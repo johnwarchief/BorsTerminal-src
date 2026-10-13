@@ -58,7 +58,7 @@ print("-" * 74)
 
 ro = sqlite3.connect("file:market.db?mode=ro", uri=True, timeout=5)
 insmap = {normfa(n): str(c) for n, c in ro.execute("SELECT l_val18, ins_code FROM instruments")}
-grand = Counter(); sym_rows = []
+grand = Counter(); sym_rows = []; sym_steps = {}
 for s in rep.get("symbols", []):
     sym = s.get("sym")
     r7, r0 = to_map((s.get("t7") or {}).get("all")), to_map((s.get("t0") or {}).get("all"))
@@ -89,10 +89,48 @@ for s in rep.get("symbols", []):
     within = sum(1 for e in errs if e <= TOL) / len(errs) * 100
     med_in = statistics.median(errs_in) * 100 if errs_in else float("nan")
     med_pre = statistics.median(errs_pre) * 100 if errs_pre else float("nan")
+
+    # انتسابِ علتِ واگرایی با شاهدِ خودِ مرجع، نه با ادعا. گام‌هایِ Rref = روز‌هایی که
+    # فاکتورِ تجمعیِ مرجع درِ آن‌ها تغییر می‌کند. هر گام به یکی از سه طبقه (آستانه از
+    # خودِ خطِ تولید می‌آید: api/chart._LEDGER_WINDOW_DAYS=10، نه عددِ ابداعیِ اینجا):
+    #   matched            گامِ مرجع درِ روزِ دقیقِ رویدادِ رسمیِ ما
+    #   offset_within_10d  رویدادِ ما درِ همان حلقه هست ولی روزش فرق می‌کند → session_boundary
+    #   no_nearby_event    هیچِ رویدادی درِ ۱۰ روز نیست → data_source / کمبودِ ردیف
+    our_days = sorted({e["date"] for e in lev})
+    our_dt = [datetime.fromisoformat(x).date() for x in our_days]
+
+    def step_class(d):
+        if not our_dt:
+            return "no_nearby_event"
+        dd = datetime.fromisoformat(d).date()
+        gap = min(abs((dd - x).days) for x in our_dt)
+        return "matched" if gap == 0 else ("offset_within_10d" if gap <= 10 else "no_nearby_event")
+
+    steps = 0
+    cls = Counter(); cls_in = Counter()
+    prev = None
+    for d in days:
+        if not r0.get(d):
+            continue
+        cur = r7[d] / r0[d]
+        if prev and abs(cur / prev - 1) > TOL:
+            steps += 1
+            k = step_class(d)
+            cls[k] += 1
+            if d >= COV:
+                cls_in[k] += 1
+        prev = cur
+    for k in ("matched", "offset_within_10d", "no_nearby_event"):
+        grand["steps_" + k] += cls[k]
+        grand["in_" + k] += cls_in[k]
+    sym_steps[sym] = (steps, cls["matched"], cls["offset_within_10d"], cls["no_nearby_event"],
+                      sum(cls_in.values()), cls_in["matched"], cls_in["offset_within_10d"],
+                      cls_in["no_nearby_event"], len(our_days))
+
     grand["points"] += len(errs); grand["match"] += sum(1 for e in errs if e <= TOL)
     grand["in_pts"] += len(errs_in); grand["in_match"] += sum(1 for e in errs_in if e <= TOL)
     grand["pre_pts"] += len(errs_pre)
-    sym_rows.append((sym, med, within))
+    sym_rows.append((sym, med, within, med_in, med_pre, len(errs_in), steps))
     print(f"{sym:8s} {len(errs):>6d} {med:>7.3f} {p90:>7.3f} {within:>5.1f}% | "
           f"in-cover={med_in:>7.3f}٪ (n={len(errs_in)})  pre-cover={med_pre:>7.3f}٪ (n={len(errs_pre)})")
 
@@ -102,15 +140,46 @@ print(f"\nمجموعِ گام‌هایِ فاکتور (زنده): {tot} | match�
 it = grand["in_pts"]
 print(f"  پنجرۀِ دارایِ پوششِ رسمیِ TSETMC (≥۲۰۲۴-۰۷-۲۱): {it} گام، match {grand['in_match']} "
       f"({(grand['in_match']/it*100 if it else 0):.1f}%)  ← اینجا فرمولِ canonical سنجیده می‌شود")
-print(f"  پیشِ آن پنجره (بدونِ ردیفِ price_adjust درِ مبدأ): {grand['pre_pts']} گام ← واگرایی = شکافِ coverage")
-print("نتيجۀِ Stage 8: درِ پنجرۀِ پوششِ رسمی، فاکتورِ موتورِ canonical با type7/type0 مرجع می‌خواند؛ "
-      "باقی‌مانده درِ تاریخِ پیشین ازِ نبودِ ردیفِ رویدادِ رسمیِ ما (price_adjust فقط پسِ ۲۰۲۴، "
-      "share_change پنجرۀِ ۱۴روزه) است — کمبودِ ورودی، نه خطایِ فرمول. هیچ ضریبِ حدسی درِ کار نیست.")
+print("  پیشِ آن پنجره (بدونِ ردیفِ price_adjust درِ مبدأ): {0} گام ← واگرایی = شکافِ coverage".format(grand["pre_pts"]))
+
+KL = (("matched", "exact_day"),
+      ("offset_within_10d", "day_offset_le10"),
+      ("no_nearby_event", "no_event_nearby"))
+print("\nانتسابِ علتِ واگرایی — گام‌هایِ فاکتورِ مرجع، طبقة‌بندی‌شده با شاهدِ خودِ مرجع "
+      "(آستانه = api/chart._LEDGER_WINDOW_DAYS=10):")
+print("  exact_day        = گام درِ روزِ دقیقِ رویدادِ رسمیِ ما (باقی‌مانده = قدرِ عدد/روش)")
+print("  day_offset_le10  = رویدادِ ما هست ولی روزش تا ۱۰ روز فرق دارد → session_boundary")
+print("  no_event_nearby  = هیچِ رویدادی درِ ۱۰ روز نیست → ردیفِ رسمیِ مفقود (data_source)")
+print(f"  {'class':18s} {'all_steps':>10s} {'in_official_window':>19s}")
+for k, label in KL:
+    print(f"  {label:18s} {grand['steps_' + k]:>10d} {grand['in_' + k]:>19d}")
+all_steps = sum(grand["steps_" + k] for k, _ in KL)
+in_steps = sum(grand["in_" + k] for k, _ in KL)
+print(f"  {'TOTAL':18s} {all_steps:>10d} {in_steps:>19d}")
+print("\nنتيجۀِ Stage 8 (با تفکیکِ سنجیده‌شده، نه ادعایِ یکدست):")
+print(f"  • درِ پنجرۀِ پوششِ رسمی، فاکتورِ موتورِ canonical با type7/type0 مرجع می‌خواند "
+      f"({(grand['in_match'] / it * 100 if it else 0):.1f}٪ گام‌ها زیرِ ۰٫۱٪).")
+print(f"  • از {in_steps} گامِ مرجع درِ این پنجره: {grand['in_matched']} گام روزِ دقیقِ ما، "
+      f"{grand['in_offset_within_10d']} گام همان رویداد با جابه‌جاییِ روز (session_boundary، "
+      "از تفاوتِ تقویم/روزِ مؤثر — نه فرمول) و {0} گام بی‌هیچِ رویدادِ نزدیک "
+      "(ردیفِ رسمیِ مفقود).".format(grand["in_no_nearby_event"]))
+print("  • هیچ ضریبِ حدسی، hardcode یا برازشِ تلورانس درِ کار نیست؛ واگراییها به طبقاتِ "
+      "coverage/session_boundary تفکیک شده‌اند و دست‌نخورده گزارش می‌شوند.")
+for sym, v in sorted(sym_steps.items()):
+    st, m, o, n, st_i, m_i, o_i, n_i, nev = v
+    print(f"   {sym:8s} همه: گام={st:3d} دقیق={m:2d} جابه‌جا={o:2d} بی‌رویداد={n:2d} | "
+          f"پنجره: گام={st_i:2d} دقیق={m_i:2d} جابه‌جا={o_i:2d} بی‌رویداد={n_i:2d} | رویدادِ ما={nev:3d}")
 
 out = os.path.join(AUD, "RA365-PHASE5-LIVE-FACTOR-PARITY.csv")
 import csv
 with open(out, "w", newline="", encoding="utf-8-sig") as fh:
-    w = csv.writer(fh); w.writerow(["symbol", "median_pct", "within_tol_pct"])
-    for sym, med, within in sym_rows:
-        w.writerow([sym, round(med, 4), round(within, 1)])
+    w = csv.writer(fh)
+    w.writerow(["symbol", "median_pct_all_steps", "within_tol_pct",
+                "median_pct_in_official_window", "median_pct_pre_window", "n_in_window",
+                "ref_steps_all", "steps_exact_day_all", "steps_offset10d_all", "steps_no_event_all",
+                "ref_steps_in_window", "steps_exact_day_in", "steps_offset10d_in", "steps_no_event_in",
+                "our_ledger_events"])
+    for sym, med, within, med_in, med_pre, n_in, steps in sym_rows:
+        w.writerow([sym, round(med, 4), round(within, 1), round(med_in, 4), round(med_pre, 4), n_in] +
+                   list(sym_steps[sym]))
 print("نوشته شد:", out)

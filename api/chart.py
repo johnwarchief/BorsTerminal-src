@@ -750,7 +750,24 @@ def _schedule_history_repair(symbol, last_date, target_date):
     return True
 
 
-def _attach_live_bar(symbol, res):
+def _stamp_data_time(payload, built_at=None):
+    """«زمان آخرین داده» را رویِ پاسخ می‌گذارد (قراردادِ Stage 5ِ Phase 5).
+
+    دو چیزِ جدا، چون یکی نیست: `lastDataTime` بزرگ‌ترینِ روزِ واقعاً موجود درِ سری است
+    (تازگیِ **داده**) و `payloadAgeS` عمرِ نسخه‌ای که از CHART_CACHE می‌آید (تازگیِ
+    **محاسبه**). بی‌این تفکیک، پاسخِ کش‌شدۀ یک‌ساعته «دادهٔ تازه» به مصرف‌کننده
+    می‌فروشد؛ با این، مصرف‌کننده می‌تواند stale را نشان دهد. هیچ عددِ ساختگی نیست:
+    اگر سری خالی است، `lastDataTime` هم null می‌ماند نه «امروز».
+    """
+    cands = payload.get("candles") or []
+    days = [str(c.get("time"))[:10] for c in cands if c.get("time")]
+    payload["lastDataTime"] = max(days) if days else None
+    if built_at:
+        payload["payloadAgeS"] = round(max(0.0, time.time() - built_at), 1)
+    return payload
+
+
+def _attach_live_bar(symbol, res, built_at=None):
     """کندلِ جلسهٔ جاری را به پاسخِ /api/chart اضافه می‌کند — بی‌نوشتن در کش.
 
     تا پیش از این فقط /api/chart-db کندلِ زنده می‌ساخت، پس همان نماد در دو
@@ -760,11 +777,12 @@ def _attach_live_bar(symbol, res):
     """
     candles = res.get("candles") or []
     if not candles:
-        return price_basis.resolve_payload(res)
+        return _stamp_data_time(price_basis.resolve_payload(res), built_at)
     newest = max(c["time"] for c in candles)   # ترتیبِ آرایه به خودِ سری واگذار است
     bar, err = _watch_live_bar(symbol, newest)
     if bar is None:
-        return price_basis.resolve_payload(dict(res, liveError=err) if err else res)
+        return _stamp_data_time(
+            price_basis.resolve_payload(dict(res, liveError=err) if err else res), built_at)
     # /api/chart نزولی می‌دهد (تازه‌به‌قدیم) و مسیرِ محلی صعودی — کندلِ تازه باید
     # در همان سمتی بنشیند که سری بزرگ می‌شود، نه همیشه در خانۀ صفر.
     at = len(candles) if candles[-1]["time"] > candles[0]["time"] else 0
@@ -783,7 +801,7 @@ def _attach_live_bar(symbol, res):
     # تنها نقطۀ انتخابِ مبنایِ قیمت درِ این مسیر (کارِ #73 قدمِ ۳): کندلِ زنده هم
     # داخلِ سری است، پس یکِ تصمیمِ مبنایی برایِ کلِ سری اینجا گرفته می‌شود — نه یکی
     # برایِ تاریخچه و یکی برایِ امروز.
-    return price_basis.resolve_payload(out)
+    return _stamp_data_time(price_basis.resolve_payload(out), built_at)
 
 
 @router.get("/api/chart/{symbol}")
@@ -791,9 +809,10 @@ def get_chart_tsetmc(symbol: str):
     """نمودار کامل از CDN TSETMC: OHLCV روزانه + رویدادهای تعدیل عملکردی (ادجاست) با فال‌بک خودکار به دیتابیس محلی."""
     import time as _t
     global CDN_OFFLINE_UNTIL
-    _cached = CHART_CACHE.get(symbol)
+    _ck = _chart_cache_key(symbol)
+    _cached = CHART_CACHE.get(_ck)
     if _cached and (_t.time() - _cached[0]) < _cached[2]:
-        return _attach_live_bar(symbol, _cached[1])
+        return _attach_live_bar(symbol, _cached[1], built_at=_cached[0])
     import requests as _rq
     from urllib.parse import quote
 
@@ -823,13 +842,24 @@ def get_chart_tsetmc(symbol: str):
                     "degraded": True,
                     "count": len(cands),
                     "fts": db_res.get("fts"),
+                    # برچسبِ مبنایِ همان شمعی‌هایی که از `get_chart_db` آمدند **کپی**
+                    # می‌شود، نه دوباره تصمیم گرفته: کندل‌ها درِ همان مبنایِ داوری‌شده
+                    # ساخته شده‌اند و اگر اینجا دوباره `apply_basis` صدا زده شود،
+                    # پاسخِ جایگزین ممکن است برچسبی غیر از عددِ داخلِ کندل ببرد
+                    # (سنجشِ زندهٔ Stage 9ِ Phase 5: `priceBasis: null` درِ مسیرِ fallback).
+                    "priceBasis": db_res.get("priceBasis"),
+                    "priceBasisRequested": db_res.get("priceBasisRequested"),
+                    "priceBasisReason": db_res.get("priceBasisReason"),
+                    "priceBasisLastMissing": db_res.get("priceBasisLastMissing"),
                 }
+                _stamp_data_time(res)
                 # شکافِ تاریخچه را بی‌صدا نگه نمی‌داریم: اگر سریِ محلی حتی
                 # امروزِ تقویمی را هم ندارد، نشستِ تازه‌ای جا افتاده و همین یک
                 # نماد در پس‌زمینه تازه می‌شود تا دیدِ بعدی کامل باشد.
                 res["historyRepairScheduled"] = _schedule_history_repair(
                     symbol, cands[-1]["time"], datetime.date.today().strftime("%Y-%m-%d"))
-                CHART_CACHE[symbol] = (_t.time(), res, CHART_FALLBACK_TTL)
+                # کلیدِ مبنادار: نسخهٔ «last» هرگز به «closing» سرو نمی‌شود
+                CHART_CACHE[_chart_cache_key(symbol)] = (_t.time(), res, CHART_FALLBACK_TTL)
                 return res
         except Exception:
             pass
@@ -961,7 +991,7 @@ def get_chart_tsetmc(symbol: str):
         }
         # یک‌بار کشف، همیشه خوانده: همین مجموعه، منبعِ مسیرِ آفلاین هم می‌شود.
         _store_adjust_events(symbol, adj_events, adjust_source)
-        CHART_CACHE[symbol] = (time.time(), result, CHART_CACHE_TTL)
+        CHART_CACHE[_chart_cache_key(symbol)] = (time.time(), result, CHART_CACHE_TTL)
         return _attach_live_bar(symbol, result)
     except Exception as e:
         fb = _fallback_local()
@@ -1558,7 +1588,7 @@ def get_chart_db(symbol: str, adjustment: int = 3):
         except Exception:
             fts_payload = None
 
-        return price_basis.resolve_payload(
+        return _stamp_data_time(price_basis.resolve_payload(
             {"status": "success", "symbol": symbol, "count": len(candles),
              "candles": candles, "volumes": vols, "factors": facts,
              "adjustEvents": _evs, "adjustSource": _src,
@@ -1567,7 +1597,7 @@ def get_chart_db(symbol: str, adjustment: int = 3):
              "liveInjected": live_injected,
              "liveError": live_error,
              "adjustment": adjustment,
-             "fts": fts_payload})
+             "fts": fts_payload}))
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
@@ -1670,7 +1700,25 @@ def get_patterns(symbol: str):
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
-CHART_CACHE = {}   # {symbol: (fetch_time, json_data)}
+CHART_CACHE = {}   # {_chart_cache_key(symbol): (fetch_time, json_data, ttl)}
+
+
+def _chart_cache_key(symbol):
+    """کلیدِ کشِ چارت **مبنا را هم می‌برد** — همان قراردادی که MA_CACHE دارد
+    (`api/chart.py::get_ma_events`: `f"{symbol}|{days}|{price_basis.current()}"`).
+
+    پیش از این کلید فقطِ symbol بود، و این دو نقصِ واقعی داشت (سنجشِ زندهٔ Stage 9ِ
+    Phase 5 درِ مرورگر: تعویضِ مبنا و دوباره‌خواندن → `priceBasis` همان «closing»
+    ماند):
+      ۱) مسیرِ فال‌بکِ محلی، برچسبِ مبنایِ داوری‌شدۀِ `get_chart_db` را داخلِ پاسخ
+         می‌گذارد و همان پاسخ کش می‌شود؛ پس تعویضِ مبنا تا TTLِ فال‌بک دیده نمی‌شود
+         (نقضِ صریحِ شرطِ Stage 5: «پاسخ‌های stale پس از تعویض نماد یا مبنا نمایش
+         داده نشوند»).
+      ۲) دو مبنایِ متفاوت، یکِ خانه را اشغال می‌کردند و هر تغییرِ مبنا سریِ دیگری
+         را از کشِ بیرونیِ خودِ آن مبنای می‌خواند.
+    """
+    return f"{symbol}|{price_basis.current()}"
+
 
 ADJ_TOL = 0.001
 
