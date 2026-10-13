@@ -209,7 +209,7 @@ def main() -> int:
 
     # کم‌شدنِ دوره‌ها به‌سببِ LIMITِ قبلِ dedupe (رفتارِ واقعیِ همان کوئری)
     for sym in {s for (s, _p) in multi}:
-        pred, params = FE.sym_in("symbol", sym)
+        pred, params = sym_in(conn, "symbol", sym)
         raw = conn.execute(
             "SELECT period_end, period_months FROM financial_statements"
             " WHERE %s AND %s ORDER BY period_end DESC, publish_date DESC LIMIT ?"

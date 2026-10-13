@@ -163,7 +163,7 @@ def main():
                         "ON i.l_val18=f.symbol WHERE i.l_val18 IS NULL")
     orph_resolvable = 0
     for s in orph_symbols:
-        pred, params = fe.sym_in("symbol", s)
+        pred, params = fe.sym_in(conn, "symbol", s)
         if q(conn, "SELECT COUNT(*) FROM financial_statements WHERE %s" % pred, params):
             orph_resolvable += 1
     conn.close()

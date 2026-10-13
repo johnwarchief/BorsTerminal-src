@@ -73,6 +73,13 @@ a = Analysis(
                    # codal_fetcher سطح-بال importش می‌کنند. نبودنش EXE را رویِ اولین
                    # درخواستِ بنیادی می‌کشد.
                    'codal_periods',
+                   # مرحلۀ ۱.۲ مأموریت بنیادی (۱۴۰۵-۰۷-۲۲): `symbol_identity` تنها
+                   # تعریفِ «این ردیف مالکِ کدام ابزار است» است و fts_engine /
+                   # api._core / api.fundamental / api.chart / api.screener و
+                   # confidence_engine آن را صدا می‌زنند. بی‌این خط EXE رویِ اولین
+                   # درخواستِ بنیادی ModuleNotFoundError می‌دهد (همان قاعدۀ
+                   # AGENTS.md برایِ هر ماژولِ ریشه).
+                   'symbol_identity',
                    # بند ۲ مأموریت (1405-07-20): `client_split` تنها تعریفِ
                    # درصدِ حقیقی/حقوقی است و api/market.py + mstat_engine آن را
                    # سطح-بال import می‌کنند؛ نبودنش EXE را رویِ اولین درخواستِ

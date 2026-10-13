@@ -130,8 +130,8 @@ def quarters(bank, symbol, limit=16):
 def legacy_pick(bank, symbol, period_end, period_months):
     """الگوریتمِ **کهنه** (قبلِ اصلاح) — فقط برایِ کنترلِ منفی: ثابت کند سنسور
     این حالت را می‌بیند و سبزیِ تست از کور بودنِ تست نیامده است."""
-    pred, params = FE.sym_in("symbol", symbol)
     c = bank.connect()
+    pred, params = FE.sym_in(c, "symbol", symbol)
     try:
         raw = c.execute(
             "SELECT period_end, period_months, tracing_no FROM financial_statements"
@@ -406,8 +406,8 @@ def contract_winners_for(connect, symbol):
 
     برگردان: `{(period_end, period_months): (numbers, tracing_no, publish_date)}`
     """
-    pred, params = FE.sym_in("symbol", symbol)
     c = connect()
+    pred, params = FE.sym_in(c, "symbol", symbol)
     out = {}
     try:
         for r in c.execute("SELECT * FROM financial_statements WHERE %s AND %s"
@@ -432,8 +432,8 @@ def legacy_winners_for(connect, symbol):
     """برندۀ **کهنه** (کنترلِ منفی): کوئریِ پیش از اصلاح، یعنی
     `ORDER BY period_end DESC, publish_date DESC` و اولینِ هر کلید — واژگانیِ
     خامِ `publish_date` با رقمِ مخلوط."""
-    pred, params = FE.sym_in("symbol", symbol)
     c = connect()
+    pred, params = FE.sym_in(c, "symbol", symbol)
     out = {}
     try:
         for r in c.execute("SELECT period_end, period_months, tracing_no,"

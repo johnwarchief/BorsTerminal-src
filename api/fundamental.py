@@ -301,7 +301,7 @@ def get_tsetmc_market_cap_info(symbol, db=None) -> dict:
         out["reason"] = str(e)[:120]
         return out
     try:
-        pred, params = fts_engine.sym_in("i.l_val18", symbol)
+        pred, params = fts_engine.sym_in(conn, "i.l_val18", symbol, "board")
         where = "(%s OR %s)" % (pred, pred.replace("i.l_val18", "i.l_val30"))
         args = (*params, *params)
         if not _has_mcap_col(conn, "market_watch"):
@@ -466,7 +466,7 @@ def _physical_pair(conn, symbol: str, year: int, month: int) -> tuple:
     if not col_now:
         return None, None, None
     col_prev = next((c for c in _VOL_PREV_KEYS if c in present), None)
-    pred, params = fts_engine.sym_in("symbol", symbol)
+    pred, params = fts_engine.sym_in(conn, "symbol", symbol)
     sel = "year, month, MAX(%s)" % col_now + (", MAX(%s)" % col_prev if col_prev else "")
     try:
         rows = conn.execute("SELECT %s FROM monthly_sales WHERE %s "
@@ -709,7 +709,7 @@ def _interim_eps_check(conn, symbol, last_fy_eps=None, track_period_ends=(),
         ۱۱ماههٔ سال ۱۴۰۴ در حالی که ۱۴۰۵ کامل در سابقه است)، «قطعِ روند» کاذب
         می‌سازد — پس فقط میاندورهٔ **جدیدتر از سال‌های سابقه** دیده میشود.
     """
-    pred, params = fts_engine.sym_in("symbol", symbol)
+    pred, params = fts_engine.sym_in(conn, "symbol", symbol)
     rows = conn.execute(
         "SELECT period_end, period_months, basic_eps, title FROM financial_statements "
         "WHERE %s AND %s AND period_months BETWEEN 1 AND 11 AND basic_eps IS NOT NULL "
@@ -1070,7 +1070,7 @@ def m141_hit(conn, symbol, m141_map=None) -> bool:
     """
     if m141_map is None:
         m141_map = fts_engine.m141_map(conn)
-    return bool(m141_map.get(fts_engine.norm_fa(symbol), False))
+    return bool(m141_map.get(fts_engine.sym_key(symbol), False))
 
 
 def trade_value_hmt(conn, symbol, liq_map=None) -> float:
@@ -1084,7 +1084,7 @@ def trade_value_hmt(conn, symbol, liq_map=None) -> float:
     """
     if liq_map is None:
         liq_map = fts_engine.avg_trade_value_hmt(conn)
-    v = liq_map.get(fts_engine.norm_fa(symbol))
+    v = liq_map.get(fts_engine.sym_key(symbol))
     return 0.0 if v is None else _f(v) / 1000.0
 
 
@@ -1771,11 +1771,15 @@ def _sector_from_company(company_name):
     return "سایر"
 
 
-_INSTR_SQL = """
+# کلیدِ نماد دیگر با تابعِ SQL مقایسه نمی‌شود: `sym_key(l_val18)=sym_key(?)` رویِ
+# instruments (۵٬۹۸۹ ردیف) هر ردیف را به UDF می‌برد و زمانِ کارت را دوبرابر کرد
+# (۱۵۰ms ← ۳۰۰ms، اندازه‌گیری‌شده). جایش `l_val18 IN (…)` با نامزدهایِ خودِ بانک
+# است — ایندکس‌پسند و **همان** قاعدۀ `symbol_identity`.
+INSTR_SQL_TMPL = """
     SELECT i.ins_code, i.sector_name, i.total_shares, m.p_closing, i.l_val18, i.l_val30
     FROM instruments i
     LEFT JOIN market_watch m ON i.ins_code = m.ins_code
-    WHERE REPLACE(REPLACE(REPLACE(i.l_val18, 'ك', 'ک'), 'ي', 'ی'), 'ى', 'ی') = ?
+    WHERE i.l_val18 IN ({})
     ORDER BY i.updated_at DESC LIMIT 1
 """
 
@@ -1896,7 +1900,7 @@ def get_fundamental(symbol: str, months: int = 0):
     """
     conn = get_db()
     try:
-        _pred_i, _params_i = fts_engine.sym_in("i.l_val18", symbol)
+        _pred_i, _params_i = fts_engine.sym_in(conn, "i.l_val18", symbol, "board")
         inst = conn.execute(f"""
             SELECT i.ins_code, i.sector_name, i.total_shares, m.p_closing, i.l_val18, i.l_val30
             FROM instruments i
@@ -1905,8 +1909,9 @@ def get_fundamental(symbol: str, months: int = 0):
             ORDER BY i.updated_at DESC LIMIT 1
         """, _params_i).fetchone()
         if not inst:
-            inst = conn.execute(_INSTR_SQL, (fts_engine.norm_fa(symbol),)).fetchone()
-        pred, params = fts_engine.sym_in("symbol", symbol)
+            _pk, _pa = fts_engine.sym_in(conn, "i.l_val18", symbol, "board")
+            inst = conn.execute(INSTR_SQL_TMPL.format(_pk), _pa).fetchone()
+        pred, params = fts_engine.sym_in(conn, "symbol", symbol)
         cn = conn.execute("SELECT company_name FROM financial_statements WHERE %s "
                           "%s LIMIT 1" % (pred, CP.latest_order_sql()),
                           params).fetchone()
@@ -1969,7 +1974,7 @@ def get_fundamental(symbol: str, months: int = 0):
             m30 = re.search(r"\S+\s+([^\s-]+)[\s-]?", str(inst["l_val30"]))
             if m30 and m30.group(1):
                 underlying = m30.group(1)
-                _p_probe, _a_probe = fts_engine.sym_in("l_val18", underlying)
+                _p_probe, _a_probe = fts_engine.sym_in(conn, "l_val18", underlying, "board")
                 if conn.execute(f"SELECT 1 FROM instruments WHERE {_p_probe}", _a_probe).fetchone():
                     ref_symbol, ref_reason = underlying, "قرارداد اختیار معامله — تحلیل به نماد اصلی آن"
                     option_contract = True
@@ -2057,7 +2062,7 @@ def get_fundamental(symbol: str, months: int = 0):
         ref_row = res.get("ref")
         if ref_row:
             # تطبیق چند-نویشتاری: norm_symbol ممکن است فارسی باشد و DB عربی نگه دارد
-            _fp, _fa = fts_engine.sym_in("symbol", norm_symbol)
+            _fp, _fa = fts_engine.sym_in(conn, "symbol", norm_symbol)
             te = conn.execute("SELECT total_equity FROM financial_statements WHERE %s "
                               "AND period_end=? ORDER BY tracing_no DESC LIMIT 1" % _fp,
                               (*_fa, ref_row["period_end"])).fetchone()
@@ -2130,7 +2135,7 @@ def get_fundamental_quarters(symbol: str, limit: int = 16):
     try:
         # تطبیق چند-نویشتاری (ك/ي عربی ↔ فارسی): ورودیِ کاربر ممکن است فارسی
         # باشد و رکوردهای کدالِ همان نماد با نوشتار عربی ذخیره شده باشند.
-        _fp, _fa = fts_engine.sym_in("symbol", symbol)
+        _fp, _fa = fts_engine.sym_in(conn, "symbol", symbol)
         # تمام candidateهای نماد خوانده می‌شوند؛ LIMIT قبل از انتخاب مرجع
         # می‌توانست چند اطلاعیه از یک دوره را وارد پنجره کند و دوره‌های یکتا را حذف کند.
         # publish_date خام عمداً مرتب نمی‌شود: ارقام فارسی/ASCII در DB مخلوط‌اند.
@@ -2198,7 +2203,7 @@ def v10_batch(symbols, cfg=None, limit: int = 50) -> list:
                        COALESCE(i.sector_name, 'سایر')
                 FROM instruments i
                 LEFT JOIN market_watch m ON m.ins_code = i.ins_code"""):
-                k = fts_engine.norm_fa(r[0])
+                k = fts_engine.sym_key(r[0])
                 if k and k not in ctx:
                     ctx[k] = (r[1], r[3], r[2])
         except sqlite3.Error:
@@ -2211,7 +2216,7 @@ def v10_batch(symbols, cfg=None, limit: int = 50) -> list:
         liq_map = fts_engine.avg_trade_value_hmt(conn) if need_liq else {}
         for s in syms:
             try:
-                hit = ctx.get(fts_engine.norm_fa(s)) or (None, "سایر", None)
+                hit = ctx.get(fts_engine.sym_key(s)) or (None, "سایر", None)
                 mcap_raw, sector, mcap_src = hit
                 mcap, mcap_err = _rials_or_none(mcap_raw)
                 if mcap is None:
@@ -2393,7 +2398,7 @@ def _fts_market_ctx(conn, symbol: str) -> tuple:
     if not _has_mcap_col(conn, "market_watch"):
         ensure_market_cap_schema(conn)
     info = get_tsetmc_market_cap_info(symbol, db=conn)
-    pred, params = fts_engine.sym_in("i.l_val18", symbol)
+    pred, params = fts_engine.sym_in(conn, "i.l_val18", symbol, "board")
     pred30 = pred.replace("i.l_val18", "i.l_val30")
     row = conn.execute(
         "SELECT COALESCE(i.sector_name, 'سایر') "

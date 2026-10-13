@@ -34,6 +34,7 @@ from typing import Optional
 import mstat_engine
 # تنها تعریفِ «دورۀ گزارش» (شکل، بی‌دوره، سالِ مالی) — ببین `codal_periods.py`.
 import codal_periods as CP
+import symbol_identity as SI            # تنها تعریفِ «این ردیف مالکِ کدام ابزار است»
 
 
 # ============================================================ نرمال‌سازی نوشتار
@@ -65,7 +66,7 @@ def norm_fa(text) -> str:
 #   bulk_scan            → کلید از خودِ دیتابیس (نوشتار عربی) → داده کامل
 # یعنی /api/fts/{symbol} و /api/screener دو پاسخ متفاوت به یک نماد می‌دادند.
 #
-# چرا `WHERE norm_fa(symbol)=?` راه‌حل نیست (روی همین market.db اندازه گرفته شد):
+# چرا `WHERE SI.key(symbol)=?` راه‌حل نیست (روی همین market.db اندازه گرفته شد):
 #   نماد خام =  ۰٫۰۱ میلی‌ثانیه   (SEARCH USING COVERING INDEX ix_fs_symbol)
 #   norm_fa() =  ۵٫۷۴ میلی‌ثانیه   (اسکن کامل ۸۰۰۹ ردیف — ایندکس قابل استفاده نیست)
 # هر scan_symbol ~۱۹ کوئری می‌زند و scan_all روی ۸۶۸+ نماد اجرا می‌شود →
@@ -87,80 +88,44 @@ for _c in _KAF_CLASS:
 del _c
 
 
-def symbol_aliases(symbol, limit: int = 27) -> tuple:
-    """همهٔ نوشتارهای خامِ یک نماد که norm_fa یکسانی تولید می‌کنند.
+def sym_in(conn, col: str, symbol, domain=None):
+    """(شرح SQL, پارامترها) برای «همۀ نوشتارهایِ همین ابزار در همین بانک».
 
-    بدون کوئری و بدون تابع سمت SQL: جای‌گذاریِ هر کاراکترِ «چند-نویشتاری»
-    با تمام نمونه‌های همان دسته (ی/ي/ى و ک/ک). ورودی خالی → تاپل خالی.
+    Stage 1.2: این تابع دیگر هیچ جایگشتِ نویسه‌ای نمی‌سازد؛ نامزدها از خودِ
+    بانک خوانده می‌شوند (`symbol_identity`). پیش‌تر کارت با جایگشتِ ي/ك/ى و
+    حذفِ نیم‌فاصله، نوشتارِ «شهر »+نیم‌فاصله+«فرش» را هرگز نمی‌ساخت، پس ۶ از ۷
+    گزارشِ آن صادرکننده را نمی‌دید (۱۶۷۵ جفتِ نماد×جدول واگرایی، سنجیده‌شده؛
+    همیشه در جهت «قیف می‌بیند، کارت نمی‌بیند»).
 
-    ترتیب خروجی **قطعی** است (اول خودِ ورودی، سپس جایگشت‌ها به ترتیب
-    ساخت) تا خروجی اسکنرها و لاگ‌ها بین اجراها عوض نشود؛ به همین دلیل از
-    set() استفاده نمی‌شود (هشِ رشته‌ها در پایتون تصادفی است).
-
-    سقف limit از آنجاست که نمادی با ۳ کاراکتر «ی‌کلاس» ۲۷ جایگشت می‌دهد؛
-    ۴ تا ۸۱ می‌شود که بی‌معناست. در عمل نمادهای TSETMC ۰ تا ۲ بار این
-    کاراکترها را دارند، پس سقف عملاً فعال نمی‌شود.
+    `conn` اجباری است: بی‌بانک نمی‌توان دانست کدام نوشتار واقعیت دارد.
     """
-    s = "" if symbol is None else str(symbol)
-    if not s:
-        return ()
-    base = s.replace(_ZWNJ, "")
-    out, seen = [], set()
-    for cand in (s, base):
-        if cand and cand not in seen:
-            seen.add(cand)
-            out.append(cand)
-    # v9.10.4 — TSETMC یک رقمِ انتهایی به نماد می‌چسباند تا ردیفِ تابلو را از
-    # شرکت جدا کند (مبين / مبين3 همان صادرکننده‌اند). صورت‌های مالی فقط زیرِ
-    # نامِ بی‌رقم ذخیره می‌شوند، پس مبين3 هیچ‌وقت به دادهٔ CODAL نمی‌رسید:
-    # ۳۹۶ نماد از ۱۴۳۹ سهام به‌نظر می‌رسید «دادهٔ بنیادی ندارد» در حالی که
-    # شرکتشان کامل بود. فقط یک رقمِ تکی (نه دنبالهٔ چندرقمی مثل صشرق512)
-    # و فقط وقتی پایه ≥۲ حرف باشد. تأییدِ ایمنی روی همین بانک: ۳۹۶/۳۹۶
-    # تعدادِ سهامِ کاملاً یکسان = همان صادرکننده، ۰ مثالِ نادرست.
-    if len(base) >= 3 and base[-1] in "0123456789" and base[-2] not in "0123456789":
-        stripped = base[:-1]
-        if len(stripped) >= 2 and stripped not in seen:
-            seen.add(stripped)
-            out.append(stripped)
-    pos = [i for i, ch in enumerate(base) if ch in _CHAR_CLASS]
-    variants = [base]
-    for i in pos:
-        if len(variants) >= max(int(limit), 1):
-            break
-        nxt = []
-        for v in variants:
-            for al in _CHAR_CLASS[base[i]]:
-                if v[i] == al:
-                    if v not in nxt:
-                        nxt.append(v)
-                else:
-                    w = v[:i] + al + v[i + 1:]
-                    if w not in nxt:
-                        nxt.append(w)
-        variants = nxt
-    for v in variants:
-        if v and v not in seen:
-            seen.add(v)
-            out.append(v)
-    return tuple(out)
+    return SI.pred(conn, col, symbol, domain or SI.CODAL)
 
 
-def sym_in(col: str, symbol, alias_limit: int = 27):
-    """(شرح SQL, پارامترها) برای تطبیق «هر نوشتارِ این نماد» با ایندکس.
+def symbol_variants(conn, symbol, domain=None):
+    """نامزدهای خامِ یک نماد — جانشینِ `symbol_aliases` در مصرف‌کننده‌های متنی."""
+    return SI.variants(conn, symbol)
 
-    مثال:  pred, params = sym_in("symbol", "داریک")
-           f"SELECT ... WHERE {pred}"  →  "symbol IN (?,?,?)"
-    اگر ناماد تهی باشد، شرطی برمی‌گردد که هیچ‌وقت درست نمی‌شود (به‌جای
-    خطای SQL) — یعنی رفتار «بدون داده» حفظ می‌شود.
-    """
-    al = symbol_aliases(symbol, limit=alias_limit)
-    if not al:
-        return "1=0", []
-    return "%s IN (%s)" % (col, ",".join("?" * len(al))), list(al)
+
+def sym_key(symbol) -> str:
+    """کلیدِ هویتِ نماد — تنها چیزی که نقشه‌های کل‌بازاری با آن می‌سازند."""
+    return SI.key(symbol)
+
+
+def symbol_evidence(conn, symbol) -> str:
+    """چطور این نماد به ردیف‌ها رسید: same-key | isin-agree | no-isin | unmatched."""
+    return SI.evidence(conn, symbol, domain or SI.CODAL)
 
 
 def register_sql(conn):
-    """norm_fa را به‌عنوان تابع SQLite ثبت می‌کند (برای فیلترهای سمت SQL).
+    """`sym_key` را به SQLite می‌دهد (کنارِ `norm_fa` برای مصرف‌های نوشتاری).
+
+    چرا لازم است: تا وقتی کوئریِ SQL روی ستونِ نماد تابع می‌نشاند، آن تابع
+    **باید** همان کلیدِ پایتون باشد. `api/fundamental._INSTR_SQL` زنجیرۀ
+    REPLACE دست‌سازِ خودش را داشت (ي/ك را یکی می‌کرد ولی نیم‌فاصله و فاصله را
+    نه) — یعنی چهارمین تعریفِ هویت. حالا آن کوئری `sym_key` را صدا می‌زند.
+    هزینه تابع در WHERE عوض نمی‌شود (~۵٫۷ms در برابر ~۰٫۰۱ms برای IN)، پس
+    `sym_in` همان `IN` را با نامزدهایِ واقعی می‌دهد.
 
     توجه: این تابع در مسیرِ «کوئری تک‌نمادی» استفاده **نمی‌شود** — همان‌طور
     که بالاتر اندازه گرفته شد، ۵۷۴ برابر کند از ایندکس است. جای درستش
@@ -169,6 +134,7 @@ def register_sql(conn):
     """
     try:
         conn.create_function("norm_fa", 1, norm_fa, deterministic=True)
+        conn.create_function("sym_key", 1, SI.key, deterministic=True)
     except Exception:
         pass                       # اتصال read-only / نسخهٔ بی‌deterministic
     return conn
@@ -214,11 +180,11 @@ def sector_of(conn, symbol: str, fallback: str = "") -> str:
                 for sym, name in conn.execute(
                         "SELECT symbol, sector_name FROM symbol_sectors"):
                     if sym and name:
-                        tab[norm_fa(sym)] = name
+                        tab[SI.key(sym)] = name
             except Exception:
                 tab = {}
         _SECTOR_CACHE[key] = tab
-    return tab.get(norm_fa(symbol)) or fallback
+    return tab.get(SI.key(symbol)) or fallback
 
 
 def market_cap_at(conn, symbol: str, date: str = "",
@@ -246,14 +212,14 @@ def market_cap_at(conn, symbol: str, date: str = "",
                         "SELECT symbol, date, market_cap FROM market_cap_snapshots"):
                     if not sym or mc is None:
                         continue
-                    buckets.setdefault(norm_fa(sym), []).append((d or "", _f(mc)))
+                    buckets.setdefault(SI.key(sym), []).append((d or "", _f(mc)))
                 for k, lst in buckets.items():
                     lst.sort(key=lambda t: t[0])
                     tab[k] = lst
             except Exception:
                 tab = {}
         _MCAP_CACHE[key] = tab
-    lst = tab.get(norm_fa(symbol))
+    lst = tab.get(SI.key(symbol))
     if not lst:
         return fallback
     if not date:
@@ -430,7 +396,7 @@ def _fts_results_table(conn, cfg_hash: str = "") -> Optional[dict]:
         return None
     tab = {"cfg_hash": cfg_hash or stored or "", "rows": {}}
     for r in rows:
-        k = norm_fa(r[0])
+        k = SI.key(r[0])
         if k and k not in tab["rows"]:
             tab["rows"][k] = r
     return tab
@@ -452,7 +418,7 @@ def fts_results_of(conn, symbol: str, cfg_hash: str = "") -> Optional[dict]:
         if tab is None:
             tab = {"cfg_hash": cfg_hash or "", "rows": {}}
         _FTS_RESULTS_CACHE[key] = tab
-    r = (tab.get("rows") or {}).get(norm_fa(symbol))
+    r = (tab.get("rows") or {}).get(SI.key(symbol))
     if r is None:
         return None
     return _fts_row_to_result(r)
@@ -763,7 +729,7 @@ def annual_statements(conn: sqlite3.Connection, symbol: str, require_audit: bool
 
     پیش‌فرض: فقط «حسابرسی‌شده» و فقط «شرکت اصلی» (غیرتلفیقی) — شرط شاخص ۲.
     """
-    pred, params = sym_in("symbol", symbol)
+    pred, params = sym_in(conn, "symbol", symbol)
     # پنجرهٔ خواند عمداً بزرگ است و غربال در Python انجام می‌شود:
     # `limit*4` (یعنی ۴ ردیف برای limit=1) باعث می‌شد صورت‌مالیِ ۱۲ماههٔ
     # حسابرسی‌شده‌ای که در ترتیب period_end عقب‌تر از ۴ ردیف اول می‌افتد هرگز
@@ -796,11 +762,16 @@ def annual_statements(conn: sqlite3.Connection, symbol: str, require_audit: bool
                 "tracing_no": tn, "company_name": str(cn or ""),
                 "amended": _is_amendment(t), "revenue": _fn(rev), "gross_profit": _fn(gp),
                 "operating_profit": _fn(op), "net_profit": _fn(np_), "basic_eps": _fn(eps)}
-        # لایۀ شرکت درِ این مسیر فعلاً خاموش است: مسیرِ تک‌نمادیِ SQL نوشتارها
-        # را با `symbol_aliases` می‌شناسد و `bulk_scan` با `norm_fa`، و تا این دو
-        # یکی نشوند «حذف/رتبه» درِ سالانه دو رأیِ متفاوت می‌سازد (بند ۹-پ).
+        # لایۀ «شرکتِ دیگر» درِ هر دو مسیر فعال است: از دورِ Stage 1.2 کارت و قیف
+        # نامزدها را از خودِ بانک می‌خوانند (`symbol_identity`)، پس این پرچم دیگر
+        # دو جواب نمی‌سازد. بی‌این لایه، ردیفِ شرکتِ فرعی درِ سبدِ یکِ سالِ مالی
+        # برنده می‌شد و صورتِ مالیِ **خودِ نماد** را از پنجره بیرون می‌انداخت —
+        # آن‌وقت `pick_reference` که ردیفِ فرعی را رد می‌کند، آن سال را هرگز
+        # نمی‌دید («شهر فرش» ۱۴۰۴: ردیفِ «شرکت داتیس نوین ایرانیان» جای
+        # صورتِ مالیِ خودِ نماد را می‌گرفت).
         rank = statement_rank(FS_NUMBER_KEYS, _is_consolidated(t),
-                              row_completeness(FS_NUMBER_KEYS, cand), tn)
+                              row_completeness(FS_NUMBER_KEYS, cand), tn,
+                              cand["other_entity"])
         cur = by_year.get(yr)
         if cur is None or rank < cur[0]:
             by_year[yr] = (rank, cand)
@@ -866,7 +837,8 @@ def pick_reference(rows) -> Optional[dict]:
             continue
         rank = statement_rank(FS_NUMBER_KEYS, bool(r.get("consolidated")),
                               row_completeness(FS_NUMBER_KEYS, r),
-                              r.get("tracing_no") or 0)
+                              r.get("tracing_no") or 0,
+                              bool(r.get("other_entity")))
         cur = by_year.get(yr)
         if cur is None or rank < cur[0]:
             by_year[yr] = (rank, r)
@@ -877,15 +849,25 @@ def pick_reference(rows) -> Optional[dict]:
     # گذاشتنِ ردیفِ «شرکتِ دیگر» درِ سالانه دو جواب می‌سازد — گاردِ
     # fts_engine_paths_parity_v1076 رویِ «شهر فرش» همین را قرمز می‌کند.
     # سنجشِ دور ۲: ۱۹۱ ردیفِ درِ financial_statements این پرچم را دارند.
-    for want in (lambda a, c, o: a and not c,             # حسابرسی‌شدۀ غیرتلفیقی
-                 lambda a, c, o: not c,                   # غیرتلفیقی
+    # پرچمِ `other_entity` از همین دور درِ **هر سه** پلۀ تنزل مصرف می‌شود. تا
+    # پیش ازِ این سه پلکان آن را نادیده می‌گرفت و کامنتِ پایین ادعایِ contrary
+    # می‌کرد؛ دلیلِ واقعیِ نگه‌داشتنش این بود که دو مسیرِ خواندن دو دستۀ ردیف
+    # متفاوت می‌دیدند (کارت ۱ ردیف، قیف ۷ ردیف برایِ «شهر فرش») و افزودنِ این
+    # پل واگراییِ دوم را می‌ساخت. Stage 1.2 آن مانع را برداشت: هر دو مسیر حالا
+    # نامزدها را از خودِ بانک می‌خوانند (`symbol_identity`)، پس یکِ قاعده برایِ
+    # هر دو ممکن است. سنجشِ همین بانک: ۳۸۴ نمادِ کدال در خانوادۀ دو-نوشتاری‌اند
+    # و واگراییِ کارت/قیف از ۱ به ۰ رسید (`_audit/symbol_identity_before_after.json`).
+    for want in (lambda a, c, o: a and not c and not o,   # حسابرسی‌شدۀ غیرتلفیقی
+                 lambda a, c, o: not c and not o,         # غیرتلفیقی
                  lambda a, c, o: True):                   # هر سالانۀ اخیر
-    # ردیفی که عنوانش شرکتِ *دیگری* را نام می‌برد هرگز مرجع نمی‌شود —
-    # حتی به‌عنوانِ تنزلِ آخر. دلیلِ صریح: عددِ آن ردیف صورتِ مالیِ آن
-    # شرکت است، نه این نماد؛ «شهر فرش» دقیقاً همین جا دو جواب می‌داد
-    # (مسیرِ SQL ۲۰٪ از ردیفِ غیرتلفیقیِ «شرکت داتیس نوین ایرانیان»،
-    # مسیرِ bulk ۳۷٫۹٪ از تلفیقیِ خودِ نماد).
+        # قاعدۀ «هرگز» برایِ ردیفِ شرکتِ دیگر: پلِ سوم هم `o` را بیرون می‌گذارد،
+        # و اگر سالِ مالی تنها ردیفش آن بود، آن سال درِ این پلکان حضور ندارد.
+        # دلیل: عددِ آن ردیف صورتِ مالیِ آن شرکت است، نه این نماد — «شهر فرش»
+        # دقیقاً همین‌جا دو جواب می‌داد (۲۰٪ از ردیفِ «شرکت داتیس نوین ایرانیان»
+        # در برابرِ ۳۷٫۹٪ از تلفیقیِ خودِ نماد).
         for _rank, r in cand:
+            if bool(r.get("other_entity")):
+                continue
             if want(bool(r.get("audited")), bool(r.get("consolidated")),
                     bool(r.get("other_entity"))):
                 return r
@@ -1003,7 +985,7 @@ def monthly_series(conn: sqlite3.Connection, symbol: str, limit: int = 60) -> li
     گزارشِ تجمیعی دارد، ردیفِ «همان دورۀ سالِ قبل» بیرونِ پنجره می‌ماند و موتور
     data_gap می‌داد جایی که کارت عدد می‌داد. سقفِ تازه = همان ۶۰.
     """
-    pred, params = sym_in("symbol", symbol)
+    pred, params = sym_in(conn, "symbol", symbol)
     rows = conn.execute(
         "SELECT " + MS_SERIES_COLS + " FROM monthly_sales WHERE " + pred +
         " AND ytd_revenue IS NOT NULL AND ytd_revenue>0 "
@@ -1161,7 +1143,7 @@ def eps_ladder(conn: sqlite3.Connection, symbol: str, years: int = 3) -> dict:
     آخرین سالِ کامل باشد. قاعدهٔ «سطر هرگز حذف نشود»: اگر کمتر از need دوره
     موجود است، `partial=True` با خانه‌هایِ None برمی‌گردد (نه نتیجهٔ تهی).
     """
-    pred, params = sym_in("symbol", symbol)
+    pred, params = sym_in(conn, "symbol", symbol)
     rows = conn.execute(
         "SELECT period_end, period_months, title, basic_eps, net_profit"
         " FROM financial_statements "
@@ -1535,7 +1517,7 @@ def annualized_sales(conn: sqlite3.Connection, symbol: str,
     months_used، scale_factor، basis، reconciled، revenue_basis،
     operational_revenue_basis، na، ytd_sales_bt، scale_table.
     """
-    pred, params = sym_in("symbol", symbol)
+    pred, params = sym_in(conn, "symbol", symbol)
     if series is None:
         series = conn.execute(
             "SELECT year, month, monthly_revenue, ytd_revenue FROM monthly_sales "
@@ -1636,7 +1618,7 @@ def company_name_of(conn, symbol) -> str:
     if conn is None:
         return ""
     try:
-        pred, params = sym_in("symbol", symbol)
+        pred, params = sym_in(conn, "symbol", symbol)
         row = conn.execute(
             "SELECT company_name FROM financial_statements "
             "WHERE %s AND company_name IS NOT NULL "
@@ -1647,7 +1629,7 @@ def company_name_of(conn, symbol) -> str:
 
 
 def company_name_map(conn: sqlite3.Connection) -> dict:
-    """نقشهٔ norm_fa(symbol) -> نامِ شرکت، تک‌کوئری (همان ردیفِ company_name_of).
+    """نقشهٔ SI.key(symbol) -> نامِ شرکت، تک‌کوئری (همان ردیفِ company_name_of).
 
     «آخرین» اینجا هم دقیقاً `codal_periods.latest_order_sql()` است (دورۀ canonical
     اول، بی‌دوره آخر، سپس tracing_no DESC)؛ اگر ترتیبش فرق کند، اسکرینر و کارت
@@ -1662,7 +1644,7 @@ def company_name_map(conn: sqlite3.Connection) -> dict:
         return out
     best = {}
     for sym, name, pe, tn in rows:
-        key = norm_fa(sym)
+        key = SI.key(sym)
         if not key:
             continue
         rank = (CP.desc_sort_key(pe), int(tn or 0))
@@ -1682,7 +1664,7 @@ def company_name_for(conn: sqlite3.Connection, symbol: str) -> str:
     یک نماد بین اسکرینر و کارت دو جواب می‌شود، و رأی ۱۵ همان واگرایی را ممنوع
     کرده است.
     """
-    al = [a for a in symbol_aliases(symbol) if a]
+    al = [a for a in SI.variants(conn, symbol) if a]
     if not al:
         return ""
     try:
@@ -1710,7 +1692,7 @@ def has_operating_sales(conn: sqlite3.Connection, symbol: str) -> Optional[int]:
         # و با مقایسهٔ خام، همان نماد بسته به نوشتارِ ورودی دو جواب متفاوت
         # می‌گرفت (امتیاز ۲ در برابر ۳ روی شارپيلن/شارپیلن و هانيكو/هانیکو).
         # norm_fa سمت SQL هم راه‌حل نیست — v9.7.3 روی همین بانک اندازه گرفت.
-        pred, params = sym_in("symbol", symbol)
+        pred, params = sym_in(conn, "symbol", symbol)
         row = conn.execute(
             "SELECT has_operating_sales FROM financial_statements "
             "WHERE %s ORDER BY tracing_no DESC LIMIT 1" % pred, params).fetchone()
@@ -1749,7 +1731,7 @@ def ind4_exempt(conn, symbol: str, sector_norm: str = "", *,
     if holding_class_match("", company_name_of(conn, symbol)):
         return True
     if _precomputed is not None:
-        return norm_fa(symbol) in _precomputed
+        return SI.key(symbol) in _precomputed
     if conn is None:
         return False
     return has_operating_sales(conn, symbol) == 0
@@ -1786,7 +1768,7 @@ def no_sales_symbols(conn: sqlite3.Connection) -> set:
     for sym, flag, tn in rows:
         if not sym:
             continue
-        key = norm_fa(sym)
+        key = SI.key(sym)
         cur = best.get(key)
         if cur is None or (tn or 0) > cur[1]:
             best[key] = (flag, tn or 0)
@@ -1943,7 +1925,7 @@ def is_suspended(conn: sqlite3.Connection, symbol: str, max_stale_sessions: int 
         return False
     cut_idx = min(max(int(max_stale_sessions), 0), len(sess) - 1)
     cutoff = sess[cut_idx]
-    pred18, params = sym_in("i.l_val18", symbol)
+    pred18, params = sym_in(conn, "i.l_val18", symbol, SI.BOARD)
     pred30 = pred18.replace("i.l_val18", "i.l_val30")
     row = conn.execute(
         "SELECT m.d_even FROM market_watch m JOIN instruments i ON i.ins_code=m.ins_code "
@@ -1966,14 +1948,14 @@ def m141_map(conn: sqlite3.Connection) -> dict:
     در تساوی، تازه‌ترین publish_date). نمادهای بدون صورت‌مالی سالانهٔ
     قابل‌استفاده در نقشه نمی‌آیند → مشمول نمی‌شوند (نه اینکه مردود شوند).
 
-    چرا فیلتر تک‌نمادی روی این کوئری نمی‌چسبد: کلیدهای خروجی norm_fa(symbol)
+    چرا فیلتر تک‌نمادی روی این کوئری نمی‌چسبد: کلیدهای خروجی SI.key(symbol)
     است، ولی ستونِ دیتابیس نوشتار خام (گاهی عربی: ي/ك/ى) دارد. اگر در SQL
     بنویسیم `symbol = ?`، نمادهایی که دیتابیس‌شان عربی‌نویسی است بی‌صدا
     «پیدا نمی‌شوند» و m141 = False برمی‌گردد — یعنی خطای داده‌ای که هیچ‌وقت
     در لاگ دیده نمی‌شود. تست dev/fts_m141_parity_v97.py همین را روی ۲۲۴ نماد
     گرفت. راه‌حلِ همین‌جا «کلیدِ نرمال در Python» است (کوئری کل‌بازار است و
     از قبل همه‌چیز را می‌خواند). برای کوئریِ تک‌نماد، `symbol_aliases`/`sym_in`
-    باید استفاده شود — نه `WHERE norm_fa(symbol)=?`، که به اندازه‌گیریِ
+    باید استفاده شود — نه `WHERE SI.key(symbol)=?`، که به اندازه‌گیریِ
     v9.7.3 روی همین بانک ۵۷۴ برابر اسکنِ ایندکسی هزینه دارد.
     """
     rows = conn.execute("""
@@ -1983,7 +1965,7 @@ def m141_map(conn: sqlite3.Connection) -> dict:
         ORDER BY symbol, %s, %s""" % (CP.order_expr(), CP.pub_order_expr())).fetchall()
     out = {}
     for sym, cap, eq, _pe, _pd in rows:
-        key = norm_fa(sym)
+        key = SI.key(sym)
         if key in out:                      # فقط جدیدترین سال مالی ملاک است
             continue
         try:
@@ -2015,7 +1997,7 @@ def avg_trade_value_hmt(conn: sqlite3.Connection, sessions: int = 30) -> dict:
         WHERE d.q_tot_cap > 0 AND d.d_even >= ?
         GROUP BY i.l_val18""", (cutoff,)).fetchall()
     # همت = ۱۰^۱۰ ریال
-    return {norm_fa(sym): (val or 0.0) / 1e10
+    return {SI.key(sym): (val or 0.0) / 1e10
             for sym, val, _n in rows if sym}
 
 
@@ -2114,7 +2096,7 @@ def scan_symbol(conn: sqlite3.Connection, symbol: str, market_cap_rials: float =
     # هر دو نقشه کل‌بازاری‌اند؛ scan_all/bulk_scan یک‌بار می‌سازند و پاس می‌دهند
     # (m141_hit / avg_trade_val) تا به N+1 نیفتد. این شاخه‌های None فقط برای
     # فراخوانی تکیِ /api/fts/{symbol} است.
-    key = norm_fa(symbol)
+    key = SI.key(symbol)
     if m141_hit is None:
         m141_hit = bool(m141_map(conn).get(key, False))
     if cfg.get("filter_m141") and m141_hit:
@@ -2187,7 +2169,7 @@ def scan_all(conn: sqlite3.Connection, limit: int = 0, cfg: dict = None) -> list
     # که جای واچ‌لیستِ سهمِ اصلی را می‌گرفت.
     best, order = {}, []
     for r in rows:
-        key = norm_fa(r[0])
+        key = SI.key(r[0])
         if not key:
             continue
         if key not in best:
@@ -2308,13 +2290,13 @@ def bulk_scan(conn: sqlite3.Connection, cfg: dict = None) -> list[dict]:
     pot_min = _th(cfg, "profit_potential_min")
 
     # ۱) صورت‌های مالی سالانه — مرجع + سری EPS
-    # v9.7.3: کلید = norm_fa(symbol). با کلیدِ خام، یک شرکت با دو نوشتار
+    # v9.7.3: کلید = SI.key(symbol). با کلیدِ خام، یک شرکت با دو نوشتار
     # (داریک/داريك) دو ردیف اسکنر می‌ساخت و نوشتارِ بی‌داده امتیاز ۰ می‌گرفت.
     annual, disp_of = {}, {}
     for sym, pe, pm, title, rev, gp, op, np_, eps, cn, tn in conn.execute(
             "SELECT symbol, " + FS_COLS + ", tracing_no FROM financial_statements "
             "WHERE period_months>=12 ORDER BY symbol, %s" % CP.order_expr()):
-        key = norm_fa(sym)
+        key = SI.key(sym)
         if not key:
             continue
         annual.setdefault(key, []).append(
@@ -2363,7 +2345,7 @@ def bulk_scan(conn: sqlite3.Connection, cfg: dict = None) -> list[dict]:
             "SELECT symbol, year, month, monthly_revenue, ytd_revenue, ytd_revenue_prev "
             "FROM monthly_sales WHERE ytd_revenue IS NOT NULL AND ytd_revenue>0 "
             "ORDER BY symbol, year DESC, month DESC"):
-        key = norm_fa(sym)
+        key = SI.key(sym)
         if not key:
             continue
         ms.setdefault(key, []).append((int(y or 0), int(mo or 0), _f(mrev), _f(ytd), _f(ytdp)))
@@ -2383,7 +2365,7 @@ def bulk_scan(conn: sqlite3.Connection, cfg: dict = None) -> list[dict]:
                COALESCE(i.sector_name, ''), m.d_even
         FROM instruments i LEFT JOIN market_watch m ON m.ins_code = i.ins_code"""
             % mcap_bulk_expr(conn)):
-        key = norm_fa(sym)
+        key = SI.key(sym)
         mcap_of[key] = _f(mcap)
         sector_of[key] = sector or ""
         if d_even:

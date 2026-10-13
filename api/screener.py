@@ -100,7 +100,7 @@ def get_history(symbol: str):
         # تطبیق چند-نویشتاری (ك/ي عربی ↔ ک/ی فارسی): ورودیِ کاربر/واچلیست
         # ممکن است فارسی باشد ولی DB همان نماد را عربی نگه داشته باشد —
         # بدون این، `WHERE symbol = ?` صفر ردیف می‌دهد و تاریخچه خالی می‌ماند.
-        _pred, _params = sym_pred("symbol", symbol)
+        _pred, _params = sym_pred(conn, "symbol", symbol, "board")
         query = """
             SELECT date, open, high, low, close, volume, last
             FROM price_history WHERE %s ORDER BY date ASC
@@ -397,11 +397,11 @@ def _screener_cached():
         # نام کامل + نوع ابزار از instruments (bulk_scan فقط نماد برمی‌گرداند)
         names, boards = {}, {}
         for l18, l30 in conn.execute("SELECT l_val18, l_val30 FROM instruments"):
-            k = fts_engine.norm_fa(l18)
+            k = fts_engine.sym_key(l18)
             if k and k not in names:
                 names[k] = l30 or l18
         for r in rows:
-            r["name"] = names.get(fts_engine.norm_fa(r["symbol"]), r["symbol"])
+            r["name"] = names.get(fts_engine.sym_key(r["symbol"]), r["symbol"])
             r["eps_data_gap"] = bool(r.get("eps_data_gap"))
             r["i2_na"] = bool(r.get("i2_na"))
             # سند v2.1 «per-row دومِ خواندنِ EPS» حذف شد: `bulk_scan` از همان
@@ -440,7 +440,7 @@ def _screener_cached():
                     "SELECT i.l_val18, " + fts_engine.mcap_bulk_expr(conn) +
                     " FROM instruments i "
                     "JOIN market_watch m ON m.ins_code = i.ins_code"):
-                _k = fts_engine.norm_fa(_l18)
+                _k = fts_engine.sym_key(_l18)
                 if _k and _k not in mcap_official:
                     mcap_official[_k] = _num(_mc)
             total_mcap, _mcap_src = board_total_market_cap(conn)
@@ -450,7 +450,7 @@ def _screener_cached():
             for _sym, _cn in conn.execute(
                     "SELECT symbol, company_name FROM financial_statements "
                     "ORDER BY %s, tracing_no DESC" % CP.order_expr()):
-                _k = fts_engine.norm_fa(_sym)
+                _k = fts_engine.sym_key(_sym)
                 if _k and _k not in cname_of:
                     cname_of[_k] = _cn or ""
 
@@ -470,7 +470,7 @@ def _screener_cached():
                 print("[screener] fts_results miss — محاسبهٔ زندهٔ evaluate_v10")
 
             for r in rows:
-                key = r.get("symbol_norm") or fts_engine.norm_fa(r["symbol"])
+                key = r.get("symbol_norm") or fts_engine.sym_key(r["symbol"])
                 res = None
                 if _mat is not None:
                     # مسیرِ مادی: همان خروجی که sync_fts_results با همین cfg_hash

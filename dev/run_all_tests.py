@@ -250,6 +250,17 @@ SUITES = [
     # برایِ ردیابیِ منبع دست‌نخورده می‌ماند.
     ('dev/codal_publish_date_v1089.py',
                                      'newest publish_date is digit-script independent; SQL and Python agree; raw kept for trace'),
+    # مرحلۀ ۱.۲ مأموریت بنیادی (۱۴۰۵-۰۷-۲۲): «این دو رشته یکی‌اند؟» چهار تعریفِ
+    # مستقل داشت و دو جواب می‌داد (کارتِ «شهر فرش» ۱ ردیف، قیف ۷ ردیف). حالا
+    # تنها لایۀ `symbol_identity` کلید می‌سازد: نامزدها از خودِ بانک، پسوندِ
+    # رقمی فقط با شاهدِ ISIN، و ردِ الحاق در ردپا اعلام می‌شود. چهار کنترلِ
+    # منفی + پرونده‌هایِ نیم‌فاصله/شرکتِ فرعی/اصلاحیه/تلفیقی/چندنویشتاری.
+    ('dev/symbol_identity_v1090.py',
+                                     'one canonical symbol-identity layer; ISIN gate; card and bulk see the same rows'),
+    # همان لایه، همان پرونده‌هایِ v9.10.4 (پسوندِ رقمی) که از `symbol_aliases`ِ
+    # جایگشتی به `symbol_identity` منتقل شدند — با کنترلِ «دو صادرکننده زیرِ یک
+    # نام هرگز الحاق نمی‌شوند».
+    ('test_symbol_aliases.py',        'board-class digit suffix resolves only with ISIN evidence'),
     # هدفِ ۲ دورۀ audit پیش از FTS: چهار مسیرِ «داده تازه شد ولی برنامه کهنه جواب
     # داد» — کشِ اسکرینر پس ازِ سینکِ بازار/کدال، تولدِ زیرپروسۀ خزنده درِ EXE
     # (sys.executable خودِ EXE است)، کلیدِ سه کشِ چارت بی‌مبنایِ قیمت، و سریِ
