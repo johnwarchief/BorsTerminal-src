@@ -2283,50 +2283,76 @@ def v10_coverage(conn) -> dict:
     ind1a/ind1b/ind2/ind3 می‌گذارد؛ پس عددِ «۲٪» یعنی موتور واقعاً برای ۹۸٪ نمادها
     «قابل محاسبه نبود» برمی‌گرداند، نه «رد».
     """
-    n_fs = int(_f(conn.execute("SELECT COUNT(DISTINCT symbol) FROM financial_statements")
-                  .fetchone()[0]))
-    n_ms = int(_f(conn.execute("SELECT COUNT(DISTINCT symbol) FROM monthly_sales")
-                  .fetchone()[0]))
+    # شمارشِ مخرج هم واحدش «هویت» است، نه نوشتار: `COUNT(DISTINCT symbol)`ِ خام
+    # «داريك» و «داریک» را دو نماد می‌شمرد در حالی که صورت‌هایشان درِ صورتِ شمارش
+    # یکی شده‌اند (همان دوتاییِ «۱۱۹۵ نوشتار / ۱۱۰۶ نماد»). بی‌این، درصدهای
+    # پوشش系统性 پایین‌تر از واقع گزارش می‌شدند.
+    n_fs = len({fts_engine.sym_key(r[0])
+                for r in conn.execute("SELECT DISTINCT symbol FROM financial_statements")
+                if r[0]})
+    n_ms = len({fts_engine.sym_key(r[0])
+                for r in conn.execute("SELECT DISTINCT symbol FROM monthly_sales")
+                if r[0]})
     pct = lambda part, whole: (round(part * 100.0 / whole, 1) if whole else None)
 
     # ── لایهٔ ۱الف: آیا مخرج YoY (ردیفِ سال−۱ِ همان ماه) وجود دارد؟ ─────────
-    row = conn.execute(
-        "WITH latest AS (SELECT symbol, MAX(year * 100 + month) AS k FROM monthly_sales "
-        "                 WHERE ytd_revenue > 0 GROUP BY symbol) "
-        "SELECT COUNT(DISTINCT l.symbol), "
-        "       COUNT(DISTINCT CASE WHEN COALESCE(c.ytd_revenue_prev, 0) > 0 "
-        "                           THEN l.symbol END), "
-        "       COUNT(DISTINCT CASE WHEN COALESCE(c.ytd_revenue_prev, 0) <= 0 "
-        "                            AND p.symbol IS NOT NULL THEN l.symbol END) "
-        "FROM latest l "
-        "JOIN monthly_sales c ON c.symbol = l.symbol AND c.year * 100 + c.month = l.k "
-        "                     AND c.ytd_revenue > 0 "
-        "LEFT JOIN monthly_sales p ON p.symbol = l.symbol "
-        "     AND p.year = (l.k / 100) - 1 AND p.month = (l.k % 100) "
-        "     AND p.ytd_revenue > 0").fetchone()
-    n_ms_latest = int(_f(row[0]))
+    # سه واحدِ شمارش درِ یک پاسخ نمی‌شود: لایۀ ۲ و ۳ «هویت» می‌شمارند، پس ۱الف
+    # هم با همان `sym_key` گروه می‌شود و مخرجش را از **همان** دو تابعِ موتور
+    # می‌گیرد (`_dedupe_ym` برایِ یکی‌کردنِ دو نوشتارِ یکِ ماه، `ytd_denominator`
+    # برایِ انتخابِ مخرج). کوئریِ CTEِ پیشین با `symbol` خام JOIN می‌کرد، پس
+    # «داريك» و «داریک» را دو نماد می‌شمرد و مخرجِ یکی را از نوشتارِ دیگری
+    # نمی‌دید — یعنی همان نقصِ هویت، این‌بار درِ آینهٔ پوشش.
+    ms_rows = {}
+    for sym, y, mo, mrev, ytd, prev in conn.execute(
+            "SELECT symbol, year, month, monthly_revenue, ytd_revenue, ytd_revenue_prev "
+            "FROM monthly_sales WHERE ytd_revenue IS NOT NULL AND ytd_revenue>0 "
+            "ORDER BY year DESC, month DESC").fetchall():
+        k = fts_engine.sym_key(sym)
+        if k:
+            ms_rows.setdefault(k, []).append([y, mo, mrev, ytd, prev])
+    n_ms_latest = n_prev_col = n_prev_row = 0
+    for _k, rows in ms_rows.items():
+        series = fts_engine._dedupe_ym(rows)[:60]
+        if not series:
+            continue
+        n_ms_latest += 1
+        d = fts_engine.ytd_denominator(series) or {}
+        if d.get("ytd_prev") is None:
+            continue
+        if str(d.get("denominator_basis") or "").startswith("ستون"):
+            n_prev_col += 1
+        else:
+            n_prev_row += 1
     # «قابل داوری» = دقیقاً قاعدهٔ `fts_engine.ytd_denominator`: ستونِ رسمی یا
-    # ردیفِ (سال−۱، همان ماه). تفکیکِ دو منشأ هم از همان یک کوئری می‌آید؛ مجموع
-    # دو ستون آخر، پس هیچ‌وقت عددِ منفی (طرحِ پیشین: ۶۲۴−۷۳۲) نمایش داده نمی‌شود.
-    n_prev_col, n_prev_row = int(_f(row[1])), int(_f(row[2]))
+    # ردیفِ (سال−۱، همان ماه). تفکیکِ دو منشأ از همان یک‌مرور می‌آید و مجموعشان
+    # شمارش می‌شود، پس هیچ‌وقت عددِ منفی نمایش داده نمی‌شود.
     n_1a = n_prev_col + n_prev_row
     latest_ym = conn.execute("SELECT MAX(year * 100 + month) FROM monthly_sales "
                              "WHERE ytd_revenue > 0").fetchone()[0]
 
     # ── لایهٔ ۲: یک‌مرورِ صورت‌های مالی با همان نردبانِ موتور ────────────────
+    # «همان نردبان» یعنی همان سه قاعده، نه فقط ترتیب: طولِ دوره از
+    # `CP.effective_months`، ردیفِ شرکتِ دیگر بیرون (بندِ ۲.۱ سیاست)، و کلیدِ
+    # نماد از لایۀ هویت (`SI.key`) — وگرنه شمارشِ «چقدر از بازار قابل داوری
+    # است» با شمارشِ خودِ موتور یکی نمی‌شد و همین پوشش‌سنجی دو جواب می‌داد.
     per_sym = {}
     for sym, pe, pm, title, eps in conn.execute(
             "SELECT symbol, period_end, period_months, title, basic_eps "
             "FROM financial_statements "
-            "WHERE basic_eps IS NOT NULL AND period_months > 0").fetchall():
-        s = str(sym or "").strip()
+            "WHERE basic_eps IS NOT NULL "
+            "AND (period_months > 0 OR period_months IS NULL)").fetchall():
+        s = fts_engine.sym_key(sym)
+        t = str(title or "")
+        if fts_engine.title_entity_suffix(t):
+            continue
+        mm, _src = CP.effective_months(pe, pm, t)
         try:
-            y, mm, ev = int(CP.fiscal_year(pe) or 0), int(_f(pm)), float(eps)
+            y, ev = int(CP.fiscal_year(pe) or 0), float(eps)
         except (TypeError, ValueError):
             continue
-        if not s or y <= 0 or mm <= 0:
+        if not s or y <= 0 or not mm:
             continue
-        aud, cons = _is_audited_title(title or ""), _is_consolidated_title(title or "")
+        aud, cons = _is_audited_title(t), _is_consolidated_title(t)
         d = per_sym.setdefault(s, {})
         if mm >= 12:
             d.setdefault("all", set()).add(y)
@@ -2339,9 +2365,15 @@ def v10_coverage(conn) -> dict:
     strict_eps = {s for s, d in per_sym.items() if _has_run3(d.get("clean") or ())}
     blended_eps = {s for s, d in per_sym.items()
                    if _has_run3(set(d.get("all") or ()) | set(d.get("int") or ()))}
-    gm_avail = {str(s or "").strip() for s, in conn.execute(
-        "SELECT DISTINCT symbol FROM financial_statements "
-        "WHERE period_months >= 12 AND revenue > 0 AND gross_profit IS NOT NULL").fetchall()}
+    gm_avail = set()
+    for sym, pe, pm, title in conn.execute(
+            "SELECT symbol, period_end, period_months, title FROM financial_statements "
+            "WHERE revenue > 0 AND gross_profit IS NOT NULL "
+            "AND (period_months >= 12 OR period_months IS NULL)").fetchall():
+        t = str(title or "")
+        mm, _src = CP.effective_months(pe, pm, t)
+        if mm and mm >= 12 and not fts_engine.title_entity_suffix(t):
+            gm_avail.add(fts_engine.sym_key(sym))
     vol_cols = _volume_columns(conn)
     layers = {
         "1a_monetary_growth": {

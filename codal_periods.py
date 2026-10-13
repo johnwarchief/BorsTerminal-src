@@ -186,6 +186,52 @@ def derive(datasource_end=None, title=None):
     return None, None
 
 
+def effective_months(period_end, period_months, title):
+    """تنها تعریفِ «این گزارش چند ماهه است» → `(months, source)`.
+
+    چرا تابع لازم است: شاخص ۲ «سالانۀ پایانِ سالِ مالی» می‌خواهد و سریِ فصلی
+    «X ماهه» را می‌شمارد؛ هر دو تا پیش از این ستونِ خامِ `period_months` را
+    می‌خواندند. سنجشِ بانکِ کاری (۸٬۷۲۳ ردیف، فقط‌خواندنی):
+      * ۶٬۱۶۹ ردیف عنوانشان «X ماهه» دارد و با ستون می‌خواند؛
+      * **۱** ردیف می‌ستاند (tn 1447293، فپردیس: «دورۀ ۶ ماهه منتهی به
+        ۱۴۰۰/۰۶/۳۱» با `period_months=12`) — اگر همان‌طور بماند، یک دورۀ
+        شش‌ماهۀ گذار به‌عنوان یک «سالِ مالی» درِ پنجرۀ سه‌ساله می‌نشیند؛
+      * **۳۸** ردیف `period_months` تهی دارند که **۲۴** تایشان از عنوان
+        قابل‌تعیین‌اند (۹×سه‌ماهه، ۱۰×شش‌ماهه، ۵×نه‌ماهه) — امروز هیچ‌جا
+        خوانده نمی‌شوند چون شرطِ `period_months > 0` تهی را رد می‌کند.
+
+    قاعده (بی‌حدسِ تقویمی): «ماه» از عنوان فقط وقتی معتبر است که *خودِ عنوان* با
+    دورۀ ستون نجنگد — یعنی یا عنوان تاریخِ «منتهی به» ندارد، یا همان
+    `period_end` را می‌گوید. این تفکیک مهم است: سالِ مالیِ شرکت‌هایِ ایرانی
+    12/29 نیست (فپردیس 06/31 را تمام می‌کند)، پس «ماهِ period_end» هرگز
+    دلیلی بر طولِ دوره نیست — ۲٬۶۲۶ ردیف دقیقاً به همین سبب اشتباه شمرده
+    می‌شدند اگر از تقویم حدس می‌زدیم.
+    منبعِ برگزیده درِ خروجی اعلام می‌شود (`column` | `title`) تا درِ ردپا
+    پیدا باشد؛ اگر ستون تهی بود و عنوان هم دوره نداشت ⇒ `(None, None)`.
+    """
+    col = None
+    raw = str(period_months).strip() if period_months is not None else ""
+    if raw:
+        try:
+            col = int(float(raw))
+        except (TypeError, ValueError):
+            col = None
+        if col is not None and not 1 <= col <= 12:
+            col = None
+    t = str(title or "")
+    tm = months_from_title(t)
+    if tm is None:
+        return col, ("column" if col is not None else None)
+    tp = from_title(t)
+    pe = canonicalize(period_end)
+    if tp and pe and tp != pe:
+        # عنوان و ستون دو دورۀ متفاوت می‌گویند: هیچ‌کدام شاهدِ دیگری نیست
+        return col, ("column" if col is not None else None)
+    if col == tm:
+        return col, "column"
+    return tm, "title"
+
+
 def is_canonical(value) -> bool:
     """آیا این مقدار همان شکلِ canonical است (شرطِ خواندنِ دقیقِ بندِ ۱)."""
     return value is not None and CANON_RE.match(str(value).strip()) is not None

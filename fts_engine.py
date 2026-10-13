@@ -700,12 +700,14 @@ def quarter_reference_rows(rows, limit=16) -> list[dict]:
         if not period_end:
             continue
         row["period_end"] = period_end
-        raw_months = row.get("period_months")
-        try:
-            months = int(raw_months) if raw_months is not None and str(raw_months).strip() else None
-        except (TypeError, ValueError):
-            months = None
+        # طولِ دوره از `effective_months` (بندِ ۲.۳): کلیدِ «یکِ دوره» نمی‌تواند
+        # درِ سریِ فصلی ۶ باشد و درِ پنجرۀ سالانۀ همان ردیف ۱۲ — یکِ قاعده،
+        # سه reader.
+        months, months_src = CP.effective_months(period_end, row.get("period_months"),
+                                                row.get("title"))
         row["period_months"] = months
+        if months_src == "title" or months_src is None:
+            row["months_source"] = months_src or "unknown"
         report_kind = str(row.get("report_kind") or "")
         key = (period_end, months, report_kind)
         title = str(row.get("title") or "")
@@ -778,7 +780,10 @@ def annual_statements(conn: sqlite3.Connection, symbol: str, require_audit: bool
     window = max(int(limit), 1) * 12 + 48
     rows = conn.execute(
         f"SELECT {FS_COLS}, tracing_no FROM financial_statements "
-        f"WHERE {pred} AND {CP.DATED_SQL} AND period_months>=12 "
+        # پیش‌فیلترِ SQL فقط «حداکثرِ ممکن» را نگه می‌دارد؛ داوریِ «سالانہ بودن»
+        # با `CP.effective_months` درِ Python است (ستونِ تهی از عنوان پر می‌شود و
+        # دورۀ گذارِ شش‌ماهه با ستونِ ۱۲ رد می‌شود).
+        f"WHERE {pred} AND {CP.DATED_SQL} AND (period_months>=12 OR period_months IS NULL) "
         "ORDER BY period_end DESC LIMIT ?",
         (*params, window)).fetchall()
     # یکِ سالِ مالی = یکِ صورتِ مالی. اگر برایِ یکِ دوره چند ردیف باشد (اصلی +
@@ -788,6 +793,13 @@ def annual_statements(conn: sqlite3.Connection, symbol: str, require_audit: bool
     by_year: dict = {}
     for pe, pm, title, rev, gp, op, np_, eps, cn, tn in rows:
         t = title or ""
+        # طولِ دوره از `CP.effective_months` خوانده می‌شود، نه از ستونِ خام:
+        # یکِ ردیفِ بانک «دورۀ ۶ ماهه» است ولی `period_months=12` دارد، و ۲۴
+        # ردیفِ بی‌ستون از عنوان قابل‌تعیین‌اند. بی‌این، دورۀ گذار به‌عنوان
+        # «سالِ مالی» درِ پنجرۀ سه‌ساله می‌نشست (بندِ ۲.۳ سیاستِ بنیادی).
+        months, months_src = CP.effective_months(pe, pm, t)
+        if months is None or months < 12:
+            continue
         if exclude_consolidated and _is_consolidated(t):
             continue
         if require_audit and not _is_audited(t):
@@ -795,10 +807,11 @@ def annual_statements(conn: sqlite3.Connection, symbol: str, require_audit: bool
         yr = CP.fiscal_year(pe)
         if not yr:
             continue
-        cand = {"period_end": pe, "fiscal_year": yr, "period_months": pm, "title": t,
+        cand = {"period_end": pe, "fiscal_year": yr, "period_months": months,
+                "months_source": months_src, "title": t,
                 "audited": _is_audited(t), "consolidated": _is_consolidated(t),
                 "other_entity": bool(title_entity_suffix(t)),
-                "conflicts": row_conflicts(pe, t, pm),
+                "conflicts": row_conflicts(pe, t, months),
                 "tracing_no": tn, "company_name": str(cn or ""),
                 "amended": _is_amendment(t), "revenue": _fn(rev), "gross_profit": _fn(gp),
                 "operating_profit": _fn(op), "net_profit": _fn(np_), "basic_eps": _fn(eps)}
@@ -1027,7 +1040,8 @@ def _th(cfg, key):
 
 
 # =============================================== شاخص ۱: رشد فروش تجمیعی (YoY)
-MS_SERIES_COLS = "year, month, monthly_revenue, ytd_revenue, ytd_revenue_prev, period_end"
+MS_SERIES_COLS = ("year, month, monthly_revenue, ytd_revenue, ytd_revenue_prev, "
+                  "period_end, title")
 
 
 def monthly_series(conn: sqlite3.Connection, symbol: str, limit: int = 60) -> list:
@@ -1045,7 +1059,13 @@ def monthly_series(conn: sqlite3.Connection, symbol: str, limit: int = 60) -> li
         " AND ytd_revenue IS NOT NULL AND ytd_revenue>0 "
         "ORDER BY year DESC, month DESC LIMIT ?",
         (*params, max(int(limit or 60), 1))).fetchall()
-    return _dedupe_ym([list(r) for r in rows])
+    # بندِ ۲.۱ سیاستِ بنیادی: گزارشِ شرکتِ دیگر برای **هیچ** شاخصی قابل‌قبول نیست.
+    # همین قاعده درِ `financial_statements` نوشته شده بود و سریِ ماهانه از آن
+    # مستثنا بود: سنجشِ بانک — ۱ ردیف از ۱۴٬۹۵۷ ردیفِ `monthly_sales` شرکتِ
+    # دیگری را نام می‌برد (tn 1591838، «غنوش» ← «شرکت سرمایه گذاری نوش مازندران»
+    # با `ytd_revenue = -62`)؛ امروز شرطِ `ytd_revenue>0` همان ردیف را بیرون
+    # می‌انداخت، پس این بند امروز رفتار را عوض نمی‌کند و نگهبانِ فرداست.
+    return _dedupe_ym([list(r[:-1]) for r in rows if not title_entity_suffix(r[-1] or "")])
 
 
 def ytd_denominator(rows):
@@ -1201,7 +1221,8 @@ def eps_ladder(conn: sqlite3.Connection, symbol: str, years: int = 3) -> dict:
     rows = conn.execute(
         "SELECT period_end, period_months, title, basic_eps, net_profit"
         " FROM financial_statements "
-        "WHERE %s AND basic_eps IS NOT NULL AND period_months > 0 "
+        "WHERE %s AND basic_eps IS NOT NULL "
+        "AND (period_months > 0 OR period_months IS NULL) "
         "AND %s ORDER BY period_end DESC LIMIT 120" % (pred, CP.DATED_SQL),
         params).fetchall()
     per_year: dict = {}
@@ -1218,11 +1239,16 @@ def eps_ladder(conn: sqlite3.Connection, symbol: str, years: int = 3) -> dict:
         # عنوان کافی بود تا آن ردیف از فیلترِ غیرتلفیقی رد شود.
         if title_entity_suffix(title or ""):
             continue
+        # طولِ دوره از `effective_months` (بندِ ۲.۳ سیاست): «دورۀ ۶ ماهه» با
+        # ستونِ ۱۲ ⇒ شش‌ماهه حساب می‌شود و از سبدِ «سالِ مالی» بیرون می‌ماند،
+        # و ۲۴ ردیفِ بی‌ستون که عنوانشان دورۀ صریح دارد از گم‌شدن نجات
+        # می‌یابند. ستونِ تهیِ بی‌عنوانِ دوره‌دار همان‌جا تهی می‌ماند — حدس نیست.
+        months, _msrc = CP.effective_months(pe, pm, title)
         try:
-            y, months, ev = int(CP.fiscal_year(pe)), int(_f(pm)), float(eps)
+            y, ev = int(CP.fiscal_year(pe)), float(eps)
         except (TypeError, ValueError):
             continue
-        if y <= 0 or months <= 0:
+        if y <= 0 or not months:
             continue
         cons = _is_consolidated(title or "")
         bucket = per_year.setdefault(y, {"annual": [], "interim": []})
@@ -1586,9 +1612,10 @@ def annualized_sales(conn: sqlite3.Connection, symbol: str,
     pred, params = sym_in(conn, "symbol", symbol)
     if series is None:
         series = conn.execute(
-            "SELECT year, month, monthly_revenue, ytd_revenue FROM monthly_sales "
+            "SELECT year, month, monthly_revenue, ytd_revenue, title FROM monthly_sales "
             "WHERE " + pred + " AND ytd_revenue IS NOT NULL AND ytd_revenue>0 "
             "ORDER BY year DESC, month DESC", params).fetchall()
+        series = [list(r[:-1]) for r in series if not title_entity_suffix(r[-1] or "")]
     series = _dedupe_ym([list(r) for r in series])
     ref_row = ref if ref is not None else reference_annual(conn, symbol)
     fs_rev = _f((ref_row or {}).get("revenue"))
@@ -2025,14 +2052,20 @@ def m141_map(conn: sqlite3.Connection) -> dict:
     v9.7.3 روی همین بانک ۵۷۴ برابر اسکنِ ایندکسی هزینه دارد.
     """
     rows = conn.execute("""
-        SELECT symbol, capital, total_equity, period_end, publish_date
+        SELECT symbol, capital, total_equity, period_end, publish_date, period_months, title
         FROM financial_statements
-        WHERE period_months >= 12 AND capital > 0 AND total_equity IS NOT NULL
+        WHERE (period_months >= 12 OR period_months IS NULL)
+          AND capital > 0 AND total_equity IS NOT NULL
         ORDER BY symbol, %s, %s""" % (CP.order_expr(), CP.pub_order_expr())).fetchall()
     out = {}
-    for sym, cap, eq, _pe, _pd in rows:
+    for sym, cap, eq, _pe, _pd, _pm, _t in rows:
         key = SI.key(sym)
         if key in out:                      # فقط جدیدترین سال مالی ملاک است
+            continue
+        # «سالانہ بودن» هم از همان `effective_months` — وگرنه نقشۀ ماده ۱۴۱ با
+        # پنجرۀ سالانۀ کارت دو «آخرین سالِ مالی» مختلف می‌داد.
+        months, _src = CP.effective_months(_pe, _pm, _t)
+        if months is None or months < 12:
             continue
         try:
             cap, eq = float(cap), float(eq)
@@ -2361,15 +2394,23 @@ def bulk_scan(conn: sqlite3.Connection, cfg: dict = None) -> list[dict]:
     annual, disp_of = {}, {}
     for sym, pe, pm, title, rev, gp, op, np_, eps, cn, tn in conn.execute(
             "SELECT symbol, " + FS_COLS + ", tracing_no FROM financial_statements "
-            "WHERE period_months>=12 ORDER BY symbol, %s" % CP.order_expr()):
+            "WHERE period_months>=12 OR period_months IS NULL "
+            "ORDER BY symbol, %s" % CP.order_expr()):
         key = SI.key(sym)
         if not key:
             continue
+        # همان قاعدۀ کارت، درِ قیف: «سالانہ بودن» را `effective_months` می‌گوید
+        # (ستونِ تهی از عنوان، و دورۀ گذارِ شش‌ماهۀ با ستونِ ۱۲ رد). بی‌این یکی
+        # از دو مسیر پنجره‌هایِ متفاوتی می‌دید و گاردِ پاریتی قرمز می‌شد.
+        months, months_src = CP.effective_months(pe, pm, title)
+        if months is None or months < 12:
+            continue
         annual.setdefault(key, []).append(
-            {"period_end": pe, "period_months": _fn(pm), "tracing_no": tn,
+            {"period_end": pe, "period_months": months, "months_source": months_src,
+             "tracing_no": tn,
              "fiscal_year": CP.fiscal_year(pe), "title": title or "",
              "company_name": str(cn or ""),
-             "conflicts": row_conflicts(pe, title, pm),
+             "conflicts": row_conflicts(pe, title, months),
              "audited": _is_audited(title), "consolidated": _is_consolidated(title),
              "other_entity": bool(title_entity_suffix(title)),
              "revenue": _fn(rev), "gross_profit": _fn(gp), "net_profit": _fn(np_),
@@ -2408,12 +2449,14 @@ def bulk_scan(conn: sqlite3.Connection, cfg: dict = None) -> list[dict]:
     # ۲) گزارش‌های ماهانه — رشد تجمیعی + فروش Annualized
     # کلید نرمال + مرتب‌سازی/حذف تکرارِ (سال,ماه) پس از ادغام دو نوشتار.
     ms = {}
-    for sym, y, mo, mrev, ytd, ytdp in conn.execute(
-            "SELECT symbol, year, month, monthly_revenue, ytd_revenue, ytd_revenue_prev "
+    for sym, y, mo, mrev, ytd, ytdp, ms_title in conn.execute(
+            "SELECT symbol, year, month, monthly_revenue, ytd_revenue, ytd_revenue_prev, title "
             "FROM monthly_sales WHERE ytd_revenue IS NOT NULL AND ytd_revenue>0 "
             "ORDER BY symbol, year DESC, month DESC"):
         key = SI.key(sym)
-        if not key:
+        if not key or title_entity_suffix(ms_title or ""):
+            # همان بندِ ۲.۱: سریِ ماهانهٔ یکِ شرکتِ فرعی، فروشِ این نماد نیست
+            # (کوئریِ تک‌نمادیِ `monthly_series` هم همین را می‌گذارد).
             continue
         ms.setdefault(key, []).append((int(y or 0), int(mo or 0), _f(mrev), _f(ytd), _f(ytdp)))
     for key in ms:

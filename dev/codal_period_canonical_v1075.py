@@ -247,11 +247,60 @@ def test_real_db():
         conn.close()
 
 
+
+# ── ۶) طولِ دوره: تنها تعریف، با منبعِ اعلام‌شده (بندِ ۲.۳ سیاستِ بنیادی) ────
+T_ANNUAL = "صورت‌های مالی  سال مالی منتهی به ۱۴۰۳/۰۶/۳۱ (حسابرسی شده)"
+T_TRANSITION = "صورت‌های مالی  دوره ۶ ماهه منتهی به  ۱۴۰۰/۰۶/۳۱ (حسابرسی شده)"
+T_INTERIM9 = "اطلاعات و صورت‌های مالی میاندورهای  دوره ۹ ماهه منتهی به ۱۴۰۱/۰۹/۳۰"
+
+
+def test_months_source():
+    print("\n— ۶) طولِ دوره: عنوان کجا بر ستون می‌چربد و کجا نمی‌چربد")
+    d = lambda a, b, c: a + SLASH + b + SLASH + c
+    ck(CP.months_from_title(T_TRANSITION) == 6, "«۶ ماهه» از عنوان خوانده می‌شود",
+       str(CP.months_from_title(T_TRANSITION)))
+    ck(CP.months_from_title(T_ANNUAL) is None,
+       "عنوانِ بی‌«X ماهه» ⇒ None، نه ۱۲ (بی‌حدسِ تقویمی)",
+       str(CP.months_from_title(T_ANNUAL)))
+    ck(CP.effective_months(d("1400", "06", "31"), 12, T_TRANSITION) == (6, "title"),
+       "تناقضِ ستون با عنوانِ هم‌دوره ⇒ عنوان برنده است (ردیف 1447293ِ فپردیس)",
+       str(CP.effective_months(d("1400", "06", "31"), 12, T_TRANSITION)))
+    ck(CP.effective_months(d("1403", "06", "31"), 12, T_ANNUAL) == (12, "column"),
+       "هم‌خوانی ⇒ ستون می‌ماند و منبع اعلام می‌شود",
+       str(CP.effective_months(d("1403", "06", "31"), 12, T_ANNUAL)))
+    ck(CP.effective_months(d("1401", "09", "30"), None, T_INTERIM9) == (9, "title"),
+       "ستونِ تهی و عنوانِ هم‌دوره ⇒ دوره از عنوان تعیین می‌شود (۲۴ ردیفِ بانک)",
+       str(CP.effective_months(d("1401", "09", "30"), None, T_INTERIM9)))
+    ck(CP.effective_months(d("1404", "12", "29"), None, T_INTERIM9) == (None, None),
+       "عنوان با ستونِ دوره می‌جنگد ⇒ هیچ‌کدام برنده نمی‌شود و تهی حدس نمی‌شود",
+       str(CP.effective_months(d("1404", "12", "29"), None, T_INTERIM9)))
+    ck(CP.effective_months(d("1401", "09", "30"), 13, T_INTERIM9) == (9, "title"),
+       "ستونِ بی‌معتبر (۱۳ ماه) با عنوانِ هم‌دوره درست می‌شود",
+       str(CP.effective_months(d("1401", "09", "30"), 13, T_INTERIM9)))
+    ck(CP.effective_months(None, None, "گزارش فعالیت ماهانه") == (None, None),
+       "هیچ منبعی ⇒ تهی؛ ردیف حذف نمی‌شود، فقط نادیده خوانده می‌شود",
+       str(CP.effective_months(None, None, "گزارش فعالیت ماهانه")))
+    # پنجرۀ سالانۀ موتور هم باید همین را ببیند، نه ستونِ خام
+    conn2 = new_db()
+    seed_fs(conn2, [(9001, "گذار", d("1400", "06", "31"), 0, 100.0)])
+    conn2.execute("UPDATE financial_statements SET title=?, period_months=12 "
+                  "WHERE tracing_no=9001", (T_TRANSITION,))
+    conn2.commit()
+    import fts_engine as _FE
+    _FE.register_sql(conn2)
+    lad = _FE.annual_statements(conn2, "گذار", require_audit=False,
+                                exclude_consolidated=False, limit=12)
+    ck(all(r["tracing_no"] != 9001 for r in lad),
+       "ردیفِ «۶ ماهه» با ستونِ ۱۲ به پنجرۀ سالانۀ شاخص ۲ وارد نمی‌شود",
+       [(r["tracing_no"], r["period_months"]) for r in lad])
+    conn2.close()
+
 def main():
     test_shape()
     test_derive()
     test_order()
     test_undated_survives()
+    test_months_source()
     conn = new_db()
     seed_fs(conn, [(31, "ی", "1405" + SLASH + "06" + SLASH + "31", 0, 10.0),
                    (32, "ی", "۱۴۰۴/۱۲/۲۹", 0, 11.0),
