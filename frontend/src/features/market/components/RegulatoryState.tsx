@@ -66,7 +66,7 @@ export function RegulatoryState({
   const tone = stopped
     ? 'border-accent-red/40 bg-accent-red/10 text-accent-red'
     : supervised
-      ? 'border-accent-amber/40 bg-accent-amber/10 text-accent-amber'
+      ? 'border-accent-yellow/40 bg-accent-yellow/10 text-accent-yellow'
       : 'border-[var(--hairline)] bg-bg-card/40 text-text-secondary';
   const whyLines = (row.stop_reasons || '').split('\n').map((s) => s.trim()).filter(Boolean);
   const supLines = (row.sup_reasons || '').split('\n').map((s) => s.trim()).filter(Boolean);

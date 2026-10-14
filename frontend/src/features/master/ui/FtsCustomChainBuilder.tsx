@@ -211,7 +211,7 @@ export default function FtsCustomChainBuilder() {
             type="button"
             data-testid="funnel-chain-reset"
             onClick={() => { resetToCanonical(); setName(''); }}
-            className="rounded-lg border border-border-c px-2 py-0.5 text-2xs font-bold text-text-muted hover:text-accent-amber"
+            className="rounded-lg border border-border-c px-2 py-0.5 text-2xs font-bold text-text-muted hover:text-accent-yellow"
           >
             بازگشت به جزوه
           </button>
