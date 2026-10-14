@@ -814,6 +814,16 @@ CREATE TABLE IF NOT EXISTS pipeline_runs (
     symbols_dirty INTEGER NOT NULL DEFAULT 0,
     indicators_recomputed INTEGER NOT NULL DEFAULT 0,
     cache_invalidated INTEGER NOT NULL DEFAULT 0,
+    instr_scanned INTEGER NOT NULL DEFAULT 0,
+    instr_new INTEGER NOT NULL DEFAULT 0,
+    instr_renamed INTEGER NOT NULL DEFAULT 0,
+    instr_id_changed INTEGER NOT NULL DEFAULT 0,
+    instr_deactivated INTEGER NOT NULL DEFAULT 0,
+    instr_removed INTEGER NOT NULL DEFAULT 0,
+    instr_absent INTEGER NOT NULL DEFAULT 0,
+    instr_ambiguous INTEGER NOT NULL DEFAULT 0,
+    instr_not_eligible INTEGER NOT NULL DEFAULT 0,
+    instr_no_publisher INTEGER NOT NULL DEFAULT 0,
     checkpoint_before TEXT, checkpoint_after TEXT, error TEXT);
 CREATE INDEX IF NOT EXISTS ix_pr_started ON pipeline_runs(started_at DESC);
 
@@ -824,7 +834,25 @@ CREATE TABLE IF NOT EXISTS pipeline_dirty (
 
 CREATE TABLE IF NOT EXISTS pipeline_lock (
     key TEXT PRIMARY KEY, owner TEXT, heartbeat_at TEXT, note TEXT);
+
+CREATE TABLE IF NOT EXISTS pipeline_instrument (
+    ins_code TEXT PRIMARY KEY,
+    symbol TEXT, name TEXT, class TEXT, kind TEXT, sector TEXT,
+    isin TEXT, paper_type INTEGER, prev_name TEXT,
+    first_seen_at TEXT, last_seen_at TEXT, last_board_at TEXT,
+    membership TEXT, cycles_absent INTEGER NOT NULL DEFAULT 0,
+    flags TEXT, identity TEXT, identity_note TEXT,
+    coverage TEXT, coverage_at TEXT, updated_at TEXT);
+CREATE INDEX IF NOT EXISTS ix_pi_symbol ON pipeline_instrument(symbol);
+CREATE INDEX IF NOT EXISTS ix_pi_membership ON pipeline_instrument(membership);
 """
+
+# شمارنده‌هایِ بندِ ۳ درِ `pipeline_runs` — افزودنیِ PRAGMA-gated، چون بانکِ
+# کاری ممکن است شکلِ مرحلۀ ۱ را ساخته باشد و این ستون‌ها را نداشته باشد.
+_RUN_INSTRUMENT_COLS = ["instr_scanned", "instr_new", "instr_renamed",
+                        "instr_id_changed", "instr_deactivated", "instr_absent",
+                        "instr_removed", "instr_ambiguous",
+                        "instr_not_eligible", "instr_no_publisher"]
 
 
 def migrate_schema(conn):
@@ -934,6 +962,16 @@ def migrate_schema(conn):
             except Exception:
                 pass
     conn.executescript(_PIPELINE_TABLES)
+    # شمارنده‌هایِ بندِ ۳: بانکهایی که شکلِ مرحلۀ ۱ را ساخته‌اند این ستون‌ها را
+    # ندارند؛ ALTER افزودنی است و هیچ مقدارِ موجود را دست نمی‌زند.
+    rcols = {r[1] for r in conn.execute("PRAGMA table_info(pipeline_runs)")}
+    for _c in _RUN_INSTRUMENT_COLS:
+        if _c not in rcols:
+            try:
+                conn.execute("ALTER TABLE pipeline_runs ADD COLUMN %s"
+                             " INTEGER NOT NULL DEFAULT 0" % _c)
+            except Exception:
+                pass
     conn.commit()
 
 

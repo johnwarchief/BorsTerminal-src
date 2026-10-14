@@ -285,6 +285,12 @@ SUITES = [
     # نگاشتِ «حرف ← اطلاعیه». بی‌شبکه (فیدِ تزریقی)، بی‌market.db.
     ('dev/codal_discovery_v1101.py',
                                      'automatic codal notice discovery: durable id checkpoint, late/revision/no-dup/network-failure'),
+    # بندِ ۳ همان مأموریت: Universe ← دفترِ عضویت. تازه/تغییرِ نام/تغییرِ شناسه/
+    # غیرفعال/حذف‌شده از هم جدا می‌مانند، صندوق و حقِ تقدم مثلِ شرکتِ عملیاتی
+    # رفتار نمی‌کنند، هویتِ مبهم ثبت می‌شود بی‌اتصالِ خودکار، و ابزارِ بی‌داده
+    # هیچ ردیفِ بنیادیِ ساختگی نمی‌گیرد. بی‌شبکه، بی‌market.db.
+    ('dev/codal_instrument_discovery_v1102.py',
+                                     'instrument universe ledger: new/rename/id-change/deactivated/removed, non-company classes held out'),
     # خودآزمونِ همان گارد: شش نقصِ تاریخی (نیم‌فاصلۀ «شهر فرش»، پلکان+sبدِ بی‌پرچم،
     # سبدِ تنها، نردبانِ EPS، گیتِ ISINِ خاموش، تناقضِ عنوان⇄ستون) درِ حافظه
     # برگردانده می‌شوند و هر شش باید قرمز شود. سبزبودنِ گارد بی‌این ثابت نمی‌کند

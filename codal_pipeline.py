@@ -57,6 +57,7 @@ __all__ = [
     "dirty_count", "lock_acquire", "lock_heartbeat", "lock_release", "lock_state",
     "health", "process_claimed", "run_cycle",
     "discover_auto", "watermarks", "cursor_notice_tn",
+    "discover_instruments", "instrument_snapshot", "instrument_coverage",
     "CURSOR_NOTICE_TN", "CURSOR_NOTICE_DATE",
     "AXES_BY_SOURCE", "BACKOFF_S", "MAX_ATTEMPTS", "LOCK_TTL_S", "CLAIM_STALE_S",
 ]
@@ -302,7 +303,8 @@ def run_update(conn, run_id, **fields):
     """فیلدهایِ شمارشیِ چرخه — فقط ستونهایِ شناخته‌شده، بی‌SQLِ دلخواه."""
     allowed = {"found", "enqueued", "processed", "done", "empty", "failed",
                "unresolved", "rejected", "symbols_dirty", "indicators_recomputed",
-               "cache_invalidated", "phase", "error", "checkpoint_after"}
+               "cache_invalidated", "phase", "error", "checkpoint_after"} | set(
+                   CF._RUN_INSTRUMENT_COLS)
     cols = {k: v for k, v in fields.items() if k in allowed}
     if not cols or not run_id:
         return 0
@@ -513,6 +515,249 @@ def discover_auto(conn, now=None, fetch=None, session=None, pace=None,
     return res
 
 
+# ─── کشفِ ابزارِ تازه/تغییرکرده (بندِ ۳ مأموریت) ──────────────────────────── #
+
+# دفترِ عضویت، نه خزندۀ دوم: `test_tsetmc.py` تابلو را درِ `instruments` و
+# `market_watch` می‌نویسد؛ این لایه همان منبعِ معتبر را با دفترِ خودش مقایسه
+# می‌کند تا «ابزارِ تازه»، «تغییرِ شناسه»، «تغییرِ نام»، «غیرفعال» و
+# «حذف‌شده از Universe» از هم جدا بمانند.
+MEMBERSHIP_PRESENT = "present"
+MEMBERSHIP_ABSENT = "absent"
+MEMBERSHIP_REMOVED = "removed"
+REMOVED_AFTER_CYCLES = 2        # دو چرخۀ پی‌درپی غیبت ⇒ حذف از Universe
+INSTR_LEDGER_COLS = ("ins_code", "symbol", "name", "class", "kind", "sector",
+                     "isin", "paper_type", "prev_name", "first_seen_at",
+                     "last_seen_at", "last_board_at", "membership",
+                     "cycles_absent", "flags", "identity", "identity_note",
+                     "coverage", "coverage_at", "updated_at")
+
+
+def _table_exists(conn, name):
+    return bool(conn.execute("SELECT 1 FROM sqlite_master WHERE type='table'"
+                             " AND name=?", (name,)).fetchone())
+
+
+def instrument_snapshot(conn):
+    """جامعۀ فعلی + حضور در تابلو + وضعیتِ معاملاتی، از خودِ بانکِ کاری.
+
+    ستون‌ها با `PRAGMA table_info` گزینش می‌شوند: نسخۀ trim‌شدهٔ بانک (یا بانکِ
+    تست) ممکن است `isin`/`paper_type`/`sector_name` را نداشته باشد، و نبودِ
+    ستون نباید با مقدارِ ساختگی پر شود — آن `None` می‌ماند. نبودِ `market_watch`
+    یا `instrument_state` هم یعنی **سنسور نیست**، نه «غیرفعال است»؛ پس هیچ
+    ادعایِ غیرفعالی از هیچِ مدرک ساخته نمی‌شود.
+    """
+    if not _table_exists(conn, "instruments"):
+        return []
+    icols = {r[1] for r in conn.execute("PRAGMA table_info(instruments)")}
+    sel = ["i.ins_code", "i.l_val18", "i.l_val30"]
+    for _c in ("paper_type", "isin", "sector_name"):
+        sel.append("i." + _c if _c in icols else "NULL")
+    has_w = _table_exists(conn, "market_watch")
+    has_s = _table_exists(conn, "instrument_state")
+    # EXISTS → 0/1: «تابلو هست ولی این ابزار درِ آن نیست» با «سنسور نیست»
+    # یکی نمی‌شود (بی‌این تفکیک، غیرفعال هیچ‌وقت دیده نمی‌شد — سنجیده شد).
+    sel.append("EXISTS (SELECT 1 FROM market_watch w"
+               " WHERE w.ins_code = i.ins_code)" if has_w else "NULL")
+    sel.append("(SELECT s.c_etaval_title FROM instrument_state s"
+               " WHERE s.ins_code = i.ins_code)" if has_s else "NULL")
+    out = []
+    for r in conn.execute("SELECT %s FROM instruments i"
+                          " ORDER BY i.l_val18, i.ins_code" % ", ".join(sel)):
+        out.append({"ins_code": r[0], "symbol": r[1], "name": r[2],
+                    "paper_type": r[3], "isin": r[4], "sector": r[5],
+                    "on_board": (None if r[6] is None else bool(r[6])),
+                    "state": r[7]})
+    return out
+
+
+def instrument_coverage(conn, symbol):
+    """پوششِ بنیادیِ یکِ نماد، از **همان** کلیدِ هویتِ `symbol_identity`."""
+    try:
+        import symbol_identity as SI
+    except Exception:
+        return "unknown", 0, 0
+    sqlp, params = SI.pred(conn, "symbol", symbol, SI.CODAL)
+    if sqlp == "1=0":
+        return "none", 0, 0
+    n_fs = n_ms = 0
+    try:
+        n_fs = int(conn.execute("SELECT COUNT(*) FROM financial_statements WHERE %s"
+                                % sqlp, params).fetchone()[0])
+        n_ms = int(conn.execute("SELECT COUNT(*) FROM monthly_sales WHERE %s"
+                                % sqlp, params).fetchone()[0])
+    except sqlite3.Error:
+        return "unknown", 0, 0
+    if n_fs and n_ms:
+        cov = "fs+ms"
+    elif n_fs:
+        cov = "fs"
+    elif n_ms:
+        cov = "ms"
+    else:
+        cov = "none"
+    return cov, n_fs, n_ms
+
+
+def discover_instruments(conn, *, now=None, snapshot=None, classify=None,
+                         mark_dirty=True, removed_after=REMOVED_AFTER_CYCLES,
+                         eligible_classes=("stock",)):
+    """یکِ پاسِ مقایسۀ Universe ← دفترِ `pipeline_instrument` + رویدادها.
+
+    هویت: تنها `ins_code` کلیدِ عضویت است. نامِ نمایشی به‌تنهایی هویت نیست، پس
+    تغییرِ نام «ابزارِ تازه» نمی‌سازد و تغییرِ `ins_code` زیرِ یکِ نماد
+    `id_changed` پرچم می‌خورد و **هیچ‌وقت** خودکار ادغام نمی‌شود (نه با حذفِ
+    رقمِ انتهایی، نه با شباهتِ نام). طبقه‌بندی از `mstat_engine.classify` است:
+    صندوق/حقِ تقدم/اوراق مثلِ شرکتِ عملیاتی رفتار نمی‌کنند و اصلاً واردِ مسیرِ
+    پنج شاخص نمی‌شوند (`not_eligible`).
+
+    پوششِ بنیادی و پیوندِ کدال **ثبت** می‌شود؛ هیچ رأیِ بنیادی اینجا ساخته
+    نمی‌شود. ابزارِ بی‌صورتِ مالی، `coverage='none'` می‌گیرد و همان «بدون داده»
+    درِ رابط می‌ماند.
+    """
+    now = now or now_s()
+    if snapshot is None:
+        snapshot = instrument_snapshot(conn)
+    if classify is None:
+        import mstat_engine as _M
+        classify = _M.classify
+    try:
+        import symbol_identity as _SI
+        _key = _SI.key
+    except Exception:
+        def _key(x):
+            return str(x or "").strip()
+    led = {}
+    cur = conn.execute("SELECT %s FROM pipeline_instrument"
+                       % ",".join(INSTR_LEDGER_COLS))
+    for r in cur.fetchall():
+        d = dict(zip(INSTR_LEDGER_COLS, tuple(r)))
+        led[d["ins_code"]] = d
+    by_symbol = {}
+    for r in snapshot:
+        s = str(r.get("symbol") or "").strip()
+        if s:
+            by_symbol.setdefault(s, []).append(r["ins_code"])
+    tally = {"instr_scanned": 0, "instr_new": 0, "instr_renamed": 0,
+             "instr_id_changed": 0, "instr_deactivated": 0, "instr_absent": 0,
+             "instr_removed": 0, "instr_ambiguous": 0, "instr_not_eligible": 0,
+             "instr_no_publisher": 0}
+    events = []
+    seen = set()
+    for r in snapshot:
+        code = r["ins_code"]
+        if not code:
+            continue
+        seen.add(code)
+        tally["instr_scanned"] += 1
+        sym = str(r.get("symbol") or "").strip()
+        nm = str(r.get("name") or "").strip()
+        cls, kind = classify(r.get("paper_type"), nm, sym, r.get("sector") or "")
+        eligible = cls in tuple(eligible_classes)
+        prev = led.get(code)
+        flags = []
+        if prev is None:
+            flags.append("new")
+            tally["instr_new"] += 1
+            first_seen = now
+            prev_name = None
+        else:
+            first_seen = prev["first_seen_at"] or now
+            prev_name = prev["name"]
+            if (prev["name"] or "") != nm:
+                flags.append("renamed")
+                tally["instr_renamed"] += 1
+                prev_name = prev["name"]
+            if (prev["symbol"] or "") != sym:
+                flags.append("symbol_changed")
+            if prev["membership"] != MEMBERSHIP_PRESENT:
+                flags.append("reactivated")
+        if len(by_symbol.get(sym, [])) > 1 and sym:
+            flags.append("id_changed")
+            tally["instr_id_changed"] += 1
+        if r.get("on_board") is False:
+            flags.append("deactivated")
+            tally["instr_deactivated"] += 1
+        # هویتِ صادرکننده — فقط با کلیدِ هویت، نه با حدسِ نام
+        if not eligible:
+            identity, id_note = "not_eligible", "%s:%s" % (cls, kind)
+            tally["instr_not_eligible"] += 1
+            cov, n_fs, n_ms = ("none", 0, 0) if not sym else ("unknown", 0, 0)
+        elif "id_changed" in flags:
+            identity, id_note = "ambiguous", "more_than_one_ins_code"
+            tally["instr_ambiguous"] += 1
+            cov, n_fs, n_ms = instrument_coverage(conn, sym)
+        else:
+            cov, n_fs, n_ms = instrument_coverage(conn, sym) if sym else ("none", 0, 0)
+            if cov == "none":
+                identity, id_note = "no_publisher", "no_codal_rows_for_identity_key"
+                tally["instr_no_publisher"] += 1
+            else:
+                identity = "linked"
+                try:
+                    id_note = _SI.evidence(conn, sym, _SI.CODAL)
+                except Exception:
+                    id_note = "identity_key"
+        membership = MEMBERSHIP_PRESENT
+        conn.execute(
+            "INSERT INTO pipeline_instrument (ins_code, symbol, name, class, kind,"
+            " sector, isin, paper_type, prev_name, first_seen_at, last_seen_at,"
+            " last_board_at, membership, cycles_absent, flags, identity,"
+            " identity_note, coverage, coverage_at, updated_at)"
+            " VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,0,?,?,?,?,?,?)"
+            " ON CONFLICT(ins_code) DO UPDATE SET"
+            "   symbol=excluded.symbol, name=excluded.name, class=excluded.class,"
+            "   kind=excluded.kind, sector=excluded.sector, isin=excluded.isin,"
+            "   paper_type=excluded.paper_type, prev_name=excluded.prev_name,"
+            "   last_seen_at=excluded.last_seen_at,"
+            "   last_board_at=excluded.last_board_at,"
+            "   membership=excluded.membership, cycles_absent=0,"
+            "   flags=excluded.flags, identity=excluded.identity,"
+            "   identity_note=excluded.identity_note, coverage=excluded.coverage,"
+            "   coverage_at=excluded.coverage_at, updated_at=excluded.updated_at",
+            (code, sym, nm, cls, kind, r.get("sector"), r.get("isin"),
+             r.get("paper_type"), prev_name, first_seen, now,
+             now if r.get("on_board") else prev["last_board_at"] if prev else None,
+             membership, ",".join(flags), identity, id_note, cov, now, now))
+        if flags:
+            events.append({"ins_code": code, "symbol": sym, "flags": flags,
+                           "identity": identity, "coverage": cov,
+                           "class": cls, "kind": kind})
+        if mark_dirty and eligible and ({"new", "renamed", "id_changed",
+                                         "symbol_changed", "deactivated"} & set(flags)):
+            dirty_mark(conn, sym, "instruments", reason="instrument:" +
+                       ",".join(flags))
+    # غیبت: سطرهایِ دفتر که درِ Universeِ امروز نیستند
+    for code, prev in led.items():
+        if code in seen:
+            continue
+        absent = int(prev["cycles_absent"] or 0) + 1
+        membership = (MEMBERSHIP_REMOVED if absent >= int(removed_after)
+                      else MEMBERSHIP_ABSENT)
+        was_removed = prev["membership"] == MEMBERSHIP_REMOVED
+        flag = "removed" if membership == MEMBERSHIP_REMOVED else "absent"
+        conn.execute("UPDATE pipeline_instrument SET membership=?,"
+                     " cycles_absent=?, flags=?, updated_at=? WHERE ins_code=?",
+                     (membership, absent, flag, now, code))
+        ev = {"ins_code": code, "symbol": prev["symbol"], "flags": [flag],
+              "identity": prev["identity"], "coverage": prev["coverage"],
+              "class": prev["class"], "kind": prev["kind"]}
+        if membership == MEMBERSHIP_REMOVED and not was_removed:
+            tally["instr_removed"] += 1
+            events.append(ev)
+            if mark_dirty and prev["symbol"]:
+                dirty_mark(conn, prev["symbol"], "instruments",
+                           reason="instrument:removed")
+        else:
+            # غیبتِ یکِ چرخه «حذف» نیست؛ هنوز سنسور ممکن است یک‌بار ننویسد.
+            tally["instr_absent"] += 1
+            events.append(ev)
+    conn.commit()
+    tally["events"] = events
+    tally["ledger"] = int(conn.execute("SELECT COUNT(*) FROM pipeline_instrument")
+                          .fetchone()[0])
+    return tally
+
+
 # ─── یکِ چرخۀ کامل ───────────────────────────────────────────────────────── #
 
 def process_claimed(conn, rows, scrape, now=None):
@@ -564,19 +809,21 @@ def process_claimed(conn, rows, scrape, now=None):
 
 
 def run_cycle(conn, owner, *, discover=None, scrape=None, budget=8,
-              recalc=None, now=None, kinds=None):
-    """یکِ چرخۀ کامل: قفل ← بازیابیِ کارِ نیمه ← کشف ← پردازش ← تازه‌سازی ←
-    نوشتنِ گزارش و checkpoint.
+              recalc=None, now=None, kinds=None, instruments="auto"):
+    """یکِ چرخۀ کامل: قفل ← بازیابیِ کارِ نیمه ← کشفِ Universe ← کشفِ اطلاعیه ←
+    پردازش ← تازه‌سازی ← نوشتنِ گزارش و checkpoint.
 
-    همه‌چیز تزریق‌پذیر است (`discover`، `scrape`، `recalc`) تا گاردِ آفلاین
-    همان مسیرِ تولید را با scraperِ فیک بزند، نه یک مسیرِ دومِ نمایشی.
+    همه‌چیز تزریق‌پذیر است (`discover`، `scrape`، `recalc`، `instruments`) تا
+    گاردِ آفلاین همان مسیرِ تولید را با scraperِ فیک بزند، نه یک مسیرِ دومِ
+    نمایشی. `instruments="auto"` یعنی مقایسۀ Universe از خودِ بانک (بی‌شبکه).
     """
     now = now or now_s()
     out = {"skipped": None, "recovered": 0, "found": 0, "enqueued": 0,
            "done": 0, "empty": 0, "failed": 0, "rejected": 0,
            "processed": 0, "symbols": [], "dirty": 0, "recomputed": 0,
            "cache_invalidated": 0, "checkpoint_before": cursor_get(conn, "discovery_day"),
-           "checkpoint_after": None, "run_id": None, "error": None}
+           "checkpoint_after": None, "run_id": None, "error": None,
+           "instruments": {}, "events": []}
     if not lock_acquire(conn, "codal_pipeline", owner, now=now):
         out["skipped"] = "locked"
         return out
@@ -584,6 +831,18 @@ def run_cycle(conn, owner, *, discover=None, scrape=None, budget=8,
     out["run_id"] = run_id
     try:
         out["recovered"] = release_stale(conn, now=now)
+        if instruments == "auto":
+            ins = discover_instruments(conn, now=now) or {}
+            out["instruments"] = {k: v for k, v in ins.items()
+                                  if k.startswith("instr_")}
+            out["events"] = ins.get("events") or []
+            run_update(conn, run_id, **out["instruments"])
+        elif callable(instruments):
+            ins = instruments(conn) or {}
+            out["instruments"] = {k: v for k, v in ins.items()
+                                  if k.startswith("instr_")}
+            out["events"] = ins.get("events") or []
+            run_update(conn, run_id, **out["instruments"])
         if discover:
             found = discover(conn) or {}
             out["found"] = int(found.get("found") or 0)
@@ -681,10 +940,39 @@ def health(conn, worker_key="codal_pipeline"):
             "SELECT key, value FROM pipeline_cursor")}
     except sqlite3.Error:
         cursors = {}
+    instruments = {}
+    if _table_exists(conn, "pipeline_instrument"):
+        try:
+            instruments = {
+                "ledger": int(conn.execute(
+                    "SELECT COUNT(*) FROM pipeline_instrument").fetchone()[0]),
+                "present": int(conn.execute(
+                    "SELECT COUNT(*) FROM pipeline_instrument"
+                    " WHERE membership='present'").fetchone()[0]),
+                "absent": int(conn.execute(
+                    "SELECT COUNT(*) FROM pipeline_instrument"
+                    " WHERE membership='absent'").fetchone()[0]),
+                "removed": int(conn.execute(
+                    "SELECT COUNT(*) FROM pipeline_instrument"
+                    " WHERE membership='removed'").fetchone()[0]),
+                "ambiguous": int(conn.execute(
+                    "SELECT COUNT(*) FROM pipeline_instrument"
+                    " WHERE identity='ambiguous'").fetchone()[0]),
+                "no_publisher": int(conn.execute(
+                    "SELECT COUNT(*) FROM pipeline_instrument"
+                    " WHERE identity='no_publisher'").fetchone()[0]),
+                "no_fundamental": int(conn.execute(
+                    "SELECT COUNT(*) FROM pipeline_instrument"
+                    " WHERE class='stock' AND coverage IN ('none','unknown')"
+                    " AND membership='present'").fetchone()[0]),
+            }
+        except sqlite3.Error:
+            instruments = {}
     return {
         "queue": c,
         "dirty_symbols": dirty_count(conn),
         "cursor": cursors,
+        "instruments": instruments,
         "last_successful_sync": ({"at": last_ok[0], "cycle": last_ok[1],
                                   "processed": last_ok[2], "done": last_ok[3],
                                   "failed": last_ok[4]} if last_ok else None),
