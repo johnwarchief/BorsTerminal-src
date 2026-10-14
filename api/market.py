@@ -1425,7 +1425,11 @@ def get_market_delta(since: int = -1):
         return _ORJ_JSON({"status": "full", "rev": cur, "reason": "no-cache"})
     if since == mirror_rev and since == cur:
         return _ORJ_JSON({"status": "unchanged", "rev": mirror_rev, "meta": meta, **counts})
-    if since > mirror_rev or not (0 <= since <= cur):
+    if since < 0:
+        # «کلاینت هنوز هیچ ویرایشی ندارد» با «کلاینت جلوتر است» یکی نیست؛ هر دو
+        # full می‌گیرند ولی علتِ دوم درِ لاگِ میدان چیزِ دیگری را معنا می‌کند.
+        return _ORJ_JSON({"status": "full", "rev": mirror_rev, "reason": "no-cache"})
+    if since > mirror_rev or since > cur:
         return _ORJ_JSON({"status": "full", "rev": mirror_rev, "reason": "stale-client"})
     codes = market_state.codes_between(since, mirror_rev)
     if codes is None:
