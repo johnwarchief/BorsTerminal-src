@@ -1,0 +1,9 @@
+﻿table,ins_code,symbol,d_even,stored_ratio,recomputed,engine_status,chart_accepts,divergence
+share_change_events,14009560662665347,غيرصنعتي ,20120225,20000.0,20000.0,invalid:ratio_out_of_range,True,ENGINE_REJECT_CHART_ACCEPTS
+share_change_events,22229150167002259,واوان,20110328,763888.88888889,763888.88888889,invalid:ratio_out_of_range,True,ENGINE_REJECT_CHART_ACCEPTS
+share_change_events,39854376080953165,ومسكن,20131210,8.333e-05,8.333e-05,invalid:ratio_out_of_range,True,ENGINE_REJECT_CHART_ACCEPTS
+share_change_events,48511238766369097,دانا,20180724,567107.75047259,567107.75047259,invalid:ratio_out_of_range,True,ENGINE_REJECT_CHART_ACCEPTS
+share_change_events,60095061789823130,نبورس,20200725,15255.53012967,15255.53012967,invalid:ratio_out_of_range,True,ENGINE_REJECT_CHART_ACCEPTS
+share_change_events,60095061789823130,نبورس,20200726,6.555e-05,6.555e-05,invalid:ratio_out_of_range,True,ENGINE_REJECT_CHART_ACCEPTS
+share_change_events,67612261115225625,تكالا,20201206,100000000.0,100000000.0,invalid:ratio_out_of_range,True,ENGINE_REJECT_CHART_ACCEPTS
+share_change_events,67612261115225625,تكالا,20201207,1e-08,1e-08,invalid:ratio_out_of_range,True,ENGINE_REJECT_CHART_ACCEPTS
