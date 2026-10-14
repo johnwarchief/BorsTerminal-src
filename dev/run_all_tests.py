@@ -279,6 +279,12 @@ SUITES = [
     # خودِ جدول خوانده می‌شوند. بی‌شبکه (scraper تزریقی)، بی‌market.db.
     ('dev/codal_pipeline_v1100.py',
                                      'durable codal queue: states, checkpoint, backoff, claim race, restart recovery'),
+    # بندِ ۲ همان مأموریت: کشفِ خودکارِ اطلاعیه با checkpointِ شناسه‌محور
+    # (`pipeline_cursor`) به‌جای `MAX(publish_date)` خام — دیررس/اصلاحیه/تکراری/
+    # ناقص/قطعیِ شبکه، بودجۀ صفحۀ تمام‌نشده که نشانک را جلو نمی‌برد، و یکِ
+    # نگاشتِ «حرف ← اطلاعیه». بی‌شبکه (فیدِ تزریقی)، بی‌market.db.
+    ('dev/codal_discovery_v1101.py',
+                                     'automatic codal notice discovery: durable id checkpoint, late/revision/no-dup/network-failure'),
     # خودآزمونِ همان گارد: شش نقصِ تاریخی (نیم‌فاصلۀ «شهر فرش»، پلکان+sبدِ بی‌پرچم،
     # سبدِ تنها، نردبانِ EPS، گیتِ ISINِ خاموش، تناقضِ عنوان⇄ستون) درِ حافظه
     # برگردانده می‌شوند و هر شش باید قرمز شود. سبزبودنِ گارد بی‌این ثابت نمی‌کند

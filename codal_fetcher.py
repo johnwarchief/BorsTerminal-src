@@ -2821,6 +2821,160 @@ def _is_fund(sym, name):
     return False
 
 
+# ─── کشفِ افزایشیِ اطلاعیه (بندِ ۲ مأموریتِ خودکارسازی) ───────────────────── #
+
+# دسته‌های فید که برایِ پنج شاخص معنا دارند: ۱ = صورتِ مالی، ۳ = فعالیتِ ماهانه.
+DISCOVERY_FEED_CATS = ("1", "3")
+# کریدورِ خاموشِ فید: پنج سالِ اخیر. عمداً ثابت است — درستیِ «تا کجا دیدیم» به
+# `tracing_no` گره خورده، نه به این تاریخ.
+DISCOVERY_FROM_DATE = "1400/01/01"
+DISCOVERY_MAX_PAGES = 6
+DISCOVERY_OVERLAP_PAGES = 1
+
+
+def feed_query(cat="1", page=1, from_date=DISCOVERY_FROM_DATE):
+    """تنها ساختارِ کوئریِ فیدِ سراسریِ کدال.
+
+    تا پیش از این همین dict داخلِ `feed_sync` دست‌نویس بود؛ مسیرِ کشفِ خودکارِ
+    صف دو-copy شدنِ آن را مجاز نمی‌داند (یکِ فیلترِ گم‌شده = دسته‌ای که هرگز
+    خوانده نمی‌شود).
+    """
+    return {"Audited": "true", "AuditorRef": "-1", "Category": cat,
+            "Childs": "true", "CompanyState": "-1", "CompanyType": "-1",
+            "Consolidatable": "true", "IsNotAudited": "false", "Length": "-1",
+            "LetterType": "-1", "Mains": "true", "NotAudited": "true",
+            "NotConsolidatable": "true", "PageNumber": str(page),
+            "Publisher": "false", "ReportingType": "-1", "TracingNo": "-1",
+            "search": "false", "FromDate": from_date}
+
+
+def discover_notices(conn, watermarks=None, cats=DISCOVERY_FEED_CATS,
+                     max_pages=DISCOVERY_MAX_PAGES,
+                     overlap_pages=DISCOVERY_OVERLAP_PAGES,
+                     session=None, fetch=None, pace=None, now=None,
+                     from_date=DISCOVERY_FROM_DATE, write=True):
+    """یکِ پاسِ کشفِ افزایشی: فیدِ سراسری ← `codal_notices` + فهرستِ کارِ صف.
+
+    تفاوتِ اساسی با `feed_sync(mode="update")`: «تا کجا دیده‌ایم» یکِ
+    `watermark_tn`ِ تزریق‌شده از `pipeline_cursor` است، نه
+    `MAX(publish_date)`ِ مشتق‌شده از خودِ داده. بی‌این تفکیک، شکستِ استخراجِ
+    یکِ اطلاعیه یعنی آن اطلاعیه از «پنجرۀ بعدی» بیرون می‌افتد (بندِ ۲-۱۰).
+
+    نشانک برایِ هر دسته جدا نگه داشته می‌شود، و معنای آن **محافظه‌کارانه** است:
+    `floors[cat]` = کوچک‌ترین `tracing_no` رویِ آخرین صفحۀ **کامل‌خوانده‌شده**.
+    یعنی «هر آنچه شماره‌اش بزرگ‌تر از این است در صفحۀ دیدۀ ما ظاهر شد» — پس
+    جلو بردنِ آن هیچ کارِ پردازش‌نشده‌ای را جا نمی‌گذارد، حتی وقتی فید میانِ
+    دسته‌ها قطع شده (بندِ ۲-۴ و ۲-۱۰). تاریخِ انتشارِ canonical فقط درِ `newest`
+    برایِ نمایشِ checkpoint برمی‌گردد و هرگز با دورۀ مالی قاطی نمی‌شود
+    (بندِ ۲-۷): `period_end` کارِ `CP.derive` درِ لایۀ استخراج است.
+
+    `fetch` و `session` و `pace` تزریق‌پذیرند تا گاردِ آفلاین **همین** مسیرِ
+    تولید را با فیدِ ساختگی بزند (الگوی `run_cycle`)، نه یکِ پیادۀ دوم.
+
+    خروجی: `found, new, pages, items=[(tn,'fs'|'ms')], floors={cat: tn},
+    max_tn, newest, blocked, incomplete, error_kind`.
+    """
+    now = now or datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    real_fetch = fetch is None
+    fetch = fetch or fetch_page
+    cats = tuple(cats or DISCOVERY_FEED_CATS)
+    watermarks = dict(watermarks or {})
+    if real_fetch and session is None:
+        session = make_session()
+    known = {int(r[0]) for r in conn.execute(
+        "SELECT tracing_no FROM codal_notices")}
+    out = {"found": 0, "new": 0, "pages": 0, "incomplete": 0,
+           "max_tn": 0, "newest": None, "blocked": False, "complete": True,
+           "error_kind": None, "items": [], "floors": {}, "per_cat": {}}
+    rows_new, pend = [], []
+    for cat in cats:
+        wm = int(watermarks.get(cat) or 0)
+        floor = None
+        older_streak = 0
+        cat_done = False
+        page = 1
+        while page <= max(1, int(max_pages)):
+            if pace:
+                pace()
+            letters = fetch(session, page, feed_query(cat, page, from_date))
+            if letters is None:
+                # منبع پاسخ نداد/بن — این صفحۀ دسته بسته نشده، پس floor برایِ
+                # آن نوشته نمی‌شود و نشانک همان‌جا می‌ماند.
+                out["blocked"] = True
+                out["complete"] = False
+                out["error_kind"] = "network"
+                break
+            out["pages"] += 1
+            if not letters:
+                # پایانِ فیدِ این دسته: همهٔ تازه‌ها دیده شدند.
+                cat_done = True
+                break
+            out["found"] += len(letters)
+            tns = []
+            for x in letters:
+                try:
+                    t = int(x.get("TracingNo"))
+                except (TypeError, ValueError):
+                    continue
+                tns.append(t)
+                if t > out["max_tn"]:
+                    out["max_tn"] = t
+                if t <= wm or t in known:
+                    continue                       # پیش‌تر دیدیم (یا بی‌شماره)
+                title = (x.get("Title") or "").strip()
+                k = kind_of(title)
+                known.add(t)
+                if SAVE_USEFUL_ONLY and not _positive_title(title):
+                    continue
+                row = letter_to_notice(x, now=now)
+                d = CP.pub_date_only(row[5])
+                if not d:
+                    # بی‌تاریخِ انتشار: رکوردِ ناقص **ثبت** می‌شود و بی‌دوره
+                    # شمرده می‌شود — تاریخِ ساختگی ساخته نمی‌شود (بندِ ۲-۳).
+                    out["incomplete"] += 1
+                elif not out["newest"] or d > out["newest"]:
+                    out["newest"] = d
+                rows_new.append(row)
+                out["new"] += 1
+                if k == "Financial Statements":
+                    pend.append((t, "fs"))
+                elif k == "Monthly Activity Report":
+                    pend.append((t, "ms"))
+            if write and rows_new:
+                conn.executemany(NOTICE_UPSERT, rows_new)
+                conn.commit()
+                rows_new = []
+            if tns:
+                floor = min(tns) if floor is None else min(floor, min(tns))
+                if max(tns) <= wm:
+                    older_streak += 1
+                    if older_streak > int(overlap_pages):
+                        cat_done = True
+                        break
+                else:
+                    older_streak = 0
+            page += 1
+        if not cat_done:
+            # بودجه تمام شد ولی صفحۀ «کهنه» ندیدیم: این دسته هنوز ‌عقب‌ماندگی دارد، پس نشانک جلو نمی‌رود و اجرایِ بعدی از همان نقطه ادامه می‌کند.
+            out["complete"] = False
+        if floor is not None and cat_done:
+            out["floors"][cat] = int(floor)
+        out["per_cat"][cat] = {
+            "watermark": wm,
+            "floor": (int(floor) if (cat_done and floor is not None) else None),
+            "done": cat_done}
+    if write and rows_new:
+        conn.executemany(NOTICE_UPSERT, rows_new)
+        conn.commit()
+    out["items"] = pend
+    if real_fetch and session is not None:
+        try:
+            session.close()
+        except Exception:
+            pass
+    return out
+
+
 def feed_sync(mode="update", optimized=False, catchup=None):
     """Smart GLOBAL-FEED sync — جایگزین جستجوی نماد-به-نماد.
 
@@ -2899,13 +3053,7 @@ def feed_sync(mode="update", optimized=False, catchup=None):
                 if c == "stop":
                     write_progress("codal_stopped", "اسکن توسط کاربر متوقف شد", 100, page, "")
                     return
-            q = {"Audited": "true", "AuditorRef": "-1", "Category": cat,
-                 "Childs": "true", "CompanyState": "-1", "CompanyType": "-1",
-                 "Consolidatable": "true", "IsNotAudited": "false", "Length": "-1",
-                 "LetterType": "-1", "Mains": "true", "NotAudited": "true",
-                 "NotConsolidatable": "true", "PageNumber": str(page),
-                 "Publisher": "false", "ReportingType": "-1", "TracingNo": "-1",
-                 "search": "false", "FromDate": from_date}
+            q = feed_query(cat, page, from_date)
             _jitter()
             letters = fetch_page(sess, page, q, quiet=False, max_429_retries=2)
             if letters is None:

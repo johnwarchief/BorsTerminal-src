@@ -33,7 +33,7 @@ import codal_pipeline as PL                   # noqa: E402
 
 PASS = FAIL = 0
 FS_TITLE = "اطلاعات و صورتهای مالی سال مالی منتهی به ۱۴۰۴/۱۲/۲۹ (حسابرسی شده)"
-MS_TITLE = "گزارش فعالیت ماهانه دوره ۱ ماهه منتهی به ۱۴۵/۰۶/۳۱"
+MS_TITLE = "گزارش فعالیت ماهانه دوره ۱ ماهه منتهی به ۱۴۰۵/۰۶/۳۱"
 FUND_TITLE = "اطلاعات و صورتهای مالی صندوق سرمایه گذاری قابل معامله (ETF)"
 
 
@@ -116,7 +116,7 @@ def main() -> int:
     ck(PL.counts(c)["queued"] == 2, "کارهایِ تازه درِ حالت queued می‌مانند",
        PL.counts(c))
 
-    # ── ) «پردازش‌شده» فقط حالتِ پایان‌یافته است (صف نباید کر شود) ────────
+    # ── ۳) «پردازش‌شده» فقط حالتِ پایان‌یافته است (صف نباید کر شود) ────────
     notice(c, 7001, "فولاد", FS_TITLE)
     notice(c, 7002, "خودرو", MS_TITLE)
     processed, _fs_done, _ms_done = CF.derived_state(c)
@@ -131,7 +131,7 @@ def main() -> int:
        "دام: سطرِ دفتر از لحظۀ کشف وجود دارد — پس تعریفِ قدیمی دقیقاً همین صف را می‌کشت",
        sorted(legacy))
 
-    # ── ) چرخۀ کامل: کشف ← پردازش ← نوشتنِ canonical ← علامتِ dirty ───────
+    # ── ۴) چرخۀ کامل: کشف ← پردازش ← نوشتنِ canonical ← علامتِ dirty ───────
     recalc_seen = {}
 
     def recalc(conn, dirty):
@@ -172,7 +172,7 @@ def main() -> int:
     got = PL.dirty_take(c3)
     ck(got == {"فولاد": ["5_industry"]}, "علامتِ صنعت شاخص‌هایِ دیگر را آلوده نمی‌کند", got)
 
-    # ── ) یدم‌پذیری: اجرایِ دوباره همان چرخه نتیجه را دو نمی‌کند ──────────
+    # ── ۶) یدم‌پذیری: اجرایِ دوباره همان چرخه نتیجه را دو نمی‌کند ──────────
     r2 = PL.run_cycle(c, "w-test", discover=lambda conn: {"found": 0},
                       scrape=auto_scrape, budget=10, recalc=recalc)
     ck(c.execute("SELECT COUNT(*) FROM financial_statements").fetchone()[0] == 1
@@ -182,7 +182,7 @@ def main() -> int:
     ck(r2["processed"] == 0, "اجرایِ دوم کاری درِ صف نمی‌بیند (همه پایان‌یافته‌اند)",
        r2["processed"])
 
-    # ── ) اصلاحیه: دو اطلاعیهٔ هم‌دوره هر دو می‌مانند و مرجع یکی می‌شود ────
+    # ── ۷) اصلاحیه: دو اطلاعیهٔ هم‌دوره هر دو می‌مانند و مرجع یکی می‌شود ────
     notice(c, 7003, "فولاد", FS_TITLE)            # همان نماد، همان دوره،tn تازه
     PL.enqueue(c, [(7003, "fs")])
     r3 = PL.run_cycle(c, "w-test", scrape=auto_scrape, budget=10, recalc=recalc)
@@ -238,7 +238,7 @@ def main() -> int:
     ck(PL.run_cycle(c5, "B", scrape=auto_scrape, budget=5)["skipped"] == "locked",
        "workerِ دوم چرخه را تکرار نمی‌کند (skipped=locked)")
 
-    # ── ۰) restart درِ میانهٔ کار: claimِ بی‌صاحب دوباره صف می‌شود ─────────
+    # ── ۱۰) restart درِ میانهٔ کار: claimِ بی‌صاحب دوباره صف می‌شود ─────────
     c6 = fresh_db()
     notice(c6, 9101, "فولاد", FS_TITLE)
     PL.enqueue(c6, [(9101, "fs")])

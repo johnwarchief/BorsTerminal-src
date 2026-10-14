@@ -56,6 +56,8 @@ __all__ = [
     "run_update", "run_finish", "last_run", "dirty_mark", "dirty_take",
     "dirty_count", "lock_acquire", "lock_heartbeat", "lock_release", "lock_state",
     "health", "process_claimed", "run_cycle",
+    "discover_auto", "watermarks", "cursor_notice_tn",
+    "CURSOR_NOTICE_TN", "CURSOR_NOTICE_DATE",
     "AXES_BY_SOURCE", "BACKOFF_S", "MAX_ATTEMPTS", "LOCK_TTL_S", "CLAIM_STALE_S",
 ]
 
@@ -449,6 +451,66 @@ def lock_state(conn, key):
     if not row:
         return {"held": False, "owner": None, "heartbeat_at": None, "note": None}
     return {"held": True, "owner": row[0], "heartbeat_at": row[1], "note": row[2]}
+
+
+# ─── کشفِ خودکارِ اطلاعیه (بندِ ۲ مأموریت) ────────────────────────────────── #
+
+# نشانکِ هر دسته از فید درِ `pipeline_cursor` می‌نشیند؛ معنا «کوچک‌ترین
+# tracing_no رویِ آخرین صفحۀ کامل‌خوانده‌شده» است، پس «همهٔ شماره‌هایِ بزرگ‌تر
+# از این دیده شدند». تاریخِ انتشارِ canonical فقط برایِ *نمایشِ* checkpoint
+# نگه داشته می‌شود و هرگز جانشینِ این نشانک یا قاطیِ دورۀ مالی نمی‌شود.
+CURSOR_NOTICE_TN = "notice_scan_tn_cat"
+CURSOR_NOTICE_DATE = "notice_newest_date"
+
+
+def cursor_notice_tn(cat):
+    return "%s%s" % (CURSOR_NOTICE_TN, cat)
+
+
+def watermarks(conn, cats=None):
+    cats = tuple(cats or CF.DISCOVERY_FEED_CATS)
+    out = {}
+    for c in cats:
+        try:
+            out[c] = int(cursor_get(conn, cursor_notice_tn(c), "0") or 0)
+        except (TypeError, ValueError):
+            out[c] = 0
+    return out
+
+
+def discover_auto(conn, now=None, fetch=None, session=None, pace=None,
+                  cats=None, max_pages=None, overlap_pages=None):
+    """یکِ پاسِ کشفِ افزایشی رویِ **مسیرِ واقعیِ** کدال (`CF.discover_notices`).
+
+    watermarks از checkpoint خوانده و فقط برایِ دسته‌ای جلو می‌رود که آن دسته تا مرزِ
+    «صفحۀ کهنه» تمام شده باشد. قطعِ شبکه ⇒ `blocked=True` و نشانک ثابت، پس
+    اطلاعیهٔ پردازش‌نشده بازیابی‌پذیر می‌ماند (بندِ ۲-۱۰). ورودی‌ها تزریق‌پذیر
+    هستند تا گاردِ آفلاین همین تابع را با فیدِ ساختگی اجرا کند.
+    """
+    cats = tuple(cats or CF.DISCOVERY_FEED_CATS)
+    wms = watermarks(conn, cats)
+    res = CF.discover_notices(
+        conn, watermarks=wms, cats=cats,
+        max_pages=int(max_pages or CF.DISCOVERY_MAX_PAGES),
+        overlap_pages=int(overlap_pages if overlap_pages is not None
+                          else CF.DISCOVERY_OVERLAP_PAGES),
+        session=session, fetch=fetch, pace=pace, now=now) or {}
+    added = enqueue(conn, res.get("items") or [], reason="discovery")
+    advanced = {}
+    for cat, floor in (res.get("floors") or {}).items():
+        key = cursor_notice_tn(cat)
+        prev = wms.get(cat, 0)
+        nxt = max(prev, int(floor))
+        if nxt != prev:
+            cursor_set(conn, key, str(nxt), note="pass=%s" % (now or now_s()))
+        advanced[cat] = nxt
+    if res.get("newest"):
+        cursor_set(conn, CURSOR_NOTICE_DATE, res["newest"],
+                   note="تازۀ‌ترین تاریخِ انتشارِ دیدہ‌شده (نمایشِ checkpoint)")
+    res["enqueued"] = added
+    res["watermarks"] = advanced
+    res.setdefault("found", 0)
+    return res
 
 
 # ─── یکِ چرخۀ کامل ───────────────────────────────────────────────────────── #
