@@ -570,32 +570,86 @@ def instrument_snapshot(conn):
     return out
 
 
-def instrument_coverage(conn, symbol):
-    """پوششِ بنیادیِ یکِ نماد، از **همان** کلیدِ هویتِ `symbol_identity`."""
+def _coverage_maps(conn):
+    """نقشۀ شمارشِ هر نوشتارِ خام درِ کدال — یکِ GROUP BY به‌ازایِ جدول.
+
+    چرا: سنجشِ رویِ کپیِ بانکِ کاری (۱۴۰۵-۰۷-۲۷) یکِ پاسِ Universe را ۸۱ ثانیه
+    برد؛ دلیلش ~۱۲٬۰۰۰ کوئریِ COUNT (دو به‌ازایِ هر ۵٬۹۹۲ ابزار) بود. همان
+    شمارش با یکِ بارِ خواندنِ جدول به‌دست می‌آید و معنایش عوض نمی‌شود.
+    """
+    maps = {}
+    for tbl in ("financial_statements", "monthly_sales"):
+        try:
+            maps[tbl] = {r[0]: int(r[1]) for r in conn.execute(
+                "SELECT symbol, COUNT(*) FROM %s GROUP BY symbol" % tbl)}
+        except sqlite3.Error:
+            maps[tbl] = None
+    return maps
+
+
+def _cov_for(maps, variants):
+    """جمعِ ردیف‌ها برایِ همهٔ نوشتارهایِ زیرِ یکِ کلیدِ هویت."""
+    fs = ms = 0
+    for m, keyname in ((maps.get("financial_statements"), "fs"),
+                       (maps.get("monthly_sales"), "ms")):
+        if m is None:
+            return "unknown", 0, 0
+        n = 0
+        for v in variants:
+            n += m.get(v, 0)
+        if keyname == "fs":
+            fs = n
+        else:
+            ms = n
+    if fs and ms:
+        return "fs+ms", fs, ms
+    if fs:
+        return "fs", fs, ms
+    if ms:
+        return "ms", fs, ms
+    return "none", 0, 0
+
+
+def coverage_resolver(conn):
+    """یکِ تابعِ `symbol → (coverage, n_fs, n_ms)` با کشِ داخلیِ هر پاس.
+
+    نوشتارها از خودِ `symbol_identity.variants`/`line_variants` می‌آیند — همان
+    قاعدۀ «دو رشته یکی است» با گیتِ ISIN؛ نه شباهتِ نام و نه رقمِ انتهاییِ
+    حدسی. نبودِ `symbol_identity` ⇒ `unknown` (بی‌ادعا)، نه صفر.
+    """
+    maps = _coverage_maps(conn)
     try:
         import symbol_identity as SI
     except Exception:
-        return "unknown", 0, 0
-    sqlp, params = SI.pred(conn, "symbol", symbol, SI.CODAL)
-    if sqlp == "1=0":
-        return "none", 0, 0
-    n_fs = n_ms = 0
-    try:
-        n_fs = int(conn.execute("SELECT COUNT(*) FROM financial_statements WHERE %s"
-                                % sqlp, params).fetchone()[0])
-        n_ms = int(conn.execute("SELECT COUNT(*) FROM monthly_sales WHERE %s"
-                                % sqlp, params).fetchone()[0])
-    except sqlite3.Error:
-        return "unknown", 0, 0
-    if n_fs and n_ms:
-        cov = "fs+ms"
-    elif n_fs:
-        cov = "fs"
-    elif n_ms:
-        cov = "ms"
-    else:
-        cov = "none"
-    return cov, n_fs, n_ms
+        SI = None
+    cache = {}
+
+    def resolve(symbol):
+        sym = str(symbol or "").strip()
+        if not sym:
+            return "none", 0, 0
+        if sym in cache:
+            return cache[sym]
+        if SI is None:
+            out = ("unknown", 0, 0)
+        else:
+            try:
+                variants = list(SI.variants(conn, sym, SI.CODAL))
+                extra, _ev = SI.line_variants(conn, sym, SI.CODAL)
+                for x in extra:
+                    if x not in variants:
+                        variants.append(x)
+                out = _cov_for(maps, variants)
+            except Exception:
+                out = ("unknown", 0, 0)
+        cache[sym] = out
+        return out
+    return resolve
+
+
+def instrument_coverage(conn, symbol):
+    """پوششِ بنیادیِ یکِ نماد، از **همان** کلیدِ هویتِ `symbol_identity`."""
+    return coverage_resolver(conn)(symbol)
 
 
 def discover_instruments(conn, *, now=None, snapshot=None, classify=None,
@@ -626,6 +680,7 @@ def discover_instruments(conn, *, now=None, snapshot=None, classify=None,
     except Exception:
         def _key(x):
             return str(x or "").strip()
+    cov_of = coverage_resolver(conn)      # یکِ بارِ خواندنِ جدول‌ها برایِ هر پاس
     led = {}
     cur = conn.execute("SELECT %s FROM pipeline_instrument"
                        % ",".join(INSTR_LEDGER_COLS))
@@ -637,6 +692,23 @@ def discover_instruments(conn, *, now=None, snapshot=None, classify=None,
         s = str(r.get("symbol") or "").strip()
         if s:
             by_symbol.setdefault(s, []).append(r["ins_code"])
+    # -- هویت و پوشش **پیش از** هر نوشتن محاسبه می‌شود.
+    # دلیلِ اندازه‌گیری‌شده (کپیِ بانکِ کاری، ۱۴۰۵-۰۷-۲۷): `symbol_identity` با
+    # هر نوشتنِ همین اتصال کشِ خود را می‌اندازد؛ ۱۰۰ جستارِ هویت بی‌نوشتن
+    # 0.08 ثانیه و با یکِ نوشتنِ میانِ هر جستار 4.29 ثانیه شد — یعنی پاسِ
+    # Universe رویِ ۵٬۹۹۲ ابزار ۷۷ ثانیه می‌کشید. بی‌این تفکیک، «یکِ چرخۀ
+    # چندثانیه‌ای» عملاً شد یکِ پاسِ یک‌ونیم‌دقیقه‌ای.
+    ident = {}
+    for r in snapshot:
+        sym = str(r.get("symbol") or "").strip()
+        if not sym or sym in ident:
+            continue
+        cov, n_fs, n_ms = cov_of(sym)
+        try:
+            ev = _SI.evidence(conn, sym, _SI.CODAL)
+        except Exception:
+            ev = "identity_key"
+        ident[sym] = (cov, n_fs, n_ms, ev)
     tally = {"instr_scanned": 0, "instr_new": 0, "instr_renamed": 0,
              "instr_id_changed": 0, "instr_deactivated": 0, "instr_absent": 0,
              "instr_removed": 0, "instr_ambiguous": 0, "instr_not_eligible": 0,
@@ -681,22 +753,19 @@ def discover_instruments(conn, *, now=None, snapshot=None, classify=None,
         if not eligible:
             identity, id_note = "not_eligible", "%s:%s" % (cls, kind)
             tally["instr_not_eligible"] += 1
-            cov, n_fs, n_ms = ("none", 0, 0) if not sym else ("unknown", 0, 0)
+            cov = "none" if not sym else "unknown"
+            n_fs = n_ms = 0
         elif "id_changed" in flags:
             identity, id_note = "ambiguous", "more_than_one_ins_code"
             tally["instr_ambiguous"] += 1
-            cov, n_fs, n_ms = instrument_coverage(conn, sym)
+            cov = ident.get(sym, ("unknown", 0, 0, ""))[0]
         else:
-            cov, n_fs, n_ms = instrument_coverage(conn, sym) if sym else ("none", 0, 0)
+            cov, n_fs, n_ms, id_note = ident.get(sym, ("none", 0, 0, ""))
             if cov == "none":
                 identity, id_note = "no_publisher", "no_codal_rows_for_identity_key"
                 tally["instr_no_publisher"] += 1
             else:
-                identity = "linked"
-                try:
-                    id_note = _SI.evidence(conn, sym, _SI.CODAL)
-                except Exception:
-                    id_note = "identity_key"
+                identity = "linked"          # id_note از همان پیش‌محاسبه می‌آید
         membership = MEMBERSHIP_PRESENT
         conn.execute(
             "INSERT INTO pipeline_instrument (ins_code, symbol, name, class, kind,"
