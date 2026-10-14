@@ -221,15 +221,34 @@ coverage  fs+ms 1489 · ms 74 · fs 33 · none 126 · unknown 4270
 **اجرا نشد:** `dev/run_all_tests.py`ِ کامل، `npx vitest run`، `npx tsc -b`،
 `npx vite build`، آزمونِ مرورگرِ Stage 10 — هیچ‌کدام درِ این نشست اجرا نشدند.
 
-گامِ بعد (Stage 8+9، به‌همین ترتیب):
+**افزودۀ همین نشست (پیش از قطع):** `recompute_dirty` پس از بردنِ ردیفِ
+مادی‌شدۀ همان نمادها، `invalidate_screener_cache(drop_materialized=False)` را هم
+صدا می‌زند (باطل‌سازِ payload سراسری است و تک‌نمادی وجود ندارد؛ فقط وقتی چیزی
+واقعاً باطل شده). دو بررسیِ تازه درِ `dev/codal_incremental_recalc_v1104.py`:
+**27/0**. `dev/codal_scheduler_v1103.py` با بخشِ پاسخِ سلامت **47/0**.
+
+گامِ بعد (Stage 8+9، به‌همین ترتیب — دقیقاً همین مشخصات):
 ۱) `GET /api/fundamental/pipeline` که `PL.health()` را می‌دهد (queue، instruments،
    cursor، last_successful_sync، last_attempt، worker، data_epoch)؛
 ۲) شکستنِ cache با همان `data_epoch`: درِ `frontend/src/features/fundamental/api/`
    کلیدِ `['fts-card', symbol]` را به epoch ببند، و درِ سمتِ سرور پس از هر چرخۀ
    موفق `invalidate_screener_cache(drop_materialized=False)` (فقط اگر `dirty`
    مصرف شده باشد) — با مستندکردنِ اینکه باطل‌کنندۀ تک‌نمادیِ payload وجود ندارد؛
-۳) پنلِ سلامتِ کوچک درِ Same‌جا (الگوی `SymbolInspector`: ارتفاعِ محدود، اسکرولِ
-   مستقل، بدونِ پنلِ بزرگ) با هشت شمارشِ الزامی؛
+۳) پنلِ سلامتِ کوچک (الگوی `FtsIndicatorRail`: ارتفاعِ محدود، یکِ خطِ پاسخ +
+   chip‌ها، جزئیات درِ `<details>`):
+   - `frontend/src/features/fundamental/api/useCodalHealth.ts` —
+     `queryKey: ['codal-health']` رویِ `/api/sync/codal/pipeline` با
+     `schema`ِ zod (هر هشت فیلد nullish)، `refetchInterval: 120_000`؛
+     و یکِ `useEffect` که با تغییرِ `data_epoch`،
+     `qc.invalidateQueries({ queryKey: ['fts-card'] })` و
+     `['fts-screen']` را می‌بَرد (بدونِ این، کارت تا ۱۰ دقیقه کهنه می‌ماند).
+   - `frontend/src/features/fundamental/components/CodalHealthStrip.tsx` با
+     testid‌های `codal-health-strip`، `codal-health-state`،
+     `codal-health-count-<queued|failed|incomplete|gap|dirty>` و
+     `codal-health-last-sync`؛ ارقام فقط با `toFaDigits`/`.num`، وضعیتِ
+     «بی‌داده» با `gapReason` (نه صفر)، و هیچ ادعایی که `last_successful_sync`
+     ندارد.
+   - جاگذاری درِ بالایِ `FundamentalPage` (نه تبِ تازه، نه پنلِ مزاحم).
 ۴) Stage 10 رویِ کپیِ ایزوله (`_audit/codal_census_20261014/copy.db`) + گردشِ
    واقعیِ مرورگر؛ ۵) Stage 11 گیت‌ها با exit code؛ ۶) Stage 12 هماهنگ‌سازی
    `docs/MASTER-EXECUTION-ROADMAP.md` و حذفِ کپیِ موقت.

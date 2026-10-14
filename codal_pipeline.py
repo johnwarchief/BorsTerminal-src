@@ -445,6 +445,16 @@ def recompute_dirty(conn, dirty=None, *, judge=None, invalidate=None,
         failed = sorted(dirty)
         return {"recomputed": 0, "cache_invalidated": 0, "failed": len(failed),
                 "done_symbols": [], "axes": {}}
+    if dropped:
+        # کشِ payload اسکرینر/قیف **سراسری** است و باطل‌سازِ تک‌نمادی ندارد؛ پس
+        # بی‌مورد بودنِ آن یعنی قیف همان ردیفِ کهنه را نشان می‌دهد. بی‌`dirty`ِ
+        # مصرف‌شده هیچ‌وقت صدا زده نمی‌شود، و `drop_materialized=False` چون
+        # ردیفِ جدول را همین‌جا بردیم (در EXE هم تنها این راه می‌ماند).
+        try:
+            from api.screener import invalidate_screener_cache
+            invalidate_screener_cache(drop_materialized=False)
+        except Exception:
+            pass
     if judge:
         for sym, axes in dirty.items():
             try:

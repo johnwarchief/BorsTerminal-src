@@ -196,6 +196,16 @@ def main() -> int:
     ck(out5["dirty"] == 0,
        "علامتِ مصرف‌شده پاک می‌ماند و شمارشِ سلامت درست است", out5["dirty"])
 
+    # ── ۸) شکستنِ کشِ خواننده: payload اسکرینر پس از مصرفِ dirty ────────────
+    src2 = inspect.getsource(PL.recompute_dirty)
+    ck("invalidate_screener_cache" in src2 and "drop_materialized=False" in src2,
+       "باطل‌سازِ payload اسکرینر درِ همان مصرفِ dirty صدا زده می‌شود (بدونِ کشتنِ جدول)",
+       [l.strip() for l in src2.splitlines() if "screener" in l][:2])
+    ck("dropped" in src2,
+       "و فقط وقتی چیزی واقعاً باطل شده (چرخۀ بی‌کار کش را خالی نمی‌کند)",
+       "dropped" in src2)
+
+
     print("\n%d passed / %d failed" % (PASS, FAIL))
     return 1 if FAIL else 0
 
