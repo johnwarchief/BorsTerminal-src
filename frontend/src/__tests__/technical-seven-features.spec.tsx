@@ -25,7 +25,7 @@ const mockChartInstance = {
   overrideOverlay: vi.fn(),
   removeOverlay: vi.fn(),
   getOverlays: vi.fn(() => []),
-  overrideYAxis: vi.fn(),
+  overrideYAxis: vi.fn(), overrideXAxis: vi.fn(),
   resize: vi.fn(),
   getConvertPictureUrl: vi.fn(() => 'data:image/png;base64,'),
   getCrosshair: vi.fn(() => ({

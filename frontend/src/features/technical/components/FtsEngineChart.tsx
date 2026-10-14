@@ -6,6 +6,8 @@
 // صادق‌گویی دو چیز است: بالا‌نیامدنِ موتور با پیامِ خودش (FFC WebGL2 می‌خواهد)،
 // و قابلیتِ نبودنِ خودش (محورِ جلالی، ترسیم‌هایِ ذخیره‌شده، بازپخش).
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+
+import { FFC_ADJUSTMENT_BASIS_LABEL } from '../nahayatnegar/lib/adjustments';
 import type { FtsAnalysisData } from '../api/useFtsAnalysis';
 import type { Structure3Data } from '../api/useStructure3';
 import { engineEntry, paletteFromTheme, type ChartEngine, type ChartEngineId, type EngineBar, type EngineError } from '../engine';
@@ -222,6 +224,10 @@ export function FtsEngineChart({
       <div className="flex flex-wrap items-center gap-2 border-t border-[var(--hairline)] px-2 py-1 text-[10px] text-text-muted">
         <span className="font-bold text-text-secondary">موتور: {caps ? caps.label : engineId}</span>
         <span>کندل: {toFaDigits(bars.length)}</span>
+        {/* مرحلۀ ۵: کرکرۀ «نوع تعدیل قیمت» درِ نوارِ ابزارِ KLineCharts است و این موتور
+            آن را ندارد؛ پس مبنایِ سریِ رسم‌شده باید خوانده شود، نه اینکه کاربر سوییچِ
+            موتور را بی‌تغییرِ عددی و بی‌اعلام ببیند («UI صادق»، نه ادعایِ ضمنی). */}
+        <span data-testid="ffc-adjust-basis">مبنایِ سری: {FFC_ADJUSTMENT_BASIS_LABEL}</span>
         {/* شمارِ لایه‌ها دو ادعایِ مرحلۀ ۶ را از هم جدا می‌کند: «سوییچ به نگاشت
             رسید» (عدد عوض می‌شود) و «رویِ بوم هم دیده شد» (بوم عوض می‌شود). */}
         <span data-testid="fts-engine-layer-count">لایهٔ FTS: {toFaDigits(layers.length)}</span>

@@ -8,6 +8,7 @@ import type { KLineData } from 'klinecharts';
 import {
   applyAdjustmentToCandles,
   mapBackendAdjustEvents,
+  type AdjustFactor,
 } from '@features/technical/nahayatnegar/lib/adjustments';
 import { weeklyFromFts } from '@features/technical/lib/weeklyFromFts';
 import { ftsMAs, majorResistance } from '@features/technical/lib/indicators';
@@ -25,7 +26,8 @@ const NOW = Date.now();
 const t = (s: string) => Date.parse(`${s}T00:00:00Z`);
 
 /** افزایشِ سرمایهٔ کايزد: ۵۸۱۰ ← ۲۶۴۲ (نسبت ≈ ۰٫۴۵) و بعد ۶۰ کندلِ صعودی */
-function gappedSeries(): { raw: KLineData[]; events: ReturnType<typeof mapBackendAdjustEvents> } {
+function gappedSeries(): { raw: KLineData[]; events: ReturnType<typeof mapBackendAdjustEvents>;
+                           factors: AdjustFactor[] } {
   const raw: KLineData[] = [];
   for (let i = 0; i < 120; i += 1) {
     const px = 5600 + Math.round(40 * Math.sin(i / 4));
@@ -35,7 +37,13 @@ function gappedSeries(): { raw: KLineData[]; events: ReturnType<typeof mapBacken
     const px = 2642 + Math.round(20 * j);
     raw.push({ timestamp: t('2026-09-08') + j * 86400000, open: px - 20, high: px + 30, low: px - 40, close: px, volume: 3e6 } as unknown as KLineData);
   }
-  return { raw, events: mapBackendAdjustEvents([{ date: '2026-09-08', ratio: 0.4547 }]) };
+  // همان عددِ سرور: ضریبِ تجمعیِ کندل‌هایِ پیشِ روزِ رویداد = نسبتِ گسست، بعدش ۱
+  const events = mapBackendAdjustEvents([{ date: '2026-09-08', ratio: 0.4547 }]);
+  const factors: AdjustFactor[] = raw.map((c) => ({
+    time: new Date(Number(c.timestamp)).toISOString().slice(0, 10),
+    factor: Number(c.timestamp) < t('2026-09-08') ? 0.4547 : 1,
+  }));
+  return { raw, events, factors };
 }
 
 function seriesOf(c: KLineData[]) {
@@ -178,8 +186,8 @@ describe('۱) رأیِ هفتگیِ سرور به گیتِ وتو می‌رسد 
 
 describe('۲) سیگنالِ تکنیکال باید سریِ تعدیل‌شده را ببیند', () => {
   it('موتور به مقیاسِ قیمت حساس است: مقاومتِ سریِ خام پیش از مجمع می‌ماند', () => {
-    const { raw, events } = gappedSeries();
-    const adj = applyAdjustmentToCandles(raw, events, 'combined');
+    const { raw, factors } = gappedSeries();
+    const adj = applyAdjustmentToCandles(raw, factors, 'combined');
     const rRaw = majorResistance(seriesOf(raw).highs);
     const rAdj = majorResistance(seriesOf(adj).highs);
     expect(rRaw).not.toBeNull();
@@ -192,19 +200,25 @@ describe('۲) سیگنالِ تکنیکال باید سریِ تعدیل‌شد�
   });
 
   it('کندلِ پس از رویداد دست‌نخورده می‌ماند (آخرین قیمتِ تابلو عوض نمی‌شود)', () => {
-    const { raw, events } = gappedSeries();
-    const adj = applyAdjustmentToCandles(raw, events, 'combined');
+    const { raw, factors } = gappedSeries();
+    const adj = applyAdjustmentToCandles(raw, factors, 'combined');
     expect(Number(adj[adj.length - 1].close)).toBe(Number(raw[raw.length - 1].close));
   });
 
   it('صفحهٔ تکنیکال همان سریِ تعدیل‌شده را به سیگنال می‌دهد', () => {
     // نگهبانِ ساختاری: اگر کسی این دو خط را به feed.candles برگرداند، مقاومت و MA
     // دوباره دو مقیاسِ قیمتی را قاطی می‌کنند و تستِ بالا بی‌فایده می‌شود.
+    // درِ قدمِ ۵ یک نگهبانِ دوم هم لازم است: صفحه نباید از `adjustEvents` خودش
+    // ضریب بسازد — ضریب فقط از `factorsِ` سرور می‌آید.
     const src = readFileSync(
       join(__dirname, '../features/technical/routes/TechnicalPage.tsx'),
       'utf-8',
     );
-    expect(src).toContain("applyAdjustmentToCandles(feed.candles, mapBackendAdjustEvents(adjustEvents ?? []), 'combined')");
+    // درِ مرحلۀ ۵ مبنایِ موتورِ دوم از ثابتِ مشترک `FFC_ADJUSTMENT_MODE` خوانده می‌شود
+    // تا برچسبِ رویِ صحنه و سریِ رسم‌شده یک منبع داشته باشند؛ نگهبان همان نگهبان است،
+    // فقط به‌جایِ رشتهٔ literal، نامِ ثابت را می‌خواهد.
+    expect(src).toContain('applyAdjustmentToCandles(feed.candles, adjustFactors ?? [], FFC_ADJUSTMENT_MODE)');
     expect(src).not.toContain('const candles = feed.candles');
+    expect(src).not.toMatch(/applyAdjustmentToCandles\([^)]*mapBackendAdjustEvents/);
   });
 });

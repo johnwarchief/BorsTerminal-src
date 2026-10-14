@@ -359,9 +359,13 @@ export class KLineChartsEngine implements ChartEngine {
 
   setLogScale(on: boolean): void {
     try {
+      // نامِ رجیسترشدۀ v10 «logarithm» است، نه «log» (سنجش: چارتِ زنده درِ
+      // KLineChartWrapper همان 'logarithm' را می‌فرستد). با 'log' این آداپتور
+      // بی‌خطا به پیش‌فرضِ normal می‌افتاد و مقیاسِ لگاریتمی فقط در یکی از دو
+      // موتور اعمال می‌شد — همان ناهمخوانیِ D-6ِ قدمِ صفر.
       (this.chart as unknown as { overrideYAxis?: (o: unknown) => void })?.overrideYAxis?.({
         paneId: CANDLE_PANE,
-        name: on ? 'log' : 'normal',
+        name: on ? 'logarithm' : 'normal',
       });
     } catch (e) {
       this.fail('log-scale', String((e as Error)?.message ?? e));

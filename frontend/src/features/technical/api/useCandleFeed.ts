@@ -28,6 +28,13 @@ export const RawAdjustEvent = z.object({
 });
 export type RawAdjustEvent = z.infer<typeof RawAdjustEvent>;
 
+/** ضریبِ تجمعیِ همان کندل، آن‌طور که سرور محاسبه کرده (`factors=[{time,factor}]`) */
+export const RawAdjustFactor = z.object({
+  time: z.string(),
+  factor: z.number(),
+});
+export type RawAdjustFactor = z.infer<typeof RawAdjustFactor>;
+
 /** رویدادِ شرکتیِ مبدأ (TSETMC) — فقط برایِ نشانه‌گذاری، بی‌هیچ ضریبِ تازه */
 export const RawCorporateEvent = z.object({
   date: z.string().nullish(),
@@ -45,7 +52,10 @@ const ChartSchema = z.object({
   volumes: z.array(RawVolume).nullish(),
   count: z.number().nullish(),
   adjustEvents: z.array(RawAdjustEvent).nullish(),
+  factors: z.array(RawAdjustFactor).nullish(),
   corporateEvents: z.array(RawCorporateEvent).nullish(),
+  adjustCapability: z.unknown().nullish(),
+  adjustSource: z.string().nullish(),
 });
 
 /** /api/history/{symbol} — تاریخچهٔ محلی */
@@ -66,8 +76,12 @@ export type CandleFeedResult = {
    * نمی‌آید و یک افزایشِ سرمایه وسطِ بازه، خطِ مقایسه را بی‌دلیل می‌شکند.
    */
   adjustEvents: RawAdjustEvent[];
+  /** ضریبِ تجمعیِ همان کندل از سرور — تنها ورودیِ مقیاسِ قیمت درِ مرورگر */
+  factors: RawAdjustFactor[];
   /** رویدادهایِ شرکتیِ مبدأ برایِ نشانگرِ چارت (نمایش؛ درِ زنجیرۀ تعدیل نمی‌نشیند) */
   corporateEvents: RawCorporateEvent[];
+  /** اعلامِ تواناییِ تعدیل از خودِ سرور (بلوکِ adjustCapability) */
+  capability: unknown;
 };
 
 export function toKLineData(
@@ -102,7 +116,9 @@ export async function fetchCandleFeed(symbol: string, signal?: AbortSignal): Pro
         candles: chart.candles ?? [],
         volumes: chart.volumes ?? [],
         adjustEvents: chart.adjustEvents ?? [],
+        factors: chart.factors ?? [],
         corporateEvents: chart.corporateEvents ?? [],
+        capability: chart.adjustCapability ?? null,
       };
     }
   } catch {
@@ -118,7 +134,12 @@ export async function fetchCandleFeed(symbol: string, signal?: AbortSignal): Pro
     candles: history.candles ?? [],
     volumes: history.volumes ?? [],
     adjustEvents: [],
+    // تاریخچۀِ محلی ضریبِ محاسبه‌شدۀِ سرور را ندارد؛ «بی‌factors» یعنی سرور چیزی
+    // نگفته، نه اینکه تعدیل صفر است — `applyAdjustmentToCandles` هم دقیقاً همین‌جا
+    // همه را ۱ می‌گیرد و `adjustmentGapNote` همان را به کاربر می‌گوید.
+    factors: [],
     corporateEvents: [],
+    capability: null,
   };
 }
 

@@ -22,7 +22,7 @@ let registeredOverlays: Record<string, unknown>[] = [];
 
 const chartStub = () => ({
   setDataLoader: vi.fn(), setSymbol: vi.fn(), setPeriod: vi.fn(), resetData: vi.fn(),
-  setOffsetRightDistance: vi.fn(), setStyles: vi.fn(), overrideYAxis: vi.fn(),
+  setOffsetRightDistance: vi.fn(), setStyles: vi.fn(), overrideYAxis: vi.fn(), overrideXAxis: vi.fn(),
   createIndicator: vi.fn(), removeIndicator: vi.fn(), setPaneOptions: vi.fn(),
   scrollToRealTime: vi.fn(), resize: vi.fn(), getConvertPictureUrl: vi.fn(() => ''),
   subscribeAction: vi.fn(), overrideOverlay: vi.fn(),

@@ -34,7 +34,7 @@ import { ComparePanel } from '../components/ComparePanel';
 import { ChartSettingsDialog } from '../components/ChartSettingsDialog';
 import type { ActiveLevelsView } from '../components/SidebarActiveLevels';
 import { useNnTedipx } from '../nahayatnegar/lib/useNnData';
-import { applyAdjustmentToCandles, mapBackendAdjustEvents } from '../nahayatnegar/lib/adjustments';
+import { applyAdjustmentToCandles, FFC_ADJUSTMENT_MODE } from '../nahayatnegar/lib/adjustments';
 import { useMarketFeed } from '@features/market/api/useMarketFeed';
 import { usePriceAlertWatch } from '../lib/usePriceAlertWatch';
 import { PriceAlertBanner } from '../nahayatnegar/components/PriceAlertBanner';
@@ -119,11 +119,15 @@ export default function TechnicalPage() {
   // FTSِ سرور تحلیل می‌کند. پیش‌تر روی کندلِ خام می‌دوید: دو طرفِ یک افزایشِ سرمایه
   // دو مقیاسِ قیمتی‌اند، پس MA/مقاومت/فیبو قاطی می‌شد (شاهد: کايزد ۵۸۱۰ ← ۲۶۴۲).
   const adjustEvents = feed.data?.adjustEvents;
+  // ضریبِ هر کندل را سرور می‌شمارد (`api/chart.py::_canonical_adjustment`)؛ این
+  // آرایه تنها ورودیِ مقیاسِ قیمت درِ مرورگر است. `adjustEvents` فقط برایِ آمارِ
+  // شمارشیِ داک نگه داشته می‌شود، نه برایِ محاسبۀِ دوم.
+  const adjustFactors = feed.data?.factors;
   // نشانگرِ رویدادِ شرکتی (تک‌منبعِ canonical) — درِ هر دو موتور از همین یکی می‌خواند
   const corpEvents = feed.data?.corporateEvents;
   const candles = useMemo(
-    () => applyAdjustmentToCandles(feed.candles, mapBackendAdjustEvents(adjustEvents ?? []), 'combined'),
-    [feed.candles, adjustEvents],
+    () => applyAdjustmentToCandles(feed.candles, adjustFactors ?? [], FFC_ADJUSTMENT_MODE),
+    [feed.candles, adjustFactors],
   );
 
   // موتورِ دوم (FFC): همان کندلِ تعدیل‌شده، همان تجمیع، همان تحلیلِ سرور -- فقط
