@@ -200,28 +200,58 @@ def mstat_phases():
     """گام ۳.۲ — شمارندهٔ چرخش وضعیت‌ها (صف↼مثبت↼منفی)."""
     return _mstat_call(_mstat.phases)
 
+def _panel(fn, *args):
+    """یکِ پنل از کشِ هر-حالت، بی‌کلیدِ `source` که `_mstat_call` می‌افزاید.
+
+    درِ «کل تب» آن کلیدِ افزوده بیرون می‌ماند تا بدنه با دیروز یکی بماند
+    (سنجشِ ۱۴۰۵-۰۷-۲۷: تنها تفاوتِ پاسخِ دو نسخه، همین کلید بود؛ پنل‌هایِ
+    mstat خودشان `source` تولید نمی‌کنند).
+    """
+    out = _mstat_call(fn, *args)
+    if isinstance(out, dict):
+        out.pop("source", None)
+    return out
+
+
+def _board_all(conn, group: str, limit: int) -> dict:
+    """ده پنلِ تب وضعیت بازار در یکِ بدنه — تنها پیاده‌سازیِ این ترکیب.
+
+    هر پنل از **همان** `_mstat_call` می‌گذرد که مسیرهایِ تک‌پنلی می‌گذرند، پس
+    «کل تب» و «پنلِ تنها» یک محاسبه را دو بار نمی‌سازند: UIِ امروز هم
+    `/api/mstat/board` را می‌زند هم `summary`/`depth`/`thermometer` را
+    (`useMarketPulse`) و پیش از این هر دو گروه، ده پنل را جدا جدا حساب
+    می‌کردند (اندازه: 753ms p50 برایِ تابلو + ~۱۳۰ms برایِ هر پنلِ تنها).
+    `conn` این‌جا مصرف نمی‌شود — `_mstat_call` اتصالِ خودش را باز می‌کند تا
+    کشِ هر-حالت درست کلید بخورد.
+    """
+    return {"status": "ok", "source": "local:market.db",
+            "summary": _panel(_mstat.summary),
+            "thermometer": _panel(_mstat.thermometer, group),
+            "histogram": _panel(_mstat.histogram, group),
+            "depth": _panel(_mstat.depth, group),
+            "clientsplit": _panel(_mstat.client_split, "all"),
+            "mainwatch": _panel(_mainwatch_with_flags, group, "", "clock", True, limit),
+            "industries": _panel(_mstat.industries),
+            "smartmoney": _panel(_mstat.smart_money),
+            "timeline": _panel(_mstat.timeline, "cum"),
+            "phases": _panel(_mstat.phases)}
+
+
 @router.get("/api/mstat/board")
 def mstat_board(group: str = Query("eq_all"), limit: int = Query(60)):
     """تک‌درخواستِ کل تب. polling هر ۳۰–۶۰ ثانیه است و ۹ درخواستِ جدا هم
     شبکه را درگیر می‌کند هم مرورگر را؛ این یکی باعث می‌شود هر بارِ رندر،
-    یک round-trip باشد (خط قرمز: رندر روان بدون افت فریم)."""
-    conn = get_db()
-    try:
-        return {"status": "ok", "source": "local:market.db",
-                "summary": _mstat.summary(conn),
-                "thermometer": _mstat.thermometer(conn, group),
-                "histogram": _mstat.histogram(conn, group),
-                "depth": _mstat.depth(conn, group),
-                "clientsplit": _mstat.client_split(conn, "all"),
-                "mainwatch": _mainwatch_with_flags(conn, group, "", "clock", True, limit),
-                "industries": _mstat.industries(conn),
-                "smartmoney": _mstat.smart_money(conn),
-                "timeline": _mstat.timeline(conn, "cum"),
-                "phases": _mstat.phases(conn)}
-    except Exception as e:
-        return {"status": "error", "message": str(e), "source": "local:market.db"}
-    finally:
-        conn.close()
+    یک round-trip باشد (خط قرمز: رندر روان بدون افت فریم).
+
+    چرا از `_mstat_call` می‌گذرد (اندازۀ ۱۴۰۵-۰۷-۲۷، baselineِ بازارِ زنده):
+    این endpoint تنها مسیرِ mstat بود که بی‌کش حساب می‌شد — p50 = 753ms رویِ
+    بک‌اندِ درِ ساعتِ بازار، درحالی‌که UI هم‌زمان `summary`/`depth`/`thermometer`
+    را جدا هم می‌خواهد (useMarketPulse) و آن‌ها کشِ هر-حالت دارند. با همین
+    پوشش، پنل‌ها بین «تک‌درخواستِ کل تب» و «درخواست‌هایِ جدا» شریک می‌شوند و
+    هیچ پنلی درِ یکِ حالتِ بانک دو بار ساخته نمی‌شود. قیدِ تازگی عوض نشده:
+    همان کلیدِ revision + static_rev + session_day + markerِ mstat_snap، و
+    خطا هرگز کش نمی‌شود."""
+    return _mstat_call(_board_all, group, limit)
 
 @router.post("/api/mstat/snapshot")
 def mstat_snapshot_now():

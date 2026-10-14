@@ -1,0 +1,161 @@
+{
+ "taken_at": "2026-10-14 11:06:25",
+ "ours_source": "db",
+ "backend_version": null,
+ "comparable": false,
+ "not_comparable_reason": "سمتِ ما از فایلِ دیسک است و با فیدِ زندهٔ مرجع دو لحظۀ متفاوت دارد (قواعدِ بندِ ۴ مأموریت)",
+ "ta_day": "1405/07/22",
+ "ta_hour": 1107,
+ "app_asof": {
+  "d_even": 20261007,
+  "h_even": 181704,
+  "client_d_even": 20261007,
+  "client_lag_days": false,
+  "depth": true,
+  "top50": 50,
+  "n": 3988
+ },
+ "rows": [
+  {
+   "ta_row": "m",
+   "ta_label": "کل بازار",
+   "our_key": "all",
+   "metric": "ارزش",
+   "ta_bt": 47936.3,
+   "our_bt": 90434.7,
+   "status": "NOT_COMPARABLE",
+   "err_pct": 88.66
+  },
+  {
+   "ta_row": "m",
+   "ta_label": "کل بازار",
+   "our_key": "all",
+   "metric": "جریان",
+   "ta_bt": -2016.7,
+   "our_bt": 5439.7,
+   "status": "NOT_COMPARABLE",
+   "err_pct": -369.74
+  },
+  {
+   "ta_row": "st",
+   "ta_label": "سهام و حق تقدم",
+   "our_key": "stock_right",
+   "metric": "جریان",
+   "ta_bt": -313.6,
+   "our_bt": 3429.2,
+   "status": "NOT_COMPARABLE",
+   "err_pct": -1193.36
+  },
+  {
+   "ta_row": "afl",
+   "ta_label": "سهام و واحدهایِ سهمی",
+   "our_key": "eq_all",
+   "metric": "جریان",
+   "ta_bt": -552.3,
+   "our_bt": 4704.0,
+   "status": "NOT_COMPARABLE",
+   "err_pct": -951.7
+  },
+  {
+   "ta_row": "st",
+   "ta_label": "سهام و حق تقدم",
+   "our_key": "stock_right",
+   "metric": "ارزش",
+   "ta_bt": 32449.5,
+   "our_bt": 32775.4,
+   "status": "NOT_COMPARABLE",
+   "err_pct": 1.0
+  },
+  {
+   "ta_row": "sf",
+   "ta_label": "صندوق‌های سهامی و مختلط",
+   "our_key": "eq_fund",
+   "metric": "ارزش",
+   "ta_bt": 7553.9,
+   "our_bt": 8154.1,
+   "status": "NOT_COMPARABLE",
+   "err_pct": 7.95
+  },
+  {
+   "ta_row": "nsf",
+   "ta_label": "صندوق درآمد ثابت",
+   "our_key": "fixed_fund",
+   "metric": "ارزش",
+   "ta_bt": 7932.9,
+   "our_bt": 49505.2,
+   "status": "NOT_COMPARABLE",
+   "err_pct": 524.05
+  },
+  {
+   "ta_row": "lf",
+   "ta_label": "صندوق‌های اهرمی",
+   "our_key": "lev_fund",
+   "metric": "ارزش",
+   "ta_bt": 4607.1,
+   "our_bt": 4452.2,
+   "status": "NOT_COMPARABLE",
+   "err_pct": -3.36
+  },
+  {
+   "ta_row": "cf",
+   "ta_label": "صندوق‌های طلا",
+   "our_key": "gold_fund",
+   "metric": "ارزش",
+   "ta_bt": 0.0,
+   "our_bt": 13284.1,
+   "status": "NOT_COMPARABLE",
+   "err_pct": null
+  },
+  {
+   "ta_row": "scf",
+   "ta_label": "صندوق‌های نقره",
+   "our_key": "silver_fund",
+   "metric": "ارزش",
+   "ta_bt": 0.0,
+   "our_bt": 441.4,
+   "status": "NOT_COMPARABLE",
+   "err_pct": null
+  },
+  {
+   "ta_row": "afl",
+   "ta_label": "سهام و واحدهایِ سهمی",
+   "our_key": "eq_all",
+   "metric": "ارزش",
+   "ta_bt": 40003.4,
+   "our_bt": 40929.5,
+   "status": "NOT_COMPARABLE",
+   "err_pct": 2.32
+  }
+ ],
+ "combos": [
+  {
+   "label": "ص.سهامی + درآمدِ ثابت",
+   "ta_bt": 15486.8,
+   "our_bt": 57659.3,
+   "err_pct": 272.31
+  },
+  {
+   "label": "طلا + نقره + کالا",
+   "ta_bt": 0.0,
+   "our_bt": 22744.4,
+   "err_pct": null
+  },
+  {
+   "label": "اهرمی (تنها)",
+   "ta_bt": 4607.1,
+   "our_bt": 4452.2,
+   "err_pct": -3.36
+  }
+ ],
+ "combos_source": "instruments+market_watch از فایلِ --db (طبقه‌بندیِ زیرگونه از نام/نام؛ با سطرهایِ API یکی نیست)",
+ "identity": {
+  "i1": {
+   "m": 47936.2932250222,
+   "st+sf+nsf": 47936.2932250222
+  },
+  "i5": {
+   "m": -2016.6635307617,
+   "st+sf+nsf": -2016.6635307615
+  }
+ }
+}

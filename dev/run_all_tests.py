@@ -304,6 +304,13 @@ SUITES = [
     # تازه‌ای نوشته نمی‌شود. بی‌شبکه، بی‌market.db.
     ('dev/codal_incremental_recalc_v1104.py',
                                      'incremental fundamental recalculation: per-symbol invalidation, re-mark on failure, no invented thresholds'),
+    # مأموریت «کاراییِ بازارِ زنده + تطبیقِ وضعیتِ بازار» (۱۴۰۵-۰۷-۲۷): شمارشِ
+    # پروسه با PowerShell ~۵۹۰ms است و درِ هر پولینگِ UI پرداخته می‌شد
+    # (sync-state با بدنۀ ۱۴۱ بایت ⇒ p50 = 573ms). گاردِ ttl + stale-while-
+    # revalidate + تک‌پروازگی را قفل می‌کند و ثابت می‌کند `ttl_s=0` هنوز لحظه‌ای
+    # است و پاسخِ endpoint دست‌نخورده. بی‌شبکه، بی‌کشتنِ پروسه.
+    ('dev/proc_probe_cache_v1105.py',
+                                     'process probe: ttl + stale-while-revalidate + single-flight, endpoint payload and semantics unchanged'),
     # خودآزمونِ همان گارد: شش نقصِ تاریخی (نیم‌فاصلۀ «شهر فرش»، پلکان+sبدِ بی‌پرچم،
     # سبدِ تنها، نردبانِ EPS، گیتِ ISINِ خاموش، تناقضِ عنوان⇄ستون) درِ حافظه
     # برگردانده می‌شوند و هر شش باید قرمز شود. سبزبودنِ گارد بی‌این ثابت نمی‌کند
