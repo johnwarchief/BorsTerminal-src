@@ -446,6 +446,11 @@ SUITES = [
     # /api/execution/* درِ api_router + hiddenimports. آزمونِ رشتۀِ دوم و
     # کنترلِ منفیِ سه‌گانه درِ همین فایل است.
     ('dev/execution_ledger_v1108.py', 'sarkhati: durable audit trail, kill switch, fail-closed risk, wired HTTP door'),
+    # مأموریتِ ۱۴۰۵-۰۷-۲۳، بندِ ۶: رباتِ کاغذی و بک‌تست. سناریوهای ۱۷گانۀ
+    # بندِ ۶-۵ (سیگنال، کهنگی، توقف، دامنۀ قیمت، سقفِ حجم، timeout، تکرار،
+    # لغو، ضرر روزانه، kill switch، restart، reconcile، ردِّپا) به‌همراه
+    # بی‌نشتیِ آینده، بازتولیدپذیریِ digest، split زمانی و کنترلِ منفیِ سه‌گانه.
+    ('dev/bot_paper_v1109.py', 'trading bot: paper lifecycle, lookahead-free backtest, risk, kill switch, recovery'),
     # گاردِ متنِ فارسی (بیرونِ سرخطی هم لازم است): سه خانۀِ خطا که درِ همین
     # ریپو واقعی دیده شده — نویسهٔ CJK جاافتاده وسطِ واژۀِ فارسی، رقمِ
     # شمارۀِ بخش که بی‌صدا می‌افتد، و ك/ي عربی درِ فایل‌هایِ سرخطی. هر سه
