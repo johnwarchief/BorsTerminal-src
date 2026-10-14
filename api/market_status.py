@@ -15,6 +15,7 @@ import time
 
 import market_state as _MS
 import mstat_engine as _mstat
+import mstat_panels as _panels
 import funnel_engine as _FE
 
 
@@ -173,6 +174,80 @@ def mstat_industries():
     """گام ۵.۳ — خلاصهٔ صنایع (کلیک ⇒ فیلتر جدول پایین)."""
     return _mstat_call(_mstat.industries)
 
+
+# ═══════════ نماهایِ صفحۀ «وضعیت بازار» (مرجعِ Binder1.pdf — مأموریت ۱۴۰۵-۰۷-۲۳)
+# همه از همان `mstat_engine.enrich` می‌آیند: یک اسکنِ تابلو، چند نما. هیچ
+# کوئریِ دومی رویِ market_watch زده نمی‌شود و هیچ عددی درِ رابط ساخته نمی‌شود؛
+# نبودِ منبع درِ خودِ پاسخ با `no_source` / `blockers` و علت می‌آید.
+
+@router.get("/api/mstat/treemap")
+def mstat_treemap(group: str = Query("eq_all"), industry: str = Query(""),
+                  metric: str = Query("value"), limit: int = Query(220)):
+    """صفحۀ ۲ و ۱۲ — نقشۀ بازار. `metric` سطحِ مستطیل را عوض می‌کند
+    (value|volume|cap|trades) و رنگ از درصدِ پایانی/دیروز است.
+    «ارزش بازار» فقط وقتی ستونش در بانک هست می‌آید؛ وگرنه `no_source`."""
+    return _mstat_call(_panels.treemap, group, industry, metric, limit)
+
+
+@router.get("/api/mstat/tops")
+def mstat_tops(group: str = Query("eq_all"), limit: int = Query(5)):
+    """صفحۀ ۸ — چهار پنل: تأثیر مثبت/منفی بر شاخص، بیشترین ارزش، بیشترین حجم.
+
+    ترتیبِ پنل‌هایِ شاخص از «درصدِ رشدِ قیمت» نیست: از تغییرِ ارزشِ بازار
+    (ریالی، بی‌فرض) می‌آید و ستونِ «واحدِ شاخص» برآورد است — پسماندش نسبت به
+    تغییرِ رسمی درِ `reconciliation` اعلام می‌شود، چون سهامِ شناور در این بانک
+    نیست و وزنِ اینجا سهامِ کل است.
+    """
+    return _mstat_call(_panels.tops, group, limit)
+
+
+@router.get("/api/mstat/orderflows")
+def mstat_order_flows(group: str = Query("all"), limit: int = Query(10)):
+    """صفحۀ ۹ — حجمِ *سفارش* (ماندهٔ دفترِ سفارش) جدا از حجمِ *معامله*.
+
+    این دو در مرجع دو پنلِ جدااند و یکی‌گرفتنشان رایج‌ترین خطایِ داشبورد است.
+    عمقِ دفتر در بانک نباشد `orders_available=false` و پنل «منبع نرسیده»
+    می‌گوید، نه صفر."""
+    return _mstat_call(_panels.order_book_flows, group, limit)
+
+
+@router.get("/api/mstat/ownership")
+def mstat_ownership(group: str = Query("all"), limit: int = Query(10)):
+    """صفحۀ ۹ — تغییرِ مالکیت حقیقی ⇄ حقوقی در *سهم* و *درصدِ سهامِ شرکت*.
+
+    با «خالصِ ورودِ پول» (ریالی، درِ clientsplit) و «سرانه» یکی نیست و
+    تکرارشان نمی‌آید. `client_data_lags_session` یعنی ردیفِ مشتری از نشستِ
+    قبل است — همان شکافِ دو‌روزه‌ای که درِ نبض هم اعلام می‌شود."""
+    return _mstat_call(_panels.ownership_change, group, limit)
+
+
+@router.get("/api/mstat/indexcards")
+def mstat_index_cards(days: int = Query(30)):
+    """صفحۀ ۶ و ۷ — سه کارت (کل بورس، کل هم‌وزن، قیمتِ وزنیِ ارزشی) + sparkline.
+
+    «قیمتِ وزنیِ ارزشی» = q_tot_cap ÷ q_tot_tran از همان ردیفِ رسمی، نه
+    میانگینِ درصدها. `history_points` می‌گوید sparkline واقعاً چند روز دارد."""
+    return _mstat_call(_panels.index_cards, days)
+
+
+@router.get("/api/mstat/gold")
+def mstat_gold(history_days: int = Query(60)):
+    """صفحۀ ۱، ۳، ۱۰، ۱۱ و ۱۲ — نمادهایِ طلا/نقرۀ *واقعاً* رویِ تابلو + تاریخچه.
+
+    طبقه از `classify()` می‌آید نه از فهرستِ دستی. هر چیزی که منبع ندارد
+    (انس، سکهٔ فیزیکی، تتر، دلار، مسکن، تورم، قیمتِ آینده، ارزشِ ذاتیِ قفل‌شده)
+    درِ `no_source` با علت و «چه منبعی لازم است» می‌آید و عددش ساخته نمی‌شود."""
+    return _mstat_call(_panels.gold_market, history_days)
+
+
+@router.get("/api/mstat/goldhistory")
+def mstat_gold_history(symbol: str = Query(...), days: int = Query(250)):
+    """تاریخچۀِ خوانِ یک نماد — نمودارِ خطیِ «مدیریتِ سبد» و مقایسه.
+
+    بی‌ردیف `available:false`، و خطِ صافِ یک‌نقطه‌ای هرگز نمی‌کشد."""
+    return _mstat_call(_panels.gold_history, symbol, days)
+
+
 @router.get("/api/mstat/smart-money")
 def mstat_smart_money():
     """v9.8.0 — بنر نقدینگی کلان + جریان پول هوشمند FTS.
@@ -204,7 +279,12 @@ def mstat_phases():
 def mstat_board(group: str = Query("eq_all"), limit: int = Query(60)):
     """تک‌درخواستِ کل تب. polling هر ۳۰–۶۰ ثانیه است و ۹ درخواستِ جدا هم
     شبکه را درگیر می‌کند هم مرورگر را؛ این یکی باعث می‌شود هر بارِ رندر،
-    یک round-trip باشد (خط قرمز: رندر روان بدون افت فریم)."""
+    یک round-trip باشد (خط قرمز: رندر روان بدون افت فریم).
+
+    نماهایِ جدیدِ «وضعیت بازار» (treemap / tops / orderflows / ownership /
+    indexcards / gold) هم همین‌جا می‌نشینند. دلیل: تب بدونِ این‌ها ۱۵ درخواست
+    هم‌زمان می‌ساخت و pollingِ دو‌نفسه‌اش شبکه‌یِ محلیِ همان اپ را صف می‌کرد؛
+    همه از یک `enrich` خوانده می‌شوند، پس هزینه‌یِ اضافه‌یِ کوئری ندارند."""
     conn = get_db()
     try:
         return {"status": "ok", "source": "local:market.db",
@@ -217,7 +297,13 @@ def mstat_board(group: str = Query("eq_all"), limit: int = Query(60)):
                 "industries": _mstat.industries(conn),
                 "smartmoney": _mstat.smart_money(conn),
                 "timeline": _mstat.timeline(conn, "cum"),
-                "phases": _mstat.phases(conn)}
+                "phases": _mstat.phases(conn),
+                "treemap": _panels.treemap(conn, group, "", "value", 220),
+                "tops": _panels.tops(conn, group, 5),
+                "orderflows": _panels.order_book_flows(conn, "all", 10),
+                "ownership": _panels.ownership_change(conn, "all", 10),
+                "indexcards": _panels.index_cards(conn, 30),
+                "gold": _panels.gold_market(conn, 60)}
     except Exception as e:
         return {"status": "error", "message": str(e), "source": "local:market.db"}
     finally:
