@@ -298,6 +298,12 @@ SUITES = [
     # ایزوله کار می‌کند. دربه‌دیوارِ BORS_CODAL_OFFLINE + tripwire ⇒ صفرِ درخواست.
     ('dev/codal_scheduler_v1103.py',
                                      'ui-independent scheduler: dynamic wakeup, crawler-busy yield, single worker, deferred recalc, offline CLI'),
+    # بندِ ۷ همان مأموریت: محاسبۀ افزایشی. باطل‌کردن فقط نمادِ متاثر (نه کل
+    # `fts_results`)، نمادِ بی‌محاسبه دوباره علامت می‌خورد و ردیفِ مادی‌شدۀ کهنه‌اش
+    # هم می‌رود، نقشۀ وابستگی از `AXES_BY_SOURCE` می‌آید، و هیچ فرمول/آستانۀ
+    # تازه‌ای نوشته نمی‌شود. بی‌شبکه، بی‌market.db.
+    ('dev/codal_incremental_recalc_v1104.py',
+                                     'incremental fundamental recalculation: per-symbol invalidation, re-mark on failure, no invented thresholds'),
     # خودآزمونِ همان گارد: شش نقصِ تاریخی (نیم‌فاصلۀ «شهر فرش»، پلکان+sبدِ بی‌پرچم،
     # سبدِ تنها، نردبانِ EPS، گیتِ ISINِ خاموش، تناقضِ عنوان⇄ستون) درِ حافظه
     # برگردانده می‌شوند و هر شش باید قرمز شود. سبزبودنِ گارد بی‌این ثابت نمی‌کند

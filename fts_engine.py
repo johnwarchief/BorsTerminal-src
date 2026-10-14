@@ -268,15 +268,28 @@ _FTS_RESULTS_COLS = (
 )
 
 
-def invalidate_fts_results(conn) -> int:
-    """حذفِ همهٔ ردیف‌های مادی‌شده (و کشِ خواننده).
+def invalidate_fts_results(conn, symbols=None) -> int:
+    """حذفِ ردیف‌های مادی‌شده (و کشِ خواننده).
 
     سینکِ کدال/تابلو هر دو کشِ اسکرینر و این جدول را کثیف می‌کند؛
     invalidate_screener_cache این را صدا میزند. برمی‌گرداند: تعداد ردیفِ حذف‌شده.
+
+    `symbols` (افزودنی، بندِ ۷ مأموریتِ خودکارسازی): فقط ردیفِ همان نمادها
+    می‌رود، پس یکِ اطلاعیهٔ تازه کلِ جدولِ مادی‌شده را بی‌دلیل دور نمی‌ریزد.
+    کشِ خواننده به‌هرحال پوپ می‌شود: کلیدهایِ آن `norm_symbol` است و حذفِ
+    تک‌نمادیِ آن نقشه بی‌مدرک درست نمی‌ماند — یکِ SELECTِ دوباره‌سازی به‌ازایِ
+    محاسبۀ مجددِ کلِ بازار خیلی ارزان‌تر است (محاسبۀ محافظه‌کارانهٔ بیشتر،
+    نتیجهٔ کهنه نه).
     """
     n = 0
+    syms = [str(x) for x in (symbols or []) if str(x or "").strip()]
     try:
-        n = int(conn.execute("DELETE FROM fts_results").rowcount or 0)
+        if syms:
+            ph = ",".join("?" * len(syms))
+            n = int(conn.execute(
+                "DELETE FROM fts_results WHERE symbol IN (%s)" % ph, syms).rowcount or 0)
+        else:
+            n = int(conn.execute("DELETE FROM fts_results").rowcount or 0)
         conn.commit()
     except Exception:
         n = 0

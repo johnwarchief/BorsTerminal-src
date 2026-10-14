@@ -407,6 +407,76 @@ def dirty_take(conn, limit=None):
     return out
 
 
+# ─── محاسبۀ افزایشیِ پنج شاخص (بندِ ۷ مأموریت) ────────────────────────────── #
+
+RECALC_BATCH = 80               # سقفِ نماد در هر چرخه
+
+
+def recompute_dirty(conn, dirty=None, *, judge=None, invalidate=None,
+                    limit=RECALC_BATCH, now=None):
+    """مصرفِ `pipeline_dirty` با باطل‌کردنِ **همان نمادها**، نه کل بازار.
+
+    نقشۀ وابستگی درِ `AXES_BY_SOURCE` است و اینجا هیچ فرمول یا آستانه‌ای دوباره
+    نوشته نمی‌شود. معماریِ فعلیِ برنامه خروجیِ بنیادی را جایی ذخیره نمی‌کند جز
+    `fts_results` (ردیف به‌ازایِ نماد) و کشِ اسکرینر/قیف؛ کارتِ جزئیات هر درخواست
+    را از canonical دوباره می‌سنجد. پس «محاسبۀ افزایشی» درِ این خط یعنی:
+      ۱) ردیفِ مادی‌شدۀ همان نمادها باطل شود ⇒ قیف/غربالگری/کارت از منبعِ
+         canonical دوباره می‌خوانند و نتیجهٔ کهنه نمی‌دهند؛
+      ۲) اگر `judge` تزریق شده باشد (محاسبه‌گرِ واقعی یا گرم‌کردنِ پیش‌دستانه)،
+         برایِ همان نمادها صدا زده می‌شود و فقط همان‌ها «محاسبه‌شده» شمرده‌اند.
+
+    رأیِ مأموریت «محاسبۀ محافظه‌کارانۀ بیشتر بهتر از نتیجهٔ کهنه» است، پس بی‌
+    مدرکِ موفقیت هیچ علامتی از `pipeline_dirty` پاک نمی‌ماند؛ `run_cycle`
+    نمادهایِ بی‌جواب را دوباره علامت می‌زند.
+    """
+    now = now or now_s()
+    if dirty is None:
+        dirty = dirty_take(conn, limit=limit)
+    if not dirty:
+        return {"recomputed": 0, "cache_invalidated": 0, "failed": 0,
+                "done_symbols": [], "axes": {}}
+    done, failed = [], []
+    if invalidate is None:
+        invalidate = _invalidate_materialized
+    try:
+        dropped = int(invalidate(conn, sorted(dirty)) or 0)
+    except Exception:
+        dropped = 0
+        failed = sorted(dirty)
+        return {"recomputed": 0, "cache_invalidated": 0, "failed": len(failed),
+                "done_symbols": [], "axes": {}}
+    if judge:
+        for sym, axes in dirty.items():
+            try:
+                ok = judge(conn, sym, axes or [])
+            except Exception:
+                ok = False
+            (done if ok else failed).append(sym)
+    else:
+        done = sorted(dirty)
+    return {"recomputed": len(done), "cache_invalidated": dropped,
+            "failed": len(failed), "done_symbols": done,
+            "axes": {s: list(v or []) for s, v in dirty.items()}}
+
+
+def _invalidate_materialized(conn, symbols):
+    """ردیف‌های `fts_results` همان نمادها − کشِ خواننده.
+
+    `fts_engine` سنگین است و درِ این ماژولِ stdlib-only جا نمی‌شود؛ دیرهنگام
+    import می‌شود و اگر نبود، با صفر برمی‌گردد (نه ساختنِ باطل‌کنندۀ دوم).
+    """
+    try:
+        import fts_engine as _fe
+    except Exception:
+        return 0
+    try:
+        return int(_fe.invalidate_fts_results(conn, symbols=list(symbols)))
+    except TypeError:           # پیادۀ بی‌`symbols` (سازگاریِ دوطرفه)
+        return int(_fe.invalidate_fts_results(conn))
+    except Exception:
+        return 0
+
+
 # ─── قفلِ تک‌worker ───────────────────────────────────────────────────────── #
 
 def lock_acquire(conn, key, owner, ttl_s=LOCK_TTL_S, now=None):
@@ -949,15 +1019,32 @@ def run_cycle(conn, owner, *, discover=None, scrape=None, budget=8,
                                  [r[0] for r in conn.execute(
                                      "SELECT DISTINCT symbol FROM pipeline_dirty")]})
         out["dirty"] = dirty_count(conn)
+        if recalc == "auto":
+            recalc = recompute_dirty
         if recalc and out["dirty"]:
-            dirty = dirty_take(conn)
+            # سقفِ هر چرخه: صفِ بزرگ یک‌باره خالی نمی‌شود (بودجه‌مند، مثلِ کارها)
+            dirty = dirty_take(conn, limit=RECALC_BATCH)
             res = recalc(conn, dirty) or {}
             out["recomputed"] = int(res.get("recomputed") or 0)
             out["cache_invalidated"] = int(res.get("cache_invalidated") or 0)
-            for sym in dirty:
-                # نمادی که محاسبه شد ولی هنوز درِ dirty است ⇒ محاسبه‌گرِ تزریق‌شده
-                # آن را ندید؛ علامتش را برمی‌گردانیم تا گم نشود.
-                pass
+            out["recalc_failed"] = int(res.get("failed") or 0)
+            reported = res.get("done_symbols")
+            # فقط وقتی محاسبه‌گر خروجیِ **تک‌نمادی** گزارش می‌کند، بی‌جواب‌ها را
+            # برمی‌گردانیم. اگر چیزی گزارش نکرد، قراردادِ پیشین حاکم است: همان
+            # که `dirty_take` برداشته، مصرف شده است.
+            missed = ({} if reported is None
+                      else {k: v for k, v in dirty.items() if k not in set(reported)})
+            for sym, axes in missed.items():
+                # نمادی که محاسبه‌گر یا آن را ندید یا شکست خورد ⇒ دوباره علامت،
+                # تا «نتیجهٔ کهنه» جایِ «هنوز محاسبه نشده» را نگیرد.
+                for ax in (axes or ["1_growth"]):
+                    conn.execute(
+                        "INSERT INTO pipeline_dirty (symbol, axis, reason, marked_at)"
+                        " VALUES (?,?,?,?) ON CONFLICT(symbol, axis) DO UPDATE SET"
+                        " reason=excluded.reason, marked_at=excluded.marked_at",
+                        (sym, ax, "recalc-missed", now))
+            conn.commit()
+            out["dirty"] = dirty_count(conn)
         # checkpoint فقط وقتی جلو می‌رود که کارِ بازِ قدیمی نمانده باشد
         c = counts(conn)
         newest = conn.execute(
@@ -1193,7 +1280,8 @@ def worker_once(db_path=None, *, owner=None, conn=None, budget=8, network=None,
             conn, owner or "worker-%d" % os.getpid(),
             discover=discover_auto if use_network else None,
             scrape=_offline_scrape if offline_gate() else CF.scrape_notice_row,
-            recalc=None if (defer_recalc and recalc is None) else recalc,
+            recalc=(None if defer_recalc and recalc is None
+                    else (recalc or "auto")),
             budget=budget, now=now)
         if use_network and res.get("run_id"):
             cursor_set(conn, CURSOR_LAST_NETWORK, now,
