@@ -207,7 +207,7 @@ coverage  fs+ms 1489 · ms 74 · fs 33 · none 126 · unknown 4270
 | `e8deef9` | Stage 3 — دفترِ عضویتِ ابزار (پنج حالت جدا) | 39/0 |
 | `15741d6` | کاراییِ پاسِ Universe: 77.0s → 3.7s | 39/42/45/0 |
 | `1aabef2` | Stage 6 — زمان‌بند، بازیابی، CLI، مرزِ «برنامه بسته» | 40/0 |
-| `83b89af` | Stage 7 — محاسبۀ افزایشیِ همان نمادها | 25/0 |
+| `83b89cf` | Stage 7 — محاسبۀ افزایشیِ همان نمادها | 25/0 |
 
 گیت‌هایِ اجراشدۀ این نشست (exit ۰ همه): `dev/codal_pipeline_v1100.py` 42/0 ·
 `dev/codal_discovery_v1101.py` 45/0 · `dev/codal_instrument_discovery_v1102.py`
