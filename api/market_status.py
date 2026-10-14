@@ -368,6 +368,18 @@ def mstat_gold_history(symbol: str = Query(...), days: int = Query(250)):
     return _mstat_call(_panels.gold_history, symbol, days)
 
 
+@router.get("/api/mstat/series")
+def mstat_series(symbols: str = Query(""), days: int = Query(730)):
+    """سریِ روزانۀ چند نماد در یک کوئری — نمودارِ مقایسه (صفحۀ ۱۳).
+
+    `symbols` با کاما. دسته‌ای بودنش لازم است: هوکِ React درِ حلقه مجاز نیست و
+    یک درخواست به‌ازای هر نماد همان round-tripِ واحد را می‌شکند که `/board`
+    برایش ساخته شد. مبنای صریح: `price_history.close` پایانیِ **خام** است، پس
+    مقایسه «نسبت به پایۀ ۱۰۰» خوانده می‌شود نه «بازدهیِ تعدیل‌شده».
+    """
+    return _mstat_call(_panels.series, [s for s in symbols.split(",") if s.strip()], days)
+
+
 @router.get("/api/mstat/smart-money")
 def mstat_smart_money():
     """v9.8.0 — بنر نقدینگی کلان + جریان پول هوشمند FTS.

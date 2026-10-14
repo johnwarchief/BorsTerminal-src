@@ -717,6 +717,51 @@ def _symbol_history(conn, symbols, days: int) -> dict:
     return out
 
 
+def series(conn, symbols, days: int = 730) -> dict:
+    """سریِ روزانۀ چند نماد در **یک** کوئری — برایِ نمودارِ مقایسه (صفحۀ ۱۳).
+
+    چرا اندپوینتِ دسته‌ای: رابطِ مقایسه برایِ هر سری یک هوک لازم دارد و هوک درِ
+    حلقه مجاز نیست؛ «یک درخواست به‌ازای هر نماد» هم همان کاری است که `/api/mstat/board`
+    برایِ تب می‌کند — حذفش. اینجا یک `IN (...)` کل بازۀِ خواسته‌شدۀ همه را می‌خواند.
+
+    مبنایِ صریح: `close` درِ `price_history` قیمتِ **پایانیِ خامِ همان روز** است،
+    نه سریِ تعدیل‌شدۀ عملکردی. نرمال‌سازیِ مقایسه رویِ همین سری انجام می‌شود و
+    رابط آن را «نسبت به پایۀ ۱۰۰» می‌نامد، نه «بازدهیِ تعدیل‌شده».
+    """
+    wanted = [str(s).strip() for s in (symbols or []) if str(s).strip()]
+    # تکرار حذف می‌شود و ترتیبِ کاربر نگه داشته می‌شود: جدولِ انتخابِ سری همان
+    # ترتیب را نشان می‌دهد و رنگ‌ها از این ترتیب می‌آیند.
+    uniq = list(dict.fromkeys(wanted))
+    days = max(5, min(int(days or 730), 2000))
+    out = {s: [] for s in uniq}
+    missing_source = []
+    if uniq:
+        ph = ",".join("?" * len(uniq))
+        try:
+            recs = conn.execute(
+                "SELECT symbol, date, close FROM price_history WHERE symbol IN (%s)"
+                " ORDER BY symbol, date DESC" % ph, tuple(uniq)).fetchall()
+        except Exception:
+            recs = []
+        for sym, date, close in recs:
+            lst = out.setdefault(sym, [])
+            if len(lst) < days:
+                lst.append({"d": date, "v": E._f(close) if close is not None else None})
+        for lst in out.values():
+            lst.reverse()
+        # نمادی که هیچ ردیفی ندارد «صفر» نیست: منبع نرسیده است و جدا اعلام می‌شود.
+        missing_source = [s for s in uniq if not out.get(s)]
+    return {
+        "status": "ok", "computed_at": _stamp(), "days": days, "unit": "ریال",
+        "basis": "price_history.close = قیمتِ پایانیِ خامِ همان روز (نه سریِ تعدیل‌شده)",
+        "requested": len(wanted), "symbols": uniq,
+        "series": out, "points": {s: len(out.get(s, [])) for s in uniq},
+        "no_source": missing_source,
+        "first_date": {s: (out[s][0]["d"] if out.get(s) else None) for s in uniq},
+        "last_date": {s: (out[s][-1]["d"] if out.get(s) else None) for s in uniq},
+    }
+
+
 def gold_history(conn, symbol: str, days: int = 250) -> dict:
     """تاریخچۀِ خوانِ یک نمادِ طلا — برایِ نمودارِ خطیِ «مدیریتِ سبد» و مقایسه.
 
