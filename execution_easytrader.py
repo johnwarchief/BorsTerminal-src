@@ -444,7 +444,6 @@ def interpret_easytrader_response(status: int, body: Any, *,
     oid = _text(_pick_any(env, WIRE_KEY_ID, "orderId")) if env else None
     head = (msg or "")[:180]
     after = _retry_after_ms(hdrs)
-    ambiguous = None, ErrorCode.UNKNOWN_RESULT, OrderState.UNKNOWN
 
     if code == 401:
         return WireVerdict(False, ErrorCode.SESSION_EXPIRED, OrderState.UNKNOWN, None,
@@ -456,7 +455,7 @@ def interpret_easytrader_response(status: int, body: Any, *,
         return WireVerdict(False, ErrorCode.RATE_LIMITED, OrderState.UNKNOWN, None,
                            head, errs, code, False, "http 429: محدودیتِ نرخ", after)
     if code == 408:
-        return WireVerdict(None, ErrorCode.TIMEOUT, ambiguous[2], None, head, errs,
+        return WireVerdict(None, ErrorCode.TIMEOUT, OrderState.UNKNOWN, None, head, errs,
                            code, True, "http 408: مهلتِ سرور — نتیجه نامعلوم", after)
     if code >= 500:
         return WireVerdict(None, ErrorCode.NETWORK_ERROR, OrderState.UNKNOWN, None,

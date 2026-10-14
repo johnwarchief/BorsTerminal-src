@@ -26,6 +26,7 @@ token درِ همین پروسه و درِ حافظه می‌ماند (`POST /ap
 from __future__ import annotations
 
 import dataclasses
+import json
 import os
 import sqlite3
 import threading
@@ -33,7 +34,7 @@ import time
 import uuid
 from typing import Any
 
-from fastapi import APIRouter, Body, HTTPException
+from fastapi import APIRouter, Body, HTTPException, Request
 
 from bors_config import DB_PATH
 from execution_contract import (
@@ -244,6 +245,10 @@ def _session_dict() -> dict[str, Any]:
 
 
 # ── زمان‌بندیِ سرخطی: توقف‌پذیر، بی‌بلوکه‌کردنِ درِ halt ───────────────────────
+#: دفترِ زمان‌بندی‌ها درِ حافظه است. بی‌عمد: restart نباید سفارشی را که کاربر
+#: «لغو شد» نمی‌داند آتش بزند. سطرِ dispatchِ نوشته‌شده رویِ دیسک می‌ماند و
+#: `_recover()` آن را درِ `open_ids` برمی‌گرداند ⇒ حالتش درِ UI معلوم است و
+#: رفعِ ابهام باقی می‌مانَد؛ هیچ چیزی بی‌صدا فرستاده نمی‌شود.
 _SCHEDULES: dict[str, dict[str, Any]] = {}
 _SCHEDULE_LOCK = threading.Lock()
 
@@ -286,7 +291,13 @@ def _gate_spin(ev: threading.Event) -> None:
 
 
 def _scheduled_send(prepared: Any, ev: threading.Event) -> None:
-    """اجرا درِ threadِ پس‌زمینه؛ قفلِ سرویس فقط دورِ خودِ dispatch گرفته می‌شود."""
+    """اجرا درِ threadِ پس‌زمینه؛ قفلِ سرویس فقط دورِ خودِ dispatch گرفته می‌شود.
+
+    ردِّپا درِ این مسیر فقط برایِ «اتفاقِ خودش» نوشته می‌شود (لغو/رد): سطرهایِ
+    خودِ سرویس (dispatch/ack/error) مرجعِ وضعیت‌اند، و یکِ سطرِ بستنِ اضافه ازِ ما
+    نمی‌باید سفارشِ ناشناخته را از `open_ids()` بیرون بیندازد — آن فهرست تنها
+    جایی است که بعدِ restart یادمان می‌آورد این را رفعِ ابهام کنیم.
+    """
     eid = prepared.draft.execution_id
     out: dict[str, Any] = {"execution_id": eid, "state": "sending"}
     try:
@@ -296,33 +307,51 @@ def _scheduled_send(prepared: Any, ev: threading.Event) -> None:
             rec = _SERVICE.execute(prepared,
                                    sleep=lambda s: _gate_sleep(s, ev),
                                    yield_cpu=lambda: _gate_spin(ev))
-        out.update({"state": "done", "record": _record_dict(rec)})
-        _AUDIT.record(execution_id=eid, kind="schedule", status="done",
-                      detail="scheduled dispatch executed")
+        unresolved = rec.status in (ExecutionStatus.UNKNOWN_RESULT,
+                                    ExecutionStatus.DISPATCHED,
+                                    ExecutionStatus.ACKNOWLEDGED,
+                                    ExecutionStatus.SCHEDULED,
+                                    ExecutionStatus.RECONCILED)
+        out.update({"state": "unknown" if rec.status is ExecutionStatus.UNKNOWN_RESULT
+                    else "done",
+                    "record": _record_dict(rec),
+                    "still_open": unresolved})
     except ScheduleAborted as e:
         out.update({"state": "aborted", "detail": str(e)})
-        _AUDIT.record(execution_id=eid, kind="schedule", status=HALT,
-                      detail="aborted before fire (halt or explicit cancel)")
+        _AUDIT.record(execution_id=eid, kind="schedule", status="failed",
+                      error_code=ErrorCode.HALTED.value,
+                      detail="aborted before fire (halt or explicit cancel) — "
+                             "هیچ درخواستی ساخته نشد")
     except ExecutionError as e:
         out.update({"state": "refused", "code": e.code.value, "detail": e.detail,
                     "checks": e.checks})
         _AUDIT.record(execution_id=eid, kind="schedule", status="refused",
                       error_code=e.code.value, detail=e.detail)
     except BrokerError as e:
+        # سطرِ «error» را خودِ سرویس زده؛ اینجا فقط حالتِ رابط عوض می‌شود.
         out.update({"state": "unknown" if e.is_unknown_result else "error",
                     "code": e.code.value, "detail": e.detail,
                     "unknown_result": e.is_unknown_result})
-        _AUDIT.record(execution_id=eid, kind="schedule",
-                      status="unknown" if e.is_unknown_result else "error",
-                      error_code=e.code.value, detail=e.detail)
     except Exception as e:                                      # noqa: BLE001
-        out.update({"state": "error", "code": "UNKNOWN_RESULT",
+        out.update({"state": "error", "code": ErrorCode.UNKNOWN_RESULT.value,
                     "detail": "%s: %s" % (type(e).__name__, e)})
+        # هیچ چیز دیگری نوشته نشده ⇒ سطرِ ما تنها شاهدِ ماندن است و باید
+        # «ناشناخته» بخوانده شود، نه بسته.
+        _AUDIT.record(execution_id=eid, kind="schedule",
+                      status=ExecutionStatus.UNKNOWN_RESULT.value,
+                      error_code=ErrorCode.UNKNOWN_RESULT.value,
+                      detail="%s: %s" % (type(e).__name__, e))
     finally:
         with _SCHEDULE_LOCK:
             entry = _SCHEDULES.get(eid) or {"abort": ev}
             entry.update(out)
             _SCHEDULES[eid] = entry
+            # دفترِ زمان‌بندی درِ حافظه است (نتیجه رویِ دیسک است)؛ بی‌سقف، هر
+            # سفارشِ زمان‌بندی‌شده یکِ ورودی تا ابد درِ پروسه نگه می‌داشت.
+            done = [k for k, v in _SCHEDULES.items()
+                    if v.get("state") not in ("waiting", "scheduled")]
+            for old in done[:-40]:
+                _SCHEDULES.pop(old, None)
 
 
 def _schedule_status(execution_id: str) -> dict[str, Any]:
@@ -418,28 +447,37 @@ def _has_token() -> bool:
 
 
 @router.post("/api/execution/session")
-def post_session(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
+async def post_session(request: Request) -> dict[str, Any]:
     """نشست را درِ حافظه می‌گذارد. هیچ مسیرِ دیگری token نمی‌نویسد.
 
+    چرا `Request` و نه `Body(...)`: جزئیاتِ خطایِ ۴۲۲ِ FastAPI مقدارِ ورودیِ
+    بی‌شکل را درِ `input` بازمی‌گرداند — یعنی بدنه‌ای با شکلِ غلط همان token را
+    درِ پاسخ و درِ هر لاگِ استثنا می‌اندازد. اینجا بدنه را خودمان می‌خوانیم و هیچ
+    پیامِ خطایی مقدارِ نشانی را ندارد.
+
     ورودِ تعاملی کارگزاری (CAPTCHA/MFA/پیامک) درِ حیطۀِ این برنامه نیست و دور
-    زده نمی‌شود؛ مالک خودش درِ مرورگر وارد می‌شود و نشانه‌ای که خودش در دسترس
+    زده نمی‌شود؛ مالک خودش درِ مرورگر وارد می‌شود و نشانی‌ای که خودش در دسترس
     دارد را اینجا می‌گذارد. بی‌`BORS_EXECUTION_LIVE=1` این کار فقط وضعیت را
-     «آماده‌به‌آزمون» می‌کند، نه متصل.
+    «آماده‌به‌آزمون» می‌کند، نه متصل.
     """
-    token = str(body.get("token") or "").strip()
+    raw = await request.body()
+    try:
+        parsed = json.loads(raw.decode("utf-8")) if raw else {}
+    except (ValueError, UnicodeDecodeError):
+        parsed = {}
+    token = str(parsed.get("token") or "").strip() if isinstance(parsed, dict) else ""
+    refused = {"status": "error", "code": ErrorCode.UNSUPPORTED.value,
+               "session": _session_dict()}
     if ADAPTER_KIND != "easytrader":
-        return {"status": "error", "code": ErrorCode.UNSUPPORTED.value,
-                "detail": "آداپتورِ فعال token نمی‌پذیرد (adapter=%s)" % ADAPTER_KIND,
-                "session": _session_dict()}
+        return {**refused, "detail": "آداپتورِ فعال token نمی‌پذیرد (adapter=%s)"
+                % ADAPTER_KIND}
     if not LIVE_REQUESTED or not isinstance(_ACTIVE_ADAPTER, EasyTraderAdapter):
         # نگه‌داشتنِ credential درِ حافظه برایِ مسیری که هیچ‌وقت ترافیک نمی‌زند
         # فقط سطحِ نشتی را بالا می‌برد، نه قابلیت را.
-        return {"status": "error", "code": ErrorCode.UNSUPPORTED.value,
-                "detail": "ترافیکِ زنده خاموش است — token ذخیره نمی‌شود "
-                          "(BORS_EXECUTION_LIVE=1 لازم است)",
-                "session": _session_dict()}
+        return {**refused, "detail": "ترافیکِ زنده خاموش است — token ذخیره نمی‌شود "
+                "(BORS_EXECUTION_LIVE=1 لازم است)"}
     if not token:
-        return {"status": "error", "code": "MISSING_TOKEN",
+        return {"status": "error", "code": "MISSING_TOKEN", "session": _session_dict(),
                 "detail": "هیچ نشانی داده نشد — نشست پاک نمانده"}
     _ACTIVE_ADAPTER.set_token(token)
     return {"status": "success", "live": _live_now(), "dry_run": DRY_RUN,

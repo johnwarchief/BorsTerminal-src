@@ -38,17 +38,16 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
 
 from execution_contract import (  # noqa: E402
-    BrokerError, Capabilities, ErrorCode, ExecutionStatus, InstrumentRef,
+    BrokerError, ErrorCode, ExecutionStatus, InstrumentRef,
     OrderDraft, OrderState, Resolution, SessionState, Side, redact,
 )
 from execution_easytrader import (  # noqa: E402
     ADAPTER_NAME, WIRE_BASE_URL, WIRE_HYPOTHESIS, WIRE_PATH_ORDER_CREATE,
-    WIRE_PATH_ORDER_LIST, WIRE_PATH_QUEUE, EasyTraderAdapter, RefusingTransport,
-    RequestsTransport, Timeouts, TransportNetwork, TransportTimeout, WireResponse,
-    client_clock_label, easytrader_payload, interpret_easytrader_response,
-    map_order_state,
+    WIRE_PATH_ORDER_LIST, WIRE_PATH_QUEUE, EasyTraderAdapter,
+    RequestsTransport, TransportNetwork, TransportTimeout, WireResponse,
+    easytrader_payload, interpret_easytrader_response, map_order_state,
 )
-from execution_ledger import ARMED, HALT, ExecutionLedger  # noqa: E402
+from execution_ledger import ARMED, ExecutionLedger  # noqa: E402
 from execution_service import ExecutionService, Limits  # noqa: E402
 from execution_timing import Scheduler, TimeSource  # noqa: E402
 
@@ -680,9 +679,101 @@ def part_door():
         finally:
             EX._SERVICE = saved_service
 
+    def scheduled_unknown_stays_open(adapter, broker, ledger):
+        """ackِ گم‌شده درِ مسیرِ زمان‌بندی باید «باز» بماند تا بعدِ restart هم
+        رفعِ ابهام شود. یکِ سطرِ «done» ازِ در بیرون‌اندازنده‌اش می‌کرد — همان
+        چیزی که این سنجه now نگهبانش است."""
+        broker.script("door-unk", ["timeout"])
+        target = int(time.time() * 1000) + 320
+        d = EX.post_dispatch({"symbol": "فولاد", "price": 12610, "quantity": 1000,
+                              "confirmed": True, "execution_id": "door-unk",
+                              "target_wall_ms": target})
+        ck(d["status"] == "scheduled", "زمان‌بندیِ بی‌ack رویِ راه افتاد", str(d)[:90])
+        s = {}
+        for _ in range(120):
+            s = EX.get_schedule("door-unk")
+            if s.get("state") not in (None, "waiting", "scheduled", "sending"):
+                break
+            time.sleep(0.05)
+        ck(s.get("state") == "unknown", "نتیجه: نامعلوم، نه رد و نه پذیرش", str(s)[:110])
+        ids = EX.get_ledger()["open_ids"]
+        ck("door-unk" in ids, "ردِّپا آن را باز می‌شمارد (فهرستِ reconcile پسِ restart)",
+           str(ids)[:120])
+        trail = EX._AUDIT.trail("door-unk")
+        ck(not [e for e in trail if e["kind"] == "schedule"],
+           "هیچ سطرِ بستنِ اضافه ازِ درِ زمان‌بندی نوشته نشد",
+           str([(e["kind"], e["status"]) for e in trail])[:150])
+        rec = EX._SERVICE.record("door-unk")
+        ck(rec is not None and rec.status is ExecutionStatus.UNKNOWN_RESULT,
+           "و رکوردِ حافظه هم UNKNOWN است", str(rec.status if rec else None))
+        # و تکرارِ همان execution_id هر دو مسیر رد می‌شود: هم preflightِ پایدار
+        second = EX.post_dispatch({"symbol": "فولاد", "price": 12610, "quantity": 1000,
+                                   "confirmed": True, "execution_id": "door-unk"})
+        ck(second["status"] == "error"
+           and second.get("code") == ErrorCode.DUPLICATE_GUARD.value,
+           "ارسالِ دوبارهٔ همان شناسه رد شد — حتی پسِ نامعلوم بودن", str(second)[:110])
+
+    def concurrent_same_id(adapter, broker, ledger):
+        """بندِ ۴-ج: دوبارِ کلیک، دو worker و race نباید سفارشِ تکراری بسازد."""
+        errs: list = []
+
+        responses: list = []
+
+        def fire(eid, target_ms=None):
+            try:
+                body = {"symbol": "فولاد", "price": 12610, "quantity": 1000,
+                        "confirmed": True, "execution_id": eid}
+                if target_ms is not None:
+                    body["target_wall_ms"] = int(time.time() * 1000) + target_ms
+                responses.append(EX.post_dispatch(body))
+            except Exception as e:                                # noqa: BLE001
+                errs.append(repr(e)[:120])
+
+        def race(eid, target_ms, expect_orders, refuse_in_response=True,
+                 max_submits=1):
+            del responses[:]
+            before = len(broker.orders)
+            submits_before = len([w for w in adapter.wire_calls
+                                  if str(w).startswith("submit:")])
+            ts = [threading.Thread(target=fire, args=(eid, target_ms)) for _ in range(2)]
+            for t in ts:
+                t.start()
+            for t in ts:
+                t.join(25)
+            got = len(broker.orders) - before
+            refused = [r for r in responses if r and r.get("status") == "error"]
+            ck(not errs, "هیچ threadی بیرون نپرید (%s)" % eid, str(errs)[:150])
+            ck(got == expect_orders,
+               "%s ⇒ %d سفارش درِ دفترِ بروکر" % (eid, expect_orders),
+               "got %d" % got)
+            if refuse_in_response:
+                # مسیرِ فوری زیرِ قفلِ سرویس است: دومین prepare *همیشه* سطرِ
+                # dispatchِ اول را می‌بیند ⇒ رد درِ همان پاسخ.
+                ck(len(responses) == 2 and len(refused) == 1,
+                   "تلاشِ دوم درِ پاسخِ HTTP صریح رد شد، نه بی‌صدا",
+                   str([r.get("code") for r in responses if r])[:120])
+            submits = len([w for w in adapter.wire_calls
+                           if str(w).startswith("submit:")]) - submits_before
+            ck(submits <= max_submits,
+               "%s ⇒ حداکثر %d POST به آداپتور" % (eid, max_submits),
+               "%d submits" % submits)
+            return got
+
+        # زمان‌بندی‌شده: هر دو ممکن است «زمان‌بندی شد» بگیرند و دومیشان درِ
+        # threadِ پس‌زمینه به DUPLICATE_GUARD بخورد — چیزی که ممنوع است
+        # سفارشِ *دوم* است، نه تلاشِ دومِ بی‌اثر.
+        race("race-sched", 260, 1, refuse_in_response=False, max_submits=2)
+        race("race-now", None, 1)
+        ids = sorted({e["execution_id"] for e in
+                      EX._AUDIT.events(kinds=("dispatch",), limit=50)})
+        ck(ids == ["race-now", "race-sched"],
+           "ردِّپا هر دو قصدِ سفارش را دارد، حتی آن که رد شد", str(ids)[:120])
+
     _with_easytrader(no_session)
     _with_easytrader(happy)
     _with_easytrader(halt_aborts_schedule)
+    _with_easytrader(scheduled_unknown_stays_open)
+    _with_easytrader(concurrent_same_id)
     _with_easytrader(secrets)
     _with_easytrader(restart)
 
@@ -745,6 +836,45 @@ def part_negative_control():
        "و خطایِ نامعلوم را که بدقلق هم درست می‌کند، اشتباهاً قرمز نمی‌کند")
 
 
+def part_session_hardening():
+    """۴۲۲ِ FastAPI مقدارِ ورودیِ بی‌شکل را درِ `input` برمی‌گرداند — درِ این در
+    یعنی tokenِ مالک درِ پاسخِ خطا و هر لاگِ استثنا می‌نشیند. بدنه را خودمان
+    می‌خوانیم، پس هیچ پیامی مقدارِ نشانی را ندارد."""
+    print("── ۱۰ بدنهٔ نامعتبر، نشانی را برنمی‌گرداند")
+    from fastapi import FastAPI
+    from fastapi.testclient import TestClient
+
+    saved = (EX.ADAPTER_KIND, EX.LIVE_REQUESTED, EX._ACTIVE_ADAPTER)
+    broker = ScriptedBroker()
+    adapter = EasyTraderAdapter(transport=ScriptedTransport(broker), token=None)
+    broker.adapter = adapter
+    EX.ADAPTER_KIND = ADAPTER_NAME
+    EX.LIVE_REQUESTED = True
+    EX._ACTIVE_ADAPTER = adapter
+    try:
+        app = FastAPI()
+        app.include_router(EX.router)
+        c = TestClient(app)
+        r = c.post("/api/execution/session", content='["%s"]' % SECRET,
+                   headers={"Content-Type": "application/json"})
+        ck(r.status_code == 200 and SECRET not in r.text,
+           "بدنۀِ واژه‌نامه‌نشدنش نشست را باز نمی‌کند و token را برنمی‌گرداند",
+           str(r.text)[:120])
+        ck(not adapter.has_token(), "و بی‌شکل بودنِ بدنه token را ذخیره نمی‌کند")
+        r2 = c.post("/api/execution/session", content='{"token": "%s"}' % SECRET,
+                    headers={"Content-Type": "application/json"})
+        ck(r2.status_code == 200 and SECRET not in r2.text and adapter.has_token(),
+           "بدنۀِ درست نشست را باز می‌کند و باز هم مقدار را برنمی‌گرداند",
+           str(r2.text)[:120])
+        ck(SECRET not in repr(adapter) and SECRET not in _js(adapter.session_status().__dict__),
+           "هیچ repr/وضعیتی نشانی را ندارد")
+        src = open(os.path.join(ROOT, "api", "execution.py"), encoding="utf-8").read()
+        ck("await request.body()" in src,
+           "درِ نشست با Request خام خوانده می‌شود (نه Bodyِ pydantic)")
+    finally:
+        EX.ADAPTER_KIND, EX.LIVE_REQUESTED, EX._ACTIVE_ADAPTER = saved
+
+
 def part_spec():
     print("── ۹ spec: آداپتور درِ بیلدِ منجمد گم نمی‌شود")
     import re
@@ -773,6 +903,7 @@ def main():
     part_queue()
     part_door()
     part_negative_control()
+    part_session_hardening()
     part_spec()
     print(f"\neasytrader_adapter_v1113: {PASS} passed / {FAIL} failed")
     return 1 if FAIL else 0
