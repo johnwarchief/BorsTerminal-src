@@ -172,7 +172,7 @@ coverage  fs+ms 1489 · ms 74 · fs 33 · none 126 · unknown 4270
 
 ---
 
-## ۴) نقصِ قابلِ اعتمادِ این جلسه و رفعش
+## ۴) نقص‌هایِ قابلِ اعتمادِ این جلسه و رفعش
 
 1. **پاسِ شبکه‌ایِ تصادفی درِ گارد:** اجرایِ اولِ `codal_scheduler_v1103.py` با
    `network=None`، چون زمان‌بند خودش «کشف واجب است» را تصمیم گرفت، درخواستِ
@@ -195,7 +195,50 @@ coverage  fs+ms 1489 · ms 74 · fs 33 · none 126 · unknown 4270
 
 ---
 
-## ۵) آنچه مانده (Stage 7 → 12)
+## ۵) چک‌پوینتِ نشست (برایِ ادامۀ کار در نشستِ بعد)
+
+کامیت‌هایِ این خط، به‌ترتیب:
+
+| کامیت | چیست | گارد |
+| --- | --- | --- |
+| `c9d68f8` | Stage 1+5 — صفِ پایدار رویِ همان `codal_extracted` + checkpoint + قفل | 42/0 |
+| `5fd24c6` | یکِ `letter_to_notice` به‌جای پنج نگاشتِ دست‌نویس | 42/0 + 11 گاردِ codal |
+| `a5694fe` | Stage 2 — کشفِ خودکار با نشانکِ `tracing_no` | 45/0 |
+| `e8deef9` | Stage 3 — دفترِ عضویتِ ابزار (پنج حالت جدا) | 39/0 |
+| `15741d6` | کاراییِ پاسِ Universe: 77.0s → 3.7s | 39/42/45/0 |
+| `1aabef2` | Stage 6 — زمان‌بند، بازیابی، CLI، مرزِ «برنامه بسته» | 40/0 |
+| `83b89af` | Stage 7 — محاسبۀ افزایشیِ همان نمادها | 25/0 |
+
+گیت‌هایِ اجراشدۀ این نشست (exit ۰ همه): `dev/codal_pipeline_v1100.py` 42/0 ·
+`dev/codal_discovery_v1101.py` 45/0 · `dev/codal_instrument_discovery_v1102.py`
+39/0 · `dev/codal_scheduler_v1103.py` 40/0 · `dev/codal_incremental_recalc_v1104.py`
+25/0 · `dev/codal_derived_ledger_v1073.py` 75/0 · `dev/codal_period_canonical_v1075.py`
+51/0 · `dev/codal_ingest_identity_v1088.py` 13/0 · `dev/codal_unit_scale_v1090.py`
+34/0 · `dev/codal_reference_select_v1088.py` 50/0 · `dev/codal_publish_date_v1089.py`
+24/0 · `dev/codal_merge_recency_v1029.py` 30/0 · `dev/codal_logic_guard.py` 24/0 ·
+`dev/test_notifications_v1.py` 30/0 · `dev/persian_glyph_guard.py` 4/0.
+
+**اجرا نشد:** `dev/run_all_tests.py`ِ کامل، `npx vitest run`، `npx tsc -b`،
+`npx vite build`، آزمونِ مرورگرِ Stage 10 — هیچ‌کدام درِ این نشست اجرا نشدند.
+
+گامِ بعد (Stage 8+9، به‌همین ترتیب):
+۱) `GET /api/fundamental/pipeline` که `PL.health()` را می‌دهد (queue، instruments،
+   cursor، last_successful_sync، last_attempt، worker، data_epoch)؛
+۲) شکستنِ cache با همان `data_epoch`: درِ `frontend/src/features/fundamental/api/`
+   کلیدِ `['fts-card', symbol]` را به epoch ببند، و درِ سمتِ سرور پس از هر چرخۀ
+   موفق `invalidate_screener_cache(drop_materialized=False)` (فقط اگر `dirty`
+   مصرف شده باشد) — با مستندکردنِ اینکه باطل‌کنندۀ تک‌نمادیِ payload وجود ندارد؛
+۳) پنلِ سلامتِ کوچک درِ Same‌جا (الگوی `SymbolInspector`: ارتفاعِ محدود، اسکرولِ
+   مستقل، بدونِ پنلِ بزرگ) با هشت شمارشِ الزامی؛
+۴) Stage 10 رویِ کپیِ ایزوله (`_audit/codal_census_20261014/copy.db`) + گردشِ
+   واقعیِ مرورگر؛ ۵) Stage 11 گیت‌ها با exit code؛ ۶) Stage 12 هماهنگ‌سازی
+   `docs/MASTER-EXECUTION-ROADMAP.md` و حذفِ کپیِ موقت.
+
+---
+
+## ۶) آنچه مانده (Stage 8 → 12)
+
+## ۷) آنچه مانده (Stage 7 → 12)
 
 * **۷** محاسبۀ افزایشی با نقشۀ وابستگی (`AXES_BY_SOURCE` ساخته شده؛ مصرف‌کنندۀ
   واقعیِ `bulk_scan`/`evaluate_v10` هنوز به صف وصل نشده).
