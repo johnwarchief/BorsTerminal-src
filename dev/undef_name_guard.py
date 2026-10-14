@@ -84,7 +84,7 @@ def main():
     # همان الگویی که درِ `guard-fixtures-hide-a-dead-branch` ثبت شده.
     targets += ["execution_contract.py", "execution_service.py", "execution_mock.py",
                 "execution_timing.py", "execution_latency.py", "execution_ledger.py",
-                "trade_sim.py", "backtest_engine.py", "paper_trading.py",
+                "trade_sim.py", "backtest_engine.py", "paper_trading.py", "bot_signals.py",
                 "price_basis.py", "candle_contract.py", "codal_periods.py",
                 "codal_pipeline.py", "codal_units.py", "client_split.py",
                 "funnel_engine.py", "funnel_registry.py", "funnel_tech_scan.py",

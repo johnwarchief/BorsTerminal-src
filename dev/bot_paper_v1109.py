@@ -422,10 +422,58 @@ def test_negative_controls():
     led.close()
 
 
+# ── ۲۲) ربات رأیِ canonical را مصرف می‌کند، داورِ دوم نمی‌سازد ───────────────
+def test_consumes_canonical_verdicts():
+    """`bot_signals` — خواستۀ `MASTER-EXECUTION-ROADMAP.md` (کامیت `cbd9035`)."""
+    import ast as _ast
+    from bot_signals import FunnelMembership, verdicts_to_membership
+    calls: list[str] = []
+
+    def judge(session):
+        calls.append(session)
+        i = int(session[1:])
+        return {"A": "in" if 5 <= i < 25 else "out",
+                "B": "in",
+                "C": "unknown"}     # داور چیزی نگفته ⇒ نباید حرکتی ساخته شود
+
+    bs = bars_by_symbol(mk("A", sine(40)) + mk("B", [c * 2 for c in sine(40)])
+                        + mk("C", [c * 0.5 for c in sine(40)]))
+    eng = BacktestEngine(by_symbol=bs, strategy=FunnelMembership(judge),
+                         costs=CostModel(30, 10, 1.0),
+                         limits=RiskLimits(position_size_fraction=0.3), start_cash=1e8)
+    res = eng.run()
+    acts = {(t.symbol, t.action) for t in res.trades}
+    ck(acts == {("A", "buy"), ("A", "sell"), ("B", "buy")},
+       "۲۲ تنها ورود/خروجِ داور حرکت می‌سازد، بی‌هیچ شرطِ اضافه", sorted(acts))
+    ck(all(t.symbol != "C" for t in res.trades),
+       "۲۲ «نمی‌دانم»ِ داور هیچ سفارشی نمی‌سازد")
+    ck(len(calls) == len(res.equity_dates),
+       "۲۲ داور به‌ازایِ هر نشست یک‌بار پرسیده می‌شود", (len(calls), len(res.equity_dates)))
+    ck(res.manifest["strategy"] == "funnel_membership",
+       "۲۲ manifest نامِ سازگارِ رأی را ثبت می‌کند", res.manifest["strategy"])
+    # فروشِ بی‌موقعیت ساخته نمی‌شود: همان قیف، ولی حسابِ بی‌موقعیت
+    fm = FunnelMembership(lambda d: {"A": "out"})
+    fm.set_held(set())
+    from backtest_engine import BarView
+    v = BarView(symbol="A", cursor=Bar(symbol="A", date="D001", open=100.0, high=101.0,
+                                       low=99.0, close=100.0, volume=1e6), bars=())
+    fm.on_bar(v)
+    ck(fm.on_bar(v) is None, "۲۲ خروجِ بی‌موقعیت فروش نمی‌سازد")
+    # قفلِ «داورِ دوم»: این فایل هیچ عددی درِ منطقِ تصمیم ندارد
+    src = open(os.path.join(ROOT, "bot_signals.py"), encoding="utf-8").read()
+    tree = _ast.parse(src)
+    nums = [n.value for n in _ast.walk(tree)
+            if isinstance(n, _ast.Constant) and isinstance(n.value, (int, float))]
+    ck(not nums, "۲۲ درِ bot_signals هیچ عددِ آستانه‌ای نیست", nums[:6])
+    ck(verdicts_to_membership(["A"], ["A", "B"]) == {"A": "in", "B": "out"},
+       "۲۲ survivorsِ قیف به in/out بدل می‌شود، بی‌فیلترِ دوم")
+
+
 if __name__ == "__main__":
     for fn in (test_paper_basic, test_paper_no_price_no_halt, test_paper_stale_and_band,
                test_risk_and_kill, test_unknown_cancel_reconcile, test_recovery,
-               test_backtest_guards, test_strategy_view_is_a_prefix, test_negative_controls):
+               test_backtest_guards, test_strategy_view_is_a_prefix,
+               test_consumes_canonical_verdicts, test_negative_controls):
         print("── %s" % fn.__name__)
         try:
             fn()
