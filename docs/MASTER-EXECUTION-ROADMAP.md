@@ -1,65 +1,153 @@
 # BorsTerminal — Master Execution Roadmap
 
-> **تفاوت roadmap با صف کار جاری:** این سند یک roadmap/ledger تاریخی و دارای بخش‌های تاریخ‌دار است. اولویت Android-first ثبت‌شده در 2026-10-07 از آن تاریخ آمده و نباید بدون تطبیق با دستور جدیدتر مالک، صف کار فعلی فرض شود. در 2026-10-10 مالک کار جاری را روی شاخهٔ اصلیِ دسکتاپ متمرکز کرده است: رفع P0های Market Feed و Preset غربالگری، اتصال Universe زنده به جدول، تثبیت دو Job پایش بازار، تکمیل وضعیت بازار/پنج فیلتر تابلوخوانی و موارد باز UI/UX؛ سپس ارزیابی دروازهٔ سرخطی. این فهرست یک snapshot تاریخ‌دار است، نه جایگزین دائمی Roadmap. مرجع تقدم مستندات: docs/README.md.
+> **مرجع ترتیب فعلی کارها — به‌روزرسانی مالک در 2026-10-13:** این سند هم roadmap فعال است و هم ledger تاریخی. ترتیب اجراییِ بخش «Current owner-approved execution order» مرجع فعلی است؛ بخش‌های قدیمی‌ترِ تاریخ‌دار برای حفظ تصمیم‌ها، شواهد و جزئیات فنی باقی می‌مانند و نباید ترتیب‌های تاریخی آن‌ها را جایگزین اولویت فعلی کنند.
 
-**Status:** Master roadmap / implementation ledger; last update 2026-10-07. Revalidate current priorities against newer owner instructions.  
-**Date:** 2026-10-07  
-**Priority (historical):** This document records an execution order last updated on 2026-10-07; it does not define today's active task order. Follow the dated owner-priority note at the top and newer explicit owner instructions.
+**Status:** Current owner-approved execution order + historical implementation ledger.  
+**Last owner-priority refresh:** 2026-10-13  
+**Repository:** `johnwarchief/BorsTerminal-src` — desktop/main source repository, not the Android branch.  
+**Source-of-truth hierarchy:** `docs/README.md`, canonical FTS sources, and explicit owner rulings.
 
-> This roadmap is intentionally sequential. For high-risk analytical features, do not start the next item until the current item has been researched, implemented, tested, externally/referentially checked, and explicitly accepted.
+## Mission
+
+BorsTerminal should become a reliable, data-correct, locally operable trading and research workstation with:
+
+- Canonical and auditable market, corporate-action, candle, and fundamental data.
+- Deterministic FTS decisions whose inputs and reasons can be reconstructed.
+- Real browser-level verification against trusted references where applicable.
+- A persistent history of what the application knew and decided at each time.
+- Safe execution timing and a separately controlled trading-bot layer.
+- Efficient bulk operations and export across the actual tables.
+- A future local ML research system trained on versioned, time-correct historical data.
+- Desktop and Android builds that share canonical analytical meaning.
+
+## Current owner-approved execution order (2026-10-13)
+
+**Current active gate: close the in-flight Fundamental/CODAL work first.** Do not launch unrelated major workstreams or fragment the active agent across new missions until Fundamental/CODAL closure has passed its real API, browser, and regression gates. Already-assigned work must be preserved, but no new parallel scope should be introduced merely because another task is available.
+
+### 1. Finish the current Fundamental/CODAL closure
+
+Complete the existing work on issuer identity, canonical report selection, reporting periods, units, extraction, five FTS fundamental indicators, coverage, card/funnel/screener parity, stale-response handling, and browser-level verification.
+
+Acceptance means:
+- A report from another legal entity never fills a missing value for the requested issuer.
+- Card, funnel, bulk scan and screener use consistent canonical evidence.
+- Missing, invalid, consolidated and period-conflicting records have explicit semantics.
+- The five indicators use the canonical FTS source; no invented thresholds or financial values.
+- The remaining changed votes and missing margins are individually explained.
+- Actual browser checks and final test gates are run against the final code state.
+
+### 2. Make Fundamental/CODAL self-updating
+
+Treat automatic data refresh as part of completing the fundamental subsystem, not as recurring manual agent work.
+
+The pipeline must discover new issuers/instruments and CODAL notices, preserve amendments and raw provenance, normalize dates and units, extract data, validate issuer identity, queue failed/incomplete work, and incrementally recalculate only affected symbols and indicators.
+
+Required operational behavior:
+- Persistent sync checkpoint and last-success timestamp.
+- Idempotent ingest and bounded retry with useful error status.
+- Catch-up after application restart.
+- Incremental refresh of canonical report selection and affected FTS outputs.
+- Visible freshness/health status, pending queue size and unresolved cases.
+- No operational-database bulk write without explicit authorization.
+
+An in-process worker cannot collect data while the application and worker are stopped. If collection while BorsTerminal is closed is required, separately evaluate a supported Windows scheduled/background worker. Do not claim that intraday events were collected while no collector was running. On restart, reconstruct historical states only from sources that support the required as-of timestamp, and mark reconstructed results as such.
+
+### 3. Complete the already-assigned corporate-action adjustment chain
+
+Continue the existing adjustment-engine work without reimplementing the proven math from scratch. Complete typed event ingestion from official TSETMC/CODAL inputs, official event reference prices, contribution/rights offer price where required, canonical event ledger, and safe integration with the chart path.
+
+Use Playwright with Microsoft Edge and the user's already-authenticated Rahavard365 session for a fixed, pre-registered validation set when the session is available. Do not collect credentials or claim live validation without actual browser evidence. Keep unresolved reference-method differences explicit.
+
+### 4. Performance: measure during a real market-open session
+
+Performance work is deferred until the market is open, as requested by the owner. Capture a reproducible live-market baseline before optimizing. Measure startup, first usable data, API/database latency, full-universe filtering, FTS computation, chart/render responsiveness, CPU/RAM, polling frequency, payload size and redundant work.
+
+Optimize from measured bottlenecks; preserve the full analytical universe, indicators, drawing tools, animations and canonical results. Report before/after under the same workload. Synthetic benchmarks alone are not a substitute for live-market measurements.
+
+### 5. Complete سرخطی / EasyTrader execution foundations
+
+Reconcile all existing worktrees, branches and variants of `api/execution.py`; preserve untracked work until its ownership and history are understood. Complete the real API/UI path and a fully testable mock/dry-run lifecycle, including exact instrument identity, timing/latency, order state transitions, timeout/unknown reconciliation, duplicate protection, and cancellation where supported.
+
+No fuzzy symbol fallback and no retry of an unknown order result. No real order submission as part of ordinary development tests.
+
+### 6. Build the trading bot on the accepted execution contract
+
+Implement reproducible backtesting without look-ahead, realistic documented costs/slippage, paper trading, a complete audit trail, explicit risk limits, duplicate-order protection, stale-data controls, restart/reconciliation, and an independent kill switch.
+
+The bot must consume canonical FTS/market decisions rather than create a conflicting second judge. Live trading remains disabled until paper behavior, broker integration, and the owner's explicit live-use authorization are separately verified.
+
+### 7. Global Table Selection & Bulk Actions
+
+Build one shared selection/operation layer and reuse it across the actual market, fundamental/CODAL, FTS screener/funnel, technical and portfolio tables.
+
+Required operations include:
+- Select rows, select visible page, clear selection, and clearly distinguish selecting filtered results from selecting only the current page.
+- Export Excel using a menu with **تابلوخوانی**, **بنیادی**, **تکنیکال**, and **هر سه**.
+- “هر سه” generates one `.xlsx` workbook with separate sheets, typed values, timestamps, provenance, adjustment basis and an explicit missing-data/error sheet where needed.
+- Add/remove selected instruments from a persistent watchlist.
+- Run supported data-refresh jobs through an observable, retryable queue.
+- Transfer selections to the relevant analysis workspace where valid.
+
+Keep identifiers stable; do not merge instruments via name similarity or suffix-stripping. Buttons must execute real backend operations, not mock UI behavior.
+
+Include the already-requested small UX fixes in this UI workstream: prevent long Strategy FTS labels from truncating the symbol to an ellipsis, and replace the plain Fundamental sidebar text with five compact, independently scrollable/clickable fundamental indicator cards while preserving the current navigation route.
+
+### 8. Market Signal Journal — persistent historical filter and decision state
+
+Create a shared, durable journal used by **Watchlist, Strategy FTS, and Tape/Market**; it must not exist only inside the watchlist.
+
+For each instrument and observation, preserve:
+- Stable instrument identity.
+- Trading date and actual observation timestamp.
+- Snapshot type: observed end-of-day, observed intraday transition, or reconstructed historical state.
+- Market/FTS/fundamental filter states, including pass, reject, unknown/not-applicable, not-evaluated and error.
+- Funnel stage, reason codes and input/output counts where available.
+- Input provenance and data-availability timestamps.
+- Rule/engine version and the relevant feature snapshot or reproducible input reference.
+- Difference from the previous observation.
+- Completeness and reconstruction status.
+
+Do not store only passing candidates. Rejected symbols, unknowns, data gaps and processing failures matter for later research.
+
+Capture end-of-day snapshots automatically and record intraday state transitions while a collector is running. On restart, reconcile expected trading dates and backfill states only when historical source data supports a faithful as-of reconstruction. Clearly distinguish observed history from reconstructed history; never invent intraday transitions for a period when no collector or suitable source data existed.
+
+Keep historical observations immutable. If rules or source records are later revised, create a separately versioned recalculation rather than silently overwriting what the application recorded at the time.
+
+### 9. Local ML data foundation and ML Engine
+
+The Market Signal Journal is a prerequisite for serious local ML. Build a reproducible historical dataset with versioned feature schemas and separately versioned outcome labels, including configurable horizons such as 3/5/10 trading sessions, returns, maximum favorable/adverse excursion and explicit outcome definitions where data permits.
+
+Hard requirements:
+- No look-ahead or future-data leakage.
+- Features must carry availability timestamps.
+- Distinguish actual observations from reconstructed records.
+- Preserve rejected and unsuccessful candidates, not only winners.
+- Use time-aware train/validation/test partitions and walk-forward evaluation.
+- Establish simple baselines before complex models.
+- Keep training, validation, model registry and local inference separate.
+- ML remains an evidence/ranking layer; it does not silently override deterministic FTS rules.
+- Do not auto-promote or retrain a production model without explicit validation and promotion gates.
+
+Do not begin by training a large model over an unreliable dataset. First prove data contracts, historical point-in-time integrity, labels and evaluation methodology.
+
+### 10. Android release — independent, strictly gated lane
+
+Android release may proceed when all release prerequisites are actually satisfied; it does not have to wait for unrelated desktop feature work. Publish only if secure key custody/backup, CI public-key configuration, signing/verification, version compatibility, rollback, relevant CI and required device/WebView tests are verified. Otherwise keep publication blocked and continue any independent fix. Never generate or publish with an unverified production signing key.
+
+### 11. Final integration and release readiness
+
+After the above workstreams reach their individual acceptance gates, reconcile their working branches/worktrees safely, verify the actual desktop runtime, run the complete regression suite and browser integration tests, and document the exact source commit and artifact. No merge, release, or completion claim is implied by a local commit or green unit tests alone.
+
+## Rules for all subsequent work
+
+- This current order supersedes historical priority lists below.
+- Detailed historical sections remain as specifications, audit evidence and backlog; their old date or P0/P1 labels do not override this current sequence.
+- Never modify the operational `market.db`, submit live orders, or publish a release without the applicable owner authorization and safety gates.
+- A blocked integration must not stop unrelated work, but it must not be falsely reported as completed.
+- Every completion claim requires the actual command/result, scope, and evidence.
+- Do not ask for a new approval after every stage; continue through all safe, authorized, independent work. Ask only when an irreversible action or an explicit owner decision is genuinely required.
 
 ---
-
-## 0. Mission and priority hierarchy
-
-The objective is to make BorsTerminal:
-
-1. Data-correct and market-realistic
-2. Verified against trusted external references
-3. Faithful to the canonical FTS methodology
-4. Visually useful directly on the chart
-5. Easy enough for a new user to understand
-6. Powerful enough for advanced users
-7. Extensible toward automation, trading bots, and local ML
-
-### Strategic priority — historical snapshot from 2026-10-07
-
-**At the 2026-10-07 snapshot, the FTS Strategy tab was treated as the most important product area.**
-
-The historical recommendation for that period was to concentrate engineering time, research time, UX refinement, chart work, testing, and validation on:
-
-- استراتژی FTS
-- FTS Funnel
-- FTS Process / Stage presentation
-- FTS technical and fundamental decisions
-- FTS chart annotations
-- Master/Portfolio integration of FTS results
-
-The goal recorded at that time was not merely to have an FTS tab that exists, but to make it the core decision-support workspace of BorsTerminal.
-
-That historical directive deprioritized polishing secondary screens while the Strategy FTS workflow, calculations, chart overlays, or parity remained uncertain; do not apply it over a newer owner-priority instruction.
-
-## Owner priority override — historical snapshot from 2026-10-07
-
-The numbered sections below describe the priority order recorded on 2026-10-07. This list is a historical decision snapshot, not proof of the active priority after 2026-10-10; newer direct owner instructions supersede it:
-
-1. Finish and verify Android release blockers.
-2. **FTS Funnel / Strategy FTS Decision Workspace — HISTORICAL PRIORITY (2026-10-07).**
-3. سرخطی / execution timing and queue workspace.
-4. ربات معامله‌گر — architecture, sandbox and paper trading first; live remains gated.
-5. FTS chart intelligence — one analytical feature at a time, each independently researched and accepted.
-6. Global UI/UX redesign and onboarding, with disproportionate investment in Strategy FTS.
-7. Third chart engine integration: `trading-vue-js` through an isolated renderer adapter.
-8. Installer / updater / runtime modernization and migration hardening.
-9. Master / Portfolio refinement.
-10. Local ML Engine.
-11. Advanced automation / research.
-
-Critical reliability, data-integrity, security and broken-release blockers may interrupt this sequence.
-
-
----
-
 
 # Completeness gates — cross-cutting work that cannot be skipped
 
@@ -1175,7 +1263,7 @@ Phase 1 is complete only when:
 
 # 2. P0 — سرخطی / execution timing and queue workspace
 
-After the current FTS Funnel milestone is accepted, resume the سرخطی workstream (with market parity foundations continuously enforced).
+Follow the current owner-approved sequence at the top of this roadmap. Do not start a new execution feature ahead of the currently active Fundamental/CODAL closure and the required live-market performance baseline. Preserve and audit already-existing execution code while waiting for its scheduled implementation phase.
 
 ## 2.1 Product definition
 
@@ -1250,7 +1338,7 @@ Until a real broker integration is validated:
 
 # 3. P0 — ربات معامله‌گر / automated trading
 
-Execute this workstream after the current FTS Funnel milestone and the required سرخطی foundations are accepted. The bot must consume canonical FTS/Market decisions rather than create a second judge.
+Follow the current owner-approved sequence at the top of this roadmap. Implement this workstream only after the execution contract and سرخطی foundations are accepted. The bot must consume canonical FTS/Market decisions rather than create a second judge.
 
 This is a separate system from the analytical FTS engine.
 
@@ -1870,6 +1958,35 @@ Every release candidate should have:
 
 ---
 
+# 9.1 P1 — Fundamental Auto-Update Pipeline
+
+Fundamental data freshness must not depend on an agent manually running scripts or opening a particular UI tab.
+
+## Required pipeline
+
+**CODAL/TSETMC discovery → durable raw notice/instrument registration → canonical identity → extraction → period/unit validation → canonical report selection → affected-indicator recalculation → API/cache refresh → health/status reporting**
+
+The pipeline must:
+- Keep durable checkpoints and last-success timestamps.
+- Discover newly listed instruments and newly published or amended CODAL notices.
+- Normalize Persian/ASCII digits and dates through the canonical date utility.
+- Preserve raw source values and provenance.
+- Be idempotent across retries and restarts.
+- Use a bounded persistent queue for pending, failed and incomplete jobs.
+- Recalculate only affected symbols/indicators where dependency tracking is reliable.
+- Distinguish source-unavailable, parse-failed, invalid-identity, missing-input and completed states.
+- Expose last successful sync, queue depth, stale coverage and actionable failures.
+- Catch up missed work after restart.
+- Never fabricate values or delete legitimate report history.
+
+An in-process worker stops when the app and its backend are stopped. If continuous refresh while the app is closed is required, evaluate a supported Windows scheduled/background worker. The system must label as reconstructed any historical state created later, and must not claim to have observed intraday transitions during an offline interval.
+
+## Acceptance gate
+
+Test fresh notice discovery, newly seen issuer, amendment, duplicate ingest, partial extraction, rate limiting, network interruption, restart recovery, incremental recalculation and visible UI freshness using an isolated database. Do not run a broad write/backfill against the operational database without explicit owner authorization.
+
+---
+
 # 10. P0/P1 — Maximum performance + minimum resource consumption
 
 Performance is a first-class product requirement, not a cosmetic optimization.
@@ -2175,25 +2292,70 @@ Master must consume canonical engine outputs rather than becoming a second FTS e
 
 ---
 
-# 12. P2 — Local ML Engine
+# 11.5 P1 — Market Signal Journal / Historical Filter-State Store
 
-The ML Engine is documented separately in docs/ML-ENGINE-ROADMAP.md.
+The journal is the shared historical source for Watchlist, Strategy FTS and Tape/Market—not a feature that exists only on the watchlist.
 
-ML begins only after data and feature contracts are trustworthy enough to avoid learning corrupted semantics.
+## Observation contract
 
-Priority:
+Each observation should preserve:
+- Stable instrument identity and source mapping.
+- Trading date, observed timestamp and timezone.
+- Observation kind: observed end-of-day, observed intraday transition, or reconstructed.
+- Each filter state: pass, reject, unknown/not-applicable, not-evaluated, or error.
+- FTS stage, reason codes and input/output counts where available.
+- Input-data provenance and the earliest time those inputs were available.
+- Rule/engine version and feature-schema version.
+- Previous state and a reproducible state-change record.
+- Data completeness and reconstruction status.
 
-1. Reproducible dataset
-2. Feature schema
-3. Labels/outcomes
-4. Walk-forward validation
-5. Baseline models
-6. Specialized models
-7. Ensemble
-8. ML Lab
-9. Production ranking
+Persist all evaluated instruments, not only those that pass a filter. Rejections, unknowns and errors are necessary to understand selection bias and to train valid models later.
 
-ML remains a complement to deterministic FTS.
+## Capture and catch-up
+
+- Capture daily end-of-session snapshots automatically.
+- While a collector is running, persist intraday transitions for tracked instruments.
+- On startup, reconcile expected trading sessions and identify missing dates.
+- Reconstruct historical states only if the sources provide the exact values and availability timestamps required for a faithful as-of evaluation.
+- Mark reconstructed records distinctly from records observed live.
+- Never invent intraday transitions for periods when neither a collector nor a suitable historical source existed.
+- If the app must keep collecting when closed, use a separately installed/scheduled worker with an explicit lifecycle; an in-process timer alone is not sufficient.
+- Keep observations immutable. If engine rules or data are revised, create a new versioned recalculation rather than silently rewriting the original observation.
+
+## Integration and acceptance
+
+Use the same canonical journal/query contract in Watchlist, Strategy FTS and Tape/Market. Validate multiple consecutive sessions, a deliberately missed app-open day, restart/catch-up, symbol identity changes, unknown data, changed rules and historical revisions. Tests must assert both the expected states and the explicit gaps; they must not assume that missing data can always be reconstructed.
+
+The journal is also a prerequisite for the local ML data foundation in the next section.
+
+---
+
+# 12. P2 — Local ML Engine and reproducible research dataset
+
+The detailed model roadmap remains in `docs/ML-ENGINE-ROADMAP.md`. The current owner-approved dependency is:
+
+**Canonical raw/history data → Market Signal Journal → versioned feature snapshots → versioned future-outcome labels → time-aware validation → baseline models → local ML Lab → approved local inference**
+
+The ML data foundation must be built before training complex models.
+
+Mandatory data contracts:
+- Every feature has a source, schema version, observation timestamp and availability timestamp.
+- Keep raw observations, computed features, model outputs and future outcome labels separate.
+- Preserve rejected/failed/unknown FTS observations as well as passing candidates.
+- Distinguish live-observed and later-reconstructed history.
+- Version FTS/technical/fundamental rules used to generate each feature snapshot.
+- Do not mix information published after a historical decision into that decision's feature set.
+- Labels such as returns after 3/5/10 sessions, MFE and MAE require explicit, versioned definitions and valid future data.
+- Use chronological train/validation/test splits and walk-forward evaluation; prevent survivorship bias and look-ahead leakage.
+- Establish deterministic/statistical baselines before more complex algorithms.
+- Local ML remains complementary to deterministic FTS and cannot silently override hard FTS rules.
+- Production model promotion requires explicit evidence and versioned acceptance; no silent auto-retraining/promotion from live outcomes.
+
+Potential model families and training/inference design are detailed in `docs/ML-ENGINE-ROADMAP.md`. Keep compute appropriate for available local hardware; prefer lightweight tabular baselines first and justify more expensive models with out-of-sample evidence.
+
+### Acceptance gate
+
+A reproducible point-in-time dataset and outcome-label pipeline exist; a sample dataset can be regenerated deterministically; temporal leakage checks pass; a baseline is compared with a meaningful non-ML baseline; and all results can be traced to source data, features, labels and model version.
 
 ---
 
@@ -2291,39 +2453,35 @@ Ambiguity must be documented and resolved through evidence.
 
 # 15. Master priority order
 
-The **current execution order** is:
+This is the current owner-approved sequence as of 2026-10-13. The active order is also recorded at the top of this document and supersedes older priority snapshots.
 
-1. Android release completion / verification blockers
-2. **FTS Funnel + Strategy FTS Decision Workspace — current highest active priority**
-3. سرخطی / execution timing and queue workspace
-4. ربات معامله‌گر / automated trading
-5. FTS chart intelligence — one feature at a time, sequentially accepted
-6. Global UI/UX and onboarding
-7. Third chart engine — `trading-vue-js` via isolated adapter
-8. Installer / updater / runtime modernization
-9. Master / Portfolio refinement
-10. Local ML Engine
-11. Advanced automation / research
+1. Finish the in-flight Fundamental/CODAL closure with real card/funnel/screener browser parity and full regression gates.
+2. Make Fundamental/CODAL automatically self-updating, with persistent checkpoints, idempotent ingest, retry/catch-up and visible freshness status.
+3. Complete the already-assigned canonical corporate-action adjustment input chain and actual Edge/Playwright Rahavard365 validation.
+4. Measure and optimize performance during a real market-open session; keep the before/after baseline honest and reproducible.
+5. Complete سرخطی / EasyTrader execution foundations with mock/dry-run end-to-end validation.
+6. Build the trading bot on the accepted execution contract: backtest, paper trading, audit trail, risk controls and kill switch.
+7. Implement Global Table Selection & Bulk Actions, including Excel options (تابلوخوانی / بنیادی / تکنیکال / هر سه in one workbook), persistent watchlist and actual group operations.
+8. Build the shared Market Signal Journal across Watchlist, Strategy FTS and Tape/Market, including daily snapshots, observed intraday transitions, missing-day reconciliation and explicit reconstructed-vs-observed status.
+9. Build the versioned local ML data foundation and then the local ML Engine; no training on unreliable or time-leaking history.
+10. Publish Android only if all security, signing, CI, compatibility, rollback and required device/WebView gates are proven; otherwise keep the release blocked.
+11. Consolidate and validate the desktop product end-to-end after the above workstreams pass their acceptance gates.
 
 ### Funnel priority rule
 
-Until the Funnel is accepted, do not start unrelated new FTS chart-analysis modules.
+FTS remains deterministic and follows canonical methodology and owner rulings. Historical FTS specifications and chart-feature sections below remain valid technical requirements, but they do not authorize jumping ahead of the active sequence above.
 
-The Funnel milestone specifically includes:
-
+The Funnel milestone still includes:
 - Full-universe custom filter-chain builder
 - Sequential filter intersection
-- Built-in **نوسان‌گیر / روندگیر / ساعت شنی** modes
-- Parameterized custom presets
-- Fundamental **Auto/Smart** mode with the first three fundamental indicators as mandatory acceptance gates
+- Built-in strategy modes and parameterized presets
+- Fundamental Auto/Smart mode using only canonical formulas and mandatory gates
 - Stage counts, reason codes, provenance and reproducibility
-- TSE/TSETMC validation in **تابلوخوانی**
+- TSE/TSETMC validation in تابلوخوانی
 
 ### Important exception
 
-Bug fixes, security issues, data-corruption issues, broken releases, and critical Android/Desktop regressions can interrupt this sequence because they are reliability blockers.
-
-Feature work that is not on the critical path should not repeatedly interrupt the current priority.
+Critical security issues, data corruption, broken runtime/release blockers and safety failures may interrupt the sequence. Ordinary feature work must not repeatedly fragment the active mission.
 
 ---
 
@@ -2347,13 +2505,17 @@ The long-term target is a BorsTerminal where:
 
 ## Current strategic instruction
 
-Until this roadmap is superseded:
+The current owner-approved order at the top of this document is authoritative.
 
-**Strategy FTS = highest product investment priority.**
+**Current active focus: close the in-flight Fundamental/CODAL work before opening new major workstreams.** Do not treat older dates or headings such as historical P0/P1 as permission to start parallel missions.
 
-When choosing between polishing a secondary feature and improving Strategy FTS correctness, research depth, chart intelligence, explainability, usability, or validation, prefer Strategy FTS unless there is a critical reliability blocker elsewhere.
+After that closure, complete the fundamental auto-update pipeline and the already-assigned corporate-action adjustment chain; then capture performance baselines at a real market-open session, proceed to EasyTrader execution foundations and the trading bot, and continue to Global Bulk Actions, Market Signal Journal and the local ML data foundation.
 
-The desired end state is a **deep, trustworthy, visually explainable FTS decision system** integrated into the rest of BorsTerminal—not merely a collection of disconnected features.
+Performance measurement must be performed under a real market-open workload where required; do not fabricate live-market results from an offline benchmark.
+
+Android publication is an independent, conditional release lane: publish only if all mandatory security/signing/CI/compatibility/rollback/device gates are verified. Otherwise keep publication blocked without stopping unrelated work.
+
+The Market Signal Journal and its point-in-time data contract are strategic infrastructure for the later local ML system. Record both observed and rejected/unknown outcomes, use versioned rules/features and future labels, and enforce no-look-ahead validation. ML must complement deterministic FTS, not replace or silently override it.
 
 ---
 

@@ -1,7 +1,7 @@
 # BorsTerminal ML Engine — Long-Term Roadmap
 
-**Status:** Planned / Long-term  
-**Date:** 2026-10-07  
+**Status:** Planned / Long-term; gated by the Market Signal Journal and point-in-time data integrity  
+**Date:** 2026-10-13  
 **Scope:** Desktop + Android, with a shared model/feature contract where practical.
 
 ## 1. Vision
@@ -316,6 +316,41 @@ Next Training Cycle
 ```
 
 The system must **not** automatically retrain and replace production models from raw live outcomes without validation and explicit model-promotion rules.
+
+## 8.1 Market Signal Journal — required source for historical observations
+
+The local ML data foundation must consume the canonical Market Signal Journal described in `docs/MASTER-EXECUTION-ROADMAP.md`; it must not independently reconstruct filter history with a parallel, subtly different implementation.
+
+The journal should be able to query a symbol's state as-of a trading timestamp across Watchlist, Strategy FTS and Tape/Market. It should preserve:
+- stable instrument identity;
+- actual observation timestamp and trading date;
+- observed end-of-day, observed intraday, or reconstructed status;
+- canonical feature/input provenance and availability timestamps;
+- FTS/technical/fundamental rule and engine versions;
+- pass, reject, unknown, not-applicable, not-evaluated and error states;
+- funnel stage and reason codes;
+- data completeness and reconstruction confidence/status.
+
+Do not store only successful candidates. Failed/rejected/unknown rows are part of the learning dataset and help measure selection bias.
+
+### Capture semantics
+
+- Daily snapshots should be recorded automatically by a reliable worker.
+- Intraday transitions can be treated as observed only while a collector was actually running or where a trustworthy historical source supports them.
+- If BorsTerminal was closed, startup catch-up may reconstruct a historical state only from data whose availability at that past decision time can be proven.
+- Reconstructed records must remain explicitly distinguishable from live-observed records.
+- Never invent intraday transitions during an interval without a collector/source.
+- Preserve original observations when rules, historical records or features are revised; produce versioned recalculations instead of silently rewriting history.
+
+### ML dataset boundary
+
+Feature snapshots and outcome labels are separate datasets. A feature can only use information available at the decision timestamp. Future outcomes—such as returns after 3/5/10 sessions, MFE, MAE, or target-before-invalidation—must be stored as labels with a versioned definition and a clearly later evaluation window.
+
+The dataset generator must audit feature availability timestamps, corporate-action status, report publication time and rule versions before accepting rows. Rows with missing/ambiguous provenance should be excluded from a claimed clean training set or explicitly represented as incomplete—not quietly filled with fabricated values.
+
+The first learning-loop deliverable is a reproducible, time-aware dataset and simple baseline evaluation, not a large model.
+
+---
 
 ## 9. Training vs inference
 
