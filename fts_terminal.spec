@@ -148,6 +148,14 @@ a = Analysis(
                    # بودند و در آرشیوِ PYZ نیستند. اگر مسیرِ import هرگز به دیسک
                    # نرسد، EXE با ModuleNotFoundError می‌میرد.
                    'api.market_index', 'api.diagnostics',
+                   # دروازۀ اجرای سفارش (مأموریت ۱۴۰۵-۰۷-۲۳، بند ۵): مثلِ بقیه درِ
+                   # بدنهٔ `api_router` ایمپورت می‌شود (api/__init__.py:12) و
+                   # ایستیک‌اسکن آن را نمی‌بیند. بی‌این خط EXE روی اولین
+                   # /api/execution/status می‌شکند — همان مسیرِی که
+                   # frontend/src/features/portfolio/lib/orderClient.ts:147 صدا می‌زند.
+                   # خودِ execution_contract/mock/service/timing/latency/ledger در
+                   # سرِ api/execution.py سطح-بال import‌اند، پس اسکن ایستا می‌بیندشان.
+                   'api.execution',
                    # پنجرهٔ مستقلِ بومی (Edge WebView2): pywebview روی ویندوز به
                    # pythonnet/clr نیاز دارد. نبودشان کشنده نیست — bors_entry
                    # عمداً به پنجرهٔ مرورگر برمی‌گردد — ولی بودنشان همان پنجرهٔ

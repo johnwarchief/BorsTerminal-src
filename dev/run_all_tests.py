@@ -440,6 +440,12 @@ SUITES = [
     # UNKNOWN_RESULT را بازنویسی نمی‌کند)؛ ULTRA بی‌prepare() رد می‌شود و
     # تکرار بی‌تأییدِ صریح یا بی‌سقفِ ارزش/تعداد اجرا نمی‌شود.
     ('dev/execution_service_v1.py', 'sarkhati: dry-run default, reconcile-only after unknown, limits'),
+    # مأموریتِ ۱۴۰۵-۰۷-۲۳، بندِ ۵ و ۶-۴: ردِّپایِ ماندگار رویِ user.db، قفلِ
+    # توقفِ اضطراری (رویِ دیسک، نه حافظه)، قاعدۀ fail-closed برایِ exposure/
+    # ضرر روزانه/نرخِ ارسال، بازیابیِ UNKNOWN پسِ restart، و ثبتِ درِ
+    # /api/execution/* درِ api_router + hiddenimports. آزمونِ رشتۀِ دوم و
+    # کنترلِ منفیِ سه‌گانه درِ همین فایل است.
+    ('dev/execution_ledger_v1108.py', 'sarkhati: durable audit trail, kill switch, fail-closed risk, wired HTTP door'),
     # گاردِ متنِ فارسی (بیرونِ سرخطی هم لازم است): سه خانۀِ خطا که درِ همین
     # ریپو واقعی دیده شده — نویسهٔ CJK جاافتاده وسطِ واژۀِ فارسی، رقمِ
     # شمارۀِ بخش که بی‌صدا می‌افتد، و ك/ي عربی درِ فایل‌هایِ سرخطی. هر سه

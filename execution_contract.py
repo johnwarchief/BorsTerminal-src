@@ -115,6 +115,15 @@ class ErrorCode(str, Enum):
     RATE_LIMITED = "RATE_LIMITED"
     NOT_ORDERABLE = "NOT_ORDERABLE"
     UNSUPPORTED = "UNSUPPORTED"
+    #: قفلِ توقفِ اضطراری بسته است (بندِ ۶-۴ مأموریتِ ۱۴۰۵-۰۷-۲۳). عمداً درِ
+    #: `UNRESOLVED_CODES` **نیست**: «توقفِ ما» با «نمی‌دانیم سرور چه کرد» یکی
+    #: نیست، و اینجا هیچ سفارشی به بیرون نرفته که باید reconcile شود.
+    HALTED = "HALTED"
+    #: ریسکِ سطحِ دوم (exposure، ضرر روزانه، نرخِ سفارش) رد کرده — پیشِ هر
+    #: درخواستِ بیرونی، و بی‌هیچ اثری رویِ سرور.
+    RISK_LIMIT = "RISK_LIMIT"
+    #: داده برایِ تصمیم تازه نیست و حدس‌زدنش یعنی سفارشِ بی‌مبناء (§۳-۳).
+    STALE_DATA = "STALE_DATA"
     #: خطایِ ساختاریِ سمتِ خودِ اپ (نه کارگزاری) — بی‌درخواستِ بیرونی
     INVALID_EXECUTION_ID = "INVALID_EXECUTION_ID"
 

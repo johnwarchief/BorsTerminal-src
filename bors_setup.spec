@@ -45,6 +45,9 @@ a = Analysis(
         'api.screener', 'api._sync_market', 'api._export',
         'api._sync_codal', 'api.adb', 'api.notify',
         'api._pipeline', 'api.engine', 'api.market_index',
+        # دروازۀ اجرای سفارش (api_router آن را درِ بدنهٔ تابع import می‌کند؛
+        # ایستیک‌اسکن نمی‌بیند). مثلِ fts_terminal.spec باید اینجا هم باشد.
+        'api.execution',
         'api.update', 'bors_minisign', 'winreg',
         'orjson', 'pandas', 'numpy', 'docx', 'openpyxl', 'reportlab',
         'lxml', 'lxml.etree', 'click', 'cryptography', 'dateutil',
