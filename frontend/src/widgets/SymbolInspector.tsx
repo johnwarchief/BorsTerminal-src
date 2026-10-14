@@ -22,6 +22,7 @@ import { usePortfolio } from '@features/portfolio/api/usePortfolio';
 import { basketRegimeFor } from '@features/portfolio/lib/basketRegime';
 import { useCapitalStore } from '@features/master/stores/capitalStore';
 import { AuditBadge } from '@features/fundamental/components/AuditBadge';
+import FtsIndicatorRail from '@features/fundamental/components/FtsIndicatorRail';
 import { VolumeFlowMini } from '@features/market/components/VolumeFlowMini';
 import { RegulatoryState } from '@features/market/components/RegulatoryState';
 import { BuySellCell } from '@features/market/components/BuySellCell';
@@ -44,7 +45,7 @@ import { useFunnelTrace } from '@features/master/api/useFunnelTrace';
 import { FunnelTraceList } from '@features/master/ui/FunnelTraceList';
 import { FunnelErrorBanner } from '@features/master/ui/FunnelErrorBanner';
 import { stageProgressFor } from '@features/master/lib/funnelView';
-import { IND_COLUMNS, STATUS_LABEL, trendLabel } from '@features/master/lib/ftsFunnel';
+import { trendLabel } from '@features/master/lib/ftsFunnel';
 
 const ACTION_FA = {
   strong_buy: 'خرید قوی',
@@ -271,22 +272,6 @@ export function SymbolInspector() {
   const analysis = useFtsAnalysis(symbol ?? '');
   const trendD = analysis.data?.fts?.trend?.D?.trend ?? screen?.tech_trend_d ?? null;
   const trendW = analysis.data?.fts?.trend?.W?.trend ?? screen?.tech_trend_w ?? null;
-  /** مقدار و حکمِ هر پنج شاخص: ردیفِ اسکرینر که باشد، همان می‌برد (بی‌وابستگی
-   *  به فیلترِ تابلو)؛ اگر اصلاً ردیفی نبود، شاخص‌ها از همان ردیفِ غربالگری
-   *  خوانده می‌شوند. عددِ دو منبع با هم قاطی نمی‌شوند. */
-  const SCREEN_PASS = [screen?.i1_pass, screen?.i2_pass, screen?.i3_pass, screen?.i4_pass, screen?.i5_pass];
-  const SCR_IDX = [
-    () => screen?.rev_growth, () => screen?.eps_last, () => screen?.gross_margin,
-    () => screen?.sales_to_mcap, () => screen?.pricing_mode,
-  ];
-  const CAND_IDX = [
-    () => cand?.screen?.rev_growth, () => cand?.screen?.eps_last, () => cand?.screen?.gross_margin,
-    () => cand?.screen?.sales_to_mcap, () => cand?.screen?.pricing_mode,
-  ];
-  const indValueAt = (i: number) => (screen ? SCR_IDX[i]() : CAND_IDX[i]());
-  const indMarkAt = (i: number) => screen
-    ? (SCREEN_PASS[i] === true ? 'pass' : SCREEN_PASS[i] === false ? 'reject' : 'unavailable')
-    : (cand?.inds?.[i] ?? null);
   /** اولین دری که رویِ این نماد بسته است — منفی یعنی هیچ‌جا وتو نشده */
   const stoppedAt = progress.findIndex((p) => p.state === 'blocked');
 
@@ -713,35 +698,17 @@ export function SymbolInspector() {
             </span>
           </div>
 
-          {/* ── بخش ۸ («در یک نگاه»): پنج شاخصِ بنیادی از همان پاسخِ غربالگری —
-              مقدار از `cand.screen`، حکم از `cand.inds`؛ هیچ محاسبهٔ دومی درِ رابط
-              نیست و هیچ شاخصِ ناقص به صفر بدل نمی‌شود. نبودِ مقدار ⇒ «—» با علتِ
-              «داده نیست» یا «لازم نبود» (حکمِ خودِ گام)، نه نتیجهٔ تأییدشده. */}
-          <div className="flex flex-wrap items-center gap-1 text-[9.5px]"
-               data-testid="inspector-i1-i5">
-            {IND_COLUMNS.map((col, i) => {
-              const st = indMarkAt(i);
-              const val = indValueAt(i);
-              const txt = i === 0 || i === 2
-                ? (val == null ? '—' : fmtPct(val as number))
-                : i === 3
-                  ? (val == null ? '—' : toFaDigits((val as number).toFixed(2)) + '×')
-                  : i === 1
-                    ? (val == null ? '—' : fmtInt(val as number))
-                    : (val == null || val === '' ? '—' : String(val));
-              const tone = st === 'pass' ? 'border-accent-green/40 bg-accent-green/10 text-accent-green'
-                : st === 'reject' ? 'border-accent-red/40 bg-accent-red/10 text-accent-red'
-                : st === 'pending' || st === 'unavailable' ? 'border-accent-yellow/40 bg-accent-yellow/10 text-accent-yellow'
-                : 'border-border-c/60 text-text-muted';
-              return (
-                <span key={col.key} data-testid={`inspector-ind-${col.key}`}
-                      title={`${col.full}${st ? ` — وضعیت: ${STATUS_LABEL[st]}` : ' — هنوز داوری‌ای برای این شاخص نیست'}`}
-                      className={`flex items-center gap-1 rounded-md border px-1.5 py-0.5 ${tone}`}>
-                  <span className="opacity-70">{col.label}</span>
-                  <span className="num font-bold">{txt}</span>
-                </span>
-              );
-            })}
+          {/* ── بخش ۸ («در یک نگاه»): پنج شاخصِ بنیادی درِ پنلِ چپ — پنج کارتِ
+              عمودی: نامِ جزوه + مقدار + حکمِ سه‌حالته + علتِ یک‌خطی، و کلیکِ هر
+              کارت همان drill-downِ موجود را درِ `#/fundamental/<symbol>?drill=N`
+              باز می‌کند (رابطِ جزئیاتِ دوم ساخته نشده). مقدار از کارتِ
+              canonicalِ تک‌نمادی (`/api/fundamental/{symbol}`) و تا پیش از
+              رسیدنش از ردیفِ غربالگری؛ این دو با
+              `dev/fts_screener_card_parity_v10` هم‌رأی نگه داشته می‌شوند.
+              رأیِ مالک ۱۴۰۵-۰۷-۱۹ محفوظ است: هیچ‌کدام به زنجیرۀ فیلتر وابسته
+              نیستند. نبودِ مقدار ⇒ «—» با علتِ همان محور، نه صفر. */}
+          <div data-testid="inspector-i1-i5">
+            <FtsIndicatorRail symbol={symbol} fallbackRow={screen ?? cand?.screen ?? null} />
           </div>
 
           {/* نشانگر مرحلۀ قیف: تبِ فعال («الان کجاییم») + جای خودِ نماد در قیف

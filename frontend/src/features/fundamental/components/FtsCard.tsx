@@ -57,7 +57,9 @@ const LAYERS: { key: GapAxis | '1_growth'; drill: DrillDownKey | null; label: st
  *  حالتِ سوم ساخته نمی‌شود. */
 type Quality = 'ideal' | 'ok' | 'below' | 'na';
 
-const QUALITY_WORD: Record<Quality, string> = {
+export type { Quality };
+
+export const QUALITY_WORD: Record<Quality, string> = {
   ideal: 'ایده‌آل',
   ok: 'قبول',
   below: 'رد',
@@ -85,7 +87,7 @@ const QUALITY_TEXT: Record<Quality, string> = {
   na: 'text-text-primary',
 };
 
-function qualityFrom(pass: boolean | null | undefined, ideal?: boolean | null): Quality {
+export function qualityFrom(pass: boolean | null | undefined, ideal?: boolean | null): Quality {
   if (pass == null) return 'na';
   if (pass && ideal === true) return 'ideal';
   return pass ? 'ok' : 'below';

@@ -662,13 +662,17 @@ function StageCard({
       {/* بدنه: درِ حالتِ بسته هیچ جدولی نمی‌راند (نه display:none) — چهار مرحلۀ
           باز رویِ نمایشگرِ ۱۳۶۶×۷۶۸ یعنی اسکرولِ بی‌پایان پیش از رسیدن به تحویل. */}
       {collapsed ? null : (<>
-      <div ref={bodyRef} className="relative h-[calc(100dvh-392px)] min-h-[380px] overflow-y-auto" data-testid={`funnel-scroll-${stage.key}`}>
+      <div ref={bodyRef} className="relative h-[calc(100dvh-392px)] min-h-[380px] overflow-y-auto overflow-x-auto" data-testid={`funnel-scroll-${stage.key}`}>
         {rows.length === 0 ? (
           <p className="px-3 py-4 text-xs text-text-muted" data-testid={`funnel-empty-${stage.key}`}>
             {emptyWhy ?? 'هیچ نمادی از این مرحله عبور نکرد.'}
           </p>
         ) : (
-          <table className="w-full table-fixed border-collapse text-sm">
+          <table className="w-full min-w-[720px] table-fixed border-collapse text-sm">
+            {/* `min-w-[720px]` + اسکرولِ افقیِ همان ظرف: درِ ۳۹۰px ستونِ نماد به
+                ~۴۸px می‌افتاد و نامِ خودِ نماد وسطِ حروف می‌شکست («آبنو/س») —
+                یعنی بریدگیِ تازه، نه حلِّ بریدگی. با کفِ عرض ستون‌ها جا
+                می‌مانند و اسکرولِ افقی جدول را می‌خواند. */}
             <ColGroup cols={cols} />
             <thead className="sticky top-0 bg-bg-primary/95 text-2xs text-text-muted backdrop-blur-sm">
               <tr>
@@ -711,8 +715,8 @@ function StageCard({
               ? `نگه‌داشته در مرحلۀ تحویل: هنوز آمادهٔ عبور نیست و رد قطعی هم نشده است (${toFaDigits(stage.pending.length)})`
               : `بررسی شده اما نتیجهٔ قطعی ندارد؛ بنابراین رد نشده است (${toFaDigits(stage.pending.length)})`}
           </p>
-          <div ref={pendingRef} className="max-h-[160px] overflow-y-auto">
-            <table className="w-full table-fixed border-collapse text-sm">
+          <div ref={pendingRef} className="max-h-[160px] overflow-y-auto overflow-x-auto">
+            <table className="w-full min-w-[720px] table-fixed border-collapse text-sm">
               {/* سرستونِ همان مرحله، با همان colgroup: ردیف‌هایِ انتظار هم باید
                   بدانند کدام ✓/✗ کدام شاخص است، و ستون‌هایِ دو جدول رویِ هم
                   بنشینند وگرنه «سرستونِ دوم» کج می‌آید. */}
@@ -864,7 +868,9 @@ function HandoverActions({ rows, onPick }: {
   );
 }
 
-function StageRow({
+/** صادر شده تا تستِ واحد بتواند یکِ ردیفِ تنها را بسنجد (بندِ ۱ مأموریتِ رابط:
+ *  نامِ نماد درِ حضورِ برچسبِ بلند نباید بریده شود). */
+export function StageRow({
   entry,
   cols,
   showMark,
@@ -904,37 +910,48 @@ function StageRow({
       title={rowTitle}
     >
       <td className="px-2 py-1 text-start">
-        <div className="flex min-w-0 items-center gap-0.5">
-          {selectable ? <SymbolSelectBox symbol={entry.symbol} name={entry.name ?? ''} /> : null}
-          <button
-            type="button"
-            onClick={() => onPick(entry.symbol)}
-            className="flex min-w-0 max-w-[15ch] items-center gap-1 truncate font-black text-text-primary hover:text-accent-blue"
-          >
-          {mark ? <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${MARK_DOT[mark]}`} /> : null}
-          <span className="truncate">{entry.symbol}</span>
-          {entry.assemblyVeto ? (
-            <span
-              data-testid={`funnel-assembly-veto-${entry.symbol}`}
-              className="shrink-0 rounded border border-accent-red/40 bg-accent-red/15 px-1 text-[9px] font-bold text-accent-red"
-              title={entry.assemblyWhy}
+        {/* دو خط: خطِ اول خودِ نماد (همیشه کامل)، خطِ دوم برچسبِ وضعیت.
+            پیش‌تر نامک و برچسب‌ها درِ یک `flex … truncate` با `max-w-[15ch]`
+            بودند و هر دو برچسب `shrink-0` — یعنی «عبور با ملاحظات» (۱۴ نویسه)
+            نماد را به «…» می‌کوبید. نام نماد نباید قربانیِ برچسب شود. */}
+        <div className="flex min-w-0 flex-col gap-0.5">
+          <div className="flex min-w-0 items-center gap-1">
+            {selectable ? <SymbolSelectBox symbol={entry.symbol} name={entry.name ?? ''} /> : null}
+            <button
+              type="button"
+              onClick={() => onPick(entry.symbol)}
+              className="flex min-w-0 items-center gap-1 text-start font-black text-text-primary hover:text-accent-blue"
             >
-              وتوی مجمع
-            </span>
+              {mark ? <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${MARK_DOT[mark]}`} /> : null}
+              <span className="min-w-0 whitespace-normal break-words leading-tight">{entry.symbol}</span>
+            </button>
+          </div>
+          {entry.assemblyVeto || entry.fundCaveat ? (
+            <div data-testid={`funnel-row-marks-${entry.symbol}`}
+                 className="flex min-w-0 flex-wrap items-center gap-1 ps-4">
+              {entry.assemblyVeto ? (
+                <span
+                  data-testid={`funnel-assembly-veto-${entry.symbol}`}
+                  className="shrink-0 rounded border border-accent-red/40 bg-accent-red/15 px-1 text-[9px] font-bold text-accent-red"
+                  title={entry.assemblyWhy}
+                >
+                  وتوی مجمع
+                </span>
+              ) : null}
+              {/* عبور با ملاحظات: رأیِ مالک ۱۴۰۵-۰۷-۲۱ — سه PASS کافی است، پس این
+                  نماد درِ فهرستِ عبوری‌هاست؛ زرد فقط می‌گوید کدام‌ها سنجیده نشدند یا
+                  رد شدند. متنِ علت را خودِ موتور نوشته، اینجا بازنویسی نمی‌شود. */}
+              {entry.fundCaveat ? (
+                <span
+                  data-testid={`funnel-fund-caveat-${entry.symbol}`}
+                  className="shrink-0 rounded border border-accent-yellow/50 bg-accent-yellow/15 px-1 text-[9px] font-bold text-accent-yellow"
+                  title={entry.why.fundamental || 'عبور با ملاحظات'}
+                >
+                  عبور با ملاحظات
+                </span>
+              ) : null}
+            </div>
           ) : null}
-          {/* عبور با ملاحظات: رأیِ مالک ۱۴۰۵-۰۷-۲۱ — سه PASS کافی است، پس این
-              نماد درِ فهرستِ عبوری‌هاست؛ زرد فقط می‌گوید کدام‌ها سنجیده نشدند یا
-              رد شدند. متنِ علت را خودِ موتور نوشته، اینجا بازنویسی نمی‌شود. */}
-          {entry.fundCaveat ? (
-            <span
-              data-testid={`funnel-fund-caveat-${entry.symbol}`}
-              className="shrink-0 rounded border border-accent-yellow/50 bg-accent-yellow/15 px-1 text-[9px] font-bold text-accent-yellow"
-              title={entry.why.fundamental || 'عبور با ملاحظات'}
-            >
-              عبور با ملاحظات
-            </span>
-          ) : null}
-          </button>
         </div>
       </td>
       {cols.filter((k) => k !== 'symbol').map((k) => (
