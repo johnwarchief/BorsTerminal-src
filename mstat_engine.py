@@ -525,6 +525,18 @@ def _has_queue_cols(conn) -> bool:
     return "buy_q_val" in cols
 
 
+def has_mcap_col(conn) -> bool:
+    """آیا `market_cap` در این بانک پر شده است؟ ستونش را `test_tsetmc.
+    ensure_market_cap_schema` می‌سازد، نه `MIGRATIONS`ِ همین فایل — پس بانکِ
+    بسته‌بندی‌شدۀ نسخۀ قبلی ممکن است اصلاً ستون نداشته باشد و کوئری بسوزد.
+    سنجه یکی است با «عمق»: نبودِ ستون ⇒ None در ردیف ⇒ «بی‌داده»، نه صفر."""
+    try:
+        cols = {r[1] for r in conn.execute("PRAGMA table_info(market_watch)")}
+    except Exception:
+        return False
+    return "market_cap" in cols
+
+
 # ترتیبِ ستون‌های client_type در کوئریِ بارگذاری — تنها مرجعِ اندیس‌ها.
 _CT_FIELDS = {"ins_code": 0, "buy_i_vol": 1, "buy_n_vol": 2, "buy_ddd_vol": 3,
               "buy_count_i": 4, "buy_count_n": 5, "sell_i_vol": 6, "sell_n_vol": 7,
@@ -532,7 +544,7 @@ _CT_FIELDS = {"ins_code": 0, "buy_i_vol": 1, "buy_n_vol": 2, "buy_ddd_vol": 3,
 _CT_ORDER = ", ".join(sorted(_CT_FIELDS, key=_CT_FIELDS.get))
 
 
-def _row_keys(have_depth: bool):
+def _row_keys(have_depth: bool, have_mcap: bool = False):
     keys = ["ins_code", "symbol", "name", "sector_code", "sector_name",
             "p_closing", "p_last", "p_yesterday", "p_first", "p_min", "p_max",
             "allowed_min", "allowed_max"]
@@ -543,6 +555,10 @@ def _row_keys(have_depth: bool):
                  "buy_q1_cnt"]
     keys += ["q_vol", "q_val", "n_trades", "price_change", "total_shares",
              "base_vol", "h_even", "paper_type"]
+    # درِ انتهای فهرست: ستون‌هایِ اختیاری هرگز به‌واسطۀ میانی جابه‌جا نمی‌شوند،
+    # پس کوئری و این فهرست باید همین ترتیب را نگه دارند.
+    if have_mcap:
+        keys += ["market_cap"]
     return keys
 
 
@@ -571,6 +587,7 @@ def load_snapshot(conn, force: bool = False) -> dict:
     cday = conn.execute(
         "SELECT MAX(d_even) FROM client_type WHERE d_even<=?", (day,)).fetchone()[0]
     have_depth = _has_queue_cols(conn)
+    have_mcap = has_mcap_col(conn)
 
     cols = """m.ins_code, i.l_val18, i.l_val30, i.sector_code, i.sector_name,
               m.p_closing, m.p_last, m.price_yesterday, m.price_first,
@@ -582,6 +599,8 @@ def load_snapshot(conn, force: bool = False) -> dict:
                     m.buy_q1_cnt,"""
     cols += """ m.q_tot_tran, m.q_tot_cap, m.z_tot_tran, m.price_change,
                m.total_shares, i.base_vol, m.h_even, i.paper_type"""
+    if have_mcap:
+        cols += ", m.market_cap"
     rows = conn.execute(
         "SELECT %s FROM market_watch m LEFT JOIN instruments i ON i.ins_code=m.ins_code "
         "WHERE m.d_even=?" % cols, (day,)).fetchall()
@@ -603,7 +622,7 @@ def load_snapshot(conn, force: bool = False) -> dict:
         pass                                  # بانکِ کهنه: جدول هنوز نساخته نشده
 
     out = []
-    keys = _row_keys(have_depth)
+    keys = _row_keys(have_depth, have_mcap)
     for r in rows:
         d = dict(zip(keys, tuple(r)))
         d["symbol"] = (d.get("symbol") or "").strip()
@@ -631,8 +650,12 @@ def load_snapshot(conn, force: bool = False) -> dict:
                              # مربوط به نشستِ جاری است یا یک نشست عقب‌تر.
                              "client_lag_days": None if not (cday and day) else
                                                  (str(day) > str(cday)),
-                             "depth": have_depth},
-                    "rows": out, "depth": have_depth,
+                             "depth": have_depth,
+                             # «ارزش بازار» یا ستونش در این بانک نیست، یا هست و
+                             # خالی. مصرف‌کننده (mstat_panels.treemap) با همین
+                             # تفکیک می‌گوید «منبع نیست» به‌جای «صفر».
+                             "market_cap": have_mcap},
+                    "rows": out, "depth": have_depth, "market_cap": have_mcap,
                     "base_est": _base_volume_estimate(conn, day)}
     return _CTX["data"]
 
@@ -839,6 +862,14 @@ def money(row, base_est) -> dict:
     m["n_sell_i"] = int(_f(cget("sell_count_i")))
     m["n_buy_n"] = int(_f(cget("buy_count_n")))
     m["n_sell_n"] = int(_f(cget("sell_count_n")))
+    # حجمِ خامِ هر گروه (سهم)، نه ارزشِ بازسازی‌شده. «تغییرِ مالکیت» یک عددِ
+    # سهمی است تا با «خالصِ ورودِ پول» (ریالی) و «سرانه» (ریال بر نفر) اشتباه
+    # نشود؛ این چهار خانه تنها مصرف‌کننده‌شان `mstat_panels` است و هیچ فرمولِ
+    # دومی نمی‌سازند — فقط همان ستون‌هایِ `client_type` را نام‌دار می‌کنند.
+    m["iv_buy"] = _f(cget("buy_i_vol"))
+    m["iv_sell"] = _f(cget("sell_i_vol"))
+    m["nv_buy"] = _f(cget("buy_n_vol"))
+    m["nv_sell"] = _f(cget("sell_n_vol"))
 
     # سرانه = ارزش ÷ تعدادِ همان گروه؛ None یعنی «مخرج صفر بود» نه «صفر»
     m["pc_buy"] = _div(m["retail_buy"], m["n_buy_i"])
