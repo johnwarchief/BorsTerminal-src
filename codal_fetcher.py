@@ -339,6 +339,40 @@ def _norm_date(s):
     میکند تا ساختارِ 'YYYY/MM/DD HH:MM:SS' دست‌نخورده بماند."""
     return str(s or "").strip().translate(_FA_DIGITS)
 
+
+def _abs_codal_url(u):
+    """پیوندِ نسبیِ کدال ← مطلق. بی‌این، لینکِ PDF/اکسل درِ بانک نصفه می‌ماند."""
+    s = str(u or "").strip()
+    if not s:
+        return ""
+    return s if s.startswith("http") else "https://codal.ir/" + s.lstrip("/")
+
+
+def letter_to_notice(x, sym=None, now=None):
+    """**تنها** تبدیلِ یکِ «حرفِ» فید/جستجوی کدال ← ردیفِ `codal_notices`.
+
+    پیش از این پنج نسخه از این نگاشت درِ همین فایل بود (`_sync_news`،
+    `feed_sync`، `_process_symbol`، `missing`، `discover`) و دو تای آن‌ها
+    `pdf_url`/`excel_url` را مطلق نمی‌کرد — یعنی یکِ اطلاعیه بسته به این‌که از
+    کدامِ در وارد شده بود، پیوندِ نصفه یا کامل می‌گرفت. ترتیبِ ستون‌ها همان
+    `NOTICE_UPSERT` است (۱۱ ستون).
+    """
+    t = x.get("TracingNo")
+    title = (x.get("Title") or "").strip()
+    return (
+        t,
+        (sym or x.get("Symbol") or "").strip(),
+        (x.get("CompanyName") or "").strip(),
+        title,
+        (x.get("LetterCode") or "").strip(),
+        _norm_date(x.get("PublishDateTime")),
+        _norm_date(x.get("SentDateTime")),
+        "https://codal.ir" + str(x.get("Url") or ""),
+        now or datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        _abs_codal_url(x.get("PdfUrl")),
+        _abs_codal_url(x.get("ExcelUrl")),
+    )
+
 # Row-label patterns (after normalization: spaces + ZWNJ stripped, ي/ك unified)
 PATTERNS = {
     # NOTE: patterns are RANK-ORDERED — index 0 is the most authoritative. The
@@ -1183,13 +1217,7 @@ def fetch_notices(s, now, max_saved_tn=0, resume_from=0):
             if SAVE_USEFUL_ONLY and not _positive_title(x.get("Title") or ""):
                 continue
             seen.add(t)
-            rows.append((
-                t, (x.get("Symbol") or "").strip(), (x.get("CompanyName") or "").strip(),
-                (x.get("Title") or "").strip(), (x.get("LetterCode") or "").strip(),
-                _norm_date(x.get("PublishDateTime")), _norm_date(x.get("SentDateTime")),
-                "https://codal.ir" + (x.get("Url") or ""), now,
-                (x.get("PdfUrl") or ""), (x.get("ExcelUrl") or ""),
-            ))
+            rows.append(letter_to_notice(x, now=now))
             _CB_DONE = len(rows)
             n += 1
         return n, False
@@ -2617,20 +2645,7 @@ def update_symbol_incremental(sym, sess):
             title = (x.get("Title") or "").strip()
             if SAVE_USEFUL_ONLY and not _positive_title(title):
                 continue
-            pdf_raw = (x.get("PdfUrl") or "").strip()
-            excel_raw = (x.get("ExcelUrl") or "").strip()
-            if pdf_raw and not pdf_raw.startswith("http"):
-                pdf_raw = "https://codal.ir/" + pdf_raw
-            if excel_raw and not excel_raw.startswith("http"):
-                excel_raw = "https://codal.ir/" + excel_raw
-            new_rows.append((t, (x.get("Symbol") or "").strip(),
-                             (x.get("CompanyName") or "").strip(), title,
-                             (x.get("LetterCode") or "").strip(),
-                             _norm_date(x.get("PublishDateTime")),
-                             _norm_date(x.get("SentDateTime")),
-                             "https://codal.ir" + (x.get("Url") or ""),
-                             datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                             pdf_raw, excel_raw))
+            new_rows.append(letter_to_notice(x))
         if new_rows:
             c2 = sqlite3.connect(DB_PATH, timeout=60, isolation_level=None)
             try:
@@ -2737,19 +2752,7 @@ def _process_symbol(sym, sess):
                     if SAVE_USEFUL_ONLY and not _positive_title(x.get("Title") or ""):
                         continue
                     known.add(t)
-                    pdf_raw = (x.get("PdfUrl") or "").strip()
-                    excel_raw = (x.get("ExcelUrl") or "").strip()
-                    if pdf_raw and not pdf_raw.startswith("http"):
-                        pdf_raw = "https://codal.ir/" + pdf_raw
-                    if excel_raw and not excel_raw.startswith("http"):
-                        excel_raw = "https://codal.ir/" + excel_raw
-                    rows.append((t, sym, (x.get("CompanyName") or "").strip(),
-                                 (x.get("Title") or "").strip(),
-                                 (x.get("LetterCode") or "").strip(),
-                                 _norm_date(x.get("PublishDateTime")),
-                                 _norm_date(x.get("SentDateTime")),
-                                 "https://codal.ir" + (x.get("Url") or ""), now,
-                                 pdf_raw, excel_raw))
+                    rows.append(letter_to_notice(x, sym=sym, now=now))
     if not rows:
         # Fallback: no new notices via API — scrape existing notices that
         # still lack extracted data (search API 429-blocked, scrape still OK).
@@ -2922,20 +2925,7 @@ def feed_sync(mode="update", optimized=False, catchup=None):
                 if t is None:
                     continue
                 title = (x.get("Title") or "").strip()
-                pdf_raw = (x.get("PdfUrl") or "").strip()
-                excel_raw = (x.get("ExcelUrl") or "").strip()
-                if pdf_raw and not pdf_raw.startswith("http"):
-                    pdf_raw = "https://codal.ir/" + pdf_raw
-                if excel_raw and not excel_raw.startswith("http"):
-                    excel_raw = "https://codal.ir/" + excel_raw
-                row = (t, (x.get("Symbol") or "").strip(),
-                       (x.get("CompanyName") or "").strip(), title,
-                       (x.get("LetterCode") or "").strip(),
-                       _norm_date(x.get("PublishDateTime")),
-                       _norm_date(x.get("SentDateTime")),
-                       "https://codal.ir" + (x.get("Url") or ""),
-                       datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                       pdf_raw, excel_raw)
+                row = letter_to_notice(x)
                 if t in known:
                     # اطلاعیه‌ای که پیش‌تر ذخیره شده ولی ردیفِ مشتق ندارد — یعنی آن
                     # وقت یا گاردِ دورۀ سراسری خردش کرده، یا اجرا وسطِ کار 429 خورده،
@@ -3440,19 +3430,7 @@ def backfill_missing_fs(limit=None):
                     if any(k in title for k in ("صورت وضعیت پورتفوی", "صندوق سرمایه", "افزایش سرمایه")):
                         continue
                     seen.add(t)
-                    pdf_raw = (x.get("PdfUrl") or "").strip()
-                    excel_raw = (x.get("ExcelUrl") or "").strip()
-                    if pdf_raw and not pdf_raw.startswith("http"):
-                        pdf_raw = "https://codal.ir/" + pdf_raw
-                    if excel_raw and not excel_raw.startswith("http"):
-                        excel_raw = "https://codal.ir/" + excel_raw
-                    new_rows.append((t, sym, (x.get("CompanyName") or "").strip(), title,
-                                     (x.get("LetterCode") or "").strip(),
-                                     _norm_date(x.get("PublishDateTime")),
-                                     _norm_date(x.get("SentDateTime")),
-                                     "https://codal.ir" + (x.get("Url") or ""),
-                                     datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                                     pdf_raw, excel_raw))
+                    new_rows.append(letter_to_notice(x, sym=sym))
                 if new_rows:
                     conn2 = sqlite3.connect(DB_PATH, timeout=60, isolation_level=None)
                     try:
@@ -3656,14 +3634,9 @@ def fetch_symbol(symbol):
                 if SAVE_USEFUL_ONLY and not _positive_title(x.get("Title") or ""):
                     continue
                 seen.add(t)
-                pdf_raw = (x.get("PdfUrl") or "").strip()
-                excel_raw = (x.get("ExcelUrl") or "").strip()
                 # Codal's PdfUrl/ExcelUrl are often relative → make them absolute
-                if pdf_raw and not pdf_raw.startswith("http"):
-                    pdf_raw = "https://codal.ir/" + pdf_raw
-                if excel_raw and not excel_raw.startswith("http"):
-                    excel_raw = "https://codal.ir/" + excel_raw
-                extra[t] = (pdf_raw, excel_raw)
+                extra[t] = (_abs_codal_url(x.get("PdfUrl")),
+                            _abs_codal_url(x.get("ExcelUrl")))
                 sym_rows.append((
                     t, (x.get("Symbol") or "").strip(), (x.get("CompanyName") or "").strip(),
                     (x.get("Title") or "").strip(), (x.get("LetterCode") or "").strip(),
