@@ -639,8 +639,8 @@ function StageCard({
                 title={on ? TECH_SCREEN_HINT.on : TECH_SCREEN_HINT.off}
                 className={`rounded-md border px-1.5 py-0.5 text-2xs font-bold transition-colors ${
                   techScreens === on
-                    ? 'border-accent-amber bg-accent-amber/15 text-accent-amber'
-                    : 'border-border-c bg-bg-card text-text-muted hover:border-accent-amber/60'
+                    ? 'border-accent-yellow bg-accent-yellow/15 text-accent-yellow'
+                    : 'border-border-c bg-bg-card text-text-muted hover:border-accent-yellow/60'
                 }`}
               >
                 {on ? TECH_SCREEN_LABEL.on : TECH_SCREEN_LABEL.off}
@@ -1031,8 +1031,8 @@ function TapeStagePrefs({ picked, counts, filters }: {
             : `اشتراک (AND): نماد باید هر ${toFaDigits(onCount)} فیلترِ روشن را داشته باشد`}
         className={`rounded-md border px-1.5 py-0.5 text-2xs font-bold transition-colors ${
           logic === 'or'
-            ? 'border-accent-amber bg-accent-amber/15 text-accent-amber'
-            : 'border-border-c bg-bg-card text-text-muted hover:border-accent-amber/60'
+            ? 'border-accent-yellow bg-accent-yellow/15 text-accent-yellow'
+            : 'border-border-c bg-bg-card text-text-muted hover:border-accent-yellow/60'
         }`}
       >
         {logic === 'or' ? 'اجتماع' : 'اشتراک'}
@@ -1053,7 +1053,7 @@ function FundStagePrefs({ passed, techScreens }: { passed: number; techScreens: 
 
   const chip = (on: boolean) =>
     `rounded-md border px-1.5 py-0.5 text-2xs font-bold transition-colors ${
-      on ? 'border-accent-amber bg-accent-amber/15 text-accent-amber' : 'border-border-c bg-bg-card text-text-muted hover:border-accent-amber/60'
+      on ? 'border-accent-yellow bg-accent-yellow/15 text-accent-yellow' : 'border-border-c bg-bg-card text-text-muted hover:border-accent-yellow/60'
     }`;
 
   return (
@@ -1106,10 +1106,9 @@ function FundStagePrefs({ passed, techScreens }: { passed: number; techScreens: 
           data-testid="funnel-prefs-reset"
           onClick={reset}
           title="بازگردانی تنظیمات به پیش‌فرض FTS"
-          className="text-3xs font-bold text-text-muted underline hover:text-accent-amber"
+          className="text-3xs font-bold text-text-muted underline hover:text-accent-yellow"
         >
-          بازگردانی به پیش‌فرض FTS
-        </button>
+          بازگردانی به پیش‌فرض FTS        </button>
       ) : null}
     </div>
   );
