@@ -674,6 +674,37 @@ def ind1b_volume_growth(conn, symbol, monetary=None, series=None, th=None,
 # ═══════════════════════════════════════════════════════════════════════════
 #  لایهٔ ۱ — رأیِ مجموعِ «الف» و «ب»
 # ═══════════════════════════════════════════════════════════════════════════
+def v10_axis_states(indicators: dict, passes: dict) -> dict:
+    """سه‌حالۀ هر پنج محور از **یک** جایِ تعریف — تنها منبعِ «بی‌نظر».
+
+    `passes` عمداً bool می‌ماند (امتیاز شمارشِ Trueهاست و CSV/مصرف‌کننده‌هایِ
+    کهنه به همان عادت دارند). ولی «بی‌نظر» بودنِ یکِ محور تنها `na` نیست:
+    `data_gap` (تاریخچۀ کامل نیست)، `available: False` (عدد نسبی ساخته نشد) و
+    نبودِ خودِ عدد هم همان معنی را می‌دهند. اسکرینر روزی فقط `na` را می‌پرسید
+    و برایِ محور ۱ هیچ پرسشی نداشت ⇒ سنجشِ زندۀ ۱۴۰۵-۰۷-۲۳ رویِ ۳۱ نماد:
+    ۱۱ ردیف درِ کارت «بی‌نظر» و درِ `/api/screener` «مردود» (اکسيژن، خوشه،
+    ستاره، فراز، مترو، نهال، پيشگام، وآرين، ولبهمن، وكادو، خاور).
+    """
+    ind = indicators or {}
+    i1 = (ind.get("1") or {}).get("monetary") or {}
+    i2 = ind.get("2") or {}
+    i3 = ind.get("3") or {}
+    i4 = ind.get("4") or {}
+    st = {"1_growth": passes.get("1_growth"), "2_eps_trend": passes.get("2_eps_trend"),
+          "3_gross_margin": passes.get("3_gross_margin"),
+          "4_sales_to_mcap": passes.get("4_sales_to_mcap"),
+          "5_industry": passes.get("5_industry")}
+    if i1.get("data_gap") or i1.get("monetary_pct") is None:
+        st["1_growth"] = None
+    if i2.get("na") or i2.get("data_gap") or i2.get("pass") is None:
+        st["2_eps_trend"] = None
+    if i3.get("na") or i3.get("band") == "not_applicable" or i3.get("margin_pct") is None:
+        st["3_gross_margin"] = None
+    if i4.get("na") or i4.get("exempt") or not i4.get("available", True):
+        st["4_sales_to_mcap"] = None
+    return st
+
+
 def axis1_pass(monetary: dict, volume: dict) -> bool:
     """رأیِ لایۀ ۱ = رشد ریالی، و «تأیید حجم» فقط آن‌جا که برایِ ماهیتِ شرکت
     **قابل‌اعمال** است.
@@ -685,6 +716,11 @@ def axis1_pass(monetary: dict, volume: dict) -> bool:
     با رأیِ ۱۶ ممنوع شده است. (`card1Pass` در FtsCard.tsx از ابتدا همین را می‌گفت
     و با موتور نمی‌خواند.)
     """
+    # قراردادِ این فایل: `passes` عمداً bool می‌ماند (امتیاز شمارشِ Trueهاست) و
+    # «بی‌داده ≠ رد» را هر consumer با `fts_engine.ind1_na` می‌پرسد — همان الگوی
+    # `ind2_na`/`ind3_na`/`ind4_na`. (سنجشِ زندۀ ۱۴۰۵-۰۷-۲۳: «شهر فرش» و «شتهران»
+    # درِ کارت بی‌نظر، درِ `/api/screener` مردود بودند، چون اسکرینر برایِ محور ۱
+    # این پرسش را نداشت.)
     if not (monetary or {}).get("pass"):
         return False
     v = volume or {}
@@ -1265,7 +1301,12 @@ def evaluate_v10(conn, symbol, market_cap_rials=0.0, total_market_cap_rials=0.0,
             "market_cap_rials": _f(market_cap_rials), "score": score,
             "primary_score": primary_score,
             "applicable": applicable,
-            "passes": passes, "excluded": bool(reasons), "exclusion_reasons": reasons,
+            "passes": passes,
+            # سه‌حالۀ مشترکِ کارت/اسکرینر/قیف (بندِ ۸ معیارهایِ بستنِ پرونده)
+            "states": v10_axis_states(
+                {"1": {"monetary": growth, "volume": volume}, "2": eps, "3": gm,
+                 "4": val, "5": sec}, passes),
+            "excluded": bool(reasons), "exclusion_reasons": reasons,
             "verdict": verdict,
             "methodology": {"version": "FTS-v10", "axes": 5,
                             "layer_1_subchecks": ("1a_monetary", "1b_volume"),
@@ -1814,11 +1855,19 @@ def _sector_from_company(company_name):
 # instruments (۵٬۹۸۹ ردیف) هر ردیف را به UDF می‌برد و زمانِ کارت را دوبرابر کرد
 # (۱۵۰ms ← ۳۰۰ms، اندازه‌گیری‌شده). جایش `l_val18 IN (…)` با نامزدهایِ خودِ بانک
 # است — ایندکس‌پسند و **همان** قاعدۀ `symbol_identity`.
+# `{}` جای **کلِ شرطِ** ساخته‌شدۀ `fts_engine.sym_in` است، نه جای فهرستِ
+# پارامترها. پیش از این این‌جا `i.l_val18 IN ({})` نوشته شده بود و predicate با
+# نامِ ستون درِ آن جای‌گذاری می‌شد:
+#   `WHERE i.l_val18 IN (i.l_val18 IN (?))`  ⇒ همیشه صفر ردیف
+# یعنی کارتِ جزئیات هیچ‌وقت صنعتِ تابلو را نمی‌دید و `sector` از *حدسِ نامِ
+# شرکت* می‌آمد (`_sector_from_company`)، در حالی که اسکرینر صنعتِ واقعی را
+# می‌داد. سنجشِ زندهٔ ۱۴۰۵-۰۷-۲۳ رویِ ۴۷ نماد: ۱۱ واگراییِ حالتِ محور (۵ تای آن
+# واگراییِ **امتیاز**) — قچار: کارت «خنثی/قبول» و قیف «دستوری/مردود».
 INSTR_SQL_TMPL = """
     SELECT i.ins_code, i.sector_name, i.total_shares, m.p_closing, i.l_val18, i.l_val30
     FROM instruments i
     LEFT JOIN market_watch m ON i.ins_code = m.ins_code
-    WHERE i.l_val18 IN ({})
+    WHERE {}
     ORDER BY i.updated_at DESC LIMIT 1
 """
 
@@ -1944,11 +1993,10 @@ def get_fundamental(symbol: str, months: int = 0):
         # شده بود: بارِ اول درونِ f-string و بارِ دوم با `INSTR_SQL_TMPL`.
         _pk, _pa = fts_engine.sym_in(conn, "i.l_val18", symbol, "board")
         inst = conn.execute(INSTR_SQL_TMPL.format(_pk), _pa).fetchone()
-        pred, params = fts_engine.sym_in(conn, "symbol", symbol)
-        cn = conn.execute("SELECT company_name FROM financial_statements WHERE %s "
-                          "%s LIMIT 1" % (pred, CP.latest_order_sql()),
-                          params).fetchone()
-        company_name = str(cn[0] or "") if cn else ""
+        # نامِ شرکت از تک‌منبعِ موتور (`company_name_of` = همان ردیفِ
+        # `company_name_map`ِ اسکرینر). بی‌این، کارت و اسکرینر برایِ یکِ نماد دو
+        # نامِ مختلف (پس دو طبقۀ مختلفِ `company_profile`) می‌دیدند.
+        company_name = fts_engine.company_name_of(conn, symbol)
         if not inst:
             # نمادهای فقط-کدال (صندوق‌ها و…): در instruments نیستند ولی اسکرینر نشانشان میدهد
             if not company_name:
@@ -2125,7 +2173,10 @@ def get_fundamental(symbol: str, months: int = 0):
                 "verdict": res["verdict"],
                 "applicable": res.get("applicable", True),
                 "excluded": res["excluded"], "exclusion_reasons": res["exclusion_reasons"],
-                "passes": res["passes"], "methodology": res["methodology"],
+                "passes": res["passes"],
+                # سه‌حالۀ مشترک (bi‌nظر/رد/پاس) — `passes` عمداً bool می‌ماند، پس
+                # هر کسی که حکم را به جدول/کارت دیگری می‌برد همین را باید بخواند.
+                "states": res.get("states"), "methodology": res["methodology"],
                 "profile": res["profile"], "indicators": ind,
                 "metrics": metrics, "insights": insights, "details": details,
                 "data_gaps": v10_data_gaps(res),
@@ -2273,7 +2324,8 @@ def v10_batch(symbols, cfg=None, limit: int = 50) -> list:
                 g, v = ind["1"]["monetary"], ind["1"]["volume"]
                 val = ind["4"]
                 out.append({"symbol": s, "score": res["score"], "verdict": res["verdict"],
-                            "passes": res["passes"], "sector": sector,
+                            "passes": res["passes"], "states": res.get("states"),
+                            "sector": sector,
                             "pricing_mode": res["pricing_mode"],
                             "monetary_pct": g.get("monetary_pct"),
                             "volume_basis": v.get("basis"),

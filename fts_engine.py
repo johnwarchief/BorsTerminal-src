@@ -297,6 +297,22 @@ def ind4_na(card_ind4) -> bool:
                                 or card_ind4.get("exempt") is True)
 
 
+def ind1_na(card_ind1) -> bool:
+    """آیا کارت، محور ۱ (رشد فروش/درآمد) را «سنجیده نشده» اعلام کرده؟
+
+    همان رأیِ ۱۶ که برای ۲/۳/۴ جاری است و برایِ محور ۱ جا افتاده بود:
+    `api/screener` برایِ سه محورِ دیگر `_na2/_na3/_na4` را می‌پرسد و سپس
+    `i{n}_pass` را None می‌کند، ولی محور ۱ را بی‌پرسش از `passes` برمی‌داشت
+    که عمداً bool است. سنجشِ زندهٔ ۱۴۰۵-۰۷-۲۳: «شهر فرش» و «شتهران» درِ کارت
+    «بی‌داده» و درِ `/api/screener` «مردود» بودند — دو پاسخ برایِ یکِ نماد.
+    «بی‌داده» یعنی هیچ درصدی ساخته نشده (مخرج YoY غایب)، نه درصدِ زیرِ کف.
+    """
+    if not card_ind1:
+        return False
+    mon = card_ind1.get("monetary") if isinstance(card_ind1.get("monetary"), dict) else card_ind1
+    return bool(mon.get("data_gap")) or mon.get("monetary_pct") is None
+
+
 def ind2_na(card_ind2) -> bool:
     """آیا کارتِ جزئیات، شاخص ۲ (سابقۀ سه‌سالۀ EPS) را «سنجیده نشده» اعلام کرده؟
 

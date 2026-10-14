@@ -446,13 +446,13 @@ def _screener_cached():
             total_mcap, _mcap_src = board_total_market_cap(conn)
             _m141m = fts_engine.m141_map(conn)
             _liqm = fts_engine.avg_trade_value_hmt(conn)
-            cname_of = {}
-            for _sym, _cn in conn.execute(
-                    "SELECT symbol, company_name FROM financial_statements "
-                    "ORDER BY %s, tracing_no DESC" % CP.order_expr()):
-                _k = fts_engine.sym_key(_sym)
-                if _k and _k not in cname_of:
-                    cname_of[_k] = _cn or ""
+            # تک‌منبعِ نامِ شرکت: `fts_engine.company_name_map` — همان ردیفی که
+            # `company_name_of` درِ کارتِ جزئیات می‌خواند. نقشۀ دست‌سازِ پیشین
+            # «اولین ردیفِ period_end DESC» را بی‌شرطِ `IS NOT NULL` برمی‌داشت،
+            # پس برایِ نمادی که تازه‌ترینِ آن نام ندارد کارت یک طبقه و اسکرینر
+            # طبقۀ دیگر می‌دید (سنجشِ زنده ۱۴۰۵-۰۷-۲۳: وكادو — کارت i4=رد،
+            # اسکرینر i4=بی‌نظر، با امتیازِ یکسان ۳).
+            cname_of = fts_engine.company_name_map(conn)
 
             # تسک ۱۹ — مادی‌سازی: یک SELECT از fts_results به‌جای ~۲۵۰۰ فراخوانیِ
             # evaluate_v10. قراردادِ fallback (تصمیم ۴): جدول غایب/خالی، یا
@@ -486,7 +486,14 @@ def _screener_cached():
                 _g3 = _ind.get("3") or {}
                 r["score"] = res["score"]
                 r["primary_score"] = res.get("primary_score", 0)
-                r["i1_pass"] = p["1_growth"]
+                # محور ۱ هم مثلِ ۲/۳/۴: «بی‌داده» را از «رد» جدا می‌پرسد. بی‌این
+                # یک‌خط، کارت برایِ نمادِ بی‌گزارشِ ماهانه «بی‌نظر» می‌گفت و جدول
+                # همان را مردود می‌شمرد (سنجشِ زنده ۱۴۰۵-۰۷-۲۳).
+                _states = res.get("states") or {}
+                _na1 = fts_engine.ind1_na(_ind.get("1"))
+                r["i1_pass"] = _states.get("1_growth",
+                                            None if _na1 else p["1_growth"])
+                r["i1_na"] = bool(_na1) or _states.get("1_growth") is None
                 # رأیِ مالک ۱۴۰۵-۰۷-۰۳: معافیت = «نظر نمی‌دهد» — همان چیزی که
                 # bulk_scan می‌دهد؛ بدونِ این تبدیلِ یک‌خطی جدول با کشِ سرد
                 # «مردود» و با کشِ گرم «N/A» می‌شد.
@@ -507,10 +514,13 @@ def _screener_cached():
                 # زنده کارت با `na: True` می‌گوید؛ درِ مسیرِ مادی همان حکم ستونِ
                 # NULLِ f02_pass است (نویسندهٔ جدول: dev/codal_fts_updater.py).
                 _na2 = fts_engine.ind2_na(_ind.get("2")) or p.get("2_eps_trend") is None
-                r["i2_pass"] = None if _na2 else p["2_eps_trend"]
+                r["i2_pass"] = _states.get("2_eps_trend",
+                                          None if _na2 else p["2_eps_trend"])
                 r["i2_na"] = bool(_na2)
-                r["i3_pass"] = None if _na3 else p["3_gross_margin"]
-                r["i4_pass"] = None if _na4 else p["4_sales_to_mcap"]
+                r["i3_pass"] = _states.get("3_gross_margin",
+                                          None if _na3 else p["3_gross_margin"])
+                r["i4_pass"] = _states.get("4_sales_to_mcap",
+                                          None if _na4 else p["4_sales_to_mcap"])
                 r["i3_na"], r["i4_na"] = bool(_na3), bool(_na4)
                 r["i5_pass"] = p["5_industry"]
                 r["i1a_pass"] = p.get("1a_monetary_growth")
