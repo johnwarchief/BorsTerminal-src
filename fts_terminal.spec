@@ -79,6 +79,12 @@ a = Analysis(
                    # نمایش) سطح-بال importش می‌کنند. بی‌این خط EXE رویِ اولین
                    # درخواستِ بنیادی ModuleNotFoundError می‌دهد.
                    'codal_units',
+                   # مأموریت «خطِ دریافت خودکار کدال» (۱۴۰۵-۰۷-۲۴):
+                   # `codal_pipeline` صف/checkpoint/قفلِ worker است و `app.py`
+                   # (حلقۀ استارتاپ) و `api/_sync_codal.py` (دستۀ چرخه و سلامت)
+                   # سطح-بال importش می‌کنند؛ بی‌این خط EXE رویِ اولین چرخه
+                   # ModuleNotFoundError می‌دهد.
+                   'codal_pipeline',
                    # مرحلۀ ۱.۲ مأموریت بنیادی (۱۴۰۵-۰۷-۲۲): `symbol_identity` تنها
                    # تعریفِ «این ردیف مالکِ کدام ابزار است» است و fts_engine /
                    # api._core / api.fundamental / api.chart / api.screener و

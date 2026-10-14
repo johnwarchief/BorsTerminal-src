@@ -272,6 +272,13 @@ SUITES = [
     # اعدادِ مثالِ جزوه. رویِ `evaluate_v10`ِ واقعی و با دو کنترلِ منفی.
     ('dev/fts_indicator_contract_v1091.py',
                                      'five indicators return verdict + reason + report id + unit/source; no notebook number hardcoded'),
+    # مأموریت «خطِ دریافت خودکار کدال» (۱۴۰۵-۰۷-۲۴): صفِ پایدار رویِ همان
+    # `codal_extracted`، حالت‌هایِ متمایز (queued/running/done/empty/failed/
+    # unresolved)، checkpoint که با کارِ باز جلو نمی‌رود، backoff و بودجۀ تلاش،
+    # claimِ رقابتی، بازیابیِ claimِ بی‌صاحب، بودجۀ چرخه، و شمارش‌هایی که از
+    # خودِ جدول خوانده می‌شوند. بی‌شبکه (scraper تزریقی)، بی‌market.db.
+    ('dev/codal_pipeline_v1100.py',
+                                     'durable codal queue: states, checkpoint, backoff, claim race, restart recovery'),
     # خودآزمونِ همان گارد: شش نقصِ تاریخی (نیم‌فاصلۀ «شهر فرش»، پلکان+sبدِ بی‌پرچم،
     # سبدِ تنها، نردبانِ EPS، گیتِ ISINِ خاموش، تناقضِ عنوان⇄ستون) درِ حافظه
     # برگردانده می‌شوند و هر شش باید قرمز شود. سبزبودنِ گارد بی‌این ثابت نمی‌کند

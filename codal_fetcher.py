@@ -718,6 +718,81 @@ CREATE TABLE IF NOT EXISTS fts_results (
 """
 
 
+# ── خودکارسازی بنیادی (1405-07-24) — دفترِ اطلاعیه از «دفترِ نتیجه» به
+# «صف + نتیجه» ارتقا می‌یابد. چرا رویِ همین جدول و نه جدولِ دوم:
+# «پردازش‌شده» تا امروز یکِ معنا داشت — «سطری درِ codal_extracted هست». با
+# خودکارسازی، سطر از *لحظۀ کشف* ساخته می‌شود (`queued`)؛ اگر همان تعریف
+# می‌ماند، `derived_state` و `pending_notices` هر کارِ درِ صف را «پردازش‌شده»
+# می‌دیدند و هیچ‌کس سراغش نمی‌رفت. تعریفِ یگانه درِ `LEDGER_TERMINAL_SQL` نشسته.
+#
+# حالت‌ها (مقدارِ ماشین ASCII، معنا درِ همین کامنت):
+#   queued      کشف شده، هنوز تلاش نشده
+#   running     یکِ worker آن را claim کرده (claim_owner/claimed_at)
+#   done        پردازش شد و ردیفِ canonical ساخت (ok=1)
+#   empty       باز شد و عددِ قابل‌استخراج نداشت (ok=0) — شکست نیست
+#   failed      خطای گذرا (شبکه/نرخ) — با next_attempt_at دوباره تلاش می‌شود
+#   unresolved  بودجۀ تلاش تمام شده یا ورودیِ ضروری وجود ندارد — تصمیمِ انسان
+# `error_kind` علت را از هم جدا می‌کند (خطای شبکه ≠ خطای استخراج ≠ فقدان ورودی ≠
+# هویت نامطمئن ≠ تناقض دوره/واحد ≠ اصلاحیه) تا «چرا» درِ رابط قابل‌نمایش باشد.
+_LEDGER_QUEUE_COLS = [
+    ("state", "TEXT"),
+    ("error_kind", "TEXT"),
+    ("attempts", "INTEGER NOT NULL DEFAULT 0"),
+    ("next_attempt_at", "TEXT"),
+    ("last_error", "TEXT"),
+    ("claim_owner", "TEXT"),
+    ("claimed_at", "TEXT"),
+    ("updated_at", "TEXT"),
+    ("finished_at", "TEXT"),
+]
+LEDGER_DONE_STATES = ("done", "empty", "unresolved")
+# `state IS NULL` = ردیفهایِ پیش از این مهاجرت: همان‌ها که `ok` دارند پایان‌یافته
+# شمرده می‌شوند (رفتارِ دیروز، بی‌بازگشتِ بی‌دلیل به صف).
+# تنها تعریفِ «این اطلاعیه تمام شد» — `derived_state`، `pending_notices`،
+# `codal_pipeline` و گاردها همه همین را می‌خوانند؛ شرطِ دوم نوشته نمی‌شود.
+def ledger_terminal_sql(alias=None):
+    col = f"{alias}.state" if alias else "state"
+    return ("(%s IS NULL OR %s IN ('done','empty','unresolved'))" % (col, col))
+
+
+LEDGER_TERMINAL_SQL = ledger_terminal_sql()
+
+# جدول‌هایِ خودکارسازی — همه ADDITIVE و IF NOT EXISTS. هیچ‌کدام دادهٔ موجود را
+# دست نمی‌زنند؛ `pipeline_cursor` تنها جایِ معتبرِ «تا کجا بررسی شده» است و
+# `pipeline_runs` گزارشِ هر چرخه (نه لاگِ متنی).
+_PIPELINE_TABLES = """
+CREATE TABLE IF NOT EXISTS pipeline_cursor (
+    key TEXT PRIMARY KEY, value TEXT, previous TEXT,
+    updated_at TEXT, note TEXT);
+
+CREATE TABLE IF NOT EXISTS pipeline_runs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    cycle TEXT NOT NULL, worker TEXT,
+    started_at TEXT NOT NULL, finished_at TEXT, phase TEXT,
+    found INTEGER NOT NULL DEFAULT 0,
+    enqueued INTEGER NOT NULL DEFAULT 0,
+    processed INTEGER NOT NULL DEFAULT 0,
+    done INTEGER NOT NULL DEFAULT 0,
+    empty INTEGER NOT NULL DEFAULT 0,
+    failed INTEGER NOT NULL DEFAULT 0,
+    unresolved INTEGER NOT NULL DEFAULT 0,
+    rejected INTEGER NOT NULL DEFAULT 0,
+    symbols_dirty INTEGER NOT NULL DEFAULT 0,
+    indicators_recomputed INTEGER NOT NULL DEFAULT 0,
+    cache_invalidated INTEGER NOT NULL DEFAULT 0,
+    checkpoint_before TEXT, checkpoint_after TEXT, error TEXT);
+CREATE INDEX IF NOT EXISTS ix_pr_started ON pipeline_runs(started_at DESC);
+
+CREATE TABLE IF NOT EXISTS pipeline_dirty (
+    symbol TEXT NOT NULL, axis TEXT NOT NULL,
+    reason TEXT, marked_at TEXT,
+    PRIMARY KEY (symbol, axis));
+
+CREATE TABLE IF NOT EXISTS pipeline_lock (
+    key TEXT PRIMARY KEY, owner TEXT, heartbeat_at TEXT, note TEXT);
+"""
+
+
 def migrate_schema(conn):
     """مهاجرتِ افزودنیِ اسکیما — کاملاً یدم‌پذیر (idempotent).
 
@@ -816,6 +891,15 @@ def migrate_schema(conn):
                 conn.execute("ALTER TABLE fts_results ADD COLUMN %s %s" % (_c, _t))
             except Exception:
                 pass
+    # ── خودکارسازی: ستون‌هایِ صف رویِ دفترِ موجود + جدول‌هایِ حالت ─────────
+    lcols = {r[1] for r in conn.execute("PRAGMA table_info(codal_extracted)")}
+    for _c, _t in _LEDGER_QUEUE_COLS:
+        if _c not in lcols:
+            try:
+                conn.execute("ALTER TABLE codal_extracted ADD COLUMN %s %s" % (_c, _t))
+            except Exception:
+                pass
+    conn.executescript(_PIPELINE_TABLES)
     conn.commit()
 
 
@@ -2197,10 +2281,13 @@ def derived_state(conn, symbol=None):
         if symbol:
             ledger = {r[0] for r in conn.execute(
                 "SELECT e.tracing_no FROM codal_extracted e"
-                " JOIN codal_notices c ON c.tracing_no = e.tracing_no WHERE c.symbol=?",
+                " JOIN codal_notices c ON c.tracing_no = e.tracing_no"
+                " WHERE %s AND c.symbol=?" % ledger_terminal_sql("e"),
                 (symbol,))}
         else:
-            ledger = {r[0] for r in conn.execute("SELECT tracing_no FROM codal_extracted")}
+            ledger = {r[0] for r in conn.execute(
+                "SELECT tracing_no FROM codal_extracted WHERE %s"
+                % ledger_terminal_sql())}
     except Exception:            # اجرای نخست، پیش از ساختِ جدولِ دفتر
         ledger = set()
     return ledger | fs_done | ms_done, fs_done, ms_done
@@ -2258,12 +2345,14 @@ def pending_notices(conn, limit=None, kinds=("Financial Statements", "Monthly Ac
     tried = set()
     if exclude_tried:
         try:
-            tried = {r[0] for r in conn.execute("SELECT tracing_no FROM codal_extracted")}
+            # فقط حالت‌هایِ پایان‌یافته «تلاش‌شده»اند — صفِ `queued` باید بماند
+            # تا کسی پردازشش کند (تعریفِ یگانہ: `ledger_terminal_sql`).
+            tried = {r[0] for r in conn.execute(
+                "SELECT tracing_no FROM codal_extracted WHERE %s"
+                % ledger_terminal_sql())}
         except sqlite3.OperationalError:
             tried = set()          # بانکِ تازه: دفترِ `codal_extracted` هنوز ساخته نشده
-    cols = ("c.tracing_no, c.symbol, c.company_name, c.title, c.letter_code,"
-            " c.publish_date, c.sent_date, c.url, c.fetched_at, c.pdf_url, c.excel_url,"
-            " i.l_val30")
+    cols = notice_row_cols("c")
     out = []
     for r in conn.execute(
             f"SELECT {cols} FROM codal_notices c"
@@ -2284,6 +2373,67 @@ def pending_notices(conn, limit=None, kinds=("Financial Statements", "Monthly Ac
         out.append(r)
     out.sort(key=lambda r: CP.pub_key(r[5]) or "", reverse=True)
     return out[:limit] if limit else out
+
+
+def notice_row_cols(alias="c"):
+    """تنها تعریفِ «ردیفِ اطلاعیه» برایِ مسیرِ استخراج — همان ترتیبی که
+    `pending_notices` می‌دهد و `scrape_notice_row` می‌خواند (دو نسخه نشود)."""
+    return (f"{alias}.tracing_no, {alias}.symbol, {alias}.company_name,"
+            f" {alias}.title, {alias}.letter_code, {alias}.publish_date,"
+            f" {alias}.sent_date, {alias}.url, {alias}.fetched_at, {alias}.pdf_url,"
+            f" {alias}.excel_url, i.l_val30")
+
+
+def notice_rows_by_tracing(conn, tracing_nos):
+    """ردیفهایِ کاملِ اطلاعیه برایِ idهایِ claim‌شده (مسیرِ workerِ صف)."""
+    ids = [int(t) for t in tracing_nos]
+    if not ids:
+        return []
+    ph = ",".join("?" * len(ids))
+    return [tuple(r) for r in conn.execute(
+        "SELECT %s FROM codal_notices c"
+        " LEFT JOIN instruments i ON i.l_val18 = c.symbol"
+        " WHERE c.tracing_no IN (%s)" % (notice_row_cols("c"), ph), ids).fetchall()]
+
+
+def scrape_notice_row(n, session=None, now=None):
+    """(kind, row|None, status) — بدنهٔ یگانۀ استخراجِ یکِ ردیفِ اطلاعیه.
+
+    status ∈ {'ok','empty','failed'}: `failed` فقط خطای شبکه/پارس است و
+    بی‌نتیجه می‌ماند (باید دوباره تلاش شود)؛ `empty` یعنی گزارش باز شد و عددِ
+    قابل‌استخراج نداشت — آن «شکست» نیست و retry نمی‌گیرد.
+    دورۀ canonical: اول datasource، در نبودش عنوان (`CP.derive`)؛ اگر هیچ‌کدام
+    نبود ردیف **بی‌دوره** نوشته می‌شود، نه حدسی و نه ردشده.
+    """
+    kind = kind_of(n[3])
+    now = now or datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    if kind == "Monthly Activity Report":
+        try:
+            vals, period_end = scrape_monthly_report(session, n[7])
+        except Exception:
+            return kind, None, "failed"
+        if vals.get("monthly_revenue") is not None or vals.get("ytd_revenue") is not None:
+            pe, _src = CP.derive(period_end, n[3])
+            year, month = CP.ym(pe)
+            return "ms", (n[0], n[1], n[3], pe, year, month,
+                          vals.get("monthly_revenue"), vals.get("ytd_revenue"),
+                          vals.get("monthly_revenue_prev"), vals.get("ytd_revenue_prev"),
+                          vals.get("monthly_volume"), vals.get("ytd_volume"),
+                          vals.get("volume_unit"), n[9], n[10]), "ok"
+        return kind, None, "empty"
+    if kind == "Financial Statements":
+        try:
+            vals, meta, unit = scrape_report(session, n[7])
+        except Exception:
+            return kind, None, "failed"
+        if vals.get("revenue") is not None:
+            pe, _src = CP.derive(meta.get("end"), n[3])
+            return "fs", (n[0], n[1], n[2], n[3], kind, meta.get("period"),
+                          pe, n[5]) + tuple(vals.get(k) for k in FS_KEYS) \
+                + (unit, n[7], now) + fs_derived(n[3], pe, unit,
+                                                 meta.get("is_consolidated")), "ok"
+        return kind, None, "empty"
+    return kind, None, "empty"
 
 
 def _deep_extract(rows, processed, conn, store_notices=True):
@@ -2328,44 +2478,12 @@ def _deep_extract(rows, processed, conn, store_notices=True):
         return s
 
     def _scrape_one(n):
-        """(tracing_no, kind, row|None, status) — status ∈ ok|empty|failed."""
-        kind = kind_of(n[3])
-        if kind == "Monthly Activity Report":
-            sess2 = _sess()
-            try:
-                vals, period_end = scrape_monthly_report(sess2, n[7])
-            except Exception as e:
-                print(f"  [worker] monthly failed {n[1]}: {e}")
-                return n[0], kind, None, "failed"
-            if vals.get("monthly_revenue") is not None or vals.get("ytd_revenue") is not None:
-                pe, _src = CP.derive(period_end, n[3])      # datasource ← عنوان
-                year, month = CP.ym(pe)
-                return n[0], "ms", (n[0], n[1], n[3], pe, year, month,
-                                    vals.get("monthly_revenue"),
-                                    vals.get("ytd_revenue"),
-                                    vals.get("monthly_revenue_prev"),
-                                    vals.get("ytd_revenue_prev"),
-                                    vals.get("monthly_volume"),
-                                    vals.get("ytd_volume"),
-                                    vals.get("volume_unit"), n[9], n[10]), "ok"
-            return n[0], kind, None, "empty"
-        if kind == "Financial Statements":
-            sess2 = _sess()
-            try:
-                vals, meta, unit = scrape_report(sess2, n[7])
-            except Exception as e:
-                print(f"  [worker] FS scrape failed {n[1]}: {e}")
-                return n[0], kind, None, "failed"
-            if vals.get("revenue") is not None:
-                # دورۀ canonical: اول datasource، در نبودش عنوان (بندِ ۳ قراردادِ
-                # `codal_periods`) — اگر هیچ‌کدام نبود ردیف **بی‌دوره** نوشته می‌شود،
-                # نه حدسی و نه ردشده.
-                pe, _src = CP.derive(meta.get("end"), n[3])
-                return n[0], "fs", (n[0], n[1], n[2], n[3], kind, meta.get("period"),
-                                    pe, n[5])                        + tuple(vals.get(k) for k in FS_KEYS)                        + (unit, n[7], now)                        + fs_derived(n[3], pe, unit,
-                                    meta.get("is_consolidated")), "ok"
-            return n[0], kind, None, "empty"
-        return n[0], kind, None, "empty"
+        """(tracing_no, kind, row|None, status) — بدنه در `scrape_notice_row` است
+        تا workerِ صف (`codal_pipeline`) هم **همان** قواعد را بخواند، نه کپیِ دوم."""
+        kind, row, status = scrape_notice_row(n, _sess())
+        if status == "failed":
+            print(f"  [worker] {kind} failed {n[1]}: network/parse")
+        return n[0], kind, row, status
 
     n_done = 0
     # همان قراردادِ --rebuild-fs: پروفایلِ polite (بی‌ADB، بی‌روتاریشن) تک‌کارگر
