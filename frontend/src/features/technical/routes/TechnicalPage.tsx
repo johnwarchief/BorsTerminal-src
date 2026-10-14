@@ -237,8 +237,13 @@ export default function TechnicalPage() {
 
   const noData = !symbol ? tedipx.data.length === 0 : nn.status === 'empty' || (!nn.isLoading && !nn.isError && nn.data.length === 0);
 
+  // ارتفاعِ کارگاه از خودِ پوسته گرفته می‌شود، نه از ۳remِ دستی: تاپ‌بارِ چسبان
+  // `--pinned-h` (۳۶px) + `py-2`ِ `.app-main` (۱۶px) = ۵۲px، ولی `3rem`=۴۸px بود
+  // — همان ۴ پیکسلِ اضافی که اسکرولِ جعلی می‌ساخت و پایینِ چارت را زیرِ تا
+  // می‌برد (اندازه‌گیریِ زنده در ۲۵۶۰×۱۴۴۰ و ۳۸۴۰×۲۱۶۰: docScroll=+4px در هر دو).
+  // با توکن، بلندترشدنِ تاپ‌بار دیگر بی‌سروصدا چارت را نمی‌بُرد.
   return (
-    <div className="tv-workbench flex h-[calc(100dvh-3rem)] min-h-0 min-w-0 w-full flex-col overflow-hidden xl:flex-row">
+    <div className="tv-workbench flex h-[calc(100dvh-var(--pinned-h)-1rem)] min-h-0 min-w-0 w-full flex-col overflow-hidden xl:flex-row">
       <TechnicalSidebar active={activeLevels} symbol={viewSymbol} onSelect={selectSymbol} />
 
       <main className="flex min-h-0 min-w-0 flex-1 flex-col">

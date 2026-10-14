@@ -320,9 +320,18 @@ export function WatchTable({ symbols, selected, onSelect, onRemove }: Props) {
                       onChange={() => togglePick(symbol)}
                     />
                   </td>
+                  {/* نامِ بلندِ فارسی دو چیز لازم دارد: (۱) white-space: normal —
+                      TD سراسری `whitespace-nowrap` دارد و دو کلاسِ whitespace رویِ
+                      یک گره، آخرِ CSS را می‌برند نه ترتیبِ نوشتن، پس استثنا رویِ
+                      خودِ span نوشته می‌شود؛ بی‌این `line-clamp-2` هرگز خطِ دوم را
+                      نشان نمی‌داد. (۲) `break-anywhere` — درونِ `-webkit-box`ِ
+                      خط‌چین تنها `anywhere` عرضِ کمینۀِ واژۀِ ZWNJ را می‌شکند
+                      (`break-word` آزموده شد و همان ۸px ماند). شاهدِ زنده در
+                      ۲۵۶۰×۱۴۴۰: «توسعه سامانه ي نرم افزاري نگين» ۸px بی‌نشانه
+                      بریده می‌شد. */}
                   <td className={`${TD} max-w-[15ch]`}>
                     <span className="font-black text-text-primary">{symbol}</span>
-                    <span className="line-clamp-2 block text-3xs leading-3 text-text-muted">{row?.name ?? ''}</span>
+                    <span className="line-clamp-2 block whitespace-normal break-anywhere text-3xs leading-3 text-text-muted">{row?.name ?? ''}</span>
                   </td>
                   <td className={TD}>
                     <FlashNum variant="neutral" value={row?.q_tot_tran ?? null} render={(v) => (v == null ? '—' : fmtInt(v))} className="text-text-secondary" />

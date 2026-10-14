@@ -98,7 +98,11 @@ export function TapeHistoryPanel({ insCode, symbol, days = 6, className = '' }: 
         <table className="w-full min-w-[420px] table-fixed border-collapse text-2xs">
           <thead>
             <tr className="border-b border-border-c/70 text-text-muted">
-              <th className="w-[9.5rem] truncate px-1.5 py-1 text-start font-bold">فیلتر</th>
+              {/* جدول `table-fixed` است: عرضِ ستون را همین <th> تعیین می‌کند و
+                  min-width رویِ <td> بی‌اثر است (آزموده شد). ۹.5rem=۱۵۲px برایِ
+                  بلندترین برچسبِ فیلتر («کد به کد حقوقی به حقیقی») ۵px کم بود و
+                  متن بی‌نشانه بریده می‌شد — اندازه‌گیریِ زنده در ۳۸۴۰×۲۱۶۰. */}
+              <th className="w-[10.5rem] px-1.5 py-1 text-start font-bold">فیلتر</th>
               {cal.map((d) => (
                 <th key={d} className="px-1.5 py-1 text-center font-bold" title={dEvenToJalali(d) ?? String(d)}>
                   {dayLabel(d)}

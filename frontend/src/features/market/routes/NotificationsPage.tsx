@@ -126,7 +126,11 @@ export default function NotificationsPage() {
   const srcState = src?.state ?? 'unknown';
 
   return (
-    <div className="flex w-full max-w-none flex-col gap-2" data-testid="notifications-page">
+  // فهرست اعلان‌ها بی‌سقف بود: ۱۲۰ ردیف = ۹٬۴۲۳px اسکرولِ *صفحه* در ۲۵۶۰×۱۴۴۰
+  // و ۸٬۸۵۵px در ۳۸۴۰×۲۱۶۰ — یعنی سرآمدِ صفحه و فیلترها با اسکرول می‌رفتند و
+  // رسیدن به آخرین ردیف نه صفحه می‌برد. الگویِ خودِ برنامه (tape-scroll،
+  // fts-screen-scroll) سقفِ dvh + اسکرولِ داخلی است؛ اینجا هم همان.
+    <div className="flex h-[calc(100dvh-var(--pinned-h)-1rem)] w-full max-w-none flex-col gap-2" data-testid="notifications-page">
       {/* ── سلامتِ منبع: «چیزی نیست» با «نرسیده» یکی نیست ─────────────────── */}
       <section className="glass-panel flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border border-border-c px-2.5 py-2"
                data-testid="notice-sources" data-state={srcState}>
@@ -210,7 +214,7 @@ export default function NotificationsPage() {
         <EmptyState title="چیزی درِ این فیلتر نیست"
                     hint="فیلترها را بردارید؛ خالی بودنِ این فهرست به معنای بی‌خبریِ بازار نیست." />
       ) : (
-        <ul className="flex min-w-0 flex-col gap-1.5" data-testid="notice-list">
+        <ul className="flex min-h-0 min-w-0 flex-1 flex-col gap-1.5 overflow-y-auto overscroll-contain pe-1" data-testid="notice-list">
           {visible.map((n) => (
             <NoticeRow key={String(n.id)} n={n} read={prefs.read.includes(String(n.id))}
                        onOpen={() => prefs.markRead(String(n.id))} />
