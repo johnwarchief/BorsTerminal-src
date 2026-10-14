@@ -318,6 +318,11 @@ SUITES = [
     # است و پاسخِ endpoint دست‌نخورده. بی‌شبکه، بی‌کشتنِ پروسه.
     ('dev/proc_probe_cache_v1105.py',
                                      'process probe: ttl + stale-while-revalidate + single-flight, endpoint payload and semantics unchanged'),
+    # مأموریتِ ۱۴۰۵-۰۷-۲۳، بندِ ۲.۲: همان دو قفل برایِ **پنل‌هایِ mstat**. سنجشِ
+    # این شب (`_audit/perf_live/loops_on_22h_*.jsonl`) نشان داد ttlِ تنها بس نبود —
+    # هر انقضا یکِ درخواستِ کاربر را ۲٬۵۷۰ms بلاک می‌کرد (board p95).
+    ('dev/mstat_swr_v1111.py',
+                                     'mstat panels: stale-while-revalidate + stale cap + single-flight, errors never cached, 3 negative controls'),
     # مرحلۀ ۸ مأموریت «صحتِ داده + خروجیِ دیدهبان»: فایل خروجی **ساخته و باز
     # می‌شود** (openpyxl/csv) — عدد درِ Excel سلولِ عددی است، `None` صفر نمی‌شود،
     # ردپایِ منشأ/تازگی درِ صفحۀ دوم و انتهای CSV می‌نشیند، BOM و RFC 5987
