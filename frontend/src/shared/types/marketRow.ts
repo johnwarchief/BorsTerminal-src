@@ -94,6 +94,10 @@ export const MarketRowSchema = z.object({
   buyer_power: num,
   buyer_power_raw: num,
   buy_power_i: num,
+  // سرانۀ فروش (حجمِ فروشِ حقیقی ÷ تعدادِ فروشندهٔ حقیقی) — درِ مرجع ستون است و
+  // خروجیِ دیدهبان هم آن را می‌خواهد؛ تا ویرایشِ ۱۴۰۵-۰۷-۲۳ درِ `_DROP_FIELDS`
+  // دور ریخته می‌شد، پس «بی‌داده» نبود، «فرستاده نمی‌شد».
+  sell_power_i: num,
   // درصدِ «آخرین» نسبت به دیروز: percent_change پایانی را می‌سنجد، این آخرین را.
   percent_last: num,
   f_roobi: flag,

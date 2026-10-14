@@ -15,9 +15,15 @@
 //
 // ترازِ عددی طبقِ گاردِ UI: مقدارِ num در لبۀِ start، بعدش نشان؛ جدولِ عریض درِ
 // `min-w-0 max-w-full overflow-auto`.
-import { useMemo } from 'react';
+//
+// خروجی (مرحلۀ ۸ مأموریت): فیلتر + انتخابِ ردیف + کنترلِ دامنه/ستون/فرمت همین‌جا
+// نشسته‌اند، چون «چه چیزی دیدنی است» فقط درِ همین کامپوننت معلوم است. جدولِ
+// خودِ دیدهبان صفحه‌بندی ندارد (سقفِ فهرست `WATCH_MAX`)، پس دامنهٔ «کلِ دیدهبان»
+// واقعاً کلِ فهرستِ رصد است — گاردِ `watch-export.spec.tsx` همین را می‌شمارد.
+import { useCallback, useMemo, useState } from 'react';
 import { FormingCandle } from '@shared/components/FormingCandle';
 import { FlashNum } from '@shared/components/FlashNum';
+import { ExportRowsControl, type ExportTableWithMeta } from '@shared/components/ExportRowsControl';
 import { fmtInt, fmtPct, toFaDigits, billionRialText, toBillionRial } from '@shared/lib/fmt';
 import { normalizeFa } from '@shared/lib/normalizeFa';
 import { useMarketFeedShared } from '@shared/api/marketFeed';
@@ -29,6 +35,11 @@ import {
   type MatrixState, type WatchMatrixRow,
 } from '@shared/api/userWatchlist';
 import type { MarketFeed, MarketRow } from '@shared/types/marketRow';
+import {
+  buildWatchTable, COLSET_LABEL, SCOPE_LABEL,
+  type WatchColumnSet, type WatchExportItem, type WatchScope,
+} from '../lib/watchExport';
+import { hhmm, statusText } from '../lib/watchStatus';
 
 /** نگاشتِ نماد(نرمال) → ردیفِ فید؛ ممو بر اساسِ مرجعِ آرایه تا هر pollِ بی‌تغییری
  *  بی‌هزینه باشد (الگویِ selectMarketCloses درِ usePortfolio.ts). */
@@ -43,29 +54,7 @@ function selectRowMap(feed: MarketFeed): Map<string, MarketRow> {
 
 const EMPTY_MAP = new Map<string, MarketRow>();
 
-/** وضعیتِ معاملاتیِ canonical — سه حالتِ جدا (P0-3): متوقف ≠ st_title ≠ «موردی ثبت نشده» */
-function statusText(row: MarketRow | null): { text: string; title: string; tone: string } {
-  if (row == null) return { text: 'بی‌ردیف', title: 'نماد در ردیف‌های فیدِ تابلو نیست (نام معتبر یا تعطیلِ دائم؟)', tone: 'text-text-muted' };
-  if (row.stop_state != null && row.stop_state !== '') {
-    return { text: 'متوقف', title: row.stop_reasons ?? row.stop_state, tone: 'text-accent-red' };
-  }
-  if (row.sup_flag != null && row.sup_flag > 0) {
-    return { text: 'زیرِ نظر', title: row.sup_reasons ?? row.sup_title ?? '', tone: 'text-accent-yellow' };
-  }
-  if (row.st_title || row.st_code) {
-    return { text: row.st_title ?? row.st_code ?? '', title: row.st_title ?? '', tone: 'text-text-secondary' };
-  }
-  return { text: 'موردی ثبت نشده', title: 'هیچ وضعیتِ رسمی‌ای برایِ این نماد ثبت نشده است — «سالم» جا نمی‌زند', tone: 'text-text-muted' };
-}
-
-/** 122959 → «۱۲:۲۹»؛ نبودِ ساعت «—» است، نه «۰۰:۰۰» */
-function hhmm(h: number | null | undefined): string {
-  if (typeof h !== 'number' || !Number.isFinite(h) || h <= 0) return '—';
-  const s = String(Math.floor(h)).padStart(6, '0');
-  return toFaDigits(`${s.slice(0, 2)}:${s.slice(2, 4)}`);
-}
-
-/** صفرِ صف یعنی «در این طرف صفی نیست»؛ کلیدِ نیامده یعنی بی‌داده. این دو یکی نیستند. */
+/** صفرِ صف یعنی «در این طرف صفی نیست»؛ کلیدِ نیامد یعنی بی‌داده. این دو یکی نیستند. */
 function queueCell(px: number | null | undefined) {
   if (px == null) return { text: '—', tone: 'text-text-muted', title: 'این خانۀ تابلو نرسیده — بی‌داده، نه صفر' };
   if (px === 0) return { text: 'بی‌صف', tone: 'text-text-muted', title: 'صفِ اولِ این طرف خالی است (صفرِ واقعیِ تابلو)' };
@@ -82,11 +71,6 @@ type Props = {
 
 const TH = 'px-2 py-1.5 text-start text-3xs font-bold whitespace-nowrap';
 const TD = 'px-2 py-1 text-start whitespace-nowrap';
-
-/** برچسب‌های تابلوخوانی (هفت فیلتر) — همان `patternBadges` و همان `MicroBadge`
- * ِ خودِ تابلو (رأیِ مالک ۱۴۰-۰۷-۱۹: «همون برچسب‌های تابلوخوانی»، بی‌ترجمۀ دوم).
- *  فقط چیپ‌هایِ فیلتر (`filter:true`)؛ وضعیت‌هایِ صف+/نظارت درِ ستونِ
- *  «وضعیت» هست. */
 
 /** «تکنیکال» و «بنیادی» درِ دیده‌بان (رأیِ مالک ۱۴۰۵-۰۷-۲۲): دو ستونِ وضعیت،
  *  با همان چهار حالتِ `confidence_engine.PILLAR_STATES`. داوری اینجا ساخته
@@ -136,9 +120,22 @@ function PillarCell({ row, pillar, pending }: {
   );
 }
 
+/** «۱۴۰۵-۰۷-۲۲ ۱۳:۰۵»ِ محلی — درِ فایلِ خروجی به‌عنوانِ زمانِ گرفتنِ خروجی نوشته می‌شود */
+function localStamp(d: Date): string {
+  const p = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+
+const SCOPE_HINT: Record<WatchScope, string> = {
+  selected: 'فقط ردیف‌هایی که تیک خورده‌اند',
+  visible: 'ردیف‌هایی که پس از فیلترِ بالا دیدنی‌اند',
+  all: 'همۀ نمادهایِ دیدهبان (بی‌فیلتر، بی‌صفحه‌بندی)',
+};
+
 export function WatchTable({ symbols, selected, onSelect, onRemove }: Props) {
   const feedQ = useMarketFeedShared(selectRowMap, 60_000);
   const byNorm = feedQ.data ?? EMPTY_MAP;
+  const feedMeta = useMarketFeedShared((f) => f.meta ?? null, 60_000);
   const tapeCfg = useTapeStore((s) => s.tapeFilterConfig);
   // یک درخواست برایِ کلِ فهرستِ رصد (ضدِN+1 درِ خودِ بک‌اند هم همین‌طور)، بی‌
   // پولینگِ موازی با ریتمِ تابلو.
@@ -154,12 +151,119 @@ export function WatchTable({ symbols, selected, onSelect, onRemove }: Props) {
     [symbols, byNorm],
   );
 
+  // ── فیلتر + انتخابِ ردیف (زیربنایِ دامنه‌هایِ خروجی) ───────────────────────
+  const [query, setQuery] = useState('');
+  const [picked, setPicked] = useState<ReadonlySet<string>>(new Set());
+  const [scope, setScope] = useState<WatchScope>('all');
+  const [colset, setColset] = useState<WatchColumnSet>('full');
+  const q = normalizeFa(query.trim());
+  const shown = useMemo(
+    () => (q.length === 0
+      ? rows
+      : rows.filter((r) => normalizeFa(r.symbol).includes(q) || normalizeFa(String(r.row?.name ?? '')).includes(q))),
+    [rows, q],
+  );
+
+  const togglePick = (s: string) => {
+    const n = normalizeFa(s);
+    const next = new Set(picked);
+    if (next.has(n)) next.delete(n);
+    else next.add(n);
+    setPicked(next);
+  };
+  const allShownPicked = shown.length > 0 && shown.every((r) => picked.has(normalizeFa(r.symbol)));
+  const toggleAllShown = () => {
+    const next = new Set(picked);
+    if (allShownPicked) shown.forEach((r) => next.delete(normalizeFa(r.symbol)));
+    else shown.forEach((r) => next.add(normalizeFa(r.symbol)));
+    setPicked(next);
+  };
+
+  const items: WatchExportItem[] = useMemo(
+    () => rows.map((r) => ({
+      symbol: r.symbol,
+      row: r.row,
+      matrix: mtx.get(normalizeFa(r.symbol)),
+    })),
+    [rows, mtx],
+  );
+
+  const counts = useMemo(() => ({
+    all: items.length,
+    visible: shown.length,
+    selected: shown.filter((r) => picked.has(normalizeFa(r.symbol))).length,
+  }), [items.length, shown, picked]);
+
+  /** دقیقاً لحظۀ کلیک ساخته می‌شود — نه snapshotِ رندرِ قبلی */
+  const getTable = useCallback((): ExportTableWithMeta => {
+    const now = new Date();
+    const m = feedMeta.data ?? null;
+    const meta: [string, string][] = [
+      ['منبع داده', 'TSETMC GetMarketWatch — همان فیدِ زندهٔ تابلو که جدول می‌خواند'],
+      ['نشستِ داده (d_even)', m?.d_even != null ? String(m.d_even) : '—'],
+      ['ساعتِ فید (h_even)', m?.h_even != null ? hhmm(m.h_even) : '—'],
+      ['آخرین همگام‌سازیِ برنامه', m?.last_sync ?? '—'],
+      ['زمانِ گرفتنِ خروجی', localStamp(now)],
+      ['دامنه', SCOPE_LABEL[scope]],
+      ['ستون‌ها', COLSET_LABEL[colset]],
+    ];
+    return buildWatchTable({
+      items, scope, selected: picked, query, colset,
+      cfg: tapeCfg ?? null,
+      exportedAt: localStamp(now),
+      meta,
+    });
+  }, [colset, feedMeta.data, items, picked, query, scope, tapeCfg]);
+
   return (
     <div className="glass-panel min-w-0 max-w-full overflow-hidden rounded-2xl" data-testid="watch-table">
+      <div className="flex min-w-0 flex-wrap items-center gap-2 border-b border-border-c/60 px-2 py-1.5">
+        <input
+          type="text"
+          value={query}
+          data-testid="watch-filter-input"
+          aria-label="فیلترِ دیدهبان"
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="فیلترِ نماد یا نام"
+          className="w-36 rounded-lg border border-border-c bg-bg-card px-2 py-1 text-2xs text-text-primary outline-none placeholder:text-text-muted focus:border-accent-blue sm:w-44"
+        />
+        <span className="num text-3xs text-text-muted" data-testid="watch-filter-count">
+          {toFaDigits(shown.length)} از {toFaDigits(rows.length)}
+        </span>
+        <div className="ms-auto">
+          <ExportRowsControl
+            base="دیدهبان-بازار"
+            scope={scope}
+            onScope={setScope}
+            colset={colset}
+            onColset={setColset}
+            getTable={getTable}
+            scopes={[
+              { id: 'selected', label: SCOPE_LABEL.selected, count: counts.selected, hint: SCOPE_HINT.selected },
+              { id: 'visible', label: SCOPE_LABEL.visible, count: counts.visible, hint: SCOPE_HINT.visible },
+              { id: 'all', label: SCOPE_LABEL.all, count: counts.all, hint: SCOPE_HINT.all },
+            ]}
+            colsets={[
+              { id: 'board', label: COLSET_LABEL.board, count: 0 },
+              { id: 'full', label: COLSET_LABEL.full, count: 0 },
+            ]}
+            testId="watch-export"
+          />
+        </div>
+      </div>
       <div className="max-w-full overflow-auto">
-        <table className="w-full min-w-[1140px] border-collapse text-xs">
+        <table className="w-full min-w-[1180px] border-collapse text-xs">
           <thead>
             <tr className="bg-bg-card/70 text-start text-3xs uppercase tracking-wider text-text-secondary">
+              <th className={`${TH} w-8`}>
+                <input
+                  type="checkbox"
+                  data-testid="watch-pick-all"
+                  aria-label="انتخابِ همهٔ ردیف‌هایِ دیدنی"
+                  checked={allShownPicked}
+                  onChange={toggleAllShown}
+                />
+              </th>
               <th className={TH}>نماد</th>
               <th className={TH}>حجم</th>
               <th className={TH}>تعداد</th>
@@ -181,13 +285,14 @@ export function WatchTable({ symbols, selected, onSelect, onRemove }: Props) {
             </tr>
           </thead>
           <tbody>
-            {rows.map(({ symbol, row }) => {
+            {shown.map(({ symbol, row }) => {
               const st = statusText(row);
               const pct = row?.percent_change ?? null;
               const isSel = normalizeFa(symbol) === normalizeFa(selected);
               const dem = queueCell(row?.buy_q1_px);
               const sup = queueCell(row?.sell_q1_px);
               const badges = row ? patternBadges(row, tapeCfg).filter((b) => b.filter) : [];
+              const isChecked = picked.has(normalizeFa(symbol));
               return (
                 <tr
                   key={symbol}
@@ -206,6 +311,15 @@ export function WatchTable({ symbols, selected, onSelect, onRemove }: Props) {
                     }
                   }}
                 >
+                  <td className={`${TD} w-8`} onClick={(e) => e.stopPropagation()}>
+                    <input
+                      type="checkbox"
+                      data-testid={`watch-pick-${symbol}`}
+                      aria-label={`انتخابِ ${symbol} برایِ خروجی`}
+                      checked={isChecked}
+                      onChange={() => togglePick(symbol)}
+                    />
+                  </td>
                   <td className={`${TD} max-w-[15ch]`}>
                     <span className="font-black text-text-primary">{symbol}</span>
                     <span className="line-clamp-2 block text-3xs leading-3 text-text-muted">{row?.name ?? ''}</span>
@@ -275,7 +389,7 @@ export function WatchTable({ symbols, selected, onSelect, onRemove }: Props) {
                     <PillarCell row={mtx.get(normalizeFa(symbol))} pillar="fund" pending={matrixPending} />
                   </td>
                   <td className={TD} title="ساعتِ خودِ همین ردیف در تابلو (نه ساعتِ کلیِ همگام‌سازی)">
-                    <span className="num text-2xs text-text-secondary">{hhmm(row?.row_h)}</span>
+                    <span className="num text-2xs text-text-secondary">{toFaDigits(hhmm(row?.row_h))}</span>
                   </td>
                   <td className={TD}>
                     <button

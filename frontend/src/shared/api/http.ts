@@ -90,6 +90,52 @@ function sleep(ms: number, signal?: AbortSignal): Promise<void> {
   });
 }
 
+export type BlobReply = { blob: Blob; filename: string | null };
+
+function dispositionFilename(header: string): string | null {
+  // RFC 5987: filename*=UTF-8''… (نامِ فارسی) و اگر نبود filename="…"ِ ASCII
+  const star = /filename\*=UTF-8''([^;]+)/i.exec(header);
+  if (star?.[1]) {
+    try {
+      return decodeURIComponent(star[1]);
+    } catch {
+      return star[1];
+    }
+  }
+  const plain = /filename="([^"]+)"/i.exec(header);
+  return plain?.[1] ?? null;
+}
+
+/**
+ * POSTِ JSON → فایلی که سرور ساخته (Excel/PDF/DOCX). `http` پاسخ را `res.json()`
+ * می‌کند، پس باینری از آن رد نمی‌شود؛ این تنها مسیرِ مجازِ `fetch` برایِ دانلودِ
+ * فایل است (گاردِ no-restricted-syntax همان `shared/api/http.ts` را می‌پذیرد).
+ */
+export async function httpBlob(url: string, body: unknown, signal?: AbortSignal): Promise<BlobReply> {
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Accept: 'application/octet-stream' },
+    body: JSON.stringify(body),
+    signal,
+  });
+  if (!res.ok) {
+    let message: string | undefined;
+    try {
+      const j = (await res.json()) as { detail?: unknown; message?: unknown };
+      const d = typeof j?.detail === 'string' ? j.detail
+        : typeof j?.message === 'string' ? j.message : undefined;
+      message = d ? `خطای ${res.status}: ${d}` : undefined;
+    } catch {
+      /* بدنهٔ غیرِ JSON = همان خطایِ بی‌توضیح */
+    }
+    throw new HttpError(res.status, url, message);
+  }
+  return {
+    blob: await res.blob(),
+    filename: dispositionFilename(res.headers?.get?.('content-disposition') ?? ''),
+  };
+}
+
 /** fetch با retry نمایی + Zod parse — الگوی codal_fetcher (backoff روی 429/403) */
 export async function http<T>(url: string, opts: HttpOptions = {}): Promise<T> {
   const { schema, retries = 2, baseDelayMs = 800, signal, method = 'GET',

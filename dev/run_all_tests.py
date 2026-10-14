@@ -311,6 +311,20 @@ SUITES = [
     # است و پاسخِ endpoint دست‌نخورده. بی‌شبکه، بی‌کشتنِ پروسه.
     ('dev/proc_probe_cache_v1105.py',
                                      'process probe: ttl + stale-while-revalidate + single-flight, endpoint payload and semantics unchanged'),
+    # مرحلۀ ۸ مأموریت «صحتِ داده + خروجیِ دیدهبان»: فایل خروجی **ساخته و باز
+    # می‌شود** (openpyxl/csv) — عدد درِ Excel سلولِ عددی است، `None` صفر نمی‌شود،
+    # ردپایِ منشأ/تازگی درِ صفحۀ دوم و انتهای CSV می‌نشیند، BOM و RFC 5987
+    # برجا می‌مانند، بدنه‌هایِ نامعتبر ۴۱۳/۴۲۲ می‌گیرند و یکِ کنترلِ منفی ثابت
+    # می‌کند سنسور صفرِ جعلی را می‌بیند. بی‌شبکه، بی‌market.db.
+    ('dev/watch_export_v1106.py',
+                                     'watchlist export: real xlsx/csv round-trip, numeric cells, nulls, provenance sheet, input gates'),
+    # بند ۴ همان مأموریت: سرانۀ فروش حقیقی ازِ `api/market.py` درِ `_DROP_FIELDS`
+    # دور ریخته می‌شد (سنجشِ هم‌نفس: ۱٬۲۹۱ ردیف MISSING_MAPPING در برابرِ سرانۀ
+    # خرید). گارد بیرون‌بودنِ هر دو کلید را با کنترلِ منفی رویِ `tmax`، یکِ
+    # قراردادِ مخرجِ صفر، نبودِ فرمولِ سومِ «قدرت خرید»، و اعلامِ هر دو درِ
+    # اسکیمای فرانت و ستونِ خروجی را قفل می‌کند. بی‌شبکه، بی‌بانک.
+    ('dev/per_capita_sell_v1107.py',
+                                     'per-capita sell reaches the wire: drop-list, shared zero-denominator rule, schema and export column'),
     # خودآزمونِ همان گارد: شش نقصِ تاریخی (نیم‌فاصلۀ «شهر فرش»، پلکان+sبدِ بی‌پرچم،
     # سبدِ تنها، نردبانِ EPS، گیتِ ISINِ خاموش، تناقضِ عنوان⇄ستون) درِ حافظه
     # برگردانده می‌شوند و هر شش باید قرمز شود. سبزبودنِ گارد بی‌این ثابت نمی‌کند

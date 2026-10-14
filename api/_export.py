@@ -15,6 +15,11 @@ import pandas as pd
 
 router = APIRouter()
 
+# سقفِ منطقیِ بدنهٔ POST /api/export — دیدهبان ۶۰ نماد است و جدولِ بازار چند
+# هزار ردیف؛ ۲۰٬۰۰۰ ردیف از هر دو بزرگ‌تر است و بازم سقفِ «خروجیِ واقعی» می‌ماند.
+EXPORT_MAX_ROWS = 20_000
+EXPORT_MAX_COLS = 200
+
 
 def _disposition(name: str) -> str:
     """Content-Dispositionِ امن — نامِ فارسی نباید هدرِ لاتین-۱ را بشکند.
@@ -32,11 +37,18 @@ def _disposition(name: str) -> str:
     return 'attachment; filename="%s"; filename*=UTF-8\'\'%s' % (safe, quote(name))
 
 
-def _export_build(fmt: str, title: str, rows_data):
-    """ساخت واقعی فایل خروجی از rows آماده (پس از اعمال فیلترها) + سازگاری GET قدیمی"""
+def _export_build(fmt: str, title: str, rows_data, meta=None):
+    """ساخت واقعی فایل خروجی از rows آماده (پس از اعمال فیلترها) + سازگاری GET قدیمی
+
+    `meta` ردپایِ منشأ است (جفت‌های «کلید، مقدار»): درِ Excel یک صفحۀ دومِ جدا
+    می‌گیرد تا دادهٔ جدولی با توضیح قاطی نشود، و درِ CSV بعد از یک سطرِ خالی و
+    با پیشوند `#` نوشته می‌شود تا خوانندهٔ جدولی همان ردیف‌های همیشگی را ببیند.
+    نبودِ `meta` = عینِ رفتارِ پیشین (هیچ مصرف‌کنندۀ قدیمی دست‌نخورده).
+    """
     import io
     import datetime as _dt
     rows = rows_data
+    meta = [(str(k), str(v)) for k, v in (meta or [])]
     ts = _dt.datetime.now().strftime("%Y%m%d_%H%M")
     name = f"borsagent_{title}_{ts}"
     if fmt in ("docx", "pdf") and len(rows) > 201:
@@ -52,6 +64,13 @@ def _export_build(fmt: str, title: str, rows_data):
             ws.append(["" if c is None else c for c in r])
         for col in ws.columns:
             ws.column_dimensions[col[0].column_letter].width = 22
+        if meta:
+            ms = wb.create_sheet("منبع و تازگی")
+            ms.append(["کلید", "مقدار"])
+            for k, v in meta:
+                ms.append([k, v])
+            ms.column_dimensions["A"].width = 34
+            ms.column_dimensions["B"].width = 60
         buf = io.BytesIO()
         wb.save(buf)
         return Response(buf.getvalue(), media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -119,16 +138,42 @@ def _export_build(fmt: str, title: str, rows_data):
         buf = io.StringIO()
         w = _csv.writer(buf)
         w.writerows(rows)
+        if meta:
+            # ردپا بعد از یک سطرِ خالی و با پیشوند `#` — همان قراردادی که رابطِ
+            # CSVِ سمتِ کلاینت می‌گیرد، تا «پروندۀ CSV از سرور» بی‌منبع نباشد.
+            w.writerow([])
+            for k, v in meta:
+                w.writerow(["# " + k, v])
         return Response("\ufeff" + buf.getvalue(), media_type="text/csv; charset=utf-8",
                         headers={"Content-Disposition": _disposition(name + ".csv")})
 
 @router.post("/api/export")
 def export_data_post(payload: dict = None):
     """دانلود خروجی با دادهٔ بستهبندیشده از UI (فیلترهای فعال اعمال شده)
-    body: {fmt, title, rows: [[...], ...]}"""
+    body: {fmt, title, rows: [[...], ...], meta: [[کلید, مقدار], ...]}
+
+    `meta` ردپایِ منشأ/تازگی است (اختیاری). سقفِ منطقی رویِ ردیف و ستون این
+    نیست که «عددِ بزرگ بد است»: بدنهٔ بی‌سقف از رابط، PyInstaller را درِ همان
+    نشستِ معاملاتی می‌خواباند.
+    """
+    from fastapi import HTTPException
     if payload is None:
         return {"status": "error", "message": "empty body"}
-    return _export_build(payload.get("fmt", "xlsx"), payload.get("title", "export"), payload.get("rows") or [])
+    rows = payload.get("rows") or []
+    if not isinstance(rows, list):
+        raise HTTPException(status_code=422, detail="rows باید فهرستِ ردیف‌ها باشد")
+    if len(rows) > EXPORT_MAX_ROWS:
+        raise HTTPException(status_code=413,
+                            detail=f"خروجی از {EXPORT_MAX_ROWS} ردیف بیشتر است")
+    wide = max((len(r) for r in rows if isinstance(r, (list, tuple))), default=0)
+    if wide > EXPORT_MAX_COLS:
+        raise HTTPException(status_code=413,
+                            detail=f"تعدادِ ستون‌ها از {EXPORT_MAX_COLS} بیشتر است")
+    meta = payload.get("meta") or []
+    if not isinstance(meta, list):
+        raise HTTPException(status_code=422, detail="meta باید فهرستِ جفت‌ها باشد")
+    return _export_build(payload.get("fmt", "xlsx"), payload.get("title", "export"),
+                         rows, meta=meta)
 
 @router.get("/api/export")
 def export_data(fmt: str = Query("csv"), view: str = Query("market"), symbol: str = Query(None)):
