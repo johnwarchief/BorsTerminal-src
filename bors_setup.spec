@@ -34,6 +34,10 @@ a = Analysis(
         'uvicorn.logging', 'uvicorn.loops.auto', 'uvicorn.protocols.http.auto',
         'uvicorn.protocols.websockets.auto', 'uvicorn.lifespan.on',
         'codal_fetcher', 'app', 'test_tsetmc', 'fts_engine', 'mstat_engine',
+        # `app.py` هوکِ استارتش `codal_pipeline` را داخلِ بدنهٔ تابع import
+        # می‌کند (خطِ دریافت خودکار کدال)؛ اسکنِ ایستای PyInstaller آن را نمی‌بیند
+        # و EXE رویِ اولین بوت با ModuleNotFoundError می‌مرد.
+        'codal_pipeline',
         'confidence_engine', 'watchlist_store', 'notifier', 'codal_engine',
         'bors_config', 'bors_flags', 'api',
         'api._core', 'api.market', 'api.chart', 'api.selection',

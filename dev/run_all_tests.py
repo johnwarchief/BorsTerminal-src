@@ -291,6 +291,13 @@ SUITES = [
     # هیچ ردیفِ بنیادیِ ساختگی نمی‌گیرد. بی‌شبکه، بی‌market.db.
     ('dev/codal_instrument_discovery_v1102.py',
                                      'instrument universe ledger: new/rename/id-change/deactivated/removed, non-company classes held out'),
+    # بندِ ۶ همان مأموریت: زمان‌بندی مستقل از رابط. چراغِ بیدارباش از خودِ صف و
+    # checkpoint می‌آید (retry-at / backlog / discovery-gap)، خزندۀ دستی و worker
+    # خودکار رویِ یکِ IP نمی‌جنگند، رشتۀ دوم ساخته نمی‌شود، محاسبۀ سنگین درِ
+    # ساعتِ بازار موکول می‌شود بی‌گم‌شدنِ نماد، و دريچۀ فرمانی (CLI) رویِ بانکِ
+    # ایزوله کار می‌کند. دربه‌دیوارِ BORS_CODAL_OFFLINE + tripwire ⇒ صفرِ درخواست.
+    ('dev/codal_scheduler_v1103.py',
+                                     'ui-independent scheduler: dynamic wakeup, crawler-busy yield, single worker, deferred recalc, offline CLI'),
     # خودآزمونِ همان گارد: شش نقصِ تاریخی (نیم‌فاصلۀ «شهر فرش»، پلکان+sبدِ بی‌پرچم،
     # سبدِ تنها، نردبانِ EPS، گیتِ ISINِ خاموش، تناقضِ عنوان⇄ستون) درِ حافظه
     # برگردانده می‌شوند و هر شش باید قرمز شود. سبزبودنِ گارد بی‌این ثابت نمی‌کند

@@ -58,6 +58,11 @@ __all__ = [
     "health", "process_claimed", "run_cycle",
     "discover_auto", "watermarks", "cursor_notice_tn",
     "discover_instruments", "instrument_snapshot", "instrument_coverage",
+    "discover_instruments", "coverage_resolver",
+    "worker_once", "start_worker", "stop_worker", "worker_status",
+    "next_wakeup", "catchup_state", "crawler_busy", "market_in_session",
+    "offline_gate",
+    "CADENCE_IDLE_S", "CADENCE_BACKLOG_S", "DISCOVERY_MIN_GAP_S",
     "CURSOR_NOTICE_TN", "CURSOR_NOTICE_DATE",
     "AXES_BY_SOURCE", "BACKOFF_S", "MAX_ATTEMPTS", "LOCK_TTL_S", "CLAIM_STALE_S",
 ]
@@ -980,9 +985,294 @@ def run_cycle(conn, owner, *, discover=None, scrape=None, budget=8,
         lock_release(conn, "codal_pipeline", owner)
 
 
+# ─── زمان‌بندی مستقل از رابط (بندِ ۶ مأموریت) ─────────────────────────────── #
+#
+# چرا تایمرِ ثابت نه: «کِی بیدار شویم» از خودِ داده معلوم می‌شود — کارِ
+# بازیابی‌شدنی درِ صف `next_attempt_at` دارد، و پاسِ شبکه‌ای بودجۀ زمانیِ خودش
+# را. چرخۀ نمایشیِ «هر N دقیقه یک درخواست به کدال» همان چیزی است که بن ۴۲۹
+# می‌سازد.
+CADENCE_IDLE_S = 6 * 3600          # صف تهی ⇒ روزی دو پاس کافی است
+CADENCE_BACKLOG_S = 300            # کارِ بازیابی‌شدنی ⇒ هر پنج دقیقه
+CADENCE_MIN_S = 60                 # سقفِ بیدارباشِ پی‌درپی
+DISCOVERY_MIN_GAP_S = 3 * 3600     # حداقل فاصلۀ دو پاسِ شبکه‌ای
+CURSOR_LAST_NETWORK = "notice_last_network_pass_at"
+CODAL_BUSY_PHASES = ("codal_sync", "codal_backoff", "codal_paused", "codal_stopped")
+_WORKER: dict = {"thread": None, "stop": None, "owner": None, "started_at": None,
+                 "cycles": 0, "last_error": None}
+
+
+def offline_gate():
+    """دربۀ آفلاین: با `BORS_CODAL_OFFLINE=1` هیچ درخواستی به کدال و هیچ
+    کنترلی به دستگاه (ADB) نرود، ولی مسیرِ صف/چرخه همچنان اجرا شود.
+
+    چرا لازم شد: گاردِ همین بند رویِ ماشینِ توسعه یکِ پاسِ شبکه‌ایِ واقعی را
+    تصمیم گرفت (چون `network=None` خود تصمیم می‌گیرد) و خزنده از راهِ ADB خواست
+    IP بچرخاند — کاری که قراردادِ مخزن برایِ آزمونِ یکِ گارد ممنوع می‌کند.
+    قفلِ «تزریقِ stub در گارد» جواب نمی‌دهد، چون زیرمسیرها (CLI، subprocess)
+    همان‌جا نمی‌آیند؛ این دربه‌دیوار درِ خودِ `worker_once` است.
+    """
+    return (os.environ.get("BORS_CODAL_OFFLINE") or "").strip().lower() in (
+        "1", "true", "yes")
+
+
+def _offline_scrape(n):
+    """جانشینِ بی‌شبکهٔ `scrape_notice_row`: فقط «باز نشد» را ثبت می‌کند."""
+    kind = n[1] if (n and n[1] in ("fs", "ms")) else "fs"
+    return kind, None, "failed"
+
+
+def _to_dt(s):
+    """`%Y-%m-%d %H:%M:%S` و همان `isoformat()` با `T`.
+
+    `write_progress` زمان را با `isoformat(timespec="seconds")` می‌نویسد («T»
+    جداکننده)؛ بی‌پذیرفتنِ هر دو، `crawler_busy` همیشه «آزاد» می‌گفت و worker
+    خودکار وسطِ کارِ خزندۀ دستی درخواست می‌زد (سنجیده شد).
+    """
+    t = str(s or "").strip().replace("T", " ")
+    try:
+        return datetime.datetime.strptime(t[:19], "%Y-%m-%d %H:%M:%S")
+    except (TypeError, ValueError):
+        return None
+
+
+def _age_s(s, now_dt=None):
+    d = _to_dt(s)
+    if not d:
+        return None
+    return int(((now_dt or datetime.datetime.now()) - d).total_seconds())
+
+
+def market_in_session(now_dt=None) -> bool:
+    """آیا بازار باز است؟ از **همان** پنجره‌ای که `app.py` و `mstat_engine`
+    استفاده می‌کنند (۰۹:۰۰–۱۳:۰۰ و تعطیلی پنجشنبه/جمعه) — تعریفِ دوم نمی‌سازیم.
+
+    بی‌خبرِ تعطیلاتِ رسمی: درِ این مخزن تقویمِ تعطیلیِ جایگزینِ آفلاینی وجود
+    ندارد (سنجشِ Stage 0: `grep jalali|shamsi` هیچی); وضعیتِ رسمی از جدولِ
+    `market_index` می‌آید. لذا «خم» فقط پنجرۀ معاملاتی است و ادعایِ تعطیلی
+    نمی‌شود — بندِ «صادقانه» مأموریت.
+    """
+    try:
+        from mstat_engine import in_trading_session
+        n = now_dt or datetime.datetime.now()
+        return bool(in_trading_session(n.hour * 10000 + n.minute * 100 + n.second, n))
+    except Exception:
+        return False
+
+
+def crawler_busy(status_path=None, max_age_s=900, now_dt=None):
+    """آیا خزندۀ دستی (دکمۀ «بروزرسانی کدال») همین حالا ترافیک می‌زند؟
+
+    `codal_pipeline` و `api/_sync_codal.py` دو مسیرِ مستقل به یکِ IP هستند؛ اگر
+    هر دو هم‌زمان بدوند، ۴۲۹/بن نصیبِ کاربر می‌شود. این دربه‌دیوار از همان
+    `sync_status.json` می‌خواند که خودِ خزنده می‌نویسد — حلقهٔ جدیدی نمی‌سازد.
+    """
+    path = status_path or getattr(CF, "STATUS_PATH", None)
+    if not path:
+        return {"busy": False, "reason": "no-status-path"}
+    try:
+        import json
+        with open(path, "r", encoding="utf-8") as f:
+            d = json.load(f)
+    except (OSError, ValueError):
+        return {"busy": False, "reason": "unreadable"}
+    age = _age_s(d.get("ts"), now_dt)
+    ph = str(d.get("phase") or d.get("stage") or "")
+    busy = ph in CODAL_BUSY_PHASES and age is not None and age <= int(max_age_s)
+    return {"busy": bool(busy), "phase": ph, "age_s": age,
+            "reason": "fresh-codal-phase" if busy else "idle"}
+
+
+def next_wakeup(conn, now=None, network_gap_s=DISCOVERY_MIN_GAP_S):
+    """چراغِ بیدارباش بعدی + علتش — از خودِ صف و checkpoint.
+
+    خروجی: `{"at", "seconds", "reason", "need_network"}`؛ `reason` یکی از
+    `retry-at` (وقتِ تلاشِ دوبارهٔ یکِ کار)، `backlog` (کارِ بازیابی‌شدنی هست)،
+    `discovery-gap` (پاسِ شبکه زودتر از این مجاز نیست)، `idle`.
+    """
+    now_dt = _to_dt(now) or datetime.datetime.now()
+    now_s = now_dt.strftime("%Y-%m-%d %H:%M:%S")
+    c = counts(conn)
+    cand, reason = [], "idle"
+    if c["retryable"]:
+        try:
+            rows = conn.execute(
+                "SELECT next_attempt_at FROM codal_extracted"
+                " WHERE state IN ('queued','failed')"
+                " ORDER BY COALESCE(next_attempt_at,'') LIMIT 1").fetchall()
+        except sqlite3.Error:
+            rows = []
+        if rows and rows[0][0]:
+            cand.append(str(rows[0][0])[:19])
+            reason = "retry-at"
+        else:
+            cand.append((now_dt + datetime.timedelta(seconds=CADENCE_BACKLOG_S))
+                        .strftime("%Y-%m-%d %H:%M:%S"))
+            reason = "backlog"
+    last_net = cursor_get(conn, CURSOR_LAST_NETWORK)
+    age_net = _age_s(last_net, now_dt)
+    if age_net is None or age_net >= int(network_gap_s):
+        cand.append(now_s)
+        if reason == "idle":
+            reason = "discovery-due"
+    else:
+        nxt = (now_dt + datetime.timedelta(seconds=int(network_gap_s) - age_net))
+        cand.append(nxt.strftime("%Y-%m-%d %H:%M:%S"))
+        if not c["retryable"]:
+            reason = "discovery-gap"
+    if not c["retryable"] and reason in ("idle", "discovery-gap"):
+        cand.append((now_dt + datetime.timedelta(seconds=CADENCE_IDLE_S))
+                    .strftime("%Y-%m-%d %H:%M:%S"))
+    at = min(x for x in cand if x)
+    d = _to_dt(at)
+    secs = CADENCE_MIN_S if not d else max(
+        CADENCE_MIN_S, int((d - now_dt).total_seconds()))
+    return {"at": at, "seconds": int(secs), "reason": reason,
+            "need_network": reason in ("discovery-due", "idle") or not last_net,
+            "queue": c}
+
+
+def catchup_state(conn, now=None):
+    """آنچه درِ زمانِ خاموشی جا مانده — خام از checkpoint و شمارنده‌ها.
+
+    بی‌ادعا: اگر بانک هیچ چرخۀ موفقی ندارد، `never_synced` می‌گویم و «چند روز
+    عقبیم» را نمی‌سازم.
+    """
+    now_dt = _to_dt(now) or datetime.datetime.now()
+    h = health(conn, worker_key="")
+    last_ok = (h.get("last_successful_sync") or {}).get("at")
+    gap = _age_s(last_ok, now_dt)
+    cur = h.get("cursor") or {}
+    return {
+        "last_successful_sync": last_ok,
+        "gap_seconds": gap,
+        "never_synced": last_ok is None,
+        "queued": h["queue"]["queued"], "failed": h["queue"]["failed"],
+        "running": h["queue"]["running"], "unresolved": h["queue"]["unresolved"],
+        "retryable": h["queue"]["retryable"],
+        "dirty": h["dirty_symbols"],
+        "notice_watermark": {k: v for k, v in cur.items()
+                             if k.startswith("notice_scan_tn")},
+        "last_network_pass": cur.get(CURSOR_LAST_NETWORK),
+    }
+
+
+def worker_once(db_path=None, *, owner=None, conn=None, budget=8, network=None,
+                recalc=None, now=None, force=False, busy=None, status_path=None):
+    """یکِ چرخه، آماده برایِ threadِ بک‌اند یا Task Scheduler.
+
+    `network=None` یعنی خودِ زمان‌بند تصمیم بگیرد: اگر خزندۀ دستی در کار است،
+    یا پاسِ شبکه‌ای زودتر از `DISCOVERY_MIN_GAP_S` از این است، فقط صفِ
+    محلی/کارهایِ بازیابی‌شدنی زده می‌شود (بی‌درخواستِ تازه). `recalc=None` هنگامِ
+    بازارِ باز یعنی محاسبۀ سنگین به چرخۀ بعد موکول می‌شود — نمادها درِ
+    `pipeline_dirty` می‌مانند و چیزی گم نمی‌شود.
+    """
+    now = now or now_s()
+    own = conn is None
+    if own:
+        conn = sqlite3.connect(db_path or CF.DB_PATH, timeout=120,
+                               isolation_level=None)
+        conn.row_factory = sqlite3.Row
+        CF.create_schema(conn)
+        CF.migrate_schema(conn)
+    try:
+        if busy is None:
+            busy = crawler_busy(status_path=status_path)
+        age_net = _age_s(cursor_get(conn, CURSOR_LAST_NETWORK), _to_dt(now))
+        want = age_net is None or age_net >= DISCOVERY_MIN_GAP_S
+        want = want and not busy["busy"]
+        use_network = want if network is None else bool(network)
+        if offline_gate():
+            use_network = False
+        if (not use_network and not force
+                and not counts(conn)["retryable"]
+                and not dirty_count(conn)):
+            return {"skipped": "nothing-to-do", "reason": busy.get("reason", ""),
+                    "network": False}
+        defer_recalc = market_in_session(_to_dt(now))
+        res = run_cycle(
+            conn, owner or "worker-%d" % os.getpid(),
+            discover=discover_auto if use_network else None,
+            scrape=_offline_scrape if offline_gate() else CF.scrape_notice_row,
+            recalc=None if (defer_recalc and recalc is None) else recalc,
+            budget=budget, now=now)
+        if use_network and res.get("run_id"):
+            cursor_set(conn, CURSOR_LAST_NETWORK, now,
+                       note="cycle=%s skipped=%s" % (res.get("run_id"),
+                                                     res.get("skipped")))
+        res["network"] = use_network
+        res["recalc_deferred"] = bool(defer_recalc and recalc is None)
+        # چراغِ بیدارباش از همان اتصال می‌آید؛ رشتۀ زمان‌بند برایِ «چند
+        # ثانیه بخوابم» اتصالِ دوم به بانکِ کاری باز نمی‌کند.
+        res["wakeup"] = next_wakeup(conn, now=now)
+        return res
+    finally:
+        if own:
+            try:
+                conn.close()
+            except sqlite3.Error:
+                pass
+
+
+def start_worker(db_path=None, owner=None, *, budget=8, tick_s=30,
+                 conn_factory=None, name="codal-auto"):
+    """رشتۀ زمان‌بند — **حداکثر یکی به‌ازایِ پروسه** (بندِ ۶: تب‌هایِ زیاد ⇒
+    workerِ زیاد نباشد). بازگشت: شرحِ وضعیت، بدونِ ساختنِ رشتۀ دوم.
+    """
+    if _WORKER.get("thread") and _WORKER["thread"].is_alive():
+        return dict(_WORKER, started=False, reason="already-running",
+                    thread=_WORKER["thread"].name)
+
+    def _loop():
+        stop = _WORKER.get("stop")
+        while not (stop and stop.is_set()):
+            try:
+                r = worker_once(db_path=db_path, owner=owner,
+                                conn=(conn_factory() if conn_factory else None),
+                                budget=budget)
+                _WORKER["cycles"] = int(_WORKER.get("cycles") or 0) + 1
+                _WORKER["last"] = {k: r.get(k) for k in
+                                   ("skipped", "processed", "done", "failed",
+                                    "network", "recalc_deferred", "error")}
+                wait = int((r.get("wakeup") or {}).get("seconds") or CADENCE_MIN_S)
+            except Exception as e:
+                _WORKER["last_error"] = "%s: %s" % (type(e).__name__, e)
+                wait = CADENCE_MIN_S
+            if stop:
+                stop.wait(min(max(int(wait), CADENCE_MIN_S), 6 * 3600))
+            else:
+                break
+
+    import threading
+    _WORKER["stop"] = threading.Event()
+    _WORKER["owner"] = owner or "worker-%d" % os.getpid()
+    _WORKER["started_at"] = now_s()
+    t = threading.Thread(target=_loop, name=name, daemon=True)
+    _WORKER["thread"] = t
+    t.start()
+    return dict(_WORKER, started=True, thread=t.name)
+
+
+def stop_worker(timeout_s=5):
+    st = _WORKER.get("stop")
+    if st:
+        st.set()
+    t = _WORKER.get("thread")
+    if t and t.is_alive():
+        t.join(timeout=float(timeout_s))
+    return worker_status()
+
+
+def worker_status():
+    t = _WORKER.get("thread")
+    return {"running": bool(t and t.is_alive()), "owner": _WORKER.get("owner"),
+            "started_at": _WORKER.get("started_at"),
+            "cycles": _WORKER.get("cycles"), "last": _WORKER.get("last"),
+            "last_error": _WORKER.get("last_error")}
+
+
 # ─── سلامتیِ خط (برایِ API و UI) ─────────────────────────────────────────── #
 
-def health(conn, worker_key="codal_pipeline"):
+def health(conn, worker_key="codal_pipeline", db_path=None):
     """وضعیتِ واقعیِ خط — از جدول، بدونِ شمارندهٔ ساختگی.
 
     «آخرین sync موفق» یعنی چرخه‌ای که `finished_at` دارد و `error` ندارد؛
@@ -1037,11 +1327,27 @@ def health(conn, worker_key="codal_pipeline"):
             }
         except sqlite3.Error:
             instruments = {}
+    def _scalar(sql, params=()):
+        try:
+            return conn.execute(sql, params).fetchone()[0]
+        except sqlite3.Error:
+            return None
+
+    # «آخرین به‌روزرسانیِ دادهٔ بنیادی» = زمانِ نوشتنِ آخرین ردیفِ canonicalِ
+    # موفق (`state='done'`)، نه زمانِ تمام‌شدنِ یکِ چرخه. چرخۀ بی‌write هم
+    # «sync موفق» دارد (`last_successful_sync`) ولی داده را تازه نکرده، پس
+    # این دو درِ پاسخِ سلامت جدا می‌مانند.
+    last_data = _scalar("SELECT MAX(tried_at) FROM codal_extracted"
+                        " WHERE state='done'")
     return {
         "queue": c,
         "dirty_symbols": dirty_count(conn),
         "cursor": cursors,
         "instruments": instruments,
+        "last_data_update": last_data,
+        "data_epoch": "%s|%s" % (last_data or "",
+                                 _scalar("SELECT COUNT(*) FROM financial_statements")
+                                 or 0),
         "last_successful_sync": ({"at": last_ok[0], "cycle": last_ok[1],
                                   "processed": last_ok[2], "done": last_ok[3],
                                   "failed": last_ok[4]} if last_ok else None),
@@ -1051,5 +1357,63 @@ def health(conn, worker_key="codal_pipeline"):
              "symbols_dirty", "indicators_recomputed", "cache_invalidated",
              "checkpoint_before", "checkpoint_after"], last_any)) if last_any else None),
         "lock": lock_state(conn, worker_key),
+        "worker": worker_status(),
         "checked_at": now_s(),
     }
+
+
+# ─── دريچۀ فرمانی (برایِ Task Scheduler یا اجرایِ دستیِ امن) ──────────────── #
+
+def main(argv=None):
+    """`python codal_pipeline.py --once --json [--db PATH] [--budget N] [--force]`
+
+    یکِ چرخه، بی‌رشتۀ نگه‌دارنده، خروجیِ JSON = همان چیزی که `health()` می‌دهد.
+    این دريچه برایِ «برنامهٔ زمان‌بندیِ ویندوز» ساخته شده تا وقتی BorsTerminal
+    باز نیست هم عقب‌ماندگی جبران شود — اما **خودِ ثبتِ وظیفه را انجام نمی‌دهد**
+    (بندِ ۱۲ مأموریت: عملیاتِ سیستمی بدونِ مجوزِ مالک ممنوع). مرزِ عملیاتی و
+    فرمانِ دقیق درِ `docs/CODAL-AUTO-UPDATE-2026-10-14.md` است.
+    """
+    import argparse
+    import json
+    ap = argparse.ArgumentParser(description="codal pipeline: one durable cycle")
+    ap.add_argument("--once", action="store_true", help="یکِ چرخه و خروج")
+    ap.add_argument("--db", default=None, help="مسیرِ بانک (پیش‌فرض: بانکِ کاری)")
+    ap.add_argument("--budget", type=int, default=8, help="سقفِ کارِ هر چرخه")
+    ap.add_argument("--network", choices=("auto", "on", "off"), default="auto")
+    ap.add_argument("--force", action="store_true",
+                    help="حتی اگر چیزی برایِ کار نیست، پاسِ شبکه بزن")
+    ap.add_argument("--status", action="store_true", help="فقط سلامتِ خط")
+    ap.add_argument("--catchup", action="store_true",
+                    help="فقط وضعیتِ عقب‌ماندگی (بی‌نوشتن)")
+    ap.add_argument("--json", action="store_true", help="خروجیِ JSON")
+    a = ap.parse_args(argv)
+    db = a.db or CF.DB_PATH
+    conn = sqlite3.connect(db, timeout=120, isolation_level=None)
+    conn.row_factory = sqlite3.Row
+    CF.create_schema(conn)
+    CF.migrate_schema(conn)
+    try:
+        if a.status:
+            out = health(conn, db_path=db)
+        elif a.catchup:
+            out = catchup_state(conn)
+        else:
+            net = {"auto": None, "on": True, "off": False}[a.network]
+            out = worker_once(db_path=db, conn=conn, budget=a.budget,
+                              network=net, force=a.force)
+            out["health"] = health(conn, db_path=db)
+        if a.json:
+            print(json.dumps(out, ensure_ascii=False, default=str))
+        else:
+            for k, v in out.items():
+                print("%-22s %s" % (k, v))
+        return 1 if out.get("error") else 0
+    finally:
+        try:
+            conn.close()
+        except sqlite3.Error:
+            pass
+
+
+if __name__ == "__main__":
+    sys.exit(main())
