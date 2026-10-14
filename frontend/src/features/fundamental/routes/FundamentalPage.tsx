@@ -32,6 +32,7 @@ import { DataGapBanner } from '../components/DataGapBanner';
 import { QuarterlyTrend } from '../components/QuarterlyTrend';
 import { FtsScreenTable } from '../ui/FtsScreenTable';
 import { FtsSettingsTrigger } from '../ui/FtsSettingsDrawer';
+import { CodalHealthStrip } from '../components/CodalHealthStrip';
 
 const DIR_TONE = { bullish: 'green', bearish: 'red', neutral: 'gray' } as const;
 const DIR_LABEL = { bullish: 'بنیاد روبه‌رشد', bearish: 'بنیاد روبه‌افت', neutral: 'بنیاد معادل' } as const;
@@ -206,6 +207,9 @@ export default function FundamentalPage() {
     // جدول کلِ صفحه را در دیدگاه‌های کوچک از کادر بیرون می‌زند.
     return (
       <div className="flex flex-col gap-2 min-w-0">
+        {/* تازگیِ دادهٔ بنیادی پیشِ جدول: «چرا این عدد دیروز است» سؤالِ اولِ
+            این تب است، و پاسخ از خودِ خطِ دریافت می‌آید نه از حدسِ رابط. */}
+        <CodalHealthStrip />
         {screen.isLoading ? (
           /* پیش از این در حینِ بارگذاری، rows=[] بود و جدول پیامِ
            * «ردیفی از غربالگری FTS نیامد» نشان می‌داد — اولین اسکنِ بازار
@@ -278,6 +282,7 @@ export default function FundamentalPage() {
   const rejectLines = rejectReasons(passes, card.data.indicators ?? null);
   return (
     <div className="flex flex-col gap-4">
+      <CodalHealthStrip />
       <div className="flex flex-wrap items-center gap-2">
         <h2 className="text-base font-black text-text-primary">{symbol}</h2>
         {sector ? <span className="text-xs text-text-secondary">{sector}</span> : null}

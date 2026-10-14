@@ -5,7 +5,14 @@ v9.5 — اجرای همهٔ تست‌های آفلاین (بدون نیاز ب�
 """
 import os, re, subprocess, sys
 
-os.chdir(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
+_HERE = os.path.dirname(os.path.abspath(__file__))
+# ترجمانِ شمارشِ گاردها (مأموریتِ ۱۴۰۵-۰۷-۲۳، بندِ ۷): «۰ pass / ۰ fail» بودنِ
+# یکِ suite یعنی گزارشگر خروجی‌اش را نفهمیده، نه اینکه صفرِ بررسی سبز شده باشد.
+if _HERE not in sys.path:
+    sys.path.insert(0, _HERE)
+from guard_counts import summarize  # noqa: E402
+
+os.chdir(os.path.join(_HERE, '..'))
 
 SUITES = [
     ('dev/struct_check.py',           'structure / undefined-names'),
@@ -451,6 +458,10 @@ SUITES = [
     # لغو، ضرر روزانه، kill switch، restart، reconcile، ردِّپا) به‌همراه
     # بی‌نشتیِ آینده، بازتولیدپذیریِ digest، split زمانی و کنترلِ منفیِ سه‌گانه.
     ('dev/bot_paper_v1109.py', 'trading bot: paper lifecycle, lookahead-free backtest, risk, kill switch, recovery'),
+    # خودِ «گزارشِ شمارش»: پارسرِ `dev/guard_counts.py` الگوهایِ واقعیِ گاردها
+    # (سنجه/خطا، سبز/قرمز، OK — N/M، N سرخ، tokenهای PASS/FAIL) را می‌شناسد و
+    # چیزی را که شمارش ندارد صریح «بی‌شمارش» می‌گوید — نه «۰ pass / ۰ fail».
+    ('dev/guard_counts_v1110.py', 'harness: guard outputs are actually counted, silence is reported as silence'),
     # گاردِ متنِ فارسی (بیرونِ سرخطی هم لازم است): سه خانۀِ خطا که درِ همین
     # ریپو واقعی دیده شده — نویسهٔ CJK جاافتاده وسطِ واژۀِ فارسی، رقمِ
     # شمارۀِ بخش که بی‌صدا می‌افتد، و ك/ي عربی درِ فایل‌هایِ سرخطی. هر سه
@@ -504,6 +515,9 @@ FIXTURE_GEN = 'dev/make_fts_ui_fixture.py'
 
 env = dict(os.environ, PYTHONIOENCODING='utf-8')
 bad = []
+#: سوئیت‌هایی که هیچ شمارشِ واقعی چاپ نکردند — «OK» اند ولی «چند بررسی» نامعلوم.
+#: پیش از این همین‌ها «0 pass / 0 fail» می‌شدند و سکوت را می‌شد با سبزی اشتباه گرفت.
+uncounted = []
 
 
 def run(argv, label):
@@ -518,24 +532,17 @@ def run(argv, label):
         bad.append(label)
         return
     txt = (r.stdout or '') + (r.stderr or '')
-    n = len(re.findall(r'\bPASS\b', txt))
-    f = len(re.findall(r'\bFAIL\b', txt))
-    m = re.search(r'(\d+)/(\d+) passed', txt)
-    # گاردهای فارسیِ تازه (v1.0.33+) خطۀ «N بررسی سبز، M شکست» می‌دهند؛ بدونِ
-    # این، گزارشِ مجموعه «0 pass / 0 fail» چاپ می‌شد و هیچ‌کس نمی‌فهمید چه چیزی
-    # واقعاً سبز شده است.
-    mf = re.search(r'(\d+) \u0628\u0631\u0631\u0633\u06cc \u0633\u0628\u0632\u060c (\d+) \u0634\u06a9\u0633\u062a', txt)
-    mp = re.search(r'(\d+) passed[ ,/]+(\d+) failed', txt)
-    if m:
-        detail = '%s/%s' % (m.group(1), m.group(2))
-    elif mf:
-        detail = '%s/%s' % (mf.group(1), int(mf.group(1)) + int(mf.group(2)))
-    elif mp:
-        detail = '%s/%s' % (mp.group(1), int(mp.group(1)) + int(mp.group(2)))
-    else:
-        detail = '%d pass / %d fail' % (n, f)
-    ok = (r.returncode == 0)
-    print('  %s %-40s rc=%s | %s' % ('OK  ' if ok else 'FAIL', label, r.returncode, detail))
+    # شمارش از `dev/guard_counts.summarize` می‌آید، نه از اینجا: پیش‌تر تنها سه
+    # الگو شناخته می‌شد و بقیه با `PASS`/`FAIL` پر می‌شدند، پس گاردی که
+    # «۱۲ سنجه، ۰ خطا» چاپ می‌کرد «۰ pass / ۰ fail» می‌شد — سکوت درِ لباسِ
+    # موفقیت. حالا یا شمارشِ واقعی هست، یا صریح «بی‌شمارش».
+    s = summarize(txt, r.returncode)
+    ok = s['ok']
+    if not s['countable']:
+        uncounted.append(label)
+    print('  %s %-40s rc=%s | %s%s' % ('OK  ' if ok else 'FAIL', label, r.returncode,
+                                       s['detail'],
+                                       '' if s['countable'] else '  [\u0628\u06cc\u200c\u0634\u0645\u0627\u0631\u0634]'))
     if not ok:
         bad.append(label)
         print('\n'.join('       ' + l for l in txt.strip().split('\n')[-12:])
@@ -551,5 +558,9 @@ if os.path.exists(FIXTURE_GEN):
 for script, label in JS_SUITES:
     run(['node', script.replace('/', os.sep)], label)
 
+total_suites = len(SUITES) + len(JS_SUITES) + (1 if os.path.exists(FIXTURE_GEN) else 0)
+print('\n%d suite counted, %d silent (exit-code only)' % (total_suites - len(uncounted), len(uncounted)))
+if uncounted:
+    print('  silent: ' + ', '.join(uncounted))
 print('\n%s' % ('ALL SUITES PASSED' if not bad else 'FAILED: ' + ', '.join(bad)))
 sys.exit(1 if bad else 0)
