@@ -25,6 +25,11 @@ a = Analysis(
         ('codal_fetcher.py', '.'),
         ('fts_engine.py', '.'),
         ('mstat_engine.py', '.'),
+        # پنل‌هایِ جدیدِ «وضعیت بازار» (treemap/tops/orderflows/ownership/
+        # indexcards/gold) درِ ماژولِ ریشه‌اند و api/market_status آن‌ها را
+        # سطح-بال import می‌کند؛ مثلِ mstat_engine هم باندل و هم صریح فهرست
+        # می‌شوند، وگرنه EXE رویِ اولین /api/mstat/treemap می‌میرد.
+        ('mstat_panels.py', '.'),
         ('fts_thresholds.json', '.'),
         ('test_tsetmc.py', '.'),
         ('tsetmc_p0_schema.py', '.'),
@@ -101,6 +106,10 @@ a = Analysis(
                    # مرحلِ جلسه است و mstat_engine آن را import می‌کند؛ مثلِ
                    # بقیۀ ماژول‌هایِ ریشه صریح فهرست می‌شود.                       
                    'market_phase',
+                   # همان قاعدۀ AGENTS.md برایِ هر ماژولِ ریشه: mstat_panels را
+                   # api/market_status سطح-بال import می‌کند و خودِ آن api درِ
+                   # function-body وارد می‌شود، پس اسکنِ ایستا نمی‌بیندش.
+                   'mstat_panels',
                    # بند ۶ مأموریت (1405-07-20): `notifications` تنها طبقه‌بندِ
                    # اطلاعیه‌هاست و api/notifications آن را سطح-بال import
                    # می‌کند؛ نبودنش EXE را رویِ اولین درخواستِ مرکزِ اعلان

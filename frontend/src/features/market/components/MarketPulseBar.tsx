@@ -45,7 +45,7 @@ function Section({
     >
       <div className="flex items-baseline justify-between gap-1.5 border-b border-border-c/40 pb-1.5">
         <h3 className="text-xs font-black text-text-primary">{title}</h3>
-        {hint ? <span className="truncate text-3xs font-medium text-text-muted">{hint}</span> : null}
+        {hint ? <span className="truncate text-3xs font-medium text-text-muted" title={hint}>{hint}</span> : null}
       </div>
       <div className="flex min-w-0 flex-col gap-1.5 text-xs">{children}</div>
     </div>
