@@ -45,11 +45,24 @@ export type WatchExportItem = {
 
 type Reader = (row: MarketRow | null) => ExportCell;
 
-/** عددِ خام یا null — نه رشتهٔ فارسی، نه صفرِ جانشین. */
+/** قیمتِ روزانهٔ صفر «قیمتِ صفر» نیست. */
+const UNPUBLISHED_PRICE_KEYS = new Set<keyof MarketRow>(['p_first', 'p_max', 'p_min']);
+
+/** عددِ خام یا null — نه رشتهٔ فارسی، نه صفرِ جانشین.
+ *
+ *  سه خانۀ `p_first/p_max/p_min` را تابلو تا وقتی مبادله‌ای نیفتاده (یا منبع
+ *  نهایه نکرده) صفر می‌فرستد: سنجشِ ۱۴۰۵-۰۷-۲۲ رویِ همین نشست ۱٬۳۴۰ ردیف با
+ *  `pmx/pmn = 0` و ۱٬۳۶۳ ردیف با `pf = 0` داد، درحالی‌که هیچ‌کدام قیمتِ معتبر
+ *  صفر نیستند. `FormingCandle` همین را می‌خواند و هندسه را `incomplete` می‌گذارد؛
+ *  فایلِ خروجی هم باید همان حکم را بدهد: تهی، نه صفر. این حکم فعلاً درِ لایۀ
+ *  خروجی است — بردنِ آن به لایۀ canonical (API) رأیِ مالک می‌خواهد، چون معنای
+ *  «بی‌داده» درِ خودِ تابلو را عوض می‌کند (§۷ همان گزارش). */
 function numOf(key: keyof MarketRow): Reader {
   return (row) => {
     const v = row == null ? null : (row[key] as unknown);
-    return typeof v === 'number' && Number.isFinite(v) ? v : null;
+    if (typeof v !== 'number' || !Number.isFinite(v)) return null;
+    if (v <= 0 && UNPUBLISHED_PRICE_KEYS.has(key)) return null;
+    return v;
   };
 }
 
