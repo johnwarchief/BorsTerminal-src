@@ -237,6 +237,9 @@ export default function TechnicalPage() {
 
   const noData = !symbol ? tedipx.data.length === 0 : nn.status === 'empty' || (!nn.isLoading && !nn.isError && nn.data.length === 0);
 
+  // ارتفاعِ کارگاه را پوسته تعیین می‌کند (h-full + min-h-0)، نه یکِ calcِ
+  // مبتنی‌بر --pinned-h: آن مسیر درِ همین شاخه با h-full جایگزین شده بود، پس
+  // بلندترشدنِ تاپ‌بار چارت را نمی‌بُرد و اسکرولِ چندپیکسلی هم نمی‌سازد.
   return (
     <div className="tv-workbench flex h-full min-h-0 min-w-0 w-full flex-col overflow-hidden xl:flex-row">
       <TechnicalSidebar active={activeLevels} symbol={viewSymbol} onSelect={selectSymbol} />

@@ -1,0 +1,6428 @@
+{
+ "base": "http://127.0.0.1:8123/",
+ "viewports": [
+  {
+   "viewport": "2560x1440",
+   "consoleErrors": [],
+   "failedRequests": [
+    "http://127.0.0.1:8123/api/index/tedpix?limit=0 net::ERR_ABORTED",
+    "http://127.0.0.1:8123/api/index/tedpix?limit=0 net::ERR_ABORTED"
+   ],
+   "rows": [
+    {
+     "path": "/master",
+     "name": "غربالگری FTS",
+     "shot": "_audit/ui-audit/2560×1440-_master.png",
+     "geom": {
+      "route": "غربالگری FTS",
+      "viewport": {
+       "w": 2560,
+       "h": 1440,
+       "dpr": 1
+      },
+      "bodyOverflowX": 0,
+      "bodyOverflowY": 0,
+      "pageScroll": 0,
+      "spuriousScroll": false,
+      "lastVisible": {
+       "node": ".flex",
+       "bottom": 1440,
+       "text": "بترمینال بورسFTS v2.1فضای تحلیلوضعیت",
+       "reachable": true,
+       "how": "درِ viewport",
+       "clippedByShell": false
+      },
+      "headerPosition": "sticky",
+      "headerSticky": true,
+      "rowCounts": {},
+      "mainOverflow": [
+       {
+        "node": ".app-main",
+        "x": 0,
+        "y": 0,
+        "w": 2360,
+        "h": 1404
+       }
+      ],
+      "outside": [],
+      "insideScroller": [
+       {
+        "node": ".glass-panel",
+        "overRight": -2560,
+        "overLeft": 256,
+        "overBottom": 0,
+        "box": {
+         "w": 256,
+         "h": 1440
+        },
+        "text": "-سنجاق✕در یک نگاهجزئیات بازارآخرین معامل",
+        "inScroller": ".flex"
+       },
+       {
+        "node": ".sticky",
+        "overRight": -2561,
+        "overLeft": 256,
+        "overBottom": -1401,
+        "box": {
+         "w": 255,
+         "h": 39
+        },
+        "text": "-سنجاق✕",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": ".min-w-0",
+        "overRight": -2571,
+        "overLeft": 17,
+        "overBottom": -1416,
+        "box": {
+         "w": 6,
+         "h": 16
+        },
+        "text": "-",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": ".truncate",
+        "overRight": -2571,
+        "overLeft": 17,
+        "overBottom": -1416,
+        "box": {
+         "w": 6,
+         "h": 16
+        },
+        "text": "-",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": ".flex",
+        "overRight": -2726,
+        "overLeft": 246,
+        "overBottom": -1410,
+        "box": {
+         "w": 80,
+         "h": 22
+        },
+        "text": "سنجاق✕",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": ".rounded-md",
+        "overRight": -2726,
+        "overLeft": 217,
+        "overBottom": -1410,
+        "box": {
+         "w": 51,
+         "h": 22
+        },
+        "text": "سنجاق",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": ".rounded-md",
+        "overRight": -2781,
+        "overLeft": 246,
+        "overBottom": -1410,
+        "box": {
+         "w": 25,
+         "h": 22
+        },
+        "text": "✕",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": ".flex",
+        "overRight": -2561,
+        "overLeft": 256,
+        "overBottom": -265,
+        "box": {
+         "w": 255,
+         "h": 1136
+        },
+        "text": "در یک نگاهجزئیات بازارآخرین معامله-—تغیی",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": "inspector-tabs",
+        "overRight": -2571,
+        "overLeft": 246,
+        "overBottom": -1362,
+        "box": {
+         "w": 235,
+         "h": 29
+        },
+        "text": "در یک نگاهجزئیات بازار",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": "inspector-tab-glance",
+        "overRight": -2571,
+        "overLeft": 127,
+        "overBottom": -1362,
+        "box": {
+         "w": 116,
+         "h": 29
+        },
+        "text": "در یک نگاه",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": "inspector-tab-detail",
+        "overRight": -2690,
+        "overLeft": 246,
+        "overBottom": -1362,
+        "box": {
+         "w": 116,
+         "h": 29
+        },
+        "text": "جزئیات بازار",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": "inspector-page-glance",
+        "overRight": -2571,
+        "overLeft": 246,
+        "overBottom": -306,
+        "box": {
+         "w": 235,
+         "h": 1048
+        },
+        "text": "آخرین معامله-—تغییر روز-پایانی—٪آخرین-او",
+        "inScroller": ".glass-panel"
+       }
+      ],
+      "clipped": [],
+      "scrollables": [],
+      "stickyAfterScroll": {
+       "scrolled": true,
+       "headerVisible": true,
+       "headerTop": 0,
+       "scrollTop": 0,
+       "scrollHeight": 1440
+      },
+      "sidebarBox": {
+       "w": 178,
+       "h": 411
+      },
+      "title": "ترمینال تحلیل بورس"
+     },
+     "clicks": {
+      "⚙": {
+       "opened": true,
+       "after": {
+        "route": "غربالگری FTS ← ⚙",
+        "viewport": {
+         "w": 2560,
+         "h": 1440,
+         "dpr": 1
+        },
+        "bodyOverflowX": 0,
+        "bodyOverflowY": 0,
+        "pageScroll": 0,
+        "spuriousScroll": false,
+        "lastVisible": {
+         "node": ".flex",
+         "bottom": 1440,
+         "text": "بترمینال بورسFTS v2.1فضای تحلیلوضعیت",
+         "reachable": true,
+         "how": "درِ viewport",
+         "clippedByShell": false
+        },
+        "headerPosition": "sticky",
+        "headerSticky": true,
+        "rowCounts": {},
+        "mainOverflow": [
+         {
+          "node": ".app-main",
+          "x": 0,
+          "y": 0,
+          "w": 2360,
+          "h": 1404
+         }
+        ],
+        "outside": [],
+        "insideScroller": [
+         {
+          "node": ".glass-panel",
+          "overRight": -2560,
+          "overLeft": 256,
+          "overBottom": 0,
+          "box": {
+           "w": 256,
+           "h": 1440
+          },
+          "text": "-سنجاق✕در یک نگاهجزئیات بازارآخرین معامل",
+          "inScroller": ".flex"
+         },
+         {
+          "node": ".sticky",
+          "overRight": -2561,
+          "overLeft": 256,
+          "overBottom": -1401,
+          "box": {
+           "w": 255,
+           "h": 39
+          },
+          "text": "-سنجاق✕",
+          "inScroller": ".glass-panel"
+         },
+         {
+          "node": ".min-w-0",
+          "overRight": -2571,
+          "overLeft": 17,
+          "overBottom": -1416,
+          "box": {
+           "w": 6,
+           "h": 16
+          },
+          "text": "-",
+          "inScroller": ".glass-panel"
+         },
+         {
+          "node": ".truncate",
+          "overRight": -2571,
+          "overLeft": 17,
+          "overBottom": -1416,
+          "box": {
+           "w": 6,
+           "h": 16
+          },
+          "text": "-",
+          "inScroller": ".glass-panel"
+         },
+         {
+          "node": ".flex",
+          "overRight": -2726,
+          "overLeft": 246,
+          "overBottom": -1410,
+          "box": {
+           "w": 80,
+           "h": 22
+          },
+          "text": "سنجاق✕",
+          "inScroller": ".glass-panel"
+         },
+         {
+          "node": ".rounded-md",
+          "overRight": -2726,
+          "overLeft": 217,
+          "overBottom": -1410,
+          "box": {
+           "w": 51,
+           "h": 22
+          },
+          "text": "سنجاق",
+          "inScroller": ".glass-panel"
+         },
+         {
+          "node": ".rounded-md",
+          "overRight": -2781,
+          "overLeft": 246,
+          "overBottom": -1410,
+          "box": {
+           "w": 25,
+           "h": 22
+          },
+          "text": "✕",
+          "inScroller": ".glass-panel"
+         },
+         {
+          "node": ".flex",
+          "overRight": -2561,
+          "overLeft": 256,
+          "overBottom": -265,
+          "box": {
+           "w": 255,
+           "h": 1136
+          },
+          "text": "در یک نگاهجزئیات بازارآخرین معامله-—تغیی",
+          "inScroller": ".glass-panel"
+         },
+         {
+          "node": "inspector-tabs",
+          "overRight": -2571,
+          "overLeft": 246,
+          "overBottom": -1362,
+          "box": {
+           "w": 235,
+           "h": 29
+          },
+          "text": "در یک نگاهجزئیات بازار",
+          "inScroller": ".glass-panel"
+         },
+         {
+          "node": "inspector-tab-glance",
+          "overRight": -2571,
+          "overLeft": 127,
+          "overBottom": -1362,
+          "box": {
+           "w": 116,
+           "h": 29
+          },
+          "text": "در یک نگاه",
+          "inScroller": ".glass-panel"
+         },
+         {
+          "node": "inspector-tab-detail",
+          "overRight": -2690,
+          "overLeft": 246,
+          "overBottom": -1362,
+          "box": {
+           "w": 116,
+           "h": 29
+          },
+          "text": "جزئیات بازار",
+          "inScroller": ".glass-panel"
+         },
+         {
+          "node": "inspector-page-glance",
+          "overRight": -2571,
+          "overLeft": 246,
+          "overBottom": -306,
+          "box": {
+           "w": 235,
+           "h": 1048
+          },
+          "text": "آخرین معامله-—تغییر روز-پایانی—٪آخرین-او",
+          "inScroller": ".glass-panel"
+         }
+        ],
+        "clipped": [],
+        "scrollables": [],
+        "stickyAfterScroll": {
+         "scrolled": true,
+         "headerVisible": true,
+         "headerTop": 0,
+         "scrollTop": 0,
+         "scrollHeight": 1440
+        },
+        "sidebarBox": {
+         "w": 178,
+         "h": 411
+        },
+        "title": "ترمینال تحلیل بورس"
+       }
+      }
+     }
+    },
+    {
+     "path": "/market",
+     "name": "تابلوخوانی",
+     "shot": "_audit/ui-audit/2560×1440-_market.png",
+     "geom": {
+      "route": "تابلوخوانی",
+      "viewport": {
+       "w": 2560,
+       "h": 1440,
+       "dpr": 1
+      },
+      "bodyOverflowX": 0,
+      "bodyOverflowY": 0,
+      "pageScroll": 0,
+      "spuriousScroll": false,
+      "lastVisible": {
+       "node": ".relative",
+       "bottom": 44817,
+       "text": "✓☆ولپارسليزينگ پارسيان۴٬۹۲۰۵٬۰۲۰-۲.۰",
+       "reachable": true,
+       "how": "اسکرولِ داخلی (tape-scroll 44680/1180)",
+       "clippedByShell": false
+      },
+      "headerPosition": "sticky",
+      "headerSticky": true,
+      "rowCounts": {
+       "tape-row": 42
+      },
+      "mainOverflow": [
+       {
+        "node": ".app-main",
+        "x": 0,
+        "y": 0,
+        "w": 2360,
+        "h": 1404
+       }
+      ],
+      "outside": [],
+      "insideScroller": [
+       {
+        "node": ".relative",
+        "overRight": -229,
+        "overLeft": -29,
+        "overBottom": 43377,
+        "box": {
+         "w": 2302,
+         "h": 44680
+        },
+        "text": "✓☆ولپارسليزينگ پارسيان۴٬۹۲۰۵٬۰۲۰-۲.۰٪-۱.",
+        "inScroller": "tape-scroll"
+       },
+       {
+        "node": ".absolute",
+        "overRight": -229,
+        "overLeft": -29,
+        "overBottom": 17,
+        "box": {
+         "w": 2302,
+         "h": 40
+        },
+        "text": "✓☆آساصندوق س آرمان كارآفرين-ثابت۱۱٬۴۵۳۱۱",
+        "inScroller": "tape-scroll"
+       },
+       {
+        "node": "tape-row",
+        "overRight": -229,
+        "overLeft": -29,
+        "overBottom": 17,
+        "box": {
+         "w": 2302,
+         "h": 40
+        },
+        "text": "✓☆آساصندوق س آرمان كارآفرين-ثابت۱۱٬۴۵۳۱۱",
+        "inScroller": "tape-scroll"
+       },
+       {
+        "node": ".font-bold",
+        "overRight": -237,
+        "overLeft": -2018,
+        "overBottom": 9,
+        "box": {
+         "w": 305,
+         "h": 24
+        },
+        "text": "✓☆آساصندوق س آرمان كارآفرين-ثابت",
+        "inScroller": "tape-scroll"
+       },
+       {
+        "node": ".grid",
+        "overRight": -237,
+        "overLeft": -2307,
+        "overBottom": 5,
+        "box": {
+         "w": 16,
+         "h": 16
+        },
+        "text": "✓",
+        "inScroller": ".font-bold"
+       },
+       {
+        "node": ".truncate",
+        "overRight": -304,
+        "overLeft": -2110,
+        "overBottom": 5,
+        "box": {
+         "w": 146,
+         "h": 16
+        },
+        "text": "صندوق س آرمان كارآفرين-ثابت",
+        "inScroller": ".font-bold"
+       },
+       {
+        "node": ".num",
+        "overRight": -546,
+        "overLeft": -1853,
+        "overBottom": 9,
+        "box": {
+         "w": 162,
+         "h": 24
+        },
+        "text": "۱۱٬۴۵۳",
+        "inScroller": "tape-scroll"
+       },
+       {
+        "node": ".num",
+        "overRight": -711,
+        "overLeft": -1687,
+        "overBottom": 9,
+        "box": {
+         "w": 162,
+         "h": 24
+        },
+        "text": "۱۱٬۴۵۳",
+        "inScroller": "tape-scroll"
+       },
+       {
+        "node": ".num",
+        "overRight": -877,
+        "overLeft": -1569,
+        "overBottom": 9,
+        "box": {
+         "w": 114,
+         "h": 24
+        },
+        "text": "۰.۰٪",
+        "inScroller": "tape-scroll"
+       },
+       {
+        "node": ".num",
+        "overRight": -995,
+        "overLeft": -1412,
+        "overBottom": 9,
+        "box": {
+         "w": 152,
+         "h": 24
+        },
+        "text": "۰.۲٪",
+        "inScroller": "tape-scroll"
+       },
+       {
+        "node": ".num",
+        "overRight": -1152,
+        "overLeft": -1256,
+        "overBottom": 9,
+        "box": {
+         "w": 152,
+         "h": 24
+        },
+        "text": "۰.۲٪",
+        "inScroller": "tape-scroll"
+       },
+       {
+        "node": ".num",
+        "overRight": -1308,
+        "overLeft": -1062,
+        "overBottom": 9,
+        "box": {
+         "w": 190,
+         "h": 24
+        },
+        "text": "۲۱۷٬۲۱۶٬۲۴۰",
+        "inScroller": "tape-scroll"
+       }
+      ],
+      "clipped": [],
+      "scrollables": [],
+      "stickyAfterScroll": {
+       "scrolled": true,
+       "headerVisible": true,
+       "headerTop": 0,
+       "scrollTop": 0,
+       "scrollHeight": 1440
+      },
+      "sidebarBox": {
+       "w": 178,
+       "h": 411
+      },
+      "title": "ترمینال تحلیل بورس"
+     },
+     "clicks": {
+      "⚙": {
+       "opened": true,
+       "after": {
+        "route": "تابلوخوانی ← ⚙",
+        "viewport": {
+         "w": 2560,
+         "h": 1440,
+         "dpr": 1
+        },
+        "bodyOverflowX": 0,
+        "bodyOverflowY": 0,
+        "pageScroll": 0,
+        "spuriousScroll": false,
+        "lastVisible": {
+         "node": ".relative",
+         "bottom": 44817,
+         "text": "✓☆ولپارسليزينگ پارسيان۴٬۹۲۰۵٬۰۲۰-۲.۰",
+         "reachable": true,
+         "how": "اسکرولِ داخلی (tape-scroll 44680/1180)",
+         "clippedByShell": false
+        },
+        "headerPosition": "sticky",
+        "headerSticky": true,
+        "rowCounts": {
+         "tape-row": 42
+        },
+        "mainOverflow": [
+         {
+          "node": ".app-main",
+          "x": 0,
+          "y": 0,
+          "w": 2360,
+          "h": 1404
+         }
+        ],
+        "outside": [],
+        "insideScroller": [
+         {
+          "node": ".relative",
+          "overRight": -229,
+          "overLeft": -29,
+          "overBottom": 43377,
+          "box": {
+           "w": 2302,
+           "h": 44680
+          },
+          "text": "✓☆ولپارسليزينگ پارسيان۴٬۹۲۰۵٬۰۲۰-۲.۰٪-۱.",
+          "inScroller": "tape-scroll"
+         },
+         {
+          "node": ".absolute",
+          "overRight": -229,
+          "overLeft": -29,
+          "overBottom": 17,
+          "box": {
+           "w": 2302,
+           "h": 40
+          },
+          "text": "✓☆آساصندوق س آرمان كارآفرين-ثابت۱۱٬۴۵۳۱۱",
+          "inScroller": "tape-scroll"
+         },
+         {
+          "node": "tape-row",
+          "overRight": -229,
+          "overLeft": -29,
+          "overBottom": 17,
+          "box": {
+           "w": 2302,
+           "h": 40
+          },
+          "text": "✓☆آساصندوق س آرمان كارآفرين-ثابت۱۱٬۴۵۳۱۱",
+          "inScroller": "tape-scroll"
+         },
+         {
+          "node": ".font-bold",
+          "overRight": -237,
+          "overLeft": -2018,
+          "overBottom": 9,
+          "box": {
+           "w": 305,
+           "h": 24
+          },
+          "text": "✓☆آساصندوق س آرمان كارآفرين-ثابت",
+          "inScroller": "tape-scroll"
+         },
+         {
+          "node": ".grid",
+          "overRight": -237,
+          "overLeft": -2307,
+          "overBottom": 5,
+          "box": {
+           "w": 16,
+           "h": 16
+          },
+          "text": "✓",
+          "inScroller": ".font-bold"
+         },
+         {
+          "node": ".truncate",
+          "overRight": -304,
+          "overLeft": -2110,
+          "overBottom": 5,
+          "box": {
+           "w": 146,
+           "h": 16
+          },
+          "text": "صندوق س آرمان كارآفرين-ثابت",
+          "inScroller": ".font-bold"
+         },
+         {
+          "node": ".num",
+          "overRight": -546,
+          "overLeft": -1853,
+          "overBottom": 9,
+          "box": {
+           "w": 162,
+           "h": 24
+          },
+          "text": "۱۱٬۴۵۳",
+          "inScroller": "tape-scroll"
+         },
+         {
+          "node": ".num",
+          "overRight": -711,
+          "overLeft": -1687,
+          "overBottom": 9,
+          "box": {
+           "w": 162,
+           "h": 24
+          },
+          "text": "۱۱٬۴۵۳",
+          "inScroller": "tape-scroll"
+         },
+         {
+          "node": ".num",
+          "overRight": -877,
+          "overLeft": -1569,
+          "overBottom": 9,
+          "box": {
+           "w": 114,
+           "h": 24
+          },
+          "text": "۰.۰٪",
+          "inScroller": "tape-scroll"
+         },
+         {
+          "node": ".num",
+          "overRight": -995,
+          "overLeft": -1412,
+          "overBottom": 9,
+          "box": {
+           "w": 152,
+           "h": 24
+          },
+          "text": "۰.۲٪",
+          "inScroller": "tape-scroll"
+         },
+         {
+          "node": ".num",
+          "overRight": -1152,
+          "overLeft": -1256,
+          "overBottom": 9,
+          "box": {
+           "w": 152,
+           "h": 24
+          },
+          "text": "۰.۲٪",
+          "inScroller": "tape-scroll"
+         },
+         {
+          "node": ".num",
+          "overRight": -1308,
+          "overLeft": -1062,
+          "overBottom": 9,
+          "box": {
+           "w": 190,
+           "h": 24
+          },
+          "text": "۲۱۷٬۲۱۶٬۲۴۰",
+          "inScroller": "tape-scroll"
+         }
+        ],
+        "clipped": [],
+        "scrollables": [],
+        "stickyAfterScroll": {
+         "scrolled": true,
+         "headerVisible": true,
+         "headerTop": 0,
+         "scrollTop": 0,
+         "scrollHeight": 1440
+        },
+        "sidebarBox": {
+         "w": 178,
+         "h": 411
+        },
+        "title": "ترمینال تحلیل بورس"
+       }
+      }
+     }
+    },
+    {
+     "path": "/market-status",
+     "name": "وضعیت بازار",
+     "shot": "_audit/ui-audit/2560×1440-_market_status.png",
+     "geom": {
+      "route": "وضعیت بازار",
+      "viewport": {
+       "w": 2560,
+       "h": 1440,
+       "dpr": 1
+      },
+      "bodyOverflowX": 0,
+      "bodyOverflowY": 115,
+      "pageScroll": 115,
+      "spuriousScroll": false,
+      "lastVisible": {
+       "node": ".w-full",
+       "bottom": 4671,
+       "text": "نمادصنعتآخرینپایانیکندل روزتغییر٪ساع",
+       "reachable": true,
+       "how": "اسکرولِ داخلی (.min-w-0 3709/547)",
+       "clippedByShell": false
+      },
+      "headerPosition": "sticky",
+      "headerSticky": true,
+      "rowCounts": {},
+      "mainOverflow": [
+       {
+        "node": ".app-main",
+        "x": 0,
+        "y": 0,
+        "w": 2360,
+        "h": 1519
+       }
+      ],
+      "outside": [],
+      "insideScroller": [
+       {
+        "node": ".panel-in",
+        "overRight": -228,
+        "overLeft": -28,
+        "overBottom": 107,
+        "box": {
+         "w": 2304,
+         "h": 1503
+        },
+        "text": "وضعیت بازاربازاربستهاتصالمتصلآخرین دادهٔ",
+        "inScroller": ".app-content"
+       },
+       {
+        "node": "market-status-page",
+        "overRight": -228,
+        "overLeft": -28,
+        "overBottom": 107,
+        "box": {
+         "w": 2304,
+         "h": 1503
+        },
+        "text": "وضعیت بازاربازاربستهاتصالمتصلآخرین دادهٔ",
+        "inScroller": ".app-content"
+       },
+       {
+        "node": "ticker-marquee-track",
+        "overRight": 264,
+        "overLeft": 1733,
+        "overBottom": -1290,
+        "box": {
+         "w": 4557,
+         "h": 16
+        },
+        "text": "پهنای بازارمثبت۶۳۷منفی۶۶۸خنثی۵بی‌درصد۳۷ج",
+        "inScroller": "ticker-marquee"
+       },
+       {
+        "node": "ticker-marquee-copy",
+        "overRight": 264,
+        "overLeft": -556,
+        "overBottom": -1290,
+        "box": {
+         "w": 2268,
+         "h": 16
+        },
+        "text": "پهنای بازارمثبت۶۳۷منفی۶۶۸خنثی۵بی‌درصد۳۷ج",
+        "inScroller": "ticker-marquee"
+       },
+       {
+        "node": "ticker-group-breadth",
+        "overRight": 264,
+        "overLeft": -2480,
+        "overBottom": -1290,
+        "box": {
+         "w": 344,
+         "h": 16
+        },
+        "text": "پهنای بازارمثبت۶۳۷منفی۶۶۸خنثی۵بی‌درصد۳۷",
+        "inScroller": "ticker-marquee"
+       },
+       {
+        "node": ".shrink-0",
+        "overRight": 264,
+        "overLeft": -2770,
+        "overBottom": -1290,
+        "box": {
+         "w": 54,
+         "h": 16
+        },
+        "text": "پهنای بازار",
+        "inScroller": "ticker-marquee"
+       },
+       {
+        "node": ".flex",
+        "overRight": 194,
+        "overLeft": -2693,
+        "overBottom": -1290,
+        "box": {
+         "w": 61,
+         "h": 16
+        },
+        "text": "مثبت۶۳۷",
+        "inScroller": "ticker-marquee"
+       },
+       {
+        "node": ".shrink-0",
+        "overRight": 194,
+        "overLeft": -2725,
+        "overBottom": -1290,
+        "box": {
+         "w": 29,
+         "h": 16
+        },
+        "text": "مثبت",
+        "inScroller": "ticker-marquee"
+       },
+       {
+        "node": "ticker-fact-مثبت",
+        "overRight": 161,
+        "overLeft": -2693,
+        "overBottom": -1290,
+        "box": {
+         "w": 28,
+         "h": 16
+        },
+        "text": "۶۳۷",
+        "inScroller": "ticker-marquee"
+       },
+       {
+        "node": ".flex",
+        "overRight": 117,
+        "overLeft": -2618,
+        "overBottom": -1290,
+        "box": {
+         "w": 59,
+         "h": 16
+        },
+        "text": "منفی۶۶۸",
+        "inScroller": "ticker-marquee"
+       },
+       {
+        "node": ".shrink-0",
+        "overRight": 117,
+        "overLeft": -2650,
+        "overBottom": -1290,
+        "box": {
+         "w": 27,
+         "h": 16
+        },
+        "text": "منفی",
+        "inScroller": "ticker-marquee"
+       },
+       {
+        "node": "ticker-fact-منفی",
+        "overRight": 86,
+        "overLeft": -2618,
+        "overBottom": -1290,
+        "box": {
+         "w": 28,
+         "h": 16
+        },
+        "text": "۶۶۸",
+        "inScroller": "ticker-marquee"
+       }
+      ],
+      "clipped": [],
+      "scrollables": [],
+      "stickyAfterScroll": {
+       "scrolled": true,
+       "headerVisible": false,
+       "headerTop": -115,
+       "scrollTop": 115,
+       "scrollHeight": 1555
+      },
+      "sidebarBox": {
+       "w": 178,
+       "h": 411
+      },
+      "title": "ترمینال تحلیل بورس"
+     },
+     "clicks": {}
+    },
+    {
+     "path": "/notifications",
+     "name": "مرکز اعلان",
+     "shot": "_audit/ui-audit/2560×1440-_notifications.png",
+     "geom": {
+      "route": "مرکز اعلان",
+      "viewport": {
+       "w": 2560,
+       "h": 1440,
+       "dpr": 1
+      },
+      "bodyOverflowX": 0,
+      "bodyOverflowY": 0,
+      "pageScroll": 0,
+      "spuriousScroll": false,
+      "lastVisible": {
+       "node": "notice-row",
+       "bottom": 10826,
+       "text": "بالاصورتهایِ مالیزشکمنبع ↗خوانده شدا",
+       "reachable": true,
+       "how": "اسکرولِ داخلی (notice-list 10704/1281)",
+       "clippedByShell": false
+      },
+      "headerPosition": "sticky",
+      "headerSticky": true,
+      "rowCounts": {
+       "notice-row": 120
+      },
+      "mainOverflow": [
+       {
+        "node": ".app-main",
+        "x": 0,
+        "y": 0,
+        "w": 2360,
+        "h": 1404
+       }
+      ],
+      "outside": [],
+      "insideScroller": [
+       {
+        "node": "notice-row",
+        "overRight": -228,
+        "overLeft": -32,
+        "overBottom": 14,
+        "box": {
+         "w": 2300,
+         "h": 83
+        },
+        "text": "متوسطفعالیت ماهانهقنقشمنبع ↗خوانده شدگزا",
+        "inScroller": "notice-list"
+       },
+       {
+        "node": ".num-text",
+        "overRight": -239,
+        "overLeft": -43,
+        "overBottom": 5,
+        "box": {
+         "w": 2278,
+         "h": 16
+        },
+        "text": "انتشار: ۱۴۰۵/۰۷/۰۹ ۱۳:۲۲ · دریافتِ برنام",
+        "inScroller": "notice-list"
+       },
+       {
+        "node": "notice-row",
+        "overRight": -228,
+        "overLeft": -32,
+        "overBottom": 104,
+        "box": {
+         "w": 2300,
+         "h": 83
+        },
+        "text": "متوسطفعالیت ماهانهوتوسعه قلکمنبع ↗خوانده",
+        "inScroller": "notice-list"
+       },
+       {
+        "node": ".flex",
+        "overRight": -239,
+        "overLeft": -43,
+        "overBottom": 51,
+        "box": {
+         "w": 2278,
+         "h": 22
+        },
+        "text": "متوسطفعالیت ماهانهوتوسعه قلکمنبع ↗خوانده",
+        "inScroller": "notice-list"
+       },
+       {
+        "node": "notice-level",
+        "overRight": -239,
+        "overLeft": -2270,
+        "overBottom": 51,
+        "box": {
+         "w": 51,
+         "h": 22
+        },
+        "text": "متوسط",
+        "inScroller": "notice-list"
+       },
+       {
+        "node": "notice-kind",
+        "overRight": -296,
+        "overLeft": -2193,
+        "overBottom": 48,
+        "box": {
+         "w": 71,
+         "h": 16
+        },
+        "text": "فعالیت ماهانه",
+        "inScroller": "notice-list"
+       },
+       {
+        "node": "notice-symbol",
+        "overRight": -373,
+        "overLeft": -2118,
+        "overBottom": 48,
+        "box": {
+         "w": 70,
+         "h": 16
+        },
+        "text": "وتوسعه قلک",
+        "inScroller": "notice-list"
+       },
+       {
+        "node": ".ms-auto",
+        "overRight": -2395,
+        "overLeft": -43,
+        "overBottom": 51,
+        "box": {
+         "w": 122,
+         "h": 22
+        },
+        "text": "منبع ↗خوانده شد",
+        "inScroller": "notice-list"
+       },
+       {
+        "node": "notice-open",
+        "overRight": -2395,
+        "overLeft": -116,
+        "overBottom": 51,
+        "box": {
+         "w": 49,
+         "h": 22
+        },
+        "text": "منبع ↗",
+        "inScroller": "notice-list"
+       },
+       {
+        "node": "notice-mark",
+        "overRight": -2450,
+        "overLeft": -43,
+        "overBottom": 51,
+        "box": {
+         "w": 67,
+         "h": 22
+        },
+        "text": "خوانده شد",
+        "inScroller": "notice-list"
+       },
+       {
+        "node": ".line-clamp-2",
+        "overRight": -239,
+        "overLeft": -43,
+        "overBottom": 75,
+        "box": {
+         "w": 2278,
+         "h": 20
+        },
+        "text": "گزارش فعالیت ماهانه دوره ۱ ماهه منتهی به",
+        "inScroller": "notice-list"
+       },
+       {
+        "node": ".num-text",
+        "overRight": -239,
+        "overLeft": -43,
+        "overBottom": 95,
+        "box": {
+         "w": 2278,
+         "h": 16
+        },
+        "text": "انتشار: ۱۴۰۵/۰۷/۰۹ ۱۳:۱۵ · دریافتِ برنام",
+        "inScroller": "notice-list"
+       }
+      ],
+      "clipped": [],
+      "scrollables": [],
+      "stickyAfterScroll": {
+       "scrolled": true,
+       "headerVisible": true,
+       "headerTop": 0,
+       "scrollTop": 0,
+       "scrollHeight": 1440
+      },
+      "sidebarBox": {
+       "w": 178,
+       "h": 411
+      },
+      "title": "ترمینال تحلیل بورس"
+     },
+     "clicks": {}
+    },
+    {
+     "path": "/fundamental/فولاد",
+     "name": "بنیادی (نماددار)",
+     "shot": "_audit/ui-audit/2560×1440-_fundamental_.png",
+     "geom": {
+      "route": "بنیادی (نماددار)",
+      "viewport": {
+       "w": 2560,
+       "h": 1440,
+       "dpr": 1
+      },
+      "bodyOverflowX": 0,
+      "bodyOverflowY": 0,
+      "pageScroll": 0,
+      "spuriousScroll": false,
+      "lastVisible": {
+       "node": ".flex",
+       "bottom": 1440,
+       "text": "بترمینال بورسFTS v2.1فضای تحلیلوضعیت",
+       "reachable": true,
+       "how": "درِ viewport",
+       "clippedByShell": false
+      },
+      "headerPosition": "sticky",
+      "headerSticky": true,
+      "rowCounts": {},
+      "mainOverflow": [
+       {
+        "node": ".app-main",
+        "x": 0,
+        "y": 0,
+        "w": 2360,
+        "h": 1404
+       }
+      ],
+      "outside": [],
+      "insideScroller": [
+       {
+        "node": ".mt-1",
+        "overRight": -2473,
+        "overLeft": 433,
+        "overBottom": -1300,
+        "box": {
+         "w": 520,
+         "h": 69
+        },
+        "text": "چرخۀ موفقی ثبت نشده؛ `catchup.never_sync",
+        "inScroller": ".app-content"
+       },
+       {
+        "node": "li",
+        "overRight": -2473,
+        "overLeft": 433,
+        "overBottom": -1353,
+        "box": {
+         "w": 520,
+         "h": 16
+        },
+        "text": "چرخۀ موفقی ثبت نشده؛ `catchup.never_sync",
+        "inScroller": ".mt-1"
+       },
+       {
+        "node": "li",
+        "overRight": -2473,
+        "overLeft": 433,
+        "overBottom": -1335,
+        "box": {
+         "w": 520,
+         "h": 16
+        },
+        "text": "چرخۀ بعدی حدود ۶۰ ثانیه دیگر (discovery-",
+        "inScroller": ".mt-1"
+       },
+       {
+        "node": "li",
+        "overRight": -2473,
+        "overLeft": 433,
+        "overBottom": -1317,
+        "box": {
+         "w": 520,
+         "h": 16
+        },
+        "text": "حجمِ صف: ۱۰۴۹۶ ردیف، از آنِ ۱۰۴۹۶ کهنه",
+        "inScroller": ".mt-1"
+       },
+       {
+        "node": ".num",
+        "overRight": -2530,
+        "overLeft": 11,
+        "overBottom": -1317,
+        "box": {
+         "w": 41,
+         "h": 16
+        },
+        "text": "۱۰۴۹۶",
+        "inScroller": ".mt-1"
+       },
+       {
+        "node": ".num",
+        "overRight": -2631,
+        "overLeft": 112,
+        "overBottom": -1317,
+        "box": {
+         "w": 41,
+         "h": 16
+        },
+        "text": "۱۰۴۹۶",
+        "inScroller": ".mt-1"
+       },
+       {
+        "node": "li",
+        "overRight": -2473,
+        "overLeft": 433,
+        "overBottom": -1300,
+        "box": {
+         "w": 520,
+         "h": 16
+        },
+        "text": "امضایِ تازگی: |8723",
+        "inScroller": ".mt-1"
+       },
+       {
+        "node": ".num",
+        "overRight": -2540,
+        "overLeft": 11,
+        "overBottom": -1300,
+        "box": {
+         "w": 32,
+         "h": 16
+        },
+        "text": "|8723",
+        "inScroller": ".mt-1"
+       },
+       {
+        "node": ".glass-panel",
+        "overRight": -2560,
+        "overLeft": 256,
+        "overBottom": 0,
+        "box": {
+         "w": 256,
+         "h": 1440
+        },
+        "text": "-سنجاق✕در یک نگاهجزئیات بازارآخرین معامل",
+        "inScroller": ".flex"
+       },
+       {
+        "node": ".sticky",
+        "overRight": -2561,
+        "overLeft": 256,
+        "overBottom": -1401,
+        "box": {
+         "w": 255,
+         "h": 39
+        },
+        "text": "-سنجاق✕",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": ".min-w-0",
+        "overRight": -2571,
+        "overLeft": 17,
+        "overBottom": -1416,
+        "box": {
+         "w": 6,
+         "h": 16
+        },
+        "text": "-",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": ".truncate",
+        "overRight": -2571,
+        "overLeft": 17,
+        "overBottom": -1416,
+        "box": {
+         "w": 6,
+         "h": 16
+        },
+        "text": "-",
+        "inScroller": ".glass-panel"
+       }
+      ],
+      "clipped": [],
+      "scrollables": [],
+      "stickyAfterScroll": {
+       "scrolled": true,
+       "headerVisible": true,
+       "headerTop": 0,
+       "scrollTop": 0,
+       "scrollHeight": 1440
+      },
+      "sidebarBox": {
+       "w": 178,
+       "h": 411
+      },
+      "title": "ترمینال تحلیل بورس"
+     },
+     "clicks": {}
+    },
+    {
+     "path": "/technical/فولاد",
+     "name": "تکنیکال (نماددار)",
+     "shot": "_audit/ui-audit/2560×1440-_technical_.png",
+     "geom": {
+      "route": "تکنیکال (نماددار)",
+      "viewport": {
+       "w": 2560,
+       "h": 1440,
+       "dpr": 1
+      },
+      "bodyOverflowX": 0,
+      "bodyOverflowY": 0,
+      "pageScroll": 0,
+      "spuriousScroll": false,
+      "lastVisible": {
+       "node": ".flex",
+       "bottom": 1440,
+       "text": "بترمینال بورسFTS v2.1🚀⚙⎋بازار بسته ",
+       "reachable": true,
+       "how": "درِ viewport",
+       "clippedByShell": false
+      },
+      "headerPosition": "sticky",
+      "headerSticky": true,
+      "rowCounts": {},
+      "mainOverflow": [
+       {
+        "node": ".app-main",
+        "x": 0,
+        "y": 0,
+        "w": 2500,
+        "h": 1404
+       },
+       {
+        "node": ".flex",
+        "x": 0,
+        "y": 0,
+        "w": 2114,
+        "h": 1388
+       },
+       {
+        "node": ".nn-canvas-area",
+        "x": 0,
+        "y": 0,
+        "w": 2066,
+        "h": 1290
+       }
+      ],
+      "outside": [],
+      "insideScroller": [
+       {
+        "node": ".glass-panel",
+        "overRight": -2560,
+        "overLeft": 256,
+        "overBottom": 0,
+        "box": {
+         "w": 256,
+         "h": 1440
+        },
+        "text": "-سنجاق✕در یک نگاهجزئیات بازارآخرین معامل",
+        "inScroller": ".flex"
+       },
+       {
+        "node": ".sticky",
+        "overRight": -2561,
+        "overLeft": 256,
+        "overBottom": -1401,
+        "box": {
+         "w": 255,
+         "h": 39
+        },
+        "text": "-سنجاق✕",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": ".min-w-0",
+        "overRight": -2571,
+        "overLeft": 17,
+        "overBottom": -1416,
+        "box": {
+         "w": 6,
+         "h": 16
+        },
+        "text": "-",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": ".truncate",
+        "overRight": -2571,
+        "overLeft": 17,
+        "overBottom": -1416,
+        "box": {
+         "w": 6,
+         "h": 16
+        },
+        "text": "-",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": ".flex",
+        "overRight": -2726,
+        "overLeft": 246,
+        "overBottom": -1410,
+        "box": {
+         "w": 80,
+         "h": 22
+        },
+        "text": "سنجاق✕",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": ".rounded-md",
+        "overRight": -2726,
+        "overLeft": 217,
+        "overBottom": -1410,
+        "box": {
+         "w": 51,
+         "h": 22
+        },
+        "text": "سنجاق",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": ".rounded-md",
+        "overRight": -2781,
+        "overLeft": 246,
+        "overBottom": -1410,
+        "box": {
+         "w": 25,
+         "h": 22
+        },
+        "text": "✕",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": ".flex",
+        "overRight": -2561,
+        "overLeft": 256,
+        "overBottom": -265,
+        "box": {
+         "w": 255,
+         "h": 1136
+        },
+        "text": "در یک نگاهجزئیات بازارآخرین معامله-—تغیی",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": "inspector-tabs",
+        "overRight": -2571,
+        "overLeft": 246,
+        "overBottom": -1362,
+        "box": {
+         "w": 235,
+         "h": 29
+        },
+        "text": "در یک نگاهجزئیات بازار",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": "inspector-tab-glance",
+        "overRight": -2571,
+        "overLeft": 127,
+        "overBottom": -1362,
+        "box": {
+         "w": 116,
+         "h": 29
+        },
+        "text": "در یک نگاه",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": "inspector-tab-detail",
+        "overRight": -2690,
+        "overLeft": 246,
+        "overBottom": -1362,
+        "box": {
+         "w": 116,
+         "h": 29
+        },
+        "text": "جزئیات بازار",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": "inspector-page-glance",
+        "overRight": -2571,
+        "overLeft": 246,
+        "overBottom": -306,
+        "box": {
+         "w": 235,
+         "h": 1048
+        },
+        "text": "آخرین معامله-—تغییر روز-پایانی—٪آخرین-او",
+        "inScroller": ".glass-panel"
+       }
+      ],
+      "clipped": [],
+      "scrollables": [],
+      "stickyAfterScroll": {
+       "scrolled": true,
+       "headerVisible": true,
+       "headerTop": 0,
+       "scrollTop": 0,
+       "scrollHeight": 1440
+      },
+      "sidebarBox": {
+       "w": 42,
+       "h": 376
+      },
+      "title": "ترمینال تحلیل بورس"
+     },
+     "clicks": {}
+    },
+    {
+     "path": "/strategy-tree/فولاد",
+     "name": "درخت استراتژی",
+     "shot": "_audit/ui-audit/2560×1440-_strategy_tree_.png",
+     "geom": {
+      "route": "درخت استراتژی",
+      "viewport": {
+       "w": 2560,
+       "h": 1440,
+       "dpr": 1
+      },
+      "bodyOverflowX": 0,
+      "bodyOverflowY": 0,
+      "pageScroll": 0,
+      "spuriousScroll": false,
+      "lastVisible": {
+       "node": ".flex",
+       "bottom": 1440,
+       "text": "بترمینال بورسFTS v2.1فضای تحلیلوضعیت",
+       "reachable": true,
+       "how": "درِ viewport",
+       "clippedByShell": false
+      },
+      "headerPosition": "sticky",
+      "headerSticky": true,
+      "rowCounts": {},
+      "mainOverflow": [
+       {
+        "node": ".app-main",
+        "x": 0,
+        "y": 0,
+        "w": 2360,
+        "h": 1404
+       }
+      ],
+      "outside": [],
+      "insideScroller": [
+       {
+        "node": ".glass-panel",
+        "overRight": -2560,
+        "overLeft": 256,
+        "overBottom": 0,
+        "box": {
+         "w": 256,
+         "h": 1440
+        },
+        "text": "-سنجاق✕در یک نگاهجزئیات بازارآخرین معامل",
+        "inScroller": ".flex"
+       },
+       {
+        "node": ".sticky",
+        "overRight": -2561,
+        "overLeft": 256,
+        "overBottom": -1401,
+        "box": {
+         "w": 255,
+         "h": 39
+        },
+        "text": "-سنجاق✕",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": ".min-w-0",
+        "overRight": -2571,
+        "overLeft": 17,
+        "overBottom": -1416,
+        "box": {
+         "w": 6,
+         "h": 16
+        },
+        "text": "-",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": ".truncate",
+        "overRight": -2571,
+        "overLeft": 17,
+        "overBottom": -1416,
+        "box": {
+         "w": 6,
+         "h": 16
+        },
+        "text": "-",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": ".flex",
+        "overRight": -2726,
+        "overLeft": 246,
+        "overBottom": -1410,
+        "box": {
+         "w": 80,
+         "h": 22
+        },
+        "text": "سنجاق✕",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": ".rounded-md",
+        "overRight": -2726,
+        "overLeft": 217,
+        "overBottom": -1410,
+        "box": {
+         "w": 51,
+         "h": 22
+        },
+        "text": "سنجاق",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": ".rounded-md",
+        "overRight": -2781,
+        "overLeft": 246,
+        "overBottom": -1410,
+        "box": {
+         "w": 25,
+         "h": 22
+        },
+        "text": "✕",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": ".flex",
+        "overRight": -2561,
+        "overLeft": 256,
+        "overBottom": -265,
+        "box": {
+         "w": 255,
+         "h": 1136
+        },
+        "text": "در یک نگاهجزئیات بازارآخرین معامله-—تغیی",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": "inspector-tabs",
+        "overRight": -2571,
+        "overLeft": 246,
+        "overBottom": -1362,
+        "box": {
+         "w": 235,
+         "h": 29
+        },
+        "text": "در یک نگاهجزئیات بازار",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": "inspector-tab-glance",
+        "overRight": -2571,
+        "overLeft": 127,
+        "overBottom": -1362,
+        "box": {
+         "w": 116,
+         "h": 29
+        },
+        "text": "در یک نگاه",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": "inspector-tab-detail",
+        "overRight": -2690,
+        "overLeft": 246,
+        "overBottom": -1362,
+        "box": {
+         "w": 116,
+         "h": 29
+        },
+        "text": "جزئیات بازار",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": "inspector-page-glance",
+        "overRight": -2571,
+        "overLeft": 246,
+        "overBottom": -306,
+        "box": {
+         "w": 235,
+         "h": 1048
+        },
+        "text": "آخرین معامله-—تغییر روز-پایانی—٪آخرین-او",
+        "inScroller": ".glass-panel"
+       }
+      ],
+      "clipped": [],
+      "scrollables": [],
+      "stickyAfterScroll": {
+       "scrolled": true,
+       "headerVisible": true,
+       "headerTop": 0,
+       "scrollTop": 0,
+       "scrollHeight": 1440
+      },
+      "sidebarBox": {
+       "w": 178,
+       "h": 411
+      },
+      "title": "ترمینال تحلیل بورس"
+     },
+     "clicks": {}
+    },
+    {
+     "path": "/portfolio",
+     "name": "مدیریت پرتفوی",
+     "shot": "_audit/ui-audit/2560×1440-_portfolio.png",
+     "geom": {
+      "route": "مدیریت پرتفوی",
+      "viewport": {
+       "w": 2560,
+       "h": 1440,
+       "dpr": 1
+      },
+      "bodyOverflowX": 0,
+      "bodyOverflowY": 0,
+      "pageScroll": 0,
+      "spuriousScroll": false,
+      "lastVisible": {
+       "node": ".flex",
+       "bottom": 1440,
+       "text": "بترمینال بورسFTS v2.1فضای تحلیلوضعیت",
+       "reachable": true,
+       "how": "درِ viewport",
+       "clippedByShell": false
+      },
+      "headerPosition": "sticky",
+      "headerSticky": true,
+      "rowCounts": {},
+      "mainOverflow": [
+       {
+        "node": ".app-main",
+        "x": 0,
+        "y": 0,
+        "w": 2360,
+        "h": 1404
+       }
+      ],
+      "outside": [],
+      "insideScroller": [
+       {
+        "node": ".glass-panel",
+        "overRight": -2560,
+        "overLeft": 256,
+        "overBottom": 0,
+        "box": {
+         "w": 256,
+         "h": 1440
+        },
+        "text": "-سنجاق✕در یک نگاهجزئیات بازارآخرین معامل",
+        "inScroller": ".flex"
+       },
+       {
+        "node": ".sticky",
+        "overRight": -2561,
+        "overLeft": 256,
+        "overBottom": -1401,
+        "box": {
+         "w": 255,
+         "h": 39
+        },
+        "text": "-سنجاق✕",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": ".min-w-0",
+        "overRight": -2571,
+        "overLeft": 17,
+        "overBottom": -1416,
+        "box": {
+         "w": 6,
+         "h": 16
+        },
+        "text": "-",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": ".truncate",
+        "overRight": -2571,
+        "overLeft": 17,
+        "overBottom": -1416,
+        "box": {
+         "w": 6,
+         "h": 16
+        },
+        "text": "-",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": ".flex",
+        "overRight": -2726,
+        "overLeft": 246,
+        "overBottom": -1410,
+        "box": {
+         "w": 80,
+         "h": 22
+        },
+        "text": "سنجاق✕",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": ".rounded-md",
+        "overRight": -2726,
+        "overLeft": 217,
+        "overBottom": -1410,
+        "box": {
+         "w": 51,
+         "h": 22
+        },
+        "text": "سنجاق",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": ".rounded-md",
+        "overRight": -2781,
+        "overLeft": 246,
+        "overBottom": -1410,
+        "box": {
+         "w": 25,
+         "h": 22
+        },
+        "text": "✕",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": ".flex",
+        "overRight": -2561,
+        "overLeft": 256,
+        "overBottom": -265,
+        "box": {
+         "w": 255,
+         "h": 1136
+        },
+        "text": "در یک نگاهجزئیات بازارآخرین معامله-—تغیی",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": "inspector-tabs",
+        "overRight": -2571,
+        "overLeft": 246,
+        "overBottom": -1362,
+        "box": {
+         "w": 235,
+         "h": 29
+        },
+        "text": "در یک نگاهجزئیات بازار",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": "inspector-tab-glance",
+        "overRight": -2571,
+        "overLeft": 127,
+        "overBottom": -1362,
+        "box": {
+         "w": 116,
+         "h": 29
+        },
+        "text": "در یک نگاه",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": "inspector-tab-detail",
+        "overRight": -2690,
+        "overLeft": 246,
+        "overBottom": -1362,
+        "box": {
+         "w": 116,
+         "h": 29
+        },
+        "text": "جزئیات بازار",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": "inspector-page-glance",
+        "overRight": -2571,
+        "overLeft": 246,
+        "overBottom": -306,
+        "box": {
+         "w": 235,
+         "h": 1048
+        },
+        "text": "آخرین معامله-—تغییر روز-پایانی—٪آخرین-او",
+        "inScroller": ".glass-panel"
+       }
+      ],
+      "clipped": [],
+      "scrollables": [],
+      "stickyAfterScroll": {
+       "scrolled": true,
+       "headerVisible": true,
+       "headerTop": 0,
+       "scrollTop": 0,
+       "scrollHeight": 1440
+      },
+      "sidebarBox": {
+       "w": 178,
+       "h": 411
+      },
+      "title": "ترمینال تحلیل بورس"
+     },
+     "clicks": {}
+    },
+    {
+     "path": "/watch",
+     "name": "دیده‌بان بازار",
+     "shot": "_audit/ui-audit/2560×1440-_watch.png",
+     "geom": {
+      "route": "دیده‌بان بازار",
+      "viewport": {
+       "w": 2560,
+       "h": 1440,
+       "dpr": 1
+      },
+      "bodyOverflowX": 0,
+      "bodyOverflowY": 211,
+      "pageScroll": 211,
+      "spuriousScroll": false,
+      "lastVisible": {
+       "node": ".flex",
+       "bottom": 1651,
+       "text": "بترمینال بورسFTS v2.1فضای تحلیلوضعیت",
+       "reachable": true,
+       "how": "اسکرولِ صفحه",
+       "clippedByShell": false
+      },
+      "headerPosition": "sticky",
+      "headerSticky": true,
+      "rowCounts": {},
+      "mainOverflow": [
+       {
+        "node": ".app-main",
+        "x": 0,
+        "y": 0,
+        "w": 2360,
+        "h": 1615
+       }
+      ],
+      "outside": [],
+      "insideScroller": [
+       {
+        "node": ".panel-in",
+        "overRight": -228,
+        "overLeft": -28,
+        "overBottom": 203,
+        "box": {
+         "w": 2304,
+         "h": 1599
+        },
+        "text": "دیدهبانِ بازارافزودنفید: لحظاتی پیش۲۲ از",
+        "inScroller": ".app-content"
+       },
+       {
+        "node": "watch-market-workspace",
+        "overRight": -228,
+        "overLeft": -28,
+        "overBottom": 203,
+        "box": {
+         "w": 2304,
+         "h": 1599
+        },
+        "text": "دیدهبانِ بازارافزودنفید: لحظاتی پیش۲۲ از",
+        "inScroller": ".app-content"
+       },
+       {
+        "node": "watch-dossier-tape",
+        "overRight": -228,
+        "overLeft": -28,
+        "overBottom": 171,
+        "box": {
+         "w": 2304,
+         "h": 534
+        },
+        "text": "خلاصۀِ نمادزقیامزنده۱۱٬۲۸۰-۲.۲٪ساعتِ ردی",
+        "inScroller": ".app-content"
+       },
+       {
+        "node": ".grid",
+        "overRight": -228,
+        "overLeft": -28,
+        "overBottom": 171,
+        "box": {
+         "w": 2304,
+         "h": 534
+        },
+        "text": "خلاصۀِ نمادزقیامزنده۱۱٬۲۸۰-۲.۲٪ساعتِ ردی",
+        "inScroller": ".app-content"
+       },
+       {
+        "node": "watch-summary",
+        "overRight": -228,
+        "overLeft": -1186,
+        "overBottom": 171,
+        "box": {
+         "w": 1146,
+         "h": 534
+        },
+        "text": "خلاصۀِ نمادزقیامزنده۱۱٬۲۸۰-۲.۲٪ساعتِ ردی",
+        "inScroller": ".app-content"
+       },
+       {
+        "node": "watch-order-panel",
+        "overRight": -239,
+        "overLeft": -1197,
+        "overBottom": 160,
+        "box": {
+         "w": 1124,
+         "h": 192
+        },
+        "text": "پنلِ معاملهسرویسِ اجرا: mock · بدلمقدار ",
+        "inScroller": ".app-content"
+       },
+       {
+        "node": ".mb-1.5",
+        "overRight": -248,
+        "overLeft": -1206,
+        "overBottom": 53,
+        "box": {
+         "w": 1106,
+         "h": 48
+        },
+        "text": "مقدار (سهم)قدرت خرید / موجودیبی‌دادهکارگ",
+        "inScroller": ".app-content"
+       },
+       {
+        "node": ".flex",
+        "overRight": -248,
+        "overLeft": -1762,
+        "overBottom": 53,
+        "box": {
+         "w": 550,
+         "h": 48
+        },
+        "text": "مقدار (سهم)",
+        "inScroller": ".app-content"
+       },
+       {
+        "node": "watch-order-qty",
+        "overRight": -248,
+        "overLeft": -1762,
+        "overBottom": 49,
+        "box": {
+         "w": 550,
+         "h": 26
+        },
+        "text": "",
+        "inScroller": ".app-content"
+       },
+       {
+        "node": ".flex",
+        "overRight": -804,
+        "overLeft": -1206,
+        "overBottom": 53,
+        "box": {
+         "w": 550,
+         "h": 48
+        },
+        "text": "قدرت خرید / موجودیبی‌دادهکارگزاری موجودی",
+        "inScroller": ".app-content"
+       },
+       {
+        "node": "watch-order-balance",
+        "overRight": -804,
+        "overLeft": -1206,
+        "overBottom": 39,
+        "box": {
+         "w": 550,
+         "h": 16
+        },
+        "text": "بی‌داده",
+        "inScroller": ".app-content"
+       },
+       {
+        "node": "watch-order-balance-note",
+        "overRight": -804,
+        "overLeft": -1206,
+        "overBottom": 53,
+        "box": {
+         "w": 550,
+         "h": 12
+        },
+        "text": "کارگزاری موجودی نمی‌دهد (capabilities.ba",
+        "inScroller": ".app-content"
+       }
+      ],
+      "clipped": [],
+      "scrollables": [],
+      "stickyAfterScroll": {
+       "scrolled": true,
+       "headerVisible": false,
+       "headerTop": -211,
+       "scrollTop": 211,
+       "scrollHeight": 1651
+      },
+      "sidebarBox": {
+       "w": 178,
+       "h": 411
+      },
+      "title": "ترمینال تحلیل بورس"
+     },
+     "clicks": {
+      "بازار در یک نگاه": {
+       "opened": true,
+       "after": {
+        "route": "دیده‌بان بازار ← بازار در یک نگاه",
+        "viewport": {
+         "w": 2560,
+         "h": 1440,
+         "dpr": 1
+        },
+        "bodyOverflowX": 0,
+        "bodyOverflowY": 211,
+        "pageScroll": 211,
+        "spuriousScroll": false,
+        "lastVisible": {
+         "node": ".flex",
+         "bottom": 1440,
+         "text": "بترمینال بورسFTS v2.1فضای تحلیلوضعیت",
+         "reachable": true,
+         "how": "درِ viewport",
+         "clippedByShell": false
+        },
+        "headerPosition": "sticky",
+        "headerSticky": true,
+        "rowCounts": {},
+        "mainOverflow": [
+         {
+          "node": ".app-main",
+          "x": 0,
+          "y": 0,
+          "w": 2360,
+          "h": 1615
+         }
+        ],
+        "outside": [],
+        "insideScroller": [
+         {
+          "node": ".glass-panel",
+          "overRight": -2560,
+          "overLeft": 256,
+          "overBottom": 0,
+          "box": {
+           "w": 256,
+           "h": 1440
+          },
+          "text": "-سنجاق✕در یک نگاهجزئیات بازارآخرین معامل",
+          "inScroller": ".flex"
+         },
+         {
+          "node": ".sticky",
+          "overRight": -2561,
+          "overLeft": 256,
+          "overBottom": -1401,
+          "box": {
+           "w": 255,
+           "h": 39
+          },
+          "text": "-سنجاق✕",
+          "inScroller": ".glass-panel"
+         },
+         {
+          "node": ".min-w-0",
+          "overRight": -2571,
+          "overLeft": 17,
+          "overBottom": -1416,
+          "box": {
+           "w": 6,
+           "h": 16
+          },
+          "text": "-",
+          "inScroller": ".glass-panel"
+         },
+         {
+          "node": ".truncate",
+          "overRight": -2571,
+          "overLeft": 17,
+          "overBottom": -1416,
+          "box": {
+           "w": 6,
+           "h": 16
+          },
+          "text": "-",
+          "inScroller": ".glass-panel"
+         },
+         {
+          "node": ".flex",
+          "overRight": -2726,
+          "overLeft": 246,
+          "overBottom": -1410,
+          "box": {
+           "w": 80,
+           "h": 22
+          },
+          "text": "سنجاق✕",
+          "inScroller": ".glass-panel"
+         },
+         {
+          "node": ".rounded-md",
+          "overRight": -2726,
+          "overLeft": 217,
+          "overBottom": -1410,
+          "box": {
+           "w": 51,
+           "h": 22
+          },
+          "text": "سنجاق",
+          "inScroller": ".glass-panel"
+         },
+         {
+          "node": ".rounded-md",
+          "overRight": -2781,
+          "overLeft": 246,
+          "overBottom": -1410,
+          "box": {
+           "w": 25,
+           "h": 22
+          },
+          "text": "✕",
+          "inScroller": ".glass-panel"
+         },
+         {
+          "node": ".flex",
+          "overRight": -2561,
+          "overLeft": 256,
+          "overBottom": -349,
+          "box": {
+           "w": 255,
+           "h": 1051
+          },
+          "text": "در یک نگاهجزئیات بازارآخرین معامله-—تغیی",
+          "inScroller": ".glass-panel"
+         },
+         {
+          "node": "inspector-tabs",
+          "overRight": -2571,
+          "overLeft": 246,
+          "overBottom": -1362,
+          "box": {
+           "w": 235,
+           "h": 29
+          },
+          "text": "در یک نگاهجزئیات بازار",
+          "inScroller": ".glass-panel"
+         },
+         {
+          "node": "inspector-tab-glance",
+          "overRight": -2571,
+          "overLeft": 127,
+          "overBottom": -1362,
+          "box": {
+           "w": 116,
+           "h": 29
+          },
+          "text": "در یک نگاه",
+          "inScroller": ".glass-panel"
+         },
+         {
+          "node": "inspector-tab-detail",
+          "overRight": -2690,
+          "overLeft": 246,
+          "overBottom": -1362,
+          "box": {
+           "w": 116,
+           "h": 29
+          },
+          "text": "جزئیات بازار",
+          "inScroller": ".glass-panel"
+         },
+         {
+          "node": "inspector-page-glance",
+          "overRight": -2571,
+          "overLeft": 246,
+          "overBottom": -390,
+          "box": {
+           "w": 235,
+           "h": 964
+          },
+          "text": "آخرین معامله-—تغییر روز-پایانی—٪آخرین-او",
+          "inScroller": ".glass-panel"
+         }
+        ],
+        "clipped": [],
+        "scrollables": [],
+        "stickyAfterScroll": {
+         "scrolled": true,
+         "headerVisible": false,
+         "headerTop": -211,
+         "scrollTop": 211,
+         "scrollHeight": 1651
+        },
+        "sidebarBox": {
+         "w": 178,
+         "h": 411
+        },
+        "title": "ترمینال تحلیل بورس"
+       }
+      },
+      "تکنیکال": {
+       "opened": true,
+       "after": {
+        "route": "دیده‌بان بازار ← تکنیکال",
+        "viewport": {
+         "w": 2560,
+         "h": 1440,
+         "dpr": 1
+        },
+        "bodyOverflowX": 0,
+        "bodyOverflowY": 0,
+        "pageScroll": 0,
+        "spuriousScroll": false,
+        "lastVisible": {
+         "node": ".flex",
+         "bottom": 1440,
+         "text": "بترمینال بورسFTS v2.1🚀⚙⎋بازار بسته ",
+         "reachable": true,
+         "how": "درِ viewport",
+         "clippedByShell": false
+        },
+        "headerPosition": "sticky",
+        "headerSticky": true,
+        "rowCounts": {},
+        "mainOverflow": [
+         {
+          "node": ".app-main",
+          "x": 0,
+          "y": 0,
+          "w": 2500,
+          "h": 1404
+         },
+         {
+          "node": ".flex",
+          "x": 0,
+          "y": 0,
+          "w": 2114,
+          "h": 1388
+         }
+        ],
+        "outside": [],
+        "insideScroller": [
+         {
+          "node": ".glass-panel",
+          "overRight": -2560,
+          "overLeft": 256,
+          "overBottom": 0,
+          "box": {
+           "w": 256,
+           "h": 1440
+          },
+          "text": "-سنجاق✕در یک نگاهجزئیات بازارآخرین معامل",
+          "inScroller": ".flex"
+         },
+         {
+          "node": ".sticky",
+          "overRight": -2561,
+          "overLeft": 256,
+          "overBottom": -1401,
+          "box": {
+           "w": 255,
+           "h": 39
+          },
+          "text": "-سنجاق✕",
+          "inScroller": ".glass-panel"
+         },
+         {
+          "node": ".min-w-0",
+          "overRight": -2571,
+          "overLeft": 17,
+          "overBottom": -1416,
+          "box": {
+           "w": 6,
+           "h": 16
+          },
+          "text": "-",
+          "inScroller": ".glass-panel"
+         },
+         {
+          "node": ".truncate",
+          "overRight": -2571,
+          "overLeft": 17,
+          "overBottom": -1416,
+          "box": {
+           "w": 6,
+           "h": 16
+          },
+          "text": "-",
+          "inScroller": ".glass-panel"
+         },
+         {
+          "node": ".flex",
+          "overRight": -2726,
+          "overLeft": 246,
+          "overBottom": -1410,
+          "box": {
+           "w": 80,
+           "h": 22
+          },
+          "text": "سنجاق✕",
+          "inScroller": ".glass-panel"
+         },
+         {
+          "node": ".rounded-md",
+          "overRight": -2726,
+          "overLeft": 217,
+          "overBottom": -1410,
+          "box": {
+           "w": 51,
+           "h": 22
+          },
+          "text": "سنجاق",
+          "inScroller": ".glass-panel"
+         },
+         {
+          "node": ".rounded-md",
+          "overRight": -2781,
+          "overLeft": 246,
+          "overBottom": -1410,
+          "box": {
+           "w": 25,
+           "h": 22
+          },
+          "text": "✕",
+          "inScroller": ".glass-panel"
+         },
+         {
+          "node": ".flex",
+          "overRight": -2561,
+          "overLeft": 256,
+          "overBottom": -265,
+          "box": {
+           "w": 255,
+           "h": 1136
+          },
+          "text": "در یک نگاهجزئیات بازارآخرین معامله-—تغیی",
+          "inScroller": ".glass-panel"
+         },
+         {
+          "node": "inspector-tabs",
+          "overRight": -2571,
+          "overLeft": 246,
+          "overBottom": -1362,
+          "box": {
+           "w": 235,
+           "h": 29
+          },
+          "text": "در یک نگاهجزئیات بازار",
+          "inScroller": ".glass-panel"
+         },
+         {
+          "node": "inspector-tab-glance",
+          "overRight": -2571,
+          "overLeft": 127,
+          "overBottom": -1362,
+          "box": {
+           "w": 116,
+           "h": 29
+          },
+          "text": "در یک نگاه",
+          "inScroller": ".glass-panel"
+         },
+         {
+          "node": "inspector-tab-detail",
+          "overRight": -2690,
+          "overLeft": 246,
+          "overBottom": -1362,
+          "box": {
+           "w": 116,
+           "h": 29
+          },
+          "text": "جزئیات بازار",
+          "inScroller": ".glass-panel"
+         },
+         {
+          "node": "inspector-page-glance",
+          "overRight": -2571,
+          "overLeft": 246,
+          "overBottom": -306,
+          "box": {
+           "w": 235,
+           "h": 1048
+          },
+          "text": "آخرین معامله-—تغییر روز-پایانی—٪آخرین-او",
+          "inScroller": ".glass-panel"
+         }
+        ],
+        "clipped": [],
+        "scrollables": [],
+        "stickyAfterScroll": {
+         "scrolled": true,
+         "headerVisible": true,
+         "headerTop": 0,
+         "scrollTop": 0,
+         "scrollHeight": 1440
+        },
+        "sidebarBox": {
+         "w": 42,
+         "h": 376
+        },
+        "title": "ترمینال تحلیل بورس"
+       }
+      },
+      "بنیادی": {
+       "opened": true,
+       "after": {
+        "route": "دیده‌بان بازار ← بنیادی",
+        "viewport": {
+         "w": 2560,
+         "h": 1440,
+         "dpr": 1
+        },
+        "bodyOverflowX": 0,
+        "bodyOverflowY": 33,
+        "pageScroll": 33,
+        "spuriousScroll": true,
+        "lastVisible": {
+         "node": ".w-full",
+         "bottom": 34804,
+         "text": "نماد۱ — رشد فروش (الف/ب) ۲ — روند EP",
+         "reachable": true,
+         "how": "اسکرولِ داخلی (fts-screen-scroll 34625/1240)",
+         "clippedByShell": false
+        },
+        "headerPosition": "sticky",
+        "headerSticky": true,
+        "rowCounts": {
+         "fts-screen-row": 32
+        },
+        "mainOverflow": [
+         {
+          "node": ".app-main",
+          "x": 0,
+          "y": 0,
+          "w": 2360,
+          "h": 1437
+         }
+        ],
+        "outside": [],
+        "insideScroller": [
+         {
+          "node": ".app-main",
+          "overRight": -200,
+          "overLeft": 0,
+          "overBottom": 33,
+          "box": {
+           "w": 2360,
+           "h": 1437
+          },
+          "text": "خطِ کدال بیکار است — کاری درِ صف نیستدر ",
+          "inScroller": ".app-content"
+         },
+         {
+          "node": ".panel-in",
+          "overRight": -228,
+          "overLeft": -28,
+          "overBottom": 25,
+          "box": {
+           "w": 2304,
+           "h": 1421
+          },
+          "text": "خطِ کدال بیکار است — کاری درِ صف نیستدر ",
+          "inScroller": ".app-content"
+         },
+         {
+          "node": ".flex",
+          "overRight": -228,
+          "overLeft": -28,
+          "overBottom": 25,
+          "box": {
+           "w": 2304,
+           "h": 1421
+          },
+          "text": "خطِ کدال بیکار است — کاری درِ صف نیستدر ",
+          "inScroller": ".app-content"
+         },
+         {
+          "node": ".mt-1",
+          "overRight": -2473,
+          "overLeft": 433,
+          "overBottom": -1300,
+          "box": {
+           "w": 520,
+           "h": 69
+          },
+          "text": "چرخۀ موفقی ثبت نشده؛ `catchup.never_sync",
+          "inScroller": ".app-content"
+         },
+         {
+          "node": "li",
+          "overRight": -2473,
+          "overLeft": 433,
+          "overBottom": -1353,
+          "box": {
+           "w": 520,
+           "h": 16
+          },
+          "text": "چرخۀ موفقی ثبت نشده؛ `catchup.never_sync",
+          "inScroller": ".mt-1"
+         },
+         {
+          "node": "li",
+          "overRight": -2473,
+          "overLeft": 433,
+          "overBottom": -1335,
+          "box": {
+           "w": 520,
+           "h": 16
+          },
+          "text": "چرخۀ بعدی حدود ۶۰ ثانیه دیگر (discovery-",
+          "inScroller": ".mt-1"
+         },
+         {
+          "node": "li",
+          "overRight": -2473,
+          "overLeft": 433,
+          "overBottom": -1317,
+          "box": {
+           "w": 520,
+           "h": 16
+          },
+          "text": "حجمِ صف: ۱۰۴۹۶ ردیف، از آنِ ۱۰۴۹۶ کهنه",
+          "inScroller": ".mt-1"
+         },
+         {
+          "node": ".num",
+          "overRight": -2530,
+          "overLeft": 11,
+          "overBottom": -1317,
+          "box": {
+           "w": 41,
+           "h": 16
+          },
+          "text": "۱۰۴۹۶",
+          "inScroller": ".mt-1"
+         },
+         {
+          "node": ".num",
+          "overRight": -2631,
+          "overLeft": 112,
+          "overBottom": -1317,
+          "box": {
+           "w": 41,
+           "h": 16
+          },
+          "text": "۱۰۴۹۶",
+          "inScroller": ".mt-1"
+         },
+         {
+          "node": "li",
+          "overRight": -2473,
+          "overLeft": 433,
+          "overBottom": -1300,
+          "box": {
+           "w": 520,
+           "h": 16
+          },
+          "text": "امضایِ تازگی: |8723",
+          "inScroller": ".mt-1"
+         },
+         {
+          "node": ".num",
+          "overRight": -2540,
+          "overLeft": 11,
+          "overBottom": -1300,
+          "box": {
+           "w": 32,
+           "h": 16
+          },
+          "text": "|8723",
+          "inScroller": ".mt-1"
+         },
+         {
+          "node": ".glass-panel",
+          "overRight": -228,
+          "overLeft": -28,
+          "overBottom": 25,
+          "box": {
+           "w": 2304,
+           "h": 1382
+          },
+          "text": "دیتابیس کدال۶۶۵ شرکت از ۹۲۲دانلود(۶۶۵)⚙ت",
+          "inScroller": ".app-content"
+         }
+        ],
+        "clipped": [],
+        "scrollables": [],
+        "stickyAfterScroll": {
+         "scrolled": true,
+         "headerVisible": false,
+         "headerTop": -33,
+         "scrollTop": 33,
+         "scrollHeight": 1473
+        },
+        "sidebarBox": {
+         "w": 178,
+         "h": 411
+        },
+        "title": "ترمینال تحلیل بورس"
+       }
+      }
+     }
+    },
+    {
+     "path": "/engine-lab",
+     "name": "آزمایشگاه موتور (ابزار توسعه)",
+     "shot": "_audit/ui-audit/2560×1440-_engine_lab.png",
+     "geom": {
+      "route": "آزمایشگاه موتور (ابزار توسعه)",
+      "viewport": {
+       "w": 2560,
+       "h": 1440,
+       "dpr": 1
+      },
+      "bodyOverflowX": 0,
+      "bodyOverflowY": 0,
+      "pageScroll": 0,
+      "spuriousScroll": false,
+      "lastVisible": {
+       "node": ".flex",
+       "bottom": 1440,
+       "text": "بترمینال بورسFTS v2.1فضای تحلیلوضعیت",
+       "reachable": true,
+       "how": "درِ viewport",
+       "clippedByShell": false
+      },
+      "headerPosition": "sticky",
+      "headerSticky": true,
+      "rowCounts": {},
+      "mainOverflow": [
+       {
+        "node": ".app-main",
+        "x": 0,
+        "y": 0,
+        "w": 2360,
+        "h": 1404
+       }
+      ],
+      "outside": [],
+      "insideScroller": [
+       {
+        "node": ".glass-panel",
+        "overRight": -2560,
+        "overLeft": 256,
+        "overBottom": 0,
+        "box": {
+         "w": 256,
+         "h": 1440
+        },
+        "text": "-سنجاق✕در یک نگاهجزئیات بازارآخرین معامل",
+        "inScroller": ".flex"
+       },
+       {
+        "node": ".sticky",
+        "overRight": -2561,
+        "overLeft": 256,
+        "overBottom": -1401,
+        "box": {
+         "w": 255,
+         "h": 39
+        },
+        "text": "-سنجاق✕",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": ".min-w-0",
+        "overRight": -2571,
+        "overLeft": 17,
+        "overBottom": -1416,
+        "box": {
+         "w": 6,
+         "h": 16
+        },
+        "text": "-",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": ".truncate",
+        "overRight": -2571,
+        "overLeft": 17,
+        "overBottom": -1416,
+        "box": {
+         "w": 6,
+         "h": 16
+        },
+        "text": "-",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": ".flex",
+        "overRight": -2726,
+        "overLeft": 246,
+        "overBottom": -1410,
+        "box": {
+         "w": 80,
+         "h": 22
+        },
+        "text": "سنجاق✕",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": ".rounded-md",
+        "overRight": -2726,
+        "overLeft": 217,
+        "overBottom": -1410,
+        "box": {
+         "w": 51,
+         "h": 22
+        },
+        "text": "سنجاق",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": ".rounded-md",
+        "overRight": -2781,
+        "overLeft": 246,
+        "overBottom": -1410,
+        "box": {
+         "w": 25,
+         "h": 22
+        },
+        "text": "✕",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": ".flex",
+        "overRight": -2561,
+        "overLeft": 256,
+        "overBottom": -349,
+        "box": {
+         "w": 255,
+         "h": 1051
+        },
+        "text": "در یک نگاهجزئیات بازارآخرین معامله-—تغیی",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": "inspector-tabs",
+        "overRight": -2571,
+        "overLeft": 246,
+        "overBottom": -1362,
+        "box": {
+         "w": 235,
+         "h": 29
+        },
+        "text": "در یک نگاهجزئیات بازار",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": "inspector-tab-glance",
+        "overRight": -2571,
+        "overLeft": 127,
+        "overBottom": -1362,
+        "box": {
+         "w": 116,
+         "h": 29
+        },
+        "text": "در یک نگاه",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": "inspector-tab-detail",
+        "overRight": -2690,
+        "overLeft": 246,
+        "overBottom": -1362,
+        "box": {
+         "w": 116,
+         "h": 29
+        },
+        "text": "جزئیات بازار",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": "inspector-page-glance",
+        "overRight": -2571,
+        "overLeft": 246,
+        "overBottom": -390,
+        "box": {
+         "w": 235,
+         "h": 964
+        },
+        "text": "آخرین معامله-—تغییر روز-پایانی—٪آخرین-او",
+        "inScroller": ".glass-panel"
+       }
+      ],
+      "clipped": [],
+      "scrollables": [],
+      "stickyAfterScroll": {
+       "scrolled": true,
+       "headerVisible": true,
+       "headerTop": 0,
+       "scrollTop": 0,
+       "scrollHeight": 1440
+      },
+      "sidebarBox": {
+       "w": 178,
+       "h": 411
+      },
+      "title": "ترمینال تحلیل بورس"
+     },
+     "clicks": {}
+    },
+    {
+     "path": "/no-such-route",
+     "name": "صفحۀ نشانیِ ثبت‌نشده",
+     "shot": "_audit/ui-audit/2560×1440-_no_such_route.png",
+     "geom": {
+      "route": "صفحۀ نشانیِ ثبت‌نشده",
+      "viewport": {
+       "w": 2560,
+       "h": 1440,
+       "dpr": 1
+      },
+      "bodyOverflowX": 0,
+      "bodyOverflowY": 0,
+      "pageScroll": 0,
+      "spuriousScroll": false,
+      "lastVisible": {
+       "node": ".flex",
+       "bottom": 1440,
+       "text": "بترمینال بورسFTS v2.1فضای تحلیلوضعیت",
+       "reachable": true,
+       "how": "درِ viewport",
+       "clippedByShell": false
+      },
+      "headerPosition": "sticky",
+      "headerSticky": true,
+      "rowCounts": {},
+      "mainOverflow": [
+       {
+        "node": ".app-main",
+        "x": 0,
+        "y": 0,
+        "w": 2360,
+        "h": 1404
+       }
+      ],
+      "outside": [],
+      "insideScroller": [
+       {
+        "node": ".glass-panel",
+        "overRight": -2560,
+        "overLeft": 256,
+        "overBottom": 0,
+        "box": {
+         "w": 256,
+         "h": 1440
+        },
+        "text": "-سنجاق✕در یک نگاهجزئیات بازارآخرین معامل",
+        "inScroller": ".flex"
+       },
+       {
+        "node": ".sticky",
+        "overRight": -2561,
+        "overLeft": 256,
+        "overBottom": -1401,
+        "box": {
+         "w": 255,
+         "h": 39
+        },
+        "text": "-سنجاق✕",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": ".min-w-0",
+        "overRight": -2571,
+        "overLeft": 17,
+        "overBottom": -1416,
+        "box": {
+         "w": 6,
+         "h": 16
+        },
+        "text": "-",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": ".truncate",
+        "overRight": -2571,
+        "overLeft": 17,
+        "overBottom": -1416,
+        "box": {
+         "w": 6,
+         "h": 16
+        },
+        "text": "-",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": ".flex",
+        "overRight": -2726,
+        "overLeft": 246,
+        "overBottom": -1410,
+        "box": {
+         "w": 80,
+         "h": 22
+        },
+        "text": "سنجاق✕",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": ".rounded-md",
+        "overRight": -2726,
+        "overLeft": 217,
+        "overBottom": -1410,
+        "box": {
+         "w": 51,
+         "h": 22
+        },
+        "text": "سنجاق",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": ".rounded-md",
+        "overRight": -2781,
+        "overLeft": 246,
+        "overBottom": -1410,
+        "box": {
+         "w": 25,
+         "h": 22
+        },
+        "text": "✕",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": ".flex",
+        "overRight": -2561,
+        "overLeft": 256,
+        "overBottom": -349,
+        "box": {
+         "w": 255,
+         "h": 1051
+        },
+        "text": "در یک نگاهجزئیات بازارآخرین معامله-—تغیی",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": "inspector-tabs",
+        "overRight": -2571,
+        "overLeft": 246,
+        "overBottom": -1362,
+        "box": {
+         "w": 235,
+         "h": 29
+        },
+        "text": "در یک نگاهجزئیات بازار",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": "inspector-tab-glance",
+        "overRight": -2571,
+        "overLeft": 127,
+        "overBottom": -1362,
+        "box": {
+         "w": 116,
+         "h": 29
+        },
+        "text": "در یک نگاه",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": "inspector-tab-detail",
+        "overRight": -2690,
+        "overLeft": 246,
+        "overBottom": -1362,
+        "box": {
+         "w": 116,
+         "h": 29
+        },
+        "text": "جزئیات بازار",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": "inspector-page-glance",
+        "overRight": -2571,
+        "overLeft": 246,
+        "overBottom": -390,
+        "box": {
+         "w": 235,
+         "h": 964
+        },
+        "text": "آخرین معامله-—تغییر روز-پایانی—٪آخرین-او",
+        "inScroller": ".glass-panel"
+       }
+      ],
+      "clipped": [],
+      "scrollables": [],
+      "stickyAfterScroll": {
+       "scrolled": true,
+       "headerVisible": true,
+       "headerTop": 0,
+       "scrollTop": 0,
+       "scrollHeight": 1440
+      },
+      "sidebarBox": {
+       "w": 178,
+       "h": 411
+      },
+      "title": "ترمینال تحلیل بورس"
+     },
+     "clicks": {}
+    }
+   ]
+  },
+  {
+   "viewport": "3840x2160",
+   "consoleErrors": [],
+   "failedRequests": [
+    "http://127.0.0.1:8123/api/index/tedpix?limit=0 net::ERR_ABORTED",
+    "http://127.0.0.1:8123/api/index/tedpix?limit=0 net::ERR_ABORTED"
+   ],
+   "rows": [
+    {
+     "path": "/master",
+     "name": "غربالگری FTS",
+     "shot": "_audit/ui-audit/3840×2160-_master.png",
+     "geom": {
+      "route": "غربالگری FTS",
+      "viewport": {
+       "w": 3840,
+       "h": 2160,
+       "dpr": 1
+      },
+      "bodyOverflowX": 0,
+      "bodyOverflowY": 0,
+      "pageScroll": 0,
+      "spuriousScroll": false,
+      "lastVisible": {
+       "node": ".flex",
+       "bottom": 2160,
+       "text": "بترمینال بورسFTS v2.1فضای تحلیلوضعیت",
+       "reachable": true,
+       "how": "درِ viewport",
+       "clippedByShell": false
+      },
+      "headerPosition": "sticky",
+      "headerSticky": true,
+      "rowCounts": {},
+      "mainOverflow": [
+       {
+        "node": ".app-main",
+        "x": 0,
+        "y": 0,
+        "w": 3640,
+        "h": 2124
+       }
+      ],
+      "outside": [],
+      "insideScroller": [
+       {
+        "node": ".glass-panel",
+        "overRight": -3840,
+        "overLeft": 256,
+        "overBottom": 0,
+        "box": {
+         "w": 256,
+         "h": 2160
+        },
+        "text": "-سنجاق✕در یک نگاهجزئیات بازارآخرین معامل",
+        "inScroller": ".flex"
+       },
+       {
+        "node": ".sticky",
+        "overRight": -3841,
+        "overLeft": 256,
+        "overBottom": -2120,
+        "box": {
+         "w": 255,
+         "h": 40
+        },
+        "text": "-سنجاق✕",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": ".min-w-0",
+        "overRight": -3851,
+        "overLeft": 17,
+        "overBottom": -2136,
+        "box": {
+         "w": 6,
+         "h": 16
+        },
+        "text": "-",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": ".truncate",
+        "overRight": -3851,
+        "overLeft": 17,
+        "overBottom": -2136,
+        "box": {
+         "w": 6,
+         "h": 16
+        },
+        "text": "-",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": ".flex",
+        "overRight": -4004,
+        "overLeft": 246,
+        "overBottom": -2129,
+        "box": {
+         "w": 82,
+         "h": 23
+        },
+        "text": "سنجاق✕",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": ".rounded-md",
+        "overRight": -4004,
+        "overLeft": 217,
+        "overBottom": -2129,
+        "box": {
+         "w": 53,
+         "h": 23
+        },
+        "text": "سنجاق",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": ".rounded-md",
+        "overRight": -4061,
+        "overLeft": 246,
+        "overBottom": -2129,
+        "box": {
+         "w": 25,
+         "h": 23
+        },
+        "text": "✕",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": ".flex",
+        "overRight": -3841,
+        "overLeft": 256,
+        "overBottom": -956,
+        "box": {
+         "w": 255,
+         "h": 1164
+        },
+        "text": "در یک نگاهجزئیات بازارآخرین معامله-—تغیی",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": "inspector-tabs",
+        "overRight": -3851,
+        "overLeft": 246,
+        "overBottom": -2081,
+        "box": {
+         "w": 235,
+         "h": 30
+        },
+        "text": "در یک نگاهجزئیات بازار",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": "inspector-tab-glance",
+        "overRight": -3851,
+        "overLeft": 127,
+        "overBottom": -2081,
+        "box": {
+         "w": 116,
+         "h": 30
+        },
+        "text": "در یک نگاه",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": "inspector-tab-detail",
+        "overRight": -3970,
+        "overLeft": 246,
+        "overBottom": -2081,
+        "box": {
+         "w": 116,
+         "h": 30
+        },
+        "text": "جزئیات بازار",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": "inspector-page-glance",
+        "overRight": -3851,
+        "overLeft": 246,
+        "overBottom": -997,
+        "box": {
+         "w": 235,
+         "h": 1075
+        },
+        "text": "آخرین معامله-—تغییر روز-پایانی—٪آخرین-او",
+        "inScroller": ".glass-panel"
+       }
+      ],
+      "clipped": [],
+      "scrollables": [],
+      "stickyAfterScroll": {
+       "scrolled": true,
+       "headerVisible": true,
+       "headerTop": 0,
+       "scrollTop": 0,
+       "scrollHeight": 2160
+      },
+      "sidebarBox": {
+       "w": 178,
+       "h": 419
+      },
+      "title": "ترمینال تحلیل بورس"
+     },
+     "clicks": {
+      "⚙": {
+       "opened": true,
+       "after": {
+        "route": "غربالگری FTS ← ⚙",
+        "viewport": {
+         "w": 3840,
+         "h": 2160,
+         "dpr": 1
+        },
+        "bodyOverflowX": 0,
+        "bodyOverflowY": 0,
+        "pageScroll": 0,
+        "spuriousScroll": false,
+        "lastVisible": {
+         "node": ".flex",
+         "bottom": 2160,
+         "text": "بترمینال بورسFTS v2.1فضای تحلیلوضعیت",
+         "reachable": true,
+         "how": "درِ viewport",
+         "clippedByShell": false
+        },
+        "headerPosition": "sticky",
+        "headerSticky": true,
+        "rowCounts": {},
+        "mainOverflow": [
+         {
+          "node": ".app-main",
+          "x": 0,
+          "y": 0,
+          "w": 3640,
+          "h": 2124
+         }
+        ],
+        "outside": [],
+        "insideScroller": [
+         {
+          "node": ".glass-panel",
+          "overRight": -3840,
+          "overLeft": 256,
+          "overBottom": 0,
+          "box": {
+           "w": 256,
+           "h": 2160
+          },
+          "text": "-سنجاق✕در یک نگاهجزئیات بازارآخرین معامل",
+          "inScroller": ".flex"
+         },
+         {
+          "node": ".sticky",
+          "overRight": -3841,
+          "overLeft": 256,
+          "overBottom": -2120,
+          "box": {
+           "w": 255,
+           "h": 40
+          },
+          "text": "-سنجاق✕",
+          "inScroller": ".glass-panel"
+         },
+         {
+          "node": ".min-w-0",
+          "overRight": -3851,
+          "overLeft": 17,
+          "overBottom": -2136,
+          "box": {
+           "w": 6,
+           "h": 16
+          },
+          "text": "-",
+          "inScroller": ".glass-panel"
+         },
+         {
+          "node": ".truncate",
+          "overRight": -3851,
+          "overLeft": 17,
+          "overBottom": -2136,
+          "box": {
+           "w": 6,
+           "h": 16
+          },
+          "text": "-",
+          "inScroller": ".glass-panel"
+         },
+         {
+          "node": ".flex",
+          "overRight": -4004,
+          "overLeft": 246,
+          "overBottom": -2129,
+          "box": {
+           "w": 82,
+           "h": 23
+          },
+          "text": "سنجاق✕",
+          "inScroller": ".glass-panel"
+         },
+         {
+          "node": ".rounded-md",
+          "overRight": -4004,
+          "overLeft": 217,
+          "overBottom": -2129,
+          "box": {
+           "w": 53,
+           "h": 23
+          },
+          "text": "سنجاق",
+          "inScroller": ".glass-panel"
+         },
+         {
+          "node": ".rounded-md",
+          "overRight": -4061,
+          "overLeft": 246,
+          "overBottom": -2129,
+          "box": {
+           "w": 25,
+           "h": 23
+          },
+          "text": "✕",
+          "inScroller": ".glass-panel"
+         },
+         {
+          "node": ".flex",
+          "overRight": -3841,
+          "overLeft": 256,
+          "overBottom": -956,
+          "box": {
+           "w": 255,
+           "h": 1164
+          },
+          "text": "در یک نگاهجزئیات بازارآخرین معامله-—تغیی",
+          "inScroller": ".glass-panel"
+         },
+         {
+          "node": "inspector-tabs",
+          "overRight": -3851,
+          "overLeft": 246,
+          "overBottom": -2081,
+          "box": {
+           "w": 235,
+           "h": 30
+          },
+          "text": "در یک نگاهجزئیات بازار",
+          "inScroller": ".glass-panel"
+         },
+         {
+          "node": "inspector-tab-glance",
+          "overRight": -3851,
+          "overLeft": 127,
+          "overBottom": -2081,
+          "box": {
+           "w": 116,
+           "h": 30
+          },
+          "text": "در یک نگاه",
+          "inScroller": ".glass-panel"
+         },
+         {
+          "node": "inspector-tab-detail",
+          "overRight": -3970,
+          "overLeft": 246,
+          "overBottom": -2081,
+          "box": {
+           "w": 116,
+           "h": 30
+          },
+          "text": "جزئیات بازار",
+          "inScroller": ".glass-panel"
+         },
+         {
+          "node": "inspector-page-glance",
+          "overRight": -3851,
+          "overLeft": 246,
+          "overBottom": -997,
+          "box": {
+           "w": 235,
+           "h": 1075
+          },
+          "text": "آخرین معامله-—تغییر روز-پایانی—٪آخرین-او",
+          "inScroller": ".glass-panel"
+         }
+        ],
+        "clipped": [],
+        "scrollables": [],
+        "stickyAfterScroll": {
+         "scrolled": true,
+         "headerVisible": true,
+         "headerTop": 0,
+         "scrollTop": 0,
+         "scrollHeight": 2160
+        },
+        "sidebarBox": {
+         "w": 178,
+         "h": 419
+        },
+        "title": "ترمینال تحلیل بورس"
+       }
+      }
+     }
+    },
+    {
+     "path": "/market",
+     "name": "تابلوخوانی",
+     "shot": "_audit/ui-audit/3840×2160-_market.png",
+     "geom": {
+      "route": "تابلوخوانی",
+      "viewport": {
+       "w": 3840,
+       "h": 2160,
+       "dpr": 1
+      },
+      "bodyOverflowX": 0,
+      "bodyOverflowY": 0,
+      "pageScroll": 0,
+      "spuriousScroll": false,
+      "lastVisible": {
+       "node": ".relative",
+       "bottom": 44818,
+       "text": "✓☆ولپارسليزينگ پارسيان۴٬۹۲۰۵٬۰۲۰-۲.۰",
+       "reachable": true,
+       "how": "اسکرولِ داخلی (tape-scroll 44680/1900)",
+       "clippedByShell": false
+      },
+      "headerPosition": "sticky",
+      "headerSticky": true,
+      "rowCounts": {
+       "tape-row": 60
+      },
+      "mainOverflow": [
+       {
+        "node": ".app-main",
+        "x": 0,
+        "y": 0,
+        "w": 3640,
+        "h": 2124
+       }
+      ],
+      "outside": [],
+      "insideScroller": [
+       {
+        "node": ".absolute",
+        "overRight": -233,
+        "overLeft": -33,
+        "overBottom": 18,
+        "box": {
+         "w": 3574,
+         "h": 40
+        },
+        "text": "✓☆وبهمنسرمايه‌گذاري‌بهمن‌۲٬۳۷۴۲٬۳۷۲۰.۱٪۲",
+        "inScroller": "tape-scroll"
+       },
+       {
+        "node": "tape-row",
+        "overRight": -233,
+        "overLeft": -33,
+        "overBottom": 18,
+        "box": {
+         "w": 3574,
+         "h": 40
+        },
+        "text": "✓☆وبهمنسرمايه‌گذاري‌بهمن‌۲٬۳۷۴۲٬۳۷۲۰.۱٪۲",
+        "inScroller": "tape-scroll"
+       },
+       {
+        "node": ".font-bold",
+        "overRight": -241,
+        "overLeft": -3122,
+        "overBottom": 9,
+        "box": {
+         "w": 477,
+         "h": 24
+        },
+        "text": "✓☆وبهمنسرمايه‌گذاري‌بهمن‌",
+        "inScroller": "tape-scroll"
+       },
+       {
+        "node": ".grid",
+        "overRight": -241,
+        "overLeft": -3583,
+        "overBottom": 5,
+        "box": {
+         "w": 16,
+         "h": 16
+        },
+        "text": "✓",
+        "inScroller": ".font-bold"
+       },
+       {
+        "node": ".truncate",
+        "overRight": -328,
+        "overLeft": -3427,
+        "overBottom": 5,
+        "box": {
+         "w": 85,
+         "h": 16
+        },
+        "text": "سرمايه‌گذاري‌بهمن‌",
+        "inScroller": ".font-bold"
+       },
+       {
+        "node": ".num",
+        "overRight": -722,
+        "overLeft": -2864,
+        "overBottom": 9,
+        "box": {
+         "w": 254,
+         "h": 24
+        },
+        "text": "۲٬۳۷۴",
+        "inScroller": "tape-scroll"
+       },
+       {
+        "node": ".num",
+        "overRight": -980,
+        "overLeft": -2607,
+        "overBottom": 9,
+        "box": {
+         "w": 254,
+         "h": 24
+        },
+        "text": "۲٬۳۷۲",
+        "inScroller": "tape-scroll"
+       },
+       {
+        "node": ".num",
+        "overRight": -1237,
+        "overLeft": -2424,
+        "overBottom": 9,
+        "box": {
+         "w": 179,
+         "h": 24
+        },
+        "text": "۰.۱٪",
+        "inScroller": "tape-scroll"
+       },
+       {
+        "node": ".num",
+        "overRight": -1420,
+        "overLeft": -2181,
+        "overBottom": 9,
+        "box": {
+         "w": 239,
+         "h": 24
+        },
+        "text": "۲.۹٪",
+        "inScroller": "tape-scroll"
+       },
+       {
+        "node": ".num",
+        "overRight": -1663,
+        "overLeft": -1938,
+        "overBottom": 9,
+        "box": {
+         "w": 239,
+         "h": 24
+        },
+        "text": "۳.۰٪",
+        "inScroller": "tape-scroll"
+       },
+       {
+        "node": ".num",
+        "overRight": -1906,
+        "overLeft": -1636,
+        "overBottom": 9,
+        "box": {
+         "w": 298,
+         "h": 24
+        },
+        "text": "۴۴۳٬۸۸۱٬۲۱۲",
+        "inScroller": "tape-scroll"
+       },
+       {
+        "node": ".num",
+        "overRight": -2208,
+        "overLeft": -1393,
+        "overBottom": 9,
+        "box": {
+         "w": 239,
+         "h": 24
+        },
+        "text": "۱٬۹۶۸",
+        "inScroller": "tape-scroll"
+       }
+      ],
+      "clipped": [],
+      "scrollables": [],
+      "stickyAfterScroll": {
+       "scrolled": true,
+       "headerVisible": true,
+       "headerTop": 0,
+       "scrollTop": 0,
+       "scrollHeight": 2160
+      },
+      "sidebarBox": {
+       "w": 178,
+       "h": 419
+      },
+      "title": "ترمینال تحلیل بورس"
+     },
+     "clicks": {
+      "⚙": {
+       "opened": true,
+       "after": {
+        "route": "تابلوخوانی ← ⚙",
+        "viewport": {
+         "w": 3840,
+         "h": 2160,
+         "dpr": 1
+        },
+        "bodyOverflowX": 0,
+        "bodyOverflowY": 0,
+        "pageScroll": 0,
+        "spuriousScroll": false,
+        "lastVisible": {
+         "node": ".relative",
+         "bottom": 44818,
+         "text": "✓☆ولپارسليزينگ پارسيان۴٬۹۲۰۵٬۰۲۰-۲.۰",
+         "reachable": true,
+         "how": "اسکرولِ داخلی (tape-scroll 44680/1900)",
+         "clippedByShell": false
+        },
+        "headerPosition": "sticky",
+        "headerSticky": true,
+        "rowCounts": {
+         "tape-row": 60
+        },
+        "mainOverflow": [
+         {
+          "node": ".app-main",
+          "x": 0,
+          "y": 0,
+          "w": 3640,
+          "h": 2124
+         }
+        ],
+        "outside": [],
+        "insideScroller": [
+         {
+          "node": ".absolute",
+          "overRight": -233,
+          "overLeft": -33,
+          "overBottom": 18,
+          "box": {
+           "w": 3574,
+           "h": 40
+          },
+          "text": "✓☆وبهمنسرمايه‌گذاري‌بهمن‌۲٬۳۷۴۲٬۳۷۲۰.۱٪۲",
+          "inScroller": "tape-scroll"
+         },
+         {
+          "node": "tape-row",
+          "overRight": -233,
+          "overLeft": -33,
+          "overBottom": 18,
+          "box": {
+           "w": 3574,
+           "h": 40
+          },
+          "text": "✓☆وبهمنسرمايه‌گذاري‌بهمن‌۲٬۳۷۴۲٬۳۷۲۰.۱٪۲",
+          "inScroller": "tape-scroll"
+         },
+         {
+          "node": ".font-bold",
+          "overRight": -241,
+          "overLeft": -3122,
+          "overBottom": 9,
+          "box": {
+           "w": 477,
+           "h": 24
+          },
+          "text": "✓☆وبهمنسرمايه‌گذاري‌بهمن‌",
+          "inScroller": "tape-scroll"
+         },
+         {
+          "node": ".grid",
+          "overRight": -241,
+          "overLeft": -3583,
+          "overBottom": 5,
+          "box": {
+           "w": 16,
+           "h": 16
+          },
+          "text": "✓",
+          "inScroller": ".font-bold"
+         },
+         {
+          "node": ".truncate",
+          "overRight": -328,
+          "overLeft": -3427,
+          "overBottom": 5,
+          "box": {
+           "w": 85,
+           "h": 16
+          },
+          "text": "سرمايه‌گذاري‌بهمن‌",
+          "inScroller": ".font-bold"
+         },
+         {
+          "node": ".num",
+          "overRight": -722,
+          "overLeft": -2864,
+          "overBottom": 9,
+          "box": {
+           "w": 254,
+           "h": 24
+          },
+          "text": "۲٬۳۷۴",
+          "inScroller": "tape-scroll"
+         },
+         {
+          "node": ".num",
+          "overRight": -980,
+          "overLeft": -2607,
+          "overBottom": 9,
+          "box": {
+           "w": 254,
+           "h": 24
+          },
+          "text": "۲٬۳۷۲",
+          "inScroller": "tape-scroll"
+         },
+         {
+          "node": ".num",
+          "overRight": -1237,
+          "overLeft": -2424,
+          "overBottom": 9,
+          "box": {
+           "w": 179,
+           "h": 24
+          },
+          "text": "۰.۱٪",
+          "inScroller": "tape-scroll"
+         },
+         {
+          "node": ".num",
+          "overRight": -1420,
+          "overLeft": -2181,
+          "overBottom": 9,
+          "box": {
+           "w": 239,
+           "h": 24
+          },
+          "text": "۲.۹٪",
+          "inScroller": "tape-scroll"
+         },
+         {
+          "node": ".num",
+          "overRight": -1663,
+          "overLeft": -1938,
+          "overBottom": 9,
+          "box": {
+           "w": 239,
+           "h": 24
+          },
+          "text": "۳.۰٪",
+          "inScroller": "tape-scroll"
+         },
+         {
+          "node": ".num",
+          "overRight": -1906,
+          "overLeft": -1636,
+          "overBottom": 9,
+          "box": {
+           "w": 298,
+           "h": 24
+          },
+          "text": "۴۴۳٬۸۸۱٬۲۱۲",
+          "inScroller": "tape-scroll"
+         },
+         {
+          "node": ".num",
+          "overRight": -2208,
+          "overLeft": -1393,
+          "overBottom": 9,
+          "box": {
+           "w": 239,
+           "h": 24
+          },
+          "text": "۱٬۹۶۸",
+          "inScroller": "tape-scroll"
+         }
+        ],
+        "clipped": [],
+        "scrollables": [],
+        "stickyAfterScroll": {
+         "scrolled": true,
+         "headerVisible": true,
+         "headerTop": 0,
+         "scrollTop": 0,
+         "scrollHeight": 2160
+        },
+        "sidebarBox": {
+         "w": 178,
+         "h": 419
+        },
+        "title": "ترمینال تحلیل بورس"
+       }
+      }
+     }
+    },
+    {
+     "path": "/market-status",
+     "name": "وضعیت بازار",
+     "shot": "_audit/ui-audit/3840×2160-_market_status.png",
+     "geom": {
+      "route": "وضعیت بازار",
+      "viewport": {
+       "w": 3840,
+       "h": 2160,
+       "dpr": 1
+      },
+      "bodyOverflowX": 0,
+      "bodyOverflowY": 0,
+      "pageScroll": 0,
+      "spuriousScroll": false,
+      "lastVisible": {
+       "node": ".w-full",
+       "bottom": 4267,
+       "text": "نمادصنعتآخرینپایانیکندل روزتغییر٪ساع",
+       "reachable": true,
+       "how": "اسکرولِ داخلی (.min-w-0 3306/821)",
+       "clippedByShell": false
+      },
+      "headerPosition": "sticky",
+      "headerSticky": true,
+      "rowCounts": {},
+      "mainOverflow": [
+       {
+        "node": ".app-main",
+        "x": 0,
+        "y": 0,
+        "w": 3640,
+        "h": 2124
+       }
+      ],
+      "outside": [],
+      "insideScroller": [
+       {
+        "node": "ticker-marquee-track",
+        "overRight": 260,
+        "overLeft": 597,
+        "overBottom": -2008,
+        "box": {
+         "w": 4697,
+         "h": 17
+        },
+        "text": "پهنای بازارمثبت۶۳۷منفی۶۶۸خنثی۵بی‌درصد۳۷ج",
+        "inScroller": "ticker-marquee"
+       },
+       {
+        "node": "ticker-marquee-copy",
+        "overRight": 260,
+        "overLeft": -1762,
+        "overBottom": -2008,
+        "box": {
+         "w": 2338,
+         "h": 17
+        },
+        "text": "پهنای بازارمثبت۶۳۷منفی۶۶۸خنثی۵بی‌درصد۳۷ج",
+        "inScroller": "ticker-marquee"
+       },
+       {
+        "node": "ticker-group-breadth",
+        "overRight": 260,
+        "overLeft": -3747,
+        "overBottom": -2008,
+        "box": {
+         "w": 354,
+         "h": 17
+        },
+        "text": "پهنای بازارمثبت۶۳۷منفی۶۶۸خنثی۵بی‌درصد۳۷",
+        "inScroller": "ticker-marquee"
+       },
+       {
+        "node": ".shrink-0",
+        "overRight": 260,
+        "overLeft": -4044,
+        "overBottom": -2008,
+        "box": {
+         "w": 56,
+         "h": 17
+        },
+        "text": "پهنای بازار",
+        "inScroller": "ticker-marquee"
+       },
+       {
+        "node": ".flex",
+        "overRight": 188,
+        "overLeft": -3965,
+        "overBottom": -2008,
+        "box": {
+         "w": 63,
+         "h": 17
+        },
+        "text": "مثبت۶۳۷",
+        "inScroller": "ticker-marquee"
+       },
+       {
+        "node": ".shrink-0",
+        "overRight": 188,
+        "overLeft": -3998,
+        "overBottom": -2008,
+        "box": {
+         "w": 30,
+         "h": 17
+        },
+        "text": "مثبت",
+        "inScroller": "ticker-marquee"
+       },
+       {
+        "node": "ticker-fact-مثبت",
+        "overRight": 154,
+        "overLeft": -3965,
+        "overBottom": -2008,
+        "box": {
+         "w": 29,
+         "h": 17
+        },
+        "text": "۶۳۷",
+        "inScroller": "ticker-marquee"
+       },
+       {
+        "node": ".flex",
+        "overRight": 109,
+        "overLeft": -3888,
+        "overBottom": -2008,
+        "box": {
+         "w": 61,
+         "h": 17
+        },
+        "text": "منفی۶۶۸",
+        "inScroller": "ticker-marquee"
+       },
+       {
+        "node": ".shrink-0",
+        "overRight": 109,
+        "overLeft": -3921,
+        "overBottom": -2008,
+        "box": {
+         "w": 28,
+         "h": 17
+        },
+        "text": "منفی",
+        "inScroller": "ticker-marquee"
+       },
+       {
+        "node": "ticker-fact-منفی",
+        "overRight": 77,
+        "overLeft": -3888,
+        "overBottom": -2008,
+        "box": {
+         "w": 29,
+         "h": 17
+        },
+        "text": "۶۶۸",
+        "inScroller": "ticker-marquee"
+       },
+       {
+        "node": ".flex",
+        "overRight": 32,
+        "overLeft": -3830,
+        "overBottom": -2008,
+        "box": {
+         "w": 42,
+         "h": 17
+        },
+        "text": "خنثی۵",
+        "inScroller": "ticker-marquee"
+       },
+       {
+        "node": ".shrink-0",
+        "overRight": 32,
+        "overLeft": -3844,
+        "overBottom": -2008,
+        "box": {
+         "w": 28,
+         "h": 17
+        },
+        "text": "خنثی",
+        "inScroller": "ticker-marquee"
+       }
+      ],
+      "clipped": [],
+      "scrollables": [],
+      "stickyAfterScroll": {
+       "scrolled": true,
+       "headerVisible": true,
+       "headerTop": 0,
+       "scrollTop": 0,
+       "scrollHeight": 2160
+      },
+      "sidebarBox": {
+       "w": 178,
+       "h": 419
+      },
+      "title": "ترمینال تحلیل بورس"
+     },
+     "clicks": {}
+    },
+    {
+     "path": "/notifications",
+     "name": "مرکز اعلان",
+     "shot": "_audit/ui-audit/3840×2160-_notifications.png",
+     "geom": {
+      "route": "مرکز اعلان",
+      "viewport": {
+       "w": 3840,
+       "h": 2160,
+       "dpr": 1
+      },
+      "bodyOverflowX": 0,
+      "bodyOverflowY": 0,
+      "pageScroll": 0,
+      "spuriousScroll": false,
+      "lastVisible": {
+       "node": "notice-row",
+       "bottom": 10977,
+       "text": "بالاصورتهایِ مالیزشکمنبع ↗خوانده شدا",
+       "reachable": true,
+       "how": "اسکرولِ داخلی (notice-list 10854/1999)",
+       "clippedByShell": false
+      },
+      "headerPosition": "sticky",
+      "headerSticky": true,
+      "rowCounts": {
+       "notice-row": 120
+      },
+      "mainOverflow": [
+       {
+        "node": ".app-main",
+        "x": 0,
+        "y": 0,
+        "w": 3640,
+        "h": 2124
+       }
+      ],
+      "outside": [],
+      "insideScroller": [
+       {
+        "node": "notice-row",
+        "overRight": -232,
+        "overLeft": -36,
+        "overBottom": 38,
+        "box": {
+         "w": 3572,
+         "h": 85
+        },
+        "text": "متوسطفعالیت ماهانهغمایهمنبع ↗خوانده شدگز",
+        "inScroller": "notice-list"
+       },
+       {
+        "node": ".line-clamp-2",
+        "overRight": -243,
+        "overLeft": -47,
+        "overBottom": 9,
+        "box": {
+         "w": 3550,
+         "h": 20
+        },
+        "text": "گزارش فعالیت ماهانه دوره ۱ ماهه منتهی به",
+        "inScroller": "notice-list"
+       },
+       {
+        "node": ".num-text",
+        "overRight": -243,
+        "overLeft": -47,
+        "overBottom": 29,
+        "box": {
+         "w": 3550,
+         "h": 16
+        },
+        "text": "انتشار: ۱۴۰۵/۰۷/۰۹ ۱۰:۴۲ · دریافتِ برنام",
+        "inScroller": "notice-list"
+       },
+       {
+        "node": "notice-row",
+        "overRight": -232,
+        "overLeft": -36,
+        "overBottom": 129,
+        "box": {
+         "w": 3572,
+         "h": 85
+        },
+        "text": "متوسطفعالیت ماهانهوفردانامهمنبع ↗خوانده ",
+        "inScroller": "notice-list"
+       },
+       {
+        "node": ".flex",
+        "overRight": -243,
+        "overLeft": -47,
+        "overBottom": 75,
+        "box": {
+         "w": 3550,
+         "h": 22
+        },
+        "text": "متوسطفعالیت ماهانهوفردانامهمنبع ↗خوانده ",
+        "inScroller": "notice-list"
+       },
+       {
+        "node": "notice-level",
+        "overRight": -243,
+        "overLeft": -3545,
+        "overBottom": 75,
+        "box": {
+         "w": 52,
+         "h": 22
+        },
+        "text": "متوسط",
+        "inScroller": "notice-list"
+       },
+       {
+        "node": "notice-kind",
+        "overRight": -301,
+        "overLeft": -3465,
+        "overBottom": 72,
+        "box": {
+         "w": 74,
+         "h": 16
+        },
+        "text": "فعالیت ماهانه",
+        "inScroller": "notice-list"
+       },
+       {
+        "node": "notice-symbol",
+        "overRight": -381,
+        "overLeft": -3407,
+        "overBottom": 73,
+        "box": {
+         "w": 52,
+         "h": 17
+        },
+        "text": "وفردانامه",
+        "inScroller": "notice-list"
+       },
+       {
+        "node": ".ms-auto",
+        "overRight": -3667,
+        "overLeft": -47,
+        "overBottom": 75,
+        "box": {
+         "w": 126,
+         "h": 22
+        },
+        "text": "منبع ↗خوانده شد",
+        "inScroller": "notice-list"
+       },
+       {
+        "node": "notice-open",
+        "overRight": -3667,
+        "overLeft": -122,
+        "overBottom": 75,
+        "box": {
+         "w": 51,
+         "h": 22
+        },
+        "text": "منبع ↗",
+        "inScroller": "notice-list"
+       },
+       {
+        "node": "notice-mark",
+        "overRight": -3724,
+        "overLeft": -47,
+        "overBottom": 75,
+        "box": {
+         "w": 69,
+         "h": 22
+        },
+        "text": "خوانده شد",
+        "inScroller": "notice-list"
+       },
+       {
+        "node": ".line-clamp-2",
+        "overRight": -243,
+        "overLeft": -47,
+        "overBottom": 99,
+        "box": {
+         "w": 3550,
+         "h": 20
+        },
+        "text": "گزارش فعالیت ماهانه دوره ۱ ماهه منتهی به",
+        "inScroller": "notice-list"
+       }
+      ],
+      "clipped": [],
+      "scrollables": [],
+      "stickyAfterScroll": {
+       "scrolled": true,
+       "headerVisible": true,
+       "headerTop": 0,
+       "scrollTop": 0,
+       "scrollHeight": 2160
+      },
+      "sidebarBox": {
+       "w": 178,
+       "h": 419
+      },
+      "title": "ترمینال تحلیل بورس"
+     },
+     "clicks": {}
+    },
+    {
+     "path": "/fundamental/فولاد",
+     "name": "بنیادی (نماددار)",
+     "shot": "_audit/ui-audit/3840×2160-_fundamental_.png",
+     "geom": {
+      "route": "بنیادی (نماددار)",
+      "viewport": {
+       "w": 3840,
+       "h": 2160,
+       "dpr": 1
+      },
+      "bodyOverflowX": 0,
+      "bodyOverflowY": 0,
+      "pageScroll": 0,
+      "spuriousScroll": false,
+      "lastVisible": {
+       "node": ".flex",
+       "bottom": 2160,
+       "text": "بترمینال بورسFTS v2.1فضای تحلیلوضعیت",
+       "reachable": true,
+       "how": "درِ viewport",
+       "clippedByShell": false
+      },
+      "headerPosition": "sticky",
+      "headerSticky": true,
+      "rowCounts": {},
+      "mainOverflow": [
+       {
+        "node": ".app-main",
+        "x": 0,
+        "y": 0,
+        "w": 3640,
+        "h": 2124
+       }
+      ],
+      "outside": [],
+      "insideScroller": [
+       {
+        "node": ".mt-1",
+        "overRight": -3747,
+        "overLeft": 427,
+        "overBottom": -2017,
+        "box": {
+         "w": 520,
+         "h": 71
+        },
+        "text": "چرخۀ موفقی ثبت نشده؛ `catchup.never_sync",
+        "inScroller": ".app-content"
+       },
+       {
+        "node": "li",
+        "overRight": -3747,
+        "overLeft": 427,
+        "overBottom": -2071,
+        "box": {
+         "w": 520,
+         "h": 16
+        },
+        "text": "چرخۀ موفقی ثبت نشده؛ `catchup.never_sync",
+        "inScroller": ".mt-1"
+       },
+       {
+        "node": "li",
+        "overRight": -3747,
+        "overLeft": 427,
+        "overBottom": -2053,
+        "box": {
+         "w": 520,
+         "h": 16
+        },
+        "text": "چرخۀ بعدی حدود ۶۰ ثانیه دیگر (discovery-",
+        "inScroller": ".mt-1"
+       },
+       {
+        "node": "li",
+        "overRight": -3747,
+        "overLeft": 427,
+        "overBottom": -2035,
+        "box": {
+         "w": 520,
+         "h": 16
+        },
+        "text": "حجمِ صف: ۱۰۴۹۶ ردیف، از آنِ ۱۰۴۹۶ کهنه",
+        "inScroller": ".mt-1"
+       },
+       {
+        "node": ".num",
+        "overRight": -3806,
+        "overLeft": 9,
+        "overBottom": -2035,
+        "box": {
+         "w": 43,
+         "h": 16
+        },
+        "text": "۱۰۴۹۶",
+        "inScroller": ".mt-1"
+       },
+       {
+        "node": ".num",
+        "overRight": -3912,
+        "overLeft": 114,
+        "overBottom": -2035,
+        "box": {
+         "w": 43,
+         "h": 16
+        },
+        "text": "۱۰۴۹۶",
+        "inScroller": ".mt-1"
+       },
+       {
+        "node": "li",
+        "overRight": -3747,
+        "overLeft": 427,
+        "overBottom": -2017,
+        "box": {
+         "w": 520,
+         "h": 16
+        },
+        "text": "امضایِ تازگی: |8723",
+        "inScroller": ".mt-1"
+       },
+       {
+        "node": ".num",
+        "overRight": -3816,
+        "overLeft": 9,
+        "overBottom": -2017,
+        "box": {
+         "w": 33,
+         "h": 16
+        },
+        "text": "|8723",
+        "inScroller": ".mt-1"
+       },
+       {
+        "node": ".glass-panel",
+        "overRight": -3840,
+        "overLeft": 256,
+        "overBottom": 0,
+        "box": {
+         "w": 256,
+         "h": 2160
+        },
+        "text": "-سنجاق✕در یک نگاهجزئیات بازارآخرین معامل",
+        "inScroller": ".flex"
+       },
+       {
+        "node": ".sticky",
+        "overRight": -3841,
+        "overLeft": 256,
+        "overBottom": -2120,
+        "box": {
+         "w": 255,
+         "h": 40
+        },
+        "text": "-سنجاق✕",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": ".min-w-0",
+        "overRight": -3851,
+        "overLeft": 17,
+        "overBottom": -2136,
+        "box": {
+         "w": 6,
+         "h": 16
+        },
+        "text": "-",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": ".truncate",
+        "overRight": -3851,
+        "overLeft": 17,
+        "overBottom": -2136,
+        "box": {
+         "w": 6,
+         "h": 16
+        },
+        "text": "-",
+        "inScroller": ".glass-panel"
+       }
+      ],
+      "clipped": [],
+      "scrollables": [],
+      "stickyAfterScroll": {
+       "scrolled": true,
+       "headerVisible": true,
+       "headerTop": 0,
+       "scrollTop": 0,
+       "scrollHeight": 2160
+      },
+      "sidebarBox": {
+       "w": 178,
+       "h": 419
+      },
+      "title": "ترمینال تحلیل بورس"
+     },
+     "clicks": {}
+    },
+    {
+     "path": "/technical/فولاد",
+     "name": "تکنیکال (نماددار)",
+     "shot": "_audit/ui-audit/3840×2160-_technical_.png",
+     "geom": {
+      "route": "تکنیکال (نماددار)",
+      "viewport": {
+       "w": 3840,
+       "h": 2160,
+       "dpr": 1
+      },
+      "bodyOverflowX": 0,
+      "bodyOverflowY": 0,
+      "pageScroll": 0,
+      "spuriousScroll": false,
+      "lastVisible": {
+       "node": ".flex",
+       "bottom": 2160,
+       "text": "بترمینال بورسFTS v2.1🚀⚙⎋بازار بسته ",
+       "reachable": true,
+       "how": "درِ viewport",
+       "clippedByShell": false
+      },
+      "headerPosition": "sticky",
+      "headerSticky": true,
+      "rowCounts": {},
+      "mainOverflow": [
+       {
+        "node": ".app-main",
+        "x": 0,
+        "y": 0,
+        "w": 3780,
+        "h": 2124
+       },
+       {
+        "node": ".flex",
+        "x": 0,
+        "y": 0,
+        "w": 3386,
+        "h": 2108
+       },
+       {
+        "node": ".nn-canvas-area",
+        "x": 0,
+        "y": 0,
+        "w": 3338,
+        "h": 2010
+       }
+      ],
+      "outside": [],
+      "insideScroller": [
+       {
+        "node": ".glass-panel",
+        "overRight": -3840,
+        "overLeft": 256,
+        "overBottom": 0,
+        "box": {
+         "w": 256,
+         "h": 2160
+        },
+        "text": "-سنجاق✕در یک نگاهجزئیات بازارآخرین معامل",
+        "inScroller": ".flex"
+       },
+       {
+        "node": ".sticky",
+        "overRight": -3841,
+        "overLeft": 256,
+        "overBottom": -2120,
+        "box": {
+         "w": 255,
+         "h": 40
+        },
+        "text": "-سنجاق✕",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": ".min-w-0",
+        "overRight": -3851,
+        "overLeft": 17,
+        "overBottom": -2136,
+        "box": {
+         "w": 6,
+         "h": 16
+        },
+        "text": "-",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": ".truncate",
+        "overRight": -3851,
+        "overLeft": 17,
+        "overBottom": -2136,
+        "box": {
+         "w": 6,
+         "h": 16
+        },
+        "text": "-",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": ".flex",
+        "overRight": -4004,
+        "overLeft": 246,
+        "overBottom": -2129,
+        "box": {
+         "w": 82,
+         "h": 23
+        },
+        "text": "سنجاق✕",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": ".rounded-md",
+        "overRight": -4004,
+        "overLeft": 217,
+        "overBottom": -2129,
+        "box": {
+         "w": 53,
+         "h": 23
+        },
+        "text": "سنجاق",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": ".rounded-md",
+        "overRight": -4061,
+        "overLeft": 246,
+        "overBottom": -2129,
+        "box": {
+         "w": 25,
+         "h": 23
+        },
+        "text": "✕",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": ".flex",
+        "overRight": -3841,
+        "overLeft": 256,
+        "overBottom": -956,
+        "box": {
+         "w": 255,
+         "h": 1164
+        },
+        "text": "در یک نگاهجزئیات بازارآخرین معامله-—تغیی",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": "inspector-tabs",
+        "overRight": -3851,
+        "overLeft": 246,
+        "overBottom": -2081,
+        "box": {
+         "w": 235,
+         "h": 30
+        },
+        "text": "در یک نگاهجزئیات بازار",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": "inspector-tab-glance",
+        "overRight": -3851,
+        "overLeft": 127,
+        "overBottom": -2081,
+        "box": {
+         "w": 116,
+         "h": 30
+        },
+        "text": "در یک نگاه",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": "inspector-tab-detail",
+        "overRight": -3970,
+        "overLeft": 246,
+        "overBottom": -2081,
+        "box": {
+         "w": 116,
+         "h": 30
+        },
+        "text": "جزئیات بازار",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": "inspector-page-glance",
+        "overRight": -3851,
+        "overLeft": 246,
+        "overBottom": -997,
+        "box": {
+         "w": 235,
+         "h": 1075
+        },
+        "text": "آخرین معامله-—تغییر روز-پایانی—٪آخرین-او",
+        "inScroller": ".glass-panel"
+       }
+      ],
+      "clipped": [],
+      "scrollables": [],
+      "stickyAfterScroll": {
+       "scrolled": true,
+       "headerVisible": true,
+       "headerTop": 0,
+       "scrollTop": 0,
+       "scrollHeight": 2160
+      },
+      "sidebarBox": {
+       "w": 42,
+       "h": 376
+      },
+      "title": "ترمینال تحلیل بورس"
+     },
+     "clicks": {}
+    },
+    {
+     "path": "/strategy-tree/فولاد",
+     "name": "درخت استراتژی",
+     "shot": "_audit/ui-audit/3840×2160-_strategy_tree_.png",
+     "geom": {
+      "route": "درخت استراتژی",
+      "viewport": {
+       "w": 3840,
+       "h": 2160,
+       "dpr": 1
+      },
+      "bodyOverflowX": 0,
+      "bodyOverflowY": 0,
+      "pageScroll": 0,
+      "spuriousScroll": false,
+      "lastVisible": {
+       "node": ".flex",
+       "bottom": 2160,
+       "text": "بترمینال بورسFTS v2.1فضای تحلیلوضعیت",
+       "reachable": true,
+       "how": "درِ viewport",
+       "clippedByShell": false
+      },
+      "headerPosition": "sticky",
+      "headerSticky": true,
+      "rowCounts": {},
+      "mainOverflow": [
+       {
+        "node": ".app-main",
+        "x": 0,
+        "y": 0,
+        "w": 3640,
+        "h": 2124
+       }
+      ],
+      "outside": [],
+      "insideScroller": [
+       {
+        "node": ".glass-panel",
+        "overRight": -3840,
+        "overLeft": 256,
+        "overBottom": 0,
+        "box": {
+         "w": 256,
+         "h": 2160
+        },
+        "text": "-سنجاق✕در یک نگاهجزئیات بازارآخرین معامل",
+        "inScroller": ".flex"
+       },
+       {
+        "node": ".sticky",
+        "overRight": -3841,
+        "overLeft": 256,
+        "overBottom": -2120,
+        "box": {
+         "w": 255,
+         "h": 40
+        },
+        "text": "-سنجاق✕",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": ".min-w-0",
+        "overRight": -3851,
+        "overLeft": 17,
+        "overBottom": -2136,
+        "box": {
+         "w": 6,
+         "h": 16
+        },
+        "text": "-",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": ".truncate",
+        "overRight": -3851,
+        "overLeft": 17,
+        "overBottom": -2136,
+        "box": {
+         "w": 6,
+         "h": 16
+        },
+        "text": "-",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": ".flex",
+        "overRight": -4004,
+        "overLeft": 246,
+        "overBottom": -2129,
+        "box": {
+         "w": 82,
+         "h": 23
+        },
+        "text": "سنجاق✕",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": ".rounded-md",
+        "overRight": -4004,
+        "overLeft": 217,
+        "overBottom": -2129,
+        "box": {
+         "w": 53,
+         "h": 23
+        },
+        "text": "سنجاق",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": ".rounded-md",
+        "overRight": -4061,
+        "overLeft": 246,
+        "overBottom": -2129,
+        "box": {
+         "w": 25,
+         "h": 23
+        },
+        "text": "✕",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": ".flex",
+        "overRight": -3841,
+        "overLeft": 256,
+        "overBottom": -956,
+        "box": {
+         "w": 255,
+         "h": 1164
+        },
+        "text": "در یک نگاهجزئیات بازارآخرین معامله-—تغیی",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": "inspector-tabs",
+        "overRight": -3851,
+        "overLeft": 246,
+        "overBottom": -2081,
+        "box": {
+         "w": 235,
+         "h": 30
+        },
+        "text": "در یک نگاهجزئیات بازار",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": "inspector-tab-glance",
+        "overRight": -3851,
+        "overLeft": 127,
+        "overBottom": -2081,
+        "box": {
+         "w": 116,
+         "h": 30
+        },
+        "text": "در یک نگاه",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": "inspector-tab-detail",
+        "overRight": -3970,
+        "overLeft": 246,
+        "overBottom": -2081,
+        "box": {
+         "w": 116,
+         "h": 30
+        },
+        "text": "جزئیات بازار",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": "inspector-page-glance",
+        "overRight": -3851,
+        "overLeft": 246,
+        "overBottom": -997,
+        "box": {
+         "w": 235,
+         "h": 1075
+        },
+        "text": "آخرین معامله-—تغییر روز-پایانی—٪آخرین-او",
+        "inScroller": ".glass-panel"
+       }
+      ],
+      "clipped": [],
+      "scrollables": [],
+      "stickyAfterScroll": {
+       "scrolled": true,
+       "headerVisible": true,
+       "headerTop": 0,
+       "scrollTop": 0,
+       "scrollHeight": 2160
+      },
+      "sidebarBox": {
+       "w": 178,
+       "h": 419
+      },
+      "title": "ترمینال تحلیل بورس"
+     },
+     "clicks": {}
+    },
+    {
+     "path": "/portfolio",
+     "name": "مدیریت پرتفوی",
+     "shot": "_audit/ui-audit/3840×2160-_portfolio.png",
+     "geom": {
+      "route": "مدیریت پرتفوی",
+      "viewport": {
+       "w": 3840,
+       "h": 2160,
+       "dpr": 1
+      },
+      "bodyOverflowX": 0,
+      "bodyOverflowY": 0,
+      "pageScroll": 0,
+      "spuriousScroll": false,
+      "lastVisible": {
+       "node": ".flex",
+       "bottom": 2160,
+       "text": "بترمینال بورسFTS v2.1فضای تحلیلوضعیت",
+       "reachable": true,
+       "how": "درِ viewport",
+       "clippedByShell": false
+      },
+      "headerPosition": "sticky",
+      "headerSticky": true,
+      "rowCounts": {},
+      "mainOverflow": [
+       {
+        "node": ".app-main",
+        "x": 0,
+        "y": 0,
+        "w": 3640,
+        "h": 2124
+       }
+      ],
+      "outside": [],
+      "insideScroller": [
+       {
+        "node": ".glass-panel",
+        "overRight": -3840,
+        "overLeft": 256,
+        "overBottom": 0,
+        "box": {
+         "w": 256,
+         "h": 2160
+        },
+        "text": "-سنجاق✕در یک نگاهجزئیات بازارآخرین معامل",
+        "inScroller": ".flex"
+       },
+       {
+        "node": ".sticky",
+        "overRight": -3841,
+        "overLeft": 256,
+        "overBottom": -2120,
+        "box": {
+         "w": 255,
+         "h": 40
+        },
+        "text": "-سنجاق✕",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": ".min-w-0",
+        "overRight": -3851,
+        "overLeft": 17,
+        "overBottom": -2136,
+        "box": {
+         "w": 6,
+         "h": 16
+        },
+        "text": "-",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": ".truncate",
+        "overRight": -3851,
+        "overLeft": 17,
+        "overBottom": -2136,
+        "box": {
+         "w": 6,
+         "h": 16
+        },
+        "text": "-",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": ".flex",
+        "overRight": -4004,
+        "overLeft": 246,
+        "overBottom": -2129,
+        "box": {
+         "w": 82,
+         "h": 23
+        },
+        "text": "سنجاق✕",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": ".rounded-md",
+        "overRight": -4004,
+        "overLeft": 217,
+        "overBottom": -2129,
+        "box": {
+         "w": 53,
+         "h": 23
+        },
+        "text": "سنجاق",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": ".rounded-md",
+        "overRight": -4061,
+        "overLeft": 246,
+        "overBottom": -2129,
+        "box": {
+         "w": 25,
+         "h": 23
+        },
+        "text": "✕",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": ".flex",
+        "overRight": -3841,
+        "overLeft": 256,
+        "overBottom": -956,
+        "box": {
+         "w": 255,
+         "h": 1164
+        },
+        "text": "در یک نگاهجزئیات بازارآخرین معامله-—تغیی",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": "inspector-tabs",
+        "overRight": -3851,
+        "overLeft": 246,
+        "overBottom": -2081,
+        "box": {
+         "w": 235,
+         "h": 30
+        },
+        "text": "در یک نگاهجزئیات بازار",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": "inspector-tab-glance",
+        "overRight": -3851,
+        "overLeft": 127,
+        "overBottom": -2081,
+        "box": {
+         "w": 116,
+         "h": 30
+        },
+        "text": "در یک نگاه",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": "inspector-tab-detail",
+        "overRight": -3970,
+        "overLeft": 246,
+        "overBottom": -2081,
+        "box": {
+         "w": 116,
+         "h": 30
+        },
+        "text": "جزئیات بازار",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": "inspector-page-glance",
+        "overRight": -3851,
+        "overLeft": 246,
+        "overBottom": -997,
+        "box": {
+         "w": 235,
+         "h": 1075
+        },
+        "text": "آخرین معامله-—تغییر روز-پایانی—٪آخرین-او",
+        "inScroller": ".glass-panel"
+       }
+      ],
+      "clipped": [],
+      "scrollables": [],
+      "stickyAfterScroll": {
+       "scrolled": true,
+       "headerVisible": true,
+       "headerTop": 0,
+       "scrollTop": 0,
+       "scrollHeight": 2160
+      },
+      "sidebarBox": {
+       "w": 178,
+       "h": 419
+      },
+      "title": "ترمینال تحلیل بورس"
+     },
+     "clicks": {}
+    },
+    {
+     "path": "/watch",
+     "name": "دیده‌بان بازار",
+     "shot": "_audit/ui-audit/3840×2160-_watch.png",
+     "geom": {
+      "route": "دیده‌بان بازار",
+      "viewport": {
+       "w": 3840,
+       "h": 2160,
+       "dpr": 1
+      },
+      "bodyOverflowX": 0,
+      "bodyOverflowY": 0,
+      "pageScroll": 0,
+      "spuriousScroll": false,
+      "lastVisible": {
+       "node": ".flex",
+       "bottom": 2160,
+       "text": "بترمینال بورسFTS v2.1فضای تحلیلوضعیت",
+       "reachable": true,
+       "how": "درِ viewport",
+       "clippedByShell": false
+      },
+      "headerPosition": "sticky",
+      "headerSticky": true,
+      "rowCounts": {},
+      "mainOverflow": [
+       {
+        "node": ".app-main",
+        "x": 0,
+        "y": 0,
+        "w": 3640,
+        "h": 2124
+       }
+      ],
+      "outside": [],
+      "insideScroller": [
+       {
+        "node": ".glass-panel",
+        "overRight": -3840,
+        "overLeft": 256,
+        "overBottom": 0,
+        "box": {
+         "w": 256,
+         "h": 2160
+        },
+        "text": "-سنجاق✕در یک نگاهجزئیات بازارآخرین معامل",
+        "inScroller": ".flex"
+       },
+       {
+        "node": ".sticky",
+        "overRight": -3841,
+        "overLeft": 256,
+        "overBottom": -2120,
+        "box": {
+         "w": 255,
+         "h": 40
+        },
+        "text": "-سنجاق✕",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": ".min-w-0",
+        "overRight": -3851,
+        "overLeft": 17,
+        "overBottom": -2136,
+        "box": {
+         "w": 6,
+         "h": 16
+        },
+        "text": "-",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": ".truncate",
+        "overRight": -3851,
+        "overLeft": 17,
+        "overBottom": -2136,
+        "box": {
+         "w": 6,
+         "h": 16
+        },
+        "text": "-",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": ".flex",
+        "overRight": -4004,
+        "overLeft": 246,
+        "overBottom": -2129,
+        "box": {
+         "w": 82,
+         "h": 23
+        },
+        "text": "سنجاق✕",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": ".rounded-md",
+        "overRight": -4004,
+        "overLeft": 217,
+        "overBottom": -2129,
+        "box": {
+         "w": 53,
+         "h": 23
+        },
+        "text": "سنجاق",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": ".rounded-md",
+        "overRight": -4061,
+        "overLeft": 246,
+        "overBottom": -2129,
+        "box": {
+         "w": 25,
+         "h": 23
+        },
+        "text": "✕",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": ".flex",
+        "overRight": -3841,
+        "overLeft": 256,
+        "overBottom": -1042,
+        "box": {
+         "w": 255,
+         "h": 1078
+        },
+        "text": "در یک نگاهجزئیات بازارآخرین معامله-—تغیی",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": "inspector-tabs",
+        "overRight": -3851,
+        "overLeft": 246,
+        "overBottom": -2081,
+        "box": {
+         "w": 235,
+         "h": 30
+        },
+        "text": "در یک نگاهجزئیات بازار",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": "inspector-tab-glance",
+        "overRight": -3851,
+        "overLeft": 127,
+        "overBottom": -2081,
+        "box": {
+         "w": 116,
+         "h": 30
+        },
+        "text": "در یک نگاه",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": "inspector-tab-detail",
+        "overRight": -3970,
+        "overLeft": 246,
+        "overBottom": -2081,
+        "box": {
+         "w": 116,
+         "h": 30
+        },
+        "text": "جزئیات بازار",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": "inspector-page-glance",
+        "overRight": -3851,
+        "overLeft": 246,
+        "overBottom": -1084,
+        "box": {
+         "w": 235,
+         "h": 989
+        },
+        "text": "آخرین معامله-—تغییر روز-پایانی—٪آخرین-او",
+        "inScroller": ".glass-panel"
+       }
+      ],
+      "clipped": [],
+      "scrollables": [],
+      "stickyAfterScroll": {
+       "scrolled": true,
+       "headerVisible": true,
+       "headerTop": 0,
+       "scrollTop": 0,
+       "scrollHeight": 2160
+      },
+      "sidebarBox": {
+       "w": 178,
+       "h": 419
+      },
+      "title": "ترمینال تحلیل بورس"
+     },
+     "clicks": {
+      "بازار در یک نگاه": {
+       "opened": true,
+       "after": {
+        "route": "دیده‌بان بازار ← بازار در یک نگاه",
+        "viewport": {
+         "w": 3840,
+         "h": 2160,
+         "dpr": 1
+        },
+        "bodyOverflowX": 0,
+        "bodyOverflowY": 0,
+        "pageScroll": 0,
+        "spuriousScroll": false,
+        "lastVisible": {
+         "node": ".flex",
+         "bottom": 2160,
+         "text": "بترمینال بورسFTS v2.1فضای تحلیلوضعیت",
+         "reachable": true,
+         "how": "درِ viewport",
+         "clippedByShell": false
+        },
+        "headerPosition": "sticky",
+        "headerSticky": true,
+        "rowCounts": {},
+        "mainOverflow": [
+         {
+          "node": ".app-main",
+          "x": 0,
+          "y": 0,
+          "w": 3640,
+          "h": 2124
+         }
+        ],
+        "outside": [],
+        "insideScroller": [
+         {
+          "node": ".glass-panel",
+          "overRight": -3840,
+          "overLeft": 256,
+          "overBottom": 0,
+          "box": {
+           "w": 256,
+           "h": 2160
+          },
+          "text": "-سنجاق✕در یک نگاهجزئیات بازارآخرین معامل",
+          "inScroller": ".flex"
+         },
+         {
+          "node": ".sticky",
+          "overRight": -3841,
+          "overLeft": 256,
+          "overBottom": -2120,
+          "box": {
+           "w": 255,
+           "h": 40
+          },
+          "text": "-سنجاق✕",
+          "inScroller": ".glass-panel"
+         },
+         {
+          "node": ".min-w-0",
+          "overRight": -3851,
+          "overLeft": 17,
+          "overBottom": -2136,
+          "box": {
+           "w": 6,
+           "h": 16
+          },
+          "text": "-",
+          "inScroller": ".glass-panel"
+         },
+         {
+          "node": ".truncate",
+          "overRight": -3851,
+          "overLeft": 17,
+          "overBottom": -2136,
+          "box": {
+           "w": 6,
+           "h": 16
+          },
+          "text": "-",
+          "inScroller": ".glass-panel"
+         },
+         {
+          "node": ".flex",
+          "overRight": -4004,
+          "overLeft": 246,
+          "overBottom": -2129,
+          "box": {
+           "w": 82,
+           "h": 23
+          },
+          "text": "سنجاق✕",
+          "inScroller": ".glass-panel"
+         },
+         {
+          "node": ".rounded-md",
+          "overRight": -4004,
+          "overLeft": 217,
+          "overBottom": -2129,
+          "box": {
+           "w": 53,
+           "h": 23
+          },
+          "text": "سنجاق",
+          "inScroller": ".glass-panel"
+         },
+         {
+          "node": ".rounded-md",
+          "overRight": -4061,
+          "overLeft": 246,
+          "overBottom": -2129,
+          "box": {
+           "w": 25,
+           "h": 23
+          },
+          "text": "✕",
+          "inScroller": ".glass-panel"
+         },
+         {
+          "node": ".flex",
+          "overRight": -3841,
+          "overLeft": 256,
+          "overBottom": -1042,
+          "box": {
+           "w": 255,
+           "h": 1078
+          },
+          "text": "در یک نگاهجزئیات بازارآخرین معامله-—تغیی",
+          "inScroller": ".glass-panel"
+         },
+         {
+          "node": "inspector-tabs",
+          "overRight": -3851,
+          "overLeft": 246,
+          "overBottom": -2081,
+          "box": {
+           "w": 235,
+           "h": 30
+          },
+          "text": "در یک نگاهجزئیات بازار",
+          "inScroller": ".glass-panel"
+         },
+         {
+          "node": "inspector-tab-glance",
+          "overRight": -3851,
+          "overLeft": 127,
+          "overBottom": -2081,
+          "box": {
+           "w": 116,
+           "h": 30
+          },
+          "text": "در یک نگاه",
+          "inScroller": ".glass-panel"
+         },
+         {
+          "node": "inspector-tab-detail",
+          "overRight": -3970,
+          "overLeft": 246,
+          "overBottom": -2081,
+          "box": {
+           "w": 116,
+           "h": 30
+          },
+          "text": "جزئیات بازار",
+          "inScroller": ".glass-panel"
+         },
+         {
+          "node": "inspector-page-glance",
+          "overRight": -3851,
+          "overLeft": 246,
+          "overBottom": -1084,
+          "box": {
+           "w": 235,
+           "h": 989
+          },
+          "text": "آخرین معامله-—تغییر روز-پایانی—٪آخرین-او",
+          "inScroller": ".glass-panel"
+         }
+        ],
+        "clipped": [],
+        "scrollables": [],
+        "stickyAfterScroll": {
+         "scrolled": true,
+         "headerVisible": true,
+         "headerTop": 0,
+         "scrollTop": 0,
+         "scrollHeight": 2160
+        },
+        "sidebarBox": {
+         "w": 178,
+         "h": 419
+        },
+        "title": "ترمینال تحلیل بورس"
+       }
+      },
+      "تکنیکال": {
+       "opened": true,
+       "after": {
+        "route": "دیده‌بان بازار ← تکنیکال",
+        "viewport": {
+         "w": 3840,
+         "h": 2160,
+         "dpr": 1
+        },
+        "bodyOverflowX": 0,
+        "bodyOverflowY": 0,
+        "pageScroll": 0,
+        "spuriousScroll": false,
+        "lastVisible": {
+         "node": ".flex",
+         "bottom": 2160,
+         "text": "بترمینال بورسFTS v2.1🚀⚙⎋بازار بسته ",
+         "reachable": true,
+         "how": "درِ viewport",
+         "clippedByShell": false
+        },
+        "headerPosition": "sticky",
+        "headerSticky": true,
+        "rowCounts": {},
+        "mainOverflow": [
+         {
+          "node": ".app-main",
+          "x": 0,
+          "y": 0,
+          "w": 3780,
+          "h": 2124
+         },
+         {
+          "node": ".flex",
+          "x": 0,
+          "y": 0,
+          "w": 3386,
+          "h": 2108
+         }
+        ],
+        "outside": [],
+        "insideScroller": [
+         {
+          "node": ".glass-panel",
+          "overRight": -3840,
+          "overLeft": 256,
+          "overBottom": 0,
+          "box": {
+           "w": 256,
+           "h": 2160
+          },
+          "text": "-سنجاق✕در یک نگاهجزئیات بازارآخرین معامل",
+          "inScroller": ".flex"
+         },
+         {
+          "node": ".sticky",
+          "overRight": -3841,
+          "overLeft": 256,
+          "overBottom": -2120,
+          "box": {
+           "w": 255,
+           "h": 40
+          },
+          "text": "-سنجاق✕",
+          "inScroller": ".glass-panel"
+         },
+         {
+          "node": ".min-w-0",
+          "overRight": -3851,
+          "overLeft": 17,
+          "overBottom": -2136,
+          "box": {
+           "w": 6,
+           "h": 16
+          },
+          "text": "-",
+          "inScroller": ".glass-panel"
+         },
+         {
+          "node": ".truncate",
+          "overRight": -3851,
+          "overLeft": 17,
+          "overBottom": -2136,
+          "box": {
+           "w": 6,
+           "h": 16
+          },
+          "text": "-",
+          "inScroller": ".glass-panel"
+         },
+         {
+          "node": ".flex",
+          "overRight": -4004,
+          "overLeft": 246,
+          "overBottom": -2129,
+          "box": {
+           "w": 82,
+           "h": 23
+          },
+          "text": "سنجاق✕",
+          "inScroller": ".glass-panel"
+         },
+         {
+          "node": ".rounded-md",
+          "overRight": -4004,
+          "overLeft": 217,
+          "overBottom": -2129,
+          "box": {
+           "w": 53,
+           "h": 23
+          },
+          "text": "سنجاق",
+          "inScroller": ".glass-panel"
+         },
+         {
+          "node": ".rounded-md",
+          "overRight": -4061,
+          "overLeft": 246,
+          "overBottom": -2129,
+          "box": {
+           "w": 25,
+           "h": 23
+          },
+          "text": "✕",
+          "inScroller": ".glass-panel"
+         },
+         {
+          "node": ".flex",
+          "overRight": -3841,
+          "overLeft": 256,
+          "overBottom": -956,
+          "box": {
+           "w": 255,
+           "h": 1164
+          },
+          "text": "در یک نگاهجزئیات بازارآخرین معامله-—تغیی",
+          "inScroller": ".glass-panel"
+         },
+         {
+          "node": "inspector-tabs",
+          "overRight": -3851,
+          "overLeft": 246,
+          "overBottom": -2081,
+          "box": {
+           "w": 235,
+           "h": 30
+          },
+          "text": "در یک نگاهجزئیات بازار",
+          "inScroller": ".glass-panel"
+         },
+         {
+          "node": "inspector-tab-glance",
+          "overRight": -3851,
+          "overLeft": 127,
+          "overBottom": -2081,
+          "box": {
+           "w": 116,
+           "h": 30
+          },
+          "text": "در یک نگاه",
+          "inScroller": ".glass-panel"
+         },
+         {
+          "node": "inspector-tab-detail",
+          "overRight": -3970,
+          "overLeft": 246,
+          "overBottom": -2081,
+          "box": {
+           "w": 116,
+           "h": 30
+          },
+          "text": "جزئیات بازار",
+          "inScroller": ".glass-panel"
+         },
+         {
+          "node": "inspector-page-glance",
+          "overRight": -3851,
+          "overLeft": 246,
+          "overBottom": -997,
+          "box": {
+           "w": 235,
+           "h": 1075
+          },
+          "text": "آخرین معامله-—تغییر روز-پایانی—٪آخرین-او",
+          "inScroller": ".glass-panel"
+         }
+        ],
+        "clipped": [],
+        "scrollables": [],
+        "stickyAfterScroll": {
+         "scrolled": true,
+         "headerVisible": true,
+         "headerTop": 0,
+         "scrollTop": 0,
+         "scrollHeight": 2160
+        },
+        "sidebarBox": {
+         "w": 42,
+         "h": 376
+        },
+        "title": "ترمینال تحلیل بورس"
+       }
+      },
+      "بنیادی": {
+       "opened": true,
+       "after": {
+        "route": "دیده‌بان بازار ← بنیادی",
+        "viewport": {
+         "w": 3840,
+         "h": 2160,
+         "dpr": 1
+        },
+        "bodyOverflowX": 0,
+        "bodyOverflowY": 19,
+        "pageScroll": 19,
+        "spuriousScroll": true,
+        "lastVisible": {
+         "node": "tr",
+         "bottom": 34821,
+         "text": "",
+         "reachable": true,
+         "how": "اسکرولِ داخلی (fts-screen-scroll 34641/1960)",
+         "clippedByShell": false
+        },
+        "headerPosition": "sticky",
+        "headerSticky": true,
+        "rowCounts": {
+         "fts-screen-row": 46
+        },
+        "mainOverflow": [
+         {
+          "node": ".app-main",
+          "x": 0,
+          "y": 0,
+          "w": 3640,
+          "h": 2143
+         }
+        ],
+        "outside": [],
+        "insideScroller": [
+         {
+          "node": ".app-main",
+          "overRight": -200,
+          "overLeft": 0,
+          "overBottom": 19,
+          "box": {
+           "w": 3640,
+           "h": 2143
+          },
+          "text": "خطِ کدال بیکار است — کاری درِ صف نیستدر ",
+          "inScroller": ".app-content"
+         },
+         {
+          "node": ".panel-in",
+          "overRight": -232,
+          "overLeft": -32,
+          "overBottom": 11,
+          "box": {
+           "w": 3576,
+           "h": 2127
+          },
+          "text": "خطِ کدال بیکار است — کاری درِ صف نیستدر ",
+          "inScroller": ".app-content"
+         },
+         {
+          "node": ".flex",
+          "overRight": -232,
+          "overLeft": -32,
+          "overBottom": 11,
+          "box": {
+           "w": 3576,
+           "h": 2127
+          },
+          "text": "خطِ کدال بیکار است — کاری درِ صف نیستدر ",
+          "inScroller": ".app-content"
+         },
+         {
+          "node": ".mt-1",
+          "overRight": -3747,
+          "overLeft": 427,
+          "overBottom": -2017,
+          "box": {
+           "w": 520,
+           "h": 71
+          },
+          "text": "چرخۀ موفقی ثبت نشده؛ `catchup.never_sync",
+          "inScroller": ".app-content"
+         },
+         {
+          "node": "li",
+          "overRight": -3747,
+          "overLeft": 427,
+          "overBottom": -2071,
+          "box": {
+           "w": 520,
+           "h": 16
+          },
+          "text": "چرخۀ موفقی ثبت نشده؛ `catchup.never_sync",
+          "inScroller": ".mt-1"
+         },
+         {
+          "node": "li",
+          "overRight": -3747,
+          "overLeft": 427,
+          "overBottom": -2053,
+          "box": {
+           "w": 520,
+           "h": 16
+          },
+          "text": "چرخۀ بعدی حدود ۶۰ ثانیه دیگر (discovery-",
+          "inScroller": ".mt-1"
+         },
+         {
+          "node": "li",
+          "overRight": -3747,
+          "overLeft": 427,
+          "overBottom": -2035,
+          "box": {
+           "w": 520,
+           "h": 16
+          },
+          "text": "حجمِ صف: ۱۰۴۹۶ ردیف، از آنِ ۱۰۴۹۶ کهنه",
+          "inScroller": ".mt-1"
+         },
+         {
+          "node": ".num",
+          "overRight": -3806,
+          "overLeft": 9,
+          "overBottom": -2035,
+          "box": {
+           "w": 43,
+           "h": 16
+          },
+          "text": "۱۰۴۹۶",
+          "inScroller": ".mt-1"
+         },
+         {
+          "node": ".num",
+          "overRight": -3912,
+          "overLeft": 114,
+          "overBottom": -2035,
+          "box": {
+           "w": 43,
+           "h": 16
+          },
+          "text": "۱۰۴۹۶",
+          "inScroller": ".mt-1"
+         },
+         {
+          "node": "li",
+          "overRight": -3747,
+          "overLeft": 427,
+          "overBottom": -2017,
+          "box": {
+           "w": 520,
+           "h": 16
+          },
+          "text": "امضایِ تازگی: |8723",
+          "inScroller": ".mt-1"
+         },
+         {
+          "node": ".num",
+          "overRight": -3816,
+          "overLeft": 9,
+          "overBottom": -2017,
+          "box": {
+           "w": 33,
+           "h": 16
+          },
+          "text": "|8723",
+          "inScroller": ".mt-1"
+         },
+         {
+          "node": ".glass-panel",
+          "overRight": -232,
+          "overLeft": -32,
+          "overBottom": 11,
+          "box": {
+           "w": 3576,
+           "h": 2087
+          },
+          "text": "دیتابیس کدال۶۶۵ شرکت از ۹۲۲دانلود(۶۶۵)⚙ت",
+          "inScroller": ".app-content"
+         }
+        ],
+        "clipped": [],
+        "scrollables": [],
+        "stickyAfterScroll": {
+         "scrolled": true,
+         "headerVisible": false,
+         "headerTop": -19,
+         "scrollTop": 19,
+         "scrollHeight": 2179
+        },
+        "sidebarBox": {
+         "w": 178,
+         "h": 419
+        },
+        "title": "ترمینال تحلیل بورس"
+       }
+      }
+     }
+    },
+    {
+     "path": "/engine-lab",
+     "name": "آزمایشگاه موتور (ابزار توسعه)",
+     "shot": "_audit/ui-audit/3840×2160-_engine_lab.png",
+     "geom": {
+      "route": "آزمایشگاه موتور (ابزار توسعه)",
+      "viewport": {
+       "w": 3840,
+       "h": 2160,
+       "dpr": 1
+      },
+      "bodyOverflowX": 0,
+      "bodyOverflowY": 0,
+      "pageScroll": 0,
+      "spuriousScroll": false,
+      "lastVisible": {
+       "node": ".flex",
+       "bottom": 2160,
+       "text": "بترمینال بورسFTS v2.1فضای تحلیلوضعیت",
+       "reachable": true,
+       "how": "درِ viewport",
+       "clippedByShell": false
+      },
+      "headerPosition": "sticky",
+      "headerSticky": true,
+      "rowCounts": {},
+      "mainOverflow": [
+       {
+        "node": ".app-main",
+        "x": 0,
+        "y": 0,
+        "w": 3640,
+        "h": 2124
+       }
+      ],
+      "outside": [],
+      "insideScroller": [
+       {
+        "node": ".glass-panel",
+        "overRight": -3840,
+        "overLeft": 256,
+        "overBottom": 0,
+        "box": {
+         "w": 256,
+         "h": 2160
+        },
+        "text": "-سنجاق✕در یک نگاهجزئیات بازارآخرین معامل",
+        "inScroller": ".flex"
+       },
+       {
+        "node": ".sticky",
+        "overRight": -3841,
+        "overLeft": 256,
+        "overBottom": -2120,
+        "box": {
+         "w": 255,
+         "h": 40
+        },
+        "text": "-سنجاق✕",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": ".min-w-0",
+        "overRight": -3851,
+        "overLeft": 17,
+        "overBottom": -2136,
+        "box": {
+         "w": 6,
+         "h": 16
+        },
+        "text": "-",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": ".truncate",
+        "overRight": -3851,
+        "overLeft": 17,
+        "overBottom": -2136,
+        "box": {
+         "w": 6,
+         "h": 16
+        },
+        "text": "-",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": ".flex",
+        "overRight": -4004,
+        "overLeft": 246,
+        "overBottom": -2129,
+        "box": {
+         "w": 82,
+         "h": 23
+        },
+        "text": "سنجاق✕",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": ".rounded-md",
+        "overRight": -4004,
+        "overLeft": 217,
+        "overBottom": -2129,
+        "box": {
+         "w": 53,
+         "h": 23
+        },
+        "text": "سنجاق",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": ".rounded-md",
+        "overRight": -4061,
+        "overLeft": 246,
+        "overBottom": -2129,
+        "box": {
+         "w": 25,
+         "h": 23
+        },
+        "text": "✕",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": ".flex",
+        "overRight": -3841,
+        "overLeft": 256,
+        "overBottom": -1042,
+        "box": {
+         "w": 255,
+         "h": 1078
+        },
+        "text": "در یک نگاهجزئیات بازارآخرین معامله-—تغیی",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": "inspector-tabs",
+        "overRight": -3851,
+        "overLeft": 246,
+        "overBottom": -2081,
+        "box": {
+         "w": 235,
+         "h": 30
+        },
+        "text": "در یک نگاهجزئیات بازار",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": "inspector-tab-glance",
+        "overRight": -3851,
+        "overLeft": 127,
+        "overBottom": -2081,
+        "box": {
+         "w": 116,
+         "h": 30
+        },
+        "text": "در یک نگاه",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": "inspector-tab-detail",
+        "overRight": -3970,
+        "overLeft": 246,
+        "overBottom": -2081,
+        "box": {
+         "w": 116,
+         "h": 30
+        },
+        "text": "جزئیات بازار",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": "inspector-page-glance",
+        "overRight": -3851,
+        "overLeft": 246,
+        "overBottom": -1084,
+        "box": {
+         "w": 235,
+         "h": 989
+        },
+        "text": "آخرین معامله-—تغییر روز-پایانی—٪آخرین-او",
+        "inScroller": ".glass-panel"
+       }
+      ],
+      "clipped": [],
+      "scrollables": [],
+      "stickyAfterScroll": {
+       "scrolled": true,
+       "headerVisible": true,
+       "headerTop": 0,
+       "scrollTop": 0,
+       "scrollHeight": 2160
+      },
+      "sidebarBox": {
+       "w": 178,
+       "h": 419
+      },
+      "title": "ترمینال تحلیل بورس"
+     },
+     "clicks": {}
+    },
+    {
+     "path": "/no-such-route",
+     "name": "صفحۀ نشانیِ ثبت‌نشده",
+     "shot": "_audit/ui-audit/3840×2160-_no_such_route.png",
+     "geom": {
+      "route": "صفحۀ نشانیِ ثبت‌نشده",
+      "viewport": {
+       "w": 3840,
+       "h": 2160,
+       "dpr": 1
+      },
+      "bodyOverflowX": 0,
+      "bodyOverflowY": 0,
+      "pageScroll": 0,
+      "spuriousScroll": false,
+      "lastVisible": {
+       "node": ".flex",
+       "bottom": 2160,
+       "text": "بترمینال بورسFTS v2.1فضای تحلیلوضعیت",
+       "reachable": true,
+       "how": "درِ viewport",
+       "clippedByShell": false
+      },
+      "headerPosition": "sticky",
+      "headerSticky": true,
+      "rowCounts": {},
+      "mainOverflow": [
+       {
+        "node": ".app-main",
+        "x": 0,
+        "y": 0,
+        "w": 3640,
+        "h": 2124
+       }
+      ],
+      "outside": [],
+      "insideScroller": [
+       {
+        "node": ".glass-panel",
+        "overRight": -3840,
+        "overLeft": 256,
+        "overBottom": 0,
+        "box": {
+         "w": 256,
+         "h": 2160
+        },
+        "text": "-سنجاق✕در یک نگاهجزئیات بازارآخرین معامل",
+        "inScroller": ".flex"
+       },
+       {
+        "node": ".sticky",
+        "overRight": -3841,
+        "overLeft": 256,
+        "overBottom": -2120,
+        "box": {
+         "w": 255,
+         "h": 40
+        },
+        "text": "-سنجاق✕",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": ".min-w-0",
+        "overRight": -3851,
+        "overLeft": 17,
+        "overBottom": -2136,
+        "box": {
+         "w": 6,
+         "h": 16
+        },
+        "text": "-",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": ".truncate",
+        "overRight": -3851,
+        "overLeft": 17,
+        "overBottom": -2136,
+        "box": {
+         "w": 6,
+         "h": 16
+        },
+        "text": "-",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": ".flex",
+        "overRight": -4004,
+        "overLeft": 246,
+        "overBottom": -2129,
+        "box": {
+         "w": 82,
+         "h": 23
+        },
+        "text": "سنجاق✕",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": ".rounded-md",
+        "overRight": -4004,
+        "overLeft": 217,
+        "overBottom": -2129,
+        "box": {
+         "w": 53,
+         "h": 23
+        },
+        "text": "سنجاق",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": ".rounded-md",
+        "overRight": -4061,
+        "overLeft": 246,
+        "overBottom": -2129,
+        "box": {
+         "w": 25,
+         "h": 23
+        },
+        "text": "✕",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": ".flex",
+        "overRight": -3841,
+        "overLeft": 256,
+        "overBottom": -1042,
+        "box": {
+         "w": 255,
+         "h": 1078
+        },
+        "text": "در یک نگاهجزئیات بازارآخرین معامله-—تغیی",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": "inspector-tabs",
+        "overRight": -3851,
+        "overLeft": 246,
+        "overBottom": -2081,
+        "box": {
+         "w": 235,
+         "h": 30
+        },
+        "text": "در یک نگاهجزئیات بازار",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": "inspector-tab-glance",
+        "overRight": -3851,
+        "overLeft": 127,
+        "overBottom": -2081,
+        "box": {
+         "w": 116,
+         "h": 30
+        },
+        "text": "در یک نگاه",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": "inspector-tab-detail",
+        "overRight": -3970,
+        "overLeft": 246,
+        "overBottom": -2081,
+        "box": {
+         "w": 116,
+         "h": 30
+        },
+        "text": "جزئیات بازار",
+        "inScroller": ".glass-panel"
+       },
+       {
+        "node": "inspector-page-glance",
+        "overRight": -3851,
+        "overLeft": 246,
+        "overBottom": -1084,
+        "box": {
+         "w": 235,
+         "h": 989
+        },
+        "text": "آخرین معامله-—تغییر روز-پایانی—٪آخرین-او",
+        "inScroller": ".glass-panel"
+       }
+      ],
+      "clipped": [],
+      "scrollables": [],
+      "stickyAfterScroll": {
+       "scrolled": true,
+       "headerVisible": true,
+       "headerTop": 0,
+       "scrollTop": 0,
+       "scrollHeight": 2160
+      },
+      "sidebarBox": {
+       "w": 178,
+       "h": 419
+      },
+      "title": "ترمینال تحلیل بورس"
+     },
+     "clicks": {}
+    }
+   ]
+  }
+ ],
+ "generatedAt": "2026-10-14T23:21:52.034Z"
+}
