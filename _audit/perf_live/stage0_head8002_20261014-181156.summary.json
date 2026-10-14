@@ -1,0 +1,103 @@
+{
+  "meta": {
+    "base": "http://127.0.0.1:8002",
+    "pid": 140028,
+    "tag": "stage0_head8002",
+    "branch": "mission/4-axes-2026-10-10",
+    "head": "512bbae",
+    "started_local": "2026-10-14 18:11:56",
+    "ended_local": "2026-10-14 18:12:21",
+    "seconds": 24.953733,
+    "samples": 6,
+    "interval_s": 4.0,
+    "raw_lines": "C:\\Users\\PCMOD\\Desktop\\BorsTerminal\\_audit\\perf_live\\stage0_head8002_20261014-181156.jsonl"
+  },
+  "endpoints": {
+    "/api/market": {
+      "n": 6,
+      "p50_ms": 52.8,
+      "p95_ms": 62.8,
+      "max_ms": 62.8,
+      "bytes_p50": 872122,
+      "bytes_max": 872122,
+      "decoded_bytes_p50": 6814470,
+      "rows_min": 6018,
+      "rows_max": 6018,
+      "errors": [],
+      "error_count": 0
+    },
+    "/api/market/delta": {
+      "n": 6,
+      "p50_ms": 2.0,
+      "p95_ms": 19.7,
+      "max_ms": 19.7,
+      "bytes_p50": 49,
+      "bytes_max": 49,
+      "decoded_bytes_p50": 49,
+      "rows_min": 0,
+      "rows_max": 0,
+      "errors": [],
+      "error_count": 0
+    },
+    "/api/market/sync-state": {
+      "n": 6,
+      "p50_ms": 2.1,
+      "p95_ms": 690.8,
+      "max_ms": 690.8,
+      "bytes_p50": 141,
+      "bytes_max": 141,
+      "decoded_bytes_p50": 141,
+      "rows_min": 0,
+      "rows_max": 0,
+      "errors": [],
+      "error_count": 0
+    },
+    "/api/mstat/summary": {
+      "n": 6,
+      "p50_ms": 6.1,
+      "p95_ms": 217.8,
+      "max_ms": 217.8,
+      "bytes_p50": 1344,
+      "bytes_max": 1344,
+      "decoded_bytes_p50": 3708,
+      "rows_min": 10,
+      "rows_max": 10,
+      "errors": [],
+      "error_count": 0
+    },
+    "/api/mstat/phase": {
+      "n": 6,
+      "p50_ms": 23.5,
+      "p95_ms": 26.3,
+      "max_ms": 26.3,
+      "bytes_p50": 651,
+      "bytes_max": 651,
+      "decoded_bytes_p50": 651,
+      "rows_min": 1,
+      "rows_max": 1,
+      "errors": [],
+      "error_count": 0
+    },
+    "/api/mstat/board": {
+      "n": 6,
+      "p50_ms": 10.5,
+      "p95_ms": 1386.8,
+      "max_ms": 1386.8,
+      "bytes_p50": 19561,
+      "bytes_max": 19561,
+      "decoded_bytes_p50": 77414,
+      "rows_min": 0,
+      "rows_max": 0,
+      "errors": [],
+      "error_count": 0
+    }
+  },
+  "process": {
+    "pid": 140028,
+    "mem_mb_p50": 216.3,
+    "mem_mb_max": 218.4,
+    "mem_samples": 6,
+    "cpu_total_s": 2.3,
+    "cpu_pct_avg": 9.2
+  }
+}
