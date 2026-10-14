@@ -38,9 +38,19 @@ def normalize_fa(s):
     return str(s or "").translate(str.maketrans({"ك": "ک", "ي": "ی", "ى": "ی"})).strip()
 
 
+def normalize_title(s):
+    """عنوانِ اطلاعیه برایِ تطبیقِ کلیدواژه.
+
+    نیم‌فاصله باید حذف شود، وگرنه «حق‌تقدم»ِ نوشته‌شده با ZWNJ هرگز با کلیدواژهٔ
+    «حق تقدم» (فاصله) نمی‌خوانده و آن اطلاعیه‌ها بی‌سروصدا `unresolved` می‌ماندند.
+    (سنجشِ واقعیِ همین دور: `codal_notices` هم با «حق تقدم» و هم با «حق‌تقدم» دارد.)
+    """
+    return normalize_fa(s).replace(chr(0x200C), " ").replace(chr(0x200B), " ").strip()
+
+
 def title_type(title):
     """نوعِ canonical از عنوانِ اطلاعیه؛ None یعنی قابلِ تعیین نیست (نه حدس)."""
-    t = normalize_fa(title)
+    t = normalize_title(title)
     for kind, keys in _TYPE_KEYWORDS:
         if any(k in t for k in keys):
             return kind
@@ -65,6 +75,9 @@ def build_typed_events(conn, ins_code):
     meta: شمارش‌هایِ Stage 2.5 (دارایِ نوع معتبر / مرجعِ رسمی / کامل / نیازمندِ S / بی‌نوع / …).
     """
     # codal: نوع/پیامِ مرتبط برایِ این ابزار (best-effort؛ تاریخِ انتشار جدا).
+    # `observed_at` (= `fetched_at`ِ خودِ ردیفِ مبدأ) و `published_at` (= تاریخِ اطلاعیهٔ
+    # کدال) از `effective_date` جدا می‌مانند: روزِ انتشارِ اطلاعیه لزوماً روزِ ظهورِ قیمتِ
+    # تعدیل‌شده نیست، و روزِ دیدنِ ما درِ TSETMC هم هیچ‌کدام از آن دو نیست.
     codal = []
     sym = None
     try:
@@ -88,20 +101,21 @@ def build_typed_events(conn, ins_code):
 
     # ردیف‌هایِ رسمی؛ dedupِ خودِ PK. یکِ g_even = یکِ رویداد (priceAdjust تقدم).
     by_date = {}
-    for d, raw, adj, ctype in conn.execute(
-            "SELECT d_even, p_closing_not_adjusted, p_closing, corporate_type_code "
+    for d, raw, adj, ctype, seen in conn.execute(
+            "SELECT d_even, p_closing_not_adjusted, p_closing, corporate_type_code, fetched_at "
             "FROM price_adjust_events WHERE ins_code=?", (ins_code,)):
         dt = _d_even_to_date(d)
         if dt:
             by_date[dt] = {"d_even": d, "kind": AE.KIND_SOURCE_RATIO, "date": dt,
                            "adj": adj, "raw": raw, "src": "priceAdjust",
-                           "tsetmc_ctype": ctype}
-    for d, old, new in conn.execute(
-            "SELECT d_even, shares_old, shares_new FROM share_change_events WHERE ins_code=?", (ins_code,)):
+                           "tsetmc_ctype": ctype, "seen": seen}
+    for d, old, new, seen in conn.execute(
+            "SELECT d_even, shares_old, shares_new, fetched_at "
+            "FROM share_change_events WHERE ins_code=?", (ins_code,)):
         dt = _d_even_to_date(d)
         if dt and dt not in by_date:          # priceAdjust تقدم دارد (بی‌اعمالِ دوباره)
             by_date[dt] = {"d_even": d, "kind": AE.KIND_SOURCE_RATIO, "date": dt,
-                           "old": old, "new": new, "src": "shareChange"}
+                           "old": old, "new": new, "src": "shareChange", "seen": seen}
 
     events, counts = [], {
         "events_total": 0, "typed_ok": 0, "with_official_ref": 0, "complete": 0,
@@ -109,8 +123,22 @@ def build_typed_events(conn, ins_code):
     for dt in sorted(by_date):
         rec = by_date[dt]
         counts["events_total"] += 1
-        prov = {"ins_code": ins_code, "d_even": rec["d_even"], "source": rec["src"],
-                "effective_date": dt}
+        prov = {"ins_code": ins_code, "symbol": sym, "d_even": rec["d_even"],
+                "source": rec["src"], "effective_date": dt,
+                # «رویت‌شدن» توسطِ ما ≠ «انتشارِ اطلاعیه» ≠ «روزِ مؤثرِ ضریب». سه میدانِ جدا،
+                # و `observed_at` ازِ خودِ ستونِ `fetched_atِ` مبدأ خوانده می‌شود (نه ازِ ساعتِ
+                # این اجرا) تا ثابت باشد ردیفِ بانکیِ همین رویداد کِی تازه شده است.
+                "observed_at": rec.get("seen")}
+        # پیوندِ اطلاعیهٔ کدال: فقط وقتی **یگتا** است می‌چسبد. تقویمِ `publish_date` جلالی
+        # است (سنجشِ واقعی: `1405-06-01`) و این مخزن یگانۀِ تبدیلِ جلالی←میلادی ندارد؛
+        # پس عددِ تبدیل‌شده نمی‌سازیم، خودِ مقدارِ مبدأ را با تقویمِ اعلام‌شده می‌بریم.
+        # نبودِ پیوند = «نامطمئن» است، نه «بی‌اطلاعیه» (`notice_candidates` ثبت می‌شود).
+        if len(codal) == 1:
+            n = codal[0]
+            prov.update({"published_at": n["publish_date"], "published_calendar": "jalali",
+                         "tracing_no": n["tracing_no"], "notice_title": n["title"]})
+        prov["notice_candidates"] = len(codal)
+
         # نسبتِ رسمی — هر مبدأ درِ واحدِ خودش؛ جهتِ canonical: تعدیلِ کاهنده نسبتِ «بعد/قبلِ واقعی».
         if rec["src"] == "priceAdjust":
             ratio = _ratio(rec.get("raw"), rec.get("adj"))          # = p_closing / p_closing_not_adjusted
@@ -141,11 +169,14 @@ def build_typed_events(conn, ins_code):
             counts["needs_offer_price"] += 1
 
         _, status = AE.event_factor(ev)
+        # وضعیتِ اعتبار **همیشه** می‌نشیند (پیش‌تر فقط ردیف‌هایِ خراب علامت می‌خوردند؛
+        # «علامت‌نشده» با «سالم» یکی نبود و مصرف‌کننده نمی‌توانست تفاوت بگذارد).
+        prov["factor_status"] = status
+        ev["validity"] = "valid" if status == AE.OK else "rejected"
         if status == AE.OK:
             counts["complete"] += 1
         else:
             counts["incomplete_or_invalid"] += 1
-            prov["factor_status"] = status
         events.append(ev)
 
     counts["published_vs_effective_separated"] = bool(codal)

@@ -149,13 +149,20 @@ def chain_factors(dates, events):
                      "ratio": None if ratio is None else round(ratio, 12), "status": status})
         if ratio is not None:
             valid.append((de, ratio))
-    factors = []
-    for t in ds:
-        f = 1.0
-        for de, ratio in valid:
-            if de > t:                 # فقطِ رویدادهایِ **بعدِ** این تاریخ (لنگرِ پایدارِ آخرین)
-                f *= ratio
-        factors.append(round(f, 10))
+    factors = [1.0] * len(ds)
+    # پیمایشِ معکوسِ دو‌اشاره‌ای O(n+m) — جای حلقۀِ تو‌در‌توی n×m (۵۲۸۸ کندل × رویدادها
+    # درِ مسیرِ واقعیِ چارت). خروجی بیتغییر است: `valid` صعودی مرتب است و `order` هم
+    # صعودی، پس با پایین‌آمدنِ `t` اشاره‌گرِ رویداد فقط جلو می‌رود و هر `ratio` با
+    # `date > t` دقیقاً یک‌بار درِ `f` می‌نشیند. دو کندلِ هم‌تاریخ همان `f` را می‌گیرند
+    # (حلقۀِ `while` درِ دیدِ دوم چیزی مصرف نمی‌کند) و بی‌رویداد همه ۱ می‌مانند.
+    order = sorted(range(len(ds)), key=lambda i: ds[i])
+    f, j = 1.0, len(valid) - 1
+    for i in reversed(order):
+        t = ds[i]
+        while j >= 0 and valid[j][0] > t:
+            f *= valid[j][1]
+            j -= 1
+        factors[i] = round(f, 10)
     anchor_i = ds.index(max(ds)) if ds else -1
     anchored = (factors[anchor_i] == 1.0) if ds else True
     incomplete = [p for p in prov if p["status"] != OK]
