@@ -2514,6 +2514,30 @@ def get_fts_coverage():
         conn.close()
 
 
+@router.get("/api/sync/codal/pipeline")
+def get_codal_pipeline_status():
+    """سلامتِ خطِ دریافت خودکار کدال — از جدول، نه از شمارندۀ حافظه‌ای.
+
+    پنلِ سلامتِ رابط همین پاسخ را می‌خواند: آخرین sync موفق، آخرین تلاش،
+    اطلاعیه‌های پردازش‌نشده، کارهای شکست‌خورده، استخراج‌های ناقص، نمادهای
+    دارای شکاف پوشش، زمان آخرین به‌روزرسانی داده، وضعیت worker و چراغِ چرخۀ
+    بعدی. چرخۀ شکست‌خورده هرگز «موفق» گزارش نمی‌شود (`codal_pipeline.health`).
+    """
+    conn = sqlite3.connect(DB_PATH, timeout=30)
+    try:
+        import codal_pipeline as _pl
+        try:
+            conn.execute("SELECT 1 FROM pipeline_cursor LIMIT 1")
+        except sqlite3.Error:
+            import codal_fetcher as _cf
+            _cf.migrate_schema(conn)      # افزودنی و یدم‌پذیر (بانکِ کهنه)
+        return _pl.status_payload(conn)
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+    finally:
+        conn.close()
+
+
 def _fts_market_ctx(conn, symbol: str) -> tuple:
     """(ارزش_بازار_ریال|None, صنعت, کل_ارزش_بازار_ریال) برای یک نماد.
 

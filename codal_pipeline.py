@@ -61,7 +61,7 @@ __all__ = [
     "discover_instruments", "coverage_resolver",
     "worker_once", "start_worker", "stop_worker", "worker_status",
     "next_wakeup", "catchup_state", "crawler_busy", "market_in_session",
-    "offline_gate",
+    "offline_gate", "status_payload",
     "CADENCE_IDLE_S", "CADENCE_BACKLOG_S", "DISCOVERY_MIN_GAP_S",
     "CURSOR_NOTICE_TN", "CURSOR_NOTICE_DATE",
     "AXES_BY_SOURCE", "BACKOFF_S", "MAX_ATTEMPTS", "LOCK_TTL_S", "CLAIM_STALE_S",
@@ -1448,6 +1448,34 @@ def health(conn, worker_key="codal_pipeline", db_path=None):
         "worker": worker_status(),
         "checked_at": now_s(),
     }
+
+
+def status_payload(conn, now=None):
+    """همۀ آنچه بندِ ۸ و ۹ خواسته‌اند، درِ یکِ پاسخ — از جدول، نه حافظه.
+
+    هشت شمارشِ الزامیِ رابطِ کاربر:
+      آخرین sync موفق (`last_successful_sync`) · آخرین تلاش (`last_attempt`) ·
+      اطلاعیه‌های پردازش‌نشده (`queue.queued`) · کارهای شکست‌خورده
+      (`queue.failed` + `queue.unresolved`) · استخراج‌های ناقص
+      (`incomplete_extractions`) · نمادهای دارای شکاف پوشش
+      (`instruments.no_fundamental`) · زمان آخرین به‌روزرسانی دادهٔ بنیادی
+      (`last_data_update`) · وضعیت worker (`worker`) + (`cadence`) چراغِ بعدی.
+    """
+    h = health(conn)
+    h["catchup"] = catchup_state(conn, now=now)
+    h["cadence"] = next_wakeup(conn, now=now)
+    try:
+        h["incomplete_extractions"] = int(conn.execute(
+            "SELECT COUNT(*) FROM codal_extracted WHERE state='empty'"
+            " OR (state IS NULL AND ok=0)").fetchone()[0])
+    except sqlite3.Error:
+        h["incomplete_extractions"] = 0
+    try:
+        h["undated_notices"] = len(CF.CP.undated_counts(conn))
+    except Exception:
+        h["undated_notices"] = 0
+    h["offline_gate"] = offline_gate()
+    return h
 
 
 # ─── دريچۀ فرمانی (برایِ Task Scheduler یا اجرایِ دستیِ امن) ──────────────── #

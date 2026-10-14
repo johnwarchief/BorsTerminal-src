@@ -317,6 +317,44 @@ def main() -> int:
                                     encoding="utf-8").read(),
        "دربۀ آفلاین درِ خودِ `codal_pipeline.py` است، نه فقط درِ گارد")
 
+    # ── ۱۱) پاسخِ سلامتِ رابط: هشت شمارشِ الزامی، یک‌جا ────────────────────
+    c6 = fresh_db()
+    c6.execute("INSERT INTO instruments (ins_code, l_val18, l_val30, paper_type)"
+               " VALUES ('7','ناپیدا','ناپیدا',1)")
+    PL.discover_instruments(c6)
+    add_notice(c6, 1200, "فولاد")
+    PL.enqueue(c6, [(1200, "fs")])
+    PL.claim(c6, "w11", limit=1)
+    PL.mark_failed(c6, 1200, error_kind="network", last_error="429")
+    sp = PL.status_payload(c6, now="2026-10-14 20:00:00")
+    need = ("last_successful_sync", "last_attempt", "queue", "instruments",
+            "incomplete_extractions", "last_data_update", "worker", "cadence",
+            "catchup", "dirty_symbols", "undated_notices", "offline_gate")
+    ck(all(k in sp for k in need),
+       "پاسخِ سلامت شمارش‌هایِ الزامیِ بندِ ۸ را دارد (بی‌ساختنِ عدد)",
+       [k for k in need if k not in sp])
+    ck(sp["queue"]["failed"] == 1 and sp["queue"]["retryable"] == 1,
+       "کارِ شکست‌خورده درِ صف شمرده می‌شود (نه درِ «موفق»)", sp["queue"])
+    ck(sp["last_successful_sync"] is None,
+       "چرخۀ شکست‌خورده هرگز «آخرین sync موفق» نمی‌شود",
+       sp["last_successful_sync"])
+    ck(sp["instruments"]["no_fundamental"] == 1,
+       "شکافِ پوشش از دفترِ ابزار خوانده می‌شود", sp["instruments"])
+    ck(sp["offline_gate"] is True and
+       sp["cadence"]["seconds"] >= PL.CADENCE_MIN_S,
+       "دربه‌دیوار و چراغِ چرخۀ بعدی هم درِ پاسخ‌اند",
+       (sp["offline_gate"], sp["cadence"]))
+    import codal_periods as _CP
+    expected_undated = len(_CP.undated_counts(c6))
+    ck(sp["undated_notices"] == expected_undated,
+       "شمارشِ «بی‌دوره» از خودِ codal_periods.undated_counts می‌آید، نه از شمارندۀ ساختگی",
+       (sp["undated_notices"], expected_undated))
+    src = open(os.path.join(ROOT, "api", "fundamental.py"),
+               encoding="utf-8").read()
+    ck("/api/sync/codal/pipeline" in src and "status_payload" in src,
+       "اندپوینتِ رابطِ کاربر وجود دارد و همان payload را می‌دهد")
+
+
     print("\n%d passed / %d failed" % (PASS, FAIL))
     return 1 if FAIL else 0
 
