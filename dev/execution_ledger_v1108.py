@@ -121,8 +121,21 @@ def test_wiring():
         hid = t[t.index("hiddenimports"):]
         ck("'api.execution'" in hid, "۲ %s درِ hiddenimports 'api.execution' دارد" % spec)
     import api.execution as EX
+    # این سنجه پیش‌تر «adapter فقط mock است» را می‌خواند. آن ادعا از
+    # مأموریتِ ۱۴۰۵-۰۷-۲۴ دیگر درست نیست: آداپتورِ EasyTrader درِ کد وجود دارد.
+    # چیزی که قفل می‌ماند *پیش‌فرض* است، نه تنوعِ پیاده‌شده — و همان قفل سه
+    # بخش شد تا اگر روزی پیش‌فرض عوض شد، گارد فریاد بزند.
     ck(EX.DRY_RUN is True and EX.ADAPTER_KIND == "mock",
-       "۳ درِ EXE dry-run قفل و adapter فقط mock است")
+       "۳ پیش‌فرضِ EXE (بی‌متغیرِ محیطی): mock و dry-run قفل")
+    ck(EX.ADAPTER_KIND == EX._configured_adapter()
+       and EX._configured_adapter() == "mock",
+       "۳ انتخابِ آداپتور فقط ازِ محیط خوانده می‌شود", EX._configured_adapter())
+    ck("easytrader" in EX.ALLOWED_ADAPTERS and "titan" not in EX.ALLOWED_ADAPTERS
+       and "onlineplus" not in EX.ALLOWED_ADAPTERS,
+       "۳ سکوی مجاز: mock/easytrader — Online-Plus/Titan درِ فهرست نیست "
+       "(رأیِ مالک ۱۴۰۵-۰۷-۲۴)")
+    ck(EX.LIVE_REQUESTED is False,
+       "۳ ترافیکِ زنده بی‌BORS_EXECUTION_LIVE خاموش است")
     body_has_dry = "dry_run" in re.sub(r"\"dry_run\"", "",
                                        open(os.path.join(ROOT, "api", "execution.py"),
                                           encoding="utf-8").read())

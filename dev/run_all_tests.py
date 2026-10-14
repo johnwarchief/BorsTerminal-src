@@ -458,6 +458,14 @@ SUITES = [
     # /api/execution/* درِ api_router + hiddenimports. آزمونِ رشتۀِ دوم و
     # کنترلِ منفیِ سه‌گانه درِ همین فایل است.
     ('dev/execution_ledger_v1108.py', 'sarkhati: durable audit trail, kill switch, fail-closed risk, wired HTTP door'),
+    # مأموریتِ ۱۴۰۵-۰۷-۲۴ (§۴-الف/ب و §۶): آداپتورِ واقعیِ EasyTrader/Orbis-MTS.
+    # ترافیک تزریقی است و بی‌نشست هیچ سوکتی باز نمی‌شود؛ ۲۰۰ با
+    # `isSuccessful:false` رد می‌شود (حتی با `id`)؛ timeout ⇒ UNKNOWN و هیچ
+    # ارسالِ دوباره؛ صف بی‌داده ⇒ None نه صفر؛ token درِ لاگ/ردِّپا/دیسک
+    # نمی‌ماند. سوئیتِ قراردادِ بالا (`run_contract`) رویِ همین آداپتور هم
+    # اجرا می‌شود — با یکِ استثنایِ ثبت‌شده که خطرِ همان case رویِ دفترِ خودِ
+    # بروکرِ بدیل دوباره سنجیده می‌شود.
+    ('dev/easytrader_adapter_v1113.py', 'easytrader adapter: injected transport, 2xx-is-not-acceptance, no blind resend'),
     # مأموریتِ ۱۴۰۵-۰۷-۲۳، بندِ ۶: رباتِ کاغذی و بک‌تست. سناریوهای ۱۷گانۀ
     # بندِ ۶-۵ (سیگنال، کهنگی، توقف، دامنۀ قیمت، سقفِ حجم، timeout، تکرار،
     # لغو، ضرر روزانه، kill switch، restart، reconcile، ردِّپا) به‌همراه

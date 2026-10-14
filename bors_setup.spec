@@ -48,6 +48,9 @@ a = Analysis(
         # دروازۀ اجرای سفارش (api_router آن را درِ بدنهٔ تابع import می‌کند؛
         # ایستیک‌اسکن نمی‌بیند). مثلِ fts_terminal.spec باید اینجا هم باشد.
         'api.execution',
+        # آداپتورِ EasyTrader — سطح-بالِ api/execution.py، ولی به حدسِ اسکن
+        # سپرده نمی‌شود (قاعدۀ مخزن؛ مأموریتِ ۱۴۰۵-۰۷-۲۴).
+        'execution_easytrader',
         'api.update', 'bors_minisign', 'winreg',
         'orjson', 'pandas', 'numpy', 'docx', 'openpyxl', 'reportlab',
         'lxml', 'lxml.etree', 'click', 'cryptography', 'dateutil',

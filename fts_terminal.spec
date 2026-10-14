@@ -156,6 +156,12 @@ a = Analysis(
                    # خودِ execution_contract/mock/service/timing/latency/ledger در
                    # سرِ api/execution.py سطح-بال import‌اند، پس اسکن ایستا می‌بیندشان.
                    'api.execution',
+                   # آداپتورِ EasyTrader (مأموریتِ ۱۴۰۵-۰۷-۲۴): سطح-بال است و اسکن
+                   # ایستا باید پیدایش کند — ولی قاعدۀ مخزن این است که چیزی که
+                   # درِ EXE کشنده است، به حدسِ اسکن سپرده نشود. بی‌این خط، بیلدِ
+                   # منجمد رویِ اولین /api/execution/status با ModuleNotFoundError
+                   # می‌میرد و گاردِ HTTPِ محلی هیچ‌وقت این را نمی‌بیند.
+                   'execution_easytrader',
                    # پنجرهٔ مستقلِ بومی (Edge WebView2): pywebview روی ویندوز به
                    # pythonnet/clr نیاز دارد. نبودشان کشنده نیست — bors_entry
                    # عمداً به پنجرهٔ مرورگر برمی‌گردد — ولی بودنشان همان پنجرهٔ
