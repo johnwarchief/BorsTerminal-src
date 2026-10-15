@@ -22,6 +22,10 @@ SUITES = [
     # شمارِ سطل را در ۲۹ از ۴۰ نماد جدا می‌دید. گارد با منفی‌کنترلِ ISO.
     ('dev/ce_weekly_bucket_v1073.py', 'confidence_engine weekly bucket == chart Saturday bucket'),
     ('dev/mstat_local_v975.py',       'mstat dashboard computed from local market.db'),
+    # PERF-S3: اسنپ‌شات حالا میانِ اتصال‌ها مشترک است ⇒ باید ثابت بماند که هیچ
+    # پنلی رویِ ردیف‌هایش نمی‌نویسد، نوشتنِ تازه کش را باطل می‌کند، و دوِ فایلِ
+    # بانکِ مختلف هرگز یکی نشمرده می‌شوند.
+    ('dev/mstat_snapshot_cache_v1.py', 'shared mstat snapshot cache: read-only rows, real invalidation, per-file isolation'),
     # رأیِ مالک (۱۴۰۵-۰۷-۲۲): «نمادهای زیرِ نظر» هم پرچم‌هایِ تابلو را می‌بیند —
     # انتقال از فید، بی‌محاسبۀِ دوم، و «بی‌منبع» هرگز «پرچمی ندارد» نمی‌شود.
     ('dev/test_mainwatch_flags_v1.py', 'mainwatch rows carry the tape flags, never a fabricated one'),

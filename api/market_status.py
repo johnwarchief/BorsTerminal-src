@@ -48,30 +48,33 @@ def _mstat_marker(conn):
 def _mstat_call(fn, *args, **kw):
     """یک اتصال، یک فراخوانی، همیشه بسته. خطای موتور ⇒ status=error نه ۵۰۰،
     چون یک پنلِ خراب نباید کل تب وضعیت بازار را از کار بیندازد.
-    نتیجه‌های موفق به‌ازای هر «حالتِ بانک» کش می‌خورند؛ خطا هرگز نه."""
+    نتیجه‌های موفق به‌ازای هر «حالتِ بانک» کش می‌خورند؛ خطا هرگز.
+
+    PERF-S3: این مسیر پیش‌تر دو اتصال باز می‌کرد — یکی برای نشانکِ کش، یکی برای
+    خودِ پنل (سنجشِ `_audit/perf/SQLITE_CONN_BASELINE.json`: هر get_db() ≈ 4ms
+    هزینه‌ی اتصال/DDL-استور). نشانک روی همان اتصالِ پنل خوانده می‌شود؛ هیچ
+    چیزی از داوریِ کش کم نشده، فقط یک اتصالِ اضافه حذف شده است.
+    """
     key = (fn.__name__, args, tuple(sorted(kw.items())))
     now = time.monotonic()
     conn = get_db()
     try:
-        marker = _mstat_marker(conn)
-        if marker is not None:
-            full_key = (key, _MS.revision(), _MS.static_rev(), _MS.session_day(), marker)
-            with _MSTAT_LOCK:
-                hit = _MSTAT_CACHE.get(full_key)
-                if hit and now - hit[0] < _MSTAT_TTL_S:
-                    return dict(hit[1])
-        else:
-            full_key = None
-    except Exception:
         full_key = None
-    finally:
-        conn.close()
-    conn = get_db()
-    try:
-        out = fn(conn, *args, **kw)
-        out.setdefault("source", "local:market.db")
-    except Exception as e:
-        return {"status": "error", "message": str(e), "source": "local:market.db"}
+        try:
+            marker = _mstat_marker(conn)
+            if marker is not None:
+                full_key = (key, _MS.revision(), _MS.static_rev(), _MS.session_day(), marker)
+                with _MSTAT_LOCK:
+                    hit = _MSTAT_CACHE.get(full_key)
+                    if hit and now - hit[0] < _MSTAT_TTL_S:
+                        return dict(hit[1])
+        except Exception:
+            full_key = None
+        try:
+            out = fn(conn, *args, **kw)
+            out.setdefault("source", "local:market.db")
+        except Exception as e:
+            return {"status": "error", "message": str(e), "source": "local:market.db"}
     finally:
         conn.close()
     if full_key is not None and isinstance(out, dict) and out.get("status") != "error":
