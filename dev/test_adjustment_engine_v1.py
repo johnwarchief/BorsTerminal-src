@@ -137,6 +137,11 @@ check("ب۱۵-ب بی‌رویداد complete", m0["complete"], True)
 
 # ── (ج) نمونۀِ واقعیِ مستند (read-only، آفلاین) ──────────────────────────────────
 REFP = os.path.join(ROOT, "_audit", "ra365_ref_bars.json")
+# دو منبع به ترتیب تقدم: کشیدنی کاملِ محلی (که ignore می‌ماند)، و اگر نبود زیرمجموعۀ
+# منتشرشده در dev/fixtures — همان که tools/make_adjustment_witness_fixture.py می‌سازد.
+# بی این دوم، روی یک clone تازه بند «ج» به جای داوری قرمز می‌شد (ممیزی ۲۰۲۶-۱۰-۱۵).
+if not os.path.exists(REFP):
+    REFP = os.path.join(ROOT, "dev", "fixtures", "ra365_witness_subset.json")
 if os.path.exists(REFP):
     TEHRAN = timezone(timedelta(hours=3, minutes=30))
 
@@ -204,7 +209,7 @@ if os.path.exists(REFP):
         check("ج۵ [طلا] بی‌رویداد، موتور complete", tmeta["complete"], True)
         check("ج۵-ب [طلا] همه فاکتورها ۱ (بدونِ جابه‌جاییِ مصنوعی)", all(math.isclose(x, 1.0) for x in tfac), True)
 else:
-    check("ج۰ شاهدِ مرجع موجود نیست (نمونۀِ واقعی رد شد — نباید بی‌شمارنده سبز شود)", False, True)
+    check("ج۰ شاهدِ مرجع موجود نیست (نه کشیدنی کامل و نه زیرمجموعۀ منتشرشده در dev/fixtures — ببین tools/make_adjustment_witness_fixture.py)", False, True)
 
 print(f"\nنتیجه: {P} سبز، {F} قرمز")
 sys.exit(1 if F else 0)
