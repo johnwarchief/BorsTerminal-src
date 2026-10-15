@@ -91,7 +91,7 @@
 |---|---|
 | وضعیت | **PARTIAL — رأیِ خودِ سندِ ممیزی (§۱۲ِ `docs/ui-audit/2026-10-15-system-2.md`)** |
 | Branch | `mission/ui-audit-system-2-2026-10-15` |
-| HEAD | `3feb525` (سی‌وسه‌کامیتِ بعدِ `dd065c1`: ۱۱ اصلاحِ UI، هارنس‌هایِ تاز، جاروبِ حالتِ واقعی، سندِ §۱ تا §۱۲) |
+| HEAD | `3feb525` (۱۴ کامیتِ بعدِ `dd065c1` باِ شمارشِ `git rev-list --count`: ۵ `fix(ui)`، ۱ `test(ui)`، ۲ `test(audit)`، ۶ `docs` — درِ مجموعۀِ `ff6b2fb..3feb525` (=۱۶) خودِ اصلاحاتِ UI = ۶) |
 | Remote | `origin/mission/ui-audit-system-2-2026-10-15` (تازةِ منتشرشده، upstream بند شد) |
 | تغییرات | `AppShell.tsx` (`h-dvh`)، `Topbar.tsx`/`SymbolContextStrip.tsx` (`shrink-0`، خارج ازِ چسبان)، `MarketSectionNav.tsx` (`--chrome-h` + تک‌ردیفه + scroll‑margin)، `MarketChartSection.tsx` (میزبانِ ۵۲۰px)، `index.css` (توکن) |
 | تست‌ها | **رویِ همینِ ۶ فایلِ تغییریافته**: glyph guard ۴/۴ · `npx tsc -b` exit 0 · `npx vitest run` رویِ ۵ فایلِ مرتبط = **۵ فایل / ۵۵ آزمون سبز** · `npm run build` موفق. `npx vitest run`ِ کامل وِ `dev/run_all_tests.py` **بعدِ اینِ تغییرات اجرا نشده‌اند** ⇒ هرِ ادعایِ سبزِ کامل بهِ `165bdca` برمی‌گردد و **STALE** است |
@@ -117,12 +117,15 @@
 | شاخه | بازۀِ push | HEAD remote | URL |
 |---|---|---|---|
 | `mission/fts-indicator-engineering` | `09e8d64..ff6b2fb` (fast‑forward، ۴۲ کامیت) | `ff6b2fb` | https://github.com/johnwarchief/BorsTerminal-src/tree/mission/fts-indicator-engineering |
-| `mission/ui-audit-system-2-2026-10-15` | `[new branch]` | `dd065c1` | https://github.com/johnwarchief/BorsTerminal-src/tree/mission/ui-audit-system-2-2026-10-15 |
-| `handoff/system-2/inventory-2026-10-15` | `[new branch]` ازِ `ff6b2fb` | `13baf23` (اینِ سطر هم باِ هرِ کامیتِ خودِ سند جلو می‌رود؛ برایِ SHAِ قطعی `git ls-remote origin refs/heads/handoff/system-2/inventory-2026-10-15`) | https://github.com/johnwarchief/BorsTerminal-src/tree/handoff/system-2/inventory-2026-10-15 |
+| `mission/ui-audit-system-2-2026-10-15` | `[new branch]` سپسِ `dd065c1..3feb525` (۱۴ کامیتِ دورِ دوم) | `3feb525` | https://github.com/johnwarchief/BorsTerminal-src/tree/mission/ui-audit-system-2-2026-10-15 |
+| `handoff/system-2/inventory-2026-10-15` | `[new branch]` ازِ `ff6b2fb` | tipِ `git ls-remote origin refs/heads/handoff/system-2/inventory-2026-10-15` (اینِ سطر باِ هرِ کامیتِ خودِ سند جلو می‌رود) | https://github.com/johnwarchief/BorsTerminal-src/tree/handoff/system-2/inventory-2026-10-15 |
+| `fix/system-2-reproducible-fixtures-2026-10-15` | `[new branch]` ازِ `ff6b2fb`، ۵ کامیتِ `ba776e2..c68dbc0` | `c68dbc0` | https://github.com/johnwarchief/BorsTerminal-src/tree/fix/system-2-reproducible-fixtures-2026-10-15 |
 
 بی‌force-push، بی‌tag، بی‌release، بی‌merge. `main` وِ هیچِ شاخۀِ دیگری دست‌نخورده ماند.
 
 ### ۴‑۱) راستی‌آزماییِ پس ازِ push (همه باِ فرمان، نه باِ خاطره)
+
+> لحظۀِ نخستِ انتشار (دورِ اول). SHAهایِ کنونیِ هرِ چهار شاخه وِ شمارشِ دورِ دوم درِ §۱۰‑۱ تا §۱۰‑۳ است.
 
 | بررسی | فرمان | نتیجه |
 |---|---|---|
@@ -235,25 +238,42 @@
 | **Responsive UI** | `mission/ui-audit-system-2-2026-10-15` | `3feb525` | `docs/ui-audit/2026-10-15-system-2.md` (۱۲ بخش) · `…-STATUS.md` · `docs/ui-audit/img/*.png` (۳ برش) · ۸۴ فایلِ `_audit/ui/**` = ۲۲ هارنسِ js + ۶۲ شاهدِ json/txt | **PUBLISHED / DONE_VERIFIED** — رأیِ خودِ گزارش: PARTIAL (بطورِ گیتِ محیطیِ Python) |
 | **Performance** | `mission/fts-indicator-engineering` | `ff6b2fb` | `_audit/perf/PERFORMANCE_REPORT.md` · `BEFORE_AFTER.md` · ۵۹ فایلِ شاهد درِ `_audit/perf/` (BE/AFTER/BOOT/CONTEND/FE/MSTAT) · `dev/perf_output_equal_v1.py` · `dev/mstat_snapshot_cache_v1.py` · `_audit/perf/gates/*.txt` | **PUBLISHED** — باِ رأیِ PARTIALLY_IMPROVED وِ بطری‌هایِ باقی‌مانده درِ §۱۰ِ خودِ گزارش |
 | **موتورِ FTS / تکنیکال** | `mission/fts-indicator-engineering` | `ff6b2fb` | `fts_engine.py`، `api/chart.py`، `api/ma*.py`، `dev/fts_engine_*`، `docs/technical-indicators/reviewed/FTS-PHASE*.md`، ماتریس‌هایِ `_audit/RA365-PHASE*.csv` | **PUBLISHED (PARTIAL: ۴۶ UNVERIFIED / ۲۷ MISMATCH)** |
-| **موتورِ تعدیلِ canonical** | `mission/fts-indicator-engineering` **وِ** `fix/system-2-reproducible-fixtures-2026-10-15` | `ff6b2fb` · `9d3f587` | `dev/test_adjustment_engine_v1.py`، `dev/adjustment_ledger*`، `tools/phase5f_*.py`، `tools/phase6_verdict_matrix.py`، `tools/make_adjustment_witness_fixture.py`، `dev/fixtures/ra365_witness_subset.json` | **PUBLISHED وِ ازِ اینِ دور رویِ cloneِ خالی هم سبز می‌شود (۴۴/۰)** |
+| **موتورِ تعدیلِ canonical** | `mission/fts-indicator-engineering` **وِ** `fix/system-2-reproducible-fixtures-2026-10-15` | `ff6b2fb` · `c68dbc0` | `dev/test_adjustment_engine_v1.py`، `dev/adjustment_ledger*`، `tools/phase5f_*.py`، `tools/phase6_verdict_matrix.py`، `tools/make_adjustment_witness_fixture.py`، `dev/fixtures/ra365_witness_subset.json` | **PUBLISHED وِ اندازه‌گیری‌شدۀِ رویِ درختِ فقط‑GitHub: ۴۴ سبز/۰ قرمز، rc=0 (§۱۰‑۳)** |
 | **Market Status / Binder1** | `mission/fts-indicator-engineering` | `ff6b2fb` | `frontend/src/features/market/**` (هشت بخش)، `api/market_status.py`، `mstat_engine.py`، `docs/technical-indicators/reviewed/BINDER1-*.md`، `_audit/MS-BINDER-UI-RUN.txt`، `tools/market_status_page_probe.mts` | **PUBLISHED** — به‌جزِ ۲۶ اسکرین‌شات (§۱۰‑۴) وِ ۱۳ صفحۀِ ارجاع‌داده‌شدہ که هرگز درِ مخزن نبودند (§۱۰‑۵) |
 | **تحقیقِ تطبیقِ Rahavard** | `mission/fts-indicator-engineering` | `ff6b2fb` | `docs/RAHAVARD-*.md`، `_audit/RA365-*.csv` (کامیت‌شده)، `_audit/ra365_job_fetch.js`، `_audit/ra365_adjustment_events.py` | **PUBLISHED (تجدیدِ زنده BLOCKED: نشستِ مالک لازم است)** |
 | **دستگاهِ تحویل/موجودی** | `handoff/system-2/inventory-2026-10-15` | tipِ `git ls-remote` (همینِ سند) | `docs/handoff/2026-10-15-system-2-inventory.md` | **PUBLISHED** |
-| **شاهدها وِ fixtureهایِ بازتولید** | `fix/system-2-reproducible-fixtures-2026-10-15` | `9d3f587` | `docs/handoff/2026-10-15-system-2-reproducible-fixtures.md`، `_audit/PHASE5F-P5G-RUNDIGEST.txt`، `_audit/P5G-FINAL-RC.txt`، شواهدِ maskedِ بیس‌لاین | **PUBLISHED (تازۀِ اینِ دور)** |
+| **شاهدها وِ fixtureهایِ بازتولید** | `fix/system-2-reproducible-fixtures-2026-10-15` | `c68dbc0` | `docs/handoff/2026-10-15-system-2-reproducible-fixtures.md`، `_audit/PHASE5F-P5G-RUNDIGEST.txt`، `_audit/P5G-FINAL-RC.txt`، شواهدِ maskedِ بیس‌لاین | **PUBLISHED (تازۀِ اینِ دور)** |
 
 ### ۱۰‑۳) انتشارهایِ اینِ دور (قبل‌تر فقط رویِ دیسک بودند)
 
-- **۴ کامیت** درِ `fix/system-2-reproducible-fixtures-2026-10-15` (پایه `ff6b2fb`):
+- **۵ کامیت** درِ `fix/system-2-reproducible-fixtures-2026-10-15` (پایه `ff6b2fb`، `ba776e2…c68dbc0`):
   شاهدِ تعدیل + ابزارِ سازندۀِ آن، LF‑پین، رکوردِ فازِ ۵F/۵G، وِ گزارشِ بازتولید.
 - **۱۴ کامیت** درِ `mission/ui-audit-system-2-2026-10-15` ازِ `dd065c1` تاِ `3feb525`
-  (۱۱ اصلاحِ UI + هارنس + جاروبِ واقعی + سند).
+  (۵ `fix(ui)` + ۱ `test(ui)`ِ testid + ۲ `test(audit)`ِ هارنس/حالتِ واقعی + ۶ `docs`).
 - **۲ قلم که درِ گیت نبودند وِ باید بودند** (سیاستِ `.gitignore` را نمی‌شکنند):
   `dev/fixtures/ra365_witness_subset.json` (۴۵۹٫۹۷۵ بایت) وِ
   `tools/make_adjustment_witness_fixture.py`.
-- **اثباتِ سبز شدن رویِ درختِ تنها ازِ GitHub**: `dev/test_adjustment_engine_v1.py` →
-  ۴۴ سبز / ۰ قرمز؛ `dev/db_housekeeping.py --selftest` باِ assetِ منتشرشده
-  (`sha256 e7df91dc…` = `market.db.meta.json`) → **PASS، rc=0**
-  (۳۳۳ ردیفِ تکراری dedupe، ۱۱٫۴۰۵ سلولِ prev‑year، integrity ok).
+- **اثباتِ بازیابی ازِ GitHub، نه ازِ دیسکِ اینِ ماشین.** درختِ آزمونی ازِ working copyِ محلی
+  گرفته نشد؛ بعدِ `git fetch --all --prune` مستقیماً ازِ همانِ refِ رویِ remote بیرون کشیده شد،
+  تا حتیِ فایل‌هایِ کاریِ commit‑نشده هم درِ آن نباشند (cloneِ کاملِ تاریخچه رویِ اینِ ماشین
+  به‌دلیلِ پهنای‌باند ناتمام ماند؛ `git archive` همانِ محتوا را بی تاریخچه می‌دهد وِ SHAهایِ remote
+  جدا باِ `git ls-remote` وِ `git ls-tree -r origin/…` تأیید شده‌اند):
+
+  ```bash
+  git fetch --all --prune
+  git archive origin/fix/system-2-reproducible-fixtures-2026-10-15 | tar -x -C /tmp/ghreplay
+  ```
+
+  نتیجه: ۱۶۸۱ فایل، وِ سه مصدرِ محلی که `gitignore` می‌شوند درِ آن درخت **نیستند** —
+  `_audit/ra365_ref_bars.json`، `market.db.lzma`، `market.db` (هر سه «No such file or directory»).
+  درِ همانِ درخت: `PYTHONIOENCODING=utf-8 python dev/test_adjustment_engine_v1.py` →
+  **rc=0، ۴۴ سبز / ۰ قرمز**، میانهٔ خطایِ بندِ «ج» = `0.0370٪` برایِ `وبصادر` باِ 601 نقطه وِ 9 رویداد
+  — همانِ عددهایی که رویِ کشیدنیِ کاملِ محلی (۱۲MB) ثبت شده بود. یعنی fixtureِ منتشرشده
+  داوریِ همانِ تست را تحمل می‌کند، نه فقطِ حضورش را.
+- **بیس‌لاینِ دیتابیس هم ازِ ریلیز بازیابی می‌شود**: `python dev/db_housekeeping.py --selftest`
+  assetِ منتشرشده را می‌گیرد وِ `sha256 e7df91dc…` را باِ `market.db.meta.json` تطبیق می‌دهد →
+  **PASS، rc=0** (۷۸٫۶۶۷٫۸۰۰ بایت؛ ۳۳۳ ردیفِ تکراری dedupe، ۱۱٫۴۰۵ سلولِ prev‑year، integrity ok).
+  `market.db.lzma` محلی (۵۷٫۱۹۳٫۰۳۲ بایت، digestِ دیگر) عمداً درِ مخزن نمانده است.
 
 ### ۱۰‑۴) آنچه عمداً درِ GitHub نیست (دلیل + عدد)
 
@@ -294,3 +314,14 @@
 (§۱۰‑۳). تنهاِ بقایایِ محلی: فایل‌هایِ §۱۰‑۴ (باِ دلیل) وِ دوِ موردِ §۱۰‑۵ (باِ تصمیمِ
 مالک). بی‌merge، بی‌tag، بی‌release، بی‌force‑push، وِ بی‌دست‌زدن بهِ نسخۀِ نصبی یا
 بانکِ عملیاتیِ بازار.
+
+### ۱۰‑۷) تأییدِ نهاییِ remote (پسِ ازِ هرِ push، باِ فرمان)
+
+| بررسی | فرمان | نتیجۀِ اندازه‌گیری‌شده |
+|---|---|---|
+| SHAِ محلی = SHAِ remote | `git ls-remote origin refs/heads/<b>` درِ برابرِ `git rev-parse <b>`، برایِ هرِ چهار شاخه | هرِ چهار **MATCH**: `ff6b2fb` · `3feb525` · tipِ `handoff/system-2/inventory-2026-10-15` (همینِ سند، باِ همانِ فرمان خوانده می‌شود) · `c68dbc0` |
+| push‌نشده باقی‌مانده؟ | `git log --branches --not --remotes --oneline` | **خالی** |
+| stash / کارِ unreachable | `git stash list` وِ `git fsck --unreachable` وِ `git diff --stat 09e8d64 afa4590` | stash خالی؛ diffِ danglingها خالی ⇒ کاری درِ آن‌ها نبود |
+| فایل‌هایِ کلیدی رویِ remote | `git ls-tree -r origin/<b> \| grep <path>` | هرِ هشت سندِ تحویل + `dev/fixtures/ra365_witness_subset.json` (۴۵۹٫۹۷۵ بایت، حجمِ object رویِ remote برابرِ حجمِ محلی) + `tools/make_adjustment_witness_fixture.py` دیده شدند |
+| درختِ بیِ مصدرِ محلی | `git archive origin/fix/system-2-reproducible-fixtures-2026-10-15 \| tar -x` | ۱۶۸۱ فایل؛ سه مصدرِ ignore‑شده غایب؛ سورسِ تستِ تعدیل ازِ همانِ درخت **۴۴/۰، rc=0** (§۱۰‑۳) |
+
