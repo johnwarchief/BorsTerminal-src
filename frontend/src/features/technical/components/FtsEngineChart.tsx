@@ -180,7 +180,7 @@ export function FtsEngineChart({
             type="button"
             data-testid="fts-engine-back"
             onClick={() => onEngineChange('klinecharts')}
-            className="mr-auto rounded border border-border-c px-2 py-0.5 text-text-secondary transition-colors hover:border-accent-blue hover:text-accent-blue"
+            className="mr-auto inline-flex min-h-6 items-center rounded border border-border-c px-2 py-0.5 text-text-secondary transition-colors hover:border-accent-blue hover:text-accent-blue"
           >
             بازگشت به KLineCharts
           </button>

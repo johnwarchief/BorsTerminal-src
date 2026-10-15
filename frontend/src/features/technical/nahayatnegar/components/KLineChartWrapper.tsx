@@ -2691,6 +2691,11 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
             boxShadow: '0 8px 24px rgba(0, 0, 0, 0.65)',
             zIndex: 150,
             width: '280px',
+            // سنجشِ ۱۳۶۶×۷۶۸: اینِ پنل باِ بیست‌وپنجِ سطر ۸۵۲px قد می‌گرفت و
+            // ۱۷۶pxِ پایینش بیرونِ viewport می‌ماند (ردیف‌هایِ آخر دسترس‌ناپذیر).
+            // سقفِ ارتفاع نسبتِ بهِ میزبان + اسکرولِ داخلی، همه را درِ صفحه نگه می‌دارد.
+            maxHeight: 'calc(100% - 60px)',
+            overflowY: 'auto' as const,
             direction: 'rtl'
           }}
         >
