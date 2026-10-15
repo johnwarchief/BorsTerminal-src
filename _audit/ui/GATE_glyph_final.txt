@@ -5,3 +5,4 @@ persian_glyph_guard — نویسهٔ بیگانه و رقمِ افتاده در�
   ok   ك/ي عربی درِ فایل‌هایِ سرخطی نیست
   ok   استثنا فقط همان یک فایلِ ثبت‌شده است
 persian_glyph_guard: 4 passed / 0 failed
+command exit=0 (recorded after the report was committed and is tracked by the guard)
