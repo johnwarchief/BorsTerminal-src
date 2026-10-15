@@ -332,9 +332,29 @@ chk("set -euo pipefail" in CER and 'read -r -s' in CER,
 chk("-storepass " not in CER and "-keypass " not in CER
     and "-storepass:env" in CER and "-storepass:file" in CER,
     "A60 رمز هیچ‌وقت درِ فرمانِ keytool (argv، فهرستِ پروسه‌ها) نمی‌نشیند")
-chk('gh secret set ANDROID_RELEASE_KEYSTORE_B64 --repo "$REPO" --body "-"' in CER
-    and 'gh secret set ANDROID_RELEASE_KEYSTORE_PROPS --repo "$REPO" --body "-"' in CER,
-    "A61 هر دو secret ازِ stdin می‌روند، نه ازِ متنِ فرمان")
+# نسخهٔ پیشینِ همین سنج، خودِ الگویِ خراب را الزام می‌کرد: gh با `--body -` رشتهٔ
+# «-» را ذخیره می‌کند (ازِ stdin فقط بی‌--body می‌خواند) و گارد سبز می‌ماند تا CI
+# با «base64: invalid input» بکوبد (رانِ 38808582245). سنجش فقط رویِ **خطوطِ
+# فرمان** است، نه رویِ توضیحِ فایل — وگرنه خودِ کامنتِ توضیحِ دام، سنسور را قرمز
+# یا خوشبخت‌تر ازِ واقع می‌کند.
+def _secret_cmds(text):
+    return [l for l in text.splitlines() if "gh secret set" in l and not l.strip().startswith("#")]
+_sh_cmds = _secret_cmds(CER)
+_py_src = read("scripts/android_release_key_ceremony.py") or ""
+_py_cmds = _secret_cmds(_py_src)
+def _a61_ok(cmds, from_stdin):
+    return bool(cmds) and all("--body" not in c for c in cmds) and from_stdin
+chk(_a61_ok(_sh_cmds, any('< "$tmp"' in c or "| gh secret set" in CER.replace("base64 -w0 \"$KS\" | gh", "P") for c in _sh_cmds))
+    and 'base64 -w0 "$KS" | gh secret set ANDROID_RELEASE_KEYSTORE_B64 --repo "$REPO"' in CER
+    and 'gh secret set ANDROID_RELEASE_KEYSTORE_PROPS --repo "$REPO" < "$tmp"' in CER,
+    "A61 هر دو secret درِ اسکریپتِ bash ازِ stdin می‌روند و «--body» درِ هیچ فرمانی نیست")
+chk(_a61_ok(_py_cmds, "input=body.encode()" in _py_src)
+    and '"gh", "secret", "set", name, "--repo", repo' in _py_src,
+    "A61-ب همدوشِ پایتون هم مقدار را ازِ stdin می‌فرستد، نه ازِ argv/--body")
+_bad_sh = CER.replace('gh secret set ANDROID_RELEASE_KEYSTORE_PROPS --repo "$REPO" < "$tmp"',
+                      'gh secret set ANDROID_RELEASE_KEYSTORE_PROPS --repo "$REPO" --body "-" < "$tmp"')
+chk(_a61_ok(_secret_cmds(_bad_sh), True) is False,
+    "A61-پ کنترلِ منفی: بازگشتِ «--body -» درِ فرمان، A61 را قرمز می‌کند")
 _secret_names_wf = set(re.findall(r"secrets\.(ANDROID_RELEASE_[A-Z_0-9]+)", WF))
 _secret_names_cer = set(re.findall(r"gh secret set (ANDROID_RELEASE_[A-Z_0-9]+)", CER))
 chk(_secret_names_wf and _secret_names_wf == _secret_names_cer,

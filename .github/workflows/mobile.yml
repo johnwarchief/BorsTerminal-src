@@ -246,8 +246,16 @@ jobs:
             exit 0
           fi
           umask 077
+          # secretِ بدشکل نباید به «base64: invalid input» و شکستِ مبهمِ بیلد
+          # بیانجامد: رانِ 38808582245 همان را دید (patternِ gh secret set که
+          # به‌جایِ مقدار، رشته‌یِ «-» را ذخیره کرده بود). پس اول شکل، بعد رمزگشایی.
+          if ! printf '%s' "$KS_B64" | grep -qE '^[A-Za-z0-9+/]+={0,2}$'; then
+            echo "BLOCKED: ANDROID_RELEASE_KEYSTORE_B64 base64 نیست (طول ${#KS_B64})؛ دوباره publish-secrets را اجرا کنید" >&2
+            exit 1
+          fi
           d="$RUNNER_TEMP/bors-keystore"; mkdir -p "$d"
           printf '%s' "$KS_B64" | base64 -d > "$d/release.keystore"
+          test -s "$d/release.keystore" || { echo "BLOCKED: keystore رمزگشایی نشد (خروجی خالی)" >&2; exit 1; }
           { echo "storeFile=$d/release.keystore"; printf '%s\n' "$KS_PROPS"; } > "$d/keystore.properties"
           echo "BORS_KEYSTORE_PROPERTIES=$d/keystore.properties" >> "$GITHUB_ENV"
           echo "release signing = configured (path only; values never printed)"

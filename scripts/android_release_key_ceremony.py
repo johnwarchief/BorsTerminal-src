@@ -280,7 +280,10 @@ def cmd_publish_secrets(a) -> int:
 
 def _gh_secret(name: str, body: str, repo: str) -> None:
     # مقدار فقط ازِ stdin می‌رود؛ هرگز درِ argv (فهرستِ پروسه‌ها آن را نشان می‌دهد)
-    r = subprocess.run(["gh", "secret", "set", name, "--repo", repo, "--body", "-"],
+    # `--body "-"` مقدارِ «-» را ذخیره می‌کرد (gh فقط بی‌--body ازِ stdin می‌خواند)؛
+    # شاهدش: درِ CI `base64: invalid input` رویِ همان secret. رمز هرگز به argv
+    # نمی‌رود: بدنه ازِ لوله (pipe) است.
+    r = subprocess.run(["gh", "secret", "set", name, "--repo", repo],
                        input=body.encode(), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     if r.returncode != 0:
         #stderrِ gh را چاپ نمی‌کنیم: ممکن است بازتابِ ورودی باشد

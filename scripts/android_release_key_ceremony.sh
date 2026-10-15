@@ -160,14 +160,14 @@ cmd_publish_secrets() {
   kp="${kp:-$sp}"
 
   # ۱) keystore، base64 — ازِ stdin، نه argv
-  base64 -w0 "$KS" | gh secret set ANDROID_RELEASE_KEYSTORE_B64 --repo "$REPO" --body "-"
+  base64 -w0 "$KS" | gh secret set ANDROID_RELEASE_KEYSTORE_B64 --repo "$REPO"
 
   # ۲) props سه‌سطری، دقیقاً همان قالبی که workflow prepend کردنِ storeFile را انتظار دارد
   local tmp
   tmp="$(mktemp)"
   umask 077
   { printf 'storePassword=%s\nkeyAlias=%s\nkeyPassword=%s\n' "$sp" "$alias" "$kp"; } > "$tmp"
-  gh secret set ANDROID_RELEASE_KEYSTORE_PROPS --repo "$REPO" --body "-" < "$tmp"
+  gh secret set ANDROID_RELEASE_KEYSTORE_PROPS --repo "$REPO" < "$tmp"
   rm -f "$tmp"
   unset sp kp tmp
 
