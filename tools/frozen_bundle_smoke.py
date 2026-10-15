@@ -16,8 +16,15 @@ import urllib.request
 
 EXE = os.path.join(ROOT, "dist", "BorsTerminal_Ultimate", "BorsTerminal_Ultimate.exe")
 PORT = 8077
+if "--exe" in sys.argv:
+    EXE = os.path.abspath(sys.argv[sys.argv.index("--exe") + 1])
+if "--port" in sys.argv:
+    PORT = int(sys.argv[sys.argv.index("--port") + 1])
 BASE = "http://127.0.0.1:%d" % PORT
+# لاگ و JSON کنارِ همین EXE نمی‌نشینند (بیلدِ منتشرشده فقط‌خواندنی حساب می‌شود);
+# هر دو درِ `_audit/` ریشه می‌مانند تا شاهدِ اجرا بایگانی شود.
 LOG = os.path.join(ROOT, "_audit", "frozen_smoke_stdout.log")
+RESULT = os.path.join(ROOT, "_audit", "frozen_smoke_result%s.json" % (sys.argv[sys.argv.index("--out-tag") + 1] if "--out-tag" in sys.argv else ""))
 
 try:
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
@@ -243,7 +250,7 @@ note("frozen_log_has_no_secret_words", not leaks, "; ".join(leaks)[:500])
 
 fails = [n for n, ok, _ in results if not ok]
 print("\nSUMMARY: %d checks, %d fail -> %s" % (len(results), len(fails), ",".join(fails) or "none"))
-with open(os.path.join(ROOT, "_audit", "frozen_smoke_result.json"), "w", encoding="utf-8") as f:
+with open(RESULT, "w", encoding="utf-8") as f:
     json.dump([{"check": n, "ok": ok, "detail": d} for n, ok, d in results], f,
               ensure_ascii=False, indent=1)
 sys.exit(1 if fails else 0)
