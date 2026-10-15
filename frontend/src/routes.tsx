@@ -41,6 +41,12 @@ export const mainRoutes: RouteObject[] = [
     element: page(() => import('@features/master/routes/StrategyTreePage')),
   },
   { path: 'portfolio', element: page(() => import('@features/portfolio/routes/PortfolioPage')) },
+  // مأموریت ۱۴۰۵-۰۷-۲۳: «سرخطی و اجرای سفارش» و «ربات معاملاتی» از ناوبری باز
+  // می‌شوند، نه از انتهای صفحهٔ پرتفوی. خودِ زیرتب پرتفوی دست‌نخورده می‌ماند.
+  {
+    path: 'trade',
+    element: page(() => import('@features/portfolio/routes/TradingPage')),
+  },
   // رأیِ مالک (1405-07-20): دیده‌بان تبِّ مستقل است، ولی درِ ناوبری زیرِ گروهِ
   // پرتفوی نشان داده می‌شود. خودِ زیرتب درِ /portfolio هم دست‌نخورده می‌ماند تا
   // نشانی‌هایِ پیشین نشکنند.
