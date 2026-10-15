@@ -263,6 +263,7 @@
 | `market.db`, `market.db.lzma`, `codal.db` | ~۲۲۸MB / ۵۷–۷۹MB | دادهٔ عملیاتی + ردیف‌هایِ کاربر؛ قراردادِ ریلیز، نه مخزنِ سورس | assetِ `data-latest` + `market.db.meta.json` (digest تأیید شد) |
 | `_audit/ui/shots/*.png` (۱۶۸) وِ `_audit/MS-BINDER-SHOTS/*.png` (۲۶) | ~۲۳MB / ۵٫۹MB | `*.png` درِ `_audit/.gitignore`؛ سنگینِ مخزن | ۳ برشِ فشرده + اعدادِ قبل/بعد؛ `_audit/MS-BINDER-UI-RUN.txt` |
 | لاگ‌هایِ خامِ راه‌اندازیِ مرورگر (`_audit/PHASE5F-CAPTURE*.txt`) | ۵KB | سطرهایِ launch باِ `--user-data-dir=<پروفیلِ کاربر>` وِ pid؛ مخزن **public** است | `_audit/PHASE5F-P5G-RUNDIGEST.txt` (outcomeها، masked) |
+| ۴۶ فایلِ بی‌commit درِ `.worktrees/ui-audit-system-2/_audit/ui/` (۲۶MB باِ shots) — ۱۷ لاگِ `*_run.txt`، dumpهایِ جای‌گزین‌شده (`INTERACT`/`INTERACT2`، `STATE2`/`STATE3`، `MODULE`/`MODULE2`) وِ دوِ dumpِ ۱۷۲–۱۸۴KBیِ خودِ سوئیتِ JS | stdoutِ خامِ میانیِ همانِ جاروب‌ها؛ نسخهٔ **نهاییِ** هرِ هارنس منتشر شد (بخشِ ۱۱ِ گزارشِ UI همینِ انتخاب را می‌گوید) | `OVERLAP.json`، `STATE.json/.txt`، `MODULE_final.json`، `INTERACT3.json` + `INTERACT3_run.txt`، `GATE_vitest_summary.txt` (خلاصۀِ واقعیِ ۱۷۱۰/۳) |
 | `ms_server.log` بیرونِ مخزن (`Borsterminal/_audit/`) | ۵۴KB | لاگِ خامِ سرویسِ dev؛ artefactِ زمانِ اجرا | گیت‌هایِ عددی درِ `_audit/perf/gates/` وِ `_audit/ui/` |
 | `frontend/dist/**`، `node_modules`، `__pycache__` | — | خروجیِ build، قابلِ بازتولید | فرمانِ build درِ سندِ fixtureها (§۶ آنِ سند) |
 
