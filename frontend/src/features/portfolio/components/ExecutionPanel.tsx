@@ -38,7 +38,11 @@ const TONE: Record<ActionState, string> = {
   busy: 'text-text-muted',
   ok: 'text-accent-green',
   warn: 'text-accent-yellow',
-  unknown: 'text-accent-orange',
+  // تنها نارنجیِ تعریف‌شدهٔ تم در توکنِ susp است؛ نامِ دیگری که این‌جا نوشته
+  // شده بود هیچ CSSی نمی‌ساخت و حالت unknown بی‌رنگ می‌ماند (همان نقصی که
+  // گاردِ design-token می‌گيرد — گارد متنِ خام را می‌خواند، پس این سطر هم نباید
+  // آن نامِ بی‌تعریف را تکرار کند).
+  unknown: 'text-accent-susp',
   error: 'text-accent-red',
 };
 
