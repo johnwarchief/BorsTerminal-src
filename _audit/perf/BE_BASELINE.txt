@@ -1,0 +1,62 @@
+
+=== dev-8000  http://127.0.0.1:8000  (5 reps each) ===
+  market full                  200  first=   2085ms p50=    119 p95=   2085 max=   2085  raw=6,803,721 gz= 845,099  etag304=304/0B@15ms  rows=5981 rev=0
+  market delta(since=rev)      200  first=      9ms p50=      7 p95=      9 max=      9  raw=      174 gz=     174  status=unchanged rows=0
+  market delta(stale rev)      200  first=      6ms p50=      5 p95=      6 max=      6  raw=       54 gz=      54
+  market sync-state            200  first=   1167ms p50=   1120 p95=   1178 max=   1178  raw=      141 gz=     141
+  live-stats                   200  first=      6ms p50=      6 p95=     22 max=     22  raw=      971 gz=     971
+  mstat board                  200  first=   3261ms p50=   3343 p95=   3381 max=   3381  raw=  242,342 gz=  50,581
+  mstat summary                200  first=    581ms p50=     21 p95=    581 max=    581  raw=    3,725 gz=   1,351
+  mstat mainwatch              200  first=    991ms p50=     33 p95=    991 max=    991  raw=   77,868 gz=  13,747
+  mstat treemap                200  first=    557ms p50=     38 p95=    557 max=    557  raw=   93,878 gz=  16,710
+  mstat tops                   200  first=    613ms p50=     18 p95=    613 max=    613  raw=    9,384 gz=   2,774
+  mstat histogram              200  first=    544ms p50=     16 p95=    544 max=    544  raw=    1,572 gz=     550
+  mstat timeline               200  first=     58ms p50=     19 p95=     58 max=     58  raw=    9,780 gz=   3,853
+  mstat phases                 200  first=    805ms p50=     18 p95=    805 max=    805  raw=      474 gz=     474
+  mstat smart-money            200  first=    909ms p50=     13 p95=    909 max=    909  raw=    3,570 gz=   1,526
+  mstat depth                  200  first=    518ms p50=     15 p95=    518 max=    518  raw=      504 gz=     504
+  mstat thermometer            200  first=    631ms p50=     14 p95=    631 max=    631  raw=      357 gz=     357
+  mstat gold                   200  first=    547ms p50=     50 p95=    547 max=    547  raw=   40,210 gz=   8,860
+  mstat indexcards             200  first=     32ms p50=     17 p95=     32 max=     32  raw=    1,836 gz=   1,029
+  mstat industries             200  first=    468ms p50=     20 p95=    468 max=    468  raw=   13,939 gz=   3,046
+  chart one symbol             ERROR UnicodeEncodeError: 'ascii' codec can't encode characters in position 15-17: ordinal not in range(128)
+  screener                     200  first=   1926ms p50=    270 p95=   1926 max=   1926  raw=1,138,676 gz=  82,809
+  funnel registry              200  first=     10ms p50=     10 p95=     15 max=     15  raw=   13,418 gz=   3,814
+  fts config                   200  first=      6ms p50=      6 p95=     17 max=     17  raw=    1,121 gz=     607
+  fundamental one              ERROR UnicodeEncodeError: 'ascii' codec can't encode characters in position 21-23: ordinal not in range(128)
+  index tedpix                 200  first=   2026ms p50=    250 p95=   2026 max=   2026  raw=  743,182 gz= 116,903
+  watchlist                    200  first=     13ms p50=     13 p95=     14 max=     14  raw=       51 gz=      51
+  market x4                    4 concurrent: wall=   1522ms  fastest=    168 slowest=    182
+  mstat board x4               4 concurrent: wall=  16760ms  fastest=  10455 slowest=  16749
+
+=== installed-8001  http://127.0.0.1:8001  (5 reps each) ===
+  market full                  200  first=   1845ms p50=    181 p95=   1845 max=   1845  raw=6,090,604 gz= 852,656  etag304=304/0B@7ms  rows=5980 rev=920
+  market delta(since=rev)      200  first=      9ms p50=      5 p95=      9 max=      9  raw=      160 gz=     160  status=unchanged rows=0
+  market delta(stale rev)      200  first=      7ms p50=      5 p95=      7 max=      7  raw=       51 gz=      51
+  market sync-state            200  first=   1332ms p50=   1099 p95=   1332 max=   1332  raw=      141 gz=     141
+  live-stats                   200  first=      6ms p50=      6 p95=      9 max=      9  raw=    1,044 gz=     571
+  mstat board                  200  first=   4038ms p50=   3031 p95=   4386 max=   4386  raw=   81,767 gz=  20,380
+  mstat summary                200  first=    718ms p50=     12 p95=    718 max=    718  raw=    3,705 gz=   1,320
+  mstat mainwatch              200  first=    811ms p50=     35 p95=    811 max=    811  raw=   77,856 gz=  13,761
+  mstat treemap                200  first=      8ms p50=      8 p95=     10 max=     10  raw=      494 gz=     494  etag304=200/494B@9ms
+  mstat tops                   200  first=      7ms p50=      8 p95=     23 max=     23  raw=      494 gz=     494  etag304=200/494B@9ms
+  mstat histogram              200  first=    603ms p50=     13 p95=    603 max=    603  raw=    1,554 gz=     536
+  mstat timeline               200  first=     70ms p50=     18 p95=     70 max=     70  raw=   17,537 gz=   6,108
+  mstat phases                 200  first=   1122ms p50=     14 p95=   1122 max=   1122  raw=      474 gz=     474
+  mstat smart-money            200  first=    994ms p50=     14 p95=    994 max=    994  raw=    3,553 gz=   1,473
+  mstat depth                  200  first=    520ms p50=     12 p95=    520 max=    520  raw=      486 gz=     486
+  mstat thermometer            200  first=    495ms p50=     16 p95=    495 max=    495  raw=      339 gz=     339
+  mstat gold                   200  first=      8ms p50=      9 p95=     10 max=     10  raw=      494 gz=     494  etag304=200/494B@8ms
+  mstat indexcards             200  first=     10ms p50=     10 p95=     11 max=     11  raw=      494 gz=     494  etag304=200/494B@7ms
+  mstat industries             200  first=    565ms p50=     18 p95=    565 max=    565  raw=   13,921 gz=   2,960
+  chart one symbol             ERROR UnicodeEncodeError: 'ascii' codec can't encode characters in position 15-17: ordinal not in range(128)
+  screener                     ERROR TimeoutError: timed out
+  funnel registry              200  first=     28ms p50=      9 p95=     28 max=     28  raw=   13,418 gz=   3,782
+  fts config                   200  first=      6ms p50=      7 p95=      7 max=      7  raw=    1,121 gz=     598
+  fundamental one              ERROR UnicodeEncodeError: 'ascii' codec can't encode characters in position 21-23: ordinal not in range(128)
+  index tedpix                 200  first=   2295ms p50=    338 p95=   2295 max=   2295  raw=  743,223 gz= 117,415
+  watchlist                    200  first=     10ms p50=     11 p95=     11 max=     11  raw=       51 gz=      51
+  market x4                    4 concurrent: wall=   1173ms  fastest=    212 slowest=    237
+  mstat board x4               4 concurrent: wall=  28145ms  fastest=  17612 slowest=  28140
+
+wrote _audit/perf/BE_BASELINE.json

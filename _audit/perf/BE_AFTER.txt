@@ -1,0 +1,37 @@
+
+=== dev-8000  http://127.0.0.1:8000  (3 reps each) ===
+  market full                  200  first=   1706ms p50=    120 p95=   1706 max=   1706  raw=6,997,312 gz= 868,605  etag304=304/0B@5ms  rows=5981 rev=0
+  market delta(since=rev)      200  first=      9ms p50=      8 p95=      9 max=      9  raw=      174 gz=     174  status=unchanged rows=0
+  market delta(stale rev)      200  first=      5ms p50=      5 p95=      5 max=      5  raw=       54 gz=      54
+  market sync-state            200  first=   1142ms p50=   1131 p95=   1142 max=   1142  raw=      141 gz=     141
+  live-stats                   200  first=      5ms p50=      6 p95=      7 max=      7  raw=      986 gz=     986
+  mstat board                  200  first=   1430ms p50=   1506 p95=   1527 max=   1527  raw=  241,968 gz=  50,372
+  mstat summary                200  first=     80ms p50=     20 p95=     80 max=     80  raw=    3,727 gz=   1,352
+  mstat mainwatch              200  first=    389ms p50=     46 p95=    389 max=    389  raw=   77,596 gz=  13,600
+  mstat treemap                200  first=     58ms p50=     35 p95=     58 max=     58  raw=   93,921 gz=  16,714
+  mstat tops                   200  first=     82ms p50=     23 p95=     82 max=     82  raw=    9,384 gz=   2,775
+  mstat histogram              200  first=     31ms p50=     14 p95=     31 max=     31  raw=    1,572 gz=     549
+  mstat timeline               200  first=     69ms p50=     20 p95=     69 max=     69  raw=    9,780 gz=   3,853
+  mstat phases                 200  first=    417ms p50=     19 p95=    417 max=    417  raw=      474 gz=     474
+  mstat smart-money            200  first=    372ms p50=     16 p95=    372 max=    372  raw=    3,573 gz=   1,525
+  mstat depth                  200  first=     31ms p50=     31 p95=     35 max=     35  raw=      503 gz=     503
+  mstat thermometer            200  first=     27ms p50=     15 p95=     27 max=     27  raw=      357 gz=     357
+  mstat gold                   200  first=     80ms p50=     38 p95=     80 max=     80  raw=   40,217 gz=   8,864
+  mstat indexcards             200  first=     30ms p50=     16 p95=     30 max=     30  raw=    1,835 gz=   1,029
+  mstat industries             200  first=     33ms p50=     22 p95=     33 max=     33  raw=   13,937 gz=   3,039
+  chart one symbol             200  first=     61ms p50=     60 p95=     61 max=     61  raw=      295 gz=     295
+  chart second symbol          200  first=   5396ms p50=    492 p95=   5396 max=   5396  raw=1,132,757 gz= 162,172
+  chart same symbol again      200  first=     47ms p50=     56 p95=     62 max=     62  raw=      295 gz=     295
+  chart key-levels             200  first=     11ms p50=     11 p95=     11 max=     11  raw=      206 gz=     206
+  mstat series (3 sym)         200  first=     23ms p50=     21 p95=     23 max=     23  raw=    3,298 gz=     906
+  fts one symbol               200  first=    103ms p50=    103 p95=    157 max=    157  raw=       47 gz=      47
+  screener                     200  first=   2056ms p50=    318 p95=   2056 max=   2056  raw=1,138,891 gz=  83,013
+  funnel registry              200  first=     38ms p50=     13 p95=     38 max=     38  raw=   13,418 gz=   3,814
+  fts config                   200  first=     10ms p50=      8 p95=     10 max=     10  raw=    1,121 gz=     607
+  fundamental one              404  first=     34ms p50=     34 p95=     34 max=     34  raw=       29 gz=      29
+  index tedpix                 200  first=   1510ms p50=    301 p95=   1510 max=   1510  raw=  743,182 gz= 116,903
+  watchlist                    200  first=     32ms p50=     21 p95=     32 max=     32  raw=       51 gz=      51
+  market x4                    4 concurrent: wall=   1202ms  fastest=    141 slowest=    185
+  mstat board x4               4 concurrent: wall=   5739ms  fastest=   5265 slowest=   5726
+
+wrote _audit/perf/BE_BASELINE.json

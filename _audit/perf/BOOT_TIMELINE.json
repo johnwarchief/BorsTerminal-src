@@ -1,0 +1,28 @@
+{
+ "port_ready_s": 3.29,
+ "first_api_ms": 167,
+ "first_api_s": 3.45,
+ "market_board_first_ms": 6164,
+ "market_board_bytes": 6997312,
+ "market_board_s": 9.62,
+ "market_board_second_ms": 23,
+ "markers": {
+  "app startup complete": 9.6,
+  "codal schema migrated": 9.6,
+  "market sync thread spawned": 9.6,
+  "screener warm deferred to sync": 9.6,
+  "market-sync thread started": 9.6,
+  "history windows rebuilt": 9.6,
+  "candle projection": 9.6,
+  "board tick loop": 9.6,
+  "pulse snapshot loop": 9.6,
+  "market-sync done": 16.6,
+  "screener heavy rebuild started": 18.7,
+  "screener fts_results live eval": 20.7,
+  "screener saved to disk cache": 136.8,
+  "screener cache warmed": 138.8
+ },
+ "screener_cache_warmed_lines": 1,
+ "screener_heavy_rebuilds": 1,
+ "total_s": 420.0
+}

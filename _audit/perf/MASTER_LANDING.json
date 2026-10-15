@@ -1,0 +1,511 @@
+{
+ "base": "http://127.0.0.1:8000",
+ "ranAt": "2026-10-15T00:16:31.559Z",
+ "timeline": [
+  {
+   "hash": "#/master",
+   "elements": 269,
+   "chars": 827,
+   "head": "ب ترمینال بورس FTS v2.1 فضای تحلیل وضعیت بازار تابلوخوانی تکنیکال بنیادی غربالگری FTS استراتژی FTS درخت استراتژی سرمایه و دارایی مدیریت پرتفوی دیده‌بان بازار ⚙ admin خروج ⎋ 🚀 آپدی",
+   "spinner": true,
+   "testids": {
+    "fts-funnel-workspace": 0,
+    "funnel-counts": 0,
+    "funnel-count-pass": 0,
+    "master-open-funnel": 0,
+    "funnel-chain-row": 0,
+    "master-breadcrumb": 0,
+    "tape-row": 0,
+    "treemap-cell": 0,
+    "fts-screen-row": 0
+   },
+   "canvas": 0,
+   "pendingApi": [],
+   "apiDurations": [
+    {
+     "u": "/api/update/version",
+     "ms": 34,
+     "status": "body"
+    }
+   ],
+   "atS": 5
+  },
+  {
+   "hash": "#/master",
+   "elements": 334,
+   "chars": 1689,
+   "head": "ب ترمینال بورس FTS v2.1 فضای تحلیل وضعیت بازار تابلوخوانی تکنیکال بنیادی غربالگری FTS استراتژی FTS درخت استراتژی سرمایه و دارایی مدیریت پرتفوی دیده‌بان بازار ⚙ admin خروج ⎋ 🚀 آپدی",
+   "spinner": true,
+   "testids": {
+    "fts-funnel-workspace": 1,
+    "funnel-counts": 6,
+    "funnel-count-pass": 1,
+    "master-open-funnel": 0,
+    "funnel-chain-row": 0,
+    "master-breadcrumb": 0,
+    "tape-row": 0,
+    "treemap-cell": 0,
+    "fts-screen-row": 0
+   },
+   "canvas": 0,
+   "pendingApi": [],
+   "apiDurations": [
+    {
+     "u": "/api/update/version",
+     "ms": 34,
+     "status": "body"
+    },
+    {
+     "u": "/api/notifications/feed?limit=60",
+     "ms": 4599,
+     "status": "body"
+    },
+    {
+     "u": "/api/market",
+     "ms": 4722,
+     "status": "body"
+    },
+    {
+     "u": "/api/selection/portfolio",
+     "ms": 4589,
+     "status": "body"
+    },
+    {
+     "u": "/api/funnel",
+     "ms": 5366,
+     "status": "body"
+    },
+    {
+     "u": "/api/screener",
+     "ms": 4613,
+     "status": "body"
+    }
+   ],
+   "atS": 5
+  },
+  {
+   "hash": "#/master",
+   "elements": 338,
+   "chars": 1702,
+   "head": "ب ترمینال بورس FTS v2.1 فضای تحلیل وضعیت بازار تابلوخوانی تکنیکال بنیادی غربالگری FTS استراتژی FTS درخت استراتژی سرمایه و دارایی مدیریت پرتفوی دیده‌بان بازار ⚙ admin خروج ⎋ 🚀 آپدی",
+   "spinner": true,
+   "testids": {
+    "fts-funnel-workspace": 1,
+    "funnel-counts": 6,
+    "funnel-count-pass": 1,
+    "master-open-funnel": 0,
+    "funnel-chain-row": 0,
+    "master-breadcrumb": 0,
+    "tape-row": 0,
+    "treemap-cell": 0,
+    "fts-screen-row": 0
+   },
+   "canvas": 0,
+   "pendingApi": [],
+   "apiDurations": [
+    {
+     "u": "/api/update/version",
+     "ms": 34,
+     "status": "body"
+    },
+    {
+     "u": "/api/notifications/feed?limit=60",
+     "ms": 4599,
+     "status": "body"
+    },
+    {
+     "u": "/api/market",
+     "ms": 4722,
+     "status": "body"
+    },
+    {
+     "u": "/api/selection/portfolio",
+     "ms": 4589,
+     "status": "body"
+    },
+    {
+     "u": "/api/funnel",
+     "ms": 5366,
+     "status": "body"
+    },
+    {
+     "u": "/api/screener",
+     "ms": 4613,
+     "status": "body"
+    }
+   ],
+   "atS": 5
+  },
+  {
+   "hash": "#/master",
+   "elements": 338,
+   "chars": 1702,
+   "head": "ب ترمینال بورس FTS v2.1 فضای تحلیل وضعیت بازار تابلوخوانی تکنیکال بنیادی غربالگری FTS استراتژی FTS درخت استراتژی سرمایه و دارایی مدیریت پرتفوی دیده‌بان بازار ⚙ admin خروج ⎋ 🚀 آپدی",
+   "spinner": true,
+   "testids": {
+    "fts-funnel-workspace": 1,
+    "funnel-counts": 6,
+    "funnel-count-pass": 1,
+    "master-open-funnel": 0,
+    "funnel-chain-row": 0,
+    "master-breadcrumb": 0,
+    "tape-row": 0,
+    "treemap-cell": 0,
+    "fts-screen-row": 0
+   },
+   "canvas": 0,
+   "pendingApi": [],
+   "apiDurations": [
+    {
+     "u": "/api/update/version",
+     "ms": 34,
+     "status": "body"
+    },
+    {
+     "u": "/api/notifications/feed?limit=60",
+     "ms": 4599,
+     "status": "body"
+    },
+    {
+     "u": "/api/market",
+     "ms": 4722,
+     "status": "body"
+    },
+    {
+     "u": "/api/selection/portfolio",
+     "ms": 4589,
+     "status": "body"
+    },
+    {
+     "u": "/api/funnel",
+     "ms": 5366,
+     "status": "body"
+    },
+    {
+     "u": "/api/screener",
+     "ms": 4613,
+     "status": "body"
+    }
+   ],
+   "atS": 5
+  },
+  {
+   "hash": "#/master",
+   "elements": 338,
+   "chars": 1702,
+   "head": "ب ترمینال بورس FTS v2.1 فضای تحلیل وضعیت بازار تابلوخوانی تکنیکال بنیادی غربالگری FTS استراتژی FTS درخت استراتژی سرمایه و دارایی مدیریت پرتفوی دیده‌بان بازار ⚙ admin خروج ⎋ 🚀 آپدی",
+   "spinner": true,
+   "testids": {
+    "fts-funnel-workspace": 1,
+    "funnel-counts": 6,
+    "funnel-count-pass": 1,
+    "master-open-funnel": 0,
+    "funnel-chain-row": 0,
+    "master-breadcrumb": 0,
+    "tape-row": 0,
+    "treemap-cell": 0,
+    "fts-screen-row": 0
+   },
+   "canvas": 0,
+   "pendingApi": [],
+   "apiDurations": [
+    {
+     "u": "/api/update/version",
+     "ms": 34,
+     "status": "body"
+    },
+    {
+     "u": "/api/notifications/feed?limit=60",
+     "ms": 4599,
+     "status": "body"
+    },
+    {
+     "u": "/api/market",
+     "ms": 4722,
+     "status": "body"
+    },
+    {
+     "u": "/api/selection/portfolio",
+     "ms": 4589,
+     "status": "body"
+    },
+    {
+     "u": "/api/funnel",
+     "ms": 5366,
+     "status": "body"
+    },
+    {
+     "u": "/api/screener",
+     "ms": 4613,
+     "status": "body"
+    }
+   ],
+   "atS": 9
+  },
+  {
+   "hash": "#/master",
+   "elements": 338,
+   "chars": 1702,
+   "head": "ب ترمینال بورس FTS v2.1 فضای تحلیل وضعیت بازار تابلوخوانی تکنیکال بنیادی غربالگری FTS استراتژی FTS درخت استراتژی سرمایه و دارایی مدیریت پرتفوی دیده‌بان بازار ⚙ admin خروج ⎋ 🚀 آپدی",
+   "spinner": true,
+   "testids": {
+    "fts-funnel-workspace": 1,
+    "funnel-counts": 6,
+    "funnel-count-pass": 1,
+    "master-open-funnel": 0,
+    "funnel-chain-row": 0,
+    "master-breadcrumb": 0,
+    "tape-row": 0,
+    "treemap-cell": 0,
+    "fts-screen-row": 0
+   },
+   "canvas": 0,
+   "pendingApi": [],
+   "apiDurations": [
+    {
+     "u": "/api/update/version",
+     "ms": 34,
+     "status": "body"
+    },
+    {
+     "u": "/api/notifications/feed?limit=60",
+     "ms": 4599,
+     "status": "body"
+    },
+    {
+     "u": "/api/market",
+     "ms": 4722,
+     "status": "body"
+    },
+    {
+     "u": "/api/selection/portfolio",
+     "ms": 4589,
+     "status": "body"
+    },
+    {
+     "u": "/api/funnel",
+     "ms": 5366,
+     "status": "body"
+    },
+    {
+     "u": "/api/screener",
+     "ms": 4613,
+     "status": "body"
+    }
+   ],
+   "atS": 9
+  },
+  {
+   "hash": "#/master",
+   "elements": 338,
+   "chars": 1702,
+   "head": "ب ترمینال بورس FTS v2.1 فضای تحلیل وضعیت بازار تابلوخوانی تکنیکال بنیادی غربالگری FTS استراتژی FTS درخت استراتژی سرمایه و دارایی مدیریت پرتفوی دیده‌بان بازار ⚙ admin خروج ⎋ 🚀 آپدی",
+   "spinner": true,
+   "testids": {
+    "fts-funnel-workspace": 1,
+    "funnel-counts": 6,
+    "funnel-count-pass": 1,
+    "master-open-funnel": 0,
+    "funnel-chain-row": 0,
+    "master-breadcrumb": 0,
+    "tape-row": 0,
+    "treemap-cell": 0,
+    "fts-screen-row": 0
+   },
+   "canvas": 0,
+   "pendingApi": [],
+   "apiDurations": [
+    {
+     "u": "/api/update/version",
+     "ms": 34,
+     "status": "body"
+    },
+    {
+     "u": "/api/notifications/feed?limit=60",
+     "ms": 4599,
+     "status": "body"
+    },
+    {
+     "u": "/api/market",
+     "ms": 4722,
+     "status": "body"
+    },
+    {
+     "u": "/api/selection/portfolio",
+     "ms": 4589,
+     "status": "body"
+    },
+    {
+     "u": "/api/funnel",
+     "ms": 5366,
+     "status": "body"
+    },
+    {
+     "u": "/api/screener",
+     "ms": 4613,
+     "status": "body"
+    }
+   ],
+   "atS": 13
+  },
+  {
+   "hash": "#/master",
+   "elements": 338,
+   "chars": 1702,
+   "head": "ب ترمینال بورس FTS v2.1 فضای تحلیل وضعیت بازار تابلوخوانی تکنیکال بنیادی غربالگری FTS استراتژی FTS درخت استراتژی سرمایه و دارایی مدیریت پرتفوی دیده‌بان بازار ⚙ admin خروج ⎋ 🚀 آپدی",
+   "spinner": true,
+   "testids": {
+    "fts-funnel-workspace": 1,
+    "funnel-counts": 6,
+    "funnel-count-pass": 1,
+    "master-open-funnel": 0,
+    "funnel-chain-row": 0,
+    "master-breadcrumb": 0,
+    "tape-row": 0,
+    "treemap-cell": 0,
+    "fts-screen-row": 0
+   },
+   "canvas": 0,
+   "pendingApi": [],
+   "apiDurations": [
+    {
+     "u": "/api/update/version",
+     "ms": 34,
+     "status": "body"
+    },
+    {
+     "u": "/api/notifications/feed?limit=60",
+     "ms": 4599,
+     "status": "body"
+    },
+    {
+     "u": "/api/market",
+     "ms": 4722,
+     "status": "body"
+    },
+    {
+     "u": "/api/selection/portfolio",
+     "ms": 4589,
+     "status": "body"
+    },
+    {
+     "u": "/api/funnel",
+     "ms": 5366,
+     "status": "body"
+    },
+    {
+     "u": "/api/screener",
+     "ms": 4613,
+     "status": "body"
+    }
+   ],
+   "atS": 21
+  },
+  {
+   "hash": "#/master",
+   "elements": 338,
+   "chars": 1702,
+   "head": "ب ترمینال بورس FTS v2.1 فضای تحلیل وضعیت بازار تابلوخوانی تکنیکال بنیادی غربالگری FTS استراتژی FTS درخت استراتژی سرمایه و دارایی مدیریت پرتفوی دیده‌بان بازار ⚙ admin خروج ⎋ 🚀 آپدی",
+   "spinner": true,
+   "testids": {
+    "fts-funnel-workspace": 1,
+    "funnel-counts": 6,
+    "funnel-count-pass": 1,
+    "master-open-funnel": 0,
+    "funnel-chain-row": 0,
+    "master-breadcrumb": 0,
+    "tape-row": 0,
+    "treemap-cell": 0,
+    "fts-screen-row": 0
+   },
+   "canvas": 0,
+   "pendingApi": [],
+   "apiDurations": [
+    {
+     "u": "/api/update/version",
+     "ms": 34,
+     "status": "body"
+    },
+    {
+     "u": "/api/notifications/feed?limit=60",
+     "ms": 4599,
+     "status": "body"
+    },
+    {
+     "u": "/api/market",
+     "ms": 4722,
+     "status": "body"
+    },
+    {
+     "u": "/api/selection/portfolio",
+     "ms": 4589,
+     "status": "body"
+    },
+    {
+     "u": "/api/funnel",
+     "ms": 5366,
+     "status": "body"
+    },
+    {
+     "u": "/api/screener",
+     "ms": 4613,
+     "status": "body"
+    }
+   ],
+   "atS": 30
+  },
+  {
+   "hash": "#/master",
+   "elements": 338,
+   "chars": 1702,
+   "head": "ب ترمینال بورس FTS v2.1 فضای تحلیل وضعیت بازار تابلوخوانی تکنیکال بنیادی غربالگری FTS استراتژی FTS درخت استراتژی سرمایه و دارایی مدیریت پرتفوی دیده‌بان بازار ⚙ admin خروج ⎋ 🚀 آپدی",
+   "spinner": true,
+   "testids": {
+    "fts-funnel-workspace": 1,
+    "funnel-counts": 6,
+    "funnel-count-pass": 1,
+    "master-open-funnel": 0,
+    "funnel-chain-row": 0,
+    "master-breadcrumb": 0,
+    "tape-row": 0,
+    "treemap-cell": 0,
+    "fts-screen-row": 0
+   },
+   "canvas": 0,
+   "pendingApi": [],
+   "apiDurations": [
+    {
+     "u": "/api/update/version",
+     "ms": 34,
+     "status": "body"
+    },
+    {
+     "u": "/api/notifications/feed?limit=60",
+     "ms": 4599,
+     "status": "body"
+    },
+    {
+     "u": "/api/market",
+     "ms": 4722,
+     "status": "body"
+    },
+    {
+     "u": "/api/selection/portfolio",
+     "ms": 4589,
+     "status": "body"
+    },
+    {
+     "u": "/api/funnel",
+     "ms": 5366,
+     "status": "body"
+    },
+    {
+     "u": "/api/screener",
+     "ms": 4613,
+     "status": "body"
+    }
+   ],
+   "atS": 45
+  }
+ ]
+}
