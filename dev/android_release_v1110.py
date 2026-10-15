@@ -494,6 +494,21 @@ chk("not_valid_before_utc.isoformat()" not in _cert_tool
     and "def _validity(" in _cert_tool and "not_valid_before" in _cert_tool,
     "A94-ب خوانندهٔ گواهی تاریخِ اعتبار را ازِ helperِ نسخه‌تحمل‌پذیر می‌خواند")
 
+# ── A95 هدفِ برچسبِ ریلیزِ اندروید ───────────────────────────────────────────
+# رانِ ۳۸۸۱۴۳۵۵۶۴۸ همه‌چیز را سبز رد کرد (امضا، گواهی، کلیدِ عمومی، دروازۀ
+# انتشار) و درِ `gh release create` با سه خطای GitHub مرد:
+# «tag_name is not a valid tag» / «Published releases must have a valid tag» /
+# «Release.target_commitish is invalid». علت: `--target $GITHUB_SHA` یکِ commitِ
+# مخزنِ *خصوصیِ سورس* را به مخزنِ *عمومیِ توزیع* می‌داد که آنجا وجود ندارد.
+# هیچ‌کدام از آن سه پیام «گواهی بد است» را نمی‌گفت، پس سنسور نباید طوری بنویسد
+# که انگار یافتهٔ امنیتی است.
+_pub_step = step_body("Publish Android release")
+_pub_cmd = next((l for l in _pub_step.splitlines() if 'gh release create "$TAG"' in l), "")
+chk(bool(_pub_cmd) and "--target" not in _pub_cmd,
+    "A95 ریلیزِ اندروید برچسب را درِ همان مخزنِ مقصد می‌سازد، نه رویِ commitِ مخزنِ سورس")
+chk("source commit: $GITHUB_SHA" in _pub_step,
+    "A95-ب شناسۀ واقعیِ سورس درِ متنِ ریلیز ثبت می‌شود (ردیابی بی‌refِ بی‌وجود)")
+
 # ── A73..A75 سنسورِ صفحۀ ۴۰۴ درِ کاوشگرِ viewport ────────────────────────────
 # نسخهٔ پیشین با گشتنِ `/پیدا نشد|۴۰|404/` درِ متنِ body می‌گشت: «۴۰» درونِ
 # قیمت‌ها هم صدا می‌خورد، پس ۹ پروندۀ واقعی ۴۰۴ خوانده می‌شدند و خودِ صفحۀ

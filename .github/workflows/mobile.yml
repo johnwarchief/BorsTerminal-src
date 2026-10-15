@@ -511,8 +511,16 @@ jobs:
           # نمی‌خواند، پس این ریلیز هیچ asset ویندوزی و هیچ latest.json را
           # لمس نمی‌کند.
           TAG="android-$BORS_VERSION_NAME"
+          # بی‌`--target`: ریلیز درِ مخزنِ *عمومیِ* توزیع ساخته می‌شود و برچسب هم
+          # همان‌جا ایجاد می‌شود؛ `--target $GITHUB_SHA` آن SHA را می‌خواست که فقط درِ
+          # مخزنِ خصوصیِ سورس وجود دارد ⇒ GitHub سه خطا می‌داد و هیچ‌کدام معنایِ
+          # «گواهی بد است» نداشت:
+          #   tag_name is not a valid tag / Published releases must have a valid tag
+          #   / Release.target_commitish is invalid
+          # پس برچسب رویِ branch پیش‌فرضِ همان مخزنِ مقصد می‌نشیند و شناسۀ واقعیِ
+          # سورس درِ notes ثبت می‌شود (ردیابی با متن، نه با refِ بی‌وجود).
           DOWNLOAD="https://github.com/$PUBLISH_REPO/releases/download/$TAG/bors-terminal-android-$BORS_VERSION_NAME.apk"
-          gh release create "$TAG" $PRERELEASE_FLAG --repo "$PUBLISH_REPO" --target "$GITHUB_SHA"             --title "BorsTerminal Android $BORS_VERSION_NAME — نسخۀ امضاشدۀ رسمی"             --notes "نسخۀ اندروید (بستۀ تجمیعی، نه per-fix). امضا با کلیدِ انتشارِ پروژه، نه debug keystore.
+          gh release create "$TAG" $PRERELEASE_FLAG --repo "$PUBLISH_REPO"             --title "BorsTerminal Android $BORS_VERSION_NAME — نسخۀ امضاشدۀ رسمی"             --notes "نسخۀ اندروید (بستۀ تجمیعی، نه per-fix). امضا با کلیدِ انتشارِ پروژه، نه debug keystore.
 
           نصب: $DOWNLOAD
           sha256: $SUM · $SIZE بایت
