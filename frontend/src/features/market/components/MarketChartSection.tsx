@@ -28,9 +28,13 @@ import { TONE_CLASS, toneOf } from '../lib/tones';
 const NnChart = lazy(() => import('@features/technical/nahayatnegar/components/KLineChartWrapper'));
 
 // ارتفاعِ میزبان = کفِ ارتفاعِ خودِ موتور چارت (`.nahayat-negar-container` با
-// `min-height:520px`). با ۴۲۰px، ۱۰۲pxِ پایینِ چارت درِ میزبانِ `overflow-hidden`
-// بریده می‌شد و هیچ اسکرولی به آن نمی‌رسید (سنجشِ ۱۳۶۶×۷۶۸: lost=102px).
-const CHART_H = 'h-[520px] w-full';
+// `min-height:520px`) **به‌علاوۀِ ردیفِ نوارِ ابزار** (`.nn-top-toolbar` با
+// `min-height:40px` — ازِ همانِ دوری که نوارِ ابزار wrap شد تا ۱۰ کنترل درِ
+// ۹۷۶pxِ یکِ ردیف له نشوند). باِ `h-[520px]` خودِ نوار ۴۰pxِ پایینِ چارت را درِ
+// `overflow-hidden` می‌برید و هیچِ اسکرولی به آن نمی‌رسید
+// (سنجشِ ۱۳۶۶×۷۶۸: unreachable=2، hiddenPx=40 رویِ `div.nn-chart-body` وِ
+// `aside.nn-left-toolbar`). باِ ۵۶۰px هرِ دوِ قطعه درِ میزبان جا می‌شوند.
+const CHART_H = 'h-[calc(520px+2.5rem)] w-full';
 
 export function MarketChartSection({ initialSymbol = 'فولاد' }: { initialSymbol?: string }) {
   const [symbol, setSymbol] = useState(initialSymbol);

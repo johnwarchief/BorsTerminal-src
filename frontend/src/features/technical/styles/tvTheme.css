@@ -101,12 +101,21 @@
 .tv-workbench [data-testid='nn-chart-host'] { direction: rtl; }
 .tv-workbench [data-testid='nn-chart-host'] .nn-chart-body { direction: ltr !important; }
 .tv-workbench [data-testid='nn-chart-host'] .nahayat-negar-container > * { min-width: 0; }
+/*
+ * نوارِ ابزارِ چارت هیچ‌وقت مجبور به تک‌سطری نیست: درِ ۱۳۶۶×۷۶۸ نوزدهِ کنترل
+ * ~۱۵۵۳px عرض می‌خواهند درِ ~۷۲۰px. «nowrap + شُrink» آن‌ها را له می‌کرد و
+ * برچسب‌ها رویِ هم می‌افتادند (سنجش: ۱۰ کنترلِ سرریز، ۷ کنترلِ گیرِ کلیک).
+ * این‌جا فقطِ «nowrap»ِ اجباری برداشته شد (`flex: 0 1 auto` برایِ *گروه‌ها* لازم
+ * است تا درِ عرضِ سطرِ خودشان جا شوند وِ داخلشان سطرِپذیر شوند؛ دکمه‌هایِ leaf
+ * درِ nahayatNegarStyles.css باِ `flex-shrink:0 !important` ازِ له‌شدن محافظت
+ * می‌شوند، چون درِ رقابتِ specificity باِ اینِ قانونِ (۰,۳,۰) جایی ندارند)؛
+ * `overflow: visible` عمداً مانده تاِ منوهایِ کشویی درِ نوارِ ابزار بریده نشوند.
+ */
 .tv-workbench [data-testid='nn-chart-host'] header,
 .tv-workbench [data-testid='nn-chart-host'] nav,
 .tv-workbench [data-testid='nn-chart-host'] [class*='toolbar'],
 .tv-workbench [data-testid='nn-chart-host'] [class*='Toolbar'] {
   overflow: visible !important;
-  flex-wrap: nowrap !important;
   min-width: 0 !important;
 }
 .tv-workbench [data-testid='nn-chart-host'] [class*='toolbar'] > *,

@@ -58,6 +58,23 @@
   max-width: 100% !important;
 }
 
+/*
+ * ارتفاع میز کار = باقیماندهٔ viewport، نه یک عدد ثابتِ dvh.
+ * قبلاً `.tv-workbench` قدِ خودش را `calc(100dvh - 3rem)` می‌گرفت (یعنی فقط
+ * نوارِ ۳۶ پیکسلیِ بالا را می‌دید)، ولی «نوارِ نماد» داخلِ جریانِ `.app-content`
+ * است و قدش با flex-wrap عوض می‌شود (سنجشِ ۱۳۶۶×۷۶۸: ۳۸px بدونِ داورِ نماد،
+ * ۶۵px با داورِ باز) ⇒ پایینِ چارت ۳۳px بیرونِ صفحه می‌رفت.
+ * با min-height:0 خودِ flex قدِ باقیمانده را دقیق می‌دهد؛ هیچ عددی لازم نیست.
+ * این قاعده فقط در همین تب اثر می‌گذارد (همان selectorِ :has بالا).
+ */
+.app-main:has(.tv-workbench),
+.panel-in:has(.tv-workbench) {
+  min-height: 0;
+}
+.panel-in:has(.tv-workbench) {
+  height: 100%;
+}
+
 .nahayat-negar-container:fullscreen,
 .nahayat-negar-container:-webkit-full-screen {
   width: 100vw;
@@ -68,6 +85,15 @@
 }
 
 /* ================= نوار ابزار بالا (TOP TOOLBAR) ================= */
+/*
+ * سطرپذیریِ عمدی: نوزدهِ کنترلِ اینِ نوار درِ ۱۳۶۶×۷۶۸ حدودِ ۱۵۵۳px عرض
+ * می‌خواهند درِ ~۷۲۰–۹۷۶px. پیش‌تر باِ «nowrap + flex-shrink» له می‌شدند؛
+ * سنجشِ واقعی (پیش ازِ اینِ اصلاح): ۱۰ برچسب بیرونِ دکمهٔ خودش می‌زد و
+ * ۷ کنترل باِ elementFromPoint گیرِ کلیک بودند. باِ سطرِ دوم، هیچِ کنترلی
+ * نه بریده می‌شود نه پشتِ اسکرولِ نامرئیِ افقی می‌ماند.
+ * قدِ نوارauto می‌شود وِ چارت (flex-1) دقیقاً بهِ همانِ اندازه کوتاه‌تر می‌شود؛
+ * درِ عرض‌هایِ بزرگ‌تر که محتوا درِ یکِ سطرِ ۴۰ پیکسلی جا می‌شود، همانِ سطرِ تک می‌ماند.
+ */
 .nn-top-toolbar {
   display: flex;
   align-items: center;
@@ -75,10 +101,11 @@
   width: 100%;
   max-width: 100%;
   min-width: 0;
-  height: 40px;
+  height: auto;
   min-height: 40px;
-  max-height: 40px;
+  max-height: none;
   flex-shrink: 0;
+  flex-wrap: wrap;
   overflow-x: auto;
   overflow-y: hidden;
   white-space: nowrap;
@@ -86,7 +113,7 @@
   background-color: var(--nn-bg-secondary);
   border-bottom: 1px solid var(--nn-border);
   padding: 0 8px;
-  gap: 6px;
+  gap: 2px 6px;
   z-index: 20;
 }
 
@@ -98,6 +125,19 @@
   display: flex;
   align-items: center;
   gap: 4px;
+  /* گروه‌ها هم سطرپذیرند و هم کوچک نمی‌شوند: برچسبِ «نمایِ بازدهی» وِ بجِ نماد
+     نباید ازِ جعبهٔ خودشان بیرون بزنند رویِ دکمهٔ کناری (سنجشِ پیشین: ۴۲px) */
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.nn-top-toolbar .nn-btn,
+.nn-top-toolbar .nn-symbol-badge,
+.nn-top-toolbar .nn-separator {
+  /* !important عمدی است: tvTheme.css باِ specificity (۰,۳,۰) رویِ هرِ فرزندِ
+     «toolbar» `flex: 0 1 auto` می‌گذارد وِ بدونِ اینِ اولویت، دکمه‌ها دوباره
+     له می‌شوند (همانِ ایرادِ سنجش‌شدۀِ ۱۳۶۶×۷۶۸) */
+  flex-shrink: 0 !important;
 }
 
 .nn-separator {
