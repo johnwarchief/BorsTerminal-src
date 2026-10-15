@@ -317,6 +317,24 @@ jobs:
             echo "APK ریلیز debuggable است؛ نسخۀ رسمی هرگز نباید باشد" >&2; exit 1
           fi
           echo "== signing =="
+          # سیاستِ شبکه درِ AGP 8 به‌صورت فایلِ res/xml/* درِ APK نمی‌ماند (درِ
+          # resources.arsc درون‌خطی می‌شود). بی‌این سطر، «res/xml خالی است» به
+          # حسابِ نبودِ network_security_config گذاشته می‌شود — دامِ همین دور.
+          python3 - "$APK" <<'PY'
+          import sys, zipfile
+          z = zipfile.ZipFile(sys.argv[1])
+          arsc = z.read("resources.arsc")
+          if b"network_security_config" not in arsc:
+              print("network_security_config درِ resources.arsc نیست ⇒ بستۀ امنیتیِ شبکه بیلد نشده", file=sys.stderr)
+              sys.exit(1)
+          pub = [n for n in z.namelist() if n.startswith("assets/public/") and n.endswith(".js")]
+          bad = [n for n in pub if any(k in z.read(n).decode("utf-8", "replace")
+                             for k in ("bors123", "DEFAULT_PASS", "DEFAULT_USER"))]
+          if bad:
+              print("اعتبارنامۀ ثابت درِ باندلِ APK: " + ",".join(bad[:3]), file=sys.stderr)
+              sys.exit(1)
+          print("packaged: network_security_config درِ resources.arsc · %d فایل js بی‌اعتبارنامۀ ثابت" % len(pub))
+          PY
           SUM=$(sha256sum "$APK" | cut -d' ' -f1); SIZE=$(stat -c '%s' "$APK")
           echo "artifact: $APK · $SIZE بایت · sha256 $SUM"
           SIGNED=no; CERT=namoloom

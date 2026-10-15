@@ -429,10 +429,14 @@ chk('step "webview-$LABEL-a11y" NOT_VERIFIED "درختِ uiautomator مالِ ق
     "A78 قفلِ صفحه به‌حسابِ اپ FAIL نمی‌شود؛ علتش صریحاً NOT_VERIFIED است")
 chk(EMU.count("step anr FAIL") == 1 and "\nfi\n  step anr FAIL" not in EMU,
     "A79 رأیِ ANR یک شاخۀ شرطی است، نه یک خطِ یتیمِ بعدِ fi (رانِ پیشین همیشه FAIL می‌داد)")
+_build2 = step_body("Validate the release artifact (aapt2 + apksigner)")
 tool = read("tools/apk_cert_fingerprint.py") or ""
 chk("SCHEME_IDS" not in tool and "APK Sig Block 42" in tool
     and '"SIGNED-UNVERIFIED"' in tool and '"UNSIGNED"' in tool,
     "A80 ابزارِ گواهی جفت‌ها را با ساختار می‌شناسد (نه جدولِ id ازِ حافظه) و بی‌شواهد «رسمی» نمی‌گوید")
+chk("resources.arsc" in _build2 and "network_security_config" in _build2
+    and "assets/public/" in _build2,
+    "A81 خودِ APKِ بیلدشده می‌خواند: سیاستِ شبکه درِ resources.arsc و بی‌اعتبارنامۀ ثابت درِ assets/public")
 
 print("android_release_v1110: %d passed / %d failed" % (PASS, FAIL))
 sys.exit(1 if FAIL else 0)
