@@ -153,8 +153,11 @@ a = Analysis(
                    # ایستیک‌اسکن آن را نمی‌بیند. بی‌این خط EXE روی اولین
                    # /api/execution/status می‌شکند — همان مسیرِی که
                    # frontend/src/features/portfolio/lib/orderClient.ts:147 صدا می‌زند.
-                   # خودِ execution_contract/mock/service/timing/latency/ledger در
-                   # سرِ api/execution.py سطح-بال import‌اند، پس اسکن ایستا می‌بیندشان.
+                   # خودِ execution_contract/mock/service/timing/ledger در
+                   # سرِ api/execution.py سطح-بال import‌اند، پس اسکن ایستا می‌بیندشان؛
+                   # execution_latency تنها مصرف‌کنندش dev/execution_latency_v1.py است
+                   # (گیتِ سنجشِ تأخیرِ مسیر، بی‌کارگزاری) و درِ EXE هیچ راهِ اجرایی سراغش
+                   # نمی‌رود — بیلدِ منجمدِ ۱۴۰۵-۰۷-۲۳ این را باِ PYZ-00.toc سنجید.
                    'api.execution',
                    # آداپتورِ EasyTrader (مأموریتِ ۱۴۰۵-۰۷-۲۴): سطح-بال است و اسکن
                    # ایستا باید پیدایش کند — ولی قاعدۀ مخزن این است که چیزی که

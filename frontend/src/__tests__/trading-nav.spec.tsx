@@ -1,10 +1,11 @@
 // آزمونِ مسیرِ «معامله» (مأموریتِ ۱۴۰۵-۰۷-۲۳، بندِ ۲)
 //
 // سه چیز را می‌سنجد، نه رندرِ دکمه: (۱) سرخطی/اجرایِ سفارش وِ رباتِ معاملاتی ازِ
-// رسیدۀِ ناوبریِ اصلی باز می‌شوند — پیش ازِ اینِ دور `ExecutionPanel` هیچ mountی درِ
-// برنامه نداشت؛ (۲) همانِ پنل‌هایِ موجود مصرف می‌شوند، نه یکِ کپیِ موازی؛
-// (۳) بازِ کردنِ صفحه وِ عوضِ کردنِ تب هیچِ درخواستِ ارسالیِ نمی‌سازد — کاغذی
-// پیش‌فرضِ خودِ سرویس است وِ اینِ صفحه فقط نشان می‌دهد.
+// رسیدۀِ ناوبریِ اصلی باز می‌شوند — پیش ازِ اینِ دورِ دوِ پنل مقصدِ مستقلِ خودشان را
+// نداشتند (سرخطی فقط درِ دفترچۀِ نمادِ «دیده‌بان بازار»، ربات فقط درِ انتهایِ پرتفوی)؛
+// (۲) همانِ پنل‌هایِ موجود مصرف می‌شوند، نه یکِ کپیِ موازی؛
+// (۳) بازِ کردنِ صفحه وِ عوضِ کردنِ تب هیچِ درخواستِ سفارش یا اجرایِ ربات نمی‌سازد —
+// کاغذی پیش‌فرضِ خودِ سرویس است وِ اینِ صفحه فقط نشان می‌دهد.
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -105,13 +106,23 @@ describe('پنل‌ها بی‌کپیِ موازی مصرف می‌شوند', ()
   });
 });
 
-describe('هیچِ ارسالی ازِ اینِ صفحه نمی‌رود', () => {
-  it('نه درِ mount وِ نه باِ عوضِ کردنِ تب، هیچِ POST/PUT/DELETE نمی‌شود', async () => {
+describe('هیچِ سفارش یا اجرایِ رباتی ازِ اینِ صفحه نمی‌رود', () => {
+  // «هیچِ POST» مدعا نیست وِ نادرست هم بود: خودِ برنامه POST /api/funnel می‌زند
+  // (queryFn درِ features/master/api/useFtsFunnel.ts:163) وِ api/funnel.py هیچِ
+  // نوشتگی درِ بانک ندارد.
+  // داوریِ درست وِ ضدِواگرایی: هیچِ درخواستِ غیرِ خواندنی درِ قلمروِ /api/execution
+  // وِ /api/bot صدازده نمی‌شود. قلمرو نه فهرستِ مسیرها — اگر نسخهٔ بعد راهِ
+  // سفارشِ تازه‌ای اضافه کند، همینِ قاعدَه می‌گیرتش (فهرستِ دستی این کار را نمی‌کرد؛
+  // dispatch/prepare/preflight/probe/halt/resume/session/reconcile/refresh/run/
+  // account-reset همگی زیرِ همینِ دوِ قلمروند — سنجیده درِ api/execution.py وِ api/bot.py).
+  const MUTATION_DOMAINS = ['/api/execution', '/api/bot'];
+  it('نه درِ mount وِ نه باِ عوضِ کردنِ تب، هیچِ نوشتگی درِ قلمروِ سفارش/ربات نمی‌رود', async () => {
     mount();
     await waitFor(() => expect(screen.getByTestId('watch-order-panel')).toBeInTheDocument());
     fireEvent.click(screen.getByTestId('trade-tab-bot'));
     await waitFor(() => expect(screen.getByTestId('bot-panel')).toBeInTheDocument());
-    const writes = calls.filter((c) => c.method !== 'GET');
-    expect(writes.map((c) => `${c.method} ${c.u}`)).toEqual([]);
+    const dangerous = calls.filter(
+      (c) => c.method !== 'GET' && MUTATION_DOMAINS.some((d) => c.u.includes(d)));
+    expect(dangerous.map((c) => `${c.method} ${c.u}`)).toEqual([]);
   });
 });

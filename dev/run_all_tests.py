@@ -541,15 +541,29 @@ bad = []
 uncounted = []
 
 
-def run(argv, label):
+#: بودژۀ زمانیِ هر سوئیت. ۶۰۰ ثانیه برایِ همه کافی بود تا اینکه سنجیده شد:
+#: گاردِ تمام‌سطحیِ پاریتی رویِ ماشینِ بی‌رقابت ۴۸۱ ثانیه طول کشید (rc=0،
+#: ۷ سبز / ۰ قرمز، ۹۲۲ نماد) — یعنی تنها ۲۰٪ فاصلۀ تنفس داشت و درِ همانِ دوری
+#: که باِ یکِ build وِ سنجشِ مرورگر هم‌زمان بود، از ۶۰۰ گذشت و «FAIL» گرفت بی‌آنکه
+#: کد ایرادی داشته باشد. بودژۀِ بیشتر داوریِ نرم‌تر نیست: سوئیت همچنان باید rc=0
+#: بدهد وِ شمارۀ واگرایی صفر باشد، فقط فرصت می‌گیرد تا آن را ثابت کند.
+LONG_TIMEOUTS = {
+    'dev/fts_engine_paths_parity_v1076.py': 1200,
+}
+
+
+def run(argv, label, timeout=600):
     try:
         r = subprocess.run(argv, capture_output=True, text=True, encoding='utf-8',
-                           errors='replace', timeout=600, env=env, shell=False)
+                           errors='replace', timeout=timeout, env=env, shell=False)
     except FileNotFoundError:
         print('  SKIP %-40s (%s not found)' % (label, argv[0]))
         return
     except Exception as ex:
-        print('  FAIL %-40s (%s)' % (label, str(ex)[:60]))
+        # [:60] علت را می‌بلعید: پیام TimeoutExpired باِ نامِ فرمان شروع می‌شود، پس
+        # «timed out after 600 seconds» هیچ‌وقت چاپ نمی‌شد و قرمزیِ سوئیتِ سالمِ
+        # کدِ سنگین قابلِ تفکیک نبود (ممیزیِ ۱۴۰۵-۰۷-۲۳).
+        print('  FAIL %-40s (%s)' % (label, str(ex)[:180]))
         bad.append(label)
         return
     txt = (r.stdout or '') + (r.stderr or '')
@@ -573,7 +587,8 @@ def run(argv, label):
 # Data-Lifecycle: برخی سوئیت‌ها آرگومان می‌گیرند (مثلاً --selftest)؛
 # script.split() مسیر و آرگومان‌ها را از هم جدا می‌کند.
 for script, label in SUITES:
-    run([sys.executable] + [a.replace('/', os.sep) for a in script.split()], label)
+    run([sys.executable] + [a.replace('/', os.sep) for a in script.split()], label,
+        LONG_TIMEOUTS.get(script, 600))
 if os.path.exists(FIXTURE_GEN):
     run([sys.executable, FIXTURE_GEN.replace('/', os.sep)], 'fixture: fts_v10 payloads')
 for script, label in JS_SUITES:
