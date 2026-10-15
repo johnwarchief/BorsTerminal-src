@@ -92,10 +92,8 @@ gate = WF.split("Publish gate status")[1] if "Publish gate status" in WF else ""
 publish = WF.split("Publish Android release")[1] if "Publish Android release" in WF else ""
 chk("BLOCKED" in gate and "BLOCKED" in publish,
     "A06 هر دو دروازه پیامِ BLOCKEDِ صریح دارند (بی‌سکوتِ قرمز)")
-rel_asset = re.findall(r'APK=([^\n]+)', publish)
-chk(any("apk/release/app-release.apk" in a for a in rel_asset) and
-    not any("apk/debug" in a for a in rel_asset),
-    "A07 assetِ ریلیز = app-release.apk؛ app-debug.apk هرگز منتشر نمی‌شود")
+chk("outputs/apk/release" in publish and "outputs/apk/debug" not in publish,
+    "A07 ریلیز تنها ازِ پوشۀ outputs/apk/release برداشته می‌شود؛ app-debug.apk هرگز منتشر نمی‌شود")
 chk("debug.keystore" in GR and "GradleException" in GR,
     "A08 Gradle خودِ کلیدِ debug را با استثنا رد می‌کند (دفاعِ دوم، بی‌CI)")
 ksblock = GR[GR.find("borsKsProps"):GR.find("android {")] if "borsKsProps" in GR else ""
@@ -184,6 +182,12 @@ for rel in ("frontend/android/app/src/main/AndroidManifest.xml",
         chk(False, "A38 XMLِ well-formed نیست (%s): %s" % (rel, e))
 chk("--live-reload" not in (NS or ""),
     "A39 هیچ `--` درِ کامنتِ network_security_config نمی‌ماند (دلیلِ شکستِ بیلدِ اول)")
+# A40/A41 — بیلدِ دومِ CI این را گرفت: بی‌کلید، AGP نامِ خروجی را
+# app-release-unsigned.apk می‌گذارد؛ هر مسیرِ سختِ «app-release.apk» دروازۀ
+# انتشار را با «ساخته نشد» می‌بست، نه با دلیلِ درست.
+chk("outputs/apk/release/*.apk" in WF and "ls -1 frontend/android/app/build/outputs/apk/release" in WF,
+    "A40 خودۀ release با glob پیدا می‌شود، نه با نامِ ثابت")
+chk("*unsigned*" in publish, "A41 اگر نامِ فایل unsigned باشد، انتشار جداگانه بسته می‌شود")
 
 print("android_release_v1110: %d passed / %d failed" % (PASS, FAIL))
 sys.exit(1 if FAIL else 0)

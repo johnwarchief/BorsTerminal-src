@@ -249,8 +249,8 @@ jobs:
         run: |
           set -e
           MAN=$(find frontend/android/app/build/intermediates -name AndroidManifest.xml \
-                -path '*merged_manifest*' | head -1)
-          if [ -z "$MAN" ]; then echo "merged AndroidManifest پیدا نشد" >&2; exit 1; fi
+                -path '*merged_manifest*' -path '*elease*' | head -1)
+          if [ -z "$MAN" ]; then echo "merged AndroidManifest نسخۀ release پیدا نشد" >&2; exit 1; fi
           VN=$(grep -o 'android:versionName="[^"]*"' "$MAN" | head -1 | sed 's/.*="\(.*\)"/\1/')
           VC=$(grep -o 'android:versionCode="[^"]*"' "$MAN" | head -1 | sed 's/.*="\(.*\)"/\1/')
           echo "manifest: versionName=$VN versionCode=$VC ($MAN)"
@@ -266,8 +266,13 @@ jobs:
         id: relcheck
         run: |
           set -e
-          APK=frontend/android/app/build/outputs/apk/release/app-release.apk
-          test -s "$APK" || { echo "app-release.apk ساخته نشد" >&2; exit 1; }
+          # نامِ فایل خودش مدرک است: بی‌کلید، AGP فایلِ
+          # «app-release-unsigned.apk» می‌سازد و با کلید «app-release.apk».
+          # پس نه فرضِ سختِ نام، نه باورِ Gradle: فایلِ واقعیِ خروجی پیدا و
+          # سپس با aapt2/apksigner خوانده می‌شود.
+          APK=$(ls -1 frontend/android/app/build/outputs/apk/release/*.apk 2>/dev/null | head -1)
+          if [ -z "$APK" ]; then echo "هیچ APK درِ outputs/apk/release ساخته نشد" >&2; exit 1; fi
+          echo "release artifact: $APK"
           BT=$(ls -d "$ANDROID_HOME"/build-tools/* 2>/dev/null | sort -V | tail -1)
           if [ -z "$BT" ]; then echo "build-tools درِ runner نیست" >&2; exit 1; fi
           echo "== badging =="
@@ -308,7 +313,7 @@ jobs:
         with:
           name: bors-mobile-candidate-${{ github.sha }}
           path: |
-            frontend/android/app/build/outputs/apk/release/app-release.apk
+            frontend/android/app/build/outputs/apk/release/*.apk
             frontend/android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
 
@@ -397,7 +402,11 @@ jobs:
           # موبایل قابلِ ردیابی به کدِ دسکتاپ نیست
           git fetch -q origin main
           BASE=$(git merge-base origin/main "$GITHUB_SHA")
-          APK=frontend/android/app/build/outputs/apk/release/app-release.apk
+          APK=$(ls -1 frontend/android/app/build/outputs/apk/release/*.apk 2>/dev/null | head -1)
+          if [ -z "$APK" ]; then echo "هیچ APK ریلیزی برایِ انتشار نیست" >&2; exit 1; fi
+          case "$(basename "$APK")" in
+            *unsigned*) echo "BLOCKED: فایلِ پیدا شده بی‌امضاست ($(basename "$APK"))؛ منتشر نمی‌شود." >&2; exit 1;;
+          esac
           SUM=$(sha256sum "$APK" | cut -d' ' -f1)
           SIZE=$(stat -c '%s' "$APK")
           # tag مستقلِ اندروید: «android-<version>» هیچ‌وقت با برچسبِ دسکتاپ
