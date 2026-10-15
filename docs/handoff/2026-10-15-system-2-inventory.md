@@ -33,8 +33,8 @@
 | مسیر / شاخه | نقش | وضعیتِ انتشار |
 |---|---|---|
 | `BorsTerminal-src` → `mission/fts-indicator-engineering` | FTS + تعدیل + market-status + perf | منتشر شد (`ff6b2fb`) |
-| `.worktrees/ui-audit-system-2` → `mission/ui-audit-system-2-2026-10-15` | ممیزیِ UI (درِ میانه) | منتشر شد (`dd065c1`) |
-| `.worktrees/handoff-system-2` → `handoff/system-2/inventory-2026-10-15` | همینِ سند، بریدۀِ `ff6b2fb` | منتشر شد |
+| `.worktrees/ui-audit-system-2` → `mission/ui-audit-system-2-2026-10-15` | ممیزیِ UI — **بسته‌شدہ درِ دورِ دوم (§۱۰)** | منتشر شد (`dd065c1` → `3feb525`) |
+| `.worktrees/handoff-system-2` → `handoff/system-2/inventory-2026-10-15` | همینِ سند، بریدۀِ `ff6b2fb` | منتشر شد (SHA درِ §۱۰) |
 | `main` (محلی) | — | **دست‌نخورده**؛ باِ `origin/main` هم‌سنج نیست (§۵) |
 | `origin/mission/easytrader-adapter-2026-10-15`, `origin/handoff/system-1/*`, `origin/mission/ui-audit-system-1-2026-10-15`, `origin/feat/android` | کارِ سیستم/ایجنتِ دیگر | فقط *دیدہ* شد؛ واردش نشدم |
 
@@ -89,9 +89,9 @@
 
 | فیلد | محتوا |
 |---|---|
-| وضعیت | **IN_PROGRESS** |
+| وضعیت | **PARTIAL — رأیِ خودِ سندِ ممیزی (§۱۲ِ `docs/ui-audit/2026-10-15-system-2.md`)** |
 | Branch | `mission/ui-audit-system-2-2026-10-15` |
-| HEAD | `dd065c1` (کامیت‌ها: `9811104` اصلاحِ پوسته، `dd065c1` هارنس‌ها + شواهد) |
+| HEAD | `3feb525` (سی‌وسه‌کامیتِ بعدِ `dd065c1`: ۱۱ اصلاحِ UI، هارنس‌هایِ تاز، جاروبِ حالتِ واقعی، سندِ §۱ تا §۱۲) |
 | Remote | `origin/mission/ui-audit-system-2-2026-10-15` (تازةِ منتشرشده، upstream بند شد) |
 | تغییرات | `AppShell.tsx` (`h-dvh`)، `Topbar.tsx`/`SymbolContextStrip.tsx` (`shrink-0`، خارج ازِ چسبان)، `MarketSectionNav.tsx` (`--chrome-h` + تک‌ردیفه + scroll‑margin)، `MarketChartSection.tsx` (میزبانِ ۵۲۰px)، `index.css` (توکن) |
 | تست‌ها | **رویِ همینِ ۶ فایلِ تغییریافته**: glyph guard ۴/۴ · `npx tsc -b` exit 0 · `npx vitest run` رویِ ۵ فایلِ مرتبط = **۵ فایل / ۵۵ آزمون سبز** · `npm run build` موفق. `npx vitest run`ِ کامل وِ `dev/run_all_tests.py` **بعدِ اینِ تغییرات اجرا نشده‌اند** ⇒ هرِ ادعایِ سبزِ کامل بهِ `165bdca` برمی‌گردد و **STALE** است |
@@ -188,7 +188,7 @@
 | `python dev/run_all_tests.py` | `165bdca` | ۲۰۲۶‑۱۰‑۱۵ | ۱۲۶ سطرِ `rc=0`، ALL SUITES PASSED |
 | `npx eslint .` | `165bdca` | ۲۰۲۶‑۱۰‑۱۵ | **FAIL ازِ پیشِ اینِ مأموریت** — ۳ خطا: `engine-klinecharts-adapter.spec.ts:21` (prefer‑const)، `funnel-preset-switch.spec.tsx:1` (ban‑ts‑comment)، `technical-settings-effectiveness.spec.tsx:114` (no‑explicit‑any)؛ درِ §۸ِ گزارشِ عملکرد مستند |
 | glyph + tsc + ۵۵ آزمونِ هدفمند + build | `dd065c1` | ۲۰۲۶‑۱۰‑۱۵ | همۀ سبز (این تنهاِ گیتِ معتبرِ **بعدِ** اصلاحِ پوسته است) |
-| suiteِ کاملِ JS/PY | `dd065c1` | — | **NOT RUN** — وِ چونِ ۶ فایلِ frontend ازِ `165bdca` عوض شده، شمارشِ بالا برایِ اینِ کد **STALE** خوانده می‌شود، نه سبز |
+| suiteِ کاملِ JS/PY | `3feb525` | ۲۰۲۶‑۱۰‑۱۵ | `npx tsc -b` rc=0 · `npx vitest run` rc=0 (۱۷۱۰ سبز / ۳ skip / ۱۶۶ فایل) · `npm run build` rc=0 (14.18s) · `python dev/run_all_tests.py` **rc=1** = ۱۲۱ سبز / ۲ قرمز؛ هرِ دوِ قرمز ازِ نبودِ fixture درِ worktree وِ باِ supplying آن‌ها سبز شدند (§۱۰‑۳) |
 
 ---
 
@@ -198,7 +198,7 @@
 
 همۀ کارهایِ محلیِ منتشرشدنیِ اینِ سیستم رویِ GitHub هستند (سه شاخه، باِ upstream،
 بی‌force/merge/tag)؛ وضعیتِ واقعیِ هرِ حوزه — از جمله دوِ مأموریتِ **PARTIAL**، یکِ
-مأموریتِ **IN_PROGRESS**، وِ سه حوزۀِ **NOT_STARTED/بیرونِ اینِ سیستم** — درِ همینِ سند
+مأموریتِ **PARTIAL** (ممیزیِ UI که درِ دورِ دوم بسته شد؛ §۱۰)، وِ سه حوزۀِ **NOT_STARTED/بیرونِ اینِ سیستم** — درِ همینِ سند
 ثبت شده؛ مواردِ منتشرنشده باِ علتِ مشخص درِ §۷ هستند وِ هیچِ کارِ ناقصی برایِ سبک‌تر
 شدنِ گزارش پاک یا بازنویسی نشد.
 
@@ -207,3 +207,89 @@
 همانِ سند (گیرِ کلیکِ تنظیماتِ چارت) → ۳) suiteِ کاملِ بعدِ اصلاحِ UI → ۴) تصمیمِ
 مالک دربارهٔ آمیختنِ `api/market_status.py`/`mstat_engine.py` باِ نسخهِٔ `origin/main`
 (۲۷ فایلِ همپوشان).
+
+---
+
+## ۱۰) ممیزیِ موجودیِ دورِ دوم — ۲۰۲۶‑۱۰‑۱۵ (همۀ کارهایِ سیستمِ دوم، ازِ GitHub)
+
+سوالِ اینِ دور: «آیا هر کارِ فنیِ مفیدِ اینِ سیستم ازِ یکِ ماشینِ دیگر قابلِ دریافت است؟»
+پاسخِ کوتاه: **بله، به‌جزِ دوِ موردِ ثبت‌شده درِ §۱۰‑۵** — که یکیشان تصمیمِ مالک است.
+
+### ۱۰‑۱) آنچه درِ اینِ دور سنجیده شد (فرمان، نه حافظه)
+
+| بررسی | فرمان | نتیجه |
+|---|---|---|
+| worktreeها | `git worktree list --porcelain` | ۴: `BorsTerminal-src`، `.worktrees/ui-audit-system-2`، `.worktrees/handoff-system-2`، وِ درِ اینِ دور `.worktrees/system-2-fixtures` |
+| شاخه‌ها | `git branch` / `git branch -r` | ۵ محلی (همۀ باِ upstream) · ۳۲ remote |
+| commitهایِ بی‌push | `git fetch --all --prune` سپس `git log --branches --not --remotes --oneline` | **خالی** — هیچِ کامیتِ مرتبطی فقط درِ local نبود |
+| stash | `git stash list` | **خالی** |
+| reflog / dangling | `git reflog` + `git fsck --unreachable` | ۲ آبجکتِ dangling ازِ ۲۰۲۶‑۱۰‑۱۱ = یکِ stashِ قدیمی؛ `git diff --stat 09e8d64 afa4590` → **خالی**، یعنی هیچِ کاری درِ آنِ نبود |
+| فایل‌هایِ ignoredِ کاری | `git ls-files -o -i --exclude-standard` (بی‌node_modules/dist/pycache) | ۱۶۷ قلم: ۱۰۲ json، ۴۵ log، ۸ txt، ۶ py، ۱ js، ۱ csv — ۵۸ درِ `_audit/` وِ ۵۴ درِ `_audit/ra_probe_cache/` (طبقه‌بندی درِ §۱۰‑۴) |
+| بیرونِ مخزن | `ls ../_audit` | ۱۵ فایل (۵۶۸KB) که درِ هیچِ repoیی نبودند: ۱۳ تصویرِ `binder1_pages/` + `MS-GATE-mstat.txt` + `ms_server.log` (§۱۰‑۴/۵) |
+| فایل‌هایِ `M` | `git diff --stat` + sha256 باِ `tr -d '\r'` | هرِ دوِ باقی‌مانده **بی‌تغییرِ محتوا** (فقطِ CRLF/LF): `_audit/RA365-LEDGER-RULE-2026-10-12.csv`، `dev/fixtures/fts_v10_payloads.json` |
+
+### ۱۰‑۲) جدولِ نهاییِ موجودی
+
+| حوزۀِ کاری | شاخۀِ Remote | SHA نهایی | فایل‌ها/مستنداتِ اصلی | وضعیتِ انتشار |
+|---|---|---|---|---|
+| **Responsive UI** | `mission/ui-audit-system-2-2026-10-15` | `3feb525` | `docs/ui-audit/2026-10-15-system-2.md` (۱۲ بخش) · `…-STATUS.md` · `docs/ui-audit/img/*.png` (۳ برش) · ۸۴ فایلِ `_audit/ui/**` = ۲۲ هارنسِ js + ۶۲ شاهدِ json/txt | **PUBLISHED / DONE_VERIFIED** — رأیِ خودِ گزارش: PARTIAL (بطورِ گیتِ محیطیِ Python) |
+| **Performance** | `mission/fts-indicator-engineering` | `ff6b2fb` | `_audit/perf/PERFORMANCE_REPORT.md` · `BEFORE_AFTER.md` · ۵۹ فایلِ شاهد درِ `_audit/perf/` (BE/AFTER/BOOT/CONTEND/FE/MSTAT) · `dev/perf_output_equal_v1.py` · `dev/mstat_snapshot_cache_v1.py` · `_audit/perf/gates/*.txt` | **PUBLISHED** — باِ رأیِ PARTIALLY_IMPROVED وِ بطری‌هایِ باقی‌مانده درِ §۱۰ِ خودِ گزارش |
+| **موتورِ FTS / تکنیکال** | `mission/fts-indicator-engineering` | `ff6b2fb` | `fts_engine.py`، `api/chart.py`، `api/ma*.py`، `dev/fts_engine_*`، `docs/technical-indicators/reviewed/FTS-PHASE*.md`، ماتریس‌هایِ `_audit/RA365-PHASE*.csv` | **PUBLISHED (PARTIAL: ۴۶ UNVERIFIED / ۲۷ MISMATCH)** |
+| **موتورِ تعدیلِ canonical** | `mission/fts-indicator-engineering` **وِ** `fix/system-2-reproducible-fixtures-2026-10-15` | `ff6b2fb` · `9d3f587` | `dev/test_adjustment_engine_v1.py`، `dev/adjustment_ledger*`، `tools/phase5f_*.py`، `tools/phase6_verdict_matrix.py`، `tools/make_adjustment_witness_fixture.py`، `dev/fixtures/ra365_witness_subset.json` | **PUBLISHED وِ ازِ اینِ دور رویِ cloneِ خالی هم سبز می‌شود (۴۴/۰)** |
+| **Market Status / Binder1** | `mission/fts-indicator-engineering` | `ff6b2fb` | `frontend/src/features/market/**` (هشت بخش)، `api/market_status.py`، `mstat_engine.py`، `docs/technical-indicators/reviewed/BINDER1-*.md`، `_audit/MS-BINDER-UI-RUN.txt`، `tools/market_status_page_probe.mts` | **PUBLISHED** — به‌جزِ ۲۶ اسکرین‌شات (§۱۰‑۴) وِ ۱۳ صفحۀِ ارجاع‌داده‌شدہ که هرگز درِ مخزن نبودند (§۱۰‑۵) |
+| **تحقیقِ تطبیقِ Rahavard** | `mission/fts-indicator-engineering` | `ff6b2fb` | `docs/RAHAVARD-*.md`، `_audit/RA365-*.csv` (کامیت‌شده)، `_audit/ra365_job_fetch.js`، `_audit/ra365_adjustment_events.py` | **PUBLISHED (تجدیدِ زنده BLOCKED: نشستِ مالک لازم است)** |
+| **دستگاهِ تحویل/موجودی** | `handoff/system-2/inventory-2026-10-15` | tipِ `git ls-remote` (همینِ سند) | `docs/handoff/2026-10-15-system-2-inventory.md` | **PUBLISHED** |
+| **شاهدها وِ fixtureهایِ بازتولید** | `fix/system-2-reproducible-fixtures-2026-10-15` | `9d3f587` | `docs/handoff/2026-10-15-system-2-reproducible-fixtures.md`، `_audit/PHASE5F-P5G-RUNDIGEST.txt`، `_audit/P5G-FINAL-RC.txt`، شواهدِ maskedِ بیس‌لاین | **PUBLISHED (تازۀِ اینِ دور)** |
+
+### ۱۰‑۳) انتشارهایِ اینِ دور (قبل‌تر فقط رویِ دیسک بودند)
+
+- **۴ کامیت** درِ `fix/system-2-reproducible-fixtures-2026-10-15` (پایه `ff6b2fb`):
+  شاهدِ تعدیل + ابزارِ سازندۀِ آن، LF‑پین، رکوردِ فازِ ۵F/۵G، وِ گزارشِ بازتولید.
+- **۱۴ کامیت** درِ `mission/ui-audit-system-2-2026-10-15` ازِ `dd065c1` تاِ `3feb525`
+  (۱۱ اصلاحِ UI + هارنس + جاروبِ واقعی + سند).
+- **۲ قلم که درِ گیت نبودند وِ باید بودند** (سیاستِ `.gitignore` را نمی‌شکنند):
+  `dev/fixtures/ra365_witness_subset.json` (۴۵۹٫۹۷۵ بایت) وِ
+  `tools/make_adjustment_witness_fixture.py`.
+- **اثباتِ سبز شدن رویِ درختِ تنها ازِ GitHub**: `dev/test_adjustment_engine_v1.py` →
+  ۴۴ سبز / ۰ قرمز؛ `dev/db_housekeeping.py --selftest` باِ assetِ منتشرشده
+  (`sha256 e7df91dc…` = `market.db.meta.json`) → **PASS، rc=0**
+  (۳۳۳ ردیفِ تکراری dedupe، ۱۱٫۴۰۵ سلولِ prev‑year، integrity ok).
+
+### ۱۰‑۴) آنچه عمداً درِ GitHub نیست (دلیل + عدد)
+
+| قلم | حجم | دلیل | جایگزینِ منتشرشده |
+|---|---|---|---|
+| `_audit/ra365_ref_bars.json` وِ `ra365_product_bars*.json` | ۱۲MB + ۴×~۲۷MB | کشیدنیِ خام؛ renew نیازمندِ نشستِ احرازشدۀِ مالک (دورزدنِ احراز هویت ممنوع) | نتایجِ جدولی درِ گیت + زیرمجموعۀِ شاهدِ §۱۰‑۳ |
+| `market.db`, `market.db.lzma`, `codal.db` | ~۲۲۸MB / ۵۷–۷۹MB | دادهٔ عملیاتی + ردیف‌هایِ کاربر؛ قراردادِ ریلیز، نه مخزنِ سورس | assetِ `data-latest` + `market.db.meta.json` (digest تأیید شد) |
+| `_audit/ui/shots/*.png` (۱۶۸) وِ `_audit/MS-BINDER-SHOTS/*.png` (۲۶) | ~۲۳MB / ۵٫۹MB | `*.png` درِ `_audit/.gitignore`؛ سنگینِ مخزن | ۳ برشِ فشرده + اعدادِ قبل/بعد؛ `_audit/MS-BINDER-UI-RUN.txt` |
+| لاگ‌هایِ خامِ راه‌اندازیِ مرورگر (`_audit/PHASE5F-CAPTURE*.txt`) | ۵KB | سطرهایِ launch باِ `--user-data-dir=<پروفیلِ کاربر>` وِ pid؛ مخزن **public** است | `_audit/PHASE5F-P5G-RUNDIGEST.txt` (outcomeها، masked) |
+| `ms_server.log` بیرونِ مخزن (`Borsterminal/_audit/`) | ۵۴KB | لاگِ خامِ سرویسِ dev؛ artefactِ زمانِ اجرا | گیت‌هایِ عددی درِ `_audit/perf/gates/` وِ `_audit/ui/` |
+| `frontend/dist/**`، `node_modules`، `__pycache__` | — | خروجیِ build، قابلِ بازتولید | فرمانِ build درِ سندِ fixtureها (§۶ آنِ سند) |
+
+### ۱۰‑۵) ACTION REQUIRED (تصمیمِ مالک، نه کارِ ایجنت)
+
+۱) **سیزده صفحۀِ Binder1**: دوِ سندِ tracked تصویرهایِ `_audit/binder1_pages/p01.jpg … p13.jpg`
+    را ارجاع می‌دهند؛ آنِ فایل‌ها (۴۹۲KB) درِ **بیرونِ** مخزن بودند
+    (`Borsterminal/_audit/binder1_pages/`) وِ هیچ‌وقت درِ GitHub نبودند. کپی‌شان درِ اینِ دور
+    آماده شد وِ سپس برداشته شد: بریدۀِ سندِ یکِ شخصِ ثالث درِ مخزنِ public = تصمیمِ مالک،
+    نه تصمیمِ ممیزی. دوِ راهِ پیشنهاد: (الف) منتشر کن باِ ذکرِ مصدر، (ب) همانِ ۱۳ صفحه را
+    به‌صورتِ جدولِ متنِ فارسی درِ خودِ سند بازنویسی کن (دادهٔ خودِ ماست). تا then ارجاعِ
+    دوِ سند رویِ GitHub شکسته می‌ماند؛ فایل‌هایِ اصلی درِ دیسکِ همینِ ماشین سالم‌اند وِ
+    هیچ‌کدام جابه‌جا یا پاک نشدند.
+۲) **credentialهایِ پیش‌فرضِ خودِ مخزن**: جاروبِ `_audit/**` نشان داد ۱۳ فایلِ ازِ
+    مأموریت‌هایِ پیشین مقدارِ literal حسابِ پیش‌فرض را هارد‌کد دارند (۱۰ فایل باِ **رمز**؛
+    §۶). ریشۀِ کار درِ `frontend/src/shared/stores/authStore.ts` است که درِ همینِ مخزنِ
+    public نشسته است. پاک‌سازیِ آنِ ۱۳ فایل یا چرخشِ رمزِ پیش‌فرض تصمیمِ مالک است. درِ
+    کامیت‌هایِ اینِ دور هیچِ credential منتشر نشد (جاروبِ ۱۱۱ فایلِ دورِ UI + ۷ فایلِ
+    اینِ دور → ۰ hit؛ سطرهایِ launchِ مرورگر masked شدند).
+
+### ۱۰‑۶) رأیِ اینِ دور
+
+`WORK_INVENTORY_COMPLETE_WITH_TWO_OWNER_DECISIONS`
+
+همۀ کامیت‌هایِ سیستمِ دوم رویِ remote‌اند (`git log --branches --not --remotes` خالی)،
+هیچِ stash یا dangling commitِ دارایِ کار نیست، هرِ حوزه یکِ شاخۀِ remote باِ SHAِ
+تأییدشده دارد (§۱۰‑۲)، وِ دوِ suite‌ای که ازِ cloneِ خالی نمی‌دویدند اکنون می‌دوند
+(§۱۰‑۳). تنهاِ بقایایِ محلی: فایل‌هایِ §۱۰‑۴ (باِ دلیل) وِ دوِ موردِ §۱۰‑۵ (باِ تصمیمِ
+مالک). بی‌merge، بی‌tag، بی‌release، بی‌force‑push، وِ بی‌دست‌زدن بهِ نسخۀِ نصبی یا
+بانکِ عملیاتیِ بازار.
