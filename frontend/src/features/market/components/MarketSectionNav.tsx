@@ -66,13 +66,17 @@ export function MarketSectionNav({
     <nav
       data-testid="market-section-nav"
       aria-label="بخش‌های وضعیت بازار"
-      className="sticky top-0 z-20 -mx-2 border-b border-border-c bg-bg-primary/95 px-2 py-1.5 backdrop-blur"
+      className="sticky top-[var(--chrome-h)] z-20 -mx-2 border-b border-border-c bg-bg-primary/95 px-2 py-1.5 backdrop-blur"
     >
-      <ul className="flex flex-wrap items-center gap-1">
+      {/* تک‌ردیفه با اسکرول افقی: با flex-wrap روی ۱۳۶۶ (و وقتی داور نماد باز است
+          و ستون محتوا ۹۵۸px می‌شود) دو خط می‌شد و ارتفاعِ چسبانِ آن نامعلوم
+          می‌شد؛ نامتحرک بودن ارتفاع، شرطِ درست‌کارکردنِ scroll-margin عنوان‌ها
+          است. دکمه‌ها پاک نمی‌شوند، فقط افقی جابه‌جا می‌شوند. */}
+      <ul className="flex flex-nowrap items-center gap-1 overflow-x-auto overscroll-x-contain scrollbar-none">
         {sections.map((s) => {
           const on = active === s.id;
           return (
-            <li key={s.id}>
+            <li key={s.id} className="shrink-0">
               <button
                 type="button"
                 id={`market-section-btn-${s.id}`}
@@ -114,7 +118,7 @@ export function SectionHeading({
     <div
       id={id}
       data-testid={`section-heading-${id}`}
-      className="flex scroll-mt-24 flex-wrap items-baseline gap-x-2 gap-y-0.5 pt-1"
+      className="flex scroll-mt-[calc(var(--chrome-h)+2.875rem)] flex-wrap items-baseline gap-x-2 gap-y-0.5 pt-1"
     >
       <h2 className="text-sm font-black text-text-primary">{title}</h2>
       <span className="num-text rounded border border-border-c bg-bg-card px-1 text-3xs text-text-muted">

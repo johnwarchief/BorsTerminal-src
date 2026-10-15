@@ -60,8 +60,11 @@ export function AppShell() {
 
   // ریسپانسیو (فاز ۲): فاصله/اورلی سایدبار و داور با CSS و توکنها مدیریت میشود
   // (.app-content / .app-main در index.css) — بدون هک جاوااسکریپت در رندر.
+  // ارتفاعِ پوسته قفلِ viewport است (`h-dvh`) تا `.app-content` واقعاً scrollport
+  // شود؛ با `min-h-screen` خودِ سند اسکرول می‌کرد و هیچ‌یک از `sticky`های
+  // نوارِ بالا و سایدبار نمی‌چسبید (سنجشِ ۱۳۶۶×۷۶۸: top=-۸۲۵).
   return (
-    <div className="flex min-h-screen overflow-hidden bg-bg-primary text-text-primary">
+    <div className="flex h-dvh overflow-hidden bg-bg-primary text-text-primary">
       <Sidebar />
       <div
         className="app-content flex min-w-0 flex-1 flex-col overflow-y-auto overflow-x-hidden transition-[padding] duration-200 ease-out"

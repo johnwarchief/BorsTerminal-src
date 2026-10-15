@@ -42,7 +42,12 @@ export function SymbolContextStrip() {
     <div
       role="region"
       aria-label={`اطلاعات نماد ${symbol}`}
-      className="sticky top-9 z-30 flex min-h-[38px] w-full flex-wrap items-center justify-between gap-2 border-b border-border-c/70 bg-bg-secondary/95 px-3 py-1 text-xs backdrop-blur-md shadow-xs transition-all duration-150"
+      /* دیگر چسبان نیست: ارتفاعِ اینِ نوار باِ flex-wrap بهِ محتوا بستگی دارد
+         (سنجشِ ۱۳۶۶ باِ داورِ باز: ۶۵px، بی‌داور ۳۸px) و «top-9» ثابت هیچ‌وقت
+         پایینِ آن را نمی‌گیرد — ناوبریِ بخش‌ها زیرِ آن می‌ماند. پین‌شدنِ
+         فقط رویِ Topbar (۳۶pxِ قطعی) است و نمادِ انتخابی همان‌جا درِ
+         breadcrumb دیده می‌شود. */
+      className="relative flex min-h-[38px] w-full shrink-0 flex-wrap items-center justify-between gap-2 border-b border-border-c/70 bg-bg-secondary/95 px-3 py-1 text-xs backdrop-blur-md shadow-xs transition-all duration-150"
     >
       {/* سمت راست (شروع): شناسه و مشخصات نماد */}
       <div className="flex flex-wrap items-center gap-2">

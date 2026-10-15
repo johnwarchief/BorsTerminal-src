@@ -27,7 +27,10 @@ import { TONE_CLASS, toneOf } from '../lib/tones';
 
 const NnChart = lazy(() => import('@features/technical/nahayatnegar/components/KLineChartWrapper'));
 
-const CHART_H = 'h-[420px] min-h-[300px] w-full';
+// ارتفاعِ میزبان = کفِ ارتفاعِ خودِ موتور چارت (`.nahayat-negar-container` با
+// `min-height:520px`). با ۴۲۰px، ۱۰۲pxِ پایینِ چارت درِ میزبانِ `overflow-hidden`
+// بریده می‌شد و هیچ اسکرولی به آن نمی‌رسید (سنجشِ ۱۳۶۶×۷۶۸: lost=102px).
+const CHART_H = 'h-[520px] w-full';
 
 export function MarketChartSection({ initialSymbol = 'فولاد' }: { initialSymbol?: string }) {
   const [symbol, setSymbol] = useState(initialSymbol);

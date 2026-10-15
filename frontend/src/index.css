@@ -491,6 +491,14 @@ details[open] > summary .disclosure-chevron {
   .app-content[data-inspector='open'] {
     padding-left: var(--inspector-w);
   }
+
+  /* ارتفاعِ پشتهٔ چسبانِ بالایِ صفحه. پوسته viewport-locked است و `.app-content`
+     اسکرول‌کنندهٔ واقعی است، پس هر چیزی که زیرِ نوارها می‌چسبد باید همین عدد را
+     بخواند، نه عددِ ثابتِ hard-coded. تنها لایۀ چسبان، Topbar با `h-9` است
+     (نوارِ نماد دیگر sticky نیست چون ارتفاعش با flex-wrap متغیر است). */
+  .app-content {
+    --chrome-h: 2.25rem;
+  }
 }
 
 @media (max-width: 1023.98px) {
