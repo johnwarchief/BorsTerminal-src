@@ -44,6 +44,23 @@ KEYTOOL="$(ls -d "$JAVA_HOME"/bin 2>/dev/null || echo /usr/bin)/keytool"
 
 VC_BASE="${BORS_VERSION_CODE:-1001000}"
 VN="${BORS_VERSION_NAME:-1.1.0}"
+# نسخۀ بالاتر برایِ مادۀ «ارتقا»: patch یکی بیشتر ⇒ versionCode مشتق‌شده یکی
+# بالاتر (همان قاعدۀ build.gradle: major·1e6 + minor·1e3 + patch).
+VN_UP=$(awk -F. -v v="$VN" '{printf "%d.%d.%d", $1, $2, $3+1}' <<<"$VN")
+VC_UP=$((VC_BASE+1))
+PKGJSON="frontend/package.json"
+
+pkg_set_version() { # pkg_set_version <version>
+  python3 - "$PKGJSON" "$1" <<'PY'
+import json, sys
+p, v = sys.argv[1], sys.argv[2]
+d = json.load(open(p, encoding="utf-8"))
+d["version"] = v
+with open(p, "w", encoding="utf-8", newline="\n") as f:
+    json.dump(d, f, ensure_ascii=False, indent=2)
+    f.write("\n")
+PY
+}
 
 make_key() { # make_key <name>
   local n="$1"
@@ -55,18 +72,29 @@ make_key() { # make_key <name>
     echo "keyAlias=$n"; echo "keyPassword=throwaway-$n-not-a-release-key"; } > "$D/$n.properties"
 }
 
-build_apk() { # build_apk <keyName> <versionCode> <outName>
-  local key="$1" vc="$2" out="$3"
+build_apk() { # build_apk <keyName> <versionName> <outName>
+  # نسخه هرگز با -P جعل نمی‌شود: گاردِ BORS-VERSION درِ build.gradle هر
+  # versionCodeای را که ازِ package.json مشتق نشده رد می‌کند (رانِ
+  # 38794263916: build-a2 با «does not specify compileSdk» مرد، چون
+  # استثنایِ(gradle) وسطِ پیکربندی بلند شد). پس مبنایِ یکتا -- versionِ
+  # package.json -- درِ همین runner موقت عوض می‌شود و بی‌درنگ برمی‌گردد.
+  local key="$1" ver="$2" out="$3" rc=0 src
+  cp "$PKGJSON" "$D/package.json.$out.bak"
+  pkg_set_version "$ver"
   ( cd frontend/android && BORS_KEYSTORE_PROPERTIES="$D/$key.properties" \
       ./gradlew assembleRelease --no-daemon -q \
-      -PBorsVersionName="$VN" -PBorsVersionCode="$vc" > "$D/$out.gradle.log" 2>&1 ) \
-    || { tail -12 "$D/$out.gradle.log" >&2; step "build-$out" "FAIL" "gradlew رد شد"; return 1; }
-  local src
+      -PBorsVersionName="$ver" > "$D/$out.gradle.log" 2>&1 ) || rc=$?
+  mv -f "$D/package.json.$out.bak" "$PKGJSON"
+  if [ "$rc" != 0 ]; then
+    tail -14 "$D/$out.gradle.log" >&2
+    step "build-$out" "FAIL" "gradlew رد شد (نسخۀ $ver)"
+    return 1
+  fi
   src=$(ls -1 frontend/android/app/build/outputs/apk/release/*.apk 2>/dev/null | head -1)
   [ -n "$src" ] || { step "build-$out" "FAIL" "هیچ APK ساخته نشد"; return 1; }
   case "$(basename "$src")" in *unsigned*) step "build-$out" "FAIL" "خروجی بی‌امضا ماند"; return 1;; esac
   cp "$src" "$D/$out.apk"
-  step "build-$out" "PASS" "$(basename "$src")"
+  step "build-$out" "PASS" "$(basename "$src") · $ver"
 }
 
 cert_of() { "$BT/apksigner" verify --print-certs "$1" 2>/dev/null \
@@ -93,7 +121,7 @@ make_key A || true
 make_key B || true
 [ -f "$D/A.properties" ] && [ -f "$D/B.properties" ] || { printf '{"counts":{"pass":%d,"fail":%d,"not_verified":%d}}\n' $PASS $FAILN $((NOTVER+1)) > "$JSON"; exit 1; }
 
-build_apk A "$VC_BASE" a1 && build_apk A "$((VC_BASE+1))" a2 && build_apk B "$((VC_BASE+1))" b1
+build_apk A "$VN" a1 && build_apk A "$VN_UP" a2 && build_apk B "$VN_UP" b1
 
 CA=$(cert_of "$D/a1.apk"); CA2=$(cert_of "$D/a2.apk"); CB=$(cert_of "$D/b1.apk")
 [ -n "$CA" ] && [ "$CA" = "$CA2" ] && step "same-key-fingerprint-stable" "PASS" "${CA:0:16}…" \
@@ -119,7 +147,7 @@ else
 fi
 
 if adb install -r -d "$D/a2.apk" > "$D/i2.log" 2>&1; then
-  step "upgrade-same-key" "PASS" "$VC_BASE → $((VC_BASE+1)) با همان گواهی"
+  step "upgrade-same-key" "PASS" "$VN/$VC_BASE → $VN_UP/$VC_UP با همان گواهی"
 else
   step "upgrade-same-key" "FAIL" "$(tail -2 "$D/i2.log" | tr '\n' ' ')"
 fi
@@ -144,7 +172,14 @@ fi
 
 rm -rf "$D"/*.jks "$D"/*.properties
 printf 'تمیز شد: کلیدهایِ دورریختنی حذف شدند (هیچ‌وقت منتشر نمی‌شوند)\n' >&2
-printf '{"pkg":"%s","vn":"%s","vc_base":%s,"cert_A":"%s","cert_B":"%s","counts":{"pass":%d,"fail":%d,"not_verified":%d}}\n' \
-  "$PKG" "$VN" "$VC_BASE" "$CA" "$CB" "$PASS" "$FAILN" "$NOTVER" > "$JSON"
+# مبنایِ یکتایِ نسخه باید دست‌نخورده برگشته باشد؛ اگر نه، هر گامِ بعدیِ همین
+# ران (متنِ ریلیز، بیلدِ دوباره) نسخۀ جعلیِ 1.1.1 را می‌بیند.
+if grep -q "\"version\": \"$VN\"" "$PKGJSON"; then
+  step "version-source-restored" "PASS" "package.json به $VN برگشت"
+else
+  step "version-source-restored" "FAIL" "مبنایِ نسخه درِ runner عوض مانده است"
+fi
+printf '{"pkg":"%s","vn":"%s","vc_base":%s,"vn_up":"%s","vc_up":%s,"cert_A":"%s","cert_B":"%s","counts":{"pass":%d,"fail":%d,"not_verified":%d}}\n' \
+  "$PKG" "$VN" "$VC_BASE" "$VN_UP" "$VC_UP" "$CA" "$CB" "$PASS" "$FAILN" "$NOTVER" > "$JSON"
 cat "$JSON" >&2
 [ "$FAILN" -eq 0 ] || exit 1

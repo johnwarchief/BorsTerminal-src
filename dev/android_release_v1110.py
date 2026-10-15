@@ -425,6 +425,9 @@ chk("wm dismiss-keyguard" in EMU and EMU.count("keep_awake") >= 3,
 UPG = read("tools/android_upgrade_matrix.sh") or ""
 chk("wm dismiss-keyguard" in UPG and 'step "boot" "PASS"' in UPG,
     "A77-ب مادۀ ارتقا هم بعدِ بوت قفلِ صفحه را کنار می‌گذارد (همان دامِ WebView)")
+chk("-PBorsVersionCode" not in UPG and "pkg_set_version" in UPG
+    and "version-source-restored" in UPG,
+    "A82 مادۀ ارتقا نسخه را جعل نمی‌کند: مبنایِ یکتا (package.json) عوض و بازگردانده می‌شود")
 chk('step "webview-$LABEL-a11y" NOT_VERIFIED "درختِ uiautomator مالِ قفلِ صفحه بود' in EMU,
     "A78 قفلِ صفحه به‌حسابِ اپ FAIL نمی‌شود؛ علتش صریحاً NOT_VERIFIED است")
 chk(EMU.count("step anr FAIL") == 1 and "\nfi\n  step anr FAIL" not in EMU,
