@@ -48,7 +48,7 @@ from execution_easytrader import (  # noqa: E402
     easytrader_payload, interpret_easytrader_response, map_order_state,
 )
 from execution_ledger import ARMED, ExecutionLedger  # noqa: E402
-from execution_service import ExecutionService, Limits  # noqa: E402
+from execution_service import ExecutionError, ExecutionService, Limits  # noqa: E402
 from execution_timing import Scheduler, TimeSource  # noqa: E402
 
 import api.execution as EX  # noqa: E402
@@ -740,7 +740,20 @@ def part_door():
                 t.start()
             for t in ts:
                 t.join(25)
+            # مسیرِ زمان‌بندی‌شده ممکن است پسِ join هنوز آتش نزده باشد (زیرِ بارِ
+            # CPU این دقیقاً رخ داد و «got 0» داد). پس اول سفارشِ انتظاری را
+            # منتظر می‌مانیم و بعد یکِ پنجرۀ ۱٫۵ ثانیه‌ای «بی‌سفارشِ تازه» باز
+            # می‌کنیم تا سفارشِ دومی که دیر می‌رسد هم دیده شود — سنجه سخت‌تر
+            # می‌ماند، فقط نمونه‌برداریِ تک‌لحظه‌ای حذف می‌شود.
+            deadline = time.time() + 20.0
             got = len(broker.orders) - before
+            while got < expect_orders and time.time() < deadline:
+                time.sleep(0.05)
+                got = len(broker.orders) - before
+            settle = time.time() + 1.5
+            while time.time() < settle:
+                time.sleep(0.05)
+                got = len(broker.orders) - before
             refused = [r for r in responses if r and r.get("status") == "error"]
             ck(not errs, "هیچ threadی بیرون نپرید (%s)" % eid, str(errs)[:150])
             ck(got == expect_orders,
@@ -769,11 +782,46 @@ def part_door():
         ck(ids == ["race-now", "race-sched"],
            "ردِّپا هر دو قصدِ سفارش را دارد، حتی آن که رد شد", str(ids)[:120])
 
+    def claim_blocks_second_prepare(adapter, broker, ledger):
+        """دومینِ prepareِ همان شناسه پیشِ هر execute رد می‌شود (رقابتِ TOCTOU).
+
+        `api/execution.py` قفل را میانِ prepare و execute رها می‌کند (توقفِ
+        اضطراری نباید پشتِ یکِ POSTِ طولانی گیر کند)، پس «سطرِ dispatch درِ
+        ردِّپا هست» تنها نگهبانِ دومینِ درخواست نیست. این سنجه همان رزرو را
+        می‌سنجد، و کنترلِ منفی‌اش ثابت می‌کند سنسور به رزرو نگاه می‌کند نه به
+        شانسِ زمان‌بندی.
+        """
+        svc = EX._SERVICE
+        d = draft("claim-1")
+        svc.prepare(d)
+        try:
+            svc.prepare(draft("claim-1"))
+            ck(False, "دومینِ prepareِ همان شناسه رد شد ( DUPLICATE_GUARD)")
+        except ExecutionError as e:
+            ck(e.code is ErrorCode.DUPLICATE_GUARD,
+               "دومینِ prepareِ همان شناسه رد شد (DUPLICATE_GUARD)", e.code.value)
+            failed = sorted(k for k, v in e.checks.items() if v == "FAIL")
+            ck(failed == ["duplicate"],
+               "و پاسخ دقیقاً همان یکِ نگهبانِ شکست‌خورده را نام می‌برد", str(e.checks)[:150])
+        # کنترلِ منفی: بیِ رزرو (رفتارِ پیشین) همان درخواست باید رد نشود —
+        # یعنی نگهبانِ این سنجه خودِ `_prepared` است، نه ردِّپا.
+        svc._prepared.pop("claim-1", None)
+        try:
+            svc.prepare(draft("claim-1"))
+            ck(True, "کنترلِ منفی: با برداشتنِ رزرو، preflight رد نمی‌کند "
+                     "(پس سنسور به رزرو نگاه می‌کند)")
+        except ExecutionError as e:
+            ck(False, "کنترلِ منفیِ رزرو نباید رد کند", e.code.value)
+        # و رزروِ تهی هیچ‌وقت سفارشِ دوم را به آداپتور نمی‌رساند
+        ck(not [w for w in adapter.wire_calls if str(w).startswith("submit:")],
+           "هیچ POSTی ازِ این سنجه بیرون نرفت", str(adapter.wire_calls)[:110])
+
     _with_easytrader(no_session)
     _with_easytrader(happy)
     _with_easytrader(halt_aborts_schedule)
     _with_easytrader(scheduled_unknown_stays_open)
     _with_easytrader(concurrent_same_id)
+    _with_easytrader(claim_blocks_second_prepare)
     _with_easytrader(secrets)
     _with_easytrader(restart)
 

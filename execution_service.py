@@ -307,16 +307,26 @@ class ExecutionService:
             except BrokerError as e:
                 p.add("balance", UNKNOWN, e.code.value)
 
-        # تکراری‌بودن (بندِ ۱۹) — هم حافظه، هم ردِّپایِ ماندگار. پسِ restart
-        # دیکشنریِ درحافظه خالی است و اگر فقط به او نگاه کنیم همان `execution_id`
-        # دوباره فرستاده می‌شود؛ ردِّپا رویِ دیسک همان را می‌گیرد.
-        seen_local = draft.execution_id in self._ledger
+        # تکراری‌بودن (بندِ ۱۹) — هم ردِّپا، هم هر چیزی که *این* پروسه قبلاً
+        # دربارهٔ همان شناسه تصمیم گرفته است. سه منبع، به ترتیبِ زودخجازد:
+        #  ۱) `_ledger` — رکوردِ اجراشده (پذیرش، خطا، نامعلوم)؛
+        #  ۲) `_prepared` — رزروِ یکِ prepare که هنوز execute نشده. بی‌این، دو
+        #     درخواستِ هم‌زمانِ یکِ `execution_id` هر دو preflight را رد می‌کردند:
+        #     درِ `api/execution.py` قفل میانِ prepare و execute رها می‌شود (تا
+        #     توقفِ اضطراری پشتِ یکِ POSTِ ۷ ثانیه‌ای گیر نکند) و کارگزاری دو
+        #     سفارش می‌گرفت. زیرِ بارِ CPU این رقابت واقعاً دو سفارش ساخت —
+        #     «race-now ⇒ 1 سفارش» با got 2 شکست و این سنجه همان را قفل می‌کند.
+        #  ۳) ردِّپایِ ماندگار — پسِ restart دیکشنری‌هایِ درحافظه خالی‌اند.
+        seen_local = (draft.execution_id in self._ledger
+                      or draft.execution_id in self._prepared)
         seen_durable = False
         if self.audit is not None and not seen_local:
             seen_durable = bool(self.audit.events(execution_id=draft.execution_id,
                                                   kinds=("dispatch",), limit=1))
         p.add("duplicate", FAIL_ if (seen_local or seen_durable) else PASS,
-              "already dispatched (durable trail)" if seen_durable else "")
+              "already dispatched (durable trail)" if seen_durable
+              else ("another prepare holds this id"
+                    if draft.execution_id in self._prepared else ""))
         # تواناییِ ارسال
         p.add("place", PASS if caps.place else FAIL_, "broker cannot place orders")
 
