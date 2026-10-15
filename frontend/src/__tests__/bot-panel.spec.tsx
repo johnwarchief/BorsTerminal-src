@@ -29,7 +29,7 @@ function statusBody(patch: Record<string, unknown> = {}) {
       logic: 'and', sizing_fraction: 0.05, max_orders: 1, max_order_value: 2e8,
       max_symbol_exposure: null, max_total_exposure: null, max_daily_loss: null,
       max_stale_sessions: 1, start_cash: 1e8, commission_bps: 30, slippage_bps: 10,
-      max_volume_share: 0.02, history_days: 40 },
+      max_volume_share: 0.02 },
     kill: 'ARMED', halted: false,
     live_gates: { env_live: false, adapter: 'mock', session: 'none', capabilities: CAPS_OFF,
       live_capable: false, dry_run: true, all_open: false },
@@ -41,8 +41,9 @@ function statusBody(patch: Record<string, unknown> = {}) {
   };
 }
 
-const RUN_OK = { status: 'ok', run: { at: '2026-10-15T10:00:00', session: '20261014', bars: 640,
-  symbols: 320, mode: 'paper', ms: 41,
+const RUN_OK = { status: 'ok', run: { at: '2026-10-15T10:00:00', session: '20261014', bars: 6,
+  symbols: 6, symbols_in: 14, unpriced: ['بنیرو', 'غمینو'], expired: [],
+  prev_session: '20261013', mode: 'paper', ms: 41,
   decisions: [{ date: '20261014', signals: 3, dispatched: 1, rejected: 2,
     equity: 100_400_000, halt_state: 'ARMED', notes: ['stale: وخار'] }] } };
 
@@ -188,5 +189,23 @@ describe('پنلِ ربات', () => {
     await screen.findByTestId('bot-panel');
     const text = container.textContent ?? '';
     expect(text).not.toMatch(/اول می‌شود|اولی|قطعی اجرا|تضمینی/);
+  });
+
+  it('یکِ فشارِ دکمه = یکِ نشست: قیف، ردیفِ قیمت‌دار و سیگنال جدا نمایش داده می‌شوند', async () => {
+    route(statusBody({ last_runs: [RUN_OK.run] }));
+    renderPanel();
+    const line = await screen.findByTestId('bot-last-run');
+    expect(line.textContent).toContain('۱۴ درِ قیف');
+    expect(line.textContent).toContain('۶ ردیف');
+    expect(line.textContent).toContain('۳ سیگنال');
+    expect(line.textContent).toContain('۱ ارسال');
+  });
+
+  it('سیگنالِ پرِشده‌نشدۀ این نشست «درِ انتظارِ نشستِ بعد» است، نه ارسال‌شده', async () => {
+    route(statusBody({ pending_drafts: 6, last_runs: [RUN_OK.run] }));
+    renderPanel();
+    const pend = await screen.findByTestId('bot-pending-line');
+    expect(pend.textContent).toContain('۶ سیگنال درِ انتظارِ نشستِ بعد');
+    expect(pend.textContent).not.toMatch(/ارسالِ قطعی|پر شد/);
   });
 });

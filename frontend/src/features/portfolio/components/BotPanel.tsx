@@ -122,18 +122,27 @@ export function BotPanel() {
         </Badge>
         <span className="text-2xs text-text-muted">{summary}</span>
         {last ? (
-          <span className="num text-2xs text-text-muted">
-            آخرین اجرا: نشست {toFaDigits(last.session)} · {n(last.bars)} ردیف ·{' '}
-            {n(last.decisions?.reduce((a, d) => a + d.signals, 0) ?? 0)} سیگنال ·{' '}
+          <span className="num text-2xs text-text-muted" data-testid="bot-last-run">
+            آخرین اجرا: نشست {toFaDigits(last.session)} · {n(last.symbols_in)} درِ قیف ·{' '}
+            {n(last.bars)} ردیف · {n(last.decisions?.reduce((a, d) => a + d.signals, 0) ?? 0)} سیگنال ·{' '}
             {n(last.decisions?.reduce((a, d) => a + d.dispatched, 0) ?? 0)} ارسال
+            {last.expired?.length ? ` · ${n(last.expired.length)} منقضی` : ''}
           </span>
         ) : <span className="text-2xs text-text-muted">هنوز اجرایی ثبت نشده</span>}
+        {(status?.pending_drafts ?? 0) > 0 ? (
+          <span className="num text-2xs text-text-muted" data-testid="bot-pending-line">
+            {n(status?.pending_drafts ?? 0)} سیگنال درِ انتظارِ نشستِ بعد
+          </span>
+        ) : null}
 
         <div className="ms-auto flex items-center gap-1.5">
           <button
             type="button"
             data-testid="bot-run"
             disabled={!!busy}
+            title={status?.verdict_session
+              ? 'یکِ نشست: داوریِ قیف، سیگنالِ ورود/خروج، پرشدنِ شبیه‌سازی‌شده درِ نشستِ بعد'
+              : 'اولینِ فشارِ پسِ نصب: اسکنِ فنیِ قیف ازِ نو ساخته می‌شود و ممکن است ~۹۰ ثانیه طول بکشد'}
             onClick={() => act('run', () => botApi.run())}
             className="rounded-md border border-accent-blue/60 bg-accent-blue/15 px-2.5 py-1 text-2xs font-bold text-accent-blue disabled:opacity-40"
           >
@@ -259,6 +268,7 @@ export function BotPanel() {
                 <thead className="text-text-muted">
                   <tr>
                     <th className="text-start font-bold">نشست</th>
+                    <th className="text-start font-bold">درِ قیف</th>
                     <th className="text-start font-bold">ردیف</th>
                     <th className="text-start font-bold">سیگنال</th>
                     <th className="text-start font-bold">ارسال‌شده</th>
@@ -275,6 +285,10 @@ export function BotPanel() {
                       <tr key={`${r.at}-${i}`} data-testid={`bot-run-row-${r.session}`}
                           className="border-t border-border-c/40">
                         <td className="num py-0.5">{toFaDigits(r.session)}</td>
+                        <td className="num py-0.5"
+                            title={r.unpriced?.length ? `بی‌ردیفِ قیمت: ${r.unpriced.join('، ')}` : undefined}>
+                          {n(r.symbols_in)}
+                        </td>
                         <td className="num py-0.5">{n(r.bars)}</td>
                         <td className="num py-0.5">{n(agg.sig)}</td>
                         <td className="num py-0.5">{n(agg.dis)}</td>
@@ -284,7 +298,7 @@ export function BotPanel() {
                     );
                   })}
                   {(history?.runs ?? []).length === 0 ? (
-                    <tr><td colSpan={6} className="py-1 text-text-muted">
+                    <tr><td colSpan={7} className="py-1 text-text-muted">
                       اجرایی ثبت نشده. ربات تنها با دکمهٔ «اجرایِ نشست» کار می‌کند.
                     </td></tr>
                   ) : null}

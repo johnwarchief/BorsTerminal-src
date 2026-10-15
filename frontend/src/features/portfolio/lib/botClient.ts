@@ -53,7 +53,6 @@ export const BotConfigSchema = z.object({
   commission_bps: z.number().default(30),
   slippage_bps: z.number().default(10),
   max_volume_share: z.number().default(0.02),
-  history_days: z.number().default(40),
   note: z.string().nullish(),
 }).nullish();
 export type BotConfig = z.infer<typeof BotConfigSchema>;
@@ -74,6 +73,12 @@ export const BotRunSchema = z.object({
   session: z.string(),
   bars: z.number(),
   symbols: z.number(),
+  //: نمادهایی که قیف نگه داشته / که ردیفِ قیمتِ این نشست را دارند / بی‌ردیف ماندند
+  symbols_in: z.number().default(0),
+  unpriced: z.array(z.string()).default([]),
+  expired: z.array(z.string()).default([]),
+  prev_session: z.string().nullish(),
+  note: z.string().nullish(),
   mode: z.string(),
   decisions: z.array(BotDecisionSchema).default([]),
   ms: z.number(),
@@ -94,6 +99,9 @@ export const BotStatusSchema = z.object({
     realized_total: z.number().nullish(),
   }).nullish(),
   last_runs: z.array(BotRunSchema).default([]),
+  //: سیگنال‌هایِ پرِشده‌نداشته (دفترِ T+1) و نشستی که رأیش درِ ردِّپا مانده است
+  pending_drafts: z.number().default(0),
+  verdict_session: z.string().nullish(),
   auto_run: z.boolean().default(false),
   note: z.string().default(''),
 });

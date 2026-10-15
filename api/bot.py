@@ -9,8 +9,8 @@
 
 چه چیزی عمداً **نیست**:
 • داورِ دوم: تنها منبعِ «تصمیم»، خروجیِ خودِ قیف است (`api/funnel._run` →
-  `survivors`) که `bot_signals.verdicts_to_membership` آن را به in/out بدل
-  می‌کند. هیچ آستانه، وزن یا امتیازی اینجا تعریف نمی‌شود.
+  `status_matrix`) و `_membership_map` آن را به in/out/unknown بدل می‌کند.
+  هیچ آستانه، وزن یا امتیازی اینجا تعریف نمی‌شود.
 • زمان‌بندیِ خودکار: ربات با باز شدنِ برنامه اجرا نمی‌شود. تنها راه،
   `POST /api/bot/run` ازِ خودِ کاربر است.
 • وعدهٔ اولی یا قطعی‌بودن اجرا: صف و پرشدن درِ paper **شبیه‌سازی** است
@@ -33,7 +33,7 @@ from typing import Any, Mapping
 from fastapi import APIRouter, Body, Request
 
 import bors_config
-from bot_signals import FunnelMembership, verdicts_to_membership
+from bot_signals import FunnelMembership
 from execution_ledger import ARMED, HALT, TRIPPED, default_ledger
 from execution_service import Limits
 from paper_trading import STATE_KEY, PaperSession
@@ -68,7 +68,6 @@ DEFAULTS: dict[str, Any] = {
     "commission_bps": 30.0,
     "slippage_bps": 10.0,
     "max_volume_share": 0.02,
-    "history_days": 40,
 }
 NUMERIC_BOUNDS = {
     "sizing_fraction": (0.001, 0.25),
@@ -78,7 +77,6 @@ NUMERIC_BOUNDS = {
     "commission_bps": (0.0, 300.0),
     "slippage_bps": (0.0, 300.0),
     "max_volume_share": (0.001, 0.25),
-    "history_days": (5, 500),
 }
 
 _LOCK = threading.Lock()
@@ -137,7 +135,7 @@ def _validate(body: Mapping[str, Any], current: Mapping[str, Any]) -> tuple[dict
             if not (lo <= n <= hi):
                 errs.append(f"{k} بیرونِ مجازِ {lo}…{hi}: {v}")
                 continue
-            out[k] = int(n) if k in ("max_orders", "max_stale_sessions", "history_days") else n
+            out[k] = int(n) if k in ("max_orders", "max_stale_sessions") else n
         else:
             # سقف‌هایِ None-پذیر: None یعنی «تعریف نشده»، هر چیزِ دیگر عددِ مثبت
             if v is None:
@@ -175,33 +173,63 @@ def _board_day() -> int | None:
     return _board_snapshot()[1]
 
 
-def _judge(cfg: Mapping[str, Any]):
-    """judge(session) → {symbol: in|out} از *خروجیِ خودِ قیف*.
+def _membership_map(payload: Any) -> dict[str, str]:
+    """نگاشتِ in/out/unknown ازِ رأیِ *خودِ* قیف، نمادبه‌نماد.
 
-    بی‌ردیف یا بی‌تابلو ⇒ نگاشتِ خالی؛ یعنی «نمی‌دانیم»، نه «همه خارج» —
-    `FunnelMembership` با unknown هیچ فروشی نمی‌سازد.
+    `status_matrix[symbol]["handover"]["status"]` یگانه حکمِ نهاییِ قیف است.
+    دو چیزی که اینجا عمداً جدا می‌مانند:
+      • `pass` ⇒ in، `reject`/`not_in_universe` ⇒ out — همان دو حکمی که دفترچه
+        می‌شناسد؛
+      • `pending`/`unavailable`/هر چیزِ دیگر ⇒ unknown: «سنجیده نشده» با
+        «خارج است» یکی نیست و بی‌این تفکیک، یکِ نمادِ درِ صفِ اسکن می‌فروخت.
+    بی‌`status_matrix` (پاسخِ کهنه/ ناقص) ⇒ نگاشتِ خالی = بی‌اقدام.
+    """
+    from funnel_engine import NOT_IN_UNIVERSE, PASS, REJECT
+    sm = payload.get("status_matrix") if isinstance(payload, dict) else None
+    if not isinstance(sm, dict) or not sm:
+        return {}
+    out: dict[str, str] = {}
+    for sym, row in sm.items():
+        st = str(((row or {}).get("handover") or {}).get("status") or "")
+        if st == PASS:
+            out[str(sym)] = "in"
+        elif st in (REJECT, NOT_IN_UNIVERSE):
+            out[str(sym)] = "out"
+        else:
+            out[str(sym)] = "unknown"
+    return out
+
+
+def _judge(cfg: Mapping[str, Any]):
+    """judge(session) → {symbol: in|out|unknown} از *خروجیِ خودِ قیف*.
+
+    بی‌تابلو/بی‌رأی ⇒ نگاشتِ خالی؛ یعنی «نمی‌دانیم»، نه «همه خارج» —
+    `FunnelMembership` با unknown هیچ فروشی نمی‌سازد. داوریِ دوبارهٔ نشستِ
+    گذشته ممکن نیست (`_run` بی‌`as_of`)، پس «دیروز» ازِ ردِّپا می‌آید
+    (`MEMBERSHIP_KEY`) و اینجا فقط همین نشست سنجیده می‌شود.
     """
     from api.funnel import _run
 
     def judge(session: str) -> dict[str, str]:
         payload = _run(str(cfg["preset"]), list(cfg["chain"]), str(cfg["fund_mode"]),
                        {}, {}, drop_suffix=True, logic=str(cfg["logic"]))
-        if not isinstance(payload, dict) or "survivors" not in payload:
+        if not isinstance(payload, dict) or payload.get("status") != "success":
             return {}
-        from api.funnel import _board_rows
-        board = _board_rows()
-        allsyms = [str(r.get("symbol") or "") for r in board if r.get("symbol")]
-        surv = [str(r.get("symbol") or "") for r in (payload.get("survivors") or [])
-                if r.get("symbol")]
-        if not allsyms or not surv:
-            return {}
-        return verdicts_to_membership(surv, allsyms)
+        return _membership_map(payload)
 
     return judge
 
 
-def _bars(cfg: Mapping[str, Any], session_day: int) -> list[Bar]:
-    """ردیفِ *همان* نشستِ بسته‌شدۀ همهٔ نمادهایِ تابلو ازِ market.db.
+def _bars(cfg: Mapping[str, Any], session_day: int,
+          symbols: set[str] | None = None) -> list[Bar]:
+    """ردیفِ *همان یک نشستِ* بسته‌شدۀ نمادهایِ خواسته‌شده ازِ market.db.
+
+    `symbols=None` ⇒ همهٔ تابلو (فقط برایِ آزمون). درِ اجرایِ واقعی همیشه
+    فهرستِ کوچک «نمادهایِ اقدام‌پذیر» داده می‌شود: داوریِ ربات تنها رویِ
+    بازماندگانِ قیف، موقعیت‌هایِ باز و سفارش‌هایِ درِ انتظار می‌تواند اثر
+    بگذارد.feed کردنِ ۶٬۰۱۸ نماد × ۳۵ نشست (۱۲۹٬۶۱۳ ردیف ⇒ ۱٬۴۵۷ ثانیه
+    سنجیده‌شده) نه تصمیمی می‌سازد نه پرشدنی — و ترتیبِ نماد-محورِ آن،
+    «دیروز»ِ استراتژی را بی‌معنی می‌کرد (سنجش: ۱۵۶ صدایِ داور در ۴۰۰ ردیفِ اول).
 
     `allowed_min/max` عمداً None است: منبعِ آن تابلویِ زنده است نه
     daily_prices، و ساختنِ باندِ ±٪ ازِ حدس یعنی جعلِ ورودیِ اعتبارسنجی.
@@ -213,39 +241,37 @@ def _bars(cfg: Mapping[str, Any], session_day: int) -> list[Bar]:
         log.warning("bot: market.db باز نشد: %s", e)
         return out
     try:
-        days = [r[0] for r in conn.execute(
-            "SELECT DISTINCT d_even FROM daily_prices WHERE d_even<=? "
-            "ORDER BY d_even DESC LIMIT ?", (int(session_day), int(cfg["history_days"])))][::-1]
-        if not days:
-            return out
         q = ("SELECT i.l_val18, p.ins_code, p.d_even, p.price_first, p.price_max, "
              "p.price_min, p.p_closing, p.q_tot_tran, p.price_yesterday "
              "FROM daily_prices p JOIN instruments i ON i.ins_code = p.ins_code "
-             "WHERE p.d_even IN (%s)" % ",".join("?" * len(days)))
-        by_sym: dict[str, list[tuple]] = {}
-        for sym, code, d, o, hi, lo, c, vol, prev in conn.execute(q, days):
+             "WHERE p.d_even = ?")
+        args: list[Any] = [int(session_day)]
+        if symbols is not None:
+            if not symbols:
+                return out
+            q += " AND i.l_val18 IN (%s)" % ",".join("?" * len(symbols))
+            args += sorted(symbols)
+        for sym, code, d, o, hi, lo, c, vol, prev in conn.execute(q, args):
             if not sym:
                 continue
-            by_sym.setdefault(str(sym), []).append((int(d), o, hi, lo, c, vol, prev))
-        for sym, rows in by_sym.items():
-            rows.sort()
-            for d, o, hi, lo, c, vol, prev in rows:
-                out.append(Bar(symbol=sym, date=str(d),
-                               open=None if o is None else float(o),
-                               high=None if hi is None else float(hi),
-                               low=None if lo is None else float(lo),
-                               close=None if c is None else float(c),
-                               volume=None if vol is None else float(vol),
-                               prev_close=None if prev is None else float(prev)))
+            out.append(Bar(symbol=str(sym), date=str(d),
+                           open=None if o is None else float(o),
+                           high=None if hi is None else float(hi),
+                           low=None if lo is None else float(lo),
+                           close=None if c is None else float(c),
+                           volume=None if vol is None else float(vol),
+                           prev_close=None if prev is None else float(prev)))
     except Exception as e:
         log.warning("bot: ردیف‌ها ساخته نشد: %s", e)
     finally:
         conn.close()
+    out.sort(key=lambda b: b.symbol)
     return out
 
 
-def _session(cfg: Mapping[str, Any], led) -> tuple[PaperSession, int | None]:
-    day = _board_day()
+def _session(cfg: Mapping[str, Any], led,
+             day: int | None = None) -> tuple[PaperSession, int | None]:
+    day = _board_day() if day is None else day
     strat = FunnelMembership(_judge(cfg))
     acc = SimAccount(start_cash=float(cfg["start_cash"]))
     costs = CostModel(commission_bps=float(cfg["commission_bps"]),
@@ -257,6 +283,66 @@ def _session(cfg: Mapping[str, Any], led) -> tuple[PaperSession, int | None]:
                      fail_closed=True)
     s.recover()
     return s, day
+
+
+def _step(cfg: Mapping[str, Any], led, day: int) -> dict[str, Any] | None:
+    """یکِ فشارِ دکمه = یکِ نشست: داوری یک‌بار، ردیف فقط برایِ نمادهایِ اقدام‌پذیر.
+
+    «دیروز» ازِ ردِّپا خوانده می‌شود (`MEMBERSHIP_KEY`)، نه با داوریِ دوبارهٔ
+    گذشته: `api/funnel._run` بی‌`as_of` است و فقط تابلویِ جاری را می‌سنجد، پس
+    رأیِ یکِ نشستِ پیشین بازسازی‌شدنی نیست و جاگذاریِ آن درِ گذشته نشتِ آینده
+    بود. سیگنالِ همین نشست رویِ همین نشست پر **نمی‌شود**؛ پرشدنش به نشستِ
+    بعد (یا انقضایش با همان سقفِ کهنگی) می‌ماند — همان T+1ِ دفترچه.
+    """
+    day = int(day)
+    cur = _judge(cfg)(str(day)) or {}
+    if not cur:
+        return None
+    prev_state = led.load_state(MEMBERSHIP_KEY) or {}
+    prev_session = prev_state.get("session")
+    prev_map = prev_state.get("map") or {}
+    sess, _ = _session(cfg, led, day)
+    sess.strategy.seed(str(prev_session) if prev_session else None, prev_map,
+                       str(day), cur)
+    want = {s for s, v in cur.items() if v == "in"}
+    want |= {str(s) for s in sess.account.positions}
+    want |= sess.pending_symbols()
+    bars = _bars(cfg, day, symbols=want) if want else []
+    if want and not bars:
+        return None
+    started = time.time()
+    decisions = [sess.on_bar(b) for b in bars]
+    seen = {b.symbol for b in bars}
+    expired: list[str] = []
+    for eid, d in list(getattr(sess, "_pending", {}).items()):
+        if str(d.price_as_of or "") == str(day):
+            continue
+        sym = str(d.instrument.symbol)
+        if sym in seen or not sess.stale(sym, str(day)):
+            continue
+        led.record(execution_id=eid, kind="risk_reject", status="expired", symbol=sym,
+                   detail="ردیفِ تازه‌تر تا نشست %s نرسید ⇒ سفارشِ درِ انتظار بسته شد" % day)
+        sess._pending.pop(eid, None)
+        expired.append(sym)
+    led.save_state(MEMBERSHIP_KEY, {"session": str(day), "map": cur,
+                                    "at": time.strftime("%Y-%m-%dT%H:%M:%S")})
+    sess.persist()
+    summary = [{
+        "date": d.date, "signals": d.signals, "dispatched": d.dispatched,
+        "rejected": d.rejected, "equity": d.equity, "halt_state": d.halt_state,
+        "notes": list(d.notes)[:8],
+    } for d in decisions if (d.signals or d.dispatched or d.rejected or d.notes)]
+    return {
+        "at": time.strftime("%Y-%m-%dT%H:%M:%S"), "session": str(day),
+        "bars": len(bars), "symbols": len(seen),
+        "symbols_in": sum(1 for v in cur.values() if v == "in"),
+        "unpriced": sorted({s for s, v in cur.items() if v == "in"} - seen)[:40],
+        "acting": sorted(want)[:40], "expired": expired,
+        "prev_session": prev_session or None,
+        "note": None if want else "بی‌اقدام: نه بازمانده‌ای درِ قیف بود، نه موقعیتِ باز، نه سفارشِ درِ انتظار",
+        "mode": str(cfg.get("mode")), "decisions": summary[-40:],
+        "ms": int((time.time() - started) * 1000),
+    }
 
 
 # ── وضعیتِ اجرایِ واقعی ─────────────────────────────────────────────────────
@@ -310,6 +396,9 @@ def get_status():
                     "positions": len(acct.get("positions") or {}),
                     "realized_total": acct.get("realized_total")},
         "last_runs": last[-5:],
+        #: دفترِ سیگنال‌هایی که پر نشده‌اند (T+1) و نشستِ رأیِ ذخیره‌شده
+        "pending_drafts": len(((led.load_state("paper_pending") or {}).get("drafts") or [])),
+        "verdict_session": (led.load_state(MEMBERSHIP_KEY) or {}).get("session"),
         "auto_run": False,
         "note": ("ربات تنها با POST /api/bot/run اجرا می‌شود؛ کاغذی پیش‌فرض است و "
                  "هیچ سفارشی به بازار نمی‌رود مگر سه قفلِ اجرایِ واقعی باز باشد."),
@@ -373,34 +462,25 @@ async def run_once(request: Request):
                     "message": "mode=live ولی قفل‌ها باز نیستند", "live_gates": g}
     with _LOCK:
         try:
-            sess, day = _session(cfg, led)
-            bars = _bars(cfg, int(day)) if day else []
+            day = _board_day()
+            if not day:
+                return {"status": "no_data", "message": "نشستِ تابلو در دسترس نیست — بی‌اقدام"}
+            run = _step(cfg, led, int(day))
         except Exception as e:
             log.exception("bot: نشست ساخته نشد")
             return {"status": "error",
                     "message": "دادهٔ بازار خوانده نشد: %s" % type(e).__name__,
                     "detail": str(e)[:180]}
-        if not day:
-            return {"status": "no_data", "message": "نشستِ تابلو در دسترس نیست — بی‌اقدام"}
-        if not bars:
-            return {"status": "no_data", "message": "ردیفی برایِ این نشست نیست — بی‌اقدام"}
-        started = time.time()
-        decisions = sess.run(bars)
-        summary = [{
-            "date": d.date, "signals": d.signals, "dispatched": d.dispatched,
-            "rejected": d.rejected, "equity": d.equity, "halt_state": d.halt_state,
-            "notes": list(d.notes)[:8],
-        } for d in decisions if (d.signals or d.dispatched or d.rejected or d.notes)]
-        run = {"at": time.strftime("%Y-%m-%dT%H:%M:%S"), "session": str(day),
-               "bars": len(bars), "symbols": len({b.symbol for b in bars}),
-               "mode": str(cfg.get("mode")), "decisions": summary[-40:],
-               "ms": int((time.time() - started) * 1000)}
+        if run is None:
+            return {"status": "no_data",
+                    "message": "رأیِ قیف یا ردیفِ این نشست نرسید — بی‌اقدام، نه صفرِ جعلی"}
         prev = led.load_state(RUNS_KEY) or {}
         runs = list(prev.get("runs") or [])[-19:] + [run]
         led.save_state(RUNS_KEY, {"runs": runs})
         led.record(execution_id="bot", kind="bot_run", symbol="-",
-                   status="ok", detail="نشست %s · %d ردیف · %d تصمیم"
-                   % (run["session"], run["bars"], len(summary)))
+                   status="ok", detail="نشست %s · %d ردیف · %d تصمیم · %d منقضی"
+                   % (run["session"], run["bars"], len(run.get("decisions") or []),
+                      len(run.get("expired") or [])))
     return {"status": "ok", "run": run, "kill": led.kill_state()}
 
 
