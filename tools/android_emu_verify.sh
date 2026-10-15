@@ -75,7 +75,8 @@ fi
 ensure_running() {  # $1 = برچسب
   local pid
   for i in 1 2 3 4 5 6; do
-    pid=$(adb shell pidof -s "$PKG" | tr -d '')
+    pid=$(adb shell pidof -s "$PKG" | tr -d '
+')
     [ -n "$pid" ] && { echo "$pid"; return 0; }
     if [ "$i" = 1 ]; then
       adb shell monkey -p "$PKG" -c android.intent.category.LAUNCHER 1 > /dev/null 2>&1
@@ -97,8 +98,21 @@ dismiss_anr_dialog() {
   return 0
 }
 
+# قفلِ صفحه‌کلیدِ AVD هر دو کاوشگر را کور می‌کند: CDP موند می‌خورد و
+# uiautomator درختِ keyguard را می‌دهد، نه متنِ برنامه. رانِ 38781829171 دقیقاً
+# همین بود («دستگاه قفل بود») و نتیجه را به‌حسابِ اپ FAIL کرد.
+keep_awake() {
+  adb shell svc power stayon true >/dev/null 2>&1
+  adb shell settings put system screen_off_timeout 2147483647 >/dev/null 2>&1
+  adb shell input keyevent KEYCODE_WAKEUP >/dev/null 2>&1
+  adb shell wm dismiss-keyguard >/dev/null 2>&1
+  adb shell input keyevent KEYCODE_MENU >/dev/null 2>&1
+  sleep 3
+}
+
 LABEL=360x800
-RSS_START=$(adb shell dumpsys meminfo "$PKG" 2>/dev/null | tr -d '' | awk '/^TOTAL/{print $2; exit}')
+RSS_START=$(adb shell dumpsys meminfo "$PKG" 2>/dev/null | tr -d '
+' | awk '/^TOTAL/{print $2; exit}')
 adb shell wm size 1080x2400 >/dev/null 2>&1 && adb shell wm density 480 >/dev/null 2>&1
 sleep 6
 PID=$(ensure_running "$LABEL")
@@ -106,6 +120,7 @@ if [ -z "$PID" ]; then
   adb logcat -d 2>/dev/null | grep -iE "$PKG|lowmemorykiller|am_proc_died" | tail -12 > "$OUT/died-$LABEL.txt"
   step "view-$LABEL" FAIL "اپ پس ازِ wm size بالا نیامد (شاهد: $OUT/died-$LABEL.txt)"
 else
+  keep_awake
   adb forward tcp:9222 "localabstract:webview_devtools_remote_$PID" 2>/dev/null
   sleep 25                      # 16 مگابایت gz ← 70 مگابایت SQLite رویِ AVDِ کند
   dismiss_anr_dialog
@@ -125,14 +140,20 @@ else
   # شواهدِ مستقل ازِ DevTools: درختِ دسترس‌پذیریِ خودِ اندروید. WebView (API 34)
   # متنِ صفحه را درِ uiautomator می‌گذارد؛ بی‌این، قفل‌شدنِ CDP هیچ مدرکی ازِ
   # «برنامۀ واقعی رویِ گوشیِ واقعی دیده شد» باقی نمی‌گذارد.
+  keep_awake
   adb exec-out uiautomator dump /dev/tty 2>/dev/null | tr -d '' > "$OUT/ui-$LABEL.xml"
-  UIHITS=$(grep -oE "شاخص کل|ارزش معاملات بازار|نوسان‌گیر|صف خرید|بورس" "$OUT/ui-$LABEL.xml" 2>/dev/null | sort -u | tr '
-' ' ' | json_escape)
+  UIHITS=$(grep -oE "شاخص کل|ارزش معاملات بازار|نوسان‌گیر|صف خرید|بورس" "$OUT/ui-$LABEL.xml" 2>/dev/null | sort -u | paste -sd' ' - | json_escape)
+  # درختِ قفلِ صفحه هیچ متنِ برنامه‌ای ندارد؛ رانِ 38781829171 همین را FAIL کرد
+  # درحالی‌که دستگاه قفل بود. علتِ جدا ⇒ NOT_VERIFIED، نه اتهامِ به اپ.
+  KEYGUARD=$(grep -oiE "keyguard|lockscreen|swipe up|enter pin" "$OUT/ui-$LABEL.xml" 2>/dev/null | sort -u | head -2 | paste -sd' ' - | json_escape)
   if [ -n "$UIHITS" ]; then
     step "webview-$LABEL-a11y" PASS "متنِ واقعیِ برنامه درِ درختِ دسترس‌پذیری: $UIHITS"
+  elif [ -n "$KEYGUARD" ]; then
+    step "webview-$LABEL-a11y" NOT_VERIFIED "درختِ uiautomator مالِ قفلِ صفحه بود ($KEYGUARD)؛ متنِ برنامه دیده نشد"
   else
     step "webview-$LABEL-a11y" FAIL "هیچ واژۀِ دیدنیِ برنامه درِ uiautomator نبود (صفحۀ سفید؟ گفتگویِ سیستمی؟)"
   fi
+
   adb forward --remove tcp:9222 2>/dev/null
 fi
 
@@ -201,7 +222,6 @@ elif [ "${ANR_OTHER:-0}" != 0 ]; then
 else
   step anr PASS "ANR=0 (نه ما، نه هیچِ پروسه‌ای)"
 fi
-  step anr FAIL "ANR=${ANR:-0} system-not-responding=${ANRSYS:-0}: $(grep -m1 -E "ANR in |not responding" "$OUT/logcat.txt" | cut -c1-120 | json_escape)"
 [ "${LEAK:-0}" = 0 ] && step logcat_secrets PASS "hit=$LEAK (خطوطِ سیستمی شمرده نشد)" || step logcat_secrets FAIL "hit=$LEAK → $OUT/leak_hits.txt"
 
 # ── خلاصه ────────────────────────────────────────────────────────────────────

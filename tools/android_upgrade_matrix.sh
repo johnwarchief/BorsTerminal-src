@@ -81,6 +81,13 @@ if [ "$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" != "1" ]
   step "boot" "NOT_VERIFIED" "شبیه‌ساز بالا نیامد"; printf '{"counts":{"pass":%d,"fail":%d,"not_verified":%d}}\n' $PASS $FAILN $((NOTVER+1)) > "$JSON"; exit 0
 fi
 step "boot" "PASS" "sys.boot_completed=1"
+# قفلِ صفحه‌کلیدِ AVD بعدِ بوت، monkey/pidof را هم گول می‌زند (همان دامِ
+# رانِ 38781829171 درِ jobِ WebView). صفحه را بیدار و keyguard را کنار بگذار.
+adb shell svc power stayon true >/dev/null 2>&1
+adb shell settings put system screen_off_timeout 2147483647 >/dev/null 2>&1
+adb shell input keyevent KEYCODE_WAKEUP >/dev/null 2>&1
+adb shell wm dismiss-keyguard >/dev/null 2>&1
+sleep 3
 
 make_key A || true
 make_key B || true

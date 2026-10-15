@@ -1,0 +1,24 @@
+{
+  "apk": "mobile-parity-b336ad3__app-debug.apk",
+  "bytes": 25327535,
+  "sha256": "61959eabaa6c4cff6294afe5776926e61dc138af045d5decffd381387d7f9bae",
+  "signing_block_present": true,
+  "signature_pairs": [
+    "0x7109871A"
+  ],
+  "certificates": [
+    {
+      "subject": "C=US,O=Android,CN=Android Debug",
+      "issuer": "C=US,O=Android,CN=Android Debug",
+      "serial": "1",
+      "not_before": "2026-10-08T14:01:26+00:00",
+      "not_after": "2056-09-30T14:01:26+00:00",
+      "sha256_fingerprint": "dac85f573d3902c88bf4ca29ebd82a227c53fe04ac17c1435e269172303cf350",
+      "pretty_fingerprint": "DA:C8:5F:57:3D:39:02:C8:8B:F4:CA:29:EB:D8:2A:22:7C:53:FE:04:AC:17:C1:43:5E:26:91:72:30:3C:F3:50",
+      "via": "block:0x7109871A"
+    }
+  ],
+  "is_debug_certificate": true,
+  "expected_fingerprint": null,
+  "verdict": "DEBUG-SIGNED"
+}

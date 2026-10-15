@@ -1,0 +1,24 @@
+{
+  "apk": "bors_apk_9m79oibb.apk",
+  "bytes": 33090188,
+  "sha256": "8416c44ab2985720d0d01dc543620a29f7cfbf81dbcb399ddbd4a060dea9bb5c",
+  "signing_block_present": true,
+  "signature_pairs": [
+    "0x7109871A"
+  ],
+  "certificates": [
+    {
+      "subject": "C=US,O=Android,CN=Android Debug",
+      "issuer": "C=US,O=Android,CN=Android Debug",
+      "serial": "1",
+      "not_before": "2026-10-07T09:33:47+00:00",
+      "not_after": "2056-09-29T09:33:47+00:00",
+      "sha256_fingerprint": "159223e4bcd6ae0174dd2d58c669961a9b3e614e9fed0f635a7223bf363ccf35",
+      "pretty_fingerprint": "15:92:23:E4:BC:D6:AE:01:74:DD:2D:58:C6:69:96:1A:9B:3E:61:4E:9F:ED:0F:63:5A:72:23:BF:36:3C:CF:35",
+      "via": "block:0x7109871A"
+    }
+  ],
+  "is_debug_certificate": true,
+  "expected_fingerprint": null,
+  "verdict": "DEBUG-SIGNED"
+}

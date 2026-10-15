@@ -415,5 +415,24 @@ _v_block = re.search(r"verdict:\s*\{[\s\S]*?\n {6}\}", PRB)
 chk(_v_block is not None and "no404Fallback:" in _v_block.group(0),
     "A75 «آدرسِ ثبت‌شده به ۴۰۴ نیفتد» جزوِ حکم‌هاست، پس خروجِ کاوشگر را می‌شکند")
 
+# ── A76..A80 هویتِ کلید و گاردهایِ سنسورِ دستگاه ─────────────────────────────
+_cert_step = step_body("Verify the release certificate identity")
+chk("vars.ANDROID_RELEASE_CERT_SHA256" in _cert_step
+    and "apk_cert_fingerprint.py" in _cert_step and "SIGNED-MATCH" in _cert_step,
+    "A76 هویتِ گواهیِ APK با اثرانگشتِ ثبت‌شدۀ مالک جدا سنجیده می‌شود (بی‌var ⇒ NOT_VERIFIED)")
+chk("wm dismiss-keyguard" in EMU and EMU.count("keep_awake") >= 3,
+    "A77 پیش‌ازِ هر کاوشِ دستگاه قفلِ صفحه کنار می‌رود (بوتِ AVD صفحه را قفل می‌کند)")
+UPG = read("tools/android_upgrade_matrix.sh") or ""
+chk("wm dismiss-keyguard" in UPG and 'step "boot" "PASS"' in UPG,
+    "A77-ب مادۀ ارتقا هم بعدِ بوت قفلِ صفحه را کنار می‌گذارد (همان دامِ WebView)")
+chk('step "webview-$LABEL-a11y" NOT_VERIFIED "درختِ uiautomator مالِ قفلِ صفحه بود' in EMU,
+    "A78 قفلِ صفحه به‌حسابِ اپ FAIL نمی‌شود؛ علتش صریحاً NOT_VERIFIED است")
+chk(EMU.count("step anr FAIL") == 1 and "\nfi\n  step anr FAIL" not in EMU,
+    "A79 رأیِ ANR یک شاخۀ شرطی است، نه یک خطِ یتیمِ بعدِ fi (رانِ پیشین همیشه FAIL می‌داد)")
+tool = read("tools/apk_cert_fingerprint.py") or ""
+chk("SCHEME_IDS" not in tool and "APK Sig Block 42" in tool
+    and '"SIGNED-UNVERIFIED"' in tool and '"UNSIGNED"' in tool,
+    "A80 ابزارِ گواهی جفت‌ها را با ساختار می‌شناسد (نه جدولِ id ازِ حافظه) و بی‌شواهد «رسمی» نمی‌گوید")
+
 print("android_release_v1110: %d passed / %d failed" % (PASS, FAIL))
 sys.exit(1 if FAIL else 0)

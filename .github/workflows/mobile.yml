@@ -337,6 +337,29 @@ jobs:
             echo "APK_CERT_SHA256=$CERT"
           } >> "$GITHUB_ENV"
 
+      # امضای APK و امضای manifest دو سازوکارِ جدااند و هرکدام مستقل سنجیده
+      # می‌شود. این گام هویتِ کلیدِ APK را می‌خواند، نه فقط «امضا دارد»:
+      # اثرانگشتِ گواهی باید با vars.ANDROID_RELEASE_CERT_SHA256 (کلیدِ عمومیِ
+      # انتشار، بدونِ رمز) بخورد. بی‌var ⇒ NOT_VERIFIED؛ با var و بی‌مصرف ⇒ رد.
+      - name: Verify the release certificate identity
+        env:
+          EXPECT: ${{ vars.ANDROID_RELEASE_CERT_SHA256 }}
+        run: |
+          set -e
+          APK=$(ls -1 frontend/android/app/build/outputs/apk/release/*.apk | head -1)
+          mkdir -p _audit/android_release
+          ARGS=(--json _audit/android_release/cert_release.json)
+          if [ -n "$EXPECT" ]; then ARGS+=(--expect-fingerprint "$EXPECT"); fi
+          python3 tools/apk_cert_fingerprint.py "$APK" "${ARGS[@]}" || true
+          V=$(python3 -c 'import json,sys;print(json.load(open("_audit/android_release/cert_release.json",encoding="utf-8"))["verdict"])')
+          echo "certificate identity: $V (expected=${EXPECT:-none})" >> "$GITHUB_STEP_SUMMARY"
+          if [ -z "$EXPECT" ]; then
+            echo "NOT_VERIFIED: اثرانگشتِ کلیدِ انتشار درِ vars ثبت نشده ⇒ نمی‌توان ادعا کرد این APK با کلیدِ رسمیِ مالک امضا شده" >> "$GITHUB_STEP_SUMMARY"
+          elif [ "$V" != "SIGNED-MATCH" ]; then
+            echo "گواهیِ امضای APK با کلیدِ انتشارِ ثبت‌شده نمی‌خواند: $V" >&2
+            exit 1
+          fi
+
       - name: Upload release + debug artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -544,6 +567,10 @@ jobs:
           arch: x86_64
           profile: pixel_5
           disable-animations: true
+          # رانِ 38781829171: مادۀ ارتقا هفتِ دقیقه «adb: device offline» گرفت و
+          # مادۀ WebView درِ همان ران بالا آمد.Bootِ AVD رویِ runner flakes است،
+          # پس مهلتِ بوت دو برابرِ پیش‌فرضِ ۱۰ دقیقه.
+          boot-timeout: 20m
           script: bash tools/android_upgrade_matrix.sh
 
       - name: Record the honest result when the emulator cannot run
@@ -606,6 +633,10 @@ jobs:
           arch: x86_64
           profile: pixel_5
           disable-animations: true
+          # رانِ 38781829171: مادۀ ارتقا هفتِ دقیقه «adb: device offline» گرفت و
+          # مادۀ WebView درِ همان ران بالا آمد.Bootِ AVD رویِ runner flakes است،
+          # پس مهلتِ بوت دو برابرِ پیش‌فرضِ ۱۰ دقیقه.
+          boot-timeout: 20m
           script: bash tools/android_emu_verify.sh
 
       - name: Record the result honestly when the emulator cannot run
