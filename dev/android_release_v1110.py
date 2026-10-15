@@ -155,8 +155,14 @@ chk("needs: build-apk" in job and "/dev/kvm" in job,
     "A30 jobِ شبیه‌ساز بعد ازِ بیلد می‌دود و KVM را کاوش می‌کند")
 chk("NOT_VERIFIED" in job and "if: steps.kvm.outputs.present != 'true'" in job,
     "A31 بی‌KVM، نتیجه صریحاً NOT_VERIFIED ثبت می‌شود (نه سبزِ جعلی)")
-chk("android_emu_verify.sh apks/app-debug.apk" in job,
-    "A32 آزمونِ WebView رویِ بیلدِ debuggable است و درِ گزارش جدا ثبت می‌شود")
+chk("bash tools/android_emu_verify.sh" in job and "app-debug.apk" not in WF.split("script: bash tools/android_emu_verify.sh")[1].split("\n")[0],
+    "A32 آزمونِ WebView رویِ بیلدِ debuggable است (مسیرِ فایل را خودِ اسکریپت پیدا می‌کند) و درِ گزارش جدا ثبت می‌شود")
+chk("find apks -type f -name 'app-debug.apk'" in EMU,
+    "A42 مسیرِ artifact با glob پیدا می‌شود؛ upload-artifact ساختارِ release/ و debug/ را نگه می‌دارد")
+chk('grep -E "$PKG|chromium|Capacitor' in EMU,
+    "A43 شمارشِ نشتِ رمز به خطوطِ خودِ برنامه/WebView محدود است (noise سیستمی نه)")
+chk("dependent checks NOT_VERIFIED" in EMU,
+    "A44 بی‌بالاآمدنِ اپ، سنجه‌هایِ بعدی NOT_VERIFIED می‌شوند نه هشت FAILِ بی‌معنا")
 chk("wm size" in EMU and "360x800" in EMU and "390x844" in EMU and "412x915" in EMU,
     "A33 سه اندازۀ تلفن با wm size/density واقعی سنجیده می‌شود")
 chk("keyevent 4" in EMU and "KEYCODE_HOME" in EMU and "FATAL EXCEPTION" in EMU,

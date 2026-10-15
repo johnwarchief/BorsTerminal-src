@@ -59,6 +59,48 @@
     justify-content: center;
     min-height: 44px; /* هدف لمسی استاندارد */
   }
+  /* بندِ ۱ب — نوار ردیف شد ولی *درونش* ستونی ماند. اندازه‌گیریِ زنده درِ
+   * ۳۶۰×۸۰۰ (کاوشگر tools/android_viewport_probe.mts): سه گروهِ nav هر کدام
+   * ۱۳۵px قد و خوشۀِ تم/به‌روزرسانی/تنظیمات ۹۲px، داخلِ نوارِ ۵۸pxکی ⇒
+   * ردیف‌هایِ پایینِ هر گروه بیرون می‌زد و رویِ محتوا می‌افتاد (دکمۀ ⚙ رویِ
+   * پنلِ «صفر فروش» درِ همان عکس). همه ردیف می‌شوند؛ عنوانِ بخش و
+   * جداکننده‌ها که برایِ ریلِ عمودی ساخته شده بودند درِ نوارِ پایین جایی
+   * ندارند و پنهان می‌شوند.
+   *
+   * ۱پ — عرضِ هدفِ لمس: لینک‌ها `flex: 1 0 auto` بودند، یعنی قدشان ۴۴px ولی
+   * عرضشان اندازهٔ خودِ آیکون (۲۱px در ۳۶۰×۸۰۰، اندازه‌گیریِ زنده). بی‌این که
+   * بخش‌ها را هم `flex: 1 1 0` کنیم سهم‌ها نابرابر می‌ماند (۲۰/۳۲/۶۵px); با
+   * `display: contents` خودِ لینک‌ها فرزندِ مستقیمِ flexِ nav می‌شوند و عرض
+   * یکسان (~۳۳px در ۳۶۰px) می‌گیرند. اگر WebView خیلی قدیمی contents را نفهمد،
+   * به همان چیدمانِ قبلی برمی‌گردد — خرابیِ آرام، نه به‌هم‌ریختگی.
+   *
+   * باقی‌مانده که تصمیمِ مالک است: درِ ۳۶۰px، شش تب با سه دکمۀِ خوشۀِ پایین
+   * (۱۶۰px) هم‌زمان ۴۴pxِ کامل درِ عرض نمی‌شوند. دو راهِ واقعی هست — نوارِ
+   * لغزان، یا برداشتنِ آن سه دکمه به نوارِ بالا — و هیچ‌کدام یک‌طرفه انتخاب
+   * نشده که مبادا تبی درِ ساعتِ بازار از دسترس بیفتد. */
+  html.bors-mobile aside[data-shell='sidebar'] nav > div {
+    display: contents;
+  }
+  html.bors-mobile aside[data-shell='sidebar'] nav > div > div {
+    display: none;
+  }
+  html.bors-mobile aside[data-shell='sidebar'] nav > a {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+  html.bors-mobile aside[data-shell='sidebar'] > div.mt-auto,
+  html.bors-mobile aside[data-shell='sidebar'] > div.mt-auto > div {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 4px;
+    width: auto;
+  }
+  /* همان خوشۀِ پایین: دکمه‌ها ۲۵-۲۶px بودند، زیرِ هدفِ لمسیِ ۴۴px */
+  html.bors-mobile aside[data-shell='sidebar'] > div.mt-auto button {
+    min-height: 44px;
+    min-width: 44px;
+  }
 
   /* ۲) بدنه: جا برای نوار پایین + لغو فاصلهٔ داور (اینسپکتور تمام‌صفحه می‌شود)
      — ۵۸px ارتفاعِ خودِ نوار است و ۸px فاصله؛ env() لازم است چون با

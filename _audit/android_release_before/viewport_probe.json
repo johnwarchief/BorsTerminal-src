@@ -1,0 +1,1427 @@
+{
+  "at": "2026-10-15T01:22:26.934Z",
+  "dist": "C:/Users/PCMOD/Desktop/BorsTerminal-android/frontend/dist",
+  "asset": "probe_bundle.js",
+  "note": "Chromium — نه WebViewِ اندروید؛ env(safe-area-inset-*) اینجا همیشه صفر است و صفحه‌کلید تقلید نمی‌شود",
+  "results": [
+    {
+      "size": "360x800x3",
+      "route": "(index)",
+      "measured": {
+        "vw": 360,
+        "vh": 800,
+        "route": "#/",
+        "title": "ترمینال تحلیل بورس",
+        "bootCard": false,
+        "fatalBanner": false,
+        "notFound": true,
+        "bootTiming": {
+          "source": "bundle",
+          "gzBytes": 16179264,
+          "rawBytes": 70619136,
+          "fetchMs": 242,
+          "gunzipMs": 173,
+          "openMs": 15,
+          "totalMs": 430
+        },
+        "viewportMeta": "width=device-width, initial-scale=1.0, viewport-fit=cover",
+        "overflowX": 0,
+        "rowCount": 26,
+        "textLen": 6245,
+        "navBox": {
+          "x": 0,
+          "y": 742,
+          "w": 360,
+          "h": 58,
+          "bottom": 800
+        },
+        "navPadBottom": "4px",
+        "appContentPadBottom": "66px",
+        "lastRowBottom": 2381,
+        "safeAreaBottom": "0px",
+        "touchTargetsUnder44": 3,
+        "navItemsUnder44Wide": 6,
+        "barScrolls": false
+      },
+      "consoleErrors": [
+        "Failed to load resource: net::ERR_FAILED",
+        "Failed to load resource: net::ERR_FAILED",
+        "Failed to load resource: net::ERR_FAILED"
+      ],
+      "blockedByHarness": 3,
+      "screenshot": "_audit/android_release_before/viewports/360x800-index.png",
+      "verdict": {
+        "booted": true,
+        "noHorizontalOverflow": true,
+        "rowsRendered": true,
+        "navOnScreen": true,
+        "touchTargetsOk": false,
+        "cleanConsole": true
+      }
+    },
+    {
+      "size": "360x800x3",
+      "route": "market",
+      "measured": {
+        "vw": 360,
+        "vh": 800,
+        "route": "#/market",
+        "title": "ترمینال تحلیل بورس",
+        "bootCard": false,
+        "fatalBanner": false,
+        "notFound": true,
+        "bootTiming": {
+          "source": "bundle",
+          "gzBytes": 16179264,
+          "rawBytes": 70619136,
+          "fetchMs": 242,
+          "gunzipMs": 173,
+          "openMs": 15,
+          "totalMs": 430
+        },
+        "viewportMeta": "width=device-width, initial-scale=1.0, viewport-fit=cover",
+        "overflowX": 0,
+        "rowCount": 26,
+        "textLen": 6322,
+        "navBox": {
+          "x": 0,
+          "y": 742,
+          "w": 360,
+          "h": 58,
+          "bottom": 800
+        },
+        "navPadBottom": "4px",
+        "appContentPadBottom": "66px",
+        "lastRowBottom": 2381,
+        "safeAreaBottom": "0px",
+        "touchTargetsUnder44": 3,
+        "navItemsUnder44Wide": 6,
+        "barScrolls": false
+      },
+      "consoleErrors": [],
+      "blockedByHarness": 0,
+      "screenshot": "_audit/android_release_before/viewports/360x800-market.png",
+      "verdict": {
+        "booted": true,
+        "noHorizontalOverflow": true,
+        "rowsRendered": true,
+        "navOnScreen": true,
+        "touchTargetsOk": false,
+        "cleanConsole": true
+      }
+    },
+    {
+      "size": "360x800x3",
+      "route": "fundamental",
+      "measured": {
+        "vw": 360,
+        "vh": 800,
+        "route": "#/fundamental",
+        "title": "ترمینال تحلیل بورس",
+        "bootCard": false,
+        "fatalBanner": false,
+        "notFound": true,
+        "bootTiming": {
+          "source": "bundle",
+          "gzBytes": 16179264,
+          "rawBytes": 70619136,
+          "fetchMs": 242,
+          "gunzipMs": 173,
+          "openMs": 15,
+          "totalMs": 430
+        },
+        "viewportMeta": "width=device-width, initial-scale=1.0, viewport-fit=cover",
+        "overflowX": 0,
+        "rowCount": 23,
+        "textLen": 3355,
+        "navBox": {
+          "x": 0,
+          "y": 742,
+          "w": 360,
+          "h": 58,
+          "bottom": 800
+        },
+        "navPadBottom": "4px",
+        "appContentPadBottom": "66px",
+        "lastRowBottom": 30539,
+        "safeAreaBottom": "0px",
+        "touchTargetsUnder44": 3,
+        "navItemsUnder44Wide": 6,
+        "barScrolls": false
+      },
+      "consoleErrors": [
+        "Failed to load resource: net::ERR_FAILED"
+      ],
+      "blockedByHarness": 1,
+      "screenshot": "_audit/android_release_before/viewports/360x800-fundamental.png",
+      "verdict": {
+        "booted": true,
+        "noHorizontalOverflow": true,
+        "rowsRendered": true,
+        "navOnScreen": true,
+        "touchTargetsOk": false,
+        "cleanConsole": true
+      }
+    },
+    {
+      "size": "360x800x3",
+      "route": "technical",
+      "measured": {
+        "vw": 360,
+        "vh": 800,
+        "route": "#/technical",
+        "title": "ترمینال تحلیل بورس",
+        "bootCard": false,
+        "fatalBanner": false,
+        "notFound": false,
+        "bootTiming": {
+          "source": "bundle",
+          "gzBytes": 16179264,
+          "rawBytes": 70619136,
+          "fetchMs": 242,
+          "gunzipMs": 173,
+          "openMs": 15,
+          "totalMs": 430
+        },
+        "viewportMeta": "width=device-width, initial-scale=1.0, viewport-fit=cover",
+        "overflowX": 0,
+        "rowCount": 0,
+        "textLen": 2110,
+        "navBox": {
+          "x": 0,
+          "y": 742,
+          "w": 360,
+          "h": 58,
+          "bottom": 800
+        },
+        "navPadBottom": "4px",
+        "appContentPadBottom": "66px",
+        "lastRowBottom": null,
+        "safeAreaBottom": "0px",
+        "touchTargetsUnder44": 3,
+        "navItemsUnder44Wide": 6,
+        "barScrolls": false
+      },
+      "consoleErrors": [
+        "Failed to load resource: net::ERR_FAILED",
+        "Failed to load resource: net::ERR_FAILED",
+        "Failed to load resource: net::ERR_FAILED"
+      ],
+      "blockedByHarness": 3,
+      "screenshot": "_audit/android_release_before/viewports/360x800-technical.png",
+      "verdict": {
+        "booted": true,
+        "noHorizontalOverflow": true,
+        "rowsRendered": true,
+        "navOnScreen": true,
+        "touchTargetsOk": false,
+        "cleanConsole": true
+      }
+    },
+    {
+      "size": "360x800x3",
+      "route": "strategy-tree",
+      "measured": {
+        "vw": 360,
+        "vh": 800,
+        "route": "#/strategy-tree",
+        "title": "ترمینال تحلیل بورس",
+        "bootCard": false,
+        "fatalBanner": false,
+        "notFound": false,
+        "bootTiming": {
+          "source": "bundle",
+          "gzBytes": 16179264,
+          "rawBytes": 70619136,
+          "fetchMs": 242,
+          "gunzipMs": 173,
+          "openMs": 15,
+          "totalMs": 430
+        },
+        "viewportMeta": "width=device-width, initial-scale=1.0, viewport-fit=cover",
+        "overflowX": 0,
+        "rowCount": 0,
+        "textLen": 4453,
+        "navBox": {
+          "x": 0,
+          "y": 742,
+          "w": 360,
+          "h": 58,
+          "bottom": 800
+        },
+        "navPadBottom": "4px",
+        "appContentPadBottom": "66px",
+        "lastRowBottom": null,
+        "safeAreaBottom": "0px",
+        "touchTargetsUnder44": 3,
+        "navItemsUnder44Wide": 6,
+        "barScrolls": false
+      },
+      "consoleErrors": [
+        "Failed to load resource: net::ERR_FAILED"
+      ],
+      "blockedByHarness": 1,
+      "screenshot": "_audit/android_release_before/viewports/360x800-strategy-tree.png",
+      "verdict": {
+        "booted": true,
+        "noHorizontalOverflow": true,
+        "rowsRendered": true,
+        "navOnScreen": true,
+        "touchTargetsOk": false,
+        "cleanConsole": true
+      }
+    },
+    {
+      "size": "360x800x3",
+      "route": "master",
+      "measured": {
+        "vw": 360,
+        "vh": 800,
+        "route": "#/master",
+        "title": "ترمینال تحلیل بورس",
+        "bootCard": false,
+        "fatalBanner": false,
+        "notFound": false,
+        "bootTiming": {
+          "source": "bundle",
+          "gzBytes": 16179264,
+          "rawBytes": 70619136,
+          "fetchMs": 242,
+          "gunzipMs": 173,
+          "openMs": 15,
+          "totalMs": 430
+        },
+        "viewportMeta": "width=device-width, initial-scale=1.0, viewport-fit=cover",
+        "overflowX": 0,
+        "rowCount": 0,
+        "textLen": 1519,
+        "navBox": {
+          "x": 0,
+          "y": 742,
+          "w": 360,
+          "h": 58,
+          "bottom": 800
+        },
+        "navPadBottom": "4px",
+        "appContentPadBottom": "66px",
+        "lastRowBottom": null,
+        "safeAreaBottom": "0px",
+        "touchTargetsUnder44": 3,
+        "navItemsUnder44Wide": 6,
+        "barScrolls": false
+      },
+      "consoleErrors": [],
+      "blockedByHarness": 0,
+      "screenshot": "_audit/android_release_before/viewports/360x800-master.png",
+      "verdict": {
+        "booted": true,
+        "noHorizontalOverflow": true,
+        "rowsRendered": true,
+        "navOnScreen": true,
+        "touchTargetsOk": false,
+        "cleanConsole": true
+      }
+    },
+    {
+      "size": "360x800x3",
+      "route": "engine-lab",
+      "measured": {
+        "vw": 360,
+        "vh": 800,
+        "route": "#/engine-lab",
+        "title": "ترمینال تحلیل بورس",
+        "bootCard": false,
+        "fatalBanner": false,
+        "notFound": false,
+        "bootTiming": {
+          "source": "bundle",
+          "gzBytes": 16179264,
+          "rawBytes": 70619136,
+          "fetchMs": 242,
+          "gunzipMs": 173,
+          "openMs": 15,
+          "totalMs": 430
+        },
+        "viewportMeta": "width=device-width, initial-scale=1.0, viewport-fit=cover",
+        "overflowX": 0,
+        "rowCount": 38,
+        "textLen": 1887,
+        "navBox": {
+          "x": 0,
+          "y": 742,
+          "w": 360,
+          "h": 58,
+          "bottom": 800
+        },
+        "navPadBottom": "4px",
+        "appContentPadBottom": "66px",
+        "lastRowBottom": 1901,
+        "safeAreaBottom": "0px",
+        "touchTargetsUnder44": 3,
+        "navItemsUnder44Wide": 6,
+        "barScrolls": false
+      },
+      "consoleErrors": [
+        "Failed to load resource: net::ERR_FAILED"
+      ],
+      "blockedByHarness": 1,
+      "screenshot": "_audit/android_release_before/viewports/360x800-engine-lab.png",
+      "verdict": {
+        "booted": true,
+        "noHorizontalOverflow": true,
+        "rowsRendered": true,
+        "navOnScreen": true,
+        "touchTargetsOk": false,
+        "cleanConsole": true
+      }
+    },
+    {
+      "size": "360x800x3",
+      "route": "portfolio",
+      "measured": {
+        "vw": 360,
+        "vh": 800,
+        "route": "#/portfolio",
+        "title": "ترمینال تحلیل بورس",
+        "bootCard": false,
+        "fatalBanner": false,
+        "notFound": false,
+        "bootTiming": {
+          "source": "bundle",
+          "gzBytes": 16179264,
+          "rawBytes": 70619136,
+          "fetchMs": 242,
+          "gunzipMs": 173,
+          "openMs": 15,
+          "totalMs": 430
+        },
+        "viewportMeta": "width=device-width, initial-scale=1.0, viewport-fit=cover",
+        "overflowX": 0,
+        "rowCount": 7,
+        "textLen": 2106,
+        "navBox": {
+          "x": 0,
+          "y": 742,
+          "w": 360,
+          "h": 58,
+          "bottom": 800
+        },
+        "navPadBottom": "4px",
+        "appContentPadBottom": "66px",
+        "lastRowBottom": 1326,
+        "safeAreaBottom": "0px",
+        "touchTargetsUnder44": 3,
+        "navItemsUnder44Wide": 6,
+        "barScrolls": false
+      },
+      "consoleErrors": [],
+      "blockedByHarness": 0,
+      "screenshot": "_audit/android_release_before/viewports/360x800-portfolio.png",
+      "verdict": {
+        "booted": true,
+        "noHorizontalOverflow": true,
+        "rowsRendered": true,
+        "navOnScreen": true,
+        "touchTargetsOk": false,
+        "cleanConsole": true
+      }
+    },
+    {
+      "size": "360x800x3",
+      "route": "nope-404",
+      "measured": {
+        "vw": 360,
+        "vh": 800,
+        "route": "#/nope-404",
+        "title": "ترمینال تحلیل بورس",
+        "bootCard": false,
+        "fatalBanner": false,
+        "notFound": false,
+        "bootTiming": {
+          "source": "bundle",
+          "gzBytes": 16179264,
+          "rawBytes": 70619136,
+          "fetchMs": 242,
+          "gunzipMs": 173,
+          "openMs": 15,
+          "totalMs": 430
+        },
+        "viewportMeta": "width=device-width, initial-scale=1.0, viewport-fit=cover",
+        "overflowX": 0,
+        "rowCount": 0,
+        "textLen": 420,
+        "navBox": {
+          "x": 0,
+          "y": 742,
+          "w": 360,
+          "h": 58,
+          "bottom": 800
+        },
+        "navPadBottom": "4px",
+        "appContentPadBottom": "66px",
+        "lastRowBottom": null,
+        "safeAreaBottom": "0px",
+        "touchTargetsUnder44": 3,
+        "navItemsUnder44Wide": 6,
+        "barScrolls": false
+      },
+      "consoleErrors": [],
+      "blockedByHarness": 0,
+      "screenshot": "_audit/android_release_before/viewports/360x800-nope-404.png",
+      "verdict": {
+        "booted": true,
+        "noHorizontalOverflow": true,
+        "rowsRendered": true,
+        "navOnScreen": true,
+        "touchTargetsOk": false,
+        "cleanConsole": true
+      }
+    },
+    {
+      "size": "390x844x3",
+      "route": "(index)",
+      "measured": {
+        "vw": 390,
+        "vh": 844,
+        "route": "#/",
+        "title": "ترمینال تحلیل بورس",
+        "bootCard": false,
+        "fatalBanner": false,
+        "notFound": true,
+        "bootTiming": {
+          "source": "bundle",
+          "gzBytes": 16179264,
+          "rawBytes": 70619136,
+          "fetchMs": 216,
+          "gunzipMs": 164,
+          "openMs": 14,
+          "totalMs": 394
+        },
+        "viewportMeta": "width=device-width, initial-scale=1.0, viewport-fit=cover",
+        "overflowX": 0,
+        "rowCount": 27,
+        "textLen": 6372,
+        "navBox": {
+          "x": 0,
+          "y": 786,
+          "w": 390,
+          "h": 58,
+          "bottom": 844
+        },
+        "navPadBottom": "4px",
+        "appContentPadBottom": "66px",
+        "lastRowBottom": 2397,
+        "safeAreaBottom": "0px",
+        "touchTargetsUnder44": 3,
+        "navItemsUnder44Wide": 6,
+        "barScrolls": false
+      },
+      "consoleErrors": [
+        "Failed to load resource: net::ERR_FAILED",
+        "Failed to load resource: net::ERR_FAILED",
+        "Failed to load resource: net::ERR_FAILED"
+      ],
+      "blockedByHarness": 3,
+      "screenshot": "_audit/android_release_before/viewports/390x844-index.png",
+      "verdict": {
+        "booted": true,
+        "noHorizontalOverflow": true,
+        "rowsRendered": true,
+        "navOnScreen": true,
+        "touchTargetsOk": false,
+        "cleanConsole": true
+      }
+    },
+    {
+      "size": "390x844x3",
+      "route": "market",
+      "measured": {
+        "vw": 390,
+        "vh": 844,
+        "route": "#/market",
+        "title": "ترمینال تحلیل بورس",
+        "bootCard": false,
+        "fatalBanner": false,
+        "notFound": true,
+        "bootTiming": {
+          "source": "bundle",
+          "gzBytes": 16179264,
+          "rawBytes": 70619136,
+          "fetchMs": 216,
+          "gunzipMs": 164,
+          "openMs": 14,
+          "totalMs": 394
+        },
+        "viewportMeta": "width=device-width, initial-scale=1.0, viewport-fit=cover",
+        "overflowX": 0,
+        "rowCount": 27,
+        "textLen": 6449,
+        "navBox": {
+          "x": 0,
+          "y": 786,
+          "w": 390,
+          "h": 58,
+          "bottom": 844
+        },
+        "navPadBottom": "4px",
+        "appContentPadBottom": "66px",
+        "lastRowBottom": 2397,
+        "safeAreaBottom": "0px",
+        "touchTargetsUnder44": 3,
+        "navItemsUnder44Wide": 6,
+        "barScrolls": false
+      },
+      "consoleErrors": [],
+      "blockedByHarness": 0,
+      "screenshot": "_audit/android_release_before/viewports/390x844-market.png",
+      "verdict": {
+        "booted": true,
+        "noHorizontalOverflow": true,
+        "rowsRendered": true,
+        "navOnScreen": true,
+        "touchTargetsOk": false,
+        "cleanConsole": true
+      }
+    },
+    {
+      "size": "390x844x3",
+      "route": "fundamental",
+      "measured": {
+        "vw": 390,
+        "vh": 844,
+        "route": "#/fundamental",
+        "title": "ترمینال تحلیل بورس",
+        "bootCard": false,
+        "fatalBanner": false,
+        "notFound": true,
+        "bootTiming": {
+          "source": "bundle",
+          "gzBytes": 16179264,
+          "rawBytes": 70619136,
+          "fetchMs": 216,
+          "gunzipMs": 164,
+          "openMs": 14,
+          "totalMs": 394
+        },
+        "viewportMeta": "width=device-width, initial-scale=1.0, viewport-fit=cover",
+        "overflowX": 0,
+        "rowCount": 23,
+        "textLen": 3355,
+        "navBox": {
+          "x": 0,
+          "y": 786,
+          "w": 390,
+          "h": 58,
+          "bottom": 844
+        },
+        "navPadBottom": "4px",
+        "appContentPadBottom": "66px",
+        "lastRowBottom": 30514,
+        "safeAreaBottom": "0px",
+        "touchTargetsUnder44": 3,
+        "navItemsUnder44Wide": 6,
+        "barScrolls": false
+      },
+      "consoleErrors": [
+        "Failed to load resource: net::ERR_FAILED"
+      ],
+      "blockedByHarness": 1,
+      "screenshot": "_audit/android_release_before/viewports/390x844-fundamental.png",
+      "verdict": {
+        "booted": true,
+        "noHorizontalOverflow": true,
+        "rowsRendered": true,
+        "navOnScreen": true,
+        "touchTargetsOk": false,
+        "cleanConsole": true
+      }
+    },
+    {
+      "size": "390x844x3",
+      "route": "technical",
+      "measured": {
+        "vw": 390,
+        "vh": 844,
+        "route": "#/technical",
+        "title": "ترمینال تحلیل بورس",
+        "bootCard": false,
+        "fatalBanner": false,
+        "notFound": false,
+        "bootTiming": {
+          "source": "bundle",
+          "gzBytes": 16179264,
+          "rawBytes": 70619136,
+          "fetchMs": 216,
+          "gunzipMs": 164,
+          "openMs": 14,
+          "totalMs": 394
+        },
+        "viewportMeta": "width=device-width, initial-scale=1.0, viewport-fit=cover",
+        "overflowX": 0,
+        "rowCount": 0,
+        "textLen": 2110,
+        "navBox": {
+          "x": 0,
+          "y": 786,
+          "w": 390,
+          "h": 58,
+          "bottom": 844
+        },
+        "navPadBottom": "4px",
+        "appContentPadBottom": "66px",
+        "lastRowBottom": null,
+        "safeAreaBottom": "0px",
+        "touchTargetsUnder44": 3,
+        "navItemsUnder44Wide": 6,
+        "barScrolls": false
+      },
+      "consoleErrors": [
+        "Failed to load resource: net::ERR_FAILED",
+        "Failed to load resource: net::ERR_FAILED",
+        "Failed to load resource: net::ERR_FAILED"
+      ],
+      "blockedByHarness": 3,
+      "screenshot": "_audit/android_release_before/viewports/390x844-technical.png",
+      "verdict": {
+        "booted": true,
+        "noHorizontalOverflow": true,
+        "rowsRendered": true,
+        "navOnScreen": true,
+        "touchTargetsOk": false,
+        "cleanConsole": true
+      }
+    },
+    {
+      "size": "390x844x3",
+      "route": "strategy-tree",
+      "measured": {
+        "vw": 390,
+        "vh": 844,
+        "route": "#/strategy-tree",
+        "title": "ترمینال تحلیل بورس",
+        "bootCard": false,
+        "fatalBanner": false,
+        "notFound": false,
+        "bootTiming": {
+          "source": "bundle",
+          "gzBytes": 16179264,
+          "rawBytes": 70619136,
+          "fetchMs": 216,
+          "gunzipMs": 164,
+          "openMs": 14,
+          "totalMs": 394
+        },
+        "viewportMeta": "width=device-width, initial-scale=1.0, viewport-fit=cover",
+        "overflowX": 0,
+        "rowCount": 0,
+        "textLen": 4453,
+        "navBox": {
+          "x": 0,
+          "y": 786,
+          "w": 390,
+          "h": 58,
+          "bottom": 844
+        },
+        "navPadBottom": "4px",
+        "appContentPadBottom": "66px",
+        "lastRowBottom": null,
+        "safeAreaBottom": "0px",
+        "touchTargetsUnder44": 3,
+        "navItemsUnder44Wide": 6,
+        "barScrolls": false
+      },
+      "consoleErrors": [
+        "Failed to load resource: net::ERR_FAILED"
+      ],
+      "blockedByHarness": 1,
+      "screenshot": "_audit/android_release_before/viewports/390x844-strategy-tree.png",
+      "verdict": {
+        "booted": true,
+        "noHorizontalOverflow": true,
+        "rowsRendered": true,
+        "navOnScreen": true,
+        "touchTargetsOk": false,
+        "cleanConsole": true
+      }
+    },
+    {
+      "size": "390x844x3",
+      "route": "master",
+      "measured": {
+        "vw": 390,
+        "vh": 844,
+        "route": "#/master",
+        "title": "ترمینال تحلیل بورس",
+        "bootCard": false,
+        "fatalBanner": false,
+        "notFound": false,
+        "bootTiming": {
+          "source": "bundle",
+          "gzBytes": 16179264,
+          "rawBytes": 70619136,
+          "fetchMs": 216,
+          "gunzipMs": 164,
+          "openMs": 14,
+          "totalMs": 394
+        },
+        "viewportMeta": "width=device-width, initial-scale=1.0, viewport-fit=cover",
+        "overflowX": 0,
+        "rowCount": 0,
+        "textLen": 1519,
+        "navBox": {
+          "x": 0,
+          "y": 786,
+          "w": 390,
+          "h": 58,
+          "bottom": 844
+        },
+        "navPadBottom": "4px",
+        "appContentPadBottom": "66px",
+        "lastRowBottom": null,
+        "safeAreaBottom": "0px",
+        "touchTargetsUnder44": 3,
+        "navItemsUnder44Wide": 6,
+        "barScrolls": false
+      },
+      "consoleErrors": [],
+      "blockedByHarness": 0,
+      "screenshot": "_audit/android_release_before/viewports/390x844-master.png",
+      "verdict": {
+        "booted": true,
+        "noHorizontalOverflow": true,
+        "rowsRendered": true,
+        "navOnScreen": true,
+        "touchTargetsOk": false,
+        "cleanConsole": true
+      }
+    },
+    {
+      "size": "390x844x3",
+      "route": "engine-lab",
+      "measured": {
+        "vw": 390,
+        "vh": 844,
+        "route": "#/engine-lab",
+        "title": "ترمینال تحلیل بورس",
+        "bootCard": false,
+        "fatalBanner": false,
+        "notFound": false,
+        "bootTiming": {
+          "source": "bundle",
+          "gzBytes": 16179264,
+          "rawBytes": 70619136,
+          "fetchMs": 216,
+          "gunzipMs": 164,
+          "openMs": 14,
+          "totalMs": 394
+        },
+        "viewportMeta": "width=device-width, initial-scale=1.0, viewport-fit=cover",
+        "overflowX": 0,
+        "rowCount": 38,
+        "textLen": 1885,
+        "navBox": {
+          "x": 0,
+          "y": 786,
+          "w": 390,
+          "h": 58,
+          "bottom": 844
+        },
+        "navPadBottom": "4px",
+        "appContentPadBottom": "66px",
+        "lastRowBottom": 1862,
+        "safeAreaBottom": "0px",
+        "touchTargetsUnder44": 3,
+        "navItemsUnder44Wide": 6,
+        "barScrolls": false
+      },
+      "consoleErrors": [
+        "Failed to load resource: net::ERR_FAILED"
+      ],
+      "blockedByHarness": 1,
+      "screenshot": "_audit/android_release_before/viewports/390x844-engine-lab.png",
+      "verdict": {
+        "booted": true,
+        "noHorizontalOverflow": true,
+        "rowsRendered": true,
+        "navOnScreen": true,
+        "touchTargetsOk": false,
+        "cleanConsole": true
+      }
+    },
+    {
+      "size": "390x844x3",
+      "route": "portfolio",
+      "measured": {
+        "vw": 390,
+        "vh": 844,
+        "route": "#/portfolio",
+        "title": "ترمینال تحلیل بورس",
+        "bootCard": false,
+        "fatalBanner": false,
+        "notFound": false,
+        "bootTiming": {
+          "source": "bundle",
+          "gzBytes": 16179264,
+          "rawBytes": 70619136,
+          "fetchMs": 216,
+          "gunzipMs": 164,
+          "openMs": 14,
+          "totalMs": 394
+        },
+        "viewportMeta": "width=device-width, initial-scale=1.0, viewport-fit=cover",
+        "overflowX": 0,
+        "rowCount": 7,
+        "textLen": 2106,
+        "navBox": {
+          "x": 0,
+          "y": 786,
+          "w": 390,
+          "h": 58,
+          "bottom": 844
+        },
+        "navPadBottom": "4px",
+        "appContentPadBottom": "66px",
+        "lastRowBottom": 1309,
+        "safeAreaBottom": "0px",
+        "touchTargetsUnder44": 3,
+        "navItemsUnder44Wide": 6,
+        "barScrolls": false
+      },
+      "consoleErrors": [],
+      "blockedByHarness": 0,
+      "screenshot": "_audit/android_release_before/viewports/390x844-portfolio.png",
+      "verdict": {
+        "booted": true,
+        "noHorizontalOverflow": true,
+        "rowsRendered": true,
+        "navOnScreen": true,
+        "touchTargetsOk": false,
+        "cleanConsole": true
+      }
+    },
+    {
+      "size": "390x844x3",
+      "route": "nope-404",
+      "measured": {
+        "vw": 390,
+        "vh": 844,
+        "route": "#/nope-404",
+        "title": "ترمینال تحلیل بورس",
+        "bootCard": false,
+        "fatalBanner": false,
+        "notFound": false,
+        "bootTiming": {
+          "source": "bundle",
+          "gzBytes": 16179264,
+          "rawBytes": 70619136,
+          "fetchMs": 216,
+          "gunzipMs": 164,
+          "openMs": 14,
+          "totalMs": 394
+        },
+        "viewportMeta": "width=device-width, initial-scale=1.0, viewport-fit=cover",
+        "overflowX": 0,
+        "rowCount": 0,
+        "textLen": 420,
+        "navBox": {
+          "x": 0,
+          "y": 786,
+          "w": 390,
+          "h": 58,
+          "bottom": 844
+        },
+        "navPadBottom": "4px",
+        "appContentPadBottom": "66px",
+        "lastRowBottom": null,
+        "safeAreaBottom": "0px",
+        "touchTargetsUnder44": 3,
+        "navItemsUnder44Wide": 6,
+        "barScrolls": false
+      },
+      "consoleErrors": [],
+      "blockedByHarness": 0,
+      "screenshot": "_audit/android_release_before/viewports/390x844-nope-404.png",
+      "verdict": {
+        "booted": true,
+        "noHorizontalOverflow": true,
+        "rowsRendered": true,
+        "navOnScreen": true,
+        "touchTargetsOk": false,
+        "cleanConsole": true
+      }
+    },
+    {
+      "size": "412x915x3",
+      "route": "(index)",
+      "measured": {
+        "vw": 412,
+        "vh": 915,
+        "route": "#/",
+        "title": "ترمینال تحلیل بورس",
+        "bootCard": false,
+        "fatalBanner": false,
+        "notFound": true,
+        "bootTiming": {
+          "source": "bundle",
+          "gzBytes": 16179264,
+          "rawBytes": 70619136,
+          "fetchMs": 212,
+          "gunzipMs": 158,
+          "openMs": 14,
+          "totalMs": 384
+        },
+        "viewportMeta": "width=device-width, initial-scale=1.0, viewport-fit=cover",
+        "overflowX": 0,
+        "rowCount": 29,
+        "textLen": 6626,
+        "navBox": {
+          "x": 0,
+          "y": 857,
+          "w": 412,
+          "h": 58,
+          "bottom": 915
+        },
+        "navPadBottom": "4px",
+        "appContentPadBottom": "66px",
+        "lastRowBottom": 2454,
+        "safeAreaBottom": "0px",
+        "touchTargetsUnder44": 3,
+        "navItemsUnder44Wide": 6,
+        "barScrolls": false
+      },
+      "consoleErrors": [
+        "Failed to load resource: net::ERR_FAILED",
+        "Failed to load resource: net::ERR_FAILED",
+        "Failed to load resource: net::ERR_FAILED"
+      ],
+      "blockedByHarness": 3,
+      "screenshot": "_audit/android_release_before/viewports/412x915-index.png",
+      "verdict": {
+        "booted": true,
+        "noHorizontalOverflow": true,
+        "rowsRendered": true,
+        "navOnScreen": true,
+        "touchTargetsOk": false,
+        "cleanConsole": true
+      }
+    },
+    {
+      "size": "412x915x3",
+      "route": "market",
+      "measured": {
+        "vw": 412,
+        "vh": 915,
+        "route": "#/market",
+        "title": "ترمینال تحلیل بورس",
+        "bootCard": false,
+        "fatalBanner": false,
+        "notFound": true,
+        "bootTiming": {
+          "source": "bundle",
+          "gzBytes": 16179264,
+          "rawBytes": 70619136,
+          "fetchMs": 212,
+          "gunzipMs": 158,
+          "openMs": 14,
+          "totalMs": 384
+        },
+        "viewportMeta": "width=device-width, initial-scale=1.0, viewport-fit=cover",
+        "overflowX": 0,
+        "rowCount": 29,
+        "textLen": 6703,
+        "navBox": {
+          "x": 0,
+          "y": 857,
+          "w": 412,
+          "h": 58,
+          "bottom": 915
+        },
+        "navPadBottom": "4px",
+        "appContentPadBottom": "66px",
+        "lastRowBottom": 2454,
+        "safeAreaBottom": "0px",
+        "touchTargetsUnder44": 3,
+        "navItemsUnder44Wide": 6,
+        "barScrolls": false
+      },
+      "consoleErrors": [],
+      "blockedByHarness": 0,
+      "screenshot": "_audit/android_release_before/viewports/412x915-market.png",
+      "verdict": {
+        "booted": true,
+        "noHorizontalOverflow": true,
+        "rowsRendered": true,
+        "navOnScreen": true,
+        "touchTargetsOk": false,
+        "cleanConsole": true
+      }
+    },
+    {
+      "size": "412x915x3",
+      "route": "fundamental",
+      "measured": {
+        "vw": 412,
+        "vh": 915,
+        "route": "#/fundamental",
+        "title": "ترمینال تحلیل بورس",
+        "bootCard": false,
+        "fatalBanner": false,
+        "notFound": true,
+        "bootTiming": {
+          "source": "bundle",
+          "gzBytes": 16179264,
+          "rawBytes": 70619136,
+          "fetchMs": 212,
+          "gunzipMs": 158,
+          "openMs": 14,
+          "totalMs": 384
+        },
+        "viewportMeta": "width=device-width, initial-scale=1.0, viewport-fit=cover",
+        "overflowX": 0,
+        "rowCount": 25,
+        "textLen": 3604,
+        "navBox": {
+          "x": 0,
+          "y": 857,
+          "w": 412,
+          "h": 58,
+          "bottom": 915
+        },
+        "navPadBottom": "4px",
+        "appContentPadBottom": "66px",
+        "lastRowBottom": 30514,
+        "safeAreaBottom": "0px",
+        "touchTargetsUnder44": 3,
+        "navItemsUnder44Wide": 6,
+        "barScrolls": false
+      },
+      "consoleErrors": [
+        "Failed to load resource: net::ERR_FAILED"
+      ],
+      "blockedByHarness": 1,
+      "screenshot": "_audit/android_release_before/viewports/412x915-fundamental.png",
+      "verdict": {
+        "booted": true,
+        "noHorizontalOverflow": true,
+        "rowsRendered": true,
+        "navOnScreen": true,
+        "touchTargetsOk": false,
+        "cleanConsole": true
+      }
+    },
+    {
+      "size": "412x915x3",
+      "route": "technical",
+      "measured": {
+        "vw": 412,
+        "vh": 915,
+        "route": "#/technical",
+        "title": "ترمینال تحلیل بورس",
+        "bootCard": false,
+        "fatalBanner": false,
+        "notFound": false,
+        "bootTiming": {
+          "source": "bundle",
+          "gzBytes": 16179264,
+          "rawBytes": 70619136,
+          "fetchMs": 212,
+          "gunzipMs": 158,
+          "openMs": 14,
+          "totalMs": 384
+        },
+        "viewportMeta": "width=device-width, initial-scale=1.0, viewport-fit=cover",
+        "overflowX": 0,
+        "rowCount": 0,
+        "textLen": 2110,
+        "navBox": {
+          "x": 0,
+          "y": 857,
+          "w": 412,
+          "h": 58,
+          "bottom": 915
+        },
+        "navPadBottom": "4px",
+        "appContentPadBottom": "66px",
+        "lastRowBottom": null,
+        "safeAreaBottom": "0px",
+        "touchTargetsUnder44": 3,
+        "navItemsUnder44Wide": 6,
+        "barScrolls": false
+      },
+      "consoleErrors": [
+        "Failed to load resource: net::ERR_FAILED",
+        "Failed to load resource: net::ERR_FAILED",
+        "Failed to load resource: net::ERR_FAILED"
+      ],
+      "blockedByHarness": 3,
+      "screenshot": "_audit/android_release_before/viewports/412x915-technical.png",
+      "verdict": {
+        "booted": true,
+        "noHorizontalOverflow": true,
+        "rowsRendered": true,
+        "navOnScreen": true,
+        "touchTargetsOk": false,
+        "cleanConsole": true
+      }
+    },
+    {
+      "size": "412x915x3",
+      "route": "strategy-tree",
+      "measured": {
+        "vw": 412,
+        "vh": 915,
+        "route": "#/strategy-tree",
+        "title": "ترمینال تحلیل بورس",
+        "bootCard": false,
+        "fatalBanner": false,
+        "notFound": false,
+        "bootTiming": {
+          "source": "bundle",
+          "gzBytes": 16179264,
+          "rawBytes": 70619136,
+          "fetchMs": 212,
+          "gunzipMs": 158,
+          "openMs": 14,
+          "totalMs": 384
+        },
+        "viewportMeta": "width=device-width, initial-scale=1.0, viewport-fit=cover",
+        "overflowX": 0,
+        "rowCount": 0,
+        "textLen": 4453,
+        "navBox": {
+          "x": 0,
+          "y": 857,
+          "w": 412,
+          "h": 58,
+          "bottom": 915
+        },
+        "navPadBottom": "4px",
+        "appContentPadBottom": "66px",
+        "lastRowBottom": null,
+        "safeAreaBottom": "0px",
+        "touchTargetsUnder44": 3,
+        "navItemsUnder44Wide": 6,
+        "barScrolls": false
+      },
+      "consoleErrors": [
+        "Failed to load resource: net::ERR_FAILED"
+      ],
+      "blockedByHarness": 1,
+      "screenshot": "_audit/android_release_before/viewports/412x915-strategy-tree.png",
+      "verdict": {
+        "booted": true,
+        "noHorizontalOverflow": true,
+        "rowsRendered": true,
+        "navOnScreen": true,
+        "touchTargetsOk": false,
+        "cleanConsole": true
+      }
+    },
+    {
+      "size": "412x915x3",
+      "route": "master",
+      "measured": {
+        "vw": 412,
+        "vh": 915,
+        "route": "#/master",
+        "title": "ترمینال تحلیل بورس",
+        "bootCard": false,
+        "fatalBanner": false,
+        "notFound": false,
+        "bootTiming": {
+          "source": "bundle",
+          "gzBytes": 16179264,
+          "rawBytes": 70619136,
+          "fetchMs": 212,
+          "gunzipMs": 158,
+          "openMs": 14,
+          "totalMs": 384
+        },
+        "viewportMeta": "width=device-width, initial-scale=1.0, viewport-fit=cover",
+        "overflowX": 0,
+        "rowCount": 0,
+        "textLen": 1519,
+        "navBox": {
+          "x": 0,
+          "y": 857,
+          "w": 412,
+          "h": 58,
+          "bottom": 915
+        },
+        "navPadBottom": "4px",
+        "appContentPadBottom": "66px",
+        "lastRowBottom": null,
+        "safeAreaBottom": "0px",
+        "touchTargetsUnder44": 3,
+        "navItemsUnder44Wide": 6,
+        "barScrolls": false
+      },
+      "consoleErrors": [],
+      "blockedByHarness": 0,
+      "screenshot": "_audit/android_release_before/viewports/412x915-master.png",
+      "verdict": {
+        "booted": true,
+        "noHorizontalOverflow": true,
+        "rowsRendered": true,
+        "navOnScreen": true,
+        "touchTargetsOk": false,
+        "cleanConsole": true
+      }
+    },
+    {
+      "size": "412x915x3",
+      "route": "engine-lab",
+      "measured": {
+        "vw": 412,
+        "vh": 915,
+        "route": "#/engine-lab",
+        "title": "ترمینال تحلیل بورس",
+        "bootCard": false,
+        "fatalBanner": false,
+        "notFound": false,
+        "bootTiming": {
+          "source": "bundle",
+          "gzBytes": 16179264,
+          "rawBytes": 70619136,
+          "fetchMs": 212,
+          "gunzipMs": 158,
+          "openMs": 14,
+          "totalMs": 384
+        },
+        "viewportMeta": "width=device-width, initial-scale=1.0, viewport-fit=cover",
+        "overflowX": 0,
+        "rowCount": 38,
+        "textLen": 1885,
+        "navBox": {
+          "x": 0,
+          "y": 857,
+          "w": 412,
+          "h": 58,
+          "bottom": 915
+        },
+        "navPadBottom": "4px",
+        "appContentPadBottom": "66px",
+        "lastRowBottom": 1862,
+        "safeAreaBottom": "0px",
+        "touchTargetsUnder44": 3,
+        "navItemsUnder44Wide": 6,
+        "barScrolls": false
+      },
+      "consoleErrors": [
+        "Failed to load resource: net::ERR_FAILED"
+      ],
+      "blockedByHarness": 1,
+      "screenshot": "_audit/android_release_before/viewports/412x915-engine-lab.png",
+      "verdict": {
+        "booted": true,
+        "noHorizontalOverflow": true,
+        "rowsRendered": true,
+        "navOnScreen": true,
+        "touchTargetsOk": false,
+        "cleanConsole": true
+      }
+    },
+    {
+      "size": "412x915x3",
+      "route": "portfolio",
+      "measured": {
+        "vw": 412,
+        "vh": 915,
+        "route": "#/portfolio",
+        "title": "ترمینال تحلیل بورس",
+        "bootCard": false,
+        "fatalBanner": false,
+        "notFound": false,
+        "bootTiming": {
+          "source": "bundle",
+          "gzBytes": 16179264,
+          "rawBytes": 70619136,
+          "fetchMs": 212,
+          "gunzipMs": 158,
+          "openMs": 14,
+          "totalMs": 384
+        },
+        "viewportMeta": "width=device-width, initial-scale=1.0, viewport-fit=cover",
+        "overflowX": 0,
+        "rowCount": 7,
+        "textLen": 2106,
+        "navBox": {
+          "x": 0,
+          "y": 857,
+          "w": 412,
+          "h": 58,
+          "bottom": 915
+        },
+        "navPadBottom": "4px",
+        "appContentPadBottom": "66px",
+        "lastRowBottom": 1299,
+        "safeAreaBottom": "0px",
+        "touchTargetsUnder44": 3,
+        "navItemsUnder44Wide": 6,
+        "barScrolls": false
+      },
+      "consoleErrors": [],
+      "blockedByHarness": 0,
+      "screenshot": "_audit/android_release_before/viewports/412x915-portfolio.png",
+      "verdict": {
+        "booted": true,
+        "noHorizontalOverflow": true,
+        "rowsRendered": true,
+        "navOnScreen": true,
+        "touchTargetsOk": false,
+        "cleanConsole": true
+      }
+    },
+    {
+      "size": "412x915x3",
+      "route": "nope-404",
+      "measured": {
+        "vw": 412,
+        "vh": 915,
+        "route": "#/nope-404",
+        "title": "ترمینال تحلیل بورس",
+        "bootCard": false,
+        "fatalBanner": false,
+        "notFound": false,
+        "bootTiming": {
+          "source": "bundle",
+          "gzBytes": 16179264,
+          "rawBytes": 70619136,
+          "fetchMs": 212,
+          "gunzipMs": 158,
+          "openMs": 14,
+          "totalMs": 384
+        },
+        "viewportMeta": "width=device-width, initial-scale=1.0, viewport-fit=cover",
+        "overflowX": 0,
+        "rowCount": 0,
+        "textLen": 420,
+        "navBox": {
+          "x": 0,
+          "y": 857,
+          "w": 412,
+          "h": 58,
+          "bottom": 915
+        },
+        "navPadBottom": "4px",
+        "appContentPadBottom": "66px",
+        "lastRowBottom": null,
+        "safeAreaBottom": "0px",
+        "touchTargetsUnder44": 3,
+        "navItemsUnder44Wide": 6,
+        "barScrolls": false
+      },
+      "consoleErrors": [],
+      "blockedByHarness": 0,
+      "screenshot": "_audit/android_release_before/viewports/412x915-nope-404.png",
+      "verdict": {
+        "booted": true,
+        "noHorizontalOverflow": true,
+        "rowsRendered": true,
+        "navOnScreen": true,
+        "touchTargetsOk": false,
+        "cleanConsole": true
+      }
+    }
+  ]
+}

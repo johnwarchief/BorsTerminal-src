@@ -1,0 +1,46 @@
+[
+ {
+  "url": "https://github.com/johnwarchief/BorsTerminal-src/releases/download/mobile-latest/mobile_snapshot.db.meta.json",
+  "method": "GET",
+  "status": 200,
+  "content_length": "111",
+  "content_type": "application/octet-stream",
+  "final_url": "https://release-assets.githubusercontent.com/github-production-release-asset/1377338556/5834e066-97f9-47cf-b762-d4f808242589?sp=r&sv=2018-11-09&sr=b&spr=https&se=2026-10-15T01%3A21%3A53Z&rscd=attachment%3B+filename%3Dmobile_snapshot.db.meta.json&rsct=application%2Foctet-stream&skoid=96c2d410-5711-43a1-aedd-ab1947aa7ab0&sktid=398a6654-997b-47e9-b12b-9515b896b4de&skt=2026-10-15T00%3A21%3A03Z&ske=2026-10-15T01%3A21%3A53Z&sks=b&skv=2018-11-09&sig=YtP8nAf1Ezw9KjvpTy7%2FxRG4dTN8qZUUf4WjW6Yaj5o%3D&jwt=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmVsZWFzZS1hc3NldHMuZ2l0aHVidXNlcmNvbnRlbnQuY29tIiwia2V5Ijoia2V5MSIsImV4cCI6MTc5MjAyNDE0NywibmJmIjoxNzkyMDIzODQ3LCJwYXRoIjoicmVsZWFzZWFzc2V0cHJvZHVjdGlvbi5ibG9iLmNvcmUud2luZG93cy5uZXQifQ.D0JM6fBf58RME5aSTCFPDJBzKz0TZMPVZjWhDuEy_7U&response-content-disposition=attachment%3B%20filename%3Dmobile_snapshot.db.meta.json&response-content-type=application%2Foctet-stream",
+  "body_head": "{\r\n \"app_version\": \"1.0.79\",\r\n \"built_at\": \"2026-10-08T16:16:15\",\r\n \"baked_ok\": 4627,\r\n \"gz_bytes\": 16179264\r\n}"
+ },
+ {
+  "url": "https://github.com/johnwarchief/BorsTerminal-src/releases/download/mobile-latest/mobile_snapshot.db.meta.json.sig",
+  "method": "GET",
+  "status": 404,
+  "error": "HTTP Error 404: Not Found"
+ },
+ {
+  "url": "https://github.com/johnwarchief/BorsTerminal-src/releases/download/mobile-latest/mobile_snapshot.db.gz",
+  "method": "HEAD",
+  "status": 200,
+  "content_length": "16179264",
+  "content_type": "application/octet-stream",
+  "final_url": "https://release-assets.githubusercontent.com/github-production-release-asset/1377338556/dc2af7f5-a639-4867-8f91-fe8093ac88cf?sp=r&sv=2018-11-09&sr=b&spr=https&se=2026-10-15T01%3A21%3A01Z&rscd=attachment%3B+filename%3Dmobile_snapshot.db.gz&rsct=application%2Foctet-stream&skoid=96c2d410-5711-43a1-aedd-ab1947aa7ab0&sktid=398a6654-997b-47e9-b12b-9515b896b4de&skt=2026-10-15T00%3A20%3A41Z&ske=2026-10-15T01%3A21%3A01Z&sks=b&skv=2018-11-09&sig=aL8xGB5Kz4Hbhm%2FiwfpO35p1TcqQXZISL%2FHoRbxyHgU%3D&jwt=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmVsZWFzZS1hc3NldHMuZ2l0aHVidXNlcmNvbnRlbnQuY29tIiwia2V5Ijoia2V5MSIsImV4cCI6MTc5MjAyNTY0OSwibmJmIjoxNzkyMDIzODQ5LCJwYXRoIjoicmVsZWFzZWFzc2V0cHJvZHVjdGlvbi5ibG9iLmNvcmUud2luZG93cy5uZXQifQ.PQPvC9OcRrxt87u6DGGCxT6r2mjhiJHtYQEeyGGFYDc&response-content-disposition=attachment%3B%20filename%3Dmobile_snapshot.db.gz&response-content-type=application%2Foctet-stream"
+ },
+ {
+  "url": "https://cdn.tsetmc.com/api/StockGet/GetMarketWatch",
+  "method": "GET",
+  "status": "URLError",
+  "error": "<urlopen error timed out>"
+ },
+ {
+  "url": "https://cdn.tsetmc.com/api/TradeHistory/GetTradeHistoryPriceVolumeSVG/32097828799138957/1",
+  "method": "GET",
+  "status": "URLError",
+  "error": "<urlopen error timed out>"
+ },
+ {
+  "note": "GetMarketWatch/GetTradeHistory را خودِ کلاینت با Referer/Origin جعلی می‌فرستد (live.ts:25-26); اینجا بدونِ آن‌هاست ⇒ اگر ۴۰۳ شد، محدودیتِ IP/رفرر است نه باگِ اپ"
+ },
+ {
+  "url": "https://cdn.tsetmc.com/api/StockGet/GetMarketWatch",
+  "method": "GET",
+  "status": "URLError",
+  "error": "<urlopen error timed out>"
+ }
+]

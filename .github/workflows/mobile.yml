@@ -473,7 +473,7 @@ jobs:
           arch: x86_64
           profile: pixel_5
           disable-animations: true
-          script: bash tools/android_emu_verify.sh apks/app-debug.apk
+          script: bash tools/android_emu_verify.sh
 
       - name: Record the result honestly when the emulator cannot run
         if: steps.kvm.outputs.present != 'true'

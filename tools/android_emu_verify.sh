@@ -16,12 +16,25 @@
 # جدا ثبت می‌شود.
 set -uo pipefail
 
-APK="${1:-apks/app-debug.apk}"
+APK="${1:-}"
 PKG=com.borsterminal.mobile
 OUT="${OUT_DIR:-_audit/android_emu}"
 mkdir -p "$OUT"
 SUM="$OUT/summary.json"
 : > "$OUT/steps.tsv"
+
+# artifactِ upload-artifact v4 مسیرِ نسبیِ مشترک را نگه می‌دارد، پس فایلِ دانلودی
+# درِ `apks/debug/app-debug.apk` است نه `apks/app-debug.apk`. اولین رانِ این
+# اسکریپت دقیقاً به‌همین دلیل قرمز شد: adb گفت «No such file» و بعد هر سنجهٔ
+# دیگر با «process gone» شکست — هشت FAILِ بی‌معنی از یکِ مسیرِ اشتباه.
+if [ -z "$APK" ] || [ ! -f "$APK" ]; then
+  APK=$(find apks -type f -name 'app-debug.apk' 2>/dev/null | head -1)
+fi
+if [ -z "$APK" ] || [ ! -f "$APK" ]; then
+  echo "install	FAIL	هیچ app-debug.apk درِ apks/ پیدا نشد ($(find apks -type f 2>/dev/null | tr '\n' ' '))" >> "$OUT/steps.tsv"
+  echo "NOT_VERIFIED	no-device-everything-down	بی‌نصب، هیچ سنجهٔ دیگری معنا ندارد" >> "$OUT/steps.tsv"
+  cat "$OUT/steps.tsv"; exit 1
+fi
 
 step() { printf '%s\t%s\t%s\n' "$1" "$2" "$3" >> "$OUT/steps.tsv"; echo "STEP $1 [$2] $3"; }
 json_escape() { sed 's/\\/\\\\/g; s/"/\\"/g' | tr -d '\n' | cut -c1-400; }
@@ -40,6 +53,17 @@ adb shell monkey -p "$PKG" -c android.intent.category.LAUNCHER 1 > /dev/null 2>&
 sleep 30
 PID=$(adb shell pidof -s "$PKG" | tr -d '\r')
 if [ -n "$PID" ]; then step launch PASS "pid=$PID"; else step launch FAIL "no process after 30s"; fi
+if [ -z "$PID" ]; then
+  # بی‌پروسه، «دکمهٔ بازگشت اپ را بست» و «ازِ home برنگشت» فقط طنینِ همان
+  # شکستِ اول‌اند. ادامه نده: هر سنجهٔ بعدی را NOT_VERIFIED بنویس و خارج شو.
+  for s in webview-360x800 webview-390x844 webview-412x915 back_button background_foreground; do
+    step "$s" NOT_VERIFIED "اپ بالا نیامد"
+  done
+  kill "$LOGD" 2>/dev/null
+  tail -40 "$OUT/logcat.txt" > "$OUT/logcat_tail.txt" 2>/dev/null
+  printf '{"apk":"%s","note":"no process after launch; dependent checks NOT_VERIFIED"}\n' "$(basename "$APK")" > "$SUM"
+  cat "$OUT/steps.tsv"; exit 1
+fi
 
 # ── ۲) سه اندازۀ تلفن: wm size درِ پیکسل، CSS viewport درِ dp ────────────────
 # 360×800 / 390×844 / 412×915 هر سه با density 480 (÷۳) ⇒ px = dp×۳
@@ -77,11 +101,18 @@ sleep 2
 kill "$LOGD" 2>/dev/null
 CRASH=$(grep -c "FATAL EXCEPTION" "$OUT/logcat.txt" 2>/dev/null || true)
 ANR=$(grep -c "ANR in $PKG" "$OUT/logcat.txt" 2>/dev/null || true)
-CONSOLE=$(grep -c "chromium.*console" "$OUT/logcat.txt" 2>/dev/null || true)
-LEAK=$(grep -icE "(authorization|bearer|api.?key|password)" "$OUT/logcat.txt" 2>/dev/null || true)
+# نشتِ رمز فقط درِ خطوطِ **خودِ برنامه/WebView** شمرده می‌شود. اولین ران دو
+# «hit» داد که هر دو `E/BackupPasswordManager( 541)` بودند — یعنی سرویسِ خودِ
+# اندروید، نه این اپ. بی‌این دامنه، هر سطرِ سیستمیِ بی‌ربط زنگِ خطر می‌زند.
+LEAKLINES=$(grep -iE "(authorization|bearer|api.?key|password)" "$OUT/logcat.txt" 2>/dev/null \
+  | grep -E "$PKG|chromium|Capacitor|WebConsole|SystemWebView" || true)
+LEAK=$(printf '%s' "$LEAKLINES" | grep -c . || true)
+if [ "${LEAK:-0}" != 0 ]; then
+  printf '%s\n' "$LEAKLINES" | sed -E 's/[0-9a-fA-F]{8,}//g' | cut -c1-90 > "$OUT/leak_hits.txt"
+fi
 [ "${CRASH:-0}" = 0 ] && step crash PASS "FATAL EXCEPTION=0" || step crash FAIL "$(grep -m1 -A3 'FATAL EXCEPTION' "$OUT/logcat.txt" | tr '\n' '|' | json_escape)"
 [ "${ANR:-0}" = 0 ] && step anr PASS "ANR=0" || step anr FAIL "ANR in $PKG"
-[ "${LEAK:-0}" = 0 ] && step logcat_secrets PASS "hit=$LEAK console_lines=${CONSOLE:-0}" || step logcat_secrets FAIL "hit=$LEAK"
+[ "${LEAK:-0}" = 0 ] && step logcat_secrets PASS "hit=$LEAK (خطوطِ سیستمی شمرده نشد)" || step logcat_secrets FAIL "hit=$LEAK → $OUT/leak_hits.txt"
 
 # ── خلاصه ────────────────────────────────────────────────────────────────────
 if command -v jq >/dev/null 2>&1; then
