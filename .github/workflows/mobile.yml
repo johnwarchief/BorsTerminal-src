@@ -44,6 +44,13 @@ jobs:
       # هیچ‌جا درِ این workflow چیزی رویِ `mobile-latest` منتشر یا بازنویسی
       # نمی‌شود — این job فقط *می‌خواند*.
       SNAPSHOT_SERIES: ${{ github.event.inputs.snapshot_series || 'mobile-latest' }}
+      # خواندنِ بستهٔ داده با `gh release download` است، نه curl بی‌اعتبارنامه:
+      # مخزنِ src از 2026-10-15 (16:45Z) خصوصی شده و `releases/download/...`
+      # بی‌token پاسخِ 404 می‌دهد. tokenِ خودِ کارفرما همان مخزن را می‌خواند، پس
+      # بیلد چه خصوصی باشد چه عمومی می‌دود. (مسیرِ *گوشی* پایین جدا سنجیده
+      # می‌شود: آن‌جا اعتبارنامۀ دیگری در کار نیست.)
+      SERIES_REPO: johnwarchief/BorsTerminal-src
+      GH_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -122,8 +129,15 @@ jobs:
           # می‌فهمد نسخۀ کشیدۀ پس‌زمینه از بستۀ همراهِ APK تازه‌تر است یا نه.
           # بی‌مهر، نسخۀ کهنۀ کشیده‌شده بر APKِ تازه می‌برد (localData.ts).
           BASE="https://github.com/johnwarchief/BorsTerminal-src/releases/download/${SNAPSHOT_SERIES}"
-          STAMP=$(curl -fsSL --retry 2 "$BASE/mobile_snapshot.db.meta.json" \
-                  | python3 -c 'import json,sys;print(json.load(sys.stdin)["built_at"])' 2>/dev/null || true)
+          # بستۀ داده با `gh release download` خوانده می‌شود (اعتبارنامۀ خودِ
+          # کارفرما)، چون `releases/download` بی‌اعتبارنامه روی مخزنِ خصوصی 404
+          # می‌دهد. مسیرِ URLِ پایین فقط *ثبت* می‌شود: همان چیزی که گوشی درِ
+          # نصبِ اوّل می‌خواند و هیچ tokenی ندارد — پس دسترسیِ ناشناسِ آن جدا
+          # سنجیده و درِ خلاصۀ گام ثبت می‌شود.
+          mkdir -p _snap
+          gh release download "$SNAPSHOT_SERIES" --repo "$SERIES_REPO" \
+            --pattern mobile_snapshot.db.meta.json --dir _snap --clobber 2>/dev/null || true
+          STAMP=$(python3 -c 'import json;print(json.load(open("_snap/mobile_snapshot.db.meta.json",encoding="utf-8"))["built_at"])' 2>/dev/null || true)
           export VITE_SNAPSHOT_STAMP="$STAMP"
           # کلاینت هم دقیقاً همان سری را می‌خواند که APK از آن پخته شده؛
           # بی‌این، بیلدِ سریِ تازه درِ برنامه هنوز mobile-latestِ کهنه را چک می‌کرد.
@@ -134,10 +148,20 @@ jobs:
           export VITE_SNAPSHOT_SERIES="$SNAPSHOT_SERIES"
           echo "snapshot series=$SNAPSHOT_SERIES remote=$BASE"
           VITE_LOCAL_DATA=1 npm run build
-          curl -fL --retry 3 "$BASE/mobile_snapshot.db.gz" -o dist/mobile_snapshot.db.gz
+          gh release download "$SNAPSHOT_SERIES" --repo "$SERIES_REPO" \
+            --pattern mobile_snapshot.db.gz --dir dist --clobber
           test -s dist/mobile_snapshot.db.gz
           SNAP_BYTES=$(stat -c '%s' dist/mobile_snapshot.db.gz)
           echo "snapshot stamp=${STAMP:-none} bytes=$SNAP_BYTES"
+          # سنجشِ صادقِ مسیرِ گوشی: همان URL، این‌بار بی‌هیچ اعتبارنامه‌ای.
+          ANON=$(curl -s -o /dev/null -w '%{http_code}' -IL "$BASE/mobile_snapshot.db.gz" || echo 000)
+          {
+            echo "### بستۀ داده: دسترسیِ ناشناس (مسیرِ خودِ گوشی)"
+            echo "- series: \`$SNAPSHOT_SERIES\` · anon HTTP \`$ANON\` · CI download: ok ($SNAP_BYTES B)"
+            if [ "$ANON" != "200" ]; then
+              echo "- **BLOCKED for end users**: مخزنِ \`$SERIES_REPO\` خصوصی است؛ هیچ APK منتشرشده‌ای نمی‌تواند دادهٔ تازه بگیرد تا یا مخزن عمومی شود یا سریِ داده به مخزنِ عمومیِ \`johnwarchief/BorsTerminal\` منتقل شود."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
           # قدمِ بسته درِ متنِ ریلیز هم نوشته می‌شود: «کدام دادۀ داخلِ APK است»
           # بی‌این عدد درِ ریلیز قابلِ استناد نیست.
           echo "SNAP_STAMP=${STAMP:-none}" >> "$GITHUB_ENV"
@@ -172,12 +196,15 @@ jobs:
           PUB: ${{ vars.MOBILE_MANIFEST_PUBKEY }}
         run: |
           set -e
-          BASE="https://github.com/johnwarchief/BorsTerminal-src/releases/download/${SNAPSHOT_SERIES}"
           mkdir -p _sigcheck
-          curl -fsSL --retry 2 "$BASE/mobile_snapshot.db.meta.json" -o _sigcheck/meta.json
-          if ! curl -fsSL --retry 2 "$BASE/mobile_snapshot.db.meta.json.sig" -o _sigcheck/meta.json.sig; then
+          gh release download "$SNAPSHOT_SERIES" --repo "$SERIES_REPO" \
+            --pattern mobile_snapshot.db.meta.json --dir _sigcheck --clobber
+          mv _sigcheck/mobile_snapshot.db.meta.json _sigcheck/meta.json
+          if ! gh release download "$SNAPSHOT_SERIES" --repo "$SERIES_REPO" \
+               --pattern mobile_snapshot.db.meta.json.sig --dir _sigcheck --clobber 2>/dev/null; then
             echo "فایلِ .sig کنارِ manifest منتشر نشده ⇒ بستۀ داده بی‌امضا است" >&2; exit 2
           fi
+          mv _sigcheck/mobile_snapshot.db.meta.json.sig _sigcheck/meta.json.sig
           if [ -z "$PUB" ]; then
             echo "vars.MOBILE_MANIFEST_PUBKEY تنظیم نشده ⇒ بررسیِ اصالت ممکن نیست" >&2; exit 3
           fi
@@ -188,8 +215,10 @@ jobs:
       - name: Record the data package identity
         run: |
           set -e
-          BASE="https://github.com/johnwarchief/BorsTerminal-src/releases/download/${SNAPSHOT_SERIES}"
-          curl -fsSL --retry 2 "$BASE/mobile_snapshot.db.meta.json" -o /tmp/meta.json 2>/dev/null || true
+          mkdir -p _ident
+          gh release download "$SNAPSHOT_SERIES" --repo "$SERIES_REPO" \
+            --pattern mobile_snapshot.db.meta.json --dir _ident --clobber 2>/dev/null || true
+          cp _ident/mobile_snapshot.db.meta.json /tmp/meta.json 2>/dev/null || true
           if [ -s /tmp/meta.json ]; then
             python3 -c 'import json;m=json.load(open("/tmp/meta.json",encoding="utf-8"));e={"SNAP_PACKAGE_ID":m.get("package_id"),"SNAP_SCHEMA_VERSION":m.get("schema_version"),"SNAP_DB_SCHEMA":m.get("db_schema"),"SNAP_BUILT_AT":m.get("built_at"),"SNAP_GZ_SHA":str(m.get("gz_sha256",""))[:16]};[print("%s=%s"%(k,v)) for k,v in e.items()]' >> "$GITHUB_ENV"
           else

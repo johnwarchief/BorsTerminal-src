@@ -21,6 +21,8 @@
   A59..A66  مراسمِ کلیدِ انتشار: قراردادِ دوطرفۀ اسکریپت ↔ workflow.
   A67..A69  خودِ سنسورِ برش: بدنۀ job/step از سطرِ ساختاری خوانده می‌شود،
             نه از هر بارِ ذکرِ نام درِ توضیح.
+  A70..A72  خواندنِ بستۀ داده از مخزنِ خصوصی (gh) + سنجشِ جداِ مسیرِ ناشناسِ
+            گوشی، که بدونِ token است و باید صریحاً BLOCKED شود.
 
 هیچ‌کدام ازِ این‌ها Gradle یا APK اجرا نمی‌کنند (رویِ این ماشین Java/SDK نصب
 نیست): قراردادِ فایل‌ها خوانده می‌شود. ساختِ واقعی درِ CI سنجیده می‌شود و
@@ -377,6 +379,26 @@ chk("needs: build-apk" not in _PROBE.split("webview-on-emulator")[1]
 chk("needs: build-apk" in job_body("webview-on-emulator", WF)
     and step_pos("Signing smoke test") > step_pos("Publish Android release"),
     "A69 برشِ ساختاری رویِ فایلِ واقعی هم بدنه/ترتیبِ درست می‌دهد")
+
+# ── A70..A72 خواندنِ بستۀ داده از مخزنِ خصوصی ───────────────────────────────
+# مخزنِ src در 2026-10-15 خصوصی شد؛ شاهد: رانِ موفقِ 2026-10-12T23:11Z که
+# بی‌اعتبارنامه bytes=16179264 گرفت و همان URL امروز 404 می‌دهد. پس بیلد نباید
+# به curlِ ناشناس وابسته باشد، و مسیرِ *گوشی* (که token ندارد) باید جدا سنجیده
+# و صریحاً BLOCKED اعلام شود، نه اینکه ساکت از گیت رد شود.
+_build = step_body("Build mobile frontend")
+chk("gh release download" in _build
+    and not re.search(r"curl[^\n]*-o dist/mobile_snapshot\.db\.gz", _build),
+    "A70 بستۀ داده با gh (اعتبارنامۀ کارفرما) خوانده می‌شود؛ curlِ ناشناس بیلد را نمی‌خواباند")
+chk("-w '%{http_code}'" in _build and "BLOCKED for end users" in _build
+    and "GITHUB_STEP_SUMMARY" in _build,
+    "A71 دسترسیِ ناشناسِ همان URL (مسیرِ خودِ گوشی) سنجیده و بی‌200 صریحاً BLOCKED می‌شود")
+_anon = re.compile(r"curl[^\n]*-o dist/mobile_snapshot\.db\.gz")
+_fake = _build.replace(
+    'gh release download "$SNAPSHOT_SERIES" --repo "$SERIES_REPO" \\\n'
+    '            --pattern mobile_snapshot.db.gz --dir dist --clobber',
+    'curl -fL "$BASE/mobile_snapshot.db.gz" -o dist/mobile_snapshot.db.gz')
+chk(_anon.search(_fake) is not None and _anon.search(_build) is None,
+    "A72 کنترلِ منفی: بازگشتِ همین خط به curlِ ناشناس، A70 را قرمز می‌کند")
 
 print("android_release_v1110: %d passed / %d failed" % (PASS, FAIL))
 sys.exit(1 if FAIL else 0)
