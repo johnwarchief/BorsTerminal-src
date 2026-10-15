@@ -58,6 +58,7 @@ export function StrategyHorizonSelector({
             <button
               type="button"
               onClick={onOpenAnalystModal}
+              data-testid="fts-analyst-open"
               className="flex items-center gap-1.5 rounded-lg border border-neon-cyan/40 bg-neon-cyan/15 px-3 py-1 text-2xs font-bold text-neon-cyan hover:border-neon-cyan hover:bg-neon-cyan/25 transition-all shadow-[0_0_10px_rgba(6,182,212,0.15)]"
             >
               <span>🧠</span>

@@ -165,6 +165,7 @@ export default function PortfolioPage() {
           type="button"
           role="tab"
           aria-selected={view === 'target'}
+          data-testid="portfolio-view-target"
           onClick={() => setView('target')}
           className={`rounded-full border px-4 py-1.5 text-xs font-bold transition-colors duration-200 ${
             view === 'target'
@@ -178,6 +179,7 @@ export default function PortfolioPage() {
           type="button"
           role="tab"
           aria-selected={view === 'current'}
+          data-testid="portfolio-view-current"
           onClick={() => setView('current')}
           className={`rounded-full border px-4 py-1.5 text-xs font-bold transition-colors duration-200 ${
             view === 'current'
