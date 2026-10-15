@@ -226,8 +226,11 @@ async function loginIfNeeded(page) {
 (async () => {
   const browser = await chromium.launch({
     executablePath: EXE,
+    // real باید headed باشد: درِ headless باِ `viewport: null` پنجرۀِ واقعی
+    // بیشینه نمی‌شود وِ عددِ «اندازۀِ واقعیِ پنل» هیچ‌وقت خوانده نمی‌شود.
+    headless: MODE !== 'real',
     args: MODE === 'real'
-      ? ['--no-first-run', '--disable-sync', '--start-maximized', '--remote-debugging-port=0']
+      ? ['--no-first-run', '--disable-sync', '--start-maximized', '--force-device-scale-factor=1']
       : ['--no-first-run', '--disable-sync', '--force-device-scale-factor=1', '--remote-debugging-port=0'],
   });
   const ctx = await browser.newContext(MODE === 'real'

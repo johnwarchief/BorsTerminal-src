@@ -6,7 +6,7 @@
 // نقطۀِ مرکزیِ خودش رویِ خودِش است یا چیزِ دیگر. `elementFromPoint` تنهاِ راهِ
 // واقعی است (درِ DOM «z-index» حرفِ آخر را نمی‌زند، چیدمانِ نهایی می‌زند).
 // خروجی: INTERCEPTED (گیرکرده) / CLIPPED (بیرونِ viewport) / OK
-// usage: MSYS_NO_PATHCONV=1 node _audit/ui/overlap_probe.js [--routes=/technical/فولاد] [--shots=1]
+// usage: MSYS_NO_PATHCONV=1 node _audit/ui/overlap_probe.js [--mode=em|real] [--routes=/technical/فولاد] [--shots=1]
 const path = require('path');
 const fs = require('fs');
 const REPO = path.join(__dirname, '..', '..');
@@ -15,6 +15,10 @@ const BASE = process.env.BORS_UI_BASE || 'http://127.0.0.1:8000';
 const EXE = process.env.RA_BROWSER || 'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe';
 const arg = (n, d) => { const h = process.argv.find((a) => a.startsWith('--' + n + '=')); return h ? h.split('=').slice(1).join('=') : d; };
 const W = Number(arg('w', 1366)), H = Number(arg('h', 768));
+// «em» = viewportِ شبیه‌سازیِ ۱۳۶۶×۷۶۸. «real» = پنجرۀِ واقعیِ بیشینۀِ Edge باِ
+// `viewport: null`؛ تنهاِ اینِ حالت می‌تواند بگوید «رویِ همینِ نمایشگر چه می‌بینیم».
+const MODE = arg('mode', 'em');
+const OUT = MODE === 'real' ? 'OVERLAP_real.json' : 'OVERLAP.json';
 const ROUTES_ARG = arg('routes', '');
 const SHOTS = arg('shots', '') === '1';
 
@@ -94,8 +98,13 @@ const PROBE_FN = (max) => {
 };
 
 (async () => {
-  const browser = await chromium.launch({ executablePath: EXE, args: ['--no-first-run', '--disable-sync', '--force-device-scale-factor=1', '--remote-debugging-port=0'] });
-  const ctx = await browser.newContext({ viewport: { width: W, height: H }, deviceScaleFactor: 1 });
+  const real = MODE === 'real';
+  const browser = real
+    ? await chromium.launch({ executablePath: EXE, headless: false, args: ['--no-first-run', '--disable-sync', '--start-maximized', '--force-device-scale-factor=1'] })
+    : await chromium.launch({ executablePath: EXE, args: ['--no-first-run', '--disable-sync', '--force-device-scale-factor=1', '--remote-debugging-port=0'] });
+  const ctx = real
+    ? await browser.newContext({ viewport: null })
+    : await browser.newContext({ viewport: { width: W, height: H }, deviceScaleFactor: 1 });
   const page = await ctx.newPage();
   const errs = [];
   page.on('pageerror', (e) => errs.push('pageerror: ' + String(e).slice(0, 140)));
@@ -111,7 +120,7 @@ const PROBE_FN = (max) => {
   }
   const ALL = require('./routes.js').ROUTES;
   const routes = ROUTES_ARG ? ALL.filter((r) => ROUTES_ARG.split(',').includes(r[0])) : ALL;
-  const out = { ranAt: new Date().toISOString(), viewport: { W, H }, routes: [] };
+  const out = { ranAt: new Date().toISOString(), mode: MODE, viewport: MODE === 'real' ? 'headed-maximized' : { W, H }, routes: [] };
   for (const [route, marker, min] of routes) {
     await page.goto(BASE + '/#' + route, { waitUntil: 'domcontentloaded' });
     if (marker) await page.waitForFunction(([m, k]) => document.querySelectorAll(m).length >= k, [marker, min || 1], { timeout: 45000 }).catch(() => {});
@@ -125,8 +134,8 @@ const PROBE_FN = (max) => {
     if (SHOTS && bad.length) await page.screenshot({ path: path.join(REPO, '_audit', 'ui', 'shots', 'OVERLAP_' + route.replace(/[^\w]+/g, '_') + '.png') }).catch(() => {});
     out.routes.push({ route, ...p, errors: errs.splice(0, errs.length).slice(0, 5) });
   }
-  fs.writeFileSync(path.join(REPO, '_audit', 'ui', 'OVERLAP.json'), JSON.stringify(out, null, 1));
-  console.log('\nwrote _audit/ui/OVERLAP.json');
+  fs.writeFileSync(path.join(REPO, '_audit', 'ui', OUT), JSON.stringify(out, null, 1));
+  console.log('\nwrote _audit/ui/' + OUT);
   await browser.close();
   return 0;
 })().then((rc) => process.exit(rc)).catch((e) => { console.error('HARNESS ERROR', e); process.exit(1); });
