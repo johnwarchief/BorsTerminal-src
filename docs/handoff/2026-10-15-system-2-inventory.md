@@ -118,7 +118,7 @@
 |---|---|---|---|
 | `mission/fts-indicator-engineering` | `09e8d64..ff6b2fb` (fast‑forward، ۴۲ کامیت) | `ff6b2fb` | https://github.com/johnwarchief/BorsTerminal-src/tree/mission/fts-indicator-engineering |
 | `mission/ui-audit-system-2-2026-10-15` | `[new branch]` | `dd065c1` | https://github.com/johnwarchief/BorsTerminal-src/tree/mission/ui-audit-system-2-2026-10-15 |
-| `handoff/system-2/inventory-2026-10-15` | `[new branch]` ازِ `ff6b2fb` | `8fc44b7` (+ همینِ تصحیح) | https://github.com/johnwarchief/BorsTerminal-src/tree/handoff/system-2/inventory-2026-10-15 |
+| `handoff/system-2/inventory-2026-10-15` | `[new branch]` ازِ `ff6b2fb` | `13baf23` (اینِ سطر هم باِ هرِ کامیتِ خودِ سند جلو می‌رود؛ برایِ SHAِ قطعی `git ls-remote origin refs/heads/handoff/system-2/inventory-2026-10-15`) | https://github.com/johnwarchief/BorsTerminal-src/tree/handoff/system-2/inventory-2026-10-15 |
 
 بی‌force-push، بی‌tag، بی‌release، بی‌merge. `main` وِ هیچِ شاخۀِ دیگری دست‌نخورده ماند.
 
@@ -126,7 +126,7 @@
 
 | بررسی | فرمان | نتیجه |
 |---|---|---|
-| هم‌خوانیِ SHA محلی/remote | `git ls-remote origin refs/heads/<b>` درِ برابرِ `git rev-parse <b>` | هرِ سه شاخه **MATCH** (`ff6b2fb`, `dd065c1`, `8fc44b7`) |
+| هم‌خوانیِ SHA محلی/remote | `git ls-remote origin refs/heads/<b>` درِ برابرِ `git rev-parse <b>` | هرِ سه شاخه **MATCH** (`ff6b2fb`, `dd065c1`, `13baf23`) |
 | باقی‌ماندۀِ push‌نشده | `git log --branches --not --remotes --oneline` | **خالی** |
 | وجودِ سندِ موجودی رویِ remote | `git ls-tree -r origin/handoff/system-2/inventory-2026-10-15` | `docs/handoff/2026-10-15-system-2-inventory.md` |
 | محتوایِ شاخۀِ UI | `git ls-tree -r … | grep` | ۷ هارنسِ js · ۲۲ شاهدِ json/txt · ۱ سندِ وضعیت · **۰ تصویرِ png** · **۰ backend.log** |
