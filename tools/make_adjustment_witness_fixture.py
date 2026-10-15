@@ -90,7 +90,7 @@ def build(src, out):
                  "مبدأ: ra365_job_fetch.js (نیازمندِ نشستِ مالک)."),
     }
 
-    with open(out, "w", encoding="utf-8") as f:
+    with open(out, "w", encoding="utf-8", newline="\n") as f:  # LF: بایتِ خروجی = بایتِ commit
         json.dump(subset, f, ensure_ascii=False, sort_keys=True, indent=1)
 
     print(f"[witness] wrote {out}  ({os.path.getsize(out):,} bytes from "
