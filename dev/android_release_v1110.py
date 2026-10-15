@@ -17,6 +17,10 @@
             اندروید، و دست‌نخورده‌بودنِ مسیرِ دسکتاپ (latest.json و vX.Y.Z).
   A23..A30  آزمونِ WebView: شبیه‌ساز باکاوشِ KVM، مسیرِ NOT_VERIFIEDِ صادق،
             و حکمِ سختِ سنجه (سفیدیِ صفحه یا نشتِ رمز ⇒ خروجِ ناموفق).
+  A51..A58  قفلِ صفحه: هیچ اعتبارنامۀ ثابت درِ سورس یا باندلِ منتشرشده.
+  A59..A66  مراسمِ کلیدِ انتشار: قراردادِ دوطرفۀ اسکریپت ↔ workflow.
+  A67..A69  خودِ سنسورِ برش: بدنۀ job/step از سطرِ ساختاری خوانده می‌شود،
+            نه از هر بارِ ذکرِ نام درِ توضیح.
 
 هیچ‌کدام ازِ این‌ها Gradle یا APK اجرا نمی‌کنند (رویِ این ماشین Java/SDK نصب
 نیست): قراردادِ فایل‌ها خوانده می‌شود. ساختِ واقعی درِ CI سنجیده می‌شود و
@@ -77,6 +81,38 @@ if missing:
     print("android_release_v1110: %d passed / %d failed" % (PASS, FAIL))
     sys.exit(1)
 
+# بدنۀ job/step باید از سطرِ ساختاریِ خودِ آن بریده شود. نامِ job و گام درِ
+# توضیحِ فارسیِ گام‌هایِ دیگر هم تکرار می‌شود؛ برشِ خامِ `WF.split(name)[1]`
+# آن‌وقت بدنهٔ یک job دیگر را می‌دهد و سنجه‌ها کور می‌شوند (این گاردِ خودی
+# یک بار همین‌جا قرمز شد: «webview-on-emulator» وسطِ توضیحِ job ارتقا آمد).
+def job_body(name, text=None):
+    t = WF if text is None else text
+    hit = re.search(r"^  " + re.escape(name) + r":[ \t]*$", t, re.M)
+    if not hit:
+        return ""
+    rest = t[hit.end():]
+    nxt = re.search(r"^  [A-Za-z0-9_-]+:[ \t]*$", rest, re.M)
+    return rest[: nxt.start()] if nxt else rest
+
+
+def step_pos(name, text=None):
+    t = WF if text is None else t
+    hits = list(re.finditer(r"^[ \t]+- name: ?\"?" + re.escape(name), t, re.M))
+    return hits[-1].start() if hits else float("inf")
+
+
+def step_body(name, text=None):
+    t = WF if text is None else text
+    hits = list(re.finditer(r"^[ \t]+- name: ?\"?" + re.escape(name), t, re.M))
+    if not hits:
+        return ""
+    hit = hits[-1]
+    indent = re.match(r"[ \t]*", t[hit.start():]).group(0)
+    rest = t[hit.end():]
+    nxt = re.search("^" + re.escape(indent) + r"- name:", rest, re.M)
+    return rest[: nxt.start()] if nxt else rest
+
+
 # ── A01..A08 دروازۀ انتشار ─────────────────────────────────────────────────
 chk("assembleRelease" in WF, "A01 workflow نسخۀ release را می‌سازد (نه فقط debug)")
 chk("Materialize the release keystore" in WF and
@@ -88,8 +124,8 @@ chk("-PBorsKeystoreProperties" not in WF and "BORS_KEYSTORE_PROPERTIES=" in WF,
     "A04 رمز هیچ‌جا درِ فرمانِ قابل‌مشاهده نمی‌آید؛ فقط مسیرِ فایل ازِ env")
 chk('if [ "$APK_SIGNED" != "yes" ]' in WF and WF.count('"$APK_SIGNED" != "yes"') >= 2,
     "A05 انتشارِ APKِ بی‌امضا درِ دو گامِ مستقل بسته است (نه یکی)")
-gate = WF.split("Publish gate status")[1] if "Publish gate status" in WF else ""
-publish = WF.split("Publish Android release")[1] if "Publish Android release" in WF else ""
+gate = step_body("Publish gate status")
+publish = step_body("Publish Android release")
 chk("BLOCKED" in gate and "BLOCKED" in publish,
     "A06 هر دو دروازه پیامِ BLOCKEDِ صریح دارند (بی‌سکوتِ قرمز)")
 chk("outputs/apk/release" in publish and "outputs/apk/debug" not in publish,
@@ -151,12 +187,13 @@ chk("mobile-latest|data-latest" in publish,
     "A29 سریِ دادۀ کهنه به‌عنوان مقصدِ بیلدِ تازه رد می‌شود")
 
 # ── A30..A36 آزمونِ WebView ────────────────────────────────────────────────
-job = WF.split("webview-on-emulator")[1] if "webview-on-emulator" in WF else ""
+job = job_body("webview-on-emulator")
+_emu_line = re.search(r"script: bash tools/android_emu_verify\.sh[^\n]*", job)
 chk("needs: build-apk" in job and "/dev/kvm" in job,
     "A30 jobِ شبیه‌ساز بعد ازِ بیلد می‌دود و KVM را کاوش می‌کند")
 chk("NOT_VERIFIED" in job and "if: steps.kvm.outputs.present != 'true'" in job,
     "A31 بی‌KVM، نتیجه صریحاً NOT_VERIFIED ثبت می‌شود (نه سبزِ جعلی)")
-chk("bash tools/android_emu_verify.sh" in job and "app-debug.apk" not in WF.split("script: bash tools/android_emu_verify.sh")[1].split("\n")[0],
+chk(_emu_line is not None and "app-debug.apk" not in _emu_line.group(0),
     "A32 آزمونِ WebView رویِ بیلدِ debuggable است (مسیرِ فایل را خودِ اسکریپت پیدا می‌کند) و درِ گزارش جدا ثبت می‌شود")
 chk("find apks -type f -name 'app-debug.apk'" in EMU,
     "A42 مسیرِ artifact با glob پیدا می‌شود؛ upload-artifact ساختارِ release/ و debug/ را نگه می‌دارد")
@@ -166,11 +203,11 @@ chk("dependent checks NOT_VERIFIED" in EMU,
     "A44 بی‌بالاآمدنِ اپ، سنجه‌هایِ بعدی NOT_VERIFIED می‌شوند نه هشت FAILِ بی‌معنا")
 # A45/A46 — مسیرِ امضا بی‌کلیدِ واقعی قابلِ آزمون نیست؛ یک کلیدِ دورریختنیِ هم‌انسان
 # همان زنجیره را اثبات می‌کند، به‌شرطِ اینکه هرگز منتشر نشود.
-smoke = WF.split("Signing smoke test")[-1] if "Signing smoke test" in WF else ""
+smoke = step_body("Signing smoke test")
 chk(bool(smoke) and "keytool -genkeypair" in smoke and "not-for-release" in smoke
     and "app-release.apk" in smoke,
     "A45 دودِ امضا با کلیدِ ساختگی، نامِ خروجیِ امضاشده و apksigner را می‌سنجد")
-WF_PUB_BEFORE_SMOKE = WF.find("Publish Android release") < WF.find("Signing smoke test")
+WF_PUB_BEFORE_SMOKE = step_pos("Publish Android release") < step_pos("Signing smoke test")
 chk(WF_PUB_BEFORE_SMOKE and 'rm -rf app/build/outputs/apk/release' in smoke,
     "A46 دودِ امضا بعد ازِ گامِ انتشار می‌آید و خروجی‌اش بی‌درنگ پاک می‌شود (هیچ گامی کلیدِ بی‌ارزش را منتشر نمی‌کند)")
 # A47/A48 — دو دامِ رانِ واقعیِ شبیه‌ساز: موندنِ پشتِ دروازۀ ورود «اپ باز شد»
@@ -310,6 +347,36 @@ chk("کلید از قبل هست" in CER and "به‌جایِ کلیدِ انت�
 _bad = CER.replace("-storepass:env BORS_SP", "-storepass hunter2")
 chk("-storepass " in _bad and "-storepass " not in CER,
     "A66 کنترلِ منفی: سنسورِ argv با یکِ بازنویسیِ ساختگی قرمز می‌شود")
+
+# ── A67..A69 خودِ سنسورِ برش: بدنۀ job/step از سطرِ ساختاری، نه از هر ذکر ────
+# یک بار همین گارد قر شد چون نامِ job وسطِ توضیحِ job دیگر آمده بود: برشِ خام
+# بدنهٔ اشتباه می‌داد و دو سنجه بی‌دلیل قرمز می‌شدند. این بندها ثابت می‌کنند
+# برشِ ساختاری هم روی متنِ ساختگی و هم روی فایلِ واقعی درست است، و که برشِ خام
+# درِ همان متنِ ساختگی گول می‌خورد (وگرنه آزمون فقط تکرارِ سبزِ سبز است).
+_PROBE = (
+    "jobs:\n"
+    "  prep:\n"
+    "    steps:\n"
+    "      - name: KVM probe\n"
+    "        run: echo see webview-on-emulator and Publish Android release\n"
+    "  webview-on-emulator:\n"
+    "    needs: build-apk\n"
+    "    steps:\n"
+    "      - name: Install, boot and probe the WebView\n"
+    "        run: bash tools/android_emu_verify.sh\n"
+    "  other:\n"
+    "    steps: []\n"
+)
+_p_body = job_body("webview-on-emulator", _PROBE)
+chk("needs: build-apk" in _p_body and "android_emu_verify" in _p_body
+    and "KVM probe" not in _p_body,
+    "A67 برشِ job رویِ متنِ ساختگی با ذکرِ مزاحم، بدنۀ درست را می‌دهد")
+chk("needs: build-apk" not in _PROBE.split("webview-on-emulator")[1]
+    .split("  webview-on-emulator:")[0],
+    "A68 کنترلِ منفی: همان متن با برشِ خام بدنهٔ اشتباه می‌داد (سنسور کور نیست)")
+chk("needs: build-apk" in job_body("webview-on-emulator", WF)
+    and step_pos("Signing smoke test") > step_pos("Publish Android release"),
+    "A69 برشِ ساختاری رویِ فایلِ واقعی هم بدنه/ترتیبِ درست می‌دهد")
 
 print("android_release_v1110: %d passed / %d failed" % (PASS, FAIL))
 sys.exit(1 if FAIL else 0)
