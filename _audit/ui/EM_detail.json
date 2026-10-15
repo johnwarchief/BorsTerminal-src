@@ -1,0 +1,1501 @@
+{
+ "env": {
+  "mode": "em",
+  "ranAt": "2026-10-15T00:48:00.830Z",
+  "base": "http://127.0.0.1:8000",
+  "routes": 3,
+  "physicalViewport": {
+   "w": 1366,
+   "h": 768
+  },
+  "devicePixelRatio": 1,
+  "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36 Edg/155.0.0.0"
+ },
+ "pages": [
+  {
+   "vw": 1366,
+   "vh": 768,
+   "dpr": 1,
+   "zoomCssPx": "16px",
+   "docScrollW": 1366,
+   "docScrollH": 772,
+   "bodyOverflowX": 0,
+   "bodyOverflowY": 4,
+   "offenders": [],
+   "clipped": [],
+   "ellipsised": [],
+   "offscreen": [
+    {
+     "el": "button.rounded-md.border.px-1.5 «سنجاق»",
+     "box": {
+      "x": -202,
+      "y": 8,
+      "w": 47,
+      "h": 20
+     },
+     "vw": 1366,
+     "vh": 768
+    },
+    {
+     "el": "button.rounded-md.border.border-transparent «✕»",
+     "box": {
+      "x": -230,
+      "y": 8,
+      "w": 24,
+      "h": 20
+     },
+     "vw": 1366,
+     "vh": 768
+    },
+    {
+     "el": "button#inspector-tab-glance.rounded-md.border.px-2 «در یک نگاه»",
+     "box": {
+      "x": -118,
+      "y": 47,
+      "w": 108,
+      "h": 25
+     },
+     "vw": 1366,
+     "vh": 768
+    },
+    {
+     "el": "button#inspector-tab-detail.rounded-md.border.px-2 «جزئیات بازار»",
+     "box": {
+      "x": -230,
+      "y": 47,
+      "w": 108,
+      "h": 25
+     },
+     "vw": 1366,
+     "vh": 768
+    },
+    {
+     "el": "a#inspector-stage-tape.flex.items-center.gap-1 «تابلوخوانی»",
+     "box": {
+      "x": -75,
+      "y": 567,
+      "w": 64,
+      "h": 21
+     },
+     "vw": 1366,
+     "vh": 768
+    },
+    {
+     "el": "a#inspector-stage-technical.flex.items-center.gap-1 «تکنیکال»",
+     "box": {
+      "x": -133,
+      "y": 567,
+      "w": 54,
+      "h": 21
+     },
+     "vw": 1366,
+     "vh": 768
+    },
+    {
+     "el": "a#inspector-stage-fundamental.flex.items-center.gap-1 «بنیادی»",
+     "box": {
+      "x": -186,
+      "y": 567,
+      "w": 49,
+      "h": 21
+     },
+     "vw": 1366,
+     "vh": 768
+    },
+    {
+     "el": "a#inspector-stage-handover.flex.items-center.gap-1 «تحویل»",
+     "box": {
+      "x": -60,
+      "y": 592,
+      "w": 49,
+      "h": 21
+     },
+     "vw": 1366,
+     "vh": 768
+    },
+    {
+     "el": "a#inspector-events-all.text-[9px].text-accent-blue.hover:underline «همه ↗»",
+     "box": {
+      "x": -221,
+      "y": 644,
+      "w": 25,
+      "h": 14
+     },
+     "vw": 1366,
+     "vh": 768
+    }
+   ],
+   "unreachable": [],
+   "canvases": [],
+   "fixedLayers": [],
+   "domNodes": 588,
+   "hash": "#/technical/%D8%AE%D9%88%D8%B2",
+   "title": "ب 🚀 ⚙ ⎋ بازار بسته — تابلوی آخرینِ نشست تحلیل تکنیکال ۶۰ سی",
+   "route": "/technical/خوز",
+   "readyBy": "marker",
+   "consoleErrors": [
+    "Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "Failed to load resource: the server responded with a status of 404 (Not Found)"
+   ],
+   "netErrors": [
+    "HTTP status() {\n        return this._initializer.status;\n      } http://127.0.0.1:8000/api/fundamental/خوز",
+    "HTTP status() {\n        return this._initializer.status;\n      } http://127.0.0.1:8000/api/fundamental/خوز"
+   ],
+   "suspects": [
+    {
+     "n": 0,
+     "kind": "offscreen-x",
+     "tag": "button",
+     "id": null,
+     "testid": null,
+     "cls": "rounded-md border px-1.5 py-0.5 text-2xs transition-colors border-transparent text-text-mu",
+     "text": "سنجاق",
+     "styles": {
+      "overflowX": "visible",
+      "overflowY": "visible",
+      "textOverflow": "clip",
+      "whiteSpace": "normal",
+      "lineClamp": "none",
+      "display": "block",
+      "fontSize": "12px",
+      "direction": "rtl",
+      "position": "static"
+     },
+     "lostX": 0,
+     "lostY": 0,
+     "rect": {
+      "x": -202,
+      "y": 8,
+      "w": 47,
+      "h": 20
+     },
+     "vw": 1366,
+     "vh": 768,
+     "extra": null,
+     "crop": "_audit/ui/detail/em/_technical___0_offscreen-x.png"
+    },
+    {
+     "n": 1,
+     "kind": "offscreen-x",
+     "tag": "button",
+     "id": null,
+     "testid": null,
+     "cls": "rounded-md border border-transparent px-1.5 py-0.5 text-2xs text-text-muted transition-col",
+     "text": "✕",
+     "styles": {
+      "overflowX": "visible",
+      "overflowY": "visible",
+      "textOverflow": "clip",
+      "whiteSpace": "normal",
+      "lineClamp": "none",
+      "display": "block",
+      "fontSize": "12px",
+      "direction": "rtl",
+      "position": "static"
+     },
+     "lostX": 0,
+     "lostY": 0,
+     "rect": {
+      "x": -230,
+      "y": 8,
+      "w": 24,
+      "h": 20
+     },
+     "vw": 1366,
+     "vh": 768,
+     "extra": null,
+     "crop": "_audit/ui/detail/em/_technical___1_offscreen-x.png"
+    },
+    {
+     "n": 2,
+     "kind": "offscreen-x",
+     "tag": "button",
+     "id": null,
+     "testid": "inspector-tab-glance",
+     "cls": "rounded-md border px-2 py-1 text-[10px] font-bold transition-colors border-accent-blue/60 ",
+     "text": "در یک نگاه",
+     "styles": {
+      "overflowX": "visible",
+      "overflowY": "visible",
+      "textOverflow": "clip",
+      "whiteSpace": "normal",
+      "lineClamp": "none",
+      "display": "block",
+      "fontSize": "10px",
+      "direction": "rtl",
+      "position": "static"
+     },
+     "lostX": 0,
+     "lostY": 0,
+     "rect": {
+      "x": -118,
+      "y": 47,
+      "w": 108,
+      "h": 25
+     },
+     "vw": 1366,
+     "vh": 768,
+     "extra": null,
+     "crop": "_audit/ui/detail/em/_technical___2_offscreen-x.png"
+    },
+    {
+     "n": 3,
+     "kind": "offscreen-x",
+     "tag": "button",
+     "id": null,
+     "testid": "inspector-tab-detail",
+     "cls": "rounded-md border px-2 py-1 text-[10px] font-bold transition-colors border-border-c/60 bg-",
+     "text": "جزئیات بازار",
+     "styles": {
+      "overflowX": "visible",
+      "overflowY": "visible",
+      "textOverflow": "clip",
+      "whiteSpace": "normal",
+      "lineClamp": "none",
+      "display": "block",
+      "fontSize": "10px",
+      "direction": "rtl",
+      "position": "static"
+     },
+     "lostX": 0,
+     "lostY": 0,
+     "rect": {
+      "x": -230,
+      "y": 47,
+      "w": 108,
+      "h": 25
+     },
+     "vw": 1366,
+     "vh": 768,
+     "extra": null,
+     "crop": "_audit/ui/detail/em/_technical___3_offscreen-x.png"
+    },
+    {
+     "n": 4,
+     "kind": "offscreen-x",
+     "tag": "a",
+     "id": null,
+     "testid": "inspector-stage-tape",
+     "cls": "flex items-center gap-1 rounded-md border px-1.5 py-0.5 transition-colors border-border-c/",
+     "text": "تابلوخوانی",
+     "styles": {
+      "overflowX": "visible",
+      "overflowY": "visible",
+      "textOverflow": "clip",
+      "whiteSpace": "normal",
+      "lineClamp": "none",
+      "display": "flex",
+      "fontSize": "10px",
+      "direction": "rtl",
+      "position": "static"
+     },
+     "lostX": 0,
+     "lostY": 0,
+     "rect": {
+      "x": -75,
+      "y": 567,
+      "w": 64,
+      "h": 21
+     },
+     "vw": 1366,
+     "vh": 768,
+     "extra": null,
+     "crop": "_audit/ui/detail/em/_technical___4_offscreen-x.png"
+    },
+    {
+     "n": 5,
+     "kind": "offscreen-x",
+     "tag": "a",
+     "id": null,
+     "testid": "inspector-stage-technical",
+     "cls": "flex items-center gap-1 rounded-md border px-1.5 py-0.5 transition-colors border-accent-bl",
+     "text": "تکنیکال",
+     "styles": {
+      "overflowX": "visible",
+      "overflowY": "visible",
+      "textOverflow": "clip",
+      "whiteSpace": "normal",
+      "lineClamp": "none",
+      "display": "flex",
+      "fontSize": "10px",
+      "direction": "rtl",
+      "position": "static"
+     },
+     "lostX": 0,
+     "lostY": 0,
+     "rect": {
+      "x": -133,
+      "y": 567,
+      "w": 54,
+      "h": 21
+     },
+     "vw": 1366,
+     "vh": 768,
+     "extra": null,
+     "crop": "_audit/ui/detail/em/_technical___5_offscreen-x.png"
+    },
+    {
+     "n": 6,
+     "kind": "offscreen-x",
+     "tag": "a",
+     "id": null,
+     "testid": "inspector-stage-fundamental",
+     "cls": "flex items-center gap-1 rounded-md border px-1.5 py-0.5 transition-colors border-border-c/",
+     "text": "بنیادی",
+     "styles": {
+      "overflowX": "visible",
+      "overflowY": "visible",
+      "textOverflow": "clip",
+      "whiteSpace": "normal",
+      "lineClamp": "none",
+      "display": "flex",
+      "fontSize": "10px",
+      "direction": "rtl",
+      "position": "static"
+     },
+     "lostX": 0,
+     "lostY": 0,
+     "rect": {
+      "x": -186,
+      "y": 567,
+      "w": 49,
+      "h": 21
+     },
+     "vw": 1366,
+     "vh": 768,
+     "extra": null,
+     "crop": "_audit/ui/detail/em/_technical___6_offscreen-x.png"
+    },
+    {
+     "n": 7,
+     "kind": "offscreen-x",
+     "tag": "a",
+     "id": null,
+     "testid": "inspector-stage-handover",
+     "cls": "flex items-center gap-1 rounded-md border px-1.5 py-0.5 transition-colors border-border-c/",
+     "text": "تحویل",
+     "styles": {
+      "overflowX": "visible",
+      "overflowY": "visible",
+      "textOverflow": "clip",
+      "whiteSpace": "normal",
+      "lineClamp": "none",
+      "display": "flex",
+      "fontSize": "10px",
+      "direction": "rtl",
+      "position": "static"
+     },
+     "lostX": 0,
+     "lostY": 0,
+     "rect": {
+      "x": -60,
+      "y": 592,
+      "w": 49,
+      "h": 21
+     },
+     "vw": 1366,
+     "vh": 768,
+     "extra": null,
+     "crop": "_audit/ui/detail/em/_technical___7_offscreen-x.png"
+    },
+    {
+     "n": 8,
+     "kind": "offscreen-x",
+     "tag": "a",
+     "id": null,
+     "testid": "inspector-events-all",
+     "cls": "text-[9px] text-accent-blue hover:underline",
+     "text": "همه ↗",
+     "styles": {
+      "overflowX": "visible",
+      "overflowY": "visible",
+      "textOverflow": "clip",
+      "whiteSpace": "normal",
+      "lineClamp": "none",
+      "display": "block",
+      "fontSize": "9px",
+      "direction": "rtl",
+      "position": "static"
+     },
+     "lostX": 0,
+     "lostY": 0,
+     "rect": {
+      "x": -221,
+      "y": 644,
+      "w": 25,
+      "h": 14
+     },
+     "vw": 1366,
+     "vh": 768,
+     "extra": null,
+     "crop": "_audit/ui/detail/em/_technical___8_offscreen-x.png"
+    }
+   ]
+  },
+  {
+   "vw": 1366,
+   "vh": 768,
+   "dpr": 1,
+   "zoomCssPx": "16px",
+   "docScrollW": 1366,
+   "docScrollH": 1072,
+   "bodyOverflowX": 0,
+   "bodyOverflowY": 304,
+   "offenders": [],
+   "clipped": [],
+   "ellipsised": [],
+   "offscreen": [
+    {
+     "el": "button.rounded-md.border.px-1.5 «سنجاق»",
+     "box": {
+      "x": -202,
+      "y": 8,
+      "w": 47,
+      "h": 20
+     },
+     "vw": 1366,
+     "vh": 768
+    },
+    {
+     "el": "button.rounded-md.border.border-transparent «✕»",
+     "box": {
+      "x": -230,
+      "y": 8,
+      "w": 24,
+      "h": 20
+     },
+     "vw": 1366,
+     "vh": 768
+    },
+    {
+     "el": "button#inspector-tab-glance.rounded-md.border.px-2 «در یک نگاه»",
+     "box": {
+      "x": -118,
+      "y": 47,
+      "w": 108,
+      "h": 25
+     },
+     "vw": 1366,
+     "vh": 768
+    },
+    {
+     "el": "button#inspector-tab-detail.rounded-md.border.px-2 «جزئیات بازار»",
+     "box": {
+      "x": -230,
+      "y": 47,
+      "w": 108,
+      "h": 25
+     },
+     "vw": 1366,
+     "vh": 768
+    },
+    {
+     "el": "a#inspector-stage-tape.flex.items-center.gap-1 «تابلوخوانی»",
+     "box": {
+      "x": -75,
+      "y": 567,
+      "w": 64,
+      "h": 21
+     },
+     "vw": 1366,
+     "vh": 768
+    },
+    {
+     "el": "a#inspector-stage-technical.flex.items-center.gap-1 «تکنیکال»",
+     "box": {
+      "x": -133,
+      "y": 567,
+      "w": 54,
+      "h": 21
+     },
+     "vw": 1366,
+     "vh": 768
+    },
+    {
+     "el": "a#inspector-stage-fundamental.flex.items-center.gap-1 «بنیادی»",
+     "box": {
+      "x": -186,
+      "y": 567,
+      "w": 49,
+      "h": 21
+     },
+     "vw": 1366,
+     "vh": 768
+    },
+    {
+     "el": "a#inspector-stage-handover.flex.items-center.gap-1 «تحویل»",
+     "box": {
+      "x": -60,
+      "y": 592,
+      "w": 49,
+      "h": 21
+     },
+     "vw": 1366,
+     "vh": 768
+    },
+    {
+     "el": "a#inspector-events-all.text-[9px].text-accent-blue.hover:underline «همه ↗»",
+     "box": {
+      "x": -221,
+      "y": 644,
+      "w": 25,
+      "h": 14
+     },
+     "vw": 1366,
+     "vh": 768
+    }
+   ],
+   "unreachable": [
+    {
+     "el": "div.mt-1.text-3xs.leading-5 «چارت برایِ هر دو سبک یک شرطِ حجمی می‌گذارد»",
+     "hiddenPx": 40,
+     "box": {
+      "x": 936,
+      "y": 751,
+      "w": 235,
+      "h": 40
+     }
+    },
+    {
+     "el": "div.mt-1.text-3xs.leading-5 «سطرِ «خشک کردن / فیلتر» در چارت: برایِ نوس»",
+     "hiddenPx": 40,
+     "box": {
+      "x": 936,
+      "y": 928,
+      "w": 235,
+      "h": 40
+     }
+    },
+    {
+     "el": "div.mt-1.text-3xs.leading-5 «سرِ شاخۀ فروش در چارت: کف دوقلو، سقف دوقلو»",
+     "hiddenPx": 40,
+     "box": {
+      "x": 633,
+      "y": 572,
+      "w": 235,
+      "h": 40
+     }
+    },
+    {
+     "el": "div.mt-1.text-3xs.leading-5 «سطرهایِ «حد ضرر» در چارت: ۵٪ زیر آخرین کفِ»",
+     "hiddenPx": 60,
+     "box": {
+      "x": 633,
+      "y": 661,
+      "w": 235,
+      "h": 40
+     }
+    },
+    {
+     "el": "div.mt-1.text-3xs.leading-5 «حکم ۴: قاعده «تخمین فروش ۱۲ ماهه ÷ ارزش با»",
+     "hiddenPx": 80,
+     "box": {
+      "x": 331,
+      "y": 751,
+      "w": 235,
+      "h": 40
+     }
+    },
+    {
+     "el": "div.mt-1.text-3xs.leading-5 «شاخص ۵: چشم‌انداز خوب (دارویی، غذایی، سیما»",
+     "hiddenPx": 40,
+     "box": {
+      "x": 331,
+      "y": 839,
+      "w": 235,
+      "h": 40
+     }
+    },
+    {
+     "el": "div.mt-1.text-3xs.leading-5 «چارت اینجا سه استراتژی را نام می‌برد: ساعت»",
+     "hiddenPx": 40,
+     "box": {
+      "x": 28,
+      "y": 839,
+      "w": 235,
+      "h": 40
+     }
+    }
+   ],
+   "canvases": [],
+   "fixedLayers": [],
+   "domNodes": 504,
+   "hash": "#/strategy-tree",
+   "title": "ب ترمینال بورس FTS v2.1 فضای تحلیل وضعیت بازار تابلوخوانی تک",
+   "route": "/strategy-tree",
+   "readyBy": "marker",
+   "consoleErrors": [],
+   "netErrors": [
+    "FAILED http://127.0.0.1:8000/api/fundamental/خوز",
+    "FAILED http://127.0.0.1:8000/api/fundamental/خوز",
+    "FAILED http://127.0.0.1:8000/api/chart/فولاد",
+    "FAILED http://127.0.0.1:8000/api/index/tedpix?limit=0",
+    "FAILED http://127.0.0.1:8000/api/fts/فولاد",
+    "FAILED http://127.0.0.1:8000/api/fundamental/فولاد"
+   ],
+   "suspects": [
+    {
+     "n": 0,
+     "kind": "unreachable-y",
+     "tag": "div",
+     "id": null,
+     "testid": null,
+     "cls": "mt-1 text-3xs leading-5 text-text-muted line-clamp-2",
+     "text": "چارت برایِ هر دو سبک یک شرطِ حجمی می‌گذارد: نوسانگیر حجمِ مشکوک (سه بر",
+     "styles": {
+      "overflowX": "hidden",
+      "overflowY": "hidden",
+      "textOverflow": "clip",
+      "whiteSpace": "normal",
+      "lineClamp": "2",
+      "display": "flow-root",
+      "fontSize": "11px",
+      "direction": "rtl",
+      "position": "static"
+     },
+     "lostX": 0,
+     "lostY": 40,
+     "rect": {
+      "x": 936,
+      "y": 751,
+      "w": 235,
+      "h": 40
+     },
+     "vw": 1366,
+     "vh": 768,
+     "extra": 40,
+     "crop": "_audit/ui/detail/em/_strategy-tree__0_unreachable-y.png"
+    },
+    {
+     "n": 1,
+     "kind": "unreachable-y",
+     "tag": "div",
+     "id": null,
+     "testid": null,
+     "cls": "mt-1 text-3xs leading-5 text-text-muted line-clamp-2",
+     "text": "سطرِ «خشک کردن / فیلتر» در چارت: برایِ نوسانگیر ساعت، جت و حجمِ مشکوک؛",
+     "styles": {
+      "overflowX": "hidden",
+      "overflowY": "hidden",
+      "textOverflow": "clip",
+      "whiteSpace": "normal",
+      "lineClamp": "2",
+      "display": "flow-root",
+      "fontSize": "11px",
+      "direction": "rtl",
+      "position": "static"
+     },
+     "lostX": 0,
+     "lostY": 40,
+     "rect": {
+      "x": 936,
+      "y": 928,
+      "w": 235,
+      "h": 40
+     },
+     "vw": 1366,
+     "vh": 768,
+     "extra": 40
+    },
+    {
+     "n": 2,
+     "kind": "unreachable-y",
+     "tag": "div",
+     "id": null,
+     "testid": null,
+     "cls": "mt-1 text-3xs leading-5 text-text-muted line-clamp-2",
+     "text": "سرِ شاخۀ فروش در چارت: کف دوقلو، سقف دوقلو، سر و شانه، سقف سوم و واگرا",
+     "styles": {
+      "overflowX": "hidden",
+      "overflowY": "hidden",
+      "textOverflow": "clip",
+      "whiteSpace": "normal",
+      "lineClamp": "2",
+      "display": "flow-root",
+      "fontSize": "11px",
+      "direction": "rtl",
+      "position": "static"
+     },
+     "lostX": 0,
+     "lostY": 40,
+     "rect": {
+      "x": 633,
+      "y": 572,
+      "w": 235,
+      "h": 40
+     },
+     "vw": 1366,
+     "vh": 768,
+     "extra": 40,
+     "crop": "_audit/ui/detail/em/_strategy-tree__2_unreachable-y.png"
+    },
+    {
+     "n": 3,
+     "kind": "unreachable-y",
+     "tag": "div",
+     "id": null,
+     "testid": null,
+     "cls": "mt-1 text-3xs leading-5 text-text-muted line-clamp-2",
+     "text": "سطرهایِ «حد ضرر» در چارت: ۵٪ زیر آخرین کفِ روند صعودی، نوسانگیر MA=14 ",
+     "styles": {
+      "overflowX": "hidden",
+      "overflowY": "hidden",
+      "textOverflow": "clip",
+      "whiteSpace": "normal",
+      "lineClamp": "2",
+      "display": "flow-root",
+      "fontSize": "11px",
+      "direction": "rtl",
+      "position": "static"
+     },
+     "lostX": 0,
+     "lostY": 60,
+     "rect": {
+      "x": 633,
+      "y": 661,
+      "w": 235,
+      "h": 40
+     },
+     "vw": 1366,
+     "vh": 768,
+     "extra": 60,
+     "crop": "_audit/ui/detail/em/_strategy-tree__3_unreachable-y.png"
+    },
+    {
+     "n": 4,
+     "kind": "unreachable-y",
+     "tag": "div",
+     "id": null,
+     "testid": null,
+     "cls": "mt-1 text-3xs leading-5 text-text-muted line-clamp-2",
+     "text": "حکم ۴: قاعده «تخمین فروش ۱۲ ماهه ÷ ارزش بازار» است، نه نسبتِ معکوسش. «",
+     "styles": {
+      "overflowX": "hidden",
+      "overflowY": "hidden",
+      "textOverflow": "clip",
+      "whiteSpace": "normal",
+      "lineClamp": "2",
+      "display": "flow-root",
+      "fontSize": "11px",
+      "direction": "rtl",
+      "position": "static"
+     },
+     "lostX": 0,
+     "lostY": 80,
+     "rect": {
+      "x": 331,
+      "y": 751,
+      "w": 235,
+      "h": 40
+     },
+     "vw": 1366,
+     "vh": 768,
+     "extra": 80,
+     "crop": "_audit/ui/detail/em/_strategy-tree__4_unreachable-y.png"
+    },
+    {
+     "n": 5,
+     "kind": "unreachable-y",
+     "tag": "div",
+     "id": null,
+     "testid": null,
+     "cls": "mt-1 text-3xs leading-5 text-text-muted line-clamp-2",
+     "text": "شاخص ۵: چشم‌انداز خوب (دارویی، غذایی، سیمانی، فلزات، پتروشیمی، کانی‌فل",
+     "styles": {
+      "overflowX": "hidden",
+      "overflowY": "hidden",
+      "textOverflow": "clip",
+      "whiteSpace": "normal",
+      "lineClamp": "2",
+      "display": "flow-root",
+      "fontSize": "11px",
+      "direction": "rtl",
+      "position": "static"
+     },
+     "lostX": 0,
+     "lostY": 40,
+     "rect": {
+      "x": 331,
+      "y": 839,
+      "w": 235,
+      "h": 40
+     },
+     "vw": 1366,
+     "vh": 768,
+     "extra": 40
+    },
+    {
+     "n": 6,
+     "kind": "unreachable-y",
+     "tag": "div",
+     "id": null,
+     "testid": null,
+     "cls": "mt-1 text-3xs leading-5 text-text-muted line-clamp-2",
+     "text": "چارت اینجا سه استراتژی را نام می‌برد: ساعت شنی، جت، نقطه‌زنی. هر سه گر",
+     "styles": {
+      "overflowX": "hidden",
+      "overflowY": "hidden",
+      "textOverflow": "clip",
+      "whiteSpace": "normal",
+      "lineClamp": "2",
+      "display": "flow-root",
+      "fontSize": "11px",
+      "direction": "rtl",
+      "position": "static"
+     },
+     "lostX": 0,
+     "lostY": 40,
+     "rect": {
+      "x": 28,
+      "y": 839,
+      "w": 235,
+      "h": 40
+     },
+     "vw": 1366,
+     "vh": 768,
+     "extra": 40
+    },
+    {
+     "n": 7,
+     "kind": "offscreen-x",
+     "tag": "button",
+     "id": null,
+     "testid": null,
+     "cls": "rounded-md border px-1.5 py-0.5 text-2xs transition-colors border-transparent text-text-mu",
+     "text": "سنجاق",
+     "styles": {
+      "overflowX": "visible",
+      "overflowY": "visible",
+      "textOverflow": "clip",
+      "whiteSpace": "normal",
+      "lineClamp": "none",
+      "display": "block",
+      "fontSize": "12px",
+      "direction": "rtl",
+      "position": "static"
+     },
+     "lostX": 0,
+     "lostY": 0,
+     "rect": {
+      "x": -202,
+      "y": 8,
+      "w": 47,
+      "h": 20
+     },
+     "vw": 1366,
+     "vh": 768,
+     "extra": null,
+     "crop": "_audit/ui/detail/em/_strategy-tree__7_offscreen-x.png"
+    },
+    {
+     "n": 8,
+     "kind": "offscreen-x",
+     "tag": "button",
+     "id": null,
+     "testid": null,
+     "cls": "rounded-md border border-transparent px-1.5 py-0.5 text-2xs text-text-muted transition-col",
+     "text": "✕",
+     "styles": {
+      "overflowX": "visible",
+      "overflowY": "visible",
+      "textOverflow": "clip",
+      "whiteSpace": "normal",
+      "lineClamp": "none",
+      "display": "block",
+      "fontSize": "12px",
+      "direction": "rtl",
+      "position": "static"
+     },
+     "lostX": 0,
+     "lostY": 0,
+     "rect": {
+      "x": -230,
+      "y": 8,
+      "w": 24,
+      "h": 20
+     },
+     "vw": 1366,
+     "vh": 768,
+     "extra": null,
+     "crop": "_audit/ui/detail/em/_strategy-tree__8_offscreen-x.png"
+    },
+    {
+     "n": 9,
+     "kind": "offscreen-x",
+     "tag": "button",
+     "id": null,
+     "testid": "inspector-tab-glance",
+     "cls": "rounded-md border px-2 py-1 text-[10px] font-bold transition-colors border-accent-blue/60 ",
+     "text": "در یک نگاه",
+     "styles": {
+      "overflowX": "visible",
+      "overflowY": "visible",
+      "textOverflow": "clip",
+      "whiteSpace": "normal",
+      "lineClamp": "none",
+      "display": "block",
+      "fontSize": "10px",
+      "direction": "rtl",
+      "position": "static"
+     },
+     "lostX": 0,
+     "lostY": 0,
+     "rect": {
+      "x": -118,
+      "y": 47,
+      "w": 108,
+      "h": 25
+     },
+     "vw": 1366,
+     "vh": 768,
+     "extra": null,
+     "crop": "_audit/ui/detail/em/_strategy-tree__9_offscreen-x.png"
+    },
+    {
+     "n": 10,
+     "kind": "offscreen-x",
+     "tag": "button",
+     "id": null,
+     "testid": "inspector-tab-detail",
+     "cls": "rounded-md border px-2 py-1 text-[10px] font-bold transition-colors border-border-c/60 bg-",
+     "text": "جزئیات بازار",
+     "styles": {
+      "overflowX": "visible",
+      "overflowY": "visible",
+      "textOverflow": "clip",
+      "whiteSpace": "normal",
+      "lineClamp": "none",
+      "display": "block",
+      "fontSize": "10px",
+      "direction": "rtl",
+      "position": "static"
+     },
+     "lostX": 0,
+     "lostY": 0,
+     "rect": {
+      "x": -230,
+      "y": 47,
+      "w": 108,
+      "h": 25
+     },
+     "vw": 1366,
+     "vh": 768,
+     "extra": null,
+     "crop": "_audit/ui/detail/em/_strategy-tree__10_offscreen-x.png"
+    },
+    {
+     "n": 11,
+     "kind": "offscreen-x",
+     "tag": "a",
+     "id": null,
+     "testid": "inspector-stage-tape",
+     "cls": "flex items-center gap-1 rounded-md border px-1.5 py-0.5 transition-colors border-border-c/",
+     "text": "تابلوخوانی",
+     "styles": {
+      "overflowX": "visible",
+      "overflowY": "visible",
+      "textOverflow": "clip",
+      "whiteSpace": "normal",
+      "lineClamp": "none",
+      "display": "flex",
+      "fontSize": "10px",
+      "direction": "rtl",
+      "position": "static"
+     },
+     "lostX": 0,
+     "lostY": 0,
+     "rect": {
+      "x": -75,
+      "y": 567,
+      "w": 64,
+      "h": 21
+     },
+     "vw": 1366,
+     "vh": 768,
+     "extra": null,
+     "crop": "_audit/ui/detail/em/_strategy-tree__11_offscreen-x.png"
+    },
+    {
+     "n": 12,
+     "kind": "offscreen-x",
+     "tag": "a",
+     "id": null,
+     "testid": "inspector-stage-technical",
+     "cls": "flex items-center gap-1 rounded-md border px-1.5 py-0.5 transition-colors border-border-c/",
+     "text": "تکنیکال",
+     "styles": {
+      "overflowX": "visible",
+      "overflowY": "visible",
+      "textOverflow": "clip",
+      "whiteSpace": "normal",
+      "lineClamp": "none",
+      "display": "flex",
+      "fontSize": "10px",
+      "direction": "rtl",
+      "position": "static"
+     },
+     "lostX": 0,
+     "lostY": 0,
+     "rect": {
+      "x": -133,
+      "y": 567,
+      "w": 54,
+      "h": 21
+     },
+     "vw": 1366,
+     "vh": 768,
+     "extra": null,
+     "crop": "_audit/ui/detail/em/_strategy-tree__12_offscreen-x.png"
+    },
+    {
+     "n": 13,
+     "kind": "offscreen-x",
+     "tag": "a",
+     "id": null,
+     "testid": "inspector-stage-fundamental",
+     "cls": "flex items-center gap-1 rounded-md border px-1.5 py-0.5 transition-colors border-border-c/",
+     "text": "بنیادی",
+     "styles": {
+      "overflowX": "visible",
+      "overflowY": "visible",
+      "textOverflow": "clip",
+      "whiteSpace": "normal",
+      "lineClamp": "none",
+      "display": "flex",
+      "fontSize": "10px",
+      "direction": "rtl",
+      "position": "static"
+     },
+     "lostX": 0,
+     "lostY": 0,
+     "rect": {
+      "x": -186,
+      "y": 567,
+      "w": 49,
+      "h": 21
+     },
+     "vw": 1366,
+     "vh": 768,
+     "extra": null,
+     "crop": "_audit/ui/detail/em/_strategy-tree__13_offscreen-x.png"
+    },
+    {
+     "n": 14,
+     "kind": "offscreen-x",
+     "tag": "a",
+     "id": null,
+     "testid": "inspector-stage-handover",
+     "cls": "flex items-center gap-1 rounded-md border px-1.5 py-0.5 transition-colors border-accent-bl",
+     "text": "تحویل",
+     "styles": {
+      "overflowX": "visible",
+      "overflowY": "visible",
+      "textOverflow": "clip",
+      "whiteSpace": "normal",
+      "lineClamp": "none",
+      "display": "flex",
+      "fontSize": "10px",
+      "direction": "rtl",
+      "position": "static"
+     },
+     "lostX": 0,
+     "lostY": 0,
+     "rect": {
+      "x": -60,
+      "y": 592,
+      "w": 49,
+      "h": 21
+     },
+     "vw": 1366,
+     "vh": 768,
+     "extra": null,
+     "crop": "_audit/ui/detail/em/_strategy-tree__14_offscreen-x.png"
+    },
+    {
+     "n": 15,
+     "kind": "offscreen-x",
+     "tag": "a",
+     "id": null,
+     "testid": "inspector-events-all",
+     "cls": "text-[9px] text-accent-blue hover:underline",
+     "text": "همه ↗",
+     "styles": {
+      "overflowX": "visible",
+      "overflowY": "visible",
+      "textOverflow": "clip",
+      "whiteSpace": "normal",
+      "lineClamp": "none",
+      "display": "block",
+      "fontSize": "9px",
+      "direction": "rtl",
+      "position": "static"
+     },
+     "lostX": 0,
+     "lostY": 0,
+     "rect": {
+      "x": -221,
+      "y": 644,
+      "w": 25,
+      "h": 14
+     },
+     "vw": 1366,
+     "vh": 768,
+     "extra": null,
+     "crop": "_audit/ui/detail/em/_strategy-tree__15_offscreen-x.png"
+    }
+   ]
+  },
+  {
+   "vw": 1366,
+   "vh": 768,
+   "dpr": 1,
+   "zoomCssPx": "16px",
+   "docScrollW": 1366,
+   "docScrollH": 10410,
+   "bodyOverflowX": 0,
+   "bodyOverflowY": 9642,
+   "offenders": [],
+   "clipped": [],
+   "ellipsised": [],
+   "offscreen": [
+    {
+     "el": "a#notice-open.rounded-md.border.border-border-c «منبع ↗»",
+     "box": {
+      "x": 77,
+      "y": 813,
+      "w": 45,
+      "h": 20
+     },
+     "vw": 1366,
+     "vh": 768
+    },
+    {
+     "el": "button#notice-mark.rounded-md.border.border-border-c «خوانده شد»",
+     "box": {
+      "x": 11,
+      "y": 813,
+      "w": 60,
+      "h": 20
+     },
+     "vw": 1366,
+     "vh": 768
+    },
+    {
+     "el": "a#notice-open.rounded-md.border.border-border-c «منبع ↗»",
+     "box": {
+      "x": 77,
+      "y": 898,
+      "w": 45,
+      "h": 20
+     },
+     "vw": 1366,
+     "vh": 768
+    },
+    {
+     "el": "button#notice-mark.rounded-md.border.border-border-c «خوانده شد»",
+     "box": {
+      "x": 11,
+      "y": 898,
+      "w": 60,
+      "h": 20
+     },
+     "vw": 1366,
+     "vh": 768
+    },
+    {
+     "el": "a#notice-open.rounded-md.border.border-border-c «منبع ↗»",
+     "box": {
+      "x": 77,
+      "y": 984,
+      "w": 45,
+      "h": 20
+     },
+     "vw": 1366,
+     "vh": 768
+    },
+    {
+     "el": "button#notice-mark.rounded-md.border.border-border-c «خوانده شد»",
+     "box": {
+      "x": 11,
+      "y": 984,
+      "w": 60,
+      "h": 20
+     },
+     "vw": 1366,
+     "vh": 768
+    },
+    {
+     "el": "a#notice-open.rounded-md.border.border-border-c «منبع ↗»",
+     "box": {
+      "x": 77,
+      "y": 1069,
+      "w": 45,
+      "h": 20
+     },
+     "vw": 1366,
+     "vh": 768
+    },
+    {
+     "el": "button#notice-mark.rounded-md.border.border-border-c «خوانده شد»",
+     "box": {
+      "x": 11,
+      "y": 1069,
+      "w": 60,
+      "h": 20
+     },
+     "vw": 1366,
+     "vh": 768
+    },
+    {
+     "el": "a#notice-open.rounded-md.border.border-border-c «منبع ↗»",
+     "box": {
+      "x": 77,
+      "y": 1155,
+      "w": 45,
+      "h": 20
+     },
+     "vw": 1366,
+     "vh": 768
+    },
+    {
+     "el": "button#notice-mark.rounded-md.border.border-border-c «خوانده شد»",
+     "box": {
+      "x": 11,
+      "y": 1155,
+      "w": 60,
+      "h": 20
+     },
+     "vw": 1366,
+     "vh": 768
+    },
+    {
+     "el": "a#notice-open.rounded-md.border.border-border-c «منبع ↗»",
+     "box": {
+      "x": 77,
+      "y": 1240,
+      "w": 45,
+      "h": 20
+     },
+     "vw": 1366,
+     "vh": 768
+    },
+    {
+     "el": "button#notice-mark.rounded-md.border.border-border-c «خوانده شد»",
+     "box": {
+      "x": 11,
+      "y": 1240,
+      "w": 60,
+      "h": 20
+     },
+     "vw": 1366,
+     "vh": 768
+    },
+    {
+     "el": "a#notice-open.rounded-md.border.border-border-c «منبع ↗»",
+     "box": {
+      "x": 77,
+      "y": 1326,
+      "w": 45,
+      "h": 20
+     },
+     "vw": 1366,
+     "vh": 768
+    },
+    {
+     "el": "button#notice-mark.rounded-md.border.border-border-c «خوانده شد»",
+     "box": {
+      "x": 11,
+      "y": 1326,
+      "w": 60,
+      "h": 20
+     },
+     "vw": 1366,
+     "vh": 768
+    },
+    {
+     "el": "a#notice-open.rounded-md.border.border-border-c «منبع ↗»",
+     "box": {
+      "x": 77,
+      "y": 1411,
+      "w": 45,
+      "h": 20
+     },
+     "vw": 1366,
+     "vh": 768
+    }
+   ],
+   "unreachable": [],
+   "canvases": [],
+   "fixedLayers": [],
+   "domNodes": 1501,
+   "hash": "#/notifications",
+   "title": "ب ترمینال بورس FTS v2.1 فضای تحلیل وضعیت بازار تابلوخوانی تک",
+   "route": "/notifications",
+   "readyBy": "marker",
+   "consoleErrors": [],
+   "netErrors": [],
+   "suspects": [
+    {
+     "n": 0,
+     "kind": "offscreen-x",
+     "tag": "button",
+     "id": null,
+     "testid": null,
+     "cls": "rounded-md border px-1.5 py-0.5 text-2xs transition-colors border-transparent text-text-mu",
+     "text": "سنجاق",
+     "styles": {
+      "overflowX": "visible",
+      "overflowY": "visible",
+      "textOverflow": "clip",
+      "whiteSpace": "normal",
+      "lineClamp": "none",
+      "display": "block",
+      "fontSize": "12px",
+      "direction": "rtl",
+      "position": "static"
+     },
+     "lostX": 0,
+     "lostY": 0,
+     "rect": {
+      "x": -202,
+      "y": 8,
+      "w": 47,
+      "h": 20
+     },
+     "vw": 1366,
+     "vh": 768,
+     "extra": null,
+     "crop": "_audit/ui/detail/em/_notifications__0_offscreen-x.png"
+    },
+    {
+     "n": 1,
+     "kind": "offscreen-x",
+     "tag": "button",
+     "id": null,
+     "testid": null,
+     "cls": "rounded-md border border-transparent px-1.5 py-0.5 text-2xs text-text-muted transition-col",
+     "text": "✕",
+     "styles": {
+      "overflowX": "visible",
+      "overflowY": "visible",
+      "textOverflow": "clip",
+      "whiteSpace": "normal",
+      "lineClamp": "none",
+      "display": "block",
+      "fontSize": "12px",
+      "direction": "rtl",
+      "position": "static"
+     },
+     "lostX": 0,
+     "lostY": 0,
+     "rect": {
+      "x": -230,
+      "y": 8,
+      "w": 24,
+      "h": 20
+     },
+     "vw": 1366,
+     "vh": 768,
+     "extra": null,
+     "crop": "_audit/ui/detail/em/_notifications__1_offscreen-x.png"
+    },
+    {
+     "n": 2,
+     "kind": "offscreen-x",
+     "tag": "button",
+     "id": null,
+     "testid": "inspector-tab-glance",
+     "cls": "rounded-md border px-2 py-1 text-[10px] font-bold transition-colors border-accent-blue/60 ",
+     "text": "در یک نگاه",
+     "styles": {
+      "overflowX": "visible",
+      "overflowY": "visible",
+      "textOverflow": "clip",
+      "whiteSpace": "normal",
+      "lineClamp": "none",
+      "display": "block",
+      "fontSize": "10px",
+      "direction": "rtl",
+      "position": "static"
+     },
+     "lostX": 0,
+     "lostY": 0,
+     "rect": {
+      "x": -118,
+      "y": 47,
+      "w": 108,
+      "h": 25
+     },
+     "vw": 1366,
+     "vh": 768,
+     "extra": null,
+     "crop": "_audit/ui/detail/em/_notifications__2_offscreen-x.png"
+    },
+    {
+     "n": 3,
+     "kind": "offscreen-x",
+     "tag": "button",
+     "id": null,
+     "testid": "inspector-tab-detail",
+     "cls": "rounded-md border px-2 py-1 text-[10px] font-bold transition-colors border-border-c/60 bg-",
+     "text": "جزئیات بازار",
+     "styles": {
+      "overflowX": "visible",
+      "overflowY": "visible",
+      "textOverflow": "clip",
+      "whiteSpace": "normal",
+      "lineClamp": "none",
+      "display": "block",
+      "fontSize": "10px",
+      "direction": "rtl",
+      "position": "static"
+     },
+     "lostX": 0,
+     "lostY": 0,
+     "rect": {
+      "x": -230,
+      "y": 47,
+      "w": 108,
+      "h": 25
+     },
+     "vw": 1366,
+     "vh": 768,
+     "extra": null,
+     "crop": "_audit/ui/detail/em/_notifications__3_offscreen-x.png"
+    },
+    {
+     "n": 4,
+     "kind": "offscreen-x",
+     "tag": "a",
+     "id": null,
+     "testid": "inspector-events-all",
+     "cls": "text-[9px] text-accent-blue hover:underline",
+     "text": "همه ↗",
+     "styles": {
+      "overflowX": "visible",
+      "overflowY": "visible",
+      "textOverflow": "clip",
+      "whiteSpace": "normal",
+      "lineClamp": "none",
+      "display": "block",
+      "fontSize": "9px",
+      "direction": "rtl",
+      "position": "static"
+     },
+     "lostX": 0,
+     "lostY": 0,
+     "rect": {
+      "x": -221,
+      "y": 572,
+      "w": 25,
+      "h": 14
+     },
+     "vw": 1366,
+     "vh": 768,
+     "extra": null,
+     "crop": "_audit/ui/detail/em/_notifications__4_offscreen-x.png"
+    }
+   ]
+  }
+ ]
+}

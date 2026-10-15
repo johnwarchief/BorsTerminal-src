@@ -1,0 +1,1454 @@
+{
+ "ranAt": "2026-10-15T01:23:33.220Z",
+ "viewport": {
+  "W": 1366,
+  "H": 768
+ },
+ "pages": [
+  {
+   "route": "/market",
+   "stickies": [
+    {
+     "el": "div «- سنجاق ✕»",
+     "top": 0,
+     "bottom": 37,
+     "x": -240,
+     "w": 239,
+     "h": 37,
+     "z": 10
+    },
+    {
+     "el": "header «بازار بسته — تابلوی آخرینِ نشست تا»",
+     "top": 0,
+     "bottom": 36,
+     "x": 0,
+     "w": 1198,
+     "h": 36,
+     "z": 40
+    }
+   ],
+   "scroller": {
+    "el": "app-content flex min-w-0 flex-1 flex-col overflow-y-auto overflow-x-hidden transition-[padding] duration-200 ease-out",
+    "top": 0,
+    "h": 768,
+    "sh": 858
+   },
+   "sections": [],
+   "pageErrors": []
+  },
+  {
+   "route": "/market-status",
+   "stickies": [
+    {
+     "el": "div «- سنجاق ✕»",
+     "top": 0,
+     "bottom": 37,
+     "x": -240,
+     "w": 239,
+     "h": 37,
+     "z": 10
+    },
+    {
+     "el": "header «بازار بسته — تابلوی آخرینِ نشست وض»",
+     "top": 0,
+     "bottom": 36,
+     "x": 0,
+     "w": 1198,
+     "h": 36,
+     "z": 40
+    }
+   ],
+   "scroller": {
+    "el": "app-content flex min-w-0 flex-1 flex-col overflow-y-auto overflow-x-hidden transition-[padding] duration-200 ease-out",
+    "top": 0,
+    "h": 768,
+    "sh": 5888
+   },
+   "sections": [
+    {
+     "i": 0,
+     "id": "market-status-panel",
+     "label": "#market-status-panel «وضعیت بازار بازار بسته اتصال رسید »",
+     "rect": {
+      "x": 0,
+      "y": 0,
+      "w": 1198,
+      "h": 34
+     },
+     "band": [
+      {
+       "el": "header «بازار بسته — تابلوی آخرینِ نشست وض»",
+       "top": 0,
+       "bottom": 36,
+       "x": 0,
+       "w": 1198,
+       "h": 36,
+       "z": 40
+      }
+     ],
+     "bandBottom": 36,
+     "covered": [],
+     "controls": 1,
+     "hiddenByClip": [],
+     "beyondFold": 0,
+     "beyondSample": [],
+     "clipped": [],
+     "unreachable": [],
+     "via": "scrollIntoView"
+    },
+    {
+     "i": 1,
+     "id": "status-ticker",
+     "label": "#status-ticker «پهنای بازار جریان پول شاخص و ارزش »",
+     "rect": {
+      "x": 0,
+      "y": 0,
+      "w": 1198,
+      "h": 75
+     },
+     "band": [
+      {
+       "el": "header «بازار بسته — تابلوی آخرینِ نشست وض»",
+       "top": 0,
+       "bottom": 36,
+       "x": 0,
+       "w": 1198,
+       "h": 36,
+       "z": 40
+      }
+     ],
+     "bandBottom": 36,
+     "covered": [],
+     "controls": 6,
+     "hiddenByClip": [],
+     "beyondFold": 0,
+     "beyondSample": [],
+     "clipped": [],
+     "unreachable": [],
+     "via": "scrollIntoView"
+    },
+    {
+     "i": 2,
+     "id": "ms-sec-overview",
+     "label": "section «نمای کلیِ بازار مرجع: ۶، ۷ کارت‌ها»",
+     "rect": {
+      "x": 0,
+      "y": 82,
+      "w": 1198,
+      "h": 983
+     },
+     "band": [],
+     "bandBottom": 0,
+     "covered": [],
+     "controls": 11,
+     "hiddenByClip": [],
+     "beyondFold": 0,
+     "beyondSample": [],
+     "clipped": [],
+     "unreachable": [],
+     "via": "nav-button"
+    },
+    {
+     "i": 3,
+     "id": "ms-sec-treemap",
+     "label": "section «نقشۀ بازار مرجع: ۲ سطح هر بلوک = s»",
+     "rect": {
+      "x": 0,
+      "y": 82,
+      "w": 1198,
+      "h": 600
+     },
+     "band": [],
+     "bandBottom": 0,
+     "covered": [],
+     "controls": 4,
+     "hiddenByClip": [],
+     "beyondFold": 0,
+     "beyondSample": [],
+     "clipped": [],
+     "unreachable": [],
+     "via": "nav-button"
+    },
+    {
+     "i": 4,
+     "id": "ms-sec-tops",
+     "label": "section «برترین‌ها و تأثیرگذاران مرجع: ۸ چه»",
+     "rect": {
+      "x": 0,
+      "y": 82,
+      "w": 1198,
+      "h": 711
+     },
+     "band": [],
+     "bandBottom": 0,
+     "covered": [],
+     "controls": 20,
+     "hiddenByClip": [],
+     "beyondFold": 0,
+     "beyondSample": [],
+     "clipped": [],
+     "unreachable": [],
+     "via": "nav-button"
+    },
+    {
+     "i": 5,
+     "id": "ms-sec-orders",
+     "label": "section «سفارش‌ها و تغییرِ مالکیت مرجع: ۹ م»",
+     "rect": {
+      "x": 0,
+      "y": 82,
+      "w": 1198,
+      "h": 1470
+     },
+     "band": [],
+     "bandBottom": 0,
+     "covered": [],
+     "controls": 40,
+     "hiddenByClip": [
+      {
+       "el": "#ms-ownership-to-legal-link-ريشمك «ريشمك»",
+       "x": 1120,
+       "y": 994,
+       "cut": "div «ب ترمینال بورس FTS v2.1 فضای تحلیل»",
+       "axis": "y"
+      },
+      {
+       "el": "#ms-ownership-to-legal-link-سپاآبان «سپاآبان»",
+       "x": 1120,
+       "y": 1044,
+       "cut": "div «ب ترمینال بورس FTS v2.1 فضای تحلیل»",
+       "axis": "y"
+      },
+      {
+       "el": "#ms-ownership-to-legal-link-ثعتما «ثعتما»",
+       "x": 1131,
+       "y": 1094,
+       "cut": "div «ب ترمینال بورس FTS v2.1 فضای تحلیل»",
+       "axis": "y"
+      },
+      {
+       "el": "#ms-ownership-to-legal-link-آس «آس»",
+       "x": 1138,
+       "y": 1145,
+       "cut": "div «ب ترمینال بورس FTS v2.1 فضای تحلیل»",
+       "axis": "y"
+      },
+      {
+       "el": "#ms-ownership-to-legal-link-سيمان «سيمان»",
+       "x": 1123,
+       "y": 1195,
+       "cut": "div «ب ترمینال بورس FTS v2.1 فضای تحلیل»",
+       "axis": "y"
+      },
+      {
+       "el": "#ms-ownership-to-legal-link-سپنتارود «سپنتارود»",
+       "x": 1114,
+       "y": 1245,
+       "cut": "div «ب ترمینال بورس FTS v2.1 فضای تحلیل»",
+       "axis": "y"
+      }
+     ],
+     "beyondFold": 0,
+     "beyondSample": [],
+     "clipped": [],
+     "unreachable": [],
+     "via": "nav-button"
+    },
+    {
+     "i": 6,
+     "id": "ms-sec-gold",
+     "label": "section «طلا، سکه و صندوق‌های طلا مرجع: ۱، »",
+     "rect": {
+      "x": 0,
+      "y": 82,
+      "w": 1198,
+      "h": 936
+     },
+     "band": [],
+     "bandBottom": 0,
+     "covered": [],
+     "controls": 17,
+     "hiddenByClip": [],
+     "beyondFold": 0,
+     "beyondSample": [],
+     "clipped": [],
+     "unreachable": [],
+     "via": "nav-button"
+    },
+    {
+     "i": 7,
+     "id": "ms-sec-compare",
+     "label": "section «نمودارِ مقایسه‌ای مرجع: ۱۳ چند نما»",
+     "rect": {
+      "x": 0,
+      "y": 82,
+      "w": 1198,
+      "h": 1302
+     },
+     "band": [],
+     "bandBottom": 0,
+     "covered": [],
+     "controls": 38,
+     "hiddenByClip": [
+      {
+       "el": "#ms-compare-cand-درنا-input",
+       "x": 1166,
+       "y": 794,
+       "cut": "div «ب ترمینال بورس FTS v2.1 فضای تحلیل»",
+       "axis": "y"
+      },
+      {
+       "el": "#ms-compare-cand-گلديس-input",
+       "x": 1166,
+       "y": 836,
+       "cut": "div «ب ترمینال بورس FTS v2.1 فضای تحلیل»",
+       "axis": "y"
+      },
+      {
+       "el": "#ms-compare-cand-پتروسورين-input",
+       "x": 1166,
+       "y": 878,
+       "cut": "div «ب ترمینال بورس FTS v2.1 فضای تحلیل»",
+       "axis": "y"
+      },
+      {
+       "el": "#ms-compare-cand-ناب2-input",
+       "x": 1166,
+       "y": 920,
+       "cut": "div «ب ترمینال بورس FTS v2.1 فضای تحلیل»",
+       "axis": "y"
+      },
+      {
+       "el": "#ms-compare-cand-طلاي ناب08-input",
+       "x": 1166,
+       "y": 963,
+       "cut": "div «ب ترمینال بورس FTS v2.1 فضای تحلیل»",
+       "axis": "y"
+      },
+      {
+       "el": "#ms-compare-cand-ثروت-input",
+       "x": 1166,
+       "y": 1005,
+       "cut": "div «ب ترمینال بورس FTS v2.1 فضای تحلیل»",
+       "axis": "y"
+      }
+     ],
+     "beyondFold": 0,
+     "beyondSample": [],
+     "clipped": [],
+     "unreachable": [],
+     "via": "nav-button"
+    },
+    {
+     "i": 8,
+     "id": "ms-sec-chart",
+     "label": "section «نمودارِ پیشرفته مرجع: ۵ همان موتور»",
+     "rect": {
+      "x": 0,
+      "y": 82,
+      "w": 1198,
+      "h": 673
+     },
+     "band": [],
+     "bandBottom": 0,
+     "covered": [],
+     "controls": 34,
+     "hiddenByClip": [],
+     "beyondFold": 0,
+     "beyondSample": [],
+     "clipped": [],
+     "unreachable": [],
+     "via": "nav-button"
+    },
+    {
+     "i": 9,
+     "id": "ms-sec-tables",
+     "label": "section «جدول‌های تابلو مرجع: ۲، ۸ صنایع و »",
+     "rect": {
+      "x": 0,
+      "y": 82,
+      "w": 1198,
+      "h": 754
+     },
+     "band": [],
+     "bandBottom": 0,
+     "covered": [],
+     "controls": 3,
+     "hiddenByClip": [],
+     "beyondFold": 0,
+     "beyondSample": [],
+     "clipped": [],
+     "unreachable": [],
+     "via": "nav-button"
+    }
+   ],
+   "pageErrors": []
+  },
+  {
+   "route": "/technical/خوز",
+   "stickies": [
+    {
+     "el": "div «- سنجاق ✕»",
+     "top": 0,
+     "bottom": 37,
+     "x": -240,
+     "w": 239,
+     "h": 37,
+     "z": 10
+    },
+    {
+     "el": "header «بازار بسته — تابلوی آخرینِ نشست تح»",
+     "top": 0,
+     "bottom": 36,
+     "x": 0,
+     "w": 1306,
+     "h": 36,
+     "z": 40
+    }
+   ],
+   "scroller": {
+    "el": "app-content flex min-w-0 flex-1 flex-col overflow-y-auto overflow-x-hidden transition-[padding] duration-200 ease-out",
+    "top": 4,
+    "h": 768,
+    "sh": 772
+   },
+   "sections": [
+    {
+     "i": 0,
+     "id": "fts-dock",
+     "label": "#fts-dock «⌃ باز کردنِ پنل وضعیت FTS تحلیل سا»",
+     "rect": {
+      "x": 0,
+      "y": 732,
+      "w": 976,
+      "h": 28
+     },
+     "band": [],
+     "bandBottom": 0,
+     "covered": [],
+     "controls": 8,
+     "hiddenByClip": [],
+     "beyondFold": 0,
+     "beyondSample": [],
+     "clipped": [],
+     "unreachable": [],
+     "via": "scrollIntoView"
+    }
+   ],
+   "pageErrors": [
+    "HTTP 404 http://127.0.0.1:8000/api/fundamental/خوز",
+    "HTTP 404 http://127.0.0.1:8000/api/fundamental/خوز"
+   ]
+  },
+  {
+   "route": "/technical",
+   "stickies": [
+    {
+     "el": "div «- سنجاق ✕»",
+     "top": 0,
+     "bottom": 37,
+     "x": -240,
+     "w": 239,
+     "h": 37,
+     "z": 10
+    },
+    {
+     "el": "header «بازار بسته — تابلوی آخرینِ نشست تح»",
+     "top": 0,
+     "bottom": 36,
+     "x": 0,
+     "w": 1306,
+     "h": 36,
+     "z": 40
+    }
+   ],
+   "scroller": {
+    "el": "app-content flex min-w-0 flex-1 flex-col overflow-y-auto overflow-x-hidden transition-[padding] duration-200 ease-out",
+    "top": 4,
+    "h": 768,
+    "sh": 772
+   },
+   "sections": [
+    {
+     "i": 0,
+     "id": "fts-dock",
+     "label": "#fts-dock «⌃ باز کردنِ پنل وضعیت FTS تحلیل سا»",
+     "rect": {
+      "x": 0,
+      "y": 732,
+      "w": 976,
+      "h": 28
+     },
+     "band": [],
+     "bandBottom": 0,
+     "covered": [],
+     "controls": 8,
+     "hiddenByClip": [],
+     "beyondFold": 0,
+     "beyondSample": [],
+     "clipped": [],
+     "unreachable": [],
+     "via": "scrollIntoView"
+    }
+   ],
+   "pageErrors": []
+  },
+  {
+   "route": "/fundamental/خوز",
+   "stickies": [
+    {
+     "el": "div «- سنجاق ✕»",
+     "top": 0,
+     "bottom": 37,
+     "x": -240,
+     "w": 239,
+     "h": 37,
+     "z": 10
+    },
+    {
+     "el": "header «بازار بسته — تابلوی آخرینِ نشست تح»",
+     "top": 0,
+     "bottom": 36,
+     "x": 0,
+     "w": 1198,
+     "h": 36,
+     "z": 40
+    }
+   ],
+   "scroller": {
+    "el": "app-content flex min-w-0 flex-1 flex-col overflow-y-auto overflow-x-hidden transition-[padding] duration-200 ease-out",
+    "top": 0,
+    "h": 768,
+    "sh": 768
+   },
+   "sections": [],
+   "pageErrors": [
+    "HTTP 404 http://127.0.0.1:8000/api/fundamental/خوز",
+    "HTTP 404 http://127.0.0.1:8000/api/fundamental/خوز",
+    "HTTP 404 http://127.0.0.1:8000/api/fundamental/خوز",
+    "HTTP 404 http://127.0.0.1:8000/api/fundamental/خوز"
+   ]
+  },
+  {
+   "route": "/fundamental",
+   "stickies": [
+    {
+     "el": "td «✓ ☆ آلومينا آلوميناي ايران»",
+     "top": 196,
+     "bottom": 248,
+     "x": 1028,
+     "w": 169,
+     "h": 52,
+     "z": 10
+    },
+    {
+     "el": "thead «نماد ۱ — رشد فروش (الف/ب) ۲ — روند»",
+     "top": 143,
+     "bottom": 196,
+     "x": 1,
+     "w": 1196,
+     "h": 53,
+     "z": 20
+    },
+    {
+     "el": "th «نماد»",
+     "top": 143,
+     "bottom": 196,
+     "x": 1028,
+     "w": 169,
+     "h": 53,
+     "z": 30
+    },
+    {
+     "el": "div «- سنجاق ✕»",
+     "top": 0,
+     "bottom": 37,
+     "x": -240,
+     "w": 239,
+     "h": 37,
+     "z": 10
+    },
+    {
+     "el": "header «بازار بسته — تابلوی آخرینِ نشست تح»",
+     "top": 0,
+     "bottom": 36,
+     "x": 0,
+     "w": 1198,
+     "h": 36,
+     "z": 40
+    }
+   ],
+   "scroller": {
+    "el": "app-content flex min-w-0 flex-1 flex-col overflow-y-auto overflow-x-hidden transition-[padding] duration-200 ease-out",
+    "top": 0,
+    "h": 768,
+    "sh": 768
+   },
+   "sections": [],
+   "pageErrors": []
+  },
+  {
+   "route": "/master",
+   "stickies": [
+    {
+     "el": "div «- سنجاق ✕»",
+     "top": 0,
+     "bottom": 37,
+     "x": -240,
+     "w": 239,
+     "h": 37,
+     "z": 10
+    },
+    {
+     "el": "header «بازار بسته — تابلوی آخرینِ نشست غر»",
+     "top": 0,
+     "bottom": 36,
+     "x": 0,
+     "w": 1198,
+     "h": 36,
+     "z": 40
+    }
+   ],
+   "scroller": {
+    "el": "app-content flex min-w-0 flex-1 flex-col overflow-y-auto overflow-x-hidden transition-[padding] duration-200 ease-out",
+    "top": 0,
+    "h": 768,
+    "sh": 768
+   },
+   "sections": [
+    {
+     "i": 0,
+     "id": null,
+     "label": "section «غربالگری FTS مهندسی معکوس FTS مرور»",
+     "rect": {
+      "x": 0,
+      "y": 146,
+      "w": 1198,
+      "h": 568
+     },
+     "band": [],
+     "bandBottom": 0,
+     "covered": [],
+     "controls": 13,
+     "hiddenByClip": [],
+     "beyondFold": 0,
+     "beyondSample": [],
+     "clipped": [],
+     "unreachable": [],
+     "via": "scrollIntoView"
+    }
+   ],
+   "pageErrors": []
+  },
+  {
+   "route": "/master/خوز",
+   "stickies": [
+    {
+     "el": "div «خوز سنجاق ✕»",
+     "top": 0,
+     "bottom": 37,
+     "x": 0,
+     "w": 239,
+     "h": 37,
+     "z": 10
+    },
+    {
+     "el": "header «بازار بسته — تابلوی آخرینِ نشست غر»",
+     "top": 0,
+     "bottom": 36,
+     "x": 240,
+     "w": 958,
+     "h": 36,
+     "z": 40
+    }
+   ],
+   "scroller": {
+    "el": "app-content flex min-w-0 flex-1 flex-col overflow-y-auto overflow-x-hidden transition-[padding] duration-200 ease-out",
+    "top": 0,
+    "h": 768,
+    "sh": 768
+   },
+   "sections": [
+    {
+     "i": 0,
+     "id": "master-dossier",
+     "label": "#master-dossier «خوز نمودار تکنیکال حکم FTS سنجیده »",
+     "rect": {
+      "x": 240,
+      "y": 164,
+      "w": 958,
+      "h": 353
+     },
+     "band": [],
+     "bandBottom": 0,
+     "covered": [],
+     "controls": 1,
+     "hiddenByClip": [],
+     "beyondFold": 0,
+     "beyondSample": [],
+     "clipped": [],
+     "unreachable": [],
+     "via": "scrollIntoView"
+    }
+   ],
+   "pageErrors": []
+  },
+  {
+   "route": "/strategy-tree",
+   "stickies": [
+    {
+     "el": "div «خوز سنجاق ✕»",
+     "top": 0,
+     "bottom": 37,
+     "x": 0,
+     "w": 239,
+     "h": 37,
+     "z": 10
+    },
+    {
+     "el": "header «بازار بسته — تابلوی آخرینِ نشست در»",
+     "top": 0,
+     "bottom": 36,
+     "x": 240,
+     "w": 958,
+     "h": 36,
+     "z": 40
+    }
+   ],
+   "scroller": {
+    "el": "app-content flex min-w-0 flex-1 flex-col overflow-y-auto overflow-x-hidden transition-[padding] duration-200 ease-out",
+    "top": 0,
+    "h": 768,
+    "sh": 1177
+   },
+   "sections": [
+    {
+     "i": 0,
+     "id": null,
+     "label": "section «FTS · STRATEGY ROADMAP درخت استرات»",
+     "rect": {
+      "x": 240,
+      "y": 0,
+      "w": 958,
+      "h": 260
+     },
+     "band": [
+      {
+       "el": "header «بازار بسته — تابلوی آخرینِ نشست در»",
+       "top": 0,
+       "bottom": 36,
+       "x": 240,
+       "w": 958,
+       "h": 36,
+       "z": 40
+      }
+     ],
+     "bandBottom": 36,
+     "covered": [],
+     "controls": 7,
+     "hiddenByClip": [],
+     "beyondFold": 0,
+     "beyondSample": [],
+     "clipped": [],
+     "unreachable": [],
+     "via": "scrollIntoView"
+    },
+    {
+     "i": 1,
+     "id": "strategy-roadmap-zones",
+     "label": "#strategy-roadmap-zones «3 ۳ · S انتخاب تابلوخوانی S وضعیت »",
+     "rect": {
+      "x": 240,
+      "y": 0,
+      "w": 958,
+      "h": 782
+     },
+     "band": [
+      {
+       "el": "header «بازار بسته — تابلوی آخرینِ نشست در»",
+       "top": 0,
+       "bottom": 36,
+       "x": 240,
+       "w": 958,
+       "h": 36,
+       "z": 40
+      }
+     ],
+     "bandBottom": 36,
+     "covered": [
+      {
+       "kind": "title",
+       "el": "h2 «۱ · F بنیادی»",
+       "y": 33,
+       "h": 24
+      }
+     ],
+     "controls": 4,
+     "hiddenByClip": [
+      {
+       "el": "a «3 ۳ · S انتخاب تابلوخوانی S وضعیت »",
+       "x": 968,
+       "y": 0,
+       "cut": "div «ب ترمینال بورس FTS v2.1 فضای تحلیل»",
+       "axis": "y"
+      },
+      {
+       "el": "a «2 ۲ · T تکنیکال سیگنال دو زمانه T »",
+       "x": 725,
+       "y": 0,
+       "cut": "div «ب ترمینال بورس FTS v2.1 فضای تحلیل»",
+       "axis": "y"
+      },
+      {
+       "el": "a «1 ۱ · F بنیادی پنج‌شاخص کدال F وضع»",
+       "x": 483,
+       "y": -2,
+       "cut": "div «ب ترمینال بورس FTS v2.1 فضای تحلیل»",
+       "axis": "y"
+      },
+      {
+       "el": "a «4 ۴ · M داوری و سرمایه مهندسی معکو»",
+       "x": 240,
+       "y": 0,
+       "cut": "div «ب ترمینال بورس FTS v2.1 فضای تحلیل»",
+       "axis": "y"
+      }
+     ],
+     "beyondFold": 0,
+     "beyondSample": [],
+     "clipped": [],
+     "unreachable": [
+      {
+       "el": "div «چارت دو سبک را می‌شمارد: نوسانگیر »",
+       "lost": 40
+      },
+      {
+       "el": "div «سطرِ «بررسی صنایع: خلاصه معاملات ص»",
+       "lost": 40
+      },
+      {
+       "el": "div «چارت برایِ هر دو سبک یک شرطِ حجمی »",
+       "lost": 40
+      },
+      {
+       "el": "div «سطرِ «خشک کردن / فیلتر» در چارت: ب»",
+       "lost": 60
+      },
+      {
+       "el": "div «سرِ شاخۀ فروش در چارت: کف دوقلو، س»",
+       "lost": 60
+      }
+     ],
+     "via": "scrollIntoView"
+    }
+   ],
+   "pageErrors": []
+  },
+  {
+   "route": "/strategy-tree?page=F",
+   "stickies": [
+    {
+     "el": "div «خوز سنجاق ✕»",
+     "top": 0,
+     "bottom": 37,
+     "x": 0,
+     "w": 239,
+     "h": 37,
+     "z": 10
+    },
+    {
+     "el": "header «بازار بسته — تابلوی آخرینِ نشست در»",
+     "top": 0,
+     "bottom": 36,
+     "x": 240,
+     "w": 958,
+     "h": 36,
+     "z": 40
+    }
+   ],
+   "scroller": {
+    "el": "app-content flex min-w-0 flex-1 flex-col overflow-y-auto overflow-x-hidden transition-[padding] duration-200 ease-out",
+    "top": 358,
+    "h": 768,
+    "sh": 1300
+   },
+   "sections": [
+    {
+     "i": 0,
+     "id": null,
+     "label": "section «1 بنیادی F ریشۀ صفحۀ اول: پنج سطرِ»",
+     "rect": {
+      "x": 240,
+      "y": 0,
+      "w": 958,
+      "h": 156
+     },
+     "band": [
+      {
+       "el": "header «بازار بسته — تابلوی آخرینِ نشست در»",
+       "top": 0,
+       "bottom": 36,
+       "x": 240,
+       "w": 958,
+       "h": 36,
+       "z": 40
+      }
+     ],
+     "bandBottom": 36,
+     "covered": [],
+     "controls": 0,
+     "hiddenByClip": [],
+     "beyondFold": 0,
+     "beyondSample": [],
+     "clipped": [],
+     "unreachable": [],
+     "via": "scrollIntoView"
+    },
+    {
+     "i": 1,
+     "id": null,
+     "label": "section «شاخص ۱: رشد فروش ماهانه (۴۰٪+) گزا»",
+     "rect": {
+      "x": 240,
+      "y": 0,
+      "w": 958,
+      "h": 920
+     },
+     "band": [
+      {
+       "el": "header «بازار بسته — تابلوی آخرینِ نشست در»",
+       "top": 0,
+       "bottom": 36,
+       "x": 240,
+       "w": 958,
+       "h": 36,
+       "z": 40
+      }
+     ],
+     "bandBottom": 36,
+     "covered": [
+      {
+       "kind": "title",
+       "el": "h2 «شاخص ۱: رشد فروش ماهانه (۴۰٪+)»",
+       "y": 21,
+       "h": 20
+      }
+     ],
+     "controls": 0,
+     "hiddenByClip": [],
+     "beyondFold": 0,
+     "beyondSample": [],
+     "clipped": [],
+     "unreachable": [],
+     "via": "scrollIntoView"
+    }
+   ],
+   "pageErrors": []
+  },
+  {
+   "route": "/strategy-tree?page=T",
+   "stickies": [
+    {
+     "el": "div «خوز سنجاق ✕»",
+     "top": 0,
+     "bottom": 37,
+     "x": 0,
+     "w": 239,
+     "h": 37,
+     "z": 10
+    },
+    {
+     "el": "header «بازار بسته — تابلوی آخرینِ نشست در»",
+     "top": 0,
+     "bottom": 36,
+     "x": 240,
+     "w": 958,
+     "h": 36,
+     "z": 40
+    }
+   ],
+   "scroller": {
+    "el": "app-content flex min-w-0 flex-1 flex-col overflow-y-auto overflow-x-hidden transition-[padding] duration-200 ease-out",
+    "top": 192,
+    "h": 768,
+    "sh": 960
+   },
+   "sections": [
+    {
+     "i": 0,
+     "id": null,
+     "label": "section «2 تکنیکال T ریشۀ صفحۀ دوم. روند و »",
+     "rect": {
+      "x": 240,
+      "y": 0,
+      "w": 958,
+      "h": 132
+     },
+     "band": [
+      {
+       "el": "header «بازار بسته — تابلوی آخرینِ نشست در»",
+       "top": 0,
+       "bottom": 36,
+       "x": 240,
+       "w": 958,
+       "h": 36,
+       "z": 40
+      }
+     ],
+     "bandBottom": 36,
+     "covered": [],
+     "controls": 0,
+     "hiddenByClip": [],
+     "beyondFold": 0,
+     "beyondSample": [],
+     "clipped": [],
+     "unreachable": [],
+     "via": "scrollIntoView"
+    },
+    {
+     "i": 1,
+     "id": null,
+     "label": "section «سیگنال خرید چارت اول روندِ هفتگی ر»",
+     "rect": {
+      "x": 240,
+      "y": 108,
+      "w": 958,
+      "h": 604
+     },
+     "band": [],
+     "bandBottom": 0,
+     "covered": [],
+     "controls": 0,
+     "hiddenByClip": [],
+     "beyondFold": 0,
+     "beyondSample": [],
+     "clipped": [],
+     "unreachable": [],
+     "via": "scrollIntoView"
+    }
+   ],
+   "pageErrors": []
+  },
+  {
+   "route": "/strategy-tree?page=S",
+   "stickies": [
+    {
+     "el": "div «خوز سنجاق ✕»",
+     "top": 0,
+     "bottom": 37,
+     "x": 0,
+     "w": 239,
+     "h": 37,
+     "z": 10
+    },
+    {
+     "el": "header «بازار بسته — تابلوی آخرینِ نشست در»",
+     "top": 0,
+     "bottom": 36,
+     "x": 240,
+     "w": 958,
+     "h": 36,
+     "z": 40
+    }
+   ],
+   "scroller": {
+    "el": "app-content flex min-w-0 flex-1 flex-col overflow-y-auto overflow-x-hidden transition-[padding] duration-200 ease-out",
+    "top": 192,
+    "h": 768,
+    "sh": 1306
+   },
+   "sections": [
+    {
+     "i": 0,
+     "id": null,
+     "label": "section «3 تابلوخوانی S ریشۀ صفحۀ سوم: سبکِ»",
+     "rect": {
+      "x": 240,
+      "y": 0,
+      "w": 958,
+      "h": 132
+     },
+     "band": [
+      {
+       "el": "header «بازار بسته — تابلوی آخرینِ نشست در»",
+       "top": 0,
+       "bottom": 36,
+       "x": 240,
+       "w": 958,
+       "h": 36,
+       "z": 40
+      }
+     ],
+     "bandBottom": 36,
+     "covered": [],
+     "controls": 0,
+     "hiddenByClip": [],
+     "beyondFold": 0,
+     "beyondSample": [],
+     "clipped": [],
+     "unreachable": [],
+     "via": "scrollIntoView"
+    },
+    {
+     "i": 1,
+     "id": null,
+     "label": "section «انتخاب سبک معامله چارت دو سبک را م»",
+     "rect": {
+      "x": 240,
+      "y": 0,
+      "w": 958,
+      "h": 950
+     },
+     "band": [
+      {
+       "el": "header «بازار بسته — تابلوی آخرینِ نشست در»",
+       "top": 0,
+       "bottom": 36,
+       "x": 240,
+       "w": 958,
+       "h": 36,
+       "z": 40
+      }
+     ],
+     "bandBottom": 36,
+     "covered": [
+      {
+       "kind": "title",
+       "el": "h2 «انتخاب سبک معامله»",
+       "y": 21,
+       "h": 20
+      }
+     ],
+     "controls": 0,
+     "hiddenByClip": [],
+     "beyondFold": 0,
+     "beyondSample": [],
+     "clipped": [],
+     "unreachable": [],
+     "via": "scrollIntoView"
+    }
+   ],
+   "pageErrors": []
+  },
+  {
+   "route": "/strategy-tree?page=M",
+   "stickies": [
+    {
+     "el": "div «خوز سنجاق ✕»",
+     "top": 0,
+     "bottom": 37,
+     "x": 0,
+     "w": 239,
+     "h": 37,
+     "z": 10
+    },
+    {
+     "el": "header «بازار بسته — تابلوی آخرینِ نشست در»",
+     "top": 0,
+     "bottom": 36,
+     "x": 240,
+     "w": 958,
+     "h": 36,
+     "z": 40
+    }
+   ],
+   "scroller": {
+    "el": "app-content flex min-w-0 flex-1 flex-col overflow-y-auto overflow-x-hidden transition-[padding] duration-200 ease-out",
+    "top": 300,
+    "h": 768,
+    "sh": 1236
+   },
+   "sections": [
+    {
+     "i": 0,
+     "id": null,
+     "label": "section «4 مدیریت سرمایه M ریشۀ صفحۀ چهارم:»",
+     "rect": {
+      "x": 240,
+      "y": 0,
+      "w": 958,
+      "h": 132
+     },
+     "band": [
+      {
+       "el": "header «بازار بسته — تابلوی آخرینِ نشست در»",
+       "top": 0,
+       "bottom": 36,
+       "x": 240,
+       "w": 958,
+       "h": 36,
+       "z": 40
+      }
+     ],
+     "bandBottom": 36,
+     "covered": [],
+     "controls": 0,
+     "hiddenByClip": [],
+     "beyondFold": 0,
+     "beyondSample": [],
+     "clipped": [],
+     "unreachable": [],
+     "via": "scrollIntoView"
+    },
+    {
+     "i": 1,
+     "id": null,
+     "label": "section «مهندسی معکوس سطرهایِ «۱-تابلو خوان»",
+     "rect": {
+      "x": 240,
+      "y": 0,
+      "w": 958,
+      "h": 880
+     },
+     "band": [
+      {
+       "el": "header «بازار بسته — تابلوی آخرینِ نشست در»",
+       "top": 0,
+       "bottom": 36,
+       "x": 240,
+       "w": 958,
+       "h": 36,
+       "z": 40
+      }
+     ],
+     "bandBottom": 36,
+     "covered": [
+      {
+       "kind": "title",
+       "el": "h2 «مهندسی معکوس»",
+       "y": 21,
+       "h": 20
+      }
+     ],
+     "controls": 0,
+     "hiddenByClip": [],
+     "beyondFold": 0,
+     "beyondSample": [],
+     "clipped": [],
+     "unreachable": [],
+     "via": "scrollIntoView"
+    }
+   ],
+   "pageErrors": []
+  },
+  {
+   "route": "/portfolio",
+   "stickies": [
+    {
+     "el": "div «خوز سنجاق ✕»",
+     "top": 0,
+     "bottom": 37,
+     "x": 0,
+     "w": 239,
+     "h": 37,
+     "z": 10
+    },
+    {
+     "el": "header «بازار بسته — تابلوی آخرینِ نشست مد»",
+     "top": 0,
+     "bottom": 36,
+     "x": 240,
+     "w": 958,
+     "h": 36,
+     "z": 40
+    }
+   ],
+   "scroller": {
+    "el": "app-content flex min-w-0 flex-1 flex-col overflow-y-auto overflow-x-hidden transition-[padding] duration-200 ease-out",
+    "top": 300,
+    "h": 768,
+    "sh": 1177
+   },
+   "sections": [
+    {
+     "i": 0,
+     "id": null,
+     "label": "section «FTS · STRATEGY ROADMAP درخت استرات»",
+     "rect": {
+      "x": 240,
+      "y": 0,
+      "w": 958,
+      "h": 260
+     },
+     "band": [
+      {
+       "el": "header «بازار بسته — تابلوی آخرینِ نشست مد»",
+       "top": 0,
+       "bottom": 36,
+       "x": 240,
+       "w": 958,
+       "h": 36,
+       "z": 40
+      }
+     ],
+     "bandBottom": 36,
+     "covered": [],
+     "controls": 7,
+     "hiddenByClip": [],
+     "beyondFold": 0,
+     "beyondSample": [],
+     "clipped": [],
+     "unreachable": [],
+     "via": "scrollIntoView"
+    }
+   ],
+   "pageErrors": []
+  },
+  {
+   "route": "/watch",
+   "stickies": [
+    {
+     "el": "div «خوز سنجاق ✕»",
+     "top": 0,
+     "bottom": 37,
+     "x": 0,
+     "w": 239,
+     "h": 37,
+     "z": 10
+    },
+    {
+     "el": "header «بازار بسته — تابلوی آخرینِ نشست دی»",
+     "top": 0,
+     "bottom": 36,
+     "x": 240,
+     "w": 958,
+     "h": 36,
+     "z": 40
+    }
+   ],
+   "scroller": {
+    "el": "app-content flex min-w-0 flex-1 flex-col overflow-y-auto overflow-x-hidden transition-[padding] duration-200 ease-out",
+    "top": 51,
+    "h": 768,
+    "sh": 819
+   },
+   "sections": [],
+   "pageErrors": []
+  },
+  {
+   "route": "/notifications",
+   "stickies": [
+    {
+     "el": "div «خوز سنجاق ✕»",
+     "top": 0,
+     "bottom": 37,
+     "x": 0,
+     "w": 239,
+     "h": 37,
+     "z": 10
+    },
+    {
+     "el": "header «بازار بسته — تابلوی آخرینِ نشست تر»",
+     "top": 0,
+     "bottom": 36,
+     "x": 240,
+     "w": 958,
+     "h": 36,
+     "z": 40
+    }
+   ],
+   "scroller": {
+    "el": "app-content flex min-w-0 flex-1 flex-col overflow-y-auto overflow-x-hidden transition-[padding] duration-200 ease-out",
+    "top": 0,
+    "h": 768,
+    "sh": 10474
+   },
+   "sections": [
+    {
+     "i": 0,
+     "id": "notice-sources",
+     "label": "#notice-sources «مرکزِ اعلان منبع: کدال (سازمانِ بو»",
+     "rect": {
+      "x": 240,
+      "y": 0,
+      "w": 958,
+      "h": 38
+     },
+     "band": [
+      {
+       "el": "header «بازار بسته — تابلوی آخرینِ نشست تر»",
+       "top": 0,
+       "bottom": 36,
+       "x": 240,
+       "w": 958,
+       "h": 36,
+       "z": 40
+      }
+     ],
+     "bandBottom": 36,
+     "covered": [],
+     "controls": 2,
+     "hiddenByClip": [],
+     "beyondFold": 0,
+     "beyondSample": [],
+     "clipped": [],
+     "unreachable": [],
+     "via": "scrollIntoView"
+    }
+   ],
+   "pageErrors": []
+  },
+  {
+   "route": "/engine-lab",
+   "stickies": [
+    {
+     "el": "div «خوز سنجاق ✕»",
+     "top": 0,
+     "bottom": 37,
+     "x": 0,
+     "w": 239,
+     "h": 37,
+     "z": 10
+    },
+    {
+     "el": "header «بازار بسته — تابلوی آخرینِ نشست تر»",
+     "top": 0,
+     "bottom": 36,
+     "x": 240,
+     "w": 958,
+     "h": 36,
+     "z": 40
+    }
+   ],
+   "scroller": {
+    "el": "app-content flex min-w-0 flex-1 flex-col overflow-y-auto overflow-x-hidden transition-[padding] duration-200 ease-out",
+    "top": 0,
+    "h": 768,
+    "sh": 768
+   },
+   "sections": [],
+   "pageErrors": []
+  },
+  {
+   "route": "/zz-not-found",
+   "stickies": [
+    {
+     "el": "div «خوز سنجاق ✕»",
+     "top": 0,
+     "bottom": 37,
+     "x": 0,
+     "w": 239,
+     "h": 37,
+     "z": 10
+    },
+    {
+     "el": "header «بازار بسته — تابلوی آخرینِ نشست تر»",
+     "top": 0,
+     "bottom": 36,
+     "x": 240,
+     "w": 958,
+     "h": 36,
+     "z": 40
+    }
+   ],
+   "scroller": {
+    "el": "app-content flex min-w-0 flex-1 flex-col overflow-y-auto overflow-x-hidden transition-[padding] duration-200 ease-out",
+    "top": 0,
+    "h": 768,
+    "sh": 768
+   },
+   "sections": [],
+   "pageErrors": []
+  }
+ ]
+}

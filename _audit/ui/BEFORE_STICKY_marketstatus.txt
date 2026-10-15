@@ -1,0 +1,22 @@
+
+### /market-status scrollY0  window.scrollY=0  doc=0/0  app-content=0/0 (ch 768)
+  named header.glass-strip: sticky z40 top=0 bottom=36 h=36 overflowY=visible
+  named aside: sticky zauto top=0 bottom=768 h=768 overflowY=auto
+  named aside: fixed z50 top=0 bottom=768 h=768 overflowY=auto
+  named .app-main: static zauto top=36 bottom=768 h=732 overflowY=visible
+  named main > div: static zauto top=44 bottom=168 h=124 overflowY=visible
+  VISIBLE  aside sticky zauto top=0 bottom=768 h=768 x=1198 w=168  [glass-panel sticky top-0 flex h-screen shrink-0 flex-col gap]
+  VISIBLE  header sticky z40 top=0 bottom=36 h=36 x=0 w=1198  [glass-strip sticky top-0 z-40 flex h-9 items-center justify-]
+
+### /market-status scrollY600  window.scrollY=825  doc=825/2574  app-content=0/0 (ch 3342)
+  named header.glass-strip: sticky z40 top=-825 bottom=-789 h=36 overflowY=visible
+  named [data-testid="market-section-nav"]: sticky z20 top=-424 bottom=-386 h=38 overflowY=visible
+  named aside: sticky zauto top=-825 bottom=-57 h=768 overflowY=auto
+  named aside: static z15 top=1615 bottom=2065 h=450 overflowY=visible
+  named aside: fixed z50 top=0 bottom=768 h=768 overflowY=auto
+  named .app-main: static zauto top=-789 bottom=2517 h=3306 overflowY=visible
+  named main > div: static zauto top=-781 bottom=2509 h=3290 overflowY=visible
+  named main > div: static zauto top=1615 bottom=2065 h=450 overflowY=visible
+  named main > div: absolute z1 top=1804 bottom=1875 h=71 overflowY=visible
+  named main > div: absolute z30 top=2037 bottom=2061 h=24 overflowY=visible
+  CLIP-Y div[t=ms-chart-host] overflowY=hidden lost=102px h=420 last=nahayat-negar-container

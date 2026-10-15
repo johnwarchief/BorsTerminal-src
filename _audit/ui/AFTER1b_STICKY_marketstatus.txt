@@ -1,0 +1,65 @@
+
+### /market-status scrollY0  window.scrollY=0  doc=0/0  app-content=0/7275 (ch 768)
+  named header.glass-strip: sticky z40 top=0 bottom=36 h=36 overflowY=visible
+  named [data-testid="market-section-nav"]: sticky z20 top=505 bottom=542 h=38 overflowY=visible
+  named aside: sticky zauto top=0 bottom=768 h=768 overflowY=auto
+  named aside: static z15 top=6761 bottom=7211 h=450 overflowY=visible
+  named aside: fixed z50 top=0 bottom=768 h=768 overflowY=auto
+  named .app-main: static zauto top=36 bottom=8043 h=8007 overflowY=visible
+  named main > div: static zauto top=44 bottom=8035 h=7991 overflowY=visible
+  named main > div: absolute z10 top=6807 bottom=6832 h=25 overflowY=visible
+  named main > div: absolute z10 top=6807 bottom=6832 h=25 overflowY=visible
+  named main > div: static zauto top=6761 bottom=7211 h=450 overflowY=visible
+  named main > div: absolute z1 top=6950 bottom=7021 h=71 overflowY=visible
+  named main > div: absolute z30 top=7183 bottom=7207 h=24 overflowY=visible
+  VISIBLE  aside sticky zauto top=0 bottom=768 h=768 x=1198 w=168  [glass-panel sticky top-0 flex h-screen shrink-0 flex-col gap]
+  VISIBLE  header sticky z40 top=0 bottom=36 h=36 x=0 w=1198  [glass-strip sticky top-0 z-40 flex h-9 shrink-0 items-center]
+
+### /market-status scrollY600  window.scrollY=0  doc=0/0  app-content=0/7275 (ch 768)
+  named header.glass-strip: sticky z40 top=0 bottom=36 h=36 overflowY=visible
+  named [data-testid="market-section-nav"]: sticky z20 top=505 bottom=542 h=38 overflowY=visible
+  named aside: sticky zauto top=0 bottom=768 h=768 overflowY=auto
+  named aside: static z15 top=6761 bottom=7211 h=450 overflowY=visible
+  named aside: fixed z50 top=0 bottom=768 h=768 overflowY=auto
+  named .app-main: static zauto top=36 bottom=8043 h=8007 overflowY=visible
+  named main > div: static zauto top=44 bottom=8035 h=7991 overflowY=visible
+  named main > div: absolute z10 top=6807 bottom=6832 h=25 overflowY=visible
+  named main > div: absolute z10 top=6807 bottom=6832 h=25 overflowY=visible
+  named main > div: static zauto top=6761 bottom=7211 h=450 overflowY=visible
+  named main > div: absolute z1 top=6950 bottom=7021 h=71 overflowY=visible
+  named main > div: absolute z30 top=7183 bottom=7207 h=24 overflowY=visible
+  VISIBLE  aside sticky zauto top=0 bottom=768 h=768 x=1198 w=168  [glass-panel sticky top-0 flex h-screen shrink-0 flex-col gap]
+  VISIBLE  header sticky z40 top=0 bottom=36 h=36 x=0 w=1198  [glass-strip sticky top-0 z-40 flex h-9 shrink-0 items-center]
+
+### /market-status scrollY2500  window.scrollY=0  doc=0/0  app-content=0/7275 (ch 768)
+  named header.glass-strip: sticky z40 top=0 bottom=36 h=36 overflowY=visible
+  named [data-testid="market-section-nav"]: sticky z20 top=505 bottom=542 h=38 overflowY=visible
+  named aside: sticky zauto top=0 bottom=768 h=768 overflowY=auto
+  named aside: static z15 top=6761 bottom=7211 h=450 overflowY=visible
+  named aside: fixed z50 top=0 bottom=768 h=768 overflowY=auto
+  named .app-main: static zauto top=36 bottom=8043 h=8007 overflowY=visible
+  named main > div: static zauto top=44 bottom=8035 h=7991 overflowY=visible
+  named main > div: absolute z10 top=6807 bottom=6832 h=25 overflowY=visible
+  named main > div: absolute z10 top=6807 bottom=6832 h=25 overflowY=visible
+  named main > div: static zauto top=6761 bottom=7211 h=450 overflowY=visible
+  named main > div: absolute z1 top=6950 bottom=7021 h=71 overflowY=visible
+  named main > div: absolute z30 top=7183 bottom=7207 h=24 overflowY=visible
+  VISIBLE  aside sticky zauto top=0 bottom=768 h=768 x=1198 w=168  [glass-panel sticky top-0 flex h-screen shrink-0 flex-col gap]
+  VISIBLE  header sticky z40 top=0 bottom=36 h=36 x=0 w=1198  [glass-strip sticky top-0 z-40 flex h-9 shrink-0 items-center]
+
+### /market-status nav:ms-sec-orders  window.scrollY=0  doc=0/0  app-content=2786/7275 (ch 768)
+  named header.glass-strip: sticky z40 top=0 bottom=36 h=36 overflowY=visible
+  named [data-testid="market-section-nav"]: sticky z20 top=36 bottom=74 h=38 overflowY=visible
+  named aside: sticky zauto top=0 bottom=768 h=768 overflowY=auto
+  named aside: static z15 top=3975 bottom=4425 h=450 overflowY=visible
+  named aside: fixed z50 top=0 bottom=768 h=768 overflowY=auto
+  named .app-main: static zauto top=-2750 bottom=5257 h=8007 overflowY=visible
+  named main > div: static zauto top=-2742 bottom=5249 h=7991 overflowY=visible
+  named main > div: absolute z10 top=4021 bottom=4046 h=25 overflowY=visible
+  named main > div: absolute z10 top=4021 bottom=4046 h=25 overflowY=visible
+  named main > div: static zauto top=3975 bottom=4425 h=450 overflowY=visible
+  named main > div: absolute z1 top=4164 bottom=4235 h=71 overflowY=visible
+  named main > div: absolute z30 top=4397 bottom=4421 h=24 overflowY=visible
+  VISIBLE  aside sticky zauto top=0 bottom=768 h=768 x=1198 w=168  [glass-panel sticky top-0 flex h-screen shrink-0 flex-col gap]
+  VISIBLE  header sticky z40 top=0 bottom=36 h=36 x=0 w=1198  [glass-strip sticky top-0 z-40 flex h-9 shrink-0 items-center]
+  VISIBLE  [t=market-section-nav] sticky z20 top=36 bottom=74 h=38 x=-8 w=1214  [sticky top-[var(--chrome-h)] z-20 -mx-2 border-b border-bord]

@@ -1,0 +1,291 @@
+{
+ "ranAt": "2026-10-15T01:06:21.698Z",
+ "viewport": {
+  "W": 1366,
+  "H": 768
+ },
+ "pages": [
+  {
+   "route": "/market-status",
+   "stickies": [
+    {
+     "el": "div «- سنجاق ✕»",
+     "top": 0,
+     "bottom": 37,
+     "x": -240,
+     "w": 239,
+     "h": 37,
+     "z": 10
+    },
+    {
+     "el": "header «بازار بسته — تابلوی آخرینِ نشست وض»",
+     "top": 0,
+     "bottom": 36,
+     "x": 0,
+     "w": 1198,
+     "h": 36,
+     "z": 40
+    }
+   ],
+   "scroller": {
+    "el": "app-content flex min-w-0 flex-1 flex-col overflow-y-auto overflow-x-hidden transition-[padding] duration-200 ease-out",
+    "top": 0,
+    "h": 3850,
+    "sh": 3850
+   },
+   "sections": [
+    {
+     "i": 0,
+     "id": "market-status-panel",
+     "label": "#market-status-panel «وضعیت بازار بازار بسته اتصال در را»",
+     "rect": {
+      "x": 0,
+      "y": 0,
+      "w": 1198,
+      "h": 34
+     },
+     "band": [],
+     "bandBottom": 0,
+     "covered": [],
+     "controls": 1,
+     "hiddenByClip": [],
+     "beyondFold": 0,
+     "beyondSample": [],
+     "clipped": [],
+     "unreachable": [],
+     "via": "scrollIntoView"
+    },
+    {
+     "i": 1,
+     "id": "status-ticker",
+     "label": "#status-ticker «پهنای بازار جریان پول شاخص و ارزش »",
+     "rect": {
+      "x": 0,
+      "y": 0,
+      "w": 1198,
+      "h": 75
+     },
+     "band": [],
+     "bandBottom": 0,
+     "covered": [],
+     "controls": 6,
+     "hiddenByClip": [],
+     "beyondFold": 0,
+     "beyondSample": [],
+     "clipped": [],
+     "unreachable": [],
+     "via": "scrollIntoView"
+    },
+    {
+     "i": 2,
+     "id": "ms-sec-overview",
+     "label": "section «نمای کلیِ بازار مرجع: ۶، ۷ کارت‌ها»",
+     "rect": {
+      "x": 0,
+      "y": 96,
+      "w": 1198,
+      "h": 983
+     },
+     "band": [],
+     "bandBottom": 0,
+     "covered": [],
+     "controls": 11,
+     "hiddenByClip": [],
+     "beyondFold": 0,
+     "beyondSample": [],
+     "clipped": [],
+     "unreachable": [],
+     "via": "nav-button"
+    },
+    {
+     "i": 3,
+     "id": "ms-sec-treemap",
+     "label": "section «نقشۀ بازار مرجع: ۲ سطح هر بلوک = s»",
+     "rect": {
+      "x": 0,
+      "y": 96,
+      "w": 1198,
+      "h": 600
+     },
+     "band": [],
+     "bandBottom": 0,
+     "covered": [],
+     "controls": 4,
+     "hiddenByClip": [],
+     "beyondFold": 0,
+     "beyondSample": [],
+     "clipped": [],
+     "unreachable": [],
+     "via": "nav-button"
+    },
+    {
+     "i": 4,
+     "id": "ms-sec-tops",
+     "label": "section «برترین‌ها و تأثیرگذاران مرجع: ۸ چه»",
+     "rect": {
+      "x": 0,
+      "y": 96,
+      "w": 1198,
+      "h": 711
+     },
+     "band": [],
+     "bandBottom": 0,
+     "covered": [],
+     "controls": 20,
+     "hiddenByClip": [],
+     "beyondFold": 0,
+     "beyondSample": [],
+     "clipped": [],
+     "unreachable": [],
+     "via": "nav-button"
+    },
+    {
+     "i": 5,
+     "id": "ms-sec-orders",
+     "label": "section «سفارش‌ها و تغییرِ مالکیت مرجع: ۹ م»",
+     "rect": {
+      "x": 0,
+      "y": 96,
+      "w": 1198,
+      "h": 1470
+     },
+     "band": [],
+     "bandBottom": 0,
+     "covered": [],
+     "controls": 40,
+     "hiddenByClip": [],
+     "beyondFold": 22,
+     "beyondSample": [
+      {
+       "el": "#ms-orders-buy-panel-link-نيلي «نيلي»",
+       "x": 1136,
+       "y": 759,
+       "why": "edge"
+      },
+      {
+       "el": "#ms-orders-sell-panel-link-شستا «شستا»",
+       "x": 536,
+       "y": 759,
+       "why": "edge"
+      },
+      {
+       "el": "#ms-ownership-to-legal-link-ريشمك «ريشمك»",
+       "y": 1008,
+       "why": "below"
+      }
+     ],
+     "clipped": [],
+     "unreachable": [],
+     "via": "nav-button"
+    },
+    {
+     "i": 6,
+     "id": "ms-sec-gold",
+     "label": "section «طلا، سکه و صندوق‌های طلا مرجع: ۱، »",
+     "rect": {
+      "x": 0,
+      "y": 96,
+      "w": 1198,
+      "h": 936
+     },
+     "band": [],
+     "bandBottom": 0,
+     "covered": [],
+     "controls": 17,
+     "hiddenByClip": [],
+     "beyondFold": 0,
+     "beyondSample": [],
+     "clipped": [],
+     "unreachable": [],
+     "via": "nav-button"
+    },
+    {
+     "i": 7,
+     "id": "ms-sec-compare",
+     "label": "section «نمودارِ مقایسه‌ای مرجع: ۱۳ چند نما»",
+     "rect": {
+      "x": 0,
+      "y": 96,
+      "w": 1198,
+      "h": 1302
+     },
+     "band": [],
+     "bandBottom": 0,
+     "covered": [],
+     "controls": 38,
+     "hiddenByClip": [],
+     "beyondFold": 15,
+     "beyondSample": [
+      {
+       "el": "#ms-compare-cand-حشكوه-input",
+       "x": 1166,
+       "y": 766,
+       "why": "edge"
+      },
+      {
+       "el": "#ms-compare-cand-درنا-input",
+       "y": 808,
+       "why": "below"
+      },
+      {
+       "el": "#ms-compare-cand-گلديس-input",
+       "y": 850,
+       "why": "below"
+      }
+     ],
+     "clipped": [],
+     "unreachable": [],
+     "via": "nav-button"
+    },
+    {
+     "i": 8,
+     "id": "ms-sec-chart",
+     "label": "section «نمودارِ پیشرفته مرجع: ۵ همان موتور»",
+     "rect": {
+      "x": 0,
+      "y": 96,
+      "w": 1198,
+      "h": 573
+     },
+     "band": [],
+     "bandBottom": 0,
+     "covered": [],
+     "controls": 34,
+     "hiddenByClip": [],
+     "beyondFold": 0,
+     "beyondSample": [],
+     "clipped": [],
+     "unreachable": [
+      {
+       "el": "#ms-chart-host «فولاد (فولاد) روزانه هفتگی ماهانه »",
+       "lost": 102
+      }
+     ],
+     "via": "nav-button"
+    },
+    {
+     "i": 9,
+     "id": "ms-sec-tables",
+     "label": "section «جدول‌های تابلو مرجع: ۲، ۸ صنایع و »",
+     "rect": {
+      "x": 0,
+      "y": 96,
+      "w": 1198,
+      "h": 754
+     },
+     "band": [],
+     "bandBottom": 0,
+     "covered": [],
+     "controls": 3,
+     "hiddenByClip": [],
+     "beyondFold": 0,
+     "beyondSample": [],
+     "clipped": [],
+     "unreachable": [],
+     "via": "nav-button"
+    }
+   ],
+   "pageErrors": []
+  }
+ ]
+}

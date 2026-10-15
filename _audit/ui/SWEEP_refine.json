@@ -1,0 +1,411 @@
+{
+ "ranAt": "2026-10-15T01:29:02.971Z",
+ "viewport": {
+  "W": 1366,
+  "H": 768
+ },
+ "pages": [
+  {
+   "route": "/market-status",
+   "stickies": [
+    {
+     "el": "div «- سنجاق ✕»",
+     "top": 0,
+     "bottom": 37,
+     "x": -240,
+     "w": 239,
+     "h": 37,
+     "z": 10
+    },
+    {
+     "el": "header «بازار بسته — تابلوی آخرینِ نشست وض»",
+     "top": 0,
+     "bottom": 36,
+     "x": 0,
+     "w": 1198,
+     "h": 36,
+     "z": 40
+    }
+   ],
+   "scroller": {
+    "el": "app-content flex min-w-0 flex-1 flex-col overflow-y-auto overflow-x-hidden transition-[padding] duration-200 ease-out",
+    "top": 0,
+    "h": 768,
+    "sh": 5888
+   },
+   "sections": [
+    {
+     "i": 0,
+     "id": "market-status-panel",
+     "label": "#market-status-panel «وضعیت بازار بازار بسته اتصال رسید »",
+     "rect": {
+      "x": 0,
+      "y": 0,
+      "w": 1198,
+      "h": 34
+     },
+     "band": [
+      {
+       "el": "header «بازار بسته — تابلوی آخرینِ نشست وض»",
+       "top": 0,
+       "bottom": 36,
+       "x": 0,
+       "w": 1198,
+       "h": 36,
+       "z": 40
+      }
+     ],
+     "bandBottom": 36,
+     "covered": [],
+     "controls": 1,
+     "hiddenByClip": [],
+     "beyondFold": 0,
+     "beyondSample": [],
+     "clipped": [],
+     "unreachable": [],
+     "via": "scrollIntoView"
+    },
+    {
+     "i": 1,
+     "id": "status-ticker",
+     "label": "#status-ticker «پهنای بازار جریان پول شاخص و ارزش »",
+     "rect": {
+      "x": 0,
+      "y": 0,
+      "w": 1198,
+      "h": 75
+     },
+     "band": [
+      {
+       "el": "header «بازار بسته — تابلوی آخرینِ نشست وض»",
+       "top": 0,
+       "bottom": 36,
+       "x": 0,
+       "w": 1198,
+       "h": 36,
+       "z": 40
+      }
+     ],
+     "bandBottom": 36,
+     "covered": [],
+     "controls": 6,
+     "hiddenByClip": [],
+     "beyondFold": 0,
+     "beyondSample": [],
+     "clipped": [],
+     "unreachable": [],
+     "via": "scrollIntoView"
+    },
+    {
+     "i": 2,
+     "id": "ms-sec-overview",
+     "label": "section «نمای کلیِ بازار مرجع: ۶، ۷ کارت‌ها»",
+     "rect": {
+      "x": 0,
+      "y": 82,
+      "w": 1198,
+      "h": 983
+     },
+     "band": [],
+     "bandBottom": 0,
+     "covered": [],
+     "controls": 11,
+     "hiddenByClip": [],
+     "beyondFold": 0,
+     "beyondSample": [],
+     "clipped": [],
+     "unreachable": [],
+     "via": "nav-button"
+    },
+    {
+     "i": 3,
+     "id": "ms-sec-treemap",
+     "label": "section «نقشۀ بازار مرجع: ۲ سطح هر بلوک = s»",
+     "rect": {
+      "x": 0,
+      "y": 82,
+      "w": 1198,
+      "h": 600
+     },
+     "band": [],
+     "bandBottom": 0,
+     "covered": [],
+     "controls": 4,
+     "hiddenByClip": [],
+     "beyondFold": 0,
+     "beyondSample": [],
+     "clipped": [],
+     "unreachable": [],
+     "via": "nav-button"
+    },
+    {
+     "i": 4,
+     "id": "ms-sec-tops",
+     "label": "section «برترین‌ها و تأثیرگذاران مرجع: ۸ چه»",
+     "rect": {
+      "x": 0,
+      "y": 82,
+      "w": 1198,
+      "h": 711
+     },
+     "band": [],
+     "bandBottom": 0,
+     "covered": [],
+     "controls": 20,
+     "hiddenByClip": [],
+     "beyondFold": 0,
+     "beyondSample": [],
+     "clipped": [],
+     "unreachable": [],
+     "via": "nav-button"
+    },
+    {
+     "i": 5,
+     "id": "ms-sec-orders",
+     "label": "section «سفارش‌ها و تغییرِ مالکیت مرجع: ۹ م»",
+     "rect": {
+      "x": 0,
+      "y": 82,
+      "w": 1198,
+      "h": 1470
+     },
+     "band": [],
+     "bandBottom": 0,
+     "covered": [],
+     "controls": 40,
+     "hiddenByClip": [],
+     "beyondFold": 20,
+     "beyondSample": [
+      {
+       "el": "#ms-ownership-to-legal-link-ريشمك «ريشمك»",
+       "y": 994,
+       "why": "below"
+      },
+      {
+       "el": "#ms-ownership-to-legal-link-سپاآبان «سپاآبان»",
+       "y": 1044,
+       "why": "below"
+      },
+      {
+       "el": "#ms-ownership-to-legal-link-ثعتما «ثعتما»",
+       "y": 1094,
+       "why": "below"
+      }
+     ],
+     "clipped": [],
+     "unreachable": [],
+     "via": "nav-button"
+    },
+    {
+     "i": 6,
+     "id": "ms-sec-gold",
+     "label": "section «طلا، سکه و صندوق‌های طلا مرجع: ۱، »",
+     "rect": {
+      "x": 0,
+      "y": 82,
+      "w": 1198,
+      "h": 936
+     },
+     "band": [],
+     "bandBottom": 0,
+     "covered": [],
+     "controls": 17,
+     "hiddenByClip": [],
+     "beyondFold": 0,
+     "beyondSample": [],
+     "clipped": [],
+     "unreachable": [],
+     "via": "nav-button"
+    },
+    {
+     "i": 7,
+     "id": "ms-sec-compare",
+     "label": "section «نمودارِ مقایسه‌ای مرجع: ۱۳ چند نما»",
+     "rect": {
+      "x": 0,
+      "y": 82,
+      "w": 1198,
+      "h": 1302
+     },
+     "band": [],
+     "bandBottom": 0,
+     "covered": [],
+     "controls": 38,
+     "hiddenByClip": [],
+     "beyondFold": 14,
+     "beyondSample": [
+      {
+       "el": "#ms-compare-cand-درنا-input",
+       "y": 794,
+       "why": "below"
+      },
+      {
+       "el": "#ms-compare-cand-گلديس-input",
+       "y": 836,
+       "why": "below"
+      },
+      {
+       "el": "#ms-compare-cand-پتروسورين-input",
+       "y": 878,
+       "why": "below"
+      }
+     ],
+     "clipped": [],
+     "unreachable": [],
+     "via": "nav-button"
+    },
+    {
+     "i": 8,
+     "id": "ms-sec-chart",
+     "label": "section «نمودارِ پیشرفته مرجع: ۵ همان موتور»",
+     "rect": {
+      "x": 0,
+      "y": 82,
+      "w": 1198,
+      "h": 673
+     },
+     "band": [],
+     "bandBottom": 0,
+     "covered": [],
+     "controls": 34,
+     "hiddenByClip": [],
+     "beyondFold": 0,
+     "beyondSample": [],
+     "clipped": [],
+     "unreachable": [],
+     "via": "nav-button"
+    },
+    {
+     "i": 9,
+     "id": "ms-sec-tables",
+     "label": "section «جدول‌های تابلو مرجع: ۲، ۸ صنایع و »",
+     "rect": {
+      "x": 0,
+      "y": 82,
+      "w": 1198,
+      "h": 754
+     },
+     "band": [],
+     "bandBottom": 0,
+     "covered": [],
+     "controls": 3,
+     "hiddenByClip": [],
+     "beyondFold": 0,
+     "beyondSample": [],
+     "clipped": [],
+     "unreachable": [],
+     "via": "nav-button"
+    }
+   ],
+   "pageErrors": []
+  },
+  {
+   "route": "/strategy-tree",
+   "stickies": [
+    {
+     "el": "div «- سنجاق ✕»",
+     "top": 0,
+     "bottom": 37,
+     "x": -240,
+     "w": 239,
+     "h": 37,
+     "z": 10
+    },
+    {
+     "el": "header «بازار بسته — تابلوی آخرینِ نشست در»",
+     "top": 0,
+     "bottom": 36,
+     "x": 0,
+     "w": 1198,
+     "h": 36,
+     "z": 40
+    }
+   ],
+   "scroller": {
+    "el": "app-content flex min-w-0 flex-1 flex-col overflow-y-auto overflow-x-hidden transition-[padding] duration-200 ease-out",
+    "top": 304,
+    "h": 768,
+    "sh": 1072
+   },
+   "sections": [
+    {
+     "i": 0,
+     "id": null,
+     "label": "section «FTS · STRATEGY ROADMAP درخت استرات»",
+     "rect": {
+      "x": 0,
+      "y": 0,
+      "w": 1198,
+      "h": 236
+     },
+     "band": [
+      {
+       "el": "header «بازار بسته — تابلوی آخرینِ نشست در»",
+       "top": 0,
+       "bottom": 36,
+       "x": 0,
+       "w": 1198,
+       "h": 36,
+       "z": 40
+      }
+     ],
+     "bandBottom": 36,
+     "covered": [],
+     "controls": 7,
+     "hiddenByClip": [],
+     "beyondFold": 0,
+     "beyondSample": [],
+     "clipped": [],
+     "unreachable": [],
+     "via": "scrollIntoView"
+    },
+    {
+     "i": 1,
+     "id": "strategy-roadmap-zones",
+     "label": "#strategy-roadmap-zones «3 ۳ · S انتخاب تابلوخوانی S وضعیت »",
+     "rect": {
+      "x": 0,
+      "y": 0,
+      "w": 1198,
+      "h": 738
+     },
+     "band": [
+      {
+       "el": "header «بازار بسته — تابلوی آخرینِ نشست در»",
+       "top": 0,
+       "bottom": 36,
+       "x": 0,
+       "w": 1198,
+       "h": 36,
+       "z": 40
+      }
+     ],
+     "bandBottom": 36,
+     "covered": [
+      {
+       "kind": "title",
+       "el": "h2 «۲ · T تکنیکال»",
+       "y": 33,
+       "h": 24
+      }
+     ],
+     "controls": 4,
+     "hiddenByClip": [],
+     "beyondFold": 1,
+     "beyondSample": [
+      {
+       "el": "a «2 ۲ · T تکنیکال سیگنال دو زمانه T »",
+       "x": 605,
+       "y": -2,
+       "why": "edge"
+      }
+     ],
+     "clipped": [],
+     "unreachable": [],
+     "via": "scrollIntoView"
+    }
+   ],
+   "pageErrors": []
+  }
+ ]
+}

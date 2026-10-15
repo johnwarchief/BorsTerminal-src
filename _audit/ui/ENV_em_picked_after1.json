@@ -1,0 +1,315 @@
+{
+ "mode": "em",
+ "picked": true,
+ "ranAt": "2026-10-15T01:20:05.426Z",
+ "routes": [
+  {
+   "route": "/market",
+   "env": {
+    "url": "#/market",
+    "screen": {
+     "width": 1366,
+     "height": 768,
+     "availW": 1366,
+     "availH": 768,
+     "colorDepth": 24
+    },
+    "window": {
+     "outerW": 1366,
+     "outerH": 768,
+     "innerW": 1366,
+     "innerH": 768
+    },
+    "visual": {
+     "w": 1366,
+     "h": 768,
+     "scale": 1
+    },
+    "dpr": 1,
+    "rootFontSizePx": "16px",
+    "remUnitPx": 160,
+    "bodyFontPx": "16px",
+    "zoomEstimated": 100,
+    "docScroll": {
+     "w": 1366,
+     "h": 768
+    },
+    "chrome": [
+     {
+      "sel": "header.glass-strip",
+      "top": 0,
+      "h": 36,
+      "w": 958,
+      "fontSize": "16px",
+      "rem": "sticky"
+     },
+     {
+      "sel": "[class*=\"top-9\"]",
+      "top": 36,
+      "h": 65,
+      "w": 958,
+      "fontSize": "12px",
+      "rem": "sticky"
+     },
+     {
+      "sel": "aside",
+      "top": 0,
+      "h": 768,
+      "w": 168,
+      "fontSize": "16px",
+      "rem": "sticky"
+     },
+     {
+      "sel": ".app-content",
+      "top": 0,
+      "h": 768,
+      "w": 1198,
+      "fontSize": "16px",
+      "rem": "static"
+     },
+     {
+      "sel": ".app-main",
+      "top": 101,
+      "h": 1000,
+      "w": 958,
+      "fontSize": "16px",
+      "rem": "static"
+     }
+    ]
+   }
+  },
+  {
+   "route": "/market-status",
+   "env": {
+    "url": "#/market-status",
+    "screen": {
+     "width": 1366,
+     "height": 768,
+     "availW": 1366,
+     "availH": 768,
+     "colorDepth": 24
+    },
+    "window": {
+     "outerW": 1366,
+     "outerH": 768,
+     "innerW": 1366,
+     "innerH": 768
+    },
+    "visual": {
+     "w": 1366,
+     "h": 768,
+     "scale": 1
+    },
+    "dpr": 1,
+    "rootFontSizePx": "16px",
+    "remUnitPx": 160,
+    "bodyFontPx": "16px",
+    "zoomEstimated": 100,
+    "docScroll": {
+     "w": 1366,
+     "h": 768
+    },
+    "chrome": [
+     {
+      "sel": "header.glass-strip",
+      "top": 0,
+      "h": 36,
+      "w": 958,
+      "fontSize": "16px",
+      "rem": "sticky"
+     },
+     {
+      "sel": "[class*=\"top-9\"]",
+      "top": 36,
+      "h": 65,
+      "w": 958,
+      "fontSize": "12px",
+      "rem": "sticky"
+     },
+     {
+      "sel": "[data-testid=\"market-section-nav\"]",
+      "top": 466,
+      "h": 38,
+      "w": 974,
+      "fontSize": "16px",
+      "rem": "sticky"
+     },
+     {
+      "sel": "aside",
+      "top": 0,
+      "h": 768,
+      "w": 168,
+      "fontSize": "16px",
+      "rem": "sticky"
+     },
+     {
+      "sel": ".app-content",
+      "top": 0,
+      "h": 768,
+      "w": 1198,
+      "fontSize": "16px",
+      "rem": "static"
+     },
+     {
+      "sel": ".app-main",
+      "top": 101,
+      "h": 7875,
+      "w": 958,
+      "fontSize": "16px",
+      "rem": "static"
+     }
+    ]
+   }
+  },
+  {
+   "route": "/technical/خوز",
+   "env": {
+    "url": "#/technical/%D8%AE%D9%88%D8%B2",
+    "screen": {
+     "width": 1366,
+     "height": 768,
+     "availW": 1366,
+     "availH": 768,
+     "colorDepth": 24
+    },
+    "window": {
+     "outerW": 1366,
+     "outerH": 768,
+     "innerW": 1366,
+     "innerH": 768
+    },
+    "visual": {
+     "w": 1366,
+     "h": 768,
+     "scale": 1
+    },
+    "dpr": 1,
+    "rootFontSizePx": "16px",
+    "remUnitPx": 160,
+    "bodyFontPx": "16px",
+    "zoomEstimated": 100,
+    "docScroll": {
+     "w": 1366,
+     "h": 768
+    },
+    "chrome": [
+     {
+      "sel": "header.glass-strip",
+      "top": 0,
+      "h": 36,
+      "w": 1066,
+      "fontSize": "16px",
+      "rem": "sticky"
+     },
+     {
+      "sel": "[class*=\"top-9\"]",
+      "top": 36,
+      "h": 65,
+      "w": 1066,
+      "fontSize": "12px",
+      "rem": "sticky"
+     },
+     {
+      "sel": "aside",
+      "top": 0,
+      "h": 768,
+      "w": 60,
+      "fontSize": "16px",
+      "rem": "sticky"
+     },
+     {
+      "sel": ".app-content",
+      "top": 0,
+      "h": 768,
+      "w": 1306,
+      "fontSize": "16px",
+      "rem": "static"
+     },
+     {
+      "sel": ".app-main",
+      "top": 101,
+      "h": 736,
+      "w": 1066,
+      "fontSize": "16px",
+      "rem": "static"
+     }
+    ]
+   }
+  },
+  {
+   "route": "/master",
+   "env": {
+    "url": "#/master",
+    "screen": {
+     "width": 1366,
+     "height": 768,
+     "availW": 1366,
+     "availH": 768,
+     "colorDepth": 24
+    },
+    "window": {
+     "outerW": 1366,
+     "outerH": 768,
+     "innerW": 1366,
+     "innerH": 768
+    },
+    "visual": {
+     "w": 1366,
+     "h": 768,
+     "scale": 1
+    },
+    "dpr": 1,
+    "rootFontSizePx": "16px",
+    "remUnitPx": 160,
+    "bodyFontPx": "16px",
+    "zoomEstimated": 100,
+    "docScroll": {
+     "w": 1366,
+     "h": 768
+    },
+    "chrome": [
+     {
+      "sel": "header.glass-strip",
+      "top": 0,
+      "h": 36,
+      "w": 958,
+      "fontSize": "16px",
+      "rem": "sticky"
+     },
+     {
+      "sel": "[class*=\"top-9\"]",
+      "top": 36,
+      "h": 65,
+      "w": 958,
+      "fontSize": "12px",
+      "rem": "sticky"
+     },
+     {
+      "sel": "aside",
+      "top": 0,
+      "h": 768,
+      "w": 168,
+      "fontSize": "16px",
+      "rem": "sticky"
+     },
+     {
+      "sel": ".app-content",
+      "top": 0,
+      "h": 768,
+      "w": 1198,
+      "fontSize": "16px",
+      "rem": "static"
+     },
+     {
+      "sel": ".app-main",
+      "top": 101,
+      "h": 719,
+      "w": 958,
+      "fontSize": "16px",
+      "rem": "static"
+     }
+    ]
+   }
+  }
+ ]
+}

@@ -1,0 +1,19 @@
+
+### /market scrollY0  window.scrollY=0  doc=0/90  app-content=0/0 (ch 858)
+  named header.glass-strip: sticky z40 top=0 bottom=36 h=36 overflowY=visible
+  named aside: sticky zauto top=0 bottom=768 h=768 overflowY=auto
+  named aside: fixed z50 top=0 bottom=768 h=768 overflowY=auto
+  named .app-main: static zauto top=36 bottom=858 h=822 overflowY=visible
+  named main > div: static zauto top=44 bottom=850 h=806 overflowY=visible
+  VISIBLE  aside sticky zauto top=0 bottom=768 h=768 x=1198 w=168  [glass-panel sticky top-0 flex h-screen shrink-0 flex-col gap]
+  VISIBLE  header sticky z40 top=0 bottom=36 h=36 x=0 w=1198  [glass-strip sticky top-0 z-40 flex h-9 items-center justify-]
+  VISIBLE  [t=tape-head] sticky z10 top=225 bottom=259 h=34 x=1 w=1196  [sticky top-0 z-10 grid w-full min-w-[1100px] grid-cols-[minm]
+
+### /market scrollY600  window.scrollY=90  doc=90/90  app-content=0/0 (ch 858)
+  named header.glass-strip: sticky z40 top=-90 bottom=-54 h=36 overflowY=visible
+  named aside: sticky zauto top=-90 bottom=678 h=768 overflowY=auto
+  named aside: fixed z50 top=0 bottom=768 h=768 overflowY=auto
+  named .app-main: static zauto top=-54 bottom=768 h=822 overflowY=visible
+  named main > div: static zauto top=-46 bottom=760 h=806 overflowY=visible
+  VISIBLE  aside sticky zauto top=-90 bottom=678 h=768 x=1198 w=168  [glass-panel sticky top-0 flex h-screen shrink-0 flex-col gap]
+  VISIBLE  [t=tape-head] sticky z10 top=135 bottom=169 h=34 x=1 w=1196  [sticky top-0 z-10 grid w-full min-w-[1100px] grid-cols-[minm]
