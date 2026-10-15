@@ -1,0 +1,3 @@
+vitest_rc=0
+tsc_rc=0
+build_rc=0
