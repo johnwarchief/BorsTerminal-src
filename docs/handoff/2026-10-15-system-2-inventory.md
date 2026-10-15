@@ -17,9 +17,9 @@
 | `main` محلی | `1e651b1` — **behind 3** نسبت بهِ `origin/main`؛ دست‌نخورده گذاشته شد |
 | worktreeها (شروعِ مأموریت) | `BorsTerminal-src` (checkoutِ اصلی) + `.worktrees/ui-audit-system-2` |
 | شاخۀِ UI | `mission/ui-audit-system-2-2026-10-15` @ `165bdca` — **بی‌upstream** (رویِ remote اصلاً وجود نداشت) |
-| تغییراتِ ثبت‌نشده درِ checkoutِ اصلی | `M _audit/app_log.txt` (+۹۰۶/−۳۰۶)، `M _audit/RA365-LEDGER-RULE-2026-10-12.csv` (بی‌تغییرِ محتوا، فقطِ پایانِ خط CRLF)، `M dev/fixtures/fts_v10_payloads.json` (همان)، + ۶ فایلِ untrackedِ `_audit/PHASE5F-*.txt` و `_audit/P5G-FINAL-RC.txt` |
+| تغییراتِ ثبت‌نشده درِ checkoutِ اصلی | `M _audit/app_log.txt` (+۹۰۶/−۳۰۶) — **اینِ محتوا بعداً درِ `ff6b2fb` («carry the live app log») کامیت شد**، `M _audit/RA365-LEDGER-RULE-2026-10-12.csv` (بی‌تغییرِ محتوا؛ دورِ دوم ثابت کرد بایت‌به‌بایت هم یکسان است ⇒ شبحِ `M`، §۱۰‑۱)، `M dev/fixtures/fts_v10_payloads.json` (فقطِ CRLF/LF)، + ۶ فایلِ untrackedِ `_audit/PHASE5F-*.txt` و `_audit/P5G-FINAL-RC.txt` (خلاصۀِ masked وِ rcِ آن‌ها درِ دورِ دوم منتشر شد) |
 | تغییراتِ ثبت‌نشده درِ worktreeِ UI | ۶ فایلِ `frontend/src/**` + `_audit/ui/` (۷ هارنسِ js + JSON/TXT) + `_audit/ui-gates/` |
-| هویتِ commit | بی‌تنظیمِ سراسری (`git config user.name` خالی) ⇒ هرِ کامیت باِ `-c user.name/user.email` درِ خودِ فرمان، همانِ رawardِ همیشگیِ اینِ سیستم |
+| هویتِ commit | بی‌تنظیمِ سراسری (`git config user.name` خالی) ⇒ هرِ کامیت باِ `-c user.name/user.email` درِ خودِ فرمان، همانِ روالِ همیشگیِ اینِ سیستم |
 
 مالکیتِ تغییرات: هرِ ۴۲ کامیتِ شاخۀِ FTS نویسنده‌ای به‌اسمِ `johnwarchief` دارند
 و تاریخشان ۲۰۲۶‑۱۰‑۱۱ تاِ ۱۵ است (همانِ سه مأموریتِ اینِ سیستم: فازهایِ تعدیل/FTS،
@@ -50,7 +50,7 @@
 | Branch | `mission/fts-indicator-engineering` |
 | HEAD | `ff6b2fb` (پیش ازِ اینِ مأموریت: `165bdca`) |
 | Remote | `origin/mission/fts-indicator-engineering` — `09e8d64..ff6b2fb` |
-| تغییرات | `adjustment_ledger*`، فازهایِ ۲/۳/۴/۵/۵F درِ `api/chart.py`، `api/ma*`، موتورِ canonicalِ نوع‌محور، `dev/*` گیت‌ها، ۶ سندِ `docs/technical-indicators/reviewed/FTS-PHASE*` |
+| تغییرات | `corporate_ledger.py`، `dev/test_corporate_ledger_v1.py`، `_audit/ra365_ledger_*.py`، فازهایِ ۲/۳/۴/۵/۵F درِ `api/chart.py`، `api/ma*`، موتورِ canonicalِ نوع‌محور، `dev/*` گیت‌ها، ۶ سندِ `docs/technical-indicators/reviewed/FTS-PHASE*` |
 | تست‌ها | `npx tsc -b` rc=0 · `npx vitest run` ۱۷۱۰ سبز / ۳ skip / ۱۶۶ فایل · `python dev/run_all_tests.py` ۱۲۶ سطرِ `rc=0` (همۀ اینها درِ `165bdca` وِ تاریخ‌هایِ ۱۴۰۵‑۰۷‑۲۱…۲۳ = ۲۰۲۶‑۱۰‑۱۳/۱۴ ثبت شده‌اند) |
 | شواهد | `docs/technical-indicators/reviewed/FTS-PHASE4-CANONICAL-ADJUSTMENT-ENGINE-1405-07-21.md` · `FTS-PHASE5-CANONICAL-ADJUSTMENT-LEDGER-LIVE-PARITY-1405-07-22.md` · `FTS-PHASE5F-CLOSURE-ADJUSTMENT-CHART-INTEGRATION-1405-07-23.md` · ماتریسِ حکم: `UNVERIFIED 46 · MISMATCH 27 · PARTIAL_COVERAGE 2` (سطرِ ۶۳ همانِ سند) · `_audit/RA365-PHASE3-DERIVE-2026-10-13.csv` (اکنون tracked) |
 | باقی‌مانده | ۴۶ نمادِ sample بی‌مرجع؛ ۲۷ MISMATCH که باید تک‌تک ریشه‌یابی شوند؛ captureِ **تازةِ** مرجع |
@@ -183,7 +183,7 @@
 | ۱۶۸ فایلِ `PNG` درِ `_audit/ui/shots/**` (≈۲۰ مگابایت) | `*.png` درِ `_audit/.gitignore`؛ سنگینِ مخزن. **دورِ دوم:** گزینۀِ فشرده انجام شد — سه برشِ انتخابی بهِ `docs/ui-audit/img/*.png` رفت وِ درِ همانِ شاخه منتشر است؛ ۱۶۸ خامِ دیگر (§۱۰‑۴) |
 | `_audit/ui/backend.log` (۱۸۶KB) | لاگِ خامِ سرویسِ dev؛ artefactِ زمانِ اجرا، نه شاهدِ قابلِ بازبینی |
 | `_audit/PHASE5F-CAPTURE*.txt`، `_audit/PHASE5F-SELECTION-RUN.txt`، `_audit/PHASE5F-SHAPE.txt`، `_audit/P5G-FINAL-RC.txt` | scratchِ لاگِ راه‌اندازیِ مرورگر باِ کلماتِ نشست/رمز (§۶). **دورِ دوم:** `_audit/P5G-FINAL-RC.txt` (فقطِ exit code) منتشر شد وِ سه لاگِ راه‌اندازی به‌صورتِ `_audit/PHASE5F-P5G-RUNDIGEST.txt` (خلاصۀِ masked، بی‌`--user-data-dir` وِ بی‌pid) درِ شاخۀِ fixtureها رفت؛ خام‌ها رویِ دیسک ماندند (§۱۰‑۳/۴) |
-| دوِ فایلِ CRLF‑onlyِ `M` | بی‌تغییرِ محتوا؛ کامیتِ بی‌محتوا تاریخچه را شلوغ می‌کرد. **هنوز درِ working tree هستند و پاک/بازگردانی نشدند** |
+| دوِ فایلِ CRLF‑onlyِ `M` | بی‌تغییرِ محتوا؛ کامیتِ بی‌محتوا تاریخچه را شلوغ می‌کرد. **هنوز درِ working tree هستند و پاک/بازگردانی نشدند.** سنجشِ دورِ دوم (§۱۰‑۱): `git diff HEAD` برایِ هرِ دو خالی است وِ یکی ازِ آن‌ها (`RA365-LEDGER-RULE`) بایت‌به‌بایت باِ HEAD یکسان است ⇒ نشانه‌ای شبحی ازِ stat/`core.autocrlf=true` است، نه کارِ ناقص |
 | `frontend/dist/**` | ignored؛ بیلدِ محلی برایِ سنجشِ مرورگری ساخته می‌شود |
 
 ---
@@ -239,7 +239,7 @@
 | reflog / dangling | `git reflog` + `git fsck --unreachable` | ۲ آبجکتِ dangling ازِ ۲۰۲۶‑۱۰‑۱۱ = یکِ stashِ قدیمی؛ `git diff --stat 09e8d64 afa4590` → **خالی**، یعنی هیچِ کاری درِ آنِ نبود |
 | فایل‌هایِ ignoredِ کاری | `git ls-files -o -i --exclude-standard` (بی‌node_modules/dist/pycache) | ۱۶۷ قلم: ۱۰۲ json، ۴۵ log، ۸ txt، ۶ py، ۱ js، ۱ csv — ۵۸ درِ `_audit/` وِ ۵۴ درِ `_audit/ra_probe_cache/` (طبقه‌بندی درِ §۱۰‑۴) |
 | بیرونِ مخزن | `ls ../_audit` | ۱۵ فایل (۵۶۸KB) که درِ هیچِ repoیی نبودند: ۱۳ تصویرِ `binder1_pages/` + `MS-GATE-mstat.txt` + `ms_server.log` (§۱۰‑۴/۵) |
-| فایل‌هایِ `M` | `git diff --stat` + sha256 باِ `tr -d '\r'` | هرِ دوِ باقی‌مانده **بی‌تغییرِ محتوا** (فقطِ CRLF/LF): `_audit/RA365-LEDGER-RULE-2026-10-12.csv`، `dev/fixtures/fts_v10_payloads.json` |
+| فایل‌هایِ `M` | `git diff HEAD --stat` + `git diff --cached --stat` + sha256 باِ `tr -d '\r'` + `git ls-files -v` | **صفرِ تغییرِ محتوا درِ هرِ دوِ فایل**: `git diff HEAD` خالی وِ `git diff --cached` خالی (هیچِ چیزی stage نشده) وِ پرچمِ assume‑unchanged/skip‑worktree هم نیست (`H` رویِ هرِ دو). تفکیکِ بایتی: `dev/fixtures/fts_v10_payloads.json` = ۹۵۴۳ بایت درِ worktree باِ ۳۹۹ جفتِ CRLF درِ برابرِ ۹۱۴۴ بایتِ LFِ همانِ blob ⇒ فقطِ پایانِ خط. `_audit/RA365-LEDGER-RULE-2026-10-12.csv` = **۱۵٫۹۴۷ بایت، sha256 یکسان باِ HEAD** ⇒ «M» شبحِ stat/eol است، نه تغییرِ پایانِ خط. `_audit/app_log.txt` دیگر `M` نیست: محتوایش درِ `ff6b2fb` («carry the live app log») کامیت شد وِ تفاوتِ خامِ باقی‌مانده (۷۰٫۷۴۰ درِ برابرِ ۶۹٫۷۴۰ بایت) فقطِ ۱۰۰۰ جفتِ CRLF است که پسِ ازِ normalization یکسان می‌شود |
 
 ### ۱۰‑۲) جدولِ نهاییِ موجودی
 
@@ -336,14 +336,13 @@
 | درختِ بیِ مصدرِ محلی | `git archive origin/fix/system-2-reproducible-fixtures-2026-10-15 \| tar -x` | ۱۶۸۱ فایل؛ سه مصدرِ ignore‑شده غایب؛ سورسِ تستِ تعدیل ازِ همانِ درخت **۴۴/۰، rc=0** (§۱۰‑۳) |
 
 
-**سه ایرادِ خودی که همینِ دورِ ممیزی پیدا وِ اصلاح شد (پنهان نشد):**
+**چهار ایرادِ خودی که همینِ دورِ ممیزی پیدا وِ اصلاح شد (پنهان نشد):**
 
-- یکِ ارجاعِ **ناتمام** درِ §۱۰‑۲: `dev/adjustment_ledger*` رویِ هیچِ شاخۀِ remoteی وجود ندارد؛ 
-نام‌هایِ واقعی `corporate_ledger.py`، `dev/test_corporate_ledger_v1.py` وِ `_audit/ra365_ledger_*.py` است. 
-پیدا شد ازِ اینِ راه که هرِ ۱۵۱ ارجاعِ مسیرِ همینِ سند باِ `git ls-tree -r origin/<b>` سنجیده شد، نه باِ چشم.
-- دوِ شمارۀِ غلط: «۱۱ اصلاحِ UI» وِ «سی‌وسه کامیتِ بعدِ `dd065c1`». شمارشِ درست باِ `git rev-list --count`: 
+- دوِ ارجاعِ **ناتمام** (نامِ فایلِ اشتباه، نه جابه‌جایی): `dev/adjustment_ledger*` درِ §۱۰‑۲ وِ `adjustment_ledger*` درِ §۳‑۲. هیچ‌یک ازِ اینها رویِ هیچِ شاخۀِ remoteی وجود ندارد؛ نام‌هایِ واقعی `corporate_ledger.py`، `dev/test_corporate_ledger_v1.py` وِ `_audit/ra365_ledger_*.py` است. پیدا شدند ازِ اینِ راه که هرِ ۱۵۱ ارجاعِ مسیرِ همینِ سند باِ `git ls-tree -r origin/<b>` سنجیده شد، نه باِ چشم.
+- یکِ واژۀِ شکسته درِ §۱: «رawardِ همیشگی» که باید «روالِ همیشگی» می‌بود. گاردِ گلیف نویسسۀِ لاتین را نمی‌گیرد (فقطِ CJK/هنگول)، پس باِ اسکنِ دستیِ «حرفِ لاتینِ چسبیده بهِ فارسی» دیده شد.
+- یکِ شمارۀِ غلط درِ دوِ جا: «۱۱ اصلاحِ UI» وِ «سی‌وسه کامیتِ بعدِ `dd065c1`». شمارشِ درست باِ `git rev-list --count`: 
 `dd065c1..3feb525` = **۱۴** وِ `ff6b2fb..3feb525` = **۱۶**، وِ `fix(ui)` درِ کلِ شاخه = **۶**.
-- سه سطرِ **کهنه** درِ §۴/§۵/§۷/§۹ که دورِ اول نوشته شده بودند (UI را `dd065c1`، سه لاگِ منتشرشده را 
+- سطرهایِ **کهنه** درِ §۱/§۴/§۵/§۷/§۹ که درِ دورِ اول درست بودند وِ اکنون کهنه شده بودند (UI را `dd065c1`، سه لاگِ منتشرشده را 
 منتشرنشده، وِ «گیتِ فشرِ PNG هنوز انجام نشده» می‌گفتند). به‌جایِ پاک‌کردنِ تاریخچه، برچسبِ «دورِ اول» 
 وِ ارجاعِ درست خوردند.
 - یکِ نویسسۀِ ممنوع (CJK) درِ همانِ سطری که اینِ دور بهِ §۴‑۱ اضافه شد. باِ بازرسیِ مستقیم دیده وِ
