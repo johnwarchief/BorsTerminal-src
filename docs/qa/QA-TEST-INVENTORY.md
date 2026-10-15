@@ -15,7 +15,7 @@
 
 | # | path | کامپوننت | نوع |
 | --- | --- | --- | --- |
-| ۱ | `''` | `Navigate to="/master"` | redirect (رأیِ مالک ۱۴۵-۰۷-۱۷) |
+| ۱ | `''` | `Navigate to="/master"` | redirect (رأیِ مالک ۱۴۰۵-۰۷-۱۷) |
 | ۲ | `market` | `@features/market/routes/MarketPage` | صفحه |
 | ۳ | `market-status` | `@features/market/routes/MarketStatusPage` | صفحه |
 | ۴ | `notifications` | `@features/market/routes/NotificationsPage` | صفحه |
