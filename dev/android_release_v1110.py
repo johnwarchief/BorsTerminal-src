@@ -546,6 +546,20 @@ _BS = chr(92)
 chk(_BS + "n" not in _pub_step.replace(_BS + _BS + "n", ""),
     "A97-ب گامِ انتشار continuationِ شکسته (دو نویسهٔ بک‌اسلاید‑n) ندارد")
 
+# ── A98 شمارشِ جداول از خودِ قرارداد، نه از عددِ حفظی ────────────────────────
+# رانِ ۳۸۸۱۸۴۸۰۵۶۹ تا آخرین سطرِ راستی‌آزماییِ پسِ انتشار سبز بود و همان‌جا مرد:
+# «snapshot parsed: … 4 tables … OK=False». چک `len(tables) >= 5` می‌خواست، ولی
+# خودِ scripts/build_mobile_snapshot.py قرارداد را چهار جدول اعلام می‌کند
+# (baked, meta, instruments, price_history) — یعنی چک هیچ‌وقت نمی‌توانست سبز
+# شود و هیچ نقصِ داده‌ای را نمی‌گرفت. سنجشِ محلی رویِ همان بستۀ منتشرشده:
+# declared == have، missing/extra خالی، gz-sha match، ۵۹۴۱ سطر ⇒ OK=True.
+_SNAP_PY = WF
+_magic = [l for l in _SNAP_PY.splitlines()
+          if "len(tables) >=" in l and not l.strip().startswith("#")]
+chk(not _magic and 'meta.get("tables")' in _SNAP_PY
+    and "missing" in _SNAP_PY and "extra" in _SNAP_PY,
+    "A98 آرایۀ جداولِ بستۀ داده از فهرستِ اعلامیِ خودِ manifest سنجیده می‌شود")
+
 # ── A73..A75 سنسورِ صفحۀ ۴۰۴ درِ کاوشگرِ viewport ────────────────────────────
 # نسخهٔ پیشین با گشتنِ `/پیدا نشد|۴۰|404/` درِ متنِ body می‌گشت: «۴۰» درونِ
 # قیمت‌ها هم صدا می‌خورد، پس ۹ پروندۀ واقعی ۴۰۴ خوانده می‌شدند و خودِ صفحۀ

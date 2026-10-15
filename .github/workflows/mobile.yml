@@ -588,12 +588,24 @@ jobs:
           fd, pth = tempfile.mkstemp(suffix=".db"); os.close(fd); open(pth, "wb").write(raw)
           con = sqlite3.connect(pth)
           tables = [r[0] for r in con.execute("select name from sqlite_master where type='table'")]
-          big = [x for x in ("tsetmc", "instruments", "boards", "baked", "price_history") if x in tables]
-          rows = con.execute("select count(*) from %s" % big[0]).fetchone()[0] if big else -1
+          probe = next((t for t in ("instruments", "baked", "price_history", "meta") if t in tables), None)
+          rows = con.execute("select count(*) from %s" % probe).fetchone()[0] if probe else -1
           con.close(); os.unlink(pth)
+          # آرایۀ جداول از خودِ قرارداد خوانده می‌شود، نه از یک شمارۀ حفظی:
+          # نسخهٔ پیشین `len(tables) >= 5` می‌خواست درحالی‌که خودِ
+          # scripts/build_mobile_snapshot.py قرارداد را «baked, meta, instruments,
+          # price_history» یعنی چهار جدول اعلام می‌کند — پس چک همیشه قرمز بود و
+          # هیچ نقصِ داده‌ای را نشان نمی‌داد.
+          declared = [str(x) for x in (meta.get("tables") or [])]
+          have = set(tables)
+          missing = [t for t in declared if t not in have]
+          extra = sorted(have - set(declared))
           shast = "match" if (want and want == got) else ("absent" if not want else "MISMATCH")
-          ok = len(tables) >= 5 and "meta" in tables and rows > 0 and shast != "MISMATCH"
-          print("snapshot parsed: %d B gz -> %d B raw, %d tables, rows(%s)=%s, gz-sha=%s, built_at=%s, OK=%s" % (len(gz), len(raw), len(tables), big[0] if big else "-", rows, shast, meta.get("built_at"), ok))
+          ok = bool(declared) and not missing and not extra and shast == "match" and rows > 0
+          print("snapshot parsed: %d B gz -> %d B raw, tables=%s declared=%s missing=%s extra=%s, rows(%s)=%d, gz-sha=%s, built_at=%s, OK=%s" % (
+              len(gz), len(raw), ",".join(sorted(have)), ",".join(declared),
+              ",".join(missing) or "-", ",".join(extra) or "-", probe or "-", rows,
+              shast, meta.get("built_at"), ok))
           sys.exit(0 if ok else 1)
           PY
           fi
