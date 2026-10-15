@@ -29,6 +29,7 @@
 
 import os
 import socket
+import sqlite3
 import sys
 import threading
 import time
@@ -523,17 +524,40 @@ def part_queue():
 
 
 # ── ۷) درِ HTTP: وضعیتِ صادق، haltِ پاسخ‌گو، بازیابی پسِ restart ─────────────
+def _instrument_bank() -> str:
+    """یکِ `market.db`ِ موقتیِ تنها-در جدولِ instruments.
+
+    چرا: `market.db` درِ گیت نیست، پس درِ CI `_resolve_instrument` هیچ ردیفی
+    نمی‌بیند ⇒ `UNRESOLVED` ⇒ `NOT_ORDERABLE` ⇒ تمامِ سنجه‌هایِ درِ HTTP با
+    `KeyError: wire_preview` می‌شکستند (دقیقاً همان چیزی که رانِ guards داشت و
+    محلی نبود). بانکِ ساختگیِ کوچک همان مسیرِ *واقعی* (`SELECT … FROM instruments`)
+    را می‌دهد، بی‌وابستگی به بانکِ ۹۸ مگابایتیِ رویِ این ماشین — و سنجهٔ «ISIN از
+    بانکِ محلی می‌آید، نه حدسِ آداپتور» همچنان معنی‌دار است.
+    """
+    p = os.path.join(ROOT, "_audit", "et_guard_bank_%s.db" % uuid.uuid4().hex[:8])
+    c = sqlite3.connect(p)
+    c.execute("CREATE TABLE instruments (ins_code TEXT, isin TEXT, l_val18 TEXT,"
+              " updated_at TEXT)")
+    c.execute("INSERT INTO instruments VALUES (?,?,?,?)",
+              (FOOLAD.ins_code, FOOLAD.isin, "فولاد", "2026-10-15T09:00:00"))
+    c.commit()
+    c.close()
+    return p
+
+
 def _with_easytrader(fn):
     """درِ واقعی را با آداپتورِ EasyTrader + ترافیکِ بدیل جایگزین می‌کند."""
     saved = (EX.ADAPTER_KIND, EX.LIVE_REQUESTED, EX.DRY_RUN, EX._ACTIVE_ADAPTER,
-             EX._SERVICE, EX._AUDIT)
+             EX._SERVICE, EX._AUDIT, EX.DB_PATH)
     broker = ScriptedBroker()
     adapter = EasyTraderAdapter(transport=ScriptedTransport(broker), token=SECRET)
     broker.adapter = adapter
     tmp = os.path.join(ROOT, "_audit", "easytrader_guard_%s.db" % uuid.uuid4().hex[:8])
+    bank = _instrument_bank()
     os.environ["BORS_EXECUTION_DB"] = tmp
     ledger = ExecutionLedger(tmp)
     try:
+        EX.DB_PATH = bank
         EX.ADAPTER_KIND = ADAPTER_NAME
         EX.LIVE_REQUESTED = True
         EX.DRY_RUN = False
@@ -546,13 +570,14 @@ def _with_easytrader(fn):
         fn(adapter, broker, ledger)
     finally:
         EX.ADAPTER_KIND, EX.LIVE_REQUESTED, EX.DRY_RUN, EX._ACTIVE_ADAPTER = saved[:4]
-        EX._SERVICE, EX._AUDIT = saved[4], saved[5]
+        EX._SERVICE, EX._AUDIT, EX.DB_PATH = saved[4], saved[5], saved[6]
         ledger.close()
         os.environ.pop("BORS_EXECUTION_DB", None)
-        try:
-            os.remove(tmp)
-        except OSError:
-            pass
+        for f in (tmp, bank):
+            try:
+                os.remove(f)
+            except OSError:
+                pass
 
 
 def part_door():

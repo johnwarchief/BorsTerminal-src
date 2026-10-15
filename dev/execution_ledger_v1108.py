@@ -313,6 +313,20 @@ def test_http_door():
 
     tmp = GUARD_DB
     os.environ["BORS_EXECUTION_DB"] = tmp
+    # `_resolve_instrument` بانکِ محلیِ نماد را ازِ market.db می‌خواند و آن فایل
+    # درِ گیت نیست ⇒ درِ CI هر درخواستِ درِ با «NOT_ORDERABLE:resolution» رد می‌شد
+    # و سنجهٔ قفلِ توقف هیچ‌وقت اجرا نمی‌رسید. یکِ بانکِ موقتیِ تنها-ردیف همان
+    # مسیرِ SELECTِ واقعی را می‌دهد، بی‌وابستگی به بانکِ ۹۸ مگابایتیِ این ماشین.
+    bank = os.path.join(ROOT, "_audit", "ledger_guard_bank_%s.db" % os.getpid())
+    bc = sqlite3.connect(bank)
+    bc.execute("CREATE TABLE instruments (ins_code TEXT, isin TEXT, l_val18 TEXT,"
+               " updated_at TEXT)")
+    bc.execute("INSERT INTO instruments VALUES (?,?,?,?)",
+               (INS.ins_code, INS.isin, INS.symbol, "2026-10-15T09:00:00"))
+    bc.commit()
+    bc.close()
+    saved_db = EX.DB_PATH
+    EX.DB_PATH = bank
     app = FastAPI()
     app.include_router(EX.router)
     c = TestClient(app)
@@ -378,6 +392,11 @@ def test_http_door():
     ck(last and last["status"] == "unknown_result",
        "۱۵ بازیابی وضعیتی نمی‌سازد", str(last)[:80])
     fresh.close()
+    EX.DB_PATH = saved_db
+    try:
+        os.remove(bank)
+    except OSError:
+        pass
 
 
 # ── ۱۶) کنترلِ منفی: سنسور کور نیست ────────────────────────────────────────
