@@ -1,0 +1,10 @@
+install	PASS	app-debug.apk on android-14(api34) Android SDK built for x86_64
+launch	PASS	pid=2366
+webview-360x800	NOT_VERIFIED	کاوشگر درِ CDP موند (300s) — دستگاه قفل بود
+webview-360x800-a11y	FAIL	هیچ واژۀِ دیدنیِ برنامه درِ uiautomator نبود (صفحۀ سفید؟ گفتگویِ سیستمی؟)
+back_button	PASS	یکِ بازگشت: زنده (pid=4078) — پنجرۀ «برایِ خروج دوباره بزنید»
+background_foreground	PASS	pid=4078
+mem_growth	NOT_VERIFIED	dumpsys meminfo عدد نداد (start=none end=none)
+crash	PASS	FATAL EXCEPTION=0
+anr	FAIL	ANR=10 system-not-responding=0: 10-15 07:22:25.550 E/ActivityManager(  546): ANR in com.android.providers.media.module
+logcat_secrets	PASS	hit=0 (خطوطِ سیستمی شمرده نشد)

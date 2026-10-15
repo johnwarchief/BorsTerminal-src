@@ -176,7 +176,8 @@ fi
 
 kill "$LOGD" 2>/dev/null
 CRASH=$(grep -c "FATAL EXCEPTION" "$OUT/logcat.txt" 2>/dev/null || true)
-ANR=$(grep -c "ANR in " "$OUT/logcat.txt" 2>/dev/null || true)   # هر پروسه، نه فقط ما
+ANR_OURS=$(grep -c "ANR in $PKG" "$OUT/logcat.txt" 2>/dev/null || true)
+ANR_OTHER=$(grep -c "ANR in " "$OUT/logcat.txt" 2>/dev/null || true)
 ANRSYS=$(grep -cE "not responding|am_anr" "$OUT/logcat.txt" 2>/dev/null || true)
 # نشتِ رمز فقط درِ خطوطِ **خودِ برنامه/WebView** شمرده می‌شود. اولین ران دو
 # «hit» داد که هر دو `E/BackupPasswordManager( 541)` بودند — یعنی سرویسِ خودِ
@@ -188,7 +189,18 @@ if [ "${LEAK:-0}" != 0 ]; then
   printf '%s\n' "$LEAKLINES" | sed -E 's/[0-9a-fA-F]{8,}//g' | cut -c1-90 > "$OUT/leak_hits.txt"
 fi
 [ "${CRASH:-0}" = 0 ] && step crash PASS "FATAL EXCEPTION=0" || step crash FAIL "$(grep -m1 -A3 'FATAL EXCEPTION' "$OUT/logcat.txt" | tr '\n' '|' | json_escape)"
-[ "${ANR:-0}" = 0 ] && [ "${ANRSYS:-0}" = 0 ] && step anr PASS "ANR=0 (هیچ «ANR in» و «isn't responding» درِ logcat نیست)" ||
+# ANR را دو خط جدا می‌خوانیم: رانِ 38696704398 ده ANR داشت که هیچ‌کدام
+# مالِ ما نبود (7×com.android.phone، 3×com.android.providers.media.module) —
+# یعنی AVDِ CI مریض است، نه اپ. بی‌این تفکیک، مریضیِ محیط به‌حسابِ اپ رد می‌شود.
+if [ "${ANR_OURS:-0}" != 0 ]; then
+  step anr FAIL "ANR in $PKG: $(grep -m1 -A4 "ANR in $PKG" "$OUT/logcat.txt" | tr '
+' '|' | cut -c1-160 | json_escape)"
+elif [ "${ANR_OTHER:-0}" != 0 ]; then
+  step anr NOT_VERIFIED "هیچ ANR برایِ $PKG نیست؛ ${ANR_OTHER} ANR مالِ پروسه‌هایِ خودِ AVD: $(grep -o 'ANR in [a-z._]*' "$OUT/logcat.txt" | sort -u | tr '
+' ' ' | json_escape)"
+else
+  step anr PASS "ANR=0 (نه ما، نه هیچِ پروسه‌ای)"
+fi
   step anr FAIL "ANR=${ANR:-0} system-not-responding=${ANRSYS:-0}: $(grep -m1 -E "ANR in |not responding" "$OUT/logcat.txt" | cut -c1-120 | json_escape)"
 [ "${LEAK:-0}" = 0 ] && step logcat_secrets PASS "hit=$LEAK (خطوطِ سیستمی شمرده نشد)" || step logcat_secrets FAIL "hit=$LEAK → $OUT/leak_hits.txt"
 

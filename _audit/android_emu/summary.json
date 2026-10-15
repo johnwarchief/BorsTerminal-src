@@ -1,0 +1,65 @@
+{
+  "device": {
+    "model": "Android SDK built for x86_64",
+    "android": "14",
+    "api": "34"
+  },
+  "apk": "app-debug.apk",
+  "steps": [
+    {
+      "step": "install",
+      "result": "PASS",
+      "note": "app-debug.apk on android-14(api34) Android SDK built for x86_64"
+    },
+    {
+      "step": "launch",
+      "result": "PASS",
+      "note": "pid=2366"
+    },
+    {
+      "step": "webview-360x800",
+      "result": "NOT_VERIFIED",
+      "note": "کاوشگر درِ CDP موند (300s) — دستگاه قفل بود"
+    },
+    {
+      "step": "webview-360x800-a11y",
+      "result": "FAIL",
+      "note": "هیچ واژۀِ دیدنیِ برنامه درِ uiautomator نبود (صفحۀ سفید؟ گفتگویِ سیستمی؟)"
+    },
+    {
+      "step": "back_button",
+      "result": "PASS",
+      "note": "یکِ بازگشت: زنده (pid=4078) — پنجرۀ «برایِ خروج دوباره بزنید»"
+    },
+    {
+      "step": "background_foreground",
+      "result": "PASS",
+      "note": "pid=4078"
+    },
+    {
+      "step": "mem_growth",
+      "result": "NOT_VERIFIED",
+      "note": "dumpsys meminfo عدد نداد (start=none end=none)"
+    },
+    {
+      "step": "crash",
+      "result": "PASS",
+      "note": "FATAL EXCEPTION=0"
+    },
+    {
+      "step": "anr",
+      "result": "FAIL",
+      "note": "ANR=10 system-not-responding=0: 10-15 07:22:25.550 E/ActivityManager(  546): ANR in com.android.providers.media.module"
+    },
+    {
+      "step": "logcat_secrets",
+      "result": "PASS",
+      "note": "hit=0 (خطوطِ سیستمی شمرده نشد)"
+    }
+  ],
+  "counts": {
+    "pass": 6,
+    "fail": 2,
+    "not_verified": 2
+  }
+}
