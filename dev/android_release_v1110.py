@@ -509,6 +509,23 @@ chk(bool(_pub_cmd) and "--target" not in _pub_cmd,
 chk("source commit: $GITHUB_SHA" in _pub_step,
     "A95-ب شناسۀ واقعیِ سورس درِ متنِ ریلیز ثبت می‌شود (ردیابی بی‌refِ بی‌وجود)")
 
+# ── A96 نامِ asset همان لینکی باشد که notes وعده می‌دهد ──────────────────────
+# رانِ ۳۸۸۱۵۵۰۴۲۵۵ ریلیز را ساخت و APK عمومی هم شد (sha256ِ دانلودِ ناشناس با
+# APK_SHA256ِ خودِ ران یکی بود: 5655afa1…e432) — اما `gh release upload
+# "$APK#نام"` نام را اعمال نکرد، asset با نامِ gradle یعنی `app-release.apk`
+# منتشر شد، و لینکِ داخلِ notes که `bors-terminal-android-1.1.0.apk` را وعده
+# می‌داد ۴۰۴ برگرداند. «انتشار موفق» با «لینکِ کاربر باز می‌شود» یکی نیست.
+_upl_line = next((l for l in _pub_step.splitlines()
+                  if l.strip().startswith("gh release upload")), "")
+chk("./$PUB_NAME" in _upl_line and "$APK#" not in _upl_line
+    and 'grep -qx "$PUB_NAME"' in _pub_step,
+    "A96 artifact با نامِ وعده‌داده‌شده آپلود می‌شود و همان نام درِ assetها راستی‌آزمایی می‌شود")
+chk('[ "$SKIP_CREATE" = "1" ] || gh release create' in _pub_step
+    and 'gh release view "$TAG"' in _pub_step,
+    "A96-ب گامِ انتشار idempotent است: ریلیزِ موجود دوباره ساخته نمی‌شود، فقط asset می‌گیرد")
+chk('sha256sum "./$PUB_NAME"' in _pub_step,
+    "A96-پ نام‌گذاریِ artifact بی‌تغییرِ بایت‌ها اثبات می‌شود (sha256ِ همان فایل)")
+
 # ── A73..A75 سنسورِ صفحۀ ۴۰۴ درِ کاوشگرِ viewport ────────────────────────────
 # نسخهٔ پیشین با گشتنِ `/پیدا نشد|۴۰|404/` درِ متنِ body می‌گشت: «۴۰» درونِ
 # قیمت‌ها هم صدا می‌خورد، پس ۹ پروندۀ واقعی ۴۰۴ خوانده می‌شدند و خودِ صفحۀ
