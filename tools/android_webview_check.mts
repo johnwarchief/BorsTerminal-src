@@ -87,7 +87,10 @@ function makeClient(ws: WebSocket) {
 }
 
 async function listPages(): Promise<{ id: string; url: string; title: string; webSocketDebuggerUrl?: string }[]> {
-  const res = await fetch(`${BASE}/json/list`);
+  // مهلتِ سخت: adb forward می‌تواند سوکتی بدهد که هیچ‌وقت جواب نمی‌دهد (اپ درِ
+  // حالتِ نیمه‌مرده). بی‌AbortSignal، `fetch` دقیقه‌ها بلوکه می‌ماند و کلِ job
+  // را می‌خورد — همان چیزی که درِ رانِ 38668608986 دیدیم.
+  const res = await fetch(`${BASE}/json/list`, { signal: AbortSignal.timeout(10000) });
   if (!res.ok) throw new Error(`CDP list ${res.status}`);
   const all = (await res.json()) as any[];
   return all.filter((p) => p.type === 'page' && p.webSocketDebuggerUrl);

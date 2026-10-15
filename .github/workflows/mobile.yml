@@ -473,7 +473,7 @@ jobs:
   webview-on-emulator:
     needs: build-apk
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 28
     steps:
       - uses: actions/checkout@v4
 

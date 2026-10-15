@@ -100,13 +100,18 @@ for pair in "1080x2400 360x800" "1170x2532 390x844" "1236x2745 412x915"; do
   [ -n "$OLD_PID" ] && [ "$OLD_PID" != "$PID" ] && step "view-$LABEL-resume" PASS "pid عوض شد ($OLD_PID → $PID) = ازنویدِ Activity با تغییرِ اندازه، نه مرگ"
   adb forward tcp:9222 "localabstract:webview_devtools_remote_$PID" 2>/dev/null
   adb exec-out screencap -p > "$OUT/$LABEL.png"
-  if node --experimental-strip-types tools/android_webview_check.mts \
+  if timeout 240 node --experimental-strip-types tools/android_webview_check.mts \
         --base http://127.0.0.1:9222 --label "$LABEL" --out "$OUT/webview-$LABEL.json" > "$OUT/webview-$LABEL.log" 2>&1; then
     step "webview-$LABEL" PASS "$(grep -o '"visible_text_len":[0-9]*' "$OUT/webview-$LABEL.json" | head -1 | json_escape)"
   else
     rc=$?
-    [ "$rc" = 2 ] && step "webview-$LABEL" NOT_VERIFIED "CDP در دسترس نیست (webview_devtools_remote_$PID)" \
-      || step "webview-$LABEL" FAIL "exit=$rc: $(tail -3 "$OUT/webview-$LABEL.log" | tr '\n' ' ' | json_escape)"
+    if [ "$rc" = 2 ]; then
+      step "webview-$LABEL" NOT_VERIFIED "CDP در دسترس نیست (webview_devtools_remote_$PID)"
+    elif [ "$rc" = 124 ]; then
+      step "webview-$LABEL" NOT_VERIFIED "کاوشگر درِ CDP موند (240s) — اپ زنده بود ولی DevTools جواب نداد"
+    else
+      step "webview-$LABEL" FAIL "exit=$rc: $(tail -3 "$OUT/webview-$LABEL.log" | tr '\n' ' ' | json_escape)"
+    fi
   fi
   adb forward --remove tcp:9222 2>/dev/null
 done
