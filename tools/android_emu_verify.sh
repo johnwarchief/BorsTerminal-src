@@ -140,7 +140,23 @@ if [ -z "$PID" ]; then
   step "view-$LABEL" FAIL "اپ پس ازِ wm size بالا نیامد (شاهد: $OUT/died-$LABEL.txt)"
 else
   keep_awake
-  adb forward tcp:9222 "localabstract:webview_devtools_remote_$PID" 2>/dev/null
+  # رانِ 38797140980: «CDP در دسترس نیست (webview_devtools_remote_2611)» درحالی‌که
+  # اپ زنده بود (pid=2611). ساختِ نامِ socket ازِ pidِ خودِ پروسه فرضِ اشتباهی است:
+  # WebView در Android یک پروسۀ رندرِ جدا می‌سازد و socket را آن پروسه باز می‌کند.
+  # پس نامِ واقعی را از /proc/net/unix بخوان، نه ازِ حدس.
+  SOCK=$(adb shell cat /proc/net/unix 2>/dev/null | tr -d '\r' \
+         | grep -oE "webview_devtools_remote_[0-9]+" | head -1)
+  [ -n "$SOCK" ] || sleep 10
+  [ -n "$SOCK" ] || SOCK=$(adb shell cat /proc/net/unix 2>/dev/null | tr -d '\r' \
+         | grep -oE "webview_devtools_remote_[0-9]+" | head -1)
+  if [ -n "$SOCK" ]; then
+    adb forward tcp:9222 "localabstract:$SOCK" >/dev/null 2>&1
+    echo "devtools socket: $SOCK (پروسۀ اپ pid=$PID)" >> "$OUT/steps.tsv"
+  else
+    { echo "== unix sockets (webview/devtools)"; adb shell cat /proc/net/unix 2>/dev/null | grep -iE "webview|devtools" | head -8
+      echo "== processes"; adb shell ps -A 2>/dev/null | grep -E "$PKG|webview" | head -6
+    } > "$OUT/no_cdp_evidence.txt" 2>&1
+  fi
   sleep 25                      # 16 مگابایت gz ← 70 مگابایت SQLite رویِ AVDِ کند
   dismiss_anr_dialog
   adb exec-out screencap -p > "$OUT/$LABEL.png"
@@ -149,7 +165,7 @@ else
   else
     rc=$?
     if [ "$rc" = 2 ]; then
-      step "webview-$LABEL" NOT_VERIFIED "CDP در دسترس نیست (webview_devtools_remote_$PID)"
+      step "webview-$LABEL" NOT_VERIFIED "CDP در دسترس نیست (socket شناسایی‌شد: ${SOCK:-none}؛ شواهد: $OUT/no_cdp_evidence.txt)"
     elif [ "$rc" = 124 ]; then
       step "webview-$LABEL" NOT_VERIFIED "کاوشگر درِ CDP موند (300s) — دستگاه قفل بود"
     else
@@ -160,17 +176,25 @@ else
   # متنِ صفحه را درِ uiautomator می‌گذارد؛ بی‌این، قفل‌شدنِ CDP هیچ مدرکی ازِ
   # «برنامۀ واقعی رویِ گوشیِ واقعی دیده شد» باقی نمی‌گذارد.
   keep_awake
-  adb exec-out uiautomator dump /dev/tty 2>/dev/null | tr -d '' > "$OUT/ui-$LABEL.xml"
-  UIHITS=$(grep -oE "شاخص کل|ارزش معاملات بازار|نوسان‌گیر|صف خرید|بورس" "$OUT/ui-$LABEL.xml" 2>/dev/null | sort -u | paste -sd' ' - | json_escape)
-  # درختِ قفلِ صفحه هیچ متنِ برنامه‌ای ندارد؛ رانِ 38781829171 همین را FAIL کرد
-  # درحالی‌که دستگاه قفل بود. علتِ جدا ⇒ NOT_VERIFIED، نه اتهامِ به اپ.
+  adb exec-out uiautomator dump /dev/tty 2>/dev/null | tr -d '
+' > "$OUT/ui-$LABEL.xml"
+  # واژگانِ این فهرست ازِ خودِ سورسِ رابط گرفته شده (count درِ frontend/src):
+  # قیف 159، تابلو 476، شاخص 426، غربالگری 87، معامله 105، بورس 74. نسخهٔ پیشین
+  # پنج واژهٔ تنگ می‌خواست و رانِ 38797140980 رویِ صفحۀ درست هم FAIL داد.
+  UIHITS=$(grep -oE "قیف|تابلو|شاخص|غربالگری|معامله|بورس|نمودار|پرتفوی" "$OUT/ui-$LABEL.xml" 2>/dev/null | sort -u | paste -sd' ' - | json_escape)
   KEYGUARD=$(grep -oiE "keyguard|lockscreen|swipe up|enter pin" "$OUT/ui-$LABEL.xml" 2>/dev/null | sort -u | head -2 | paste -sd' ' - | json_escape)
   if [ -n "$UIHITS" ]; then
     step "webview-$LABEL-a11y" PASS "متنِ واقعیِ برنامه درِ درختِ دسترس‌پذیری: $UIHITS"
   elif [ -n "$KEYGUARD" ]; then
     step "webview-$LABEL-a11y" NOT_VERIFIED "درختِ uiautomator مالِ قفلِ صفحه بود ($KEYGUARD)؛ متنِ برنامه دیده نشد"
   else
-    step "webview-$LABEL-a11y" FAIL "هیچ واژۀِ دیدنیِ برنامه درِ uiautomator نبود (صفحۀ سفید؟ گفتگویِ سیستمی؟)"
+    # FAIL بی‌مدرک ارزشِ تشخیص ندارد: چه چیزی *واقعاً* رویِ صفحه بود؟
+    { echo "== node count: $(grep -oE '<node ' "$OUT/ui-$LABEL.xml" | wc -l)"
+      echo "== windows"; adb shell dumpsys window 2>/dev/null | grep -iE "mCurrentFocus|mFocusedApp" | head -4
+      echo "== texts"; grep -oE 'text="[^"]{2,60}"' "$OUT/ui-$LABEL.xml" 2>/dev/null | sed 's/text=//' | sort -u | head -20
+      echo "== size of dump: $(wc -c < "$OUT/ui-$LABEL.xml") bytes"
+    } > "$OUT/a11y-$LABEL-evidence.txt" 2>&1
+    step "webview-$LABEL-a11y" FAIL "هیچ واژۀِ دیدنیِ برنامه درِ uiautomator نبود — شواهد: $OUT/a11y-$LABEL-evidence.txt"
   fi
 
   adb forward --remove tcp:9222 2>/dev/null

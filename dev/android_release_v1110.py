@@ -444,9 +444,14 @@ chk("BorsTerminal-src" in _fake_src,
 chk("for i in 1 2 3" in EMU and "launch_fail_evidence.txt" in EMU
     and "no process after 3 attempts" in EMU,
     "A91 کاوشِ WebView سه تلاشِ راه‌اندازی دارد و درِ شکست پروندۀ شواهد می‌نویسد")
-chk("for i in 1 2 3" in (read("tools/android_upgrade_matrix.sh") or "")
-    and "launch_fail.txt" in (read("tools/android_upgrade_matrix.sh") or ""),
+UPG2 = read("tools/android_upgrade_matrix.sh") or ""
+chk("for i in 1 2 3" in UPG2 and "launch_fail.txt" in UPG2,
     "A91-ب مادۀ ارتقا هم همان سه تلاشِ شواهدمند را دارد")
+chk("/proc/net/unix" in EMU and "webview_devtools_remote_$PID" not in EMU,
+    "A92 نامِ socketِ DevTools ازِ /proc/net/unix خوانده می‌شود، نه ازِ حدسِ pid اپ")
+chk('UIHITS=$(grep -oE "قیف|تابلو|شاخص|غربالگری|معامله|بورس|نمودار|پرتفوی"' in EMU
+    and "a11y-$LABEL-evidence.txt" in EMU,
+    "A93 واژگانِ سنجۀ دسترس‌پذیری ازِ خودِ رابط است و FAIL بی‌شواهد نمی‌ماند")
 
 # ── A73..A75 سنسورِ صفحۀ ۴۰۴ درِ کاوشگرِ viewport ────────────────────────────
 # نسخهٔ پیشین با گشتنِ `/پیدا نشد|۴۰|404/` درِ متنِ body می‌گشت: «۴۰» درونِ
