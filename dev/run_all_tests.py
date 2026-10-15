@@ -466,6 +466,14 @@ SUITES = [
     # اجرا می‌شود — با یکِ استثنایِ ثبت‌شده که خطرِ همان case رویِ دفترِ خودِ
     # بروکرِ بدیل دوباره سنجیده می‌شود.
     ('dev/easytrader_adapter_v1113.py', 'easytrader adapter: injected transport, 2xx-is-not-acceptance, no blind resend'),
+    # فاز ۳ مأموریتِ ۱۴۰۵-۰۷-۲۴: ربات تا پیش‌ازِ این فقط *موتور* بود
+    # (`paper_trading.py` + ۵۴ سنجه) و هیچ endpoint و هیچ پنلی نداشت، پس درِ
+    # برنامه وجود نداشت. این گارد قراردادِ `api/bot.py` را می‌سنجد: پیش‌فرضِ
+    # کاغذی و خاموش، اجرایِ فقط با درخواستِ صریح، اعتبارسنجیِ بی‌پذیرشِ typo،
+    # سه قفلِ اجرایِ واقعی (env + capabilities از runtime + عبارتِ تأیید)،
+    # ردِّ HALTED، بازنگشتِ TRIPPED، no_data بی‌صفرِ جعلی، خطایِ بانک به‌جای 500،
+    # و نبودِ هرگونه credential درِ پاسخ.
+    ('dev/bot_api_v1114.py', 'bot API contract: paper by default, manual run only, three live gates, halt honored, no fabricated zero, no leaked session'),
     # مأموریتِ ۱۴۰۵-۰۷-۲۳، بندِ ۶: رباتِ کاغذی و بک‌تست. سناریوهای ۱۷گانۀ
     # بندِ ۶-۵ (سیگنال، کهنگی، توقف، دامنۀ قیمت، سقفِ حجم، timeout، تکرار،
     # لغو، ضرر روزانه، kill switch، restart، reconcile، ردِّپا) به‌همراه

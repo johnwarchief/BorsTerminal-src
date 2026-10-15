@@ -24,6 +24,7 @@ import { useStopLossBoard } from '../api/useStopLossBoard';
 import { SymbolBasketAction, weightSourceLabel } from '../components/SymbolBasketAction';
 import { SectorMatrix } from '../components/SectorMatrix';
 import WatchlistSection from '../components/WatchlistSection';
+import { BotPanel } from '../components/BotPanel';
 import { TwinDonuts, ActualPortfolioCard } from '../components/TwinDonuts';
 
 const STATUS_TONE = { accept: 'green', reject: 'red', monitor: 'yellow', pending: 'gray' } as const;
@@ -422,6 +423,8 @@ export default function PortfolioPage() {
 
           {/* واچ‌لیست داخلِ همین workspace است (§۱): نه تبِ ناوبری، نه صفحۀ دیگر */}
           <WatchlistSection />
+          {/* ربات هم همین‌جا: کاغذی، دستی، و با یکِ سطرِ وضعیت — نه صفحۀ جدا */}
+          <BotPanel />
         </>
       )}
         </>

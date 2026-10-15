@@ -9,13 +9,17 @@ from fastapi import APIRouter
 
 def api_router() -> APIRouter:
     """Aggregate every module router into one APIRouter."""
-    from . import (market, chart, selection, watchlist, fundamental, market_status, screener, funnel, _sync_market, _export, _sync_codal, adb, notify, notifications, update, _pipeline, engine, market_index, diagnostics, execution)
+    from . import (market, chart, selection, watchlist, fundamental, market_status, screener, funnel, _sync_market, _export, _sync_codal, adb, notify, notifications, update, _pipeline, engine, market_index, diagnostics, execution, bot)
     import codal_fetcher
 
     agg = APIRouter()
     mods = [market, chart, selection, watchlist, fundamental, market_status, screener, funnel,
             _sync_market, _export, _sync_codal, adb, notify, notifications, update, _pipeline, engine,
-            market_index, diagnostics, execution]
+            market_index, diagnostics, execution, bot]
+    # /api/bot/* هم مثلِ /api/execution/* در *همهٔ* بیلدها ثبت می‌شود: پیش‌فرضش
+    # کاغذی است، با باز شدنِ برنامه هیچ اجرا نمی‌کند (فقط POST /api/bot/run) و
+    # مصرف‌کنندۀ رابطی دارد (features/portfolio/lib/botClient.ts). بی‌ثبت‌کردن،
+    # پنلِ ربات همان 404 نسخهٔ ۱٫۰٫۸۷ را می‌گرفت.
     # دروازۀ اجرای سفارش در *همهٔ* بیلدها ثبت می‌شود، برخلافِ adb. دلیلِ این
     # تفاوتِ رفتار درِ خودِ دو ماژول است: adb کنترلِ واقعیِ دستگاهِ کاربر است
     # (خاموش‌کردنِ Wi-Fi او) و درِ EXE هیچ مصرف‌کننده‌ای ندارد؛ اما

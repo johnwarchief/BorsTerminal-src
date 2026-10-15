@@ -301,30 +301,41 @@ export function invalidateExecution(qc: QueryClient) {
   qc.invalidateQueries({ queryKey: ['execution-ledger'] });
 }
 
-/** هر نوشتنی درِ مسیرِ اجرا از همین چهار در می‌گذرد — بی‌fetchِ موازی درِ UI. */
+/**
+ * هر نوشتنی درِ مسیرِ اجرا از همین چهار در می‌گذرد — بی‌fetchِ موازی درِ UI.
+ *
+ * `retries: 0` رویِ همهٔ نوشتن‌ها عمدی و امنیتی است: `http()` پیش‌فرض دو بار
+ * با backoff تلاش می‌کند و رویِ «خطایِ شبکه» هم این کار را می‌کند. برایِ GET
+ * درست است؛ برایِ POSTِ ارسالِ سفارش یعنی «پاسخ نرسید ⇒ دوباره بفرست»، و
+ * پاسخ‌نرسیدن بعد ازِ رسیدنِ درخواست = سفارشِ تکراری درِ کارگزاری. مأموریتِ
+ * ۱۴۰-۰۷-۲۴ (§۴-ب) صریحاً همین را ممنوع کرده؛ ابهام را حالتِ `unknown` درِ
+ * همان دروازه حل می‌کند، نه retry.
+ */
+const NO_RETRY = { retries: 0 } as const;
+
 export const orderApi = {
   preflight: (body: unknown) => http<Record<string, unknown>>('/api/execution/preflight',
-    { method: 'POST', body }),
+    { method: 'POST', body, ...NO_RETRY }),
   prepare: (body: unknown) => http<Record<string, unknown>>('/api/execution/prepare',
-    { method: 'POST', body }),
+    { method: 'POST', body, ...NO_RETRY }),
   dispatch: (body: unknown) => http<Record<string, unknown>>('/api/execution/dispatch',
-    { method: 'POST', body }),
+    { method: 'POST', body, ...NO_RETRY }),
   reconcile: (id: string) => http<Record<string, unknown>>(`/api/execution/reconcile/${id}`,
-    { method: 'POST' }),
+    { method: 'POST', ...NO_RETRY }),
   refresh: (id: string) => http<Record<string, unknown>>(`/api/execution/refresh/${id}`,
-    { method: 'POST' }),
+    { method: 'POST', ...NO_RETRY }),
   queue: (id: string) => http<Record<string, unknown>>(`/api/execution/queue/${id}`),
   audit: (id: string) => http<Record<string, unknown>>(`/api/execution/audit/${id}`),
   halt: (reason: string) => http<Record<string, unknown>>('/api/execution/halt',
-    { method: 'POST', body: { reason } }),
+    { method: 'POST', body: { reason }, ...NO_RETRY }),
   resume: (reason: string, confirm = false) => http<Record<string, unknown>>(
-    '/api/execution/resume', { method: 'POST', body: { reason, confirm } }),
-  probe: () => http<Record<string, unknown>>('/api/execution/probe', { method: 'POST' }),
+    '/api/execution/resume', { method: 'POST', body: { reason, confirm }, ...NO_RETRY }),
+  probe: () => http<Record<string, unknown>>('/api/execution/probe', { method: 'POST', ...NO_RETRY }),
   /** نشانی را فقط درِ حافظۀِ پروسۀِ بک‌اند می‌گذارد؛ پاسخ هیچ مقدارِ باز نمی‌گرداند */
   putSession: (token: string) => http<Record<string, unknown>>('/api/execution/session',
-    { method: 'POST', body: { token } }),
+    { method: 'POST', body: { token }, ...NO_RETRY }),
   delSession: () => http<Record<string, unknown>>('/api/execution/session',
-    { method: 'DELETE' }),
+    { method: 'DELETE', ...NO_RETRY }),
 };
 
 /**

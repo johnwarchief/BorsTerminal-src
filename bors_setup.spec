@@ -51,6 +51,9 @@ a = Analysis(
         # آداپتورِ EasyTrader — سطح-بالِ api/execution.py، ولی به حدسِ اسکن
         # سپرده نمی‌شود (قاعدۀ مخزن؛ مأموریتِ ۱۴۰۵-۰۷-۲۴).
         'execution_easytrader',
+        # دروازۀ ربات و سه ماژولِ پشتِ آن (فاز ۳ مأموریتِ ۱۴۰۵-۰۷-۲۴) — مثلِ
+        # fts_terminal.spec؛ بی‌این /api/bot/* درِ بستهٔ نصاب 404 می‌ماند.
+        'api.bot', 'bot_signals', 'paper_trading', 'trade_sim', 'backtest_engine',
         'api.update', 'bors_minisign', 'winreg',
         'orjson', 'pandas', 'numpy', 'docx', 'openpyxl', 'reportlab',
         'lxml', 'lxml.etree', 'click', 'cryptography', 'dateutil',
