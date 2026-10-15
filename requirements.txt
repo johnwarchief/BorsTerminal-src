@@ -19,3 +19,8 @@ pythonnet
 openpyxl==3.1.5
 python-docx==1.2.0
 reportlab==5.0.1
+# ابزارِ شواهدِ جزوۀ `tools/notebook_evidence.py` (وِ سوئیتِ
+# `dev/fts_notebook_examples_v1089.py` درِ `dev/run_all_tests.py`) اینِ ماژول را
+# درِ سطرِ اولِ import می‌خواند. اعلام‌نشده بود ⇒ گیتِ کامل رویِ هرِ محیطِ
+# تازه‌ای ازِ جمله CI قرمز می‌شد، نه اینکه حسابِ جزوه غلط باشد.
+pypdfium2
