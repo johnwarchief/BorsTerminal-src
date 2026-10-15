@@ -526,6 +526,26 @@ chk('[ "$SKIP_CREATE" = "1" ] || gh release create' in _pub_step
 chk('sha256sum "./$PUB_NAME"' in _pub_step,
     "A96-پ نام‌گذاریِ artifact بی‌تغییرِ بایت‌ها اثبات می‌شود (sha256ِ همان فایل)")
 
+# ── A97 دو دامی که رفعِ A96 خودش ساخته بود ───────────────────────────────────
+# رانِ ۳۸۸۱۷۲۱۰۴۶۳ ریلیز و assetِ درست را منتشر کرد (لینکِ وعده‌داده‌شده باز شد و
+# sha256ِ دانلودِ ناشناس با APK_SHA256ِ خودِ ران یکی بود: f85fd3cf…7b38) و بعد
+# قرمز مرد، به دو علتِ درِ همین اصلاحِ من:
+#  ۱) چکِ idempotency به "$TAG" پیش ازِ سطرِ TAG= اشاره می‌کرد ⇒ gh release view ""
+#     «آخرین ریلیز» (یعنی v1.0.89 دسکتاپ) را دید و دروغ گفت «از پیش موجود است».
+#  ۲) continuationِ «\ + newline» درِ YAMLِ بلوکی به دو نویسهٔ \n تبدیل شد ⇒ gh
+#     «accepts at most 1 arg(s), received 2» گرفت و راستی‌آزماییِ asset اجرا نشد.
+_pub_lines = _pub_step.splitlines()
+_tag_def = next((i for i, l in enumerate(_pub_lines)
+                 if l.strip().startswith('TAG="android-')), -1)
+_first_tag_use = next((i for i, l in enumerate(_pub_lines)
+                       if '$TAG' in l and not l.strip().startswith('#')
+                       and not l.strip().startswith('TAG=')), -1)
+chk(_tag_def >= 0 and _first_tag_use >= 0 and _tag_def < _first_tag_use,
+    "A97 به‌کارگیریِ $TAG درِ گامِ انتشار پس از تعریفش می‌آید (نه پیش از آن)")
+_BS = chr(92)
+chk(_BS + "n" not in _pub_step.replace(_BS + _BS + "n", ""),
+    "A97-ب گامِ انتشار continuationِ شکسته (دو نویسهٔ بک‌اسلاید‑n) ندارد")
+
 # ── A73..A75 سنسورِ صفحۀ ۴۰۴ درِ کاوشگرِ viewport ────────────────────────────
 # نسخهٔ پیشین با گشتنِ `/پیدا نشد|۴۰|404/` درِ متنِ body می‌گشت: «۴۰» درونِ
 # قیمت‌ها هم صدا می‌خورد، پس ۹ پروندۀ واقعی ۴۰۴ خوانده می‌شدند و خودِ صفحۀ

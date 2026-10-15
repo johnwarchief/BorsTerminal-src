@@ -514,6 +514,7 @@ jobs:
           PUB_NAME="bors-terminal-android-$BORS_VERSION_NAME.apk"
           cp "$APK" "./$PUB_NAME"
           [ "$(sha256sum "./$PUB_NAME" | cut -d' ' -f1)" = "$SUM" ] || { echo "نام‌گذاریِ artifact بایت‌ها را عوض کرد" >&2; exit 1; }
+          TAG="android-$BORS_VERSION_NAME"
           # idempotent: اگر رانِ پیشین ریلیز را ساخته و درِ گامِ بعد مرد باشد،
           # `create` با «already exists» می‌مرد و نسخهٔ درست هرگز منتشر نمی‌شد.
           # ریلیزِ منتشرشده هرگز حذف یا بازنویسی نمی‌شود؛ فقط asset تازه می‌گیرد.
@@ -527,7 +528,6 @@ jobs:
           # (vX.Y.Z) یا با سریِ دادۀ منتشرشده (mobile-latest / data-latest)
           # نمی‌خواند، پس این ریلیز هیچ asset ویندوزی و هیچ latest.json را
           # لمس نمی‌کند.
-          TAG="android-$BORS_VERSION_NAME"
           # بی‌`--target`: ریلیز درِ مخزنِ *عمومیِ* توزیع ساخته می‌شود و برچسب هم
           # همان‌جا ایجاد می‌شود؛ `--target $GITHUB_SHA` آن SHA را می‌خواست که فقط درِ
           # مخزنِ خصوصیِ سورس وجود دارد ⇒ GitHub سه خطا می‌داد و هیچ‌کدام معنایِ
@@ -553,7 +553,7 @@ jobs:
           gh release upload "$TAG" "./$PUB_NAME" --repo "$PUBLISH_REPO" --clobber
           # همان چیزی که لینکِ notes وعده می‌دهد باید واقعاً درِ assetها باشد؛
           # بی‌این چک، gh می‌تواند نام را عوض کند و گامِ بعدی با 404 می‌مرد.
-          gh release view "$TAG" --repo "$PUBLISH_REPO" --json assets --jq '.assets[].name' \n            | grep -qx "$PUB_NAME" || { echo "asset با نام $PUB_NAME منتشر نشد" >&2; exit 1; }
+          gh release view "$TAG" --repo "$PUBLISH_REPO" --json assets --jq '.assets[].name' | grep -qx "$PUB_NAME" || { echo "asset با نام $PUB_NAME منتشر نشد" >&2; exit 1; }
 
           # ── راستی‌آزماییِ پسِ انتشار: بی‌هیچ اعتبارنامه‌ای ────────────────────
           # «۲۰۰ گرفتم» کافی نیست (درخواستِ مالک): لینکِ کاربر باید ناشناس باز
