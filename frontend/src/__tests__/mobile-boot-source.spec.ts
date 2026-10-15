@@ -23,7 +23,7 @@ function signedMeta(manifest: unknown): { meta: ArrayBuffer; sig: ArrayBuffer } 
 }
 
 const META_URL =
-  'https://github.com/johnwarchief/BorsTerminal-src/releases/download/mobile-latest/mobile_snapshot.db.meta.json';
+  'https://github.com/johnwarchief/BorsTerminal/releases/download/mobile-latest/mobile_snapshot.db.meta.json';
 
 /** مسیری که nativeGetBytes می‌بیند: gz/manifest/sig. بی‌routes یعنی null. */
 function routeNative(routes: Record<string, ArrayBuffer | null>) {
@@ -46,7 +46,7 @@ vi.mock('@shared/api/local/nativeHttp', () => ({
 const STAMP_KEY = 'bors_snapshot_cached_stamp';
 const GZ_URL = '/mobile_snapshot.db.gz';
 const RELEASE_URL =
-  'https://github.com/johnwarchief/BorsTerminal-src/releases/download/mobile-latest/mobile_snapshot.db.gz';
+  'https://github.com/johnwarchief/BorsTerminal/releases/download/mobile-latest/mobile_snapshot.db.gz';
 
 const gzBytes = (n = 1_048_576): ArrayBuffer => {
   const b = new Uint8Array(n);

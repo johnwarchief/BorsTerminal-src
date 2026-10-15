@@ -43,7 +43,7 @@ const META_NAME = 'mobile_snapshot.db.meta.json';
 // آدرسِ واقعیِ موبایل‌لیتست که درِ بایلدِ کهنه مهر شده است — همان مسیر را
 // می‌رباییم تا کلاینتِ کهنه «بی‌آنکه بداند» کاندیدای v2 را بخواند.
 const LIVE_BASE =
-  'https://github.com/johnwarchief/BorsTerminal-src/releases/download/mobile-latest';
+  'https://github.com/johnwarchief/BorsTerminal/releases/download/mobile-latest';
 
 for (const [p, what] of [[join(WWW, 'index.html'), 'بایلدِ بیرون‌کشیده‌شده از APK'],
                          [join(REL, PKG_NAME, META_NAME), `بستۀِ ${PKG_NAME} درِ چیدمانِ ریلیز`]] as string[][]) {

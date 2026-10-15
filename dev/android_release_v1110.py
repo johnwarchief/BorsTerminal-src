@@ -23,6 +23,12 @@
             نه از هر بارِ ذکرِ نام درِ توضیح.
   A70..A72  خواندنِ بستۀ داده از مخزنِ خصوصی (gh) + سنجشِ جداِ مسیرِ ناشناسِ
             گوشی، که بدونِ token است و باید صریحاً BLOCKED شود.
+  A76..A82 هویتِ گواهیِ APK، قفلِ صفحه‌کلیدِ AVD، و مادۀ ارتقا که نسخه را از
+            مبنایِ یکتا می‌سازد نه با جعلِ versionCode.
+  A83..A90 تصمیمِ «src خصوصی می‌ماند»: هر چه گوشی بیرونِ CI می‌خواند (داده،
+            لینکِ APK) باید به مخزنِ عمومیِ توزیع برود و پسِ انتشار ناشناس
+            دانلود و پارس شود؛ ریلیزِ stable درِ آن مخزن رد می‌شود تا
+            latest.json دسکتاپ پوشانده نشود.
 
 هیچ‌کدام ازِ این‌ها Gradle یا APK اجرا نمی‌کنند (رویِ این ماشین Java/SDK نصب
 نیست): قراردادِ فایل‌ها خوانده می‌شود. ساختِ واقعی درِ CI سنجیده می‌شود و
@@ -399,6 +405,48 @@ _fake = _build.replace(
     'curl -fL "$BASE/mobile_snapshot.db.gz" -o dist/mobile_snapshot.db.gz')
 chk(_anon.search(_fake) is not None and _anon.search(_build) is None,
     "A72 کنترلِ منفی: بازگشتِ همین خط به curlِ ناشناس، A70 را قرمز می‌کند")
+
+# ── A83..A90 چیزی که گوشی می‌خواند باید عمومی باشد (مخزنِ src خصوصی می‌ماند) ──
+# تصمیمِ مالک: src خصوصی می‌ماند. پس هر URL که بیرونِ CI خوانده می‌شود —
+# بستۀ دادۀ گوشی و لینکِ دانلودِ APK — باید به مخزنِ عمومیِ توزیع برود.
+LD = read("frontend/src/shared/api/local/localData.ts") or ""
+PUBS = read("scripts/publish_mobile_series.py") or ""
+_pub = step_body("Publish Android release")
+chk("BorsTerminal-src" not in LD and "johnwarchief/BorsTerminal/releases/download" in LD,
+    "A83 پیش‌فرضِ دادۀ گوشی درِ باندل، مخزنِ عمومیِ توزیع است (گوشی token ندارد)")
+chk("johnwarchief/BorsTerminal-src" not in "".join(
+        read(p) or "" for p in ("frontend/src/__tests__/mobile-boot-source.spec.ts",
+                                "frontend/src/__tests__/mobile-snapshot-integrity.spec.ts",
+                                "tools/mobile_old_client_compat_probe.mts")),
+    "A84 آزمون‌ها و کاوشگرهایِ مسیرِ داده هم همان hostِ عمومی را می‌سنجند (یک قرارداد، دو جا نیست)")
+chk('REPO_DEFAULT = "johnwarchief/BorsTerminal"' in PUBS
+    and 'SERIES_DEFAULT = "mobile-latest-v2"' in PUBS,
+    "A85 ناشرِ سریِ داده به‌پیش‌فرض درِ مخزنِ عمومی منتشر می‌کند")
+chk("secrets.RELEASE_TOKEN" in _pub and '--repo "$PUBLISH_REPO"' in _pub
+    and "github.token" not in _pub,
+    "A86 ریلیزِ اندروید با tokenِ نوشتنِ مخزنِ توزیع و رویِ همان مخزن ساخته می‌شود")
+chk('if [ "${{ github.event.inputs.prerelease }}" = "false" ]; then' in _pub
+    and "BLOCKED: prerelease=false" in _pub,
+    "A87 prerelease=false رد می‌شود: ریلیزِ stableِ اندروید latest.json دسکتاپ را می‌پوشاند")
+chk("unset GH_TOKEN" in _pub and "releases/latest/download/latest.json" in _pub
+    and "sqlite3.connect" in _pub and "sha256sum _pubcheck/apk_from_link.apk" in _pub,
+    "A88 پسِ انتشار، لینکِ کاربر بی‌اعتبارنامه باز و پارس می‌شود (نه فقط HTTP 200)")
+chk("emulator-boot-timeout" in WF and "\n          boot-timeout:" not in WF,
+    "A89 مهلتِ بوت با نامِ واقعیِ ورودیِ action نوشته شده (نامِ غلط بی‌صدا نادیده می‌گیرد)")
+_fake_src = LD.replace("johnwarchief/BorsTerminal/releases/download",
+                       "johnwarchief/BorsTerminal-src/releases/download")
+chk("BorsTerminal-src" in _fake_src,
+    "A90 کنترلِ منفی: بازگشتِ hostِ خصوصی به localData، A83 را قرمز می‌کند")
+
+# ── A91 راه‌اندازیِ دستگاه: flake را با شواهد داوری کن، نه با یک تلاش ──────────
+# رانِ 38796223802 رویِ APK ای که درِ رانِ پیشین pid داده بود «no process after
+# 30s» گرفت و هیچ مدرکی نگذاشت.
+chk("for i in 1 2 3" in EMU and "launch_fail_evidence.txt" in EMU
+    and "no process after 3 attempts" in EMU,
+    "A91 کاوشِ WebView سه تلاشِ راه‌اندازی دارد و درِ شکست پروندۀ شواهد می‌نویسد")
+chk("for i in 1 2 3" in (read("tools/android_upgrade_matrix.sh") or "")
+    and "launch_fail.txt" in (read("tools/android_upgrade_matrix.sh") or ""),
+    "A91-ب مادۀ ارتقا هم همان سه تلاشِ شواهدمند را دارد")
 
 # ── A73..A75 سنسورِ صفحۀ ۴۰۴ درِ کاوشگرِ viewport ────────────────────────────
 # نسخهٔ پیشین با گشتنِ `/پیدا نشد|۴۰|404/` درِ متنِ body می‌گشت: «۴۰» درونِ

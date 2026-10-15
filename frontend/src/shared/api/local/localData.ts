@@ -138,9 +138,13 @@ async function responseArrayBufferWithProgress(
 // قبلی مرجع است، و هر شکستی همان نسخه را باقی می‌گذارد.
 // تگ ثابت «mobile-latest» (pre-release غلتان که CI با هر بیلد تازه می‌کند) —
 // عمداً نه releases/latest، تا ریلیزهای رسمی دسکتاپ مالک دست‌نخورده بمانند.
+// مخزنِ **عمومیِ** توزیع: مخزنِ src خصوصی است (تصمیمِ مالک) و گوشی هیچ
+// اعتبارنامه‌ای ندارد، پس هر URLِ پیش‌فرضی که به او اشاره کند باید بیرونِ آن
+// خوانده شود. بیلدِ رسمی این را با VITE_SNAPSHOT_REMOTE ازِ همان سریِ خودش
+// جایگزین می‌کند؛ این فقط پیش‌فرضِ بی‌CI است.
 const REMOTE_BASE =
   (import.meta.env.VITE_SNAPSHOT_REMOTE as string | undefined) ??
-  'https://github.com/johnwarchief/BorsTerminal-src/releases/download/mobile-latest';
+  'https://github.com/johnwarchief/BorsTerminal/releases/download/mobile-latest';
 const REMOTE_META_URL = `${REMOTE_BASE}/mobile_snapshot.db.meta.json`;
 const REMOTE_GZ_URL = `${REMOTE_BASE}/mobile_snapshot.db.gz`;
 /** امضا **کنارِ** manifest، نه داخلِ آن (`scripts/sign_mobile_manifest.py`) — تا

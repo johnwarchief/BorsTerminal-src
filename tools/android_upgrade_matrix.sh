@@ -133,11 +133,19 @@ CA=$(cert_of "$D/a1.apk"); CA2=$(cert_of "$D/a2.apk"); CB=$(cert_of "$D/b1.apk")
 adb shell pm clear "$PKG" >/dev/null 2>&1 || true
 if adb install -r -d "$D/a1.apk" > "$D/i1.log" 2>&1; then
   step "clean-install-official" "PASS" "versionCode $VC_BASE"
-  adb shell monkey -p "$PKG" -c android.intent.category.LAUNCHER 1 >/dev/null 2>&1
-  sleep 8
-  PID=$(adb shell pidof -s "$PKG" | tr -d '\r')
-  [ -n "$PID" ] && step "launch-after-clean-install" "PASS" "pid=$PID" \
-    || step "launch-after-clean-install" "FAIL" "اپ بالا نیامد"
+  # سه تلاش: monkey رویِ AVDِ تازه‌بوت‌شده گاهی گم می‌شود (دامِ دیدۀ WebView درِ
+  # رانِ 38796223802)؛ یک تلاشِ تنها، flakeِ محیط را به‌حسابِ اپ FAIL می‌کند.
+  PID=""
+  for i in 1 2 3; do
+    adb shell monkey -p "$PKG" -c android.intent.category.LAUNCHER 1 > "$D/monkey_$i.log" 2>&1
+    sleep $((8 + i * 4))
+    PID=$(adb shell pidof -s "$PKG" | tr -d '\r')
+    [ -n "$PID" ] && break
+  done
+  [ -n "$PID" ] && step "launch-after-clean-install" "PASS" "pid=$PID (تلاش $i)" \
+    || { { echo "== pm path"; adb shell pm path "$PKG" 2>&1; echo "== monkey"; cat "$D"/monkey_*.log 2>&1;
+           echo "== activities"; adb shell dumpsys activity activities 2>/dev/null | grep -iE "mResumedActivity|Starting" | head -6; } > "$D/launch_fail.txt" 2>&1
+         step "launch-after-clean-install" "FAIL" "اپ بالا نیامد — شواهد: $D/launch_fail.txt"; }
   # نشانه‌گذاریِ دادۀ محلی تا معلوم شود حذفِ نصب چه چیزی را می‌برد
   adb shell "run-as $PKG sh -c 'echo upmat > /data/data/$PKG/databases/.upmat_probe'" >/dev/null 2>&1 \
     || adb shell "echo" >/dev/null 2>&1

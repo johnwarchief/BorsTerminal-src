@@ -50,7 +50,10 @@ sys.path.insert(0, os.path.join(ROOT, "scripts"))
 
 import sign_mobile_manifest as sm                       # noqa: E402
 
-REPO_DEFAULT = "johnwarchief/BorsTerminal-src"
+# بستۀ داده را گوشی می‌خواند، بدونِ هیچ اعتبارنامه‌ای ⇒ مقصد باید مخزنِ **عمومیِ**
+# توزیع باشد. مخزنِ src خصوصی است (تصمیمِ مالک، 2026-10-15) و اگر همین‌جا
+# بماند، لینکِ ناشناس 404 می‌دهد و هیچ APK ای دادهٔ تازه نمی‌گیرد.
+REPO_DEFAULT = "johnwarchief/BorsTerminal"
 SERIES_DEFAULT = "mobile-latest-v2"
 
 # سری‌هایی که **نباید** دست بخورند: همان چیزی که امروز رویِ گوشی‌هایِ کهنه است و

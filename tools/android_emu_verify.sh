@@ -49,10 +49,29 @@ adb install -r -g "$APK" > "$OUT/install.log" 2>&1 && step install PASS "$(basen
 adb logcat -c
 adb logcat -v time > "$OUT/logcat.txt" 2>&1 &
 LOGD=$!
-adb shell monkey -p "$PKG" -c android.intent.category.LAUNCHER 1 > /dev/null 2>&1
-sleep 30
-PID=$(adb shell pidof -s "$PKG" | tr -d '\r')
-if [ -n "$PID" ]; then step launch PASS "pid=$PID"; else step launch FAIL "no process after 30s"; fi
+# رانِ 38796223802: `launch [FAIL] no process after 30s` رویِ همان APK ای که درِ
+# رانِ پیشین pid داده بود. یک monkeyِ تنها + خوابِ ثابت، flakeِ system_server را
+# به‌حسابِ اپ رد می‌کند و هیچ مدرکی هم نمی‌گذارد. پس: بیدارکردنِ صفحه، سه تلاشِ
+# راه‌اندازی با فاصلۀ رشدیافته، و درِ شکست شواهد (نصب‌شده؟ کرش کرده؟ monkey
+# چه گفت؟). اگر باز هم بالا نیامد، FAIL است — اما با شاهد.
+adb shell svc power stayon true >/dev/null 2>&1
+adb shell input keyevent KEYCODE_WAKEUP >/dev/null 2>&1
+adb shell wm dismiss-keyguard >/dev/null 2>&1
+PID=""
+for i in 1 2 3; do
+  adb shell monkey -p "$PKG" -c android.intent.category.LAUNCHER 1 > "$OUT/monkey_$i.log" 2>&1
+  sleep $((12 + i * 6))
+  PID=$(adb shell pidof -s "$PKG" | tr -d '\r')
+  [ -n "$PID" ] && { step launch PASS "pid=$PID (تلاش $i)"; break; }
+done
+if [ -z "$PID" ]; then
+  { echo "== pm path"; adb shell pm path "$PKG" 2>&1
+    echo "== monkey"; cat "$OUT"/monkey_*.log 2>/dev/null
+    echo "== activity"; adb shell dumpsys activity activities 2>/dev/null | grep -iE "mResumedActivity|Starting" | head -6
+    echo "== crash/proc"; adb logcat -d 2>/dev/null | grep -iE "$PKG|FATAL|ANR in|am_proc_died|lowmemory" | tail -20
+  } > "$OUT/launch_fail_evidence.txt" 2>&1
+  step launch FAIL "no process after 3 attempts — شواهد: $OUT/launch_fail_evidence.txt"
+fi
 if [ -z "$PID" ]; then
   # بی‌پروسه، «دکمهٔ بازگشت اپ را بست» و «ازِ home برنگشت» فقط طنینِ همان
   # شکستِ اول‌اند. ادامه نده: هر سنجهٔ بعدی را NOT_VERIFIED بنویس و خارج شو.

@@ -44,12 +44,12 @@ jobs:
       # هیچ‌جا درِ این workflow چیزی رویِ `mobile-latest` منتشر یا بازنویسی
       # نمی‌شود — این job فقط *می‌خواند*.
       SNAPSHOT_SERIES: ${{ github.event.inputs.snapshot_series || 'mobile-latest' }}
-      # خواندنِ بستهٔ داده با `gh release download` است، نه curl بی‌اعتبارنامه:
-      # مخزنِ src از 2026-10-15 (16:45Z) خصوصی شده و `releases/download/...`
-      # بی‌token پاسخِ 404 می‌دهد. tokenِ خودِ کارفرما همان مخزن را می‌خواند، پس
-      # بیلد چه خصوصی باشد چه عمومی می‌دود. (مسیرِ *گوشی* پایین جدا سنجیده
-      # می‌شود: آن‌جا اعتبارنامۀ دیگری در کار نیست.)
-      SERIES_REPO: johnwarchief/BorsTerminal-src
+      # مخزنِ src عمداً خصوصی می‌ماند (تصمیمِ مالک، 2026-10-15). پس هر چیزی که
+      # بیرونِ CI خوانده می‌شود — بستۀ دادۀ گوشی و خودِ APKِ منتشرشده — باید درِ
+      # مخزنِ عمومیِ توزیع باشد: آن‌جا token لازم نیست و لینک برایِ کاربر باز است.
+      # خواندن درِ CI با gh/token می‌ماند، چون checkout خودِ مخزنِ خصوصی است.
+      SERIES_REPO: johnwarchief/BorsTerminal
+      PUBLISH_REPO: johnwarchief/BorsTerminal
       GH_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@v4
@@ -128,12 +128,9 @@ jobs:
           # مهرِ بستۀ داده (built_at از meta.json کنارِ همان gz): گوشی با آن
           # می‌فهمد نسخۀ کشیدۀ پس‌زمینه از بستۀ همراهِ APK تازه‌تر است یا نه.
           # بی‌مهر، نسخۀ کهنۀ کشیده‌شده بر APKِ تازه می‌برد (localData.ts).
-          BASE="https://github.com/johnwarchief/BorsTerminal-src/releases/download/${SNAPSHOT_SERIES}"
-          # بستۀ داده با `gh release download` خوانده می‌شود (اعتبارنامۀ خودِ
-          # کارفرما)، چون `releases/download` بی‌اعتبارنامه روی مخزنِ خصوصی 404
-          # می‌دهد. مسیرِ URLِ پایین فقط *ثبت* می‌شود: همان چیزی که گوشی درِ
-          # نصبِ اوّل می‌خواند و هیچ tokenی ندارد — پس دسترسیِ ناشناسِ آن جدا
-          # سنجیده و درِ خلاصۀ گام ثبت می‌شود.
+          BASE="https://github.com/${SERIES_REPO}/releases/download/${SNAPSHOT_SERIES}"
+          # بستۀ داده با `gh release download` خوانده می‌شود؛ بی‌این روی مخزنِ
+          # خصوصی 404 می‌داد (شاهد: ران‌های 38778336195 و 38778341353).
           mkdir -p _snap
           gh release download "$SNAPSHOT_SERIES" --repo "$SERIES_REPO" \
             --pattern mobile_snapshot.db.meta.json --dir _snap --clobber 2>/dev/null || true
@@ -438,7 +435,10 @@ jobs:
       - name: Publish Android release
         if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.publish == 'true' }}
         env:
-          GH_TOKEN: ${{ github.token }}
+          # ریلیزِ اندروید درِ مخزنِ *عمومیِ* توزیع ساخته می‌شود تا لینکِ APK برایِ
+          # کاربر بدونِ هیچ اعتبارنامه‌ای باز باشد؛ tokenِ خودِ کارفرما به آن مخزن
+          # نوشتن نمی‌کند، پس RELEASE_TOKEN (همان که دسکتاپ را منتشر می‌کند).
+          GH_TOKEN: ${{ secrets.RELEASE_TOKEN }}
           VERIFIED: ${{ steps.sigcheck.outputs.signed }}
           PUB: ${{ vars.MOBILE_MANIFEST_PUBKEY }}
         run: |
@@ -467,7 +467,16 @@ jobs:
           esac
           SHA="${GITHUB_SHA::7}"
           PRERELEASE_FLAG="--prerelease"
-          if [ "${{ github.event.inputs.prerelease }}" = "false" ]; then PRERELEASE_FLAG=""; fi
+          if [ "${{ github.event.inputs.prerelease }}" = "false" ]; then
+            # این مخزنِ عمومی، مقصدِ آپدیتِ دسکتاپ هم هست: api/update.py:66
+            # `releases/latest/download/latest.json` را می‌خواند و آن مسیر «آخرین
+            # ریلیزِ غیرپیش‌انتشار» است. یک ریلیزِ android به‌عنوان stable درِ همین
+            # مخزن، latest.json دسکتاپ را می‌پوشاند و هر آپدیتِ ویندوزی 404 می‌گیرد.
+            # پس ریلیزِ اندروید همیشه prerelease است؛ لینکِ دانلودِ مستقیمِ آن برایِ
+            # کاربر عادی ثابت و باز می‌ماند.
+            echo "BLOCKED: prerelease=false درِ این مخزن مجاز نیست؛ ریلیزِ stableِ اندروید مسیرِ releases/latest/download/latest.json دسکتاپ را می‌پوشاند. با prerelease=true منتشر کنید." >&2
+            exit 1
+          fi
           # base_main_commit = جایی که این شاخه از main جدا شده؛ بی‌این، ریلیزِ
           # موبایل قابلِ ردیابی به کدِ دسکتاپ نیست
           git fetch -q origin main
@@ -484,8 +493,8 @@ jobs:
           # نمی‌خواند، پس این ریلیز هیچ asset ویندوزی و هیچ latest.json را
           # لمس نمی‌کند.
           TAG="android-$BORS_VERSION_NAME"
-          DOWNLOAD="https://github.com/$GITHUB_REPOSITORY/releases/download/$TAG/bors-terminal-android-$BORS_VERSION_NAME.apk"
-          gh release create "$TAG" $PRERELEASE_FLAG --target "$GITHUB_SHA"             --title "BorsTerminal Android $BORS_VERSION_NAME — نسخۀ امضاشدۀ رسمی"             --notes "نسخۀ اندروید (بستۀ تجمیعی، نه per-fix). امضا با کلیدِ انتشارِ پروژه، نه debug keystore.
+          DOWNLOAD="https://github.com/$PUBLISH_REPO/releases/download/$TAG/bors-terminal-android-$BORS_VERSION_NAME.apk"
+          gh release create "$TAG" $PRERELEASE_FLAG --repo "$PUBLISH_REPO" --target "$GITHUB_SHA"             --title "BorsTerminal Android $BORS_VERSION_NAME — نسخۀ امضاشدۀ رسمی"             --notes "نسخۀ اندروید (بستۀ تجمیعی، نه per-fix). امضا با کلیدِ انتشارِ پروژه، نه debug keystore.
 
           نصب: $DOWNLOAD
           sha256: $SUM · $SIZE بایت
@@ -498,7 +507,50 @@ jobs:
           snapshot داده: ${SNAPSHOT_SERIES} · ${SNAP_BYTES} بایت · built_at ${SNAP_STAMP} · package_id ${SNAP_PACKAGE_ID:-نامعلوم} · schema ${SNAP_SCHEMA_VERSION:-?}/db ${SNAP_DB_SCHEMA:-?} · gz sha ${SNAP_GZ_SHA:-?}…
           امضایِ manifest: ${VERIFIED:-بررسی‌نشده} (کلیدِ عمومی درِ باندل بیلد نشسته است؛ کلیدِ خصوصی درِ مخزن نیست)
           وضعیتِ آیتم‌ها و شاهد هر کدام: docs/android/ANDROID-RELEASE-REPORT-2026-10-15.md"
-          gh release upload "$TAG" "$APK#bors-terminal-android-$BORS_VERSION_NAME.apk" --clobber
+          gh release upload "$TAG" "$APK#bors-terminal-android-$BORS_VERSION_NAME.apk" --repo "$PUBLISH_REPO" --clobber
+
+          # ── راستی‌آزماییِ پسِ انتشار: بی‌هیچ اعتبارنامه‌ای ────────────────────
+          # «۲۰۰ گرفتم» کافی نیست (درخواستِ مالک): لینکِ کاربر باید ناشناس باز
+          # شود، بایت‌هایش باید همان artifactِ بیلدشده باشد، و آپدیتِ دسکتاپ
+          # نباید با این ریلیز خراب شده باشد.
+          unset GH_TOKEN
+          mkdir -p _pubcheck
+          curl -fL --retry 3 "$DOWNLOAD" -o _pubcheck/apk_from_link.apk
+          LINK_SUM=$(sha256sum _pubcheck/apk_from_link.apk | cut -d' ' -f1)
+          echo "دانلودِ ناشناسِ لینکِ کاربر: $(stat -c '%s' _pubcheck/apk_from_link.apk) بایت · sha256 $LINK_SUM"
+          [ "$LINK_SUM" = "$SUM" ] || { echo "بایت‌هایِ لینکِ عمومی با artifactِ بیلدشده نمی‌خواند" >&2; exit 1; }
+          # آپدیتِ دسکتاپ: latest.json باید همچنان درِ releases/latest پیدا شود و
+          # نسخۀ خودِ دسکتاپ را بگوید، نه ریلیزِ اندروید.
+          curl -fL --retry 3 "https://github.com/$PUBLISH_REPO/releases/latest/download/latest.json" \
+            -o _pubcheck/latest.json
+          DESK_TOP=$(python3 -c 'import json;d=json.load(open("_pubcheck/latest.json",encoding="utf-8"));print(d.get("version") or sorted(d))' 2>/dev/null || echo نامعلوم)
+          echo "releases/latest/download/latest.json → نسخۀ $DESK_TOP (باید نسخۀ دسکتاپ باشد، نه $BORS_VERSION_NAME)"
+          # بستۀ دادۀ گوشی: همان URL درِ باندل، ناشناس، و **پارس‌شدنی** — gzip
+          # باز می‌شود و SQLite فایلِ واقعی با جدولِ tsetmc ازِ آب درمی‌آید.
+          DATA_META="https://github.com/$PUBLISH_REPO/releases/download/$SNAPSHOT_SERIES/mobile_snapshot.db.meta.json"
+          DATA_GZ="https://github.com/$PUBLISH_REPO/releases/download/$SNAPSHOT_SERIES/mobile_snapshot.db.gz"
+          curl -fsSL "$DATA_META" -o _pubcheck/meta.json || echo "meta.json پیدا نشد (سریِ $SNAPSHOT_SERIES هنوز منتشر نشده)"
+          if [ -s _pubcheck/meta.json ]; then
+            curl -fL --retry 2 "$DATA_GZ" -o _pubcheck/snap.db.gz
+            python3 - <<'PY'
+          import gzip, hashlib, json, sqlite3, sys, tempfile, os
+          meta = json.load(open("_pubcheck/meta.json", encoding="utf-8"))
+          gz = open("_pubcheck/snap.db.gz", "rb").read()
+          raw = gzip.decompress(gz)
+          want = str(meta.get("gz_sha256") or "")
+          got = hashlib.sha256(gz).hexdigest()
+          fd, pth = tempfile.mkstemp(suffix=".db"); os.close(fd); open(pth, "wb").write(raw)
+          con = sqlite3.connect(pth)
+          tables = [r[0] for r in con.execute("select name from sqlite_master where type='table'")]
+          big = [x for x in ("tsetmc", "instruments", "boards", "baked", "price_history") if x in tables]
+          rows = con.execute("select count(*) from %s" % big[0]).fetchone()[0] if big else -1
+          con.close(); os.unlink(pth)
+          shast = "match" if (want and want == got) else ("absent" if not want else "MISMATCH")
+          ok = len(tables) >= 5 and "meta" in tables and rows > 0 and shast != "MISMATCH"
+          print("snapshot parsed: %d B gz -> %d B raw, %d tables, rows(%s)=%s, gz-sha=%s, built_at=%s, OK=%s" % (len(gz), len(raw), len(tables), big[0] if big else "-", rows, shast, meta.get("built_at"), ok))
+          sys.exit(0 if ok else 1)
+          PY
+          fi
 
       # ── دودِ امضا: مسیرِ کدِ signing را بی‌کلیدِ واقعی اثبات می‌کند ──────────
       # کلیدِ انتشار درِ این پروژه وجود ندارد، پس هرگز با آن «تمرین» کرده نمی‌شود.
@@ -585,10 +637,12 @@ jobs:
           arch: x86_64
           profile: pixel_5
           disable-animations: true
-          # رانِ 38781829171: مادۀ ارتقا هفتِ دقیقه «adb: device offline» گرفت و
-          # مادۀ WebView درِ همان ران بالا آمد.Bootِ AVD رویِ runner flakes است،
-          # پس مهلتِ بوت دو برابرِ پیش‌فرضِ ۱۰ دقیقه.
-          boot-timeout: 20m
+          # Bootِ AVD رویِ runner flakes است (رانِ 38781829171: هفت دقیقه «adb:
+          # device offline» درحالی‌که مادۀ WebViewِ همان ران بالا آمد). نامِ درستِ
+          # این ورودی emulator-boot-timeout است (میلی‌ثانیه)؛ نوشتنِ `boot-timeout`
+          # را action بی‌صدا «ورودیِ ناشناخته» می‌شمارد و پیش‌فرض می‌ماند — پس
+          # تنظیمی که اعمال‌شده می‌پنداری، اعمال نشده است.
+          emulator-boot-timeout: 900000
           script: bash tools/android_upgrade_matrix.sh
 
       - name: Record the honest result when the emulator cannot run
@@ -651,10 +705,12 @@ jobs:
           arch: x86_64
           profile: pixel_5
           disable-animations: true
-          # رانِ 38781829171: مادۀ ارتقا هفتِ دقیقه «adb: device offline» گرفت و
-          # مادۀ WebView درِ همان ران بالا آمد.Bootِ AVD رویِ runner flakes است،
-          # پس مهلتِ بوت دو برابرِ پیش‌فرضِ ۱۰ دقیقه.
-          boot-timeout: 20m
+          # Bootِ AVD رویِ runner flakes است (رانِ 38781829171: هفت دقیقه «adb:
+          # device offline» درحالی‌که مادۀ WebViewِ همان ران بالا آمد). نامِ درستِ
+          # این ورودی emulator-boot-timeout است (میلی‌ثانیه)؛ نوشتنِ `boot-timeout`
+          # را action بی‌صدا «ورودیِ ناشناخته» می‌شمارد و پیش‌فرض می‌ماند — پس
+          # تنظیمی که اعمال‌شده می‌پنداری، اعمال نشده است.
+          emulator-boot-timeout: 900000
           script: bash tools/android_emu_verify.sh
 
       - name: Record the result honestly when the emulator cannot run

@@ -35,8 +35,8 @@ const ABS = (u: string): string => new URL(u, globalThis.location?.href ?? 'http
 const GZ_URL = ABS(SNAP_PATH);
 const STAGING = 'bors-mobile-snapshot-staging-v2';
 const LEGACY = 'bors-mobile-snapshot-v1';
-const RELEASE_GZ = 'https://github.com/johnwarchief/BorsTerminal-src/releases/download/mobile-latest/mobile_snapshot.db.gz';
-const RELEASE_META = 'https://github.com/johnwarchief/BorsTerminal-src/releases/download/mobile-latest/mobile_snapshot.db.meta.json';
+const RELEASE_GZ = 'https://github.com/johnwarchief/BorsTerminal/releases/download/mobile-latest/mobile_snapshot.db.gz';
+const RELEASE_META = 'https://github.com/johnwarchief/BorsTerminal/releases/download/mobile-latest/mobile_snapshot.db.meta.json';
 const RELEASE_SIG = RELEASE_META + '.sig';
 // کلیدِ آزمایشیِ همین اجرا — امضا/بررسی درِ آزمون‌هایِ چرخه از همین می‌آید
 const SIGNER = makeTestSigner();
