@@ -514,3 +514,134 @@ gz 16,179,264 B ⇒ SQLite 70,619,136 B درِ 422ms (`fetch 234 / gunzip 169 / 
 سبزند و بیلدِ Release واقعی ساخته و ازِ خودِ artifact خوانده شد؛ امضایِ رسمی
 و دسترسیِ ناشناسِ مخزنِ src دو قفلِ بیرونی‌اند. هیچ APK بی‌امضا یا debug به‌عنوان
 نسخۀ رسمی منتشر نشد و هیچ نسخۀ منتشرشده‌ای حذف/بازنویسی نشد.
+
+## بندِ سیزده — «src خصوصی می‌ماند»: راهِ عمومیِ داده و ریلیز، و مادۀ ارتقایِ سبز
+
+مالک تصمیم گرفت `johnwarchief/BorsTerminal-src` خصوصی بماند. پس «خصوصی‌بودن»
+با «کدِ موبایل باید عمومی خوانده شود» درگیر نمی‌شود — دو مقصد جدا می‌شود.
+
+### ۱۳-۱ جداسازیِ مقصدها
+
+| چیز | مقصد | چرا |
+| --- | --- | --- |
+| کد، workflow، ران‌ها، secrets و vars | `…-src` (خصوصی) | `secrets.*` / `vars.*` از مخزنِ خودِ workflow خوانده می‌شوند |
+| بستۀ دادۀ موبایل (`mobile_snapshot.db.gz` + `.meta.json` + `.sig`) | `johnwarchief/BorsTerminal` (عمومی) | گوشی token ندارد |
+| ریلیز و tag اندروید (`android-1.1.0`) | `johnwarchief/BorsTerminal` (عمومی) | لینکِ نصب باید برایِ کاربر باز باشد |
+
+پیاده‌سازی: `SERIES_REPO` و `PUBLISH_REPO` درِ `mobile.yml`، `REPO_DEFAULT` درِ
+`scripts/publish_mobile_series.py`، پیش‌فرضِ `REMOTE_BASE` درِ `localData.ts`، و دو
+specِ دادۀ موبایل + کاوشگرِ سازگاریِ کلاینتِ کهنه. هیچ tokenی درِ باندل نیست و
+هیچ مسیرِ احرازِ هویتی درِ فرانت وجود ندارد (شاهد: `grep -rl Authorization
+frontend/src` → صفر فایل). نوشتنِ ریلیز درِ مخزنِ عمومی با
+`secrets.RELEASE_TOKEN` انجام می‌شود، چون `GITHUB_TOKEN`ِ کارفرما به آن مخزن
+نوشتن نمی‌کند.
+
+### ۱۳-۲ یک قفلِ اضافه که ازِ همین جدول می‌آید
+
+`api/update.py:66` آپدیتِ دسکتاپ را ازِ
+`…/BorsTerminal/releases/latest/download/latest.json` می‌خواند، و آن مسیر «آخرین
+ریلیزِ **غیرپیش‌انتشار**» است. اگر ریلیزِ اندروید درِ همان مخزن stable منتشر شود،
+`latest` به `android-…` می‌چرخد و آپدیتِ ویندوز 404 می‌گیرد. پس
+`prerelease=false` درِ گامِ انتشار صریحاً رد می‌شود؛ لینکِ مستقیمِ APK مستقل از
+این پرچم باز و ثابت است. گامِ پسِ انتشار هم همین را اندازه می‌گیرد:
+`releases/latest/download/latest.json` را ناشناس می‌خواند و نسخه‌اش را چاپ می‌کند.
+
+### ۱۳-۳ آنچه دربارهٔ بستۀ دادۀ عمومی اندازه گرفته شد
+
+چیزی که امروز درِ مخزنِ عمومی به‌عنوان `mobile-latest` هست، قراردادِ **کهنه** دارد:
+
+- `mobile_snapshot.db.meta.json` (ناشناس، 200) = 106 بایت، فقط چهار کلید:
+  `app_version=1.0.65`, `built_at=2026-10-07T09:29:30`, `baked_ok=4381`,
+  `gz_bytes=23498222`.
+- `mobile_snapshot.db.gz` (ناشناس) = 23,498,222 بایت ← gunzip ← 78,729,216 بایت
+  SQLite با 10 جدول (`baked, meta, instruments, market_watch, price_history,
+  boards, market_index, market_totals, …`)؛ جدولِ `tsetmc` را ندارد و `meta`اش
+  کلیدهایِ `app_version/baked_ok/baked_fail/built_at/schema` دارد.
+- `parseManifest()` درِ کلاینت این‌ها را لازم می‌دارد: `schema_version`,
+  `package_id`, `built_at`, `gz_sha256`, `app_version`, `min_app_version`
+  (و `series` را با `checkSeries` می‌سنجد). هیچ‌کدام درِ آن meta نیست ⇒ بسته **رد**
+  می‌شود و گوشی همان بستۀ همراهِ APK را نگه می‌دارد.
+
+خواندش: کانالِ تازه‌سازیِ داده تا سریِ v2 منتشر نشود باز نیست — و این
+fail-closedِ مستند است، نه خرابیِ پنهان. انتشارِ v2 درِ مخزنِ عمومی (بندِ ۶ سندِ
+مراسم با `--repo` جدید) و `MOBILE_MANIFEST_PUBKEY` کارِ مالک است.
+
+### ۱۳-۴ مادۀ ارتقایِ واقعی: ۱۲ PASS / ۰ FAIL (ران 38797140980، شبیۀ Android 14)
+
+سه APK با دو کلیدِ دورریختنیِ هم‌انسان ساخته شد (هیچ‌وقت منتشر نشدند، بی‌درنگ
+پاک شدند): `a1` با کلیدِ A و نسخۀ 1.1.0/versionCode 1001000، `a2` با همان کلیدِ A
+و 1.1.1/1001001، `b1` با کلیدِ B و 1.1.1/1001001.
+
+| سنج | نتیجه | شاهد |
+| --- | --- | --- |
+| boot | PASS | `sys.boot_completed=1` |
+| build-a1/a2/b1 | PASS | سه `app-release.apk` (نامِ خروجی با کلید عوض می‌شود) |
+| same-key-fingerprint-stable | PASS | `ad20cef6bd02ed58…` درِ هر دو بیلدِ یکسان |
+| other-key-fingerprint-differs | PASS | `11c73980ba615193…` |
+| clean-install-official | PASS | versionCode 1001000 |
+| launch-after-clean-install | PASS | pid=2925 |
+| **upgrade-same-key** | **PASS** | 1.1.0/1001000 → 1.1.1/1001001 با همان گواهی — ارتقایِ درجا واقعاً کار می‌کند |
+| **reject-different-cert** | **PASS** | اندروید `INSTALL_FAILED_UPDATE_INCOMPATIBLE` داد |
+| fresh-install-after-uninstall | PASS | پسِ حذف، کلیدِ دیگر نصب می‌شود (دادهٔ محلی می‌سوزد) |
+| version-source-restored | PASS | `package.json` به 1.1.0 برگشت |
+
+چهار قرمزیِ رانِ پیشین (38794263916) ازِ همین‌جا رفع شد: `-PBorsVersionCode`
+جعلی بود و گاردِ BORS-VERSION آن را رد می‌کرد (پیامِ AGP گمراه‌کننده:
+«does not specify compileSdk»)، حالا نسخۀ بالاتر ازِ مبنایِ یکتا نوشته و بازگردانده
+می‌شود. چون مشتریِ اندرویدی وجود ندارد، سازگاریِ backwards لازم نیست؛ آنچه لازم
+است **ثابت‌ماندنِ یک کلید** است و این مادۀ آن را با دو کلیدِ متفاوت اثبات کرد.
+
+### ۱۳-۵ WebView رویِ دستگاه: چرخۀِ عمر سبز، محتوایِ صفحه هنوز بی‌اثبات
+
+درِ همان ران: `install` PASS، `launch` PASS (pid=2611)، `back_button` PASS
+(پنجرۀ «برایِ خروج دوباره بزنید» و پروسه زنده)، `background_foreground` PASS،
+`crash` PASS (`FATAL EXCEPTION=0`)، `logcat_secrets` PASS (hit=0؛ خطوطِ سیستمی
+شمرده نشد)، `anr` NOT_VERIFIED (صفر ANR برایِ `com.borsterminal.mobile`؛ ۶ ANR مالِ
+پروسه‌هایِ خودِ AVD — پس خطِ یتیمِ قبلی، که همیشه FAIL می‌داد، رفع شده است).
+
+دو سنجۀ محتوا سبز نشدند و علتشان درِ کدِ کاوشگر بود، نه اپ:
+- CDP: نامِ socket ازِ pidِ خودِ اپ ساخته می‌شد، و WebView پروسۀ رندرِ جدا دارد ⇒
+  «CDP درِ دسترس نیست». حالا نام ازِ `/proc/net/unix` خوانده می‌شود و بی‌socket،
+  پروندۀ شواهد نوشته می‌شود.
+- درختِ دسترس‌پذیری: فهرستِ واژگان پنج کلمهٔ تنگ بود؛ حالا ازِ خودِ سورسِ رابط
+  گرفته شده (قیف 159، تابلو 476، شاخص 426، معامله 105، غربالگری 87، بورس 74) و
+  درِ شکست، تعداد گره‌ها + `mCurrentFocus` + متن‌هایِ دیدنی ثبت می‌شود.
+- راه‌اندازی هم یک تلاشِ تنها بود و flakeِ system_server را FAIL می‌کرد؛ سه تلاش
+  با شواهد شد.
+
+**حکمِ صادق:** «DOM/محتوایِ صفحه رویِ دستگاه» تا رانِ تازه = **NOT_VERIFIED**؛
+«برنامۀ واقعی رویِ شبیه‌ساز نصب و اجرا می‌شود و نمی‌میرد» = **PASS**. عددِ چیدمانِ
+سه viewport ازِ Chromium می‌آید (بندِ ۱۲-۵) و جایِ سنجشِ دستگاه را نمی‌گیرد.
+
+### ۱۳-۶ بی‌اعتبارنامۀ ثابت درِ خودِ artifact
+
+`app-release-unsigned.apk` ازِ artifactِ ران 38781829171 (sha256
+`ef4591f2854b…42ac`، که با sha256ِ چاپ‌شدۀ همان ران یکی است — یعنی دانلودِ
+artifact همان بایت‌هایِ بیلد است) باز شد و ۳۵ فایل js درِ `assets/public/` با
+الگوهایِ `Authorization`, `Bearer`, `ghp_…`, `PRIVATE KEY`, `storepass`,
+`bors123`, `DEFAULT_PASS`, و `password="…"` اسکن شد: **صفر برخورد**.
+مکانیزمِ قفلِ صفحه (`crypto.subtle` / `deriveBits` / `bors_screen_lock`) درِ
+باندل هست، پس قابلیتِ لازم مانده و اعتبارنامۀ ثابت نرفته است.
+
+### ۱۳-۷ گیت‌ها درِ همین دور
+
+`tsc -b` صفر خطا · دو specِ دادۀ موبایل 44/44 · گاردِ اندروید **97/97** ·
+`persian_glyph_guard` 4/4 · `run_all_tests` با 6 قرمزِ ازِ پیش موجود (بدونِ تغییر) ·
+`bash -n` رویِ هر دو اسکریپتِ دستگاه · YAMLِ `mobile.yml` با `yaml.safe_load`
+اعتبارسنجی شد (و دو بار که خراب شده بود، همین اعتبارسنجی گرفت: lines 324 و 536).
+
+### ۱۳-۸ کارِ دقیقِ باقی‌ماندهٔ مالک
+
+1. `bash scripts/android_release_key_ceremony.sh keygen` → `backup` →
+   `verify-backup` → `restore` (drill) → `publish-secrets` (دو secret).
+2. `python scripts/sign_mobile_manifest.py --keygen …` و `gh variable set
+   MOBILE_MANIFEST_PUBKEY --repo johnwarchief/BorsTerminal-src`.
+3. `bash scripts/android_release_key_ceremony.sh fingerprint` و `gh variable set
+   ANDROID_RELEASE_CERT_SHA256 --repo johnwarchief/BorsTerminal-src` (اثرانگشتِ
+   public، نه کلیدِ خصوصی).
+4. `python scripts/publish_mobile_series.py --yes` — حالا درِ **مخزنِ عمومی**
+   سریِ `mobile-latest-v2` را با `.sig` منتشر می‌کند.
+5. `gh workflow run mobile.yml -f publish=true` (با `prerelease` پیش‌فرضِ true).
+   دروازۀ چهارشرطی: APK امضاشده، کلیدِ عمومی درِ باندل، امضایِ بستۀ داده معتبر،
+   و سریِ هدفِ کهنه نبودن. بی‌هر چهار، منتشر نمی‌شود.
+
