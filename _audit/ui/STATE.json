@@ -1,0 +1,3676 @@
+{
+  "ranAt": "2026-10-15T11:02:11.827Z",
+  "viewport": {
+    "W": 1366,
+    "H": 768
+  },
+  "base": "http://127.0.0.1:8000",
+  "cases": [
+    {
+      "key": "C1",
+      "route": "/market",
+      "name": "منویِ فیلترِ بازارها (دارایی)",
+      "target": "[data-testid=\"asset-filter\"] button",
+      "reset": "cleared",
+      "targetInfo": {
+        "found": true,
+        "n": 1,
+        "tag": "button",
+        "role": null,
+        "clickable": true,
+        "disabled": false,
+        "box": [
+          1059,
+          55,
+          130,
+          26
+        ],
+        "hit": "span"
+      },
+      "before": {
+        "at": 1792062147635,
+        "url": "#/market",
+        "scroll": 0,
+        "probes": [
+          {
+            "sel": "[data-testid=\"asset-filter\"] button",
+            "n": 1,
+            "nAll": 1,
+            "states": [
+              "expanded=false"
+            ],
+            "text": "بازارها / ابزارها ۵ ▾",
+            "box": [
+              1059,
+              55,
+              130,
+              26
+            ],
+            "tag": "button",
+            "role": null,
+            "clickable": true
+          },
+          {
+            "sel": "[data-testid=\"asset-filter-menu\"]",
+            "n": 0,
+            "nAll": 0,
+            "states": [],
+            "text": "",
+            "box": null,
+            "tag": null,
+            "role": null,
+            "clickable": false
+          },
+          {
+            "sel": "[data-testid=\"asset-filter-menu\"] input[type=\"checkbox\"]",
+            "n": 0,
+            "nAll": 0,
+            "states": [],
+            "text": "",
+            "box": null,
+            "tag": null,
+            "role": null,
+            "clickable": false
+          }
+        ]
+      },
+      "clicked": true,
+      "after": {
+        "at": 1792062149123,
+        "url": "#/market",
+        "scroll": 0,
+        "probes": [
+          {
+            "sel": "[data-testid=\"asset-filter\"] button",
+            "n": 1,
+            "nAll": 1,
+            "states": [
+              "expanded=true"
+            ],
+            "text": "بازارها / ابزارها ۵ ▾",
+            "box": [
+              1059,
+              55,
+              130,
+              26
+            ],
+            "tag": "button",
+            "role": null,
+            "clickable": true
+          },
+          {
+            "sel": "[data-testid=\"asset-filter-menu\"]",
+            "n": 1,
+            "nAll": 1,
+            "states": [
+              "-"
+            ],
+            "text": "سهام فرابورس - بازار پایه اختیار معامله صندوق سرمایه‌گذاری اوراق بدهی حق تقدم تسهیلات مسکن معاملات پایانی TAL آتی بورس ک",
+            "box": [
+              901,
+              85,
+              288,
+              344
+            ],
+            "tag": "div",
+            "role": null,
+            "clickable": false
+          },
+          {
+            "sel": "[data-testid=\"asset-filter-menu\"] input[type=\"checkbox\"]",
+            "n": 11,
+            "nAll": 11,
+            "states": [
+              "-",
+              "-",
+              "-",
+              "-",
+              "-",
+              "-",
+              "-",
+              "-"
+            ],
+            "text": "",
+            "box": [
+              1158,
+              99,
+              14,
+              14
+            ],
+            "tag": "input",
+            "role": null,
+            "clickable": true
+          }
+        ]
+      },
+      "changes": [
+        "[data-testid=\"asset-filter\"] button :: states [\"expanded=false\"]→[\"expanded=true\"]",
+        "[data-testid=\"asset-filter-menu\"] :: n 0→1 | nAll 0→1 | states []→[\"-\"] | text «»→«سهام فرابورس - بازار پایه اختیار معامله » | box null→[901,85,288,344]",
+        "[data-testid=\"asset-filter-menu\"] input[type=\"checkbox\"] :: n 0→11 | nAll 0→11 | states []→[\"-\",\"-\",\"-\",\"-\",\"-\",\"-\",\"-\",\"-\"] | box null→[1158,99,14,14]"
+      ],
+      "errAfter": 0,
+      "verdict": "STATE-CHANGED (3)",
+      "restore": [
+        "[data-testid=\"asset-filter\"] button = ok"
+      ],
+      "afterRestore": {
+        "at": 1792062150596,
+        "url": "#/market",
+        "scroll": 0,
+        "probes": [
+          {
+            "sel": "[data-testid=\"asset-filter\"] button",
+            "n": 1,
+            "nAll": 1,
+            "states": [
+              "expanded=false"
+            ],
+            "text": "بازارها / ابزارها ۵ ▾",
+            "box": [
+              1059,
+              55,
+              130,
+              26
+            ],
+            "tag": "button",
+            "role": null,
+            "clickable": true
+          },
+          {
+            "sel": "[data-testid=\"asset-filter-menu\"]",
+            "n": 0,
+            "nAll": 0,
+            "states": [],
+            "text": "",
+            "box": null,
+            "tag": null,
+            "role": null,
+            "clickable": false
+          },
+          {
+            "sel": "[data-testid=\"asset-filter-menu\"] input[type=\"checkbox\"]",
+            "n": 0,
+            "nAll": 0,
+            "states": [],
+            "text": "",
+            "box": null,
+            "tag": null,
+            "role": null,
+            "clickable": false
+          }
+        ]
+      },
+      "restoreDrift": []
+    },
+    {
+      "key": "C2",
+      "route": "/market-status",
+      "name": "زیرتبِ دومِ طلا",
+      "target": "[data-testid=\"ms-gold-tabs\"] [data-testid^=\"ms-gold-tab-\"]:nth-child(2)",
+      "reset": "cleared",
+      "targetInfo": {
+        "found": true,
+        "n": 1,
+        "tag": "button",
+        "role": "tab",
+        "clickable": true,
+        "disabled": false,
+        "box": [
+          977,
+          4433,
+          123,
+          24
+        ],
+        "hit": null
+      },
+      "before": {
+        "at": 1792062166396,
+        "url": "#/market-status",
+        "scroll": 0,
+        "probes": [
+          {
+            "sel": "[data-testid^=\"ms-gold-tab-\"]",
+            "n": 3,
+            "nAll": 3,
+            "states": [
+              "selected=true,cls:accent",
+              "selected=false",
+              "selected=false"
+            ],
+            "text": "نمای کلیِ طلا",
+            "box": [
+              1104,
+              4433,
+              83,
+              24
+            ],
+            "tag": "button",
+            "role": "tab",
+            "clickable": true
+          },
+          {
+            "sel": "[data-testid=\"ms-gold-tabs\"]",
+            "n": 1,
+            "nAll": 1,
+            "states": [
+              "-"
+            ],
+            "text": "نمای کلیِ طلا جدول‌های طلا و سکه صندوق‌های طلا: ترکیب و نقشه",
+            "box": [
+              11,
+              4433,
+              1176,
+              24
+            ],
+            "tag": "div",
+            "role": "tablist",
+            "clickable": false
+          }
+        ]
+      },
+      "clicked": true,
+      "after": {
+        "at": 1792062168114,
+        "url": "#/market-status",
+        "scroll": 4062,
+        "probes": [
+          {
+            "sel": "[data-testid^=\"ms-gold-tab-\"]",
+            "n": 3,
+            "nAll": 3,
+            "states": [
+              "selected=false",
+              "selected=true,cls:accent",
+              "selected=false"
+            ],
+            "text": "نمای کلیِ طلا",
+            "box": [
+              1104,
+              371,
+              83,
+              24
+            ],
+            "tag": "button",
+            "role": "tab",
+            "clickable": true
+          },
+          {
+            "sel": "[data-testid=\"ms-gold-tabs\"]",
+            "n": 1,
+            "nAll": 1,
+            "states": [
+              "-"
+            ],
+            "text": "نمای کلیِ طلا جدول‌های طلا و سکه صندوق‌های طلا: ترکیب و نقشه",
+            "box": [
+              11,
+              371,
+              1176,
+              24
+            ],
+            "tag": "div",
+            "role": "tablist",
+            "clickable": false
+          }
+        ]
+      },
+      "changes": [
+        "[data-testid^=\"ms-gold-tab-\"] :: states [\"selected=true,cls:accent\",\"selected=false\",\"selected=false\"]→[\"selected=false\",\"selected=true,cls:accent\",\"selected=false\"] | box [1104,4433,83,24]→[1104,371,83,24]",
+        "[data-testid=\"ms-gold-tabs\"] :: box [11,4433,1176,24]→[11,371,1176,24]"
+      ],
+      "errAfter": 0,
+      "verdict": "STATE-CHANGED (2)",
+      "restore": [
+        "[data-testid=\"ms-gold-tabs\"] [data-testid^=\"ms-gold-tab-\"]:nth-child(1) = ok"
+      ],
+      "afterRestore": {
+        "at": 1792062169724,
+        "url": "#/market-status",
+        "scroll": 4062,
+        "probes": [
+          {
+            "sel": "[data-testid^=\"ms-gold-tab-\"]",
+            "n": 3,
+            "nAll": 3,
+            "states": [
+              "selected=true,cls:accent",
+              "selected=false",
+              "selected=false"
+            ],
+            "text": "نمای کلیِ طلا",
+            "box": [
+              1104,
+              371,
+              83,
+              24
+            ],
+            "tag": "button",
+            "role": "tab",
+            "clickable": true
+          },
+          {
+            "sel": "[data-testid=\"ms-gold-tabs\"]",
+            "n": 1,
+            "nAll": 1,
+            "states": [
+              "-"
+            ],
+            "text": "نمای کلیِ طلا جدول‌های طلا و سکه صندوق‌های طلا: ترکیب و نقشه",
+            "box": [
+              11,
+              371,
+              1176,
+              24
+            ],
+            "tag": "div",
+            "role": "tablist",
+            "clickable": false
+          }
+        ]
+      },
+      "restoreDrift": [
+        "[data-testid^=\"ms-gold-tab-\"] :: box [1104,4433,83,24]→[1104,371,83,24]",
+        "[data-testid=\"ms-gold-tabs\"] :: box [11,4433,1176,24]→[11,371,1176,24]"
+      ]
+    },
+    {
+      "key": "C3",
+      "route": "/technical/فولاد",
+      "name": "تبِ دومِ دیالوگِ تنظیماتِ چارت",
+      "target": "[data-testid=\"chart-settings\"] [data-testid^=\"settings-tab-\"]:nth-child(2)",
+      "reset": "cleared",
+      "pre_[data-testid=\"open-chart-settings\"]": "clicked",
+      "targetInfo": {
+        "found": true,
+        "n": 1,
+        "tag": "button",
+        "role": "tab",
+        "clickable": true,
+        "disabled": false,
+        "box": [
+          840,
+          138,
+          83,
+          26
+        ],
+        "hit": "settings-tab-status"
+      },
+      "before": {
+        "at": 1792062187000,
+        "url": "#/technical/%D9%81%D9%88%D9%84%D8%A7%D8%AF",
+        "scroll": 0,
+        "probes": [
+          {
+            "sel": "[data-testid^=\"settings-tab-\"]",
+            "n": 6,
+            "nAll": 6,
+            "states": [
+              "selected=false",
+              "selected=false",
+              "selected=true",
+              "selected=false",
+              "selected=false",
+              "selected=false"
+            ],
+            "text": "نماد",
+            "box": [
+              928,
+              138,
+              44,
+              26
+            ],
+            "tag": "button",
+            "role": "tab",
+            "clickable": true
+          },
+          {
+            "sel": "[data-testid=\"chart-settings\"]",
+            "n": 1,
+            "nAll": 1,
+            "states": [
+              "-"
+            ],
+            "text": "تنظیمات چارت فولاد ✕ نماد خط وضعیت مقیاس‌ها رنگ‌بندی دقت و اعشار رویدادها مقیاسِ محورِ قیمت محورِ عمودی خطی لگاریتمی درص",
+            "box": [
+              0,
+              44,
+              1306,
+              716
+            ],
+            "tag": "div",
+            "role": "presentation",
+            "clickable": false
+          },
+          {
+            "sel": "[data-testid=\"chart-settings\"] input, [data-testid=\"chart-settings\"] select",
+            "n": 0,
+            "nAll": 0,
+            "states": [],
+            "text": "",
+            "box": null,
+            "tag": null,
+            "role": null,
+            "clickable": false
+          }
+        ]
+      },
+      "clicked": true,
+      "after": {
+        "at": 1792062188458,
+        "url": "#/technical/%D9%81%D9%88%D9%84%D8%A7%D8%AF",
+        "scroll": 0,
+        "probes": [
+          {
+            "sel": "[data-testid^=\"settings-tab-\"]",
+            "n": 6,
+            "nAll": 6,
+            "states": [
+              "selected=false",
+              "selected=true",
+              "selected=false",
+              "selected=false",
+              "selected=false",
+              "selected=false"
+            ],
+            "text": "نماد",
+            "box": [
+              928,
+              248,
+              44,
+              26
+            ],
+            "tag": "button",
+            "role": "tab",
+            "clickable": true
+          },
+          {
+            "sel": "[data-testid=\"chart-settings\"]",
+            "n": 1,
+            "nAll": 1,
+            "states": [
+              "-"
+            ],
+            "text": "تنظیمات چارت فولاد ✕ نماد خط وضعیت مقیاس‌ها رنگ‌بندی دقت و اعشار رویدادها خطِ وضعیتِ کندل همان بلوکِ بالایِ چارت مقادیر ",
+            "box": [
+              0,
+              44,
+              1306,
+              716
+            ],
+            "tag": "div",
+            "role": "presentation",
+            "clickable": false
+          },
+          {
+            "sel": "[data-testid=\"chart-settings\"] input, [data-testid=\"chart-settings\"] select",
+            "n": 0,
+            "nAll": 0,
+            "states": [],
+            "text": "",
+            "box": null,
+            "tag": null,
+            "role": null,
+            "clickable": false
+          }
+        ]
+      },
+      "changes": [
+        "[data-testid^=\"settings-tab-\"] :: states [\"selected=false\",\"selected=false\",\"selected=true\",\"selected=false\",\"selected=false\",\"selected=false\"]→[\"selected=false\",\"selected=true\",\"selected=false\",\"selected=false\",\"selected=false\",\"selected=false\"] | box [928,138,44,26]→[928,248,44,26]",
+        "[data-testid=\"chart-settings\"] :: text «تنظیمات چارت فولاد ✕ نماد خط وضعیت مقیاس»→«تنظیمات چارت فولاد ✕ نماد خط وضعیت مقیاس»"
+      ],
+      "errAfter": 0,
+      "verdict": "STATE-CHANGED (2)",
+      "restore": [
+        "[data-testid=\"chart-settings-close\"] = ok"
+      ],
+      "afterRestore": {
+        "at": 1792062189928,
+        "url": "#/technical/%D9%81%D9%88%D9%84%D8%A7%D8%AF",
+        "scroll": 0,
+        "probes": [
+          {
+            "sel": "[data-testid^=\"settings-tab-\"]",
+            "n": 0,
+            "nAll": 0,
+            "states": [],
+            "text": "",
+            "box": null,
+            "tag": null,
+            "role": null,
+            "clickable": false
+          },
+          {
+            "sel": "[data-testid=\"chart-settings\"]",
+            "n": 0,
+            "nAll": 0,
+            "states": [],
+            "text": "",
+            "box": null,
+            "tag": null,
+            "role": null,
+            "clickable": false
+          },
+          {
+            "sel": "[data-testid=\"chart-settings\"] input, [data-testid=\"chart-settings\"] select",
+            "n": 0,
+            "nAll": 0,
+            "states": [],
+            "text": "",
+            "box": null,
+            "tag": null,
+            "role": null,
+            "clickable": false
+          }
+        ]
+      },
+      "restoreDrift": [
+        "[data-testid^=\"settings-tab-\"] :: n 6→0 | nAll 6→0 | states [\"selected=false\",\"selected=false\",\"selected=true\",\"selected=false\",\"selected=false\",\"selected=false\"]→[] | text «نماد»→«» | box [928,138,44,26]→null",
+        "[data-testid=\"chart-settings\"] :: n 1→0 | nAll 1→0 | states [\"-\"]→[] | text «تنظیمات چارت فولاد ✕ نماد خط وضعیت مقیاس»→«» | box [0,44,1306,716]→null"
+      ]
+    },
+    {
+      "key": "C4",
+      "route": "/technical/فولاد",
+      "name": "تایم‌فریم → هفتگی",
+      "target": "[data-testid^=\"timeframe-\"]:nth-child(2)",
+      "reset": "cleared",
+      "targetInfo": {
+        "found": true,
+        "n": 1,
+        "tag": "button",
+        "role": null,
+        "clickable": true,
+        "disabled": false,
+        "box": [
+          580,
+          45,
+          51,
+          30
+        ],
+        "hit": "timeframe-W"
+      },
+      "before": {
+        "at": 1792062205723,
+        "url": "#/technical/%D9%81%D9%88%D9%84%D8%A7%D8%AF",
+        "scroll": 0,
+        "probes": [
+          {
+            "sel": "[data-testid^=\"timeframe-\"]",
+            "n": 3,
+            "nAll": 3,
+            "states": [
+              "cls:active",
+              "-",
+              "-"
+            ],
+            "text": "روزانه",
+            "box": [
+              634,
+              45,
+              43,
+              30
+            ],
+            "tag": "button",
+            "role": null,
+            "clickable": true
+          },
+          {
+            "sel": "[data-testid=\"chart-timeframe-note\"]",
+            "n": 0,
+            "nAll": 0,
+            "states": [],
+            "text": "",
+            "box": null,
+            "tag": null,
+            "role": null,
+            "clickable": false
+          },
+          {
+            "sel": "[data-testid=\"chart-area\"] canvas",
+            "n": 10,
+            "nAll": 10,
+            "states": [
+              "-",
+              "-",
+              "-",
+              "-",
+              "-",
+              "-",
+              "-",
+              "-"
+            ],
+            "text": "",
+            "box": [
+              48,
+              143,
+              863,
+              416
+            ],
+            "tag": "canvas",
+            "role": null,
+            "clickable": false
+          }
+        ]
+      },
+      "clicked": true,
+      "after": {
+        "at": 1792062207262,
+        "url": "#/technical/%D9%81%D9%88%D9%84%D8%A7%D8%AF",
+        "scroll": 0,
+        "probes": [
+          {
+            "sel": "[data-testid^=\"timeframe-\"]",
+            "n": 3,
+            "nAll": 3,
+            "states": [
+              "-",
+              "cls:active",
+              "-"
+            ],
+            "text": "روزانه",
+            "box": [
+              634,
+              45,
+              43,
+              30
+            ],
+            "tag": "button",
+            "role": null,
+            "clickable": true
+          },
+          {
+            "sel": "[data-testid=\"chart-timeframe-note\"]",
+            "n": 0,
+            "nAll": 0,
+            "states": [],
+            "text": "",
+            "box": null,
+            "tag": null,
+            "role": null,
+            "clickable": false
+          },
+          {
+            "sel": "[data-testid=\"chart-area\"] canvas",
+            "n": 10,
+            "nAll": 10,
+            "states": [
+              "-",
+              "-",
+              "-",
+              "-",
+              "-",
+              "-",
+              "-",
+              "-"
+            ],
+            "text": "",
+            "box": [
+              48,
+              143,
+              863,
+              416
+            ],
+            "tag": "canvas",
+            "role": null,
+            "clickable": false
+          }
+        ]
+      },
+      "changes": [
+        "[data-testid^=\"timeframe-\"] :: states [\"cls:active\",\"-\",\"-\"]→[\"-\",\"cls:active\",\"-\"]"
+      ],
+      "errAfter": 0,
+      "verdict": "STATE-CHANGED (1)",
+      "restore": [
+        "[data-testid^=\"timeframe-\"]:nth-child(1) = ok"
+      ],
+      "afterRestore": {
+        "at": 1792062208765,
+        "url": "#/technical/%D9%81%D9%88%D9%84%D8%A7%D8%AF",
+        "scroll": 0,
+        "probes": [
+          {
+            "sel": "[data-testid^=\"timeframe-\"]",
+            "n": 3,
+            "nAll": 3,
+            "states": [
+              "cls:active",
+              "-",
+              "-"
+            ],
+            "text": "روزانه",
+            "box": [
+              634,
+              45,
+              43,
+              30
+            ],
+            "tag": "button",
+            "role": null,
+            "clickable": true
+          },
+          {
+            "sel": "[data-testid=\"chart-timeframe-note\"]",
+            "n": 0,
+            "nAll": 0,
+            "states": [],
+            "text": "",
+            "box": null,
+            "tag": null,
+            "role": null,
+            "clickable": false
+          },
+          {
+            "sel": "[data-testid=\"chart-area\"] canvas",
+            "n": 10,
+            "nAll": 10,
+            "states": [
+              "-",
+              "-",
+              "-",
+              "-",
+              "-",
+              "-",
+              "-",
+              "-"
+            ],
+            "text": "",
+            "box": [
+              48,
+              143,
+              863,
+              416
+            ],
+            "tag": "canvas",
+            "role": null,
+            "clickable": false
+          }
+        ]
+      },
+      "restoreDrift": []
+    },
+    {
+      "key": "C5",
+      "route": "/technical/فولاد",
+      "name": "دکمۀِ موتورِ چارت (نه منو)",
+      "target": "[data-testid=\"nn-engine-ffc\"]",
+      "reset": "cleared",
+      "targetInfo": {
+        "found": true,
+        "n": 1,
+        "tag": "button",
+        "role": null,
+        "clickable": true,
+        "disabled": false,
+        "box": [
+          816,
+          112,
+          64,
+          30
+        ],
+        "hit": "span"
+      },
+      "before": {
+        "at": 1792062224551,
+        "url": "#/technical/%D9%81%D9%88%D9%84%D8%A7%D8%AF",
+        "scroll": 0,
+        "probes": [
+          {
+            "sel": "[data-testid=\"nn-engine-switch\"]",
+            "n": 1,
+            "nAll": 1,
+            "states": [
+              "-"
+            ],
+            "text": "KLineCharts موتور دوم",
+            "box": [
+              816,
+              112,
+              152,
+              30
+            ],
+            "tag": "div",
+            "role": "group",
+            "clickable": false
+          },
+          {
+            "sel": "[data-testid^=\"nn-engine-\"]",
+            "n": 3,
+            "nAll": 3,
+            "states": [
+              "-",
+              "pressed=true,cls:active",
+              "pressed=false"
+            ],
+            "text": "KLineCharts موتور دوم",
+            "box": [
+              816,
+              112,
+              152,
+              30
+            ],
+            "tag": "div",
+            "role": "group",
+            "clickable": false
+          },
+          {
+            "sel": "[data-testid=\"ffc-chart-host\"]",
+            "n": 0,
+            "nAll": 0,
+            "states": [],
+            "text": "",
+            "box": null,
+            "tag": null,
+            "role": null,
+            "clickable": false
+          },
+          {
+            "sel": "[data-testid=\"fts-engine-back\"]",
+            "n": 0,
+            "nAll": 0,
+            "states": [],
+            "text": "",
+            "box": null,
+            "tag": null,
+            "role": null,
+            "clickable": false
+          },
+          {
+            "sel": "[data-testid=\"fts-engine-error\"]",
+            "n": 0,
+            "nAll": 0,
+            "states": [],
+            "text": "",
+            "box": null,
+            "tag": null,
+            "role": null,
+            "clickable": false
+          },
+          {
+            "sel": "[data-testid=\"chart-area\"]",
+            "n": 1,
+            "nAll": 1,
+            "states": [
+              "-"
+            ],
+            "text": "فولاد (فولاد مباركه اصفهان) ۴,۵۴۰ +۲.۹۵% روزانه هفتگی ماهانه کندل نمایِ بازدهی (شاخصِ ۱۰۰) fx اندیکاتورها همسنجی تحلیل F",
+            "box": [
+              0,
+              44,
+              976,
+              688
+            ],
+            "tag": "div",
+            "role": null,
+            "clickable": false
+          }
+        ]
+      },
+      "clicked": true,
+      "after": {
+        "at": 1792062226036,
+        "url": "#/technical/%D9%81%D9%88%D9%84%D8%A7%D8%AF",
+        "scroll": 0,
+        "probes": [
+          {
+            "sel": "[data-testid=\"nn-engine-switch\"]",
+            "n": 0,
+            "nAll": 0,
+            "states": [],
+            "text": "",
+            "box": null,
+            "tag": null,
+            "role": null,
+            "clickable": false
+          },
+          {
+            "sel": "[data-testid^=\"nn-engine-\"]",
+            "n": 0,
+            "nAll": 0,
+            "states": [],
+            "text": "",
+            "box": null,
+            "tag": null,
+            "role": null,
+            "clickable": false
+          },
+          {
+            "sel": "[data-testid=\"ffc-chart-host\"]",
+            "n": 1,
+            "nAll": 1,
+            "states": [
+              "-"
+            ],
+            "text": "موتور: Fast Financial Charts 2.2 کندل: ۴۲۴۶ مبنایِ سری: عملکردی (خام × ضریبِ سرور) — این موتور کرکرۀ تعدیل ندارد لایهٔ F",
+            "box": [
+              0,
+              44,
+              976,
+              688
+            ],
+            "tag": "div",
+            "role": null,
+            "clickable": false
+          },
+          {
+            "sel": "[data-testid=\"fts-engine-back\"]",
+            "n": 1,
+            "nAll": 1,
+            "states": [
+              "cls:accent"
+            ],
+            "text": "بازگشت به KLineCharts",
+            "box": [
+              8,
+              707,
+              116,
+              21
+            ],
+            "tag": "button",
+            "role": null,
+            "clickable": true
+          },
+          {
+            "sel": "[data-testid=\"fts-engine-error\"]",
+            "n": 0,
+            "nAll": 0,
+            "states": [],
+            "text": "",
+            "box": null,
+            "tag": null,
+            "role": null,
+            "clickable": false
+          },
+          {
+            "sel": "[data-testid=\"chart-area\"]",
+            "n": 1,
+            "nAll": 1,
+            "states": [
+              "-"
+            ],
+            "text": "موتور: Fast Financial Charts 2.2 کندل: ۴۲۴۶ مبنایِ سری: عملکردی (خام × ضریبِ سرور) — این موتور کرکرۀ تعدیل ندارد لایهٔ F",
+            "box": [
+              0,
+              44,
+              976,
+              688
+            ],
+            "tag": "div",
+            "role": null,
+            "clickable": false
+          }
+        ]
+      },
+      "changes": [
+        "[data-testid=\"nn-engine-switch\"] :: n 1→0 | nAll 1→0 | states [\"-\"]→[] | text «KLineCharts موتور دوم»→«» | box [816,112,152,30]→null",
+        "[data-testid^=\"nn-engine-\"] :: n 3→0 | nAll 3→0 | states [\"-\",\"pressed=true,cls:active\",\"pressed=false\"]→[] | text «KLineCharts موتور دوم»→«» | box [816,112,152,30]→null",
+        "[data-testid=\"ffc-chart-host\"] :: n 0→1 | nAll 0→1 | states []→[\"-\"] | text «»→«موتور: Fast Financial Charts 2.2 کندل: ۴» | box null→[0,44,976,688]",
+        "[data-testid=\"fts-engine-back\"] :: n 0→1 | nAll 0→1 | states []→[\"cls:accent\"] | text «»→«بازگشت به KLineCharts» | box null→[8,707,116,21]",
+        "[data-testid=\"chart-area\"] :: text «فولاد (فولاد مباركه اصفهان) ۴,۵۴۰ +۲.۹۵%»→«موتور: Fast Financial Charts 2.2 کندل: ۴»"
+      ],
+      "errAfter": 0,
+      "verdict": "STATE-CHANGED (5)",
+      "restore": [
+        "[data-testid=\"fts-engine-back\"] = ok"
+      ],
+      "afterRestore": {
+        "at": 1792062227597,
+        "url": "#/technical/%D9%81%D9%88%D9%84%D8%A7%D8%AF",
+        "scroll": 0,
+        "probes": [
+          {
+            "sel": "[data-testid=\"nn-engine-switch\"]",
+            "n": 1,
+            "nAll": 1,
+            "states": [
+              "-"
+            ],
+            "text": "KLineCharts موتور دوم",
+            "box": [
+              816,
+              112,
+              152,
+              30
+            ],
+            "tag": "div",
+            "role": "group",
+            "clickable": false
+          },
+          {
+            "sel": "[data-testid^=\"nn-engine-\"]",
+            "n": 3,
+            "nAll": 3,
+            "states": [
+              "-",
+              "pressed=true,cls:active",
+              "pressed=false"
+            ],
+            "text": "KLineCharts موتور دوم",
+            "box": [
+              816,
+              112,
+              152,
+              30
+            ],
+            "tag": "div",
+            "role": "group",
+            "clickable": false
+          },
+          {
+            "sel": "[data-testid=\"ffc-chart-host\"]",
+            "n": 0,
+            "nAll": 0,
+            "states": [],
+            "text": "",
+            "box": null,
+            "tag": null,
+            "role": null,
+            "clickable": false
+          },
+          {
+            "sel": "[data-testid=\"fts-engine-back\"]",
+            "n": 0,
+            "nAll": 0,
+            "states": [],
+            "text": "",
+            "box": null,
+            "tag": null,
+            "role": null,
+            "clickable": false
+          },
+          {
+            "sel": "[data-testid=\"fts-engine-error\"]",
+            "n": 0,
+            "nAll": 0,
+            "states": [],
+            "text": "",
+            "box": null,
+            "tag": null,
+            "role": null,
+            "clickable": false
+          },
+          {
+            "sel": "[data-testid=\"chart-area\"]",
+            "n": 1,
+            "nAll": 1,
+            "states": [
+              "-"
+            ],
+            "text": "فولاد (فولاد مباركه اصفهان) ۴,۵۴۰ +۲.۹۵% روزانه هفتگی ماهانه کندل نمایِ بازدهی (شاخصِ ۱۰۰) fx اندیکاتورها همسنجی تحلیل F",
+            "box": [
+              0,
+              44,
+              976,
+              688
+            ],
+            "tag": "div",
+            "role": null,
+            "clickable": false
+          }
+        ]
+      },
+      "restoreDrift": []
+    },
+    {
+      "key": "C6",
+      "route": "/technical/فولاد",
+      "name": "جمع‌کردنِ سایدبارِ تکنیکال",
+      "target": "[data-testid=\"sidebar-collapse\"]",
+      "reset": "cleared",
+      "targetInfo": {
+        "found": true,
+        "n": 1,
+        "tag": "button",
+        "role": null,
+        "clickable": true,
+        "disabled": false,
+        "box": [
+          1033,
+          52,
+          24,
+          24
+        ],
+        "hit": "sidebar-collapse"
+      },
+      "before": {
+        "at": 1792062243376,
+        "url": "#/technical/%D9%81%D9%88%D9%84%D8%A7%D8%AF",
+        "scroll": 0,
+        "probes": [
+          {
+            "sel": "[data-testid=\"technical-sidebar\"]",
+            "n": 1,
+            "nAll": 1,
+            "states": [
+              "-"
+            ],
+            "text": "سیگنال‌های FTS ✕ سخاش سيمان‌خاش‌ امتیاز ۵ کف دوقلو الكتروماد صنايع الكترونيك ماديران امتیاز ۵ کف دوقلو خروج: احتیاط سبها",
+            "box": [
+              976,
+              44,
+              330,
+              716
+            ],
+            "tag": "aside",
+            "role": null,
+            "clickable": false
+          },
+          {
+            "sel": "[data-testid=\"technical-sidebar-collapsed\"]",
+            "n": 0,
+            "nAll": 0,
+            "states": [],
+            "text": "",
+            "box": null,
+            "tag": null,
+            "role": null,
+            "clickable": false
+          },
+          {
+            "sel": "[data-testid=\"sidebar-expand\"]",
+            "n": 0,
+            "nAll": 0,
+            "states": [],
+            "text": "",
+            "box": null,
+            "tag": null,
+            "role": null,
+            "clickable": false
+          },
+          {
+            "sel": "[data-testid=\"sidebar-body\"]",
+            "n": 1,
+            "nAll": 1,
+            "states": [
+              "-"
+            ],
+            "text": "سخاش سيمان‌خاش‌ امتیاز ۵ کف دوقلو الكتروماد صنايع الكترونيك ماديران امتیاز ۵ کف دوقلو خروج: احتیاط سبهان سيمان‌ بهبهان‌ ",
+            "box": [
+              1021,
+              84,
+              284,
+              676
+            ],
+            "tag": "div",
+            "role": "tabpanel",
+            "clickable": false
+          }
+        ]
+      },
+      "clicked": true,
+      "after": {
+        "at": 1792062244904,
+        "url": "#/technical/%D9%81%D9%88%D9%84%D8%A7%D8%AF",
+        "scroll": 0,
+        "probes": [
+          {
+            "sel": "[data-testid=\"technical-sidebar\"]",
+            "n": 0,
+            "nAll": 0,
+            "states": [],
+            "text": "",
+            "box": null,
+            "tag": null,
+            "role": null,
+            "clickable": false
+          },
+          {
+            "sel": "[data-testid=\"technical-sidebar-collapsed\"]",
+            "n": 1,
+            "nAll": 1,
+            "states": [
+              "-"
+            ],
+            "text": "‹",
+            "box": [
+              1261,
+              44,
+              45,
+              716
+            ],
+            "tag": "aside",
+            "role": null,
+            "clickable": false
+          },
+          {
+            "sel": "[data-testid=\"sidebar-expand\"]",
+            "n": 1,
+            "nAll": 1,
+            "states": [
+              "-"
+            ],
+            "text": "‹",
+            "box": [
+              1268,
+              52,
+              32,
+              32
+            ],
+            "tag": "button",
+            "role": null,
+            "clickable": true
+          },
+          {
+            "sel": "[data-testid=\"sidebar-body\"]",
+            "n": 0,
+            "nAll": 0,
+            "states": [],
+            "text": "",
+            "box": null,
+            "tag": null,
+            "role": null,
+            "clickable": false
+          }
+        ]
+      },
+      "changes": [
+        "[data-testid=\"technical-sidebar\"] :: n 1→0 | nAll 1→0 | states [\"-\"]→[] | text «سیگنال‌های FTS ✕ سخاش سيمان‌خاش‌ امتیاز »→«» | box [976,44,330,716]→null",
+        "[data-testid=\"technical-sidebar-collapsed\"] :: n 0→1 | nAll 0→1 | states []→[\"-\"] | text «»→«‹» | box null→[1261,44,45,716]",
+        "[data-testid=\"sidebar-expand\"] :: n 0→1 | nAll 0→1 | states []→[\"-\"] | text «»→«‹» | box null→[1268,52,32,32]",
+        "[data-testid=\"sidebar-body\"] :: n 1→0 | nAll 1→0 | states [\"-\"]→[] | text «سخاش سيمان‌خاش‌ امتیاز ۵ کف دوقلو الكترو»→«» | box [1021,84,284,676]→null"
+      ],
+      "errAfter": 0,
+      "verdict": "STATE-CHANGED (4)",
+      "restore": [
+        "[data-testid=\"sidebar-expand\"] = ok"
+      ],
+      "afterRestore": {
+        "at": 1792062246409,
+        "url": "#/technical/%D9%81%D9%88%D9%84%D8%A7%D8%AF",
+        "scroll": 0,
+        "probes": [
+          {
+            "sel": "[data-testid=\"technical-sidebar\"]",
+            "n": 1,
+            "nAll": 1,
+            "states": [
+              "-"
+            ],
+            "text": "سیگنال‌های FTS ✕ سخاش سيمان‌خاش‌ امتیاز ۵ کف دوقلو الكتروماد صنايع الكترونيك ماديران امتیاز ۵ کف دوقلو خروج: احتیاط سبها",
+            "box": [
+              976,
+              44,
+              330,
+              716
+            ],
+            "tag": "aside",
+            "role": null,
+            "clickable": false
+          },
+          {
+            "sel": "[data-testid=\"technical-sidebar-collapsed\"]",
+            "n": 0,
+            "nAll": 0,
+            "states": [],
+            "text": "",
+            "box": null,
+            "tag": null,
+            "role": null,
+            "clickable": false
+          },
+          {
+            "sel": "[data-testid=\"sidebar-expand\"]",
+            "n": 0,
+            "nAll": 0,
+            "states": [],
+            "text": "",
+            "box": null,
+            "tag": null,
+            "role": null,
+            "clickable": false
+          },
+          {
+            "sel": "[data-testid=\"sidebar-body\"]",
+            "n": 1,
+            "nAll": 1,
+            "states": [
+              "-"
+            ],
+            "text": "سخاش سيمان‌خاش‌ امتیاز ۵ کف دوقلو الكتروماد صنايع الكترونيك ماديران امتیاز ۵ کف دوقلو خروج: احتیاط سبهان سيمان‌ بهبهان‌ ",
+            "box": [
+              1021,
+              84,
+              284,
+              676
+            ],
+            "tag": "div",
+            "role": "tabpanel",
+            "clickable": false
+          }
+        ]
+      },
+      "restoreDrift": []
+    },
+    {
+      "key": "C7",
+      "route": "/master/فولاد",
+      "name": "تحلیل‌گر تشریحی FTS درِ دосьیه",
+      "target": "[data-testid=\"fts-analyst-open\"]",
+      "reset": "cleared",
+      "pre_[data-testid=\"master-toggle-advanced\"]": "clicked",
+      "targetInfo": {
+        "found": true,
+        "n": 1,
+        "tag": "button",
+        "role": null,
+        "clickable": true,
+        "disabled": false,
+        "box": [
+          257,
+          1656,
+          144,
+          24
+        ],
+        "hit": null
+      },
+      "before": {
+        "at": 1792062273771,
+        "url": "#/master/%D9%81%D9%88%D9%84%D8%A7%D8%AF",
+        "scroll": 19,
+        "probes": [
+          {
+            "sel": "[data-testid=\"master-toggle-advanced\"]",
+            "n": 1,
+            "nAll": 1,
+            "states": [
+              "expanded=true,cls:accent"
+            ],
+            "text": "بستنِ جزئیات، برنامهٔ معاملاتی و رأی‌گیریِ ایجنت‌ها",
+            "box": [
+              941,
+              743,
+              257,
+              24
+            ],
+            "tag": "button",
+            "role": null,
+            "clickable": true
+          },
+          {
+            "sel": "[data-testid=\"strategy-horizon-selector\"]",
+            "n": 1,
+            "nAll": 1,
+            "states": [
+              "-"
+            ],
+            "text": "افق معاملاتی و استراتژی انتخابی پیشنهاد سیستم: نوسان‌گیری سریع 🌳 نمودار درختی استراتژی 🧠 مشاور تشریحی FTS ⚡ شخص نوسان‌",
+            "box": [
+              240,
+              1639,
+              958,
+              196
+            ],
+            "tag": "div",
+            "role": null,
+            "clickable": false
+          },
+          {
+            "sel": "[data-testid=\"fts-analyst-open\"]",
+            "n": 1,
+            "nAll": 1,
+            "states": [
+              "cls:accent"
+            ],
+            "text": "🧠 مشاور تشریحی FTS",
+            "box": [
+              257,
+              1656,
+              144,
+              24
+            ],
+            "tag": "button",
+            "role": null,
+            "clickable": true
+          },
+          {
+            "sel": "[data-testid=\"fts-analyst-modal\"]",
+            "n": 0,
+            "nAll": 0,
+            "states": [],
+            "text": "",
+            "box": null,
+            "tag": null,
+            "role": null,
+            "clickable": false
+          },
+          {
+            "sel": "[role=\"dialog\"]",
+            "n": 0,
+            "nAll": 0,
+            "states": [],
+            "text": "",
+            "box": null,
+            "tag": null,
+            "role": null,
+            "clickable": false
+          }
+        ]
+      },
+      "clicked": true,
+      "after": {
+        "at": 1792062275282,
+        "url": "#/master/%D9%81%D9%88%D9%84%D8%A7%D8%AF",
+        "scroll": 1303,
+        "probes": [
+          {
+            "sel": "[data-testid=\"master-toggle-advanced\"]",
+            "n": 1,
+            "nAll": 1,
+            "states": [
+              "expanded=true,cls:accent"
+            ],
+            "text": "بستنِ جزئیات، برنامهٔ معاملاتی و رأی‌گیریِ ایجنت‌ها",
+            "box": [
+              941,
+              -541,
+              257,
+              24
+            ],
+            "tag": "button",
+            "role": null,
+            "clickable": true
+          },
+          {
+            "sel": "[data-testid=\"strategy-horizon-selector\"]",
+            "n": 1,
+            "nAll": 1,
+            "states": [
+              "-"
+            ],
+            "text": "افق معاملاتی و استراتژی انتخابی پیشنهاد سیستم: نوسان‌گیری سریع 🌳 نمودار درختی استراتژی 🧠 مشاور تشریحی FTS ⚡ شخص نوسان‌",
+            "box": [
+              240,
+              355,
+              958,
+              196
+            ],
+            "tag": "div",
+            "role": null,
+            "clickable": false
+          },
+          {
+            "sel": "[data-testid=\"fts-analyst-open\"]",
+            "n": 1,
+            "nAll": 1,
+            "states": [
+              "cls:accent"
+            ],
+            "text": "🧠 مشاور تشریحی FTS",
+            "box": [
+              257,
+              372,
+              144,
+              24
+            ],
+            "tag": "button",
+            "role": null,
+            "clickable": true
+          },
+          {
+            "sel": "[data-testid=\"fts-analyst-modal\"]",
+            "n": 1,
+            "nAll": 1,
+            "states": [
+              "-"
+            ],
+            "text": "FTS مشاور تحلیلی و گزارش تشریحی نماد فولاد ریجکت یا توقف در فیلترهای FTS مطابق با روش آموزشی دوره نوسان‌گیری و سرمایه‌گذ",
+            "box": [
+              235,
+              35,
+              896,
+              697
+            ],
+            "tag": "div",
+            "role": "dialog",
+            "clickable": false
+          },
+          {
+            "sel": "[role=\"dialog\"]",
+            "n": 1,
+            "nAll": 1,
+            "states": [
+              "-"
+            ],
+            "text": "FTS مشاور تحلیلی و گزارش تشریحی نماد فولاد ریجکت یا توقف در فیلترهای FTS مطابق با روش آموزشی دوره نوسان‌گیری و سرمایه‌گذ",
+            "box": [
+              235,
+              35,
+              896,
+              697
+            ],
+            "tag": "div",
+            "role": "dialog",
+            "clickable": false
+          }
+        ]
+      },
+      "changes": [
+        "[data-testid=\"master-toggle-advanced\"] :: box [941,743,257,24]→[941,-541,257,24]",
+        "[data-testid=\"strategy-horizon-selector\"] :: box [240,1639,958,196]→[240,355,958,196]",
+        "[data-testid=\"fts-analyst-open\"] :: box [257,1656,144,24]→[257,372,144,24]",
+        "[data-testid=\"fts-analyst-modal\"] :: n 0→1 | nAll 0→1 | states []→[\"-\"] | text «»→«FTS مشاور تحلیلی و گزارش تشریحی نماد فول» | box null→[235,35,896,697]",
+        "[role=\"dialog\"] :: n 0→1 | nAll 0→1 | states []→[\"-\"] | text «»→«FTS مشاور تحلیلی و گزارش تشریحی نماد فول» | box null→[235,35,896,697]"
+      ],
+      "errAfter": 0,
+      "verdict": "STATE-CHANGED (5)",
+      "restore": [
+        "body = ok"
+      ],
+      "afterRestore": {
+        "at": 1792062276728,
+        "url": "#/master/%D9%81%D9%88%D9%84%D8%A7%D8%AF",
+        "scroll": 1303,
+        "probes": [
+          {
+            "sel": "[data-testid=\"master-toggle-advanced\"]",
+            "n": 1,
+            "nAll": 1,
+            "states": [
+              "expanded=true,cls:accent"
+            ],
+            "text": "بستنِ جزئیات، برنامهٔ معاملاتی و رأی‌گیریِ ایجنت‌ها",
+            "box": [
+              941,
+              -541,
+              257,
+              24
+            ],
+            "tag": "button",
+            "role": null,
+            "clickable": true
+          },
+          {
+            "sel": "[data-testid=\"strategy-horizon-selector\"]",
+            "n": 1,
+            "nAll": 1,
+            "states": [
+              "-"
+            ],
+            "text": "افق معاملاتی و استراتژی انتخابی پیشنهاد سیستم: نوسان‌گیری سریع 🌳 نمودار درختی استراتژی 🧠 مشاور تشریحی FTS ⚡ شخص نوسان‌",
+            "box": [
+              240,
+              355,
+              958,
+              196
+            ],
+            "tag": "div",
+            "role": null,
+            "clickable": false
+          },
+          {
+            "sel": "[data-testid=\"fts-analyst-open\"]",
+            "n": 1,
+            "nAll": 1,
+            "states": [
+              "cls:accent"
+            ],
+            "text": "🧠 مشاور تشریحی FTS",
+            "box": [
+              257,
+              372,
+              144,
+              24
+            ],
+            "tag": "button",
+            "role": null,
+            "clickable": true
+          },
+          {
+            "sel": "[data-testid=\"fts-analyst-modal\"]",
+            "n": 0,
+            "nAll": 0,
+            "states": [],
+            "text": "",
+            "box": null,
+            "tag": null,
+            "role": null,
+            "clickable": false
+          },
+          {
+            "sel": "[role=\"dialog\"]",
+            "n": 0,
+            "nAll": 0,
+            "states": [],
+            "text": "",
+            "box": null,
+            "tag": null,
+            "role": null,
+            "clickable": false
+          }
+        ]
+      },
+      "restoreDrift": [
+        "[data-testid=\"master-toggle-advanced\"] :: box [941,743,257,24]→[941,-541,257,24]",
+        "[data-testid=\"strategy-horizon-selector\"] :: box [240,1639,958,196]→[240,355,958,196]",
+        "[data-testid=\"fts-analyst-open\"] :: box [257,1656,144,24]→[257,372,144,24]"
+      ]
+    },
+    {
+      "key": "C8",
+      "route": "/fundamental",
+      "name": "پری‌ستِ استراتژیک (سوپر)",
+      "target": "[data-testid=\"fts-strategic-presets\"] button:nth-child(3)",
+      "reset": "cleared",
+      "targetInfo": {
+        "found": true,
+        "n": 1,
+        "tag": "button",
+        "role": null,
+        "clickable": true,
+        "disabled": false,
+        "box": [
+          773,
+          104,
+          134,
+          24
+        ],
+        "hit": "button"
+      },
+      "before": {
+        "at": 1792062288635,
+        "url": "#/fundamental",
+        "scroll": 0,
+        "probes": [
+          {
+            "sel": "[data-testid=\"fts-strategic-presets\"] button",
+            "n": 4,
+            "nAll": 4,
+            "states": [
+              "cls:accent",
+              "-",
+              "-",
+              "-"
+            ],
+            "text": "همه شرکت‌ها (۶۶۴)",
+            "box": [
+              914,
+              104,
+              119,
+              24
+            ],
+            "tag": "button",
+            "role": null,
+            "clickable": true
+          },
+          {
+            "sel": "[data-testid=\"fts-screen-row\"]",
+            "n": 19,
+            "nAll": 19,
+            "states": [
+              "-",
+              "-",
+              "-",
+              "-",
+              "-",
+              "-",
+              "-",
+              "-"
+            ],
+            "text": "✓ ☆ آلومينا آلوميناي ايران الف ✓ ب ✓ ۶۸٪ ✓ ۱۵۵۹۲ +۵.۱٪ ← ۱۶۳۸۷ +۱۱۱.۳٪ ← ۳۴۶۲۸ ✓ ۲۸.۱٪ ✓ ۱۲.۳٪ ✓ آزاد ۵",
+            "box": [
+              1,
+              190,
+              1196,
+              52
+            ],
+            "tag": "tr",
+            "role": null,
+            "clickable": true
+          }
+        ]
+      },
+      "clicked": true,
+      "after": {
+        "at": 1792062290110,
+        "url": "#/fundamental",
+        "scroll": 0,
+        "probes": [
+          {
+            "sel": "[data-testid=\"fts-strategic-presets\"] button",
+            "n": 4,
+            "nAll": 4,
+            "states": [
+              "-",
+              "cls:accent",
+              "-",
+              "-"
+            ],
+            "text": "همه شرکت‌ها (۶۶۴)",
+            "box": [
+              914,
+              104,
+              119,
+              24
+            ],
+            "tag": "button",
+            "role": null,
+            "clickable": true
+          },
+          {
+            "sel": "[data-testid=\"fts-screen-row\"]",
+            "n": 19,
+            "nAll": 19,
+            "states": [
+              "-",
+              "-",
+              "-",
+              "-",
+              "-",
+              "-",
+              "-",
+              "-"
+            ],
+            "text": "✓ ☆ آلومينا آلوميناي ايران الف ✓ ب ✓ ۶۸٪ ✓ ۱۵۵۹۲ +۵.۱٪ ← ۱۶۳۸۷ +۱۱۱.۳٪ ← ۳۴۶۲۸ ✓ ۲۸.۱٪ ✓ ۱۲.۳٪ ✓ آزاد ۵",
+            "box": [
+              1,
+              190,
+              1196,
+              52
+            ],
+            "tag": "tr",
+            "role": null,
+            "clickable": true
+          }
+        ]
+      },
+      "changes": [
+        "[data-testid=\"fts-strategic-presets\"] button :: states [\"cls:accent\",\"-\",\"-\",\"-\"]→[\"-\",\"cls:accent\",\"-\",\"-\"]"
+      ],
+      "errAfter": 0,
+      "verdict": "STATE-CHANGED (1)",
+      "restore": [
+        "[data-testid=\"fts-strategic-presets\"] button:nth-child(2) = ok"
+      ],
+      "afterRestore": {
+        "at": 1792062291571,
+        "url": "#/fundamental",
+        "scroll": 0,
+        "probes": [
+          {
+            "sel": "[data-testid=\"fts-strategic-presets\"] button",
+            "n": 4,
+            "nAll": 4,
+            "states": [
+              "cls:accent",
+              "-",
+              "-",
+              "-"
+            ],
+            "text": "همه شرکت‌ها (۶۶۴)",
+            "box": [
+              914,
+              104,
+              119,
+              24
+            ],
+            "tag": "button",
+            "role": null,
+            "clickable": true
+          },
+          {
+            "sel": "[data-testid=\"fts-screen-row\"]",
+            "n": 19,
+            "nAll": 19,
+            "states": [
+              "-",
+              "-",
+              "-",
+              "-",
+              "-",
+              "-",
+              "-",
+              "-"
+            ],
+            "text": "✓ ☆ آلومينا آلوميناي ايران الف ✓ ب ✓ ۶۸٪ ✓ ۱۵۵۹۲ +۵.۱٪ ← ۱۶۳۸۷ +۱۱۱.۳٪ ← ۳۴۶۲۸ ✓ ۲۸.۱٪ ✓ ۱۲.۳٪ ✓ آزاد ۵",
+            "box": [
+              1,
+              190,
+              1196,
+              52
+            ],
+            "tag": "tr",
+            "role": null,
+            "clickable": true
+          }
+        ]
+      },
+      "restoreDrift": []
+    },
+    {
+      "key": "C9",
+      "route": "/master",
+      "name": "مودِ روندگیر (aria-pressed)",
+      "target": "[data-testid=\"funnel-mode-trend\"]",
+      "reset": "cleared",
+      "targetInfo": {
+        "found": true,
+        "n": 1,
+        "tag": "button",
+        "role": null,
+        "clickable": true,
+        "disabled": false,
+        "box": [
+          1032,
+          44,
+          75,
+          38
+        ],
+        "hit": "funnel-mode-trend"
+      },
+      "before": {
+        "at": 1792062319367,
+        "url": "#/master",
+        "scroll": 0,
+        "probes": [
+          {
+            "sel": "[data-testid^=\"funnel-mode-\"]",
+            "n": 7,
+            "nAll": 7,
+            "states": [
+              "-",
+              "pressed=false,cls:accent",
+              "pressed=true,cls:accent",
+              "pressed=false,cls:accent",
+              "-",
+              "pressed=true,cls:accent",
+              "pressed=false,cls:accent"
+            ],
+            "text": "نوسان‌گیر روندگیر Custom",
+            "box": [
+              0,
+              44,
+              1198,
+              38
+            ],
+            "tag": "div",
+            "role": "group",
+            "clickable": false
+          },
+          {
+            "sel": "[data-testid=\"funnel-counts\"]",
+            "n": 1,
+            "nAll": 1,
+            "states": [
+              "-"
+            ],
+            "text": "جامعِ چهار در: ۰ در انتظار: ۰ رد: ۱۰۵۷ بی‌داده: ۹ لازم نبود: ۰ جامعۀ تابلو: ۵۹۷۸ واجدِ غربالگری: ۱۰۶۶ خارج از جامعۀ غربا",
+            "box": [
+              0,
+              174,
+              1198,
+              24
+            ],
+            "tag": "div",
+            "role": null,
+            "clickable": false
+          }
+        ]
+      },
+      "clicked": true,
+      "after": {
+        "at": 1792062320849,
+        "url": "#/master?preset=trend",
+        "scroll": 0,
+        "probes": [
+          {
+            "sel": "[data-testid^=\"funnel-mode-\"]",
+            "n": 7,
+            "nAll": 7,
+            "states": [
+              "-",
+              "pressed=false,cls:accent",
+              "pressed=true,cls:accent",
+              "pressed=false,cls:accent",
+              "-",
+              "pressed=true,cls:accent",
+              "pressed=false,cls:accent"
+            ],
+            "text": "نوسان‌گیر روندگیر Custom",
+            "box": [
+              0,
+              44,
+              1198,
+              38
+            ],
+            "tag": "div",
+            "role": "group",
+            "clickable": false
+          },
+          {
+            "sel": "[data-testid=\"funnel-counts\"]",
+            "n": 1,
+            "nAll": 1,
+            "states": [
+              "-"
+            ],
+            "text": "جامعِ چهار در: ۰ در انتظار: ۰ رد: ۱۰۵۷ بی‌داده: ۹ لازم نبود: ۰ جامعۀ تابلو: ۵۹۷۸ واجدِ غربالگری: ۱۰۶۶ خارج از جامعۀ غربا",
+            "box": [
+              0,
+              264,
+              1198,
+              24
+            ],
+            "tag": "div",
+            "role": null,
+            "clickable": false
+          }
+        ]
+      },
+      "changes": [
+        "[data-testid=\"funnel-counts\"] :: box [0,174,1198,24]→[0,264,1198,24]",
+        "URL #/master → #/master?preset=trend"
+      ],
+      "errAfter": 0,
+      "verdict": "STATE-CHANGED (2)",
+      "restore": [
+        "[data-testid=\"funnel-mode-swing\"] = ok"
+      ],
+      "afterRestore": {
+        "at": 1792062322330,
+        "url": "#/master?preset=swing",
+        "scroll": 0,
+        "probes": [
+          {
+            "sel": "[data-testid^=\"funnel-mode-\"]",
+            "n": 7,
+            "nAll": 7,
+            "states": [
+              "-",
+              "pressed=true,cls:accent",
+              "pressed=false,cls:accent",
+              "pressed=false,cls:accent",
+              "-",
+              "pressed=true,cls:accent",
+              "pressed=false,cls:accent"
+            ],
+            "text": "نوسان‌گیر روندگیر Custom",
+            "box": [
+              0,
+              44,
+              1198,
+              38
+            ],
+            "tag": "div",
+            "role": "group",
+            "clickable": false
+          },
+          {
+            "sel": "[data-testid=\"funnel-counts\"]",
+            "n": 1,
+            "nAll": 1,
+            "states": [
+              "-"
+            ],
+            "text": "جامعِ چهار در: ۰ در انتظار: ۰ رد: ۱۰۵۷ بی‌داده: ۹ لازم نبود: ۰ جامعۀ تابلو: ۵۹۷۸ واجدِ غربالگری: ۱۰۶۶ خارج از جامعۀ غربا",
+            "box": [
+              0,
+              264,
+              1198,
+              24
+            ],
+            "tag": "div",
+            "role": null,
+            "clickable": false
+          }
+        ]
+      },
+      "restoreDrift": [
+        "[data-testid^=\"funnel-mode-\"] :: states [\"-\",\"pressed=false,cls:accent\",\"pressed=true,cls:accent\",\"pressed=false,cls:accent\",\"-\",\"pressed=true,cls:accent\",\"pressed=false,cls:accent\"]→[\"-\",\"pressed=true,cls:accent\",\"pressed=false,cls:accent\",\"pressed=false,cls:accent\",\"-\",\"pressed=true,cls:accent\",\"pressed=false,cls:accent\"]",
+        "[data-testid=\"funnel-counts\"] :: box [0,174,1198,24]→[0,264,1198,24]",
+        "URL #/master → #/master?preset=swing"
+      ]
+    },
+    {
+      "key": "C10",
+      "route": "/master",
+      "name": "گامِ ۲ فرایند (لینکِ روتر)",
+      "target": "[data-testid=\"fts-step-technical\"]",
+      "reset": "cleared",
+      "targetInfo": {
+        "found": true,
+        "n": 1,
+        "tag": "a",
+        "role": null,
+        "clickable": true,
+        "disabled": false,
+        "box": [
+          1029,
+          90,
+          76,
+          24
+        ],
+        "hit": "fts-step-technical"
+      },
+      "before": {
+        "at": 1792062350118,
+        "url": "#/master",
+        "scroll": 0,
+        "probes": [
+          {
+            "sel": "[data-testid=\"fts-process-stepper\"]",
+            "n": 1,
+            "nAll": 1,
+            "states": [
+              "-"
+            ],
+            "text": "۱ · تابلوخوانی ۲ · تکنیکال ۳ · بنیادی ۴ · تحویل و جمع‌بندی",
+            "box": [
+              0,
+              90,
+              1198,
+              24
+            ],
+            "tag": "nav",
+            "role": null,
+            "clickable": false
+          },
+          {
+            "sel": "[data-testid^=\"fts-step-\"]",
+            "n": 4,
+            "nAll": 4,
+            "states": [
+              "current=step,cls:accent",
+              "cls:accent",
+              "cls:accent",
+              "cls:accent"
+            ],
+            "text": "۱ · تابلوخوانی",
+            "box": [
+              1109,
+              90,
+              89,
+              24
+            ],
+            "tag": "a",
+            "role": null,
+            "clickable": true
+          },
+          {
+            "sel": "[data-testid^=\"funnel-stage-\"]",
+            "n": 2,
+            "nAll": 2,
+            "states": [
+              "cls:accent",
+              "expanded=true,cls:accent"
+            ],
+            "text": "۱ تابلوخوانی ▲ ۱۰۶۶ نماد − ۱۰۴۷ ۱۹ بی‌داده حکم: ۱۰۶۶ = کلِ جامعۀ غربالگری نمادهایی که از درِ فیلترهایِ روشنِ همین نشست ع",
+            "box": [
+              0,
+              267,
+              1198,
+              447
+            ],
+            "tag": "section",
+            "role": null,
+            "clickable": false
+          },
+          {
+            "sel": "[data-testid=\"funnel-scroll-technical\"]",
+            "n": 0,
+            "nAll": 0,
+            "states": [],
+            "text": "",
+            "box": null,
+            "tag": null,
+            "role": null,
+            "clickable": false
+          },
+          {
+            "sel": "[data-testid=\"funnel-empty-technical\"]",
+            "n": 0,
+            "nAll": 0,
+            "states": [],
+            "text": "",
+            "box": null,
+            "tag": null,
+            "role": null,
+            "clickable": false
+          }
+        ]
+      },
+      "clicked": true,
+      "after": {
+        "at": 1792062355212,
+        "url": "#/master?stage=technical&preset=swing",
+        "scroll": 0,
+        "probes": [
+          {
+            "sel": "[data-testid=\"fts-process-stepper\"]",
+            "n": 1,
+            "nAll": 1,
+            "states": [
+              "-"
+            ],
+            "text": "۱ · تابلوخوانی ۲ · تکنیکال ۳ · بنیادی ۴ · تحویل و جمع‌بندی",
+            "box": [
+              0,
+              90,
+              1198,
+              24
+            ],
+            "tag": "nav",
+            "role": null,
+            "clickable": false
+          },
+          {
+            "sel": "[data-testid^=\"fts-step-\"]",
+            "n": 4,
+            "nAll": 4,
+            "states": [
+              "cls:accent",
+              "current=step,cls:accent",
+              "cls:accent",
+              "cls:accent"
+            ],
+            "text": "۱ · تابلوخوانی",
+            "box": [
+              1110,
+              90,
+              88,
+              24
+            ],
+            "tag": "a",
+            "role": null,
+            "clickable": true
+          },
+          {
+            "sel": "[data-testid^=\"funnel-stage-\"]",
+            "n": 2,
+            "nAll": 2,
+            "states": [
+              "cls:accent",
+              "expanded=true,cls:accent"
+            ],
+            "text": "۲ تکنیکال ▲ ۱۰۶۶ نماد ۱۰۶۶ لازم نبود حکم: ۱۰۶۶ = کلِ جامعۀ غربالگری رد می‌کند خودم چک می‌کنم ترتیبِ T: اول روند هفتگی، ب",
+            "box": [
+              0,
+              267,
+              1198,
+              463
+            ],
+            "tag": "section",
+            "role": null,
+            "clickable": false
+          },
+          {
+            "sel": "[data-testid=\"funnel-scroll-technical\"]",
+            "n": 1,
+            "nAll": 1,
+            "states": [
+              "-"
+            ],
+            "text": "هیچ نمادی از این مرحله عبور نکرد.",
+            "box": [
+              1,
+              349,
+              1196,
+              380
+            ],
+            "tag": "div",
+            "role": null,
+            "clickable": false
+          },
+          {
+            "sel": "[data-testid=\"funnel-empty-technical\"]",
+            "n": 1,
+            "nAll": 1,
+            "states": [
+              "-"
+            ],
+            "text": "هیچ نمادی از این مرحله عبور نکرد.",
+            "box": [
+              1,
+              349,
+              1196,
+              48
+            ],
+            "tag": "p",
+            "role": null,
+            "clickable": false
+          }
+        ]
+      },
+      "changes": [
+        "[data-testid^=\"fts-step-\"] :: states [\"current=step,cls:accent\",\"cls:accent\",\"cls:accent\",\"cls:accent\"]→[\"cls:accent\",\"current=step,cls:accent\",\"cls:accent\",\"cls:accent\"] | box [1109,90,89,24]→[1110,90,88,24]",
+        "[data-testid^=\"funnel-stage-\"] :: text «۱ تابلوخوانی ▲ ۱۰۶۶ نماد − ۱۰۴۷ ۱۹ بی‌دا»→«۲ تکنیکال ▲ ۱۰۶۶ نماد ۱۰۶۶ لازم نبود حکم» | box [0,267,1198,447]→[0,267,1198,463]",
+        "[data-testid=\"funnel-scroll-technical\"] :: n 0→1 | nAll 0→1 | states []→[\"-\"] | text «»→«هیچ نمادی از این مرحله عبور نکرد.» | box null→[1,349,1196,380]",
+        "[data-testid=\"funnel-empty-technical\"] :: n 0→1 | nAll 0→1 | states []→[\"-\"] | text «»→«هیچ نمادی از این مرحله عبور نکرد.» | box null→[1,349,1196,48]",
+        "URL #/master → #/master?stage=technical&preset=swing"
+      ],
+      "errAfter": 0,
+      "verdict": "STATE-CHANGED (5)",
+      "restore": [
+        "[data-testid=\"fts-step-tape\"] = ok"
+      ],
+      "afterRestore": {
+        "at": 1792062360289,
+        "url": "#/master?stage=tape&preset=swing",
+        "scroll": 0,
+        "probes": [
+          {
+            "sel": "[data-testid=\"fts-process-stepper\"]",
+            "n": 1,
+            "nAll": 1,
+            "states": [
+              "-"
+            ],
+            "text": "۱ · تابلوخوانی ۲ · تکنیکال ۳ · بنیادی ۴ · تحویل و جمع‌بندی",
+            "box": [
+              0,
+              90,
+              1198,
+              24
+            ],
+            "tag": "nav",
+            "role": null,
+            "clickable": false
+          },
+          {
+            "sel": "[data-testid^=\"fts-step-\"]",
+            "n": 4,
+            "nAll": 4,
+            "states": [
+              "current=step,cls:accent",
+              "cls:accent",
+              "cls:accent",
+              "cls:accent"
+            ],
+            "text": "۱ · تابلوخوانی",
+            "box": [
+              1109,
+              90,
+              89,
+              24
+            ],
+            "tag": "a",
+            "role": null,
+            "clickable": true
+          },
+          {
+            "sel": "[data-testid^=\"funnel-stage-\"]",
+            "n": 2,
+            "nAll": 2,
+            "states": [
+              "cls:accent",
+              "expanded=true,cls:accent"
+            ],
+            "text": "۱ تابلوخوانی ▲ ۱۰۶۶ نماد − ۱۰۴۷ ۱۹ بی‌داده حکم: ۱۰۶۶ = کلِ جامعۀ غربالگری نمادهایی که از درِ فیلترهایِ روشنِ همین نشست ع",
+            "box": [
+              0,
+              267,
+              1198,
+              447
+            ],
+            "tag": "section",
+            "role": null,
+            "clickable": false
+          },
+          {
+            "sel": "[data-testid=\"funnel-scroll-technical\"]",
+            "n": 0,
+            "nAll": 0,
+            "states": [],
+            "text": "",
+            "box": null,
+            "tag": null,
+            "role": null,
+            "clickable": false
+          },
+          {
+            "sel": "[data-testid=\"funnel-empty-technical\"]",
+            "n": 0,
+            "nAll": 0,
+            "states": [],
+            "text": "",
+            "box": null,
+            "tag": null,
+            "role": null,
+            "clickable": false
+          }
+        ]
+      },
+      "restoreDrift": [
+        "URL #/master → #/master?stage=tape&preset=swing"
+      ]
+    },
+    {
+      "key": "C11",
+      "route": "/master/فولاد",
+      "name": "جزئیاتِ FTS (details/summary)",
+      "target": "[data-testid=\"dossier-tech-details\"] summary",
+      "reset": "cleared",
+      "targetInfo": {
+        "found": true,
+        "n": 1,
+        "tag": "summary",
+        "role": null,
+        "clickable": true,
+        "disabled": false,
+        "box": [
+          257,
+          546,
+          924,
+          14
+        ],
+        "hit": "summary"
+      },
+      "before": {
+        "at": 1792062386083,
+        "url": "#/master/%D9%81%D9%88%D9%84%D8%A7%D8%AF",
+        "scroll": 0,
+        "probes": [
+          {
+            "sel": "[data-testid=\"dossier-tech-details\"]",
+            "n": 1,
+            "nAll": 1,
+            "states": [
+              "-"
+            ],
+            "text": "جزئیاتِ تکنیکال (از همان موتور)",
+            "box": [
+              257,
+              546,
+              924,
+              14
+            ],
+            "tag": "details",
+            "role": null,
+            "clickable": false
+          },
+          {
+            "sel": "[data-testid=\"master-fts-details\"]",
+            "n": 1,
+            "nAll": 1,
+            "states": [
+              "-"
+            ],
+            "text": "S — تابلوخوانی❌ T — تکنیکال· F — بنیادی· استراتژی و مدیریت",
+            "box": [
+              240,
+              593,
+              958,
+              154
+            ],
+            "tag": "div",
+            "role": null,
+            "clickable": false
+          }
+        ]
+      },
+      "clicked": true,
+      "after": {
+        "at": 1792062387559,
+        "url": "#/master/%D9%81%D9%88%D9%84%D8%A7%D8%AF",
+        "scroll": 0,
+        "probes": [
+          {
+            "sel": "[data-testid=\"dossier-tech-details\"]",
+            "n": 1,
+            "nAll": 1,
+            "states": [
+              "open"
+            ],
+            "text": "جزئیاتِ تکنیکال (از همان موتور) ماتریسِ روند: هفتگی صعودی + روزانه صعودی: ستاپ جت یا پولبک؛ نگهداری روندی بدون نوسان‌گیر",
+            "box": [
+              257,
+              546,
+              924,
+              106
+            ],
+            "tag": "details",
+            "role": null,
+            "clickable": false
+          },
+          {
+            "sel": "[data-testid=\"master-fts-details\"]",
+            "n": 1,
+            "nAll": 1,
+            "states": [
+              "-"
+            ],
+            "text": "S — تابلوخوانی❌ T — تکنیکال· F — بنیادی· استراتژی و مدیریت",
+            "box": [
+              240,
+              685,
+              958,
+              154
+            ],
+            "tag": "div",
+            "role": null,
+            "clickable": false
+          }
+        ]
+      },
+      "changes": [
+        "[data-testid=\"dossier-tech-details\"] :: states [\"-\"]→[\"open\"] | text «جزئیاتِ تکنیکال (از همان موتور)»→«جزئیاتِ تکنیکال (از همان موتور) ماتریسِ » | box [257,546,924,14]→[257,546,924,106]",
+        "[data-testid=\"master-fts-details\"] :: box [240,593,958,154]→[240,685,958,154]"
+      ],
+      "errAfter": 0,
+      "verdict": "STATE-CHANGED (2)",
+      "restore": [
+        "[data-testid=\"dossier-tech-details\"] summary = ok"
+      ],
+      "afterRestore": {
+        "at": 1792062389026,
+        "url": "#/master/%D9%81%D9%88%D9%84%D8%A7%D8%AF",
+        "scroll": 0,
+        "probes": [
+          {
+            "sel": "[data-testid=\"dossier-tech-details\"]",
+            "n": 1,
+            "nAll": 1,
+            "states": [
+              "-"
+            ],
+            "text": "جزئیاتِ تکنیکال (از همان موتور)",
+            "box": [
+              257,
+              546,
+              924,
+              14
+            ],
+            "tag": "details",
+            "role": null,
+            "clickable": false
+          },
+          {
+            "sel": "[data-testid=\"master-fts-details\"]",
+            "n": 1,
+            "nAll": 1,
+            "states": [
+              "-"
+            ],
+            "text": "S — تابلوخوانی❌ T — تکنیکال· F — بنیادی· استراتژی و مدیریت",
+            "box": [
+              240,
+              593,
+              958,
+              154
+            ],
+            "tag": "div",
+            "role": null,
+            "clickable": false
+          }
+        ]
+      },
+      "restoreDrift": []
+    },
+    {
+      "key": "C12",
+      "route": "/strategy-tree",
+      "name": "rail → گامِ T تکنیکال (لینکِ والد)",
+      "target": "[data-testid=\"strategy-tree-stepper\"] a",
+      "reset": "cleared",
+      "targetInfo": {
+        "found": true,
+        "n": 4,
+        "tag": "a",
+        "role": null,
+        "clickable": true,
+        "disabled": false,
+        "box": [
+          639,
+          171,
+          245,
+          50
+        ],
+        "hit": "a"
+      },
+      "before": {
+        "at": 1792062400918,
+        "url": "#/strategy-tree",
+        "scroll": 0,
+        "probes": [
+          {
+            "sel": "[data-testid=\"strategy-tree-stepper\"]",
+            "n": 1,
+            "nAll": 1,
+            "states": [
+              "-"
+            ],
+            "text": "S تابلوخوانی صفحه ۳ T تکنیکال صفحه ۲ F بنیادی صفحه ۱ M مدیریت و استراتژی صفحه ۴",
+            "box": [
+              25,
+              171,
+              1148,
+              54
+            ],
+            "tag": "nav",
+            "role": null,
+            "clickable": false
+          },
+          {
+            "sel": "[data-testid^=\"tree-flow-rail-\"]",
+            "n": 3,
+            "nAll": 3,
+            "states": [
+              "-",
+              "-",
+              "-"
+            ],
+            "text": "",
+            "box": [
+              892,
+              184,
+              28,
+              24
+            ],
+            "tag": "span",
+            "role": null,
+            "clickable": false
+          },
+          {
+            "sel": "[data-testid^=\"strategy-tree-page-\"]",
+            "n": 0,
+            "nAll": 0,
+            "states": [],
+            "text": "",
+            "box": null,
+            "tag": null,
+            "role": null,
+            "clickable": false
+          },
+          {
+            "sel": "[data-testid=\"strategy-roadmap-zones\"]",
+            "n": 1,
+            "nAll": 1,
+            "states": [
+              "-"
+            ],
+            "text": "3 ۳ · S انتخاب تابلوخوانی S وضعیت نماد نمای کلی شاخه‌های پیش رو ۶ انتخاب سبک معامله گره چارت دو سبک را می‌شمارد: نوسانگی",
+            "box": [
+              0,
+              296,
+              1198,
+              738
+            ],
+            "tag": "section",
+            "role": null,
+            "clickable": false
+          },
+          {
+            "sel": "[data-testid=\"strategy-tree-stepper\"] a",
+            "n": 4,
+            "nAll": 4,
+            "states": [
+              "cls:accent",
+              "cls:accent",
+              "cls:accent",
+              "cls:accent"
+            ],
+            "text": "S تابلوخوانی صفحه ۳",
+            "box": [
+              928,
+              171,
+              245,
+              50
+            ],
+            "tag": "a",
+            "role": null,
+            "clickable": true
+          }
+        ]
+      },
+      "clicked": true,
+      "after": {
+        "at": 1792062402456,
+        "url": "#/strategy-tree?page=T&preset=swing",
+        "scroll": 0,
+        "probes": [
+          {
+            "sel": "[data-testid=\"strategy-tree-stepper\"]",
+            "n": 1,
+            "nAll": 1,
+            "states": [
+              "-"
+            ],
+            "text": "S تابلوخوانی صفحه ۳ T تکنیکال صفحه ۲ F بنیادی صفحه ۱ M مدیریت و استراتژی صفحه ۴",
+            "box": [
+              0,
+              44,
+              1198,
+              54
+            ],
+            "tag": "nav",
+            "role": null,
+            "clickable": false
+          },
+          {
+            "sel": "[data-testid^=\"tree-flow-rail-\"]",
+            "n": 3,
+            "nAll": 3,
+            "states": [
+              "-",
+              "-",
+              "-"
+            ],
+            "text": "",
+            "box": [
+              905,
+              57,
+              28,
+              24
+            ],
+            "tag": "span",
+            "role": null,
+            "clickable": false
+          },
+          {
+            "sel": "[data-testid^=\"strategy-tree-page-\"]",
+            "n": 1,
+            "nAll": 1,
+            "states": [
+              "-"
+            ],
+            "text": "S تابلوخوانی صفحه ۳ T تکنیکال صفحه ۲ F بنیادی صفحه ۱ M مدیریت و استراتژی صفحه ۴ 2 تکنیکال T ریشۀ صفحۀ دوم. روند و ستاپ‌ه",
+            "box": [
+              0,
+              44,
+              1198,
+              870
+            ],
+            "tag": "div",
+            "role": null,
+            "clickable": false
+          },
+          {
+            "sel": "[data-testid=\"strategy-roadmap-zones\"]",
+            "n": 0,
+            "nAll": 0,
+            "states": [],
+            "text": "",
+            "box": null,
+            "tag": null,
+            "role": null,
+            "clickable": false
+          },
+          {
+            "sel": "[data-testid=\"strategy-tree-stepper\"] a",
+            "n": 4,
+            "nAll": 4,
+            "states": [
+              "cls:accent",
+              "current=page,cls:accent",
+              "cls:accent",
+              "cls:accent"
+            ],
+            "text": "S تابلوخوانی صفحه ۳",
+            "box": [
+              941,
+              44,
+              258,
+              50
+            ],
+            "tag": "a",
+            "role": null,
+            "clickable": true
+          }
+        ]
+      },
+      "changes": [
+        "[data-testid=\"strategy-tree-stepper\"] :: box [25,171,1148,54]→[0,44,1198,54]",
+        "[data-testid^=\"tree-flow-rail-\"] :: box [892,184,28,24]→[905,57,28,24]",
+        "[data-testid^=\"strategy-tree-page-\"] :: n 0→1 | nAll 0→1 | states []→[\"-\"] | text «»→«S تابلوخوانی صفحه ۳ T تکنیکال صفحه ۲ F ب» | box null→[0,44,1198,870]",
+        "[data-testid=\"strategy-roadmap-zones\"] :: n 1→0 | nAll 1→0 | states [\"-\"]→[] | text «3 ۳ · S انتخاب تابلوخوانی S وضعیت نماد ن»→«» | box [0,296,1198,738]→null",
+        "[data-testid=\"strategy-tree-stepper\"] a :: states [\"cls:accent\",\"cls:accent\",\"cls:accent\",\"cls:accent\"]→[\"cls:accent\",\"current=page,cls:accent\",\"cls:accent\",\"cls:accent\"] | box [928,171,245,50]→[941,44,258,50]",
+        "URL #/strategy-tree → #/strategy-tree?page=T&preset=swing"
+      ],
+      "errAfter": 0,
+      "verdict": "STATE-CHANGED (6)",
+      "restore": [
+        "[data-testid=\"strategy-tree-stepper\"] a = ok"
+      ],
+      "afterRestore": {
+        "at": 1792062404007,
+        "url": "#/strategy-tree?page=S&preset=swing",
+        "scroll": 0,
+        "probes": [
+          {
+            "sel": "[data-testid=\"strategy-tree-stepper\"]",
+            "n": 1,
+            "nAll": 1,
+            "states": [
+              "-"
+            ],
+            "text": "S تابلوخوانی صفحه ۳ T تکنیکال صفحه ۲ F بنیادی صفحه ۱ M مدیریت و استراتژی صفحه ۴",
+            "box": [
+              0,
+              44,
+              1198,
+              54
+            ],
+            "tag": "nav",
+            "role": null,
+            "clickable": false
+          },
+          {
+            "sel": "[data-testid^=\"tree-flow-rail-\"]",
+            "n": 3,
+            "nAll": 3,
+            "states": [
+              "-",
+              "-",
+              "-"
+            ],
+            "text": "",
+            "box": [
+              905,
+              57,
+              28,
+              24
+            ],
+            "tag": "span",
+            "role": null,
+            "clickable": false
+          },
+          {
+            "sel": "[data-testid^=\"strategy-tree-page-\"]",
+            "n": 1,
+            "nAll": 1,
+            "states": [
+              "-"
+            ],
+            "text": "S تابلوخوانی صفحه ۳ T تکنیکال صفحه ۲ F بنیادی صفحه ۱ M مدیریت و استراتژی صفحه ۴ 3 تابلوخوانی S ریشۀ صفحۀ سوم: سبکِ معامل",
+            "box": [
+              0,
+              44,
+              1198,
+              1216
+            ],
+            "tag": "div",
+            "role": null,
+            "clickable": false
+          },
+          {
+            "sel": "[data-testid=\"strategy-roadmap-zones\"]",
+            "n": 0,
+            "nAll": 0,
+            "states": [],
+            "text": "",
+            "box": null,
+            "tag": null,
+            "role": null,
+            "clickable": false
+          },
+          {
+            "sel": "[data-testid=\"strategy-tree-stepper\"] a",
+            "n": 4,
+            "nAll": 4,
+            "states": [
+              "current=page,cls:accent",
+              "cls:accent",
+              "cls:accent",
+              "cls:accent"
+            ],
+            "text": "S تابلوخوانی صفحه ۳",
+            "box": [
+              941,
+              44,
+              258,
+              50
+            ],
+            "tag": "a",
+            "role": null,
+            "clickable": true
+          }
+        ]
+      },
+      "restoreDrift": [
+        "[data-testid=\"strategy-tree-stepper\"] :: box [25,171,1148,54]→[0,44,1198,54]",
+        "[data-testid^=\"tree-flow-rail-\"] :: box [892,184,28,24]→[905,57,28,24]",
+        "[data-testid^=\"strategy-tree-page-\"] :: n 0→1 | nAll 0→1 | states []→[\"-\"] | text «»→«S تابلوخوانی صفحه ۳ T تکنیکال صفحه ۲ F ب» | box null→[0,44,1198,1216]",
+        "[data-testid=\"strategy-roadmap-zones\"] :: n 1→0 | nAll 1→0 | states [\"-\"]→[] | text «3 ۳ · S انتخاب تابلوخوانی S وضعیت نماد ن»→«» | box [0,296,1198,738]→null",
+        "[data-testid=\"strategy-tree-stepper\"] a :: states [\"cls:accent\",\"cls:accent\",\"cls:accent\",\"cls:accent\"]→[\"current=page,cls:accent\",\"cls:accent\",\"cls:accent\",\"cls:accent\"] | box [928,171,245,50]→[941,44,258,50]",
+        "URL #/strategy-tree → #/strategy-tree?page=S&preset=swing"
+      ]
+    },
+    {
+      "key": "C13",
+      "route": "/portfolio",
+      "name": "تازه‌سازیِ واچ‌لیست",
+      "target": "[data-testid=\"portfolio-watchlist-refresh\"]",
+      "reset": "cleared",
+      "pre_[data-testid=\"portfolio-view-current\"]": "clicked",
+      "targetInfo": {
+        "found": true,
+        "n": 1,
+        "tag": "button",
+        "role": null,
+        "clickable": true,
+        "disabled": false,
+        "box": [
+          13,
+          678,
+          57,
+          20
+        ],
+        "hit": "portfolio-watchlist-refresh"
+      },
+      "before": {
+        "at": 1792062421352,
+        "url": "#/portfolio",
+        "scroll": 0,
+        "probes": [
+          {
+            "sel": "[data-testid=\"portfolio-watchlist\"]",
+            "n": 1,
+            "nAll": 1,
+            "states": [
+              "-"
+            ],
+            "text": "واچ‌لیست ۰ سهم سقفِ کاربر: ۶۰ تازه‌سازی خالی است. درِ تابلوخوانی یا بنیادی رویِ ☆ کنارِ نماد بزن تا برایِ رصدِ روزهایِ ب",
+            "box": [
+              0,
+              668,
+              1198,
+              81
+            ],
+            "tag": "section",
+            "role": null,
+            "clickable": false
+          },
+          {
+            "sel": "[data-testid^=\"portfolio-watchlist-open-\"]",
+            "n": 0,
+            "nAll": 0,
+            "states": [],
+            "text": "",
+            "box": null,
+            "tag": null,
+            "role": null,
+            "clickable": false
+          },
+          {
+            "sel": "[role=\"status\"]",
+            "n": 1,
+            "nAll": 1,
+            "states": [
+              "-"
+            ],
+            "text": "بازار بسته — تابلوی آخرینِ نشست",
+            "box": [
+              1010,
+              10,
+              172,
+              14
+            ],
+            "tag": "span",
+            "role": "status",
+            "clickable": false
+          }
+        ]
+      },
+      "clicked": true,
+      "after": {
+        "at": 1792062422802,
+        "url": "#/portfolio",
+        "scroll": 0,
+        "probes": [
+          {
+            "sel": "[data-testid=\"portfolio-watchlist\"]",
+            "n": 1,
+            "nAll": 1,
+            "states": [
+              "-"
+            ],
+            "text": "واچ‌لیست ۰ سهم سقفِ کاربر: ۶۰ تازه‌سازی خالی است. درِ تابلوخوانی یا بنیادی رویِ ☆ کنارِ نماد بزن تا برایِ رصدِ روزهایِ ب",
+            "box": [
+              0,
+              668,
+              1198,
+              81
+            ],
+            "tag": "section",
+            "role": null,
+            "clickable": false
+          },
+          {
+            "sel": "[data-testid^=\"portfolio-watchlist-open-\"]",
+            "n": 0,
+            "nAll": 0,
+            "states": [],
+            "text": "",
+            "box": null,
+            "tag": null,
+            "role": null,
+            "clickable": false
+          },
+          {
+            "sel": "[role=\"status\"]",
+            "n": 1,
+            "nAll": 1,
+            "states": [
+              "-"
+            ],
+            "text": "بازار بسته — تابلوی آخرینِ نشست",
+            "box": [
+              1010,
+              10,
+              172,
+              14
+            ],
+            "tag": "span",
+            "role": "status",
+            "clickable": false
+          }
+        ]
+      },
+      "changes": [],
+      "errAfter": 0,
+      "verdict": "STATE-UNCHANGED",
+      "restore": []
+    },
+    {
+      "key": "C14",
+      "route": "/notifications",
+      "name": "فیلترِ سطحِ بالا",
+      "target": "[data-testid=\"notice-level-high\"]",
+      "reset": "cleared",
+      "targetInfo": {
+        "found": true,
+        "n": 1,
+        "tag": "button",
+        "role": null,
+        "clickable": true,
+        "disabled": false,
+        "box": [
+          1100,
+          91,
+          31,
+          20
+        ],
+        "hit": "notice-level-high"
+      },
+      "before": {
+        "at": 1792062438585,
+        "url": "#/notifications",
+        "scroll": 0,
+        "probes": [
+          {
+            "sel": "[data-testid=\"notice-filters\"] button",
+            "n": 14,
+            "nAll": 14,
+            "states": [
+              "pressed=false",
+              "pressed=false",
+              "pressed=false",
+              "pressed=false",
+              "pressed=false",
+              "pressed=false",
+              "pressed=false",
+              "pressed=false"
+            ],
+            "text": "بالا",
+            "box": [
+              1100,
+              91,
+              31,
+              20
+            ],
+            "tag": "button",
+            "role": null,
+            "clickable": true
+          },
+          {
+            "sel": "[data-testid=\"notice-level-high\"]",
+            "n": 1,
+            "nAll": 1,
+            "states": [
+              "pressed=false"
+            ],
+            "text": "بالا",
+            "box": [
+              1100,
+              91,
+              31,
+              20
+            ],
+            "tag": "button",
+            "role": null,
+            "clickable": true
+          },
+          {
+            "sel": "[data-testid=\"notice-list\"]",
+            "n": 1,
+            "nAll": 1,
+            "states": [
+              "-"
+            ],
+            "text": "بالا صورتهایِ مالی شهر منبع ↗ خوانده شد اطلاعات و صورت‌های مالی میاندوره‌ای تلفیقی دوره ۶ ماهه منتهی به ۱۴۰۵/۰۳/۳۱ (حساب",
+            "box": [
+              0,
+              120,
+              1198,
+              10254
+            ],
+            "tag": "ul",
+            "role": null,
+            "clickable": false
+          }
+        ]
+      },
+      "clicked": true,
+      "after": {
+        "at": 1792062440071,
+        "url": "#/notifications",
+        "scroll": 0,
+        "probes": [
+          {
+            "sel": "[data-testid=\"notice-filters\"] button",
+            "n": 14,
+            "nAll": 14,
+            "states": [
+              "pressed=true",
+              "pressed=false",
+              "pressed=false",
+              "pressed=false",
+              "pressed=false",
+              "pressed=false",
+              "pressed=false",
+              "pressed=false"
+            ],
+            "text": "بالا",
+            "box": [
+              1100,
+              91,
+              31,
+              20
+            ],
+            "tag": "button",
+            "role": null,
+            "clickable": true
+          },
+          {
+            "sel": "[data-testid=\"notice-level-high\"]",
+            "n": 1,
+            "nAll": 1,
+            "states": [
+              "pressed=true"
+            ],
+            "text": "بالا",
+            "box": [
+              1100,
+              91,
+              31,
+              20
+            ],
+            "tag": "button",
+            "role": null,
+            "clickable": true
+          },
+          {
+            "sel": "[data-testid=\"notice-list\"]",
+            "n": 1,
+            "nAll": 1,
+            "states": [
+              "-"
+            ],
+            "text": "بالا صورتهایِ مالی شهر منبع ↗ خوانده شد اطلاعات و صورت‌های مالی میاندوره‌ای تلفیقی دوره ۶ ماهه منتهی به ۱۴۰۵/۰۳/۳۱ (حساب",
+            "box": [
+              0,
+              120,
+              1198,
+              10254
+            ],
+            "tag": "ul",
+            "role": null,
+            "clickable": false
+          }
+        ]
+      },
+      "changes": [
+        "[data-testid=\"notice-filters\"] button :: states [\"pressed=false\",\"pressed=false\",\"pressed=false\",\"pressed=false\",\"pressed=false\",\"pressed=false\",\"pressed=false\",\"pressed=false\"]→[\"pressed=true\",\"pressed=false\",\"pressed=false\",\"pressed=false\",\"pressed=false\",\"pressed=false\",\"pressed=false\",\"pressed=false\"]",
+        "[data-testid=\"notice-level-high\"] :: states [\"pressed=false\"]→[\"pressed=true\"]"
+      ],
+      "errAfter": 0,
+      "verdict": "STATE-CHANGED (2)",
+      "restore": [
+        "[data-testid=\"notice-level-high\"] = ok"
+      ],
+      "afterRestore": {
+        "at": 1792062441592,
+        "url": "#/notifications",
+        "scroll": 0,
+        "probes": [
+          {
+            "sel": "[data-testid=\"notice-filters\"] button",
+            "n": 14,
+            "nAll": 14,
+            "states": [
+              "pressed=false",
+              "pressed=false",
+              "pressed=false",
+              "pressed=false",
+              "pressed=false",
+              "pressed=false",
+              "pressed=false",
+              "pressed=false"
+            ],
+            "text": "بالا",
+            "box": [
+              1100,
+              91,
+              31,
+              20
+            ],
+            "tag": "button",
+            "role": null,
+            "clickable": true
+          },
+          {
+            "sel": "[data-testid=\"notice-level-high\"]",
+            "n": 1,
+            "nAll": 1,
+            "states": [
+              "pressed=false"
+            ],
+            "text": "بالا",
+            "box": [
+              1100,
+              91,
+              31,
+              20
+            ],
+            "tag": "button",
+            "role": null,
+            "clickable": true
+          },
+          {
+            "sel": "[data-testid=\"notice-list\"]",
+            "n": 1,
+            "nAll": 1,
+            "states": [
+              "-"
+            ],
+            "text": "بالا صورتهایِ مالی شهر منبع ↗ خوانده شد اطلاعات و صورت‌های مالی میاندوره‌ای تلفیقی دوره ۶ ماهه منتهی به ۱۴۰۵/۰۳/۳۱ (حساب",
+            "box": [
+              0,
+              120,
+              1198,
+              10254
+            ],
+            "tag": "ul",
+            "role": null,
+            "clickable": false
+          }
+        ]
+      },
+      "restoreDrift": []
+    },
+    {
+      "key": "C15",
+      "route": "/notifications",
+      "name": "برچسبِ منبعِ کدال (کنترل است؟)",
+      "target": "[data-testid=\"notice-source-name\"]",
+      "reset": "cleared",
+      "targetInfo": {
+        "found": true,
+        "n": 1,
+        "tag": "span",
+        "role": null,
+        "clickable": false,
+        "disabled": false,
+        "box": [
+          1012,
+          56,
+          114,
+          14
+        ],
+        "hit": "notice-source-name"
+      },
+      "before": {
+        "at": 1792062457400,
+        "url": "#/notifications",
+        "scroll": 0,
+        "probes": [
+          {
+            "sel": "[data-testid=\"notice-sources\"]",
+            "n": 1,
+            "nAll": 1,
+            "states": [
+              "dstate=ok"
+            ],
+            "text": "مرکزِ اعلان منبع: کدال (سازمانِ بورس) ۳۶۳۵۰ اطلاعیه درِ بانک · تازه‌ترینِ انتشار ۱۴۰۵/۰۶/۱۳ ۲۳:۵۳ · آخرینِ واکشی 2026-10",
+            "box": [
+              0,
+              44,
+              1198,
+              38
+            ],
+            "tag": "section",
+            "role": null,
+            "clickable": false
+          },
+          {
+            "sel": "[data-testid=\"notice-source-name\"]",
+            "n": 1,
+            "nAll": 1,
+            "states": [
+              "-"
+            ],
+            "text": "منبع: کدال (سازمانِ بورس)",
+            "box": [
+              1012,
+              56,
+              114,
+              14
+            ],
+            "tag": "span",
+            "role": null,
+            "clickable": false
+          },
+          {
+            "sel": "[data-testid=\"notice-source-fresh\"]",
+            "n": 1,
+            "nAll": 1,
+            "states": [
+              "-"
+            ],
+            "text": "۳۶۳۵۰ اطلاعیه درِ بانک · تازه‌ترینِ انتشار ۱۴۰۵/۰۶/۱۳ ۲۳:۵۳ · آخرینِ واکشی 2026-10-02 15:40",
+            "box": [
+              557,
+              56,
+              442,
+              14
+            ],
+            "tag": "span",
+            "role": null,
+            "clickable": false
+          }
+        ]
+      },
+      "clicked": true,
+      "after": {
+        "at": 1792062458875,
+        "url": "#/notifications",
+        "scroll": 0,
+        "probes": [
+          {
+            "sel": "[data-testid=\"notice-sources\"]",
+            "n": 1,
+            "nAll": 1,
+            "states": [
+              "dstate=ok"
+            ],
+            "text": "مرکزِ اعلان منبع: کدال (سازمانِ بورس) ۳۶۳۵۰ اطلاعیه درِ بانک · تازه‌ترینِ انتشار ۱۴۰۵/۰۶/۱۳ ۲۳:۵۳ · آخرینِ واکشی 2026-10",
+            "box": [
+              0,
+              44,
+              1198,
+              38
+            ],
+            "tag": "section",
+            "role": null,
+            "clickable": false
+          },
+          {
+            "sel": "[data-testid=\"notice-source-name\"]",
+            "n": 1,
+            "nAll": 1,
+            "states": [
+              "-"
+            ],
+            "text": "منبع: کدال (سازمانِ بورس)",
+            "box": [
+              1012,
+              56,
+              114,
+              14
+            ],
+            "tag": "span",
+            "role": null,
+            "clickable": false
+          },
+          {
+            "sel": "[data-testid=\"notice-source-fresh\"]",
+            "n": 1,
+            "nAll": 1,
+            "states": [
+              "-"
+            ],
+            "text": "۳۶۳۵۰ اطلاعیه درِ بانک · تازه‌ترینِ انتشار ۱۴۰۵/۰۶/۱۳ ۲۳:۵۳ · آخرینِ واکشی 2026-10-02 15:40",
+            "box": [
+              557,
+              56,
+              442,
+              14
+            ],
+            "tag": "span",
+            "role": null,
+            "clickable": false
+          }
+        ]
+      },
+      "changes": [],
+      "errAfter": 0,
+      "verdict": "TARGET-NOT-A-CONTROL",
+      "restore": []
+    },
+    {
+      "key": "C16",
+      "route": "/engine-lab",
+      "name": "اندازۀِ موتورِ klinecharts",
+      "target": "[data-testid=\"lab-measure-klinecharts\"]",
+      "reset": "cleared",
+      "targetInfo": {
+        "found": true,
+        "n": 1,
+        "tag": "button",
+        "role": null,
+        "clickable": true,
+        "disabled": false,
+        "box": [
+          614,
+          956,
+          63,
+          20
+        ],
+        "hit": null
+      },
+      "before": {
+        "at": 1792062474653,
+        "url": "#/engine-lab",
+        "scroll": 0,
+        "probes": [
+          {
+            "sel": "[data-testid=\"lab-measure-klinecharts\"]",
+            "n": 1,
+            "nAll": 1,
+            "states": [
+              "-"
+            ],
+            "text": "اندازه‌گیری",
+            "box": [
+              614,
+              956,
+              63,
+              20
+            ],
+            "tag": "button",
+            "role": null,
+            "clickable": true
+          },
+          {
+            "sel": "[data-testid=\"lab-col-klinecharts\"]",
+            "n": 1,
+            "nAll": 1,
+            "states": [
+              "-"
+            ],
+            "text": "KLineCharts (موتورِ فعلی) موتورِ تولید قابلیت‌های KLineCharts (موتورِ فعلی) کتابخانه/نسخه KLineCharts v10 پنلِ مستقل ۴ ا",
+            "box": [
+              605,
+              136,
+              593,
+              847
+            ],
+            "tag": "section",
+            "role": null,
+            "clickable": false
+          },
+          {
+            "sel": "[data-testid=\"lab-compare\"]",
+            "n": 1,
+            "nAll": 1,
+            "states": [
+              "-"
+            ],
+            "text": "جدولِ مقایسهٔ کارایی سنجه KLineCharts (موتورِ فعلی) Fast Financial Charts (موتورِ دوم) زمانِ بالا‌آمدن (ms) ۳۰۰ ۱۹۶ فریم",
+            "box": [
+              0,
+              995,
+              1198,
+              243
+            ],
+            "tag": "section",
+            "role": null,
+            "clickable": false
+          },
+          {
+            "sel": "[data-testid^=\"lab-host-\"] canvas",
+            "n": 16,
+            "nAll": 16,
+            "states": [
+              "-",
+              "-",
+              "-",
+              "-",
+              "-",
+              "-",
+              "-",
+              "-"
+            ],
+            "text": "",
+            "box": [
+              606,
+              511,
+              540,
+              283
+            ],
+            "tag": "canvas",
+            "role": null,
+            "clickable": false
+          }
+        ]
+      },
+      "clicked": true,
+      "after": {
+        "at": 1792062477713,
+        "url": "#/engine-lab",
+        "scroll": 478,
+        "probes": [
+          {
+            "sel": "[data-testid=\"lab-measure-klinecharts\"]",
+            "n": 1,
+            "nAll": 1,
+            "states": [
+              "-"
+            ],
+            "text": "اندازه‌گیری",
+            "box": [
+              614,
+              478,
+              63,
+              20
+            ],
+            "tag": "button",
+            "role": null,
+            "clickable": true
+          },
+          {
+            "sel": "[data-testid=\"lab-col-klinecharts\"]",
+            "n": 1,
+            "nAll": 1,
+            "states": [
+              "-"
+            ],
+            "text": "KLineCharts (موتورِ فعلی) موتورِ تولید قابلیت‌های KLineCharts (موتورِ فعلی) کتابخانه/نسخه KLineCharts v10 پنلِ مستقل ۴ ا",
+            "box": [
+              605,
+              -342,
+              593,
+              847
+            ],
+            "tag": "section",
+            "role": null,
+            "clickable": false
+          },
+          {
+            "sel": "[data-testid=\"lab-compare\"]",
+            "n": 1,
+            "nAll": 1,
+            "states": [
+              "-"
+            ],
+            "text": "جدولِ مقایسهٔ کارایی سنجه KLineCharts (موتورِ فعلی) Fast Financial Charts (موتورِ دوم) زمانِ بالا‌آمدن (ms) ۳۰۰ ۱۹۶ فریم",
+            "box": [
+              0,
+              517,
+              1198,
+              243
+            ],
+            "tag": "section",
+            "role": null,
+            "clickable": false
+          },
+          {
+            "sel": "[data-testid^=\"lab-host-\"] canvas",
+            "n": 16,
+            "nAll": 16,
+            "states": [
+              "-",
+              "-",
+              "-",
+              "-",
+              "-",
+              "-",
+              "-",
+              "-"
+            ],
+            "text": "",
+            "box": [
+              606,
+              33,
+              540,
+              283
+            ],
+            "tag": "canvas",
+            "role": null,
+            "clickable": false
+          }
+        ]
+      },
+      "changes": [
+        "[data-testid=\"lab-measure-klinecharts\"] :: box [614,956,63,20]→[614,478,63,20]",
+        "[data-testid=\"lab-col-klinecharts\"] :: box [605,136,593,847]→[605,-342,593,847]",
+        "[data-testid=\"lab-compare\"] :: box [0,995,1198,243]→[0,517,1198,243]",
+        "[data-testid^=\"lab-host-\"] canvas :: box [606,511,540,283]→[606,33,540,283]"
+      ],
+      "errAfter": 0,
+      "verdict": "STATE-CHANGED (4)",
+      "restore": []
+    },
+    {
+      "key": "C17",
+      "route": "/engine-lab",
+      "name": "بخشِ مقایسه (کنترل است؟)",
+      "target": "[data-testid=\"lab-compare\"]",
+      "reset": "cleared",
+      "targetInfo": {
+        "found": true,
+        "n": 1,
+        "tag": "section",
+        "role": null,
+        "clickable": false,
+        "disabled": false,
+        "box": [
+          0,
+          517,
+          1198,
+          243
+        ],
+        "hit": "td"
+      },
+      "before": {
+        "at": 1792062493511,
+        "url": "#/engine-lab",
+        "scroll": 478,
+        "probes": [
+          {
+            "sel": "[data-testid=\"lab-compare\"]",
+            "n": 1,
+            "nAll": 1,
+            "states": [
+              "-"
+            ],
+            "text": "جدولِ مقایسهٔ کارایی سنجه KLineCharts (موتورِ فعلی) Fast Financial Charts (موتورِ دوم) زمانِ بالا‌آمدن (ms) ۲۶۲ ۲۵۳ فریم",
+            "box": [
+              0,
+              517,
+              1198,
+              243
+            ],
+            "tag": "section",
+            "role": null,
+            "clickable": false
+          },
+          {
+            "sel": "[data-testid=\"lab-compare\"] button",
+            "n": 0,
+            "nAll": 0,
+            "states": [],
+            "text": "",
+            "box": null,
+            "tag": null,
+            "role": null,
+            "clickable": false
+          },
+          {
+            "sel": "[data-testid=\"lab-compare\"] a",
+            "n": 0,
+            "nAll": 0,
+            "states": [],
+            "text": "",
+            "box": null,
+            "tag": null,
+            "role": null,
+            "clickable": false
+          }
+        ]
+      },
+      "clicked": true,
+      "after": {
+        "at": 1792062494978,
+        "url": "#/engine-lab",
+        "scroll": 478,
+        "probes": [
+          {
+            "sel": "[data-testid=\"lab-compare\"]",
+            "n": 1,
+            "nAll": 1,
+            "states": [
+              "-"
+            ],
+            "text": "جدولِ مقایسهٔ کارایی سنجه KLineCharts (موتورِ فعلی) Fast Financial Charts (موتورِ دوم) زمانِ بالا‌آمدن (ms) ۲۶۲ ۲۵۳ فریم",
+            "box": [
+              0,
+              517,
+              1198,
+              243
+            ],
+            "tag": "section",
+            "role": null,
+            "clickable": false
+          },
+          {
+            "sel": "[data-testid=\"lab-compare\"] button",
+            "n": 0,
+            "nAll": 0,
+            "states": [],
+            "text": "",
+            "box": null,
+            "tag": null,
+            "role": null,
+            "clickable": false
+          },
+          {
+            "sel": "[data-testid=\"lab-compare\"] a",
+            "n": 0,
+            "nAll": 0,
+            "states": [],
+            "text": "",
+            "box": null,
+            "tag": null,
+            "role": null,
+            "clickable": false
+          }
+        ]
+      },
+      "changes": [],
+      "errAfter": 0,
+      "verdict": "TARGET-NOT-A-CONTROL",
+      "restore": []
+    }
+  ],
+  "consoleErrors": []
+}

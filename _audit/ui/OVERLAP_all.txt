@@ -1,0 +1,85 @@
+
+== /market  controls=218  covered=0  below-fold=82
+   OFF-VIEWPORT  tape-row «✓☆شارپيلنپتروشيمي ار»  box={"x":1,"y":779,"w":1196,"h":40}
+   OFF-VIEWPORT  tape-buy-sell «۱۱۰م.ت۱۲۹م.ت۰.۸۵»  box={"x":155,"y":784,"w":170,"h":30}
+   OFF-VIEWPORT  tape-buy-pc «۱۱۰م.ت»  box={"x":274,"y":784,"w":51,"h":14}
+   OFF-VIEWPORT  tape-sell-pc «۱۲۹م.ت»  box={"x":155,"y":784,"w":51,"h":14}
+
+== /market-status  controls=1089  covered=0  below-fold=163
+   OFF-VIEWPORT  market-status-page «وضعیت بازاربازاربسته»  box={"x":0,"y":44,"w":1198,"h":7740}
+   OFF-VIEWPORT  ticker-marquee-track «پهنای بازارمثبت—منفی»  box={"x":-2024,"y":128,"w":3269,"h":14}
+   OFF-VIEWPORT  ticker-group-queues «صف‌هاعمقِ صف برایِ ا»  box={"x":-380,"y":128,"w":462,"h":14}
+   OFF-VIEWPORT  ticker-no-depth «عمقِ صف برایِ این نش»  box={"x":-380,"y":128,"w":413,"h":14}
+
+== /technical/فولاد  controls=85  covered=0  below-fold=0
+
+== /technical/خوز  controls=53  covered=0  below-fold=0
+
+== /technical  controls=85  covered=0  below-fold=0
+
+== /fundamental/فولاد  controls=54  covered=0  below-fold=6
+   OFF-VIEWPORT  fts-card-cell-4_sales_to_mcap «۴. پتانسیل سود تا آخ»  box={"x":604,"y":692,"w":357,"h":174}
+   OFF-VIEWPORT  fts-card-4-secondary «نسبت فروش ÷ ارزش باز»  box={"x":615,"y":822,"w":335,"h":14}
+   OFF-VIEWPORT  data-gap-banner «دادهٔ کدال برای ۱ شا»  box={"x":0,"y":936,"w":1198,"h":94}
+   OFF-VIEWPORT  data-gap-item «شاخص ۲: افت سود در ۱»  box={"x":17,"y":981,"w":1164,"h":32}
+
+== /fundamental/خوز  controls=18  covered=0  below-fold=0
+
+== /fundamental  controls=169  covered=0  below-fold=63
+   OUTSIDE-OWN-SCROLLER  fts-screen-row «✓☆غسالمسالمين‌الف✓ب✓»  box={"x":1,"y":716,"w":1196,"h":52}  اسکرولر: fts-screen-scroll [143..711]
+   OUTSIDE-OWN-SCROLLER  fts-mark-1a_monetary_growth «✓»  box={"x":978,"y":732,"w":20,"h":20}  اسکرولر: fts-screen-scroll [143..711]
+   OUTSIDE-OWN-SCROLLER  fts-mark-1b_volume_growth «✓»  box={"x":941,"y":732,"w":20,"h":20}  اسکرولر: fts-screen-scroll [143..711]
+   OUTSIDE-OWN-SCROLLER  fts-mark-2_eps_trend «✓»  box={"x":778,"y":732,"w":20,"h":20}  اسکرولر: fts-screen-scroll [143..711]
+
+== /master  controls=63  covered=0  below-fold=0
+
+== /master/فولاد  controls=101  covered=0  below-fold=2
+   OFF-VIEWPORT  master-toggle-advanced «جزئیات، برنامهٔ معام»  box={"x":971,"y":762,"w":227,"h":24}
+   OFF-VIEWPORT  inspector-veto-why «گیتِ تکنیکالِ این نم»  box={"x":19,"y":780,"w":159,"h":14}
+
+== /master/خوز  controls=100  covered=1  below-fold=0
+   COVERED  master-levels-note «تاریخچهٔ موجود: ۰ رو»  box={"x":253,"y":677,"w":932,"h":20}  ←  زیرِ «details-strategy «استراتژی و مدیریتساع»» {"x":240,"y":655,"w":958,"h":32}
+
+== /strategy-tree  controls=90  covered=0  below-fold=0
+
+== /strategy-tree?page=F  controls=84  covered=0  below-fold=2
+   OFF-VIEWPORT  a.rounded-xl.border «← صفحه قبل»  box={"x":1107,"y":1259,"w":91,"h":32}
+   OFF-VIEWPORT  a.rounded-xl.border «صفحه بعد →»  box={"x":240,"y":1259,"w":90,"h":32}
+
+== /strategy-tree?page=T  controls=84  covered=0  below-fold=2
+   OFF-VIEWPORT  a.rounded-xl.border «← صفحه قبل»  box={"x":1107,"y":919,"w":91,"h":32}
+   OFF-VIEWPORT  a.rounded-xl.border «صفحه بعد →»  box={"x":240,"y":919,"w":90,"h":32}
+
+== /strategy-tree?page=S  controls=83  covered=0  below-fold=1
+   OFF-VIEWPORT  a.rounded-xl.border «صفحه بعد →»  box={"x":240,"y":1266,"w":90,"h":32}
+
+== /strategy-tree?page=M  controls=84  covered=0  below-fold=2
+   OFF-VIEWPORT  a.rounded-xl.border «← صفحه قبل»  box={"x":1107,"y":1196,"w":91,"h":32}
+   OFF-VIEWPORT  a.rounded-xl.border «رفتن به غربالگری FTS»  box={"x":240,"y":1196,"w":131,"h":32}
+
+== /portfolio  controls=88  covered=5  below-fold=0
+   COVERED  input.num.rounded-lg «»  box={"x":952,"y":613,"w":221,"h":30}  ←  زیرِ «section.glass-panel.relative «تفکیک صنایع سهام (سن»» {"x":240,"y":622,"w":958,"h":391}
+   COVERED  input.num.rounded-lg «»  box={"x":723,"y":613,"w":221,"h":30}  ←  زیرِ «section.glass-panel.relative «تفکیک صنایع سهام (سن»» {"x":240,"y":622,"w":958,"h":391}
+   COVERED  input.num.rounded-lg «»  box={"x":495,"y":613,"w":221,"h":30}  ←  زیرِ «section.glass-panel.relative «تفکیک صنایع سهام (سن»» {"x":240,"y":622,"w":958,"h":391}
+   COVERED  input.num.rounded-lg «»  box={"x":266,"y":613,"w":221,"h":30}  ←  زیرِ «section.glass-panel.relative «تفکیک صنایع سهام (سن»» {"x":240,"y":622,"w":958,"h":391}
+   COVERED  input.num.rounded-lg «»  box={"x":952,"y":669,"w":221,"h":30}  ←  زیرِ «section.glass-panel.relative «تفکیک صنایع سهام (سن»» {"x":240,"y":622,"w":958,"h":391}
+
+== /watch  controls=97  covered=0  below-fold=1
+   OFF-VIEWPORT  watch-server-note «ستارۀ «واچ‌لیست» (۰ »  box={"x":240,"y":791,"w":958,"h":20}
+
+== /notifications  controls=814  covered=0  below-fold=174
+   OFF-VIEWPORT  notifications-page «مرکزِ اعلانمنبع: کدا»  box={"x":240,"y":82,"w":958,"h":10384}
+   OFF-VIEWPORT  notice-list «بالاصورتهایِ مالیشهر»  box={"x":240,"y":184,"w":958,"h":10254}
+   OFF-VIEWPORT  notice-row «بالاصورتهایِ مالیوبه»  box={"x":240,"y":782,"w":958,"h":80}
+   OFF-VIEWPORT  notice-level «بالا»  box={"x":1160,"y":791,"w":27,"h":20}
+
+== /engine-lab  controls=86  covered=0  below-fold=5
+   OFF-VIEWPORT  lab-host-klinecharts «»  box={"x":726,"y":572,"w":471,"h":420}
+   OFF-VIEWPORT  lab-measure-klinecharts «اندازه‌گیری»  box={"x":734,"y":1016,"w":63,"h":20}
+   OFF-VIEWPORT  lab-host-ffc «»  box={"x":241,"y":572,"w":471,"h":420}
+   OFF-VIEWPORT  lab-measure-ffc «اندازه‌گیری»  box={"x":249,"y":1016,"w":63,"h":20}
+
+== /zz-not-found  controls=72  covered=0  below-fold=0
+
+wrote _audit/ui/OVERLAP.json
+EXIT=0

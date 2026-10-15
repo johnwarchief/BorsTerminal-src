@@ -1,0 +1,9 @@
+LAYOUT21 start 15:18:17
+layout exit=0
+OVERLAP-em 15:19:22
+overlap-em exit=0
+FIT 15:20:11
+fit exit=0
+OVERLAP-real 15:22:32
+overlap-real exit=0
+ALL DONE 15:23:22

@@ -1,0 +1,333 @@
+{
+  "ranAt": "2026-10-15T12:05:51.383Z",
+  "viewport": {
+    "W": 1366,
+    "H": 768
+  },
+  "base": "http://127.0.0.1:8000",
+  "cases": [
+    {
+      "key": "C5",
+      "route": "/technical/فولاد",
+      "name": "دکمۀِ موتورِ چارت (نه منو)",
+      "target": "[data-testid=\"nn-engine-ffc\"]",
+      "reset": "cleared",
+      "targetInfo": {
+        "found": true,
+        "n": 1,
+        "tag": "button",
+        "role": null,
+        "clickable": true,
+        "disabled": false,
+        "box": [
+          816,
+          112,
+          64,
+          30
+        ],
+        "hit": "span"
+      },
+      "before": {
+        "at": 1792065962399,
+        "url": "#/technical/%D9%81%D9%88%D9%84%D8%A7%D8%AF",
+        "scroll": 0,
+        "probes": [
+          {
+            "sel": "[data-testid=\"nn-engine-switch\"]",
+            "n": 1,
+            "nAll": 1,
+            "states": [
+              "-"
+            ],
+            "text": "KLineCharts موتور دوم",
+            "box": [
+              816,
+              112,
+              152,
+              30
+            ],
+            "tag": "div",
+            "role": "group",
+            "clickable": false
+          },
+          {
+            "sel": "[data-testid^=\"nn-engine-\"]",
+            "n": 3,
+            "nAll": 3,
+            "states": [
+              "-",
+              "pressed=true,cls:active",
+              "pressed=false"
+            ],
+            "text": "KLineCharts موتور دوم",
+            "box": [
+              816,
+              112,
+              152,
+              30
+            ],
+            "tag": "div",
+            "role": "group",
+            "clickable": false
+          },
+          {
+            "sel": "[data-testid=\"ffc-chart-host\"]",
+            "n": 0,
+            "nAll": 0,
+            "states": [],
+            "text": "",
+            "box": null,
+            "tag": null,
+            "role": null,
+            "clickable": false
+          },
+          {
+            "sel": "[data-testid=\"fts-engine-back\"]",
+            "n": 0,
+            "nAll": 0,
+            "states": [],
+            "text": "",
+            "box": null,
+            "tag": null,
+            "role": null,
+            "clickable": false
+          },
+          {
+            "sel": "[data-testid=\"fts-engine-error\"]",
+            "n": 0,
+            "nAll": 0,
+            "states": [],
+            "text": "",
+            "box": null,
+            "tag": null,
+            "role": null,
+            "clickable": false
+          },
+          {
+            "sel": "[data-testid=\"chart-area\"]",
+            "n": 1,
+            "nAll": 1,
+            "states": [
+              "-"
+            ],
+            "text": "فولاد (فولاد مباركه اصفهان) ۴,۵۴۰ +۲.۹۵% روزانه هفتگی ماهانه کندل نمایِ بازدهی (شاخصِ ۱۰۰) fx اندیکاتورها همسنجی تحلیل F",
+            "box": [
+              0,
+              44,
+              976,
+              688
+            ],
+            "tag": "div",
+            "role": null,
+            "clickable": false
+          }
+        ]
+      },
+      "clicked": true,
+      "after": {
+        "at": 1792065963919,
+        "url": "#/technical/%D9%81%D9%88%D9%84%D8%A7%D8%AF",
+        "scroll": 0,
+        "probes": [
+          {
+            "sel": "[data-testid=\"nn-engine-switch\"]",
+            "n": 0,
+            "nAll": 0,
+            "states": [],
+            "text": "",
+            "box": null,
+            "tag": null,
+            "role": null,
+            "clickable": false
+          },
+          {
+            "sel": "[data-testid^=\"nn-engine-\"]",
+            "n": 0,
+            "nAll": 0,
+            "states": [],
+            "text": "",
+            "box": null,
+            "tag": null,
+            "role": null,
+            "clickable": false
+          },
+          {
+            "sel": "[data-testid=\"ffc-chart-host\"]",
+            "n": 1,
+            "nAll": 1,
+            "states": [
+              "-"
+            ],
+            "text": "موتور: Fast Financial Charts 2.2 کندل: ۴۲۴۶ مبنایِ سری: عملکردی (خام × ضریبِ سرور) — این موتور کرکرۀ تعدیل ندارد لایهٔ F",
+            "box": [
+              0,
+              44,
+              976,
+              688
+            ],
+            "tag": "div",
+            "role": null,
+            "clickable": false
+          },
+          {
+            "sel": "[data-testid=\"fts-engine-back\"]",
+            "n": 1,
+            "nAll": 1,
+            "states": [
+              "cls:accent"
+            ],
+            "text": "بازگشت به KLineCharts",
+            "box": [
+              8,
+              704,
+              116,
+              24
+            ],
+            "tag": "button",
+            "role": null,
+            "clickable": true
+          },
+          {
+            "sel": "[data-testid=\"fts-engine-error\"]",
+            "n": 0,
+            "nAll": 0,
+            "states": [],
+            "text": "",
+            "box": null,
+            "tag": null,
+            "role": null,
+            "clickable": false
+          },
+          {
+            "sel": "[data-testid=\"chart-area\"]",
+            "n": 1,
+            "nAll": 1,
+            "states": [
+              "-"
+            ],
+            "text": "موتور: Fast Financial Charts 2.2 کندل: ۴۲۴۶ مبنایِ سری: عملکردی (خام × ضریبِ سرور) — این موتور کرکرۀ تعدیل ندارد لایهٔ F",
+            "box": [
+              0,
+              44,
+              976,
+              688
+            ],
+            "tag": "div",
+            "role": null,
+            "clickable": false
+          }
+        ]
+      },
+      "changes": [
+        "[data-testid=\"nn-engine-switch\"] :: n 1→0 | nAll 1→0 | states [\"-\"]→[] | text «KLineCharts موتور دوم»→«» | box [816,112,152,30]→null",
+        "[data-testid^=\"nn-engine-\"] :: n 3→0 | nAll 3→0 | states [\"-\",\"pressed=true,cls:active\",\"pressed=false\"]→[] | text «KLineCharts موتور دوم»→«» | box [816,112,152,30]→null",
+        "[data-testid=\"ffc-chart-host\"] :: n 0→1 | nAll 0→1 | states []→[\"-\"] | text «»→«موتور: Fast Financial Charts 2.2 کندل: ۴» | box null→[0,44,976,688]",
+        "[data-testid=\"fts-engine-back\"] :: n 0→1 | nAll 0→1 | states []→[\"cls:accent\"] | text «»→«بازگشت به KLineCharts» | box null→[8,704,116,24]",
+        "[data-testid=\"chart-area\"] :: text «فولاد (فولاد مباركه اصفهان) ۴,۵۴۰ +۲.۹۵%»→«موتور: Fast Financial Charts 2.2 کندل: ۴»"
+      ],
+      "errAfter": 0,
+      "verdict": "STATE-CHANGED (5)",
+      "restore": [
+        "[data-testid=\"fts-engine-back\"] = ok"
+      ],
+      "afterRestore": {
+        "at": 1792065965487,
+        "url": "#/technical/%D9%81%D9%88%D9%84%D8%A7%D8%AF",
+        "scroll": 0,
+        "probes": [
+          {
+            "sel": "[data-testid=\"nn-engine-switch\"]",
+            "n": 1,
+            "nAll": 1,
+            "states": [
+              "-"
+            ],
+            "text": "KLineCharts موتور دوم",
+            "box": [
+              816,
+              112,
+              152,
+              30
+            ],
+            "tag": "div",
+            "role": "group",
+            "clickable": false
+          },
+          {
+            "sel": "[data-testid^=\"nn-engine-\"]",
+            "n": 3,
+            "nAll": 3,
+            "states": [
+              "-",
+              "pressed=true,cls:active",
+              "pressed=false"
+            ],
+            "text": "KLineCharts موتور دوم",
+            "box": [
+              816,
+              112,
+              152,
+              30
+            ],
+            "tag": "div",
+            "role": "group",
+            "clickable": false
+          },
+          {
+            "sel": "[data-testid=\"ffc-chart-host\"]",
+            "n": 0,
+            "nAll": 0,
+            "states": [],
+            "text": "",
+            "box": null,
+            "tag": null,
+            "role": null,
+            "clickable": false
+          },
+          {
+            "sel": "[data-testid=\"fts-engine-back\"]",
+            "n": 0,
+            "nAll": 0,
+            "states": [],
+            "text": "",
+            "box": null,
+            "tag": null,
+            "role": null,
+            "clickable": false
+          },
+          {
+            "sel": "[data-testid=\"fts-engine-error\"]",
+            "n": 0,
+            "nAll": 0,
+            "states": [],
+            "text": "",
+            "box": null,
+            "tag": null,
+            "role": null,
+            "clickable": false
+          },
+          {
+            "sel": "[data-testid=\"chart-area\"]",
+            "n": 1,
+            "nAll": 1,
+            "states": [
+              "-"
+            ],
+            "text": "فولاد (فولاد مباركه اصفهان) ۴,۵۴۰ +۲.۹۵% روزانه هفتگی ماهانه کندل نمایِ بازدهی (شاخصِ ۱۰۰) fx اندیکاتورها همسنجی تحلیل F",
+            "box": [
+              0,
+              44,
+              976,
+              688
+            ],
+            "tag": "div",
+            "role": null,
+            "clickable": false
+          }
+        ]
+      },
+      "restoreDrift": []
+    }
+  ],
+  "consoleErrors": []
+}

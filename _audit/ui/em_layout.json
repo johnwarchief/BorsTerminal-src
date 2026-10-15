@@ -1,9 +1,9 @@
 {
  "env": {
   "mode": "em",
-  "ranAt": "2026-10-15T00:33:27.705Z",
+  "ranAt": "2026-10-15T11:48:19.837Z",
   "base": "http://127.0.0.1:8000",
-  "routes": 18,
+  "routes": 21,
   "physicalViewport": {
    "w": 1366,
    "h": 768
@@ -18,9 +18,9 @@
    "dpr": 1,
    "zoomCssPx": "16px",
    "docScrollW": 1366,
-   "docScrollH": 858,
+   "docScrollH": 768,
    "bodyOverflowX": 0,
-   "bodyOverflowY": 90,
+   "bodyOverflowY": 0,
    "offenders": [],
    "clipped": [],
    "ellipsised": [
@@ -145,173 +145,9 @@
      }
     }
    ],
-   "offscreen": [
-    {
-     "el": "div#tape-row.group.grid.w-full «✓ ☆ شارپيلن پتروشيمي ارغوان گسترايلام ۳٬۹۷»",
-     "box": {
-      "x": 1,
-      "y": 779,
-      "w": 1196,
-      "h": 40
-     },
-     "vw": 1366,
-     "vh": 768
-    },
-    {
-     "el": "div#tape-row.group.grid.w-full «✓ ☆ مرواريد صندوق س. مرواريد آتا-س ۲۳٬۴۸۰ »",
-     "box": {
-      "x": 1,
-      "y": 819,
-      "w": 1196,
-      "h": 40
-     },
-     "vw": 1366,
-     "vh": 768
-    },
-    {
-     "el": "div#tape-row.group.grid.w-full «✓ ☆ سيدكو سرمايه گذاري توسعه صنايع سيمان ۱»",
-     "box": {
-      "x": 1,
-      "y": 859,
-      "w": 1196,
-      "h": 40
-     },
-     "vw": 1366,
-     "vh": 768
-    },
-    {
-     "el": "div#tape-row.group.grid.w-full «✓ ☆ سيمانا صندوق س صنايع دايا2-بخشي ۴۹٬۹۴۴»",
-     "box": {
-      "x": 1,
-      "y": 899,
-      "w": 1196,
-      "h": 40
-     },
-     "vw": 1366,
-     "vh": 768
-    },
-    {
-     "el": "div#tape-row.group.grid.w-full «✓ ☆ داتام گروه مالي داتام ۴٬۵۴۰ ۴٬۵۴۰ ۰.۰٪»",
-     "box": {
-      "x": 1,
-      "y": 939,
-      "w": 1196,
-      "h": 40
-     },
-     "vw": 1366,
-     "vh": 768
-    },
-    {
-     "el": "div#tape-row.group.grid.w-full «✓ ☆ ناما توليدي مخازن گازطبيعي آسياناما ۵٬»",
-     "box": {
-      "x": 1,
-      "y": 979,
-      "w": 1196,
-      "h": 40
-     },
-     "vw": 1366,
-     "vh": 768
-    },
-    {
-     "el": "div#tape-row.group.grid.w-full «✓ ☆ ساربيل سيمان آرتا اردبيل ۱۰۰٬۹۸۰ ۱۰۰٬۹»",
-     "box": {
-      "x": 1,
-      "y": 1019,
-      "w": 1196,
-      "h": 40
-     },
-     "vw": 1366,
-     "vh": 768
-    },
-    {
-     "el": "div#tape-row.group.grid.w-full «✓ ☆ تاصيكو سرمايه گذاري صدرتامين ۴۵٬۰۷۰ ۴۴»",
-     "box": {
-      "x": 1,
-      "y": 1059,
-      "w": 1196,
-      "h": 40
-     },
-     "vw": 1366,
-     "vh": 768
-    },
-    {
-     "el": "div#tape-row.group.grid.w-full «✓ ☆ چافست افست‌ ۳۰٬۴۰۰ ۳۱٬۴۱۰ -۳.۲٪ ۰.۲٪ -»",
-     "box": {
-      "x": 1,
-      "y": 1099,
-      "w": 1196,
-      "h": 40
-     },
-     "vw": 1366,
-     "vh": 768
-    },
-    {
-     "el": "div#tape-row.group.grid.w-full «✓ ☆ كارام صنايع سرام آرا ۲٬۷۶۷ ۲٬۷۰۹ ۲.۱٪ »",
-     "box": {
-      "x": 1,
-      "y": 1139,
-      "w": 1196,
-      "h": 40
-     },
-     "vw": 1366,
-     "vh": 768
-    },
-    {
-     "el": "div#tape-row.group.grid.w-full «✓ ☆ آسا صندوق س آرمان كارآفرين-ثابت ۱۱٬۴۵۳»",
-     "box": {
-      "x": 1,
-      "y": 1179,
-      "w": 1196,
-      "h": 40
-     },
-     "vw": 1366,
-     "vh": 768
-    },
-    {
-     "el": "div#tape-row.group.grid.w-full «✓ ☆ شليا شركت مواد ويژه ليا ۲۶٬۱۶۰ ۲۵٬۷۶۰ »",
-     "box": {
-      "x": 1,
-      "y": 1219,
-      "w": 1196,
-      "h": 40
-     },
-     "vw": 1366,
-     "vh": 768
-    },
-    {
-     "el": "button#watch-tab-clock.shrink-0.rounded-full.border «دیده‌بان ساعت»",
-     "box": {
-      "x": 1038,
-      "y": 812,
-      "w": 93,
-      "h": 26
-     },
-     "vw": 1366,
-     "vh": 768
-    },
-    {
-     "el": "button#watch-tab-susp.shrink-0.rounded-full.border «دیده‌بان حجم مشکوک»",
-     "box": {
-      "x": 902,
-      "y": 812,
-      "w": 128,
-      "h": 26
-     },
-     "vw": 1366,
-     "vh": 768
-    },
-    {
-     "el": "button#watch-tab-industries.shrink-0.rounded-full.border «صنایع داغ»",
-     "box": {
-      "x": 824,
-      "y": 812,
-      "w": 70,
-      "h": 26
-     },
-     "vw": 1366,
-     "vh": 768
-    }
-   ],
+   "offscreen": [],
+   "belowFold": 15,
+   "inertOffscreen": 9,
    "unreachable": [],
    "canvases": [],
    "fixedLayers": [
@@ -392,7 +228,7 @@
    "hash": "#/market",
    "title": "ب ترمینال بورس FTS v2.1 فضای تحلیل وضعیت بازار تابلوخوانی تک",
    "route": "/market",
-   "readyBy": "timeout",
+   "readyBy": "marker",
    "consoleErrors": [],
    "netErrors": []
   },
@@ -402,9 +238,9 @@
    "dpr": 1,
    "zoomCssPx": "16px",
    "docScrollW": 1366,
-   "docScrollH": 2539,
+   "docScrollH": 768,
    "bodyOverflowX": 0,
-   "bodyOverflowY": 1771,
+   "bodyOverflowY": 0,
    "offenders": [],
    "clipped": [],
    "ellipsised": [
@@ -413,250 +249,185 @@
      "lost": 11,
      "box": {
       "x": 315,
-      "y": 299,
+      "y": 309,
       "w": 116,
+      "h": 14
+     }
+    },
+    {
+     "el": "span.min-w-0.flex-1.truncate «کمتر از ۵-»",
+     "lost": 15,
+     "box": {
+      "x": 815,
+      "y": 1251,
+      "w": 28,
+      "h": 14
+     }
+    },
+    {
+     "el": "span.min-w-0.flex-1.truncate «بالاتر از ۵+»",
+     "lost": 17,
+     "box": {
+      "x": 1159,
+      "y": 1251,
+      "w": 28,
+      "h": 14
+     }
+    },
+    {
+     "el": "span#ms-toplists-impact_pos-formula.truncate.max-w-[60%] «(پایانی − دیروز) × سهامِ شرکت — ستونِ واحد»",
+     "lost": 17,
+     "box": {
+      "x": 612,
+      "y": 2462,
+      "w": 346,
+      "h": 14
+     }
+    },
+    {
+     "el": "span#ms-toplists-impact_neg-formula.truncate.max-w-[60%] «(پایانی − دیروز) × سهامِ شرکت — ستونِ واحد»",
+     "lost": 17,
+     "box": {
+      "x": 9,
+      "y": 2462,
+      "w": 346,
+      "h": 14
+     }
+    },
+    {
+     "el": "label.block.truncate.font-bold «هميان — صندوق س.پشتوانه طلا هميان سپهر»",
+     "lost": 6,
+     "box": {
+      "x": 946,
+      "y": 5747,
+      "w": 214,
+      "h": 14
+     }
+    },
+    {
+     "el": "label.block.truncate.font-bold «نگين فارس — صندوق س.طلا زرديس خليج فارس»",
+     "lost": 19,
+     "box": {
+      "x": 946,
+      "y": 5789,
+      "w": 214,
+      "h": 14
+     }
+    },
+    {
+     "el": "label.block.truncate.font-bold «گلديس — صندوق س.پشتوانه طلا گلديس نوين»",
+     "lost": 10,
+     "box": {
+      "x": 946,
+      "y": 6042,
+      "w": 214,
+      "h": 14
+     }
+    },
+    {
+     "el": "label.block.truncate.font-bold «پتروسورين — صندوق س.بخشي ثروت آفرين1-ب»",
+     "lost": 18,
+     "box": {
+      "x": 946,
+      "y": 6084,
+      "w": 214,
+      "h": 14
+     }
+    },
+    {
+     "el": "label.block.truncate.font-bold «طلاي ناب08 — مرابحه طلاي ناب كوروش080403»",
+     "lost": 18,
+     "box": {
+      "x": 946,
+      "y": 6169,
+      "w": 214,
+      "h": 14
+     }
+    },
+    {
+     "el": "span#ms-compare-cand-missing-gold_ounce-note.block.truncate.text-3xs «بی‌منبع — TSETMC انسِ جهانی را منتشر نمی‌ک»",
+     "lost": 205,
+     "box": {
+      "x": 946,
+      "y": 6267,
+      "w": 214,
+      "h": 14
+     }
+    },
+    {
+     "el": "span#ms-compare-cand-missing-tether-note.block.truncate.text-3xs «بی‌منبع — بازارِ رمزارز در دامنه‌یِ داده‌ه»",
+     "lost": 57,
+     "box": {
+      "x": 946,
+      "y": 6309,
+      "w": 214,
       "h": 14
      }
     }
    ],
-   "offscreen": [
-    {
-     "el": "select#ms-treemap-group.min-w-0.max-w-full.rounded-lg «کل بازار سهام، حق تقدم و ص.سهامی سهام و حق»",
-     "box": {
-      "x": 987,
-      "y": 1068,
-      "w": 173,
-      "h": 30
-     },
-     "vw": 1366,
-     "vh": 768
-    },
-    {
-     "el": "select#ms-treemap-industry.min-w-0.max-w-full.rounded-lg «همه صنایع»",
-     "box": {
-      "x": 859,
-      "y": 1068,
-      "w": 88,
-      "h": 30
-     },
-     "vw": 1366,
-     "vh": 768
-    },
-    {
-     "el": "select#ms-treemap-metric.min-w-0.max-w-full.rounded-lg «ارزش معاملات حجم معاملات ارزش بازار تعداد »",
-     "box": {
-      "x": 696,
-      "y": 1068,
-      "w": 104,
-      "h": 30
-     },
-     "vw": 1366,
-     "vh": 768
-    },
-    {
-     "el": "button#ms-treemap-apply.rounded-lg.border.px-2 «اعمال فیلتر»",
-     "box": {
-      "x": 618,
-      "y": 1071,
-      "w": 72,
-      "h": 24
-     },
-     "vw": 1366,
-     "vh": 768
-    },
-    {
-     "el": "button#ms-gold-tab-overview.rounded-full.border.px-2.5 «نمای کلیِ طلا»",
-     "box": {
-      "x": 1104,
-      "y": 1498,
-      "w": 83,
-      "h": 24
-     },
-     "vw": 1366,
-     "vh": 768
-    },
-    {
-     "el": "button#ms-gold-tab-tables.rounded-full.border.px-2.5 «جدول‌های طلا و سکه»",
-     "box": {
-      "x": 977,
-      "y": 1498,
-      "w": 123,
-      "h": 24
-     },
-     "vw": 1366,
-     "vh": 768
-    },
-    {
-     "el": "button#ms-gold-tab-funds.rounded-full.border.px-2.5 «صندوق‌های طلا: ترکیب و نقشه»",
-     "box": {
-      "x": 805,
-      "y": 1498,
-      "w": 168,
-      "h": 24
-     },
-     "vw": 1366,
-     "vh": 768
-    },
-    {
-     "el": "button#ms-compare-range-5y.rounded-full.border.px-2 «۵ سال»",
-     "box": {
-      "x": 1140,
-      "y": 1669,
-      "w": 47,
-      "h": 20
-     },
-     "vw": 1366,
-     "vh": 768
-    },
-    {
-     "el": "button#ms-compare-range-1y.rounded-full.border.px-2 «۱ سال»",
-     "box": {
-      "x": 1093,
-      "y": 1669,
-      "w": 43,
-      "h": 20
-     },
-     "vw": 1366,
-     "vh": 768
-    },
-    {
-     "el": "button#ms-compare-range-6m.rounded-full.border.px-2 «۶ ماه»",
-     "box": {
-      "x": 1048,
-      "y": 1669,
-      "w": 41,
-      "h": 20
-     },
-     "vw": 1366,
-     "vh": 768
-    },
-    {
-     "el": "button#ms-compare-range-3m.rounded-full.border.px-2 «۳ ماه»",
-     "box": {
-      "x": 1002,
-      "y": 1669,
-      "w": 43,
-      "h": 20
-     },
-     "vw": 1366,
-     "vh": 768
-    },
-    {
-     "el": "button#ms-compare-range-1m.rounded-full.border.px-2 «۱ ماه»",
-     "box": {
-      "x": 959,
-      "y": 1669,
-      "w": 39,
-      "h": 20
-     },
-     "vw": 1366,
-     "vh": 768
-    },
-    {
-     "el": "button#ms-compare-range-5d.rounded-full.border.px-2 «۵ روز»",
-     "box": {
-      "x": 915,
-      "y": 1669,
-      "w": 40,
-      "h": 20
-     },
-     "vw": 1366,
-     "vh": 768
-    },
-    {
-     "el": "button#ms-compare-scale-pct.rounded-full.border.px-2 «%»",
-     "box": {
-      "x": 881,
-      "y": 1669,
-      "w": 26,
-      "h": 20
-     },
-     "vw": 1366,
-     "vh": 768
-    },
-    {
-     "el": "button#ms-compare-scale-log.rounded-full.border.px-2 «log»",
-     "box": {
-      "x": 843,
-      "y": 1669,
-      "w": 33,
-      "h": 20
-     },
-     "vw": 1366,
-     "vh": 768
-    }
-   ],
-   "unreachable": [
-    {
-     "el": "div#ms-chart-host.relative.min-w-0.overflow-hidden «فولاد (فولاد) روزانه هفتگی ماهانه کندل نما»",
-     "hiddenPx": 102,
-     "box": {
-      "x": 259,
-      "y": 1868,
-      "w": 928,
-      "h": 420
-     }
-    }
-   ],
+   "offscreen": [],
+   "belowFold": 162,
+   "inertOffscreen": 5,
+   "unreachable": [],
    "canvases": [
     {
      "x": 308,
-     "y": 1909,
-     "w": 840,
-     "h": 307
+     "y": 6820,
+     "w": 813,
+     "h": 286
     },
     {
      "x": 308,
-     "y": 1909,
-     "w": 840,
-     "h": 307
+     "y": 6820,
+     "w": 813,
+     "h": 286
     },
     {
-     "x": 1148,
-     "y": 1909,
-     "w": 38,
-     "h": 307
+     "x": 1121,
+     "y": 6820,
+     "w": 65,
+     "h": 286
     },
     {
-     "x": 1148,
-     "y": 1909,
-     "w": 38,
-     "h": 307
+     "x": 1121,
+     "y": 6820,
+     "w": 65,
+     "h": 286
     },
     {
      "x": 308,
-     "y": 2217,
-     "w": 840,
+     "y": 7107,
+     "w": 813,
      "h": 110
     },
     {
      "x": 308,
-     "y": 2217,
-     "w": 840,
+     "y": 7107,
+     "w": 813,
      "h": 110
     },
     {
-     "x": 1148,
-     "y": 2217,
-     "w": 38,
+     "x": 1121,
+     "y": 7107,
+     "w": 65,
      "h": 110
     },
     {
-     "x": 1148,
-     "y": 2217,
-     "w": 38,
+     "x": 1121,
+     "y": 7107,
+     "w": 65,
      "h": 110
     },
     {
      "x": 308,
-     "y": 2327,
-     "w": 840,
+     "y": 7217,
+     "w": 813,
      "h": 32
     },
     {
      "x": 308,
-     "y": 2327,
-     "w": 840,
+     "y": 7217,
+     "w": 813,
      "h": 32
     }
    ],
@@ -665,7 +436,7 @@
      "el": "span.tv-slot-arrow «▸»",
      "box": {
       "x": 293,
-      "y": 1941,
+      "y": 6852,
       "w": 7,
       "h": 8
      }
@@ -674,7 +445,7 @@
      "el": "span.tv-slot-arrow «▸»",
      "box": {
       "x": 293,
-      "y": 1980,
+      "y": 6891,
       "w": 7,
       "h": 8
      }
@@ -683,7 +454,7 @@
      "el": "span.tv-slot-arrow «▸»",
      "box": {
       "x": 293,
-      "y": 2019,
+      "y": 6930,
       "w": 7,
       "h": 8
      }
@@ -692,7 +463,7 @@
      "el": "span.tv-slot-arrow «▸»",
      "box": {
       "x": 293,
-      "y": 2058,
+      "y": 6969,
       "w": 7,
       "h": 8
      }
@@ -701,7 +472,7 @@
      "el": "span.tv-slot-arrow «▸»",
      "box": {
       "x": 293,
-      "y": 2097,
+      "y": 7008,
       "w": 7,
       "h": 8
      }
@@ -710,7 +481,7 @@
      "el": "span.tv-slot-arrow «▸»",
      "box": {
       "x": 293,
-      "y": 2136,
+      "y": 7047,
       "w": 7,
       "h": 8
      }
@@ -719,7 +490,7 @@
      "el": "span.tv-slot-arrow «▸»",
      "box": {
       "x": 293,
-      "y": 2175,
+      "y": 7086,
       "w": 7,
       "h": 8
      }
@@ -728,13 +499,13 @@
      "el": "span.tv-slot-arrow «▸»",
      "box": {
       "x": 293,
-      "y": 2214,
+      "y": 7125,
       "w": 7,
       "h": 8
      }
     }
    ],
-   "domNodes": 873,
+   "domNodes": 7464,
    "hash": "#/market-status",
    "title": "ب ترمینال بورس FTS v2.1 فضای تحلیل وضعیت بازار تابلوخوانی تک",
    "route": "/market-status",
@@ -748,113 +519,102 @@
    "dpr": 1,
    "zoomCssPx": "16px",
    "docScrollW": 1366,
-   "docScrollH": 772,
+   "docScrollH": 768,
    "bodyOverflowX": 0,
-   "bodyOverflowY": 4,
+   "bodyOverflowY": 0,
    "offenders": [],
    "clipped": [],
    "ellipsised": [],
-   "offscreen": [
+   "offscreen": [],
+   "belowFold": 0,
+   "inertOffscreen": 9,
+   "unreachable": [],
+   "canvases": [
     {
-     "el": "button.rounded-md.border.px-1.5 «سنجاق»",
-     "box": {
-      "x": -202,
-      "y": 8,
-      "w": 47,
-      "h": 20
-     },
-     "vw": 1366,
-     "vh": 768
+     "x": 48,
+     "y": 143,
+     "w": 863,
+     "h": 416
     },
     {
-     "el": "button.rounded-md.border.border-transparent «✕»",
-     "box": {
-      "x": -230,
-      "y": 8,
-      "w": 24,
-      "h": 20
-     },
-     "vw": 1366,
-     "vh": 768
+     "x": 48,
+     "y": 143,
+     "w": 863,
+     "h": 416
     },
     {
-     "el": "button#inspector-tab-glance.rounded-md.border.px-2 «در یک نگاه»",
-     "box": {
-      "x": -118,
-      "y": 47,
-      "w": 108,
-      "h": 25
-     },
-     "vw": 1366,
-     "vh": 768
+     "x": 911,
+     "y": 143,
+     "w": 65,
+     "h": 416
     },
     {
-     "el": "button#inspector-tab-detail.rounded-md.border.px-2 «جزئیات بازار»",
-     "box": {
-      "x": -230,
-      "y": 47,
-      "w": 108,
-      "h": 25
-     },
-     "vw": 1366,
-     "vh": 768
+     "x": 911,
+     "y": 143,
+     "w": 65,
+     "h": 416
     },
     {
-     "el": "a#inspector-stage-tape.flex.items-center.gap-1 «تابلوخوانی»",
-     "box": {
-      "x": -75,
-      "y": 567,
-      "w": 64,
-      "h": 21
-     },
-     "vw": 1366,
-     "vh": 768
+     "x": 48,
+     "y": 560,
+     "w": 863,
+     "h": 110
     },
     {
-     "el": "a#inspector-stage-technical.flex.items-center.gap-1 «تکنیکال»",
-     "box": {
-      "x": -133,
-      "y": 567,
-      "w": 54,
-      "h": 21
-     },
-     "vw": 1366,
-     "vh": 768
+     "x": 48,
+     "y": 560,
+     "w": 863,
+     "h": 110
     },
     {
-     "el": "a#inspector-stage-fundamental.flex.items-center.gap-1 «بنیادی»",
-     "box": {
-      "x": -186,
-      "y": 567,
-      "w": 49,
-      "h": 21
-     },
-     "vw": 1366,
-     "vh": 768
+     "x": 911,
+     "y": 560,
+     "w": 65,
+     "h": 110
     },
     {
-     "el": "a#inspector-stage-handover.flex.items-center.gap-1 «تحویل»",
-     "box": {
-      "x": -60,
-      "y": 592,
-      "w": 49,
-      "h": 21
-     },
-     "vw": 1366,
-     "vh": 768
+     "x": 911,
+     "y": 560,
+     "w": 65,
+     "h": 110
     },
     {
-     "el": "a#inspector-events-all.text-[9px].text-accent-blue.hover:underline «همه ↗»",
-     "box": {
-      "x": -221,
-      "y": 644,
-      "w": 25,
-      "h": 14
-     },
-     "vw": 1366,
-     "vh": 768
+     "x": 48,
+     "y": 670,
+     "w": 863,
+     "h": 32
+    },
+    {
+     "x": 48,
+     "y": 670,
+     "w": 863,
+     "h": 32
     }
    ],
+   "fixedLayers": [],
+   "domNodes": 840,
+   "hash": "#/technical/%D9%81%D9%88%D9%84%D8%A7%D8%AF",
+   "title": "ب 🚀 ⚙ ⎋ بازار بسته — تابلوی آخرینِ نشست تحلیل تکنیکال ۶۰ سی",
+   "route": "/technical/فولاد",
+   "readyBy": "marker",
+   "consoleErrors": [],
+   "netErrors": []
+  },
+  {
+   "vw": 1366,
+   "vh": 768,
+   "dpr": 1,
+   "zoomCssPx": "16px",
+   "docScrollW": 1366,
+   "docScrollH": 768,
+   "bodyOverflowX": 0,
+   "bodyOverflowY": 0,
+   "offenders": [],
+   "clipped": [],
+   "ellipsised": [],
+   "offscreen": [],
+   "belowFold": 0,
+   "inertOffscreen": 9,
    "unreachable": [],
    "canvases": [],
    "fixedLayers": [],
@@ -868,139 +628,8 @@
     "Failed to load resource: the server responded with a status of 404 (Not Found)"
    ],
    "netErrors": [
-    "FAILED http://127.0.0.1:8000/api/mstat/smart-money",
-    "FAILED http://127.0.0.1:8000/api/mstat/phases",
-    "FAILED http://127.0.0.1:8000/api/mstat/gold?history_days=60",
-    "FAILED http://127.0.0.1:8000/api/index/tedpix?limit=0",
-    "HTTP status() {\n        return this._initializer.status;\n      } http://127.0.0.1:8000/api/fundamental/خوز",
-    "HTTP status() {\n        return this._initializer.status;\n      } http://127.0.0.1:8000/api/fundamental/خوز"
-   ]
-  },
-  {
-   "vw": 1366,
-   "vh": 768,
-   "dpr": 1,
-   "zoomCssPx": "16px",
-   "docScrollW": 1366,
-   "docScrollH": 772,
-   "bodyOverflowX": 0,
-   "bodyOverflowY": 4,
-   "offenders": [],
-   "clipped": [],
-   "ellipsised": [],
-   "offscreen": [
-    {
-     "el": "button.rounded-md.border.px-1.5 «سنجاق»",
-     "box": {
-      "x": -202,
-      "y": 8,
-      "w": 47,
-      "h": 20
-     },
-     "vw": 1366,
-     "vh": 768
-    },
-    {
-     "el": "button.rounded-md.border.border-transparent «✕»",
-     "box": {
-      "x": -230,
-      "y": 8,
-      "w": 24,
-      "h": 20
-     },
-     "vw": 1366,
-     "vh": 768
-    },
-    {
-     "el": "button#inspector-tab-glance.rounded-md.border.px-2 «در یک نگاه»",
-     "box": {
-      "x": -118,
-      "y": 47,
-      "w": 108,
-      "h": 25
-     },
-     "vw": 1366,
-     "vh": 768
-    },
-    {
-     "el": "button#inspector-tab-detail.rounded-md.border.px-2 «جزئیات بازار»",
-     "box": {
-      "x": -230,
-      "y": 47,
-      "w": 108,
-      "h": 25
-     },
-     "vw": 1366,
-     "vh": 768
-    },
-    {
-     "el": "a#inspector-stage-tape.flex.items-center.gap-1 «تابلوخوانی»",
-     "box": {
-      "x": -75,
-      "y": 567,
-      "w": 64,
-      "h": 21
-     },
-     "vw": 1366,
-     "vh": 768
-    },
-    {
-     "el": "a#inspector-stage-technical.flex.items-center.gap-1 «تکنیکال»",
-     "box": {
-      "x": -133,
-      "y": 567,
-      "w": 54,
-      "h": 21
-     },
-     "vw": 1366,
-     "vh": 768
-    },
-    {
-     "el": "a#inspector-stage-fundamental.flex.items-center.gap-1 «بنیادی»",
-     "box": {
-      "x": -186,
-      "y": 567,
-      "w": 49,
-      "h": 21
-     },
-     "vw": 1366,
-     "vh": 768
-    },
-    {
-     "el": "a#inspector-stage-handover.flex.items-center.gap-1 «تحویل»",
-     "box": {
-      "x": -60,
-      "y": 592,
-      "w": 49,
-      "h": 21
-     },
-     "vw": 1366,
-     "vh": 768
-    },
-    {
-     "el": "a#inspector-events-all.text-[9px].text-accent-blue.hover:underline «همه ↗»",
-     "box": {
-      "x": -221,
-      "y": 644,
-      "w": 25,
-      "h": 14
-     },
-     "vw": 1366,
-     "vh": 768
-    }
-   ],
-   "unreachable": [],
-   "canvases": [],
-   "fixedLayers": [],
-   "domNodes": 596,
-   "hash": "#/technical",
-   "title": "ب 🚀 ⚙ ⎋ بازار بسته — تابلوی آخرینِ نشست تحلیل تکنیکال ۶۰ سی",
-   "route": "/technical",
-   "readyBy": "timeout",
-   "consoleErrors": [],
-   "netErrors": [
-    "FAILED http://127.0.0.1:8000/api/fundamental/خوز",
-    "FAILED http://127.0.0.1:8000/api/fundamental/خوز"
+    "HTTP 404 http://127.0.0.1:8000/api/fundamental/خوز",
+    "HTTP 404 http://127.0.0.1:8000/api/fundamental/خوز"
    ]
   },
   {
@@ -1015,129 +644,140 @@
    "offenders": [],
    "clipped": [],
    "ellipsised": [],
-   "offscreen": [
+   "offscreen": [],
+   "belowFold": 0,
+   "inertOffscreen": 9,
+   "unreachable": [],
+   "canvases": [
     {
-     "el": "button.rounded-md.border.px-1.5 «سنجاق»",
-     "box": {
-      "x": -202,
-      "y": 8,
-      "w": 47,
-      "h": 20
-     },
-     "vw": 1366,
-     "vh": 768
+     "x": 48,
+     "y": 143,
+     "w": 863,
+     "h": 416
     },
     {
-     "el": "button.rounded-md.border.border-transparent «✕»",
-     "box": {
-      "x": -230,
-      "y": 8,
-      "w": 24,
-      "h": 20
-     },
-     "vw": 1366,
-     "vh": 768
+     "x": 48,
+     "y": 143,
+     "w": 863,
+     "h": 416
     },
     {
-     "el": "button#inspector-tab-glance.rounded-md.border.px-2 «در یک نگاه»",
-     "box": {
-      "x": -118,
-      "y": 47,
-      "w": 108,
-      "h": 25
-     },
-     "vw": 1366,
-     "vh": 768
+     "x": 911,
+     "y": 143,
+     "w": 65,
+     "h": 416
     },
     {
-     "el": "button#inspector-tab-detail.rounded-md.border.px-2 «جزئیات بازار»",
-     "box": {
-      "x": -230,
-      "y": 47,
-      "w": 108,
-      "h": 25
-     },
-     "vw": 1366,
-     "vh": 768
+     "x": 911,
+     "y": 143,
+     "w": 65,
+     "h": 416
     },
     {
-     "el": "a#inspector-stage-tape.flex.items-center.gap-1 «تابلوخوانی»",
-     "box": {
-      "x": -75,
-      "y": 567,
-      "w": 64,
-      "h": 21
-     },
-     "vw": 1366,
-     "vh": 768
+     "x": 48,
+     "y": 560,
+     "w": 863,
+     "h": 110
     },
     {
-     "el": "a#inspector-stage-technical.flex.items-center.gap-1 «تکنیکال»",
-     "box": {
-      "x": -133,
-      "y": 567,
-      "w": 54,
-      "h": 21
-     },
-     "vw": 1366,
-     "vh": 768
+     "x": 48,
+     "y": 560,
+     "w": 863,
+     "h": 110
     },
     {
-     "el": "a#inspector-stage-fundamental.flex.items-center.gap-1 «بنیادی»",
-     "box": {
-      "x": -186,
-      "y": 567,
-      "w": 49,
-      "h": 21
-     },
-     "vw": 1366,
-     "vh": 768
+     "x": 911,
+     "y": 560,
+     "w": 65,
+     "h": 110
     },
     {
-     "el": "a#inspector-stage-handover.flex.items-center.gap-1 «تحویل»",
-     "box": {
-      "x": -60,
-      "y": 592,
-      "w": 49,
-      "h": 21
-     },
-     "vw": 1366,
-     "vh": 768
+     "x": 911,
+     "y": 560,
+     "w": 65,
+     "h": 110
     },
     {
-     "el": "a#inspector-events-all.text-[9px].text-accent-blue.hover:underline «همه ↗»",
-     "box": {
-      "x": -221,
-      "y": 644,
-      "w": 25,
-      "h": 14
-     },
-     "vw": 1366,
-     "vh": 768
+     "x": 48,
+     "y": 670,
+     "w": 863,
+     "h": 32
+    },
+    {
+     "x": 48,
+     "y": 670,
+     "w": 863,
+     "h": 32
     }
    ],
+   "fixedLayers": [],
+   "domNodes": 840,
+   "hash": "#/technical",
+   "title": "ب 🚀 ⚙ ⎋ بازار بسته — تابلوی آخرینِ نشست تحلیل تکنیکال ۶۰ سی",
+   "route": "/technical",
+   "readyBy": "marker",
+   "consoleErrors": [],
+   "netErrors": [
+    "FAILED(net::ERR_ABORTED) http://127.0.0.1:8000/api/fundamental/خوز",
+    "FAILED(net::ERR_ABORTED) http://127.0.0.1:8000/api/fundamental/خوز"
+   ]
+  },
+  {
+   "vw": 1366,
+   "vh": 768,
+   "dpr": 1,
+   "zoomCssPx": "16px",
+   "docScrollW": 1366,
+   "docScrollH": 768,
+   "bodyOverflowX": 0,
+   "bodyOverflowY": 0,
+   "offenders": [],
+   "clipped": [],
+   "ellipsised": [],
+   "offscreen": [],
+   "belowFold": 1,
+   "inertOffscreen": 9,
    "unreachable": [],
    "canvases": [],
    "fixedLayers": [],
-   "domNodes": 489,
+   "domNodes": 706,
+   "hash": "#/fundamental/%D9%81%D9%88%D9%84%D8%A7%D8%AF",
+   "title": "ب ترمینال بورس FTS v2.1 فضای تحلیل وضعیت بازار تابلوخوانی تک",
+   "route": "/fundamental/فولاد",
+   "readyBy": "marker",
+   "consoleErrors": [],
+   "netErrors": []
+  },
+  {
+   "vw": 1366,
+   "vh": 768,
+   "dpr": 1,
+   "zoomCssPx": "16px",
+   "docScrollW": 1366,
+   "docScrollH": 768,
+   "bodyOverflowX": 0,
+   "bodyOverflowY": 0,
+   "offenders": [],
+   "clipped": [],
+   "ellipsised": [],
+   "offscreen": [],
+   "belowFold": 0,
+   "inertOffscreen": 9,
+   "unreachable": [],
+   "canvases": [],
+   "fixedLayers": [],
+   "domNodes": 287,
    "hash": "#/fundamental/%D8%AE%D9%88%D8%B2",
    "title": "ب ترمینال بورس FTS v2.1 فضای تحلیل وضعیت بازار تابلوخوانی تک",
    "route": "/fundamental/خوز",
-   "readyBy": "timeout",
+   "readyBy": "marker",
    "consoleErrors": [
-    "Failed to load resource: the server responded with a status of 404 (Not Found)",
-    "Failed to load resource: the server responded with a status of 404 (Not Found)",
     "Failed to load resource: the server responded with a status of 404 (Not Found)",
     "Failed to load resource: the server responded with a status of 404 (Not Found)"
    ],
    "netErrors": [
-    "FAILED http://127.0.0.1:8000/api/fts/فولاد",
-    "HTTP status() {\n        return this._initializer.status;\n      } http://127.0.0.1:8000/api/fundamental/خوز",
-    "FAILED http://127.0.0.1:8000/api/index/tedpix?limit=0",
-    "FAILED http://127.0.0.1:8000/api/fundamental/خوز",
-    "HTTP status() {\n        return this._initializer.status;\n      } http://127.0.0.1:8000/api/fundamental/خوز",
-    "HTTP status() {\n        return this._initializer.status;\n      } http://127.0.0.1:8000/api/fundamental/خوز",
-    "HTTP status() {\n        return this._initializer.status;\n      } http://127.0.0.1:8000/api/fundamental/خوز"
+    "HTTP 404 http://127.0.0.1:8000/api/fundamental/خوز",
+    "HTTP 404 http://127.0.0.1:8000/api/fundamental/خوز"
    ]
   },
   {
@@ -1173,173 +813,9 @@
      }
     }
    ],
-   "offscreen": [
-    {
-     "el": "span#fts-mark-1a_monetary_growth.inline-flex.cursor-pointer.items-center «✓»",
-     "box": {
-      "x": 978,
-      "y": 784,
-      "w": 20,
-      "h": 20
-     },
-     "vw": 1366,
-     "vh": 768
-    },
-    {
-     "el": "span#fts-mark-1b_volume_growth.inline-flex.cursor-pointer.items-center «✓»",
-     "box": {
-      "x": 941,
-      "y": 784,
-      "w": 20,
-      "h": 20
-     },
-     "vw": 1366,
-     "vh": 768
-    },
-    {
-     "el": "span#fts-mark-2_eps_trend.inline-flex.cursor-pointer.items-center «✓»",
-     "box": {
-      "x": 778,
-      "y": 784,
-      "w": 20,
-      "h": 20
-     },
-     "vw": 1366,
-     "vh": 768
-    },
-    {
-     "el": "span#fts-mark-3_gross_margin.inline-flex.cursor-pointer.items-center «✓»",
-     "box": {
-      "x": 501,
-      "y": 784,
-      "w": 20,
-      "h": 20
-     },
-     "vw": 1366,
-     "vh": 768
-    },
-    {
-     "el": "span#fts-mark-4_sales_to_mcap.inline-flex.cursor-pointer.items-center «✓»",
-     "box": {
-      "x": 368,
-      "y": 784,
-      "w": 20,
-      "h": 20
-     },
-     "vw": 1366,
-     "vh": 768
-    },
-    {
-     "el": "span#fts-mark-5_industry.inline-flex.cursor-pointer.items-center «✓»",
-     "box": {
-      "x": 223,
-      "y": 784,
-      "w": 20,
-      "h": 20
-     },
-     "vw": 1366,
-     "vh": 768
-    },
-    {
-     "el": "span#fts-mark-1a_monetary_growth.inline-flex.cursor-pointer.items-center «✓»",
-     "box": {
-      "x": 978,
-      "y": 836,
-      "w": 20,
-      "h": 20
-     },
-     "vw": 1366,
-     "vh": 768
-    },
-    {
-     "el": "span#fts-mark-1b_volume_growth.inline-flex.cursor-pointer.items-center «✓»",
-     "box": {
-      "x": 941,
-      "y": 836,
-      "w": 20,
-      "h": 20
-     },
-     "vw": 1366,
-     "vh": 768
-    },
-    {
-     "el": "span#fts-mark-2_eps_trend.inline-flex.cursor-pointer.items-center «✓»",
-     "box": {
-      "x": 778,
-      "y": 836,
-      "w": 20,
-      "h": 20
-     },
-     "vw": 1366,
-     "vh": 768
-    },
-    {
-     "el": "span#fts-mark-3_gross_margin.inline-flex.cursor-pointer.items-center «✓»",
-     "box": {
-      "x": 501,
-      "y": 836,
-      "w": 20,
-      "h": 20
-     },
-     "vw": 1366,
-     "vh": 768
-    },
-    {
-     "el": "span#fts-mark-4_sales_to_mcap.inline-flex.cursor-pointer.items-center «✓»",
-     "box": {
-      "x": 368,
-      "y": 836,
-      "w": 20,
-      "h": 20
-     },
-     "vw": 1366,
-     "vh": 768
-    },
-    {
-     "el": "span#fts-mark-5_industry.inline-flex.cursor-pointer.items-center «✓»",
-     "box": {
-      "x": 223,
-      "y": 836,
-      "w": 20,
-      "h": 20
-     },
-     "vw": 1366,
-     "vh": 768
-    },
-    {
-     "el": "span#fts-mark-1a_monetary_growth.inline-flex.cursor-pointer.items-center «✓»",
-     "box": {
-      "x": 978,
-      "y": 888,
-      "w": 20,
-      "h": 20
-     },
-     "vw": 1366,
-     "vh": 768
-    },
-    {
-     "el": "span#fts-mark-1b_volume_growth.inline-flex.cursor-pointer.items-center «✓»",
-     "box": {
-      "x": 941,
-      "y": 888,
-      "w": 20,
-      "h": 20
-     },
-     "vw": 1366,
-     "vh": 768
-    },
-    {
-     "el": "span#fts-mark-2_eps_trend.inline-flex.cursor-pointer.items-center «✓»",
-     "box": {
-      "x": 778,
-      "y": 888,
-      "w": 20,
-      "h": 20
-     },
-     "vw": 1366,
-     "vh": 768
-    }
-   ],
+   "offscreen": [],
+   "belowFold": 48,
+   "inertOffscreen": 9,
    "unreachable": [],
    "canvases": [],
    "fixedLayers": [],
@@ -1347,9 +823,12 @@
    "hash": "#/fundamental",
    "title": "ب ترمینال بورس FTS v2.1 فضای تحلیل وضعیت بازار تابلوخوانی تک",
    "route": "/fundamental",
-   "readyBy": "timeout",
+   "readyBy": "marker",
    "consoleErrors": [],
-   "netErrors": []
+   "netErrors": [
+    "FAILED(net::ERR_ABORTED) http://127.0.0.1:8000/api/fundamental/خوز",
+    "FAILED(net::ERR_ABORTED) http://127.0.0.1:8000/api/fundamental/خوز"
+   ]
   },
   {
    "vw": 1366,
@@ -1363,115 +842,17 @@
    "offenders": [],
    "clipped": [],
    "ellipsised": [],
-   "offscreen": [
-    {
-     "el": "button.rounded-md.border.px-1.5 «سنجاق»",
-     "box": {
-      "x": -202,
-      "y": 8,
-      "w": 47,
-      "h": 20
-     },
-     "vw": 1366,
-     "vh": 768
-    },
-    {
-     "el": "button.rounded-md.border.border-transparent «✕»",
-     "box": {
-      "x": -230,
-      "y": 8,
-      "w": 24,
-      "h": 20
-     },
-     "vw": 1366,
-     "vh": 768
-    },
-    {
-     "el": "button#inspector-tab-glance.rounded-md.border.px-2 «در یک نگاه»",
-     "box": {
-      "x": -118,
-      "y": 47,
-      "w": 108,
-      "h": 25
-     },
-     "vw": 1366,
-     "vh": 768
-    },
-    {
-     "el": "button#inspector-tab-detail.rounded-md.border.px-2 «جزئیات بازار»",
-     "box": {
-      "x": -230,
-      "y": 47,
-      "w": 108,
-      "h": 25
-     },
-     "vw": 1366,
-     "vh": 768
-    },
-    {
-     "el": "a#inspector-stage-tape.flex.items-center.gap-1 «تابلوخوانی»",
-     "box": {
-      "x": -75,
-      "y": 567,
-      "w": 64,
-      "h": 21
-     },
-     "vw": 1366,
-     "vh": 768
-    },
-    {
-     "el": "a#inspector-stage-technical.flex.items-center.gap-1 «تکنیکال»",
-     "box": {
-      "x": -133,
-      "y": 567,
-      "w": 54,
-      "h": 21
-     },
-     "vw": 1366,
-     "vh": 768
-    },
-    {
-     "el": "a#inspector-stage-fundamental.flex.items-center.gap-1 «بنیادی»",
-     "box": {
-      "x": -186,
-      "y": 567,
-      "w": 49,
-      "h": 21
-     },
-     "vw": 1366,
-     "vh": 768
-    },
-    {
-     "el": "a#inspector-stage-handover.flex.items-center.gap-1 «تحویل»",
-     "box": {
-      "x": -60,
-      "y": 592,
-      "w": 49,
-      "h": 21
-     },
-     "vw": 1366,
-     "vh": 768
-    },
-    {
-     "el": "a#inspector-events-all.text-[9px].text-accent-blue.hover:underline «همه ↗»",
-     "box": {
-      "x": -221,
-      "y": 644,
-      "w": 25,
-      "h": 14
-     },
-     "vw": 1366,
-     "vh": 768
-    }
-   ],
+   "offscreen": [],
+   "belowFold": 0,
+   "inertOffscreen": 9,
    "unreachable": [],
    "canvases": [],
    "fixedLayers": [],
-   "domNodes": 359,
+   "domNodes": 360,
    "hash": "#/master",
    "title": "ب ترمینال بورس FTS v2.1 فضای تحلیل وضعیت بازار تابلوخوانی تک",
    "route": "/master",
-   "readyBy": "timeout",
+   "readyBy": "marker",
    "consoleErrors": [],
    "netErrors": []
   },
@@ -1488,6 +869,34 @@
    "clipped": [],
    "ellipsised": [],
    "offscreen": [],
+   "belowFold": 0,
+   "inertOffscreen": 0,
+   "unreachable": [],
+   "canvases": [],
+   "fixedLayers": [],
+   "domNodes": 491,
+   "hash": "#/master/%D9%81%D9%88%D9%84%D8%A7%D8%AF",
+   "title": "ب ترمینال بورس FTS v2.1 فضای تحلیل وضعیت بازار تابلوخوانی تک",
+   "route": "/master/فولاد",
+   "readyBy": "marker",
+   "consoleErrors": [],
+   "netErrors": []
+  },
+  {
+   "vw": 1366,
+   "vh": 768,
+   "dpr": 1,
+   "zoomCssPx": "16px",
+   "docScrollW": 1366,
+   "docScrollH": 768,
+   "bodyOverflowX": 0,
+   "bodyOverflowY": 0,
+   "offenders": [],
+   "clipped": [],
+   "ellipsised": [],
+   "offscreen": [],
+   "belowFold": 0,
+   "inertOffscreen": 0,
    "unreachable": [],
    "canvases": [],
    "fixedLayers": [],
@@ -1495,7 +904,7 @@
    "hash": "#/master/%D8%AE%D9%88%D8%B2",
    "title": "ب ترمینال بورس FTS v2.1 فضای تحلیل وضعیت بازار تابلوخوانی تک",
    "route": "/master/خوز",
-   "readyBy": "timeout",
+   "readyBy": "marker",
    "consoleErrors": [],
    "netErrors": []
   },
@@ -1505,135 +914,16 @@
    "dpr": 1,
    "zoomCssPx": "16px",
    "docScrollW": 1366,
-   "docScrollH": 1177,
+   "docScrollH": 768,
    "bodyOverflowX": 0,
-   "bodyOverflowY": 409,
+   "bodyOverflowY": 0,
    "offenders": [],
    "clipped": [],
    "ellipsised": [],
    "offscreen": [],
-   "unreachable": [
-    {
-     "el": "div.mt-1.text-3xs.leading-5 «چارت دو سبک را می‌شمارد: نوسانگیر و روندگی»",
-     "hiddenPx": 40,
-     "box": {
-      "x": 996,
-      "y": 548,
-      "w": 175,
-      "h": 40
-     }
-    },
-    {
-     "el": "div.mt-1.text-3xs.leading-5 «سطرِ «بررسی صنایع: خلاصه معاملات صنایع بور»",
-     "hiddenPx": 40,
-     "box": {
-      "x": 996,
-      "y": 725,
-      "w": 175,
-      "h": 40
-     }
-    },
-    {
-     "el": "div.mt-1.text-3xs.leading-5 «چارت برایِ هر دو سبک یک شرطِ حجمی می‌گذارد»",
-     "hiddenPx": 40,
-     "box": {
-      "x": 996,
-      "y": 813,
-      "w": 175,
-      "h": 40
-     }
-    },
-    {
-     "el": "div.mt-1.text-3xs.leading-5 «سطرِ «خشک کردن / فیلتر» در چارت: برایِ نوس»",
-     "hiddenPx": 60,
-     "box": {
-      "x": 996,
-      "y": 990,
-      "w": 175,
-      "h": 40
-     }
-    },
-    {
-     "el": "div.mt-1.text-3xs.leading-5 «سرِ شاخۀ فروش در چارت: کف دوقلو، سقف دوقلو»",
-     "hiddenPx": 60,
-     "box": {
-      "x": 753,
-      "y": 636,
-      "w": 175,
-      "h": 40
-     }
-    },
-    {
-     "el": "div.mt-1.text-3xs.leading-5 «سطرهایِ «حد ضرر» در چارت: ۵٪ زیر آخرین کفِ»",
-     "hiddenPx": 100,
-     "box": {
-      "x": 753,
-      "y": 725,
-      "w": 175,
-      "h": 40
-     }
-    },
-    {
-     "el": "div.mt-1.text-3xs.leading-5 «حکم ۴: قاعده «تخمین فروش ۱۲ ماهه ÷ ارزش با»",
-     "hiddenPx": 140,
-     "box": {
-      "x": 511,
-      "y": 854,
-      "w": 175,
-      "h": 40
-     }
-    },
-    {
-     "el": "div.mt-1.text-3xs.leading-5 «شاخص ۵: چشم‌انداز خوب (دارویی، غذایی، سیما»",
-     "hiddenPx": 60,
-     "box": {
-      "x": 511,
-      "y": 943,
-      "w": 175,
-      "h": 40
-     }
-    },
-    {
-     "el": "div.mt-1.text-3xs.leading-5 «درِ جزوه این چهار طبقه سطر ندارد؛ از منطقِ»",
-     "hiddenPx": 40,
-     "box": {
-      "x": 511,
-      "y": 1031,
-      "w": 175,
-      "h": 40
-     }
-    },
-    {
-     "el": "div.mt-1.text-3xs.leading-5 «سطرهایِ «۱-تابلو خوانی، ۲-تکنیکال، ۳-بنیاد»",
-     "hiddenPx": 40,
-     "box": {
-      "x": 268,
-      "y": 548,
-      "w": 175,
-      "h": 40
-     }
-    },
-    {
-     "el": "div.mt-1.text-3xs.leading-5 «حداکثر ۷۰٪ کل دارایی در بازارِ سرمایه (در »",
-     "hiddenPx": 60,
-     "box": {
-      "x": 268,
-      "y": 636,
-      "w": 175,
-      "h": 40
-     }
-    },
-    {
-     "el": "div.mt-1.text-3xs.leading-5 «سطرِ چارت: هر ماه گزارشِ فروش، هر فصل صورت»",
-     "hiddenPx": 40,
-     "box": {
-      "x": 268,
-      "y": 739,
-      "w": 175,
-      "h": 40
-     }
-    }
-   ],
+   "belowFold": 0,
+   "inertOffscreen": 0,
+   "unreachable": [],
    "canvases": [],
    "fixedLayers": [],
    "domNodes": 528,
@@ -1650,36 +940,15 @@
    "dpr": 1,
    "zoomCssPx": "16px",
    "docScrollW": 1366,
-   "docScrollH": 1300,
+   "docScrollH": 768,
    "bodyOverflowX": 0,
-   "bodyOverflowY": 532,
+   "bodyOverflowY": 0,
    "offenders": [],
    "clipped": [],
    "ellipsised": [],
-   "offscreen": [
-    {
-     "el": "a.rounded-xl.border.border-border-c «← صفحه قبل»",
-     "box": {
-      "x": 1107,
-      "y": 1259,
-      "w": 91,
-      "h": 32
-     },
-     "vw": 1366,
-     "vh": 768
-    },
-    {
-     "el": "a.rounded-xl.border.border-accent-blue/40 «صفحه بعد →»",
-     "box": {
-      "x": 240,
-      "y": 1259,
-      "w": 90,
-      "h": 32
-     },
-     "vw": 1366,
-     "vh": 768
-    }
-   ],
+   "offscreen": [],
+   "belowFold": 2,
+   "inertOffscreen": 0,
    "unreachable": [],
    "canvases": [],
    "fixedLayers": [],
@@ -1687,7 +956,7 @@
    "hash": "#/strategy-tree?page=F",
    "title": "ب ترمینال بورس FTS v2.1 فضای تحلیل وضعیت بازار تابلوخوانی تک",
    "route": "/strategy-tree?page=F",
-   "readyBy": "timeout",
+   "readyBy": "marker",
    "consoleErrors": [],
    "netErrors": []
   },
@@ -1697,36 +966,15 @@
    "dpr": 1,
    "zoomCssPx": "16px",
    "docScrollW": 1366,
-   "docScrollH": 960,
+   "docScrollH": 768,
    "bodyOverflowX": 0,
-   "bodyOverflowY": 192,
+   "bodyOverflowY": 0,
    "offenders": [],
    "clipped": [],
    "ellipsised": [],
-   "offscreen": [
-    {
-     "el": "a.rounded-xl.border.border-border-c «← صفحه قبل»",
-     "box": {
-      "x": 1107,
-      "y": 919,
-      "w": 91,
-      "h": 32
-     },
-     "vw": 1366,
-     "vh": 768
-    },
-    {
-     "el": "a.rounded-xl.border.border-accent-blue/40 «صفحه بعد →»",
-     "box": {
-      "x": 240,
-      "y": 919,
-      "w": 90,
-      "h": 32
-     },
-     "vw": 1366,
-     "vh": 768
-    }
-   ],
+   "offscreen": [],
+   "belowFold": 2,
+   "inertOffscreen": 0,
    "unreachable": [],
    "canvases": [],
    "fixedLayers": [],
@@ -1734,7 +982,7 @@
    "hash": "#/strategy-tree?page=T",
    "title": "ب ترمینال بورس FTS v2.1 فضای تحلیل وضعیت بازار تابلوخوانی تک",
    "route": "/strategy-tree?page=T",
-   "readyBy": "timeout",
+   "readyBy": "marker",
    "consoleErrors": [],
    "netErrors": []
   },
@@ -1744,25 +992,15 @@
    "dpr": 1,
    "zoomCssPx": "16px",
    "docScrollW": 1366,
-   "docScrollH": 1306,
+   "docScrollH": 768,
    "bodyOverflowX": 0,
-   "bodyOverflowY": 538,
+   "bodyOverflowY": 0,
    "offenders": [],
    "clipped": [],
    "ellipsised": [],
-   "offscreen": [
-    {
-     "el": "a.rounded-xl.border.border-accent-blue/40 «صفحه بعد →»",
-     "box": {
-      "x": 240,
-      "y": 1266,
-      "w": 90,
-      "h": 32
-     },
-     "vw": 1366,
-     "vh": 768
-    }
-   ],
+   "offscreen": [],
+   "belowFold": 1,
+   "inertOffscreen": 0,
    "unreachable": [],
    "canvases": [],
    "fixedLayers": [],
@@ -1770,7 +1008,7 @@
    "hash": "#/strategy-tree?page=S",
    "title": "ب ترمینال بورس FTS v2.1 فضای تحلیل وضعیت بازار تابلوخوانی تک",
    "route": "/strategy-tree?page=S",
-   "readyBy": "timeout",
+   "readyBy": "marker",
    "consoleErrors": [],
    "netErrors": []
   },
@@ -1780,36 +1018,15 @@
    "dpr": 1,
    "zoomCssPx": "16px",
    "docScrollW": 1366,
-   "docScrollH": 1236,
+   "docScrollH": 768,
    "bodyOverflowX": 0,
-   "bodyOverflowY": 468,
+   "bodyOverflowY": 0,
    "offenders": [],
    "clipped": [],
    "ellipsised": [],
-   "offscreen": [
-    {
-     "el": "a.rounded-xl.border.border-border-c «← صفحه قبل»",
-     "box": {
-      "x": 1107,
-      "y": 1196,
-      "w": 91,
-      "h": 32
-     },
-     "vw": 1366,
-     "vh": 768
-    },
-    {
-     "el": "a.rounded-xl.border.border-emerald-500/40 «رفتن به غربالگری FTS»",
-     "box": {
-      "x": 240,
-      "y": 1196,
-      "w": 131,
-      "h": 32
-     },
-     "vw": 1366,
-     "vh": 768
-    }
-   ],
+   "offscreen": [],
+   "belowFold": 2,
+   "inertOffscreen": 0,
    "unreachable": [],
    "canvases": [],
    "fixedLayers": [],
@@ -1817,7 +1034,7 @@
    "hash": "#/strategy-tree?page=M",
    "title": "ب ترمینال بورس FTS v2.1 فضای تحلیل وضعیت بازار تابلوخوانی تک",
    "route": "/strategy-tree?page=M",
-   "readyBy": "timeout",
+   "readyBy": "marker",
    "consoleErrors": [],
    "netErrors": []
   },
@@ -1827,21 +1044,23 @@
    "dpr": 1,
    "zoomCssPx": "16px",
    "docScrollW": 1366,
-   "docScrollH": 1146,
+   "docScrollH": 768,
    "bodyOverflowX": 0,
-   "bodyOverflowY": 378,
+   "bodyOverflowY": 0,
    "offenders": [],
    "clipped": [],
    "ellipsised": [],
    "offscreen": [],
+   "belowFold": 0,
+   "inertOffscreen": 0,
    "unreachable": [],
    "canvases": [],
    "fixedLayers": [],
-   "domNodes": 531,
+   "domNodes": 532,
    "hash": "#/portfolio",
    "title": "ب ترمینال بورس FTS v2.1 فضای تحلیل وضعیت بازار تابلوخوانی تک",
    "route": "/portfolio",
-   "readyBy": "timeout",
+   "readyBy": "marker",
    "consoleErrors": [],
    "netErrors": []
   },
@@ -1851,13 +1070,15 @@
    "dpr": 1,
    "zoomCssPx": "16px",
    "docScrollW": 1366,
-   "docScrollH": 819,
+   "docScrollH": 768,
    "bodyOverflowX": 0,
-   "bodyOverflowY": 51,
+   "bodyOverflowY": 0,
    "offenders": [],
    "clipped": [],
    "ellipsised": [],
    "offscreen": [],
+   "belowFold": 0,
+   "inertOffscreen": 0,
    "unreachable": [],
    "canvases": [],
    "fixedLayers": [],
@@ -1875,179 +1096,15 @@
    "dpr": 1,
    "zoomCssPx": "16px",
    "docScrollW": 1366,
-   "docScrollH": 10474,
+   "docScrollH": 768,
    "bodyOverflowX": 0,
-   "bodyOverflowY": 9706,
+   "bodyOverflowY": 0,
    "offenders": [],
    "clipped": [],
    "ellipsised": [],
-   "offscreen": [
-    {
-     "el": "a#notice-open.rounded-md.border.border-border-c «منبع ↗»",
-     "box": {
-      "x": 317,
-      "y": 791,
-      "w": 45,
-      "h": 20
-     },
-     "vw": 1366,
-     "vh": 768
-    },
-    {
-     "el": "button#notice-mark.rounded-md.border.border-border-c «خوانده شد»",
-     "box": {
-      "x": 251,
-      "y": 791,
-      "w": 60,
-      "h": 20
-     },
-     "vw": 1366,
-     "vh": 768
-    },
-    {
-     "el": "a#notice-open.rounded-md.border.border-border-c «منبع ↗»",
-     "box": {
-      "x": 317,
-      "y": 877,
-      "w": 45,
-      "h": 20
-     },
-     "vw": 1366,
-     "vh": 768
-    },
-    {
-     "el": "button#notice-mark.rounded-md.border.border-border-c «خوانده شد»",
-     "box": {
-      "x": 251,
-      "y": 877,
-      "w": 60,
-      "h": 20
-     },
-     "vw": 1366,
-     "vh": 768
-    },
-    {
-     "el": "a#notice-open.rounded-md.border.border-border-c «منبع ↗»",
-     "box": {
-      "x": 317,
-      "y": 962,
-      "w": 45,
-      "h": 20
-     },
-     "vw": 1366,
-     "vh": 768
-    },
-    {
-     "el": "button#notice-mark.rounded-md.border.border-border-c «خوانده شد»",
-     "box": {
-      "x": 251,
-      "y": 962,
-      "w": 60,
-      "h": 20
-     },
-     "vw": 1366,
-     "vh": 768
-    },
-    {
-     "el": "a#notice-open.rounded-md.border.border-border-c «منبع ↗»",
-     "box": {
-      "x": 317,
-      "y": 1048,
-      "w": 45,
-      "h": 20
-     },
-     "vw": 1366,
-     "vh": 768
-    },
-    {
-     "el": "button#notice-mark.rounded-md.border.border-border-c «خوانده شد»",
-     "box": {
-      "x": 251,
-      "y": 1048,
-      "w": 60,
-      "h": 20
-     },
-     "vw": 1366,
-     "vh": 768
-    },
-    {
-     "el": "a#notice-open.rounded-md.border.border-border-c «منبع ↗»",
-     "box": {
-      "x": 317,
-      "y": 1133,
-      "w": 45,
-      "h": 20
-     },
-     "vw": 1366,
-     "vh": 768
-    },
-    {
-     "el": "button#notice-mark.rounded-md.border.border-border-c «خوانده شد»",
-     "box": {
-      "x": 251,
-      "y": 1133,
-      "w": 60,
-      "h": 20
-     },
-     "vw": 1366,
-     "vh": 768
-    },
-    {
-     "el": "a#notice-open.rounded-md.border.border-border-c «منبع ↗»",
-     "box": {
-      "x": 317,
-      "y": 1219,
-      "w": 45,
-      "h": 20
-     },
-     "vw": 1366,
-     "vh": 768
-    },
-    {
-     "el": "button#notice-mark.rounded-md.border.border-border-c «خوانده شد»",
-     "box": {
-      "x": 251,
-      "y": 1219,
-      "w": 60,
-      "h": 20
-     },
-     "vw": 1366,
-     "vh": 768
-    },
-    {
-     "el": "a#notice-open.rounded-md.border.border-border-c «منبع ↗»",
-     "box": {
-      "x": 317,
-      "y": 1304,
-      "w": 45,
-      "h": 20
-     },
-     "vw": 1366,
-     "vh": 768
-    },
-    {
-     "el": "button#notice-mark.rounded-md.border.border-border-c «خوانده شد»",
-     "box": {
-      "x": 251,
-      "y": 1304,
-      "w": 60,
-      "h": 20
-     },
-     "vw": 1366,
-     "vh": 768
-    },
-    {
-     "el": "a#notice-open.rounded-md.border.border-border-c «منبع ↗»",
-     "box": {
-      "x": 317,
-      "y": 1390,
-      "w": 45,
-      "h": 20
-     },
-     "vw": 1366,
-     "vh": 768
-    }
-   ],
+   "offscreen": [],
+   "belowFold": 227,
+   "inertOffscreen": 0,
    "unreachable": [],
    "canvases": [],
    "fixedLayers": [],
@@ -2072,10 +1129,182 @@
    "clipped": [],
    "ellipsised": [],
    "offscreen": [],
+   "belowFold": 2,
+   "inertOffscreen": 0,
    "unreachable": [],
-   "canvases": [],
-   "fixedLayers": [],
-   "domNodes": 314,
+   "canvases": [
+    {
+     "x": 726,
+     "y": 572,
+     "w": 420,
+     "h": 283
+    },
+    {
+     "x": 726,
+     "y": 572,
+     "w": 420,
+     "h": 283
+    },
+    {
+     "x": 1146,
+     "y": 572,
+     "w": 51,
+     "h": 283
+    },
+    {
+     "x": 1146,
+     "y": 572,
+     "w": 51,
+     "h": 283
+    },
+    {
+     "x": 726,
+     "y": 856,
+     "w": 420,
+     "h": 110
+    },
+    {
+     "x": 726,
+     "y": 856,
+     "w": 420,
+     "h": 110
+    },
+    {
+     "x": 1146,
+     "y": 856,
+     "w": 51,
+     "h": 110
+    },
+    {
+     "x": 1146,
+     "y": 856,
+     "w": 51,
+     "h": 110
+    },
+    {
+     "x": 726,
+     "y": 966,
+     "w": 420,
+     "h": 26
+    },
+    {
+     "x": 726,
+     "y": 966,
+     "w": 420,
+     "h": 26
+    },
+    {
+     "x": 241,
+     "y": 572,
+     "w": 471,
+     "h": 303
+    },
+    {
+     "x": 241,
+     "y": 572,
+     "w": 471,
+     "h": 303
+    },
+    {
+     "x": 241,
+     "y": 572,
+     "w": 471,
+     "h": 117
+    },
+    {
+     "x": 241,
+     "y": 572,
+     "w": 471,
+     "h": 117
+    },
+    {
+     "x": 241,
+     "y": 572,
+     "w": 471,
+     "h": 303
+    },
+    {
+     "x": 241,
+     "y": 572,
+     "w": 471,
+     "h": 303
+    }
+   ],
+   "fixedLayers": [
+    {
+     "el": "div",
+     "box": {
+      "x": 726,
+      "y": 572,
+      "w": 420,
+      "h": 283
+     }
+    },
+    {
+     "el": "canvas",
+     "box": {
+      "x": 726,
+      "y": 572,
+      "w": 420,
+      "h": 283
+     }
+    },
+    {
+     "el": "canvas",
+     "box": {
+      "x": 726,
+      "y": 572,
+      "w": 420,
+      "h": 283
+     }
+    },
+    {
+     "el": "div",
+     "box": {
+      "x": 1146,
+      "y": 572,
+      "w": 51,
+      "h": 283
+     }
+    },
+    {
+     "el": "canvas",
+     "box": {
+      "x": 1146,
+      "y": 572,
+      "w": 51,
+      "h": 283
+     }
+    },
+    {
+     "el": "canvas",
+     "box": {
+      "x": 1146,
+      "y": 572,
+      "w": 51,
+      "h": 283
+     }
+    },
+    {
+     "el": "div",
+     "box": {
+      "x": 726,
+      "y": 852,
+      "w": 471,
+      "h": 7
+     }
+    },
+    {
+     "el": "div",
+     "box": {
+      "x": 726,
+      "y": 856,
+      "w": 420,
+      "h": 110
+     }
+    }
+   ],
+   "domNodes": 544,
    "hash": "#/engine-lab",
    "title": "ب ترمینال بورس FTS v2.1 فضای تحلیل وضعیت بازار تابلوخوانی تک",
    "route": "/engine-lab",
@@ -2096,18 +1325,18 @@
    "clipped": [],
    "ellipsised": [],
    "offscreen": [],
+   "belowFold": 0,
+   "inertOffscreen": 0,
    "unreachable": [],
    "canvases": [],
    "fixedLayers": [],
-   "domNodes": 300,
+   "domNodes": 301,
    "hash": "#/zz-not-found",
    "title": "ب ترمینال بورس FTS v2.1 فضای تحلیل وضعیت بازار تابلوخوانی تک",
    "route": "/zz-not-found",
-   "readyBy": "timeout",
+   "readyBy": "marker",
    "consoleErrors": [],
-   "netErrors": [
-    "FAILED http://127.0.0.1:8000/api/chart/فولاد"
-   ]
+   "netErrors": []
   }
  ]
 }

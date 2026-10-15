@@ -1,0 +1,11 @@
+MODULE 15:30:50
+module exit=0
+SWEEP 15:32:07
+sweep exit=0
+OVERLAP 15:33:13
+overlap exit=0
+INSTALLED 15:34:07
+installed exit=0
+SHOTS 15:34:21
+shots exit=0
+BATTERY DONE 15:34:46

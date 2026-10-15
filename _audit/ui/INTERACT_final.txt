@@ -1,0 +1,60 @@
+market فیلترِ دارایی (منو)                NOT-OPEN              n=0 focus=button.shrink-0
+market منطقِ غربالگری (توگل)              DISABLED-BY-DESIGN  title=«دو یا چند فیلتر را روشن کنید تا اشتراک/اجتماع معنا پیدا کند»
+market فقط زنده (توگل)                    TOGGLE+RESTORE OK     n=1 @580,133 61×24 focus=in-layer
+market پسوندِ عددی (توگل)                 TOGGLE+RESTORE OK     n=1 @465,133 106×24 focus=in-layer
+market چیپِ سریعِ فیلتر                   TOGGLE+RESTORE OK     n=1 @1,259 1196×508 focus=button.shrink-0
+market ردیفِ تابلو → داورِ نماد           OPEN, NOT-RESTORED    n=1 @10,72 219×25 focus=tape-row
+market-status توگلِ چرخشِ تیکر                   TOGGLE+RESTORE OK     n=0 focus=ticker-mode-toggle
+market-status زیرتبِ طلا (۲)                     PANEL-SAME(no-op)     n=1 @251,372 936×24
+market-status معیارِ دوناتِ طلا                  TOGGLE OK             n=1 @732,998 446×14 OUTSIDE
+      outside: {"left":0,"top":0,"right":0,"bottom":244}
+market-status صفحه‌بندیِ کارت‌هایِ نمایِ کلی     PANEL+RESTORE OK      n=1 @1065,378 61×14 focus=ms-glance-next
+market-status بازهٔ مقایسه                       TOGGLE OK             n=1 @251,683 678×14
+market-status انتخابِ نمادِ نمودار               PANEL OK              n=1 @1154,246 33×24
+technical دیالوگِ تنظیماتِ چارت (۶ تب)       OPEN+RESTORE OK       n=1 @240,109 1066×651 focus=in-layer
+technical تبِ دومِ تنظیماتِ چارت             PANEL-SAME(no-op)     n=1 @240,109 1066×651 focus=in-layer
+technical تغییرِ تایم‌فریم → هفتگی           PANEL-SAME(no-op)     n=1 @240,109 736×623
+technical بازگشتِ تایم‌فریم → روزانه         PANEL-SAME(no-op)     n=1 @240,109 736×623
+technical منویِ موتورِ چارت                  PANEL-SAME(no-op)     n=2 @885,179 83×30 focus=in-layer
+technical جمع‌کردنِ داکِ FTS                 PANEL+RESTORE OK      n=1 @240,552 736×208 focus=in-layer
+technical تبِ دومِ داکِ FTS                  OPEN OK               n=1 @240,581 736×179
+technical تبِ سومِ داکِ FTS                  PANEL OK              n=1 @240,581 736×179
+technical rail سایدبار: کتاب                 PANEL OK              n=1 @1021,149 284×611
+technical rail سایدبار: سطوح                 PANEL OK              n=1 @1021,149 284×611
+technical rail سایدبار: watch                PANEL OK              n=1 @1021,149 284×611
+technical جمع‌کردنِ سایدبار                  NOT-TOGGLE            n=1 @1261,109 45×651 focus=body
+master مودالِ تحلیل‌گر FTS                NO-TRIGGER  pre=clicked  testidها=102  هم‌خانوادۀِ «fts-analyst»=«هیچ»
+fundamental پری‌ستِ استراتژیک                  PANEL-SAME(no-op)     n=19 @1,190 1196×52 OUTSIDE focus=button.rounded-lg
+      outside: {"left":0,"top":0,"right":0,"bottom":46}
+      outside: {"left":0,"top":0,"right":0,"bottom":98}
+      outside: {"left":0,"top":0,"right":0,"bottom":150}
+fundamental جست‌وجویِ غربالگری                 PANEL+RESTORE OK      n=19 @1,190 1196×52 OUTSIDE focus=fts-search
+      outside: {"left":0,"top":0,"right":0,"bottom":46}
+      outside: {"left":0,"top":0,"right":0,"bottom":98}
+      outside: {"left":0,"top":0,"right":0,"bottom":150}
+fundamental پنلِ تنظیماتِ داده                 OPEN+RESTORE OK       n=1 @946,0 420×768 focus=in-layer
+master مودِ نوسان‌گیر                     TOGGLE+RESTORE OK     n=1 @0,264 1198×24 focus=funnel-mode-swing
+master مودِ روندگیر                       NOT-TOGGLE            n=1 @0,264 1198×24
+master گامِ ۲ فرایند                      NOT-PANEL             n=0 focus=fts-step-technical
+master جزئیاتِ FTS درِ دосьیه             PANEL-SAME(no-op)     n=1 @240,685 958×154 OUTSIDE
+      outside: {"left":0,"top":0,"right":0,"bottom":71}
+strategy-tree rail → T تکنیکال                   PANEL-SAME(no-op)     n=1 @265,260 908×54
+strategy-tree زونِ F درِ نقشه                    OPEN OK               n=1 @240,-277 958×1274 OUTSIDE
+      outside: {"left":0,"top":277,"right":0,"bottom":229}
+portfolio تازه‌سازیِ واچ‌لیست (نمایِ فعلی)   PANEL-SAME(no-op)     n=1 @240,679 958×81
+watch پیشنهادِ نماد (بدونِ افزودن)       OPEN OK               n=1 @861,64 256×160
+notifications فیلترِ سطحِ بالا                   PANEL-SAME(no-op)     n=1 @240,211 958×10254 OUTSIDE focus=notice-level-high
+      outside: {"left":0,"top":0,"right":0,"bottom":9697}
+notifications فیلترِ نوعِ اطلاعیه                TOGGLE+RESTORE OK     n=0 focus=notice-kind-capital
+notifications منبعِ کدال                         PANEL-SAME(no-op)     n=1 @240,109 958×38
+engine-lab اندازۀِ klinecharts                PANEL-SAME(no-op)     n=1 @240,-456 958×1216 OUTSIDE
+      outside: {"left":0,"top":456,"right":0,"bottom":0}
+engine-lab مقایسهٔ دوِ موتور                  PANEL-SAME(no-op)     n=1 @240,-456 958×1216 OUTSIDE
+      outside: {"left":0,"top":456,"right":0,"bottom":0}
+global پالتِ فرمان (Ctrl+K)               OPEN+RESTORE OK       n=1 @347,77 672×503 focus=in-layer
+global تنظیماتِ کاربر                     OPEN+RESTORE OK       n=1 @459,194 448×380 focus=in-layer
+global مدیرِ آپدیت (فقطِ نمایش)           OPEN+RESTORE OK       n=1 @427,148 512×472 focus=in-layer
+technical زنگِ هشدارِ قیمتی                  OPEN+RESTORE OK       n=1 @316,213 300×137 focus=price-alert-bell
+
+wrote C:\Users\Johnkallnaya\Desktop\Borsterminal\.worktrees\ui-audit-system-2\_audit\ui\INTERACT.json
+EXIT=0

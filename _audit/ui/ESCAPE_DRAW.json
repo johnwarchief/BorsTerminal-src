@@ -1,0 +1,81 @@
+{
+  "ranAt": "2026-10-15T11:31:58.261Z",
+  "out": [
+    {
+      "case": "focus=tool-button",
+      "afterClick": {
+        "active": [
+          1
+        ],
+        "focus": "body",
+        "nEscListenersUnknown": null
+      },
+      "beforeEsc": {
+        "active": [
+          1
+        ],
+        "focus": "body",
+        "nEscListenersUnknown": null
+      },
+      "afterEsc": {
+        "active": [
+          0
+        ],
+        "focus": "body",
+        "nEscListenersUnknown": null
+      },
+      "cancelled": true
+    },
+    {
+      "case": "focus=chart-canvas",
+      "afterClick": {
+        "active": [
+          1
+        ],
+        "focus": "body",
+        "nEscListenersUnknown": null
+      },
+      "beforeEsc": {
+        "active": [
+          1
+        ],
+        "focus": "body",
+        "nEscListenersUnknown": null
+      },
+      "afterEsc": {
+        "active": [
+          0
+        ],
+        "focus": "body",
+        "nEscListenersUnknown": null
+      },
+      "cancelled": true
+    },
+    {
+      "case": "focus=body",
+      "afterClick": {
+        "active": [
+          1
+        ],
+        "focus": "body",
+        "nEscListenersUnknown": null
+      },
+      "beforeEsc": {
+        "active": [
+          1
+        ],
+        "focus": "body",
+        "nEscListenersUnknown": null
+      },
+      "afterEsc": {
+        "active": [
+          0
+        ],
+        "focus": "body",
+        "nEscListenersUnknown": null
+      },
+      "cancelled": true
+    }
+  ],
+  "errs": []
+}

@@ -1,0 +1,25 @@
+state_probe  viewport=1366x768  base=http://127.0.0.1:8000  at=2026-10-15T12:05:51.383Z
+
+C5  دکمۀِ موتورِ چارت (نه منو)   [STATE-CHANGED (5)]
+     reset(symbol)=cleared   target [data-testid="nn-engine-ffc"]
+     → tag=button role=null clickable=true disabled=false box=[816,112,64,30] hit=span
+     · [data-testid="nn-engine-switch"]  n=0  states=[]  box=null
+        text=
+     · [data-testid^="nn-engine-"]  n=0  states=[]  box=null
+        text=
+     · [data-testid="ffc-chart-host"]  n=1  states=["-"]  box=[0,44,976,688]
+        text=موتور: Fast Financial Charts 2.2 کندل: ۴۲۴۶ مبنایِ سری: عملکردی (خام × ضریبِ سرور) — این موتور کرکرۀ تعدیل ندارد لایهٔ F
+     · [data-testid="fts-engine-back"]  n=1  states=["cls:accent"]  box=[8,704,116,24]
+        text=بازگشت به KLineCharts
+     · [data-testid="fts-engine-error"]  n=0  states=[]  box=null
+        text=
+     · [data-testid="chart-area"]  n=1  states=["-"]  box=[0,44,976,688]
+        text=موتور: Fast Financial Charts 2.2 کندل: ۴۲۴۶ مبنایِ سری: عملکردی (خام × ضریبِ سرور) — این موتور کرکرۀ تعدیل ندارد لایهٔ F
+     Δ [data-testid="nn-engine-switch"] :: n 1→0 | nAll 1→0 | states ["-"]→[] | text «KLineCharts موتور دوم»→«» | box [816,112,152,30]→null
+     Δ [data-testid^="nn-engine-"] :: n 3→0 | nAll 3→0 | states ["-","pressed=true,cls:active","pressed=false"]→[] | text «KLineCharts موتور دوم»→«» | box [816,112,152,30]→null
+     Δ [data-testid="ffc-chart-host"] :: n 0→1 | nAll 0→1 | states []→["-"] | text «»→«موتور: Fast Financial Charts 2.2 کندل: ۴» | box null→[0,44,976,688]
+     Δ [data-testid="fts-engine-back"] :: n 0→1 | nAll 0→1 | states []→["cls:accent"] | text «»→«بازگشت به KLineCharts» | box null→[8,704,116,24]
+     Δ [data-testid="chart-area"] :: text «فولاد (فولاد مباركه اصفهان) ۴,۵۴۰ +۲.۹۵%»→«موتور: Fast Financial Charts 2.2 کندل: ۴»
+     restore: [data-testid="fts-engine-back"] = ok
+
+console/page errors during run = 0

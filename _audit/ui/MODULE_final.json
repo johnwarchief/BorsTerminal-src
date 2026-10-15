@@ -1,0 +1,379 @@
+{
+  "ranAt": "2026-10-15T12:00:52.877Z",
+  "viewport": {
+    "W": 1366,
+    "H": 768
+  },
+  "route": "/technical/%D9%81%D9%88%D9%84%D8%A7%D8%AF",
+  "steps": [
+    {
+      "what": "drawing-toolbar-inventory",
+      "count": 13,
+      "list": [
+        {
+          "i": 0,
+          "x": 6,
+          "y": 149,
+          "w": 36,
+          "h": 36,
+          "active": true,
+          "title": "نشانگر صلیبی",
+          "inView": true,
+          "zero": false,
+          "hitSelf": true,
+          "blockedBy": null
+        },
+        {
+          "i": 1,
+          "x": 6,
+          "y": 188,
+          "w": 36,
+          "h": 36,
+          "active": false,
+          "title": "خط روند",
+          "inView": true,
+          "zero": false,
+          "hitSelf": true,
+          "blockedBy": null
+        },
+        {
+          "i": 2,
+          "x": 6,
+          "y": 227,
+          "w": 36,
+          "h": 36,
+          "active": false,
+          "title": "بازگشتی فیبوناچی",
+          "inView": true,
+          "zero": false,
+          "hitSelf": true,
+          "blockedBy": null
+        },
+        {
+          "i": 3,
+          "x": 6,
+          "y": 266,
+          "w": 36,
+          "h": 36,
+          "active": false,
+          "title": "مستطیل",
+          "inView": true,
+          "zero": false,
+          "hitSelf": true,
+          "blockedBy": null
+        },
+        {
+          "i": 4,
+          "x": 6,
+          "y": 305,
+          "w": 36,
+          "h": 36,
+          "active": false,
+          "title": "متن یادداشت",
+          "inView": true,
+          "zero": false,
+          "hitSelf": true,
+          "blockedBy": null
+        },
+        {
+          "i": 5,
+          "x": 6,
+          "y": 344,
+          "w": 36,
+          "h": 36,
+          "active": false,
+          "title": "الگوی هارمونیک",
+          "inView": true,
+          "zero": false,
+          "hitSelf": true,
+          "blockedBy": null
+        },
+        {
+          "i": 6,
+          "x": 6,
+          "y": 383,
+          "w": 36,
+          "h": 36,
+          "active": false,
+          "title": "جعبهٔ گن",
+          "inView": true,
+          "zero": false,
+          "hitSelf": true,
+          "blockedBy": null
+        },
+        {
+          "i": 7,
+          "x": 6,
+          "y": 422,
+          "w": 36,
+          "h": 36,
+          "active": false,
+          "title": "موقعیت خرید",
+          "inView": true,
+          "zero": false,
+          "hitSelf": true,
+          "blockedBy": null
+        },
+        {
+          "i": 8,
+          "x": 6,
+          "y": 473,
+          "w": 36,
+          "h": 36,
+          "active": false,
+          "title": "خط‌کش اندازه‌گیری",
+          "inView": true,
+          "zero": false,
+          "hitSelf": true,
+          "blockedBy": null
+        },
+        {
+          "i": 9,
+          "x": 6,
+          "y": 512,
+          "w": 36,
+          "h": 36,
+          "active": false,
+          "title": "آهنربا: غیرفعال",
+          "inView": true,
+          "zero": false,
+          "hitSelf": true,
+          "blockedBy": null
+        },
+        {
+          "i": 10,
+          "x": 6,
+          "y": 551,
+          "w": 36,
+          "h": 36,
+          "active": false,
+          "title": "قفل ترسیم‌ها: باز",
+          "inView": true,
+          "zero": false,
+          "hitSelf": true,
+          "blockedBy": null
+        },
+        {
+          "i": 11,
+          "x": 6,
+          "y": 590,
+          "w": 36,
+          "h": 36,
+          "active": false,
+          "title": "ترسیم‌ها: نمایان",
+          "inView": true,
+          "zero": false,
+          "hitSelf": true,
+          "blockedBy": null
+        },
+        {
+          "i": 12,
+          "x": 6,
+          "y": 629,
+          "w": 36,
+          "h": 36,
+          "active": false,
+          "title": "حذف تمام ترسیم‌ها",
+          "inView": true,
+          "zero": false,
+          "hitSelf": true,
+          "blockedBy": null
+        }
+      ]
+    },
+    {
+      "what": "drawing-tool-click-each",
+      "results": [
+        {
+          "i": 0,
+          "title": "نشانگر صلیبی",
+          "wasActive": true,
+          "isActive": true,
+          "changed": false,
+          "afterEscapeActive": true
+        },
+        {
+          "i": 1,
+          "title": "خط روند",
+          "wasActive": false,
+          "isActive": true,
+          "changed": true,
+          "afterEscapeActive": false
+        },
+        {
+          "i": 2,
+          "title": "بازگشتی فیبوناچی",
+          "wasActive": false,
+          "isActive": true,
+          "changed": true,
+          "afterEscapeActive": false
+        },
+        {
+          "i": 3,
+          "title": "مستطیل",
+          "wasActive": false,
+          "isActive": true,
+          "changed": true,
+          "afterEscapeActive": false
+        },
+        {
+          "i": 4,
+          "title": "متن یادداشت",
+          "wasActive": false,
+          "isActive": true,
+          "changed": true,
+          "afterEscapeActive": false
+        },
+        {
+          "i": 5,
+          "title": "الگوی هارمونیک",
+          "wasActive": false,
+          "isActive": true,
+          "changed": true,
+          "afterEscapeActive": false
+        },
+        {
+          "i": 6,
+          "title": "جعبهٔ گن",
+          "wasActive": false,
+          "isActive": true,
+          "changed": true,
+          "afterEscapeActive": false
+        },
+        {
+          "i": 7,
+          "title": "موقعیت خرید",
+          "wasActive": false,
+          "isActive": true,
+          "changed": true,
+          "afterEscapeActive": false
+        },
+        {
+          "i": 8,
+          "title": "خط‌کش اندازه‌گیری",
+          "wasActive": false,
+          "isActive": true,
+          "changed": true,
+          "afterEscapeActive": false
+        },
+        {
+          "i": 9,
+          "title": "آهنربا: فعال",
+          "wasActive": false,
+          "isActive": true,
+          "changed": true,
+          "afterEscapeActive": true
+        },
+        {
+          "i": 10,
+          "title": "قفل ترسیم‌ها: فعال",
+          "wasActive": false,
+          "isActive": true,
+          "changed": true,
+          "afterEscapeActive": true
+        },
+        {
+          "i": 11,
+          "title": "ترسیم‌ها: مخفی",
+          "wasActive": false,
+          "isActive": true,
+          "changed": true,
+          "afterEscapeActive": true
+        },
+        {
+          "i": 12,
+          "title": "حذف تمام ترسیم‌ها",
+          "wasActive": false,
+          "isActive": false,
+          "changed": false,
+          "afterEscapeActive": false
+        }
+      ]
+    },
+    {
+      "what": "indicator-panel",
+      "opened": {
+        "open": true,
+        "box": [
+          436,
+          92,
+          280,
+          628
+        ],
+        "inView": true,
+        "outside": {
+          "top": 0,
+          "bottom": 0,
+          "left": 0,
+          "right": 0
+        },
+        "rows": 25,
+        "text": "اندیکاتورها و اسیلاتورها حجم معاملات (Volume) میانگین متحرک ساده (MA 14/100) میانگین متحرک نمایی (EMA 50) شاخص قدرت نسبی (RSI 14 Wilder) مکدی (MACD) باندهای بول",
+        "z": "150"
+      },
+      "closed": {
+        "open": false
+      }
+    },
+    {
+      "what": "replay",
+      "dockPre": [
+        "[data-testid=\"fts-dock-toggle\"] = clicked",
+        "[data-testid=\"fts-dock-tab-replay\"] = clicked"
+      ],
+      "bar": {
+        "n": 1,
+        "box": [
+          8,
+          568,
+          960,
+          48
+        ],
+        "inView": true,
+        "text": "بازپخش پخش کندل قبل کندل بعد آخرین کندل موقعیت سرعت یک کندل هر ۱۰ ثانیه یک کندل هر ۵ ثانیه ۱ کندل در ثانیه ۲ کندل در ثان"
+      },
+      "progress": {
+        "n": 1,
+        "box": [
+          162,
+          584,
+          86,
+          15
+        ],
+        "inView": true,
+        "text": "کندل ۴۲۴۶ از ۴۲۴۶"
+      },
+      "barAfterStop": {
+        "n": 1,
+        "box": [
+          8,
+          568,
+          960,
+          48
+        ],
+        "inView": true,
+        "text": "بازپخش شروع بازپخش شروع از آخرین کندل؛ سپس با اسلایدر به عقب برگردان و پخش کن"
+      }
+    },
+    {
+      "what": "order-form-scan-technical",
+      "orderControls": 0,
+      "samples": [],
+      "totalControls": 106
+    },
+    {
+      "what": "order-form-scan-market",
+      "orderControls": 0,
+      "samples": [],
+      "totalControls": 130
+    },
+    {
+      "what": "order-form-scan-portfolio",
+      "orderControls": 0,
+      "samples": [],
+      "totalControls": 31
+    }
+  ],
+  "consoleErrors": [],
+  "networkErrors": []
+}

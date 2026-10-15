@@ -1,8 +1,8 @@
-market فیلترِ دارایی (منو)                NO-TRIGGER
-market منطقِ غربالگری (توگل)              NO-TRIGGER
-market فقط زنده (توگل)                    TOGGLE+RESTORE OK     n=1 @580,43 61×24 focus=in-layer
-market پسوندِ عددی (توگل)                 TOGGLE+RESTORE OK     n=1 @465,43 106×24 focus=in-layer
-market چیپِ سریعِ فیلتر                   NOT-TOGGLE            n=1 @1,259 1196×508 focus=button.shrink-0
+market فیلترِ دارایی (منو)                OPEN+RESTORE OK       n=1 @901,85 288×344 focus=button.shrink-0
+market منطقِ غربالگری (توگل)              DISABLED-BY-DESIGN  title=«دو یا چند فیلتر را روشن کنید تا اشتراک/اجتماع معنا پیدا کند»
+market فقط زنده (توگل)                    TOGGLE+RESTORE OK     n=1 @580,133 61×24 focus=in-layer
+market پسوندِ عددی (توگل)                 TOGGLE+RESTORE OK     n=1 @465,133 106×24 focus=in-layer
+market چیپِ سریعِ فیلتر                   TOGGLE+RESTORE OK     n=1 @1,259 1196×508 focus=button.shrink-0
 market ردیفِ تابلو → داورِ نماد           OPEN, NOT-RESTORED    n=1 @10,72 219×25 focus=tape-row
 market-status توگلِ چرخشِ تیکر                   NOT-OPEN              n=0 focus=body
 market-status زیرتبِ طلا (۲)                     PANEL-SAME(no-op)     n=1 @251,372 936×24
@@ -10,20 +10,17 @@ market-status معیارِ دوناتِ طلا                  NO-TRIGGER
 market-status صفحه‌بندیِ کارت‌هایِ نمایِ کلی     PANEL+RESTORE OK      n=1 @1065,378 61×14 focus=ms-glance-next
 market-status بازهٔ مقایسه                       NO-TRIGGER
 market-status انتخابِ نمادِ نمودار               NO-TRIGGER
-technical دیالوگِ تنظیماتِ چارت (۶ تب)       CLICK-FAILED          n=0 BLOCKED-BY=fts-settings-btn «⚙تنظیمات» focus=body
-      TimeoutError: locator.click: Timeout 8000ms exceeded. Call log: [2m - waiting for locator('[data-testid="open-chart-settings"]').first()[22m [2m - locator resolved to <button type="button" title="تنظیمات چارت" class="nn-btn nn-icon-btn" data-testid="open-chart-settings">…</button>[22m [2m - attempting click action[22m [2m 2 × waiting for element to be visible, enabled and stable[22m [2m -
-technical تبِ دومِ تنظیماتِ چارت             NO-TRIGGER
-technical تغییرِ تایم‌فریم → هفتگی           PANEL-SAME(no-op)     n=1 @240,109 736×692 OUTSIDE
-      outside: {"left":0,"top":0,"right":0,"bottom":33}
-technical بازگشتِ تایم‌فریم → روزانه         PANEL-SAME(no-op)     n=1 @240,109 736×692 OUTSIDE
-      outside: {"left":0,"top":0,"right":0,"bottom":33}
-technical منویِ موتورِ چارت                  NOT-PANEL             n=0 focus=body
-technical جمع‌کردنِ داکِ FTS                 PANEL+RESTORE OK      n=1 @240,530 736×230 focus=in-layer
-technical تبِ دومِ داکِ FTS                  OPEN OK               n=1 @240,559 736×201
-technical تبِ سومِ داکِ FTS                  PANEL OK              n=1 @240,559 736×201
-technical rail سایدبار: کتاب                 PANEL OK              n=1 @1021,80 284×680
-technical rail سایدبار: سطوح                 PANEL OK              n=1 @1021,80 284×680
-technical rail سایدبار: watch                PANEL OK              n=1 @1021,80 284×680
+technical دیالوگِ تنظیماتِ چارت (۶ تب)       OPEN+RESTORE OK       n=1 @240,109 1066×651 focus=in-layer
+technical تبِ دومِ تنظیماتِ چارت             PANEL-SAME(no-op)     n=1 @240,109 1066×651 focus=in-layer
+technical تغییرِ تایم‌فریم → هفتگی           PANEL-SAME(no-op)     n=1 @240,109 736×623
+technical بازگشتِ تایم‌فریم → روزانه         PANEL-SAME(no-op)     n=1 @240,109 736×623
+technical منویِ موتورِ چارت                  PANEL-SAME(no-op)     n=2 @885,179 83×30 focus=in-layer
+technical جمع‌کردنِ داکِ FTS                 PANEL+RESTORE OK      n=1 @240,552 736×208 focus=in-layer
+technical تبِ دومِ داکِ FTS                  OPEN OK               n=1 @240,581 736×179
+technical تبِ سومِ داکِ FTS                  PANEL OK              n=1 @240,581 736×179
+technical rail سایدبار: کتاب                 PANEL OK              n=1 @1021,149 284×611
+technical rail سایدبار: سطوح                 PANEL OK              n=1 @1021,149 284×611
+technical rail سایدبار: watch                PANEL OK              n=1 @1021,149 284×611
 technical جمع‌کردنِ سایدبار                  NOT-PANEL             n=0 focus=body
 fundamental مودالِ تحلیل‌گر FTS                NO-TRIGGER
 fundamental پری‌ستِ استراتژیک                  NO-TRIGGER
@@ -52,4 +49,5 @@ global تنظیماتِ کاربر                     OPEN+RESTORE OK       n=1
 global مدیرِ آپدیت (فقطِ نمایش)           OPEN+RESTORE OK       n=1 @427,148 512×472 focus=in-layer
 global زنگِ هشدارِ قیمتی                  NO-TRIGGER
 
-wrote C:\Users\Johnkallnaya\Desktop\Borsterminal\.worktrees\ui-audit-system-2\_audit\ui\INTERACT_all.json
+wrote C:\Users\Johnkallnaya\Desktop\Borsterminal\.worktrees\ui-audit-system-2\_audit\ui\INTERACT.json
+EXIT=0

@@ -1,0 +1,121 @@
+
+== /market  sections=0  scroller=app-content flex min-w-0 flex-1 flex-col overflow-y-auto overflow-x-hidden transition-[padding] duration-200 ease-out 768/858
+   layer z10 top=0 bottom=41 h=41 x=-240 w=239 div «- سنجاق ✕»
+   layer z40 top=0 bottom=36 h=36 x=0 w=1198 header «بازار بسته — تابلوی آخرینِ نشست تا»
+
+== /market-status  sections=10  scroller=app-content flex min-w-0 flex-1 flex-col overflow-y-auto overflow-x-hidden transition-[padding] duration-200 ease-out 768/7194
+   layer z10 top=0 bottom=41 h=41 x=-240 w=239 div «- سنجاق ✕»
+   layer z40 top=0 bottom=36 h=36 x=0 w=1198 header «بازار بسته — تابلوی آخرینِ نشست وض»
+/market-status [0] market-status-panel      y=    0 h=   34 ctl=  1  OK
+/market-status [1] status-ticker            y=    0 h=   75 ctl=  6  OK
+/market-status [2] ms-sec-overview          y=   82 h=  983 ctl= 11  OK
+/market-status [3] ms-sec-treemap           y=   82 h=  600 ctl=  4  OK
+/market-status [4] ms-sec-tops              y=   82 h=  711 ctl= 20  OK
+/market-status [5] ms-sec-orders            y=   82 h= 1470 ctl= 40  below-fold=20
+/market-status [6] ms-sec-gold              y=   82 h=  936 ctl= 17  OK
+/market-status [7] ms-sec-compare           y=   82 h= 1302 ctl= 39  below-fold=14
+/market-status [8] ms-sec-chart             y=   82 h=  713 ctl= 34  OK
+/market-status [9] ms-sec-tables            y=   82 h=  754 ctl=  3  OK
+
+== /technical/فولاد  sections=1  scroller=app-content flex min-w-0 flex-1 flex-col overflow-y-auto overflow-x-hidden transition-[padding] duration-200 ease-out 768/768
+   layer z10 top=0 bottom=41 h=41 x=-240 w=239 div «- سنجاق ✕»
+   layer z40 top=0 bottom=36 h=36 x=0 w=1306 header «بازار بسته — تابلوی آخرینِ نشست تح»
+/technical/فولاد [0] fts-dock                 y=  732 h=   28 ctl=  9  OK
+
+== /technical/خوز  sections=1  scroller=app-content flex min-w-0 flex-1 flex-col overflow-y-auto overflow-x-hidden transition-[padding] duration-200 ease-out 768/768
+   layer z10 top=0 bottom=41 h=41 x=-240 w=239 div «- سنجاق ✕»
+   layer z40 top=0 bottom=36 h=36 x=0 w=1306 header «بازار بسته — تابلوی آخرینِ نشست تح»
+/technical/خوز [0] fts-dock                 y=  732 h=   28 ctl=  9  OK
+
+== /technical  sections=1  scroller=app-content flex min-w-0 flex-1 flex-col overflow-y-auto overflow-x-hidden transition-[padding] duration-200 ease-out 768/768
+   layer z10 top=0 bottom=41 h=41 x=-240 w=239 div «- سنجاق ✕»
+   layer z40 top=0 bottom=36 h=36 x=0 w=1306 header «بازار بسته — تابلوی آخرینِ نشست تح»
+/technical [0] fts-dock                 y=  732 h=   28 ctl=  9  OK
+
+== /fundamental/فولاد  sections=0  scroller=app-content flex min-w-0 flex-1 flex-col overflow-y-auto overflow-x-hidden transition-[padding] duration-200 ease-out 768/1118
+   layer z10 top=0 bottom=41 h=41 x=-240 w=239 div «- سنجاق ✕»
+   layer z40 top=0 bottom=36 h=36 x=0 w=1198 header «بازار بسته — تابلوی آخرینِ نشست تح»
+
+== /fundamental/خوز  sections=0  scroller=app-content flex min-w-0 flex-1 flex-col overflow-y-auto overflow-x-hidden transition-[padding] duration-200 ease-out 768/768
+   layer z10 top=0 bottom=41 h=41 x=-240 w=239 div «- سنجاق ✕»
+   layer z40 top=0 bottom=36 h=36 x=0 w=1198 header «بازار بسته — تابلوی آخرینِ نشست تح»
+
+== /fundamental  sections=0  scroller=app-content flex min-w-0 flex-1 flex-col overflow-y-auto overflow-x-hidden transition-[padding] duration-200 ease-out 768/768
+   layer z10 top=196 bottom=248 h=52 x=1028 w=169 td «✓ ☆ آلومينا آلوميناي ايران»
+   layer z20 top=143 bottom=196 h=53 x=1 w=1196 thead «نماد ۱ — رشد فروش (الف/ب) ۲ — روند»
+   layer z30 top=143 bottom=196 h=53 x=1028 w=169 th «نماد»
+   layer z10 top=0 bottom=41 h=41 x=-240 w=239 div «- سنجاق ✕»
+   layer z40 top=0 bottom=36 h=36 x=0 w=1198 header «بازار بسته — تابلوی آخرینِ نشست تح»
+
+== /master  sections=1  scroller=app-content flex min-w-0 flex-1 flex-col overflow-y-auto overflow-x-hidden transition-[padding] duration-200 ease-out 768/768
+   layer z10 top=0 bottom=41 h=41 x=-240 w=239 div «- سنجاق ✕»
+   layer z40 top=0 bottom=36 h=36 x=0 w=1198 header «بازار بسته — تابلوی آخرینِ نشست غر»
+/master [0] ?                        y=  146 h=  568 ctl= 13  OK
+
+== /master/فولاد  sections=1  scroller=app-content flex min-w-0 flex-1 flex-col overflow-y-auto overflow-x-hidden transition-[padding] duration-200 ease-out 768/795
+   layer z10 top=0 bottom=62 h=62 x=0 w=239 div «فولاد فولاد مباركه اصفهان فلزات اس»
+   layer z40 top=0 bottom=36 h=36 x=240 w=958 header «بازار بسته — تابلوی آخرینِ نشست غر»
+/master/فولاد [0] master-dossier           y=  165 h=  385 ctl=  1  OK
+
+== /master/خوز  sections=1  scroller=app-content flex min-w-0 flex-1 flex-col overflow-y-auto overflow-x-hidden transition-[padding] duration-200 ease-out 768/768
+   layer z10 top=0 bottom=41 h=41 x=0 w=239 div «خوز سنجاق ✕»
+   layer z40 top=0 bottom=36 h=36 x=240 w=958 header «بازار بسته — تابلوی آخرینِ نشست غر»
+/master/خوز [0] master-dossier           y=  164 h=  353 ctl=  1  OK
+
+== /strategy-tree  sections=2  scroller=app-content flex min-w-0 flex-1 flex-col overflow-y-auto overflow-x-hidden transition-[padding] duration-200 ease-out 768/1177
+   layer z10 top=0 bottom=41 h=41 x=0 w=239 div «خوز سنجاق ✕»
+   layer z40 top=0 bottom=36 h=36 x=240 w=958 header «بازار بسته — تابلوی آخرینِ نشست در»
+/strategy-tree [0] ?                        y=    0 h=  260 ctl=  7  OK
+/strategy-tree [1] strategy-roadmap-zones   y=    0 h=  782 ctl=  4  band-overlap-after-scrollTo(36px) below-fold=4
+      covered: title h2 «۱ · F بنیادی» y=33
+
+== /strategy-tree?page=F  sections=2  scroller=app-content flex min-w-0 flex-1 flex-col overflow-y-auto overflow-x-hidden transition-[padding] duration-200 ease-out 768/1300
+   layer z10 top=0 bottom=41 h=41 x=0 w=239 div «خوز سنجاق ✕»
+   layer z40 top=0 bottom=36 h=36 x=240 w=958 header «بازار بسته — تابلوی آخرینِ نشست در»
+/strategy-tree?page=F [0] ?                        y=    0 h=  156 ctl=  0  OK
+/strategy-tree?page=F [1] ?                        y=    0 h=  920 ctl=  0  band-overlap-after-scrollTo(36px)
+      covered: title h2 «شاخص ۱: رشد فروش ماهانه (۴۰٪+)» y=21
+
+== /strategy-tree?page=T  sections=2  scroller=app-content flex min-w-0 flex-1 flex-col overflow-y-auto overflow-x-hidden transition-[padding] duration-200 ease-out 768/960
+   layer z10 top=0 bottom=41 h=41 x=0 w=239 div «خوز سنجاق ✕»
+   layer z40 top=0 bottom=36 h=36 x=240 w=958 header «بازار بسته — تابلوی آخرینِ نشست در»
+/strategy-tree?page=T [0] ?                        y=    0 h=  132 ctl=  0  OK
+/strategy-tree?page=T [1] ?                        y=  108 h=  604 ctl=  0  OK
+
+== /strategy-tree?page=S  sections=2  scroller=app-content flex min-w-0 flex-1 flex-col overflow-y-auto overflow-x-hidden transition-[padding] duration-200 ease-out 768/1306
+   layer z10 top=0 bottom=41 h=41 x=0 w=239 div «خوز سنجاق ✕»
+   layer z40 top=0 bottom=36 h=36 x=240 w=958 header «بازار بسته — تابلوی آخرینِ نشست در»
+/strategy-tree?page=S [0] ?                        y=    0 h=  132 ctl=  0  OK
+/strategy-tree?page=S [1] ?                        y=    0 h=  950 ctl=  0  band-overlap-after-scrollTo(36px)
+      covered: title h2 «انتخاب سبک معامله» y=21
+
+== /strategy-tree?page=M  sections=2  scroller=app-content flex min-w-0 flex-1 flex-col overflow-y-auto overflow-x-hidden transition-[padding] duration-200 ease-out 768/1236
+   layer z10 top=0 bottom=41 h=41 x=0 w=239 div «خوز سنجاق ✕»
+   layer z40 top=0 bottom=36 h=36 x=240 w=958 header «بازار بسته — تابلوی آخرینِ نشست در»
+/strategy-tree?page=M [0] ?                        y=    0 h=  132 ctl=  0  OK
+/strategy-tree?page=M [1] ?                        y=    0 h=  880 ctl=  0  band-overlap-after-scrollTo(36px)
+      covered: title h2 «مهندسی معکوس» y=21
+
+== /portfolio  sections=2  scroller=app-content flex min-w-0 flex-1 flex-col overflow-y-auto overflow-x-hidden transition-[padding] duration-200 ease-out 768/1177
+   layer z10 top=0 bottom=41 h=41 x=0 w=239 div «خوز سنجاق ✕»
+   layer z40 top=0 bottom=36 h=36 x=240 w=958 header «بازار بسته — تابلوی آخرینِ نشست مد»
+/portfolio [0] ?                        y=    0 h=  260 ctl=  7  OK
+
+== /watch  sections=0  scroller=app-content flex min-w-0 flex-1 flex-col overflow-y-auto overflow-x-hidden transition-[padding] duration-200 ease-out 768/819
+   layer z10 top=0 bottom=41 h=41 x=0 w=239 div «خوز سنجاق ✕»
+   layer z40 top=0 bottom=36 h=36 x=240 w=958 header «بازار بسته — تابلوی آخرینِ نشست دی»
+
+== /notifications  sections=1  scroller=app-content flex min-w-0 flex-1 flex-col overflow-y-auto overflow-x-hidden transition-[padding] duration-200 ease-out 768/10474
+   layer z10 top=0 bottom=41 h=41 x=0 w=239 div «خوز سنجاق ✕»
+   layer z40 top=0 bottom=36 h=36 x=240 w=958 header «بازار بسته — تابلوی آخرینِ نشست تر»
+/notifications [0] notice-sources           y=    0 h=   38 ctl=  2  OK
+
+== /engine-lab  sections=0  scroller=app-content flex min-w-0 flex-1 flex-col overflow-y-auto overflow-x-hidden transition-[padding] duration-200 ease-out 768/768
+   layer z10 top=0 bottom=41 h=41 x=0 w=239 div «خوز سنجاق ✕»
+   layer z40 top=0 bottom=36 h=36 x=240 w=958 header «بازار بسته — تابلوی آخرینِ نشست تر»
+
+== /zz-not-found  sections=0  scroller=app-content flex min-w-0 flex-1 flex-col overflow-y-auto overflow-x-hidden transition-[padding] duration-200 ease-out 768/768
+   layer z10 top=0 bottom=41 h=41 x=0 w=239 div «خوز سنجاق ✕»
+   layer z40 top=0 bottom=36 h=36 x=240 w=958 header «بازار بسته — تابلوی آخرینِ نشست تر»
+
+wrote C:\Users\Johnkallnaya\Desktop\Borsterminal\.worktrees\ui-audit-system-2\_audit\ui\SWEEP.json

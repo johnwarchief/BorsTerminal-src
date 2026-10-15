@@ -1,0 +1,43 @@
+module_probe viewport=1366x768 route=/technical/%D9%81%D9%88%D9%84%D8%A7%D8%AF at=2026-10-15T12:00:52.877Z
+
+[tools] count=13
+  #0 نشانگر صلیبی box=[6,149,36,36] active=true inView=true zero=false hitSelf=true
+  #1 خط روند box=[6,188,36,36] active=false inView=true zero=false hitSelf=true
+  #2 بازگشتی فیبوناچی box=[6,227,36,36] active=false inView=true zero=false hitSelf=true
+  #3 مستطیل box=[6,266,36,36] active=false inView=true zero=false hitSelf=true
+  #4 متن یادداشت box=[6,305,36,36] active=false inView=true zero=false hitSelf=true
+  #5 الگوی هارمونیک box=[6,344,36,36] active=false inView=true zero=false hitSelf=true
+  #6 جعبهٔ گن box=[6,383,36,36] active=false inView=true zero=false hitSelf=true
+  #7 موقعیت خرید box=[6,422,36,36] active=false inView=true zero=false hitSelf=true
+  #8 خط‌کش اندازه‌گیری box=[6,473,36,36] active=false inView=true zero=false hitSelf=true
+  #9 آهنربا: غیرفعال box=[6,512,36,36] active=false inView=true zero=false hitSelf=true
+  #10 قفل ترسیم‌ها: باز box=[6,551,36,36] active=false inView=true zero=false hitSelf=true
+  #11 ترسیم‌ها: نمایان box=[6,590,36,36] active=false inView=true zero=false hitSelf=true
+  #12 حذف تمام ترسیم‌ها box=[6,629,36,36] active=false inView=true zero=false hitSelf=true
+
+[tool clicks]
+  #0 نشانگر صلیبی was=true now=true changed=false afterEsc=true
+  #1 خط روند was=false now=true changed=true afterEsc=false
+  #2 بازگشتی فیبوناچی was=false now=true changed=true afterEsc=false
+  #3 مستطیل was=false now=true changed=true afterEsc=false
+  #4 متن یادداشت was=false now=true changed=true afterEsc=false
+  #5 الگوی هارمونیک was=false now=true changed=true afterEsc=false
+  #6 جعبهٔ گن was=false now=true changed=true afterEsc=false
+  #7 موقعیت خرید was=false now=true changed=true afterEsc=false
+  #8 خط‌کش اندازه‌گیری was=false now=true changed=true afterEsc=false
+  #9 آهنربا: فعال was=false now=true changed=true afterEsc=true
+  #10 قفل ترسیم‌ها: فعال was=false now=true changed=true afterEsc=true
+  #11 ترسیم‌ها: مخفی was=false now=true changed=true afterEsc=true
+  #12 حذف تمام ترسیم‌ها was=false now=false changed=false afterEsc=false
+
+[indicator-panel] {"what":"indicator-panel","opened":{"open":true,"box":[436,92,280,628],"inView":true,"outside":{"top":0,"bottom":0,"left":0,"right":0},"rows":25,"text":"اندیکاتورها و اسیلاتورها حجم معاملات (Volume) میانگین متحرک ساده (MA 14/100) میانگین متحرک نمایی (EMA 50) شاخص قدرت نسبی (RSI 14 Wilder) مکدی (MACD) باندهای بول","z":"150"},"closed":{"open":false}}
+
+[replay] {"what":"replay","dockPre":["[data-testid=\"fts-dock-toggle\"] = clicked","[data-testid=\"fts-dock-tab-replay\"] = clicked"],"bar":{"n":1,"box":[8,568,960,48],"inView":true,"text":"بازپخش پخش کندل قبل کندل بعد آخرین کندل موقعیت سرعت یک کندل هر ۱۰ ثانیه یک کندل هر ۵ ثانیه ۱ کندل در ثانیه ۲ کندل در ثان"},"progress":{"n":1,"box":[162,584,86,15],"inView":true,"text":"کندل ۴۲۴۶ از ۴۲۴۶"},"barAfterStop":{"n":1,"box":[8,568,960,48],"inView":true,"text":"بازپخش شروع بازپخش شروع از آخرین کندل؛ سپس با اسلایدر به عقب برگردان و پخش کن"}}
+
+[order-form-scan-technical] {"what":"order-form-scan-technical","orderControls":0,"samples":[],"totalControls":106}
+
+[order-form-scan-market] {"what":"order-form-scan-market","orderControls":0,"samples":[],"totalControls":130}
+
+[order-form-scan-portfolio] {"what":"order-form-scan-portfolio","orderControls":0,"samples":[],"totalControls":31}
+
+console errors=0 network errors=0

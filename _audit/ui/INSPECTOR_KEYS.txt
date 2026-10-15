@@ -1,0 +1,8 @@
+1) باز شدن باِ ردیف: {"exists":true,"ariaHidden":"false","inert":false,"box":[0,0,240,768],"onScreen":true,"closeBtn":{"box":[10,8,24,24],"label":"بستن پنل نماد"},"focus":"tape-row","focusInside":false,"backdropVisible":true,"tabsText":"در یک نگاهجزئیات بازار","hash":"#/market"}
+2) پس ازِ Escape: {"exists":true,"ariaHidden":"false","inert":false,"box":[0,0,240,768],"onScreen":true,"closeBtn":{"box":[10,8,24,24],"label":"بستن پنل نماد"},"focus":"tape-row","focusInside":false,"backdropVisible":true,"tabsText":"در یک نگاهجزئیات بازار","hash":"#/market"}
+3) پیش ازِ پنل 130 کنترلِ tabbable هست (کلِ صفحه 140); focus حالا رویِ دکمهٔ بستن: «BUTTON.inline-flex«✕»» داخلِ پنل=true اندازه={"box":[10,8,24,24],"label":"بستن پنل نماد"}
+4) Esc باِ فوکوسِ داخلِ پنل → بسته شد؟ بله {"exists":true,"ariaHidden":"true","inert":true,"box":[-240,0,240,768],"onScreen":false,"closeBtn":{"box":[-230,8,24,24],"label":"بستن پنل نماد"},"focus":"BODY.«بترمینال بور»","focusInside":false,"backdropVisible":false,
+5) ناوبری باِ پنلِ باز: hash=#/market-status پنل‌باز=true خطا=0
+
+wrote _audit/ui/INSPECTOR_KEYS.json  errors=0
+IK=0
