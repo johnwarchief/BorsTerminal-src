@@ -87,6 +87,10 @@
 
 ### ۳‑۴) ممیزیِ سراسریِ UI (system‑2) — **نیمه‌تمام، درِ همینِ سیستم**
 
+> سطرهایِ «تست‌ها» وِ «باقی‌مانده» زیرِ لحظۀِ دورِ اول است. دورِ دوم هرِ ۱۳ قدمِ تعاملی، جاروبِ حالتِ واقعی
+> وِ گیت‌هایِ کاملِ JS/Python را بست؛ شمارۀِ دورِ دوم درِ همانِ سطرهایِ §۱۰‑۲ وِ §۱۰‑۳ وِ §۱۲ِ خودِ
+> گزارشِ UI (`docs/ui-audit/2026-10-15-system-2.md`) است.
+
 | فیلد | محتوا |
 |---|---|
 | وضعیت | **PARTIAL — رأیِ خودِ سندِ ممیزی (§۱۲ِ `docs/ui-audit/2026-10-15-system-2.md`)** |
@@ -149,10 +153,12 @@
 
 ## ۵) تفکیکِ شاخه/نسخه و ریسکِ conflict (مرحلۀِ ۵)
 
+> شمارش‌هایِ اینِ بخشِ دورِ اول است (سه شاخه). واقعِ کنونیِ دورِ دوم = §۱۰‑۲ وِ §۱۰‑۷: **چهار** شاخۀِ منتشرشده.
+
 1. **ازِ قبل رویِ `github/main`:** ۸۹ کامیت ازِ نقطۀِ جدا شدنِ ما (تاریخِ ۲۰۲۶‑۱۰‑۱۲ به‌بعد): `feat(codal)`، `feat(bot)`/`/api/execution`، `feat(watch)`، `perf(mstat)`، releasesِ `v1.0.87` وِ `v1.0.88`. هیچ‌یک ازِ اینها درِ دوِ شاخۀِ ماست.
 2. **commitهایی که محلی بودند و اکنون push شده‌اند:** همان ۴۲ (FTS/وضعیت‌بازار/عملکرد/سند) + ۲ِ ممیزیِ UI.
 3. **تغییراتِ منتشرشده رویِ شاخه‌هایِ مستقل:** سه شاخۀِ §۴.
-4. **هنوز فقط رویِ اینِ ماشین:** دو فایلِ `M` بی‌تغییرِ محتوا (فقطِ پایانِ خط: `_audit/RA365-LEDGER-RULE-2026-10-12.csv`، `dev/fixtures/fts_v10_payloads.json`) وِ ۶ لاگِ scratchِ `_audit/PHASE5F-*` وِ `_audit/P5G-FINAL-RC.txt` وِ `_audit/ui/backend.log` وِ ۱۶۸ تصویرِ `_audit/ui/shots/*.png` وِ پوشۀِ `frontend/dist/` (ignored) — علتشان درِ §۸.
+4. **هنوز فقط رویِ اینِ ماشین:** دو فایلِ `M` بی‌تغییرِ محتوا (فقطِ پایانِ خط: `_audit/RA365-LEDGER-RULE-2026-10-12.csv`، `dev/fixtures/fts_v10_payloads.json`) وِ ۶ لاگِ scratchِ `_audit/PHASE5F-*` وِ `_audit/P5G-FINAL-RC.txt` وِ `_audit/ui/backend.log` وِ ۱۶۸ تصویرِ `_audit/ui/shots/*.png` وِ پوشۀِ `frontend/dist/` (ignored) — علتشان درِ §۸. **تصحیحِ دورِ دوم:** خودِ `_audit/P5G-FINAL-RC.txt` وِ خلاصۀِ maskedِ آنِ شش لاگ (`_audit/PHASE5F-P5G-RUNDIGEST.txt`) اکنون منتشرند (§۱۰‑۳)؛ خامِ لاگ‌ها وِ ۴۶ واسطۀِ worktreeِ UI (§۱۰‑۴) محلی ماندند.
 5. **همپوشانی:** `api/market_status.py` وِ `mstat_engine.py` درِ **هر دو** سو ازِ `f5a1016` عوض شده‌اند (اختلافِ موجود: ۳۴۰ وِ ۵۸۲ سطر). یعنی سیستمِ دیگر رویِ main همانِ اندپوینت/موتور را دوباره کار کرده است.
 6. **ریسکِ conflict (عددِ دقیق):** نقطۀِ مشترکِ جدایی `f5a10166` (۲۰۲۶‑۱۰‑۱۱). ما ۵۱ کامیت وِ ۳۱۰ فایل؛ `origin/main` ۸۹ کامیت وِ ۳۳۳ فایل؛ **۲۷ فایل درِ هر دو سو تغییده شده‌اند** — پرخطرترینها: `api/market_status.py`، `api/chart.py`، `app.py`، `frontend/src/app/components/Topbar.tsx`، `frontend/src/features/market/routes/MarketStatusPage.tsx`، `MarketStatusTables.tsx`، `MarketPulseBar.tsx`، `FtsFunnelAllStages.tsx`، `MasterFtsDetails.tsx`، `SymbolInspector.tsx`، `dev/run_all_tests.py`، `.gitignore`، `fts_terminal.spec`. هیچِ merge‌ای انجام نشد (ممنوعِ مأموریت).
 7. **چه چیزی درِ نسخۀِ نصبی/Frozen/Portable نیست:** نسخۀِ نصبیِ درِ حالِ اجرا `v1.0.86` رویِ `127.0.0.1:8001` (PID 5336) است وِ `BorsTerminal_Portable_v1.0.86.zip` رویِ دسکتاپ؛ `APP_VERSION` شاخۀِ ما ۱.۰.۸۶ وِ `origin/main` ۱.۰.۸۸. `git tag --contains HEAD` خالی است ⇒ **هیچ‌یک ازِ کارهایِ اینِ سه شاخه درِ هیچِ tag یا بیلدِ منتشرشده نیست** (نه تبِ وضعیتِ بازارِ بازسازی‌شده، نه اصلاحاتِ عملکرد، نه اصلاحِ پوستهٔ UI).
@@ -174,9 +180,9 @@
 
 | قلم | علت |
 |---|---|
-| ۱۶۸ فایلِ `PNG` درِ `_audit/ui/shots/**` (≈۲۰ مگابایت) | `*.png` درِ `_audit/.gitignore`؛ سنگینِ مخزن. گزینۀِ فشرده باید بهِ `docs/ui-audit/` برود (کارِ مرحلۀِ ۷ِ مأموریتِ UI، هنوز انجام نشده) |
+| ۱۶۸ فایلِ `PNG` درِ `_audit/ui/shots/**` (≈۲۰ مگابایت) | `*.png` درِ `_audit/.gitignore`؛ سنگینِ مخزن. **دورِ دوم:** گزینۀِ فشرده انجام شد — سه برشِ انتخابی بهِ `docs/ui-audit/img/*.png` رفت وِ درِ همانِ شاخه منتشر است؛ ۱۶۸ خامِ دیگر (§۱۰‑۴) |
 | `_audit/ui/backend.log` (۱۸۶KB) | لاگِ خامِ سرویسِ dev؛ artefactِ زمانِ اجرا، نه شاهدِ قابلِ بازبینی |
-| `_audit/PHASE5F-CAPTURE*.txt`، `_audit/PHASE5F-SELECTION-RUN.txt`، `_audit/PHASE5F-SHAPE.txt`، `_audit/P5G-FINAL-RC.txt` | scratchِ لاگِ راه‌اندازیِ مرورگر باِ کلماتِ نشست/رمز (§۶)؛ P5G فقطِ یکِ شمارۀِ بازگشتِ ۳۲ بایتی است |
+| `_audit/PHASE5F-CAPTURE*.txt`، `_audit/PHASE5F-SELECTION-RUN.txt`، `_audit/PHASE5F-SHAPE.txt`، `_audit/P5G-FINAL-RC.txt` | scratchِ لاگِ راه‌اندازیِ مرورگر باِ کلماتِ نشست/رمز (§۶). **دورِ دوم:** `_audit/P5G-FINAL-RC.txt` (فقطِ exit code) منتشر شد وِ سه لاگِ راه‌اندازی به‌صورتِ `_audit/PHASE5F-P5G-RUNDIGEST.txt` (خلاصۀِ masked، بی‌`--user-data-dir` وِ بی‌pid) درِ شاخۀِ fixtureها رفت؛ خام‌ها رویِ دیسک ماندند (§۱۰‑۳/۴) |
 | دوِ فایلِ CRLF‑onlyِ `M` | بی‌تغییرِ محتوا؛ کامیتِ بی‌محتوا تاریخچه را شلوغ می‌کرد. **هنوز درِ working tree هستند و پاک/بازگردانی نشدند** |
 | `frontend/dist/**` | ignored؛ بیلدِ محلی برایِ سنجشِ مرورگری ساخته می‌شود |
 
@@ -199,7 +205,7 @@
 
 `HANDOFF_COMPLETE`
 
-همۀ کارهایِ محلیِ منتشرشدنیِ اینِ سیستم رویِ GitHub هستند (سه شاخه، باِ upstream،
+همۀ کارهایِ محلیِ منتشرشدنیِ اینِ سیستم رویِ GitHub هستند (سه شاخه درِ آنِ لحظه، باِ upstream،
 بی‌force/merge/tag)؛ وضعیتِ واقعیِ هرِ حوزه — از جمله دوِ مأموریتِ **PARTIAL**، یکِ
 مأموریتِ **PARTIAL** (ممیزیِ UI که درِ دورِ دوم بسته شد؛ §۱۰)، وِ سه حوزۀِ **NOT_STARTED/بیرونِ اینِ سیستم** — درِ همینِ سند
 ثبت شده؛ مواردِ منتشرنشده باِ علتِ مشخص درِ §۷ هستند وِ هیچِ کارِ ناقصی برایِ سبک‌تر
@@ -210,6 +216,10 @@
 همانِ سند (گیرِ کلیکِ تنظیماتِ چارت) → ۳) suiteِ کاملِ بعدِ اصلاحِ UI → ۴) تصمیمِ
 مالک دربارهٔ آمیختنِ `api/market_status.py`/`mstat_engine.py` باِ نسخهِٔ `origin/main`
 (۲۷ فایلِ همپوشان).
+
+> **وضعیتِ دورِ دوم:** نقاطِ ۱، ۲ وِ ۳ بسته شدند (شاهدشان درِ `docs/ui-audit/2026-10-15-system-2.md` §§۳‑۴/۹).
+> نقطۀِ ۴ همچنان تصمیمِ مالک است، همراه باِ موردِ ۱۳ صفحۀِ Binder1 درِ §۱۰‑۵. شمارۀِ شاخه‌هایِ
+> بالا درِ دورِ اول سه بود؛ اکنون **چهار** (§۱۰‑۲). رأیِ اینِ بخش برایِ دورِ اول است؛ رأیِ دورِ دوم درِ §۱۰‑۶.
 
 ---
 
@@ -238,7 +248,7 @@
 | **Responsive UI** | `mission/ui-audit-system-2-2026-10-15` | `3feb525` | `docs/ui-audit/2026-10-15-system-2.md` (۱۲ بخش) · `…-STATUS.md` · `docs/ui-audit/img/*.png` (۳ برش) · ۸۴ فایلِ `_audit/ui/**` = ۲۲ هارنسِ js + ۶۲ شاهدِ json/txt | **PUBLISHED / DONE_VERIFIED** — رأیِ خودِ گزارش: PARTIAL (بطورِ گیتِ محیطیِ Python) |
 | **Performance** | `mission/fts-indicator-engineering` | `ff6b2fb` | `_audit/perf/PERFORMANCE_REPORT.md` · `BEFORE_AFTER.md` · ۵۹ فایلِ شاهد درِ `_audit/perf/` (BE/AFTER/BOOT/CONTEND/FE/MSTAT) · `dev/perf_output_equal_v1.py` · `dev/mstat_snapshot_cache_v1.py` · `_audit/perf/gates/*.txt` | **PUBLISHED** — باِ رأیِ PARTIALLY_IMPROVED وِ بطری‌هایِ باقی‌مانده درِ §۱۰ِ خودِ گزارش |
 | **موتورِ FTS / تکنیکال** | `mission/fts-indicator-engineering` | `ff6b2fb` | `fts_engine.py`، `api/chart.py`، `api/ma*.py`، `dev/fts_engine_*`، `docs/technical-indicators/reviewed/FTS-PHASE*.md`، ماتریس‌هایِ `_audit/RA365-PHASE*.csv` | **PUBLISHED (PARTIAL: ۴۶ UNVERIFIED / ۲۷ MISMATCH)** |
-| **موتورِ تعدیلِ canonical** | `mission/fts-indicator-engineering` **وِ** `fix/system-2-reproducible-fixtures-2026-10-15` | `ff6b2fb` · `c68dbc0` | `dev/test_adjustment_engine_v1.py`، `dev/adjustment_ledger*`، `tools/phase5f_*.py`، `tools/phase6_verdict_matrix.py`، `tools/make_adjustment_witness_fixture.py`، `dev/fixtures/ra365_witness_subset.json` | **PUBLISHED وِ اندازه‌گیری‌شدۀِ رویِ درختِ فقط‑GitHub: ۴۴ سبز/۰ قرمز، rc=0 (§۱۰‑۳)** |
+| **موتورِ تعدیلِ canonical** | `mission/fts-indicator-engineering` **وِ** `fix/system-2-reproducible-fixtures-2026-10-15` | `ff6b2fb` · `c68dbc0` | `dev/test_adjustment_engine_v1.py`، `corporate_ledger.py`، `dev/test_corporate_ledger_v1.py`، `_audit/ra365_ledger_*.py`، `tools/phase5f_*.py`، `tools/phase6_verdict_matrix.py`، `tools/make_adjustment_witness_fixture.py`، `dev/fixtures/ra365_witness_subset.json` | **PUBLISHED وِ اندازه‌گیری‌شدۀِ رویِ درختِ فقط‑GitHub: ۴۴ سبز/۰ قرمز، rc=0 (§۱۰‑۳)** |
 | **Market Status / Binder1** | `mission/fts-indicator-engineering` | `ff6b2fb` | `frontend/src/features/market/**` (هشت بخش)، `api/market_status.py`، `mstat_engine.py`، `docs/technical-indicators/reviewed/BINDER1-*.md`، `_audit/MS-BINDER-UI-RUN.txt`، `tools/market_status_page_probe.mts` | **PUBLISHED** — به‌جزِ ۲۶ اسکرین‌شات (§۱۰‑۴) وِ ۱۳ صفحۀِ ارجاع‌داده‌شدہ که هرگز درِ مخزن نبودند (§۱۰‑۵) |
 | **تحقیقِ تطبیقِ Rahavard** | `mission/fts-indicator-engineering` | `ff6b2fb` | `docs/RAHAVARD-*.md`، `_audit/RA365-*.csv` (کامیت‌شده)، `_audit/ra365_job_fetch.js`، `_audit/ra365_adjustment_events.py` | **PUBLISHED (تجدیدِ زنده BLOCKED: نشستِ مالک لازم است)** |
 | **دستگاهِ تحویل/موجودی** | `handoff/system-2/inventory-2026-10-15` | tipِ `git ls-remote` (همینِ سند) | `docs/handoff/2026-10-15-system-2-inventory.md` | **PUBLISHED** |
@@ -324,4 +334,20 @@
 | stash / کارِ unreachable | `git stash list` وِ `git fsck --unreachable` وِ `git diff --stat 09e8d64 afa4590` | stash خالی؛ diffِ danglingها خالی ⇒ کاری درِ آن‌ها نبود |
 | فایل‌هایِ کلیدی رویِ remote | `git ls-tree -r origin/<b> \| grep <path>` | هرِ هشت سندِ تحویل + `dev/fixtures/ra365_witness_subset.json` (۴۵۹٫۹۷۵ بایت، حجمِ object رویِ remote برابرِ حجمِ محلی) + `tools/make_adjustment_witness_fixture.py` دیده شدند |
 | درختِ بیِ مصدرِ محلی | `git archive origin/fix/system-2-reproducible-fixtures-2026-10-15 \| tar -x` | ۱۶۸۱ فایل؛ سه مصدرِ ignore‑شده غایب؛ سورسِ تستِ تعدیل ازِ همانِ درخت **۴۴/۰، rc=0** (§۱۰‑۳) |
+
+
+**سه ایرادِ خودی که همینِ دورِ ممیزی پیدا وِ اصلاح شد (پنهان نشد):**
+
+- یکِ ارجاعِ **ناتمام** درِ §۱۰‑۲: `dev/adjustment_ledger*` رویِ هیچِ شاخۀِ remoteی وجود ندارد؛ 
+نام‌هایِ واقعی `corporate_ledger.py`، `dev/test_corporate_ledger_v1.py` وِ `_audit/ra365_ledger_*.py` است. 
+پیدا شد ازِ اینِ راه که هرِ ۱۵۱ ارجاعِ مسیرِ همینِ سند باِ `git ls-tree -r origin/<b>` سنجیده شد، نه باِ چشم.
+- دوِ شمارۀِ غلط: «۱۱ اصلاحِ UI» وِ «سی‌وسه کامیتِ بعدِ `dd065c1`». شمارشِ درست باِ `git rev-list --count`: 
+`dd065c1..3feb525` = **۱۴** وِ `ff6b2fb..3feb525` = **۱۶**، وِ `fix(ui)` درِ کلِ شاخه = **۶**.
+- سه سطرِ **کهنه** درِ §۴/§۵/§۷/§۹ که دورِ اول نوشته شده بودند (UI را `dd065c1`، سه لاگِ منتشرشده را 
+منتشرنشده، وِ «گیتِ فشرِ PNG هنوز انجام نشده» می‌گفتند). به‌جایِ پاک‌کردنِ تاریخچه، برچسبِ «دورِ اول» 
+وِ ارجاعِ درست خوردند.
+- یکِ نویسسۀِ ممنوع (CJK) درِ همانِ سطری که اینِ دور بهِ §۴‑۱ اضافه شد. باِ بازرسیِ مستقیم دیده وِ
+  **پیشِ ازِ اجرایِ گارد** پاک شد؛ اجرایِ گارد پسِ ازِ اصلاح `rc=0` بود وِ اسکنِ مستقل هم صفرِ سطرِ
+  CJK/هنگول داد. درِ هیچِ کامیتی منتشر نشد. (تفاوتِ اینِ سطر باِ اعترافِ §۴: آنِ یکی رویِ remote رفته
+  بود وِ بازنویسیِ تاریخچه نشد؛ اینِ یکی فقط رویِ دیسک بود.)
 
