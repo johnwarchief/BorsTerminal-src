@@ -426,6 +426,14 @@ _fake = _build.replace(
 chk(_anon.search(_fake) is not None and _anon.search(_build) is None,
     "A72 کنترلِ منفی: بازگشتِ همین خط به curlِ ناشناس، A70 را قرمز می‌کند")
 
+# نوعِ keystore باید با `=` داده شود. «storeType (a ?: b).trim()» درِ Groovy یک
+# فراخوانیِ متد است که نتیجه‌اش تهی است و `.trim()` رویِ آن می‌شکند — همان چیزی
+# که رانِ 38809760278 (اولین باری که شاخۀ امضایِ واقعی اجرا شد) درِ سطرِ ۱۱۹ داد.
+_st = [l for l in (read("frontend/android/app/build.gradle") or "").splitlines()
+       if "storeType" in l and not l.strip().startswith("//")]
+chk(len(_st) == 1 and "storeType =" in _st[0] and "storeType (" not in _st[0],
+    "A72-ب storeType با انتسابِ صریح نوشته شده، نه فراخوانیِ Groovy")
+
 # ── A83..A90 چیزی که گوشی می‌خواند باید عمومی باشد (مخزنِ src خصوصی می‌ماند) ──
 # تصمیمِ مالک: src خصوصی می‌ماند. پس هر URL که بیرونِ CI خوانده می‌شود —
 # بستۀ دادۀ گوشی و لینکِ دانلودِ APK — باید به مخزنِ عمومیِ توزیع برود.

@@ -113,10 +113,11 @@ android {
                 storeFile file(borsKsProps.getProperty('storeFile').trim())
                 // نوع keystore ازِ props خوانده می‌شود، نه حدس: Java/KeyStore
                 // فایلِ PKCS12 را با نوعِ JKS **باز نمی‌کند** (پیش‌فرضِ AGP). وقتی
-                // کلیدِ انتشار بی‌keytool (مثلاً رویِ ماشینِ بی‌Java) ساخته شود،
-                // ظرفِ آن PKCS12 است و این سطر باید همان را بگوید. نبودِ این
-                // کلید = همان رفتارِ قبلی (JKS).
-                storeType (borsKsProps.getProperty('storeType') ?: 'JKS').trim()
+                // کلیدِ انتشار بی‌keytool ساخته شود، ظرفِ آن PKCS12 است.
+                // `=` اینجا لازم است: «storeType (a ?: b).trim()» درِ Groovy به‌شکلِ
+                // فراخوانیِ متدِ storeType(...) و بعدِ .trim() رویِ نتیجهٔ تهی
+                // خوانده می‌شود و می‌شکند (شاهد: رانِ 38809760278، سطرِ ۱۱۹).
+                storeType = (borsKsProps.getProperty('storeType') ?: 'JKS').trim()
                 storePassword borsKsProps.getProperty('storePassword')
                 keyAlias borsKsProps.getProperty('keyAlias')
                 keyPassword borsKsProps.getProperty('keyPassword')
