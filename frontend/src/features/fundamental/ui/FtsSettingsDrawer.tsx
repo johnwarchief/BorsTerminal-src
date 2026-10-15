@@ -172,13 +172,16 @@ function ToggleRow({
 
 /** دکمهٔ ⚙ + پنل Overlay ثابت سمت راست — پنل با createPortal به
  *  document.body رندر می‌شود و `fixed inset-y-0 start-0` است: مستقل از
- *  هر اسکرول/جریان صفحه، همیشه داخل viewport. Esc و کلیک بیرون می‌بندند. */
+ *  هر اسکرول/جریان صفحه، همیشه داخل viewport. Esc و کلیک بیرون می‌بندند.
+ *  `compact` = همان دکمه در سطرِ باریک (هدر داک پایین چارت، ۲۸px). */
 export function FtsSettingsTrigger({
   open,
   onToggle,
+  compact = false,
 }: {
   open: boolean;
   onToggle: () => void;
+  compact?: boolean;
 }) {
   const close = () => {
     if (open) onToggle();
@@ -193,13 +196,15 @@ export function FtsSettingsTrigger({
         aria-label="تنظیمات پیش‌شرط‌های FTS"
         title="تنظیمات پیش‌شرط‌های FTS"
         data-testid="fts-settings-btn"
-        className={`inline-flex shrink-0 items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-bold transition-all duration-200 ${
+        className={`inline-flex shrink-0 items-center gap-1.5 rounded-lg border font-bold transition-all duration-200 ${
+          compact ? 'px-2 py-1 text-[11px] gap-1' : 'px-3 py-2 text-xs'
+        } ${
           open
             ? 'border-border-accent bg-bg-card/80 text-accent-blue'
             : 'border-[var(--hairline)] bg-bg-card/60 text-text-secondary hover:border-border-accent hover:text-accent-blue'
         }`}
       >
-        <span aria-hidden className="text-base leading-none">⚙</span>
+        <span aria-hidden className={compact ? 'text-sm leading-none' : 'text-base leading-none'}>⚙</span>
         تنظیمات
       </button>
       <FtsSettingsDrawer open={open} onClose={close} />
