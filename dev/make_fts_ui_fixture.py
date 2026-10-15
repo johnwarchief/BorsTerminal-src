@@ -113,7 +113,7 @@ out = {"full": layer2("A"), "partial": layer2("E"), "nodata": layer2("N")}
 d = os.path.join(ROOT, "dev", "fixtures")
 os.makedirs(d, exist_ok=True)
 p = os.path.join(d, "fts_v10_payloads.json")
-with open(p, "w", encoding="utf-8") as fh:
+with open(p, "w", encoding="utf-8", newline="\n") as fh:
     json.dump(out, fh, ensure_ascii=False, indent=1)
 print("wrote", p)
 print("partial row:", out["partial"]["details"]["۲"]["period_row"]["markdown"])
