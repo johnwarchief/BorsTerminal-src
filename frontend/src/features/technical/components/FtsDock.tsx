@@ -5,7 +5,12 @@ import { useState } from 'react';
 
 export type DockTab = { id: string; label: string; node: React.ReactNode };
 
-export function FtsDock({ tabs, defaultOpen = false }: { tabs: DockTab[]; defaultOpen?: boolean }) {
+/**
+ * `extra` = کناریِ همانِ سطرِ تب‌ها (سمتِ مخالف). جایِ کنترل‌هایِ FTS است،
+ * نه اورلیِ شناور رویِ چارت: شناورِ قبلی درِ ۱۳۶۶×۷۶۸ رویِ نوارِ ابزارِ چارت
+ * می‌نشست وِ چهارِ دکمهٔ چارت را غیرقابلِ کلیک می‌کرد.
+ */
+export function FtsDock({ tabs, defaultOpen = false, extra }: { tabs: DockTab[]; defaultOpen?: boolean; extra?: React.ReactNode }) {
   const [open, setOpen] = useState(defaultOpen);
   const [active, setActive] = useState(tabs[0]?.id ?? '');
   const current = tabs.find((t) => t.id === active) ?? tabs[0];
@@ -18,7 +23,7 @@ export function FtsDock({ tabs, defaultOpen = false }: { tabs: DockTab[]; defaul
         open ? 'h-[32%] min-h-[180px]' : 'h-7'
       }`}
     >
-      <div className="flex h-7 shrink-0 items-center gap-0.5 px-1" role="tablist" aria-label="داک پایین چارت">
+      <div className="flex h-7 shrink-0 items-center gap-0.5 overflow-x-auto px-1 scrollbar-none" role="tablist" aria-label="داک پایین چارت">
         <button
           type="button"
           data-testid="fts-dock-toggle"
@@ -41,13 +46,14 @@ export function FtsDock({ tabs, defaultOpen = false }: { tabs: DockTab[]; defaul
               setActive(t.id);
               setOpen(true);
             }}
-            className={`rounded px-2 py-0.5 text-[11px] font-semibold transition-colors ${
+            className={`shrink-0 rounded px-2 py-0.5 text-[11px] font-semibold transition-colors ${
               open && active === t.id ? 'bg-accent-blue/15 text-accent-blue' : 'text-text-muted hover:text-text-secondary'
             }`}
           >
             {t.label}
           </button>
         ))}
+        {extra ? <div className="ms-auto flex shrink-0 items-center ps-1">{extra}</div> : null}
       </div>
       {open ? (
         <div role="tabpanel" data-testid="fts-dock-body" className="min-h-0 flex-1 overflow-y-auto p-2">

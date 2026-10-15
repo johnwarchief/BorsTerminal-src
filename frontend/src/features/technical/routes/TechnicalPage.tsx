@@ -257,15 +257,16 @@ export default function TechnicalPage() {
   const noData = !symbol ? tedipx.data.length === 0 : nn.status === 'empty' || (!nn.isLoading && !nn.isError && nn.data.length === 0);
 
   return (
-    <div className="tv-workbench flex h-[calc(100dvh-3rem)] min-h-0 min-w-0 w-full flex-col overflow-hidden xl:flex-row">
+    <div className="tv-workbench flex h-full min-h-0 min-w-0 w-full flex-col overflow-hidden xl:flex-row">
       <TechnicalSidebar active={activeLevels} symbol={viewSymbol} onSelect={selectSymbol} />
 
       <main className="flex min-h-0 min-w-0 flex-1 flex-col">
         {/* چارت تمام‌فضا (بدون کادر تودرتو/حاشیهٔ مرده) */}
         <div className="relative min-h-0 min-w-0 flex-1" data-testid="chart-area">
-          <div className="absolute end-3 top-3 z-50" data-testid="technical-fts-settings">
-            <FtsSettingsTrigger open={ftsSettingsOpen} onToggle={() => setFtsSettingsOpen((open) => !open)} />
-          </div>
+          {/* دکمهٔ «تنظیمات FTS» درِ سطرِ داک پایین است (پایینِ همینِ چارت)، نه اورلیِ
+              شناور رویِ چارت: شناورِ قبلی باِ `end-3 top-3` دقیقاً رویِ گوشۀِ نوارِ ابزارِ
+              چارت می‌نشست وِ سنجشِ elementFromPoint چهارِ دکمهٔ چارت (بازپخش، تنظیماتِ
+              چارت، 🔔 هشدار، تمام‌صفحه) را «گیرِ کلیک» گزارش کرد. */}
           {chartEngine === 'ffc' ? (
             <div className="h-full w-full overflow-hidden" data-testid="ffc-chart-host">
               <FtsEngineChart
@@ -320,7 +321,11 @@ export default function TechnicalPage() {
           )}
           <PriceAlertBanner rows={marketData?.data} />
           {showChartLegend ? (
-            <div className="absolute bottom-9 start-3 z-40" data-testid="fts-legend-host">
+            /* `bottom-[3.85rem]` = بالایِ نوارِ ۲۸pxِ دکمه‌هایِ محورِ قیمتِ چارت
+               (`.nn-price-axis-buttons` باِ `bottom:4px` درِ `.nn-canvas-area`);
+               باِ `bottom-9` ردیف‌هایِ افسانۀِ FTS دقیقاً رویِ % / log / auto می‌افتاد
+               وِ هرِ سه را غیرقابلِ کلیک می‌کرد (سنجش: overlap ۹۳×۲۲px). */
+            <div className="absolute bottom-[3.85rem] start-3 z-40" data-testid="fts-legend-host">
               <FtsLayerLegend
                 fts={analysis.data?.fts ?? null}
                 engineId={chartEngine}
@@ -332,6 +337,7 @@ export default function TechnicalPage() {
         </div>
 
         <FtsDock
+          extra={<FtsSettingsTrigger compact open={ftsSettingsOpen} onToggle={() => setFtsSettingsOpen((open) => !open)} />}
           tabs={[
             {
               id: 'status',
