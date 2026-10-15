@@ -54,6 +54,43 @@ def borsVersionCode = {
     return got
 }()
 
+// ── امضایِ انتشار: سازوکارِ رسمیِ پروژه، بی‌بازگشتِ ساکت به debug ───────────
+// تا پیش‌ازِ این، این ماژول هیچ signingConfig نداشت و CI فقط `assembleDebug`
+// می‌ساخت؛ شاهد: دو APKِ منتشرشده (mobile-latest و mobile-parity-9f7427d) هر دو
+// `CN=Android Debug` بودند ولی اثرانگشتشان با هم فرق داشت ⇒ ارتقایِ درجا رویِ
+// گوشی هیچ‌وقت ممکن نبود. از این پس «نسخۀ رسمی» فقط از یک keystore خوانده
+// می‌شود که مسیرش از بیرونِ گیت داده می‌شود.
+//
+// چرا فایلِ properties و نه `-PstorePassword=…`: مقدارِ ردِ‌شده درِ فرمانِ
+// gradlew درِ فهرستِ فرآیندها (Windows/Linux) قابلِ خواندن است و درِ لاگِ CI
+// می‌نشیند. اینجا تنها *مسیر* فایل درِ فرمان می‌آید و رمزها درِ فایلی
+// خواندنی‌نشدنی برایِ گیت می‌مانند.
+def borsKsProps = new Properties()
+def borsKsPath = (findProperty('BorsKeystoreProperties')
+    ?: System.getenv('BORS_KEYSTORE_PROPERTIES'))?.toString()?.trim()
+if (borsKsPath) {
+    def f = new File(borsKsPath)
+    if (!f.canRead()) {
+        throw new GradleException("BORS-SIGN: فایلِ propertiesِ keystore خوانده نشد: ${f}")
+    }
+    f.withInputStream { borsKsProps.load(it) }
+}
+def borsKsFields = ['storeFile', 'storePassword', 'keyAlias', 'keyPassword']
+def borsKsGiven = borsKsFields.findAll { !borsKsProps.getProperty(it)?.trim() }
+def borsReleaseSigned = false
+if (borsKsPath) {
+    if (borsKsGiven) {
+        // نیمه‌کاره = فاجعه: بیلدی که «انگار امضا شده» ولی نشده. بی‌صدا رد نمی‌شود.
+        throw new GradleException("BORS-SIGN: این کلیدهایِ propertiesِ keystore خالی‌اند: ${borsKsGiven.join(', ')}")
+    }
+    if (borsKsProps.getProperty('storeFile').trim().toLowerCase().endsWith('debug.keystore')) {
+        // قاعدۀ مأموریت: debug keystore هرگز جایِ کلیدِ انتشار را نمی‌گیرد.
+        throw new GradleException('BORS-SIGN: storeFile به debug.keystore اشاره می‌کند؛ نسخۀ رسمی با کلیدِ debug ساخته نمی‌شود.')
+    }
+    borsReleaseSigned = true
+}
+logger.lifecycle("BORS-SIGN: release signing = ${borsReleaseSigned ? 'configured' : 'ABSENT (release APK will be unsigned)'}")
+
 android {
     namespace = "com.borsterminal.mobile"
     compileSdk = rootProject.ext.compileSdkVersion
@@ -70,10 +107,30 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    signingConfigs {
+        if (borsReleaseSigned) {
+            borsRelease {
+                storeFile file(borsKsProps.getProperty('storeFile').trim())
+                storePassword borsKsProps.getProperty('storePassword')
+                keyAlias borsKsProps.getProperty('keyAlias')
+                keyPassword borsKsProps.getProperty('keyPassword')
+            }
+        }
+    }
     buildTypes {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            // نسخۀ رسمی هرگز debuggable نیست: با debuggable=true خودِ WebView
+            // `setWebContentsDebuggingEnabled` می‌گیرد و هر console.error یا
+            // رشتهٔ خطا از راهِ DevTools رویِ گوشیِ کاربر بیرون می‌آید.
+            debuggable false
+            if (borsReleaseSigned) {
+                signingConfig signingConfigs.borsRelease
+            }
+            // بی‌کلید، APK **بی‌امضا** می‌ماند (نه debug). دروازۀ انتشار درِ
+            // .github/workflows/mobile.yml همین را می‌بیند و ریلیز را می‌بندد؛
+            // ساختِ بی‌امضا برایِ آزمونِ خودِ زنجیره مجاز است.
         }
     }
 }

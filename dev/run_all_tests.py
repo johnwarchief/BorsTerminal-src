@@ -224,6 +224,17 @@ SUITES = [
     # با کنترلِ منفیِ رفتارِ پیشین و با سنجشِ رویِ snapshotِ مستقل.
     ('dev/mobile_bake_key_parity_v1079.py',
                                      'baked key == runtime key for every screener symbol (trailing-space symbol no longer lost)'),
+    # دورِ انتشارِ اندروید (۲۰۲۶-۱۰-۱۵): «نسخۀ رسمی» تا پیش‌ازِ این یعنی
+    # assembleDebug و انتشارِ همان app-debug.apk — دو ریلیزِ منتشرشده با دو
+    # گواهیِ Android Debugِ متفاوت امضا شده بودند، پس ارتقایِ درجا رویِ گوشی
+    # هیچ‌وقت ممکن نبود. این گارد قراردادِ فایل‌ها را می‌سنجد (نه Gradle):
+    # دروازۀ انتشار بی‌امضا بسته، keystore تنها از secret و فایلِ 077، رمز بیرونِ
+    # فرمانِ gradlew، debug.keystore با استثنا رد، manifest سخت‌شده (allowBackup/
+    # cleartext/inset/صفحه‌کلید)، versionCode بالاتر و tag مستقلِ android- که
+    # latest.json و برچسبِ vX.Y.Z دسکتاپ را لمس نمی‌کند، و jobِ شبیه‌ساز که
+    # بی‌KVM صریحاً NOT_VERIFIED می‌دهد نه سبز.
+    ('dev/android_release_v1110.py',
+                                     'android release chain: no debug-signed official build, signing gate closed, hardened manifest, non-colliding tag, honest emulator verdict'),
     # هدفِ ۲ دورۀ audit پیش از FTS: چهار مسیرِ «داده تازه شد ولی برنامه کهنه جواب
     # داد» — کشِ اسکرینر پس ازِ سینکِ بازار/کدال، تولدِ زیرپروسۀ خزنده درِ EXE
     # (sys.executable خودِ EXE است)، کلیدِ سه کشِ چارت بی‌مبنایِ قیمت، و سریِ

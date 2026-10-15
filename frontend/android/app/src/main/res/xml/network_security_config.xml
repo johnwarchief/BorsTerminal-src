@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- تنها منبعِ دادۀ گوشی HTTPS است (cdn.tsetmc.com و GitHub Releases).
+     cleartextTrafficPermitted=false یعنی «http://» حتی اگر روزی درِ کدِ فرانت
+     سرِ هم بیاید، درِ شبکهٔ اندروید بسته می‌ماند — نه درِ یک if درِ TypeScript
+     که با هر refactor جابه‌جا می‌شود. بی‌این فایل، محدودیت فقط ازِ مقدارِ
+     پیش‌فرضِ targetSdk می‌آمد و هیچ‌جا نوشته نشده بود؛ با targetSdk ۳۶ امروز
+     درست است، اما یک افزودنِ `debug-overrides` یا تغییرِ target آن را ساکت
+     برمی‌گرداند.
+
+     توجه: این پیکربندی `npx cap run android --live-reload` را می‌شکند (آن
+     مسیر http://LAN-IP:8080 است). روالِ توسعهٔ این پروژه `npm run dev` درِ
+     مرورگر با پروکسیِ 127.0.0.1:8001 است، پس چیزی از دست نمی‌رود؛ اگر کسی
+     روزی live-reload رویِ گوشی خواست، همان‌جا یک <debug-overrides> صریح
+     اضافه کند، نه اینکه کلِ base-config شل شود. -->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>

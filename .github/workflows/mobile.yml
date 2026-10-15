@@ -36,7 +36,7 @@ permissions:
 jobs:
   build-apk:
     runs-on: ubuntu-latest
-    timeout-minutes: 35
+    timeout-minutes: 50
     env:
       # سریِ بستهٔ داده. پیش‌فرض همان چیزی است که امروز رویِ گوشی‌هاست
       # (`mobile-latest`، manifestِ چهارکلیدیِ بی‌امضا). سریِ جدیدِ v2 **مسیرِ
@@ -201,13 +201,45 @@ jobs:
           distribution: temurin
           java-version: 21
 
-      - name: Sync Capacitor and build APK
+      # ── کلیدِ امضایِ انتشار: سازوکارِ رسمی، بی‌افشایِ رمز ───────────────────
+      # دو secret لازم است (هیچ‌کدام امروز تنظیم نشده؛ تا تنظیم نشود بیلدِ
+      # release **بی‌امضا** می‌ماند و دروازۀ انتشار پایین همان را می‌بندد):
+      #   ANDROID_RELEASE_KEYSTORE_B64 — خودِ keystore، base64
+      #   ANDROID_RELEASE_KEYSTORE_PROPS — سه سطرِ storePassword/keyAlias/keyPassword
+      # رمز هرگز درِ فرمانِ gradlew نمی‌آید (فهرستِ فرآیندها آن را نشان می‌دهد):
+      # فایلِ properties با umask 077 درِ RUNNER_TEMP نوشته می‌شود و مسیرش از
+      # راهِ متغیرِ محیطی به Gradle می‌رسد.
+      - name: Materialize the release keystore (if the project key exists)
+        env:
+          KS_B64: ${{ secrets.ANDROID_RELEASE_KEYSTORE_B64 }}
+          KS_PROPS: ${{ secrets.ANDROID_RELEASE_KEYSTORE_PROPS }}
+        run: |
+          set -e
+          if [ -z "$KS_B64" ] || [ -z "$KS_PROPS" ]; then
+            echo "release signing = ABSENT؛ releases امضانشده منتشر نمی‌شوند (دروازۀ publish بسته می‌ماند)"
+            exit 0
+          fi
+          umask 077
+          d="$RUNNER_TEMP/bors-keystore"; mkdir -p "$d"
+          printf '%s' "$KS_B64" | base64 -d > "$d/release.keystore"
+          { echo "storeFile=$d/release.keystore"; printf '%s\n' "$KS_PROPS"; } > "$d/keystore.properties"
+          echo "BORS_KEYSTORE_PROPERTIES=$d/keystore.properties" >> "$GITHUB_ENV"
+          echo "release signing = configured (path only; values never printed)"
+
+      - name: Sync Capacitor and build Release + Debug APKs
         working-directory: frontend
         run: |
           set -e
           npx cap sync android
           cd android
           chmod +x gradlew
+          # نسخۀ رسمی: assembleRelease. اگر کلید نبود، بی‌امضا می‌ماند — و هرگز
+          # به debug.keystore برنمی‌گردد (بیلدِ debug جایِ کلیدِ انتشار را نمی‌گیرد).
+          ./gradlew assembleRelease --no-daemon \
+            -PBorsVersionName="$BORS_VERSION_NAME" -PBorsVersionCode="$BORS_VERSION_CODE"
+          # bیلدِ debug فقط برایِ آزمونِ WebView رویِ شبیه‌ساز لازم است: DevTools
+          # تنها درِ buildِ debuggable باز می‌شود، پس اندازه‌گیریِ DOM/console/inset
+          # از همان ساخته می‌آید و درِ گزارش «آزمونِ artifact رسمی» حساب نمی‌شود.
           ./gradlew assembleDebug --no-daemon \
             -PBorsVersionName="$BORS_VERSION_NAME" -PBorsVersionCode="$BORS_VERSION_CODE"
 
@@ -225,18 +257,59 @@ jobs:
           [ "$VN" = "$BORS_VERSION_NAME" ] || { echo "versionName درِ APK ($VN) ≠ نسخۀ رسمی ($BORS_VERSION_NAME)" >&2; exit 1; }
           [ "$VC" = "$BORS_VERSION_CODE" ] || { echo "versionCode درِ APK ($VC) ≠ مشتقِ رسمی ($BORS_VERSION_CODE)" >&2; exit 1; }
 
-      - name: Verify APK
+      # ── اعتبارسنجیِ artifact رسمی از ریلِ خودِ Android ───────────────────────
+      # aapt2/apksigner حرفِ Gradle را باور نمی‌کنند: بسته‌ای که خوانده می‌شود
+      # همان بسته‌ای است که باید رویِ گوشی برود. سه چیز همین‌جا ثبت می‌شود و
+      # بعداً درِ متنِ ریلیز می‌نشیند: امضا (با اثرانگشتِ گواهی)، نبودِ
+      # `debuggable`، و فهرستِ مجوزها.
+      - name: Validate the release artifact (aapt2 + apksigner)
+        id: relcheck
         run: |
-          APK=frontend/android/app/build/outputs/apk/debug/app-debug.apk
-          test -s "$APK"
-          sha256sum "$APK"
-          stat -c '%n %s bytes' "$APK"
+          set -e
+          APK=frontend/android/app/build/outputs/apk/release/app-release.apk
+          test -s "$APK" || { echo "app-release.apk ساخته نشد" >&2; exit 1; }
+          BT=$(ls -d "$ANDROID_HOME"/build-tools/* 2>/dev/null | sort -V | tail -1)
+          if [ -z "$BT" ]; then echo "build-tools درِ runner نیست" >&2; exit 1; fi
+          echo "== badging =="
+          "$BT/aapt2" dump badging "$APK" | grep -E '^package:|^sdkVersion:|^targetSdkVersion:|^uses-permission:|debuggable|^application-label' || true
+          BADGE=$("$BT/aapt2" dump badging "$APK")
+          echo "$BADGE" | grep -q "^package: name='com.borsterminal.mobile'" \
+            || { echo "applicationId درِ APK درست نیست" >&2; exit 1; }
+          echo "$BADGE" | grep -q "versionCode='$BORS_VERSION_CODE'" \
+            || { echo "versionCode درِ APK ($BORS_VERSION_CODE) نیست" >&2; exit 1; }
+          echo "$BADGE" | grep -q "versionName='$BORS_VERSION_NAME'" \
+            || { echo "versionName درِ APK نیست" >&2; exit 1; }
+          if echo "$BADGE" | grep -qw debuggable; then
+            echo "APK ریلیز debuggable است؛ نسخۀ رسمی هرگز نباید باشد" >&2; exit 1
+          fi
+          echo "== signing =="
+          SUM=$(sha256sum "$APK" | cut -d' ' -f1); SIZE=$(stat -c '%s' "$APK")
+          echo "artifact: $APK · $SIZE بایت · sha256 $SUM"
+          SIGNED=no; CERT=namoloom
+          if "$BT/apksigner" verify --print-certs "$APK" > /tmp/verify.txt 2>&1; then
+            SIGNED=yes
+            CERT=$(grep -m1 -oE 'SHA-256 digest: [0-9a-f]+' /tmp/verify.txt | cut -d' ' -f3)
+            [ -n "$CERT" ] || CERT=namoloom
+            grep -E '^(Verified using|Signer #1 certificate DN|Signer #1 certificate SHA-256 digest)' /tmp/verify.txt || true
+          else
+            echo "APK بی‌امضاست (دروازۀ publish همین را می‌بیند)"; tail -3 /tmp/verify.txt || true
+          fi
+          echo "signed=$SIGNED" >> "$GITHUB_OUTPUT"
+          echo "cert_sha256=$CERT" >> "$GITHUB_OUTPUT"
+          {
+            echo "APK_SHA256=$SUM"
+            echo "APK_SIZE=$SIZE"
+            echo "APK_SIGNED=$SIGNED"
+            echo "APK_CERT_SHA256=$CERT"
+          } >> "$GITHUB_ENV"
 
-      - name: Upload APK artifact
+      - name: Upload release + debug artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: bors-mobile-candidate-apk-${{ github.sha }}
-          path: frontend/android/app/build/outputs/apk/debug/app-debug.apk
+          name: bors-mobile-candidate-${{ github.sha }}
+          path: |
+            frontend/android/app/build/outputs/apk/release/app-release.apk
+            frontend/android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
 
       - name: Publish gate status
@@ -244,16 +317,26 @@ jobs:
           PUB: ${{ vars.MOBILE_MANIFEST_PUBKEY }}
           VERIFIED: ${{ steps.sigcheck.outputs.signed }}
         run: |
+          # سه قفلِ مستقل، هر سه باید باز شوند: (۱) کلیدِ عمومیِ manifest درِ باندل
+          # هست، (۲) بستۀ دادۀ هدف امضایش معتبر است، (۳) APK با کلیدِ *انتشار*
+          # امضا شده. سومیا تا پیش‌ازِ این وجود نداشت: CI فقط app-debug.apk
+          # می‌ساخت و منتشر می‌کرد — یعنی نسخۀ «رسمی» رویِ گوشی با debug keystore
+          # امضا می‌شد و گواهی‌اش درِ هرِ ران عوض می‌شد (ارتقایِ درجا ناممکن).
+          echo "release APK signing: ${APK_SIGNED:-no} · certificate sha256: ${APK_CERT_SHA256:-نامعلوم}"
+          echo "data package series: $SNAPSHOT_SERIES · manifest signature: ${VERIFIED:-unchecked}"
+          echo "bundle trust root: $([ -n "$PUB" ] && echo configured || echo ABSENT)"
           if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ github.event.inputs.publish }}" = "true" ]; then
             echo "PUBLISH = صریحاً درخواست‌شده (workflow_dispatch, publish=true)"
-            # دروازۀ انتشار: APK ای که کلیدِ عمومی ندارد یا بستۀ داده‌اش امضایِ
-            # معتبر ندارد، رویِ گوشی هیچ‌وقت دادهٔ تازه نمی‌گیرد ⇒ منتشر نمی‌شود.
+            if [ "$APK_SIGNED" != "yes" ]; then
+              echo "BLOCKED: APK امضایِ انتشار ندارد (secrets.ANDROID_RELEASE_KEYSTORE_B64/PROPS تنظیم نشده). APKِ بی‌امضا یا debug به‌عنوان نسخۀ رسمی منتشر نمی‌شود." >&2
+              exit 1
+            fi
             if [ -z "$PUB" ]; then
               echo "BLOCKED: vars.MOBILE_MANIFEST_PUBKEY تنظیم نشده؛ کلیدِ آزمایشی جایِ کلیدِ انتشار را نمی‌گیرد." >&2
               exit 1
             fi
             if [ "$VERIFIED" != "verified" ]; then
-              echo "BLOCKED: امضایِ بستۀ داده درِ mobile-latest بررسی/معتبر نشد؛ انتشارِ APKِ بی‌منبعِ اعتماد ممنوع." >&2
+              echo "BLOCKED: امضایِ بستۀ داده بررسی/معتبر نشد؛ انتشارِ APKِ بی‌منبعِ اعتماد ممنوع." >&2
               exit 1
             fi
           else
@@ -287,9 +370,13 @@ jobs:
           set -e
           # دروازۀ انتشار درِ *همین* گام هم بازخوانی می‌شود، نه فقط درِ گامِ
           # «Publish gate status»: آن گام با exit 1 شغل را می‌بندد، ولی اعتماد به
-          # ترتیبِ گام‌ها یعنی یکِ جابه‌جاییِ بعدی، انتشارِ بی‌کلید. سه شرط، هر سه
-          # همین‌جا: کلیدِ عمومی تنظیم‌شده، امضایِ بستۀ داده معتبر، و tag هدف
-          # هیچ‌کدام از سری‌هایِ کهنه نیست.
+          # ترتیبِ گام‌ها یعنی یکِ جابه‌جاییِ بعدی، انتشارِ بی‌کلید. چهار شرط، هر
+          # چهار همین‌جا: APK امضاشده، کلیدِ عمومی درِ باندل، امضایِ بستۀ داده
+          # معتبر، و سریِ هدف کهنه/خالی نیست.
+          if [ "$APK_SIGNED" != "yes" ]; then
+            echo "BLOCKED: APK امضایِ انتشار ندارد؛ نسخۀ رسمی با debug keystore یا بی‌امضا منتشر نمی‌شود." >&2
+            exit 1
+          fi
           if [ -z "$PUB" ]; then
             echo "BLOCKED: vars.MOBILE_MANIFEST_PUBKEY تنظیم نشده؛ APK بی‌ریشۀ اعتماد منتشر نمی‌شود." >&2
             exit 1
@@ -310,18 +397,87 @@ jobs:
           # موبایل قابلِ ردیابی به کدِ دسکتاپ نیست
           git fetch -q origin main
           BASE=$(git merge-base origin/main "$GITHUB_SHA")
-          APK=frontend/android/app/build/outputs/apk/debug/app-debug.apk
+          APK=frontend/android/app/build/outputs/apk/release/app-release.apk
           SUM=$(sha256sum "$APK" | cut -d' ' -f1)
           SIZE=$(stat -c '%s' "$APK")
-          TAG="mobile-parity-$SHA"
-          gh release create "$TAG" $PRERELEASE_FLAG --target "$GITHUB_SHA"             --title "BorsTerminal Android — parity pack — $SHA"             --notes "بستۀ تجمیعیِ اندروید (یک ریلیز، نه per-fix).
+          # tag مستقلِ اندروید: «android-<version>» هیچ‌وقت با برچسبِ دسکتاپ
+          # (vX.Y.Z) یا با سریِ دادۀ منتشرشده (mobile-latest / data-latest)
+          # نمی‌خواند، پس این ریلیز هیچ asset ویندوزی و هیچ latest.json را
+          # لمس نمی‌کند.
+          TAG="android-$BORS_VERSION_NAME"
+          DOWNLOAD="https://github.com/$GITHUB_REPOSITORY/releases/download/$TAG/bors-terminal-android-$BORS_VERSION_NAME.apk"
+          gh release create "$TAG" $PRERELEASE_FLAG --target "$GITHUB_SHA"             --title "BorsTerminal Android $BORS_VERSION_NAME — نسخۀ امضاشدۀ رسمی"             --notes "نسخۀ اندروید (بستۀ تجمیعی، نه per-fix). امضا با کلیدِ انتشارِ پروژه، نه debug keystore.
 
+          نصب: $DOWNLOAD
+          sha256: $SUM · $SIZE بایت
+          applicationId: com.borsterminal.mobile · versionName $BORS_VERSION_NAME · versionCode $BORS_VERSION_CODE (منبع: frontend/package.json)
+          گواهیِ امضا (sha256): ${APK_CERT_SHA256:-نامعلوم}
+          ارتقا: اگر نسخۀ قبلی با کلیدِ دیگری امضا شده باشد، اندروید نصبِ رو‌رویی را رد می‌کند (INSTALL_FAILED_UPDATE_INCOMPATIBLE) و باید نسخۀ قبلی حذف شود. کلیدِ این ریلیز از این پس ثابت می‌ماند؛ ریلیزهایِ بعدیِ همان applicationId رویِ این نسخه رو‌رویی نصب می‌شوند.
           source commit: $GITHUB_SHA
           base_main_commit: $BASE
-          app version: $BORS_VERSION_NAME (versionCode $BORS_VERSION_CODE) — منبع: frontend/package.json
-          build: frontend tsc + vitest سبز، سپس vite build (VITE_LOCAL_DATA=1) و gradlew assembleDebug
-          artifact: app-debug.apk · $SIZE بایت · sha256 $SUM
+          build: frontend tsc + vitest سبز، vite build (VITE_LOCAL_DATA=1)، gradlew assembleRelease، aapt2 + apksigner verify
           snapshot داده: ${SNAPSHOT_SERIES} · ${SNAP_BYTES} بایت · built_at ${SNAP_STAMP} · package_id ${SNAP_PACKAGE_ID:-نامعلوم} · schema ${SNAP_SCHEMA_VERSION:-?}/db ${SNAP_DB_SCHEMA:-?} · gz sha ${SNAP_GZ_SHA:-?}…
           امضایِ manifest: ${VERIFIED:-بررسی‌نشده} (کلیدِ عمومی درِ باندل بیلد نشسته است؛ کلیدِ خصوصی درِ مخزن نیست)
-          وضعیتِ آیتم‌ها و شاهد هر کدام: docs/MASTER-EXECUTION-ROADMAP.md §15"
-          gh release upload "$TAG" "$APK#bors-terminal-mobile.apk" --clobber
+          وضعیتِ آیتم‌ها و شاهد هر کدام: docs/android/ANDROID-RELEASE-REPORT-2026-10-15.md"
+          gh release upload "$TAG" "$APK#bors-terminal-android-$BORS_VERSION_NAME.apk" --clobber
+
+  # ── WebView رویِ دستگاه: آزمونِ زنده درِ شبیه‌ساز ─────────────────────────────
+  # درِ هر گزارشِ قبلی این مورد «انجام‌نشده» نوشته شده بود، چون رویِ ماشینِ
+  # توسعه Java/Android SDK نیست و آزمون‌ها یا درِ jsdom بودند یا درِ Chromiumِ
+  # دسکتاپ. این job همان چیزی را می‌سنجد که فقط WebView می‌دهد: نصب، نبودِ
+  # صفحهٔ سفید، باز شدنِ دیتابیسِ بسته، سه اندازۀ تلفن، دکمهٔ بازگشت،
+  # background/foreground، crash/ANR و نشتِ رمز درِ logcat.
+  # صریح: بیلدی که نصب می‌شود **debug** است (DevTools فقط درِ debuggable باز
+  # می‌شود)؛ پس این job مدرکِ «artifact رسمی آزموده شد» نیست و درِ گزارش هم
+  # جدا از آن ثبت می‌شود.
+  webview-on-emulator:
+    needs: build-apk
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: bors-mobile-candidate-${{ github.sha }}
+          path: apks
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: KVM probe
+        id: kvm
+        run: |
+          if [ -e /dev/kvm ]; then
+            echo "present=true" >> "$GITHUB_OUTPUT"; echo "KVM هست ⇒ شبیه‌سازِ x86 راه می‌افتد"
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+            echo "NOT_VERIFIED: /dev/kvm درِ این runner نیست؛ شبیه‌سازِ x86 بدونِ شتابِ سخت‌افزاری عملاً بالا نمی‌آید."
+          fi
+
+      - name: Install, boot and probe the WebView
+        if: steps.kvm.outputs.present == 'true'
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          arch: x86_64
+          profile: pixel_5
+          disable-animations: true
+          script: bash tools/android_emu_verify.sh apks/app-debug.apk
+
+      - name: Record the result honestly when the emulator cannot run
+        if: steps.kvm.outputs.present != 'true'
+        run: |
+          mkdir -p _audit/android_emu
+          printf 'NOT_VERIFIED\t/no-kvm\tشبیه‌ساز روی این runner اجرا نشد\n' > _audit/android_emu/steps.tsv
+          printf '{"device":null,"apk":"apks/app-debug.apk","steps":[{"step":"emulator","result":"NOT_VERIFIED","note":"no /dev/kvm on runner"}],"counts":{"pass":0,"fail":0,"not_verified":1}}\n' > _audit/android_emu/summary.json
+          cat _audit/android_emu/summary.json
+
+      - name: Upload the device evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-webview-evidence-${{ github.sha }}
+          path: _audit/android_emu/
+          if-no-files-found: warn
