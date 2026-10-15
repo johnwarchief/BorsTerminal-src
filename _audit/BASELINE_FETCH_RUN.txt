@@ -1,0 +1,12 @@
+BASELINE-FETCH start 19:23:17
+curl exit=0
+bytes=78667800
+e7df91dc0af257715494fbf31d64047ab4043d4b9d165e2467ca73b52d308157
+selftest exit=0
+  [ok] backfill filled 11405 cells
+  [ok] backfill idempotent
+  [ok] شارپيلن canonical (1 row per period)
+  [ok] integrity=ok, fk_violations=0
+[selftest] PASS
+[selftest] copy removed: %TEMP%\\bors_housekeep_c56g13tk\copy.db
+DONE 20:12:45
