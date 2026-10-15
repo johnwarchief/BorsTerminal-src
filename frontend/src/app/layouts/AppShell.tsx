@@ -22,6 +22,7 @@ const SHOW_FTS_PIPELINE_BAR = false;
 
 export function AppShell() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const locked = useAuthStore((s) => s.locked);
   const symbol = useSymbolStore((s) => s.symbol);
   const inspectorOpen = symbol.length > 0;
 
@@ -54,7 +55,9 @@ export function AppShell() {
     return stopIdleGate;
   }, []);
 
-  if (!isAuthenticated) {
+  // قفلِ صفحه فقط وقتی وجود دارد که کاربر خودش کدِ چیده باشد؛ بی‌آن، برنامه
+  // بی‌پرسش باز می‌شود (اعتبارنامۀ ثابتی درِ بسته نیست که بخواهد چک شود).
+  if (locked && !isAuthenticated) {
     return <LoginScreen />;
   }
 

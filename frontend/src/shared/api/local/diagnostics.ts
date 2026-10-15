@@ -130,7 +130,7 @@ export function mountDiagnostics(): void {
     // با viewport-fit=cover (تازۀ index.html) WebView تا زیرِ ناوتی‌بارِ سیستم
     // می‌رود؛ بی‌این env() دکمهٔ 🛠 و پنلش رویِ گوشی‌هایِ سه‌دکمه‌ای زیرِ
     // نوارِ سیستم می‌ماند و «دکمه غیب شده» به نظر می‌رسد.
-    'position:fixed;bottom:calc(70px + env(safe-area-inset-bottom));left:8px;z-index:9998;' +
+    'position:fixed;bottom:calc(var(--bors-nav-h, 66px) + 6px + env(safe-area-inset-bottom));left:8px;z-index:9998;' +
     'width:34px;height:34px;' +
     'border-radius:50%;border:1px solid rgba(255,255,255,.2);background:rgba(20,20,30,.75);' +
     'color:#fff;font-size:16px;line-height:1;opacity:.55';
@@ -141,7 +141,7 @@ export function mountDiagnostics(): void {
     panel.id = 'bors-diag-panel';
     panel.dir = 'rtl';
     panel.style.cssText =
-      'position:fixed;bottom:calc(112px + env(safe-area-inset-bottom));left:8px;right:8px;z-index:9998;max-height:55vh;' +
+      'position:fixed;bottom:calc(var(--bors-nav-h, 66px) + 48px + env(safe-area-inset-bottom));left:8px;right:8px;z-index:9998;max-height:55vh;' +
       'overflow-y:auto;background:rgba(10,12,20,.96);color:#e5e7eb;border:1px solid ' +
       'rgba(255,255,255,.15);border-radius:10px;padding:10px 12px;font-size:12px;' +
       'line-height:1.9;font-family:inherit;word-break:break-word;direction:rtl;text-align:right';

@@ -1,9 +1,626 @@
 {
-  "at": "2026-10-15T01:10:05.718Z",
+  "at": "2026-10-15T17:04:38.846Z",
   "dist": "C:/Users/PCMOD/Desktop/BorsTerminal-android/frontend/dist",
   "asset": "probe_bundle.js",
   "note": "Chromium — نه WebViewِ اندروید؛ env(safe-area-inset-*) اینجا همیشه صفر است و صفحه‌کلید تقلید نمی‌شود",
   "results": [
+    {
+      "size": "320x568x3",
+      "route": "(index)",
+      "measured": {
+        "vw": 320,
+        "vh": 568,
+        "route": "#/",
+        "title": "ترمینال تحلیل بورس",
+        "bootCard": false,
+        "fatalBanner": false,
+        "notFound": true,
+        "bootTiming": {
+          "source": "bundle",
+          "gzBytes": 16179264,
+          "rawBytes": 70619136,
+          "fetchMs": 217,
+          "gunzipMs": 173,
+          "openMs": 15,
+          "totalMs": 405
+        },
+        "viewportMeta": "width=device-width, initial-scale=1.0, viewport-fit=cover",
+        "overflowX": 0,
+        "rowCount": 23,
+        "textLen": 5915,
+        "navBox": {
+          "x": 0,
+          "y": 456,
+          "w": 320,
+          "h": 112,
+          "bottom": 568
+        },
+        "navPadBottom": "4px",
+        "appContentPadBottom": "120px",
+        "lastRowBottom": 2319,
+        "safeAreaBottom": "0px",
+        "touchTargetsUnder44": 0,
+        "navItemsUnder44Wide": 0,
+        "barScrolls": false,
+        "tabWidths": [
+          49,
+          49,
+          49,
+          49,
+          49,
+          49
+        ],
+        "navRowScrolls": false,
+        "utilityClipped": 0,
+        "utilityHidden": 1,
+        "utilityClipDetail": []
+      },
+      "consoleErrors": [
+        "Failed to load resource: net::ERR_FAILED",
+        "Failed to load resource: net::ERR_FAILED",
+        "Failed to load resource: net::ERR_FAILED"
+      ],
+      "blockedByHarness": 3,
+      "screenshot": "_audit/android_release/viewports/320x568-index.png",
+      "verdict": {
+        "booted": true,
+        "noHorizontalOverflow": true,
+        "rowsRendered": true,
+        "navOnScreen": true,
+        "touchTargetsOk": true,
+        "tabsHaveTouchWidth": true,
+        "utilityNotClipped": true,
+        "barStaysPut": true,
+        "padClearsBar": true,
+        "cleanConsole": true
+      }
+    },
+    {
+      "size": "320x568x3",
+      "route": "market",
+      "measured": {
+        "vw": 320,
+        "vh": 568,
+        "route": "#/market",
+        "title": "ترمینال تحلیل بورس",
+        "bootCard": false,
+        "fatalBanner": false,
+        "notFound": true,
+        "bootTiming": {
+          "source": "bundle",
+          "gzBytes": 16179264,
+          "rawBytes": 70619136,
+          "fetchMs": 217,
+          "gunzipMs": 173,
+          "openMs": 15,
+          "totalMs": 405
+        },
+        "viewportMeta": "width=device-width, initial-scale=1.0, viewport-fit=cover",
+        "overflowX": 0,
+        "rowCount": 23,
+        "textLen": 5992,
+        "navBox": {
+          "x": 0,
+          "y": 456,
+          "w": 320,
+          "h": 112,
+          "bottom": 568
+        },
+        "navPadBottom": "4px",
+        "appContentPadBottom": "120px",
+        "lastRowBottom": 2319,
+        "safeAreaBottom": "0px",
+        "touchTargetsUnder44": 0,
+        "navItemsUnder44Wide": 0,
+        "barScrolls": false,
+        "tabWidths": [
+          49,
+          49,
+          49,
+          49,
+          49,
+          49
+        ],
+        "navRowScrolls": false,
+        "utilityClipped": 0,
+        "utilityHidden": 1,
+        "utilityClipDetail": []
+      },
+      "consoleErrors": [],
+      "blockedByHarness": 0,
+      "screenshot": "_audit/android_release/viewports/320x568-market.png",
+      "verdict": {
+        "booted": true,
+        "noHorizontalOverflow": true,
+        "rowsRendered": true,
+        "navOnScreen": true,
+        "touchTargetsOk": true,
+        "tabsHaveTouchWidth": true,
+        "utilityNotClipped": true,
+        "barStaysPut": true,
+        "padClearsBar": true,
+        "cleanConsole": true
+      }
+    },
+    {
+      "size": "320x568x3",
+      "route": "fundamental",
+      "measured": {
+        "vw": 320,
+        "vh": 568,
+        "route": "#/fundamental",
+        "title": "ترمینال تحلیل بورس",
+        "bootCard": false,
+        "fatalBanner": false,
+        "notFound": true,
+        "bootTiming": {
+          "source": "bundle",
+          "gzBytes": 16179264,
+          "rawBytes": 70619136,
+          "fetchMs": 217,
+          "gunzipMs": 173,
+          "openMs": 15,
+          "totalMs": 405
+        },
+        "viewportMeta": "width=device-width, initial-scale=1.0, viewport-fit=cover",
+        "overflowX": 0,
+        "rowCount": 17,
+        "textLen": 2750,
+        "navBox": {
+          "x": 0,
+          "y": 456,
+          "w": 320,
+          "h": 112,
+          "bottom": 568
+        },
+        "navPadBottom": "4px",
+        "appContentPadBottom": "120px",
+        "lastRowBottom": 30539,
+        "safeAreaBottom": "0px",
+        "touchTargetsUnder44": 0,
+        "navItemsUnder44Wide": 0,
+        "barScrolls": false,
+        "tabWidths": [
+          49,
+          49,
+          49,
+          49,
+          49,
+          49
+        ],
+        "navRowScrolls": false,
+        "utilityClipped": 0,
+        "utilityHidden": 1,
+        "utilityClipDetail": []
+      },
+      "consoleErrors": [
+        "Failed to load resource: net::ERR_FAILED"
+      ],
+      "blockedByHarness": 1,
+      "screenshot": "_audit/android_release/viewports/320x568-fundamental.png",
+      "verdict": {
+        "booted": true,
+        "noHorizontalOverflow": true,
+        "rowsRendered": true,
+        "navOnScreen": true,
+        "touchTargetsOk": true,
+        "tabsHaveTouchWidth": true,
+        "utilityNotClipped": true,
+        "barStaysPut": true,
+        "padClearsBar": true,
+        "cleanConsole": true
+      }
+    },
+    {
+      "size": "320x568x3",
+      "route": "technical",
+      "measured": {
+        "vw": 320,
+        "vh": 568,
+        "route": "#/technical",
+        "title": "ترمینال تحلیل بورس",
+        "bootCard": false,
+        "fatalBanner": false,
+        "notFound": false,
+        "bootTiming": {
+          "source": "bundle",
+          "gzBytes": 16179264,
+          "rawBytes": 70619136,
+          "fetchMs": 217,
+          "gunzipMs": 173,
+          "openMs": 15,
+          "totalMs": 405
+        },
+        "viewportMeta": "width=device-width, initial-scale=1.0, viewport-fit=cover",
+        "overflowX": 0,
+        "rowCount": 0,
+        "textLen": 2110,
+        "navBox": {
+          "x": 0,
+          "y": 456,
+          "w": 320,
+          "h": 112,
+          "bottom": 568
+        },
+        "navPadBottom": "4px",
+        "appContentPadBottom": "120px",
+        "lastRowBottom": null,
+        "safeAreaBottom": "0px",
+        "touchTargetsUnder44": 0,
+        "navItemsUnder44Wide": 0,
+        "barScrolls": false,
+        "tabWidths": [
+          49,
+          49,
+          49,
+          49,
+          49,
+          49
+        ],
+        "navRowScrolls": false,
+        "utilityClipped": 0,
+        "utilityHidden": 1,
+        "utilityClipDetail": []
+      },
+      "consoleErrors": [
+        "Failed to load resource: net::ERR_FAILED",
+        "Failed to load resource: net::ERR_FAILED",
+        "Failed to load resource: net::ERR_FAILED"
+      ],
+      "blockedByHarness": 3,
+      "screenshot": "_audit/android_release/viewports/320x568-technical.png",
+      "verdict": {
+        "booted": true,
+        "noHorizontalOverflow": true,
+        "rowsRendered": true,
+        "navOnScreen": true,
+        "touchTargetsOk": true,
+        "tabsHaveTouchWidth": true,
+        "utilityNotClipped": true,
+        "barStaysPut": true,
+        "padClearsBar": true,
+        "cleanConsole": true
+      }
+    },
+    {
+      "size": "320x568x3",
+      "route": "strategy-tree",
+      "measured": {
+        "vw": 320,
+        "vh": 568,
+        "route": "#/strategy-tree",
+        "title": "ترمینال تحلیل بورس",
+        "bootCard": false,
+        "fatalBanner": false,
+        "notFound": false,
+        "bootTiming": {
+          "source": "bundle",
+          "gzBytes": 16179264,
+          "rawBytes": 70619136,
+          "fetchMs": 217,
+          "gunzipMs": 173,
+          "openMs": 15,
+          "totalMs": 405
+        },
+        "viewportMeta": "width=device-width, initial-scale=1.0, viewport-fit=cover",
+        "overflowX": 0,
+        "rowCount": 0,
+        "textLen": 4453,
+        "navBox": {
+          "x": 0,
+          "y": 456,
+          "w": 320,
+          "h": 112,
+          "bottom": 568
+        },
+        "navPadBottom": "4px",
+        "appContentPadBottom": "120px",
+        "lastRowBottom": null,
+        "safeAreaBottom": "0px",
+        "touchTargetsUnder44": 0,
+        "navItemsUnder44Wide": 0,
+        "barScrolls": false,
+        "tabWidths": [
+          49,
+          49,
+          49,
+          49,
+          49,
+          49
+        ],
+        "navRowScrolls": false,
+        "utilityClipped": 0,
+        "utilityHidden": 1,
+        "utilityClipDetail": []
+      },
+      "consoleErrors": [
+        "Failed to load resource: net::ERR_FAILED"
+      ],
+      "blockedByHarness": 1,
+      "screenshot": "_audit/android_release/viewports/320x568-strategy-tree.png",
+      "verdict": {
+        "booted": true,
+        "noHorizontalOverflow": true,
+        "rowsRendered": true,
+        "navOnScreen": true,
+        "touchTargetsOk": true,
+        "tabsHaveTouchWidth": true,
+        "utilityNotClipped": true,
+        "barStaysPut": true,
+        "padClearsBar": true,
+        "cleanConsole": true
+      }
+    },
+    {
+      "size": "320x568x3",
+      "route": "master",
+      "measured": {
+        "vw": 320,
+        "vh": 568,
+        "route": "#/master",
+        "title": "ترمینال تحلیل بورس",
+        "bootCard": false,
+        "fatalBanner": false,
+        "notFound": false,
+        "bootTiming": {
+          "source": "bundle",
+          "gzBytes": 16179264,
+          "rawBytes": 70619136,
+          "fetchMs": 217,
+          "gunzipMs": 173,
+          "openMs": 15,
+          "totalMs": 405
+        },
+        "viewportMeta": "width=device-width, initial-scale=1.0, viewport-fit=cover",
+        "overflowX": 0,
+        "rowCount": 0,
+        "textLen": 1519,
+        "navBox": {
+          "x": 0,
+          "y": 456,
+          "w": 320,
+          "h": 112,
+          "bottom": 568
+        },
+        "navPadBottom": "4px",
+        "appContentPadBottom": "120px",
+        "lastRowBottom": null,
+        "safeAreaBottom": "0px",
+        "touchTargetsUnder44": 0,
+        "navItemsUnder44Wide": 0,
+        "barScrolls": false,
+        "tabWidths": [
+          49,
+          49,
+          49,
+          49,
+          49,
+          49
+        ],
+        "navRowScrolls": false,
+        "utilityClipped": 0,
+        "utilityHidden": 1,
+        "utilityClipDetail": []
+      },
+      "consoleErrors": [],
+      "blockedByHarness": 0,
+      "screenshot": "_audit/android_release/viewports/320x568-master.png",
+      "verdict": {
+        "booted": true,
+        "noHorizontalOverflow": true,
+        "rowsRendered": true,
+        "navOnScreen": true,
+        "touchTargetsOk": true,
+        "tabsHaveTouchWidth": true,
+        "utilityNotClipped": true,
+        "barStaysPut": true,
+        "padClearsBar": true,
+        "cleanConsole": true
+      }
+    },
+    {
+      "size": "320x568x3",
+      "route": "engine-lab",
+      "measured": {
+        "vw": 320,
+        "vh": 568,
+        "route": "#/engine-lab",
+        "title": "ترمینال تحلیل بورس",
+        "bootCard": false,
+        "fatalBanner": false,
+        "notFound": false,
+        "bootTiming": {
+          "source": "bundle",
+          "gzBytes": 16179264,
+          "rawBytes": 70619136,
+          "fetchMs": 217,
+          "gunzipMs": 173,
+          "openMs": 15,
+          "totalMs": 405
+        },
+        "viewportMeta": "width=device-width, initial-scale=1.0, viewport-fit=cover",
+        "overflowX": 0,
+        "rowCount": 38,
+        "textLen": 1889,
+        "navBox": {
+          "x": 0,
+          "y": 456,
+          "w": 320,
+          "h": 112,
+          "bottom": 568
+        },
+        "navPadBottom": "4px",
+        "appContentPadBottom": "120px",
+        "lastRowBottom": 1928,
+        "safeAreaBottom": "0px",
+        "touchTargetsUnder44": 0,
+        "navItemsUnder44Wide": 0,
+        "barScrolls": false,
+        "tabWidths": [
+          49,
+          49,
+          49,
+          49,
+          49,
+          49
+        ],
+        "navRowScrolls": false,
+        "utilityClipped": 0,
+        "utilityHidden": 1,
+        "utilityClipDetail": []
+      },
+      "consoleErrors": [
+        "Failed to load resource: net::ERR_FAILED"
+      ],
+      "blockedByHarness": 1,
+      "screenshot": "_audit/android_release/viewports/320x568-engine-lab.png",
+      "verdict": {
+        "booted": true,
+        "noHorizontalOverflow": true,
+        "rowsRendered": true,
+        "navOnScreen": true,
+        "touchTargetsOk": true,
+        "tabsHaveTouchWidth": true,
+        "utilityNotClipped": true,
+        "barStaysPut": true,
+        "padClearsBar": true,
+        "cleanConsole": true
+      }
+    },
+    {
+      "size": "320x568x3",
+      "route": "portfolio",
+      "measured": {
+        "vw": 320,
+        "vh": 568,
+        "route": "#/portfolio",
+        "title": "ترمینال تحلیل بورس",
+        "bootCard": false,
+        "fatalBanner": false,
+        "notFound": false,
+        "bootTiming": {
+          "source": "bundle",
+          "gzBytes": 16179264,
+          "rawBytes": 70619136,
+          "fetchMs": 217,
+          "gunzipMs": 173,
+          "openMs": 15,
+          "totalMs": 405
+        },
+        "viewportMeta": "width=device-width, initial-scale=1.0, viewport-fit=cover",
+        "overflowX": 0,
+        "rowCount": 7,
+        "textLen": 2106,
+        "navBox": {
+          "x": 0,
+          "y": 456,
+          "w": 320,
+          "h": 112,
+          "bottom": 568
+        },
+        "navPadBottom": "4px",
+        "appContentPadBottom": "120px",
+        "lastRowBottom": 1369,
+        "safeAreaBottom": "0px",
+        "touchTargetsUnder44": 0,
+        "navItemsUnder44Wide": 0,
+        "barScrolls": false,
+        "tabWidths": [
+          49,
+          49,
+          49,
+          49,
+          49,
+          49
+        ],
+        "navRowScrolls": false,
+        "utilityClipped": 0,
+        "utilityHidden": 1,
+        "utilityClipDetail": []
+      },
+      "consoleErrors": [],
+      "blockedByHarness": 0,
+      "screenshot": "_audit/android_release/viewports/320x568-portfolio.png",
+      "verdict": {
+        "booted": true,
+        "noHorizontalOverflow": true,
+        "rowsRendered": true,
+        "navOnScreen": true,
+        "touchTargetsOk": true,
+        "tabsHaveTouchWidth": true,
+        "utilityNotClipped": true,
+        "barStaysPut": true,
+        "padClearsBar": true,
+        "cleanConsole": true
+      }
+    },
+    {
+      "size": "320x568x3",
+      "route": "nope-404",
+      "measured": {
+        "vw": 320,
+        "vh": 568,
+        "route": "#/nope-404",
+        "title": "ترمینال تحلیل بورس",
+        "bootCard": false,
+        "fatalBanner": false,
+        "notFound": false,
+        "bootTiming": {
+          "source": "bundle",
+          "gzBytes": 16179264,
+          "rawBytes": 70619136,
+          "fetchMs": 217,
+          "gunzipMs": 173,
+          "openMs": 15,
+          "totalMs": 405
+        },
+        "viewportMeta": "width=device-width, initial-scale=1.0, viewport-fit=cover",
+        "overflowX": 0,
+        "rowCount": 0,
+        "textLen": 420,
+        "navBox": {
+          "x": 0,
+          "y": 456,
+          "w": 320,
+          "h": 112,
+          "bottom": 568
+        },
+        "navPadBottom": "4px",
+        "appContentPadBottom": "120px",
+        "lastRowBottom": null,
+        "safeAreaBottom": "0px",
+        "touchTargetsUnder44": 0,
+        "navItemsUnder44Wide": 0,
+        "barScrolls": false,
+        "tabWidths": [
+          49,
+          49,
+          49,
+          49,
+          49,
+          49
+        ],
+        "navRowScrolls": false,
+        "utilityClipped": 0,
+        "utilityHidden": 1,
+        "utilityClipDetail": []
+      },
+      "consoleErrors": [],
+      "blockedByHarness": 0,
+      "screenshot": "_audit/android_release/viewports/320x568-nope-404.png",
+      "verdict": {
+        "booted": true,
+        "noHorizontalOverflow": true,
+        "rowsRendered": true,
+        "navOnScreen": true,
+        "touchTargetsOk": true,
+        "tabsHaveTouchWidth": true,
+        "utilityNotClipped": true,
+        "barStaysPut": true,
+        "padClearsBar": true,
+        "cleanConsole": true
+      }
+    },
     {
       "size": "360x800x3",
       "route": "(index)",
@@ -19,10 +636,10 @@
           "source": "bundle",
           "gzBytes": 16179264,
           "rawBytes": 70619136,
-          "fetchMs": 225,
-          "gunzipMs": 168,
+          "fetchMs": 303,
+          "gunzipMs": 167,
           "openMs": 15,
-          "totalMs": 407
+          "totalMs": 485
         },
         "viewportMeta": "width=device-width, initial-scale=1.0, viewport-fit=cover",
         "overflowX": 0,
@@ -30,18 +647,30 @@
         "textLen": 6245,
         "navBox": {
           "x": 0,
-          "y": 742,
+          "y": 688,
           "w": 360,
-          "h": 58,
+          "h": 112,
           "bottom": 800
         },
         "navPadBottom": "4px",
-        "appContentPadBottom": "66px",
+        "appContentPadBottom": "120px",
         "lastRowBottom": 2381,
         "safeAreaBottom": "0px",
         "touchTargetsUnder44": 0,
-        "navItemsUnder44Wide": 6,
-        "barScrolls": false
+        "navItemsUnder44Wide": 0,
+        "barScrolls": false,
+        "tabWidths": [
+          56,
+          56,
+          56,
+          56,
+          56,
+          56
+        ],
+        "navRowScrolls": false,
+        "utilityClipped": 0,
+        "utilityHidden": 1,
+        "utilityClipDetail": []
       },
       "consoleErrors": [
         "Failed to load resource: net::ERR_FAILED",
@@ -56,6 +685,10 @@
         "rowsRendered": true,
         "navOnScreen": true,
         "touchTargetsOk": true,
+        "tabsHaveTouchWidth": true,
+        "utilityNotClipped": true,
+        "barStaysPut": true,
+        "padClearsBar": true,
         "cleanConsole": true
       }
     },
@@ -74,10 +707,10 @@
           "source": "bundle",
           "gzBytes": 16179264,
           "rawBytes": 70619136,
-          "fetchMs": 225,
-          "gunzipMs": 168,
+          "fetchMs": 303,
+          "gunzipMs": 167,
           "openMs": 15,
-          "totalMs": 407
+          "totalMs": 485
         },
         "viewportMeta": "width=device-width, initial-scale=1.0, viewport-fit=cover",
         "overflowX": 0,
@@ -85,18 +718,30 @@
         "textLen": 6322,
         "navBox": {
           "x": 0,
-          "y": 742,
+          "y": 688,
           "w": 360,
-          "h": 58,
+          "h": 112,
           "bottom": 800
         },
         "navPadBottom": "4px",
-        "appContentPadBottom": "66px",
+        "appContentPadBottom": "120px",
         "lastRowBottom": 2381,
         "safeAreaBottom": "0px",
         "touchTargetsUnder44": 0,
-        "navItemsUnder44Wide": 6,
-        "barScrolls": false
+        "navItemsUnder44Wide": 0,
+        "barScrolls": false,
+        "tabWidths": [
+          56,
+          56,
+          56,
+          56,
+          56,
+          56
+        ],
+        "navRowScrolls": false,
+        "utilityClipped": 0,
+        "utilityHidden": 1,
+        "utilityClipDetail": []
       },
       "consoleErrors": [],
       "blockedByHarness": 0,
@@ -107,6 +752,10 @@
         "rowsRendered": true,
         "navOnScreen": true,
         "touchTargetsOk": true,
+        "tabsHaveTouchWidth": true,
+        "utilityNotClipped": true,
+        "barStaysPut": true,
+        "padClearsBar": true,
         "cleanConsole": true
       }
     },
@@ -125,10 +774,10 @@
           "source": "bundle",
           "gzBytes": 16179264,
           "rawBytes": 70619136,
-          "fetchMs": 225,
-          "gunzipMs": 168,
+          "fetchMs": 303,
+          "gunzipMs": 167,
           "openMs": 15,
-          "totalMs": 407
+          "totalMs": 485
         },
         "viewportMeta": "width=device-width, initial-scale=1.0, viewport-fit=cover",
         "overflowX": 0,
@@ -136,18 +785,30 @@
         "textLen": 3355,
         "navBox": {
           "x": 0,
-          "y": 742,
+          "y": 688,
           "w": 360,
-          "h": 58,
+          "h": 112,
           "bottom": 800
         },
         "navPadBottom": "4px",
-        "appContentPadBottom": "66px",
+        "appContentPadBottom": "120px",
         "lastRowBottom": 30539,
         "safeAreaBottom": "0px",
         "touchTargetsUnder44": 0,
-        "navItemsUnder44Wide": 6,
-        "barScrolls": false
+        "navItemsUnder44Wide": 0,
+        "barScrolls": false,
+        "tabWidths": [
+          56,
+          56,
+          56,
+          56,
+          56,
+          56
+        ],
+        "navRowScrolls": false,
+        "utilityClipped": 0,
+        "utilityHidden": 1,
+        "utilityClipDetail": []
       },
       "consoleErrors": [
         "Failed to load resource: net::ERR_FAILED"
@@ -160,6 +821,10 @@
         "rowsRendered": true,
         "navOnScreen": true,
         "touchTargetsOk": true,
+        "tabsHaveTouchWidth": true,
+        "utilityNotClipped": true,
+        "barStaysPut": true,
+        "padClearsBar": true,
         "cleanConsole": true
       }
     },
@@ -178,10 +843,10 @@
           "source": "bundle",
           "gzBytes": 16179264,
           "rawBytes": 70619136,
-          "fetchMs": 225,
-          "gunzipMs": 168,
+          "fetchMs": 303,
+          "gunzipMs": 167,
           "openMs": 15,
-          "totalMs": 407
+          "totalMs": 485
         },
         "viewportMeta": "width=device-width, initial-scale=1.0, viewport-fit=cover",
         "overflowX": 0,
@@ -189,18 +854,30 @@
         "textLen": 2110,
         "navBox": {
           "x": 0,
-          "y": 742,
+          "y": 688,
           "w": 360,
-          "h": 58,
+          "h": 112,
           "bottom": 800
         },
         "navPadBottom": "4px",
-        "appContentPadBottom": "66px",
+        "appContentPadBottom": "120px",
         "lastRowBottom": null,
         "safeAreaBottom": "0px",
         "touchTargetsUnder44": 0,
-        "navItemsUnder44Wide": 6,
-        "barScrolls": false
+        "navItemsUnder44Wide": 0,
+        "barScrolls": false,
+        "tabWidths": [
+          56,
+          56,
+          56,
+          56,
+          56,
+          56
+        ],
+        "navRowScrolls": false,
+        "utilityClipped": 0,
+        "utilityHidden": 1,
+        "utilityClipDetail": []
       },
       "consoleErrors": [
         "Failed to load resource: net::ERR_FAILED",
@@ -215,6 +892,10 @@
         "rowsRendered": true,
         "navOnScreen": true,
         "touchTargetsOk": true,
+        "tabsHaveTouchWidth": true,
+        "utilityNotClipped": true,
+        "barStaysPut": true,
+        "padClearsBar": true,
         "cleanConsole": true
       }
     },
@@ -233,10 +914,10 @@
           "source": "bundle",
           "gzBytes": 16179264,
           "rawBytes": 70619136,
-          "fetchMs": 225,
-          "gunzipMs": 168,
+          "fetchMs": 303,
+          "gunzipMs": 167,
           "openMs": 15,
-          "totalMs": 407
+          "totalMs": 485
         },
         "viewportMeta": "width=device-width, initial-scale=1.0, viewport-fit=cover",
         "overflowX": 0,
@@ -244,18 +925,30 @@
         "textLen": 4453,
         "navBox": {
           "x": 0,
-          "y": 742,
+          "y": 688,
           "w": 360,
-          "h": 58,
+          "h": 112,
           "bottom": 800
         },
         "navPadBottom": "4px",
-        "appContentPadBottom": "66px",
+        "appContentPadBottom": "120px",
         "lastRowBottom": null,
         "safeAreaBottom": "0px",
         "touchTargetsUnder44": 0,
-        "navItemsUnder44Wide": 6,
-        "barScrolls": false
+        "navItemsUnder44Wide": 0,
+        "barScrolls": false,
+        "tabWidths": [
+          56,
+          56,
+          56,
+          56,
+          56,
+          56
+        ],
+        "navRowScrolls": false,
+        "utilityClipped": 0,
+        "utilityHidden": 1,
+        "utilityClipDetail": []
       },
       "consoleErrors": [
         "Failed to load resource: net::ERR_FAILED"
@@ -268,6 +961,10 @@
         "rowsRendered": true,
         "navOnScreen": true,
         "touchTargetsOk": true,
+        "tabsHaveTouchWidth": true,
+        "utilityNotClipped": true,
+        "barStaysPut": true,
+        "padClearsBar": true,
         "cleanConsole": true
       }
     },
@@ -286,10 +983,10 @@
           "source": "bundle",
           "gzBytes": 16179264,
           "rawBytes": 70619136,
-          "fetchMs": 225,
-          "gunzipMs": 168,
+          "fetchMs": 303,
+          "gunzipMs": 167,
           "openMs": 15,
-          "totalMs": 407
+          "totalMs": 485
         },
         "viewportMeta": "width=device-width, initial-scale=1.0, viewport-fit=cover",
         "overflowX": 0,
@@ -297,18 +994,30 @@
         "textLen": 1519,
         "navBox": {
           "x": 0,
-          "y": 742,
+          "y": 688,
           "w": 360,
-          "h": 58,
+          "h": 112,
           "bottom": 800
         },
         "navPadBottom": "4px",
-        "appContentPadBottom": "66px",
+        "appContentPadBottom": "120px",
         "lastRowBottom": null,
         "safeAreaBottom": "0px",
         "touchTargetsUnder44": 0,
-        "navItemsUnder44Wide": 6,
-        "barScrolls": false
+        "navItemsUnder44Wide": 0,
+        "barScrolls": false,
+        "tabWidths": [
+          56,
+          56,
+          56,
+          56,
+          56,
+          56
+        ],
+        "navRowScrolls": false,
+        "utilityClipped": 0,
+        "utilityHidden": 1,
+        "utilityClipDetail": []
       },
       "consoleErrors": [],
       "blockedByHarness": 0,
@@ -319,6 +1028,10 @@
         "rowsRendered": true,
         "navOnScreen": true,
         "touchTargetsOk": true,
+        "tabsHaveTouchWidth": true,
+        "utilityNotClipped": true,
+        "barStaysPut": true,
+        "padClearsBar": true,
         "cleanConsole": true
       }
     },
@@ -337,10 +1050,10 @@
           "source": "bundle",
           "gzBytes": 16179264,
           "rawBytes": 70619136,
-          "fetchMs": 225,
-          "gunzipMs": 168,
+          "fetchMs": 303,
+          "gunzipMs": 167,
           "openMs": 15,
-          "totalMs": 407
+          "totalMs": 485
         },
         "viewportMeta": "width=device-width, initial-scale=1.0, viewport-fit=cover",
         "overflowX": 0,
@@ -348,18 +1061,30 @@
         "textLen": 1889,
         "navBox": {
           "x": 0,
-          "y": 742,
+          "y": 688,
           "w": 360,
-          "h": 58,
+          "h": 112,
           "bottom": 800
         },
         "navPadBottom": "4px",
-        "appContentPadBottom": "66px",
+        "appContentPadBottom": "120px",
         "lastRowBottom": 1901,
         "safeAreaBottom": "0px",
         "touchTargetsUnder44": 0,
-        "navItemsUnder44Wide": 6,
-        "barScrolls": false
+        "navItemsUnder44Wide": 0,
+        "barScrolls": false,
+        "tabWidths": [
+          56,
+          56,
+          56,
+          56,
+          56,
+          56
+        ],
+        "navRowScrolls": false,
+        "utilityClipped": 0,
+        "utilityHidden": 1,
+        "utilityClipDetail": []
       },
       "consoleErrors": [
         "Failed to load resource: net::ERR_FAILED"
@@ -372,6 +1097,10 @@
         "rowsRendered": true,
         "navOnScreen": true,
         "touchTargetsOk": true,
+        "tabsHaveTouchWidth": true,
+        "utilityNotClipped": true,
+        "barStaysPut": true,
+        "padClearsBar": true,
         "cleanConsole": true
       }
     },
@@ -390,10 +1119,10 @@
           "source": "bundle",
           "gzBytes": 16179264,
           "rawBytes": 70619136,
-          "fetchMs": 225,
-          "gunzipMs": 168,
+          "fetchMs": 303,
+          "gunzipMs": 167,
           "openMs": 15,
-          "totalMs": 407
+          "totalMs": 485
         },
         "viewportMeta": "width=device-width, initial-scale=1.0, viewport-fit=cover",
         "overflowX": 0,
@@ -401,18 +1130,30 @@
         "textLen": 2106,
         "navBox": {
           "x": 0,
-          "y": 742,
+          "y": 688,
           "w": 360,
-          "h": 58,
+          "h": 112,
           "bottom": 800
         },
         "navPadBottom": "4px",
-        "appContentPadBottom": "66px",
+        "appContentPadBottom": "120px",
         "lastRowBottom": 1326,
         "safeAreaBottom": "0px",
         "touchTargetsUnder44": 0,
-        "navItemsUnder44Wide": 6,
-        "barScrolls": false
+        "navItemsUnder44Wide": 0,
+        "barScrolls": false,
+        "tabWidths": [
+          56,
+          56,
+          56,
+          56,
+          56,
+          56
+        ],
+        "navRowScrolls": false,
+        "utilityClipped": 0,
+        "utilityHidden": 1,
+        "utilityClipDetail": []
       },
       "consoleErrors": [],
       "blockedByHarness": 0,
@@ -423,6 +1164,10 @@
         "rowsRendered": true,
         "navOnScreen": true,
         "touchTargetsOk": true,
+        "tabsHaveTouchWidth": true,
+        "utilityNotClipped": true,
+        "barStaysPut": true,
+        "padClearsBar": true,
         "cleanConsole": true
       }
     },
@@ -441,10 +1186,10 @@
           "source": "bundle",
           "gzBytes": 16179264,
           "rawBytes": 70619136,
-          "fetchMs": 225,
-          "gunzipMs": 168,
+          "fetchMs": 303,
+          "gunzipMs": 167,
           "openMs": 15,
-          "totalMs": 407
+          "totalMs": 485
         },
         "viewportMeta": "width=device-width, initial-scale=1.0, viewport-fit=cover",
         "overflowX": 0,
@@ -452,18 +1197,30 @@
         "textLen": 420,
         "navBox": {
           "x": 0,
-          "y": 742,
+          "y": 688,
           "w": 360,
-          "h": 58,
+          "h": 112,
           "bottom": 800
         },
         "navPadBottom": "4px",
-        "appContentPadBottom": "66px",
+        "appContentPadBottom": "120px",
         "lastRowBottom": null,
         "safeAreaBottom": "0px",
         "touchTargetsUnder44": 0,
-        "navItemsUnder44Wide": 6,
-        "barScrolls": false
+        "navItemsUnder44Wide": 0,
+        "barScrolls": false,
+        "tabWidths": [
+          56,
+          56,
+          56,
+          56,
+          56,
+          56
+        ],
+        "navRowScrolls": false,
+        "utilityClipped": 0,
+        "utilityHidden": 1,
+        "utilityClipDetail": []
       },
       "consoleErrors": [],
       "blockedByHarness": 0,
@@ -474,6 +1231,10 @@
         "rowsRendered": true,
         "navOnScreen": true,
         "touchTargetsOk": true,
+        "tabsHaveTouchWidth": true,
+        "utilityNotClipped": true,
+        "barStaysPut": true,
+        "padClearsBar": true,
         "cleanConsole": true
       }
     },
@@ -492,10 +1253,10 @@
           "source": "bundle",
           "gzBytes": 16179264,
           "rawBytes": 70619136,
-          "fetchMs": 212,
-          "gunzipMs": 165,
-          "openMs": 15,
-          "totalMs": 391
+          "fetchMs": 301,
+          "gunzipMs": 172,
+          "openMs": 16,
+          "totalMs": 489
         },
         "viewportMeta": "width=device-width, initial-scale=1.0, viewport-fit=cover",
         "overflowX": 0,
@@ -503,18 +1264,30 @@
         "textLen": 6372,
         "navBox": {
           "x": 0,
-          "y": 786,
+          "y": 732,
           "w": 390,
-          "h": 58,
+          "h": 112,
           "bottom": 844
         },
         "navPadBottom": "4px",
-        "appContentPadBottom": "66px",
+        "appContentPadBottom": "120px",
         "lastRowBottom": 2397,
         "safeAreaBottom": "0px",
         "touchTargetsUnder44": 0,
-        "navItemsUnder44Wide": 6,
-        "barScrolls": false
+        "navItemsUnder44Wide": 0,
+        "barScrolls": false,
+        "tabWidths": [
+          61,
+          61,
+          61,
+          61,
+          61,
+          61
+        ],
+        "navRowScrolls": false,
+        "utilityClipped": 0,
+        "utilityHidden": 1,
+        "utilityClipDetail": []
       },
       "consoleErrors": [
         "Failed to load resource: net::ERR_FAILED",
@@ -529,6 +1302,10 @@
         "rowsRendered": true,
         "navOnScreen": true,
         "touchTargetsOk": true,
+        "tabsHaveTouchWidth": true,
+        "utilityNotClipped": true,
+        "barStaysPut": true,
+        "padClearsBar": true,
         "cleanConsole": true
       }
     },
@@ -547,10 +1324,10 @@
           "source": "bundle",
           "gzBytes": 16179264,
           "rawBytes": 70619136,
-          "fetchMs": 212,
-          "gunzipMs": 165,
-          "openMs": 15,
-          "totalMs": 391
+          "fetchMs": 301,
+          "gunzipMs": 172,
+          "openMs": 16,
+          "totalMs": 489
         },
         "viewportMeta": "width=device-width, initial-scale=1.0, viewport-fit=cover",
         "overflowX": 0,
@@ -558,18 +1335,30 @@
         "textLen": 6449,
         "navBox": {
           "x": 0,
-          "y": 786,
+          "y": 732,
           "w": 390,
-          "h": 58,
+          "h": 112,
           "bottom": 844
         },
         "navPadBottom": "4px",
-        "appContentPadBottom": "66px",
+        "appContentPadBottom": "120px",
         "lastRowBottom": 2397,
         "safeAreaBottom": "0px",
         "touchTargetsUnder44": 0,
-        "navItemsUnder44Wide": 6,
-        "barScrolls": false
+        "navItemsUnder44Wide": 0,
+        "barScrolls": false,
+        "tabWidths": [
+          61,
+          61,
+          61,
+          61,
+          61,
+          61
+        ],
+        "navRowScrolls": false,
+        "utilityClipped": 0,
+        "utilityHidden": 1,
+        "utilityClipDetail": []
       },
       "consoleErrors": [],
       "blockedByHarness": 0,
@@ -580,6 +1369,10 @@
         "rowsRendered": true,
         "navOnScreen": true,
         "touchTargetsOk": true,
+        "tabsHaveTouchWidth": true,
+        "utilityNotClipped": true,
+        "barStaysPut": true,
+        "padClearsBar": true,
         "cleanConsole": true
       }
     },
@@ -598,10 +1391,10 @@
           "source": "bundle",
           "gzBytes": 16179264,
           "rawBytes": 70619136,
-          "fetchMs": 212,
-          "gunzipMs": 165,
-          "openMs": 15,
-          "totalMs": 391
+          "fetchMs": 301,
+          "gunzipMs": 172,
+          "openMs": 16,
+          "totalMs": 489
         },
         "viewportMeta": "width=device-width, initial-scale=1.0, viewport-fit=cover",
         "overflowX": 0,
@@ -609,18 +1402,30 @@
         "textLen": 3355,
         "navBox": {
           "x": 0,
-          "y": 786,
+          "y": 732,
           "w": 390,
-          "h": 58,
+          "h": 112,
           "bottom": 844
         },
         "navPadBottom": "4px",
-        "appContentPadBottom": "66px",
+        "appContentPadBottom": "120px",
         "lastRowBottom": 30514,
         "safeAreaBottom": "0px",
         "touchTargetsUnder44": 0,
-        "navItemsUnder44Wide": 6,
-        "barScrolls": false
+        "navItemsUnder44Wide": 0,
+        "barScrolls": false,
+        "tabWidths": [
+          61,
+          61,
+          61,
+          61,
+          61,
+          61
+        ],
+        "navRowScrolls": false,
+        "utilityClipped": 0,
+        "utilityHidden": 1,
+        "utilityClipDetail": []
       },
       "consoleErrors": [
         "Failed to load resource: net::ERR_FAILED"
@@ -633,6 +1438,10 @@
         "rowsRendered": true,
         "navOnScreen": true,
         "touchTargetsOk": true,
+        "tabsHaveTouchWidth": true,
+        "utilityNotClipped": true,
+        "barStaysPut": true,
+        "padClearsBar": true,
         "cleanConsole": true
       }
     },
@@ -651,10 +1460,10 @@
           "source": "bundle",
           "gzBytes": 16179264,
           "rawBytes": 70619136,
-          "fetchMs": 212,
-          "gunzipMs": 165,
-          "openMs": 15,
-          "totalMs": 391
+          "fetchMs": 301,
+          "gunzipMs": 172,
+          "openMs": 16,
+          "totalMs": 489
         },
         "viewportMeta": "width=device-width, initial-scale=1.0, viewport-fit=cover",
         "overflowX": 0,
@@ -662,18 +1471,30 @@
         "textLen": 2110,
         "navBox": {
           "x": 0,
-          "y": 786,
+          "y": 732,
           "w": 390,
-          "h": 58,
+          "h": 112,
           "bottom": 844
         },
         "navPadBottom": "4px",
-        "appContentPadBottom": "66px",
+        "appContentPadBottom": "120px",
         "lastRowBottom": null,
         "safeAreaBottom": "0px",
         "touchTargetsUnder44": 0,
-        "navItemsUnder44Wide": 6,
-        "barScrolls": false
+        "navItemsUnder44Wide": 0,
+        "barScrolls": false,
+        "tabWidths": [
+          61,
+          61,
+          61,
+          61,
+          61,
+          61
+        ],
+        "navRowScrolls": false,
+        "utilityClipped": 0,
+        "utilityHidden": 1,
+        "utilityClipDetail": []
       },
       "consoleErrors": [
         "Failed to load resource: net::ERR_FAILED",
@@ -688,6 +1509,10 @@
         "rowsRendered": true,
         "navOnScreen": true,
         "touchTargetsOk": true,
+        "tabsHaveTouchWidth": true,
+        "utilityNotClipped": true,
+        "barStaysPut": true,
+        "padClearsBar": true,
         "cleanConsole": true
       }
     },
@@ -706,10 +1531,10 @@
           "source": "bundle",
           "gzBytes": 16179264,
           "rawBytes": 70619136,
-          "fetchMs": 212,
-          "gunzipMs": 165,
-          "openMs": 15,
-          "totalMs": 391
+          "fetchMs": 301,
+          "gunzipMs": 172,
+          "openMs": 16,
+          "totalMs": 489
         },
         "viewportMeta": "width=device-width, initial-scale=1.0, viewport-fit=cover",
         "overflowX": 0,
@@ -717,18 +1542,30 @@
         "textLen": 4453,
         "navBox": {
           "x": 0,
-          "y": 786,
+          "y": 732,
           "w": 390,
-          "h": 58,
+          "h": 112,
           "bottom": 844
         },
         "navPadBottom": "4px",
-        "appContentPadBottom": "66px",
+        "appContentPadBottom": "120px",
         "lastRowBottom": null,
         "safeAreaBottom": "0px",
         "touchTargetsUnder44": 0,
-        "navItemsUnder44Wide": 6,
-        "barScrolls": false
+        "navItemsUnder44Wide": 0,
+        "barScrolls": false,
+        "tabWidths": [
+          61,
+          61,
+          61,
+          61,
+          61,
+          61
+        ],
+        "navRowScrolls": false,
+        "utilityClipped": 0,
+        "utilityHidden": 1,
+        "utilityClipDetail": []
       },
       "consoleErrors": [
         "Failed to load resource: net::ERR_FAILED"
@@ -741,6 +1578,10 @@
         "rowsRendered": true,
         "navOnScreen": true,
         "touchTargetsOk": true,
+        "tabsHaveTouchWidth": true,
+        "utilityNotClipped": true,
+        "barStaysPut": true,
+        "padClearsBar": true,
         "cleanConsole": true
       }
     },
@@ -759,10 +1600,10 @@
           "source": "bundle",
           "gzBytes": 16179264,
           "rawBytes": 70619136,
-          "fetchMs": 212,
-          "gunzipMs": 165,
-          "openMs": 15,
-          "totalMs": 391
+          "fetchMs": 301,
+          "gunzipMs": 172,
+          "openMs": 16,
+          "totalMs": 489
         },
         "viewportMeta": "width=device-width, initial-scale=1.0, viewport-fit=cover",
         "overflowX": 0,
@@ -770,18 +1611,30 @@
         "textLen": 1519,
         "navBox": {
           "x": 0,
-          "y": 786,
+          "y": 732,
           "w": 390,
-          "h": 58,
+          "h": 112,
           "bottom": 844
         },
         "navPadBottom": "4px",
-        "appContentPadBottom": "66px",
+        "appContentPadBottom": "120px",
         "lastRowBottom": null,
         "safeAreaBottom": "0px",
         "touchTargetsUnder44": 0,
-        "navItemsUnder44Wide": 6,
-        "barScrolls": false
+        "navItemsUnder44Wide": 0,
+        "barScrolls": false,
+        "tabWidths": [
+          61,
+          61,
+          61,
+          61,
+          61,
+          61
+        ],
+        "navRowScrolls": false,
+        "utilityClipped": 0,
+        "utilityHidden": 1,
+        "utilityClipDetail": []
       },
       "consoleErrors": [],
       "blockedByHarness": 0,
@@ -792,6 +1645,10 @@
         "rowsRendered": true,
         "navOnScreen": true,
         "touchTargetsOk": true,
+        "tabsHaveTouchWidth": true,
+        "utilityNotClipped": true,
+        "barStaysPut": true,
+        "padClearsBar": true,
         "cleanConsole": true
       }
     },
@@ -810,29 +1667,41 @@
           "source": "bundle",
           "gzBytes": 16179264,
           "rawBytes": 70619136,
-          "fetchMs": 212,
-          "gunzipMs": 165,
-          "openMs": 15,
-          "totalMs": 391
+          "fetchMs": 301,
+          "gunzipMs": 172,
+          "openMs": 16,
+          "totalMs": 489
         },
         "viewportMeta": "width=device-width, initial-scale=1.0, viewport-fit=cover",
         "overflowX": 0,
         "rowCount": 38,
-        "textLen": 1885,
+        "textLen": 1887,
         "navBox": {
           "x": 0,
-          "y": 786,
+          "y": 732,
           "w": 390,
-          "h": 58,
+          "h": 112,
           "bottom": 844
         },
         "navPadBottom": "4px",
-        "appContentPadBottom": "66px",
+        "appContentPadBottom": "120px",
         "lastRowBottom": 1862,
         "safeAreaBottom": "0px",
         "touchTargetsUnder44": 0,
-        "navItemsUnder44Wide": 6,
-        "barScrolls": false
+        "navItemsUnder44Wide": 0,
+        "barScrolls": false,
+        "tabWidths": [
+          61,
+          61,
+          61,
+          61,
+          61,
+          61
+        ],
+        "navRowScrolls": false,
+        "utilityClipped": 0,
+        "utilityHidden": 1,
+        "utilityClipDetail": []
       },
       "consoleErrors": [
         "Failed to load resource: net::ERR_FAILED"
@@ -845,6 +1714,10 @@
         "rowsRendered": true,
         "navOnScreen": true,
         "touchTargetsOk": true,
+        "tabsHaveTouchWidth": true,
+        "utilityNotClipped": true,
+        "barStaysPut": true,
+        "padClearsBar": true,
         "cleanConsole": true
       }
     },
@@ -863,10 +1736,10 @@
           "source": "bundle",
           "gzBytes": 16179264,
           "rawBytes": 70619136,
-          "fetchMs": 212,
-          "gunzipMs": 165,
-          "openMs": 15,
-          "totalMs": 391
+          "fetchMs": 301,
+          "gunzipMs": 172,
+          "openMs": 16,
+          "totalMs": 489
         },
         "viewportMeta": "width=device-width, initial-scale=1.0, viewport-fit=cover",
         "overflowX": 0,
@@ -874,18 +1747,30 @@
         "textLen": 2106,
         "navBox": {
           "x": 0,
-          "y": 786,
+          "y": 732,
           "w": 390,
-          "h": 58,
+          "h": 112,
           "bottom": 844
         },
         "navPadBottom": "4px",
-        "appContentPadBottom": "66px",
+        "appContentPadBottom": "120px",
         "lastRowBottom": 1309,
         "safeAreaBottom": "0px",
         "touchTargetsUnder44": 0,
-        "navItemsUnder44Wide": 6,
-        "barScrolls": false
+        "navItemsUnder44Wide": 0,
+        "barScrolls": false,
+        "tabWidths": [
+          61,
+          61,
+          61,
+          61,
+          61,
+          61
+        ],
+        "navRowScrolls": false,
+        "utilityClipped": 0,
+        "utilityHidden": 1,
+        "utilityClipDetail": []
       },
       "consoleErrors": [],
       "blockedByHarness": 0,
@@ -896,6 +1781,10 @@
         "rowsRendered": true,
         "navOnScreen": true,
         "touchTargetsOk": true,
+        "tabsHaveTouchWidth": true,
+        "utilityNotClipped": true,
+        "barStaysPut": true,
+        "padClearsBar": true,
         "cleanConsole": true
       }
     },
@@ -914,10 +1803,10 @@
           "source": "bundle",
           "gzBytes": 16179264,
           "rawBytes": 70619136,
-          "fetchMs": 212,
-          "gunzipMs": 165,
-          "openMs": 15,
-          "totalMs": 391
+          "fetchMs": 301,
+          "gunzipMs": 172,
+          "openMs": 16,
+          "totalMs": 489
         },
         "viewportMeta": "width=device-width, initial-scale=1.0, viewport-fit=cover",
         "overflowX": 0,
@@ -925,18 +1814,30 @@
         "textLen": 420,
         "navBox": {
           "x": 0,
-          "y": 786,
+          "y": 732,
           "w": 390,
-          "h": 58,
+          "h": 112,
           "bottom": 844
         },
         "navPadBottom": "4px",
-        "appContentPadBottom": "66px",
+        "appContentPadBottom": "120px",
         "lastRowBottom": null,
         "safeAreaBottom": "0px",
         "touchTargetsUnder44": 0,
-        "navItemsUnder44Wide": 6,
-        "barScrolls": false
+        "navItemsUnder44Wide": 0,
+        "barScrolls": false,
+        "tabWidths": [
+          61,
+          61,
+          61,
+          61,
+          61,
+          61
+        ],
+        "navRowScrolls": false,
+        "utilityClipped": 0,
+        "utilityHidden": 1,
+        "utilityClipDetail": []
       },
       "consoleErrors": [],
       "blockedByHarness": 0,
@@ -947,6 +1848,10 @@
         "rowsRendered": true,
         "navOnScreen": true,
         "touchTargetsOk": true,
+        "tabsHaveTouchWidth": true,
+        "utilityNotClipped": true,
+        "barStaysPut": true,
+        "padClearsBar": true,
         "cleanConsole": true
       }
     },
@@ -965,10 +1870,10 @@
           "source": "bundle",
           "gzBytes": 16179264,
           "rawBytes": 70619136,
-          "fetchMs": 205,
-          "gunzipMs": 160,
-          "openMs": 14,
-          "totalMs": 379
+          "fetchMs": 298,
+          "gunzipMs": 174,
+          "openMs": 15,
+          "totalMs": 487
         },
         "viewportMeta": "width=device-width, initial-scale=1.0, viewport-fit=cover",
         "overflowX": 0,
@@ -976,18 +1881,30 @@
         "textLen": 6626,
         "navBox": {
           "x": 0,
-          "y": 857,
+          "y": 803,
           "w": 412,
-          "h": 58,
+          "h": 112,
           "bottom": 915
         },
         "navPadBottom": "4px",
-        "appContentPadBottom": "66px",
+        "appContentPadBottom": "120px",
         "lastRowBottom": 2454,
         "safeAreaBottom": "0px",
         "touchTargetsUnder44": 0,
-        "navItemsUnder44Wide": 6,
-        "barScrolls": false
+        "navItemsUnder44Wide": 0,
+        "barScrolls": false,
+        "tabWidths": [
+          64,
+          64,
+          64,
+          64,
+          64,
+          64
+        ],
+        "navRowScrolls": false,
+        "utilityClipped": 0,
+        "utilityHidden": 1,
+        "utilityClipDetail": []
       },
       "consoleErrors": [
         "Failed to load resource: net::ERR_FAILED",
@@ -1002,6 +1919,10 @@
         "rowsRendered": true,
         "navOnScreen": true,
         "touchTargetsOk": true,
+        "tabsHaveTouchWidth": true,
+        "utilityNotClipped": true,
+        "barStaysPut": true,
+        "padClearsBar": true,
         "cleanConsole": true
       }
     },
@@ -1020,10 +1941,10 @@
           "source": "bundle",
           "gzBytes": 16179264,
           "rawBytes": 70619136,
-          "fetchMs": 205,
-          "gunzipMs": 160,
-          "openMs": 14,
-          "totalMs": 379
+          "fetchMs": 298,
+          "gunzipMs": 174,
+          "openMs": 15,
+          "totalMs": 487
         },
         "viewportMeta": "width=device-width, initial-scale=1.0, viewport-fit=cover",
         "overflowX": 0,
@@ -1031,18 +1952,30 @@
         "textLen": 6703,
         "navBox": {
           "x": 0,
-          "y": 857,
+          "y": 803,
           "w": 412,
-          "h": 58,
+          "h": 112,
           "bottom": 915
         },
         "navPadBottom": "4px",
-        "appContentPadBottom": "66px",
+        "appContentPadBottom": "120px",
         "lastRowBottom": 2454,
         "safeAreaBottom": "0px",
         "touchTargetsUnder44": 0,
-        "navItemsUnder44Wide": 6,
-        "barScrolls": false
+        "navItemsUnder44Wide": 0,
+        "barScrolls": false,
+        "tabWidths": [
+          64,
+          64,
+          64,
+          64,
+          64,
+          64
+        ],
+        "navRowScrolls": false,
+        "utilityClipped": 0,
+        "utilityHidden": 1,
+        "utilityClipDetail": []
       },
       "consoleErrors": [],
       "blockedByHarness": 0,
@@ -1053,6 +1986,10 @@
         "rowsRendered": true,
         "navOnScreen": true,
         "touchTargetsOk": true,
+        "tabsHaveTouchWidth": true,
+        "utilityNotClipped": true,
+        "barStaysPut": true,
+        "padClearsBar": true,
         "cleanConsole": true
       }
     },
@@ -1071,10 +2008,10 @@
           "source": "bundle",
           "gzBytes": 16179264,
           "rawBytes": 70619136,
-          "fetchMs": 205,
-          "gunzipMs": 160,
-          "openMs": 14,
-          "totalMs": 379
+          "fetchMs": 298,
+          "gunzipMs": 174,
+          "openMs": 15,
+          "totalMs": 487
         },
         "viewportMeta": "width=device-width, initial-scale=1.0, viewport-fit=cover",
         "overflowX": 0,
@@ -1082,18 +2019,30 @@
         "textLen": 3604,
         "navBox": {
           "x": 0,
-          "y": 857,
+          "y": 803,
           "w": 412,
-          "h": 58,
+          "h": 112,
           "bottom": 915
         },
         "navPadBottom": "4px",
-        "appContentPadBottom": "66px",
+        "appContentPadBottom": "120px",
         "lastRowBottom": 30514,
         "safeAreaBottom": "0px",
         "touchTargetsUnder44": 0,
-        "navItemsUnder44Wide": 6,
-        "barScrolls": false
+        "navItemsUnder44Wide": 0,
+        "barScrolls": false,
+        "tabWidths": [
+          64,
+          64,
+          64,
+          64,
+          64,
+          64
+        ],
+        "navRowScrolls": false,
+        "utilityClipped": 0,
+        "utilityHidden": 1,
+        "utilityClipDetail": []
       },
       "consoleErrors": [
         "Failed to load resource: net::ERR_FAILED"
@@ -1106,6 +2055,10 @@
         "rowsRendered": true,
         "navOnScreen": true,
         "touchTargetsOk": true,
+        "tabsHaveTouchWidth": true,
+        "utilityNotClipped": true,
+        "barStaysPut": true,
+        "padClearsBar": true,
         "cleanConsole": true
       }
     },
@@ -1124,10 +2077,10 @@
           "source": "bundle",
           "gzBytes": 16179264,
           "rawBytes": 70619136,
-          "fetchMs": 205,
-          "gunzipMs": 160,
-          "openMs": 14,
-          "totalMs": 379
+          "fetchMs": 298,
+          "gunzipMs": 174,
+          "openMs": 15,
+          "totalMs": 487
         },
         "viewportMeta": "width=device-width, initial-scale=1.0, viewport-fit=cover",
         "overflowX": 0,
@@ -1135,18 +2088,30 @@
         "textLen": 2110,
         "navBox": {
           "x": 0,
-          "y": 857,
+          "y": 803,
           "w": 412,
-          "h": 58,
+          "h": 112,
           "bottom": 915
         },
         "navPadBottom": "4px",
-        "appContentPadBottom": "66px",
+        "appContentPadBottom": "120px",
         "lastRowBottom": null,
         "safeAreaBottom": "0px",
         "touchTargetsUnder44": 0,
-        "navItemsUnder44Wide": 6,
-        "barScrolls": false
+        "navItemsUnder44Wide": 0,
+        "barScrolls": false,
+        "tabWidths": [
+          64,
+          64,
+          64,
+          64,
+          64,
+          64
+        ],
+        "navRowScrolls": false,
+        "utilityClipped": 0,
+        "utilityHidden": 1,
+        "utilityClipDetail": []
       },
       "consoleErrors": [
         "Failed to load resource: net::ERR_FAILED",
@@ -1161,6 +2126,10 @@
         "rowsRendered": true,
         "navOnScreen": true,
         "touchTargetsOk": true,
+        "tabsHaveTouchWidth": true,
+        "utilityNotClipped": true,
+        "barStaysPut": true,
+        "padClearsBar": true,
         "cleanConsole": true
       }
     },
@@ -1179,10 +2148,10 @@
           "source": "bundle",
           "gzBytes": 16179264,
           "rawBytes": 70619136,
-          "fetchMs": 205,
-          "gunzipMs": 160,
-          "openMs": 14,
-          "totalMs": 379
+          "fetchMs": 298,
+          "gunzipMs": 174,
+          "openMs": 15,
+          "totalMs": 487
         },
         "viewportMeta": "width=device-width, initial-scale=1.0, viewport-fit=cover",
         "overflowX": 0,
@@ -1190,18 +2159,30 @@
         "textLen": 4453,
         "navBox": {
           "x": 0,
-          "y": 857,
+          "y": 803,
           "w": 412,
-          "h": 58,
+          "h": 112,
           "bottom": 915
         },
         "navPadBottom": "4px",
-        "appContentPadBottom": "66px",
+        "appContentPadBottom": "120px",
         "lastRowBottom": null,
         "safeAreaBottom": "0px",
         "touchTargetsUnder44": 0,
-        "navItemsUnder44Wide": 6,
-        "barScrolls": false
+        "navItemsUnder44Wide": 0,
+        "barScrolls": false,
+        "tabWidths": [
+          64,
+          64,
+          64,
+          64,
+          64,
+          64
+        ],
+        "navRowScrolls": false,
+        "utilityClipped": 0,
+        "utilityHidden": 1,
+        "utilityClipDetail": []
       },
       "consoleErrors": [
         "Failed to load resource: net::ERR_FAILED"
@@ -1214,6 +2195,10 @@
         "rowsRendered": true,
         "navOnScreen": true,
         "touchTargetsOk": true,
+        "tabsHaveTouchWidth": true,
+        "utilityNotClipped": true,
+        "barStaysPut": true,
+        "padClearsBar": true,
         "cleanConsole": true
       }
     },
@@ -1232,10 +2217,10 @@
           "source": "bundle",
           "gzBytes": 16179264,
           "rawBytes": 70619136,
-          "fetchMs": 205,
-          "gunzipMs": 160,
-          "openMs": 14,
-          "totalMs": 379
+          "fetchMs": 298,
+          "gunzipMs": 174,
+          "openMs": 15,
+          "totalMs": 487
         },
         "viewportMeta": "width=device-width, initial-scale=1.0, viewport-fit=cover",
         "overflowX": 0,
@@ -1243,18 +2228,30 @@
         "textLen": 1519,
         "navBox": {
           "x": 0,
-          "y": 857,
+          "y": 803,
           "w": 412,
-          "h": 58,
+          "h": 112,
           "bottom": 915
         },
         "navPadBottom": "4px",
-        "appContentPadBottom": "66px",
+        "appContentPadBottom": "120px",
         "lastRowBottom": null,
         "safeAreaBottom": "0px",
         "touchTargetsUnder44": 0,
-        "navItemsUnder44Wide": 6,
-        "barScrolls": false
+        "navItemsUnder44Wide": 0,
+        "barScrolls": false,
+        "tabWidths": [
+          64,
+          64,
+          64,
+          64,
+          64,
+          64
+        ],
+        "navRowScrolls": false,
+        "utilityClipped": 0,
+        "utilityHidden": 1,
+        "utilityClipDetail": []
       },
       "consoleErrors": [],
       "blockedByHarness": 0,
@@ -1265,6 +2262,10 @@
         "rowsRendered": true,
         "navOnScreen": true,
         "touchTargetsOk": true,
+        "tabsHaveTouchWidth": true,
+        "utilityNotClipped": true,
+        "barStaysPut": true,
+        "padClearsBar": true,
         "cleanConsole": true
       }
     },
@@ -1283,29 +2284,41 @@
           "source": "bundle",
           "gzBytes": 16179264,
           "rawBytes": 70619136,
-          "fetchMs": 205,
-          "gunzipMs": 160,
-          "openMs": 14,
-          "totalMs": 379
+          "fetchMs": 298,
+          "gunzipMs": 174,
+          "openMs": 15,
+          "totalMs": 487
         },
         "viewportMeta": "width=device-width, initial-scale=1.0, viewport-fit=cover",
         "overflowX": 0,
         "rowCount": 38,
-        "textLen": 1885,
+        "textLen": 1887,
         "navBox": {
           "x": 0,
-          "y": 857,
+          "y": 803,
           "w": 412,
-          "h": 58,
+          "h": 112,
           "bottom": 915
         },
         "navPadBottom": "4px",
-        "appContentPadBottom": "66px",
+        "appContentPadBottom": "120px",
         "lastRowBottom": 1862,
         "safeAreaBottom": "0px",
         "touchTargetsUnder44": 0,
-        "navItemsUnder44Wide": 6,
-        "barScrolls": false
+        "navItemsUnder44Wide": 0,
+        "barScrolls": false,
+        "tabWidths": [
+          64,
+          64,
+          64,
+          64,
+          64,
+          64
+        ],
+        "navRowScrolls": false,
+        "utilityClipped": 0,
+        "utilityHidden": 1,
+        "utilityClipDetail": []
       },
       "consoleErrors": [
         "Failed to load resource: net::ERR_FAILED"
@@ -1318,6 +2331,10 @@
         "rowsRendered": true,
         "navOnScreen": true,
         "touchTargetsOk": true,
+        "tabsHaveTouchWidth": true,
+        "utilityNotClipped": true,
+        "barStaysPut": true,
+        "padClearsBar": true,
         "cleanConsole": true
       }
     },
@@ -1336,10 +2353,10 @@
           "source": "bundle",
           "gzBytes": 16179264,
           "rawBytes": 70619136,
-          "fetchMs": 205,
-          "gunzipMs": 160,
-          "openMs": 14,
-          "totalMs": 379
+          "fetchMs": 298,
+          "gunzipMs": 174,
+          "openMs": 15,
+          "totalMs": 487
         },
         "viewportMeta": "width=device-width, initial-scale=1.0, viewport-fit=cover",
         "overflowX": 0,
@@ -1347,18 +2364,30 @@
         "textLen": 2106,
         "navBox": {
           "x": 0,
-          "y": 857,
+          "y": 803,
           "w": 412,
-          "h": 58,
+          "h": 112,
           "bottom": 915
         },
         "navPadBottom": "4px",
-        "appContentPadBottom": "66px",
+        "appContentPadBottom": "120px",
         "lastRowBottom": 1299,
         "safeAreaBottom": "0px",
         "touchTargetsUnder44": 0,
-        "navItemsUnder44Wide": 6,
-        "barScrolls": false
+        "navItemsUnder44Wide": 0,
+        "barScrolls": false,
+        "tabWidths": [
+          64,
+          64,
+          64,
+          64,
+          64,
+          64
+        ],
+        "navRowScrolls": false,
+        "utilityClipped": 0,
+        "utilityHidden": 1,
+        "utilityClipDetail": []
       },
       "consoleErrors": [],
       "blockedByHarness": 0,
@@ -1369,6 +2398,10 @@
         "rowsRendered": true,
         "navOnScreen": true,
         "touchTargetsOk": true,
+        "tabsHaveTouchWidth": true,
+        "utilityNotClipped": true,
+        "barStaysPut": true,
+        "padClearsBar": true,
         "cleanConsole": true
       }
     },
@@ -1387,10 +2420,10 @@
           "source": "bundle",
           "gzBytes": 16179264,
           "rawBytes": 70619136,
-          "fetchMs": 205,
-          "gunzipMs": 160,
-          "openMs": 14,
-          "totalMs": 379
+          "fetchMs": 298,
+          "gunzipMs": 174,
+          "openMs": 15,
+          "totalMs": 487
         },
         "viewportMeta": "width=device-width, initial-scale=1.0, viewport-fit=cover",
         "overflowX": 0,
@@ -1398,18 +2431,30 @@
         "textLen": 420,
         "navBox": {
           "x": 0,
-          "y": 857,
+          "y": 803,
           "w": 412,
-          "h": 58,
+          "h": 112,
           "bottom": 915
         },
         "navPadBottom": "4px",
-        "appContentPadBottom": "66px",
+        "appContentPadBottom": "120px",
         "lastRowBottom": null,
         "safeAreaBottom": "0px",
         "touchTargetsUnder44": 0,
-        "navItemsUnder44Wide": 6,
-        "barScrolls": false
+        "navItemsUnder44Wide": 0,
+        "barScrolls": false,
+        "tabWidths": [
+          64,
+          64,
+          64,
+          64,
+          64,
+          64
+        ],
+        "navRowScrolls": false,
+        "utilityClipped": 0,
+        "utilityHidden": 1,
+        "utilityClipDetail": []
       },
       "consoleErrors": [],
       "blockedByHarness": 0,
@@ -1420,6 +2465,627 @@
         "rowsRendered": true,
         "navOnScreen": true,
         "touchTargetsOk": true,
+        "tabsHaveTouchWidth": true,
+        "utilityNotClipped": true,
+        "barStaysPut": true,
+        "padClearsBar": true,
+        "cleanConsole": true
+      }
+    },
+    {
+      "size": "428x926x2",
+      "route": "(index)",
+      "measured": {
+        "vw": 428,
+        "vh": 926,
+        "route": "#/",
+        "title": "ترمینال تحلیل بورس",
+        "bootCard": false,
+        "fatalBanner": false,
+        "notFound": true,
+        "bootTiming": {
+          "source": "bundle",
+          "gzBytes": 16179264,
+          "rawBytes": 70619136,
+          "fetchMs": 316,
+          "gunzipMs": 166,
+          "openMs": 15,
+          "totalMs": 498
+        },
+        "viewportMeta": "width=device-width, initial-scale=1.0, viewport-fit=cover",
+        "overflowX": 0,
+        "rowCount": 29,
+        "textLen": 6626,
+        "navBox": {
+          "x": 0,
+          "y": 814,
+          "w": 428,
+          "h": 112,
+          "bottom": 926
+        },
+        "navPadBottom": "4px",
+        "appContentPadBottom": "120px",
+        "lastRowBottom": 2454,
+        "safeAreaBottom": "0px",
+        "touchTargetsUnder44": 0,
+        "navItemsUnder44Wide": 0,
+        "barScrolls": false,
+        "tabWidths": [
+          67,
+          67,
+          67,
+          67,
+          67,
+          67
+        ],
+        "navRowScrolls": false,
+        "utilityClipped": 0,
+        "utilityHidden": 1,
+        "utilityClipDetail": []
+      },
+      "consoleErrors": [
+        "Failed to load resource: net::ERR_FAILED",
+        "Failed to load resource: net::ERR_FAILED",
+        "Failed to load resource: net::ERR_FAILED"
+      ],
+      "blockedByHarness": 3,
+      "screenshot": "_audit/android_release/viewports/428x926-index.png",
+      "verdict": {
+        "booted": true,
+        "noHorizontalOverflow": true,
+        "rowsRendered": true,
+        "navOnScreen": true,
+        "touchTargetsOk": true,
+        "tabsHaveTouchWidth": true,
+        "utilityNotClipped": true,
+        "barStaysPut": true,
+        "padClearsBar": true,
+        "cleanConsole": true
+      }
+    },
+    {
+      "size": "428x926x2",
+      "route": "market",
+      "measured": {
+        "vw": 428,
+        "vh": 926,
+        "route": "#/market",
+        "title": "ترمینال تحلیل بورس",
+        "bootCard": false,
+        "fatalBanner": false,
+        "notFound": true,
+        "bootTiming": {
+          "source": "bundle",
+          "gzBytes": 16179264,
+          "rawBytes": 70619136,
+          "fetchMs": 316,
+          "gunzipMs": 166,
+          "openMs": 15,
+          "totalMs": 498
+        },
+        "viewportMeta": "width=device-width, initial-scale=1.0, viewport-fit=cover",
+        "overflowX": 0,
+        "rowCount": 29,
+        "textLen": 6703,
+        "navBox": {
+          "x": 0,
+          "y": 814,
+          "w": 428,
+          "h": 112,
+          "bottom": 926
+        },
+        "navPadBottom": "4px",
+        "appContentPadBottom": "120px",
+        "lastRowBottom": 2454,
+        "safeAreaBottom": "0px",
+        "touchTargetsUnder44": 0,
+        "navItemsUnder44Wide": 0,
+        "barScrolls": false,
+        "tabWidths": [
+          67,
+          67,
+          67,
+          67,
+          67,
+          67
+        ],
+        "navRowScrolls": false,
+        "utilityClipped": 0,
+        "utilityHidden": 1,
+        "utilityClipDetail": []
+      },
+      "consoleErrors": [],
+      "blockedByHarness": 0,
+      "screenshot": "_audit/android_release/viewports/428x926-market.png",
+      "verdict": {
+        "booted": true,
+        "noHorizontalOverflow": true,
+        "rowsRendered": true,
+        "navOnScreen": true,
+        "touchTargetsOk": true,
+        "tabsHaveTouchWidth": true,
+        "utilityNotClipped": true,
+        "barStaysPut": true,
+        "padClearsBar": true,
+        "cleanConsole": true
+      }
+    },
+    {
+      "size": "428x926x2",
+      "route": "fundamental",
+      "measured": {
+        "vw": 428,
+        "vh": 926,
+        "route": "#/fundamental",
+        "title": "ترمینال تحلیل بورس",
+        "bootCard": false,
+        "fatalBanner": false,
+        "notFound": true,
+        "bootTiming": {
+          "source": "bundle",
+          "gzBytes": 16179264,
+          "rawBytes": 70619136,
+          "fetchMs": 316,
+          "gunzipMs": 166,
+          "openMs": 15,
+          "totalMs": 498
+        },
+        "viewportMeta": "width=device-width, initial-scale=1.0, viewport-fit=cover",
+        "overflowX": 0,
+        "rowCount": 25,
+        "textLen": 3604,
+        "navBox": {
+          "x": 0,
+          "y": 814,
+          "w": 428,
+          "h": 112,
+          "bottom": 926
+        },
+        "navPadBottom": "4px",
+        "appContentPadBottom": "120px",
+        "lastRowBottom": 30484,
+        "safeAreaBottom": "0px",
+        "touchTargetsUnder44": 0,
+        "navItemsUnder44Wide": 0,
+        "barScrolls": false,
+        "tabWidths": [
+          67,
+          67,
+          67,
+          67,
+          67,
+          67
+        ],
+        "navRowScrolls": false,
+        "utilityClipped": 0,
+        "utilityHidden": 1,
+        "utilityClipDetail": []
+      },
+      "consoleErrors": [
+        "Failed to load resource: net::ERR_FAILED"
+      ],
+      "blockedByHarness": 1,
+      "screenshot": "_audit/android_release/viewports/428x926-fundamental.png",
+      "verdict": {
+        "booted": true,
+        "noHorizontalOverflow": true,
+        "rowsRendered": true,
+        "navOnScreen": true,
+        "touchTargetsOk": true,
+        "tabsHaveTouchWidth": true,
+        "utilityNotClipped": true,
+        "barStaysPut": true,
+        "padClearsBar": true,
+        "cleanConsole": true
+      }
+    },
+    {
+      "size": "428x926x2",
+      "route": "technical",
+      "measured": {
+        "vw": 428,
+        "vh": 926,
+        "route": "#/technical",
+        "title": "ترمینال تحلیل بورس",
+        "bootCard": false,
+        "fatalBanner": false,
+        "notFound": false,
+        "bootTiming": {
+          "source": "bundle",
+          "gzBytes": 16179264,
+          "rawBytes": 70619136,
+          "fetchMs": 316,
+          "gunzipMs": 166,
+          "openMs": 15,
+          "totalMs": 498
+        },
+        "viewportMeta": "width=device-width, initial-scale=1.0, viewport-fit=cover",
+        "overflowX": 0,
+        "rowCount": 0,
+        "textLen": 2110,
+        "navBox": {
+          "x": 0,
+          "y": 814,
+          "w": 428,
+          "h": 112,
+          "bottom": 926
+        },
+        "navPadBottom": "4px",
+        "appContentPadBottom": "120px",
+        "lastRowBottom": null,
+        "safeAreaBottom": "0px",
+        "touchTargetsUnder44": 0,
+        "navItemsUnder44Wide": 0,
+        "barScrolls": false,
+        "tabWidths": [
+          67,
+          67,
+          67,
+          67,
+          67,
+          67
+        ],
+        "navRowScrolls": false,
+        "utilityClipped": 0,
+        "utilityHidden": 1,
+        "utilityClipDetail": []
+      },
+      "consoleErrors": [
+        "Failed to load resource: net::ERR_FAILED",
+        "Failed to load resource: net::ERR_FAILED",
+        "Failed to load resource: net::ERR_FAILED"
+      ],
+      "blockedByHarness": 3,
+      "screenshot": "_audit/android_release/viewports/428x926-technical.png",
+      "verdict": {
+        "booted": true,
+        "noHorizontalOverflow": true,
+        "rowsRendered": true,
+        "navOnScreen": true,
+        "touchTargetsOk": true,
+        "tabsHaveTouchWidth": true,
+        "utilityNotClipped": true,
+        "barStaysPut": true,
+        "padClearsBar": true,
+        "cleanConsole": true
+      }
+    },
+    {
+      "size": "428x926x2",
+      "route": "strategy-tree",
+      "measured": {
+        "vw": 428,
+        "vh": 926,
+        "route": "#/strategy-tree",
+        "title": "ترمینال تحلیل بورس",
+        "bootCard": false,
+        "fatalBanner": false,
+        "notFound": false,
+        "bootTiming": {
+          "source": "bundle",
+          "gzBytes": 16179264,
+          "rawBytes": 70619136,
+          "fetchMs": 316,
+          "gunzipMs": 166,
+          "openMs": 15,
+          "totalMs": 498
+        },
+        "viewportMeta": "width=device-width, initial-scale=1.0, viewport-fit=cover",
+        "overflowX": 0,
+        "rowCount": 0,
+        "textLen": 4453,
+        "navBox": {
+          "x": 0,
+          "y": 814,
+          "w": 428,
+          "h": 112,
+          "bottom": 926
+        },
+        "navPadBottom": "4px",
+        "appContentPadBottom": "120px",
+        "lastRowBottom": null,
+        "safeAreaBottom": "0px",
+        "touchTargetsUnder44": 0,
+        "navItemsUnder44Wide": 0,
+        "barScrolls": false,
+        "tabWidths": [
+          67,
+          67,
+          67,
+          67,
+          67,
+          67
+        ],
+        "navRowScrolls": false,
+        "utilityClipped": 0,
+        "utilityHidden": 1,
+        "utilityClipDetail": []
+      },
+      "consoleErrors": [
+        "Failed to load resource: net::ERR_FAILED"
+      ],
+      "blockedByHarness": 1,
+      "screenshot": "_audit/android_release/viewports/428x926-strategy-tree.png",
+      "verdict": {
+        "booted": true,
+        "noHorizontalOverflow": true,
+        "rowsRendered": true,
+        "navOnScreen": true,
+        "touchTargetsOk": true,
+        "tabsHaveTouchWidth": true,
+        "utilityNotClipped": true,
+        "barStaysPut": true,
+        "padClearsBar": true,
+        "cleanConsole": true
+      }
+    },
+    {
+      "size": "428x926x2",
+      "route": "master",
+      "measured": {
+        "vw": 428,
+        "vh": 926,
+        "route": "#/master",
+        "title": "ترمینال تحلیل بورس",
+        "bootCard": false,
+        "fatalBanner": false,
+        "notFound": false,
+        "bootTiming": {
+          "source": "bundle",
+          "gzBytes": 16179264,
+          "rawBytes": 70619136,
+          "fetchMs": 316,
+          "gunzipMs": 166,
+          "openMs": 15,
+          "totalMs": 498
+        },
+        "viewportMeta": "width=device-width, initial-scale=1.0, viewport-fit=cover",
+        "overflowX": 0,
+        "rowCount": 0,
+        "textLen": 1519,
+        "navBox": {
+          "x": 0,
+          "y": 814,
+          "w": 428,
+          "h": 112,
+          "bottom": 926
+        },
+        "navPadBottom": "4px",
+        "appContentPadBottom": "120px",
+        "lastRowBottom": null,
+        "safeAreaBottom": "0px",
+        "touchTargetsUnder44": 0,
+        "navItemsUnder44Wide": 0,
+        "barScrolls": false,
+        "tabWidths": [
+          67,
+          67,
+          67,
+          67,
+          67,
+          67
+        ],
+        "navRowScrolls": false,
+        "utilityClipped": 0,
+        "utilityHidden": 1,
+        "utilityClipDetail": []
+      },
+      "consoleErrors": [],
+      "blockedByHarness": 0,
+      "screenshot": "_audit/android_release/viewports/428x926-master.png",
+      "verdict": {
+        "booted": true,
+        "noHorizontalOverflow": true,
+        "rowsRendered": true,
+        "navOnScreen": true,
+        "touchTargetsOk": true,
+        "tabsHaveTouchWidth": true,
+        "utilityNotClipped": true,
+        "barStaysPut": true,
+        "padClearsBar": true,
+        "cleanConsole": true
+      }
+    },
+    {
+      "size": "428x926x2",
+      "route": "engine-lab",
+      "measured": {
+        "vw": 428,
+        "vh": 926,
+        "route": "#/engine-lab",
+        "title": "ترمینال تحلیل بورس",
+        "bootCard": false,
+        "fatalBanner": false,
+        "notFound": false,
+        "bootTiming": {
+          "source": "bundle",
+          "gzBytes": 16179264,
+          "rawBytes": 70619136,
+          "fetchMs": 316,
+          "gunzipMs": 166,
+          "openMs": 15,
+          "totalMs": 498
+        },
+        "viewportMeta": "width=device-width, initial-scale=1.0, viewport-fit=cover",
+        "overflowX": 0,
+        "rowCount": 38,
+        "textLen": 1887,
+        "navBox": {
+          "x": 0,
+          "y": 814,
+          "w": 428,
+          "h": 112,
+          "bottom": 926
+        },
+        "navPadBottom": "4px",
+        "appContentPadBottom": "120px",
+        "lastRowBottom": 1835,
+        "safeAreaBottom": "0px",
+        "touchTargetsUnder44": 0,
+        "navItemsUnder44Wide": 0,
+        "barScrolls": false,
+        "tabWidths": [
+          67,
+          67,
+          67,
+          67,
+          67,
+          67
+        ],
+        "navRowScrolls": false,
+        "utilityClipped": 0,
+        "utilityHidden": 1,
+        "utilityClipDetail": []
+      },
+      "consoleErrors": [
+        "Failed to load resource: net::ERR_FAILED"
+      ],
+      "blockedByHarness": 1,
+      "screenshot": "_audit/android_release/viewports/428x926-engine-lab.png",
+      "verdict": {
+        "booted": true,
+        "noHorizontalOverflow": true,
+        "rowsRendered": true,
+        "navOnScreen": true,
+        "touchTargetsOk": true,
+        "tabsHaveTouchWidth": true,
+        "utilityNotClipped": true,
+        "barStaysPut": true,
+        "padClearsBar": true,
+        "cleanConsole": true
+      }
+    },
+    {
+      "size": "428x926x2",
+      "route": "portfolio",
+      "measured": {
+        "vw": 428,
+        "vh": 926,
+        "route": "#/portfolio",
+        "title": "ترمینال تحلیل بورس",
+        "bootCard": false,
+        "fatalBanner": false,
+        "notFound": false,
+        "bootTiming": {
+          "source": "bundle",
+          "gzBytes": 16179264,
+          "rawBytes": 70619136,
+          "fetchMs": 316,
+          "gunzipMs": 166,
+          "openMs": 15,
+          "totalMs": 498
+        },
+        "viewportMeta": "width=device-width, initial-scale=1.0, viewport-fit=cover",
+        "overflowX": 0,
+        "rowCount": 7,
+        "textLen": 2106,
+        "navBox": {
+          "x": 0,
+          "y": 814,
+          "w": 428,
+          "h": 112,
+          "bottom": 926
+        },
+        "navPadBottom": "4px",
+        "appContentPadBottom": "120px",
+        "lastRowBottom": 1274,
+        "safeAreaBottom": "0px",
+        "touchTargetsUnder44": 0,
+        "navItemsUnder44Wide": 0,
+        "barScrolls": false,
+        "tabWidths": [
+          67,
+          67,
+          67,
+          67,
+          67,
+          67
+        ],
+        "navRowScrolls": false,
+        "utilityClipped": 0,
+        "utilityHidden": 1,
+        "utilityClipDetail": []
+      },
+      "consoleErrors": [],
+      "blockedByHarness": 0,
+      "screenshot": "_audit/android_release/viewports/428x926-portfolio.png",
+      "verdict": {
+        "booted": true,
+        "noHorizontalOverflow": true,
+        "rowsRendered": true,
+        "navOnScreen": true,
+        "touchTargetsOk": true,
+        "tabsHaveTouchWidth": true,
+        "utilityNotClipped": true,
+        "barStaysPut": true,
+        "padClearsBar": true,
+        "cleanConsole": true
+      }
+    },
+    {
+      "size": "428x926x2",
+      "route": "nope-404",
+      "measured": {
+        "vw": 428,
+        "vh": 926,
+        "route": "#/nope-404",
+        "title": "ترمینال تحلیل بورس",
+        "bootCard": false,
+        "fatalBanner": false,
+        "notFound": false,
+        "bootTiming": {
+          "source": "bundle",
+          "gzBytes": 16179264,
+          "rawBytes": 70619136,
+          "fetchMs": 316,
+          "gunzipMs": 166,
+          "openMs": 15,
+          "totalMs": 498
+        },
+        "viewportMeta": "width=device-width, initial-scale=1.0, viewport-fit=cover",
+        "overflowX": 0,
+        "rowCount": 0,
+        "textLen": 420,
+        "navBox": {
+          "x": 0,
+          "y": 814,
+          "w": 428,
+          "h": 112,
+          "bottom": 926
+        },
+        "navPadBottom": "4px",
+        "appContentPadBottom": "120px",
+        "lastRowBottom": null,
+        "safeAreaBottom": "0px",
+        "touchTargetsUnder44": 0,
+        "navItemsUnder44Wide": 0,
+        "barScrolls": false,
+        "tabWidths": [
+          67,
+          67,
+          67,
+          67,
+          67,
+          67
+        ],
+        "navRowScrolls": false,
+        "utilityClipped": 0,
+        "utilityHidden": 1,
+        "utilityClipDetail": []
+      },
+      "consoleErrors": [],
+      "blockedByHarness": 0,
+      "screenshot": "_audit/android_release/viewports/428x926-nope-404.png",
+      "verdict": {
+        "booted": true,
+        "noHorizontalOverflow": true,
+        "rowsRendered": true,
+        "navOnScreen": true,
+        "touchTargetsOk": true,
+        "tabsHaveTouchWidth": true,
+        "utilityNotClipped": true,
+        "barStaysPut": true,
+        "padClearsBar": true,
         "cleanConsole": true
       }
     }

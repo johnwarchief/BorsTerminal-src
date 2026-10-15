@@ -461,6 +461,79 @@ jobs:
           rm -rf app/build/outputs/apk/release "$D"
           echo "تمیز شد: artifactِ کلیدِ ساختگی حذف گردید تا هیچ گامی آن را نبیند"
 
+  # ── مادۀ ارتقا: کلیدِ پایدار ⇒ ارتقایِ درجا؛ کلیدِ دیگر ⇒ ردِ نصب ────────────
+  # این job پرسشِ مرحلۀ پنجمِ مأموریت را با آزمونِ واقعی جواب می‌دهد، نه با
+  # استدلال: آیا نسخهٔ رسمیِ امضاشده رویِ نسخهٔ رسمیِ قبلی نصب می‌شود، و آیا
+  # عوض‌شدنِ کلید همان INSTALL_FAILED_UPDATE_INCOMPATIBLE را می‌سازد که درِ دو
+  # ریلزِ debugِ قبلی ما داشتیم؟ سه کلیدِ دورریختنی (هرگز کلیدِ انتشار) و سه
+  # بیلدِ release؛ هیچ artifactی منتشر نمی‌شود و کلیدها بی‌درنگ پاک می‌شوند.
+  upgrade-matrix-on-device:
+    needs: build-apk
+    runs-on: ubuntu-latest
+    timeout-minutes: 34
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Prepare the web bundle for three release builds
+        working-directory: frontend
+        run: |
+          set -e
+          npm ci
+          # بستۀ داده عمداً دانلود نمی‌شود: این مادۀ «نصب/ارتقا» است، نه محتوا.
+          # نبودِ gz یعنی WebView صفحهٔ بوت را نشان می‌دهد؛ pidof با این باز هم
+          # فرآیندِ زنده می‌دهد و سنجشِ محتوا درِ jobِ webview-on-emulator است.
+          VITE_LOCAL_DATA=1 VITE_APP_VERSION="$(node -p "require('./package.json').version")" npm run build
+          npx cap sync android
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: KVM probe
+        id: kvm
+        run: |
+          set -e
+          if [ -e /dev/kvm ]; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+            echo "NOT_VERIFIED: بی‌/dev/kvm مادۀ ارتقا اجرا نمی‌شود (نه اینکه سبز باشد)" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Build three throwaway-signed APKs and run the install matrix
+        if: steps.kvm.outputs.present == 'true'
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          arch: x86_64
+          profile: pixel_5
+          disable-animations: true
+          script: bash tools/android_upgrade_matrix.sh
+
+      - name: Record the honest result when the emulator cannot run
+        if: steps.kvm.outputs.present != 'true'
+        run: |
+          set -e
+          mkdir -p _audit/android_upgrade
+          printf '%s\t%s\t%s\n' toolchain NOT_VERIFIED "no /dev/kvm on runner" > _audit/android_upgrade/matrix.tsv
+          printf '{"counts":{"pass":0,"fail":0,"not_verified":1}}' > _audit/android_upgrade/summary.json
+
+
+      - name: Upload the matrix evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-upgrade-matrix-${{ github.sha }}
+          path: _audit/android_upgrade/
+          if-no-files-found: warn
+
   # ── WebView رویِ دستگاه: آزمونِ زنده درِ شبیه‌ساز ─────────────────────────────
   # درِ هر گزارشِ قبلی این مورد «انجام‌نشده» نوشته شده بود، چون رویِ ماشینِ
   # توسعه Java/Android SDK نیست و آزمون‌ها یا درِ jsdom بودند یا درِ Chromiumِ

@@ -45,7 +45,7 @@ describe('چیدمانِ موبایل', () => {
     // ناوبری و سرِ صفحه را می‌خورد.
     const b = mediaBlock('max-width: 820px');
     expect(b).toMatch(/aside\[data-shell='inspector'\][\s\S]*?top:\s*calc\(env\(safe-area-inset-top\)/);
-    expect(b).toContain('bottom: calc(58px + env(safe-area-inset-bottom))');
+    expect(b).toContain('bottom: calc(var(--bors-nav-h) + env(safe-area-inset-bottom))');
     expect(b).toContain('width: min(100vw, 26rem)');
     // لبه باید صریح بسته باشد: با right:0 هم‌زمان، درِ RTL کشو ۵۲ پیکسل از
     // حالتِ بسته رویِ صفحه جا می‌ماند (کشویِ بسته باید کامل بیرون برود).

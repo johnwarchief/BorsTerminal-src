@@ -127,19 +127,21 @@ await c.send('Network.enable');
 await c.send('Log.enable');
 await new Promise((r) => setTimeout(r, WAIT_MS));
 
-// ۰) دروازۀ ورودِ محلی: رویِ گوشی هم مثلِ کاربر، اگر صفحهٔ رمز آمد باز شود.
-// بی‌این، «صفحه سفید نیست» با «برنامۀ واقعی باز شد» قاطی می‌شود: درِ صفحهٔ
-// ورود هم گره و متن هست، ولی هیچ داده‌ای نمایش داده نشده. رمزِ پیش‌فرض درِ
-// sourceِ عمومیِ همین مخزن است (authStore.ts: DEFAULT_USER/DEFAULT_PASS) —
-// چیزی برایِ حدس‌زدن نیست و هیچ حسابِ واقعی درِ کار نیست.
+// ۰) قفلِ صفحه: رویِ گوشی هم مثلِ کاربر، اگر قفل چیده شده باشد باز شود.
+// بی‌این، «صفحه سفید نیست» با «برنامۀ واقعی باز شد» قاطی می‌شود: درِ صفحۀ
+// قفل هم گره و متن هست، ولی هیچ داده‌ای نمایش داده نشده. دیگر هیچ اعتبارنامۀ
+// ثابتی درِ source نیست؛ کدِ آزمون ازِ محیط (BORS_SCREEN_CODE) می‌آید و اگر
+// نباشد، پروفیلِ بی‌قفل (حالتِ CI) بی‌درنگ ازِ همین‌جا رد می‌شود.
+const SCREEN_CODE = (process.env.BORS_SCREEN_CODE || '').replace(/["'\\]/g, '');
 await c.evaluate(
-  '(()=>{const u=document.querySelector("input[type=text],input:not([type])");' +
-  'const p=document.querySelector("input[type=password]");' +
-  'if(!u||!p) return "no-gate";' +
+  '(()=>{const p=document.querySelector("input[type=password]");' +
+  'if(!p) return "no-gate";' +
+  'const code="' + SCREEN_CODE + '";' +
+  'if(!code) return "gate-no-code";' +
   'const set=(el,v)=>{const s=Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype,"value").set;' +
   's.call(el,v);el.dispatchEvent(new Event("input",{bubbles:true}));};' +
-  'set(u,"admin");set(p,"bors123");' +
-  'const b=Array.from(document.querySelectorAll("button")).find(x=>/ورود/.test(x.textContent||""));' +
+  'set(p,code);' +
+  'const b=Array.from(document.querySelectorAll("button")).find(x=>/بازکردن|ورود/.test(x.textContent||""));' +
   'if(b) b.click(); return "submitted"})()');
 await new Promise((r) => setTimeout(r, 6000));
 
@@ -153,7 +155,7 @@ set('visible_text_len', (await c.evaluate(
 // هست. تنها چیزی که ادعا را اثبات می‌کند، متنِ خودِ تابلوست.
 set('reached_content', (await c.evaluate(
   '(()=>{const t=document.body.innerText||"";' +
-  'if(/نام کاربری|رمز عبور/.test(t)&&!/شاخص کل/.test(t)) return "login-gate";' +
+  'if(/کدِ صفحه|نام کاربری|رمز عبور/.test(t)&&!/شاخص کل/.test(t)) return "login-gate";' +
   'if(/شاخص کل|ارزش معاملات بازار|نوسان‌گیر/.test(t)) return "board";' +
   'if(/پیدا نشد/.test(t)) return "not-found";return "other"})()')).value);
 set('route', (await c.evaluate('location.hash || location.pathname')).value);

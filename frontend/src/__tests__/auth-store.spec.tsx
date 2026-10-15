@@ -1,97 +1,134 @@
+// authStore — قفلِ صفحهٔ محلی
+//
+// چیزی که این پرونده می‌بندد همان چیزی است که نسخۀ پیشین باز میگذاشت: یکِ
+// اعتبارنامۀ ثابت درِ سورس (`admin` / `bors123`) که درِ باندلِ APK هم می‌نشست.
+// سنجه‌هایِ ۱ و ۲ دقیقاً همان «دربندِ جادویی» را رد می‌کنند، و سنجه‌هایِ ۶ و ۹
+// ثابت می‌کنند رویِ دیسک فقطِ هش می‌ماند، نه کدِ خام.
 import { describe, it, expect, beforeEach } from 'vitest';
-import { useAuthStore } from '../shared/stores/authStore';
+import { useAuthStore, normalizeCode } from '../shared/stores/authStore';
 
-describe('سیستم احراز هویت ترمینال (authStore)', () => {
-  beforeEach(() => {
-    useAuthStore.getState().resetCredentials();
+// jsdom هیچ SubtleCrypto ندارد؛ WebCrypto نود همان PBKDF2 را می‌دهد که درِ
+// WebView و مرورگر استفاده می‌شود (بی‌این، تست «قفل چیده نمی‌شود» را می‌داد).
+import { webcrypto } from 'node:crypto';
+
+if (!globalThis.crypto?.subtle) {
+  Object.defineProperty(globalThis, 'crypto', { value: webcrypto, configurable: true });
+}
+
+const LOCK_KEY = 'bors_screen_lock';
+const LEGACY_KEY = 'bors_auth_pass';
+
+function resetAll() {
+  localStorage.clear();
+  sessionStorage.clear();
+  const st = useAuthStore.getState();
+  st.logout();
+  useAuthStore.setState({ locked: false, failedAttempts: 0, lockoutUntil: null, username: '' });
+}
+
+describe('قفلِ صفحهٔ محلی', () => {
+  beforeEach(() => resetAll());
+
+  it('۰ ارقامِ فارسی و لاتین یکِ کدند (وگرنه «۱۲۳۴»ِ تایپ‌شده هرگز باز نمی‌شود)', () => {
+    expect(normalizeCode('۱۲۳۴')).toBe('1234');
+    expect(normalizeCode('١٢٣٤')).toBe('1234');
+    expect(normalizeCode(' 12 34 ')).toBe('1234');
+    expect(normalizeCode('۱۲‍۳۴')).toBe('1234');
   });
 
-  it('ورود با رمز عبور اشتباه با خطا مواجه می‌شود', () => {
-    const res = useAuthStore.getState().login('admin', 'wrong_pass');
+  it('۱ بی‌چیدنِ قفل، هیچِ کدی نمی‌پذیرد — نه «باز» است نه «درِ ورود»', async () => {
+    expect(useAuthStore.getState().locked).toBe(false);
+    const res = await useAuthStore.getState().unlock('bors123');
     expect(res.success).toBe(false);
-    expect(res.error).toContain('اشتباه');
     expect(useAuthStore.getState().isAuthenticated).toBe(false);
   });
 
-  it('ورود موفق با اعتبار پیش‌فرض admin / bors123', () => {
-    const res = useAuthStore.getState().login('admin', 'bors123');
+  it('۲ هیچ اعتبارنامۀ ثابتی در store نمانده است', () => {
+    const keys = Object.keys(useAuthStore.getState());
+    expect(keys).not.toContain('login');
+    expect(keys).toContain('unlock');
+    expect(keys).toContain('setLock');
+    expect(LOCK_KEY in localStorage).toBe(false);
+  });
+
+  it('۳ کدِ کوتاه قفل نمی‌کند', async () => {
+    const res = await useAuthStore.getState().setLock('123');
+    expect(res.success).toBe(false);
+    expect(useAuthStore.getState().locked).toBe(false);
+  });
+
+  it('۴ چیدنِ کد ⇒ قفل فعال و همین نشست باز است', async () => {
+    const res = await useAuthStore.getState().setLock('1234');
     expect(res.success).toBe(true);
+    expect(useAuthStore.getState().locked).toBe(true);
     expect(useAuthStore.getState().isAuthenticated).toBe(true);
-    expect(useAuthStore.getState().username).toBe('admin');
   });
 
-  it('خروج از حساب وضعیت ورود را باطل می‌کند', () => {
-    useAuthStore.getState().login('admin', 'bors123');
-    expect(useAuthStore.getState().isAuthenticated).toBe(true);
-
+  it('۵ کدِ درست می‌گشاید و کدِ غلط رد می‌شود', async () => {
+    await useAuthStore.getState().setLock('۴۳۲۱');
     useAuthStore.getState().logout();
     expect(useAuthStore.getState().isAuthenticated).toBe(false);
-  });
 
-  it('تغییر رمز عبور با اعتبارسنجی رمز قدیمی کار می‌کند', () => {
-    // تلاش با رمز قدیمی نادرست
-    const failRes = useAuthStore.getState().changePassword('wrong', 'new_pass_123');
-    expect(failRes.success).toBe(false);
+    const bad = await useAuthStore.getState().unlock('0000');
+    expect(bad.success).toBe(false);
+    expect(bad.error).toContain('اشتباه');
 
-    // تغییر موفق
-    const okRes = useAuthStore.getState().changePassword('bors123', 'my_new_pass');
-    expect(okRes.success).toBe(true);
-
-    // ورود با رمز جدید
-    const loginRes = useAuthStore.getState().login('admin', 'my_new_pass');
-    expect(loginRes.success).toBe(true);
-  });
-
-  it('به‌روزرسانی همزمان نام کاربری و رمز عبور (updateCredentials)', () => {
-    // تلاش با رمز فعلی اشتباه
-    const failRes = useAuthStore.getState().updateCredentials('wrong', 'trader_pro', 'pass_9999');
-    expect(failRes.success).toBe(false);
-    expect(failRes.error).toContain('نادرست');
-
-    // به‌روزرسانی موفق
-    const okRes = useAuthStore.getState().updateCredentials('bors123', 'trader_pro', 'pass_9999');
-    expect(okRes.success).toBe(true);
-    expect(useAuthStore.getState().username).toBe('trader_pro');
-
-    // بررسی ورود با نام کاربری و رمز جدید
-    useAuthStore.getState().logout();
-    const loginNew = useAuthStore.getState().login('trader_pro', 'pass_9999');
-    expect(loginNew.success).toBe(true);
+    const good = await useAuthStore.getState().unlock('4321');
+    expect(good.success).toBe(true);
     expect(useAuthStore.getState().isAuthenticated).toBe(true);
   });
 
-  it('تغییر نام کاربری بدون تغییر رمز عبور', () => {
-    const okRes = useAuthStore.getState().updateCredentials('bors123', 'analyst');
-    expect(okRes.success).toBe(true);
-    expect(useAuthStore.getState().username).toBe('analyst');
-
-    useAuthStore.getState().logout();
-    // ورود با نام کاربری جدید و همان رمز قبلی
-    const loginRes = useAuthStore.getState().login('analyst', 'bors123');
-    expect(loginRes.success).toBe(true);
+  it('۶ رویِ دیسک فقط salt+hash است، نه کدِ خام', async () => {
+    await useAuthStore.getState().setLock('9876');
+    const blob = localStorage.getItem(LOCK_KEY) || '';
+    expect(blob).toContain('PBKDF2-SHA256');
+    expect(blob).not.toContain('9876');
+    expect(localStorage.getItem(LEGACY_KEY)).toBeNull();
   });
 
-  it('حفاظت ضد بروت‌فورس پس از ۵ تلاش ناموفق فعال می‌شود', () => {
-    // ۴ تلاش ناموفق
-    for (let i = 1; i <= 4; i++) {
-      const res = useAuthStore.getState().login('admin', 'wrong_' + i);
-      expect(res.success).toBe(false);
-      expect(useAuthStore.getState().failedAttempts).toBe(i);
-      expect(useAuthStore.getState().lockoutUntil).toBeNull();
-    }
-
-    // تلاش پنجم منجر به قفل شدن می‌شود
-    const fifthRes = useAuthStore.getState().login('admin', 'wrong_5');
-    expect(fifthRes.success).toBe(false);
-    expect(fifthRes.error).toContain('قفل');
-    expect(useAuthStore.getState().failedAttempts).toBe(5);
-    expect(useAuthStore.getState().lockoutUntil).toBeGreaterThan(Date.now());
+  it('۷ پنج تلاشِ ناموفق ⇒ قفلِ ۳۰ ثانیه‌ای (سنسورِ ضد بروت‌فورس زنده است)', async () => {
+    await useAuthStore.getState().setLock('1111');
+    useAuthStore.getState().logout();
+    for (let i = 0; i < 5; i++) await useAuthStore.getState().unlock('0000');
+    const blocked = await useAuthStore.getState().unlock('1111');
+    expect(blocked.success).toBe(false);
+    expect(blocked.error).toContain('مسدود');
     expect(useAuthStore.getState().getLockoutRemaining()).toBeGreaterThan(0);
+  });
 
-    // تلاش حتی با رمز درست در حالت قفل رد می‌شود
-    const blockedRes = useAuthStore.getState().login('admin', 'bors123');
-    expect(blockedRes.success).toBe(false);
-    expect(blockedRes.error).toContain('مسدود');
-    expect(useAuthStore.getState().isAuthenticated).toBe(false);
+  it('۸ رمزِ متنِ نسخۀ پیشین یک‌بار مهاجرت می‌کند و بعد خاموش می‌شود', async () => {
+    localStorage.setItem(LEGACY_KEY, 'oldsecret1');
+    useAuthStore.setState({ locked: false });
+
+    const wrong = await useAuthStore.getState().unlock('nope');
+    expect(wrong.success).toBe(false);
+
+    const ok = await useAuthStore.getState().unlock('oldsecret1');
+    expect(ok.success).toBe(true);
+    expect(localStorage.getItem(LEGACY_KEY)).toBeNull();
+    const blob = localStorage.getItem(LOCK_KEY) || '';
+    expect(blob).toContain('PBKDF2-SHA256');
+    expect(blob).not.toContain('oldsecret1');
+    expect(useAuthStore.getState().locked).toBe(true);
+  });
+
+  it('۹ برداشتنِ قفل با کدِ نادرست ممکن نیست، با کدِ درست بله', async () => {
+    await useAuthStore.getState().setLock('5566');
+    const bad = await useAuthStore.getState().clearLock('0000');
+    expect(bad.success).toBe(false);
+    expect(useAuthStore.getState().locked).toBe(true);
+
+    const good = await useAuthStore.getState().clearLock('5566');
+    expect(good.success).toBe(true);
+    expect(useAuthStore.getState().locked).toBe(false);
+    expect(localStorage.getItem(LOCK_KEY)).toBeNull();
+  });
+
+  it('۱۰ نام نمایشی ذخیره می‌شود و نقشی درِ احراز هویت ندارد', () => {
+    expect(useAuthStore.getState().setDisplayName('x').success).toBe(false);
+    expect(useAuthStore.getState().setDisplayName('trader').success).toBe(true);
+    expect(useAuthStore.getState().username).toBe('trader');
+    expect(localStorage.getItem('bors_auth_user')).toBe('trader');
+    expect(useAuthStore.getState().locked).toBe(false);
   });
 });

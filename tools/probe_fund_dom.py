@@ -30,11 +30,8 @@ with sync_playwright() as pw:
     pg.goto(BASE + "/#/fundamental")
     # صفحهٔ ورودِ محلی رویِ مسیر است؛ اگر بود رد شو (رمزِ پیش‌فرضِ خودِ برنامه)
     if pg.evaluate("() => !!document.querySelector('input[type=password]')"):
-        print("login gate seen")
-        u = pg.locator("input[type=text], input[name*=user i], input[autocomplete=username]").first
-        u.fill("admin")
-        pg.locator("input[type=password]").first.fill("bors123")
-        pg.get_by_role("button", name=__import__("re").compile(r"ورود")).first.click()
+        from bors_unlock import unlock  # قفلِ محلی؛ کد ازِ BORS_SCREEN_CODE
+        unlock(pg)
         pg.wait_for_timeout(4000)
 
     # جدولِ بنیادی سرد است؛ تا آمدنِ اولینِ ردیف صبر کن وگرنه DOM نصفه می‌بینیم

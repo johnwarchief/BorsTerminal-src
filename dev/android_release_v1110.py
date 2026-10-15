@@ -120,8 +120,9 @@ chk(exp.count("true") == 1 and exp.count("false") == 1,
 chk("android:allowMixedContent" not in MF and "allowMixedContent: false" in CAP,
     "A19 mixed content درِ پیکربندیِ Capacitor بسته است")
 chk("viewport-fit=cover" in HT, "A20 viewport-fit=cover تا env(safe-area-inset-*) صفر نماند")
-chk("calc(66px + env(safe-area-inset-bottom))" in CSS,
-    "A21 بدنه با ناوتی‌بارِ بلندشده‌یِ سیستم فاصله دارد")
+chk("calc(var(--bors-nav-h) + 8px + env(safe-area-inset-bottom))" in CSS
+    and re.search(r"--bors-nav-h: \d+px", CSS) is not None,
+    "A21 بدنه ازِ همۀ بلندیِ نوار (+envِ ناوتی‌بار) فاصله می‌گیرد")
 chk("function esc(" in ESC and "${esc(label)}" in ESC and "${esc(value)}" in ESC,
     "A22 مقدارهایِ پنلِ عیب‌یابی پیش ازِ innerHTML گریز می‌کنند")
 
@@ -213,6 +214,102 @@ chk("--live-reload" not in (NS or ""),
 chk("outputs/apk/release/*.apk" in WF and "ls -1 frontend/android/app/build/outputs/apk/release" in WF,
     "A40 خودۀ release با glob پیدا می‌شود، نه با نامِ ثابت")
 chk("*unsigned*" in publish, "A41 اگر نامِ فایل unsigned باشد، انتشار جداگانه بسته می‌شود")
+
+# ── A51..A58 قفلِ صفحه: بی‌هیچ اعتبارنامۀ ثابت درِ سورس یا باندل ─────────────
+# دورِ پیشین ثبت کرد که یکِ نام‌کاربری و رمزِ پیش‌فرض درِ `authStore.ts` و درِ
+# باندلِ built (پس درِ APK) می‌نشیند. رأیِ مالک درِ مأموریت ۱۴۰۵-۰۷-۲۳: آن
+# اعتبارنامه حفظ نمی‌شود و قابلیتِ ورودِ ضروری هم حذف نمی‌شود. سنسور یکِ تابع
+# است و کنترلِ منفی (A52) همان تابع را با متنِ کاشته‌شده می‌سنجد، پس سبزیِ A51
+# یعنی «نیست»، نه «نمی‌بینم».
+SECRET_PATTERNS = [r"bors123", r"DEFAULT_PASS", r"DEFAULT_USER"]
+
+
+def secret_hits(text):
+    return [p for p in SECRET_PATTERNS if re.search(p, text)]
+
+
+shipped, shipped_hits = 0, []
+for base, dirs, files in os.walk(os.path.join(ROOT, "frontend", "src")):
+    dirs[:] = [d for d in dirs if d != "__tests__"]
+    for f in files:
+        if not f.endswith((".ts", ".tsx")):
+            continue
+        shipped += 1
+        rel = os.path.relpath(os.path.join(base, f), ROOT).replace(os.sep, "/")
+        h = secret_hits(read(rel))
+        if h:
+            shipped_hits.append("%s:%s" % (rel, ",".join(h)))
+chk(shipped > 40 and not shipped_hits,
+    "A51 هیچ اعتبارنامۀ ثابتی درِ %d سورسِ ارسالیِ فرانت نیست%s"
+    % (shipped, ("" if not shipped_hits else " — " + "; ".join(shipped_hits[:3]))))
+chk(secret_hits('export const DEFAULT_PASS = "bors123";') == ["bors123", "DEFAULT_PASS"],
+    "A52 کنترلِ منفی: سنسور اعتبارنامۀ کاشته‌شده را می‌بیند (پس A51 کور نیست)")
+
+bundle = os.path.join(ROOT, "frontend", "dist", "assets")
+if os.path.isdir(bundle):
+    js = [f for f in os.listdir(bundle) if f.endswith(".js")]
+    leak = [f for f in js if secret_hits(open(os.path.join(bundle, f), encoding="utf-8",
+                                              errors="replace").read())]
+    chk(bool(js) and not leak, "A53 باندلِ built (%d فایل js) بی‌رمزِ ثابت است%s"
+        % (len(js), ("" if not leak else " — " + ",".join(leak[:3]))))
+else:
+    chk(False, "A53 باندلِ built وجود ندارد — ابتدا `npm run build` (سنجشِ artifact انجام نشد)")
+
+tool_hits = []
+for f in sorted(os.listdir(os.path.join(ROOT, "tools"))):
+    if f.endswith((".py", ".mts")) and secret_hits(read("tools/" + f)):
+        tool_hits.append(f)
+chk(not tool_hits, "A54 کاوشگرها رمز را تایپ نمی‌کنند (کد ازِ BORS_SCREEN_CODE)%s"
+    % ("" if not tool_hits else " — " + ",".join(tool_hits[:4])))
+
+AUTH = read("frontend/src/shared/stores/authStore.ts")
+LOGIN = read("frontend/src/widgets/LoginScreen.tsx")
+SHELL = read("frontend/src/app/layouts/AppShell.tsx")
+chk("PBKDF2-SHA256" in AUTH and "setItem(LOCK_KEY" in AUTH and "setItem(LEGACY" not in AUTH,
+    "A55 قفل فقط salt+hash می‌نویسد؛ هیچ نوشتنِ متنِ خام باقی نیست")
+chk("normalizeCode" in AUTH and "0x06f0" in AUTH,
+    "A56 ارقامِ فارسی/عربی نرمال می‌شوند (وگرنه «۱۲۳۴»ِ تایپی قفل را باز نمی‌کند)")
+chk("locked && !isAuthenticated" in SHELL,
+    "A57 دروازۀ قفل فقط وقتی قفل چیده شده بند است — پروفیلِ بی‌قفل قفل نمی‌شود")
+chk('placeholder="admin"' not in LOGIN and "احراز هویت" not in LOGIN
+    and 'autoComplete="off"' in LOGIN,
+    "A58 صفحۀ قفل نام‌کاربری نمی‌خواهد و ادعایِ «احراز هویت امن» ندارد")
+
+# ── A59..A65 مراسمِ کلیدِ انتشار: قراردادِ دو‌طرفۀ اسکریپت ↔ workflow ─────────
+# بدونِ کلیدِ پایدار، «نسخۀ رسمی» معنی ندارد (دو ریلیزِ منتشرشده با دو گواهیِ
+# debugِ متفاوت ساخته شدند و ارتقایِ درجا هیچ‌وقت ممکن نبود). کلید را مالک
+# می‌سازد؛ کاری که این سنجه‌ها می‌کنند این است که اسکریپتِ مراسمِ او دقیقاً همان
+# نام‌ها و همان قالبی را بسازد که mobile.yml می‌خواند — و هیچ رمزی درِ argv
+# یا stdout نیفتد.
+CER = read("scripts/android_release_key_ceremony.sh")
+chk("set -euo pipefail" in CER and 'read -r -s' in CER,
+    "A59 مراسمِ کلید: ورودیِ رمز بی‌پیش‌نمایش است و اسکریپت fail-fast")
+chk("-storepass " not in CER and "-keypass " not in CER
+    and "-storepass:env" in CER and "-storepass:file" in CER,
+    "A60 رمز هیچ‌وقت درِ فرمانِ keytool (argv، فهرستِ پروسه‌ها) نمی‌نشیند")
+chk('gh secret set ANDROID_RELEASE_KEYSTORE_B64 --repo "$REPO" --body "-"' in CER
+    and 'gh secret set ANDROID_RELEASE_KEYSTORE_PROPS --repo "$REPO" --body "-"' in CER,
+    "A61 هر دو secret ازِ stdin می‌روند، نه ازِ متنِ فرمان")
+_secret_names_wf = set(re.findall(r"secrets\.(ANDROID_RELEASE_[A-Z_0-9]+)", WF))
+_secret_names_cer = set(re.findall(r"gh secret set (ANDROID_RELEASE_[A-Z_0-9]+)", CER))
+chk(_secret_names_wf and _secret_names_wf == _secret_names_cer,
+    "A62 نامِ secretها درِ اسکریپت و workflow یکی است: %s"
+    % ", ".join(sorted(_secret_names_wf | _secret_names_cer)))
+_props_fmt = " ".join(l for l in CER.splitlines() if "storePassword=%s" in l)
+_props_keys = re.findall(r"(?:\\n)?([A-Za-z]+)=%s", _props_fmt)
+_gradle_keys = re.findall(r"getProperty\('([a-zA-Z]+)'\)", GR)
+chk(sorted(_props_keys) == ["keyAlias", "keyPassword", "storePassword"]
+    and set(_props_keys) <= set(_gradle_keys),
+    "A63 قالبِ props (%s) همان چیزی است که build.gradle می‌خواند (%s)"
+    % (",".join(sorted(_props_keys)), ",".join(sorted(set(_gradle_keys)))))
+chk("storeFile=" not in CER.split("cmd_publish_secrets")[1],
+    "A64 اسکریپت storeFile را درِ secret نمی‌گذارد — workflow خودش مسیرِ موقت را می‌نویسد")
+chk("کلید از قبل هست" in CER and "به‌جایِ کلیدِ انتشارِ قبلی نسازید" in CER,
+    "A65 keygen رویِ کلیدِ موجود بازنویسی نمی‌کند (کلیدِ انتشارِ قبلی جایِ تازه ندارد)")
+# کنترلِ منفی: اگر روزی رمز به argv برود، A60 باید ببیند
+_bad = CER.replace("-storepass:env BORS_SP", "-storepass hunter2")
+chk("-storepass " in _bad and "-storepass " not in CER,
+    "A66 کنترلِ منفی: سنسورِ argv با یکِ بازنویسیِ ساختگی قرمز می‌شود")
 
 print("android_release_v1110: %d passed / %d failed" % (PASS, FAIL))
 sys.exit(1 if FAIL else 0)

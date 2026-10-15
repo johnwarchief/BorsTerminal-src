@@ -33,12 +33,22 @@ describe('AppShell smoke', () => {
     useAuthStore.setState({ isAuthenticated: true });
   });
 
-  it('در غیاب احراز هویت، صفحه لاگین نمایش داده می‌شود', async () => {
-    useAuthStore.setState({ isAuthenticated: false });
+  it('بی‌قفلِ چیده‌شده، برنامه بی‌درز باز می‌شود (اعتبارنامۀ ثابتی دیگر نیست)', async () => {
+    useAuthStore.setState({ isAuthenticated: false, locked: false });
     renderApp('/');
     await waitFor(() => {
-      expect(screen.getByText('ورود به ایستگاه معاملاتی ⏎')).toBeInTheDocument();
+      expect(screen.queryByTestId('login-screen')).not.toBeInTheDocument();
     });
+  });
+
+  it('با قفلِ صفحه، دروازۀ قفل می‌آید — نه فرمِ نام‌کاربری', async () => {
+    useAuthStore.setState({ isAuthenticated: false, locked: true });
+    renderApp('/');
+    await waitFor(() => {
+      expect(screen.getByTestId('login-screen')).toBeInTheDocument();
+    });
+    expect(screen.getByTestId('login-submit').textContent).toContain('بازکردنِ صفحه');
+    expect(screen.queryByTestId('login-code')).not.toBeNull();
   });
 
   it('سایدبار فارسی رندر می شود', async () => {

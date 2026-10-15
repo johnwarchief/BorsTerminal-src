@@ -53,10 +53,8 @@ STORES = """() => ({
 
 def login(pg):
     pg.goto(BASE + "/#/fundamental")
-    if pg.evaluate("() => !!document.querySelector('input[type=password]')"):
-        pg.locator("input").first.fill("admin")
-        pg.locator("input[type=password]").first.fill("bors123")
-        pg.get_by_role("button", name=re.compile("ورود")).first.click()
+    from bors_unlock import unlock  # قفلِ محلی؛ کد ازِ BORS_SCREEN_CODE
+    unlock(pg)
     pg.wait_for_timeout(2000)
 
 

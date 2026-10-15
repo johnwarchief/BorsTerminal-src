@@ -36,10 +36,8 @@ def main():
         pg = b.new_page(viewport={"width": 1600, "height": 900})
         pg.on("pageerror", lambda e: stacks.append(getattr(e, "stack", str(e)) or str(e)))
         pg.goto(BASE + "/#/fundamental")
-        if pg.evaluate("() => !!document.querySelector('input[type=password]')"):
-            pg.locator("input").first.fill("admin")
-            pg.locator("input[type=password]").first.fill("bors123")
-            pg.get_by_role("button", name=re.compile("ورود")).first.click()
+        from bors_unlock import unlock  # قفلِ محلی؛ کد ازِ BORS_SCREEN_CODE
+        unlock(pg)
         pg.wait_for_timeout(2000)
         pg.goto(f"{BASE}/#/technical/{SYM}")
         pg.wait_for_timeout(9000)

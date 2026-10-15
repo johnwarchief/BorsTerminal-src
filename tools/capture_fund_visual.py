@@ -101,10 +101,8 @@ class Valen:
 
 def login(pg, base: str):
     pg.goto(base + "/#/fundamental")
-    if pg.evaluate("() => !!document.querySelector('input[type=password]')"):
-        pg.locator("input").first.fill("admin")
-        pg.locator("input[type=password]").first.fill("bors123")
-        pg.get_by_role("button", name=re.compile("ورود")).first.click()
+    from bors_unlock import unlock  # قفلِ محلی؛ کد ازِ BORS_SCREEN_CODE
+    unlock(pg)
     pg.wait_for_function("() => document.querySelectorAll('tbody tr').length > 5", timeout=120000)
     pg.wait_for_timeout(2500)
 

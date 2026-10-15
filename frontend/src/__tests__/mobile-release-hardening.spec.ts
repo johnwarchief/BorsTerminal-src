@@ -23,15 +23,25 @@ describe('invariantsِ انتشارِ اندروید', () => {
     expect(m![1]).toContain('width=device-width');
   });
 
-  it('بدنه و بنرِ هشدار، بلندای ناوتی‌بارِ سیستم را حساب می‌کنند', () => {
-    expect(css).toMatch(/\.app-content\s*\{\s*padding-bottom:\s*calc\(66px \+ env\(safe-area-inset-bottom\)\)/);
-    expect(css).toMatch(/\[data-testid="price-alert-banner"\]\s*\{\s*bottom:\s*calc\(1rem \+ env\(safe-area-inset-bottom\)\)/);
+  it('بدنه و بنرِ هشدار، بلندای ناوتی‌بار و نوارِ پایین را حساب می‌کنند', () => {
+    // عددِ جادوییِ جدا (66px اینجا، 58px آن‌جا) همان چیزی بود که با هر تغییرِ
+    // نوار یکی از them جا می‌ماند؛ حالا همه ازِ --bors-nav-h می‌آیند.
+    expect(css).toMatch(/\.app-content\s*\{\s*padding-bottom:\s*calc\(var\(--bors-nav-h\) \+ 8px \+ env\(safe-area-inset-bottom\)\)/);
+    expect(css).toMatch(/\[data-testid="price-alert-banner"\]\s*\{\s*bottom:\s*calc\(var\(--bors-nav-h\) \+ 1rem \+ env\(safe-area-inset-bottom\)\)/);
+  });
+
+  it('همۀ فاصله‌هایِ پایین ازِ یکِ متغیر می‌آیند (نه عددِ جداگانه)', () => {
+    const users = ['--bors-nav-h) + 8px + env', '--bors-nav-h) + 1rem + env',
+      '--bors-nav-h) + env', '--bors-nav-h, 104px) + 8px + env'];
+    const all = css + fs.readFileSync('src/shared/api/local/diagnostics.ts', 'utf8');
+    for (const u of users) expect(all).toContain(u);
+    expect(css).toMatch(/--bors-nav-h: \d+px/);
   });
 
   it('پنلِ عیب‌یابی هم با viewport-fit=cover زیرِ نوارِ سیستم نمی‌ماند', () => {
     const diag = fs.readFileSync('src/shared/api/local/diagnostics.ts', 'utf8');
-    expect(diag).toContain('calc(70px + env(safe-area-inset-bottom))');
-    expect(diag).toContain('calc(112px + env(safe-area-inset-bottom))');
+    expect(diag).toContain('calc(var(--bors-nav-h, 66px) + 6px + env(safe-area-inset-bottom))');
+    expect(diag).toContain('calc(var(--bors-nav-h, 66px) + 48px + env(safe-area-inset-bottom))');
   });
 
   it('پشتیبانِ ابری و `adb backup` خاموش‌اند، صفحه‌کلید فشرده نمی‌کند', () => {

@@ -1,13 +1,28 @@
+// پنجرۀ «نام و قفلِ صفحه» + سازگاریِ تم چارت (بلوکِ آخر دست‌نخورده مانده است)
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { webcrypto } from 'node:crypto';
 import { UserSettingsModal } from '../widgets/UserSettingsModal';
 import { useAuthStore } from '../shared/stores/authStore';
 import { nahayatNegarLightTheme, nahayatNegarDarkTheme } from '../features/technical/nahayatnegar/lib/chartTheme';
 
-describe('پنجره تنظیمات کاربر و امنیت (UserSettingsModal)', () => {
+if (!globalThis.crypto?.subtle) {
+  Object.defineProperty(globalThis, 'crypto', { value: webcrypto, configurable: true });
+}
+
+async function armLock(code = '۴۴۵۵') {
+  await useAuthStore.getState().setLock(code);
+  useAuthStore.setState({ isAuthenticated: false });
+}
+
+describe('پنجرهٔ نام و قفلِ صفحه (UserSettingsModal)', () => {
   beforeEach(() => {
-    useAuthStore.getState().resetCredentials();
-    useAuthStore.getState().login('admin', 'bors123');
+    localStorage.clear();
+    sessionStorage.clear();
+    useAuthStore.getState().logout();
+    // نامِ ازِ پیش پرشده: فرم، «نام نمایشی» را required دارد و بی‌آن،
+    // مرورگر/jsbedom اصلاً submit نمی‌کند (تستِ بی‌نام، تستِ قفل نیست).
+    useAuthStore.setState({ locked: false, failedAttempts: 0, lockoutUntil: null, username: 'trader' });
   });
 
   it('در حالت open=false چیزی رندر نمی‌شود', () => {
@@ -15,62 +30,82 @@ describe('پنجره تنظیمات کاربر و امنیت (UserSettingsModal)
     expect(container.firstChild).toBeNull();
   });
 
-  it('در حالت open=true فیلدهای نام کاربری و رمز عبور نمایش می‌یابند', () => {
-    render(<UserSettingsModal open={true} onClose={vi.fn()} />);
-    expect(screen.getByText('تنظیمات حساب کاربری و امنیت')).toBeInTheDocument();
-    expect(screen.getByPlaceholderText('admin')).toHaveValue('admin');
+  it('عنوانِ صادق است و وضعیتِ قفل «غیرفعال» نشان داده می‌شود', async () => {
+    render(<UserSettingsModal open onClose={vi.fn()} />);
+    expect(await screen.findByText('نام و قفلِ صفحه')).toBeInTheDocument();
+    expect(screen.getByTestId('settings-lock-state').textContent).toContain('غیرفعال');
+    // ادعایِ «احراز هویت امن» حذف شده است:
+    expect(screen.getByText(/قفلِ نمایشیِ محلی/)).toBeInTheDocument();
   });
 
-  it('ثبت بدون رمز عبور فعلی پیام خطا می‌دهد', async () => {
-    render(<UserSettingsModal open={true} onClose={vi.fn()} />);
-    const submitBtn = screen.getByText('ذخیره تغییرات');
-    const form = submitBtn.closest('form')!;
-    fireEvent.submit(form);
-
-    await waitFor(() => {
-      expect(screen.getByRole('alert')).toHaveTextContent('رمز عبور فعلی');
-    });
+  it('کدِ کوتاه قفل نمی‌شود و پیامش می‌آید', async () => {
+    render(<UserSettingsModal open onClose={vi.fn()} />);
+    fireEvent.change(screen.getByTestId('settings-username'), { target: { value: 'trader' } });
+    fireEvent.change(screen.getByTestId('settings-new-code'), { target: { value: '123' } });
+    fireEvent.change(screen.getByTestId('settings-confirm-code'), { target: { value: '123' } });
+    fireEvent.click(screen.getByTestId('settings-submit'));
+    await waitFor(() => expect(screen.getByTestId('settings-error')).toHaveTextContent('۴ رقم'));
+    expect(useAuthStore.getState().locked).toBe(false);
   });
 
-  it('عدم تطابق رمز عبور جدید و تکرار آن خطای متناظر را نشان می‌دهد', async () => {
-    render(<UserSettingsModal open={true} onClose={vi.fn()} />);
+  it('کدِ درست قفل را فعال می‌کند و رویِ دیسک هش می‌ماند', async () => {
+    render(<UserSettingsModal open onClose={vi.fn()} />);
+    fireEvent.change(screen.getByTestId('settings-username'), { target: { value: 'trader' } });
+    fireEvent.change(screen.getByTestId('settings-new-code'), { target: { value: '۴۴۵۵' } });
+    fireEvent.change(screen.getByTestId('settings-confirm-code'), { target: { value: '4455' } });
+    fireEvent.click(screen.getByTestId('settings-submit'));
 
-    const currentPassInput = screen.getByPlaceholderText('جهت تایید هویت، رمز عبور فعلی را وارد کنید');
-    const newPassInput = screen.getByPlaceholderText('اگر قصد تغییر رمز را دارید، رمز جدید را وارد کنید');
-
-    fireEvent.change(currentPassInput, { target: { value: 'bors123' } });
-    fireEvent.change(newPassInput, { target: { value: 'newpass123' } });
-
-    const confirmPassInput = screen.getByPlaceholderText('تکرار رمز عبور جدید');
-    fireEvent.change(confirmPassInput, { target: { value: 'different' } });
-
-    const submitBtn = screen.getByText('ذخیره تغییرات');
-    const form = submitBtn.closest('form')!;
-    fireEvent.submit(form);
-
-    await waitFor(() => {
-      expect(screen.getByRole('alert')).toHaveTextContent('همخوانی');
-    });
+    await waitFor(() => expect(screen.getByTestId('settings-success')).toBeInTheDocument());
+    expect(useAuthStore.getState().locked).toBe(true);
+    expect((screen.getByTestId('settings-lock-state').textContent || '')).toContain('فعال');
+    const blob = localStorage.getItem('bors_screen_lock') || '';
+    expect(blob).toContain('PBKDF2-SHA256');
+    expect(blob).not.toContain('4455');
+    expect(useAuthStore.getState().username).toBe('trader');
   });
 
-  it('به‌روزرسانی موفق نام کاربری و پیام تایید', async () => {
-    render(<UserSettingsModal open={true} onClose={vi.fn()} />);
+  it('بی‌کدِ فعلی، تغییرِ کد رد می‌شود', async () => {
+    await armLock();
+    render(<UserSettingsModal open onClose={vi.fn()} />);
+    fireEvent.change(screen.getByTestId('settings-new-code'), { target: { value: '9999' } });
+    fireEvent.change(screen.getByTestId('settings-confirm-code'), { target: { value: '9999' } });
+    fireEvent.click(screen.getByTestId('settings-submit'));
+    await waitFor(() => expect(screen.getByTestId('settings-error')).toHaveTextContent('کدِ فعلی'));
+    expect(useAuthStore.getState().locked).toBe(true);
+  });
 
-    const userInput = screen.getByPlaceholderText('admin');
-    const currentPassInput = screen.getByPlaceholderText('جهت تایید هویت، رمز عبور فعلی را وارد کنید');
+  it('کدِ فعلیِ غلط قفل را برندارد', async () => {
+    await armLock();
+    render(<UserSettingsModal open onClose={vi.fn()} />);
+    fireEvent.change(screen.getByTestId('settings-current-code'), { target: { value: '0000' } });
+    fireEvent.click(screen.getByTestId('settings-submit'));
+    await waitFor(() => expect(screen.getByTestId('settings-error')).toBeInTheDocument());
+    expect(useAuthStore.getState().locked).toBe(true);
+  });
 
-    fireEvent.change(userInput, { target: { value: 'super_admin' } });
-    fireEvent.change(currentPassInput, { target: { value: 'bors123' } });
+  it('کدِ فعلیِ درست، قفل را برمی‌دارد (و نام ذخیره می‌ماند)', async () => {
+    await armLock();
+    render(<UserSettingsModal open onClose={vi.fn()} />);
+    fireEvent.change(screen.getByTestId('settings-username'), { target: { value: 'analyst' } });
+    fireEvent.change(screen.getByTestId('settings-current-code'), { target: { value: '4455' } });
+    fireEvent.click(screen.getByTestId('settings-submit'));
+    await waitFor(() => expect(screen.getByTestId('settings-success')).toHaveTextContent('برداشته شد'));
+    expect(useAuthStore.getState().locked).toBe(false);
+    expect(localStorage.getItem('bors_screen_lock')).toBeNull();
+  });
 
-    const submitBtn = screen.getByText('ذخیره تغییرات');
-    const form = submitBtn.closest('form')!;
-    fireEvent.submit(form);
+  it('تغییرِ کد با کدِ فعلیِ درست انجام می‌شود و کدِ قدیمی دیگر نمی‌گشاید', async () => {
+    await armLock();
+    render(<UserSettingsModal open onClose={vi.fn()} />);
+    fireEvent.change(screen.getByTestId('settings-current-code'), { target: { value: '4455' } });
+    fireEvent.change(screen.getByTestId('settings-new-code'), { target: { value: '۷۷۸۸' } });
+    fireEvent.change(screen.getByTestId('settings-confirm-code'), { target: { value: '7788' } });
+    fireEvent.click(screen.getByTestId('settings-submit'));
+    await waitFor(() => expect(screen.getByTestId('settings-success')).toHaveTextContent('عوض شد'));
 
-    await waitFor(() => {
-      expect(screen.getByRole('status')).toHaveTextContent('با موفقیت به‌روزرسانی شد');
-    });
-
-    expect(useAuthStore.getState().username).toBe('super_admin');
+    useAuthStore.setState({ isAuthenticated: false });
+    expect((await useAuthStore.getState().unlock('4455')).success).toBe(false);
+    expect((await useAuthStore.getState().unlock('۷۷۸۸')).success).toBe(true);
   });
 });
 

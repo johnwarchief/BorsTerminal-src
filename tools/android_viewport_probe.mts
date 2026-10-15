@@ -143,6 +143,50 @@ for (const spec of SIZES) {
           .map((e) => Math.round(e.getBoundingClientRect().width)).filter((n) => n > 0 && n < 44).length,
         barScrolls: (() => { const b = document.querySelector("aside[data-shell='sidebar']");
           return b ? b.scrollWidth > b.clientWidth + 1 : null; })(),
+        // دورِ ۱۴۰۵-۰۷-۲۳ رأیِ مالک داده شد: تب‌ها باید ۴۴pxِ کامل بگیرند و
+        // خوشۀِ ابزارها ردیفِ دومِ خودش باشد. پس عرضِ تب و بریدگیِ ابزارها
+        // ازِ «عددِ بی‌حکم» به سنجۀ رد تبدیل شد.
+        tabWidths: Array.from(document.querySelectorAll("aside[data-shell='sidebar'] a"))
+          .map((e) => Math.round(e.getBoundingClientRect().width)).filter((n) => n > 0),
+        navRowScrolls: (() => { const n = document.querySelector("aside[data-shell='sidebar'] nav");
+          return n ? n.scrollWidth > n.clientWidth + 1 : null; })(),
+        utilityClipped: (() => {
+          const bar = document.querySelector("aside[data-shell='sidebar']");
+          if (!bar) return 0;
+          const bb = bar.getBoundingClientRect();
+          // کنترلی که عمداً پنهان است (مثلاً «به‌روزرسانی» درِ گوشی، که
+          // /api/update پشتیبانی نمی‌شود) بریده نیست؛ شمرده می‌شود جدا.
+          return Array.from(bar.querySelectorAll("div.mt-auto button, div.mt-auto a"))
+            .filter((e) => { const r = e.getBoundingClientRect();
+              if (r.width < 1 || r.height < 1) return false;
+              return r.bottom > bb.bottom + 1 || r.top < bb.top - 1
+                || r.right > bb.right + 1 || r.left < bb.left - 1; }).length;
+        })(),
+        utilityHidden: (() => {
+          const bar = document.querySelector("aside[data-shell='sidebar']");
+          if (!bar) return 0;
+          return Array.from(bar.querySelectorAll("div.mt-auto button, div.mt-auto a"))
+            .filter((e) => { const r = e.getBoundingClientRect();
+              return r.width < 1 || r.height < 1; }).length;
+        })(),
+        // جزئیاتِ همان بریدگی: بدونِ این، «۱ تا بریده» هیچ چیزی دربارهٔ چیدمان
+        // نمی‌گوید و اصلاح حدسی می‌شود.
+        utilityClipDetail: (() => {
+          const bar = document.querySelector("aside[data-shell='sidebar']");
+          if (!bar) return [];
+          const bb = bar.getBoundingClientRect();
+          return Array.from(bar.querySelectorAll("div.mt-auto button, div.mt-auto a, div.mt-auto > div"))
+            .map((e) => {
+              const r = e.getBoundingClientRect();
+              const tag = (e.getAttribute("aria-label") || e.getAttribute("title")
+                || e.tagName || "").slice(0, 26);
+              // پنهانِ عمدی (0×0) بریدگی نیست؛ utilityHidden آن را می‌شمارد.
+              if (r.width < 1 || r.height < 1) return { tag, x: 0, y: 0, w: 0, h: 0, out: false };
+              return { tag, x: Math.round(r.x), y: Math.round(r.y), w: Math.round(r.width),
+                h: Math.round(r.height), out: r.bottom > bb.bottom + 1 || r.top < bb.top - 1
+                  || r.right > bb.right + 1 || r.left < bb.left - 1 };
+            }).filter((o) => o.out).slice(0, 6);
+        })(),
       };
     });
     page.off('console', onConsole);
@@ -167,6 +211,17 @@ for (const spec of SIZES) {
         rowsRendered: expectRows ? Number(m.rowCount) > 0 : m.rowCount === 0,
         navOnScreen: m.navBox === null || Number(m.navBox.bottom) <= Number(m.vh) + 1,
         touchTargetsOk: Number(m.touchTargetsUnder44) === 0,
+        tabsHaveTouchWidth: Number(m.navItemsUnder44Wide) === 0,
+        utilityNotClipped: Number(m.utilityClipped) === 0,
+        barStaysPut: m.barScrolls !== true,
+        /* ارتفاعِ واقعیِ نوار و فاصلۀِ زیرِ محتوا باید همیشه هم‌خوان باشد،
+           وگرنه ردیفِ آخرِ جدول زیرِ نوار می‌ماند (این همان چیزی است که با
+           عددِ جادوییِ ۵۸/۶۶ درِ دورِ پیشین شکست). */
+        padClearsBar: (() => {
+          const pad = parseFloat(String(m.appContentPadBottom));
+          const h = m.navBox ? Number(m.navBox.h) : 0;
+          return !m.navBox || (isFinite(pad) && pad + 1 >= h);
+        })(),
         cleanConsole: realErrs.length === 0,
       },
     });
@@ -189,7 +244,9 @@ for (const r of results as { size: string; route: string; verdict: Record<string
   if (failed.length) bad++;
   console.log(`${r.size} ${r.route.padEnd(14)} rows=${String(r.measured.rowCount).padStart(4)} ` +
     `ovfX=${r.measured.overflowX} nav=${JSON.stringify(r.measured.navBox)} ` +
-    `${failed.length ? 'FAIL: ' + failed.join(', ') : 'ok'}`);
+    `${failed.length ? 'FAIL: ' + failed.join(', ') : 'ok'}` +
+    (r.measured.utilityClipDetail && (r.measured.utilityClipDetail as unknown[]).length
+      ? ` clip=${JSON.stringify(r.measured.utilityClipDetail)}` : ''));
 }
-console.log(`\nPROBE ${results.length} record (3 انداز × ${ROUTES.length} route) — ${bad} با سنجۀ رد`);
+console.log(`\nPROBE ${results.length} record (${SIZES.length} انداز × ${ROUTES.length} route) — ${bad} با سنجۀ رد`);
 process.exit(bad ? 1 : 0);
