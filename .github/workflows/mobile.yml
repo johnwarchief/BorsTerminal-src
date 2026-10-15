@@ -373,7 +373,17 @@ jobs:
           mkdir -p _audit/android_release
           ARGS=(--json _audit/android_release/cert_release.json)
           if [ -n "$EXPECT" ]; then ARGS+=(--expect-fingerprint "$EXPECT"); fi
-          python3 tools/apk_cert_fingerprint.py "$APK" "${ARGS[@]}" || true
+          # `|| true` عمداً بیرون ازِ set -e نگه داشته شد: کرشِ خواننده باید به
+          # دستِ خودِ گام برسد و باِ پیامِ «خواننده خراب است» بمیرد، نه با
+          # FileNotFoundErrorِ بی‌سروصدا که «گواهی نمی‌خواند» را از «ابزار کرش
+          # کرد» جدا نمی‌کند. این تفکیک امنیتی است، نه آرایشی.
+          RC=0
+          python3 tools/apk_cert_fingerprint.py "$APK" "${ARGS[@]}" 2>&1 | tee _audit/android_release/cert_reader.log || RC=$?
+          if [ ! -s _audit/android_release/cert_release.json ]; then
+            echo "READER-FAILED: خودِ ابزارِ خواندنِ گواهی خروجیِ JSON نساخت (rc=$RC)" >> "$GITHUB_STEP_SUMMARY"
+            echo "آخرینِ خواننده:" >&2; tail -12 _audit/android_release/cert_reader.log >&2
+            exit 1
+          fi
           V=$(python3 -c 'import json,sys;print(json.load(open("_audit/android_release/cert_release.json",encoding="utf-8"))["verdict"])')
           echo "certificate identity: $V (expected=${EXPECT:-none})" >> "$GITHUB_STEP_SUMMARY"
           if [ -z "$EXPECT" ]; then

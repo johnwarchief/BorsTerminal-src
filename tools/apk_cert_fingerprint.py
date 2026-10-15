@@ -128,15 +128,31 @@ def signer_certs(data: bytes) -> list[bytes]:
     return certs
 
 
+def _validity(cert) -> tuple[str, str]:
+    """`not_valid_*_utc` از cryptography 42 آمد؛ رویِ runner هایِ قدیمی‌تر همان
+    داتایمِ naive است. نسخه را نمی‌شناسیم، پس هر دو را امتحان می‌کنیم — و اگر
+    هیچ‌کدام نبود، رشتهٔ خالی می‌دهیم نه کرش: نبودِ تاریخِ اعتبار، دلیلِ ردِ
+    امضا نیست، و این ابزار برایِ خواندنِ اثرانگشت ساخته شده است."""
+    for pair in (("not_valid_before_utc", "not_valid_after_utc"),
+                 ("not_valid_before", "not_valid_after")):
+        try:
+            return cert.__getattribute__(pair[0]).isoformat(), \
+                cert.__getattribute__(pair[1]).isoformat()
+        except AttributeError:
+            continue
+    return "", ""
+
+
 def _cert_info(cert) -> dict:
     from cryptography.hazmat.primitives import hashes
     fp = cert.fingerprint(hashes.SHA256()).hex()
+    nb, na = _validity(cert)
     return {
         "subject": cert.subject.rfc4514_string(),
         "issuer": cert.issuer.rfc4514_string(),
         "serial": format(cert.serial_number, "x"),
-        "not_before": cert.not_valid_before_utc.isoformat(),
-        "not_after": cert.not_valid_after_utc.isoformat(),
+        "not_before": nb,
+        "not_after": na,
         "sha256_fingerprint": fp,
         "pretty_fingerprint": ":".join(fp[i:i + 2].upper() for i in range(0, 64, 2)),
     }

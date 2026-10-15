@@ -481,6 +481,19 @@ chk('UIHITS=$(grep -oE "قیف|تابلو|شاخص|غربالگری|معامله
     and "a11y-$LABEL-evidence.txt" in EMU,
     "A93 واژگانِ سنجۀ دسترس‌پذیری ازِ خودِ رابط است و FAIL بی‌شواهد نمی‌ماند")
 
+# ── A94 جداکردنِ «خواننده کرش کرد» از «گواهی نمی‌خواند» ─────────────────────
+# رانشِ ۳۸۸۱۰۲۳۵۰۴ گواهی را رد کرد، درحالی‌که apksigner اثرانگشتِ یکسانِ با
+# vars داده بود: `cert.not_valid_before_utc` رویِ cryptographyِ قدیمیِ runner
+# وجود ندارد، ابزار می‌ترکد، JSON ساخته نمی‌شود و گام با FileNotFoundError
+# می‌مرد — همان شکلی که یکِ باگِ ابزار، خودش را «یافتۀ امنیتی» جا می‌زند.
+_cert_tool = read("tools/apk_cert_fingerprint.py") or ""
+_cert_step_here = step_body("Verify the release certificate identity")
+chk("READER-FAILED" in _cert_step_here and "-s _audit/android_release/cert_release.json" in _cert_step_here,
+    "A94 گامِ گواهی، کرشِ خواننده را از عدم‌تطابقِ اثرانگشت جدا می‌کند")
+chk("not_valid_before_utc.isoformat()" not in _cert_tool
+    and "def _validity(" in _cert_tool and "not_valid_before" in _cert_tool,
+    "A94-ب خوانندهٔ گواهی تاریخِ اعتبار را ازِ helperِ نسخه‌تحمل‌پذیر می‌خواند")
+
 # ── A73..A75 سنسورِ صفحۀ ۴۰۴ درِ کاوشگرِ viewport ────────────────────────────
 # نسخهٔ پیشین با گشتنِ `/پیدا نشد|۴۰|404/` درِ متنِ body می‌گشت: «۴۰» درونِ
 # قیمت‌ها هم صدا می‌خورد، پس ۹ پروندۀ واقعی ۴۰۴ خوانده می‌شدند و خودِ صفحۀ
