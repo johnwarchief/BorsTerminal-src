@@ -1,0 +1,29 @@
+/market                    ready=marker  ovX=    0px ovY=    0px hardClip= 0 ellipsis=12 offscreen= 0 unreachable= 0 canvas= 0 err=0/0 dom=1370
+/market-status             ready=marker  ovX=    0px ovY=    0px hardClip= 0 ellipsis=12 offscreen= 0 unreachable= 0 canvas=10 err=0/0 dom=7312
+/technical/فولاد           ready=marker  ovX=    0px ovY=    0px hardClip= 0 ellipsis= 0 offscreen= 0 unreachable= 0 canvas=10 err=0/0 dom=748
+/technical/خوز             ready=marker  ovX=    0px ovY=    0px hardClip= 0 ellipsis= 0 offscreen= 0 unreachable= 0 canvas= 0 err=2/2 dom=592
+   console: Failed to load resource: the server responded with a status of 404 (Not Found) ⏐ Failed to load resource: the server responded with a status of 404 (Not Found)
+   network: HTTP 404 http://127.0.0.1:8000/api/fundamental/خوز ⏐ HTTP 404 http://127.0.0.1:8000/api/fundamental/خوز
+/technical                 ready=marker  ovX=    0px ovY=    0px hardClip= 0 ellipsis= 0 offscreen= 0 unreachable= 0 canvas=10 err=0/2 dom=840
+   network: FAILED(net::ERR_ABORTED) http://127.0.0.1:8000/api/fundamental/خوز ⏐ FAILED(net::ERR_ABORTED) http://127.0.0.1:8000/api/fundamental/خوز
+/fundamental/فولاد         ready=marker  ovX=    0px ovY=    0px hardClip= 0 ellipsis= 0 offscreen= 0 unreachable= 0 canvas= 0 err=0/0 dom=706
+/fundamental/خوز           ready=marker  ovX=    0px ovY=    0px hardClip= 0 ellipsis= 0 offscreen= 0 unreachable= 0 canvas= 0 err=2/2 dom=287
+   console: Failed to load resource: the server responded with a status of 404 (Not Found) ⏐ Failed to load resource: the server responded with a status of 404 (Not Found)
+   network: HTTP 404 http://127.0.0.1:8000/api/fundamental/خوز ⏐ HTTP 404 http://127.0.0.1:8000/api/fundamental/خوز
+/fundamental               ready=marker  ovX=    0px ovY=    0px hardClip= 0 ellipsis= 1 offscreen= 0 unreachable= 0 canvas= 0 err=0/2 dom=1565
+   network: FAILED(net::ERR_ABORTED) http://127.0.0.1:8000/api/fundamental/خوز ⏐ FAILED(net::ERR_ABORTED) http://127.0.0.1:8000/api/fundamental/خوز
+/master                    ready=marker  ovX=    0px ovY=    0px hardClip= 0 ellipsis= 0 offscreen= 0 unreachable= 0 canvas= 0 err=0/0 dom=359
+/master/فولاد              ready=marker  ovX=    0px ovY=    0px hardClip= 0 ellipsis= 0 offscreen= 0 unreachable= 0 canvas= 0 err=0/0 dom=491
+/master/خوز                ready=marker  ovX=    0px ovY=    0px hardClip= 0 ellipsis= 0 offscreen= 0 unreachable= 0 canvas= 0 err=0/0 dom=426
+/strategy-tree             ready=marker  ovX=    0px ovY=    0px hardClip= 0 ellipsis= 0 offscreen= 0 unreachable= 0 canvas= 0 err=0/0 dom=528
+/strategy-tree?page=F      ready=marker  ovX=    0px ovY=    0px hardClip= 0 ellipsis= 0 offscreen= 0 unreachable= 0 canvas= 0 err=0/0 dom=440
+/strategy-tree?page=T      ready=marker  ovX=    0px ovY=    0px hardClip= 0 ellipsis= 0 offscreen= 0 unreachable= 0 canvas= 0 err=0/0 dom=476
+/strategy-tree?page=S      ready=marker  ovX=    0px ovY=    0px hardClip= 0 ellipsis= 0 offscreen= 0 unreachable= 0 canvas= 0 err=0/0 dom=511
+/strategy-tree?page=M      ready=marker  ovX=    0px ovY=    0px hardClip= 0 ellipsis= 0 offscreen= 0 unreachable= 0 canvas= 0 err=0/0 dom=512
+/portfolio                 ready=marker  ovX=    0px ovY=    0px hardClip= 0 ellipsis= 0 offscreen= 0 unreachable= 0 canvas= 0 err=0/0 dom=532
+/watch                     ready=marker  ovX=    0px ovY=    0px hardClip= 0 ellipsis= 0 offscreen= 0 unreachable= 0 canvas= 0 err=0/0 dom=378
+/notifications             ready=marker  ovX=    0px ovY=    0px hardClip= 0 ellipsis= 0 offscreen= 0 unreachable= 0 canvas= 0 err=0/0 dom=1526
+/engine-lab                ready=marker  ovX=    0px ovY=    0px hardClip= 0 ellipsis= 0 offscreen= 0 unreachable= 0 canvas=16 err=0/0 dom=544
+/zz-not-found              ready=marker  ovX=    0px ovY=    0px hardClip= 0 ellipsis= 0 offscreen= 0 unreachable= 0 canvas= 0 err=0/0 dom=301
+
+wrote C:\Users\Johnkallnaya\Desktop\Borsterminal\.worktrees\ui-audit-system-2\_audit\ui\real_layout.json

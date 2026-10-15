@@ -1,0 +1,46 @@
+{
+  "ranAt": "2026-10-15T12:04:15.542Z",
+  "base": "http://127.0.0.1:8000",
+  "viewport": {
+    "W": 1366,
+    "H": 768
+  },
+  "http": {
+    "status": 200,
+    "server": "uvicorn",
+    "bytes": 478,
+    "assets": [
+      "/vendor/fonts/vazirmatn.css",
+      "/assets/index-YssolEBL.js",
+      "/assets/index-QMWs0YWE.css"
+    ],
+    "title": "ترمینال تحلیل بورس",
+    "loginGateMarkup": false
+  },
+  "auditedBuildAssets": [
+    "/vendor/fonts/vazirmatn.css",
+    "/assets/index-YssolEBL.js",
+    "/assets/index-QMWs0YWE.css"
+  ],
+  "render": {
+    "url": "http://127.0.0.1:8000/",
+    "viewport": [
+      1366,
+      768
+    ],
+    "dpr": 1,
+    "scrollW": 1366,
+    "scrollH": 768,
+    "ovX": 0,
+    "rootFont": "16px",
+    "heading": "ترمینال بورس التیمیت",
+    "hasPassword": true,
+    "outOfBounds": [],
+    "outCount": 0,
+    "focusable": 4,
+    "smallTargets": [],
+    "bodyText": "⚡ ترمینال بورس التیمیت سامانه جامع داوری نخبگان بازار سرمایه بر پایه متدولوژی FTS ایستگاه کاری امن و ایزوله نام کاربری رمز عبور نمایش رمز ورود با احراز هویت محلی امن حداکثر ۵ تلاش مجاز ورود به ایستگاه معاملاتی ⏎ BorsTerm",
+    "consoleErrors": []
+  },
+  "screenshot": "_audit/ui/shots/installed/gate_1366x768.png"
+}

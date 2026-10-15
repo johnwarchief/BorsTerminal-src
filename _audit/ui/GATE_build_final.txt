@@ -1,0 +1,70 @@
+BUILD-FINAL start 16:11:39
+
+> bors-terminal-frontend@1.0.86 build
+> vite build
+
+[36mvite v5.4.21 [32mbuilding for production...[36m[39m
+transforming...
+../../../BorsTerminal-src/frontend/node_modules/zod/v4/core/util.js (400:0): A comment
+
+"// Wrapped in a `@__PURE__` IIFE: esbuild never tree-shakes a top-level initializer that contains a member access on `Number`, so the bare object literal survived into every bundle."
+
+in "../../../BorsTerminal-src/frontend/node_modules/zod/v4/core/util.js" contains an annotation that Rollup cannot interpret due to the position of the comment. The comment will be removed to avoid issues.
+../../../BorsTerminal-src/frontend/node_modules/zod/v4/core/regexes.js (72:0): A comment
+
+"/** Anchors a pattern source. The interpolation lives here rather than at the call site because
+ * esbuild will not drop a `@__PURE__` call whose own argument interpolates a variable, but it
+ * will drop `anchor(dateSource)`. Keeping it inline pinned `date` into every bundle. */"
+
+in "../../../BorsTerminal-src/frontend/node_modules/zod/v4/core/regexes.js" contains an annotation that Rollup cannot interpret due to the position of the comment. The comment will be removed to avoid issues.
+[32m✓[39m 735 modules transformed.
+rendering chunks...
+computing gzip size...
+[2mdist/[22m[32mindex.html                                    [39m[1m[2m  0.48 kB[22m[1m[22m[2m │ gzip:   0.34 kB[22m
+[2mdist/[22m[32massets/indicator.worker-Bl64aN4W.js           [39m[1m[2m 42.47 kB[22m[1m[22m
+[2mdist/[22m[35massets/TechnicalPage-5xvArKOj.css             [39m[1m[2m  2.97 kB[22m[1m[22m[2m │ gzip:   0.76 kB[22m
+[2mdist/[22m[35massets/KLineChartWrapper-DzUWqITk.css         [39m[1m[2m 12.43 kB[22m[1m[22m[2m │ gzip:   2.80 kB[22m
+[2mdist/[22m[35massets/index-QMWs0YWE.css                     [39m[1m[2m139.58 kB[22m[1m[22m[2m │ gzip:  20.46 kB[22m
+[2mdist/[22m[36massets/signalBus-ffBfuskb.js                  [39m[1m[2m  0.15 kB[22m[1m[22m[2m │ gzip:   0.13 kB[22m
+[2mdist/[22m[36massets/index-B-Y4-FCV.js                      [39m[1m[2m  0.34 kB[22m[1m[22m[2m │ gzip:   0.25 kB[22m
+[2mdist/[22m[36massets/EmptyState-B_TqyDEy.js                 [39m[1m[2m  0.41 kB[22m[1m[22m[2m │ gzip:   0.26 kB[22m
+[2mdist/[22m[36massets/levels-DXqKsBvM.js                     [39m[1m[2m  0.64 kB[22m[1m[22m[2m │ gzip:   0.56 kB[22m
+[2mdist/[22m[36massets/tvIndicators-uKmtIhr4.js               [39m[1m[2m  0.70 kB[22m[1m[22m[2m │ gzip:   0.44 kB[22m
+[2mdist/[22m[36massets/watchSymbolsStore-Be4elsgo.js          [39m[1m[2m  0.75 kB[22m[1m[22m[2m │ gzip:   0.44 kB[22m
+[2mdist/[22m[36massets/useIndustries-Dx4l9YWo.js              [39m[1m[2m  0.96 kB[22m[1m[22m[2m │ gzip:   0.51 kB[22m
+[2mdist/[22m[36massets/WatchlistStar-CUJY5Zun.js              [39m[1m[2m  0.97 kB[22m[1m[22m[2m │ gzip:   0.58 kB[22m
+[2mdist/[22m[36massets/tvTools-D7XaxdZR.js                    [39m[1m[2m  1.15 kB[22m[1m[22m[2m │ gzip:   0.76 kB[22m
+[2mdist/[22m[36massets/Collapse-BnaMj9cy.js                   [39m[1m[2m  1.65 kB[22m[1m[22m[2m │ gzip:   0.80 kB[22m
+[2mdist/[22m[36massets/DownloadRowsButton-CLevkP47.js         [39m[1m[2m  1.96 kB[22m[1m[22m[2m │ gzip:   1.19 kB[22m
+[2mdist/[22m[36massets/userWatchlist-CUtyWa53.js              [39m[1m[2m  2.21 kB[22m[1m[22m[2m │ gzip:   1.22 kB[22m
+[2mdist/[22m[36massets/useNnData-BZzMAGtF.js                  [39m[1m[2m  2.39 kB[22m[1m[22m[2m │ gzip:   1.22 kB[22m
+[2mdist/[22m[36massets/StrategyTreeStepper-BCheCrge.js        [39m[1m[2m  3.16 kB[22m[1m[22m[2m │ gzip:   1.41 kB[22m
+[2mdist/[22m[36massets/ftsLabels-5RKL_HJx.js                  [39m[1m[2m  5.72 kB[22m[1m[22m[2m │ gzip:   1.79 kB[22m
+[2mdist/[22m[36massets/NotificationsPage-BQQzuLDm.js          [39m[1m[2m  7.62 kB[22m[1m[22m[2m │ gzip:   2.98 kB[22m
+[2mdist/[22m[36massets/KLineChartsEngine-C28MXmwo.js          [39m[1m[2m  9.58 kB[22m[1m[22m[2m │ gzip:   3.65 kB[22m
+[2mdist/[22m[36massets/TapeTable-Bvqfddub.js                  [39m[1m[2m 12.93 kB[22m[1m[22m[2m │ gzip:   5.19 kB[22m
+[2mdist/[22m[36massets/EngineLabPage-Dp44jG9I.js              [39m[1m[2m 15.10 kB[22m[1m[22m[2m │ gzip:   5.70 kB[22m
+[2mdist/[22m[36massets/mabnaIndicators-DGcA8XtY.js            [39m[1m[2m 16.76 kB[22m[1m[22m[2m │ gzip:   5.72 kB[22m
+[2mdist/[22m[36massets/FtsSettingsDrawer-DzFMEfxZ.js          [39m[1m[2m 23.56 kB[22m[1m[22m[2m │ gzip:   8.38 kB[22m
+[2mdist/[22m[36massets/WatchMarketWorkspace-BwtRI9NK.js       [39m[1m[2m 27.75 kB[22m[1m[22m[2m │ gzip:   9.15 kB[22m
+[2mdist/[22m[36massets/SymbolSelectBox-BXa_616i.js            [39m[1m[2m 27.88 kB[22m[1m[22m[2m │ gzip:   8.86 kB[22m
+[2mdist/[22m[36massets/chunk-QVJHXQ4A-CyUQK-W3.js             [39m[1m[2m 31.85 kB[22m[1m[22m[2m │ gzip:   9.25 kB[22m
+[2mdist/[22m[36massets/MarketPage-0I2whafn.js                 [39m[1m[2m 35.54 kB[22m[1m[22m[2m │ gzip:  11.10 kB[22m
+[2mdist/[22m[36massets/priceAlerts-DhykoI7a.js                [39m[1m[2m 36.23 kB[22m[1m[22m[2m │ gzip:  12.27 kB[22m
+[2mdist/[22m[36massets/StrategyTreePage-C0cjl5n1.js           [39m[1m[2m 52.34 kB[22m[1m[22m[2m │ gzip:  16.44 kB[22m
+[2mdist/[22m[36massets/PortfolioPage-CpR4_y82.js              [39m[1m[2m 57.49 kB[22m[1m[22m[2m │ gzip:  17.50 kB[22m
+[2mdist/[22m[36massets/TechnicalPage-BG9WobrD.js              [39m[1m[2m105.19 kB[22m[1m[22m[2m │ gzip:  32.56 kB[22m
+[2mdist/[22m[36massets/KLineChartWrapper-DvIGW2AI.js          [39m[1m[2m106.96 kB[22m[1m[22m[2m │ gzip:  31.68 kB[22m
+[2mdist/[22m[36massets/FundamentalPage-BUXxo1cI.js            [39m[1m[2m110.64 kB[22m[1m[22m[2m │ gzip:  33.28 kB[22m
+[2mdist/[22m[36massets/MarketStatusPage--Vi2cpHN.js           [39m[1m[2m131.42 kB[22m[1m[22m[2m │ gzip:  36.80 kB[22m
+[2mdist/[22m[36massets/MasterPage-qVkg4rD7.js                 [39m[1m[2m156.68 kB[22m[1m[22m[2m │ gzip:  48.26 kB[22m
+[2mdist/[22m[36massets/useCandleFeed-Byuw51lp.js              [39m[1m[2m240.92 kB[22m[1m[22m[2m │ gzip:  64.03 kB[22m
+[2mdist/[22m[36massets/FastFinancialChartsEngine-D2f__ad5.js  [39m[1m[2m296.64 kB[22m[1m[22m[2m │ gzip:  71.88 kB[22m
+[2mdist/[22m[36massets/index-YssolEBL.js                      [39m[1m[33m612.91 kB[39m[22m[2m │ gzip: 194.73 kB[22m
+[33m
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.[39m
+[32m✓ built in 14.18s[39m
+build exit=0

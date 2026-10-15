@@ -1,0 +1,111 @@
+
+== /market  controls=207  covered=0  below-fold=92
+   OFF-VIEWPORT  tape-row «✓☆آواپارسبيمه اتكايي»  box={"x":31,"y":619,"w":1158,"h":40}
+   OFF-VIEWPORT  tape-buy-sell «۷۵.۰م.ت۷۰.۶م.ت۱.۰۶»  box={"x":185,"y":624,"w":170,"h":30}
+   OFF-VIEWPORT  tape-patterns «»  box={"x":39,"y":637,"w":142,"h":4}
+   OFF-VIEWPORT  tape-row «✓☆ريشمكتوليد و صادرا»  box={"x":31,"y":659,"w":1158,"h":40}
+
+== /market-status  controls=989  covered=0  below-fold=177
+   OFF-VIEWPORT  market-status-page «وضعیت بازاربازاربسته»  box={"x":15,"y":44,"w":1175,"h":6404}
+   OFF-VIEWPORT  ticker-marquee-track «پهنای بازارمثبت—منفی»  box={"x":-2036,"y":128,"w":3269,"h":14}
+   OFF-VIEWPORT  ticker-group-queues «صف‌هاعمقِ صف برایِ ا»  box={"x":-392,"y":128,"w":462,"h":14}
+   OFF-VIEWPORT  ticker-no-depth «عمقِ صف برایِ این نش»  box={"x":-392,"y":128,"w":413,"h":14}
+
+== /technical/فولاد  controls=74  covered=0  below-fold=0
+
+== /technical/خوز  controls=53  covered=0  below-fold=3
+   OFF-VIEWPORT  button.flex.w-full «كگل معدني و صنعتي گل»  box={"x":1029,"y":610,"w":260,"h":56}
+   OFF-VIEWPORT  button.flex.w-full «كگهر معدني و صنعتي گ»  box={"x":1029,"y":670,"w":260,"h":56}
+   OFF-VIEWPORT  button.flex.w-full «همراه شركت ارتباطات »  box={"x":1029,"y":730,"w":260,"h":56}
+
+== /technical  controls=95  covered=0  below-fold=3
+   OFF-VIEWPORT  button.flex.w-full «كگل معدني و صنعتي گل»  box={"x":1029,"y":610,"w":260,"h":56}
+   OFF-VIEWPORT  button.flex.w-full «كگهر معدني و صنعتي گ»  box={"x":1029,"y":670,"w":260,"h":56}
+   OFF-VIEWPORT  button.flex.w-full «همراه شركت ارتباطات »  box={"x":1029,"y":730,"w":260,"h":56}
+
+== /fundamental/فولاد  controls=53  covered=0  below-fold=12
+   OFF-VIEWPORT  fts-card-cell-4_sales_to_mcap «۴. پتانسیل سود تا آخ»  box={"x":608,"y":694,"w":350,"h":174}
+   OFF-VIEWPORT  fts-verdict-4_sales_to_mcap «قبول»  box={"x":619,"y":705,"w":37,"h":18}
+   OFF-VIEWPORT  fts-result-4_sales_to_mcap «۱۶.۶٪»  box={"x":888,"y":723,"w":58,"h":20}
+   OFF-VIEWPORT  fts-card-4-secondary «نسبت فروش ÷ ارزش باز»  box={"x":619,"y":824,"w":328,"h":14}
+
+== /fundamental/خوز  controls=18  covered=0  below-fold=0
+
+== /fundamental  controls=155  covered=0  below-fold=70
+   OUTSIDE-OWN-SCROLLER  fts-screen-row «✓☆نانصنايع غذايي رضو»  box={"x":9,"y":560,"w":1180,"h":52}  اسکرولر: fts-screen-scroll [143..579]
+   OUTSIDE-OWN-SCROLLER  fts-mark-1a_monetary_growth «✓»  box={"x":973,"y":576,"w":20,"h":20}  اسکرولر: fts-screen-scroll [143..579]
+   OUTSIDE-OWN-SCROLLER  fts-mark-1b_volume_growth «✓»  box={"x":936,"y":576,"w":20,"h":20}  اسکرولر: fts-screen-scroll [143..579]
+   OUTSIDE-OWN-SCROLLER  fts-mark-2_eps_trend «✓»  box={"x":776,"y":576,"w":20,"h":20}  اسکرولر: fts-screen-scroll [143..579]
+
+== /master  controls=63  covered=0  below-fold=0
+
+== /master/فولاد  controls=96  covered=0  below-fold=11
+   OFF-VIEWPORT  master-fts-details «S — تابلوخوانی❌کف رو»  box={"x":255,"y":593,"w":935,"h":154}
+   OFF-VIEWPORT  master-toggle-advanced «جزئیات، برنامهٔ معام»  box={"x":963,"y":762,"w":227,"h":24}
+   OFF-VIEWPORT  inspector-stage «تابلوخوانیتکنیکال· ل»  box={"x":25,"y":610,"w":204,"h":79}
+   OFF-VIEWPORT  inspector-stage-fundamental «بنیادی· لازم نبود»  box={"x":142,"y":635,"w":87,"h":21}
+
+== /master/خوز  controls=94  covered=0  below-fold=6
+   OFF-VIEWPORT  master-toggle-advanced «جزئیات، برنامهٔ معام»  box={"x":963,"y":703,"w":227,"h":24}
+   OFF-VIEWPORT  inspector-stage-next «مرحلۀ فعلی: تحویل — »  box={"x":25,"y":636,"w":204,"h":14}
+   OFF-VIEWPORT  inspector-events «رویدادهاهمه ↗رویدادی»  box={"x":25,"y":659,"w":204,"h":41}
+   OFF-VIEWPORT  inspector-events-all «همه ↗»  box={"x":34,"y":664,"w":25,"h":14}
+
+== /strategy-tree  controls=90  covered=0  below-fold=10
+   OFF-VIEWPORT  strategy-roadmap-zones «3۳ · S انتخابتابلوخو»  box={"x":255,"y":358,"w":935,"h":796}
+   OFF-VIEWPORT  a.group.flex «3۳ · S انتخابتابلوخو»  box={"x":965,"y":358,"w":225,"h":796}
+   OFF-VIEWPORT  a.group.flex «2۲ · T تکنیکالسیگنال»  box={"x":729,"y":358,"w":225,"h":796}
+   OFF-VIEWPORT  a.group.flex «1۱ · F بنیادیپنج‌شاخ»  box={"x":492,"y":356,"w":225,"h":796}
+
+== /strategy-tree?page=F  controls=84  covered=0  below-fold=8
+   OFF-VIEWPORT  strategy-tree-page-F «Sتابلوخوانیصفحه ۳Tتک»  box={"x":255,"y":82,"w":935,"h":1210}
+   OFF-VIEWPORT  a.rounded-xl.border «← صفحه قبل»  box={"x":1099,"y":1259,"w":91,"h":32}
+   OFF-VIEWPORT  a.rounded-xl.border «صفحه بعد →»  box={"x":255,"y":1259,"w":90,"h":32}
+   OFF-VIEWPORT  inspector-stage-next «مرحلۀ فعلی: تحویل — »  box={"x":25,"y":636,"w":204,"h":14}
+
+== /strategy-tree?page=T  controls=84  covered=0  below-fold=7
+   OFF-VIEWPORT  a.rounded-xl.border «← صفحه قبل»  box={"x":1099,"y":943,"w":91,"h":32}
+   OFF-VIEWPORT  a.rounded-xl.border «صفحه بعد →»  box={"x":255,"y":943,"w":90,"h":32}
+   OFF-VIEWPORT  inspector-stage-next «مرحلۀ فعلی: تحویل — »  box={"x":25,"y":636,"w":204,"h":14}
+   OFF-VIEWPORT  inspector-events «رویدادهاهمه ↗رویدادی»  box={"x":25,"y":659,"w":204,"h":41}
+
+== /strategy-tree?page=S  controls=83  covered=0  below-fold=7
+   OFF-VIEWPORT  strategy-tree-page-S «Sتابلوخوانیصفحه ۳Tتک»  box={"x":255,"y":82,"w":935,"h":1240}
+   OFF-VIEWPORT  a.rounded-xl.border «صفحه بعد →»  box={"x":255,"y":1290,"w":90,"h":32}
+   OFF-VIEWPORT  inspector-stage-next «مرحلۀ فعلی: تحویل — »  box={"x":25,"y":636,"w":204,"h":14}
+   OFF-VIEWPORT  inspector-events «رویدادهاهمه ↗رویدادی»  box={"x":25,"y":659,"w":204,"h":41}
+
+== /strategy-tree?page=M  controls=84  covered=0  below-fold=8
+   OFF-VIEWPORT  strategy-tree-page-M «Sتابلوخوانیصفحه ۳Tتک»  box={"x":255,"y":82,"w":935,"h":1146}
+   OFF-VIEWPORT  a.rounded-xl.border «← صفحه قبل»  box={"x":1099,"y":1196,"w":91,"h":32}
+   OFF-VIEWPORT  a.rounded-xl.border «رفتن به غربالگری FTS»  box={"x":255,"y":1196,"w":131,"h":32}
+   OFF-VIEWPORT  inspector-stage-next «مرحلۀ فعلی: تحویل — »  box={"x":25,"y":636,"w":204,"h":14}
+
+== /portfolio  controls=83  covered=0  below-fold=5
+   OFF-VIEWPORT  inspector-stage-next «مرحلۀ فعلی: تحویل — »  box={"x":25,"y":636,"w":204,"h":14}
+   OFF-VIEWPORT  inspector-events «رویدادهاهمه ↗رویدادی»  box={"x":25,"y":659,"w":204,"h":41}
+   OFF-VIEWPORT  inspector-events-all «همه ↗»  box={"x":34,"y":664,"w":25,"h":14}
+   OFF-VIEWPORT  inspector-events-none «رویدادی ثبت نشده»  box={"x":34,"y":679,"w":186,"h":15}
+
+== /watch  controls=97  covered=0  below-fold=8
+   OFF-VIEWPORT  watch-order-panel «پنلِ معاملهسرویسِ اج»  box={"x":582,"y":544,"w":282,"h":224}
+   OFF-VIEWPORT  watch-order-buy «خرید»  box={"x":726,"y":655,"w":129,"h":26}
+   OFF-VIEWPORT  watch-order-sell «فروش»  box={"x":591,"y":655,"w":129,"h":26}
+   OFF-VIEWPORT  watch-order-phase «وضعیتِ سفارش: بی‌سفا»  box={"x":734,"y":690,"w":121,"h":14}
+
+== /notifications  controls=814  covered=0  below-fold=181
+   OFF-VIEWPORT  notifications-page «مرکزِ اعلانمنبع: کدا»  box={"x":255,"y":82,"w":935,"h":10384}
+   OFF-VIEWPORT  notice-list «بالاصورتهایِ مالیشهر»  box={"x":255,"y":184,"w":935,"h":10254}
+   OFF-VIEWPORT  notice-row «بالاصورتهایِ مالیپتر»  box={"x":255,"y":611,"w":935,"h":80}
+   OFF-VIEWPORT  notice-row «بالاصورتهایِ مالیوهو»  box={"x":255,"y":697,"w":935,"h":80}
+
+== /engine-lab  controls=86  covered=0  below-fold=7
+   OFF-VIEWPORT  engine-lab «آزمایشگاهِ موتورهایِ»  box={"x":255,"y":82,"w":935,"h":1216}
+   OFF-VIEWPORT  lab-host-klinecharts «»  box={"x":730,"y":572,"w":460,"h":420}
+   OFF-VIEWPORT  lab-measure-klinecharts «اندازه‌گیری»  box={"x":738,"y":1016,"w":63,"h":20}
+   OFF-VIEWPORT  lab-host-ffc «»  box={"x":256,"y":572,"w":460,"h":420}
+
+== /zz-not-found  controls=72  covered=0  below-fold=1
+   OFF-VIEWPORT  inspector-veto-why «گیتِ بنیادیِ این نما»  box={"x":34,"y":670,"w":144,"h":14}
+
+wrote _audit/ui/OVERLAP_real.json

@@ -1,0 +1,7 @@
+installed_probe base=http://127.0.0.1:8000 viewport=1366x768 at=2026-10-15T12:04:15.542Z
+http: {"status":200,"server":"uvicorn","bytes":478,"assets":["/vendor/fonts/vazirmatn.css","/assets/index-YssolEBL.js","/assets/index-QMWs0YWE.css"],"title":"ترمینال تحلیل بورس","loginGateMarkup":false}
+audited build assets: ["/vendor/fonts/vazirmatn.css","/assets/index-YssolEBL.js","/assets/index-QMWs0YWE.css"]
+render: url=http://127.0.0.1:8000/ viewport=[1366,768] dpr=1 rootFont=16px
+  heading=«ترمینال بورس التیمیت» loginGate=true focusable=4
+  scroll=[1366,768] ovX=0 outOfBounds=0
+  console errors=0

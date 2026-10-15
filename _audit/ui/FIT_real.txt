@@ -1,0 +1,145 @@
+
+== /market  ovX=0px  scroller=636/1037
+   header.glass-strip                     y=    0 h=   36 bottom=   36 fits
+   .app-main                              y=  125 h=  912 bottom= 1037 OVERFLOW+401
+   [data-testid="tape-scroll"]            y=  527 h=  420 bottom=  947 OVERFLOW+311
+   scroll «app-content flex min-w-0» max=401 → REACHABLE
+   scroll «tape-scroll» max=44220 → REACHABLE
+   scroll «glass-panel fixed bottom» max=203 → REACHABLE
+
+== /market-status  ovX=0px  scroller=636/3842
+   header.glass-strip                     y=    0 h=   36 bottom=   36 fits
+   .app-main                              y=  125 h= 3717 bottom= 3842 OVERFLOW+3206
+   scroll «app-content flex min-w-0» max=3206 → REACHABLE
+   scroll «glass-panel fixed bottom» max=117 → REACHABLE
+
+== /technical/فولاد  ovX=0px  scroller=636/636
+   header.glass-strip                     y=    0 h=   36 bottom=   36 fits
+   .app-main                              y=  101 h=  535 bottom=  636 fits
+   .tv-workbench                          y=  109 h=  519 bottom=  628 fits
+   [data-testid="chart-area"]             y=  109 h=  491 bottom=  600 fits
+   [data-testid="technical-sidebar"]      y=  109 h=  519 bottom=  628 fits
+   [data-testid="fts-dock"]               y=  600 h=   28 bottom=  628 fits
+   scroll «glass-panel fixed bottom» max=203 → REACHABLE
+   scroll «flex min-h-0 flex-1 flex» max=2154 → REACHABLE
+
+== /technical/خوز  ovX=0px  scroller=636/636
+   header.glass-strip                     y=    0 h=   36 bottom=   36 fits
+   .app-main                              y=  101 h=  535 bottom=  636 fits
+   .tv-workbench                          y=  109 h=  519 bottom=  628 fits
+   [data-testid="chart-area"]             y=  109 h=  491 bottom=  600 fits
+   [data-testid="technical-sidebar"]      y=  109 h=  519 bottom=  628 fits
+   [data-testid="fts-dock"]               y=  600 h=   28 bottom=  628 fits
+   scroll «sidebar-body» max=231 → REACHABLE
+   scroll «glass-panel fixed bottom» max=203 → REACHABLE
+   scroll «flex min-h-0 flex-1 flex» max=2154 → REACHABLE
+
+== /technical  ovX=0px  scroller=636/636
+   header.glass-strip                     y=    0 h=   36 bottom=   36 fits
+   .app-main                              y=  101 h=  535 bottom=  636 fits
+   .tv-workbench                          y=  109 h=  519 bottom=  628 fits
+   [data-testid="chart-area"]             y=  109 h=  491 bottom=  600 fits
+   [data-testid="technical-sidebar"]      y=  109 h=  519 bottom=  628 fits
+   [data-testid="fts-dock"]               y=  600 h=   28 bottom=  628 fits
+   scroll «sidebar-body» max=231 → REACHABLE
+   scroll «glass-panel fixed bottom» max=203 → REACHABLE
+   scroll «flex min-h-0 flex-1 flex» max=2154 → REACHABLE
+
+== /fundamental/فولاد  ovX=0px  scroller=636/1207
+   header.glass-strip                     y=    0 h=   36 bottom=   36 fits
+   .app-main                              y=  125 h= 1082 bottom= 1207 OVERFLOW+571
+   scroll «app-content flex min-w-0» max=571 → REACHABLE
+   scroll «glass-panel fixed bottom» max=203 → REACHABLE
+   scroll «flex min-h-0 flex-1 flex» max=2154 → REACHABLE
+
+== /fundamental/خوز  ovX=0px  scroller=636/636
+   header.glass-strip                     y=    0 h=   36 bottom=   36 fits
+   .app-main                              y=  125 h=  511 bottom=  636 fits
+   scroll «glass-panel fixed bottom» max=203 → REACHABLE
+
+== /fundamental  ovX=0px  scroller=636/1162
+   header.glass-strip                     y=    0 h=   36 bottom=   36 fits
+   .app-main                              y=  125 h= 1037 bottom= 1162 OVERFLOW+526
+   scroll «app-content flex min-w-0» max=526 → REACHABLE
+   scroll «glass-panel fixed bottom» max=203 → REACHABLE
+   scroll «flex min-h-0 flex-1 flex» max=2154 → REACHABLE
+
+== /master  ovX=0px  scroller=636/819
+   header.glass-strip                     y=    0 h=   36 bottom=   36 fits
+   .app-main                              y=  125 h=  693 bottom=  818 OVERFLOW+183
+   scroll «app-content flex min-w-0» max=183 → REACHABLE
+   scroll «glass-panel fixed bottom» max=203 → REACHABLE
+
+== /master/فولاد  ovX=0px  scroller=636/795
+   header.glass-strip                     y=    0 h=   36 bottom=   36 fits
+   .app-main                              y=  101 h=  693 bottom=  794 OVERFLOW+159
+   scroll «app-content flex min-w-0» max=159 → REACHABLE
+   scroll «glass-panel fixed bottom» max=203 → REACHABLE
+
+== /master/خوز  ovX=0px  scroller=636/735
+   header.glass-strip                     y=    0 h=   36 bottom=   36 fits
+   .app-main                              y=   74 h=  661 bottom=  735 OVERFLOW+99
+   scroll «app-content flex min-w-0» max=99 → REACHABLE
+   scroll «glass-panel fixed bottom» max=150 → REACHABLE
+
+== /strategy-tree  ovX=0px  scroller=636/1192
+   header.glass-strip                     y=    0 h=   36 bottom=   36 fits
+   .app-main                              y=   74 h= 1118 bottom= 1192 OVERFLOW+556
+   scroll «app-content flex min-w-0» max=556 → REACHABLE
+   scroll «glass-panel fixed bottom» max=150 → REACHABLE
+
+== /strategy-tree?page=F  ovX=0px  scroller=636/1300
+   header.glass-strip                     y=    0 h=   36 bottom=   36 fits
+   .app-main                              y=   74 h= 1226 bottom= 1300 OVERFLOW+664
+   scroll «app-content flex min-w-0» max=664 → REACHABLE
+   scroll «glass-panel fixed bottom» max=150 → REACHABLE
+
+== /strategy-tree?page=T  ovX=0px  scroller=636/960
+   header.glass-strip                     y=    0 h=   36 bottom=   36 fits
+   .app-main                              y=   74 h=  886 bottom=  960 OVERFLOW+324
+   scroll «app-content flex min-w-0» max=324 → REACHABLE
+   scroll «glass-panel fixed bottom» max=150 → REACHABLE
+
+== /strategy-tree?page=S  ovX=0px  scroller=636/1330
+   header.glass-strip                     y=    0 h=   36 bottom=   36 fits
+   .app-main                              y=   74 h= 1256 bottom= 1330 OVERFLOW+694
+   scroll «app-content flex min-w-0» max=694 → REACHABLE
+   scroll «glass-panel fixed bottom» max=150 → REACHABLE
+
+== /strategy-tree?page=M  ovX=0px  scroller=636/1236
+   header.glass-strip                     y=    0 h=   36 bottom=   36 fits
+   .app-main                              y=   74 h= 1162 bottom= 1236 OVERFLOW+600
+   scroll «app-content flex min-w-0» max=600 → REACHABLE
+   scroll «glass-panel fixed bottom» max=150 → REACHABLE
+
+== /portfolio  ovX=0px  scroller=636/1192
+   header.glass-strip                     y=    0 h=   36 bottom=   36 fits
+   .app-main                              y=   74 h= 1118 bottom= 1192 OVERFLOW+556
+   scroll «app-content flex min-w-0» max=556 → REACHABLE
+   scroll «glass-panel fixed bottom» max=150 → REACHABLE
+
+== /watch  ovX=0px  scroller=636/819
+   header.glass-strip                     y=    0 h=   36 bottom=   36 fits
+   .app-main                              y=   74 h=  745 bottom=  819 OVERFLOW+183
+   scroll «app-content flex min-w-0» max=183 → REACHABLE
+   scroll «glass-panel fixed bottom» max=77 → REACHABLE
+
+== /notifications  ovX=0px  scroller=636/10474
+   header.glass-strip                     y=    0 h=   36 bottom=   36 fits
+   .app-main                              y=   74 h=10400 bottom=10474 OVERFLOW+9838
+   scroll «app-content flex min-w-0» max=9838 → REACHABLE
+   scroll «glass-panel fixed bottom» max=77 → REACHABLE
+
+== /engine-lab  ovX=0px  scroller=636/1306
+   header.glass-strip                     y=    0 h=   36 bottom=   36 fits
+   .app-main                              y=   74 h= 1232 bottom= 1306 OVERFLOW+670
+   scroll «app-content flex min-w-0» max=670 → REACHABLE
+   scroll «glass-panel fixed bottom» max=77 → REACHABLE
+
+== /zz-not-found  ovX=0px  scroller=636/636
+   header.glass-strip                     y=    0 h=   36 bottom=   36 fits
+   .app-main                              y=   74 h=  562 bottom=  636 fits
+   scroll «glass-panel fixed bottom» max=77 → REACHABLE
+
+wrote _audit/ui/FIT.json
+FIT=0

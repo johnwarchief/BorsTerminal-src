@@ -1,0 +1,12 @@
+[selftest] fresh copy: C:\Users\JOHNKA~1\AppData\Local\Temp\bors_housekeep_wcyb8dez\copy.db
+  [ok] dry-run idempotent
+  [ok] dedupe deleted 333 rows; dup groups now 0
+  [ok] dedupe idempotent
+  [setup] artificial prev-year gap: 11405 cells nulled
+  [ok] backfill filled 11405 cells
+  [ok] backfill idempotent
+  [ok] شارپيلن canonical (1 row per period)
+  [ok] integrity=ok, fk_violations=0
+[selftest] PASS
+[selftest] copy removed: C:\Users\JOHNKA~1\AppData\Local\Temp\bors_housekeep_wcyb8dez\copy.db
+housekeeping exit=0
