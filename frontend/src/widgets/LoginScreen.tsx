@@ -118,7 +118,7 @@ export function LoginScreen() {
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="text-[11px] text-text-muted hover:text-text-primary"
+                className="inline-flex min-h-6 items-center rounded-md px-1.5 text-[11px] text-text-muted hover:text-text-primary"
               >
                 {showPassword ? 'پنهان‌سازی' : 'نمایش رمز'}
               </button>
