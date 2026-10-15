@@ -129,6 +129,25 @@ keep_awake() {
   sleep 3
 }
 
+# نشانة‌ای که رانِ 38802635761 گذاشت: درِ لحظۀ نمونه‌برداری، mCurrentFocus =
+# «Application Not Responding: com.android.systemui» و uiautomator ۵۷ بایت (درختِ
+# خالی) داد. یعنی پنجرۀ سیستم رویِ صفحه بود، نه اپ — و کاوش CDP ۳۰۰ ثانیه موند.
+# پس پیش‌ازِ هر سنجشِ محتوا صبر می‌کنیم تا واقعیِ اپ فوکوس بگیرد؛ اگر نشد، علت
+# (فوکوسِ پنجرۀ ANR / launcher) درِ حکم نوشته می‌شود، نه «متنِ برنامه دیده نشد».
+wait_for_focus() { # wait_for_focus <تلاش‌ها>
+  local n="${1:-6}" i
+  for i in $(seq 1 "$n"); do
+    FOCUS=$(adb shell dumpsys window 2>/dev/null | tr -d '
+' | grep -m1 "mCurrentFocus" | cut -c1-160)
+    case "$FOCUS" in
+      *"$PKG"*) return 0 ;;
+    esac
+    dismiss_anr_dialog
+    sleep 6
+  done
+  return 1
+}
+
 LABEL=360x800
 RSS_START=$(adb shell dumpsys meminfo "$PKG" 2>/dev/null | tr -d '
 ' | awk '/^TOTAL/{print $2; exit}')
@@ -159,6 +178,8 @@ else
   fi
   sleep 25                      # 16 مگابایت gz ← 70 مگابایت SQLite رویِ AVDِ کند
   dismiss_anr_dialog
+  if wait_for_focus 6; then FOCUS_OK=yes; else FOCUS_OK=no; fi
+  FOCUS_NOTE=$(printf '%s' "${FOCUS:-none}" | tr -d '"' | cut -c1-90)
   adb exec-out screencap -p > "$OUT/$LABEL.png"
   if timeout 300 node --experimental-strip-types tools/android_webview_check.mts         --base http://127.0.0.1:9222 --label "$LABEL" --out "$OUT/webview-$LABEL.json" > "$OUT/webview-$LABEL.log" 2>&1; then
     step "webview-$LABEL" PASS "$(grep -o '"reached_content":"[^"]*"' "$OUT/webview-$LABEL.json" | head -1 | json_escape) $(grep -o '"visible_text_len":[0-9]*' "$OUT/webview-$LABEL.json" | head -1 | json_escape)"
@@ -167,7 +188,7 @@ else
     if [ "$rc" = 2 ]; then
       step "webview-$LABEL" NOT_VERIFIED "CDP در دسترس نیست (socket شناسایی‌شد: ${SOCK:-none}؛ شواهد: $OUT/no_cdp_evidence.txt)"
     elif [ "$rc" = 124 ]; then
-      step "webview-$LABEL" NOT_VERIFIED "کاوشگر درِ CDP موند (300s) — دستگاه قفل بود"
+      step "webview-$LABEL" NOT_VERIFIED "کاوشگر درِ CDP موند (300s) · focus_ok=$FOCUS_OK · focus=$FOCUS_NOTE"
     else
       step "webview-$LABEL" FAIL "exit=$rc reached=$(grep -o '"reached_content":"[^"]*"' "$OUT/webview-$LABEL.json" | head -1 | json_escape) nodes=$(grep -o '"dom_nodes":[0-9]*' "$OUT/webview-$LABEL.json" | head -1 | json_escape)"
     fi

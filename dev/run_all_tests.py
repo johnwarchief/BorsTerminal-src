@@ -235,6 +235,12 @@ SUITES = [
     # بی‌KVM صریحاً NOT_VERIFIED می‌دهد نه سبز.
     ('dev/android_release_v1110.py',
                                      'android release chain: no debug-signed official build, signing gate closed, hardened manifest, non-colliding tag, honest emulator verdict'),
+    # قراردادِ manifestِ بستۀ داده: فهرستِ فیلدهایِ الزامی ازِ خودِ سورسِ کلاینت
+    # خوانده می‌شود، بستۀ واقعی ازِ market.db پخته می‌شود، و نوع/شکلِ هر فیلد با
+    # بایت‌هایِ واقعیِ gz و SQLite مقایسه می‌گردد. سمتِ TS درِ
+    # __tests__/mobile-manifest-contract.spec.ts با همان fixture می‌سنجد.
+    ('dev/mobile_manifest_contract_v1115.py',
+                                     'mobile manifest contract: producer output == parser requirement (real package, real digest)'),
     # هدفِ ۲ دورۀ audit پیش از FTS: چهار مسیرِ «داده تازه شد ولی برنامه کهنه جواب
     # داد» — کشِ اسکرینر پس ازِ سینکِ بازار/کدال، تولدِ زیرپروسۀ خزنده درِ EXE
     # (sys.executable خودِ EXE است)، کلیدِ سه کشِ چارت بی‌مبنایِ قیمت، و سریِ

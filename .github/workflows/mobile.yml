@@ -643,6 +643,10 @@ jobs:
           # را action بی‌صدا «ورودیِ ناشناخته» می‌شمارد و پیش‌فرض می‌ماند — پس
           # تنظیمی که اعمال‌شده می‌پنداری، اعمال نشده است.
           emulator-boot-timeout: 900000
+          # رانِ 38802635761: mCurrentFocus = «ANR: com.android.systemui» و
+          # uiautomator ۵۷ بایت داد — AVD پیش‌فرض زیرِ WebView + ۱۶ مگابایت SQLite
+          # نفَس نمی‌آورد. RAMِ صریح، همان دام نیست: تخصیصِ خودِ runner است.
+          ram-size: 5120
           script: bash tools/android_upgrade_matrix.sh
 
       - name: Record the honest result when the emulator cannot run
@@ -711,6 +715,10 @@ jobs:
           # را action بی‌صدا «ورودیِ ناشناخته» می‌شمارد و پیش‌فرض می‌ماند — پس
           # تنظیمی که اعمال‌شده می‌پنداری، اعمال نشده است.
           emulator-boot-timeout: 900000
+          # رانِ 38802635761: mCurrentFocus = «ANR: com.android.systemui» و
+          # uiautomator ۵۷ بایت داد — AVD پیش‌فرض زیرِ WebView + ۱۶ مگابایت SQLite
+          # نفَس نمی‌آورد. RAMِ صریح، همان دام نیست: تخصیصِ خودِ runner است.
+          ram-size: 5120
           script: bash tools/android_emu_verify.sh
 
       - name: Record the result honestly when the emulator cannot run

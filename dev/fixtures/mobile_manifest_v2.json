@@ -1,0 +1,23 @@
+{
+ "schema_version": 2,
+ "package_id": "20261016T003833-0c7be1b6",
+ "app_version": "1.1.0",
+ "min_app_version": "1.1.0",
+ "built_at": "2026-10-16T00:38:33",
+ "gz_bytes": 11435178,
+ "gz_sha256": "0c7be1b6d03067c65edd0b9b20cc28319c4f6048776ce37cc52a87c9b9b41f8a",
+ "db_bytes": 42070016,
+ "baked_ok": 48,
+ "baked_fail": 0,
+ "tables": [
+  "baked",
+  "meta",
+  "instruments",
+  "price_history"
+ ],
+ "required_baked_keys": [
+  "market_board"
+ ],
+ "db_schema": 1,
+ "series": "mobile-latest-v2"
+}

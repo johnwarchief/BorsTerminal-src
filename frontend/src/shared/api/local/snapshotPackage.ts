@@ -62,16 +62,22 @@ export function parseManifest(raw: unknown): Check<SnapshotManifest> {
   if (raw === null || raw === undefined) return bad('manifest-missing', 'پاسخِ manifest خالی بود');
   if (typeof raw !== 'object') return bad('manifest-unparsable', `نوعِ manifest: ${typeof raw}`);
   const m = raw as Record<string, unknown>;
-  const sv = Number(m.schema_version);
-  if (!Number.isFinite(sv)) return bad('manifest-field-missing', 'schema_version نیست');
+  // نوع هم سنجیده می‌شود، نه فقط «عددِ قابلِ تبدیل»: با Number(...) رشتهٔ "2"
+  // پذیرفته می‌شد، یعنی manifestی که سازندهٔ واقعی هیچ‌وقت نمی‌نویسد (gz_bytes و
+  // schema_version درِ JSON همیشه عددند) بی‌آزمون رد نمی‌شد.
+  if (typeof m.schema_version !== 'number' || !Number.isInteger(m.schema_version)) {
+    return bad('manifest-field-missing', 'schema_version نیست یا عدد نیست');
+  }
+  const sv = m.schema_version;
   if (sv !== ACCEPTED_MANIFEST_SCHEMA) {
     return bad('manifest-schema-unknown', `schema_version=${sv}؛ این کلاینت ${ACCEPTED_MANIFEST_SCHEMA} می‌خواهد`);
   }
   for (const k of ['package_id', 'built_at', 'gz_sha256', 'app_version', 'min_app_version'] as const) {
     if (typeof m[k] !== 'string' || !m[k]) return bad('manifest-field-missing', `${k} نیست`);
   }
-  const gzBytes = Number(m.gz_bytes);
-  if (!Number.isInteger(gzBytes) || gzBytes <= 0) return bad('manifest-field-missing', 'gz_bytes درست نیست');
+  if (typeof m.gz_bytes !== 'number' || !Number.isInteger(m.gz_bytes) || m.gz_bytes <= 0) {
+    return bad('manifest-field-missing', 'gz_bytes درست نیست');
+  }
   if (!/^[0-9a-f]{64}$/i.test(String(m.gz_sha256))) return bad('manifest-field-missing', 'gz_sha256 شکلِ sha256 ندارد');
   return { ok: true, value: m as unknown as SnapshotManifest };
 }
