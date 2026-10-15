@@ -61,16 +61,23 @@ function makeClient(ws: WebSocket) {
       events.push({ method: msg.method, params: msg.params || {} });
     }
   };
-  const send = (method: string, params: Record<string, unknown> = {}): Promise<any> =>
+  const send = (method: string, params: Record<string, unknown> = {}, ms = 12000): Promise<any> =>
     new Promise((res) => {
       const mid = ++id;
-      pending.set(mid, res as (v: unknown) => void);
+      // بی‌مهلت، یکِ CDPِ بی‌پاسخ (WebView که DevTools را نگه نداشته) پروسه را
+      // معلق می‌کرد و Node با کدِ ۱۳ (top-level await ناتمام) خارج می‌شد —
+      // یعنی «FAIL» بی‌هیچ سطرِ توضیح. حالا همان حالت یکِ خطایِ خوانا است.
+      const t = setTimeout(() => {
+        if (pending.has(mid)) { pending.delete(mid); res({ __timeout: method }); }
+      }, ms);
+      pending.set(mid, (v: unknown) => { clearTimeout(t); (res as (v: unknown) => void)(v); });
       ws.send(JSON.stringify({ id: mid, method, params }));
     });
   const evaluate = async (expr: string): Promise<Eval> => {
     const r = await send('Runtime.evaluate', {
       expression: expr, returnByValue: true, awaitPromise: true,
     });
+    if (r?.__timeout) return { ok: false, err: `timeout: ${r.__timeout}` };
     if (r?.exceptionDetails) {
       return { ok: false, err: r.exceptionDetails.exception?.description || 'exception' };
     }
@@ -105,6 +112,7 @@ if (!pages.length) {
   process.exit(2);
 }
 const page = pages[0];
+console.log(`CDP target: ${page.url} · title=${page.title}`);
 set('page_url', page.url);
 set('page_title', page.title);
 
@@ -116,12 +124,35 @@ await c.send('Network.enable');
 await c.send('Log.enable');
 await new Promise((r) => setTimeout(r, WAIT_MS));
 
+// ۰) دروازۀ ورودِ محلی: رویِ گوشی هم مثلِ کاربر، اگر صفحهٔ رمز آمد باز شود.
+// بی‌این، «صفحه سفید نیست» با «برنامۀ واقعی باز شد» قاطی می‌شود: درِ صفحهٔ
+// ورود هم گره و متن هست، ولی هیچ داده‌ای نمایش داده نشده. رمزِ پیش‌فرض درِ
+// sourceِ عمومیِ همین مخزن است (authStore.ts: DEFAULT_USER/DEFAULT_PASS) —
+// چیزی برایِ حدس‌زدن نیست و هیچ حسابِ واقعی درِ کار نیست.
+await c.evaluate(
+  '(()=>{const u=document.querySelector("input[type=text],input:not([type])");' +
+  'const p=document.querySelector("input[type=password]");' +
+  'if(!u||!p) return "no-gate";' +
+  'const set=(el,v)=>{const s=Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype,"value").set;' +
+  's.call(el,v);el.dispatchEvent(new Event("input",{bubbles:true}));};' +
+  'set(u,"admin");set(p,"bors123");' +
+  'const b=Array.from(document.querySelectorAll("button")).find(x=>/ورود/.test(x.textContent||""));' +
+  'if(b) b.click(); return "submitted"})()');
+await new Promise((r) => setTimeout(r, 6000));
+
 // ۱) صفحه سفید نیست؟ — تعدادِ گره‌ها + همان چیزی که کاربر باید ببیند
 set('dom_nodes', (await c.evaluate('document.querySelectorAll("*").length')).value);
 set('testids', (await c.evaluate(
   'Array.from(document.querySelectorAll("[data-testid]")).slice(0,60).map(e=>e.getAttribute("data-testid"))')).value);
 set('visible_text_len', (await c.evaluate(
   'document.body ? document.body.innerText.replace(/\\s+/g," ").trim().length : 0')).value);
+// «سفید نیست» با «برنامۀ واقعی باز شده» یکی نیست: درِ صفحۀ ورود هم گره و متن
+// هست. تنها چیزی که ادعا را اثبات می‌کند، متنِ خودِ تابلوست.
+set('reached_content', (await c.evaluate(
+  '(()=>{const t=document.body.innerText||"";' +
+  'if(/نام کاربری|رمز عبور/.test(t)&&!/شاخص کل/.test(t)) return "login-gate";' +
+  'if(/شاخص کل|ارزش معاملات بازار|نوسان‌گیر/.test(t)) return "board";' +
+  'if(/پیدا نشد/.test(t)) return "not-found";return "other"})()')).value);
 set('route', (await c.evaluate('location.hash || location.pathname')).value);
 
 // ۲) دیتابیسِ بسته واقعاً باز شده؟ bootTiming را خودِ localData رویِ window می‌گذارد
@@ -177,8 +208,10 @@ mkdirSync(dirname(OUT), { recursive: true });
 writeFileSync(OUT, JSON.stringify(report, null, 2), 'utf8');
 console.log(JSON.stringify(report, null, 2));
 
-// حکم: سفیدیبودن و نبودِ داده و نشتِ رمز، سه «رد»ِ سخت‌اند.
+// حکم: سفیدیبودن، نبودِ داده، موندن پشتِ دروازۀ ورود، و نشتِ رمز، چهار «رد»ِ
+// سخت‌اند. بی‌این سه اول، «اپ باز شد» از رویِ هر صفحۀ غیرخالی ادعا می‌شد.
 const nodes = Number(report.checks.dom_nodes || 0);
 const textLen = Number(report.checks.visible_text_len || 0);
-const fail = nodes < 150 || textLen < 40 || secretish.length > 0;
+const reached = String(report.checks.reached_content || 'other');
+const fail = nodes < 150 || textLen < 40 || secretish.length > 0 || reached !== 'board';
 process.exit(fail ? 1 : 0);

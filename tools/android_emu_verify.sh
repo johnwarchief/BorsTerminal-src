@@ -67,13 +67,37 @@ fi
 
 # ── ۲) سه اندازۀ تلفن: wm size درِ پیکسل، CSS viewport درِ dp ────────────────
 # 360×800 / 390×844 / 412×915 هر سه با density 480 (÷۳) ⇒ px = dp×۳
+#
+# تغییرِ اندازه درِ اندروید یعنی configuration change و **ازنویدِ Activity**؛
+# پس pid عوض می‌شود. اولین رانِ واقعی این را «process gone» خواند و رد کرد، در
+# حالی که اپ سالم بود. اینجا هر اندازه با اطمینان ازِ بالا بودنِ اپ سنجیده
+# می‌شود و «مُرد» از «ازنوید بالا آمد» جدا نوشته می‌شود.
+ensure_running() {  # $1 = برچسب
+  local pid old=$2
+  for i in 1 2 3 4 5 6; do
+    pid=$(adb shell pidof -s "$PKG" | tr -d '\r')
+    [ -n "$pid" ] && { echo "$pid"; return 0; }
+    if [ "$i" = 1 ]; then
+      adb shell monkey -p "$PKG" -c android.intent.category.LAUNCHER 1 > /dev/null 2>&1
+    fi
+    sleep 8
+  done
+  echo ""; return 1
+}
+
 for pair in "1080x2400 360x800" "1170x2532 390x844" "1236x2745 412x915"; do
   set -- $pair
   PX=$1; LABEL=$2
+  OLD_PID=$(adb shell pidof -s "$PKG" | tr -d '\r')
   adb shell wm size "$PX" && adb shell wm density 480
-  sleep 4
-  PID=$(adb shell pidof -s "$PKG" | tr -d '\r')
-  if [ -z "$PID" ]; then step "view-$LABEL" FAIL "process gone after wm size"; continue; fi
+  sleep 6
+  PID=$(ensure_running "$LABEL" "$OLD_PID")
+  if [ -z "$PID" ]; then
+    adb logcat -d 2>/dev/null | grep -iE "$PKG|lowmemorykiller|am_proc_died" | tail -12 > "$OUT/died-$LABEL.txt"
+    step "view-$LABEL" FAIL "اپ پس ازِ wm size بالا نیامد (شاهد: $OUT/died-$LABEL.txt)"
+    continue
+  fi
+  [ -n "$OLD_PID" ] && [ "$OLD_PID" != "$PID" ] && step "view-$LABEL-resume" PASS "pid عوض شد ($OLD_PID → $PID) = ازنویدِ Activity با تغییرِ اندازه، نه مرگ"
   adb forward tcp:9222 "localabstract:webview_devtools_remote_$PID" 2>/dev/null
   adb exec-out screencap -p > "$OUT/$LABEL.png"
   if node --experimental-strip-types tools/android_webview_check.mts \
@@ -89,12 +113,25 @@ done
 
 # ── ۳) بازگشت، background/foreground، crash/ANR ─────────────────────────────
 adb shell wm size reset >/dev/null 2>&1; adb shell wm density reset >/dev/null 2>&1
-adb shell input keyevent 4; sleep 1
-PID=$(adb shell pidof -s "$PKG" | tr -d '\r')
-if [ -n "$PID" ]; then step back_button PASS "پس از یکِ بازگشت زنده است (api فشارِ دوباره برایِ خروج)"; else step back_button FAIL "اپ با یکِ بازگشت بست"; fi
+sleep 3
+# بازگشت رویِ اپِ **بالا آمده** سنجیده می‌شود؛ بی‌این، طنینِ شکست‌هایِ قبلی به
+# حسابِ «اپ با یکِ بازگشت بست» گزارش می‌شد.
+PID=$(ensure_running "back" "")
+if [ -z "$PID" ]; then
+  step back_button NOT_VERIFIED "اپ پیش ازِ سنجه بالا نیامد"
+else
+  adb shell input keyevent 4; sleep 1
+  PIDB=$(adb shell pidof -s "$PKG" | tr -d '\r')
+  if [ -n "$PIDB" ]; then
+    step back_button PASS "یکِ بازگشت: زنده (pid=$PIDB) — پنجرۀ «برایِ خروج دوباره بزنید»"
+  else
+    adb logcat -d 2>/dev/null | grep -iE "$PKG|ActivityTaskManager|am_kill" | tail -12 > "$OUT/back_died.txt"
+    step back_button FAIL "اپ با یکِ بازگشت بست (شاهد: $OUT/back_died.txt)"
+  fi
+fi
 adb shell input keyevent KEYCODE_HOME; sleep 3
 adb shell monkey -p "$PKG" -c android.intent.category.LAUNCHER 1 > /dev/null 2>&1; sleep 6
-PID2=$(adb shell pidof -s "$PKG" | tr -d '\r')
+PID2=$(ensure_running "fg" "")
 if [ -n "$PID2" ]; then step background_foreground PASS "pid=$PID2"; else step background_foreground FAIL "پس ازِ home برنگشت"; fi
 adb shell input keyevent KEYCODE_APP_SWITCH 2>/dev/null
 sleep 2

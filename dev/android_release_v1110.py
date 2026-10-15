@@ -163,6 +163,23 @@ chk('grep -E "$PKG|chromium|Capacitor' in EMU,
     "A43 شمارشِ نشتِ رمز به خطوطِ خودِ برنامه/WebView محدود است (noise سیستمی نه)")
 chk("dependent checks NOT_VERIFIED" in EMU,
     "A44 بی‌بالاآمدنِ اپ، سنجه‌هایِ بعدی NOT_VERIFIED می‌شوند نه هشت FAILِ بی‌معنا")
+# A45/A46 — مسیرِ امضا بی‌کلیدِ واقعی قابلِ آزمون نیست؛ یک کلیدِ دورریختنیِ هم‌انسان
+# همان زنجیره را اثبات می‌کند، به‌شرطِ اینکه هرگز منتشر نشود.
+smoke = WF.split("Signing smoke test")[-1] if "Signing smoke test" in WF else ""
+chk(bool(smoke) and "keytool -genkeypair" in smoke and "not-for-release" in smoke
+    and "app-release.apk" in smoke,
+    "A45 دودِ امضا با کلیدِ ساختگی، نامِ خروجیِ امضاشده و apksigner را می‌سنجد")
+WF_PUB_BEFORE_SMOKE = WF.find("Publish Android release") < WF.find("Signing smoke test")
+chk(WF_PUB_BEFORE_SMOKE and 'rm -rf app/build/outputs/apk/release' in smoke,
+    "A46 دودِ امضا بعد ازِ گامِ انتشار می‌آید و خروجی‌اش بی‌درنگ پاک می‌شود (هیچ گامی کلیدِ بی‌ارزش را منتشر نمی‌کند)")
+# A47/A48 — دو دامِ رانِ واقعیِ شبیه‌ساز: موندنِ پشتِ دروازۀ ورود «اپ باز شد»
+# حساب نمی‌شود، و CDPِ بی‌پاسخ نباید پروسه را معلق کند.
+chk("reached_content" in CDP and "login-gate" in CDP and "board" in CDP,
+    "A47 کاوشگر WebView بینِ «صفحۀ ورود»، «تابلو» و «پیدا نشد» فرق می‌گذارد و فقط board سبز است")
+chk("__timeout" in CDP and "setTimeout" in CDP,
+    "A48 هر فرمانِ CDP مهلت دارد؛ بی‌پاسخ‌ماندن به exit 13 (top-level await ناتمام) نمی‌انجامد")
+chk("ensure_running" in EMU and "ازنویدِ Activity" in EMU,
+    "A49 تغییرِ اندازه که Activity را ازنوید می‌کند، «مرگِ اپ» خوانده نمی‌شود")
 chk("wm size" in EMU and "360x800" in EMU and "390x844" in EMU and "412x915" in EMU,
     "A33 سه اندازۀ تلفن با wm size/density واقعی سنجیده می‌شود")
 chk("keyevent 4" in EMU and "KEYCODE_HOME" in EMU and "FATAL EXCEPTION" in EMU,

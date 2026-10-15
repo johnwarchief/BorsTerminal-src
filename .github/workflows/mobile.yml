@@ -430,6 +430,37 @@ jobs:
           وضعیتِ آیتم‌ها و شاهد هر کدام: docs/android/ANDROID-RELEASE-REPORT-2026-10-15.md"
           gh release upload "$TAG" "$APK#bors-terminal-android-$BORS_VERSION_NAME.apk" --clobber
 
+      # ── دودِ امضا: مسیرِ کدِ signing را بی‌کلیدِ واقعی اثبات می‌کند ──────────
+      # کلیدِ انتشار درِ این پروژه وجود ندارد، پس هرگز با آن «تمرین» کرده نمی‌شود.
+      # این گام یک keystoreِ دور‌ریختنیِ هم‌انسان می‌سازد (رمزِ ساختگی، بی‌ارزش،
+      # فقط درِ RUNNER_TEMP)، همان BORS_KEYSTORE_PROPERTIES را به Gradle می‌دهد و
+      # چک می‌کند زنجیره واقعاً کار می‌کند: نامِ خروجی app-release.apk می‌شود،
+      # apksigner قبولش می‌کند، و گواهیِ چاپ‌شده مالِ همان کلیدِ ساختگی است.
+      # عمداً **آخرین** گام است و بی‌درنگ پاک می‌شود: هیچ گامِ دیگری (انتشار
+      # شاملش) نمی‌تواند این فایلِ امضاشده با کلیدِ بی‌ارزش را ببیند. این
+      # artifact هرگز منتشر نمی‌شود و جایِ کلیدِ انتشار را هم نمی‌گیرد.
+      - name: Signing smoke test (throwaway key, never published)
+        if: env.APK_SIGNED != 'yes'
+        run: |
+          set -e
+          BT=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)
+          D="$RUNNER_TEMP/smoke"; mkdir -p "$D"; umask 077
+          keytool -genkeypair -keystore "$D/smoke.jks" -storepass smoke-not-a-release-key \
+            -keypass smoke-not-a-release-key -alias smoke -keyalg RSA -keysize 2048 -validity 30 \
+            -dname "CN=signing smoke test, O=not-for-release" >/dev/null 2>&1
+          { echo "storeFile=$D/smoke.jks"; echo "storePassword=smoke-not-a-release-key";
+            echo "keyAlias=smoke"; echo "keyPassword=smoke-not-a-release-key"; } > "$D/ks.properties"
+          cd frontend/android
+          BORS_KEYSTORE_PROPERTIES="$D/ks.properties" ./gradlew assembleRelease --no-daemon \
+            -PBorsVersionName="$BORS_VERSION_NAME" -PBorsVersionCode="$BORS_VERSION_CODE" > "$D/gradle.log" 2>&1 \
+            || { tail -20 "$D/gradle.log"; echo "SMOKE FAIL: مسیرِ امضا درِ Gradle کار نمی‌کند" >&2; exit 1; }
+          SIGNED=app/build/outputs/apk/release/app-release.apk
+          test -s "$SIGNED" || { echo "SMOKE FAIL: با کلید، نامِ خروجی app-release.apk نشد" >&2; exit 1; }
+          "$BT/apksigner" verify --print-certs "$SIGNED" | grep -m1 -E "Signer #1 certificate DN|SHA-256" || true
+          "$BT/apksigner" verify "$SIGNED" && echo "SMOKE OK: signingConfig + apksigner زنجیره‌شان کار می‌کند (کلیدِ ساختگی؛ منتشر نمی‌شود)"
+          rm -rf app/build/outputs/apk/release "$D"
+          echo "تمیز شد: artifactِ کلیدِ ساختگی حذف گردید تا هیچ گامی آن را نبیند"
+
   # ── WebView رویِ دستگاه: آزمونِ زنده درِ شبیه‌ساز ─────────────────────────────
   # درِ هر گزارشِ قبلی این مورد «انجام‌نشده» نوشته شده بود، چون رویِ ماشینِ
   # توسعه Java/Android SDK نیست و آزمون‌ها یا درِ jsdom بودند یا درِ Chromiumِ
