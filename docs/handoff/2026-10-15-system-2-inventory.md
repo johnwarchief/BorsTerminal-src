@@ -17,7 +17,7 @@
 | `main` محلی | `1e651b1` — **behind 3** نسبت بهِ `origin/main`؛ دست‌نخورده گذاشته شد |
 | worktreeها (شروعِ مأموریت) | `BorsTerminal-src` (checkoutِ اصلی) + `.worktrees/ui-audit-system-2` |
 | شاخۀِ UI | `mission/ui-audit-system-2-2026-10-15` @ `165bdca` — **بی‌upstream** (رویِ remote اصلاً وجود نداشت) |
-| تغییراتِ ثبت‌نشده درِ checkoutِ اصلی | `M _audit/app_log.txt` (+۹۰۶/−۳۰۶)، `M _audit/RA365-LEDGER-RULE-2026-10-12.csv` (بی‌تغییرِ محتوا، فقطِ خطوطِ 끝 CRLF)، `M dev/fixtures/fts_v10_payloads.json` (همان)، + ۶ فایلِ untrackedِ `_audit/PHASE5F-*.txt` و `_audit/P5G-FINAL-RC.txt` |
+| تغییراتِ ثبت‌نشده درِ checkoutِ اصلی | `M _audit/app_log.txt` (+۹۰۶/−۳۰۶)، `M _audit/RA365-LEDGER-RULE-2026-10-12.csv` (بی‌تغییرِ محتوا، فقطِ پایانِ خط CRLF)، `M dev/fixtures/fts_v10_payloads.json` (همان)، + ۶ فایلِ untrackedِ `_audit/PHASE5F-*.txt` و `_audit/P5G-FINAL-RC.txt` |
 | تغییراتِ ثبت‌نشده درِ worktreeِ UI | ۶ فایلِ `frontend/src/**` + `_audit/ui/` (۷ هارنسِ js + JSON/TXT) + `_audit/ui-gates/` |
 | هویتِ commit | بی‌تنظیمِ سراسری (`git config user.name` خالی) ⇒ هرِ کامیت باِ `-c user.name/user.email` درِ خودِ فرمان، همانِ رawardِ همیشگیِ اینِ سیستم |
 
@@ -131,7 +131,13 @@
 | وجودِ سندِ موجودی رویِ remote | `git ls-tree -r origin/handoff/system-2/inventory-2026-10-15` | `docs/handoff/2026-10-15-system-2-inventory.md` |
 | محتوایِ شاخۀِ UI | `git ls-tree -r … | grep` | ۷ هارنسِ js · ۲۲ شاهدِ json/txt · ۱ سندِ وضعیت · **۰ تصویرِ png** · **۰ backend.log** |
 | شاهدِ مأموریتِ عملکرد رویِ شاخۀِ FTS | `git ls-tree -r …` | `_audit/perf/PERFORMANCE_REPORT.md` · `BEFORE_AFTER.md` · `dev/mstat_snapshot_cache_v1.py` · `dev/perf_output_equal_v1.py` |
-| وضعیتِ working treeها | `git status --short` | worktreeهایِ UI وِ handoff **پاک**؛ checkoutِ اصلی فقطِ ۸ قلمِ §۷ (دوِ فایلِ CRLF‑only وِ ۶ لاگِ scratch) — پاک نشدند، stage نشدند |
+| وضعیتِ working treeها | `git status --short` | worktreeهایِ UI وِ handoff **پاک**؛ checkoutِ اصلی فقطِ ۸ قلمِ §۷ (دوِ فایلِ «فقطِ پایانِ خط» وِ ۶ لاگِ scratch) — پاک نشدند، stage نشدند |
+
+**خطایِ خودی که پنهان نشد:** نخستینِ کامیتِ همینِ سند باِ گاردِ گلیف «سبز» رفت، چونِ
+اجرایِ گارد درِ لولۀِ `| tail` شد و کدِ خروجی‌اش گم شد؛ گارد بعداً یکِ نویسسۀِ کره‌ای
+(`끝`) درِ سطرها ۲۰ وِ ۱۴۳ پیدا کرد که درِ همانِ کامیتِ منتشرشده بود. اصلاحش درِ
+کامیتِ بعدیِ همینِ شاخه رفت (تاریخچه بازنویسی نشد) وِ هرِ دوِ worktree دوباره باِ
+کدِ خروجیِ درست سنجیده شدند: `3 passed` نه، `4 passed / 0 failed`، `exit 0`.
 
 ---
 
@@ -140,7 +146,7 @@
 1. **ازِ قبل رویِ `github/main`:** ۸۹ کامیت ازِ نقطۀِ جدا شدنِ ما (تاریخِ ۲۰۲۶‑۱۰‑۱۲ به‌بعد): `feat(codal)`، `feat(bot)`/`/api/execution`، `feat(watch)`، `perf(mstat)`، releasesِ `v1.0.87` وِ `v1.0.88`. هیچ‌یک ازِ اینها درِ دوِ شاخۀِ ماست.
 2. **commitهایی که محلی بودند و اکنون push شده‌اند:** همان ۴۲ (FTS/وضعیت‌بازار/عملکرد/سند) + ۲ِ ممیزیِ UI.
 3. **تغییراتِ منتشرشده رویِ شاخه‌هایِ مستقل:** سه شاخۀِ §۴.
-4. **هنوز فقط رویِ اینِ ماشین:** دو فایلِ `M` بی‌تغییرِ محتوا (فقطِ خطوطِ 끝: `_audit/RA365-LEDGER-RULE-2026-10-12.csv`، `dev/fixtures/fts_v10_payloads.json`) وِ ۶ لاگِ scratchِ `_audit/PHASE5F-*` وِ `_audit/P5G-FINAL-RC.txt` وِ `_audit/ui/backend.log` وِ ۱۶۸ تصویرِ `_audit/ui/shots/*.png` وِ پوشۀِ `frontend/dist/` (ignored) — علتشان درِ §۸.
+4. **هنوز فقط رویِ اینِ ماشین:** دو فایلِ `M` بی‌تغییرِ محتوا (فقطِ پایانِ خط: `_audit/RA365-LEDGER-RULE-2026-10-12.csv`، `dev/fixtures/fts_v10_payloads.json`) وِ ۶ لاگِ scratchِ `_audit/PHASE5F-*` وِ `_audit/P5G-FINAL-RC.txt` وِ `_audit/ui/backend.log` وِ ۱۶۸ تصویرِ `_audit/ui/shots/*.png` وِ پوشۀِ `frontend/dist/` (ignored) — علتشان درِ §۸.
 5. **همپوشانی:** `api/market_status.py` وِ `mstat_engine.py` درِ **هر دو** سو ازِ `f5a1016` عوض شده‌اند (اختلافِ موجود: ۳۴۰ وِ ۵۸۲ سطر). یعنی سیستمِ دیگر رویِ main همانِ اندپوینت/موتور را دوباره کار کرده است.
 6. **ریسکِ conflict (عددِ دقیق):** نقطۀِ مشترکِ جدایی `f5a10166` (۲۰۲۶‑۱۰‑۱۱). ما ۵۱ کامیت وِ ۳۱۰ فایل؛ `origin/main` ۸۹ کامیت وِ ۳۳۳ فایل؛ **۲۷ فایل درِ هر دو سو تغییده شده‌اند** — پرخطرترینها: `api/market_status.py`، `api/chart.py`، `app.py`، `frontend/src/app/components/Topbar.tsx`، `frontend/src/features/market/routes/MarketStatusPage.tsx`، `MarketStatusTables.tsx`، `MarketPulseBar.tsx`، `FtsFunnelAllStages.tsx`، `MasterFtsDetails.tsx`، `SymbolInspector.tsx`، `dev/run_all_tests.py`، `.gitignore`، `fts_terminal.spec`. هیچِ merge‌ای انجام نشد (ممنوعِ مأموریت).
 7. **چه چیزی درِ نسخۀِ نصبی/Frozen/Portable نیست:** نسخۀِ نصبیِ درِ حالِ اجرا `v1.0.86` رویِ `127.0.0.1:8001` (PID 5336) است وِ `BorsTerminal_Portable_v1.0.86.zip` رویِ دسکتاپ؛ `APP_VERSION` شاخۀِ ما ۱.۰.۸۶ وِ `origin/main` ۱.۰.۸۸. `git tag --contains HEAD` خالی است ⇒ **هیچ‌یک ازِ کارهایِ اینِ سه شاخه درِ هیچِ tag یا بیلدِ منتشرشده نیست** (نه تبِ وضعیتِ بازارِ بازسازی‌شده، نه اصلاحاتِ عملکرد، نه اصلاحِ پوستهٔ UI).
