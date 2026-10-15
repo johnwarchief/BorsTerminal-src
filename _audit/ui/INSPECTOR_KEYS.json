@@ -1,0 +1,171 @@
+{
+ "ranAt": "2026-10-15T20:14:40.911Z",
+ "log": [
+  {
+   "step": "open-by-row-click",
+   "exists": true,
+   "ariaHidden": "false",
+   "inert": false,
+   "box": [
+    0,
+    0,
+    240,
+    768
+   ],
+   "onScreen": true,
+   "closeBtn": {
+    "box": [
+     10,
+     8,
+     24,
+     24
+    ],
+    "label": "بستن پنل نماد"
+   },
+   "focus": "tape-row",
+   "focusInside": false,
+   "backdropVisible": true,
+   "tabsText": "در یک نگاهجزئیات بازار",
+   "hash": "#/market"
+  },
+  {
+   "step": "after-Escape",
+   "exists": true,
+   "ariaHidden": "false",
+   "inert": false,
+   "box": [
+    0,
+    0,
+    240,
+    768
+   ],
+   "onScreen": true,
+   "closeBtn": {
+    "box": [
+     10,
+     8,
+     24,
+     24
+    ],
+    "label": "بستن پنل نماد"
+   },
+   "focus": "tape-row",
+   "focusInside": false,
+   "backdropVisible": true,
+   "tabsText": "در یک نگاهجزئیات بازار",
+   "hash": "#/market"
+  },
+  {
+   "step": "tab-distance",
+   "tabbableBefore": 145,
+   "tabbableBeforePanel": 131,
+   "exists": true,
+   "ariaHidden": "false",
+   "inert": false,
+   "box": [
+    0,
+    0,
+    240,
+    768
+   ],
+   "onScreen": true,
+   "closeBtn": {
+    "box": [
+     10,
+     8,
+     24,
+     24
+    ],
+    "label": "بستن پنل نماد"
+   },
+   "focus": "BUTTON.inline-flex«✕»",
+   "focusInside": true,
+   "backdropVisible": true,
+   "tabsText": "در یک نگاهجزئیات بازار",
+   "hash": "#/market"
+  },
+  {
+   "step": "after-Escape-inside-panel",
+   "exists": true,
+   "ariaHidden": "true",
+   "inert": true,
+   "box": [
+    -240,
+    0,
+    240,
+    768
+   ],
+   "onScreen": false,
+   "closeBtn": {
+    "box": [
+     -230,
+     8,
+     24,
+     24
+    ],
+    "label": "بستن پنل نماد"
+   },
+   "focus": "BODY.«بترمینال بور»",
+   "focusInside": false,
+   "backdropVisible": false,
+   "tabsText": "در یک نگاهجزئیات بازار",
+   "hash": "#/market"
+  },
+  {
+   "step": "navigate-with-panel-open",
+   "reopened": {
+    "exists": true,
+    "ariaHidden": "false",
+    "inert": false,
+    "box": [
+     0,
+     0,
+     240,
+     768
+    ],
+    "onScreen": true,
+    "closeBtn": {
+     "box": [
+      10,
+      8,
+      24,
+      24
+     ],
+     "label": "بستن پنل نماد"
+    },
+    "focus": "tape-row",
+    "focusInside": false,
+    "backdropVisible": true,
+    "tabsText": "در یک نگاهجزئیات بازار",
+    "hash": "#/market"
+   },
+   "afterNav": {
+    "exists": true,
+    "ariaHidden": "false",
+    "inert": false,
+    "box": [
+     0,
+     0,
+     240,
+     768
+    ],
+    "onScreen": true,
+    "closeBtn": {
+     "box": [
+      10,
+      8,
+      24,
+      24
+     ],
+     "label": "بستن پنل نماد"
+    },
+    "focus": "A.group«وضعیت بازار»",
+    "focusInside": false,
+    "backdropVisible": true,
+    "tabsText": "در یک نگاهجزئیات بازار",
+    "hash": "#/market-status"
+   }
+  }
+ ],
+ "errors": []
+}

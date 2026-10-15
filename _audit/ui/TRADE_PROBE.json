@@ -1,0 +1,167 @@
+{
+ "ranAt": "2026-10-15T20:40:40.991Z",
+ "base": "http://127.0.0.1:8010",
+ "viewport": {
+  "w": 1366,
+  "h": 768
+ },
+ "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36 Edg/155.0.0.0",
+ "total": 22,
+ "failed": 0,
+ "requestsSeen": 39,
+ "nonGet": [
+  "POST http://127.0.0.1:8010/api/funnel"
+ ],
+ "orderOrBotWrites": [],
+ "killAtStart": "ARMED",
+ "killAtEnd": "ARMED",
+ "consoleErrors": [],
+ "checks": [
+  {
+   "id": "trading-page دیده می‌شود",
+   "ok": true
+  },
+  {
+   "id": "هرِ دوِ تبِ سرخطی وِ ربات هست",
+   "ok": true,
+   "detail": [
+    "سرخطی و اجرای سفارش",
+    "ربات معاملاتی"
+   ]
+  },
+  {
+   "id": "یادداشتِ «کاغذی پیش‌فرض» رویِ صفحه خوانده می‌شود",
+   "ok": true
+  },
+  {
+   "id": "watch-order-panel نمایان است",
+   "ok": true
+  },
+  {
+   "id": "bot-panel درِ تبِ سرخطی نیست",
+   "ok": true
+  },
+  {
+   "id": "فهرستِ نماد اسکرول‌کنندۀِ واقعی است (overflow-y:auto وِ scrollHeight>clientHeight)",
+   "ok": true,
+   "detail": {
+    "overflowY": "auto",
+    "maxH": "256px",
+    "scrollH": 1038,
+    "clientH": 256,
+    "items": 40,
+    "outsideBefore": 30,
+    "firstOutside": "trade-symbol-آتيه06"
+   }
+  },
+  {
+   "id": "ردیفِ پایینِ فهرست باِ اسکرول داخلِ اسکرولر می‌آید",
+   "ok": true,
+   "detail": {
+    "top": 152,
+    "bottom": 408,
+    "cy": 397,
+    "inside": true
+   }
+  },
+  {
+   "id": "اسکرولر واقعاً جابه‌جا شد (scrollTop>0)",
+   "ok": true
+  },
+  {
+   "id": "کلیکِ ردیفِ نماد صفحۀِ سفارش را نمی‌شکند",
+   "ok": true,
+   "detail": "trade-symbol-آباد"
+  },
+  {
+   "id": "bot-panel نمایان است",
+   "ok": true
+  },
+  {
+   "id": "watch-order-panel ازِ تبِ ربات بیرون رفته",
+   "ok": true
+  },
+  {
+   "id": "ربات کاغذی را اعلام می‌کند",
+   "ok": true,
+   "detail": "▸ ربات معاملاتیآمادهربات خاموش · کاغذی · آماده · ۰ موقعیت · سرمایهٔ نمایشی — ریالهنوز اجرا"
+  },
+  {
+   "id": "بازگشت بهِ سرخطی work می‌کند",
+   "ok": true
+  },
+  {
+   "id": "دفتر/فرمِ سرخطی باِ آزمونگارهایِ واقعیِ خودِ پنل رویِ صفحه است",
+   "ok": true,
+   "detail": [
+    "watch-order-panel",
+    "watch-order-buy",
+    "watch-order-sell",
+    "watch-order-price",
+    "watch-order-qty",
+    "watch-order-balance-row",
+    "watch-order-balance",
+    "watch-order-balance-note",
+    "watch-order-actions",
+    "watch-order-phase",
+    "watch-order-reason",
+    "tape-buy-pc",
+    "tape-sell-pc"
+   ]
+  },
+  {
+   "id": "پنلِ سرخطی کاغذی/آزمایشی بودنِ مسیر را درِ متن اعلام می‌کند",
+   "ok": true,
+   "detail": {
+    "len": 260
+   }
+  },
+  {
+   "id": "صفرِ درخواستِ سفارش/ربات درِ کلِ اینِ نشستِ خودکار",
+   "ok": true,
+   "detail": {
+    "total": 31,
+    "dangerous": []
+   }
+  },
+  {
+   "id": "BOT_PANEL باِ بارگذاریِ تنها هم سفارش/ربات را نمی‌حرکت می‌دهد",
+   "ok": true,
+   "detail": {
+    "dangerous": []
+   }
+  },
+  {
+   "id": "adapter=mock وِ dry_run=true وِ live_enabled=false",
+   "ok": true,
+   "detail": {
+    "adapter": "mock",
+    "dry_run": true,
+    "live_enabled": false,
+    "nothing_will_leave": true,
+    "bot_enabled": false,
+    "bot_mode": "paper",
+    "kill": "ARMED",
+    "halted": false,
+    "live_all_open": false
+   }
+  },
+  {
+   "id": "«nothing_will_leave_the_machine» روشن اعلام می‌شود",
+   "ok": true
+  },
+  {
+   "id": "ربات خاموش وِ کاغذی وِ ARMED است",
+   "ok": true
+  },
+  {
+   "id": "درِ ربات هم قفل‌هایِ اجرایِ واقعی باز نیست",
+   "ok": true
+  },
+  {
+   "id": "بی‌خطایِ کنسول درِ مسیرِ /trade",
+   "ok": true,
+   "detail": []
+  }
+ ]
+}

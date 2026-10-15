@@ -1,0 +1,1429 @@
+{
+ "ranAt": "2026-10-15T20:18:29.173Z",
+ "viewport": {
+  "W": 1366,
+  "H": 768
+ },
+ "picked": true,
+ "routes": [
+  {
+   "route": "/market",
+   "vw": 1366,
+   "vh": 768,
+   "ovX": 0,
+   "scroller": {
+    "h": 768,
+    "sh": 1101,
+    "top": 0
+   },
+   "boxes": [
+    {
+     "sel": "header.glass-strip",
+     "x": 240,
+     "y": 0,
+     "w": 958,
+     "h": 36,
+     "belowPx": -732,
+     "abovePx": 0
+    },
+    {
+     "sel": ".app-main",
+     "x": 240,
+     "y": 101,
+     "w": 958,
+     "h": 1000,
+     "belowPx": 333,
+     "abovePx": -101
+    },
+    {
+     "sel": "[data-testid=\"tape-scroll\"]",
+     "x": 241,
+     "y": 503,
+     "w": 956,
+     "h": 508,
+     "belowPx": 243,
+     "abovePx": -503
+    }
+   ],
+   "scrollers": [
+    {
+     "tag": "app-content flex min-w-0",
+     "scrollTop": 333,
+     "maxTop": 333,
+     "hiddenRows": 0,
+     "sample": null,
+     "verdict": "REACHABLE"
+    },
+    {
+     "tag": "tape-scroll",
+     "scrollTop": 44132,
+     "maxTop": 44132,
+     "hiddenRows": 0,
+     "sample": null,
+     "verdict": "REACHABLE"
+    },
+    {
+     "tag": "glass-panel fixed bottom",
+     "scrollTop": 195,
+     "maxTop": 195,
+     "hiddenRows": 0,
+     "sample": null,
+     "verdict": "REACHABLE"
+    }
+   ],
+   "overflow": [
+    {
+     "sel": ".app-main",
+     "x": 240,
+     "y": 101,
+     "w": 958,
+     "h": 1000,
+     "belowPx": 333,
+     "abovePx": -101
+    },
+    {
+     "sel": "[data-testid=\"tape-scroll\"]",
+     "x": 241,
+     "y": 503,
+     "w": 956,
+     "h": 508,
+     "belowPx": 243,
+     "abovePx": -503
+    }
+   ],
+   "errors": []
+  },
+  {
+   "route": "/market-status",
+   "vw": 1366,
+   "vh": 768,
+   "ovX": 0,
+   "scroller": {
+    "h": 768,
+    "sh": 965,
+    "top": 0
+   },
+   "boxes": [
+    {
+     "sel": "header.glass-strip",
+     "x": 240,
+     "y": 0,
+     "w": 958,
+     "h": 36,
+     "belowPx": -732,
+     "abovePx": 0
+    },
+    {
+     "sel": ".app-main",
+     "x": 240,
+     "y": 101,
+     "w": 958,
+     "h": 864,
+     "belowPx": 197,
+     "abovePx": -101
+    }
+   ],
+   "scrollers": [
+    {
+     "tag": "app-content flex min-w-0",
+     "scrollTop": 197,
+     "maxTop": 197,
+     "hiddenRows": 0,
+     "sample": null,
+     "verdict": "REACHABLE"
+    },
+    {
+     "tag": "glass-panel fixed bottom",
+     "scrollTop": 109,
+     "maxTop": 109,
+     "hiddenRows": 0,
+     "sample": null,
+     "verdict": "REACHABLE"
+    }
+   ],
+   "overflow": [
+    {
+     "sel": ".app-main",
+     "x": 240,
+     "y": 101,
+     "w": 958,
+     "h": 864,
+     "belowPx": 197,
+     "abovePx": -101
+    }
+   ],
+   "errors": []
+  },
+  {
+   "route": "/technical/فولاد",
+   "vw": 1366,
+   "vh": 768,
+   "ovX": 0,
+   "scroller": {
+    "h": 768,
+    "sh": 768,
+    "top": 0
+   },
+   "boxes": [
+    {
+     "sel": "header.glass-strip",
+     "x": 240,
+     "y": 0,
+     "w": 1066,
+     "h": 36,
+     "belowPx": -732,
+     "abovePx": 0
+    },
+    {
+     "sel": ".app-main",
+     "x": 240,
+     "y": 101,
+     "w": 1066,
+     "h": 667,
+     "belowPx": 0,
+     "abovePx": -101
+    },
+    {
+     "sel": ".tv-workbench",
+     "x": 240,
+     "y": 109,
+     "w": 1066,
+     "h": 651,
+     "belowPx": -8,
+     "abovePx": -109
+    },
+    {
+     "sel": "[data-testid=\"chart-area\"]",
+     "x": 240,
+     "y": 109,
+     "w": 736,
+     "h": 623,
+     "belowPx": -36,
+     "abovePx": -109
+    },
+    {
+     "sel": "[data-testid=\"technical-sidebar\"]",
+     "x": 976,
+     "y": 109,
+     "w": 330,
+     "h": 651,
+     "belowPx": -8,
+     "abovePx": -109
+    },
+    {
+     "sel": "[data-testid=\"fts-dock\"]",
+     "x": 240,
+     "y": 732,
+     "w": 736,
+     "h": 28,
+     "belowPx": -8,
+     "abovePx": -732
+    }
+   ],
+   "scrollers": [
+    {
+     "tag": "glass-panel fixed bottom",
+     "scrollTop": 195,
+     "maxTop": 195,
+     "hiddenRows": 0,
+     "sample": null,
+     "verdict": "REACHABLE"
+    },
+    {
+     "tag": "flex min-h-0 flex-1 flex",
+     "scrollTop": 2022,
+     "maxTop": 2022,
+     "hiddenRows": 0,
+     "sample": null,
+     "verdict": "REACHABLE"
+    }
+   ],
+   "overflow": [],
+   "errors": []
+  },
+  {
+   "route": "/technical/خوز",
+   "vw": 1366,
+   "vh": 768,
+   "ovX": 0,
+   "scroller": {
+    "h": 768,
+    "sh": 768,
+    "top": 0
+   },
+   "boxes": [
+    {
+     "sel": "header.glass-strip",
+     "x": 240,
+     "y": 0,
+     "w": 1066,
+     "h": 36,
+     "belowPx": -732,
+     "abovePx": 0
+    },
+    {
+     "sel": ".app-main",
+     "x": 240,
+     "y": 101,
+     "w": 1066,
+     "h": 667,
+     "belowPx": 0,
+     "abovePx": -101
+    },
+    {
+     "sel": ".tv-workbench",
+     "x": 240,
+     "y": 109,
+     "w": 1066,
+     "h": 651,
+     "belowPx": -8,
+     "abovePx": -109
+    },
+    {
+     "sel": "[data-testid=\"chart-area\"]",
+     "x": 240,
+     "y": 109,
+     "w": 736,
+     "h": 623,
+     "belowPx": -36,
+     "abovePx": -109
+    },
+    {
+     "sel": "[data-testid=\"technical-sidebar\"]",
+     "x": 976,
+     "y": 109,
+     "w": 330,
+     "h": 651,
+     "belowPx": -8,
+     "abovePx": -109
+    },
+    {
+     "sel": "[data-testid=\"fts-dock\"]",
+     "x": 240,
+     "y": 732,
+     "w": 736,
+     "h": 28,
+     "belowPx": -8,
+     "abovePx": -732
+    }
+   ],
+   "scrollers": [
+    {
+     "tag": "sidebar-body",
+     "scrollTop": 519,
+     "maxTop": 519,
+     "hiddenRows": 0,
+     "sample": null,
+     "verdict": "REACHABLE"
+    },
+    {
+     "tag": "glass-panel fixed bottom",
+     "scrollTop": 195,
+     "maxTop": 195,
+     "hiddenRows": 0,
+     "sample": null,
+     "verdict": "REACHABLE"
+    },
+    {
+     "tag": "flex min-h-0 flex-1 flex",
+     "scrollTop": 2022,
+     "maxTop": 2022,
+     "hiddenRows": 0,
+     "sample": null,
+     "verdict": "REACHABLE"
+    }
+   ],
+   "overflow": [],
+   "errors": [
+    "console: Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "console: Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "console: Failed to load resource: the server responded with a status of 404 (Not Found)"
+   ]
+  },
+  {
+   "route": "/technical",
+   "vw": 1366,
+   "vh": 768,
+   "ovX": 0,
+   "scroller": {
+    "h": 768,
+    "sh": 768,
+    "top": 0
+   },
+   "boxes": [
+    {
+     "sel": "header.glass-strip",
+     "x": 240,
+     "y": 0,
+     "w": 1066,
+     "h": 36,
+     "belowPx": -732,
+     "abovePx": 0
+    },
+    {
+     "sel": ".app-main",
+     "x": 240,
+     "y": 101,
+     "w": 1066,
+     "h": 667,
+     "belowPx": 0,
+     "abovePx": -101
+    },
+    {
+     "sel": ".tv-workbench",
+     "x": 240,
+     "y": 109,
+     "w": 1066,
+     "h": 651,
+     "belowPx": -8,
+     "abovePx": -109
+    },
+    {
+     "sel": "[data-testid=\"chart-area\"]",
+     "x": 240,
+     "y": 109,
+     "w": 736,
+     "h": 623,
+     "belowPx": -36,
+     "abovePx": -109
+    },
+    {
+     "sel": "[data-testid=\"technical-sidebar\"]",
+     "x": 976,
+     "y": 109,
+     "w": 330,
+     "h": 651,
+     "belowPx": -8,
+     "abovePx": -109
+    },
+    {
+     "sel": "[data-testid=\"fts-dock\"]",
+     "x": 240,
+     "y": 732,
+     "w": 736,
+     "h": 28,
+     "belowPx": -8,
+     "abovePx": -732
+    }
+   ],
+   "scrollers": [
+    {
+     "tag": "sidebar-body",
+     "scrollTop": 519,
+     "maxTop": 519,
+     "hiddenRows": 0,
+     "sample": null,
+     "verdict": "REACHABLE"
+    },
+    {
+     "tag": "glass-panel fixed bottom",
+     "scrollTop": 195,
+     "maxTop": 195,
+     "hiddenRows": 0,
+     "sample": null,
+     "verdict": "REACHABLE"
+    },
+    {
+     "tag": "flex min-h-0 flex-1 flex",
+     "scrollTop": 2022,
+     "maxTop": 2022,
+     "hiddenRows": 0,
+     "sample": null,
+     "verdict": "REACHABLE"
+    }
+   ],
+   "overflow": [],
+   "errors": []
+  },
+  {
+   "route": "/fundamental/فولاد",
+   "vw": 1366,
+   "vh": 768,
+   "ovX": 0,
+   "scroller": {
+    "h": 768,
+    "sh": 1229,
+    "top": 0
+   },
+   "boxes": [
+    {
+     "sel": "header.glass-strip",
+     "x": 240,
+     "y": 0,
+     "w": 958,
+     "h": 36,
+     "belowPx": -732,
+     "abovePx": 0
+    },
+    {
+     "sel": ".app-main",
+     "x": 240,
+     "y": 101,
+     "w": 958,
+     "h": 1128,
+     "belowPx": 461,
+     "abovePx": -101
+    }
+   ],
+   "scrollers": [
+    {
+     "tag": "app-content flex min-w-0",
+     "scrollTop": 461,
+     "maxTop": 461,
+     "hiddenRows": 0,
+     "sample": null,
+     "verdict": "REACHABLE"
+    },
+    {
+     "tag": "glass-panel fixed bottom",
+     "scrollTop": 195,
+     "maxTop": 195,
+     "hiddenRows": 0,
+     "sample": null,
+     "verdict": "REACHABLE"
+    },
+    {
+     "tag": "flex min-h-0 flex-1 flex",
+     "scrollTop": 2022,
+     "maxTop": 2022,
+     "hiddenRows": 0,
+     "sample": null,
+     "verdict": "REACHABLE"
+    }
+   ],
+   "overflow": [
+    {
+     "sel": ".app-main",
+     "x": 240,
+     "y": 101,
+     "w": 958,
+     "h": 1128,
+     "belowPx": 461,
+     "abovePx": -101
+    }
+   ],
+   "errors": []
+  },
+  {
+   "route": "/fundamental/خوز",
+   "vw": 1366,
+   "vh": 768,
+   "ovX": 0,
+   "scroller": {
+    "h": 768,
+    "sh": 768,
+    "top": 0
+   },
+   "boxes": [
+    {
+     "sel": "header.glass-strip",
+     "x": 240,
+     "y": 0,
+     "w": 958,
+     "h": 36,
+     "belowPx": -732,
+     "abovePx": 0
+    },
+    {
+     "sel": ".app-main",
+     "x": 240,
+     "y": 101,
+     "w": 958,
+     "h": 667,
+     "belowPx": 0,
+     "abovePx": -101
+    }
+   ],
+   "scrollers": [
+    {
+     "tag": "glass-panel fixed bottom",
+     "scrollTop": 195,
+     "maxTop": 195,
+     "hiddenRows": 0,
+     "sample": null,
+     "verdict": "REACHABLE"
+    }
+   ],
+   "overflow": [],
+   "errors": [
+    "console: Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "console: Failed to load resource: the server responded with a status of 404 (Not Found)"
+   ]
+  },
+  {
+   "route": "/fundamental",
+   "vw": 1366,
+   "vh": 768,
+   "ovX": 0,
+   "scroller": {
+    "h": 768,
+    "sh": 1270,
+    "top": 0
+   },
+   "boxes": [
+    {
+     "sel": "header.glass-strip",
+     "x": 240,
+     "y": 0,
+     "w": 958,
+     "h": 36,
+     "belowPx": -732,
+     "abovePx": 0
+    },
+    {
+     "sel": ".app-main",
+     "x": 240,
+     "y": 101,
+     "w": 958,
+     "h": 1168,
+     "belowPx": 502,
+     "abovePx": -101
+    }
+   ],
+   "scrollers": [
+    {
+     "tag": "app-content flex min-w-0",
+     "scrollTop": 502,
+     "maxTop": 502,
+     "hiddenRows": 0,
+     "sample": null,
+     "verdict": "REACHABLE"
+    },
+    {
+     "tag": "glass-panel fixed bottom",
+     "scrollTop": 195,
+     "maxTop": 195,
+     "hiddenRows": 0,
+     "sample": null,
+     "verdict": "REACHABLE"
+    },
+    {
+     "tag": "flex min-h-0 flex-1 flex",
+     "scrollTop": 2022,
+     "maxTop": 2022,
+     "hiddenRows": 0,
+     "sample": null,
+     "verdict": "REACHABLE"
+    }
+   ],
+   "overflow": [
+    {
+     "sel": ".app-main",
+     "x": 240,
+     "y": 101,
+     "w": 958,
+     "h": 1168,
+     "belowPx": 502,
+     "abovePx": -101
+    }
+   ],
+   "errors": []
+  },
+  {
+   "route": "/master",
+   "vw": 1366,
+   "vh": 768,
+   "ovX": 0,
+   "scroller": {
+    "h": 768,
+    "sh": 795,
+    "top": 0
+   },
+   "boxes": [
+    {
+     "sel": "header.glass-strip",
+     "x": 240,
+     "y": 0,
+     "w": 958,
+     "h": 36,
+     "belowPx": -732,
+     "abovePx": 0
+    },
+    {
+     "sel": ".app-main",
+     "x": 240,
+     "y": 101,
+     "w": 958,
+     "h": 693,
+     "belowPx": 27,
+     "abovePx": -101
+    }
+   ],
+   "scrollers": [
+    {
+     "tag": "app-content flex min-w-0",
+     "scrollTop": 27,
+     "maxTop": 27,
+     "hiddenRows": 0,
+     "sample": null,
+     "verdict": "REACHABLE"
+    },
+    {
+     "tag": "glass-panel fixed bottom",
+     "scrollTop": 195,
+     "maxTop": 195,
+     "hiddenRows": 0,
+     "sample": null,
+     "verdict": "REACHABLE"
+    }
+   ],
+   "overflow": [
+    {
+     "sel": ".app-main",
+     "x": 240,
+     "y": 101,
+     "w": 958,
+     "h": 693,
+     "belowPx": 27,
+     "abovePx": -101
+    }
+   ],
+   "errors": []
+  },
+  {
+   "route": "/master/فولاد",
+   "vw": 1366,
+   "vh": 768,
+   "ovX": 0,
+   "scroller": {
+    "h": 768,
+    "sh": 795,
+    "top": 0
+   },
+   "boxes": [
+    {
+     "sel": "header.glass-strip",
+     "x": 240,
+     "y": 0,
+     "w": 958,
+     "h": 36,
+     "belowPx": -732,
+     "abovePx": 0
+    },
+    {
+     "sel": ".app-main",
+     "x": 240,
+     "y": 101,
+     "w": 958,
+     "h": 693,
+     "belowPx": 27,
+     "abovePx": -101
+    }
+   ],
+   "scrollers": [
+    {
+     "tag": "app-content flex min-w-0",
+     "scrollTop": 27,
+     "maxTop": 27,
+     "hiddenRows": 0,
+     "sample": null,
+     "verdict": "REACHABLE"
+    },
+    {
+     "tag": "glass-panel fixed bottom",
+     "scrollTop": 198,
+     "maxTop": 198,
+     "hiddenRows": 0,
+     "sample": null,
+     "verdict": "REACHABLE"
+    }
+   ],
+   "overflow": [
+    {
+     "sel": ".app-main",
+     "x": 240,
+     "y": 101,
+     "w": 958,
+     "h": 693,
+     "belowPx": 27,
+     "abovePx": -101
+    }
+   ],
+   "errors": []
+  },
+  {
+   "route": "/master/خوز",
+   "vw": 1366,
+   "vh": 768,
+   "ovX": 0,
+   "scroller": {
+    "h": 768,
+    "sh": 780,
+    "top": 0
+   },
+   "boxes": [
+    {
+     "sel": "header.glass-strip",
+     "x": 240,
+     "y": 0,
+     "w": 958,
+     "h": 36,
+     "belowPx": -732,
+     "abovePx": 0
+    },
+    {
+     "sel": ".app-main",
+     "x": 240,
+     "y": 74,
+     "w": 958,
+     "h": 706,
+     "belowPx": 12,
+     "abovePx": -74
+    }
+   ],
+   "scrollers": [
+    {
+     "tag": "glass-panel fixed bottom",
+     "scrollTop": 188,
+     "maxTop": 188,
+     "hiddenRows": 0,
+     "sample": null,
+     "verdict": "REACHABLE"
+    }
+   ],
+   "overflow": [
+    {
+     "sel": ".app-main",
+     "x": 240,
+     "y": 74,
+     "w": 958,
+     "h": 706,
+     "belowPx": 12,
+     "abovePx": -74
+    }
+   ],
+   "errors": [
+    "console: Failed to load resource: the server responded with a status of 404 (Not Found)"
+   ]
+  },
+  {
+   "route": "/strategy-tree",
+   "vw": 1366,
+   "vh": 768,
+   "ovX": 0,
+   "scroller": {
+    "h": 768,
+    "sh": 1177,
+    "top": 0
+   },
+   "boxes": [
+    {
+     "sel": "header.glass-strip",
+     "x": 240,
+     "y": 0,
+     "w": 958,
+     "h": 36,
+     "belowPx": -732,
+     "abovePx": 0
+    },
+    {
+     "sel": ".app-main",
+     "x": 240,
+     "y": 74,
+     "w": 958,
+     "h": 1103,
+     "belowPx": 409,
+     "abovePx": -74
+    }
+   ],
+   "scrollers": [
+    {
+     "tag": "app-content flex min-w-0",
+     "scrollTop": 409,
+     "maxTop": 409,
+     "hiddenRows": 0,
+     "sample": null,
+     "verdict": "REACHABLE"
+    },
+    {
+     "tag": "glass-panel fixed bottom",
+     "scrollTop": 188,
+     "maxTop": 188,
+     "hiddenRows": 0,
+     "sample": null,
+     "verdict": "REACHABLE"
+    }
+   ],
+   "overflow": [
+    {
+     "sel": ".app-main",
+     "x": 240,
+     "y": 74,
+     "w": 958,
+     "h": 1103,
+     "belowPx": 409,
+     "abovePx": -74
+    }
+   ],
+   "errors": [
+    "console: Failed to load resource: the server responded with a status of 404 (Not Found)"
+   ]
+  },
+  {
+   "route": "/strategy-tree?page=F",
+   "vw": 1366,
+   "vh": 768,
+   "ovX": 0,
+   "scroller": {
+    "h": 768,
+    "sh": 1300,
+    "top": 0
+   },
+   "boxes": [
+    {
+     "sel": "header.glass-strip",
+     "x": 240,
+     "y": 0,
+     "w": 958,
+     "h": 36,
+     "belowPx": -732,
+     "abovePx": 0
+    },
+    {
+     "sel": ".app-main",
+     "x": 240,
+     "y": 74,
+     "w": 958,
+     "h": 1226,
+     "belowPx": 532,
+     "abovePx": -74
+    }
+   ],
+   "scrollers": [
+    {
+     "tag": "app-content flex min-w-0",
+     "scrollTop": 532,
+     "maxTop": 532,
+     "hiddenRows": 0,
+     "sample": null,
+     "verdict": "REACHABLE"
+    },
+    {
+     "tag": "glass-panel fixed bottom",
+     "scrollTop": 188,
+     "maxTop": 188,
+     "hiddenRows": 0,
+     "sample": null,
+     "verdict": "REACHABLE"
+    }
+   ],
+   "overflow": [
+    {
+     "sel": ".app-main",
+     "x": 240,
+     "y": 74,
+     "w": 958,
+     "h": 1226,
+     "belowPx": 532,
+     "abovePx": -74
+    }
+   ],
+   "errors": [
+    "console: Failed to load resource: the server responded with a status of 404 (Not Found)"
+   ]
+  },
+  {
+   "route": "/strategy-tree?page=T",
+   "vw": 1366,
+   "vh": 768,
+   "ovX": 0,
+   "scroller": {
+    "h": 768,
+    "sh": 960,
+    "top": 0
+   },
+   "boxes": [
+    {
+     "sel": "header.glass-strip",
+     "x": 240,
+     "y": 0,
+     "w": 958,
+     "h": 36,
+     "belowPx": -732,
+     "abovePx": 0
+    },
+    {
+     "sel": ".app-main",
+     "x": 240,
+     "y": 74,
+     "w": 958,
+     "h": 886,
+     "belowPx": 192,
+     "abovePx": -74
+    }
+   ],
+   "scrollers": [
+    {
+     "tag": "app-content flex min-w-0",
+     "scrollTop": 192,
+     "maxTop": 192,
+     "hiddenRows": 0,
+     "sample": null,
+     "verdict": "REACHABLE"
+    },
+    {
+     "tag": "glass-panel fixed bottom",
+     "scrollTop": 188,
+     "maxTop": 188,
+     "hiddenRows": 0,
+     "sample": null,
+     "verdict": "REACHABLE"
+    }
+   ],
+   "overflow": [
+    {
+     "sel": ".app-main",
+     "x": 240,
+     "y": 74,
+     "w": 958,
+     "h": 886,
+     "belowPx": 192,
+     "abovePx": -74
+    }
+   ],
+   "errors": []
+  },
+  {
+   "route": "/strategy-tree?page=S",
+   "vw": 1366,
+   "vh": 768,
+   "ovX": 0,
+   "scroller": {
+    "h": 768,
+    "sh": 1306,
+    "top": 0
+   },
+   "boxes": [
+    {
+     "sel": "header.glass-strip",
+     "x": 240,
+     "y": 0,
+     "w": 958,
+     "h": 36,
+     "belowPx": -732,
+     "abovePx": 0
+    },
+    {
+     "sel": ".app-main",
+     "x": 240,
+     "y": 74,
+     "w": 958,
+     "h": 1232,
+     "belowPx": 538,
+     "abovePx": -74
+    }
+   ],
+   "scrollers": [
+    {
+     "tag": "app-content flex min-w-0",
+     "scrollTop": 538,
+     "maxTop": 538,
+     "hiddenRows": 0,
+     "sample": null,
+     "verdict": "REACHABLE"
+    },
+    {
+     "tag": "glass-panel fixed bottom",
+     "scrollTop": 188,
+     "maxTop": 188,
+     "hiddenRows": 0,
+     "sample": null,
+     "verdict": "REACHABLE"
+    }
+   ],
+   "overflow": [
+    {
+     "sel": ".app-main",
+     "x": 240,
+     "y": 74,
+     "w": 958,
+     "h": 1232,
+     "belowPx": 538,
+     "abovePx": -74
+    }
+   ],
+   "errors": []
+  },
+  {
+   "route": "/strategy-tree?page=M",
+   "vw": 1366,
+   "vh": 768,
+   "ovX": 0,
+   "scroller": {
+    "h": 768,
+    "sh": 1236,
+    "top": 0
+   },
+   "boxes": [
+    {
+     "sel": "header.glass-strip",
+     "x": 240,
+     "y": 0,
+     "w": 958,
+     "h": 36,
+     "belowPx": -732,
+     "abovePx": 0
+    },
+    {
+     "sel": ".app-main",
+     "x": 240,
+     "y": 74,
+     "w": 958,
+     "h": 1162,
+     "belowPx": 468,
+     "abovePx": -74
+    }
+   ],
+   "scrollers": [
+    {
+     "tag": "app-content flex min-w-0",
+     "scrollTop": 468,
+     "maxTop": 468,
+     "hiddenRows": 0,
+     "sample": null,
+     "verdict": "REACHABLE"
+    },
+    {
+     "tag": "glass-panel fixed bottom",
+     "scrollTop": 188,
+     "maxTop": 188,
+     "hiddenRows": 0,
+     "sample": null,
+     "verdict": "REACHABLE"
+    }
+   ],
+   "overflow": [
+    {
+     "sel": ".app-main",
+     "x": 240,
+     "y": 74,
+     "w": 958,
+     "h": 1162,
+     "belowPx": 468,
+     "abovePx": -74
+    }
+   ],
+   "errors": []
+  },
+  {
+   "route": "/portfolio",
+   "vw": 1366,
+   "vh": 768,
+   "ovX": 0,
+   "scroller": {
+    "h": 768,
+    "sh": 1177,
+    "top": 0
+   },
+   "boxes": [
+    {
+     "sel": "header.glass-strip",
+     "x": 240,
+     "y": 0,
+     "w": 958,
+     "h": 36,
+     "belowPx": -732,
+     "abovePx": 0
+    },
+    {
+     "sel": ".app-main",
+     "x": 240,
+     "y": 74,
+     "w": 958,
+     "h": 1103,
+     "belowPx": 409,
+     "abovePx": -74
+    }
+   ],
+   "scrollers": [
+    {
+     "tag": "app-content flex min-w-0",
+     "scrollTop": 409,
+     "maxTop": 409,
+     "hiddenRows": 0,
+     "sample": null,
+     "verdict": "REACHABLE"
+    },
+    {
+     "tag": "glass-panel fixed bottom",
+     "scrollTop": 188,
+     "maxTop": 188,
+     "hiddenRows": 0,
+     "sample": null,
+     "verdict": "REACHABLE"
+    }
+   ],
+   "overflow": [
+    {
+     "sel": ".app-main",
+     "x": 240,
+     "y": 74,
+     "w": 958,
+     "h": 1103,
+     "belowPx": 409,
+     "abovePx": -74
+    }
+   ],
+   "errors": []
+  },
+  {
+   "route": "/trade",
+   "vw": 1366,
+   "vh": 768,
+   "ovX": 0,
+   "scroller": {
+    "h": 768,
+    "sh": 768,
+    "top": 0
+   },
+   "boxes": [
+    {
+     "sel": "header.glass-strip",
+     "x": 240,
+     "y": 0,
+     "w": 958,
+     "h": 36,
+     "belowPx": -732,
+     "abovePx": 0
+    },
+    {
+     "sel": ".app-main",
+     "x": 240,
+     "y": 74,
+     "w": 958,
+     "h": 694,
+     "belowPx": 0,
+     "abovePx": -74
+    }
+   ],
+   "scrollers": [
+    {
+     "tag": "trade-symbol-list",
+     "scrollTop": 782,
+     "maxTop": 782,
+     "hiddenRows": 0,
+     "sample": null,
+     "verdict": "REACHABLE"
+    },
+    {
+     "tag": "glass-panel fixed bottom",
+     "scrollTop": 116,
+     "maxTop": 116,
+     "hiddenRows": 0,
+     "sample": null,
+     "verdict": "REACHABLE"
+    }
+   ],
+   "overflow": [],
+   "errors": []
+  },
+  {
+   "route": "/watch",
+   "vw": 1366,
+   "vh": 768,
+   "ovX": 0,
+   "scroller": {
+    "h": 768,
+    "sh": 768,
+    "top": 0
+   },
+   "boxes": [
+    {
+     "sel": "header.glass-strip",
+     "x": 240,
+     "y": 0,
+     "w": 958,
+     "h": 36,
+     "belowPx": -732,
+     "abovePx": 0
+    },
+    {
+     "sel": ".app-main",
+     "x": 240,
+     "y": 74,
+     "w": 958,
+     "h": 694,
+     "belowPx": 0,
+     "abovePx": -74
+    }
+   ],
+   "scrollers": [
+    {
+     "tag": "glass-panel fixed bottom",
+     "scrollTop": 116,
+     "maxTop": 116,
+     "hiddenRows": 0,
+     "sample": null,
+     "verdict": "REACHABLE"
+    }
+   ],
+   "overflow": [],
+   "errors": []
+  },
+  {
+   "route": "/notifications",
+   "vw": 1366,
+   "vh": 768,
+   "ovX": 0,
+   "scroller": {
+    "h": 768,
+    "sh": 10494,
+    "top": 0
+   },
+   "boxes": [
+    {
+     "sel": "header.glass-strip",
+     "x": 240,
+     "y": 0,
+     "w": 958,
+     "h": 36,
+     "belowPx": -732,
+     "abovePx": 0
+    },
+    {
+     "sel": ".app-main",
+     "x": 240,
+     "y": 74,
+     "w": 958,
+     "h": 10420,
+     "belowPx": 9726,
+     "abovePx": -74
+    }
+   ],
+   "scrollers": [
+    {
+     "tag": "app-content flex min-w-0",
+     "scrollTop": 9726,
+     "maxTop": 9726,
+     "hiddenRows": 0,
+     "sample": null,
+     "verdict": "REACHABLE"
+    },
+    {
+     "tag": "glass-panel fixed bottom",
+     "scrollTop": 116,
+     "maxTop": 116,
+     "hiddenRows": 0,
+     "sample": null,
+     "verdict": "REACHABLE"
+    }
+   ],
+   "overflow": [
+    {
+     "sel": ".app-main",
+     "x": 240,
+     "y": 74,
+     "w": 958,
+     "h": 10420,
+     "belowPx": 9726,
+     "abovePx": -74
+    }
+   ],
+   "errors": []
+  },
+  {
+   "route": "/engine-lab",
+   "vw": 1366,
+   "vh": 768,
+   "ovX": 0,
+   "scroller": {
+    "h": 768,
+    "sh": 1306,
+    "top": 0
+   },
+   "boxes": [
+    {
+     "sel": "header.glass-strip",
+     "x": 240,
+     "y": 0,
+     "w": 958,
+     "h": 36,
+     "belowPx": -732,
+     "abovePx": 0
+    },
+    {
+     "sel": ".app-main",
+     "x": 240,
+     "y": 74,
+     "w": 958,
+     "h": 1232,
+     "belowPx": 538,
+     "abovePx": -74
+    }
+   ],
+   "scrollers": [
+    {
+     "tag": "app-content flex min-w-0",
+     "scrollTop": 538,
+     "maxTop": 538,
+     "hiddenRows": 0,
+     "sample": null,
+     "verdict": "REACHABLE"
+    },
+    {
+     "tag": "glass-panel fixed bottom",
+     "scrollTop": 116,
+     "maxTop": 116,
+     "hiddenRows": 0,
+     "sample": null,
+     "verdict": "REACHABLE"
+    }
+   ],
+   "overflow": [
+    {
+     "sel": ".app-main",
+     "x": 240,
+     "y": 74,
+     "w": 958,
+     "h": 1232,
+     "belowPx": 538,
+     "abovePx": -74
+    }
+   ],
+   "errors": []
+  },
+  {
+   "route": "/zz-not-found",
+   "vw": 1366,
+   "vh": 768,
+   "ovX": 0,
+   "scroller": {
+    "h": 768,
+    "sh": 768,
+    "top": 0
+   },
+   "boxes": [
+    {
+     "sel": "header.glass-strip",
+     "x": 240,
+     "y": 0,
+     "w": 958,
+     "h": 36,
+     "belowPx": -732,
+     "abovePx": 0
+    },
+    {
+     "sel": ".app-main",
+     "x": 240,
+     "y": 74,
+     "w": 958,
+     "h": 694,
+     "belowPx": 0,
+     "abovePx": -74
+    }
+   ],
+   "scrollers": [
+    {
+     "tag": "glass-panel fixed bottom",
+     "scrollTop": 116,
+     "maxTop": 116,
+     "hiddenRows": 0,
+     "sample": null,
+     "verdict": "REACHABLE"
+    }
+   ],
+   "overflow": [],
+   "errors": []
+  }
+ ]
+}

@@ -1,0 +1,1138 @@
+{
+ "env": {
+  "mode": "em",
+  "ranAt": "2026-10-15T20:11:26.822Z",
+  "base": "http://127.0.0.1:8010",
+  "routes": 22,
+  "physicalViewport": {
+   "w": 1366,
+   "h": 768
+  },
+  "devicePixelRatio": 1,
+  "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36 Edg/155.0.0.0"
+ },
+ "pages": [
+  {
+   "vw": 1366,
+   "vh": 768,
+   "dpr": 1,
+   "zoomCssPx": "16px",
+   "docScrollW": 1366,
+   "docScrollH": 768,
+   "bodyOverflowX": 0,
+   "bodyOverflowY": 0,
+   "offenders": [],
+   "clipped": [],
+   "ellipsised": [
+    {
+     "el": "span.truncate.text-xs.font-normal «بار پايه آبان کوچک مقياس»",
+     "lost": 60,
+     "box": {
+      "x": 1039,
+      "y": 241,
+      "w": 62,
+      "h": 16
+     }
+    },
+    {
+     "el": "span.truncate.text-xs.font-normal «ليزينگ پارسيان»",
+     "lost": 12,
+     "box": {
+      "x": 1039,
+      "y": 281,
+      "w": 58,
+      "h": 16
+     }
+    },
+    {
+     "el": "span.truncate.text-xs.font-normal «دريايي و کشتيراني خط دريابندر»",
+     "lost": 74,
+     "box": {
+      "x": 1039,
+      "y": 321,
+      "w": 68,
+      "h": 16
+     }
+    },
+    {
+     "el": "span.truncate.text-xs.font-normal «شركت سرمايه گذاري مسكن شمالغرب»",
+     "lost": 106,
+     "box": {
+      "x": 1039,
+      "y": 361,
+      "w": 71,
+      "h": 16
+     }
+    },
+    {
+     "el": "span.truncate.text-xs.font-normal «سرمايه گذاري مسكن الوند»",
+     "lost": 53,
+     "box": {
+      "x": 1039,
+      "y": 401,
+      "w": 69,
+      "h": 16
+     }
+    },
+    {
+     "el": "span.truncate.text-xs.font-normal «سيمان‌اصفهان‌»",
+     "lost": 11,
+     "box": {
+      "x": 1039,
+      "y": 481,
+      "w": 57,
+      "h": 16
+     }
+    },
+    {
+     "el": "span.truncate.text-xs.font-normal «س. ساختماني اعتماد گستر»",
+     "lost": 56,
+     "box": {
+      "x": 1039,
+      "y": 521,
+      "w": 71,
+      "h": 16
+     }
+    },
+    {
+     "el": "span.truncate.text-xs.font-normal «صندوق س. طلوع تدبير پايا-د»",
+     "lost": 83,
+     "box": {
+      "x": 1039,
+      "y": 641,
+      "w": 54,
+      "h": 16
+     }
+    },
+    {
+     "el": "span.truncate.text-xs.font-normal «صندوق س.بخشي صنايع داريا-ب»",
+     "lost": 98,
+     "box": {
+      "x": 1039,
+      "y": 681,
+      "w": 57,
+      "h": 16
+     }
+    },
+    {
+     "el": "span.truncate.text-xs.font-normal «بيمه اتكايي آواي پارس»",
+     "lost": 48,
+     "box": {
+      "x": 1039,
+      "y": 721,
+      "w": 55,
+      "h": 16
+     }
+    },
+    {
+     "el": "span.truncate.text-xs.font-normal «سرمايه گذاري توسعه صنايع سيمان»",
+     "lost": 102,
+     "box": {
+      "x": 1039,
+      "y": 761,
+      "w": 63,
+      "h": 16
+     }
+    },
+    {
+     "el": "span.truncate.text-xs.font-normal «توليد و صادرات ريشمك»",
+     "lost": 53,
+     "box": {
+      "x": 1039,
+      "y": 801,
+      "w": 56,
+      "h": 16
+     }
+    }
+   ],
+   "offscreen": [],
+   "belowFold": 14,
+   "inertOffscreen": 14,
+   "unreachable": [],
+   "canvases": [],
+   "fixedLayers": [
+    {
+     "el": "div.absolute.inset-x-0.top-0 «✓ ☆ سيدكو سرمايه گذاري توسعه صنايع سيمان ۱»",
+     "box": {
+      "x": 1,
+      "y": 749,
+      "w": 1196,
+      "h": 40
+     }
+    },
+    {
+     "el": "div.absolute.inset-x-0.top-0 «✓ ☆ ريشمك توليد و صادرات ريشمك ۲۱٬۰۲۰ ۲۱٬۰»",
+     "box": {
+      "x": 1,
+      "y": 789,
+      "w": 1196,
+      "h": 40
+     }
+    },
+    {
+     "el": "div.absolute.inset-x-0.top-0 «✓ ☆ شارپيلن پتروشيمي ارغوان گسترايلام ۳٬۹۷»",
+     "box": {
+      "x": 1,
+      "y": 829,
+      "w": 1196,
+      "h": 40
+     }
+    },
+    {
+     "el": "div.absolute.inset-x-0.top-0 «✓ ☆ سيمانا صندوق س صنايع دايا2-بخشي ۴۹٬۹۴۴»",
+     "box": {
+      "x": 1,
+      "y": 869,
+      "w": 1196,
+      "h": 40
+     }
+    },
+    {
+     "el": "div.absolute.inset-x-0.top-0 «✓ ☆ داتام گروه مالي داتام ۴٬۵۴۰ ۴٬۵۴۰ ۰.۰٪»",
+     "box": {
+      "x": 1,
+      "y": 909,
+      "w": 1196,
+      "h": 40
+     }
+    },
+    {
+     "el": "div.absolute.inset-x-0.top-0 «✓ ☆ مرواريد صندوق س. مرواريد آتا-س ۲۳٬۴۸۰ »",
+     "box": {
+      "x": 1,
+      "y": 949,
+      "w": 1196,
+      "h": 40
+     }
+    },
+    {
+     "el": "div.absolute.inset-x-0.top-0 «✓ ☆ چافست افست‌ ۳۰٬۴۰۰ ۳۱٬۴۱۰ -۳.۲٪ ۰.۲٪ -»",
+     "box": {
+      "x": 1,
+      "y": 989,
+      "w": 1196,
+      "h": 40
+     }
+    },
+    {
+     "el": "div.absolute.inset-x-0.top-0 «✓ ☆ زنجان صنايع كشاورزي وكود زنجان ۳٬۲۲۴ ۳»",
+     "box": {
+      "x": 1,
+      "y": 1029,
+      "w": 1196,
+      "h": 40
+     }
+    }
+   ],
+   "domNodes": 1473,
+   "hash": "#/market",
+   "title": "ب ترمینال بورس FTS v2.1 فضای تحلیل وضعیت بازار تابلوخوانی تک",
+   "route": "/market",
+   "readyBy": "marker",
+   "consoleErrors": [],
+   "netErrors": []
+  },
+  {
+   "vw": 1366,
+   "vh": 768,
+   "dpr": 1,
+   "zoomCssPx": "16px",
+   "docScrollW": 1366,
+   "docScrollH": 768,
+   "bodyOverflowX": 0,
+   "bodyOverflowY": 0,
+   "offenders": [],
+   "clipped": [],
+   "ellipsised": [
+    {
+     "el": "span.truncate.text-3xs.font-medium «سهام، حق تقدم و ص.سهامی»",
+     "lost": 11,
+     "box": {
+      "x": 315,
+      "y": 299,
+      "w": 116,
+      "h": 14
+     }
+    }
+   ],
+   "offscreen": [],
+   "belowFold": 0,
+   "inertOffscreen": 10,
+   "unreachable": [],
+   "canvases": [],
+   "fixedLayers": [],
+   "domNodes": 515,
+   "hash": "#/market-status",
+   "title": "ب ترمینال بورس FTS v2.1 فضای تحلیل وضعیت بازار تابلوخوانی تک",
+   "route": "/market-status",
+   "readyBy": "marker",
+   "consoleErrors": [],
+   "netErrors": []
+  },
+  {
+   "vw": 1366,
+   "vh": 768,
+   "dpr": 1,
+   "zoomCssPx": "16px",
+   "docScrollW": 1366,
+   "docScrollH": 768,
+   "bodyOverflowX": 0,
+   "bodyOverflowY": 0,
+   "offenders": [],
+   "clipped": [],
+   "ellipsised": [],
+   "offscreen": [],
+   "belowFold": 0,
+   "inertOffscreen": 14,
+   "unreachable": [],
+   "canvases": [
+    {
+     "x": 48,
+     "y": 143,
+     "w": 886,
+     "h": 416
+    },
+    {
+     "x": 48,
+     "y": 143,
+     "w": 886,
+     "h": 416
+    },
+    {
+     "x": 934,
+     "y": 143,
+     "w": 42,
+     "h": 416
+    },
+    {
+     "x": 934,
+     "y": 143,
+     "w": 42,
+     "h": 416
+    },
+    {
+     "x": 48,
+     "y": 560,
+     "w": 886,
+     "h": 110
+    },
+    {
+     "x": 48,
+     "y": 560,
+     "w": 886,
+     "h": 110
+    },
+    {
+     "x": 934,
+     "y": 560,
+     "w": 42,
+     "h": 110
+    },
+    {
+     "x": 934,
+     "y": 560,
+     "w": 42,
+     "h": 110
+    },
+    {
+     "x": 48,
+     "y": 670,
+     "w": 886,
+     "h": 32
+    },
+    {
+     "x": 48,
+     "y": 670,
+     "w": 886,
+     "h": 32
+    }
+   ],
+   "fixedLayers": [],
+   "domNodes": 732,
+   "hash": "#/technical/%D9%81%D9%88%D9%84%D8%A7%D8%AF",
+   "title": "ب 🚀 ⚙ ⎋ بازار بسته — تابلوی آخرین روز معاملاتی تحلیل تکنیکا",
+   "route": "/technical/فولاد",
+   "readyBy": "marker",
+   "consoleErrors": [],
+   "netErrors": [
+    "FAILED(net::ERR_ABORTED) http://127.0.0.1:8010/api/mstat/smart-money",
+    "FAILED(net::ERR_ABORTED) http://127.0.0.1:8010/api/mstat/histogram?group=all",
+    "FAILED(net::ERR_ABORTED) http://127.0.0.1:8010/api/mstat/clientsplit?tab=all",
+    "FAILED(net::ERR_ABORTED) http://127.0.0.1:8010/api/mstat/phases",
+    "FAILED(net::ERR_ABORTED) http://127.0.0.1:8010/api/mstat/mainwatch?group=eq_all&industry="
+   ]
+  },
+  {
+   "vw": 1366,
+   "vh": 768,
+   "dpr": 1,
+   "zoomCssPx": "16px",
+   "docScrollW": 1366,
+   "docScrollH": 768,
+   "bodyOverflowX": 0,
+   "bodyOverflowY": 0,
+   "offenders": [],
+   "clipped": [],
+   "ellipsised": [],
+   "offscreen": [],
+   "belowFold": 7,
+   "inertOffscreen": 14,
+   "unreachable": [],
+   "canvases": [],
+   "fixedLayers": [],
+   "domNodes": 677,
+   "hash": "#/technical/%D8%AE%D9%88%D8%B2",
+   "title": "ب 🚀 ⚙ ⎋ بازار بسته — تابلوی آخرین روز معاملاتی تحلیل تکنیکا",
+   "route": "/technical/خوز",
+   "readyBy": "marker",
+   "consoleErrors": [
+    "Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "Failed to load resource: the server responded with a status of 404 (Not Found)"
+   ],
+   "netErrors": [
+    "FAILED(net::ERR_ABORTED) http://127.0.0.1:8010/api/chart/فولاد",
+    "FAILED(net::ERR_ABORTED) http://127.0.0.1:8010/api/fts/فولاد",
+    "FAILED(net::ERR_ABORTED) http://127.0.0.1:8010/api/fundamental/فولاد",
+    "FAILED(net::ERR_ABORTED) http://127.0.0.1:8010/api/chart/فولاد",
+    "HTTP 404 http://127.0.0.1:8010/api/fundamental/خوز",
+    "HTTP 404 http://127.0.0.1:8010/api/fundamental/خوز",
+    "HTTP 404 http://127.0.0.1:8010/api/fundamental/خوز"
+   ]
+  },
+  {
+   "vw": 1366,
+   "vh": 768,
+   "dpr": 1,
+   "zoomCssPx": "16px",
+   "docScrollW": 1366,
+   "docScrollH": 768,
+   "bodyOverflowX": 0,
+   "bodyOverflowY": 0,
+   "offenders": [],
+   "clipped": [],
+   "ellipsised": [],
+   "offscreen": [],
+   "belowFold": 7,
+   "inertOffscreen": 14,
+   "unreachable": [],
+   "canvases": [
+    {
+     "x": 48,
+     "y": 143,
+     "w": 880,
+     "h": 416
+    },
+    {
+     "x": 48,
+     "y": 143,
+     "w": 880,
+     "h": 416
+    },
+    {
+     "x": 928,
+     "y": 143,
+     "w": 48,
+     "h": 416
+    },
+    {
+     "x": 928,
+     "y": 143,
+     "w": 48,
+     "h": 416
+    },
+    {
+     "x": 48,
+     "y": 560,
+     "w": 880,
+     "h": 110
+    },
+    {
+     "x": 48,
+     "y": 560,
+     "w": 880,
+     "h": 110
+    },
+    {
+     "x": 928,
+     "y": 560,
+     "w": 48,
+     "h": 110
+    },
+    {
+     "x": 928,
+     "y": 560,
+     "w": 48,
+     "h": 110
+    },
+    {
+     "x": 48,
+     "y": 670,
+     "w": 880,
+     "h": 32
+    },
+    {
+     "x": 48,
+     "y": 670,
+     "w": 880,
+     "h": 32
+    }
+   ],
+   "fixedLayers": [],
+   "domNodes": 892,
+   "hash": "#/technical",
+   "title": "ب 🚀 ⚙ ⎋ بازار بسته — تابلوی آخرین روز معاملاتی تحلیل تکنیکا",
+   "route": "/technical",
+   "readyBy": "marker",
+   "consoleErrors": [],
+   "netErrors": []
+  },
+  {
+   "vw": 1366,
+   "vh": 768,
+   "dpr": 1,
+   "zoomCssPx": "16px",
+   "docScrollW": 1366,
+   "docScrollH": 768,
+   "bodyOverflowX": 0,
+   "bodyOverflowY": 0,
+   "offenders": [],
+   "clipped": [],
+   "ellipsised": [],
+   "offscreen": [],
+   "belowFold": 1,
+   "inertOffscreen": 14,
+   "unreachable": [],
+   "canvases": [],
+   "fixedLayers": [],
+   "domNodes": 759,
+   "hash": "#/fundamental/%D9%81%D9%88%D9%84%D8%A7%D8%AF",
+   "title": "ب ترمینال بورس FTS v2.1 فضای تحلیل وضعیت بازار تابلوخوانی تک",
+   "route": "/fundamental/فولاد",
+   "readyBy": "marker",
+   "consoleErrors": [],
+   "netErrors": [
+    "FAILED(net::ERR_ABORTED) http://127.0.0.1:8010/api/chart/فولاد"
+   ]
+  },
+  {
+   "vw": 1366,
+   "vh": 768,
+   "dpr": 1,
+   "zoomCssPx": "16px",
+   "docScrollW": 1366,
+   "docScrollH": 768,
+   "bodyOverflowX": 0,
+   "bodyOverflowY": 0,
+   "offenders": [],
+   "clipped": [],
+   "ellipsised": [],
+   "offscreen": [],
+   "belowFold": 0,
+   "inertOffscreen": 14,
+   "unreachable": [],
+   "canvases": [],
+   "fixedLayers": [],
+   "domNodes": 311,
+   "hash": "#/fundamental/%D8%AE%D9%88%D8%B2",
+   "title": "ب ترمینال بورس FTS v2.1 فضای تحلیل وضعیت بازار تابلوخوانی تک",
+   "route": "/fundamental/خوز",
+   "readyBy": "marker",
+   "consoleErrors": [
+    "Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "Failed to load resource: the server responded with a status of 404 (Not Found)"
+   ],
+   "netErrors": [
+    "HTTP 404 http://127.0.0.1:8010/api/fundamental/خوز",
+    "HTTP 404 http://127.0.0.1:8010/api/fundamental/خوز"
+   ]
+  },
+  {
+   "vw": 1366,
+   "vh": 768,
+   "dpr": 1,
+   "zoomCssPx": "16px",
+   "docScrollW": 1366,
+   "docScrollH": 768,
+   "bodyOverflowX": 0,
+   "bodyOverflowY": 0,
+   "offenders": [],
+   "clipped": [],
+   "ellipsised": [
+    {
+     "el": "span.truncate.text-2xs.text-text-muted «مجتمع كاشي و سنگ پرسپوليس يزد»",
+     "lost": 24,
+     "box": {
+      "x": 1040,
+      "y": 834,
+      "w": 145,
+      "h": 15
+     }
+    }
+   ],
+   "offscreen": [],
+   "belowFold": 54,
+   "inertOffscreen": 14,
+   "unreachable": [],
+   "canvases": [],
+   "fixedLayers": [],
+   "domNodes": 1741,
+   "hash": "#/fundamental",
+   "title": "ب ترمینال بورس FTS v2.1 فضای تحلیل وضعیت بازار تابلوخوانی تک",
+   "route": "/fundamental",
+   "readyBy": "marker",
+   "consoleErrors": [],
+   "netErrors": [
+    "FAILED(net::ERR_ABORTED) http://127.0.0.1:8010/api/fundamental/خوز",
+    "FAILED(net::ERR_ABORTED) http://127.0.0.1:8010/api/fundamental/خوز"
+   ]
+  },
+  {
+   "vw": 1366,
+   "vh": 768,
+   "dpr": 1,
+   "zoomCssPx": "16px",
+   "docScrollW": 1366,
+   "docScrollH": 768,
+   "bodyOverflowX": 0,
+   "bodyOverflowY": 0,
+   "offenders": [],
+   "clipped": [],
+   "ellipsised": [],
+   "offscreen": [],
+   "belowFold": 0,
+   "inertOffscreen": 14,
+   "unreachable": [],
+   "canvases": [],
+   "fixedLayers": [],
+   "domNodes": 392,
+   "hash": "#/master",
+   "title": "ب ترمینال بورس FTS v2.1 فضای تحلیل وضعیت بازار تابلوخوانی تک",
+   "route": "/master",
+   "readyBy": "marker",
+   "consoleErrors": [],
+   "netErrors": []
+  },
+  {
+   "vw": 1366,
+   "vh": 768,
+   "dpr": 1,
+   "zoomCssPx": "16px",
+   "docScrollW": 1366,
+   "docScrollH": 768,
+   "bodyOverflowX": 0,
+   "bodyOverflowY": 0,
+   "offenders": [],
+   "clipped": [],
+   "ellipsised": [],
+   "offscreen": [],
+   "belowFold": 3,
+   "inertOffscreen": 0,
+   "unreachable": [],
+   "canvases": [],
+   "fixedLayers": [],
+   "domNodes": 576,
+   "hash": "#/master/%D9%81%D9%88%D9%84%D8%A7%D8%AF",
+   "title": "ب ترمینال بورس FTS v2.1 فضای تحلیل وضعیت بازار تابلوخوانی تک",
+   "route": "/master/فولاد",
+   "readyBy": "marker",
+   "consoleErrors": [],
+   "netErrors": []
+  },
+  {
+   "vw": 1366,
+   "vh": 768,
+   "dpr": 1,
+   "zoomCssPx": "16px",
+   "docScrollW": 1366,
+   "docScrollH": 768,
+   "bodyOverflowX": 0,
+   "bodyOverflowY": 0,
+   "offenders": [],
+   "clipped": [],
+   "ellipsised": [],
+   "offscreen": [],
+   "belowFold": 1,
+   "inertOffscreen": 0,
+   "unreachable": [],
+   "canvases": [],
+   "fixedLayers": [],
+   "domNodes": 453,
+   "hash": "#/master/%D8%AE%D9%88%D8%B2",
+   "title": "ب ترمینال بورس FTS v2.1 فضای تحلیل وضعیت بازار تابلوخوانی تک",
+   "route": "/master/خوز",
+   "readyBy": "marker",
+   "consoleErrors": [
+    "Failed to load resource: the server responded with a status of 404 (Not Found)"
+   ],
+   "netErrors": [
+    "HTTP 404 http://127.0.0.1:8010/api/fundamental/خوز"
+   ]
+  },
+  {
+   "vw": 1366,
+   "vh": 768,
+   "dpr": 1,
+   "zoomCssPx": "16px",
+   "docScrollW": 1366,
+   "docScrollH": 768,
+   "bodyOverflowX": 0,
+   "bodyOverflowY": 0,
+   "offenders": [],
+   "clipped": [],
+   "ellipsised": [],
+   "offscreen": [],
+   "belowFold": 1,
+   "inertOffscreen": 0,
+   "unreachable": [],
+   "canvases": [],
+   "fixedLayers": [],
+   "domNodes": 552,
+   "hash": "#/strategy-tree",
+   "title": "ب ترمینال بورس FTS v2.1 فضای تحلیل وضعیت بازار تابلوخوانی تک",
+   "route": "/strategy-tree",
+   "readyBy": "marker",
+   "consoleErrors": [
+    "Failed to load resource: the server responded with a status of 404 (Not Found)"
+   ],
+   "netErrors": [
+    "FAILED(net::ERR_ABORTED) http://127.0.0.1:8010/api/fts/خوز",
+    "HTTP 404 http://127.0.0.1:8010/api/fundamental/خوز"
+   ]
+  },
+  {
+   "vw": 1366,
+   "vh": 768,
+   "dpr": 1,
+   "zoomCssPx": "16px",
+   "docScrollW": 1366,
+   "docScrollH": 768,
+   "bodyOverflowX": 0,
+   "bodyOverflowY": 0,
+   "offenders": [],
+   "clipped": [],
+   "ellipsised": [],
+   "offscreen": [],
+   "belowFold": 3,
+   "inertOffscreen": 0,
+   "unreachable": [],
+   "canvases": [],
+   "fixedLayers": [],
+   "domNodes": 464,
+   "hash": "#/strategy-tree?page=F",
+   "title": "ب ترمینال بورس FTS v2.1 فضای تحلیل وضعیت بازار تابلوخوانی تک",
+   "route": "/strategy-tree?page=F",
+   "readyBy": "marker",
+   "consoleErrors": [],
+   "netErrors": []
+  },
+  {
+   "vw": 1366,
+   "vh": 768,
+   "dpr": 1,
+   "zoomCssPx": "16px",
+   "docScrollW": 1366,
+   "docScrollH": 768,
+   "bodyOverflowX": 0,
+   "bodyOverflowY": 0,
+   "offenders": [],
+   "clipped": [],
+   "ellipsised": [],
+   "offscreen": [],
+   "belowFold": 3,
+   "inertOffscreen": 0,
+   "unreachable": [],
+   "canvases": [],
+   "fixedLayers": [],
+   "domNodes": 500,
+   "hash": "#/strategy-tree?page=T",
+   "title": "ب ترمینال بورس FTS v2.1 فضای تحلیل وضعیت بازار تابلوخوانی تک",
+   "route": "/strategy-tree?page=T",
+   "readyBy": "marker",
+   "consoleErrors": [
+    "Failed to load resource: the server responded with a status of 404 (Not Found)"
+   ],
+   "netErrors": [
+    "HTTP 404 http://127.0.0.1:8010/api/fundamental/خوز"
+   ]
+  },
+  {
+   "vw": 1366,
+   "vh": 768,
+   "dpr": 1,
+   "zoomCssPx": "16px",
+   "docScrollW": 1366,
+   "docScrollH": 768,
+   "bodyOverflowX": 0,
+   "bodyOverflowY": 0,
+   "offenders": [],
+   "clipped": [],
+   "ellipsised": [],
+   "offscreen": [],
+   "belowFold": 2,
+   "inertOffscreen": 0,
+   "unreachable": [],
+   "canvases": [],
+   "fixedLayers": [],
+   "domNodes": 535,
+   "hash": "#/strategy-tree?page=S",
+   "title": "ب ترمینال بورس FTS v2.1 فضای تحلیل وضعیت بازار تابلوخوانی تک",
+   "route": "/strategy-tree?page=S",
+   "readyBy": "marker",
+   "consoleErrors": [],
+   "netErrors": []
+  },
+  {
+   "vw": 1366,
+   "vh": 768,
+   "dpr": 1,
+   "zoomCssPx": "16px",
+   "docScrollW": 1366,
+   "docScrollH": 768,
+   "bodyOverflowX": 0,
+   "bodyOverflowY": 0,
+   "offenders": [],
+   "clipped": [],
+   "ellipsised": [],
+   "offscreen": [],
+   "belowFold": 3,
+   "inertOffscreen": 0,
+   "unreachable": [],
+   "canvases": [],
+   "fixedLayers": [],
+   "domNodes": 536,
+   "hash": "#/strategy-tree?page=M",
+   "title": "ب ترمینال بورس FTS v2.1 فضای تحلیل وضعیت بازار تابلوخوانی تک",
+   "route": "/strategy-tree?page=M",
+   "readyBy": "marker",
+   "consoleErrors": [],
+   "netErrors": []
+  },
+  {
+   "vw": 1366,
+   "vh": 768,
+   "dpr": 1,
+   "zoomCssPx": "16px",
+   "docScrollW": 1366,
+   "docScrollH": 768,
+   "bodyOverflowX": 0,
+   "bodyOverflowY": 0,
+   "offenders": [],
+   "clipped": [],
+   "ellipsised": [],
+   "offscreen": [],
+   "belowFold": 1,
+   "inertOffscreen": 0,
+   "unreachable": [],
+   "canvases": [],
+   "fixedLayers": [],
+   "domNodes": 554,
+   "hash": "#/portfolio",
+   "title": "ب ترمینال بورس FTS v2.1 فضای تحلیل وضعیت بازار تابلوخوانی تک",
+   "route": "/portfolio",
+   "readyBy": "marker",
+   "consoleErrors": [],
+   "netErrors": []
+  },
+  {
+   "vw": 1366,
+   "vh": 768,
+   "dpr": 1,
+   "zoomCssPx": "16px",
+   "docScrollW": 1366,
+   "docScrollH": 768,
+   "bodyOverflowX": 0,
+   "bodyOverflowY": 0,
+   "offenders": [],
+   "clipped": [],
+   "ellipsised": [],
+   "offscreen": [],
+   "belowFold": 18,
+   "inertOffscreen": 0,
+   "unreachable": [],
+   "canvases": [],
+   "fixedLayers": [],
+   "domNodes": 443,
+   "hash": "#/trade",
+   "title": "ب ترمینال بورس FTS v2.1 فضای تحلیل وضعیت بازار تابلوخوانی تک",
+   "route": "/trade",
+   "readyBy": "marker",
+   "consoleErrors": [],
+   "netErrors": []
+  },
+  {
+   "vw": 1366,
+   "vh": 768,
+   "dpr": 1,
+   "zoomCssPx": "16px",
+   "docScrollW": 1366,
+   "docScrollH": 768,
+   "bodyOverflowX": 0,
+   "bodyOverflowY": 0,
+   "offenders": [],
+   "clipped": [],
+   "ellipsised": [],
+   "offscreen": [],
+   "belowFold": 0,
+   "inertOffscreen": 0,
+   "unreachable": [],
+   "canvases": [],
+   "fixedLayers": [],
+   "domNodes": 334,
+   "hash": "#/watch",
+   "title": "ب ترمینال بورس FTS v2.1 فضای تحلیل وضعیت بازار تابلوخوانی تک",
+   "route": "/watch",
+   "readyBy": "marker",
+   "consoleErrors": [],
+   "netErrors": []
+  },
+  {
+   "vw": 1366,
+   "vh": 768,
+   "dpr": 1,
+   "zoomCssPx": "16px",
+   "docScrollW": 1366,
+   "docScrollH": 768,
+   "bodyOverflowX": 0,
+   "bodyOverflowY": 0,
+   "offenders": [],
+   "clipped": [],
+   "ellipsised": [],
+   "offscreen": [],
+   "belowFold": 227,
+   "inertOffscreen": 0,
+   "unreachable": [],
+   "canvases": [],
+   "fixedLayers": [],
+   "domNodes": 1553,
+   "hash": "#/notifications",
+   "title": "ب ترمینال بورس FTS v2.1 فضای تحلیل وضعیت بازار تابلوخوانی تک",
+   "route": "/notifications",
+   "readyBy": "marker",
+   "consoleErrors": [],
+   "netErrors": []
+  },
+  {
+   "vw": 1366,
+   "vh": 768,
+   "dpr": 1,
+   "zoomCssPx": "16px",
+   "docScrollW": 1366,
+   "docScrollH": 768,
+   "bodyOverflowX": 0,
+   "bodyOverflowY": 0,
+   "offenders": [],
+   "clipped": [],
+   "ellipsised": [],
+   "offscreen": [],
+   "belowFold": 2,
+   "inertOffscreen": 0,
+   "unreachable": [],
+   "canvases": [
+    {
+     "x": 726,
+     "y": 572,
+     "w": 420,
+     "h": 283
+    },
+    {
+     "x": 726,
+     "y": 572,
+     "w": 420,
+     "h": 283
+    },
+    {
+     "x": 1146,
+     "y": 572,
+     "w": 51,
+     "h": 283
+    },
+    {
+     "x": 1146,
+     "y": 572,
+     "w": 51,
+     "h": 283
+    },
+    {
+     "x": 726,
+     "y": 856,
+     "w": 420,
+     "h": 110
+    },
+    {
+     "x": 726,
+     "y": 856,
+     "w": 420,
+     "h": 110
+    },
+    {
+     "x": 1146,
+     "y": 856,
+     "w": 51,
+     "h": 110
+    },
+    {
+     "x": 1146,
+     "y": 856,
+     "w": 51,
+     "h": 110
+    },
+    {
+     "x": 726,
+     "y": 966,
+     "w": 420,
+     "h": 26
+    },
+    {
+     "x": 726,
+     "y": 966,
+     "w": 420,
+     "h": 26
+    },
+    {
+     "x": 241,
+     "y": 572,
+     "w": 471,
+     "h": 303
+    },
+    {
+     "x": 241,
+     "y": 572,
+     "w": 471,
+     "h": 303
+    },
+    {
+     "x": 241,
+     "y": 572,
+     "w": 471,
+     "h": 117
+    },
+    {
+     "x": 241,
+     "y": 572,
+     "w": 471,
+     "h": 117
+    },
+    {
+     "x": 241,
+     "y": 572,
+     "w": 471,
+     "h": 303
+    },
+    {
+     "x": 241,
+     "y": 572,
+     "w": 471,
+     "h": 303
+    }
+   ],
+   "fixedLayers": [
+    {
+     "el": "div",
+     "box": {
+      "x": 726,
+      "y": 572,
+      "w": 420,
+      "h": 283
+     }
+    },
+    {
+     "el": "canvas",
+     "box": {
+      "x": 726,
+      "y": 572,
+      "w": 420,
+      "h": 283
+     }
+    },
+    {
+     "el": "canvas",
+     "box": {
+      "x": 726,
+      "y": 572,
+      "w": 420,
+      "h": 283
+     }
+    },
+    {
+     "el": "div",
+     "box": {
+      "x": 1146,
+      "y": 572,
+      "w": 51,
+      "h": 283
+     }
+    },
+    {
+     "el": "canvas",
+     "box": {
+      "x": 1146,
+      "y": 572,
+      "w": 51,
+      "h": 283
+     }
+    },
+    {
+     "el": "canvas",
+     "box": {
+      "x": 1146,
+      "y": 572,
+      "w": 51,
+      "h": 283
+     }
+    },
+    {
+     "el": "div",
+     "box": {
+      "x": 726,
+      "y": 852,
+      "w": 471,
+      "h": 7
+     }
+    },
+    {
+     "el": "div",
+     "box": {
+      "x": 726,
+      "y": 856,
+      "w": 420,
+      "h": 110
+     }
+    }
+   ],
+   "domNodes": 572,
+   "hash": "#/engine-lab",
+   "title": "ب ترمینال بورس FTS v2.1 فضای تحلیل وضعیت بازار تابلوخوانی تک",
+   "route": "/engine-lab",
+   "readyBy": "marker",
+   "consoleErrors": [],
+   "netErrors": []
+  },
+  {
+   "vw": 1366,
+   "vh": 768,
+   "dpr": 1,
+   "zoomCssPx": "16px",
+   "docScrollW": 1366,
+   "docScrollH": 768,
+   "bodyOverflowX": 0,
+   "bodyOverflowY": 0,
+   "offenders": [],
+   "clipped": [],
+   "ellipsised": [],
+   "offscreen": [],
+   "belowFold": 0,
+   "inertOffscreen": 0,
+   "unreachable": [],
+   "canvases": [],
+   "fixedLayers": [],
+   "domNodes": 328,
+   "hash": "#/zz-not-found",
+   "title": "ب ترمینال بورس FTS v2.1 فضای تحلیل وضعیت بازار تابلوخوانی تک",
+   "route": "/zz-not-found",
+   "readyBy": "marker",
+   "consoleErrors": [],
+   "netErrors": []
+  }
+ ]
+}

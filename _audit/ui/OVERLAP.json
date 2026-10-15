@@ -1,0 +1,4741 @@
+{
+ "ranAt": "2026-10-15T20:21:26.052Z",
+ "mode": "em",
+ "viewport": {
+  "W": 1366,
+  "H": 768
+ },
+ "routes": [
+  {
+   "route": "/market",
+   "vw": 1366,
+   "vh": 768,
+   "total": 219,
+   "findings": [
+    {
+     "el": "tape-row «✓☆سيدكوسرمايه گذاري »",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 1,
+      "y": 749,
+      "w": 1196,
+      "h": 40
+     }
+    },
+    {
+     "el": "tape-buy-sell «۱۲۹م.ت۲۷۷م.ت۰.۴۷»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 155,
+      "y": 754,
+      "w": 170,
+      "h": 30
+     }
+    },
+    {
+     "el": "tape-buy-pc «۱۲۹م.ت»",
+     "kind": "OUTSIDE-OWN-SCROLLER",
+     "box": {
+      "x": 274,
+      "y": 754,
+      "w": 51,
+      "h": 14
+     },
+     "hit": "tape-scroll [229..737]"
+    },
+    {
+     "el": "tape-sell-pc «۲۷۷م.ت»",
+     "kind": "OUTSIDE-OWN-SCROLLER",
+     "box": {
+      "x": 155,
+      "y": 754,
+      "w": 51,
+      "h": 14
+     },
+     "hit": "tape-scroll [229..737]"
+    },
+    {
+     "el": "tape-patterns «مشکوک»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 9,
+      "y": 759,
+      "w": 142,
+      "h": 19
+     }
+    },
+    {
+     "el": "badge-susp «مشکوک»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 105,
+      "y": 761,
+      "w": 46,
+      "h": 15
+     }
+    },
+    {
+     "el": "tape-row «✓☆ريشمكتوليد و صادرا»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 1,
+      "y": 789,
+      "w": 1196,
+      "h": 40
+     }
+    },
+    {
+     "el": "tape-buy-sell «۹۰.۷م.ت۲۶۳م.ت۰.۳۴»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 155,
+      "y": 794,
+      "w": 170,
+      "h": 30
+     }
+    },
+    {
+     "el": "tape-buy-pc «۹۰.۷م.ت»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 271,
+      "y": 794,
+      "w": 54,
+      "h": 14
+     }
+    },
+    {
+     "el": "tape-sell-pc «۲۶۳م.ت»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 155,
+      "y": 794,
+      "w": 51,
+      "h": 14
+     }
+    },
+    {
+     "el": "tape-patterns «مشکوک»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 9,
+      "y": 799,
+      "w": 142,
+      "h": 19
+     }
+    },
+    {
+     "el": "badge-susp «مشکوک»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 105,
+      "y": 801,
+      "w": 46,
+      "h": 15
+     }
+    },
+    {
+     "el": "tape-row «✓☆شارپيلنپتروشيمي ار»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 1,
+      "y": 829,
+      "w": 1196,
+      "h": 40
+     }
+    },
+    {
+     "el": "tape-buy-sell «۱۱۰م.ت۱۲۹م.ت۰.۸۵»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 155,
+      "y": 834,
+      "w": 170,
+      "h": 30
+     }
+    },
+    {
+     "el": "tape-buy-pc «۱۱۰م.ت»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 274,
+      "y": 834,
+      "w": 51,
+      "h": 14
+     }
+    },
+    {
+     "el": "tape-sell-pc «۱۲۹م.ت»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 155,
+      "y": 834,
+      "w": 51,
+      "h": 14
+     }
+    },
+    {
+     "el": "tape-patterns «مشکوک»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 9,
+      "y": 839,
+      "w": 142,
+      "h": 19
+     }
+    },
+    {
+     "el": "badge-susp «مشکوک»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 105,
+      "y": 841,
+      "w": 46,
+      "h": 15
+     }
+    },
+    {
+     "el": "tape-row «✓☆سيماناصندوق س صناي»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 1,
+      "y": 869,
+      "w": 1196,
+      "h": 40
+     }
+    },
+    {
+     "el": "tape-buy-sell «۲۸۱م.ت۵۴۹م.ت۰.۵۱»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 155,
+      "y": 874,
+      "w": 170,
+      "h": 30
+     }
+    },
+    {
+     "el": "tape-buy-pc «۲۸۱م.ت»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 274,
+      "y": 874,
+      "w": 51,
+      "h": 14
+     }
+    },
+    {
+     "el": "tape-sell-pc «۵۴۹م.ت»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 155,
+      "y": 874,
+      "w": 51,
+      "h": 14
+     }
+    },
+    {
+     "el": "tape-patterns «مشکوک»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 9,
+      "y": 879,
+      "w": 142,
+      "h": 19
+     }
+    },
+    {
+     "el": "badge-susp «مشکوک»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 105,
+      "y": 881,
+      "w": 46,
+      "h": 15
+     }
+    },
+    {
+     "el": "tape-row «✓☆داتامگروه مالي دات»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 1,
+      "y": 909,
+      "w": 1196,
+      "h": 40
+     }
+    },
+    {
+     "el": "tape-buy-sell «۲۷۵م.ت۸۴.۷م.ت۳.۲۴»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 155,
+      "y": 914,
+      "w": 170,
+      "h": 30
+     }
+    },
+    {
+     "el": "tape-buy-pc «۲۷۵م.ت»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 274,
+      "y": 914,
+      "w": 51,
+      "h": 14
+     }
+    },
+    {
+     "el": "tape-sell-pc «۸۴.۷م.ت»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 155,
+      "y": 914,
+      "w": 54,
+      "h": 14
+     }
+    },
+    {
+     "el": "tape-patterns «مشکوکجتپول هوشمندکد »",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 9,
+      "y": 911,
+      "w": 142,
+      "h": 36
+     }
+    },
+    {
+     "el": "badge-susp «مشکوک»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 105,
+      "y": 913,
+      "w": 46,
+      "h": 15
+     }
+    },
+    {
+     "el": "badge-jet «جت»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 76,
+      "y": 913,
+      "w": 28,
+      "h": 15
+     }
+    },
+    {
+     "el": "badge-smart «پول هوشمند»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 85,
+      "y": 930,
+      "w": 66,
+      "h": 15
+     }
+    },
+    {
+     "el": "badge-legal «کد به کد»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 37,
+      "y": 930,
+      "w": 46,
+      "h": 15
+     }
+    },
+    {
+     "el": "tape-row «✓☆مرواريدصندوق س. مر»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 1,
+      "y": 949,
+      "w": 1196,
+      "h": 40
+     }
+    },
+    {
+     "el": "tape-buy-sell «۱۴.۶م.ت۹۰.۵م.ت۰.۱۶»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 155,
+      "y": 954,
+      "w": 170,
+      "h": 30
+     }
+    },
+    {
+     "el": "tape-buy-pc «۱۴.۶م.ت»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 271,
+      "y": 954,
+      "w": 54,
+      "h": 14
+     }
+    },
+    {
+     "el": "tape-sell-pc «۹۰.۵م.ت»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 155,
+      "y": 954,
+      "w": 54,
+      "h": 14
+     }
+    },
+    {
+     "el": "tape-patterns «مشکوک»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 9,
+      "y": 959,
+      "w": 142,
+      "h": 19
+     }
+    },
+    {
+     "el": "badge-susp «مشکوک»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 105,
+      "y": 961,
+      "w": 46,
+      "h": 15
+     }
+    },
+    {
+     "el": "tape-row «✓☆چافستافست‌۳۰٬۴۰۰۳۱»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 1,
+      "y": 989,
+      "w": 1196,
+      "h": 40
+     }
+    },
+    {
+     "el": "tape-buy-sell «۱۰۶م.ت۱۸۸م.ت۰.۵۶»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 155,
+      "y": 994,
+      "w": 170,
+      "h": 30
+     }
+    },
+    {
+     "el": "tape-buy-pc «۱۰۶م.ت»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 274,
+      "y": 994,
+      "w": 51,
+      "h": 14
+     }
+    },
+    {
+     "el": "tape-sell-pc «۱۸۸م.ت»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 155,
+      "y": 994,
+      "w": 51,
+      "h": 14
+     }
+    },
+    {
+     "el": "tape-patterns «مشکوک»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 9,
+      "y": 999,
+      "w": 142,
+      "h": 19
+     }
+    },
+    {
+     "el": "badge-susp «مشکوک»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 105,
+      "y": 1001,
+      "w": 46,
+      "h": 15
+     }
+    },
+    {
+     "el": "tape-row «✓☆زنجانصنايع كشاورزي»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 1,
+      "y": 1029,
+      "w": 1196,
+      "h": 40
+     }
+    },
+    {
+     "el": "tape-buy-sell «۷۹.۲م.ت۵۴.۳م.ت۱.۴۶»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 155,
+      "y": 1034,
+      "w": 170,
+      "h": 30
+     }
+    },
+    {
+     "el": "tape-buy-pc «۷۹.۲م.ت»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 271,
+      "y": 1034,
+      "w": 54,
+      "h": 14
+     }
+    },
+    {
+     "el": "tape-sell-pc «۵۴.۳م.ت»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 155,
+      "y": 1034,
+      "w": 54,
+      "h": 14
+     }
+    },
+    {
+     "el": "tape-patterns «مشکوک»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 9,
+      "y": 1039,
+      "w": 142,
+      "h": 19
+     }
+    },
+    {
+     "el": "badge-susp «مشکوک»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 105,
+      "y": 1041,
+      "w": 46,
+      "h": 15
+     }
+    },
+    {
+     "el": "tape-row «✓☆ناماتوليدي مخازن گ»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 1,
+      "y": 1069,
+      "w": 1196,
+      "h": 40
+     }
+    },
+    {
+     "el": "tape-buy-sell «۱۱۸م.ت۱۳۱م.ت۰.۹۰»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 155,
+      "y": 1074,
+      "w": 170,
+      "h": 30
+     }
+    },
+    {
+     "el": "tape-buy-pc «۱۱۸م.ت»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 274,
+      "y": 1074,
+      "w": 51,
+      "h": 14
+     }
+    },
+    {
+     "el": "tape-sell-pc «۱۳۱م.ت»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 155,
+      "y": 1074,
+      "w": 51,
+      "h": 14
+     }
+    },
+    {
+     "el": "tape-patterns «مشکوک»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 9,
+      "y": 1079,
+      "w": 142,
+      "h": 19
+     }
+    },
+    {
+     "el": "badge-susp «مشکوک»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 105,
+      "y": 1081,
+      "w": 46,
+      "h": 15
+     }
+    },
+    {
+     "el": "tape-row «✓☆ساربيلسيمان آرتا ا»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 1,
+      "y": 1109,
+      "w": 1196,
+      "h": 40
+     }
+    },
+    {
+     "el": "tape-buy-sell «۲۶۸م.ت۱۲۶م.ت۲.۱۲»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 155,
+      "y": 1114,
+      "w": 170,
+      "h": 30
+     }
+    },
+    {
+     "el": "tape-buy-pc «۲۶۸م.ت»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 274,
+      "y": 1114,
+      "w": 51,
+      "h": 14
+     }
+    },
+    {
+     "el": "tape-sell-pc «۱۲۶م.ت»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 155,
+      "y": 1114,
+      "w": 51,
+      "h": 14
+     }
+    },
+    {
+     "el": "tape-patterns «مشکوکجتپول هوشمند»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 9,
+      "y": 1111,
+      "w": 142,
+      "h": 36
+     }
+    },
+    {
+     "el": "badge-susp «مشکوک»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 105,
+      "y": 1113,
+      "w": 46,
+      "h": 15
+     }
+    },
+    {
+     "el": "badge-jet «جت»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 76,
+      "y": 1113,
+      "w": 28,
+      "h": 15
+     }
+    },
+    {
+     "el": "badge-smart «پول هوشمند»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 85,
+      "y": 1130,
+      "w": 66,
+      "h": 15
+     }
+    },
+    {
+     "el": "tape-row «✓☆سمانصندوق سرمايه گ»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 1,
+      "y": 1149,
+      "w": 1196,
+      "h": 40
+     }
+    },
+    {
+     "el": "tape-buy-sell «۱۹۱م.ت۶۶۵م.ت۰.۲۹»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 155,
+      "y": 1154,
+      "w": 170,
+      "h": 30
+     }
+    },
+    {
+     "el": "tape-buy-pc «۱۹۱م.ت»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 274,
+      "y": 1154,
+      "w": 51,
+      "h": 14
+     }
+    },
+    {
+     "el": "tape-sell-pc «۶۶۵م.ت»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 155,
+      "y": 1154,
+      "w": 51,
+      "h": 14
+     }
+    },
+    {
+     "el": "tape-patterns «مشکوک»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 9,
+      "y": 1159,
+      "w": 142,
+      "h": 19
+     }
+    },
+    {
+     "el": "badge-susp «مشکوک»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 105,
+      "y": 1161,
+      "w": 46,
+      "h": 15
+     }
+    },
+    {
+     "el": "tape-row «✓☆تاصيكوسرمايه گذاري»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 1,
+      "y": 1189,
+      "w": 1196,
+      "h": 40
+     }
+    },
+    {
+     "el": "tape-buy-sell «۱۱۲م.ت۲۲۳م.ت۰.۵۰»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 155,
+      "y": 1194,
+      "w": 170,
+      "h": 30
+     }
+    },
+    {
+     "el": "tape-buy-pc «۱۱۲م.ت»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 274,
+      "y": 1194,
+      "w": 51,
+      "h": 14
+     }
+    },
+    {
+     "el": "tape-sell-pc «۲۲۳م.ت»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 155,
+      "y": 1194,
+      "w": 51,
+      "h": 14
+     }
+    },
+    {
+     "el": "tape-patterns «مشکوک»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 9,
+      "y": 1199,
+      "w": 142,
+      "h": 19
+     }
+    },
+    {
+     "el": "badge-susp «مشکوک»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 105,
+      "y": 1201,
+      "w": 46,
+      "h": 15
+     }
+    },
+    {
+     "el": "watch-drawer «دیده‌بان‌هادیده‌بان »",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 0,
+      "y": 770,
+      "w": 1198,
+      "h": 50
+     }
+    },
+    {
+     "el": "watch-tab-clock «دیده‌بان ساعت»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 1038,
+      "y": 782,
+      "w": 93,
+      "h": 26
+     }
+    },
+    {
+     "el": "watch-tab-susp «دیده‌بان حجم مشکوک»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 902,
+      "y": 782,
+      "w": 128,
+      "h": 26
+     }
+    },
+    {
+     "el": "watch-tab-industries «صنایع داغ»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 824,
+      "y": 782,
+      "w": 70,
+      "h": 26
+     }
+    }
+   ],
+   "errors": []
+  },
+  {
+   "route": "/market-status",
+   "vw": 1366,
+   "vh": 768,
+   "total": 77,
+   "findings": [
+    {
+     "el": "ticker-marquee-track «پهنای بازارمثبت—منفی»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": -1821,
+      "y": 128,
+      "w": 3084,
+      "h": 14
+     }
+    },
+    {
+     "el": "ticker-group-queues «صف‌هاعمقِ صف برایِ ا»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": -270,
+      "y": 128,
+      "w": 432,
+      "h": 14
+     }
+    },
+    {
+     "el": "ticker-no-depth «عمقِ صف برایِ امروز »",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": -270,
+      "y": 128,
+      "w": 382,
+      "h": 14
+     }
+    },
+    {
+     "el": "status-industries-loading «در حالِ خواندن…»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 11,
+      "y": 753,
+      "w": 1176,
+      "h": 38
+     }
+    },
+    {
+     "el": "status-mainwatch «نمادهای زیرِ نظردر ح»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 0,
+      "y": 811,
+      "w": 1198,
+      "h": 81
+     }
+    },
+    {
+     "el": "status-mainwatch-loading «در حالِ خواندن…»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 11,
+      "y": 842,
+      "w": 1176,
+      "h": 38
+     }
+    }
+   ],
+   "errors": []
+  },
+  {
+   "route": "/technical/فولاد",
+   "vw": 1366,
+   "vh": 768,
+   "total": 71,
+   "findings": [],
+   "errors": []
+  },
+  {
+   "route": "/technical/خوز",
+   "vw": 1366,
+   "vh": 768,
+   "total": 58,
+   "findings": [
+    {
+     "el": "button.flex.w-full «كخاك صنايع‌خاك‌چيني‌»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 1029,
+      "y": 790,
+      "w": 268,
+      "h": 56
+     }
+    },
+    {
+     "el": "button.flex.w-full «ساروم سيمان‌اروميه‌ا»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 1029,
+      "y": 850,
+      "w": 268,
+      "h": 56
+     }
+    },
+    {
+     "el": "button.flex.w-full «سمتاز سيمان ممتازان »",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 1029,
+      "y": 910,
+      "w": 268,
+      "h": 56
+     }
+    },
+    {
+     "el": "button.flex.w-full «تكيميا تامين سرمايه »",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 1029,
+      "y": 970,
+      "w": 268,
+      "h": 56
+     }
+    },
+    {
+     "el": "button.flex.w-full «كگل معدني و صنعتي گل»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 1029,
+      "y": 1030,
+      "w": 268,
+      "h": 56
+     }
+    },
+    {
+     "el": "button.flex.w-full «كگهر معدني و صنعتي گ»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 1029,
+      "y": 1090,
+      "w": 268,
+      "h": 56
+     }
+    },
+    {
+     "el": "button.flex.w-full «شسپا نفت سپاهانامتیا»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 1029,
+      "y": 1150,
+      "w": 268,
+      "h": 56
+     }
+    }
+   ],
+   "errors": [
+    "console: Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "console: Failed to load resource: the server responded with a status of 404 (Not Found)"
+   ]
+  },
+  {
+   "route": "/technical",
+   "vw": 1366,
+   "vh": 768,
+   "total": 90,
+   "findings": [
+    {
+     "el": "button.flex.w-full «كخاك صنايع‌خاك‌چيني‌»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 1029,
+      "y": 790,
+      "w": 268,
+      "h": 56
+     }
+    },
+    {
+     "el": "button.flex.w-full «ساروم سيمان‌اروميه‌ا»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 1029,
+      "y": 850,
+      "w": 268,
+      "h": 56
+     }
+    },
+    {
+     "el": "button.flex.w-full «سمتاز سيمان ممتازان »",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 1029,
+      "y": 910,
+      "w": 268,
+      "h": 56
+     }
+    },
+    {
+     "el": "button.flex.w-full «تكيميا تامين سرمايه »",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 1029,
+      "y": 970,
+      "w": 268,
+      "h": 56
+     }
+    },
+    {
+     "el": "button.flex.w-full «كگل معدني و صنعتي گل»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 1029,
+      "y": 1030,
+      "w": 268,
+      "h": 56
+     }
+    },
+    {
+     "el": "button.flex.w-full «كگهر معدني و صنعتي گ»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 1029,
+      "y": 1090,
+      "w": 268,
+      "h": 56
+     }
+    },
+    {
+     "el": "button.flex.w-full «شسپا نفت سپاهانامتیا»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 1029,
+      "y": 1150,
+      "w": 268,
+      "h": 56
+     }
+    }
+   ],
+   "errors": []
+  },
+  {
+   "route": "/fundamental/فولاد",
+   "vw": 1366,
+   "vh": 768,
+   "total": 62,
+   "findings": [
+    {
+     "el": "fts-card-cell-4_sales_to_mcap «۴. پتانسیل سود تا آخ»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 604,
+      "y": 740,
+      "w": 357,
+      "h": 174
+     }
+    },
+    {
+     "el": "fts-result-4_sales_to_mcap «۱۶.۶٪»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 892,
+      "y": 769,
+      "w": 58,
+      "h": 20
+     }
+    },
+    {
+     "el": "fts-card-4-secondary «نسبت فروش ÷ ارزش باز»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 615,
+      "y": 870,
+      "w": 335,
+      "h": 14
+     }
+    },
+    {
+     "el": "fts-card-cell-5_industry «۵. رژیم صنعتقبولصنعت»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 237,
+      "y": 740,
+      "w": 357,
+      "h": 123
+     }
+    },
+    {
+     "el": "fts-result-5_industry «صنعت آزاد»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 497,
+      "y": 769,
+      "w": 86,
+      "h": 20
+     }
+    },
+    {
+     "el": "fts-card-label-5_industry «صنعت آزاد»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 497,
+      "y": 763,
+      "w": 86,
+      "h": 32
+     }
+    },
+    {
+     "el": "data-gap-banner «دادهٔ کدال برای ۱ شا»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 0,
+      "y": 982,
+      "w": 1198,
+      "h": 94
+     }
+    },
+    {
+     "el": "data-gap-item «شاخص ۲: افت سود در ۱»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 17,
+      "y": 1027,
+      "w": 1164,
+      "h": 32
+     }
+    },
+    {
+     "el": "qtrend-toggle «روند فصلی درآمد و سو»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 17,
+      "y": 1115,
+      "w": 1164,
+      "h": 30
+     }
+    },
+    {
+     "el": "qtrend-toggle-hint «نمودار فصلی»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 22,
+      "y": 1120,
+      "w": 73,
+      "h": 20
+     }
+    }
+   ],
+   "errors": []
+  },
+  {
+   "route": "/fundamental/خوز",
+   "vw": 1366,
+   "vh": 768,
+   "total": 19,
+   "findings": [],
+   "errors": [
+    "console: Failed to load resource: the server responded with a status of 404 (Not Found)",
+    "console: Failed to load resource: the server responded with a status of 404 (Not Found)"
+   ]
+  },
+  {
+   "route": "/fundamental",
+   "vw": 1366,
+   "vh": 768,
+   "total": 178,
+   "findings": [
+    {
+     "el": "fts-screen-row «✓☆غسالمسالمين‌الف✓ب✓»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 1,
+      "y": 754,
+      "w": 1196,
+      "h": 52
+     }
+    },
+    {
+     "el": "fts-mark-1a_monetary_growth «✓»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 978,
+      "y": 770,
+      "w": 20,
+      "h": 20
+     }
+    },
+    {
+     "el": "fts-mark-1b_volume_growth «✓»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 941,
+      "y": 770,
+      "w": 20,
+      "h": 20
+     }
+    },
+    {
+     "el": "fts-mark-2_eps_trend «✓»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 778,
+      "y": 770,
+      "w": 20,
+      "h": 20
+     }
+    },
+    {
+     "el": "fts-mark-3_gross_margin «✓»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 501,
+      "y": 770,
+      "w": 20,
+      "h": 20
+     }
+    },
+    {
+     "el": "fts-mark-4_sales_to_mcap «✓»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 368,
+      "y": 770,
+      "w": 20,
+      "h": 20
+     }
+    },
+    {
+     "el": "fts-mark-5_industry «✓»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 223,
+      "y": 770,
+      "w": 20,
+      "h": 20
+     }
+    },
+    {
+     "el": "fts-screen-row «✓☆چخزرصنايع چوب خزر »",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 1,
+      "y": 806,
+      "w": 1196,
+      "h": 52
+     }
+    },
+    {
+     "el": "fts-mark-1a_monetary_growth «✓»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 978,
+      "y": 822,
+      "w": 20,
+      "h": 20
+     }
+    },
+    {
+     "el": "fts-mark-1b_volume_growth «✓»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 941,
+      "y": 822,
+      "w": 20,
+      "h": 20
+     }
+    },
+    {
+     "el": "fts-mark-2_eps_trend «✓»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 778,
+      "y": 822,
+      "w": 20,
+      "h": 20
+     }
+    },
+    {
+     "el": "fts-mark-3_gross_margin «✓»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 501,
+      "y": 822,
+      "w": 20,
+      "h": 20
+     }
+    },
+    {
+     "el": "fts-mark-4_sales_to_mcap «✓»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 368,
+      "y": 822,
+      "w": 20,
+      "h": 20
+     }
+    },
+    {
+     "el": "fts-mark-5_industry «✓»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 223,
+      "y": 822,
+      "w": 20,
+      "h": 20
+     }
+    },
+    {
+     "el": "fts-screen-row «✓☆دزهراويداروسازي‌زه»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 1,
+      "y": 858,
+      "w": 1196,
+      "h": 52
+     }
+    },
+    {
+     "el": "fts-mark-1a_monetary_growth «✓»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 978,
+      "y": 874,
+      "w": 20,
+      "h": 20
+     }
+    },
+    {
+     "el": "fts-mark-1b_volume_growth «✓»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 941,
+      "y": 874,
+      "w": 20,
+      "h": 20
+     }
+    },
+    {
+     "el": "fts-mark-2_eps_trend «✓»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 778,
+      "y": 874,
+      "w": 20,
+      "h": 20
+     }
+    },
+    {
+     "el": "fts-mark-3_gross_margin «✓»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 501,
+      "y": 874,
+      "w": 20,
+      "h": 20
+     }
+    },
+    {
+     "el": "fts-mark-4_sales_to_mcap «✓»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 368,
+      "y": 874,
+      "w": 20,
+      "h": 20
+     }
+    },
+    {
+     "el": "fts-mark-5_industry «✓»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 223,
+      "y": 874,
+      "w": 20,
+      "h": 20
+     }
+    },
+    {
+     "el": "fts-screen-row «✓☆كپارسكاشي‌ پارس‌ال»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 1,
+      "y": 910,
+      "w": 1196,
+      "h": 52
+     }
+    },
+    {
+     "el": "fts-mark-1a_monetary_growth «✓»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 978,
+      "y": 926,
+      "w": 20,
+      "h": 20
+     }
+    },
+    {
+     "el": "fts-mark-1b_volume_growth «✓»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 941,
+      "y": 926,
+      "w": 20,
+      "h": 20
+     }
+    },
+    {
+     "el": "fts-mark-2_eps_trend «✓»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 778,
+      "y": 926,
+      "w": 20,
+      "h": 20
+     }
+    },
+    {
+     "el": "fts-mark-3_gross_margin «✓»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 501,
+      "y": 926,
+      "w": 20,
+      "h": 20
+     }
+    },
+    {
+     "el": "fts-mark-4_sales_to_mcap «✓»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 368,
+      "y": 926,
+      "w": 20,
+      "h": 20
+     }
+    },
+    {
+     "el": "fts-mark-5_industry «✓»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 223,
+      "y": 926,
+      "w": 20,
+      "h": 20
+     }
+    },
+    {
+     "el": "fts-screen-row «✓☆دكپسولتوليد ژلاتين»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 1,
+      "y": 962,
+      "w": 1196,
+      "h": 52
+     }
+    },
+    {
+     "el": "fts-mark-1a_monetary_growth «✓»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 978,
+      "y": 978,
+      "w": 20,
+      "h": 20
+     }
+    },
+    {
+     "el": "fts-mark-1b_volume_growth «✓»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 941,
+      "y": 978,
+      "w": 20,
+      "h": 20
+     }
+    },
+    {
+     "el": "fts-mark-2_eps_trend «✓»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 778,
+      "y": 978,
+      "w": 20,
+      "h": 20
+     }
+    },
+    {
+     "el": "fts-mark-3_gross_margin «✓»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 501,
+      "y": 978,
+      "w": 20,
+      "h": 20
+     }
+    },
+    {
+     "el": "fts-mark-4_sales_to_mcap «✓»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 368,
+      "y": 978,
+      "w": 20,
+      "h": 20
+     }
+    },
+    {
+     "el": "fts-mark-5_industry «✓»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 223,
+      "y": 978,
+      "w": 20,
+      "h": 20
+     }
+    },
+    {
+     "el": "fts-screen-row «✓☆سبهانسيمان‌ بهبهان»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 1,
+      "y": 1014,
+      "w": 1196,
+      "h": 52
+     }
+    },
+    {
+     "el": "fts-mark-1a_monetary_growth «✓»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 978,
+      "y": 1030,
+      "w": 20,
+      "h": 20
+     }
+    },
+    {
+     "el": "fts-mark-1b_volume_growth «✓»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 941,
+      "y": 1030,
+      "w": 20,
+      "h": 20
+     }
+    },
+    {
+     "el": "fts-mark-2_eps_trend «✓»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 778,
+      "y": 1030,
+      "w": 20,
+      "h": 20
+     }
+    },
+    {
+     "el": "fts-mark-3_gross_margin «✓»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 501,
+      "y": 1030,
+      "w": 20,
+      "h": 20
+     }
+    },
+    {
+     "el": "fts-mark-4_sales_to_mcap «✓»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 368,
+      "y": 1030,
+      "w": 20,
+      "h": 20
+     }
+    },
+    {
+     "el": "fts-mark-5_industry «✓»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 223,
+      "y": 1030,
+      "w": 20,
+      "h": 20
+     }
+    },
+    {
+     "el": "fts-screen-row «✓☆فگسترگسترش صنايع ر»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 1,
+      "y": 1066,
+      "w": 1196,
+      "h": 52
+     }
+    },
+    {
+     "el": "fts-mark-1a_monetary_growth «✓»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 978,
+      "y": 1082,
+      "w": 20,
+      "h": 20
+     }
+    },
+    {
+     "el": "fts-mark-1b_volume_growth «✓»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 941,
+      "y": 1082,
+      "w": 20,
+      "h": 20
+     }
+    },
+    {
+     "el": "fts-mark-2_eps_trend «✓»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 778,
+      "y": 1082,
+      "w": 20,
+      "h": 20
+     }
+    },
+    {
+     "el": "fts-mark-3_gross_margin «✓»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 501,
+      "y": 1082,
+      "w": 20,
+      "h": 20
+     }
+    },
+    {
+     "el": "fts-mark-4_sales_to_mcap «✓»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 368,
+      "y": 1082,
+      "w": 20,
+      "h": 20
+     }
+    },
+    {
+     "el": "fts-mark-5_industry «✓»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 223,
+      "y": 1082,
+      "w": 20,
+      "h": 20
+     }
+    },
+    {
+     "el": "fts-screen-row «✓☆كتوكاتوليدي و خدما»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 1,
+      "y": 1118,
+      "w": 1196,
+      "h": 52
+     }
+    },
+    {
+     "el": "fts-mark-1a_monetary_growth «✓»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 978,
+      "y": 1134,
+      "w": 20,
+      "h": 20
+     }
+    },
+    {
+     "el": "fts-na-1b_volume_growth «کاربرد ندارد»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 892,
+      "y": 1135,
+      "w": 69,
+      "h": 18
+     }
+    },
+    {
+     "el": "fts-mark-2_eps_trend «✓»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 778,
+      "y": 1134,
+      "w": 20,
+      "h": 20
+     }
+    },
+    {
+     "el": "fts-mark-3_gross_margin «✓»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 501,
+      "y": 1134,
+      "w": 20,
+      "h": 20
+     }
+    },
+    {
+     "el": "fts-mark-4_sales_to_mcap «✓»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 368,
+      "y": 1134,
+      "w": 20,
+      "h": 20
+     }
+    },
+    {
+     "el": "fts-mark-5_industry «✓»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 223,
+      "y": 1134,
+      "w": 20,
+      "h": 20
+     }
+    },
+    {
+     "el": "fts-screen-row «✓☆دبالكمواد اوليه دا»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 1,
+      "y": 1170,
+      "w": 1196,
+      "h": 52
+     }
+    },
+    {
+     "el": "fts-mark-1a_monetary_growth «✓»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 978,
+      "y": 1186,
+      "w": 20,
+      "h": 20
+     }
+    },
+    {
+     "el": "fts-mark-1b_volume_growth «✓»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 941,
+      "y": 1186,
+      "w": 20,
+      "h": 20
+     }
+    },
+    {
+     "el": "fts-mark-2_eps_trend «✓»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 778,
+      "y": 1186,
+      "w": 20,
+      "h": 20
+     }
+    },
+    {
+     "el": "fts-mark-3_gross_margin «✓»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 501,
+      "y": 1186,
+      "w": 20,
+      "h": 20
+     }
+    },
+    {
+     "el": "fts-mark-4_sales_to_mcap «✓»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 368,
+      "y": 1186,
+      "w": 20,
+      "h": 20
+     }
+    },
+    {
+     "el": "fts-mark-5_industry «✓»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 223,
+      "y": 1186,
+      "w": 20,
+      "h": 20
+     }
+    }
+   ],
+   "errors": []
+  },
+  {
+   "route": "/master",
+   "vw": 1366,
+   "vh": 768,
+   "total": 68,
+   "findings": [],
+   "errors": []
+  },
+  {
+   "route": "/master/فولاد",
+   "vw": 1366,
+   "vh": 768,
+   "total": 108,
+   "findings": [
+    {
+     "el": "master-toggle-advanced «جزئیات، برنامهٔ معام»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 971,
+      "y": 762,
+      "w": 227,
+      "h": 24
+     }
+    },
+    {
+     "el": "inspector-stage «تابلوخوانیتکنیکال· ل»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 10,
+      "y": 736,
+      "w": 219,
+      "h": 79
+     }
+    },
+    {
+     "el": "inspector-stage-fundamental «بنیادی· لازم نبود»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 142,
+      "y": 761,
+      "w": 87,
+      "h": 21
+     }
+    },
+    {
+     "el": "inspector-stage-note-fundamental «· لازم نبود»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 149,
+      "y": 765,
+      "w": 34,
+      "h": 14
+     }
+    },
+    {
+     "el": "inspector-stage-handover «تحویل»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 89,
+      "y": 761,
+      "w": 49,
+      "h": 21
+     }
+    },
+    {
+     "el": "inspector-stage-next «ایستاده در «تابلوخوا»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 10,
+      "y": 786,
+      "w": 219,
+      "h": 29
+     }
+    },
+    {
+     "el": "inspector-events «رویدادهاهمه ↗رویدادی»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 10,
+      "y": 823,
+      "w": 219,
+      "h": 41
+     }
+    },
+    {
+     "el": "inspector-events-all «همه ↗»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 19,
+      "y": 828,
+      "w": 25,
+      "h": 14
+     }
+    },
+    {
+     "el": "inspector-events-none «رویدادی ثبت نشده»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 19,
+      "y": 843,
+      "w": 201,
+      "h": 15
+     }
+    },
+    {
+     "el": "inspector-veto-why «گیتِ تکنیکالِ این نم»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 19,
+      "y": 906,
+      "w": 159,
+      "h": 14
+     }
+    }
+   ],
+   "errors": []
+  },
+  {
+   "route": "/master/خوز",
+   "vw": 1366,
+   "vh": 768,
+   "total": 108,
+   "findings": [
+    {
+     "el": "inspector-stage «تابلوخوانیتکنیکالبنی»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 10,
+      "y": 741,
+      "w": 219,
+      "h": 64
+     }
+    },
+    {
+     "el": "inspector-stage-handover «تحویل»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 180,
+      "y": 766,
+      "w": 49,
+      "h": 21
+     }
+    },
+    {
+     "el": "inspector-stage-next «مرحلۀ فعلی: تحویل — »",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 10,
+      "y": 791,
+      "w": 219,
+      "h": 14
+     }
+    },
+    {
+     "el": "inspector-events «رویدادهاهمه ↗رویدادی»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 10,
+      "y": 813,
+      "w": 219,
+      "h": 41
+     }
+    },
+    {
+     "el": "inspector-events-all «همه ↗»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 19,
+      "y": 818,
+      "w": 25,
+      "h": 14
+     }
+    },
+    {
+     "el": "inspector-events-none «رویدادی ثبت نشده»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 19,
+      "y": 833,
+      "w": 201,
+      "h": 15
+     }
+    },
+    {
+     "el": "inspector-veto-why «گیتِ بنیادیِ این نما»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 19,
+      "y": 896,
+      "w": 156,
+      "h": 14
+     }
+    }
+   ],
+   "errors": [
+    "console: Failed to load resource: the server responded with a status of 404 (Not Found)"
+   ]
+  },
+  {
+   "route": "/strategy-tree",
+   "vw": 1366,
+   "vh": 768,
+   "total": 103,
+   "findings": [
+    {
+     "el": "inspector-stage «تابلوخوانیتکنیکالبنی»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 10,
+      "y": 741,
+      "w": 219,
+      "h": 64
+     }
+    },
+    {
+     "el": "inspector-stage-handover «تحویل»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 180,
+      "y": 766,
+      "w": 49,
+      "h": 21
+     }
+    },
+    {
+     "el": "inspector-stage-next «مرحلۀ فعلی: تحویل — »",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 10,
+      "y": 791,
+      "w": 219,
+      "h": 14
+     }
+    },
+    {
+     "el": "inspector-events «رویدادهاهمه ↗رویدادی»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 10,
+      "y": 813,
+      "w": 219,
+      "h": 41
+     }
+    },
+    {
+     "el": "inspector-events-all «همه ↗»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 19,
+      "y": 818,
+      "w": 25,
+      "h": 14
+     }
+    },
+    {
+     "el": "inspector-events-none «رویدادی ثبت نشده»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 19,
+      "y": 833,
+      "w": 201,
+      "h": 15
+     }
+    },
+    {
+     "el": "inspector-veto-why «گیتِ بنیادیِ این نما»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 19,
+      "y": 896,
+      "w": 156,
+      "h": 14
+     }
+    }
+   ],
+   "errors": [
+    "console: Failed to load resource: the server responded with a status of 404 (Not Found)"
+   ]
+  },
+  {
+   "route": "/strategy-tree?page=F",
+   "vw": 1366,
+   "vh": 768,
+   "total": 97,
+   "findings": [
+    {
+     "el": "a.rounded-xl.border «← صفحه قبل»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 1107,
+      "y": 1259,
+      "w": 91,
+      "h": 32
+     }
+    },
+    {
+     "el": "a.rounded-xl.border «صفحه بعد →»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 240,
+      "y": 1259,
+      "w": 90,
+      "h": 32
+     }
+    },
+    {
+     "el": "inspector-stage «تابلوخوانیتکنیکالبنی»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 10,
+      "y": 741,
+      "w": 219,
+      "h": 64
+     }
+    },
+    {
+     "el": "inspector-stage-handover «تحویل»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 180,
+      "y": 766,
+      "w": 49,
+      "h": 21
+     }
+    },
+    {
+     "el": "inspector-stage-next «مرحلۀ فعلی: تحویل — »",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 10,
+      "y": 791,
+      "w": 219,
+      "h": 14
+     }
+    },
+    {
+     "el": "inspector-events «رویدادهاهمه ↗رویدادی»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 10,
+      "y": 813,
+      "w": 219,
+      "h": 41
+     }
+    },
+    {
+     "el": "inspector-events-all «همه ↗»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 19,
+      "y": 818,
+      "w": 25,
+      "h": 14
+     }
+    },
+    {
+     "el": "inspector-events-none «رویدادی ثبت نشده»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 19,
+      "y": 833,
+      "w": 201,
+      "h": 15
+     }
+    },
+    {
+     "el": "inspector-veto-why «گیتِ بنیادیِ این نما»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 19,
+      "y": 896,
+      "w": 156,
+      "h": 14
+     }
+    }
+   ],
+   "errors": [
+    "console: Failed to load resource: the server responded with a status of 404 (Not Found)"
+   ]
+  },
+  {
+   "route": "/strategy-tree?page=T",
+   "vw": 1366,
+   "vh": 768,
+   "total": 97,
+   "findings": [
+    {
+     "el": "a.rounded-xl.border «← صفحه قبل»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 1107,
+      "y": 919,
+      "w": 91,
+      "h": 32
+     }
+    },
+    {
+     "el": "a.rounded-xl.border «صفحه بعد →»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 240,
+      "y": 919,
+      "w": 90,
+      "h": 32
+     }
+    },
+    {
+     "el": "inspector-stage «تابلوخوانیتکنیکالبنی»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 10,
+      "y": 741,
+      "w": 219,
+      "h": 64
+     }
+    },
+    {
+     "el": "inspector-stage-handover «تحویل»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 180,
+      "y": 766,
+      "w": 49,
+      "h": 21
+     }
+    },
+    {
+     "el": "inspector-stage-next «مرحلۀ فعلی: تحویل — »",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 10,
+      "y": 791,
+      "w": 219,
+      "h": 14
+     }
+    },
+    {
+     "el": "inspector-events «رویدادهاهمه ↗رویدادی»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 10,
+      "y": 813,
+      "w": 219,
+      "h": 41
+     }
+    },
+    {
+     "el": "inspector-events-all «همه ↗»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 19,
+      "y": 818,
+      "w": 25,
+      "h": 14
+     }
+    },
+    {
+     "el": "inspector-events-none «رویدادی ثبت نشده»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 19,
+      "y": 833,
+      "w": 201,
+      "h": 15
+     }
+    },
+    {
+     "el": "inspector-veto-why «گیتِ بنیادیِ این نما»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 19,
+      "y": 896,
+      "w": 156,
+      "h": 14
+     }
+    }
+   ],
+   "errors": []
+  },
+  {
+   "route": "/strategy-tree?page=S",
+   "vw": 1366,
+   "vh": 768,
+   "total": 96,
+   "findings": [
+    {
+     "el": "a.rounded-xl.border «صفحه بعد →»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 240,
+      "y": 1266,
+      "w": 90,
+      "h": 32
+     }
+    },
+    {
+     "el": "inspector-stage «تابلوخوانیتکنیکالبنی»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 10,
+      "y": 741,
+      "w": 219,
+      "h": 64
+     }
+    },
+    {
+     "el": "inspector-stage-handover «تحویل»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 180,
+      "y": 766,
+      "w": 49,
+      "h": 21
+     }
+    },
+    {
+     "el": "inspector-stage-next «مرحلۀ فعلی: تحویل — »",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 10,
+      "y": 791,
+      "w": 219,
+      "h": 14
+     }
+    },
+    {
+     "el": "inspector-events «رویدادهاهمه ↗رویدادی»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 10,
+      "y": 813,
+      "w": 219,
+      "h": 41
+     }
+    },
+    {
+     "el": "inspector-events-all «همه ↗»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 19,
+      "y": 818,
+      "w": 25,
+      "h": 14
+     }
+    },
+    {
+     "el": "inspector-events-none «رویدادی ثبت نشده»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 19,
+      "y": 833,
+      "w": 201,
+      "h": 15
+     }
+    },
+    {
+     "el": "inspector-veto-why «گیتِ بنیادیِ این نما»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 19,
+      "y": 896,
+      "w": 156,
+      "h": 14
+     }
+    }
+   ],
+   "errors": []
+  },
+  {
+   "route": "/strategy-tree?page=M",
+   "vw": 1366,
+   "vh": 768,
+   "total": 97,
+   "findings": [
+    {
+     "el": "a.rounded-xl.border «← صفحه قبل»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 1107,
+      "y": 1196,
+      "w": 91,
+      "h": 32
+     }
+    },
+    {
+     "el": "a.rounded-xl.border «رفتن به غربالگری FTS»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 240,
+      "y": 1196,
+      "w": 131,
+      "h": 32
+     }
+    },
+    {
+     "el": "inspector-stage «تابلوخوانیتکنیکالبنی»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 10,
+      "y": 741,
+      "w": 219,
+      "h": 64
+     }
+    },
+    {
+     "el": "inspector-stage-handover «تحویل»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 180,
+      "y": 766,
+      "w": 49,
+      "h": 21
+     }
+    },
+    {
+     "el": "inspector-stage-next «مرحلۀ فعلی: تحویل — »",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 10,
+      "y": 791,
+      "w": 219,
+      "h": 14
+     }
+    },
+    {
+     "el": "inspector-events «رویدادهاهمه ↗رویدادی»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 10,
+      "y": 813,
+      "w": 219,
+      "h": 41
+     }
+    },
+    {
+     "el": "inspector-events-all «همه ↗»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 19,
+      "y": 818,
+      "w": 25,
+      "h": 14
+     }
+    },
+    {
+     "el": "inspector-events-none «رویدادی ثبت نشده»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 19,
+      "y": 833,
+      "w": 201,
+      "h": 15
+     }
+    },
+    {
+     "el": "inspector-veto-why «گیتِ بنیادیِ این نما»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 19,
+      "y": 896,
+      "w": 156,
+      "h": 14
+     }
+    }
+   ],
+   "errors": []
+  },
+  {
+   "route": "/portfolio",
+   "vw": 1366,
+   "vh": 768,
+   "total": 103,
+   "findings": [
+    {
+     "el": "inspector-stage «تابلوخوانیتکنیکالبنی»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 10,
+      "y": 741,
+      "w": 219,
+      "h": 64
+     }
+    },
+    {
+     "el": "inspector-stage-handover «تحویل»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 180,
+      "y": 766,
+      "w": 49,
+      "h": 21
+     }
+    },
+    {
+     "el": "inspector-stage-next «مرحلۀ فعلی: تحویل — »",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 10,
+      "y": 791,
+      "w": 219,
+      "h": 14
+     }
+    },
+    {
+     "el": "inspector-events «رویدادهاهمه ↗رویدادی»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 10,
+      "y": 813,
+      "w": 219,
+      "h": 41
+     }
+    },
+    {
+     "el": "inspector-events-all «همه ↗»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 19,
+      "y": 818,
+      "w": 25,
+      "h": 14
+     }
+    },
+    {
+     "el": "inspector-events-none «رویدادی ثبت نشده»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 19,
+      "y": 833,
+      "w": 201,
+      "h": 15
+     }
+    },
+    {
+     "el": "inspector-veto-why «گیتِ بنیادیِ این نما»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 19,
+      "y": 896,
+      "w": 156,
+      "h": 14
+     }
+    }
+   ],
+   "errors": []
+  },
+  {
+   "route": "/trade",
+   "vw": 1366,
+   "vh": 768,
+   "total": 148,
+   "findings": [
+    {
+     "el": "trade-symbol-آتيه06 «آتيه06»",
+     "kind": "OUTSIDE-OWN-SCROLLER",
+     "box": {
+      "x": 971,
+      "y": 467,
+      "w": 206,
+      "h": 22
+     },
+     "hit": "trade-symbol-list [206..462]"
+    },
+    {
+     "el": "trade-symbol-آذرين «آذرين»",
+     "kind": "OUTSIDE-OWN-SCROLLER",
+     "box": {
+      "x": 971,
+      "y": 493,
+      "w": 206,
+      "h": 22
+     },
+     "hit": "trade-symbol-list [206..462]"
+    },
+    {
+     "el": "trade-symbol-آرام «آرام»",
+     "kind": "OUTSIDE-OWN-SCROLLER",
+     "box": {
+      "x": 971,
+      "y": 519,
+      "w": 206,
+      "h": 22
+     },
+     "hit": "trade-symbol-list [206..462]"
+    },
+    {
+     "el": "trade-symbol-آرامش «آرامش»",
+     "kind": "OUTSIDE-OWN-SCROLLER",
+     "box": {
+      "x": 971,
+      "y": 545,
+      "w": 206,
+      "h": 22
+     },
+     "hit": "trade-symbol-list [206..462]"
+    },
+    {
+     "el": "trade-symbol-آردينه «آردينه»",
+     "kind": "OUTSIDE-OWN-SCROLLER",
+     "box": {
+      "x": 971,
+      "y": 571,
+      "w": 206,
+      "h": 22
+     },
+     "hit": "trade-symbol-list [206..462]"
+    },
+    {
+     "el": "trade-symbol-آردينه3 «آردينه3»",
+     "kind": "OUTSIDE-OWN-SCROLLER",
+     "box": {
+      "x": 971,
+      "y": 597,
+      "w": 206,
+      "h": 22
+     },
+     "hit": "trade-symbol-list [206..462]"
+    },
+    {
+     "el": "trade-symbol-آرمان «آرمان»",
+     "kind": "OUTSIDE-OWN-SCROLLER",
+     "box": {
+      "x": 971,
+      "y": 623,
+      "w": 206,
+      "h": 22
+     },
+     "hit": "trade-symbol-list [206..462]"
+    },
+    {
+     "el": "trade-symbol-آرمان ارگ071 «آرمان ارگ071»",
+     "kind": "OUTSIDE-OWN-SCROLLER",
+     "box": {
+      "x": 971,
+      "y": 649,
+      "w": 206,
+      "h": 22
+     },
+     "hit": "trade-symbol-list [206..462]"
+    },
+    {
+     "el": "trade-symbol-آرمان ارگ072 «آرمان ارگ072»",
+     "kind": "OUTSIDE-OWN-SCROLLER",
+     "box": {
+      "x": 971,
+      "y": 675,
+      "w": 206,
+      "h": 22
+     },
+     "hit": "trade-symbol-list [206..462]"
+    },
+    {
+     "el": "trade-symbol-آرمان سلولز06 «آرمان سلولز06»",
+     "kind": "OUTSIDE-OWN-SCROLLER",
+     "box": {
+      "x": 971,
+      "y": 701,
+      "w": 206,
+      "h": 22
+     },
+     "hit": "trade-symbol-list [206..462]"
+    },
+    {
+     "el": "trade-symbol-آرمان موتور082 «آرمان موتور082»",
+     "kind": "OUTSIDE-OWN-SCROLLER",
+     "box": {
+      "x": 971,
+      "y": 727,
+      "w": 206,
+      "h": 22
+     },
+     "hit": "trade-symbol-list [206..462]"
+    },
+    {
+     "el": "trade-symbol-آريا «آريا»",
+     "kind": "OUTSIDE-OWN-SCROLLER",
+     "box": {
+      "x": 971,
+      "y": 753,
+      "w": 206,
+      "h": 22
+     },
+     "hit": "trade-symbol-list [206..462]"
+    },
+    {
+     "el": "trade-symbol-آريا3 «آريا3»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 971,
+      "y": 779,
+      "w": 206,
+      "h": 22
+     }
+    },
+    {
+     "el": "trade-symbol-آريان «آريان»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 971,
+      "y": 805,
+      "w": 206,
+      "h": 22
+     }
+    },
+    {
+     "el": "trade-symbol-آريس08 «آريس08»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 971,
+      "y": 831,
+      "w": 206,
+      "h": 22
+     }
+    },
+    {
+     "el": "trade-symbol-آرين سلامت06 «آرين سلامت06»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 971,
+      "y": 857,
+      "w": 206,
+      "h": 22
+     }
+    },
+    {
+     "el": "trade-symbol-آرين سلامت08 «آرين سلامت08»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 971,
+      "y": 883,
+      "w": 206,
+      "h": 22
+     }
+    },
+    {
+     "el": "trade-symbol-آرين پارس07 «آرين پارس07»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 971,
+      "y": 909,
+      "w": 206,
+      "h": 22
+     }
+    },
+    {
+     "el": "trade-symbol-آس «آس»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 971,
+      "y": 935,
+      "w": 206,
+      "h": 22
+     }
+    },
+    {
+     "el": "trade-symbol-آسا «آسا»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 971,
+      "y": 961,
+      "w": 206,
+      "h": 22
+     }
+    },
+    {
+     "el": "trade-symbol-آسا2 «آسا2»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 971,
+      "y": 987,
+      "w": 206,
+      "h": 22
+     }
+    },
+    {
+     "el": "trade-symbol-آساس «آساس»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 971,
+      "y": 1013,
+      "w": 206,
+      "h": 22
+     }
+    },
+    {
+     "el": "trade-symbol-آسال «آسال»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 971,
+      "y": 1039,
+      "w": 206,
+      "h": 22
+     }
+    },
+    {
+     "el": "trade-symbol-آسام «آسام»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 971,
+      "y": 1065,
+      "w": 206,
+      "h": 22
+     }
+    },
+    {
+     "el": "trade-symbol-آسان «آسان»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 971,
+      "y": 1091,
+      "w": 206,
+      "h": 22
+     }
+    },
+    {
+     "el": "trade-symbol-آسمان06 «آسمان06»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 971,
+      "y": 1117,
+      "w": 206,
+      "h": 22
+     }
+    },
+    {
+     "el": "trade-symbol-آسمان08 «آسمان08»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 971,
+      "y": 1143,
+      "w": 206,
+      "h": 22
+     }
+    },
+    {
+     "el": "trade-symbol-آسود «آسود»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 971,
+      "y": 1169,
+      "w": 206,
+      "h": 22
+     }
+    },
+    {
+     "el": "trade-symbol-آسيا «آسيا»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 971,
+      "y": 1195,
+      "w": 206,
+      "h": 22
+     }
+    },
+    {
+     "el": "trade-symbol-آسيا3 «آسيا3»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 971,
+      "y": 1221,
+      "w": 206,
+      "h": 22
+     }
+    },
+    {
+     "el": "inspector-events-none «رویدادی ثبت نشده»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 19,
+      "y": 761,
+      "w": 201,
+      "h": 15
+     }
+    },
+    {
+     "el": "inspector-veto-why «گیتِ بنیادیِ این نما»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 19,
+      "y": 824,
+      "w": 156,
+      "h": 14
+     }
+    }
+   ],
+   "errors": []
+  },
+  {
+   "route": "/watch",
+   "vw": 1366,
+   "vh": 768,
+   "total": 90,
+   "findings": [
+    {
+     "el": "inspector-events-none «رویدادی ثبت نشده»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 19,
+      "y": 761,
+      "w": 201,
+      "h": 15
+     }
+    },
+    {
+     "el": "inspector-veto-why «گیتِ بنیادیِ این نما»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 19,
+      "y": 824,
+      "w": 156,
+      "h": 14
+     }
+    }
+   ],
+   "errors": []
+  },
+  {
+   "route": "/notifications",
+   "vw": 1366,
+   "vh": 768,
+   "total": 827,
+   "findings": [
+    {
+     "el": "notifications-page «اعلان‌هامنبع: کدال (»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 240,
+      "y": 82,
+      "w": 958,
+      "h": 10404
+     }
+    },
+    {
+     "el": "notice-list «بالاصورتهایِ مالیغشه»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 240,
+      "y": 184,
+      "w": 958,
+      "h": 10254
+     }
+    },
+    {
+     "el": "notice-row «بالاصورتهایِ مالیفرا»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 240,
+      "y": 782,
+      "w": 958,
+      "h": 80
+     }
+    },
+    {
+     "el": "notice-level «بالا»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 1160,
+      "y": 791,
+      "w": 27,
+      "h": 20
+     }
+    },
+    {
+     "el": "notice-kind «صورتهایِ مالی»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 1096,
+      "y": 794,
+      "w": 59,
+      "h": 14
+     }
+    },
+    {
+     "el": "notice-symbol «فرابورس»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 1049,
+      "y": 794,
+      "w": 40,
+      "h": 14
+     }
+    },
+    {
+     "el": "notice-open «منبع ↗»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 317,
+      "y": 791,
+      "w": 45,
+      "h": 20
+     }
+    },
+    {
+     "el": "notice-mark «خوانده شد»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 251,
+      "y": 791,
+      "w": 60,
+      "h": 20
+     }
+    },
+    {
+     "el": "notice-row «بالاصورتهایِ مالیثعم»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 240,
+      "y": 868,
+      "w": 958,
+      "h": 80
+     }
+    },
+    {
+     "el": "notice-level «بالا»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 1160,
+      "y": 877,
+      "w": 27,
+      "h": 20
+     }
+    },
+    {
+     "el": "notice-kind «صورتهایِ مالی»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 1096,
+      "y": 880,
+      "w": 59,
+      "h": 14
+     }
+    },
+    {
+     "el": "notice-symbol «ثعمرا»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 1065,
+      "y": 879,
+      "w": 25,
+      "h": 14
+     }
+    },
+    {
+     "el": "notice-open «منبع ↗»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 317,
+      "y": 877,
+      "w": 45,
+      "h": 20
+     }
+    },
+    {
+     "el": "notice-mark «خوانده شد»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 251,
+      "y": 877,
+      "w": 60,
+      "h": 20
+     }
+    },
+    {
+     "el": "notice-row «بالاصورتهایِ مالیثنو»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 240,
+      "y": 953,
+      "w": 958,
+      "h": 80
+     }
+    },
+    {
+     "el": "notice-level «بالا»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 1160,
+      "y": 962,
+      "w": 27,
+      "h": 20
+     }
+    },
+    {
+     "el": "notice-kind «صورتهایِ مالی»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 1096,
+      "y": 965,
+      "w": 59,
+      "h": 14
+     }
+    },
+    {
+     "el": "notice-symbol «ثنور»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 1072,
+      "y": 965,
+      "w": 18,
+      "h": 14
+     }
+    },
+    {
+     "el": "notice-open «منبع ↗»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 317,
+      "y": 962,
+      "w": 45,
+      "h": 20
+     }
+    },
+    {
+     "el": "notice-mark «خوانده شد»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 251,
+      "y": 962,
+      "w": 60,
+      "h": 20
+     }
+    },
+    {
+     "el": "notice-row «بالاصورتهایِ مالیغچی»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 240,
+      "y": 1039,
+      "w": 958,
+      "h": 80
+     }
+    },
+    {
+     "el": "notice-level «بالا»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 1160,
+      "y": 1048,
+      "w": 27,
+      "h": 20
+     }
+    },
+    {
+     "el": "notice-kind «صورتهایِ مالی»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 1096,
+      "y": 1051,
+      "w": 59,
+      "h": 14
+     }
+    },
+    {
+     "el": "notice-symbol «غچین»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 1062,
+      "y": 1050,
+      "w": 28,
+      "h": 14
+     }
+    },
+    {
+     "el": "notice-open «منبع ↗»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 317,
+      "y": 1048,
+      "w": 45,
+      "h": 20
+     }
+    },
+    {
+     "el": "notice-mark «خوانده شد»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 251,
+      "y": 1048,
+      "w": 60,
+      "h": 20
+     }
+    },
+    {
+     "el": "notice-row «متوسطفعالیت ماهانهشخ»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 240,
+      "y": 1124,
+      "w": 958,
+      "h": 80
+     }
+    },
+    {
+     "el": "notice-level «متوسط»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 1141,
+      "y": 1133,
+      "w": 46,
+      "h": 20
+     }
+    },
+    {
+     "el": "notice-kind «فعالیت ماهانه»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 1072,
+      "y": 1136,
+      "w": 63,
+      "h": 14
+     }
+    },
+    {
+     "el": "notice-symbol «شخارک»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 1031,
+      "y": 1136,
+      "w": 35,
+      "h": 14
+     }
+    },
+    {
+     "el": "notice-open «منبع ↗»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 317,
+      "y": 1133,
+      "w": 45,
+      "h": 20
+     }
+    },
+    {
+     "el": "notice-mark «خوانده شد»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 251,
+      "y": 1133,
+      "w": 60,
+      "h": 20
+     }
+    },
+    {
+     "el": "notice-row «بالاصورتهایِ مالیشجی»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 240,
+      "y": 1210,
+      "w": 958,
+      "h": 80
+     }
+    },
+    {
+     "el": "notice-level «بالا»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 1160,
+      "y": 1219,
+      "w": 27,
+      "h": 20
+     }
+    },
+    {
+     "el": "notice-kind «صورتهایِ مالی»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 1096,
+      "y": 1222,
+      "w": 59,
+      "h": 14
+     }
+    },
+    {
+     "el": "notice-symbol «شجی»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 1064,
+      "y": 1221,
+      "w": 26,
+      "h": 14
+     }
+    },
+    {
+     "el": "notice-open «منبع ↗»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 317,
+      "y": 1219,
+      "w": 45,
+      "h": 20
+     }
+    },
+    {
+     "el": "notice-mark «خوانده شد»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 251,
+      "y": 1219,
+      "w": 60,
+      "h": 20
+     }
+    },
+    {
+     "el": "notice-row «بالاصورتهایِ مالیوال»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 240,
+      "y": 1295,
+      "w": 958,
+      "h": 80
+     }
+    },
+    {
+     "el": "notice-level «بالا»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 1160,
+      "y": 1304,
+      "w": 27,
+      "h": 20
+     }
+    },
+    {
+     "el": "notice-kind «صورتهایِ مالی»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 1096,
+      "y": 1307,
+      "w": 59,
+      "h": 14
+     }
+    },
+    {
+     "el": "notice-symbol «والبر»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 1068,
+      "y": 1307,
+      "w": 22,
+      "h": 14
+     }
+    },
+    {
+     "el": "notice-open «منبع ↗»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 317,
+      "y": 1304,
+      "w": 45,
+      "h": 20
+     }
+    },
+    {
+     "el": "notice-mark «خوانده شد»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 251,
+      "y": 1304,
+      "w": 60,
+      "h": 20
+     }
+    },
+    {
+     "el": "notice-row «بالاصورتهایِ مالیآرس»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 240,
+      "y": 1381,
+      "w": 958,
+      "h": 80
+     }
+    },
+    {
+     "el": "notice-level «بالا»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 1160,
+      "y": 1390,
+      "w": 27,
+      "h": 20
+     }
+    },
+    {
+     "el": "notice-kind «صورتهایِ مالی»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 1096,
+      "y": 1393,
+      "w": 59,
+      "h": 14
+     }
+    },
+    {
+     "el": "notice-symbol «آرسیس»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 1054,
+      "y": 1392,
+      "w": 36,
+      "h": 14
+     }
+    },
+    {
+     "el": "notice-open «منبع ↗»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 317,
+      "y": 1390,
+      "w": 45,
+      "h": 20
+     }
+    },
+    {
+     "el": "notice-mark «خوانده شد»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 251,
+      "y": 1390,
+      "w": 60,
+      "h": 20
+     }
+    },
+    {
+     "el": "notice-row «بالاصورتهایِ مالیوبش»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 240,
+      "y": 1466,
+      "w": 958,
+      "h": 80
+     }
+    },
+    {
+     "el": "notice-level «بالا»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 1160,
+      "y": 1475,
+      "w": 27,
+      "h": 20
+     }
+    },
+    {
+     "el": "notice-kind «صورتهایِ مالی»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 1096,
+      "y": 1478,
+      "w": 59,
+      "h": 14
+     }
+    },
+    {
+     "el": "notice-symbol «وبشهر»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 1059,
+      "y": 1478,
+      "w": 30,
+      "h": 14
+     }
+    },
+    {
+     "el": "notice-open «منبع ↗»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 317,
+      "y": 1475,
+      "w": 45,
+      "h": 20
+     }
+    },
+    {
+     "el": "notice-mark «خوانده شد»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 251,
+      "y": 1475,
+      "w": 60,
+      "h": 20
+     }
+    },
+    {
+     "el": "notice-row «متوسطفعالیت ماهانهپر»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 240,
+      "y": 1552,
+      "w": 958,
+      "h": 80
+     }
+    },
+    {
+     "el": "notice-level «متوسط»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 1141,
+      "y": 1561,
+      "w": 46,
+      "h": 20
+     }
+    },
+    {
+     "el": "notice-kind «فعالیت ماهانه»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 1072,
+      "y": 1564,
+      "w": 63,
+      "h": 14
+     }
+    },
+    {
+     "el": "notice-symbol «پرطلا»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 1043,
+      "y": 1563,
+      "w": 23,
+      "h": 14
+     }
+    },
+    {
+     "el": "notice-open «منبع ↗»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 317,
+      "y": 1561,
+      "w": 45,
+      "h": 20
+     }
+    },
+    {
+     "el": "notice-mark «خوانده شد»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 251,
+      "y": 1561,
+      "w": 60,
+      "h": 20
+     }
+    },
+    {
+     "el": "notice-row «بالاصورتهایِ مالیشجی»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 240,
+      "y": 1637,
+      "w": 958,
+      "h": 80
+     }
+    },
+    {
+     "el": "notice-level «بالا»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 1160,
+      "y": 1646,
+      "w": 27,
+      "h": 20
+     }
+    },
+    {
+     "el": "notice-kind «صورتهایِ مالی»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 1096,
+      "y": 1649,
+      "w": 59,
+      "h": 14
+     }
+    },
+    {
+     "el": "notice-symbol «شجی»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 1064,
+      "y": 1649,
+      "w": 26,
+      "h": 14
+     }
+    },
+    {
+     "el": "notice-open «منبع ↗»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 317,
+      "y": 1646,
+      "w": 45,
+      "h": 20
+     }
+    },
+    {
+     "el": "notice-mark «خوانده شد»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 251,
+      "y": 1646,
+      "w": 60,
+      "h": 20
+     }
+    },
+    {
+     "el": "notice-row «بالاصورتهایِ مالیآتی»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 240,
+      "y": 1723,
+      "w": 958,
+      "h": 80
+     }
+    },
+    {
+     "el": "notice-level «بالا»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 1160,
+      "y": 1732,
+      "w": 27,
+      "h": 20
+     }
+    },
+    {
+     "el": "notice-kind «صورتهایِ مالی»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 1096,
+      "y": 1735,
+      "w": 59,
+      "h": 14
+     }
+    },
+    {
+     "el": "notice-symbol «آتیه بازار»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 1050,
+      "y": 1734,
+      "w": 40,
+      "h": 14
+     }
+    },
+    {
+     "el": "notice-open «منبع ↗»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 317,
+      "y": 1732,
+      "w": 45,
+      "h": 20
+     }
+    },
+    {
+     "el": "notice-mark «خوانده شد»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 251,
+      "y": 1732,
+      "w": 60,
+      "h": 20
+     }
+    },
+    {
+     "el": "notice-row «بالاصورتهایِ مالیمعی»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 240,
+      "y": 1808,
+      "w": 958,
+      "h": 80
+     }
+    },
+    {
+     "el": "notice-level «بالا»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 1160,
+      "y": 1817,
+      "w": 27,
+      "h": 20
+     }
+    },
+    {
+     "el": "notice-kind «صورتهایِ مالی»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 1096,
+      "y": 1820,
+      "w": 59,
+      "h": 14
+     }
+    },
+    {
+     "el": "notice-symbol «معیار بازار»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 1042,
+      "y": 1820,
+      "w": 47,
+      "h": 14
+     }
+    },
+    {
+     "el": "notice-open «منبع ↗»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 317,
+      "y": 1817,
+      "w": 45,
+      "h": 20
+     }
+    },
+    {
+     "el": "notice-mark «خوانده شد»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 251,
+      "y": 1817,
+      "w": 60,
+      "h": 20
+     }
+    },
+    {
+     "el": "notice-row «بالاصورتهایِ مالیدات»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 240,
+      "y": 1894,
+      "w": 958,
+      "h": 80
+     }
+    },
+    {
+     "el": "notice-level «بالا»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 1160,
+      "y": 1903,
+      "w": 27,
+      "h": 20
+     }
+    },
+    {
+     "el": "notice-kind «صورتهایِ مالی»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 1096,
+      "y": 1906,
+      "w": 59,
+      "h": 14
+     }
+    },
+    {
+     "el": "notice-symbol «داتام»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 1065,
+      "y": 1905,
+      "w": 24,
+      "h": 14
+     }
+    },
+    {
+     "el": "notice-open «منبع ↗»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 317,
+      "y": 1903,
+      "w": 45,
+      "h": 20
+     }
+    },
+    {
+     "el": "notice-mark «خوانده شد»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 251,
+      "y": 1903,
+      "w": 60,
+      "h": 20
+     }
+    },
+    {
+     "el": "notice-row «بالاصورتهایِ مالیدار»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 240,
+      "y": 1979,
+      "w": 958,
+      "h": 80
+     }
+    },
+    {
+     "el": "notice-level «بالا»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 1160,
+      "y": 1988,
+      "w": 27,
+      "h": 20
+     }
+    },
+    {
+     "el": "notice-kind «صورتهایِ مالی»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 1096,
+      "y": 1991,
+      "w": 59,
+      "h": 14
+     }
+    },
+    {
+     "el": "notice-symbol «داریک بازار»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 1039,
+      "y": 1991,
+      "w": 51,
+      "h": 14
+     }
+    },
+    {
+     "el": "notice-open «منبع ↗»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 317,
+      "y": 1988,
+      "w": 45,
+      "h": 20
+     }
+    },
+    {
+     "el": "notice-mark «خوانده شد»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 251,
+      "y": 1988,
+      "w": 60,
+      "h": 20
+     }
+    },
+    {
+     "el": "notice-row «بالاصورتهایِ مالیگلب»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 240,
+      "y": 2065,
+      "w": 958,
+      "h": 80
+     }
+    },
+    {
+     "el": "notice-level «بالا»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 1160,
+      "y": 2074,
+      "w": 27,
+      "h": 20
+     }
+    },
+    {
+     "el": "notice-kind «صورتهایِ مالی»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 1096,
+      "y": 2077,
+      "w": 59,
+      "h": 14
+     }
+    },
+    {
+     "el": "notice-symbol «گلبرگ ثابت»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 1036,
+      "y": 2076,
+      "w": 53,
+      "h": 14
+     }
+    },
+    {
+     "el": "notice-open «منبع ↗»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 317,
+      "y": 2074,
+      "w": 45,
+      "h": 20
+     }
+    },
+    {
+     "el": "notice-mark «خوانده شد»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 251,
+      "y": 2074,
+      "w": 60,
+      "h": 20
+     }
+    },
+    {
+     "el": "notice-row «بالاصورتهایِ مالیکرم»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 240,
+      "y": 2150,
+      "w": 958,
+      "h": 80
+     }
+    },
+    {
+     "el": "notice-level «بالا»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 1160,
+      "y": 2159,
+      "w": 27,
+      "h": 20
+     }
+    },
+    {
+     "el": "notice-kind «صورتهایِ مالی»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 1096,
+      "y": 2162,
+      "w": 59,
+      "h": 14
+     }
+    },
+    {
+     "el": "notice-symbol «کرمان»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 1062,
+      "y": 2162,
+      "w": 28,
+      "h": 14
+     }
+    },
+    {
+     "el": "notice-open «منبع ↗»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 317,
+      "y": 2159,
+      "w": 45,
+      "h": 20
+     }
+    },
+    {
+     "el": "notice-mark «خوانده شد»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 251,
+      "y": 2159,
+      "w": 60,
+      "h": 20
+     }
+    },
+    {
+     "el": "notice-row «بالاصورتهایِ مالیشجی»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 240,
+      "y": 2236,
+      "w": 958,
+      "h": 80
+     }
+    },
+    {
+     "el": "notice-level «بالا»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 1160,
+      "y": 2245,
+      "w": 27,
+      "h": 20
+     }
+    },
+    {
+     "el": "notice-kind «صورتهایِ مالی»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 1096,
+      "y": 2248,
+      "w": 59,
+      "h": 14
+     }
+    },
+    {
+     "el": "notice-symbol «شجی»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 1064,
+      "y": 2247,
+      "w": 26,
+      "h": 14
+     }
+    },
+    {
+     "el": "notice-open «منبع ↗»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 317,
+      "y": 2245,
+      "w": 45,
+      "h": 20
+     }
+    },
+    {
+     "el": "notice-mark «خوانده شد»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 251,
+      "y": 2245,
+      "w": 60,
+      "h": 20
+     }
+    },
+    {
+     "el": "notice-row «بالاصورتهایِ مالیهلد»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 240,
+      "y": 2321,
+      "w": 958,
+      "h": 80
+     }
+    },
+    {
+     "el": "notice-level «بالا»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 1160,
+      "y": 2330,
+      "w": 27,
+      "h": 20
+     }
+    },
+    {
+     "el": "notice-kind «صورتهایِ مالی»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 1096,
+      "y": 2333,
+      "w": 59,
+      "h": 14
+     }
+    },
+    {
+     "el": "notice-symbol «هلد ملل»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 1049,
+      "y": 2333,
+      "w": 41,
+      "h": 14
+     }
+    },
+    {
+     "el": "notice-open «منبع ↗»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 317,
+      "y": 2330,
+      "w": 45,
+      "h": 20
+     }
+    },
+    {
+     "el": "notice-mark «خوانده شد»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 251,
+      "y": 2330,
+      "w": 60,
+      "h": 20
+     }
+    },
+    {
+     "el": "notice-row «بالاصورتهایِ مالیپرگ»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 240,
+      "y": 2407,
+      "w": 958,
+      "h": 80
+     }
+    },
+    {
+     "el": "notice-level «بالا»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 1160,
+      "y": 2416,
+      "w": 27,
+      "h": 20
+     }
+    },
+    {
+     "el": "notice-kind «صورتهایِ مالی»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 1096,
+      "y": 2419,
+      "w": 59,
+      "h": 14
+     }
+    },
+    {
+     "el": "notice-symbol «پرگار بازار»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 1047,
+      "y": 2418,
+      "w": 42,
+      "h": 14
+     }
+    },
+    {
+     "el": "notice-open «منبع ↗»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 317,
+      "y": 2416,
+      "w": 45,
+      "h": 20
+     }
+    },
+    {
+     "el": "notice-mark «خوانده شد»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 251,
+      "y": 2416,
+      "w": 60,
+      "h": 20
+     }
+    },
+    {
+     "el": "notice-row «بالاصورتهایِ مالیورن»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 240,
+      "y": 2492,
+      "w": 958,
+      "h": 80
+     }
+    },
+    {
+     "el": "notice-level «بالا»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 1160,
+      "y": 2501,
+      "w": 27,
+      "h": 20
+     }
+    },
+    {
+     "el": "notice-kind «صورتهایِ مالی»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 1096,
+      "y": 2504,
+      "w": 59,
+      "h": 14
+     }
+    },
+    {
+     "el": "notice-symbol «ورنا»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 1073,
+      "y": 2504,
+      "w": 16,
+      "h": 14
+     }
+    },
+    {
+     "el": "notice-open «منبع ↗»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 317,
+      "y": 2501,
+      "w": 45,
+      "h": 20
+     }
+    },
+    {
+     "el": "notice-mark «خوانده شد»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 251,
+      "y": 2501,
+      "w": 60,
+      "h": 20
+     }
+    },
+    {
+     "el": "notice-row «بالاصورتهایِ مالیپار»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 240,
+      "y": 2578,
+      "w": 958,
+      "h": 80
+     }
+    },
+    {
+     "el": "notice-level «بالا»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 1160,
+      "y": 2587,
+      "w": 27,
+      "h": 20
+     }
+    },
+    {
+     "el": "notice-kind «صورتهایِ مالی»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 1096,
+      "y": 2590,
+      "w": 59,
+      "h": 14
+     }
+    },
+    {
+     "el": "notice-symbol «پارند ثابت»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 1043,
+      "y": 2589,
+      "w": 46,
+      "h": 14
+     }
+    },
+    {
+     "el": "notice-open «منبع ↗»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 317,
+      "y": 2587,
+      "w": 45,
+      "h": 20
+     }
+    },
+    {
+     "el": "notice-mark «خوانده شد»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 251,
+      "y": 2587,
+      "w": 60,
+      "h": 20
+     }
+    },
+    {
+     "el": "notice-row «بالاصورتهایِ مالیثام»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 240,
+      "y": 2663,
+      "w": 958,
+      "h": 80
+     }
+    },
+    {
+     "el": "notice-level «بالا»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 1160,
+      "y": 2672,
+      "w": 27,
+      "h": 20
+     }
+    },
+    {
+     "el": "notice-kind «صورتهایِ مالی»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 1096,
+      "y": 2675,
+      "w": 59,
+      "h": 14
+     }
+    },
+    {
+     "el": "notice-symbol «ثامید»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 1065,
+      "y": 2675,
+      "w": 25,
+      "h": 14
+     }
+    },
+    {
+     "el": "notice-open «منبع ↗»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 317,
+      "y": 2672,
+      "w": 45,
+      "h": 20
+     }
+    },
+    {
+     "el": "notice-mark «خوانده شد»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 251,
+      "y": 2672,
+      "w": 60,
+      "h": 20
+     }
+    },
+    {
+     "el": "notice-row «بالاصورتهایِ مالیخبر»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 240,
+      "y": 2749,
+      "w": 958,
+      "h": 80
+     }
+    },
+    {
+     "el": "notice-level «بالا»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 1160,
+      "y": 2758,
+      "w": 27,
+      "h": 20
+     }
+    },
+    {
+     "el": "notice-kind «صورتهایِ مالی»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 1096,
+      "y": 2761,
+      "w": 59,
+      "h": 14
+     }
+    },
+    {
+     "el": "notice-symbol «خبرگان»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 1056,
+      "y": 2760,
+      "w": 33,
+      "h": 14
+     }
+    },
+    {
+     "el": "notice-open «منبع ↗»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 317,
+      "y": 2758,
+      "w": 45,
+      "h": 20
+     }
+    },
+    {
+     "el": "notice-mark «خوانده شد»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 251,
+      "y": 2758,
+      "w": 60,
+      "h": 20
+     }
+    },
+    {
+     "el": "notice-row «بالاصورتهایِ مالیبهم»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 240,
+      "y": 2834,
+      "w": 958,
+      "h": 80
+     }
+    },
+    {
+     "el": "notice-level «بالا»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 1160,
+      "y": 2843,
+      "w": 27,
+      "h": 20
+     }
+    },
+    {
+     "el": "notice-kind «صورتهایِ مالی»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 1096,
+      "y": 2846,
+      "w": 59,
+      "h": 14
+     }
+    },
+    {
+     "el": "notice-symbol «بهمن بازار»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 1043,
+      "y": 2846,
+      "w": 47,
+      "h": 14
+     }
+    },
+    {
+     "el": "notice-open «منبع ↗»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 317,
+      "y": 2843,
+      "w": 45,
+      "h": 20
+     }
+    },
+    {
+     "el": "notice-mark «خوانده شد»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 251,
+      "y": 2843,
+      "w": 60,
+      "h": 20
+     }
+    },
+    {
+     "el": "notice-row «بالاصورتهایِ مالیشجی»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 240,
+      "y": 2920,
+      "w": 958,
+      "h": 80
+     }
+    },
+    {
+     "el": "notice-level «بالا»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 1160,
+      "y": 2929,
+      "w": 27,
+      "h": 20
+     }
+    },
+    {
+     "el": "notice-kind «صورتهایِ مالی»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 1096,
+      "y": 2932,
+      "w": 59,
+      "h": 14
+     }
+    },
+    {
+     "el": "notice-symbol «شجی»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 1064,
+      "y": 2931,
+      "w": 26,
+      "h": 14
+     }
+    },
+    {
+     "el": "notice-open «منبع ↗»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 317,
+      "y": 2929,
+      "w": 45,
+      "h": 20
+     }
+    },
+    {
+     "el": "notice-mark «خوانده شد»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 251,
+      "y": 2929,
+      "w": 60,
+      "h": 20
+     }
+    },
+    {
+     "el": "notice-row «بالاصورتهایِ مالیترم»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 240,
+      "y": 3005,
+      "w": 958,
+      "h": 80
+     }
+    },
+    {
+     "el": "notice-level «بالا»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 1160,
+      "y": 3014,
+      "w": 27,
+      "h": 20
+     }
+    },
+    {
+     "el": "notice-kind «صورتهایِ مالی»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 1096,
+      "y": 3017,
+      "w": 59,
+      "h": 14
+     }
+    },
+    {
+     "el": "notice-symbol «ترمه»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 1069,
+      "y": 3017,
+      "w": 21,
+      "h": 14
+     }
+    },
+    {
+     "el": "notice-open «منبع ↗»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 317,
+      "y": 3014,
+      "w": 45,
+      "h": 20
+     }
+    },
+    {
+     "el": "notice-mark «خوانده شد»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 251,
+      "y": 3014,
+      "w": 60,
+      "h": 20
+     }
+    },
+    {
+     "el": "notice-row «بالاصورتهایِ مالیغگی»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 240,
+      "y": 3091,
+      "w": 958,
+      "h": 80
+     }
+    },
+    {
+     "el": "notice-level «بالا»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 1160,
+      "y": 3100,
+      "w": 27,
+      "h": 20
+     }
+    },
+    {
+     "el": "notice-kind «صورتهایِ مالی»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 1096,
+      "y": 3103,
+      "w": 59,
+      "h": 14
+     }
+    },
+    {
+     "el": "notice-symbol «غگیلا»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 1065,
+      "y": 3102,
+      "w": 24,
+      "h": 14
+     }
+    },
+    {
+     "el": "notice-open «منبع ↗»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 317,
+      "y": 3100,
+      "w": 45,
+      "h": 20
+     }
+    },
+    {
+     "el": "notice-mark «خوانده شد»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 251,
+      "y": 3100,
+      "w": 60,
+      "h": 20
+     }
+    },
+    {
+     "el": "notice-row «بالاصورتهایِ مالیسبد»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 240,
+      "y": 3176,
+      "w": 958,
+      "h": 80
+     }
+    },
+    {
+     "el": "notice-level «بالا»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 1160,
+      "y": 3185,
+      "w": 27,
+      "h": 20
+     }
+    },
+    {
+     "el": "notice-kind «صورتهایِ مالی»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 1096,
+      "y": 3188,
+      "w": 59,
+      "h": 14
+     }
+    }
+   ],
+   "errors": []
+  },
+  {
+   "route": "/engine-lab",
+   "vw": 1366,
+   "vh": 768,
+   "total": 92,
+   "findings": [
+    {
+     "el": "inspector-events-none «رویدادی ثبت نشده»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 19,
+      "y": 761,
+      "w": 201,
+      "h": 15
+     }
+    },
+    {
+     "el": "inspector-veto-why «گیتِ بنیادیِ این نما»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 19,
+      "y": 824,
+      "w": 156,
+      "h": 14
+     }
+    }
+   ],
+   "errors": []
+  },
+  {
+   "route": "/zz-not-found",
+   "vw": 1366,
+   "vh": 768,
+   "total": 85,
+   "findings": [
+    {
+     "el": "inspector-events-none «رویدادی ثبت نشده»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 19,
+      "y": 761,
+      "w": 201,
+      "h": 15
+     }
+    },
+    {
+     "el": "inspector-veto-why «گیتِ بنیادیِ این نما»",
+     "kind": "OFF-VIEWPORT",
+     "box": {
+      "x": 19,
+      "y": 824,
+      "w": 156,
+      "h": 14
+     }
+    }
+   ],
+   "errors": []
+  }
+ ]
+}
