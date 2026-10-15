@@ -1,0 +1,206 @@
+{
+  "base": "http://127.0.0.1:8010",
+  "buildLabel": "after: uiux-2-0 Phase C",
+  "bundle": "/assets/index-CAvPwOch.js",
+  "viewport": {
+    "width": 1366,
+    "height": 768
+  },
+  "browser": "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
+  "generatedAt": "2026-10-15T23:01:58.270Z",
+  "method": {
+    "readyBy": "marker = نشانۀِ دیدنیِ خودِ صفحه؛ settle = بازمانیِ ثابت؛ marker-missing = نشانۀِ ثابتِ آنِ route درِ اینِ حالتِ داده render نشد",
+    "tabs": "همۀ شمارش‌هایِ تب درِ [data-shell=\"workspace-tabs\"] [role=\"tab\"] (بی‌تب‌هایِ FtsDock/پرتفوی)",
+    "coldStart": "هرِ route درِ contextِ تازه باِ نشستِ ورودِ جدا ⇒ TanStack Query سرد است وِ شمارشِ `/api/` ازِ همانِ route",
+    "clippedText": "متنِ بریدۀِ ناخواسته؛ `sr-only` وِ `clip:rect(0,0,0,0)` (پنهانِ عمدی برایِ صفحۀ‌خوان) شمرده نمی‌شود"
+  },
+  "pages": [
+    {
+      "path": "/market-status",
+      "readyBy": "marker",
+      "ms": 1139,
+      "apiRequests": 22,
+      "consoleErrors": 0,
+      "hScrollPx": 0,
+      "clippedText": 0,
+      "clippedSample": [],
+      "offscreenInPanel": 0,
+      "offscreenSample": [],
+      "stripH": 36,
+      "stripTabs": 1
+    },
+    {
+      "path": "/market",
+      "readyBy": "settle",
+      "ms": 2337,
+      "apiRequests": 1,
+      "consoleErrors": 0,
+      "hScrollPx": 0,
+      "clippedText": 0,
+      "clippedSample": [],
+      "offscreenInPanel": 0,
+      "offscreenSample": [],
+      "stripH": 36,
+      "stripTabs": 1
+    },
+    {
+      "path": "/technical/فولاد",
+      "readyBy": "marker",
+      "ms": 1541,
+      "apiRequests": 10,
+      "consoleErrors": 0,
+      "hScrollPx": 0,
+      "clippedText": 0,
+      "clippedSample": [],
+      "offscreenInPanel": 0,
+      "offscreenSample": [],
+      "stripH": 36,
+      "stripTabs": 1
+    },
+    {
+      "path": "/fundamental",
+      "readyBy": "marker",
+      "ms": 4337,
+      "apiRequests": 4,
+      "consoleErrors": 0,
+      "hScrollPx": 0,
+      "clippedText": 0,
+      "clippedSample": [],
+      "offscreenInPanel": 0,
+      "offscreenSample": [],
+      "stripH": 36,
+      "stripTabs": 1
+    },
+    {
+      "path": "/master",
+      "readyBy": "marker",
+      "ms": 3458,
+      "apiRequests": 0,
+      "consoleErrors": 0,
+      "hScrollPx": 0,
+      "clippedText": 0,
+      "clippedSample": [],
+      "offscreenInPanel": 0,
+      "offscreenSample": [],
+      "stripH": 36,
+      "stripTabs": 1
+    },
+    {
+      "path": "/portfolio",
+      "readyBy": "settle",
+      "ms": 1903,
+      "apiRequests": 0,
+      "consoleErrors": 0,
+      "hScrollPx": 0,
+      "clippedText": 0,
+      "clippedSample": [],
+      "offscreenInPanel": 0,
+      "offscreenSample": [],
+      "stripH": 36,
+      "stripTabs": 1
+    },
+    {
+      "path": "/watch",
+      "readyBy": "marker",
+      "ms": 3920,
+      "apiRequests": 2,
+      "consoleErrors": 0,
+      "hScrollPx": 0,
+      "clippedText": 0,
+      "clippedSample": [],
+      "offscreenInPanel": 0,
+      "offscreenSample": [],
+      "stripH": 36,
+      "stripTabs": 1
+    },
+    {
+      "path": "/notifications",
+      "readyBy": "marker",
+      "ms": 1103,
+      "apiRequests": 2,
+      "consoleErrors": 0,
+      "hScrollPx": 0,
+      "clippedText": 0,
+      "clippedSample": [],
+      "offscreenInPanel": 0,
+      "offscreenSample": [],
+      "stripH": 36,
+      "stripTabs": 1
+    },
+    {
+      "path": "/strategy-tree",
+      "readyBy": "settle",
+      "ms": 1898,
+      "apiRequests": 0,
+      "consoleErrors": 0,
+      "hScrollPx": 0,
+      "clippedText": 0,
+      "clippedSample": [],
+      "offscreenInPanel": 0,
+      "offscreenSample": [],
+      "stripH": 36,
+      "stripTabs": 1
+    }
+  ],
+  "tabScenario": {
+    "steps": [
+      {
+        "step": "start",
+        "tabs": [
+          "تکنیکال · فولاد"
+        ],
+        "stored": "",
+        "hash": "#/technical/%D9%81%D9%88%D9%84%D8%A7%D8%AF"
+      },
+      {
+        "step": "second-tab",
+        "tabs": [
+          "تکنیکال · فولاد",
+          "تکنیکال · فملی"
+        ],
+        "stored": "",
+        "hash": "#/technical/%D9%81%D9%85%D9%84%DB%8C"
+      },
+      {
+        "step": "back-to-first",
+        "stored": "فولاد",
+        "isolated": true
+      },
+      {
+        "step": "forward-to-second",
+        "stored": "فملی",
+        "isolated": true
+      },
+      {
+        "step": "arrow-left-in-rtl",
+        "activeIndex": 0,
+        "expect": 0
+      },
+      {
+        "step": "after-reload",
+        "tabs": 2
+      },
+      {
+        "step": "crowded",
+        "hScrollPx": 0,
+        "clippedText": 0,
+        "clippedSample": [],
+        "offscreenInPanel": 0,
+        "offscreenSample": [],
+        "stripH": 36,
+        "stripTabs": 7
+      }
+    ],
+    "waitForFirstTab": {
+      "ok": true,
+      "waitedMs": 41
+    },
+    "waitForSecondTab": {
+      "ok": true,
+      "waitedMs": 21
+    },
+    "dockTabsAlive": 11
+  },
+  "consoleErrorCount": 0,
+  "consoleErrors": []
+}

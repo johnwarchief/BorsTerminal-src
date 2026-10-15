@@ -1,12 +1,14 @@
 import { Outlet } from 'react-router';
 import { Sidebar } from '../components/Sidebar';
 import { Topbar } from '../components/Topbar';
+import { WorkspaceTabs } from '../components/WorkspaceTabs';
 import { SymbolContextStrip } from '../components/SymbolContextStrip';
 import { CommandPalette } from '../components/CommandPalette';
 import { SymbolInspector } from '../../widgets/SymbolInspector';
 import { FtsPipelineBar } from '../../widgets/FtsPipelineBar';
 import { useEffect } from 'react';
 import { useSymbolStore } from '@shared/stores/symbolStore';
+import { useActiveTab } from '@shared/stores/workspaceStore';
 import { useAuthStore } from '@shared/stores/authStore';
 import { useMarketStore } from '@shared/stores/marketStore';
 import { startIdleGate } from '@shared/lib/idleGate';
@@ -24,6 +26,7 @@ export function AppShell() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const symbol = useSymbolStore((s) => s.symbol);
   const inspectorOpen = symbol.length > 0;
+  const activeTab = useActiveTab();
 
   // طولِ فلاشِ اعداد از ریتمِ واقعیِ تازۀِ تابلو می‌آید (رأیِ مالک: ۵s ← ~۳٫۵s)
   useFlashClock();
@@ -68,9 +71,16 @@ export function AppShell() {
         data-inspector={inspectorOpen ? 'open' : 'closed'}
       >
         <Topbar />
+        <WorkspaceTabs />
         <SymbolContextStrip />
         {SHOW_FTS_PIPELINE_BAR ? <FtsPipelineBar /> : null}
-        <main className="app-main flex-1 py-2">
+        <main
+          id="workspace-panel"
+          role="tabpanel"
+          aria-labelledby={activeTab ? `ws-tab-${activeTab.id}` : undefined}
+          tabIndex={0}
+          className="app-main flex-1 py-2 outline-none focus-visible:ring-2 focus-visible:ring-accent-blue"
+        >
           <div className="panel-in flex w-full flex-col gap-4">
             <Outlet />
           </div>

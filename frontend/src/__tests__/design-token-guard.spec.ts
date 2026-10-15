@@ -58,7 +58,7 @@ function isSpecFile(p: string): boolean {
 /** هر ارجاعِ رنگیِ اختصاصی درِ رشته‌یِ className */
 function usedCustomColors(text: string): string[] {
   const hits: string[] = [];
-  for (const m of text.matchAll(/(?:^|[\s"'`:])(?:text|bg|border|ring|fill|stroke|from|to|via|outline|decoration|shadow|accent|divide|placeholder)-(accent-[a-z0-9-]+|neon-[a-z0-9-]+)/g)) {
+  for (const m of text.matchAll(/(?:^|[\s"'`:])(?:text|bg|border|ring|fill|stroke|from|to|via|outline|decoration|shadow|accent|divide|placeholder)-(accent-[a-z0-9-]+|neon-[a-z0-9-]+|tone-[a-z0-9-]+)/g)) {
     hits.push(m[1].split('/')[0]);
   }
   return hits;
@@ -73,6 +73,11 @@ describe('نگهبانِ رنگِ اختصاصی (مرحلۀ ۵ — کلاسِ �
     // قرمز شود نه اینکه بی‌صدا «سبزِ بی‌محتوا» بدهد.
     expect(defined.has('accent-blue')).toBe(true);
     expect(defined.has('accent-yellow')).toBe(true);
+    // لایۀ معناییِ وضعیت‌ها (بند ۳ معماری): شش واژه باید باشند، وگرنه کلاس‌های
+    // text-tone-* در build سبز ولی بی‌رنگ می‌مانند — همان نقصِ accent-amber.
+    for (const tone of ['tone-pos', 'tone-neg', 'tone-neutral', 'tone-warn', 'tone-err', 'tone-unknown']) {
+      expect(defined.has(tone), `--color-${tone} در @theme نیست`).toBe(true);
+    }
     expect(defined.size).toBeGreaterThan(8);
     expect(files.length).toBeGreaterThan(80);
   });

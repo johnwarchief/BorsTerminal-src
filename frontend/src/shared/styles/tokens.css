@@ -16,6 +16,15 @@
   --accent-susp-bg: rgba(249, 115, 22, 0.16);
   /* متنِ مناسبِ روی سطوحِ accent — در تم تاریک accent روشن است پس متن تیره لازم است */
   --on-accent: #0b1220;
+  /* لایۀ معناییِ وضعیت‌ها: شش واژه برای کل برنامه (مثبت/منفی/خنثی/هشدار/خطا/نامعلوم).
+     هیچ رنگ تازه‌ای اختراع نشده — هر tone به یک accent موجود نگاشت می‌شود، و «خنثی»
+     (صفرِ واقعی) از «نامعلوم» (نمی‌دانیم) جدا می‌ماند. */
+  --tone-pos: var(--accent-green);
+  --tone-neg: var(--accent-red);
+  --tone-neutral: var(--text-secondary);
+  --tone-warn: var(--accent-yellow);
+  --tone-err: var(--neon-red);
+  --tone-unknown: var(--text-muted);
   /* لایه سایبر: نئون و خطوط مویی */
   --neon-cyan: #22d3ee;
   --neon-red: #ff3860;

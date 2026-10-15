@@ -1,0 +1,151 @@
+{
+  "base": "http://127.0.0.1:8010",
+  "buildLabel": "before: base ff6b2fb (no workspace tabs)",
+  "bundle": "/assets/index-BzFJmp4W.js",
+  "viewport": {
+    "width": 1366,
+    "height": 768
+  },
+  "browser": "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
+  "generatedAt": "2026-10-15T23:03:30.437Z",
+  "method": {
+    "readyBy": "marker = نشانۀِ دیدنیِ خودِ صفحه؛ settle = بازمانیِ ثابت؛ marker-missing = نشانۀِ ثابتِ آنِ route درِ اینِ حالتِ داده render نشد",
+    "tabs": "همۀ شمارش‌هایِ تب درِ [data-shell=\"workspace-tabs\"] [role=\"tab\"] (بی‌تب‌هایِ FtsDock/پرتفوی)",
+    "coldStart": "هرِ route درِ contextِ تازه باِ نشستِ ورودِ جدا ⇒ TanStack Query سرد است وِ شمارشِ `/api/` ازِ همانِ route",
+    "clippedText": "متنِ بریدۀِ ناخواسته؛ `sr-only` وِ `clip:rect(0,0,0,0)` (پنهانِ عمدی برایِ صفحۀ‌خوان) شمرده نمی‌شود"
+  },
+  "pages": [
+    {
+      "path": "/market-status",
+      "readyBy": "marker",
+      "ms": 1013,
+      "apiRequests": 22,
+      "consoleErrors": 0,
+      "hScrollPx": 0,
+      "clippedText": 0,
+      "clippedSample": [],
+      "offscreenInPanel": 0,
+      "offscreenSample": [],
+      "stripH": 0,
+      "stripTabs": 0
+    },
+    {
+      "path": "/market",
+      "readyBy": "settle",
+      "ms": 1879,
+      "apiRequests": 0,
+      "consoleErrors": 0,
+      "hScrollPx": 0,
+      "clippedText": 0,
+      "clippedSample": [],
+      "offscreenInPanel": 0,
+      "offscreenSample": [],
+      "stripH": 0,
+      "stripTabs": 0
+    },
+    {
+      "path": "/technical/فولاد",
+      "readyBy": "marker",
+      "ms": 1468,
+      "apiRequests": 10,
+      "consoleErrors": 0,
+      "hScrollPx": 0,
+      "clippedText": 0,
+      "clippedSample": [],
+      "offscreenInPanel": 0,
+      "offscreenSample": [],
+      "stripH": 0,
+      "stripTabs": 0
+    },
+    {
+      "path": "/fundamental",
+      "readyBy": "marker",
+      "ms": 3431,
+      "apiRequests": 4,
+      "consoleErrors": 0,
+      "hScrollPx": 0,
+      "clippedText": 0,
+      "clippedSample": [],
+      "offscreenInPanel": 0,
+      "offscreenSample": [],
+      "stripH": 0,
+      "stripTabs": 0
+    },
+    {
+      "path": "/master",
+      "readyBy": "marker",
+      "ms": 825,
+      "apiRequests": 0,
+      "consoleErrors": 0,
+      "hScrollPx": 0,
+      "clippedText": 0,
+      "clippedSample": [],
+      "offscreenInPanel": 0,
+      "offscreenSample": [],
+      "stripH": 0,
+      "stripTabs": 0
+    },
+    {
+      "path": "/portfolio",
+      "readyBy": "settle",
+      "ms": 1881,
+      "apiRequests": 0,
+      "consoleErrors": 0,
+      "hScrollPx": 0,
+      "clippedText": 0,
+      "clippedSample": [],
+      "offscreenInPanel": 0,
+      "offscreenSample": [],
+      "stripH": 0,
+      "stripTabs": 0
+    },
+    {
+      "path": "/watch",
+      "readyBy": "marker",
+      "ms": 2652,
+      "apiRequests": 2,
+      "consoleErrors": 0,
+      "hScrollPx": 0,
+      "clippedText": 0,
+      "clippedSample": [],
+      "offscreenInPanel": 0,
+      "offscreenSample": [],
+      "stripH": 0,
+      "stripTabs": 0
+    },
+    {
+      "path": "/notifications",
+      "readyBy": "marker",
+      "ms": 889,
+      "apiRequests": 2,
+      "consoleErrors": 0,
+      "hScrollPx": 0,
+      "clippedText": 0,
+      "clippedSample": [],
+      "offscreenInPanel": 0,
+      "offscreenSample": [],
+      "stripH": 0,
+      "stripTabs": 0
+    },
+    {
+      "path": "/strategy-tree",
+      "readyBy": "settle",
+      "ms": 2017,
+      "apiRequests": 0,
+      "consoleErrors": 0,
+      "hScrollPx": 0,
+      "clippedText": 0,
+      "clippedSample": [],
+      "offscreenInPanel": 0,
+      "offscreenSample": [],
+      "stripH": 0,
+      "stripTabs": 0
+    }
+  ],
+  "tabScenario": {
+    "steps": [],
+    "stripPresent": false
+  },
+  "consoleErrorCount": 0,
+  "consoleErrors": []
+}
