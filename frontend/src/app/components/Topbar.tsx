@@ -38,7 +38,7 @@ export function Topbar() {
   };
 
   return (
-    <header className="glass-strip sticky top-0 z-40 flex h-9 items-center justify-between px-3 sm:px-4">
+    <header className="glass-strip sticky top-0 z-40 flex h-9 shrink-0 items-center justify-between px-3 sm:px-4">
       {/* سمت راست: نشانِ وضعیت (اتصال ≠ تازگی) + Breadcrumb ناوبری */}
       <div className="flex items-center gap-2 overflow-hidden">
         <FreshnessBadge />
