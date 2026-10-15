@@ -210,6 +210,9 @@ def _startup_sync_market():
             threading.Thread(target=_sync_market_on_start, daemon=True).start()
             print("[startup] market sync thread spawned")
         else:
+            # هیچ سینکی در کار نیست ⇒ گرم‌کردنِ اسکرینر نباید پشتِ داوریِ سینک بماند
+            import api._sync_market as _SM
+            _SM.mark_sync_not_scheduled()
             print("[startup] BORS_NO_FETCH_LOOPS=1 — حلقه‌هایِ شبکه‌ایِ تابلو خاموش "
                   "(دست‌نخورده خواندنِ بانکِ مشترک؛ برایِ سنجشِ dev کنارِ نسخۀِ نصبی)")
     except Exception as e:
@@ -220,6 +223,13 @@ def _startup_sync_market():
         try:
             import time as _t
             _t.sleep(1)          # شروع سریع در ترد پس‌زمینه
+            # PERF-S6: اگر همگام‌سازیِ بوت در کار است، سینک درِ پایانِ خودش
+            # اسکرینر را بازمی‌سازد؛ گرم‌کردنِ هم‌زمان یعنی دوِ بیلدِ کاملِ
+            # `bulk_scan` و بیلدِ اول دور ریخته می‌شود.
+            import api._sync_market as _SM
+            if _SM.screener_warm_should_skip():
+                print("[startup] screener warm deferred to market sync")
+                return
             from api.screener import warm_screener_cache
             warm_screener_cache()
         except Exception as _e:
