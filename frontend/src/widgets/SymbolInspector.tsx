@@ -377,6 +377,18 @@ export function SymbolInspector() {
       <aside
       aria-label={`بازرسی نماد ${symbol}`}
       data-shell="inspector"
+      /* Esc وقتی که فوکوس داخلِ همینِ پنل است آن را می‌بندد. عمداً فقط درِ همینِ
+         پنل بسته شده وِ نه درِ سطحِ سند: Esc درِ اینِ برنامه مالِ «لغوِ رسمِ المان»
+         درِ چارت است (KLineChartWrapper.tsx:866، شنونده‌ای درِ سطحِ سند) وِ درِ
+         پالتِ فرمان (CommandPalette.tsx:196)؛ یکِ شنوندهٔ سراسریِ «Esc ⇒ بستنِ داور»
+         هر بارِ لغوِ رسم، نمادِ انتخاب‌شدهٔ کلِ برنامه را هم پاک می‌کرد.
+         stopPropagation هم لازم است تاِ همانِ Esc دوباره بهِ چارت نرسد. */
+      onKeyDown={(e) => {
+        if (e.key !== 'Escape') return;
+        e.stopPropagation();
+        e.preventDefault();
+        clearSymbol();
+      }}
       className={`glass-panel fixed bottom-0 left-0 top-0 z-50 flex w-[var(--inspector-w)] max-w-[88vw] shrink-0 flex-col overflow-y-auto rounded-none border-y-0 border-l-0 p-0 transition-transform duration-200 ease-out shadow-2xl ${
         open ? 'translate-x-0' : '-translate-x-full'
       }`}
@@ -398,7 +410,7 @@ export function SymbolInspector() {
             aria-pressed={pinned.includes(symbol)}
             aria-label="سنجاق کردن نماد برای دسترسی سریع"
             title={pinned.includes(symbol) ? 'از سنجاق برداشته می‌شود' : 'به سنجاق‌ها اضافه می‌شود — در Ctrl+K صدر می‌آید'}
-            className={`rounded-md border px-1.5 py-0.5 text-2xs transition-colors ${
+            className={`inline-flex min-h-6 min-w-6 items-center justify-center rounded-md border px-1.5 py-0.5 text-2xs transition-colors ${
               pinned.includes(symbol)
                 ? 'border-accent-amber/50 bg-accent-amber/15 text-accent-amber'
                 : 'border-transparent text-text-muted hover:border-[var(--hairline)] hover:text-text-primary'
@@ -410,7 +422,7 @@ export function SymbolInspector() {
             type="button"
             onClick={clearSymbol}
             aria-label="بستن پنل نماد"
-            className="rounded-md border border-transparent px-1.5 py-0.5 text-2xs text-text-muted transition-colors hover:border-[var(--hairline)] hover:text-accent-red"
+            className="inline-flex min-h-6 min-w-6 items-center justify-center rounded-md border border-transparent px-1.5 py-0.5 text-2xs text-text-muted transition-colors hover:border-[var(--hairline)] hover:text-accent-red"
           >
             ✕
           </button>
