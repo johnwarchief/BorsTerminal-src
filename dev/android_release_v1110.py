@@ -400,5 +400,20 @@ _fake = _build.replace(
 chk(_anon.search(_fake) is not None and _anon.search(_build) is None,
     "A72 کنترلِ منفی: بازگشتِ همین خط به curlِ ناشناس، A70 را قرمز می‌کند")
 
+# ── A73..A75 سنسورِ صفحۀ ۴۰۴ درِ کاوشگرِ viewport ────────────────────────────
+# نسخهٔ پیشین با گشتنِ `/پیدا نشد|۴۰|404/` درِ متنِ body می‌گشت: «۴۰» درونِ
+# قیمت‌ها هم صدا می‌خورد، پس ۹ پروندۀ واقعی ۴۰۴ خوانده می‌شدند و خودِ صفحۀ
+# ۴۰۴ false. سنسورِ درست همان testid را می‌بیند که routes.tsx می‌گذارد.
+PRB = read("tools/android_viewport_probe.mts") or ""
+_m_line = re.search(r"^\s*notFound:.*$", PRB, re.M)
+chk(_m_line is not None and "route-not-found" in _m_line.group(0),
+    "A73 کاوشگرِ viewport صفحۀ ۴۰۴ را از testidِ خودِ route می‌شناسد")
+chk(_m_line is not None and "innerText" not in _m_line.group(0)
+    and "notFound: /" not in PRB,
+    "A74 هیچ حکمِ مسیریابی از تطبیقِ متنِ خامِ body ساخته نمی‌شود")
+_v_block = re.search(r"verdict:\s*\{[\s\S]*?\n {6}\}", PRB)
+chk(_v_block is not None and "no404Fallback:" in _v_block.group(0),
+    "A75 «آدرسِ ثبت‌شده به ۴۰۴ نیفتد» جزوِ حکم‌هاست، پس خروجِ کاوشگر را می‌شکند")
+
 print("android_release_v1110: %d passed / %d failed" % (PASS, FAIL))
 sys.exit(1 if FAIL else 0)

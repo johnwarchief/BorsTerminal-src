@@ -123,7 +123,11 @@ for (const spec of SIZES) {
         title: document.title,
         bootCard: !!document.querySelector('[data-testid="mobile-boot"]'),
         fatalBanner: !!document.querySelector('.bors-fatal-banner'),
-        notFound: /پیدا نشد|۴۰|404/.test(document.body.innerText.slice(0, 400)),
+        // سنسورِ «صفحهٔ ۴۰۴» باید خودِ کامپوننت را ببیند، نه رشته‌ای درِ متن:
+        // نسخهٔ پیشین `/پیدا نشد|۴۰|404/` رویِ متنِ اولِ body می‌گشت و «۴۰» را
+        // درونِ قیمت‌ها هم صدا می‌زد (۹ از ۲۷ پروندۀ واقعی ۴۰۴ خوانده شدند،
+        // و پروندۀ *واقعاً* ۴۰۴ false). testidِ درِ routes.tsx تنها شاهدِ درست است.
+        notFound: !!document.querySelector('[data-testid="route-not-found"]'),
         bootTiming: (window as unknown as { bootTiming?: unknown }).bootTiming ?? null,
         viewportMeta: (document.querySelector('meta[name=viewport]') || {}).content || null,
         overflowX: document.documentElement.scrollWidth - document.documentElement.clientWidth,
@@ -223,6 +227,10 @@ for (const spec of SIZES) {
           return !m.navBox || (isFinite(pad) && pad + 1 >= h);
         })(),
         cleanConsole: realErrs.length === 0,
+        /* آدرسِ ثبت‌شده نباید به صفحۀ «این نشانی در اپ ثبت نشده است» بیفتد؛
+           نسخهٔ پیشینِ کاوشگر دقیقاً همین را نمی‌دید (/#/watch در دورِ پیشین
+           ۴۰۴ می‌داد و «ردیف=۰» به حسابِ چیدمان گذاشته می‌شد). */
+        no404Fallback: route === 'nope-404' ? m.notFound === true : m.notFound === false,
       },
     });
   }
