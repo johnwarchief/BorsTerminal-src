@@ -65,7 +65,10 @@ export function MobileBootstrap({ children }: { children: React.ReactNode }) {
         setStatus('ready');
       })
       .catch((err) => {
-        console.error('Failed to load local DB', err);
+        // فقط یک سطرِ بی‌جزئیات درِ console: شیءِ کامل (stack + URLِ پاسخِ
+        // ریلیز) درِ لاگ نمی‌نشیند. متنِ خطا همین‌جا درِ صفحه نشان داده می‌شود
+        // و درِ پنلِ عیب‌یابی هم هست، پس چیزی برایِ ریشه‌یابی از دست نمی‌رود.
+        console.error('mobile boot: packaged data failed to open');
         setErrorMsg(err instanceof Error ? err.message : String(err));
         setStatus('error');
       });

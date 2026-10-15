@@ -2,7 +2,13 @@
 <html lang="fa" dir="rtl">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- viewport-fit=cover لازم است تا env(safe-area-inset-*) رویِ گوشی مقدارِ
+         واقعی بگیرد. بی‌«cover» WebView ناوتی‌بار/ناچ را ازِ حوزهٔ دید بیرون
+         نگه می‌دارد و همهٔ env()ها صفرند؛ درِ mobile.css هشت قاعده (پایینِ
+         نوارِ تب، بالا/پایینِ کشویِ اینسپکتور، پنلِ عیب‌یابی، بنرِ خطا) رویِ
+         همین env() نشسته‌اند و رویِ گوشیِ واقعی بی‌اثر بودند. رویِ دسکتاپ
+         این کلمه هیچ اثری ندارد (safe-area آنجا صفر است). -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>ترمینال تحلیل بورس</title>
     <link rel="stylesheet" href="/vendor/fonts/vazirmatn.css" />
   </head>

@@ -14,10 +14,23 @@ import { overlayStatus } from './resolvers';
 
 const BUILD_TAG = (import.meta.env.VITE_BUILD_TAG as string | undefined) ?? 'بیلد محلی';
 
-function row(label: string, value: string, ok?: boolean): string {
+/** مقدارهایی که پنل نشان می‌دهد ازِ بیرون می‌آیند: `package_id` و `built_at`
+ *  از manifestِ ریموت، `detail` و `message` از رشته‌هایِ خطایِ شبکه/JSON.
+ *  پنل با `innerHTML` ساخته می‌شود، پس یک manifestِ دست‌خورده (یا خطایی که
+ *  تکه‌ای از پاسخ را بازمی‌گرداند) می‌توانست درِ WebView اسکریپت شود — با
+ *  همان دسترسیِ برنامه به دیتابیسِ محلی و پلِ بومی. تنها راهِ درست: هرِ
+ *  مقدارِ کنترل‌نشده پیش ازِ درج درِ HTML گریز می‌گیرد. */
+/** بیرون‌داده شده تا دروازۀ گریز درِ تست مستقیم دیده شود (تستِ متنِ CSS
+ *  این را نمی‌گیرد و آزمونِ رفتاریِ پنل به `localData` وابسته است). */
+export function esc(s: string): string {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+export function row(label: string, value: string, ok?: boolean): string {
   const mark = ok === undefined ? '' : ok ? ' ✅' : ' ❌';
   return `<div style="padding:4px 0;border-bottom:1px solid rgba(255,255,255,.08)">` +
-         `<b>${label}:</b> ${value}${mark}</div>`;
+         `<b>${esc(label)}:</b> ${esc(value)}${mark}</div>`;
 }
 
 async function collect(): Promise<string> {
@@ -114,7 +127,11 @@ export function mountDiagnostics(): void {
   btn.id = 'bors-diag-btn';
   btn.textContent = '🛠';
   btn.style.cssText =
-    'position:fixed;bottom:70px;left:8px;z-index:9998;width:34px;height:34px;' +
+    // با viewport-fit=cover (تازۀ index.html) WebView تا زیرِ ناوتی‌بارِ سیستم
+    // می‌رود؛ بی‌این env() دکمهٔ 🛠 و پنلش رویِ گوشی‌هایِ سه‌دکمه‌ای زیرِ
+    // نوارِ سیستم می‌ماند و «دکمه غیب شده» به نظر می‌رسد.
+    'position:fixed;bottom:calc(70px + env(safe-area-inset-bottom));left:8px;z-index:9998;' +
+    'width:34px;height:34px;' +
     'border-radius:50%;border:1px solid rgba(255,255,255,.2);background:rgba(20,20,30,.75);' +
     'color:#fff;font-size:16px;line-height:1;opacity:.55';
   btn.addEventListener('click', () => {
@@ -124,7 +141,7 @@ export function mountDiagnostics(): void {
     panel.id = 'bors-diag-panel';
     panel.dir = 'rtl';
     panel.style.cssText =
-      'position:fixed;bottom:112px;left:8px;right:8px;z-index:9998;max-height:55vh;' +
+      'position:fixed;bottom:calc(112px + env(safe-area-inset-bottom));left:8px;right:8px;z-index:9998;max-height:55vh;' +
       'overflow-y:auto;background:rgba(10,12,20,.96);color:#e5e7eb;border:1px solid ' +
       'rgba(255,255,255,.15);border-radius:10px;padding:10px 12px;font-size:12px;' +
       'line-height:1.9;font-family:inherit;word-break:break-word;direction:rtl;text-align:right';

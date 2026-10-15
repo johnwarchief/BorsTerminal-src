@@ -60,9 +60,17 @@
     min-height: 44px; /* هدف لمسی استاندارد */
   }
 
-  /* ۲) بدنه: جا برای نوار پایین + لغو فاصلهٔ داور (اینسپکتور تمام‌صفحه می‌شود) */
+  /* ۲) بدنه: جا برای نوار پایین + لغو فاصلهٔ داور (اینسپکتور تمام‌صفحه می‌شود)
+     — ۵۸px ارتفاعِ خودِ نوار است و ۸px فاصله؛ env() لازم است چون با
+     viewport-fit=cover نوارِ تب خودش `max(4px, env(safe-area-inset-bottom))`
+     زیرِ ناوتی‌بارِ سیستم بلند می‌شود (خطِ ۴۵)، پس بی‌این هم‌افزودی، ردیفِ
+     آخرِ جدول زیرِ نوارِ پایین می‌ماند. */
   html.bors-mobile .app-content {
-    padding-bottom: 66px;
+    padding-bottom: calc(66px + env(safe-area-inset-bottom));
+  }
+  /* بنرِ هشدارِ قیمت هم رویِ لبۀ پایین می‌نشیند؛ همان env() لازم است. */
+  html.bors-mobile [data-testid="price-alert-banner"] {
+    bottom: calc(1rem + env(safe-area-inset-bottom));
   }
   html.bors-mobile .app-content[data-inspector='open'] {
     padding-inline-end: 0 !important;
