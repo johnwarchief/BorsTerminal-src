@@ -170,5 +170,20 @@ sec = re.findall(r'secretish', CDP)
 chk(len(sec) >= 2 and "process.exit(fail ? 1 : 0)" in CDP,
     "A37 نشتِ رمز یا صفحۀ سفید درِ کاوشگر حکمِ رد می‌دهد")
 
+# A38/A39 — همان چیزی که یکِ بیلدِ CI واقعی گرفت: کامنتِ XML نمی‌تواند `--`
+# داشته باشد و AAPT آن را تا بیلدِ release ساکت نگه نمی‌دارد. parseِ سخت، گامِ
+# زودتر ازِ Gradle.
+import xml.dom.minidom as _md
+for rel in ("frontend/android/app/src/main/AndroidManifest.xml",
+            "frontend/android/app/src/main/res/xml/network_security_config.xml"):
+    txt = read(rel)
+    try:
+        _md.parseString(txt)
+        chk(True, "A38 XMLِ سخت‌افزارخوان well-formed است: " + rel.split("/")[-1])
+    except Exception as e:
+        chk(False, "A38 XMLِ well-formed نیست (%s): %s" % (rel, e))
+chk("--live-reload" not in (NS or ""),
+    "A39 هیچ `--` درِ کامنتِ network_security_config نمی‌ماند (دلیلِ شکستِ بیلدِ اول)")
+
 print("android_release_v1110: %d passed / %d failed" % (PASS, FAIL))
 sys.exit(1 if FAIL else 0)
