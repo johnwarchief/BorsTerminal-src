@@ -61,7 +61,7 @@ function makeClient(ws: WebSocket) {
       events.push({ method: msg.method, params: msg.params || {} });
     }
   };
-  const send = (method: string, params: Record<string, unknown> = {}, ms = 12000): Promise<any> =>
+  const send = (method: string, params: Record<string, unknown> = {}, ms = 25000): Promise<any> =>
     new Promise((res) => {
       const mid = ++id;
       // بی‌مهلت، یکِ CDPِ بی‌پاسخ (WebView که DevTools را نگه نداشته) پروسه را

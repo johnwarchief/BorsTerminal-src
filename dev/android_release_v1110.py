@@ -178,8 +178,10 @@ chk("reached_content" in CDP and "login-gate" in CDP and "board" in CDP,
     "A47 کاوشگر WebView بینِ «صفحۀ ورود»، «تابلو» و «پیدا نشد» فرق می‌گذارد و فقط board سبز است")
 chk("__timeout" in CDP and "setTimeout" in CDP,
     "A48 هر فرمانِ CDP مهلت دارد؛ بی‌پاسخ‌ماندن به exit 13 (top-level await ناتمام) نمی‌انجامد")
-chk("ensure_running" in EMU and "ازنویدِ Activity" in EMU,
-    "A49 تغییرِ اندازه که Activity را ازنوید می‌کند، «مرگِ اپ» خوانده نمی‌شود")
+chk("ensure_running" in EMU and "dismiss_anr_dialog" in EMU and "uiautomator dump" in EMU,
+    "A49 دستگاه یک اندازۀ ثابت می‌ماند، گفتگوی ANR رد می‌شود، و شواهدِ مستقل از DevTools (uiautomator) هم گرفته می‌شود")
+chk('grep -c "ANR in "' in EMU and "ANRSYS" in EMU,
+    "A50 سنجۀ ANR به پروسۀ ما محدود نیست؛ «Process system isn't responding» هم رد می‌شود (درِ رانِ 38671378595 گفتگوی سیستمی روی صفحه بود و گاردِ باریک آن را ندید)")
 chk("wm size" in EMU and "360x800" in EMU and "390x844" in EMU and "412x915" in EMU,
     "A33 سه اندازۀ تلفن با wm size/density واقعی سنجیده می‌شود")
 chk("keyevent 4" in EMU and "KEYCODE_HOME" in EMU and "FATAL EXCEPTION" in EMU,

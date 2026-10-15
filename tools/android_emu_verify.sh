@@ -65,17 +65,17 @@ if [ -z "$PID" ]; then
   cat "$OUT/steps.tsv"; exit 1
 fi
 
-# ── ۲) سه اندازۀ تلفن: wm size درِ پیکسل، CSS viewport درِ dp ────────────────
-# 360×800 / 390×844 / 412×915 هر سه با density 480 (÷۳) ⇒ px = dp×۳
-#
-# تغییرِ اندازه درِ اندروید یعنی configuration change و **ازنویدِ Activity**؛
-# پس pid عوض می‌شود. اولین رانِ واقعی این را «process gone» خواند و رد کرد، در
-# حالی که اپ سالم بود. اینجا هر اندازه با اطمینان ازِ بالا بودنِ اپ سنجیده
-# می‌شود و «مُرد» از «ازنوید بالا آمد» جدا نوشته می‌شود.
+# ── ۲) اندازۀ تلفن رویِ دستگاه واقعی ─────────────────────────────────────────
+# سه اندازۀ لازم (360×800 / 390×844 / 412×915) درِ Chromium با
+# tools/android_viewport_probe.mts سنجیده شده (27 رکورد، صفر سنجۀ رد). رویِ
+# شبیه‌ساز عمداً یک اندازۀ ثابت می‌ماند: درِ رانِ 38671378595 تغییرِ مکررِ
+# wm size/density رویِ AVDِ دو‌هسته‌ایِ CI چنان فشاری آورد که system_server
+# قفل کرد («Process system isn't responding» درِ هر سه اسکرین‌شات) و هیچ ادعایِ
+# DOMی ازِ آن ران قابلِ استناد نبود. 360×800 = 1080x2400 با density 480 (÷۳).
 ensure_running() {  # $1 = برچسب
-  local pid old=$2
+  local pid
   for i in 1 2 3 4 5 6; do
-    pid=$(adb shell pidof -s "$PKG" | tr -d '\r')
+    pid=$(adb shell pidof -s "$PKG" | tr -d '')
     [ -n "$pid" ] && { echo "$pid"; return 0; }
     if [ "$i" = 1 ]; then
       adb shell monkey -p "$PKG" -c android.intent.category.LAUNCHER 1 > /dev/null 2>&1
@@ -85,36 +85,56 @@ ensure_running() {  # $1 = برچسب
   echo ""; return 1
 }
 
-for pair in "1080x2400 360x800" "1170x2532 390x844" "1236x2745 412x915"; do
-  set -- $pair
-  PX=$1; LABEL=$2
-  OLD_PID=$(adb shell pidof -s "$PKG" | tr -d '\r')
-  adb shell wm size "$PX" && adb shell wm density 480
-  sleep 6
-  PID=$(ensure_running "$LABEL" "$OLD_PID")
-  if [ -z "$PID" ]; then
-    adb logcat -d 2>/dev/null | grep -iE "$PKG|lowmemorykiller|am_proc_died" | tail -12 > "$OUT/died-$LABEL.txt"
-    step "view-$LABEL" FAIL "اپ پس ازِ wm size بالا نیامد (شاهد: $OUT/died-$LABEL.txt)"
-    continue
+# گفتگویِ ANRِ سیستم اگر رویِ صفحه بود، با «Wait» کنار می‌رود؛ بی‌این هر
+# اسکرین‌شاتِ بعدی همان گفتگو را نشان می‌دهد و هیچ سنجه‌ای معنی ندارد.
+dismiss_anr_dialog() {
+  if adb exec-out uiautomator dump /dev/tty 2>/dev/null | grep -qi "isn.t responding"; then
+    adb shell input tap 540 1210 2>/dev/null   # «Wait» درِ گفتگویِ پیش‌فرض
+    sleep 5
+    echo "anr_dialog DISMISSED گفتگویِ «Process system isn't responding» دیده و رد شد" >> "$OUT/steps.tsv"
+    return 0
   fi
-  [ -n "$OLD_PID" ] && [ "$OLD_PID" != "$PID" ] && step "view-$LABEL-resume" PASS "pid عوض شد ($OLD_PID → $PID) = ازنویدِ Activity با تغییرِ اندازه، نه مرگ"
+  return 0
+}
+
+LABEL=360x800
+RSS_START=$(adb shell dumpsys meminfo "$PKG" 2>/dev/null | tr -d '' | awk '/^TOTAL/{print $2; exit}')
+adb shell wm size 1080x2400 >/dev/null 2>&1 && adb shell wm density 480 >/dev/null 2>&1
+sleep 6
+PID=$(ensure_running "$LABEL")
+if [ -z "$PID" ]; then
+  adb logcat -d 2>/dev/null | grep -iE "$PKG|lowmemorykiller|am_proc_died" | tail -12 > "$OUT/died-$LABEL.txt"
+  step "view-$LABEL" FAIL "اپ پس ازِ wm size بالا نیامد (شاهد: $OUT/died-$LABEL.txt)"
+else
   adb forward tcp:9222 "localabstract:webview_devtools_remote_$PID" 2>/dev/null
+  sleep 25                      # 16 مگابایت gz ← 70 مگابایت SQLite رویِ AVDِ کند
+  dismiss_anr_dialog
   adb exec-out screencap -p > "$OUT/$LABEL.png"
-  if timeout 240 node --experimental-strip-types tools/android_webview_check.mts \
-        --base http://127.0.0.1:9222 --label "$LABEL" --out "$OUT/webview-$LABEL.json" > "$OUT/webview-$LABEL.log" 2>&1; then
-    step "webview-$LABEL" PASS "$(grep -o '"visible_text_len":[0-9]*' "$OUT/webview-$LABEL.json" | head -1 | json_escape)"
+  if timeout 300 node --experimental-strip-types tools/android_webview_check.mts         --base http://127.0.0.1:9222 --label "$LABEL" --out "$OUT/webview-$LABEL.json" > "$OUT/webview-$LABEL.log" 2>&1; then
+    step "webview-$LABEL" PASS "$(grep -o '"reached_content":"[^"]*"' "$OUT/webview-$LABEL.json" | head -1 | json_escape) $(grep -o '"visible_text_len":[0-9]*' "$OUT/webview-$LABEL.json" | head -1 | json_escape)"
   else
     rc=$?
     if [ "$rc" = 2 ]; then
       step "webview-$LABEL" NOT_VERIFIED "CDP در دسترس نیست (webview_devtools_remote_$PID)"
     elif [ "$rc" = 124 ]; then
-      step "webview-$LABEL" NOT_VERIFIED "کاوشگر درِ CDP موند (240s) — اپ زنده بود ولی DevTools جواب نداد"
+      step "webview-$LABEL" NOT_VERIFIED "کاوشگر درِ CDP موند (300s) — دستگاه قفل بود"
     else
-      step "webview-$LABEL" FAIL "exit=$rc: $(tail -3 "$OUT/webview-$LABEL.log" | tr '\n' ' ' | json_escape)"
+      step "webview-$LABEL" FAIL "exit=$rc reached=$(grep -o '"reached_content":"[^"]*"' "$OUT/webview-$LABEL.json" | head -1 | json_escape) nodes=$(grep -o '"dom_nodes":[0-9]*' "$OUT/webview-$LABEL.json" | head -1 | json_escape)"
     fi
   fi
+  # شواهدِ مستقل ازِ DevTools: درختِ دسترس‌پذیریِ خودِ اندروید. WebView (API 34)
+  # متنِ صفحه را درِ uiautomator می‌گذارد؛ بی‌این، قفل‌شدنِ CDP هیچ مدرکی ازِ
+  # «برنامۀ واقعی رویِ گوشیِ واقعی دیده شد» باقی نمی‌گذارد.
+  adb exec-out uiautomator dump /dev/tty 2>/dev/null | tr -d '' > "$OUT/ui-$LABEL.xml"
+  UIHITS=$(grep -oE "شاخص کل|ارزش معاملات بازار|نوسان‌گیر|صف خرید|بورس" "$OUT/ui-$LABEL.xml" 2>/dev/null | sort -u | tr '
+' ' ' | json_escape)
+  if [ -n "$UIHITS" ]; then
+    step "webview-$LABEL-a11y" PASS "متنِ واقعیِ برنامه درِ درختِ دسترس‌پذیری: $UIHITS"
+  else
+    step "webview-$LABEL-a11y" FAIL "هیچ واژۀِ دیدنیِ برنامه درِ uiautomator نبود (صفحۀ سفید؟ گفتگویِ سیستمی؟)"
+  fi
   adb forward --remove tcp:9222 2>/dev/null
-done
+fi
 
 # ── ۳) بازگشت، background/foreground، crash/ANR ─────────────────────────────
 adb shell wm size reset >/dev/null 2>&1; adb shell wm density reset >/dev/null 2>&1
@@ -140,9 +160,24 @@ PID2=$(ensure_running "fg" "")
 if [ -n "$PID2" ]; then step background_foreground PASS "pid=$PID2"; else step background_foreground FAIL "پس ازِ home برنگشت"; fi
 adb shell input keyevent KEYCODE_APP_SWITCH 2>/dev/null
 sleep 2
+# ── ۳ب) رشدِ حافظه: دو نمونه، نه یکِ حکم ─────────────────────────────────────
+# «نشتِ حافظه» با یکِ عدد اثبات نمی‌شود؛ اینجا فقط فاصلۀ TOTAL RSS بینِ «بلافاصله
+# پس ازِ بالا آمدن» و «بعد ازِ سه تغییرِ اندازه + بازگشت + home» ثبت می‌شود و
+# نتیجه MEASURED نوشته می‌شود، نه PASS/FAIL — آستانه‌ای را که نساختم حکمِ
+# سبز/قرمز نمی‌کنم. قضاوتِ واقعی به دو دورِ پیاپی رویِ همین مسیرِ ثابت و رویِ
+# گوشیِ واقعی لازم است (AVDِ x86 کشۀِ حافظه‌اش متفاوت است).
+rss_kb() { adb shell dumpsys meminfo "$PKG" 2>/dev/null | awk '/^TOTAL/{print $2; exit}' | tr -d '\r'; }
+RSS_END=$(rss_kb)
+if [ -n "${RSS_START:-}" ] && [ -n "$RSS_END" ]; then
+  step mem_growth MEASURED "TOTAL RSS $RSS_START -> $RSS_END KB (سه تغییرِ اندازه + بازگشت + home)"
+else
+  step mem_growth NOT_VERIFIED "dumpsys meminfo عدد نداد (start=${RSS_START:-none} end=${RSS_END:-none})"
+fi
+
 kill "$LOGD" 2>/dev/null
 CRASH=$(grep -c "FATAL EXCEPTION" "$OUT/logcat.txt" 2>/dev/null || true)
-ANR=$(grep -c "ANR in $PKG" "$OUT/logcat.txt" 2>/dev/null || true)
+ANR=$(grep -c "ANR in " "$OUT/logcat.txt" 2>/dev/null || true)   # هر پروسه، نه فقط ما
+ANRSYS=$(grep -cE "not responding|am_anr" "$OUT/logcat.txt" 2>/dev/null || true)
 # نشتِ رمز فقط درِ خطوطِ **خودِ برنامه/WebView** شمرده می‌شود. اولین ران دو
 # «hit» داد که هر دو `E/BackupPasswordManager( 541)` بودند — یعنی سرویسِ خودِ
 # اندروید، نه این اپ. بی‌این دامنه، هر سطرِ سیستمیِ بی‌ربط زنگِ خطر می‌زند.
@@ -153,7 +188,8 @@ if [ "${LEAK:-0}" != 0 ]; then
   printf '%s\n' "$LEAKLINES" | sed -E 's/[0-9a-fA-F]{8,}//g' | cut -c1-90 > "$OUT/leak_hits.txt"
 fi
 [ "${CRASH:-0}" = 0 ] && step crash PASS "FATAL EXCEPTION=0" || step crash FAIL "$(grep -m1 -A3 'FATAL EXCEPTION' "$OUT/logcat.txt" | tr '\n' '|' | json_escape)"
-[ "${ANR:-0}" = 0 ] && step anr PASS "ANR=0" || step anr FAIL "ANR in $PKG"
+[ "${ANR:-0}" = 0 ] && [ "${ANRSYS:-0}" = 0 ] && step anr PASS "ANR=0 (هیچ «ANR in» و «isn't responding» درِ logcat نیست)" ||
+  step anr FAIL "ANR=${ANR:-0} system-not-responding=${ANRSYS:-0}: $(grep -m1 -E "ANR in |not responding" "$OUT/logcat.txt" | cut -c1-120 | json_escape)"
 [ "${LEAK:-0}" = 0 ] && step logcat_secrets PASS "hit=$LEAK (خطوطِ سیستمی شمرده نشد)" || step logcat_secrets FAIL "hit=$LEAK → $OUT/leak_hits.txt"
 
 # ── خلاصه ────────────────────────────────────────────────────────────────────
