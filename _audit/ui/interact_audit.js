@@ -27,12 +27,13 @@ const OUT = path.join(REPO, '_audit', 'ui', arg('out', 'INTERACT.json'));
 const SHOTS = arg('shots', '_audit/ui/shots/int');
 const ONLY = arg('only', '');
 const WAIT = Number(arg('settle', 1500));
+const TRIGGER_WAIT = Number(arg('trigger-wait', 20000));
 
 // k=کلیدِ ماژول، r=route، n=نامِ قدم، act=click|keys|select|none، t=هدفِ CSS،
 // v=مقدارِ select/keys، exp=لایۀِ انتظار، close=escape|css|null، back=بازگشتِ حالت
 const STEPS = [
   // ── تابلوخوانی ────────────────────────────────────────────────────────────
-  { k: 'market', r: '/market', n: 'فیلترِ دارایی (منو)', kind: 'overlay', act: 'click', t: '[data-testid="asset-filter"]', exp: '[data-testid="asset-filter-menu"]', close: '[data-testid="asset-filter"]' },
+  { k: 'market', r: '/market', n: 'فیلترِ دارایی (منو)', kind: 'overlay', act: 'click', t: '[data-testid="asset-filter"] button', exp: '[data-testid="asset-filter-menu"]', close: '[data-testid="asset-filter"] button' },
   { k: 'market', r: '/market', n: 'منطقِ غربالگری (توگل)', kind: 'toggle', act: 'click', t: '[data-testid="screen-logic-toggle"]', exp: '[data-testid="screen-logic-toggle"]', close: '[data-testid="screen-logic-toggle"]' },
   { k: 'market', r: '/market', n: 'فقط زنده (توگل)', kind: 'toggle', act: 'click', t: '[data-testid="live-only-toggle"]', exp: '[data-testid="live-only-toggle"]', close: '[data-testid="live-only-toggle"]' },
   { k: 'market', r: '/market', n: 'پسوندِ عددی (توگل)', kind: 'toggle', act: 'click', t: '[data-testid="numeric-suffix-toggle"]', exp: '[data-testid="numeric-suffix-toggle"]', close: '[data-testid="numeric-suffix-toggle"]' },
@@ -40,48 +41,48 @@ const STEPS = [
   { k: 'market', r: '/market', n: 'ردیفِ تابلو → داورِ نماد', kind: 'overlay', act: 'click', t: '[data-testid="tape-row"]', exp: '[data-testid="inspector-tabs"]', close: 'escape' },
 
   // ── وضعیت بازار ───────────────────────────────────────────────────────────
-  { k: 'market-status', r: '/market-status', n: 'توگلِ چرخشِ تیکر', act: 'click', t: '[data-testid="ticker-continuous"]', exp: '[data-testid="ticker-body"]', close: '[data-testid="ticker-continuous"]' },
-  { k: 'market-status', r: '/market-status', n: 'زیرتبِ طلا (۲)', act: 'click', t: '[data-testid="ms-gold-tabs"] [data-testid^="ms-gold-tab-"]:nth-child(2)', exp: '[data-testid="ms-gold-tabs"]', close: null },
-  { k: 'market-status', r: '/market-status', n: 'معیارِ دوناتِ طلا', act: 'click', t: '[data-testid="ms-gold-donut-metric"] button:nth-child(2)', exp: '[data-testid^="ms-gold-donut-"]', close: null },
+  { k: 'market-status', r: '/market-status', n: 'توگلِ چرخشِ تیکر', kind: 'toggle', act: 'click', t: '[data-testid="ticker-mode-toggle"]', exp: '[data-testid="ticker-continuous"]', close: '[data-testid="ticker-mode-toggle"]' },
+  { k: 'market-status', r: '/market-status', n: 'زیرتبِ طلا (۲)', act: 'click', t: '[data-testid="ms-gold-tabs"] [data-testid^="ms-gold-tab-"]:nth-child(2)', exp: '[data-testid^="ms-gold-tab-"]', close: '[data-testid="ms-gold-tabs"] [data-testid^="ms-gold-tab-"]:nth-child(1)' },
+  { k: 'market-status', r: '/market-status', n: 'معیارِ دوناتِ طلا', kind: 'toggle', act: 'click', t: '[data-testid="ms-gold-donut-metric-cap"]', exp: '[data-testid="ms-gold-donut-coverage"]', pre: '[data-testid="ms-gold-tab-overview"]', close: null },
   { k: 'market-status', r: '/market-status', n: 'صفحه‌بندیِ کارت‌هایِ نمایِ کلی', kind: 'panel', act: 'click', t: '[data-testid="ms-glance-next"]', exp: '[data-testid="ms-glance-page"]', close: '[data-testid="ms-glance-prev"]' },
-  { k: 'market-status', r: '/market-status', n: 'بازهٔ مقایسه', act: 'click', t: '[data-testid="ms-compare-range-p1m"]', exp: '[data-testid="ms-compare-canvas"]', close: null },
-  { k: 'market-status', r: '/market-status', n: 'انتخابِ نمادِ نمودار', act: 'click', t: '[data-testid="ms-chart-watch-list"] button', exp: '[data-testid="ms-chart-symbol"]', close: null },
+  { k: 'market-status', r: '/market-status', n: 'بازهٔ مقایسه', kind: 'toggle', act: 'click', t: '[data-testid="ms-compare-range-1m"]', exp: '[data-testid="ms-compare-span"]', close: null },
+  { k: 'market-status', r: '/market-status', n: 'انتخابِ نمادِ نمودار', kind: 'panel', act: 'click', t: '[data-testid^="ms-chart-board-list-row-"]', exp: '[data-testid="ms-chart-symbol"]', close: null },
 
   // ── تکنیکال ────────────────────────────────────────────────────────────────
   { k: 'technical', r: '/technical/فولاد', n: 'دیالوگِ تنظیماتِ چارت (۶ تب)', act: 'click', t: '[data-testid="open-chart-settings"]', exp: '[data-testid="chart-settings"]', close: '[data-testid="chart-settings-close"]' },
-  { k: 'technical', r: '/technical/فولاد', n: 'تبِ دومِ تنظیماتِ چارت', act: 'click', t: '[data-testid="chart-settings"] [data-testid^="settings-tab-"]:nth-child(2)', exp: '[data-testid="chart-settings"]', close: '[data-testid="chart-settings-close"]', pre: '[data-testid="open-chart-settings"]' },
-  { k: 'technical', r: '/technical/فولاد', n: 'تغییرِ تایم‌فریم → هفتگی', act: 'click', t: '[data-testid^="timeframe-"]:nth-child(2)', exp: '[data-testid="chart-area"]', close: null },
-  { k: 'technical', r: '/technical/فولاد', n: 'بازگشتِ تایم‌فریم → روزانه', act: 'click', t: '[data-testid^="timeframe-"]:nth-child(1)', exp: '[data-testid="chart-area"]', close: null },
-  { k: 'technical', r: '/technical/فولاد', n: 'منویِ موتورِ چارت', act: 'click', t: '[data-testid="nn-engine-switch"]', exp: '[data-testid^="nn-engine-"]:not([data-testid="nn-engine-switch"])', close: 'escape' },
+  { k: 'technical', r: '/technical/فولاد', n: 'تبِ دومِ تنظیماتِ چارت', act: 'click', t: '[data-testid="chart-settings"] [data-testid^="settings-tab-"]:nth-child(2)', kind: 'toggle', exp: '[data-testid^="settings-tab-"]', close: '[data-testid="chart-settings-close"]', pre: '[data-testid="open-chart-settings"]' },
+  { k: 'technical', r: '/technical/فولاد', n: 'تغییرِ تایم‌فریم → هفتگی', act: 'click', t: '[data-testid^="timeframe-"]:nth-child(2)', kind: 'toggle', exp: '[data-testid^="timeframe-"]', close: null },
+  { k: 'technical', r: '/technical/فولاد', n: 'بازگشتِ تایم‌فریم → روزانه', act: 'click', t: '[data-testid^="timeframe-"]:nth-child(1)', kind: 'toggle', exp: '[data-testid^="timeframe-"]', close: null },
+  { k: 'technical', r: '/technical/فولاد', n: 'منویِ موتورِ چارت', act: 'click', t: '[data-testid="nn-engine-ffc"]', kind: 'toggle', exp: '[data-testid="ffc-chart-host"], [data-testid="fts-engine-back"]', close: '[data-testid="fts-engine-back"]' },
   { k: 'technical', r: '/technical/فولاد', n: 'جمع‌کردنِ داکِ FTS', act: 'click', t: '[data-testid="fts-dock-toggle"]', exp: '[data-testid="fts-dock"]', close: '[data-testid="fts-dock-toggle"]' },
   { k: 'technical', r: '/technical/فولاد', n: 'تبِ دومِ داکِ FTS', act: 'click', t: '[data-testid="fts-dock-tab-technical"], [data-testid^="fts-dock-tab-"]:nth-child(2)', exp: '[data-testid="fts-dock-body"]', close: null },
   { k: 'technical', r: '/technical/فولاد', n: 'تبِ سومِ داکِ FTS', act: 'click', t: '[data-testid^="fts-dock-tab-"]:nth-child(3)', exp: '[data-testid="fts-dock-body"]', close: null },
   { k: 'technical', r: '/technical/فولاد', n: 'rail سایدبار: کتاب', act: 'click', t: '[data-testid="sidebar-tab-book"]', exp: '[data-testid="sidebar-body"]', close: null },
   { k: 'technical', r: '/technical/فولاد', n: 'rail سایدبار: سطوح', act: 'click', t: '[data-testid="sidebar-tab-levels"]', exp: '[data-testid="sidebar-body"]', close: null },
   { k: 'technical', r: '/technical/فولاد', n: 'rail سایدبار: watch', act: 'click', t: '[data-testid="sidebar-tab-watch"]', exp: '[data-testid="sidebar-body"]', close: null },
-  { k: 'technical', r: '/technical/فولاد', n: 'جمع‌کردنِ سایدبار', act: 'click', t: '[data-testid="sidebar-collapse"]', exp: '[data-testid="technical-sidebar"]', close: '[data-testid="sidebar-collapse"]' },
+  { k: 'technical', r: '/technical/فولاد', n: 'جمع‌کردنِ سایدبار', kind: 'panel', act: 'click', t: '[data-testid="sidebar-collapse"]', exp: '[data-testid="technical-sidebar-collapsed"]', close: '[data-testid="sidebar-expand"]' },
 
   // ── بنیادی / غربالگری ──────────────────────────────────────────────────────
-  { k: 'fundamental', r: '/fundamental/فولاد', n: 'مودالِ تحلیل‌گر FTS', act: 'click', t: '[data-testid="fts-analyst-open"], [data-testid="master-fts-details"]', exp: '[data-testid="fts-analyst-modal"]', close: 'escape' },
-  { k: 'fundamental', r: '/fundamental', n: 'پری‌ستِ استراتژیک', kind: 'panel', act: 'click', t: '[data-testid="fts-strategic-presets"] button:nth-child(2)', exp: '[data-testid="fts-screen-row"]', close: '[data-testid="fts-strategic-presets"] button:nth-child(1)' },
-  { k: 'fundamental', r: '/fundamental', n: 'جست‌وجویِ غربالگری', act: 'type', t: '[data-testid="fts-search"]', v: 'فولاد', exp: '[data-testid="fts-screen-scroll"]', close: '[data-testid="fts-search-clear"]' },
+  { k: 'master', r: '/master/فولاد', n: 'مودالِ تحلیل‌گر FTS', act: 'click', t: '[data-testid="fts-analyst-open"]', exp: '[data-testid="fts-analyst-modal"]', pre: '[data-testid="master-toggle-advanced"]', close: 'escape' },
+  { k: 'fundamental', r: '/fundamental', n: 'پری‌ستِ استراتژیک', kind: 'toggle', act: 'click', t: '[data-testid="fts-strategic-presets"] button:nth-child(3)', exp: '[data-testid="fts-screen-row"]', pre: 'aside[data-shell="inspector"] button[aria-label="بستن پنل نماد"]', close: '[data-testid="fts-strategic-presets"] button:nth-child(2)' },
+  { k: 'fundamental', r: '/fundamental', n: 'جست‌وجویِ غربالگری', kind: 'panel', act: 'type', t: '[data-testid="fts-search"]', v: 'فولاد', exp: '[data-testid="fts-screen-row"]', pre: 'aside[data-shell="inspector"] button[aria-label="بستن پنل نماد"]', close: '[data-testid="fts-search-clear"]' },
   { k: 'fundamental', r: '/fundamental', n: 'پنلِ تنظیماتِ داده', act: 'click', t: '[data-testid="fts-settings-trigger"]', exp: '[data-testid="fts-settings-panel"]', close: '[data-testid="fts-settings-backdrop"]' },
 
   // ── مستر FTS ───────────────────────────────────────────────────────────────
-  { k: 'master', r: '/master', n: 'مودِ نوسان‌گیر', act: 'click', t: '[data-testid="funnel-mode-swing"]', exp: '[data-testid="fts-funnel-workspace"]', close: null },
-  { k: 'master', r: '/master', n: 'مودِ روندگیر', act: 'click', t: '[data-testid="funnel-mode-trend"]', exp: '[data-testid="fts-funnel-workspace"]', close: '[data-testid="funnel-mode-modes"]' },
-  { k: 'master', r: '/master', n: 'گامِ ۲ فرایند', kind: 'panel', act: 'click', t: '[data-testid="fts-step-technical"]', exp: '[data-testid="fts-funnel-workspace"]', close: '[data-testid="fts-step-tape"]' },
-  { k: 'master', r: '/master/فولاد', n: 'جزئیاتِ FTS درِ دосьیه', act: 'click', t: '[data-testid="dossier-tech-details"]', exp: '[data-testid="master-fts-details"]', close: null },
+  { k: 'master', r: '/master', n: 'مودِ نوسان‌گیر', kind: 'toggle', act: 'click', t: '[data-testid="funnel-mode-swing"]', exp: '[data-testid="funnel-counts"]', pre: 'aside[data-shell="inspector"] button[aria-label="بستن پنل نماد"]', close: '[data-testid="funnel-mode-trend"]' },
+  { k: 'master', r: '/master', n: 'مودِ روندگیر', kind: 'toggle', act: 'click', t: '[data-testid="funnel-mode-trend"]', exp: '[data-testid="funnel-counts"]', pre: 'aside[data-shell="inspector"] button[aria-label="بستن پنل نماد"]', close: null },
+  { k: 'master', r: '/master', n: 'گامِ ۲ فرایند', kind: 'panel', act: 'click', t: '[data-testid="fts-step-technical"]', exp: '[data-testid="funnel-stage-technical"]', pre: 'aside[data-shell="inspector"] button[aria-label="بستن پنل نماد"]', close: '[data-testid="fts-step-tape"]' },
+  { k: 'master', r: '/master/فولاد', n: 'جزئیاتِ FTS درِ دосьیه', act: 'click', t: '[data-testid="dossier-tech-details"] summary', exp: '[data-testid="master-fts-details"]', close: null },
 
   // ── درخت استراتژی ──────────────────────────────────────────────────────────
-  { k: 'strategy-tree', r: '/strategy-tree', n: 'rail → T تکنیکال', act: 'click', t: '[data-testid="tree-flow-rail-T"] a, [data-testid="tree-flow-rail-T"]', exp: '[data-testid="strategy-tree-stepper"]', close: null },
-  { k: 'strategy-tree', r: '/strategy-tree', n: 'زونِ F درِ نقشه', act: 'click', t: '[data-testid="strategy-roadmap-zones"] a', exp: '[data-testid^="strategy-tree-page-"]', close: null },
+  { k: 'strategy-tree', r: '/strategy-tree', n: 'rail → T تکنیکال', act: 'click', t: '[data-testid="strategy-tree-stepper"] > div > div:nth-child(2) > a', kind: 'toggle', exp: '[data-testid="strategy-tree-stepper"] a[aria-current]', close: '[data-testid="strategy-tree-stepper"] > div > div:first-child > a' },
+  { k: 'strategy-tree', r: '/strategy-tree?page=', n: 'زونِ F درِ نقشه', act: 'click', t: '[data-testid="strategy-roadmap-zones"] a', exp: '[data-testid^="strategy-tree-page-"]', close: null },
 
   // ── پرتفوی / دیده‌بان / اطلاعیه‌ها / آزمایشگاه ─────────────────────────────
-  { k: 'portfolio', r: '/portfolio', n: 'بازکردنِ سبد (watchlist)', act: 'click', t: '[data-testid="portfolio-watchlist-refresh"]', exp: '[data-testid="portfolio-watchlist"]', close: null },
+  { k: 'portfolio', r: '/portfolio', n: 'تازه‌سازیِ واچ‌لیست (نمایِ فعلی)', kind: 'panel', act: 'click', t: '[data-testid="portfolio-watchlist-refresh"]', exp: '[data-testid="portfolio-watchlist"]', pre: '[data-testid="portfolio-view-current"]', close: null },
   { k: 'watch', r: '/watch', n: 'پیشنهادِ نماد (بدونِ افزودن)', act: 'type', t: '[data-testid="watch-add-input"]', v: 'فولاد', exp: '[data-testid="watch-add-suggestions"]', close: null },
   { k: 'notifications', r: '/notifications', n: 'فیلترِ سطحِ بالا', act: 'click', t: '[data-testid="notice-level-high"]', exp: '[data-testid="notice-list"]', close: '[data-testid="notice-filters"] button:first-child' },
-  { k: 'notifications', r: '/notifications', n: 'فیلترِ نوعِ اطلاعیه', act: 'click', t: '[data-testid^="notice-kind-"]:nth-child(2)', exp: '[data-testid="notice-list"]', close: null },
+  { k: 'notifications', r: '/notifications', n: 'فیلترِ نوعِ اطلاعیه', kind: 'toggle', act: 'click', t: '[data-testid="notice-kind-capital"]', exp: '[data-testid="notice-list"]', close: '[data-testid="notice-kind-capital"]' },
   { k: 'notifications', r: '/notifications', n: 'منبعِ کدال', act: 'click', t: '[data-testid="notice-source-name"]', exp: '[data-testid="notice-sources"]', close: null },
   { k: 'engine-lab', r: '/engine-lab', n: 'اندازۀِ klinecharts', act: 'click', t: '[data-testid="lab-measure-klinecharts"]', exp: '[data-testid="engine-lab"]', close: null },
   { k: 'engine-lab', r: '/engine-lab', n: 'مقایسهٔ دوِ موتور', act: 'click', t: '[data-testid="lab-compare"]', exp: '[data-testid="engine-lab"]', close: null },
@@ -90,7 +91,7 @@ const STEPS = [
   { k: 'global', r: '/market', n: 'پالتِ فرمان (Ctrl+K)', act: 'keys', t: 'body', v: 'Control+k', exp: '[data-testid="command-palette"], [role="dialog"]', close: 'escape' },
   { k: 'global', r: '/market', n: 'تنظیماتِ کاربر', act: 'click', t: '[data-testid="user-settings-btn"]', exp: '[role="dialog"]', close: 'escape' },
   { k: 'global', r: '/market', n: 'مدیرِ آپدیت (فقطِ نمایش)', act: 'click', t: '[data-testid="app-update-btn"]', exp: '[role="dialog"]', close: 'escape' },
-  { k: 'global', r: '/market', n: 'زنگِ هشدارِ قیمتی', act: 'click', t: '[data-testid="price-alert-bell"]', exp: '[data-testid="price-alerts-panel"]', close: '[data-testid="price-alert-bell"]' },
+  { k: 'technical', r: '/technical/فولاد', n: 'زنگِ هشدارِ قیمتی', act: 'click', t: '[data-testid="price-alert-bell"]', exp: '[data-testid="price-alerts-panel"]', close: '[data-testid="price-alert-bell"]' },
 ];
 
 // kind: overlay = لایه‌ای که باید باز و بسته شود (مودال/درُور/منو)
@@ -185,20 +186,69 @@ const STATE_FN = ({ sel, probeSel }) => {
   }
 
   fs.mkdirSync(path.join(REPO, SHOTS), { recursive: true });
-  const steps = ONLY ? STEPS.filter((s) => s.k === ONLY) : STEPS;
+  const onlyKeys = ONLY ? ONLY.split(',').map((x) => x.trim()) : null;
+  const steps = onlyKeys ? STEPS.filter((s) => onlyKeys.includes(s.k)) : STEPS;
   const out = { ranAt: new Date().toISOString(), viewport: { W, H }, steps: [] };
   let lastRoute = null;
   for (const s of steps) {
+    let symbolCleared = false;
     if (s.r !== lastRoute) {
+      // «نمادِ انتخابی» درِ این اپ حالتِ سراسری است (عمدی). قدم‌هایی که نمادِ
+      // خودِ route ندارند (قیف، پرتفوی، درخت) باید بی‌نماد شروع شوند، وگرنه
+      // صفحهٔ بعدی دوسيهِ نمادِ قبلی را می‌نشاند و دستگیره‌هایِ درست رسم نمی‌شوند.
+      if (!/(?:^|\/)(?:technical|master)\/[^/]/.test(s.r)) {
+        const clear = page.locator('aside[data-shell="inspector"] button[aria-label="بستن پنل نماد"]');
+        if (await clear.count().catch(() => 0)) {
+          await clear.first().click({ timeout: 4000 }).catch(() => {});
+          await page.waitForTimeout(900);
+          symbolCleared = true;
+        }
+      }
       await page.goto(BASE + '/#' + s.r, { waitUntil: 'domcontentloaded' });
-      await page.waitForTimeout(3200);
+      await page.waitForTimeout(s.r.startsWith('/master') || s.r.startsWith('/technical') ? 6000 : 3200);
       lastRoute = s.r;
     }
     const rec = { key: s.k, route: s.r, name: s.n, act: s.act, target: s.t, expect: s.exp, kind: s.kind || 'auto' };
+    if (symbolCleared) rec.symbolCleared = true;
+    // ۱) پیش‌شرط (بازکردنِ لایه/تب) *اول* انجام می‌شود: چهاردهِ گام درِ دورِ پیشین
+    //    «NO-TRIGGER» خوانده می‌شدند چون دستگیره فقط پس ازِ کلیکِ پیش‌شرط درِ DOM
+    //    می‌آید وِ شمارش، پیش ازِ آنِ کلیک انجام می‌شد.
+    if (s.pre) {
+      const pre1 = page.locator(s.pre).first();
+      rec.preFound = await pre1.count();
+      rec.preClicked = false;
+      if (rec.preFound) {
+        await pre1.click({ timeout: 6000 }).then(() => { rec.preClicked = true; }).catch((e) => { rec.preError = String(e).replace(/\s+/g, ' ').slice(0, 160); });
+        await page.waitForTimeout(1200);
+      }
+    }
     const trig = page.locator(s.t);
+    // ۲) منتظرِ آمدنِ دستگیره می‌نشینیم (داده‌محور: بعضی کنترل‌ها بعد ازِ رسیدنِ
+    //    پاسخِ سرور رندر می‌شوند)؛ حداکثرِ TRIGGER_WAIT وِ اگر نیامد صریح
+    //    NO-TRIGGER ثبت می‌شود — حذفِ گام یا سبزِ مصنوعی درِ کار نیست.
+    await trig.first().waitFor({ state: 'attached', timeout: TRIGGER_WAIT }).catch(() => {});
     rec.triggerFound = await trig.count();
-    if (!rec.triggerFound) { rec.result = 'NO-TRIGGER'; out.steps.push(rec); console.log(`${s.k} ${s.n.padEnd(34)} NO-TRIGGER`); continue; }
-    if (s.needs && !(await page.locator(s.needs).count())) { rec.result = 'BLOCKED-prereq'; out.steps.push(rec); console.log(`${s.k} ${s.n.padEnd(34)} BLOCKED-prereq`); continue; }
+    if (!rec.triggerFound) {
+      // شواهدِ طبقه‌بندی: چه چیزی *واقعاً* درِ اینِ route هست؟ بی‌اینِ خط،
+      // NO-TRIGGER فقط «دستگیره نبود» می‌گفت و نمی‌شد تشخیص داد سلکتورِ من
+      // غلط بوده یا کنترل داده‌محور/گیت‌شدنی است. `kin` = testidهایی که باِ
+      // همانِ پیشوندِ دستگیره شروع می‌شوند (درِ صفحه‌ای با ۱۱۸۰ testid، نمونهٔ
+      // ۶۰تاییِ اول هیچ‌وقت تاِ «ms-gold-…» نمی‌رسید).
+      const hint = (s.t.match(/data-testid="([^"[]+)/) || [])[1] || '';
+      const stem = hint.split('-').slice(0, 2).join('-');
+      rec.onRoute = await page.evaluate(({ stem, hint }) => {
+        const uniq = [...new Set([...document.querySelectorAll('[data-testid]')].map((e) => e.getAttribute('data-testid')))];
+        const kin = uniq.filter((t) => (stem && t.startsWith(stem)) || (hint && t === hint));
+        return { count: uniq.length, stem, kin: kin.slice(0, 14), sample: uniq.slice(0, 40), text: String(document.body.innerText || '').replace(/\s+/g, ' ').trim().slice(0, 120) };
+      }, { stem, hint });
+      rec.result = 'NO-TRIGGER'; out.steps.push(rec);
+      console.log(`${s.k} ${s.n.padEnd(34)} NO-TRIGGER  pre=${rec.preClicked === undefined ? '-' : (rec.preClicked ? 'clicked' : 'FAILED(' + (rec.preError || 'absent') + ')')}  testidها=${rec.onRoute.count}  هم‌خانوادۀِ «${stem}»=«${rec.onRoute.kin.join(', ') || 'هیچ'}»`);
+      continue;
+    }
+    if (s.needs) {
+      await page.locator(s.needs).first().waitFor({ state: 'attached', timeout: TRIGGER_WAIT }).catch(() => {});
+      if (!(await page.locator(s.needs).count())) { rec.result = 'BLOCKED-prereq'; out.steps.push(rec); console.log(`${s.k} ${s.n.padEnd(34)} BLOCKED-prereq`); continue; }
+    }
     // خودِ دستگیره: کجا است و آیا چیزی مسیرِ کلیک را می‌گیرد؟
     const tp = await page.evaluate(STATE_FN, { sel: s.t, probeSel: s.t });
     rec.triggerBox = tp.boxes[0] || null;
@@ -215,7 +265,6 @@ const STATE_FN = ({ sel, probeSel }) => {
     }
     const pre = await page.evaluate(STATE_FN, { sel: s.exp, probeSel: s.t });
     const errBefore = errs.length;
-    if (s.pre) { await page.locator(s.pre).first().click({ timeout: 6000 }).catch(() => {}); await page.waitForTimeout(900); }
     try {
       if (s.act === 'keys') await page.keyboard.press(s.v);
       else if (s.act === 'type') await trig.first().fill(s.v);

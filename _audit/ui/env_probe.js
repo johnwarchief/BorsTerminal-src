@@ -52,8 +52,12 @@ const ENV = () => {
 (async () => {
   const browser = await chromium.launch({
     executablePath: EXE,
+    // «real» باید سربسرِ (headed) باشد: درِ headless مقدارِ screen بهِ ۸۰۰×۶۰۰
+    //ِ پیش‌فرض برمی‌گردد وِ `--start-maximized` هیچ پنجرۀِ واقعی را بیشینه نمی‌کند،
+    // پس «اندازۀِ واقعیِ مرورگر رویِ همینِ پنل» خوانده نمی‌شود.
+    headless: MODE !== 'real',
     args: MODE === 'real'
-      ? ['--no-first-run', '--disable-sync', '--start-maximized']
+      ? ['--no-first-run', '--disable-sync', '--start-maximized', '--force-device-scale-factor=1']
       : ['--no-first-run', '--disable-sync', '--force-device-scale-factor=1', '--remote-debugging-port=0'],
   });
   const ctx = MODE === 'real'
