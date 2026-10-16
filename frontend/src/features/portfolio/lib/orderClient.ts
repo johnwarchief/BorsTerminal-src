@@ -35,10 +35,15 @@ export const ExecutionStatusSchema = z.object({
   dry_run: bool,
   experimental: bool,
   live_enabled: bool,
+  live_requested: bool,
+  wire_hypothesis: bool,
+  /** اعلامِ خودِ دروازہ: درِ اینِ آداپتور هیچِ چیزی ازِ دستگاه بیرون نمی‌رود */
+  nothing_will_leave_the_machine: bool,
   blocked_on: z.array(z.string()).nullish(),
   capabilities: BrokerCapabilitiesSchema.nullish(),
   limits: z.unknown().nullish(),
   ledger_size: z.number().nullish(),
+  session: z.unknown().nullish(),
 });
 export type ExecutionStatus = z.infer<typeof ExecutionStatusSchema>;
 

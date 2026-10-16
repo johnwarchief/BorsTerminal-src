@@ -1,0 +1,1156 @@
+{
+ "base": "http://127.0.0.1:8012",
+ "cases": {
+  "status": {
+   "request": {
+    "method": "GET",
+    "path": "/api/execution/status",
+    "body": null
+   },
+   "response": {
+    "http": 200,
+    "content_type": "application/json",
+    "body": {
+     "status": "success",
+     "adapter": "mock",
+     "dry_run": true,
+     "experimental": true,
+     "live_enabled": false,
+     "nothing_will_leave_the_machine": true,
+     "live_requested": false,
+     "wire_hypothesis": false,
+     "session": {
+      "state": "connected",
+      "account_label": "mock-acct-1",
+      "checked_at": null
+     },
+     "blocked_on": [
+      "آداپتورِ واقعی انتخاب نشده (BORS_EXECUTION_ADAPTER=easytrader)"
+     ],
+     "capabilities": {
+      "place": true,
+      "list_orders": true,
+      "order_state": true,
+      "queue_position": true,
+      "cancel": true,
+      "best_bid_ask": false,
+      "balances": false
+     },
+     "limits": {
+      "max_orders": 1,
+      "max_total_value": null,
+      "max_total_quantity": null,
+      "require_confirmation": true,
+      "max_order_value": null,
+      "max_symbol_exposure": null,
+      "max_total_exposure": null,
+      "max_daily_loss": null,
+      "max_orders_per_window": null,
+      "window_seconds": 60.0,
+      "max_data_age_s": null
+     },
+     "ledger_size": 7,
+     "kill_switch": "ARMED",
+     "halted": false,
+     "kill_reason": "ادامهٔ دستوری",
+     "durable_events": 9,
+     "recovered_after_restart": 0,
+     "audit_db": "C:\\Users\\Johnkallnaya\\Desktop\\Borsterminal\\.worktrees\\uiux-2-0\\user.db",
+     "clock_source": "system",
+     "clock_limit": "ساعتِ سیستم بدونِ آفستِ NTP؛ زمان‌بندی رویِ monotonic است پس پرشِ ساعتِ دیواری dispatch را جابه‌جا نمی‌کند، ولی خودِ هدفِ دیواری قابلِ ادعایِ دقتِ میلی‌ثانیه نیست",
+     "scheduled_pending": 0
+    }
+   }
+  },
+  "session_get": {
+   "request": {
+    "method": "GET",
+    "path": "/api/execution/session",
+    "body": null
+   },
+   "response": {
+    "http": 200,
+    "content_type": "application/json",
+    "body": {
+     "status": "success",
+     "adapter": "mock",
+     "live": false,
+     "dry_run": true,
+     "session": {
+      "state": "connected",
+      "account_label": "mock-acct-1",
+      "checked_at": null
+     },
+     "token_present": false
+    }
+   }
+  },
+  "limits": {
+   "request": {
+    "method": "GET",
+    "path": "/api/execution/limits",
+    "body": null
+   },
+   "response": {
+    "http": 200,
+    "content_type": "application/json",
+    "body": {
+     "status": "success",
+     "limits": {
+      "max_orders": 1,
+      "max_total_value": null,
+      "max_total_quantity": null,
+      "require_confirmation": true,
+      "max_order_value": null,
+      "max_symbol_exposure": null,
+      "max_total_exposure": null,
+      "max_daily_loss": null,
+      "max_orders_per_window": null,
+      "window_seconds": 60.0,
+      "max_data_age_s": null
+     },
+     "codes": [
+      "AUTH_FAILED",
+      "SESSION_EXPIRED",
+      "NETWORK_ERROR",
+      "TIMEOUT",
+      "BROKER_REJECTED",
+      "INVALID_PRICE",
+      "INVALID_QUANTITY",
+      "MARKET_CLOSED",
+      "DUPLICATE_GUARD",
+      "UNKNOWN_RESULT",
+      "QUEUE_UNAVAILABLE",
+      "RATE_LIMITED",
+      "NOT_ORDERABLE",
+      "UNSUPPORTED",
+      "HALTED",
+      "RISK_LIMIT",
+      "STALE_DATA",
+      "INVALID_EXECUTION_ID"
+     ]
+    }
+   }
+  },
+  "preflight_ok": {
+   "request": {
+    "method": "POST",
+    "path": "/api/execution/preflight",
+    "body": {
+     "execution_id": "fx-send-1792168417",
+     "symbol": "فولاد",
+     "side": "buy",
+     "mode": "safe",
+     "price": 5170,
+     "quantity": 50,
+     "confirmed": true,
+     "mock_instrument": true
+    }
+   },
+   "response": {
+    "http": 200,
+    "content_type": "application/json",
+    "body": {
+     "status": "success",
+     "adapter": "mock",
+     "dry_run": true,
+     "live": false,
+     "execution_id": "fx-send-1792168417",
+     "instrument": {
+      "symbol": "فولاد",
+      "ins_code": "46348559193224090",
+      "isin": "IRO1FOLD0001",
+      "broker_instrument": "MOCK:فولاد",
+      "resolution": "exact"
+     },
+     "checks": {
+      "execution_id": "PASS",
+      "instrument": "PASS",
+      "side": "PASS",
+      "price": "PASS",
+      "quantity": "PASS",
+      "session": "UNKNOWN",
+      "balance": "UNKNOWN",
+      "duplicate": "PASS",
+      "place": "PASS",
+      "kill_switch": "PASS"
+     },
+     "reasons": {
+      "session": "no session gate injected",
+      "balance": "broker exposes no balances",
+      "place": "broker cannot place orders",
+      "kill_switch": "ARMED"
+     },
+     "ok": true,
+     "unknown": [
+      "session",
+      "balance"
+     ]
+    }
+   }
+  },
+  "preflight_no_isin": {
+   "request": {
+    "method": "POST",
+    "path": "/api/execution/preflight",
+    "body": {
+     "execution_id": "fx-noisin-1792168417",
+     "symbol": "شپنا",
+     "side": "buy",
+     "mode": "safe",
+     "price": 1040,
+     "quantity": 100,
+     "confirmed": true,
+     "mock_instrument": true
+    }
+   },
+   "response": {
+    "http": 200,
+    "content_type": "application/json",
+    "body": {
+     "status": "success",
+     "adapter": "mock",
+     "dry_run": true,
+     "live": false,
+     "execution_id": "fx-noisin-1792168417",
+     "instrument": {
+      "symbol": "شپنا",
+      "ins_code": "7745894403636165",
+      "isin": null,
+      "broker_instrument": "MOCK:شپنا",
+      "resolution": "unresolved"
+     },
+     "checks": {
+      "execution_id": "PASS",
+      "instrument": "FAIL",
+      "side": "PASS",
+      "price": "PASS",
+      "quantity": "PASS",
+      "session": "UNKNOWN",
+      "balance": "UNKNOWN",
+      "duplicate": "PASS",
+      "place": "PASS",
+      "kill_switch": "PASS"
+     },
+     "reasons": {
+      "instrument": "NOT_ORDERABLE:resolution",
+      "session": "no session gate injected",
+      "balance": "broker exposes no balances",
+      "place": "broker cannot place orders",
+      "kill_switch": "ARMED"
+     },
+     "ok": false,
+     "unknown": [
+      "session",
+      "balance"
+     ]
+    }
+   }
+  },
+  "preflight_bare_no_mapping": {
+   "request": {
+    "method": "POST",
+    "path": "/api/execution/preflight",
+    "body": {
+     "execution_id": "fx-bare-1792168417",
+     "symbol": "فولاد",
+     "side": "buy",
+     "mode": "safe",
+     "price": 5170,
+     "quantity": 50,
+     "confirmed": true
+    }
+   },
+   "response": {
+    "http": 200,
+    "content_type": "application/json",
+    "body": {
+     "status": "success",
+     "adapter": "mock",
+     "dry_run": true,
+     "live": false,
+     "execution_id": "fx-bare-1792168417",
+     "instrument": {
+      "symbol": "فولاد",
+      "ins_code": "46348559193224090",
+      "isin": "IRO1FOLD0001",
+      "broker_instrument": null,
+      "resolution": "exact"
+     },
+     "checks": {
+      "execution_id": "PASS",
+      "instrument": "FAIL",
+      "side": "PASS",
+      "price": "PASS",
+      "quantity": "PASS",
+      "session": "UNKNOWN",
+      "balance": "UNKNOWN",
+      "duplicate": "PASS",
+      "place": "PASS",
+      "kill_switch": "PASS"
+     },
+     "reasons": {
+      "instrument": "NOT_ORDERABLE:broker_instrument",
+      "session": "no session gate injected",
+      "balance": "broker exposes no balances",
+      "place": "broker cannot place orders",
+      "kill_switch": "ARMED"
+     },
+     "ok": false,
+     "unknown": [
+      "session",
+      "balance"
+     ]
+    }
+   }
+  },
+  "prepare_ok": {
+   "request": {
+    "method": "POST",
+    "path": "/api/execution/prepare",
+    "body": {
+     "execution_id": "fx-prepared-1792168417",
+     "symbol": "فولاد",
+     "side": "buy",
+     "mode": "safe",
+     "price": 5170,
+     "quantity": 50,
+     "confirmed": true,
+     "mock_instrument": true
+    }
+   },
+   "response": {
+    "http": 200,
+    "content_type": "application/json",
+    "body": {
+     "status": "success",
+     "execution_id": "fx-prepared-1792168417",
+     "mode": "safe",
+     "dry_run": true,
+     "sendable": true,
+     "checks": {
+      "execution_id": "PASS",
+      "instrument": "PASS",
+      "side": "PASS",
+      "price": "PASS",
+      "quantity": "PASS",
+      "session": "UNKNOWN",
+      "balance": "UNKNOWN",
+      "duplicate": "PASS",
+      "place": "PASS",
+      "kill_switch": "PASS"
+     },
+     "plan": null,
+     "payload_preview": {
+      "execution_id": "fx-prepared-1792168417",
+      "instrument": "MOCK:فولاد",
+      "isin": "IRO1FOLD0001",
+      "side": "buy",
+      "price": 5170.0,
+      "quantity": 50.0,
+      "mode": "safe",
+      "dry_run": true
+     },
+     "wire_preview": null,
+     "wire_hypothesis": false,
+     "timings": {
+      "prepared_ms": 7.3,
+      "dispatch_ms": null,
+      "response_ms": null,
+      "observed_ms": null
+     }
+    }
+   }
+  },
+  "prepare_then_dispatch_same_id": {
+   "request": {
+    "method": "POST",
+    "path": "/api/execution/dispatch",
+    "body": {
+     "execution_id": "fx-prepared-1792168417",
+     "symbol": "فولاد",
+     "side": "buy",
+     "mode": "safe",
+     "price": 5170,
+     "quantity": 50,
+     "confirmed": true,
+     "mock_instrument": true
+    }
+   },
+   "response": {
+    "http": 200,
+    "content_type": "application/json",
+    "body": {
+     "status": "error",
+     "code": "DUPLICATE_GUARD",
+     "detail": "preflight failed",
+     "checks": {
+      "execution_id": "PASS",
+      "instrument": "PASS",
+      "side": "PASS",
+      "price": "PASS",
+      "quantity": "PASS",
+      "session": "UNKNOWN",
+      "balance": "UNKNOWN",
+      "duplicate": "FAIL",
+      "place": "PASS",
+      "kill_switch": "PASS"
+     },
+     "execution_id": "fx-prepared-1792168417"
+    }
+   }
+  },
+  "dispatch_ok": {
+   "request": {
+    "method": "POST",
+    "path": "/api/execution/dispatch",
+    "body": {
+     "execution_id": "fx-send-1792168417",
+     "symbol": "فولاد",
+     "side": "buy",
+     "mode": "safe",
+     "price": 5170,
+     "quantity": 50,
+     "confirmed": true,
+     "mock_instrument": true
+    }
+   },
+   "response": {
+    "http": 200,
+    "content_type": "application/json",
+    "body": {
+     "status": "success",
+     "adapter": "mock",
+     "dry_run": true,
+     "live": false,
+     "kill_switch": "ARMED",
+     "record": {
+      "execution_id": "fx-send-1792168417",
+      "broker": "mock",
+      "account": null,
+      "symbol": "فولاد",
+      "isin": "IRO1FOLD0001",
+      "side": "buy",
+      "price": 5170.0,
+      "quantity": 50.0,
+      "mode": "safe",
+      "status": "validated",
+      "scheduled_at": null,
+      "actual_send_at": null,
+      "actual_send_wall_ms": null,
+      "response_at": null,
+      "rtt_ms": null,
+      "drift_us": null,
+      "clock_offset_ms": null,
+      "broker_order_id": null,
+      "order_state": "unknown",
+      "filled_quantity": null,
+      "queue_position": null,
+      "volume_ahead": null,
+      "queue_as_of": null,
+      "queue_series": [],
+      "error_code": null,
+      "error_detail": "",
+      "attempts": 0,
+      "events": [
+       "dry-run: nothing was sent",
+       "payload={'execution_id': 'fx-send-1792168417', 'instrument': 'MOCK:فولاد', 'isin': 'IRO1FOLD0001', 'side': 'buy', 'price': 5170.0, 'quantity': 50.0, 'mode': 'safe', 'dry_run': True}"
+      ]
+     },
+     "timings": {
+      "prepared_ms": null,
+      "dispatch_ms": 9.0,
+      "response_ms": null,
+      "observed_ms": null
+     }
+    }
+   }
+  },
+  "dispatch_same_id_again": {
+   "request": {
+    "method": "POST",
+    "path": "/api/execution/dispatch",
+    "body": {
+     "execution_id": "fx-send-1792168417",
+     "symbol": "فولاد",
+     "side": "buy",
+     "mode": "safe",
+     "price": 5170,
+     "quantity": 50,
+     "confirmed": true,
+     "mock_instrument": true
+    }
+   },
+   "response": {
+    "http": 200,
+    "content_type": "application/json",
+    "body": {
+     "status": "error",
+     "code": "DUPLICATE_GUARD",
+     "detail": "preflight failed",
+     "checks": {
+      "execution_id": "PASS",
+      "instrument": "PASS",
+      "side": "PASS",
+      "price": "PASS",
+      "quantity": "PASS",
+      "session": "UNKNOWN",
+      "balance": "UNKNOWN",
+      "duplicate": "FAIL",
+      "place": "PASS",
+      "kill_switch": "PASS"
+     },
+     "execution_id": "fx-send-1792168417"
+    }
+   }
+  },
+  "dispatch_without_confirmed_flag": {
+   "request": {
+    "method": "POST",
+    "path": "/api/execution/dispatch",
+    "body": {
+     "execution_id": "fx-noconf-1792168417",
+     "symbol": "فولاد",
+     "side": "buy",
+     "mode": "safe",
+     "price": 5170,
+     "quantity": 50,
+     "confirmed": false,
+     "mock_instrument": true
+    }
+   },
+   "response": {
+    "http": 200,
+    "content_type": "application/json",
+    "body": {
+     "status": "success",
+     "adapter": "mock",
+     "dry_run": true,
+     "live": false,
+     "kill_switch": "ARMED",
+     "record": {
+      "execution_id": "fx-noconf-1792168417",
+      "broker": "mock",
+      "account": null,
+      "symbol": "فولاد",
+      "isin": "IRO1FOLD0001",
+      "side": "buy",
+      "price": 5170.0,
+      "quantity": 50.0,
+      "mode": "safe",
+      "status": "validated",
+      "scheduled_at": null,
+      "actual_send_at": null,
+      "actual_send_wall_ms": null,
+      "response_at": null,
+      "rtt_ms": null,
+      "drift_us": null,
+      "clock_offset_ms": null,
+      "broker_order_id": null,
+      "order_state": "unknown",
+      "filled_quantity": null,
+      "queue_position": null,
+      "volume_ahead": null,
+      "queue_as_of": null,
+      "queue_series": [],
+      "error_code": null,
+      "error_detail": "",
+      "attempts": 0,
+      "events": [
+       "dry-run: nothing was sent",
+       "payload={'execution_id': 'fx-noconf-1792168417', 'instrument': 'MOCK:فولاد', 'isin': 'IRO1FOLD0001', 'side': 'buy', 'price': 5170.0, 'quantity': 50.0, 'mode': 'safe', 'dry_run': True}"
+      ]
+     },
+     "timings": {
+      "prepared_ms": null,
+      "dispatch_ms": 8.7,
+      "response_ms": null,
+      "observed_ms": null
+     }
+    }
+   }
+  },
+  "dispatch_unorderable": {
+   "request": {
+    "method": "POST",
+    "path": "/api/execution/dispatch",
+    "body": {
+     "execution_id": "fx-noisin-1792168417",
+     "symbol": "شپنا",
+     "side": "buy",
+     "mode": "safe",
+     "price": 1040,
+     "quantity": 100,
+     "confirmed": true,
+     "mock_instrument": true
+    }
+   },
+   "response": {
+    "http": 200,
+    "content_type": "application/json",
+    "body": {
+     "status": "error",
+     "code": "NOT_ORDERABLE",
+     "detail": "preflight failed",
+     "checks": {
+      "execution_id": "PASS",
+      "instrument": "FAIL",
+      "side": "PASS",
+      "price": "PASS",
+      "quantity": "PASS",
+      "session": "UNKNOWN",
+      "balance": "UNKNOWN",
+      "duplicate": "PASS",
+      "place": "PASS",
+      "kill_switch": "PASS"
+     },
+     "execution_id": "fx-noisin-1792168417"
+    }
+   }
+  },
+  "reconcile_ok": {
+   "request": {
+    "method": "POST",
+    "path": "/api/execution/reconcile/fx-send-1792168417",
+    "body": {}
+   },
+   "response": {
+    "http": 200,
+    "content_type": "application/json",
+    "body": {
+     "status": "success",
+     "record": {
+      "execution_id": "fx-send-1792168417",
+      "broker": "mock",
+      "account": null,
+      "symbol": "فولاد",
+      "isin": "IRO1FOLD0001",
+      "side": "buy",
+      "price": 5170.0,
+      "quantity": 50.0,
+      "mode": "safe",
+      "status": "validated",
+      "scheduled_at": null,
+      "actual_send_at": null,
+      "actual_send_wall_ms": null,
+      "response_at": null,
+      "rtt_ms": null,
+      "drift_us": null,
+      "clock_offset_ms": null,
+      "broker_order_id": null,
+      "order_state": "unknown",
+      "filled_quantity": null,
+      "queue_position": null,
+      "volume_ahead": null,
+      "queue_as_of": null,
+      "queue_series": [],
+      "error_code": null,
+      "error_detail": "",
+      "attempts": 0,
+      "events": [
+       "dry-run: nothing was sent",
+       "payload={'execution_id': 'fx-send-1792168417', 'instrument': 'MOCK:فولاد', 'isin': 'IRO1FOLD0001', 'side': 'buy', 'price': 5170.0, 'quantity': 50.0, 'mode': 'safe', 'dry_run': True}"
+      ]
+     }
+    }
+   }
+  },
+  "reconcile_unknown_id": {
+   "request": {
+    "method": "POST",
+    "path": "/api/execution/reconcile/fx-never-existed",
+    "body": {}
+   },
+   "response": {
+    "http": 404,
+    "content_type": "application/json",
+    "body": {
+     "detail": "INVALID_EXECUTION_ID: no such execution fx-never-existed"
+    }
+   }
+  },
+  "audit": {
+   "request": {
+    "method": "GET",
+    "path": "/api/execution/audit/fx-send-1792168417",
+    "body": null
+   },
+   "response": {
+    "http": 200,
+    "content_type": "application/json",
+    "body": {
+     "status": "success",
+     "execution_id": "fx-send-1792168417",
+     "found": true,
+     "events": [
+      {
+       "id": 10,
+       "execution_id": "fx-send-1792168417",
+       "written_at": "2026-10-16T16:33:37Z",
+       "at_epoch": 1792168417.2454858,
+       "kind": "dispatch_dry",
+       "status": "validated",
+       "order_state": "unknown",
+       "error_code": null,
+       "detail": "",
+       "broker": "mock",
+       "symbol": "فولاد",
+       "side": "buy",
+       "price": 5170.0,
+       "quantity": 50.0,
+       "filled": 0.0,
+       "mode": "safe",
+       "payload": {
+        "execution_id": "fx-send-1792168417",
+        "instrument": "MOCK:فولاد",
+        "isin": "IRO1FOLD0001",
+        "side": "buy",
+        "price": 5170.0,
+        "quantity": 50.0,
+        "mode": "safe",
+        "dry_run": true
+       }
+      }
+     ],
+     "latest": {
+      "id": 10,
+      "execution_id": "fx-send-1792168417",
+      "written_at": "2026-10-16T16:33:37Z",
+      "at_epoch": 1792168417.2454858,
+      "kind": "dispatch_dry",
+      "status": "validated",
+      "order_state": "unknown",
+      "error_code": null,
+      "detail": "",
+      "broker": "mock",
+      "symbol": "فولاد",
+      "side": "buy",
+      "price": 5170.0,
+      "quantity": 50.0,
+      "filled": 0.0,
+      "mode": "safe",
+      "payload": {
+       "execution_id": "fx-send-1792168417",
+       "instrument": "MOCK:فولاد",
+       "isin": "IRO1FOLD0001",
+       "side": "buy",
+       "price": 5170.0,
+       "quantity": 50.0,
+       "mode": "safe",
+       "dry_run": true
+      }
+     }
+    }
+   }
+  },
+  "ledger": {
+   "request": {
+    "method": "GET",
+    "path": "/api/execution/ledger",
+    "body": null
+   },
+   "response": {
+    "http": 200,
+    "content_type": "application/json",
+    "body": {
+     "status": "success",
+     "adapter": "mock",
+     "dry_run": true,
+     "live": false,
+     "kill_switch": "ARMED",
+     "open_ids": [],
+     "scheduled": [],
+     "records": [
+      {
+       "execution_id": "py-dis-1",
+       "broker": "mock",
+       "account": null,
+       "symbol": "فولاد",
+       "isin": "IRO1FOLD0001",
+       "side": "buy",
+       "price": 5000.0,
+       "quantity": 50.0,
+       "mode": "safe",
+       "status": "validated",
+       "scheduled_at": null,
+       "actual_send_at": null,
+       "actual_send_wall_ms": null,
+       "response_at": null,
+       "rtt_ms": null,
+       "drift_us": null,
+       "clock_offset_ms": null,
+       "broker_order_id": null,
+       "order_state": "unknown",
+       "filled_quantity": null,
+       "queue_position": null,
+       "volume_ahead": null,
+       "queue_as_of": null,
+       "queue_series": [],
+       "error_code": null,
+       "error_detail": "",
+       "attempts": 0,
+       "events": [
+        "dry-run: nothing was sent",
+        "payload={'execution_id': 'py-dis-1', 'instrument': 'MOCK:فولاد', 'isin': 'IRO1FOLD0001', 'side': 'buy', 'price': 5000.0, 'quantity': 50.0, 'mode': 'safe', 'dry_run': True}"
+       ]
+      },
+      {
+       "execution_id": "x-2i567oc7lr",
+       "broker": "mock",
+       "account": null,
+       "symbol": "فولاد",
+       "isin": "IRO1FOLD0001",
+       "side": "buy",
+       "price": 5170.0,
+       "quantity": 50.0,
+       "mode": "safe",
+       "status": "validated",
+       "scheduled_at": null,
+       "actual_send_at": null,
+       "actual_send_wall_ms": null,
+       "response_at": null,
+       "rtt_ms": null,
+       "drift_us": null,
+       "clock_offset_ms": null,
+       "broker_order_id": null,
+       "order_state": "unknown",
+       "filled_quantity": null,
+       "queue_position": null,
+       "volume_ahead": null,
+       "queue_as_of": null,
+       "queue_series": [],
+       "error_code": null,
+       "error_detail": "",
+       "attempts": 0,
+       "events": [
+        "dry-run: nothing was sent",
+        "payload={'execution_id': 'x-2i567oc7lr', 'instrument': 'MOCK:فولاد', 'isin': 'IRO1FOLD0001', 'side': 'buy', 'price': 5170.0, 'quantity': 50.0, 'mode': 'safe', 'dry_run': True}"
+       ]
+      },
+      {
+       "execution_id": "probe-dbg-1",
+       "broker": "mock",
+       "account": null,
+       "symbol": "فولاد",
+       "isin": "IRO1FOLD0001",
+       "side": "buy",
+       "price": 5170.0,
+       "quantity": 50.0,
+       "mode": "safe",
+       "status": "validated",
+       "scheduled_at": null,
+       "actual_send_at": null,
+       "actual_send_wall_ms": null,
+       "response_at": null,
+       "rtt_ms": null,
+       "drift_us": null,
+       "clock_offset_ms": null,
+       "broker_order_id": null,
+       "order_state": "unknown",
+       "filled_quantity": null,
+       "queue_position": null,
+       "volume_ahead": null,
+       "queue_as_of": null,
+       "queue_series": [],
+       "error_code": null,
+       "error_detail": "",
+       "attempts": 0,
+       "events": [
+        "dry-run: nothing was sent",
+        "payload={'execution_id': 'probe-dbg-1', 'instrument': 'MOCK:فولاد', 'isin': 'IRO1FOLD0001', 'side': 'buy', 'price': 5170.0, 'quantity': 50.0, 'mode': 'safe', 'dry_run': True}"
+       ]
+      },
+      {
+       "execution_id": "fx-nc-1",
+       "broker": "mock",
+       "account": null,
+       "symbol": "فولاد",
+       "isin": "IRO1FOLD0001",
+       "side": "buy",
+       "price": 5170.0,
+       "quantity": 50.0,
+       "mode": "safe",
+       "status": "validated",
+       "scheduled_at": null,
+       "actual_send_at": null,
+       "actual_send_wall_ms": null,
+       "response_at": null,
+       "rtt_ms": null,
+       "drift_us": null,
+       "clock_offset_ms": null,
+       "broker_order_id": null,
+       "order_state": "unknown",
+       "filled_quantity": null,
+       "queue_position": null,
+       "volume_ahead": null,
+       "queue_as_of": null,
+       "queue_series": [],
+       "error_code": null,
+       "error_detail": "",
+       "attempts": 0,
+       "events": [
+        "dry-run: nothing was sent",
+        "payload={'execution_id': 'fx-nc-1', 'instrument': 'MOCK:فولاد', 'isin': 'IRO1FOLD0001', 'side': 'buy', 'price': 5170.0, 'quantity': 50.0, 'mode': 'safe', 'dry_run': True}"
+       ]
+      },
+      {
+       "execution_id": "t-alone-1792167998",
+       "broker": "mock",
+       "account": null,
+       "symbol": "فولاد",
+       "isin": "IRO1FOLD0001",
+       "side": "buy",
+       "price": 5170.0,
+       "quantity": 50.0,
+       "mode": "safe",
+       "status": "validated",
+       "scheduled_at": null,
+       "actual_send_at": null,
+       "actual_send_wall_ms": null,
+       "response_at": null,
+       "rtt_ms": null,
+       "drift_us": null,
+       "clock_offset_ms": null,
+       "broker_order_id": null,
+       "order_state": "unknown",
+       "filled_quantity": null,
+       "queue_position": null,
+       "volume_ahead": null,
+       "queue_as_of": null,
+       "queue_series": [],
+       "error_code": null,
+       "error_detail": "",
+       "attempts": 0,
+       "events": [
+        "dry-run: nothing was sent",
+        "payload={'execution_id': 't-alone-1792167998', 'instrument': 'MOCK:فولاد', 'isin': 'IRO1FOLD0001', 'side': 'buy', 'price': 5170.0, 'quantity': 50.0, 'mode': 'safe', 'dry_run': True}"
+       ]
+      },
+      {
+       "execution_id": "t-dbl-1792167998",
+       "broker": "mock",
+       "account": null,
+       "symbol": "فولاد",
+       "isin": "IRO1FOLD0001",
+       "side": "buy",
+       "price": 5170.0,
+       "quantity": 50.0,
+       "mode": "safe",
+       "status": "validated",
+       "scheduled_at": null,
+       "actual_send_at": null,
+       "actual_send_wall_ms": null,
+       "response_at": null,
+       "rtt_ms": null,
+       "drift_us": null,
+       "clock_offset_ms": null,
+       "broker_order_id": null,
+       "order_state": "unknown",
+       "filled_quantity": null,
+       "queue_position": null,
+       "volume_ahead": null,
+       "queue_as_of": null,
+       "queue_series": [],
+       "error_code": null,
+       "error_detail": "",
+       "attempts": 0,
+       "events": [
+        "dry-run: nothing was sent",
+        "payload={'execution_id': 't-dbl-1792167998', 'instrument': 'MOCK:فولاد', 'isin': 'IRO1FOLD0001', 'side': 'buy', 'price': 5170.0, 'quantity': 50.0, 'mode': 'safe', 'dry_run': True}"
+       ]
+      },
+      {
+       "execution_id": "t-nc-1792167998",
+       "broker": "mock",
+       "account": null,
+       "symbol": "فولاد",
+       "isin": "IRO1FOLD0001",
+       "side": "buy",
+       "price": 5170.0,
+       "quantity": 50.0,
+       "mode": "safe",
+       "status": "validated",
+       "scheduled_at": null,
+       "actual_send_at": null,
+       "actual_send_wall_ms": null,
+       "response_at": null,
+       "rtt_ms": null,
+       "drift_us": null,
+       "clock_offset_ms": null,
+       "broker_order_id": null,
+       "order_state": "unknown",
+       "filled_quantity": null,
+       "queue_position": null,
+       "volume_ahead": null,
+       "queue_as_of": null,
+       "queue_series": [],
+       "error_code": null,
+       "error_detail": "",
+       "attempts": 0,
+       "events": [
+        "dry-run: nothing was sent",
+        "payload={'execution_id': 't-nc-1792167998', 'instrument': 'MOCK:فولاد', 'isin': 'IRO1FOLD0001', 'side': 'buy', 'price': 5170.0, 'quantity': 50.0, 'mode': 'safe', 'dry_run': True}"
+       ]
+      },
+      {
+       "execution_id": "fx-send-1792168417",
+       "broker": "mock",
+       "account": null,
+       "symbol": "فولاد",
+       "isin": "IRO1FOLD0001",
+       "side": "buy",
+       "price": 5170.0,
+       "quantity": 50.0,
+       "mode": "safe",
+       "status": "validated",
+       "scheduled_at": null,
+       "actual_send_at": null,
+       "actual_send_wall_ms": null,
+       "response_at": null,
+       "rtt_ms": null,
+       "drift_us": null,
+       "clock_offset_ms": null,
+       "broker_order_id": null,
+       "order_state": "unknown",
+       "filled_quantity": null,
+       "queue_position": null,
+       "volume_ahead": null,
+       "queue_as_of": null,
+       "queue_series": [],
+       "error_code": null,
+       "error_detail": "",
+       "attempts": 0,
+       "events": [
+        "dry-run: nothing was sent",
+        "payload={'execution_id': 'fx-send-1792168417', 'instrument': 'MOCK:فولاد', 'isin': 'IRO1FOLD0001', 'side': 'buy', 'price': 5170.0, 'quantity': 50.0, 'mode': 'safe', 'dry_run': True}"
+       ]
+      },
+      {
+       "execution_id": "fx-noconf-1792168417",
+       "broker": "mock",
+       "account": null,
+       "symbol": "فولاد",
+       "isin": "IRO1FOLD0001",
+       "side": "buy",
+       "price": 5170.0,
+       "quantity": 50.0,
+       "mode": "safe",
+       "status": "validated",
+       "scheduled_at": null,
+       "actual_send_at": null,
+       "actual_send_wall_ms": null,
+       "response_at": null,
+       "rtt_ms": null,
+       "drift_us": null,
+       "clock_offset_ms": null,
+       "broker_order_id": null,
+       "order_state": "unknown",
+       "filled_quantity": null,
+       "queue_position": null,
+       "volume_ahead": null,
+       "queue_as_of": null,
+       "queue_series": [],
+       "error_code": null,
+       "error_detail": "",
+       "attempts": 0,
+       "events": [
+        "dry-run: nothing was sent",
+        "payload={'execution_id': 'fx-noconf-1792168417', 'instrument': 'MOCK:فولاد', 'isin': 'IRO1FOLD0001', 'side': 'buy', 'price': 5170.0, 'quantity': 50.0, 'mode': 'safe', 'dry_run': True}"
+       ]
+      }
+     ]
+    }
+   }
+  },
+  "halt": {
+   "request": {
+    "method": "POST",
+    "path": "/api/execution/halt",
+    "body": {}
+   },
+   "response": {
+    "http": 200,
+    "content_type": "application/json",
+    "body": {
+     "status": "success",
+     "kill_switch": "HALTED",
+     "halted": true,
+     "reason": "دستوری",
+     "aborted_schedules": 0,
+     "dry_run": true,
+     "adapter": "mock"
+    }
+   }
+  },
+  "dispatch_while_halt": {
+   "request": {
+    "method": "POST",
+    "path": "/api/execution/dispatch",
+    "body": {
+     "execution_id": "fx-halted-1792168417",
+     "symbol": "فولاد",
+     "side": "buy",
+     "mode": "safe",
+     "price": 5170,
+     "quantity": 50,
+     "confirmed": true,
+     "mock_instrument": true
+    }
+   },
+   "response": {
+    "http": 200,
+    "content_type": "application/json",
+    "body": {
+     "status": "error",
+     "code": "HALTED",
+     "detail": "preflight failed",
+     "checks": {
+      "execution_id": "PASS",
+      "instrument": "PASS",
+      "side": "PASS",
+      "price": "PASS",
+      "quantity": "PASS",
+      "session": "UNKNOWN",
+      "balance": "UNKNOWN",
+      "duplicate": "PASS",
+      "place": "PASS",
+      "kill_switch": "FAIL"
+     },
+     "execution_id": "fx-halted-1792168417"
+    }
+   }
+  },
+  "resume": {
+   "request": {
+    "method": "POST",
+    "path": "/api/execution/resume",
+    "body": {}
+   },
+   "response": {
+    "http": 200,
+    "content_type": "application/json",
+    "body": {
+     "status": "success",
+     "kill_switch": "ARMED",
+     "halted": false,
+     "reason": "ادامهٔ دستوری",
+     "open_ids": []
+    }
+   }
+  },
+  "unregistered_path": {
+   "request": {
+    "method": "GET",
+    "path": "/api/execution/definitely-not-a-route",
+    "body": null
+   },
+   "response": {
+    "http": 200,
+    "content_type": "text/html; charset=utf-8",
+    "body": {
+     "__non_json__": "<!doctype html>\n<html lang=\"fa\" dir=\"rtl\">\n  <head>\n    <meta charset=\"UTF-8\" />\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />\n    <title>ترمینال تحلیل بورس</title>\n    "
+    }
+   }
+  }
+ }
+}
