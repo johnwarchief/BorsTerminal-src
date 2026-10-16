@@ -266,6 +266,15 @@ export function deriveGate(status: ExecutionStatus | null | undefined, source: G
 }
 
 /** وضعیتِ اتصالِ اجرا یک‌بار در هر نشستِ بازار کافی است؛ ثابت‌تر از آن نیست */
+export function useBrokerConnect() {
+  return useQuery({
+    queryKey: ['execution-connect'],
+    queryFn: ({ signal }) => connectApi.status(signal),
+    refetchInterval: 60_000,
+  });
+}
+
+
 export function useExecutionStatus() {
   const q = useQuery({
     queryKey: ['execution-status'],
@@ -335,6 +344,64 @@ export const orderApi = {
   putSession: (token: string) => http<Record<string, unknown>>('/api/execution/session',
     { method: 'POST', body: { token }, ...NO_RETRY }),
   delSession: () => http<Record<string, unknown>>('/api/execution/session',
+    { method: 'DELETE', ...NO_RETRY }),
+};
+
+/** وضعیتِ صریحِ نشستِ کارگزاری — همان چهار حالتِ `execution_connect.py`.
+ *  «CONNECTED» فقط از پرسشِ واقعی می‌آید؛ HTMLِ صفحۀ ورود هرگز دلیلِ اتصال نیست. */
+export type ConnectState = 'CONNECTED' | 'DISCONNECTED' | 'EXPIRED' | 'UNKNOWN';
+
+export const CONNECT_LABEL: Record<ConnectState, string> = {
+  CONNECTED: 'متصل',
+  DISCONNECTED: 'قطع',
+  EXPIRED: 'منقضی',
+  UNKNOWN: 'نامعلوم',
+};
+
+const BrowserSchema = z.object({
+  open: z.boolean().nullish(),
+  pid: z.number().nullish(),
+  url: z.string().nullish(),
+  profile_kept: z.boolean().nullish(),
+  opened_seconds_ago: z.number().nullish(),
+}).nullish();
+
+const VerifySchema = z.object({
+  state: z.string().nullish(),
+  reason: z.string().nullish(),
+  blocked_reason: z.string().nullish(),
+  checked_at: z.string().nullish(),
+  live: z.boolean().nullish(),
+  token_present: z.boolean().nullish(),
+  adapter: z.string().nullish(),
+}).nullish();
+
+export const ConnectSchema = z.object({
+  status: z.string(),
+  states_supported: z.array(z.string()).nullish(),
+  browser: BrowserSchema,
+  allowed_hosts: z.array(z.string()).nullish(),
+  login_hosts_configured: z.array(z.string()).nullish(),
+  login_host_blocked_reason: z.string().nullish(),
+  last_verify: VerifySchema,
+  secrets_stored: z.boolean().nullish(),
+  detail: z.string().nullish(),
+  // پاسخ‌هایِ خطا (NO_LOGIN_HOST / BROWSER_REFUSED) کلیدهایِ دیگری هم دارند؛
+  // بی‌catchall کلِ پاسخ درِ parse می‌افتاد و رابط «نرسید» می‌گفت.
+}).catchall(z.unknown());
+
+export type BrokerConnect = z.infer<typeof ConnectSchema>;
+
+export const connectApi = {
+  status: (signal?: AbortSignal) => http<BrokerConnect>('/api/execution/connect',
+    { schema: ConnectSchema, signal }),
+  openBrowser: (url?: string) => http<Record<string, unknown>>('/api/execution/connect/browser',
+    { method: 'POST', body: url ? { url } : {}, ...NO_RETRY }),
+  closeBrowser: () => http<Record<string, unknown>>('/api/execution/connect/browser',
+    { method: 'DELETE', ...NO_RETRY }),
+  verify: () => http<Record<string, unknown>>('/api/execution/connect/verify',
+    { method: 'POST', ...NO_RETRY }),
+  disconnect: () => http<Record<string, unknown>>('/api/execution/connect',
     { method: 'DELETE', ...NO_RETRY }),
 };
 
