@@ -764,7 +764,12 @@ class EasyTraderAdapter(BrokerAdapter):
             self._session = SessionStatus(state, checked_at=self._iso())
             raise BrokerError(v.error or ErrorCode.UNKNOWN_RESULT, v.detail,
                               broker_message=v.message)
-        env, _ = _envelope(resp.body)
+        env, rows = _envelope(resp.body)
+        if env is None and rows is None:
+            self._session = SessionStatus(SessionState.ERROR, checked_at=self._iso())
+            raise BrokerError(ErrorCode.UNKNOWN_RESULT,
+                              "پاسخِ ۲۰۰ ولی بدنه پاکتِ API نبود — اتصال تأیید نشد",
+                              broker_message="unreadable body")
         label = _text(_pick_any(env, "accountCode", "clientCode", "code"))
         self._ingest_rows(resp)
         self._session = SessionStatus(SessionState.CONNECTED,
