@@ -42,7 +42,7 @@ export function Topbar() {
   };
 
   return (
-    <header className="glass-strip sticky top-0 z-40 flex h-9 items-center justify-between px-3 sm:px-4">
+    <header className="glass-strip sticky top-0 z-40 flex h-11 items-center justify-between px-3 sm:px-4 md:h-9">
       {/* سمت راست: نشانِ وضعیت (اتصال ≠ تازگی) + Breadcrumb ناوبری */}
       <div className="flex items-center gap-2 overflow-hidden">
         <h1 className="sr-only">{title}</h1>
@@ -92,7 +92,7 @@ export function Topbar() {
           <button
             type="button"
             onClick={() => window.dispatchEvent(new Event(PALETTE_OPEN_EVENT))}
-            className="flex items-center gap-2 rounded-lg border border-border-c bg-bg-card/70 px-2.5 py-1 text-2xs text-text-secondary transition-all hover:border-border-accent hover:text-accent-blue hover:bg-bg-card shadow-2xs"
+            className="flex items-center gap-2 rounded-lg border border-border-c bg-bg-card/70 px-2.5 py-1 text-2xs text-text-secondary transition-all hover:border-border-accent hover:text-accent-blue hover:bg-bg-card shadow-2xs max-md:min-h-[40px]"
             aria-label="باز کردن پالت فرمان"
           >
             <SearchIcon size={12} className="text-neon-cyan" />
@@ -124,7 +124,7 @@ function NoticeBell() {
       title="مرکزِ اعلان: اطلاعیه‌هایِ کدال با لینکِ اصلی و دلیلِ اهمیت"
       data-testid="topbar-notifications"
       data-state={known ? 'ok' : 'unknown'}
-      className="relative flex items-center gap-1 rounded-lg border border-border-c bg-bg-card/70 px-2 py-1 text-2xs text-text-secondary transition-all hover:border-border-accent hover:text-accent-blue"
+      className="relative flex items-center gap-1 rounded-lg border border-border-c bg-bg-card/70 px-2 py-1 text-2xs text-text-secondary transition-all hover:border-border-accent hover:text-accent-blue max-md:min-h-[40px]"
     >
       <BellIcon size={13} className="text-accent-yellow" />
       {known && unread > 0 ? (

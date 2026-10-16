@@ -3,6 +3,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { Sidebar } from '../components/Sidebar';
 import { Topbar } from '../components/Topbar';
 import { WorkspaceTabs } from '../components/WorkspaceTabs';
+import { MobileNav } from '../components/MobileNav';
 import { SymbolContextStrip } from '../components/SymbolContextStrip';
 import { CommandPalette } from '../components/CommandPalette';
 import { SymbolInspector } from '../../widgets/SymbolInspector';
@@ -11,6 +12,8 @@ import { useEffect } from 'react';
 import { useSymbolStore } from '@shared/stores/symbolStore';
 import { useActiveTab } from '@shared/stores/workspaceStore';
 import { useAuthStore } from '@shared/stores/authStore';
+import { useMediaQuery } from '@shared/lib/useMediaQuery';
+import { MEDIA_MOBILE } from '@shared/lib/breakpoints';
 import { useMarketStore } from '@shared/stores/marketStore';
 import { startIdleGate } from '@shared/lib/idleGate';
 import { useFlashClock } from '@shared/lib/flashClock';
@@ -31,6 +34,11 @@ export function AppShell() {
   const activeTab = useActiveTab();
   const pathname = useLocation().pathname;
   const qc = useQueryClient();
+  // بندِ ۲.۳ مأموریتِ System ۲: درِ گوشی دوِ مرجعِ ناوبری نداریم. ریلِ آیکونِ سایدبار
+  // درِ ۳۹۰px هم ۵۶px عرضِ جدولِ کارت را می‌خورد وِ هم ۱۱ کنترلِ ۳۸×۴۱px (زیرِ کفِ
+  // لمس) بهِ هرِ صفحّه اضافه می‌کرد -- اندازه‌گیریِ `tools/ui_mobile_probe.mjs`.
+  // مقصدها وِ کنترل‌هایِ حساب همگی ازِ `MobileNav` + `AccountControls` می‌رسند.
+  const isMobile = useMediaQuery(MEDIA_MOBILE);
 
   // طولِ فلاشِ اعداد از ریتمِ واقعیِ تازۀِ تابلو می‌آید (رأیِ مالک: ۵s ← ~۳٫۵s)
   useFlashClock();
@@ -77,7 +85,7 @@ export function AppShell() {
   // (.app-content / .app-main در index.css) — بدون هک جاوااسکریپت در رندر.
   return (
     <div className="flex h-dvh overflow-hidden bg-bg-primary text-text-primary">
-      <Sidebar />
+      {!isMobile && <Sidebar />}
       <div
         className="app-content flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto overflow-x-hidden transition-[padding] duration-200 ease-out"
         data-inspector={inspectorOpen ? 'open' : 'closed'}
@@ -99,6 +107,7 @@ export function AppShell() {
         </main>
       </div>
       <SymbolInspector />
+      <MobileNav />
       <CommandPalette />
     </div>
   );

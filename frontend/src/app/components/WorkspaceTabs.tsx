@@ -202,7 +202,7 @@ export function WorkspaceTabs() {
                 aria-label={`بستن تب ${tabTitle(tab)}`}
                 data-testid={`ws-tab-close-${tab.id}`}
                 onClick={(e) => { e.stopPropagation(); doClose(tab.id); }}
-                className="shrink-0 rounded p-0.5 text-text-muted opacity-60 transition hover:bg-accent-red/15 hover:text-accent-red hover:opacity-100 focus-visible:ring-2 focus-visible:ring-accent-blue"
+                className="shrink-0 rounded p-0.5 text-text-muted opacity-60 transition hover:bg-accent-red/15 hover:text-accent-red hover:opacity-100 focus-visible:ring-2 focus-visible:ring-accent-blue max-md:min-h-[36px] max-md:min-w-[36px] max-md:p-2"
               >
                 <span aria-hidden="true" className="text-3xs leading-none">×</span>
               </button>
@@ -218,7 +218,7 @@ export function WorkspaceTabs() {
           aria-label="تب تازه"
           title="تب تازه (Ctrl+T)"
           data-testid="ws-tab-new"
-          className="rounded px-2 text-sm font-black text-text-secondary transition hover:bg-accent-blue/12 hover:text-accent-blue focus-visible:ring-2 focus-visible:ring-accent-blue"
+          className="rounded px-2 text-sm font-black text-text-secondary transition hover:bg-accent-blue/12 hover:text-accent-blue focus-visible:ring-2 focus-visible:ring-accent-blue max-md:min-h-[40px]"
         >
           <span aria-hidden="true">+</span>
         </button>

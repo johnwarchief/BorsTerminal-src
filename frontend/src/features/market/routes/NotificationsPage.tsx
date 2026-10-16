@@ -96,7 +96,7 @@ function NoticeRow({ n, read, onOpen }: { n: NoticeItem; read: boolean; onOpen: 
             rel="noreferrer noopener"
             onClick={onOpen}
             data-testid="notice-open"
-            className="rounded-md border border-border-c px-1.5 py-0.5 text-3xs font-bold text-accent-blue hover:border-accent-blue"
+            className="rounded-md border border-border-c px-1.5 py-0.5 text-3xs font-bold text-accent-blue hover:border-accent-blue max-md:inline-flex max-md:min-h-[40px] max-md:min-w-[44px] max-md:items-center max-md:justify-center"
             title="درِ خودِ کدال باز می‌شود (لینکِ اصلیِ اطلاعیه)"
           >
             منبع ↗
@@ -105,7 +105,7 @@ function NoticeRow({ n, read, onOpen }: { n: NoticeItem; read: boolean; onOpen: 
             <span className="text-3xs text-text-muted" data-testid="notice-read-mark">خوانده شد</span>
           ) : (
             <button type="button" onClick={onOpen} data-testid="notice-mark"
-                    className="rounded-md border border-border-c px-1.5 py-0.5 text-3xs text-text-muted hover:text-text-primary">
+                    className="rounded-md border border-border-c px-1.5 py-0.5 text-3xs text-text-muted hover:text-text-primary max-md:min-h-[40px] max-md:min-w-[44px]">
               خوانده شد
             </button>
           )}
