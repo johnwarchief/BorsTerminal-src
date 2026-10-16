@@ -208,6 +208,17 @@ else
     step "webview-$LABEL-a11y" PASS "متنِ واقعیِ برنامه درِ درختِ دسترس‌پذیری: $UIHITS"
   elif [ -n "$KEYGUARD" ]; then
     step "webview-$LABEL-a11y" NOT_VERIFIED "درختِ uiautomator مالِ قفلِ صفحه بود ($KEYGUARD)؛ متنِ برنامه دیده نشد"
+  elif [ "$FOCUS_OK" = "no" ]; then
+    # رانِ 38819805470: mCurrentFocus=null و درختِ uiautomator مالِ launcher3 بود
+    # («Home settings/Wallpapers/Widgets»). درِ آن حالت هیچ screenshot و هیچ dump
+    # ازِ برنامه وجود ندارد؛ پس قرمزِ آن ران رأیِ کاوش بود، نه رأیِ برنامه.
+    # سنجه‌ای که پنجرۀ هدف را ندیده نمی‌تواند بگوید «متنِ برنامه نیست».
+    { echo "== focus never arrived"; echo "focus=$FOCUS_NOTE"
+      echo "== windows"; adb shell dumpsys window 2>/dev/null | grep -iE "mCurrentFocus|mFocusedApp" | head -4
+      echo "== input dispatcher"; adb logcat -d 2>/dev/null | grep -iE "no window has focus|Waiting because" | tail -4
+      echo "== texts"; grep -oE 'text="[^"]{2,60}"' "$OUT/ui-$LABEL.xml" 2>/dev/null | sed 's/text=//' | sort -u | head -12
+    } > "$OUT/a11y-$LABEL-nofocus.txt" 2>&1
+    step "webview-$LABEL-a11y" NOT_VERIFIED "پنجرۀِ $PKG هرگز فوکوس نگرفت (focus=$FOCUS_NOTE) ⇒ uiautomator مالِ صفحۀِ دیگر است؛ شواهد: $OUT/a11y-$LABEL-nofocus.txt"
   else
     # FAIL بی‌مدرک ارزشِ تشخیص ندارد: چه چیزی *واقعاً* رویِ صفحه بود؟
     { echo "== node count: $(grep -oE '<node ' "$OUT/ui-$LABEL.xml" | wc -l)"
@@ -286,6 +297,25 @@ elif [ "${ANR_OTHER:-0}" != 0 ]; then
 else
   step anr PASS "ANR=0 (نه ما، نه هیچِ پروسه‌ای)"
 fi
+# ── تشخیص، نه فقط رأی ──────────────────────────────────────────────────────
+# سه عدد که رانِ پیشین (`webview-on-emulator`, run 38819805470) درِ logcat داشت
+# ولی هیچ‌کدام درِ گزارش نمی‌آمد: زمانِ اولین فریم، علتِ ANR، و فشارِ CPU.
+# آن‌ها تنها چیزی است که بین «اپ ما کند است» و «AVDِ دوهسته‌ای با بافتِ نرم
+# نمی‌رسد» تشخیص می‌دهد.
+DISPL=$(grep -m1 "Displayed $PKG" "$OUT/logcat.txt" 2>/dev/null | grep -oE '\+[0-9]+m?s[0-9]*m?s?' | head -1)
+[ -n "$DISPL" ] || DISPL="not-found"
+step boot_displayed INFO "اولین فریمِ $PKG پس ازِ ${DISPL} (ActivityTaskManager)"
+if [ "${ANR_OURS:-0}" != 0 ]; then
+  # بلوکِ خودِ ANR، نه اولین ANRِ فایل: رانِ 38819805470 سه ANR داشت (media.module،
+  # دو‌بار com.android.phone) و `-m1` درختِ فشارِ آن‌ها را به‌جایِ بلوکِ ما می‌داد.
+  BLOCK=$(grep -A40 "ANR in $PKG" "$OUT/logcat.txt" | sed 's/.*ActivityManager( *[0-9]*): //')
+  REASON=$(printf '%s\n' "$BLOCK" | grep -m1 "Reason:" | sed 's/.*Reason: //' | json_escape)
+  NOWIN=$(grep -cE "no window has focus but ActivityRecord.*$PKG|Application does not have a focused window" "$OUT/logcat.txt" 2>/dev/null || true)
+  step anr_reason INFO "علت: ${REASON:-ناشناخته} · سطرهایِ «no window has focus» برایِ اپ: ${NOWIN:-0}"
+  PSI=$(printf '%s\n' "$BLOCK" | grep -A2 "pressure/cpu" | grep -m1 "some" | json_escape)
+  CPULINE=$(printf '%s\n' "$BLOCK" | grep -m1 "TOTAL: .*user + " | sed 's/.*TOTAL://' | json_escape)
+  step anr_pressure INFO "psi-cpu some: ${PSI:-none} · TOTAL ${CPULINE:-none}"
+fi
 [ "${LEAK:-0}" = 0 ] && step logcat_secrets PASS "hit=$LEAK (خطوطِ سیستمی شمرده نشد)" || step logcat_secrets FAIL "hit=$LEAK → $OUT/leak_hits.txt"
 
 # ── خلاصه ────────────────────────────────────────────────────────────────────
@@ -296,7 +326,8 @@ if command -v jq >/dev/null 2>&1; then
     | {device:{model:$model, android:$android, api:$api}, apk:$apk, steps:$steps,
        counts:{pass:         [$steps[]|select(.result=="PASS")]|length,
                fail:         [$steps[]|select(.result=="FAIL")]|length,
-               not_verified: [$steps[]|select(.result=="NOT_VERIFIED")]|length}}
+               not_verified: [$steps[]|select(.result=="NOT_VERIFIED")]|length,
+               info:         [$steps[]|select(.result=="INFO")]|length}}
   ' "$OUT/steps.tsv" > "$SUM"
 else
   { echo '{'; echo "  \"device\": \"$MODEL / android $RELEASE (api $SDK)\",";
