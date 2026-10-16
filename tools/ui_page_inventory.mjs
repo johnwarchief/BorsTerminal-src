@@ -87,6 +87,9 @@ const inventory = () => {
   const px = (v) => Math.round(v);
   const txt = (el) => (el.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 60);
   const visible = (r) => r.width > 1 && r.height > 1;
+  // آف‌کانواس «دیدنی» نیست: پنجرۀِ جزئیات درِ حالتِ بسته باِ translate بیرونِ
+  // صحنه می‌ماند وِ متن‌هایِ ۸٫۵ پیکسلی‌اش شمارۀِ «متنِ ریزِ صفحه» را بالا می‌برد.
+  const onCanvas = (r) => r.right > 0 && r.left < VPW && r.bottom > 0 && r.top < VPH;
 
   const inFlow = (el) => {
     let n = el;
@@ -104,7 +107,7 @@ const inventory = () => {
   for (const el of document.querySelectorAll('h1,h2,h3,h4,h5,[role="heading"]')) {
     if (!inFlow(el)) continue;
     const r = el.getBoundingClientRect();
-    if (!visible(r)) continue;
+    if (!visible(r) || !onCanvas(r)) continue;
     const level = Number(el.getAttribute('aria-level') || el.tagName.replace(/^H/i, '') || 0);
     heads.push({
       level, text: txt(el), top: px(r.top), fontPx: Number(parseFloat(getComputedStyle(el).fontSize).toFixed(1)),
@@ -118,7 +121,7 @@ const inventory = () => {
   for (const el of document.querySelectorAll('button,a[href],[role="combobox"],[role="tab"],select,input[type="search"]')) {
     if (!inFlow(el)) continue;
     const r = el.getBoundingClientRect();
-    if (!visible(r)) continue;
+    if (!visible(r) || !onCanvas(r)) continue;
     const label = (el.getAttribute('aria-label') || txt(el) || el.getAttribute('placeholder') || '').trim();
     actions.push({
       tag: el.tagName.toLowerCase(), role: el.getAttribute('role') || null, label: label.slice(0, 40),
@@ -133,7 +136,7 @@ const inventory = () => {
   const tables = [];
   for (const t of document.querySelectorAll('table')) {
     const r = t.getBoundingClientRect();
-    if (!visible(r)) continue;
+    if (!visible(r) || !onCanvas(r)) continue;
     const headRow = t.querySelector('thead tr, tr');
     const headers = headRow ? Array.from(headRow.querySelectorAll('th,td')).map(txt).filter(Boolean) : [];
     tables.push({
@@ -155,7 +158,7 @@ const inventory = () => {
     if (el.children.length) return false;
     if (!inFlow(el)) return false;
     const r = el.getBoundingClientRect();
-    if (!visible(r) || r.top < 0 || r.top > VPH) return false;
+    if (!visible(r) || !onCanvas(r)) return false;
     return NUM.test((el.textContent || '').trim());
   }).length;
 
@@ -168,11 +171,14 @@ const inventory = () => {
     if (s.length < 2) continue;
     if (!inFlow(el)) continue;
     const r = el.getBoundingClientRect();
-    if (!visible(r) || r.top > VPH) continue;
+    if (!visible(r) || !onCanvas(r)) continue;
     const f = parseFloat(getComputedStyle(el).fontSize);
     if (f < 10.5) {
       tinyCount += 1;
-      if (tiny.length < 6) tiny.push({ text: txt(el), fontPx: Number(f.toFixed(1)), top: px(r.top) });
+      if (tiny.length < 6) tiny.push({
+        text: txt(el), fontPx: Number(f.toFixed(1)), top: px(r.top),
+        node: `${el.tagName.toLowerCase()}${el.getAttribute('data-testid') ? `[${el.getAttribute('data-testid')}]` : ''}.${(el.getAttribute('class') || '').split(' ').slice(0, 4).join('.')}`,
+      });
     }
   }
 
@@ -187,10 +193,16 @@ const inventory = () => {
     if (!/hidden|clip/.test(cs.overflowX + ' ' + cs.overflowY)) continue;
     const r = el.getBoundingClientRect();
     if (r.width <= 1 || r.height <= 1) continue;
+    if (r.right <= 0 || r.left >= VPW) continue;
     if (el.scrollWidth <= r.width + 1) continue;
     const s = (el.textContent || '').trim();
     if (!s || s.endsWith('…') || s.endsWith('...')) continue;
-    clipped.push({ text: s.slice(0, 40), scrollWidth: px(el.scrollWidth), clientWidth: px(r.width) });
+    clipped.push({
+      text: s.slice(0, 40), scrollWidth: px(el.scrollWidth), clientWidth: px(r.width),
+      // هویتِ گره: بدونِ آن، «۹ بریدگی» نمی‌گوید کدامِ عنصر وِ اصلاح حدس می‌شود.
+      node: `${el.tagName.toLowerCase()}${el.getAttribute('data-testid') ? `[${el.getAttribute('data-testid')}]` : ''}.${el.className.toString().split(' ').slice(0, 4).join('.')}`,
+      ellipsis: cs.textOverflow === 'ellipsis',
+    });
     if (clipped.length > 8) break;
   }
 
@@ -201,7 +213,7 @@ const inventory = () => {
     if (!/(auto|scroll)/.test(cs.overflowY)) continue;
     if (el.scrollHeight <= el.clientHeight + 12) continue;
     const r = el.getBoundingClientRect();
-    if (!visible(r)) continue;
+    if (!visible(r) || !onCanvas(r)) continue;
     scrollers.push({
       sel: el.getAttribute('data-testid') || el.getAttribute('data-shell') || el.tagName.toLowerCase() + '.' + el.className.toString().split(' ')[0],
       scrollH: px(el.scrollHeight), clientH: px(el.clientHeight), top: px(r.top),
@@ -278,7 +290,7 @@ for (const r of ROUTES) {
 await browser.close();
 
 const result = {
-  base: BASE, buildLabel: LABEL, bundle, viewport: VIEWPORT, browser: EXE,
+  base: BASE, buildLabel: LABEL, bundle, methodVersion: 'v3-clip-node-identity', viewport: VIEWPORT, browser: EXE,
   generatedAt: new Date().toISOString(), consoleErrors,
   method: {
     density: 'numberCellsInFirstScreen = سلول‌هایِ عددیِ دیدنی درِ ۰ تاِ innerHeight (برازِ «چگالیِ داده درِ یکِ screenful»)',

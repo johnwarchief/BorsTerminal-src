@@ -13,7 +13,7 @@
 //    جایِ صفحه دو خوانشِ متفاوت از یک مفهوم ندارند.
 // ۳) `no_source` / `blockers` بخشی از قراردادند، نه خطا: منبعِ نرسیده با علت
 //    می‌آید و رابط همان علت را می‌نویسد.
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, type QueryFunctionContext } from '@tanstack/react-query';
 import { z } from 'zod';
 import { http } from '@shared/api/http';
 import { sessionPollMs } from '@shared/lib/marketHours';
@@ -312,16 +312,22 @@ export const IndexCardsSchema = z.object({
 });
 export type IndexCardsFeed = z.infer<typeof IndexCardsSchema>;
 
-export function useMstatIndexCards(days = 30) {
-  return useQuery({
+/** کلید، آدرس وِ قراردادِ کارت‌های شاخص — یکِ تعریف. پیش‌خوانیِ route وِ isِ hook
+ *  همینِ شیء را می‌خوانند؛ کلیدِ دوم یعنی دو پرسشِ تکراری رویِ یکِ داده. */
+export function indexCardsQueryOptions(days = 30) {
+  return {
     queryKey: ['mstat-indexcards', days],
-    queryFn: ({ signal }) =>
+    queryFn: ({ signal }: QueryFunctionContext) =>
       http<IndexCardsFeed>(`/api/mstat/indexcards?days=${days}`, {
         schema: IndexCardsSchema,
         signal,
       }),
     ...poll,
-  });
+  };
+}
+
+export function useMstatIndexCards(days = 30) {
+  return useQuery(indexCardsQueryOptions(days));
 }
 
 // ═══════════════════════════════════ طلا، سکه و صندوق‌های طلا (صفحۀ ۱/۳/۱۰/۱۱/۱۲)

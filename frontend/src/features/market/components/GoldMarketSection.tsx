@@ -172,7 +172,7 @@ function GoldOverview({ data }: { data: GoldMarketFeed }) {
                 width={92}
                 height={22}
               />
-              <span className="truncate text-3xs text-text-muted" title={s.name ?? undefined}>
+              <span className="line-clamp-2 break-words text-3xs leading-4 text-text-muted" title={s.name ?? undefined}>
                 {s.name}
               </span>
             </div>

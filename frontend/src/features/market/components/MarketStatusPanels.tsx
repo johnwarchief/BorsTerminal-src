@@ -135,8 +135,13 @@ export function BreadthHistogram({
               // نامِ کامل درِ titleِ همان میله است.
               const show = i % 3 === 0 || i === buckets.length - 1;
               const short = show ? (b.label.includes(' تا ') ? b.label.split(' تا ')[0] : b.label) : '';
+              const edge = i === 0 || i === buckets.length - 1;
               return (
-                <span key={b.key} className="min-w-0 flex-1 truncate text-center" title={b.label}>
+                <span
+                  key={b.key}
+                  className={`min-w-0 flex-1 ${edge ? `overflow-visible whitespace-nowrap ${i === 0 ? 'text-start' : 'text-end'}` : 'truncate text-center'}`}
+                  title={b.label}
+                >
                   {short}
                 </span>
               );

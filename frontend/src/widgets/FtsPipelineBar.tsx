@@ -81,7 +81,7 @@ export function FtsPipelineBar() {
       >
         {/* سمت راست (RTL): نماد و ۴ مرحله */}
         <div className="flex items-center gap-1.5 overflow-hidden">
-          <div className="flex items-center gap-1 rounded-md border border-accent-blue/30 bg-accent-blue/10 px-1.5 py-0.5 text-[11px] font-black text-accent-blue shrink-0">
+          <div className="flex items-center gap-1 rounded-md border border-accent-blue/30 bg-accent-blue/10 px-1.5 py-0.5 text-3xs font-black text-accent-blue shrink-0">
             <span>{symbol}</span>
           </div>
 
@@ -104,7 +104,7 @@ export function FtsPipelineBar() {
                   <span className="text-text-muted">{toFaDigits(s.step)}.</span>
                   <span>{s.title}</span>
                   <span
-                    className={`flex h-3 w-3 items-center justify-center rounded-full text-[9px] font-black ${
+                    className={`flex h-3 w-3 items-center justify-center rounded-full text-3xs font-black ${
                       s.status === 'pass'
                         ? 'bg-accent-green text-black'
                         : s.status === 'fail'
@@ -122,7 +122,7 @@ export function FtsPipelineBar() {
 
         {/* سمت چپ (RTL): افق معاملاتی و دکمه باز کردن مشاور تشریحی */}
         <div className="flex items-center gap-1.5 ms-auto shrink-0">
-          <span className="hidden md:inline text-[10px] text-text-muted">
+          <span className="hidden md:inline text-3xs text-text-muted">
             افق: <span className="font-bold text-accent-blue">{HORIZON_LABELS[horizon].badge}</span>
           </span>
 
@@ -130,7 +130,7 @@ export function FtsPipelineBar() {
             type="button"
             onClick={() => setModalOpen(true)}
             data-testid="fts-open-copilot-btn"
-            className="flex items-center gap-1 rounded-md border border-accent-blue/50 bg-accent-blue/20 px-2 py-0.5 text-[11px] font-black text-accent-blue hover:bg-accent-blue hover:text-black transition-all shadow-[0_0_8px_rgba(56,189,248,0.15)]"
+            className="flex items-center gap-1 rounded-md border border-accent-blue/50 bg-accent-blue/20 px-2 py-0.5 text-3xs font-black text-accent-blue hover:bg-accent-blue hover:text-black transition-all shadow-[0_0_8px_rgba(56,189,248,0.15)]"
           >
             <span className="text-xs">🧠</span>
             <span className="hidden sm:inline">مشاور تحلیلی FTS</span>
@@ -141,7 +141,7 @@ export function FtsPipelineBar() {
             type="button"
             onClick={clearSymbol}
             title="بستن نماد انتخابی"
-            className="flex h-5 w-5 items-center justify-center rounded border border-border-c/60 text-text-muted hover:border-accent-red hover:text-accent-red transition-colors text-[10px]"
+            className="flex h-5 w-5 items-center justify-center rounded border border-border-c/60 text-text-muted hover:border-accent-red hover:text-accent-red transition-colors text-3xs"
           >
             ✕
           </button>

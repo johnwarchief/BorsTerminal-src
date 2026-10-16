@@ -30,17 +30,17 @@ export function SidebarWatchlist({ onSelect }: { onSelect: (s: string) => void }
       </div>
 
       {/* سرستون ۳ گانه سبک تریدینگ‌ویو */}
-      <div className="grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-1.5 px-2 py-1 text-[10px] font-bold text-[var(--text-muted)] border-b border-[var(--hairline)]">
+      <div className="grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-1.5 px-2 py-1 text-3xs font-bold text-[var(--text-muted)] border-b border-[var(--hairline)]">
         <span>نماد</span>
         <span className="text-end">آخرین قیمت</span>
         <span className="w-16 text-end">تغییر %</span>
       </div>
 
-      {isLoading ? <span className="px-1 text-[11px] text-[var(--text-secondary)]">در حال دریافت دیده‌بان...</span> : null}
-      {isError ? <span className="px-1 text-[11px] text-[#f23645]">خطا در دریافت تابلو بازار</span> : null}
+      {isLoading ? <span className="px-1 text-3xs text-[var(--text-secondary)]">در حال دریافت دیده‌بان...</span> : null}
+      {isError ? <span className="px-1 text-3xs text-[#f23645]">خطا در دریافت تابلو بازار</span> : null}
 
       {!isLoading && !isError && rows.length === 0 ? (
-        <span className="px-1 text-[11px] text-[var(--text-muted)]" data-testid="sidebar-watch-empty">
+        <span className="px-1 text-3xs text-[var(--text-muted)]" data-testid="sidebar-watch-empty">
           نمادی یافت نشد
         </span>
       ) : null}
@@ -58,7 +58,7 @@ export function SidebarWatchlist({ onSelect }: { onSelect: (s: string) => void }
               >
                 <div className="flex flex-col truncate">
                   <span className="truncate text-xs font-bold text-[var(--text-primary)]">{r.symbol}</span>
-                  {r.name && <span className="truncate text-[10px] text-[var(--text-muted)] leading-tight">{r.name}</span>}
+                  {r.name && <span className="truncate text-3xs text-[var(--text-muted)] leading-tight">{r.name}</span>}
                 </div>
                 <FlashNum
                   value={r.p_last ?? r.p_closing}
@@ -68,7 +68,7 @@ export function SidebarWatchlist({ onSelect }: { onSelect: (s: string) => void }
                 <FlashNum
                   value={r.percent_change}
                   render={(v) => (v == null ? '-' : fmtPct(v))}
-                  className={`num font-mono tabular-nums w-16 text-end text-[11px] font-bold ${
+                  className={`num font-mono tabular-nums w-16 text-end text-3xs font-bold ${
                     up ? 'text-[#089981]' : 'text-[#f23645]'
                   }`}
                 />

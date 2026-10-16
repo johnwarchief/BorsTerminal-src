@@ -94,7 +94,7 @@ function Donut({
         <text x="70" y="64" textAnchor="middle" fontSize="15" fontWeight="900" fill="var(--text-primary)" className="num">
           {centerValue}
         </text>
-        <text x="70" y="82" textAnchor="middle" fontSize="9" fill="var(--text-muted)">
+        <text x="70" y="82" textAnchor="middle" fontSize="11" fill="var(--text-muted)">
           {centerLabel}
         </text>
       </svg>

@@ -97,7 +97,7 @@ export function Topbar() {
             <SearchIcon size={12} className="text-neon-cyan" />
             <span className="hidden sm:inline">جستجوی سریع نماد...</span>
             <span className="sm:hidden">جستجو</span>
-            <kbd className="rounded border border-border-c/80 bg-bg-secondary px-1 py-0.2 text-[10px] text-text-muted">
+            <kbd className="rounded border border-border-c/80 bg-bg-secondary px-1 py-0.2 text-3xs text-text-muted">
               Ctrl+K
             </kbd>
           </button>
@@ -127,7 +127,7 @@ function NoticeBell() {
     >
       <BellIcon size={13} className="text-accent-yellow" />
       {known && unread > 0 ? (
-        <span className="num rounded-full bg-accent-red/20 px-1 text-[10px] font-black text-accent-red"
+        <span className="num rounded-full bg-accent-red/20 px-1 text-3xs font-black text-accent-red"
               data-testid="topbar-notifications-count">
           {toFaDigits(unread)}
         </span>

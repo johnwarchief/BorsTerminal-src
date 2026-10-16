@@ -88,9 +88,19 @@ describe('مرکزِ اعلان', () => {
     mockFeed({ items: [...ITEMS, { ...ITEMS[0], id: 9, kind: 'other', level: 'unclassified',
                                    title: 'بازخرید سهام' }] });
     page();
-    await waitFor(() => expect(screen.getAllByTestId('notice-level')[2]).toBeInTheDocument());
-    expect(screen.getAllByTestId('notice-level')[2].textContent).toBe('بی‌طبقه');
-    expect(screen.getAllByTestId('notice-level')[0].getAttribute('title')).toContain('EPS');
+    await waitFor(() => expect(screen.getAllByTestId('notice-row').length).toBe(3));
+    // شاخصِ تخت، ترتیبِ DOM را بهِ ترتیبِ آزمونِ بی‌مرتب گره می‌زد؛ گروه‌بندیِ روز
+    // آنِ را جابه‌جا می‌کند. هرِ برچسب ازِ ردیفِ خودش خوانده می‌شود — ادعا همان، وِ
+    // بستگیِ کم‌تر.
+    const rowOf = (t: string) =>
+      screen.getAllByTestId('notice-row').find((li) => (li.textContent ?? '').includes(t)) as HTMLElement;
+    const chip = (t: string) => rowOf(t).querySelector('[data-testid="notice-level"]') as HTMLElement;
+    expect(rowOf('بازخرید سهام').getAttribute('data-level')).toBe('unclassified');
+    expect(chip('بازخرید سهام').textContent).toBe('بی‌طبقه');
+    expect(chip('سالانه').getAttribute('title')).toContain('EPS');
+    // بی‌طبقه باِ پایین یکی نیست: مرزِ خط‌چین مخصوصِ بی‌طبقه است وِ برچسبِ سطحِ دیگر خط‌چین ندارد
+    expect(chip('بازخرید سهام').className).toContain('border-dashed');
+    expect(chip('ماهانه')).not.toHaveClass('border-dashed');
   });
 
   it('«خوانده شد» درِ همین دستگاه می‌ماند و شمارۀِ ناخوانده کم می‌شود', async () => {

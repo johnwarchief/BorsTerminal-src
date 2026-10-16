@@ -453,13 +453,13 @@ function CandidateRow({
         <label
           htmlFor={`${testId}-input`}
           title={label}
-          className={`block truncate font-bold ${available ? 'cursor-pointer text-text-primary' : 'text-text-muted'}`}
+          className={`block line-clamp-2 break-words font-bold ${available ? 'cursor-pointer text-text-primary' : 'text-text-muted'}`}
         >
           {label}
         </label>
         {note ? (
           <span
-            className={`block truncate text-3xs ${available ? 'text-text-muted' : 'text-accent-yellow'}`}
+            className={`block line-clamp-2 break-words text-3xs leading-4 ${available ? 'text-text-muted' : 'text-accent-yellow'}`}
             title={note}
             data-testid={`${testId}-note`}
           >

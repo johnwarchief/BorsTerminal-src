@@ -258,24 +258,28 @@ export default function PortfolioPage() {
             </div>
           ) : null}
 
-          <div className="flex flex-wrap gap-2">
-            {tabs.map((t) => (
-              <button
-                key={t.id}
-                type="button"
-                onClick={() => setTab(t.id)}
-                className={`rounded-full border px-3.5 py-1.5 text-xs font-bold transition-colors duration-200 ${
-                  tab === t.id
-                    ? 'border-neon-cyan/50 bg-neon-cyan/15 text-neon-cyan'
-                    : 'border-border-c bg-bg-card text-text-secondary hover:bg-bg-secondary hover:text-text-primary'
-                }`}
-              >
-                {t.label} <span className="num">({toFaDigits(t.count)})</span>
-              </button>
-            ))}
-          </div>
+          {/* فاز G: همینِ گروهِ سه‌تایی نقشِ tab داشت وِ بی‌صفحه‌کلیدِ وابسته؛ حالا
+              ازِ همانِ اصلِ `ui/tabs.tsx` می‌آید (role=tab، roving tabindex،
+              پیکان/Home/End) وِ رنگِ انتخاب ازِ `neon-cyan` اختصاصی بهِ لایۀِ
+              accentِ مشترک می‌نشیند. پنلِ جدول یکِ TabsContent است، چون ستون‌ها
+              عوض نمی‌شوند وِ فقطِ مجموعهٔ ردیف‌ها. */}
+          <Tabs value={tab} onValueChange={(v) => setTab(v as BoardTab)} className="flex flex-col gap-3">
+            <div className="flex flex-wrap gap-1">
+              <TabsList aria-label="نمای سبد" className="h-auto gap-1 border-none bg-transparent p-0">
+                {tabs.map((t) => (
+                  <TabsTrigger
+                    key={t.id}
+                    value={t.id}
+                    data-testid={`portfolio-board-tab-${t.id}`}
+                    className="rounded-full px-3.5 py-1.5 text-xs"
+                  >
+                    {t.label} <span className="num">({toFaDigits(t.count)})</span>
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+            </div>
 
-          <div className="glass-panel overflow-hidden rounded-2xl">
+            <TabsContent value={tab} data-testid="portfolio-board-panel" className="glass-panel overflow-hidden rounded-2xl">
             <div className="overflow-x-auto">
               <table className="w-full border-collapse text-sm">
                 <thead>
@@ -411,7 +415,8 @@ export default function PortfolioPage() {
                 </tbody>
               </table>
             </div>
-          </div>
+            </TabsContent>
+          </Tabs>
 
           {/* واچ‌لیست داخلِ همین workspace است (§۱): نه تبِ ناوبری، نه صفحۀ دیگر */}
           <WatchlistSection />

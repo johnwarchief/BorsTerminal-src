@@ -204,7 +204,7 @@ export function WorkspaceTabs() {
                 onClick={(e) => { e.stopPropagation(); doClose(tab.id); }}
                 className="shrink-0 rounded p-0.5 text-text-muted opacity-60 transition hover:bg-accent-red/15 hover:text-accent-red hover:opacity-100 focus-visible:ring-2 focus-visible:ring-accent-blue"
               >
-                <span aria-hidden="true" className="text-[11px] leading-none">×</span>
+                <span aria-hidden="true" className="text-3xs leading-none">×</span>
               </button>
             </div>
           );
@@ -264,7 +264,7 @@ export function WorkspaceTabs() {
                     </button>
                   </div>
                 ))}
-                <div className="mt-1 border-t border-border-c/60 px-2 py-1 text-[10px] leading-4 text-text-muted">
+                <div className="mt-1 border-t border-border-c/60 px-2 py-1 text-3xs leading-4 text-text-muted">
                   Ctrl+T تب تازه · Ctrl+W بستن · Ctrl+Tab جابه‌جایی · Ctrl+۱…۹ پرش
                 </div>
               </div>

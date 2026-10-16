@@ -134,7 +134,7 @@ export function FtsIndicatorPanel({
 
       {groups.map(({ g, title, entries }) => (
         <div key={g} className="flex flex-col gap-1" data-testid={`fts-layer-group-${g}`}>
-          <span className="text-[11px] font-bold text-text-secondary">{title}</span>
+          <span className="text-3xs font-bold text-text-secondary">{title}</span>
           {entries.map((e) => {
             const enabled = enabledOf(e.toggle);
             const evd = evidenceOf(e);
@@ -165,7 +165,7 @@ export function FtsIndicatorPanel({
                   onClick={() => setSelected(e)}
                   data-testid={`fts-layer-evidence-btn-${e.id}`}
                   aria-expanded={selected?.id === e.id}
-                  className="min-w-0 flex-1 truncate text-start text-[11px] text-text-secondary transition-colors hover:text-text-primary"
+                  className="min-w-0 flex-1 truncate text-start text-3xs text-text-secondary transition-colors hover:text-text-primary"
                 >
                   {e.fa}
                 </button>
@@ -208,7 +208,7 @@ export function FtsIndicatorPanel({
               دهانۀ payload: <span className="num">{selected.source}</span> · ترسیم: {selected.display.join(' + ')}
             </div>
             {evd.facts.length > 0 ? (
-              <dl className="grid grid-cols-2 gap-x-3 gap-y-0.5 text-[11px]">
+              <dl className="grid grid-cols-2 gap-x-3 gap-y-0.5 text-3xs">
                 {evd.facts.map((f) => (
                   <div key={f.label} className="flex justify-between gap-2">
                     <dt className="text-text-secondary">{f.label}</dt>
@@ -217,7 +217,7 @@ export function FtsIndicatorPanel({
                 ))}
               </dl>
             ) : (
-              <p className="text-[11px] text-text-muted" data-testid="fts-evidence-no-facts">
+              <p className="text-3xs text-text-muted" data-testid="fts-evidence-no-facts">
                 سرور برایِ این لایه عددی منتشر نکرده است — چیزی برایِ نشان دادن نیست.
               </p>
             )}
@@ -230,7 +230,7 @@ export function FtsIndicatorPanel({
               </span>
             </div>
             {evd.note ? (
-              <p className="text-[11px] text-accent-yellow" data-testid="fts-evidence-note">
+              <p className="text-3xs text-accent-yellow" data-testid="fts-evidence-note">
                 {evd.note}
               </p>
             ) : null}

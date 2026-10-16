@@ -146,7 +146,7 @@ export const FtsToolbar: React.FC<FtsToolbarProps> = ({
               </span>
               {boardRow.percent_change != null && (
                 <span
-                  className="font-mono tabular-nums text-[10px] font-bold px-1.5 py-0.5 rounded"
+                  className="font-mono tabular-nums text-3xs font-bold px-1.5 py-0.5 rounded"
                   style={{
                     backgroundColor: boardRow.percent_change >= 0 ? 'rgba(8, 153, 129, 0.15)' : 'rgba(242, 54, 69, 0.15)',
                     color: boardRow.percent_change >= 0 ? '#089981' : '#f23645',

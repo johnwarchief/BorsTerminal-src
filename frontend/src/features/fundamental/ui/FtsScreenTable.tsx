@@ -342,7 +342,7 @@ const ScreenerRow = memo(function ScreenerRow({
                           {r.symbol}
                         </span>
                         {r.tech_hourglass_active ? (
-                          <span className="shrink-0 rounded px-1.5 py-0.5 text-[9px] font-bold bg-accent-green/20 text-accent-green border border-accent-green/30" title="استراتژی ساعت شنی FTS فعال (خرید ۲x-۴x)">
+                          <span className="shrink-0 rounded px-1.5 py-0.5 text-3xs font-bold bg-accent-green/20 text-accent-green border border-accent-green/30" title="استراتژی ساعت شنی FTS فعال (خرید ۲x-۴x)">
                             ساعت شنی
                           </span>
                         ) : null}
@@ -350,18 +350,18 @@ const ScreenerRow = memo(function ScreenerRow({
                           <span
                             data-testid="row-funnel-candidate"
                             title="هر سه گامِ قیف (تابلوخوانی ← تکنیکال ← بنیادی) pass و بی‌وتو"
-                            className="shrink-0 rounded px-1.5 py-0.5 text-[9px] font-bold bg-neon-cyan/20 text-neon-cyan border border-neon-cyan/30"
+                            className="shrink-0 rounded px-1.5 py-0.5 text-3xs font-bold bg-neon-cyan/20 text-neon-cyan border border-neon-cyan/30"
                           >
                             کاندیدِ قیف
                           </span>
                         ) : null}
                         {r.tech_jet ? (
-                          <span className="shrink-0 rounded px-1.5 py-0.5 text-[9px] font-bold bg-accent-blue/20 text-accent-blue border border-accent-blue/30" title="ستاپ جت FTS (شکست مقاومت)">
+                          <span className="shrink-0 rounded px-1.5 py-0.5 text-3xs font-bold bg-accent-blue/20 text-accent-blue border border-accent-blue/30" title="ستاپ جت FTS (شکست مقاومت)">
                             جت
                           </span>
                         ) : null}
                         {r.tech_matrix_decision === 'REJECT' ? (
-                          <span className="shrink-0 rounded px-1.5 py-0.5 text-[9px] font-bold bg-accent-red/20 text-accent-red border border-accent-red/30" title={r.tech_matrix_desc ?? 'ممنوعیت ورود FTS'}>
+                          <span className="shrink-0 rounded px-1.5 py-0.5 text-3xs font-bold bg-accent-red/20 text-accent-red border border-accent-red/30" title={r.tech_matrix_desc ?? 'ممنوعیت ورود FTS'}>
                             وتوی روند
                           </span>
                         ) : null}
@@ -378,7 +378,7 @@ const ScreenerRow = memo(function ScreenerRow({
                             title={`مجمع عمومی در پیش است — ورود وتو شد${
                               r.assembly_date ? ` · تاریخ: ${jalaliOf(r.assembly_date)}` : ''
                             }${typeof r.assembly_days === 'number' ? ` · ${toFaDigits(r.assembly_days)} روز دیگر` : ''}`}
-                            className="shrink-0 rounded px-1.5 py-0.5 text-[9px] font-bold border bg-accent-red/20 text-accent-red border-accent-red/30"
+                            className="shrink-0 rounded px-1.5 py-0.5 text-3xs font-bold border bg-accent-red/20 text-accent-red border-accent-red/30"
                           >
                             وتوی مجمع{r.assembly_date ? ` ${jalaliOf(r.assembly_date)}` : ''}
                           </span>
@@ -386,7 +386,7 @@ const ScreenerRow = memo(function ScreenerRow({
                           <span
                             data-testid={`row-${assembly.testId}`}
                             title={assembly.detail ? `${assembly.label} · ${assembly.detail}` : assembly.label}
-                            className={`shrink-0 rounded px-1.5 py-0.5 text-[9px] font-bold border ${
+                            className={`shrink-0 rounded px-1.5 py-0.5 text-3xs font-bold border ${
                               assembly.kind === 'near'
                                 ? 'bg-accent-yellow/20 text-accent-yellow border-accent-yellow/30'
                                 : 'bg-accent-blue/20 text-accent-blue border-accent-blue/30'
@@ -411,7 +411,7 @@ const ScreenerRow = memo(function ScreenerRow({
                                 ? `افزایش سرمایه در پیش است — فقط هشدارِ تاریخ است، وتو نیست · تاریخ: ${capital.jalali} · ${capital.detail}`
                                 : `افزایش سرمایه در پیش است — فقط هشدارِ تاریخ است، وتو نیست · تاریخ: ${capital.jalali}`
                             }
-                            className="shrink-0 rounded px-1.5 py-0.5 text-[9px] font-bold border bg-accent-blue/15 text-accent-blue border-accent-blue/30"
+                            className="shrink-0 rounded px-1.5 py-0.5 text-3xs font-bold border bg-accent-blue/15 text-accent-blue border-accent-blue/30"
                           >
                             افزایش سرمایه {capital.jalali.split('-').slice(-2).join('/')}
                           </span>
@@ -426,7 +426,7 @@ const ScreenerRow = memo(function ScreenerRow({
                     <div className="flex items-center justify-start gap-2 min-w-0">
                       <div className="shrink-0 flex items-center gap-1.5">
                         <span className="inline-flex items-center gap-0.5" title="۱-الف: رشد ریالی">
-                          <span className="text-[10px] text-text-muted font-bold">الف</span>
+                          <span className="text-3xs text-text-muted font-bold">الف</span>
                           {i1a === 'gap' ? (
                             <AxisGapMark axis="1a_monetary_growth" evidence={ev.i1a} />
                           ) : (
@@ -438,7 +438,7 @@ const ScreenerRow = memo(function ScreenerRow({
                           )}
                         </span>
                         <span className="inline-flex items-center gap-0.5" title="۱-ب: رشد تولیدی (تناژ)">
-                          <span className="text-[10px] text-text-muted font-bold">ب</span>
+                          <span className="text-3xs text-text-muted font-bold">ب</span>
                           {r.i1b_applicable === false ? (
                             /* «قابل اعمال نیست» را خودِ موتور می‌گوید
                                (`company_profile.volume_applicable`) — نه از
@@ -674,7 +674,7 @@ function FunnelGateChip({ gate }: { gate?: FtsFunnelGate | null }) {
         ? `زنجیرۀ تابلوخوانی: ${(gate.chain ?? []).join('، ') || 'بی‌فیلتر'} · `
           + 'کاندیدِ قیف فقط ردیفی است که هر سه گام pass باشد و وتوی هفتگی/مجمع نداشته باشد.'
         : String(gate.message ?? gate.state)}
-      className={`ms-auto shrink-0 rounded-lg border px-2 py-1 text-[10px] font-bold ${
+      className={`ms-auto shrink-0 rounded-lg border px-2 py-1 text-3xs font-bold ${
         applied ? 'border-[var(--hairline)] bg-bg-primary text-text-secondary'
                 : 'border-accent-red/40 bg-accent-red/10 text-accent-red'
       }`}

@@ -135,7 +135,7 @@ function StatusLight({
   const warn = tone === 'yellow' || tone === 'orange';
   return (
     <div className="flex items-center justify-between gap-1.5 rounded-md border border-transparent px-1.5 py-1 transition-colors duration-200 hover:border-[var(--hairline)] hover:bg-bg-card/40">
-      <span className="flex items-center gap-1.5 text-[10px] text-text-secondary">
+      <span className="flex items-center gap-1.5 text-3xs text-text-secondary">
         <span
           aria-hidden
           className={`inline-block h-1.5 w-1.5 shrink-0 rounded-full transition-all duration-300 ${
@@ -150,7 +150,7 @@ function StatusLight({
         />
         {label}
       </span>
-      <span className={`num text-[10px] font-bold ${tone === 'green' || tone === 'blue' ? 'text-accent-green' : tone === 'red' ? 'text-accent-red' : tone === 'yellow' || tone === 'orange' ? 'text-accent-yellow' : 'text-text-secondary'}`} title={hint}>
+      <span className={`num text-3xs font-bold ${tone === 'green' || tone === 'blue' ? 'text-accent-green' : tone === 'red' ? 'text-accent-red' : tone === 'yellow' || tone === 'orange' ? 'text-accent-yellow' : 'text-text-secondary'}`} title={hint}>
         {value}
       </span>
     </div>
@@ -167,7 +167,7 @@ function TrendChip({ side, value }: { side: string; value: string | null }) {
     : 'text-text-muted';
   return (
     <span className="flex items-baseline gap-1">
-      <span className="text-[9px] text-text-muted">{side}</span>
+      <span className="text-3xs text-text-muted">{side}</span>
       <span className={`num font-bold ${tone}`} data-testid={`inspector-trend-${side}`}>
         {trendLabel(value)}
       </span>
@@ -447,7 +447,7 @@ export function SymbolInspector() {
           {([['glance', 'در یک نگاه'], ['detail', 'جزئیات بازار']] as const).map(([k, lbl]) => (
             <button key={k} type="button" aria-current={page === k ? 'page' : undefined}
                     data-testid={`inspector-tab-${k}`} onClick={() => goPage(k)}
-                    className={`rounded-md border px-2 py-1 text-[10px] font-bold transition-colors ${
+                    className={`rounded-md border px-2 py-1 text-3xs font-bold transition-colors ${
                       page === k
                         ? 'border-accent-blue/60 bg-accent-blue/15 text-accent-blue'
                         : 'border-border-c/60 bg-bg-primary text-text-muted hover:text-text-primary'
@@ -590,13 +590,13 @@ export function SymbolInspector() {
               ستونِ تابلو با برچسبِ منشأ است. نبودِ عدد ⇒ «بی‌داده»، هرگز صفر. */}
           <div className="flex items-center justify-between gap-2 rounded-lg border border-[var(--hairline)] bg-bg-card/40 px-2 py-1"
                data-testid="inspector-market-cap">
-            <span className="text-[9px] text-text-muted">ارزشِ بازار</span>
-            <span className="num text-[11px] font-bold text-text-primary"
+            <span className="text-3xs text-text-muted">ارزشِ بازار</span>
+            <span className="num text-3xs font-bold text-text-primary"
                   title={`مبنایِ TSETMC: ${rawRow?.mcap_src || 'بی‌منبع'} — `
                          + `${rawRow?.is_live === false ? 'آخرینِ نشستِ تابلو' : 'نشستِ جاریِ تابلو'}`}>
               {rawRow?.mcap != null ? fmtHemmat(rawRow.mcap) : 'بی‌داده'}
             </span>
-            <span className="text-[9px] text-text-muted">I4</span>
+            <span className="text-3xs text-text-muted">I4</span>
             {(() => {
               // رأیِ I4ِ موتور دست‌نخورده است؛ آنچه اینجا نشان داده می‌شود
               // «نسبتِ با ارزشِ بازارِ همین ردیفِ تابلو» است:
@@ -611,7 +611,7 @@ export function SymbolInspector() {
               const live = salesBt != null && mcap ? (salesBt * 1e10) / mcap : null;
               const shown = live ?? cached;
               if (shown == null) {
-                return <span className="num text-[11px] text-text-muted" data-testid="inspector-i4"
+                return <span className="num text-3xs text-text-muted" data-testid="inspector-i4"
                              title="I4 = فروشِ ۱۲ ماهه ÷ ارزشِ بازار؛ نه فروش داریم نه مبنایِ معتبر">بی‌داده</span>;
               }
               const differs = live != null && cached != null && Math.abs(live - cached) > 0.005;
@@ -625,7 +625,7 @@ export function SymbolInspector() {
                                    : ' — با نسبتِ ثبت‌شدۀ موتور می‌خواند')
                         + '\nمبنایِ ارزشِ بازار: TSETMC (' + (rawRow?.mcap_src || 'بی‌منبع') + ')؛'
                         + ' حکمِ پذیرش/رد را همان موتورِ بنیادی می‌دهد، این عدد فقط نسبتِ زنده است.'}
-                      className="num flex items-baseline gap-1 text-[11px] font-bold text-accent-blue hover:underline">
+                      className="num flex items-baseline gap-1 text-3xs font-bold text-accent-blue hover:underline">
                   {toFaDigits((shown * 100).toFixed(1))}٪
                   {differs ? (
                     <span className="text-[8.5px] font-normal text-accent-yellow"
@@ -704,11 +704,11 @@ export function SymbolInspector() {
               به این گام ⇒ «—»، که با «نزولی» یکی نیست؛ هیچ روندِ ساختگی ساخته نمی‌شود. */}
           <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[9.5px]"
                data-testid="inspector-trend">
-            <span className="text-[9px] text-text-muted">روند</span>
+            <span className="text-3xs text-text-muted">روند</span>
             <TrendChip side="روزانۀ" value={trendD} />
             <TrendChip side="هفتگی" value={trendW} />
             <span className="flex items-center gap-1" data-testid="inspector-jet">
-              <span className="text-[9px] text-text-muted">جت</span>
+              <span className="text-3xs text-text-muted">جت</span>
               <span className={`rounded px-1 font-bold ${
                 rawRow?.f_jet ? 'bg-accent-yellow/15 text-accent-yellow' : 'text-text-muted'
               }`} title={rawRow?.f_jet ? 'پرچمِ جت از داوریِ canonicalِ تابلو (f_jet)' : 'جتِ canonical روشن نیست'}>
@@ -755,7 +755,7 @@ export function SymbolInspector() {
             <nav
               aria-label="مراحل غربالگری FTS"
               data-testid="inspector-stage"
-              className="flex flex-wrap items-center gap-1 text-[10px] font-bold"
+              className="flex flex-wrap items-center gap-1 text-3xs font-bold"
             >
               {INSPECTOR_STAGES.map((s, i) => {
                 const p = progress[i];
@@ -793,12 +793,12 @@ export function SymbolInspector() {
                     />
                     {s.label}
                     {st === 'not_required' ? (
-                      <span className="text-[9px] font-normal opacity-70" data-testid={`inspector-stage-note-${s.key}`}>
+                      <span className="text-3xs font-normal opacity-70" data-testid={`inspector-stage-note-${s.key}`}>
                         · لازم نبود
                       </span>
                     ) : null}
                     {st === 'not_in_universe' ? (
-                      <span className="text-[9px] font-normal opacity-70" data-testid="inspector-stage-out">
+                      <span className="text-3xs font-normal opacity-70" data-testid="inspector-stage-out">
                         · خارج از جامعه
                       </span>
                     ) : null}
@@ -825,13 +825,13 @@ export function SymbolInspector() {
           <div className="flex flex-col gap-0.5 rounded-lg border border-[var(--hairline)] bg-bg-card/40 px-2 py-1"
                data-testid="inspector-events">
             <div className="flex items-center justify-between gap-2">
-              <span className="text-[9px] text-text-muted">رویدادها</span>
+              <span className="text-3xs text-text-muted">رویدادها</span>
               <Link to={`/fundamental?symbol=${encodeURIComponent(symbol)}`}
                     data-testid="inspector-events-all"
-                    className="text-[9px] text-accent-blue hover:underline">همه ↗</Link>
+                    className="text-3xs text-accent-blue hover:underline">همه ↗</Link>
             </div>
             {events.length === 0 ? (
-              <span className="text-[10px] text-text-muted" data-testid="inspector-events-none">
+              <span className="text-3xs text-text-muted" data-testid="inspector-events-none">
                 {calEvents.isError ? 'تقویم نمی‌رسد'
                  : calEvents.isPending ? 'در حالِ خواندنِ تقویم'
                  : 'رویدادی ثبت نشده'}
@@ -839,7 +839,7 @@ export function SymbolInspector() {
             ) : (
               <ul className="flex flex-col gap-0.5">
                 {events.map((e, i) => (
-                  <li key={`${e.date}-${i}`} className="truncate text-[10px] text-text-secondary"
+                  <li key={`${e.date}-${i}`} className="truncate text-3xs text-text-secondary"
                       title={`${e.date} — ${e.title ?? ''}`}>
                     <span className="num text-text-muted">{jalaliOf(e.date)}</span>
                     {' '}{e.title ?? '—'}
@@ -892,13 +892,13 @@ export function SymbolInspector() {
                data-testid="inspector-quotes">
             <button type="button" onClick={() => setQuotesOpen((v) => !v)} aria-expanded={quotesOpen}
                     data-testid="inspector-quotes-toggle"
-                    className={`flex w-full items-center gap-2 text-[10px] font-bold text-text-secondary ${quotesOpen ? 'justify-end' : 'justify-between'}`}>
+                    className={`flex w-full items-center gap-2 text-3xs font-bold text-text-secondary ${quotesOpen ? 'justify-end' : 'justify-between'}`}>
               {quotesOpen ? (
-                <span className="text-[9px] font-normal text-accent-blue">بستن</span>
+                <span className="text-3xs font-normal text-accent-blue">بستن</span>
               ) : (
                 <>
                   <span>پنج مظنه</span>
-                  <span className="text-[9px] font-normal text-accent-blue">نمایش</span>
+                  <span className="text-3xs font-normal text-accent-blue">نمایش</span>
                 </>
               )}
             </button>
@@ -920,13 +920,13 @@ export function SymbolInspector() {
               «ایستاده در مرحلۀ X» را می‌گفت. */}
           <div className="rounded-lg border border-[var(--hairline)] bg-bg-card/40 px-2 py-1.5"
                data-testid="inspector-trace">
-            <div className="mb-1 text-[10px] font-bold text-text-secondary">ردپایِ غربالگری</div>
+            <div className="mb-1 text-3xs font-bold text-text-secondary">ردپایِ غربالگری</div>
             {trace.isError ? (
-              <span className="text-[10px] text-accent-red" data-testid="funnel-trace-error">
+              <span className="text-3xs text-accent-red" data-testid="funnel-trace-error">
                 ردپا نمی‌رسد
               </span>
             ) : trace.isPending ? (
-              <span className="text-[10px] text-text-muted" data-testid="funnel-trace-loading">
+              <span className="text-3xs text-text-muted" data-testid="funnel-trace-loading">
                 در حالِ خواندنِ ردپا
               </span>
             ) : (
@@ -968,21 +968,21 @@ export function SymbolInspector() {
             </div>
             <Link
               to={`/master/${encodeURIComponent(symbol)}`}
-              className="flex items-center justify-center rounded-lg border border-[var(--hairline)] bg-bg-card/60 px-2 py-1 text-center text-[10px] font-bold text-accent-green transition-all duration-200 hover:border-accent-green hover:bg-accent-green/10"
+              className="flex items-center justify-center rounded-lg border border-[var(--hairline)] bg-bg-card/60 px-2 py-1 text-center text-3xs font-bold text-accent-green transition-all duration-200 hover:border-accent-green hover:bg-accent-green/10"
               title="کاکپیت داوری مستر"
             >
               کاکپیت مستر ↗
             </Link>
             <Link
               to={`/technical/${encodeURIComponent(symbol)}`}
-              className="flex items-center justify-center rounded-lg border border-[var(--hairline)] bg-bg-card/60 px-2 py-1 text-center text-[10px] font-bold text-accent-blue transition-all duration-200 hover:border-border-accent hover:text-neon-cyan"
+              className="flex items-center justify-center rounded-lg border border-[var(--hairline)] bg-bg-card/60 px-2 py-1 text-center text-3xs font-bold text-accent-blue transition-all duration-200 hover:border-border-accent hover:text-neon-cyan"
               title="چارت تکنیکال"
             >
               چارت تکنیکال ↗
             </Link>
             <Link
               to={`/fundamental/${encodeURIComponent(symbol)}`}
-              className="flex items-center justify-center rounded-lg border border-[var(--hairline)] bg-bg-card/60 px-2 py-1 text-center text-[10px] font-bold text-text-secondary transition-all duration-200 hover:border-border-accent hover:text-accent-blue"
+              className="flex items-center justify-center rounded-lg border border-[var(--hairline)] bg-bg-card/60 px-2 py-1 text-center text-3xs font-bold text-text-secondary transition-all duration-200 hover:border-border-accent hover:text-accent-blue"
               title="صورت‌های مالی و کدال"
             >
               بررسی کدال ↗

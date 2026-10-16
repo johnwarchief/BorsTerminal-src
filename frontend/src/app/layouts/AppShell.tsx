@@ -1,4 +1,5 @@
-import { Outlet } from 'react-router';
+import { Outlet, useLocation } from 'react-router';
+import { useQueryClient } from '@tanstack/react-query';
 import { Sidebar } from '../components/Sidebar';
 import { Topbar } from '../components/Topbar';
 import { WorkspaceTabs } from '../components/WorkspaceTabs';
@@ -14,6 +15,7 @@ import { useMarketStore } from '@shared/stores/marketStore';
 import { startIdleGate } from '@shared/lib/idleGate';
 import { useFlashClock } from '@shared/lib/flashClock';
 import { LoginScreen } from '../../widgets/LoginScreen';
+import { preloadMarketStatusFirstScreen } from '@features/market/lib/preloadMarketStatusFirstScreen';
 
 /**
  * نوارِ «مشاور تحلیلی FTS» که بعد از انتخابِ نماد در بالای صفحه می‌چسبد، فعلاً
@@ -27,9 +29,19 @@ export function AppShell() {
   const symbol = useSymbolStore((s) => s.symbol);
   const inspectorOpen = symbol.length > 0;
   const activeTab = useActiveTab();
+  const pathname = useLocation().pathname;
+  const qc = useQueryClient();
 
   // طولِ فلاشِ اعداد از ریتمِ واقعیِ تازۀِ تابلو می‌آید (رأیِ مالک: ۵s ← ~۳٫۵s)
   useFlashClock();
+
+  // فاز G بندِ ۵: صفحۀِ اولِ «وضعیت بازار» ازِ همینِ لحظه خوانده می‌شود، نه ازِ بعدِ
+  // رسیدنِ chunkِ تنبلِ خودِ صفحه. `prefetchQuery` باِ همانِ کلیدِ isِ hook است، پسِ
+  // کامپوننت درِ همانِ پرسشِ در حالِ جریان شرکت می‌کند (درخواستِ دوم ساخته نمی‌شود).
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    if (pathname.startsWith('/market-status')) preloadMarketStatusFirstScreen(qc);
+  }, [isAuthenticated, pathname, qc]);
 
   // پولینگ هنگام مینیمایز متوقف می‌شود (فقط hidden؛ «بی‌فوکوس» کمکی نمی‌کند).
   useEffect(() => {

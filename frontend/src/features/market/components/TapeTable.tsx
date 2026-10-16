@@ -47,7 +47,7 @@ type SortKey =
  */
 const ROW_H = 34;
 const ROW_GRID =
-  'grid-cols-[minmax(240px,2.1fr)_minmax(66px,0.85fr)_minmax(66px,0.85fr)_minmax(60px,0.6fr)_minmax(62px,0.8fr)_minmax(62px,0.8fr)_minmax(104px,0.85fr)_minmax(56px,0.7fr)_minmax(56px,0.72fr)_minmax(56px,0.72fr)_minmax(150px,1.25fr)_minmax(104px,1.0fr)]';
+  'grid-cols-[minmax(240px,2.3fr)_minmax(66px,0.85fr)_minmax(66px,0.85fr)_minmax(60px,0.6fr)_minmax(62px,0.8fr)_minmax(62px,0.8fr)_minmax(104px,0.85fr)_minmax(56px,0.7fr)_minmax(56px,0.72fr)_minmax(56px,0.72fr)_minmax(150px,1.25fr)_minmax(104px,0.9fr)]';
 
 /** کمترینِ عرضِ جدول = جمعِ مینیمم‌ها + فاصله‌ها + padding (زیرِ این، جدول افقی اسکرول می‌خورد) */
 const TABLE_MIN_W = 'min-w-[1150px]';
@@ -234,7 +234,7 @@ export const TapeRow = memo(function TapeRow({
                          insCode={row.ins_code ?? null} />
         <WatchlistStar symbol={String(row.symbol ?? '')} name={String(row.name ?? '')} />
         {row.symbol}
-        <span className="truncate text-xs font-normal text-text-muted">{row.name ?? ''}</span>
+        <span className="truncate text-xs font-normal text-text-muted" title={row.name ?? undefined}>{row.name ?? ''}</span>
       </span>
       {/* تراز ستون (fix): محتوای عددی با `.num` (direction:ltr) به‌صورت خودکار چپ‌چین می‌شد
           و زیر هدرِ راست‌چین نمی‌نشست؛ `text-end` آن را با لبهٔ راست (جای هدر) هم‌تراز می‌کند. */}

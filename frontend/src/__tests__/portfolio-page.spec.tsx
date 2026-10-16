@@ -210,6 +210,27 @@ describe('پرتفوی فعلی — جدول سه‌گانه', () => {
     await screen.findByText('شکاف فعلی با هدف (ری‌بالانس)');
   }
 
+  it('گروهِ سبد/زیرِ نظر/حذف‌شده: نقشِ tab، صفحه‌کلیدِ وابسته وِ پیکان درِ RTL', async () => {
+    renderPage();
+    await openCurrentView();
+    const tabs = await screen.findAllByRole('tab', { name: /^(سبد|زیر نظر|حذف شده)/ });
+    expect(tabs).toHaveLength(3);
+    const panel = await screen.findByTestId('portfolio-board-panel');
+    expect(panel).toHaveAttribute('role', 'tabpanel');
+    expect(panel.getAttribute('aria-labelledby')).toBe(tabs[0].id);
+    // roving tabindex: کاربر یک‌بار واردِ گروه می‌شود، پس فقطِ تبِ فعال tabIndex=0 دارد
+    expect(tabs.filter((t) => t.getAttribute('tabindex') === '0')).toHaveLength(1);
+    // RTL: پیکانِ چپ یعنی «بعدی» (برعکسِ چپ‌به‌راست)
+    // کاربر درِ مرورگر واقعی اول باِ Tab واردِ گروه می‌شود (فوکوس رویِ تبِ فعال)،
+    // پس پیکان ازِ همانِ عنصرِ فوکوس‌شده خوانده می‌شود.
+    tabs[0].focus();
+    fireEvent.keyDown(tabs[0], { key: 'ArrowLeft' });
+    await waitFor(() =>
+      expect(screen.getByRole('tab', { name: /^زیر نظر/ })).toHaveAttribute('aria-selected', 'true'));
+    expect((await screen.findByTestId('portfolio-board-panel')).getAttribute('aria-labelledby'))
+      .toBe(screen.getByRole('tab', { name: /^زیر نظر/ }).id);
+  });
+
   it('تب سبد: ستون‌های حد ضرر و DCA و سود/زیان', async () => {
     renderPage();
     await openCurrentView();
@@ -233,7 +254,7 @@ describe('پرتفوی فعلی — جدول سه‌گانه', () => {
   it('برچسب بدون داده برای غیب حد ضرر چارت (شاملا بدون fib ⇒ پله‌ها بدون داده)', async () => {
     renderPage();
     await openCurrentView();
-    fireEvent.click(await screen.findByRole('button', { name: /^زیر نظر/ }));
+    fireEvent.click(await screen.findByRole('tab', { name: /^زیر نظر/ }));
     await waitFor(() => {
       expect(screen.getByText('شاملا')).toBeInTheDocument();
     });
@@ -250,7 +271,7 @@ describe('پرتفوی فعلی — جدول سه‌گانه', () => {
   it('تب حذف شده: ردیف رد شده دیده می شود', async () => {
     renderPage();
     await openCurrentView();
-    fireEvent.click(await screen.findByRole('button', { name: /^حذف شده/ }));
+    fireEvent.click(await screen.findByRole('tab', { name: /^حذف شده/ }));
     await waitFor(() => {
       expect(screen.getByText('ویسا')).toBeInTheDocument();
     });

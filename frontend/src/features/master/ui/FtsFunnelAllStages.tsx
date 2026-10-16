@@ -648,11 +648,27 @@ function StageCard({
       {/* بدنه: درِ حالتِ بسته هیچ جدولی نمی‌راند (نه display:none) — چهار مرحلۀ
           باز رویِ نمایشگرِ ۱۳۶۶×۷۶۸ یعنی اسکرولِ بی‌پایان پیش از رسیدن به تحویل. */}
       {collapsed ? null : (<>
-      <div ref={bodyRef} className="relative h-[calc(100dvh-392px)] min-h-[380px] overflow-y-auto" data-testid={`funnel-scroll-${stage.key}`}>
+      {/* بندِ بازطراحی (فاز G): بدنهٔ بی‌ردیف همانِ ۳۸۰px جایِ خالی را نگه نمی‌دارد —
+          سنجشِ ۱۳۶۶×۷۶۸ نشان داد مرحلۀِ خالی، ۳۵۱px ازِ صفحۀِ اول را بی‌محتوا
+          می‌خورد. ارتفاع حالا بهِ اندازهٔ خودِ پیام است، وِ پیام شمارشِ همانِ
+          مرحله را می‌گوید (بی‌داده ≠ صفر: «چه شد که کسی نماند» دیده می‌شود). */}
+      <div ref={bodyRef}
+           className={`relative overflow-y-auto ${rows.length === 0 ? 'h-auto' : 'h-[calc(100dvh-392px)] min-h-[380px]'}`}
+           data-testid={`funnel-scroll-${stage.key}`}>
         {rows.length === 0 ? (
-          <p className="px-3 py-4 text-xs text-text-muted" data-testid={`funnel-empty-${stage.key}`}>
-            {emptyWhy ?? 'هیچ نمادی از این مرحله عبور نکرد.'}
-          </p>
+          <div className="px-3 py-4">
+            <p className="text-xs text-text-muted" data-testid={`funnel-empty-${stage.key}`}>
+              {emptyWhy ?? 'هیچ نمادی از این مرحله عبور نکرد.'}
+            </p>
+            <p className="mt-1.5 flex flex-wrap gap-x-2 gap-y-1 text-3xs text-text-muted"
+               data-testid={`funnel-empty-counts-${stage.key}`}>
+              <span className="num">رد: {toFaDigits(stage.summary.reject)}</span>
+              <span className="num">در انتظار: {toFaDigits(stage.summary.pending)}</span>
+              <span className="num">بی‌داده: {toFaDigits(stage.summary.unavailable)}</span>
+              <span className="num">لازمِ نیست: {toFaDigits(stage.summary.not_required)}</span>
+              <span className="num">ورودیِ اینِ مرحله: {toFaDigits(stage.entries.length)}</span>
+            </p>
+          </div>
         ) : (
           <table className="w-full table-fixed border-collapse text-sm">
             <ColGroup cols={cols} />
@@ -782,7 +798,7 @@ function StageRow({
           {entry.assemblyVeto ? (
             <span
               data-testid={`funnel-assembly-veto-${entry.symbol}`}
-              className="shrink-0 rounded border border-accent-red/40 bg-accent-red/15 px-1 text-[9px] font-bold text-accent-red"
+              className="shrink-0 rounded border border-accent-red/40 bg-accent-red/15 px-1 text-3xs font-bold text-accent-red"
               title={entry.assemblyWhy}
             >
               وتوی مجمع

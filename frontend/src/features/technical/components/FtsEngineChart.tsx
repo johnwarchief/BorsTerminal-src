@@ -221,7 +221,7 @@ export function FtsEngineChart({
   return (
     <div className="relative flex h-full min-h-0 w-full flex-col" data-testid="fts-engine-chart">
       <div ref={hostRef} className="min-h-0 flex-1" data-testid="fts-engine-host" />
-      <div className="flex flex-wrap items-center gap-2 border-t border-[var(--hairline)] px-2 py-1 text-[10px] text-text-muted">
+      <div className="flex flex-wrap items-center gap-2 border-t border-[var(--hairline)] px-2 py-1 text-3xs text-text-muted">
         <span className="font-bold text-text-secondary">موتور: {caps ? caps.label : engineId}</span>
         <span>کندل: {toFaDigits(bars.length)}</span>
         {/* مرحلۀ ۵: کرکرۀ «نوع تعدیل قیمت» درِ نوارِ ابزارِ KLineCharts است و این موتور
@@ -255,7 +255,7 @@ export function FtsEngineChart({
         ) : null}
       </div>
       {failed ? (
-        <div className="absolute inset-x-0 top-0 m-2 rounded-lg border border-accent-red/40 bg-bg-card/95 p-2 text-[11px] text-accent-red" data-testid="fts-engine-error">
+        <div className="absolute inset-x-0 top-0 m-2 rounded-lg border border-accent-red/40 bg-bg-card/95 p-2 text-3xs text-accent-red" data-testid="fts-engine-error">
           {errors.map((e, k) => (
             <div key={`${e.code}-${k}`}>
               {e.code}: {e.message}

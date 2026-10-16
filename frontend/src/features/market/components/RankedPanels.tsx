@@ -101,7 +101,7 @@ export function RankedPanelCard({
           از {toFaDigits(panel.candidates ?? 0)} نامزد · «{panel.value_field}»
         </span>
         {panel.formula ? (
-          <span className="truncate max-w-[60%]" title={panel.formula} data-testid={`${testId}-formula`}>
+          <span className="min-w-0 basis-full whitespace-normal break-words leading-4 sm:max-w-[70%] sm:basis-auto" title={panel.formula} data-testid={`${testId}-formula`}>
             {panel.formula}
           </span>
         ) : null}
