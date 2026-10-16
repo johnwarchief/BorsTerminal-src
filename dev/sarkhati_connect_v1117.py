@@ -185,6 +185,24 @@ ck(not os.path.isdir(stale) and h10.profile_dir != stale,
    "E9 پروفایلِ پنجرۀ مُرده پیش ازِ جایگزینی پاک می‌شود",
    {"stale": os.path.isdir(stale)})
 XC.close_login_window()
+# هم‌زمانی: هشت درخواستِ بازِ‌کردن ⇒ فقط یکِ پروسه (بی‌قفل، دو شناسه می‌ساخت)
+slow = []
+def _slow_popen(*a, **k):
+    slow.append(a)
+    __import__("time").sleep(0.05)
+    return LiveProc()
+XC.subprocess.Popen = _slow_popen
+import threading                                              # noqa: E402
+res = []
+ths = [threading.Thread(target=lambda: res.append(XC.open_login_window(
+    "https://mts.example-broker.ir/login"))) for _ in range(8)]
+for t in ths: t.start()
+for t in ths: t.join()
+n_live = sum(1 for _x, why in res if why in ("", "already-open"))
+ck(len(slow) == 1 and n_live == 8,
+   "E10 هشت بازِ‌کردنِ هم‌زمان یکِ پروسه می‌سازد، نه هشت",
+   {"popen": len(slow), "ok": n_live})
+XC.close_login_window()
 XC.subprocess.Popen = _real_popen
 XC.subprocess.run = _real_run
 
