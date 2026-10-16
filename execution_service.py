@@ -28,7 +28,7 @@ from __future__ import annotations
 
 import time
 from dataclasses import dataclass, field
-from typing import Callable, Mapping, Sequence
+from typing import Any, Callable, Mapping, Sequence
 
 from execution_contract import (
     BrokerAdapter, BrokerError, Capabilities, ErrorCode, ExecutionRecord,
@@ -42,11 +42,71 @@ PASS, FAIL_, UNKNOWN = "PASS", "FAIL", "UNKNOWN"
 
 @dataclass(frozen=True)
 class Limits:
-    """گاردِ بندِ ۱۵. پیش‌فرضِ محافظه‌کارانه: یکِ سفارش، بی‌تکرار، بی‌قیمتِ کلان."""
+    """گاردِ بندِ ۱۵ و ۶-۴. پیش‌فرضِ محافظه‌کارانه: یکِ سفارش، بی‌تکرار، بی‌قیمتِ کلان.
+
+    قاعدۀ حاکم بر *همۀ* فیلدهای `None`-پذیر: `None` یعنی «این سقف اصلاً
+    تعریف نشده»، و تا تعریف نشده هیچ داوری نمی‌شود. اگر برعکس عمل می‌کردیم
+    («None یعنی صفر») هر مصرف‌کننده‌ای که exposure حساب نکرده باشد از دروازه
+    رد نمی‌شد — یعنی یک رباتِ بی‌حساب‌وکتاب مسدود، و این جای درستِ ترس نیست.
+    برعکسش هم قاعده است: سقفی که **تعریف شده** ولی اندازه‌اش نرسیده (`None` در
+    `RiskContext`) رد می‌کند، نه پذیرش. بندِ ۶-۵: در وضعیتِ نامطمئن، ربات پیش‌فرض
+    اقدامِ تازه نمی‌کند.
+    """
     max_orders: int = 1
     max_total_value: float | None = None
     max_total_quantity: float | None = None
     require_confirmation: bool = True
+    #: ارزشِ هر سفارش به‌تنهایی (§۶-۴: حداکثر حجم و ارزش هر سفارش)
+    max_order_value: float | None = None
+    #: ارزشِ کلِ باز در یک نماد (§۶-۴: حداکثر exposure هر نماد)
+    max_symbol_exposure: float | None = None
+    #: ارزشِ کلِ بازِ پرتفو (§۶-۴: حداکثر exposure کل پرتفو)
+    max_total_exposure: float | None = None
+    #: ضررِ محقق‌شدۀ روز؛ رسیدن به آن یعنی توقفِ خودکار (TRIPPED)
+    max_daily_loss: float | None = None
+    #: نرخِ ارسال: چند سفارش در `window_seconds` (§۶-۴: حدِ مجاز تعداد سفارش)
+    max_orders_per_window: int | None = None
+    window_seconds: float = 60.0
+    #: تازگیِ داده: اگر تازه‌ترین شاهدِ داده از این بیشتر گذشته باشد، رد (§۳-۳).
+    #: `None` یعنی این گیت خاموش است (رفتارِ پیشینِ سرخطی).
+    max_data_age_s: float | None = None
+
+
+@dataclass(frozen=True)
+class RiskContext:
+    """اندازه‌هایی که مصرف‌کننده می‌داند و سرویس نباید خودشان را بسازد.
+
+    چرا تزریقی: خودِ سرویس نه به بانکِ بازار دسترسی دارد نه به حسابِ کارگزاری؛
+    حدس‌زدنِ exposure از قیمتِ درخواستیِ کاربر یعنی ساختنِ عددِ نمایشی برایِ
+    عبور از گارد. `None` در هر فیلد یعنی «نمی‌دانیم» و با سقفِ تعریف‌شدۀ
+    همان فیلد ⇒ رد.
+    """
+    #: نماد → ارزشِ بازِ فعلی (تومان/ریال، همان واحدِ سفارش)
+    exposure_by_symbol: Mapping[str, float] | None = None
+    exposure_total: float | None = None
+    #: ضررِ محقق‌شدۀ همین روز (عددِ منفی یعنی ضرر). None = نامعلوم.
+    realized_pnl_today: float | None = None
+    #: تازه‌ترین شاهدِ داده که تصمیم روی آن نشسته (epoch ثانیه)
+    data_as_of_epoch: float | None = None
+    #: منبعِ این اندازه‌ها، برایِ ردِّپا («از کجا می‌دانیم؟»)
+    source: str = "caller"
+
+    def symbol_exposure(self, symbol: str) -> float | None:
+        if self.exposure_by_symbol is None:
+            return None
+        got = self.exposure_by_symbol.get(symbol)
+        return None if got is None else float(got)
+
+    def total_exposure(self) -> float | None:
+        """اگر جمعِ نماد‌ها داده نشده، از واژگانیِ خودشان حساب می‌شود — و اگر
+        هیچ‌کدام نیست None، نه صفر.
+        """
+        if self.exposure_total is not None:
+            return float(self.exposure_total)
+        if self.exposure_by_symbol is None:
+            return None
+        vals = [v for v in self.exposure_by_symbol.values() if v is not None]
+        return float(sum(vals)) if vals else None
 
 
 @dataclass(frozen=True)
@@ -135,7 +195,10 @@ class ExecutionService:
                  scheduler: Scheduler | None = None,
                  dry_run: bool = True,
                  limits: Limits = Limits(),
-                 session_gate: Callable[[int], str] | None = None) -> None:
+                 session_gate: Callable[[int], str] | None = None,
+                 audit=None,
+                 risk_ctx: Callable[[OrderDraft], "RiskContext"] | RiskContext | None = None,
+                 epoch: Callable[[], float] = time.time) -> None:
         self.adapter = adapter
         self.scheduler = scheduler
         self.dry_run = dry_run
@@ -144,6 +207,72 @@ class ExecutionService:
         self.confirmed_ids: set[str] = set()
         self._prepared: dict[str, Prepared] = {}
         self._ledger: dict[str, ExecutionRecord] = {}
+        #: ردِّپایِ ماندگار (`execution_ledger.ExecutionLedger`)؛ None یعنی
+        #: رفتارِ پیشینِ درحافظه‌ای — که برایِ آزمون‌هایِ واحدمان کافی است.
+        self.audit = audit
+        self.risk_ctx = risk_ctx
+        self.epoch = epoch
+
+    # ---- ردِّپا و قفلِ توقف ----------------------------------------------
+    def _risk_for(self, draft: OrderDraft) -> "RiskContext":
+        if self.risk_ctx is None:
+            return RiskContext(source="none")
+        if isinstance(self.risk_ctx, RiskContext):
+            return self.risk_ctx
+        got = self.risk_ctx(draft)
+        return got if isinstance(got, RiskContext) else RiskContext(source="none")
+
+    def halted(self) -> tuple[bool, str]:
+        """وضعیتِ قفلِ توقف. بی‌ردِّپا یعنی قفلی نیست (None ⇒ راه باز).
+
+        چرا بی‌سکوت: اگر روزی `audit` بسته شود و کسی قفل را رویِ دیسک نگه دارد،
+        اینجا باید «توقفی نیست» بدهد نه خطا — ولی هر فراخوانیِ dispatch همان
+        وضعیت را درِ پاسخ اعلام می‌کند تا کسی «خاموش» را «امن» نپندارد.
+        """
+        if self.audit is None:
+            return False, "no durable kill switch wired"
+        return self.audit.halted(), self.audit.kill_state()
+
+    def _audit(self, draft: OrderDraft, kind: str, *, status: str | None = None,
+               order_state: str | None = None, error_code: str | None = None,
+               detail: str = "", payload: Mapping[str, Any] | None = None,
+               filled: float | None = None) -> None:
+        if self.audit is None:
+            return
+        self.audit.record(execution_id=draft.execution_id, kind=kind,
+                          at_epoch=self.epoch(), status=status,
+                          order_state=order_state, error_code=error_code,
+                          detail=detail, broker=self.adapter.name,
+                          symbol=draft.instrument.symbol, side=draft.side.value,
+                          price=draft.price, quantity=draft.quantity,
+                          filled=filled,
+                          mode=draft.mode.value, payload=payload)
+
+    def _audit_state(self, rec: ExecutionRecord, kind: str, why: str) -> None:
+        """رُکوردِ «وضعیت چه شد» از خودِ رکورد، نه از draft.
+
+        چرا جدا: reconcile/refresh با `execution_id` صدا زده می‌شوند و ممکن است
+        ماه‌ها بعدِ ارسالِ original باشند؛ draftِ آنجا نیست. رکوردِ اجرا همهٔ
+        فیلدهایِ لازم را دارد و تنها مرجعِ همان لحظه است.
+        """
+        if self.audit is None:
+            return
+        self.audit.record(execution_id=rec.execution_id, kind=kind,
+                          at_epoch=self.epoch(), status=rec.status.value,
+                          order_state=rec.order_state.value,
+                          error_code=rec.error_code.value if rec.error_code else None,
+                          detail=why, broker=rec.broker, symbol=rec.symbol,
+                          side=rec.side.value if isinstance(rec.side, Side) else str(rec.side),
+                          price=rec.price, quantity=rec.quantity,
+                          filled=rec.filled_quantity,
+                          mode=rec.mode.value if isinstance(rec.mode, OrderMode) else str(rec.mode),
+                          payload={"broker_order_id": rec.broker_order_id})
+
+    def adopt(self, rec: ExecutionRecord) -> None:
+        """رُکوردِ بازیابی‌شده از دیسک را به دفترِ حافظه می‌دهد تا `reconcile()`
+        بعدِ restart همان را بشناسد (بی‌این، «no such execution» می‌داد).
+        """
+        self._ledger[rec.execution_id] = rec
 
     # ---- ۱) پیش‌فرود (بندِ ۱۶) --------------------------------------------
     def preflight(self, draft: OrderDraft) -> Preflight:
@@ -178,10 +307,44 @@ class ExecutionService:
             except BrokerError as e:
                 p.add("balance", UNKNOWN, e.code.value)
 
-        # تکراری‌بودن (بندِ ۱۹)
-        p.add("duplicate", FAIL_ if draft.execution_id in self._ledger else PASS)
+        # تکراری‌بودن (بندِ ۱۹) — هم ردِّپا، هم هر چیزی که *این* پروسه قبلاً
+        # دربارهٔ همان شناسه تصمیم گرفته است. سه منبع، به ترتیبِ زودخجازد:
+        #  ۱) `_ledger` — رکوردِ اجراشده (پذیرش، خطا، نامعلوم)؛
+        #  ۲) `_prepared` — رزروِ یکِ prepare که هنوز execute نشده. بی‌این، دو
+        #     درخواستِ هم‌زمانِ یکِ `execution_id` هر دو preflight را رد می‌کردند:
+        #     درِ `api/execution.py` قفل میانِ prepare و execute رها می‌شود (تا
+        #     توقفِ اضطراری پشتِ یکِ POSTِ ۷ ثانیه‌ای گیر نکند) و کارگزاری دو
+        #     سفارش می‌گرفت. زیرِ بارِ CPU این رقابت واقعاً دو سفارش ساخت —
+        #     «race-now ⇒ 1 سفارش» با got 2 شکست و این سنجه همان را قفل می‌کند.
+        #  ۳) ردِّپایِ ماندگار — پسِ restart دیکشنری‌هایِ درحافظه خالی‌اند.
+        seen_local = (draft.execution_id in self._ledger
+                      or draft.execution_id in self._prepared)
+        seen_durable = False
+        if self.audit is not None and not seen_local:
+            seen_durable = bool(self.audit.events(execution_id=draft.execution_id,
+                                                  kinds=("dispatch",), limit=1))
+        p.add("duplicate", FAIL_ if (seen_local or seen_durable) else PASS,
+              "already dispatched (durable trail)" if seen_durable
+              else ("another prepare holds this id"
+                    if draft.execution_id in self._prepared else ""))
         # تواناییِ ارسال
         p.add("place", PASS if caps.place else FAIL_, "broker cannot place orders")
+
+        # قفلِ توقفِ اضطراری (بندِ ۶-۴): پیشِ هر چیزِ دیگر، چون معنایش «هیچ
+        # سفارشِ تازه‌ای، حتی بی‌ارسالِ بیرونی» است.
+        stopped, why = self.halted()
+        p.add("kill_switch", FAIL_ if stopped else PASS, why)
+
+        # تازگیِ داده (بندِ ۳-۳ و ۶-۴): فقط اگر مصرف‌کننده سقف تعریف کرده باشد
+        # داوری می‌شود؛ اندازه‌اش را هم خودِ مصرف‌کننده می‌دهد، نه اینجا.
+        if self.limits.max_data_age_s is not None:
+            ctx = self._risk_for(draft)
+            if ctx.data_as_of_epoch is None:
+                p.add("data_age", UNKNOWN, "caller gave no data timestamp")
+            else:
+                age = self.epoch() - float(ctx.data_as_of_epoch)
+                p.add("data_age", PASS if age <= self.limits.max_data_age_s else FAIL_,
+                      "age=%.0fs limit=%.0fs" % (age, self.limits.max_data_age_s))
         return p
 
     # ---- ۲) آماده‌سازی (پیش از مهلت) --------------------------------------
@@ -193,7 +356,7 @@ class ExecutionService:
         p = self.preflight(draft)
         if not p.ok:
             raise ExecutionError(_code_for(p), "preflight failed", checks=p.checks)
-        self._check_limits([draft])
+        self._check_limits([draft], ctx=self._risk_for(draft))
         if policy.allow_repeat or draft.mode is OrderMode.ULTRA:
             if self.limits.require_confirmation and not confirmed:
                 raise ExecutionError(ErrorCode.DUPLICATE_GUARD,
@@ -237,8 +400,18 @@ class ExecutionService:
         if prepared.dry_run:
             rec = self._dry_run_record(prepared)
             self._ledger[rec.execution_id] = rec
+            # ردِّپا حتی درِ dry-run نوشته می‌شود (بندِ ۶-۳: «رویدادهایِ سفارش را
+            # درِ audit log ذخیره کند») ولی با نوعِ `dispatch_dry` — چون شمارشِ
+            # نرخِ ارسال باید فقط *ارسال‌هایِ واقعی* را بشمارد، وگرنه آزمایشِ
+            # بی‌ضررِ امروز جلویِ کارِ فردا را می‌گیرد.
+            self._audit(prepared.draft, "dispatch_dry", status=rec.status.value,
+                        order_state=rec.order_state.value,
+                        payload=prepared.payload_preview, filled=0.0)
             return rec
 
+        self._audit(prepared.draft, "dispatch",
+                    status=ExecutionStatus.DISPATCHED.value,
+                    payload=prepared.payload_preview)
         if prepared.plan is not None and self.scheduler is not None:
             tel = self.scheduler.dispatch(
                 prepared.plan,
@@ -278,6 +451,10 @@ class ExecutionService:
             stored.attempts += 1
             stored.note(f"{e.code.value}: {e.detail}")
             self._ledger[draft.execution_id] = stored
+            self._audit(draft, "error", status=stored.status.value,
+                        order_state=stored.order_state.value,
+                        error_code=e.code.value, detail=e.detail,
+                        payload={"attempts": stored.attempts})
             if e.is_unknown_result:
                 # تنها پاسخِ مجاز: reconcile. ارسالِ دوباره درِ اینجا انجام نمی‌شود.
                 return stored
@@ -286,6 +463,10 @@ class ExecutionService:
         self._ledger[draft.execution_id] = rec
         if policy.blocking_verify:
             self._verify(rec)
+        self._audit(draft, "ack", status=rec.status.value,
+                    order_state=rec.order_state.value, filled=rec.filled_quantity,
+                    payload={"broker_order_id": rec.broker_order_id,
+                             "attempts": rec.attempts})
         return rec
 
     def _verify(self, rec: ExecutionRecord) -> None:
@@ -348,9 +529,11 @@ class ExecutionService:
             rec.status = ExecutionStatus.RECONCILED
             rec.broker_order_id = hit.broker_order_id
             _carry_state(rec, hit, "reconciled from broker order list")
+            self._audit_state(rec, "reconcile", "found on broker list")
         else:
             rec.status = ExecutionStatus.FAILED
             rec.note("reconciled: broker has no such order")
+            self._audit_state(rec, "reconcile", "broker has no such order")
         return rec
 
     # ---- ۴-پ) خواندنِ وضعیت / صف (بندِ ۱۸) ---------------------------------
@@ -378,6 +561,7 @@ class ExecutionService:
         _carry_state(rec, found, "refreshed from broker")
         if rec.status in (ExecutionStatus.ACKNOWLEDGED, ExecutionStatus.DISPATCHED):
             rec.status = ExecutionStatus.RECONCILED
+        self._audit_state(rec, "state", "refreshed from broker")
         return rec
 
     def queue(self, execution_id: str) -> QueueView:
@@ -436,7 +620,8 @@ class ExecutionService:
         self._check_limits([draft] * max(1, count))
         return [i * int(delay_ms) for i in range(max(1, count))]
 
-    def _check_limits(self, drafts: Sequence[OrderDraft]) -> None:
+    def _check_limits(self, drafts: Sequence[OrderDraft], *,
+                     ctx: "RiskContext | None" = None) -> None:
         n = len(drafts)
         if n > self.limits.max_orders:
             raise ExecutionError(ErrorCode.DUPLICATE_GUARD,
@@ -451,6 +636,72 @@ class ExecutionService:
                 and total_qty > self.limits.max_total_quantity):
             raise ExecutionError(ErrorCode.DUPLICATE_GUARD,
                                  f"تعدادِ کلِ {total_qty:.0f} از سقف بیرون است")
+
+        # ---- بندهایِ ۶-۴: ارزشِ هر سفارش، exposure، ضرر روزانه، نرخِ ارسال ----
+        # سه حالتِ هر اندازه: سقف تعریف نشده ⇒ داوری نمی‌شود. سقف تعریف شده و
+        # اندازه رسیده ⇒ مقایسه. سقف تعریف شده و اندازه نرسیده ⇒ **رد**
+        # (fail-closed؛ «نمی‌دانم چقدر درگیریم» مجوزِ خرید نیست).
+        lim = self.limits
+        first = drafts[0] if drafts else None
+        if first is None:
+            return
+        c = ctx if ctx is not None else self._risk_for(first)
+
+        per_value = (first.price or 0.0) * (first.quantity or 0.0)
+        if lim.max_order_value is not None and per_value > lim.max_order_value:
+            raise ExecutionError(ErrorCode.RISK_LIMIT,
+                                 f"ارزشِ این سفارشِ تنها ({per_value:.0f}) از "
+                                 f"سقفِ {lim.max_order_value:.0f} بیشتر است")
+
+        if lim.max_symbol_exposure is not None:
+            now_exp = c.symbol_exposure(first.instrument.symbol)
+            if now_exp is None:
+                raise ExecutionError(ErrorCode.RISK_LIMIT,
+                                     "سقفِ exposureِ نماد تعریف شده ولی exposureِ "
+                                     "فعلی داده نشده — رد، نه حدس",
+                                     checks={"exposure_symbol": UNKNOWN})
+            if now_exp + per_value > lim.max_symbol_exposure:
+                raise ExecutionError(
+                    ErrorCode.RISK_LIMIT,
+                    f"exposureِ {first.instrument.symbol} به {now_exp + per_value:.0f} "
+                    f"می‌رسد و سقفِ نماد {lim.max_symbol_exposure:.0f} است")
+
+        if lim.max_total_exposure is not None:
+            tot = c.total_exposure()
+            if tot is None:
+                raise ExecutionError(ErrorCode.RISK_LIMIT,
+                                     "سقفِ exposureِ کل تعریف شده ولی جمعِ درگیرِ "
+                                     "پرتفو داده نشده",
+                                     checks={"exposure_total": UNKNOWN})
+            if tot + per_value > lim.max_total_exposure:
+                raise ExecutionError(ErrorCode.RISK_LIMIT,
+                                     f"exposureِ کل به {tot + per_value:.0f} می‌رسد "
+                                     f"و سقف {lim.max_total_exposure:.0f} است")
+
+        if lim.max_daily_loss is not None:
+            pnl = c.realized_pnl_today
+            if pnl is None:
+                raise ExecutionError(ErrorCode.RISK_LIMIT,
+                                     "سقفِ ضرر روزانه تعریف شده ولی ضررِ امروز داده نشده",
+                                     checks={"daily_loss": UNKNOWN})
+            if -float(pnl) >= lim.max_daily_loss:
+                raise ExecutionError(ErrorCode.RISK_LIMIT,
+                                     f"ضررِ امروز ({pnl:.0f}) به سقفِ {lim.max_daily_loss:.0f} "
+                                     "رسیده — ارسالِ تازه ممنوع")
+
+        if lim.max_orders_per_window is not None:
+            sent = None if self.audit is None else self.audit.orders_in_window(
+                lim.window_seconds, symbol=first.instrument.symbol)
+            if sent is None:
+                raise ExecutionError(ErrorCode.RISK_LIMIT,
+                                     "سقفِ تعدادِ سفارش در پنجره تعریف شده ولی "
+                                     "ردِّپایِ ماندگار وصل نیست — نمی‌دانیم چندتا فرستاده",
+                                     checks={"order_rate": UNKNOWN})
+            if sent + n > lim.max_orders_per_window:
+                raise ExecutionError(
+                    ErrorCode.RISK_LIMIT,
+                    f"{sent + n} سفارشِ این نماد در {lim.window_seconds:.0f} ثانیه، "
+                    f"سقف {lim.max_orders_per_window}")
 
     # ---- کمکي ------------------------------------------------------------
     def _require(self, execution_id: str) -> ExecutionRecord:
@@ -481,6 +732,9 @@ def _carry_state(dst: ExecutionRecord, src: ExecutionRecord, why: str) -> None:
 
 
 def _code_for(p: Preflight) -> ErrorCode:
+    # ترتیبِ داوری مهم است: instrument/price/… خطایِ *خودِ سفارش*‌اند و باید
+    # زودتر از «توقفِ سراسری» reported شوند — کاربری که سفارشِ غلط زده باید
+    # «سفارشت غلط است» بشنود، نه «مسیر متوقف است».
     if p.checks.get("instrument") == FAIL_:
         return ErrorCode.NOT_ORDERABLE
     if p.checks.get("price") == FAIL_:
@@ -493,8 +747,12 @@ def _code_for(p: Preflight) -> ErrorCode:
         return ErrorCode.DUPLICATE_GUARD
     if p.checks.get("place") == FAIL_:
         return ErrorCode.UNSUPPORTED
+    if p.checks.get("data_age") == FAIL_:
+        return ErrorCode.STALE_DATA
+    if p.checks.get("kill_switch") == FAIL_:
+        return ErrorCode.HALTED
     return ErrorCode.BROKER_REJECTED
 
 
 __all__ = ["ExecutionService", "ExecutionError", "Preflight", "Prepared", "QueueView",
-           "Limits", "ModePolicy"]
+           "Limits", "ModePolicy", "RiskContext"]

@@ -123,6 +123,13 @@ a = Analysis(
                    # بودند و در آرشیوِ PYZ نیستند. اگر مسیرِ import هرگز به دیسک
                    # نرسد، EXE با ModuleNotFoundError می‌میرد.
                    'api.market_index', 'api.diagnostics',
+                   # دروازۀِ اجرایِ سرخطی (انتقالِ انتخابی ازِ main، بندِ ۱.۱):
+                   # بیِ اینِ سطر EXE رویِ اولینِ /api/execution/status می‌شکند —
+                   # همانِ مسیری که frontend/src/features/portfolio/lib/orderClient.ts
+                   # صدا می‌زند وِ گاردِ HTTPِ محلی هرگز اینِ شکست را نمی‌بیند.
+                   # آداپتورِ EasyTrader هم صریح فهرست می‌شود (§۹ v1113): بی‌او
+                   # بیلدِ منجمد رویِ اولینِ وضعیت، ModuleNotFoundError می‌گیرد.
+                   'api.execution', 'execution_easytrader',
                    # مرحلۀ ۲ دورِ تطبیقِ دوم: `/api/structure3` موتورِ سوم را به‌عنوان
                    # رابطِ بی‌رأی منتشر می‌کند و `structure_engine3` را سطح-بال import
                    # می‌کند؛ `api_router` هم ماژول را درِ بدنهٔ تابع import می‌کند، پس
