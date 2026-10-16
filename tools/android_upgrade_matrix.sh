@@ -131,8 +131,25 @@ CA=$(cert_of "$D/a1.apk"); CA2=$(cert_of "$D/a2.apk"); CB=$(cert_of "$D/b1.apk")
 
 # دادۀ محلیِ کاربر (localStorage) تنها دادۀ قابل‌ازدست‌رفتنِ این اپ رویِ گوشی است
 adb shell pm clear "$PKG" >/dev/null 2>&1 || true
-if adb install -r -d "$D/a1.apk" > "$D/i1.log" 2>&1; then
-  step "clean-install-official" "PASS" "versionCode $VC_BASE"
+# رانِ 38943920964 (شاخۀ mission/android-parity-2026-10-16): هر سه بیلد و هر دو
+# گواهی PASS بودند و تنها همین سنجه مرد، با
+# «Failure calling service package: Broken pipe (32)» — پیامِ سرویسِ package و
+# لولۀ adb، نه APK و نه گواهی. همان دامی که برایِ monkey سه تلاش گذاشتم این‌جا
+# نبود، پس مریضیِ محیط به‌حسابِ اپ رد می‌شد. سه تلاش فقط برایِ خطایِ ترابری؛
+# خطایِ واقعیِ نصب (گواهی/امضا/نسخه) تکرار و پنهان نمی‌شود.
+INSTALL_OK=no
+INSTALL_TRIED=0
+for i in 1 2 3; do
+  INSTALL_TRIED=$i
+  rm -f "$D/i1.log"
+  if adb install -r -d "$D/a1.apk" > "$D/i1.log" 2>&1; then INSTALL_OK=yes; break; fi
+  grep -qiE "Broken pipe|Failure calling service package|device .*not found|closed" "$D/i1.log" || break
+  echo "تلاش $i: خطایِ ترابری adb/package — 12s صبر و تکرار" >&2
+  sleep 12
+  adb wait-for-device >/dev/null 2>&1 || true
+done
+if [ "$INSTALL_OK" = "yes" ]; then
+  step "clean-install-official" "PASS" "versionCode $VC_BASE (تلاش $INSTALL_TRIED)"
   # سه تلاش: monkey رویِ AVDِ تازه‌بوت‌شده گاهی گم می‌شود (دامِ دیدۀ WebView درِ
   # رانِ 38796223802)؛ یک تلاشِ تنها، flakeِ محیط را به‌حسابِ اپ FAIL می‌کند.
   PID=""
@@ -150,7 +167,11 @@ if adb install -r -d "$D/a1.apk" > "$D/i1.log" 2>&1; then
   adb shell "run-as $PKG sh -c 'echo upmat > /data/data/$PKG/databases/.upmat_probe'" >/dev/null 2>&1 \
     || adb shell "echo" >/dev/null 2>&1
 else
-  step "clean-install-official" "FAIL" "$(tail -2 "$D/i1.log" | tr '\n' ' ')"
+  if grep -qiE "Broken pipe|Failure calling service package|device .*not found|closed" "$D/i1.log"; then
+    step "clean-install-official" "NOT_VERIFIED" "پس ازِ $INSTALL_TRIED تلاش، لولۀ adb/package مرد ($VC_BASE) — رأیِ محیط است نه APK؛ شواهد: $D/i1.log"
+  else
+    step "clean-install-official" "FAIL" "$(tail -2 "$D/i1.log" | tr '\n' ' ')"
+  fi
   printf '{"counts":{"pass":%d,"fail":%d,"not_verified":%d}}\n' $PASS $FAILN $((NOTVER+1)) > "$JSON"; exit 1
 fi
 
