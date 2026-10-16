@@ -67,6 +67,7 @@ export const NAV_SECTIONS: NavSection[] = [
       // رأیِ مالک (1405-07-20): دیده‌بان از درونِ پرتفوی بیرون آمد و تبِّ مستقل شد،
       // ولی همان‌جا زیرِ گروهِ «سرمایه و دارایی» و با دندانه نشان داده می‌شود که
       // تعلقش به پرتفوی گم نشود.
+      { to: '/order-line', icon: MarketIcon, label: 'سرخطی', end: true },
       { to: '/watch', icon: StatusIcon, label: 'دیده‌بان بازار', end: true, sub: true },
     ],
   },

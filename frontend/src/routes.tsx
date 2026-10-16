@@ -19,6 +19,10 @@ export const mainRoutes: RouteObject[] = [
   },
   // بند ۶ مأموریت (1405-07-20): مرکزِ اعلانِ درون‌برنامه از ناوبری باز می‌شود؛
   // منبعش اطلاعیه‌هایِ کدالِ خودِ برنامه است، نه یک فیدِ بیرونیِ تازه.
+  // بندِ ۱.۲ مأموریتِ System 2: سرخطیِ چندنمادی مقصدِ مستقلِ خودش را می‌خواهد —
+  // پنلِ معاملهٔ «دیده‌بان» یکِ فرمِ تک‌نمادی است وِ تب‌هایِ مستقلِ چندنمادی جایِ
+  // دیگری‌اند. بی‌اینِ مسیر، هرِ طراحیِ چندتبّه بهِ یکِ state مشترک برمی‌گردد.
+  { path: 'order-line', element: page(() => import('@features/execution/routes/OrderLinePage')) },
   {
     path: 'notifications',
     element: page(() => import('@features/market/routes/NotificationsPage')),

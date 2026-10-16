@@ -56,6 +56,7 @@ if (!ROUTES.length) {
     ['portfolio', '/portfolio/فولاد'],
     ['watch', '/watch'],
     ['notifications', '/notifications'],
+    ['order-line', '/order-line'],
   ]) ROUTES.push({ name, path: p });
 }
 

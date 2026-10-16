@@ -1,0 +1,29 @@
+{
+  "what": "سناریوِ ۱۰ مأموریتِ System 2 — رفتارِ ردِّپا درِ عبورِ restartِ پروسه",
+  "level": "backend-probe (mock/dry-run؛ هیچِ اتصالِ واقعی آزموده نشد)",
+  "generatedAt": "2026-10-16T20:26:00+03:30",
+  "method": [
+    "۱) BORS_NO_FETCH_LOOPS=1 python -m uvicorn app:app --host 127.0.0.1 --port 8012  (نشستِ اول)",
+    "۲) node tools/ui_order_line_probe.mjs --base=http://127.0.0.1:8012  ⇒ ۲۰ شناسۀِ dry-run درِ ردِّپا",
+    "۳) GET /api/execution/ledger → ۲۰ سطر، kill_switch=ARMED، open_ids=[]  (خارجی‌شدۀِ همین فایل: _scratch/ledger_before_restart.json)",
+    "۴) taskkill /PID <اولین پروسه> /F  وِ راه‌اندازیِ دوباره باِ همانِ دستورِ سطرِ ۱ (همانِ دیسک، همانِ بانک)",
+    "۵) GET /api/execution/ledger → ۰ سطر · POST /dispatch باِ یکی ازِ شناسه‌هایِ پیشِ restart → status=success",
+    "۶) POST /dispatch باِ شناسۀِ کاملاًِ تازه → success (record.status=validated) — یعنی دروازہ پسِ restart کار می‌کند"
+  ],
+  "observed": {
+    "rows_before_restart": 20,
+    "rows_after_restart": 0,
+    "pre_restart_id_replayed_after_restart": "x-tmvb77x17-4",
+    "replay_result": "success (دیگرِ DUPLICATE_GUARD نیست)",
+    "fresh_id_after_restart": "success / validated",
+    "kill_switch_after_restart": "ARMED"
+  },
+  "why": "ExecutionLedger.open_ids() فقطِ ردِّپاهایی را «باز» می‌شمارد که درِ حالتِ نبسته‌اند: unknown_result / dispatched / acknowledged / scheduled / reconciled. رُکوردهایِ بدل باِ status=validated درِ اینِ فهرست نیستند، پسِ restart آن‌ها را درِ دفترِ حافظه برنمی‌گرداند وِ `duplicate` آنِ شناسه‌ها را دوباره قبول می‌کند. کد: execution_ledger.py:192-209 وِ api/execution.py:116-146.",
+  "what_this_protects": "خطرِ واقعیِ restart مالِ سفارشی است که ممکن است بهِ کارگزاری رسیده باشد — وِ آنِ مسیر باِ نوعِ `dispatch` (بی‌_dry) ثبت می‌شود، درِ `open_ids()` می‌ماند وِ پسِ restart دوباره درِ `duplicate` نشستن است. اینِ سه حالت درِ `test_execution_recovery.py` قفل شده‌اند (۳ آزمونِ سبز).",
+  "what_this_does_not_claim": [
+    "«پسِ restart هیچِ شناسه‌ای دوباره ارسال نمی‌شود» — درِ حالتِ mock/dry-run نادرست است وِ اینجا نفی می‌شود.",
+    "هیچِ ادعایی دربارهٔ اتصالِ واقعی: آداپتورِ easytrader درِ اینِ شاخه انتخاب نشده (BORS_EXECUTION_ADAPTER=easytrader) وِ مسیرِ زنده چندِ قفل دارد.",
+    "رتبۀِ صف، «اولِ صف شدن»، RTTِ کارگزاری وِ سرعتِ اجرایِ سفارش درِ اینِ حالت اندازه‌گرفته نمی‌شوند (response_ms/observed_ms = null)."
+  ],
+  "ui_side_of_the_same_scenario": "درِ رابط، بازخوانیِ صفحه صفرِ نوشتار ساخت (سناریوِ ۱۰ درِ `_audit/ui2/order-line-probe.json`: «۰ نوشتار پسِ reload») وِ پیش‌نویس‌ها باِ همانِ شناسه‌ها برمی‌گردند؛ حالتِ «در حالِ ارسالِ دیروز» بهِ پیش‌نویس تنزل می‌کند. یعنی تنها راهِ ارسالِ دوباره پسِ restart، یکِ کلیکِ آگاهانۀِ انسان است، نه رفتارِ خودکارِ محصول."
+}

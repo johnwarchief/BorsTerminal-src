@@ -1,0 +1,207 @@
+{
+ "base": "http://127.0.0.1:8012",
+ "buildLabel": "نامشخص",
+ "bundle": "/assets/index-Bqv1iYix.js",
+ "methodVersion": "v3-clip-node-identity",
+ "viewport": {
+  "width": 1366,
+  "height": 768
+ },
+ "browser": "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
+ "generatedAt": "2026-10-16T16:46:41.246Z",
+ "consoleErrors": [],
+ "method": {
+  "density": "numberCellsInFirstScreen = سلول‌هایِ عددیِ دیدنی درِ ۰ تاِ innerHeight (برازِ «چگالیِ داده درِ یکِ screenful»)",
+  "hierarchy": "headings = تیترها باِ level/top/fontPx، مرتب ازِ بالا بهِ پایینِ همانِ صفحه",
+  "primaryAction": "primaryActionTop = اولینِ کنشِ دیدنیِ برچسب‌دار درِ screenfulِ اول (RTL: left ازِ راستِ صفحه اندازهِٔ پیکسلی)",
+  "scrollers": "scrollers = ظرف‌هایی که خودشون اسکرول می‌شن (scrollH > clientH + 12)، نه بدۀِ سند",
+  "tiny": "tinyTextCount = متنِ دیدنیِ زیرِ ۱۰٫۵ پیکسل درِ screenfulِ اول"
+ },
+ "pages": [
+  {
+   "name": "order-line",
+   "path": "/order-line",
+   "apiCount": 7,
+   "api": [
+    "200 /api/update/version",
+    "200 /api/notifications/feed",
+    "200 /api/selection/portfolio",
+    "200 /api/market",
+    "200 /api/execution/limits",
+    "200 /api/execution/status",
+    "200 /api/funnel"
+   ],
+   "route": "#/order-line",
+   "urlSymbol": null,
+   "docScrollH": 768,
+   "viewportH": 768,
+   "hScrollPx": 0,
+   "contentWidthRatio": 1,
+   "headings": [],
+   "headingCount": 0,
+   "actionCount": 21,
+   "firstScreenActionCount": 21,
+   "firstScreenActions": [
+    {
+     "tag": "button",
+     "role": null,
+     "label": "جمع‌کردن نوار کناری",
+     "top": 15,
+     "left": 1209,
+     "w": 23,
+     "h": 23,
+     "inFirstScreen": true,
+     "disabled": false,
+     "testid": null
+    },
+    {
+     "tag": "a",
+     "role": null,
+     "label": "وضعیت بازار",
+     "top": 74,
+     "left": 1209,
+     "w": 146,
+     "h": 36,
+     "inFirstScreen": true,
+     "disabled": false,
+     "testid": null
+    },
+    {
+     "tag": "a",
+     "role": null,
+     "label": "تابلوخوانی",
+     "top": 112,
+     "left": 1209,
+     "w": 146,
+     "h": 36,
+     "inFirstScreen": true,
+     "disabled": false,
+     "testid": null
+    },
+    {
+     "tag": "a",
+     "role": null,
+     "label": "تکنیکال",
+     "top": 150,
+     "left": 1209,
+     "w": 146,
+     "h": 36,
+     "inFirstScreen": true,
+     "disabled": false,
+     "testid": null
+    },
+    {
+     "tag": "a",
+     "role": null,
+     "label": "بنیادی",
+     "top": 188,
+     "left": 1209,
+     "w": 146,
+     "h": 36,
+     "inFirstScreen": true,
+     "disabled": false,
+     "testid": null
+    },
+    {
+     "tag": "a",
+     "role": null,
+     "label": "استراتژی FTS",
+     "top": 254,
+     "left": 1209,
+     "w": 146,
+     "h": 36,
+     "inFirstScreen": true,
+     "disabled": false,
+     "testid": null
+    },
+    {
+     "tag": "a",
+     "role": null,
+     "label": "درخت استراتژی",
+     "top": 292,
+     "left": 1209,
+     "w": 146,
+     "h": 36,
+     "inFirstScreen": true,
+     "disabled": false,
+     "testid": null
+    },
+    {
+     "tag": "a",
+     "role": null,
+     "label": "مدیریت پرتفوی",
+     "top": 358,
+     "left": 1209,
+     "w": 146,
+     "h": 36,
+     "inFirstScreen": true,
+     "disabled": false,
+     "testid": null
+    },
+    {
+     "tag": "a",
+     "role": null,
+     "label": "سرخطی",
+     "top": 396,
+     "left": 1209,
+     "w": 146,
+     "h": 36,
+     "inFirstScreen": true,
+     "disabled": false,
+     "testid": null
+    },
+    {
+     "tag": "a",
+     "role": null,
+     "label": "دیده‌بان بازار",
+     "top": 435,
+     "left": 1209,
+     "w": 134,
+     "h": 36,
+     "inFirstScreen": true,
+     "disabled": false,
+     "testid": "nav-sub-watch"
+    },
+    {
+     "tag": "button",
+     "role": null,
+     "label": "⚙admin",
+     "top": 691,
+     "left": 1296,
+     "w": 50,
+     "h": 14,
+     "inFirstScreen": true,
+     "disabled": false,
+     "testid": "user-settings-btn"
+    },
+    {
+     "tag": "button",
+     "role": null,
+     "label": "خروج ⎋",
+     "top": 690,
+     "left": 1218,
+     "w": 47,
+     "h": 16,
+     "inFirstScreen": true,
+     "disabled": false,
+     "testid": null
+    }
+   ],
+   "primaryActionTop": 15,
+   "tables": [],
+   "numberCellsInFirstScreen": 1,
+   "tinyTextCount": 0,
+   "tinySamples": [],
+   "clippedCount": 0,
+   "clippedSamples": [],
+   "scrollers": [],
+   "empties": [
+    "هیچِ تبی باز نیست. هرِ تب یکِ نماد باِ قیمت، تعداد وِ شناسۀِ",
+    "وضعیتِ ناظر: اطلاعات در دسترس نیست"
+   ],
+   "inspectorOpen": true,
+   "inspectorTestId": null,
+   "testids": 60
+  }
+ ]
+}

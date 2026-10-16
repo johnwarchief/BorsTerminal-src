@@ -11,6 +11,7 @@ import { resolveSymbolParam } from '@shared/lib/symbolParam';
 const TITLES: Record<string, string> = {
   '/market': 'تابلوخوانی',
   '/market-status': 'وضعیت بازار',
+  '/order-line': 'سرخطی',
   '/watch': 'دیده‌بان بازار',
   '/technical': 'تحلیل تکنیکال',
   '/fundamental': 'تحلیل بنیادی',

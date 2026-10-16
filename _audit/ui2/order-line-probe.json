@@ -1,0 +1,518 @@
+{
+  "base": "http://127.0.0.1:8012",
+  "generatedAt": "2026-10-16T17:09:19.043Z",
+  "level": "UI test on mock/dry-run backend + direct backend probes (NO live broker connection tested)",
+  "status": {
+    "status": "success",
+    "adapter": "mock",
+    "dry_run": true,
+    "experimental": true,
+    "live_enabled": false,
+    "nothing_will_leave_the_machine": true,
+    "live_requested": false,
+    "wire_hypothesis": false,
+    "session": {
+      "state": "connected",
+      "account_label": "mock-acct-1",
+      "checked_at": null
+    },
+    "blocked_on": [
+      "آداپتورِ واقعی انتخاب نشده (BORS_EXECUTION_ADAPTER=easytrader)"
+    ],
+    "capabilities": {
+      "place": true,
+      "list_orders": true,
+      "order_state": true,
+      "queue_position": true,
+      "cancel": true,
+      "best_bid_ask": false,
+      "balances": false
+    },
+    "limits": {
+      "max_orders": 1,
+      "max_total_value": null,
+      "max_total_quantity": null,
+      "require_confirmation": true,
+      "max_order_value": null,
+      "max_symbol_exposure": null,
+      "max_total_exposure": null,
+      "max_daily_loss": null,
+      "max_orders_per_window": null,
+      "window_seconds": 60,
+      "max_data_age_s": null
+    },
+    "ledger_size": 2,
+    "kill_switch": "ARMED",
+    "halted": false,
+    "kill_reason": "ادامهٔ دستوری",
+    "durable_events": 26,
+    "recovered_after_restart": 0,
+    "audit_db": "C:\\Users\\Johnkallnaya\\Desktop\\Borsterminal\\.worktrees\\uiux-2-0\\user.db",
+    "clock_source": "system",
+    "clock_limit": "ساعتِ سیستم بدونِ آفستِ NTP؛ زمان‌بندی رویِ monotonic است پس پرشِ ساعتِ دیواری dispatch را جابه‌جا نمی‌کند، ولی خودِ هدفِ دیواری قابلِ ادعایِ دقتِ میلی‌ثانیه نیست",
+    "scheduled_pending": 0
+  },
+  "steps": [
+    {
+      "no": "۰",
+      "name": "سرویسِ اجرا درِ حالتِ بدلِ قفل است (بی‌این هیچِ نوشتاری آزموده نمی‌شود)",
+      "pass": true,
+      "evidence": "http=200 ctype=application/json adapter=mock dry_run=true live_enabled=false nothing_will_leave_the_machine=true blocked_on=آداپتورِ واقعی انتخاب نشده (BORS_EXECUTION_ADAPTER=easytrader)",
+      "level": "backend-probe"
+    },
+    {
+      "no": "۱",
+      "name": "سه تب ساخته شد؛ هرِ تب triggerِ نقش‌دار باِ پنلِ aria-controlsِ خودش",
+      "pass": true,
+      "evidence": "tabs=3 panels=3",
+      "level": "UI/mock-backend"
+    },
+    {
+      "no": "۲",
+      "name": "تغییرِ نماد درِ یکِ تب، دو تبِ دیگر را عوض نمی‌کند (سه سرِ متفاوت)",
+      "pass": true,
+      "evidence": "فولاد·پیش‌نویس | خودرو·پیش‌نویس | شپنا·پیش‌نویس",
+      "level": "UI/mock-backend"
+    },
+    {
+      "no": "۳",
+      "name": "جابه‌جاییِ بینِ تب‌ها ورودیِ هرِ تب را نگه می‌دارد (هیچِ فیلدی جابه‌جا نمی‌شود)",
+      "pass": true,
+      "evidence": "تبِ اول تعداد=50 · تبِ دوم نماد=خودرو",
+      "level": "UI/mock-backend"
+    },
+    {
+      "no": "۳-ب",
+      "name": "هرِ تب شناسۀِ اجرایِ جدا دارد (کلیدِ idempotency درِ هرِ تب جداست)",
+      "pass": true,
+      "evidence": "x-jjv9vb2bat · x-0tns002bgx · x-5hnbff2bmh",
+      "level": "UI/mock-backend"
+    },
+    {
+      "no": "۵",
+      "name": "اعتبارسنجی، `checks` خودِ سرویس را می‌آورد (نماد باِ ISIN: instrument قبول)",
+      "pass": true,
+      "evidence": "قبولexecution_id / قبولinstrument / قبولside / قبولprice",
+      "level": "UI/mock-backend"
+    },
+    {
+      "no": "۵-ب",
+      "name": "نمادی که ISIN درِ بانکِ محلی ندارد رد می‌شود وِ رابط نگاشت اختراع نمی‌کند",
+      "pass": true,
+      "evidence": "ردinstrumentNOT_ORDERABLE:resolution",
+      "level": "UI/mock-backend"
+    },
+    {
+      "no": "۶",
+      "name": "ارسالِ یکِ تب دقیقاً یکِ درخواستِ dispatch می‌فرستد",
+      "pass": true,
+      "evidence": "1 درخواست · otherTabs=1",
+      "level": "UI/mock-backend"
+    },
+    {
+      "no": "۶-ب",
+      "name": "نتیجهٔ همانِ تب ازِ پاسخِ سرویس خوانده می‌شود (record/status/broker_order_id درِ صورتِ ارائه)",
+      "pass": true,
+      "evidence": "{ \"record\": { \"execution_id\": \"x-jjv9vb2bat\", \"symbol\": \"فولاد\", \"side\": \"buy\", \"price\": 5170, \"quantity\": 50, \"mode\": \"safe\", \"status\": \"validated\", \"order_state\": \"unknown\", \"broker_order_id\": null,",
+      "level": "UI/mock-backend"
+    },
+    {
+      "no": "۶-پ",
+      "name": "وضعیتِ هرِ تب درِ سرِ تب جداست: ارسالِ یکِ تب، تبِ بی‌کار را «فرستاده‌شده» نمی‌کند",
+      "pass": true,
+      "evidence": "فولاد: فولاد·اعتبارسنجی‌شده || خودرو: خودرو·پیش‌نویس",
+      "level": "UI/mock-backend"
+    },
+    {
+      "no": "۷-ب",
+      "name": "هرِ نوشتار باِ `confirmed: true` ازِ رابط می‌رود (رأیِ صریحِ کاربر؛ دروازہ درِ mode=safe آن را الزام نمی‌کند — فیکسچر)",
+      "pass": true,
+      "evidence": "1 dispatch، همه باِ confirmed:true",
+      "level": "UI/mock-backend"
+    },
+    {
+      "no": "۷-پ",
+      "name": "`mock_instrument` فقط باِ تیکِ همانِ تب درِ بدنه می‌نشیند",
+      "pass": true,
+      "evidence": "همۀِ dispatchهایِ آزموده: mock=true",
+      "level": "UI/mock-backend"
+    },
+    {
+      "no": "۹",
+      "name": "سهِ کلیکِ همِ‌زمان (یکِ تسک) رویِ یکِ تب، یکِ درخواست می‌سازد (قفلِ درِ state)",
+      "pass": true,
+      "evidence": "1 درخواست ازِ ۳ کلیکِ همِ‌زمان · کلِ dispatch=2",
+      "level": "UI/mock-backend"
+    },
+    {
+      "no": "۹-د",
+      "name": "کلیکِ دوم پسِ رسیدنِ پاسخ، سفارشِ تازه نمی‌سازد: سرویس duplicate رد می‌کند وِ ردِّپا یکِ سطر می‌ماند",
+      "pass": true,
+      "evidence": "درخواستِ دوم=1 · کد=DUPLICATE_GUARD · سطرهایِ همانِ شناسه=1",
+      "level": "UI/mock-backend"
+    },
+    {
+      "no": "۸",
+      "name": "ردِ «شپنا» وضعیتِ «فولاد» را دست‌نخورده می‌گذارد (دوِ واژگانِ متفاوت درِ دوِ تب)",
+      "pass": true,
+      "evidence": "شپنا: شپنا·رد/خطا || فولاد: فولاد·اعتبارسنجی‌شده",
+      "level": "UI/mock-backend"
+    },
+    {
+      "no": "۷",
+      "name": "قطعِ ارتباط «رد» نیست: «نتیجهٔ نامعلوم» باِ همانِ شناسه وِ دکمۀِ مطابقت ظاهر می‌شود",
+      "pass": true,
+      "evidence": "خودرو·نتیجهٔ نامعلوم :: پاسخِ سرویس نرسید: Failed to fetch — نتیجه نامعلوم است.",
+      "level": "UI/mock-backend"
+    },
+    {
+      "no": "۷-ت",
+      "name": "HTML به‌جایِ JSON (fallbackِ SPA) بهِ «موفق» ترجمه نمی‌شود وِ بی‌retry نمی‌ماند رویِ ادعا",
+      "pass": true,
+      "evidence": "درخواست‌هایِ افزوده=1 یادداشت=پاسخِ سرویس نرسید: Unexpected token '<', \"<!doctype \"... is not valid JSON — نتیجه نامعلوم",
+      "level": "UI/mock-backend"
+    },
+    {
+      "no": "۹-ب",
+      "name": "پسِ خطا، «مطابقتِ نتیجه» باِ همانِ شناسه می‌رود وِ dispatchِ تازه نمی‌سازد",
+      "pass": true,
+      "evidence": "dispatchِ تازه=0 reconcile=1 مسیر=/api/execution/reconcile/x-0tns002bgx",
+      "level": "UI/mock-backend"
+    },
+    {
+      "no": "۸-ب",
+      "name": "ارسالِ گروهی پیش ازِ هرچیز «مرور» می‌خواهد: نماد/قیمت/تعداد/شناسه درِ یکِ چک‌لیست",
+      "pass": true,
+      "evidence": "فولادخرید۵۱۷۰× ۵۰safex-jjv9vb2batخودروخرید۳۱۲× ۹۰۰safex-0tns002bgxشپناخرید۱۰۴۰× ۱۰۰safex-5hnbff2bmh",
+      "level": "UI/mock-backend"
+    },
+    {
+      "no": "۶-گ",
+      "name": "گروهی = چندِ درخواستِ مستقل باِ شناسه‌هایِ متفاوت (بی‌endpointِ گروهیِ ساختگی)",
+      "pass": true,
+      "evidence": "3 درخواست: x-jjv9vb2bat x-0tns002bgx x-5hnbff2bmh",
+      "level": "UI/mock-backend"
+    },
+    {
+      "no": "۱۰",
+      "name": "بازخوانیِ صفحه هیچِ سفارشی را دوباره اجرا نمی‌کند (صفرِ نوشتار)",
+      "pass": true,
+      "evidence": "0 نوشتار پسِ reload · 0 درخواستِ دیگر",
+      "level": "UI/mock-backend"
+    },
+    {
+      "no": "۱۰-ب",
+      "name": "پیش‌نویس‌ها ازِ همینِ دستگاه بازیابی می‌شوند وِ حالتِ «در حالِ ارسال» پایین می‌آید",
+      "pass": true,
+      "evidence": "فولاد·پیش‌نویس | خودرو·پیش‌نویس | شپنا·پیش‌نویس",
+      "level": "UI/mock-backend"
+    },
+    {
+      "no": "۴",
+      "name": "بستنِ یکِ تب، ورودیِ تب‌هایِ دیگر را خراب نمی‌کند",
+      "pass": true,
+      "evidence": "تبها=2 · تعدادِ تبِ دوم=900",
+      "level": "UI/mock-backend"
+    },
+    {
+      "no": "۱۱",
+      "name": "درِ ۱۳۶۶×۷۶۸ سرریزِ افقیِ سند صفر است وِ تب‌ها می‌شکنند",
+      "pass": true,
+      "evidence": "docOverflow=۰px · سطرِ تب=۱ · بریدگی=[]",
+      "level": "UI/mock-backend"
+    },
+    {
+      "no": "۱۱",
+      "name": "درِ ۱۰۲۴×۷۶۸ سرریزِ افقیِ سند صفر است وِ تب‌ها می‌شکنند",
+      "pass": true,
+      "evidence": "docOverflow=۰px · سطرِ تب=۱ · بریدگی=[]",
+      "level": "UI/mock-backend"
+    },
+    {
+      "no": "۱۱",
+      "name": "درِ ۴۳۰×۹۳۲ سرریزِ افقیِ سند صفر است وِ تب‌ها می‌شکنند",
+      "pass": true,
+      "evidence": "docOverflow=۰px · سطرِ تب=۱ · بریدگی=[]",
+      "level": "UI/mock-backend"
+    },
+    {
+      "no": "۱۱",
+      "name": "درِ ۳۹۰×۸۴۴ سرریزِ افقیِ سند صفر است وِ تب‌ها می‌شکنند",
+      "pass": true,
+      "evidence": "docOverflow=۰px · سطرِ تب=۱ · بریدگی=[]",
+      "level": "UI/mock-backend"
+    },
+    {
+      "no": "۱۱",
+      "name": "درِ ۳۶۰×۶۴۰ سرریزِ افقیِ سند صفر است وِ تب‌ها می‌شکنند",
+      "pass": true,
+      "evidence": "docOverflow=۰px · سطرِ تب=۲ · بریدگی=[]",
+      "level": "UI/mock-backend"
+    },
+    {
+      "no": "۱.۴",
+      "name": "زمانِ پیش‌فرود ازِ مرورگر (۵ نمونه، یکِ ساعت) -- گزارشِ بی‌آستانه",
+      "pass": true,
+      "evidence": "client ms min/med/max = 18/18/26 · درِ پاسخِ preflight کلیدِ timings نیست (svc=null) · ok=true,true,true,true,true",
+      "level": "UI/mock-backend"
+    },
+    {
+      "no": "۱.۴-ب",
+      "name": "زمانِ مسیرِ ارسال: دوِ ساعتِ مستقل (ساعتِ پروسه وِ monotonicِ دروازہ) باِ نتیجهٔ acceptance",
+      "pass": true,
+      "evidence": "client ms min/med/max = 22/28/34 · dispatch_msِ سرویس = 8.6/8.8/11.2 · kill_switch=ARMED · response_ms=null (بی‌ارسالِ واقعی: RTT وِ رتبۀِ صف اندازه‌گرفته نمی‌شوند)",
+      "level": "backend-probe"
+    },
+    {
+      "no": "۹-پ",
+      "name": "درِ یکِ نشستِ پروسه، هرِ شناسه یکِ سطرِ ردِّپا دارد (بی‌سطرِ دوتایی ازِ کلیک/تکرار)",
+      "pass": true,
+      "evidence": "سطرها=9 منحصربه‌فرد=9",
+      "level": "UI/mock-backend"
+    },
+    {
+      "no": "۱۰-پ",
+      "name": "تکرارِ همانِ execution_id ازِ خودِ سرویس رد می‌شود (check=duplicate، بی‌سفارشِ تازه)",
+      "pass": true,
+      "evidence": "{\"http\":200,\"ctype\":\"application/json\",\"status\":\"error\",\"code\":\"DUPLICATE_GUARD\",\"dup_check\":\"FAIL\"}",
+      "level": "UI/mock-backend"
+    },
+    {
+      "no": "۱۲",
+      "name": "بی‌استثنایِ بی‌گرفته (pageerror) درِ کلِ سناریو",
+      "pass": true,
+      "evidence": "هیچ",
+      "level": "UI/mock-backend"
+    },
+    {
+      "no": "۱۲-ب",
+      "name": "خطایِ کنسول فقطِ مالِ دوِ نقصِ تزریق‌شدۀِ بندِ ۷ است (بی‌خطایِ تازه)",
+      "pass": true,
+      "evidence": "کلِ کنسول=1 · بیرونِ تزریق=[]",
+      "level": "UI/mock-backend"
+    }
+  ],
+  "consoleErrors": [
+    "Failed to load resource: net::ERR_TIMED_OUT"
+  ],
+  "pageErrors": [],
+  "posts": [
+    {
+      "p": "/api/execution/preflight",
+      "id": "x-jjv9vb2bat",
+      "mock": true,
+      "confirmed": false,
+      "t": 1792170539087
+    },
+    {
+      "p": "/api/execution/preflight",
+      "id": "x-5hnbff2bmh",
+      "mock": true,
+      "confirmed": false,
+      "t": 1792170539615
+    },
+    {
+      "p": "/api/execution/dispatch",
+      "id": "x-jjv9vb2bat",
+      "mock": true,
+      "confirmed": true,
+      "t": 1792170540122
+    },
+    {
+      "p": "/api/execution/dispatch",
+      "id": "x-0tns002bgx",
+      "mock": true,
+      "confirmed": true,
+      "t": 1792170540447
+    },
+    {
+      "p": "/api/execution/dispatch",
+      "id": "x-0tns002bgx",
+      "mock": true,
+      "confirmed": true,
+      "t": 1792170542505
+    },
+    {
+      "p": "/api/execution/dispatch",
+      "id": "x-5hnbff2bmh",
+      "mock": true,
+      "confirmed": true,
+      "t": 1792170544514
+    },
+    {
+      "p": "/api/execution/dispatch",
+      "id": "x-0tns002bgx",
+      "mock": true,
+      "confirmed": true,
+      "t": 1792170544913
+    },
+    {
+      "p": "/api/execution/dispatch",
+      "id": "x-0tns002bgx",
+      "mock": true,
+      "confirmed": true,
+      "t": 1792170545061
+    },
+    {
+      "p": "/api/execution/reconcile/x-0tns002bgx",
+      "id": "",
+      "mock": false,
+      "confirmed": false,
+      "t": 1792170546347
+    },
+    {
+      "p": "/api/execution/dispatch",
+      "id": "x-jjv9vb2bat",
+      "mock": true,
+      "confirmed": true,
+      "t": 1792170547835
+    },
+    {
+      "p": "/api/execution/dispatch",
+      "id": "x-0tns002bgx",
+      "mock": true,
+      "confirmed": true,
+      "t": 1792170547853
+    },
+    {
+      "p": "/api/execution/dispatch",
+      "id": "x-5hnbff2bmh",
+      "mock": true,
+      "confirmed": true,
+      "t": 1792170547875
+    },
+    {
+      "p": "/api/execution/preflight",
+      "id": "probe-t-1792170557684-0",
+      "mock": true,
+      "confirmed": false,
+      "t": 1792170557687
+    },
+    {
+      "p": "/api/execution/preflight",
+      "id": "probe-t-1792170557710-1",
+      "mock": true,
+      "confirmed": false,
+      "t": 1792170557712
+    },
+    {
+      "p": "/api/execution/preflight",
+      "id": "probe-t-1792170557728-2",
+      "mock": true,
+      "confirmed": false,
+      "t": 1792170557731
+    },
+    {
+      "p": "/api/execution/preflight",
+      "id": "probe-t-1792170557746-3",
+      "mock": true,
+      "confirmed": false,
+      "t": 1792170557749
+    },
+    {
+      "p": "/api/execution/preflight",
+      "id": "probe-t-1792170557764-4",
+      "mock": true,
+      "confirmed": false,
+      "t": 1792170557766
+    }
+  ],
+  "timing": [
+    {
+      "client_ms": 26,
+      "svc": null,
+      "ok": true
+    },
+    {
+      "client_ms": 19,
+      "svc": null,
+      "ok": true
+    },
+    {
+      "client_ms": 18,
+      "svc": null,
+      "ok": true
+    },
+    {
+      "client_ms": 18,
+      "svc": null,
+      "ok": true
+    },
+    {
+      "client_ms": 18,
+      "svc": null,
+      "ok": true
+    }
+  ],
+  "sendTiming": [
+    {
+      "client_ms": 28,
+      "svc": {
+        "prepared_ms": null,
+        "dispatch_ms": 8.6,
+        "response_ms": null,
+        "observed_ms": null
+      },
+      "status": "success",
+      "kill": "ARMED"
+    },
+    {
+      "client_ms": 22,
+      "svc": {
+        "prepared_ms": null,
+        "dispatch_ms": 8.9,
+        "response_ms": null,
+        "observed_ms": null
+      },
+      "status": "success",
+      "kill": "ARMED"
+    },
+    {
+      "client_ms": 34,
+      "svc": {
+        "prepared_ms": null,
+        "dispatch_ms": 8.6,
+        "response_ms": null,
+        "observed_ms": null
+      },
+      "status": "success",
+      "kill": "ARMED"
+    },
+    {
+      "client_ms": 32,
+      "svc": {
+        "prepared_ms": null,
+        "dispatch_ms": 8.8,
+        "response_ms": null,
+        "observed_ms": null
+      },
+      "status": "success",
+      "kill": "ARMED"
+    },
+    {
+      "client_ms": 23,
+      "svc": {
+        "prepared_ms": null,
+        "dispatch_ms": 11.2,
+        "response_ms": null,
+        "observed_ms": null
+      },
+      "status": "success",
+      "kill": "ARMED"
+    }
+  ],
+  "ledger": {
+    "rows": 9,
+    "ids": [
+      "x-tmvb77x17-4",
+      "fx-restart-ok-1",
+      "x-jjv9vb2bat",
+      "x-0tns002bgx",
+      "x-tmvb82sm0-0",
+      "x-tmvb82sms-1",
+      "x-tmvb82snd-2",
+      "x-tmvb82sob-3",
+      "x-tmvb82sp7-4"
+    ]
+  }
+}
