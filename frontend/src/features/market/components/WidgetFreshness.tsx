@@ -93,14 +93,17 @@ export function WidgetFreshness({ label, input }: { label: string; input: Widget
     <span
       data-testid="widget-freshness"
       title={`تازگیِ «${label}» — سنِ رسیدنِ پاسخ، نه ساعتِ خودِ صفحه`}
-      className={`num-text inline-flex items-center gap-1 text-3xs ${v.toneClass}`}
+      // قالبِ «pill» عمدی است: گرفتنیِ ۱۳۶۶×۷۶۸ نشان داد وقتی ده برچسب بی‌حاشیه درِ
+      // یکِ خط کنارِ هم می‌نشینند، بهِ یکِ پاراگرافِ ناخوانا تبدیل می‌شوند (عددِ DOM
+      // اینِ نقص را نمی‌بیند: نه سرریز است وِ نه بریدگی).
+      className={`num-text inline-flex items-center gap-1 whitespace-nowrap rounded border border-border-c bg-bg-card/70 px-1.5 py-px text-3xs leading-4 ${v.toneClass}`}
     >
       {/* نامِ ویجت درِ متن می‌ماند (نه فقط درِ title): وقتی ششِ برچسب درِ یکِ صفحه
           دیده می‌شود، صفحه‌خوان باید بداند کدامِ سن مالِ کدامِ بخش است. */}
-      <span className="text-text-muted">{label}:</span>
-      <span className="whitespace-nowrap">{v.label}</span>
+      <span className="font-bold text-text-secondary">{label}</span>
+      <span>{v.label}</span>
       {v.ageText ? <span className="text-text-muted">· {v.ageText}</span> : null}
-      <span className="text-text-muted">· {v.sourceText}</span>
+      {v.sourceText ? <span className="text-text-muted">· {v.sourceText}</span> : null}
     </span>
   );
 }

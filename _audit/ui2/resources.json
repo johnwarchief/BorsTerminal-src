@@ -1,0 +1,137 @@
+{
+  "server": {
+    "pid": 2676,
+    "name": "python.exe",
+    "cmdline": "C:\\Users\\Johnkallnaya\\Desktop\\Borsterminal\\.worktrees\\uiux-2-0\\.venv-ui\\Scripts\\python.exe -m uvicorn app:app --host 127.0.0.1 --port 8010 --log-level warning"
+  },
+  "port": 8010,
+  "viewport_note": "سمتِ سرور؛ سمتِ مرورگر درِ tabs-*.json",
+  "generatedAt": "2026-10-16T03:47:40",
+  "panels": [
+    {
+      "path": "/api/mstat/summary",
+      "status": 200,
+      "bytes": 3728,
+      "ms": 152
+    },
+    {
+      "path": "/api/mstat/histogram",
+      "status": 200,
+      "bytes": 1569,
+      "ms": 41
+    },
+    {
+      "path": "/api/mstat/clientsplit",
+      "status": 200,
+      "bytes": 553,
+      "ms": 28
+    },
+    {
+      "path": "/api/mstat/phases",
+      "status": 200,
+      "bytes": 471,
+      "ms": 751
+    },
+    {
+      "path": "/api/mstat/mainwatch?group=all",
+      "status": 200,
+      "bytes": 78059,
+      "ms": 316
+    },
+    {
+      "path": "/api/mstat/industries",
+      "status": 200,
+      "bytes": 13937,
+      "ms": 30
+    },
+    {
+      "path": "/api/mstat/treemap",
+      "status": 200,
+      "bytes": 95169,
+      "ms": 76
+    },
+    {
+      "path": "/api/mstat/tops",
+      "status": 200,
+      "bytes": 9380,
+      "ms": 73
+    },
+    {
+      "path": "/api/mstat/orderflows",
+      "status": 200,
+      "bytes": 10160,
+      "ms": 109
+    },
+    {
+      "path": "/api/mstat/ownership",
+      "status": 200,
+      "bytes": 11334,
+      "ms": 44
+    },
+    {
+      "path": "/api/mstat/indexcards",
+      "status": 200,
+      "bytes": 1737,
+      "ms": 48
+    },
+    {
+      "path": "/api/mstat/gold",
+      "status": 200,
+      "bytes": 40147,
+      "ms": 59
+    },
+    {
+      "path": "/api/market",
+      "status": 200,
+      "bytes": 6792800,
+      "ms": 28
+    },
+    {
+      "path": "/api/live-stats",
+      "status": 200,
+      "bytes": 985,
+      "ms": 6
+    }
+  ],
+  "panelsWallMs": 1765,
+  "afterPanels": {
+    "rssMb": 430.6,
+    "cpuSec": 996.531,
+    "numThreads": 13
+  },
+  "panelsDelta": {
+    "rssMb": -12.4,
+    "cpuSec": 1.672
+  },
+  "board": {
+    "path": "/api/mstat/board",
+    "status": 200,
+    "bytes": 250166,
+    "ms": 3459
+  },
+  "boardDelta": {
+    "rssMb": 13.3,
+    "cpuSec": 4.047
+  },
+  "boardVsPanels": {
+    "bytes": {
+      "board": 250166,
+      "mstatPanels": 266244
+    },
+    "bytesRatio": 0.94,
+    "serverMs": {
+      "board": 3459,
+      "mstatPanelsSum": 1727
+    },
+    "roundTrips": {
+      "board": 1,
+      "mstatPanels": 12
+    },
+    "comparedSet": "فقطِ ۱۲ پنلِ mstat (بدونِ /api/market وِ /api/live-stats که درِ بسته نیستند)"
+  },
+  "idleWindow": {
+    "seconds": 8.0,
+    "cpuSec": 0.0,
+    "rssMb": 0.0
+  }
+}

@@ -1,0 +1,295 @@
+{
+  "base": "http://127.0.0.1:8010",
+  "buildLabel": "Phase F @2560x1440",
+  "bundle": "/assets/index-Dcm2VDrv.js",
+  "viewport": {
+    "width": 2560,
+    "height": 1440
+  },
+  "browser": "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
+  "generatedAt": "2026-10-16T00:15:29.204Z",
+  "method": {
+    "readyBy": "marker = نشانۀِ دیدنیِ خودِ صفحه؛ settle = بازمانیِ ثابت؛ marker-missing = نشانۀِ ثابتِ آنِ route درِ اینِ حالتِ داده render نشد",
+    "tabs": "همۀ شمارش‌هایِ تب درِ [data-shell=\"workspace-tabs\"] [role=\"tab\"] (بی‌تب‌هایِ FtsDock/پرتفوی)",
+    "coldStart": "هرِ route درِ contextِ تازه باِ نشستِ ورودِ جدا ⇒ TanStack Query سرد است وِ شمارشِ `/api/` ازِ همانِ route",
+    "clippedText": "متنِ بریدۀِ ناخواسته؛ `sr-only` وِ `clip:rect(0,0,0,0)` (پنهانِ عمدی برایِ صفحۀ‌خوان) شمرده نمی‌شود"
+  },
+  "pages": [
+    {
+      "path": "/market-status",
+      "readyBy": "marker",
+      "ms": 1096,
+      "apiRequests": 22,
+      "consoleErrors": 0,
+      "hScrollPx": 0,
+      "clippedText": 0,
+      "clippedSample": [],
+      "offscreenInPanel": 0,
+      "offscreenSample": [],
+      "stripH": 36,
+      "stripTabs": 1
+    },
+    {
+      "path": "/market",
+      "readyBy": "settle",
+      "ms": 1876,
+      "apiRequests": 0,
+      "consoleErrors": 0,
+      "hScrollPx": 0,
+      "clippedText": 0,
+      "clippedSample": [],
+      "offscreenInPanel": 0,
+      "offscreenSample": [],
+      "stripH": 36,
+      "stripTabs": 1
+    },
+    {
+      "path": "/technical/فولاد",
+      "readyBy": "marker",
+      "ms": 1938,
+      "apiRequests": 10,
+      "consoleErrors": 0,
+      "hScrollPx": 0,
+      "clippedText": 0,
+      "clippedSample": [],
+      "offscreenInPanel": 0,
+      "offscreenSample": [],
+      "stripH": 36,
+      "stripTabs": 1
+    },
+    {
+      "path": "/fundamental",
+      "readyBy": "marker",
+      "ms": 4319,
+      "apiRequests": 4,
+      "consoleErrors": 0,
+      "hScrollPx": 0,
+      "clippedText": 0,
+      "clippedSample": [],
+      "offscreenInPanel": 0,
+      "offscreenSample": [],
+      "stripH": 36,
+      "stripTabs": 1
+    },
+    {
+      "path": "/master",
+      "readyBy": "marker",
+      "ms": 3012,
+      "apiRequests": 0,
+      "consoleErrors": 0,
+      "hScrollPx": 0,
+      "clippedText": 0,
+      "clippedSample": [],
+      "offscreenInPanel": 0,
+      "offscreenSample": [],
+      "stripH": 36,
+      "stripTabs": 1
+    },
+    {
+      "path": "/portfolio",
+      "readyBy": "settle",
+      "ms": 2152,
+      "apiRequests": 0,
+      "consoleErrors": 0,
+      "hScrollPx": 0,
+      "clippedText": 0,
+      "clippedSample": [],
+      "offscreenInPanel": 0,
+      "offscreenSample": [],
+      "stripH": 36,
+      "stripTabs": 1
+    },
+    {
+      "path": "/watch",
+      "readyBy": "marker",
+      "ms": 4178,
+      "apiRequests": 2,
+      "consoleErrors": 0,
+      "hScrollPx": 0,
+      "clippedText": 0,
+      "clippedSample": [],
+      "offscreenInPanel": 0,
+      "offscreenSample": [],
+      "stripH": 36,
+      "stripTabs": 1
+    },
+    {
+      "path": "/notifications",
+      "readyBy": "marker",
+      "ms": 785,
+      "apiRequests": 2,
+      "consoleErrors": 0,
+      "hScrollPx": 0,
+      "clippedText": 0,
+      "clippedSample": [],
+      "offscreenInPanel": 0,
+      "offscreenSample": [],
+      "stripH": 36,
+      "stripTabs": 1
+    },
+    {
+      "path": "/strategy-tree",
+      "readyBy": "settle",
+      "ms": 1901,
+      "apiRequests": 0,
+      "consoleErrors": 0,
+      "hScrollPx": 0,
+      "clippedText": 0,
+      "clippedSample": [],
+      "offscreenInPanel": 0,
+      "offscreenSample": [],
+      "stripH": 36,
+      "stripTabs": 1
+    }
+  ],
+  "tabScenario": {
+    "steps": [
+      {
+        "step": "start",
+        "tabs": [
+          "تکنیکال · فولاد"
+        ],
+        "stored": "",
+        "hash": "#/technical/%D9%81%D9%88%D9%84%D8%A7%D8%AF"
+      },
+      {
+        "step": "second-tab",
+        "tabs": [
+          "تکنیکال · فولاد",
+          "تکنیکال · فملی"
+        ],
+        "stored": "",
+        "hash": "#/technical/%D9%81%D9%85%D9%84%DB%8C"
+      },
+      {
+        "step": "back-to-first",
+        "stored": "فولاد",
+        "isolated": true
+      },
+      {
+        "step": "forward-to-second",
+        "stored": "فملی",
+        "isolated": true
+      },
+      {
+        "step": "arrow-left-in-rtl",
+        "activeIndex": 0,
+        "expect": 0
+      },
+      {
+        "step": "after-reload",
+        "tabs": 2
+      },
+      {
+        "step": "crowded",
+        "hScrollPx": 0,
+        "clippedText": 0,
+        "clippedSample": [],
+        "offscreenInPanel": 0,
+        "offscreenSample": [],
+        "stripH": 36,
+        "stripTabs": 7
+      }
+    ],
+    "waitForFirstTab": {
+      "ok": true,
+      "waitedMs": 48
+    },
+    "waitForSecondTab": {
+      "ok": true,
+      "waitedMs": 25
+    },
+    "dockTabsAlive": 11
+  },
+  "features": {
+    "checks": [
+      {
+        "name": "market-status freshness chips",
+        "chips": 10,
+        "overviewChips": 4,
+        "anySourceStamp": true,
+        "anyStampAbsentSaidSo": true,
+        "sample": [
+          "کارت‌های شاخص:خوانده شد· لحظاتی پیش· ساعتِ منبع: ۰۳:۴۴:۵۲",
+          "توزیعِ درصد:خوانده شد· لحظاتی پیش· زمانِ داده از منبع نیامد",
+          "تفکیکِ مشتری:خوانده شد· لحظاتی پیش· زمانِ داده از منبع نیامد"
+        ],
+        "hScrollPx": 0,
+        "clippedText": 0,
+        "clippedSample": [],
+        "offscreenInPanel": 0,
+        "offscreenSample": [],
+        "stripH": 36,
+        "stripTabs": 1
+      },
+      {
+        "name": "url symbol beats store",
+        "activeText": "نماد فعال: فولاد",
+        "showsUrlSymbol": true,
+        "showsStoreSymbol": false
+      },
+      {
+        "name": "portfolio signal is addressable",
+        "tabTitle": [
+          "مدیریت پرتفوی · فولاد×"
+        ],
+        "signalHeadsInViewTarget": [],
+        "signalHeadsInViewCurrent": [
+          "سیگنال پرتفوی فولاد"
+        ]
+      },
+      {
+        "name": "default-symbol notice",
+        "noticeWhenNoSelection": "نمایشِ پیش‌فرض: فولاد — انتخابِ شما نبود",
+        "noticeWithUrlSymbol": false,
+        "noticeWithStoredSymbol": false,
+        "storedSymbolInStorage": "فولاد"
+      },
+      {
+        "name": "portfolio tabs keyboard",
+        "selectedBefore": "مدیریت پرتفوی · فولاد×",
+        "tabsInList": [
+          "مدیریت پرتفوی · فولاد×",
+          "پرتفوی هدف",
+          "پرتفوی فعلی"
+        ]
+      }
+    ]
+  },
+  "safety": {
+    "mutating": [
+      {
+        "method": "POST",
+        "path": "/api/funnel"
+      },
+      {
+        "method": "POST",
+        "path": "/api/funnel"
+      }
+    ],
+    "mutatingCount": 2,
+    "sections": {
+      "headings": 8,
+      "headingIds": [
+        "ms-sec-overview",
+        "ms-sec-treemap",
+        "ms-sec-tops",
+        "ms-sec-orders",
+        "ms-sec-gold",
+        "ms-sec-compare",
+        "ms-sec-chart",
+        "ms-sec-tables"
+      ],
+      "navButtons": 9,
+      "referencePages": "۶، ۷|۲|۸|۹|۱، ۳، ۱۰، ۱۱، ۱۲|۱۳|۵|۲، ۸"
+    },
+    "orderEndpointsTouched": [
+      "GET /api/execution/status",
+      "GET /api/execution/status",
+      "GET /api/execution/status",
+      "GET /api/mstat/orderflows?group=all"
+    ]
+  },
+  "consoleErrorCount": 0,
+  "consoleErrors": []
+}

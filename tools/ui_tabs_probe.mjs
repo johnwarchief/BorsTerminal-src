@@ -35,6 +35,9 @@ const BASE = args.base || 'http://127.0.0.1:8010';
 const OUT = args.out || path.join('_audit', 'ui2', 'tabs.json');
 const LABEL = args.label || 'نامشخص';
 const FEATURES_ONLY = args['features-only'] === 'true';
+// --shots=true گرفتنیِ ۱۳۶۶/۲۵۶۰ درِ `_audit/ui2/shots/` (قابرِ PNG درِ `_audit/.gitignore`
+// است: شاهدِ دیدنی برایِ تأییدِ چشمیِ همینِ دور، نه باینریِ کامیت‌شده).
+const SHOTS = args.shots === 'true';
 const EXE = process.env.RA_BROWSER || 'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe';
 
 const STRIP = '[data-shell="workspace-tabs"]';
@@ -54,7 +57,16 @@ const ROUTES = [
   { path: '/strategy-tree', marker: null },
 ];
 
-const VIEWPORT = { width: 1366, height: 768 };
+// --viewport=2560x1440 برایِ دورِ دومِ مأموریت؛ بی‌این، هرِ ادعایِ «درِ هرِ دوِ نمایشگر»
+// فقط یکِ نمایشگر را دیده است.
+const VP = /^([0-9]+)x([0-9]+)$/.exec(args.viewport || '');
+const SHOT_ROUTES = [
+  { name: 'market-status', path: '/market-status' },
+  { name: 'portfolio', path: '/portfolio' },
+  { name: 'tabs-crowded', path: '/master', crowd: 6 },
+];
+
+const VIEWPORT = VP ? { width: Number(VP[1]), height: Number(VP[2]) } : { width: 1366, height: 768 };
 const MARKER_TIMEOUT = 8000;
 
 // self-contained: هیچ ارجاعی به ثابت‌هایِ بیرون ندارد، چون درِ مرورگر اجرا می‌شود
@@ -348,6 +360,52 @@ async function featureScenario(browser, consoleErrors) {
   return out;
 }
 
+// سناریویِ فاز F: دو چیز که درِ آزمونِ واحد قابلِ اثبات نیستند
+// ۱) ایمنیِ سفارش: هیچِ حرکتِ *نوشتاری* بهِ مسیرِ سفارش/ربات درِ طولِ گشت‌وگذارِ عادی
+//    صفحه‌ها نمی‌افتد (بازکردنِ صفحّه نباید ربات را مسلح کند). شمارشِ روش‌هایِ غیرِ
+//    GET رویِ آنِ مسیرها ثبت می‌شود؛ صفر، خواستۀِ مأموریت است.
+// ۲) هرِ ۱۳ صفحۀِ مرجع درِ هشتِ بخشِ «وضعیت بازار» لنگر دارد (ناوبریِ بخش، نه ادعا).
+async function safetyScenario(browser, consoleErrors) {
+  const out = { mutating: [], mutatingCount: null, sections: {}, orderEndpointsTouched: [] };
+  const ctx = await browser.newContext({ viewport: VIEWPORT, locale: 'fa-IR', deviceScaleFactor: 1 });
+  const page = await ctx.newPage();
+  attach(page);
+  const seen = [];
+  page.on('request', (r) => {
+    const u = r.url();
+    if (!u.includes('/api/')) return;
+    const m = r.method();
+    if (m !== 'GET') out.mutating.push({ method: m, path: u.replace(BASE, '').slice(0, 80) });
+    if (/order|execution|bot|trade/i.test(u)) out.orderEndpointsTouched.push(`${m} ${u.replace(BASE, '').slice(0, 60)}`);
+    seen.push(`${m} ${u.replace(BASE, '').slice(0, 60)}`);
+  });
+
+  await page.goto(`${BASE}/`, { waitUntil: 'domcontentloaded' });
+  await loginIfNeeded(page);
+
+  for (const r of ROUTES) {
+    await page.goto(`${BASE}/#${r.path}`, { waitUntil: 'domcontentloaded' });
+    await page.waitForTimeout(1_200);
+  }
+  // نمک‌دانِ سفارش: پنلِ «معامله» وِ دفترچۀِ نماد باز می‌شوند — نباید چیزی بفرستند
+  await page.goto(`${BASE}/#/watch`, { waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(1_500);
+
+  await page.goto(`${BASE}/#/market-status`, { waitUntil: 'domcontentloaded' });
+  await page.waitForSelector('[data-testid="market-section-nav"]', { timeout: 12_000 }).catch(() => null);
+  await page.waitForTimeout(2_000);
+  out.sections = await page.evaluate(() => {
+    const ids = [...document.querySelectorAll('[data-testid^="section-heading-"]')].map((e) => e.id);
+    const nav = [...document.querySelectorAll('[data-testid^="market-section-"]')].map((e) => e.getAttribute('data-testid'));
+    const pages = [...document.querySelectorAll('[data-testid^="section-heading-"]')]
+      .map((e) => (e.textContent || '').match(/مرجع:\s*([۰-۹0-9، ]+)/)?.[1] ?? '');
+    return { headings: ids.length, headingIds: ids, navButtons: nav.length, referencePages: pages.join('|') };
+  });
+  out.mutatingCount = out.mutating.length;
+  await ctx.close();
+  return out;
+}
+
 const browser = await chromium.launch({ executablePath: EXE, headless: true, args: ['--no-first-run', '--disable-sync', '--force-device-scale-factor=1'] });
 const consoleErrors = [];
 const attach = (pg) => {
@@ -371,6 +429,36 @@ const pages = [];
 if (!FEATURES_ONLY) for (const r of ROUTES) pages.push(await measurePage(browser, r, consoleErrors));
 const tabs = FEATURES_ONLY ? { skipped: true, steps: [] } : await tabScenario(browser, consoleErrors);
 const features = await featureScenario(browser, consoleErrors);
+const safety = await safetyScenario(browser, consoleErrors);
+
+if (SHOTS) {
+  const shotDir = path.join(REPO, '_audit', 'ui2', 'shots');
+  fs.mkdirSync(shotDir, { recursive: true });
+  for (const [w, h] of [[1366, 768], [2560, 1440]]) {
+    const c = await browser.newContext({ viewport: { width: w, height: h }, locale: 'fa-IR', deviceScaleFactor: 1 });
+    const pg = await c.newPage();
+    attach(pg);
+    await pg.goto(`${BASE}/`, { waitUntil: 'domcontentloaded' });
+    await loginIfNeeded(pg);
+    for (const r of SHOT_ROUTES) {
+      await pg.goto(`${BASE}/#${r.path}`, { waitUntil: 'domcontentloaded' });
+      await pg.waitForTimeout(2_500);
+      if (r.crowd) {
+        // نوارِ تبِ شلوغ باید *دیده* شود، نه فقط hScrollPx=0: «…» منیو وِ بی‌سرریز
+        // بودنِ هفتِ تبِ فارسی درِ ۱۳۶۶، چیزی است که عدد به‌تنهایی ثابتش نمی‌کند.
+        for (let i = 0; i < r.crowd; i += 1) {
+          await pg.click(`${STRIP} [data-testid="ws-tab-new"]`).catch(() => null);
+          await pg.waitForTimeout(250);
+        }
+        await pg.waitForTimeout(600);
+      }
+      const name = `${r.name}-${w}x${h}.png`;
+      await pg.screenshot({ path: path.join(shotDir, name) });
+      console.log('  shot →', name);
+    }
+    await c.close();
+  }
+}
 
 const result = {
   base: BASE, buildLabel: LABEL, bundle, viewport: VIEWPORT, browser: EXE,
@@ -384,6 +472,7 @@ const result = {
   pages,
   tabScenario: tabs,
   features,
+  safety,
   consoleErrorCount: consoleErrors.length,
   consoleErrors: consoleErrors.slice(0, 10),
 };
@@ -397,5 +486,8 @@ for (const p of pages) {
 for (const s of tabs.steps) console.log(`  tab ${JSON.stringify(s).slice(0, 200)}`);
 console.log('  dockTabsAlive=', tabs.dockTabsAlive);
 for (const c of features.checks) console.log('  feat', JSON.stringify(c).slice(0, 220));
+console.log('  safety mutating=', safety.mutatingCount, JSON.stringify(safety.mutating).slice(0, 200));
+console.log('  safety orderEndpoints=', JSON.stringify([...new Set(safety.orderEndpointsTouched)]).slice(0, 200));
+console.log('  safety sections=', JSON.stringify(safety.sections).slice(0, 260));
 console.log('written →', OUT);
 await browser.close();

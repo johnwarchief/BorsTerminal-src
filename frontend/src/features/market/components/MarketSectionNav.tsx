@@ -128,7 +128,12 @@ export function SectionHeading({
         مرجع: {pages.map((p) => toFaDigits(p)).join('، ')}
       </span>
       {freshness?.length ? (
-        <span className="flex flex-wrap items-center gap-x-2" data-testid={`section-freshness-${id}`}>
+        // `basis-full`: خطِ خودِ سرِصفحّه. گرفتنیِ ۱۳۶۶ نشان داد چسبیدنِ برچسب‌ها بهِ
+        // عنوان وِ بهِ توضیح، هرِ دو را بهِ هم می‌ریزد وِ پاراگرافِ بی‌سروته می‌سازد.
+        <span
+          className="basis-full flex flex-wrap items-center gap-x-1.5 gap-y-0.5"
+          data-testid={`section-freshness-${id}`}
+        >
           {freshness.map((f) => (
             <WidgetFreshness key={f.label} label={f.label} input={f} />
           ))}
