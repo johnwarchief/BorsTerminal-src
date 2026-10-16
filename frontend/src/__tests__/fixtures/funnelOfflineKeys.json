@@ -1,0 +1,13 @@
+{
+ "note": "تولید: python dev/mobile_funnel_offline_v1116.py --emit",
+ "keys": [
+  "funnel/trend/and/standard/ds1",
+  "funnel/trend/or/standard/ds1",
+  "funnel/swing/and/standard/ds1",
+  "funnel/swing/or/standard/ds1",
+  "funnel/hourglass/and/standard/ds1",
+  "funnel/hourglass/or/standard/ds1",
+  "funnel/custom/and/standard/ds1",
+  "funnel/custom/or/standard/ds1"
+ ]
+}

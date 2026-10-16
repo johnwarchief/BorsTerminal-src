@@ -112,6 +112,26 @@ PER_SYMBOL_ENDPOINTS = (
     ("calendar/{s}", "/api/calendar/{s}"),
 )
 
+# قیفِ غربالگری. داورِ رسمی درِ `api/funnel.py` است و گوشی سروری ندارد، پس
+# خروجیِ همان موتور پخته می‌شود؛ هیچ داوریِ تازه درِ کلاینت ساخته نمی‌شود.
+# شبکهٔ ترکیب‌ها عمداً محدود است: هر پاسخِ canonical ۷٫۵ تا ۹ مگابایت خام است
+# (سنجش: tools/mobile_funnel_offline_probe.py، ۲۰۲۶-۱۰-۱۶) یعنی ۲۷۳ تا ۳۸۱
+# کیلوبایت gz. چهار اشخاص × دو منطق = ۸ کلید ≈ ۲٫۶ مگابایت gz به بستۀ ۱۶٫۲
+# مگابایتیِ امروز اضافه می‌شود. وسعتِ بیشتر (سه حالتِ بنیادی، حذف‌نکردنِ
+# پسوندِ عددی، زنجیرۀ دستِ خودِ کاربر، استثناها) هر کدام یک متغیرِ کاربر است
+# و بی‌پخت قابلِ سرو نیست؛ کلاینت برایِ آن‌ها HttpError با علت می‌دهد، نه
+# جدولِ خالی. افزودنِ یکِ سطرِ این جدول کافی است تا آن ترکیب هم پخته شود.
+FUNNEL_PRESETS = ("trend", "swing", "hourglass", "custom")
+FUNNEL_LOGICS = ("and", "or")
+FUNNEL_FUND_MODE = "standard"
+FUNNEL_DROP_SUFFIX = True
+
+
+def funnel_key(preset: str, logic: str, fund_mode: str, drop_suffix: bool) -> str:
+    """باید با `funnelKey()` درِ frontend/src/shared/api/local/resolvers.ts یکی باشد."""
+    return "funnel/%s/%s/%s/%s" % (preset, logic, fund_mode, "ds1" if drop_suffix else "ds0")
+
+
 
 def _symbols_from_screener(payload) -> list:
     """فهرست نمادها از خروجی /api/screener (کلید data، ستون symbol)."""
@@ -225,6 +245,25 @@ def build(out_dir: str, limit: int = 0, do_lzma: bool = True, series: str = SERI
                 put(key, data)
                 if key == "screener":
                     screener_payload = data
+
+        # ۱ب) قیفِ غربالگری — خروجیِ موتورِ رسمی، برایِ همان شبکهٔ اعلام‌شده.
+        # پاسخِ بی‌status یا status=success پخته می‌شود؛ {"status":"error"} با
+        # حجمِ ۶۷ بایت نباید جایِ یکِ قیفِ واقعی درِ بسته بنشیند.
+        for preset in FUNNEL_PRESETS:
+            for logic in FUNNEL_LOGICS:
+                path = ("/api/funnel?preset=%s&logic=%s&fund_mode=%s&drop_suffix=%s&chain="
+                        % (preset, logic, FUNNEL_FUND_MODE,
+                           str(FUNNEL_DROP_SUFFIX).lower()))
+                data = get(path)
+                if isinstance(data, dict) and data.get("status") not in (None, "success"):
+                    print(f"  [skip] {path} → status={data.get('status')} "
+                          f"{str(data.get('message'))[:60]}")
+                    continue
+                if data is not None:
+                    put(funnel_key(preset, logic, FUNNEL_FUND_MODE, FUNNEL_DROP_SUFFIX), data)
+        reg = get("/api/funnel/registry")
+        if reg is not None:
+            put("funnel_registry", reg)
 
         # ۲) کارت بنیادی + فصل‌ها برای هر نماد اسکرینر
         symbols = _symbols_from_screener(screener_payload)
@@ -352,7 +391,8 @@ def build(out_dir: str, limit: int = 0, do_lzma: bool = True, series: str = SERI
         # قرارداد ساختار از خودِ همین سازنده: این چهار جدول ساخته می‌شود و گوشی هم
         # همین‌ها را می‌خواند (resolvers.ts ⇒ baked/meta/instruments/price_history).
         "tables": ["baked", "meta", "instruments", "price_history"],
-        "required_baked_keys": ["market_board"],
+        "required_baked_keys": ["market_board",
+                                funnel_key("trend", "and", FUNNEL_FUND_MODE, FUNNEL_DROP_SUFFIX)],
         # چیدمانِ دیتابیسِ بسته — کلاینت با meta.schema داخلِ بسته می‌سنجد
         "db_schema": DB_SCHEMA_VERSION,
         # سریِ انتشار: کلاینتِ همین شاخه فقط بستۀ هم‌سریِ خودش را قبول می‌کند

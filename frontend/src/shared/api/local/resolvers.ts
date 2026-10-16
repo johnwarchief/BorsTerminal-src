@@ -59,6 +59,47 @@ async function bakedOr404(key: string, url: string): Promise<unknown> {
   return data;
 }
 
+/** کلیدِ بستۀ قیف. باید با `funnel_key()` درِ `scripts/build_mobile_snapshot.py`
+ *  بیت‌به‌بیت یکی باشد — `dev/mobile_funnel_offline_v1116.py` همین را با هم
+ *  خواندنِ هر دو طرف می‌سنجد، چون رانشِ همین یکِ رشته صفحۀ غربالگریِ گوشی را
+ *  بی‌خطایِ قابل‌فهم خالی می‌کند. */
+export function funnelKey(preset: string, logic: string, fundMode: string,
+                          dropSuffix: boolean): string {
+  return `funnel/${preset}/${logic}/${fundMode}/${dropSuffix ? 'ds1' : 'ds0'}`;
+}
+
+const FUNNEL_FUND_DEFAULT = 'standard';
+
+/** آنچه آفلاین سرو می‌شود: زنجیرۀ پیش‌فرضِ هر اشخاص × منطقِ and/or × بنیادیِ
+ *  standard × حذفِ پسوندِ عددیِ روشن. هر چیزِ دیگری صریح رد می‌شود. */
+async function funnelOffline(u: URL, body: unknown, url: string): Promise<unknown> {
+  const b = (body && typeof body === 'object' ? body : {}) as Record<string, unknown>;
+  const preset = String(b.preset ?? u.searchParams.get('preset') ?? 'trend');
+  const logic = String(b.logic ?? u.searchParams.get('logic') ?? 'and');
+  const fundMode = String(b.fund_mode ?? u.searchParams.get('fund_mode') ?? FUNNEL_FUND_DEFAULT);
+  const dropRaw = b.drop_suffix ?? u.searchParams.get('drop_suffix');
+  const dropSuffix = dropRaw === undefined || dropRaw === null
+    ? true : (dropRaw === true || dropRaw === 'true');
+  const chain = Array.isArray(b.chain) ? b.chain.map(String)
+    : String(u.searchParams.get('chain') ?? '').split(',').map((s) => s.trim()).filter(Boolean);
+  const has = (v: unknown) => !!v && typeof v === 'object' && Object.keys(v as object).length > 0;
+  const exceptions = has(b.exceptions);
+  const params = has(b.params);
+
+  if (fundMode !== FUNNEL_FUND_DEFAULT || !dropSuffix || chain.length || exceptions || params) {
+    const asked = [preset, `منطقِ ${logic}`, `بنیادیِ ${fundMode}`,
+      dropSuffix ? 'با پسوندِ عددی' : 'بی‌پسوندِ عددی'];
+    if (chain.length) asked.push(`زنجیرۀ دستِ خودِ شما (${chain.length} فیلتر)`);
+    if (exceptions) asked.push('استثنا');
+    if (params) asked.push('پارامترِ دلخواه');
+    throw new HttpError(404, url,
+      `ترکیبِ خواستۀ غربالگری درِ بستۀ آفلاین پخته نشده: ${asked.join(' / ')}. `
+      + 'رویِ گوشی فقط زنجیرۀ پیش‌فرضِ هر اشخاص با منطقِ AND یا OR و بنیادیِ standard سرو '
+      + 'می‌شود؛ برایِ همین ترکیب نسخهٔ دسکتاپ را باز کنید.');
+  }
+  return bakedOr404(funnelKey(preset, logic, fundMode, dropSuffix), url);
+}
+
 /** کندل/حجم از price_history — همتای /api/history بک‌اند (فیلتر و dedupe یکسان) */
 async function historyPayload(symbol: string): Promise<{
   status: string;
@@ -236,6 +277,24 @@ export async function resolveLocal(
   if (p(1) === 'fundamental' && seg.length === 3) return bakedOr404(`fundamental/${p(2)}`, url);
   if (p(1) === 'fundamental' && seg.length === 4 && p(3) === 'quarters') {
     return bakedOr404(`quarters/${p(2)}`, url);
+  }
+
+  // --- غربالگری (قیف FTS) ------------------------------------------------
+  // داورِ رسمی درِ `api/funnel.py` است و گوشی هیچ سروری ندارد، پس تنها چیزی که
+  // آفلاین سرو می‌شود **خروجیِ پختۀ همان موتور** است. هیچ داوریِ تازه درِ
+  // کلاینت ساخته نمی‌شود — همان قاعدۀ «یک داور» که با حذفِ `buildFunnel` بسته شد.
+  // ترکیبی که پخته نشده ⇒ HttpError با علتِ روشن؛ نه جدولِ خالی (که «بازار خالی»
+  // خوانده می‌شود) و نه حدس.
+  if (path === '/api/funnel') {
+    return funnelOffline(u, body, url);
+  }
+  if (path === '/api/funnel/registry') {
+    return bakedOr404('funnel_registry', url);
+  }
+  if (path === '/api/funnel/trace') {
+    throw new HttpError(404, url,
+      'ردپایِ یکِ نماد درِ بستۀ آفلاین پخته نمی‌شود؛ وضعیتِ هر نماد درِ هر گام از '
+      + 'خودِ پاسخِ قیف رویِ دستگاه است، اما خطِ زمانِ رویدادها فقط درِ دسکتاپ ساخته می‌شود');
   }
 
   // --- نبض بازار و شاخص ---------------------------------------------------

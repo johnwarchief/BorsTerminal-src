@@ -256,6 +256,11 @@ SUITES = [
     # __tests__/mobile-manifest-contract.spec.ts با همان fixture می‌سنجد.
     ('dev/mobile_manifest_contract_v1115.py',
                                      'mobile manifest contract: producer output == parser requirement (real package, real digest)'),
+    # قیفِ غربالگری رویِ گوشی: کلیدِ بستۀ ساخته‌شده درِ پایتون و کلیدی که resolver
+    # می‌سازد باید یکی باشد (رانشش صفحه را بی‌خطا خالی می‌کند) و هر هشتِ ترکیبِ
+    # شبکه پاسخِ canonicalِ واقعی بدهد.
+    ('dev/mobile_funnel_offline_v1116.py',
+                                     'offline funnel keys agree across python/typescript and every grid combo answers canonically'),
     # CA-2 (ممیزی CODAL دور ۲، ۱۴۰۵-۰۷-۲۰): `/api/fundamental/*/quarters` برندهٔ
     # هر دوره را با `ORDER BY publish_date DESC LIMIT ?` می‌گزید و رقمِ فارسی
     # (U+06F0..) در واژگانِ SQLite بعدِ لاتین می‌آید ⇒ ردیفِ کهنه «تازه‌ترین»
