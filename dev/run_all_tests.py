@@ -306,6 +306,9 @@ SUITES = [
     # سنسور با سمِ --selftest راستی‌آزمایی می‌شوند؛ بیرونِ سرخطی ك/ي عربی
     # فقط شمارشِ اطلاعیه (۳۵۰ سطر، اکثراً املایِ خودِ نمادهایِ تابلو).
     ('dev/persian_glyph_guard.py', 'persian text: no stray CJK, no eaten section digit'),
+    # گامِ انتشار را آفلاین و بدونِ هیچ publish اجرا می‌کند: gh به تابعِ bash
+    # تبدیل می‌شود و مسیرها نسبی‌اند (روی این ماشین env تازه به Git Bash نمی‌رسد).
+    ('dev/test_publish_step_offline.py', 'publish step simulated offline: idempotent notes refresh, no network'),
     # SARKHATI Stage G: خواندنِ وضعیتِ سفارش و جایِ صف. سه معنایِ متفاوتِ
     # «نمی‌دانیم» (بی‌capability / پاسخِ خالی / ردیفِ بی‌مقدار) را از صفر
     # جدا می‌گذارد، و ثابت می‌کند هیچ refresh یا پایشی سفارشِ تازه
