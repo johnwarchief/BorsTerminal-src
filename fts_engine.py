@@ -118,8 +118,19 @@ def symbol_class_siblings(conn, symbol):
     return SI.class_siblings(conn, symbol)
 
 
+def symbol_pending_siblings(conn, symbol):
+    """نامزدِ خطِ کلاس که ادغامش بسته شده — برایِ اعلام درِ کارت، بی‌ادغام."""
+    return SI.pending_siblings(conn, symbol)
+
+
+def symbol_pending_variants(conn, symbol, domain=None):
+    """نامزدهایِ الحاقِ بسته‌شدۀ خودِ نماد (پسوندِ رقمی) با شاهد."""
+    return SI.pending_variants(conn, symbol, domain or SI.CODAL)
+
+
 def symbol_evidence(conn, symbol, domain=None) -> str:
-    """چطور این نماد به ردیف‌ها رسید: same-key | isin-agree | no-isin | isin-clash | unmatched."""
+    """چطور این نماد به ردیف‌ها رسید: same-key | isin-agree | pending-review |
+    isin-clash | unmatched. «بی‌شاهدِ ISIN» دیگر ادغام نمی‌شود (رأیِ مالک)."""
     return SI.evidence(conn, symbol, domain or SI.CODAL)
 
 
