@@ -187,7 +187,10 @@ describe('OrderLinePage', () => {
     fireEvent.click(await screen.findByTestId('order-add-tab'));
     await waitFor(() => expect(screen.getByTestId('order-line-adapter').textContent).toContain('easytrader'));
     expect(screen.queryByTestId(/order-mockswitch-/)).toBeNull();
+    // یادراشتِ mock درِ متنِ راهنمایِ صفحه هم نمی‌آید، چون خودِ راهنما مشروطِ
+    // adapter: mock است (پرابِ زنده: order-line-mockhint)
     expect(screen.queryByTestId('order-line-mockhint')).toBeNull();
+    expect(screen.getByTestId('order-line-note').textContent).not.toContain('mock_instrument');
   });
 
   it('مرورِ گروهی نتیجهٔ هرِ تب را جدا می‌نویسد وِ «ردشدۀِ یکِ تب» بهِ تبِ دیگر نسبّت نمی‌گیرد', async () => {
@@ -197,7 +200,7 @@ describe('OrderLinePage', () => {
     fireEvent.change(screen.getByTestId(`order-symbol-${t0.id}`), { target: { value: 'شپنا' } });
     fireEvent.change(screen.getByTestId(`order-price-${t0.id}`), { target: { value: '1040' } });
     fireEvent.change(screen.getByTestId(`order-qty-${t0.id}`), { target: { value: '10' } });
-    fireEvent.click(screen.getByTestId(`order-mockswitch-${t0.id}`));
+    fireEvent.click(screen.getByTestId(`order-mockswitch-${t0.id}`).querySelector('input') as Element);
     fireEvent.click(await screen.findByTestId('order-batch-review'));
     fireEvent.click(await screen.findByTestId('order-batch-send'));
     await waitFor(() => {
