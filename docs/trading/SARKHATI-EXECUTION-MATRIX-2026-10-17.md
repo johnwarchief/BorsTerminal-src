@@ -16,7 +16,7 @@
 | ۶ | عدمِ ذخیرهٔ رمز/کوکی/توکن روی دیسک | **IMPLEMENTED** | توکن فقط درِ حافظه (`api/execution.py:post_session`)؛ پروفایلِ مرورگر سه راه پاک می‌شود: بستنِ پنجره (E7)، جایگزینیِ پنجرۀ مُرده (E9)، پایانِ فرایند (`_atexit_cleanup`)؛ `profile_kept` ازِ دیسک خوانده می‌شود نه ازِ ادعا (E5/E8)؛ H1–H4 و F9: نه در پاسخ، نه در وضعیت، نه در دلیلِ خطا (سانسورِ `EC.redact`) |
 | ۷ | حلِ ISIN/شناسه پیش ازِ هر چیز؛ بی‌نگاشتِ مبهم | **IMPLEMENTED** | `_resolve_instrument` از `instruments` می‌خواند؛ بی‌ISIN ⇒ `NOT_ORDERABLE`. I2 (`resolution=exact`) و I10 |
 | ۸ | کنترلِ قیمت/حجم/محدودیت/تازگی (preflight) | **IMPLEMENTED** | `/api/execution/preflight` + `checks` در پاسخ؛ I2–I3 |
-| ۹ | زمان‌بندی + منبعِ ساعت + خطایِ زمان‌بندی دیدنی | **PARTIAL** | `schedule/{id}`، `timings` در پاسخِ dispatch، و `execution_timing` درِ مرجعِ مخزن؛ **کالیبراسیون RTT/HEAD** (مرجع ۱) و «چند میلی‌ثانیه مانده» درِ این شاخه سنجیده نشده — NOT_IMPLEMENTED |
+| ۹ | زمان‌بندی + منبعِ ساعت + خطایِ زمان‌بندی دیدنی | **PARTIAL** | `schedule/{id}`، `timings` در پاسخِ dispatch و `execution_timing` درِ مرجعِ مخزن؛ I12–I14 (درخواست مسدود نمی‌شود، حالت دیدنی است، لغو «دیر شد» را دروغ نمی‌گوید). **یافتِ این شاخه:** درِ `dry_run` خودِ سرویس تا مهلت نمی‌ایستد، پس لغوِ پیش از آتش فقط رویِ مسیرِ ترافیکِ بدیل سنجیده می‌شود (`easytrader_adapter_v1113`: `halt_aborts_schedule`)؛ کالیبراسیون RTT/HEAD (مرجع ۱) هنوز NOT_IMPLEMENTED |
 | ۱۰ | دروازۀ پیش از ارسال + توقفِ اضطراری + لغوِ زمان‌بندی | **IMPLEMENTED** | I4–I6: halt ⇒ dispatch رد؛ resume با `confirm` ⇒ ارسال می‌رود؛ `aborted_schedules` در پاسخِ halt |
 | ۱۱ | یک قصد = یک ارسال (بی‌تکرارِ کور) | **IMPLEMENTED** | I8: dispatchِ دوبارهٔ همان `execution_id` ⇒ `DUPLICATE_GUARD`؛ در contract هم `submit_order` بی‌retry است |
 | ۱۲ | timeout ⇒ اول reconcile، نه ارسالِ دوباره | **IMPLEMENTED** | `UNKNOWN_RESULT` + مسیرِ reconcile؛ I7/I9/I10 |
@@ -46,6 +46,16 @@
   (خروجۀ SPA) و اجرایِ بک‌اندِ محلی. انتشار/تگ/merge به `main` انجام نشده است.
 - اعدادِ «اول صف» یا «ارسالِ زندهٔ تأییدشده» درِ هیچ کجای این شاخه ادعا نمی‌شود.
 
+
+## ۷)الف) زنجیرۀ سفارش، سنجیده‌شده بی‌ارسالِ واقعی
+
+I12–I18 درِ `dev/sarkhati_connect_v1117.py` هشت حلقۀ زنجیره را رویِ mock می‌بندند:
+Schedule ⇒ پاسخِ فوری با `wait_ms` · حالتِ زمان‌بندی ازِ `/schedule/{id}` · لغو باِ
+اعلامِ صادق (aborted یا «دیر رسید») · Queue ⇒ «نمی‌دانم» باِ علت، هرگز جایگاهِ
+ساختگی · Refresh ⇒ `order_state=unknown` و `filled_quantity=None` · Audit Trail ⇒
+ردیف‌هایِ همان `execution_id` و نه ردیفِ دیگری · Ledger ⇒ اعلامِ صریحِ `dry_run`.
+هر سه سنجهٔ بازخوانی باِ کارگذاریِ منفی (جایگاهِ ساختگی، پرشدنِ ساختگی، ردیفِ
+بیگانه) قرمز می‌شوند؛ پس سنجه‌ها کور نیستند.
 
 ## ۸) بازنگریِ پس ازِ بازبینیِ مستقل (همان روز)
 

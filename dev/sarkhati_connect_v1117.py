@@ -385,7 +385,53 @@ else:
        "I11 the durable audit row keeps symbol + ISIN + id",
        {"n": len(rows), "first": {k: (rows[0].get(k) if rows else None)
                                  for k in ("execution_id", "symbol", "status")}})
-
+    import time as _t
+    eid3 = "sarkhati-guard-3"
+    fut = int(_t.time() * 1000) + 700
+    sc = client.post("/api/execution/dispatch",
+                     json=dict(draft, execution_id=eid3, target_wall_ms=fut)).json()
+    ck(sc.get("status") == "scheduled" and (sc.get("wait_ms") or 0) > 0,
+       "I12 a far target schedules and answers at once (no blocking the request)",
+       {k: sc.get(k) for k in ("status", "wait_ms", "code")})
+    s3 = client.get("/api/execution/schedule/%s" % eid3).json()
+    ck(s3.get("execution_id") == eid3 and s3.get("state") in
+       ("waiting", "scheduled", "done", "aborted", "sending"),
+       "I13 the schedule is readable by id, with a stated state", s3.get("state"))
+    cx = client.delete("/api/execution/schedule/%s" % eid3).json()
+    # درِ dry-run خودِ مسیر مهلت نمی‌گیرد (چیزی ارسال نمی‌شود)، پس لغو ممکن است
+    # «دیگر درِ انتظار نیست» بگوید. آنچه ممنوع است «aborted: true»ِ دروغ است.
+    ck(cx.get("status") == "success" and
+       (cx.get("aborted") is True or "not in waiting" in str(cx.get("note", "")) or
+        cx.get("state") in ("done", "aborted", "sending")),
+       "I14 cancel tells the truth: aborted, or plainly «too late to abort»", cx)
+    _t.sleep(0.9)
+    q = client.get("/api/execution/queue/%s" % eid2).json()
+    snap = q.get("snapshot") or {}
+    ck(q.get("status") == "success" and q.get("known") is False
+       and q.get("terminal") is False and snap.get("queue_position") is None
+       and q.get("reason", "").startswith("order id not known"),
+       "I15 queue readback says «not known» with a reason, never a position",
+       {k: q.get(k) for k in ("supported", "known", "terminal", "reason")})
+    rf = client.post("/api/execution/refresh/%s" % eid2).json()
+    rrf = rf.get("record") or {}
+    ck(rf.get("status") == "success" and rrf.get("execution_id") == eid2
+       and rrf.get("order_state") == "unknown" and rrf.get("filled_quantity") is None
+       and rrf.get("queue_position") is None and rrf.get("broker_order_id") is None,
+       "I16 refresh keeps an unobserved order unknown, never a fabricated fill",
+       {k: rrf.get(k) for k in ("order_state", "filled_quantity",
+                                "queue_position", "broker_order_id")})
+    au = client.get("/api/execution/audit/%s" % eid2).json()
+    evs = au.get("events") or []
+    kinds = [str(e.get("kind")) for e in evs if isinstance(e, dict)]
+    ck(au.get("found") is True and len(evs) > 0 and
+       any(k.startswith("dispatch") for k in kinds) and
+       all(str(e.get("execution_id")) == eid2 for e in evs if isinstance(e, dict)),
+       "I17 the audit trail is retrievable by id and only carries that id",
+       {"found": au.get("found"), "kinds": kinds[:6]})
+    led3 = client.get("/api/execution/ledger").json()
+    ck(led3.get("dry_run") is True and led3.get("live") is not True,
+       "I18 the ledger itself declares dry-run and not-live",
+       {k: led3.get(k) for k in ("dry_run", "live", "kill_switch")})
 print("\nsarkhati_connect_v1117: %d passed / %d failed / %d skipped" % (PASS, FAIL, SKIP))
 if SKIP:
     print("SKIP total: %d check(s) — see the SKIP line above for the reason" % SKIP)
