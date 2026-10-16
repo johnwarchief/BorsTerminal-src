@@ -311,6 +311,21 @@ SUITES = [
     # تازه‌ای نوشته نمی‌شود. بی‌شبکه، بی‌market.db.
     ('dev/codal_incremental_recalc_v1104.py',
                                      'incremental fundamental recalculation: per-symbol invalidation, re-mark on failure, no invented thresholds'),
+    # بندِ C و D فازِ اولِ مأموریت: لایۀ HTTP. پنج گاردِ بالا موتور و دفترِ کار را
+    # می‌سنجیدند؛ هیچ‌کدام درخواستِ HTTP نمی‌فرستاد، و وجودِ اندپوینتِ سلامت با
+    # grepِ متنِ `api/fundamental.py` ثابت می‌شد. اینجا کارتِ بنیادی و سلامتِ کدال
+    # رویِ سیم سنجیده می‌شوند: ردپایِ منبع/واحد پس از JSON، غایب ≠ صفر، ۴۰۴ به‌جای
+    # ۵۰۰، خانۀ schemaِ zodِ رابط در پاسخ، و چرخۀ خطا‌دار جای «موفق» نمی‌نشیند.
+    # بی‌شبکه، بی‌market.db (بانکِ موقت با اسکیماِ خودِ codal_fetcher).
+    ('dev/codal_api_contract_v1115.py',
+                                     'fundamental HTTP layer: card provenance, missing!=zero, 404 not 500, health schema fields, failed cycle never successful'),
+    # بند ۴ فاز اول: ۴۲۹ باید **وضعیتِ واقعیِ HTTP** باشد، نه برچسبِ رشته‌ایِ
+    # `last_error="429"` درِ گاردِ صف. سرورِ لوپ‌بَک ۴۲۹ واقعی می‌دهد (صفرِ درخواستِ
+    # بیرونی)، `API`ِ خزنده به آن بند می‌شود، `time.sleep` ضبط می‌شود ⇒ نردبانِ
+    # بک‌آف، بی‌None-نشدنِ پاسخِ موفق، بالا‌رفتنِ شمارندۀ ۴۲۹هایِ پی‌در‌پی، و
+    # جلو نرفتنِ نشانکِ کشف/«موفق» نشدنِ چرخۀ شکسته.
+    ('dev/codal_http_429_v1116.py',
+                                     'real HTTP 429 over a loopback socket: backoff ladder, cursor frozen, failed cycle never successful'),
     # مأموریت «کاراییِ بازارِ زنده + تطبیقِ وضعیتِ بازار» (۱۴۰۵-۰۷-۲۷): شمارشِ
     # پروسه با PowerShell ~۵۹۰ms است و درِ هر پولینگِ UI پرداخته می‌شد
     # (sync-state با بدنۀ ۱۴۱ بایت ⇒ p50 = 573ms). گاردِ ttl + stale-while-
