@@ -24,6 +24,8 @@ import { TONE_CLASS, TONE_LEGEND, toneOf } from '../lib/tones';
 import { SourceNotice, StatusError, StatusLoading, StatusNoData, StatusSection } from './StatusShell';
 import type { TreemapMetric, TreemapNode } from '../api/useMarketPanels';
 import { useMstatTreemap } from '../api/useMarketPanels';
+import { serverStamp } from '@shared/lib/time';
+import { WidgetFreshness } from './WidgetFreshness';
 
 const METRICS: { key: TreemapMetric; label: string }[] = [
   { key: 'value', label: 'ارزش معاملات' },
@@ -99,7 +101,14 @@ export function MarketTreemap({
     !fixedGroup &&
     (draftGroup !== applied.group || draftIndustry !== applied.industry || draftMetric !== applied.metric);
 
-  const { data, isLoading, isError, refetch } = useMstatTreemap(
+  const {
+    data,
+    isLoading,
+    isError,
+    refetch,
+    status: treeStatus,
+    dataUpdatedAt: treeUpdatedAt,
+  } = useMstatTreemap(
     fixedGroup ?? applied.group,
     fixedGroup ? '' : applied.industry,
     applied.metric,
@@ -209,6 +218,16 @@ export function MarketTreemap({
               انتخاب تغییر کرده — هنوز اعمال نشده
             </span>
           ) : null}
+          {/* فاز D: سنِ همینِ ویجت، نه ساعتِ سراسریِ صفحه. `/api/mstat/treemap`
+              زمانِ خودِ عدد را گزارش نمی‌کند، پس برچسب همان را صریح می‌گوید. */}
+          <WidgetFreshness
+            label="نقشۀ بازار"
+            input={{
+              status: treeStatus,
+              dataUpdatedAt: treeUpdatedAt,
+              sourceAsOf: serverStamp(data?.computed_at),
+            }}
+          />
         </div>
       }
     >

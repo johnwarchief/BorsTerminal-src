@@ -10,6 +10,7 @@
 // نیفتد.
 import { useEffect, useRef, useState } from 'react';
 import { toFaDigits } from '@shared/lib/fmt';
+import { WidgetFreshness, type WidgetFreshInput } from './WidgetFreshness';
 
 export type MarketSection = {
   id: string;
@@ -98,17 +99,23 @@ export function MarketSectionNav({
   );
 }
 
-/** تیترِ میانیِ هر بخش: شمارۀ صفحۀ مرجع را کنارِ نام نگه می‌دارد */
+/** تیترِ میانیِ هر بخش: شمارۀ صفحۀ مرجع را کنارِ نام نگه می‌دارد
+ *
+ *  `freshness` (فاز D): هر بخش از کوئریِ خودِ خودش خوانده می‌شود وِ سنِ آن هم همین‌جا
+ *  دیده می‌شود — نه از یکِ ساعتِ سراسریِ بالایِ صفحه. آرایه است چون یکِ بخش می‌تواند
+ *  چهارِ ویجتِ مستقل باشد (نمایِ کلی) وِ یکِ برچسبِ واحد برایِ آنِ چهار دروغ است. */
 export function SectionHeading({
   id,
   title,
   pages,
   desc,
+  freshness,
 }: {
   id: string;
   title: string;
   pages: number[];
   desc?: string;
+  freshness?: (WidgetFreshInput & { label: string })[];
 }) {
   return (
     <div
@@ -120,6 +127,13 @@ export function SectionHeading({
       <span className="num-text rounded border border-border-c bg-bg-card px-1 text-3xs text-text-muted">
         مرجع: {pages.map((p) => toFaDigits(p)).join('، ')}
       </span>
+      {freshness?.length ? (
+        <span className="flex flex-wrap items-center gap-x-2" data-testid={`section-freshness-${id}`}>
+          {freshness.map((f) => (
+            <WidgetFreshness key={f.label} label={f.label} input={f} />
+          ))}
+        </span>
+      ) : null}
       {desc ? <p className="text-3xs text-text-muted">{desc}</p> : null}
     </div>
   );

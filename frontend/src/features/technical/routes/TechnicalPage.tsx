@@ -4,6 +4,7 @@ import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react
 import { useNavigate, useParams } from 'react-router';
 import { publishSignal } from '@shared/lib/signalBus';
 import { useSymbolStore } from '@shared/stores/symbolStore';
+import { DefaultSymbolNotice } from '@shared/components/DefaultSymbolNotice';
 import { useUiStore } from '@shared/stores/uiStore';
 import { RetryAction } from '@shared/components/RetryAction';
 import { useFtsConfigStore } from '../stores/ftsConfigStore';
@@ -263,6 +264,11 @@ export default function TechnicalPage() {
       <main className="flex min-h-0 min-w-0 flex-1 flex-col">
         {/* چارت تمام‌فضا (بدون کادر تودرتو/حاشیهٔ مرده) */}
         <div className="relative min-h-0 min-w-0 flex-1" data-testid="chart-area">
+          {/* فاز D: فولبکِ «فولاد» (بالایِ همینِ فایل) دیده می‌شود — پیش‌تر بی‌صدا
+              رویِ صحنه می‌نشست وِ کاربر آن را انتخابِ خودِ می‌خواند. */}
+          <div className="absolute start-3 top-3 z-50">
+            <DefaultSymbolNotice shown={viewSymbol} url={params.symbol} stored={symbol} />
+          </div>
           <div className="absolute end-3 top-3 z-50" data-testid="technical-fts-settings">
             <FtsSettingsTrigger open={ftsSettingsOpen} onToggle={() => setFtsSettingsOpen((open) => !open)} />
           </div>

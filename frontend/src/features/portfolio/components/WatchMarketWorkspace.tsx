@@ -14,6 +14,7 @@ import { useSymbolStore } from '@shared/stores/symbolStore';
 import { useMarketFeedShared } from '@shared/api/marketFeed';
 import { useUserWatchlist } from '@shared/api/userWatchlist';
 import { normalizeFa } from '@shared/lib/normalizeFa';
+import { DefaultSymbolNotice } from '@shared/components/DefaultSymbolNotice';
 import { useSymbolSearch } from '../api/useSymbolSearch';
 import { useWatchSymbolsStore, WATCH_MAX } from '../stores/watchSymbolsStore';
 import { WatchTable } from './WatchTable';
@@ -140,6 +141,10 @@ export default function WatchMarketWorkspace() {
           فید: {fmtAge(summaryRow.dataUpdatedAt)}
         </span>
       </div>
+
+      {/* فاز D: «اولینِ نمادِ رصد» فولبکِ عمدیِ پنل‌هاست (بالایِ همینِ فایل، باِ دلیلِ
+          سنجشِ زنده). بی‌برچسب، کاربر آن را انتخابِ خودِ می‌خواند. */}
+      <DefaultSymbolNotice shown={effective} stored={selected} testId="watch-default-symbol" />
 
       {symbols.length === 0 ? (
         <p className="glass-panel rounded-2xl px-3 py-4 text-center text-2xs leading-6 text-text-muted" data-testid="watch-empty">

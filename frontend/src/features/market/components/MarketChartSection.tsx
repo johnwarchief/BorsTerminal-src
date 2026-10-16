@@ -22,6 +22,7 @@ import { Link } from 'react-router';
 import { fmtPct, toFaDigits } from '@shared/lib/fmt';
 import { useUserWatchlist } from '@shared/api/userWatchlist';
 import { useMstatMainwatch } from '../api/useMarketStatusFeed';
+import { WidgetFreshness } from './WidgetFreshness';
 import { StatusError, StatusLoading, StatusNoData, StatusSection } from './StatusShell';
 import { TONE_CLASS, toneOf } from '../lib/tones';
 
@@ -77,6 +78,12 @@ export function MarketChartSection({ initialSymbol = 'فولاد' }: { initialSy
           <span className="text-3xs text-text-muted" title="از ردیفِ واقعیِ تابلو، نه از حدس">
             {current?.name || 'بی‌نام از تابلو'}
           </span>
+          {/* فاز D: سنِ همینِ ویجت ( `/api/mstat/mainwatch` بی‌`computed_at` است —
+              سنجشِ زنده)، پس برچسب صریح می‌گوید «از منبع نیامد». */}
+          <WidgetFreshness
+            label="چارتِ همین نماد"
+            input={{ status: board.status, dataUpdatedAt: board.dataUpdatedAt }}
+          />
           <Link
             to={`/technical/${encodeURIComponent(symbol)}`}
             data-testid="ms-chart-open-technical"

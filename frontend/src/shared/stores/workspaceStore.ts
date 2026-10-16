@@ -24,7 +24,10 @@ const STORAGE_KEY = ['bors', 'workspace', 'tabs'].join('-');
 export const DEFAULT_TAB_PATH = '/master';
 
 /** routeهایی که نماد درِ خودِ مسیرشان است (فاز صفر، بندِ ۳) */
-const SYMBOL_ROUTES = ['technical', 'fundamental', 'master', 'strategy-tree'];
+/** مسیرهایی که نماد را درِ خودِ نشانی حمل می‌کنند (`/x/<symbol>`) وِ پس برچسبِ تبِ
+ *  آن‌ها باید همانِ نماد را بگوید. `portfolio` درِ فاز D افزوده شد: بلوکِ «سیگنال
+ *  پرتفویِ ایکس» بی‌آدرسِ نماد ازِ بیرون قابلِ دستیابی نبود (سنجشِ فاز صفر). */
+export const SYMBOL_ROUTES = ['technical', 'fundamental', 'master', 'strategy-tree', 'portfolio'];
 
 function newId(): string {
   try {

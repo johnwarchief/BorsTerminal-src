@@ -1,4 +1,5 @@
-import { Link, useNavigate, useSearchParams } from 'react-router';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router';
+import { resolveSymbolParam } from '@shared/lib/symbolParam';
 import { useMemo } from 'react';
 import { toFaDigits } from '@shared/lib/fmt';
 import { useStrategyStore } from '@shared/stores/strategyStore';
@@ -40,10 +41,14 @@ function SymbolPhase({ zone, label }: { zone: FtsZone; label?: string }) {
 
 export default function StrategyTreeOverview() {
   const [params] = useSearchParams();
+  const routeParams = useParams();
   const navigate = useNavigate();
   const horizon = useStrategyStore((s) => s.horizon);
   const storedSymbol = useSymbolStore((s) => s.symbol);
-  const symbol = params.get('symbol') || storedSymbol;
+  // فاز D: نوارِ زمینه `/strategy-tree/<symbol>` را می‌سازد وِ stepper `?symbol=` را؛
+  // خودِ اینِ فایل فقطِ query را می‌خواند، پس آدرسِ مسیرِ نماد بی‌سروصدا بهِ استورِ
+  // پیشین می‌افتاد («فولاد» را می‌زنی، «شپنا» را می‌بینی). قاعدۀ تب‌ها اینجا هم حاکم است.
+  const symbol = resolveSymbolParam({ path: routeParams.symbol, query: params.get('symbol'), stored: storedSymbol });
   const strategyParams = useStrategyParamsStore((s) => s.params);
   // presetِ درخت از همان تصمیمِ canonicalِ سراسری می‌آید (URL > انتخابِ کاربر > افق)،
   // نه از URL→horizon تنها؛ وگرنه همان universe دوِ قیفِ متفاوت می‌ساخت (#M2.1).

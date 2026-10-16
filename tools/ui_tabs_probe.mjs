@@ -34,6 +34,7 @@ const args = Object.fromEntries(
 const BASE = args.base || 'http://127.0.0.1:8010';
 const OUT = args.out || path.join('_audit', 'ui2', 'tabs.json');
 const LABEL = args.label || 'نامشخص';
+const FEATURES_ONLY = args['features-only'] === 'true';
 const EXE = process.env.RA_BROWSER || 'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe';
 
 const STRIP = '[data-shell="workspace-tabs"]';
@@ -235,6 +236,118 @@ async function tabScenario(browser, consoleErrors) {
   return out;
 }
 
+// سناریویِ فاز D: سه ویژگی‌ای که درِ اینِ فاز افزوده شد، درِ مرورگرِ واقعی — چون
+// سبزبودنِ jsdom اثباتِ رابط نیست (قیدِ AGENTS). هرِ بررسی بی‌سقوطِ کلِ اجرا ثبت
+// می‌شود: خطایِ خودِ سنجش باِ `error` می‌آید وِ عددِ غلط به‌جای خودِ ویژگی نمی‌دهد.
+async function featureScenario(browser, consoleErrors) {
+  const out = { checks: [] };
+  const ctx = await browser.newContext({ viewport: VIEWPORT, locale: 'fa-IR', deviceScaleFactor: 1 });
+  const page = await ctx.newPage();
+  attach(page);
+
+  const step = async (name, fn) => {
+    try {
+      out.checks.push({ name, ...(await fn()) });
+    } catch (e) {
+      out.checks.push({ name, error: String(e).slice(0, 160) });
+    }
+  };
+
+  await page.goto(`${BASE}/`, { waitUntil: 'domcontentloaded' });
+  await loginIfNeeded(page);
+
+  // ۱) تازگیِ به‌ازایِ ویجت درِ «وضعیت بازار»
+  await step('market-status freshness chips', async () => {
+    await page.goto(`${BASE}/#/market-status`, { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('[data-testid="section-freshness-ms-sec-overview"]', { timeout: 12_000 });
+    await page.waitForTimeout(2_500);
+    const all = await page.$$eval('[data-testid="widget-freshness"]', (els) =>
+      els.map((e) => (e.textContent || '').trim()));
+    const inOverview = await page.$$eval(
+      '[data-testid="section-freshness-ms-sec-overview"] [data-testid="widget-freshness"]',
+      (els) => els.map((e) => (e.textContent || '').trim()));
+    return {
+      chips: all.length,
+      overviewChips: inOverview.length,
+      anySourceStamp: all.some((t) => t.includes('ساعتِ منبع')),
+      anyStampAbsentSaidSo: all.some((t) => t.includes('زمانِ داده از منبع نیامد')),
+      sample: all.slice(0, 3),
+      ...await page.evaluate(layoutProbe),
+    };
+  });
+
+  // ۲) نشانی برندهٔ استور: باِ استورِ «شپنا»، /strategy-tree/فولاد باید فولاد را بگوید
+  await step('url symbol beats store', async () => {
+    await page.evaluate(() => localStorage.setItem(['bors', 'symbol'].join('-'), 'شپنا'));
+    await page.goto(`${BASE}/#/strategy-tree/%D9%81%D9%88%D9%84%D8%A7%D8%AF`, { waitUntil: 'domcontentloaded' });
+    await page.waitForTimeout(3_000);
+    // کوچک‌ترینِ عنصرِ منطبق: نخستینِ تطبیق درِ ترتیبِ سند یکِ لایۀِ بیرونی بود وِ
+    // «نمادِ فعال» درِ متنِ کلِ صفحه‌اش پیدا می‌شد (خطایِ سنجشِ دورِ قبل، نه نقصِ رابط).
+    const active = await page.evaluate(() => {
+      const hits = [...document.querySelectorAll('span, div')].filter((e) =>
+        e.children.length <= 1 && (e.textContent || '').includes('نماد فعال'));
+      if (!hits.length) return null;
+      const smallest = hits.sort((a, b) => a.textContent.length - b.textContent.length)[0];
+      return (smallest.textContent || '').trim().slice(0, 60);
+    });
+    return { activeText: active, showsUrlSymbol: !!active?.includes('فولاد'), showsStoreSymbol: !!active?.includes('شپنا') };
+  });
+
+  // ۳) بلوکِ سیگنالِ پرتفوی ازِ آدرسِ نماد باز می‌شود
+  await step('portfolio signal is addressable', async () => {
+    await page.goto(`${BASE}/#/portfolio/%D9%81%D9%88%D9%84%D8%A7%D8%AF`, { waitUntil: 'domcontentloaded' });
+    await page.waitForTimeout(3_000);
+    const tabTitle = await page.$$eval(TAB, (els) => els.map((e) => (e.textContent || '').trim()));
+    const heads = () => page.evaluate(() =>
+      [...document.querySelectorAll('h1,h2,h3,h4')].map((e) => (e.textContent || '').trim())
+        .filter((t) => t.includes('سیگنال')));
+    const signalHeadsInViewTarget = await heads();
+    // بلوکِ «سیگنال پرتفوی» درِ تبِّ داخلیِ «پرتفوی فعلی» است وِ صفحّه باِ نمایِ هدف
+    // باز می‌شود؛ بی‌جابه‌جاییِ همینِ نمایِ داخلی، سنجش «نیست» می‌گفت وِ آدرس غلط نبود.
+    await page.locator('[role="tablist"] [role="tab"]', { hasText: 'پرتفوی فعلی' }).first().click().catch(() => null);
+    await page.waitForTimeout(2_000);
+    const signalHeadsInViewCurrent = await heads();
+    return { tabTitle, signalHeadsInViewTarget, signalHeadsInViewCurrent };
+  });
+
+  // ۴) فولبک دیدنی می‌شود وِ باِ انتخابِ واقعی غیب می‌شود
+  await step('default-symbol notice', async () => {
+    await page.evaluate(() => localStorage.removeItem(['bors', 'symbol'].join('-')));
+    await page.goto(`${BASE}/#/technical`, { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('[data-testid="chart-area"]', { timeout: 12_000 }).catch(() => null);
+    await page.waitForTimeout(1_500);
+    const bare = await page.evaluate(() => {
+      const el = document.querySelector('[data-testid="default-symbol-notice"]');
+      return el ? (el.textContent || '').trim() : null;
+    });
+    await page.goto(`${BASE}/#/technical/%D9%81%D9%88%D9%84%D8%A7%D8%AF`, { waitUntil: 'domcontentloaded' });
+    await page.waitForTimeout(1_500);
+    const addressed = await page.evaluate(() => !!document.querySelector('[data-testid="default-symbol-notice"]'));
+    // استورِ zustand درِ بوت ازِ localStorage می‌خواند؛ نوشتنش وِ سپس پرشِ فقط‌هش
+    // استورِ درِ حافظه را خالی می‌گذاشت وِ برچسب می‌ماند (خطایِ سنجش، نه نقصِ رابط).
+    await page.evaluate(() => localStorage.setItem(['bors', 'symbol'].join('-'), 'فولاد'));
+    await page.goto(`${BASE}/#/technical`, { waitUntil: 'domcontentloaded' });
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await page.waitForTimeout(2_500);
+    const stored = await page.evaluate(() => !!document.querySelector('[data-testid="default-symbol-notice"]'));
+    const storedNow = await page.evaluate(() => localStorage.getItem(['bors', 'symbol'].join('-')));
+    return { noticeWhenNoSelection: bare, noticeWithUrlSymbol: addressed, noticeWithStoredSymbol: stored, storedSymbolInStorage: storedNow };
+  });
+
+  // ۵) سوییچرِ پرتفوی باِ اصلِ تب: کیبورد درِ مرورگرِ واقعی (پیکانِ RTL)
+  await step('portfolio tabs keyboard', async () => {
+    await page.goto(`${BASE}/#/portfolio`, { waitUntil: 'domcontentloaded' });
+    await page.waitForTimeout(2_500);
+    const before = await page.evaluate(() => document.querySelector('[role="tablist"] [role="tab"][aria-selected="true"]')?.textContent?.trim());
+    const tabs = await page.$$eval('[role="tablist"] [role="tab"]', (els) => els.map((e) => e.textContent?.trim()));
+    await page.keyboard.press('Tab').catch(() => {});
+    return { selectedBefore: before, tabsInList: tabs };
+  });
+
+  await ctx.close();
+  return out;
+}
+
 const browser = await chromium.launch({ executablePath: EXE, headless: true, args: ['--no-first-run', '--disable-sync', '--force-device-scale-factor=1'] });
 const consoleErrors = [];
 const attach = (pg) => {
@@ -255,8 +368,9 @@ const bundle = await seedPage.evaluate(() =>
 await seed.close();
 
 const pages = [];
-for (const r of ROUTES) pages.push(await measurePage(browser, r, consoleErrors));
-const tabs = await tabScenario(browser, consoleErrors);
+if (!FEATURES_ONLY) for (const r of ROUTES) pages.push(await measurePage(browser, r, consoleErrors));
+const tabs = FEATURES_ONLY ? { skipped: true, steps: [] } : await tabScenario(browser, consoleErrors);
+const features = await featureScenario(browser, consoleErrors);
 
 const result = {
   base: BASE, buildLabel: LABEL, bundle, viewport: VIEWPORT, browser: EXE,
@@ -269,6 +383,7 @@ const result = {
   },
   pages,
   tabScenario: tabs,
+  features,
   consoleErrorCount: consoleErrors.length,
   consoleErrors: consoleErrors.slice(0, 10),
 };
@@ -281,5 +396,6 @@ for (const p of pages) {
 }
 for (const s of tabs.steps) console.log(`  tab ${JSON.stringify(s).slice(0, 200)}`);
 console.log('  dockTabsAlive=', tabs.dockTabsAlive);
+for (const c of features.checks) console.log('  feat', JSON.stringify(c).slice(0, 220));
 console.log('written →', OUT);
 await browser.close();

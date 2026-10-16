@@ -140,7 +140,7 @@ export const FtsToolbar: React.FC<FtsToolbarProps> = ({
             </span>
           )}
           {boardRow && (boardRow.p_last != null || boardRow.p_closing != null) && (
-            <div className="flex items-center gap-1.5 border-r border-[var(--nn-border)] pr-2">
+            <div className="flex items-center gap-1.5 border-s border-[var(--nn-border)] ps-2">
               <span className="font-mono tabular-nums text-xs font-bold text-[var(--nn-text-primary)]">
                 {toFaDigits(Math.round(boardRow.p_last ?? boardRow.p_closing ?? 0).toLocaleString('en-US'))}
               </span>

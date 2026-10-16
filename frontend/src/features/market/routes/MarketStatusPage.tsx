@@ -15,6 +15,7 @@
 // چشمی و با دادهٔ ثابت قابلِ رندر باشد. بخش‌هایِ بزرگ (طلا، مقایسه، چارت،
 // نمایِ کلی) خودگردان‌اند چون حالتِ داخلیِ زیادی دارند.
 import { useMemo } from 'react';
+import { serverStamp } from '@shared/lib/time';
 import { MarketStatusPanel } from '../components/MarketStatusPanel';
 import { MarketStatusTicker } from '../components/MarketStatusTicker';
 import { MarketPulseBar } from '../components/MarketPulseBar';
@@ -42,6 +43,18 @@ import {
   useMstatPhases,
 } from '../api/useMarketStatusFeed';
 import { useMstatIndexCards, useMstatOrderFlows, useMstatOwnership, useMstatTops } from '../api/useMarketPanels';
+import type { WidgetFreshInput } from '../components/WidgetFreshness';
+
+const fresh = (
+  label: string,
+  q: { status: string; dataUpdatedAt: number },
+  computedAt?: string | null,
+): WidgetFreshInput & { label: string } => ({
+  label,
+  status: q.status,
+  dataUpdatedAt: q.dataUpdatedAt,
+  sourceAsOf: serverStamp(computedAt),
+});
 
 const SECTIONS: MarketSection[] = [
   { id: 'ms-sec-overview', label: 'نمای کلی', pages: [6, 7] },
@@ -85,6 +98,16 @@ export default function MarketStatusPage() {
           id="ms-sec-overview"
           title="نمای کلیِ بازار"
           pages={[6, 7]}
+          freshness={[
+            // `null` برایِ چهارِ پنلِ بی‌`computed_at` — سنجشِ زندهٔ ۱۴۰۵-۰۷-۲۴ رویِ
+            // `/api/mstat/{histogram,clientsplit,industries,phases}`: اینِ پاسخ‌ها
+            // ساعتِ ساختِ خودشان را ندارند. برچسب همان را صریح می‌گوید وِ ساعتِ
+            // پنلِ همسایه را بهِ آن‌ها نسبت نمی‌دهد (قاعدۀ «بی‌داده ≠ صفر»).
+            fresh('کارت‌های شاخص', cards, cards.data?.computed_at),
+            fresh('توزیعِ درصد', histo, null),
+            fresh('تفکیکِ مشتری', split, null),
+            fresh('فازهای نشست', phases, null),
+          ]}
           desc="کارت‌های شاخص، توزیعِ درصد، تفکیکِ مشتری و فازهایِ همین نشست — همۀ اعداد از یک اسکنِ market.db"
         />
         <MarketGlanceCards />
@@ -135,6 +158,7 @@ export default function MarketStatusPage() {
           id="ms-sec-tops"
           title="برترین‌ها و تأثیرگذاران"
           pages={[8]}
+          freshness={[fresh('برترین‌ها', tops, tops.data?.computed_at)]}
           desc="چهار پنلِ جدا: اثرِ مثبت و منفی بر شاخص، بیشترین ارزش و بیشترین حجم — «اثر بر شاخص» با «٪ رشد قیمت» یکی نیست"
         />
         <TopListsGrid
@@ -152,6 +176,7 @@ export default function MarketStatusPage() {
           id="ms-sec-orders"
           title="سفارش‌ها و تغییرِ مالکیت"
           pages={[9]}
+          freshness={[fresh('ماندۀ سفارش', flows, flows.data?.computed_at), fresh('جابه‌جاییِ سهم', owner, owner.data?.computed_at)]}
           desc="ماندۀ دفترِ سفارش از حجمِ انجام‌شده، و جابه‌جاییِ سهم از خالصِ ورودِ پول جدا نگه داشته شده"
         />
         <div className="grid grid-cols-1 gap-2 2xl:grid-cols-2">
@@ -205,6 +230,7 @@ export default function MarketStatusPage() {
           id="ms-sec-tables"
           title="جدول‌های تابلو"
           pages={[2, 8]}
+          freshness={[fresh('صنایع', industries, null)]}
           desc="صنایع و نمادهای زیرِ نظر — همان دو جدولِ قبلی، بی‌کاهشِ ستون"
         />
         {/* دو جدول نه‌تایی‌ستون در ۱۳۶ پیکسل کنارِ هم فشرده می‌شوند؛ فقط روی

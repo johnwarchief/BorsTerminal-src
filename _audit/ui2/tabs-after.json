@@ -1,13 +1,13 @@
 {
   "base": "http://127.0.0.1:8010",
-  "buildLabel": "after: uiux-2-0 Phase C",
-  "bundle": "/assets/index-CAvPwOch.js",
+  "buildLabel": "after: uiux-2-0 Phase D",
+  "bundle": "/assets/index-Dcm2VDrv.js",
   "viewport": {
     "width": 1366,
     "height": 768
   },
   "browser": "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
-  "generatedAt": "2026-10-15T23:01:58.270Z",
+  "generatedAt": "2026-10-16T00:02:02.952Z",
   "method": {
     "readyBy": "marker = نشانۀِ دیدنیِ خودِ صفحه؛ settle = بازمانیِ ثابت؛ marker-missing = نشانۀِ ثابتِ آنِ route درِ اینِ حالتِ داده render نشد",
     "tabs": "همۀ شمارش‌هایِ تب درِ [data-shell=\"workspace-tabs\"] [role=\"tab\"] (بی‌تب‌هایِ FtsDock/پرتفوی)",
@@ -18,7 +18,7 @@
     {
       "path": "/market-status",
       "readyBy": "marker",
-      "ms": 1139,
+      "ms": 1733,
       "apiRequests": 22,
       "consoleErrors": 0,
       "hScrollPx": 0,
@@ -32,8 +32,8 @@
     {
       "path": "/market",
       "readyBy": "settle",
-      "ms": 2337,
-      "apiRequests": 1,
+      "ms": 1889,
+      "apiRequests": 0,
       "consoleErrors": 0,
       "hScrollPx": 0,
       "clippedText": 0,
@@ -46,7 +46,7 @@
     {
       "path": "/technical/فولاد",
       "readyBy": "marker",
-      "ms": 1541,
+      "ms": 1260,
       "apiRequests": 10,
       "consoleErrors": 0,
       "hScrollPx": 0,
@@ -60,7 +60,7 @@
     {
       "path": "/fundamental",
       "readyBy": "marker",
-      "ms": 4337,
+      "ms": 5907,
       "apiRequests": 4,
       "consoleErrors": 0,
       "hScrollPx": 0,
@@ -74,7 +74,7 @@
     {
       "path": "/master",
       "readyBy": "marker",
-      "ms": 3458,
+      "ms": 2558,
       "apiRequests": 0,
       "consoleErrors": 0,
       "hScrollPx": 0,
@@ -88,7 +88,7 @@
     {
       "path": "/portfolio",
       "readyBy": "settle",
-      "ms": 1903,
+      "ms": 2082,
       "apiRequests": 0,
       "consoleErrors": 0,
       "hScrollPx": 0,
@@ -102,7 +102,7 @@
     {
       "path": "/watch",
       "readyBy": "marker",
-      "ms": 3920,
+      "ms": 4070,
       "apiRequests": 2,
       "consoleErrors": 0,
       "hScrollPx": 0,
@@ -116,7 +116,7 @@
     {
       "path": "/notifications",
       "readyBy": "marker",
-      "ms": 1103,
+      "ms": 1035,
       "apiRequests": 2,
       "consoleErrors": 0,
       "hScrollPx": 0,
@@ -130,7 +130,7 @@
     {
       "path": "/strategy-tree",
       "readyBy": "settle",
-      "ms": 1898,
+      "ms": 1908,
       "apiRequests": 0,
       "consoleErrors": 0,
       "hScrollPx": 0,
@@ -193,13 +193,64 @@
     ],
     "waitForFirstTab": {
       "ok": true,
-      "waitedMs": 41
+      "waitedMs": 82
     },
     "waitForSecondTab": {
       "ok": true,
-      "waitedMs": 21
+      "waitedMs": 57
     },
     "dockTabsAlive": 11
+  },
+  "features": {
+    "checks": [
+      {
+        "name": "market-status freshness chips",
+        "chips": 10,
+        "overviewChips": 4,
+        "anySourceStamp": true,
+        "anyStampAbsentSaidSo": true,
+        "sample": [
+          "کارت‌های شاخص:خوانده شد· لحظاتی پیش· ساعتِ منبع: ۰۳:۳۱:۴۸",
+          "توزیعِ درصد:خوانده شد· لحظاتی پیش· زمانِ داده از منبع نیامد",
+          "تفکیکِ مشتری:خوانده شد· لحظاتی پیش· زمانِ داده از منبع نیامد"
+        ],
+        "hScrollPx": 0,
+        "clippedText": 0,
+        "clippedSample": [],
+        "offscreenInPanel": 0,
+        "offscreenSample": [],
+        "stripH": 36,
+        "stripTabs": 1
+      },
+      {
+        "name": "url symbol beats store",
+        "activeText": "بترمینال بورسFTS v2.1فضای تحلیلوضعیت بازارتابلوخوانیتکنیکالب",
+        "showsUrlSymbol": false,
+        "showsStoreSymbol": false
+      },
+      {
+        "name": "portfolio signal is addressable",
+        "signalHeads": [],
+        "tabTitle": [
+          "مدیریت پرتفوی · فولاد×"
+        ]
+      },
+      {
+        "name": "default-symbol notice",
+        "noticeWhenNoSelection": "نمایشِ پیش‌فرض: فولاد — انتخابِ شما نبود",
+        "noticeWithUrlSymbol": false,
+        "noticeWithStoredSymbol": true
+      },
+      {
+        "name": "portfolio tabs keyboard",
+        "selectedBefore": "مدیریت پرتفوی×",
+        "tabsInList": [
+          "مدیریت پرتفوی×",
+          "پرتفوی هدف",
+          "پرتفوی فعلی"
+        ]
+      }
+    ]
   },
   "consoleErrorCount": 0,
   "consoleErrors": []

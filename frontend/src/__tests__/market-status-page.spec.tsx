@@ -104,12 +104,24 @@ function renderPage(table: Record<string, unknown>) {
   );
 }
 
+// پاسخِ `/api/mstat/indexcards` — تنها پنلِ اینِ صفحه که `computed_at` دارد
+// (سنجشِ زندهٔ ۱۴۰۵-۰۷-۲۴: histogram/clientsplit/phases/industries/mainwatch آنِ
+// ستون را ندارند). بقیۀِ فیلدها درِ schema همگی `nullish`‌اند، پس اینِ نمونه‌یِ
+// کوچکِ عمدی باِ خودِ اعتبارسنجی نمی‌جنگد.
+const INDEXCARDS = {
+  status: 'ok',
+  computed_at: '2026-10-16T02:43:50',
+  cards: [],
+  source: 'market_index',
+};
+
 const FULL: Record<string, unknown> = {
   '/api/mstat/histogram': HISTO,
   '/api/mstat/clientsplit': SPLIT,
   '/api/mstat/phases': PHASES,
   '/api/mstat/mainwatch': MAINWATCH,
   '/api/mstat/industries': INDUSTRIES,
+  '/api/mstat/indexcards': INDEXCARDS,
 };
 
 beforeEach(() => fetchMock.mockReset());
@@ -159,6 +171,43 @@ describe('صفحۀ «وضعیت بازار» با داده', () => {
       const after = Array.from(document.querySelectorAll('[data-testid^="industry-row-"]')).map((el) => el.getAttribute('data-testid'));
       expect(after).not.toEqual(before);
     });
+  });
+});
+
+describe('تازگیِ به‌ازایِ ویجت (فاز D)', () => {
+  it('سرِصفحۀ «نمای کلی» چهارِ برچسب دارد، یکی به‌ازایِ هرِ ویجتِ مستقل', async () => {
+    renderPage(FULL);
+    await waitFor(() => expect(screen.getByTestId('histo-bucket-0..1')).toBeInTheDocument());
+    const chips = Array.from(
+      screen.getByTestId('section-freshness-ms-sec-overview').querySelectorAll('[data-testid="widget-freshness"]'),
+    );
+    expect(chips).toHaveLength(4);
+    // نامِ هرِ ویجت درِ برچسبِ خودش می‌ماند، تاِ دوِ بخش باِ هم یکی خوانده نشوند
+    expect(chips.map((c) => c.textContent).join('|')).toContain('کارت‌های شاخص');
+    expect(chips.map((c) => c.textContent).join('|')).toContain('فازهای نشست');
+  });
+
+  it('ساعتِ ساختِ پاسخ را از خودِ همانِ پنل می‌خواند، نه از همسایه', async () => {
+    renderPage(FULL);
+    await waitFor(() => expect(screen.getByTestId('histo-bucket-0..1')).toBeInTheDocument());
+    const texts = Array.from(
+      screen.getByTestId('section-freshness-ms-sec-overview').querySelectorAll('[data-testid="widget-freshness"]'),
+    ).map((c) => c.textContent ?? '');
+    // `computed_at` فقط درِ پاسخِ indexcards است ⇒ همانِ یک «ساعتِ منبع» دارد
+    expect(texts.filter((t) => t.includes('ساعتِ منبع: ۰۲:۴۳:۵۰'))).toHaveLength(1);
+    // وِ سه پنلِ بی‌`computed_at` باید صریح بگویند «نیامد» — نه ساعتِ همسایه، نه صفر
+    expect(texts.filter((t) => t.includes('زمانِ داده از منبع نیامد')).length).toBeGreaterThanOrEqual(3);
+  });
+
+  it('برچسبِ سراسریِ بالایِ صفحه جایِ برچسبِ هیچِ ویجتی را نمی‌گیرد', async () => {
+    renderPage(FULL);
+    await waitFor(() => expect(screen.getByTestId('histo-bucket-0..1')).toBeInTheDocument());
+    // پنلِ تازگیِ سراسری هنوز هست (اتصال/دریافت/عوض‌شدنِ عدد)، ولی جدا ازِ سنجهایِ بخش‌ها
+    expect(screen.getByTestId('market-status-panel')).toBeInTheDocument();
+    const secs = ['ms-sec-overview', 'ms-sec-tops', 'ms-sec-orders', 'ms-sec-tables'];
+    for (const id of secs) {
+      expect(screen.getByTestId(`section-freshness-${id}`)).toBeInTheDocument();
+    }
   });
 });
 

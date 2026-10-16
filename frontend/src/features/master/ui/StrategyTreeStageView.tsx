@@ -1,4 +1,5 @@
-import { Link, useSearchParams } from 'react-router';
+import { Link, useParams, useSearchParams } from 'react-router';
+import { resolveSymbolParam } from '@shared/lib/symbolParam';
 import { useMemo } from 'react';
 import { toFaDigits } from '@shared/lib/fmt';
 import { useStrategyStore } from '@shared/stores/strategyStore';
@@ -29,9 +30,10 @@ function leaves(model: ReturnType<typeof buildFtsChartModel>, id: string): FtsCh
 
 export default function StrategyTreeStageView({ zone }: { zone: FtsZone }) {
   const [params] = useSearchParams();
+  const routeParams = useParams();
   const horizon = useStrategyStore((s) => s.horizon);
   const symbolStore = useSymbolStore((s) => s.symbol);
-  const symbol = params.get('symbol') || symbolStore || '';
+  const symbol = resolveSymbolParam({ path: routeParams.symbol, query: params.get('symbol'), stored: symbolStore });
   // همان presetِ canonicalِ سراسری (URL > انتخابِ کاربر > افق) — نه URL→horizon تنها (#M2.1).
   const preset = useActiveFunnelPreset(horizon);
   const strategyParams = useStrategyParamsStore((s) => s.params);

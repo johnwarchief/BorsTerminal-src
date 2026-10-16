@@ -40,7 +40,9 @@ export const mainRoutes: RouteObject[] = [
     path: 'strategy-tree/:symbol?',
     element: page(() => import('@features/master/routes/StrategyTreePage')),
   },
-  { path: 'portfolio', element: page(() => import('@features/portfolio/routes/PortfolioPage')) },
+  // فاز D: `:symbol?` -- بلوکِ «سیگنال پرتفوی» نماد می‌خواهد وِ بی‌آدرسِ نماد ازِ بیرون
+  // قابلِ بازکردن نبود (`PortfolioPage.tsx:251`). مسیرِ بی‌نماد دست‌نخورده می‌ماند.
+  { path: 'portfolio/:symbol?', element: page(() => import('@features/portfolio/routes/PortfolioPage')) },
   // رأیِ مالک (1405-07-20): دیده‌بان تبِّ مستقل است، ولی درِ ناوبری زیرِ گروهِ
   // پرتفوی نشان داده می‌شود. خودِ زیرتب درِ /portfolio هم دست‌نخورده می‌ماند تا
   // نشانی‌هایِ پیشین نشکنند.
