@@ -40,7 +40,8 @@ except Exception:
 
 import codal_fetcher as CF                     # noqa: E402
 import codal_units as CU                       # noqa: E402
-import fts_engine as FE                        # noqa: E402
+import fts_engine as FE                                  # noqa: E402
+import bors_fixture_db as FX                     # noqa: E402
 
 PASS = FAIL = 0
 
@@ -221,10 +222,8 @@ def main() -> int:
         b.close()
 
     # ── ۹) سرشماریِ واقعی رویِ بانکِ کاری، با قرینِ بی‌واحد ────────────────
-    prod = os.path.join(ROOT, "market.db")
-    if os.path.exists(prod):
-        c = sqlite3.connect("file:%s?mode=ro" % prod.replace("\\", "/"), uri=True)
-        c.row_factory = sqlite3.Row
+    c = FX.market_db_ro(ROOT)
+    if c is not None:
         FE.register_sql(c)
         n_rows, n_syms = c.execute("SELECT COUNT(*), COUNT(DISTINCT symbol) FROM "
                                    "financial_statements WHERE " + CU.MISSING_SQL).fetchone()
@@ -258,7 +257,7 @@ def main() -> int:
         ck(not moved, "U9ت رویِ دادهٔ real هم هیچ مرجعِ بی‌واحدی مبنایِ عدد نمی‌شود", moved[:4])
         c.close()
     else:
-        print("  info  market.db نیست — بندهایِ ۹ رویِ این ماشین اجرا نشد")
+        FX.note_skip("U9 census", "market.db absent or incomplete (read-only) -- sections U9a..U9t not run")
 
     print("\ncodal_unit_scale_v1090: %d passed / %d failed" % (PASS, FAIL))
     return 0 if FAIL == 0 else 1
