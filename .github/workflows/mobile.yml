@@ -17,6 +17,24 @@ on:
         type: string
         required: false
         default: 'mobile-latest'
+      # bake_snapshot عمداً **آف** است: با false هیچ گامِ تازه‌ای درِ build-apk
+      # فعال نمی‌شود و همان مسیرِ دیروز می‌دود (بستۀ داده از ریلیزِ منتشرشده
+      # دانلود می‌شود). با true، بستۀ داده درِ خودِ runner پخته می‌شود و همان
+      # بایت‌ها داخلِ APK می‌نشینند — چون ریلیزِ منتشرشده هیچ کلیدِ قیفی ندارد
+      # و صفحۀ «غربالگری» درِ حالتِ آفلاین خالی می‌ماند.
+      bake_snapshot:
+        description: 'پختِ آزمایشیِ بستۀ داده رویِ runner و بستنِ همان بسته داخلِ APK (خروجی فقط artifact؛ هیچ ریلیز/برچسب/latest.json ساخته یا بازنویسی نمی‌شود)'
+        type: boolean
+        required: false
+        default: false
+      # 0 = جهانِ کاملِ اسکرینر. هر عددِ بزرگ‌تر از صفر یعنی «فقط N نمادِ اول»
+      # و بستۀ PARTIAL می‌سازد؛ همان‌جا درِ لاگ و درِ خلاصۀ شغل فریاد زده می‌شود،
+      # چون کوچک‌کردنِ خاموشِ جهانِ نمادها درِ این پروژه ممنوع است.
+      bake_limit:
+        description: 'فقط با bake_snapshot=true: سقفِ نمادهایِ پخت‌شده. 0 = جهانِ کامل؛ هر مقدارِ دیگر = بستۀ PARTIAL (با اعلامِ صریح)'
+        type: number
+        required: false
+        default: 0
   push:
     branches:
       - 'arena/**'
@@ -34,7 +52,341 @@ permissions:
   contents: write
 
 jobs:
+  # ── پختِ آزمایشیِ بستۀ داده رویِ خودِ runner (خروجی فقط artifact) ────────────
+  # چرا این job هست: بستۀ منتشرشده درِ `mobile-latest` (و سریِ `v2`) هیچ کلیدِ
+  # `funnel/…` ندارد، پس APK ای که امروز ساخته می‌شود درِ حالتِ آفلاین صفحۀ
+  # «غربالگری» را خالی نشان می‌دهد و کاربر همان «بازارِ خالی» را می‌خواند. این
+  # job همان بسته را درِ خودِ runner می‌پزد و build-apk بایت‌هایش را داخلِ APK
+  # می‌گذارد تا مسیرِ آفلاین با بارِ واقعی آزموده شود.
+  #
+  # سه قیدِ این job:
+  #  ۱) هیچ‌چیز منتشر نمی‌شود: نه ریلیز، نه برچسب، نه `latest.json`. تنها خروجی
+  #     `actions/upload-artifact` است و همان artifact مصرف می‌شود.
+  #  ۲) بی‌`bake_snapshot=true` تمامِ job یک گامِ تصمیم است و build-apk دقیقاً
+  #     همان مسیرِ دیروز را می‌رود (بستۀ داده از ریلیز دانلود می‌شود).
+  #  ۳) پخت **آفلاین نیست و بازتولیدپذیر هم نیست**: سازنده خودِ `app.py` را با
+  #     TestClient بالا می‌آورد و بعضی مسیرها (نمودار/شاخص) به `cdn.tsetmc.com`
+  #     می‌زنند — سنجشِ محلی همین دور از همان میزبان `502` دید. `built_at`، تابلو
+  #     و شمارشِ اسکرینر با هر ران عوض می‌شوند، پس هیچ‌جا ادعایِ بایت‌یکی یا
+  #     «offline bake» نمی‌کنیم.
+  bake-mobile-snapshot:
+    runs-on: ubuntu-latest
+    # سقفِ بیرونی ۹۰ دقیقه؛ خودِ گامِ پخت رویِ ۴۸۰۰ ثانیه (۸۰ دقیقه) می‌میرد تا
+    # پیامِ «مهلت تمام شد» درِ لاگ و درِ خلاصۀ شغل بماند، نه اینکه runner شغل را
+    # بی‌متن cancel کند. مبنایِ عدد: پختِ کامل رویِ ماشینِ ۲ هسته‌ایِ محلی ~۷۱
+    # دقیقه کشید و ۱۴۱MB خام / ۱۹٫۶MB gz داد؛ runner چهار هسته‌ای تندتر است اما
+    # قیفِ غربالگری سنگین است و سقف باید صریح بشکند، نه ساکت بماند.
+    timeout-minutes: 90
+    outputs:
+      enabled: ${{ steps.gate.outputs.enabled }}
+      partial: ${{ steps.gate.outputs.partial }}
+      limit: ${{ steps.gate.outputs.limit }}
+    env:
+      # بانکِ مرجع: کپیِ **جدا** درِ workspace خودِ runner. `data-latest` درِ
+      # مخزنِ عمومیِ توزیع فقط خوانده می‌شود و هیچ‌جا جایِ بانکِ کاربر را نمی‌گیرد:
+      # فایلِ بازشده رویِ همین ماشینِ موقت می‌نشیند و با رفتنِ ران می‌رود.
+      DATA_REPO: johnwarchief/BorsTerminal
+      DATA_TAG: data-latest
+      GH_TOKEN: ${{ github.token }}
+      SNAPSHOT_SERIES: ${{ github.event.inputs.snapshot_series || 'mobile-latest' }}
+      BAKE_SNAPSHOT: ${{ github.event.inputs.bake_snapshot }}
+      BAKE_LIMIT: ${{ github.event.inputs.bake_limit }}
+      # همان درب‌هایِ آفلاین که کارِ محلی می‌بندد: حلقه‌هایِ تابلو و واکشیِ کدال
+      # خاموش. آنچه بیرونِ این دو در می‌رود درخواستِ خودِ endpointهاست و همان را
+      # درِ گامِ پخت صریح اعلام می‌کنیم.
+      BORS_CODAL_OFFLINE: '1'
+      BORS_NO_FETCH_LOOPS: '1'
+      PYTHONIOENCODING: utf-8
+    steps:
+      # تنها گامی که همیشه می‌دود. `build-apk` به این job `needs` دارد، پس این
+      # شغل هرگز نباید skipped شود — وگرنه مسیرِ عادیِ بیلد هم با آن خاموش
+      # می‌شد. بی‌bake_snapshot فقط همین چند سطر اجرا می‌شود.
+      - name: Decide whether to bake
+        id: gate
+        run: |
+          set -e
+          LIMIT="${BAKE_LIMIT:-0}"
+          case "$LIMIT" in ''|*[!0-9]*) LIMIT=0;; esac
+          if [ "$BAKE_SNAPSHOT" = "true" ]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+            # سری از ورودیِ dispatch می‌آید و درِ فرمانهایِ gh و درِ manifest
+            # پخت می‌نشیند؛ کاراکترِ ناشناخته یعنی تزریقِ آرگومان، نه سریِ داده.
+            case "$SNAPSHOT_SERIES" in
+              ''|*[!A-Za-z0-9._-]*)
+                echo "BLOCKED: snapshot_series نامعتبر است ('$SNAPSHOT_SERIES')؛ تنها [A-Za-z0-9._-] مجاز است." >&2
+                exit 1;;
+            esac
+            echo "limit=$LIMIT" >> "$GITHUB_OUTPUT"
+            if [ "$LIMIT" -gt 0 ]; then
+              echo "partial=true" >> "$GITHUB_OUTPUT"
+              echo "::warning::bake_snapshot=true با bake_limit=$LIMIT ⇒ فقط $LIMIT نمادِ اولِ اسکرینر پخته می‌شود. این بستۀ داده PARTIAL است و جهانِ نمادها را کوچک می‌کند؛ برایِ بستۀ کامل bake_limit=0 بگذارید."
+            else
+              echo "partial=false" >> "$GITHUB_OUTPUT"
+              echo "bake_snapshot=true ⇒ پختِ کامل (بی‌limit): همۀ نمادهایِ اسکرینر، همان جهانِ امروز."
+            fi
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "partial=false" >> "$GITHUB_OUTPUT"
+            echo "limit=0" >> "$GITHUB_OUTPUT"
+            echo "bake_snapshot=false ⇒ هیچ پختی انجام نمی‌شود. build-apk بستۀ داده را از ریلیزِ \"$SNAPSHOT_SERIES\" می‌خواند (مسیرِ عادیِ امروز، دست‌نخورده)."
+          fi
+
+      - name: Checkout the source
+        if: steps.gate.outputs.enabled == 'true'
+        uses: actions/checkout@v4
+
+      # همان pairing که guards.yml و release.yml می‌سازند: Python 3.12 + pip از
+      # requirements.txt. پخت بی‌این بسته‌ها نمی‌چرخد، چون TestClient خودِ
+      # `app.py` را import می‌کند (fastapi/httpx/pandas/numpyِ پین‌شده).
+      - name: Set up Python for the bake
+        if: steps.gate.outputs.enabled == 'true'
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: 'requirements.txt'
+
+      - name: Install the backend requirements
+        if: steps.gate.outputs.enabled == 'true'
+        run: |
+          set -e
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      # ── مرحلۀ ۱: بانکِ مرجع، به‌صورتِ کپیِ جدا درِ runner ────────────────────
+      # نامِ asset و تگ از خودِ ریلیز خوانده می‌شود، نه از حافظه: اگر روزی asset
+      # عوض شود، فهرستِ چاپ‌شده درِ خلاصه معلوم است و دانلود صریح می‌شکند.
+      - name: Fetch the isolated market.db baseline (read-only pull)
+        if: steps.gate.outputs.enabled == 'true'
+        run: |
+          set -e
+          mkdir -p _bake_src
+          echo "### پختِ بستۀ داده رویِ runner (artifact-only؛ هیچ ریلیزی ساخته نمی‌شود)" >> "$GITHUB_STEP_SUMMARY"
+          echo "- منبعِ بانک: \`$DATA_REPO\` @ \`$DATA_TAG\` (فقط خواندنی)" >> "$GITHUB_STEP_SUMMARY"
+          # فهرستِ asset از خودِ ریلیز خوانده می‌شود، نه از حافظه: نامِ فایلِ بانک
+          # اگر روزی عوض شود، همین‌جا لو می‌رود (بی‌این، دانلودِ بی‌pattern با
+          # پیامِ مبهمِ «not found» می‌مرد و علتِ واقعی معلوم نمی‌ماند).
+          gh release view "$DATA_TAG" --repo "$DATA_REPO" --json assets \
+            --jq '.assets[] | [.name, (.size|tostring)] | @tsv' > _bake_src/assets.tsv
+          echo "assetهایِ \"$DATA_TAG\" درِ $DATA_REPO:"
+          cat _bake_src/assets.tsv
+          grep -q '^market\.db\.lzma' _bake_src/assets.tsv || {
+            echo "BLOCKED: درِ ریلیزِ \"$DATA_TAG\" هیچ asset به نام market.db.lzma نیست؛ پخت بی‌بانکِ مرجع انجام نمی‌شود." >> "$GITHUB_STEP_SUMMARY"
+            echo "BLOCKED: asset market.db.lzma درِ $DATA_REPO/$DATA_TAG نیست (فهرستِ بالا را ببینید)" >&2
+            exit 1; }
+          WANT_DIGEST=$(gh release view "$DATA_TAG" --repo "$DATA_REPO" --json assets \
+                        --jq '.assets[] | select(.name=="market.db.lzma") | .digest' || true)
+          gh release download "$DATA_TAG" --repo "$DATA_REPO" --pattern market.db.lzma --dir _bake_src --clobber
+          test -s _bake_src/market.db.lzma
+          # متایِ خودِ بانک (قدمتِ داده) — فقط لاگ می‌شود، کنارِ بستۀ گوشی نمی‌رود.
+          gh release download "$DATA_TAG" --repo "$DATA_REPO" --pattern market.db.meta.json --dir _bake_src --clobber 2>/dev/null || true
+          if [ -s _bake_src/market.db.meta.json ]; then
+            echo "meta خودِ بانکِ مرجع:"
+            head -c 900 _bake_src/market.db.meta.json
+            echo
+          else
+            echo "market.db.meta.json درِ این ریلیز نیست ⇒ قدمتِ داده سنجیده نشد (NOT_VERIFIED، نه «تازه»)"
+          fi
+          HAVE="sha256:$(sha256sum _bake_src/market.db.lzma | cut -d' ' -f1)"
+          if [ -z "$WANT_DIGEST" ]; then
+            echo "NOT_VERIFIED: digest برایِ asset ثبت نشده ⇒ تطبیقِ منبع انجام نشد (ادعایِ سالم‌بودنِ دانلود نمی‌کنیم)"
+            echo "- \`market.db.lzma\`: $HAVE · digest درِ GitHub ثبت‌نشده ⇒ تطبیق **انجام‌نشده**" >> "$GITHUB_STEP_SUMMARY"
+          elif [ "$WANT_DIGEST" != "$HAVE" ]; then
+            echo "BLOCKED: هشِ market.db.lzma با digestِ خودِ GitHub نمی‌خواند (want=$WANT_DIGEST got=$HAVE) ⇒ دانلود ناقص/خراب است." >> "$GITHUB_STEP_SUMMARY"
+            echo "BLOCKED: market.db.lzma خراب دانلود شد: want=$WANT_DIGEST got=$HAVE" >&2
+            exit 1
+          else
+            echo "منبعِ بانک راستی‌آزمایی شد: $HAVE ($(stat -c '%s' _bake_src/market.db.lzma) بایت)"
+            echo "- \`market.db.lzma\`: \`$HAVE\` (با digestِ خودِ GitHub خواند)" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      # DB_PATH درِ dev = ریشۀ ریپو (bors_config._resolve_market_db)، پس فایلِ
+      # بازشده همین‌جا می‌نشیند و سازنده همان را ATTACH می‌کند. این بانک فقط
+      # ورودیِ پخت است: هیچ‌جا آپلود، منتشر یا جایِ بانکِ کاربر گذاشته نمی‌شود.
+      - name: Decompress the baseline into the runner workspace
+        if: steps.gate.outputs.enabled == 'true'
+        run: |
+          set -e
+          python3 - <<'PY'
+          import lzma, os, sqlite3, sys
+          src = os.path.join("_bake_src", "market.db.lzma")
+          dst = "market.db"
+          n = 0
+          with lzma.open(src, "rb") as fi, open(dst, "wb") as fo:
+              while True:
+                  blk = fi.read(1 << 22)
+                  if not blk:
+                      break
+                  fo.write(blk)
+                  n += len(blk)
+          print("decompressed: %s -> %s (%d B)" % (src, dst, n))
+          con = sqlite3.connect("file:%s?mode=ro" % os.path.abspath(dst), uri=True)
+          try:
+              have = {r[0] for r in con.execute("SELECT name FROM sqlite_master WHERE type='table'")}
+              # سازنده فقط این دو جدولِ خام را از بانک برمی‌دارد (RAW_TABLES)؛ نبودِ
+              # یکی یعنی بستۀ بی‌چارت/بی‌نماد می‌سازیم — همان‌جا باید بمیرد.
+              for t in ("instruments", "price_history"):
+                  if t not in have:
+                      print("BLOCKED: جدول %s در market.db نیست ⇒ پخت متوقف می‌شود" % t, file=sys.stderr)
+                      sys.exit(1)
+              for t in ("instruments", "price_history"):
+                  print("rows %s = %d" % (t, con.execute("SELECT COUNT(*) FROM %s" % t).fetchone()[0]))
+          finally:
+              con.close()
+          PY
+          MARKET_DB_SHA=$(sha256sum market.db | cut -d' ' -f1)
+          echo "MARKET_DB_SHA=$MARKET_DB_SHA" >> "$GITHUB_ENV"
+          echo "- \`market.db\` بازشده درِ runner: $(stat -c '%s' market.db) بایت · sha256 \`$MARKET_DB_SHA\`" >> "$GITHUB_STEP_SUMMARY"
+
+      # ── مرحلۀ ۲: خودِ پخت. صریح: این گام شبکه دارد و بازتولیدپذیر نیست ──────
+      - name: "Bake the data package (uses the network; not byte-reproducible)"
+        if: steps.gate.outputs.enabled == 'true'
+        env:
+          BAKE_LIMIT_N: ${{ steps.gate.outputs.limit }}
+        run: |
+          set -e
+          echo "::notice::این پخت آفلاین نیست. scripts/build_mobile_snapshot.py خودِ app.py را با TestClient بالا می‌آورد و بعضی endpointها (نمودار/شاخص) مستقیم به cdn.tsetmc.com می‌زنند؛ سنجشِ محلی همین دور یک 502 از همان میزبان دید. پس نتیجه نه offline است نه reproducible: built_at، صفّ تابلو و شمارشِ اسکرینر با هر ران عوض می‌شوند."
+          echo "- **شبکه**: این گام ممکن است به \`cdn.tsetmc.com\` بزند (بی‌ادعایِ آفلاین‌بودن؛ سنجشِ محلی: 502)" >> "$GITHUB_STEP_SUMMARY"
+          LIMIT="${BAKE_LIMIT_N:-0}"
+          case "$LIMIT" in ''|*[!0-9]*) LIMIT=0;; esac
+          ARGS="--out _bake_out --no-lzma --series $SNAPSHOT_SERIES"
+          if [ "$LIMIT" -gt 0 ]; then
+            ARGS="$ARGS --limit $LIMIT"
+            echo "::warning::PARTIAL: bake_limit=$LIMIT ⇒ جهانِ نمادها کوچک شده است؛ این بسته برایِ سنجشِ کاملِ قیف کافی نیست و درِ خلاصه و درِ لاگِ بیلد هم همین اعلام می‌شود."
+            echo "- **PARTIAL**: bake_limit=$LIMIT (فقط $LIMIT نمادِ اولِ اسکرینر) ⇒ بستۀ کامل نیست" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "پختِ کامل: همۀ نمادهایِ اسکرینر پخته می‌شود (بی‌limit)."
+          fi
+          echo "بسته برایِ سریِ \"$SNAPSHOT_SERIES\" پخته می‌شود (درِ manifest نوشته می‌شود)"
+          rc=0
+          # ۴۸۰۰s درونِ سقفِ ۹۰ دقیقه‌ایِ شغل: مهلتِ خودِ شغل runner را بی‌متن
+          # cancel می‌کند، اما این «timeout» با rc=124 برمی‌گردد و پیامِ روشن
+          # می‌گذارد. بی‌این، یک پختِ کند درِ رانِ نیمه‌ساکت گم می‌شد.
+          timeout -k 120 4800 python3 scripts/build_mobile_snapshot.py $ARGS || rc=$?
+          if [ "$rc" != "0" ]; then
+            if [ "$rc" = "124" ] || [ "$rc" = "137" ]; then
+              echo "BAKE-TIMEOUT: پخت درِ ۴۸۰۰ ثانیه (۸۰ دقیقه) تمام نشد (rc=$rc). هیچ بستۀ تازه‌ای نیست و شغل صریحاً قرمز است — سبزِ جعلی نداریم." >> "$GITHUB_STEP_SUMMARY"
+              echo "BAKE-TIMEOUT (rc=$rc): برایِ ادامه bake_limit را بالا ببرید و آنگاه درِ گزارش صریح PARTIAL اعلام می‌شود." >&2
+            else
+              echo "BAKE-FAILED: سازنده با rc=$rc مرد؛ بستۀ داده ساخته نشد." >> "$GITHUB_STEP_SUMMARY"
+            fi
+            exit "$rc"
+          fi
+          test -s _bake_out/mobile_snapshot.db
+          test -s _bake_out/mobile_snapshot.db.gz
+          test -s _bake_out/mobile_snapshot.db.meta.json
+          echo "بستۀ پخته: $(stat -c '%s' _bake_out/mobile_snapshot.db) B خام / $(stat -c '%s' _bake_out/mobile_snapshot.db.gz) B gz"
+
+      # بازرسیِ مستقل با همان ابزاری که قراردادِ manifest را از بیرون می‌خواند
+      # (`tools/verify_mobile_snapshot.py`) + شمارشِ کلیدهایِ قیف از خودِ شبکهٔ
+      # اعلامیِ سازنده، نه از فهرستِ حفظی. نبودِ همین کلیدها دلیلِ وجودِ این job است.
+      - name: Verify the baked package and the funnel keys
+        if: steps.gate.outputs.enabled == 'true'
+        run: |
+          set -e
+          # بی‌tee: لوله، کدِ خروجِ بازرس را می‌پوشاند و «رد شد» سبز می‌گذرد.
+          rc=0
+          python3 tools/verify_mobile_snapshot.py --dir _bake_out --tamper-test > _bake_out/verify.json || rc=$?
+          python3 -c 'import json;d=json.load(open("_bake_out/verify.json",encoding="utf-8"));print("verify: verdict=%s integrity=%s tables_missing=%s required_keys_missing=%s tamper=%s" % (d.get("verdict"),d.get("integrity_ok"),d.get("tables_missing"),d.get("required_baked_keys_missing"),d.get("tamper_trials")))' || true
+          if [ "$rc" != "0" ]; then
+            echo "BAKE-VERIFY-FAILED: بازرسیِ مستقلِ بستۀ پخته رد شد (rc=$rc) ⇒ artifact آپلود نمی‌شود." >> "$GITHUB_STEP_SUMMARY"
+            echo "BLOCKED: tools/verify_mobile_snapshot.py این بسته را رد کرد (rc=$rc)" >&2
+            exit 1
+          fi
+          python3 - <<'PY'
+          import json, sqlite3, sys
+          # CWD درِ این گام ریشۀ ریپو است و importِ سازنده (که خودش chdir به همان
+          # ریشۀ ROOT می‌کند) مسیرها را عوض نمی‌کند؛ پس شبکهٔ کلیدها از خودِ
+          # قرارداد خوانده می‌شود، نه از فهرستِ دوباره‌نوشته.
+          sys.path.insert(0, ".")
+          from scripts.build_mobile_snapshot import (FUNNEL_DROP_SUFFIX, FUNNEL_FUND_MODE,
+                                                     FUNNEL_LOGICS, FUNNEL_PRESETS, funnel_key)
+          want = [funnel_key(p, l, FUNNEL_FUND_MODE, FUNNEL_DROP_SUFFIX)
+                  for p in FUNNEL_PRESETS for l in FUNNEL_LOGICS]
+          con = sqlite3.connect("file:_bake_out/mobile_snapshot.db?mode=ro", uri=True)
+          bad, joined = [], {}
+          try:
+              for k in want:
+                  row = con.execute("SELECT json FROM baked WHERE key=?", (k,)).fetchone()
+                  if not row:
+                      bad.append("%s:کلید-نیست" % k)
+                      continue
+                  payload = json.loads(row[0])
+                  status = payload.get("status")
+                  u = payload.get("universe") or {}
+                  joined[k] = u.get("joined")
+                  if (status not in (None, "success")) or not payload.get("entries") or not payload.get("status_matrix"):
+                      bad.append("%s:status=%s" % (k, status))
+                  elif not u.get("joined"):
+                      bad.append("%s:joined=0" % k)
+          finally:
+              con.close()
+          print("funnel keys: %d/%d پخته و سنجیده شد · joined=%s"
+                % (len(want) - len(bad), len(want),
+                   ",".join(str(joined.get(k)) for k in want)))
+          if bad:
+              print("BLOCKED: قیفِ آفلاین بارِ واقعی ندارد -> " + "; ".join(bad), file=sys.stderr)
+              sys.exit(1)
+          PY
+          echo "- کلیدهایِ قیفِ پخت‌شده: \`funnel/*\` کامل (هر ترکیبِ اعلامیِ سازنده، با universe.joined و status_matrixِ غیرخالی)" >> "$GITHUB_STEP_SUMMARY"
+
+      # ── مرحلۀ ۳: هش‌ها و هویت، درِ لاگ و درِ خلاصۀ شغل ───────────────────────
+      - name: Record the bake checksums and identity
+        if: steps.gate.outputs.enabled == 'true'
+        run: |
+          set -e
+          DB_SHA=$(sha256sum _bake_out/mobile_snapshot.db | cut -d' ' -f1)
+          GZ_SHA=$(sha256sum _bake_out/mobile_snapshot.db.gz | cut -d' ' -f1)
+          META_LINE=$(python3 -c 'import json;m=json.load(open("_bake_out/mobile_snapshot.db.meta.json",encoding="utf-8"));print("gz_sha256=%s package_id=%s built_at=%s baked_ok=%s baked_fail=%s" % (m.get("gz_sha256"),m.get("package_id"),m.get("built_at"),m.get("baked_ok"),m.get("baked_fail")))')
+          # gz_sha256 درِ manifest باید با بایت‌هایِ ارسالی بخورد؛ نخورد یعنی
+          # بسته درِ همین ران خراب است و اصلاً نباید به APK برسد.
+          if [ "$(printf '%s' "$META_LINE" | sed 's/.*gz_sha256=\([0-9a-f]*\).*/\1/')" != "$GZ_SHA" ]; then
+            echo "BLOCKED: gz_sha256 درِ manifest با sha256ِ فایلِ واقعی نمی‌خواند" >&2
+            exit 1
+          fi
+          echo "BAKE_GZ_SHA=$GZ_SHA" >> "$GITHUB_ENV"
+          echo "BAKE_DB_SHA=$DB_SHA" >> "$GITHUB_ENV"
+          echo "BAKE_META_LINE=$META_LINE" >> "$GITHUB_ENV"
+          # baked_fail صفر نیست یعنی بعضی اندپوینت‌ها درِ همین ران پاسخ ندادند
+          # (قیفِ آفلاین پایین جدا سنجیده می‌شود). عدد باید درِ لاگ باشد، نه درِ
+          # یکِ manifestِ ۲۰ کیلوبایتی که هیچ‌کس نمی‌خواند.
+          FAILS=$(python3 -c 'import json;print(json.load(open("_bake_out/mobile_snapshot.db.meta.json",encoding="utf-8")).get("baked_fail",0))')
+          if [ "$FAILS" != "0" ]; then
+            echo "::warning::baked_fail=$FAILS — درِ همین پخت $FAILS اندپوینت پاسخِ کامل نداد (بسته ناقص است؛ شمار را درِ خلاصه ببینید)."
+          fi
+          {
+            echo "- sha256 \`market.db\` (ورودی، بازشده): \`${MARKET_DB_SHA:-نامعلوم}\`"
+            echo "- sha256 \`mobile_snapshot.db\`: \`$DB_SHA\` ($(stat -c '%s' _bake_out/mobile_snapshot.db) B)"
+            echo "- sha256 \`mobile_snapshot.db.gz\`: \`$GZ_SHA\` ($(stat -c '%s' _bake_out/mobile_snapshot.db.gz) B)"
+            echo "- manifest: $META_LINE"
+            echo "- این بسته **آفلاین/بازتولیدپذیر نیست** و ادعایِ بایت‌یکیِ ران‌ها نمی‌کند."
+            echo "- تنها خروجی: artifactِ \`mobile-snapshot-baked-$GITHUB_SHA\`. هیچ ریلیز، برچسب یا latest.json ساخته/بازنویسی نشد."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload the baked package (artifact only, never a release)
+        if: steps.gate.outputs.enabled == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: mobile-snapshot-baked-${{ github.sha }}
+          path: |
+            _bake_out/mobile_snapshot.db.gz
+            _bake_out/mobile_snapshot.db.meta.json
+          if-no-files-found: error
+          retention-days: 14
+
+      # شکست/مهلت نباید بی‌صدا بگذرد: build-apk با نبودِ artifact می‌میرد، اما
+      # علتِ مرگ باید درِ خلاصه هم نوشته باشد، نه فقط درِ لاگِ سبز‌نشدۀ job.
+      - name: Explain a failed or timed-out bake
+        if: failure() && steps.gate.outputs.enabled == 'true'
+        run: |
+          {
+            echo "- بستۀ پختۀ تازه **ساخته نشد** ⇒ artifact آپلود نمی‌شود و build-apk همین‌جا رد می‌شود (نه بیلدِ ساکت با بستۀ نصفه)."
+            echo "- اگر مهلتِ ۸۰ دقیقه‌ای خورد: bake_limit را بگذارید و پیامِ PARTIAL را درِ گزارش بیلد بخوانید."
+          } >> "$GITHUB_STEP_SUMMARY"
+          echo "BAKE-ABORTED: هیچ بستۀ تازه‌ای برایِ APK نیست." >&2
+
   build-apk:
+    needs: bake-mobile-snapshot
     runs-on: ubuntu-latest
     timeout-minutes: 50
     env:
@@ -51,6 +403,12 @@ jobs:
       SERIES_REPO: johnwarchief/BorsTerminal
       PUBLISH_REPO: johnwarchief/BorsTerminal
       GH_TOKEN: ${{ github.token }}
+      # ── شاخهٔ آزمایشیِ پخت (bake_snapshot) ───────────────────────────────────
+      # با پیش‌فرضِ false این دو متغیر «false» و یکِ مسیرِ بی‌مصرف‌اند و هیچ‌کدام
+      # از گام‌هایِ gated پایین فعال نمی‌شود: بیلد دقیقاً همان کاری را می‌کند که
+      # امروز می‌کند، یعنی بستۀ داده از ریلیزِ همان SNAPSHOT_SERIES خوانده می‌شود.
+      BAKE_SNAPSHOT: ${{ github.event.inputs.bake_snapshot }}
+      BAKE_DIR: ${{ github.workspace }}/_baked
     steps:
       - uses: actions/checkout@v4
         with:
@@ -65,6 +423,18 @@ jobs:
       - name: Install mobile frontend
         working-directory: frontend
         run: npm ci --no-audit --no-fund
+
+      # ── تنها گامِ تازه‌ای که پیشِ بیلد اضافه می‌شود، و فقط با bake_snapshot=true ─
+      # با پیش‌فرضِ false این گام اجرا نمی‌شود و `$BAKE_DIR` خالی می‌ماند؛ هر شاخهٔ
+      # پایین که «bake» را می‌خواند همان‌جا بسته است و مسیرِ امروزِ این job (خواندنِ
+      # بستۀ داده از ریلیز با gh release download) دست‌نخورده می‌ماند.
+      - name: Download the baked data package
+        if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.bake_snapshot == 'true' }}
+        uses: actions/download-artifact@v4
+        with:
+          name: mobile-snapshot-baked-${{ github.sha }}
+          path: _baked
+          if-no-files-found: error
 
       # ── منبعِ یکتایِ نسخۀ برنامه ─────────────────────────────────────────────
       # `frontend/package.json` تنها جایِ تعریفِ نسخۀ معنایی است (همان لنگرِ
@@ -135,6 +505,20 @@ jobs:
           gh release download "$SNAPSHOT_SERIES" --repo "$SERIES_REPO" \
             --pattern mobile_snapshot.db.meta.json --dir _snap --clobber 2>/dev/null || true
           STAMP=$(python3 -c 'import json;print(json.load(open("_snap/mobile_snapshot.db.meta.json",encoding="utf-8"))["built_at"])' 2>/dev/null || true)
+          # bake_snapshot=true ⇒ مُهرِ بستۀ همراهِ APK باید از meta پختِ خودِ runner
+          # بیاید، نه از ریلیزِ منتشرشده. بی‌این، بستۀ تازه‌ترِ داخلِ APK مُهرِ
+          # کهنه‌تر می‌گرفت و گوشی درِ اولین اجرا کشِ دورِ پیش را بر آن ترجیح می‌داد
+          # (BUNDLE_STAMP درِ localData.fetchSnapshot). بقیۀ این گام — از جمله
+          # خواندنِ manifest/مُهر از ریلیز و سنجشِ مسیرِ ناشناسِ گوشی — دست‌نخورده است.
+          if [ "$BAKE_SNAPSHOT" = "true" ]; then
+            BAKED_META=$(find "$BAKE_DIR" -type f -name mobile_snapshot.db.meta.json 2>/dev/null | head -1)
+            if [ -z "$BAKED_META" ]; then
+              echo "BLOCKED: bake_snapshot=true ولی mobile_snapshot.db.meta.json درِ artifactِ پخت نیست" >&2
+              exit 1
+            fi
+            STAMP=$(python3 -c 'import json,sys;print(json.load(open(sys.argv[1],encoding="utf-8"))["built_at"])' "$BAKED_META")
+            echo "bake_snapshot=true ⇒ مُهر از پختِ runner: ${STAMP:-none} (منبع: $BAKED_META)"
+          fi
           export VITE_SNAPSHOT_STAMP="$STAMP"
           # کلاینت هم دقیقاً همان سری را می‌خواند که APK از آن پخته شده؛
           # بی‌این، بیلدِ سریِ تازه درِ برنامه هنوز mobile-latestِ کهنه را چک می‌کرد.
@@ -221,6 +605,120 @@ jobs:
           else
             echo "SNAP_PACKAGE_ID=none" >> "$GITHUB_ENV"
           fi
+
+      # ── bake_snapshot=true: بایت‌هایِ پختِ runner جایِ بستۀ دانلودیِ ریلیز ─────
+      # دلیلِ وجودش: ریلیزِ منتشرشده هیچ کلیدِ `funnel/…` ندارد، پس همین بیلدِ
+      # امروز APK ای می‌سازد که صفحۀ غربالگریِ آفلاینش خالی است. ترتیب عمدی است:
+      # گامِ «Build mobile frontend» همان دانلودِ همیشگیِ ریلیز را می‌کند (چون
+      # همان‌جا مسیرِ *تازه‌سازیِ* گوشی و سنجشِ دسترسیِ ناشناس آزموده می‌شود) و این
+      # گام بعد ازِ vite build فایلِ `dist` را عوض می‌کند، پیش ازِ `cap sync` که
+      # همان `dist` را به `assets/public/` داخلِ APK می‌برد — جایی که کلاینت با
+      # `SNAPSHOT_URL = /mobile_snapshot.db.gz` می‌خواندش.
+      # با bake_snapshot=false این گام هرگز اجرا نمی‌شود و dist همان بستۀ
+      # دانلودیِ ریلیز می‌ماند؛ یعنی دقیقاً بیلدِ دیروز.
+      # توجه: این شاخه با publish=true درِ گامِ «Publish gate status» بسته می‌شود؛
+      # پس هیچ‌وقت APK ای با دادۀ پختِ runner منتشر نمی‌شود.
+      - name: Bundle the baked data package into the APK
+        if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.bake_snapshot == 'true' }}
+        working-directory: frontend
+        env:
+          BAKE_PARTIAL: ${{ needs.bake-mobile-snapshot.outputs.partial }}
+        run: |
+          set -e
+          BAKED_GZ=$(find "$BAKE_DIR" -type f -name mobile_snapshot.db.gz 2>/dev/null | head -1)
+          BAKED_META=$(find "$BAKE_DIR" -type f -name mobile_snapshot.db.meta.json 2>/dev/null | head -1)
+          if [ -z "$BAKED_GZ" ] || [ ! -s "$BAKED_GZ" ] || [ -z "$BAKED_META" ]; then
+            echo "BLOCKED: bake_snapshot=true ولی gz/meta درِ artifactِ پخت ($BAKE_DIR) پیدا نشد" >&2
+            exit 1
+          fi
+          if [ "$BAKE_PARTIAL" = "true" ]; then
+            echo "::warning::PARTIAL: بستۀ دادۀ داخلِ این APK با bake_limit پخته شده است؛ جهانِ نمادها کامل نیست. برایِ سنجشِ کامل، bake_limit=0."
+          fi
+          cp "$BAKED_GZ" dist/mobile_snapshot.db.gz
+          test -s dist/mobile_snapshot.db.gz
+          echo "بستۀ همراهِ APK := $(stat -c '%s' dist/mobile_snapshot.db.gz) بایت (منبع: $BAKED_GZ)"
+          # بایت‌هایِ نشسته‌درِ dist با همان manifest می‌سنجیده می‌شود، نه با فرضِ
+          # سالم‌بودنِ کپی: gz_sha256/gz_bytes/db_bytes، جداول، required_baked_keys
+          # و بعد خودِ بارِ قیف رویِ همان بایت‌ها. هرکدام نخورد ⇒ بیلد قرمز.
+          python3 - "$(pwd)/dist/mobile_snapshot.db.gz" "$BAKED_META" "$(pwd)/.." <<'PY'
+          import gzip, hashlib, json, os, sqlite3, sys, tempfile
+          gz_p, meta_p, repo_root = (os.path.abspath(p) for p in sys.argv[1:4])
+          # شبکهٔ کلیدها از خودِ سازنده خوانده می‌شود: funnel_key همان قراردادِ
+          # resolver.ts است (dev/mobile_funnel_offline_v1116.py دو طرف را قفل
+          # می‌کند). import از repo root و خودِ مادیول هم chdir به همان ریشۀ ROOT
+          # می‌کند، پس همهٔ مسیرهایِ بالا را از پیش مطلق کرده‌ایم.
+          sys.path.insert(0, repo_root)
+          from scripts.build_mobile_snapshot import (FUNNEL_DROP_SUFFIX, FUNNEL_FUND_MODE,
+                                                     FUNNEL_LOGICS, FUNNEL_PRESETS, funnel_key)
+          blob = open(gz_p, "rb").read()
+          meta = json.load(open(meta_p, encoding="utf-8"))
+          digest = hashlib.sha256(blob).hexdigest()
+          problems = []
+          if digest.lower() != str(meta.get("gz_sha256", "")).lower():
+              problems.append("gz_sha256-مخالف: فایل=%s manifest=%s" % (digest[:16], str(meta.get("gz_sha256"))[:16]))
+          if len(blob) != int(meta.get("gz_bytes", -1)):
+              problems.append("gz_bytes-مخالف: %s ≠ %s" % (len(blob), meta.get("gz_bytes")))
+          raw = gzip.decompress(blob)
+          if len(raw) != int(meta.get("db_bytes", -1)):
+              problems.append("db_bytes-مخالف: %s ≠ %s" % (len(raw), meta.get("db_bytes")))
+          fd, tmp = tempfile.mkstemp(suffix=".db")
+          os.close(fd)
+          want = [funnel_key(p, l, FUNNEL_FUND_MODE, FUNNEL_DROP_SUFFIX)
+                  for p in FUNNEL_PRESETS for l in FUNNEL_LOGICS]
+          got, empty, miss, miss_keys = [], [], [], []
+          try:
+              with open(tmp, "wb") as fo:
+                  fo.write(raw)
+              con = sqlite3.connect("file:%s?mode=ro" % tmp.replace(os.sep, "/"), uri=True)
+              try:
+                  have = {r[0] for r in con.execute("SELECT name FROM sqlite_master WHERE type='table'")}
+                  miss = [t for t in (meta.get("tables") or []) if t not in have]
+                  if "baked" in have:
+                      for k in want:
+                          row = con.execute("SELECT json FROM baked WHERE key=?", (k,)).fetchone()
+                          if not row:
+                              continue
+                          payload = json.loads(row[0])
+                          u = payload.get("universe") or {}
+                          seg = k.split("/")
+                          if (payload.get("status") in (None, "success") and payload.get("status_matrix")
+                                  and payload.get("entries") and u.get("joined")):
+                              got.append(seg[1] + "/" + seg[2])
+                          else:
+                              empty.append("%s(joined=%s,status=%s)" % (k, u.get("joined"), payload.get("status")))
+                      miss_keys = [k for k in (meta.get("required_baked_keys") or [])
+                                   if not con.execute("SELECT 1 FROM baked WHERE key=? LIMIT 1", (k,)).fetchone()]
+              finally:
+                  con.close()
+          finally:
+              os.unlink(tmp)
+          if miss:
+              problems.append("جدولِ اعلامیِ manifest درِ بسته نیست: " + ",".join(miss))
+          if len(got) != len(want) or empty:
+              problems.append("بارِ قیفِ آفلاین کامل نیست: %d از %d کلید با پاسخِ واقعی؛ بی‌بار=%s"
+                              % (len(got), len(want), ",".join(empty) or "-"))
+          if miss_keys:
+              problems.append("required_baked_keys نیست: " + ",".join(miss_keys))
+          print("bundled snapshot: %d B gz -> %d B db · package_id=%s · built_at=%s · gz_sha=%s…"
+                % (len(blob), len(raw), meta.get("package_id"), meta.get("built_at"), digest[:16]))
+          print("funnel keys با بارِ واقعی: " + (",".join(got) or "هیچ"))
+          if problems:
+              print("BLOCKED: بستۀ پختۀ همراهِ APK سالم/کامل نیست -> " + "; ".join(problems), file=sys.stderr)
+              sys.exit(1)
+          PY
+          {
+            echo "### بستۀ دادهٔ **پخت‌شده درِ همین ران** داخلِ APK"
+            echo "- gz: \`$BAKED_GZ\` → \`frontend/dist/mobile_snapshot.db.gz\` ($(stat -c '%s' dist/mobile_snapshot.db.gz) بایت) · sha256 \`$(sha256sum dist/mobile_snapshot.db.gz | cut -d' ' -f1)\`"
+            echo "- این بسته آفلاین یا بازتولیدپذیر **نیست** (گامِ پخت شبکه دارد؛ built_at با هر ران عوض می‌شود)."
+            if [ "$BAKE_PARTIAL" = "true" ]; then
+              echo "- **PARTIAL**: bake_limit فعال بود؛ جهانِ نمادها کامل نیست."
+            fi
+            echo "- مسیرِ تازه‌سازیِ گوشی همچنان \`$SNAPSHOT_SERIES\" می‌ماند؛ این گام فقط بستۀ *همراهِ* APK را عوض می‌کند و با publish=true منتشر نمی‌شود."
+          } >> "$GITHUB_STEP_SUMMARY"
+          {
+            echo "SNAP_BAKED=1"
+            echo "SNAP_BYTES=$(stat -c '%s' dist/mobile_snapshot.db.gz)"
+          } >> "$GITHUB_ENV"
 
       - uses: actions/setup-java@v5
         with:
@@ -415,6 +913,14 @@ jobs:
           echo "release APK signing: ${APK_SIGNED:-no} · certificate sha256: ${APK_CERT_SHA256:-نامعلوم}"
           echo "data package series: $SNAPSHOT_SERIES · manifest signature: ${VERIFIED:-unchecked}"
           echo "bundle trust root: $([ -n "$PUB" ] && echo configured || echo ABSENT)"
+          # پختِ آزمایشی و انتشار با هم نمی‌آیند: بستۀ دادۀ پختِ runner فقط artifact
+          # است و هیچ‌جا رویِ هیچ ریلیزی منتشر نمی‌شود؛ پس APK ای که همان بسته را
+          # درِ خودش حمل می‌کند هم منتشر نمی‌شود — وگرنه «نسخۀ رسمی» دادۀ نیم‌پختِ
+          # یکِ ران را می‌برد درحالی‌که manifestِ منتشرشده چیزِ دیگری می‌گوید.
+          if [ "$BAKE_SNAPSHOT" = "true" ] && [ "${{ github.event.inputs.publish }}" = "true" ]; then
+            echo "BLOCKED: bake_snapshot=true با publish=true؛ بستۀ پختِ runner هرگز منتشر نمی‌شود، فقط artifact می‌ماند." >&2
+            exit 1
+          fi
           if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ github.event.inputs.publish }}" = "true" ]; then
             echo "PUBLISH = صریحاً درخواست‌شده (workflow_dispatch, publish=true)"
             if [ "$APK_SIGNED" != "yes" ]; then
@@ -466,6 +972,14 @@ jobs:
           # ترتیبِ گام‌ها یعنی یکِ جابه‌جاییِ بعدی، انتشارِ بی‌کلید. چهار شرط، هر
           # چهار همین‌جا: APK امضاشده، کلیدِ عمومی درِ باندل، امضایِ بستۀ داده
           # معتبر، و سریِ هدف کهنه/خالی نیست.
+          # شرطِ پنجم ازِ شاخهٔ bake: بستۀ دادۀ پختِ runner هرگز منتشر نمی‌شود، پس
+          # APK حاملِ آن هم نه. همین چک درِ «Publish gate status» هم هست؛ تکرار
+          # عمدی است، چون اتکا به ترتیبِ گام‌ها همان دامی است که این workflow چند
+          # بار با آن برخورد کرده.
+          if [ "$BAKE_SNAPSHOT" = "true" ] && [ "${{ github.event.inputs.publish }}" = "true" ]; then
+            echo "BLOCKED: bake_snapshot=true منتشر نمی‌شود (بستۀ دادهٔ پختِ runner فقط artifact است)." >&2
+            exit 1
+          fi
           if [ "$APK_SIGNED" != "yes" ]; then
             echo "BLOCKED: APK امضایِ انتشار ندارد؛ نسخۀ رسمی با debug keystore یا بی‌امضا منتشر نمی‌شود." >&2
             exit 1
