@@ -135,10 +135,15 @@ keep_awake() {
 # پس پیش‌ازِ هر سنجشِ محتوا صبر می‌کنیم تا واقعیِ اپ فوکوس بگیرد؛ اگر نشد، علت
 # (فوکوسِ پنجرۀ ANR / launcher) درِ حکم نوشته می‌شود، نه «متنِ برنامه دیده نشد».
 wait_for_focus() { # wait_for_focus <تلاش‌ها>
+  # نقصِ نسخهٔ پیشین: دامپ با tr بی‌CR می‌شد و بعد grep -m1 رویِ یکِ سطرِ تنها
+  # running، پس «case *PKG*» هر جایی که نامِ پیکج رد شده بود (از جمله
+  # mFocusedApp یا mOpeningApp) فوکوس را «گرفته» می‌شمرد و مقدارِ چاپی هم
+  # سرِ‌باطور بود. یعنی سنجه‌ای که باید علتِ ANR را بگوید، خودش
+  # دروغ می‌گفت. حالا فقط سطرِ mCurrentFocus=Window خوانده و مقایسه می‌شود.
   local n="${1:-6}" i
   for i in $(seq 1 "$n"); do
-    FOCUS=$(adb shell dumpsys window 2>/dev/null | tr -d '
-' | grep -m1 "mCurrentFocus" | cut -c1-160)
+    FOCUS=$(adb shell dumpsys window 2>/dev/null | tr -d '\015' \
+            | grep -m1 -E "^\s*mCurrentFocus" | cut -c1-160)
     case "$FOCUS" in
       *"$PKG"*) return 0 ;;
     esac
