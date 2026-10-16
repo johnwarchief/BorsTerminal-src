@@ -203,3 +203,18 @@ _audit/*.json
 
 # خروجیِ بیلدِ موبایل (snapshot db + bundle) — بازتولیدشدنی، ~127MB
 /dist_mobile/
+
+# خروجیِ Jobهایِ پایشِ زنده (لاگِ اجرا، نه کد)
+_audit/fts_live_audit/
+_audit/market_tape_live_audit/
+
+# کپی‌هایِ یدکیِ market.db که ایجنت‌ها پیشِ یک migration می‌گیرند (هر کدام ~۹۸ مگابایت،
+# و -shm/-wal پیوستشان). هیچ‌کدام دادهٔ مخزن نیست: خودِ market.db هم gitignored است.
+market.db.baseline
+market.db.baseline.*
+market.db.*-backup*
+market.db.*-back*-*
+market.db.meta.json
+# لاگِ خروجیِ فرمان‌هایِ تست/بیلد که ریشه می‌نشیند (بازتولیدشدنی)
+/tests_output.txt
+/build_log.txt

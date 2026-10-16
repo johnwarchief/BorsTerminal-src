@@ -261,6 +261,63 @@ jobs:
           if (-not (Test-Path $f)) { Write-Output "::error::[manifest] $f ساخته نشد"; exit 1 }
           Write-Output "::notice::[manifest] $f = $((Get-Item $f).Length) بایت"
 
+      - name: Build Portable ZIP (same build, no installer)
+        shell: pwsh
+        run: |
+          # بند ۴ مأموریتِ انتشار: پرتابیل از *همان* بیلدِ Release ساخته می‌شود،
+          # نه از پوشۀ نصب‌شده. سه چیز را مراعات می‌کنیم:
+          #   • نشانۀ bors_portable.flag کنارِ EXE (bors_config.is_portable همین
+          #     را می‌خواند؛ «نوشتنی‌بودنِ پوشه» هرگز دلیلِ پرتابیل بودن نیست)
+          #   • بیرون‌گذاشتنِ دادۀ زمانِ اجرا (وگرنه تنظیم/واچ‌لیستِ رانر به
+          #     کاربر می‌رسید) -- همان فهرستِ release.ps1
+          #   • market.db.lzma کنارِ EXE؛ نبودش یعنی اپ بالا می‌آید و تا اولین
+          #     سینک تابلو خالی است. بانک درِ گیت نیست (*.lzma ایگنور است) و CI هم
+          #     آن را از ریلیزِ بیرونیِ data-latest می‌گیرد، پس اینجا هم از همان
+          #     منبع دانلود می‌شود؛ اگر دانلود نشد، ریلیز متوقف نمی‌شود -- فقط
+          #     پرتابیل هم مثلِ نصابِ CI درِ اولین اجرا دانلود می‌کند و این با
+          #     ::warning:: ثبت می‌شود.
+          #continue-on-error نیست: ریلیزی که پرتابیل ندارد خواستۀ مأموریت را
+          #تحویل نداده، پس بهتر است قرمز شود تا اینکه سبز و ناقص منتشر شود.
+          $ErrorActionPreference = 'Stop'
+          $bundle = "dist/BorsTerminal_Ultimate"
+          $zip = "dist/BorsTerminal_Ultimate_Portable_$env:TAG.zip"
+          $stage = "releases/portable_$env:TAG"
+          $exclude = @('data','market.db','market.db-shm','market.db-wal',
+                       'user.db','user.db-shm','user.db-wal','price_basis.json',
+                       '.screener_cache.json','sync_status.json','sync_ondemand.json',
+                       'market_sync.json','codal_control.json','adb_config.json',
+                       'updater.log','app.log','webview2','logs')
+          if (-not (Test-Path "$bundle/BorsTerminal_Ultimate.exe")) {
+            Write-Output "::error::[portable] بیلدِ onedir در $bundle نیست"; exit 1
+          }
+          if (Test-Path $stage) { Remove-Item $stage -Recurse -Force }
+          New-Item -ItemType Directory -Path $stage -Force | Out-Null
+          Get-ChildItem -LiteralPath $bundle -Force |
+            Where-Object { $exclude -notcontains $_.Name } |
+            ForEach-Object { Copy-Item -LiteralPath $_.FullName -Destination $stage -Recurse -Force }
+          if (-not (Test-Path "$stage/market.db.lzma")) {
+            try {
+              curl.exe --fail --location --retry 2 --output "$stage/market.db.lzma" `
+                "https://github.com/johnwarchief/BorsTerminal/releases/download/data-latest/market.db.lzma"
+            } catch { Write-Output "::warning::[portable] دانلودِ بانکِ بیس‌لاین نشد" }
+          }
+          if (-not (Test-Path "$stage/market.db.lzma")) {
+            Write-Output "::warning::[portable] market.db.lzma درِ بسته نیست؛ نسخۀ Portable مثلِ نصابِ CI درِ اولین اجرا آن را دانلود می‌کند (تابلو تا wtedy خالی است)"
+          } else {
+            Write-Output "::notice::[portable] market.db.lzma درِ بسته: $([math]::Round((Get-Item "$stage/market.db.lzma").Length / 1MB, 1)) MB"
+          }
+          Set-Content -LiteralPath "$stage/bors_portable.flag" -Value "bors-portable" -Encoding ascii
+          if (Test-Path "docs/PORTABLE-README.txt") {
+            Copy-Item "docs/PORTABLE-README.txt" "$stage/README-PORTABLE.txt" -Force
+          } else { Write-Output "::warning::[portable] README-PORTABLE نیست"; }
+          if (Test-Path $zip) { Remove-Item $zip -Force }
+          $items = Get-ChildItem -LiteralPath $stage -Force | ForEach-Object { $_.FullName }
+          Compress-Archive -LiteralPath $items -DestinationPath $zip -CompressionLevel Optimal
+          if (-not (Test-Path $zip)) { Write-Output "::error::[portable] ZIP ساخته نشد"; exit 1 }
+          $sz = [math]::Round((Get-Item $zip).Length / 1MB, 2)
+          $sha = (Get-FileHash -Algorithm SHA256 -LiteralPath $zip).Hash.ToLower()
+          Write-Output "::notice::[portable] $zip = $sz MB  sha256=$sha"
+
       - name: Build Delta Patch (previous installer -> this build)
         shell: pwsh
         continue-on-error: true

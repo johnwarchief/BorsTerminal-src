@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, Route, Routes } from 'react-router';
@@ -54,16 +54,50 @@ describe('AppShell smoke', () => {
   it('سایدبار فارسی رندر می شود', async () => {
     renderApp('/');
     await waitFor(() => {
-      expect(screen.getByText('تابلوخوانی/بازار')).toBeInTheDocument();
-      expect(screen.getByText('استراتژی FTS')).toBeInTheDocument();
+      const sidebar0 = screen.getByLabelText('نوار کناری') as HTMLElement;
+      expect(within(sidebar0).getByText('تابلوخوانی')).toBeInTheDocument();
+      expect(within(sidebar0).getByText('استراتژی FTS')).toBeInTheDocument();
+      // رأیِ مالک (1405-07-20): «وضعیت بازار» اولین تبِ فضای تحلیل است و
+      // «/بازار» از نامِ تابلوخوانی افتاده؛ دیده‌بان هم تبِّ مستقلش را دارد.
+      expect(within(sidebar0).queryByText('تابلوخوانی/بازار')).not.toBeInTheDocument();
+      const navLinks = Array.from(
+        (screen.getByLabelText('نوار کناری') as HTMLElement).querySelectorAll('nav a[aria-label]'),
+      ).map((a) => a.getAttribute('aria-label'));
+      expect(navLinks.slice(0, 2)).toEqual(['وضعیت بازار', 'تابلوخوانی']);
+      expect(navLinks).toContain('دیده‌بان بازار');
+      // رأیِ مالک (۱۴۰۵-۰۷-۲۲): مرکزِ اعلان ازِ ناوبری بیرون رفت چون زنگِ
+      // نوارِ بالا (/notifications) همان صفحه را می‌گشاید.
+      expect(navLinks).not.toContain('مرکز اعلان');
+      expect(screen.getByTestId('topbar-notifications')).toBeInTheDocument();
     });
+    // رأیِ واژگانِ مالک (۱۴۰۵-۰۷-۱۷): /master «استراتژی FTS» صدا می‌زند؛
+    // «تابلوی غربالگری» و «مستر FTS» دیگر نامِ این مقصد نیستند. عنوانِ گروه
+    // («غربالگری FTS») و عنوانِ درونِ صفحه سرِ جایشان می‌مانند، پس جستجو درِ
+    // خودِ سایدبار قفل می‌شود وگرنه دو «غربالگری FTS» با هم قاطی می‌کنند.
+    const sidebar = (await screen.findByLabelText('نوار کناری')) as HTMLElement;
+    expect(within(sidebar).queryByText('تابلوی غربالگری')).not.toBeInTheDocument();
+    expect(within(sidebar).queryByText('مستر FTS')).not.toBeInTheDocument();
+    expect(within(sidebar).getByText('غربالگری FTS')).toBeInTheDocument();   // عنوانِ گروه
+    expect(within(sidebar).getByText('درخت استراتژی')).toBeInTheDocument();
+  });
+
+  it('صفحۀ نخستِ برنامه غربالگری FTS است (رأیِ مالک)', async () => {
+    await import('@features/master/routes/MasterPage');
+    renderApp('/');
+    // '/' دیگر تابلو نیست: باید قیف را بنشاند.
+    await waitFor(() => {
+      expect(screen.getByTestId('fts-funnel-workspace')).toBeInTheDocument();
+    }, { timeout: 4000 });
+    expect(screen.queryByTestId('tape-scroll')).not.toBeInTheDocument();
   });
 
   it('روت /master بدون نماد، قیفِ غربالگری را به‌جای پیامِ خالی نشان می دهد', async () => {
     await import('@features/master/routes/MasterPage');
     renderApp('/master');
     await waitFor(() => {
-      expect(screen.getByTestId('fts-funnel-overview')).toBeInTheDocument();
+      // «نقشۀ راه قیف» حذف شده: /master باید مستقیم workspaceِ قیف باشد.
+      expect(screen.getByTestId('fts-funnel-workspace')).toBeInTheDocument();
+      expect(screen.queryByTestId('fts-funnel-overview')).not.toBeInTheDocument();
     });
     expect(screen.queryByText('نمادی انتخاب نشده')).not.toBeInTheDocument();
   });

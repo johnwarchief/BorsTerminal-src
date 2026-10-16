@@ -26,7 +26,7 @@ def ck(cond, msg):
     CHECKS.append((bool(cond), msg))
 
 
-def make_db(path, rows, last_day=20260930, with_tape=True):
+def make_db(path, rows, last_day=20260930, with_tape=True, with_window=None):
     conn = sqlite3.connect(path)
     conn.execute("CREATE TABLE daily_prices (ins_code TEXT, d_even INT, fetched_at TEXT)")
     conn.execute("CREATE TABLE market_totals (updated_at TEXT)")
@@ -34,6 +34,13 @@ def make_db(path, rows, last_day=20260930, with_tape=True):
     conn.execute("CREATE TABLE codal_notices (report_id TEXT, fetched_at TEXT)")
     if with_tape:
         conn.execute("CREATE TABLE tape_history (symbol TEXT)")
+    # پنجرۀ اسلات‌محور و کلیدهای [is]: گارد باید این دو را هم ببیند؛ برایِ
+    # همان است که «جدولِ نیست» باید None بماند نه صفر.
+    for t in ("tape_ih_slot", "tse_inst_stat"):
+        if with_window is None or t in with_window:
+            conn.execute("CREATE TABLE %s (ins_code TEXT)" % t)
+            conn.executemany("INSERT INTO %s VALUES (?)" % t,
+                             [("s%d" % i,) for i in range(with_window.get(t, 0) if with_window else 0)])
     stamp = "2026-09-30 12:00:00"
     conn.executemany("INSERT INTO daily_prices VALUES (?,?,?)",
                      [("s%d" % i, last_day, stamp) for i in range(rows["daily_prices"])])
@@ -68,15 +75,17 @@ def run_pack(src_db, dst_lzma, **kw):
     return rc, out.getvalue()
 
 
-def scenario(tag, base_rows, src_rows, src_day=20260930, src_tape=True, **kw):
+def scenario(tag, base_rows, src_rows, src_day=20260930, src_tape=True,
+             base_window=None, src_window="__same__", **kw):
     # هر سناریو پوشۀ خودش: دو سناریو روی یک base.db «table already exists»
     # می‌گیرد، و روی ویندوزِ قفل‌شده پاک‌کردنِ پوشۀ مشترک هم ممکن نیست.
     dirname = tempfile.mkdtemp(prefix="prc_" + tag + "_")
     base_db = os.path.join(dirname, "base.db")
     src_db = os.path.join(dirname, "src.db")
     dst = os.path.join(dirname, "market.db.lzma")
-    make_db(base_db, base_rows)
-    make_db(src_db, src_rows, last_day=src_day, with_tape=src_tape)
+    make_db(base_db, base_rows, with_window=base_window)
+    make_db(src_db, src_rows, last_day=src_day, with_tape=src_tape,
+            with_window=base_window if src_window == "__same__" else src_window)
     write_baseline(dst, base_db)
     before = open(dst, "rb").read()
     rc, log = run_pack(src_db, dst, **kw)
@@ -130,14 +139,31 @@ rc6, log6 = run_pack(src_db, dst)
 ck(rc6 == 0, "بیس‌لاینِ ناخوانا ریلیز را نمی‌بندد (راه‌درمانِ همیشگی)")
 ck("no row-count comparison" in log6, "بی‌مقایسه بودنِ شمارِ ردیف اعلام می‌شود")
 
-# ۷) توابعِ خالص
+# ۷) پنجرۀ [ih] اسلات‌محور و کلیدهای [is] هم نگهبان‌اند: کاستی‌شان رد می‌شود،
+# نبودشان (بیس‌لاینِ قدیمی) نه.
+WIN = {"tape_ih_slot": 200, "tse_inst_stat": 1277}
+rcw, logw, untouchedw, _ = scenario("win-shrink", dict(FULL, **WIN), dict(FULL, **WIN),
+                                    base_window=WIN,
+                                    src_window=dict(WIN, tape_ih_slot=150))
+ck(rcw == 1 and "PACK_SHRINK table=tape_ih_slot source=150 baseline=200 lost=50" in logw,
+   "کاهشِ tape_ih_slot همان مسیرِ ردِ بقیه را می‌رود")
+ck(untouchedw, "ردِ جدولِ پنجره بیس‌لاین را دست نمی‌زند")
+rcw2, logw2, _, _ = scenario("win-absent", dict(FULL, **WIN), dict(FULL),
+                             base_window=WIN, src_window={})
+ck(rcw2 == 0 and "PACK_SHRINK table=tse_inst_stat" not in logw2,
+   "بیس‌لاینِ تازه رویِ بانکی که این جدول‌ها را هرگز نداشته رد نمی‌کند (ناشناخته ≠ صفر)")
+
+# ۸) توابعِ خالص
 ck(M.shrinking({"daily_prices": 5, "tape_history": None},
                {"daily_prices": 9, "tape_history": 9}) == [("daily_prices", 5, 9)],
    "shrinking فقط کاستیِ قطعی را برمی‌گرداند")
 ck(M.shrinking({"daily_prices": 9}, {"daily_prices": 9}) == [], "برابر کاستی نیست")
-ck(set(M.COUNT_TABLES) == {"daily_prices", "financial_statements",
-                           "codal_notices", "tape_history"},
-   "چهار جدولِ نگهبان ثابت مانده‌اند")
+# پینِ ۱۴۰۵-۰۷-۲۰: چهار جدولِ اول همان است؛ دو تا از پنجرۀ دیدهبانِ اسلات‌محور
+# و [is5]/[is6] اضافه شد. نبودِ هر دو در بیس‌لاینِ قدیمی None است، پس ریلیز را
+# نمی‌بندد؛ ولی وقتی منتشر شدند، کم‌شدنشان ریلیز را می‌بندد.
+ck(set(M.COUNT_TABLES) == {"daily_prices", "financial_statements", "codal_notices",
+                           "tape_history", "tape_ih_slot", "tse_inst_stat"},
+   "شش جدولِ نگهبان: چهارِ همیشگی + پنجرۀ [ih] و [is]")
 conn = sqlite3.connect(src_db)
 counts = M.row_counts(conn)
 conn.close()

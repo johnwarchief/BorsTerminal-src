@@ -49,11 +49,19 @@ TABLES = ["instruments", "boards", "market_watch", "client_type",
 
 
 def _schema_source():
+    """بانکِ مرجعِ ساختار — اگر رویِ این ماشین باشد.
+
+    عمداً «اختیاری»: market.db و market.db.lzma هر دو در گیت نیستند، پس درِ CI
+    هیچ‌کدام وجود ندارد و گارد باید از DDLِ خودِ مخزن بخواند، نه اینکه با
+    «table instruments gone from schema» بسوزد (همان چیزی که `guards` را رویِ
+    main قرمز کرده بود).
+    """
     plain = os.path.join(REPO, "market.db")
     if os.path.exists(plain):
         return plain
     packed = os.path.join(REPO, "market.db.lzma")
-    assert os.path.exists(packed), "no market.db and no market.db.lzma"
+    if not os.path.exists(packed):
+        return None
     import lzma
     import shutil
     import tempfile
@@ -64,15 +72,30 @@ def _schema_source():
 
 
 def build_fixture(n=12):
-    """بانکِ ساختگی با همان ساختارِ واقعی و n نمادِ معامله‌شده."""
-    src = sqlite3.connect(f"file:{_schema_source().replace(os.sep, '/')}?mode=ro", uri=True)
+    """بانکِ ساختگی با همان ساختارِ رسمی و n نمادِ معامله‌شده.
+
+    ساختار از DDLِ مخزن (`test_tsetmc.create_schema`) ساخته می‌شود؛ اگر بانکِ
+    واقعیِ همین ماشین هست، ستون‌هایش هم راستی‌آزمایی می‌شوند تا فیکسچر از
+    همان چیزی بخواند که کاربر رویِ دیسکش دارد.
+    """
     c = sqlite3.connect(":memory:")
+    T.create_schema(c)
+    src = None
+    src_path = _schema_source()
+    if src_path:
+        src = sqlite3.connect(f"file:{src_path.replace(os.sep, '/')}?mode=ro", uri=True)
     for t in TABLES:
-        cols = [r[1] for r in src.execute(f"PRAGMA table_info({t})")]
-        assert cols, f"table {t} gone from schema — guard is stale"
+        cols = [r[1] for r in c.execute(f"PRAGMA table_info({t})")]
+        assert cols, f"table {t} missing from the repo DDL — guard or schema is stale"
+        if src is not None:
+            real = [r[1] for r in src.execute(f"PRAGMA table_info({t})")]
+            missing = [x for x in real if x not in cols]
+            assert not missing, f"{t}: ستونِ بانکِ واقعی در DDL نیست: {missing}"
         sel = ", ".join(f'NULL AS "{col}"' for col in cols)
+        c.execute(f"DROP TABLE {t}")
         c.execute(f"CREATE TABLE {t} AS SELECT {sel} WHERE 0")
-    src.close()
+    if src is not None:
+        src.close()
     # کوئریِ تابلو جدول‌هایِ P0 را JOIN می‌کند؛ این‌ها درِ TABLES نیستند چون
     # بانکِ مخزن ممکن است اصلاً آن‌ها را نداشته باشد. تک‌منبعِ DDL صدا زده
     # می‌شود تا فیکسچر و کوئری از یک ساختار بخوانند.
@@ -96,11 +119,11 @@ def build_fixture(n=12):
         c.execute("INSERT INTO boards (ins_code, board) VALUES (?,?)", (code, "بورس"))
         c.execute("INSERT INTO market_watch (ins_code, d_even, h_even, p_closing, p_last,"
                   " q_tot_tran, q_tot_cap, z_tot_tran, price_yesterday, price_change, pe, eps,"
-                  " price_max, price_min, allowed_min, allowed_max, buy_q_vol, buy_q1_vol,"
+                  " price_max, price_min, price_first, allowed_min, allowed_max, buy_q_vol, buy_q1_vol,"
                   " sell_q_vol, fetched_at, market_cap, market_cap_src)"
-                  " VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                  " VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
                   (code, 20260928, 110000 + i, 100 + i, 101 + i, 5000 + i * 10, 5e5 + i * 10,
-                   50 + i, 100, 1.0, 8.0, 12.0, 105 + i, 98, 90, 110, 10, 5, 9,
+                   50 + i, 100, 1.0, 8.0, 12.0, 105 + i, 98, 102 + i, 90, 110, 10, 5, 9,
                    "2026-09-28 11:00:00", 1e9, "tsetmc"))
         c.execute("INSERT INTO client_type (ins_code, d_even, buy_i_vol, buy_n_vol,"
                   " sell_i_vol, sell_n_vol, buy_count_i, sell_count_i)"
@@ -284,10 +307,17 @@ def board_part():
 
     d0, by0 = board_payload()
     ck("مسیرِ SQL کوئریِ تابلو را زد", _SQL_RUNS["n"] >= 1, str(_SQL_RUNS["n"]))
+    # Stage-2: سه قیمتِ روزانه (p_first/p_max/p_min) حالا عمداً درِ بدنه‌اند؛
+    # گارد باید ستون‌هایی را بسنجد که *هنوز* بی‌مصرف‌کننده‌اند و حذف می‌مانند.
     ck("بدنه بی‌فیلدهایِ بی‌خواننده ساخته شد",
-       all("eps" not in r and "p_max" not in r and "d_even" not in r
+       all("eps" not in r and "tmax" not in r and "d_even" not in r
            for r in d0["data"]),
        str(sorted(k for k in d0["data"][0])[:6]))
+    ck("سه قیمتِ روزانه درِ بدنۀ عادی برگشتند (Stage-2)",
+       all(("p_max" in r and "p_min" in r and "p_first" in r)
+           for r in d0["data"] if r.get("symbol", "").startswith("نماد")),
+       str(sorted(set().union(*[set(r) for r in d0["data"][:3]]) &
+                  {"p_max", "p_min", "p_first"})))
     ck("بی‌تیکِ زنده، متا از کوئری می‌آید (نه صفرِ جعلی)",
        d0["meta"]["d_even"] in (None, 20260928) and MS.last_cycle_at() == "",
        str(d0["meta"]))
@@ -366,8 +396,8 @@ def board_part():
            {"eps", "p_max", "p_min", "suspicious_vol", "d_even", "prev_day_vol",
             "tmax", "vol_trend"} <= keys_all,
            str(sorted({"eps", "p_max", "d_even", "tmax"} - keys_all)))
-        ck("بدنۀ عادی همان ستون‌ها را نمی‌فرستد (وگرنه صرفِ ۴۵٪ معنا ندارد)",
-           not ({"eps", "p_max", "suspicious_vol"} & set(d1b["data"][0].keys())))
+        ck("بدنۀ عادی همان ستون‌هایِ بی‌مصرف را نمی‌فرستد (وگرنه صرفِ ۴۵٪ معنا ندارد)",
+           not ({"eps", "suspicious_vol"} & set(d1b["data"][0].keys())))
         after_body, after_etag, _ = M._market_snapshot()
         ck("و این بدنۀ ابزار جایِ کشِ تابلو را نمی‌گیرد (برقی‌ماندِ یکسان)",
            after_etag == before_etag and after_body == before_body)
@@ -397,6 +427,31 @@ def board_part():
         ck("کلاینتِ جلوتر ⇒ full، نه دلتایِ ساختگی", dl3["status"] == "full", str(dl3))
         dl4 = json.loads(M.get_market_delta(since=-1).body.decode("utf-8"))
         ck("کلاینتِ بی‌rev ⇒ full", dl4["status"] == "full", str(dl4))
+        ck("کلاینتِ بی‌rev ⇒ علتش `no-cache` است نه «کلاینتِ جلوتر» "
+           "(برچسبِ غلط درِ لاگِ عیب‌یابیِ میدان راه را گم می‌کند)",
+           dl4.get("reason") == "no-cache", str(dl4.get("reason")))
+
+        # ── ۳-ب) افزودنِ نماد: ردیفش باید ازِ دلتا بیاید ─────────────────────
+        # ازِ مسیرِ واقعیِ تیک (`tick_live`) نوشته می‌شود، نه `commit`ِ تنها.
+        # `count` این‌جا سنجیده **نمی‌شود**: هم `count` و هم آینه ازِ یکِ بازسازی
+        # می‌آیند و درِ این فیکسچر بازسازیِ پس ازِ تیک عمداً خفه است (همین گارد
+        # چک می‌کند «بی‌تغییری `_kick_market_rebuild` صدا زده نمی‌شود»). سازگار-
+        # بودنِ `count` با افزودن/حذفِ نماد درِ نشستِ بازِ بازار سنجیدنی است و درِ
+        # بندِ ۲.۳ِ سندِ مأموریت به‌عنوانِ «بازِ نیازمند جلسۀ زنده» ثبت شده.
+        r_before = MS.revision()
+        raw = [_mw("K3", pcl=140.0, vol=9999.0), _mw("K9", pcl=210.0, vol=777.0)]
+        T.tick_live(conn)
+        M.warm_market_cache()
+        dl_add = json.loads(M.get_market_delta(since=r_before).body.decode("utf-8"))
+        rows_add = dl_add.get("rows") or []
+        k9 = [x for x in rows_add if x.get("ins_code") == "K9"]
+        ck("نمادِ تازه ازِ دلتا می‌آید، با عددِ درستِ همان ردیف",
+           dl_add["status"] == "delta" and len(k9) == 1 and abs(k9[0]["p_closing"] - 210.0) < 1e-6,
+           f"status={dl_add['status']} rows={sorted(x.get('ins_code') for x in rows_add)}")
+        # یادداشتِ سنجش (ادعا نیست): دو ردیفِ درِ یکِ بدنهٔ دلتا می‌توانند مجموعهٔ
+        # ستون‌هایِ مختلف داشته باشند (قابِ ایستا + overlayِ داغ، و بیرون‌رفتنِ
+        # ستون‌هایِ بی‌مصرفِ هر ردیف). اسکیماِ zod درِ کلاینت همه را optional می‌گیرد،
+        # پس «هم‌ش شکلی» تضمینِ محصول نیست و قفل نمی‌شود — ثبتِ مشاهده، نه ادعا.
         # ژورنالِ چرخیده: هیچ دلتایِ ناقصی از آن ساخته نمی‌شود
         for i in range(1, 400):
             # ردیفِ *واقعاً* ساختۀ _mw_row (همان نگاشتِ نوشتن)، نه بدنهٔ خام —

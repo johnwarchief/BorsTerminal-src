@@ -146,7 +146,10 @@ function Panel1({ card, physicalApplicable }: { card: FtsCard; physicalApplicabl
             </div>
             <div className="flex items-baseline justify-between mt-1">
               <span className="text-2xs text-text-secondary">فروش تجمیعی:</span>
-              <span className="font-mono text-sm font-black text-text-primary">
+              <span
+                className="font-mono text-sm font-black text-text-primary"
+                title="ب.ت = میلیارد تومان"
+              >
                 {now == null ? '—' : `${fmtInt(now)} ب.ت`}
               </span>
             </div>
@@ -167,7 +170,10 @@ function Panel1({ card, physicalApplicable }: { card: FtsCard; physicalApplicabl
             </div>
             <div className="flex items-baseline justify-between mt-1">
               <span className="text-2xs text-text-secondary">فروش تجمیعی:</span>
-              <span className="font-mono text-sm font-black text-text-primary">
+              <span
+                className="font-mono text-sm font-black text-text-primary"
+                title="ب.ت = میلیارد تومان"
+              >
                 {prev == null ? '—' : `${fmtInt(prev)} ب.ت`}
               </span>
             </div>
@@ -296,6 +302,8 @@ function Panel1({ card, physicalApplicable }: { card: FtsCard; physicalApplicabl
 function Panel2({ card }: { card: FtsCard }) {
   const ind = card.indicators?.['2'];
   const series = ind?.eps_series ?? [];
+  // ردپای بند ۵: هر خانۀ سریِ EPS از کدام گزارشِ کدال خوانده شده
+  const refNos = (ind as { ref_tracing_nos?: (number | null)[] } | undefined)?.ref_tracing_nos ?? [];
   /** #101: درصد رشدِ همان سری — اگر موتور فرستاده باشد همان مقدم است (کارت و
    *  دریل‌دان یک عدد)، وگرنه از روی سریِ خودِ بک‌اند حساب می‌شود. */
   const changes = epsChanges(series, ind?.eps_yoy_pct);
@@ -339,7 +347,7 @@ function Panel2({ card }: { card: FtsCard }) {
               data-testid="drilldown-eps-na"
               className="rounded-full border border-accent-yellow/40 bg-bg-card/60 px-2.5 py-0.5 text-xs font-semibold text-accent-yellow"
             >
-              {ind?.consolidated_used ? 'N/A — مبنایِ تلفیقی' : 'N/A — لایه اجرا نمی‌شود'}
+              {ind?.consolidated_used ? 'کاربرد ندارد — مبنایِ تلفیقی' : 'کاربرد ندارد — این لایه اجرا نمی‌شود'}
             </span>
           </GapHint>
         ) : rising == null && realYears < 2 ? (
@@ -366,6 +374,13 @@ function Panel2({ card }: { card: FtsCard }) {
         {ind?.evidence_tier ? (
           <span className="text-2xs text-text-muted" data-testid="drilldown-evidence-tier">
             مدرک: {EVIDENCE_TIER_FA[ind.evidence_tier] ?? ind.evidence_tier}
+          </span>
+        ) : null}
+        {refNos.length ? (
+          <span className="text-2xs text-text-muted" data-testid="drilldown-eps-reference">
+            {slots
+              .map((s, i) => `${s}→${refNos[i] ?? '—'}`)
+              .join(' · ')}
           </span>
         ) : null}
         {ind?.interim?.eps_interim != null ? (
@@ -455,7 +470,7 @@ function Panel3({ card, quarters }: { card: FtsCard; quarters: FiscalQuarter[] }
         : ind?.optimal === true
           ? 'ideal'
           : 'conditional';
-  const BAND_LABEL: Record<string, string> = { ideal: 'مطلوب', conditional: 'مشروط', rejected: 'مردود', na: 'N/A' };
+  const BAND_LABEL: Record<string, string> = { ideal: 'مطلوب', conditional: 'مشروط', rejected: 'مردود', na: 'قابل ارزیابی نیست' };
   // روند خطی ۶ فصل حاشیهٔ **ناخالص** فصلی (تفکیک‌شده از fundMath).
   // #102: مبنای مقایسه با درآمد، سود ناخالص است. FiscalQuarter.margin از
   // سود ناخالص ساخته می‌شود و وقتی آن NULL است (صندوق/هلدینگ بدون سطر بهای
@@ -469,11 +484,17 @@ function Panel3({ card, quarters }: { card: FtsCard; quarters: FiscalQuarter[] }
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center gap-2">
         <Badge tone={band === 'ideal' ? 'green' : band === 'conditional' ? 'yellow' : band === 'rejected' ? 'red' : 'gray'}>
-          {margin == null ? 'N/A' : `${fmtPct(margin)} · ${BAND_LABEL[band]}`}
+          {margin == null ? 'قابل ارزیابی نیست' : `${fmtPct(margin)} · ${BAND_LABEL[band]}`}
         </Badge>
         {ind?.basis ? (
           <span className="text-2xs text-text-muted" data-testid="drilldown-margin-basis">
             مبنای محاسبه: {toFaDigits(ind.basis)}
+          </span>
+        ) : null}
+        {ind?.ref_tracing_no ? (
+          <span className="text-2xs text-text-muted" data-testid="drilldown-margin-reference">
+            گزارش {toFaDigits(String(ind.ref_tracing_no))} · دوره {toFaDigits(ind.period_end ?? '—')} ·{' '}
+            {ind.unit_label ?? 'واحد نامعلوم'} · {ind.source ?? 'کدال'}
           </span>
         ) : null}
       </div>
@@ -548,7 +569,7 @@ function Panel3({ card, quarters }: { card: FtsCard; quarters: FiscalQuarter[] }
 
       <p className="text-2xs leading-relaxed text-text-secondary">
         فرمول: حاشیه = (سود ناخالص ÷ درآمدهای عملیاتی) × ۱۰۰{ind?.period_end ? ` · دوره: ${toFaDigits(ind.period_end)}` : ''}
-        {ind?.na ? ' · این شرکت «بهای تمام‌شده» درج نمی‌کند — N/A' : ''}
+        {ind?.na ? ' · این شرکت «بهای تمام‌شده» درج نمی‌کند — کاربرد ندارد' : ''}
       </p>
     </div>
   );
@@ -611,8 +632,13 @@ function Panel4({ card }: { card: FtsCard }) {
         <p className="mt-1 text-2xs leading-relaxed text-text-muted" data-testid="annualize-basis">
           مبنا: {m >= 12 ? '۱۲ ماه کاملِ سال مالی (بدون سالانه‌سازی)' : `سالانه‌شده از دورهٔ ${toFaDigits(m)} ماهه`}
           {ind?.annualize_basis ? ` · ${toFaDigits(ind.annualize_basis)}` : ''}
+          {` · واحد: ${toFaDigits(ind?.annual?.fs_unit_label ?? 'نامعلوم')}`}
         </p>
-        {ind?.annual?.reconciled === false ? (
+        {ind?.annual?.unit_unverified ? (
+          <p className="mt-1 text-2xs font-bold text-accent-yellow" data-testid="annualize-unit-unverified">
+            واحدِ پولِ ردیفِ مرجع در کدال اعلام نشده؛ مقیاسِ این عدد راستی‌آزمایی نشده است.
+          </p>
+        ) : ind?.annual?.reconciled === false ? (
           <p className="mt-1 text-2xs font-bold text-accent-yellow" data-testid="annualize-unreconciled">
             برآوردِ ماهانه با فروش صورت مالی سالانه هم‌خوان نبود؛ مبنا به فروش سالانهٔ کدال برگشت.
           </p>

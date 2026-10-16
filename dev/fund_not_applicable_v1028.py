@@ -86,7 +86,11 @@ def main():
         name_of = {}
         for sym, cn in conn.execute("SELECT symbol, company_name FROM financial_statements "
                                     "ORDER BY %s, tracing_no DESC" % CP.order_expr()):
-            k = fts_engine.norm_fa(sym)
+            # کلیدِ این نگاشت هم باید لایۀ هویت باشد: `symbol_norm` درِ bulk
+          # از `symbol_identity.key` ساخته می‌شود (فاصله‌ها هم حذف می‌شوند)، پس
+          # norm_fa اینجا ردیفِ چندنوشتاری را گم می‌کرد و «صندوق» را «قابل‌سنجش»
+          # می‌گفت — واگراییِ ساختگیِ خودِ گارد، نه موتور.
+            k = fts_engine.sym_key(sym)
             if k and k not in name_of:
                 name_of[k] = cn or ""
         bad = []

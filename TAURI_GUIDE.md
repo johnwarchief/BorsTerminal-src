@@ -1,4 +1,6 @@
 # راهنمای جامع استقرار و بیلد دسکتاپ با Tauri v2 و سیستم به‌روزرسانی خودکار (In-App Updater)
+
+> **راهنمای target/architecture-specific:** این فایل Tauri v2 و updater آن را شرح می‌دهد؛ README و AGENTS.md مخزن معماری و روش اجرای مرجع فعلی را مشخص می‌کنند. برای بیلد/release، روش فعال را از scripts و workflow جاری تأیید کنید؛ این راهنما را به‌تنهایی دستور اجرای پیش‌فرض فرض نکنید.
 # BorsTerminal Ultimate — Tauri v2 Desktop & Auto-Updater Guide
 
 این سند راهنمای رسمی توسعه، بیلد نصبی سبک ویندوز (.exe)، مدیریت کلیدهای امضای دیجیتال و پایپ‌لاین انتشار خودکار GitHub Actions برای ترمینال بورس التیمیت است.

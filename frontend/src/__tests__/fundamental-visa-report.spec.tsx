@@ -67,7 +67,9 @@ describe('ویسا — محور ۲: هلدینگ و حذف P/NAV ساختگی', 
     );
     const cell = screen.getByTestId('fts-card-cell-1b_volume_growth');
     // #204: بجِ «N/A» روی کارت نیست؛ علتِ معافیت را همان کارت به فارسی می‌گوید
-    expect(within(cell).getByText('این شرکت محصول فیزیکی ندارد — شاخص اجرا نمی‌شود')).toBeInTheDocument();
+    expect(
+      within(cell).getByText('این شرکت محصول فیزیکی ندارد؛ بنابراین این شاخص برای آن کاربرد ندارد'),
+    ).toBeInTheDocument();
     // #149 — کاشیِ معاف «نظر نمی‌دهد» می‌گیرد، نه «قبول»
     expect(within(cell).queryByText('قبول')).not.toBeInTheDocument();
   });

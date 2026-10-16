@@ -91,6 +91,12 @@ SIG_FILE = SETUP_EXE + ".sig"
 # دوباره باس‌لاین نصب کند.
 MANIFEST_JSON = os.path.join(ROOT, "dist", f"BorsTerminal_Manifest_{TAG}.json")
 
+# نسخۀ Portable: ZIPِ *همان* بیلدِ Release (همان commit، همان dist) درِ همان
+# ریلیز. این نصاب نیست و آپدیتِرِ نصبی به آن دست نمی‌زند؛ تنها راهِ
+# تازه‌سازیِ نسخۀ پرتابیل است (بندِ ۴ مأموریتِ انتشار). نامش با الگوی
+# release.ps1 / CI می‌خواند، پس اگر نبود ریلیز کامل محسوب نمی‌شود.
+PORTABLE_ZIP = os.path.join(ROOT, "dist", f"BorsTerminal_Ultimate_Portable_{TAG}.zip")
+
 # v1.0.10 -- delta update. هر پچ فقط برای یک نسخهٔ مبدأ اعتبار دارد؛ اگر
 # نسخهٔ کاربر با `from` نخواند، آپدیتِر شفافاً به نصبِ کامل برمی‌گردد.
 # چندنسخه‌ای (v1.0.25 به بعد): کاربری که دو سه نسخه عقب است باید همان آپدیتِ
@@ -236,6 +242,21 @@ def build_latest_json():
                   f" ({os.path.getsize(e['zip']):,} بایت)")
     else:
         print("[*] پچِ دلتایی نیست؛ مانیفست فقط نصبِ کامل را معرفی می‌کند.")
+    # نسخۀ Portable: آپدیتِرِ پرتابیل همین را لینک می‌کند (api/update.py
+    # `_portable_zip_url`)، پس نبودش یعنی کاربرِ پرتابیل به نصابِ ۵۷ مگابایتی
+    # می‌افتد. نبودش ریلیز را متوقف نمی‌کند (نصبی سالم می‌ماند) ولی با
+    # ::error:: درِ annotations ثبت می‌شود تا «ریلیزِ بی‌پرتابیل» سبز نخواند.
+    if os.path.isfile(PORTABLE_ZIP):
+        manifest["portable"] = {
+            "url": f"https://github.com/{REPO}/releases/download/{TAG}/"
+                   + os.path.basename(PORTABLE_ZIP),
+            "size": os.path.getsize(PORTABLE_ZIP),
+        }
+        print(f"[+] بلوکِ portable به مانیفست اضافه شد: "
+              f"{os.path.basename(PORTABLE_ZIP)} ({manifest['portable']['size']:,} بایت)")
+    else:
+        print(f"::error::[publish] {os.path.basename(PORTABLE_ZIP)} نیست؛ "
+              "ریلیز نسخۀ Portable ندارد و آپدیتِرِ پرتابیل لینکی نمی‌دهد")
     out_path = os.path.join(ROOT, "latest.json")
     with open(out_path, "w", encoding="utf-8") as f:
         json.dump(manifest, f, ensure_ascii=False, indent=2)
@@ -385,6 +406,8 @@ def main():
     # v1.0.10: نامِ پچ هم در لیستِ پاکسازی است تا جایگزینیِ پچ روی یک ریلیزِ
     # موجود (GitHub روی اسمِ تکراری ۴۲۲ می‌دهد) بدونِ مانع بماند.
     stale_names = {os.path.basename(SETUP_EXE), os.path.basename(SIG_FILE), "latest.json"}
+    if os.path.isfile(PORTABLE_ZIP):
+        stale_names.add(os.path.basename(PORTABLE_ZIP))
     for e in PATCHES:
         stale_names.add(os.path.basename(e["zip"]))
         stale_names.add(os.path.basename(e["sig"]))
@@ -474,6 +497,17 @@ def main():
         print(f"[!] {manifest_path} ساخته نشده؛ این ریلیز لنگهٔ مقایسهٔ پچِ بعد را ندارد.")
         print("::error::[publish] %s نیست؛ نسخهٔ بعد مجبور به نصبِ باس‌لاین می‌شود"
               % os.path.basename(manifest_path))
+
+    # نسخۀ Portable درِ *همین* ریلیز: آپدیتِرِ پرتابیل به همین لینک می‌رود، پس
+    # آپلودنشدنش یعنی صفحۀ Release وعده‌ای دارد که فایلش نیست.
+    portable_uploaded = False
+    if os.path.isfile(PORTABLE_ZIP):
+        portable_uploaded = bool(upload_asset(PORTABLE_ZIP))
+        if not portable_uploaded:
+            print("::error::[publish] آپلودِ %s ناموفق بود" % os.path.basename(PORTABLE_ZIP))
+    else:
+        print("::error::[publish] %s روی دیسک نیست؛ ریلیز بی‌نسخۀ Portable منتشر می‌شود"
+              % os.path.basename(PORTABLE_ZIP))
 
     # 5) build + upload latest.json (Tauri updater manifest)
     latest_path = build_latest_json()
@@ -580,6 +614,14 @@ def main():
     if manifest_uploaded:
         if verify_asset_bytes(manifest_path, os.path.basename(manifest_path)) is None:
             verify_ok = False
+
+    # ZIPِ پرتابیل: همان چکِ بایت‌به‌بایت. امضا ندارد (نصاب نیست و آپدیتِر آن را
+    # نصب نمی‌کند)، پس فقط هشِ از راه دور با فایلِ محلی می‌خواند.
+    if portable_uploaded:
+        if verify_asset_bytes(PORTABLE_ZIP, os.path.basename(PORTABLE_ZIP)) is None:
+            verify_ok = False
+        else:
+            print("[✓] نسخۀ Portable از راهِ دورِ خودِ ریلیز خوانده و تأیید شد.")
 
     # ۷. منتقل‌کردنِ codal.db.lzma به این ریلیز.
     #

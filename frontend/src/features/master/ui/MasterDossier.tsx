@@ -137,7 +137,7 @@ export function MasterDossierPanel({ dossier }: { dossier: MasterDossier }) {
           <span>ساعت شنی: سنجیده نشد</span>
         )}
         {d.technical.basis ? <span>مبنای تحلیل: {d.technical.basis}</span> : null}
-        {d.inFunnel ? null : <span>نماد در جامعۀ قیف نیست — خطوطِ S/F سنجیده نشده‌اند، نه رد</span>}
+        {d.inFunnel ? null : <span>نماد در جامعۀ غربالگری نیست — خطوطِ S/F سنجیده نشده‌اند، نه رد</span>}
       </div>
 
       {d.technical.engineText && d.verdictText !== d.technical.engineText ? (
@@ -158,7 +158,7 @@ export function MasterDossierPanel({ dossier }: { dossier: MasterDossier }) {
             حکمِ خروج: {d.technical.exitVerdict ?? '—'} · مبنایِ حد ضرر: {d.technical.stopBasis ?? '—'}
           </li>
           <li className="num">
-            سقفِ تاریخی: {d.technical.jetAth === null ? '—' : d.technical.jetAth ? 'بله' : 'خیر'}
+            سقفِ تاریخی: {d.technical.jetAth == null ? '—' : d.technical.jetAth ? 'بله' : 'خیر'}
             {' · '}
             {money(d.levels.ceiling)}
           </li>

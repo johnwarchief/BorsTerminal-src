@@ -294,6 +294,16 @@ def ensure_market_index_schema(conn):
         " d_even INTEGER PRIMARY KEY, idx_last REAL, idx_change REAL, idx_pct REAL,"
         " ew_last REAL, ew_change REAL, ew_pct REAL,"
         " z_tot_tran REAL, q_tot_cap REAL, q_tot_tran REAL, updated_at TEXT)")
+    # دورِ هوشمندسازیِ وضعیت بازار (بند ۵ مأموریت، 1405-07-20): همان پاسخِ
+    # رسمیِ بورس `marketState`/`marketStateTitle` و ساعتِ خودِ فعالیت را هم
+    # می‌فرستد و تا پیش از این دور ریخته می‌شد؛ پس برنامه «بازار باز است یا
+    # نه» را از ساعتِ دیواریِ خودش حدس می‌زد. سه ستونِ جدید با ALTER می‌آیند
+    # (پایگاهِ بسته‌بندی‌شدۀ کهنه ستون ندارد) و نوشتار از این پس نامی است.
+    cols = {r[1] for r in conn.execute(f"PRAGMA table_info({MARKET_INDEX_TABLE})")}
+    for name, typ in (("market_state", "TEXT"), ("market_state_title", "TEXT"),
+                      ("activity_h_even", "INTEGER")):
+        if name not in cols:
+            conn.execute(f"ALTER TABLE {MARKET_INDEX_TABLE} ADD COLUMN {name} {typ}")
 
 
 def _idx_pct(last, change):
@@ -318,8 +328,14 @@ def save_market_index(conn, ov, d_even, now=None):
     if last <= 0 and ew_last <= 0:
         return False
     ensure_market_index_schema(conn)
+    # نوشتارِ **نامی**: سه ستونِ تازه به انتهای جدول می‌چسبند و INSERTِ جایگاهی
+    # با ۱۱ علامتِ سؤال، `market_state` را درِ `updated_at` می‌نشاند (همان
+    # اشتباهی که درِ client_type_value دیدیم).
     conn.execute(
-        f"INSERT OR REPLACE INTO {MARKET_INDEX_TABLE} VALUES (?,?,?,?,?,?,?,?,?,?,?)",
+        f"INSERT OR REPLACE INTO {MARKET_INDEX_TABLE} (d_even, idx_last, idx_change,"
+        " idx_pct, ew_last, ew_change, ew_pct, z_tot_tran, q_tot_cap, q_tot_tran,"
+        " updated_at, market_state, market_state_title, activity_h_even)"
+        " VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
         (int(d_even),
          last or None, num(ov.get("indexChange")) or None,
          _idx_pct(last, num(ov.get("indexChange"))),
@@ -327,7 +343,10 @@ def save_market_index(conn, ov, d_even, now=None):
          _idx_pct(ew_last, num(ov.get("indexEqualWeightedChange"))),
          num(ov.get("marketActivityZTotTran")), num(ov.get("marketActivityQTotCap")),
          num(ov.get("marketActivityQTotTran")),
-         now or datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+         now or datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+         (str(ov.get("marketState")).strip() or None) if ov.get("marketState") else None,
+         (str(ov.get("marketStateTitle")).strip() or None) if ov.get("marketStateTitle") else None,
+         int(num(ov.get("marketActivityHEven")) or 0) or None))
     conn.commit()
     return True
 
@@ -543,6 +562,13 @@ TAPE_HIST_RETRY_S = 6 * 3600
 # ندارد درِ پنج فیلتر بی‌صدا مردود می‌ماند. ۹۵٪ سقفِ محافظه‌کارانه‌ای است که با
 # پوششِ کاملِ سایت (۹۹+٪) فرقِ روشن دارد و بی‌دلیل هر سینک ۵۱ مگابایت نمی‌گیرد.
 TAPE_COVER_MIN = 0.95
+# سقفِ زمانِ کلِ مرحلۀ [ih] در هر دور. CDN همین صبح (۱۴۰۵-۰۷-۲۰ ۰۹:۳۷) بیش از
+# ۱۲۰ ثانیه بی‌پاسخ ماند؛ بی‌سقف، سه تلاشِ ۱۲۰ ثانیه‌ای قفلِ سینک را ~۷ دقیقه
+# نگه می‌داشت و تازگیِ تابلو/وضعیتِ رسمیِ بازار پشتش می‌خوابید.
+TAPE_FETCH_BUDGET_S = 45.0
+# پنجرۀ بی‌پوشش (یا پاسخِ کوتاه) «خطای قطعی» نیست که شش ساعت قفل شود؛
+# دهۀ دقیقه دوباره آزموده می‌شود — بی‌این، پنج فیلتر تا عصر خاموش می‌مانند.
+TAPE_HIST_LOW_S = 30 * 60
 # نوشتن با نامِ ستون: بانکِ ارتقایافته این جدول را با پنج ستون ساخته و
 # `q_tot_cap` را `mstat_engine.MIGRATIONS` با ALTER به **آخر** افزوده است، پس
 # ترتیبِ ستون‌هایش (…، fetched_at، q_tot_cap) با بانکِ تازه (…، q_tot_cap،
@@ -576,18 +602,26 @@ def ensure_tape_history_schema(conn):
     # مهاجرتِ ستون)؛ این‌جا ALTER دوم نمی‌نویسیم.
 
 
-def fetch_tape_history(timeout=120, attempts=3, gap=20):
+def fetch_tape_history(timeout=45, attempts=3, gap=20, budget=None):
     """([ih] rows | None, خطا). None یعنی «نگرفتم» — با «خالی گرفت» یکی نیست.
 
     بی‌stream تنها راهِ آزموده‌شده است: با stream=True همین پاسخ ۱۸۰ ثانیه
     بی‌پاسخ ماند و ترکید، و درخواستِ معمولی در ۳ ثانیه تمام می‌شود. کشِ CDN
-    گاه سرد است، پس چند تلاشِ فاصله‌دار.
+    گاه سرد است، پس چند تلاشِ فاصله‌دار — ولی کلِ مرحلۀ شبکه‌ای زیرِ
+    `budget` ثانیه می‌ماند (سنجشِ ۱۴۰۵-۰۷-۲۰ ۰۹:۳۷: خودِ همین آدرس بیش از
+    ۱۲۰ ثانیه read-timeout داد؛ بی‌سقف، تابلو و وضعیتِ رسمیِ بازار پشتِ
+    قفلِ سینک می‌خوابیدند).
     """
     import time as _t
     err = "empty-response"
+    deadline = _t.monotonic() + (TAPE_FETCH_BUDGET_S if budget is None else budget)
     for i in range(attempts):
+        left = deadline - _t.monotonic()
+        if left <= 0:
+            return None, f"budget({err})"
         try:
-            r = requests.get(TAPE_HIST_URL, headers=HEADERS, timeout=timeout)
+            r = requests.get(TAPE_HIST_URL, headers=HEADERS,
+                             timeout=min(float(timeout), left))
             r.raise_for_status()
             rows = r.json().get(TAPE_HIST_KEY) or []
         except (requests.exceptions.RequestException, ValueError, OSError,
@@ -596,7 +630,7 @@ def fetch_tape_history(timeout=120, attempts=3, gap=20):
             rows = []
         if rows:
             return rows, None
-        if i + 1 < attempts:
+        if i + 1 < attempts and deadline - _t.monotonic() > gap:
             _t.sleep(gap)
     return None, err
 
@@ -629,9 +663,313 @@ def tape_window_coverage(conn):
     return (covered / traded), traded, covered
 
 
+def tape_history_session_topup(conn, d_even, fetch=None, timeout=60):
+    """تکمیلِ یک نشستِ نهایه‌شده به پنجرۀ [ih] — بدونِ پاسخ ۵۱ مگابایتی.
+
+    سایت `[ih][0]` را به همان نشستِ نهایه‌شده می‌بَرَد (سنجش ۱۴-۰-۱۹ روی
+    دیدۀبانِ زنده: ۳۴۶ از ۴۴۶ ردیف، حجمِ `[ih][0]` = حجمِ همان روز). پنجرۀ ما
+    با `GetClosingPriceDailyAllInst` نو می‌شود و همان پاسخ درِ CDNِ شلوغ بارها
+    از بودجۀ ۴۵ ثانیه بیرون می‌زند (۲۱:۲۸ همان روز: budget(ReadTimeout)) — نتیجه
+    پنجره‌ای یک نشست عقب و جابه‌جاییِ مبنای حجم/پلکان/کف. این مسیر یک درخواست
+    ~۱ مگابایتی است برایِ همان روز، با همان ستون‌ها.
+    """
+    day = int(d_even or 0)
+    if day <= 0:
+        return {"skipped": "no-board-day"}
+    url = f"{BASE}/ClosingPrice/GetInstrmentsHistoryInDay/{day}"
+    try:
+        r = (fetch or requests.get)(url, headers=HEADERS, timeout=timeout)
+        rows = (r.json() or {}).get("closingPriceDailyHistoryWithInstDetails") or []
+    except Exception as e:      # noqa: BLE001 - نشست، پنجرۀ کهنه دست‌نخورده
+        return {"error": f"{type(e).__name__}"}
+    now_txt = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    recs = []
+    for x in rows:
+        ins, d = x.get("insCode"), x.get("dEven") or day
+        if not ins or str(ins).strip() in ("0", "0.0") or int(d) != day:
+            continue
+        recs.append((str(ins), int(d), num(x.get("priceMin")) or 0.0,
+                     num(x.get("priceMax")) or 0.0, num(x.get("qTotTran5J")) or 0.0,
+                     num(x.get("qTotCap")), now_txt))
+    if not recs:
+        return {"error": "no-rows"}
+    conn.executemany(_TAPE_HIST_INSERT, recs)
+    conn.execute("UPDATE tape_history_state SET newest_d_even=?, note=? WHERE id=1",
+                 (day, f"session-topup {len(recs)}"))
+    conn.commit()
+    return {"topped": len(recs), "d_even": day}
+
+
+def closing_published(conn, d_even):
+    """آیا نهایۀ این نشست در بانک نشسته؟ (daily_prices تنها مسیرِ نوشتنِ closing است)
+
+    پنجرۀ [ih] تا پیش از نهایه «امروز» را نمی‌بیند — درست مثل سایت. پس تنها وقتی
+    کهنه بودنِ پنجره معنا دارد که خودِ نشست نهایه شده باشد؛ وگرنه میانِ روز هر ۹۰
+    ثانیه یک پاسخ ۵۱ مگابایتی گرفته می‌شود.
+    """
+    try:  # بانکِ تازه/آزمایشی ممکن است این جدول را نداشته باشد ⇒ «نمی‌دانیم»
+        return bool(conn.execute(
+            "SELECT 1 FROM daily_prices WHERE d_even = ? LIMIT 1",
+            (int(d_even or 0),)).fetchone())
+    except Exception:      # noqa: BLE001 - تایمرِ معمولی خودش را نگه می‌دارد
+        return False
+
+
 def board_session_day(conn):
     """نشستِ جاریِ تابلو — همان روزی که پنجره باید او را بپوشاند."""
     return conn.execute("SELECT MAX(d_even) FROM market_watch").fetchone()[0] or 0
+
+
+# ── پنجرۀ [ih] از باندِ خودِ دیدۀبان (اسلات‌محور)، و [is5]/[is6] ─────────────
+# دو حقیقتِ اندازه‌گیری‌شده از همان صفحه (tools/tse_saved_filter_eval.mjs،
+# سنجشِ ۱۴۰۵-۰۷-۲۰ رویِ ۳٬۴۴۶ ردیف):
+#   ۱) `mw.InstHistory` از `tsev2/data/ClosingPriceAll.aspx` می‌آید و **شاخصش
+#      شمارهٔ نشست است، نه شمارۀ ردیفِ معامله‌شده**: ۳٬۶۰۹ نماد، ۱۸۱٬۹۷۱ ردیف،
+#      اسلات ۰..۵۹، و ۴۷٪ ردیف‌ها بی‌معامله‌اند (حجم صفر با قیمت صفر). آرایه‌ها
+#      از اسلات ۰ پیوسته‌اند (۳٬۶۰۳ از ۳٬۶۰۹) و فقط از دنباله کوتاه می‌شوند.
+#      پنجرۀ `GetClosingPriceDailyAllInst` (۵۱ مگابایت JSON) همین‌ها را دارد ولی
+#      درِ CDNِ شلوغ بارها از بودجه بیرون می‌زند و ۳۵٬۵۸۸ ردیفِ سایت در بانکِ ما
+#      نبود (۱۸٬۶۰۶ تای آن داخلِ [0..29]) — یعنی نمادهایِ کم‌معامله بی‌دلیل
+#      درِ «سی نشست نداریم» می‌ماندند.
+#   ۲) `mw.InstStat` از `tsev2/data/InstValue.aspx?t=a` می‌آید و `[is6]` کلیدِ ۶
+#      همان شیء است. این عدد **از [ih] ساخته نمی‌شود**: هیچ کرانِ جمع/میانگین/
+#      میانه/کمینه/بیشینه رویِ اسلات‌های ۰..۵۹ (حجم، ارزش، تعداد) به آن نرسید
+#      (tools/tse_is_series_probe.py) و هیچ عددِ `GetInstrumentInfo` — از جمله
+#      `qTotTran5JAvg` — با آن یکی نبود (tools/tse_is6_identity.py). پس تنها راهِ
+#      درستِ «ورود پول هوشمند» و «کدبه‌کد» گرفتنِ خودِ همین عدد است، و تنها از
+#      همین مسیر. کلید ۶ برایِ ۱٬۲۷۷ موجودیت از ۸٬۸۷۷ منتشر می‌شود؛ درِ جامعۀ
+#      امروز ۹۸۵ نماد دارد و ۲٬۴۶۱ نماد هیچ. درِ JS نبودنش `undefined` است و
+#      `(tvol) > 1.5*undefined` ⇒ NaN ⇒ false — سایت همان نمادها را بی‌صدا
+#      از فهرست بیرون می‌اندازد، نه اینکه صفرِ جعلی بگذارد.
+# ما هم همان‌طور رفتار می‌کنیم: نبودِ عدد ⇒ سنجیده نمی‌شود (نه صفر، نه ردِ ساختگی).
+OLD_BASE = "https://old.tsetmc.com/tsev2/data"
+TAPE_SLOT_URL = f"{OLD_BASE}/ClosingPriceAll.aspx"
+TAPE_SLOT_TABLE = "tape_ih_slot"
+INST_VALUE_URL = f"{OLD_BASE}/InstValue.aspx?t=a"
+INST_STAT_TABLE = "tse_inst_stat"
+# ردیف‌هایِ اسلات‌محور نباید از این کمتر بیایند (سایت ۱۸۱٬۹۷۱ می‌دهد؛ این کفِ
+# محافظه‌کارانه جلویِ نوشتنِ پاسخِ نصفه‌نیمه را می‌گیرد).
+TAPE_SLOT_MIN_ROWS = 60_000
+# سازگاریِ اسلات→روز با پنجرۀ فعلی؛ بی‌این سنجش، یک تقویمِ یک‌نشست‌جابه‌جا
+# کلِ پلکان/کف/مبناء را یک روز عقب می‌انداخت و هیچ‌کس متوجه نمی‌شد.
+TAPE_SLOT_AGREE_MIN = 0.95
+_TAPE_SLOT_FIELDS = ("PClosing", "PDrCotVal", "ZTotTran", "QTotTran5J", "QTotCap",
+                     "PriceMin", "PriceMax", "PriceYesterday", "PriceFirst")
+
+
+def _http_text(url, timeout=90, headers=None):
+    """متنِ gzip‌فشرده → str. `requests` خودش Content-Encoding را وا می‌کند."""
+    r = requests.get(url, headers={**(headers or HEADERS),
+                                   "Accept-Encoding": "gzip",
+                                   "Referer": "https://old.tsetmc.com/",
+                                   "Origin": "https://old.tsetmc.com"},
+                     timeout=timeout)
+    r.raise_for_status()
+    return r.text
+
+
+def parse_closing_price_all(txt):
+    """تجزیه عینِ `mw.LoadInstHistory`: ۱۱ ستون = سرآمدنِ نماد، ۱۰ ستون = ادامه."""
+    out = {}
+    cur = ""
+    for row in txt.split(";"):
+        if not row:
+            continue
+        c = row.split(",")
+        if len(c) == 11:
+            cur, slot, vals = c[0], c[1], c[2:]
+        elif len(c) == 10:
+            slot, vals, cur = c[0], c[1:], cur
+        else:
+            continue
+        try:
+            slot = int(float(slot))
+        except ValueError:
+            continue
+        rec = dict(zip(_TAPE_SLOT_FIELDS,
+                       [float(v) if v not in ("", None) else 0.0 for v in vals[:9]]))
+        out.setdefault(cur, {})[slot] = rec
+    return out
+
+
+def parse_inst_value(txt):
+    """تجزیه عینِ `mw.LoadInstStat`: سه‌ستونه = نمادِ نو، دوستونه = کلیدِ همان نماد."""
+    out = {}
+    cur = ""
+    for row in txt.split(";"):
+        if not row:
+            continue
+        c = row.split(",")
+        if len(c) == 3:
+            cur = c[0]
+            out.setdefault(cur, {})[c[1]] = float(c[2])
+        elif len(c) == 2 and cur:
+            out.setdefault(cur, {})[c[0]] = float(c[1])
+    return out
+
+
+def market_session_calendar(conn, limit=60):
+    """نشست‌هایِ بازار نزولی — فقط برایِ نامِ روز، نه برایِ شمارشِ پنجره.
+
+    چرا دست‌چورده نمی‌ماند (سنجشِ ۱۴۰۵-۰۷-۲۰): اول فرض شد اسلاتِ سایت = جایگاهِ
+    روز درِ این تقویم. تا اسلات ۳۵ درست بود و بعدش نه — نمادِ نمونه درِ اسلات ۳۶
+    حجمِ ۲۰۲۶۰۸۱۹ را دارد ولی تقویم آنجا ۲۰۲۶۰۸۲۱ را می‌شمارد (بانکِ ما هم آن
+    دو روز را برایِ همان نماد ندارد). یعنی شمارشِ `[ih]` **سلفی** است: ترتیبِ
+    ردیف‌هایِ خودِ نماد. پس پنجره از `slot` ساخته می‌شود و این تابع فقط روزِ
+    قابل‌اطمینان را برایِ نشانِ «سن» می‌دهد؛ هیچ دروازه‌ای با آن بسته نمی‌شود.
+    """
+    try:
+        rows = conn.execute(
+            "SELECT DISTINCT d_even FROM ("
+            "  SELECT d_even FROM daily_prices UNION SELECT d_even FROM tape_history"
+            ") ORDER BY d_even DESC LIMIT ?", (limit,)).fetchall()
+    except sqlite3.Error:
+        return []
+    return [int(r[0]) for r in rows if r[0]]
+
+
+def _slot_window_agrees(conn, arr):
+    """اسلاتِ k سایت با ردیفِ (k+1)امِ آخرِ **همان نماد** درِ بانک می‌خواند؟
+
+    مقایسه سلفی است، نه تقویمی — همان درسی که بالا گرفته شد. پاسخ
+    (سازگار، شمارِ آزموده‌شده). بی‌این سنجش، پاسخِ نصفه‌نیمه یا جابه‌جا پنجره
+    را با علامتِ بیرونیِ سالم جایِ پنجرۀ کامل می‌گذاشت.
+    """
+    seen = ok = 0
+    for code, slots in arr.items():
+        if not slots or max(slots) < 5:
+            continue
+        mine = conn.execute(
+            "SELECT q_tot_tran5j FROM tape_history WHERE ins_code = ?"
+            " ORDER BY d_even DESC LIMIT 60", (code,)).fetchall()
+        if len(mine) < 3:
+            continue
+        for slot in range(min(len(slots), len(mine))):
+            rec = slots.get(slot)
+            if not rec or not (rec.get("QTotTran5J") or 0.0):
+                continue
+            seen += 1
+            if abs((mine[slot][0] or 0.0) - rec["QTotTran5J"]) <= 1.0:
+                ok += 1
+            if seen >= 600:
+                return ok / seen, seen
+    return (ok / seen if seen else 1.0), seen
+
+
+def fetch_tape_history_slots(conn, timeout=90):
+    """[ih] اسلات‌محور از باندِ خودِ دیدۀبان (~۲٫۷ مگابایت gzip، یک درخواست).
+
+    روزهایِ بی‌معامله **همان‌طور که سایت منتشر می‌کند** می‌آیند (حجم صفر، قیمت
+    صفر) — چیزی ساخته نمی‌شود؛ و روزی که سایت برایش ردیف ندارد اینجا هم ردیف
+    ندارد، پس «غایب» می‌ماند و مثلِ سایت سنجش را می‌شکند (نه صفرِ جعلی).
+    بازگردانی: (recs | None, خطا) و recs =
+    (ins_code, slot, d_even=None, price_min, price_max, q_tot_tran5j,
+     q_tot_cap, z_tot_tran, p_closing, fetched_at)
+    """
+    try:
+        txt = _http_text(TAPE_SLOT_URL, timeout=timeout)
+    except Exception as e:  # noqa: BLE001 — پنجرۀ کهنه دست‌نخورده می‌ماند
+        return None, type(e).__name__
+    arr = parse_closing_price_all(txt)
+    if not arr:
+        return None, "empty-payload"
+    agree, seen = _slot_window_agrees(conn, arr)
+    if seen >= 60 and agree < TAPE_SLOT_AGREE_MIN:
+        return None, f"slot-mismatch:{agree:.2f}/{seen}"
+    now_txt = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    recs = []
+    for code, slots in arr.items():
+        if not code or str(code).strip() in ("0", "0.0"):
+            continue      # «شاخص» با insCode=۰ — همان دامِ ۱۴۰۵-۰۷-۲۰
+        for slot in sorted(slots):
+            rec = slots[slot]
+            recs.append((code, int(slot), None,
+                         rec.get("PriceMin") or 0.0, rec.get("PriceMax") or 0.0,
+                         rec.get("QTotTran5J") or 0.0, rec.get("QTotCap"),
+                         rec.get("ZTotTran") or 0.0, rec.get("PClosing") or 0.0,
+                         now_txt))
+    if len(recs) < TAPE_SLOT_MIN_ROWS:
+        return None, f"partial-payload:{len(recs)}"
+    return recs, None
+
+
+def ensure_tape_slot_schema(conn):
+    conn.execute(
+        f"CREATE TABLE IF NOT EXISTS {TAPE_SLOT_TABLE} ("
+        " ins_code TEXT NOT NULL, slot INTEGER NOT NULL, d_even INTEGER,"
+        " price_min REAL, price_max REAL, q_tot_tran5j REAL, q_tot_cap REAL,"
+        " z_tot_tran REAL, p_closing REAL, fetched_at TEXT,"
+        " PRIMARY KEY (ins_code, slot))")
+
+
+def refresh_tape_slots(conn, fetch=None):
+    """پنجرۀ اسلات‌محور را می‌سازد. شکستِ شبکه = پنجرۀ قبلی دست‌نخورده.
+
+    جایگزینیِ کامل درِ یک تراکنش (DELETE + INSERT رویِ کلیدِ اصلی) ⇒ اجرایِ
+    دوباره همان حالتِ پیش را می‌دهد؛ سنجشِ تکرار درِ گزارشِ همین دور آمده است.
+    """
+    ensure_tape_slot_schema(conn)
+    conn.execute("PRAGMA busy_timeout=30000")
+    recs, err = fetch_tape_history_slots(conn) if fetch is None else fetch(conn)
+    if not recs:
+        print(f"  [tape-slots] نگرفت ({err}) — پنجرۀ قبلی دست‌نخورده ماند")
+        return {"error": err}
+    c = conn.cursor()
+    c.execute(f"DELETE FROM {TAPE_SLOT_TABLE}")
+    c.executemany(f"INSERT OR REPLACE INTO {TAPE_SLOT_TABLE}"
+                  " (ins_code, slot, d_even, price_min, price_max, q_tot_tran5j,"
+                  "  q_tot_cap, z_tot_tran, p_closing, fetched_at)"
+                  " VALUES (?,?,?,?,?,?,?,?,?,?)", recs)
+    conn.commit()
+    codes = len({r[0] for r in recs})
+    print(f"  [tape-slots] {len(recs):,} ردیفِ [ih] از دیدۀبان "
+          f"({codes:,} نماد، اسلات ۰..{max(r[1] for r in recs)})")
+    return {"rows": len(recs), "codes": codes}
+
+
+
+def ensure_inst_stat_schema(conn):
+    conn.execute(
+        f"CREATE TABLE IF NOT EXISTS {INST_STAT_TABLE} ("
+        " ins_code TEXT PRIMARY KEY, is5 REAL, is6 REAL,"
+        " q_tot_tran5j_avg REAL, fetched_at TEXT)")
+
+
+def sync_inst_value(conn, fetch=None, timeout=60):
+    """[is5]/[is6] را از همان باندِ دیدۀبان می‌گیرد (۸۳۸ کیلوبایت gzip).
+
+    تنها کلیدهایی می‌نشینند که فیلترهایِ ذخیرۀ مالک به آن‌ها اشاره می‌کنند؛
+    باقیِ ۴۹ کلید بی‌مصرف ذخیره نمی‌شود. نبودِ کلید = NULL (نه صفر)، چون درِ
+    سایت همان `undefined` است و نتیجه «ردیف بیرون می‌افتد».
+    """
+    ensure_inst_stat_schema(conn)
+    conn.execute("PRAGMA busy_timeout=30000")
+    try:
+        txt = (fetch or _http_text)(INST_VALUE_URL, timeout)
+    except Exception as e:  # noqa: BLE001
+        return {"error": type(e).__name__}
+    inst = parse_inst_value(txt)
+    now_txt = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    recs = []
+    for code, keys in inst.items():
+        if not code or str(code).strip() in ("0", "0.0") or "6" not in keys:
+            continue
+        recs.append((code, keys.get("5"), keys.get("6"), keys.get("16"), now_txt))
+    if not recs:
+        return {"error": "no-rows"}
+    c = conn.cursor()
+    # جایگزینیِ کاملِ بی‌تکرار: PRIMARY KEY + DELETE درِ همان تراکنش ⇒ اجرایِ
+    # دوباره همان حالتِ پیش را می‌سازد (idempotent).
+    c.execute(f"DELETE FROM {INST_STAT_TABLE}")
+    c.executemany(f"INSERT OR REPLACE INTO {INST_STAT_TABLE}"
+                  " (ins_code, is5, is6, q_tot_tran5j_avg, fetched_at)"
+                  " VALUES (?,?,?,?,?)", recs)
+    conn.commit()
+    # چاپِ موفقیت نه اختیاری است: لاگِ بدونِ این خط، اجرایِ سالم را از
+    # اجرایِ نگرفته جدا نمی‌کند (همان دامِ [tape-slots] درِ دورِ اول).
+    print(f"  [inst-value] {len(recs):,} نماد با کلید ۶ از دیدۀبان "
+          f"({len(inst):,} کلِ موجود)")
+    return {"rows": len(recs), "codes": len(inst)}
 
 
 def refresh_tape_history(conn, force=False, fetch=None):
@@ -654,6 +992,16 @@ def refresh_tape_history(conn, force=False, fetch=None):
     # کوتاه‌آمدهٔ صبح تا نهایهٔ شب «تازه» می‌ماند و صدها نماد بی‌دلیل مردود
     # می‌شوند (tape_window_coverage).
     ratio, traded, covered = tape_window_coverage(conn)
+    # یک نشستِ نهایه‌شده‌ی جاافتاده را با یک درخواستِ کوچک ببند؛ پاسخِ کامل
+    # (۵۱ مگابایت) بودجۀ ۴۵ ثانیه را می‌شکند و پنجره ساعت‌ها عقب می‌ماند.
+    if board_day and (newest or 0) < board_day and closing_published(conn, board_day):
+        tp = tape_history_session_topup(conn, board_day)
+        if tp.get("topped"):
+            have, newest = conn.execute(
+                f"SELECT COUNT(*), MAX(d_even) FROM {TAPE_HIST_TABLE}").fetchone()
+            ratio, traded, covered = tape_window_coverage(conn)
+            if (newest or 0) >= board_day and ratio >= TAPE_COVER_MIN:
+                return {"session_topup": tp["topped"], "d_even": board_day}
     if (not force and have and board_day and (newest or 0) >= board_day
             and ratio >= TAPE_COVER_MIN):
         return {"skipped": "fresh"}
@@ -669,13 +1017,27 @@ def refresh_tape_history(conn, force=False, fetch=None):
     # HTTPErrorِ گذرا از CDN در ۱۰:۰۶، و پنج فیلتر تا بعدازظهر صفر ماندند.
     # وقتی جدول خالی است، «پنجرۀ کهنه»ای برای محفوظ‌داشتن وجود ندارد؛
     # تایمر بی‌موضوع است و باید هر دورِ سینک دوباره tried شود.)
-    if not force and have and last_attempt and last_note != "attempt":
+    if not force and last_attempt and last_note != "attempt":
+        # پنجرۀ خالی را روزها پشتِ تایمرِ شش‌ساعته نگه ندار: پاسخِ کوتاه یا
+        # بی‌پوشش با TAPE_HIST_LOW_S دوباره آزموده می‌شود (پنج فیلترِ بی‌پنجره
+        # یعنی غربالگری «بدون داده» — سنجشِ ۱۴۰۵-۰۷-۲۰ رویِ بانکِ نصبی).
+        limit = TAPE_HIST_RETRY_S
+        if have < 1 or (last_note or "").startswith(("low-coverage", "partial-payload",
+                                                     "no-rows", "budget",
+                                                     "no-traded-set")):
+            limit = TAPE_HIST_LOW_S
+
+        # پنجره یک نشست عقب است ولی نهایۀ امروز منتشر شده: سایت «[ih][0]» را به
+        # امروز برده (سنجش ۱۴۰۵-۰۷-۱۹ روی دیدۀبان: ۳٬۴۶ از ۳۴۴۶ ردیف)، پس مبنای
+        # حجم و پلکان و کفِ ما جابه‌است. این حالت را پشتِ قفلِ ۶ ساعته نگه ندار.
+        if board_day and (newest or 0) < board_day and closing_published(conn, board_day):
+            limit = min(limit, TAPE_HIST_LOW_S)
         try:
             age = (now - datetime.datetime.strptime(last_attempt,
                                                     "%Y-%m-%d %H:%M:%S")).total_seconds()
         except ValueError:
-            age = TAPE_HIST_RETRY_S + 1.0
-        if age < TAPE_HIST_RETRY_S:
+            age = limit + 1.0
+        if age < limit:
             return {"skipped": "throttled"}
     conn.execute(f"INSERT OR REPLACE INTO {TAPE_HIST_STATE} VALUES (1, ?, ?, ?, ?)",
                  (now_txt, last_ok, newest, "attempt"))
@@ -691,6 +1053,13 @@ def refresh_tape_history(conn, force=False, fetch=None):
         ins, d = x.get("insCode"), x.get("dEven")
         if not ins or not d:
             continue
+        # «شاخص» هم درِ این پاسخ هست، با insCode=۰. بی‌این خط، پنجرۀ [ih] رویِ
+        # بانکِ نصبی ۶۰ ردیفِ `ins_code='0'` شد و هیچ نمادی پوشش نگرفت — یعنی
+        # هفت فیلترِ تابلو و گامِ تابلوی غربالگری بی‌صدا «بدون داده» خوانده
+        # شدند (سنجشِ ۱۴۰۵-۰۷-۲۰ ۰۹:۳۴ رویِ همین ماشین: tape_history =
+        # ۶۰ ردیف/۱ «نماد» در برابرِ ۱۸۰٬۵۰۹ ردیف/۳٬۶۰۲ نماد در بانکِ توسعه).
+        if str(ins).strip() in ("0", "0.0"):
+            continue
         recs.append((ins, int(d), num(x.get("priceMin")) or 0.0,
                      num(x.get("priceMax")) or 0.0,
                      num(x.get("qTotTran5J")) or 0.0,
@@ -700,6 +1069,36 @@ def refresh_tape_history(conn, force=False, fetch=None):
         conn.commit()
         return {"error": "no-rows"}
     top = max(r[1] for r in recs)
+    # پوششِ پاسخ **پیش از هر نوشتنی** و **حتی وقتی جدول خالی است** سنجیده
+    # می‌شود: بی‌این شرطِ دوم، نخستین نوشتنِ پس از نصب می‌توانست پنجرۀ
+    # بی‌ارزش را جای همه بگذارد و «تازگی»ِ بعدی (`newest >= board_day`) روزها
+    # به منبع چکش بزند.
+    cur = conn.cursor()
+    cur.execute("CREATE TEMP TABLE _new_window (ins_code TEXT PRIMARY KEY)")
+    cur.executemany("INSERT OR IGNORE INTO _new_window VALUES (?)",
+                    [(r[0],) for r in recs])
+    traded_n, covered_new, covered_cur = cur.execute(
+        "SELECT COUNT(*),"
+        " SUM(CASE WHEN EXISTS (SELECT 1 FROM _new_window w WHERE w.ins_code = m.ins_code)"
+        "          THEN 1 ELSE 0 END),"
+        f" SUM(CASE WHEN EXISTS (SELECT 1 FROM {TAPE_HIST_TABLE} h WHERE h.ins_code = m.ins_code)"
+        "          THEN 1 ELSE 0 END)"
+        " FROM market_watch m WHERE m.d_even = ? AND COALESCE(m.q_tot_tran, 0) > 0",
+        (board_day,)).fetchone()
+    cur.execute("DROP TABLE _new_window")
+    traded_n = traded_n or 0
+    ratio_new = (covered_new or 0) / traded_n if traded_n else 1.0
+    ratio_cur = (covered_cur or 0) / traded_n if traded_n else 0.0
+    if traded_n and ratio_new < TAPE_COVER_MIN:
+        conn.execute("UPDATE tape_history_state SET note = ? WHERE id = 1",
+                     (f"low-coverage:{covered_new or 0}/{traded_n}",))
+        conn.commit()
+        print(f"  [tape-history] پاسخِ سایت {covered_new or 0:,} از {traded_n:,} نمادِ "
+              f"معامله‌شده را پوشش می‌دهد ({ratio_new * 100:.1f}٪، زیرِ کفِ "
+              f"{TAPE_COVER_MIN * 100:.0f}٪) — پنجره "
+              f"{'دست‌نخورده ماند' if have else 'پر نشد'}")
+        return {"skipped": "low-coverage", "covered": covered_new or 0,
+                "traded": traded_n, "window_rows_kept": have}
     # پنجره را بی‌سرنوشت عوض نکن: پاسخِ سایت گاه **کوتاه** می‌آید (اندازۀ
     # ۱۴۰۵-۰۷-۰۷: همان endpoint یک دور ۳٬۲۳۸ نماد داد و دور بعد ۳٬۹۴۱). بی‌این
     # بند، همان پاسخِ کوتاهِ ۰۸:۵۵ جای پنجرۀ کامل را می‌گرفت و ۵۸۸ نمادِ
@@ -708,46 +1107,36 @@ def refresh_tape_history(conn, force=False, fetch=None):
     #   ۱) همان نشست با پوششِ کمتر → دادهٔ ناقص دادهٔ کهنه را نمی‌بَرَد؛
     #   ۲) نشستِ تازه‌تر ولی زیرِ کفِ پوشش، در حالی که پنجرۀ فعلی بالای کف است
     #      → تازگیِ یک نشست ارزشِ خاموش‌کردنِ صدها نماد را ندارد.
-    if have:
-        cur = conn.cursor()
-        cur.execute("CREATE TEMP TABLE _new_window (ins_code TEXT PRIMARY KEY)")
-        cur.executemany("INSERT OR IGNORE INTO _new_window VALUES (?)",
-                        [(r[0],) for r in recs])
-        traded_n, covered_new, covered_cur = cur.execute(
-            "SELECT COUNT(*),"
-            " SUM(CASE WHEN EXISTS (SELECT 1 FROM _new_window w WHERE w.ins_code = m.ins_code)"
-            "          THEN 1 ELSE 0 END),"
-            f" SUM(CASE WHEN EXISTS (SELECT 1 FROM {TAPE_HIST_TABLE} h WHERE h.ins_code = m.ins_code)"
-            "          THEN 1 ELSE 0 END)"
-            " FROM market_watch m WHERE m.d_even = ? AND COALESCE(m.q_tot_tran, 0) > 0",
-            (board_day,)).fetchone()
-        cur.execute("DROP TABLE _new_window")
-        traded_n = traded_n or 0
-        if traded_n:
-            ratio_new = (covered_new or 0) / traded_n
-            ratio_cur = (covered_cur or 0) / traded_n
-            if top <= (newest or 0) and (covered_new or 0) < (covered_cur or 0):
-                lost = (covered_cur or 0) - (covered_new or 0)
-                conn.execute("UPDATE tape_history_state SET note = ? WHERE id = 1",
-                             (f"partial-payload:{lost}",))
-                conn.commit()
-                print(f"  [tape-history] پاسخِ سایت {lost:,} نمادِ معامله‌شده را ندارد که "
-                      f"پنجرۀ فعلی دارد — پنجره دست‌نخورده ماند")
-                return {"skipped": "partial-payload", "lost": lost}
-            if (top > (newest or 0) and ratio_new < TAPE_COVER_MIN
-                    and ratio_cur >= TAPE_COVER_MIN):
-                conn.execute("UPDATE tape_history_state SET note = ? WHERE id = 1",
-                             ("partial-payload:collapse",))
-                conn.commit()
-                print(f"  [tape-history] نشستِ تازه آمد ولی پوشش به "
-                      f"{ratio_new * 100:.1f}٪ افتاد (پنجرۀ فعلی {ratio_cur * 100:.1f}٪) — "
-                      f"پنجرۀ کاملِ فعلی ماند")
-                return {"skipped": "partial-payload", "lost": covered_cur}
+    if have and traded_n:
+        if top <= (newest or 0) and (covered_new or 0) < (covered_cur or 0):
+            lost = (covered_cur or 0) - (covered_new or 0)
+            conn.execute("UPDATE tape_history_state SET note = ? WHERE id = 1",
+                         (f"partial-payload:{lost}",))
+            conn.commit()
+            print(f"  [tape-history] پاسخِ سایت {lost:,} نمادِ معامله‌شده را ندارد که "
+                  f"پنجرۀ فعلی دارد — پنجره دست‌نخورده ماند")
+            return {"skipped": "partial-payload", "lost": lost}
+        if (top > (newest or 0) and ratio_new < TAPE_COVER_MIN
+                and ratio_cur >= TAPE_COVER_MIN):
+            conn.execute("UPDATE tape_history_state SET note = ? WHERE id = 1",
+                         ("partial-payload:collapse",))
+            conn.commit()
+            print(f"  [tape-history] نشستِ تازه آمد ولی پوشش به "
+                  f"{ratio_new * 100:.1f}٪ افتاد (پنجرۀ فعلی {ratio_cur * 100:.1f}٪) — "
+                  f"پنجرۀ کاملِ فعلی ماند")
+            return {"skipped": "partial-payload", "lost": covered_cur}
     c = conn.cursor()
     c.execute(f"DELETE FROM {TAPE_HIST_TABLE}")
     c.executemany(_TAPE_HIST_INSERT, recs)
+    # تابلویِ رول‌شدهٔ پیش‌ازبازگشایی همهٔ حجم‌ها صفر است و traded_n=0 همهٔ
+    # گیت‌هایِ پوشش را خنثی می‌کند؛ اگر همان‌جا note خالی بماند، قفلِ
+    # شش‌ساعته می‌افتد و نخستین fetchِ پس‌ازبازگشایی — که پوشش را againstِ
+    # مجموعۀ واقعیِ معامله‌شده می‌سنجد — روز پشتِ تایمر می‌ماند. خانوادۀ
+    # no-traded-set همان ۳۰دقیقهٔ retry است و بعدازظهرِ تعطیلی/کندیِ منبع هم
+    # فقط همان یک نشستِ بی‌معامله را هر نیم‌ساعت دوباره می‌آزماید.
+    note = "" if traded_n else "no-traded-set"
     c.execute(f"INSERT OR REPLACE INTO {TAPE_HIST_STATE} VALUES (1, ?, ?, ?, ?)",
-              (now_txt, now_txt, top, ""))
+              (now_txt, now_txt, top, note))
     conn.commit()
     print(f"  [tape-history] {len(recs):,} ردیفِ [ih] از سایت (نشست تا {top})")
     return {"rows": len(recs), "newest": top}
@@ -991,7 +1380,19 @@ def get_json(s, url, key):
 # ════════════════════════════════════════════════════════════════════════════
 CTV_SOURCE = "tsetmc_clienttype_history"
 CTV_RETRY_S = 6 * 3600      # سقفِ تلاش برایِ یک نشست (الگوی TAPE_HIST_RETRY_S)
+# نشستی که بودجه‌اش تمام نشده ولی ردیف‌هایِ کم‌حجمش باقی‌اند: هر ۳۰ دقیقه
+# ادامه می‌دهد. بی‌این، تلاشِ سوختۀ «همین نشستِ باز» پنجرۀ شش‌ساعته را
+# می‌بست و آن نشست هرگز کامل نمی‌شد (سنجشِ ۱۴۰۵-۰۷-۱۹: ۰ ردیف از ۱۵۹۳).
+CTV_RESUME_S = 30 * 60
 CTV_BUDGET = 600            # حداکثرِ درخواست در هر اجرا
+# دو مهارکنندۀ افزون بر بودجهٔ شمارشی (سنجشِ زندهٔ ۱۴۰۵-۰۷-۲۰ ۰۹:۰۹–۰۹:۲۰:
+# یک مرحلۀ شبکه‌ای طولانی قفلِ `_MARKET_SYNC_LOCK` را نگه داشت و تازگیِ تابلو،
+# `market_index` و وضعیتِ رسمیِ بازار را برایِ ۲۰+ دقیقه خواباند):
+#   • نشستِ بی‌داده پس از این همه نمادِ پشتِ‌سرهم رها می‌شود، نه تا سقفِ ۶۰۰تا؛
+#   • هر اجرا حداکثر این قدر ثانیه رویِ شبکه وقت می‌گیرد و دورِ بعد از پنجرۀ
+#     ادامه (CTV_RESUME_S) همان نشستِ ناقص را برمی‌دارد.
+CTV_ABANDON_AFTER = 10
+CTV_RUN_BUDGET_S = 90.0
 
 # DDL درِ tsetmc_p0_schema است؛ این نام فقط برایِ سازگاریِ فراخوانی‌هایِ موجود
 import tsetmc_p0_schema as _P0
@@ -999,12 +1400,36 @@ CTV_TABLE_DDL = _P0.CLIENT_TYPE_VALUE
 
 
 def ensure_client_type_value_schema(conn):
-    """میزِ ارزشِ مبدأ و حالتِ آن (DDL از tsetmc_p0_schema — تک‌منبع)."""
+    """میزِ ارزشِ مبدأ و حالتِ آن (DDL از tsetmc_p0_schema — تک‌منبع).
+
+    پنجرۀ تلاشِ هر نشست درِ `tsetmc_p0_state` با نامِ `client-values:<day>`
+    می‌نشیند (تکمیلِ سطرِ خودِ تابع) — هیچ ستونِ تازه‌ای به بانکِ ارتقایافته
+    لازم نیست.
+    """
     import tsetmc_p0_schema as P0
     conn.execute(P0.CLIENT_TYPE_VALUE)
     conn.execute(P0.CLIENT_TYPE_VALUE_STATE)
     conn.execute("INSERT OR IGNORE INTO client_type_value_state"
                  " (id, last_attempt, last_ok, newest_d_even, note) VALUES (1, NULL, NULL, 0, NULL)")
+
+
+def ct_candidate_days(conn):
+    """نشست‌هایی که هنوز مبدأِ همه‌یِ نمادهایشان نرسیده — تازه‌ترین اول.
+
+    چرا لازم شد: انتخابِ هدف بی «MAX(d_even) از client_type» بود، یعنی همیشه
+    «همین نشستِ باز». خودِ TSETMC برایِ نشستِ جاریِ نهایه‌نشده HTTP 500 می‌دهد
+    (سنجدش درِ همین فایل)، پس آن تلاش هرگز چیزی نمی‌نوشد ولی `last_attempt` را
+    می‌سوزاند و نشستِ دیروز — که منبعش آماده است — درِ صفِ شش‌ساعته می‌مرد.
+    سنجشِ ۱۴۰۵-۰۷-۱۹ رویِ بانکِ زندۀ همین ماشین: `client_type` برایِ ۲۰۲۶۱۰۱۰
+    ۱۵۹۳ ردیف دارد و `client_type_value` صفر؛ با یک fetchِ آزمایشیِ ۱۲نمادی از
+    همان نشست، ۱۲ از ۱۲ ردیف `native` نوشته شد. یعنی منبع هست و گیتِ وقت‌سنجی
+    مانع بوده، نه نبودِ داده.
+    """
+    return conn.execute(
+        "SELECT c.d_even, COUNT(*) AS want,"
+        "       (SELECT COUNT(*) FROM client_type_value v WHERE v.d_even = c.d_even) AS have"
+        "  FROM client_type c GROUP BY c.d_even HAVING have < want ORDER BY c.d_even DESC"
+    ).fetchall()
 
 
 def ct_universe_sql():
@@ -1055,6 +1480,75 @@ def parse_client_type_value(payload, ins_code, d_even, now=None):
             num(row.get("buy_DDD_Value")), kind, now or "", CTV_SOURCE)
 
 
+def _ct_window_name(day) -> str:
+    """نامِ سطرِ حالتِ «ارزشِ مبدأ» برایِ یک نشست — پنجره به‌ازایِ نشست است، نه سراسری.
+
+    بی‌این، تنها «آخرینِ نشستِ تلاش‌شده» حافظه داشت: یک نشستِ بازِ ۵۰۰‌ده پنجرۀ
+    شش‌ساعته را می‌سوخت، و تلاشِ بعدی رویِ نشستِ دیگر آن را فراموش می‌کرد و
+    همان نشستِ شکسته را دوباره صدا می‌زد (چکش‌زدن به منبع).
+    """
+    return "client-values:%s" % day
+
+
+def _ct_window_ok(conn, day, now, have) -> bool:
+    """آیا این نشست حالا مجاز به تلاش است؟
+
+    پیشرفتِ واقعی (`have > 0`) ⇒ پنجرۀ کوتاهِ ادامه، تا بودجه‌ی ۶۰تایی درِ همان
+    روز تمام شود. بی‌پیشرفت (۵۰۰ِ نشستِ باز) ⇒ همان سقفِ شش‌ساعته.
+    """
+    conn.execute(P0_STATE_DDL)
+    row = conn.execute("SELECT last_run FROM tsetmc_p0_state WHERE name=?",
+                       (_ct_window_name(day),)).fetchone()
+    if not row or not row[0]:
+        return True
+    try:
+        age = (datetime.datetime.strptime(now, "%Y-%m-%d %H:%M:%S")
+               - datetime.datetime.strptime(row[0], "%Y-%m-%d %H:%M:%S")).total_seconds()
+    except (TypeError, ValueError):
+        return True
+    return age >= (CTV_RESUME_S if (have or 0) > 0 else CTV_RETRY_S)
+
+
+def _ct_window_mark(conn, day, now) -> None:
+    conn.execute(P0_STATE_DDL)
+    conn.execute("INSERT OR REPLACE INTO tsetmc_p0_state (name, last_run) VALUES (?, ?)",
+                 (_ct_window_name(day), now))
+
+
+def _now_dt(now):
+    """`now` رشتهٔ «YYYY-MM-DD HH:MM:SS» یا datetime → datetime (برِ گیتِ ساعتی)."""
+    if isinstance(now, datetime.datetime):
+        return now
+    try:
+        return datetime.datetime.strptime(now, "%Y-%m-%d %H:%M:%S")
+    except (TypeError, ValueError):
+        return datetime.datetime.now()
+
+
+def _ct_session_is_closed(day, now_dt=None) -> bool:
+    """آیا این نشست از دیدِ خودِ بازار تمام شده؟ (منبع برایِ نشستِ باز ۵۰۰ می‌دهد)
+
+    سنجشِ زندهٔ ۱۴۰۵-۰۷-۲۰ ۰۹:۰۹ همین ماشین: `GetClientTypeHistory` برایِ
+    نشستِ ۲۰۲۶۱۰۱۱ سه از سه بار HTTP 500 داد و همان سه نماد برایِ ۲۰۲۶۱۰۱۰ سه
+    از سه بار ۲۰۰ — یعنی ۵۰۰ِ نشستِ باز خطایِ گذرا نیست، تعریفِ داده هنوز
+    نیست. نبودِ این گیت دو خسارت داشت: سوختنِ پنجرۀ شش‌ساعتهٔ نشستِ باز، و
+    نگه‌داشتنِ قفلِ سینک با ~۱۰۷ درخواستِ مرده در ~۲۰ دقیقه، که `market_index`
+    را روی marketState="P"ِ ساعتِ ۰۸:۵۶ خواباند و کلِ نشست «مرحل نامشخص /
+    verdict_allowed=False» خوانده شد.
+
+    مرزِ «بسته شدن» آستانهٔ تازه نیست: پایانِ اعلام‌شدۀ خودِ بازار
+    (`market_phase.SESSION_END`) است.
+    """
+    n = now_dt or datetime.datetime.now()
+    try:
+        if int(day) != int(n.strftime("%Y%m%d")):
+            return True
+    except (TypeError, ValueError):
+        return True
+    import market_phase
+    return n.time() >= market_phase.SESSION_END
+
+
 def refresh_client_type_values(conn, day=None, limit=CTV_BUDGET, force=False,
                                session=None, fetch=None, now=None):
     """ارزشِ مبدأ را برایِ یک نشستِ بسته پر می‌کند. برمی‌گرداند dictِ آمار.
@@ -1062,35 +1556,60 @@ def refresh_client_type_values(conn, day=None, limit=CTV_BUDGET, force=False,
     رفتارِ دیدہ‌شده (۱۴۰۵-۰۷-۱۳): نشستِ جاری HTTP 500 می‌دهد، نشست‌هایِ بسته تا
     `20260701` برمی‌گردند. پس ۵۰۰ «خطا» نیست و بوقِ خطا هم نمی‌زند؛ فقط ردیفی
     نوشته نمی‌شود و provenance مصرف‌کننده رویِ `reconstructed` می‌ماند.
+
+    انتخابِ هدف (رأیِ مالک ۱۴۰۵-۰۷-۲۲، «حقوقی/حقیقی باید با تریدرزآرنا یکی
+    باشد»): تازه‌ترین نشستی که هنوز کامل نشده، و اگر پنجرۀ استراحتِ آن بسته
+    بود نشستِ کهنه‌ترِ ناقص. بی‌این، «همین نشستِ باز» هر بار ۵۰۰ می‌گرفت و
+    پنجرۀ شش‌ساعته را می‌سوزاند، و نشستِ دیروز — که منبعش آماده است — هرگز
+    خوانده نمی‌شد (سنجشِ ۱۴۰۵-۰۷-۱۹: ۱۵۹۳ ردیف client_type و صفر ردیف
+    client_type_value؛ با یک fetchِ آزمایشیِ ۱۲نمادی از همان نشست، ۱۲ از ۱۲
+    ردیفِ native نوشته شد — یعنی منبع بود و گیتِ وقت‌سنجی مانع).
     """
     now = now or datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     ensure_client_type_value_schema(conn)
-    st = conn.execute("SELECT last_attempt, newest_d_even FROM client_type_value_state"
-                      " WHERE id=1").fetchone()
+    cands = ct_candidate_days(conn)
     if day is None:
-        day = conn.execute("SELECT MAX(d_even) FROM client_type").fetchone()[0] or 0
+        if not cands:
+            return {"skipped": "no-session", "written": 0}
+        # نشستِ باز از صف بیرون می‌رود (مگر با forceِ دستی): منبع برایش ۵۰۰
+        # می‌دهد و هر تلاشِ بی‌نتیجه پنجرۀ شش‌ساعته‌اش را می‌سوزاند.
+        elig = [c for c in cands if force or _ct_session_is_closed(c[0], _now_dt(now))]
+        if not elig:
+            return {"skipped": "no-closed-session", "written": 0,
+                    "candidates": [c[0] for c in cands]}
+        picked = next(((d, w, h) for d, w, h in elig
+                       if force or _ct_window_ok(conn, d, now, h)), None)
+        if picked is None:
+            d0, w0, h0 = elig[0]
+            return {"skipped": "throttled", "day": d0, "written": h0}
+        day, want, have = picked
+    else:
+        if not force and not _ct_session_is_closed(day, _now_dt(now)):
+            return {"skipped": "open-session", "day": day, "written": 0}
+        have = conn.execute("SELECT COUNT(*) FROM client_type_value WHERE d_even=?",
+                            (day,)).fetchone()[0]
+        want = conn.execute("SELECT COUNT(*) FROM client_type WHERE d_even=?",
+                            (day,)).fetchone()[0]
+        if want and have >= want:
+            return {"skipped": "complete", "day": day, "written": have}
     if not day:
         return {"skipped": "no-session", "written": 0}
-    have = conn.execute("SELECT COUNT(*) FROM client_type_value WHERE d_even=?",
-                        (day,)).fetchone()[0]
-    want = conn.execute("SELECT COUNT(*) FROM client_type WHERE d_even=?",
-                        (day,)).fetchone()[0]
-    if want and have >= want:
-        return {"skipped": "complete", "day": day, "written": have}
-    if not force and st and st[0]:
-        try:
-            age = (datetime.datetime.now()
-                   - datetime.datetime.strptime(st[0], "%Y-%m-%d %H:%M:%S")).total_seconds()
-        except ValueError:
-            age = CTV_RETRY_S + 1.0
-        if age < CTV_RETRY_S:
-            return {"skipped": "throttled", "day": day, "written": have}
+    if not force and not _ct_window_ok(conn, day, now, have):
+        # هدف هنوز پنجرۀ استراحتِ خودش را نگه می‌دارد (تلاشِ بی‌پیشرفت)
+        return {"skipped": "throttled", "day": day, "written": have}
+    # پنجره پیش از واکشی بسته می‌شود، نه بعدش: اگر فرآیند درِ وسطِ ۶۰۰ درخواست
+    # بمیرد، دورۀ بعد بی‌درخواستِ دوباره نپرد.
     conn.execute("UPDATE client_type_value_state SET last_attempt=? WHERE id=1", (now,))
+    _ct_window_mark(conn, day, now)
     conn.commit()
     done = {r[0] for r in conn.execute(
         "SELECT ins_code FROM client_type_value WHERE d_even=?", (day,)).fetchall()}
-    todo = [r[0] for r in conn.execute(ct_universe_sql(), (day, int(limit))).fetchall()
-            if r[0] not in done]
+    # پنجرهٔ بودجه باید رویِ مانده بلغزد: LIMIT درونِ SQL دامنهٔ کل را
+    # می‌بُرد (۶۰۰تایِ پرحجمِ همیشگی) و بعد ازِ یک اجرا todo خالی می‌ماند —
+    # سنجشِ ۱۴۰۵-۰۷-۲۱ رویِ بانکِ زنده: done دقیقاً همان top-۶۰۰ بود و
+    # پوششِ ۲۰۲۶۱۰۱۰ از ۲۵٪ تکان نمی‌خورد. سقفِ درخواست حالا رویِ مانده است.
+    todo = [r[0] for r in conn.execute(ct_universe_sql(), (day, 10**6)).fetchall()
+            if r[0] not in done][: int(limit)]
     if fetch is None:
         s = session or make_session()
 
@@ -1098,16 +1617,31 @@ def refresh_client_type_values(conn, day=None, limit=CTV_BUDGET, force=False,
             # `clientType` شیء است؛ polite_get با key همان شیء را بی‌change می‌دهد
             return polite_get(_s, f"{BASE}/ClientType/GetClientTypeHistory/{c}/{_day}",
                               "clientType")
-    rows, errs = [], 0
+    rows, errs, dead, aborted = [], 0, 0, None
+    import time as _t
+    _t0 = _t.monotonic()
     for c in todo:
         try:
             payload = fetch(c)
         except Exception:
             payload, errs = None, errs + 1
-            continue
-        rec = parse_client_type_value(payload, c, day, now)
-        if rec:
-            rows.append(rec)
+        if payload is None:
+            # نشستِ بی‌داده تا سقفِ ۶۰تا چکش نمی‌خورد: ده نمادِ پشتِ‌سرهم
+            # بی‌پاسخ ⇒ همین اجرا را ببند و پنجره را بباز (تلاشِ بعدی ۶ ساعت).
+            dead += 1
+            if not rows and dead >= CTV_ABANDON_AFTER:
+                aborted = "no-payload"
+                break
+        else:
+            dead = 0
+            rec = parse_client_type_value(payload, c, day, now)
+            if rec:
+                rows.append(rec)
+        if _t.monotonic() - _t0 > CTV_RUN_BUDGET_S:
+            # مرحلۀ شبکه‌ای نباید تازگیِ تابلو را پشتِ قفلِ سینک بخواباند؛
+            # نشستِ ناقص می‌ماند و پنجرۀ ادامه (۳۰ دقیقه) دوباره برمی‌داردش.
+            aborted = "time-budget"
+            break
     if rows:
         # نوشتنِ نام‌دار: `kind` بعداً با ALTER اضافه شد و به انتهای
         # جدول چسبید، پس ترتیبِ tupleِ ما با ترتیبِ ستون‌هایِ بانک یکی
@@ -1119,14 +1653,18 @@ def refresh_client_type_values(conn, day=None, limit=CTV_BUDGET, force=False,
             + ",".join("?" * 10) + ")", rows)
     total = conn.execute("SELECT COUNT(*) FROM client_type_value WHERE d_even=?",
                          (day,)).fetchone()[0]
-    conn.execute("UPDATE client_type_value_state SET last_ok=?, newest_d_even=?,"
-                 " note=? WHERE id=1",
-                 (now if rows else st[1] if st else None, day,
-                  f"day={day} written={len(rows)} total={total} errors={errs}"))
+    # `last_ok` فقط با پیشرفت تازه می‌شود (COALESCE، نه جای‌گزینی با شمارۀِ نشست —
+    # آن یک اشتباهِ نوعیِ پیشین بود: newest_d_even درِ ستونِ زمان می‌نشست).
+    conn.execute("UPDATE client_type_value_state SET last_ok=COALESCE(?, last_ok),"
+                 " newest_d_even=?, note=? WHERE id=1",
+                 (now if rows else None, day,
+                  f"day={day} written={len(rows)} total={total} errors={errs}"
+                  f" no_payload={dead}" + (f" aborted={aborted}" if aborted else "")))
     conn.commit()
     market_state_touch()
     return {"day": day, "written": len(rows), "total": total, "errors": errs,
-            "attempted": len(todo)}
+            "no_payload": dead, "aborted": aborted,
+            "ran_s": round(_t.monotonic() - _t0, 1), "attempted": len(todo)}
 
 
 def market_state_touch():
@@ -1922,6 +2460,12 @@ def update_existing(symbols_limit=None, max_429=3, min_interval=0.05, cooldown_f
         # پنجرۀ [ih] آخرین کارِ سینک است، نه نخستین: پاسخِ سایت گاه چند دقیقه
         # دیر می‌آید (کشِ سردِ CDN) و نباید نوشتنِ تابلو را پشتِ خودش بیندازد.
         stats["tape_history"] = refresh_tape_history(conn)
+        # پنجرۀ اسلات‌محورِ خودِ دیدۀبان و [is5]/[is6] هم این‌جا می‌نشینند:
+        # پنج فیلترِ فایل `[ih][k]` را با شاخصِ می‌سنجند (نبودنش درِ سایت
+        # استثناست، نه صفر) و «پول هوشمند/کدبه‌کد» خطِ دوم و سومشان `[is6]`
+        # است — بی‌این دو، داوریِ ما با فیلترنویسِ سایت یکی نمی‌شود.
+        stats["tape_slots"] = refresh_tape_slots(conn)
+        stats["inst_value"] = sync_inst_value(conn)
     finally:
         conn.close()
     return stats
@@ -2108,9 +2652,29 @@ _TICK_SESSION_LOCK = __import__("threading").Lock()
 # می‌سازند — و سقفِ ۲۰:۰۰ برای پاتولوژیک؛ آخرینِ واقعیِ hEven سایت ~۱۶ است.
 TICK_QUIET_S = 600.0
 TICK_LISTEN_POLL_S = 60.0
+# سقفِ زمانِ یکِ درخواستِ تیک (connect, read). بی‌این، اتصالِ آویزانِ TSETMC حلقه
+# را چندِ دقیقه بلوکه می‌کند (سنجشِ زنده: ۹۴۵ ثانیه بی‌revision).
+TICK_TIMEOUT_S = (4.0, 12.0)
 _TICK_PREV_SIG = None
 _TICK_LAST_CHANGE = 0.0
 _TICK_LAST_PROBE = 0.0
+_TICK_STATS = {"ok": 0, "empty": 0, "slow_over_10s": 0, "last_s": 0.0, "max_s": 0.0}
+
+
+def tick_window_open(now_dt=None) -> bool:
+    """دربِ نوشتنِ تیک، یک‌جا: شنبه..چهارشنبه، ۰۸:۵۵ تا ۲۰:۰۰.
+
+    همان شرطی که `tick_live` اولِ کار می‌زند؛ بی‌تعریفِ مشترک، هر خوانندهٔ دیگر
+    (UIِ «وضعیت بازار»، سنجش‌ها، لاگِ Job) دربِ دومِ خودش را می‌پخت و با واقعیتِ
+    حلقه نمی‌خواند.
+
+    روز از ماژولِ تاریخ خوانده می‌شود و ساعت از `%H%M` — دقیقاً مثلِ دروازۀِ
+    پیشین. بی‌این تفکیک، گاردهایی که ساعتِ ساختگی می‌زنند (یکِ stubِ بی‌`weekday`
+    درِ `dev/market_tick_v1045.py` و `dev/market_hot_state_v1077.py`) می‌شکستند.
+    """
+    n = now_dt or datetime.datetime.now()
+    return datetime.date.today().weekday() not in (3, 4) \
+        and "0855" <= n.strftime("%H%M") < "2000"
 
 
 def _tick_session():
@@ -2165,7 +2729,7 @@ def tick_live(conn=None):
     wd = datetime.date.today().weekday()          # 3=پنجشنبه, 4=جمعه
     now_dt = datetime.datetime.now()
     hhmm = now_dt.strftime("%H%M")
-    if wd in (3, 4) or hhmm < "0855" or hhmm >= "2000":
+    if not tick_window_open(now_dt):
         return 0
     after_hours = hhmm >= "1230"
     import time as _t
@@ -2175,9 +2739,23 @@ def tick_live(conn=None):
     if listen and mono - _TICK_LAST_PROBE < TICK_LISTEN_POLL_S:
         return 0
     s = _tick_session()
-    mw_raw = polite_get(s, MW_URL, "marketwatch")
+    # سقفِ زمانِ یکِ تیک: `polite_get` بی‌این پارامتر تا ۹۰ ثانیه رویِ یکِ اتصالِ
+    # آویزان می‌نشیند (و Retryِ درونِ adapter سه بار تکرار می‌کند) — یعنی یکِ
+    # درخواستِ کند، حلقۀِ پنج‌ثانیه‌ای را چندِ دقیقه قفل می‌کند. سنجشِ زندهٔ
+    # ۱۴۰۵-۰۷-۱۸: revision از ۱۱:۰۶:۳۶ تا ۱۱:۲۲:۲۱ تکان نخورد (۹۴۵ ثانیه) درحالی‌که
+    # فرانت درست هر ۵ ثانیه می‌پرسید. تیک باید سریع ناامید شود و دورِ بعد امتحان
+    # کند، نه این‌که کلِ راهِ اعدادِ زنده را بلوکه کند.
+    mw_raw = polite_get(s, MW_URL, "marketwatch", timeout=TICK_TIMEOUT_S)
     if not mw_raw:
+        _TICK_STATS["empty"] += 1
         return 0
+    _req_s = _t.monotonic() - mono
+    _TICK_STATS["ok"] += 1
+    _TICK_STATS["last_s"] = round(_req_s, 2)
+    if _req_s > _TICK_STATS["max_s"]:
+        _TICK_STATS["max_s"] = round(_req_s, 2)
+    if _req_s > 10.0:
+        _TICK_STATS["slow_over_10s"] += 1
     _tick_observe(mw_raw, mono, listen)
     now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     today = int(datetime.date.today().strftime("%Y%m%d"))
@@ -2245,6 +2823,39 @@ def tick_live(conn=None):
     finally:
         if own:
             conn.close()
+
+
+def tick_health() -> dict:
+    """وضعیتِ حلقۀِ تیک — برایِ بخشِ «وضعیت بازار» و برایِ سنجشِ «چرا عدد عوض نشد».
+
+    سه چیزِ جدا اینجا خوانده می‌شوند، چون سه علتِ جدا دارند:
+      • خنک‌شدنِ ۴۲۹ (`cooldown_remaining_s`) ⇒ حلقه خواب است، داده نمی‌رسد
+      • گوش‌دادنِ پس ازِ دَه دقیقه سکوت (`listening`) ⇒ ریتمِ عمداً آرام
+      • بی‌تغییریِ خودِ تابلو (`since_change_s`) ⇒ چیزی برایِ نوشتن نیست
+    تا پیش از این هیچ‌کدام از این‌ها درِ UI دیده نمی‌شد، پس «تازه نبودن» همیشه
+    شکلِ یکِ ادعایِ مبهمِ «داده کهنه» داشت.
+    """
+    import time as _t
+    now = _t.monotonic()
+    p = getattr(_TICK_SESSION, "_polite", {}) if _TICK_SESSION is not None else {}
+    cd_left = max(0.0, float(p.get("cooldown", 0.0)) - now)
+    last_change = _TICK_LAST_CHANGE
+    last_probe = _TICK_LAST_PROBE
+    after_hours = datetime.datetime.now().strftime("%H%M") >= "1230"
+    return {
+        "cooldown_remaining_s": round(cd_left, 1),
+        "cooldown_level": int(p.get("cooldown_level", 0) or 0),
+        "listening": bool(last_change and after_hours
+                          and now - last_change > TICK_QUIET_S),
+        "since_change_s": round(now - last_change, 1) if last_change else None,
+        "since_probe_s": round(now - last_probe, 1) if last_probe else None,
+        "quiet_limit_s": TICK_QUIET_S,
+        "listen_poll_s": TICK_LISTEN_POLL_S,
+        "after_hours": after_hours,
+        "requests_open": tick_window_open(),
+        "cycle": dict(_TICK_STATS),
+        "timeout_s": TICK_TIMEOUT_S,
+    }
 
 
 def main():
@@ -2491,6 +3102,26 @@ def main():
     except Exception as e:      # noqa: BLE001 — پنجره نو نشد، همگام‌سازی نمی‌شکند
         print(f"  [tape-history] خطای غیرمنتظره: {type(e).__name__}: {e}")
 
+    # پنجرۀ اسلات‌محورِ خودِ دیدۀبان و [is5]/[is6]. این دو هم مثلِ [ih] درِ
+    # مسیرِ *سبک* (تیکِ تابلو) می‌دوند، نه فقط درِ سینکِ سنگینِ نماد‌ها:
+    # پنج فیلترِ فایل `[ih][k]` را با شاخصِ سایت می‌سنجند و «پول هوشمند/
+    # کدبه‌کد» خطِ دوم و سومشان `[is5]`/`[is6]` است. سنجشِ ۱۴۰۵-۰۷-۲۰:
+    # اتصالِ این دو تنها در `update_existing` باعث شد یک دورِ کاملِ `main()`
+    # بی‌هیچ‌کدام بگذرد (لاگِ `_audit/copy_market_tick.log` هیچ [tape-slots]
+    # نداشت) و داوری‌ها با همان پنجرۀ کهنه حساب شوند.
+    try:
+        r = refresh_tape_slots(conn)
+        if r.get("error"):
+            print(f"  [tape-slots] این دور نگرفت ({r['error']}) — پنجرۀ اسلاتِ قبلی ماند")
+    except Exception as e:      # noqa: BLE001
+        print(f"  [tape-slots] خطای غیرمنتظره: {type(e).__name__}: {e}")
+    try:
+        r = sync_inst_value(conn)
+        if r.get("error"):
+            print(f"  [inst-value] این دور نگرفت ({r['error']}) — [is6] بی‌داوری می‌ماند")
+    except Exception as e:      # noqa: BLE001
+        print(f"  [inst-value] خطای غیرمنتظره: {type(e).__name__}: {e}")
+
     # ── P0 — سه خانوادۀ دادهٔ canonical، هیچ‌کدام در حلقۀ ۹۰ ثانیه‌ای نیستند ──
     # `main()` هر ۹۰ ثانیه از app.py:232-246 صدا زده می‌شود، پس هر سه با
     # throttleِ روزانه‌شان می‌دوند: یک بار در روز برایِ رویدادها و وضعیت‌ها، و
@@ -2499,6 +3130,11 @@ def main():
     for _name, _fn, _every in (
             ("corporate-events", lambda: fetch_corporate_events(s, conn, now=now), 86400),
             ("state-notices", lambda: fetch_state_and_notices(s, conn, now=now), 86400),
+            # سقفِ روز دست‌نخورده: چهار تلاش × بودجۀ ۶۰تایی. چیزی که عوض شد
+            # *انتخابِ هدف* است (تازه‌ترین نشستِ کامل‌نشده) و پنجرۀ هر نشست درِ
+            # خودِ تابع — بی‌این، یک تلاشِ بی‌نتیجه رویِ «همین نشستِ باز» درِ
+            # ۰۹:۳۷ کلِ روز را قفل می‌کرد و آن نشست هرگز خوانده نمی‌شد
+            # (سنجشِ ۱۴۰۵-۰۷-۱۹: client_type ۱۵۹۳ ردیف، client_type_value صفر).
             ("client-values", lambda: refresh_client_type_values(conn, now=now),
              CTV_RETRY_S)):
         try:

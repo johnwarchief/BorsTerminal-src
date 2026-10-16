@@ -1,0 +1,787 @@
+{
+ "item": 1,
+ "started_at_local": "2026-10-10T13:55:19",
+ "samples": [
+  {
+   "t_s": 0,
+   "clock": "13:55:21",
+   "data_age": "نامعلوم",
+   "last_market_data": "گزارش نشده",
+   "market": "بسته",
+   "connection": "در راه",
+   "revision": "۰",
+   "chips": [
+    {
+     "label": "بازار",
+     "value": "بسته"
+    },
+    {
+     "label": "اتصال",
+     "value": "در راه"
+    },
+    {
+     "label": "آخرین دادهٔ بازار",
+     "value": "گزارش نشده"
+    },
+    {
+     "label": "عوض‌شدنِ عدد",
+     "value": "نامعلوم"
+    },
+    {
+     "label": "ویرایش",
+     "value": "۰"
+    }
+   ],
+   "panel_text": "وضعیت بازاربازاربستهاتصالدر راهآخرین دادهٔ بازارگزارش نشدهعوض‌شدنِ عددنامعلومویرایش۰",
+   "cooldown_chip": false,
+   "retry_btn": false,
+   "claims_liveness": false,
+   "data_age_title": "سنِ آخرینِ revisionِ دیده‌شده در همین مرورگر — «تازگی» یعنی همین، نه رسیدنِ پاسخ",
+   "last_data_title": "چرخۀ تیکِ سرور:  · ویرایش: ۰"
+  },
+  {
+   "t_s": 5,
+   "clock": "13:55:26",
+   "data_age": "نامعلوم",
+   "last_market_data": "گزارش نشده",
+   "market": "بسته",
+   "connection": "در راه",
+   "revision": "۰",
+   "chips": [
+    {
+     "label": "بازار",
+     "value": "بسته"
+    },
+    {
+     "label": "اتصال",
+     "value": "در راه"
+    },
+    {
+     "label": "آخرین دادهٔ بازار",
+     "value": "گزارش نشده"
+    },
+    {
+     "label": "عوض‌شدنِ عدد",
+     "value": "نامعلوم"
+    },
+    {
+     "label": "ویرایش",
+     "value": "۰"
+    }
+   ],
+   "panel_text": "وضعیت بازاربازاربستهاتصالدر راهآخرین دادهٔ بازارگزارش نشدهعوض‌شدنِ عددنامعلومویرایش۰",
+   "cooldown_chip": false,
+   "retry_btn": false,
+   "claims_liveness": false,
+   "data_age_title": "سنِ آخرینِ revisionِ دیده‌شده در همین مرورگر — «تازگی» یعنی همین، نه رسیدنِ پاسخ",
+   "last_data_title": "چرخۀ تیکِ سرور:  · ویرایش: ۰"
+  },
+  {
+   "t_s": 10,
+   "clock": "13:55:31",
+   "data_age": "نامعلوم",
+   "last_market_data": "گزارش نشده",
+   "market": "بسته",
+   "connection": "در راه",
+   "revision": "۰",
+   "chips": [
+    {
+     "label": "بازار",
+     "value": "بسته"
+    },
+    {
+     "label": "اتصال",
+     "value": "در راه"
+    },
+    {
+     "label": "آخرین دادهٔ بازار",
+     "value": "گزارش نشده"
+    },
+    {
+     "label": "عوض‌شدنِ عدد",
+     "value": "نامعلوم"
+    },
+    {
+     "label": "ویرایش",
+     "value": "۰"
+    }
+   ],
+   "panel_text": "وضعیت بازاربازاربستهاتصالدر راهآخرین دادهٔ بازارگزارش نشدهعوض‌شدنِ عددنامعلومویرایش۰",
+   "cooldown_chip": false,
+   "retry_btn": false,
+   "claims_liveness": false,
+   "data_age_title": "سنِ آخرینِ revisionِ دیده‌شده در همین مرورگر — «تازگی» یعنی همین، نه رسیدنِ پاسخ",
+   "last_data_title": "چرخۀ تیکِ سرور:  · ویرایش: ۰"
+  },
+  {
+   "t_s": 15,
+   "clock": "13:55:36",
+   "data_age": "نامعلوم",
+   "last_market_data": "گزارش نشده",
+   "market": "بسته",
+   "connection": "رسید",
+   "revision": "۰",
+   "chips": [
+    {
+     "label": "بازار",
+     "value": "بسته"
+    },
+    {
+     "label": "اتصال",
+     "value": "رسید"
+    },
+    {
+     "label": "آخرین دادهٔ بازار",
+     "value": "گزارش نشده"
+    },
+    {
+     "label": "عوض‌شدنِ عدد",
+     "value": "نامعلوم"
+    },
+    {
+     "label": "ویرایش",
+     "value": "۰"
+    }
+   ],
+   "panel_text": "وضعیت بازاربازاربستهاتصالرسیدآخرین دادهٔ بازارگزارش نشدهعوض‌شدنِ عددنامعلومویرایش۰",
+   "cooldown_chip": false,
+   "retry_btn": false,
+   "claims_liveness": false,
+   "data_age_title": "سنِ آخرینِ revisionِ دیده‌شده در همین مرورگر — «تازگی» یعنی همین، نه رسیدنِ پاسخ",
+   "last_data_title": "چرخۀ تیکِ سرور:  · ویرایش: ۰"
+  },
+  {
+   "t_s": 20,
+   "clock": "13:55:41",
+   "data_age": "نامعلوم",
+   "last_market_data": "گزارش نشده",
+   "market": "بسته",
+   "connection": "رسید",
+   "revision": "۰",
+   "chips": [
+    {
+     "label": "بازار",
+     "value": "بسته"
+    },
+    {
+     "label": "اتصال",
+     "value": "رسید"
+    },
+    {
+     "label": "آخرین دادهٔ بازار",
+     "value": "گزارش نشده"
+    },
+    {
+     "label": "عوض‌شدنِ عدد",
+     "value": "نامعلوم"
+    },
+    {
+     "label": "ویرایش",
+     "value": "۰"
+    }
+   ],
+   "panel_text": "وضعیت بازاربازاربستهاتصالرسیدآخرین دادهٔ بازارگزارش نشدهعوض‌شدنِ عددنامعلومویرایش۰",
+   "cooldown_chip": false,
+   "retry_btn": false,
+   "claims_liveness": false,
+   "data_age_title": "سنِ آخرینِ revisionِ دیده‌شده در همین مرورگر — «تازگی» یعنی همین، نه رسیدنِ پاسخ",
+   "last_data_title": "چرخۀ تیکِ سرور:  · ویرایش: ۰"
+  },
+  {
+   "t_s": 25,
+   "clock": "13:55:46",
+   "data_age": "نامعلوم",
+   "last_market_data": "گزارش نشده",
+   "market": "بسته",
+   "connection": "رسید",
+   "revision": "۰",
+   "chips": [
+    {
+     "label": "بازار",
+     "value": "بسته"
+    },
+    {
+     "label": "اتصال",
+     "value": "رسید"
+    },
+    {
+     "label": "آخرین دادهٔ بازار",
+     "value": "گزارش نشده"
+    },
+    {
+     "label": "عوض‌شدنِ عدد",
+     "value": "نامعلوم"
+    },
+    {
+     "label": "ویرایش",
+     "value": "۰"
+    }
+   ],
+   "panel_text": "وضعیت بازاربازاربستهاتصالرسیدآخرین دادهٔ بازارگزارش نشدهعوض‌شدنِ عددنامعلومویرایش۰",
+   "cooldown_chip": false,
+   "retry_btn": false,
+   "claims_liveness": false,
+   "data_age_title": "سنِ آخرینِ revisionِ دیده‌شده در همین مرورگر — «تازگی» یعنی همین، نه رسیدنِ پاسخ",
+   "last_data_title": "چرخۀ تیکِ سرور:  · ویرایش: ۰"
+  },
+  {
+   "t_s": 30,
+   "clock": "13:55:51",
+   "data_age": "نامعلوم",
+   "last_market_data": "گزارش نشده",
+   "market": "بسته",
+   "connection": "رسید",
+   "revision": "۰",
+   "chips": [
+    {
+     "label": "بازار",
+     "value": "بسته"
+    },
+    {
+     "label": "اتصال",
+     "value": "رسید"
+    },
+    {
+     "label": "آخرین دادهٔ بازار",
+     "value": "گزارش نشده"
+    },
+    {
+     "label": "عوض‌شدنِ عدد",
+     "value": "نامعلوم"
+    },
+    {
+     "label": "ویرایش",
+     "value": "۰"
+    }
+   ],
+   "panel_text": "وضعیت بازاربازاربستهاتصالرسیدآخرین دادهٔ بازارگزارش نشدهعوض‌شدنِ عددنامعلومویرایش۰",
+   "cooldown_chip": false,
+   "retry_btn": false,
+   "claims_liveness": false,
+   "data_age_title": "سنِ آخرینِ revisionِ دیده‌شده در همین مرورگر — «تازگی» یعنی همین، نه رسیدنِ پاسخ",
+   "last_data_title": "چرخۀ تیکِ سرور:  · ویرایش: ۰"
+  },
+  {
+   "t_s": 35,
+   "clock": "13:55:56",
+   "data_age": "نامعلوم",
+   "last_market_data": "گزارش نشده",
+   "market": "بسته",
+   "connection": "رسید",
+   "revision": "۰",
+   "chips": [
+    {
+     "label": "بازار",
+     "value": "بسته"
+    },
+    {
+     "label": "اتصال",
+     "value": "رسید"
+    },
+    {
+     "label": "آخرین دادهٔ بازار",
+     "value": "گزارش نشده"
+    },
+    {
+     "label": "عوض‌شدنِ عدد",
+     "value": "نامعلوم"
+    },
+    {
+     "label": "ویرایش",
+     "value": "۰"
+    }
+   ],
+   "panel_text": "وضعیت بازاربازاربستهاتصالرسیدآخرین دادهٔ بازارگزارش نشدهعوض‌شدنِ عددنامعلومویرایش۰",
+   "cooldown_chip": false,
+   "retry_btn": false,
+   "claims_liveness": false,
+   "data_age_title": "سنِ آخرینِ revisionِ دیده‌شده در همین مرورگر — «تازگی» یعنی همین، نه رسیدنِ پاسخ",
+   "last_data_title": "چرخۀ تیکِ سرور:  · ویرایش: ۰"
+  },
+  {
+   "t_s": 40,
+   "clock": "13:56:01",
+   "data_age": "نامعلوم",
+   "last_market_data": "گزارش نشده",
+   "market": "بسته",
+   "connection": "رسید",
+   "revision": "۰",
+   "chips": [
+    {
+     "label": "بازار",
+     "value": "بسته"
+    },
+    {
+     "label": "اتصال",
+     "value": "رسید"
+    },
+    {
+     "label": "آخرین دادهٔ بازار",
+     "value": "گزارش نشده"
+    },
+    {
+     "label": "عوض‌شدنِ عدد",
+     "value": "نامعلوم"
+    },
+    {
+     "label": "ویرایش",
+     "value": "۰"
+    }
+   ],
+   "panel_text": "وضعیت بازاربازاربستهاتصالرسیدآخرین دادهٔ بازارگزارش نشدهعوض‌شدنِ عددنامعلومویرایش۰",
+   "cooldown_chip": false,
+   "retry_btn": false,
+   "claims_liveness": false,
+   "data_age_title": "سنِ آخرینِ revisionِ دیده‌شده در همین مرورگر — «تازگی» یعنی همین، نه رسیدنِ پاسخ",
+   "last_data_title": "چرخۀ تیکِ سرور:  · ویرایش: ۰"
+  },
+  {
+   "t_s": 45,
+   "clock": "13:56:06",
+   "data_age": "نامعلوم",
+   "last_market_data": "گزارش نشده",
+   "market": "بسته",
+   "connection": "رسید",
+   "revision": "۰",
+   "chips": [
+    {
+     "label": "بازار",
+     "value": "بسته"
+    },
+    {
+     "label": "اتصال",
+     "value": "رسید"
+    },
+    {
+     "label": "آخرین دادهٔ بازار",
+     "value": "گزارش نشده"
+    },
+    {
+     "label": "عوض‌شدنِ عدد",
+     "value": "نامعلوم"
+    },
+    {
+     "label": "ویرایش",
+     "value": "۰"
+    }
+   ],
+   "panel_text": "وضعیت بازاربازاربستهاتصالرسیدآخرین دادهٔ بازارگزارش نشدهعوض‌شدنِ عددنامعلومویرایش۰",
+   "cooldown_chip": false,
+   "retry_btn": false,
+   "claims_liveness": false,
+   "data_age_title": "سنِ آخرینِ revisionِ دیده‌شده در همین مرورگر — «تازگی» یعنی همین، نه رسیدنِ پاسخ",
+   "last_data_title": "چرخۀ تیکِ سرور:  · ویرایش: ۰"
+  },
+  {
+   "t_s": 50,
+   "clock": "13:56:11",
+   "data_age": "نامعلوم",
+   "last_market_data": "گزارش نشده",
+   "market": "بسته",
+   "connection": "رسید",
+   "revision": "۰",
+   "chips": [
+    {
+     "label": "بازار",
+     "value": "بسته"
+    },
+    {
+     "label": "اتصال",
+     "value": "رسید"
+    },
+    {
+     "label": "آخرین دادهٔ بازار",
+     "value": "گزارش نشده"
+    },
+    {
+     "label": "عوض‌شدنِ عدد",
+     "value": "نامعلوم"
+    },
+    {
+     "label": "ویرایش",
+     "value": "۰"
+    }
+   ],
+   "panel_text": "وضعیت بازاربازاربستهاتصالرسیدآخرین دادهٔ بازارگزارش نشدهعوض‌شدنِ عددنامعلومویرایش۰",
+   "cooldown_chip": false,
+   "retry_btn": false,
+   "claims_liveness": false,
+   "data_age_title": "سنِ آخرینِ revisionِ دیده‌شده در همین مرورگر — «تازگی» یعنی همین، نه رسیدنِ پاسخ",
+   "last_data_title": "چرخۀ تیکِ سرور:  · ویرایش: ۰"
+  },
+  {
+   "t_s": 55,
+   "clock": "13:56:16",
+   "data_age": "نامعلوم",
+   "last_market_data": "گزارش نشده",
+   "market": "بسته",
+   "connection": "رسید",
+   "revision": "۰",
+   "chips": [
+    {
+     "label": "بازار",
+     "value": "بسته"
+    },
+    {
+     "label": "اتصال",
+     "value": "رسید"
+    },
+    {
+     "label": "آخرین دادهٔ بازار",
+     "value": "گزارش نشده"
+    },
+    {
+     "label": "عوض‌شدنِ عدد",
+     "value": "نامعلوم"
+    },
+    {
+     "label": "ویرایش",
+     "value": "۰"
+    }
+   ],
+   "panel_text": "وضعیت بازاربازاربستهاتصالرسیدآخرین دادهٔ بازارگزارش نشدهعوض‌شدنِ عددنامعلومویرایش۰",
+   "cooldown_chip": false,
+   "retry_btn": false,
+   "claims_liveness": false,
+   "data_age_title": "سنِ آخرینِ revisionِ دیده‌شده در همین مرورگر — «تازگی» یعنی همین، نه رسیدنِ پاسخ",
+   "last_data_title": "چرخۀ تیکِ سرور:  · ویرایش: ۰"
+  },
+  {
+   "t_s": 60,
+   "clock": "13:56:21",
+   "data_age": "نامعلوم",
+   "last_market_data": "گزارش نشده",
+   "market": "بسته",
+   "connection": "رسید",
+   "revision": "۰",
+   "chips": [
+    {
+     "label": "بازار",
+     "value": "بسته"
+    },
+    {
+     "label": "اتصال",
+     "value": "رسید"
+    },
+    {
+     "label": "آخرین دادهٔ بازار",
+     "value": "گزارش نشده"
+    },
+    {
+     "label": "عوض‌شدنِ عدد",
+     "value": "نامعلوم"
+    },
+    {
+     "label": "ویرایش",
+     "value": "۰"
+    }
+   ],
+   "panel_text": "وضعیت بازاربازاربستهاتصالرسیدآخرین دادهٔ بازارگزارش نشدهعوض‌شدنِ عددنامعلومویرایش۰",
+   "cooldown_chip": false,
+   "retry_btn": false,
+   "claims_liveness": false,
+   "data_age_title": "سنِ آخرینِ revisionِ دیده‌شده در همین مرورگر — «تازگی» یعنی همین، نه رسیدنِ پاسخ",
+   "last_data_title": "چرخۀ تیکِ سرور:  · ویرایش: ۰"
+  },
+  {
+   "t_s": 65,
+   "clock": "13:56:26",
+   "data_age": "نامعلوم",
+   "last_market_data": "گزارش نشده",
+   "market": "بسته",
+   "connection": "رسید",
+   "revision": "۰",
+   "chips": [
+    {
+     "label": "بازار",
+     "value": "بسته"
+    },
+    {
+     "label": "اتصال",
+     "value": "رسید"
+    },
+    {
+     "label": "آخرین دادهٔ بازار",
+     "value": "گزارش نشده"
+    },
+    {
+     "label": "عوض‌شدنِ عدد",
+     "value": "نامعلوم"
+    },
+    {
+     "label": "ویرایش",
+     "value": "۰"
+    }
+   ],
+   "panel_text": "وضعیت بازاربازاربستهاتصالرسیدآخرین دادهٔ بازارگزارش نشدهعوض‌شدنِ عددنامعلومویرایش۰",
+   "cooldown_chip": false,
+   "retry_btn": false,
+   "claims_liveness": false,
+   "data_age_title": "سنِ آخرینِ revisionِ دیده‌شده در همین مرورگر — «تازگی» یعنی همین، نه رسیدنِ پاسخ",
+   "last_data_title": "چرخۀ تیکِ سرور:  · ویرایش: ۰"
+  },
+  {
+   "t_s": 70,
+   "clock": "13:56:31",
+   "data_age": "نامعلوم",
+   "last_market_data": "گزارش نشده",
+   "market": "بسته",
+   "connection": "رسید",
+   "revision": "۰",
+   "chips": [
+    {
+     "label": "بازار",
+     "value": "بسته"
+    },
+    {
+     "label": "اتصال",
+     "value": "رسید"
+    },
+    {
+     "label": "آخرین دادهٔ بازار",
+     "value": "گزارش نشده"
+    },
+    {
+     "label": "عوض‌شدنِ عدد",
+     "value": "نامعلوم"
+    },
+    {
+     "label": "ویرایش",
+     "value": "۰"
+    }
+   ],
+   "panel_text": "وضعیت بازاربازاربستهاتصالرسیدآخرین دادهٔ بازارگزارش نشدهعوض‌شدنِ عددنامعلومویرایش۰",
+   "cooldown_chip": false,
+   "retry_btn": false,
+   "claims_liveness": false,
+   "data_age_title": "سنِ آخرینِ revisionِ دیده‌شده در همین مرورگر — «تازگی» یعنی همین، نه رسیدنِ پاسخ",
+   "last_data_title": "چرخۀ تیکِ سرور:  · ویرایش: ۰"
+  },
+  {
+   "t_s": 75,
+   "clock": "13:56:36",
+   "data_age": "نامعلوم",
+   "last_market_data": "گزارش نشده",
+   "market": "بسته",
+   "connection": "رسید",
+   "revision": "۰",
+   "chips": [
+    {
+     "label": "بازار",
+     "value": "بسته"
+    },
+    {
+     "label": "اتصال",
+     "value": "رسید"
+    },
+    {
+     "label": "آخرین دادهٔ بازار",
+     "value": "گزارش نشده"
+    },
+    {
+     "label": "عوض‌شدنِ عدد",
+     "value": "نامعلوم"
+    },
+    {
+     "label": "ویرایش",
+     "value": "۰"
+    }
+   ],
+   "panel_text": "وضعیت بازاربازاربستهاتصالرسیدآخرین دادهٔ بازارگزارش نشدهعوض‌شدنِ عددنامعلومویرایش۰",
+   "cooldown_chip": false,
+   "retry_btn": false,
+   "claims_liveness": false,
+   "data_age_title": "سنِ آخرینِ revisionِ دیده‌شده در همین مرورگر — «تازگی» یعنی همین، نه رسیدنِ پاسخ",
+   "last_data_title": "چرخۀ تیکِ سرور:  · ویرایش: ۰"
+  },
+  {
+   "t_s": 80,
+   "clock": "13:56:41",
+   "data_age": "نامعلوم",
+   "last_market_data": "گزارش نشده",
+   "market": "بسته",
+   "connection": "رسید",
+   "revision": "۰",
+   "chips": [
+    {
+     "label": "بازار",
+     "value": "بسته"
+    },
+    {
+     "label": "اتصال",
+     "value": "رسید"
+    },
+    {
+     "label": "آخرین دادهٔ بازار",
+     "value": "گزارش نشده"
+    },
+    {
+     "label": "عوض‌شدنِ عدد",
+     "value": "نامعلوم"
+    },
+    {
+     "label": "ویرایش",
+     "value": "۰"
+    }
+   ],
+   "panel_text": "وضعیت بازاربازاربستهاتصالرسیدآخرین دادهٔ بازارگزارش نشدهعوض‌شدنِ عددنامعلومویرایش۰",
+   "cooldown_chip": false,
+   "retry_btn": false,
+   "claims_liveness": false,
+   "data_age_title": "سنِ آخرینِ revisionِ دیده‌شده در همین مرورگر — «تازگی» یعنی همین، نه رسیدنِ پاسخ",
+   "last_data_title": "چرخۀ تیکِ سرور:  · ویرایش: ۰"
+  },
+  {
+   "t_s": 85,
+   "clock": "13:56:46",
+   "data_age": "نامعلوم",
+   "last_market_data": "گزارش نشده",
+   "market": "بسته",
+   "connection": "رسید",
+   "revision": "۰",
+   "chips": [
+    {
+     "label": "بازار",
+     "value": "بسته"
+    },
+    {
+     "label": "اتصال",
+     "value": "رسید"
+    },
+    {
+     "label": "آخرین دادهٔ بازار",
+     "value": "گزارش نشده"
+    },
+    {
+     "label": "عوض‌شدنِ عدد",
+     "value": "نامعلوم"
+    },
+    {
+     "label": "ویرایش",
+     "value": "۰"
+    }
+   ],
+   "panel_text": "وضعیت بازاربازاربستهاتصالرسیدآخرین دادهٔ بازارگزارش نشدهعوض‌شدنِ عددنامعلومویرایش۰",
+   "cooldown_chip": false,
+   "retry_btn": false,
+   "claims_liveness": false,
+   "data_age_title": "سنِ آخرینِ revisionِ دیده‌شده در همین مرورگر — «تازگی» یعنی همین، نه رسیدنِ پاسخ",
+   "last_data_title": "چرخۀ تیکِ سرور:  · ویرایش: ۰"
+  },
+  {
+   "t_s": 90,
+   "clock": "13:56:51",
+   "data_age": "نامعلوم",
+   "last_market_data": "گزارش نشده",
+   "market": "بسته",
+   "connection": "رسید",
+   "revision": "۰",
+   "chips": [
+    {
+     "label": "بازار",
+     "value": "بسته"
+    },
+    {
+     "label": "اتصال",
+     "value": "رسید"
+    },
+    {
+     "label": "آخرین دادهٔ بازار",
+     "value": "گزارش نشده"
+    },
+    {
+     "label": "عوض‌شدنِ عدد",
+     "value": "نامعلوم"
+    },
+    {
+     "label": "ویرایش",
+     "value": "۰"
+    }
+   ],
+   "panel_text": "وضعیت بازاربازاربستهاتصالرسیدآخرین دادهٔ بازارگزارش نشدهعوض‌شدنِ عددنامعلومویرایش۰",
+   "cooldown_chip": false,
+   "retry_btn": false,
+   "claims_liveness": false,
+   "data_age_title": "سنِ آخرینِ revisionِ دیده‌شده در همین مرورگر — «تازگی» یعنی همین، نه رسیدنِ پاسخ",
+   "last_data_title": "چرخۀ تیکِ سرور:  · ویرایش: ۰"
+  }
+ ],
+ "console_errors": [],
+ "bad_responses": [],
+ "notes": [],
+ "href": "http://127.0.0.1:8002/#/market",
+ "body_head": "ب ترمینال بورس FTS v2.1 فضای تحلیل تابلوخوانی/بازار تکنیکال بنیادی غربالگری FTS استراتژی FTS درخت استراتژی سرمایه و دارایی مدیریت پرتفوی ⚙ admin خروج ⎋ 🚀 آپدیت بازار بسته — تابلوی آخرینِ نشست تابلوخو",
+ "error_boundary": false,
+ "expanded_text": "وضعیت بازاربازاربستهاتصالرسیدآخرین دادهٔ بازارگزارش نشدهعوض‌شدنِ عددنامعلومویرایش۰پنجره‌ها (از بک‌اند)معاملۀ تابلو: بستهپنجرۀ سینکِ نبض: بستهنوشتنِ تیک: فعالحلقۀ تیکچرخه‌ها: ۰ · بدونِ تغییر: ۰مدتِ آخرین چرخه: ۰ ثانیهگوش‌دادن: نه · بی‌تغییری: —درخواست‌های خنک‌شده: ۰ · آویزان بیش از ۱۰s: ۰جهانِ نمادهاکلِ تابلو۵۸۹۰در حالِ معامله۰مظنه بی‌معامله۰بدونِ معاملۀ اخیر۰متوقف۰دادهٔ کهنه۰نامعلوم۰بازار بسته۵۸۹۰واجدِ غربالگری۰ردیفِ تکراری۲مشاهده در ویرایشِ ۰",
+ "live_stats": {
+  "status": "success",
+  "data": {
+   "cycles": 0,
+   "rows_seen": 0,
+   "rows_written": 0,
+   "nochange_cycles": 0,
+   "last_cycle_s": 0,
+   "last_changed": 0,
+   "started_at": 1791627572.3251998,
+   "revision": 0,
+   "sync_count": 0,
+   "session_day": 0,
+   "symbols": 0,
+   "full_rows": 0,
+   "patched": 0,
+   "journal": 0,
+   "subscribed": [],
+   "last_cycle_at": "",
+   "board_cache": true,
+   "board_rows": 5892,
+   "delta_mirror_rows": 5892,
+   "window": {
+    "market_open": false,
+    "sync_window": false,
+    "tick_writes": true,
+    "source": "backend"
+   },
+   "tick": {
+    "cooldown_remaining_s": 0,
+    "cooldown_level": 0,
+    "listening": false,
+    "since_change_s": null,
+    "since_probe_s": null,
+    "quiet_limit_s": 600,
+    "listen_poll_s": 60,
+    "after_hours": true,
+    "requests_open": true,
+    "cycle": {
+     "ok": 0,
+     "empty": 0,
+     "slow_over_10s": 0,
+     "last_s": 0,
+     "max_s": 0
+    },
+    "timeout_s": [
+     4,
+     12
+    ]
+   },
+   "universe": {
+    "at": 1791627887.4272382,
+    "counts": {
+     "total": 5890,
+     "eligible": 0,
+     "trading": 0,
+     "quote": 0,
+     "no_trade": 0,
+     "stale": 0,
+     "suspended": 0,
+     "unknown": 0,
+     "duplicate_rows": 2,
+     "market_closed": 5890
+    },
+    "observed_rows": 5890,
+    "market_open": false,
+    "revision": 0
+   }
+  }
+ },
+ "ended_at_local": "2026-10-10T13:56:53"
+}

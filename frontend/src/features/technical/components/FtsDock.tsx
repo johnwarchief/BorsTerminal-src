@@ -18,7 +18,7 @@ export function FtsDock({ tabs, defaultOpen = false }: { tabs: DockTab[]; defaul
         open ? 'h-[32%] min-h-[180px]' : 'h-7'
       }`}
     >
-      <div className="flex h-7 shrink-0 items-center gap-0.5 px-1" role="tablist" aria-label="داک پایین چارت">
+      <div className="flex h-7 shrink-0 items-center gap-0.5 px-1" role="tablist" aria-label="پنل پایین نمودار">
         <button
           type="button"
           data-testid="fts-dock-toggle"

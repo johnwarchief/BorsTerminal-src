@@ -5,6 +5,8 @@ import type { MarketRow } from '@shared/types/marketRow';
 import { fmtPct, toFaDigits } from '@shared/lib/fmt';
 import { Badge } from '@shared/components/Badge';
 import { buyerPowerRatio, detectClockPattern, detectSuspiciousVolume } from '../lib/tapeMath';
+import { tapeFilterVerdict } from '../lib/tapeAlgorithms';
+import { useTapeStore } from '../stores/tapeStore';
 import { STRONG_HOUR_LABEL, detectStrongHour } from '../lib/tapePatterns';
 
 const MAX_ITEMS = 15;
@@ -36,10 +38,16 @@ export function SuspiciousPanel({
   /** زیرمجموعه بخش‌های قابل نمایش؛ پیش‌فرض هر سه (ساعت/حجم مشکوک/کف‌روبی) */
   sections?: SuspSection[];
 }) {
+  /** عضویت از همان داوریِ canonicalِ چیپ/ستون (`tapeFilterVerdict` + تنظیمِ کاربر)
+   *  می‌آید، نه از بااجرای فرمولِ ثابتِ جدا. `detectClockPattern/detectSuspiciousVolume`
+   *  فقط برایِ عددِ مرتب‌سازی/نمایش نگه داشته می‌شوند، نه داوری (#M2.3). */
+  const cfg = useTapeStore((s) => s.tapeFilterConfig);
+
   const clocks = useMemo<Item[]>(() => {
     const out: Item[] = [];
     for (const r of rows) {
       if (!r.symbol) continue;
+      if (!tapeFilterVerdict(r, 'f_clock', cfg)) continue;
       const c = detectClockPattern(r);
       if (c.hit && c.gap != null) {
         out.push({
@@ -53,12 +61,13 @@ export function SuspiciousPanel({
       }
     }
     return out.sort((a, b) => b.metric - a.metric).slice(0, MAX_ITEMS);
-  }, [rows]);
+  }, [rows, cfg]);
 
   const susps = useMemo<Item[]>(() => {
     const out: Item[] = [];
     for (const r of rows) {
       if (!r.symbol) continue;
+      if (!tapeFilterVerdict(r, 'f_susp', cfg)) continue;
       const s = detectSuspiciousVolume(r);
       if (s.hit && s.multiple != null) {
         out.push({
@@ -72,13 +81,15 @@ export function SuspiciousPanel({
       }
     }
     return out.sort((a, b) => b.metric - a.metric).slice(0, MAX_ITEMS);
-  }, [rows]);
+  }, [rows, cfg]);
 
-  /** کف‌روبی: ردیف‌های f_roobi از همان فید تابلو (فیلتر بک‌اند، نه محاسبهٔ مجدد) */
+  /** کف‌روبی: همان داوریِ canonical (perچمِ بک‌اند یا فرمولِ تنظیم‌شده، هرچه
+   *  `tapeFilterVerdict` بگوید) — نه خواندنِ خامِ `f_roobi` که تنظیمِ کاربر را رد می‌کرد. */
   const roobis = useMemo<Item[]>(() => {
     const out: Item[] = [];
     for (const r of rows) {
-      if (!r.symbol || !r.f_roobi) continue;
+      if (!r.symbol) continue;
+      if (!tapeFilterVerdict(r, 'f_roobi', cfg)) continue;
       out.push({
         symbol: r.symbol,
         name: r.name ?? '',
@@ -90,7 +101,7 @@ export function SuspiciousPanel({
       });
     }
     return out.sort((a, b) => a.metric - b.metric).slice(0, MAX_ITEMS);
-  }, [rows]);
+  }, [rows, cfg]);
 
   const section = (
     title: string,

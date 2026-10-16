@@ -28,7 +28,8 @@ CRITICAL = ("growth_min", "margin_min", "margin_optimal", "sales_to_mcap_min",
             "profit_potential_min", "eps_years", "industry_mode",
             "v10_sales_to_mcap_min", "v10_potential_min", "v10_margin_min",
             "v10_margin_ideal", "v10_eps_years",
-            "v10_inflation_basis")
+            "v10_inflation_basis", "hourglass_rsi_period",
+            "hourglass_rsi_oversold", "hourglass_ma52_position")
 
 # «همهٔ صنایعِ دستوری» در کشوی تنظیمات فهرستِ سخت‌گیرانه‌تری نسبت به پیش‌فرضِ
 # سرور می‌فرستد: سرور دارو/غذا را در فهرست وتو ندارد چون استثنای v2.1 با گیتِ

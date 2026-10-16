@@ -68,7 +68,10 @@ def get_selection_symbols(q: str = "", limit: int = 40):
         return {"status": "error", "message": str(e)[:200], "data": []}
     rows = []
     try:
-        # فیلترِ سمتِ SQL با norm_fa (همان تابعِ نوشتارِ یکسانِ جدولِ بازار):
+        # ستونِ **نماد** با کلیدِ هویت (`sym_key` = لایۀ `symbol_identity`) و ستونِ
+        # **نام** با `norm_fa` سنجیده می‌شود؛ دو قاعده، دو چیزِ different: هویتِ
+        # ابزار یک کلید دارد، مقایسۀ متنِ توصیفی یک نرمال‌سازِ نوشتاری. پیش از این
+        # اینجا چهارمین تعریفِ هویت بود (زنجیرۀ نوشتارِ مخصوصِ جعبۀ جست‌وجو).
         # بی‌فیلتر، هر کلیدواژه کلِ instruments را ورق می‌زد.
         for sym, name, sector, ptype, p_last, p_close in conn.execute(
             """SELECT i.l_val18, i.l_val30, i.sector_name, i.paper_type,
@@ -78,8 +81,9 @@ def get_selection_symbols(q: str = "", limit: int = 40):
                         ON m.ins_code = i.ins_code
                        AND m.d_even = (SELECT MAX(d_even) FROM market_watch)
                 WHERE i.l_val18 IS NOT NULL AND i.l_val18 <> ''
-                  AND (instr(norm_fa(i.l_val18), ?) > 0 OR instr(norm_fa(i.l_val30), ?) > 0)
-                ORDER BY length(norm_fa(i.l_val18)), i.l_val18
+                  AND (instr(sym_key(i.l_val18), sym_key(?)) > 0
+                       OR instr(norm_fa(i.l_val30), ?) > 0)
+                ORDER BY length(sym_key(i.l_val18)), i.l_val18
                 LIMIT ?""", (n_term, n_term, cap * 4)):
             cls, kind = _mstat.classify(ptype, name or "", sym or "", sector or "")
             # اختیار/اوراق/حق‌تقدم داراییِ قابل‌نگهداری در سبدِ هدف نیستند؛
@@ -231,7 +235,8 @@ def post_selection_decision(payload: dict = None):
     به حالت «بررسی‌نشده» برگردد (به‌جای نگه‌داشتن ردیف بی‌اثر).
     """
     if not payload:
-        return {"status": "error", "message": "بدون داده"}
+        return {"status": "error",
+                "message": "بدنهٔ درخواست خالی است — کلیدهای symbol و status لازم‌اند"}
     symbol = str(payload.get("symbol") or "").strip()
     if not symbol:
         return {"status": "error", "message": "نماد ارسال نشده"}
@@ -269,7 +274,7 @@ def post_selection_decision(payload: dict = None):
     try:
         conn = get_user_db()
         try:
-            _pred, _params = sym_pred("symbol", symbol)
+            _pred, _params = sym_pred(conn, "symbol", symbol, "board")
             if status == "pending":
                 conn.execute(f"DELETE FROM selection_decisions WHERE {_pred}", _params)
             else:
@@ -317,7 +322,7 @@ def delete_selection_decision(symbol: str):
     try:
         conn = get_user_db()
         try:
-            _pred, _params = sym_pred("symbol", symbol)
+            _pred, _params = sym_pred(conn, "symbol", symbol, "board")
             cur = conn.execute(f"DELETE FROM selection_decisions WHERE {_pred}", _params)
             conn.commit()
             n = cur.rowcount

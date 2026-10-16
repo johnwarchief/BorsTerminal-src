@@ -1,0 +1,961 @@
+{
+  "1366": {
+    "viewport": {
+      "width": 1366,
+      "height": 768
+    },
+    "tag": "1366",
+    "cases": {
+      "wide": {
+        "symbol": "وسپهر",
+        "dom": {
+          "symbol": "وسپهر",
+          "heads": {
+            "buy_cols": "تعدادحجمقیمت",
+            "sell_cols": "تعدادحجمقیمت",
+            "buy_label": "تقاضا",
+            "sell_label": "عرضه"
+          },
+          "cells": {
+            "buy1": {
+              "text": "۳۳۸٬۳۱۹۴٬۹۹۰",
+              "state": "live",
+              "parts": [
+                "",
+                "۳",
+                "۳۸٬۳۱۹",
+                "۴٬۹۹۰"
+              ]
+            },
+            "buy2": {
+              "text": "۶۲۱۶٬۷۱۹۴٬۹۸۰",
+              "state": "live",
+              "parts": [
+                "",
+                "۶",
+                "۲۱۶٬۷۱۹",
+                "۴٬۹۸۰"
+              ]
+            },
+            "buy3": {
+              "text": "۱۸۴٬۹۱۸٬۸۶۴۴٬۹۷۰",
+              "state": "live",
+              "parts": [
+                "",
+                "۱۸",
+                "۴٬۹۱۸٬۸۶۴",
+                "۴٬۹۷۰"
+              ]
+            },
+            "buy4": {
+              "text": "۲۳۴٬۵۶۸٬۴۸۴۴٬۹۶۰",
+              "state": "live",
+              "parts": [
+                "",
+                "۲۳",
+                "۴٬۵۶۸٬۴۸۴",
+                "۴٬۹۶۰"
+              ]
+            },
+            "buy5": {
+              "text": "۴۱۰٬۷۰۰۴٬۹۵۰",
+              "state": "live",
+              "parts": [
+                "",
+                "۴",
+                "۱۰٬۷۰۰",
+                "۴٬۹۵۰"
+              ]
+            },
+            "sell1": {
+              "text": "۱۲٬۷۳۶۵٬۰۰۰",
+              "state": "live",
+              "parts": [
+                "",
+                "۱",
+                "۲٬۷۳۶",
+                "۵٬۰۰۰"
+              ]
+            },
+            "sell2": {
+              "text": "۱۲۱٬۲۲۰٬۹۸۵۵٬۰۲۰",
+              "state": "live",
+              "parts": [
+                "",
+                "۱۲",
+                "۱٬۲۲۰٬۹۸۵",
+                "۵٬۰۲۰"
+              ]
+            },
+            "sell3": {
+              "text": "۱۰۱۲۰٬۶۵۲۵٬۰۳۰",
+              "state": "live",
+              "parts": [
+                "",
+                "۱۰",
+                "۱۲۰٬۶۵۲",
+                "۵٬۰۳۰"
+              ]
+            },
+            "sell4": {
+              "text": "۱۵۳۶۷٬۰۷۷۵٬۰۴۰",
+              "state": "live",
+              "parts": [
+                "",
+                "۱۵",
+                "۳۶۷٬۰۷۷",
+                "۵٬۰۴۰"
+              ]
+            },
+            "sell5": {
+              "text": "۱۱۲۴۷٬۲۰۹۵٬۰۵۰",
+              "state": "live",
+              "parts": [
+                "",
+                "۱۱",
+                "۲۴۷٬۲۰۹",
+                "۵٬۰۵۰"
+              ]
+            }
+          },
+          "totals": "جمعِ تقاضا۹٬۹۰۵٬۸۸۹ (۵۵ سفارش)جمعِ عرضه۲٬۴۹۸٬۵۶۴ (۶۱ سفارش)",
+          "candle": {
+            "text": "اول ۵٬۱۰۰ · بیشینه ۵٬۱۰۰ · کمینه ۴٬۹۷۰ · آخرین ۵٬۰۴۰کندلِ امروزاول۵٬۱۰۰بیش۵٬۱۰۰کم۴٬۹۷۰آخرین۵٬۰۴۰",
+            "state": "down"
+          },
+          "glyphState": "down",
+          "candleAboveRows": true,
+          "panelBottom": 596,
+          "overflowX": 0
+        },
+        "api_levels": 5,
+        "api_first_level": {
+          "buy_px": 4990,
+          "buy_vol": 38319,
+          "buy_cnt": 3,
+          "sell_px": 5000,
+          "sell_vol": 2736,
+          "sell_cnt": 1
+        },
+        "board_prices": {
+          "p_first": 5100,
+          "p_max": 5100,
+          "p_min": 4970,
+          "p_last": 5040
+        }
+      },
+      "few": {
+        "symbol": "طجار9018",
+        "dom": {
+          "symbol": "طجار9018",
+          "heads": {
+            "buy_cols": "تعدادحجمقیمت",
+            "sell_cols": "تعدادحجمقیمت",
+            "buy_label": "تقاضا",
+            "sell_label": "عرضه"
+          },
+          "cells": {
+            "buy1": {
+              "text": "۳۳٬۰۰۰۱",
+              "state": "live",
+              "parts": [
+                "",
+                "۳",
+                "۳٬۰۰۰",
+                "۱"
+              ]
+            },
+            "buy2": {
+              "text": "———",
+              "state": "no-row",
+              "parts": [
+                "—",
+                "—",
+                "—"
+              ]
+            },
+            "buy3": {
+              "text": "———",
+              "state": "no-row",
+              "parts": [
+                "—",
+                "—",
+                "—"
+              ]
+            },
+            "buy4": {
+              "text": "———",
+              "state": "no-row",
+              "parts": [
+                "—",
+                "—",
+                "—"
+              ]
+            },
+            "buy5": {
+              "text": "———",
+              "state": "no-row",
+              "parts": [
+                "—",
+                "—",
+                "—"
+              ]
+            },
+            "sell1": {
+              "text": "———",
+              "state": "empty",
+              "parts": [
+                "—",
+                "—",
+                "—"
+              ]
+            },
+            "sell2": {
+              "text": "———",
+              "state": "no-row",
+              "parts": [
+                "—",
+                "—",
+                "—"
+              ]
+            },
+            "sell3": {
+              "text": "———",
+              "state": "no-row",
+              "parts": [
+                "—",
+                "—",
+                "—"
+              ]
+            },
+            "sell4": {
+              "text": "———",
+              "state": "no-row",
+              "parts": [
+                "—",
+                "—",
+                "—"
+              ]
+            },
+            "sell5": {
+              "text": "———",
+              "state": "no-row",
+              "parts": [
+                "—",
+                "—",
+                "—"
+              ]
+            }
+          },
+          "totals": "جمعِ تقاضا۳٬۰۰۰ (۳ سفارش)جمعِ عرضه۰ (۰ سفارش)",
+          "candle": {
+            "text": "—کندلِ امروزاول—بیش—کم—آخرین۱",
+            "state": "incomplete"
+          },
+          "glyphState": "incomplete",
+          "candleAboveRows": true,
+          "panelBottom": 897,
+          "overflowX": 0
+        },
+        "api_levels": 1,
+        "api_first_level": {
+          "buy_px": 1,
+          "buy_vol": 3000,
+          "buy_cnt": 3,
+          "sell_px": 0,
+          "sell_vol": 0,
+          "sell_cnt": 0
+        },
+        "board_prices": {
+          "p_first": 0,
+          "p_max": 0,
+          "p_min": 0,
+          "p_last": 1
+        }
+      },
+      "flat": {
+        "symbol": "تاصيكو",
+        "dom": {
+          "symbol": "تاصيكو",
+          "heads": {
+            "buy_cols": "تعدادحجمقیمت",
+            "sell_cols": "تعدادحجمقیمت",
+            "buy_label": "تقاضا",
+            "sell_label": "عرضه"
+          },
+          "cells": {
+            "buy1": {
+              "text": "۹۷۱۳۱۷۳٬۱۶۹٬۱۷۶۴۲٬۴۹۰",
+              "state": "live",
+              "parts": [
+                "",
+                "۹۷۱۳",
+                "۱۷۳٬۱۶۹٬۱۷۶",
+                "۴۲٬۴۹۰"
+              ]
+            },
+            "buy2": {
+              "text": "۱۹۲۰۱٬۲۲۳۴۲٬۴۸۰",
+              "state": "live",
+              "parts": [
+                "",
+                "۱۹",
+                "۲۰۱٬۲۲۳",
+                "۴۲٬۴۸۰"
+              ]
+            },
+            "buy3": {
+              "text": "۲۳۰٬۱۲۰۴۲٬۴۷۰",
+              "state": "live",
+              "parts": [
+                "",
+                "۲",
+                "۳۰٬۱۲۰",
+                "۴۲٬۴۷۰"
+              ]
+            },
+            "buy4": {
+              "text": "۳۳۲٬۴۴۴۴۲٬۴۶۰",
+              "state": "live",
+              "parts": [
+                "",
+                "۳",
+                "۳۲٬۴۴۴",
+                "۴۲٬۴۶۰"
+              ]
+            },
+            "buy5": {
+              "text": "۵۶٬۳۶۱۴۲٬۴۲۰",
+              "state": "live",
+              "parts": [
+                "",
+                "۵",
+                "۶٬۳۶۱",
+                "۴۲٬۴۲۰"
+              ]
+            },
+            "sell1": {
+              "text": "———",
+              "state": "empty",
+              "parts": [
+                "—",
+                "—",
+                "—"
+              ]
+            },
+            "sell2": {
+              "text": "———",
+              "state": "empty",
+              "parts": [
+                "—",
+                "—",
+                "—"
+              ]
+            },
+            "sell3": {
+              "text": "———",
+              "state": "empty",
+              "parts": [
+                "—",
+                "—",
+                "—"
+              ]
+            },
+            "sell4": {
+              "text": "———",
+              "state": "empty",
+              "parts": [
+                "—",
+                "—",
+                "—"
+              ]
+            },
+            "sell5": {
+              "text": "———",
+              "state": "empty",
+              "parts": [
+                "—",
+                "—",
+                "—"
+              ]
+            }
+          },
+          "totals": "جمعِ تقاضا۰ (۰ سفارش)جمعِ عرضه۰ (۰ سفارش)",
+          "candle": {
+            "text": "اول ۴۲٬۴۹۰ · بیشینه ۴۲٬۴۹۰ · کمینه ۴۲٬۴۹۰ · آخرین ۴۲٬۴۹۰کندلِ امروزاول۴۲٬۴۹۰بیش۴۲٬۴۹۰کم۴۲٬۴۹۰آخرین۴۲٬۴۹۰",
+            "state": "flat"
+          },
+          "glyphState": "flat",
+          "candleAboveRows": true,
+          "panelBottom": 596,
+          "overflowX": 0
+        },
+        "api_levels": 5,
+        "api_first_level": {
+          "buy_px": 42490,
+          "buy_vol": 173169176,
+          "buy_cnt": 9713,
+          "sell_px": 0,
+          "sell_vol": 0,
+          "sell_cnt": 0
+        },
+        "board_prices": {
+          "p_first": 42490,
+          "p_max": 42490,
+          "p_min": 42490,
+          "p_last": 42490
+        }
+      }
+    }
+  },
+  "1920": {
+    "viewport": {
+      "width": 1920,
+      "height": 1080
+    },
+    "tag": "1920",
+    "cases": {
+      "wide": {
+        "symbol": "وسپهر",
+        "dom": {
+          "symbol": "وسپهر",
+          "heads": {
+            "buy_cols": "تعدادحجمقیمت",
+            "sell_cols": "تعدادحجمقیمت",
+            "buy_label": "تقاضا",
+            "sell_label": "عرضه"
+          },
+          "cells": {
+            "buy1": {
+              "text": "۳۳۸٬۳۱۹۴٬۹۹۰",
+              "state": "live",
+              "parts": [
+                "",
+                "۳",
+                "۳۸٬۳۱۹",
+                "۴٬۹۹۰"
+              ]
+            },
+            "buy2": {
+              "text": "۶۲۱۶٬۷۱۹۴٬۹۸۰",
+              "state": "live",
+              "parts": [
+                "",
+                "۶",
+                "۲۱۶٬۷۱۹",
+                "۴٬۹۸۰"
+              ]
+            },
+            "buy3": {
+              "text": "۱۸۴٬۹۱۸٬۸۶۴۴٬۹۷۰",
+              "state": "live",
+              "parts": [
+                "",
+                "۱۸",
+                "۴٬۹۱۸٬۸۶۴",
+                "۴٬۹۷۰"
+              ]
+            },
+            "buy4": {
+              "text": "۲۳۴٬۵۶۸٬۴۸۴۴٬۹۶۰",
+              "state": "live",
+              "parts": [
+                "",
+                "۲۳",
+                "۴٬۵۶۸٬۴۸۴",
+                "۴٬۹۶۰"
+              ]
+            },
+            "buy5": {
+              "text": "۴۱۰٬۷۰۰۴٬۹۵۰",
+              "state": "live",
+              "parts": [
+                "",
+                "۴",
+                "۱۰٬۷۰۰",
+                "۴٬۹۵۰"
+              ]
+            },
+            "sell1": {
+              "text": "۱۲٬۷۳۶۵٬۰۰۰",
+              "state": "live",
+              "parts": [
+                "",
+                "۱",
+                "۲٬۷۳۶",
+                "۵٬۰۰۰"
+              ]
+            },
+            "sell2": {
+              "text": "۱۲۱٬۲۲۰٬۹۸۵۵٬۰۲۰",
+              "state": "live",
+              "parts": [
+                "",
+                "۱۲",
+                "۱٬۲۲۰٬۹۸۵",
+                "۵٬۰۲۰"
+              ]
+            },
+            "sell3": {
+              "text": "۱۰۱۲۰٬۶۵۲۵٬۰۳۰",
+              "state": "live",
+              "parts": [
+                "",
+                "۱۰",
+                "۱۲۰٬۶۵۲",
+                "۵٬۰۳۰"
+              ]
+            },
+            "sell4": {
+              "text": "۱۵۳۶۷٬۰۷۷۵٬۰۴۰",
+              "state": "live",
+              "parts": [
+                "",
+                "۱۵",
+                "۳۶۷٬۰۷۷",
+                "۵٬۰۴۰"
+              ]
+            },
+            "sell5": {
+              "text": "۱۱۲۴۷٬۲۰۹۵٬۰۵۰",
+              "state": "live",
+              "parts": [
+                "",
+                "۱۱",
+                "۲۴۷٬۲۰۹",
+                "۵٬۰۵۰"
+              ]
+            }
+          },
+          "totals": "جمعِ تقاضا۹٬۹۰۵٬۸۸۹ (۵۵ سفارش)جمعِ عرضه۲٬۴۹۸٬۵۶۴ (۶۱ سفارش)",
+          "candle": {
+            "text": "اول ۵٬۱۰۰ · بیشینه ۵٬۱۰۰ · کمینه ۴٬۹۷۰ · آخرین ۵٬۰۴۰کندلِ امروزاول۵٬۱۰۰بیش۵٬۱۰۰کم۴٬۹۷۰آخرین۵٬۰۴۰",
+            "state": "down"
+          },
+          "glyphState": "down",
+          "candleAboveRows": true,
+          "panelBottom": 657,
+          "overflowX": 0
+        },
+        "api_levels": 5,
+        "api_first_level": {
+          "buy_px": 4990,
+          "buy_vol": 38319,
+          "buy_cnt": 3,
+          "sell_px": 5000,
+          "sell_vol": 2736,
+          "sell_cnt": 1
+        },
+        "board_prices": {
+          "p_first": 5100,
+          "p_max": 5100,
+          "p_min": 4970,
+          "p_last": 5040
+        }
+      },
+      "few": {
+        "symbol": "طجار9018",
+        "dom": {
+          "symbol": "طجار9018",
+          "heads": {
+            "buy_cols": "تعدادحجمقیمت",
+            "sell_cols": "تعدادحجمقیمت",
+            "buy_label": "تقاضا",
+            "sell_label": "عرضه"
+          },
+          "cells": {
+            "buy1": {
+              "text": "۳۳٬۰۰۰۱",
+              "state": "live",
+              "parts": [
+                "",
+                "۳",
+                "۳٬۰۰۰",
+                "۱"
+              ]
+            },
+            "buy2": {
+              "text": "———",
+              "state": "no-row",
+              "parts": [
+                "—",
+                "—",
+                "—"
+              ]
+            },
+            "buy3": {
+              "text": "———",
+              "state": "no-row",
+              "parts": [
+                "—",
+                "—",
+                "—"
+              ]
+            },
+            "buy4": {
+              "text": "———",
+              "state": "no-row",
+              "parts": [
+                "—",
+                "—",
+                "—"
+              ]
+            },
+            "buy5": {
+              "text": "———",
+              "state": "no-row",
+              "parts": [
+                "—",
+                "—",
+                "—"
+              ]
+            },
+            "sell1": {
+              "text": "———",
+              "state": "empty",
+              "parts": [
+                "—",
+                "—",
+                "—"
+              ]
+            },
+            "sell2": {
+              "text": "———",
+              "state": "no-row",
+              "parts": [
+                "—",
+                "—",
+                "—"
+              ]
+            },
+            "sell3": {
+              "text": "———",
+              "state": "no-row",
+              "parts": [
+                "—",
+                "—",
+                "—"
+              ]
+            },
+            "sell4": {
+              "text": "———",
+              "state": "no-row",
+              "parts": [
+                "—",
+                "—",
+                "—"
+              ]
+            },
+            "sell5": {
+              "text": "———",
+              "state": "no-row",
+              "parts": [
+                "—",
+                "—",
+                "—"
+              ]
+            }
+          },
+          "totals": "جمعِ تقاضا۳٬۰۰۰ (۳ سفارش)جمعِ عرضه۰ (۰ سفارش)",
+          "candle": {
+            "text": "—کندلِ امروزاول—بیش—کم—آخرین۱",
+            "state": "incomplete"
+          },
+          "glyphState": "incomplete",
+          "candleAboveRows": true,
+          "panelBottom": 853,
+          "overflowX": 0
+        },
+        "api_levels": 1,
+        "api_first_level": {
+          "buy_px": 1,
+          "buy_vol": 3000,
+          "buy_cnt": 3,
+          "sell_px": 0,
+          "sell_vol": 0,
+          "sell_cnt": 0
+        },
+        "board_prices": {
+          "p_first": 0,
+          "p_max": 0,
+          "p_min": 0,
+          "p_last": 1
+        }
+      },
+      "flat": {
+        "symbol": "تاصيكو",
+        "dom": {
+          "symbol": "تاصيكو",
+          "heads": {
+            "buy_cols": "تعدادحجمقیمت",
+            "sell_cols": "تعدادحجمقیمت",
+            "buy_label": "تقاضا",
+            "sell_label": "عرضه"
+          },
+          "cells": {
+            "buy1": {
+              "text": "۹۷۱۳۱۷۳٬۱۶۹٬۱۷۶۴۲٬۴۹۰",
+              "state": "live",
+              "parts": [
+                "",
+                "۹۷۱۳",
+                "۱۷۳٬۱۶۹٬۱۷۶",
+                "۴۲٬۴۹۰"
+              ]
+            },
+            "buy2": {
+              "text": "۱۹۲۰۱٬۲۲۳۴۲٬۴۸۰",
+              "state": "live",
+              "parts": [
+                "",
+                "۱۹",
+                "۲۰۱٬۲۲۳",
+                "۴۲٬۴۸۰"
+              ]
+            },
+            "buy3": {
+              "text": "۲۳۰٬۱۲۰۴۲٬۴۷۰",
+              "state": "live",
+              "parts": [
+                "",
+                "۲",
+                "۳۰٬۱۲۰",
+                "۴۲٬۴۷۰"
+              ]
+            },
+            "buy4": {
+              "text": "۳۳۲٬۴۴۴۴۲٬۴۶۰",
+              "state": "live",
+              "parts": [
+                "",
+                "۳",
+                "۳۲٬۴۴۴",
+                "۴۲٬۴۶۰"
+              ]
+            },
+            "buy5": {
+              "text": "۵۶٬۳۶۱۴۲٬۴۲۰",
+              "state": "live",
+              "parts": [
+                "",
+                "۵",
+                "۶٬۳۶۱",
+                "۴۲٬۴۲۰"
+              ]
+            },
+            "sell1": {
+              "text": "———",
+              "state": "empty",
+              "parts": [
+                "—",
+                "—",
+                "—"
+              ]
+            },
+            "sell2": {
+              "text": "———",
+              "state": "empty",
+              "parts": [
+                "—",
+                "—",
+                "—"
+              ]
+            },
+            "sell3": {
+              "text": "———",
+              "state": "empty",
+              "parts": [
+                "—",
+                "—",
+                "—"
+              ]
+            },
+            "sell4": {
+              "text": "———",
+              "state": "empty",
+              "parts": [
+                "—",
+                "—",
+                "—"
+              ]
+            },
+            "sell5": {
+              "text": "———",
+              "state": "empty",
+              "parts": [
+                "—",
+                "—",
+                "—"
+              ]
+            }
+          },
+          "totals": "جمعِ تقاضا۰ (۰ سفارش)جمعِ عرضه۰ (۰ سفارش)",
+          "candle": {
+            "text": "اول ۴۲٬۴۹۰ · بیشینه ۴۲٬۴۹۰ · کمینه ۴۲٬۴۹۰ · آخرین ۴۲٬۴۹۰کندلِ امروزاول۴۲٬۴۹۰بیش۴۲٬۴۹۰کم۴۲٬۴۹۰آخرین۴۲٬۴۹۰",
+            "state": "flat"
+          },
+          "glyphState": "flat",
+          "candleAboveRows": true,
+          "panelBottom": 657,
+          "overflowX": 0
+        },
+        "api_levels": 5,
+        "api_first_level": {
+          "buy_px": 42490,
+          "buy_vol": 173169176,
+          "buy_cnt": 9713,
+          "sell_px": 0,
+          "sell_vol": 0,
+          "sell_cnt": 0
+        },
+        "board_prices": {
+          "p_first": 42490,
+          "p_max": 42490,
+          "p_min": 42490,
+          "p_last": 42490
+        }
+      }
+    }
+  },
+  "base": "http://127.0.0.1:8002",
+  "at": "2026-10-10T20:23:44.876Z",
+  "cases": [],
+  "verdicts": [
+    {
+      "name": "A) هر پنج سطرِ تقاضا و پنج سطرِ عرضه رندر می\\u200cشود",
+      "pass": true,
+      "detail": {
+        "levels_from_api": 5,
+        "cells": 10
+      }
+    },
+    {
+      "name": "A) سه خانۀ تعداد/حجم/قیمت درِ هر دو سو سرستون دارد",
+      "pass": true,
+      "detail": {
+        "buy_cols": "تعدادحجمقیمت",
+        "sell_cols": "تعدادحجمقیمت",
+        "buy_label": "تقاضا",
+        "sell_label": "عرضه"
+      }
+    },
+    {
+      "name": "A) سه خانۀ سطرِ اول = سه عددِ خودِ /api/order-book درِ همان لحظه",
+      "pass": true,
+      "detail": {
+        "buy1": [
+          "",
+          "۳",
+          "۳۸٬۳۱۹",
+          "۴٬۹۹۰"
+        ],
+        "sell1": [
+          "",
+          "۱",
+          "۲٬۷۳۶",
+          "۵٬۰۰۰"
+        ],
+        "api": {
+          "buy_px": 4990,
+          "buy_vol": 38319,
+          "buy_cnt": 3,
+          "sell_px": 5000,
+          "sell_vol": 2736,
+          "sell_cnt": 1
+        }
+      }
+    },
+    {
+      "name": "A) کندلِ روز بالایِ سطرها، با چهار قیمتِ خودِ تابلو",
+      "pass": true,
+      "detail": {
+        "candle": {
+          "text": "اول ۵٬۱۰۰ · بیشینه ۵٬۱۰۰ · کمینه ۴٬۹۷۰ · آخرین ۵٬۰۴۰کندلِ امروزاول۵٬۱۰۰بیش۵٬۱۰۰کم۴٬۹۷۰آخرین۵٬۰۴۰",
+          "state": "down"
+        },
+        "board": {
+          "p_first": 5100,
+          "p_max": 5100,
+          "p_min": 4970,
+          "p_last": 5040
+        },
+        "above": true
+      }
+    },
+    {
+      "name": "A) حالتِ کندل از جهتِ خودِ عدد می\\u200cآید (up/down/flat، نه پیش\\u200cفرض)",
+      "pass": true,
+      "detail": {
+        "state": "down"
+      }
+    },
+    {
+      "name": "B) سطرهایِ نرسیده «—» با وضعیتِ صریح‌اند و هیچ رقمی ندارند",
+      "pass": true,
+      "detail": {
+        "states": {
+          "buy1": "live",
+          "buy2": "no-row",
+          "buy3": "no-row",
+          "buy4": "no-row",
+          "buy5": "no-row",
+          "sell1": "empty",
+          "sell2": "no-row",
+          "sell3": "no-row",
+          "sell4": "no-row",
+          "sell5": "no-row"
+        },
+        "levels_from_api": 1
+      }
+    },
+    {
+      "name": "B) پنلِ دیده‌بان همان کامپوننت است (نه نسخۀِ دوم)",
+      "pass": true,
+      "detail": {
+        "symbol": "طجار9018",
+        "heads": {
+          "buy_cols": "تعدادحجمقیمت",
+          "sell_cols": "تعدادحجمقیمت",
+          "buy_label": "تقاضا",
+          "sell_label": "عرضه"
+        }
+      }
+    },
+    {
+      "name": "C) روزِ بی‌دامنه (صف/قفل) ⇒ کندل flat و بی‌بدنهٔ ساختگی",
+      "pass": true,
+      "detail": {
+        "state": "flat",
+        "board": {
+          "p_first": 42490,
+          "p_max": 42490,
+          "p_min": 42490,
+          "p_last": 42490
+        }
+      }
+    },
+    {
+      "name": "بی‌سرریزِ افقی درِ هر دو viewport",
+      "pass": true,
+      "detail": {
+        "small": {
+          "wide": 0,
+          "few": 0,
+          "flat": 0
+        },
+        "big": {
+          "wide": 0,
+          "few": 0,
+          "flat": 0
+        }
+      }
+    },
+    {
+      "name": "قدِ پنل درِ ۱۳۶۶×۷۶۸ از صفحۀ دیده‌بان بیرون نمی\\u200cزند",
+      "pass": true,
+      "detail": {
+        "note": "panelBottom ثبت شده؛ کرانِ بالا درِ گزارشِ دستی خوانده می‌شود"
+      }
+    }
+  ]
+}

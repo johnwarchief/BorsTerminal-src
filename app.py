@@ -165,6 +165,18 @@ def _spa_index():
     return FileResponse(idx)
 
 
+def _fetch_loops_enabled() -> bool:
+    """آیا حلقه‌هایِ شبکه‌ایِ تابلو (سینک/تیکِ زنده) درِ این اجرا فعال باشند؟
+
+    با `BORS_NO_FETCH_LOOPS=1` خاموش می‌شوند. دلیلِ وجودش: سنجشِ زندهٔ UI/endpoint
+    رویِ نسخۀِ dev (پورتِ دوم) نیاز است، ولی آن اجرا هم همان `market.db` و همان
+    IPِ نسخۀِ نصب‌شده را می‌گیرد؛ دو حلقۀِ تیکِ ۵ثانیه‌ای رویِ یکِ IP یعنی ۴۲۹ و
+    یعنی «اعدادِ دیر عوض می‌شوند» درِ همانِ نشستِ واقعیِ مالک. با این درب، dev
+    فقط می‌خواند و چیزی از TSETMC نمی‌گیرد.
+    """
+    return (os.environ.get("BORS_NO_FETCH_LOOPS") or "").strip().lower() not in ("1", "true", "yes")
+
+
 @app.on_event("startup")
 def _startup_sync_market():
     """هوک استارت FastAPI: اجرای uvicorn (باش با bat) → تابلو در هر اجرا آپدیت می‌شود.
@@ -193,9 +205,40 @@ def _startup_sync_market():
         # migrate_schema را صدا می‌زنند.
         print(f"[startup] codal schema migrate failed (non-fatal): {e}")
 
+    # ── خطِ دریافت خودکار کدال (مأموریت ۱۴۰۵-۰۷-۲۷، بندِ ۶) ────────────────
+    # تبِ بنیادی باز نباشد هم اجرا می‌شود: این رشتۀ سمتِ سرور است، نه درخواستِ
+    # UI — و `start_worker` به‌ازایِ پروسه یکی است، پس بازکردنِ چند تب یا چند
+    # فراخوانیِ استارت، چند worker هم‌زمان نمی‌سازد. خودِ چرخه هم قفلِ
+    # `pipeline_lock` را می‌گیرد؛ بنابراین Task Schedulerِ جدا یا دکمۀ
+    # «بروزرسانی کدال» نمی‌توانند دو پردازشِ هم‌زمان رویِ یکِ اطلاعیه بسازند.
+    def _start_codal_worker():
+        import codal_pipeline as _cp
+        import codal_fetcher as _cf
+        return _cp.start_worker(_cf.DB_PATH, owner="app-%d" % os.getpid())
+
     try:
-        threading.Thread(target=_sync_market_on_start, daemon=True).start()
-        print("[startup] market sync thread spawned")
+        _auto_on = (os.environ.get("BORS_CODAL_AUTO") or "1").strip().lower()
+        if not _fetch_loops_enabled():
+            print("[startup] codal auto-pipeline خاموش (همان دربِ "
+                  "BORS_NO_FETCH_LOOPS — دو instance رویِ یکِ IP)")
+        elif _auto_on in ("1", "true", "yes"):
+            _w = _start_codal_worker()
+            print("[startup] codal auto-pipeline: %s" % (
+                "worker شروع شد (%s)" % (_w or {}).get("owner")
+                if (_w or {}).get("started") else "worker از قبل در کار است"))
+        else:
+            print("[startup] BORS_CODAL_AUTO=0 — دریافت خودکار کدال خاموش؛ "
+                  "دکمۀ دستی و `python codal_pipeline.py --once` کار می‌کنند")
+    except Exception as e:
+        print(f"[startup] codal auto-pipeline spawn failed (non-fatal): {e}")
+
+    try:
+        if _fetch_loops_enabled():
+            threading.Thread(target=_sync_market_on_start, daemon=True).start()
+            print("[startup] market sync thread spawned")
+        else:
+            print("[startup] BORS_NO_FETCH_LOOPS=1 — حلقه‌هایِ شبکه‌ایِ تابلو خاموش "
+                  "(دست‌نخورده خواندنِ بانکِ مشترک؛ برایِ سنجشِ dev کنارِ نسخۀِ نصبی)")
     except Exception as e:
         print(f"[startup] market sync thread failed: {e}")
 
@@ -240,8 +283,9 @@ def _startup_sync_market():
                 print(f"[startup] board refresh loop: {_e}")
             _t.sleep(90)
     try:
-        threading.Thread(target=_board_refresh_loop, daemon=True).start()
-        print("[startup] board refresh loop spawned (90s, session-windowed)")
+        if _fetch_loops_enabled():
+            threading.Thread(target=_board_refresh_loop, daemon=True).start()
+            print("[startup] board refresh loop spawned (90s, session-windowed)")
     except Exception as _e:
         print(f"[startup] board refresh loop failed: {_e}")
 
@@ -278,8 +322,9 @@ def _startup_sync_market():
                 print(f"[startup] board tick loop: {_e}")
             _t.sleep(5)
     try:
-        threading.Thread(target=_board_tick_loop, daemon=True).start()
-        print("[startup] board tick loop spawned (5s, session-windowed)")
+        if _fetch_loops_enabled():
+            threading.Thread(target=_board_tick_loop, daemon=True).start()
+            print("[startup] board tick loop spawned (5s, session-windowed)")
     except Exception as _e:
         print(f"[startup] board tick loop failed: {_e}")
 
@@ -312,8 +357,9 @@ def _startup_sync_market():
                 print(f"[startup] pulse snapshot loop: {_e}")
             _t.sleep(300)
     try:
-        threading.Thread(target=_pulse_snapshot_loop, daemon=True).start()
-        print("[startup] pulse snapshot loop spawned (300s, session-windowed)")
+        if _fetch_loops_enabled():
+            threading.Thread(target=_pulse_snapshot_loop, daemon=True).start()
+            print("[startup] pulse snapshot loop spawned (300s, session-windowed)")
     except Exception as _e:
         print(f"[startup] pulse snapshot loop failed: {_e}")
 

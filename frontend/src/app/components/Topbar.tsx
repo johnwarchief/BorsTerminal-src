@@ -1,55 +1,22 @@
 import { useLocation, useNavigate, Link } from 'react-router';
-import { useEffect, useState } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
 import { PALETTE_OPEN_EVENT } from './CommandPalette';
-import { SearchIcon } from '@shared/components/Icons';
-import { MARKET_FEED_KEY } from '@shared/api/marketFeed';
+import { SearchIcon, BellIcon } from '@shared/components/Icons';
+import { toFaDigits } from '@shared/lib/fmt';
+import { useNoticeFeed } from '@features/market/api/useNotifications';
+import { useNoticePrefsStore } from '@features/market/stores/noticePrefsStore';
+import { FreshnessBadge } from '@shared/components/FreshnessBadge';
 import { useSymbolStore } from '@shared/stores/symbolStore';
 
 const TITLES: Record<string, string> = {
-  '/market': 'تابلوخوانی / بازار',
+  '/market': 'تابلوخوانی',
+  '/market-status': 'وضعیت بازار',
+  '/watch': 'دیده‌بان بازار',
   '/technical': 'تحلیل تکنیکال',
   '/fundamental': 'تحلیل بنیادی',
   '/portfolio': 'مدیریت پرتفوی',
-  '/master': 'استراتژی FTS',
+  '/master': 'غربالگری FTS',
   '/strategy-tree': 'درخت استراتژی FTS',
 };
-
-type FeedSnap = { status: string; dataUpdatedAt: number };
-const NO_FEED: FeedSnap = { status: 'idle', dataUpdatedAt: 0 };
-
-function readFeedSnap(qc: ReturnType<typeof useQueryClient>): FeedSnap {
-  const q = qc.getQueryCache().find({ queryKey: MARKET_FEED_KEY });
-  if (!q) return NO_FEED;
-  return { status: q.state.status, dataUpdatedAt: q.state.dataUpdatedAt };
-}
-
-function useFeedSnapshot(): FeedSnap {
-  const qc = useQueryClient();
-  const [snap, setSnap] = useState<FeedSnap>(() => readFeedSnap(qc));
-  useEffect(() => {
-    setSnap(readFeedSnap(qc));
-    const unsub = qc.getQueryCache().subscribe(() => {
-      const next = readFeedSnap(qc);
-      setSnap((prev) => (prev.status === next.status && prev.dataUpdatedAt === next.dataUpdatedAt ? prev : next));
-    });
-    return unsub;
-  }, [qc]);
-  return snap;
-}
-
-function feedStatus(state: FeedSnap) {
-  if (state.status === 'idle' && !state.dataUpdatedAt) {
-    return { tone: 'bg-text-muted', label: 'در انتظارِ رسیدنِ دادهٔ تابلو' };
-  }
-  if (state.status === 'error') {
-    return { tone: 'bg-accent-red', label: 'دادهٔ تابلو نمی‌رسد — اتصال بک‌اند را بررسی کن' };
-  }
-  if (state.status === 'success') {
-    return { tone: 'bg-accent-green animate-pulse', label: 'سیستم آنلاین و متصل' };
-  }
-  return { tone: 'bg-accent-yellow', label: 'در حالِ دریافتِ داده' };
-}
 
 export function Topbar() {
   const { pathname } = useLocation();
@@ -62,8 +29,6 @@ export function Topbar() {
   const setSymbol = useSymbolStore((s) => s.setSymbol);
 
   const showSearch = base !== '/technical';
-  const feedState = useFeedSnapshot();
-  const feed = feedStatus(feedState);
 
   const handlePinnedClick = (s: string) => {
     setSymbol(s);
@@ -74,14 +39,9 @@ export function Topbar() {
 
   return (
     <header className="glass-strip sticky top-0 z-40 flex h-9 items-center justify-between px-3 sm:px-4">
-      {/* سمت راست: نشان وضعیت + Breadcrumb ناوبری */}
+      {/* سمت راست: نشانِ وضعیت (اتصال ≠ تازگی) + Breadcrumb ناوبری */}
       <div className="flex items-center gap-2 overflow-hidden">
-        <span
-          role="status"
-          aria-label={feed.label}
-          className={`inline-block h-2 w-2 shrink-0 rounded-full ${feed.tone}`}
-          title={feed.label}
-        />
+        <FreshnessBadge />
 
         <nav aria-label="موقعیت در برنامه" className="flex items-center gap-1.5 text-xs">
           <Link
@@ -122,6 +82,7 @@ export function Topbar() {
 
       {/* سمت چپ: دکمه جستجو و پالت فرمان */}
       <div className="flex items-center gap-2 shrink-0">
+        <NoticeBell />
         {showSearch && (
           <button
             type="button"
@@ -139,5 +100,34 @@ export function Topbar() {
         )}
       </div>
     </header>
+  );
+}
+
+/** زنگولۀِ مرکزِ اعلان — شمارۀِ خوانده‌نشده از همان فیدِ خودِ صفحه می‌آید؛ خودِ
+ *  آیکون هیچ منطقِ خبری‌ای ندارد (رأیِ مالک، بند ۶: «زنگوله بی‌منبع کافی نیست»).
+ *  بی‌پاسخ/خطا ⇒ بی‌شماره، نه «صفر خوانده‌نشده» و نه انیمیشنِ هشدار. */
+function NoticeBell() {
+  const feed = useNoticeFeed([], 60);
+  const read = useNoticePrefsStore((st) => st.read);
+  const items = feed.data?.items ?? [];
+  const unread = items.filter((n) => !read.includes(String(n.id))).length;
+  const known = feed.data != null;
+  return (
+    <Link
+      to="/notifications"
+      aria-label={known ? `اعلان‌ها — ${unread} خوانده‌نشده` : 'اعلان‌ها'}
+      title="اعلان‌ها: اطلاعیه‌های کدال همراه با پیوند اصلی و توضیح اهمیت هر مورد"
+      data-testid="topbar-notifications"
+      data-state={known ? 'ok' : 'unknown'}
+      className="relative flex items-center gap-1 rounded-lg border border-border-c bg-bg-card/70 px-2 py-1 text-2xs text-text-secondary transition-all hover:border-border-accent hover:text-accent-blue"
+    >
+      <BellIcon size={13} className="text-accent-amber" />
+      {known && unread > 0 ? (
+        <span className="num rounded-full bg-accent-red/20 px-1 text-[10px] font-black text-accent-red"
+              data-testid="topbar-notifications-count">
+          {toFaDigits(unread)}
+        </span>
+      ) : null}
+    </Link>
   );
 }

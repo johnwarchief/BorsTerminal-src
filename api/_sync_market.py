@@ -7,6 +7,7 @@ Audit map of source line spans: MIGRATED_LINES.txt
 """
 from .market import warm_market_cache
 from fastapi import APIRouter
+import os
 import subprocess
 import test_tsetmc as _tsetmc_mod
 import threading
@@ -53,7 +54,11 @@ def _market_sync_alive():
         out = subprocess.run(
             ["powershell.exe", "-NoProfile", "-Command",
              "(Get-CimInstance Win32_Process | Where-Object { $_.CommandLine -match 'test_tsetmc' -and $_.Name -ne 'pythonw.exe' }).Count"],
-            capture_output=True, text=True, timeout=15)
+            capture_output=True, text=True, timeout=15,
+            # درِ بیلدِ console=False این صدا زدنِ powershell یک کنسولِ سیاهِ
+            # چشمک‌زن باز می‌کرد (شکایتِ مالک 1405-07-20) و تا ۱۵ ثانیه هم
+            # مسیرِ بوت را بلوکه می‌کرد.
+            creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
         n = int(out.stdout.strip()) if out.returncode == 0 and out.stdout.strip().isdigit() else 0
         if n:
             return True
@@ -66,13 +71,51 @@ def sync_market():
     threading.Thread(target=_run_market_sync, daemon=True).start()
     return {"status": "success", "message": "Market sync started."}
 
+def _board_session_day():
+    """آخرینِ روزِ نشستِ موجودِ در بانک (Gregorian YYYYMMDD) یا None."""
+    try:
+        import sqlite3
+
+        from bors_config import DB_PATH
+        if not os.path.exists(DB_PATH):
+            return None
+        conn = sqlite3.connect(f"file:{DB_PATH}?mode=ro", uri=True, timeout=5)
+        try:
+            r = conn.execute("SELECT MAX(d_even) FROM market_watch").fetchone()
+        finally:
+            conn.close()
+        return int(r[0]) if r and r[0] else None
+    except Exception:
+        return None
+
+
 def _sync_market_on_start():
     """بروزرسانی زنده تابلو هنگام هر اجرای برنامه (هوک استارت).
-    dedup: اگر سینک بازار از قبل در حال اجراست صبر کن — اجرای درون‌پروسه‌ای (EXE-safe)."""
+    dedup: اگر سینک بازار از قبل در حال اجراست صبر کن — اجرای درون‌پروسه‌ای (EXE-safe).
+
+    گیتِ نشست (رأیِ مالک 1405-07-20: «هر بار اجرا همهٔ تب‌ها طول می‌کشد رویِ
+    «در حال دریافت»»): پیش از این هر بوت یک اسکرپِ کاملِ TSETMC راه می‌انداخت،
+    حتی سه‌ساعتِ پس از بستنِ بازار. آن اسکرپ بانک را قفلِ نوشتن می‌گذارد و کشِ
+    تابلو/اسکرینر را بازمی‌سازد، پس نخستین درخواستِ هر تب پشتِ همان کار می‌ماند.
+    بیرونِ پنجرۀ رسمی، اگر بانک *همینِ روزِ نشست* را دارد، داده چیزی عوض
+    نمی‌کند — پس سرو می‌شود و شبکه صدا زده نمی‌شود. بی‌داده‌ی امروز یا درِ
+    نشستِ باز، رفتارِ پیشین دست‌نخورده است."""
     if _market_sync_alive():
         print("[startup] market sync already running — skip")
         return
     try:
+        import datetime as _dt
+
+        from mstat_engine import in_trading_session
+        now = _dt.datetime.now()
+        open_now = in_trading_session(now.hour * 10000 + now.minute * 100 + now.second, now)
+        if not open_now:
+            today = int(now.strftime("%Y%m%d"))
+            have = _board_session_day()
+            if have and have >= today:
+                print(f"[startup] market closed and board is from {have} — "
+                      "serving the stored session, no network sync")
+                return
         threading.Thread(target=_run_market_sync, daemon=True).start()
         print("[startup] market sync thread spawned")
     except Exception as e:

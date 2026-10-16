@@ -47,7 +47,7 @@ describe('lib/assemblyEvent — منطق خالص', () => {
 
   it('مجمع نزدیک: ۳ روز دیگر با تاریخ جلالی', () => {
     const b = pickAssemblyBadge(
-      [{ date: '2026-09-17', cat: 'assembly', title: 'آگهی دعوت به مجمع عمومی عادی سالیانه' }],
+      [{ date: '2026-09-17', cat: 'assembly', date_source: 'title' as const, title: 'آگهی دعوت به مجمع عمومی عادی سالیانه' }],
       NOW,
     );
     expect(b?.kind).toBe('near');
@@ -57,20 +57,20 @@ describe('lib/assemblyEvent — منطق خالص', () => {
   });
 
   it('امروز و فردا: برچسب صادقانه، بدون عدد گنگ', () => {
-    const t = pickAssemblyBadge([{ date: '2026-09-14', cat: 'assembly', title: 'x' }], NOW);
+    const t = pickAssemblyBadge([{ date: '2026-09-14', cat: 'assembly', date_source: 'title' as const, title: 'x' }], NOW);
     expect(t?.label).toBe('مجمع نزدیک — امروز (۱۴۰۵/۰۶/۲۳)');
-    const tm = pickAssemblyBadge([{ date: '2026-09-15', cat: 'assembly', title: 'x' }], NOW);
+    const tm = pickAssemblyBadge([{ date: '2026-09-15', cat: 'assembly', date_source: 'title' as const, title: 'x' }], NOW);
     expect(tm?.label).toBe('مجمع نزدیک — فردا (۱۴۰۵/۰۶/۲۴)');
   });
 
   it('مجمع فوقالعاده: هدر متفاوت', () => {
-    const b = pickAssemblyBadge([{ date: '2026-09-20', cat: 'assemblyExtra', title: 'دعوت به مجمع فوق العاده' }], NOW);
+    const b = pickAssemblyBadge([{ date: '2026-09-20', cat: 'assemblyExtra', date_source: 'title' as const, title: 'دعوت به مجمع فوق العاده' }], NOW);
     expect(b?.label).toContain('مجمع فوق‌العاده نزدیک — ۶ روز دیگر');
   });
 
   it('دورتر از آستانه ⇒ بدون badge', () => {
     const b = pickAssemblyBadge(
-      [{ date: '2026-10-30', cat: 'assembly', title: 'x' }],
+      [{ date: '2026-10-30', cat: 'assembly', date_source: 'title' as const, title: 'x' }],
       NOW,
       ASSEMBLY_NEAR_DAYS,
     );
@@ -80,8 +80,8 @@ describe('lib/assemblyEvent — منطق خالص', () => {
   it('تغییر مجمع پیش‌رو: برچسب صادقانهٔ تغییر — نه تاریخ قدیمی', () => {
     const b = pickAssemblyBadge(
       [
-        { date: '2026-09-20', cat: 'assembly', title: 'دعوت به مجمع' },
-        { date: '2026-09-15', cat: 'assemblyChange', title: 'تصمیمات مجمع — به تعویق افتاد' },
+        { date: '2026-09-20', cat: 'assembly', date_source: 'title' as const, title: 'دعوت به مجمع' },
+        { date: '2026-09-15', cat: 'assemblyChange', date_source: 'title' as const, title: 'تصمیمات مجمع — به تعویق افتاد' },
       ],
       NOW,
     );
@@ -100,8 +100,8 @@ describe('lib/assemblyEvent — منطق خالص', () => {
   it('رویداد مجمع پیش‌رو نیست ولی آخرین رویداد گذشته تغییر بود ⇒ برچسب تغییر', () => {
     const b = pickAssemblyBadge(
       [
-        { date: '2026-09-01', cat: 'assembly', title: 'دعوت به مجمع' },
-        { date: '2026-09-10', cat: 'assemblyChange', title: 'لغو مجمع عمومی' },
+        { date: '2026-09-01', cat: 'assembly', date_source: 'title' as const, title: 'دعوت به مجمع' },
+        { date: '2026-09-10', cat: 'assemblyChange', date_source: 'title' as const, title: 'لغو مجمع عمومی' },
       ],
       NOW,
     );
@@ -116,14 +116,14 @@ describe('lib/assemblyEvent — منطق خالص', () => {
       pickAssemblyBadge([{ date: '2026-09-20', cat: 'dividend', title: 'تقسیم سود' }], NOW),
     ).toBeNull();
     // تاریخ نامعتبر هم فیلتر می‌شود
-    expect(pickAssemblyBadge([{ date: 'نه-تاریخ', cat: 'assembly', title: 'x' }], NOW)).toBeNull();
+    expect(pickAssemblyBadge([{ date: 'نه-تاریخ', cat: 'assembly', date_source: 'title' as const, title: 'x' }], NOW)).toBeNull();
   });
 
   it('رویدادهای غیرمجمع با هم‌دسته اشتباه گرفته نمی‌شوند', () => {
     const b = pickAssemblyBadge(
       [
         { date: '2026-09-15', cat: 'capitalIncrease', title: 'افزایش سرمایه' },
-        { date: '2026-09-16', cat: 'assembly', title: 'دعوت به مجمع' },
+        { date: '2026-09-16', cat: 'assembly', date_source: 'title' as const, title: 'دعوت به مجمع' },
       ],
       NOW,
     );
@@ -139,7 +139,7 @@ describe('AssemblyBadge — رندر با دادهٔ واقعی /api/ma', () => 
 
   it('مجمع نزدیک: badge کنار نماد با تاریخ جلالی و tooltip عنوان اطلاعیه', async () => {
     mockEvents([
-      { date: '2026-09-14', ts: 1, title: 'آگهی دعوت به مجمع صندوق سرمایه گذاری در تاریخ ۱۴۰۵/۰۶/۲۳', cat: 'assembly' },
+      { date: '2026-09-14', ts: 1, title: 'آگهی دعوت به مجمع صندوق سرمایه گذاری در تاریخ ۱۴۰۵/۰۶/۲۳', cat: 'assembly', date_source: 'title' as const },
     ]);
     renderBadge('پست بازار');
     const el = await screen.findByTestId('assembly-near-badge');
@@ -153,8 +153,8 @@ describe('AssemblyBadge — رندر با دادهٔ واقعی /api/ma', () => 
 
   it('تغییر مجمع: برچسب صادقانهٔ تغییر — نه تاریخ قدیمی', async () => {
     mockEvents([
-      { date: '2026-09-20', ts: 1, title: 'دعوت به مجمع عمومی', cat: 'assembly' },
-      { date: '2026-09-14', ts: 2, title: 'تصمیمات مجمع عمومی — به تعویق افتاد', cat: 'assemblyChange' },
+      { date: '2026-09-20', ts: 1, title: 'دعوت به مجمع عمومی', cat: 'assembly', date_source: 'title' as const },
+      { date: '2026-09-14', ts: 2, title: 'تصمیمات مجمع عمومی — به تعویق افتاد', cat: 'assemblyChange', date_source: 'title' as const },
     ]);
     renderBadge('البرز');
     const el = await screen.findByTestId('assembly-change-badge');

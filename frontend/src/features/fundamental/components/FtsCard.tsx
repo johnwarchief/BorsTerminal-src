@@ -57,7 +57,9 @@ const LAYERS: { key: GapAxis | '1_growth'; drill: DrillDownKey | null; label: st
  *  حالتِ سوم ساخته نمی‌شود. */
 type Quality = 'ideal' | 'ok' | 'below' | 'na';
 
-const QUALITY_WORD: Record<Quality, string> = {
+export type { Quality };
+
+export const QUALITY_WORD: Record<Quality, string> = {
   ideal: 'ایده‌آل',
   ok: 'قبول',
   below: 'رد',
@@ -85,7 +87,7 @@ const QUALITY_TEXT: Record<Quality, string> = {
   na: 'text-text-primary',
 };
 
-function qualityFrom(pass: boolean | null | undefined, ideal?: boolean | null): Quality {
+export function qualityFrom(pass: boolean | null | undefined, ideal?: boolean | null): Quality {
   if (pass == null) return 'na';
   if (pass && ideal === true) return 'ideal';
   return pass ? 'ok' : 'below';
@@ -106,6 +108,13 @@ function getCardToneClasses(q: Quality, isActive: boolean): string {
 /** عددِ مالیِ کانفیگ؛ هر چیزِ دیگر ( رشته، آرایه، پنهان) «نمی‌دانیم» است. */
 function cfgNum(v: unknown): number | null {
   return typeof v === 'number' && Number.isFinite(v) ? v : null;
+}
+
+/** رأیِ مالک (1405-07-20): شاخص ۴ درصد نشان داده می‌شود، نه «×».
+ *  تعریف و مقدارِ موتور دست‌نخورده است؛ فقط عرضِ ×۱۰ و ٪ اضافه می‌شود، پس
+ *  عددِ کارت با عددِ جدولِ غربال و با «بالای ۳۰٪»ِ جزوه می‌خواند. */
+function pct(v: number | null | undefined): string {
+  return v == null ? '—' : `${toFaDigits((v * 100).toFixed(1))}٪`;
 }
 
 /**
@@ -467,7 +476,7 @@ export function FtsCard({
                       </div>
 
                       {!physicalApplicable ? (
-                        <span className="text-3xs text-text-muted">این شرکت محصول فیزیکی ندارد — شاخص اجرا نمی‌شود</span>
+                        <span className="text-3xs text-text-muted">این شرکت محصول فیزیکی ندارد؛ بنابراین این شاخص برای آن کاربرد ندارد</span>
                       ) : (
                         <>
                           <div className="flex items-center justify-center rounded border border-border-c/30 bg-bg-primary/40 py-1 px-1.5">
@@ -553,8 +562,8 @@ export function FtsCard({
                 >
                   {i2?.na === true
                     ? i2?.consolidated_used
-                      ? 'N/A (تلفیقی)'
-                      : 'N/A'
+                      ? 'کاربرد ندارد (مبنایِ تلفیقی)'
+                      : 'کاربرد ندارد'
                     : epsRising
                       ? `${toFaDigits(epsYearsReq)} سالِ رشد`
                       : epsYears
@@ -707,18 +716,18 @@ export function FtsCard({
                   {potPct != null
                     ? `${toFaDigits(potPct.toFixed(1))}٪`
                     : salesRatio != null
-                      ? `${toFaDigits(salesRatio.toFixed(2))}×`
+                      ? pct(salesRatio)
                       : '—'}
                 </span>
               );
 
               extraNode = (
                 <span className="num mt-0.5 block truncate text-3xs text-text-muted" data-testid="fts-card-4-secondary"
-                  title={salesFloor == null ? undefined : `کفِ قبولِ نسبت: ${toFaDigits(salesFloor.toFixed(2))}×`}>
+                  title={salesFloor == null ? undefined : `کفِ قبولِ نسبت: ${pct(salesFloor)}`}>
                   {salesRatio == null
                     ? 'نسبت فروش به ارزش بازار: بدون داده'
-                    : `نسبت فروش ÷ ارزش بازار ${toFaDigits(salesRatio.toFixed(2))}×` +
-                      (salesFloor == null ? '' : ` · کف ${toFaDigits(salesFloor.toFixed(2))}×`)}
+                    : `نسبت فروش ÷ ارزش بازار ${pct(salesRatio)}` +
+                      (salesFloor == null ? '' : ` · کف ${pct(salesFloor)}`)}
                 </span>
               );
 
@@ -739,8 +748,8 @@ export function FtsCard({
               );
               benchmarkHint =
                 potFloor == null
-                  ? 'کفِ پتانسیل از بک‌اند نرسید'
-                  : `کفِ پتانسیل سود ${toFaDigits(potFloor)}٪ از ارزش بازار`;
+                  ? 'حداقل معیار پتانسیل از سرور دریافت نشد'
+                  : `حداقل معیار پتانسیل سود: ${toFaDigits(potFloor)}٪ از ارزش بازار`;
             } else if (key === '5_industry') {
               const indLabel =
                 industryMode !== undefined
@@ -811,7 +820,7 @@ export function FtsCard({
                       data-testid={`fts-cell-gap-${key}`}
                       className="shrink-0 text-3xs leading-snug text-text-muted"
                     >
-                      {axisNa ? 'N/A' : gapLabel(key)}
+                      {axisNa ? 'کاربرد ندارد' : gapLabel(key)}
                     </span>
                   ) : null}
                 </div>

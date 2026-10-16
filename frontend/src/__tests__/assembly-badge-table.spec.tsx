@@ -13,17 +13,17 @@ const NOW = new Date('2026-09-26T12:00:00+03:30');
 describe('مسیر انبوهٔ تقویم → برچسب ردیف', () => {
   it('پاسخِ تختِ /api/calendar/upcoming به نقشهٔ نماد→رویداد تبدیل می‌شود', () => {
     const map = groupBySymbol([
-      { symbol: 'داریک بازار', date: '2026-09-26', cat: 'assembly', title: 'آگهی دعوت به مجمع' },
-      { symbol: ' سرآمد بازار ', date: '2026-10-06', cat: 'assembly', title: 'آگهی دعوت به مجمع' },
-      { symbol: '', date: '2026-10-06', cat: 'assembly', title: 'بی‌نماد' },
+      { symbol: 'داریک بازار', date: '2026-09-26', cat: 'assembly', date_source: 'title' as const, title: 'آگهی دعوت به مجمع' },
+      { symbol: ' سرآمد بازار ', date: '2026-10-06', cat: 'assembly', date_source: 'title' as const, title: 'آگهی دعوت به مجمع' },
+      { symbol: '', date: '2026-10-06', cat: 'assembly', date_source: 'title' as const, title: 'بی‌نماد' },
     ]);
     expect(Object.keys(map)).toEqual(['داریک بازار', 'سرآمد بازار']);
-    expect(map['سرآمد بازار'][0]).toMatchObject({ date: '2026-10-06', cat: 'assembly' });
+    expect(map['سرآمد بازار'][0]).toMatchObject({ date: '2026-10-06', cat: 'assembly', date_source: 'title' as const });
   });
 
   it('نمادی که ده روز بعد مجمع دارد برچسب «نزدیک» می‌گیرد', () => {
     const map = groupBySymbol([
-      { symbol: 'خفولا', date: '2026-10-06', cat: 'assembly', title: 'آگهی دعوت به مجمع عادی' },
+      { symbol: 'خفولا', date: '2026-10-06', cat: 'assembly', date_source: 'title' as const, title: 'آگهی دعوت به مجمع عادی' },
     ]);
     const badge = pickAssemblyBadge(map['خفولا'], NOW);
     expect(badge).not.toBeNull();
@@ -34,15 +34,15 @@ describe('مسیر انبوهٔ تقویم → برچسب ردیف', () => {
 
   it('مجمعِ بیرونِ پنجرهٔ «نزدیک» برچسب نمی‌گیرد — تاریخِ دور ساخته نمی‌شود', () => {
     const map = groupBySymbol([
-      { symbol: 'فلان', date: '2026-12-28', cat: 'assembly', title: 'آگهی دعوت به مجمع' },
+      { symbol: 'فلان', date: '2026-12-28', cat: 'assembly', date_source: 'title' as const, title: 'آگهی دعوت به مجمع' },
     ]);
     expect(pickAssemblyBadge(map['فلان'], NOW)).toBeNull();
   });
 
   it('لغو/تعویق مجمع برچسبِ تغییر می‌گیرد نه تاریخِ مجمعِ باطل‌شده', () => {
     const map = groupBySymbol([
-      { symbol: 'بهمان', date: '2026-09-28', cat: 'assembly', title: 'برگزاری مجمع' },
-      { symbol: 'بهمان', date: '2026-09-27', cat: 'assemblyChange', title: 'لغو برگزاری مجمع' },
+      { symbol: 'بهمان', date: '2026-09-28', cat: 'assembly', date_source: 'title' as const, title: 'برگزاری مجمع' },
+      { symbol: 'بهمان', date: '2026-09-27', cat: 'assemblyChange', date_source: 'title' as const, title: 'لغو برگزاری مجمع' },
     ]);
     const badge = pickAssemblyBadge(map['بهمان'], NOW);
     expect(badge?.kind).toBe('change');
@@ -63,7 +63,7 @@ describe('مسیر انبوهٔ تقویم → برچسب ردیف', () => {
 describe('برچسب «افزایش سرمایه» از پاسخِ انبوه', () => {
   it('دعوۀ مجمع با موضوعِ افزایشِ سرمایه هر دو برچسب را می‌گیرد', () => {
     const evs = [
-      { symbol: 'خزکو', date: '2026-10-06', cat: 'assemblyExtra', title: 'آگهی دعوت به مجمع فوق العاده جهت افزایش سرمایه' },
+      { symbol: 'خزکو', date: '2026-10-06', cat: 'assemblyExtra', date_source: 'title' as const, title: 'آگهی دعوت به مجمع فوق العاده جهت افزایش سرمایه' },
     ];
     const map = groupBySymbol(evs);
     expect(pickAssemblyBadge(map['خزکو'], NOW)?.kind).toBe('near');

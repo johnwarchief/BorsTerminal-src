@@ -19,6 +19,7 @@ import { technicalSignal } from '../signals/technicalSignals';
 import { weeklyFromFts } from '../lib/weeklyFromFts';
 import { corpEventChipLabel, recentCorpEvents } from '../lib/corpEvents';
 import { FtsBadgeStrip } from '../components/FtsBadgeStrip';
+import { FtsSettingsTrigger } from '../../fundamental/ui/FtsSettingsDrawer';
 import { FtsTrendPanel } from '../components/FtsTrendPanel';
 import { FtsStatusCard } from '../components/FtsStatusCard';
 import { FtsDock } from '../components/FtsDock';
@@ -28,7 +29,7 @@ import { ReplayBar } from '../components/ReplayBar';
 import { ComparePanel } from '../components/ComparePanel';
 import { ChartSettingsDialog } from '../components/ChartSettingsDialog';
 import type { ActiveLevelsView } from '../components/SidebarActiveLevels';
-import { useNnChartData, useNnTedipx } from '../nahayatnegar/lib/useNnData';
+import { useNnTedipx } from '../nahayatnegar/lib/useNnData';
 import { applyAdjustmentToCandles, mapBackendAdjustEvents } from '../nahayatnegar/lib/adjustments';
 import { useMarketFeed } from '@features/market/api/useMarketFeed';
 import { usePriceAlertWatch } from '../lib/usePriceAlertWatch';
@@ -74,6 +75,7 @@ export default function TechnicalPage() {
 
   const enforceRiskGates = useFtsConfigStore((s) => s.enforceRiskGates);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [ftsSettingsOpen, setFtsSettingsOpen] = useState(false);
 
   const replayActive = useReplayStore((s) => s.active);
   const replayCursor = useReplayStore((s) => s.cursor);
@@ -87,9 +89,21 @@ export default function TechnicalPage() {
   // داکِ پایین و پنل‌های FTS از همین نمادِ نمایشی تغذیه می‌شوند. پیش‌تر روی
   // `symbol` (تهی تا کاربر چیزی انتخاب نکند) قفل بودند، پس پنل‌هایِ پایینِ تب
   // برای کسی که هنوز نمادی انتخاب نکرده اصلاً در DOM نمی‌آمد (#185).
-  const nn = useNnChartData(viewSymbol);
-  const tedipx = useNnTedipx();
+  // #M3.1: `useNnChartData` و `useCandleFeed` هر دو `/api/chart/{symbol}` را برایِ
+  // همانِ نماد می‌خواندند (دوِ کوئریِ هم‌محتوا، دوِ cache، دوِ «مبنا»). حالا همان
+  // یکِ منبعِ canonical (`['candles',symbol]` با فال‌بک /api/history) می‌ماند و
+  // طول/خطا/لودینگِ داک و ریپلی همه از همان آبجکتِ cache‌شده خوانده می‌شوند تا
+  // هیچ‌وقت عددِ داک با کندلِ چارت واگرایی نکند. (بومِ canvas با لایۀ سومِ
+  // `/api/chart-db` خودش می‌کشد — قراردادِ جدا و مستند، نه اینِ داک.)
   const feed = useCandleFeed(viewSymbol);
+  const tedipx = useNnTedipx();
+  const nn = {
+    data: feed.candles,
+    status: feed.data?.status ?? null,
+    isLoading: feed.isLoading,
+    isError: feed.isError,
+    refetch: feed.refetch,
+  };
   const analysis = useFtsAnalysis(viewSymbol);
   const gate = useFundGate(enforceRiskGates ? viewSymbol : '');
 
@@ -230,6 +244,9 @@ export default function TechnicalPage() {
       <main className="flex min-h-0 min-w-0 flex-1 flex-col">
         {/* چارت تمام‌فضا (بدون کادر تودرتو/حاشیهٔ مرده) */}
         <div className="relative min-h-0 min-w-0 flex-1" data-testid="chart-area">
+          <div className="absolute end-3 top-3 z-50" data-testid="technical-fts-settings">
+            <FtsSettingsTrigger open={ftsSettingsOpen} onToggle={() => setFtsSettingsOpen((open) => !open)} />
+          </div>
           {chartEngine === 'ffc' ? (
             <div className="h-full w-full overflow-hidden" data-testid="ffc-chart-host">
               <FtsEngineChart

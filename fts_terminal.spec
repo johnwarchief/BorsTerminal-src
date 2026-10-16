@@ -59,11 +59,53 @@ a = Analysis(
                    # سطح-بال import می‌کنند. مثل tape_flags صریح فهرست می‌شود: نبودنش
                    # EXE را روی اولین درخواستِ چارت می‌کشد.
                    'price_basis', 'candle_contract',
+                   # دورِ قیف (1405-07-16): `funnel_registry` تک‌منبعِ فیلترها و
+                   # presetهاست و api/funnel آن را سطح-بال import می‌کند؛ مثلِ بقیۀ
+                   # ماژول‌هایِ ریشه صریح فهرست می‌شود وگرنه EXE رویِ اولین درخواستِ
+                   # قیف ModuleNotFoundError می‌دهد.
+                   'funnel_registry', 'funnel_engine', 'funnel_tech_scan',
+                   # Universe زنده (وضعیت معاملاتیِ نماد): api/funnel آن را سطح-بال
+                   # import می‌کند و خودِ api.funnel درِ function-body وارد می‌شود؛
+                   # نبودنش EXE را روی اولین /api/universe/live می‌کشد.
+                   'market_universe',
                    # کارِ #73 (بخشِ بنیادی، ۱۴۰۵-۰۷-۱۰): `codal_periods` تنها تعریفِ
                    # «دورۀ گزارش» است و fts_engine / api.fundamental / api.screener /
                    # codal_fetcher سطح-بال importش می‌کنند. نبودنش EXE را رویِ اولین
                    # درخواستِ بنیادی می‌کشد.
                    'codal_periods',
+                   # مرحلۀ ۴ مأموریت بنیادی (۱۴۰۵-۰۷-۲۳): `codal_units` تنها
+                   # تعریفِ «واحدِ پول» است؛ fts_engine (مقیاسِ هر ردیف),
+                   # codal_fetcher (`_classify_unit`) و api.fundamental (ضریب‌های
+                   # نمایش) سطح-بال importش می‌کنند. بی‌این خط EXE رویِ اولین
+                   # درخواستِ بنیادی ModuleNotFoundError می‌دهد.
+                   'codal_units',
+                   # مأموریت «خطِ دریافت خودکار کدال» (۱۴۰۵-۰۷-۲۴):
+                   # `codal_pipeline` صف/checkpoint/قفلِ worker است و `app.py`
+                   # (حلقۀ استارتاپ) و `api/_sync_codal.py` (دستۀ چرخه و سلامت)
+                   # سطح-بال importش می‌کنند؛ بی‌این خط EXE رویِ اولین چرخه
+                   # ModuleNotFoundError می‌دهد.
+                   'codal_pipeline',
+                   # مرحلۀ ۱.۲ مأموریت بنیادی (۱۴۰۵-۰۷-۲۲): `symbol_identity` تنها
+                   # تعریفِ «این ردیف مالکِ کدام ابزار است» است و fts_engine /
+                   # api._core / api.fundamental / api.chart / api.screener و
+                   # confidence_engine آن را صدا می‌زنند. بی‌این خط EXE رویِ اولین
+                   # درخواستِ بنیادی ModuleNotFoundError می‌دهد (همان قاعدۀ
+                   # AGENTS.md برایِ هر ماژولِ ریشه).
+                   'symbol_identity',
+                   # بند ۲ مأموریت (1405-07-20): `client_split` تنها تعریفِ
+                   # درصدِ حقیقی/حقوقی است و api/market.py + mstat_engine آن را
+                   # سطح-بال import می‌کنند؛ نبودنش EXE را رویِ اولین درخواستِ
+                   # تابلو می‌کشد (همان الگوی price_basis/codal_periods).
+                   'client_split',
+                   # بند ۵ مأموریت (1405-07-20): `market_phase` تنها تعریفِ
+                   # مرحلِ جلسه است و mstat_engine آن را import می‌کند؛ مثلِ
+                   # بقیۀ ماژول‌هایِ ریشه صریح فهرست می‌شود.                       
+                   'market_phase',
+                   # بند ۶ مأموریت (1405-07-20): `notifications` تنها طبقه‌بندِ
+                   # اطلاعیه‌هاست و api/notifications آن را سطح-بال import
+                   # می‌کند؛ نبودنش EXE را رویِ اولین درخواستِ مرکزِ اعلان
+                   # می‌کشد (همان قاعدۀ AGENTS.md برایِ هر ماژولِ ریشه).
+                   'notifications',
                    # دورِ P0 (1405-07-13): `tsetmc_p0_schema` تک‌منبعِ DDL جدول‌هایِ
                    # canonical است و هم از test_tsetmc و هم از mstat_engine.
                    # ensure_schema خوانده می‌شود؛ نبودش درِ EXE یعنی 500 رویِ هر
@@ -74,13 +116,31 @@ a = Analysis(
                    # بیازماید. ایمپورتش سطح-بال است اما صریح فهرست می‌شود:
                    # نبودنش EXE را روی اولین درخواست /api/market می‌کشد.
                    'tape_flags',
+                   # سابقۀ ماندگارِ هفت فیلتر (مأموریتِ پروندۀ نماد، ۱۴۰۵-۰۷-۲۱):
+                   # api/market.py آن را سطح-بال import می‌کند و هر دو نوشتنِ
+                   # تابلو و خواندنِ /api/tape-history از همین ماژول می‌گذرند؛
+                   # نبودنش EXE را رویِ اولین درخواستِ تابلو می‌کشد (همان قاعدۀ
+                   # AGENTS.md برایِ هر ماژولِ ریشه).
+                   'tape_flag_history',
                    # حالتِ داغِ تابلو (کار #73): api.market و test_tsetmc آن را import
                    # می‌کنند (test_tsetmc درِ بدنهٔ تابع، پس ایستیک‌اسکن نمی‌بیند).
                    # نبودنش EXE را روی اولین تیکِ زنده می‌کشد.
                    'market_state',
                    'api._core', 'api.market', 'api.chart', 'api.selection',
                    'api.watchlist', 'api.fundamental', 'api.market_status',
-                   'api.screener', 'api._sync_market', 'api._export',
+                   'api.screener',
+                   # دورِ قیف: `api_router` ماژولِ funnel را هم درِ بدنهٔ تابع import
+                   # می‌کند (api/__init__.py:13)، پس ایستیک‌اسکن آن را نمی‌بیند و
+                   # ماژول درِ PYZ نبود — EXE رویِ اولین /api/funnel
+                   # ModuleNotFoundError می‌داد. گاردِ dev/onedir_contract_v11.py
+                   # همین را گرفت.
+                   'api.funnel',
+                   # بند ۶ مأموریت (1405-07-20): `api_router` مرکزِ اعلان را هم
+                   # درِ بدنهٔ تابع import می‌کند (api/__init__.py)؛ بی‌این خط
+                   # EXE رویِ اولین /api/notifications/* می‌شکند — همان چیزی که
+                   # گاردِ dev/onedir_contract_v11.py درِ همین دور گرفت.
+                   'api.notifications',
+                   'api._sync_market', 'api._export',
                    'api._sync_codal', 'api.adb', 'api.notify',
                    'api._pipeline', 'api.engine', 'watchlist_store',
                    # api/__init__.py:12 از api_router دو ماژولِ دیگر را هم import
@@ -88,6 +148,28 @@ a = Analysis(
                    # بودند و در آرشیوِ PYZ نیستند. اگر مسیرِ import هرگز به دیسک
                    # نرسد، EXE با ModuleNotFoundError می‌میرد.
                    'api.market_index', 'api.diagnostics',
+                   # دروازۀ اجرای سفارش (مأموریت ۱۴۰۵-۰۷-۲۳، بند ۵): مثلِ بقیه درِ
+                   # بدنهٔ `api_router` ایمپورت می‌شود (api/__init__.py:12) و
+                   # ایستیک‌اسکن آن را نمی‌بیند. بی‌این خط EXE روی اولین
+                   # /api/execution/status می‌شکند — همان مسیرِی که
+                   # frontend/src/features/portfolio/lib/orderClient.ts:147 صدا می‌زند.
+                   # خودِ execution_contract/mock/service/timing/latency/ledger در
+                   # سرِ api/execution.py سطح-بال import‌اند، پس اسکن ایستا می‌بیندشان.
+                   'api.execution',
+                   # آداپتورِ EasyTrader (مأموریتِ ۱۴۰۵-۰۷-۲۴): سطح-بال است و اسکن
+                   # ایستا باید پیدایش کند — ولی قاعدۀ مخزن این است که چیزی که
+                   # درِ EXE کشنده است، به حدسِ اسکن سپرده نشود. بی‌این خط، بیلدِ
+                   # منجمد رویِ اولین /api/execution/status با ModuleNotFoundError
+                   # می‌میرد و گاردِ HTTPِ محلی هیچ‌وقت این را نمی‌بیند.
+                   'execution_easytrader',
+                   # دروازۀ ربات (مأموریتِ ۱۴۰۵-۰۷-۲۴، فاز ۳): مثلِ بقیۀ api/*
+                   # درِ بدنهٔ `api_router()` ایمپورت می‌شود، پس اسکن ایستا
+                   # نمی‌بیندش؛ بی‌این خط هر /api/bot/* درِ EXE روی 404 می‌ماند.
+                   # سه ماژولِ بعدی سطح‌بالِ خودِ api/bot.py‌اند و اسکن باید
+                   # پیدایشان کند — اینجا هم فهرست شده‌اند چون قاعدۀ مخزن این
+                   # است: چیزی که درِ بستهٔ نهایی کشنده است، به حدس سپرده نشود.
+                   'api.bot', 'bot_signals', 'paper_trading', 'trade_sim',
+                   'backtest_engine',
                    # پنجرهٔ مستقلِ بومی (Edge WebView2): pywebview روی ویندوز به
                    # pythonnet/clr نیاز دارد. نبودشان کشنده نیست — bors_entry
                    # عمداً به پنجرهٔ مرورگر برمی‌گردد — ولی بودنشان همان پنجرهٔ

@@ -1,0 +1,135 @@
+{
+  "api": {
+    "phase": "closed",
+    "label": "پایانِ نشست",
+    "phase_source": "tsetmc_marketState",
+    "official": true,
+    "official_state": "F",
+    "official_state_title": "بسته",
+    "session_day": 20261010,
+    "activity_h_even": 185711,
+    "is_live": false,
+    "verdict_allowed": true,
+    "computable": {
+      "realized_flow": true,
+      "order_pressure": false,
+      "session_vs_threshold": true,
+      "close_price_final": true
+    },
+    "not_computable": [
+      "order_pressure"
+    ],
+    "why_not": {
+      "order_pressure": "دفترِ سفارشِ همین نشست در دسترس نیست"
+    },
+    "data_updated_at": "2026-10-10 22:25:00",
+    "clock_now": "2026-10-10 23:53:02",
+    "session_start": "09:00",
+    "session_end": "12:30",
+    "status": "ok",
+    "source": "local:market.db"
+  },
+  "summary_phase": {
+    "phase": "closed",
+    "label": "پایانِ نشست",
+    "phase_source": "tsetmc_marketState",
+    "official": true,
+    "official_state": "F",
+    "official_state_title": "بسته",
+    "session_day": 20261010,
+    "activity_h_even": 185711,
+    "is_live": false,
+    "verdict_allowed": true,
+    "computable": {
+      "realized_flow": true,
+      "order_pressure": false,
+      "session_vs_threshold": true,
+      "close_price_final": true
+    },
+    "not_computable": [
+      "order_pressure"
+    ],
+    "why_not": {
+      "order_pressure": "دفترِ سفارشِ همین نشست در دسترس نیست"
+    },
+    "data_updated_at": "2026-10-10 22:25:00",
+    "clock_now": "2026-10-10 23:53:02",
+    "session_start": "09:00",
+    "session_end": "12:30"
+  },
+  "health": {
+    "value_hemat": 41.26,
+    "state": "good",
+    "label": "مساعد",
+    "basis": "eq_all",
+    "phase": "closed",
+    "phase_label": "پایانِ نشست",
+    "phase_source": "tsetmc_marketState",
+    "phase_official": true,
+    "session_day": 20261010,
+    "session_is_live": false,
+    "trade_value_all_market_hemat": 91.49,
+    "market_value_hemat": 28289.6,
+    "market_value_source": "tse_market_overview",
+    "excellent": false,
+    "good_min": 20,
+    "bad_max": 10,
+    "excellent_min": 50
+  },
+  "dom": {
+    "panel": true,
+    "phase": "closed",
+    "labelText": "پایانِ نشست",
+    "source": "از وضعیتِ رسمیِ بازار",
+    "verdict": "این نشست قابلِ داوری است؛ حکمِ «مساعد/نامساعد» از همان آستانه‌هایِ سندِ FTS می‌آید.",
+    "missing": "",
+    "day": "نشستِ ۱۴۰۵/۰۷/۱۸",
+    "overflowX": 0
+  },
+  "checks": [
+    {
+      "n": "بلوکِ مرحل رویِ صفحۀ وضعیت بازار دیدنی است (کنترلِ رسیدن)",
+      "ok": true,
+      "d": true
+    },
+    {
+      "n": "مرحلِ صفحه = مرحلِ API",
+      "ok": true,
+      "d": {
+        "dom": "closed",
+        "api": "closed"
+      }
+    },
+    {
+      "n": "برچسبِ فارسیِ همان مرحل رویِ صفحه است",
+      "ok": true,
+      "d": "پایانِ نشست"
+    },
+    {
+      "n": "منبعِ مرحل صریح نوشته می‌شود (رسمی یا تقویم)",
+      "ok": true,
+      "d": "از وضعیتِ رسمیِ بازار"
+    },
+    {
+      "n": "خطِ حکم با verdict_allowedِ خودِ بک‌اند می‌خواند",
+      "ok": true,
+      "d": {
+        "allowed": true,
+        "verdict": "این نشست قابلِ داوری است؛ حکمِ «مساعد/نامساعد» از همان آستانه‌هایِ سندِ FTS می‌آید."
+      }
+    },
+    {
+      "n": "ستونِ مرحل درِ پاسخِ خلاصه هم هست (یک منبع برای هر دو بلوک)",
+      "ok": true,
+      "d": {
+        "summary": "closed",
+        "api": "closed"
+      }
+    },
+    {
+      "n": "بی‌سرریزِ افقی درِ ۱۳۶۶×۷۶۸",
+      "ok": true,
+      "d": 0
+    }
+  ]
+}

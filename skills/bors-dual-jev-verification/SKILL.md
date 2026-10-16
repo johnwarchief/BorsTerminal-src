@@ -1,15 +1,15 @@
 ---
 name: bors-dual-jev-verification
-description: Close every unit of work in the BorsTerminal project with BOTH jev tools - prose arbitration via tools/pilot_ctl.py arbitrate, then live browser verification via tools/jev_ui_check.mts. Use after any code change, bug fix, or before cutting a release tag, and whenever the owner says "از دوتا jev استفاده کن", "هر دو jev", or asks whether a change was verified.
+description: Legacy Jev-specific verification workflow retained for fallback and migration comparison. On 2026-10-10 the owner requested Jev-to-Laya migration; do not treat this skill as the canonical mandatory workflow until the actual Qoder/Laya integration is verified.
 ---
 
-# Bors dual-jev verification
+# Bors dual-jev verification (legacy fallback)
+
+> **Status as of 2026-10-10:** the owner requested replacing Jev-based decisions/browser checks with Laya. This file documents the previous Jev workflow and must not override that newer direction. Keep it for fallback and comparison until Laya passes equivalent end-to-end tests; do not claim migration is complete from this note alone.
 
 ## Overview
 
-No unit of work in BorsTerminal is finished until two independent jev tools have passed:
-the prose arbiter (jev-pilot) and the live browser check (jev-browser). One alone does not
-count. If a step was skipped, say so explicitly instead of reporting success.
+For current work, live UI verification is still required, but Jev is no longer the automatic canonical decision layer. Prefer the verified Laya integration once available; until then use the existing Playwright/CDP browser checks and mark the Laya migration `UNVERIFIED`. Use the Jev steps below only when explicitly validating the legacy path or comparing a migration.
 
 ## Preconditions
 

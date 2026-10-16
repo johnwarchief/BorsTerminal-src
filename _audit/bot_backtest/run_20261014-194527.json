@@ -1,0 +1,727 @@
+{
+ "universe": {
+  "symbols": 40,
+  "min_bars": 300,
+  "sessions": 517,
+  "span": [
+   "2024-08-24",
+   "2026-10-14"
+  ],
+  "bar_rows": 20446
+ },
+ "strategy": "ma_cross",
+ "params": {
+  "fast": 20,
+  "slow": 60
+ },
+ "cost_model": {
+  "commission_bps": 30.0,
+  "slippage_bps": 10.0,
+  "max_volume_share": 0.02
+ },
+ "risk_limits": {
+  "max_order_value": null,
+  "max_symbol_exposure": null,
+  "max_total_exposure": null,
+  "max_daily_loss": null,
+  "max_orders_per_day": null,
+  "max_missing_sessions": null,
+  "position_size_fraction": 0.1
+ },
+ "start_cash": 1000000000.0,
+ "runs": {
+  "full": {
+   "metrics": {
+    "sessions": 517,
+    "sessions_marked": 512,
+    "end_equity": 1592040517.8429785,
+    "total_return": 0.5920405178429784,
+    "max_drawdown": -0.24166330393919,
+    "annualised_volatility": 0.17388892760795366,
+    "sharpe_like": 1.3961682901546162,
+    "trades": 186,
+    "buys": 99,
+    "sells": 87,
+    "closed_sells": 87,
+    "win_count": 39,
+    "win_rate": 0.4482758620689655,
+    "best_trade": 39922182.33416,
+    "worst_trade": -70135853.93999998,
+    "fees_total": 44621065.337022,
+    "turnover": 14873688445.674,
+    "cost_drag_of_start": 0.044621065337022,
+    "realized_pnl_total": -39104910.31678074,
+    "rejections": {
+     "size_zero": 52,
+     "no_bar": 1,
+     "stale": 4
+    },
+    "rejected_total": 57,
+    "kill_switch": {
+     "killed": false,
+     "reason": ""
+    },
+    "final_positions": {
+     "سرود": {
+      "qty": 12403.0,
+      "avg": 7430.0
+     },
+     "شاملا": {
+      "qty": 4823.0,
+      "avg": 19289.269999999997
+     },
+     "شفارس": {
+      "qty": 78176.0,
+      "avg": 1193.1919999999998
+     },
+     "چخزر": {
+      "qty": 71.0,
+      "avg": 66466.4
+     },
+     "فنوال": {
+      "qty": 1.0,
+      "avg": 6096.089999999999
+     },
+     "فگستر": {
+      "qty": 12976.0,
+      "avg": 3995.9919999999997
+     },
+     "سشمال": {
+      "qty": 8109.0,
+      "avg": 15805.789999999999
+     },
+     "سفار": {
+      "qty": 619.0,
+      "avg": 226600.0
+     },
+     "شاروم": {
+      "qty": 9606.0,
+      "avg": 14190.0
+     },
+     "سخاش": {
+      "qty": 1781.0,
+      "avg": 14150.0
+     },
+     "سبهان": {
+      "qty": 5871.0,
+      "avg": 6606.5999999999985
+     },
+     "نخل": {
+      "qty": 13007.0,
+      "avg": 10285.0
+     }
+    }
+   },
+   "digest": "d84e8e9d94c1fb6b",
+   "manifest": {
+    "engine_version": "bot-backtest-2",
+    "strategy": "ma_cross",
+    "strategy_params": {
+     "fast": 20,
+     "slow": 60
+    },
+    "cost_model": {
+     "commission_bps": 30.0,
+     "slippage_bps": 10.0,
+     "max_volume_share": 0.02
+    },
+    "risk_limits": {
+     "max_order_value": null,
+     "max_symbol_exposure": null,
+     "max_total_exposure": null,
+     "max_daily_loss": null,
+     "max_orders_per_day": null,
+     "max_missing_sessions": null,
+     "position_size_fraction": 0.1
+    },
+    "start_cash": 1000000000.0,
+    "fill_rule": "signal on day T, fill at open of T+1, bounded by T+1 low/high and by max_volume_share",
+    "lookahead_guard": "strategy receives BarView(bars = seq[:i+1]) only",
+    "universe_size": 40,
+    "universe_hash": "ac6c60eb4f39",
+    "sessions": 517,
+    "date_span": [
+     "2024-08-24",
+     "2026-10-14"
+    ],
+    "bar_rows": 20446,
+    "bar_src_mix": {
+     "null": 19070,
+     "board": 1376
+    },
+    "halted_rows": 0
+   },
+   "span": [
+    "2024-08-24",
+    "2026-10-14"
+   ],
+   "n_sessions": 517
+  },
+  "split_train": {
+   "metrics": {
+    "sessions": 310,
+    "sessions_marked": 307,
+    "end_equity": 1026923663.7667153,
+    "total_return": 0.026923663766715178,
+    "max_drawdown": -0.21427925629376265,
+    "annualised_volatility": 0.11390835181162962,
+    "sharpe_like": 0.24764871684123804,
+    "trades": 104,
+    "buys": 57,
+    "sells": 47,
+    "closed_sells": 47,
+    "win_count": 18,
+    "win_rate": 0.3829787234042553,
+    "best_trade": 30838662.626550004,
+    "worst_trade": -42880967.86512,
+    "fees_total": 24599446.986285,
+    "turnover": 8199815662.094999,
+    "cost_drag_of_start": 0.024599446986285002,
+    "realized_pnl_total": -75398468.16727191,
+    "rejections": {
+     "size_zero": 32,
+     "no_bar": 1,
+     "stale": 4
+    },
+    "rejected_total": 37,
+    "kill_switch": {
+     "killed": false,
+     "reason": ""
+    },
+    "final_positions": {
+     "سرود": {
+      "qty": 28374.0,
+      "avg": 6094.711305420455
+     },
+     "چخزر": {
+      "qty": 38.0,
+      "avg": 61361.299999999996
+     },
+     "شاروم": {
+      "qty": 17873.0,
+      "avg": 9082.15202484194
+     },
+     "سخاش": {
+      "qty": 13371.0,
+      "avg": 6526.519999999999
+     },
+     "شاملا": {
+      "qty": 4450.0,
+      "avg": 13540.0
+     },
+     "سشمال": {
+      "qty": 3204.0,
+      "avg": 27507.479999999996
+     },
+     "سفار": {
+      "qty": 452.0,
+      "avg": 179799.61999999997
+     },
+     "سبهان": {
+      "qty": 25157.0,
+      "avg": 3711.7079999999996
+     },
+     "مارون": {
+      "qty": 1585.0,
+      "avg": 56306.24999999999
+     },
+     "همگام": {
+      "qty": 20.0,
+      "avg": 10109.0
+     }
+    }
+   },
+   "digest": "ca6e1737903c4fcb",
+   "manifest": {
+    "engine_version": "bot-backtest-2",
+    "strategy": "ma_cross",
+    "strategy_params": {
+     "fast": 20,
+     "slow": 60
+    },
+    "cost_model": {
+     "commission_bps": 30.0,
+     "slippage_bps": 10.0,
+     "max_volume_share": 0.02
+    },
+    "risk_limits": {
+     "max_order_value": null,
+     "max_symbol_exposure": null,
+     "max_total_exposure": null,
+     "max_daily_loss": null,
+     "max_orders_per_day": null,
+     "max_missing_sessions": null,
+     "position_size_fraction": 0.1
+    },
+    "start_cash": 1000000000.0,
+    "fill_rule": "signal on day T, fill at open of T+1, bounded by T+1 low/high and by max_volume_share",
+    "lookahead_guard": "strategy receives BarView(bars = seq[:i+1]) only",
+    "universe_size": 40,
+    "universe_hash": "ac6c60eb4f39",
+    "sessions": 310,
+    "date_span": [
+     "2024-08-24",
+     "2025-12-03"
+    ],
+    "bar_rows": 20446,
+    "bar_src_mix": {
+     "null": 19070,
+     "board": 1376
+    },
+    "halted_rows": 0
+   },
+   "span": [
+    "2024-08-24",
+    "2025-12-03"
+   ],
+   "n_sessions": 310
+  },
+  "split_validation": {
+   "metrics": {
+    "sessions": 103,
+    "sessions_marked": 97,
+    "end_equity": 924543780.6306869,
+    "total_return": -0.07545621936931313,
+    "max_drawdown": -0.09159569652381172,
+    "annualised_volatility": 0.08722107552380556,
+    "sharpe_like": -2.296755675789227,
+    "trades": 35,
+    "buys": 22,
+    "sells": 13,
+    "closed_sells": 13,
+    "win_count": 5,
+    "win_rate": 0.38461538461538464,
+    "best_trade": 494085.36100000143,
+    "worst_trade": -25248008.03428799,
+    "fees_total": 9220282.790313,
+    "turnover": 3073427596.771,
+    "cost_drag_of_start": 0.009220282790313,
+    "realized_pnl_total": -33374338.68828799,
+    "rejections": {
+     "size_zero": 11,
+     "stale": 1
+    },
+    "rejected_total": 12,
+    "kill_switch": {
+     "killed": false,
+     "reason": ""
+    },
+    "final_positions": {
+     "فگستر": {
+      "qty": 23082.0,
+      "avg": 4332.3279999999995
+     },
+     "همگام": {
+      "qty": 10029.0,
+      "avg": 10028.0
+     },
+     "نخل": {
+      "qty": 9530.0,
+      "avg": 10225.0
+     },
+     "هماي": {
+      "qty": 9492.0,
+      "avg": 10262.0
+     },
+     "سخاش": {
+      "qty": 10583.0,
+      "avg": 8770.0
+     },
+     "سشمال": {
+      "qty": 8531.0,
+      "avg": 10820.0
+     },
+     "سرود": {
+      "qty": 12458.0,
+      "avg": 7430.0
+     },
+     "كمند": {
+      "qty": 9024.0,
+      "avg": 10264.0
+     },
+     "هامرز": {
+      "qty": 9026.0,
+      "avg": 10259.0
+     }
+    }
+   },
+   "digest": "f85da9baca016af1",
+   "manifest": {
+    "engine_version": "bot-backtest-2",
+    "strategy": "ma_cross",
+    "strategy_params": {
+     "fast": 20,
+     "slow": 60
+    },
+    "cost_model": {
+     "commission_bps": 30.0,
+     "slippage_bps": 10.0,
+     "max_volume_share": 0.02
+    },
+    "risk_limits": {
+     "max_order_value": null,
+     "max_symbol_exposure": null,
+     "max_total_exposure": null,
+     "max_daily_loss": null,
+     "max_orders_per_day": null,
+     "max_missing_sessions": null,
+     "position_size_fraction": 0.1
+    },
+    "start_cash": 1000000000.0,
+    "fill_rule": "signal on day T, fill at open of T+1, bounded by T+1 low/high and by max_volume_share",
+    "lookahead_guard": "strategy receives BarView(bars = seq[:i+1]) only",
+    "universe_size": 40,
+    "universe_hash": "ac6c60eb4f39",
+    "sessions": 103,
+    "date_span": [
+     "2025-12-06",
+     "2026-05-13"
+    ],
+    "bar_rows": 20446,
+    "bar_src_mix": {
+     "null": 19070,
+     "board": 1376
+    },
+    "halted_rows": 0
+   },
+   "span": [
+    "2025-12-06",
+    "2026-05-13"
+   ],
+   "n_sessions": 103
+  },
+  "split_test": {
+   "metrics": {
+    "sessions": 104,
+    "sessions_marked": 102,
+    "end_equity": 2013393962.9522622,
+    "total_return": 1.0133939629522621,
+    "max_drawdown": -0.0710471030543911,
+    "annualised_volatility": 0.26141195187589517,
+    "sharpe_like": 6.778705224464029,
+    "trades": 43,
+    "buys": 27,
+    "sells": 16,
+    "closed_sells": 16,
+    "win_count": 11,
+    "win_rate": 0.6875,
+    "best_trade": 43414501.00171998,
+    "worst_trade": -67889260.01999998,
+    "fees_total": 11373518.601738,
+    "turnover": 3791172867.246,
+    "cost_drag_of_start": 0.011373518601738,
+    "realized_pnl_total": 5411731.209300064,
+    "rejections": {
+     "size_zero": 11
+    },
+    "rejected_total": 11,
+    "kill_switch": {
+     "killed": false,
+     "reason": ""
+    },
+    "final_positions": {
+     "شاملا": {
+      "qty": 5214.0,
+      "avg": 19289.269999999997
+     },
+     "شفارس": {
+      "qty": 84506.0,
+      "avg": 1193.1919999999998
+     },
+     "چخزر": {
+      "qty": 1555.0,
+      "avg": 66466.4
+     },
+     "فنوال": {
+      "qty": 17769.0,
+      "avg": 6096.089999999999
+     },
+     "فگستر": {
+      "qty": 12976.0,
+      "avg": 3995.9919999999997
+     },
+     "سشمال": {
+      "qty": 9544.0,
+      "avg": 15805.789999999999
+     },
+     "سفار": {
+      "qty": 728.0,
+      "avg": 226600.0
+     },
+     "شاروم": {
+      "qty": 1577.0,
+      "avg": 14190.0
+     },
+     "سبهان": {
+      "qty": 5684.0,
+      "avg": 6606.599999999999
+     },
+     "نخل": {
+      "qty": 15201.0,
+      "avg": 10285.0
+     },
+     "كمند": {
+      "qty": 122.0,
+      "avg": 10027.0
+     }
+    }
+   },
+   "digest": "2b5afa53b974770b",
+   "manifest": {
+    "engine_version": "bot-backtest-2",
+    "strategy": "ma_cross",
+    "strategy_params": {
+     "fast": 20,
+     "slow": 60
+    },
+    "cost_model": {
+     "commission_bps": 30.0,
+     "slippage_bps": 10.0,
+     "max_volume_share": 0.02
+    },
+    "risk_limits": {
+     "max_order_value": null,
+     "max_symbol_exposure": null,
+     "max_total_exposure": null,
+     "max_daily_loss": null,
+     "max_orders_per_day": null,
+     "max_missing_sessions": null,
+     "position_size_fraction": 0.1
+    },
+    "start_cash": 1000000000.0,
+    "fill_rule": "signal on day T, fill at open of T+1, bounded by T+1 low/high and by max_volume_share",
+    "lookahead_guard": "strategy receives BarView(bars = seq[:i+1]) only",
+    "universe_size": 40,
+    "universe_hash": "ac6c60eb4f39",
+    "sessions": 104,
+    "date_span": [
+     "2026-05-16",
+     "2026-10-14"
+    ],
+    "bar_rows": 20446,
+    "bar_src_mix": {
+     "null": 19070,
+     "board": 1376
+    },
+    "halted_rows": 0
+   },
+   "span": [
+    "2026-05-16",
+    "2026-10-14"
+   ],
+   "n_sessions": 104
+  },
+  "walk_fold1": {
+   "metrics": {
+    "sessions": 129,
+    "sessions_marked": 124,
+    "end_equity": 944070428.6873112,
+    "total_return": -0.05592957131268883,
+    "max_drawdown": -0.21380321315736983,
+    "annualised_volatility": 0.17571240230787086,
+    "sharpe_like": -0.5754027694563629,
+    "trades": 50,
+    "buys": 26,
+    "sells": 24,
+    "closed_sells": 24,
+    "win_count": 9,
+    "win_rate": 0.375,
+    "best_trade": 20771369.768480033,
+    "worst_trade": -50955684.44999998,
+    "fees_total": 12843220.621689,
+    "turnover": 4281073540.5629997,
+    "cost_drag_of_start": 0.012843220621689,
+    "realized_pnl_total": -66445093.879807875,
+    "rejections": {
+     "size_zero": 14,
+     "stale": 1
+    },
+    "rejected_total": 15,
+    "kill_switch": {
+     "killed": false,
+     "reason": ""
+    },
+    "final_positions": {
+     "چخزر": {
+      "qty": 566.0,
+      "avg": 51551.49999999999
+     },
+     "فگستر": {
+      "qty": 24507.0,
+      "avg": 4332.3279999999995
+     },
+     "همگام": {
+      "qty": 10799.0,
+      "avg": 10028.0
+     }
+    }
+   },
+   "digest": "c34ec511e1fe07e8",
+   "manifest": {
+    "engine_version": "bot-backtest-2",
+    "strategy": "ma_cross",
+    "strategy_params": {
+     "fast": 20,
+     "slow": 60
+    },
+    "cost_model": {
+     "commission_bps": 30.0,
+     "slippage_bps": 10.0,
+     "max_volume_share": 0.02
+    },
+    "risk_limits": {
+     "max_order_value": null,
+     "max_symbol_exposure": null,
+     "max_total_exposure": null,
+     "max_daily_loss": null,
+     "max_orders_per_day": null,
+     "max_missing_sessions": null,
+     "position_size_fraction": 0.1
+    },
+    "start_cash": 1000000000.0,
+    "fill_rule": "signal on day T, fill at open of T+1, bounded by T+1 low/high and by max_volume_share",
+    "lookahead_guard": "strategy receives BarView(bars = seq[:i+1]) only",
+    "universe_size": 40,
+    "universe_hash": "ac6c60eb4f39",
+    "sessions": 129,
+    "date_span": [
+     "2025-09-22",
+     "2026-04-06"
+    ],
+    "bar_rows": 20446,
+    "bar_src_mix": {
+     "null": 19070,
+     "board": 1376
+    },
+    "halted_rows": 0
+   },
+   "span": [
+    "2025-09-22",
+    "2026-04-06"
+   ],
+   "n_sessions": 129
+  },
+  "walk_fold2": {
+   "metrics": {
+    "sessions": 129,
+    "sessions_marked": 127,
+    "end_equity": 1694624319.9648662,
+    "total_return": 0.6946243199648661,
+    "max_drawdown": -0.10090534807016438,
+    "annualised_volatility": 0.22307799518562418,
+    "sharpe_like": 4.811835139645272,
+    "trades": 56,
+    "buys": 33,
+    "sells": 23,
+    "closed_sells": 23,
+    "win_count": 13,
+    "win_rate": 0.5652173913043478,
+    "best_trade": 43165502.804259986,
+    "worst_trade": -76208678.13,
+    "fees_total": 16083071.197134,
+    "turnover": 5361023732.378,
+    "cost_drag_of_start": 0.016083071197134,
+    "realized_pnl_total": 20888925.93619007,
+    "rejections": {
+     "size_zero": 10
+    },
+    "rejected_total": 10,
+    "kill_switch": {
+     "killed": false,
+     "reason": ""
+    },
+    "final_positions": {
+     "سرود": {
+      "qty": 13411.0,
+      "avg": 7430.0
+     },
+     "شاملا": {
+      "qty": 5215.0,
+      "avg": 19289.269999999997
+     },
+     "شفارس": {
+      "qty": 84528.0,
+      "avg": 1193.1919999999998
+     },
+     "چخزر": {
+      "qty": 61.0,
+      "avg": 66466.4
+     },
+     "فگستر": {
+      "qty": 12976.0,
+      "avg": 3995.9919999999997
+     },
+     "سشمال": {
+      "qty": 8728.0,
+      "avg": 15805.79
+     },
+     "سفار": {
+      "qty": 665.0,
+      "avg": 226600.0
+     },
+     "شاروم": {
+      "qty": 10310.0,
+      "avg": 14190.0
+     },
+     "سخاش": {
+      "qty": 2392.0,
+      "avg": 14150.0
+     },
+     "سبهان": {
+      "qty": 6377.0,
+      "avg": 6606.599999999999
+     },
+     "نخل": {
+      "qty": 13989.0,
+      "avg": 10285.0
+     }
+    }
+   },
+   "digest": "b2bcde30b92bc8f9",
+   "manifest": {
+    "engine_version": "bot-backtest-2",
+    "strategy": "ma_cross",
+    "strategy_params": {
+     "fast": 20,
+     "slow": 60
+    },
+    "cost_model": {
+     "commission_bps": 30.0,
+     "slippage_bps": 10.0,
+     "max_volume_share": 0.02
+    },
+    "risk_limits": {
+     "max_order_value": null,
+     "max_symbol_exposure": null,
+     "max_total_exposure": null,
+     "max_daily_loss": null,
+     "max_orders_per_day": null,
+     "max_missing_sessions": null,
+     "position_size_fraction": 0.1
+    },
+    "start_cash": 1000000000.0,
+    "fill_rule": "signal on day T, fill at open of T+1, bounded by T+1 low/high and by max_volume_share",
+    "lookahead_guard": "strategy receives BarView(bars = seq[:i+1]) only",
+    "universe_size": 40,
+    "universe_hash": "ac6c60eb4f39",
+    "sessions": 129,
+    "date_span": [
+     "2026-04-07",
+     "2026-10-13"
+    ],
+    "bar_rows": 20446,
+    "bar_src_mix": {
+     "null": 19070,
+     "board": 1376
+    },
+    "halted_rows": 0
+   },
+   "span": [
+    "2026-04-07",
+    "2026-10-13"
+   ],
+   "n_sessions": 129
+  }
+ },
+ "db": "C:\\Users\\PCMOD\\Desktop\\BorsTerminal\\market.db"
+}

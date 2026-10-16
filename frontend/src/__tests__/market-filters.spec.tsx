@@ -3,6 +3,7 @@ import { fireEvent, render, screen, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { MarketFilters } from '@features/market/components/MarketFilters';
 import { ASSET_TYPES } from '@features/market/lib/assetType';
+import { useScreenFilterStore } from '@shared/stores/screenFilterStore';
 import {
   DEFAULT_ASSET_TYPES,
   VOL_RATIO_DEFAULT,
@@ -117,13 +118,13 @@ describe('کنترل‌های فیلتر در MarketFilters', () => {
         }}
       />,
     );
-    const roobi = screen.getByTitle(/کف‌روبی — ۳۰ ردیف/);
+    const roobi = screen.getByTitle(/کف‌روبی — ۳۰ نمادِ واجدِ شرایط/);
     expect(roobi.getAttribute('title')).toContain('(نمادِ خاموش ۳۰)');
     // دو در با شمارِ خودشان، به رتبهٔ HIDDEN_DOORS
-    expect(screen.getByTitle(/حجم مشکوک — ۵۱ ردیف/).getAttribute('title')).toContain(
-      '(پسوندِ عددی ۴۴، بازار/ابزارِ خاموش ۷)',
-    );
-    expect(screen.getByTitle(/نقطه زنی — ۷ ردیف/).getAttribute('title')).toContain(
+    expect(
+      screen.getByTitle(/حجم مشکوک — ۵۱ نمادِ واجدِ شرایط/).getAttribute('title'),
+    ).toContain('(پسوندِ عددی ۴۴، بازار/ابزارِ خاموش ۷)');
+    expect(screen.getByTitle(/نقطه زنی — ۷ نمادِ واجدِ شرایط/).getAttribute('title')).toContain(
       '(صنعت ۲، جستجو ۵)',
     );
     // جت هیچ ردیفِ پنهانی ندارد → عنوانِ ساده، بدونِ ادعایِ دروغ
@@ -147,7 +148,7 @@ describe('کنترل‌های فیلتر در MarketFilters', () => {
         }}
       />,
     );
-    const title = screen.getByTitle(/حجم مشکوک — ۱۲ ردیف/).getAttribute('title') ?? '';
+    const title = screen.getByTitle(/حجم مشکوک — ۱۲ نمادِ واجدِ شرایط/).getAttribute('title') ?? '';
     expect(title).toContain('(پسوندِ عددی ۱۲)');
     expect(title).not.toContain('نمادِ خاموش');
     expect(title).not.toContain('بازار');
@@ -170,14 +171,16 @@ describe('کنترل‌های فیلتر در MarketFilters', () => {
         }}
       />,
     );
-    const susp = screen.getByTitle(/حجم مشکوک — ۵۱ ردیف/).getAttribute('title') ?? '';
-    expect(susp).toContain('دیده نمی‌شوند');
+    const susp = screen.getByTitle(/حجم مشکوک — ۵۱ نمادِ واجدِ شرایط/).getAttribute('title') ?? '';
+    expect(susp).toContain('نمایش داده نمی‌شود');
     expect(susp).toContain('حذفِ پسوندِ عددی');
     expect(susp).toContain('بازارها / ابزارها');
     // فقط زنده هم کلیدِ خودش را دارد
-    expect(screen.getByTitle(/کف‌روبی — ۳۰ ردیف/).getAttribute('title')).toContain('فقط زنده');
+    expect(
+      screen.getByTitle(/کف‌روبی — ۳۰ نمادِ واجدِ شرایط/).getAttribute('title'),
+    ).toContain('فقط زنده');
     // صنعت و جستجو رأیِ خودِ کاربرند، پس هیچ کلیدی وعده داده نمی‌شود
-    const noqteh = screen.getByTitle(/نقطه زنی — ۷ ردیف/).getAttribute('title') ?? '';
+    const noqteh = screen.getByTitle(/نقطه زنی — ۷ نمادِ واجدِ شرایط/).getAttribute('title') ?? '';
     expect(noqteh).not.toContain('باز می‌شوند');
   });
 });
@@ -337,6 +340,50 @@ describe('سوییچِ «حذفِ پسوندِ عددی» در نوارِ فیل
     render(<MarketFilters sectors={[]} />);
     expect(toggle().getAttribute('title')).toContain('پیش‌فرضِ تابلو');
     fireEvent.click(toggle());
-    expect(toggle().getAttribute('title')).toContain('نشست‌هایِ قدیمی');
+    expect(toggle().getAttribute('title')).toContain('روزهایِ معاملاتیِ قدیمی');
+  });
+});
+
+describe('کلیدِ اشتراک/اجتماعِ غربالگری (رأیِ مالک ۱۴۰۵-۰۷-۲۰)', () => {
+  const logic = () => screen.getByTestId('screen-logic-toggle');
+
+  beforeEach(() => {
+    useTapeStore.getState().resetFilters();
+    useScreenFilterStore.getState().setLogic('and');
+  });
+
+  it('با هیچ چیپِ روشن غیرفعال است — «اجتماع» بی‌موضوع پیشنهاد نمی‌شود', () => {
+    render(<MarketFilters sectors={[]} />);
+    expect(logic()).toBeDisabled();
+    expect(logic().textContent).toBe('اشتراک');
+  });
+
+  it('با یک چیپ فعال می‌شود و کلیک، منطق را برمی‌گرداند و ذخیره می‌کند', () => {
+    render(<MarketFilters sectors={[]} />);
+    fireEvent.click(screen.getByText(/حجم مشکوک/));
+    expect(logic()).toBeEnabled();
+    fireEvent.click(logic());
+    expect(useScreenFilterStore.getState().logic).toBe('or');
+    expect(logic()).toHaveAttribute('aria-pressed', 'true');
+    expect(localStorage.getItem('bors.screen.logic.v1')).toBe('or');
+    fireEvent.click(logic());
+    expect(useScreenFilterStore.getState().logic).toBe('and');
+  });
+
+  it('متنِ راهنما شمارۀ واقعیِ چیپ‌هایِ روشن را می‌گوید، نه عددِ دست‌نویس', () => {
+    render(<MarketFilters sectors={[]} />);
+    fireEvent.click(screen.getByText(/حجم مشکوک/));
+    fireEvent.click(screen.getByText(/کف‌روبی/));
+    expect(logic().getAttribute('title')).toContain('۲');
+    fireEvent.click(logic());
+    expect(logic().getAttribute('title')).toContain('حداقل یکی از ۲');
+  });
+
+  it('«پاک کردن» تابلو انتخابِ غربالگری را هم بی‌اثر می‌کند (یکی، نه دو تا)', () => {
+    render(<MarketFilters sectors={[]} />);
+    fireEvent.click(screen.getByText(/نقطه زنی/));
+    fireEvent.click(screen.getByTestId('filters-reset'));
+    expect(useTapeStore.getState().quickFilters).toEqual([]);
+    expect(logic()).toBeDisabled();
   });
 });

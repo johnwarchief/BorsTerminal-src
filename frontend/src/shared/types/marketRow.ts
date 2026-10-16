@@ -12,6 +12,11 @@
 // ۷٫۵MB → ۴٫۲MB و gzip ۹۱۳KB → ۵۶۵KB. `month_avg_vol` فرستاده می‌شود، چون
 // typeِ همین فایل آن را اعلام می‌کند — قراردادِ دو طرف باید یکی بماند.
 //
+// استثنایِ Stage-2 («در یک نگاه»): سه کلیدِ `p_first`/`p_max`/`p_min` عمداً به
+// سریال‌سازی برگشتند، چون مصرف‌کننده‌شان (بخشِ «وضعیتِ قیمتِ» سایدبار) حالا
+// هست؛ بقیۀ بیست‌ودو کلید همچنان حذف‌اند. زیرِ هر کلید درِ همین فایل، منبعِ
+// واقعیِ `market_watch` و دلیلِ برگشتش نوشته شده.
+//
 // همه کلیدها `.nullish()`‌اند، پس «نیامدن» و «null» برایِ UI یکی است — و این
 // شرطِ درستِ کارِ حالتِ داغ است: سرور کلیدهایِ null را هم حذف می‌کند.
 import { z } from 'zod';
@@ -27,11 +32,28 @@ export const MarketRowSchema = z.object({
   board: z.union([z.number(), z.string()]).nullish(),
   p_closing: num,
   p_last: num,
+  // Stage-2 (کارِ «در یک نگاه»): سه قیمتِ روزانه از سریال‌سازیِ حالتِ داغ برگشتند.
+  // منبعِ واقعی‌شان ستون‌هایِ خودِ `market_watch` است، بی‌محاسبه درِ رابط:
+  //   p_first ← price_first (اولینِ مبادله؛ صفر = هنوز اولین معامله نیفتاده)
+  //   p_max   ← price_max    (بیشترینِ همین نشست)
+  //   p_min   ← price_min    (کمترینِ همین نشست)
+  // مثلِ بقیۀ عددها `.nullish()`‌اند، ولی این‌ها درِ بانک هیچ‌وقت NULL نمی‌شوند؛
+  // صفرِ واقعی یعنی «مبادله‌ای در این سطح نبود»، که رابط از «مقدارِ معتبر» جدا
+  // می‌خواند — نه از نبودِ کلید.
+  p_first: num,
+  p_max: num,
+  p_min: num,
   price_yesterday: num,
   percent_change: num,
   q_tot_tran: num,
   z_tot_tran: num,
   q_tot_cap: num,
+  // ارزشِ بازارِ *همین نشست* (ریال) — همان ستونِ رسمیِ که مخرجِ I4 اول از آن
+  // می‌خواند (`fts_engine.mcap_bulk_expr`)، با دروازۀ «بانِ مرده» از همان
+  // تک‌تعریف. نبود ⇒ کلید نمی‌آید (بی‌داده ≠ صفر). `mcap_src` منشأ را می‌گوید:
+  // tse_raw (ستونِ marketValue خودِ سایت) | tse_board_calc | …_backfill.
+  mcap: num,
+  mcap_src: z.string().nullish(),
   tvol: num,
   vol_ratio: num,
   pe: num,
@@ -39,6 +61,16 @@ export const MarketRowSchema = z.object({
   // فقط سطرِ اولِ صف خرید درِ پنج فیلترِ جزوه است (qd1/zd1)، پس همان می‌ماند.
   buy_q1_vol: num,
   buy_q1_cnt: num,
+  // صفِ اولِ هر دو طرف، آن‌طور که خودِ تابلو می‌فرستد (`market_watch`):
+  // قیمتِ تقاضا/عرضه و حجمِ عرضه. دیده‌بانِ بازار این‌ها را ستون می‌کند، پس
+  // دیگر هیچ `/api/order-book` ردیف‌به‌ردیف زده نمی‌شود. صفرِ واقعی یعنی
+  // «در این طرف صفی نیست» (نمادِ چسبیده به صفِ خرید عرضه ندارد) — رابط آن را
+  // از «کلید نیامده = بی‌داده» جدا می‌خواند.
+  buy_q1_px: num,
+  sell_q1_px: num,
+  sell_q1_vol: num,
+  // ساعتِ همین نشستِ همین نماد (HHMMSS) — «آخرین به‌روزرسانیِ معتبر» ردیف.
+  row_h: num,
   // (tmin) درِ فیلترنویسِ TSETMC = آستانۀ مجاز، نه کفِ همین نشست.
   tmin: num,
   buy_i_vol: num,
@@ -62,6 +94,10 @@ export const MarketRowSchema = z.object({
   buyer_power: num,
   buyer_power_raw: num,
   buy_power_i: num,
+  // سرانۀ فروش (حجمِ فروشِ حقیقی ÷ تعدادِ فروشندهٔ حقیقی) — درِ مرجع ستون است و
+  // خروجیِ دیدهبان هم آن را می‌خواهد؛ تا ویرایشِ ۱۴۰۵-۰۷-۲۳ درِ `_DROP_FIELDS`
+  // دور ریخته می‌شد، پس «بی‌داده» نبود، «فرستاده نمی‌شد».
+  sell_power_i: num,
   // درصدِ «آخرین» نسبت به دیروز: percent_change پایانی را می‌سنجد، این آخرین را.
   percent_last: num,
   f_roobi: flag,
@@ -73,6 +109,13 @@ export const MarketRowSchema = z.object({
   // می‌خواند (بی‌آینۀِ منطقیِ دوم).
   f_smart: flag,
   f_legal: flag,
+  // [is5]/[is6] از `InstValue.aspx` خودِ TSETMC. داوریِ «ورود پول هوشمند» و
+  // «کدبه‌کد» خطِ سومِ فایلشان است و مبنایش [is6]؛ [is5] فقط درِ خطِ دوم اجرا
+  // می‌شود و ارزشش دور ریخته می‌شود، پس دروازه نیست. نبودِ [is6] درِ سایت
+  // `undefined` است ⇒ NaN ⇒ ردیف از فهرست بیرون می‌افتد؛ پس null اینجا
+  // یعنی «این فیلتر بر این نماد سنجیده نشده»، نه «صفر» و نه «رد».
+  is5: num,
+  is6: num,
   is_live: flag,
   // سقفِ تک‌روزیِ kامین نشستِ آخر — [ih][k].PriceMax در فرمول‌هایِ TSETMC.
   // نبودنش یعنی آن نشست بی‌معامله بوده و سایت همان‌جا صفر می‌گذارد؛ «پلکانِ
@@ -110,11 +153,32 @@ export const MarketRowSchema = z.object({
   stop_state: z.string().nullish(),
   stop_since: z.string().nullish(),
   stop_reasons: z.string().nullish(),
+  // ── «خارج از غربالگری» (گزینهٔ الف) ──────────────────────────────────────────
+  // رأیِ خودِ موتورِ غربالگری (`funnel_engine.screening_eligibility`) رویِ ردیفِ
+  // تابلو، تا رابط بگوید کدام نمادِ دارایِ فیلترِ تابلو به چه علتی واردِ قیف نمی‌شود.
+  // فقط نمایش است: شمارۀ چیپ و داوریِ فیلترها را دست نمی‌زند. نبودِ کلید (پاسخِ
+  // قدیمی) ⇒ «نمی‌دانیم»، نه «خارج است» — پس `nullish` و رابط بی‌اطلاعی را نمی‌بندد.
+  screening_eligible: z.boolean().nullish(),
+  screening_exclusion_code: z.string().nullish(),
+  screening_exclusion_reason: z.string().nullish(),
   // مبدأِ ارزشِ حقیقی/حقوقی: native | mixed | reconstructed. یک‌بار درِ نویسنده
   // حساب شده و همین‌جا خوانده می‌شود؛ رابط حق ندارد از خودِ عددها بازسازیش کند.
   // فقط درِ «جزئیات» نشان داده می‌شود — نه بج، نه ستونِ تابلو، و هرگز وارد
   // داوری/FTS نمی‌شود.
   ctv_kind: z.string().nullish(),
+  // ── بند ۲ مأموریت (رأیِ مالک 1405-07-20): درصدِ حقیقی/حقوقی **ارزش‌محور** ──
+  // هر چهار درصد درِ `client_split.py` (بک‌اند) از ارزشِ ریالیِ مبدأ حساب شده
+  //‌اند؛ دو سمت مستقل‌اند و هیچ‌کدام از حجم ساخته نمی‌شود. نبودِ کلید =
+  // «نامشخص» — نه صفر. `ctv_d` نشستِ خودِ عدد است و `pct_is_current` می‌گوید
+  // همان نشستِ تابلو هست یا نشستِ پیشین؛ رابط تاریخِ خودِ عدد را می‌نویسد تا
+  // دادهٔ پیشین زنده خوانده نشود.
+  retail_buy_pct: num,
+  legal_buy_pct: num,
+  retail_sell_pct: num,
+  legal_sell_pct: num,
+  pct_basis: z.string().nullish(),
+  ctv_d: num,
+  pct_is_current: num,
 });
 
 export type MarketRow = z.infer<typeof MarketRowSchema>;
@@ -131,6 +195,11 @@ export const MarketFeedSchema = z.object({
   status: z.string(),
   /** ویرایشِ حالتِ داغِ این بدنه — پولینگِ بعدی `?since=rev` می‌شود. */
   rev: z.number().nullish(),
+  /** لحظۀِ (epoch ms، ساعتِ خودِ کلاینت) که *داده* عوض شد — نه لحظه‌ای که یکِ
+   *  پاسخِ HTTP رسید. تا پیش از این تازگی از `dataUpdatedAt` سنجیده می‌شد و آن
+   *  با هر دورِ «unchanged» هم نو می‌شد؛ سنجشِ زنده ۱۴۰۵-۰۷-۱۸: revision ۹۴۵
+   *  ثانیه تکان نخورد و نشانگر همان‌وقت «لحظاتی پیش» می‌گفت. */
+  rev_at: z.number().nullish(),
   count: z.number().nullish(),
   data: z.array(MarketRowSchema),
   meta: MarketMetaSchema.nullish(),

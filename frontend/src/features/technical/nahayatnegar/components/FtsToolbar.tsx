@@ -349,7 +349,7 @@ export const FtsToolbar: React.FC<FtsToolbarProps> = ({
           onClick={onToggleFts}
           data-testid="nn-fts-layer-toggle"
           aria-pressed={isFtsActive}
-          title="لایۀ سطوحِ تحلیل FTS (فیبو، کمربندها، خط‌هایِ ماژور). الگوها از «الگوهای FTS» روشن/خاموش می‌شوند."
+          title="لایۀ سطوحِ تحلیل FTS (فیبو، زون‌های اصلاح، خط‌هایِ ماژور). الگوها از «الگوهای FTS» روشن/خاموش می‌شوند."
         >
           <IconFts size={16} color={isFtsActive ? '#ffab00' : 'currentColor'} />
           <span>تحلیل FTS</span>
@@ -362,7 +362,7 @@ export const FtsToolbar: React.FC<FtsToolbarProps> = ({
           onClick={onToggleFibLevels}
           data-testid="nn-fib-levels-toggle"
           aria-pressed={showFibLevels}
-          title="سطح‌هایِ هفتگانه فیبو رویِ چارت (کمربندها همیشه می‌مانند؛ عددِ سطوح درِ پنلِ «تحلیل ساختاری» هست)"
+          title="سطح‌هایِ هفتگانه فیبو رویِ چارت (زون‌ها همیشه می‌مانند؛ عددِ سطوح درِ پنلِ «تحلیل ساختاری» هست)"
         >
           <span>سطح‌های فیبو</span>
         </button>

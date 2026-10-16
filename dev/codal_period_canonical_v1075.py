@@ -151,20 +151,46 @@ def test_order():
     conn.close()
 
 
-# ── ۴) ردیفِ بی‌دوره حذف نمی‌شود ─────────────────────────────────────────────
+# ── ۴) هیچ ردیفی حذف نمی‌شود؛ بازنده فقط از دیدِ مرجع کنار می‌رود ───────────
 def test_undated_survives():
-    print("\n— ۴) جمع‌شدنِ دوره‌ها به ردیفِ بی‌دوره دست نمی‌زند")
+    print("\n— ۴) «جمع‌شدنِ دوره» دیگر حذفِ فیزیکی نیست (سیاستِ CA-3، دور ۲)")
     conn = new_db()
     seed_fs(conn, [(21, "د", "1405" + SLASH + "06" + SLASH + "31", 1, 160.0),
                    (22, "د", "1405" + SLASH + "06" + SLASH + "31", 0, 100.0),
                    (23, "د", None, 0, 7.0),
                    (24, "د", "1404" + SLASH + "12" + SLASH + "29", 0, 60.0)])
     removed = CF.collapse_symbol(conn, "د")
+    # «تلفیقی» باید درِ *عنوان* باشد: هم `period_winners` (نویسنده) و هم
+    # `fts_engine._is_consolidated` (خواننده) از عنوان می‌خوانند؛ ستونِ
+    # `is_consolidated` درِ audit ۱۴۰۵-۰۷-۱۱ بی‌اعتبار شناخته شد. بی‌این سطر
+    # fixture یکِ ردیفِ «تلفیقی» نداشت و شاخۀ مبنا هرگز اجرا نمی‌شد.
+    CONS_TITLE = FS_TITLE.replace("میاندورهای", "تلفیقی میاندورهای")
+    import fts_engine as FE
+    conn.execute("UPDATE financial_statements SET title=? WHERE tracing_no=21",
+                 (CONS_TITLE,))
+    conn.commit()
+    # سنسور: خودِ fixture را با همان تابعِ قاعده بسنج، وگرنه سبزِ بعد بی‌مغزا است.
+    ck(FE._is_consolidated(CONS_TITLE) and not FE._is_consolidated(FS_TITLE),
+       "سنسور: عنوانِ ۲۱ واقعاً «تلفیقی» و عنوانِ ۲۲ واقعاً غیرتلفیقی است",
+       "%s / %s" % (FE._is_consolidated(CONS_TITLE), FE._is_consolidated(FS_TITLE)))
     left = conn.execute("SELECT tracing_no FROM financial_statements ORDER BY tracing_no"
                         ).fetchall()
-    ck([r[0] for r in left] == [22, 23, 24],
-       "تلفیقیِ هم‌دوره حذف شد؛ بی‌دوره و تنها-ردیفِ دورهٔ دیگر سالم‌اند",
+    # پیش از دور ۲ این سطر «[22, 23, 24]» انتظار داشت، یعنی حذفِ فیزیکیِ ردیفِ
+    # تلفیقی. آن حذف با سیاستِ جدیدِ CA-3 باطل شد: دو اطلاعیهٔ متمایزِ یکِ دوره
+    # (اصلی/تلفیقی/اصلاحیه) تاریخچه‌اند و `tracing_no` هویتشان است.
+    ck([r[0] for r in left] == [21, 22, 23, 24],
+       "هیچ ردیفی حذف نمی‌شود: تلفیقی، بی‌دوره و تنها-ردیفِ دورۀ دیگر همه سالم‌اند",
        "%s removed=%s" % ([r[0] for r in left], removed))
+    ck(tuple(removed) == (0, 0),
+       "collapse_symbol دیگر حذف نمی‌کند ⇒ (۰، ۰) برمی‌گرداند", str(removed))
+    # عوضِ آن، لایۀ مرجع باید همان رأیِ قبل را بدهد: تلفیقی نمایندۀ دوره نیست.
+    # ۲۱ عددِ بزرگ‌تری دارد (۱۶۰ در برابر ۱۰۰) تا اگر مبنا بردۀ عددی می‌شد، فرق کند.
+    win = CF.period_winners(conn, "financial_statements", "د")
+    ck(win.get(("د", "1405" + SLASH + "06" + SLASH + "31")) == 22,
+       "درِ نمای مرجع، مستقل (۲۲) برِ تلفیقیِ درشت‌عدد (۲۱) می‌ماند",
+       str(win.get(("د", "1405" + SLASH + "06" + SLASH + "31"))))
+    ck(("د", None) not in win,
+       "ردیفِ بی‌دوره اصلاً واردِ نمای مرجع نمی‌شود", str(sorted(win)))
     ck(CP.undated_counts(conn)["financial_statements"] == 1,
        "و آن یکِ ردیفِ سالم، درِ شمارشِ واحد «بی‌دوره» دیده می‌شود",
        str(CP.undated_counts(conn)))
@@ -199,10 +225,31 @@ def test_one_number(conn, label):
             if CP.is_undated(row["period_end"]) or not row["fiscal_year"]:
                 bad.append((sym, row["period_end"]))
     ck(not bad, "fts_engine.annual_statements: نه ردیفِ بی‌دوره، نه سالِ مالیِ تهی", str(bad[:3]))
-    # موتورِ بنیادی (card): کوئری‌هایِ «آخرین» به canonical واگرد کرده‌اند
+    # موتورِ بنیادی (card): کوئری‌هایِ «آخرین» به canonical واگرد کرده‌اند.
+    # ۱۴۰۵-۰۷-۲۴: این بند متنِ **یک فایل** را می‌شمرد. «آخرینِ نامِ شرکت» از
+    # api/fundamental.py به `fts_engine.company_name_of` منتقل شد (مرحلۀ ۳ —
+    # تک‌منبعِ کارت و اسکرینر) و شمارشِ بیرونی به ۲ افتاد، بی‌آن‌که واگردی از دست
+    # برود. حالا مجموعِ دو فایل سنجیده می‌شود **و** همان تابع زنده آزموده می‌شود؛
+    # اگر روزی واگرد واقعاً حذف شود، هر دو بند قرمز می‌شوند.
     src = open(os.path.join(ROOT, "api", "fundamental.py"), encoding="utf-8").read()
-    ck(src.count("CP.DATED_SQL") + src.count("CP.latest_order_sql") >= 3,
-       "api/fundamental.py هر سه کوئریِ «آخرین» را به canonical واگرد کرده", "")
+    fesrc = open(os.path.join(ROOT, "fts_engine.py"), encoding="utf-8").read()
+    ck(src.count("CP.DATED_SQL") + src.count("CP.latest_order_sql")
+       + fesrc.count("CP.latest_order_sql") >= 3,
+       "کوئری‌هایِ «آخرین»ِ مسیرِ بنیادی به canonical واگرد کرده‌اند (کارت + موتور)",
+       "fundamental=%d fts_engine=%d" % (
+           src.count("CP.DATED_SQL") + src.count("CP.latest_order_sql"),
+           fesrc.count("CP.latest_order_sql")))
+    _mem = sqlite3.connect(":memory:")
+    _mem.execute("CREATE TABLE financial_statements (tracing_no INTEGER PRIMARY KEY,"
+                 " symbol TEXT, company_name TEXT, period_end TEXT, unit_norm TEXT)")
+    _mem.execute("INSERT INTO financial_statements VALUES (1,'واحدکهنه','نامِ کهنه',"
+                 " '۱۴۰۵/۱۲/۲۹', NULL)")     # نوشتارِ فارسی ⇒ درِ canonical باخته است
+    _mem.execute("INSERT INTO financial_statements VALUES (2,'واحدکهنه','نامِ تازه',"
+                 " '1404/12/29', NULL)")
+    ck(FE.company_name_of(_mem, "واحدکهنه") == "نامِ تازه",
+       "company_name_of «آخرین» را با canonical می‌خواند، نه با ترتیبِ خامِ رقم",
+       repr(FE.company_name_of(_mem, "واحدکهنه")))
+    _mem.close()
     scr = open(os.path.join(ROOT, "api", "screener.py"), encoding="utf-8").read()
     ck("ORDER BY period_end DESC" not in scr,
        "api/screener.py ترتیبِ خامِ period_end ندارد", "")
@@ -221,11 +268,60 @@ def test_real_db():
         conn.close()
 
 
+
+# ── ۶) طولِ دوره: تنها تعریف، با منبعِ اعلام‌شده (بندِ ۲.۳ سیاستِ بنیادی) ────
+T_ANNUAL = "صورت‌های مالی  سال مالی منتهی به ۱۴۰۳/۰۶/۳۱ (حسابرسی شده)"
+T_TRANSITION = "صورت‌های مالی  دوره ۶ ماهه منتهی به  ۱۴۰۰/۰۶/۳۱ (حسابرسی شده)"
+T_INTERIM9 = "اطلاعات و صورت‌های مالی میاندورهای  دوره ۹ ماهه منتهی به ۱۴۰۱/۰۹/۳۰"
+
+
+def test_months_source():
+    print("\n— ۶) طولِ دوره: عنوان کجا بر ستون می‌چربد و کجا نمی‌چربد")
+    d = lambda a, b, c: a + SLASH + b + SLASH + c
+    ck(CP.months_from_title(T_TRANSITION) == 6, "«۶ ماهه» از عنوان خوانده می‌شود",
+       str(CP.months_from_title(T_TRANSITION)))
+    ck(CP.months_from_title(T_ANNUAL) is None,
+       "عنوانِ بی‌«X ماهه» ⇒ None، نه ۱۲ (بی‌حدسِ تقویمی)",
+       str(CP.months_from_title(T_ANNUAL)))
+    ck(CP.effective_months(d("1400", "06", "31"), 12, T_TRANSITION) == (6, "title"),
+       "تناقضِ ستون با عنوانِ هم‌دوره ⇒ عنوان برنده است (ردیف 1447293ِ فپردیس)",
+       str(CP.effective_months(d("1400", "06", "31"), 12, T_TRANSITION)))
+    ck(CP.effective_months(d("1403", "06", "31"), 12, T_ANNUAL) == (12, "column"),
+       "هم‌خوانی ⇒ ستون می‌ماند و منبع اعلام می‌شود",
+       str(CP.effective_months(d("1403", "06", "31"), 12, T_ANNUAL)))
+    ck(CP.effective_months(d("1401", "09", "30"), None, T_INTERIM9) == (9, "title"),
+       "ستونِ تهی و عنوانِ هم‌دوره ⇒ دوره از عنوان تعیین می‌شود (۲۴ ردیفِ بانک)",
+       str(CP.effective_months(d("1401", "09", "30"), None, T_INTERIM9)))
+    ck(CP.effective_months(d("1404", "12", "29"), None, T_INTERIM9) == (None, None),
+       "عنوان با ستونِ دوره می‌جنگد ⇒ هیچ‌کدام برنده نمی‌شود و تهی حدس نمی‌شود",
+       str(CP.effective_months(d("1404", "12", "29"), None, T_INTERIM9)))
+    ck(CP.effective_months(d("1401", "09", "30"), 13, T_INTERIM9) == (9, "title"),
+       "ستونِ بی‌معتبر (۱۳ ماه) با عنوانِ هم‌دوره درست می‌شود",
+       str(CP.effective_months(d("1401", "09", "30"), 13, T_INTERIM9)))
+    ck(CP.effective_months(None, None, "گزارش فعالیت ماهانه") == (None, None),
+       "هیچ منبعی ⇒ تهی؛ ردیف حذف نمی‌شود، فقط نادیده خوانده می‌شود",
+       str(CP.effective_months(None, None, "گزارش فعالیت ماهانه")))
+    # پنجرۀ سالانۀ موتور هم باید همین را ببیند، نه ستونِ خام
+    conn2 = new_db()
+    seed_fs(conn2, [(9001, "گذار", d("1400", "06", "31"), 0, 100.0)])
+    conn2.execute("UPDATE financial_statements SET title=?, period_months=12 "
+                  "WHERE tracing_no=9001", (T_TRANSITION,))
+    conn2.commit()
+    import fts_engine as _FE
+    _FE.register_sql(conn2)
+    lad = _FE.annual_statements(conn2, "گذار", require_audit=False,
+                                exclude_consolidated=False, limit=12)
+    ck(all(r["tracing_no"] != 9001 for r in lad),
+       "ردیفِ «۶ ماهه» با ستونِ ۱۲ به پنجرۀ سالانۀ شاخص ۲ وارد نمی‌شود",
+       [(r["tracing_no"], r["period_months"]) for r in lad])
+    conn2.close()
+
 def main():
     test_shape()
     test_derive()
     test_order()
     test_undated_survives()
+    test_months_source()
     conn = new_db()
     seed_fs(conn, [(31, "ی", "1405" + SLASH + "06" + SLASH + "31", 0, 10.0),
                    (32, "ی", "۱۴۰۴/۱۲/۲۹", 0, 11.0),

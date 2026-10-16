@@ -485,8 +485,10 @@ def main():
         return out
 
     r = _fts_jet_setup(series(spikes={30: 200.0}))
-    ck(bool(r["active"]),
-       "سقفِ بلند در نشستی که جزوه آن را درِ پلکان نمی‌خواهد، شکست را متوقف نمی‌کند",
+    # پلکانِ جزوه [ih][2..59] است، پس سقفِ [ih][30] هر دو (تابلو و چارت) یک «جت»
+    # می‌سازد: مقاومت ۲۰۰ است و ۱۲۹ زیرش ⇒ رأیِ منفیِ واقعی (نه سنجیده‌نشده).
+    ck(not r["active"] and r["resistance"] == 200.0 and r["tier"] == "none",
+       "چارت و تابلو یک جت می‌بینند: سقفِ [ih][30] مقاومت است، ۱۲۹ زیرش نمی‌شکند",
        str(r))
     r2 = _fts_jet_setup(series(spikes={29: 200.0}))
     ck(not r2["active"] and r2["resistance"] == 200.0,
@@ -524,6 +526,9 @@ def main():
        "اول «نگرفتم» برگردانده می‌شود، بعد پاک‌کردنِ قدیمی‌ها (شکست = دادهٔ کهنه، نه بی‌داده)")
     ck("stream=True" not in body,
        "درخواستِ پنجره بی‌stream است؛ با stream=True همان پاسخ ۱۸۰ ثانیه ترکید")
+    ck("TAPE_FETCH_BUDGET_S" in sync and "deadline" in sync,
+       "کلِ مرحلۀ [ih] سقفِ زمانی دارد: read-timeoutِ ۱۲۰ ثانیه‌ایِ ۱۴۰۵-۰۷-۲۰"
+       " نباید قفلِ سینک را چند دقیقه نگه دارد")
     ck("TAPE_HIST_RETRY_S" in sync and "throttled" in sync,
        "پاسخِ ۵۱ مگابایتی هر چند دقیقه یک‌بار گرفته نمی‌شود")
     ck("stats[\"tape_history\"]" in sync,
@@ -582,10 +587,11 @@ def main():
     ck(c.execute("SELECT COUNT(DISTINCT ins_code) FROM tape_history").fetchone()[0] == 100,
        "پنجرۀ کامل جای پنجرۀ کوتاه نشست")
 
-    # ج) همان نشست با پاسخِ کوتاه‌تر → پنجرۀ کامل دست‌نخورده می‌ماند
+    # ج) همان نشست با پاسخِ کوتاه → پنجرۀ کامل دست‌نخورده می‌ماند
+    # (کفِ پوشش از ۱۴۰۵-۰۷-۲۰ پیش از هر نوشتن سنجیده می‌شود، پس نامِ رد همین است)
     c = fresh_db(ALL100, 100)
     r = T.refresh_tape_history(c, force=True, fetch=payload(ALL100[:60]))
-    ck(r.get("skipped") == "partial-payload",
+    ck(r.get("skipped") == "low-coverage",
        "پاسخِ کوتاهِ همان نشست پنجرۀ کامل را پاک نمی‌کند", str(r))
     ck(c.execute("SELECT COUNT(DISTINCT ins_code) FROM tape_history").fetchone()[0] == 100,
        "بعد از ردِ پاسخِ کوتاه، پوشش افت نکرد")
@@ -593,8 +599,35 @@ def main():
     # د) نشستِ تازه‌تر ولی زیرِ کفِ پوشش → تازگیِ یک روز ارزشِ خاموشیِ پنجره را ندارد
     c = fresh_db(ALL100, 100)
     r = T.refresh_tape_history(c, force=True, fetch=payload(ALL100[:60], DAY + 1))
-    ck(r.get("skipped") == "partial-payload",
+    ck(r.get("skipped") == "low-coverage",
        "نشستِ تازه با پوششِ ۶۰٪ پنجرۀ کامل را نمی‌بَرَد", str(r))
+
+    # د-۲) پوششِ بالا ولی با از‌دست‌رفتنِ چند نمادِ خاص → همان پاسخِ ناقص
+    # پنجره را نمی‌بَرَد (شاخۀ partial-payload هنوز زنده است، نه مرده)
+    c = fresh_db(ALL100, 100)
+    r = T.refresh_tape_history(c, force=True, fetch=payload(ALL100[:98] + ["X1", "X2"]))
+    ck(r.get("skipped") == "partial-payload",
+       "۹۸٪ با دو نمادِ جعلی جای پنجرۀ ۱۰۰٪ را نمی‌گیرد", str(r))
+
+    # د-۳) باگِ واقعیِ ۱۴۰۵-۰۷-۲۰ رویِ اپِ نصبی: پاسخِ «شاخص» با insCode=۰ که
+    # ۶۰ ردیفِ بی‌نماد ساخت و هفت فیلتر را خاموش کرد. بی‌پنجره هم نباید پذیرفته
+    # شود؛ اینجا فقط ردیف‌هایِ واقعیِ معامله‌شده می‌توانند پنجره بسازند.
+    empty = fresh_db([], 100)
+    r = T.refresh_tape_history(empty, force=True,
+                               fetch=lambda: ([{"insCode": 0, "dEven": d, "priceMin": 1.0,
+                                                "priceMax": 2.0, "qTotTran5J": 5.0}
+                                               for d in range(DAY, DAY + 60)], None))
+    ck(r.get("skipped") in ("no-rows", "low-coverage") or r.get("error") == "no-rows",
+       "پاسخِ بی‌نماد (insCode=۰) پنجره را نمی‌نویسد، حتی وقتی جدول خالی است", str(r))
+    ck(empty.execute("SELECT COUNT(*) FROM tape_history").fetchone()[0] == 0,
+       "جدولِ خالی با ۶۰ ردیفِ شاخص آلوده نمی‌شود",
+       str(empty.execute("SELECT COUNT(*) FROM tape_history").fetchone()))
+    empty.close()
+
+    # د-۴) کنترلِ منفی: همان پاسخِ کوتاه اگر پوششِ کامل بدهد پذیرفته می‌شود
+    c = fresh_db([], 100)
+    r = T.refresh_tape_history(c, force=True, fetch=payload(ALL100))
+    ck(r.get("rows") == 100, "پنجرۀ کامل رویِ جدولِ خالی نوشته می‌شود", str(r))
 
     # ه) نشستِ تازه با پوششِ کامل → همان چیزی است که می‌خواهیم، پس عوض می‌شود
     c = fresh_db(ALL100, 100)

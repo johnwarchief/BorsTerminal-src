@@ -100,7 +100,7 @@ def get_history(symbol: str):
         # تطبیق چند-نویشتاری (ك/ي عربی ↔ ک/ی فارسی): ورودیِ کاربر/واچلیست
         # ممکن است فارسی باشد ولی DB همان نماد را عربی نگه داشته باشد —
         # بدون این، `WHERE symbol = ?` صفر ردیف می‌دهد و تاریخچه خالی می‌ماند.
-        _pred, _params = sym_pred("symbol", symbol)
+        _pred, _params = sym_pred(conn, "symbol", symbol, "board")
         query = """
             SELECT date, open, high, low, close, volume, last
             FROM price_history WHERE %s ORDER BY date ASC
@@ -178,7 +178,12 @@ def _apply_assembly_veto(rows):
         base = " · ".join(x for x in str(r.get("exclusion_reasons") or "").split(" · ")
                           if x.strip() and not x.startswith(_ASM_VETO_PREFIX))
         ev = asm.get(str(r.get("symbol") or "").translate(norm).strip())
-        if ev is None or ev.get("cat") not in _ASSEMBLY_CONFIRMED:
+        # رأیِ §۲۴: عددی که از تاریخِ انتشارِ اطلاعیه آمده، تاریخِ مجمع نیست.
+        # پیش از این `extract_when` بی‌علامت همان را جایِ تاریخِ جلسه می‌گذاشت و
+        # وتوی سبد رویِ «تصمیمات مجمع…» (بی‌تاریخِ جلسه) روشن می‌شد. حالا فقط
+        # منشأِ عنوان‌محور وتو می‌سازد؛ بقیه برچسبِ «اطلاعیه» می‌مانند.
+        if (ev is None or ev.get("cat") not in _ASSEMBLY_CONFIRMED
+                or ev.get("date_source") != "title"):
             r["assembly_veto"] = False
             r["exclusion_reasons"] = base
             out.append(r)
@@ -199,9 +204,113 @@ def _apply_assembly_veto(rows):
     return out
 
 
+def _funnel_gate(preset: str, chain: list[str]):
+    """عضویتِ مرحله‌ایِ قیف، از همان `api/funnel._run` (تک‌تعریفِ زنجیره).
+
+    بند ۷.۱ مأموریت (رأیِ مالک 1405-07-20): اسکرینر نباید اسکنِ مستقلِ
+    بنیادی‌اولِ کلِ بازار باشد؛ حکمِ «کاندید» باید بقایۀِ تابلوخوانی و بعد
+    تکنیکال باشد. اینجا چیزی حساب نمی‌شود — فقط `status_matrix`ِ خودِ قیف
+    خوانده می‌شود، پس دو تعریف از «رد شد / سنجیده نشد / لازم نیست» نداریم.
+
+    بیرونِ کشِ ۱۲ساعتهٔ اسکرینر صدا زده می‌شود (مثلِ وتوی مجمع): حکمِ قیف
+    لحظه‌ای است و کشِ ۱۲ ساعته آن را کهنه می‌کند. خودِ `api/funnel` هشت
+    ثانیه کش دارد، پس هزینهٔ هر پرسشِ اسکرینر درِ ساعتِ بازار ~= صفر است.
+
+    بی‌قیف (خطا، تابلویِ نساخته، presetِ ناشناخته) ⇒ `state` چیزِ دیگری است و
+    هیچ ردیفی کاندید نمی‌شود؛ «نداریم» هرگز جای «قبول» را نمی‌گیرد.
+    """
+    try:
+        from api.funnel import _run
+        payload = _run(preset, chain, "standard", {}, {})
+    except Exception as e:                       # بی‌صدا قیف را رد نمی‌کنیم: اعلام
+        return {"state": "error", "matrix": {}, "block": {"state": "error",
+                                                          "message": "%s: %s" % (type(e).__name__, e)}}
+    if not isinstance(payload, dict) or payload.get("status") != "success":
+        return {"state": "unavailable", "matrix": {},
+                "block": {"state": "unavailable",
+                          "message": str((payload or {}).get("message")
+                                         or (payload or {}).get("status") or "")}}
+    stages = payload.get("stages") or {}
+    return {
+        "state": "applied",
+        "matrix": payload.get("status_matrix") or {},
+        "block": {
+            "state": "applied",
+            "preset": payload.get("preset"),
+            "chain": payload.get("chain"),
+            "ruleset_version": payload.get("ruleset_version"),
+            "engine_version": payload.get("engine_version"),
+            "as_of": payload.get("as_of"),
+            # شمارشِ ورودی/خروجیِ هر گام — زنجیره از خودِ پاسخ خواندنی است
+            "stages": {k: {kk: vv for kk, vv in (v or {}).items() if kk != "survivors"}
+                       for k, v in stages.items()},
+            "coverage": payload.get("coverage"),
+        },
+    }
+
+
+def _apply_funnel_gate(rows, gate):
+    """پرچمِ قیف رویِ هر ردیف، از `status_matrix`ِ همان preset.
+
+    سه چیز جدا می‌مانند (قاعدۀِ مالک: «سنجیده‌نشده» ≠ «رد»):
+      tape_status / technical_status / fundamental_status = وضعیتِ canonical
+      funnel_candidate = هر سه گام PASS و بی‌وتویِ هفتگی/مجمع
+      gate_state = آیا اصلاً داوریِ قیف به این ردیف رسید (`applied`) یا منبعش
+                   نبود (`unavailable`/`error`) — درِ دومی هیچ کاندیدی نیست.
+    `watchlist` دست‌نخورده می‌ماند: همان کوتاه‌کردۀِ بنیادیِ `watchlist_max`
+    است و مصرف‌کنندۀِ خودش را دارد؛ ادعایِ «عبور از قیف» عددِ دیگری است.
+    """
+    import funnel_engine as FE
+    matrix = gate.get("matrix") or {}
+    applied = gate.get("state") == "applied"
+    out = []
+    for r in rows:
+        r = dict(r)
+        # کلیدِ matrix نرمال است (`funnel_engine.norm_symbol`)؛ جستجو با رشتهٔ خام
+        # یعنی هر نمادی که «ك/ي/ى» عربی دارد بی‌سروصدا «در تابلو نیست» می‌شد —
+        # درِ سنجشِ ۱۴۰۵-۰۷-۱۹: ۳۸۷ از ۴۹۰ ردیفِ گم‌شده فقط املا داشتند.
+        sym = FE.norm_symbol(r.get("symbol"))
+        cell = matrix.get(sym) or {}
+        t = (cell.get("tape") or {}).get("status")
+        x = (cell.get("technical") or {}).get("status")
+        f = (cell.get("fundamental") or {}).get("status")
+        r["tape_status"] = t
+        r["technical_status"] = x
+        r["fundamental_status"] = f
+        if not applied:
+            r["gate_state"] = str(gate.get("state") or "unavailable")
+            r["funnel_candidate"] = False
+            out.append(r)
+            continue
+        if not cell:
+            # ردیفِ اسکرینر هست ولی در جامعۀِ تابلویِ امروز نیست (نمادِ تعطیل/
+            # حذف‌شده). این «رد» نیست؛ «قیف امروز آن را ندید» است.
+            r["gate_state"] = "not_in_board"
+            r["funnel_candidate"] = False
+            out.append(r)
+            continue
+        r["gate_state"] = "applied"
+        r["funnel_candidate"] = bool(t == FE.PASS and x == FE.PASS and f == FE.PASS
+                                     and not r.get("weekly_veto") and not r.get("assembly_veto"))
+        if x not in (None, FE.PASS):
+            r["technical_reason"] = (cell.get("technical") or {}).get("human_reason")
+        out.append(r)
+    return out
+
+
+def _only_symbols(rows, wanted):
+    """`symbols=` فقط کم می‌کند، هیچ‌وقت زیاد: راهِ دورزدنِ قیف نمی‌شود."""
+    import funnel_engine as FE
+    want = {FE.norm_symbol(s) for s in wanted if str(s).strip()}
+    if not want:
+        return rows, 0
+    kept = [r for r in rows if FE.norm_symbol(r.get("symbol")) in want]
+    return kept, len(want)
+
+
 @router.get("/api/screener")
-def get_screener():
-    """جدول بنیادی کدال — غربالگری ۵ شاخص FTS (v8).
+def get_screener(symbols: str = "", preset: str = "trend", chain: str = ""):
+    """جدول بنیادی کدال — غربالگری ۵ شاخص FTS (v8)، علامت‌خورده با قیف.
 
     در v7.3 این endpoint امتیاز را روی مقیاس ۰..۷ و با معیارهای خارج از ۵ محور
     می‌بست (ROE>15، mcap>1e13، شمارش دوبارهٔ رشد فروش، P/S به‌جای فروش÷ارزش بازار،
@@ -209,14 +318,26 @@ def get_screener():
     اکنون امتیاز دقیقاً تعداد پنج محور است (۰..۵) و نمادهای تعلیق/بیمه/دستوری
     با پرچم excluded علامت می‌خورند.
 
-    وتوی مجمع بیرونِ کش و روی هر درخواست تازه حساب می‌شود (`_apply_assembly_veto`).
+    وتوی مجمع و پرچمِ قیف بیرونِ کش و روی هر درخواست تازه حساب می‌شوند
+    (`_apply_assembly_veto`، `_apply_funnel_gate`). بند ۷.۱ مأموریت:
+      • `symbols=` ورودِ صریحِ نمادهایِ عبورکرده از تکنیکال است (بقایایِ قیف)
+        و فقط مجموعه را کم می‌کند؛
+      • `preset=` فقط انتخابِ شاخۀِ قیف است، نه خاموش‌کردنش — هیچ پارامتری
+        `funnel_candidate` را بی‌عبور از تابلوخوانی و تکنیکال true نمی‌کند.
     """
     payload = _screener_cached()
     rows = (payload or {}).get("data")
     if not isinstance(rows, list) or not rows:
         return payload
+    wanted = [s for s in str(symbols or "").split(",") if s.strip()]
+    rows, asked = _only_symbols(rows, wanted)
+    gate = _funnel_gate(str(preset or "trend"), [c for c in str(chain or "").split(",") if c])
     fresh = dict(payload)
-    fresh["data"] = _apply_assembly_veto(rows)
+    fresh["data"] = _apply_funnel_gate(_apply_assembly_veto(rows), gate)
+    fresh["count"] = len(fresh["data"])
+    fresh["funnel_gate"] = gate["block"]
+    if asked:
+        fresh["requested_symbols"] = asked
     return fresh
 
 
@@ -276,11 +397,11 @@ def _screener_cached():
         # نام کامل + نوع ابزار از instruments (bulk_scan فقط نماد برمی‌گرداند)
         names, boards = {}, {}
         for l18, l30 in conn.execute("SELECT l_val18, l_val30 FROM instruments"):
-            k = fts_engine.norm_fa(l18)
+            k = fts_engine.sym_key(l18)
             if k and k not in names:
                 names[k] = l30 or l18
         for r in rows:
-            r["name"] = names.get(fts_engine.norm_fa(r["symbol"]), r["symbol"])
+            r["name"] = names.get(fts_engine.sym_key(r["symbol"]), r["symbol"])
             r["eps_data_gap"] = bool(r.get("eps_data_gap"))
             r["i2_na"] = bool(r.get("i2_na"))
             # سند v2.1 «per-row دومِ خواندنِ EPS» حذف شد: `bulk_scan` از همان
@@ -319,19 +440,19 @@ def _screener_cached():
                     "SELECT i.l_val18, " + fts_engine.mcap_bulk_expr(conn) +
                     " FROM instruments i "
                     "JOIN market_watch m ON m.ins_code = i.ins_code"):
-                _k = fts_engine.norm_fa(_l18)
+                _k = fts_engine.sym_key(_l18)
                 if _k and _k not in mcap_official:
                     mcap_official[_k] = _num(_mc)
             total_mcap, _mcap_src = board_total_market_cap(conn)
             _m141m = fts_engine.m141_map(conn)
             _liqm = fts_engine.avg_trade_value_hmt(conn)
-            cname_of = {}
-            for _sym, _cn in conn.execute(
-                    "SELECT symbol, company_name FROM financial_statements "
-                    "ORDER BY %s, tracing_no DESC" % CP.order_expr()):
-                _k = fts_engine.norm_fa(_sym)
-                if _k and _k not in cname_of:
-                    cname_of[_k] = _cn or ""
+            # تک‌منبعِ نامِ شرکت: `fts_engine.company_name_map` — همان ردیفی که
+            # `company_name_of` درِ کارتِ جزئیات می‌خواند. نقشۀ دست‌سازِ پیشین
+            # «اولین ردیفِ period_end DESC» را بی‌شرطِ `IS NOT NULL` برمی‌داشت،
+            # پس برایِ نمادی که تازه‌ترینِ آن نام ندارد کارت یک طبقه و اسکرینر
+            # طبقۀ دیگر می‌دید (سنجشِ زنده ۱۴۰۵-۰۷-۲۳: وكادو — کارت i4=رد،
+            # اسکرینر i4=بی‌نظر، با امتیازِ یکسان ۳).
+            cname_of = fts_engine.company_name_map(conn)
 
             # تسک ۱۹ — مادی‌سازی: یک SELECT از fts_results به‌جای ~۲۵۰۰ فراخوانیِ
             # evaluate_v10. قراردادِ fallback (تصمیم ۴): جدول غایب/خالی، یا
@@ -349,7 +470,7 @@ def _screener_cached():
                 print("[screener] fts_results miss — محاسبهٔ زندهٔ evaluate_v10")
 
             for r in rows:
-                key = r.get("symbol_norm") or fts_engine.norm_fa(r["symbol"])
+                key = r.get("symbol_norm") or fts_engine.sym_key(r["symbol"])
                 res = None
                 if _mat is not None:
                     # مسیرِ مادی: همان خروجی که sync_fts_results با همین cfg_hash
@@ -365,7 +486,14 @@ def _screener_cached():
                 _g3 = _ind.get("3") or {}
                 r["score"] = res["score"]
                 r["primary_score"] = res.get("primary_score", 0)
-                r["i1_pass"] = p["1_growth"]
+                # محور ۱ هم مثلِ ۲/۳/۴: «بی‌داده» را از «رد» جدا می‌پرسد. بی‌این
+                # یک‌خط، کارت برایِ نمادِ بی‌گزارشِ ماهانه «بی‌نظر» می‌گفت و جدول
+                # همان را مردود می‌شمرد (سنجشِ زنده ۱۴۰۵-۰۷-۲۳).
+                _states = res.get("states") or {}
+                _na1 = fts_engine.ind1_na(_ind.get("1"))
+                r["i1_pass"] = _states.get("1_growth",
+                                            None if _na1 else p["1_growth"])
+                r["i1_na"] = bool(_na1) or _states.get("1_growth") is None
                 # رأیِ مالک ۱۴۰۵-۰۷-۰۳: معافیت = «نظر نمی‌دهد» — همان چیزی که
                 # bulk_scan می‌دهد؛ بدونِ این تبدیلِ یک‌خطی جدول با کشِ سرد
                 # «مردود» و با کشِ گرم «N/A» می‌شد.
@@ -386,10 +514,13 @@ def _screener_cached():
                 # زنده کارت با `na: True` می‌گوید؛ درِ مسیرِ مادی همان حکم ستونِ
                 # NULLِ f02_pass است (نویسندهٔ جدول: dev/codal_fts_updater.py).
                 _na2 = fts_engine.ind2_na(_ind.get("2")) or p.get("2_eps_trend") is None
-                r["i2_pass"] = None if _na2 else p["2_eps_trend"]
+                r["i2_pass"] = _states.get("2_eps_trend",
+                                          None if _na2 else p["2_eps_trend"])
                 r["i2_na"] = bool(_na2)
-                r["i3_pass"] = None if _na3 else p["3_gross_margin"]
-                r["i4_pass"] = None if _na4 else p["4_sales_to_mcap"]
+                r["i3_pass"] = _states.get("3_gross_margin",
+                                          None if _na3 else p["3_gross_margin"])
+                r["i4_pass"] = _states.get("4_sales_to_mcap",
+                                          None if _na4 else p["4_sales_to_mcap"])
                 r["i3_na"], r["i4_na"] = bool(_na3), bool(_na4)
                 r["i5_pass"] = p["5_industry"]
                 r["i1a_pass"] = p.get("1a_monetary_growth")

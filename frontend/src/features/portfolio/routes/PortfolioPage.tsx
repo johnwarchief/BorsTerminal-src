@@ -6,6 +6,7 @@ import { Badge } from '@shared/components/Badge';
 import { EmptyState } from '@shared/components/EmptyState';
 import { RetryAction } from '@shared/components/RetryAction';
 import { fmtInt, toFaDigits } from '@shared/lib/fmt';
+import { fmtAge } from '@shared/lib/time';
 import { FlashNum } from '@shared/components/FlashNum';
 import { useSymbolStore } from '@shared/stores/symbolStore';
 import { publishSignal } from '@shared/lib/signalBus';
@@ -22,10 +23,12 @@ import { useAssetValues } from '../stores/assetValues';
 import { useStopLossBoard } from '../api/useStopLossBoard';
 import { SymbolBasketAction, weightSourceLabel } from '../components/SymbolBasketAction';
 import { SectorMatrix } from '../components/SectorMatrix';
+import WatchlistSection from '../components/WatchlistSection';
+import { BotPanel } from '../components/BotPanel';
 import { TwinDonuts, ActualPortfolioCard } from '../components/TwinDonuts';
 
 const STATUS_TONE = { accept: 'green', reject: 'red', monitor: 'yellow', pending: 'gray' } as const;
-const STATUS_LABEL: Record<string, string> = { accept: 'نگهداری', reject: 'حذف شده', monitor: 'زیر نظر', pending: 'در انتظار' };
+const STATUS_LABEL: Record<string, string> = { accept: 'نگهداری', reject: 'حذف‌شده', monitor: 'زیر نظر', pending: 'در انتظار' };
 
 type BoardTab = 'portfolio' | 'monitor' | 'rejects';
 
@@ -61,6 +64,12 @@ export default function PortfolioPage() {
   const setSymbol = useSymbolStore((s) => s.setSymbol);
   const portfolio = usePortfolio();
   const closes = useMarketCloses();
+  // سنِ دو منبعِ این صفحه جداست: قیمتِ پایانی از فیدِ زندهٔ تابلو، و وزن/تخصیصِ
+  // سبد از snapshotِ `/api/selection/portfolio` (ریتمِ نشست). وقتی سبد از قیمت
+  // عقب‌تر است صریح گفته می‌شود، نه اینکه عددِ کهنه «به‌روز» جا بزند (#M3.2).
+  const basketAgeMs = portfolio.dataUpdatedAt && closes.dataUpdatedAt
+    ? Math.max(0, closes.dataUpdatedAt - portfolio.dataUpdatedAt)
+    : 0;
   const [tab, setTab] = useState<BoardTab>('portfolio');
   const [editOpen, setEditOpen] = useState(false);
 
@@ -118,30 +127,39 @@ export default function PortfolioPage() {
     [classes, holdings, limits?.class_mix_pct, limits?.portfolio_value_toman, assetTotal, assetValues],
   );
 
-  if (portfolio.isLoading) return <EmptyState title="در حال دریافت سبد..." />;
-  if (portfolio.isError)
-    return (
-      <EmptyState
-        title="خطا در دریافت سبد"
-        hint="اتصال بک اند را بررسی کن"
-        action={<RetryAction onRetry={() => void portfolio.refetch()} testId="portfolio-retry" />}
-      />
-    );
+  // دروازۀِ بارگذاری/خطا فقط ناظرِ «پرتفوی من» است؛ زیرتبِ «دیده‌بان بازار»
+  // به snapshotِ سبد نیازی ندارد و با سبدِ در حالِ لود نباید سفید شود.
+  const mineGate = portfolio.isLoading ? (
+    <EmptyState title="در حال دریافت سبد..." />
+  ) : portfolio.isError ? (
+    <EmptyState
+      title="خطا در دریافت سبد"
+      hint="اتصال بک‌اند را بررسی کنید"
+      action={<RetryAction onRetry={() => void portfolio.refetch()} testId="portfolio-retry" />}
+    />
+  ) : null;
 
   const rows = tab === 'portfolio' ? holdings : tab === 'monitor' ? monitor : rejects;
-  const rowLabel = tab === 'portfolio' ? 'سبد' : tab === 'monitor' ? 'رادار زیر نظر' : 'حذف شده ها';
+  const rowLabel = tab === 'portfolio' ? 'سبد' : tab === 'monitor' ? 'رادار زیر نظر' : 'حذف‌شده‌ها';
   const sumWeight = limits?.sum_weight_pct;
   const weightCap = limits?.weight_cap_pct;
 
   const tabs: { id: BoardTab; label: string; count: number }[] = [
     { id: 'portfolio', label: 'سبد', count: holdings.length },
     { id: 'monitor', label: 'زیر نظر', count: monitor.length },
-    { id: 'rejects', label: 'حذف شده', count: rejects.length },
+    { id: 'rejects', label: 'حذف‌شده', count: rejects.length },
   ];
 
   return (
     <div className="relative flex w-full max-w-none flex-col gap-4 overflow-clip">
-      {/* سوییچر دوگانه */}
+      {/* رأیِ مالک (۱۴۰۵-۰۷-۲۲): «دیده‌بان بازار» تبِّ اصلیِ ناوبری است (/watch)،
+          پس زیرتبِّ تکراری ازِ این ناحیه بیرون رفت. «واچ‌لیست» (§۱ و §۶task)
+          همان‌جا می‌ماند: فهرستِ ستاره‌دارِ خودِ کاربر، نه رصدِ بازار. */}
+      {mineGate != null ? (
+        mineGate
+      ) : (
+        <>
+          {/* سوییچر دوگانه */}
       <div className="flex flex-wrap items-center gap-2" role="tablist" aria-label="انتخاب نمای پرتفوی">
         <button
           type="button"
@@ -169,6 +187,15 @@ export default function PortfolioPage() {
         >
           پرتفوی فعلی
         </button>
+        {basketAgeMs > 30_000 ? (
+          <span
+            data-testid="portfolio-basket-age"
+            title="قیمت‌ها از فیدِ زندهٔ تابلو می‌آیند؛ وزن/تخصیصِ سبد از snapshotِ جدا (هر ۳۰ ثانیه) است"
+            className="num ms-auto rounded-full bg-accent-yellow/10 px-2 py-0.5 text-3xs font-bold text-accent-yellow"
+          >
+            سبد: {fmtAge(portfolio.dataUpdatedAt)} · قیمت: {fmtAge(closes.dataUpdatedAt)}
+          </span>
+        ) : null}
       </div>
 
       {view === 'target' ? (
@@ -199,7 +226,7 @@ export default function PortfolioPage() {
             <SymbolBasketAction symbol="" addMode />
             <Badge tone="green">نگهداری {toFaDigits(counts.accept ?? 0)}</Badge>
             <Badge tone="yellow">زیر نظر {toFaDigits(counts.monitor ?? 0)}</Badge>
-            <Badge tone="red">حذف شده {toFaDigits(counts.reject ?? 0)}</Badge>
+            <Badge tone="red">حذف‌شده {toFaDigits(counts.reject ?? 0)}</Badge>
             {sumWeight != null ? (
               <Badge tone={weightCap != null && sumWeight > weightCap ? 'orange' : 'blue'}>
                 جمع وزن {toFaDigits(sumWeight)} درصد
@@ -213,7 +240,8 @@ export default function PortfolioPage() {
             ) : null}
             {limits?.value_missing_count ? (
               <Badge tone="gray">
-                {toFaDigits(limits.value_missing_count)} ردیف تعداد ندارد — وزن خودکار حساب نمی‌شود
+                در {toFaDigits(limits.value_missing_count)} ردیف تعداد ثبت نشده است؛ وزن این
+                ردیف‌ها به‌صورت خودکار محاسبه نمی‌شود
               </Badge>
             ) : null}
             {weightCap != null ? <Badge tone="gray">سقف وزن هر نماد {toFaDigits(weightCap)} درصد</Badge> : null}
@@ -326,8 +354,8 @@ export default function PortfolioPage() {
                             {h.qty != null && h.qty > 0 ? (
                               <span className="num text-xs text-text-primary">{fmtInt(h.qty)}</span>
                             ) : (
-                              <span className="text-xs text-text-muted" title="تعداد ثبت نشده؛ وزن خودکار حساب نمی‌شود">
-                                بدون تعداد
+                              <span className="text-xs text-text-muted" title="تعداد ثبت نشده؛ وزن این ردیف به‌صورت خودکار محاسبه نمی‌شود">
+                                تعداد ثبت نشده
                               </span>
                             )}
                           </td>
@@ -392,6 +420,13 @@ export default function PortfolioPage() {
               </table>
             </div>
           </div>
+
+          {/* واچ‌لیست داخلِ همین workspace است (§۱): نه تبِ ناوبری، نه صفحۀ دیگر */}
+          <WatchlistSection />
+          {/* ربات هم همین‌جا: کاغذی، دستی، و با یکِ سطرِ وضعیت — نه صفحۀ جدا */}
+          <BotPanel />
+        </>
+      )}
         </>
       )}
     </div>

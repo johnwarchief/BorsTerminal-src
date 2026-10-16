@@ -32,6 +32,14 @@ RIAL_TO_BT = 1e10          # ریال → میلیارد تومان (تأیید:
 PAIRS = [
     ("m",   "کل بازار",                 "all",         "ارزش"),
     ("m",   "کل بازار",                 "all",         "جریان"),
+    # «جریان» فقط رویِ «کل بازار» دامنه‌اش با TA یکی نیست: اندیسِ ۵ درِ TA رویِ
+    # m = st+sf+nsf نشسته و جریانِ صندوقِ درآمدِ ثابت را با وزنِ خودش می‌آورد.
+    # سنجشِ ۱۴۰۵-۰۷-۱۸: m −۱۵۰۶٪، درحالی‌که همین عدد رویِ دامنه‌هایِ هم‌نام
+    # (سهام، و سهام+صندوق سهمی) نزدیکِ صفر است. بی‌این دو سطر، آن −۱۵۰۶٪
+    # «اختلافِ توضیح‌نداده» می‌ماند — و معیارِ این پرونده zero unexplained
+    # mismatch است، نه سبزِ ظاهری.
+    ("st",  "سهام و حق تقدم",            "stock_right", "جریان"),
+    ("afl", "سهام و واحدهایِ سهمی",        "eq_all",      "جریان"),
     ("st",  "سهام و حق تقدم",            "stock_right", "ارزش"),
     ("sf",  "صندوق‌های سهامی و مختلط",     "eq_fund",     "ارزش"),
     ("nsf", "صندوق درآمد ثابت",           "fixed_fund",  "ارزش"),
@@ -52,10 +60,30 @@ def ta_feed():
     return d
 
 
+def discover_backend(timeout=6.0):
+    """بندِ «پورت را از حافظه بازخوانی نکن»: کدامِ بک‌اند *الان* پاسخ می‌دهد؟
+
+    نسخهٔ نصبی رویِ ۸۰۰۱، نسخۀ dev رویِ ۸۰۰۲، و نشست‌هایِ‌هم‌زمانِ ایجنت رویِ
+    ۸۰۱۲/۸۰۲۱ — hardcode کردنِ یکی، مقایسه را بی‌صدا به فایلِ کهنه می‌اندازد.
+    """
+    import urllib.error
+    for port in (8001, 8002, 8012, 8021, 8000, 5173):
+        base = "http://127.0.0.1:%d" % port
+        try:
+            with urllib.request.urlopen(base + "/api/update/version",
+                                        timeout=timeout) as r:
+                d = json.loads(r.read().decode("utf-8"))
+            if isinstance(d, dict) and d.get("version"):
+                return base, d
+        except Exception:
+            continue
+    return None, None
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--db", default=None)
-    ap.add_argument("--api", default="http://127.0.0.1:8002",
+    ap.add_argument("--api", default=None,
                     help="منبع «ما»: اپِ نصب‌شده. بانکِ رویِ دیسک پس از نهایه "
                          "پشتِ RAM می‌ماند (client_type دیرهنگام flush می‌شود) و "
                          "مقایسۀ فایل با فیدِ زندهٔ TA دو لحظه را می‌آورد — همان "
@@ -76,6 +104,16 @@ def main():
     ours: dict = {}
     meta: dict = {}
     src = "db"
+    backend = None
+    if not args.api:
+        args.api, ver = discover_backend()
+        backend = ver
+        if args.api:
+            print("بک‌اندِ زنده: %s (نسخه %s، mode %s)"
+                  % (args.api, (ver or {}).get("version"), (ver or {}).get("mode")))
+        else:
+            print("هیچ بک‌اندِ زنده‌ای پیدا نشد ⇒ «ما» از فایلِ دیسک خوانده می‌شود "
+                  "و مقایسه NOT_COMPARABLE است.")
     if args.api:
         try:
             with urllib.request.urlopen(args.api.rstrip("/") + "/api/mstat/summary", timeout=15) as r:
@@ -95,8 +133,14 @@ def main():
         ours = {r["key"]: r for r in s["rows"]}
         meta = s["asof"]
     lines = []
+    comparable = src.startswith("api")
     out = {"taken_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
            "ours_source": src,
+           "backend_version": backend,
+           "comparable": comparable,
+           "not_comparable_reason": (None if comparable else
+                                     "سمتِ ما از فایلِ دیسک است و با فیدِ زندهٔ مرجع "
+                                     "دو لحظۀ متفاوت دارد (قواعدِ بندِ ۴ مأموریت)"),
            "ta_day": ta.get("j"), "ta_hour": ta.get("d"), "app_asof": meta,
            "rows": []}
     for key, ta_label, our_key, metric in PAIRS:
@@ -107,9 +151,16 @@ def main():
         mine = float(ours.get(our_key, {}).get("value_b_toman") or 0.0) \
             if metric == "ارزش" else float(ours.get(our_key, {}).get("money_flow_b_toman") or 0.0)
         err = (mine - theirs) / theirs if theirs else None
+        st = ("MATCH" if err is not None and abs(err) <= 0.005 else
+              "MISMATCH" if err is not None else "NOT_COMPARABLE")
+        if not comparable:
+            # بی‌هماهنگیِ لحظه، درصدِ خطا «اختلاف» نیست؛ ادعایِ MISMATCH هم
+            # نکنیم — همان چیزی که این پرونده را دروغ‌گو می‌کرد.
+            st = "NOT_COMPARABLE"
         out["rows"].append({"ta_row": key, "ta_label": ta_label, "our_key": our_key,
                             "metric": metric, "ta_bt": round(theirs, 1),
                             "our_bt": round(mine, 1),
+                            "status": st,
                             "err_pct": None if err is None else round(err * 100, 2)})
         lines.append((key, ta_label, ours[our_key]["label"], theirs, mine, err))
 
@@ -159,8 +210,13 @@ def main():
     print("\nهویتِ جبریِ TA (m = st+sf+nsf):")
     for k, v in ident.items():
         print("  %-3s m=%s  st+sf+nsf=%s" % (k, f"{v['m']:,.1f}", f"{v['st+sf+nsf']:,.1f}"))
+    if not comparable:
+        print("", "-> NOT_COMPARABLE: خطاهایِ بالا اختلافِ واقعی نیستند (دو لحظه/دو روز).")
+        print("   بک‌اندِ زنده را با --api بده یا بگذار پورت کشف شود.")
     print("\nگروه‌هایِ صندوق (تقسیمِ زیرگونه حدس است؛ گروه باید بخواند):")
     out["combos"] = []
+    out["combos_source"] = ("instruments+market_watch از فایلِ --db (طبقه‌بندیِ "
+                            "زیرگونه از نام/نام؛ با سطرهایِ API یکی نیست)")
     for label, theirs, mine in combos:
         err = (mine - theirs) / theirs if theirs else None
         out["combos"].append({"label": label, "ta_bt": round(theirs, 1),

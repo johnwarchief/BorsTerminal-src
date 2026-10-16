@@ -8,7 +8,7 @@
     هفتگی na     ⇒ UNKNOWN  (کمبودِ داده رأی نیست)
     هفتگی صعودی  ⇒ PERMITTED (یا UNKNOWN اگر روزانه سنجیده نشده)
 
-و ساعتِ شنی باید همان MA52/RSI5 **هفتگی** بماند (تعدادِ کندلِ هفتگی ≈ یک‌پنجمِ
+و ساعتِ شنی باید MA52 و RSI **هفتگیِ قابل‌تنظیم (پیش‌فرض RSI7)** را به‌کار ببرد (تعدادِ کندلِ هفتگی ≈ یک‌پنجمِ
 روزانه، و عددِ MA52 تنها وقتی می‌آید که ≥۵۲ کندلِ هفتگی باشد). اگر روزی کسی
 «Daily-only» را دوباره پیشنهاد کرد، همین فایل قرمز می‌شود — که خواستِ کار است.
 
@@ -124,8 +124,20 @@ else:
                                "api", "chart.py"), encoding="utf-8").read()
     ck("متنِ «وتوی تایم هفتگی» درِ اولویتِ وضعیت باقی است",
        '"weekly_veto"' in src and "وتوی تایم هفتگی" in src)
+    # قاعدۀ منجمد: MA52 و RSIِ ساعتِ شنی **از سری هفتگی** ساخته می‌شوند.
+    # بازهٔ RSI از f96ce3d تنظیم‌پذیر است (`hourglass_rsi_period`)، پس سوزنِ
+    # قدیمیِ «rsi5_w = _fts_rsi(closes_w, 5)」 مُرده بود؛ آنچه باید ثابت بماند
+    # *منبعِ سری* است، نه عددِ ۵. کنترلِ منفی پایین همان را می‌سنجد: اگر RSI از
+    # سری روزانه ساخته شود، همین بند قرمز می‌شود.
+    hg_block = src[src.index("hg_cfg = _fts_hourglass_settings()"):]
+    hg_block = hg_block[:hg_block.index("\n    # ")] if "\n    # " in hg_block else hg_block
     ck("Hourglass هنوز MA52/RSI هفتگی را از `closes_w` می‌سازد",
-       "ma52_w = _fts_ma(closes_w, 52)" in src and "rsi5_w = _fts_rsi(closes_w, 5)" in src)
+       "_fts_ma(closes_w, 52)" in src and "_fts_rsi(closes_w, rsi_period)" in src
+       and "rsi_period = hg_cfg[\"hourglass_rsi_period\"]" in src,
+       "هر سه: MA52 از closes_w، RSI از closes_w با بازۀ رجیستری")
+    ck("کنترلِ منفی: درِ بلوکِ ساعتِ شنی هیچ RSI/MA از سری روزانه ساخته نمی‌شود",
+       "_fts_rsi(closes," not in hg_block and "_fts_ma(closes," not in hg_block,
+       "closesِ روزانه درِ این بلوک نباشد")
 
 print("─" * 72)
 print(f"نتیجه: {PASS}_pass / {FAIL}_fail / {SKIP}_skip")

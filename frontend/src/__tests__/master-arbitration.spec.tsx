@@ -1,5 +1,6 @@
 // تست بازطراحی تب ایجنت ارشد (M-03): ماشین وتو، استپر ۴ گیتی، خلاصهٔ آفلاین، DCA و اکشن‌ها
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { FUNNEL_FIXTURE } from './fixtures/funnelApi';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { MemoryRouter, Route, Routes } from 'react-router';
@@ -167,6 +168,9 @@ beforeEach(() => {
   fetchMock.mockImplementation((url: string, opts?: { method?: string }) => {
     const u = String(url);
     const ok = (body: unknown) => Promise.resolve({ ok: true, json: () => Promise.resolve(body) } as unknown as Response);
+    if (u.includes('/api/funnel')) {
+      return ok(FUNNEL_FIXTURE);
+    }
     if (u.startsWith('/api/fts/')) return ok(ftsFeed());
     if (u.startsWith('/api/selection/portfolio'))
       return ok({ status: 'success', decisions: [{ symbol: 'شپنا', status: 'accept', weight_eff_pct: 5, sector: 'فلزات اساسي' }], counts: {}, limits: {} });
@@ -449,10 +453,10 @@ describe('صحنهٔ کامل تب ایجنت ارشد', () => {
 
   it('هیچ سیگنالی ⇒ حالت خالی تمیز می‌ماند', async () => {
     renderMaster();
-    expect(await screen.findByText('هنوز سیگنالی در باس نیست')).toBeInTheDocument();
+    expect(await screen.findByText('هنوز هیچ سیگنالی دریافت نشده است')).toBeInTheDocument();
   });
 
-  it('در وضعیت وتو (فیلتر ۲): گیج نمره «وتو / فاقد تایید» و بج «ورود ممنوع (توقف در فیلتر دوم)» نشان می‌دهد', async () => {
+  it('در وضعیت وتو (فیلتر ۲): گیج نمره «وتو / تأیید نشده» و بج «ورود ممنوع (توقف در فیلتر دوم)» نشان می‌دهد', async () => {
     useSignalStore.getState().publishSignal(fundSig('bullish', 85, { metrics: { gross_margin: 26, growth_pct: 45 } }));
     // تکنیکال بدون ستاپ شکست و منفی ⇒ وتو در فیلتر ۲
     useSignalStore.getState().publishSignal(techSig('neutral', 40, []));
@@ -460,7 +464,7 @@ describe('صحنهٔ کامل تب ایجنت ارشد', () => {
 
     expect(await screen.findByText('برآیند مستر برای شپنا')).toBeInTheDocument();
     // در وضعیت وتو، برچسب صریح داخل گیج و بج قرمز رندر می‌شوند:
-    expect(screen.getByText('وتو / فاقد تایید')).toBeInTheDocument();
+    expect(screen.getByText('وتو / تأیید نشده')).toBeInTheDocument();
     expect(screen.getByText('ورود ممنوع (توقف در فیلتر دوم)')).toBeInTheDocument();
     expect(screen.queryByText('خرید قوی')).toBeNull();
     useSignalStore.getState().clearSignals();

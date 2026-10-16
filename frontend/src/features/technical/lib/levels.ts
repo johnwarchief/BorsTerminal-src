@@ -13,14 +13,14 @@ export const SETUP_FA: Record<string, string> = {
 
 /** واژه‌نامۀ «زمینه»ها — این‌ها ستاپ/سیگنالِ ورود نیستند (taxonomyِ دورِ J) */
 export const CONTEXT_FA: Record<string, string> = {
-  fib_zone_33_40: 'موقعیت: کمربند ۳۳–۴۰٪',
-  fib_zone_618_70: 'موقعیت: کمربند ۶۱.۸–۷۰٪',
+  fib_zone_33_40: 'موقعیت: زون اصلاح ۳۳–۴۰٪',
+  fib_zone_618_70: 'موقعیت: زون طلایی ۶۱.۸–۷۰٪',
 };
 
 /** منشأِ حد ضرر سخت از موتور خروج — `stop_basis` در لایهٔ ۱ */
 export const STOP_BASIS_FA: Record<string, string> = {
   entry: 'زیرِ قیمتِ خریدِ ثبت‌شده در سبد',
-  swing_low: 'زیرِ کف ۲۰ نشستِ اخیر (قیمت خریدی در سبد ثبت نشده)',
+  swing_low: 'زیرِ کف ۲۰ روز معاملاتیِ اخیر (قیمت خریدی در سبد ثبت نشده)',
 };
 
 /** لایه‌های فعالِ موتور خروج — کلیدهای `exit_engine.signals` */

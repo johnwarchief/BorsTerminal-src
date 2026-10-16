@@ -1,0 +1,30 @@
+symbol,asset_id,ra_name,identity,tf,adjustment,scale,human_label,structure_observed,prod_label,hybrid_label,db_cliff_agoFromEnd,agree_prod,agree_hybrid,screenshot
+فنوال,149,نورد آلومینیوم,YES(code),D,عملکردی,log,up,HH+HL صعود تا ATH 15.4k,up,up,-,Y,Y,ra_149_fenval_daily_amali.png
+فنوال,149,نورد آلومینیوم,YES(code),W,عملکردی,log,up,کف/سقف بالاترِ هفتگی تا 15.8k,down,up,Y(flip),N,Y,ra_149_fenval_weekly_amali.png
+فولاد,453,فولاد مبارکه اصفهان,YES(code),D,عملکردی,log,up,HL 1500→1900→2250؛ HH 3050→3400→3800,up,up,-,Y,Y,ra_453_folad_daily_amali.png
+فولاد,453,فولاد مبارکه اصفهان,YES(code),W,عملکردی,log,up,HH 3000→3050→3990؛ HL 1600→2000,down,neutral,Y(flip),N,Y,ra_453_folad_weekly_amali.png
+خودرو,167,ایران خودرو,YES(code),D,عملکردی,log,up,چندساله HH+HL؛ 230→380→500→620؛ ATH 780→732,down,up,-,N,Y,ra_167_khodro_daily_amali_log.png
+خودرو,167,ایران خودرو,YES(code),W,عملکردی,log,up,بازیابی از حباب 2020؛ HH+HLِ 2سالۀ اخیر (تلفیقی با رنج),up,insuff,-,Y,N,ra_167_khodro_weekly_amali_log.png
+وبملت,462,بانک ملت,YES(code),D,عملکردی,log,up,HH 950→1030→1770؛ HLِ متوالی؛ کانالِ صعودیِ ترسیمیِ مالک,down,up,-,N,Y,ra_462_bemellat_daily_amali_log.png
+وبملت,462,بانک ملت,YES(code),W,عملکردی,log,up,پایۀ 2012-2024 سپس بالاِ 2024-2026 داخلِ کانالِ صعودی,up,up,-,Y,Y,ra_462_bemellat_weekly_amali_log.png
+شپنا,484,پالایش نفت اصفهان,YES(code),D,عملکردی,log,up,HL 2300→4700→12800؛ HH 3300→6300→14000؛ ATH,up,up,-,Y,Y,ra_484_shapna_daily_amali_log.png
+ولانا,599,لیزینگ آریادانا,YES(code),D,عملکردی,log,contradictory,HH(5800>4800) + LL(3100<3300) ⇒ متناقض,down,down,46,N,Y,ra_599_volana_daily_amali_log.png
+ولانا,599,لیزینگ آریادانا,YES(code),W,عملکردی,log,up,بالا از کف 2025 ولی زیرِ سقف 2023 (LH+HL)، پایۀ صعودی,down,down,46,N,Y,ra_599_volana_weekly_amali_log.png
+مارون,485,پتروشیمی مارون,YES(code),D,عملکردی,log,up,صعودِ 15k→30k در 4 ماه؛ ATH 30170، HH+HL,down,down,22,N,N,ra_485_maron_daily_amali_log.png
+# ===== تحلیلِ ریشه‌ایِ اختلاف‌ها (read-only؛ هیچ تغییری در کد) =====
+# دو مکانیزمِ جدا برایِ prod=down در برابرِ human=up:
+# (A) کلیفِ افزایشِ سرمایۀ تعدیل‌نشده درِ market.db:
+#     مارون: 53550→18950 فقط 22 کندلِ قبل ⇒ ماشینِ پیوت آن را ریزشِ فاجعه‌بار می‌بیند ⇒ down.
+#     ولانا: کلیف 46 کندلِ قبل ⇒ ساختارِ متناقض/نزولی کاذب.
+#     مرجعِ Rahavardِ «عملکردی» این شکاف را حذف می‌کند ⇒ upِ واقعی. ⇒ ایرادِ لایۀ داده/تعدیل، نه منطق.
+# (B) منطقِ ماشینِ پیوت رویِ سریِ تمیز (بدونِ کلیف):
+#     خودرو، وبملت (روزانۀ تمیزِ صعودی) و فنوال/فولادِ هفتگی ⇒ prod=down ولی human=up.
+#     موتورِ hybrid (پشتِ BORS_TREND_ENGINE) رویِ همهٔ این‌ها با human می‌خوانَد (up/neutral).
+# نتیجه: hybrid در «منطق» بهتر است؛ اما مارون را غلط می‌دهد چون همان سریِ خامِ کلیف‌دار را می‌خوانَد.
+# ⇒ اولویتِ اصلاح: خوراندنِ کندلِ «تعدیل‌شده» به طبقه‌بند (رفعِ A)؛ سپس hybrid منطق را می‌بندد.
+# ===== وضعیتِ صادقانۀ مرجع =====
+# ۱۲ جفتِ D/W رویِ ۷ نماد، همه با کدِ تأییدشده، تعدیلِ عملکردی، مقیاسِ log، رندرِ واقعیِ تمیز.
+# توزیعِ human: up=۱۰، contradictory=۱ (ولانا D)، (downِ تمیزِ انسانی = ۰).
+# محدودیت: بازارِ ۲۰۲۶ غالباً صعودی است ⇒ نمونهٔ «نزولیِ خالصِ انسانی» و «رنجِ خالص» گرفته نشد؛
+#   کلِ مرجع PARTIAL است و برایِ حذفِ recent-window یا تغییرِ production کافی نیست.
+# طبقه‌بند production و recent-window: **بدونِ تغییر** (طبقِ دستورِ مالک تا تکمیلِ ارزیابی و رأیِ او).

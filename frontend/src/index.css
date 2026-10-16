@@ -266,84 +266,95 @@ details[open] > summary .disclosure-chevron {
 }
 }
 
-/* #198 پلتو و سپس محو، به‌جای محوِ از ثانیهٔ صفر.
-   عددِ اندازه‌گیری‌شده رویِ برنامۀِ زنده (خواندنِ alpha از CSS در هر ۵۰ms):
-   با دورۀِ ۰.۹s و ease-out رنگ در ۳۰۰ میلی‌ثانیه به alpha ۰.۲۳ و در ۵۰۰
-   به ۰.۱۰ می‌رسید، یعنی عملاً ~۴۰۰ میلی‌ثانیه «فلش» داشتیم نه ۹۰۰؛ و چون
-   ردیف‌هایِ جدول با هر تازه‌شدنِ داده از نو ساخته می‌شوند، انیمیشنِ سلول‌هایِ
-   واقعی هرگز به animationend نمی‌رسید (۱۵۵ شروع، صفر پایان) پس محوِ تدریجی
-   هم دیده نمی‌شد. پلتو یعنی حتی اگر انیمیشن نیمه‌کاره بریده شود، تا لحظۀِ
-   بریده‌شدن رنگِ کامل رویِ سلول بوده است. رأیِ jev-pilot: A (اطمینان ۰.۹۴). */
+/* فلاشِ تغییرِ عدد — الگویِ مشترکِ همهٔ اعدادِ زنده (تابلو، دیده‌بان، نبض، بازرس).
+   پیش‌تر صفرِ درصد روی «پُررنگ» شروع می‌شد و خطی می‌رفت: عدد یک‌باره سبز
+   می‌شد و بعدِ ~۲ ثانیه بریده می‌شد («خشک» و «پرش به عقب»). حالا پوششِ
+   نرمِ سه‌مرحله‌ای است: از شفاف بالا می‌آید (fade-in)، لحظه‌ای می‌ماند
+   (hold)، و آرام تا شفاف پایین می‌رود (fade-out) — کم‌مزاحم و بدونِ رنگِ
+   گیرکرده. چون هر دو مرحلۀِ شروع و پایان شفاف‌اند، رنگ هیچ‌وقت در میانه
+   بریده و «پرش» نمی‌کند. شکلِ منحنی یک‌جا همین‌جاست و بقیه فقط مدت را
+   از ریتمِ تیک می‌گیرند (flashClock)؛ پس منطقِ زمان‌بندی در ده‌ها مؤلفه
+   کپی نمی‌شود. سرانۀِ درصدِ اوجِ رنگ: fade-in ≈ ۱۲٪، hold تا ≈ ۳۰٪.
+   رأیِ jev-pilot: A (اطمینانِ ۰٫۹۴). */
 @keyframes flash-up {
   0% {
-    background: color-mix(in srgb, var(--accent-green) 50%, transparent);
-    box-shadow: 0 0 10px color-mix(in srgb, var(--accent-green) 40%, transparent);
+    background-color: transparent;
+    box-shadow: none;
   }
-  45% {
-    background: color-mix(in srgb, var(--accent-green) 46%, transparent);
+  12% {
+    background-color: color-mix(in srgb, var(--accent-green) 46%, transparent);
     box-shadow: 0 0 9px color-mix(in srgb, var(--accent-green) 34%, transparent);
   }
+  30% {
+    background-color: color-mix(in srgb, var(--accent-green) 38%, transparent);
+    box-shadow: 0 0 7px color-mix(in srgb, var(--accent-green) 26%, transparent);
+  }
   100% {
-    background: transparent;
+    background-color: transparent;
     box-shadow: none;
   }
 }
 @keyframes flash-down {
   0% {
-    background: color-mix(in srgb, var(--accent-red) 50%, transparent);
-    box-shadow: 0 0 10px color-mix(in srgb, var(--accent-red) 40%, transparent);
+    background-color: transparent;
+    box-shadow: none;
   }
-  45% {
-    background: color-mix(in srgb, var(--accent-red) 46%, transparent);
+  12% {
+    background-color: color-mix(in srgb, var(--accent-red) 46%, transparent);
     box-shadow: 0 0 9px color-mix(in srgb, var(--accent-red) 34%, transparent);
   }
+  30% {
+    background-color: color-mix(in srgb, var(--accent-red) 38%, transparent);
+    box-shadow: 0 0 7px color-mix(in srgb, var(--accent-red) 26%, transparent);
+  }
   100% {
-    background: transparent;
+    background-color: transparent;
     box-shadow: none;
   }
 }
 /* مدت از --bors-flash-dur می‌آید (shared/lib/flashClock.ts): ۷۰٪ِ بازۀِ تازۀِ
-   تابلو، با کفِ ۱.۲s و سقفِ ۴s. نبودنِ متغیر = همان ۱.۶sِ پیشین. */
+   تابلو، با کفِ ۱٫۲s و سقفِ ۴s. نبودنِ متغیر = همان ۱٫۶sِ پیشین. */
 @layer components {
 .flash-up {
-  animation: flash-up var(--bors-flash-dur, 1.6s) linear both;
+  animation: flash-up var(--bors-flash-dur, 1.6s) ease-out both;
 }
 }
 @layer components {
 .flash-down {
-  animation: flash-down var(--bors-flash-dur, 1.6s) linear both;
+  animation: flash-down var(--bors-flash-dur, 1.6s) ease-out both;
 }
 }
 
-/* فلش ملایم و سریع برای اعداد زنده (LiveNumber) — الهام‌گرفته از ترمینال‌های مالی و VibafarsiUI */
-@keyframes live-flash-up {
-  0% {
-    background-color: color-mix(in srgb, var(--accent-green) 28%, transparent);
-    box-shadow: 0 0 8px color-mix(in srgb, var(--accent-green) 24%, transparent);
-  }
-  100% {
-    background-color: transparent;
-    box-shadow: none;
-  }
-}
-
-@keyframes live-flash-down {
-  0% {
-    background-color: color-mix(in srgb, var(--accent-red) 28%, transparent);
-    box-shadow: 0 0 8px color-mix(in srgb, var(--accent-red) 24%, transparent);
-  }
-  100% {
-    background-color: transparent;
-    box-shadow: none;
-  }
-}
-
+/* فلاشِ اعدادِ درشت (LiveNumber) — همان منحنیِ مشترکِ بالا، فقط با دورۀِ
+   کوتاه‌ترِ ۱٫۱s تا عددِ قهرمانِ صفحه به‌اندازۀِ یک نگاهِ سریع روشن بماند و
+   آرام خاموش شود. --bors-flash-soft-dur را اگر خواستیم از ریشه عوض می‌کنیم. */
 @layer components {
   .live-flash-up {
-    animation: live-flash-up 0.65s ease-out both;
+    animation: flash-up var(--bors-flash-soft-dur, 1.1s) ease-out both;
   }
   .live-flash-down {
-    animation: live-flash-down 0.65s ease-out both;
+    animation: flash-down var(--bors-flash-soft-dur, 1.1s) ease-out both;
+  }
+}
+
+/* فلاشِ آبیِ «دیده‌بان» — رنگِ خودِ عدد، بی‌جهت، سریع و زیرِ یک ثانیه. برخلافِ
+   فلاشِ تابلو (سبز/قرمزِ جهت‌دار) اینجا رنگ هیچ معنایی جز «همین حالا عوض شد»
+   ندارد؛ شروعش آنی است (آبیِ کامل در ۰٪)، لحظه‌ای می‌ماند، و نرم به رنگِ عادیِ
+   همان سلول (--flash-rest که خودِ FlashNum پیش از فلاش می‌خواند) برمی‌گردد. */
+@keyframes flash-neutral {
+  0% {
+    color: var(--accent-blue);
+  }
+  22% {
+    color: var(--accent-blue);
+  }
+  100% {
+    color: var(--flash-rest, currentColor);
+  }
+}
+@layer components {
+  .flash-neutral {
+    animation: flash-neutral var(--bors-flash-neutral-dur, 0.75s) ease-out both;
   }
 }
 
@@ -491,6 +502,19 @@ details[open] > summary .disclosure-chevron {
   .app-content[data-inspector='open'] {
     padding-left: var(--inspector-w);
   }
+
+  /* ارتفاعِ چیزی که بالایِ `.app-content` چسبان مانده (تاپ‌بار h-9 = ۳۶px، و
+     نوارِ نماد sticky top-9 با min-h-[38px] + py-1 ≈ ۴۶px دیگر). هر نوارِ
+     چسبانِ میانی باید از همین متغیر فاصله بگیرد تا هیچ‌چیز را نپوشاند —
+     پیش از این مقدارِ top دستی درِ هر کامپوننت نوشته می‌شد و با تغییرِ
+     تاپ‌بار زیرِ نوارِ فیلترها سرستون قاطی می‌شد. */
+  .app-content {
+    --pinned-h: 36px;
+  }
+
+  .app-content:has(.symbol-strip-bar) {
+    --pinned-h: 82px;
+  }
 }
 
 @media (max-width: 1023.98px) {
@@ -518,6 +542,9 @@ details[open] > summary .disclosure-chevron {
   .conflict-pulse,
   .flash-up,
   .flash-down,
+  .flash-neutral,
+  .live-flash-up,
+  .live-flash-down,
   .hud-beam,
   .animate-spin-slow {
     animation: none !important;
@@ -607,7 +634,10 @@ html[data-idle='1'] *::after {
    حالتی که مالک نگاه می‌کند هرگز رنگ نمی‌دید. با حرکتِ موس همان گره
    playState=running و currentTime=297ms شد. */
 html[data-idle='1'] .flash-up,
-html[data-idle='1'] .flash-down {
+html[data-idle='1'] .flash-down,
+html[data-idle='1'] .flash-neutral,
+html[data-idle='1'] .live-flash-up,
+html[data-idle='1'] .live-flash-down {
   animation-play-state: running !important;
 }
 
@@ -625,4 +655,33 @@ html[data-idle='1'] .flash-down {
 html[data-idle='1']:not([data-hidden='1']) .fts-path-flow,
 html[data-idle='1']:not([data-hidden='1']) .fts-comet {
   animation-play-state: running !important;
+}
+
+/* ── ردیفِ «همین حالا حکمش عوض شد» درِ جدول غربالگری FTS ─────────────────
+   قیف زنده است؛ کاربر باید ببیند *کدام* حکم تازه شده، نه فقط این‌که شمار
+   عوض شده. یک فلاشِ کوتاهِ لبه‌ای، بی‌تغییرِ ارتفاعِ ردیف (ارتفاع با
+   ROW_Hِ مجازی‌سازی قفل است؛ چیزی که اندازه عوض کند اسکرول می‌لنگد). */
+@keyframes fts-row-flash {
+  0% { background-color: rgba(56, 189, 248, 0.22); }
+  70% { background-color: rgba(56, 189, 248, 0.10); }
+  100% { background-color: transparent; }
+}
+tr.fts-row-changed > td {
+  animation: fts-row-flash 2.6s ease-out 1;
+}
+@media (prefers-reduced-motion: reduce) {
+  /* بی‌انیمیشن هم خبر می‌رسد: زمینۀ کم‌رنگ رویِ ردیف می‌ماند. */
+  tr.fts-row-changed > td { animation: none; background-color: rgba(56, 189, 248, 0.10); }
+}
+
+/* چیپِ دلتا «همین دور» است، نه «همیشه»: با هر عددِ تازه دوباره متولد می‌شود
+   (key درِ کامپوننت) و بعد از چند ثانیه محو می‌شود تا کاربر دورِ کهنه را
+   زنده نپندارد. */
+@keyframes fts-chip-fade {
+  0%, 55% { opacity: 1; }
+  100% { opacity: 0; }
+}
+.fts-delta-chip { animation: fts-chip-fade 9s ease-out forwards; }
+@media (prefers-reduced-motion: reduce) {
+  .fts-delta-chip { animation: none; }
 }

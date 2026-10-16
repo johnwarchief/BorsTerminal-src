@@ -25,6 +25,7 @@ FLAGS_PY = os.path.join(ROOT, "tape_flags.py")
 MARKET_PY = os.path.join(ROOT, "api", "market.py")
 ROW_TS = os.path.join(ROOT, "frontend", "src", "shared", "types", "marketRow.ts")
 STORE_TS = os.path.join(ROOT, "frontend", "src", "features", "market", "stores", "tapeStore.ts")
+TAPE_FLAGS_TS = os.path.join(ROOT, "frontend", "src", "shared", "lib", "tapeFlags.ts")
 FUNNEL_TS = os.path.join(ROOT, "frontend", "src", "features", "master", "lib", "ftsFunnel.ts")
 
 PASS = FAIL = 0
@@ -53,6 +54,10 @@ def row(**over):
         "q_tot_tran": 4_000_000.0, "tvol": 4_000_000.0, "z_tot_tran": 120.0,
         "month_avg_vol": 1_000_000.0, "prev_day_vol": 2_000_000.0,
         "prior30_vol": 30_000_000.0, "hist_sessions": 60.0, "min_low_29": 995.0,
+        # [is5]/[is6] از `InstValue.aspx` خودِ سایت — داوریِ نهایی با [is6]
+        # است (رأیِ مالک ۱۴۰۵-۰۷-۲۰: «[is6] با Σ[ih]/۳۰ جایگزین نشود»).
+        # ۱٫۵×۱M = ۱٫۵M < tvol=۴M ⇒ قیدِ حجم درست می‌ماند.
+        "is5": 1_000_000.0, "is6": 1_000_000.0,
         "buy_i_vol": 2_400_000.0, "buy_count_i": 100.0,
         "sell_i_vol": 1_000_000.0, "sell_count_i": 100.0,
         "buy_n_vol": 2_000_000.0, "sell_n_vol": 3_000_000.0,
@@ -112,6 +117,21 @@ def main():
 
     # ── ۵) بی‌داده ⇒ نسنجیده، نه صفرِ جعلی ───────────────────────────────────
     ck(not sm(prior30_vol=None), "مبناءِ غایب ⇒ سنجش نیست")
+    # مبنایِ خطِ آخرِ فایل `[is6]` است؛ نبودنش درِ JS `undefined` و
+    # `1.5*undefined` ⇒ NaN ⇒ مقایسه false (سنجشِ ۱۴۰۵-۰۷-۲۰: از ۳٬۴۴۶ ردیفِ
+    # امروز فقط ۹۸۵ نماد کلید ۶ دارند — سایت بقیه را بی‌صدا از فهرست بیرون
+    # می‌اندازد، پس «رد» هم نیست، «سنجیده نشد» است).
+    ck(not sm(is6=None), "[is6] منتشر نشده ⇒ خطِ سوم سنجیده نمی‌شود")
+    # اصلاحِ بازبینیِ ۱۴۰۵-۰۷-۲۰: خطِ دوم (`tvol > 1.5*[is5]`) استثنای **نمی‌دهد**
+    # — مقایسه با `undefined` فقط NaN⇒false است و مقدارش هم برگردانده نمی‌شود
+    # (eval ارزشِ آخرین عبارت را می‌گیرد). پس `[is5]`ِ غایب ردیف را بیرون
+    # نمی‌اندازد؛ این سنجش قبلاً دروازه‌ای می‌ساخت که سایت ندارد.
+    ck(sm(is5=None, is6=1_000_000.0), "[is5] غایب داوری را نمی‌شکند (مقدارش دور ریخته می‌شود)")
+    # تفکیکِ مبناء: اگر کسی `[is6]` را با Σ[ih]/۳۰ عوض کند، این دو جهت مخالف
+    # می‌دهند (Σ/۳۰ = ۴M ⇒ آستانه ۶M ⇒ رد؛ [is6] = ۱M ⇒ آستانه ۱٫۵M ⇒ قبول).
+    ck(sm(prior30_vol=120_000_000.0),
+       "مبناء عیناً [is6] است، نه Σ[ih]/۳۰ (سایت همین را می‌زند)")
+    ck(not sm(is6=2_700_000.0), "۱٫۵×[is6] = ۴٫۰۵M > tvol=۴M ⇒ رد")
     ck(not sm(hist_sessions=10.0), "ده نشستِ سابقه ⇒ درِ سایت استثنا؛ اینجا هم نسنجیده")
     ck(not sm(buy_count_i=0.0, sell_count_i=0.0),
        "بی‌معاملۀِ حقوقی (۰/۰ = NaN درِ سایت) ⇒ رد، نه «قدرتِ متعادلِ» جعلی")
@@ -164,8 +184,12 @@ def main():
     ck('"f_smart", "f_legal"' in mk, "پاک‌سازیِ NaN هم دو تازه را پوشش می‌دهد")
     for name, path, needles in (
         ("marketRow", ROW_TS, ("f_smart: flag", "f_legal: flag")),
-        ("tapeStore", STORE_TS, ("'f_smart'", "'f_legal'",
-                                 "ورود پول هوشمند", "کد به کد")),
+        # نامِ دو فیلترِ تازه از `tapeStore` به `shared/lib/tapeFlags.ts` منتقل
+        # شد (پروندۀ نماد درِ سه سطح نام می‌خواهد؛ دو منبعِ حقیقت ممنوع). store
+        # کلیدها را نگه می‌دارد و لیبل را از تک‌منبع می‌خواند.
+        ("tapeStore", STORE_TS, ("'f_smart'", "'f_legal'", "TAPE_FLAG_LABELS")),
+        ("tapeFlags", TAPE_FLAGS_TS, ("ورود پول هوشمند", "کد به کد",
+                                      "'f_smart'", "'f_legal'")),
         # پلِ ورودِ قیف عمداً پنج‌گره‌ایِ چارت ۳ مانده — چکِ ضدِ تورمِ پیش‌فرض:
         ("ftsFunnel", FUNNEL_TS, ("PRESET_ENTRY:",)),
     ):

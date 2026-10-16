@@ -1,44 +1,153 @@
 # BorsTerminal — Master Execution Roadmap
 
-**Status:** Active master roadmap  
-**Date:** 2026-10-07  
-**Priority:** This document defines the execution order for the remaining major BorsTerminal work.
+> **مرجع ترتیب فعلی کارها — به‌روزرسانی مالک در 2026-10-13:** این سند هم roadmap فعال است و هم ledger تاریخی. ترتیب اجراییِ بخش «Current owner-approved execution order» مرجع فعلی است؛ بخش‌های قدیمی‌ترِ تاریخ‌دار برای حفظ تصمیم‌ها، شواهد و جزئیات فنی باقی می‌مانند و نباید ترتیب‌های تاریخی آن‌ها را جایگزین اولویت فعلی کنند.
 
-> This roadmap is intentionally sequential. For high-risk analytical features, do not start the next item until the current item has been researched, implemented, tested, externally/referentially checked, and explicitly accepted.
+**Status:** Current owner-approved execution order + historical implementation ledger.  
+**Last owner-priority refresh:** 2026-10-13  
+**Repository:** `johnwarchief/BorsTerminal-src` — desktop/main source repository, not the Android branch.  
+**Source-of-truth hierarchy:** `docs/README.md`, canonical FTS sources, and explicit owner rulings.
+
+## Mission
+
+BorsTerminal should become a reliable, data-correct, locally operable trading and research workstation with:
+
+- Canonical and auditable market, corporate-action, candle, and fundamental data.
+- Deterministic FTS decisions whose inputs and reasons can be reconstructed.
+- Real browser-level verification against trusted references where applicable.
+- A persistent history of what the application knew and decided at each time.
+- Safe execution timing and a separately controlled trading-bot layer.
+- Efficient bulk operations and export across the actual tables.
+- A future local ML research system trained on versioned, time-correct historical data.
+- Desktop and Android builds that share canonical analytical meaning.
+
+## Current owner-approved execution order (2026-10-13)
+
+**Current active gate: close the in-flight Fundamental/CODAL work first.** Do not launch unrelated major workstreams or fragment the active agent across new missions until Fundamental/CODAL closure has passed its real API, browser, and regression gates. Already-assigned work must be preserved, but no new parallel scope should be introduced merely because another task is available.
+
+### 1. Finish the current Fundamental/CODAL closure
+
+Complete the existing work on issuer identity, canonical report selection, reporting periods, units, extraction, five FTS fundamental indicators, coverage, card/funnel/screener parity, stale-response handling, and browser-level verification.
+
+Acceptance means:
+- A report from another legal entity never fills a missing value for the requested issuer.
+- Card, funnel, bulk scan and screener use consistent canonical evidence.
+- Missing, invalid, consolidated and period-conflicting records have explicit semantics.
+- The five indicators use the canonical FTS source; no invented thresholds or financial values.
+- The remaining changed votes and missing margins are individually explained.
+- Actual browser checks and final test gates are run against the final code state.
+
+### 2. Make Fundamental/CODAL self-updating
+
+Treat automatic data refresh as part of completing the fundamental subsystem, not as recurring manual agent work.
+
+The pipeline must discover new issuers/instruments and CODAL notices, preserve amendments and raw provenance, normalize dates and units, extract data, validate issuer identity, queue failed/incomplete work, and incrementally recalculate only affected symbols and indicators.
+
+Required operational behavior:
+- Persistent sync checkpoint and last-success timestamp.
+- Idempotent ingest and bounded retry with useful error status.
+- Catch-up after application restart.
+- Incremental refresh of canonical report selection and affected FTS outputs.
+- Visible freshness/health status, pending queue size and unresolved cases.
+- No operational-database bulk write without explicit authorization.
+
+An in-process worker cannot collect data while the application and worker are stopped. If collection while BorsTerminal is closed is required, separately evaluate a supported Windows scheduled/background worker. Do not claim that intraday events were collected while no collector was running. On restart, reconstruct historical states only from sources that support the required as-of timestamp, and mark reconstructed results as such.
+
+### 3. Complete the already-assigned corporate-action adjustment chain
+
+Continue the existing adjustment-engine work without reimplementing the proven math from scratch. Complete typed event ingestion from official TSETMC/CODAL inputs, official event reference prices, contribution/rights offer price where required, canonical event ledger, and safe integration with the chart path.
+
+Use Playwright with Microsoft Edge and the user's already-authenticated Rahavard365 session for a fixed, pre-registered validation set when the session is available. Do not collect credentials or claim live validation without actual browser evidence. Keep unresolved reference-method differences explicit.
+
+### 4. Performance: measure during a real market-open session
+
+Performance work is deferred until the market is open, as requested by the owner. Capture a reproducible live-market baseline before optimizing. Measure startup, first usable data, API/database latency, full-universe filtering, FTS computation, chart/render responsiveness, CPU/RAM, polling frequency, payload size and redundant work.
+
+Optimize from measured bottlenecks; preserve the full analytical universe, indicators, drawing tools, animations and canonical results. Report before/after under the same workload. Synthetic benchmarks alone are not a substitute for live-market measurements.
+
+### 5. Complete سرخطی / EasyTrader execution foundations
+
+Reconcile all existing worktrees, branches and variants of `api/execution.py`; preserve untracked work until its ownership and history are understood. Complete the real API/UI path and a fully testable mock/dry-run lifecycle, including exact instrument identity, timing/latency, order state transitions, timeout/unknown reconciliation, duplicate protection, and cancellation where supported.
+
+No fuzzy symbol fallback and no retry of an unknown order result. No real order submission as part of ordinary development tests.
+
+### 6. Build the trading bot on the accepted execution contract
+
+Implement reproducible backtesting without look-ahead, realistic documented costs/slippage, paper trading, a complete audit trail, explicit risk limits, duplicate-order protection, stale-data controls, restart/reconciliation, and an independent kill switch.
+
+The bot must consume canonical FTS/market decisions rather than create a conflicting second judge. Live trading remains disabled until paper behavior, broker integration, and the owner's explicit live-use authorization are separately verified.
+
+### 7. Global Table Selection & Bulk Actions
+
+Build one shared selection/operation layer and reuse it across the actual market, fundamental/CODAL, FTS screener/funnel, technical and portfolio tables.
+
+Required operations include:
+- Select rows, select visible page, clear selection, and clearly distinguish selecting filtered results from selecting only the current page.
+- Export Excel using a menu with **تابلوخوانی**, **بنیادی**, **تکنیکال**, and **هر سه**.
+- “هر سه” generates one `.xlsx` workbook with separate sheets, typed values, timestamps, provenance, adjustment basis and an explicit missing-data/error sheet where needed.
+- Add/remove selected instruments from a persistent watchlist.
+- Run supported data-refresh jobs through an observable, retryable queue.
+- Transfer selections to the relevant analysis workspace where valid.
+
+Keep identifiers stable; do not merge instruments via name similarity or suffix-stripping. Buttons must execute real backend operations, not mock UI behavior.
+
+Include the already-requested small UX fixes in this UI workstream: prevent long Strategy FTS labels from truncating the symbol to an ellipsis, and replace the plain Fundamental sidebar text with five compact, independently scrollable/clickable fundamental indicator cards while preserving the current navigation route.
+
+### 8. Market Signal Journal — persistent historical filter and decision state
+
+Create a shared, durable journal used by **Watchlist, Strategy FTS, and Tape/Market**; it must not exist only inside the watchlist.
+
+For each instrument and observation, preserve:
+- Stable instrument identity.
+- Trading date and actual observation timestamp.
+- Snapshot type: observed end-of-day, observed intraday transition, or reconstructed historical state.
+- Market/FTS/fundamental filter states, including pass, reject, unknown/not-applicable, not-evaluated and error.
+- Funnel stage, reason codes and input/output counts where available.
+- Input provenance and data-availability timestamps.
+- Rule/engine version and the relevant feature snapshot or reproducible input reference.
+- Difference from the previous observation.
+- Completeness and reconstruction status.
+
+Do not store only passing candidates. Rejected symbols, unknowns, data gaps and processing failures matter for later research.
+
+Capture end-of-day snapshots automatically and record intraday state transitions while a collector is running. On restart, reconcile expected trading dates and backfill states only when historical source data supports a faithful as-of reconstruction. Clearly distinguish observed history from reconstructed history; never invent intraday transitions for a period when no collector or suitable source data existed.
+
+Keep historical observations immutable. If rules or source records are later revised, create a separately versioned recalculation rather than silently overwriting what the application recorded at the time.
+
+### 9. Local ML data foundation and ML Engine
+
+The Market Signal Journal is a prerequisite for serious local ML. Build a reproducible historical dataset with versioned feature schemas and separately versioned outcome labels, including configurable horizons such as 3/5/10 trading sessions, returns, maximum favorable/adverse excursion and explicit outcome definitions where data permits.
+
+Hard requirements:
+- No look-ahead or future-data leakage.
+- Features must carry availability timestamps.
+- Distinguish actual observations from reconstructed records.
+- Preserve rejected and unsuccessful candidates, not only winners.
+- Use time-aware train/validation/test partitions and walk-forward evaluation.
+- Establish simple baselines before complex models.
+- Keep training, validation, model registry and local inference separate.
+- ML remains an evidence/ranking layer; it does not silently override deterministic FTS rules.
+- Do not auto-promote or retrain a production model without explicit validation and promotion gates.
+
+Do not begin by training a large model over an unreliable dataset. First prove data contracts, historical point-in-time integrity, labels and evaluation methodology.
+
+### 10. Android release — independent, strictly gated lane
+
+Android release may proceed when all release prerequisites are actually satisfied; it does not have to wait for unrelated desktop feature work. Publish only if secure key custody/backup, CI public-key configuration, signing/verification, version compatibility, rollback, relevant CI and required device/WebView tests are verified. Otherwise keep publication blocked and continue any independent fix. Never generate or publish with an unverified production signing key.
+
+### 11. Final integration and release readiness
+
+After the above workstreams reach their individual acceptance gates, reconcile their working branches/worktrees safely, verify the actual desktop runtime, run the complete regression suite and browser integration tests, and document the exact source commit and artifact. No merge, release, or completion claim is implied by a local commit or green unit tests alone.
+
+## Rules for all subsequent work
+
+- This current order supersedes historical priority lists below.
+- Detailed historical sections remain as specifications, audit evidence and backlog; their old date or P0/P1 labels do not override this current sequence.
+- Never modify the operational `market.db`, submit live orders, or publish a release without the applicable owner authorization and safety gates.
+- A blocked integration must not stop unrelated work, but it must not be falsely reported as completed.
+- Every completion claim requires the actual command/result, scope, and evidence.
+- Do not ask for a new approval after every stage; continue through all safe, authorized, independent work. Ask only when an irreversible action or an explicit owner decision is genuinely required.
 
 ---
-
-## 0. Mission and priority hierarchy
-
-The objective is to make BorsTerminal:
-
-1. Data-correct and market-realistic
-2. Verified against trusted external references
-3. Faithful to the canonical FTS methodology
-4. Visually useful directly on the chart
-5. Easy enough for a new user to understand
-6. Powerful enough for advanced users
-7. Extensible toward automation, trading bots, and local ML
-
-### Strategic priority
-
-**The FTS Strategy tab is currently the most important product area.**
-
-Engineering time, research time, UX refinement, chart work, testing, and validation should be disproportionately concentrated on:
-
-- استراتژی FTS
-- FTS Funnel
-- FTS Process / Stage presentation
-- FTS technical and fundamental decisions
-- FTS chart annotations
-- Master/Portfolio integration of FTS results
-
-The goal is not merely to have an FTS tab that exists. It should become the core decision-support workspace of BorsTerminal.
-
-Do not spend major effort polishing secondary screens while the Strategy FTS workflow, calculations, chart overlays, or parity are still uncertain.
-
----
-
 
 # Completeness gates — cross-cutting work that cannot be skipped
 
@@ -1154,7 +1263,7 @@ Phase 1 is complete only when:
 
 # 2. P0 — سرخطی / execution timing and queue workspace
 
-After market parity, implement the real product workflow for سرخطی.
+Follow the current owner-approved sequence at the top of this roadmap. Do not start a new execution feature ahead of the currently active Fundamental/CODAL closure and the required live-market performance baseline. Preserve and audit already-existing execution code while waiting for its scheduled implementation phase.
 
 ## 2.1 Product definition
 
@@ -1229,7 +1338,7 @@ Until a real broker integration is validated:
 
 # 3. P0 — ربات معامله‌گر / automated trading
 
-Only after market and timing foundations are trustworthy.
+Follow the current owner-approved sequence at the top of this roadmap. Implement this workstream only after the execution contract and سرخطی foundations are accepted. The bot must consume canonical FTS/Market decisions rather than create a second judge.
 
 This is a separate system from the analytical FTS engine.
 
@@ -1278,6 +1387,167 @@ No live trading until paper/simulation behavior is verified and broker integrati
 
 # 4. P0/P1 — FTS Strategy chart intelligence
 
+
+## 4.0 Current P0 focus — FTS Funnel architecture and Decision Workspace
+
+**This is the next major product milestone. Implement this before starting new FTS chart-analysis modules.**
+
+The Funnel is not merely four UI pages. It is a configurable, explainable, canonical decision workspace.
+
+### 4.0.1 Canonical architecture
+
+Use:
+
+```text
+Full Universe
+    ↓
+Funnel Preset / Custom Filter Chain
+    ↓
+Stage-by-stage intersection
+    ↓
+Technical Structure / Trend
+    ↓
+Fundamental Auto/Smart Gate
+    ↓
+Decision Trace
+    ↓
+Strategy FTS Workspace
+    ↓
+Chart / downstream engines
+```
+
+There must be **one canonical backend decision**. Frontend components render that decision and its evidence; they must not become a second FTS judge.
+
+### 4.0.2 Custom Funnel Builder
+
+The user must be able to create a **Custom Funnel** from the complete canonical filter registry.
+
+The registry must be generated/maintained from the real `docs/*.txt` filter sources and must include every supported canonical filter, including the smart-money / code-to-code filters if their TXT sources are present.
+
+Do not maintain an incomplete hand-written five-filter list when the source registry contains more filters.
+
+The user can:
+
+- Add a filter
+- Remove a filter
+- Reorder filters
+- Save a named preset
+- Reset to canonical/default preset
+- See the active filter chain
+- See the remaining symbol count after every step
+- See why a symbol was removed at each step
+
+### 4.0.3 Sequential intersection semantics
+
+For a selected chain:
+
+```text
+F1 → F2 → F3 → ... → Fn
+```
+
+each filter operates on the survivors of the previous filter:
+
+```text
+Universe
+∩ F1
+∩ F2
+∩ F3
+...
+∩ Fn
+```
+
+This is **intersection (اشتراک) by default** and the order is meaningful for presentation, diagnostics and stage counts.
+
+Do not silently turn selected filters into OR logic.
+
+Every stage must expose:
+
+```text
+input_count
+matched_count
+removed_count
+filter_id
+parameter_set
+source_ref
+timestamp
+```
+
+The full analytical universe remains available; large result sets must use virtualization rather than hidden hard caps.
+
+### 4.0.4 Built-in strategy modes
+
+Provide verified presets for:
+
+- **نوسان‌گیر**
+- **روندگیر**
+- **ساعت شنی**
+- **Custom**
+
+The current repository already contains preset concepts for these modes. Before treating their exact filter composition as canonical, verify each composition against the FTS chart/PDF/source material.
+
+Do not invent a filter relationship merely because the name suggests one.
+
+For **ساعت شنی**, specifically verify the existing references/implementation (including any MA52/RSI5 weekly interpretation) before promoting it to a canonical rule. If evidence is insufficient, keep the preset visible as research/unverified rather than silently inventing semantics.
+
+### 4.0.5 Fundamental Auto / Smart system
+
+The Funnel must have an **Auto/Smart Fundamental** mode that evaluates the five canonical fundamental indicators.
+
+The minimum acceptance rule is:
+
+**The first three indicators are mandatory gates.**
+
+Therefore:
+
+- I1 — Sales/revenue growth must pass the canonical floor.
+- I2 — Three-year EPS condition must pass its canonical rule.
+- I3 — Gross-profit margin must pass the canonical floor.
+- I4 and I5 are additional evidence/scoring context and must not compensate for failure of any of I1–I3.
+- Missing data in any mandatory first-three indicator must not be silently treated as a pass.
+
+The exact formulas and thresholds still come from the canonical FTS sources/OWNER_RULINGS; this section defines the gate structure, not new formulas.
+
+The UI should clearly distinguish:
+
+```text
+AUTO / SMART
+→ mandatory blockers
+→ supporting indicators
+→ final fundamental decision
+```
+
+### 4.0.6 Funnel + process visualization
+
+For every candidate, the user must be able to see:
+
+```text
+Universe
+→ Selected filter chain
+→ Technical / Trend gate
+→ Daily branch
+→ Fundamental Auto/Smart
+→ Final FTS decision
+```
+
+Every accept/reject/pending/unavailable state must have a reason and provenance.
+
+### 4.0.7 Funnel acceptance
+
+Do not consider the Funnel complete until:
+
+- Custom filter chain works on the full universe.
+- Selected filters are applied sequentially by intersection.
+- Every filter is sourced from the canonical registry.
+- Built-in Swing/Trend/Hourglass modes are verified.
+- Fundamental Auto/Smart requires all first three indicators to pass.
+- Stage counts are reproducible.
+- Every candidate has reason codes and provenance.
+- No hidden 60/120-symbol cap remains.
+- Results are browser-validated.
+- Relevant filter results are checked against TSE/TSETMC in تابلوخوانی.
+- A saved custom preset can be reproduced exactly from its parameter set/version.
+
+
 ## The most important long-term workstream
 
 This phase receives **very high investment**.
@@ -1298,20 +1568,58 @@ A feature that is not accepted does not become the foundation for the next featu
 
 # 5. FTS reference hierarchy
 
-For every FTS analytical feature, use this research order.
+For every FTS analytical feature, rule change, parameter change, or semantic decision, use this mandatory hierarchy.
 
-### Primary sources
+### L0 — Owner rulings
 
-- docs/FTS_SPEC.md
-- docs/fts-notes/OWNER_RULINGS.md
-- docs/جزوه FTS.pdf
+- `docs/fts-notes/OWNER_RULINGS.md`
+
+This is the highest-priority source for explicit owner decisions and for resolving conflicts.
+
+### L1 — FTS methodology sources
+
+- `docs/جزوه FTS.pdf`
+- Relevant FTS/chart PDFs
+- Faithful extracted/transcribed FTS source text
+
+These define the underlying methodology and process.
+
+### L2 — Derived implementation specification
+
+- `docs/FTS_SPEC.md`
+
+This is a derived implementation specification. It must follow L0/L1 and must be corrected when it drifts from them. It must never override L0/L1.
+
+### L3 — Parity / audit / research evidence
+
+- `docs/CHART-FOUR-PAGES-PARITY.md`
+- `docs/CHART-PARITY-REFERENCE.md`
+- Other audit/research documents
+
+These provide evidence, implementation context, and reference behavior. They cannot silently redefine an FTS rule.
+
+### L4 — Code
+
+The code is the executor of the rules, never the source-of-truth for the rules.
+
+### Conflict protocol
+
+For every FTS rule or parameter change:
+
+1. Read L0/L1 first.
+2. Check L2/L3 for drift or contradiction.
+3. If L0/L1 resolve the conflict, update derived documents and code to match.
+4. If L0/L1 are ambiguous or conflict, mark the item `BLOCKED-OWNER`.
+5. Never use existing code to justify a rule that contradicts a higher-level source.
 
 ### Technical/chart sources
 
-- docs/CANDLE-CONTRACT.md
-- docs/CHART-FOUR-PAGES-PARITY.md
-- docs/CHART-PARITY-REFERENCE.md
-- Relevant technical/chart PDFs in docs/
+The following remain important technical references but do not outrank the FTS hierarchy:
+
+- `docs/CANDLE-CONTRACT.md`
+- `docs/CHART-FOUR-PAGES-PARITY.md`
+- `docs/CHART-PARITY-REFERENCE.md`
+- Relevant technical/chart PDFs in `docs/`
 
 ### External research
 
@@ -1650,6 +1958,35 @@ Every release candidate should have:
 
 ---
 
+# 9.1 P1 — Fundamental Auto-Update Pipeline
+
+Fundamental data freshness must not depend on an agent manually running scripts or opening a particular UI tab.
+
+## Required pipeline
+
+**CODAL/TSETMC discovery → durable raw notice/instrument registration → canonical identity → extraction → period/unit validation → canonical report selection → affected-indicator recalculation → API/cache refresh → health/status reporting**
+
+The pipeline must:
+- Keep durable checkpoints and last-success timestamps.
+- Discover newly listed instruments and newly published or amended CODAL notices.
+- Normalize Persian/ASCII digits and dates through the canonical date utility.
+- Preserve raw source values and provenance.
+- Be idempotent across retries and restarts.
+- Use a bounded persistent queue for pending, failed and incomplete jobs.
+- Recalculate only affected symbols/indicators where dependency tracking is reliable.
+- Distinguish source-unavailable, parse-failed, invalid-identity, missing-input and completed states.
+- Expose last successful sync, queue depth, stale coverage and actionable failures.
+- Catch up missed work after restart.
+- Never fabricate values or delete legitimate report history.
+
+An in-process worker stops when the app and its backend are stopped. If continuous refresh while the app is closed is required, evaluate a supported Windows scheduled/background worker. The system must label as reconstructed any historical state created later, and must not claim to have observed intraday transitions during an offline interval.
+
+## Acceptance gate
+
+Test fresh notice discovery, newly seen issuer, amendment, duplicate ingest, partial extraction, rate limiting, network interruption, restart recovery, incremental recalculation and visible UI freshness using an isolated database. Do not run a broad write/backfill against the operational database without explicit owner authorization.
+
+---
+
 # 10. P0/P1 — Maximum performance + minimum resource consumption
 
 Performance is a first-class product requirement, not a cosmetic optimization.
@@ -1955,25 +2292,70 @@ Master must consume canonical engine outputs rather than becoming a second FTS e
 
 ---
 
-# 12. P2 — Local ML Engine
+# 11.5 P1 — Market Signal Journal / Historical Filter-State Store
 
-The ML Engine is documented separately in docs/ML-ENGINE-ROADMAP.md.
+The journal is the shared historical source for Watchlist, Strategy FTS and Tape/Market—not a feature that exists only on the watchlist.
 
-ML begins only after data and feature contracts are trustworthy enough to avoid learning corrupted semantics.
+## Observation contract
 
-Priority:
+Each observation should preserve:
+- Stable instrument identity and source mapping.
+- Trading date, observed timestamp and timezone.
+- Observation kind: observed end-of-day, observed intraday transition, or reconstructed.
+- Each filter state: pass, reject, unknown/not-applicable, not-evaluated, or error.
+- FTS stage, reason codes and input/output counts where available.
+- Input-data provenance and the earliest time those inputs were available.
+- Rule/engine version and feature-schema version.
+- Previous state and a reproducible state-change record.
+- Data completeness and reconstruction status.
 
-1. Reproducible dataset
-2. Feature schema
-3. Labels/outcomes
-4. Walk-forward validation
-5. Baseline models
-6. Specialized models
-7. Ensemble
-8. ML Lab
-9. Production ranking
+Persist all evaluated instruments, not only those that pass a filter. Rejections, unknowns and errors are necessary to understand selection bias and to train valid models later.
 
-ML remains a complement to deterministic FTS.
+## Capture and catch-up
+
+- Capture daily end-of-session snapshots automatically.
+- While a collector is running, persist intraday transitions for tracked instruments.
+- On startup, reconcile expected trading sessions and identify missing dates.
+- Reconstruct historical states only if the sources provide the exact values and availability timestamps required for a faithful as-of evaluation.
+- Mark reconstructed records distinctly from records observed live.
+- Never invent intraday transitions for periods when neither a collector nor a suitable historical source existed.
+- If the app must keep collecting when closed, use a separately installed/scheduled worker with an explicit lifecycle; an in-process timer alone is not sufficient.
+- Keep observations immutable. If engine rules or data are revised, create a new versioned recalculation rather than silently rewriting the original observation.
+
+## Integration and acceptance
+
+Use the same canonical journal/query contract in Watchlist, Strategy FTS and Tape/Market. Validate multiple consecutive sessions, a deliberately missed app-open day, restart/catch-up, symbol identity changes, unknown data, changed rules and historical revisions. Tests must assert both the expected states and the explicit gaps; they must not assume that missing data can always be reconstructed.
+
+The journal is also a prerequisite for the local ML data foundation in the next section.
+
+---
+
+# 12. P2 — Local ML Engine and reproducible research dataset
+
+The detailed model roadmap remains in `docs/ML-ENGINE-ROADMAP.md`. The current owner-approved dependency is:
+
+**Canonical raw/history data → Market Signal Journal → versioned feature snapshots → versioned future-outcome labels → time-aware validation → baseline models → local ML Lab → approved local inference**
+
+The ML data foundation must be built before training complex models.
+
+Mandatory data contracts:
+- Every feature has a source, schema version, observation timestamp and availability timestamp.
+- Keep raw observations, computed features, model outputs and future outcome labels separate.
+- Preserve rejected/failed/unknown FTS observations as well as passing candidates.
+- Distinguish live-observed and later-reconstructed history.
+- Version FTS/technical/fundamental rules used to generate each feature snapshot.
+- Do not mix information published after a historical decision into that decision's feature set.
+- Labels such as returns after 3/5/10 sessions, MFE and MAE require explicit, versioned definitions and valid future data.
+- Use chronological train/validation/test splits and walk-forward evaluation; prevent survivorship bias and look-ahead leakage.
+- Establish deterministic/statistical baselines before more complex algorithms.
+- Local ML remains complementary to deterministic FTS and cannot silently override hard FTS rules.
+- Production model promotion requires explicit evidence and versioned acceptance; no silent auto-retraining/promotion from live outcomes.
+
+Potential model families and training/inference design are detailed in `docs/ML-ENGINE-ROADMAP.md`. Keep compute appropriate for available local hardware; prefer lightweight tabular baselines first and justify more expensive models with out-of-sample evidence.
+
+### Acceptance gate
+
+A reproducible point-in-time dataset and outcome-label pipeline exist; a sample dataset can be regenerated deterministically; temporal leakage checks pass; a baseline is compared with a meaningful non-ML baseline; and all results can be traced to source data, features, labels and model version.
 
 ---
 
@@ -2071,23 +2453,35 @@ Ambiguity must be documented and resolved through evidence.
 
 # 15. Master priority order
 
-The intended high-level sequence is:
+This is the current owner-approved sequence as of 2026-10-13. The active order is also recorded at the top of this document and supersedes older priority snapshots.
 
-1. TradersArena parity
-2. سرخطی / execution timing
-3. ربات معامله‌گر
-4. FTS chart intelligence — one feature at a time
-5. Full Strategy FTS integration
-6. Advanced UI/UX
-7. Master / Portfolio refinement
-8. Local ML Engine
-9. Advanced automation / research
+1. Finish the in-flight Fundamental/CODAL closure with real card/funnel/screener browser parity and full regression gates.
+2. Make Fundamental/CODAL automatically self-updating, with persistent checkpoints, idempotent ingest, retry/catch-up and visible freshness status.
+3. Complete the already-assigned canonical corporate-action adjustment input chain and actual Edge/Playwright Rahavard365 validation.
+4. Measure and optimize performance during a real market-open session; keep the before/after baseline honest and reproducible.
+5. Complete سرخطی / EasyTrader execution foundations with mock/dry-run end-to-end validation.
+6. Build the trading bot on the accepted execution contract: backtest, paper trading, audit trail, risk controls and kill switch.
+7. Implement Global Table Selection & Bulk Actions, including Excel options (تابلوخوانی / بنیادی / تکنیکال / هر سه in one workbook), persistent watchlist and actual group operations.
+8. Build the shared Market Signal Journal across Watchlist, Strategy FTS and Tape/Market, including daily snapshots, observed intraday transitions, missing-day reconciliation and explicit reconstructed-vs-observed status.
+9. Build the versioned local ML data foundation and then the local ML Engine; no training on unreliable or time-leaking history.
+10. Publish Android only if all security, signing, CI, compatibility, rollback and required device/WebView gates are proven; otherwise keep the release blocked.
+11. Consolidate and validate the desktop product end-to-end after the above workstreams pass their acceptance gates.
+
+### Funnel priority rule
+
+FTS remains deterministic and follows canonical methodology and owner rulings. Historical FTS specifications and chart-feature sections below remain valid technical requirements, but they do not authorize jumping ahead of the active sequence above.
+
+The Funnel milestone still includes:
+- Full-universe custom filter-chain builder
+- Sequential filter intersection
+- Built-in strategy modes and parameterized presets
+- Fundamental Auto/Smart mode using only canonical formulas and mandatory gates
+- Stage counts, reason codes, provenance and reproducibility
+- TSE/TSETMC validation in تابلوخوانی
 
 ### Important exception
 
-Bug fixes, security issues, data-corruption issues, broken releases, and critical Android/Desktop regressions can interrupt this sequence because they are reliability blockers.
-
-Feature work that is not on the critical path should not repeatedly interrupt the current priority.
+Critical security issues, data corruption, broken runtime/release blockers and safety failures may interrupt the sequence. Ordinary feature work must not repeatedly fragment the active mission.
 
 ---
 
@@ -2111,13 +2505,17 @@ The long-term target is a BorsTerminal where:
 
 ## Current strategic instruction
 
-Until this roadmap is superseded:
+The current owner-approved order at the top of this document is authoritative.
 
-**Strategy FTS = highest product investment priority.**
+**Current active focus: close the in-flight Fundamental/CODAL work before opening new major workstreams.** Do not treat older dates or headings such as historical P0/P1 as permission to start parallel missions.
 
-When choosing between polishing a secondary feature and improving Strategy FTS correctness, research depth, chart intelligence, explainability, usability, or validation, prefer Strategy FTS unless there is a critical reliability blocker elsewhere.
+After that closure, complete the fundamental auto-update pipeline and the already-assigned corporate-action adjustment chain; then capture performance baselines at a real market-open session, proceed to EasyTrader execution foundations and the trading bot, and continue to Global Bulk Actions, Market Signal Journal and the local ML data foundation.
 
-The desired end state is a **deep, trustworthy, visually explainable FTS decision system** integrated into the rest of BorsTerminal—not merely a collection of disconnected features.
+Performance measurement must be performed under a real market-open workload where required; do not fabricate live-market results from an offline benchmark.
+
+Android publication is an independent, conditional release lane: publish only if all mandatory security/signing/CI/compatibility/rollback/device gates are verified. Otherwise keep publication blocked without stopping unrelated work.
+
+The Market Signal Journal and its point-in-time data contract are strategic infrastructure for the later local ML system. Record both observed and rejected/unknown outcomes, use versioned rules/features and future labels, and enforce no-look-ahead validation. ML must complement deterministic FTS, not replace or silently override it.
 
 ---
 
@@ -2182,7 +2580,7 @@ measurement. Nothing is recorded as PASS without evidence; unproven items stay `
 | --- | --- | --- | --- |
 | S-1 | Reference repositories | `ACCEPTED` | Already in the repo: `docs/execution/SARKHATI-ARCHITECTURE.md` §۶ names `RezaMahdaviiDev/mofid`, `m-fazel/Sarkhati`, `Sir-Sorg/Stock-Headline-Script-Mofid`, `Mkhorasani99/sarkhat`; §۷ records the license verdict (two with no license, two GPL-3.0 ⇒ no code copied; their 50/100 ms claims are not accepted as facts) |
 | S-2 | Engine vs research | `ACCEPTED` | `execution_contract/service/timing/latency/mock` and the `dev/execution_*` guards match doc stages C/D/H/I/J/G; `git grep` across `api/` and `frontend/` is empty ⇒ no router, no UI |
-| S-3 | Router + thin UI (dry-run/mock, labelled experimental) | `IMPLEMENTING` | The doc lists stage K as the remaining broker-independent work |
+| S-3 | Router + thin UI (dry-run/mock, labelled experimental) | `DEFERRED` | Owner reprioritized execution: FTS Funnel is the active milestone and must be accepted before Sarkhati continues |
 | S-4 | Real-broker stages E/F/G-real/I-live/L | `BLOCKED-OWNER` | D8 (which Mofid platform: EasyTrader/MTS vs Online-Plus/Titan — two protocols, two adapters) and D1 (is a real-account PoC allowed) per §۹-ث. No endpoint, no credential, no order has ever been called |
 
 ## 15.9 Android boot wait (owner report 2026-10-08: «تا ۱۰ دقیقه در حال دریافت داده‌های آفلاین»)
@@ -2198,7 +2596,660 @@ measurement. Nothing is recorded as PASS without evidence; unproven items stay `
 | B-7 | Real handset | `UNVERIFIED` | No phone was measured. WebView asset-server behaviour, mobile radio throughput and memory pressure on the owner's device are not covered by the Chromium numbers above |
 
 Releases cut for this unit: `mobile-parity-037a9d6` (payload + loader) and `mobile-parity-b336ad3` (percent + drawer + live probe). `mobile-latest` now serves the 16,179,264 B bundle with `built_at 2026-10-08T16:16:15`.
+## 15.10 FTS Funnel → Decision Workspace (owner mission 2026-10-08, audit stage)
+
+The owner's new mission makes the funnel the top priority: **Sarkhati S-3 is paused**
+(`api/execution.py` stays uncommitted WIP in this worktree), no Auto-Fibonacci or other
+FTS chart feature starts before this milestone is `ACCEPTED`.
+
+| ID | Item | State | Evidence |
+| --- | --- | --- | --- |
+| F-1 | Canonical filter registry read out of the sources | `ACCEPTED` | 7 TXT filters documented with verbatim thresholds in `docs/fts-notes/FUNNEL-WORKSPACE-AUDIT-1405-07-16.md` §۱; `f_smart`/`f_legal` exist in `tape_flags.py:351-352` but are outside `FILE_FILTERS` (`ftsFunnel.ts:44`) — the funnel registry does not cover the sources |
+| F-2 | Judge-location audit | `ACCEPTED` | Four parallel judge stacks listed with file:line (audit §۴). `tapeFilterVerdict` (`tapeAlgorithms.ts:409-414`) prefers the frontend formula over the backend flag, so the frontend is the *primary* tape judge today; `ftsPipelineEvaluator.ts:241-249` judges a 1% clock gap while the TXT and `tape_flags.py:62` say 2% — the mirrors have already diverged |
+| F-3 | Fundamental gate audit | `ACCEPTED` | No AND-gate: `api/fundamental.py:1226-1229` yields `WATCH` at `score>=3` even when a blocker failed — measured 307 of 922 symbols with `primary_score<3` today. Missing data: I1/I2/I4 → REJECT (263 / 542 / 84 rows), I5 with an empty sector → PASS (504 neutral rows, 129 of them with no `sector_name`); `PENDING` does not exist in the backend |
+| F-4 | Preset provenance | `ACCEPTED` | swing/trend match chart-3 and the notebook; **hourglass has no tape filter in any source** (it is MA52 + weekly RSI5 ≤ 30, already implemented at `api/chart.py:2767-2790`) while `PRESET_ENTRY` currently borrows `f_roobi,f_clock` → `UNVERIFIED`, owner ruling Q-1 |
+| F-5 | Hidden caps inventory | `ACCEPTED` | `TECH_QUERY_CAP=60` (`useFtsTechBoard.ts:77`), `watchlist_max=50` gating backend tech enrichment (`screener.py:444-458`, `fts_engine.py:2005-2006`), plus 60/20 limits in adjacent hooks (audit §۶) |
+| F-6 | Acceptance-gate mapping (22 items) | `ACCEPTED` | audit §۹ — 3 items partially satisfied, the rest open |
+| F-7 | Stage R — canonical filter registry | `ACCEPTED` | `funnel_registry.py`: 7 filters (the five plus `f_smart`/`f_legal`), each with source_file + pinned sha256 + formula_version + backend_impl + 21 params whose values come from `tape_flags` constants, `configurable=True` only where the notebook hands the dial to the user. Guard `dev/funnel_registry_v1.py` (registered in `run_all_tests.py`) checks coverage, hashes, importability, "the number appears in the cited text", and carries a negative control that moves `ruleset_version` (555648ebff52) when a threshold is nudged. `fts_terminal.spec` hiddenimports updated |
+| F-9 | Cost of removing the technical-scan cap | `MEASURED` | `_fts_analyze_symbol` on 40 symbols: median **248 ms**, p90 411 ms, max 600 ms → **252 s single-threaded for 922 symbols**. That is why `api/screener.py:456-458` enriches only the 50 watchlist rows. Stage C therefore cannot be a one-line cap removal: it needs one batched candle load + parallel/incremental verdict computation keyed by a scan `as_of`, with the per-symbol 900 s TTL cache kept for the interactive path |
+| F-8 | Stages C → E → U → T | `PENDING` | audit §۱۰ — C = batched full-universe technical scan and cap removal, E = `funnel_engine` + `/api/funnel` (sequential intersection, per-stage counts, I1∧I2∧I3 gate with PASS/REJECT/PENDING/UNAVAILABLE, decision trace), U = workspace UI with the frontend judges retired, T = tests + live + 20-symbol TSETMC validation |
+| F-10 | Owner rulings Q-1…Q-5 | `BLOCKED-OWNER` | hourglass tape set, `tno>100` in the funnel, `dist>=0` floor, whether 50/10/5-7 (ruling ۶) are visible stage targets or compute caps, and I5-with-no-sector state. None of them blocks stage C or E |
+
+| F-11 | Why the cap exists (measured, not assumed) | `MEASURED` | `_fts_analysis_series` (`api/chart.py:2900-2943`) reads the **CDN chart per symbol** and only falls back to the local bank, so the 248 ms is mostly network. The local bank today: 6031 symbols, but only 1263 with ≥60 sessions, 737 with ≥252, max depth 512, none ≥756 — a local-only scan would silently change verdicts for the shallow rest |
+| F-12 | Stage C design (chosen) | `PENDING-BUILD` | Batched **incremental** full-universe technical scan in a new root module: reuse `_fts_analysis_series` + `_fts_analyze_candles` unchanged (one code path, so no board-vs-funnel parity risk), bounded worker pool, skip symbols whose `(symbol, last_close, basis)` already has a stored verdict, write `funnel_tech_scan(symbol, trend_w, trend_d, matrix_decision, hourglass_*, jet_*, basis, as_of, engine_version, ruleset_version)`. `/api/screener` joins that table instead of the per-row call and the `watchlist` flag goes back to being a label, not a compute gate. Cold cost and steady-state cost are both reported before the caps are declared lifted |
+
+| F-13 | Stage C first cut built and measured | `PARTIAL` | `funnel_tech_scan.py` (not wired into `/api/screener` yet): one `funnel_tech_scan` table, `tech_fields_from_fts()` as the **only** copy of the extraction (the screener will call it, so no second judge is created), signature-based incremental reuse, CLI. Re-measured after removing a double history fetch: **serial 0.57 s/symbol → 922 symbols ≈ 8.8 min cold**, a repeat call 0.02 s (cache), `universe()` over 433,922 rows 0.4 s. **Four threads made it 10× worse** (68 s for 12 symbols), so the default is one worker. Remaining: scope the scan to the screener's ~922 symbols (not the 6031 spellings in `price_history`; 3710 traded in `market_watch`, 1263 with ≥60 sessions), wire the screener to the table, then lift `watchlist_max`/`TECH_QUERY_CAP` |
+
+## 15.11 Funnel UX restructure (owner mission 2026-10-08, presentation only)
+
+| ID | Item | State | Evidence |
+| --- | --- | --- | --- |
+| U-1 | «نقشۀ راه قیف» page deleted | `ACCEPTED` | `FtsFunnelOverview.tsx` deleted; `/master` now opens the stage table itself (`fts-funnel-workspace`), `?stage=` keeps addressing the four stages and defaults to the first |
+| U-2 | Three modes in one workspace | `ACCEPTED` | `FUNNEL_MODES` = نوسان‌گیر / روندگیر / Custom in one segmented row; hourglass left out of the selector because no source gives it a tape filter (Q-1) but `?preset=hourglass` still works, so no capability was deleted |
+| U-3 | Table is the centre | `ACCEPTED` | The stage hero (title + purpose + 4 stat cards + rule chips) is gone; the duplicate in-table preset picker is gone; counts live on one line above the table |
+| U-4 | Reason visible without a second page | `ACCEPTED` | New `دلیل` column renders the engine's own reason string per row (it was only a `title` tooltip before, invisible on touch) |
+| U-5 | Stage survives a row click | `ACCEPTED` | `pick()` navigates to `/master/<symbol>?stage=<active>`; the workspace also falls back to the Task-#78 snapshot. Found by the retargeted snapshot test, which had passed only because the deleted overview page never consumed the snapshot |
+| U-6 | Custom: pick filters | `PARTIAL` | Selection works through the existing board chips (`funnel-tape-chip-*`) shown in the tape stage; **reordering the chain is not built yet** and the engine still intersects the picked set as a set, so order is display-only until stage E |
+| U-7 | Browser validation | `ACCEPTED` | `tools/jev_ui_check.mts` at 1366/1920/360 → `_audit/funnel_workspace_check.json`: three modes present, no overview page, `دلیل` present, `pageOverflowX: 0` at every width. One React "setState during render" warning appeared only in the 1366 run and its cause is not yet isolated - recorded, not dismissed |
+| U-8 | Logic untouched | `ACCEPTED` | No change under `lib/ftsFunnel.ts`, `tape_flags.py`, `fts_engine.py` or `api/*` in this commit; tsc clean and 1444 passed / 3 skipped |
+
+## 15.12 Final Funnel milestone (owner mission 2026-10-08, §1-46) - IN PROGRESS
+
+| ID | Item | State | Evidence |
+| --- | --- | --- | --- |
+| X-1 | Re-audit before coding | `ACCEPTED` | §15.10 F-1..F-13 plus this round's re-read of the current tree (the UX commit changed the files the earlier audit described, so the audit was redone against `d0314b6`, not against the report) |
+| X-2 | Canonical backend judge | `ACCEPTED` | `funnel_engine.py` + `api/funnel.py` (`GET/POST /api/funnel`, `GET /api/funnel/registry`). Guard `dev/funnel_engine_v1.py` = the mission's 22 required cases, each with expectations written outside the engine. Registered in `run_all_tests.py`, in `fts_terminal.spec` hiddenimports, and in `api/__init__.py` |
+| X-3 | Sequential intersection is real | `ACCEPTED` | Live smoke on this bank: `custom [f_susp, f_noqteh]` = 5865 → 121 → 4, and `[f_noqteh, f_susp]` records different per-stage counts. Guard case 3 fails if OR logic leaks (it would match 2) |
+| X-4 | Weekly-first technical gate | `ACCEPTED` | down/neutral reject, up only then daily, branch map per the four-page chart, `UNKNOWN` = PENDING not reject; guard case 12 proves jet+CHoCH+5 points never break a weekly veto |
+| X-5 | Fundamental hard/standard/exception | `ACCEPTED` | standard blocks on I1∧I2∧I3, hard requires all five, missing data is PENDING, exception keeps `canonical=REJECT` beside `effective=PASS WITH EXCEPTION` with the indicator and reason code in the trace; a wrong exception does nothing |
+| X-6 | Handover ranking without invented weights | `ACCEPTED` | final → no-exception → existing fundamental score → existing technical points → backend rank → symbol, with `display_rank`; 1200 in = 1200 out and the engine source contains no slice |
+| X-7 | **Frontend still runs its own judge** | `OPEN - BLOCKING` | `lib/ftsFunnel.ts` (`buildFunnel`, `techMark`, `fundMark`) and `tapeAlgorithms.tapeFilterVerdict` are still the browser-side verdict path used by the table. Until the table renders `/api/funnel`, the mission's "one judge" rule is NOT met and the funnel cannot be called complete |
+| X-8 | Custom builder (add/remove/reorder/save presets) | `OPEN` | Registry is served and the chain is honoured by the engine; the UI control does not exist yet |
+| X-9 | Hidden caps | `OPEN` | `TECH_QUERY_CAP=60`, `watchlist_max=50` gating tech enrichment, and `scan_all[:cap]` all still stand. `funnel_tech_scan.py` is built and measured but not wired |
+| X-10 | React "setState during render" | `OPEN` | Seen only in the 1366 live run; cause not isolated yet |
+| X-11 | 3 skipped tests | `OPEN` | Classified as required by §42, not yet resolved |
+| X-12 | TSE/TSETMC validation, browser validation, inspector | `OPEN` | §24, §33, §40 |
+
+### Order of the remaining work (each its own commit)
+
+1. `useFtsFunnel` → fetch `/api/funnel` (POST with chain/fund_mode/params/exceptions) and
+   return the server payload unchanged; delete `buildFunnel`/`techMark`/`fundMark` verdicts
+   and make `tapeFilterVerdict` read the backend flag (the live-board mirror stays only as a
+   parity-guarded display path, or dies).
+2. Custom builder in the workspace header: registry-driven add/remove/reorder + saved
+   presets (ordered ids, parameter set, registry+formula version, fundamental mode,
+   technical settings, timestamp).
+3. Handover table + inspector with the trace (§23, §24), progressive disclosure.
+4. Wire `funnel_tech_scan` into `/api/screener`, lift the caps, re-measure.
+5. Isolate the React warning, classify the skipped tests, browser validation at
+   1366/1920/360, TSETMC validation on >= 20 real symbols.
+
+**FINAL STATUS of the milestone: NOT COMPLETE.** Backend decision layer is accepted;
+the frontend still judges, so the funnel is not yet "one canonical engine + a renderer".
+
+## 15.14 Funnel integration is green on `funnel-api-wip` (2026-10-08, later in the same day)
+
+Owner instruction: continue on the branch and fix the harness, do not drop the canonical
+backend. Done - the branch is green and the UI no longer judges.
+
+| commit | what |
+| --- | --- |
+| `5a34395` | the funnel spec now renders a hand-written `/api/funnel` payload; 15 cases replace the 42 that called `buildFunnel`; `StageRow` takes its stage key so the tape card's دلیل column stopped rendering «—» for every row; `moved()` applies the destination index after removal; `useFtsFunnel` read `portfolio.data` as an array (it is `{status, decisions,...}`) and crashed three master specs as unhandled exceptions |
+| `93af3bc` | `SymbolInspector` reads `stageProgressFor(funnel, symbol)` from the same answer instead of re-running `symbolStageProgress` on one symbol; statuses are merged per stage because the tape row only carries `status.tape` |
+
+Evidence, all run after the last change: `tsc` 0 errors, **1417 passed / 3 skipped (139
+files)**, no unhandled errors; `funnel_engine` guard 26/26, `funnel_registry` guard 7 filters /
+21 params, `persian_glyph_guard` 4/4.
+
+### §37 verified - the runtime no longer imports any browser-side judge
+
+`grep` over `frontend/src` (excluding `__tests__`) for `buildFunnel`, `symbolStageProgress`,
+`funnelUniverse`, `techQueryQueue`, `useFtsTechBoard`: the only remaining hit is a **type**
+import (`TechVerdict`) inside `lib/ftsFunnel.ts`. Everything else is prose in comments.
+
+### What is still dead-but-present (attempted this session, reverted)
+
+`buildFunnel`, `evaluateCandidate`, `symbolStageProgress`, `funnelUniverse`, `techQueryQueue`,
+`tapePickedSymbols`, `officialRankMap`, `orderOfficial`, `techFromScreen`, `techFromVerdict`,
+`technicalDailyBranch`, `technicalEvidencePoints` and `api/useFtsTechBoard.ts` (which owns
+`TECH_QUERY_CAP = 60`) are unreferenced by the app but still in the tree, and
+`__tests__/fts-candidate-engine.spec.tsx` still exercises them.
+
+A first deletion pass mangled `ftsFunnel.ts` (line-slice removed the tail of the `Candidate`
+type and duplicated `Funnel`/`FunnelStage`), so the file was restored from HEAD and the branch
+was left green. **The deletion is not a text-slicing job**: it needs the type block, the two
+`import type` lines and the candidate-engine spec handled together, then `tsc` as the gate.
+
+### Still open before ACCEPTED
+
+1. DONE (15.15): the dead judges, `useFtsTechBoard` and `fts-candidate-engine.spec.tsx` are
+   deleted; decision coverage lives in the 38 python bands only.
+2. Custom builder UI in the workspace header (state is ready: chain, moveFilter, savedChains).
+3. Handover columns + inspector fed by `timeline`.
+4. PARTLY DONE (15.15): `funnel_tech_scan` is wired into `/api/funnel` (verdicts come from
+   the scan table, not the top-50). Still open: `/api/screener` enrichment + weekly veto
+   remain capped at `watchlist_max`, and `scan_all[:cap]`.
+5. React "setState during render" root cause; classify the 3 skipped tests.
+6. Browser validation 1366/1920/360 with `_audit/funnel_final_*.json`; TSETMC on >= 20 symbols;
+   full-universe benchmark.
+
+Release: still not built. Funnel: IMPLEMENTING (one step closer - the UI now renders the
+canonical answer).
+
+## 15.15 Completeness rule enforced end to end (2026-10-08 / 1405-07-16, later the same day)
+
+Owner rule: «هیچ نمادی نباید با وضعیت «سنجیده نشده» از Funnel خارج شود» plus the
+mandatory guard `input universe count == output evaluated-symbol count`.
+
+Backend (commit `1ffd11a`, `d10f618`):
+- `status_matrix()` + `coverage` in `funnel_engine.py`: one explicit status per symbol per
+  stage, with `reason_code` + `human_reason`. Five statuses: pass / reject / pending /
+  unavailable / **not_required**.
+- Universe is keyed by normalized symbol; duplicate board rows are reported
+  (`duplicate_rows`) instead of silently double-counting.
+- Live identity on this bank: `board 5865, screened 922, joined 5863, duplicate_rows 2`;
+  every stage sums to 5863.
+- `technical_stage()` now takes `tech_scan` + `tech_sigs` and separates three honest cases:
+  verdict available -> judge; history exists but the scan has not run -> `PENDING` /
+  `TECH_SCAN_PENDING`; no price history at all -> `UNAVAILABLE` / `TECH_NO_HISTORY`.
+- Stop reasons are status-aware (`stop_text`): a pending upstream stage no longer claims the
+  symbol was "rejected".
+
+API:
+- `GET /api/funnel/trace?symbol=` serves the per-symbol timeline on demand; the list
+  response drops `timeline` - payload **18.9 MB -> 9.1 MB** with identical decisions.
+- `_tech_context()` reads verdicts from `funnel_tech_scan` (60s cache) instead of the
+  screener's enriched top-50; leftovers are queued into a background thread, so no HTTP
+  request ever waits for a scan.
+
+Measured cost of the scan (this bank, 4 real tape survivors): 99.5 s for 4 symbols
+=> ~25 s per cold symbol (history fetch), 0.02 s when the stored signature matches.
+A cold full 922-symbol pass is therefore **hours**, not the 8.8 minutes the earlier
+0.57 s/symbol figure suggested - which is exactly why it is background + PENDING.
+
+Frontend (P0 second judge removed):
+- `ftsFunnel.ts` 920 -> ~260 lines: `buildFunnel`, `evaluateCandidate`, `techMark`, `fundMark`,
+  `tapeMarkOf`, `tapeRows`, `symbolStageProgress`, `funnelUniverse`, `techQueryQueue`,
+  `orderOfficial`, `officialRankMap`, the `techFrom*`/`technical*` helpers and `FUNNEL_TARGETS`
+  are gone. What remains is types, labels and display metadata only.
+- `api/useFtsTechBoard.ts` deleted - its `TECH_QUERY_CAP = 60` was a decision queue (case B of
+  the cap table). `__tests__/fts-candidate-engine.spec.tsx` deleted with it (classification:
+  OBSOLETE - it tested the browser judge that no longer exists; decision coverage is the
+  38 python bands).
+- `funnelFromApi()` builds one row per universe symbol per stage from `status_matrix`,
+  enriched by that stage's own rich row; counts come from backend `coverage`.
+- Every stage table now renders the whole universe (virtualized body + virtualized pending
+  group), the header shows the five statuses and «حکم: N = کلِ universe», and the tab badge
+  shows the pass count. `not_required` = «لازم نبود» in labels, dots, badges, dossier, details.
+- Background scan progress is visible: «تکنیکال در انتظارِ اسکن: N».
+
+Gates: `tsc -b` 0 errors; `vitest run` 1400 passed / 3 skipped / 138 files;
+`funnel_engine_v1` OK (38 bands); `funnel_registry_v1` OK (7 filters, 21 params);
+`persian_glyph_guard` 4/4.
+
+Open: `api/screener.py` still computes `tech_*` only for `watchlist_max=50` rows and applies
+the weekly veto only to them - the funnel no longer depends on it, the screener table does.
+Also open: Custom builder UI, handover inspector from `/api/funnel/trace`, the React warning,
+classifying the 3 skipped tests, browser + TSETMC validation, full-universe benchmark.
+Today's live funnel ends at 0 PASS with explicit reasons (the tape survivors are ETFs:
+no codal coverage, and the weekly judge rejects or cannot classify them).
+
+
+## 15.16 Funnel validation: warning fixed, browser walked, benchmark and TSETMC measured (2026-10-08)
+
+React warning (`122143d`) — reproduced, root-caused, not suppressed:
+`Warning: Cannot update a component (%s) while rendering a different component (%s)`
+with the substituted names printed after the string; stack
+`dispatchSetState <- Topbar.tsx:47 <- query-cache Set.forEach`. Cause:
+`useFeedSnapshot` calls `setSnap` synchronously from the TanStack Query **cache
+subscription**, and mounting the funnel's observer notifies that subscription
+during `FtsFunnelStages`' render phase. Fix: defer the listener body one
+microtask. Now **0 errors / 0 warnings at all three viewports** (was 6 at 1366).
+
+Live browser walk `_audit/funnel_final_check.mts` -> `_audit/funnel_final_dev2.json`
++ `funnel_final_{1366,1920,360}.png`, against the real backend on this worktree:
+
+| viewport | pageOverflowX | table px / box px | reason cells | ruled vs universe | technical not_required |
+| --- | --- | --- | --- | --- | --- |
+| 1366x768 | 0 | 1196 / 1198 | 18 of 18 filled | حکم ۵۸۶۳ = کلِ universe | ۵۷۶۱ لازم نبود |
+| 1920x1080 | 0 | 1670 / 1672 | 18 of 18 | same | same |
+| 360x800 | 0 | 278 / 280 | 18 of 18 | same | same |
+
+Steps executed at every viewport: enter (default = tape) -> swing -> trend ->
+custom -> add two registry filters -> reorder -> remove -> save -> reset ->
+load -> row click -> technical -> fundamental -> handover -> back.
+Ordered intersection proved by the UI's own numbers: `[f_clock, f_susp]` printed
+`f_clock ۵۸۶۳ ← ۵۰`, `[f_susp, f_clock]` after reorder printed
+`f_susp ۵۰ ← ۱۹` / `f_clock ۵۸۶۳ ← ۵۰`.
+Row click kept the stage (`?stage=technical` - bug found and fixed: `pick()` used
+the component's internal active instead of the routed one) and Back returned to it.
+Registry gave 7 filters including `f_smart` / `f_legal` (the old five-chip list is gone).
+
+Two more defects the walk exposed and fixed:
+- switching preset/chain blanked the dominant table to `universe: ۰` for the whole
+  POST; now `placeholderData: keepPreviousData` + an explicit «در حالِ تازه‌سازی» chip.
+- the inspector collapsed `not_required` into `unknown` («سنجیده نشده»); it is now its
+  own state with «لازم نبود» and the blocking stage in the title.
+
+Skipped tests classified (§28) - all three were **FIXED**, not accepted as skipped:
+they needed fixtures that did not exist on this machine. Built from the live bank:
+`_audit/live_rows.json` (5865 rows from /api/market) and
+`tools/tape_parity_fuzz.py --rows 140` => 1312 mutated cases.
+`tape-fuzz-parity` 2/2 pass; `tape-badge-chip-parity` 8/8 pass including the
+three-way live check (backend flag == frontend formula == row badge) for all five
+filters: f_clock [50,50,50], f_susp [102,102,102], f_jet [8,8,8], f_roobi [19,19,19],
+f_noqteh [17,17,17]. `_audit/*` stays gitignored by design (PC gate, not CI).
+
+Full-universe benchmark (§35) `tools/funnel_universe_benchmark.py` ->
+`_audit/funnel_universe_benchmark.json`: universe 5863 (board 5865, 2 duplicate rows
+deduped, screened 922), `evaluate()` 1.87-2.34 s per case, peak 40-48 MB, six cases
+(swing / trend / two custom chains / empty chain / hard fundamental), cache cold
+2113 ms -> warm 902 ms (the remaining cost is serialising the answer), concurrency:
+`evaluate()` is single-threaded and the technical verdicts are built in a background
+thread, never awaited by a request. `no_truncation_proof: true` - every case has
+`matrix rows == universe` and every stage's five statuses sum to the universe.
+
+TSETMC/TSE validation (§32-33) `tools/tse_live_filter_parity.py` ->
+`_audit/tse_filter_parity_final.json`, live at 21:38 against the app snapshot of
+21:18 (7207 comparison rows, 2273 traded):
+
+| filter | site | app | match | only_site | only_app |
+| --- | --- | --- | --- | --- | --- |
+| clock | 49 | 50 | 49 | 0 | 1 |
+| susp | 102 | 102 | 102 | 0 | 0 |
+| jet | 8 | 8 | 8 | 0 | 0 |
+| roobi | 18 | 19 | 18 | 0 | 1 |
+| noqteh | 17 | 17 | 17 | 0 | 0 |
+| smart | 143 | 147 | 143 | 0 | 4 |
+| legal | 34 | 34 | 34 | 0 | 0 |
+
+Every one of the 6 `only_app` rows classified in `_audit/funnel_tse_diff_classify.py`:
+**all DATA_DIFFERENCE, zero RULE_DIFFERENCE, zero BUG** - one symbol is absent from
+the site's live `GetMarketWatch` payload, the other five differ on `zd1/bp/sp/sn/h_len`
+(their clientType and history inputs are not identical between the two snapshots).
+An earlier draft of that probe compared only five fields and mislabelled them
+RULE_DIFFERENCE; the instrument was wrong, not the app - the check now compares all
+ten variables the formulas read.
+
+Open before ACCEPTED: /api/screener's own `tech_*` enrichment and weekly veto are
+still limited to `watchlist_max=50` rows (the funnel no longer depends on them);
+the technical scan covers 16 of 6032 symbols with history and is ~25 s per cold
+symbol, so the universe-wide verdicts are still filling in the background;
+handover columns + the trace-fed inspector (§21-22); the same completeness counters
+on Android (§9); owner questions Q-1..Q-5.
+
 
 ## 15.5 Next item selected
 
-Phase 1 **S-3**: put a FastAPI router and a thin Desktop page in front of the existing execution service, dry-run/mock only, explicitly labelled experimental. S-4 stays `BLOCKED-OWNER` until D8/D1 are answered. Phase 2 (trading bot) is not started: the analytical feature in front of it must be accepted first, and the bot must consume the canonical FTS signal rather than judge again.
+Current owner priority is **FTS Funnel / Strategy FTS Decision Workspace**. **S-3 Sarkhati is explicitly DEFERRED** until this milestone is accepted. The next implementation item is the Funnel milestone defined in §4.0: canonical full-universe filter registry, sequential intersection/custom presets, verified Swing/Trend/Hourglass modes, Fundamental Auto/Smart with mandatory first-three gates, decision trace, browser/TSE validation, and acceptance. No new Sarkhati implementation should overtake this milestone.
+
+* superseded by §15.17 (2026-10-09): U-6 and the Custom builder are done, the funnel consumes
+the canonical engine, and the next cut is the AssemblyEvent unit in
+`docs/ASSEMBLY-EVENT-PLAN-1405-07-17.md`. The text below is kept as written then.*
+
+**FTS Funnel stage U-6 then C** — first the Custom chain editor (order controls over the
+already-picked filters, display-only until the engine consumes the order), then replace the
+per-symbol technical enrichment of the top-50
+(`api/screener.py:456-458`, `fts_engine.scan_all` `[:cap]`) with one batched full-universe
+scan (single candle load, parallel verdicts, scan-level `as_of`), then measure the cold
+rebuild. Stage E builds the intersection engine on top of it.
+Phase 1 **S-3** (execution router) is `PAUSED` by the owner's mission until the funnel milestone
+is `ACCEPTED` (`api/execution.py` sits uncommitted in this worktree); S-4 stays
+`BLOCKED-OWNER` (D8/D1). Phase 2 (trading bot) is not started: the bot must consume the
+canonical FTS signal rather than judge again.
+
+
+## 15.17 WS-7 — دو جامعه، واژگانِ غربالگری، walkِ واقعیِ واچ‌لیست (۱۴۰۵-۰۷-۱۷)
+
+ پنج کار درِ این دور نشست (branch `funnel-api-wip`، پنج کامیت):
+
+| کار | حکم | شاهد |
+| --- | --- | --- |
+| جامعۀ تابلو ≠ جامعۀ غربالگری | **پیاده و زنده** | `X=5863 / Y=3655 / Z=2208`؛ `X=Y+Z`؛ `docs/SCREENING-UNIVERSE-LIVE-STATE-1405-07-17.md`؛ `_audit/ws7_universe_check.mts` |
+| live ≠ «امروز معامله داشت» | **اثبات‌شده از داده** | ۳۹۹۲ ردیفِ نشستِ جاری که ۱۷۰۵شان بی‌معامله‌اند؛ شاهدِ مستقلِ `price_history` ۲۲۹۲ |
+| «NOT IN SCREENING UNIVERSE» | **وضعیتِ ششمِ رسمی** | `not_in_universe` درِ matrix/trace/رابط؛ نه reject، نه «سنجیده نشده» |
+| گاردها | **۴۲ بند سبز + کنترلِ منفی** | `dev/funnel_engine_v1.py` ۳۸-۴۱؛ جهشِ عمدی → ۷ FAIL → بازگشت از copy |
+| rename: Funnel → غربالگری | **فقط متنِ دیدنی** | ۲۲ رشته درِ ۱۴ فایل؛ walkِ DOM درِ پنج مسیر: صفر «قیف»؛ `_audit/ws7b_rename_check.mts` |
+| walkِ واقعیِ واچ‌لیست | **۱۰/۱۰ سبز** | optimistic (فقط POST+GET)، ماندگاری با reload، سطر درِ Portfolio → پرتفوی فعلی، ستارۀ بنیادی، حذف؛ `_audit/ws7c_watchlist_walk.mts` |
+| `/api/watchlist/matrix?symbols=` | **از مرگ برگشت** | `no such table: instruments` → حالا verdict می‌دهد؛ تفکیکِ `USER_WATCHLIST_MAX` / `MATRIX_PROBE_MAX`؛ گارد ۱۳ بند |
+| `api.funnel` درِ hiddenimports | **نقصِ ریلیزِ واقعی برطرف** | EXE رویِ اولین `/api/funnel` می‌مرد؛ `onedir_contract_v11` الان PASS |
+
+open, in this order:
+
+1. **Sidebar «در یک نگاه»** (رأیِ ۱: حذفِ Quick Scan به‌عنوان قابلیتِ مستقل؛ رفتارش
+   کلیکِ نماد ⇒ داوریِ هدفمندِ کامل ⇒ سایدبار). امروز هیچ «Quick Scan»ی درِ این
+   کارتر ساخته نشده بود، پس چیزی برای حذف نیست؛ کاری که مانده ساختِ همان سطرِ
+   «در یک نگاه» است (تک‌نگار: `stageProgressFor` سطرِ خارج از جامعه را هم می‌دهد).
+2. **AssemblyEvent** — مدلِ canonical از sourceهایِ راستی‌آزمایی‌شده
+   (`Codal/GetPreparedDataByInsCode`، `MarketData/GetInstrumentState`،
+   `GetInstrumentShareChange`)؛ `DPS = UNAVAILABLE`؛ `decision_date = null` بی‌دادهٔ
+   ساختاریافته؛ تاریخِ انتشار با labelِ خودش. کامنتِ گمراه‌کنندۀ
+   `codal_fetcher.py:3588-3590` هم درِ همین بند.
+3. **Android parity** — واژگانِ «غربالگری»، واچ‌لیست، و شمارشِ تکمیلِ جامعۀ
+   غربالگری درِ `BorsTerminal-android` (کارترِ جدا).
+4. **زنجیرۀ acceptance روند** (Trend milestone): G1 candle parity، corpusِ
+   دستیِ ۳۰-۵۰ نماد، Rahavard/TradersArena فقط به‌عنوان مرجع، و
+   `docs/validation/FTS-TREND-VALIDATION.md`. G3/G5/G6/G7 سبزند
+   (`dev/fts_trend_pit_v1.py`، ۱۳ بند)؛ **parityِ بیرونی هنوز UNVERIFIED**.
+
+still red in this worktree *and* in the untouched one (not caused by this work,
+each with identical counts): `tape_filters_v1034` 214/2، `test_fts_technical_tristate`
+32/37، `test_fts_roundj` ۱ سرخ، `chart_api_check_v95` (فایلِ بایگانیِ gitignored).
+
+pilot jev: سه درخواستِ داوری درِ دوراهیِ «نبودِ ردیفِ وضعیت» هر سه `read timeout`
+دادند ⇒ آن تصمیم **UNVERIFIED-BY-PILOT** ثبت شد و قضاوتش با مالک است.
+Release ساخته نشد (milestone هنوز ACCEPTED نیست).
+
+
+## 15.18 ارزشِ بازار درِ سایدبار، و یک مبنایِ واحد برای I4 (۱۴۰۵-۰۷-۱۷)
+
+Addendum به spec از مالک: «ارزش بازار باید در Sidebar → در یک نگاه باشد» و I4 باید
+**همان** canonical market cap را مصرف کند.
+
+چه چیزی به‌عنوان canonical پیدا شد (هیچ‌چیز اختراع نشد):
+
+| پرسش | پاسخ با شاهد |
+| --- | --- |
+| آیا TSETMC برای *هر نماد* `marketValue` ساختاریافته می‌فرستد؟ | **نه** — سنجش‌های زندۀ پروژه: `docs/fts-notes/FUND_LIVE_AUDIT.md:306-313`؛ فیلدِ ساختاریافته فقط در سطحِ *بازار* وجود دارد (`GetMarketOverview.marketValue/marketValueBase` → `market_totals`) |
+| پس منبعِ جاریِ هر نماد چیست؟ | ستونِ رسمیِ `market_watch.market_cap` + برچسبِ منشأِ `market_cap_src`؛ درِ این بانک: ۴۶۷۳ `tse_board_calc` + ۳۹۷ `tse_board_calc_backfill` + **صفر** `tse_raw` |
+| تعریفِ واحدِ کد کدام است؟ | `fts_engine.mcap_bulk_expr` (ستونِ رسمی ← آخرین `daily_prices` معتبر) با دروازۀ یک‌تعریفِ «بانِ مرده» (`mcap_dead_band_sql`) — همان که از نسبتِ ۱۴۱۳٫۷۵× جعلی جلوگیری می‌کند |
+
+انجام‌شده:
+
+- تابلو حالا خودِ عدد را می‌فرستد: `/api/market` ردیف‌ها را با `mcap`/`mcap_src`
+  برمی‌گرداند (۵۰۷۰ از ۵۸۶۵ ردیف دارایِ عدد؛ بقیه **بی‌داده**، نه صفر) و سایدبار
+  «در یک نگاه» یک سطرِ `ارزشِ بازار … · I4 …` با titleِ منشأ/تازگی دارد.
+- **یک فرمول، دو سطح:** سایدبار دیگر عبارتِ دومِ خودش را ندارد — `api/market._board_sql`
+  دقیقاً `mcap_bulk_expr(conn, alias="i", board="m")` را می‌نشاند. سنجشِ زنده:
+  روی ۵۰۷۰ ردیف، عددِ سایدبار با مخرجِ I4 درِ `confidence_engine.mcap_map`
+  **صفر اختلاف** است.
+- I4 از مبنایِ دومی جدا شد: `conf_fund` پیش‌تر `p_closing × total_shares` را خودش
+  می‌ساخت. حالا همان canonical را می‌خواند. اثرِ واقعی (و این تغییرِ حکم است، نه
+  فقط نام): از ۳۹۹۱ ردیفِ زنده، **۴۷۵ ردیف هیچ مبنایِ معتبری ندارند** و I4شان
+  از این پس `None` (بی‌داده) است نه یک عددِ ساخته‌شده؛ درِ نمونۀ ۴۰۰تایی ۱۱۴ ردیف
+  «بانِ مرده» دارند و به تاریخچۀ معتبر می‌روند.
+- هزینۀ اندازه‌گیری‌شده: ساختِ سردِ تابلو ۱٫۱۵s ← **۱٫۵۴s**؛ مسیرِ کش‌دوست ۰٫۰۶s.
+- یک رگرسیونِ واقعی که خودم ساخته بودم و گارد گرفت: `dev/board_hist_cache_v1056.py`
+  و `tools/tape_formula_parity.py` متنِ `_BOARD_SQL` را با regex از فایلِ منبع
+  برمی‌دارند و **مستقیم اجرا** می‌کنند؛ توکن‌های `@MCAP@` آن متن را بی‌اجرا کرده بود
+  (`unrecognized token`). متنِ پایه حالا `CAST(NULL AS REAL)` قابل‌اجرا دارد و
+  `_board_sql` فقط وقتی ستون هست آن را با عبارتِ canonical عوض می‌کند. گارد ۲۴/۰ سبز.
+- گارد `dev/watchlist_matrix_v973.py`: ۵۱ چک، ۰ خطا (چهار بندِ تازه: نقشه یکی،
+  برابری با ستونِ رسمی روی ردیف‌هایِ پذیرفته‌شدۀ دروازہ، نبودِ productِ محلی درِ
+  conf_fund، و استفادهٔ سایدبار از همان `mcap_bulk_expr`).
+
+هنوز باز ( ACCEPTED نیست ):
+
+1. **سطرِ سایدبار درِ مرورگر زنده هنوز عدد نمی‌دهد — و این ادّعایِ PASS نیست.**
+   `_audit/ws7d_sidebar_mcap_check.mts` اجرا شد: سطرِ `ارزشِ بازار … I4 …` رندر
+   می‌شود ولی متنش `بی‌داده` است، در حالی که **همان پاسخ** وقتی درِ همان صفحه با
+   `fetch('/api/market')` خوانده می‌شود برایِ ۵۰۷۰ ردیف `mcap` دارد (نمونۀ تست
+   «آباد»: ۱٫۴۳ همت). یعنی عدد تا مرورگر می‌رسد و درِ رابط گم می‌شود.
+   `MarketFeedSchema → MarketRowSchema` هر دو `mcap` را دارند (`marketRow.ts:39-40`)
+   و خوراک هم همین schema را مصرف می‌کند (`marketFeed.ts:105`)، پس دو فرضیه مانده
+   و یکی درمیانی را باید دید: (الف) `rawRow` برایِ آن مسیر `null` است
+   (تشبیهِ نماد درِ سایدبار) و «بی‌داده» از نبودِ *ردیف* است نه نبودِ کلید؛
+   (ب) سازندۀ ردیفِ نرمال‌شده، کلیدهای تازه را نمی‌گذراند.
+   گامِ بعد: چاپِ `Object.keys(rawRow)` درِ همان صفحه، بعد از آن اصلاح درِ
+   همان لایه. تا این دو حالت روشن نشود، بندِ «UI evidence» برایِ ارزشِ بازار
+   **UNVERIFIED** می‌ماند.
+2. **ترتیبِ کاملِ «در یک نگاه»** همان لیستِ مالک (نماد ← قیمت ← تغییر ← حجم/ارزش
+   معاملات ← ارزش بازار ← قدرت خرید/فروش ← وضعیت تابلو ← تکنیکال ← بنیادی ←
+   غربالگری FTS ← رویدادها) هنوز بازچینی نشده؛ سطرِ ارزشِ بازار فعلاً بعدِ
+   قیمت/درصد نشسته است.
+3. تازگیِ I4: عدد از ردیفِ اسکرینر می‌آید، پس با هر تیکِ قیمت تازه نمی‌شود.
+   رفتاری که مالک خواست («I4 با تغییرِ مخرج، بی‌recomputeِ کلِ بنیادی تازه شود»)
+   یعنی ratio از `sales(as_of ثابت) ÷ mcap(جاری)` درِ لحظۀ خواندن ساخته شود —
+   این **هنوز ساخته نشده** و UNVERIFIED است؛ کلیدش این است که حکمِ موتور دومی
+   ساخته نشود، فقط عددِ نمایشی با asofِ خودش برود.
+
+
+## 15.19 سه رأیِ تازه (ارزشِ بازار) + milestone جدیدِ «وضعیت بازار» (۱۴۰۵-۰۷-۱۷)
+
+رأی‌هایی که بعد از §15.18 آمد و **هنوز اجرا نشده‌اند** (به‌همین دلیل milestone
+ACCEPTED نیست):
+
+1. **حکمِ I4ِ موتور دست‌نخورد؛ عددِ سایدبار live باشد.** سازۀ نمایشی:
+   `sales(as_ofِ ثابت) ÷ market capِ جاری` با `as_of` و sourceِ خودش؛ اگر با
+   حکمِ cachedِ موتور می‌خواند همان عدد، اگر نمی‌خواند **اختلاف صریح نشان
+   داده شود** (نه quiet overwrite). جایِ ساختن: `SymbolInspector` (نمایشی) —
+   موتورِ بنیادی و `fts_engine.sales_to_marketcap` بی‌تغییر می‌مانند.
+2. **بازچینی کاملِ «در یک نگاه» درِ همین milestone**، به ترتیبِ specification:
+   نماد ← قیمت ← تغییر ← حجم/ارزشِ معاملات ← **ارزشِ بازار** ← قدرتِ خرید/فروش
+   ← وضعیتِ تابلو ← تکنیکال ← بنیادی ← غربالگری FTS ← رویدادها. هیچ
+   capability حذف نشود؛ پنجرۀ ۵ مظنه و جزئیاتِ معاملات به Page 2
+   («جزئیاتِ بازار») می‌روند و سوییچ هر دو page محلی و فوری است.
+3. **auditِ منشأ انجام شد** و نتیجه در `docs/TSETMC-MARKET-CAP-SOURCE-AUDIT-1405-07-17.md`:
+   TSETMC هیچ `marketValue` هر-نمادی از هیچ مسیرِ راستی‌آزمایی‌شده نمی‌فرستد
+   (detail pathها SPA-shell برمی‌گردانند؛ `GetInstrumentInfo` = 404)؛
+   `marketValue` فقط سطحِ بازار است. `market_watch.market_cap` canonical
+   می‌ماند **برایِ I4** ولی با ارزشِ بازارِ TSETMC هم‌خوان نیست:
+   Σ ردیف‌هایِ live ما ۴۶۱٫۵ میلیون‌میلیون ریال در برابرِ ۲۷۰٫۲
+   بازار ۱+۲ ⇒ **۷۰٫۸٪+** (فقط سهام+حق‌تقدم: ۵۱٫۶٪+). طبقه:
+   DEFINITION DIFFERENCE. اگر مبنایِ شناور برای I4 خواسته شود، تعویضِ
+   تعریفِ شاخص است و رأیِ مالک را می‌خواهد (با این ارقام، نه با تنظیمِ آستانه).
+
+گامِ بعدِ فنی (پیش از ۱ و ۲): سطرِ ارزشِ بازار درِ مرورگر هنوز «بی‌داده»
+می‌گوید با این‌که `mcap` درِ پاسخِ `/api/market` هست — اول `Object.keys(rawRow)`
+درِ همان صفحه چاپ شود تا معلوم گردد ردیف resolve نمی‌شود یا کلید درِ لایه‌ای
+می‌سوزد (بندِ ۱ و ۲ به همین عدد وابسته‌اند).
+
+milestone جدیدِ الحاقی (از همین‌جا درِ صف، بعد از بسته‌شدنِ این سه رأی):
+«بازطراحی کامل وضعیت بازار» — دو page (نمایشِ لحظه‌ای / تحلیل)، chartهای
+چهارصفحۀ FTS که درِ وضعیت بازار نبودند، motion به‌عنوان information
+visualization (≤۲۵۰ms، latest-target-wins، reduced-motion)، و parity
+اندازه‌گیری‌شدنِ TradersArena با matrix و طبقه‌بندیِ هر mismatch؛ در ساعاتِ
+واقعیِ بازار. منشأ و قاعدۀ جدید اختراع نمی‌شود.
+
+
+## 15.20 نشانگرِ زیرِ موس، و «در یک نگاه»ِ دوصفحه‌ای (۱۴۰۵-۰۷-۱۷)
+
+دو رأیِ مالک درِ همین دور اجرا شد: «مربعِ کوچک یا ستاره فقط اگر موس رویِ همان
+ردیف رفت نشان داده بشه» و «بازچینیِ کاملِ «در یک نظرة» همین milestone».
+
+**نشانگرها.** `SymbolSelectBox` و `WatchlistStar` از `opacity-0` شروع می‌شوند و با
+`group-hover`ِ خودِ ردیف، یا `focus-visible`ِ کیبورد، ظاهر می‌شوند. دو حالت
+عمداً همیشه‌دیده‌اند: ستارۀ نمادی که عضوِ واچ‌لیست است (پنهانش یعنی اطلاعاتِ
+دیدنی حذف شده) و دستگاهِ لمسی (`@media(hover:none)` — اندروید موس ندارد).
+`motion-reduce:transition-none` بی‌حرکتیِ خواستۀ کاربر را محترم می‌شمارد.
+سنجش از بیرونِ DOM با `getComputedStyle(...).opacity` است، نه با خواندنِ کلاس:
+`_audit/ws7e_hover_reveal.mts` → ۱۷/۱۷ (idle ۰، hover ردیف ۱، دور شدنِ موس ۰،
+hoverِ ردیفِ دیگر ردیفِ اول را پنهان می‌دارد، کیبورد ۱، لمسی ۱).
+`_audit/ws7f_hover_persistence.mts` ثابت می‌کند reveal با هر pollِ تابلو و با
+همان گرهٔ DOM (۶ ثانیه بی‌حرکتیِ موس) می‌ماند؛ پس hoverِ خالصِ CSS رویِ
+تابلویِ زنده شکننده نیست.
+
+**دو صفحۀ بازرسی نماد.** `SymbolInspector` حالا دو صفحۀ *محلی* دارد:
+«در یک نگاه» و «جزئیات بازار». ترتیبِ صفحۀ اول دقیقاً رأیِ مالک است —
+قیمت ← تغییر ← حجم/تعداد/ارزشِ معاملات ← ارزشِ بازار/I4 ← قدرت خرید/فروش ←
+وضعیت تابلو ← تکنیکال ← بنیادی ← غربالگری FTS ← رویدادها ← جمع‌بندی — و همین
+ترتیب درِ `symbol-inspector.spec.tsx` با یک تستِ ترتیب قفل شده است.
+«قدرت خرید/فروش» سلولِ دومِ خودش را نمی‌سازد: `BuySellCell` (سرانه‌ها + نوارِ
+سهم + نسبت) از درونِ `TapeTable` بی‌کم‌وکاست به
+`features/market/components/BuySellCell.tsx` منتقل شد و تابلو و سایدبار هر دو
+از همان یک implementation می‌خوانند؛ `toBillionRial` و `billionRialText` هم به
+`shared/lib/fmt` رفتند تا واحدِ «ارزشِ معاملات» دو جا دو جور نوشته نشود.
+چراغِ «سرانۀ خریدار» حذف نشد بلکه درِ همان سلول حل شد (نسبت و دو سرانه آن‌جاست).
+«رویدادها» عنوانِ خودِ اطلاعیه را از `/api/calendar/<symbol>` می‌خواند؛ برچسبِ
+جدایی اختراع نشد.
+صفحۀ دوم (پنج مظنه، جریان حجم، چراغِ سبد، ممیزی بنیادی، دسترسی‌ها) تا باز نشده
+mount نمی‌شود تا پرسشِ عمقِ بازار بی‌مصرف نرود، و بعد از باز شدن سرِ جایش
+می‌ماند تا حالتِ بازشو گم نشود.
+
+**سنجشِ زنده** (`_audit/ws8_inspector_pages.mts`، Chromium، بک‌اندِ همین worktree
+رویِ ۸۰۰۱ و vite رویِ ۵۱۷۵): ۱۱/۱۱ PASS. ترتیبِ دیدنی همان رأی؛ جابه‌جاییِ
+صفحّه هیچ درخواستِ غیرِ pollingی نمی‌سازد؛ پنج مظنه بسته به‌پیش‌فرض درِ DOM نیست
+و با باز شدن، `/api/order-book/<sym>` را می‌پرسد و ۱۰ سطر (۵+۵) می‌نشیند؛
+برگشت و آمدنِ دوباره بی‌درخواست است و پنل باز می‌ماند. ارتفاعِ «در یک نگاه»
+۴۷۰px و «جزئیات بازار» ۴۷۷px درِ پنلِ ۲۴۰ پیکسلی. روبشِ سرریز هیچ عددِ بریده‌ای
+درِ صفحۀ اول نگذاشت (نسخۀ اولِ خانۀ «قدرت خرید/فروش» ۱۰۸ پیکسل درِ ۷۴ پیکسل
+می‌شکست — با عددِ همان سنجش اصلاح شد).
+
+**آنچه راستی‌آزمایی نشد:** درِ حالتِ توسعه اپ داخل `<StrictMode>` است و هر mount
+اول را دو بار اجرا می‌کند؛ timeline همین را نشان می‌دهد (دو درخواستِ یکسان درِ
+یک میلی‌ثانیه). شمارۀ «یک درخواست» درِ بیلدِ بسته باید دوباره گرفته شود.
+رفتارِ دو صفحّه رویِ اندروید (عرضِ کوچک‌تر، نبودِ hover) درِ همین دور با
+مرورگرِ لمسیِ Chrome سنجیده نشد — فقط `hover:none` شبیه‌سازی شد.
+گیتِ pilot برایِ این رأی‌ها درخواست نشد چون مالک خودِ ترتیب را رأی داده بود.
+
+
+## 15.21 زنده‌شدنِ «غربالگری FTS»: ریتم، خطِ محاسبه، و دلیلِ تکراری (§۱۵.۲۰ ادامه)
+
+**ریتمِ تازه‌سازی.** `useFtsFunnel` یک `refetchInterval` ثابتِ ۶۰ ثانیه داشت. حالا
+تابع است: تا اسکنِ پس‌زمینۀ تکنیکال صف دارد یا در حالِ کار است ۵ ثانیه، و
+در غیر این صورت `sessionPollMs(20_000)` — یعنی ۲۰ ثانیه درِ ساعتِ بازار و
+ریتمِ آرامِ تابلو (۵ دقیقه) بیرونِ آن. همان کمکی که نبض بازار و صنایع استفاده
+می‌کنند، پس قیف از قاعدۀ کلیِ برنامه خارج نشده است.
+
+**خطِ «در حال محاسبه».** سرخطِ پوششِ تکنیکال وقتی صف وجود دارد با نقطۀ تپنده
+جای خودش را به «در حال محاسبه — ساخته‌شده: X · در صف: Y · سنجیده‌شده: Z از W»
+می‌دهد؛ بی‌صف همان «تکنیکال سنجیده شده: Z از W» می‌ماند. `scan.done` از
+`tech_scan` سرور اضافه شد (باقیِ فیلدها در پاسخ بود و خوانده نمی‌شد).
+
+**دلیلِ تکراری — باگِ لایۀ canonical.** ستونِ دلیل درِ جدولِ تکنیکال سرریز
+می‌کرد (۴۸۷ پیکسل متن درِ ۲۷۸ پیکسل خانه). علت درِ رابط نبود: درِ
+`funnel_engine.py` هر آیتمِ `why` متنِ *aggregate* را می‌برد، پس ردیفی با دو
+دلیل (مثلاً `WEEKLY_TREND_UP` + `DAILY_BRANCH`) یک جمله را دوبار می‌داد و
+مرورگر آن‌ها را با « · » به هم می‌چسباند. سنجشِ مستقیمِ پاسخِ سرور: از ۸۵۱۷
+فهرستِ دلیل، ۲۰۴۱ مورد تکراری بودند؛ پس از جفت‌کردنِ هر `code` با متنِ
+خودش، صفر — و همان سنجش ثابت کرد هیچ چیزِ دیگری عوض نشده: ۸۵۱۷ ردیفِ حکم،
+`universe`، `coverage` و شمارِ هر چهار مرحلۀ `stages` عیناً یکسان‌اند.
+گاردِ `dev/funnel_engine_v1.py` (۴۳ بند) و `dev/user_watchlist_v1.py` (۱۳ بند)
+سبز؛ `dev/persian_glyph_guard.py` ۴/۴.
+
+**سنجشِ زنده** (`_audit/ws9_funnel_live.mts`، Chromium رویِ بک‌اندِ همین
+worktree): ۸/۸ PASS — ۳۲ ردیف بی‌هیچ کلیکی نقاشی می‌شود، جدول ۱۱۹۶ از ۱۳۶۶
+پیکسل عرضِ viewport را می‌گیرد (جدول مسلط است)، هیچ سلولِ بریده‌ای درِ جدولِ
+تکنیکال نمانده، خطِ پوشش «تکنیکال سنجیده شده: ۳۶۵۵ از ۵۸۶۳» را می‌گوید، و درِ
+۲۰ ثانیه بی‌تعامل هیچ درخواستِ تازه‌ای به /api/funnel نرفت (ریتمِ بازارِ بسته).
+
+**یافتِ باز (هنوز اصلاح نشده):** درِ همان بارِ اول، /api/funnel سه بار زده می‌شود
+(۲۶۳، ۳۲۳، ۳۲۳ میلی‌ثانیه — دو تای دوم هم‌زمان). هر پاسخِ کامل ~۰.۸ تا ۱.۵
+ثانیه کارِ موتور است (۵۸۶۳ ردیف، ۳۶۵۵ غربال). این از قبل همین‌جا بوده و ربطی به
+تغییرِ این دور ندارد، ولی برایِ «ساعت بازار خیلی سریع» باید تک‌درخواست شود.
+
+**راستی‌آزمایی‌نشده:** ریتمِ ۲۰ ثانیه و جابه‌جاییِ دیدنیِ ردیف‌ها با FLIP درِ
+ساعتِ بازِ بازار سنجیده نشده (این دور بیرونِ نشست اجرا شد). شاخۀ «در حال
+محاسبه» فقط درِ jsdom دیده شده — درِ نشستِ بسته صفِ اسکن وجود نداشت و برای
+دیدنش دادهٔ ساختگی یا دست‌کاریِ صف انجام نشد.
+
+
+## 15.22 روبشِ «جدول بیشترین دید، چیزی تکراری نباشد» (§۱۵.۲۱ ادامه)
+
+`_audit/ws10_table_visibility.mts` هر جدولِ هر صفحه را از بیرون می‌خواند و عدد
+می‌دهد: عرضِ جدول نسبت به viewport، سرریزِ افقیِ ظرف، سلول‌هایِ بریده
+(`scrollWidth > clientWidth`)، سرستونِ هم‌نام و ستونِ هم‌محتوا.
+
+**دو باگِ واقعی که همین روبش پیدا کرد:**
+
+۱) پنج ستونِ جدولِ تکنیکال («هفتگی، روزانه، شاخه، شواهد، امتیاز») برایِ همهٔ
+ردیف‌ها '—' بود و روبش آن‌ها را «ستونِ تکراری» می‌زد (۱۰ جفتِ هم‌محتوا). علت:
+`_display` این پنج ستون را از کلیدهایِ `tech_*` ردیفِ تابلو می‌خواند که فقط درِ
+مسیرِ اسکرینر پر می‌شوند؛ خودِ داوری درِ گامِ تکنیکال ساخته شده بود و فقط به
+ستون‌هایش نمی‌رسید (همان داوری درِ ستونِ «دلیل» نوشته شده بود). حالا `_display`
+گامِ تکنیکال را می‌گیرد: از ۳۶۵۵ ردیفِ این گام، ۲۶۲۳ ردیف هفتگیِ
+واقعی دارند و ستونِ تکراری صفر شد. هیچ داوریِ تازه‌ای ساخته نشد — فقط خروجیِ
+همان گام به ستونش رسید.
+
+۲) خانۀ «شواهد» کلیدِ ستونِ بانک را نشان می‌داد:
+«tech_double_bottom + tech_range_break» (۲۱۴ پیکسل درِ ۱۵۰). نگاشتِ
+واژۀ جزوه درِ `features/technical/api/useScreener.ts` بود و غربالگری از آن
+استفاده نمی‌کرد؛ چون importِ cross-feature درِ FSD ممنوع است، نگاشت به
+`shared/lib/ftsSignals.ts` منتقل شد و هر دو مصرف‌کننده (برچسب‌هایِ تکنیکال و
+خانۀ شواهد) از همان یک منبع می‌خوانند. متنِ ستون حالا «کف دوقلو + خروج از
+انباشت» است (۱۶۸ پیکسل) و عرضِ ستون از ۱۴ به ۱۷ رسید (با
+کسرِ «امتیاز» و «علامت» که کوتاه‌ترین ستون‌های همین جدول‌اند).
+
+**آنچه باز مانده و رأیِ مالک را می‌خواهد (با عددِ خودش):**
+
+| جدول | سلول | لازم | موجود |
+| --- | --- | --- | --- |
+| بنیادی (غربالگری) | دلیل | ۳۳۵ | ۲۸۰ |
+| بنیادی در انتظار | دلیل | ۸۳۶ | ۲۸۰ |
+| تکنیکال | وضعیتِ «داده در دسترس نیست» | ۱۱۵ | ۹۸ |
+| تکنیکال در انتظار | شاخۀ توصیفی | ۲۰۰ | ۱۵۲ |
+| بنیادی (تب بنیادی) | خانۀ الف/ب + ظرفِ اسکرول | ۲۰۸ | ۱۶۲، سرریزِ افقی +۴۴px |
+
+هیچ‌کدام با جابه‌جاییِ عرضِ ستون حل نمی‌شوند: متن‌های ۳۳۵ و ۸۳۶
+پیکسلی رویِ یک خط درِ جدولِ ۱۱۹۶ پیکسلیِ هشت‌ستونه نمی‌گنجند. دو راهِ
+روشن هست و انتخابش با مالک است: (الف) ارتفاعِ ردیف متغیر شود و دلیل درِ همان
+سطر بشکند/دو خط بنشیند — که مجازی‌سازیِ ردیف‌ها (`ROW_H` ثابت) باید به
+`measureElement` عوض شود؛ (ب) دلیلِ بلند درِ همان سطر خلاصه بماند و متنِ کامل
+درِ پنلِ نماد باز شود. هیچ‌کدام را به‌زورِ خودم انتخاب نکردم.
+
+**محدودیتِ خودِ روبش:** صفحۀ تابلو (`TapeTable`) و درخت استراتژی جدولِ
+`<table>` نیستند (CSS grid / canvas)، پس درِ این روبش «NOT PAINTED» گزارش
+شدند — یعنی سنسور آن‌ها را ندید، نه اینکه پاک باشند. سنجشِ آن دو درِ دورِ
+بعد با selectorِ خودشان لازم است.
+
+**سبزها:** `dev/funnel_engine_v1.py` ۴۳ بند، `dev/user_watchlist_v1.py` ۱۳ بند،
+`dev/persian_glyph_guard.py` ۴/۴، فرانت ۱۴۳۳ تست و `tsc -b` صفر خطا.
+
+
+### ۱۵.۲۳ پیادۀ جدول‌ها از رُبروشِ §۱۵.۲۲ (همان دور)
+
+| جدول | پیش | پس |
+| --- | --- | --- |
+| بنیادی (تب بنیادی) | سرریزِ افقی +۴۴px و بریدگیِ ۲۰۸ در ۱۶۲ | پاک — بی‌سرریز، بی‌بریدگی |
+| تکنیکال درِ غربالگری (بخشِ در انتظار) | بریدگیِ ۲۰۰ در ۱۵۲ | پاک |
+| تکنیکال درِ غربالگری (بخشِ اصلی) | بریدگیِ وضعیت ۱۱۵ در ۹۸ | فقط ستونِ «دلیل» مانده (۲۴۷ در ۲۳۳) |
+| تابلوخوانی و تحویل | پاک | پاک |
+
+عددِ `min-w-[1240px]` تب بنیادی به ۱۱۲۰ عوض شد: درِ viewportِ ۱۳۶۶ با
+پنلِ نمادِ باز، ظرفِ جدول ۱۱۹۶ پیکسل است و همان ۴۴ پیکسلِ اضافه
+پشتِ لبه می‌رفت. تستِ `layout-responsive.spec.tsx` عددِ خام را پین نکرده بود؛
+پین را به *قید* عوض کردیم — کمینۀ عرض باید از تنگ‌ترین ظرفِ واقعیِ سنجیده‌شده
+کمتر بماند — تا اگر روزی عدد بالا رفت، همان سرریز دوباره تست را بشکند.
+«N/A» دست‌نخورده ماند (واژۀ خودِ جزوۀ ص ۴ است، رأیِ ۱۳)؛ فقط عرض جابه‌جا شد.
+
+ستون‌های قیف هم با عددِ همان روبش تنظیم شدند: شاخه ۱۴→۱۹ (بلندترین
+مقدارش «کف دوقلو / آخرین ساختار حمایت-مقاومت» = ۲۰۰ پیکسل)، داوری
+۹→۱۱ («داده در دسترس نیست» = ۱۱۵ پیکسل) و «دلیل» ۲۶→۲۲.
+
+**تنها باقیماندۀ این روبش، ستونِ «دلیل» است** (۲۴۷، ۳۳۵ و ۸۳۶
+پیکسل متن در ۲۳۳ تا ۲۴۶ پیکسل) — همان رأیِ معوقۀ §۱۵.۲۲: ردیفِ دوخطی
+یا خلاصه‌نویسی با متنِ کامل درِ پنلِ نماد.
+
+
+## 15.24 کشِ قیف و سنسورِ کهنای benchmark (۱۴۰۵-۰۷-۱۷)
+
+**دو کلید، یک خانۀ کش.** `api/funnel.py` تنها یک کلید نگه می‌داشت. صفحۀ مستر
+سه مصرف‌کنندۀ هم‌زمان دارد (کاکپیتِ مستر با presetِ horizon، جدولِ غربالگری با
+presetِ انتخابی، پنلِ نماد با `custom`)، پس دو کلیدِ متناوب هر بار *miss*
+می‌خوردند و موتورِ کامل دوباره اجرا می‌شد — همان‌جا که مالک «درِ ساعتِ بازار
+خیلی سریع» می‌خواهد. حالا دو خانۀ LRU است. سنجشِ زنده با دو presetِ متناوب:
+
+| دور | custom | trend |
+| --- | --- | --- |
+| ۱ (سرد) | ۱۷۱۳۰ms (اولین اجرایِ اجرا) | ۷۵۰ms |
+| ۲ | ۱۱۴۰ms بی‌کش | ۳۷۰ms — `cached_for_ms=۱۸۸۳` |
+| ۳ | ۹۲۰ms — `cached_for_ms=۱۵۴۴` | ۳۹۰ms — `cached_for_ms=۳۲۰۸` |
+
+سقفِ دو خانۀ LRU از حافظه آمد، نه سلیقه: با چهار کلیدِ متفاوت حافظۀ فرایند
+از ۴۰۶ به ۴۰۹ مگابایت رسید و همان‌جا ماند (یعنی واقعاً ته‌رِ LRU
+پاک می‌شود).
+
+**سنسورِ کهنای خودِ ابزار.** `tools/funnel_universe_benchmark.py` «ثابتِ
+no-truncation» را False گزارش می‌کرد و همهٔ گام‌ها را ✗ می‌زد. علت درِ برنامه نبود:
+جمعِ پوششِ هر گام رویِ HTTP دقیقاً ۵۸۶۳ = `universe.joined` است (سنجیده شد:
+tape = ۳۶۵۴ reject + ۱ pass + ۲۲۰۸ not_in_universe و سه گام دیگر
+هم همین). ابزار هنوز واژگانِ پنج‌حالتهٔ پیش از §۱۵.۱۷ را داشت و حالتِ ششم
+(`not_in_universe`) را نمی‌شمرد، پس جمعش ۳۶۵۵ می‌شد. حالا `STATUSES` از
+خودِ `funnel_engine` خوانده می‌شود (تا این دو دوباره از هم جدا نشوند) و هویتِ
+خودِ رأی — جامعۀ تابلو = واجدان + خارج‌شدگان — درِ هر اجرا assert می‌شود. پس از
+اصلاح: `no-truncation: True` و هر پنج سنجه ✓.
+
+**عددِ بامُعاملۀ خودِ موتور** (همان benchmark، بی‌HTTP): سرد ۱۰۷۵ms →
+گرم ۳۷۱ms برایِ کلِ ۵۸۶۳ ردیف، و اوجِ حافظۀ ۳۳-۴۷ مگابایت
+درِ هر اجرا.
+
+
+## 15.25 ردپایِ فیلتر‌به‌فیلتر درِ پنلِ نماد (۱۴۰۵-۰۷-۱۷)
+
+`GET /api/funnel/trace?symbol=` از قبل همان `timeline` را می‌داد که درِ پاسخِ
+فهرست نصفِ حجم را می‌گرفت؛ هیچ مصرف‌کننده‌ای نداشت، پس سایدبار فقط «ایستاده در
+مرحلۀ X» را می‌گفت. حالا درِ صفحۀ «جزئیات بازار» می‌نشیند: هر فیلتر با وضعیت،
+دلیل، و «ورودی N → خروجی M»، به‌علاوە نسخۀ قواعد و زمانِ داده (#12ِ مأموریت:
+هر داوری باید توضیح‌پذیر باشد).
+
+**یک حکم، نه دو تا.** مسیرِ trace بی‌پرسش با `preset=trend` و بی‌`exceptions`
+اجرا می‌شد؛ یعنی اگر همان لحظه جدولِ غربالگری زیرِ `custom` + زنجیرۀ کاربر
+حکم می‌داد، سایدبار می‌توانست چیزِ دیگری بگوید. route حالا `preset`، `chain`،
+`fund_mode` و `exceptions` را از caller می‌گیرد و هوکِ فرانت دقیقاً همان
+`request`ِ `useFtsFunnel` را می‌فرستد. اثرِ دوم: کلیدِ کشِ `_run` یکی است، پس
+ردپا معمولاً به همان پاسخِ آماده می‌خورد — سنجشِ زنده: زمانِ پاسخِ trace
+۰-۱ میلی‌ثانیه در برابرِ ۹۰۰ میلی‌ثانیه برایِ یک اجرایِ کامل.
+
+**سنجشِ زنده** (`_audit/ws12_sidebar_trace.mts`، کلیکِ واقعیِ ردیف → تبِ دوم):
+۸/۸ PASS — شمارِ سطرهایِ رابط با شمارِ `timeline`ِ سرور برابر (۳)، هر سطر
+نقطۀ وضعیتِ خودش را دارد، «نسخۀ قواعد: 555648ebff52 · داده: ۶:۲۲:۴۰» رویِ
+بلوک است، و شمارها با رقمِ فارسی نوشته می‌شوند («ورودی ۳۶۵۵ → خروجی ۳۶۵۵» —
+نسخۀ اولِ کامپوننت رقمِ لاتین می‌داد و همین روبش گرفتش).
+پروندۀ `funnel-trace.spec.tsx` (۴ سنجه) همان قرارداد را درِ jsdom می‌پاید:
+بی‌ردپا ⇒ «ثبت نشده»، نه حکمِ ساختگی.
+
+**گزارشِ دورِ قبل اصلاح می‌شود:** ساعتِ این سیستم خودِ ساعتِ تهران است
+(`time.tzname = ('Iran Standard Time', 'Iran Daylight Time')`، آفست +۳:۳۰)؛
+درِ §۱۵.۲۴ زمانِ بازگشاییِ بازار را اشتباه محاسبه کرده بودم. پس سنجشِ
+«ریتمِ ساعتِ بازار» (§۱۵.۲۱، ws11) از ۰۸:۴۵ِ همان روز به بعد ممکن است و تا
+آن ساعت درِ همین کارتر با کنترلِ منفیِ خودش (بازارِ بسته ⇒ صفر حرکت) سبز مانده.

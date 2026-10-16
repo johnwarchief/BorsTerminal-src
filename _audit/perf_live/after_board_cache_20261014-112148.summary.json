@@ -1,0 +1,95 @@
+{
+  "meta": {
+    "base": "http://127.0.0.1:8025",
+    "pid": null,
+    "tag": "after_board_cache",
+    "branch": "mission/4-axes-2026-10-10",
+    "head": "165ff40",
+    "started_local": "2026-10-14 11:21:48",
+    "ended_local": "2026-10-14 11:23:01",
+    "seconds": 73.311202,
+    "samples": 8,
+    "interval_s": 10.0,
+    "raw_lines": "C:\\Users\\PCMOD\\Desktop\\BorsTerminal\\_audit\\perf_live\\after_board_cache_20261014-112148.jsonl"
+  },
+  "endpoints": {
+    "/api/market": {
+      "n": 8,
+      "p50_ms": 68.3,
+      "p95_ms": 155.1,
+      "max_ms": 155.1,
+      "bytes_p50": 858014,
+      "bytes_max": 858014,
+      "rows_min": null,
+      "rows_max": null,
+      "errors": [],
+      "error_count": 0
+    },
+    "/api/market/delta": {
+      "n": 8,
+      "p50_ms": 14.1,
+      "p95_ms": 21.0,
+      "max_ms": 21.0,
+      "bytes_p50": 49,
+      "bytes_max": 49,
+      "rows_min": 0,
+      "rows_max": 0,
+      "errors": [],
+      "error_count": 0
+    },
+    "/api/market/sync-state": {
+      "n": 8,
+      "p50_ms": 14.6,
+      "p95_ms": 766.7,
+      "max_ms": 766.7,
+      "bytes_p50": 141,
+      "bytes_max": 141,
+      "rows_min": 0,
+      "rows_max": 0,
+      "errors": [],
+      "error_count": 0
+    },
+    "/api/mstat/summary": {
+      "n": 8,
+      "p50_ms": 13.5,
+      "p95_ms": 164.8,
+      "max_ms": 164.8,
+      "bytes_p50": 1339,
+      "bytes_max": 1339,
+      "rows_min": null,
+      "rows_max": null,
+      "errors": [],
+      "error_count": 0
+    },
+    "/api/mstat/phase": {
+      "n": 8,
+      "p50_ms": 17.6,
+      "p95_ms": 28.9,
+      "max_ms": 28.9,
+      "bytes_p50": 657,
+      "bytes_max": 657,
+      "rows_min": 1,
+      "rows_max": 1,
+      "errors": [],
+      "error_count": 0
+    },
+    "/api/mstat/board": {
+      "n": 8,
+      "p50_ms": 11.1,
+      "p95_ms": 1272.9,
+      "max_ms": 1272.9,
+      "bytes_p50": 17809,
+      "bytes_max": 17819,
+      "rows_min": null,
+      "rows_max": null,
+      "errors": [],
+      "error_count": 0
+    }
+  },
+  "process": {
+    "pid": null,
+    "mem_mb_p50": null,
+    "mem_mb_max": null,
+    "mem_samples": 0
+  }
+}

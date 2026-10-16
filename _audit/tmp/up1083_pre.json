@@ -1,0 +1,29 @@
+{
+ "orig_Version.txt": "app_version=1.0.82\npatch_from=1.0.80\ngit_commit=48e1042\nbuilt=2026-10-10 12:19",
+ "orig_exe": {
+  "size": 14935498,
+  "mtime": 1791622122
+ },
+ "orig_bors_config_mtime": null,
+ "copy_Version.txt": "app_version=1.0.82\npatch_from=1.0.80\ngit_commit=48e1042\nbuilt=2026-10-10 12:19",
+ "copy_user_db": {
+  "size": 24576,
+  "mtime": 1791548115
+ },
+ "copy_price_basis": null,
+ "copy_files_top": [
+  ".screener_cache.json",
+  "BorsTerminal_Ultimate.exe",
+  "Version.txt",
+  "_internal",
+  "apply_update.bat",
+  "logs",
+  "market.db.baseline",
+  "market.db.lzma",
+  "market_sync.json",
+  "sync_summary.json",
+  "user.db"
+ ],
+ "orig_tree_sha": "c572f74a8e2da38a",
+ "orig_tree_files": 1520
+}

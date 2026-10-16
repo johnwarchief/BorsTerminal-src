@@ -5,11 +5,26 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { CommandPalette, PALETTE_OPEN_EVENT } from '@app/components/CommandPalette';
 import { useSymbolStore } from '@shared/stores/symbolStore';
 
 const fetchMock = vi.fn();
 vi.stubGlobal('fetch', fetchMock);
+
+// پالت فرمان حالا از فیدِ مشترکِ تابلو (useMarketFeedShared) می‌خواند، پس مثلِ هر
+// مصرف‌کننده‌ای باید زیرِ QueryClientProvider رندر شود — همان چیزی که درِ AppShell
+// هست. بی‌کوئریِ دومِ /api/market دیگر فرستاده نمی‌شود (#M2.2).
+function renderPalette() {
+  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  return render(
+    <QueryClientProvider client={qc}>
+      <MemoryRouter>
+        <CommandPalette />
+      </MemoryRouter>
+    </QueryClientProvider>,
+  );
+}
 
 beforeEach(() => {
   localStorage.clear();
@@ -47,11 +62,7 @@ describe('۲) پالت فرمان سه‌شیار', () => {
       headers: new Headers(),
       json: async () => ({ data: [{ symbol: 'فولاد', name: 'فولاد مبارکه', sector_name: 'فلزات' }] }),
     });
-    render(
-      <MemoryRouter>
-        <CommandPalette />
-      </MemoryRouter>,
-    );
+    renderPalette();
     openPalette();
     await waitFor(() => expect(screen.getByText('صفحه')).toBeInTheDocument());
     expect(screen.getByText('فرمان')).toBeInTheDocument();
@@ -67,11 +78,7 @@ describe('۲) پالت فرمان سه‌شیار', () => {
       headers: new Headers(),
       json: async () => ({ data: [] }),
     });
-    render(
-      <MemoryRouter>
-        <CommandPalette />
-      </MemoryRouter>,
-    );
+    renderPalette();
     openPalette();
     const cmd = await screen.findByText('پاک کردن نمادِ انتخابی');
     fireEvent.click(cmd);
@@ -82,11 +89,7 @@ describe('۲) پالت فرمان سه‌شیار', () => {
   it('pinned در صدر نتایج با برچسبِ «سنجاق» می‌آید حتی پیش از رسیدن فید', async () => {
     fetchMock.mockImplementation(() => new Promise(() => {})); // فید هرگز نمی‌رسد
     useSymbolStore.setState({ pinned: ['فولاد'], recent: [] });
-    render(
-      <MemoryRouter>
-        <CommandPalette />
-      </MemoryRouter>,
-    );
+    renderPalette();
     openPalette();
     await waitFor(() => expect(screen.getByText('فولاد')).toBeInTheDocument());
     expect(screen.getByText('سنجاق')).toBeInTheDocument();

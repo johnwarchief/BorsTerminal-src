@@ -1,0 +1,69 @@
+{
+  "base": "http://127.0.0.1:8002/",
+  "at": "2026-10-14T17:47:53.651Z",
+  "execution_door": {
+    "status": 200,
+    "dryRun": true,
+    "live": false,
+    "adapter": "mock",
+    "kill": "ARMED",
+    "auditDb": "C:\\Users\\PCMOD\\Desktop\\BorsTerminal\\user.db",
+    "blocked": [
+      "D8: کدام سکوی کارگزاری (EasyTrader/MTS یا Online-Plus/Titan)",
+      "D1: آیا PoC روی حساب واقعی مجاز است"
+    ],
+    "recovered": 0
+  },
+  "kill_switch_roundtrip": {
+    "haltCode": 200,
+    "stateHalted": "HALTED",
+    "halted": true,
+    "dispatchWhileHalted": {
+      "code": 200,
+      "status": "error",
+      "err": "HALTED"
+    },
+    "resumeCode": 200,
+    "stateAfter": "ARMED"
+  },
+  "codal_strip": {
+    "present": true,
+    "state": "idle",
+    "stateText": "خطِ کدال بیکار است — کاری درِ صف نیست",
+    "stateTitle": "چرخۀ موفقی ثبت نشده؛ `catchup.never_synced` همین را می‌گوید",
+    "queued": "در صف۰",
+    "failed": "بی‌نتیجه۰",
+    "incomplete": "استخراجِ ناقص۹۲۲",
+    "gap": "بی‌صورتِ مالی۰",
+    "dirty": "نیازمندِ بازشماری۰",
+    "lastSync": "آخرین تازگی: —",
+    "lastSyncTitle": "درِ این بانک هیچ چرخۀ موفقی ثبت نشده (`last_data_update = null`) — صفر نیست، بی‌سابقه است",
+    "latinDigitsInCounters": [],
+    "stripHeightPx": 30
+  },
+  "watchRows": 22,
+  "watch_download": {
+    "taken": true,
+    "reason": "",
+    "name": "دیدهبان-بازار-2026-10-14_21-17.csv",
+    "rows": 29,
+    "bom": true,
+    "sep": false,
+    "metaLines": 7,
+    "dataCount": "22"
+  },
+  "viewports": {
+    "desktop": {
+      "overflowX": 0,
+      "stripVisible": true,
+      "stripHeight": 30
+    },
+    "phone": {
+      "overflowX": 0,
+      "stripVisible": true,
+      "stripHeight": 101
+    }
+  },
+  "consoleErrors": [],
+  "failedRequests": []
+}

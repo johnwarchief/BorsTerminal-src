@@ -83,11 +83,10 @@ function ChartCard({
   );
 }
 
-export function MicroChartsDrawer() {
+/** دو نمودارِ تایم‌لاین — یک پیاده‌سازی، دو مصرف: دراورِ تابلو و صفحۀ «وضعیت بازار» */
+export function TimelineCharts() {
   const { data, isLoading, isError, refetch } = useMarketTimeline();
-  const [open, setOpen] = useState(false);
 
-  /** نقاط تایم‌لاین بک‌اند */
   const backendPoints = useMemo(() => timelinePoints(toSeriesColumns(data?.series)), [data]);
 
   // ثبت ~۳۰ثانیه‌ایِ آخرین اسنپ‌شات در کش محلی (فقط ساعات بازار) و ادغام با بک‌اند
@@ -114,11 +113,7 @@ export function MicroChartsDrawer() {
     };
   }, [points]);
 
-  // تا تیک‌های زنده قطعی لود نشده‌اند، دراور (و دو کادر میان‌خالی) اصلاً رندر نمی‌شود
-  // تا جدول بلافاصله زیر کارت‌های ۴گانهٔ نبض بنشیند. خطا استثناست: سربالاییِ
-  // بی‌پایانِ «لود نشده» با «نمی‌رسد» یکی نیست — بی‌این، خرابیِ تایم‌لاین بی‌صدا می‌ماند.
-  if (isLoading) return null;
-  if (isError) {
+  if (isError && !data) {
     return (
       <div
         data-testid="micro-charts-error"
@@ -129,19 +124,24 @@ export function MicroChartsDrawer() {
       </div>
     );
   }
-  if (!data) return null;
+  if (!data) {
+    return isLoading ? (
+      <div data-testid="micro-charts-loading" className="px-2 py-3 text-2xs text-text-muted">
+        در حالِ خواندنِ تایم‌لاین…
+      </div>
+    ) : null;
+  }
 
   return (
-    <div className="glass-panel panel-in flex flex-col gap-2 rounded-2xl p-3">
-      <CollapseToggle
-        open={open}
-        onToggle={() => setOpen((v) => !v)}
-        testId="micro-charts-toggle"
-        label="نمودارهای جریان سفارش‌ها و جو بازار"
-        openLabel="باز کردنِ نمودارها"
-      />
-      <CollapseBody open={open}>
-        <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+    <>
+      {isError ? (
+        <span className="flex items-center justify-between gap-2 text-2xs text-accent-yellow"
+              data-testid="micro-charts-degraded">
+          <span>به‌روزرسانیِ تایم‌لاین ناموفق بود؛ نمودار از آخرینِ پاسخِ موفق است</span>
+          <RetryAction onRetry={() => void refetch()} testId="micro-charts-degraded-retry" />
+        </span>
+      ) : null}
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
             <ChartCard
               testId="micro-orderbook"
               title="ارزش سفارش های خرید و فروش (سهام، حق تقدم و ص.سهامی)"
@@ -198,7 +198,33 @@ export function MicroChartsDrawer() {
               }
             />
         </div>
-        {data.note ? <p className="mt-1 text-2xs text-text-muted">{data.note}</p> : null}
+      {data.note ? <p className="mt-1 text-2xs text-text-muted">{data.note}</p> : null}
+    </>
+  );
+}
+
+/** همان نمودارها، پشتِ یک دراورِ تاشو در صفحۀ تابلو */
+export function MicroChartsDrawer() {
+  const { data, isLoading, isError } = useMarketTimeline();
+  const [open, setOpen] = useState(false);
+
+  // تا تیک‌های زنده قطعی لود نشده‌اند، دراور (و دو کادر میان‌خالی) اصلاً رندر نمی‌شود
+  // تا جدول بلافاصله زیر کارت‌های ۴گانه نبض بنشیند. خطا استثناست: سربالاییِ
+  // بی‌پایانِ «لود نشده» با «نمی‌رسد» یکی نیست — بی‌این، خرابیِ تایم‌لاین بی‌صدا می‌ماند.
+  if (isLoading && !data) return null;
+  if (isError && !data) return <TimelineCharts />;
+
+  return (
+    <div className="glass-panel panel-in flex flex-col gap-2 rounded-2xl p-3">
+      <CollapseToggle
+        open={open}
+        onToggle={() => setOpen((v) => !v)}
+        testId="micro-charts-toggle"
+        label="نمودارهای جریان سفارش‌ها و جو بازار"
+        openLabel="باز کردنِ نمودارها"
+      />
+      <CollapseBody open={open}>
+        <TimelineCharts />
       </CollapseBody>
     </div>
   );

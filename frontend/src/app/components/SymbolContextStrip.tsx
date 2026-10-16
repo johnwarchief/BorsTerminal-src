@@ -6,6 +6,7 @@ import { toFaDigits, fmtPct, fmtInt } from '@shared/lib/fmt';
 import { Badge } from '@shared/components/ui/badge';
 import { Button } from '@shared/components/ui/button';
 import { LiveNumber } from '@shared/components/ui/live-number';
+import { ClientShareInline } from '@shared/components/ClientSharePct';
 
 export function SymbolContextStrip() {
   const symbol = useSymbolStore((s) => s.symbol);
@@ -32,7 +33,7 @@ export function SymbolContextStrip() {
   const routes = [
     { id: 'technical', label: 'تکنیکال', path: `/technical/${encodeURIComponent(symbol)}` },
     { id: 'fundamental', label: 'بنیادی', path: `/fundamental/${encodeURIComponent(symbol)}` },
-    { id: 'master', label: 'مستر FTS', path: `/master/${encodeURIComponent(symbol)}` },
+    { id: 'master', label: 'استراتژی FTS', path: `/master/${encodeURIComponent(symbol)}` },
     { id: 'strategy-tree', label: 'درخت FTS', path: `/strategy-tree/${encodeURIComponent(symbol)}` },
     { id: 'market', label: 'تابلو', path: '/market' },
   ];
@@ -41,7 +42,7 @@ export function SymbolContextStrip() {
     <div
       role="region"
       aria-label={`اطلاعات نماد ${symbol}`}
-      className="sticky top-9 z-30 flex min-h-[38px] w-full flex-wrap items-center justify-between gap-2 border-b border-border-c/70 bg-bg-secondary/95 px-3 py-1 text-xs backdrop-blur-md shadow-xs transition-all duration-150"
+      className="symbol-strip-bar sticky top-9 z-30 flex min-h-[38px] w-full flex-wrap items-center justify-between gap-2 border-b border-border-c/70 bg-bg-secondary/95 px-3 py-1 text-xs backdrop-blur-md shadow-xs transition-all duration-150"
     >
       {/* سمت راست (شروع): شناسه و مشخصات نماد */}
       <div className="flex flex-wrap items-center gap-2">
@@ -149,6 +150,19 @@ export function SymbolContextStrip() {
             />
           </div>
         ) : null}
+
+        {/* بند ۲ مأموریت: سهمِ حقیقی/حقوقی از ارزشِ خرید و فروش، همان عددِ
+            بک‌اند (`client_split.py`) از ردیفِ خودِ تابلو — کنارِ نسبتِ
+            خریدار/فروشنده، درِ نوارِزمینۀ نماد که روی صفحۀ بنیادی هم می‌آید.
+            «ح/حقوقی» نیست: برچسبِ کامل درِ title نشسته است. */}
+        {rawRow ? (
+          <div className="hidden items-baseline gap-1.5 sm:flex" data-testid="strip-client-share">
+            <span className="text-text-muted text-3xs font-sans">سهمِ حقیقی از ارزش:</span>
+            <ClientShareInline row={rawRow} side="buy" testId="strip-client-share-buy" />
+            <span className="text-text-muted text-3xs">/</span>
+            <ClientShareInline row={rawRow} side="sell" testId="strip-client-share-sell" />
+          </div>
+        ) : null}
       </div>
 
       {/* سمت چپ (پایان): دکمه‌های ناوبری سریع و بستن نماد */}
@@ -173,8 +187,8 @@ export function SymbolContextStrip() {
         <button
           type="button"
           onClick={clearSymbol}
-          title="بستن کانتکست نماد"
-          aria-label="بستن کانتکست نماد"
+          title="بستن نوار اطلاعات نماد"
+          aria-label="بستن نوار اطلاعات نماد"
           className="rounded-md border border-border-c/60 p-1 text-2xs text-text-muted transition-colors hover:border-accent-red/50 hover:bg-accent-red/10 hover:text-accent-red"
         >
           ✕

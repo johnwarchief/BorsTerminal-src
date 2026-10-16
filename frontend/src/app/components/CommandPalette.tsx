@@ -2,8 +2,8 @@
 // الگوی Raycast / Bloomberg / Linear: دسترسی سریع به نمادها، صفحات، و فرمان‌های اصلی
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
-import { http } from '@shared/api/http';
-import { MarketFeedSchema, type MarketFeed } from '@shared/types/marketRow';
+import { useMarketFeedShared } from '@shared/api/marketFeed';
+import type { MarketFeed } from '@shared/types/marketRow';
 import { useSymbolStore } from '@shared/stores/symbolStore';
 import { useUiStore } from '@shared/stores/uiStore';
 import { toFaDigits } from '@shared/lib/fmt';
@@ -15,7 +15,7 @@ import { Badge } from '@shared/components/ui/badge';
 type Dest = 'master' | 'technical' | 'fundamental' | 'strategy-tree' | 'market';
 
 const DESTS: { id: Dest; label: string }[] = [
-  { id: 'master', label: 'مستر FTS' },
+  { id: 'master', label: 'استراتژی FTS' },
   { id: 'technical', label: 'تکنیکال' },
   { id: 'fundamental', label: 'بنیادی' },
   { id: 'strategy-tree', label: 'درخت FTS' },
@@ -23,15 +23,23 @@ const DESTS: { id: Dest; label: string }[] = [
 ];
 
 const PAGES: { path: string; label: string; hint: string }[] = [
-  { path: '/market', label: 'تابلوخوانی / بازار', hint: 'تب' },
+  // صفحۀ نخستِ برنامه «استراتژی FTS» است، پس درِ پالت هم اول می‌آید.
+  { path: '/master', label: 'استراتژی FTS', hint: 'تب' },
+  { path: '/market-status', label: 'وضعیت بازار', hint: 'تب' },
+  { path: '/market', label: 'تابلوخوانی', hint: 'تب' },
   { path: '/technical', label: 'تحلیل تکنیکال', hint: 'تب' },
   { path: '/fundamental', label: 'تحلیل بنیادی', hint: 'تب' },
-  { path: '/master', label: 'استراتژی FTS', hint: 'تب' },
   { path: '/strategy-tree', label: 'درخت استراتژی', hint: 'تب' },
   { path: '/portfolio', label: 'مدیریت پرتفوی', hint: 'تب' },
+  { path: '/watch', label: 'دیده‌بان بازار', hint: 'تب' },
 ];
 
 type Row = { symbol: string; name: string; sector: string };
+
+// انتخابگرِ پایدار (مرجع ثابت) — نقشه بردنِ کل تابلو فقط وقتی داده عوض می‌شود
+// اجرا می‌شود، نه هر رندر؛ وگرنه mappingِ ۵٬۸۰۰ ردیف درِ هر کلیدِ کیبورد سوخت می‌شد.
+const selectPaletteRows = (f: MarketFeed): Row[] =>
+  (f.data ?? []).filter((r) => r.symbol).map((r) => ({ symbol: r.symbol, name: r.name ?? '', sector: r.sector_name ?? '' }));
 
 type Item =
   | { kind: 'symbol'; id: string; row: Row; recent?: boolean; pinned?: boolean }
@@ -58,34 +66,18 @@ export function CommandPalette() {
   const [query, setQuery] = useState('');
   const [dest, setDest] = useState<Dest>('master');
   const [cursor, setCursor] = useState(0);
-  const [rows, setRows] = useState<Row[] | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(false);
+  // جست‌وجو از همان فیدِ مشترکِ تابلو می‌خواند (select فقط) — نه یکِ fetchِ دومِ
+  // /api/market که snapshotِ جدا و کهنه نگه می‌داشت (#M2.2). کلیدِ یکی ⇒ درخواستِ یکی.
+  const feed = useMarketFeedShared(selectPaletteRows);
+  const rows = feed.data ?? null;
+  const loading = feed.isPending;
+  const error = !!feed.error && rows === null;
   const inputRef = useRef<HTMLInputElement>(null);
-  const loadedOnce = useRef(false);
 
   const openPalette = useCallback(() => {
     setOpen(true);
     setQuery('');
     setCursor(0);
-    setError(false);
-    if (!loadedOnce.current) {
-      loadedOnce.current = true;
-      setLoading(true);
-      http<MarketFeed>('/api/market', { schema: MarketFeedSchema })
-        .then((feed) =>
-          setRows(
-            feed.data
-              .filter((r) => r.symbol)
-              .map((r) => ({ symbol: r.symbol, name: r.name ?? '', sector: r.sector_name ?? '' })),
-          ),
-        )
-        .catch(() => {
-          setError(true);
-          loadedOnce.current = false;
-        })
-        .finally(() => setLoading(false));
-    }
   }, []);
 
   useEffect(() => {
@@ -130,7 +122,7 @@ export function CommandPalette() {
       {
         kind: 'command',
         id: 'cmd-funnel',
-        label: 'باز کردن قیفِ غربالگری',
+        label: 'باز کردن غربالگری FTS',
         hint: 'دستور',
         run: () => {
           clearSymbol();
@@ -253,7 +245,7 @@ export function CommandPalette() {
             }}
             placeholder="جستجوی نماد، صفحه یا فرمان... (↑↓ جابه‌جایی، Enter انتخاب)"
             className="flex-1 bg-transparent text-sm text-text-primary outline-none placeholder:text-text-muted"
-            aria-label="جستجو در نمادها، صفحه ها و فرمان ها"
+            aria-label="جست‌وجوی نمادها، صفحه‌ها و فرمان‌ها"
           />
           <kbd className="rounded-md border border-border-c bg-bg-card/70 px-1.5 py-0.5 text-2xs text-text-muted">
             Esc
@@ -262,7 +254,7 @@ export function CommandPalette() {
 
         {/* انتخاب مقصد باز کردن نماد */}
         <div className="flex flex-wrap items-center gap-2 border-b border-border-c/40 bg-bg-card/30 px-4 py-2">
-          <span className="text-2xs font-medium text-text-muted">مقصد بازگشایی:</span>
+          <span className="text-2xs font-medium text-text-muted">باز کردن نماد در:</span>
           {DESTS.map((d) => (
             <button
               key={d.id}
@@ -292,7 +284,7 @@ export function CommandPalette() {
 
           {error && !loading && (
             <div className="p-4 text-center text-xs text-accent-red">
-              خطا در دریافت برخط داده‌ها — نتایج محلی و فرمان‌ها در دسترس هستند.
+              دریافت داده‌های برخط ناموفق بود؛ نتایج محلی و فرمان‌ها همچنان در دسترس‌اند.
             </div>
           )}
 

@@ -4,7 +4,7 @@
 // سنجیده نشده بود. قاعدۀ مخزن (dev/weekly_veto_guard.py، dev/assembly_veto_v1064.py):
 // بی‌داده وتو نیست.
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useSymbolStore } from '@shared/stores/symbolStore';
@@ -43,10 +43,15 @@ function sig(agent: AgentSignal['agentId'], patch: Partial<AgentSignal> = {}): A
 const isoIn = (days: number) => new Date(Date.now() + days * 86_400_000).toISOString().slice(0, 10);
 
 /** پاسخِ تقویم: رویدادِ مجمعِ خواستۀ آزمون */
-function calendarWith(cat: string, days = 3) {
+function calendarWith(cat: string, days = 3, source: string = 'title') {
   fetchMock.mockImplementation((url: string) => {
     const body = String(url).includes('/api/calendar/upcoming')
-      ? { status: 'ok', days: 14, count: 1, items: [{ symbol: SYM, date: isoIn(days), cat, title: 'آگهی دعوت به مجمع' }] }
+      ? { status: 'ok', days: 14, count: 1, items: [{
+          symbol: SYM, date: isoIn(days), cat,
+          // «مورخ …» در عنوان ⇒ منشأ title (§۲۴ِ رأی). بی‌این میدان واکشی‌شده
+          // وتو نمی‌سازد؛ سنجه‌هایِ زیر همین را می‌سنجند.
+          title: 'آگهی دعوت به مجمع مورخ ۱۴۰۵/۰۷/۲۰',
+          date_source: source }] }
       : { status: 'ok', data: [], items: [], decisions: [] };
     return Promise.resolve({ ok: true, json: () => Promise.resolve(body) } as unknown as Response);
   });
@@ -76,12 +81,24 @@ afterEach(() => {
 });
 
 describe('سایدبار چپ: ردِ قطعی با «هنوز سنجیده نشده» یکی نمی‌شود', () => {
-  it('فقط سیگنالِ تابلو (بنیادی هرگز باز نشده) ⇒ «در انتظارِ سنجش»، نه «وتو»', () => {
+  // رأیِ مالک (1405-07-20): «در انتظار سنجش» درِ سایدبار ممنوع است و gauge با
+  // حالتِ veto برایِ درِ بسته حفظ می‌شود. پس «سنجیده‌نشده» دیگر با «رد» یکی
+  // نیست، ولی با «در حال محاسبه» هم یکی نیست: برچسبِ صریحِ «مسدود در …».
+  it('فقط سیگنالِ تابلو (گیتِ بنیادی باز نشده) ⇒ «مسدود در بنیادی»، نه «در انتظارِ سنجش»', () => {
     useSignalStore.getState().publishSignal(sig('tape'));
     renderInspector();
-    expect(screen.queryByText('وتو'), 'نباید واژۀ وتو روی بی‌داده بیاید').toBeNull();
-    expect(screen.getByText('در انتظارِ سنجش')).toBeInTheDocument();
-    expect(screen.getByTestId('inspector-veto-why').textContent).toBe('بنیادی هنوز سنجیده نشده');
+    expect(screen.getByText('مسدود در بنیادی')).toBeInTheDocument();
+    expect(screen.queryByText('در انتظارِ سنجش')).toBeNull();
+    expect(screen.getByTestId('inspector-veto-why').textContent)
+      .toContain('گیتِ بنیادیِ این نماد باز نیست');
+  });
+
+  it('بی‌هیچ داوری‌ای (نه گیتِ بسته، نه وتویِ واقعی) ⇒ گیج «وتو» نیست', () => {
+    // همان قاعدۀ eabe829 که باید زنده بماند: بی‌داده وتو نیست. این حالت
+    // «درِ بسته» ندارد، پس گیج حق ندارد قرمزِ وتو بگوید.
+    renderInspector();
+    expect(screen.queryByText('وتو'), 'بی‌هیچ حکمِ بستۀ واقعی نباید وتو بیاید').toBeNull();
+    expect(screen.queryByText('ورود متوقف')).toBeNull();
   });
 
   it('مجمعِ قطعیِ سه روز دیگر ⇒ وتو + همان برچسبی که جدول می‌دهد', async () => {
@@ -89,16 +106,33 @@ describe('سایدبار چپ: ردِ قطعی با «هنوز سنجیده نش
     useSignalStore.getState().publishSignal(sig('tape'));
     renderInspector();
     expect(await screen.findByText('وتو')).toBeInTheDocument();
-    expect(screen.getByText('ورود متوقف')).toBeInTheDocument();
+    // وتویِ مجمع از درخواستِ ناهمگامِ تقویم می‌آید؛ درِ محیطِ ماک به‌تاخیرِ یک
+    // رندر می‌نشیند، پس منتظرِ همان بج می‌نشینیم (نه queryBy).
+    expect(await screen.findByText('ورود متوقف')).toBeInTheDocument();
     expect(screen.getByTestId('inspector-veto-why').textContent).toContain('مجمع');
+  });
+
+  // §۲۴ِ رأی درِ خودِ سایدبار: عددی که از انتشارِ اطلاعیه آمده تاریخِ مجمع نیست.
+  // بک‌اند این را درِ `dev/test_calendar_v92.py` می‌پاید؛ اینجا مصرف‌کنندۀ
+  // فرانتیِ همان میدان سنجیده می‌شود، چون سایدبار رأیِ دومِ خودش را دارد.
+  it('مجمعِ بی‌تاریخِ جلسه در عنوان ⇒ سایدبار وتو نمی‌کند، «در انتظار» هم نه — برچسبِ اطلاعیه', () => {
+    calendarWith('assembly', 3, 'publication_fallback');
+    useSignalStore.getState().publishSignal(sig('fundamental'));
+    useSignalStore.getState().publishSignal(sig('technical'));
+    useSignalStore.getState().publishSignal(sig('tape'));
+    renderInspector();
+    const why = screen.getByTestId('inspector-veto-why').textContent ?? '';
+    expect(why).not.toContain('مجمع');
   });
 
   it('لغو/تعویقِ مجمع وتو نمی‌سازد (همان قاعدۀ بک‌اند: تاریخِ نامعلوم)', () => {
     calendarWith('assemblyChange');
     useSignalStore.getState().publishSignal(sig('tape'));
     renderInspector();
-    expect(screen.queryByText('وتو')).toBeNull();
-    expect(screen.getByText('در انتظارِ سنجش')).toBeInTheDocument();
+    // لغو/تعویق وتویِ مجمع نمی‌سازد؛ اگر قرمزی رویِ صفحه هست، فقط از گیتِ
+    // بسته‌یِ خودِ قیف است، نه از این اطلاعیه.
+    expect(screen.queryByText('ورود متوقف'), 'لغوِ مجمع نباید وتویِ مجمع بسازد').toBeNull();
+    expect(screen.getByTestId('inspector-veto-why').textContent).not.toContain('مجمع');
   });
 
   it('وتوی هفتگی از ردیفِ اسکرینرِ کش‌شده می‌آید — درخواستِ تازه‌ای ساخته نمی‌شود', () => {
@@ -120,6 +154,9 @@ describe('سایدبار چپ: ردِ قطعی با «هنوز سنجیده نش
   it('سیگنالِ پرتفو بی‌payload پنل را نمی‌شکند', () => {
     useSignalStore.getState().publishSignal(sig('portfolio', { payload: null }));
     expect(() => renderInspector()).not.toThrow();
+    // §۱۵.۲۰: چراغِ سبد به صفحۀ «جزئیات بازار» رفته؛ ادعا همان است، فقط یک
+    // کلیک جلوتر.
+    fireEvent.click(screen.getByTestId('inspector-tab-detail'));
     expect(screen.getByText('پرتفوی')).toBeInTheDocument();
   });
 });

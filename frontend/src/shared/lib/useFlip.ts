@@ -10,8 +10,15 @@
 //
 // three things this guards: «یک نماد، یک حرکت» (کلیدِ گره نه ایندکس)،
 // بی‌‌انیمیشنِ ردیف‌هایِ تازه (cross-fade نمی‌کنیم، فقط می‌نشینند)، و احترامِ
-// کاملِ به three escape hatches: prefers-reduced-motion، html[data-perf=low]،
-// html[data-idle='1'] — همان سه‌دربی که درِ index.css برایِ فلاش هم رعایت شده.
+// به two escape hatches: prefers-reduced-motion و html[data-perf=low].
+//
+// چرا data-idle اینجا نیست (ریشۀِ رگرسیونِ حرکتِ زنده در v1.0.81):
+// قیاس با فلاش و جریانِ درخت. آن‌ها CSS بودند و با `:not([data-hidden])` از
+// دروازۀ بی‌کاری مستثنی شدند (#198)، چون تماشای زندۀ قیف ذاتاً بی‌تعامل است و
+// بی‌حرکتیِ موس نباید حرکت را بکُشد. FLIP یک انیمیشنِ یک‌بارمصرفِ ۴۲۰ms است که
+// خودش لغو می‌شود و هر vsync را بیدار نگه نمی‌دارد — مصرفِ GPUی که دروازۀ بی‌کاری
+// برایش ساخته شد را ندارد. پس اینجا فقط پنهان‌بودنِ واقعیِ پنجره (data-hidden)
+// حرکت را می‌خواباند، نه بی‌کاریِ ناشی از دست‌روی‌موس-نبودن.
 import { useLayoutEffect, useRef } from 'react';
 
 export type FlipOptions = {
@@ -34,7 +41,9 @@ function motionAllowed(): boolean {
   if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return false;
   const root = document.documentElement;
   if (root.dataset.perf === 'low') return false;
-  if (root.dataset.idle === '1') return false;
+  // پنهان‌بودنِ واقعیِ پنجره (مینیمایز/تبِ مخفی) حرکت را می‌خواباند؛
+  // بی‌حرکتیِ موس (data-idle) نه — تماشای زندۀ قیف همان حالتِ بی‌دست است.
+  if (root.dataset.hidden === '1') return false;
   return typeof Element.prototype.animate === 'function';
 }
 

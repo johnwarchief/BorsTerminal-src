@@ -47,7 +47,7 @@ describe('وضعیت FTS', () => {
     // بی‌وضعیتِ موتور هیچ متنِ ثابتی ساخته نمی‌شود
     const none = resolveFtsStatusView({ payload: {} } as never, false);
     expect(none.code).toBe('insufficient');
-    expect(none.text).toContain('وضعیتِ عمومی');
+    expect(none.text).toContain('نتیجهٔ تحلیل FTS');
   });
 
   it('قانون عبور گیت: بدون حذف و امتیاز دست کم 3', () => {

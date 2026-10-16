@@ -79,11 +79,11 @@ export function engineFtsLayers(i: FtsLayerInput): ChartOverlaySpec[] {
     return v == null ? null : i.toDisp(v);
   };
 
-  // ۱) کمربندهای فیبو -- عددِ سرور، جهتِ سرور (موجِ نزولی از کف به بالا)
+  // ۱) زون‌های فیبو -- عددِ سرور، جهتِ سرور (موجِ نزولی از کف به بالا)
   const fib = fts.fib;
   for (const [key, edge, fill, label] of [
-    ['zone_33_40', FTS_OVERLAY_COLORS.fibStep1Edge, FTS_OVERLAY_COLORS.fibStep1, 'پله اول ۳۳-۴۰٪'],
-    ['zone_618_70', FTS_OVERLAY_COLORS.fibStep2Edge, FTS_OVERLAY_COLORS.fibStep2, 'کمربند طلایی ۶۱.۸-۷۰٪'],
+    ['zone_33_40', FTS_OVERLAY_COLORS.fibStep1Edge, FTS_OVERLAY_COLORS.fibStep1, 'زون اصلاح ۳۳-۴۰٪'],
+    ['zone_618_70', FTS_OVERLAY_COLORS.fibStep2Edge, FTS_OVERLAY_COLORS.fibStep2, 'زون طلایی ۶۱.۸-۷۰٪'],
   ] as const) {
     const z = fib?.[key];
     const lo = disp(z?.lo);

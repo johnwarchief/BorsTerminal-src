@@ -655,14 +655,27 @@ def save_monthly(conn, L, vals, period_end):
 
 
 def save_annual(conn, L, vals, meta, unit):
-    conn.execute("INSERT OR REPLACE INTO financial_statements VALUES ("
-                 + ",".join("?" * (8 + len(cf.FS_KEYS) + 3)) + ")",
-                 (int(L["TracingNo"]), (L.get("Symbol") or "").strip(),
-                  (L.get("CompanyName") or "").strip(), (L.get("Title") or "").strip(),
-                  "Financial Statements", meta.get("period"), meta.get("end"),
-                  (L.get("PublishDateTime") or "").strip())
-                 + tuple(vals.get(k) for k in cf.FS_KEYS)
-                 + (unit, letter_url(L.get("Url")), now_str()))
+    """درجِ صورتِ مالی با **نامِ ستون** (`cf.FS_UPSERT`)، نه ترتیبِ موقعیتی.
+
+    پیش‌تر `INSERT OR REPLACE … VALUES (?,…×۲۱)` بود؛ جدولِ امروز ۲۶ ستون دارد
+    (چهار ستونِ مشتقِ v2.2 در انتها می‌نشینند)، پس هر سالانه با
+    `OperationalError: … has 26 columns but 21 values` رد می‌شد و آن خطا درِ
+    `except`ِ فراخوان به شکل «استخراج ناموفق» چاپ می‌شد ⇒ `--mode full` از روزِ
+    افزودنِ ستون‌ها تا امروز هیچ ردیفِ سالانه‌ای ننوشته است.
+    """
+    title = (L.get("Title") or "").strip()
+    pe, _src = CP.derive(meta.get("end"), title)
+    audited, consol, year, unit_norm = cf.fs_derived(
+        title, pe, unit, meta.get("is_consolidated"))
+    row = {"tracing_no": int(L["TracingNo"]), "symbol": (L.get("Symbol") or "").strip(),
+           "company_name": (L.get("CompanyName") or "").strip(), "title": title,
+           "report_kind": "Financial Statements", "period_months": meta.get("period"),
+           "period_end": pe, "publish_date": (L.get("PublishDateTime") or "").strip(),
+           "unit": unit, "url": letter_url(L.get("Url")), "fetched_at": now_str(),
+           "is_audited": audited, "is_consolidated": consol, "fiscal_year": year,
+           "unit_norm": unit_norm}
+    row.update({k: vals.get(k) for k in cf.FS_KEYS})
+    conn.execute(cf.FS_UPSERT, tuple(row[c] for c in cf.FS_COLS))
 
 
 # ─────────────────────── واکشی یک نماد ─────────────────────── #
@@ -734,7 +747,11 @@ def fetch_symbol(session, conn, sym, mode, rotate=False, long_cycle=False,
                     vals, meta, unit = cf.scrape_report(session, url)
                     if vals.get("revenue") is None:
                         continue
-                    pe = (meta or {}).get("end")
+                    # مقایسه باید با همان نوشتارِ ذخیره‌شده باشد: `fs_pe` از
+                    # ستونِ canonical می‌آید، پس `meta['end']` خام هم canonical
+                    # می‌شود — وگرنه یک دورۀ غیرcanonical هر اجرا را دوباره
+                    # scrape می‌طلب (۱ تا ۷ درخواست HTTP به ازای هر تکرار).
+                    pe, _ps = CP.derive((meta or {}).get("end"), title)
                     if pe and pe in fs_pe:
                         STATS["skipped_known"] += 1
                         continue

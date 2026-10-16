@@ -1,0 +1,760 @@
+# -*- coding: utf-8 -*-
+"""dev/funnel_engine_v1.py — گاردِ داورِ canonicalِ قیف (۳۸ بندِ مأموریت)
+
+همۀ «انتظار»ها بیرونِ موتور و با دستِ خودِ این فایل نوشته شده‌اند: ردیف‌هایِ
+ساختگیِ مشخص می‌سازم و عددِ درست را از قبل می‌دانم. اگر موتور انتظار را عوض
+کند، این گارد قرمز می‌شود — نه سبزِ دروغین.
+
+اجرا:  python dev/funnel_engine_v1.py
+"""
+from __future__ import annotations
+
+import os
+import sys
+
+REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, REPO)
+
+import funnel_engine as FE  # noqa: E402
+import funnel_registry as REG  # noqa: E402
+
+FAILED: list[str] = []
+
+
+def ck(cond: bool, msg: str) -> None:
+    print(("  ok   " if cond else "  FAIL ") + msg)
+    if not cond:
+        FAILED.append(msg)
+
+
+def board(sym: str, **flags) -> dict:
+    r: dict = {"symbol": sym, "name": sym}
+    for f in REG.filter_ids():
+        r[f] = flags.get(f, False)
+    return r
+
+
+def screen(sym: str, **over) -> dict:
+    r: dict = {
+        "symbol": sym, "score": 0, "primary_score": 0, "i1_pass": None, "i2_pass": None,
+        "i3_pass": None, "i4_pass": None, "i5_pass": None, "tech_trend_w": None,
+        "tech_trend_d": None, "tech_matrix_decision": None, "assembly_veto": False,
+    }
+    r.update(over)
+    return r
+
+
+UP = dict(tech_trend_w="up", tech_trend_d="up", tech_matrix_decision="PERMITTED")
+W_DOWN = dict(tech_trend_w="down", tech_trend_d="up", tech_matrix_decision="REJECT")
+W_RANGE = dict(tech_trend_w="range", tech_trend_d="up", tech_matrix_decision="REJECT")
+OK_FUND = dict(i1_pass=1, i2_pass=1, i3_pass=1, i4_pass=1, i5_pass=1, score=5, primary_score=3)
+
+
+# ── Custom: اشتراکِ ترتیبی ────────────────────────────────────────────────
+B = [board("الف", f_susp=True, f_noqteh=True), board("ب", f_susp=True, f_noqteh=False),
+     board("پ", f_susp=False, f_noqteh=True), board("ت", f_susp=False, f_noqteh=False)]
+S = [screen("الف", **UP, **OK_FUND), screen("ب", **UP, **OK_FUND),
+     screen("پ", **UP, **OK_FUND), screen("ت", **UP, **OK_FUND)]
+
+o = FE.evaluate(B, S, preset="custom", custom_chain=["f_susp", "f_noqteh"])
+t1, t2 = o["stages"]["tape"]["steps"][0], o["stages"]["tape"]["steps"][1]
+ck(t1["input_count"] == 4 and t1["matched_count"] == 2 and t1["removed_count"] == 2,
+   "۱) F1 رویِ جامعۀ کامل: ۴ → ۲ (حجم مشکوک)")
+ck(t2["input_count"] == 2 and t2["matched_count"] == 1,
+   "۱) F2 فقط رویِ بازماندۀ F1: ۲ → ۱ (نقطه‌زنی)")
+ck([e["symbol"] for e in o["handover"]] == ["الف"], "۱) خروجیِ نهایی فقط «الف» است")
+
+o2 = FE.evaluate(B, S, preset="custom", custom_chain=["f_noqteh", "f_susp"])
+s2 = o2["stages"]["tape"]["steps"]
+ck([s["filter_id"] for s in s2] == ["f_noqteh", "f_susp"], "۲) ترتیبِ زنجیره عیناً ثبت می‌شود")
+ck(s2[0]["input_count"] == 4 and s2[0]["matched_count"] == 2 and s2[1]["input_count"] == 2,
+   "۲) شمارشِ مرحلهٔ دوم به ترتیبِ تازه بسته است، نه به ترتیبِ قبلی")
+
+o3 = FE.evaluate(B, S, preset="custom", custom_chain=["f_susp", "f_jet"])
+ck(o3["stages"]["tape"]["steps"][1]["matched_count"] == 0,
+   "۳) OR نشت نکرده: «جت» هیچ‌کدام از حجم‌مشکوک‌ها را رد می‌کند و مجموع تهی می‌شود")
+ck(len(o3["handover"]) == 0, "۳) با منطقِ OR این تست باید قرمز شود (۲ نماد می‌آمد)")
+
+ck(set(REG.filter_ids()) == {"f_clock", "f_susp", "f_jet", "f_roobi", "f_noqteh",
+                             "f_smart", "f_legal"},
+   "۴) رجیستری هر هفت فیلترِ docs/*.txt را بیرون می‌گذارد")
+o4 = FE.evaluate(B, S, preset="custom", custom_chain=["f_smart"])
+ck(o4["stages"]["tape"]["steps"][0]["label"] == "ورود پول هوشمند",
+   "۴) فیلترِ پولِ هوشمند از چیپِ تابلو به زنجیرۀ قیف رسیده")
+
+# ── ۴ب) اشتراک / اجتماع — رأیِ مالک ۱۴۰۵-۰۷-۲۰ ────────────────────────────
+# چیپ‌هایِ خودِ تابلو غربالگری را می‌سازند و یک کلید روشن/خاموش مشخص می‌کند
+# نماد باید **همۀ** انتخاب‌ها را داشته باشد یا **کم‌از‌یکی** را.
+ou = FE.evaluate(B, S, preset="custom", custom_chain=["f_susp", "f_noqteh"],
+                 tape_logic="or")
+su = ou["stages"]["tape"]["steps"]
+ck(ou.get("tape_logic") == "or" and ou["stages"]["tape"].get("logic") == "or",
+   f"۴ب) منطقِ اجتماع درِ پاسخ مهر می‌شود (رابط حدس نمی‌زند) — {ou.get('tape_logic')}")
+ck(all(s["input_count"] == 4 for s in su),
+   f"۴ب) درِ اجتماع هر فیلتر رویِ کلِ جامعۀ ورودی شمرده می‌شود، نه بازماندۀ فیلترِ دیگر — "
+   f"{[s['input_count'] for s in su]}")
+ck(su[0]["matched_count"] == 2 and su[1]["matched_count"] == 2,
+   f"۴ب) شمارشِ هر دو فیلتر درست است (حجم‌مشکوک ۲، نقطه‌زنی ۲) — "
+   f"{[s['matched_count'] for s in su]}")
+ck(sorted(e["symbol"] for e in ou["handover"]) == ["الف", "ب", "پ"],
+   "۴ب) اجتماع: هر سه نمادی که کم‌از‌یک نشانه دارند عبور می‌کنند (اشتراک فقط «الف» را می‌داد)")
+ck(ou["stages"]["tape"]["matched"] == 3,
+   f"۴ب) شمارِ عبوریِ گامِ تابلو با اجتماع می‌خواند — {ou['stages']['tape']['matched']}")
+# کنترلِ منفی: «ت» هیچ‌کدام را ندارد ⇒ با اجتماع هم رد است، و دلیلش هر دو
+# فیلترِ انتخابی را می‌شمارد (نه یک جملهٔ عمومی).
+ct = ou["status_matrix"]["ت"]["tape"]
+ck(ct["status"] == FE.REJECT,
+   f"۴ث) نمادِ بی‌نشانه با اجتماع هم رد می‌ماند (اجتماع درِ باز نیست) — {ct['status']}")
+ck("فیلتر" in ct["human_reason"] and ("حجم" in ct["human_reason"] or "نقطه" in ct["human_reason"]),
+   f"۴ث) دلیلِ ردِ اجتماع هر دو فیلترِ انتخابی را می‌نامد — {ct['human_reason']}")
+# پیش‌فرض باید دقیقاً رفتارِ دیروز باشد (کنترلِ بی‌تغییری)
+ob = FE.evaluate(B, S, preset="custom", custom_chain=["f_susp", "f_noqteh"])
+ck(sorted(e["symbol"] for e in ob["handover"]) == ["الف"] and ob.get("tape_logic") == "and",
+   f"۴چ) بی‌درخواستِ صریح، منطقِ اشتراک می‌ماند — {[e['symbol'] for e in ob['handover']]}")
+
+# ── ۴پ) چیپ‌هایِ تابلو بر زنجیرۀ پیش‌فرضِ شخص بردگی می‌کنند ──────────────
+ck(FE.resolve_chain("trend", ("f_clock",)) == ("f_clock",),
+   "۴پ) انتخابِ فعالِ کاربر (چیپ) زنجیرۀ «روندگیر» را عوض می‌کند")
+ck(FE.resolve_chain("trend", ()) == REG.PRESET_BY_ID["trend"].chain,
+   "۴پ) بی‌انتخابِ کاربر، زنجیرۀ خودِ شخص دست‌نخورده می‌ماند")
+ck(FE.resolve_chain("custom", ("f_roobi", "f_jet")) == ("f_roobi", "f_jet"),
+   "۴پ) custom همچنان همان زنجیرۀ دستی را می‌گیرد")
+try:
+    FE.resolve_chain("trend", ("f_not_a_filter",))
+    ck(False, "۴پ) فیلترِ ناشناخته حتی با overrideِ شخص باید خطا بدهد")
+except KeyError:
+    ck(True, "۴پ) فیلترِ ناشناخته حتی با overrideِ شخص خطا می‌دهد")
+
+# ── ۴ت) «نشانه» و «دلیل»ِ ردیفِ عبوری ─────────────────────────────────────
+# مالک: ستونِ نشانه باید بگوید این نماد کدام برچسب‌هایِ تابلو را دارد، نه اینکه
+# صرفاً بنویسد «تأیید»؛ و دلیلِ عبور هم باید همان برچسب‌ها را بگوید.
+VP = FE.evaluate(B, S, preset="custom", custom_chain=["f_susp", "f_noqteh"])
+ent = {e["symbol"]: e for e in VP["entries"]["tape"]}
+ce = ent.get("ب") or {}
+ck(ce.get("patterns") == ["مشکوک"],
+   f"۴ت) نمادی که فقط «حجم مشکوک» دارد همان را درِ نشانه می‌گیرد نه «تأیید» — "
+   f"{ce.get('patterns')}")
+ta = ent.get("الف") or {}
+why_tape = " ".join((w.get("text") or w.get("human_reason") or "")
+                    for w in (ta.get("why", {}) or {}).get("tape", []))
+ck("همۀ فیلترهایِ زنجیره" not in why_tape,
+   f"۴ت) دلیلِ عبور دیگر جملهٔ عمومی «همۀ فیلترهایِ زنجیره» نیست — {why_tape}")
+ck(any(k in why_tape for k in ("حجم", "نقطه")),
+   f"۴ت) دلیلِ عبور نامِ فیلترهایی که خورده شده را می‌نویسد — {why_tape}")
+
+import json  # noqa: E402
+chain_a = ["f_susp", "f_noqteh", "f_smart"]
+run1 = FE.evaluate(B, S, preset="custom", custom_chain=chain_a, as_of=1)
+run2 = FE.evaluate(B, S, preset="custom", custom_chain=chain_a, as_of=1)
+pinned = json.dumps({k: run1[k] for k in ("stages", "trace", "handover", "chain")},
+                    ensure_ascii=False, sort_keys=True)
+pinned2 = json.dumps({k: run2[k] for k in ("stages", "trace", "handover", "chain")},
+                     ensure_ascii=False, sort_keys=True)
+ck(pinned == pinned2, "۵) یک ورودیِ یکسان ⇒ trace، شمارش‌ها و تحویل بایت‌به‌بایت یکی")
+ck(run1["ruleset_version"] == REG.RULESET_VERSION and run1["engine_version"] == FE.ENGINE_VERSION,
+   "۵) هر پاسخ با engine_version و ruleset_versionِ همان روز مهر شده")
+ck(all(st["source_ref"].startswith("docs/") and st["formula_version"] for st in run1["stages"]["tape"]["steps"]),
+   "۵) هر مرحله منبع و نسخۀ فرمولش را درِ trace دارد")
+
+o5 = FE.evaluate([board("الف", f_clock=True)], [screen("الف", **UP, **OK_FUND)],
+                 preset="custom", custom_chain=["f_clock"],
+                 params={"f_clock": {"vol_mult": 3.0, "min_trades": 30}})
+ck(o5["stages"]["tape"]["steps"][0]["parameter_set"] == {"vol_mult": 3.0, "min_trades": 30},
+   "۶) parameter_setِ کاربر درِ trace همان مرحله می‌نشیند (کاننیکال عوض نمی‌شود)")
+
+# ── تکنیکال: هفتگی اول ────────────────────────────────────────────────────
+def tech_of(rows, sc):
+    return FE.evaluate(rows, sc, preset="custom", custom_chain=[]).stages if False else \
+        FE.evaluate(rows, sc, preset="custom", custom_chain=[])
+
+
+d_down = FE.evaluate([board("x"), board("y")],
+                     [screen("x", **W_DOWN, **OK_FUND), screen("y", **W_RANGE, **OK_FUND)],
+                     preset="custom", custom_chain=[])
+ck(d_down["stages"]["technical"]["counts"][FE.REJECT] == 2,
+   "۷ و ۸) هفتگی نزولی و هفتگی خنثی هر دو رد")
+
+d_branch = FE.evaluate([board("u", f_susp=True), board("v", f_susp=True), board("w", f_susp=True)],
+                       [screen("u", tech_trend_w="up", tech_trend_d="up", tech_matrix_decision="PERMITTED", **OK_FUND),
+                        screen("v", tech_trend_w="up", tech_trend_d="down", tech_matrix_decision="PERMITTED", **OK_FUND),
+                        screen("w", tech_trend_w="up", tech_trend_d="range", tech_matrix_decision="PERMITTED", **OK_FUND)],
+                       preset="custom", custom_chain=["f_susp"])
+br = {t["symbol"]: t["branch"] for t in d_branch["trace"]["technical"]}
+ck(br["u"] == "جت / پولبک" and br["v"] == "فیبوناچی / CHoCH"
+   and br["w"] == "کف دوقلو / آخرین ساختار حمایت-مقاومت",
+   "۹، ۱۰ و ۱) شاخه‌هایِ روزانه بعد از صعودیِ هفتگی درست‌اند")
+
+d_veto = FE.evaluate([board("z", f_susp=True)],
+                     [screen("z", tech_trend_w="down", tech_trend_d="up", tech_matrix_decision="REJECT",
+                             tech_jet=1, tech_choch_bull=1, tech_points=5, **OK_FUND)],
+                     preset="custom", custom_chain=["f_susp"])
+ck(not d_veto["handover"], "۱۲) جت + CHoCH + امتیازِ پنج، وتوی هفتگی را نمی‌شکنند")
+
+# ── بنیادی: سه حالت ───────────────────────────────────────────────────────
+def fund(symbols_rows, mode, exc=None):
+    rows, sc = symbols_rows
+    return FE.evaluate(rows, sc, preset="custom", custom_chain=[], fund_mode=mode,
+                       exceptions=exc)
+
+
+one_i3_bad = ([board("a")], [screen("a", **UP, i1_pass=1, i2_pass=1, i3_pass=0,
+                                    i4_pass=1, i5_pass=1, score=4, primary_score=2)])
+std = fund(one_i3_bad, "standard")
+# رأیِ مالک (مأموریت ۱۴۰۵-۰۷-۲۱): عبور = حداقل سه شاخص PASS، حتی با بعضی رد.
+# پیش از این همان ردیف «رد» بود چون I3 بلاکرِ جزوه شمرده می‌شد.
+ck(std["handover"], "۱۳) standard: ۴ PASS با یک I3 رد ⇒ عبور (قاعدهٔ حداقل سه PASS)")
+ck(std["trace"]["fundamental"][0]["caveat"] is True,
+   "۱۳) همان عبور «با ملاحظات» برچسب می‌گیرد، نه حکمِ عادی")
+ck(any(w["code"] == "FUND_I3_REJECT" for w in std["trace"]["fundamental"][0]["why"]),
+   "۱۳) علتِ ملاحظات نامِ شاخصِ ردشده را می‌نویسد")
+ck(std["trace"]["fundamental"][0]["indicators_passed"] == 4,
+   "۱۳) شمارِ PASSها از خودِ داوری استخراج می‌شود")
+five = ([board("a")], [screen("a", **UP, i1_pass=1, i2_pass=1, i3_pass=1,
+                              i4_pass=1, i5_pass=1, score=5, primary_score=3)])
+ck(fund(five, "standard")["trace"]["fundamental"][0]["caveat"] is False,
+   "۱۳) پنج PASS بی‌ملاحظه است — رنگِ موفقیتِ عادی")
+three_unknown2 = ([board("a")], [screen("a", **UP, i1_pass=1, i2_pass=1, i3_pass=1,
+                                        i4_pass=None, i5_pass=None, score=3, primary_score=3)])
+_t3 = fund(three_unknown2, "standard")
+ck(_t3["handover"] and _t3["trace"]["fundamental"][0]["caveat"],
+   "۱۳) ۳ PASS + ۲ فاقد داده ⇒ عبور با ملاحظات (نمونۀ صریحِ مالک)")
+two_pass = ([board("a")], [screen("a", **UP, i1_pass=1, i2_pass=1, i3_pass=0,
+                                  i4_pass=0, i5_pass=0, score=2, primary_score=2)])
+ck(not fund(two_pass, "standard")["handover"],
+   "۱۳) کمتر از سه PASS ⇒ عبور از این قاعده نیست")
+hard = fund(one_i3_bad, "hard")
+ck(not hard["handover"], "۱۴) hard: همان رد")
+one_i4_bad = ([board("a")], [screen("a", **UP, i1_pass=1, i2_pass=1, i3_pass=1,
+                                    i4_pass=0, i5_pass=1, score=4, primary_score=3)])
+ck(bool(fund(one_i4_bad, "standard")["handover"]), "۱۴) hard: I4 رد ⇒ درِ standard قبول، درِ hard رد")
+ck(not fund(one_i4_bad, "hard")["handover"], "۱۴) hard: I4 رد ⇒ رد")
+
+# بلاکرِ بی‌داده هنوز PENDING است — ولی تنها وقتی که سه PASS جمع نشود.
+missing = ([board("a")], [screen("a", **UP, i1_pass=None, i2_pass=1, i3_pass=None,
+                                 i4_pass=1, i5_pass=None, score=2, primary_score=1)])
+ms = fund(missing, "standard")
+ck(ms["stages"]["fundamental"]["counts"][FE.PENDING] == 1 and not ms["handover"],
+   "۱۵) دو PASS با شاخصِ بی‌داده = PENDING، نه pass و نه reject")
+
+exc = fund(two_pass, "exception", {"a": ["I3"]})
+ent = exc["handover"]
+ck(len(ent) == 1 and ent[0]["exception"] and ent[0]["exceptions"] == ["I3"],
+   "۱۶) استثنایِ صریح برچسب دارد و درِ trace می‌ماند")
+ck(exc["trace"]["fundamental"][0]["canonical"] == FE.REJECT
+   and exc["trace"]["fundamental"][0]["effective"] == FE.PASS,
+   "۱۸) canonical و effective جدا نگه داشته شده‌اند")
+ck(not fund(two_pass, "exception", {"a": ["I1"]})["handover"],
+   "۱۹) استثنایِ بی‌فایده (بخششِ I1 که از قبل PASS است) سه‌تا را نمی‌سازد")
+ck(not fund(one_i4_bad, "exception", {"a": ["I4"]})["stages"]["fundamental"]["counts"][FE.REJECT],
+   "۱۷) I4/I5 درِ standard جبران‌کنندهٔ بلاکر نیستند و ردی تولید نمی‌کنند")
+
+# ── ۱۳-ب) بی‌داده و بی‌کاربرد PASS شمرده نمی‌شوند + علت از همان شمار ──────
+# رأیِ مالک: «شاخص فاقد داده نباید به‌عنوان PASS شمرده شود» و «اعداد و نام
+# شاخص‌ها باید از نتیجهٔ واقعی محاسبات استخراج شوند، نه متن ثابت».
+def _one(**kw):
+    base = dict(symbol="a", i1_pass=None, i2_pass=None, i3_pass=None,
+                i4_pass=None, i5_pass=None)
+    base.update(kw)
+    return [base]
+
+
+def _dec(**kw):
+    return FE.fundamental_stage(_one(**kw))["decisions"][0]
+
+
+_d = _dec(i1_pass=1, i2_pass=1, i3_pass=1, i4_pass=None, i5_pass=None, i4_na=True)
+ck(_d["indicators_passed"] == 3 and _d["indicators_na"] == 1 and _d["indicators_unknown"] == 1,
+   "۱۳-ب) بی‌کاربرد و بی‌داده هیچ‌کدام PASS نمی‌شوند: "
+   + f"pass={_d['indicators_passed']} na={_d['indicators_na']} unk={_d['indicators_unknown']}")
+ck(_d["effective"] == FE.PASS and _d["caveat"] is True,
+   "۱۳-ب) سه PASSِ واقعی با دو شاخصِ سنجیده‌نشده ⇒ عبور با ملاحظات")
+_note = [w for w in _d["why"] if w["code"] == "FUND_PASSED_WITH_CAVEATS"][0]["text"]
+ck("۳ شاخص تأیید شد" in _note and "۱ شاخص" in _note and "۱ شاخص برایِ این نماد کاربرد ندارد" in _note,
+   "۱۳-ب) متنِ علت همان شمارهایِ داوری را می‌نویسد، نه عددِ ثابت: " + _note)
+ck(_dec(i1_pass=1, i2_pass=1, i3_pass=None, i4_pass=None, i5_pass=None)["effective"] == FE.PENDING,
+   "۱۳-ب) دو PASS با سه بی‌داده ⇒ هنوز PENDING، عبور نیست")
+ck(_dec(i1_pass=1, i2_pass=1, i3_pass=0, i4_pass=0, i5_pass=0)["effective"] == FE.REJECT,
+   "۱۳-ب) دو PASS و سه رد ⇒ ردِ قطعی")
+ck(FE.passes_fundamental({"i1_pass": 1, "i2_pass": 1, "i3_pass": 1,
+                          "i4_pass": 0, "i5_pass": 0}) is True
+   and FE.passes_fundamental({"i1_pass": 1, "i2_pass": 1, "i3_pass": 0,
+                              "i4_pass": 0, "i5_pass": 0}) is False,
+   "۱۳-ب) `passes_fundamental` همان قاعده را به جدولِ بنیادی هم می‌دهد (یک داور)")
+ck(FE.fund_caveat({"i1_pass": 1, "i2_pass": 1, "i3_pass": 1,
+                   "i4_pass": 0, "i5_pass": 1}) is True
+   and FE.fund_caveat({"i1_pass": 1, "i2_pass": 1, "i3_pass": 1,
+                       "i4_pass": 1, "i5_pass": 1}) is False,
+   "۱۳-ب) ملاحظات فقط وقتی هست که رد یا ناقص رویِ میز باشد")
+
+# ── تحویل ─────────────────────────────────────────────────────────────────
+mix = ([board("الف", f_susp=True), board("ب", f_susp=True), board("پ", f_susp=True)],
+       [screen("الف", **UP, i1_pass=1, i2_pass=1, i3_pass=1, i4_pass=0, i5_pass=0, score=3, primary_score=3),
+        screen("ب", **UP, i1_pass=1, i2_pass=1, i3_pass=1, i4_pass=1, i5_pass=1, score=5, primary_score=3,
+               tech_points=2),
+        screen("پ", **UP, i1_pass=1, i2_pass=1, i3_pass=1, i4_pass=1, i5_pass=0, score=4, primary_score=3)])
+hx = FE.evaluate(*mix, preset="custom", custom_chain=["f_susp"])
+ck([e["symbol"] for e in hx["handover"]] == ["ب", "پ", "الف"],
+   "۱۹ و ۲۱) بهترین‌ها اول: حکم ⇒ بی‌استثنا ⇒ امتیازِ بنیادی ⇒ شاهدِ تکنیکال ⇒ رتبۀ بک‌اند")
+ck(all(e["display_rank"] == i for i, e in enumerate(hx["handover"], 1)),
+   "۲۱) رتبۀ نمایشی پیوسته و بازتولیدشدنی است")
+ck(hx["stages"]["tape"]["steps"][0]["input_count"] == 3 and len(hx["handover"]) == 3,
+   "۲۰) هیچ سقفی درِ موتور نیست: هر سه ورودی، هر سه خروجی")
+big = ([board(f"s{i}", f_susp=True) for i in range(1200)],
+       [screen(f"s{i}", **UP, **OK_FUND) for i in range(1200)])
+bx = FE.evaluate(big[0], big[1], preset="custom", custom_chain=["f_susp"])
+ck(len(bx["handover"]) == 1200, "۲۰) ۱۲۰۰ نماد ورودی ⇒ ۱۲۰۰ نماد درِ تحویل (بی‌slice)")
+src = open(os.path.join(REPO, "funnel_engine.py"), encoding="utf-8").read()
+ck(".slice(" not in src and "[:60]" not in src and "[:50]" not in src,
+   "۲۰) درِ متنِ موتور هم هیچ برشِ ثابتی نیست")
+ck(hx["handover"][0]["why"] and all("code" in w for w in hx["handover"][0]["why"]),
+   "۲۲) هر ردیفِ تحویل دلیلِ رمزگذاری‌شده (reason_code) دارد")
+
+# ── نمایِ آمادهٔ رندر (خط ۵، ۶، ۷ و ۲۶ مأموریت) ────────────────────────────
+V = FE.evaluate(B, S, preset="custom", custom_chain=["f_susp", "f_noqteh"])
+tape_syms = {e["symbol"] for e in V["entries"]["tape"] if e["status"]["tape"] == "pass"}
+tech_syms = {e["symbol"] for e in V["entries"]["technical"]}
+fund_syms = {e["symbol"] for e in V["entries"]["fundamental"]}
+ck(tech_syms <= tape_syms and fund_syms <= tech_syms,
+   "۲۳) survivors هر گام زیرمجموعۀ گامِ قبلی است (Y ⊆ X) — درِ همان پاسخِ API")
+tl = V["timeline"]["ب"]
+ck([t["stage"] for t in tl] == ["universe", "tape:f_susp", "tape:f_noqteh"],
+   "۲۴) خطِ زمانِ نمادِ ردشده درِ همان فیلتر می‌ایستد و ادامه نمی‌یابد")
+ck(all(t.get("reason_code") and t.get("human_reason") and "input_count" in t for t in tl),
+   "۲۴) هر گامِ trace دلیلِ رمزگذاری‌شده + شمارۀ ورودی/خروجی دارد")
+ck(tl[-1]["source"].startswith("docs/") and "formula_version" in tl[-1],
+   "۲۴) منبع و نسخۀ فرمولِ همان فیلتر درِ trace هست، نه فقط نامِ مرحله")
+ck(all("source_ref" in st and st["parameter_set"] for st in V["stages"]["tape"]["steps"]),
+   "۲۵) هر مرحلۀ زنجیره parameter_set و source_ref خودش را درِ پاسخ دارد")
+row = V["entries"]["tape"][0]
+for k in ("symbol", "name", "sector", "last", "change_pct", "vol_ratio", "patterns",
+          "status", "why", "score", "weekly", "daily", "branch", "inds", "as_of"):
+    if k not in row:
+        ck(False, f"۲۶) ردیفِ نمایشی ستونِ {k} را ندارد")
+        break
+else:
+    ck(True, "۲۶) ردیفِ نمایشی هر ستونی که جدول می‌خواهد را از API می‌گیرد (بدون join فرانت)")
+
+# ── قانونِ جامع: تک‌تکِ نمادها وضعیتِ صریح دارند (§8 و §10) ────────────────
+U = [board(f"n{i}", f_susp=(i % 3 == 0), f_noqteh=(i % 4 == 0)) for i in range(40)]
+SC = [screen(f"n{i}", **(UP if i % 5 else W_DOWN), **OK_FUND) for i in range(40)]
+M = FE.evaluate(U, SC, preset="custom", custom_chain=["f_susp", "f_noqteh"])
+uni = M["universe"]["joined"]
+ck(uni == 40, "۲۷) جامعۀ ورودی شمرده و درِ پاسخ است")
+for stage in ("tape", "technical", "fundamental", "handover"):
+    tot = sum(M["coverage"][stage].values())
+    ck(tot == uni, f"۲۸) {stage}: جمعِ وضعیت‌ها = جامعۀ ورودی ({tot} = {uni})")
+ck(set(M["status_matrix"]) == {f"n{i}" for i in range(40)},
+   "۲۹) هیچ نمادی از matrix بیرون نیفتاده (بی‌سایلنت‌دراپ)")
+DUP = [board("تکراری", f_susp=True), board("تکراری", f_susp=True), board("دیگر", f_susp=True)]
+DP = FE.evaluate(DUP, [screen("تکراری", **UP, **OK_FUND), screen("دیگر", **UP, **OK_FUND)],
+                 preset="custom", custom_chain=["f_susp"])
+ck(DP["universe"]["board"] == 3 and DP["universe"]["joined"] == 2
+   and DP["universe"]["duplicate_rows"] == 1,
+   "۳۵) ردیفِ هم‌نام دوم نماد شمرده نمی‌شود و صریح گزارش می‌شود")
+ck(len(DP["status_matrix"]) == DP["universe"]["joined"]
+   == sum(DP["coverage"]["handover"].values()),
+   "۳۵) matrix، جامعۀ یکتا و جمعِ وضعیت‌ها هر سه یک عدد")
+bad = [s for s, row in M["status_matrix"].items()
+       if any(c["status"] not in FE.STATUSES or not c.get("reason_code") for c in row.values())]
+ck(not bad, "۳۰) هر خانۀ matrix وضعیتِ معتبر + reason_code دارد")
+rej = sorted(s for s, row in M["status_matrix"].items() if row["tape"]["status"] == FE.REJECT)
+ck(rej and all(M["status_matrix"][s]["technical"]["status"] == FE.NOT_REQUIRED for s in rej),
+   "۳۱) ردشدۀ تابلو درِ تکنیکال NOT_REQUIRED است، نه «سنجیده نشده»")
+ck(all(M["status_matrix"][s]["technical"]["reason_code"] == "NOT_REQUIRED_AFTER_TAPE_REJECT"
+       for s in rej), "۳۱) علتِ اجرا‌نشدن هم درِ trace ثبت می‌شود")
+ck(all(M["status_matrix"][s]["fundamental"]["status"] == FE.NOT_REQUIRED for s in rej),
+   "۳۱) بنیادی هم برای همان نماد NOT_REQUIRED است، نه حذف")
+# نمادی که ردیفِ اسکرینر ندارد: تکنیکال UNAVAILABLE (نه سنجیده‌نشِ مبهم) و
+# بنیادی NOT_REQUIRED با علت؛ تحویل هم UNAVAILABLE می‌گوید، نه حذفِ نماد.
+no_screen = [board("بی‌کدال", f_susp=True), board("باکدال", f_susp=True),
+             screen("باکدال", **UP, **OK_FUND)]
+NS = FE.evaluate(no_screen, [screen("باکدال", **UP, **OK_FUND)],
+                 preset="custom", custom_chain=["f_susp"])
+row_ns = NS["status_matrix"]["بی‌کدال"]
+ck(row_ns["technical"]["status"] == FE.UNAVAILABLE
+   and row_ns["technical"]["reason_code"] == "TECH_UNMEASURED",
+   "۳۲) نمادِ بی‌ردیفِ اسکرینر: تکنیکال UNAVAILABLE با کد، نه سنجیده‌نشِ مبهم")
+ck(row_ns["fundamental"]["status"] == FE.NOT_REQUIRED
+   and row_ns["fundamental"]["reason_code"].startswith("NOT_REQUIRED_AFTER"),
+   "۳۲) بنیادیِ آن نماد NOT_REQUIRED است با علت، نه غایب")
+ck(row_ns["handover"]["status"] == FE.UNAVAILABLE
+   and row_ns["handover"]["reason_code"] == "NO_FINAL_SOURCE",
+   "۳۲) تحویل هم وضعیت دارد: بی‌منبع، نه گم‌شده")
+# بلاکرِ بی‌داده ⇒ PENDING با کدِ هر شاخص (نه pass، نه reject) — با قاعدهٔ
+# «حداقل سه PASS» این تنها وقتی می‌ماند که سه تأیید جمع نشود.
+miss = FE.evaluate([board("کم‌گزارش", f_susp=True)],
+                   [screen("کم‌گزارش", **UP, i1_pass=None, i2_pass=1, i3_pass=None,
+                           i4_pass=1, i5_pass=None, score=2, primary_score=1)],
+                   preset="custom", custom_chain=["f_susp"])
+mr = miss["status_matrix"]["کم‌گزارش"]
+ck(mr["fundamental"]["status"] == FE.PENDING
+   and mr["fundamental"]["reason_code"] == "FUND_I1_MISSING",
+   "۳۳) I1 بی‌گزارش = PENDING با کدِ FUND_I1_MISSING")
+ck(mr["handover"]["status"] == FE.PENDING,
+   "۳۳) تحویل هم همان انتظار را می‌گوید، نماد ناپدید نمی‌شود")
+# و همان I1ِ بی‌گزارش وقتی سه PASS هست نماد را بیرون نمی‌اندازد — با ملاحظات.
+miss3 = FE.evaluate([board("سه‌PASS", f_susp=True)],
+                    [screen("سه‌PASS", **UP, i1_pass=None, i2_pass=1, i3_pass=1,
+                            i4_pass=1, i5_pass=0, score=3, primary_score=2)],
+                    preset="custom", custom_chain=["f_susp"])
+m3 = miss3["status_matrix"]["سه‌PASS"]
+ck(m3["fundamental"]["status"] == FE.PASS and m3["handover"]["status"] == FE.PASS,
+   "۳۳) I1 بی‌گزارش با سه PASS ⇒ عبور، نه بلوکه‌شدن")
+ck("عبور با ملاحظات" in (m3["fundamental"]["human_reason"] or ""),
+   "۳۳) علتِ عبور درِ matrix هم نوشته شده: «عبور با ملاحظات»")
+ck(all(isinstance(M["status_matrix"][s]["handover"].get("display_rank"), int)
+       for s, row in M["status_matrix"].items() if row["handover"]["status"] == FE.PASS),
+   "۳۴) رتبۀ نمایشی برایِ هر پذیرفته‌شده ثبت شده")
+
+# -- ۳۶) پیمانِ HTTP: همان جامعیت باید از سیم هم عبور کند
+# پاسخِ فهرست عمداً بی‌`timeline` است (خطِ زمانِ ۵٫۸ هزار نماد نیمی از پاسخ بود
+# و جدولِ فهرست هرگز همه‌اش را نمی‌خواند). دو چیز نباید با این برش برود:
+# `status_matrix` (حکمِ هر نماد درِ هر گام) و `coverage` (جمعِ پنج وضعیت).
+import api.funnel as FA
+STRIPPED = FA._strip(M)
+ck("timeline" not in STRIPPED,
+   "۳۶) خطِ زمانِ همهٔ نمادها از پاسخِ فهرست بیرون است، نه از داوری")
+ck("status_matrix" in STRIPPED and "coverage" in STRIPPED,
+   "۳۶) برشِ پاسخ، matrix و coverage را دست نمی‌زند")
+_FIVE = ("pass", "reject", "pending", "unavailable", "not_required")
+ck(all(sum(STRIPPED["coverage"][g].get(s, 0) for s in _FIVE) == STRIPPED["universe"]["joined"]
+       for g in ("tape", "technical", "fundamental", "handover")),
+   "۳۶) جمعِ پنج وضعیت درِ هر گام == جامعۀ ورودی، رویِ سیمِ HTTP هم")
+ck(len(STRIPPED["status_matrix"]) == STRIPPED["universe"]["joined"],
+   "۳۶) یک سطرِ وضعیت برایِ هر نمادِ universe درِ پاسخ هست")
+ck(all(set(cell) >= {"status", "reason_code", "human_reason"}
+       for row in STRIPPED["status_matrix"].values() for cell in row.values()),
+   "۳۶) هر سلولِ پاسخ حکم + کدِ دلیل + متنِ دلیل دارد")
+# -- ۳۷) تکنیکال از داوریِ کلِ جوامع خوانده می‌شود، نه از پنجاه ردیفِ اسکرینر
+# `api/screener.py` فقط `watchlist_max` ردیفِ اول را غنی می‌کند؛ اگر قیف همان
+# را منبعِ رأیِ تکنیکال می‌گذاشت، رسیدگانِ پنجاه‌ویکم هیچ‌وقت داوری نمی‌شدند.
+# اینجا موتور `tech_scan` (ردیف‌هایِ `funnel_tech_scan`) و `tech_sigs` (امضایِ
+# داده) می‌گیرد و سه حالت را از هم جدا می‌کند: رأیِ ساخته‌شده / در انتظارِ
+# اسکن / بی‌سابقهٔ قیمتی.
+BS = [board("بی‌تحلیل", f_susp=True), board("درصف", f_susp=True), board("بی‌سابقه", f_susp=True)]
+BSR = [screen("بی‌تحلیل"), screen("درصف"), screen("بی‌سابقه")]
+g_scan = FE.evaluate(BS, BSR, preset="custom", custom_chain=["f_susp"],
+                     tech_scan={"بی‌تحلیل": {"tech_trend_w": "up", "tech_trend_d": "down",
+                                               "tech_matrix_decision": "PERMITTED"}},
+                     tech_sigs={"بی‌تحلیل": "1405-07-16|128", "درصف": "1405-07-16|94"})
+M1 = g_scan["status_matrix"]["بی‌تحلیل"]["technical"]
+ck(M1["status"] == FE.PASS and M1["reason_code"] == "WEEKLY_TREND_UP",
+   "۳۷) رسیدۀ پنجاه‌ویکم از ردیفِ اسکن داوری می‌گیرد (نه از سقفِ اسکرینر)")
+ck(g_scan["status_matrix"]["بی‌تحلیل"]["technical"]["human_reason"],
+   "۳۷) دلیلِ همان رأی هم درِ پاسخ است")
+M2 = g_scan["status_matrix"]["درصف"]["technical"]
+ck(M2["status"] == FE.PENDING and M2["reason_code"] == "TECH_SCAN_PENDING",
+   "۳۷) سابقه دارد و اسکن نرسیده ⇒ PENDING با کد، نه «سنجیده نشده» و نه حذف")
+ck(g_scan["status_matrix"]["درصف"]["fundamental"]["status"] == FE.NOT_REQUIRED,
+   "۳۷) گامِ بعد از توقفِ گامِ قبل خبردار است، نه بی‌حکم")
+M3 = g_scan["status_matrix"]["بی‌سابقه"]["technical"]
+ck(M3["status"] == FE.UNAVAILABLE and M3["reason_code"] == "TECH_NO_HISTORY",
+   "۳۷) هیچ سابقۀ قیمتی = UNAVAILABLE با کدِ خودش (تلاشِ بی‌حاصل نیست، نشدنی است)")
+_FIVE2 = ("pass", "reject", "pending", "unavailable", "not_required")
+ck(all(sum(g_scan["coverage"][s].get(x, 0) for x in _FIVE2) == 3
+       for s in ("tape", "technical", "fundamental", "handover")),
+   "۳۷) با سه حالتِ تازه هم جمعِ وضعیت‌ها == جامعۀ ورودی")
+
+# -- ۳۸) جامعۀ تابلو ≠ جامعۀ غربالگری (رأیِ مالک ۱۴۰۵-۰۷-۱۶، بندِ ۱۴ و ۱۵)
+# چهار نمادِ همۀ فیلتر را دارند؛ سه تا از آنها به سه علتِ *متفاوت* از جامعۀ
+# غربالگری بیرون‌اند. ملاک، وضعیتِ رسمیِ بازار است — نه عددِ اختراعی.
+U4 = [board("سالم", f_susp=True),
+     {**board("متوقف", f_susp=True), "stop_state": "تعلیق شده"},
+     {**board("کهنه", f_susp=True), "is_live": False},
+     {**board("ممنوع", f_susp=True), "st_code": "IS", "st_title": "ممنوع-متوقف"}]
+U4S = [screen("سالم", **UP, **OK_FUND), screen("متوقف", **UP, **OK_FUND),
+       screen("کهنه", **UP, **OK_FUND), screen("ممنوع", **UP, **OK_FUND)]
+u4 = FE.evaluate(U4, U4S, preset="custom", custom_chain=["f_susp"])
+ck(u4["universe"]["market"] == 4 and u4["universe"]["screening"] == 1
+   and u4["universe"]["excluded"] == 3,
+   "۳۸) X=۴ نمادِ تابلو، Y=۱ جامعۀ غربالگری، Z=۳ خارج — هر سه جدا شمرده می‌شوند")
+ck(u4["universe"]["market"] == u4["universe"]["screening"] + u4["universe"]["excluded"],
+   "۳۸) X = Y + Z درِ خودِ پاسخ")
+ck([e["symbol"] for e in u4["entries"]["tape"]] == ["سالم"],
+   "۳۸) خارج‌ها درِ جدولِ گام نمی‌نشینند (رأیِ مالک: جدول را شلوغ نکن)")
+ck(all(u4["status_matrix"]["کهنه"][g]["status"] == FE.NOT_IN_UNIVERSE
+       for g in ("tape", "technical", "fundamental", "handover")),
+   "۳۸) خارج از جامعه درِ هر چهار گام همان وضعیت است — نه reject و نه pending")
+ck({e["symbol"]: e["reason_code"] for e in u4["exclusions"]}
+   == {"متوقف": "STOPPED", "کهنه": "NOT_LIVE_SESSION", "ممنوع": "FORBIDDEN_STATE"},
+   "۳۸) علتِ خروجِ تک‌تکِ خارج‌ها ثبت می‌شود (هیچ‌کس بی‌علت حذف نمی‌شود)")
+ck(u4["universe"]["exclusion_labels"].get("STOPPED")
+   and set(u4["universe"]["exclusion_labels"]) == set(u4["universe"]["exclusion_counts"]),
+   "۳۸) واژۀ فارسیِ هر علت از خودِ موتور می‌آید، نه از رابط")
+
+# -- ۳۹) «زنده» ≠ «امروز معامله داشت» (رأیِ صریحِ مالک، بندِ ۱۴)
+V2 = [{**board("بی‌معامله", f_susp=True), "is_live": True, "q_tot_tran": 0},
+      {**board("پرحجم_ممنوع", f_susp=True), "is_live": True, "q_tot_tran": 9_999_999,
+       "st_code": "I", "st_title": "ممنوع"}]
+v2 = FE.evaluate(V2, [screen("بی‌معامله"), screen("پرحجم_ممنوع")],
+                 preset="custom", custom_chain=["f_susp"])
+ck(v2["universe"]["screening"] == 1
+   and [e["symbol"] for e in v2["exclusions"]] == ["پرحجم_ممنوع"],
+   "۳۹) حجمِ امروز نمادی را داخل جامعه نمی‌کند؛ وضعیتِ ممنوع بیرونش می‌اندازد")
+ck(v2["status_matrix"]["بی‌معامله"]["tape"]["status"] == FE.PASS,
+   "۳۹) نمادِ بی‌معاملۀ امروز درِ جامعۀ غربالگری می‌ماند و حکم می‌گیرد")
+
+# -- ۴۰) silent drop ممنوع، دو سو (بندِ ۱۶: «هیچ نمادی نباید بی‌حکم بماند»)
+_SIX = ("pass", "reject", "pending", "unavailable", "not_required", FE.NOT_IN_UNIVERSE)
+ck(all(sum(u4["coverage"][g].values()) == 4 for g in ("tape", "technical",
+       "fundamental", "handover")),
+   "۴۰) جمعِ شش وضعیت درِ هر گام == جامعۀ تابلو (X)")
+ck(all(sum(u4["coverage"][g].get(s, 0) for s in _SIX if s != FE.NOT_IN_UNIVERSE) == 1
+       for g in ("tape", "technical", "fundamental", "handover")),
+   "۴۰) جمعِ پنج وضعیتِ گام == جامعۀ غربالگری (Y) — هیچ نمادِ واجدِ شرایط بی‌حکم نیست")
+ck(len(u4["status_matrix"]) == 4, "۴۰) سطرِ وضعیت برایِ هر چهار نماد هست، خارج‌ها هم")
+
+# -- ۴۱) جامعۀ غربالگری پویا است: نه عددِ ثابت، نه سقفِ واچ‌لیست
+_SRC = open("funnel_engine.py", encoding="utf-8").read()
+ck("2273" not in _SRC and "3991" not in _SRC,
+   "۴۱) هیچ شمارۀ جامعۀ ثابتی (۲۲۷۳ / ۳۹۹۱) درِ موتور ننوشته شده")
+BIG = [board(f"ن{i:03d}", f_susp=True) for i in range(121)]
+BIGS = [screen(f"ن{i:03d}") for i in range(121)]
+big = FE.evaluate(BIG, BIGS, preset="custom", custom_chain=["f_susp"])
+ck(big["universe"]["screening"] == 121 and len(big["status_matrix"]) == 121
+   and len(big["entries"]["tape"]) == 121,
+   "۴۱) ۱۲۱ نماد ورودی ⇒ ۱۲۱ نماد درِ غربالگری؛ ظرفیتِ واچ‌لیست (۶۰) هیچ‌جا جامعۀ "
+   "غربالگری را کوتاه نمی‌کند")
+u5 = FE.evaluate(U4 + [board("افزون", f_susp=True)], U4S + [screen("افزون")],
+                 preset="custom", custom_chain=["f_susp"])
+ck(u5["universe"]["screening"] == u4["universe"]["screening"] + 1,
+   "۴۱) Y با خودِ داده تغییر می‌کند، نه با عددی درِ کد")
+
+# -- ۴۲) برچسبِ زمان‌مندِ توقف (رأیِ مالک §۸: «ممنوع-متوقف (طی معاملات)»)
+# «توقفِ امروز» غلط است: لاگِ وضعیت ساعت‌مند است و نماد می‌تواند درِ همان نشست
+# اول مجاز و بعداً متوقف شده باشد (شاهدِ زنده: آوند۴ — ۱۴:۲۴:۵۷).
+SAME = {"symbol": "هم‌نشست", "is_live": True, "st_code": "IS", "st_title": "ممنوع-متوقف",
+        "st_d": 20261007.0, "st_h": 142457.0, "d_even": 20261007}
+PRIOR = {**SAME, "symbol": "نشستِ‌پیش", "st_d": 20261003.0}
+NOKEY = {**SAME, "symbol": "بی‌نشست", "st_d": None, "st_h": None, "d_even": None}
+ck_elig, ck_code, ck_why = FE.screening_eligibility(SAME)
+ck(not ck_elig and ck_code == "FORBIDDEN_STATE" and "(طی معاملات" in ck_why
+   and "۱۴:۲۴" in ck_why,
+   "۴۲) وتوی درونِ همین نشست ⇒ «(طی معاملات)» با ساعتِ خودِ لاگ، نه «توقفِ امروز»")
+ck_elig2, _, ck_why2 = FE.screening_eligibility(PRIOR)
+ck(not ck_elig2 and "از نشستِ" in ck_why2 and "طی معاملات" not in ck_why2,
+   "۴۲) وتوی نشستِ پیش‌تر صادقانه همان نشست را می‌گوید و ادّعایِ «طی معاملات» ندارد")
+ck_elig3, _, ck_why3 = FE.screening_eligibility(NOKEY)
+ck(not ck_elig3 and "طی معاملات" not in ck_why3 and "از نشستِ" not in ck_why3,
+   "۴۲) بی‌نشستِ قابل‌مقایسه هیچ برچسبِ زمانی جعلی نمی‌سازد")
+ck(not any(c.isascii() and c.isdigit() for c in ck_why),
+   "۴۲) عددِ نمایشیِ این علت فارسی است (قاعدۀ رقمِ فارسی درِ متنِ فارسی)")
+
+# ── ۴۳/۴۴: «سنجیده نشد» از «رد شد» جداست و فهرستِ منتقل‌شده خواندنی است ─────
+UM = board("کم‌سابقه", f_susp=False)
+UM.update({"hist_sessions": 10, "z_tot_tran": 200, "p_closing": 500, "prior30_vol": 1000})
+OK_ROW = board("کافى", f_susp=False)
+OK_ROW.update({"hist_sessions": 60, "z_tot_tran": 200, "p_closing": 500, "prior30_vol": 1000})
+HIT = board("خورده", f_susp=True)
+HIT.update({"hist_sessions": 60, "z_tot_tran": 200, "p_closing": 500, "prior30_vol": 1000})
+UMV = FE.tape_stage([UM, OK_ROW, HIT], ("f_susp",))
+um_step = UMV["steps"][0]
+ck(um_step["unmeasured_count"] == 1 and um_step["removed_count"] == 1 and um_step["matched_count"] == 1,
+   f"۴۳) ردیفِ بی‌مبنایِ ۳۰-نشست «سنجیده نشد» است، نه رد — و ردِ واقعی جدا شمرده می‌شود")
+ck(um_step["input_count"] == um_step["matched_count"] + um_step["removed_count"] + um_step["unmeasured_count"],
+   f"۴۳) حسابِ گام می‌بندد: ورودی = عبورکرده + رد + سنجیده‌نشده")
+ck([str(r.get("symbol")) for r in UMV["survivors"]] == ["خورده"],
+   f"۴۳) سنجیده‌نشده و ردشده هیچ‌کدام منتقل نمی‌شوند؛ فقط خوردهٔ واقعی")
+_um_why = [w for w in UM["_funnel_why"] if w.get("stage") == "tape"]
+_ok_why = [w for w in OK_ROW["_funnel_why"] if w.get("stage") == "tape"]
+ck(_um_why and _um_why[0]["status"] == FE.UNAVAILABLE and _um_why[0]["reason_code"].endswith("UNMEASURED"),
+   f"۴۳) دلیلِ دفترچه برایِ سنجیده‌نشده UNAVAILABLE است، نه TAPE_*_NO_MATCH")
+ck(_ok_why and _ok_why[0]["status"] == FE.REJECT and _ok_why[0]["reason_code"].endswith("NO_MATCH"),
+   f"۴۴) ردیفی که مبناء دارد و نخورده، همان ردِ قطعی می‌ماند (کنترلِ منفی)")
+
+V2 = FE.evaluate([dict(r) for r in B], [dict(r) for r in S], preset="custom",
+                 custom_chain=["f_susp", "f_noqteh"])
+st2 = V2["stages"]
+ck(all(isinstance(st2[k].get("survivors"), list) for k in ("tape", "technical", "fundamental", "handover")),
+   f"۴۴) هر گام فهرستِ صریحِ نمادهایِ منتقل‌شده را درِ پاسخ دارد")
+ck(len(st2["technical"]["survivors"]) == st2["technical"]["matched"]
+   and set(st2["technical"]["survivors"]) <= set(st2["tape"]["survivors"])
+   and set(st2["fundamental"]["survivors"]) <= set(st2["technical"]["survivors"])
+   and set(st2["handover"]["survivors"]) <= set(st2["fundamental"]["survivors"]),
+   f"۴۵) فهرست‌ها با شمارش می‌خوانند و هر گام زیرمجموعۀ گامِ پیشین است")
+ck(st2["technical"].get("input") == st2["tape"]["matched"]
+   and st2["fundamental"].get("input") == st2["technical"]["matched"],
+   f"۴۵) input هر گام = matchedِ گامِ قبل (زنجیره درِ پاسخ اثبات می‌شود، نه درِ متن)")
+_reached = [(sym, [t for t in tl_ if t["stage"] in ("technical", "fundamental", "handover")])
+              for sym, tl_ in V2["timeline"].items()]
+_rows = [r for _, rows_ in _reached for r in rows_]
+ck(bool(_rows), f"۴۶) سنسورِ این بند کور نیست: دستِ‌کم یک نماد به گامِ تکنیکال می‌رسد")
+ck(all(r["input_count"] is not None and r["output_count"] is not None for r in _rows),
+   f"۴۶) خطِ زمانِ تکنیکال/بنیادی/تحویل شمارۀ ورودی/خروجیِ خودِ گام را دارد، نه None")
+
+# ── ۴۷) «حذفِ پسوندِ عددی» — رأیِ مالک ۱۴۰۵-۰۷-۲۲، عینِ درِ تبِ تابلو ──────
+# نمادِ افزودهدار («فولاد۲»، «وشپنا۱») اصلاً candidate نیست، و نبودنش «رد» هم
+# نیست: مثلِ بقیۀ وتوها درِ «خارج از جامعۀ غربالگری» با علتِ خودش می‌نشیند، پس
+# جمعِ جامعۀ تابلو (X) با غربالگری (Y) + خارج‌ها (Z) می‌خواند.
+SUF_B = [board("فولاد", f_susp=True), board("فولاد۲", f_susp=True),
+         board("وشپنا۱", f_susp=True), board("پ", f_susp=False)]
+SUF_S = [screen("فولاد", **UP, **OK_FUND), screen("فولاد۲", **UP, **OK_FUND),
+         screen("وشپنا۱", **UP, **OK_FUND), screen("پ", **UP, **OK_FUND)]
+d_on = FE.evaluate(SUF_B, SUF_S, preset="custom", custom_chain=["f_susp"],
+                   drop_numeric_suffix=True)
+d_off = FE.evaluate(SUF_B, SUF_S, preset="custom", custom_chain=["f_susp"])
+u_on, u_off = d_on["universe"], d_off["universe"]
+ck(u_on["drop_numeric_suffix"] is True and u_off.get("drop_numeric_suffix") is False,
+   f"۴۷) پرچمِ اعمال‌شده درِ پاسخ می‌نشیند — رابط حدس نمی‌زند")
+ck(u_on["screening"] == 2 and u_on["excluded"] == 2
+   and u_on["market"] == u_on["screening"] + u_on["excluded"],
+   f"۴۷) روشن: ۴ نماد → ۲ غربال + ۲ خارج، و X = Y + Z")
+ck(u_on["exclusion_counts"] == {"NUMERIC_SUFFIX": 2}
+   and u_on["exclusion_labels"].get("NUMERIC_SUFFIX") == "پسوندِ عددی",
+   f"۴۷) علتِ خروج با شمار و برچسبِ فارسیِ خودش گزارش می‌شود")
+ck(u_off["screening"] == 4 and u_off["excluded"] == 0,
+   f"۴۷) خاموش: همان چهار نماد مثلِ پیش داوری می‌شوند (چیزی بی‌صدا نمی‌میرد)")
+ck(not any(FE.has_numeric_suffix(s) for s in d_on["stages"]["tape"]["survivors"])
+   and all(any(e["symbol"] == s and e["reason_code"] == "NUMERIC_SUFFIX"
+               for e in d_on["exclusions"])
+           for s in ("فولاد۲", "وشپنا۱")),
+   f"۴۷) هیچ نمادِ پسونددار به گامِ بعد نمی‌رسد و هر دو درِ فهرستِ علّت‌ها هست")
+# parity با regexِ خودِ تابلو درِ `tapeFts.isNumericSuffixSymbol` = /[0-9۰-۹]$/
+ck([FE.has_numeric_suffix(s) for s in
+    ("خودرو2", "خودرو۲", "10", "۳", "فولاد", "پ", "ش", "", "  ش  ", "حق‌تقدم۴")]
+   == [True, True, True, True, False, False, False, False, False, True],
+   f"۴۷) سنجشِ پسوند با /[0-9۰-۹]$/ِ تابلو یکی است (latin و فارسی، با trim)")
+ck(FE.has_numeric_suffix("خودرو٢") is False,
+   f"۴۷) ارقامِ عربیِ هندی (٠-٩) درِ regexِ تابلو نیست و اینجا هم نیست — دو در یکی")
+
+# ── ۴۸) «دلیل»ِ دیدنی: کدام بندِ فایل خورد، با عددِ خودِ ردیف ──────────────
+# رأیِ مالک (۱۴۰۵-۰۷۰۲۲): «{فیلتر} — نشانه در این نماد نیست» رویِ صدها ردیفِ
+# یکسان هیچ چیزی نمی‌گفت. متنِ تازه قیدها را به ترتیبِ خودِ فایل می‌سنجد؛
+# آستانه‌ها از `tape_flags` خوانده می‌شوند، پس اگر جمله اشتباه باشد عددِ ردیف
+# هم اشتباه است — و کنترلِ منفی همان‌جا این را می‌گیرد.
+def roobi(sym, **over):
+    """ردیفِ کف‌روبی با ورودی‌هایِ خامِ خودِ فایل (pl، tmin، zd1، plp، qd1)."""
+    r = board(sym, f_roobi=False)
+    r.update({"p_last": 1000.0, "p_closing": 990.0, "plp_raw": -2.0, "tmin": 900.0,
+              "buy_q1_cnt": 5.0, "buy_q1_vol": 400.0, "z_tot_tran": 60.0,
+              "tvol": 1000.0, "prior30_vol": 30000.0, "hist_sessions": 60.0,
+              "min_low_29": 995.0})
+    r.update(over)
+    return r
+
+
+S_OK = [screen("الف", **UP, **OK_FUND)]
+# الف) بندِ اول می‌افتد: آخرین رویِ کفِ مجاز ننشسته
+g1 = FE.evaluate([roobi("الف", p_last=1000.0, tmin=900.0)], S_OK,
+                 preset="custom", custom_chain=["f_roobi"])
+why1 = g1["status_matrix"]["الف"]["tape"]["human_reason"]
+ck("کف روبی" in why1 and "ننشست" in why1 and "۱۰۰۰" in why1 and "۹۰۰" in why1,
+   f"۴۸) بندِ اولِ کف‌روبی با عددِ خودِ ردیف نوشته می‌شود: {why1}")
+ck("نشانه در این نماد نیست" not in why1,
+   f"۴۸) متنِ عمومیِ بی‌محتوا دیگر جانشینِ دلیلِ قابلِ اثبات نمی‌شود")
+
+# ب) کنترلِ منفی: فقط tmin را برابرِ آخرین می‌کنیم ⇒ دلیل باید به بندِ دوم
+#    (صفِ سطرِ اول) برود. اگر متن ثابت بماند، سنسور کور است.
+g2 = FE.evaluate([roobi("الف", p_last=900.0, tmin=900.0, buy_q1_cnt=1.0)], S_OK,
+                 preset="custom", custom_chain=["f_roobi"])
+why2 = g2["status_matrix"]["الف"]["tape"]["human_reason"]
+ck(why2 != why1 and "سطرِ اول" in why2,
+   f"۴۸) سنسور کور نیست: با اصلاحِ بندِ اول، دلیل به بندِ بعد می‌رود: {why2}")
+
+# پ) ردیفی که هیچ بندی از آن قابلِ اثبات نیست (ستون‌هایِ فرمول غایب) ⇒
+#    «سنجیده نشد» با علتِ نبودِ همان ورودی، نه «رد».
+g3 = FE.evaluate([roobi("الف", tmin=None, buy_q1_cnt=None, buy_q1_vol=None)], S_OK,
+                 preset="custom", custom_chain=["f_roobi"])
+cell3 = g3["status_matrix"]["الف"]["tape"]
+ck(cell3["status"] == "unavailable" and "آستانۀ مجاز" in cell3["human_reason"],
+   f"۴۸) سنجیده‌نشده علتِ ورودیِ گم‌شده را می‌گوید، نه «رد»: {cell3['human_reason']}")
+
+# ت) دفترچه و ماتریس یک جمله دارند (دو تعریفِ «دلیل» درِ یک پاسخ ممنوع)
+ent = (g2["entries"].get("tape") or [])
+twhy = next((w["text"] for r in ent if r.get("symbol") == "الف"
+             for w in (r.get("why") or {}).get("tape") or []), None)
+ck(twhy == why2, f"۴۸) متنِ ستونِ «دلیل» درِ جدول همان جمله‌ای است که ماتریس می‌گوید")
+
+# ث) دو کمبودِ ورودیِ جدا، دو نامِ جدا — و هیچ‌وقت «حجم کم است»:
+g4 = FE.evaluate([roobi("الف", f_susp=False, prior30_vol=None, hist_sessions=12.0)], S_OK,
+                 preset="custom", custom_chain=["f_susp"])
+cell4 = g4["status_matrix"]["الف"]["tape"]
+ck(cell4["status"] == "unavailable" and "جمعِ حجمِ ۳۰ نشستِ پیش نرسیده" in cell4["human_reason"]
+   and "مبناء" not in cell4["human_reason"],
+   f"۴۸) جمعِ حجمِ غایب ⇒ کمبودِ ورودی، نه «حجم کم»: {cell4['human_reason']}")
+g4b = FE.evaluate([roobi("الف", f_susp=False, prior30_vol=30000.0, hist_sessions=12.0)], S_OK,
+                  preset="custom", custom_chain=["f_susp"])
+cell4b = g4b["status_matrix"]["الف"]["tape"]
+ck(cell4b["status"] == "unavailable" and "۱۲ نشست" in cell4b["human_reason"]
+   and "مبناء" not in cell4b["human_reason"],
+   f"۴۸) پنجرۀ ۳۰ نشستِ ناقص با شمارۀِ خودِ ردیف نامیده می‌شود: {cell4b['human_reason']}")
+
+# ج) عددِ آستانه درِ متن از خودِ `tape_flags` می‌آید، نه از بازنویسیِ این فایل
+import tape_flags as TF  # noqa: E402
+g5 = FE.evaluate([roobi("الف", f_susp=False, f_roobi=True, tvol=60.0,
+                        prior30_vol=30000.0, hist_sessions=60.0)], S_OK,
+                 preset="custom", custom_chain=["f_susp"])
+why5 = g5["status_matrix"]["الف"]["tape"]["human_reason"]
+# مبناء = ۳۰۰۰۰/۳۰ = ۱۰۰۰؛ حجمِ امروز ۶۰ ⇒ نسبت ۰٫۰۶، و فایل ۳× می‌خواهد
+ck("مبناء" in why5 and "۰٫۰۶" in why5 and "۳" in why5 and "." not in why5,
+   f"۴۸) دلیلِ حجمِ مشکوک نسبتِ خودِ ردیف و آستانۀ فایل را با هم می‌نویسد: {why5}")
+
+# ── ۴۹) بدنۀِ همین نشست درِ ردیف‌هایِ قیف (ستونِ «کندل روز») ────────────────
+# رأیِ مالک (۱۴۰۵-۰۷-۲۲): «جاهایی که می‌طلبد نمودار هم باشد». قیف همان
+# ردیف‌هایِ تابلو را می‌نماید ولی هیچ شکلی از نشستِشان نمی‌داد. سه کلیدِ
+# first/high/low عیناً از ردیفِ تابلو حمل می‌شوند — نبودنشان None می‌ماند،
+# نه صفر (صفر درِ کندل یعنی «اولینِ مبادله رویِ صفر افتاد»).
+_b1 = board("الف", f_susp=True)
+_b1.update({"p_first": 980.0, "p_max": 1010.0, "p_min": 960.0,
+            "p_last": 1000.0, "p_closing": 990.0})
+_b2 = board("ب", f_susp=True)
+E49 = FE.evaluate([_b1, _b2], [screen("الف", **UP, **OK_FUND), screen("ب", **UP, **OK_FUND)],
+                  preset="custom", custom_chain=["f_susp"])
+_by = {r["symbol"]: r for r in E49["entries"]["tape"]}
+ck(_by["الف"].get("first") == 980.0 and _by["الف"].get("high") == 1010.0
+   and _by["الف"].get("low") == 960.0,
+   f"۴۹) بدنۀِ نشست از ردیفِ تابلو به ردیفِ قیف می‌رسد: "
+   f"{_by['الف'].get('first')}/{_by['الف'].get('high')}/{_by['الف'].get('low')}")
+ck("first" in _by["ب"] and _by["ب"]["first"] is None
+   and _by["ب"]["high"] is None and _by["ب"]["low"] is None,
+   f"۴۹) بی‌OHLC کلید تهی می‌ماند (صفرِ ساختگی کندل نمی‌سازد): "
+   f"{_by['ب'].get('first')!r}")
+
+
+# ── ۵۰) نامزدِ هر فیلتر رویِ **همان مجموعه‌ای که الان رویِ میز است** ────────
+# خواستِ مالک (۱۴۰۵-۰۷-۲۰): «برایِ هرکدوم عدد بزار، زنده محاسبه کنه».
+# رأیِ ۱۴۰۵-۰۷-۲۱ همان عدد را وابسته کرد: «وقتی حجم مشکوک روشن است، جت بگوید
+# از این‌ها چندتا». پس مبنایِ شمارشِ هر چیپ، ردیف‌هایی است که *بقیۀ* چیپ‌هایِ
+# روشن را پاس کرده‌اند (leave-one-out) — نه کلِّ بازار، و نه بازماندۀ ترتیبیِ
+# گام‌ها (که فیلترِ دوم را رویِ فیلترِ اول می‌شمارد و اشتراک را می‌دهد).
+_fc = o["stages"]["tape"]["filter_counts"]
+ck(set(_fc) == set(REG.filter_ids()),
+   "۵۰) هر هفت فیلترِ رجیستری شمارش دارد، نه فقط زنجیره: " + str(sorted(_fc)))
+ck(_fc["f_susp"]["matched"] == 1 and _fc["f_susp"]["input"] == 2
+   and _fc["f_susp"]["universe"] == 4,
+   "۵۰) با دو چیپِ روشن، شمارِ هر چیپ رویِ نامزدِ «بقیه» است، نه کلِّ بازار: "
+   + str(_fc["f_susp"]))
+ck(_fc["f_susp"]["matched"] == _fc["f_noqteh"]["matched"] == 1,
+   "۵۰) دو چیپِ روشن هر دو اندازهٔ اشتراکشان را می‌شمارند (۲∩۲=۱)")
+ck(all(v["matched"] + v["removed"] + v["unmeasured"] == v["input"] for v in _fc.values()),
+   "۵۰) نامزد + رد + بی‌حکم با مبنایِ همان چیپ می‌خواند")
+# بی‌هیچ چیپِ روشن همان شمارِ مستقلِ همیشگی برمی‌گردد (رفتارِ پیشین نسوزد).
+# توجه: `preset="trend"` بی‌زنجیره **نیست** — خودش کف‌روبی + نقطه‌زنی را روشن
+# می‌کند؛ مبنایِ بی‌چیپ فقط با زنجیرۀ خالیِ custom می‌آید.
+_o2 = FE.evaluate(B, S, preset="custom", custom_chain=[])
+_fc2 = _o2["stages"]["tape"]["filter_counts"]
+ck(_fc2["f_susp"]["matched"] == 2 and _fc2["f_susp"]["input"] == 4,
+   "۵۰) بی‌چیپِ روشن مبنایِ شمارش کلِّ جامعۀ غربالگری است: " + str(_fc2["f_susp"]))
+# اجتماع: مبنایِ هر چیپ = اتحادِ *بقیۀ* روشن. برایِ چیپِ روشنِ f_susp آن اتحاد
+# تنها ردیف‌هایِ f_noqteh است (۲)، و برایِ چیپِ خاموشی مثلِ f_jet اتحادِ هر دو
+# روشن (۲ ∪ ۲ با یک اشتراک = ۳).
+_o3 = FE.evaluate(B, S, preset="custom", custom_chain=["f_susp", "f_noqteh"],
+                  tape_logic="or")
+_fc3 = _o3["stages"]["tape"]["filter_counts"]
+ck(_fc3["f_susp"]["input"] == 2 and _fc3["f_susp"]["matched"] == 1,
+   "۵۰) درِ اجتماع مبنایِ هر چیپ اتحادِ بقیهٔ روشن است: " + str(_fc3["f_susp"]))
+ck(_fc3["f_jet"]["input"] == 3,
+   "۵۰) چیپِ خاموش درِ اجتماع رویِ اتحادِ دو چیپِ روشن می‌شمارد: " + str(_fc3["f_jet"]))
+# ت) پرچمِ بی‌حکم «رد» شمرده نمی‌شود (UNAVAILABLE ≠ REJECT درِ همین شمارش هم)
+_B4 = [board("الف", f_susp=None), board("ب", f_susp=True)]
+_o4 = FE.evaluate(_B4, [screen("الف", **UP, **OK_FUND), screen("ب", **UP, **OK_FUND)],
+                  preset="custom", custom_chain=["f_susp"])
+_fc4 = _o4["stages"]["tape"]["filter_counts"]["f_susp"]
+ck(_fc4["matched"] == 1 and _fc4["removed"] == 0 and _fc4["unmeasured"] == 1,
+   "۵۰) بی‌حکم درِ نامزد و رد نمی‌نشیند: " + str(_fc4))
+
+print()
+if FAILED:
+    print(f"funnel_engine guard: {len(FAILED)} FAILED")
+    sys.exit(1)
+print(f"funnel_engine guard OK — {43 + 9 + 7 + 8 + 2 + 6} بندِ مأموریت")

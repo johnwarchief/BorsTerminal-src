@@ -5,6 +5,7 @@ import { http } from '@shared/api/http';
 import { useMarketFeedShared } from '@shared/api/marketFeed';
 import type { MarketFeed } from '@shared/types/marketRow';
 import { normalizeFa } from '@shared/lib/normalizeFa';
+import { sessionPollMs } from '@shared/lib/marketHours';
 import { PortfolioDecisionSchema } from '../model/portfolioSignals';
 
 const PortfolioFeedSchema = z.object({
@@ -45,6 +46,11 @@ export function usePortfolio() {
       http<PortfolioFeed>('/api/selection/portfolio', { schema: PortfolioFeedSchema, signal }),
     staleTime: 60_000,
     gcTime: 10 * 60_000,
+    // #M3.2: وزن/تخصیصِ هدف/ارزشِ سبد از همین snapshot می‌آید و قیمتِ جاری از
+    // فیدِ مشترک. بی‌این، deltaِ تخصیص و فاصله‌ها تا پایانِ نشست رویِ عددِ ورودِ
+    // صفحه می‌ماند. ریتمِ نشست‌محور (۳۰s باز / ۵min بسته) — نه هر نفسِ تابلو.
+    refetchInterval: () => sessionPollMs(30_000),
+    refetchIntervalInBackground: false,
   });
 }
 

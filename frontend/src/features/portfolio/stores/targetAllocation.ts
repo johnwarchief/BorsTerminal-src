@@ -56,7 +56,16 @@ function loadInitial(): TargetClass[] {
     if (!raw) return FTS_DEFAULT_TARGETS.map((c) => ({ ...c }));
     const parsed = JSON.parse(raw) as TargetClass[];
     if (!Array.isArray(parsed) || parsed.length === 0) return FTS_DEFAULT_TARGETS.map((c) => ({ ...c }));
-    return parsed.map((c) => ({ ...c, pct: Number(c.pct) || 0 }));
+    // pct خراب (NaN/رشته) صفرِ ساختگی نمی‌شود: به درصدِ پیش‌فرضِ همان طبقه برمی‌گردد
+    // و طبقه‌ای که اصلاً شناخته‌شده نیست از لیست بیرون می‌رود — نه با ۰٪ جعلی.
+    return parsed
+      .map((c) => {
+        const pct = Number(c.pct);
+        if (Number.isFinite(pct)) return { ...c, pct };
+        const d = FTS_DEFAULT_TARGETS.find((t) => t.id === c.id);
+        return d ? { ...c, pct: d.pct } : null;
+      })
+      .filter((c): c is TargetClass => c !== null);
   } catch {
     return FTS_DEFAULT_TARGETS.map((c) => ({ ...c }));
   }

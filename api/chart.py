@@ -5,10 +5,18 @@ Every statement is byte-for-byte identical to app.py; only the route
 decorators changed from @app.<verb> to @router.<verb>.
 Audit map of source line spans: MIGRATED_LINES.txt
 """
-from bors_config import DB_PATH, MA_WINDOWS, _CAL_CACHE_PATH, _cal_cache
+from bors_config import (DB_PATH, FTS_CONFIG_PATH, FTS_DEFAULTS, MA_WINDOWS,
+                         _CAL_CACHE_PATH, _cal_cache, APP_VERSION)
 from tape_flags import JET_LADDER
 import candle_contract
 import price_basis
+import os as _os
+import trend_classify
+# موتورِ تشخیصِ روند: legacy (پیش‌فرض = رفتارِ امروز) | hybrid. با env عوض می‌شود تا
+# درِ dev مسیرِ ترکیبی واقعاً فعال/قابل‌مشاهده باشد و برگشت به قبلی روشن بماند.
+# این flag فقط «برچسبِ روند» را می‌سازد؛ جت همیشه `_fts_classify_trend` را می‌خواند
+# و دروازۀ هفتگی قیف همان `trend.matrix` را — پس قانونِ قیف و منطقِ جت عوض نمی‌شود.
+TREND_ENGINE = (_os.environ.get("BORS_TREND_ENGINE") or "legacy").strip().lower()
 from ._core import get_user_db, sym_pred
 from fastapi import APIRouter
 from fastapi import Query
@@ -22,6 +30,57 @@ import time
 
 
 router = APIRouter()
+
+
+# Cache settings by file signature: FTS analysis can run for hundreds of symbols.
+_FTS_HG_SETTINGS_LOCK = threading.Lock()
+_FTS_HG_SETTINGS_CACHE = {"signature": None, "values": None}
+
+
+def _fts_hourglass_settings():
+    try:
+        stat = os.stat(FTS_CONFIG_PATH)
+        signature = (stat.st_mtime_ns, stat.st_size)
+    except OSError:
+        signature = None
+    cached = _FTS_HG_SETTINGS_CACHE
+    if cached["values"] is not None and cached["signature"] == signature:
+        return dict(cached["values"])
+
+    with _FTS_HG_SETTINGS_LOCK:
+        try:
+            stat = os.stat(FTS_CONFIG_PATH)
+            signature = (stat.st_mtime_ns, stat.st_size)
+        except OSError:
+            signature = None
+        cached = _FTS_HG_SETTINGS_CACHE
+        if cached["values"] is not None and cached["signature"] == signature:
+            return dict(cached["values"])
+
+        values = {
+            "hourglass_rsi_period": int(FTS_DEFAULTS.get("hourglass_rsi_period", 7)),
+            "hourglass_rsi_oversold": float(FTS_DEFAULTS.get("hourglass_rsi_oversold", 30.0)),
+            "hourglass_ma52_position": FTS_DEFAULTS.get("hourglass_ma52_position", "below"),
+        }
+        try:
+            with open(FTS_CONFIG_PATH, encoding="utf-8") as f:
+                raw = json.load(f)
+            if isinstance(raw, dict):
+                period = float(raw.get("hourglass_rsi_period", values["hourglass_rsi_period"]))
+                oversold = float(raw.get("hourglass_rsi_oversold", values["hourglass_rsi_oversold"]))
+                mode = raw.get("hourglass_ma52_position", values["hourglass_ma52_position"])
+                if period.is_integer() and 2 <= period <= 100:
+                    values["hourglass_rsi_period"] = int(period)
+                if 5.0 <= oversold <= 50.0:
+                    values["hourglass_rsi_oversold"] = oversold
+                if mode in ("below", "above", "either"):
+                    values["hourglass_ma52_position"] = mode
+        except (OSError, ValueError, TypeError):
+            # Missing, older or partially-written settings fall back safely.
+            pass
+        _FTS_HG_SETTINGS_CACHE["signature"] = signature
+        _FTS_HG_SETTINGS_CACHE["values"] = dict(values)
+        return dict(values)
 
 
 CDN_OFFLINE_UNTIL = 0.0
@@ -293,7 +352,7 @@ def _corporate_events(symbol):
     except Exception:
         return []
     try:
-        _pred, _params = sym_pred("l_val18", symbol)
+        _pred, _params = sym_pred(conn, "l_val18", symbol, "board")
         row = conn.execute(
             f"SELECT ins_code FROM instruments WHERE {_pred}"
             " ORDER BY updated_at DESC LIMIT 1", _params).fetchone()
@@ -344,8 +403,8 @@ def _watch_live_bar(symbol, after_date):
             # (p_open/p_max/p_min وجود نداشتند → OperationalError هر بار توسط
             #  exceptِ خاموش بلعیده می‌شد و کندل زندهٔ امروز هرگز تزریق نمی‌شد).
             #  price_first = اولین معامله (هم‌خانمان با FIX-1)، p_closing = پایانی.
-            _p18, _a18 = sym_pred("i.l_val18", symbol)
-            _p30, _a30 = sym_pred("i.l_val30", symbol)
+            _p18, _a18 = sym_pred(conn, "i.l_val18", symbol, "board")
+            _p30, _a30 = sym_pred(conn, "i.l_val30", symbol, "board")
             row = conn.execute(
                 "SELECT m.price_first, m.price_max, m.price_min, m.p_closing, m.q_tot_tran, "
                 "       m.d_even, m.p_last "
@@ -535,20 +594,24 @@ def get_chart_tsetmc(symbol: str):
         # ردیفِ دلخواهِ SQLite را می‌گرفتند → در دو اجرا، نمودارِ یک اوراقِ «دیگر»
         # با همان نام سرو می‌شد. اکنون newest-first: ردیفِ به‌روزتر (ابزارِ فعلیِ
         # بازار) به‌صورت قطعی انتخاب می‌شود.
-        _pred, _params = sym_pred("l_val18", symbol)
+        _pred, _params = sym_pred(conn, "l_val18", symbol, "board")
         ins = conn.execute(
             f"SELECT ins_code FROM instruments WHERE {_pred} ORDER BY updated_at DESC LIMIT 1", _params
         ).fetchone()
         if not ins:
+            # همان خانوادۀ نوشتاریِ خودِ تابلو (فاصله/نیم‌فاصله/ي-ك) — نه حذفِ
+            # رقمِ انتهایی: درِ جهانِ تابلو «خودرو2» ابزارِ دیگری است.
             try:
                 import fts_engine
-                norm_s = fts_engine.norm_fa(symbol)
+                _bvar = list(fts_engine.symbol_variants(conn, symbol, "board"))
             except Exception:
-                norm_s = symbol
-            ins = conn.execute(
-                "SELECT ins_code FROM instruments WHERE REPLACE(REPLACE(REPLACE(l_val18, 'ك', 'ک'), 'ي', 'ی'), 'ى', 'ی') = ? ORDER BY updated_at DESC LIMIT 1",
-                (norm_s,)
-            ).fetchone()
+                _bvar = [symbol]
+            if _bvar:
+                ins = conn.execute(
+                    "SELECT ins_code FROM instruments WHERE l_val18 IN (%s) "
+                    "ORDER BY updated_at DESC LIMIT 1" % ",".join("?" * len(_bvar)),
+                    _bvar,
+                ).fetchone()
         conn.close()
         if not ins:
             fb = _fallback_local()
@@ -751,7 +814,7 @@ def get_key_levels(symbol: str):
     try:
         conn = sqlite3.connect(DB_PATH, timeout=30)
         conn.execute("PRAGMA journal_mode=WAL")
-        _pred, _params = sym_pred("symbol", symbol)
+        _pred, _params = sym_pred(conn, "symbol", symbol, "board")
         _raw = conn.execute(
             "SELECT symbol, date, open, high, low, close, volume, last FROM price_history "
             "WHERE %s ORDER BY date DESC, volume DESC LIMIT 250" % _pred,
@@ -794,7 +857,7 @@ def get_order_book(symbol: str):
     try:
         conn = sqlite3.connect(DB_PATH, timeout=30)
         conn.row_factory = sqlite3.Row
-        _pred, _params = sym_pred("l_val18", symbol)
+        _pred, _params = sym_pred(conn, "l_val18", symbol, "board")
         ins = conn.execute(
             f"SELECT ins_code FROM instruments WHERE {_pred}"
             " ORDER BY updated_at DESC LIMIT 1", _params).fetchone()
@@ -863,6 +926,31 @@ def _cal_cache_events():
     return _cal_cache["events"]
 
 
+# ── منشأِ تاریخِ رویداد (§۲۳ و §۲۴ِ رأیِ مالک) ────────────────────────────────
+# «آیا خودِ عنوان، تاریخِ جلسه را می‌گوید؟» — همان شرطی که واکشی‌کننده برای
+# انتخابِ تاریخِ رویداد به کار می‌برد (`dev/calendar_fetcher.py`، DATE_RE).
+# ردیف‌هایِ قدیمیِ cache.json این علامت را ندارند و reingest هم درِ این milestone
+# ممنوع است (رأیِ §۲۶)، پس منشأ از خودِ عنوانِ ذخیره‌شده بازسازی می‌شود؛ نه از
+# حدس، نه از تاریخِ انتشار.
+_FA_NUM = str.maketrans({chr(0x06F0 + i): str(i) for i in range(10)}
+                        | {chr(0x0660 + i): str(i) for i in range(10)})
+_TITLE_DATE_RE = __import__("re").compile(r"(?:مورخ|مؤرخ|تاریخ)\s*\d{4}/\d{1,2}/\d{1,2}")
+
+
+def event_date_source(ev: dict) -> str:
+    """`"title"` | `"publication_fallback"` — هیچ حالتِ سومی وجود ندارد.
+
+    نبودِ علامت رویِ ردیفِ کهنه با «تاریخِ مجمع» یکی نیست: اگر عنوان تاریخِ
+    جلسه نداشته باشد، آن عدد فقط تاریخِ انتشارِ اطلاعیه است و وتو رویِ آن
+    روشن نمی‌شود.
+    """
+    src = str(ev.get("date_source") or "").strip()
+    if src in ("title", "publication_fallback"):
+        return src
+    title = str(ev.get("event_title") or ev.get("description") or "").translate(_FA_NUM)
+    return "title" if _TITLE_DATE_RE.search(title) else "publication_fallback"
+
+
 def _cal_events_for(symbol):
     """رویدادهای نماد از static/calendar/cache.json (کش با mtime)."""
     _norm = lambda s: str(s or "").translate(str.maketrans({"ك": "ک", "ي": "ی", "ى": "ی"})).strip()
@@ -887,6 +975,10 @@ def _cal_events_for(symbol):
             "ts": int(_tg((dt.year, dt.month, dt.day, 12, 0, 0, 0, 0, 0))) * 1000,
             "title": title,
             "cat": _cal_classify(title, int(ev.get("event_type_id") or 0)),
+            # همان دو میدانِ `upcoming`: رابطِ تقویمِ نماد هم باید بداند این تاریخ
+            # تاریخِ جلسه است یا فقط انتشارِ اطلاعیه.
+            "date_source": event_date_source(ev),
+            "published_at": ev.get("published_at"),
         })
     out.sort(key=lambda x: x["ts"])
     return out
@@ -959,7 +1051,12 @@ def _upcoming_by(cats, days: int, title_re=None) -> dict:
             and cur["cat"] != "assemblyChange"
         ):
             best[sym] = {"symbol": sym, "date": d.isoformat(), "cat": cat,
-                         "title": title[:140]}
+                         "title": title[:140],
+                         # دو میدانِ تازه برایِ همین مصرف‌کننده‌هاست: وتو فقط با
+                         # «title» روشن می‌شود و رابط «تاریخِ انتشار» را جدا
+                         # برچسب می‌زند. نبودش ⇒ هیچ‌کدام.
+                         "date_source": event_date_source(ev),
+                         "published_at": ev.get("published_at")}
     return best
 
 
@@ -1035,7 +1132,7 @@ def get_ma_events(symbol: str, days: int = Query(730)):
     try:
         conn = sqlite3.connect(DB_PATH, timeout=30)
         conn.execute("PRAGMA journal_mode=WAL")
-        _pred, _params = sym_pred("symbol", symbol)
+        _pred, _params = sym_pred(conn, "symbol", symbol, "board")
         _raw = conn.execute(
             "SELECT date, close, volume, last FROM price_history WHERE %s "
             "ORDER BY date DESC, volume DESC LIMIT ?" % _pred,
@@ -1097,7 +1194,7 @@ def get_chart_db(symbol: str, adjustment: int = 3):
         conn = sqlite3.connect(DB_PATH, timeout=30)
         conn.execute("PRAGMA journal_mode=WAL")
         try:
-            _pred, _params = sym_pred("symbol", symbol)
+            _pred, _params = sym_pred(conn, "symbol", symbol, "board")
             _raw = conn.execute(
                 "SELECT date, open, high, low, close, volume, last, value FROM price_history "
                 "WHERE %s ORDER BY date DESC, volume DESC" % _pred, _params).fetchall()
@@ -1187,7 +1284,7 @@ def get_patterns(symbol: str):
     try:
         conn = sqlite3.connect(DB_PATH, timeout=30)
         conn.execute("PRAGMA journal_mode=WAL")
-        _pred, _params = sym_pred("symbol", symbol)
+        _pred, _params = sym_pred(conn, "symbol", symbol, "board")
         _raw = conn.execute(
             "SELECT symbol, date, open, high, low, close, volume, last FROM price_history "
             "WHERE %s ORDER BY date DESC, volume DESC LIMIT 250" % _pred,
@@ -1312,9 +1409,16 @@ PATTERNS_CACHE = {}
 _FTS_STALE_BARS = 8         # فاصلهٔ تازه‌ترین پیوتِ تأییدشده تا امروز که «ساختار کهنه» حساب می‌شود
 _FTS_STALE_WINDOW = 52      # بازهٔ سنجشِ مستقیمِ روند (همان ۵۲ دورهٔ MA52)
 _FTS_STALE_MIN_BARS = 12    # کمینهٔ کندل برای سنجشِ مستقیم؛ کمتر از آن رأی نمی‌دهیم
+_FTS_JET_MIN_BARS = 60      # کمینۀ تاریخچۀ جت: کمتر از «شصت نشستِ شناخته‌شده» ارزیابی ممکن نیست ⇒ null
 _FTS_STALE_MOVE_MIN = 0.05  # کمینهٔ جابه‌جاییِ کلِ بازه برای اعلامِ جهت
 _FTS_SWING_K = 3          # نیم‌پنجرهٔ پیوت (fractal) روی روزانه
 _FTS_EQUAL_TOL = 0.005    # اختلاف ≤ ۰.۵٪ دو پیوت = «مساوی» (ساختار رنج/تخت)
+# نسخهٔ قواعدِ تحلیلِ تکنیکالِ چارت (`_fts_classify_trend` + وزن‌ها + resample +
+# jet/choch/fib/point-hunt). این شمارۀ بیلد نیست؛ هر بار که یکی از این قواعد عوض
+# شد باید یک واحد بالا برود — وگرنه کشِ پاسخِ کهنه با قواعدِ نو جواب می‌دهد.
+# (بیلدِ منتشرشده: `APP_VERSION`. قواعدِ فیلترِ قیف جایِ دیگری نسخه دارد و با این
+# یکی نمی‌شود، چون rulebookهایِ متفاوت‌اند.)
+FTS_TECH_RULESET_VERSION = "3"   # «۳»: تأییدِ موقعیتِ قیمت (شکستِ سقف/کفِ آخر بر شمارشِ دو پیوتِ کهنه ترجیح می‌یابد)
 # «قطعی» بودنِ CHoCH: چند بستهٔ متوالی + چقدر حاشیه. تک‌منبع — هم `_fts_choch`
 # این‌ها را پیش‌فرض می‌گیرد و هم `_fts_setup_history` (مارکر) همان را می‌خواند،
 # پس مارکر و پنل از دو عددِ جدا رأی نمی‌دهند. سنجشِ تاریخی: دوروزه/۱٪ دقتِ
@@ -1521,13 +1625,37 @@ def _fts_classify_trend(swings, tol=_FTS_EQUAL_TOL, series=None,
                "last_low_time": lows[-1].get("time"), "prev_low_time": lows[-2].get("time"),
                "stale_bars": None, "window": None}
 
+        # تأییدِ موقعیتِ قیمت رویِ ساختار: نمی‌شود در «سقفِ تازه» نزولی بود.
+        # اگر بستۀِ اخیر از هر دو سقفِ پیوتِ اخیر (ماکسِ h1,h2) بالاتر باشد،
+        # ساختارِ نزولی شکسته شده و جهت صعودی است؛ و برعکس زیرِ هر دو کفِ اخیر ⇒
+        # نزولی. بی‌این، فنوال/فولادِ هفتگی رویِ دو پیوتِ کهنه «down» می‌گرفتند
+        # در حالی کهِ قیمت در سقفِ تاریخی بود (دروازۀ قیف را می‌بست). آستانه
+        # «بالاتر/پایین‌تر از هر دو» است، نه یکِ پیوت، تا پولبکِ ۰٫۵٪ درِ روندِ
+        # نزولیِ واقعی اشتباهاً جهت عوض نکند. `piv["trend"]` خام می‌ماند (نسخۀِ
+        # ممیزیِ «pivots» باید رأیِ خالصِ پیوت باشد)؛ اعمال در وقتِ بازگشت.
+        if series:
+            last_close = float(series[-1].get("close") or 0)
+            if last_close > max(h1, h2) * (1 + tol):
+                piv["price_confirm"] = "new-high-above-recent-pivots"
+            elif last_close > 0 and last_close < min(l1, l2) * (1 - tol):
+                piv["price_confirm"] = "new-low-below-recent-pivots"
+
+    def _with_price_confirm(p):
+        # فقط رأیِ نهایی را عوض می‌کند؛ نسخهٔ «pivots» خام می‌ماند.
+        pc = p.get("price_confirm")
+        if not pc:
+            return p
+        q = dict(p)
+        q["trend"] = "up" if pc == "new-high-above-recent-pivots" else "down"
+        return q
+
     if series is None:
         return piv if piv is not None else base
     n = len(series)
     newest = max((s["idx"] for s in swings), default=-1)
     gap = n - 1 - newest
     if piv is not None and gap <= stale_bars:
-        return piv
+        return _with_price_confirm(piv)
     win = _fts_recent_window_trend(series)
     if win is None:
         return piv if piv is not None else base
@@ -1792,10 +1920,15 @@ def _fts_jet_setup(candles, ladder=JET_LADDER, ceiling_win=250, ceiling_skip=6, 
     entry_window_days, days_remaining, tier, reason
     """
     n = len(candles)
-    if n < 2:
+    # رأیِ مالک: «نبودِ دادهٔ کافی برایِ ارزیابی ⇒ null؛ منفی فقط وقتی که ارزیابی
+    # واقعاً ممکن بوده.» جت به پنجرۀ ایستادۀ مقاومت نیاز دارد؛ با کمتر از کفِ
+    # ۶۰ کندل (همان کفِ «شصت نشستِ شناخته‌شده» درِ فیلترِ جتِ تابلو) ارزیابی
+    # ممکن نیست ⇒ سنجیده‌نشده، نه «رد». (خط ۷۷۱/۱۲۳۸ همین کف را دارند.)
+    if n < _FTS_JET_MIN_BARS:
+        _c = float(candles[-1]["close"]) if n >= 1 else None
         return {
             "active": None, "resistance": None, "resistance_date": None,
-            "resistance_type": None, "ath": None, "close": None,
+            "resistance_type": None, "ath": None, "close": round(_c, 2) if _c is not None else None,
             "pct_above_res": None, "ceiling": None, "ceiling_date": None,
             "static_broke": None, "breakout_date": None,
             "entry_window_days": entry_window_days, "days_remaining": None,
@@ -2604,7 +2737,7 @@ def _fts_exit_engine(candles, entry_hint=None):
 # v10 - single-symbol FTS analysis (payload assembly + endpoint)
 # ============================================================================
 
-FTS_ANALYSIS_CACHE = {}          # {key: (ts, payload)}; key = symbol|close
+FTS_ANALYSIS_CACHE = {}          # {key: (ts, payload)}; symbol/close/context + active hourglass settings
 FTS_ANALYSIS_CACHE_MAX = 3000    # size cap (bulk-screener style churn safe)
 FTS_ANALYSIS_TTL = 900.0         # seconds; payload recomputed after expiry
 
@@ -2676,11 +2809,15 @@ def _fts_analyze_candles(symbol, candles, entry_hint=None):
     swings_d = _fts_swings(candles, k=_FTS_SWING_K)
     w = _fts_resample(candles, "W")
     m = _fts_resample(candles, "M")
+    # dispatchِ موتورِ روند (flag). legacy = دقیقاً رفتارِ امروز؛ hybrid = طبقه‌بندِ
+    # ترکیبیِ قابل‌توضیح. jet (بالا) و باقیِ مصرف‌کننده‌ها از همین trend می‌خوانند؛
+    # classify_trend خروجیِ سازگارِ legacy می‌دهد (neutral→range، کم‌داده→na).
+    _tf = trend_classify.classify_trend if TREND_ENGINE == "hybrid" else _fts_classify_trend
     out = {
         "trend": {
-            "D": _fts_classify_trend(swings_d, series=candles),
-            "W": _fts_classify_trend(_fts_swings(w, k=2), series=w),
-            "M": _fts_classify_trend(_fts_swings(m, k=2), series=m),
+            "D": _tf(swings_d, series=candles),
+            "W": _tf(_fts_swings(w, k=2), series=w),
+            "M": _tf(_fts_swings(m, k=2), series=m),
             "alignment": "na",
         },
         "fib": _fts_fib_zones(candles, swings_d),
@@ -2761,49 +2898,67 @@ def _fts_analyze_candles(symbol, candles, entry_hint=None):
             if why:
                 _mx["desc"] = f"{_mx['desc']} — {why}"
 
-    # استراتژی ساعت شنی پیشرفته FTS طبق بخش ۵ سند رسمی FTS v2.1
+    # تنظیمات کاربر فقط بر ساعت شنی اثر می‌گذارند؛ RSI(14) خروج مستقل است.
+    hg_cfg = _fts_hourglass_settings()
+    rsi_period = hg_cfg["hourglass_rsi_period"]
+    rsi_oversold = hg_cfg["hourglass_rsi_oversold"]
+    ma52_position_mode = hg_cfg["hourglass_ma52_position"]
     closes_w = [float(c["close"]) for c in w] if w else []
-    if len(closes_w) >= 15:
-        rsi5_w = _fts_rsi(closes_w, 5)
-        last_cw = closes_w[-1]
-        last_rsi5 = rsi5_w[-1] if rsi5_w else None
-        # MA52 فقط با پنجاه‌ودو نشستِ هفتگیِ واقعی. پیش از این دوره با
-        # «کمترینِ پنجاه‌ودو و طولِ سابقه» ساخته می‌شد و همان عددِ کوتاه‌تر با
-        # نامِ ma52 منتشر و در شرطِ «خریدِ ۲ تا ۴ برابری» به کار می‌رفت: نمادی
-        # با چهارده هفته، میانگینِ چهارده‌هفته‌اش را زیرِ پا داشت و ساعت شنی
-        # روشن می‌شد. عددی که موتور نگفته نباید جایِ عددِ دیگر را بزند.
-        ma_ok = len(closes_w) >= 52
-        ma52_w = _fts_ma(closes_w, 52) if ma_ok else []
-        last_ma52 = ma52_w[-1] if ma52_w else None
-        is_hg_active = bool(last_ma52 and last_cw < last_ma52 and (last_rsi5 is not None and last_rsi5 <= 30.0))
-        out["hourglass"] = {
-            # MA52 با کمتر از ۵۲ کندل هفتگی ساخته نمی‌شود ⇒ ساعت شنی **نظر
-            # نمی‌دهد** (None)، نه «غیرفعال». پیش از این desc می‌گفت «نظر نمی‌دهد»
-            # ولی active=False می‌داد و UI همان ✗ را می‌کشید.
-            "active": is_hg_active if ma_ok else None,
-            "weekly_close": round(last_cw, 2),
-            "ma52": round(last_ma52, 2) if last_ma52 else None,
-            "weekly_bars": len(closes_w),
-            "weekly_rsi5": round(last_rsi5, 1) if last_rsi5 is not None else None,
-            "action": ("ACCELERATE_BUY_2X_4X" if is_hg_active else
-                       "NORMAL" if ma_ok else "UNKNOWN"),
-            "desc": (
-                "اهرم شتاب‌دهنده ساعت شنی فعال: قیمت هفتگی زیر MA52 و RSI هفتگی اشباع فروش (خرید ۲ تا ۴ برابری)"
-                if is_hg_active
-                else ("MA52 سنجیده نشد (کمتر از ۵۲ کندل هفتگی) — ساعت شنی نظر نمی‌دهد"
-                      if not ma_ok else "شرایط ساعت شنی برقرار نیست")
-            ),
-        }
+    weekly_rsi_values = _fts_rsi(closes_w, rsi_period)
+    last_cw = closes_w[-1] if closes_w else None
+    last_rsi = weekly_rsi_values[-1] if weekly_rsi_values else None
+
+    # MA52 فقط با ۵۲ کندل هفتگی واقعی؛ RSI هم باید warm-up کافی داشته باشد.
+    ma_ok = len(closes_w) >= 52
+    rsi_ok = last_rsi is not None
+    ma52_w = _fts_ma(closes_w, 52) if ma_ok else []
+    last_ma52 = ma52_w[-1] if ma52_w else None
+
+    if ma_ok and last_ma52 is not None and last_cw is not None:
+        if ma52_position_mode == "below":
+            ma52_position_match = last_cw < last_ma52
+        elif ma52_position_mode == "above":
+            ma52_position_match = last_cw > last_ma52
+        else:
+            # either: MA52 در خروجی باقی می‌ماند، اما جهت آن شرط فعال‌سازی نیست.
+            ma52_position_match = True
     else:
-        out["hourglass"] = {
-            "active": None,
-            "weekly_close": None,
-            "ma52": None,
-            "weekly_rsi5": None,
-            "weekly_bars": len(closes_w),
-            "action": "UNKNOWN",
-            "desc": "سابقه هفتگی کمتر از حد نصاب (۱۵ کندل) — ساعت شنی سنجیده نمی‌شود",
-        }
+        ma52_position_match = None
+
+    enough_data = ma_ok and rsi_ok
+    is_hg_active = bool(
+        enough_data and ma52_position_match and last_rsi is not None and last_rsi <= rsi_oversold
+    )
+    if is_hg_active:
+        if ma52_position_mode == "below":
+            hg_desc = "ساعت شنی فعال: قیمت هفتگی زیر MA52 و RSI هفتگی در آستانه اشباع فروش (افزایش خرید ۲ تا ۴ برابر)"
+        elif ma52_position_mode == "above":
+            hg_desc = "ساعت شنی فعال: قیمت هفتگی بالای MA52 و RSI هفتگی در آستانه اشباع فروش (افزایش خرید ۲ تا ۴ برابر)"
+        else:
+            hg_desc = "ساعت شنی فعال: RSI هفتگی در آستانه اشباع فروش؛ گیت جهت MA52 خاموش است (افزایش خرید ۲ تا ۴ برابر)"
+    elif not ma_ok:
+        hg_desc = "MA52 سنجیده نشد (کمتر از ۵۲ کندل هفتگی) — ساعت شنی نظر نمی‌دهد"
+    elif not rsi_ok:
+        hg_desc = f"RSI({rsi_period}) هفتگی سنجیده نشد — سابقه کافی نیست"
+    else:
+        hg_desc = "شرایط ساعت شنی با تنظیمات فعلی برقرار نیست"
+
+    out["hourglass"] = {
+        "active": is_hg_active if enough_data else None,
+        "weekly_close": round(last_cw, 2) if last_cw is not None else None,
+        "ma52": round(last_ma52, 2) if last_ma52 is not None else None,
+        "weekly_bars": len(closes_w),
+        "weekly_rsi": round(last_rsi, 1) if last_rsi is not None else None,
+        # Alias سازگاری برای UI قدیمی؛ مقدار با دوره فعال محاسبه می‌شود.
+        "weekly_rsi5": round(last_rsi, 1) if last_rsi is not None else None,
+        "rsi_period": rsi_period,
+        "rsi_oversold": rsi_oversold,
+        "ma52_position_mode": ma52_position_mode,
+        "ma52_position_match": ma52_position_match,
+        "action": ("ACCELERATE_BUY_2X_4X" if is_hg_active else
+                   "NORMAL" if enough_data else "UNKNOWN"),
+        "desc": hg_desc,
+    }
 
     box = _fts_double_bottom(candles, swings_d)
     out["double_bottom"] = box["double_bottom"]
@@ -2943,15 +3098,52 @@ def _fts_analysis_series(symbol):
     return cands, "local-db-raw"
 
 
-def _fts_analyze_symbol(symbol, entry_hint=None):
+def _candles_upto_asof(candles, as_of):
+    """برشِ واقعیِ ورودی به کندل‌هایِجلسۀ `as_of` و پیش‌تر.
+
+    `as_of` رشتهٔ 'YYYY-MM-DD' است؛ کندل‌هایِ این مسیر هم قرارداداً همین شکلِ
+    تاریخ را درِ `time` دارند (`'time' ('YYYY-MM-DD')` درِ docstringِ این فایل).
+    بیِ `as_of` هیچ برشی نمی‌شود ⇒ رفتارِ امروز دست‌نخورده. مقایسهٔ رشته‌ایِ ISO
+    با ترتیبِ زمانی یکی است، پس این یک cutoffِ واقعی است، نه تزئینِ کلیدِ کش.
+    """
+    if not as_of:
+        return candles
+    return [c for c in candles if str(c.get("time", ""))[:10] <= as_of]
+
+
+def _fts_analysis_cache_key(symbol, last_close, entry_hint, basis, as_of, hg_key: str = ""):
+    """هویتِ کاملِ کشِ تحلیلِ FTS — هر چیزی که نتیجه را عوض می‌کند اینجا باشد.
+
+    symbol + tf (قفلِ روزانه: D/W/M همه از همین سریِ روزانه ساخته می‌شوند) +
+    آخرینِ بستۀِ برشیده + entry_hint (hard-stop به آن وابسته است) + as_of (cutoff)
+    + نسخهٔ قواعد + بیلد + **تنظیمِ فعالِ ساعتِ شنی** + **مبنایِ تعدیل در آخر**.
+    مبنا عمداً آخرینِ فیلد است: گاردِ `dev/fts_cache_basis_v1078` اثبات می‌کند دو
+    مبنایِ متفاوت دو نتیجهٔ جدا می‌سازند؛ پس ترتیبِ کلید بخشی از قرارداد است.
+    `hg_key` هم از همین دور درِ کلید است: `dev/test_hourglass_settings_v1.py` ثابت
+    می‌کند با عوض‌شدنِ RSI/آستانه/حالتِ MA52، کشِ ۹۰۰ ثانیه‌ای نباید رأیِ مبنایِ
+    قبلی را جواب بدهد — چون این کشِ درونِ پروسه است و باطل‌کردنِ فرانت آن را پاک
+    نمی‌کند. بی‌این فیلد، تغییرِ تنظیمِ ساعتِ شنی تا ۱۵ دقیقه بی‌اثر می‌ماند.
+    """
+    return (f"{symbol}|tf=daily|{last_close}|{entry_hint}"
+            f"|asof={as_of or ''}|rs={FTS_TECH_RULESET_VERSION}|eng={TREND_ENGINE}"
+            + (f"|hg={hg_key}" if hg_key else "")
+            + f"|{basis}")
+
+
+def _fts_analyze_symbol(symbol, entry_hint=None, as_of=None):
     """Cached single-symbol FTS payload for /api/fts/{symbol} and badges.
 
-    Cache key = symbol + last daily close + entry hint: the hard stop is
-    entry-dependent, so a cached swing-basis payload must never answer an
-    `entry` request. Intra-day live-candle churn recomputes freely, but
-    repeated calls with unchanged closes (the common case for the badge strip
-    polling the same symbol) are served from cache. TTL guards against a
-    static close with drifting intraday fields.
+    Cache key = symbol + tf + last daily close + entry hint + price basis + as_of +
+    build/ruleset + the active hourglass settings. The hard stop is entry-dependent,
+    so a cached swing-basis payload must never answer an `entry` request. `as_of` is a
+    REAL historical cutoff: the input candles are sliced to sessions <= as_of before
+    the engine runs, so the weekly/daily verdict at T can never be moved by data that
+    post-dates T, and no result computed at one cutoff can leak to another. The build
+    (APP_VERSION) tags the ruleset so a new release never serves an old-rulebook
+    payload from cache. If the user changes RSI period/threshold/MA52 mode, the old
+    900s result must not answer the new configuration either — this cache is
+    process-local and frontend invalidation cannot clear it. TTL still guards against
+    a static close with drifting intraday fields.
     """
     import time as _t
     now = _t.time()
@@ -2961,13 +3153,29 @@ def _fts_analyze_symbol(symbol, entry_hint=None):
         return {"status": "error", "symbol": symbol, "message": str(e)}
     if not candles:
         return {"status": "empty", "symbol": symbol, "fts": None}
+    # برشِ واقعیِ as_of: فقط کندل‌هایِجلسۀ T و پیش‌تر به موتور می‌روند؛ پس دادهٔ
+    # بعد از T هرگز حکمِ تاریخیِ T را جابه‌جا نمی‌کند.
+    if as_of:
+        candles = _candles_upto_asof(candles, as_of)
+        if not candles:
+            return {"status": "empty", "symbol": symbol, "fts": None, "as_of": as_of}
     last_close = candles[-1].get("close")
     # مبنایِ قیمت هم درِ کلید است، مثلِ سه کشِ دیگر (key-levels، ma، patterns درِ
     # همین فایل) و مثلِ باقیِ مسیرِ چارت: `_fts_analysis_series` سری را با
     # مبنایِ ذخیرۀ کاربر می‌سازد، و برایِ نمادی که آخرینِ کندلش last==closing
     # باشد «آخرینِ ته‌بندی» عوض نمی‌شود ⇒ بی‌این، عوض‌کردنِ مبنایِ قیمت تا
     # FTS_ANALYSIS_TTL (۹۰۰ ثانیه) همان داوریِ مبنایِ قبلی را برمی‌گرداند.
-    key = f"{symbol}|{last_close}|{entry_hint}|{basis}"
+    # تنظیمِ فعالِ ساعتِ شنی هم درِ کلید: باطل‌کردنِ فرانت این کشِ درونِ پروسه را
+    # پاک نمی‌کند و درخواستِ هم‌بسته وگرنه تا TTL (=۹۰۰s) همان داوریِ تنظیمِ قبلی را
+    # می‌گیرد. as_of و build هم: دو cutoffِ متفاوت هرگز به هم نشت نمی‌کنند، و ریلیزِ
+    # تازه با rulebookِ نو کشِ rulebookِ قبلی را جواب نمی‌دهد.
+    hg_cfg = _fts_hourglass_settings()
+    hg_key = (
+        f"rsi={hg_cfg['hourglass_rsi_period']}:"
+        f"oversold={hg_cfg['hourglass_rsi_oversold']:.6g}:"
+        f"ma52={hg_cfg['hourglass_ma52_position']}"
+    )
+    key = _fts_analysis_cache_key(symbol, last_close, entry_hint, basis, as_of, hg_key)
     cached = FTS_ANALYSIS_CACHE.get(key)
     if cached and (now - cached[0]) < FTS_ANALYSIS_TTL:
         return cached[1]
@@ -2979,7 +3187,10 @@ def _fts_analyze_symbol(symbol, entry_hint=None):
     _src = _stored_adjust_source(symbol) or ("local-cache" if _evs else "local-db-unseen")
     result = {"status": "success", "symbol": symbol, "fts": fts,
               "analysis_basis": basis, "bars": len(candles),
+              "trend_engine": TREND_ENGINE,
               "adjustCapability": _adjust_capability(_evs, _src)}
+    if as_of:
+        result["as_of"] = as_of
     if len(FTS_ANALYSIS_CACHE) > FTS_ANALYSIS_CACHE_MAX:
         FTS_ANALYSIS_CACHE.clear()
     FTS_ANALYSIS_CACHE[key] = (now, result)
@@ -2987,14 +3198,19 @@ def _fts_analyze_symbol(symbol, entry_hint=None):
 
 
 @router.get("/api/fts/{symbol}")
-def get_fts(symbol: str):
+def get_fts(symbol: str, as_of: str | None = None):
     """Light analysis-only payload for the tech-view badge strip.
 
     Same FTS engine as the embedded chart payload; separate endpoint so the
     UI can refresh badges without refetching full candle history. The user's
     saved basket price is resolved here (not in the engine) so the hard stop
     can be «۵٪ زیرِ قیمتِ خرید» when the symbol is actually held.
+
+    `as_of` (YYYY-MM-DD) replays the verdict as of a past session: only candles
+    dated <= as_of reach the engine, and the cache key carries it, so a
+    historical answer can neither be moved by later data nor cross-serve another
+    cutoff. Without it the behaviour is byte-for-byte today's live analysis.
     """
-    return _fts_analyze_symbol(symbol, entry_hint=_basket_entry(symbol))
+    return _fts_analyze_symbol(symbol, entry_hint=_basket_entry(symbol), as_of=as_of)
 
 # __FTS_APPEND__

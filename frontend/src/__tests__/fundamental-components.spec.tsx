@@ -1,8 +1,8 @@
 // تست کامپوننت های بنیادی: تاب آوری در برابر null و رندر روند
-// + تفکیک میاندوره در نردبان EPS + نردبان خالی + فارسی‌سازی نمودار فصلی
+// (نردبان EPS در `FtsDrillDown` زنده است؛ `EpsLadder` مرده حذف شد و
+//  حکم‌هایش به src/__tests__/fts-drilldown.spec.tsx منتقل شده)
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { EpsLadder } from '@features/fundamental/components/EpsLadder';
 import { QuarterlyTrend } from '@features/fundamental/components/QuarterlyTrend';
 import { SectorPePanel } from '@features/fundamental/components/SectorPePanel';
 import type { FiscalQuarter } from '@features/fundamental/lib/fundMath';
@@ -14,55 +14,6 @@ const QUARTERS: FiscalQuarter[] = [
 ];
 
 describe('کامپوننت های بنیادی', () => {
-  it('نردبان EPS دوره ناقص را با خط تیره قرمز و علتِ گویا نشان می دهد', () => {
-    render(<EpsLadder slots={['1403', '1404']} series={[100, null]} partial />);
-    expect(screen.getByText('-')).toBeInTheDocument();
-    // جای برچسب خالی «ناقص»، علتِ واقعی: فقط ۱ سال سابقه هست
-    expect(screen.getByText('سابقهٔ EPS کمتر از ۲ سال')).toBeInTheDocument();
-  });
-
-  it('نردبان EPS با ۲ سالِ موجود: همان دو سال رندر + برچسب «مردود — سابقهٔ ناقص» + علت در title', () => {
-    render(<EpsLadder slots={['1403', '1404']} series={[100, 150]} partial requiredYears={3} />);
-    // همان دو سالِ موجود نمایش داده می‌شود — داده حیف نمی‌شود
-    expect(screen.getByText('۱۰۰')).toBeInTheDocument();
-    expect(screen.getByText('۱۵۰')).toBeInTheDocument();
-    const label = screen.getByTestId('eps-partial-rejected');
-    expect(label.textContent).toContain('مردود در شاخص ۲');
-    expect(label.textContent).toContain('۲ از ۳ سال');
-    // hover (title) علت شکاف را توضیح می‌دهد
-    expect(label.getAttribute('title')).toContain('فقط ۲ سال از ۳ سال');
-  });
-
-  it('نردبان EPS با ۱ سالِ موجود: برچسب علت‌دار می‌گیرد — برچسب سابقهٔ ناقص نمی‌آید', () => {
-    render(<EpsLadder slots={['1404']} series={[100]} partial requiredYears={3} />);
-    expect(screen.getByText('سابقهٔ EPS کمتر از ۲ سال')).toBeInTheDocument();
-    expect(screen.queryByTestId('eps-partial-rejected')).not.toBeInTheDocument();
-  });
-
-  it('نردبان EPS: دوره میاندوره ۳ ماهه با برچسب جدا از سود سالانه نمایش می‌یابد', () => {
-    render(
-      <EpsLadder
-        slots={['1403', '1404']}
-        series={[96, 202]}
-        partial={false}
-        interim={{ available: true, periodEnd: '1405/03/31', months: 3, eps: 51 }}
-      />,
-    );
-    const interimCell = screen.getByTestId('eps-interim-cell');
-    expect(interimCell.textContent).toContain('میاندوره');
-    expect(interimCell.textContent).toContain('۳ ماهه');
-    expect(interimCell.textContent).toContain('۵۱');
-    expect(interimCell.textContent).toContain('جزئی');
-    // سلول‌های سالانه با «سال مالی کامل» برچسب می‌خورند تا با میاندوره اشتباه نشوند
-    const ladder = screen.getByTestId('eps-ladder');
-    expect(ladder.textContent).toContain('سال مالی کامل');
-  });
-
-  it('نردبان EPS: بدون میاندوره و بدون سری، رندر نمی‌شود', () => {
-    const { container } = render(<EpsLadder slots={[]} series={[]} partial={false} />);
-    expect(container.firstChild).toBeNull();
-  });
-
   it('روند فصلی با سود منفی کرش نمی کند', () => {
     const { container } = render(<QuarterlyTrend quarters={QUARTERS} />);
     // #156 — پنل بسته است؛ نمودار را با کلیکِ نوار باز می‌کنیم

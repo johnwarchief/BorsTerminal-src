@@ -1,18 +1,16 @@
 // تست سایدبار چپ (#48 نشانگر مرحلۀ تبِ فعال، #49 پنج مظنه در سایدبار،
 // #67 «مرحلۀ خودِ نماد» — همان قیف، نه قاعدۀ دوم)
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router';
 import { describe, expect, it, vi } from 'vitest';
-import type { MarketRow } from '@shared/types/marketRow';
 import { useSymbolStore } from '@shared/stores/symbolStore';
 import { SymbolInspector } from '@widgets/SymbolInspector';
 import { INSPECTOR_STAGES, stageHref, stageIndexForPath } from '@widgets/inspectorStage';
+import { funnelQueryKey } from '@features/master/api/useFtsFunnel';
+import type { ApiPayload } from '@features/master/lib/funnelView';
 
 vi.stubGlobal('fetch', vi.fn(() => Promise.reject(new Error('شبکه در تست خاموش است'))));
-
-const board = (over: Partial<MarketRow>): MarketRow =>
-  ({ symbol: 'شپنا', name: 'شبکه برق', p_last: 1000, p_closing: 990, ...over }) as unknown as MarketRow;
 
 function renderAt(path: string, symbol = 'شپنا', seed?: (qc: QueryClient) => void) {
   useSymbolStore.setState({ symbol });
@@ -44,6 +42,17 @@ describe('نقشۀ تب ⇒ مرحلۀ قیف', () => {
   });
 });
 
+describe('نماد از مسیر هم می‌آید (پیوندِ مستقیم/عقبِ مرورگر)', () => {
+  it('بی‌نمادِ ازپیش‌نشسته درِ استور، ‎#/master/شپنا همان را در استور می‌گذارد', () => {
+    // پیش‌تر سایدبار فقط استور را می‌خواند؛ هر پیوندِ مستقیم پنل را خالی
+    // می‌گذاشت (حتی «آخرین معامله» «-» می‌شد). بقیۀ تست‌ها استور را از
+    // پیش پر می‌کردند، پس این حالت هیچ‌وقت گرفته نشد.
+    useSymbolStore.setState({ symbol: '' });
+    renderAt('/master/شپنا', '');
+    expect(useSymbolStore.getState().symbol).toBe('شپنا');
+  });
+});
+
 describe('نشانگر مرحله در سایدبار چپ', () => {
   it('در تب تابلوخوانی: فعلی=تابلوخوانی، بعدی=تکنیکال', () => {
     renderAt('/market');
@@ -54,10 +63,10 @@ describe('نشانگر مرحله در سایدبار چپ', () => {
     expect(strip.textContent).toContain('مرحلۀ فعلی: تابلوخوانی · بعدی: تکنیکال');
   });
 
-  it('در پایۀ قیف پیامِ «پایِ قیف» می‌آید و هر سه مرحلۀ قبل گذشته‌اند', () => {
+  it('در پایۀ غربالگری پیامِ «پایِ غربالگری» می‌آید و هر سه مرحلۀ قبل گذشته‌اند', () => {
     renderAt('/master/شپنا');
     expect(screen.getByTestId('inspector-stage-handover')).toHaveAttribute('aria-current', 'step');
-    expect(screen.getByTestId('inspector-stage-next').textContent).toContain('پایِ قیف');
+    expect(screen.getByTestId('inspector-stage-next').textContent).toContain('پایِ غربالگری');
   });
 
   it('در تب بیرونِ قیف نشانگر مرحله نمی‌آید (چیزی را حدس نمی‌زند)', () => {
@@ -65,43 +74,83 @@ describe('نشانگر مرحله در سایدبار چپ', () => {
     expect(screen.queryByTestId('inspector-stage')).not.toBeInTheDocument();
   });
 
-  it('پنج مظنه در سایدبار چپ نشسته است', () => {
+  // §۱۵.۲۰: پنج مظنه نه حذف شده، بلکه به صفحۀ «جزئیات بازار» رفته و بسته
+  // به‌پیش‌فرض است. دو ادعا اینجا زنده می‌مانند: (۱) بی‌باز کردن، پرسشی به
+  // عمقِ بازار نمی‌رود؛ (۲) با دو کلیک همان عمق پیشِ کاربر است.
+  it('پنج مظنه در «جزئیات بازار» است و بی‌باز کردن پرسیده نمی‌شود', () => {
     renderAt('/market');
+    expect(screen.queryByTestId('sidebar-orderbook')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByTestId('inspector-tab-detail'));
+    expect(screen.queryByTestId('sidebar-orderbook')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByTestId('inspector-quotes-toggle'));
     expect(screen.getByTestId('sidebar-orderbook')).toBeInTheDocument();
   });
 });
 
 describe('جایِ خودِ نماد در قیف (#67)', () => {
-  /** ردیفی که هیچ فیلترِ دری روشن ندارد ⇒ درِ تابلو بسته */
-  const seedRow = (row: MarketRow) => (qc: QueryClient) => {
-    qc.setQueryData(['market-feed'], { data: [row] });
+  // سایدبار دیگر قواعدِ قیف را رویِ تک‌ناماد اجرا نمی‌کند؛ همان پاسخِ
+  // /api/funnel را می‌خواند که جدول می‌خواند. پس seed هم پاسخِ قیف است،
+  // نه ردیفِ خامِ تابلو + اسکرینر (آن دو ورودیِ داورِ دوم بودند).
+  const seedFunnel = (payload: ApiPayload) => (qc: QueryClient) => {
+    qc.setQueryData(
+      funnelQueryKey({ preset: 'custom', chain: [], logic: 'and', fundMode: 'standard', exceptions: {},
+                       // کلیدِ کش باید همان پارامترِ مؤثرِ فرستاده‌شده باشد،
+                       // وگرنه seedِ تست به درخواستِ واقعیِ سایدبار نمی‌خورد.
+                       dropSuffix: true }),
+      payload,
+    );
   };
+  const row = (over: Record<string, unknown>) => ({
+    symbol: 'شپنا', name: 'شبکه برق', sector: 'برق', status: {}, why: {}, ...over,
+  });
+  const payload = (entries: Record<string, unknown[]>, matrix?: Record<string, unknown>) => ({
+    status: 'success', engine_version: '1', ruleset_version: 'x', as_of: Math.floor(Date.now() / 1000),
+    preset: 'custom', chain: [], fund_mode: 'standard',
+    universe: { board: 1, screened: 1, joined: 1 },
+    stages: {}, entries, status_matrix: matrix, timeline: {}, handover: [],
+  } as unknown as ApiPayload);
 
   it('بی‌علامت ⇒ چراغِ تابلو قرمز و خطِ «ایستاده در تابلوخوانی»', () => {
-    renderAt('/market', 'شپنا', seedRow(board({})));
+    renderAt('/market?preset=custom', 'شپنا', seedFunnel(payload({
+      tape: [row({ status: { tape: 'reject' },
+                   why: { tape: [{ code: 'TAPE_F_SUSP_NO_MATCH', text: 'حجم مشکوک — نشانه نیست' }] } })],
+    }, {
+      // پاسخِ موتورِ تازه برایِ سه گامِ بعدی حکمِ صریح می‌فرستد؛ «بی‌حکم» نداریم
+      شپنا: {
+        tape: { status: 'reject', reason_code: 'TAPE_F_SUSP_NO_MATCH', human_reason: 'حجم مشکوک — نشانه نیست' },
+        technical: { status: 'not_required', reason_code: 'NOT_REQUIRED_AFTER_TAPE_REJECT',
+                     human_reason: 'تابلو نماد را رد کرده؛ تکنیکال اجرا نمی‌شود' },
+        fundamental: { status: 'not_required', reason_code: 'NOT_REQUIRED_AFTER_TAPE_REJECT',
+                       human_reason: 'تابلو نماد را رد کرده؛ بنیادی اجرا نمی‌شود' },
+        handover: { status: 'reject', reason_code: 'NOT_ELIGIBLE_AFTER_PRIOR_REJECT',
+                    human_reason: 'در گامِ پیشین رد شده' },
+      },
+    })));
     expect(screen.getByTestId('inspector-stage-tape')).toHaveAttribute('data-stage-state', 'blocked');
     expect(screen.getByTestId('inspector-stage-next').textContent).toContain('ایستاده در «تابلوخوانی»');
-    // بالادستِ بسته: سه مرحلۀ بعدی رأی ندارند، پس «سنجیده نشده» جایش را می‌گیرد
-    expect(screen.getByTestId('inspector-stage-technical')).toHaveAttribute('data-stage-state', 'unknown');
+    // بالادستِ بسته ≠ «سنجیده نشده»: حکمِ صریحِ «لازم نبود» با ذکرِ گامِ بازدارنده
+    expect(screen.getByTestId('inspector-stage-technical')).toHaveAttribute('data-stage-state', 'not_required');
+    expect(screen.getByTestId('inspector-stage-note-technical')).toHaveTextContent('لازم نبود');
+    expect(screen.getByTestId('inspector-stage-technical').getAttribute('title'))
+      .toContain('تابلو نماد را رد کرده');
   });
 
-  it('تابلو سبز + وتوی هفتگیِ اسکرینر ⇒ چراغِ تکنیکال قرمز و همان‌جا ایستاده', () => {
-    renderAt('/technical/شپنا', 'شپنا', (qc) => {
-      qc.setQueryData(['market-feed'], { data: [board({ f_susp: true })] });
-      qc.setQueryData(['fts-screen', 120], {
-        status: 'success',
-        count: 1,
-        data: [{ symbol: 'شپنا', name: 'شپنا', score: 3, weekly_veto: true, tech_matrix_decision: 'REJECT', tech_trend_w: 'down' }],
-      });
-    });
+  it('تابلو سبز + وتوی هفتگی ⇒ چراغِ تکنیکال قرمز و همان‌جا ایستاده', () => {
+    renderAt('/technical/شپنا?preset=custom', 'شپنا', seedFunnel(payload({
+      tape: [row({ status: { tape: 'pass' } })],
+      technical: [row({ status: { tape: 'pass', technical: 'reject' }, weekly: 'down',
+                        why: { technical: [{ code: 'WEEKLY_TREND_DOWN', text: 'روند هفتگی نزولی — وتوی قطعی' }] } })],
+    })));
     expect(screen.getByTestId('inspector-stage-tape')).toHaveAttribute('data-stage-state', 'passed');
     expect(screen.getByTestId('inspector-stage-technical')).toHaveAttribute('data-stage-state', 'blocked');
     expect(screen.getByTestId('inspector-stage-next').textContent).toContain('ایستاده در «تکنیکال»');
     expect(INSPECTOR_STAGES.map((s) => s.key)).toEqual(['tape', 'technical', 'fundamental', 'handover']);
   });
 
-  it('ردیفِ تابلو وجود ندارد ⇒ هیچ مرحله‌ای قرمز نمی‌شود (بی‌داده وتو نیست)', () => {
-    renderAt('/market', 'شپنا', (qc) => qc.setQueryData(['market-feed'], { data: [board({ symbol: 'فولاد' })] }));
+  it('نماد در پاسخِ قیف نیست ⇒ هیچ مرحله‌ای قرمز نمی‌شود (بی‌داده وتو نیست)', () => {
+    renderAt('/market?preset=custom', 'شپنا', seedFunnel(payload({
+      tape: [row({ symbol: 'فولاد', status: { tape: 'pass' } })],
+    })));
     for (const s of INSPECTOR_STAGES) {
       expect(screen.getByTestId(`inspector-stage-${s.key}`)).toHaveAttribute('data-stage-state', 'unknown');
     }

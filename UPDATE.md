@@ -1,5 +1,7 @@
 # Modular Patch/Update System (v10)
 
+> **راهنمای updater با ریسک قدیمی‌بودن:** این سند به مسیرها و فرض‌های نسخهٔ پیشین اشاره می‌کند. قبل از هر patch واقعی، قرارداد جاری نسخه را در AGENTS.md و bors_config.py، و فرمان‌های به‌روز را در scripts/ و workflow انتشار بررسی کنید. ادعای منبع نسخه در متن زیر را بدون تطبیق اجرا نکنید.
+
 The EXE install can be updated **without re-downloading the database**.
 Two pieces live in the repo:
 

@@ -1,154 +1,231 @@
-// features/master/api/useFtsFunnel.ts -- «Mode Resolver» + دو پاسِ کشفِ نماد FTS
+// features/master/api/useFtsFunnel.ts — مصرف‌کنندۀ /api/funnel
 //
-// چرا هوکِ جدا: قیفِ چهارمرحله‌ای (`ui/FtsFunnelStages`)
-// و سایدبارِ چپ، همه باید **همان** کاندیدها را ببینند.
-// بی‌این، هر کامپوننت یک دورۀ خودش می‌ساخت — همان چیزی که `phaseMarksFor` درِ
-// هاب می‌کرد (F همیشه «تایید»!). حالا هر سه از یک `Candidate[]` خوانده‌اند.
-//
-// جریان (#11):
-//   خوراکِ تابلو + اسکرینرِ کدال + سبد
-//     ➔ `funnelUniverse` (حالت: reverse = تابلو، review = کلِ اسکرینر)
-//     ➔ `techQueryQueue` (بودجۀ `/api/fts` با رتبۀ رسمیِ بک‌اند، نه ترتیبِ تابلو)
-//     ➔ `useFtsTechBoard` (رأیِ زنده)
-//     ➔ `buildFunnel` (S ➔ T ➔ F ➔ M با واژگانِ چهارحالتي)
-//
-// کوئری‌ها درِ TanStack Query مشترک‌اند، پس صدازدنِ این هوک از دو کامپوننتِ
-// هم‌زمان یک fetchِ دوباره نمی‌سازد؛ فقط شمارشِ خالصِ `buildFunnel` دو بار
-// حساب می‌شود (O(universe)، بی‌هیچ کارِ شبکه‌ای).
+// پیش از این همین فایل خوراکِ تابلو و اسکرینر را می‌گرفت، بودجۀ «۶۰ نماد» را
+// می‌چید، برای هر کدام /api/fts می‌زد و درِ آخر `buildFunnel` حکمِ نهایی را درِ
+// مرورگر می‌ساخت. یعنی دومین داور. حالا تنها کاری که می‌کند این است:
+//   درخواستِ زنجیره + حالتِ بنیادی  ➔  /api/funnel  ➔  funnelFromApi()
+// و هر آنچه جدول می‌خواند از پاسخِ سرور می‌آید. هیچ شمارشِ FTS درِ کلاینت
+// حساب نمی‌شود؛ نگاشتِ نام‌ها درِ `lib/funnelView.ts` است و بس.
 import { useMemo } from 'react';
-import { useMarketFeed } from '@features/market/api/useMarketFeed';
-import { useFtsScreen } from '@features/fundamental/api/useFtsScreen';
+import { useSearchParams } from 'react-router';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
+import { http } from '@shared/api/http';
+import { sessionPollMs } from '@shared/lib/marketHours';
 import { usePortfolio } from '@features/portfolio/api/usePortfolio';
-import { useTapeStore } from '@features/market/stores/tapeStore';
-import { isMarketOpen } from '@shared/lib/marketHours';
+import { useTapeStore, type QuickFilter } from '@features/market/stores/tapeStore';
+import { useScreenFilterStore } from '@shared/stores/screenFilterStore';
 import {
-  buildFunnel,
-  funnelUniverse,
-  techQueryQueue,
+  DEFAULT_FUNNEL_OPTIONS,
   type Funnel,
   type FunnelMode,
   type FunnelOptions,
+  type FunnelStage,
+  type FunnelStageKey,
+  type StageSummary,
   type TapeFreshness,
   type TreePreset,
 } from '../lib/ftsFunnel';
-import { useFunnelPrefsStore } from '../stores/funnelPrefsStore';
-import { TECH_QUERY_CAP, useFtsTechBoard } from './useFtsTechBoard';
+import { funnelFromApi, type ApiPayload } from '../lib/funnelView';
+import { useFunnelPrefsStore, type FundStrictness } from '../stores/funnelPrefsStore';
 
-export type FtsFunnelResult = {
+export type FunnelRequest = {
+  preset: TreePreset;
+  chain: string[];
+  /** ترکیبِ چیپ‌هایِ روشن: «and» = هرچه دارد، «or» = کم‌از‌یکی. پیش‌فرضِ موتور
+   *  هم and است، پس بی‌کلیدِ تازه رفتارِ دیروز می‌ماند. */
+  logic: 'and' | 'or';
+  fundMode: FundStrictness;
+  exceptions: Record<string, string[]>;
+  /** «حذفِ پسوندِ عددی» — پارامترِ مؤثرِ خودِ موتور است، پس درِ کلیدِ کش هم
+   *  می‌نشیند (تغییرش نباید پاسخِ حالتِ دیگر را نشان دهد). */
+  dropSuffix: boolean;
+};
+
+const EMPTY_SUM: StageSummary = { pass: 0, reject: 0, pending: 0, unavailable: 0, not_required: 0 };
+const emptyStage = (key: FunnelStageKey): FunnelStage => ({
+  key, entries: [], steps: [], dropped: 0, rejected: 0, unmeasured: 0, notRequired: 0,
+  ruled: 0, pending: [], summary: { ...EMPTY_SUM },
+});
+
+const EMPTY: Funnel = {
+  mode: 'reverse', tape: 'unavailable',
+  techCoverage: { universe: 0, live: 0, fromScreen: 0, none: 0 },
+  stages: {
+    tape: emptyStage('tape'),
+    technical: emptyStage('technical'),
+    fundamental: emptyStage('fundamental'),
+    handover: emptyStage('handover'),
+  },
+  boardScope: 0, total: 0, asOf: null,
+  marketUniverse: 0, excludedCount: 0, dropSuffixApplied: null, exclusions: [], exclusionCounts: {},
+  exclusionLabels: {},
+  filterCounts: {},
+  counts: {
+    tape: { ...EMPTY_SUM },
+    technical: { ...EMPTY_SUM },
+    fundamental: { ...EMPTY_SUM },
+    handover: { ...EMPTY_SUM },
+  },
+  targets: { initial: 50, watchlist: 10, basketMin: 5, basketMax: 7 },
+};
+
+export function funnelQueryKey(req: FunnelRequest): string[] {
+  return ['funnel', req.preset, req.chain.join(','), req.logic, req.fundMode,
+          JSON.stringify(req.exceptions), req.dropSuffix ? 'ds1' : 'ds0'];
+}
+
+/** درخواستِ قیف از سرور. `mode` فقط نمایشِ ریتمِ کشف است (معکوس/مرور) و داوری
+ *  نیست؛ همان را prefs نگه می‌دارد. */
+export function useFtsFunnel(
+  preset: TreePreset = 'trend',
+  overrides: Partial<FunnelRequest> = {},
+): {
   funnel: Funnel;
   mode: FunnelMode;
   tape: TapeFreshness;
-  /** بودجۀ تکنیکال: چه کسی رأیِ زنده می‌گیرد و چند تا بیرونِ بودجه می‌مانند */
   queue: { symbols: string[]; beyondCap: number };
-  tech: ReturnType<typeof useFtsTechBoard>;
+  tech: { wanted: number; resolved: number; loading: boolean };
+  /** پیشرفتِ اسکنِ تکنیکال درِ پاسخِ سرور — برایِ خطِ «چرا بعضی در انتظارند» */
+  scan: { pending: number; running: boolean; queued: number; done: number };
   loading: boolean;
-  /** سبدِ فعال — همان مجموعه‌ای که درِ `handover` توقف می‌دهد (#9) */
+  refreshing: boolean;
+  error: string | null;
+  hasData: boolean;
+  retry: () => void;
   basket: Set<string>;
-  /** چیپ‌هایِ روشنِ تبِ تابلو — درِ reverse دربِ قیف را تعیین می‌کنند */
   quickFilters: string[];
-  /** سه پیچِ دستِ مالک (کفِ بنیادی، سرنوشتِ سنجیده‌نشده، غربالگریِ تکنیکال) */
+  /** چیپ‌هایِ فیلترِ نوارِ غربالگری: همان فهرستی که همین دور داوری می‌شود، و
+   *  کلیدِ روشن/خاموشی که به همان منبع می‌نویسد (درِ Custom زنجیرۀِ شخص،
+   *  درِ بقیه چیپ‌هایِ تبِّ تابلو). بی‌این، چیپ درِ Custom بی‌اثر می‌شد. */
+  screenFilters: { active: string[]; source: 'chips' | 'chain'; toggle: (f: string) => void };
   opts: FunnelOptions;
-};
-
-// Phase پرفورمنس (N4-C): درِ /master دو مصرف‌کننده هم‌زمان این قیف را mount
-// می‌کنند (سربرگِ مستر برایِ candidate + خودِ پنلِ قیف). useMemo هر instance
-// جدا می‌شمارد، پس buildFunnel و funnelUniverse دو بار رویِ همان ورودیِ
-// یکسان می‌دوند. این کشِ ماژول با برابریِ مرجعِ همان آرگومان‌ها، شمارش را
-// به یک‌بار می‌رساند — بی‌هیچ تغییرِ خروجی. آرگومان‌ها همه از store/کوئری
-// می‌آیند و مرجع‌شان تا تغییرِ واقعی پایدار است؛ گسترشِ [...quickFilters]
-// حذف شد تا همین برابریِ مرجع برقرار بماند (تابلو همان آرایه را in-place
-// عوض نمی‌کند — tapeRows فقط می‌خواند).
-type BuildFunnelArgs = Parameters<typeof buildFunnel>;
-let lastFunnelArgs: BuildFunnelArgs | null = null;
-let lastFunnelResult: ReturnType<typeof buildFunnel> | null = null;
-
-function sharedBuildFunnel(...args: BuildFunnelArgs): ReturnType<typeof buildFunnel> {
-  if (lastFunnelArgs && lastFunnelArgs.length === args.length && lastFunnelArgs.every((v, i) => v === args[i])) {
-    return lastFunnelResult as ReturnType<typeof buildFunnel>;
-  }
-  lastFunnelArgs = args;
-  lastFunnelResult = buildFunnel(...args);
-  return lastFunnelResult;
-}
-
-type UniverseArgs = Parameters<typeof funnelUniverse>;
-let lastUniverseArgs: UniverseArgs | null = null;
-let lastUniverseResult: ReturnType<typeof funnelUniverse> | null = null;
-
-function sharedFunnelUniverse(...args: UniverseArgs): ReturnType<typeof funnelUniverse> {
-  if (lastUniverseArgs && lastUniverseArgs.length === args.length && lastUniverseArgs.every((v, i) => v === args[i])) {
-    return lastUniverseResult as ReturnType<typeof funnelUniverse>;
-  }
-  lastUniverseArgs = args;
-  lastUniverseResult = funnelUniverse(...args);
-  return lastUniverseResult;
-}
-
-export function useFtsFunnel(preset: TreePreset = 'custom'): FtsFunnelResult {  const feed = useMarketFeed();
-  // یک درخواستِ مشترک با تبِ بنیادی (کلیدِ ۰ = کلِ universe). رویِ موبایل
-  // resolverِ محلی `?limit` را جدی می‌گیرد، پس هر دو مصرف‌کننده باید «همه»
-  // بخواهند وگرنه قیف از ۱۲۰ ردیفِ اول داوری می‌کند.
-  const screen = useFtsScreen();
-  const portfolio = usePortfolio();
-  const cfg = useTapeStore((s) => s.tapeFilterConfig);
+  request: FunnelRequest;
+} {
   const quickFilters = useTapeStore((s) => s.quickFilters);
-  const fundFloor = useFunnelPrefsStore((s) => s.fundFloor);
-  const unmeasured = useFunnelPrefsStore((s) => s.unmeasured);
-  const techScreens = useFunnelPrefsStore((s) => s.techScreens);
+  const screenLogic = useScreenFilterStore((s) => s.logic);
   const mode = useFunnelPrefsStore((s) => s.mode);
+  const fundMode = useFunnelPrefsStore((s) => s.fundMode);
+  const chainPref = useFunnelPrefsStore((s) => s.chain);
+  const addChainFilter = useFunnelPrefsStore((s) => s.addFilter);
+  const removeChainFilter = useFunnelPrefsStore((s) => s.removeFilter);
+  const exceptions = useFunnelPrefsStore((s) => s.exceptions);
+  const dropSuffixPref = useFunnelPrefsStore((s) => s.dropSuffix);
+  const opts: FunnelOptions = {
+    ...DEFAULT_FUNNEL_OPTIONS,
+    ...useFunnelPrefsStore.getState(),
+  };
+  const portfolio = usePortfolio();
+  // `?chain=` درِ URL باید بر انتخابِ ذخیره‌شده بردگی کند، وگرنه لینکِ
+  // «برو به این زنجیره» (stepper/StrategyTree/کاوشِ مرورگر) همان جدولِ خالیِ
+  // custom را می‌دهد. سنجشِ ۱۴۰۵-۰۷-۱۸: `?preset=custom&chain=f_clock` رویِ API
+  // عبورِ ۵۴ نماد می‌داد و جدولِ UI ۲۸۱۲ — یعنی زنجیرۀِ URL هرگز خوانده نمی‌شد.
+  // بی‌`chain` درِ URL، همان رفتارِ پیشین (زنجیرۀِ کاربر درِ builder).
+  const [searchParams] = useSearchParams();
+  const urlChain = useMemo(() => {
+    const raw = searchParams.get('chain');
+    if (!raw) return null;
+    const ids = raw.split(',').map((s) => s.trim()).filter(Boolean);
+    return ids.length ? ids : null;
+  }, [searchParams]);
 
-  const opts = useMemo<FunnelOptions>(
-    () => ({ fundFloor, unmeasured, techScreens }),
-    [fundFloor, unmeasured, techScreens],
-  );
+  const request = useMemo<FunnelRequest>(() => ({
+    preset,
+    // دو منطقِ انتخاب، یک قاعدۀِ منبع (بعد از بازگشتِ Custom): «Custom» یعنی
+    // زنجیرۀِ خودِ شخص — همان فهرستی که سازنده مرتب می‌کند و همان که چیپ‌هایِ
+    // بالایِ غربالگری روشن/خاموش می‌کنند. بقیۀ اشخاص از چیپ‌هایِ تبِّ تابلو
+    // ساخته می‌شوند؛ بی‌انتخاب، زنجیرۀِ خودِ شخصِ رجیستری درِ سرور می‌ماند.
+    chain: overrides.chain ?? urlChain
+      ?? (preset === 'custom' ? chainPref : quickFilters),
+    logic: overrides.logic ?? screenLogic,
+    fundMode: overrides.fundMode ?? fundMode,
+    exceptions: overrides.exceptions ?? exceptions,
+    dropSuffix: dropSuffixPref,
+    ...overrides,
+  }), [preset, overrides, urlChain, chainPref, fundMode, exceptions, dropSuffixPref,
+      quickFilters, screenLogic]);
 
-  // تازگیِ خوراکِ تابلو (#16): بی‌ردیف یعنی «منبع نیست»، و بیرونِ ساعتِ بازار
-  // یعنی داده از آخرینِ نشست است — هیچ‌کدام «رد» نیست.
-  const boardRows = feed.data?.data ?? [];
-  const tape: TapeFreshness = !boardRows.length ? 'unavailable' : isMarketOpen() ? 'live' : 'stale';
+  // چیپ‌هایِ نوارِ غربالگری با همان منبعی که داوری می‌شود حرف می‌زنند: درِ
+  // Custom زنجیرۀِ شخص، درِ بقیه چیپ‌هایِ تبِّ تابلو.
+  const screenFilters = useMemo(() => ({
+    active: preset === 'custom' ? chainPref : quickFilters,
+    source: (preset === 'custom' ? 'chain' : 'chips') as 'chips' | 'chain',
+    toggle: (f: string) => {
+      if (preset === 'custom') {
+        if (chainPref.includes(f)) removeChainFilter(f); else addChainFilter(f);
+      } else {
+        useTapeStore.getState().toggleQuickFilter(f as QuickFilter);
+      }
+    },
+  }), [preset, chainPref, quickFilters, addChainFilter, removeChainFilter]);
 
-  // دو پاسِ عمدی: نخست جامعۀ ورود حساب می‌شود تا معلوم شود برایِ کدام نمادها
-  // رأیِ تکنیکال لازم است، سپس `/api/fts` برایِ همان‌ها خوانده می‌شود. بی‌این،
-  // درِ T هرگز بسته نمی‌شد چون اسکرینر فقط سقفِ واچ‌لیست را تحلیل کرده.
-  // صف را `funnelUniverse` + `techQueryQueue` می‌چینند (رتبۀ رسمیِ بک‌اند) —
-  // ترتیبِ تابلو با هر رفرش عوض می‌شود و «کی سنجیده شد» را قمار می‌کرد.
-  const queue = useMemo(() => {
-    const u = sharedFunnelUniverse(mode, boardRows, cfg, quickFilters, preset, screen.data?.data ?? []);
-    return techQueryQueue(u.ordered, u.rank, TECH_QUERY_CAP);
-  }, [mode, boardRows, cfg, quickFilters, preset, screen.data]);
-
-  const tech = useFtsTechBoard(queue.symbols);
-
-  const basket = useMemo(
-    () => new Set((portfolio.data?.portfolio ?? []).map((h) => h.symbol)),
-    [portfolio.data],
-  );
-
-  const funnelCtx = useMemo(
-    () => ({
-      mode,
-      tape,
-      screenAsOf: screen.data?.as_of ?? null,
-      techAsOf: tech.asOf,
+  const q = useQuery({
+    queryKey: funnelQueryKey(request),
+    queryFn: (ctx) => http<ApiPayload>('/api/funnel', {
+      method: 'POST',
+      // لغوِ درخواستِ کهنه: هر پاسخِ قیف چندِ مگابایت است (سنجشِ زنده: ۷٫۷ تا
+      // ۱۰٫۹ مگابایت درِ هر کلیک). بی‌`signal`، با عوض‌کردنِ سریعِ preset آن
+      // بدنه‌ها تا آخر دانلود می‌مانند و می‌توانند *بعدِ* پاسخِ تازه بنشینند.
+      signal: ctx.signal,
+      body: { preset: request.preset, chain: request.chain, logic: request.logic,
+              fund_mode: request.fundMode,
+              exceptions: request.exceptions, drop_suffix: request.dropSuffix },
     }),
-    [mode, tape, screen.data, tech.asOf],
-  );
+    // کلیدِ تازه = پاسخِ تازه، و بی‌این خط جدولِ مسلطِ قیف برایِ چند صدمیلی‌ثانیه
+    // به صفر می‌افتاد («universe: ۰») و کاربر فکر می‌کرد بازار خالی است. پاسخِ
+    // قبلی رویِ صفحه می‌ماند تا جدید بنشیند؛ markerِ loading هم همین‌جا دیده
+    // می‌شود، پس «کهنه» با «تازه» قاطی نمی‌شود.
+    placeholderData: keepPreviousData,
+    // ریتمِ تازه‌سازی دیگر ثابتِ ۶۰ ثانیه نیست: درِ ساعتِ بازار ۲۰ ثانیه و
+    // بیرونِ آن ریتمِ آرامِ تابلو (`sessionPollMs`) — و تا اسکنِ تکنیکال صف
+    // داشته باشد ۵ ثانیه، وگرنه «در حال محاسبه» فقط یک نوشته می‌ماند و نمادها
+    // جلویِ چشمِ کاربر جابه‌جا نمی‌شوند.
+    refetchInterval: (query) => {
+      const ts = query.state.data?.tech_scan;
+      if (ts?.running || (ts?.pending_symbols ?? 0) > 0) return 5_000;
+      return sessionPollMs(20_000);
+    },
+    staleTime: 5_000,
+  });
 
-  const funnel = useMemo(
-    () =>
-      sharedBuildFunnel(boardRows, cfg, quickFilters, screen.data?.data ?? [], basket, preset, tech.map, opts, funnelCtx),
-    [boardRows, screen.data, basket, cfg, quickFilters, preset, tech.map, opts, funnelCtx],
-  );
+  const funnel = useMemo<Funnel>(() => (q.data ? funnelFromApi(q.data, mode) : EMPTY),
+                                 [q.data, mode]);
+  const universe = q.data?.universe?.joined ?? 0;
+  // «سنجیده شده» = هر نمادی که گامِ تکنیکال درباره‌اش حکمی نوشته است. آنکه
+  // تابلو ردش کرده به این گام نرسیده (`not_required`) و درِ شمار حساب نمی‌آید؛
+  // این تقسیمِ شمارش است، نه داوریِ تازه.
+  const tc = funnel.counts.technical;
+  const resolved = tc.pass + tc.reject + tc.pending + tc.unavailable;
 
   return {
     funnel,
     mode,
-    tape,
-    queue,
-    tech,
-    loading: feed.isLoading || screen.isLoading || tech.loading,
-    basket,
-    quickFilters: [...quickFilters],
+    tape: funnel.tape,
+    // بودجۀ /api/fts دیگر معنا ندارد: تکنیکالِ هر نماد درِ همان پاسخِ قیف است.
+    queue: { symbols: [], beyondCap: 0 },
+    tech: { wanted: universe, resolved, loading: q.isFetching },
+    scan: {
+      pending: q.data?.tech_scan?.pending_symbols ?? 0,
+      running: !!q.data?.tech_scan?.running,
+      queued: q.data?.tech_scan?.queued ?? 0,
+      done: q.data?.tech_scan?.done ?? 0,
+    },
+    loading: q.isPending,
+    /** پاسخِ رویِ صفحه پاسخِ *قبلی* است و تازه‌اش در راه است — باید دیده شود،
+     *  وگرنه keepPreviousData یعنی «کهنه» بی‌برچسب. */
+    refreshing: !!q.isPlaceholderData || q.isFetching,
+    error: q.error ? String((q.error as Error).message ?? q.error) : null,
+    /** آیا همین حالا دادهٔ معتبری رویِ صفحه هست؟ مصرف‌کننده با این، «خطا» را از
+     *  «خالی» جدا می‌کند: خطا با دادهٔ قبلی ⇒ بنرِ کنارِ جدول، نه empty-state. */
+    hasData: !!q.data,
+    /** Retryِ همان query — دکمهٔ بی‌اثر نه؛ همان fetchِ واقعی را دوباره می‌زند. */
+    retry: () => void q.refetch(),
+    // سبد از همان پاسخِ /api/selection/portfolio خوانده می‌شود (decisions)،
+    // نه از فرضِ آرایه — آن ساختار { status, decisions, counts, limits } است.
+    basket: new Set(((portfolio.data as { decisions?: Array<{ symbol: string }> } | undefined)
+      ?.decisions ?? []).map((d) => d.symbol)),
+    quickFilters,
+    screenFilters,
     opts,
+    request,
   };
 }

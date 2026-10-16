@@ -36,10 +36,15 @@ ROWS = [
 conn = sqlite3.connect(":memory:")
 # net_profit ستونِ بانکِ واقعی است (codal_fetcher: CREATE + مهاجرتِ REAL) و
 # `eps_ladder` آن را می‌خواند؛ فیکچر باید همان طرحِ جدول را داشته باشد.
-conn.execute("CREATE TABLE financial_statements (symbol TEXT, period_end TEXT, "
-             "period_months INTEGER, title TEXT, basic_eps REAL, net_profit REAL)")
-conn.executemany("INSERT INTO financial_statements (symbol, period_end, period_months, "
-                 "title, basic_eps) VALUES (?,?,?,?,?)", ROWS)
+# `tracing_no` هم لازم است: از مرحلۀ ۵ به بعد نردبانِ EPS «کدامِ گزارش» را اعلام
+# می‌کند، پس SELECTِ آن این ستون را می‌خواند — فیکچرِ بی‌ستون یعنی گاردی که
+# هیچ‌وقت نردبان را اجرا نکرده است.
+conn.execute("CREATE TABLE financial_statements (tracing_no INTEGER PRIMARY KEY,"
+             " symbol TEXT, period_end TEXT, period_months INTEGER, title TEXT,"
+             " basic_eps REAL, net_profit REAL, unit_norm TEXT)")
+conn.executemany("INSERT INTO financial_statements (tracing_no, symbol, period_end, "
+                 "period_months, title, basic_eps) VALUES (?,?,?,?,?,?)",
+                 [(9500 + i, *r) for i, r in enumerate(ROWS)])
 conn.commit()
 
 TH = F.v10_thresholds()
@@ -108,7 +113,7 @@ out = {"full": layer2("A"), "partial": layer2("E"), "nodata": layer2("N")}
 d = os.path.join(ROOT, "dev", "fixtures")
 os.makedirs(d, exist_ok=True)
 p = os.path.join(d, "fts_v10_payloads.json")
-with open(p, "w", encoding="utf-8") as fh:
+with open(p, "w", encoding="utf-8", newline="\n") as fh:
     json.dump(out, fh, ensure_ascii=False, indent=1)
 print("wrote", p)
 print("partial row:", out["partial"]["details"]["۲"]["period_row"]["markdown"])

@@ -1,10 +1,10 @@
 // widgets/SymbolInspector.tsx -- داک باریک نماد در لبه چپ (فاز 8)
 // دید متمرکز روی تک‌سهم در کنار دید کلان همه تب‌ها.
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useLocation } from 'react-router';
 import { useSymbolStore } from '@shared/stores/symbolStore';
 import { useSignalStore, getActiveSignals } from '@shared/stores/signalStore';
-import { toFaDigits } from '@shared/lib/fmt';
+import { billionRialText, fmtHemmat, fmtInt, toBillionRial, toFaDigits } from '@shared/lib/fmt';
 import { fmtPct } from '@shared/lib/fmt';
 import { ftsScoreOf } from '@contracts/fundamental';
 import { LiveNumber } from '@shared/components/ui/live-number';
@@ -22,16 +22,30 @@ import { usePortfolio } from '@features/portfolio/api/usePortfolio';
 import { basketRegimeFor } from '@features/portfolio/lib/basketRegime';
 import { useCapitalStore } from '@features/master/stores/capitalStore';
 import { AuditBadge } from '@features/fundamental/components/AuditBadge';
+import FtsIndicatorRail from '@features/fundamental/components/FtsIndicatorRail';
 import { VolumeFlowMini } from '@features/market/components/VolumeFlowMini';
 import { RegulatoryState } from '@features/market/components/RegulatoryState';
-import { SidebarOrderBook } from '@features/technical/components/SidebarOrderBook';
+import { BuySellCell } from '@features/market/components/BuySellCell';
+import { ClientSharePct } from '@shared/components/ClientSharePct';
+import { buyPerCapitaMt, sellPerCapitaMt } from '@features/market/lib/tapeFts';
+import { useCalendarEvents } from '@features/fundamental/api/useCalendarEvents';
+import { jalaliOf } from '@features/fundamental/lib/assemblyEvent';
+import { OrderBookFive } from '@shared/components/OrderBookFive';
+import { FormingCandle } from '@shared/components/FormingCandle';
 import { useMarketFeed } from '@features/market/api/useMarketFeed';
 import { INSPECTOR_STAGES, stageHref, stageIndexForPath } from './inspectorStage';
 import { useInspectorBoard, useInspectorRawRow } from './useInspectorBoard';
 import { useSymbolVeto } from './useSymbolVeto';
-import { symbolStageProgress } from '@features/master/lib/ftsFunnel';
-import { useTapeStore } from '@features/market/stores/tapeStore';
-import { useFunnelPrefsStore } from '@features/master/stores/funnelPrefsStore';
+import { useFtsFunnel } from '@features/master/api/useFtsFunnel';
+import { useFtsScreen } from '@features/fundamental/api/useFtsScreen';
+import { useFtsAnalysis } from '@features/technical/api/useFtsAnalysis';
+import { normalizeFa } from '@shared/lib/normalizeFa';
+import { useActiveFunnelPreset } from '@features/master/lib/useActiveFunnelPreset';
+import { useFunnelTrace } from '@features/master/api/useFunnelTrace';
+import { FunnelTraceList } from '@features/master/ui/FunnelTraceList';
+import { FunnelErrorBanner } from '@features/master/ui/FunnelErrorBanner';
+import { stageProgressFor } from '@features/master/lib/funnelView';
+import { trendLabel } from '@features/master/lib/ftsFunnel';
 
 const ACTION_FA = {
   strong_buy: 'خرید قوی',
@@ -144,8 +158,27 @@ function StatusLight({
   );
 }
 
+/** چیپِ روندِ یک تایم‌فریم — واژگانِ موتور (`up`/`down`/`range`/`na`) به زبانِ
+ *  چارت ۳؛ `na`/نبود ⇒ «بی‌ساختار» و بی‌رنگ، که «نزولی» نیست. هیچ روندِ ساختگی
+ *  از نبودِ داده ساخته نمی‌شود. */
+function TrendChip({ side, value }: { side: string; value: string | null }) {
+  const tone = value === 'up' ? 'text-accent-green'
+    : value === 'down' ? 'text-accent-red'
+    : value === 'range' ? 'text-accent-yellow'
+    : 'text-text-muted';
+  return (
+    <span className="flex items-baseline gap-1">
+      <span className="text-[9px] text-text-muted">{side}</span>
+      <span className={`num font-bold ${tone}`} data-testid={`inspector-trend-${side}`}>
+        {trendLabel(value)}
+      </span>
+    </span>
+  );
+}
+
 export function SymbolInspector() {
-  const symbol = useSymbolStore((s) => s.symbol);
+  const storedSymbol = useSymbolStore((s) => s.symbol);
+  const setSymbol = useSymbolStore((s) => s.setSymbol);
   const clearSymbol = useSymbolStore((s) => s.clearSymbol);
   const togglePin = useSymbolStore((s) => s.togglePin);
   const pinned = useSymbolStore((s) => s.pinned);
@@ -153,6 +186,19 @@ export function SymbolInspector() {
   const feed = useMarketFeed();
   const { pathname } = useLocation();
   const stageIdx = stageIndexForPath(pathname);
+  // نشانی منبعِ نماد هم هست. پیش‌تر این پنل فقط استور را می‌خواند، پس هر
+  // پیوندِ مستقیمِ ‎#/master/فولاد (لینک، «عقب» مرورگر، بازکردنِ دوباره پس از
+  // ری‌استارت) سایدبار را خالی می‌گذاشت — نه فقط عددِ تازه، حتی «آخرین معامله»
+  // هم «-» می‌ماند چون ردیفِ تابلو هرگز resolve نمی‌شد.
+  const routeSymbol = useMemo(() => {
+    const m = /^\/master\/([^/?#]+)/.exec(pathname ?? '');
+    if (!m) return null;
+    try { return decodeURIComponent(m[1]); } catch { return m[1]; }
+  }, [pathname]);
+  const symbol = routeSymbol ?? storedSymbol;
+  useEffect(() => {
+    if (routeSymbol && routeSymbol !== storedSymbol) setSymbol(routeSymbol);
+  }, [routeSymbol, storedSymbol, setSymbol]);
 
   const entry = useSignalStore((s) => (symbol ? s.bus[symbol] : undefined));
   const inputs = useMemo(() => (symbol ? getActiveSignals(symbol) : {}), [symbol, entry]);
@@ -189,35 +235,53 @@ export function SymbolInspector() {
   // همان قاعدۀ «بی‌داده وتو نیست» که بک‌اند هم به آن گارد دارد).
   const veto = useSymbolVeto(symbol);
   const rawRow = useInspectorRawRow();
-  const tapeCfg = useTapeStore((s) => s.tapeFilterConfig);
-  const tapeQuickFilters = useTapeStore((s) => s.quickFilters);
-  const fundFloor = useFunnelPrefsStore((s) => s.fundFloor);
-  const unmeasured = useFunnelPrefsStore((s) => s.unmeasured);
-  const techScreens = useFunnelPrefsStore((s) => s.techScreens);
-  /** جایِ خودِ نماد در قیف — از همان `buildFunnel`، رویِ تک‌ردیفِ همین نماد.
-   *  سبکِ درخت محلیِ تبِ درخت است و این‌جا در دسترس نیست، پس «مسیر سفارشی»
-   *  (هر پنج فیلترِ درب) مبنا است؛ tooltipِ هر چیپ همان را می‌گوید. */
-  const progress = useMemo(
-    () =>
-      symbolStageProgress(
-        rawRow,
-        tapeCfg,
-        tapeQuickFilters ?? [],
-        veto.screen,
-        regime.inBasket === true,
-        'custom',
-        new Map(),
-        { fundFloor, unmeasured, techScreens },
-      ),
-    [rawRow, tapeCfg, tapeQuickFilters, veto.screen, regime.inBasket, fundFloor, unmeasured, techScreens],
-  );
+  /** جایِ خودِ نماد در قیف — از همان پاسخِ /api/funnel که جدول می‌خواند: یکیِ
+   *  presetِ فعال (URL > انتخابِ کاربر > افق)، نه `'custom'`ِ ثابت. بی‌این سه سطح
+   *  (جدول، dossier، سایدبار) سه مدلِ متفاوت از یک universe را می‌سنجیدند. */
+  const { funnel, request: funnelRequest, error: funnelError, hasData: funnelHasData, retry: funnelRetry } = useFtsFunnel(useActiveFunnelPreset());
+  // ردیفِ غنیِ همین نماد از همان پاسخِ غربالگری (یک findsِ اضافی به‌جای پنج تا):
+  // مخرجِ I4 و شمارۀِ sales از همین‌جا خوانده می‌شود، نه از یک پرس‌وجویِ تازه.
+  const cand = useMemo(() => {
+    for (const k of ['fundamental', 'technical', 'handover', 'tape'] as const) {
+      const hit = funnel.stages[k].entries.find((e) => e.symbol === symbol);
+      if (hit) return hit;
+    }
+    return null;
+  }, [funnel, symbol]);
+  const progress = useMemo(() => stageProgressFor(funnel, symbol), [funnel, symbol]);
+
+  /** سنجشِ بی‌زنجیره. ردیفِ قیف فقط برایِ نمادی پُر است که از درِ زنجیرۀِ انتخابی
+   *  گذشته باشد؛ پس تاگلِ «اشتراک/اجتماع» و حتی بازکردنِ تبِ بنیادی، روند و پنج
+   *  شاخصِ همین نماد را عوض می‌کرد (رأیِ مالک ۱۴۰۵-۰۷-۱۹: «اصلاً نباید ربطی
+   *  داشته باشن»). اسکرینر کلِ جامعۀ غربالگری را یک‌جا می‌سنجد — همان اعداد،
+   *  بی‌وابستگی به فیلترِ تابلو. درخواستِ این‌جا تازه نیست: همان کلیدِ کشِ تب. */
+  const screenRes = useFtsScreen(0);
+  const screen = useMemo(() => {
+    const rows = screenRes.data?.data;
+    if (!rows?.length || !symbol) return veto.screen;
+    const want = normalizeFa(symbol);
+    return rows.find((r) => r.symbol === symbol)
+      ?? rows.find((r) => normalizeFa(r.symbol ?? '') === want)
+      ?? veto.screen;
+  }, [screenRes.data, symbol, veto.screen]);
+  /** روند از داوریِ *تک‌نمادیِ* موتور می‌آید (`/api/fts/{symbol}`): همان چیزی که
+   *  تبِ تکنیکال می‌سازد و به هیچ زنجیره‌ای وابسته نیست. پیش‌تر از ردیفِ قیف
+   *  خوانده می‌شد و آن ردیف فقط وقتی هست که نماد از درهایِ انتخابی رد شده باشد —
+   *  پس کلیدِ «اشتراک/اجتماع» صعودی/نزولیِ یک نماد را عوض می‌کرد. اسکرینر
+   *  جانشین است (۹۲۲ نمادِ غربالگری) و نبودنش «—» می‌ماند، نه حدس. */
+  const analysis = useFtsAnalysis(symbol ?? '');
+  const trendD = analysis.data?.fts?.trend?.D?.trend ?? screen?.tech_trend_d ?? null;
+  const trendW = analysis.data?.fts?.trend?.W?.trend ?? screen?.tech_trend_w ?? null;
   /** اولین دری که رویِ این نماد بسته است — منفی یعنی هیچ‌جا وتو نشده */
   const stoppedAt = progress.findIndex((p) => p.state === 'blocked');
 
   const hardVeto = veto.assembly.veto || veto.weekly.veto || decision?.action === 'veto';
   const awaiting =
     !hardVeto && (decision?.action === 'veto_gate1' || decision?.action === 'veto_gate2');
-  const gaugeMode: 'score' | 'veto' | 'wait' = hardVeto ? 'veto' : awaiting ? 'wait' : 'score';
+  // رأیِ مالک (1405-07-20): «در انتظار سنجش» درِ سایدبار ممنوع است. این دو
+  // اکشن هیچ محاسبۀ معطّلی را معنی نمی‌کنند -- گیتِ مرحلۀ قیف برایِ این نماد
+  // باز نشده است، پس همان لحظه هم حکمِ خودش را دارد: «مسدود».
+  const gaugeMode: 'score' | 'veto' | 'wait' = hardVeto || awaiting ? 'veto' : 'score';
   const isVeto = hardVeto;
   /** نامِ گیت‌هایی که سبز نیستند — خطِ دومِ کاکپیت، تا «چرا نه» مبهم نماند */
   const blockers = (strictRes?.gates ?? [])
@@ -230,13 +294,13 @@ export function SymbolInspector() {
       ? `وتوی هفتگی${veto.weekly.desc ? ` — ${veto.weekly.desc}` : ' — روند هفتگی صعودی نیست'}`
       : awaiting
         ? decision?.action === 'veto_gate1'
-          ? 'بنیادی هنوز سنجیده نشده'
-          : 'تکنیکال هنوز سنجیده نشده'
+          ? 'گیتِ بنیادیِ این نماد باز نیست (تکنیکال عبور نکرده)'
+          : 'گیتِ تکنیکالِ این نماد باز نیست (تابلو/هفتگی عبور نکرده)'
         : blockers
           ? `سد: ${blockers}`
           : verdict && symbol
             ? `${toFaDigits(verdict.usedSignalIds.length)}/۴ سیگنال`
-            : 'در انتظار سیگنال';
+            : 'بی‌سیگنالِ فعال';
 
   const open = symbol.length > 0;
   const pct = isVeto ? 0 : verdict ? (verdict.compositeScore + 100) / 2 : 50;
@@ -279,6 +343,26 @@ export function SymbolInspector() {
       : basketIn
         ? 'green'
         : 'gray';
+
+  // ── ۱۵.۲۰ دو صفحۀ محلی (رأیِ مالک ۱۴۰۵-۰۷-۱۷) ──────────────────────────────
+  // جابه‌جاییِ صفحّه فقط «دیدن» است: نه درخواستِ تازه می‌زند نه refetchِ صفحۀ
+  // دیگر. `detailSeen` نگهبانِ mount است: تا بارِ اول باز نشود پنج مظنه پرسیده
+  // نمی‌شود (query درِ خودش enabled-gated است)، و بعد از آن mount می‌ماند تا
+  // حالتِ بازشوِ پنل‌هایش با هر تبِ دیگر گم نشود.
+  const [page, setPage] = useState<'glance' | 'detail'>('glance');
+  const [detailSeen, setDetailSeen] = useState(false);
+  const [quotesOpen, setQuotesOpen] = useState(false);
+  const goPage = (k: 'glance' | 'detail') => {
+    setPage(k);
+    if (k === 'detail') setDetailSeen(true);
+  };
+  // رویدادها از همان تقویمِ خودِ بک‌اند (`/api/calendar/<symbol>`) خوانده می‌شوند
+  // با همان کشِ شش‌ساعته‌اش — نه از یک منبعِ دومِ اختراعیِ درِ فرانت.
+  // ردپایِ فیلتر‌به‌فیلتر از همان درخواستِ جدولِ غربالگری — تا سایدبار و جدول
+  // یک حکم داشته باشند، نه دو تا.
+  const trace = useFunnelTrace(symbol, funnelRequest);
+  const calEvents = useCalendarEvents(symbol);
+  const events = useMemo(() => (calEvents.data?.events ?? []).slice(0, 3), [calEvents.data]);
 
   return (
     <>
@@ -334,6 +418,26 @@ export function SymbolInspector() {
       </div>
 
       <div className="flex flex-col gap-2 p-2.5">
+        {/* ── ۱۵.۲۰ دو صفحۀ محلیِ بازرسی نماد (رأیِ مالک ۱۴۰۵-۰۷-۱۷) ────────
+            «در یک نگاه» = همان سطرهایِ خودش به همان ترتیبِ رأیِ داده‌شده،
+            «جزئیات بازار» = ردیف‌هایِ پُر جزئیات. جابه‌جایی فقط دیدن است: نه
+            درخواستِ تازه‌ای می‌زند نه refetch. صفحۀ دوم تا باز نشده mount نمی‌شود
+            تا پرسشِ پنج مظنه بی‌مصرف نرود، و بعد از باز شدن سرِ جایش می‌ماند تا
+            حالتِ بازشوِ خودش گم نشود. */}
+        <nav aria-label="صفحه‌هایِ بازرسی" data-testid="inspector-tabs" className="grid grid-cols-2 gap-1">
+          {([['glance', 'در یک نگاه'], ['detail', 'جزئیات بازار']] as const).map(([k, lbl]) => (
+            <button key={k} type="button" aria-current={page === k ? 'page' : undefined}
+                    data-testid={`inspector-tab-${k}`} onClick={() => goPage(k)}
+                    className={`rounded-md border px-2 py-1 text-[10px] font-bold transition-colors ${
+                      page === k
+                        ? 'border-accent-blue/60 bg-accent-blue/15 text-accent-blue'
+                        : 'border-border-c/60 bg-bg-primary text-text-muted hover:text-text-primary'
+                    }`}>
+              {lbl}
+            </button>
+          ))}
+        </nav>
+
         {/* خطای خوراک با «ردیف نیست» یکی نیست: بی‌این، بیست '-' بی‌صدا معنای
             «داده نیست» به کاربر می‌فروشد وقتی مشکل، رسیدنِ داده است. */}
         {!row && feed.isError ? (
@@ -345,193 +449,515 @@ export function SymbolInspector() {
             <RetryAction onRetry={() => void feed.refetch()} testId="inspector-feed-retry" />
           </div>
         ) : null}
-        {/* نشانگر مرحلۀ قیف: تبِ فعال («الان کجاییم») + جای خودِ نماد در قیف
-            («این سهم کجا ایستاده»). حلقه‌ها از همان `symbolStageProgress`ِ قیف
-            می‌آیند — سایدبار قواعدِ دومی نمی‌سازد. */}
-        {stageIdx != null ? (
-          <nav
-            aria-label="مراحل غربالگری FTS"
-            data-testid="inspector-stage"
-            className="flex flex-wrap items-center gap-1 text-[10px] font-bold"
-          >
-            {INSPECTOR_STAGES.map((s, i) => {
-              const p = progress[i];
-              const st = p?.state ?? 'unknown';
+
+        <div data-testid="inspector-page-glance"
+             className={page === 'glance' ? 'flex flex-col gap-2' : 'hidden'}>
+          {/* ── بند ۱.۲ مأموریت: پنلِ راستِ مرجع (شناسۀ نماد + قیمتِ روز + کندلِ
+              در حالِ تشکیل) درِ «در یک نگاه». کندل از چهار قیمتِ خودِ همین ردیف
+              رسم می‌شود؛ بی‌آن چهار عدد «—» است با علتش، نه بدنهٔ ساختگی. ── */}
+          <div className="flex items-end justify-between gap-2">
+            <div>
+              <div className="text-[8.5px] uppercase tracking-wider text-text-muted">آخرین معامله</div>
+              <LiveNumber
+                value={row?.pLast}
+                format={(v) => toFaDigits(Number(v.toFixed(2)).toString())}
+                className="text-sm font-black text-text-primary"
+              />
+            </div>
+            <FormingCandle candle={rawRow} width={30} height={10} testId="inspector-day-candle" />
+            <div className="text-end">
+              <div className="text-[8.5px] uppercase tracking-wider text-text-muted">تغییر روز</div>
+              <span className={row?.percentChange != null && row.percentChange >= 0 ? 'text-accent-green' : 'text-accent-red'}>
+                <LiveNumber
+                  value={row?.percentChange}
+                  format={(v) => fmtPct(v)}
+                  className="text-xs font-bold"
+                />
+              </span>
+            </div>
+          </div>
+
+          {/* ── بخش ۲ («در یک نگاه»): وضعیتِ قیمت — همان ستون‌هایِ تابلو، بی‌محاسبه
+              درِ رابط. «٪ آخرین» (p_last به دیروز) از «٪ پایانی» (percent_change،
+              p_closing به دیروز) جدا می‌ماند؛ یکی جای دیگری نمی‌نشیند. اولین/
+              بیشترین/کمترین از `p_first`/`p_max`/`p_min` خوانده می‌شوند و صفرِ
+              واقعیِ این سه «مبادله‌ای در این سطح نبود» است، نه قیمتِ صفر ⇒ «—» با
+              منشأ درِ title. نبودِ کلید ⇒ «—» (بی‌داده)، نه پرشدن با آخرین/پایانی. */}
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[9.5px]"
+               data-testid="inspector-price-grid">
+            <span className="flex items-baseline gap-1 text-text-muted">
+              پایانی
+              <span className="num font-bold text-text-primary" data-testid="inspector-p-closing"
+                    title={rawRow?.p_closing != null ? fmtInt(rawRow.p_closing) : 'قیمتِ پایانی درِ پاسخ نیست'}>
+                {rawRow?.p_closing != null ? fmtInt(rawRow.p_closing) : '—'}
+              </span>
+            </span>
+            <span className="flex items-baseline gap-1 text-text-muted">
+              ٪آخرین
+              <span className={`num font-bold ${rawRow?.percent_last != null && rawRow.percent_last >= 0 ? 'text-accent-green' : 'text-accent-red'}`}
+                    data-testid="inspector-percent-last"
+                    title="درصدِ آخرین به دیروز (p_last÷price_yesterday) — با ٪پایانی یکی نیست">
+                {fmtPct(rawRow?.percent_last)}
+              </span>
+            </span>
+            <span className="flex items-baseline gap-1 text-text-muted">
+              اولین
+              <span className="num font-bold text-text-secondary" data-testid="inspector-p-first"
+                    title={rawRow?.p_first != null
+                      ? 'صفرِ واقعی: مبادله‌ای در این سطح هنوز رخ نداده'
+                      : 'کلیدِ اولین در پاسخِ تابلو نیست'}>
+                {rawRow?.p_first != null && rawRow.p_first > 0 ? fmtInt(rawRow.p_first) : '—'}
+              </span>
+            </span>
+            <span className="flex items-baseline gap-1 text-text-muted">
+              بیشترین
+              <span className="num font-bold text-text-secondary" data-testid="inspector-p-max"
+                    title={rawRow?.p_max != null
+                      ? 'صفرِ واقعی: مبادله‌ای در این سطح هنوز رخ نداده'
+                      : 'کلیدِ بیشترین در پاسخِ تابلو نیست'}>
+                {rawRow?.p_max != null && rawRow.p_max > 0 ? fmtInt(rawRow.p_max) : '—'}
+              </span>
+            </span>
+            <span className="flex items-baseline gap-1 text-text-muted">
+              کمترین
+              <span className="num font-bold text-text-secondary" data-testid="inspector-p-min"
+                    title={rawRow?.p_min != null
+                      ? 'صفرِ واقعی: مبادله‌ای در این سطح هنوز رخ نداده'
+                      : 'کلیدِ کمترین در پاسخِ تابلو نیست'}>
+                {rawRow?.p_min != null && rawRow.p_min > 0 ? fmtInt(rawRow.p_min) : '—'}
+              </span>
+            </span>
+          </div>
+
+          {/* ── ۱۵.۲۰ حجم/تعداد و ارزشِ معاملات — دو مقدارِ همان ستون‌هایِ تابلو
+              با همان واحد. اینجا عددِ تازه‌ای محاسبه نمی‌شود؛ فقط همان‌ها خوانده
+              می‌شود (تک‌تعریفِ واحد درِ `shared/lib/fmt`). */}
+          {/* دو ستون به‌جای سه‌تا (رأیِ مالک 1405-07-20: «حجم و تعداد تو‌هم
+              رفته و قابل دیدن نیست»): درِ عرضِ این سایدبار، عددِ هفت‌رقمیِ
+              جداشده با «٬» درِ ستونِ یک‌سومی جا نمی‌شود و می‌شکند. ارزشِ
+              معاملات که بلندترین عدد است، یک سطرِ تمام‌عرض می‌گیرد. */}
+          <div className="grid grid-cols-2 items-end gap-x-2 gap-y-1 rounded-lg border border-[var(--hairline)] bg-bg-card/40 px-2 py-1"
+               data-testid="inspector-volume">
+            <div className="min-w-0">
+              <div className="text-[8.5px] text-text-muted">حجم</div>
+              <div className="num truncate text-[10.5px] font-bold text-text-primary"
+                   data-testid="inspector-volume-num"
+                   title={rawRow?.tvol != null ? fmtInt(rawRow.tvol) : undefined}>
+                {rawRow?.tvol != null ? fmtInt(rawRow.tvol) : 'بی‌داده'}
+              </div>
+            </div>
+            <div className="min-w-0">
+              <div className="text-[8.5px] text-text-muted">تعداد</div>
+              <div className="num truncate text-[10.5px] font-bold text-text-primary"
+                   data-testid="inspector-trades-num"
+                   title={rawRow?.z_tot_tran != null ? fmtInt(rawRow.z_tot_tran) : undefined}>
+                {rawRow?.z_tot_tran != null ? fmtInt(rawRow.z_tot_tran) : 'بی‌داده'}
+              </div>
+            </div>
+            <div className="col-span-2 min-w-0 border-t border-[var(--hairline)] pt-1">
+              <div className="truncate text-[8.5px] text-text-muted">ارزش (م.ریال)</div>
+              <div className="num truncate text-[10.5px] font-bold text-text-primary"
+                   data-testid="inspector-value-num"
+                   title={rawRow?.q_tot_cap != null ? `${fmtInt(rawRow.q_tot_cap)} ریال` : undefined}>
+                {rawRow?.q_tot_cap != null ? billionRialText(toBillionRial(rawRow.q_tot_cap)) : 'بی‌داده'}
+              </div>
+            </div>
+          </div>
+
+          {/* ارزشِ بازار و I4 از یک مبنایِ واحد (رأیِ مالک ۱۴۰۵-۰۷-۱۷): همان
+              `market_watch.market_cap` که مخرجِ I4 درِ موتور است، اینجا می‌نشیند —
+              پس «two market cap» درِ رابط نداریم. TSETMC برایِ هر نماد `marketValue`
+              ساختاریاره نمی‌فرستد (سنجشِ زنده: فقط سطحِ بازار)، لذا مبنا همان
+              ستونِ تابلو با برچسبِ منشأ است. نبودِ عدد ⇒ «بی‌داده»، هرگز صفر. */}
+          <div className="flex items-center justify-between gap-2 rounded-lg border border-[var(--hairline)] bg-bg-card/40 px-2 py-1"
+               data-testid="inspector-market-cap">
+            <span className="text-[9px] text-text-muted">ارزشِ بازار</span>
+            <span className="num text-[11px] font-bold text-text-primary"
+                  title={`مبنایِ TSETMC: ${rawRow?.mcap_src || 'بی‌منبع'} — `
+                         + `${rawRow?.is_live === false ? 'تابلوی آخرین روز معاملاتی' : 'تابلوی امروز'}`}>
+              {rawRow?.mcap != null ? fmtHemmat(rawRow.mcap) : 'بی‌داده'}
+            </span>
+            <span className="text-[9px] text-text-muted">I4</span>
+            {(() => {
+              // رأیِ I4ِ موتور دست‌نخورده است؛ آنچه اینجا نشان داده می‌شود
+              // «نسبتِ با ارزشِ بازارِ همین ردیفِ تابلو» است:
+              //   فروشِ ۱۲ ماهه (برآورد، میلیارد تومان) × ۱e10 ÷ mcap(ریال)
+              // رأیِ مالک (1405-07-20): نمایش درصدی است (×۱۰۰ و ٪)؛ خودِ نسبت و حکمِ موتور
+              // دست‌نخورده‌اند.
+              // و اگر با نسبتِ ثبت‌شدۀ موتور نمی‌خواند، **هر دو** عدد دیده
+              // می‌شوند — نه بازنویسیِ بی‌صدایِ حکم، نه داورِ دوم درِ فرانت.
+              const salesBt = cand?.screen?.annual_sales_bt ?? null;
+              const cached = cand?.screen?.sales_to_mcap ?? null;
+              const mcap = rawRow?.mcap ?? null;
+              const live = salesBt != null && mcap ? (salesBt * 1e10) / mcap : null;
+              const shown = live ?? cached;
+              if (shown == null) {
+                return <span className="num text-[11px] text-text-muted" data-testid="inspector-i4"
+                             title="I4 = فروشِ ۱۲ ماهه ÷ ارزشِ بازار؛ نه فروش داریم نه مبنایِ معتبر">بی‌داده</span>;
+              }
+              const differs = live != null && cached != null && Math.abs(live - cached) > 0.005;
               return (
-                <Link
-                  key={s.key}
-                  to={stageHref(i, symbol)}
-                  aria-current={i === stageIdx ? 'step' : undefined}
-                  data-testid={`inspector-stage-${s.key}`}
-                  data-stage-state={st}
-                  title={p?.why || `${s.label}: هنوز منبعی برای داوری این مرحله نیست`}
-                  className={`flex items-center gap-1 rounded-md border px-1.5 py-0.5 transition-colors ${
-                    i === stageIdx
-                      ? 'border-accent-blue bg-accent-blue/15 text-accent-blue'
-                      : 'border-border-c/60 bg-bg-primary text-text-muted hover:text-text-primary'
-                  }`}
-                >
-                  <span
-                    aria-hidden
-                    data-testid={`inspector-stage-dot-${s.key}`}
-                    className={`inline-block h-1.5 w-1.5 shrink-0 rounded-full ${
-                      st === 'passed'
-                        ? 'bg-accent-green'
-                        : st === 'blocked'
-                          ? 'bg-accent-red'
-                          : st === 'waiting'
-                            ? 'bg-accent-yellow'
-                            : 'bg-border-c'
-                    }`}
-                  />
-                  {s.label}
+                <Link to={`/fundamental?symbol=${encodeURIComponent(symbol)}`}
+                      data-testid="inspector-i4"
+                      title={`فروشِ ۱۲ ماهه (برآورد): ${salesBt != null ? toFaDigits(Math.round(salesBt)) : '—'} میلیارد تومان`
+                        + ` ÷ ارزشِ بازارِ همین ردیف: ${mcap != null ? fmtHemmat(mcap) : '—'}`
+                        + ` ⇒ ${toFaDigits((shown * 100).toFixed(1))}٪`
+                        + (differs ? ` — نسبتِ ثبت‌شدۀ موتور: ${toFaDigits((cached! * 100).toFixed(1))}٪`
+                                   : ' — با نسبتِ ثبت‌شدۀ موتور می‌خواند')
+                        + '\nمبنایِ ارزشِ بازار: TSETMC (' + (rawRow?.mcap_src || 'بی‌منبع') + ')؛'
+                        + ' حکمِ پذیرش/رد را همان موتورِ بنیادی می‌دهد، این عدد فقط نسبتِ زنده است.'}
+                      className="num flex items-baseline gap-1 text-[11px] font-bold text-accent-blue hover:underline">
+                  {toFaDigits((shown * 100).toFixed(1))}٪
+                  {differs ? (
+                    <span className="text-[8.5px] font-normal text-accent-amber"
+                          data-testid="inspector-i4-diverges">
+                      (موتور: {toFaDigits(((cached as number) * 100).toFixed(1))}٪)
+                    </span>
+                  ) : null}
                 </Link>
               );
-            })}
-            <span className="w-full text-[9.5px] font-normal text-text-muted" data-testid="inspector-stage-next">
-              {stoppedAt >= 0
-                ? `ایستاده در «${INSPECTOR_STAGES[stoppedAt].label}» — ${progress[stoppedAt].why}`
-                : stageIdx < INSPECTOR_STAGES.length - 1
-                  ? `مرحلۀ فعلی: ${INSPECTOR_STAGES[stageIdx].label} · بعدی: ${INSPECTOR_STAGES[stageIdx + 1].label}`
-                  : `مرحلۀ فعلی: ${INSPECTOR_STAGES[stageIdx].label} — پایِ قیف`}
-            </span>
-          </nav>
-        ) : null}
-
-        {/* قیمت و درصد با انیمیشن زنده و فلاش مارکت */}
-        <div className="flex items-end justify-between gap-2">
-          <div>
-            <div className="text-[8.5px] uppercase tracking-wider text-text-muted">آخرین معامله</div>
-            <LiveNumber
-              value={row?.pLast}
-              format={(v) => toFaDigits(Number(v.toFixed(2)).toString())}
-              className="text-sm font-black text-text-primary"
-            />
+            })()}
           </div>
-          <div className="text-end">
-            <div className="text-[8.5px] uppercase tracking-wider text-text-muted">تغییر روز</div>
-            <span className={row?.percentChange != null && row.percentChange >= 0 ? 'text-accent-green' : 'text-accent-red'}>
-              <LiveNumber
-                value={row?.percentChange}
-                format={(v) => fmtPct(v)}
-                className="text-xs font-bold"
+
+          {/* ── ۱۵.۲۰ قدرت خرید/فروش — همان خانۀ ستونِ «خرید/فروش»ِ تابلو
+              (دو سرانه + نوارِ سهم + نسبت)، بی‌اوراقِ دوباره‌نویسی: یک
+              implementation درِ `BuySellCell`. پرچمِ الگو همین‌جا می‌ماند، چون
+              همان دو سرانه را داوری می‌کند؛ پیش‌تر درِ چراغِ «سرانۀ خریدار» بود. */}
+          <div className="flex flex-col gap-0.5 rounded-lg border border-[var(--hairline)] bg-bg-card/40 px-2 py-1"
+               data-testid="inspector-power">
+            <div className="flex items-center justify-between gap-1">
+              <span className="text-[8.5px] text-text-muted">قدرت خرید/فروش</span>
+              {rawRow?.f_clock || rawRow?.f_susp ? (
+                <span className="text-[8.5px] text-accent-amber" data-testid="inspector-power-pattern">
+                  {rawRow?.f_clock ? 'الگوی ساعت' : 'حجم مشکوک'}
+                </span>
+              ) : null}
+            </div>
+            {/* خانۀ تمام‌عرض: پنل ۲۴۰ پیکسل است و برچسبِ کنارِ سلول، خودِ سلول را
+                می‌شکست (سرریزِ ۱۰۸→۷۴ پیکسل درِ سنجشِ زنده دیده شد). */}
+            <BuySellCell testId="inspector-buy-sell"
+                         buyPc={rawRow ? buyPerCapitaMt(rawRow) : null}
+                         sellPc={rawRow ? sellPerCapitaMt(rawRow) : null}
+                         power={rawRow?.buyer_power} />
+            {/* بند ۲ مأموریت (رأیِ مالک 1405-07-20): سهمِ حقیقی/حقوقی از **ارزشِ**
+                خرید و فروش، درِ همان خانۀ نسبتِ خریدار/فروشنده. عددها را بک‌اند
+                ساخته (`client_split.py`)؛ این‌جا فقط نمایش است و نبودِ عدد
+                «نامشخص» خوانده می‌شود، نه صفر و نه سهمِ حجم. */}
+            <ClientSharePct row={rawRow} dense testId="inspector-client-share" />
+          </div>
+
+          {/* وضعیتِ ناظر (TSETMC): کفِ سلسله‌مراتبِ همین پنل — «الان می‌شود-trade کرد
+              یا نه» پیش از هر عددی خوانده می‌شود. متنِ کامل درِ بازشو. */}
+          <RegulatoryState row={rawRow} feedFailed={feed.isError} />
+
+          <div className="flex flex-col gap-0.5">
+              {/* روند از داوریِ بی‌زنجیرۀ اسکرینر خوانده می‌شود؛ سیگنالِ باس فقط
+                  جانشین است، وگرنه فیلترِ تابلو رنگِ همین دو خط را عوض می‌کرد. */}
+              <StatusLight
+                label="تکنیکال FTS"
+                value={trendD === 'up' ? 'صعودی'
+                  : trendD === 'down' ? 'نزولی'
+                    : trendD ? 'خنثی'
+                      : tech == null ? '-' : tech.direction === 'bullish' ? 'صعودی' : tech.direction === 'bearish' ? 'نزولی' : 'خنثی'}
+                tone={trendD === 'up' ? 'green'
+                  : trendD === 'down' ? 'red'
+                    : trendD ? 'yellow'
+                      : tech == null ? 'gray' : tech.direction === 'bullish' ? 'green' : tech.direction === 'bearish' ? 'red' : 'yellow'}
+                hint={tech?.rationale ?? screen?.tech_matrix_desc ?? undefined}
               />
+              <StatusLight
+                label="نمره بنیادی"
+                value={(screen?.score ?? cand?.score ?? fund?.score) == null
+                  ? '-'
+                  : toFaDigits((screen?.score ?? cand?.score ?? (fund?.score as number)))}
+                tone={screen?.verdict === 'STRONG' || cand?.status.fundamental === 'pass' ? 'green'
+                  : screen?.verdict === 'REJECT' || cand?.status.fundamental === 'reject' ? 'red'
+                    : fund?.direction === 'bullish' ? 'green'
+                      : fund?.direction === 'bearish' ? 'red'
+                        : (screen || cand || fund) ? 'yellow' : 'gray'}
+                hint={screen?.exclusion_reasons ?? cand?.why.fundamental ?? fund?.rationale ?? undefined}
+              />
+          </div>
+
+          {/* ── بخش ۷ («در یک نگاه»): نمای فشردهٔ تکنیکال — روندِ روزانه و هفتگی از
+              همان خروجیِ canonicalِ قیف (`cand.trendD`/`cand.trendW` ← `trend.matrix`)
+              و جت از پرچمِ canonicalِ تابلو (`f_jet` درِ tape_flags). بی‌نامزدِ رسیدن
+              به این گام ⇒ «—»، که با «نزولی» یکی نیست؛ هیچ روندِ ساختگی ساخته نمی‌شود. */}
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[9.5px]"
+               data-testid="inspector-trend">
+            <span className="text-[9px] text-text-muted">روند</span>
+            <TrendChip side="روزانۀ" value={trendD} />
+            <TrendChip side="هفتگی" value={trendW} />
+            <span className="flex items-center gap-1" data-testid="inspector-jet">
+              <span className="text-[9px] text-text-muted">جت</span>
+              <span className={`rounded px-1 font-bold ${
+                rawRow?.f_jet ? 'bg-accent-amber/15 text-accent-amber' : 'text-text-muted'
+              }`} title={rawRow?.f_jet ? 'پرچمِ جت از داوریِ canonicalِ تابلو (f_jet)' : 'جتِ canonical روشن نیست'}>
+                {rawRow?.f_jet ? '✓' : '—'}
+              </span>
             </span>
           </div>
-        </div>
 
-        {/* وضعیتِ ناظر (TSETMC): کفِ سلسله‌مراتبِ همین پنل — «الان می‌شود-trade کرد
-            یا نه» پیش از هر عددی خوانده می‌شود. متنِ کامل درِ بازشو. */}
-        <RegulatoryState row={rawRow} feedFailed={feed.isError} />
+          {/* ── بخش ۸ («در یک نگاه»): پنج شاخصِ بنیادی درِ پنلِ چپ — پنج کارتِ
+              عمودی: نامِ جزوه + مقدار + حکمِ سه‌حالته + علتِ یک‌خطی، و کلیکِ هر
+              کارت همان drill-downِ موجود را درِ `#/fundamental/<symbol>?drill=N`
+              باز می‌کند (رابطِ جزئیاتِ دوم ساخته نشده). مقدار از کارتِ
+              canonicalِ تک‌نمادی (`/api/fundamental/{symbol}`) و تا پیش از
+              رسیدنش از ردیفِ غربالگری؛ این دو با
+              `dev/fts_screener_card_parity_v10` هم‌رأی نگه داشته می‌شوند.
+              رأیِ مالک ۱۴۰۵-۰۷-۱۹ محفوظ است: هیچ‌کدام به زنجیرۀ فیلتر وابسته
+              نیستند. نبودِ مقدار ⇒ «—» با علتِ همان محور، نه صفر. */}
+          <div data-testid="inspector-i1-i5">
+            <FtsIndicatorRail symbol={symbol} fallbackRow={screen ?? cand?.screen ?? null} />
+          </div>
 
-        {/* مینی کاکپیت مستر
-            بج از «تصمیمِ قطعیِ گیت‌ها» می‌آید، نه از میانگینِ وزنیِ آرا: میانگین
-            می‌توانست «خرید قوی» بگوید در حالی که گیتِ سبد (رژیم جنگی/سقفِ صنعت)
-            همان نماد را بسته است — دو پنل، دو جواب. */}
-        <div className="flex items-center gap-2.5 rounded-lg border border-[var(--hairline)] bg-bg-card/40 p-2">
-          <MiniGauge pct={pct} color={gaugeColor} mode={gaugeMode} />
-          <div className="flex min-w-0 flex-col gap-0.5">
-            {hardVeto ? (
-              <Badge tone="red">ورود متوقف</Badge>
-            ) : awaiting ? (
-              <Badge tone="yellow">در انتظارِ سنجش</Badge>
-            ) : decision ? (
-              <Badge tone={DECISION_TONE[decision.action]}>{decision.label}</Badge>
-            ) : verdict ? (
-              <Badge tone={ACTION_TONE[verdict.finalAction]}>{ACTION_FA[verdict.finalAction]}</Badge>
+          {/* نشانگر مرحلۀ قیف: تبِ فعال («الان کجاییم») + جای خودِ نماد در قیف
+              («این سهم کجا ایستاده»). حلقه‌ها از همان `symbolStageProgress`ِ قیف
+              می‌آیند — سایدبار قواعدِ دومی نمی‌سازد. */}
+          {stageIdx != null ? (
+            <nav
+              aria-label="مراحل غربالگری FTS"
+              data-testid="inspector-stage"
+              className="flex flex-wrap items-center gap-1 text-[10px] font-bold"
+            >
+              {INSPECTOR_STAGES.map((s, i) => {
+                const p = progress[i];
+                const st = p?.state ?? 'unknown';
+                return (
+                  <Link
+                    key={s.key}
+                    to={stageHref(i, symbol)}
+                    aria-current={i === stageIdx ? 'step' : undefined}
+                    data-testid={`inspector-stage-${s.key}`}
+                    data-stage-state={st}
+                    title={p?.why || `${s.label}: هنوز منبعی برای داوری این مرحله نیست`}
+                    className={`flex items-center gap-1 rounded-md border px-1.5 py-0.5 transition-colors ${
+                      i === stageIdx
+                        ? 'border-accent-blue bg-accent-blue/15 text-accent-blue'
+                        : 'border-border-c/60 bg-bg-primary text-text-muted hover:text-text-primary'
+                    }`}
+                  >
+                    <span
+                      aria-hidden
+                      data-testid={`inspector-stage-dot-${s.key}`}
+                      className={`inline-block h-1.5 w-1.5 shrink-0 rounded-full ${
+                        st === 'passed'
+                          ? 'bg-accent-green'
+                          : st === 'blocked'
+                            ? 'bg-accent-red'
+                            : st === 'waiting'
+                              ? 'bg-accent-yellow'
+                              : st === 'not_required'
+                                ? 'bg-border-c/40 ring-1 ring-border-c/60'
+                                : st === 'not_in_universe'
+                                  ? 'bg-bg-secondary ring-1 ring-border-c'
+                                  : 'bg-border-c'
+                      }`}
+                    />
+                    {s.label}
+                    {st === 'not_required' ? (
+                      <span className="text-[9px] font-normal opacity-70" data-testid={`inspector-stage-note-${s.key}`}>
+                        · لازم نبود
+                      </span>
+                    ) : null}
+                    {st === 'not_in_universe' ? (
+                      <span className="text-[9px] font-normal opacity-70" data-testid="inspector-stage-out">
+                        · خارج از جامعه
+                      </span>
+                    ) : null}
+                  </Link>
+                );
+              })}
+              <span className="w-full text-[9.5px] font-normal text-text-muted" data-testid="inspector-stage-next">
+                {progress[0]?.state === 'not_in_universe'
+                  ? `خارج از جامعۀ غربالگری — ${progress[0].why}`
+                  : stoppedAt >= 0
+                  ? `ایستاده در «${INSPECTOR_STAGES[stoppedAt].label}» — ${progress[stoppedAt].why}`
+                  : stageIdx < INSPECTOR_STAGES.length - 1
+                    ? `مرحلۀ فعلی: ${INSPECTOR_STAGES[stageIdx].label} · بعدی: ${INSPECTOR_STAGES[stageIdx + 1].label}`
+                    : `مرحلۀ فعلی: ${INSPECTOR_STAGES[stageIdx].label} — پایِ غربالگری`}
+              </span>
+            </nav>
+          ) : funnelError && !funnelHasData ? (
+            <FunnelErrorBanner onRetry={funnelRetry} blocking />
+          ) : null}
+
+          {/* ── ۱۵.۲۰ رویدادها — عنوانِ خودِ اطلاعیه از تقویمِ نماد
+              (`/api/calendar/<symbol>`)، نه برچسبِ اختراعی. سه رویدادِ نخستِ
+              پیشِ رو؛ «همه» به صفحۀ بنیادی می‌رود. */}
+          <div className="flex flex-col gap-0.5 rounded-lg border border-[var(--hairline)] bg-bg-card/40 px-2 py-1"
+               data-testid="inspector-events">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-[9px] text-text-muted">رویدادها</span>
+              <Link to={`/fundamental?symbol=${encodeURIComponent(symbol)}`}
+                    data-testid="inspector-events-all"
+                    className="text-[9px] text-accent-blue hover:underline">همه ↗</Link>
+            </div>
+            {events.length === 0 ? (
+              <span className="text-[10px] text-text-muted" data-testid="inspector-events-none">
+                {calEvents.isError ? 'تقویم نمی‌رسد'
+                 : calEvents.isPending ? 'در حالِ خواندنِ تقویم'
+                 : 'رویدادی ثبت نشده'}
+              </span>
             ) : (
-              <Badge tone="gray">بدون داده</Badge>
+              <ul className="flex flex-col gap-0.5">
+                {events.map((e, i) => (
+                  <li key={`${e.date}-${i}`} className="truncate text-[10px] text-text-secondary"
+                      title={`${e.date} — ${e.title ?? ''}`}>
+                    <span className="num text-text-muted">{jalaliOf(e.date)}</span>
+                    {' '}{e.title ?? '—'}
+                    {/* رأیِ §۲۴: اگر عنوانِ اطلاعیه تاریخِ جلسه را نمی‌گفت، این عدد
+                        فقط تاریخِ انتشار است — بی‌علامت گذاشتنش «X روز تا مجمع»
+                        به کاربر می‌فروشد. */}
+                    {e.date_source === 'title' ? null : (
+                      <span className="text-text-muted" data-testid="inspector-event-published"> (انتشار)</span>
+                    )}
+                  </li>
+                ))}
+              </ul>
             )}
-            <span className="num text-[9.5px] text-text-muted" data-testid="inspector-veto-why">
-              {whyLine}
-            </span>
+          </div>
+
+          {/* مینی کاکپیت مستر
+              بج از «تصمیمِ قطعیِ گیت‌ها» می‌آید، نه از میانگینِ وزنیِ آرا: میانگین
+              می‌توانست «خرید قوی» بگوید در حالی که گیتِ سبد (رژیم جنگی/سقفِ صنعت)
+              همان نماد را بسته است — دو پنل، دو جواب. */}
+          <div className="flex items-center gap-2.5 rounded-lg border border-[var(--hairline)] bg-bg-card/40 p-2">
+            <MiniGauge pct={pct} color={gaugeColor} mode={gaugeMode} />
+            <div className="flex min-w-0 flex-col gap-0.5">
+              {hardVeto ? (
+                <Badge tone="red">ورود متوقف</Badge>
+              ) : awaiting ? (
+                <Badge tone="red" title="این «در حالِ محاسبه» نیست: گیتِ مرحلۀ قیف بسته است">
+                  {decision?.action === 'veto_gate1' ? 'مسدود در بنیادی' : 'مسدود در تکنیکال'}
+                </Badge>
+              ) : decision ? (
+                <Badge tone={DECISION_TONE[decision.action]}>{decision.label}</Badge>
+              ) : verdict ? (
+                <Badge tone={ACTION_TONE[verdict.finalAction]}>{ACTION_FA[verdict.finalAction]}</Badge>
+              ) : (
+                <Badge tone="gray">بدون داده</Badge>
+              )}
+              <span className="num text-[9.5px] text-text-muted" data-testid="inspector-veto-why">
+                {whyLine}
+              </span>
+            </div>
           </div>
         </div>
 
-        {/* چهار چراغ وضعیت */}
-        <div className="flex flex-col gap-0.5">
-          <StatusLight
-            label="نمره بنیادی"
-            value={fund?.score == null ? '-' : toFaDigits(fund.score)}
-            tone={fund == null ? 'gray' : fund.direction === 'bullish' ? 'green' : fund.direction === 'bearish' ? 'red' : 'yellow'}
-            hint={fund?.rationale}
-          />
-          <StatusLight
-            label="تکنیکال FTS"
-            value={tech == null ? '-' : tech.direction === 'bullish' ? 'صعودی' : tech.direction === 'bearish' ? 'نزولی' : 'خنثی'}
-            tone={tech == null ? 'gray' : tech.direction === 'bullish' ? 'green' : tech.direction === 'bearish' ? 'red' : 'yellow'}
-            hint={tech?.rationale}
-          />
-          <StatusLight
-            label="سرانه خریدار"
-            value={row?.buyerPower == null ? '-' : toFaDigits(row.buyerPower.toFixed(1))}
-            tone={row?.buyerPower != null && row.buyerPower >= 1.5 ? 'green' : row?.fClock || row?.fSusp ? 'orange' : 'gray'}
-            hint={row?.fClock ? 'الگوی ساعت فعال' : row?.fSusp ? 'حجم مشکوک' : undefined}
-          />
-          <StatusLight
-            label="پرتفوی"
-            value={basketValue}
-            tone={basketTone}
-            hint={port?.rationale}
-          />
-        </div>
-
-        {/* پنج مظنه — همان عمقی که در تب تکنیکال است، این‌جا برایِ همان نماد */}
-        <div className="rounded-lg border border-[var(--hairline)] bg-bg-card/40 p-1.5">
-          <div className="mb-1 text-[10px] font-bold text-text-secondary">پنج مظنه</div>
-          <SidebarOrderBook symbol={symbol} compact />
-        </div>
-
-        {/* جریان حجم درون‌روز — کارتِ خودکفا (عنوان و محورِ خودش را دارد) */}
-        <VolumeFlowMini symbol={symbol} compact />
-
-        {/* ممیزی وضعیت بنیادی (FTS) — بازشوی «چرا این وضعیت؟» */}
-        <AuditBadge
-          state={fund == null ? 'na' : fund.direction === 'bearish' ? 'fail' : 'pass'}
-          evidence={{
-            actualValue: fundFts,
-            targetThreshold: 5,
-            ruleRef: 'FTS',
-            reason: fund?.rationale ?? null,
-            direction: 'higher',
-          }}
-          compact
-          title="چرا این وضعیت؟"
-          label={`ممیزی بنیادی${fundFts == null ? '' : ': ' + toFaDigits(fundFts) + ' از ۵'}`}
-          hintTitle="دلیل وضعیت شاخص بنیادی"
-        />
-
-        {/* دسترسی‌های سریع و اکشن‌ها در شبکه فشرده ۲×۲ */}
-        <div className="grid grid-cols-2 gap-1.5 pt-1">
-          <div className="flex items-center justify-center">
-            <SymbolBasketAction symbol={symbol} compact />
+        {detailSeen ? (
+          <div data-testid="inspector-page-detail"
+               className={page === 'detail' ? 'flex flex-col gap-2' : 'hidden'}>
+          {/* ── ۱۵.۲۰ پنج مظنه، بسته به‌پیش‌فرض — «بسته» یعنی «نپرسیده نشده»،
+              نه «حذف شده»: اجزایِ عمق فقط وقتی پرسیده می‌شوند که بازشده باشد، و
+              کلِ پنل هم درِ صفحۀ دوم سرِ جایش است. */}
+          <div className="rounded-lg border border-[var(--hairline)] bg-bg-card/40 p-1.5"
+               data-testid="inspector-quotes">
+            <button type="button" onClick={() => setQuotesOpen((v) => !v)} aria-expanded={quotesOpen}
+                    data-testid="inspector-quotes-toggle"
+                    className={`flex w-full items-center gap-2 text-[10px] font-bold text-text-secondary ${quotesOpen ? 'justify-end' : 'justify-between'}`}>
+              {quotesOpen ? (
+                <span className="text-[9px] font-normal text-accent-blue">بستن</span>
+              ) : (
+                <>
+                  <span>پنج مظنه</span>
+                  <span className="text-[9px] font-normal text-accent-blue">نمایش</span>
+                </>
+              )}
+            </button>
+            {quotesOpen ? (
+              /* بازخوردِ بازشدن: همان .panel-inِ مشترک (با احترامِ
+                 prefers-reduced-motion درِ index.css) — پنل بی‌حرکت باز نمی‌شود
+                 و بی‌محاسبۀِ سنگین هم می‌ماند. */
+              <div className="panel-in mt-1">
+                <OrderBookFive symbol={symbol} candle={rawRow} compact testId="sidebar-orderbook" />
+              </div>
+            ) : null}
           </div>
-          <Link
-            to={`/master/${encodeURIComponent(symbol)}`}
-            className="flex items-center justify-center rounded-lg border border-[var(--hairline)] bg-bg-card/60 px-2 py-1 text-center text-[10px] font-bold text-accent-green transition-all duration-200 hover:border-accent-green hover:bg-accent-green/10"
-            title="کاکپیت داوری مستر"
-          >
-            کاکپیت مستر ↗
-          </Link>
-          <Link
-            to={`/technical/${encodeURIComponent(symbol)}`}
-            className="flex items-center justify-center rounded-lg border border-[var(--hairline)] bg-bg-card/60 px-2 py-1 text-center text-[10px] font-bold text-accent-blue transition-all duration-200 hover:border-border-accent hover:text-neon-cyan"
-            title="چارت تکنیکال"
-          >
-            چارت تکنیکال ↗
-          </Link>
-          <Link
-            to={`/fundamental/${encodeURIComponent(symbol)}`}
-            className="flex items-center justify-center rounded-lg border border-[var(--hairline)] bg-bg-card/60 px-2 py-1 text-center text-[10px] font-bold text-text-secondary transition-all duration-200 hover:border-border-accent hover:text-accent-blue"
-            title="صورت‌های مالی و کدال"
-          >
-            بررسی کدال ↗
-          </Link>
-        </div>
+
+          {/* جریان حجم درون‌روز — کارتِ خودکفا (عنوان و محورِ خودش را دارد) */}
+          <VolumeFlowMini symbol={symbol} compact />
+
+          {/* ردپا — همان `timeline`ِ موتور برایِ همین نماد: کدام فیلتر، با چه
+              دلیلی، با چه ورودی/خروجی‌ای رد یا قبولش کرد. بی‌این، سایدبار فقط
+              «ایستاده در مرحلۀ X» را می‌گفت. */}
+          <div className="rounded-lg border border-[var(--hairline)] bg-bg-card/40 px-2 py-1.5"
+               data-testid="inspector-trace">
+            <div className="mb-1 text-[10px] font-bold text-text-secondary">ردپایِ غربالگری</div>
+            {trace.isError ? (
+              <span className="text-[10px] text-accent-red" data-testid="funnel-trace-error">
+                ردپا نمی‌رسد
+              </span>
+            ) : trace.isPending ? (
+              <span className="text-[10px] text-text-muted" data-testid="funnel-trace-loading">
+                در حالِ خواندنِ ردپا
+              </span>
+            ) : (
+              <FunnelTraceList steps={trace.data?.timeline ?? []}
+                               rulesetVersion={trace.data?.ruleset_version ?? null}
+                               asOf={trace.data?.as_of ?? null} />
+            )}
+          </div>
+
+          <div className="flex flex-col gap-0.5">
+              <StatusLight
+                label="پرتفوی"
+                value={basketValue}
+                tone={basketTone}
+                hint={port?.rationale}
+              />
+          </div>
+
+          {/* ممیزی وضعیت بنیادی (FTS) — بازشوی «چرا این وضعیت؟» */}
+          <AuditBadge
+            state={fund == null ? 'na' : fund.direction === 'bearish' ? 'fail' : 'pass'}
+            evidence={{
+              actualValue: fundFts,
+              targetThreshold: 5,
+              ruleRef: 'FTS',
+              reason: fund?.rationale ?? null,
+              direction: 'higher',
+            }}
+            compact
+            title="چرا این وضعیت؟"
+            label={`ممیزی بنیادی${fundFts == null ? '' : ': ' + toFaDigits(fundFts) + ' از ۵'}`}
+            hintTitle="دلیل وضعیت شاخص بنیادی"
+          />
+
+          {/* دسترسی‌های سریع و اکشن‌ها در شبکه فشرده ۲×۲ */}
+          <div className="grid grid-cols-2 gap-1.5 pt-1">
+            <div className="flex items-center justify-center">
+              <SymbolBasketAction symbol={symbol} compact />
+            </div>
+            <Link
+              to={`/master/${encodeURIComponent(symbol)}`}
+              className="flex items-center justify-center rounded-lg border border-[var(--hairline)] bg-bg-card/60 px-2 py-1 text-center text-[10px] font-bold text-accent-green transition-all duration-200 hover:border-accent-green hover:bg-accent-green/10"
+              title="کاکپیت داوری مستر"
+            >
+              کاکپیت مستر ↗
+            </Link>
+            <Link
+              to={`/technical/${encodeURIComponent(symbol)}`}
+              className="flex items-center justify-center rounded-lg border border-[var(--hairline)] bg-bg-card/60 px-2 py-1 text-center text-[10px] font-bold text-accent-blue transition-all duration-200 hover:border-border-accent hover:text-neon-cyan"
+              title="چارت تکنیکال"
+            >
+              چارت تکنیکال ↗
+            </Link>
+            <Link
+              to={`/fundamental/${encodeURIComponent(symbol)}`}
+              className="flex items-center justify-center rounded-lg border border-[var(--hairline)] bg-bg-card/60 px-2 py-1 text-center text-[10px] font-bold text-text-secondary transition-all duration-200 hover:border-border-accent hover:text-accent-blue"
+              title="صورت‌های مالی و کدال"
+            >
+              بررسی کدال ↗
+            </Link>
+          </div>
+          </div>
+        ) : null}
 
         <div className="mt-auto pt-1 text-center text-[8.5px] uppercase tracking-widest text-text-muted">
           Symbol Inspector · FTS
         </div>
+
       </div>
     </aside>
     </>

@@ -32,6 +32,9 @@ export const FtsConfigPayloadSchema = z.object({
   v10_sales_to_mcap_min: z.number().nullish(),
   v10_potential_min: z.number().nullish(),
   v10_inflation_basis: z.number().nullish(),
+  hourglass_rsi_period: z.number().int().min(2).max(100),
+  hourglass_rsi_oversold: z.number().min(5).max(50),
+  hourglass_ma52_position: z.enum(["below", "above", "either"]),
 });
 
 export const FtsConfigSchema = z.object({
@@ -72,6 +75,12 @@ export const FTS_GUIDE_DEFAULTS = {
   v10_potential_min: 40,
   /** مبنای تورمِ داخلِ فرمولِ ۱ب (٪). مالک ۱۴۰۵-۰۷-۰۴ خواست این عدد درِ دستِ کاربر باشد؛ پیش‌فرض = هدفِ ۶۰٪ جزوه. */
   v10_inflation_basis: 60,
+  /** ساعت شنی: دوره ۷ با رأی مالک؛ جدا از RSI(14) لایه خروج */
+  hourglass_rsi_period: 7,
+  /** آستانه اجرایی قابل تنظیم؛ مقدار canonical استخراج‌شده از PDF نیست */
+  hourglass_rsi_oversold: 30,
+  /** پیش‌فرض سازگاری با موتور موجود؛ کاربر می‌تواند above/either را انتخاب کند */
+  hourglass_ma52_position: 'below',
 } as const;
 
 /** پیش‌فرضِ کشوی تنظیمات: کف فروش/ارزش بازار ۳۳٪ (مطلوب ۱۰۰٪) */
@@ -104,10 +113,22 @@ export function useSaveFtsConfig() {
       }
       return { ok: true };
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
+      if (!result.ok) return;
       qc.invalidateQueries({ queryKey: ['fts-config'] });
       qc.invalidateQueries({ queryKey: ['fts-screen'] });
       qc.invalidateQueries({ queryKey: ['fts-card'] });
+      // هر تحلیل FTS باید پس از تغییر تنظیم ساعت‌شنی دوباره از موتور خوانده شود.
+      qc.invalidateQueries({ queryKey: ['fts-analysis'] });
+      // THRESHOLD-FANOUT: آستانه یکی است، ولی مصرف‌کننده‌هایش چهار کشِ جدا بودند.
+      // بی‌این سه خط، بعد از عوض‌کردنِ آستانه تصمیمِ «دروازۀ بنیادی» تا ۶۰ دقیقه
+      // و «حد ضرر» تا ۳۰ دقیقه همان رأیِ قبلی را نگه می‌داشت (`staleTime` درِ
+      // useFundGate.ts:20-29 و useStopLossBoard.ts:85-111) و قیفِ غربالگری هم تا
+      // پولینگِ بعدی — یعنی کاربر آستانه را عوض می‌کرد و رنگِ جدول تکان نمی‌خورد.
+      qc.invalidateQueries({ queryKey: ['fund-gate'] });
+      qc.invalidateQueries({ queryKey: ['stop-fund'] });
+      qc.invalidateQueries({ queryKey: ['stop-fts'] });
+      qc.invalidateQueries({ queryKey: ['funnel'] });
     },
   });
 }

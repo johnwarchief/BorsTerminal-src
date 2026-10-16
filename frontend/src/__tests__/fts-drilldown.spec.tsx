@@ -323,6 +323,43 @@ describe('پنل شاخص ۲ — نردبان EPS سه ساله', () => {
     const hint = screen.getAllByTestId('gap-hint')[0];
     expect(hint.getAttribute('title')).toContain('فقط ۱ سال از ۳ سال');
   });
+
+  // دو حکمی که `EpsLadder` (کامپوننتِ مرده) تنها جایِ رابط می‌گفت؛ با حذفِ آن
+  // باید رویِ همان `FtsDrillDown`ِ زنده قفل می‌شدند، نه اینکه پوشش کم شود.
+  it('سالِ میاندوره از سودِ سالانۀ کامل جدا برچسب می‌گیرد (۳ ماهه، نه «سال مالی»)', () => {
+    const card = baseCard();
+    card.indicators!['2'] = {
+      ...card.indicators!['2']!,
+      eps_series: [96, 130, 202],
+      period_slots: ['1403', '1404', '1405'],
+      partial: false,
+      strictly_rising: true,
+      interim: { available: true, eps_interim: 51, period_months: 3, period_end: '1405-03-31' },
+    };
+    render(<FtsDrillDown card={card} active="2" quarters={FISCAL} physicalApplicable />);
+    const text = document.body.textContent ?? '';
+    // برچسبِ متمایزِ میاندوره (با ماه‌هایِ خودش) کنارِ میله‌هایِ سالانۀ کامل
+    expect(text).toMatch(/میاندوره:\s*۵۱\s*\(\s*۳\s*ماهه\s*\)/);
+    expect(screen.getByTestId('drilldown-eps-chart').textContent).toContain('۲۰۲');
+    expect(text).not.toContain('سال مالی کامل');   // برچسبِ نردبانِ مرده، نه رابطِ زنده
+  });
+
+  it('بدونِ سریِ سالانه، پنل پیامِ «موجود نیست» می‌دهد — نه نمودارِ تهی', () => {
+    const card = baseCard();
+    card.indicators!['2'] = {
+      ...card.indicators!['2']!,
+      eps_series: [],
+      period_slots: [],
+      fiscal_years: [],
+      partial: true,
+      strictly_rising: null,
+      data_gap: true,
+      reason: 'هیچ صورتِ مالیِ سالانۀ حسابرسی‌شدۀ غیرتلفیقی وجود ندارد',
+    };
+    render(<FtsDrillDown card={card} active="2" quarters={FISCAL} physicalApplicable />);
+    expect(screen.getByText('سری EPS سالانهٔ حسابرسی‌شده موجود نیست.')).toBeInTheDocument();
+    expect(screen.queryByTestId('drilldown-eps-chart')).toBeNull();
+  });
 });
 
 describe('پنل شاخص ۳ — حاشیه سود ناخالص', () => {
@@ -429,7 +466,7 @@ describe('پنل شاخص ۴ — سالانه‌سازی داینامیک N ما
     const block = screen.getByTestId('potential-formula');
     // جای برچسب عمومی «بدون داده» / «شکاف داده»، علتِ همان متغیر می‌آید
     expect(within(block).getByText('حاشیهٔ ناخالص ثبت نشده')).toBeInTheDocument();
-    expect(within(block).getByText('خروجی قابل محاسبه نیست')).toBeInTheDocument();
+    expect(within(block).getByText('این مقدار با اطلاعات فعلی قابل محاسبه نیست')).toBeInTheDocument();
     expect(within(block).queryByText('بدون داده')).not.toBeInTheDocument();
     expect(within(block).getByText(/فروش سالانه‌شده/).textContent).toContain('۳٬۶۸۱');
     expect(within(block).getByText(/D: ارزش بازار/).textContent).toContain('۲.۷۲');
@@ -458,7 +495,9 @@ describe('N/A رشد تولیدی در کارت FTS', () => {
     render(<FtsCard score={3} passes={{ ...FTS_PASSES, '1b_volume_growth': false }} physicalApplicable={false} />);
     const cell = screen.getByTestId('fts-card-cell-1b_volume_growth');
     expect(within(cell).getByTestId('fts-verdict-1b_volume_growth').textContent).toBe('نظر نمی‌دهد');
-    expect(within(cell).getByText('این شرکت محصول فیزیکی ندارد — شاخص اجرا نمی‌شود')).toBeInTheDocument();
+    expect(
+      within(cell).getByText('این شرکت محصول فیزیکی ندارد؛ بنابراین این شاخص برای آن کاربرد ندارد'),
+    ).toBeInTheDocument();
     expect(cell.className).not.toContain('rose');
   });
 
@@ -498,7 +537,7 @@ describe('DataGapBanner — پاک‌سازی متون خام موتور', () =>
     expect(banner.textContent).not.toContain('گیتِ');
     expect(banner.textContent).not.toContain('×۱۲÷م');
     expect(banner.textContent).toContain('شاخص ۴');
-    expect(banner.textContent).toContain('گزارش‌های ماهانهٔ کدال برای سالانه‌سازی فروش کافی نیست');
+    expect(banner.textContent).toContain('گزارش‌های ماهانۀ کدال برای سالانه‌سازی فروش کافی نیست');
     expect(banner.textContent).toContain('شاخص ۲');
     expect(banner.textContent).toContain('سابقه با میاندورهٔ کوتاهِ سالِ جاری تکمیل شده');
   });

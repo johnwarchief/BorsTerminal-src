@@ -143,12 +143,14 @@ describe('کف‌روبی در پنل مشکوک', () => {
 
   it('الگوی ساعت با برچسب ساعت قوی در پنل نشان داده می‌شود', () => {
     render(
+      // عضویت پنل = داوریِ canonical (f_clock + فرمولِ تنظیمی). ردیفِ واقعیِ ساعت:
+      // آخرین بالای پایانی (gap≥۲٪) و پرچمِ f_clock از تابلو. (#M2.3)
       <SuspiciousPanel
-        rows={[row({ symbol: 'شپنا', f_clock: true, p_last: 1000, p_closing: 1025, price_yesterday: 1010 })]}
+        rows={[row({ symbol: 'شپنا', f_clock: true, p_last: 1025, p_closing: 1000, price_yesterday: 1010 })]}
         onSelect={() => {}}
       />,
     );
-    // پایانی بالاتر (ساعت) ولی آخرین زیر دیروز → ساعت قوی خیر؛ فقط نشان ساعت/پایانی
+    // پایانی بالاتر از دیروز و آخرین بالاتر از پایانی ⇒ نشاندۀ ساعت؛ شپنا باید ببینده شود
     const items = screen.getAllByText('شپنا');
     expect(items.length).toBeGreaterThanOrEqual(1);
   });

@@ -4,6 +4,8 @@
 اگر روی ماشینِ تازه‌ای clone کردید، **همین فایل + پوشۀ `skills/`** باید برای کار کافی باشد؛
 چیزِ دیگری از حافظۀ ماشینِ من لازم نباشد. (استثنائات در بندِ «چی در گیت نیست».)
 
+**پیش از استفاده از دستورهای مستندات، `docs/README.md` را هم بخوانید.** آن فایل تقدم منابع FTS را روشن می‌کند و اسناد handoff/roadmap تاریخ‌دار را از وضعیت جاری جدا می‌کند. `docs/AGENT-INDEX.md` نقشهٔ کدِ تولیدشده است؛ آن را دستی ویرایش نکنید.
+
 ## ساختارِ ریپو
 
 | مسیر | چیست |
@@ -59,17 +61,16 @@ python dev/version_anchor_guard.py      # باید «VERSION ANCHOR GUARD OK» �
   `https://github.com/johnwarchief/BorsTerminal/releases/latest/download/latest.json` می‌خواند.
 - زنجیرۀ کامل، مرحله‌به‌مرحله و جدولِ «این علامت یعنی چه»: `skills/bors-build-release/SKILL.md`.
 
-## اثباتِ کار با هر دو jev (هر واحدِ کار)
+## راستی‌آزمایی مرورگر و وضعیت مهاجرت Jev → Laya
 
-1. **pilot** (قضاوتِ متنی، کد از ماشین بیرون نمی‌رود): `python tools/pilot_ctl.py arbitrate --context … --option k=prose`
-   — در هر دورِ تصمیمِ طراحی، نه فقط آخر کار.
-2. **jev-browser** (اثباتِ زنده): `node --experimental-strip-types tools/jev_ui_check.mts …`
-   یا probeهایِ اختصاصیِ `tools/*.mts`، با
-   `JEV_BROWSER_DIR` (پکیجِ Playwright) و `JEV_CHROME` (مسیرِ chromium) و `MSYS_NO_PATHCONV=1`.
-   گیتِ سبزِ jsdom به‌تنهایی «انجام شد» نیست.
+> **تصمیم مالک در 2026-10-10:** مسیر تصمیم‌گیری و ابزارهای Jev باید تا حد امکان با Laya جایگزین شوند. این مهاجرت در مخزن هنوز اثبات‌شده نیست؛ تا زمان آزمون موفق، ادعا نکنید Laya جایگزین کامل شده است. دستورهای زیرِ Jev تاریخی/سازگاری‌اند و نباید به‌صورت الزام دائمیِ همهٔ کارها تفسیر شوند.
 
-جزئیات، توالیِ فرمان‌ها و حالت‌هایِ شکست:
-`skills/bors-dual-jev-verification/`, `skills/bors-jev-verification/`, `skills/bors-live-ui-check/`,
+- بعد از تغییر UI، آزمون زندهٔ مرورگر همچنان لازم است؛ سبز بودن jsdom یا Vitest به‌تنهایی اثبات UI واقعی نیست.
+- اگر Laya روی ماشین نصب و پیکربندی شده است، ابتدا endpoint/MCP واقعی آن را بررسی و تصمیم ساختاریافته و اقدام مرورگر را end-to-end آزمایش کنید.
+- اگر Laya هنوز آماده نیست، از Playwright/CDP و probeهای زندهٔ موجود برای راستی‌آزمایی استفاده کنید و وضعیت مهاجرت را صادقانه `UNVERIFIED` بنویسید؛ اجرای Jev فقط fallback مقایسه‌ای است، نه مدرکِ مهاجرت.
+- متغیرهای `JEV_BROWSER_DIR`، `JEV_CHROME`، `tools/pilot_ctl.py` و `tools/jev_ui_check.mts` را تا وقتی جایگزین آزمایش و تأیید نشده حذف یا rename نکنید.
+
+راهنماهای میراثی: `skills/bors-dual-jev-verification/`, `skills/bors-jev-verification/`, `skills/bors-live-ui-check/`,
 `skills/canvas-chart-live-pixel-check/`, `skills/bors-installed-vs-dev-diagnosis/`.
 
 ## قیدهایِ شکست‌پذیر (اگر نشکنند، کار تمام است)
@@ -92,8 +93,8 @@ python dev/version_anchor_guard.py      # باید «VERSION ANCHOR GUARD OK» �
 | `*.tauri_updater_key*` (کلیدِ خصوصیِ امضا) | gitignored؛ فقط pubkey در `tauri.conf.json` و `api/update.UPDATE_PUBKEY` کامیت می‌شود |
 | `adb_config.json`, `codal_control.json`, `market.db`, `codal.db` | gitignored؛ `market.db` از `market.db.lzma` بازسازی می‌شود (`ensure_market_db()` در `bors_config.py`) |
 | `RELEASE_TOKEN` برایِ انتشار روی مخزنِ توزیع | secretِ CI، نه فایلِ ریپو |
-| `TYPESAFE_API_KEY` و `~/.jev_pilot/config.json` | محیطیِ ماشینِ من برایِ pilot jev؛ بدونِ آن `tools/pilot_ctl.py` فوراً exit می‌کند |
-| `JEV_BROWSER_DIR` / `JEV_CHROME` | مسیرِ پکیجِ Playwright و chromium روی همان ماشین؛ در `skills/bors-live-ui-check/` توضیح دارد |
+| **Legacy Jev only:** `TYPESAFE_API_KEY` و `~/.jev_pilot/config.json` | فقط برای اجرای fallback قدیمیِ `tools/pilot_ctl.py`؛ پیش‌نیاز عمومی Qoder یا Laya نیست |
+| **Legacy Jev only:** `JEV_BROWSER_DIR` / `JEV_CHROME` | فقط مسیرهای harness قدیمی؛ برای Laya/Playwright عمومی لازم نیستند مگر همان harness اجرا شود |
 
 ## ایجنتِ داده/بک‌اند (codal) — رابطِ ابزارها
 

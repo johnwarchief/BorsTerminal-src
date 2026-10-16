@@ -115,6 +115,15 @@ class ErrorCode(str, Enum):
     RATE_LIMITED = "RATE_LIMITED"
     NOT_ORDERABLE = "NOT_ORDERABLE"
     UNSUPPORTED = "UNSUPPORTED"
+    #: قفلِ توقفِ اضطراری بسته است (بندِ ۶-۴ مأموریتِ ۱۴۰۵-۰۷-۲۳). عمداً درِ
+    #: `UNRESOLVED_CODES` **نیست**: «توقفِ ما» با «نمی‌دانیم سرور چه کرد» یکی
+    #: نیست، و اینجا هیچ سفارشی به بیرون نرفته که باید reconcile شود.
+    HALTED = "HALTED"
+    #: ریسکِ سطحِ دوم (exposure، ضرر روزانه، نرخِ سفارش) رد کرده — پیشِ هر
+    #: درخواستِ بیرونی، و بی‌هیچ اثری رویِ سرور.
+    RISK_LIMIT = "RISK_LIMIT"
+    #: داده برایِ تصمیم تازه نیست و حدس‌زدنش یعنی سفارشِ بی‌مبناء (§۳-۳).
+    STALE_DATA = "STALE_DATA"
     #: خطایِ ساختاریِ سمتِ خودِ اپ (نه کارگزاری) — بی‌درخواستِ بیرونی
     INVALID_EXECUTION_ID = "INVALID_EXECUTION_ID"
 
@@ -164,9 +173,22 @@ class Capabilities:
 
 
 class SessionState(str, Enum):
+    """شش مقدارِ خواستۀ مأموریتِ ۱۴۰۵-۰۷-۲۴ (§۴-الف: «مدیریت اتصال و وضعیت نشست»).
+
+    `AUTH_FAILED` و `ERROR` ازِ همین‌جا به بالایِ «نشستِ منقضی» اضافه شدند، چون
+    آداپتورِ واقعی (`execution_easytrader.py`) این دو را از هم جدا می‌بیند: ۴۰۱
+    یعنی «نشستی که تو داشتی باطل شد»، ۴۰۳ یعنی «از اول اجازه‌ای نبود»، و خطایِ
+    شبکه/۵xx یعنی «هیچ‌کدام — نمی‌دانیم». اگر UI فقط چهار مقدار می‌دید، این سه
+    رفتارِ متفاوتِ عملیاتی (بازنشانیِ token / بررسیِ حساب / صبرِ بی‌ارسال) یک
+    پیامِ واحد می‌گرفت. یک enum، درِ همان لایۀ canonical — نه enumِ دوم درِ UI.
+    """
     DISCONNECTED = "disconnected"
     CONNECTED = "connected"
     EXPIRED = "expired"
+    #: ورودِ اولیه رد شد (۴۰۳/credential بد) — با «منقضی‌شدنِ نشستِ سالم» یکی نیست.
+    AUTH_FAILED = "auth_failed"
+    #: پرسیدنی از کارگزاری خطایِ غیرمعنا داد (شبکه/۵xx/پاسخِ بی‌قالب).
+    ERROR = "error"
     UNKNOWN = "unknown"
 
 
@@ -242,6 +264,11 @@ class ExecutionRecord:
     status: ExecutionStatus = ExecutionStatus.DRAFT
     scheduled_at: float | None = None
     actual_send_at: float | None = None
+    #: ساعتِ دیواریِ لحظۀِ آتش (ms). `execution_service.py` این را ازِ تلمتریِ
+    #: `Scheduler.dispatch` رویِ رکورد می‌نشاند؛ تا پیش از این، فیلد درِ
+    #: dataclass نبود و `dataclasses.asdict()` آن را بی‌صدا از پاسخِ HTTP و
+    #: ردِّپا بیرون می‌انداخت — یعنی «چقدر دیر ترکید» فقط درِ حافظه زنده بود.
+    actual_send_wall_ms: int | None = None
     response_at: float | None = None
     rtt_ms: float | None = None
     drift_us: float | None = None

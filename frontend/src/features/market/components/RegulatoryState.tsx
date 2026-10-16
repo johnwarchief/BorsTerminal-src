@@ -7,19 +7,11 @@
 //   ردیفِ تابلو نمی‌رسد       → «اطلاعات در دسترس نیست»
 //   فید خطا داده            → همان بنرِ inspector-feed-error (اینجا تکرار نمی‌شود)
 import { toFaDigits } from '@shared/lib/fmt';
-import { isoToJalali } from '@shared/lib/jalaali';
+import { dEvenToJalali } from '@shared/lib/jalaali';
 import type { MarketRow } from '@shared/types/marketRow';
 
 const NOT_RECORDED = 'موردی ثبت نشده';
 const UNAVAILABLE = 'اطلاعات در دسترس نیست';
-
-/** 20261005 → «۱۴۰۵/۰۷/۱۳»؛ بی‌اعتبار را «-» می‌دهد نه صفر */
-function dEvenToJalali(d: number | null | undefined): string | null {
-  if (d == null || d <= 0) return null;
-  const s = String(d);
-  if (s.length !== 8) return null;
-  return isoToJalali(`${s.slice(0, 4)}-${s.slice(4, 6)}-${s.slice(6, 8)}`);
-}
 
 function hEvenToTime(h: number | null | undefined): string | null {
   if (h == null || h <= 0) return null;
@@ -64,7 +56,7 @@ export function RegulatoryState({
         data-testid="inspector-regulatory"
         data-regulatory-state="none"
         className="rounded-lg border border-dashed border-[var(--hairline)] px-2 py-1 text-3xs text-text-muted"
-        title="هیچ رکوردِ وضعیتی برایِ این نماد از TSETMC نرسیده — این «سالم بودن» نیست"
+        title="وضعیت این نماد از TSETMC دریافت نشده است؛ بنابراین نمی‌توان نتیجه گرفت که نماد بدون مشکل است"
       >
         وضعیتِ ناظر: {NOT_RECORDED}
       </div>
@@ -138,7 +130,7 @@ export function RegulatoryState({
           ) : null}
           {/* مبدأِ عددِ ریالیِ حقیقی/حقوقی — فقط اینجا خوانده می‌شود، نه درِ ستونِ تابلو،
               و هرگز واردِ داوری نمی‌شود. */}
-          <li title="پیش‌آمدِ ریالی از خودِ TSETMC می‌آید یا از حجم × میانگینِ وزنی ساخته شده">
+          <li title="ارزش معاملۀ این سطر از TSETMC دریافت می‌شود یا از حاصل‌ضرب حجم در میانگین وزنی محاسبه شده">
             مبدأِ ارزشِ معامله: {KIND_FA[row.ctv_kind ?? 'reconstructed'] ?? UNAVAILABLE}
           </li>
         </ul>

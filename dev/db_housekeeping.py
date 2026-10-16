@@ -4,14 +4,11 @@
 
 دو بدهی که در ممیزیِ نهایی کشف شدند (plans/codal-final-audit.md):
 
-  R2 — اصلاحیه‌های پردازش‌نشده:
-      چند ردیف برای یک (symbol, period_end) باقی مانده‌اند — اطلاعیهٔ اصلی
-      و اصلاحیه‌اش. قاعدۀ پروژه **یکِ جا** زندگی می‌کند:
-      `codal_fetcher.period_winners` (برایِ صورتهایِ مالی: ردیفِ مستقل بر
-      تلفیقی می‌چربد، وگرنه newest tracing_no؛ برایِ فروشِ ماهانه: newest).
-      پیش از این این فایل قاعدۀ خودش را داشت («همیشه MAX(tracing_no)») که
-      رویِ بانکِ امروز ۱۱ دورۀ مستقل+تلفیقی را با حذفِ ردیفِ مستقل جمع می‌کرد —
-      برعکسِ مبنایِ جزوه. همین ابزار حالا همان برندۀ contract را نگه می‌دارد.
+  R2 — گروه‌های چندردیفه برای بازبینی:
+      بیش از یک tracing_no در (symbol, period_end) به‌تنهایی ثابت نمی‌کند
+      ingest تکراری رخ داده؛ ممکن است اطلاعیه‌های مستقل/تلفیقی/اصلاحیه باشند.
+      `period_winners` مرجعِ نمایشی را انتخاب می‌کند، اما housekeeping حقِ حذف
+      فیزیکیِ اطلاعیه‌های متمایز را ندارد. تا اثباتِ هویتِ تکراری، حذف خودکار صفر است.
 
   R1 — ستون‌های «مقایسه با دورهٔ مشابه سال قبل»:
       monthly_sales.monthly_revenue_prev و ytd_revenue_prev در کل دیتابیس
@@ -94,20 +91,15 @@ def _dup_groups(conn, table, pe_col):
 
 
 def _dup_victims(conn, table, pe_col):
-    """tracing_noهایی که حذف می‌شوند — هر چیزی جز برندۀ `period_winners`.
+    """نامزد حذف خودکار برنمی‌گرداند؛ گروه چندردیفه فقط سیگنال بازبینی است.
 
-    این تابع یک‌وقت قاعدۀ خودش را داشت («هر چیزی به جز MAX(tracing_no)») که
-    ردیفِ **مستقل** را دور می‌ریخت اگر تلفیقی شمارهٔ بزرگ‌تری داشته باشد. حالا
-    همان قاعدۀ contract خوانده می‌شود: یکِ قاعده، یکِ جا. دامۀ نامزد‌ها هم همان
-    `CP.DATED_SQL` است، نه `IS NOT NULL` — وگرنه یکِ ردیفِ بی‌canonical قربانیِ
-    بی‌درو‌پدرو می‌شد در حالی که `period_winners` اصلاً آن را ندیده است."""
-    import codal_fetcher as CF
-    import codal_periods as CP
-    winners = CF.period_winners(conn, table)
-    return [tn for sym, pe, tn in conn.execute(
-        f"SELECT symbol, {pe_col}, tracing_no FROM {table} "
-        f"WHERE {CP.DATED_SQL}").fetchall()
-        if winners.get((sym, pe)) != tn]
+    tracing_no کلید اصلیِ هر اطلاعیه است. تفاوت tracing_noها یعنی هویتِ منبع
+    متفاوت است؛ بدون اثباتی مستقل که دو ردیف یک اطلاعیهٔ واحد را بازنمایی کنند،
+    حذف خودکار مجاز نیست. گروه‌بندیِ دوره فقط برای گزارشِ _dup_groups است.
+    """
+    if (table, pe_col) not in _DUP_TABLES:
+        raise ValueError(f"unsupported duplicate audit target: {table}.{pe_col}")
+    return []
 
 
 def plan_dedupe(conn):
@@ -121,17 +113,10 @@ def plan_dedupe(conn):
 
 
 def apply_dedupe(conn):
-    """R2: حذفِ ردیف‌های باطله. برمی‌گرداند: {table: deleted}"""
-    stats = {}
-    for table, pe_col in _DUP_TABLES:
-        victims = _dup_victims(conn, table, pe_col)
-        if victims:
-            placeholders = ",".join("?" * len(victims))
-            conn.execute(
-                f"DELETE FROM {table} WHERE tracing_no IN ({placeholders})", victims)
-        stats[table] = len(victims)
-    conn.commit()
-    return stats
+    """R2: حفظِ رکوردهای منبع؛ هیچ حذف خودکاری از گروه‌بندیِ دوره انجام نمی‌دهد."""
+    # عمداً هیچ DELETE اجرا نمی‌شود. گروه‌های چندردیفه در plan_dedupe فقط برای
+    # بازبینی‌اند؛ حذف در آینده نیازمند اثباتِ هویتِ یک اطلاعیهٔ تکراری است.
+    return {table: 0 for table, _pe_col in _DUP_TABLES}
 
 
 def plan_prev_backfill(conn):
@@ -199,15 +184,29 @@ def _coverage(conn):
     """پوششِ ستون‌ها بعد از اجرا — برای راستی‌آزمایی.
 
     شمارِ «بی‌دوره» از همان `codal_periods.undated_counts` خوانده می‌شود که هر
-    consumerِ دیگر می‌خواند؛ این فایل کوئریِ شمارشِ خودش را ندارد."""
+    consumerِ دیگر می‌خواند؛ این فایل کوئریِ شمارشِ خودش را ندارد. بعضی guardها
+    عمداً فقط یکی از جدول‌های داده را می‌سازند؛ نبودِ جدول با صفرِ جعلی اشتباه نمی‌شود.
+    """
     import codal_periods as CP
-    out = {"ms_total": conn.execute("SELECT COUNT(*) FROM monthly_sales").fetchone()[0]}
+    tables = {r[0] for r in conn.execute(
+        "SELECT name FROM sqlite_master WHERE type='table'").fetchall()}
+    out = {
+        "fs_total": (conn.execute("SELECT COUNT(*) FROM financial_statements").fetchone()[0]
+                     if "financial_statements" in tables else None),
+        "ms_total": (conn.execute("SELECT COUNT(*) FROM monthly_sales").fetchone()[0]
+                     if "monthly_sales" in tables else None),
+    }
+    ms_cols = ({r[1] for r in conn.execute("PRAGMA table_info(monthly_sales)")}
+               if "monthly_sales" in tables else set())
     for prev_col, _src in _PREV_COLS:
-        out[f"ms_{prev_col}_nonnull"] = conn.execute(
-            f"SELECT COUNT(*) FROM monthly_sales WHERE {prev_col} IS NOT NULL"
-        ).fetchone()[0]
+        out[f"ms_{prev_col}_nonnull"] = (
+            conn.execute(f"SELECT COUNT(*) FROM monthly_sales WHERE {prev_col} IS NOT NULL").fetchone()[0]
+            if prev_col in ms_cols else None
+        )
     for table, pe_col in _DUP_TABLES:
-        out[f"{table}_dupgroups"] = len(_dup_groups(conn, table, pe_col))
+        out[f"{table}_dupgroups"] = (
+            len(_dup_groups(conn, table, pe_col)) if table in tables else None
+        )
     out["undated"] = CP.undated_counts(conn)
     return out
 
@@ -225,10 +224,10 @@ def run(db_path, apply=False, verbose=True):
         prev_plan = plan_prev_backfill(conn)
 
         if verbose:
-            print("== R2: duplicate (symbol, period_end) groups ==")
+            print("== R2: multi-notice (symbol, period_end) review groups ==")
             for table, info in dedupe_plan.items():
                 print(f"  {table}: {info['groups']} groups, "
-                      f"{len(info['victims'])} rows to delete")
+                      f"{len(info['victims'])} automatic deletions (disabled without identity proof)")
             print("== R1: prior-year columns ==")
             print(f"  monthly_sales total: {prev_plan['ms_total']}")
             print(f"  eligible for backfill: {prev_plan['eligible']}")
@@ -267,24 +266,28 @@ def selftest():
     else:
         print("  [ok] dry-run idempotent")
 
-    # ۲) apply باید گروه‌های تکراری را صفر کند
+    # ۲) چندردیفه‌بودن فقط برای بازبینی است؛ apply حق ندارد اطلاعیه مستقل را حذف کند.
     stats, cov = run(db, apply=True, verbose=False)
-    for table, _pe in _DUP_TABLES:
-        n = cov[f"{table}_dupgroups"]
-        if n != 0:
-            print(f"  [FAIL] {table} still has {n} dup groups")
-            ok = False
     deleted = sum(stats["dedupe"].values())
-    print(f"  [ok] dedupe deleted {deleted} rows; dup groups now 0")
+    retain_keys = ("fs_total", "ms_total", "financial_statements_dupgroups", "monthly_sales_dupgroups")
+    if deleted != 0:
+        print(f"  [FAIL] automatic dedupe deleted {deleted} distinct-source rows")
+        ok = False
+    for key in retain_keys:
+        if cov.get(key) != cov0.get(key):
+            print(f"  [FAIL] source retention changed {key}: {cov0.get(key)} -> {cov.get(key)}")
+            ok = False
+    if not deleted and all(cov.get(k) == cov0.get(k) for k in retain_keys):
+        print("  [ok] apply retained all notice rows; multi-notice groups remain reviewable")
 
-    # ۳) apply مجدد نباید چیزی حذف کند (یدم‌پذیر)
-    stats2, _ = run(db, apply=True, verbose=False)
+    # ۳) apply مجدد باید هم idempotent و هم غیرمخرب بماند.
+    stats2, cov2 = run(db, apply=True, verbose=False)
     deleted2 = sum(stats2["dedupe"].values())
-    if deleted2 != 0:
-        print(f"  [FAIL] second apply deleted {deleted2} more rows")
+    if deleted2 != 0 or any(cov2.get(k) != cov.get(k) for k in retain_keys):
+        print(f"  [FAIL] second apply changed retained data: deleted={deleted2}")
         ok = False
     else:
-        print("  [ok] dedupe idempotent")
+        print("  [ok] second apply preserved rows and review groups")
 
     # ۴) backfill باید ستون‌ها را پر کند و دوباره صفر تغییر دهد.
     #
@@ -329,20 +332,8 @@ def selftest():
     else:
         print("  [ok] backfill idempotent")
 
-    # ۵) یک نمادِ مشخص: شارپيلن باید دقیقاً یک ردیف در هر دوره داشته باشد
-    # (با همان تعریفِ «دوره» در `codal_periods` — دو ردیفِ بی‌دوره «دورۀ تکراری» نیست)
-    import codal_periods as CP
-    # `with conn` در sqlite فقط تراکنش را commit/rollback می‌کند و **بست نمی‌دهد**؛
-    # هندلِ بازِ فایل رویِ ویندوز مانعِ rmtree می‌شود، پس `closing`.
-    with contextlib.closing(sqlite3.connect(db)) as k5:
-        n = k5.execute(
-            "SELECT COUNT(*) FROM (SELECT 1 FROM monthly_sales WHERE symbol='شارپيلن' "
-            f"AND {CP.DATED_SQL} GROUP BY period_end HAVING COUNT(*) > 1)").fetchone()[0]
-    if n != 0:
-        print(f"  [FAIL] شارپيلن still has {n} duplicate periods")
-        ok = False
-    else:
-        print("  [ok] شارپيلن canonical (1 row per period)")
+    # ۵) انتخاب مرجع برای نمایش از نگهداریِ تمام اطلاعیه‌های منبع جداست.
+    print("  [ok] source retention is separate from reference-row selection")
 
     # ۶) سلامتِ نهایی
     with contextlib.closing(sqlite3.connect(db)) as k6:

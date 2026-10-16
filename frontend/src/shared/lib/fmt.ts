@@ -59,3 +59,16 @@ export function fmtMarketCapToman(toman: number | null | undefined): string {
   if (toman >= 1e6) return toFaDigits((toman / 1e6).toFixed(1)) + ' میلیون تومان';
   return fmtInt(toman) + ' تومان';
 }
+
+/** ریال → میلیارد ریال (q_tot_cap درِ بانک ریال است؛ همان واحدِ تابلوی TSETMC)
+ *  از درونِ `TapeTable.tsx` منتقل شد تا «ارزشِ معاملات» دو جا دو واحد نگیرد. */
+export function toBillionRial(rials: number | null | undefined): number | null {
+  return typeof rials === 'number' && Number.isFinite(rials) ? rials / 1e9 : null;
+}
+
+/** نمایشِ میلیارد ریال: بالای ۱۰۰ بی‌اعشار، زیرش یک اعشار (قاعدۀ ستونِ ارزشِ
+ *  تابلو) — یک پیاده‌سازی، هم ردیفِ تابلو هم «در یک نظرة». داده نیست ⇒ «—». */
+export function billionRialText(v: number | null | undefined): string {
+  if (v == null || !Number.isFinite(v)) return '-';
+  return v >= 100 ? fmtInt(v) : toFaDigits(v.toFixed(1));
+}

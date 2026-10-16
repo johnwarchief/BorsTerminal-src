@@ -116,7 +116,7 @@ describe('صفحه تحلیل بنیادی — هلدینگ‌ها', () => {
     expect(screen.queryByText(/P\/E در برابر صنعت/)).not.toBeInTheDocument();
     const panel = screen.getByTestId('holding-pnav-panel');
     // برچسب رسمی N/A و علت آن — یکی در نشان، یکی در متن (بدونِ تکرارِ عینِ جمله)
-    expect(screen.getByTestId('holding-pnav-panel').textContent).toContain('N/A');
+    expect(screen.getByTestId('holding-pnav-panel').textContent).toContain('قابل ارزیابی نیست');
     expect(screen.getByTestId('holding-nav-na').textContent).toContain('ارزش خالص دارایی (NAV)');
     // هیچ نسبت جانشینی (EPS به‌جای NAV) محاسبه/نمایش داده نمی‌شود
     expect(panel.textContent).not.toContain('P/NAV ≈');
@@ -138,7 +138,7 @@ describe('صفحه تحلیل بنیادی — هلدینگ‌ها', () => {
     renderPage('وغدير');
     await waitFor(() => expect(screen.getByTestId('holding-pnav-panel')).toBeInTheDocument());
     const panel = screen.getByTestId('holding-pnav-panel');
-    expect(panel.textContent).toContain('N/A');
+    expect(panel.textContent).toContain('قابل ارزیابی نیست');
     expect(panel.textContent).not.toContain('undefined');
     expect(panel.textContent).not.toContain('NaN');
   });

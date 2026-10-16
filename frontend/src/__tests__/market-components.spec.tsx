@@ -51,11 +51,30 @@ describe('کامپوننت های تابلو', () => {
     expect(screen.getByText('نمادی با این فیلترها نیست')).toBeInTheDocument();
   });
 
+  it('جدولِ خالی با علتِ نام‌برده و دکمۀِ بازگشت می‌آید، نه فقط «فیلتر را کم کن»', () => {
+    const onClear = vi.fn();
+    render(
+      <TapeTable
+        rows={[]}
+        selected=""
+        onSelect={() => {}}
+        emptyNote="فقط بازارِ «فرابورس - بازار پایه» — ۳ ردیفِ واجدِ شرط درِ این نما باز نشد"
+        onClearFilters={onClear}
+      />,
+    );
+    expect(screen.getByText(/۳ ردیفِ واجدِ شرط/)).toBeInTheDocument();
+    fireEvent.click(screen.getByTestId('tape-clear-filters'));
+    expect(onClear).toHaveBeenCalledTimes(1);
+  });
+
   it('پنل مشکوک الگوی ساعت را فهرست می کند', () => {
     const onSelect = vi.fn();
-    render(<SuspiciousPanel rows={[row(), row({ symbol: 'خودرو', p_last: 1000, p_closing: 1001, tvol: 500_000, vol_ratio_file: 0.5 })]} onSelect={onSelect} />);
+    // شپنا هر دو پرچمِ canonicalِ تابلو را دارد (همان f_clock/f_susp که چیپ و ستون
+    // می‌خوانند)؛ پنل دیگر فرمولِ جدا نمی‌سازد، پس عضویت = داوریِ چیپ (#M2.3).
+    render(<SuspiciousPanel rows={[row({ f_clock: true, f_susp: true }), row({ symbol: 'خودرو', p_last: 1000, p_closing: 1001, tvol: 500_000, vol_ratio_file: 0.5 })]} onSelect={onSelect} />);
     // شپنا هم در بخش ساعت هم در بخش حجم مشکوک است (حجم 5 برابر میانگین)
     expect(screen.getAllByText('شپنا')).toHaveLength(2);
+    // خودرو هیچ پرچمی ندارد و داوریِ canonical هم ردش می‌کند ⇒ در هیچ بخشی نمی‌آید
     expect(screen.queryByText('خودرو')).not.toBeInTheDocument();
   });
 });

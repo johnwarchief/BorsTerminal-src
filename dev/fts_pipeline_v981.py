@@ -43,7 +43,13 @@ CREATE TABLE financial_statements (
     report_kind TEXT, period_months INTEGER, period_end TEXT, publish_date TEXT,
     revenue REAL, gross_profit REAL, operating_profit REAL, net_profit REAL,
     total_assets REAL, total_liabilities REAL, total_equity REAL, capital REAL,
-    retained_earnings REAL, basic_eps REAL, unit TEXT, url TEXT, fetched_at TEXT);
+    retained_earnings REAL, basic_eps REAL, unit TEXT, url TEXT, fetched_at TEXT,
+    -- چهار ستونِ مشتقِ v2.2 + has_operating_sales: `FS_COLS` این‌ها را می‌خواند،
+    -- پس فیکچری که ندارند مسیرِ موتور را با OperationalError می‌ترکاند. نام‌محور
+    -- درج می‌شوند (همان درسی که save_annual گرفت: ترتیبِ ستون‌ها ضامن نیست).
+    is_audited INTEGER NOT NULL DEFAULT 0,
+    is_consolidated INTEGER NOT NULL DEFAULT 0,
+    fiscal_year TEXT, unit_norm TEXT, has_operating_sales INTEGER);
 CREATE TABLE monthly_sales (
     tracing_no INTEGER PRIMARY KEY, symbol TEXT, title TEXT, period_end TEXT,
     year INTEGER, month INTEGER, monthly_revenue REAL, ytd_revenue REAL,
@@ -76,13 +82,22 @@ def seed_fts(conn):
     for i, (yr, eps, np_) in enumerate(((1404, 410.0, 5000.0),
                                         (1403, 300.0, 3800.0),
                                         (1402, 180.0, 2400.0))):
-        c.execute("INSERT INTO financial_statements VALUES ("
-                  + ",".join("?" * 21) + ")",
+        c.execute("INSERT INTO financial_statements (tracing_no, symbol, company_name,"
+                  " title, report_kind, period_months, period_end, publish_date, revenue,"
+                  " gross_profit, operating_profit, net_profit, total_assets,"
+                  " total_liabilities, total_equity, capital, retained_earnings,"
+                  " basic_eps, unit, url, fetched_at, is_audited, is_consolidated,"
+                  " fiscal_year, unit_norm) VALUES ("
+                  + ",".join("?" * 25) + ")",
                   (9100 + i, "تستF", "شرکت آزمون فلزات",
                    AUDITED_ANNUAL % (str(yr) + "/12/29"),
                    "Financial Statements", 12, f"{yr}/12/29", f"{yr+1}/03/01",
                    120000.0, 42000.0, 38000.0, np_, 80000.0, 30000.0, 50000.0,
-                   10000.0, 5000.0, eps, "میلیون ریال", "http://x", "2026"))
+                   10000.0, 5000.0, eps, "میلیون ریال", "http://x", "2026",
+                   # مشتق‌ها همان چیزی است که `codal_fetcher.fs_derived` موقعِ درج
+                   # می‌زند: عنوانِ «حسابرسی شده» غیرتلفیقی، سالِ مالی از دوره،
+                   # و مقیاسِ «میلیون ریال» ← 'mrl'.
+                   1, 0, str(yr), "mrl"))
     # گزارش‌های ماهانهٔ سال جاری ۱۴۰۵: سه ماه متوالی (۳،۴،۵) با YTD و سال قبل
     for tn, y, m, mr, ytd, mrp, ytdp in (
             (9201, 1405, 3, 14000.0, 14000.0, 9000.0, 9000.0),
@@ -208,7 +223,12 @@ ck(F.sector_filter("مواد و محصولات دارویی")["pass"],
 # ── هم‌ارزی مسیر تک‌نمادی ⇄ دسته‌ای (پاریتی شاخص ۴) ──
 conn = mk_fts_db()
 single = F.scan_symbol(conn, "تستF", 500_000.0, 500_000.0, "فلزات اساسي", cfg={})
-bulk = [r for r in F.bulk_scan(conn, cfg={}) if r["symbol_norm"] == F.norm_fa("تستF")]
+# `symbol_norm` درِ `bulk_scan` همان کلیدِ هویتِ canonical است (`symbol_identity.key`)،
+# نه `norm_fa` — و آن کلید حرفِ بزرگ را کوچک هم می‌کند. فیکچرِ این گارد «تستF»
+# با لاتینِ بزرگ است، پس مقایسه با norm_fa ردیف را پیدا نمی‌کرد (سنجشِ بانکِ
+# واقعی: هیچ‌یک از ۵۹۸۹ نماد تابلو و ۱۱۹۵ نماد کدال حرفِ بزرگ ندارد، پس این
+# تفاوت فقط درِ همین فیکچر است).
+bulk = [r for r in F.bulk_scan(conn, cfg={}) if r["symbol_norm"] == F.sym_key("تستF")]
 ck(len(bulk) == 1, "bulk_scan دقیقاً یک ردیف برای نماد آزمون میدهد")
 ck(bool(bulk) and bulk[0]["sales_to_mcap"]
    == single["detail"]["sales_to_mcap"]["sales_to_mcap"],

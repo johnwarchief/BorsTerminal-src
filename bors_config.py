@@ -40,20 +40,120 @@ def _user_data_dir():
         "BorsTerminal_Ultimate", "data")
 
 
+# ────────────────────────── حالتِ Portable (صریح) ──────────────────────────
+# پرتابیل بودن را با «آیا پوشه نوشتنی است؟» حدس نمی‌زنیم: آن حدس دو نسخۀ
+# هم‌زمان (نصبیِ writable و ZIPِ استخراج‌شده) را به هم می‌چسباند. اینجا دو
+# نشانه روشن داریم و هیچ‌یک به دسترسی وابسته نیست.
+PORTABLE_MARKER = "bors_portable.flag"
+PORTABLE_DEFAULT_PORT = 8101      # نصبی روی 8001 می‌ماند؛ پرتابیل همیشه جدا
+INSTALLED_DEFAULT_PORT = 8001
+
+
+def _exe_dir():
+    """پوشۀ خودِ باینری (dev: ریشۀ ریپو) — یک‌بار خوانده می‌شود.
+
+    اگر هر فراخوانی `sys.executable`ِ زنده را بخواند، `portable_data_dir()` بعداً
+    می‌تواند پوشۀ دیگری بدهد (درِ آزمون که sys.executable را برمی‌گردانند، یا درِ
+    اجرای دوبارۀ خودِ برنامه). مسیرِ دادی که یک‌بار حساب شده باید همان بماند.
+    """
+    return os.path.dirname(sys.executable) if getattr(sys, "frozen", False) else _SRC_DIR
+
+
+EXE_DIR = _exe_dir()
+
+
+def _decide_portable() -> bool:
+    env = (os.environ.get("BORS_PORTABLE") or "").strip().lower()
+    if env in ("1", "true", "yes", "on"):
+        return True
+    if env in ("0", "false", "no", "off"):
+        return False
+    return os.path.isfile(os.path.join(EXE_DIR, PORTABLE_MARKER))
+
+
+# تصمیمِ حالت یک‌بار درِ import گرفته می‌شود، نه درِ هر فراخوانی: WORK_DIR هم
+# همان‌جا حساب می‌شود، و اگر `is_portable()` بعداً `sys.frozen`ِ زنده را بخواند
+# ممکن است یک لایه «پرتابیل» و لایۀ دیگر «dev» بگوید (گاردِ portable دقیقاً
+# همین دوپایی را دید). درِ عمرِ یک پروسه نه `sys.frozen` عوض می‌شود نه محیط.
+_FROZEN = bool(getattr(sys, "frozen", False))
+IS_PORTABLE = _decide_portable()
+RUNTIME_MODE = "portable" if IS_PORTABLE else ("installed" if _FROZEN else "dev")
+
+
+def is_portable():
+    """True اگر این اجرا نسخۀ Portable باشد.
+
+    ۱) `BORS_PORTABLE=1|0` — تصمیمِ صریحِ اپراتور/آزمون (0 خاموشِ صریح است).
+    ۲) فایلِ `bors_portable.flag` کنارِ EXE — همان چیزی که Build-Portable در
+        ZIP می‌گذارد؛ پس هر ZIPِ استخراج‌شده پرتابیل است و هر نصبِ Inno نیست.
+    هیچ‌کدام به نوشتنی‌بودنِ پوشه وابسته نیست؛ آن حدس نسخۀ نصبیِ writable را
+    با پرتابیل یکی می‌کرد.
+    """
+    return IS_PORTABLE
+
+
+def portable_data_dir():
+    """پوشۀ دادهِ پرتابیل: `<exe_dir>/data` — مستقل از نسخۀ نصبی."""
+    return os.path.join(EXE_DIR, "data")
+
+
+def runtime_mode():
+    """'portable' | 'installed' | 'dev' — همان چیزی که UI و آپدیتِر اعلام می‌کنند."""
+    return RUNTIME_MODE
+
+
+def instance_id():
+    """اثرِ انگشتِ این اجرا: پوشۀ واقعیِ داده.
+
+    لانچر با این عدد می‌فهمد سروری که روی پورت نشسته *همین* نسخۀ پرتابیل است
+    یا نسخۀ نصبیِ کنارِ دست؛ بدونِ آن، دومین اجرای پرتابیل به سرور 8001
+    می‌چسبید و کاربر دادۀ نسخۀ نصبی را می‌دید در حالی که فکر می‌کرد پرتابیل
+    باز کرده است.
+    """
+    import hashlib
+    try:
+        real = os.path.realpath(WORK_DIR)
+    except OSError:
+        real = WORK_DIR
+    return hashlib.sha1(real.encode("utf-8", "replace")).hexdigest()[:12]
+
+
+def portable_data_problem():
+    """متنِ خطا اگر پوشۀ دادهِ پرتابیل ساخته/نوشتنی نشود؛ None یعنی سالم.
+
+    در پرتابیل «سکوت و جابه‌جایی به LOCALAPPDATA» مجاز نیست: کاربر باید بداند
+    کجا گیر کرده، وگرنه دو نسخۀ روی هم نوشته‌اند و فکر می‌کند داده مانده است.
+    """
+    if not is_portable():
+        return None
+    d = portable_data_dir()
+    try:
+        os.makedirs(d, exist_ok=True)
+    except OSError as e:
+        return f"پوشۀ دادهِ پرتابیل ساخته نشد: {d} ({e})"
+    if not _writable(d):
+        return f"پوشۀ دادهِ پرتابیل نوشتنی نیست: {d}"
+    return None
+
+
 def _work_dir():
     """مسیر نوشتن فایل‌های وضعیت/تنظیمات.
 
-    در حالت EXE اولویت با پوشهٔ کنار باینری است (حالت پرتابیل: وقتی ZIP را
-    در یک پوشهٔ نوشتنی باز می‌کنید همان‌جا کار می‌کند)، اما اگر آن پوشه
-    نوشتنی نباشد (نصب در Program Files با PrivilegesRequired=admin) تمام
-    داده‌های کاربر به %LOCALAPPDATA%\\BorsTerminal_Ultimate منتقل می‌شوند؛
-    در غیر این صورت استخراج market.db.lzma و سینک بازار با «Permission
-    denied» گیر می‌کنند. در حالت dev همان ریشهٔ ریپو است.
+    سه حالت، و تشخیصِ پرتابیل **صریح** است نه حدسِ دسترسی:
+      ۱) پرتابیل (نشانۀ کنارِ EXE یا `BORS_PORTABLE=1`): داده در
+         `<exe_dir>/data` می‌ماند و هرگز به %LOCALAPPDATA% نسخۀ نصبی نمی‌رود،
+         پس دو نسخۀ هم‌زمان یک فایل را نمی‌نویسند.
+      ۲) EXE نصبی: اولویت با پوشۀ کنارِ باینری؛ اگر نوشتنی نبود (نصب در
+         Program Files با admin) داده به %LOCALAPPDATA%\\BorsTerminal_Ultimate
+         می‌رود؛ وگرنه استخراج market.db.lzma و سینک با «Permission denied»
+         گیر می‌کنند.
+      ۳) dev: ریشۀ ریپو.
     """
-    if getattr(sys, "frozen", False):
-        exe_dir = os.path.dirname(sys.executable)
-        if _writable(exe_dir):
-            return exe_dir
+    if _FROZEN:
+        if IS_PORTABLE:
+            return portable_data_dir()
+        if _writable(EXE_DIR):
+            return EXE_DIR
         return _user_data_dir()
     return _SRC_DIR
 
@@ -97,6 +197,11 @@ def _resolve_market_db():
     # را کنارِ db بسازد که ممکن نیست → «unable to open database file» روی
     # هر اتصال. مثلِ _work_dir() از exe_dirِ غیرنوشتنی صرف‌نظر می‌کنیم.
     dirs = [exe_dir, WORK_DIR] if _writable(exe_dir) else [WORK_DIR]
+    # در پرتابیل WORK_DIR = <exe>/data است؛ فایلِ کنارِ EXE (جای market.db در
+    # نصبِ نوشتنی) نباید جلوی دادۀ خودِ پرتابیل را بگیرد، وگرنه دو نسخۀ
+    # هم‌زمان یک بانک را باز می‌کنند و «ماندگاری دادۀ پرتابیل» دروغ می‌شود.
+    if is_portable():
+        dirs = [WORK_DIR]
     # v1.0.16: در بیلدِ onedir، PyInstaller داده‌ها را در _internal می‌گذارد.
     # اگر آنجا market.db با دادهٔ کدال هست، باید بر فایلِ کوچکِ کنارِ EXE
     # (که همگام‌سازیِ زندهٔ تابلو می‌سازد) ارجح باشد.
@@ -162,6 +267,17 @@ def _sha256_file(path, chunk=1 << 20):
     return h.hexdigest()
 
 
+def _report(progress, phase, done=0, total=0):
+    """پیشرفت را به صفحۀ بوت می‌رساند. هیچ گزارشی نباید مسیر ساختِ دیتابیس را
+    بشکند، پس خطای گزارش خورده می‌شود (صفحۀ بوت اختیاری است)."""
+    if not progress:
+        return
+    try:
+        progress(phase, done, total)
+    except Exception:
+        pass
+
+
 MARKET_DATA_RELEASE_TAG = "data-latest"
 MARKET_DATA_RELEASE_BASE = (
     "https://github.com/johnwarchief/BorsTerminal/releases/download/"
@@ -171,7 +287,7 @@ MARKET_DATA_RELEASE_ASSET = MARKET_DATA_RELEASE_BASE + "market.db.lzma"
 MARKET_DATA_RELEASE_META = MARKET_DATA_RELEASE_BASE + "market.db.meta.json"
 
 
-def _download_market_db_lzma(verbose=False):
+def _download_market_db_lzma(verbose=False, progress=None):
     """Download and verify the external market baseline release."""
     import hashlib
     import json
@@ -181,6 +297,7 @@ def _download_market_db_lzma(verbose=False):
     os.makedirs(WORK_DIR, exist_ok=True)
     target = os.path.join(WORK_DIR, "market.db.lzma")
     tmp = None
+    _report(progress, "data-meta")
     try:
         req = urllib.request.Request(
             MARKET_DATA_RELEASE_META,
@@ -211,6 +328,7 @@ def _download_market_db_lzma(verbose=False):
                 out.write(chunk)
                 h.update(chunk)
                 total += len(chunk)
+                _report(progress, "download", total, want_size)
 
         got_sha = h.hexdigest()
         if want_size and total != want_size:
@@ -518,7 +636,7 @@ def prune_stale_frontend_assets(dist_dir, marker_version, verbose=False):
     return len(dead)
 
 
-def ensure_market_db(verbose=False):
+def ensure_market_db(verbose=False, progress=None):
     """(idempotent) market.db را از market.db.lzma می‌سازد یا تازه می‌کند.
 
     دو شرطِ جدا گلوگاه بودند:
@@ -537,9 +655,10 @@ def ensure_market_db(verbose=False):
     ۳۷۵٫۱۵۴ ردیف بود، با یکِ «نصبِ کامل» به ۸۷٫۱۴۶ و ۳۲۱٫۳۸۹ ردیفِ baseline برمی‌گشت
     و tape_history‌اش (۱۵۱٫۳۵۶ ردیف) هم می‌توانست برود.
     """
+    _report(progress, "check")
     src_lzma = _find_bundled_db_lzma()
     if not src_lzma:
-        src_lzma = _download_market_db_lzma(verbose=verbose)
+        src_lzma = _download_market_db_lzma(verbose=verbose, progress=progress)
     want = None
     if src_lzma:
         try:
@@ -555,9 +674,10 @@ def ensure_market_db(verbose=False):
             return DB_PATH
         if complete:
             # سالم است و فقط baseline عوض شده ⇒ ادغام، نه جایگزینی.
-            fresh = _extract_market_db(src_lzma, verbose=verbose,
+            fresh = _extract_market_db(src_lzma, verbose=verbose, progress=progress,
                                        scratch_name="market.db.baseline.new")
             if fresh:
+                _report(progress, "merge")
                 _union_forward(DB_PATH, fresh, verbose=verbose)
                 try:
                     os.remove(fresh)
@@ -568,6 +688,7 @@ def ensure_market_db(verbose=False):
         # تا این‌جا فقط دیتابیسِ ناقص/خراب می‌رسد: سالم‌ها بالا ادغام شدند.
         if verbose:
             print("  [..]  market.db is incomplete — re-extracting from market.db.lzma")
+        _report(progress, "rebuild")
         stale_path = DB_PATH + ".stale"
         try:
             os.replace(DB_PATH, stale_path)
@@ -583,23 +704,28 @@ def ensure_market_db(verbose=False):
             except OSError:
                 pass
         # baselineِ تازه را استخراج کن، بعد دادهٔ کاربر را از نسخهٔ قدیمی برگردان
-        new_db = _extract_market_db(src_lzma, verbose=verbose)
+        new_db = _extract_market_db(src_lzma, verbose=verbose, progress=progress)
         if new_db:
             _carry_user_tables(stale_path, new_db, verbose=verbose)
             _write_baseline_stamp(want or "")
         return new_db or DB_PATH
 
-    new_db = _extract_market_db(src_lzma, verbose=verbose)
+    new_db = _extract_market_db(src_lzma, verbose=verbose, progress=progress)
     if new_db:
         _write_baseline_stamp(want or "")
     return new_db or DB_PATH
 
 
-def _extract_market_db(src_lzma, verbose=False, scratch_name=None):
+def _extract_market_db(src_lzma, verbose=False, scratch_name=None, progress=None):
     """market.db.lzma را به WORK_DIR/market.db باز می‌کند. None یعنی نشد.
 
     scratch_name داده شود یعنی فقط بازکردنِ موقت برایِ ادغام: فایلِ market.dbِ
     کاربر دست‌نخورده می‌ماند و مسیرِ باز شده برایِ پاک‌شدن به caller برمی‌گردد.
+
+    جریان‌خوان (به‌جای یک‌بار `lzma.decompress(کلِ فایل)`): هم memory را از
+    ~۱۵۵ مگابایتِ هم‌زمان پایین می‌آورد، هم به صفحۀ بوت عددِ واقعی می‌دهد.
+    برابر بودنِ خروجیِ دو مسیر روی market.db.lzma واقعی سنجیده شد (یکسان،
+    sha256 91fbc4ee…b825)، و جای‌گیریِ `raw.tell()` تا انتهای فایل ثابت شد.
     """
     if not src_lzma:
         return None
@@ -608,10 +734,17 @@ def _extract_market_db(src_lzma, verbose=False, scratch_name=None):
         os.makedirs(WORK_DIR, exist_ok=True)
         target_db = os.path.join(WORK_DIR, scratch_name or "market.db")
         tmp = target_db + ".part"
+        comp_total = os.path.getsize(src_lzma)
         if verbose:
             print("  [..]  extracting market.db.lzma (one-time, ~40s) ...")
-        with open(src_lzma, "rb") as fi, open(tmp, "wb") as fo:
-            fo.write(lzma.decompress(fi.read()))
+        with open(src_lzma, "rb") as raw, lzma.LZMAFile(raw, mode="rb") as fi, \
+                open(tmp, "wb") as fo:
+            while True:
+                block = fi.read(1 << 22)
+                if not block:
+                    break
+                fo.write(block)
+                _report(progress, "extract", raw.tell(), comp_total)
         if not _REQUIRED_MARKET_TABLES <= _market_db_tables(tmp):
             if verbose:
                 print("  [ERR] extracted market.db is missing required tables")
@@ -704,6 +837,10 @@ FTS_DEFAULTS = {
     # فهرست‌ها با «,» یا «،» نوشته میشوند و با norm_fa نرمال‌سازی می‌شوند.
     "include_industries": [],
     "exclude_industries": [],
+    # تنظیمات مستقلِ ساعت‌شنی تکنیکال؛ دوره RSI آن با RSI(14) خروج یکسان نیست.
+    "hourglass_rsi_period": 7,
+    "hourglass_rsi_oversold": 30.0,  # پیش‌فرض اجرایی قابل‌تغییر، نه عدد قطعی PDF
+    "hourglass_ma52_position": "below",  # below | above | either؛ below برای سازگاری
 }
 
 FTS_LEGACY_SCALARS = {
@@ -714,7 +851,7 @@ FTS_LEGACY_SCALARS = {
 FTS_LEGACY_LISTS = {"bad_sectors": "mandatory_sectors", "good_sectors": "free_sectors"}
 FTS_LIST_KEYS = ("mandatory_sectors", "free_sectors", "include_industries",
                  "exclude_industries", "exclude_rejected_indicators")
-FTS_STR_KEYS = ("industry_mode",)
+FTS_STR_KEYS = ("industry_mode", "hourglass_ma52_position")
 
 _CAL_CACHE_PATH = os.path.join(APP_DIR, "static", "calendar", "cache.json")
 _cal_cache = {"mtime": 0.0, "events": []}
@@ -725,4 +862,4 @@ MA_WINDOWS = [5, 20, 50, 120]
 # هر بار که نسخه در installer/bors_setup.iss و tauri.conf.json بالا می‌رود،
 # اینجا هم باید به‌روز شود (scripts/publish_github_release.py هم همین نسخه را
 # در latest.json می‌نویسد).
-APP_VERSION = "1.1.0"
+APP_VERSION = "1.1.1"

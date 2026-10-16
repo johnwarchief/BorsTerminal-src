@@ -38,6 +38,10 @@ export const MARKET_FEED_KEY = ['market-feed'] as const;
 let rows: MarketRow[] = [];
 let indexBy = new Map<string, number>();
 let rev = -1;
+/** لحظه‌ای که *داده* عوض شد (epoch msِ کلاینت)، نه لحظه‌ی رسیدنِ پاسخ. هر دورِ
+ *  «unchanged» هم `dataUpdatedAt` را نو می‌کند، پس تازگیِ واقعی باید از این
+ *  شمارنده خوانده شود — وگرنه نشانگر رویِ دادهٔ منجمد «لحظاتی پیش» می‌گوید. */
+let revAt = 0;
 let meta: MarketFeed['meta'] = null;
 let counts = { count: 0, live_count: 0, fossil_count: 0 };
 /** سرورِ بی‌/api/market/delta (نسخۀ قدیمیِ نصب‌شده) ⇒ تا پایانِ عمرِ تب کامل می‌گیریم. */
@@ -45,9 +49,9 @@ let deltaUnsupported = false;
 
 /** تنها سازندۀ wrapper؛ بعدِ هر adopt/applyDelta/reset صدا زده می‌شود. تا آن
  *  لحظه snapshot() همان مرجع قبلی را می‌دهد و «بی‌تغییری» واقعاً بی‌تغییری است. */
-let snap: MarketFeed = { status: 'success', data: rows, meta, ...counts };
+let snap: MarketFeed = { status: 'success', data: rows, meta, rev: null, rev_at: null, ...counts };
 function rebuildSnapshot(): void {
-  snap = { status: 'success', data: rows, meta, ...counts };
+  snap = { status: 'success', data: rows, meta, rev, rev_at: revAt, ...counts };
 }
 
 function snapshot(): MarketFeed {
@@ -66,9 +70,18 @@ function adopt(f: MarketFeed): MarketFeed {
   // بدنهٔ کامل **همراه rev خودش** می‌آید (سرور آن را پیش از ساختن می‌خواند)،
   // پس پولینگِ بعدی دقیقاً از همین نقطه دلتا می‌خواهد. بی‌rev هر دور یک
   // بدنۀ ۴ مگابایتی می‌شد — یعنی همان وضعیتِ پیش از حالتِ داغ.
+  const prevRev = rev;
   rev = typeof f.rev === 'number' ? f.rev : -1;
+  // بدنۀ کامل = وضعیتِ امروزِ تابلو؛ بی‌این خط، `rev_at`ِ اولین بارگذاری صفر
+  // می‌ماند و تازگی «هیچ‌وقت» خوانده می‌شد. اما بدنهٔ کاملِ *بازنشده* (خطای
+  // دلتا، سرورِ بی‌/api/market/delta) دلیلِ عوض‌شدنِ داده نیست — سنجشِ زنده
+  // ۱۴۰۵-۰۷-۱۸: «عوض‌شدنِ عدد: نامعلوم» دقیقاً از همین‌جا می‌آمد که `rev_at`
+  // فقط درِ مسیرِ دلتا پر می‌شد. پس: بارِ اول یا revِ تازه = عوض شد؛ بقیه نه.
+  if (prevRev < 0 || (rev >= 0 && rev !== prevRev)) revAt = Date.now();
   rebuildSnapshot();
-  return f;
+  // خودِ `f` برگردانده نمی‌شود: بدنهٔ سرور `rev_at` ندارد (سرور هرگز آن را
+  // نمی‌فرستد) و پنلِ وضعیت از نبودنش «نامعلوم» می‌گفت.
+  return snapshot();
 }
 
 type Delta = Extract<MarketDelta, { status: 'delta' }>;
@@ -90,6 +103,7 @@ function applyDelta(r: Delta): boolean {
   // آمده یا رفته که دلتا آن را ندارد — merge را ول می‌کنیم و کامل می‌خواهیم.
   if (r.count != null && r.count !== next.length) return false;
   rows = next;
+  if (r.rev !== rev) revAt = Date.now();   // داده واقعاً عوض شده، نه این‌که پاسخ آمده
   rev = r.rev;
   if (r.meta) meta = r.meta;
   counts = {
@@ -164,6 +178,7 @@ export function resetMarketFeedMirror() {
   rows = [];
   indexBy = new Map();
   rev = -1;
+  revAt = 0;
   meta = null;
   counts = { count: 0, live_count: 0, fossil_count: 0 };
   deltaUnsupported = false;
@@ -171,5 +186,5 @@ export function resetMarketFeedMirror() {
 }
 
 export function marketFeedMirrorSize() {
-  return { rows: rows.length, rev };
+  return { rows: rows.length, rev, revAt };
 }

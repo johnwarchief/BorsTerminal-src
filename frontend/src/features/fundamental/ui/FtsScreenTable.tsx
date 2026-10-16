@@ -17,7 +17,7 @@ import { toExportTable, type ExportCell } from '@shared/lib/tableExport';
 import { matchFa } from '@shared/lib/normalizeFa';
 import { absurdHint, fmtPctGrouped, fmtRatioGrouped, isAbsurdPct } from '../lib/numFmt';
 import { EmptyState } from '@shared/components/EmptyState';
-import type { FtsScreenRow } from '../api/useFtsScreen';
+import type { FtsScreenRow, FtsFunnelGate } from '../api/useFtsScreen';
 import { isFundamentalCompany } from '../lib/assetScope';
 import {
   EPS_PARTIAL_TESTID,
@@ -31,6 +31,8 @@ import {
 import { gapLabel, gapReason, gapTooltip, type GapAxis } from '../lib/gapReason';
 import { AuditBadge, type AuditEvidenceInput } from '../components/AuditBadge';
 import { screenAuditEvidence } from '../lib/auditEvidence';
+import SymbolSelectBox from '@shared/components/SymbolSelectBox';
+import WatchlistStar from '@shared/components/WatchlistStar';
 import {
   EXCLUDE_LABEL,
   applyExcludeFilter,
@@ -77,7 +79,7 @@ export function screenRowCells(r: FtsScreenRow): ExportCell[] {
     // صنعت با کلیدِ `'regulated'` سنجیده می‌شد در حالی که بک‌اند `'mandatory'`
     // می‌فرستد — یعنی هر شرکتِ دستوری در فایل «آزاد» نوشته می‌شد.
     `${pct(r.rev_growth)} (الف: ${mark(r.i1a_pass)} / ب: ${
-      r.i1b_applicable === false ? 'N/A' : mark(r.i1b_pass)})`,
+      r.i1b_applicable === false ? 'کاربرد ندارد' : mark(r.i1b_pass)})`,
     `${eps}${r.eps_last != null ? ` | ${toFaDigits(r.eps_last)}` : ''}${r.eps_data_gap ? ' | بی‌داده' : ''}`,
     pct(r.gross_margin),
     r.profit_potential_pct == null ? '—' : pct(r.profit_potential_pct),
@@ -175,7 +177,7 @@ const STATE_BADGE: Record<'pass' | 'fail', { tone: 'green' | 'red'; label: strin
 };
 
 /** ارتفاع ثابت ردیف جدول (پیکسل) — همگام دقیق با DOM برای جلوگیری از لگ و پرش اسکرول */
-const ROW_H = 46;
+const ROW_H = 52;
 
 /** نشان قبول/مردود — حالت‌های «partial» و «gap» هرگز به اینجا نمی‌رسند
  *  (پیش از آن با برچسب علت‌دار یا برچسب سابقهٔ ناقص رندر می‌شوند). */
@@ -309,7 +311,7 @@ const ScreenerRow = memo(function ScreenerRow({
                   }}
                   aria-label={r.excluded ? undefined : `باز کردن کارت ${r.symbol}`}
                   style={{ height: ROW_H }}
-                  className={`h-[46px] border-b border-border-c/40 transition-colors ${
+                  className={`h-[52px] border-b border-border-c/40 transition-colors ${
                     r.excluded
                       ? 'cursor-not-allowed bg-accent-red/5 opacity-55'
                       : `cursor-pointer group ${stripe === 'odd' ? 'bg-bg-secondary' : 'bg-bg-primary'} hover:bg-accent-blue/10`
@@ -330,12 +332,36 @@ const ScreenerRow = memo(function ScreenerRow({
                   }`}>
                     <div className="flex flex-col justify-center min-w-0">
                       <div className="flex items-center gap-1.5 min-w-0">
+                        {/* همان جعبۀ تابلو — یکِ رفتار درِ دو جدول (§۲۱).
+                            `FtsScreenRow` هیچ `ins_code` ندارد
+                            (`useFtsScreen.ts:9-88`)، پس هویت اینجا همان
+                            `normalizeFa(symbol)` است و عددِ ساختگی نمی‌سازیم. */}
+                        <SymbolSelectBox symbol={String(r.symbol ?? '')} name={String(r.name ?? '')} />
+                        <WatchlistStar symbol={String(r.symbol ?? '')} name={String(r.name ?? '')} />
                         <span className={`font-bold text-sm text-text-primary tracking-wide ${r.excluded ? 'line-through decoration-accent-red/60' : ''}`}>
                           {r.symbol}
                         </span>
                         {r.tech_hourglass_active ? (
                           <span className="shrink-0 rounded px-1.5 py-0.5 text-[9px] font-bold bg-accent-green/20 text-accent-green border border-accent-green/30" title="استراتژی ساعت شنی FTS فعال (خرید ۲x-۴x)">
                             ساعت شنی
+                          </span>
+                        ) : null}
+                        {r.funnel_candidate ? (
+                          <span
+                            data-testid="row-funnel-candidate"
+                            title="هر سه گامِ قیف (تابلوخوانی ← تکنیکال ← بنیادی) pass و بی‌وتو"
+                            className="shrink-0 rounded px-1.5 py-0.5 text-[9px] font-bold bg-neon-cyan/20 text-neon-cyan border border-neon-cyan/30"
+                          >
+                            کاندیدِ قیف
+                          </span>
+                        ) : null}
+                        {r.fund_caveat ? (
+                          <span
+                            data-testid="row-fund-caveat"
+                            title={`عبور با ملاحظات: ${r.fund_passed ?? '—'} شاخص PASS — حداقل ۳ کافی است؛ بقیهٔ شاخص‌ها رد شده‌اند یا داده ندارند`}
+                            className="shrink-0 rounded px-1.5 py-0.5 text-[9px] font-bold bg-accent-yellow/20 text-accent-yellow border border-accent-yellow/30"
+                          >
+                            عبور با ملاحظات
                           </span>
                         ) : null}
                         {r.tech_jet ? (
@@ -375,7 +401,12 @@ const ScreenerRow = memo(function ScreenerRow({
                                 : 'bg-accent-blue/20 text-accent-blue border-accent-blue/30'
                             }`}
                           >
-                            مجمع {assembly.jalali.split('-').slice(-2).join('/')}
+                            {/* §۲۴: اگر تاریخ از عنوانِ اطلاعیه نیامده، عدد فقط
+                                تاریخِ انتشار است — پس واژۀ «مجمع» هم نمی‌تواند
+                                تنها برچسب باشد؛ «اطلاعیه» می‌نشیند تا خواننده
+                                «مجمعِ فلان‌روز» را نخواند. */}
+                            {assembly.kind === 'notice' ? 'اطلاعیه' : 'مجمع'}{' '}
+                            {assembly.jalali.split('-').slice(-2).join('/')}
                           </span>
                         ) : null}
                         {/* «افزایش سرمایه» — فقط برچسب. رأیِ pilot (#53): این رویداد
@@ -424,7 +455,7 @@ const ScreenerRow = memo(function ScreenerRow({
                                واقعیِ ✓/✗ پشتِ N/A پنهان می‌شد و درِ ۱۰۲ ردیف
                                N/Aِ اشتباه می‌خورد. */
                             <GapMark
-                              label="N/A (قابل اعمال نیست)"
+                              label="کاربرد ندارد"
                               tooltip="رشد تولیدی/تناژ برایِ این ماهیت (مالی، هلدینگ، صندوق، خدماتِ بی‌کالای فیزیکی) معنا ندارد — اعلامِ خودِ موتور FTS، نه شکاف داده."
                               evidence={ev.i1b}
                               testId="fts-na-1b_volume_growth"
@@ -460,7 +491,7 @@ const ScreenerRow = memo(function ScreenerRow({
                              ندارد — نه ✓ و نه ✗. علت را خودِ موتور می‌گوید
                              (`ind2_na` + `eps_consolidated`)، نه حدسِ جدول. */
                           <GapMark
-                            label={r.eps_consolidated ? 'N/A (تلفیقی)' : 'N/A'}
+                            label={r.eps_consolidated ? "کاربرد ندارد (تلفیقی)" : "کاربرد ندارد"}
                             tooltip={
                               r.eps_consolidated
                                 ? 'برخی سال‌ها فقط به‌صورت تلفیقی منتشر شده‌اند؛ جزوه (ص ۴) صورتِ شرکت اصلی را مبنای می‌گیرد، پس این شاخص سنجیده نمی‌شود. با همگام‌سازیِ تازه هم بسته نمی‌شود.'
@@ -509,7 +540,7 @@ const ScreenerRow = memo(function ScreenerRow({
                                (`ind3_na`) — نه regexِ نام/صنعت. بی‌این، ۱۱۲
                                ردیف از ۲۹۶ ردیفِ نادرست «N/A» می‌گرفت. */
                             <GapMark
-                              label="N/A (ماهیت مالی)"
+                              label="کاربرد ندارد"
                               tooltip="موتور FTS برای همین نماد «سود ناخالص» را بی‌کاربرد اعلام کرده است (بانک/بیمه/هلدینگ/صندوق)؛ شکاف داده نیست."
                               evidence={ev.i3}
                               testId="fts-na-3_gross_margin"
@@ -540,7 +571,7 @@ const ScreenerRow = memo(function ScreenerRow({
                         {i4 === 'gap' ? (
                           r.i4_na === true ? (
                             <GapMark
-                              label="N/A (ماهیت مالی)"
+                              label="کاربرد ندارد"
                               tooltip="موتور FTS همین نماد را از شرط «فروش ÷ ارزش بازار» معاف دانسته است (`ind4_na`)؛ شکاف داده نیست."
                               evidence={ev.i4}
                               testId="fts-na-4_sales_to_mcap"
@@ -627,6 +658,41 @@ const ScreenerRow = memo(function ScreenerRow({
               );
 });
 
+/** شمارۀِ گام‌هایِ قیف از خودِ `/api/screener` (بند ۷.۱ مأموریت). جدول هیچ گامی
+ *  را خودش حساب نمی‌کند و هیچ آستانه‌ای هم اینجا نیست؛ فقط می‌گوید پرچمِ
+ *  «کاندیدِ قیف» رویِ کدام preset/chain نشسته و درِ هر گام چند نماد مانده.
+ *  بی‌قیف (خطا/unavailable) صریح گفته می‌شود — سکوتِ سبز ممنوع. */
+function FunnelGateChip({ gate }: { gate?: FtsFunnelGate | null }) {
+  if (!gate) return null;
+  const st = gate.stages ?? {};
+  const n = (k: string) => {
+    const v = (st[k] ?? {}) as Record<string, unknown>;
+    return { input: Number(v.input ?? 0), matched: Number(v.matched ?? 0) };
+  };
+  const t = n('tape'), x = n('technical'), f = n('fundamental');
+  const applied = gate.state === 'applied';
+  const text = applied
+    ? `قیف ${gate.preset ?? '—'} · تابلو ${toFaDigits(t.input)}→${toFaDigits(t.matched)}`
+      + ` · تکنیکال ${toFaDigits(x.matched)} · بنیادی ${toFaDigits(f.matched)}`
+    : 'قیف نرسید — کاندیدِ قیف نشان داده نمی‌شود';
+  return (
+    <span
+      data-testid="fts-funnel-gate"
+      data-state={gate.state}
+      title={applied
+        ? `زنجیرۀ تابلوخوانی: ${(gate.chain ?? []).join('، ') || 'بی‌فیلتر'} · `
+          + 'کاندیدِ قیف فقط ردیفی است که هر سه گام pass باشد و وتوی هفتگی/مجمع نداشته باشد.'
+        : String(gate.message ?? gate.state)}
+      className={`ms-auto shrink-0 rounded-lg border px-2 py-1 text-[10px] font-bold ${
+        applied ? 'border-[var(--hairline)] bg-bg-primary text-text-secondary'
+                : 'border-accent-red/40 bg-accent-red/10 text-accent-red'
+      }`}
+    >
+      {text}
+    </span>
+  );
+}
+
 export function FtsScreenTable({
   rows,
   onSelect,
@@ -636,6 +702,7 @@ export function FtsScreenTable({
   assemblyEvents = null,
   capitalEvents = null,
   settingsSlot,
+  funnelGate = null,
 }: {
   rows: FtsScreenRow[];
   onSelect: (symbol: string) => void;
@@ -651,6 +718,10 @@ export function FtsScreenTable({
   capitalEvents?: Record<string, CalEvent[]> | null;
   /** اسلاتِ تزریقیِ نوار جدول — مثلاً دکمهٔ تنظیمات FTS (بزرگ‌تر و افقی) */
   settingsSlot?: ReactNode;
+  /** شمارشِ گام‌هایِ قیف از خودِ `/api/screener` (بند ۷.۱ مأموریت). جدول هیچ
+   *  گامی را خودش حساب نمی‌کند؛ این فقط می‌گوید پرچمِ «کاندیدِ قیف» رویِ کدام
+   *  preset/chain نشسته است. */
+  funnelGate?: FtsFunnelGate | null;
 }) {
   /** برچسب مجمعِ یک نماد؛ منطق انتخاب در lib/assemblyEvent.ts (آزمون‌شده) است */
   const assemblyBadge = (sym: string) =>
@@ -760,7 +831,7 @@ export function FtsScreenTable({
   }
 
   return (
-    // min-w-0 + max-w-full: بدون این دو، پنل به اندازهٔ min-w-[1240px]ِ جدول
+    // min-w-0 + max-w-full: بدون این دو، پنل به اندازهٔ min-w-[1120px]ِ جدول
     // پهن می‌شود و overflow-autoِ درونش هرگز فعال نمی‌شود — نتیجه: کلِ صفحه
     // در دیدگاه‌های کوچک‌تر از ۱۲۴۰px (مثلاً ۷۶۸px) ۵۶۲px بیرون از کادر
     // می‌افتد و کاربر به ستون‌ها نمی‌رسد.
@@ -914,29 +985,35 @@ export function FtsScreenTable({
         >
           ⏳ ساعت شنی FTS ({toFaDigits(presetCounts.hourglass)})
         </button>
+        <FunnelGateChip gate={funnelGate} />
       </div>
 
       {/* اسکرول‌کانتینر جدول: ارتفاع متناسب با ویوپورت تا پایینِ
           جدول فضای خالی نماند و در هر رزولوشنی (به‌ویژه لپ‌تاپ) درست و کامل پر شود. */}
       <div ref={scrollRef} data-testid="fts-screen-scroll" className="h-[calc(100dvh-200px)] min-h-[320px] overflow-auto overscroll-contain">
-        <table className="w-full min-w-[1240px] table-fixed text-start text-xs">
+        <table className="w-full min-w-[1180px] table-fixed text-start text-sm">
           <colgroup>
             {/* ستونِ نماد ۱۸٪ بود که در ۱۹۲۰ پهنای بی‌مصرف می‌گرفت؛ ۱۴٪ اندازهٔ
                 خودِ نماد + یک برچسبِ کوتاه است. عرضِ آزادشده به سری EPS رفت. */}
             <col className="w-[14%]" />
             {/* ستون شاخص ۱ دو تیک (الف/ب) + عددِ تا ۴ رقم دارد؛ با ۱۲٪ عددِ ۲۴۴.۷٪
                 از خانه بیرون می‌زد (اندازه‌گیری روی مرورگر واقعی). */}
-            <col className="w-[13%]" />
+            <col className="w-[18%]" />
             {/* شاخص ۲ سری EPS دارد (سه عدد + درصد رشد) — با بزرگ‌ترشدنِ فونتِ این ستون،
-                عرضش از ستونِ صنعت گرفته شد که کوتاه‌ترین مقدار را دارد. */}
-            <col className="w-[28%]" />
+                عرضش از ستونِ صنعت گرفته شد که کوتاه‌ترین مقدار را دارد. ۲۸→۲۳:
+                سنجشِ زنده (ws10) نشان داد خانۀ الف/ب با برچسبِ بلند ۲۰۸
+                پیکسل می‌خواهد و 162 می‌گیرد. رأیِ 2026-10-12 (بند ۳) به‌جای «N/A» واژۀ
+                خودِ وضعیت را می‌نشیند («کاربرد ندارد» برایِ شاخصِ بی‌کاربرد،
+                «قابل ارزیابی نیست» برایِ دادهٔ نرسیده) و علت درِ tooltip می‌ماند،
+                پس خانۀ جدول کوتاه ماند. */}
+            <col className="w-[23%]" />
             <col className="w-[11%]" />
             <col className="w-[12%]" />
             <col className="w-[14%]" />
             <col className="w-[7%]" />
           </colgroup>
           <thead className="sticky top-0 z-20 bg-bg-card shadow-xs">
-            <tr className="bg-bg-card text-2xs text-text-secondary border-b border-[var(--hairline)]">
+            <tr className="bg-bg-card text-xs text-text-secondary border-b border-[var(--hairline)]">
               {COLS.map((c, i) =>
                 c.key ? (
                   <th key={c.label} className="px-3 py-2.5 font-bold tracking-wide text-start">

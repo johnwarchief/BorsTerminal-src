@@ -5,14 +5,21 @@ v9.5 — اجرای همهٔ تست‌های آفلاین (بدون نیاز ب�
 """
 import os, re, subprocess, sys
 
-os.chdir(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
+_HERE = os.path.dirname(os.path.abspath(__file__))
+# ترجمانِ شمارشِ گاردها (مأموریتِ ۱۴۰۵-۰۷-۲۳، بندِ ۷): «۰ pass / ۰ fail» بودنِ
+# یکِ suite یعنی گزارشگر خروجی‌اش را نفهمیده، نه اینکه صفرِ بررسی سبز شده باشد.
+if _HERE not in sys.path:
+    sys.path.insert(0, _HERE)
+from guard_counts import summarize  # noqa: E402
+
+os.chdir(os.path.join(_HERE, '..'))
 
 SUITES = [
     ('dev/struct_check.py',           'structure / undefined-names'),
     ('dev/test_fts_isolation.py',     'FTS filter isolation'),
     ('dev/fts_pipeline_v981.py',      'codal FTS pipeline + ADB fallback + session window'),
     ('dev/test_calendar_v92.py',      'calendar py<->js categories'),
-    ('dev/chart_api_check_v95.py',    'KLineCharts v10 API guard'),
+    ('dev/chart_api_check_v95.py',    'chart API guard: installed klinecharts v10 exports, no dead legacy path'),
     ('dev/fts_m141_parity_v97.py',    'm141/liquidity parity + anti-N+1'),
     ('dev/adb_resilience_v972.py',    'ADB retry/reconnect + wifi restore'),
     ('dev/confidence_engine_v973.py', 'triple-confirmation confidence engine'),
@@ -22,6 +29,9 @@ SUITES = [
     # شمارِ سطل را در ۲۹ از ۴۰ نماد جدا می‌دید. گارد با منفی‌کنترلِ ISO.
     ('dev/ce_weekly_bucket_v1073.py', 'confidence_engine weekly bucket == chart Saturday bucket'),
     ('dev/mstat_local_v975.py',       'mstat dashboard computed from local market.db'),
+    # رأیِ مالک (۱۴۰۵-۰۷-۲۲): «نمادهای زیرِ نظر» هم پرچم‌هایِ تابلو را می‌بیند —
+    # انتقال از فید، بی‌محاسبۀِ دوم، و «بی‌منبع» هرگز «پرچمی ندارد» نمی‌شود.
+    ('dev/test_mainwatch_flags_v1.py', 'mainwatch rows carry the tape flags, never a fabricated one'),
     ('dev/watchlist_matrix_v973.py',  'watchlist store + triple matrix + parity'),
     ('dev/patch_check_v10.py',        'patch/update system guard'),
     ('dev/test_arg_parse_v10.py',     'make_patch --from arg parsing'),
@@ -86,6 +96,10 @@ SUITES = [
      'technical setups stay three-state (null != false) and each rule matches the notebook'),
     ('dev/test_fts_roundj.py',
      'Round J: jet is last-candle-only, point-hunt trigger ≠ anchor, exit tri-state, roles + status priority'),
+    ('dev/test_fts_asof_cutoff.py',
+     'FTS analysis as_of is a real input cutoff; the cache key carries as_of + ruleset so cutoffs never leak'),
+    ('dev/test_trend_engine_flag.py',
+     'trend engine flag: legacy is byte-identical, hybrid is a drop-in, jet unchanged, cache isolated by engine, weekly gate rule preserved'),
     ('_audit/candle_integrity_roundj.py',
      'candle integrity + published-TSETMC parity along feed → engine → chart'),
     ('dev/test_fts_market_cap.py',    'TSETMC market-cap source of truth + risk filters'),
@@ -113,6 +127,7 @@ SUITES = [
     ('dev/db_contract_v11.py',        'FTS v2.2 db contract: writer/reader/schema agree'),
     ('dev/version_anchor_guard.py',   'all six version anchors state the same release'),
     ('dev/fts_defaults_parity_guard.py', 'FTS guide defaults: FE drawer mirrors the server'),
+    ('dev/test_hourglass_settings_v1.py', 'hourglass RSI period, oversold threshold and MA52 mode are configurable'),
     ('dev/weekly_veto_guard.py',      'weekly downtrend/neutral is a hard veto; no-data is not'),
     # وتوی مجمع (رأیِ مالک، نه چارت): برچسبِ جدول و وتوی اسکرینر باید یک افق و یک
     # پنجرۀ تقویم داشته باشند، و وتو بیرونِ کشِ ۱۲ ساعته حساب شود. بی‌شبکه —
@@ -241,6 +256,128 @@ SUITES = [
     # __tests__/mobile-manifest-contract.spec.ts با همان fixture می‌سنجد.
     ('dev/mobile_manifest_contract_v1115.py',
                                      'mobile manifest contract: producer output == parser requirement (real package, real digest)'),
+    # CA-2 (ممیزی CODAL دور ۲، ۱۴۰۵-۰۷-۲۰): `/api/fundamental/*/quarters` برندهٔ
+    # هر دوره را با `ORDER BY publish_date DESC LIMIT ?` می‌گزید و رقمِ فارسی
+    # (U+06F0..) در واژگانِ SQLite بعدِ لاتین می‌آید ⇒ ردیفِ کهنه «تازه‌ترین»
+    # شد. سنجشِ بازتولیدشدنی رویِ market.dbِ همین دور
+    # (`tools/codal_reference_before_after.py`، ۱۴۰۵-۰۷-۲۱): ۱۶۵
+    # اسلاتِ چندردیفی، ۹۳ اسلاتِ ردیفِ‌عوض‌شده، ۸۱ اسلات با
+    # عددِ نمایشیِ عوض‌شده، و ۰ جابه‌جایی به شرکتِ فرعی. LIMIT هم
+    # پیش از dedupe دوره کم می‌آورد؛ حالا هر دو درِ
+    # `fts_engine.quarter_reference_rows` بسته شده‌اند.
+    ('dev/codal_reference_select_v1088.py',
+                                     'one reference-row rule for quarters; digit script never decides; losers preserved'),
+    # CA-3 (همان ممیزی): «نبودِ upsert ⇒ انباشتِ تکراری» باطل شد — `tracing_no`
+    # PRIMARY KEY + `FS_UPSERT ... ON CONFLICT DO UPDATE` است. هویتِ یکِ گزارش
+    # فقط شمارهٔ ردّ کدال است؛ این گارد ثابت می‌کند بازنشرِ یکِ اطلاعیه ردیفِ دوم
+    # نمی‌سازد، دو اطلاعیهٔ یکِ دوره ادغام نمی‌شوند، و هیچِ مسیرِ ingest حذف نمی‌کند.
+    ('dev/codal_ingest_identity_v1088.py',
+                                     'notice identity = tracing_no; re-ingest never adds or deletes a row'),
+    # مرحلۀ ۱ مأموریت بنیادی (۱۴۰۵-۰۷-۲۱): مثال‌هایِ عددیِ خودِ جزوه
+    # با حسابِ خودِ صفحه سنجیده می‌شوند و دو تعارضِ داخلیِ آن (مخرجِ
+    # حاشیه ۳۹۲۱/۳۶۲۱ و EPS ۱۴۰۲ = ۷۷۴/۷۴۴) باز می‌مانند — یکی
+    # بی‌صدا حقیقت نشود. آستانه‌ها هم با حکمِ مالک مقایسه می‌شوند.
+    ('dev/fts_notebook_examples_v1089.py',
+                                     'notebook numeric examples reproduce; its two internal conflicts stay open'),
+    # CA-۱ (مأموریت بنیادی، ۱۴۰۵-۰۷-۲۱): publish_date درِ یکِ ستون دو
+    # encoding دارد (۲۲,۵۶۰ ردیفِ فارسی‌رقم + ۱۳,۷۸۸ ردیفِ لاتین در
+    # codal_notices). MAX/ORDER BYِ خام همیشه فارسی‌رقم را «تازه‌ترین»
+    # می‌گزید ⇒ پنجرۀ واکشیِ افزایشی رویِ ۱,۱۱۰ نماد از ۱,۸۰۰ کهنه‌تر
+    # از واقع می‌رفت (بیش‌دریافت/خطر ۴۲۹). حالا همه از
+    # `codal_periods.pub_canon_sql` / `pub_key` می‌خوانند؛ ستونِ خام
+    # برایِ ردیابیِ منبع دست‌نخورده می‌ماند.
+    ('dev/codal_publish_date_v1089.py',
+                                     'newest publish_date is digit-script independent; SQL and Python agree; raw kept for trace'),
+    # مرحلۀ ۱.۲ مأموریت بنیادی (۱۴۰۵-۰۷-۲۲): «این دو رشته یکی‌اند؟» چهار تعریفِ
+    # مستقل داشت و دو جواب می‌داد (کارتِ «شهر فرش» ۱ ردیف، قیف ۷ ردیف). حالا
+    # تنها لایۀ `symbol_identity` کلید می‌سازد: نامزدها از خودِ بانک، پسوندِ
+    # رقمی فقط با شاهدِ ISIN، و ردِ الحاق در ردپا اعلام می‌شود. چهار کنترلِ
+    # منفی + پرونده‌هایِ نیم‌فاصله/شرکتِ فرعی/اصلاحیه/تلفیقی/چندنویشتاری.
+    ('dev/symbol_identity_v1090.py',
+                                     'one canonical symbol-identity layer; ISIN gate; card and bulk see the same rows'),
+    # مرحلۀ ۴ مأموریت بنیادی (۱۴۰۵-۰۷-۲۳): «واحدِ پول» چهار تعریفِ مستقل داشت
+    # و هیچ‌کدام به خودِ ردیف نگاه نمی‌کرد (ستونِ unit_norm درِ هیچ کوئریِ خوانده
+    # نمی‌شد). حالا مقیاس از codal_units و از unit_normِ همان ردیف می‌آید؛ ردیفِ
+    # بی‌واحد (۲۸۳ ردیف / ۱۲۶ نماد درِ این بانک) نه ×1e6 می‌شود نه صفر — رأیِ
+    # وابسته به مقیاس اعلام‌شده بی‌شاهد می‌ماند. «میلیون تومان» هم عمداً
+    # fail-closed است. بندها با کنترلِ منفی (ثابتِ 1e6 بازگشتی، LIKEِ SQL،
+    # همان ردیف با واحد در برابرِ بی‌واحد).
+    ('dev/codal_unit_scale_v1090.py',
+                                     'one money-unit definition; per-row scale; unitless never becomes a fabricated rial number'),
+    # بندِ ۵ مأموریت بنیادی (۱۴۰۵-۰۷-۲۳): contractِ خروجیِ پنج شاخص — رأی
+    # سه‌حالۀ واقعی، دلیلِ هر بی‌رأیی، ردپایِ «کدامِ گزارش» (tracing_no + دوره +
+    # منبع)، اعلامِ واحد (یا صریحِ «ستونِ واحد ندارد»)، و بی‌hardcode بودنِ
+    # اعدادِ مثالِ جزوه. رویِ `evaluate_v10`ِ واقعی و با دو کنترلِ منفی.
+    ('dev/fts_indicator_contract_v1091.py',
+                                     'five indicators return verdict + reason + report id + unit/source; no notebook number hardcoded'),
+    # مأموریت «خطِ دریافت خودکار کدال» (۱۴۰۵-۰۷-۲۴): صفِ پایدار رویِ همان
+    # `codal_extracted`، حالت‌هایِ متمایز (queued/running/done/empty/failed/
+    # unresolved)، checkpoint که با کارِ باز جلو نمی‌رود، backoff و بودجۀ تلاش،
+    # claimِ رقابتی، بازیابیِ claimِ بی‌صاحب، بودجۀ چرخه، و شمارش‌هایی که از
+    # خودِ جدول خوانده می‌شوند. بی‌شبکه (scraper تزریقی)، بی‌market.db.
+    ('dev/codal_pipeline_v1100.py',
+                                     'durable codal queue: states, checkpoint, backoff, claim race, restart recovery'),
+    # بندِ ۲ همان مأموریت: کشفِ خودکارِ اطلاعیه با checkpointِ شناسه‌محور
+    # (`pipeline_cursor`) به‌جای `MAX(publish_date)` خام — دیررس/اصلاحیه/تکراری/
+    # ناقص/قطعیِ شبکه، بودجۀ صفحۀ تمام‌نشده که نشانک را جلو نمی‌برد، و یکِ
+    # نگاشتِ «حرف ← اطلاعیه». بی‌شبکه (فیدِ تزریقی)، بی‌market.db.
+    ('dev/codal_discovery_v1101.py',
+                                     'automatic codal notice discovery: durable id checkpoint, late/revision/no-dup/network-failure'),
+    # بندِ ۳ همان مأموریت: Universe ← دفترِ عضویت. تازه/تغییرِ نام/تغییرِ شناسه/
+    # غیرفعال/حذف‌شده از هم جدا می‌مانند، صندوق و حقِ تقدم مثلِ شرکتِ عملیاتی
+    # رفتار نمی‌کنند، هویتِ مبهم ثبت می‌شود بی‌اتصالِ خودکار، و ابزارِ بی‌داده
+    # هیچ ردیفِ بنیادیِ ساختگی نمی‌گیرد. بی‌شبکه، بی‌market.db.
+    ('dev/codal_instrument_discovery_v1102.py',
+                                     'instrument universe ledger: new/rename/id-change/deactivated/removed, non-company classes held out'),
+    # بندِ ۶ همان مأموریت: زمان‌بندی مستقل از رابط. چراغِ بیدارباش از خودِ صف و
+    # checkpoint می‌آید (retry-at / backlog / discovery-gap)، خزندۀ دستی و worker
+    # خودکار رویِ یکِ IP نمی‌جنگند، رشتۀ دوم ساخته نمی‌شود، محاسبۀ سنگین درِ
+    # ساعتِ بازار موکول می‌شود بی‌گم‌شدنِ نماد، و دريچۀ فرمانی (CLI) رویِ بانکِ
+    # ایزوله کار می‌کند. دربه‌دیوارِ BORS_CODAL_OFFLINE + tripwire ⇒ صفرِ درخواست.
+    ('dev/codal_scheduler_v1103.py',
+                                     'ui-independent scheduler: dynamic wakeup, crawler-busy yield, single worker, deferred recalc, offline CLI'),
+    # بندِ ۷ همان مأموریت: محاسبۀ افزایشی. باطل‌کردن فقط نمادِ متاثر (نه کل
+    # `fts_results`)، نمادِ بی‌محاسبه دوباره علامت می‌خورد و ردیفِ مادی‌شدۀ کهنه‌اش
+    # هم می‌رود، نقشۀ وابستگی از `AXES_BY_SOURCE` می‌آید، و هیچ فرمول/آستانۀ
+    # تازه‌ای نوشته نمی‌شود. بی‌شبکه، بی‌market.db.
+    ('dev/codal_incremental_recalc_v1104.py',
+                                     'incremental fundamental recalculation: per-symbol invalidation, re-mark on failure, no invented thresholds'),
+    # مأموریت «کاراییِ بازارِ زنده + تطبیقِ وضعیتِ بازار» (۱۴۰۵-۰۷-۲۷): شمارشِ
+    # پروسه با PowerShell ~۵۹۰ms است و درِ هر پولینگِ UI پرداخته می‌شد
+    # (sync-state با بدنۀ ۱۴۱ بایت ⇒ p50 = 573ms). گاردِ ttl + stale-while-
+    # revalidate + تک‌پروازگی را قفل می‌کند و ثابت می‌کند `ttl_s=0` هنوز لحظه‌ای
+    # است و پاسخِ endpoint دست‌نخورده. بی‌شبکه، بی‌کشتنِ پروسه.
+    ('dev/proc_probe_cache_v1105.py',
+                                     'process probe: ttl + stale-while-revalidate + single-flight, endpoint payload and semantics unchanged'),
+    # مأموریتِ ۱۴۰۵-۰۷-۲۳، بندِ ۲.۲: همان دو قفل برایِ **پنل‌هایِ mstat**. سنجشِ
+    # این شب (`_audit/perf_live/loops_on_22h_*.jsonl`) نشان داد ttlِ تنها بس نبود —
+    # هر انقضا یکِ درخواستِ کاربر را ۲٬۵۷۰ms بلاک می‌کرد (board p95).
+    ('dev/mstat_swr_v1111.py',
+                                     'mstat panels: stale-while-revalidate + stale cap + single-flight, errors never cached, 3 negative controls'),
+    # مرحلۀ ۸ مأموریت «صحتِ داده + خروجیِ دیدهبان»: فایل خروجی **ساخته و باز
+    # می‌شود** (openpyxl/csv) — عدد درِ Excel سلولِ عددی است، `None` صفر نمی‌شود،
+    # ردپایِ منشأ/تازگی درِ صفحۀ دوم و انتهای CSV می‌نشیند، BOM و RFC 5987
+    # برجا می‌مانند، بدنه‌هایِ نامعتبر ۴۱۳/۴۲۲ می‌گیرند و یکِ کنترلِ منفی ثابت
+    # می‌کند سنسور صفرِ جعلی را می‌بیند. بی‌شبکه، بی‌market.db.
+    ('dev/watch_export_v1106.py',
+                                     'watchlist export: real xlsx/csv round-trip, numeric cells, nulls, provenance sheet, input gates'),
+    # بند ۴ همان مأموریت: سرانۀ فروش حقیقی ازِ `api/market.py` درِ `_DROP_FIELDS`
+    # دور ریخته می‌شد (سنجشِ هم‌نفس: ۱٬۲۹۱ ردیف MISSING_MAPPING در برابرِ سرانۀ
+    # خرید). گارد بیرون‌بودنِ هر دو کلید را با کنترلِ منفی رویِ `tmax`، یکِ
+    # قراردادِ مخرجِ صفر، نبودِ فرمولِ سومِ «قدرت خرید»، و اعلامِ هر دو درِ
+    # اسکیمای فرانت و ستونِ خروجی را قفل می‌کند. بی‌شبکه، بی‌بانک.
+    ('dev/per_capita_sell_v1107.py',
+                                     'per-capita sell reaches the wire: drop-list, shared zero-denominator rule, schema and export column'),
+    # خودآزمونِ همان گارد: شش نقصِ تاریخی (نیم‌فاصلۀ «شهر فرش»، پلکان+sبدِ بی‌پرچم،
+    # سبدِ تنها، نردبانِ EPS، گیتِ ISINِ خاموش، تناقضِ عنوان⇄ستون) درِ حافظه
+    # برگردانده می‌شوند و هر شش باید قرمز شود. سبزبودنِ گارد بی‌این ثابت نمی‌کند
+    # سنسور می‌بیند. بی‌market.db، بی‌شبکه، بی‌نوشت.
+    ('tools/codal_identity_sensor_selftest.py',
+                                     'the identity guard really detects the six historical defects (mutation control)'),
+    # همان لایه، همان پرونده‌هایِ v9.10.4 (پسوندِ رقمی) که از `symbol_aliases`ِ
+    # جایگشتی به `symbol_identity` منتقل شدند — با کنترلِ «دو صادرکننده زیرِ یک
+    # نام هرگز الحاق نمی‌شوند».
+    ('test_symbol_aliases.py',        'board-class digit suffix resolves only with ISIN evidence'),
     # هدفِ ۲ دورۀ audit پیش از FTS: چهار مسیرِ «داده تازه شد ولی برنامه کهنه جواب
     # داد» — کشِ اسکرینر پس ازِ سینکِ بازار/کدال، تولدِ زیرپروسۀ خزنده درِ EXE
     # (sys.executable خودِ EXE است)، کلیدِ سه کشِ چارت بی‌مبنایِ قیمت، و سریِ
@@ -266,6 +403,10 @@ SUITES = [
     # SMART-MONEY: «ورود پول هوشمند» و «کد به کد» عینِ دو فایلِ تازهٔ جزوه،
     # درِ همان tape_flags؛ ماتریسِ حدی/بی‌داده + سیم‌کشیِ رابطِ بی‌آینه.
     ('dev/tape_smartmoney_v1074.py', 'tape smart-money: two new file filters, one canonical judge'),
+    # TAPE-HISTORY: سابقۀ ماندگارِ «کدام فیلتر، کدام نماد، کدام روز» در user.db؛
+    # یک روز = یک ردیف (دفعاتِ ساختگی ممنوع)، «غیرفعال» ≠ «ثبت نشده»، و ماضی
+    # از دادهٔ امروز بازسازی نمی‌شود.
+    ('dev/tape_flag_history_v1.py', 'tape flag history: per-day record, no double count, honest gaps'),
     # TREND-FIXTURES: سه جامعۀ ساختگی (HH/HL، LH/LL، برابر) ⇒ رأیِ چارت ص ۲؛
     # ادعای محوری: روزانۀ صعودی وتوی هفتگی را نمی‌شکند؛ na ⇒ UNKNOWN نه REJECT.
     ('dev/fts_trend_fixtures_v1075.py', 'fts trend fixtures: weekly gate beats daily setup'),
@@ -273,10 +414,52 @@ SUITES = [
     # مبدأ و fallbackِ سالم، رویدادهایِ شرکتیِ منتشرشده، و وضعیت/تعلیق/نظارت/
     # پیام. چکِ ضدِ نشت: هیچ‌کدام به فیلتر/گیت/طبقۀ روند وصل نشوند.
     ('dev/tsetmc_p0_v1076.py', 'tsetmc p0: native client values, corporate events, state'),
+    # بند ۲ مأموریت (رأیِ مالک 1405-07-20): درصدِ حقیقی/حقوقی **ارزش‌محور** است،
+    # دو سمت مستقل، بی‌بازسازی از حجم — و تک‌تعریف درِ `client_split.py`.
+    ('dev/test_client_split_v1.py', 'real/legal share: value basis, both sides independent, no volume estimate'),
+    # بند ۷.۱ مأموریت: اسکرینر بقایایِ قیف را می‌خواند و هیچ دروازۀ دورزدن ندارد.
+    ('dev/test_screener_funnel_gate_v1.py',
+                                      'screener candidate = tape∧technicalfundamental pass; no bypass door'),
+    # بند ۶ مأموریت: مرکزِ اعلان از کدال، با ادغامِ تکراری و بی‌تيترِ ساختگی.
+    ('dev/test_notifications_v1.py',
+                                      'notification centre: codal-only source, explainable levels, dedupe'),
+    # بند ۵ مأموریت: مرحلِ جلسه از وضعیتِ رسمیِ بازار، و داوری بی‌مرحل ممنوع.
+    ('dev/test_market_phase_v1.py',
+                                      'session phase from the official market state; no verdict without a phase'),
+    # مأموریت 1405-07-20: وضعیتِ زمان‌مند — حکم بی‌مرحل و مقایسۀ ابتدای-روز-با-کل-روز ممنوع
+    ('dev/test_market_state_stages_v1.py',
+                                      'time-aware market state: staged verdict, one-sided partial liquidity, no lookahead'),
+    # بندِ ۴ مأموریتِ انتشار: Portable صریح (نشانۀ کنارِ EXE)، دادۀ جدا، پورتِ
+    # جدا، و «Inno درِ پرتابیل هرگز اجرا نمی‌شود».
+    ('dev/test_portable_v1.py',
+                                      'portable mode: explicit marker, isolated data/port, never spawns the installer'),
     # SINGLE-WRITER: دورِ P0 دو بک‌اند هم‌زمان رویِ یک market.db داشت (نسخۀ
     # ماندۀ 1.0.73 ستون‌هایِ تازه را با هر سینک NULL می‌کرد). این گارد همان
     # حالت را می‌گیرد؛ رویِ ماشینِ بدونِ PowerShell بی‌صدا skip می‌شود.
     ('dev/single_writer_guard.py', 'single writer: one backend per market.db'),
+    # FUNNEL REGISTRY: هفت فیلترِ docs/*.txt باید همه درِ رجیستریِ قیف باشند،
+    # sha256ِ هر منبع با فایلِ رویِ دیسک بخواند، هر backend_impl زنده باشد، و
+    # هر عددِ پارامتر درِ متنِ منبعش پیدا شود (کنترلِ منفی: تکانِ یک آستانه
+    # ruleset_version را عوض می‌کند). ساعت‌شنی عمداً زنجیرۀ تهی دارد تا هیچ
+    # فیلترِ بی‌منبعی برایش اختراع نشود.
+    ('dev/funnel_registry_v1.py', 'funnel registry: every txt filter pinned to its source'),
+    # FUNNEL ENGINE: داورِ canonical — اشتراکِ ترتیبی، وتوی هفتگی، سه
+    # حالتِ بنیادی، استثنایِ برچسب‌دار و رتبۀ تحویل. ۲۲ بندِ مأموریت، همگی
+    # با انتظارِ نوشته‌شدۀ بیرونِ موتور.
+    ('dev/funnel_engine_v1.py', 'funnel engine: ordered intersection, weekly gate, fund modes'),
+    # FUNNEL PRESET DISTINCT: هر Preset باید **خروجِ موتور** را عوض کند، نه فقط
+    # عنوانِ دکمه. این گارد تا پیش از این درِ `run_all_tests` ثبت نبود (باگِ P0:
+    # «تغییر Preset جدول را عوض نمی‌کند» سبز می‌ماند) و فقط رجیستری را می‌خواند؛
+    # حالا خروجیِ واقعیِ `FE.evaluate` رویِ fixture هم مقابله می‌شود، پس هیچ
+    # presetی نمی‌تواند بی‌صدا کپیِ دیگری شود.
+    ('dev/funnel_preset_distinct_v1.py', 'funnel presets: distinct chains, gates AND distinct engine output'),
+    # UNIVERSE LIVE: طبقه‌بندیِ وضعیتِ معاملاتی (معاملۀ انجام‌شده ≠ تغییرِ دفتر)،
+    # یکی‌کردنِ ردیفِ تکراریِ هم‌نام و کهنگی از سنِ خودِ بدنهٔ تابلو. ثبت نشدنی
+    # بود و درِ `run_all_tests` نبود؛ endpointِ `/api/universe/live` هم از
+    # `api/funnel.py` به `api/market.py` رفت (یکِ ردیاب، یکِ راننده).
+    ('dev/market_universe_v1.py', 'live trading-status universe: executed vs quoted, dedupe, staleness'),
+    ('dev/user_watchlist_v1.py', 'user watchlist CRUD: get() on a missing row, upsert identity, cap layering'),
+    ('dev/fts_trend_pit_v1.py', 'trend point-in-time: Saturday week bucket, closed-week immutability, no cache-key lookahead'),
     # SARKHATI Stage D: قراردادِ BrokerAdapter. هیچ کارگزاریِ واقعی صدا زده
     # نمی‌شود؛ بدلِ ما هم timeout را «پذیرفته‌شده درِ سرور، گم‌شده درِ کلاینت»
     # می‌سازد تا مسیرِ UNKNOWN_RESULT → RECONCILE و تله‌یِ retryِ کور قابلِ اثبات
@@ -300,6 +483,37 @@ SUITES = [
     # UNKNOWN_RESULT را بازنویسی نمی‌کند)؛ ULTRA بی‌prepare() رد می‌شود و
     # تکرار بی‌تأییدِ صریح یا بی‌سقفِ ارزش/تعداد اجرا نمی‌شود.
     ('dev/execution_service_v1.py', 'sarkhati: dry-run default, reconcile-only after unknown, limits'),
+    # مأموریتِ ۱۴۰۵-۰۷-۲۳، بندِ ۵ و ۶-۴: ردِّپایِ ماندگار رویِ user.db، قفلِ
+    # توقفِ اضطراری (رویِ دیسک، نه حافظه)، قاعدۀ fail-closed برایِ exposure/
+    # ضرر روزانه/نرخِ ارسال، بازیابیِ UNKNOWN پسِ restart، و ثبتِ درِ
+    # /api/execution/* درِ api_router + hiddenimports. آزمونِ رشتۀِ دوم و
+    # کنترلِ منفیِ سه‌گانه درِ همین فایل است.
+    ('dev/execution_ledger_v1108.py', 'sarkhati: durable audit trail, kill switch, fail-closed risk, wired HTTP door'),
+    # مأموریتِ ۱۴۰۵-۰۷-۲۴ (§۴-الف/ب و §۶): آداپتورِ واقعیِ EasyTrader/Orbis-MTS.
+    # ترافیک تزریقی است و بی‌نشست هیچ سوکتی باز نمی‌شود؛ ۲۰۰ با
+    # `isSuccessful:false` رد می‌شود (حتی با `id`)؛ timeout ⇒ UNKNOWN و هیچ
+    # ارسالِ دوباره؛ صف بی‌داده ⇒ None نه صفر؛ token درِ لاگ/ردِّپا/دیسک
+    # نمی‌ماند. سوئیتِ قراردادِ بالا (`run_contract`) رویِ همین آداپتور هم
+    # اجرا می‌شود — با یکِ استثنایِ ثبت‌شده که خطرِ همان case رویِ دفترِ خودِ
+    # بروکرِ بدیل دوباره سنجیده می‌شود.
+    ('dev/easytrader_adapter_v1113.py', 'easytrader adapter: injected transport, 2xx-is-not-acceptance, no blind resend'),
+    # فاز ۳ مأموریتِ ۱۴۰۵-۰۷-۲۴: ربات تا پیش‌ازِ این فقط *موتور* بود
+    # (`paper_trading.py` + ۵۴ سنجه) و هیچ endpoint و هیچ پنلی نداشت، پس درِ
+    # برنامه وجود نداشت. این گارد قراردادِ `api/bot.py` را می‌سنجد: پیش‌فرضِ
+    # کاغذی و خاموش، اجرایِ فقط با درخواستِ صریح، اعتبارسنجیِ بی‌پذیرشِ typo،
+    # سه قفلِ اجرایِ واقعی (env + capabilities از runtime + عبارتِ تأیید)،
+    # ردِّ HALTED، بازنگشتِ TRIPPED، no_data بی‌صفرِ جعلی، خطایِ بانک به‌جای 500،
+    # و نبودِ هرگونه credential درِ پاسخ.
+    ('dev/bot_api_v1114.py', 'bot API contract: paper by default, manual run only, three live gates, halt honored, no fabricated zero, no leaked session'),
+    # مأموریتِ ۱۴۰۵-۰۷-۲۳، بندِ ۶: رباتِ کاغذی و بک‌تست. سناریوهای ۱۷گانۀ
+    # بندِ ۶-۵ (سیگنال، کهنگی، توقف، دامنۀ قیمت، سقفِ حجم، timeout، تکرار،
+    # لغو، ضرر روزانه، kill switch، restart، reconcile، ردِّپا) به‌همراه
+    # بی‌نشتیِ آینده، بازتولیدپذیریِ digest، split زمانی و کنترلِ منفیِ سه‌گانه.
+    ('dev/bot_paper_v1109.py', 'trading bot: paper lifecycle, lookahead-free backtest, risk, kill switch, recovery'),
+    # خودِ «گزارشِ شمارش»: پارسرِ `dev/guard_counts.py` الگوهایِ واقعیِ گاردها
+    # (سنجه/خطا، سبز/قرمز، OK — N/M، N سرخ، tokenهای PASS/FAIL) را می‌شناسد و
+    # چیزی را که شمارش ندارد صریح «بی‌شمارش» می‌گوید — نه «۰ pass / ۰ fail».
+    ('dev/guard_counts_v1110.py', 'harness: guard outputs are actually counted, silence is reported as silence'),
     # گاردِ متنِ فارسی (بیرونِ سرخطی هم لازم است): سه خانۀِ خطا که درِ همین
     # ریپو واقعی دیده شده — نویسهٔ CJK جاافتاده وسطِ واژۀِ فارسی، رقمِ
     # شمارۀِ بخش که بی‌صدا می‌افتد، و ك/ي عربی درِ فایل‌هایِ سرخطی. هر سه
@@ -323,6 +537,9 @@ SUITES = [
     # می‌بیند، بدنۀ RAM-overlay سطر‌به‌سطر همان بدنۀ SQLite است، و
     # /api/market/delta یا exact است یا صریح `full` — هیچ‌وقت نصفه.
     ('dev/market_hot_state_v1077.py', 'hot state: field-aware diff, RAM==SQL board, honest delta'),
+    # Stage-2 «در یک نگاه»: سه قیمتِ روزانه از ستونِ واقعی، بی‌نشتِ عمق درِ تابلو،
+    # و تطابقِ نماد درِ /api/order-book (نبودِ مقدار ⇒ حذفِ کلید، نه صفر/جایگزین).
+    ('dev/sidebar_market_fields_v1082.py', 'sidebar Stage-2: p_first/p_max/p_min from real cols, lazy order-book binding'),
     # #119 + #120 (مانیتورینگِ زندهٔ ۱۴۰۵-۰۷-۰۴): روزِ client_type باید روزِ
     # نشستِ معامله‌شده باشد، پنجرۀِ بازار یک‌جا تعریف شود، و «نبودنِ داده»
     # دماسنج را «نامساعد» نکند.
@@ -332,6 +549,12 @@ SUITES = [
     # صفرِ ساختگی در مقایسهٔ ترکیبِ سبد با هدف.
     ('dev/portfolio_weights_v1035.py',
                                      'portfolio weights: value-based + no fake zero'),
+    # BOOT-1 (۱۴۰۵-۰۷-۱۷): اولین اجرا باید پیشرفت نشان دهد. دو مسیرِ ساختِ
+    # market.db (دریافت از Release، استخراجِ lzma) عددِ واقعی می‌دهند و صفحۀ
+    # بوتِ فارسی همان‌ها را سرو می‌کند؛ بی‌این گارد «صفحه سفیدِ بی‌خبر» دوباره
+    # برمی‌گردد.
+    ('dev/boot_page_v1081.py',
+                                     'boot page: real download/extract progress, RTL page, handoff + error'),
 ]
 
 # تست‌هایِ Node (رابطِ جدول بنیادی با DOMِ ساختگی) — اگر node نصب نباشد رد میشوند
@@ -347,6 +570,9 @@ FIXTURE_GEN = 'dev/make_fts_ui_fixture.py'
 
 env = dict(os.environ, PYTHONIOENCODING='utf-8')
 bad = []
+#: سوئیت‌هایی که هیچ شمارشِ واقعی چاپ نکردند — «OK» اند ولی «چند بررسی» نامعلوم.
+#: پیش از این همین‌ها «0 pass / 0 fail» می‌شدند و سکوت را می‌شد با سبزی اشتباه گرفت.
+uncounted = []
 
 
 def run(argv, label):
@@ -361,24 +587,17 @@ def run(argv, label):
         bad.append(label)
         return
     txt = (r.stdout or '') + (r.stderr or '')
-    n = len(re.findall(r'\bPASS\b', txt))
-    f = len(re.findall(r'\bFAIL\b', txt))
-    m = re.search(r'(\d+)/(\d+) passed', txt)
-    # گاردهای فارسیِ تازه (v1.0.33+) خطۀ «N بررسی سبز، M شکست» می‌دهند؛ بدونِ
-    # این، گزارشِ مجموعه «0 pass / 0 fail» چاپ می‌شد و هیچ‌کس نمی‌فهمید چه چیزی
-    # واقعاً سبز شده است.
-    mf = re.search(r'(\d+) \u0628\u0631\u0631\u0633\u06cc \u0633\u0628\u0632\u060c (\d+) \u0634\u06a9\u0633\u062a', txt)
-    mp = re.search(r'(\d+) passed[ ,/]+(\d+) failed', txt)
-    if m:
-        detail = '%s/%s' % (m.group(1), m.group(2))
-    elif mf:
-        detail = '%s/%s' % (mf.group(1), int(mf.group(1)) + int(mf.group(2)))
-    elif mp:
-        detail = '%s/%s' % (mp.group(1), int(mp.group(1)) + int(mp.group(2)))
-    else:
-        detail = '%d pass / %d fail' % (n, f)
-    ok = (r.returncode == 0)
-    print('  %s %-40s rc=%s | %s' % ('OK  ' if ok else 'FAIL', label, r.returncode, detail))
+    # شمارش از `dev/guard_counts.summarize` می‌آید، نه از اینجا: پیش‌تر تنها سه
+    # الگو شناخته می‌شد و بقیه با `PASS`/`FAIL` پر می‌شدند، پس گاردی که
+    # «۱۲ سنجه، ۰ خطا» چاپ می‌کرد «۰ pass / ۰ fail» می‌شد — سکوت درِ لباسِ
+    # موفقیت. حالا یا شمارشِ واقعی هست، یا صریح «بی‌شمارش».
+    s = summarize(txt, r.returncode)
+    ok = s['ok']
+    if not s['countable']:
+        uncounted.append(label)
+    print('  %s %-40s rc=%s | %s%s' % ('OK  ' if ok else 'FAIL', label, r.returncode,
+                                       s['detail'],
+                                       '' if s['countable'] else '  [\u0628\u06cc\u200c\u0634\u0645\u0627\u0631\u0634]'))
     if not ok:
         bad.append(label)
         print('\n'.join('       ' + l for l in txt.strip().split('\n')[-12:])
@@ -394,5 +613,9 @@ if os.path.exists(FIXTURE_GEN):
 for script, label in JS_SUITES:
     run(['node', script.replace('/', os.sep)], label)
 
+total_suites = len(SUITES) + len(JS_SUITES) + (1 if os.path.exists(FIXTURE_GEN) else 0)
+print('\n%d suite counted, %d silent (exit-code only)' % (total_suites - len(uncounted), len(uncounted)))
+if uncounted:
+    print('  silent: ' + ', '.join(uncounted))
 print('\n%s' % ('ALL SUITES PASSED' if not bad else 'FAILED: ' + ', '.join(bad)))
 sys.exit(1 if bad else 0)

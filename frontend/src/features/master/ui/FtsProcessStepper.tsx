@@ -1,5 +1,6 @@
 import { Link } from 'react-router';
-import type { FunnelStageKey } from '../lib/ftsFunnel';
+import { toFaDigits } from '@shared/lib/fmt';
+import type { FunnelStageKey, StageSummary } from '../lib/ftsFunnel';
 
 export const FUNNEL_STAGES = [
   { key: 'tape' as FunnelStageKey, index: 1, short: 'S', title: 'تابلوخوانی', page: 'گام ۱' },
@@ -15,43 +16,78 @@ export function funnelStagePath(stage: FunnelStageKey, preset?: string, symbol?:
   return `/master?${q.toString()}`;
 }
 
+/** شمارندۀ هر تب = تعدادِ نمادهایی که **از همان گام عبور کرده‌اند** — یعنی
+ *  `pass`ِ خودِ موتور رویِ جامعۀ غربالگری، نه شمارِ ردیف‌هایِ جدول و نه شمارِ
+ *  بررسی‌شدگان. بارگذاری/خطا/خالی سه حالتِ جدا هستند تا هیچ‌کدام با «صفر
+ *  عبوری» اشتباه نشود (رأیِ مالک ۱۴۰۵-۰۷-۲۱). */
+function stageBadge(s: StageSummary | undefined, state: 'ready' | 'loading' | 'error') {
+  if (state === 'error') return { text: '!', tone: 'border-accent-red/50 bg-accent-red/15 text-accent-red',
+    title: 'داوریِ این گام از سرور نرسید — شمارندۀ گام پیشین را ندارد' };
+  if (state === 'loading' && !s) return { text: '…', tone: 'border-border-c bg-bg-primary/60 text-text-muted',
+    title: 'در حالِ محاسبه' };
+  const pass = s?.pass ?? 0;
+  return {
+    text: toFaDigits(pass),
+    tone: pass > 0
+      ? 'border-accent-green/40 bg-accent-green/15 text-accent-green'
+      : 'border-border-c bg-bg-primary/60 text-text-muted',
+    title: s
+      ? `${toFaDigits(pass)} عبوری از این گام — ${toFaDigits(s.reject)} رد، `
+        + `${toFaDigits(s.pending)} سنجیده‌نشده، ${toFaDigits(s.unavailable)} بی‌منبع`
+      : '',
+  };
+}
+
+/** گام‌هایِ قیف — چهار تبِ خوانا با شمارندۀ عبوری‌هایِ همان گام.
+ *
+ *  پیشِ این هر گام کارتِ ۸×۸ با سطرِ دوم بود و `min-w-[720px]` می‌خواست؛ مالک آن
+ *  را «navigationِ بزرگ» شمرد و به چهار برچسبِ فشرده رسیدیم (۱۴۰۵-۰۷-۱۹). درِ
+ *  دورِ ۱۴۰۵-۰۷-۲۱ همان برچسب‌ها خیلی ریز بودند (text-2xs، py-1) و بی‌عدد؛
+ *  حالا قدِ ثابتِ py-2 با متنِ ۱۳px و عددِ پرانتزی — نه کارتِ دوباره، نه نوارِ بلند. */
 export function FtsProcessStepper({
   active,
   preset,
   symbol,
+  counts,
+  state = 'ready',
 }: {
   active: FunnelStageKey;
   preset?: string;
   symbol?: string | null;
+  counts?: Partial<Record<FunnelStageKey, StageSummary>>;
+  state?: 'ready' | 'loading' | 'error';
 }) {
   return (
-    <nav aria-label="مراحل قیف FTS" data-testid="fts-process-stepper" className="w-full overflow-x-auto pb-1">
-      <div className="flex min-w-[720px] items-center gap-2">
-        {FUNNEL_STAGES.map((stage, i) => {
+    <nav aria-label="مراحل غربالگری FTS" data-testid="fts-process-stepper" className="w-full">
+      <div className="flex flex-wrap items-stretch gap-1.5">
+        {FUNNEL_STAGES.map((stage) => {
           const isActive = stage.key === active;
+          const badge = stageBadge(counts?.[stage.key], state);
           return (
-            <div key={stage.key} className="flex min-w-0 flex-1 items-center gap-2">
-              <Link
-                to={funnelStagePath(stage.key, preset, symbol)}
-                aria-current={isActive ? 'step' : undefined}
-                className={
-                  isActive
-                    ? 'flex min-w-0 flex-1 items-center gap-2 rounded-2xl border border-accent-blue/60 bg-accent-blue/10 px-3 py-2 shadow-sm'
-                    : 'flex min-w-0 flex-1 items-center gap-2 rounded-2xl border border-border-c bg-bg-card/50 px-3 py-2 text-text-muted transition-colors hover:border-accent-blue/40 hover:text-text-primary'
-                }
-              >
-                <span className={isActive ? 'flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-accent-blue/20 text-xs font-black text-accent-blue' : 'flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-border-c bg-bg-primary text-xs font-black text-text-muted'}>
-                  {stage.short}
-                </span>
-                <span className="min-w-0">
-                  <span className="block text-2xs font-black">{stage.page} · {stage.title}</span>
-                  <span className="mt-0.5 block truncate text-3xs text-text-muted">
-                    {isActive ? 'اکنون در این مرحله هستید' : 'رفتن به این مرحله'}
-                  </span>
-                </span>
-              </Link>
-              {i < FUNNEL_STAGES.length - 1 ? <span className="shrink-0 text-lg text-text-muted" aria-hidden>←</span> : null}
-            </div>
+            <Link
+              key={stage.key}
+              to={funnelStagePath(stage.key, preset, symbol)}
+              aria-current={isActive ? 'step' : undefined}
+              data-testid={`fts-step-${stage.key}`}
+              title={`${stage.page}: ${stage.title} — ${badge.title}`}
+              className={`flex items-center gap-1.5 rounded-xl border px-3 py-2 text-[13px] leading-none transition-colors ${
+                isActive
+                  ? 'border-accent-blue bg-accent-blue/15 font-black text-accent-blue'
+                  : 'border-border-c bg-bg-card/60 font-bold text-text-secondary hover:border-accent-blue/50 hover:text-text-primary'
+              }`}
+            >
+              <span className={`num grid h-4.5 w-4.5 shrink-0 place-items-center rounded-md border text-[10px] font-black ${
+                isActive ? 'border-accent-blue/50 bg-accent-blue/20 text-accent-blue'
+                         : 'border-border-c bg-bg-primary/70 text-text-muted'
+              }`}>
+                {toFaDigits(stage.index)}
+              </span>
+              <span className="whitespace-nowrap">{stage.title}</span>
+              <span data-testid={`fts-step-count-${stage.key}`}
+                    className={`num shrink-0 rounded-md border px-1.5 py-0.5 text-[11px] font-black ${badge.tone}`}>
+                {badge.text}
+              </span>
+            </Link>
           );
         })}
       </div>

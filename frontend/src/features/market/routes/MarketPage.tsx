@@ -1,19 +1,18 @@
 // features/market/routes/MarketPage.tsx -- صفحه تابلو بازار (ایجنت 3)
 import { useEffect, useMemo } from 'react';
 import type { MarketRow } from '@shared/types/marketRow';
+import { toFaDigits } from '@shared/lib/fmt';
 import { publishSignals } from '@shared/lib/signalBus';
 import { matchFa } from '@shared/lib/normalizeFa';
 import { useSymbolStore } from '@shared/stores/symbolStore';
 import { useMarketStore } from '@shared/stores/marketStore';
+import { useScreenFilterStore } from '@shared/stores/screenFilterStore';
 import { useMarketFeed } from '../api/useMarketFeed';
-import { useMarketPulse } from '../api/useMarketPulse';
-import { classifyAssetType, type AssetType } from '../lib/assetType';
+import { ASSET_LABELS, classifyAssetType, type AssetType } from '../lib/assetType';
 import { dropNumericSuffixRows } from '../lib/tapeFts';
 import { rowsToTapeSignals } from '../signals/tapeSignals';
-import { matchesDirection, matchesExitAccum, matchesVolRatio, useTapeStore } from '../stores/tapeStore';
-import { countHiddenMatches, countQuickMatches, MarketFilters } from '../components/MarketFilters';
-import { MarketPulseBar } from '../components/MarketPulseBar';
-import { MicroChartsDrawer } from '../components/MicroChartsDrawer';
+import { matchesDirection, matchesExitAccum, matchesVolRatio, QUICK_LABELS, useTapeStore, type QuickFilter } from '../stores/tapeStore';
+import { countHiddenMatches, countQuickFilters, MarketFilters } from '../components/MarketFilters';
 import { TapeTable } from '../components/TapeTable';
 import { WatchDrawer } from '../components/WatchDrawer';
 
@@ -34,18 +33,25 @@ export function applyFilters(
   volRatioMin: number,
   exitAccum = false,
   filterConfig?: TapeFilterConfig,
+  /** «اشتراک» = همهٔ چیپ‌های روشن لازم‌اند؛ «اجتماع» = کم‌از‌یکی کافی است.
+   *  تا پیش از این جدولِ تابلو فقط اشتراک را می‌شناخت و کلیدِ اجتماع هیچ اثری
+   *  روی‌اش نداشت (رأیِ مالک ۱۴۰۵-۰۷-۱۹: «هر دو رو نشون بده، هم مشترک هارو»). */
+  quickLogic: 'and' | 'or' = 'and',
 ): MarketRow[] {
   const q = query.trim();
+  const passes = (r: MarketRow, f: string) =>
+    filterConfig
+      ? tapeFilterVerdict(r, f, filterConfig)
+      : !!(r as unknown as Record<string, unknown>)[f];
   return rows.filter((r) => {
     if (q && !(matchFa(r.symbol, q) || matchFa(r.name, q))) return false;
     if (sector && (r.sector_name ?? '') !== sector) return false;
     if (!assetTypes.includes(classifyAssetType(r))) return false;
-    for (const f of quickFilters) {
-      if (filterConfig) {
-        if (!tapeFilterVerdict(r, f, filterConfig)) return false;
-      } else {
-        if (!(r as unknown as Record<string, unknown>)[f]) return false;
-      }
+    if (quickFilters.length) {
+      const hit = quickLogic === 'or'
+        ? quickFilters.some((f) => passes(r, f))
+        : quickFilters.every((f) => passes(r, f));
+      if (!hit) return false;
     }
     // #197: جدول بی‌پیش‌فرض فقط «همین نشست» را می‌نمایاند؛ ولی وقتی کاربر
     // خودش نمادی را نوشته منظورش دیدنِ همان نماد است، پس جستجو از این بند
@@ -60,12 +66,13 @@ export function applyFilters(
 
 export default function MarketPage() {
   const { data, isLoading, isError, refetch, dataUpdatedAt, isFetching } = useMarketFeed();
-  const { data: pulse, isLoading: pulseLoading } = useMarketPulse();
   const rows = useMemo(() => data?.data ?? [], [data]);
 
   const query = useTapeStore((s) => s.query);
   const assetTypes = useTapeStore((s) => s.assetTypes);
   const quickFilters = useTapeStore((s) => s.quickFilters);
+  // کلیدِ اشتراک/اجتماع همان است که چیپ‌ها نشان می‌دهند و قیف هم می‌فرستد.
+  const screenLogic = useScreenFilterStore((s) => s.logic);
   const sector = useTapeStore((s) => s.sector);
   const liveOnly = useTapeStore((s) => s.liveOnly);
   const direction = useTapeStore((s) => s.direction);
@@ -78,6 +85,7 @@ export default function MarketPage() {
   const symbol = useSymbolStore((s) => s.symbol);
   const setSymbol = useSymbolStore((s) => s.setSymbol);
   const setSector = useTapeStore((s) => s.setSector);
+  const resetFilters = useTapeStore((s) => s.resetFilters);
   const refetchIntervalMs = useMarketStore((s) => s.refetchIntervalMs);
   const setRefetchIntervalMs = useMarketStore((s) => s.setRefetchIntervalMs);
 
@@ -141,14 +149,22 @@ export default function MarketPage() {
     [hiddenRows, assetTypes, liveOnly, query, sector, showNumericSuffix, tapeFilterConfig],
   );
 
-  const quickMatches = useMemo(
+  // شمارنده‌ها به نامزدِ جاری گره خورده‌اند: با یک چیپِ روشن، عددِ بقیه می‌گوید
+  // «از این‌ها چندتا آن فیلتر را هم دارند» (رأیِ مالک ۱۴۰۵-۰۷-۲۱).
+  const quickCounts = useMemo(
     () =>
-      countQuickMatches(
-        filterBase as unknown as Parameters<typeof countQuickMatches>[0],
+      countQuickFilters(
+        filterBase as unknown as Parameters<typeof countQuickFilters>[0],
         tapeFilterConfig,
+        quickFilters,
+        screenLogic,
       ),
-    [filterBase, tapeFilterConfig],
+    [filterBase, tapeFilterConfig, quickFilters, screenLogic],
   );
+  const quickMatches = quickCounts.matched;
+
+  // چند ردیف هر فیلتر رویشان اجرا نشده (مأموریت P0) — فقط در تولتیپِ چیپ می‌آید.
+  const quickUnevaluated = quickCounts.unevaluated;
 
   const filtered = useMemo(
     () =>
@@ -166,11 +182,39 @@ export default function MarketPage() {
             volRatioMin,
             exitAccum,
             tapeFilterConfig,
+            screenLogic,
           ),
-    [filterBase, query, assetTypes, quickFilters, sector, liveOnly, direction, volRatioOn, volRatioMin, exitAccum, tapeFilterConfig],
+    [filterBase, query, assetTypes, quickFilters, sector, liveOnly, direction, volRatioOn, volRatioMin, exitAccum, tapeFilterConfig, screenLogic],
   );
 
   const signals = useMemo(() => rowsToTapeSignals(filtered), [filtered]);
+
+  /**
+   * جدولِ خالی باید بگوید *کدام در* ردیف‌ها را نگه داشته است. سنجشِ زنده:
+   * «فقط بازار پایه» جدول را صفر می‌کرد و تنها راهنما «فیلترها را کم کن» بود؛
+   * کاربر نمی‌فهمید نمادها پنهان‌اند یا واقعاً واجدِ شرط نیستند.
+   */
+  const emptyNote = useMemo(() => {
+    if (filtered.length > 0) return null;
+    const doors: string[] = [];
+    if (quickFilters.length) {
+      const names = quickFilters.map((f) => QUICK_LABELS[f as QuickFilter]).join('، ');
+      doors.push(`${screenLogic === 'or' ? 'اجتماعِ' : 'اشتراکِ'} ${names}`);
+    }
+    if (sector) doors.push(`صنعتِ «${sector}»`);
+    if (query.trim()) doors.push(`جستجوی «${query.trim()}»`);
+    if (liveOnly) doors.push('فقط زنده');
+    if (!showNumericSuffix) doors.push('پسوندِ عددی پنهان');
+    if (assetTypes.length === 1) doors.push(`فقط بازارِ «${ASSET_LABELS[assetTypes[0]]}»`);
+    const hidden = quickFilters.reduce(
+      (s, f) => s + (hiddenInfo?.[f as QuickFilter]?.count ?? 0),
+      0,
+    );
+    const head = doors.length ? doors.join(' · ') : 'بدون فیلترِ سریع';
+    return hidden > 0
+      ? `${head} — ${toFaDigits(hidden)} نمادِ واجدِ شرایط با فیلترهای فعلی پنهان مانده؛ فیلترها را تغییر دهید`
+      : `${head} — با فیلترهای فعلی، هیچ نمادی واجدِ شرایط نیست`;
+  }, [filtered.length, quickFilters, screenLogic, sector, query, liveOnly, showNumericSuffix, assetTypes, hiddenInfo]);
 
   /**
    * انتشار سیگنال های تابلو در باس: تک اسلات ایجنت «تابلو» روی هر نماد.
@@ -188,15 +232,14 @@ export default function MarketPage() {
 
   return (
     <div className="flex w-full max-w-none flex-col gap-2">
-      <MarketPulseBar pulse={pulse ?? null} isLoading={pulseLoading} />
-
-      {/* نمودارهای جریان سفارش‌ها بالای نوار تابلو */}
-      <MicroChartsDrawer />
-
+      {/* رأیِ مالک (۱۴۰۵-۰۷-۲۲): سه بلوکِ «وضعیت بازار»، «نبض» و «نمودارهای
+          درون‌روز» تکرارِ تبِّ مستقلِ «وضعیت بازار»اند و ازِ این صفحه بیرون
+          رفتند؛ تابلو فقط فیلتر + جدول + کشویِ نظارت می‌ماند. */}
       <MarketFilters
         sectors={sectors}
         matches={quickMatches}
         hiddenInfo={hiddenInfo}
+        unevaluated={quickUnevaluated}
         shown={filtered.length}
         total={rows.length}
         pollMs={refetchIntervalMs}
@@ -215,6 +258,8 @@ export default function MarketPage() {
         isLoading={isLoading}
         isError={isError}
         onRetry={refetch}
+        emptyNote={emptyNote}
+        onClearFilters={resetFilters}
       />
       <WatchDrawer rows={filtered} onSelect={setSymbol} onPickSector={setSector} />
     </div>

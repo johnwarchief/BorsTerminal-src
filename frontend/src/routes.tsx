@@ -1,4 +1,4 @@
-import { Link, type RouteObject } from 'react-router';
+import { Link, Navigate, type RouteObject } from 'react-router';
 import { Lazy } from '@shared/components/Lazy';
 
 const page = (load: () => Promise<{ default: React.ComponentType }>) => (
@@ -6,8 +6,23 @@ const page = (load: () => Promise<{ default: React.ComponentType }>) => (
 );
 
 export const mainRoutes: RouteObject[] = [
-  { path: '', element: page(() => import('@features/market/routes/MarketPage')) },
+  // رأیِ مالک (۱۴۰۵-۰۷-۱۷): صفحهٔ نخستِ برنامه غربالگری FTS است. مسیرِ خالی
+  // redirect می‌شود نه element، تا آدرسِ نوارِ نشانی همان /master بماند و
+  // نوارِ کناری هم درست روشن شود.
+  { path: '', element: <Navigate to="/master" replace /> },
   { path: 'market', element: page(() => import('@features/market/routes/MarketPage')) },
+  // رأیِ مالک (۱۴۰۵-۰۷-۲۰): «وضعیت بازار» باید از ناوبری باز شود، نه فقط نوارِ
+  // بالایِ تابلو باشد.
+  {
+    path: 'market-status',
+    element: page(() => import('@features/market/routes/MarketStatusPage')),
+  },
+  // بند ۶ مأموریت (1405-07-20): مرکزِ اعلانِ درون‌برنامه از ناوبری باز می‌شود؛
+  // منبعش اطلاعیه‌هایِ کدالِ خودِ برنامه است، نه یک فیدِ بیرونیِ تازه.
+  {
+    path: 'notifications',
+    element: page(() => import('@features/market/routes/NotificationsPage')),
+  },
   {
     path: 'fundamental/:symbol?',
     element: page(() => import('@features/fundamental/routes/FundamentalPage')),
@@ -26,6 +41,13 @@ export const mainRoutes: RouteObject[] = [
     element: page(() => import('@features/master/routes/StrategyTreePage')),
   },
   { path: 'portfolio', element: page(() => import('@features/portfolio/routes/PortfolioPage')) },
+  // رأیِ مالک (1405-07-20): دیده‌بان تبِّ مستقل است، ولی درِ ناوبری زیرِ گروهِ
+  // پرتفوی نشان داده می‌شود. خودِ زیرتب درِ /portfolio هم دست‌نخورده می‌ماند تا
+  // نشانی‌هایِ پیشین نشکنند.
+  {
+    path: 'watch',
+    element: page(() => import('@features/portfolio/components/WatchMarketWorkspace')),
+  },
   {
     path: 'master/:symbol?',
     element: page(() => import('@features/master/routes/MasterPage')),
@@ -38,7 +60,7 @@ export const mainRoutes: RouteObject[] = [
         <h1 className="text-lg font-black text-text-primary">این نشانی در اپ ثبت نشده است</h1>
         <p className="text-2xs text-text-muted" data-testid="route-not-found-path">{window.location.hash}</p>
         <Link to="/master" className="rounded-xl border border-accent-blue/50 px-3 py-1.5 text-2xs font-bold text-accent-blue">
-          رفتن به قیف FTS
+          رفتن به غربالگری FTS
         </Link>
       </div>
     ),

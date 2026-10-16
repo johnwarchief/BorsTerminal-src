@@ -194,7 +194,15 @@ class MockBrokerAdapter(BrokerAdapter):
                               "mock: cancel unsupported (هیچ مرجعِ بازبینی‌شده‌ای "
                               "لغو را پیاده نکرده — §۷-الف)")
         self.wire_calls.append(f"cancel:{broker_order_id}")
-        return broker_order_id in self.server_orders
+        hit = self.server_orders.get(broker_order_id)
+        if hit is None:
+            return False
+        # doubles باید با خودشان سازگار باشند: «لغو موفق بود» و بعد در
+        # `get_order` همان سفارش UNKNOWN بماند، یعنی سنسوری که رویِ این بدل
+        # نوشته می‌شود وضعیتِ لغو را هرگز نمی‌بیند.
+        hit.order_state = OrderState.CANCELLED
+        hit.note("cancelled by mock broker")
+        return True
 
     # ---- کمکی -------------------------------------------------------------
     def _new_record(self, draft: OrderDraft) -> ExecutionRecord:

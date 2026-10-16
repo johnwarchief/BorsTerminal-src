@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { SidebarWatchlist } from './SidebarWatchlist';
 import { SidebarFtsSignals } from './SidebarFtsSignals';
-import { SidebarOrderBook } from './SidebarOrderBook';
+import { OrderBookFive } from '@shared/components/OrderBookFive';
 import { SidebarActiveLevels, type ActiveLevelsView } from './SidebarActiveLevels';
 
 export type SidebarTabId = 'watch' | 'fts' | 'book' | 'levels';
@@ -106,7 +106,7 @@ export function TechnicalSidebar({
           <div role="tabpanel" className="min-h-0 flex-1 overflow-y-auto p-2" data-testid="sidebar-body">
             {tab === 'watch' ? <SidebarWatchlist onSelect={onSelect} /> : null}
             {tab === 'fts' ? <SidebarFtsSignals onSelect={onSelect} /> : null}
-            {tab === 'book' ? <SidebarOrderBook symbol={symbol} /> : null}
+            {tab === 'book' ? <OrderBookFive symbol={symbol} testId="sidebar-orderbook" /> : null}
             {tab === 'levels' ? <SidebarActiveLevels active={active} /> : null}
           </div>
         </div>

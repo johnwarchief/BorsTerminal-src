@@ -12,9 +12,11 @@ import {
   JET_LADDER,
   LOW_BASE_SESSIONS,
   ROOBI_ZD1_MIN,
+  buyerPowerRatio,
   detectJetBreakout,
   filterVolumeRatio,
   filterVolumeRatioWithToday,
+  resistanceLadderHigh,
 } from './tapeMath';
 
 /** نقاطِ پلکانِ مقاومتِ جزوه — همان JET_LADDER، تا انتخابِ UI گم نشود. */
@@ -385,7 +387,7 @@ export function evaluateDynamicQuickFilter(
     case 'f_smart_flow':
       return matchSmartFlowFilter(r, cfg.smartFlow);
     default:
-      return Boolean((r as unknown as Record<string, unknown>)[filterKey]);
+      return (r as unknown as Record<string, unknown>)[filterKey] === true;
   }
 }
 
@@ -407,8 +409,105 @@ export function hasTapeFormulaInputs(r: MarketRow): boolean {
  * است؛ ستونِ «الگو»ی بی‌بجِ ویرایشِ ۱٫۰٫۴۴ نباید دوباره ساخته شود.
  */
 export function tapeFilterVerdict(r: MarketRow, filterKey: string, cfg: TapeFilterConfig): boolean {
-  if (!hasTapeFormulaInputs(r)) {
-    return Boolean((r as unknown as Record<string, unknown>)[filterKey]);
+  return tapeFilterState(r, filterKey, cfg) === 'pass';
+}
+
+/**
+ * آیا این فیلتر روی این ردیف **اصلاً اندازه‌گیری شدنی بود**؟
+ *
+ * فرمول‌ها نبودنِ ورودی را «رد» می‌کنند — عینِ `try/catch`ِ ExecFilter و قیدِ
+ * جزوه که بی‌داده حقِ قبول نیست — و آن داوری این‌جا عوض نمی‌شود. این تابع فقط
+ * علت را از «زیرِ آستانه» جدا می‌کند. نبودنش گران بود: سنجشِ زنده رویِ همان
+ * تابلو نشان داد `vol_ratio_file` در ۴٬۱۰۹ از ۵٬۹۴۱ ردیف null است (پنجرۀ ۳۰
+ * نشستِ فایل کامل نیست) و `hist_sessions`/`min_low_29`/`prior30_vol` در ۲٬۹۸۱
+ * ردیف نمی‌آیند — یعنی بیشترِ «رد»هایِ چیپ دروغِ «سنجیده شد و نشد» بودند.
+ * آستانه‌ای که خودش خاموش است (صفر) در حساب نمی‌آید؛ گیتِ خاموش نسنجیده نیست.
+ */
+export function tapeFilterUnmeasured(
+  r: MarketRow,
+  filterKey: string,
+  cfg: TapeFilterConfig,
+): boolean {
+  const volMissing = (cfg.basis?.includeTodayInVolumeBase ? filterVolumeRatioWithToday(r) : filterVolumeRatio(r)) == null;
+  const tradesMissing = num(r.z_tot_tran) == null;
+  const lastMissing = num(r.p_last) == null;
+  const closeMissing = (num(r.p_closing) ?? 0) <= 0;
+  const gate = (min: number) => min > 0;
+
+  switch (filterKey) {
+    case 'f_clock':
+      return lastMissing || closeMissing || tradesMissing
+        || (cfg.clock.requireGoldenHour && num(r.price_yesterday) == null)
+        || (gate(cfg.clock.minVolRatio) && volMissing);
+    case 'f_susp':
+      return tradesMissing
+        || (cfg.suspiciousVolume.timeframe === 'prev_day_dod'
+            ? num(r.vol_dod) == null
+            : gate(cfg.suspiciousVolume.minRatio) && volMissing);
+    case 'f_jet': {
+      // جت برخلافِ بقیه مبناء را بی‌قیدِ آستانه می‌خواهد (mult==null پیش از هر
+      // مقایسه رد می‌کند) و پلکان را هم تا همان lookback.
+      const power = r.buyer_power_raw != null
+        ? num(r.buyer_power_raw)
+        : buyerPowerRatio(r.buy_i_vol, r.buy_count_i, r.sell_i_vol, r.sell_count_i);
+      return closeMissing || lastMissing || tradesMissing || volMissing
+        || power == null || num(r.percent_last) == null
+        || resistanceLadderHigh(r, cfg.jet.lookbackDays) == null;
+    }
+    case 'f_roobi':
+      return (num(r.tmin) ?? 0) <= 0 || num(r.buy_q1_cnt) == null || num(r.buy_q1_vol) == null
+        || num(r.percent_last) == null || (gate(cfg.roobi.minVolRatio) && volMissing)
+        || (cfg.roobi.minBuyerPower > 0 && num(r.buyer_power) == null);
+    case 'f_noqteh':
+      return closeMissing || fileLow(r, cfg.basis) == null || tradesMissing
+        || (gate(cfg.noqteh.minVolRatio) && volMissing);
+    case 'f_smart_flow':
+      return num(r.buyer_power) == null || volMissing;
+    case 'f_smart':
+    // «پول هوشمند» و «کدبه‌کد» درِ فایل سه خط دارند و داوریِ نهاییِ خطِ آخر با
+    // `[is6]` می‌گردد. سایت برایِ ۲٬۴۶۱ از ۳٬۴۴۶ نمادِ امروز اصلاً کلید ۶ را
+    // منتشر نمی‌کند؛ آنجا `1.5*undefined` ⇒ NaN ⇒ ردیف بیرون می‌افتد. پس نبودِ
+    // همین عدد «سنجیده نشد» است، نه «رد» — و ربطی به نبودِ حجم ندارد
+    // (سنجشِ ۱۴۰۵-۰۷-۲۰: با مبناءِ Σ[ih]/۳۰ داوری‌ها جابه‌جا می‌شد؛ پرچمِ
+    // بک‌اند حالا عیناً همان `[is6]` را می‌سنجد). خطِ دوم `[is5]` است، ولی
+    // مقدارش درِ `eval` دور ریخته می‌شود و استثنای هم نمی‌دهد، پس نبودش
+    // «سنجیده نشد» نیست (۱۳۱ موجودِ InstValue کلید ۶ دارند و کلید ۵ نه).
+    case 'f_legal': {
+      const flag = (r as unknown as Record<string, unknown>)[filterKey] === true;
+      return !flag && num(r.is6) == null;
+    }
+    default:
+      // فیلترهایی که فرمولِ محلی ندارند (کد به کد) داوری‌شان پرچمِ بک‌اند است؛
+      // رابط چیزی نمی‌سنجد که بگوید «سنجیده نشد».
+      return false;
   }
-  return evaluateDynamicQuickFilter(r, filterKey, cfg);
+}
+
+/**
+ * حالتِ سه‌ارزشیِ داوری: pass / fail / unevaluated.
+ *
+ * «unevaluated» یعنی همان فرمول روی این ردیف ورودی نداشت — نه این‌که ضعیف‌تر
+ * از آستانه بود. حکمِ فیلترکردن عوض نمی‌شود (`tapeFilterVerdict` فقط pass را
+ * قبول می‌کند، و ردیفِ نسنجیده در هر دو حالت بیرون می‌ماند)؛ مصرف این حالت
+ * نمایشی است: شمارشِ چیپ می‌گوید چند ردیفِ دیدنی اصلاً سنجیده نشد.
+ *
+ * جایی که ستون‌هایِ تاریخچه اصلاً نمی‌آیند (پنل‌هایِ قدیمی) پرچمِ بک‌اند تنها
+ * داوریِ صادق است و آن شاخه دست‌نخورده مانده — ستونِ «الگو»ی بی‌بجِ ویرایشِ
+ * ۱٫۰٫۴۴ نباید دوباره ساخته شود.
+ */
+export function tapeFilterState(
+  r: MarketRow,
+  filterKey: string,
+  cfg: TapeFilterConfig,
+): 'pass' | 'fail' | 'unevaluated' {
+  const raw = (r as unknown as Record<string, unknown>)[filterKey];
+  if (!hasTapeFormulaInputs(r)) {
+    return raw === true ? 'pass' : raw === false ? 'fail' : 'unevaluated';
+  }
+  // ردیفِ بیرونِ تابلویِ امروز را سایت اصلاً نمی‌سنجد (درِ باندش ردیفی نیست)،
+  // پس «رد» نشان‌دادنش نتیجهٔ ساختگی است (رأیِ مالک ۱۴۰۵-۰۷-۲۱: وضعیتِ
+  // فعال‌بودن جدا نمایش داده شود). جریانِ پولِ نخبگان از این قید آزاد است.
+  if (!isLiveBoardRow(r) && filterKey !== 'f_smart_flow') return 'unevaluated';
+  if (tapeFilterUnmeasured(r, filterKey, cfg)) return 'unevaluated';
+  return evaluateDynamicQuickFilter(r, filterKey, cfg) ? 'pass' : 'fail';
 }

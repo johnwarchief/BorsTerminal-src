@@ -264,10 +264,67 @@ try:
 except Exception as _e:
     fails.append("بخشِ «افزایش سرمایه» اجرا نشد: %r" % (_e,))
 
+# ── بخش ۵ (§۲۳ و §۲۴ِ رأیِ مالک): منشأِ تاریخِ مجمع، و وتوی بی‌منبع ──────────
+# «تاریخِ انتشارِ اطلاعیه» نباید به «تاریخِ مجمع» بدل شود. دو حالت باید سنجیده
+# شود، وگرنه سنسور کور است: (الف) ردیفِ بی‌تاریخِ جلسه ⇒ وتو روشن **نشود**؛
+# (ب) همان دسته با «مورخ …» در عنوان ⇒ وتو روشن **شود**. بی‌(ب) می‌شد همه‌چیز را
+# با «هیچ‌وقت وتو نمی‌شود» سبز کرد.
+try:
+    import json as _json5, os as _os5, tempfile as _tf5, datetime as _dt5
+    import api.chart as _ch5
+    import api.screener as _sc5
+
+    def _probe_src(events):
+        fp = _os5.path.join(_tf5.gettempdir(), "bors_cal_src_probe.json")
+        with open(fp, "w", encoding="utf-8") as fh:
+            _json5.dump({"events": events}, fh)
+        real_path, real_cache = _ch5._CAL_CACHE_PATH, dict(_ch5._cal_cache)
+        _ch5._CAL_CACHE_PATH = fp
+        _ch5._cal_cache["mtime"] = 0.0
+        _ch5._cal_cache["events"] = []
+        try:
+            return _ch5.upcoming_assemblies(days=90)
+        finally:
+            _ch5._CAL_CACHE_PATH, _ch5._cal_cache = real_path, real_cache
+            _os5.remove(fp)
+
+    _day = (_dt5.date.today() + _dt5.timedelta(days=5)).isoformat()
+    up_no = _probe_src([
+        {"asset_symbol_trade": "بی‌تاریخ", "date_time": _day + "T11:00:00+03:30",
+         "event_title": "تصمیمات مجمع عمومی عادی سالیانه", "event_type_id": 1},
+        {"asset_symbol_trade": "مورخ‌دار", "date_time": _day + "T11:00:00+03:30",
+         "event_title": "آگهی دعوت به مجمع عمومی عادی مورخ ۱۴۰۵/۰۷/۲۰",
+         "event_type_id": 1}])
+    _check(up_no.get("بی‌تاریخ", {}).get("date_source") == "publication_fallback",
+           "ردیفِ بی‌«مورخ» در عنوان ⇒ منشأ «publication_fallback» (نه حدس)")
+    _check(up_no.get("مورخ‌دار", {}).get("date_source") == "title",
+           "ردیفِ «مورخ …» در عنوان ⇒ منشأ «title» — سنسورِ (الف) کور نیست")
+
+    def _veto_src(symbols):
+        real = _sc5.upcoming_assemblies
+        _sc5.upcoming_assemblies = lambda *a, **k: {
+            w: dict(up_no[w]) for w in symbols if w in up_no}
+        try:
+            rows = _sc5._apply_assembly_veto([{"symbol": w, "exclusion_reasons": ""}
+                                              for w in symbols])
+        finally:
+            _sc5.upcoming_assemblies = real
+        return {r["symbol"]: bool(r.get("assembly_veto")) for r in rows}
+
+    v5 = _veto_src(["بی‌تاریخ", "مورخ‌دار"])
+    _check(v5.get("بی‌تاریخ") is False,
+           "بی‌date_source == title ⇒ وتوی مجمع روشن نمی‌شود (§۲۴)")
+    _check(v5.get("مورخ‌دار") is True,
+           "با تاریخِ عنوان‌محور ⇒ وتو همچنان روشن می‌شود (قابلیت کم نشد)")
+    _check(all("decision_date" not in x and "dps" not in x for x in up_no.values()),
+           "هیچ ردیفِ تقویمی decision_date/DPS جعلی حمل نمی‌کند (منبعِ ساختاریافته ندارد)")
+except Exception as _e5:
+    fails.append("بخش ۵ (منشأِ تاریخِ مجمع) اجرا نشد: %r" % (_e5,))
+
 print("\n" + "=" * 74)
 if fails:
     print("❌ %d شکست:" % len(fails))
     for f in fails:
         print("   - " + f)
     sys.exit(1)
-print("✅ همهٔ %d حالت + یکای JS + تمرکز چرخش IP + افقِ مجمع پاس شد" % len(CASES))
+print("✅ همهٔ %d حالت + یکای JS + تمرکز چرخش IP + افقِ مجمع + منشأِ تاریخ پاس شد" % len(CASES))

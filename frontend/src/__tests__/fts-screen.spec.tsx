@@ -189,10 +189,12 @@ describe('دیده‌بان کلان بنیادی (ماتریس FTS)', () => {
     );
     expect(screen.getByText('ناقص')).toBeInTheDocument();
     // جای برچسب عمومی «شکاف داده»، علتِ همان شاخص نمایش داده میشود
-    expect(screen.getAllByText('گزارش ماهانهٔ کدال نیست').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText('گزارش ماهانۀ فروش در کدال موجود نیست').length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText('سابقهٔ EPS سالانه ثبت نشده').length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText('سود ناخالص در کدال نیست').length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText('سالانه‌سازی فروش کدال ناقص').length).toBeGreaterThanOrEqual(1);
+    expect(
+      screen.getAllByText('گزارش‌های ماهانه برای برآورد فروش سالانه کامل نیستند').length,
+    ).toBeGreaterThanOrEqual(1);
     // برچسب عمومی حذف شده — هیچجا «شکاف داده» نداریم
     expect(screen.queryByText('شکاف داده')).not.toBeInTheDocument();
   });
@@ -202,7 +204,7 @@ describe('دیده‌بان کلان بنیادی (ماتریس FTS)', () => {
     const cell = screen.getByTestId('fts-gap-reason-1a_monetary_growth');
     // از F-06: خودِ برچسبِ علت یک بج ممیزی است و متن tooltip کوتاه روی همان بج می‌ماند
     const title = cell.getAttribute('title') ?? '';
-    expect(title).toContain('گزارش ماهانه');
+    expect(title).toContain('گزارش ماهانۀ');
     expect(title).toContain('مشابه');
     expect(title).toContain('راه‌حل');
   });
@@ -410,7 +412,9 @@ describe('کارایی جدول غربالگری (F-08)', () => {
     const opts = rv.__virtualOptions?.();
     expect(opts).toBeTruthy();
     expect(opts!.count).toBe(200);
-    expect(opts!.estimateSize?.(0)).toBe(46);
+    // ارتفاعِ ردیف با فونتِ درشتِ جدول بالا رفت (46 → 52)؛ سنجشِ زنده
+    // offsetHeightِ واقعی را همین ۵۲ اندازه گرفت، پس پین، پینِ عددِ تازه است.
+    expect(opts!.estimateSize?.(0)).toBe(52);
     expect(opts!.overscan).toBe(8);
   });
 
@@ -486,7 +490,10 @@ describe('برچسب و وتوی مجمعِ ردیف', () => {
   const IN40 = plusDays(TODAY, 40);
 
   const events = (date: string, cat = 'assembly') => ({
-    شپنا: [{ date, cat, title: 'آگهی دعوت به مجمع عمومی عادی سالیانه' }],
+    // «آگهی دعوت به مجمع…» تاریخِ جلسه را در عنوان دارد ⇒ منشأ title. بی‌این
+    // میدان (§۲۴ِ رأی) برچسب شمارشِ معکوس نمی‌سازد.
+    شپنا: [{ date, cat, title: 'آگهی دعوت به مجمع عمومی عادی سالیانه',
+             date_source: 'title' as const }],
   });
 
   const badge = () => screen.queryByTestId('row-assembly-veto-badge');
@@ -522,6 +529,25 @@ describe('برچسب و وتوی مجمعِ ردیف', () => {
     expect(badge()).toBeNull();
     expect(near()).not.toBeNull();
     expect(near()?.textContent).toContain('مجمع');
+  });
+
+  // §۲۴ِ رأی: اگر عنوانِ اطلاعیه تاریخِ جلسه را نمی‌گفت، عددِ تقویم فقط تاریخِ
+  // انتشار است ⇒ نه شمارشِ معکوس، نه وتو. برچسبِ «اطلاعیه» می‌ماند.
+  it('بی‌تاریخِ جلسه در عنوان ⇒ برچسبِ «اطلاعیه» با تاریخِ انتشار، بی‌«چند روز دیگر»', () => {
+    render(
+      <FtsScreenTable
+        rows={[row({ assembly_veto: false })]}
+        onSelect={() => {}}
+        assemblyEvents={{ شپنا: [{ date: IN3, cat: 'assembly', date_source: 'publication_fallback' as const,
+                                   title: 'تصمیمات مجمع عمومی عادی سالیانه' }] }}
+      />,
+    );
+    expect(badge()).toBeNull();          // وتو نمی‌شود
+    const n = screen.queryByTestId('row-assembly-notice-badge');
+    expect(n).not.toBeNull();
+    expect(near()).toBeNull();           // برچسبِ «مجمعِ نزدیک» هم نمی‌گیرد
+    expect(n?.textContent).toContain('اطلاعیه');
+    expect(n?.textContent).not.toMatch(/روز دیگر|فردا|امروز/);
   });
 
   it('لغو/تعویق برچسبِ تغییر می‌گیرد و وتو نمی‌شود (تاریخِ نامعلوم، وتوی ساختگی است)', () => {
@@ -602,7 +628,7 @@ describe('برچسب «افزایش سرمایه» در ردیف', () => {
       <FtsScreenTable
         rows={[row({ assembly_veto: true, assembly_date: d, assembly_days: 4 })]}
         onSelect={() => {}}
-        assemblyEvents={{ شپنا: [{ date: d, cat: 'assembly', title: 'آگهی دعوت به مجمع' }] }}
+        assemblyEvents={{ شپنا: [{ date: d, cat: 'assembly', date_source: 'title' as const, title: 'آگهی دعوت به مجمع' }] }}
         capitalEvents={cap(d)}
       />,
     );

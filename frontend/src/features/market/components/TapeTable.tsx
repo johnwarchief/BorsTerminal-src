@@ -3,7 +3,7 @@
 import { memo, useMemo, useRef, useState } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import type { MarketRow } from '@shared/types/marketRow';
-import { fmtInt, fmtPct, toFaDigits } from '@shared/lib/fmt';
+import { billionRialText, fmtInt, fmtPct, toBillionRial, toFaDigits } from '@shared/lib/fmt';
 import { EmptyState } from '@shared/components/EmptyState';
 import { FlashNum } from '@shared/components/FlashNum';
 import {
@@ -14,10 +14,12 @@ import {
   detectSweep,
   lastCloseDiff,
 } from '../lib/tapePatterns';
-import { FTS_VOL_RATIO_HOT, buyPerCapitaMt, buySellShare, sellPerCapitaMt } from '../lib/tapeFts';
+import { FTS_VOL_RATIO_HOT, buyPerCapitaMt, sellPerCapitaMt } from '../lib/tapeFts';
 import { patternBadges } from '../lib/tapeBadges';
-import { powerTone } from '../api/useMarketPulse';
+import { BuySellCell } from './BuySellCell';
 import { LIMIT_PCT, useTapeStore } from '../stores/tapeStore';
+import SymbolSelectBox from '@shared/components/SymbolSelectBox';
+import WatchlistStar from '@shared/components/WatchlistStar';
 
 type SortKey =
   | 'symbol'
@@ -44,7 +46,7 @@ type SortKey =
  * ستون‌ها ۶→۴ و حاشیهٔ ردیف ۱۲→۸ آمد تا حدِ آستانهٔ عرض بالا نکند.
  */
 const ROW_GRID =
-  'grid-cols-[minmax(150px,1.6fr)_minmax(66px,0.85fr)_minmax(66px,0.85fr)_minmax(60px,0.6fr)_minmax(62px,0.8fr)_minmax(62px,0.8fr)_minmax(130px,1.05fr)_minmax(64px,0.85fr)_minmax(58px,0.8fr)_minmax(58px,0.78fr)_minmax(118px,1.1fr)_minmax(142px,1.5fr)]';
+  'grid-cols-[minmax(150px,1.6fr)_minmax(66px,0.85fr)_minmax(66px,0.85fr)_minmax(60px,0.6fr)_minmax(62px,0.8fr)_minmax(62px,0.8fr)_minmax(124px,1.0fr)_minmax(60px,0.8fr)_minmax(56px,0.78fr)_minmax(56px,0.75fr)_minmax(170px,1.45fr)_minmax(142px,1.5fr)]';
 
 /** کمترینِ عرضِ جدول = جمعِ مینیمم‌ها + فاصله‌ها + padding (زیرِ این، جدول افقی اسکرول می‌خورد) */
 const TABLE_MIN_W = 'min-w-[1100px]';
@@ -57,7 +59,7 @@ const HEADERS: { key: SortKey | null; label: string; hint?: string }[] = [
   // سرستون افقی اسکرول می‌خورد.
   { key: 'symbol', label: 'نماد' },
   { key: 'p_last', label: 'آخرین' },
-  { key: 'p_closing', label: 'پایانی', hint: 'قیمت پایانیِ همین نشست (p_closing)' },
+  { key: 'p_closing', label: 'پایانی', hint: 'قیمت پایانیِ همین روز معاملاتی (p_closing)' },
   // اختلافِ آخرین تا پایانی بغلِ پایانی نشسته (#194): هر دو ستونِ یک مقایسه‌اند
   // — «آخرین» و «پایانی» و «فاصلۀ این دو» — و جدا از هم خوانده نمی‌شوند.
   {
@@ -97,10 +99,6 @@ const HEADERS: { key: SortKey | null; label: string; hint?: string }[] = [
   },
 ];
 
-/** ریال → میلیارد ریال (q_tot_cap درِ بانک ریال است؛ همان واحدِ تابلوی TSETMC) */
-function toBillionRial(rials: number | null | undefined): number | null {
-  return typeof rials === 'number' && Number.isFinite(rials) ? rials / 1e9 : null;
-}
 
 const NEG = Number.NEGATIVE_INFINITY;
 
@@ -141,7 +139,10 @@ function pctTone(pct: number | null | undefined): string {
   return 'text-text-secondary';
 }
 
-const MICRO_TONES = {
+/** پالتِ بج‌هایِ تابلو — صادر شده تا جدولِ غربالگری هم *همان* برچسب‌ها را با
+ *  همان رنگ بدهد (رأیِ مالک ۱۴۰۵-۰۷-۱۹: «همون برچسب‌های تابلوخوانی») و نه
+ *  ترجمۀ دومی از них. */
+export const MICRO_TONES = {
   violet: 'bg-purple-100 text-purple-950 border border-purple-300 dark:bg-[#8b5cf6]/25 dark:text-[#ddd6fe] dark:border-[#8b5cf6]/40',
   amber: 'bg-amber-100 text-amber-950 border border-amber-300 dark:bg-accent-yellow/25 dark:text-[#fef08a] dark:border-accent-yellow/45',
   cyan: 'bg-sky-100 text-sky-950 border border-sky-300 dark:bg-neon-cyan/20 dark:text-[#a5f3fc] dark:border-neon-cyan/40',
@@ -151,89 +152,10 @@ const MICRO_TONES = {
   gray: 'bg-slate-200 text-slate-900 border border-slate-300 dark:bg-bg-card/90 dark:text-text-primary dark:border-border-c',
 } as const;
 
-type MicroTone = keyof typeof MICRO_TONES;
-
-/** رنگِ عددِ نسبت از همان آستانه‌های ۱.۵/۰.۸ِ نبض بازار — این‌جا داوری نمی‌شود */
-function powerClass(tone: 'good' | 'mid' | 'bad' | null): string {
-  if (tone === 'good') return 'text-accent-green font-bold';
-  if (tone === 'bad') return 'text-accent-red font-bold';
-  if (tone === 'mid') return 'text-accent-yellow';
-  return 'text-text-secondary';
-}
-
-const mt = (v: number | null): string => (v == null ? '—' : `${toFaDigits(v.toFixed(1))} م.ت`);
-
-/** سرانه به میلیون تومان: عددِ tabular + واحدِ جدا. واحد در spanِ خودش است چون
- *  `.num` جهت را ltr می‌کند و «۵.۰ م.ت» را در آن «م.ت ۵.۰» می‌خواند. داده نیست ⇒
- *  فقط «—»؛ صفرِ جعلی نه. بالای ۱۰۰ اعشار نمی‌ماند (همان قاعدهٔ ستونِ ارزش):
- *  سرانۀِ صدها میلیونی با یک رقم اعشار در ستونِ ۱۱۸ پیکسلی جا نمی‌شد. */
-function pcText(v: number): string {
-  return v >= 100 ? fmtInt(v) : toFaDigits(v.toFixed(1));
-}
-
-function PcNum({ v, className, testId }: { v: number | null; className: string; testId: string }) {
-  return (
-    <span data-testid={testId} className={`flex shrink-0 items-baseline gap-px ${className}`}>
-      {/* سرانه‌ها هم مثلِ بقیۀِ ستون‌هایِ عددی فلاش می‌گیرند (#12): تا پیش از این
-          تنها «نسبتِ خرید/فروش» رنگ می‌دید و دو عددِ بالایِ همان خانه بی‌خبر عوض
-          می‌شدند. */}
-      <FlashNum
-        value={v}
-        className="num font-bold"
-        render={(x) => (x == null ? '—' : pcText(x))}
-      />
-      {v != null && <span className="text-3xs opacity-80">م.ت</span>}
-    </span>
-  );
-}
-
-/**
- * ستونِ خرید/فروش (#146 و #172): دو خط. بالا خودِ دو سرانه (میلیون تومان) — سبز
- * خرید در راست، قرمز فروش در چپ؛ پایین نوارِ سهم و نسبتِ خرید به فروش. تا پیش از
- * #172 دو سرانه فقط در title بود و «با دیدنِ ستون جزئیات زیادی نمی‌داد».
- * یک طرف غایب ⇒ «—» و بی‌نوار: نبودِ داده «فروش صفر» یا «خرید صددرصد» نیست.
- */
-function BuySellCell({
-  buyPc,
-  sellPc,
-  power,
-}: {
-  buyPc: number | null;
-  sellPc: number | null;
-  power: number | null | undefined;
-}) {
-  const share = buySellShare(buyPc, sellPc);
-  return (
-    <span
-      data-testid="tape-buy-sell"
-      className="flex min-w-0 flex-col gap-0.5"
-      title={`سرانۀ خرید ${mt(buyPc)} · سرانۀ فروش ${mt(sellPc)} — نسبتِ خرید به فروش ${
-        power == null ? '—' : `${toFaDigits(power.toFixed(2))}×`
-      }`}
-    >
-      <span className="flex min-w-0 items-baseline justify-between gap-1 text-3xs leading-none">
-        <PcNum v={buyPc} className="text-accent-green" testId="tape-buy-pc" />
-        <PcNum v={sellPc} className="text-accent-red" testId="tape-sell-pc" />
-      </span>
-      <span className="flex min-w-0 items-center gap-1">
-        <span dir="rtl" aria-hidden className="flex h-1.5 min-w-0 flex-1 overflow-hidden rounded-full bg-bg-card/80">
-          {share == null ? null : (
-            <>
-              <span className="bg-accent-green transition-[width] duration-300 ease-out" style={{ width: `${share * 100}%` }} />
-              <span className="bg-accent-red transition-[width] duration-300 ease-out" style={{ width: `${(1 - share) * 100}%` }} />
-            </>
-          )}
-        </span>
-        <span className={`num shrink-0 text-2xs ${powerClass(powerTone(power))}`}>
-          <FlashNum value={power} render={(v) => (v == null ? '-' : toFaDigits(v.toFixed(2)))} />
-        </span>
-      </span>
-    </span>
-  );
-}
+export type MicroTone = keyof typeof MICRO_TONES;
 
 /** میکرو-بج متنی های‌دنسیتی با کنتراست و خوانایی بالا؛ جزئیات عددی در title (Tooltip) هر بج */
-function MicroBadge({ pattern, tone, title, children }: { pattern: string; tone: MicroTone; title: string; children: React.ReactNode }) {
+export function MicroBadge({ pattern, tone, title, children }: { pattern: string; tone: MicroTone; title: string; children: React.ReactNode }) {
   return (
     <span
       data-testid={`badge-${pattern}`}
@@ -299,12 +221,17 @@ export const TapeRow = memo(function TapeRow({
         }
       }}
       title={tooltip}
-      className={`grid w-full ${ROW_GRID} cursor-pointer items-center gap-1 border-b border-border-c/50 px-2 text-start text-base ${
+      className={`group grid w-full ${ROW_GRID} cursor-pointer items-center gap-1 border-b border-border-c/50 px-2 text-start text-base ${
         selected ? 'bg-accent-blue/15' : 'odd:bg-bg-secondary even:bg-bg-primary hover:bg-bg-card/70'
       } ${atLimitUp ? 'border-s-2 border-s-accent-green' : atLimitDown ? 'border-s-2 border-s-accent-red' : ''}`}
       style={{ height: 40 }}
     >
-      <span className="font-bold text-base text-text-primary flex items-baseline gap-1.5 truncate">
+      <span className="font-bold text-base text-text-primary flex items-center gap-1.5 truncate">
+        {/* جعبۀ انتخاب داخلِ همان ستونِ نماد است، نه ستونِ تازه: `ROW_GRID` با
+            افزودنِ یک فرزندِ مستقیمِ grid از جا درمی‌رود. */}
+        <SymbolSelectBox symbol={String(row.symbol ?? '')} name={String(row.name ?? '')}
+                         insCode={row.ins_code ?? null} />
+        <WatchlistStar symbol={String(row.symbol ?? '')} name={String(row.name ?? '')} />
         {row.symbol}
         <span className="truncate text-xs font-normal text-text-muted">{row.name ?? ''}</span>
       </span>
@@ -337,8 +264,7 @@ export const TapeRow = memo(function TapeRow({
         <FlashNum value={row.z_tot_tran} render={(v) => (v == null ? '-' : fmtInt(v))} />
       </span>
       <span className="num text-end text-text-secondary" title={row.q_tot_cap != null ? `${fmtInt(row.q_tot_cap)} ریال` : undefined}>
-        <FlashNum value={toBillionRial(row.q_tot_cap)}
-                  render={(v) => (v == null ? '-' : v >= 100 ? fmtInt(v) : toFaDigits(v.toFixed(1)))} />
+        <FlashNum value={toBillionRial(row.q_tot_cap)} render={billionRialText} />
       </span>
       <span
         className={`num text-end ${volHot ? 'font-bold text-accent-susp' : 'text-text-secondary'}`}
@@ -357,6 +283,19 @@ export const TapeRow = memo(function TapeRow({
             {b.label}
           </MicroBadge>
         ))}
+        {/* «خارج از غربالگری» (گزینهٔ الف): این نماد فیلترِ تابلو را دارد، ولی
+            موتورِ غربالگری به این علت آن را candidate نمی‌گیرد (متوقف/ممنوع/…).
+            شمارۀ چیپ را کم نمی‌کند — فقط علتِ تفاوتِ تابلو با قیف را رویِ همان
+            ردیف نشان می‌دهد. بی‌اطلاعی (پاسخِ قدیمی) برچسب نمی‌زند. */}
+        {row.screening_eligible === false && badges.some((b) => b.filter) ? (
+          <MicroBadge
+            pattern="out-of-screening"
+            tone="gray"
+            title={`دارایِ فیلترِ تابلو، اما واردِ غربالگری نمی‌شود — ${row.screening_exclusion_reason ?? row.screening_exclusion_code ?? 'خارج از جامعۀ غربالگری'}`}
+          >
+            خارج از غربالگری
+          </MicroBadge>
+        ) : null}
       </span>
     </div>
   );
@@ -369,6 +308,8 @@ export function TapeTable({
   isLoading,
   isError,
   onRetry,
+  emptyNote,
+  onClearFilters,
 }: {
   rows: MarketRow[];
   selected: string;
@@ -377,6 +318,9 @@ export function TapeTable({
   isLoading?: boolean;
   isError?: boolean;
   onRetry?: () => void;
+  /** علتِ خالی‌ماندن با نامِ درها؛ بی‌آن «نبود» به «غلطِ فیلتر» ترجمه می‌شد */
+  emptyNote?: string | null;
+  onClearFilters?: () => void;
 }) {
   const [sortKey, setSortKey] = useState<SortKey>('vol_ratio');
   const [desc, setDesc] = useState(true);
@@ -427,9 +371,26 @@ export function TapeTable({
       );
     }
     if (isLoading) {
-      return <EmptyState title="در حالِ خواندنِ تابلو…" hint="نخستین نشستِ داده کمی طول می‌کشد" />;
+      return <EmptyState title="در حالِ خواندنِ تابلو…" hint="نخستین دریافتِ داده کمی طول می‌کشد" />;
     }
-    return <EmptyState title="نمادی با این فیلترها نیست" hint="فیلترها را کم کن یا جستجو را پاک کن" />;
+    return (
+      <EmptyState
+        title="نمادی با این فیلترها نیست"
+        hint={emptyNote || 'فیلترها را کم کن یا جستجو را پاک کن'}
+        action={
+          onClearFilters ? (
+            <button
+              type="button"
+              onClick={onClearFilters}
+              data-testid="tape-clear-filters"
+              className="rounded-lg border border-accent-blue bg-accent-blue/10 px-3 py-1 text-xs font-bold text-accent-blue"
+            >
+              خاموش‌کردنِ فیلترها
+            </button>
+          ) : undefined
+        }
+      />
+    );
   }
 
   const toggle = (k: SortKey) => {
@@ -443,7 +404,7 @@ export function TapeTable({
   return (
     <div className="glass-panel overflow-hidden rounded-2xl">
       <div className="overflow-x-auto overscroll-x-contain">
-        <div data-testid="tape-head" className={`sticky top-0 z-10 grid w-full ${TABLE_MIN_W} ${ROW_GRID} gap-1 bg-bg-card/95 px-2 py-2.5 text-start text-3xs font-bold text-text-secondary backdrop-blur`}>
+        <div data-testid="tape-head" className={`sticky top-0 z-10 grid w-full ${TABLE_MIN_W} ${ROW_GRID} gap-1 bg-bg-card/95 px-2 py-2.5 text-start text-2xs font-bold text-text-secondary backdrop-blur`}>
           {HEADERS.map((h) => {
             const k = h.key;
             if (k == null) {

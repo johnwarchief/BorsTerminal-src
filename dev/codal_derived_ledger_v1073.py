@@ -135,11 +135,15 @@ def main():
 
     print("\n— ۲) یکِ اطلاعیه یک‌بار پردازش می‌شود (دفتر، نه شمارِ ردیف‌هایِ باقی‌مانده)")
     SCRAPES.clear()
+    rows_before_repeat = conn.execute("SELECT COUNT(*) FROM monthly_sales").fetchone()[0]
     again, _f2, _m2 = CF.derived_state(conn)
     CF._deep_extract(list(conn.execute(
         "SELECT tracing_no, symbol, company_name, title, letter_code, publish_date,"
         " sent_date, url, fetched_at, pdf_url, excel_url FROM codal_notices")), again, conn)
+    rows_after_repeat = conn.execute("SELECT COUNT(*) FROM monthly_sales").fetchone()[0]
     ck(len(SCRAPES) == 0, "اجرای دوم هیچ درخواستی نمی‌زند", str(SCRAPES))
+    ck(rows_after_repeat == rows_before_repeat,
+       "بازپخش همان tracing_no ردیف تازه نمی‌سازد", f"{rows_before_repeat} -> {rows_after_repeat}")
     led = conn.execute("SELECT tracing_no, ok FROM codal_extracted ORDER BY tracing_no").fetchall()
     ck(led == [(11, 1), (12, 1)], "دفترِ استخراج هر دو اطلاعیه را با نتیجه ثبت کرده", str(led))
 
@@ -156,23 +160,28 @@ def main():
     ck(len(SCRAPES) == 1, "فقط همین یکِ گزارشِ تازه باز شد", str(SCRAPES))
 
 
-    print("\n— ۳) قاعدۀ ترجیح: مستقل بر تلفیقی، بدونِ ترتیبِ رسیدن")
-    for order, want in ((("tel", "std"), "std"), (("std", "tel"), "std")):
+    print("\n— ۳) انتخاب مرجع مستقل، بدون حذف اطلاعیه تلفیقی")
+    for order in (("tel", "std"), ("std", "tel")):
         c2 = new_db()
         ns = []
+        fs_map = {}
         for i, kind in enumerate(order):
             tn = 100 + i
-            ns.append(notice(tn, "فولاد", FS_TITLE, "u/%d" % tn))
+            title = (FS_TITLE + " (گزارش تلفیقی)") if kind == "tel" else (FS_TITLE + " (شرکت اصلی)")
+            ns.append(notice(tn, "فولاد", title, "u/%d" % tn))
+            fs_map[tn] = (10.0, 4.0, 2.0, "1405-06-31", 1 if kind == "tel" else 0)
+        expected_standalone = 100 + order.index("std")
         seed(c2, ns)
-        fs_map = {100: (10.0, 4.0, 2.0, "1405-06-31", 1),
-                  101: (7.0, 3.0, 1.0, "1405-06-31", 0)}   # 101 = مستقل
         install_scrapers(fs_map=fs_map)
         p2, _a, _b = CF.derived_state(c2)
         CF._deep_extract(ns, p2, c2)
         left = c2.execute("SELECT tracing_no, COALESCE(is_consolidated,0)"
-                          " FROM financial_statements WHERE symbol='فولاد'").fetchall()
-        ck(len(left) == 1 and left[0][1] == 0,
-           "ترتیبِ «%s» → یکِ ردیف و همانِ مستقل می‌ماند" % ("/".join(order)), str(left))
+                           " FROM financial_statements WHERE symbol='فولاد' ORDER BY tracing_no").fetchall()
+        winner = CF.period_winners(c2, "financial_statements", "فولاد")
+        ck(len(left) == 2 and {r[0] for r in left} == {100, 101},
+           "اطلاعیه‌های اصلی و تلفیقی مستقل هر دو حفظ می‌شوند", str(left))
+        ck(winner.get(("فولاد", "1405/06/31")) == expected_standalone,
+           "مرجع نمایشی مستقل می‌ماند مستقل از ترتیب ingest", str(winner))
 
     print("\n— ۴) شکستِ شبکه ثبت نمی‌شود (باید درِ اجرای بعدی تلاش شود)")
     c3 = new_db()
@@ -218,12 +227,20 @@ def main():
     p6, _a, _b = CF.derived_state(c6)
     CF._deep_extract(ns, p6, c6)
     c6.execute("UPDATE financial_statements SET has_operating_sales=1 WHERE tracing_no=501")
-    c6.execute("DELETE FROM codal_extracted WHERE tracing_no=501")     # وادار به بازنشر
-    p6b, _a, _b = CF.derived_state(c6)
-    CF._deep_extract(ns, p6b, c6)
+    c6.execute("DELETE FROM codal_extracted WHERE tracing_no=501")     # مسیر repair صریح
+    install_scrapers(fs_map={501: (8.0, 2.0, 3.0, "1405-06-31", 0)})
+    rows_before_repair = c6.execute("SELECT COUNT(*) FROM financial_statements").fetchone()[0]
+    # derived_state هنوز tracing_no را از جدول FS می‌بیند؛ این تست repair را صریحاً تحریک می‌کند.
+    CF._deep_extract(ns, set(), c6)
+    rows_after_repair = c6.execute("SELECT COUNT(*) FROM financial_statements").fetchone()[0]
+    ck(rows_after_repair == rows_before_repair,
+       "repair همان tracing_no را upsert می‌کند، نه اینکه ردیف جدید بسازد",
+       f"{rows_before_repair} -> {rows_after_repair}")
+    ck(c6.execute("SELECT revenue FROM financial_statements WHERE tracing_no=501").fetchone()[0] == 8.0,
+       "repair مقدار استخراج‌شدهٔ همان notice را به‌روزرسانی می‌کند", "")
     ck(c6.execute("SELECT has_operating_sales FROM financial_statements"
                   " WHERE tracing_no=501").fetchone()[0] == 1,
-       "DO UPDATE ستونِ بیست‌وششم را نگه می‌دارد (با INSERT OR REPLACE NULL می‌شد)", "")
+       "DO UPDATE ستونِ فهرست‌نشده را حفظ می‌کند", "")
 
     print("\n— ۸) نشانکِ increment با ارقامِ فارسی نمی‌شکند")
     c7 = new_db()
@@ -468,10 +485,8 @@ def main():
            "%s ⇒ %s" % (name, want), "calls=%d rotations=%d" % (b.calls, len(rot)))
     CF.rotate_ip_via_adb, CF._control_sleep, CF.POLITE = _saved_hook
 
-    print("\n— ۱۵) قاعدۀ «یکِ دوره یکِ ردیف» سه جا نمی‌شکند (ردیفِ مستقل نمی‌میرد)")
-    # دام: تلفیقی شمارهٔ ردیابیِ **بزرگ‌تر** دارد (اصلاحیهٔ تلفیقی بعد از مستقل
-    # منتشر شده). قاعدۀ MAX(tracing_no) همان را نگه می‌داشت و مستقل را حذف —
-    # سنجیدۀ بانکِ کاری: ۱۱ دورۀ مستقل+تلفیقی در همین دام افتاده بودند.
+    print("\n— ۱۵) یک دوره می‌تواند چند اطلاعیه منبع داشته باشد؛ فقط مرجع یکی است")
+    # tracing_no بالاتر نباید باعث حذف منبع تلفیقی شود؛ انتخاب مرجع از نگهداری جداست.
     c11 = new_db()
     ns11 = [notice(200, "دعبید", FS_TITLE, "u/200"), notice(900, "دعبید", FS_TITLE, "u/900")]
     seed(c11, ns11)
@@ -499,8 +514,8 @@ def main():
     CF.collapse_symbol(c11, "دعبید")
     left = c11.execute("SELECT tracing_no, COALESCE(is_consolidated,0)"
                        " FROM financial_statements ORDER BY tracing_no").fetchall()
-    ck(left == [(200, 0), (910, 0)],
-       "collapse_symbol: یکِ ردیف درِ آن دوره + ردیفِ بی‌دوره دست‌نخورده (بندِ ۳)", str(left))
+    ck(left == [(200, 0), (900, 1), (910, 0)],
+       "collapse_symbol هیچ ردیفی را حذف نمی‌کند؛ اصلی، تلفیقی و بی‌دوره حفظ می‌شوند", str(left))
 
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
     import db_housekeeping as HK  # noqa: E402
@@ -513,9 +528,15 @@ def main():
                 " (910,'دعبید','%s','1404/12/29',7.0,0),"   # تنها ردیفِ دورۀ خودش
                 " (920,'دعبید','%s',NULL,9.0,0)"
                 % (SOLO, CONS, SOLO, SOLO))           # بی‌دوره
-    ck(HK._dup_victims(c12, "financial_statements", "period_end") == [900],
-       "dev/db_housekeeping --apply: قربانی فقط تلفیقی است؛ نه تنها-ردیفِ یکِ دوره و نه بی‌دوره",
+    before_housekeeping = c12.execute("SELECT COUNT(*) FROM financial_statements").fetchone()[0]
+    ck(HK._dup_victims(c12, "financial_statements", "period_end") == [],
+       "housekeeping از یکسانی نماد/دوره قربانی حذف استنتاج نمی‌کند",
        str(HK._dup_victims(c12, "financial_statements", "period_end")))
+    hk_deleted = HK.apply_dedupe(c12)
+    after_housekeeping = c12.execute("SELECT COUNT(*) FROM financial_statements").fetchone()[0]
+    ck(hk_deleted.get("financial_statements") == 0 and after_housekeeping == before_housekeeping,
+       "اجرای apply اطلاعیه‌های متمایز را حفظ می‌کند",
+       f"{before_housekeeping} -> {after_housekeeping}")
     # دو ابزارِ دیگر باید به همین یکِ قاعده واگرد کنند (نقشۀ متنِ سورس: واگردِ
     # صریح، نه قاعدۀ دومِ بی‌سرنخ)
     pu_src = open(os.path.join(os.path.dirname(os.path.abspath(__file__)),
@@ -524,12 +545,114 @@ def main():
                                "db_housekeeping.py"), encoding="utf-8").read()
     ck("cf.collapse_symbol(conn, sym)" in pu_src,
        "dev/pipeline_updater.dedupe_symbol به collapse_symbol واگرد می‌کند", "")
-    ck("CF.period_winners(conn, table)" in hk_src,
-       "dev/db_housekeeping از period_winners می‌خواند (قاعدۀ دوم درِ فایل نیست)", "")
+    ck("def _dup_victims" in hk_src and "return []" in hk_src
+       and "DELETE FROM {table}" not in hk_src,
+       "housekeeping گروهِ دوره را بدون اثبات هویت به حذف فیزیکی تبدیل نمی‌کند", "")
     ck("MAX(tracing_no) FROM financial_statements" not in pu_src,
        "درِ pipeline_updater هیچ «MAX(tracing_no)» برایِ صورتهایِ مالی نمانده", "")
 
-    for c in (conn, c2, c3, c4, c5, c6, c7, c8, c10, c11, c12):
+    print("\n— ۱۶) انتخاب مرجع quarterly مستقل از encoding تاریخ و بدون حذف داده")
+    def qrow(tn, pub, *, period="1405/06/31", months=3, title=SOLO,
+             kind="Financial Statements", revenue=100.0, gross=20.0, op=10.0, net=8.0, eps=5.0):
+        return {"tracing_no": tn, "publish_date": pub, "period_end": period,
+                "period_months": months, "title": title, "report_kind": kind,
+                "revenue": revenue, "gross_profit": gross, "operating_profit": op,
+                "net_profit": net, "basic_eps": eps}
+
+    _quarters = _fe11.quarter_reference_rows
+    qa = [qrow(100, "۱۴۰۵/۰۶/۱۳ 10:00:00", revenue=100.0),
+          qrow(200, "1405/07/10 10:00:00", revenue=200.0)]
+    ck(_quarters(qa, 10)[0]["tracing_no"] == 200,
+       "فارسی کهنه در برابر ASCII جدید، مرجع کهنه را برنده نمی‌کند",
+       str([r["tracing_no"] for r in _quarters(qa, 10)]))
+    qb = [qrow(300, "1405/06/13 10:00:00", revenue=100.0),
+          qrow(301, "۱۴۰۵/۰۷/۱۰ 10:00:00", revenue=200.0)]
+    ck(_quarters(qb, 10)[0]["tracing_no"] == 301,
+       "تاریخ فارسی/ASCII در جهت عکس هم خروجی قطعی دارد",
+       str([r["tracing_no"] for r in _quarters(qb, 10)]))
+    qc = [qrow(400, "1405/07/10", revenue=100.0),
+          qrow(401, "1405/07/10", revenue=100.0)]
+    ck(_quarters(qc, 10)[0]["tracing_no"] == 401,
+       "تاریخ برابر: tracing_no بالاتر tie-breaker پایدار است", "")
+    qd = [qrow(500, "1405/07/10", title=SOLO, revenue=100.0),
+          qrow(900, "۱۴۰۵/۰۷/۱۰", title=CONS, revenue=100.0)]
+    ck(_quarters(qd, 10)[0]["tracing_no"] == 500,
+       "صورت اصلی بر تلفیقی حتی با tracing_no بزرگ‌تر تلفیقی اولویت دارد", "")
+    qe = [qrow(600, None, revenue=100.0),
+          qrow(601, "not-a-date", revenue=100.0)]
+    ck(_quarters(qe, 10)[0]["tracing_no"] == 601,
+       "تاریخ ناموجود/نامعتبر به ترتیب رشته‌ای خام تکیه نمی‌کند", "")
+    qf = [qrow(700, "bad", months=3, kind="Financial Statements"),
+          qrow(701, "bad", months=12, kind="Financial Statements"),
+          qrow(702, "bad", months=3, kind="Other Financial Statement")]
+    _qf = _quarters(qf, 10)
+    ck(len(_qf) == 3 and {r["tracing_no"] for r in _qf} == {700, 701, 702},
+       "دوره‌های متفاوت و نوع گزارش متفاوت در نمای مرجع جدا باقی می‌مانند", str(_qf))
+    ck([r["tracing_no"] for r in _quarters(qf, 10)] ==
+       [r["tracing_no"] for r in _quarters(list(reversed(qf)), 10)],
+       "نتیجه مستقل از ترتیب ورودی تکرارپذیر است", "")
+    qg = [qrow(800, None, revenue=100.0, gross=20.0, op=10.0, net=8.0, eps=5.0),
+          qrow(801, "not-a-date", revenue=100.0, gross=None, op=None, net=None, eps=None)]
+    ck(_quarters(qg, 10)[0]["tracing_no"] == 800,
+       "رتبه کامل‌بودن از ردیف اصلاحی ناقص جدیدتر محافظت می‌کند", "")
+
+    print("\n— ۱۷) نوشتنِ سالانه با نامِ ستون؛ انحرافِ schema نباید بی‌صدا بمیرد")
+    # ۱۴۰۵-۰۷-۲۴: `dev/codal_fts_updater.save_annual` بیست‌ویک مقدارِ موقعیتی به
+    # جدولِ بیست‌وشش‌ستونه می‌زد. خطا درِ `except`ِ فراخوان «استخراج ناموفق» چاپ
+    # می‌شد و `--mode full` از روزِ افزودنِ ستون‌های مشتق هیچ ردیفِ سالانه‌ای
+    # نمی‌نوشت — یعنی پوششِ شاخص ۲ و ۳ بی‌هیچ پیامِ مرگِ اجرا متوقف می‌ماند.
+    import codal_fts_updater as UPD  # noqa: E402
+    c17 = new_db()
+    order = [r[1] for r in c17.execute("PRAGMA table_info(financial_statements)")]
+    ck(len(order) == 26 and "has_operating_sales" in order,
+       "فیکچر همان ۲۶ ستونِ تولید را دارد (پس این بندِ گاردِ زنده است، نه کاغذی)",
+       str(len(order)))
+    ck(order != CF.FS_COLS,
+       "دامِ موقعیتی: ترتیبِ FS_COLS با ترتیبِ جدول یکی نیست، پس نام‌محور بودن بارِ واقعی دارد",
+       "اولین اختلاف: %s" % str(next(((i, a, b) for i, (a, b) in
+                                      enumerate(zip(order, CF.FS_COLS)) if a != b), "—")))
+    L17 = {"TracingNo": "999", "Symbol": "دعبید", "CompanyName": "شرکت دعبید",
+           "Title": FS_TITLE, "PublishDateTime": "1405/07/23 10:00:00",
+           "Url": "https://codal.ir/Reports?a=999"}
+    V17 = {k: 100.0 for k in CF.FS_KEYS}
+    V17["basic_eps"] = 25.0
+    UPD.save_annual(c17, L17, V17,
+                    {"period": "۱۲", "end": "1404-12-29", "is_consolidated": 0},
+                    "کليه مبالغ به ميليون ريال است")
+    r17 = c17.execute("SELECT * FROM financial_statements").fetchone()
+    d17 = dict(zip(order, r17))
+    ck(r17 is not None and d17["unit_norm"] == "mrl" and d17["fiscal_year"] == "1404"
+       and d17["revenue"] == 100.0 and d17["basic_eps"] == 25.0,
+       "ردیفِ سالانۀِ واکشی‌شده با مقیاس و سالِ مالی و ستون‌هایِ درست می‌نشیند", str(d17))
+    # کنترلِ منفی: همان ردیف با فرمانِ موقعیتیِ پیشین باید خطا بدهد — اگر خطا
+    # ندهد و این بند سبز بماند، یعنی سنسور کور است.
+    try:
+        c17.execute("INSERT OR REPLACE INTO financial_statements VALUES ("
+                    + ",".join("?" * (8 + len(CF.FS_KEYS) + 3)) + ")",
+                    ("9998", "دعبید", "x", "y", "z", 12, "1404-12-29", "p")
+                    + tuple(1.0 for _ in CF.FS_KEYS) + ("u", "url", "now"))
+        dead = "no error"
+    except sqlite3.OperationalError as e:
+        dead = str(e)
+    ck("columns but" in dead,
+       "کنترلِ منفی: درجِ موقعیتی رویِ همین schema واقعاً می‌شکند (پس بندِ بالا کور نیست)", dead)
+    c17.execute("UPDATE financial_statements SET has_operating_sales=1 WHERE tracing_no=999")
+    UPD.save_annual(c17, L17, V17,
+                    {"period": "۱۲", "end": "1404-12-29", "is_consolidated": 0},
+                    "کليه مبالغ به ميليون ريال است")
+    keep = c17.execute("SELECT COUNT(*), MAX(has_operating_sales)"
+                       " FROM financial_statements").fetchone()
+    ck(keep == (1, 1),
+       "بازنشرِ همان گزارش نه ردیف می‌سازد نه ستونِ خوانده‌نشده را NULL می‌کند", str(keep))
+    for fname in ("codal_fetcher.py", "codal_fts_updater.py", "pipeline_updater.py",
+                  "db_housekeeping.py"):
+        p = os.path.join(ROOT if fname.endswith("fetcher.py") else
+                         os.path.dirname(os.path.abspath(__file__)), fname)
+        src = open(p, encoding="utf-8").read()
+        ck("INTO financial_statements VALUES (" not in src,
+           "هیچ نوشتنِ موقعیتیِ صورتِ مالی درِ %s نمانده" % fname, "")
+
+    for c in (conn, c2, c3, c4, c5, c6, c7, c8, c10, c11, c12, c17):
         c.close()
     print(f"\nنتیجه: {PASS} سبز، {FAIL} قرمز")
     return 1 if FAIL else 0

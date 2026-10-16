@@ -89,7 +89,7 @@ describe('AuditBadge — بج وضعیت', () => {
     );
     expect(screen.getByTestId('b-pass').textContent).toContain('قبول');
     expect(screen.getByTestId('b-fail').textContent).toContain('مردود');
-    expect(screen.getByTestId('b-na').textContent).toContain('N/A');
+    expect(screen.getByTestId('b-na').textContent).toContain('قابل ارزیابی نیست');
     expect(screen.getByTestId('b-pass').className).toContain('text-accent-green');
     expect(screen.getByTestId('b-fail').className).toContain('text-accent-red');
     expect(screen.getByTestId('b-na').className).toContain('text-text-secondary');
@@ -99,7 +99,7 @@ describe('AuditBadge — بج وضعیت', () => {
     render(<AuditBadge state="na" label="سابقهٔ EPS کمتر از ۲ سال" hintTitle="علت + راه‌حل" testId="b-c" />);
     const b = screen.getByTestId('b-c');
     expect(b.textContent).toContain('سابقهٔ EPS کمتر از ۲ سال');
-    expect(b.textContent).not.toContain('N/A');
+    expect(b.textContent).not.toContain('قابل ارزیابی نیست');
     expect(b.getAttribute('title')).toBe('علت + راه‌حل');
   });
 });
@@ -181,7 +181,7 @@ describe('AuditBadge — بازشوی «چرا این وضعیت؟»', () => {
 });
 
 describe('AuditBadge — رفتار دفاعی (نبود فیلدهای ممیزی بک‌اند)', () => {
-  it('بدون مقدار/تارگت، جدول ساخته نمی‌شود و «قابل‌محاسبه نیست» می‌آید', () => {
+  it('بدون مقدار/تارگت، جدول ساخته نمی‌شود و «قابل ارزیابی نیست» می‌آید', () => {
     render(<AuditReasonCard state="na" evidence={{ reason: 'دلیل متنی موجود است.' }} />);
     expect(screen.queryByTestId('audit-compare')).toBeNull();
     expect(screen.getByTestId('audit-reason').textContent).toContain('دلیل متنی موجود است.');
@@ -227,7 +227,7 @@ describe('#204 — کارت بنیادی دیگر بج ممیزی ندارد (ش
     expect(screen.getByTestId('fts-verdict-3_gross_margin')).toHaveTextContent('رد');
     expect(screen.queryByText('شکاف داده')).toBeNull();
     const gap = screen.getByTestId('fts-cell-gap-1a_monetary_growth');
-    expect(gap.textContent).toContain('گزارش ماهانهٔ کدال نیست');
+    expect(gap.textContent).toContain('گزارش ماهانۀ فروش در کدال موجود نیست');
     fireEvent.mouseOver(gap);
     expect(screen.queryByTestId('audit-popover')).toBeNull();
   });
@@ -244,12 +244,12 @@ describe('AuditBadge در جدول غربالگری (FtsScreenTable)', () => {
     expect(within(pop).getByTestId('audit-target').textContent).toContain(toFaDigits('30') + '٪');
   });
 
-  it('بدون تارگت‌ها: ستون تارگت «—» و انحراف «قابل‌محاسبه نیست»', () => {
+  it('بدون تارگت‌ها: ستون تارگت «—» و فاصله تا حد معیار «قابل ارزیابی نیست»', () => {
     render(<FtsScreenTable rows={[row()]} onSelect={() => {}} />);
     fireEvent.mouseOver(screen.getByTestId('fts-mark-1a_monetary_growth'));
     const pop = screen.getByTestId('audit-popover');
     expect(within(pop).getByTestId('audit-target').textContent).toBe('—');
-    expect(within(pop).getByTestId('audit-deviation').textContent).toContain('قابل‌محاسبه نیست');
+    expect(within(pop).getByTestId('audit-deviation').textContent).toContain('قابل ارزیابی نیست');
   });
 
   it('ستون شاخص ۲ سابقهٔ EPS را با تارگت سال مقایسه می‌کند', () => {
@@ -261,7 +261,7 @@ describe('AuditBadge در جدول غربالگری (FtsScreenTable)', () => {
 
   it('ستون بی‌داده دقیقاً علت را نشان می‌دهد و برچسب کلی «شکاف داده» ندارد', () => {
     render(<FtsScreenTable rows={[row({ rev_growth: null, i1_pass: null, i1a_pass: null })]} onSelect={() => {}} />);
-    expect(screen.getByTestId('fts-gap-reason-1a_monetary_growth').textContent).toContain('گزارش ماهانهٔ کدال نیست');
+    expect(screen.getByTestId('fts-gap-reason-1a_monetary_growth').textContent).toContain('گزارش ماهانۀ فروش در کدال موجود نیست');
     expect(screen.queryByText('شکاف داده')).toBeNull();
   });
 });

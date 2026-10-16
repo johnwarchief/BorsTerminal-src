@@ -61,11 +61,13 @@ export function SidebarWatchlist({ onSelect }: { onSelect: (s: string) => void }
                   {r.name && <span className="truncate text-[10px] text-[var(--text-muted)] leading-tight">{r.name}</span>}
                 </div>
                 <FlashNum
+                  variant="neutral"
                   value={r.p_last ?? r.p_closing}
                   render={fmtPrice}
                   className="num font-mono tabular-nums text-xs font-semibold text-[var(--text-primary)]"
                 />
                 <FlashNum
+                  variant="neutral"
                   value={r.percent_change}
                   render={(v) => (v == null ? '-' : fmtPct(v))}
                   className={`num font-mono tabular-nums w-16 text-end text-[11px] font-bold ${

@@ -151,6 +151,7 @@ function VerdictStrip({ v }: { v: DayVerdict | null }) {
   const kind = v?.verdict ?? 'nodata';
   const [showWhys, setShowWhys] = useState(false);
   const gates = v?.gates ?? [];
+  const ms = v?.market_state ?? null;
   return (
     <div
       data-testid="pulse-verdict"
@@ -165,6 +166,19 @@ function VerdictStrip({ v }: { v: DayVerdict | null }) {
           {v ? v.reason : 'هنوز پولِ هوشمند نرسیده تا حکمی باشد'}
         </span>
       </div>
+      {/* مرحل/وضعیت از موتور؛ یک سطر، متنِ آماده — نمایش عددی نمی‌سازد. */}
+      {ms?.stage_label ? (
+        <div
+          data-testid="pulse-verdict-stage"
+          className="min-w-0 text-3xs font-bold text-text-secondary"
+          title={ms.evidence_direction ? `جهتِ شواهد: ${ms.evidence_direction}` : undefined}
+        >
+          {ms.stage_label}
+          {ms.since_open_text ? <span> · {ms.since_open_text}</span> : null}
+          {ms.data_clock ? <span> · دادهٔ {ms.data_clock}</span> : null}
+          {ms.evidence_strength ? <span> · {ms.evidence_strength}</span> : null}
+        </div>
+      ) : null}
       {gates.length ? (
         <>
           <ul className="flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-1 border-t border-border-c/40 pt-1">
@@ -207,6 +221,30 @@ function VerdictStrip({ v }: { v: DayVerdict | null }) {
                   <span> — {g.why}</span>
                 </li>
               ))}
+              {ms && (ms.for?.length || ms.against?.length) ? (
+                <li data-testid="pulse-verdict-evidence" className="text-3xs leading-snug text-text-muted">
+                  <span className="font-bold text-text-secondary">شواهد: </span>
+                  {ms.for?.length ? <span className={GATE_TONE.ok}>موافق — {ms.for.join(' · ')} </span> : null}
+                  {ms.against?.length ? <span className={GATE_TONE.bad}>مخالف — {ms.against.join(' · ')}</span> : null}
+                </li>
+              ) : null}
+              {ms?.pace_note ? (
+                <li data-testid="pulse-verdict-pace" className="text-3xs leading-snug text-text-muted">{ms.pace_note}</li>
+              ) : null}
+              {ms?.flow_trend ? (
+                <li data-testid="pulse-verdict-trend" className="text-3xs leading-snug text-text-muted">{ms.flow_trend}</li>
+              ) : null}
+              {ms?.changed_from ? (
+                <li data-testid="pulse-verdict-change" className="text-3xs leading-snug text-text-muted">
+                  تغییرِ وضعیت نسبت به ارزیابیِ پیش: از «{ms.changed_from}»
+                </li>
+              ) : null}
+              {ms?.limitations?.length ? (
+                <li data-testid="pulse-verdict-limits" className="text-3xs leading-snug text-text-muted">
+                  <span className="font-bold text-text-secondary">محدودیتِ داده: </span>
+                  {ms.limitations.join(' · ')}
+                </li>
+              ) : null}
             </ul>
           ) : null}
         </>

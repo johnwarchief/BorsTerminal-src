@@ -1,0 +1,630 @@
+
+//@version=6
+indicator("Double Tap 3D Indicator", shorttitle = "Double Tap 3D [Neblok]", overlay = true,
+     max_lines_count = 500, max_labels_count = 500, max_boxes_count = 500,
+     max_polylines_count = 100, max_bars_back = 500)
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// INPUTS
+// ═══════════════════════════════════════════════════════════════════════════════
+const string G_DET  = "① Detection"
+const string G_FLT  = "② Quality & Filters"
+const string G_RISK = "③ Targets & Risk"
+const string G_STR  = "④ Signals"
+const string G_VIS  = "⑤ Visuals"
+const string G_DSH  = "⑥ Dashboard"
+
+const int PIVOT_MEMORY = 6
+
+bool  showTops     = input.bool(true, "Detect Double Tops", group = G_DET)
+bool  showBots     = input.bool(true, "Detect Double Bottoms", group = G_DET)
+int   pivLeft      = input.int(8, "Pivot Left Bars", minval = 2, maxval = 50, group = G_DET)
+int   pivRight     = input.int(5, "Pivot Right Bars", minval = 2, maxval = 30, group = G_DET, tooltip = "Bars needed after a peak to confirm it. Higher = fewer, cleaner peaks but later detection. Nothing repaints: a peak is only used after it is confirmed.")
+float tolAtr       = input.float(0.75, "Peak Match Tolerance (× ATR)", minval = 0.05, step = 0.05, group = G_DET, tooltip = "How close the two peaks must be, measured in ATR so it adapts to volatility.")
+int   minSpan      = input.int(10, "Min Bars Between Peaks", minval = 3, group = G_DET)
+int   maxSpan      = input.int(150, "Max Bars Between Peaks", minval = 10, maxval = 250, group = G_DET)
+float minHeightAtr = input.float(1.5, "Min Pattern Height (× ATR)", minval = 0.1, step = 0.1, group = G_DET)
+int   expiryBars   = input.int(60, "Bars Allowed to Break Neckline", minval = 5, group = G_DET)
+int   priorLook    = input.int(60, "Prior Trend Lookback", minval = 10, maxval = 150, group = G_DET)
+int   atrLen       = input.int(14, "ATR Length", minval = 1, group = G_DET)
+
+int   minScore     = input.int(50, "Min Quality Score for Signals", minval = 0, maxval = 100, group = G_FLT, tooltip = "Score 0-100 built from: peak match (25), RSI divergence (20), volume divergence (15), pattern height (15), symmetry (10), prior trend strength (15).")
+bool  showLowQ     = input.bool(true, "Draw Patterns Below Min Score", group = G_FLT)
+int   rsiLen       = input.int(14, "RSI Length (Divergence)", minval = 2, group = G_FLT)
+bool  useTrend     = input.bool(false, "Trend Filter: Signal Only With EMA", group = G_FLT, tooltip = "SHORT needs the break close below the EMA, LONG above it.")
+int   emaLen       = input.int(200, "Trend EMA Length", minval = 2, group = G_FLT)
+bool  useVolBrk    = input.bool(false, "Require Volume Surge on Break", group = G_FLT)
+float volMult      = input.float(1.2, "Break Volume ≥ × 20-Bar Avg", minval = 0.1, step = 0.1, group = G_FLT)
+
+float slBufAtr     = input.float(0.25, "Stop Buffer Beyond Peaks (× ATR)", minval = 0.0, step = 0.05, group = G_RISK, tooltip = "Also the invalidation level before the neckline breaks.")
+float tp1Mult      = input.float(1.0, "TP1 (× Pattern Height)", minval = 0.1, step = 0.1, group = G_RISK)
+float tp2Mult      = input.float(1.618, "TP2 (× Pattern Height)", minval = 0.1, step = 0.1, group = G_RISK)
+bool  showTargets  = input.bool(true, "Show TP / SL Lines", group = G_RISK)
+
+bool   sigLong     = input.bool(true, "LONG Signals (Double Bottoms)", group = G_STR, tooltip = "A neckline break is labeled LONG / SHORT only when it passes the min score and any filters you turned on. Otherwise it is labeled BREAK.")
+bool   sigShort    = input.bool(true, "SHORT Signals (Double Tops)", group = G_STR)
+bool   moveBE      = input.bool(true, "Track Stop at Breakeven After TP1", group = G_STR, tooltip = "After TP1 is hit, the SL line moves to the break price and the pattern counts as a success if price comes back to it.")
+
+color  cTop        = input.color(#FF2079, "Double Top", group = G_VIS, inline = "c1")
+color  cBot        = input.color(#00F0FF, "Double Bottom", group = G_VIS, inline = "c1")
+color  cWin        = input.color(#39FF14, "Success", group = G_VIS, inline = "c2")
+color  cLoss       = input.color(#FF5F1F, "Failed / SL", group = G_VIS, inline = "c2")
+color  cTP         = input.color(#FFF01F, "Targets", group = G_VIS, inline = "c3")
+color  cNeck       = input.color(#BC13FE, "Neckline", group = G_VIS, inline = "c3")
+bool   use3D       = input.bool(true, "3D Extruded Zones & Shadowed Legs", group = G_VIS)
+int    depthBars   = input.int(4, "3D Depth (Bars)", minval = 1, maxval = 20, group = G_VIS)
+float  depthAtr    = input.float(0.6, "3D Depth (× ATR)", minval = 0.0, step = 0.1, group = G_VIS)
+string lblSizeIn   = input.string("Large", "Label Size", options = ["Normal", "Large", "Huge"], group = G_VIS)
+int    lineW       = input.int(3, "Pattern Line Width", minval = 1, maxval = 6, group = G_VIS)
+int    maxHist     = input.int(12, "Completed Patterns to Keep", minval = 1, maxval = 30, group = G_VIS)
+bool   keepTags    = input.bool(false, "Keep TP / SL Tags on Finished Patterns", group = G_VIS, tooltip = "Off = once a pattern finishes, its TP/SL/BE price tags are removed and its target lines are dimmed. Keeps the chart readable. Only live patterns show tags.")
+
+bool   showDash    = input.bool(true, "Show Dashboard", group = G_DSH)
+string dashPos     = input.string("Top Right", "Position", options = ["Top Right", "Top Left", "Bottom Right", "Bottom Left"], group = G_DSH)
+string dashSizeIn  = input.string("Large", "Text Size", options = ["Normal", "Large", "Huge"], group = G_DSH)
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════════════════════════════════════════
+f_size(string s) =>
+    switch s
+        "Normal" => size.normal
+        "Huge"   => size.huge
+        => size.large
+
+f_pos(string s) =>
+    switch s
+        "Top Left"     => position.top_left
+        "Bottom Right" => position.bottom_right
+        "Bottom Left"  => position.bottom_left
+        => position.top_right
+
+LBL_SIZE  = f_size(lblSizeIn)
+DASH_SIZE = f_size(dashSizeIn)
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// CORE SERIES (called every bar)
+// ═══════════════════════════════════════════════════════════════════════════════
+float atr    = ta.atr(atrLen)
+float rsiV   = ta.rsi(close, rsiLen)
+float emaV   = ta.ema(close, emaLen)
+float volAvg = ta.sma(nz(volume), 20)
+float ph     = ta.pivothigh(high, pivLeft, pivRight)
+float pl     = ta.pivotlow(low, pivLeft, pivRight)
+float pRsi   = rsiV[pivRight]
+float pVol   = math.sum(nz(volume), 3)[pivRight - 1]
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// TYPES
+// ═══════════════════════════════════════════════════════════════════════════════
+type Pivot
+    int   x
+    float p
+    float r
+    float v
+
+type Pattern
+    int      dir
+    int      x0
+    float    p0
+    int      x1
+    float    p1
+    int      xn
+    float    neck
+    int      x2
+    float    p2
+    float    height
+    float    stop
+    float    tp1
+    float    tp2
+    float    atrV
+    int      score
+    string   grade
+    string   notes
+    int      state  = 0
+    int      xb
+    float    pb
+    int      xEnd
+    bool     tp1Hit = false
+    bool     tp2Hit = false
+    bool     signal = false
+    array<line> legs
+    box      face
+    polyline topFace
+    polyline sideFace
+    line     neckLn
+    line     tp1Ln
+    line     tp2Ln
+    line     slLn
+    label    mainLbl
+    label    brkLbl
+    label    tp1Lbl
+    label    tp2Lbl
+    label    slLbl
+
+// state: 0 forming · 1 active (neckline broken) · 2 success · 3 failed · 5 timed out
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// STATS
+// ═══════════════════════════════════════════════════════════════════════════════
+// index = (top ? 0 : 6) + metric | metrics: 0 detected, 1 breaks, 2 wins(TP1), 3 TP2 hits, 4 losses, 5 timeouts
+var array<int> stats = array.new<int>(12, 0)
+
+f_bump(int dir, int m) =>
+    int idx = (dir == -1 ? 0 : 6) + m
+    stats.set(idx, stats.get(idx) + 1)
+
+f_stat(int dir, int m) =>
+    stats.get((dir == -1 ? 0 : 6) + m)
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// SCORING
+// ═══════════════════════════════════════════════════════════════════════════════
+f_score(int dir, Pivot a, Pivot b, int xn, float h, float priorMove, float atrV) =>
+    float matchPct   = math.max(0.0, 1.0 - math.abs(b.p - a.p) / (tolAtr * atrV))
+    bool  rsiDiv     = dir == -1 ? b.r < a.r : b.r > a.r
+    bool  volKnown   = a.v > 0 and b.v > 0
+    bool  volDiv     = volKnown and b.v < a.v
+    float l1         = xn - a.x
+    float l2         = b.x - xn
+    float sym        = math.min(l1, l2) / math.max(math.max(l1, l2), 1.0)
+    float trendRatio = math.min(1.0, priorMove / math.max(h, syminfo.mintick))
+    float s1 = 25.0 * matchPct
+    float s2 = rsiDiv ? 20.0 : 0.0
+    float s3 = volKnown ? (volDiv ? 15.0 : 0.0) : 7.5
+    float s4 = 15.0 * math.min(1.0, h / (3.0 * atrV))
+    float s5 = 10.0 * sym
+    float s6 = 15.0 * trendRatio
+    int   score = int(math.round(s1 + s2 + s3 + s4 + s5 + s6))
+    string notes = "Peak match: " + str.tostring(matchPct * 100, "#") + "%"
+    notes += "\nRSI divergence: " + (rsiDiv ? "YES ✔" : "no")
+    notes += "\nVolume divergence: " + (volKnown ? (volDiv ? "YES ✔" : "no") : "n/a")
+    notes += "\nHeight: " + str.tostring(h / atrV, "#.#") + " × ATR"
+    notes += "\nSymmetry: " + str.tostring(sym * 100, "#") + "%"
+    notes += "\nPrior trend: " + str.tostring(trendRatio * 100, "#") + "% of height"
+    [score, notes]
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// DETECTION — compares the newest confirmed pivot with the last few same-side pivots
+// ═══════════════════════════════════════════════════════════════════════════════
+f_detect(int dir, Pivot b, array<Pivot> piv) =>
+    Pattern res = na
+    int n = piv.size()
+    if n > 0 and atr > 0
+        for k = n - 1 to 0
+            Pivot a  = piv.get(k)
+            int span = b.x - a.x
+            if span > maxSpan
+                break
+            if span >= minSpan and math.abs(b.p - a.p) <= tolAtr * atr
+                int   offA = bar_index - a.x
+                int   offB = bar_index - b.x
+                float neck = na
+                int   xn   = na
+                float rim  = na
+                for i = offB + 1 to offA - 1
+                    if dir == -1
+                        if na(neck) or low[i] < neck
+                            neck := low[i]
+                            xn   := bar_index - i
+                        rim := na(rim) ? high[i] : math.max(rim, high[i])
+                    else
+                        if na(neck) or high[i] > neck
+                            neck := high[i]
+                            xn   := bar_index - i
+                        rim := na(rim) ? low[i] : math.min(rim, low[i])
+                float ext   = dir == -1 ? math.max(a.p, b.p) : math.min(a.p, b.p)
+                bool  clean = dir == -1 ? rim <= ext : rim >= ext
+                // a higher high (or lower low) sits between the peaks: older pivots can't qualify either
+                if not clean
+                    break
+                float h = math.abs(ext - neck)
+                if h >= minHeightAtr * atr
+                    float pr     = na
+                    int   xp     = a.x
+                    int   endOff = math.min(offA + priorLook, bar_index)
+                    if endOff > offA
+                        for i = offA + 1 to endOff
+                            if dir == -1
+                                if na(pr) or low[i] < pr
+                                    pr := low[i]
+                                    xp := bar_index - i
+                            else
+                                if na(pr) or high[i] > pr
+                                    pr := high[i]
+                                    xp := bar_index - i
+                    float p0        = na(pr) ? a.p : pr
+                    float priorMove = dir == -1 ? math.max(0.0, a.p - p0) : math.max(0.0, p0 - a.p)
+                    [sc, notes] = f_score(dir, a, b, xn, h, priorMove, atr)
+                    res := Pattern.new()
+                    res.dir    := dir
+                    res.x0     := xp
+                    res.p0     := p0
+                    res.x1     := a.x
+                    res.p1     := a.p
+                    res.xn     := xn
+                    res.neck   := neck
+                    res.x2     := b.x
+                    res.p2     := b.p
+                    res.height := h
+                    res.stop   := dir == -1 ? ext + slBufAtr * atr : ext - slBufAtr * atr
+                    res.tp1    := dir == -1 ? neck - h * tp1Mult : neck + h * tp1Mult
+                    res.tp2    := dir == -1 ? neck - h * tp2Mult : neck + h * tp2Mult
+                    res.atrV   := atr
+                    res.score  := sc
+                    res.grade  := sc >= 75 ? "A" : sc >= 55 ? "B" : "C"
+                    res.notes  := notes
+                    res.xEnd   := bar_index
+                    res.legs   := array.new<line>()
+                    break
+    res
+var table wm = table.new(position.bottom_right, 1, 1)
+if barstate.isfirst
+    table.cell(wm, 0, 0, "Telegram @IndicatorsforTV", text_color = color.new(color.gray, 70), text_size = size.large)
+// ═══════════════════════════════════════════════════════════════════════════════
+// DRAWING METHODS
+// ═══════════════════════════════════════════════════════════════════════════════
+method colorOf(Pattern pt) =>
+    pt.state == 2 ? cWin : pt.state == 3 ? cLoss : pt.dir == -1 ? cTop : cBot
+
+method zone(Pattern pt) =>
+    float top  = math.max(pt.p1, pt.p2)
+    float bot  = math.min(pt.p1, pt.p2)
+    float minT = 0.2 * pt.atrV
+    if top - bot < minT
+        if pt.dir == -1
+            bot := top - minT
+        else
+            top := bot + minT
+    [top, bot]
+
+method statusText(Pattern pt) =>
+    string name = pt.dir == -1 ? "DOUBLE TOP" : "DOUBLE BOTTOM"
+    string st = switch pt.state
+        0 => "FORMING"
+        1 => pt.tp1Hit ? "TP1 HIT ✔" : "ACTIVE"
+        2 => pt.tp2Hit ? "TP2 HIT ✔✔" : "SUCCESS ✔"
+        3 => "FAILED ✖"
+        => "TIMED OUT"
+    name + " · " + st + "\nGrade " + pt.grade + " · " + str.tostring(pt.score) + "/100"
+
+// one leg of the M / W, with an offset 3D drop-shadow underneath
+method leg(Pattern pt, int xa, float ya, int xb, float yb, color c) =>
+    if use3D
+        float sh = 0.18 * pt.atrV
+        pt.legs.push(line.new(xa + 1, ya - sh, xb + 1, yb - sh, color = color.new(c, 72), width = lineW))
+    pt.legs.push(line.new(xa, ya, xb, yb, color = c, width = lineW))
+
+// front face (box) + extruded top face and side face (polylines) for a 3D block
+method render(Pattern pt) =>
+    [top, bot] = pt.zone()
+    color c  = pt.colorOf()
+    int   xr = pt.xEnd
+    if na(pt.face)
+        pt.face := box.new(pt.x1, top, xr, bot, border_width = 2)
+    pt.face.set_right(xr)
+    pt.face.set_border_color(c)
+    pt.face.set_bgcolor(color.new(c, 78))
+    pt.topFace.delete()
+    pt.sideFace.delete()
+    if use3D and depthAtr > 0
+        float dy = depthAtr * pt.atrV
+        int   dx = depthBars
+        array<chart.point> tf = array.new<chart.point>()
+        tf.push(chart.point.from_index(pt.x1, top))
+        tf.push(chart.point.from_index(pt.x1 + dx, top + dy))
+        tf.push(chart.point.from_index(xr + dx, top + dy))
+        tf.push(chart.point.from_index(xr, top))
+        array<chart.point> sf = array.new<chart.point>()
+        sf.push(chart.point.from_index(xr, top))
+        sf.push(chart.point.from_index(xr + dx, top + dy))
+        sf.push(chart.point.from_index(xr + dx, bot + dy))
+        sf.push(chart.point.from_index(xr, bot))
+        pt.topFace  := polyline.new(tf, closed = true, line_color = c, line_width = 1, fill_color = color.new(c, 55))
+        pt.sideFace := polyline.new(sf, closed = true, line_color = c, line_width = 1, fill_color = color.new(c, 85))
+
+method drawLabel(Pattern pt) =>
+    [top, bot] = pt.zone()
+    color c  = pt.colorOf()
+    int   xm = int(math.round((pt.x1 + pt.x2) / 2.0))
+    float dy = use3D ? depthAtr * pt.atrV : 0.0
+    float y  = pt.dir == -1 ? top + dy + 0.35 * pt.atrV : bot - 0.35 * pt.atrV
+    if na(pt.mainLbl)
+        pt.mainLbl := label.new(xm, y, "", textcolor = #000000, style = pt.dir == -1 ? label.style_label_down : label.style_label_up, size = LBL_SIZE, tooltip = pt.notes)
+    pt.mainLbl.set_text(pt.statusText())
+    pt.mainLbl.set_color(c)
+
+method build(Pattern pt) =>
+    color c = pt.colorOf()
+    pt.leg(pt.x0, pt.p0, pt.x1, pt.p1, c)
+    pt.leg(pt.x1, pt.p1, pt.xn, pt.neck, c)
+    pt.leg(pt.xn, pt.neck, pt.x2, pt.p2, c)
+    pt.neckLn := line.new(pt.x1, pt.neck, bar_index, pt.neck, color = cNeck, width = 2, style = line.style_dashed)
+    pt.render()
+    pt.drawLabel()
+
+method onBreak(Pattern pt) =>
+    pt.state := 1
+    pt.xb    := bar_index
+    pt.pb    := close
+    color c = pt.colorOf()
+    pt.leg(pt.x2, pt.p2, bar_index, close, c)
+    string side = pt.signal ? (pt.dir == -1 ? "SHORT" : "LONG") : "BREAK"
+    string txt  = (pt.dir == -1 ? "▼ " : "▲ ") + side
+    float off = 0.4 * pt.atrV
+    pt.brkLbl := label.new(bar_index, pt.dir == -1 ? high + off : low - off, txt, color = c, textcolor = #000000, style = pt.dir == -1 ? label.style_label_down : label.style_label_up, size = LBL_SIZE)
+    if showTargets
+        pt.tp1Ln  := line.new(bar_index, pt.tp1, bar_index, pt.tp1, color = cTP, width = 2)
+        pt.tp2Ln  := line.new(bar_index, pt.tp2, bar_index, pt.tp2, color = cTP, width = 2, style = line.style_dashed)
+        pt.slLn   := line.new(bar_index, pt.stop, bar_index, pt.stop, color = cLoss, width = 2, style = line.style_dotted)
+        pt.tp1Lbl := label.new(bar_index, pt.tp1, "TP1  " + str.tostring(pt.tp1, format.mintick), color = cTP, textcolor = #000000, style = label.style_label_left, size = LBL_SIZE)
+        pt.tp2Lbl := label.new(bar_index, pt.tp2, "TP2  " + str.tostring(pt.tp2, format.mintick), color = cTP, textcolor = #000000, style = label.style_label_left, size = LBL_SIZE)
+        pt.slLbl  := label.new(bar_index, pt.stop, "SL  " + str.tostring(pt.stop, format.mintick), color = cLoss, textcolor = #000000, style = label.style_label_left, size = LBL_SIZE)
+    pt.drawLabel()
+
+method extendTo(Pattern pt, int x) =>
+    pt.xEnd := x
+    if not na(pt.face)
+        pt.face.set_right(x)
+    if not na(pt.neckLn)
+        pt.neckLn.set_x2(x)
+    if not na(pt.tp1Ln)
+        pt.tp1Ln.set_x2(x)
+        pt.tp2Ln.set_x2(x)
+        pt.slLn.set_x2(x)
+        pt.tp1Lbl.set_x(x)
+        pt.tp2Lbl.set_x(x)
+        pt.slLbl.set_x(x)
+    // polylines can't be stretched, so only rebuild them on the live bar (saves resources on history)
+    if barstate.islast and pt.state <= 1
+        pt.render()
+
+method finish(Pattern pt, int st) =>
+    pt.state := st
+    pt.extendTo(bar_index)
+    if not keepTags
+        pt.tp1Lbl.delete()
+        pt.tp2Lbl.delete()
+        pt.slLbl.delete()
+        if not na(pt.tp1Ln)
+            pt.tp1Ln.set_color(color.new(cTP, 65))
+            pt.tp2Ln.set_color(color.new(cTP, 65))
+            pt.slLn.set_color(color.new(cLoss, 65))
+    pt.render()
+    pt.drawLabel()
+
+method wipe(Pattern pt) =>
+    for l in pt.legs
+        l.delete()
+    pt.face.delete()
+    pt.topFace.delete()
+    pt.sideFace.delete()
+    pt.neckLn.delete()
+    pt.tp1Ln.delete()
+    pt.tp2Ln.delete()
+    pt.slLn.delete()
+    pt.mainLbl.delete()
+    pt.brkLbl.delete()
+    pt.tp1Lbl.delete()
+    pt.tp2Lbl.delete()
+    pt.slLbl.delete()
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════════════════════════════
+var array<Pivot>   pHighs = array.new<Pivot>()
+var array<Pivot>   pLows  = array.new<Pivot>()
+var array<Pattern> live   = array.new<Pattern>()
+var array<Pattern> done   = array.new<Pattern>()
+
+// per-bar flags for alertcondition()
+bool aTopForm  = false
+bool aBotForm  = false
+bool aShort    = false
+bool aLong     = false
+bool aBreak    = false
+bool aTP1      = false
+bool aTP2      = false
+bool aFail     = false
+string alertMsg   = ""
+string tfTag      = syminfo.ticker + " " + timeframe.period + ": "
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// 1) DETECTION ON NEWLY CONFIRMED PIVOTS
+// ═══════════════════════════════════════════════════════════════════════════════
+if not na(ph)
+    Pivot b = Pivot.new(bar_index - pivRight, ph, pRsi, pVol)
+    if showTops
+        Pattern pt = f_detect(-1, b, pHighs)
+        if not na(pt) and (showLowQ or pt.score >= minScore)
+            // a newer double top replaces an older one that never broke (triple-top case)
+            if live.size() > 0
+                for i = live.size() - 1 to 0
+                    Pattern o = live.get(i)
+                    if o.dir == -1 and o.state == 0
+                        o.wipe()
+                        live.remove(i)
+            pt.build()
+            live.push(pt)
+            f_bump(-1, 0)
+            aTopForm := true
+            alertMsg += tfTag + "Double Top forming (Grade " + pt.grade + " " + str.tostring(pt.score) + ") neckline " + str.tostring(pt.neck, format.mintick) + "\n"
+    pHighs.push(b)
+    if pHighs.size() > PIVOT_MEMORY
+        pHighs.shift()
+
+if not na(pl)
+    Pivot b = Pivot.new(bar_index - pivRight, pl, pRsi, pVol)
+    if showBots
+        Pattern pt = f_detect(1, b, pLows)
+        if not na(pt) and (showLowQ or pt.score >= minScore)
+            if live.size() > 0
+                for i = live.size() - 1 to 0
+                    Pattern o = live.get(i)
+                    if o.dir == 1 and o.state == 0
+                        o.wipe()
+                        live.remove(i)
+            pt.build()
+            live.push(pt)
+            f_bump(1, 0)
+            aBotForm := true
+            alertMsg += tfTag + "Double Bottom forming (Grade " + pt.grade + " " + str.tostring(pt.score) + ") neckline " + str.tostring(pt.neck, format.mintick) + "\n"
+    pLows.push(b)
+    if pLows.size() > PIVOT_MEMORY
+        pLows.shift()
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// 2) LIFECYCLE: forming → break → success / fail
+// ═══════════════════════════════════════════════════════════════════════════════
+if live.size() > 0
+    for i = live.size() - 1 to 0
+        Pattern pt    = live.get(i)
+        bool    isTop = pt.dir == -1
+        string  nm    = isTop ? "Double Top" : "Double Bottom"
+        if pt.state == 0
+            bool inval = isTop ? high > pt.stop : low < pt.stop
+            bool brk   = isTop ? close < pt.neck : close > pt.neck
+            bool expired = bar_index - pt.x2 > expiryBars
+            if inval or (expired and not brk)
+                pt.wipe()
+                live.remove(i)
+            else if brk
+                bool trendOK = not useTrend or (isTop ? close < emaV : close > emaV)
+                bool volOK   = not useVolBrk or volAvg <= 0 or nz(volume) >= volAvg * volMult
+                bool dirOK   = isTop ? sigShort : sigLong
+                bool isSig   = trendOK and volOK and dirOK and pt.score >= minScore
+                pt.signal := isSig
+                pt.onBreak()
+                pt.extendTo(bar_index)
+                f_bump(pt.dir, 1)
+                alertMsg += tfTag + nm + " neckline break" + (isSig ? (isTop ? " → SHORT" : " → LONG") : "") + " | SL " + str.tostring(pt.stop, format.mintick) + " | TP1 " + str.tostring(pt.tp1, format.mintick) + " | TP2 " + str.tostring(pt.tp2, format.mintick) + "\n"
+                aBreak := true
+                if isSig
+                    if isTop
+                        aShort := true
+                    else
+                        aLong := true
+            else
+                pt.extendTo(bar_index)
+        else if pt.state == 1
+            float stopNow = pt.tp1Hit and moveBE ? pt.pb : pt.stop
+            bool  hitStop = isTop ? high >= stopNow : low <= stopNow
+            bool  hitT1   = isTop ? low <= pt.tp1 : high >= pt.tp1
+            bool  hitT2   = isTop ? low <= pt.tp2 : high >= pt.tp2
+            int   endState = -1
+            // same-bar stop + target is treated as a stop (conservative)
+            if hitStop
+                if pt.tp1Hit
+                    endState := 2
+                else
+                    endState := 3
+                    f_bump(pt.dir, 4)
+                    aFail := true
+                    alertMsg += tfTag + nm + " FAILED (stop hit)\n"
+            else if hitT2
+                if not pt.tp1Hit
+                    pt.tp1Hit := true
+                    f_bump(pt.dir, 2)
+                pt.tp2Hit := true
+                f_bump(pt.dir, 3)
+                aTP2 := true
+                endState := 2
+                alertMsg += tfTag + nm + " TP2 hit ✔✔\n"
+            else if hitT1 and not pt.tp1Hit
+                pt.tp1Hit := true
+                f_bump(pt.dir, 2)
+                aTP1 := true
+                alertMsg += tfTag + nm + " TP1 hit ✔\n"
+                if moveBE and not na(pt.slLn)
+                    pt.slLn.set_y1(pt.pb)
+                    pt.slLn.set_y2(pt.pb)
+                    pt.slLbl.set_y(pt.pb)
+                    pt.slLbl.set_text("BE  " + str.tostring(pt.pb, format.mintick))
+                pt.drawLabel()
+                pt.extendTo(bar_index)
+            else if bar_index - pt.xb > expiryBars * 3
+                endState := 5
+                f_bump(pt.dir, 5)
+            else
+                pt.extendTo(bar_index)
+            if endState >= 0
+                pt.finish(endState)
+                live.remove(i)
+                done.push(pt)
+                if done.size() > maxHist
+                    Pattern old = done.shift()
+                    old.wipe()
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// 3) ALERTS
+// Option A: one alert on "Any alert() function call" gets every event with full details.
+// Option B: pick individual conditions below.
+// ═══════════════════════════════════════════════════════════════════════════════
+if str.length(alertMsg) > 0
+    alert(alertMsg, alert.freq_once_per_bar_close)
+
+alertcondition(aTopForm, "Double Top Forming", "{{ticker}} {{interval}}: Double Top forming")
+alertcondition(aBotForm, "Double Bottom Forming", "{{ticker}} {{interval}}: Double Bottom forming")
+alertcondition(aShort, "SHORT Signal", "{{ticker}} {{interval}}: Double Top neckline break → SHORT @ {{close}}")
+alertcondition(aLong, "LONG Signal", "{{ticker}} {{interval}}: Double Bottom neckline break → LONG @ {{close}}")
+alertcondition(aBreak, "Any Neckline Break", "{{ticker}} {{interval}}: Double Tap neckline break @ {{close}}")
+alertcondition(aTP1, "TP1 Hit", "{{ticker}} {{interval}}: Double Tap TP1 hit")
+alertcondition(aTP2, "TP2 Hit", "{{ticker}} {{interval}}: Double Tap TP2 hit")
+alertcondition(aFail, "Pattern Failed", "{{ticker}} {{interval}}: Double Tap pattern failed (stop hit)")
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// 4) TREND EMA
+// ═══════════════════════════════════════════════════════════════════════════════
+plot(useTrend ? emaV : na, "Trend EMA", color = cNeck, linewidth = 2)
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// 5) DASHBOARD
+// ═══════════════════════════════════════════════════════════════════════════════
+f_rate(int dir) =>
+    int w = f_stat(dir, 2)
+    int l = f_stat(dir, 4)
+    w + l > 0 ? str.tostring(100.0 * w / (w + l), "#.0") + "%" : "—"
+
+f_live(int dir) =>
+    string s = "—"
+    if live.size() > 0
+        for i = live.size() - 1 to 0
+            Pattern p = live.get(i)
+            if p.dir == dir
+                s := p.grade + " · " + str.tostring(p.score) + (p.state == 0 ? " FORMING" : " ACTIVE")
+                break
+    s
+
+var table dash = na
+if showDash and barstate.islast
+    if na(dash)
+        dash := table.new(f_pos(dashPos), 3, 9, bgcolor = #000000, frame_color = cNeck, frame_width = 2, border_color = color.new(cNeck, 60), border_width = 1)
+        table.cell(dash, 0, 0, "⚡ DOUBLE TAP 3D", text_color = cNeck, text_size = DASH_SIZE, bgcolor = #000000)
+        table.merge_cells(dash, 0, 0, 2, 0)
+    table.cell(dash, 0, 1, "", text_size = DASH_SIZE, bgcolor = #000000)
+    table.cell(dash, 1, 1, "TOPS", text_color = cTop, text_size = DASH_SIZE, bgcolor = #000000)
+    table.cell(dash, 2, 1, "BOTTOMS", text_color = cBot, text_size = DASH_SIZE, bgcolor = #000000)
+    array<string> names = array.from("Detected", "Neck Breaks", "Wins (TP1)", "TP2 Hits", "Losses", "Win Rate", "Live Setup")
+    for r = 0 to 6
+        table.cell(dash, 0, r + 2, names.get(r), text_color = #FFFFFF, text_size = DASH_SIZE, text_halign = text.align_left, bgcolor = #000000)
+        for c = 0 to 1
+            int    d   = c == 0 ? -1 : 1
+            color  col = c == 0 ? cTop : cBot
+            string v   = ""
+            if r <= 4
+                int m = r == 0 ? 0 : r == 1 ? 1 : r == 2 ? 2 : r == 3 ? 3 : 4
+                v := str.tostring(f_stat(d, m))
+                col := r == 2 or r == 3 ? cWin : r == 4 ? cLoss : col
+            else if r == 5
+                v := f_rate(d)
+                int w = f_stat(d, 2)
+                int l = f_stat(d, 4)
+                col := w + l == 0 ? #FFFFFF : 100.0 * w / (w + l) >= 50 ? cWin : cLoss
+            else
+                v := f_live(d)
+            table.cell(dash, c + 1, r + 2, v, text_color = col, text_size = DASH_SIZE, bgcolor = #000000)
+// === Dashboard with Telegram Link ===
+var table myTable = table.new(position.top_center, 1, 1, border_width=1, frame_color=color.black, bgcolor=color.white)
+
+// Add Telegram Message to Dashboard
+table.cell(myTable, 0, 0, "Join Telegram @IndicatorsforTV", bgcolor=color.blue, text_color=color.white, text_size=size.normal)

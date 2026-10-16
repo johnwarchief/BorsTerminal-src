@@ -1,0 +1,330 @@
+// تستِ جدولِ زنده و پنلِ اجرای «دیده‌بان بازار»
+//
+// رأیِ مالک: دیده‌بان باید جدولِ زندهٔ کامل با ستون‌های تقاضا/عرضه باشد و پنلِ
+// راست از امروز برایِ ربات آماده باشد، بی‌اینکه هیچ سفارشِ واقعی برود. پس این
+// فایل سه چیز را می‌سنجد: (1) ستون‌هایِ تازه از همان فیدِ مشترک می‌آیند و
+// صفرِ صف با «بی‌داده» و با «۰» یکی نمی‌شود؛ (2) کلیک رویِ ردیف هر سه پنلِ
+// پایین را رویِ همان نماد می‌بَرَد؛ (3) درِ غیابِ سرویسِ اجرا، خرید/فروش و
+// Kill Switch غیرفعال‌اند و دلیلش از پاسخِ سرویس خوانده می‌شود.
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { WatchTable } from '@features/portfolio/components/WatchTable';
+import { WatchSummaryPanel } from '@features/portfolio/components/WatchSummaryPanel';
+import { deriveGate } from '@features/portfolio/lib/orderClient';
+import { resetMarketFeedMirror } from '@shared/api/marketFeed';
+import { useWatchSymbolsStore } from '@features/portfolio/stores/watchSymbolsStore';
+import type { MarketFeed, MarketRow } from '@shared/types/marketRow';
+
+const fetchMock = vi.fn();
+vi.stubGlobal('fetch', fetchMock);
+
+const json = (body: unknown) =>
+  ({ ok: true, status: 200, json: () => Promise.resolve(body) }) as unknown as Response;
+
+function row(patch: Partial<MarketRow> = {}): MarketRow {
+  return {
+    symbol: 'شپنا', name: 'پالایش نفت اصفهان', ins_code: 'A1',
+    p_last: 1025, p_closing: 1000, p_first: 990, p_max: 1040, p_min: 980,
+    percent_change: 2.5, q_tot_tran: 5_000_000, z_tot_tran: 320, q_tot_cap: 5_125_000_000,
+    buy_q1_px: 1024, buy_q1_vol: 44_600, sell_q1_px: 1026, sell_q1_vol: 9_846,
+    row_h: 102335, is_live: true, ...patch,
+  } as MarketRow;
+}
+
+function feed(rows: MarketRow[]) {
+  return { status: 'success', rev: 3, count: rows.length, live_count: rows.length,
+           fossil_count: 0, meta: { d_even: 20261010, h_even: 102335 }, data: rows } as MarketFeed;
+}
+
+function mockFeed(rows: MarketRow[], status?: unknown) {
+  fetchMock.mockImplementation((url: string) => {
+    if (String(url).includes('/api/execution/status')) {
+      return status === 'absent'
+        ? Promise.resolve({ ok: false, status: 404, json: () => Promise.resolve({}) } as unknown as Response)
+        : Promise.resolve(json(status));
+    }
+    return Promise.resolve(json(feed(rows)));
+  });
+}
+
+/** خانۀ کندل حالا همیشه رندر می‌شود (حتی بی‌داده، با «—»ِ صریح)؛ پس «حاضر
+ *  بودنش» دیگر نشانۀ رسیدنِ ردیف نیست — آزمون رویِ سطرِ خالی رد می‌شد و سبز
+ *  می‌ماند (همان دامی که دورِ پیش درِ همین پرونده دیدیم). منتظر همان مقداری
+ *  می‌نشینیم که فقط با ردیفِ فید رویِ سطر می‌آید. */
+const cellHas = (testId: string, text: string) =>
+  waitFor(() => expect(screen.getByTestId(testId).textContent).toContain(text), { timeout: 4000 });
+const drawnCandles = () =>
+  document.querySelectorAll('[data-testid="watch-day-candle"]:not([data-state="incomplete"])').length;
+const candlesDrawn = (n: number) => waitFor(() => expect(drawnCandles()).toBe(n), { timeout: 4000 });
+
+function renderTable(rows: MarketRow[], onSelect = vi.fn()) {
+  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  render(
+    <QueryClientProvider client={qc}>
+      <WatchTable symbols={rows.map((r) => r.symbol)} selected="" onSelect={onSelect} onRemove={() => {}} />
+    </QueryClientProvider>,
+  );
+  return onSelect;
+}
+
+beforeEach(() => {
+  fetchMock.mockReset();
+  localStorage.clear();
+  useWatchSymbolsStore.setState({ symbols: [] });
+});
+
+describe('ستون‌هایِ مرجعِ جدول دیده‌بان', () => {
+  it('قیمت و حجمِ تقاضا/عرضه از همان ردیفِ فید می‌آیند (بی‌درخواستِ عمق ردیف‌به‌ردیف)', async () => {
+    mockFeed([row()]);
+    renderTable([row()]);
+    const tr = screen.getByTestId('watch-row-شپنا');
+    await cellHas('watch-row-شپنا', '۱٬۰۲۴');
+    expect(tr.textContent).toContain('۱٬۰۲۴');// قیمت تقاضا
+    expect(tr.textContent).toContain('۱٬۰۲۶');// قیمت عرضه
+    expect(tr.textContent).toContain('۴۴٬۶۰۰');// حجم تقاضا
+    expect(tr.textContent).toContain('۹٬۸۴۶');// حجم عرضه
+    expect(tr.textContent).toContain('۱۰:۲۳');   // ساعتِ خودِ ردیف
+    // فقط یک درخواستِ فید؛ هیچ /api/order-book ردیف‌به‌ردیف زده نمی‌شود
+    const urls = fetchMock.mock.calls.map((c) => String(c[0]));
+    expect(urls.filter((u) => u.includes('order-book'))).toHaveLength(0);
+    expect(urls.filter((u) => u.includes('/api/market')).length).toBeLessThanOrEqual(1);
+  });
+
+  it('صفرِ واقعیِ صف «بی‌صف» است، نه «—» و نه «۰»؛ نبودِ کلید «—» است', async () => {
+    const zero = row({ symbol: 'خودرو', sell_q1_px: 0, sell_q1_vol: 0 });
+    const bare = row({ symbol: 'فولاد', buy_q1_px: undefined, buy_q1_vol: undefined });
+    mockFeed([zero, bare]);
+    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={qc}>
+        <WatchTable symbols={['خودرو', 'فولاد']} selected="" onSelect={() => {}} onRemove={() => {}} />
+      </QueryClientProvider>,
+    );
+    await cellHas('watch-row-خودرو', 'بی‌صف');
+    expect(screen.getByTestId('watch-row-فولاد').textContent).toContain('—');
+  });
+
+  it('کندلِ روز از اول/بیشترین/کمترین/آخرینِ همان ردیف ساخته می‌شود و بی‌داده «—» است', async () => {
+    const a = row(); const b = row({ symbol: 'بی‌کندل', p_max: null, p_min: null });
+    mockFeed([a, b]);
+    renderTable([a, b]);
+    // هر دو ردیف خانۀ کندل دارند (خانه باید پیدا باشد تا «نکشیدہ» از «نبودِ
+    // ستون» جدا بماند)؛ تفاوت درِ data-state است: رسم شدۀ SVG یا «—».
+    await candlesDrawn(1);   // یک ردیف کندلِ رسم‌شده دارد، «بی‌كندل» نه
+    const drawn = document.querySelector('[data-testid="watch-day-candle"][data-state="up"], [data-testid="watch-day-candle"][data-state="down"]');
+    expect(drawn?.tagName.toLowerCase()).toBe('svg');
+    expect(drawn?.getAttribute('aria-label')).toContain('بیشترین');
+    const flat = document.querySelector('[data-testid="watch-day-candle"][data-state="incomplete"]');
+    expect(flat?.textContent).toBe('—');
+    expect(screen.getByTestId('watch-row-بی‌کندل').textContent).toContain('—');
+  });
+
+  it('کلیک رویِ ردیف همان نماد را به بالایِ صفحه می‌دهد (هماهنگیِ سه پنل)', async () => {
+    mockFeed([row(), row({ symbol: 'فولاد', ins_code: 'A2' })]);
+    const onSelect = renderTable([row(), row({ symbol: 'فولاد', ins_code: 'A2' })]);
+    await cellHas('watch-row-فولاد', '۱٬۰۰۰');
+    fireEvent.click(screen.getByTestId('watch-row-فولاد'));
+    expect(onSelect).toHaveBeenCalledWith('فولاد');
+  });
+});
+
+describe('پنلِ معامله: قراردادِ بی‌سفارشِ واقعی', () => {
+  it('بی‌سرویسِ اجرا (۴۰۴) خرید/فروش و Kill Switch غیرفعال‌اند و دلیل می‌آید', async () => {
+    mockFeed([row()], 'absent');
+    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={qc}>
+        <WatchSummaryPanel symbol="شپنا" row={row()} />
+      </QueryClientProvider>,
+    );
+    await waitFor(() => expect(screen.getByTestId('watch-order-buy')).toBeDisabled());
+    expect(screen.getByTestId('watch-order-sell')).toBeDisabled();
+    expect(screen.getByTestId('watch-kill-switch')).toBeDisabled();
+    expect(screen.getByTestId('watch-order-panel').getAttribute('data-can-trade')).toBe('false');
+    expect(screen.getByTestId('watch-order-reason').textContent).toContain('هیچ سفارشی');
+  });
+
+  it('موجودیِ نرسیده صفر نمی‌شود؛ capabilities.balances=false صریح گفته می‌شود', async () => {
+    mockFeed([row()], { status: 'success', adapter: 'mock', dry_run: true, live_enabled: false,
+      blocked_on: ['D8: کدام سکوی کارگزاری'], capabilities: { place: true, balances: false } });
+    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={qc}>
+        <WatchSummaryPanel symbol="شپنا" row={row()} />
+      </QueryClientProvider>,
+    );
+    await waitFor(() => expect(screen.getByTestId('watch-order-reason').textContent).toContain('D8'));
+    expect(screen.getByTestId('watch-order-balance-note').textContent).toContain('صفر جا نمی‌زند');
+    expect(screen.getByTestId('watch-order-reason').textContent).toContain('D8');
+  });
+
+  it('dry_run=true هرگز «قابلِ معامله» خوانده نمی‌شود، حتی با live_enabled', () => {
+    const g = deriveGate({ status: 'success', adapter: 'mock', dry_run: true, live_enabled: true,
+      capabilities: { place: true } }, 'ok');
+    expect(g.canTrade).toBe(false);
+    expect(g.reason).toContain('بدل');
+  });
+
+  it('ورودیِ مقدار سفارش فقط محلی است و هیچ درخواستی نمی‌فرستد', async () => {
+    mockFeed([row()], 'absent');
+    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={qc}>
+        <WatchSummaryPanel symbol="شپنا" row={row()} />
+      </QueryClientProvider>,
+    );
+    const before = fetchMock.mock.calls.length;
+    await waitFor(() => expect(screen.getByTestId('watch-order-qty')).toBeInTheDocument());
+    fireEvent.change(screen.getByTestId('watch-order-qty'), { target: { value: '۱۰۰' } });
+    // رقمِ فارسی باید رویِ سطر بماند: sanitationِ پیشین با `\d` (که درِ JS فقط
+    // لاتین است) عددِ خودش را می‌بلعید و «۱۰۰» به '' می‌رسید — یعنی همان
+    // چیزی که این آزمون تصادفاً سبز می‌کرد.
+    expect(screen.getByTestId('watch-order-qty')).toHaveValue('۱۰۰');
+    fireEvent.click(screen.getByTestId('watch-order-buy'));
+    expect(fetchMock.mock.calls.length).toBe(before);
+  });
+});
+
+describe('ورودِ بی‌کلیک به زیرتبِ دیده‌بان', () => {
+  it('بی‌انتخابِ سراسری، هر سه پنل رویِ نخستین نمادِ رصد می‌نشینند (نه خالی)', async () => {
+    // ستور درِ import از localStorage خوانده، پس برایِ این تست حالتش را مستقیم می‌گذارم
+    useWatchSymbolsStore.setState({ symbols: ['شپنا', 'فولاد'] });
+    mockFeed([row(), row({ symbol: 'فولاد', ins_code: 'A2' })], 'absent');
+    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const W = (await import('@features/portfolio/components/WatchMarketWorkspace')).default;
+    render(
+      <QueryClientProvider client={qc}>
+        <W />
+      </QueryClientProvider>,
+    );
+    // پرونده درِ تب‌هاست (مأموریتِ پروندۀ نماد، بندِ ۲): سه پنل حذف نشده‌اند،
+    // هر یک تبِّ خودش را دارد — پس تست هم تب را می‌زند و همان ادعا را می‌کند.
+    await waitFor(() => expect(screen.getByTestId('watch-summary')).toHaveAttribute('data-symbol', 'شپنا'));
+    fireEvent.click(screen.getByTestId('watch-tab-chart'));
+    await waitFor(() => expect(screen.getByTestId('watch-chart')).toHaveAttribute('data-symbol', 'شپنا'));
+    fireEvent.click(screen.getByTestId('watch-tab-market'));
+    await waitFor(() => expect(screen.getByTestId('watch-orderbook')).toHaveAttribute('data-symbol', 'شپنا'));
+    // تب با انتخابِ نماد عوض نمی‌شود (کاربر وسطِ بررسیِ چارت نباید به اول بپرد)
+    fireEvent.click(screen.getByTestId('watch-tab-chart'));
+    fireEvent.click(screen.getByTestId('watch-row-فولاد'));
+    await waitFor(() => expect(screen.getByTestId('watch-chart')).toHaveAttribute('data-symbol', 'فولاد'));
+    expect(screen.getByTestId('watch-tab-chart')).toHaveAttribute('aria-selected', 'true');
+  });
+});
+
+describe('تازگیِ بی‌دکمۀ دستی', () => {
+  it('با رسیدنِ ردیفِ نو (revِ نو) عددِ همان ردیف عوض می‌شود، بی‌remount', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    try {
+      resetMarketFeedMirror();
+      mockFeed([row()]);
+      const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+      render(
+        <QueryClientProvider client={qc}>
+          <WatchTable symbols={['شپنا']} selected="" onSelect={() => {}} onRemove={() => {}} />
+        </QueryClientProvider>,
+      );
+      await waitFor(() => expect(screen.getByTestId('watch-row-شپنا').textContent).toContain('۱٬۰۲۵'));
+      fetchMock.mockImplementation((url: string) => {
+        if (String(url).includes('execution/status')) {
+          return Promise.resolve({ ok: false, status: 404, json: () => Promise.resolve({}) } as unknown as Response);
+        }
+        return Promise.resolve(json(feed([row({ p_last: 1100, buy_q1_px: 1099, sell_q1_px: 1105 })])));
+      });
+      await act(async () => {
+        vi.advanceTimersByTime(6 * 60_000 + 5_000);
+      });
+      await waitFor(() => expect(screen.getByTestId('watch-row-شپنا').textContent).toContain('۱٬۱۰۰'), { timeout: 4000 });
+      expect(screen.getByTestId('watch-row-شپنا').textContent).toContain('۱٬۱۰۵');
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+});
+
+describe('ستون‌هایِ «تکنیکال» و «بنیادی» درِ دیده‌بان (رأیِ مالک ۱۴۰۵-۰۷-۲۲)', () => {
+  /** ماتریسِ تأیید درِ همان mock نشسته است؛ داوری ازِ `confidence_engine`
+   *  می‌آید، پس این تست فقط منتقل‌شدنِ چهار حالت را می‌سنجد. */
+  function mockFeedAndMatrix(rows: MarketRow[], matrixRows: unknown[]) {
+    fetchMock.mockImplementation((url: string) => {
+      if (String(url).includes('/api/watchlist/matrix')) {
+        return Promise.resolve(json({ status: 'success', count: matrixRows.length,
+                                     rows: matrixRows, limit: 60, asof: {} }));
+      }
+      return Promise.resolve(json(feed(rows)));
+    });
+  }
+
+  it('هر چهار حالتِ ستون، با نامِ فارسیِ خودش و علتِ رد/هشدار درِ title', async () => {
+    mockFeedAndMatrix([row(), row({ symbol: 'فولاد', ins_code: 'A2' })], [
+      { symbol: 'شپنا', states: { tech: 'pass', fund: 'warn' },
+        pillars: { fund: { state: 'warn', reasons: ['ماده ۱۴۱ / زیان‌ده'], asof: '2026-10-10' } },
+        asof: { tech: '2026-10-10' } },
+      { symbol: 'فولاد', states: { tech: 'fail', fund: 'nodata' },
+        pillars: { tech: { state: 'fail', reasons: ['کندل کافی نیست (۴۵ < ۵۰)'] } } },
+    ]);
+    renderTable([row(), row({ symbol: 'فولاد', ins_code: 'A2' })]);
+    await cellHas('watch-tech-شپنا', 'تأیید');
+    expect(screen.getByTestId('watch-fund-شپنا').textContent).toBe('هشدار');
+    expect(screen.getByTestId('watch-fund-شپنا').getAttribute('title')).toContain('ماده ۱۴۱ / زیان‌ده');
+    expect(screen.getByTestId('watch-tech-فولاد').textContent).toBe('رد');
+    // «بی‌داده» رأی نیست: رنگِ خنثی و متنِ خودش، نه «رد»
+    expect(screen.getByTestId('watch-fund-فولاد').textContent).toBe('بی‌داده');
+    expect(screen.getByTestId('watch-fund-فولاد').className).toContain('text-text-muted');
+    // یک درخواستِ ماتریس برایِ کلِ فهرست، نه یکی به‌ازای هر نماد
+    const urls = fetchMock.mock.calls.map((c) => String(c[0]));
+    expect(urls.filter((u) => u.includes('/api/watchlist/matrix'))).toHaveLength(1);
+  });
+
+  it('نمادی که ماتریس ندارد «—» است و پاورقی منبع را می‌گوید', async () => {
+    mockFeedAndMatrix([row({ symbol: 'ولرز' })], []);
+    renderTable([row({ symbol: 'ولرز' })]);
+    await cellHas('watch-row-ولرز', '۱٬۰۲۴');
+    const tr = screen.getByTestId('watch-row-ولرز');
+    expect(tr.textContent).toContain('—');
+    expect(screen.getByTestId('watch-matrix-state').textContent).toContain('۰ نماد');
+  });
+
+  it('ستونِ «برچسب‌های تابلو» همان هفت پرچمِ فید را با MicroBadgeِ خودِ تابلو می‌زند (رأیِ مالک ۱۴۰۵-۰۷-۲۱)', async () => {
+    // بی‌موتورِ دوم: چیپ‌ها فقط از f_*ِ همان ردیفِ فید می‌آیند (patternBadges).
+    const hot = row({ symbol: 'زرنخ', ins_code: 'Z1', f_smart: true, f_legal: true, f_roobi: false });
+    const cold = row();
+    mockFeed([hot, cold]);
+    renderTable([hot, cold]);
+    await cellHas('watch-row-زرنخ', '۱٬۰۲۵');
+    const chips = screen.getByTestId('watch-tape-badges-زرنخ');
+    expect(chips.textContent).toContain('پول هوشمند');
+    expect(chips.textContent).toContain('کد به کد');
+    expect(chips.textContent).not.toContain('کف‌روب');
+    // بج‌ها همان کامپوننتِ تابلویند (data-testid=badge-<pattern>) — ترجمۀ دوم نیست
+    expect(chips.querySelector('[data-testid="badge-smart"]')).not.toBeNull();
+    expect(chips.querySelector('[data-testid="badge-legal"]')).not.toBeNull();
+    // نمادِ بی‌پرچم «بی‌برچسب» می‌گیرد، نه جایِ خالیِ بی‌دلیل
+    expect(screen.getByTestId('watch-tape-badges-شپنا').textContent).toBe('بی‌برچسب');
+  });
+
+  it('بی‌ماتریس جدول نمی‌شکند: هم «۲۰۰ با statusِ error» و هم HTTP ۴۰۴ به پاورقی می‌آیند', async () => {
+    // مسیرِ واقعی: `api/watchlist.py` استثنا را می‌گیرد و با ۲۰۰ و
+    // `status: 'error'` برمی‌گرداند؛ `isError` درِ react-query این را خطا نمی‌داند.
+    fetchMock.mockImplementation((url: string) => Promise.resolve(json(
+      String(url).includes('/api/watchlist/matrix')
+        ? { status: 'error', message: 'no such table', count: 0, rows: [] }
+        : feed([row()]),
+    )));
+    renderTable([row()]);
+    await cellHas('watch-row-شپنا', '۱٬۰۲۴');
+    await waitFor(() => expect(screen.getByTestId('watch-matrix-state').textContent)
+      .toContain('ماتریسِ تأیید نرسید'));
+    expect(screen.getByTestId('watch-row-شپنا').textContent).toContain('—');
+
+    // مسیرِ سخت‌تر: HTTP ۴۰۴ (غیرِ قابلِ تکرار) ⇒ خطایِ واقعیِ کوئری
+    fetchMock.mockImplementation((url: string) => (String(url).includes('/api/watchlist/matrix')
+      ? Promise.resolve({ ok: false, status: 404, json: () => Promise.resolve({ detail: 'x' }) } as unknown as Response)
+      : Promise.resolve(json(feed([row({ symbol: 'فولاد', ins_code: 'B1' })])))));
+    renderTable([row({ symbol: 'فولاد', ins_code: 'B1' })]);
+    await cellHas('watch-row-فولاد', '۱٬۰۲۴');
+    expect(screen.getAllByTestId('watch-matrix-state').some((n) => n.textContent?.includes('ماتریسِ تأیید نرسید')))
+      .toBe(true);
+  });
+});

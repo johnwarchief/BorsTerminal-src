@@ -139,7 +139,7 @@ describe('پنل ترازها', () => {
   it('ترازها، مبنای فیبو و ستاپ از همان پیلود سرور', () => {
     render(<SidebarActiveLevels active={ACTIVE} />);
     const panel = screen.getByTestId('sidebar-levels');
-    expect(panel.textContent).toContain('کمربند طلایی');
+    expect(panel.textContent).toContain('زون طلایی');
     expect(panel.textContent).toContain('MA(100)');
     expect(panel.textContent).toContain('جت (شکست سقف)');
     expect(panel.textContent).toContain('۲,۴۴۷');
