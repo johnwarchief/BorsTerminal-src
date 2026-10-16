@@ -150,6 +150,14 @@ def main() -> int:
                                    % (k, r.status_code, j.get("status"), joined))
             chk(not bad, "M4 هر %d ترکیبِ شبکه پاسخِ واقعیِ canonical می‌دهد%s"
                 % (len(keys), "" if not bad else " | " + "; ".join(bad[:3])))
+            # M7: تله‌ای که تستِ TS روِ آن نوشته شده، ساختگی نباشد — بک‌اند واقعاً
+            # برایِ fund_mode ناشناخته HTTP 200 با بدنۀ خطا می‌دهد.
+            r = c.get("/api/funnel?preset=trend&fund_mode=strict")
+            j7 = r.json() if r.status_code == 200 else {}
+            chk(r.status_code == 200 and j7.get("status") not in (None, "success")
+                and bool(j7.get("message")),
+                "M7 پاسخِ ۲۰۰ با بدنۀ خطا واقعاً وجود دارد (http=%s status=%s)"
+                % (r.status_code, j7.get("status")))
         except Exception as e:  # noqa: BLE001
             chk(False, "M4 BLOCKED — بک‌اند بالا نیامد: %s: %s" % (type(e).__name__, e))
 

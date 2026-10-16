@@ -74,6 +74,18 @@ export function funnelQueryKey(req: FunnelRequest): string[] {
           JSON.stringify(req.exceptions), req.dropSuffix ? 'ds1' : 'ds0'];
 }
 
+/**
+ * پاسخِ ۲۰۰ِ موتورِ قیف می‌تواند **خطا** باشد: برایِ `fund_mode` ناشناخته
+ * `{"status":"error","message":…}` برمی‌گرداند با HTTP 200 (سنجشِ زنده رویِ
+ * `api/funnel.py:255` — بدنه ۶۷ بایت). بی‌این تابع، آن بدنه درِ `funnelFromApi`
+ * به «جهانیِ صفر» بدل می‌شد و صفحه یا empty-state می‌داد یا بنرِ «اعدادِ کهنه»
+ * رویِ هیچ عددِ معتبر. پاسخِ قدیمیِ بی‌`status` خطا نیست (سازگاریِ عقب‌رو).
+ */
+export function funnelPayloadProblem(p?: { status?: string; message?: string } | null): string | null {
+  if (!p || !p.status || p.status === 'success') return null;
+  return p.message || `پاسخِ موتورِ قیف ناموفق بود (status=${p.status})`;
+}
+
 /** درخواستِ قیف از سرور. `mode` فقط نمایشِ ریتمِ کشف است (معکوس/مرور) و داوری
  *  نیست؛ همان را prefs نگه می‌دارد. */
 export function useFtsFunnel(
@@ -195,6 +207,7 @@ export function useFtsFunnel(
   // این تقسیمِ شمارش است، نه داوریِ تازه.
   const tc = funnel.counts.technical;
   const resolved = tc.pass + tc.reject + tc.pending + tc.unavailable;
+  const problem = funnelPayloadProblem(q.data);
 
   return {
     funnel,
@@ -213,10 +226,15 @@ export function useFtsFunnel(
     /** پاسخِ رویِ صفحه پاسخِ *قبلی* است و تازه‌اش در راه است — باید دیده شود،
      *  وگرنه keepPreviousData یعنی «کهنه» بی‌برچسب. */
     refreshing: !!q.isPlaceholderData || q.isFetching,
-    error: q.error ? String((q.error as Error).message ?? q.error) : null,
+    // موتورِ قیف برایِ پارامترِ ناشناخته **HTTP 200** می‌دهد با بدنۀ خطا
+    // (سنجشِ ۱۴۰۵-۰۹-۲۵: `fund_mode=strict` → ۶۷ بایت `{"status":"error",
+    // "message":…}`). بی‌این دو خط، آن بدنه درِ `funnelFromApi` به «جهانیِ صفر»
+    // بدل می‌شد: صفحه می‌گفت بازاری خالی است، یا با `hasData` بنرِ کهنه می‌داد
+    // درحالی‌که هیچ عددِ معتبری رویِ صفحه نیست.
+    error: q.error ? String((q.error as Error).message ?? q.error) : problem,
     /** آیا همین حالا دادهٔ معتبری رویِ صفحه هست؟ مصرف‌کننده با این، «خطا» را از
      *  «خالی» جدا می‌کند: خطا با دادهٔ قبلی ⇒ بنرِ کنارِ جدول، نه empty-state. */
-    hasData: !!q.data,
+    hasData: !!q.data && !problem,
     /** Retryِ همان query — دکمهٔ بی‌اثر نه؛ همان fetchِ واقعی را دوباره می‌زند. */
     retry: () => void q.refetch(),
     // سبد از همان پاسخِ /api/selection/portfolio خوانده می‌شود (decisions)،
