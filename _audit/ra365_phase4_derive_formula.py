@@ -13,7 +13,7 @@ import csv
 from datetime import datetime, timezone, timedelta
 
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
-ROOT = "C:/Users/Johnkallnaya/Desktop/Borsterminal/BorsTerminal-src"
+ROOT = "C:/Users/[LOCAL_USER]/Desktop/Borsterminal/BorsTerminal-src"
 R = json.load(open(f"{ROOT}/_audit/ra365_ref_bars.json", encoding="utf-8"))
 CORPUS = json.load(open(f"{ROOT}/_audit/ra365_corpus.json", encoding="utf-8"))
 TEHRAN = timezone(timedelta(hours=3, minutes=30))

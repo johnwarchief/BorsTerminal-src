@@ -2,13 +2,13 @@
 """ra365_dbcheck_followup.py — read-only second look (ولانا gap + installed DB)."""
 import os, sqlite3, sys
 sys.stdout.reconfigure(encoding="utf-8")
-ROOT = r"C:\Users\Johnkallnaya\Desktop\Borsterminal\BorsTerminal-src"
+ROOT = r"C:\Users\[LOCAL_USER]\Desktop\Borsterminal\BorsTerminal-src"
 
 def ro(p):
     return sqlite3.connect(f"file:{p}?mode=ro", uri=True)
 
 for label, db in (("REPO", os.path.join(ROOT, "market.db")),
-                  ("INSTALLED", r"C:\Users\Johnkallnaya\AppData\Local\Programs\BorsTerminal_Ultimate\market.db")):
+                  ("INSTALLED", r"C:\Users\[LOCAL_USER]\AppData\Local\Programs\BorsTerminal_Ultimate\market.db")):
     if not os.path.exists(db):
         print(label, db, "MISSING"); continue
     print(f"\n===== {label} {db} size={os.path.getsize(db)} =====")

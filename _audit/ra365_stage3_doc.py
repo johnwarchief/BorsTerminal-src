@@ -7,7 +7,7 @@ import sys
 from collections import defaultdict
 
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8")
-ROOT = "C:/Users/Johnkallnaya/Desktop/Borsterminal/BorsTerminal-src"
+ROOT = "C:/Users/[LOCAL_USER]/Desktop/Borsterminal/BorsTerminal-src"
 OUT = f"{ROOT}/docs/RAHAVARD-CANDLE-ADJUSTMENT-PARITY-1405-07-20.md"
 
 

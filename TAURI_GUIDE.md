@@ -159,7 +159,7 @@ git push origin v1.0.1
   "platforms": {
     "windows-x86_64": {
       "signature": "<امضای دیجیتال تولیدشده توسط tauri-action>",
-      "url": "https://github.com/Johnkallnaya/BorsTerminal/releases/download/v1.0.1/Bors.Terminal.Ultimate_1.0.1_x64-setup.nsis.zip"
+      "url": "https://github.com/[LOCAL_USER]/BorsTerminal/releases/download/v1.0.1/Bors.Terminal.Ultimate_1.0.1_x64-setup.nsis.zip"
     }
   }
 }

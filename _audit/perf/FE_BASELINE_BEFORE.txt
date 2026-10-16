@@ -32,6 +32,6 @@
   [dev-8000] drag-pan    : 451ms longtasks=0 worst=0 frames med/p95/max=17/17/17 >100ms=0
   [dev-8000] heavy: status-tab open=1525ms scroll(12×600px)=561ms longtasks=3 tbt=645 worst=465 frames>100=2 req=8 heap=43.1MB dom=7478
 
-wrote C:\Users\Johnkallnaya\Desktop\Borsterminal\BorsTerminal-src\_audit\perf\FE_BASELINE_DEV.json
+wrote C:\Users\[LOCAL_USER]\Desktop\Borsterminal\BorsTerminal-src\_audit\perf\FE_BASELINE_DEV.json
 console errors: []
 net errors    : []

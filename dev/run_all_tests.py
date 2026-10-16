@@ -378,6 +378,10 @@ SUITES = [
     # سنسور با سمِ --selftest راستی‌آزمایی می‌شوند؛ بیرونِ سرخطی ك/ي عربی
     # فقط شمارشِ اطلاعیه (۳۵۰ سطر، اکثراً املایِ خودِ نمادهایِ تابلو).
     ('dev/persian_glyph_guard.py', 'persian text: no stray CJK, no eaten section digit'),
+    # بازبینیِ ۲۰۲۶-۱۰-۱۶: ردیف‌هایِ شاهد و یک fixtureِ آزمونِ محصول نشانیِ مطلقِ
+    # `Users\<نامِ حساب>` را نگه داشته بودند. پاک‌سازی شد؛ این شُمارِ ریشه‌دار
+    # (ratchet) نمی‌گذارد فایلِ تازه‌ای مسیرِ شخصی بیاورد. نام/مقدار چاپ نمی‌شود.
+    ('dev/local_path_guard.py', 'no new tracked file carries a personal user-profile path (ratchet vs baseline)'),
     # SARKHATI Stage G: خواندنِ وضعیتِ سفارش و جایِ صف. سه معنایِ متفاوتِ
     # «نمی‌دانیم» (بی‌capability / پاسخِ خالی / ردیفِ بی‌مقدار) را از صفر
     # جدا می‌گذارد، و ثابت می‌کند هیچ refresh یا پایشی سفارشِ تازه

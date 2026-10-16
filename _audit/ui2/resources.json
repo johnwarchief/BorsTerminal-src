@@ -2,7 +2,7 @@
   "server": {
     "pid": 2676,
     "name": "python.exe",
-    "cmdline": "C:\\Users\\Johnkallnaya\\Desktop\\Borsterminal\\.worktrees\\uiux-2-0\\.venv-ui\\Scripts\\python.exe -m uvicorn app:app --host 127.0.0.1 --port 8010 --log-level warning"
+    "cmdline": "C:\\Users\\[LOCAL_USER]\\Desktop\\Borsterminal\\.worktrees\\uiux-2-0\\.venv-ui\\Scripts\\python.exe -m uvicorn app:app --host 127.0.0.1 --port 8010 --log-level warning"
   },
   "port": 8010,
   "viewport_note": "سمتِ سرور؛ سمتِ مرورگر درِ tabs-*.json",

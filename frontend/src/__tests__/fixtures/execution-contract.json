@@ -55,7 +55,7 @@
      "kill_reason": "ادامهٔ دستوری",
      "durable_events": 9,
      "recovered_after_restart": 0,
-     "audit_db": "C:\\Users\\Johnkallnaya\\Desktop\\Borsterminal\\.worktrees\\uiux-2-0\\user.db",
+     "audit_db": "C:\\Users\\[LOCAL_USER]\\Desktop\\Borsterminal\\.worktrees\\uiux-2-0\\user.db",
      "clock_source": "system",
      "clock_limit": "ساعتِ سیستم بدونِ آفستِ NTP؛ زمان‌بندی رویِ monotonic است پس پرشِ ساعتِ دیواری dispatch را جابه‌جا نمی‌کند، ولی خودِ هدفِ دیواری قابلِ ادعایِ دقتِ میلی‌ثانیه نیست",
      "scheduled_pending": 0

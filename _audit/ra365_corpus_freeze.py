@@ -8,7 +8,7 @@ import json
 import sys
 
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8")
-ROOT = "C:/Users/Johnkallnaya/Desktop/Borsterminal/BorsTerminal-src"
+ROOT = "C:/Users/[LOCAL_USER]/Desktop/Borsterminal/BorsTerminal-src"
 AUD = f"{ROOT}/_audit"
 
 corpus = json.load(open(f"{AUD}/ra365_corpus.json", encoding="utf-8"))

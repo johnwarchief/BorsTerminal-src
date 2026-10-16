@@ -4,7 +4,7 @@ TSETMC event tables in market.db. Touches nothing (mode=ro URI)."""
 import os, sqlite3, sys, csv, json
 
 sys.stdout.reconfigure(encoding="utf-8")
-ROOT = r"C:\Users\Johnkallnaya\Desktop\Borsterminal\BorsTerminal-src"
+ROOT = r"C:\Users\[LOCAL_USER]\Desktop\Borsterminal\BorsTerminal-src"
 DB = os.path.join(ROOT, "market.db")
 
 def ro(path):

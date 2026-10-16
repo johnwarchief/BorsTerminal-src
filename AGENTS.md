@@ -99,7 +99,7 @@ python dev/version_anchor_guard.py      # باید «VERSION ANCHOR GUARD OK» �
 ## ایجنتِ داده/بک‌اند (codal) — رابطِ ابزارها
 
 > بخشِ زیر دستورِ کارِ ایجنتِ واکشیِ کدال است (قبلاً کلِ این فایل بود). مسیرِ
-> `C:\Users\Johnkallnaya\Desktop\BorsTerminal_Ultimate_Base` که در نسخۀ پیشینِ این فایل آمده بود،
+> `C:\Users\[LOCAL_USER]\Desktop\BorsTerminal_Ultimate_Base` که در نسخۀ پیشینِ این فایل آمده بود،
 > ریپویِ رویِ ماشینِ دیگری است؛ ریشهٔ کارِ شما همین clone است.
 
 **مأموریت:** تازه‌سازیِ دادهٔ خامِ **فقط ۵ شاخص FTS** از کدال، با کمترین نرخِ درخواست (ضد ۴۲۹/بن)، و نگه‌داشتنِ جدول‌های `monthly_sales` / `financial_statements` تازه.

@@ -3,8 +3,8 @@
 #   .\setup-agents.ps1 -RepoRoot "D:\Proj\BorsTerminal" -WorktreeRoot "D:\Proj\_worktrees"
 # پس از اجرا: ۴ ورکتری + AGENTS.md هر ایجنت ساخته می‌شود و دستورات کانفیگ اپ چاپ می‌گردد.
 param(
-  [string]$RepoRoot     = "C:\Users\Johnkallnaya\Desktop\BorsTerminal_Ultimate_Base",
-  [string]$WorktreeRoot = "C:\Users\Johnkallnaya\Desktop\BorsTerminal_Ultimate_Base_worktrees"
+  [string]$RepoRoot     = "C:\Users\[LOCAL_USER]\Desktop\BorsTerminal_Ultimate_Base",
+  [string]$WorktreeRoot = "C:\Users\[LOCAL_USER]\Desktop\BorsTerminal_Ultimate_Base_worktrees"
 )
 $ErrorActionPreference = 'Stop'
 if (-not (Test-Path (Join-Path $RepoRoot '.git'))) { throw "ریپو پیدا نشد: $RepoRoot" }
