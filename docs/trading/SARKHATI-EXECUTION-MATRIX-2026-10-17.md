@@ -9,11 +9,11 @@
 | # | قابلیت (منبع در ماتریس مرجع) | وضعیت | شاهد / علت |
 | --- | --- | --- | --- |
 | ۱ | نشانه‌گذاریِ نشست: `authorization`/`cookie` صفحه‌اختیاری کاربر | **PARTIAL** | `execution_easytrader.py:686-697` نشانی را به `Authorization` می‌گذارد (نرمال‌سازی `Bearer`)؛ ولی **منبعِ نشانی** هنوز «کاربر خودش در API می‌خواند و اینجا می‌چسباند» است. تحویلِ خودکارِ نشست از پنجرۀ مرورگر: **REJECTED WITH REASON** تا پروتکلِ واقعی مشاهده نشود (§۶) |
-| ۲ | بازِ کردنِ پنجرۀ ورودِ کاربر در دامنهٔ واقعی | **IMPLEMENTED** | `execution_connect.py:open_login_window` + `POST /api/execution/connect/browser`؛ پروفایلِ موقت، بدونِ هیچ ورودِ خودکار؛ `dev/sarkhati_connect_v1117.py` E1–E3 |
-| ۳ | حالتِ صریحِ نشست (CONNECTED / DISCONNECTED / EXPIRED / UNKNOWN) | **IMPLEMENTED** | `execution_connect.py:verify`؛ ۴۰۱⇒EXPIRED، احرازِ ناموفق⇒EXPIRED، timeout/شبکه⇒UNKNOWN، بی‌ترافیکِ مجاز⇒UNKNOWN+`blocked_reason`. F1–F6، و **G1**: پنجرۀ باز به‌تنهایی «متصل» نیست |
+| ۲ | بازِ کردنِ پنجرۀ ورودِ کاربر در دامنهٔ واقعی | **IMPLEMENTED** | `execution_connect.py:open_login_window` + `POST /api/execution/connect/browser`؛ پروفایلِ موقت، بی‌هیچ ورودِ خودکار؛ E1–E9 در `dev/sarkhati_connect_v1117.py` (بازِ پنجره با دامنهٔ تأییدشده، بسته‌شدن، جارویِ پنجرۀ مُرده) |
+| ۳ | حالتِ صریحِ نشست (CONNECTED / DISCONNECTED / EXPIRED / UNKNOWN) | **IMPLEMENTED** | `execution_connect.py:verify`؛ ۴۰۱⇒EXPIRED، ۴۰۳/احرازِ ناموفق⇒DISCONNECTED، timeout/شبکه/پاسخِ بی‌قالب⇒UNKNOWN، پاکتِ معتبر⇒CONNECTED، بی‌ترافیکِ مجاز⇒UNKNOWN+`blocked_reason`. F1–F6، F9–F10، و **G1**: پنجرۀ باز به‌تنهایی «متصل» نیست |
 | ۴ | بررسیِ اتصال / قطعِ اتصال / مشاهدهٔ وضعیت در رابط | **IMPLEMENTED** | `ConnectBrokerRow.tsx` (چیپِ حالت + سه کنش + جزئیات درِ `<details>`) روی `ExecutionPanel`؛ `connect-broker-row.spec.tsx` ۴ سنجه |
-| ۵ | محدودیتِ دامنه + ردِّ پاسخِ HTML به‌عنوانِ «اتصال موفق» | **IMPLEMENTED** | `validate_url` (فقط https + میزبانِ مجاز)؛ `login_hosts()` عمداً از `allowed_hosts()` جداست و بی‌`BORS_EXECUTION_CONNECT_HOSTS` خروج `NO_LOGIN_HOST` است (E1–E2) |
-| ۶ | عدمِ ذخیرهٔ رمز/کوکی/توکن روی دیسک | **IMPLEMENTED** | توکن فقط درِ حافظه (`api/execution.py:post_session`)؛ پروفایلِ مرورگر هنگام بستن پاک می‌شود (`close_login_window`)؛ H1–H4: نه در پاسخ، نه در وضعیتِ پنجره |
+| ۵ | محدودیتِ دامنه + ردِّ پاسخِ HTML به‌عنوانِ «اتصال موفق» | **IMPLEMENTED** | `validate_url` (فقط https + میزبانِ مجاز + بندرِ ۴۴۳ + تطبیقِ Authority؛ D6–D10) و `login_hosts()` جدا از `allowed_hosts()` (E1–E2). **صفحۀ HTML دیگر اتصال نمی‌شود**: `execution_easytrader.py:767-772` پاکتِ خواندنی می‌خواهد؛ F7 (۲۰۰+HTML⇒UNKNOWN) با دامِ مثبتِ F8 (۲۰۰+JSON⇒CONNECTED) |
+| ۶ | عدمِ ذخیرهٔ رمز/کوکی/توکن روی دیسک | **IMPLEMENTED** | توکن فقط درِ حافظه (`api/execution.py:post_session`)؛ پروفایلِ مرورگر سه راه پاک می‌شود: بستنِ پنجره (E7)، جایگزینیِ پنجرۀ مُرده (E9)، پایانِ فرایند (`_atexit_cleanup`)؛ `profile_kept` ازِ دیسک خوانده می‌شود نه ازِ ادعا (E5/E8)؛ H1–H4 و F9: نه در پاسخ، نه در وضعیت، نه در دلیلِ خطا (سانسورِ `EC.redact`) |
 | ۷ | حلِ ISIN/شناسه پیش ازِ هر چیز؛ بی‌نگاشتِ مبهم | **IMPLEMENTED** | `_resolve_instrument` از `instruments` می‌خواند؛ بی‌ISIN ⇒ `NOT_ORDERABLE`. I2 (`resolution=exact`) و I10 |
 | ۸ | کنترلِ قیمت/حجم/محدودیت/تازگی (preflight) | **IMPLEMENTED** | `/api/execution/preflight` + `checks` در پاسخ؛ I2–I3 |
 | ۹ | زمان‌بندی + منبعِ ساعت + خطایِ زمان‌بندی دیدنی | **PARTIAL** | `schedule/{id}`، `timings` در پاسخِ dispatch، و `execution_timing` درِ مرجعِ مخزن؛ **کالیبراسیون RTT/HEAD** (مرجع ۱) و «چند میلی‌ثانیه مانده» درِ این شاخه سنجیده نشده — NOT_IMPLEMENTED |
@@ -45,3 +45,22 @@
 - پیکربندیِ نصاب/بسته‌بندیِ ویندوز درِ این مرحله ساخته **نشده** — فقط `npm run build`
   (خروجۀ SPA) و اجرایِ بک‌اندِ محلی. انتشار/تگ/merge به `main` انجام نشده است.
 - اعدادِ «اول صف» یا «ارسالِ زندهٔ تأییدشده» درِ هیچ کجای این شاخه ادعا نمی‌شود.
+
+
+## ۸) بازنگریِ پس ازِ بازبینیِ مستقل (همان روز)
+
+شش نقص از بازبینیِ مستقل درآمد و هر یک باِ کارگذاریِ قرینه (mutation) پین شد — یعنی
+بیِ اصلاح، سنجه‌اش قرمز می‌شود؛ ۱۲ کارگذاری، ۱۲ قرمز:
+
+| نقص | اصلاح | سنجه |
+| --- | --- | --- |
+| ۲۰۰ِ صفحهٔ ورود «متصل» می‌ساخت | پاکت‌سنجی در `authenticate` | F7 + دامِ مثبت F8 |
+| گاردِ میزبانِ ورود وارونه بود (بی‌env باز می‌شد) | `NO_LOGIN_HOST` پیشِ هر Popen | E2/E3 |
+| ۴۰۳ را «منقضی» می‌گفت و شاخهٔ DISCONNECTED مرده بود | نگاشتِ `AUTH_FAILED`⇒DISCONNECTED | F4/F4b |
+| نشانی‌هایِ دوپاره (جداکننده، userinfo، بندرِ کاذب) | Authorityِ ساده‌شده + بندرِ ۴۴۳ | D6–D10 |
+| PIDِ بازچرخانده می‌توانست غریبه را بکشد | نگه‌داشتنِ شیءِ فرزند و `poll()` | E4/E7 (بی‌اجرایِ واقعی) |
+| پاک‌شدنِ پروفایل ادعا بود، نه سنجش | `profile_kept` ازِ دیسک + جارویِ مُرده | E5–E9 |
+| دلیلِ خطا سانسور نمی‌شد | `EC.redact` پیش ازِ پاسخ | F9 |
+
+دو چیز عمداً **انجام نشد**: هیچ پلی از کوکیِ مرورگر به توکنِ API ساخته نمی‌شود (§۶ بند ۲،
+بی‌مشاهدهٔ پروتکل) و هیچ کلیک/تایپِ خودکاری درِ کارگزاری نیست (قاعدهٔ مأموریت).

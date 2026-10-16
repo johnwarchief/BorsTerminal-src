@@ -12,29 +12,34 @@
   ۱) **هیچ نشانی ازِ حدس ساخته نمی‌شود.** دامنۀ ورود درِ این مخزن مشاهده نشده
      است (سنجش: `grep` رویِ کد فقط `WIRE_BASE_URL = api-mts.orbis.easytrader.ir`
      را می‌دهد — نشانیِ API، نه صفحۀ ورود). پس دامنۀ ورود ازِ
-     `BORS_EXECUTION_CONNECT_HOSTS` خوانده می‌شود؛ بی‌آن، حالت `BLOCKED` با
-     علتِ روشن اعلام می‌شود و هیچ مرورگری باز نمی‌شود.
+     `BORS_EXECUTION_CONNECT_HOSTS` خوانده می‌شود؛ بی‌آن، پنجره باز نمی‌شود و
+     علتِ مسدودبودن اعلام می‌شود. میزبانِ API به‌تنهایی جایِ ورود نیست.
   ۲) **رمز/CAPTCHA/MFA را این برنامه نمی‌شکند.** پنجره فقط باز می‌شود؛ ورودِ
      واقعی باِ خودِ کاربر است. هیچ خواندنِ فرم، هیچ کلیکِ خودکار، هیچ
      دورزدنی نیست.
-  ۳) **هیچ رازی نوشته نمی‌شود.** پروفایلِ مرورگر درِ یکِ پوشۀ موقت است و هنگام
-     بستن پاک می‌شود؛ کوکی/توکن هرگز درِ DB، لاگ، پاسخ API یا فایلِ تنظیمات
-     نمی‌نشیند. نشانیِ نشست همان مسیرِ موجودِ درِ حافظه می‌رود.
+  ۳) **هیچ رازی نوشته نمی‌شود.** کوکی/توکن هرگز درِ DB، لاگ، پاسخ API یا
+     فایلِ تنظیمات نمی‌نشیند. پروفایلِ مرورگر پوشۀ موقت است و سه راه پاک می‌شود:
+     بستنِ پنجره، جایگزین‌شدنِ پروفایلِ مُرده، و پایانِ فرایند؛ پوشه‌هایِ بی‌صاحبِ
+     کهنه هم درِ همان لحظه جارو می‌شوند.
   ۴) **HTMLِ صفحۀ ورود، «اتصال موفق» نیست.** حالت *فقط* از پرسیدنیِ واقعیِ
-     آداپتر (`authenticate()`) می‌آید: ۴۰۱ ⇒ EXPIRED، ۴۰۳ ⇒ DISCONNECTED،
-     timeout/شبکه ⇒ UNKNOWN، پاسخِ معنادار ⇒ CONNECTED. بی‌ترافیکِ مجاز
-     (کلیدهایِ زنده) حالت `UNKNOWN` + `blocked_reason` می‌ماند، نه `CONNECTED`.
+     آداپتر (`authenticate()`) می‌آید: ۴۰۱ ⇒ EXPIRED، احرازِ ناموفق (۴۰۳) ⇒
+     DISCONNECTED، timeout/شبکه/پاسخِ بی‌قالب ⇒ UNKNOWN، پاکتِ معتبرِ API ⇒
+     CONNECTED. بی‌ترافیکِ مجاز (کلیدهایِ زنده) حالت `UNKNOWN` + `blocked_reason`
+     می‌ماند، نه `CONNECTED`.
 
-کشتنِ پروسه فقط رویِ PIDی که *خودِ این ماژول* بالا آورده است؛ هر PID دیگری
-دست‌نخورده می‌ماند.
+کشتنِ پروسه فقط رویِ فرزندِ خودِ این ماژول، و فقط تا زمانی که `poll()` می‌گوید
+زنده است؛ شمارهٔ PIDِ بازچرخانده‌شده نمی‌تواند مجوزِ کشتنِ غریبه بدهد. هر PID
+دیگری دست‌نخورده می‌ماند.
 """
 from __future__ import annotations
 
+import atexit
 import dataclasses
 import os
 import shutil
 import subprocess
 import tempfile
+import threading
 import time
 from typing import Any, Mapping
 from urllib.parse import urlparse
@@ -45,9 +50,14 @@ import execution_easytrader as ET
 CONNECT_ENV = "BORS_EXECUTION_CONNECT_HOSTS"
 BROWSER_ENV = "BORS_CONNECT_BROWSER"
 
-#: تنها نشانی‌ای که درِ این مخزن *مشاهده* شده (سرِ `execution_easytrader.py`).
-#: این دامنۀ API است؛ برایِ بازِ کردنِ پنجره هم مجاز است، ولی جایِ ورودِ کاربر
-#: نیست و ادعایی بابتش ساخته نمی‌شود.
+#: پوشۀ موقتِ مرورگر نباید بیشترِ این عمر رویِ دیسک بماند (کوکیِ بی‌صاحب).
+#: با فاصلۀ زیاد از عمرِ معمولِ یکِ پنجرۀ ورود انتخاب شده تا پنجرۀ بازِ کاربر
+#: پاک نشود؛ اگر هنوز درِ استفاده باشد، ویندوز نگهش می‌دارد و پاک نمی‌شود.
+STALE_PROFILE_S = 12 * 3600.0
+PROFILE_PREFIX = "bors_broker_profile_"
+
+#: تنها نشانیِای که درِ این مخزن *مشاهده* شده (سرِ `execution_easytrader.py`).
+#: این دامنۀ API است؛ پرسشِ نشست رویِ آن مجاز است، ولی جایِ ورودِ کاربر **نیست**.
 KNOWN_WIRE_HOST = urlparse(ET.WIRE_BASE_URL).hostname or ""
 
 STATE_CONNECTED = "CONNECTED"
@@ -56,9 +66,16 @@ STATE_EXPIRED = "EXPIRED"
 STATE_UNKNOWN = "UNKNOWN"
 STATES = (STATE_CONNECTED, STATE_DISCONNECTED, STATE_EXPIRED, STATE_UNKNOWN)
 
+#: چرا پنجره باز نشده — رشته‌ای ثابت که UI و گارد رویِ آن می‌خوانند، نه بر اساسِ متن.
+NO_LOGIN_HOST = "NO_LOGIN_HOST"
+
 
 def allowed_hosts() -> tuple[str, ...]:
-    """دامنه‌هایِ تأییدشده. پیش‌فرضِ امن: فقطِ همان یکِ میزبانِ دیدہ‌شدہ."""
+    """دامنه‌هایی که *پرسشِ* نشست رویِ آن‌ها مجاز است.
+
+    پیش‌فرضِ امن: فقطِ همان یکِ میزبانِ دیدہ‌شدہ. فهرستِ کاربر فقط *افزوده* می‌شود
+    و هیچ‌گاه جایِ آن را نمی‌گیرد؛ بی‌`CONNECT_ENV` هم پرسشِ API ممکن است.
+    """
     raw = (os.environ.get(CONNECT_ENV) or "").strip()
     extra = tuple(h.strip().lower() for h in raw.split(",") if h.strip())
     out = list(dict.fromkeys(list(extra) + ([KNOWN_WIRE_HOST] if KNOWN_WIRE_HOST else [])))
@@ -70,26 +87,42 @@ def login_hosts() -> tuple[str, ...]:
 
     این فهرست عمداً ازِ `allowed_hosts()` جداست: دیدنِ یکِ میزبانِ API دلیل
     نمی‌شود که صفحۀ ورود همان‌جا باشد. بی‌`BORS_EXECUTION_CONNECT_HOSTS` این
-    خالی است ⇒ `BLOCKED`.
+    خالی است ⇒ پنجره باز نمی‌شود.
     """
     raw = (os.environ.get(CONNECT_ENV) or "").strip()
     return tuple(h.strip().lower() for h in raw.split(",") if h.strip())
 
 
 def validate_url(url: str) -> tuple[bool, str]:
-    """https + میزبانِ درِ فهرستِ مجاز. بقیه رد، بی‌درخواست."""
+    """https + میزبانِ درِ فهرستِ مجاز + بندرِ ۴۴۳. بقیه رد، بی‌درخواست.
+
+    دو تله که با «فقط hostname را ببین» ازِ درِ می‌گذرند: «بک‌اسلش» درِ نشانی (مرورگر
+    آن را پایانِ Authority می‌داند، urlparseِ پایتون نه) و userinfo به شکلِ
+    «اول میزبانِ مخرب، سپس جداکننده، سپس میزبانِ مجاز». سنجشِ نهایی این است که
+    چیزی که درِ نشانی بود دقیقاً یکی باشد.
+    """
     u = (url or "").strip()
     if not u:
         return False, "نشانی داده نشد"
     try:
         p = urlparse(u)
+        port = p.port                       # ممکن است ValueError بدهد
     except ValueError as e:
         return False, "نشانیِ تجزیه‌ناپذیر: %s" % type(e).__name__
+    if "\\" in u:
+        return False, "«\\» درِ نشانی مجاز نیست (مرورگر و تجزیه‌گر یکی نمی‌خوانندش)"
     if p.scheme != "https":
         return False, "فقط https مجاز است (طرح: %r)" % (p.scheme or "-")
     host = (p.hostname or "").lower()
     if not host:
         return False, "میزبانِ نشانی خالی است"
+    if host != host.strip("."):
+        return False, "میزبانِ نقطه‌دارِ انتهایی پذیرفته نمی‌شود"
+    expect = host + (":%d" % port if port else "")
+    if p.netloc.lower() != expect:
+        return False, "ساختارِ نشانی با میزبانِ ساده‌شده نمی‌خواند: %r" % (p.netloc[:60],)
+    if port not in (None, 443):
+        return False, "فقط بندرِ ۴۴۳ مجاز است: %r" % (port,)
     if host not in allowed_hosts():
         return False, "میزبان درِ فهرستِ مجاز نیست: %s" % host
     return True, ""
@@ -98,24 +131,20 @@ def validate_url(url: str) -> tuple[bool, str]:
 # ── پنجرۀ مرورگریِ کاربر ─────────────────────────────────────────────────────
 @dataclasses.dataclass
 class BrowserHandle:
-    pid: int
+    proc: Any
     profile_dir: str
     url: str
     opened_at: float
 
+    @property
+    def pid(self) -> int:
+        return int(getattr(self.proc, "pid", 0) or 0)
+
     def alive(self) -> bool:
-        if self.pid <= 0:
-            return False
+        """فقط دربارهٔ فرزندِ خودِ ما. PIDِ بازچرخانده‌شده اینجا سبز نمی‌شود،
+        چون تا نگه‌داشتنِ این شیء،_handle_ِ فرایندِ ما بسته نمی‌شود."""
         try:
-            import ctypes
-            STILL_ACTIVE = 259
-            h = ctypes.windll.kernel32.OpenProcess(0x1000, False, self.pid)  # QUERY_LIMITED
-            if not h:
-                return False
-            code = ctypes.c_ulong()
-            ok = ctypes.windll.kernel32.GetExitCodeProcess(h, ctypes.byref(code))
-            ctypes.windll.kernel32.CloseHandle(h)
-            return bool(ok) and code.value == STILL_ACTIVE
+            return self.proc.poll() is None
         except Exception:
             return False
 
@@ -135,7 +164,43 @@ def _browser_binary() -> tuple[str | None, str]:
     return None, "no-browser-binary"
 
 
+def _remove_profile(path: str) -> bool:
+    """پوشۀ موقت را پاک کن؛ True یعنی واقعاً ازِ دیسک رفته است."""
+    if not path:
+        return True
+    shutil.rmtree(path, ignore_errors=True)
+    return not os.path.isdir(path)
+
+
+def _sweep_stale_profiles() -> int:
+    """پوشه‌هایِ بی‌صاحبِ کهنهٔ خودِ این ماژول (پسِ مرگ/بازِ‌راه‌اندازیِ بک‌اند)."""
+    root = tempfile.gettempdir()
+    now = time.time()
+    n = 0
+    try:
+        names = os.listdir(root)
+    except OSError:
+        return 0
+    for name in names:
+        if not name.startswith(PROFILE_PREFIX):
+            continue
+        full = os.path.join(root, name)
+        try:
+            if now - os.path.getmtime(full) < STALE_PROFILE_S:
+                continue
+            if _SESSION.get("browser") is not None and \
+                    os.path.abspath(str(getattr(_SESSION["browser"], "profile_dir", ""))) == \
+                    os.path.abspath(full):
+                continue                      # پنجرۀ بازِ خودِ ما
+            if _remove_profile(full):
+                n += 1
+        except OSError:
+            continue
+    return n
+
+
 _SESSION: dict[str, Any] = {"browser": None}
+_LOCK = threading.RLock()
 
 
 def open_login_window(url: str) -> tuple[BrowserHandle | None, str]:
@@ -145,63 +210,97 @@ def open_login_window(url: str) -> tuple[BrowserHandle | None, str]:
         return None, why
     hosts = login_hosts()
     host = (urlparse(url).hostname or "").lower()
-    if hosts and host not in hosts:
+    if not hosts:
+        return None, "%s: هیچ دامنه‌ای برایِ ورودِ کاربر تأیید نشده (%s)" % (
+            NO_LOGIN_HOST, CONNECT_ENV)
+    if host not in hosts:
         return None, "این میزبان برایِ ورودِ کاربر ثبت نشده: %s" % host
     exe, _src = _browser_binary()
     if not exe:
         return None, "مرورگری برایِ بازِ کردن پیدا نشد (BORS_CONNECT_BROWSER را بگذارید)"
-    prev = _SESSION.get("browser")
-    if isinstance(prev, BrowserHandle) and prev.alive():
-        return prev, "already-open"
-    profile = tempfile.mkdtemp(prefix="bors_broker_profile_")
-    args = [exe, "--user-data-dir=%s" % profile, "--no-first-run",
-            "--no-default-browser-check", "--new-window", url]
-    try:
-        proc = subprocess.Popen(args, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    except OSError as e:
-        shutil.rmtree(profile, ignore_errors=True)
-        return None, "بازِ نشد: %s" % type(e).__name__
-    h = BrowserHandle(pid=int(proc.pid), profile_dir=profile, url=url, opened_at=time.time())
-    _SESSION["browser"] = h
-    return h, ""
+    with _LOCK:
+        prev = _SESSION.get("browser")
+        if isinstance(prev, BrowserHandle):
+            if prev.alive():
+                return prev, "already-open"
+            _remove_profile(prev.profile_dir)   # پروفایلِ مُرده نباید بماند
+        _sweep_stale_profiles()
+        profile = tempfile.mkdtemp(prefix=PROFILE_PREFIX)
+        args = [exe, "--user-data-dir=%s" % profile, "--no-first-run",
+                "--no-default-browser-check", "--new-window", url]
+        try:
+            proc = subprocess.Popen(args, stdout=subprocess.DEVNULL,
+                                    stderr=subprocess.DEVNULL)
+        except OSError as e:
+            _remove_profile(profile)
+            return None, "بازِ نشد: %s" % type(e).__name__
+        h = BrowserHandle(proc=proc, profile_dir=profile, url=url, opened_at=time.time())
+        _SESSION["browser"] = h
+        return h, ""
 
 
 def close_login_window() -> tuple[bool, str]:
-    """فقطِ PIDی که خودمان بالا آوردیم کشته می‌شود؛ پروفایلِ موقت پاک می‌شود."""
-    h = _SESSION.get("browser")
-    _SESSION["browser"] = None
-    if not isinstance(h, BrowserHandle):
-        return True, "nothing-open"
-    try:
+    """فرزندِ خودِمان را می‌بندیم و پروفایلش را پاک می‌کنیم؛ ادعا نه، سنجش."""
+    with _LOCK:
+        h = _SESSION.get("browser")
+        _SESSION["browser"] = None
+        if not isinstance(h, BrowserHandle):
+            return True, "nothing-open"
         if h.alive():
-            subprocess.run(["taskkill", "/PID", str(h.pid), "/T", "/F"],
-                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-                           timeout=15)
-    except Exception:
-        pass
-    shutil.rmtree(h.profile_dir, ignore_errors=True)
-    return True, "closed"
+            try:
+                subprocess.run(["taskkill", "/PID", str(h.pid), "/T", "/F"],
+                               stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                               timeout=15)
+            except Exception:
+                pass
+            try:
+                h.proc.wait(timeout=10)
+            except Exception:
+                pass
+        return True, ("closed" if _remove_profile(h.profile_dir)
+                      else "profile-still-on-disk")
 
 
 def browser_state() -> dict[str, Any]:
-    h = _SESSION.get("browser")
+    """وضعیتِ پنجره — هیچ‌گاه نشانیِ پوشۀ موقت را بیرون نمی‌فرستد."""
+    with _LOCK:
+        h = _SESSION.get("browser")
     if not isinstance(h, BrowserHandle):
         return {"open": False, "pid": None, "url": None, "profile_kept": False}
     return {"open": h.alive(), "pid": h.pid, "url": h.url,
-            "profile_kept": False,          # پاک می‌شود؛ ادعایِ صادق
+            "profile_kept": os.path.isdir(h.profile_dir),
             "opened_seconds_ago": round(time.time() - h.opened_at)}
+
+
+def _atexit_cleanup() -> None:
+    """پایانِ فرایند: پنجره را نمی‌کُشیم (کاربر شاید درِ میانهٔ ورود است)، ولی
+    پروفایلِ متعلقِ به خودِمان را ازِ دیسک برمی‌داریم اگر فرایندش رفته باشد."""
+    try:
+        with _LOCK:
+            h = _SESSION.get("browser")
+            if isinstance(h, BrowserHandle) and not h.alive():
+                _remove_profile(h.profile_dir)
+                _SESSION["browser"] = None
+    except Exception:
+        pass
+
+
+atexit.register(_atexit_cleanup)
 
 
 # ── داوریِ حالتِ نشست ────────────────────────────────────────────────────────
 def _from_error_code(code: Any) -> str | None:
+    """کدِ خطایِ قرارداد ← حالتِ نشست. نام‌هایِ مرده اینجا نرفته‌اند: هر شاخه
+    باید کدی را ببیند که `execution_contract.ErrorCode` واقعاً می‌دهد."""
     v = getattr(code, "value", code)
     s = str(v or "").upper()
-    if "SESSION_EXPIRED" in s or "TOKEN" in s or "AUTH_FAILED" in s:
-        # احرازِ ناموفق = نشستِ درِ دست نیست؛ نه «متصل»، نه «خطایِ عمومی»
-        return STATE_EXPIRED
-    if "UNAUTHORIZED" in s or "FORBIDDEN" in s or "PERMISSION" in s:
+    if s == EC.ErrorCode.SESSION_EXPIRED.value:
+        return STATE_EXPIRED                      # ۴۰۱: نشست باطل شد
+    if s == EC.ErrorCode.AUTH_FAILED.value:
+        # ۴۰۳: نشانی هست ولی اجازه‌ای نیست — «منقضی» ادعا نمی‌شود، «متصل» هم نه.
         return STATE_DISCONNECTED
-    if "TIMEOUT" in s or "NETWORK" in s or "UNKNOWN" in s:
+    if s in (EC.ErrorCode.TIMEOUT.value, EC.ErrorCode.NETWORK_ERROR.value,
+             EC.ErrorCode.UNKNOWN_RESULT.value, EC.ErrorCode.RATE_LIMITED.value):
         return STATE_UNKNOWN
     return None
 
@@ -228,7 +327,7 @@ def verify(adapter: Any) -> dict[str, Any]:
         st = adapter.authenticate()
     except EC.BrokerError as e:
         out["state"] = _from_error_code(getattr(e, "code", None)) or STATE_UNKNOWN
-        out["reason"] = str(getattr(e, "detail", None) or e)[:160]
+        out["reason"] = str(EC.redact(getattr(e, "detail", None) or str(e)))[:160]
         return out
     except Exception as e:                       # هیچ خطایی «متصل» تفسیر نمی‌شود
         out["state"] = STATE_UNKNOWN
@@ -240,7 +339,7 @@ def verify(adapter: Any) -> dict[str, Any]:
               EC.SessionState.DISCONNECTED: STATE_DISCONNECTED,
               # دو حالتِ اضافیِ قرارداد: «رمز/نشانی رد شد» نشستِ باز نیست، و
               # «خطایِ عمومی» را نمی‌شود متصل خواند.
-              EC.SessionState.AUTH_FAILED: STATE_EXPIRED,
+              EC.SessionState.AUTH_FAILED: STATE_DISCONNECTED,
               EC.SessionState.ERROR: STATE_UNKNOWN}.get(raw)
     out["state"] = mapped or STATE_UNKNOWN
     if mapped is None:
@@ -258,7 +357,8 @@ def status_dict(adapter: Any, last: Mapping[str, Any] | None) -> dict[str, Any]:
             "allowed_hosts": list(allowed_hosts()),
             "login_hosts_configured": hosts,
             "login_host_blocked_reason": ("" if hosts else
-                                          "هیچ دامنه‌ای برایِ ورودِ کاربر تأیید نشده — "
+                                          NO_LOGIN_HOST + " — هیچ دامنه‌ای برایِ "
+                                          "ورودِ کاربر تأیید نشده؛ "
                                           "BORS_EXECUTION_CONNECT_HOSTS را بگذارید"),
             "last_verify": dict(last or {}),
             "secrets_stored": False,
