@@ -33,18 +33,34 @@ const WAIT = Number(arg('wait', '11000'));
 // leading فشرده کشیده می‌شوند؛ بی‌اندازه‌گیریِ هر دو تم، «سالم است» نصفه است.
 const THEME = arg('theme', 'dark');
 
-const ROUTES: Array<[string, string, string?]> = [
-  ['tape', '#/'],
-  ['tape-inspector', '#/', 'inspector'],
-  ['technical', '#/technical/%D9%81%D9%88%D9%84%D8%A7%D8%AF'],
-  ['technical-dialog', '#/technical/%D9%81%D9%88%D9%84%D8%A7%D8%AF', 'chartSettings'],
-  ['fundamental', '#/fundamental/%D9%81%D9%88%D9%84%D8%A7%D8%AF'],
-  ['masterFunnel', '#/master'],
-  ['masterVerdict', '#/master/%D9%81%D9%88%D9%84%D8%A7%D8%AF'],
-  ['tree', '#/strategy-tree'],
-  ['portfolio', '#/portfolio'],
-  ['palette', '#/', 'palette'],
-];
+// جدولِ دستیِ این ابزار رویِ main سه نقص داشت و هیچ‌کس متوجه نشد چون باِ کد
+// مقایسه نمی‌شد: '#/' را «تابلو» می‌شمرد (از ۱۴۰-۰۷-۷ به /master می‌رود، پس
+// همان /master دو بار سنجیده می‌شد)، و market-status / notifications / watch /
+// engine-lab را اصلاً نمی‌شناخت. حالا فهرست از خودِ routes.tsx خوانده می‌شود
+// (tools/qa_routes.mts) و فقط حالت‌هایی که باِ تعامل باز می‌شوند دستی‌اند.
+import { readRoutes } from './qa_routes.mts';
+
+/** حالت‌هایی که خودِ router نمی‌شناسد چون باِ کلیک باز می‌شوند: کلید = name */
+const EXTRA_STATES: Record<string, string[]> = {
+  market: ['inspector'],
+  technical: ['chartSettings'],
+  root: ['palette'],
+  master: [],
+};
+
+const _spec = readRoutes('.');
+const ROUTES: Array<[string, string, string?]> = _spec
+  .filter((r) => r.kind !== 'fallback')
+  .flatMap((r) => {
+    const nm = r.name || 'root';
+    const base: [string, string, string?] = [nm, r.hash];
+    const extras = (EXTRA_STATES[nm] ?? []).map(
+      (s) => [`${nm}-${s}`, r.hash, s] as [string, string, string],
+    );
+    return [base, ...extras];
+  });
+
+
 
 /** حالت‌هایی که با یک تعاملِ واقعی باز می‌شوند (دیالوگ/پالت/بازرس) */
 const STATE_ACTIONS: Record<string, (p: any) => Promise<string>> = {

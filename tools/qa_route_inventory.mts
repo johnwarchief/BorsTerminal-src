@@ -28,22 +28,25 @@ const OUT = arg('out', '_audit/qa/route_inventory.json');
 const [W, H] = (arg('size', '1366x768') || '1366x768').split('x').map(Number);
 const WAIT = Number(arg('wait', '9000'));
 
-// routeها از routes.tsx برداشته شده‌اند؛ نشانهٔ «چرا این» در یادداشت است.
-const SYM = encodeURIComponent('فولاد');
-const ROUTES: Array<[string, string, string]> = [
-  ['root', '#/', 'path "" → باید redirect شود؛ مقصدِ واقعی ثبت می‌شود'],
-  ['market', '#/market', 'تابلو'],
-  ['market-status', '#/market-status', 'وضعیت بازار'],
-  ['notifications', '#/notifications', 'اعلان‌ها'],
-  ['fundamental', `#/fundamental/${SYM}`, 'بنیادی با نماد'],
-  ['technical', `#/technical/${SYM}`, 'تکنیکال با نماد'],
-  ['engine-lab', '#/engine-lab', 'ابزار توسعهٔ مقایسهٔ موتور'],
-  ['strategy-tree', `#/strategy-tree/${SYM}`, 'درخت استراتژی'],
-  ['portfolio', '#/portfolio', 'پرتفوی'],
-  ['watch', '#/watch', 'دیده‌بان'],
-  ['master', `#/master/${SYM}`, 'غربالگری FTS'],
-  ['not-found', '#/this-route-does-not-exist', 'fallbackِ route نامعتبر'],
-];
+// routeها از خودِ routes.tsx خوانده می‌شوند (tools/qa_routes.mts). دلیلِ این
+// انتخاب: جدولِ دستیِ clip_audit.mts رویِ main هنوز '#/' را «تابلو» می‌شمرد در
+//حالی‌که آن مسیر به /master redirect می‌شود — سه صفحه هرگز سنجیده نشدند و یکِ
+// صفحه دو بار. جدولِ دستی هیچ‌وقت باِ کد مقایسه نمی‌شد؛ حالا منبعِ واحد است.
+const { readRoutes, redirectTarget } = await import('./qa_routes.mts');
+const SPEC = readRoutes('.');
+const REDIRECT_TO = redirectTarget('.');
+const ROUTES: Array<[string, string, string]> = SPEC.map((r) => [
+  r.name,
+  r.hash,
+  r.kind === 'redirect'
+    ? `path "" → باید به ${REDIRECT_TO} برود؛ مقصدِ واقعی ثبت می‌شود`
+    : r.kind === 'fallback'
+      ? 'fallbackِ route نامعتبر'
+      : r.component,
+]);
+if (SPEC.filter((r) => r.kind === 'page').length < 10) {
+  throw new Error(`parser found only ${SPEC.length} routes — the parser is broken, not the app`);
+}
 
 const rows: any[] = [];
 const browser = await chromium.launch({
@@ -147,10 +150,17 @@ for (const [name, hash, note] of ROUTES) {
 }
 await browser.close();
 
+const rootRow = rows.find((r) => r.route === 'root');
 const summary = {
   generatedAt: new Date().toISOString(),
   base: BASE,
   viewport: `${W}x${H}`,
+  unlock: unlockMode,
+  routesFromRouter: SPEC.length,
+  pagesInRouter: SPEC.filter((r) => r.kind === 'page').length,
+  redirectDeclared: REDIRECT_TO,
+  redirectLanded: rootRow ? rootRow.landedHash : null,
+  redirectHonoured: rootRow ? rootRow.landedHash === '#' + REDIRECT_TO : null,
   routesRequested: ROUTES.length,
   routesWithConsoleErrors: rows.filter((r) => r.consoleErrorCount > 0).length,
   routesWithHorizontalOverflow: rows.filter((r) => r.horizontalOverflow).length,
