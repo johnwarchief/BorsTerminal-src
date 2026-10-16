@@ -1,0 +1,269 @@
+{
+  "base": "http://127.0.0.1:8012",
+  "generatedAt": "2026-10-16T18:40:03.738Z",
+  "widths": {
+    "360": {
+      "firstCardMs": 645,
+      "cardCount": 23,
+      "fieldAudit": [
+        {
+          "symbol": "کپاآبان",
+          "inViewport": true,
+          "cardW": 262,
+          "price": {
+            "text": "۸۴٬۵۰۰",
+            "px": 16
+          },
+          "pct": {
+            "text": "۴.۴٪",
+            "px": 12
+          },
+          "clipped": [],
+          "minFontPx": 11
+        },
+        {
+          "symbol": "ولپارس",
+          "inViewport": true,
+          "cardW": 262,
+          "price": {
+            "text": "۴٬۹۲۰",
+            "px": 16
+          },
+          "pct": {
+            "text": "-۱.۰٪",
+            "px": 12
+          },
+          "clipped": [],
+          "minFontPx": 11
+        },
+        {
+          "symbol": "patterns-ولپارس",
+          "inViewport": true,
+          "cardW": 240,
+          "price": null,
+          "pct": null,
+          "clipped": [],
+          "minFontPx": 11
+        }
+      ],
+      "sort": {
+        "before": [
+          "کپاآبان",
+          "ولپارس",
+          "patterns-ولپارس",
+          "حبندر",
+          "patterns-حبندر"
+        ],
+        "byValue": [
+          "عيار",
+          "پاسارگاد",
+          "اعتماد",
+          "patterns-اعتماد",
+          "وبملت"
+        ],
+        "byValueReversed": [
+          "بامداد",
+          "ثروت",
+          "ديوان",
+          "رويش",
+          "سپاآذر"
+        ],
+        "byPctDesc": [
+          "فروسيل",
+          "patterns-فروسيل",
+          "کپاآبان",
+          "كمان",
+          "آلتون"
+        ],
+        "pctValues": [
+          175605.8,
+          null,
+          845004.4,
+          35,
+          820743.1,
+          291773,
+          199403,
+          188903
+        ],
+        "monotonicDesc": false
+      },
+      "search": {
+        "query": "ولپارس",
+        "matched": 2,
+        "onlyTarget": false,
+        "restored": 14,
+        "before": 23
+      },
+      "selection": {
+        "picked": "کپاآبان",
+        "ariaCurrent": "true",
+        "othersCurrent": 1,
+        "topbarShowsSymbol": true
+      },
+      "occlusion": {
+        "barTop": 791,
+        "lowestVisibleCard": 835,
+        "clearBy": -44,
+        "rendered": 17
+      },
+      "layoutChain": {
+        "innerHeight": 844,
+        "docScrollH": 844,
+        "navH": 53,
+        "navTop": 791,
+        "chain": [
+          {
+            "node": "tape-cards-scroll",
+            "top": 547,
+            "bottom": 967,
+            "h": 420,
+            "position": "static",
+            "display": "block",
+            "overflowY": "auto",
+            "height": "420px",
+            "minHeight": "420px",
+            "flex": "1 1 0%",
+            "paddingBottom": 0,
+            "marginBottom": 0
+          },
+          {
+            "node": "tape-cards",
+            "top": 494,
+            "bottom": 638,
+            "h": 144,
+            "position": "static",
+            "display": "flex",
+            "overflowY": "visible",
+            "height": "143.828px",
+            "minHeight": "0px",
+            "flex": "1 1 0%",
+            "paddingBottom": 0,
+            "marginBottom": 0
+          },
+          {
+            "node": "div.glass-panel",
+            "top": 504,
+            "bottom": 722,
+            "h": 218,
+            "position": "relative",
+            "display": "flex",
+            "overflowY": "hidden",
+            "height": "218.219px",
+            "minHeight": "0px",
+            "flex": "1 1 0%",
+            "paddingBottom": 0,
+            "marginBottom": 0
+          },
+          {
+            "node": "div.flex",
+            "top": 145,
+            "bottom": 780,
+            "h": 635,
+            "position": "static",
+            "display": "flex",
+            "overflowY": "visible",
+            "height": "634.609px",
+            "minHeight": "0px",
+            "flex": "0 1 auto",
+            "paddingBottom": 0,
+            "marginBottom": 0
+          },
+          {
+            "node": "div.panel-in",
+            "top": 145,
+            "bottom": 780,
+            "h": 635,
+            "position": "static",
+            "display": "flex",
+            "overflowY": "visible",
+            "height": "634.609px",
+            "minHeight": "0px",
+            "flex": "1 1 0%",
+            "paddingBottom": 0,
+            "marginBottom": 0
+          },
+          {
+            "node": "main.app-main",
+            "top": 137,
+            "bottom": 788,
+            "h": 651,
+            "position": "static",
+            "display": "flex",
+            "overflowY": "visible",
+            "height": "650.609px",
+            "minHeight": "0px",
+            "flex": "1 1 0%",
+            "paddingBottom": 8,
+            "marginBottom": 0
+          },
+          {
+            "node": "div.app-content",
+            "top": 0,
+            "bottom": 844,
+            "h": 844,
+            "position": "static",
+            "display": "flex",
+            "overflowY": "auto",
+            "height": "844px",
+            "minHeight": "0px",
+            "flex": "1 1 0%",
+            "paddingBottom": 56,
+            "marginBottom": 0
+          },
+          {
+            "node": "div.flex",
+            "top": 0,
+            "bottom": 844,
+            "h": 844,
+            "position": "static",
+            "display": "flex",
+            "overflowY": "hidden",
+            "height": "844px",
+            "minHeight": "0px",
+            "flex": "0 1 auto",
+            "paddingBottom": 0,
+            "marginBottom": 0
+          },
+          {
+            "node": "div",
+            "top": 0,
+            "bottom": 844,
+            "h": 844,
+            "position": "static",
+            "display": "block",
+            "overflowY": "visible",
+            "height": "844px",
+            "minHeight": "0px",
+            "flex": "0 1 auto",
+            "paddingBottom": 0,
+            "marginBottom": 0
+          }
+        ]
+      },
+      "nav": [
+        {
+          "id": "mobile-nav-market-status",
+          "moved": true,
+          "to": "/market-status"
+        },
+        {
+          "id": "mobile-nav-technical",
+          "moved": true,
+          "to": "/technical"
+        },
+        {
+          "id": "mobile-nav-watch",
+          "moved": true,
+          "to": "/watch"
+        },
+        {
+          "id": "more→order-line",
+          "moved": true,
+          "sheetOpenBefore": 1,
+          "to": "/order-line"
+        }
+      ],
+      "pageErrors": 0
+    }
+  }
+}

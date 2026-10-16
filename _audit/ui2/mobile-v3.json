@@ -1,0 +1,1017 @@
+{
+  "base": "http://127.0.0.1:8012",
+  "generatedAt": "2026-10-16T19:00:49.952Z",
+  "method": "v3 — فقطِ گره‌هایِ داخلِ viewport (بی‌sr-only وِ بی‌کشویِ آف‌کانون)، عرض‌هایِ ثابت، انتظارِ داده به‌جایِ تأخیرِ کور (v2 درِ cold-start شمارۀِ کارتِ صفحۀِ نخست را صفر می‌خواند)",
+  "rows": {
+    "390": {
+      "market": {
+        "vw": 390,
+        "docOverflow": 0,
+        "clippedCount": 0,
+        "clippedSample": [],
+        "tinyCount": 0,
+        "tinySample": [],
+        "tapCount": 24,
+        "tapGroups": [
+          {
+            "ctrl": "تابلوخوانی",
+            "n": 3,
+            "minW": 38,
+            "minH": 16
+          },
+          {
+            "ctrl": "بازکردن نوار کناری",
+            "n": 1,
+            "minW": 23,
+            "minH": 23
+          },
+          {
+            "ctrl": "وضعیت بازار",
+            "n": 1,
+            "minW": 38,
+            "minH": 41
+          },
+          {
+            "ctrl": "تکنیکال",
+            "n": 1,
+            "minW": 38,
+            "minH": 41
+          },
+          {
+            "ctrl": "بنیادی",
+            "n": 1,
+            "minW": 38,
+            "minH": 41
+          },
+          {
+            "ctrl": "استراتژی FTS",
+            "n": 1,
+            "minW": 38,
+            "minH": 41
+          },
+          {
+            "ctrl": "درخت استراتژی",
+            "n": 1,
+            "minW": 38,
+            "minH": 41
+          },
+          {
+            "ctrl": "مدیریت پرتفوی",
+            "n": 1,
+            "minW": 38,
+            "minH": 41
+          },
+          {
+            "ctrl": "سرخطی",
+            "n": 1,
+            "minW": 38,
+            "minH": 41
+          },
+          {
+            "ctrl": "nav-sub-watch",
+            "n": 1,
+            "minW": 38,
+            "minH": 41
+          },
+          {
+            "ctrl": "تغییر تم",
+            "n": 1,
+            "minW": 28,
+            "minH": 28
+          },
+          {
+            "ctrl": "app-update-btn",
+            "n": 1,
+            "minW": 30,
+            "minH": 30
+          }
+        ],
+        "tapSample": [
+          {
+            "tag": "BUTTON",
+            "label": "بازکردن نوار کناری",
+            "w": 23,
+            "h": 23
+          },
+          {
+            "tag": "A",
+            "label": "وضعیت بازار",
+            "w": 38,
+            "h": 41
+          },
+          {
+            "tag": "A",
+            "label": "تابلوخوانی",
+            "w": 38,
+            "h": 41
+          },
+          {
+            "tag": "A",
+            "label": "تکنیکال",
+            "w": 38,
+            "h": 41
+          }
+        ],
+        "hscrollCount": 0,
+        "hscrollDetail": [],
+        "bottomBar": [
+          {
+            "testid": "mobile-nav",
+            "h": 53,
+            "paddingBottom": "4px",
+            "safeAreaInset": "4px",
+            "items": 5,
+            "labelsHidden": 0
+          }
+        ],
+        "contentUnderBar": 0,
+        "boardCards": 12,
+        "boardRows": 0,
+        "consolePageErrors": 0,
+        "settleMs": 660
+      },
+      "market-status": {
+        "vw": 390,
+        "docOverflow": 0,
+        "clippedCount": 0,
+        "clippedSample": [],
+        "tinyCount": 0,
+        "tinySample": [],
+        "tapCount": 31,
+        "tapGroups": [
+          {
+            "ctrl": "وضعیت بازار",
+            "n": 3,
+            "minW": 38,
+            "minH": 16
+          },
+          {
+            "ctrl": "بازکردن نوار کناری",
+            "n": 1,
+            "minW": 23,
+            "minH": 23
+          },
+          {
+            "ctrl": "تابلوخوانی",
+            "n": 1,
+            "minW": 38,
+            "minH": 41
+          },
+          {
+            "ctrl": "تکنیکال",
+            "n": 1,
+            "minW": 38,
+            "minH": 41
+          },
+          {
+            "ctrl": "بنیادی",
+            "n": 1,
+            "minW": 38,
+            "minH": 41
+          },
+          {
+            "ctrl": "استراتژی FTS",
+            "n": 1,
+            "minW": 38,
+            "minH": 41
+          },
+          {
+            "ctrl": "درخت استراتژی",
+            "n": 1,
+            "minW": 38,
+            "minH": 41
+          },
+          {
+            "ctrl": "مدیریت پرتفوی",
+            "n": 1,
+            "minW": 38,
+            "minH": 41
+          },
+          {
+            "ctrl": "سرخطی",
+            "n": 1,
+            "minW": 38,
+            "minH": 41
+          },
+          {
+            "ctrl": "nav-sub-watch",
+            "n": 1,
+            "minW": 38,
+            "minH": 41
+          },
+          {
+            "ctrl": "تغییر تم",
+            "n": 1,
+            "minW": 28,
+            "minH": 28
+          },
+          {
+            "ctrl": "app-update-btn",
+            "n": 1,
+            "minW": 30,
+            "minH": 30
+          }
+        ],
+        "tapSample": [
+          {
+            "tag": "BUTTON",
+            "label": "بازکردن نوار کناری",
+            "w": 23,
+            "h": 23
+          },
+          {
+            "tag": "A",
+            "label": "وضعیت بازار",
+            "w": 38,
+            "h": 41
+          },
+          {
+            "tag": "A",
+            "label": "تابلوخوانی",
+            "w": 38,
+            "h": 41
+          },
+          {
+            "tag": "A",
+            "label": "تکنیکال",
+            "w": 38,
+            "h": 41
+          }
+        ],
+        "hscrollCount": 0,
+        "hscrollDetail": [],
+        "bottomBar": [
+          {
+            "testid": "mobile-nav",
+            "h": 53,
+            "paddingBottom": "4px",
+            "safeAreaInset": "4px",
+            "items": 5,
+            "labelsHidden": 0
+          }
+        ],
+        "contentUnderBar": 0,
+        "boardCards": 0,
+        "boardRows": 0,
+        "consolePageErrors": 0,
+        "settleMs": 652
+      },
+      "watch": {
+        "vw": 390,
+        "docOverflow": 0,
+        "clippedCount": 0,
+        "clippedSample": [],
+        "tinyCount": 0,
+        "tinySample": [],
+        "tapCount": 31,
+        "tapGroups": [
+          {
+            "ctrl": "دیده‌بان بازار",
+            "n": 2,
+            "minW": 59,
+            "minH": 16
+          },
+          {
+            "ctrl": "بازکردن نوار کناری",
+            "n": 1,
+            "minW": 23,
+            "minH": 23
+          },
+          {
+            "ctrl": "وضعیت بازار",
+            "n": 1,
+            "minW": 38,
+            "minH": 41
+          },
+          {
+            "ctrl": "تابلوخوانی",
+            "n": 1,
+            "minW": 38,
+            "minH": 41
+          },
+          {
+            "ctrl": "تکنیکال",
+            "n": 1,
+            "minW": 38,
+            "minH": 41
+          },
+          {
+            "ctrl": "بنیادی",
+            "n": 1,
+            "minW": 38,
+            "minH": 41
+          },
+          {
+            "ctrl": "استراتژی FTS",
+            "n": 1,
+            "minW": 38,
+            "minH": 41
+          },
+          {
+            "ctrl": "درخت استراتژی",
+            "n": 1,
+            "minW": 38,
+            "minH": 41
+          },
+          {
+            "ctrl": "مدیریت پرتفوی",
+            "n": 1,
+            "minW": 38,
+            "minH": 41
+          },
+          {
+            "ctrl": "سرخطی",
+            "n": 1,
+            "minW": 38,
+            "minH": 41
+          },
+          {
+            "ctrl": "nav-sub-watch",
+            "n": 1,
+            "minW": 38,
+            "minH": 41
+          },
+          {
+            "ctrl": "تغییر تم",
+            "n": 1,
+            "minW": 28,
+            "minH": 28
+          }
+        ],
+        "tapSample": [
+          {
+            "tag": "BUTTON",
+            "label": "بازکردن نوار کناری",
+            "w": 23,
+            "h": 23
+          },
+          {
+            "tag": "A",
+            "label": "وضعیت بازار",
+            "w": 38,
+            "h": 41
+          },
+          {
+            "tag": "A",
+            "label": "تابلوخوانی",
+            "w": 38,
+            "h": 41
+          },
+          {
+            "tag": "A",
+            "label": "تکنیکال",
+            "w": 38,
+            "h": 41
+          }
+        ],
+        "hscrollCount": 0,
+        "hscrollDetail": [],
+        "bottomBar": [
+          {
+            "testid": "mobile-nav",
+            "h": 53,
+            "paddingBottom": "4px",
+            "safeAreaInset": "4px",
+            "items": 5,
+            "labelsHidden": 0
+          }
+        ],
+        "contentUnderBar": 0,
+        "boardCards": 0,
+        "boardRows": 120,
+        "consolePageErrors": 0,
+        "settleMs": 834
+      },
+      "notifications": {
+        "vw": 390,
+        "docOverflow": 0,
+        "clippedCount": 0,
+        "clippedSample": [],
+        "tinyCount": 0,
+        "tinySample": [],
+        "tapCount": 31,
+        "tapGroups": [
+          {
+            "ctrl": "بازکردن نوار کناری",
+            "n": 1,
+            "minW": 23,
+            "minH": 23
+          },
+          {
+            "ctrl": "وضعیت بازار",
+            "n": 1,
+            "minW": 38,
+            "minH": 41
+          },
+          {
+            "ctrl": "تابلوخوانی",
+            "n": 1,
+            "minW": 38,
+            "minH": 41
+          },
+          {
+            "ctrl": "تکنیکال",
+            "n": 1,
+            "minW": 38,
+            "minH": 41
+          },
+          {
+            "ctrl": "بنیادی",
+            "n": 1,
+            "minW": 38,
+            "minH": 41
+          },
+          {
+            "ctrl": "استراتژی FTS",
+            "n": 1,
+            "minW": 38,
+            "minH": 41
+          },
+          {
+            "ctrl": "درخت استراتژی",
+            "n": 1,
+            "minW": 38,
+            "minH": 41
+          },
+          {
+            "ctrl": "مدیریت پرتفوی",
+            "n": 1,
+            "minW": 38,
+            "minH": 41
+          },
+          {
+            "ctrl": "سرخطی",
+            "n": 1,
+            "minW": 38,
+            "minH": 41
+          },
+          {
+            "ctrl": "nav-sub-watch",
+            "n": 1,
+            "minW": 38,
+            "minH": 41
+          },
+          {
+            "ctrl": "تغییر تم",
+            "n": 1,
+            "minW": 28,
+            "minH": 28
+          },
+          {
+            "ctrl": "app-update-btn",
+            "n": 1,
+            "minW": 30,
+            "minH": 30
+          }
+        ],
+        "tapSample": [
+          {
+            "tag": "BUTTON",
+            "label": "بازکردن نوار کناری",
+            "w": 23,
+            "h": 23
+          },
+          {
+            "tag": "A",
+            "label": "وضعیت بازار",
+            "w": 38,
+            "h": 41
+          },
+          {
+            "tag": "A",
+            "label": "تابلوخوانی",
+            "w": 38,
+            "h": 41
+          },
+          {
+            "tag": "A",
+            "label": "تکنیکال",
+            "w": 38,
+            "h": 41
+          }
+        ],
+        "hscrollCount": 0,
+        "hscrollDetail": [],
+        "bottomBar": [
+          {
+            "testid": "mobile-nav",
+            "h": 53,
+            "paddingBottom": "4px",
+            "safeAreaInset": "4px",
+            "items": 5,
+            "labelsHidden": 0
+          }
+        ],
+        "contentUnderBar": 0,
+        "boardCards": 0,
+        "boardRows": 166,
+        "consolePageErrors": 0,
+        "settleMs": 691
+      },
+      "technical": {
+        "vw": 390,
+        "docOverflow": 0,
+        "clippedCount": 0,
+        "clippedSample": [],
+        "tinyCount": 0,
+        "tinySample": [],
+        "tapCount": 30,
+        "tapGroups": [
+          {
+            "ctrl": "بازکردن نوار کناری",
+            "n": 1,
+            "minW": 23,
+            "minH": 23
+          },
+          {
+            "ctrl": "وضعیت بازار",
+            "n": 1,
+            "minW": 38,
+            "minH": 41
+          },
+          {
+            "ctrl": "تابلوخوانی",
+            "n": 1,
+            "minW": 38,
+            "minH": 41
+          },
+          {
+            "ctrl": "تکنیکال",
+            "n": 1,
+            "minW": 38,
+            "minH": 41
+          },
+          {
+            "ctrl": "بنیادی",
+            "n": 1,
+            "minW": 38,
+            "minH": 41
+          },
+          {
+            "ctrl": "استراتژی FTS",
+            "n": 1,
+            "minW": 38,
+            "minH": 41
+          },
+          {
+            "ctrl": "درخت استراتژی",
+            "n": 1,
+            "minW": 38,
+            "minH": 41
+          },
+          {
+            "ctrl": "مدیریت پرتفوی",
+            "n": 1,
+            "minW": 38,
+            "minH": 41
+          },
+          {
+            "ctrl": "سرخطی",
+            "n": 1,
+            "minW": 38,
+            "minH": 41
+          },
+          {
+            "ctrl": "nav-sub-watch",
+            "n": 1,
+            "minW": 38,
+            "minH": 41
+          },
+          {
+            "ctrl": "تغییر تم",
+            "n": 1,
+            "minW": 28,
+            "minH": 28
+          },
+          {
+            "ctrl": "app-update-btn",
+            "n": 1,
+            "minW": 30,
+            "minH": 30
+          }
+        ],
+        "tapSample": [
+          {
+            "tag": "BUTTON",
+            "label": "بازکردن نوار کناری",
+            "w": 23,
+            "h": 23
+          },
+          {
+            "tag": "A",
+            "label": "وضعیت بازار",
+            "w": 38,
+            "h": 41
+          },
+          {
+            "tag": "A",
+            "label": "تابلوخوانی",
+            "w": 38,
+            "h": 41
+          },
+          {
+            "tag": "A",
+            "label": "تکنیکال",
+            "w": 38,
+            "h": 41
+          }
+        ],
+        "hscrollCount": 0,
+        "hscrollDetail": [],
+        "bottomBar": [
+          {
+            "testid": "mobile-nav",
+            "h": 53,
+            "paddingBottom": "4px",
+            "safeAreaInset": "4px",
+            "items": 5,
+            "labelsHidden": 0
+          }
+        ],
+        "contentUnderBar": 0,
+        "boardCards": 0,
+        "boardRows": 166,
+        "consolePageErrors": 0,
+        "settleMs": 635
+      },
+      "fundamental": {
+        "vw": 390,
+        "docOverflow": 0,
+        "clippedCount": 0,
+        "clippedSample": [],
+        "tinyCount": 0,
+        "tinySample": [],
+        "tapCount": 20,
+        "tapGroups": [
+          {
+            "ctrl": "بازکردن نوار کناری",
+            "n": 1,
+            "minW": 23,
+            "minH": 23
+          },
+          {
+            "ctrl": "وضعیت بازار",
+            "n": 1,
+            "minW": 38,
+            "minH": 41
+          },
+          {
+            "ctrl": "تابلوخوانی",
+            "n": 1,
+            "minW": 38,
+            "minH": 41
+          },
+          {
+            "ctrl": "تکنیکال",
+            "n": 1,
+            "minW": 38,
+            "minH": 41
+          },
+          {
+            "ctrl": "بنیادی",
+            "n": 1,
+            "minW": 38,
+            "minH": 41
+          },
+          {
+            "ctrl": "استراتژی FTS",
+            "n": 1,
+            "minW": 38,
+            "minH": 41
+          },
+          {
+            "ctrl": "درخت استراتژی",
+            "n": 1,
+            "minW": 38,
+            "minH": 41
+          },
+          {
+            "ctrl": "مدیریت پرتفوی",
+            "n": 1,
+            "minW": 38,
+            "minH": 41
+          },
+          {
+            "ctrl": "سرخطی",
+            "n": 1,
+            "minW": 38,
+            "minH": 41
+          },
+          {
+            "ctrl": "nav-sub-watch",
+            "n": 1,
+            "minW": 38,
+            "minH": 41
+          },
+          {
+            "ctrl": "تغییر تم",
+            "n": 1,
+            "minW": 28,
+            "minH": 28
+          },
+          {
+            "ctrl": "app-update-btn",
+            "n": 1,
+            "minW": 30,
+            "minH": 30
+          }
+        ],
+        "tapSample": [
+          {
+            "tag": "BUTTON",
+            "label": "بازکردن نوار کناری",
+            "w": 23,
+            "h": 23
+          },
+          {
+            "tag": "A",
+            "label": "وضعیت بازار",
+            "w": 38,
+            "h": 41
+          },
+          {
+            "tag": "A",
+            "label": "تابلوخوانی",
+            "w": 38,
+            "h": 41
+          },
+          {
+            "tag": "A",
+            "label": "تکنیکال",
+            "w": 38,
+            "h": 41
+          }
+        ],
+        "hscrollCount": 0,
+        "hscrollDetail": [],
+        "bottomBar": [
+          {
+            "testid": "mobile-nav",
+            "h": 53,
+            "paddingBottom": "4px",
+            "safeAreaInset": "4px",
+            "items": 5,
+            "labelsHidden": 0
+          }
+        ],
+        "contentUnderBar": 0,
+        "boardCards": 0,
+        "boardRows": 0,
+        "consolePageErrors": 0,
+        "settleMs": 643
+      },
+      "portfolio": {
+        "vw": 390,
+        "docOverflow": 0,
+        "clippedCount": 0,
+        "clippedSample": [],
+        "tinyCount": 0,
+        "tinySample": [],
+        "tapCount": 26,
+        "tapGroups": [
+          {
+            "ctrl": "مدیریت پرتفوی",
+            "n": 2,
+            "minW": 38,
+            "minH": 16
+          },
+          {
+            "ctrl": "بازکردن نوار کناری",
+            "n": 1,
+            "minW": 23,
+            "minH": 23
+          },
+          {
+            "ctrl": "وضعیت بازار",
+            "n": 1,
+            "minW": 38,
+            "minH": 41
+          },
+          {
+            "ctrl": "تابلوخوانی",
+            "n": 1,
+            "minW": 38,
+            "minH": 41
+          },
+          {
+            "ctrl": "تکنیکال",
+            "n": 1,
+            "minW": 38,
+            "minH": 41
+          },
+          {
+            "ctrl": "بنیادی",
+            "n": 1,
+            "minW": 38,
+            "minH": 41
+          },
+          {
+            "ctrl": "استراتژی FTS",
+            "n": 1,
+            "minW": 38,
+            "minH": 41
+          },
+          {
+            "ctrl": "درخت استراتژی",
+            "n": 1,
+            "minW": 38,
+            "minH": 41
+          },
+          {
+            "ctrl": "سرخطی",
+            "n": 1,
+            "minW": 38,
+            "minH": 41
+          },
+          {
+            "ctrl": "nav-sub-watch",
+            "n": 1,
+            "minW": 38,
+            "minH": 41
+          },
+          {
+            "ctrl": "تغییر تم",
+            "n": 1,
+            "minW": 28,
+            "minH": 28
+          },
+          {
+            "ctrl": "app-update-btn",
+            "n": 1,
+            "minW": 30,
+            "minH": 30
+          }
+        ],
+        "tapSample": [
+          {
+            "tag": "BUTTON",
+            "label": "بازکردن نوار کناری",
+            "w": 23,
+            "h": 23
+          },
+          {
+            "tag": "A",
+            "label": "وضعیت بازار",
+            "w": 38,
+            "h": 41
+          },
+          {
+            "tag": "A",
+            "label": "تابلوخوانی",
+            "w": 38,
+            "h": 41
+          },
+          {
+            "tag": "A",
+            "label": "تکنیکال",
+            "w": 38,
+            "h": 41
+          }
+        ],
+        "hscrollCount": 0,
+        "hscrollDetail": [],
+        "bottomBar": [
+          {
+            "testid": "mobile-nav",
+            "h": 53,
+            "paddingBottom": "4px",
+            "safeAreaInset": "4px",
+            "items": 5,
+            "labelsHidden": 0
+          }
+        ],
+        "contentUnderBar": 0,
+        "boardCards": 0,
+        "boardRows": 0,
+        "consolePageErrors": 0,
+        "settleMs": 641
+      },
+      "order-line": {
+        "vw": 390,
+        "docOverflow": 0,
+        "clippedCount": 0,
+        "clippedSample": [],
+        "tinyCount": 0,
+        "tinySample": [],
+        "tapCount": 21,
+        "tapGroups": [
+          {
+            "ctrl": "سرخطی",
+            "n": 3,
+            "minW": 38,
+            "minH": 16
+          },
+          {
+            "ctrl": "بازکردن نوار کناری",
+            "n": 1,
+            "minW": 23,
+            "minH": 23
+          },
+          {
+            "ctrl": "وضعیت بازار",
+            "n": 1,
+            "minW": 38,
+            "minH": 41
+          },
+          {
+            "ctrl": "تابلوخوانی",
+            "n": 1,
+            "minW": 38,
+            "minH": 41
+          },
+          {
+            "ctrl": "تکنیکال",
+            "n": 1,
+            "minW": 38,
+            "minH": 41
+          },
+          {
+            "ctrl": "بنیادی",
+            "n": 1,
+            "minW": 38,
+            "minH": 41
+          },
+          {
+            "ctrl": "استراتژی FTS",
+            "n": 1,
+            "minW": 38,
+            "minH": 41
+          },
+          {
+            "ctrl": "درخت استراتژی",
+            "n": 1,
+            "minW": 38,
+            "minH": 41
+          },
+          {
+            "ctrl": "مدیریت پرتفوی",
+            "n": 1,
+            "minW": 38,
+            "minH": 41
+          },
+          {
+            "ctrl": "nav-sub-watch",
+            "n": 1,
+            "minW": 38,
+            "minH": 41
+          },
+          {
+            "ctrl": "تغییر تم",
+            "n": 1,
+            "minW": 28,
+            "minH": 28
+          },
+          {
+            "ctrl": "app-update-btn",
+            "n": 1,
+            "minW": 30,
+            "minH": 30
+          }
+        ],
+        "tapSample": [
+          {
+            "tag": "BUTTON",
+            "label": "بازکردن نوار کناری",
+            "w": 23,
+            "h": 23
+          },
+          {
+            "tag": "A",
+            "label": "وضعیت بازار",
+            "w": 38,
+            "h": 41
+          },
+          {
+            "tag": "A",
+            "label": "تابلوخوانی",
+            "w": 38,
+            "h": 41
+          },
+          {
+            "tag": "A",
+            "label": "تکنیکال",
+            "w": 38,
+            "h": 41
+          }
+        ],
+        "hscrollCount": 0,
+        "hscrollDetail": [],
+        "bottomBar": [
+          {
+            "testid": "mobile-nav",
+            "h": 53,
+            "paddingBottom": "4px",
+            "safeAreaInset": "4px",
+            "items": 5,
+            "labelsHidden": 0
+          }
+        ],
+        "contentUnderBar": 0,
+        "boardCards": 0,
+        "boardRows": 0,
+        "consolePageErrors": 0,
+        "settleMs": 638
+      }
+    }
+  }
+}

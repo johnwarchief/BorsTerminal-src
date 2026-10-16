@@ -1,0 +1,2884 @@
+{
+  "base": "http://127.0.0.1:8012",
+  "generatedAt": "2026-10-16T19:09:16.142Z",
+  "method": "v5 — فقطِ گره‌هایِ داخلِ viewport (بی‌sr-only وِ بی‌کشویِ آف‌کانون)، عرض‌هایِ ثابت، نشستنِ hash وِ بی‌صداشدنِ DOM پیشِ ازِ اندازه‌گیر (v3 صفحۀِ قبلی را می‌سنجید)",
+  "rows": {
+    "360": {
+      "market": {
+        "vw": 360,
+        "docOverflow": 0,
+        "clippedCount": 0,
+        "clippedSample": [],
+        "tinyCount": 0,
+        "tinySample": [],
+        "tapCount": 10,
+        "tapGroups": [
+          {
+            "ctrl": "تابلوخوانی",
+            "n": 2,
+            "minW": 49,
+            "minH": 16
+          },
+          {
+            "ctrl": "topbar-notifications",
+            "n": 1,
+            "minW": 58,
+            "minH": 24
+          },
+          {
+            "ctrl": "باز کردن پالت فرمان",
+            "n": 1,
+            "minW": 126,
+            "minH": 26
+          },
+          {
+            "ctrl": "ws-tab-close-c63e10f0-149f-4a98-aee5-18129364d9f6",
+            "n": 1,
+            "minW": 10,
+            "minH": 18
+          },
+          {
+            "ctrl": "ws-tab-new",
+            "n": 1,
+            "minW": 24,
+            "minH": 20
+          },
+          {
+            "ctrl": "جستجوی نماد",
+            "n": 1,
+            "minW": 177,
+            "minH": 26
+          },
+          {
+            "ctrl": "filters-disclosure",
+            "n": 1,
+            "minW": 52,
+            "minH": 24
+          },
+          {
+            "ctrl": "watch-tab-clock",
+            "n": 1,
+            "minW": 93,
+            "minH": 26
+          },
+          {
+            "ctrl": "watch-tab-susp",
+            "n": 1,
+            "minW": 128,
+            "minH": 26
+          }
+        ],
+        "tapSample": [
+          {
+            "tag": "A",
+            "label": "تابلوخوانی",
+            "w": 49,
+            "h": 16
+          },
+          {
+            "tag": "A",
+            "label": "مرکز اعلان — 60 نا",
+            "w": 58,
+            "h": 24
+          },
+          {
+            "tag": "BUTTON",
+            "label": "باز کردن پالت فرما",
+            "w": 126,
+            "h": 26
+          },
+          {
+            "tag": "DIV",
+            "label": "تابلوخوانی×",
+            "w": 104,
+            "h": 35
+          }
+        ],
+        "hscrollCount": 0,
+        "hscrollDetail": [],
+        "bottomBar": [
+          {
+            "testid": "mobile-nav",
+            "h": 53,
+            "paddingBottom": "4px",
+            "safeAreaInset": "4px",
+            "items": 5,
+            "labelsHidden": 0
+          }
+        ],
+        "contentUnderBar": 0,
+        "boardCards": 12,
+        "boardRows": 0,
+        "consolePageErrors": 0,
+        "settleMs": 420,
+        "hashOk": true,
+        "measuredRoute": "تابلوخوانی"
+      },
+      "market-status": {
+        "vw": 360,
+        "docOverflow": 0,
+        "clippedCount": 0,
+        "clippedSample": [],
+        "tinyCount": 0,
+        "tinySample": [],
+        "tapCount": 10,
+        "tapGroups": [
+          {
+            "ctrl": "وضعیت بازار",
+            "n": 2,
+            "minW": 60,
+            "minH": 16
+          },
+          {
+            "ctrl": "topbar-notifications",
+            "n": 1,
+            "minW": 58,
+            "minH": 24
+          },
+          {
+            "ctrl": "باز کردن پالت فرمان",
+            "n": 1,
+            "minW": 126,
+            "minH": 26
+          },
+          {
+            "ctrl": "ws-tab-close-c63e10f0-149f-4a98-aee5-18129364d9f6",
+            "n": 1,
+            "minW": 10,
+            "minH": 18
+          },
+          {
+            "ctrl": "ws-tab-new",
+            "n": 1,
+            "minW": 24,
+            "minH": 20
+          },
+          {
+            "ctrl": "جستجوی نماد",
+            "n": 1,
+            "minW": 177,
+            "minH": 26
+          },
+          {
+            "ctrl": "filters-disclosure",
+            "n": 1,
+            "minW": 52,
+            "minH": 24
+          },
+          {
+            "ctrl": "watch-tab-clock",
+            "n": 1,
+            "minW": 93,
+            "minH": 26
+          },
+          {
+            "ctrl": "watch-tab-susp",
+            "n": 1,
+            "minW": 128,
+            "minH": 26
+          }
+        ],
+        "tapSample": [
+          {
+            "tag": "A",
+            "label": "وضعیت بازار",
+            "w": 60,
+            "h": 16
+          },
+          {
+            "tag": "A",
+            "label": "مرکز اعلان — 60 نا",
+            "w": 58,
+            "h": 24
+          },
+          {
+            "tag": "BUTTON",
+            "label": "باز کردن پالت فرما",
+            "w": 126,
+            "h": 26
+          },
+          {
+            "tag": "DIV",
+            "label": "وضعیت بازار×",
+            "w": 104,
+            "h": 35
+          }
+        ],
+        "hscrollCount": 0,
+        "hscrollDetail": [],
+        "bottomBar": [
+          {
+            "testid": "mobile-nav",
+            "h": 53,
+            "paddingBottom": "4px",
+            "safeAreaInset": "4px",
+            "items": 5,
+            "labelsHidden": 0
+          }
+        ],
+        "contentUnderBar": 0,
+        "boardCards": 12,
+        "boardRows": 0,
+        "consolePageErrors": 0,
+        "settleMs": 418,
+        "hashOk": true,
+        "measuredRoute": "وضعیت بازار"
+      },
+      "watch": {
+        "vw": 360,
+        "docOverflow": 0,
+        "clippedCount": 0,
+        "clippedSample": [],
+        "tinyCount": 0,
+        "tinySample": [],
+        "tapCount": 12,
+        "tapGroups": [
+          {
+            "ctrl": "دیده‌بان بازار",
+            "n": 2,
+            "minW": 59,
+            "minH": 16
+          },
+          {
+            "ctrl": "topbar-notifications",
+            "n": 1,
+            "minW": 58,
+            "minH": 24
+          },
+          {
+            "ctrl": "باز کردن پالت فرمان",
+            "n": 1,
+            "minW": 126,
+            "minH": 26
+          },
+          {
+            "ctrl": "ws-tab-close-c63e10f0-149f-4a98-aee5-18129364d9f6",
+            "n": 1,
+            "minW": 10,
+            "minH": 18
+          },
+          {
+            "ctrl": "ws-tab-new",
+            "n": 1,
+            "minW": 24,
+            "minH": 20
+          },
+          {
+            "ctrl": "watch-add-input",
+            "n": 1,
+            "minW": 160,
+            "minH": 28
+          },
+          {
+            "ctrl": "watch-add-btn",
+            "n": 1,
+            "minW": 55,
+            "minH": 28
+          },
+          {
+            "ctrl": "watch-order-qty",
+            "n": 1,
+            "minW": 145,
+            "minH": 24
+          },
+          {
+            "ctrl": "watch-order-buy",
+            "n": 1,
+            "minW": 145,
+            "minH": 26
+          },
+          {
+            "ctrl": "watch-order-sell",
+            "n": 1,
+            "minW": 145,
+            "minH": 26
+          },
+          {
+            "ctrl": "watch-kill-switch",
+            "n": 1,
+            "minW": 70,
+            "minH": 20
+          }
+        ],
+        "tapSample": [
+          {
+            "tag": "A",
+            "label": "دیده‌بان بازار",
+            "w": 59,
+            "h": 16
+          },
+          {
+            "tag": "A",
+            "label": "مرکز اعلان — 60 نا",
+            "w": 58,
+            "h": 24
+          },
+          {
+            "tag": "BUTTON",
+            "label": "باز کردن پالت فرما",
+            "w": 126,
+            "h": 26
+          },
+          {
+            "tag": "DIV",
+            "label": "دیده‌بان بازار×",
+            "w": 104,
+            "h": 35
+          }
+        ],
+        "hscrollCount": 0,
+        "hscrollDetail": [],
+        "bottomBar": [
+          {
+            "testid": "mobile-nav",
+            "h": 53,
+            "paddingBottom": "4px",
+            "safeAreaInset": "4px",
+            "items": 5,
+            "labelsHidden": 0
+          }
+        ],
+        "contentUnderBar": 0,
+        "boardCards": 0,
+        "boardRows": 0,
+        "consolePageErrors": 0,
+        "settleMs": 697,
+        "hashOk": true,
+        "measuredRoute": "دیده‌بان بازار"
+      },
+      "notifications": {
+        "vw": 360,
+        "docOverflow": 0,
+        "clippedCount": 0,
+        "clippedSample": [],
+        "tinyCount": 0,
+        "tinySample": [],
+        "tapCount": 32,
+        "tapGroups": [
+          {
+            "ctrl": "notice-open",
+            "n": 5,
+            "minW": 45,
+            "minH": 20
+          },
+          {
+            "ctrl": "notice-mark",
+            "n": 5,
+            "minW": 60,
+            "minH": 20
+          },
+          {
+            "ctrl": "ترمینال بورس",
+            "n": 1,
+            "minW": 64,
+            "minH": 16
+          },
+          {
+            "ctrl": "topbar-notifications",
+            "n": 1,
+            "minW": 58,
+            "minH": 24
+          },
+          {
+            "ctrl": "باز کردن پالت فرمان",
+            "n": 1,
+            "minW": 126,
+            "minH": 26
+          },
+          {
+            "ctrl": "مرکز اعلان",
+            "n": 1,
+            "minW": 104,
+            "minH": 35
+          },
+          {
+            "ctrl": "ws-tab-close-c63e10f0-149f-4a98-aee5-18129364d9f6",
+            "n": 1,
+            "minW": 10,
+            "minH": 18
+          },
+          {
+            "ctrl": "ws-tab-new",
+            "n": 1,
+            "minW": 24,
+            "minH": 20
+          },
+          {
+            "ctrl": "notice-native",
+            "n": 1,
+            "minW": 13,
+            "minH": 13
+          },
+          {
+            "ctrl": "notice-mark-all",
+            "n": 1,
+            "minW": 89,
+            "minH": 20
+          },
+          {
+            "ctrl": "notice-level-high",
+            "n": 1,
+            "minW": 31,
+            "minH": 20
+          },
+          {
+            "ctrl": "notice-level-medium",
+            "n": 1,
+            "minW": 50,
+            "minH": 20
+          }
+        ],
+        "tapSample": [
+          {
+            "tag": "A",
+            "label": "ترمینال بورس",
+            "w": 64,
+            "h": 16
+          },
+          {
+            "tag": "A",
+            "label": "مرکز اعلان — 60 نا",
+            "w": 58,
+            "h": 24
+          },
+          {
+            "tag": "BUTTON",
+            "label": "باز کردن پالت فرما",
+            "w": 126,
+            "h": 26
+          },
+          {
+            "tag": "DIV",
+            "label": "مرکز اعلان×",
+            "w": 104,
+            "h": 35
+          }
+        ],
+        "hscrollCount": 0,
+        "hscrollDetail": [],
+        "bottomBar": [
+          {
+            "testid": "mobile-nav",
+            "h": 53,
+            "paddingBottom": "4px",
+            "safeAreaInset": "4px",
+            "items": 5,
+            "labelsHidden": 0
+          }
+        ],
+        "contentUnderBar": 0,
+        "boardCards": 0,
+        "boardRows": 0,
+        "consolePageErrors": 0,
+        "settleMs": 692,
+        "hashOk": true,
+        "measuredRoute": "ترمینال بورس"
+      },
+      "technical": {
+        "vw": 360,
+        "docOverflow": 0,
+        "clippedCount": 3,
+        "clippedSample": [
+          {
+            "tag": "BUTTON",
+            "text": "روزانه",
+            "lost": 5,
+            "ellipsis": false,
+            "title": true
+          },
+          {
+            "tag": "BUTTON",
+            "text": "هفتگی",
+            "lost": 8,
+            "ellipsis": false,
+            "title": true
+          },
+          {
+            "tag": "BUTTON",
+            "text": "ماهانه",
+            "lost": 7,
+            "ellipsis": false,
+            "title": true
+          }
+        ],
+        "tinyCount": 0,
+        "tinySample": [],
+        "tapCount": 35,
+        "tapGroups": [
+          {
+            "ctrl": "تحلیل تکنیکال",
+            "n": 1,
+            "minW": 68,
+            "minH": 16
+          },
+          {
+            "ctrl": "topbar-notifications",
+            "n": 1,
+            "minW": 58,
+            "minH": 24
+          },
+          {
+            "ctrl": "تکنیکال · فولاد",
+            "n": 1,
+            "minW": 104,
+            "minH": 35
+          },
+          {
+            "ctrl": "ws-tab-close-c63e10f0-149f-4a98-aee5-18129364d9f6",
+            "n": 1,
+            "minW": 10,
+            "minH": 18
+          },
+          {
+            "ctrl": "ws-tab-new",
+            "n": 1,
+            "minW": 24,
+            "minH": 20
+          },
+          {
+            "ctrl": "sidebar-collapse",
+            "n": 1,
+            "minW": 24,
+            "minH": 24
+          },
+          {
+            "ctrl": "sidebar-fts-search",
+            "n": 1,
+            "minW": 268,
+            "minH": 30
+          },
+          {
+            "ctrl": "sidebar-tab-watch",
+            "n": 1,
+            "minW": 32,
+            "minH": 32
+          },
+          {
+            "ctrl": "sidebar-tab-fts",
+            "n": 1,
+            "minW": 32,
+            "minH": 32
+          },
+          {
+            "ctrl": "sidebar-tab-book",
+            "n": 1,
+            "minW": 32,
+            "minH": 32
+          },
+          {
+            "ctrl": "sidebar-tab-levels",
+            "n": 1,
+            "minW": 32,
+            "minH": 32
+          },
+          {
+            "ctrl": "fts-settings-btn",
+            "n": 1,
+            "minW": 87,
+            "minH": 34
+          }
+        ],
+        "tapSample": [
+          {
+            "tag": "A",
+            "label": "تحلیل تکنیکال",
+            "w": 68,
+            "h": 16
+          },
+          {
+            "tag": "A",
+            "label": "مرکز اعلان — 60 نا",
+            "w": 58,
+            "h": 24
+          },
+          {
+            "tag": "DIV",
+            "label": "تکنیکال · فولاد×",
+            "w": 104,
+            "h": 35
+          },
+          {
+            "tag": "BUTTON",
+            "label": "بستن تب تکنیکال · ",
+            "w": 10,
+            "h": 18
+          }
+        ],
+        "hscrollCount": 0,
+        "hscrollDetail": [],
+        "bottomBar": [
+          {
+            "testid": "mobile-nav",
+            "h": 53,
+            "paddingBottom": "4px",
+            "safeAreaInset": "4px",
+            "items": 5,
+            "labelsHidden": 0
+          }
+        ],
+        "contentUnderBar": 0,
+        "boardCards": 0,
+        "boardRows": 0,
+        "consolePageErrors": 0,
+        "settleMs": 10378,
+        "hashOk": false,
+        "measuredRoute": "تحلیل تکنیکال"
+      },
+      "fundamental": {
+        "vw": 360,
+        "docOverflow": 0,
+        "clippedCount": 0,
+        "clippedSample": [],
+        "tinyCount": 0,
+        "tinySample": [],
+        "tapCount": 7,
+        "tapGroups": [
+          {
+            "ctrl": "تحلیل بنیادی",
+            "n": 1,
+            "minW": 62,
+            "minH": 16
+          },
+          {
+            "ctrl": "topbar-notifications",
+            "n": 1,
+            "minW": 58,
+            "minH": 24
+          },
+          {
+            "ctrl": "باز کردن پالت فرمان",
+            "n": 1,
+            "minW": 126,
+            "minH": 26
+          },
+          {
+            "ctrl": "بنیادی · فولاد",
+            "n": 1,
+            "minW": 104,
+            "minH": 35
+          },
+          {
+            "ctrl": "ws-tab-close-c63e10f0-149f-4a98-aee5-18129364d9f6",
+            "n": 1,
+            "minW": 10,
+            "minH": 18
+          },
+          {
+            "ctrl": "ws-tab-new",
+            "n": 1,
+            "minW": 24,
+            "minH": 20
+          },
+          {
+            "ctrl": "fts-settings-btn",
+            "n": 1,
+            "minW": 87,
+            "minH": 34
+          }
+        ],
+        "tapSample": [
+          {
+            "tag": "A",
+            "label": "تحلیل بنیادی",
+            "w": 62,
+            "h": 16
+          },
+          {
+            "tag": "A",
+            "label": "مرکز اعلان — 60 نا",
+            "w": 58,
+            "h": 24
+          },
+          {
+            "tag": "BUTTON",
+            "label": "باز کردن پالت فرما",
+            "w": 126,
+            "h": 26
+          },
+          {
+            "tag": "DIV",
+            "label": "بنیادی · فولاد×",
+            "w": 104,
+            "h": 35
+          }
+        ],
+        "hscrollCount": 0,
+        "hscrollDetail": [],
+        "bottomBar": [
+          {
+            "testid": "mobile-nav",
+            "h": 53,
+            "paddingBottom": "4px",
+            "safeAreaInset": "4px",
+            "items": 5,
+            "labelsHidden": 0
+          }
+        ],
+        "contentUnderBar": 0,
+        "boardCards": 0,
+        "boardRows": 0,
+        "consolePageErrors": 0,
+        "settleMs": 10372,
+        "hashOk": false,
+        "measuredRoute": "تحلیل بنیادی"
+      },
+      "portfolio": {
+        "vw": 360,
+        "docOverflow": 0,
+        "clippedCount": 0,
+        "clippedSample": [],
+        "tinyCount": 0,
+        "tinySample": [],
+        "tapCount": 12,
+        "tapGroups": [
+          {
+            "ctrl": "مدیریت پرتفوی",
+            "n": 1,
+            "minW": 73,
+            "minH": 16
+          },
+          {
+            "ctrl": "topbar-notifications",
+            "n": 1,
+            "minW": 58,
+            "minH": 24
+          },
+          {
+            "ctrl": "باز کردن پالت فرمان",
+            "n": 1,
+            "minW": 126,
+            "minH": 26
+          },
+          {
+            "ctrl": "مدیریت پرتفوی · فولاد",
+            "n": 1,
+            "minW": 136,
+            "minH": 35
+          },
+          {
+            "ctrl": "ws-tab-close-c63e10f0-149f-4a98-aee5-18129364d9f6",
+            "n": 1,
+            "minW": 10,
+            "minH": 18
+          },
+          {
+            "ctrl": "ws-tab-new",
+            "n": 1,
+            "minW": 24,
+            "minH": 20
+          },
+          {
+            "ctrl": "پرتفوی هدف",
+            "n": 1,
+            "minW": 95,
+            "minH": 30
+          },
+          {
+            "ctrl": "پرتفوی فعلی",
+            "n": 1,
+            "minW": 93,
+            "minH": 30
+          },
+          {
+            "ctrl": "ویرایش دارایی",
+            "n": 1,
+            "minW": 94,
+            "minH": 24
+          },
+          {
+            "ctrl": "افزودن دارایی",
+            "n": 1,
+            "minW": 91,
+            "minH": 24
+          },
+          {
+            "ctrl": "بازنشانی به پیش‌فر",
+            "n": 1,
+            "minW": 154,
+            "minH": 24
+          },
+          {
+            "ctrl": "محاسبه دستورات ری‌",
+            "n": 1,
+            "minW": 184,
+            "minH": 30
+          }
+        ],
+        "tapSample": [
+          {
+            "tag": "A",
+            "label": "مدیریت پرتفوی",
+            "w": 73,
+            "h": 16
+          },
+          {
+            "tag": "A",
+            "label": "مرکز اعلان — 60 نا",
+            "w": 58,
+            "h": 24
+          },
+          {
+            "tag": "BUTTON",
+            "label": "باز کردن پالت فرما",
+            "w": 126,
+            "h": 26
+          },
+          {
+            "tag": "DIV",
+            "label": "مدیریت پرتفوی · فو",
+            "w": 136,
+            "h": 35
+          }
+        ],
+        "hscrollCount": 0,
+        "hscrollDetail": [],
+        "bottomBar": [
+          {
+            "testid": "mobile-nav",
+            "h": 53,
+            "paddingBottom": "4px",
+            "safeAreaInset": "4px",
+            "items": 5,
+            "labelsHidden": 0
+          }
+        ],
+        "contentUnderBar": 0,
+        "boardCards": 0,
+        "boardRows": 0,
+        "consolePageErrors": 0,
+        "settleMs": 10364,
+        "hashOk": false,
+        "measuredRoute": "مدیریت پرتفوی"
+      },
+      "order-line": {
+        "vw": 360,
+        "docOverflow": 0,
+        "clippedCount": 0,
+        "clippedSample": [],
+        "tinyCount": 0,
+        "tinySample": [],
+        "tapCount": 7,
+        "tapGroups": [
+          {
+            "ctrl": "سرخطی",
+            "n": 2,
+            "minW": 38,
+            "minH": 16
+          },
+          {
+            "ctrl": "topbar-notifications",
+            "n": 1,
+            "minW": 58,
+            "minH": 24
+          },
+          {
+            "ctrl": "باز کردن پالت فرمان",
+            "n": 1,
+            "minW": 126,
+            "minH": 26
+          },
+          {
+            "ctrl": "ws-tab-close-c63e10f0-149f-4a98-aee5-18129364d9f6",
+            "n": 1,
+            "minW": 10,
+            "minH": 18
+          },
+          {
+            "ctrl": "ws-tab-new",
+            "n": 1,
+            "minW": 24,
+            "minH": 20
+          },
+          {
+            "ctrl": "order-add-tab",
+            "n": 1,
+            "minW": 64,
+            "minH": 24
+          }
+        ],
+        "tapSample": [
+          {
+            "tag": "A",
+            "label": "سرخطی",
+            "w": 38,
+            "h": 16
+          },
+          {
+            "tag": "A",
+            "label": "مرکز اعلان — 60 نا",
+            "w": 58,
+            "h": 24
+          },
+          {
+            "tag": "BUTTON",
+            "label": "باز کردن پالت فرما",
+            "w": 126,
+            "h": 26
+          },
+          {
+            "tag": "DIV",
+            "label": "سرخطی×",
+            "w": 104,
+            "h": 35
+          }
+        ],
+        "hscrollCount": 0,
+        "hscrollDetail": [],
+        "bottomBar": [
+          {
+            "testid": "mobile-nav",
+            "h": 53,
+            "paddingBottom": "4px",
+            "safeAreaInset": "4px",
+            "items": 5,
+            "labelsHidden": 0
+          }
+        ],
+        "contentUnderBar": 0,
+        "boardCards": 0,
+        "boardRows": 0,
+        "consolePageErrors": 0,
+        "settleMs": 472,
+        "hashOk": true,
+        "measuredRoute": "سرخطی"
+      }
+    },
+    "390": {
+      "market": {
+        "vw": 390,
+        "docOverflow": 0,
+        "clippedCount": 0,
+        "clippedSample": [],
+        "tinyCount": 0,
+        "tinySample": [],
+        "tapCount": 11,
+        "tapGroups": [
+          {
+            "ctrl": "تابلوخوانی",
+            "n": 2,
+            "minW": 49,
+            "minH": 16
+          },
+          {
+            "ctrl": "topbar-notifications",
+            "n": 1,
+            "minW": 58,
+            "minH": 24
+          },
+          {
+            "ctrl": "باز کردن پالت فرمان",
+            "n": 1,
+            "minW": 126,
+            "minH": 26
+          },
+          {
+            "ctrl": "ws-tab-close-165dc2f7-68e7-45b5-9f85-f3316788703a",
+            "n": 1,
+            "minW": 10,
+            "minH": 18
+          },
+          {
+            "ctrl": "ws-tab-new",
+            "n": 1,
+            "minW": 24,
+            "minH": 20
+          },
+          {
+            "ctrl": "جستجوی نماد",
+            "n": 1,
+            "minW": 177,
+            "minH": 26
+          },
+          {
+            "ctrl": "filters-disclosure",
+            "n": 1,
+            "minW": 52,
+            "minH": 24
+          },
+          {
+            "ctrl": "watch-tab-clock",
+            "n": 1,
+            "minW": 93,
+            "minH": 26
+          },
+          {
+            "ctrl": "watch-tab-susp",
+            "n": 1,
+            "minW": 128,
+            "minH": 26
+          },
+          {
+            "ctrl": "watch-tab-industries",
+            "n": 1,
+            "minW": 70,
+            "minH": 26
+          }
+        ],
+        "tapSample": [
+          {
+            "tag": "A",
+            "label": "تابلوخوانی",
+            "w": 49,
+            "h": 16
+          },
+          {
+            "tag": "A",
+            "label": "مرکز اعلان — 60 نا",
+            "w": 58,
+            "h": 24
+          },
+          {
+            "tag": "BUTTON",
+            "label": "باز کردن پالت فرما",
+            "w": 126,
+            "h": 26
+          },
+          {
+            "tag": "DIV",
+            "label": "تابلوخوانی×",
+            "w": 104,
+            "h": 35
+          }
+        ],
+        "hscrollCount": 0,
+        "hscrollDetail": [],
+        "bottomBar": [
+          {
+            "testid": "mobile-nav",
+            "h": 53,
+            "paddingBottom": "4px",
+            "safeAreaInset": "4px",
+            "items": 5,
+            "labelsHidden": 0
+          }
+        ],
+        "contentUnderBar": 0,
+        "boardCards": 12,
+        "boardRows": 0,
+        "consolePageErrors": 0,
+        "settleMs": 411,
+        "hashOk": true,
+        "measuredRoute": "تابلوخوانی"
+      },
+      "market-status": {
+        "vw": 390,
+        "docOverflow": 0,
+        "clippedCount": 0,
+        "clippedSample": [],
+        "tinyCount": 0,
+        "tinySample": [],
+        "tapCount": 14,
+        "tapGroups": [
+          {
+            "ctrl": "وضعیت بازار",
+            "n": 2,
+            "minW": 60,
+            "minH": 16
+          },
+          {
+            "ctrl": "topbar-notifications",
+            "n": 1,
+            "minW": 58,
+            "minH": 24
+          },
+          {
+            "ctrl": "باز کردن پالت فرمان",
+            "n": 1,
+            "minW": 126,
+            "minH": 26
+          },
+          {
+            "ctrl": "ws-tab-close-165dc2f7-68e7-45b5-9f85-f3316788703a",
+            "n": 1,
+            "minW": 10,
+            "minH": 18
+          },
+          {
+            "ctrl": "ws-tab-new",
+            "n": 1,
+            "minW": 24,
+            "minH": 20
+          },
+          {
+            "ctrl": "msp-toggle",
+            "n": 1,
+            "minW": 60,
+            "minH": 14
+          },
+          {
+            "ctrl": "ticker-tabs-breadth",
+            "n": 1,
+            "minW": 85,
+            "minH": 24
+          },
+          {
+            "ctrl": "ticker-tabs-flow",
+            "n": 1,
+            "minW": 85,
+            "minH": 24
+          },
+          {
+            "ctrl": "ticker-tabs-value",
+            "n": 1,
+            "minW": 85,
+            "minH": 24
+          },
+          {
+            "ctrl": "ticker-tabs-queues",
+            "n": 1,
+            "minW": 85,
+            "minH": 24
+          },
+          {
+            "ctrl": "ticker-mode-toggle",
+            "n": 1,
+            "minW": 46,
+            "minH": 20
+          },
+          {
+            "ctrl": "ticker-rotate-toggle",
+            "n": 1,
+            "minW": 78,
+            "minH": 20
+          }
+        ],
+        "tapSample": [
+          {
+            "tag": "A",
+            "label": "وضعیت بازار",
+            "w": 60,
+            "h": 16
+          },
+          {
+            "tag": "A",
+            "label": "مرکز اعلان — 60 نا",
+            "w": 58,
+            "h": 24
+          },
+          {
+            "tag": "BUTTON",
+            "label": "باز کردن پالت فرما",
+            "w": 126,
+            "h": 26
+          },
+          {
+            "tag": "DIV",
+            "label": "وضعیت بازار×",
+            "w": 104,
+            "h": 35
+          }
+        ],
+        "hscrollCount": 0,
+        "hscrollDetail": [],
+        "bottomBar": [
+          {
+            "testid": "mobile-nav",
+            "h": 53,
+            "paddingBottom": "4px",
+            "safeAreaInset": "4px",
+            "items": 5,
+            "labelsHidden": 0
+          }
+        ],
+        "contentUnderBar": 0,
+        "boardCards": 0,
+        "boardRows": 166,
+        "consolePageErrors": 0,
+        "settleMs": 30050,
+        "hashOk": true,
+        "measuredRoute": "وضعیت بازار"
+      },
+      "watch": {
+        "vw": 390,
+        "docOverflow": 0,
+        "clippedCount": 0,
+        "clippedSample": [],
+        "tinyCount": 0,
+        "tinySample": [],
+        "tapCount": 12,
+        "tapGroups": [
+          {
+            "ctrl": "دیده‌بان بازار",
+            "n": 2,
+            "minW": 59,
+            "minH": 16
+          },
+          {
+            "ctrl": "topbar-notifications",
+            "n": 1,
+            "minW": 58,
+            "minH": 24
+          },
+          {
+            "ctrl": "باز کردن پالت فرمان",
+            "n": 1,
+            "minW": 126,
+            "minH": 26
+          },
+          {
+            "ctrl": "ws-tab-close-165dc2f7-68e7-45b5-9f85-f3316788703a",
+            "n": 1,
+            "minW": 10,
+            "minH": 18
+          },
+          {
+            "ctrl": "ws-tab-new",
+            "n": 1,
+            "minW": 24,
+            "minH": 20
+          },
+          {
+            "ctrl": "watch-add-input",
+            "n": 1,
+            "minW": 160,
+            "minH": 28
+          },
+          {
+            "ctrl": "watch-add-btn",
+            "n": 1,
+            "minW": 55,
+            "minH": 28
+          },
+          {
+            "ctrl": "watch-order-qty",
+            "n": 1,
+            "minW": 160,
+            "minH": 24
+          },
+          {
+            "ctrl": "watch-order-buy",
+            "n": 1,
+            "minW": 160,
+            "minH": 26
+          },
+          {
+            "ctrl": "watch-order-sell",
+            "n": 1,
+            "minW": 160,
+            "minH": 26
+          },
+          {
+            "ctrl": "watch-kill-switch",
+            "n": 1,
+            "minW": 70,
+            "minH": 20
+          }
+        ],
+        "tapSample": [
+          {
+            "tag": "A",
+            "label": "دیده‌بان بازار",
+            "w": 59,
+            "h": 16
+          },
+          {
+            "tag": "A",
+            "label": "مرکز اعلان — 60 نا",
+            "w": 58,
+            "h": 24
+          },
+          {
+            "tag": "BUTTON",
+            "label": "باز کردن پالت فرما",
+            "w": 126,
+            "h": 26
+          },
+          {
+            "tag": "DIV",
+            "label": "دیده‌بان بازار×",
+            "w": 104,
+            "h": 35
+          }
+        ],
+        "hscrollCount": 0,
+        "hscrollDetail": [],
+        "bottomBar": [
+          {
+            "testid": "mobile-nav",
+            "h": 53,
+            "paddingBottom": "4px",
+            "safeAreaInset": "4px",
+            "items": 5,
+            "labelsHidden": 0
+          }
+        ],
+        "contentUnderBar": 0,
+        "boardCards": 0,
+        "boardRows": 0,
+        "consolePageErrors": 0,
+        "settleMs": 725,
+        "hashOk": true,
+        "measuredRoute": "دیده‌بان بازار"
+      },
+      "notifications": {
+        "vw": 390,
+        "docOverflow": 0,
+        "clippedCount": 0,
+        "clippedSample": [],
+        "tinyCount": 0,
+        "tinySample": [],
+        "tapCount": 32,
+        "tapGroups": [
+          {
+            "ctrl": "notice-open",
+            "n": 5,
+            "minW": 45,
+            "minH": 20
+          },
+          {
+            "ctrl": "notice-mark",
+            "n": 5,
+            "minW": 60,
+            "minH": 20
+          },
+          {
+            "ctrl": "ترمینال بورس",
+            "n": 1,
+            "minW": 64,
+            "minH": 16
+          },
+          {
+            "ctrl": "topbar-notifications",
+            "n": 1,
+            "minW": 58,
+            "minH": 24
+          },
+          {
+            "ctrl": "باز کردن پالت فرمان",
+            "n": 1,
+            "minW": 126,
+            "minH": 26
+          },
+          {
+            "ctrl": "مرکز اعلان",
+            "n": 1,
+            "minW": 104,
+            "minH": 35
+          },
+          {
+            "ctrl": "ws-tab-close-165dc2f7-68e7-45b5-9f85-f3316788703a",
+            "n": 1,
+            "minW": 10,
+            "minH": 18
+          },
+          {
+            "ctrl": "ws-tab-new",
+            "n": 1,
+            "minW": 24,
+            "minH": 20
+          },
+          {
+            "ctrl": "notice-native",
+            "n": 1,
+            "minW": 13,
+            "minH": 13
+          },
+          {
+            "ctrl": "notice-mark-all",
+            "n": 1,
+            "minW": 89,
+            "minH": 20
+          },
+          {
+            "ctrl": "notice-level-high",
+            "n": 1,
+            "minW": 31,
+            "minH": 20
+          },
+          {
+            "ctrl": "notice-level-medium",
+            "n": 1,
+            "minW": 50,
+            "minH": 20
+          }
+        ],
+        "tapSample": [
+          {
+            "tag": "A",
+            "label": "ترمینال بورس",
+            "w": 64,
+            "h": 16
+          },
+          {
+            "tag": "A",
+            "label": "مرکز اعلان — 60 نا",
+            "w": 58,
+            "h": 24
+          },
+          {
+            "tag": "BUTTON",
+            "label": "باز کردن پالت فرما",
+            "w": 126,
+            "h": 26
+          },
+          {
+            "tag": "DIV",
+            "label": "مرکز اعلان×",
+            "w": 104,
+            "h": 35
+          }
+        ],
+        "hscrollCount": 0,
+        "hscrollDetail": [],
+        "bottomBar": [
+          {
+            "testid": "mobile-nav",
+            "h": 53,
+            "paddingBottom": "4px",
+            "safeAreaInset": "4px",
+            "items": 5,
+            "labelsHidden": 0
+          }
+        ],
+        "contentUnderBar": 0,
+        "boardCards": 0,
+        "boardRows": 0,
+        "consolePageErrors": 0,
+        "settleMs": 673,
+        "hashOk": true,
+        "measuredRoute": "ترمینال بورس"
+      },
+      "technical": {
+        "vw": 390,
+        "docOverflow": 0,
+        "clippedCount": 3,
+        "clippedSample": [
+          {
+            "tag": "BUTTON",
+            "text": "روزانه",
+            "lost": 5,
+            "ellipsis": false,
+            "title": true
+          },
+          {
+            "tag": "BUTTON",
+            "text": "هفتگی",
+            "lost": 8,
+            "ellipsis": false,
+            "title": true
+          },
+          {
+            "tag": "BUTTON",
+            "text": "ماهانه",
+            "lost": 7,
+            "ellipsis": false,
+            "title": true
+          }
+        ],
+        "tinyCount": 0,
+        "tinySample": [],
+        "tapCount": 36,
+        "tapGroups": [
+          {
+            "ctrl": "تحلیل تکنیکال",
+            "n": 1,
+            "minW": 68,
+            "minH": 16
+          },
+          {
+            "ctrl": "topbar-notifications",
+            "n": 1,
+            "minW": 58,
+            "minH": 24
+          },
+          {
+            "ctrl": "تکنیکال · فولاد",
+            "n": 1,
+            "minW": 104,
+            "minH": 35
+          },
+          {
+            "ctrl": "ws-tab-close-165dc2f7-68e7-45b5-9f85-f3316788703a",
+            "n": 1,
+            "minW": 10,
+            "minH": 18
+          },
+          {
+            "ctrl": "ws-tab-new",
+            "n": 1,
+            "minW": 24,
+            "minH": 20
+          },
+          {
+            "ctrl": "sidebar-collapse",
+            "n": 1,
+            "minW": 24,
+            "minH": 24
+          },
+          {
+            "ctrl": "sidebar-fts-search",
+            "n": 1,
+            "minW": 268,
+            "minH": 30
+          },
+          {
+            "ctrl": "sidebar-tab-watch",
+            "n": 1,
+            "minW": 32,
+            "minH": 32
+          },
+          {
+            "ctrl": "sidebar-tab-fts",
+            "n": 1,
+            "minW": 32,
+            "minH": 32
+          },
+          {
+            "ctrl": "sidebar-tab-book",
+            "n": 1,
+            "minW": 32,
+            "minH": 32
+          },
+          {
+            "ctrl": "sidebar-tab-levels",
+            "n": 1,
+            "minW": 32,
+            "minH": 32
+          },
+          {
+            "ctrl": "fts-settings-btn",
+            "n": 1,
+            "minW": 87,
+            "minH": 34
+          }
+        ],
+        "tapSample": [
+          {
+            "tag": "A",
+            "label": "تحلیل تکنیکال",
+            "w": 68,
+            "h": 16
+          },
+          {
+            "tag": "A",
+            "label": "مرکز اعلان — 60 نا",
+            "w": 58,
+            "h": 24
+          },
+          {
+            "tag": "DIV",
+            "label": "تکنیکال · فولاد×",
+            "w": 104,
+            "h": 35
+          },
+          {
+            "tag": "BUTTON",
+            "label": "بستن تب تکنیکال · ",
+            "w": 10,
+            "h": 18
+          }
+        ],
+        "hscrollCount": 0,
+        "hscrollDetail": [],
+        "bottomBar": [
+          {
+            "testid": "mobile-nav",
+            "h": 53,
+            "paddingBottom": "4px",
+            "safeAreaInset": "4px",
+            "items": 5,
+            "labelsHidden": 0
+          }
+        ],
+        "contentUnderBar": 0,
+        "boardCards": 0,
+        "boardRows": 0,
+        "consolePageErrors": 0,
+        "settleMs": 10382,
+        "hashOk": false,
+        "measuredRoute": "تحلیل تکنیکال"
+      },
+      "fundamental": {
+        "vw": 390,
+        "docOverflow": 0,
+        "clippedCount": 0,
+        "clippedSample": [],
+        "tinyCount": 0,
+        "tinySample": [],
+        "tapCount": 7,
+        "tapGroups": [
+          {
+            "ctrl": "تحلیل بنیادی",
+            "n": 1,
+            "minW": 62,
+            "minH": 16
+          },
+          {
+            "ctrl": "topbar-notifications",
+            "n": 1,
+            "minW": 58,
+            "minH": 24
+          },
+          {
+            "ctrl": "باز کردن پالت فرمان",
+            "n": 1,
+            "minW": 126,
+            "minH": 26
+          },
+          {
+            "ctrl": "بنیادی · فولاد",
+            "n": 1,
+            "minW": 104,
+            "minH": 35
+          },
+          {
+            "ctrl": "ws-tab-close-165dc2f7-68e7-45b5-9f85-f3316788703a",
+            "n": 1,
+            "minW": 10,
+            "minH": 18
+          },
+          {
+            "ctrl": "ws-tab-new",
+            "n": 1,
+            "minW": 24,
+            "minH": 20
+          },
+          {
+            "ctrl": "fts-settings-btn",
+            "n": 1,
+            "minW": 87,
+            "minH": 34
+          }
+        ],
+        "tapSample": [
+          {
+            "tag": "A",
+            "label": "تحلیل بنیادی",
+            "w": 62,
+            "h": 16
+          },
+          {
+            "tag": "A",
+            "label": "مرکز اعلان — 60 نا",
+            "w": 58,
+            "h": 24
+          },
+          {
+            "tag": "BUTTON",
+            "label": "باز کردن پالت فرما",
+            "w": 126,
+            "h": 26
+          },
+          {
+            "tag": "DIV",
+            "label": "بنیادی · فولاد×",
+            "w": 104,
+            "h": 35
+          }
+        ],
+        "hscrollCount": 0,
+        "hscrollDetail": [],
+        "bottomBar": [
+          {
+            "testid": "mobile-nav",
+            "h": 53,
+            "paddingBottom": "4px",
+            "safeAreaInset": "4px",
+            "items": 5,
+            "labelsHidden": 0
+          }
+        ],
+        "contentUnderBar": 0,
+        "boardCards": 0,
+        "boardRows": 0,
+        "consolePageErrors": 0,
+        "settleMs": 10381,
+        "hashOk": false,
+        "measuredRoute": "تحلیل بنیادی"
+      },
+      "portfolio": {
+        "vw": 390,
+        "docOverflow": 0,
+        "clippedCount": 0,
+        "clippedSample": [],
+        "tinyCount": 0,
+        "tinySample": [],
+        "tapCount": 12,
+        "tapGroups": [
+          {
+            "ctrl": "مدیریت پرتفوی",
+            "n": 1,
+            "minW": 73,
+            "minH": 16
+          },
+          {
+            "ctrl": "topbar-notifications",
+            "n": 1,
+            "minW": 58,
+            "minH": 24
+          },
+          {
+            "ctrl": "باز کردن پالت فرمان",
+            "n": 1,
+            "minW": 126,
+            "minH": 26
+          },
+          {
+            "ctrl": "مدیریت پرتفوی · فولاد",
+            "n": 1,
+            "minW": 136,
+            "minH": 35
+          },
+          {
+            "ctrl": "ws-tab-close-165dc2f7-68e7-45b5-9f85-f3316788703a",
+            "n": 1,
+            "minW": 10,
+            "minH": 18
+          },
+          {
+            "ctrl": "ws-tab-new",
+            "n": 1,
+            "minW": 24,
+            "minH": 20
+          },
+          {
+            "ctrl": "پرتفوی هدف",
+            "n": 1,
+            "minW": 95,
+            "minH": 30
+          },
+          {
+            "ctrl": "پرتفوی فعلی",
+            "n": 1,
+            "minW": 93,
+            "minH": 30
+          },
+          {
+            "ctrl": "ویرایش دارایی",
+            "n": 1,
+            "minW": 94,
+            "minH": 24
+          },
+          {
+            "ctrl": "افزودن دارایی",
+            "n": 1,
+            "minW": 91,
+            "minH": 24
+          },
+          {
+            "ctrl": "بازنشانی به پیش‌فر",
+            "n": 1,
+            "minW": 154,
+            "minH": 24
+          },
+          {
+            "ctrl": "محاسبه دستورات ری‌",
+            "n": 1,
+            "minW": 184,
+            "minH": 30
+          }
+        ],
+        "tapSample": [
+          {
+            "tag": "A",
+            "label": "مدیریت پرتفوی",
+            "w": 73,
+            "h": 16
+          },
+          {
+            "tag": "A",
+            "label": "مرکز اعلان — 60 نا",
+            "w": 58,
+            "h": 24
+          },
+          {
+            "tag": "BUTTON",
+            "label": "باز کردن پالت فرما",
+            "w": 126,
+            "h": 26
+          },
+          {
+            "tag": "DIV",
+            "label": "مدیریت پرتفوی · فو",
+            "w": 136,
+            "h": 35
+          }
+        ],
+        "hscrollCount": 0,
+        "hscrollDetail": [],
+        "bottomBar": [
+          {
+            "testid": "mobile-nav",
+            "h": 53,
+            "paddingBottom": "4px",
+            "safeAreaInset": "4px",
+            "items": 5,
+            "labelsHidden": 0
+          }
+        ],
+        "contentUnderBar": 0,
+        "boardCards": 0,
+        "boardRows": 0,
+        "consolePageErrors": 0,
+        "settleMs": 10381,
+        "hashOk": false,
+        "measuredRoute": "مدیریت پرتفوی"
+      },
+      "order-line": {
+        "vw": 390,
+        "docOverflow": 0,
+        "clippedCount": 0,
+        "clippedSample": [],
+        "tinyCount": 0,
+        "tinySample": [],
+        "tapCount": 7,
+        "tapGroups": [
+          {
+            "ctrl": "سرخطی",
+            "n": 2,
+            "minW": 38,
+            "minH": 16
+          },
+          {
+            "ctrl": "topbar-notifications",
+            "n": 1,
+            "minW": 58,
+            "minH": 24
+          },
+          {
+            "ctrl": "باز کردن پالت فرمان",
+            "n": 1,
+            "minW": 126,
+            "minH": 26
+          },
+          {
+            "ctrl": "ws-tab-close-165dc2f7-68e7-45b5-9f85-f3316788703a",
+            "n": 1,
+            "minW": 10,
+            "minH": 18
+          },
+          {
+            "ctrl": "ws-tab-new",
+            "n": 1,
+            "minW": 24,
+            "minH": 20
+          },
+          {
+            "ctrl": "order-add-tab",
+            "n": 1,
+            "minW": 64,
+            "minH": 24
+          }
+        ],
+        "tapSample": [
+          {
+            "tag": "A",
+            "label": "سرخطی",
+            "w": 38,
+            "h": 16
+          },
+          {
+            "tag": "A",
+            "label": "مرکز اعلان — 60 نا",
+            "w": 58,
+            "h": 24
+          },
+          {
+            "tag": "BUTTON",
+            "label": "باز کردن پالت فرما",
+            "w": 126,
+            "h": 26
+          },
+          {
+            "tag": "DIV",
+            "label": "سرخطی×",
+            "w": 104,
+            "h": 35
+          }
+        ],
+        "hscrollCount": 0,
+        "hscrollDetail": [],
+        "bottomBar": [
+          {
+            "testid": "mobile-nav",
+            "h": 53,
+            "paddingBottom": "4px",
+            "safeAreaInset": "4px",
+            "items": 5,
+            "labelsHidden": 0
+          }
+        ],
+        "contentUnderBar": 0,
+        "boardCards": 0,
+        "boardRows": 0,
+        "consolePageErrors": 0,
+        "settleMs": 538,
+        "hashOk": true,
+        "measuredRoute": "سرخطی"
+      }
+    },
+    "430": {
+      "market": {
+        "vw": 430,
+        "docOverflow": 0,
+        "clippedCount": 0,
+        "clippedSample": [],
+        "tinyCount": 0,
+        "tinySample": [],
+        "tapCount": 11,
+        "tapGroups": [
+          {
+            "ctrl": "تابلوخوانی",
+            "n": 2,
+            "minW": 49,
+            "minH": 16
+          },
+          {
+            "ctrl": "topbar-notifications",
+            "n": 1,
+            "minW": 58,
+            "minH": 24
+          },
+          {
+            "ctrl": "باز کردن پالت فرمان",
+            "n": 1,
+            "minW": 126,
+            "minH": 26
+          },
+          {
+            "ctrl": "ws-tab-close-922ed840-3ff0-482b-82b1-fe437fa8a550",
+            "n": 1,
+            "minW": 10,
+            "minH": 18
+          },
+          {
+            "ctrl": "ws-tab-new",
+            "n": 1,
+            "minW": 24,
+            "minH": 20
+          },
+          {
+            "ctrl": "جستجوی نماد",
+            "n": 1,
+            "minW": 177,
+            "minH": 26
+          },
+          {
+            "ctrl": "filters-disclosure",
+            "n": 1,
+            "minW": 52,
+            "minH": 24
+          },
+          {
+            "ctrl": "watch-tab-clock",
+            "n": 1,
+            "minW": 93,
+            "minH": 26
+          },
+          {
+            "ctrl": "watch-tab-susp",
+            "n": 1,
+            "minW": 128,
+            "minH": 26
+          },
+          {
+            "ctrl": "watch-tab-industries",
+            "n": 1,
+            "minW": 70,
+            "minH": 26
+          }
+        ],
+        "tapSample": [
+          {
+            "tag": "A",
+            "label": "تابلوخوانی",
+            "w": 49,
+            "h": 16
+          },
+          {
+            "tag": "A",
+            "label": "مرکز اعلان — 60 نا",
+            "w": 58,
+            "h": 24
+          },
+          {
+            "tag": "BUTTON",
+            "label": "باز کردن پالت فرما",
+            "w": 126,
+            "h": 26
+          },
+          {
+            "tag": "DIV",
+            "label": "تابلوخوانی×",
+            "w": 104,
+            "h": 35
+          }
+        ],
+        "hscrollCount": 0,
+        "hscrollDetail": [],
+        "bottomBar": [
+          {
+            "testid": "mobile-nav",
+            "h": 53,
+            "paddingBottom": "4px",
+            "safeAreaInset": "4px",
+            "items": 5,
+            "labelsHidden": 0
+          }
+        ],
+        "contentUnderBar": 0,
+        "boardCards": 12,
+        "boardRows": 0,
+        "consolePageErrors": 0,
+        "settleMs": 430,
+        "hashOk": true,
+        "measuredRoute": "تابلوخوانی"
+      },
+      "market-status": {
+        "vw": 430,
+        "docOverflow": 0,
+        "clippedCount": 0,
+        "clippedSample": [],
+        "tinyCount": 0,
+        "tinySample": [],
+        "tapCount": 14,
+        "tapGroups": [
+          {
+            "ctrl": "وضعیت بازار",
+            "n": 2,
+            "minW": 60,
+            "minH": 16
+          },
+          {
+            "ctrl": "topbar-notifications",
+            "n": 1,
+            "minW": 58,
+            "minH": 24
+          },
+          {
+            "ctrl": "باز کردن پالت فرمان",
+            "n": 1,
+            "minW": 126,
+            "minH": 26
+          },
+          {
+            "ctrl": "ws-tab-close-922ed840-3ff0-482b-82b1-fe437fa8a550",
+            "n": 1,
+            "minW": 10,
+            "minH": 18
+          },
+          {
+            "ctrl": "ws-tab-new",
+            "n": 1,
+            "minW": 24,
+            "minH": 20
+          },
+          {
+            "ctrl": "msp-toggle",
+            "n": 1,
+            "minW": 60,
+            "minH": 14
+          },
+          {
+            "ctrl": "ticker-tabs-breadth",
+            "n": 1,
+            "minW": 85,
+            "minH": 24
+          },
+          {
+            "ctrl": "ticker-tabs-flow",
+            "n": 1,
+            "minW": 85,
+            "minH": 24
+          },
+          {
+            "ctrl": "ticker-tabs-value",
+            "n": 1,
+            "minW": 85,
+            "minH": 24
+          },
+          {
+            "ctrl": "ticker-tabs-queues",
+            "n": 1,
+            "minW": 85,
+            "minH": 24
+          },
+          {
+            "ctrl": "ticker-mode-toggle",
+            "n": 1,
+            "minW": 46,
+            "minH": 20
+          },
+          {
+            "ctrl": "ticker-rotate-toggle",
+            "n": 1,
+            "minW": 78,
+            "minH": 20
+          }
+        ],
+        "tapSample": [
+          {
+            "tag": "A",
+            "label": "وضعیت بازار",
+            "w": 60,
+            "h": 16
+          },
+          {
+            "tag": "A",
+            "label": "مرکز اعلان — 60 نا",
+            "w": 58,
+            "h": 24
+          },
+          {
+            "tag": "BUTTON",
+            "label": "باز کردن پالت فرما",
+            "w": 126,
+            "h": 26
+          },
+          {
+            "tag": "DIV",
+            "label": "وضعیت بازار×",
+            "w": 104,
+            "h": 35
+          }
+        ],
+        "hscrollCount": 0,
+        "hscrollDetail": [],
+        "bottomBar": [
+          {
+            "testid": "mobile-nav",
+            "h": 53,
+            "paddingBottom": "4px",
+            "safeAreaInset": "4px",
+            "items": 5,
+            "labelsHidden": 0
+          }
+        ],
+        "contentUnderBar": 0,
+        "boardCards": 0,
+        "boardRows": 166,
+        "consolePageErrors": 0,
+        "settleMs": 30057,
+        "hashOk": true,
+        "measuredRoute": "وضعیت بازار"
+      },
+      "watch": {
+        "vw": 430,
+        "docOverflow": 0,
+        "clippedCount": 0,
+        "clippedSample": [],
+        "tinyCount": 0,
+        "tinySample": [],
+        "tapCount": 12,
+        "tapGroups": [
+          {
+            "ctrl": "دیده‌بان بازار",
+            "n": 2,
+            "minW": 59,
+            "minH": 16
+          },
+          {
+            "ctrl": "topbar-notifications",
+            "n": 1,
+            "minW": 58,
+            "minH": 24
+          },
+          {
+            "ctrl": "باز کردن پالت فرمان",
+            "n": 1,
+            "minW": 126,
+            "minH": 26
+          },
+          {
+            "ctrl": "ws-tab-close-922ed840-3ff0-482b-82b1-fe437fa8a550",
+            "n": 1,
+            "minW": 10,
+            "minH": 18
+          },
+          {
+            "ctrl": "ws-tab-new",
+            "n": 1,
+            "minW": 24,
+            "minH": 20
+          },
+          {
+            "ctrl": "watch-add-input",
+            "n": 1,
+            "minW": 160,
+            "minH": 28
+          },
+          {
+            "ctrl": "watch-add-btn",
+            "n": 1,
+            "minW": 55,
+            "minH": 28
+          },
+          {
+            "ctrl": "watch-order-qty",
+            "n": 1,
+            "minW": 180,
+            "minH": 24
+          },
+          {
+            "ctrl": "watch-order-buy",
+            "n": 1,
+            "minW": 180,
+            "minH": 26
+          },
+          {
+            "ctrl": "watch-order-sell",
+            "n": 1,
+            "minW": 180,
+            "minH": 26
+          },
+          {
+            "ctrl": "watch-kill-switch",
+            "n": 1,
+            "minW": 70,
+            "minH": 20
+          }
+        ],
+        "tapSample": [
+          {
+            "tag": "A",
+            "label": "دیده‌بان بازار",
+            "w": 59,
+            "h": 16
+          },
+          {
+            "tag": "A",
+            "label": "مرکز اعلان — 60 نا",
+            "w": 58,
+            "h": 24
+          },
+          {
+            "tag": "BUTTON",
+            "label": "باز کردن پالت فرما",
+            "w": 126,
+            "h": 26
+          },
+          {
+            "tag": "DIV",
+            "label": "دیده‌بان بازار×",
+            "w": 104,
+            "h": 35
+          }
+        ],
+        "hscrollCount": 0,
+        "hscrollDetail": [],
+        "bottomBar": [
+          {
+            "testid": "mobile-nav",
+            "h": 53,
+            "paddingBottom": "4px",
+            "safeAreaInset": "4px",
+            "items": 5,
+            "labelsHidden": 0
+          }
+        ],
+        "contentUnderBar": 0,
+        "boardCards": 0,
+        "boardRows": 0,
+        "consolePageErrors": 0,
+        "settleMs": 601,
+        "hashOk": true,
+        "measuredRoute": "دیده‌بان بازار"
+      },
+      "notifications": {
+        "vw": 430,
+        "docOverflow": 0,
+        "clippedCount": 0,
+        "clippedSample": [],
+        "tinyCount": 0,
+        "tinySample": [],
+        "tapCount": 32,
+        "tapGroups": [
+          {
+            "ctrl": "notice-open",
+            "n": 5,
+            "minW": 45,
+            "minH": 20
+          },
+          {
+            "ctrl": "notice-mark",
+            "n": 5,
+            "minW": 60,
+            "minH": 20
+          },
+          {
+            "ctrl": "ترمینال بورس",
+            "n": 1,
+            "minW": 64,
+            "minH": 16
+          },
+          {
+            "ctrl": "topbar-notifications",
+            "n": 1,
+            "minW": 58,
+            "minH": 24
+          },
+          {
+            "ctrl": "باز کردن پالت فرمان",
+            "n": 1,
+            "minW": 126,
+            "minH": 26
+          },
+          {
+            "ctrl": "مرکز اعلان",
+            "n": 1,
+            "minW": 104,
+            "minH": 35
+          },
+          {
+            "ctrl": "ws-tab-close-922ed840-3ff0-482b-82b1-fe437fa8a550",
+            "n": 1,
+            "minW": 10,
+            "minH": 18
+          },
+          {
+            "ctrl": "ws-tab-new",
+            "n": 1,
+            "minW": 24,
+            "minH": 20
+          },
+          {
+            "ctrl": "notice-native",
+            "n": 1,
+            "minW": 13,
+            "minH": 13
+          },
+          {
+            "ctrl": "notice-mark-all",
+            "n": 1,
+            "minW": 89,
+            "minH": 20
+          },
+          {
+            "ctrl": "notice-level-high",
+            "n": 1,
+            "minW": 31,
+            "minH": 20
+          },
+          {
+            "ctrl": "notice-level-medium",
+            "n": 1,
+            "minW": 50,
+            "minH": 20
+          }
+        ],
+        "tapSample": [
+          {
+            "tag": "A",
+            "label": "ترمینال بورس",
+            "w": 64,
+            "h": 16
+          },
+          {
+            "tag": "A",
+            "label": "مرکز اعلان — 60 نا",
+            "w": 58,
+            "h": 24
+          },
+          {
+            "tag": "BUTTON",
+            "label": "باز کردن پالت فرما",
+            "w": 126,
+            "h": 26
+          },
+          {
+            "tag": "DIV",
+            "label": "مرکز اعلان×",
+            "w": 104,
+            "h": 35
+          }
+        ],
+        "hscrollCount": 0,
+        "hscrollDetail": [],
+        "bottomBar": [
+          {
+            "testid": "mobile-nav",
+            "h": 53,
+            "paddingBottom": "4px",
+            "safeAreaInset": "4px",
+            "items": 5,
+            "labelsHidden": 0
+          }
+        ],
+        "contentUnderBar": 0,
+        "boardCards": 0,
+        "boardRows": 0,
+        "consolePageErrors": 0,
+        "settleMs": 619,
+        "hashOk": true,
+        "measuredRoute": "ترمینال بورس"
+      },
+      "technical": {
+        "vw": 430,
+        "docOverflow": 0,
+        "clippedCount": 3,
+        "clippedSample": [
+          {
+            "tag": "BUTTON",
+            "text": "روزانه",
+            "lost": 5,
+            "ellipsis": false,
+            "title": true
+          },
+          {
+            "tag": "BUTTON",
+            "text": "هفتگی",
+            "lost": 8,
+            "ellipsis": false,
+            "title": true
+          },
+          {
+            "tag": "BUTTON",
+            "text": "ماهانه",
+            "lost": 7,
+            "ellipsis": false,
+            "title": true
+          }
+        ],
+        "tinyCount": 0,
+        "tinySample": [],
+        "tapCount": 37,
+        "tapGroups": [
+          {
+            "ctrl": "تحلیل تکنیکال",
+            "n": 1,
+            "minW": 68,
+            "minH": 16
+          },
+          {
+            "ctrl": "topbar-notifications",
+            "n": 1,
+            "minW": 58,
+            "minH": 24
+          },
+          {
+            "ctrl": "تکنیکال · فولاد",
+            "n": 1,
+            "minW": 104,
+            "minH": 35
+          },
+          {
+            "ctrl": "ws-tab-close-922ed840-3ff0-482b-82b1-fe437fa8a550",
+            "n": 1,
+            "minW": 10,
+            "minH": 18
+          },
+          {
+            "ctrl": "ws-tab-new",
+            "n": 1,
+            "minW": 24,
+            "minH": 20
+          },
+          {
+            "ctrl": "sidebar-collapse",
+            "n": 1,
+            "minW": 24,
+            "minH": 24
+          },
+          {
+            "ctrl": "sidebar-fts-search",
+            "n": 1,
+            "minW": 268,
+            "minH": 30
+          },
+          {
+            "ctrl": "sidebar-tab-watch",
+            "n": 1,
+            "minW": 32,
+            "minH": 32
+          },
+          {
+            "ctrl": "sidebar-tab-fts",
+            "n": 1,
+            "minW": 32,
+            "minH": 32
+          },
+          {
+            "ctrl": "sidebar-tab-book",
+            "n": 1,
+            "minW": 32,
+            "minH": 32
+          },
+          {
+            "ctrl": "sidebar-tab-levels",
+            "n": 1,
+            "minW": 32,
+            "minH": 32
+          },
+          {
+            "ctrl": "fts-settings-btn",
+            "n": 1,
+            "minW": 87,
+            "minH": 34
+          }
+        ],
+        "tapSample": [
+          {
+            "tag": "A",
+            "label": "تحلیل تکنیکال",
+            "w": 68,
+            "h": 16
+          },
+          {
+            "tag": "A",
+            "label": "مرکز اعلان — 60 نا",
+            "w": 58,
+            "h": 24
+          },
+          {
+            "tag": "DIV",
+            "label": "تکنیکال · فولاد×",
+            "w": 104,
+            "h": 35
+          },
+          {
+            "tag": "BUTTON",
+            "label": "بستن تب تکنیکال · ",
+            "w": 10,
+            "h": 18
+          }
+        ],
+        "hscrollCount": 0,
+        "hscrollDetail": [],
+        "bottomBar": [
+          {
+            "testid": "mobile-nav",
+            "h": 53,
+            "paddingBottom": "4px",
+            "safeAreaInset": "4px",
+            "items": 5,
+            "labelsHidden": 0
+          }
+        ],
+        "contentUnderBar": 0,
+        "boardCards": 0,
+        "boardRows": 0,
+        "consolePageErrors": 0,
+        "settleMs": 10396,
+        "hashOk": false,
+        "measuredRoute": "تحلیل تکنیکال"
+      },
+      "fundamental": {
+        "vw": 430,
+        "docOverflow": 0,
+        "clippedCount": 0,
+        "clippedSample": [],
+        "tinyCount": 2,
+        "tinySample": [
+          {
+            "text": "t-1",
+            "px": "9px"
+          },
+          {
+            "text": "t-2",
+            "px": "9px"
+          }
+        ],
+        "tapCount": 7,
+        "tapGroups": [
+          {
+            "ctrl": "تحلیل بنیادی",
+            "n": 1,
+            "minW": 62,
+            "minH": 16
+          },
+          {
+            "ctrl": "topbar-notifications",
+            "n": 1,
+            "minW": 58,
+            "minH": 24
+          },
+          {
+            "ctrl": "باز کردن پالت فرمان",
+            "n": 1,
+            "minW": 126,
+            "minH": 26
+          },
+          {
+            "ctrl": "بنیادی · فولاد",
+            "n": 1,
+            "minW": 104,
+            "minH": 35
+          },
+          {
+            "ctrl": "ws-tab-close-922ed840-3ff0-482b-82b1-fe437fa8a550",
+            "n": 1,
+            "minW": 10,
+            "minH": 18
+          },
+          {
+            "ctrl": "ws-tab-new",
+            "n": 1,
+            "minW": 24,
+            "minH": 20
+          },
+          {
+            "ctrl": "fts-settings-btn",
+            "n": 1,
+            "minW": 87,
+            "minH": 34
+          }
+        ],
+        "tapSample": [
+          {
+            "tag": "A",
+            "label": "تحلیل بنیادی",
+            "w": 62,
+            "h": 16
+          },
+          {
+            "tag": "A",
+            "label": "مرکز اعلان — 60 نا",
+            "w": 58,
+            "h": 24
+          },
+          {
+            "tag": "BUTTON",
+            "label": "باز کردن پالت فرما",
+            "w": 126,
+            "h": 26
+          },
+          {
+            "tag": "DIV",
+            "label": "بنیادی · فولاد×",
+            "w": 104,
+            "h": 35
+          }
+        ],
+        "hscrollCount": 0,
+        "hscrollDetail": [],
+        "bottomBar": [
+          {
+            "testid": "mobile-nav",
+            "h": 53,
+            "paddingBottom": "4px",
+            "safeAreaInset": "4px",
+            "items": 5,
+            "labelsHidden": 0
+          }
+        ],
+        "contentUnderBar": 0,
+        "boardCards": 0,
+        "boardRows": 0,
+        "consolePageErrors": 0,
+        "settleMs": 10386,
+        "hashOk": false,
+        "measuredRoute": "تحلیل بنیادی"
+      },
+      "portfolio": {
+        "vw": 430,
+        "docOverflow": 0,
+        "clippedCount": 0,
+        "clippedSample": [],
+        "tinyCount": 0,
+        "tinySample": [],
+        "tapCount": 12,
+        "tapGroups": [
+          {
+            "ctrl": "مدیریت پرتفوی",
+            "n": 1,
+            "minW": 73,
+            "minH": 16
+          },
+          {
+            "ctrl": "topbar-notifications",
+            "n": 1,
+            "minW": 58,
+            "minH": 24
+          },
+          {
+            "ctrl": "باز کردن پالت فرمان",
+            "n": 1,
+            "minW": 126,
+            "minH": 26
+          },
+          {
+            "ctrl": "مدیریت پرتفوی · فولاد",
+            "n": 1,
+            "minW": 136,
+            "minH": 35
+          },
+          {
+            "ctrl": "ws-tab-close-922ed840-3ff0-482b-82b1-fe437fa8a550",
+            "n": 1,
+            "minW": 10,
+            "minH": 18
+          },
+          {
+            "ctrl": "ws-tab-new",
+            "n": 1,
+            "minW": 24,
+            "minH": 20
+          },
+          {
+            "ctrl": "پرتفوی هدف",
+            "n": 1,
+            "minW": 95,
+            "minH": 30
+          },
+          {
+            "ctrl": "پرتفوی فعلی",
+            "n": 1,
+            "minW": 93,
+            "minH": 30
+          },
+          {
+            "ctrl": "ویرایش دارایی",
+            "n": 1,
+            "minW": 94,
+            "minH": 24
+          },
+          {
+            "ctrl": "افزودن دارایی",
+            "n": 1,
+            "minW": 91,
+            "minH": 24
+          },
+          {
+            "ctrl": "بازنشانی به پیش‌فر",
+            "n": 1,
+            "minW": 154,
+            "minH": 24
+          },
+          {
+            "ctrl": "محاسبه دستورات ری‌",
+            "n": 1,
+            "minW": 184,
+            "minH": 30
+          }
+        ],
+        "tapSample": [
+          {
+            "tag": "A",
+            "label": "مدیریت پرتفوی",
+            "w": 73,
+            "h": 16
+          },
+          {
+            "tag": "A",
+            "label": "مرکز اعلان — 60 نا",
+            "w": 58,
+            "h": 24
+          },
+          {
+            "tag": "BUTTON",
+            "label": "باز کردن پالت فرما",
+            "w": 126,
+            "h": 26
+          },
+          {
+            "tag": "DIV",
+            "label": "مدیریت پرتفوی · فو",
+            "w": 136,
+            "h": 35
+          }
+        ],
+        "hscrollCount": 0,
+        "hscrollDetail": [],
+        "bottomBar": [
+          {
+            "testid": "mobile-nav",
+            "h": 53,
+            "paddingBottom": "4px",
+            "safeAreaInset": "4px",
+            "items": 5,
+            "labelsHidden": 0
+          }
+        ],
+        "contentUnderBar": 0,
+        "boardCards": 0,
+        "boardRows": 0,
+        "consolePageErrors": 0,
+        "settleMs": 10386,
+        "hashOk": false,
+        "measuredRoute": "مدیریت پرتفوی"
+      },
+      "order-line": {
+        "vw": 430,
+        "docOverflow": 0,
+        "clippedCount": 0,
+        "clippedSample": [],
+        "tinyCount": 0,
+        "tinySample": [],
+        "tapCount": 7,
+        "tapGroups": [
+          {
+            "ctrl": "سرخطی",
+            "n": 2,
+            "minW": 38,
+            "minH": 16
+          },
+          {
+            "ctrl": "topbar-notifications",
+            "n": 1,
+            "minW": 58,
+            "minH": 24
+          },
+          {
+            "ctrl": "باز کردن پالت فرمان",
+            "n": 1,
+            "minW": 126,
+            "minH": 26
+          },
+          {
+            "ctrl": "ws-tab-close-922ed840-3ff0-482b-82b1-fe437fa8a550",
+            "n": 1,
+            "minW": 10,
+            "minH": 18
+          },
+          {
+            "ctrl": "ws-tab-new",
+            "n": 1,
+            "minW": 24,
+            "minH": 20
+          },
+          {
+            "ctrl": "order-add-tab",
+            "n": 1,
+            "minW": 64,
+            "minH": 24
+          }
+        ],
+        "tapSample": [
+          {
+            "tag": "A",
+            "label": "سرخطی",
+            "w": 38,
+            "h": 16
+          },
+          {
+            "tag": "A",
+            "label": "مرکز اعلان — 60 نا",
+            "w": 58,
+            "h": 24
+          },
+          {
+            "tag": "BUTTON",
+            "label": "باز کردن پالت فرما",
+            "w": 126,
+            "h": 26
+          },
+          {
+            "tag": "DIV",
+            "label": "سرخطی×",
+            "w": 104,
+            "h": 35
+          }
+        ],
+        "hscrollCount": 0,
+        "hscrollDetail": [],
+        "bottomBar": [
+          {
+            "testid": "mobile-nav",
+            "h": 53,
+            "paddingBottom": "4px",
+            "safeAreaInset": "4px",
+            "items": 5,
+            "labelsHidden": 0
+          }
+        ],
+        "contentUnderBar": 0,
+        "boardCards": 0,
+        "boardRows": 0,
+        "consolePageErrors": 0,
+        "settleMs": 478,
+        "hashOk": true,
+        "measuredRoute": "سرخطی"
+      }
+    }
+  }
+}

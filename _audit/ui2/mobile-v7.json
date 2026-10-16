@@ -1,0 +1,2919 @@
+{
+  "base": "http://127.0.0.1:8012",
+  "generatedAt": "2026-10-16T19:20:34.395Z",
+  "method": "v5 — فقطِ گره‌هایِ داخلِ viewport (بی‌sr-only وِ بی‌کشویِ آف‌کانون)، عرض‌هایِ ثابت، نشستنِ hash وِ بی‌صداشدنِ DOM پیشِ ازِ اندازه‌گیر (v3 صفحۀِ قبلی را می‌سنجید)",
+  "rows": {
+    "360": {
+      "market": {
+        "vw": 360,
+        "docOverflow": 0,
+        "clippedCount": 0,
+        "clippedSample": [],
+        "tinyCount": 0,
+        "tinySample": [],
+        "tapCount": 8,
+        "tapGroups": [
+          {
+            "ctrl": "تابلوخوانی",
+            "n": 2,
+            "minW": 49,
+            "minH": 16
+          },
+          {
+            "ctrl": "ws-tab-close-070887e2-52d1-427b-a4ac-45359c9506b8",
+            "n": 1,
+            "minW": 36,
+            "minH": 36
+          },
+          {
+            "ctrl": "ws-tab-new",
+            "n": 1,
+            "minW": 24,
+            "minH": 40
+          },
+          {
+            "ctrl": "جستجوی نماد",
+            "n": 1,
+            "minW": 177,
+            "minH": 26
+          },
+          {
+            "ctrl": "filters-disclosure",
+            "n": 1,
+            "minW": 52,
+            "minH": 24
+          },
+          {
+            "ctrl": "watch-tab-clock",
+            "n": 1,
+            "minW": 93,
+            "minH": 26
+          },
+          {
+            "ctrl": "watch-tab-susp",
+            "n": 1,
+            "minW": 128,
+            "minH": 26
+          }
+        ],
+        "tapSample": [
+          {
+            "tag": "A",
+            "label": "تابلوخوانی",
+            "w": 49,
+            "h": 16
+          },
+          {
+            "tag": "DIV",
+            "label": "تابلوخوانی×",
+            "w": 104,
+            "h": 35
+          },
+          {
+            "tag": "BUTTON",
+            "label": "بستن تب تابلوخوانی",
+            "w": 36,
+            "h": 36
+          },
+          {
+            "tag": "BUTTON",
+            "label": "تب تازه",
+            "w": 24,
+            "h": 40
+          }
+        ],
+        "hscrollCount": 0,
+        "hscrollDetail": [],
+        "bottomBar": [
+          {
+            "testid": "mobile-nav",
+            "h": 53,
+            "paddingBottom": "4px",
+            "safeAreaInset": "4px",
+            "items": 5,
+            "labelsHidden": 0
+          }
+        ],
+        "contentUnderBar": 0,
+        "boardCards": 0,
+        "boardRows": 0,
+        "consolePageErrors": 0,
+        "settleMs": 372,
+        "hashOk": true,
+        "quiet": true,
+        "measuredRoute": "تابلوخوانی"
+      },
+      "market-status": {
+        "vw": 360,
+        "docOverflow": 0,
+        "clippedCount": 0,
+        "clippedSample": [],
+        "tinyCount": 0,
+        "tinySample": [],
+        "tapCount": 11,
+        "tapGroups": [
+          {
+            "ctrl": "وضعیت بازار",
+            "n": 2,
+            "minW": 60,
+            "minH": 16
+          },
+          {
+            "ctrl": "ws-tab-close-070887e2-52d1-427b-a4ac-45359c9506b8",
+            "n": 1,
+            "minW": 36,
+            "minH": 36
+          },
+          {
+            "ctrl": "ws-tab-new",
+            "n": 1,
+            "minW": 24,
+            "minH": 40
+          },
+          {
+            "ctrl": "msp-toggle",
+            "n": 1,
+            "minW": 60,
+            "minH": 14
+          },
+          {
+            "ctrl": "ticker-tabs-breadth",
+            "n": 1,
+            "minW": 85,
+            "minH": 24
+          },
+          {
+            "ctrl": "ticker-tabs-flow",
+            "n": 1,
+            "minW": 85,
+            "minH": 24
+          },
+          {
+            "ctrl": "ticker-tabs-value",
+            "n": 1,
+            "minW": 85,
+            "minH": 24
+          },
+          {
+            "ctrl": "ticker-tabs-queues",
+            "n": 1,
+            "minW": 85,
+            "minH": 24
+          },
+          {
+            "ctrl": "ticker-mode-toggle",
+            "n": 1,
+            "minW": 46,
+            "minH": 20
+          },
+          {
+            "ctrl": "ticker-rotate-toggle",
+            "n": 1,
+            "minW": 78,
+            "minH": 20
+          }
+        ],
+        "tapSample": [
+          {
+            "tag": "A",
+            "label": "وضعیت بازار",
+            "w": 60,
+            "h": 16
+          },
+          {
+            "tag": "DIV",
+            "label": "وضعیت بازار×",
+            "w": 115,
+            "h": 35
+          },
+          {
+            "tag": "BUTTON",
+            "label": "بستن تب وضعیت بازا",
+            "w": 36,
+            "h": 36
+          },
+          {
+            "tag": "BUTTON",
+            "label": "تب تازه",
+            "w": 24,
+            "h": 40
+          }
+        ],
+        "hscrollCount": 0,
+        "hscrollDetail": [],
+        "bottomBar": [
+          {
+            "testid": "mobile-nav",
+            "h": 53,
+            "paddingBottom": "4px",
+            "safeAreaInset": "4px",
+            "items": 5,
+            "labelsHidden": 0
+          }
+        ],
+        "contentUnderBar": 0,
+        "boardCards": 0,
+        "boardRows": 166,
+        "consolePageErrors": 0,
+        "settleMs": 30050,
+        "hashOk": true,
+        "quiet": false,
+        "measuredRoute": "وضعیت بازار"
+      },
+      "watch": {
+        "vw": 360,
+        "docOverflow": 0,
+        "clippedCount": 0,
+        "clippedSample": [],
+        "tinyCount": 0,
+        "tinySample": [],
+        "tapCount": 10,
+        "tapGroups": [
+          {
+            "ctrl": "دیده‌بان بازار",
+            "n": 2,
+            "minW": 59,
+            "minH": 16
+          },
+          {
+            "ctrl": "ws-tab-close-070887e2-52d1-427b-a4ac-45359c9506b8",
+            "n": 1,
+            "minW": 36,
+            "minH": 36
+          },
+          {
+            "ctrl": "ws-tab-new",
+            "n": 1,
+            "minW": 24,
+            "minH": 40
+          },
+          {
+            "ctrl": "watch-add-input",
+            "n": 1,
+            "minW": 160,
+            "minH": 28
+          },
+          {
+            "ctrl": "watch-add-btn",
+            "n": 1,
+            "minW": 55,
+            "minH": 28
+          },
+          {
+            "ctrl": "watch-order-qty",
+            "n": 1,
+            "minW": 145,
+            "minH": 24
+          },
+          {
+            "ctrl": "watch-order-buy",
+            "n": 1,
+            "minW": 145,
+            "minH": 26
+          },
+          {
+            "ctrl": "watch-order-sell",
+            "n": 1,
+            "minW": 145,
+            "minH": 26
+          },
+          {
+            "ctrl": "watch-kill-switch",
+            "n": 1,
+            "minW": 70,
+            "minH": 20
+          }
+        ],
+        "tapSample": [
+          {
+            "tag": "A",
+            "label": "دیده‌بان بازار",
+            "w": 59,
+            "h": 16
+          },
+          {
+            "tag": "DIV",
+            "label": "دیده‌بان بازار×",
+            "w": 114,
+            "h": 35
+          },
+          {
+            "tag": "BUTTON",
+            "label": "بستن تب دیده‌بان ب",
+            "w": 36,
+            "h": 36
+          },
+          {
+            "tag": "BUTTON",
+            "label": "تب تازه",
+            "w": 24,
+            "h": 40
+          }
+        ],
+        "hscrollCount": 0,
+        "hscrollDetail": [],
+        "bottomBar": [
+          {
+            "testid": "mobile-nav",
+            "h": 53,
+            "paddingBottom": "4px",
+            "safeAreaInset": "4px",
+            "items": 5,
+            "labelsHidden": 0
+          }
+        ],
+        "contentUnderBar": 0,
+        "boardCards": 0,
+        "boardRows": 0,
+        "consolePageErrors": 0,
+        "settleMs": 538,
+        "hashOk": true,
+        "quiet": true,
+        "measuredRoute": "دیده‌بان بازار"
+      },
+      "notifications": {
+        "vw": 360,
+        "docOverflow": 0,
+        "clippedCount": 0,
+        "clippedSample": [],
+        "tinyCount": 0,
+        "tinySample": [],
+        "tapCount": 20,
+        "tapGroups": [
+          {
+            "ctrl": "ترمینال بورس",
+            "n": 1,
+            "minW": 64,
+            "minH": 16
+          },
+          {
+            "ctrl": "مرکز اعلان",
+            "n": 1,
+            "minW": 105,
+            "minH": 35
+          },
+          {
+            "ctrl": "ws-tab-close-070887e2-52d1-427b-a4ac-45359c9506b8",
+            "n": 1,
+            "minW": 36,
+            "minH": 36
+          },
+          {
+            "ctrl": "ws-tab-new",
+            "n": 1,
+            "minW": 24,
+            "minH": 40
+          },
+          {
+            "ctrl": "notice-native",
+            "n": 1,
+            "minW": 13,
+            "minH": 13
+          },
+          {
+            "ctrl": "notice-mark-all",
+            "n": 1,
+            "minW": 89,
+            "minH": 20
+          },
+          {
+            "ctrl": "notice-level-high",
+            "n": 1,
+            "minW": 31,
+            "minH": 20
+          },
+          {
+            "ctrl": "notice-level-medium",
+            "n": 1,
+            "minW": 50,
+            "minH": 20
+          },
+          {
+            "ctrl": "notice-level-low",
+            "n": 1,
+            "minW": 41,
+            "minH": 20
+          },
+          {
+            "ctrl": "notice-level-unclassified",
+            "n": 1,
+            "minW": 52,
+            "minH": 20
+          },
+          {
+            "ctrl": "notice-kind-statements",
+            "n": 1,
+            "minW": 78,
+            "minH": 20
+          },
+          {
+            "ctrl": "notice-kind-assembly",
+            "n": 1,
+            "minW": 45,
+            "minH": 20
+          }
+        ],
+        "tapSample": [
+          {
+            "tag": "A",
+            "label": "ترمینال بورس",
+            "w": 64,
+            "h": 16
+          },
+          {
+            "tag": "DIV",
+            "label": "مرکز اعلان×",
+            "w": 105,
+            "h": 35
+          },
+          {
+            "tag": "BUTTON",
+            "label": "بستن تب مرکز اعلان",
+            "w": 36,
+            "h": 36
+          },
+          {
+            "tag": "BUTTON",
+            "label": "تب تازه",
+            "w": 24,
+            "h": 40
+          }
+        ],
+        "hscrollCount": 0,
+        "hscrollDetail": [],
+        "bottomBar": [
+          {
+            "testid": "mobile-nav",
+            "h": 53,
+            "paddingBottom": "4px",
+            "safeAreaInset": "4px",
+            "items": 5,
+            "labelsHidden": 0
+          }
+        ],
+        "contentUnderBar": 0,
+        "boardCards": 0,
+        "boardRows": 0,
+        "consolePageErrors": 0,
+        "settleMs": 544,
+        "hashOk": true,
+        "quiet": true,
+        "measuredRoute": "ترمینال بورس"
+      },
+      "technical": {
+        "vw": 360,
+        "docOverflow": 0,
+        "clippedCount": 3,
+        "clippedSample": [
+          {
+            "tag": "BUTTON",
+            "text": "روزانه",
+            "lost": 5,
+            "ellipsis": false,
+            "title": true
+          },
+          {
+            "tag": "BUTTON",
+            "text": "هفتگی",
+            "lost": 8,
+            "ellipsis": false,
+            "title": true
+          },
+          {
+            "tag": "BUTTON",
+            "text": "ماهانه",
+            "lost": 7,
+            "ellipsis": false,
+            "title": true
+          }
+        ],
+        "tinyCount": 0,
+        "tinySample": [],
+        "tapCount": 30,
+        "tapGroups": [
+          {
+            "ctrl": "تحلیل تکنیکال",
+            "n": 1,
+            "minW": 68,
+            "minH": 16
+          },
+          {
+            "ctrl": "تکنیکال · فولاد",
+            "n": 1,
+            "minW": 126,
+            "minH": 35
+          },
+          {
+            "ctrl": "ws-tab-close-070887e2-52d1-427b-a4ac-45359c9506b8",
+            "n": 1,
+            "minW": 36,
+            "minH": 36
+          },
+          {
+            "ctrl": "ws-tab-new",
+            "n": 1,
+            "minW": 24,
+            "minH": 40
+          },
+          {
+            "ctrl": "sidebar-collapse",
+            "n": 1,
+            "minW": 24,
+            "minH": 24
+          },
+          {
+            "ctrl": "sidebar-fts-search",
+            "n": 1,
+            "minW": 268,
+            "minH": 30
+          },
+          {
+            "ctrl": "sidebar-tab-watch",
+            "n": 1,
+            "minW": 32,
+            "minH": 32
+          },
+          {
+            "ctrl": "sidebar-tab-fts",
+            "n": 1,
+            "minW": 32,
+            "minH": 32
+          },
+          {
+            "ctrl": "sidebar-tab-book",
+            "n": 1,
+            "minW": 32,
+            "minH": 32
+          },
+          {
+            "ctrl": "sidebar-tab-levels",
+            "n": 1,
+            "minW": 32,
+            "minH": 32
+          },
+          {
+            "ctrl": "fts-settings-btn",
+            "n": 1,
+            "minW": 87,
+            "minH": 34
+          },
+          {
+            "ctrl": "timeframe-D",
+            "n": 1,
+            "minW": 18,
+            "minH": 30
+          }
+        ],
+        "tapSample": [
+          {
+            "tag": "A",
+            "label": "تحلیل تکنیکال",
+            "w": 68,
+            "h": 16
+          },
+          {
+            "tag": "DIV",
+            "label": "تکنیکال · فولاد×",
+            "w": 126,
+            "h": 35
+          },
+          {
+            "tag": "BUTTON",
+            "label": "بستن تب تکنیکال · ",
+            "w": 36,
+            "h": 36
+          },
+          {
+            "tag": "BUTTON",
+            "label": "تب تازه",
+            "w": 24,
+            "h": 40
+          }
+        ],
+        "hscrollCount": 0,
+        "hscrollDetail": [],
+        "bottomBar": [
+          {
+            "testid": "mobile-nav",
+            "h": 53,
+            "paddingBottom": "4px",
+            "safeAreaInset": "4px",
+            "items": 5,
+            "labelsHidden": 0
+          }
+        ],
+        "contentUnderBar": 0,
+        "boardCards": 0,
+        "boardRows": 0,
+        "consolePageErrors": 0,
+        "settleMs": 589,
+        "hashOk": true,
+        "quiet": true,
+        "measuredRoute": "تحلیل تکنیکال"
+      },
+      "fundamental": {
+        "vw": 360,
+        "docOverflow": 0,
+        "clippedCount": 0,
+        "clippedSample": [],
+        "tinyCount": 0,
+        "tinySample": [],
+        "tapCount": 4,
+        "tapGroups": [
+          {
+            "ctrl": "تحلیل بنیادی",
+            "n": 1,
+            "minW": 62,
+            "minH": 16
+          },
+          {
+            "ctrl": "بنیادی · فولاد",
+            "n": 1,
+            "minW": 120,
+            "minH": 35
+          },
+          {
+            "ctrl": "ws-tab-close-070887e2-52d1-427b-a4ac-45359c9506b8",
+            "n": 1,
+            "minW": 36,
+            "minH": 36
+          },
+          {
+            "ctrl": "ws-tab-new",
+            "n": 1,
+            "minW": 24,
+            "minH": 40
+          }
+        ],
+        "tapSample": [
+          {
+            "tag": "A",
+            "label": "تحلیل بنیادی",
+            "w": 62,
+            "h": 16
+          },
+          {
+            "tag": "DIV",
+            "label": "بنیادی · فولاد×",
+            "w": 120,
+            "h": 35
+          },
+          {
+            "tag": "BUTTON",
+            "label": "بستن تب بنیادی · ف",
+            "w": 36,
+            "h": 36
+          },
+          {
+            "tag": "BUTTON",
+            "label": "تب تازه",
+            "w": 24,
+            "h": 40
+          }
+        ],
+        "hscrollCount": 0,
+        "hscrollDetail": [],
+        "bottomBar": [
+          {
+            "testid": "mobile-nav",
+            "h": 53,
+            "paddingBottom": "4px",
+            "safeAreaInset": "4px",
+            "items": 5,
+            "labelsHidden": 0
+          }
+        ],
+        "contentUnderBar": 0,
+        "boardCards": 0,
+        "boardRows": 0,
+        "consolePageErrors": 0,
+        "settleMs": 1103,
+        "hashOk": true,
+        "quiet": true,
+        "measuredRoute": "تحلیل بنیادی"
+      },
+      "portfolio": {
+        "vw": 360,
+        "docOverflow": 0,
+        "clippedCount": 0,
+        "clippedSample": [],
+        "tinyCount": 0,
+        "tinySample": [],
+        "tapCount": 4,
+        "tapGroups": [
+          {
+            "ctrl": "مدیریت پرتفوی",
+            "n": 1,
+            "minW": 73,
+            "minH": 16
+          },
+          {
+            "ctrl": "مدیریت پرتفوی · فولاد",
+            "n": 1,
+            "minW": 162,
+            "minH": 35
+          },
+          {
+            "ctrl": "ws-tab-close-070887e2-52d1-427b-a4ac-45359c9506b8",
+            "n": 1,
+            "minW": 36,
+            "minH": 36
+          },
+          {
+            "ctrl": "ws-tab-new",
+            "n": 1,
+            "minW": 24,
+            "minH": 40
+          }
+        ],
+        "tapSample": [
+          {
+            "tag": "A",
+            "label": "مدیریت پرتفوی",
+            "w": 73,
+            "h": 16
+          },
+          {
+            "tag": "DIV",
+            "label": "مدیریت پرتفوی · فو",
+            "w": 162,
+            "h": 35
+          },
+          {
+            "tag": "BUTTON",
+            "label": "بستن تب مدیریت پرت",
+            "w": 36,
+            "h": 36
+          },
+          {
+            "tag": "BUTTON",
+            "label": "تب تازه",
+            "w": 24,
+            "h": 40
+          }
+        ],
+        "hscrollCount": 0,
+        "hscrollDetail": [],
+        "bottomBar": [
+          {
+            "testid": "mobile-nav",
+            "h": 53,
+            "paddingBottom": "4px",
+            "safeAreaInset": "4px",
+            "items": 5,
+            "labelsHidden": 0
+          }
+        ],
+        "contentUnderBar": 0,
+        "boardCards": 0,
+        "boardRows": 0,
+        "consolePageErrors": 0,
+        "settleMs": 332,
+        "hashOk": true,
+        "quiet": true,
+        "measuredRoute": "مدیریت پرتفوی"
+      },
+      "order-line": {
+        "vw": 360,
+        "docOverflow": 0,
+        "clippedCount": 0,
+        "clippedSample": [],
+        "tinyCount": 0,
+        "tinySample": [],
+        "tapCount": 5,
+        "tapGroups": [
+          {
+            "ctrl": "سرخطی",
+            "n": 2,
+            "minW": 38,
+            "minH": 16
+          },
+          {
+            "ctrl": "ws-tab-close-070887e2-52d1-427b-a4ac-45359c9506b8",
+            "n": 1,
+            "minW": 36,
+            "minH": 36
+          },
+          {
+            "ctrl": "ws-tab-new",
+            "n": 1,
+            "minW": 24,
+            "minH": 40
+          },
+          {
+            "ctrl": "order-add-tab",
+            "n": 1,
+            "minW": 64,
+            "minH": 24
+          }
+        ],
+        "tapSample": [
+          {
+            "tag": "A",
+            "label": "سرخطی",
+            "w": 38,
+            "h": 16
+          },
+          {
+            "tag": "DIV",
+            "label": "سرخطی×",
+            "w": 104,
+            "h": 35
+          },
+          {
+            "tag": "BUTTON",
+            "label": "بستن تب سرخطی",
+            "w": 36,
+            "h": 36
+          },
+          {
+            "tag": "BUTTON",
+            "label": "تب تازه",
+            "w": 24,
+            "h": 40
+          }
+        ],
+        "hscrollCount": 0,
+        "hscrollDetail": [],
+        "bottomBar": [
+          {
+            "testid": "mobile-nav",
+            "h": 53,
+            "paddingBottom": "4px",
+            "safeAreaInset": "4px",
+            "items": 5,
+            "labelsHidden": 0
+          }
+        ],
+        "contentUnderBar": 0,
+        "boardCards": 0,
+        "boardRows": 0,
+        "consolePageErrors": 0,
+        "settleMs": 686,
+        "hashOk": true,
+        "quiet": true,
+        "measuredRoute": "سرخطی"
+      }
+    },
+    "390": {
+      "market": {
+        "vw": 390,
+        "docOverflow": 0,
+        "clippedCount": 0,
+        "clippedSample": [],
+        "tinyCount": 0,
+        "tinySample": [],
+        "tapCount": 9,
+        "tapGroups": [
+          {
+            "ctrl": "تابلوخوانی",
+            "n": 2,
+            "minW": 49,
+            "minH": 16
+          },
+          {
+            "ctrl": "ws-tab-close-ae9ae7f3-9a36-439d-af79-50e7e761c5b5",
+            "n": 1,
+            "minW": 36,
+            "minH": 36
+          },
+          {
+            "ctrl": "ws-tab-new",
+            "n": 1,
+            "minW": 24,
+            "minH": 40
+          },
+          {
+            "ctrl": "جستجوی نماد",
+            "n": 1,
+            "minW": 177,
+            "minH": 26
+          },
+          {
+            "ctrl": "filters-disclosure",
+            "n": 1,
+            "minW": 52,
+            "minH": 24
+          },
+          {
+            "ctrl": "watch-tab-clock",
+            "n": 1,
+            "minW": 93,
+            "minH": 26
+          },
+          {
+            "ctrl": "watch-tab-susp",
+            "n": 1,
+            "minW": 128,
+            "minH": 26
+          },
+          {
+            "ctrl": "watch-tab-industries",
+            "n": 1,
+            "minW": 70,
+            "minH": 26
+          }
+        ],
+        "tapSample": [
+          {
+            "tag": "A",
+            "label": "تابلوخوانی",
+            "w": 49,
+            "h": 16
+          },
+          {
+            "tag": "DIV",
+            "label": "تابلوخوانی×",
+            "w": 104,
+            "h": 35
+          },
+          {
+            "tag": "BUTTON",
+            "label": "بستن تب تابلوخوانی",
+            "w": 36,
+            "h": 36
+          },
+          {
+            "tag": "BUTTON",
+            "label": "تب تازه",
+            "w": 24,
+            "h": 40
+          }
+        ],
+        "hscrollCount": 0,
+        "hscrollDetail": [],
+        "bottomBar": [
+          {
+            "testid": "mobile-nav",
+            "h": 53,
+            "paddingBottom": "4px",
+            "safeAreaInset": "4px",
+            "items": 5,
+            "labelsHidden": 0
+          }
+        ],
+        "contentUnderBar": 0,
+        "boardCards": 12,
+        "boardRows": 0,
+        "consolePageErrors": 0,
+        "settleMs": 559,
+        "hashOk": true,
+        "quiet": true,
+        "measuredRoute": "تابلوخوانی"
+      },
+      "market-status": {
+        "vw": 390,
+        "docOverflow": 0,
+        "clippedCount": 0,
+        "clippedSample": [],
+        "tinyCount": 0,
+        "tinySample": [],
+        "tapCount": 12,
+        "tapGroups": [
+          {
+            "ctrl": "وضعیت بازار",
+            "n": 2,
+            "minW": 60,
+            "minH": 16
+          },
+          {
+            "ctrl": "ws-tab-close-ae9ae7f3-9a36-439d-af79-50e7e761c5b5",
+            "n": 1,
+            "minW": 36,
+            "minH": 36
+          },
+          {
+            "ctrl": "ws-tab-new",
+            "n": 1,
+            "minW": 24,
+            "minH": 40
+          },
+          {
+            "ctrl": "msp-toggle",
+            "n": 1,
+            "minW": 60,
+            "minH": 14
+          },
+          {
+            "ctrl": "ticker-tabs-breadth",
+            "n": 1,
+            "minW": 85,
+            "minH": 24
+          },
+          {
+            "ctrl": "ticker-tabs-flow",
+            "n": 1,
+            "minW": 85,
+            "minH": 24
+          },
+          {
+            "ctrl": "ticker-tabs-value",
+            "n": 1,
+            "minW": 85,
+            "minH": 24
+          },
+          {
+            "ctrl": "ticker-tabs-queues",
+            "n": 1,
+            "minW": 85,
+            "minH": 24
+          },
+          {
+            "ctrl": "ticker-mode-toggle",
+            "n": 1,
+            "minW": 46,
+            "minH": 20
+          },
+          {
+            "ctrl": "ticker-rotate-toggle",
+            "n": 1,
+            "minW": 78,
+            "minH": 20
+          },
+          {
+            "ctrl": "pulse-verdict-whys-toggle",
+            "n": 1,
+            "minW": 64,
+            "minH": 14
+          }
+        ],
+        "tapSample": [
+          {
+            "tag": "A",
+            "label": "وضعیت بازار",
+            "w": 60,
+            "h": 16
+          },
+          {
+            "tag": "DIV",
+            "label": "وضعیت بازار×",
+            "w": 115,
+            "h": 35
+          },
+          {
+            "tag": "BUTTON",
+            "label": "بستن تب وضعیت بازا",
+            "w": 36,
+            "h": 36
+          },
+          {
+            "tag": "BUTTON",
+            "label": "تب تازه",
+            "w": 24,
+            "h": 40
+          }
+        ],
+        "hscrollCount": 0,
+        "hscrollDetail": [],
+        "bottomBar": [
+          {
+            "testid": "mobile-nav",
+            "h": 53,
+            "paddingBottom": "4px",
+            "safeAreaInset": "4px",
+            "items": 5,
+            "labelsHidden": 0
+          }
+        ],
+        "contentUnderBar": 0,
+        "boardCards": 0,
+        "boardRows": 166,
+        "consolePageErrors": 0,
+        "settleMs": 30071,
+        "hashOk": true,
+        "quiet": false,
+        "measuredRoute": "وضعیت بازار"
+      },
+      "watch": {
+        "vw": 390,
+        "docOverflow": 0,
+        "clippedCount": 0,
+        "clippedSample": [],
+        "tinyCount": 0,
+        "tinySample": [],
+        "tapCount": 10,
+        "tapGroups": [
+          {
+            "ctrl": "دیده‌بان بازار",
+            "n": 2,
+            "minW": 59,
+            "minH": 16
+          },
+          {
+            "ctrl": "ws-tab-close-ae9ae7f3-9a36-439d-af79-50e7e761c5b5",
+            "n": 1,
+            "minW": 36,
+            "minH": 36
+          },
+          {
+            "ctrl": "ws-tab-new",
+            "n": 1,
+            "minW": 24,
+            "minH": 40
+          },
+          {
+            "ctrl": "watch-add-input",
+            "n": 1,
+            "minW": 160,
+            "minH": 28
+          },
+          {
+            "ctrl": "watch-add-btn",
+            "n": 1,
+            "minW": 55,
+            "minH": 28
+          },
+          {
+            "ctrl": "watch-order-qty",
+            "n": 1,
+            "minW": 160,
+            "minH": 24
+          },
+          {
+            "ctrl": "watch-order-buy",
+            "n": 1,
+            "minW": 160,
+            "minH": 26
+          },
+          {
+            "ctrl": "watch-order-sell",
+            "n": 1,
+            "minW": 160,
+            "minH": 26
+          },
+          {
+            "ctrl": "watch-kill-switch",
+            "n": 1,
+            "minW": 70,
+            "minH": 20
+          }
+        ],
+        "tapSample": [
+          {
+            "tag": "A",
+            "label": "دیده‌بان بازار",
+            "w": 59,
+            "h": 16
+          },
+          {
+            "tag": "DIV",
+            "label": "دیده‌بان بازار×",
+            "w": 114,
+            "h": 35
+          },
+          {
+            "tag": "BUTTON",
+            "label": "بستن تب دیده‌بان ب",
+            "w": 36,
+            "h": 36
+          },
+          {
+            "tag": "BUTTON",
+            "label": "تب تازه",
+            "w": 24,
+            "h": 40
+          }
+        ],
+        "hscrollCount": 0,
+        "hscrollDetail": [],
+        "bottomBar": [
+          {
+            "testid": "mobile-nav",
+            "h": 53,
+            "paddingBottom": "4px",
+            "safeAreaInset": "4px",
+            "items": 5,
+            "labelsHidden": 0
+          }
+        ],
+        "contentUnderBar": 0,
+        "boardCards": 0,
+        "boardRows": 0,
+        "consolePageErrors": 0,
+        "settleMs": 516,
+        "hashOk": true,
+        "quiet": true,
+        "measuredRoute": "دیده‌بان بازار"
+      },
+      "notifications": {
+        "vw": 390,
+        "docOverflow": 0,
+        "clippedCount": 0,
+        "clippedSample": [],
+        "tinyCount": 0,
+        "tinySample": [],
+        "tapCount": 20,
+        "tapGroups": [
+          {
+            "ctrl": "ترمینال بورس",
+            "n": 1,
+            "minW": 64,
+            "minH": 16
+          },
+          {
+            "ctrl": "مرکز اعلان",
+            "n": 1,
+            "minW": 105,
+            "minH": 35
+          },
+          {
+            "ctrl": "ws-tab-close-ae9ae7f3-9a36-439d-af79-50e7e761c5b5",
+            "n": 1,
+            "minW": 36,
+            "minH": 36
+          },
+          {
+            "ctrl": "ws-tab-new",
+            "n": 1,
+            "minW": 24,
+            "minH": 40
+          },
+          {
+            "ctrl": "notice-native",
+            "n": 1,
+            "minW": 13,
+            "minH": 13
+          },
+          {
+            "ctrl": "notice-mark-all",
+            "n": 1,
+            "minW": 89,
+            "minH": 20
+          },
+          {
+            "ctrl": "notice-level-high",
+            "n": 1,
+            "minW": 31,
+            "minH": 20
+          },
+          {
+            "ctrl": "notice-level-medium",
+            "n": 1,
+            "minW": 50,
+            "minH": 20
+          },
+          {
+            "ctrl": "notice-level-low",
+            "n": 1,
+            "minW": 41,
+            "minH": 20
+          },
+          {
+            "ctrl": "notice-level-unclassified",
+            "n": 1,
+            "minW": 52,
+            "minH": 20
+          },
+          {
+            "ctrl": "notice-kind-statements",
+            "n": 1,
+            "minW": 78,
+            "minH": 20
+          },
+          {
+            "ctrl": "notice-kind-assembly",
+            "n": 1,
+            "minW": 45,
+            "minH": 20
+          }
+        ],
+        "tapSample": [
+          {
+            "tag": "A",
+            "label": "ترمینال بورس",
+            "w": 64,
+            "h": 16
+          },
+          {
+            "tag": "DIV",
+            "label": "مرکز اعلان×",
+            "w": 105,
+            "h": 35
+          },
+          {
+            "tag": "BUTTON",
+            "label": "بستن تب مرکز اعلان",
+            "w": 36,
+            "h": 36
+          },
+          {
+            "tag": "BUTTON",
+            "label": "تب تازه",
+            "w": 24,
+            "h": 40
+          }
+        ],
+        "hscrollCount": 0,
+        "hscrollDetail": [],
+        "bottomBar": [
+          {
+            "testid": "mobile-nav",
+            "h": 53,
+            "paddingBottom": "4px",
+            "safeAreaInset": "4px",
+            "items": 5,
+            "labelsHidden": 0
+          }
+        ],
+        "contentUnderBar": 0,
+        "boardCards": 0,
+        "boardRows": 0,
+        "consolePageErrors": 0,
+        "settleMs": 594,
+        "hashOk": true,
+        "quiet": true,
+        "measuredRoute": "ترمینال بورس"
+      },
+      "technical": {
+        "vw": 390,
+        "docOverflow": 0,
+        "clippedCount": 3,
+        "clippedSample": [
+          {
+            "tag": "BUTTON",
+            "text": "روزانه",
+            "lost": 5,
+            "ellipsis": false,
+            "title": true
+          },
+          {
+            "tag": "BUTTON",
+            "text": "هفتگی",
+            "lost": 8,
+            "ellipsis": false,
+            "title": true
+          },
+          {
+            "tag": "BUTTON",
+            "text": "ماهانه",
+            "lost": 7,
+            "ellipsis": false,
+            "title": true
+          }
+        ],
+        "tinyCount": 0,
+        "tinySample": [],
+        "tapCount": 31,
+        "tapGroups": [
+          {
+            "ctrl": "تحلیل تکنیکال",
+            "n": 1,
+            "minW": 68,
+            "minH": 16
+          },
+          {
+            "ctrl": "تکنیکال · فولاد",
+            "n": 1,
+            "minW": 126,
+            "minH": 35
+          },
+          {
+            "ctrl": "ws-tab-close-ae9ae7f3-9a36-439d-af79-50e7e761c5b5",
+            "n": 1,
+            "minW": 36,
+            "minH": 36
+          },
+          {
+            "ctrl": "ws-tab-new",
+            "n": 1,
+            "minW": 24,
+            "minH": 40
+          },
+          {
+            "ctrl": "sidebar-collapse",
+            "n": 1,
+            "minW": 24,
+            "minH": 24
+          },
+          {
+            "ctrl": "sidebar-fts-search",
+            "n": 1,
+            "minW": 268,
+            "minH": 30
+          },
+          {
+            "ctrl": "sidebar-tab-watch",
+            "n": 1,
+            "minW": 32,
+            "minH": 32
+          },
+          {
+            "ctrl": "sidebar-tab-fts",
+            "n": 1,
+            "minW": 32,
+            "minH": 32
+          },
+          {
+            "ctrl": "sidebar-tab-book",
+            "n": 1,
+            "minW": 32,
+            "minH": 32
+          },
+          {
+            "ctrl": "sidebar-tab-levels",
+            "n": 1,
+            "minW": 32,
+            "minH": 32
+          },
+          {
+            "ctrl": "fts-settings-btn",
+            "n": 1,
+            "minW": 87,
+            "minH": 34
+          },
+          {
+            "ctrl": "timeframe-D",
+            "n": 1,
+            "minW": 18,
+            "minH": 30
+          }
+        ],
+        "tapSample": [
+          {
+            "tag": "A",
+            "label": "تحلیل تکنیکال",
+            "w": 68,
+            "h": 16
+          },
+          {
+            "tag": "DIV",
+            "label": "تکنیکال · فولاد×",
+            "w": 126,
+            "h": 35
+          },
+          {
+            "tag": "BUTTON",
+            "label": "بستن تب تکنیکال · ",
+            "w": 36,
+            "h": 36
+          },
+          {
+            "tag": "BUTTON",
+            "label": "تب تازه",
+            "w": 24,
+            "h": 40
+          }
+        ],
+        "hscrollCount": 0,
+        "hscrollDetail": [],
+        "bottomBar": [
+          {
+            "testid": "mobile-nav",
+            "h": 53,
+            "paddingBottom": "4px",
+            "safeAreaInset": "4px",
+            "items": 5,
+            "labelsHidden": 0
+          }
+        ],
+        "contentUnderBar": 0,
+        "boardCards": 0,
+        "boardRows": 0,
+        "consolePageErrors": 0,
+        "settleMs": 560,
+        "hashOk": true,
+        "quiet": true,
+        "measuredRoute": "تحلیل تکنیکال"
+      },
+      "fundamental": {
+        "vw": 390,
+        "docOverflow": 0,
+        "clippedCount": 3,
+        "clippedSample": [
+          {
+            "tag": "BUTTON",
+            "text": "روزانه",
+            "lost": 5,
+            "ellipsis": false,
+            "title": true
+          },
+          {
+            "tag": "BUTTON",
+            "text": "هفتگی",
+            "lost": 8,
+            "ellipsis": false,
+            "title": true
+          },
+          {
+            "tag": "BUTTON",
+            "text": "ماهانه",
+            "lost": 7,
+            "ellipsis": false,
+            "title": true
+          }
+        ],
+        "tinyCount": 0,
+        "tinySample": [],
+        "tapCount": 31,
+        "tapGroups": [
+          {
+            "ctrl": "تحلیل بنیادی",
+            "n": 1,
+            "minW": 62,
+            "minH": 16
+          },
+          {
+            "ctrl": "بنیادی · فولاد",
+            "n": 1,
+            "minW": 120,
+            "minH": 35
+          },
+          {
+            "ctrl": "ws-tab-close-ae9ae7f3-9a36-439d-af79-50e7e761c5b5",
+            "n": 1,
+            "minW": 36,
+            "minH": 36
+          },
+          {
+            "ctrl": "ws-tab-new",
+            "n": 1,
+            "minW": 24,
+            "minH": 40
+          },
+          {
+            "ctrl": "sidebar-collapse",
+            "n": 1,
+            "minW": 24,
+            "minH": 24
+          },
+          {
+            "ctrl": "sidebar-fts-search",
+            "n": 1,
+            "minW": 268,
+            "minH": 30
+          },
+          {
+            "ctrl": "sidebar-tab-watch",
+            "n": 1,
+            "minW": 32,
+            "minH": 32
+          },
+          {
+            "ctrl": "sidebar-tab-fts",
+            "n": 1,
+            "minW": 32,
+            "minH": 32
+          },
+          {
+            "ctrl": "sidebar-tab-book",
+            "n": 1,
+            "minW": 32,
+            "minH": 32
+          },
+          {
+            "ctrl": "sidebar-tab-levels",
+            "n": 1,
+            "minW": 32,
+            "minH": 32
+          },
+          {
+            "ctrl": "fts-settings-btn",
+            "n": 1,
+            "minW": 87,
+            "minH": 34
+          },
+          {
+            "ctrl": "timeframe-D",
+            "n": 1,
+            "minW": 18,
+            "minH": 30
+          }
+        ],
+        "tapSample": [
+          {
+            "tag": "A",
+            "label": "تحلیل بنیادی",
+            "w": 62,
+            "h": 16
+          },
+          {
+            "tag": "DIV",
+            "label": "بنیادی · فولاد×",
+            "w": 120,
+            "h": 35
+          },
+          {
+            "tag": "BUTTON",
+            "label": "بستن تب بنیادی · ف",
+            "w": 36,
+            "h": 36
+          },
+          {
+            "tag": "BUTTON",
+            "label": "تب تازه",
+            "w": 24,
+            "h": 40
+          }
+        ],
+        "hscrollCount": 0,
+        "hscrollDetail": [],
+        "bottomBar": [
+          {
+            "testid": "mobile-nav",
+            "h": 53,
+            "paddingBottom": "4px",
+            "safeAreaInset": "4px",
+            "items": 5,
+            "labelsHidden": 0
+          }
+        ],
+        "contentUnderBar": 0,
+        "boardCards": 0,
+        "boardRows": 0,
+        "consolePageErrors": 0,
+        "settleMs": 338,
+        "hashOk": true,
+        "quiet": true,
+        "measuredRoute": "تحلیل بنیادی"
+      },
+      "portfolio": {
+        "vw": 390,
+        "docOverflow": 0,
+        "clippedCount": 3,
+        "clippedSample": [
+          {
+            "tag": "BUTTON",
+            "text": "روزانه",
+            "lost": 5,
+            "ellipsis": false,
+            "title": true
+          },
+          {
+            "tag": "BUTTON",
+            "text": "هفتگی",
+            "lost": 8,
+            "ellipsis": false,
+            "title": true
+          },
+          {
+            "tag": "BUTTON",
+            "text": "ماهانه",
+            "lost": 7,
+            "ellipsis": false,
+            "title": true
+          }
+        ],
+        "tinyCount": 0,
+        "tinySample": [],
+        "tapCount": 35,
+        "tapGroups": [
+          {
+            "ctrl": "مدیریت پرتفوی",
+            "n": 1,
+            "minW": 73,
+            "minH": 16
+          },
+          {
+            "ctrl": "مدیریت پرتفوی · فولاد",
+            "n": 1,
+            "minW": 162,
+            "minH": 35
+          },
+          {
+            "ctrl": "ws-tab-close-ae9ae7f3-9a36-439d-af79-50e7e761c5b5",
+            "n": 1,
+            "minW": 36,
+            "minH": 36
+          },
+          {
+            "ctrl": "ws-tab-new",
+            "n": 1,
+            "minW": 24,
+            "minH": 40
+          },
+          {
+            "ctrl": "sidebar-collapse",
+            "n": 1,
+            "minW": 24,
+            "minH": 24
+          },
+          {
+            "ctrl": "sidebar-fts-search",
+            "n": 1,
+            "minW": 268,
+            "minH": 30
+          },
+          {
+            "ctrl": "sidebar-tab-watch",
+            "n": 1,
+            "minW": 32,
+            "minH": 32
+          },
+          {
+            "ctrl": "sidebar-tab-fts",
+            "n": 1,
+            "minW": 32,
+            "minH": 32
+          },
+          {
+            "ctrl": "sidebar-tab-book",
+            "n": 1,
+            "minW": 32,
+            "minH": 32
+          },
+          {
+            "ctrl": "sidebar-tab-levels",
+            "n": 1,
+            "minW": 32,
+            "minH": 32
+          },
+          {
+            "ctrl": "fts-settings-btn",
+            "n": 1,
+            "minW": 87,
+            "minH": 34
+          },
+          {
+            "ctrl": "timeframe-D",
+            "n": 1,
+            "minW": 18,
+            "minH": 30
+          }
+        ],
+        "tapSample": [
+          {
+            "tag": "A",
+            "label": "مدیریت پرتفوی",
+            "w": 73,
+            "h": 16
+          },
+          {
+            "tag": "DIV",
+            "label": "مدیریت پرتفوی · فو",
+            "w": 162,
+            "h": 35
+          },
+          {
+            "tag": "BUTTON",
+            "label": "بستن تب مدیریت پرت",
+            "w": 36,
+            "h": 36
+          },
+          {
+            "tag": "BUTTON",
+            "label": "تب تازه",
+            "w": 24,
+            "h": 40
+          }
+        ],
+        "hscrollCount": 0,
+        "hscrollDetail": [],
+        "bottomBar": [
+          {
+            "testid": "mobile-nav",
+            "h": 53,
+            "paddingBottom": "4px",
+            "safeAreaInset": "4px",
+            "items": 5,
+            "labelsHidden": 0
+          }
+        ],
+        "contentUnderBar": 0,
+        "boardCards": 0,
+        "boardRows": 0,
+        "consolePageErrors": 0,
+        "settleMs": 898,
+        "hashOk": true,
+        "quiet": true,
+        "measuredRoute": "مدیریت پرتفوی"
+      },
+      "order-line": {
+        "vw": 390,
+        "docOverflow": 0,
+        "clippedCount": 3,
+        "clippedSample": [
+          {
+            "tag": "BUTTON",
+            "text": "روزانه",
+            "lost": 5,
+            "ellipsis": false,
+            "title": true
+          },
+          {
+            "tag": "BUTTON",
+            "text": "هفتگی",
+            "lost": 8,
+            "ellipsis": false,
+            "title": true
+          },
+          {
+            "tag": "BUTTON",
+            "text": "ماهانه",
+            "lost": 7,
+            "ellipsis": false,
+            "title": true
+          }
+        ],
+        "tinyCount": 0,
+        "tinySample": [],
+        "tapCount": 35,
+        "tapGroups": [
+          {
+            "ctrl": "سرخطی",
+            "n": 2,
+            "minW": 38,
+            "minH": 16
+          },
+          {
+            "ctrl": "ws-tab-close-ae9ae7f3-9a36-439d-af79-50e7e761c5b5",
+            "n": 1,
+            "minW": 36,
+            "minH": 36
+          },
+          {
+            "ctrl": "ws-tab-new",
+            "n": 1,
+            "minW": 24,
+            "minH": 40
+          },
+          {
+            "ctrl": "sidebar-collapse",
+            "n": 1,
+            "minW": 24,
+            "minH": 24
+          },
+          {
+            "ctrl": "sidebar-fts-search",
+            "n": 1,
+            "minW": 268,
+            "minH": 30
+          },
+          {
+            "ctrl": "sidebar-tab-watch",
+            "n": 1,
+            "minW": 32,
+            "minH": 32
+          },
+          {
+            "ctrl": "sidebar-tab-fts",
+            "n": 1,
+            "minW": 32,
+            "minH": 32
+          },
+          {
+            "ctrl": "sidebar-tab-book",
+            "n": 1,
+            "minW": 32,
+            "minH": 32
+          },
+          {
+            "ctrl": "sidebar-tab-levels",
+            "n": 1,
+            "minW": 32,
+            "minH": 32
+          },
+          {
+            "ctrl": "fts-settings-btn",
+            "n": 1,
+            "minW": 87,
+            "minH": 34
+          },
+          {
+            "ctrl": "timeframe-D",
+            "n": 1,
+            "minW": 18,
+            "minH": 30
+          },
+          {
+            "ctrl": "timeframe-W",
+            "n": 1,
+            "minW": 18,
+            "minH": 30
+          }
+        ],
+        "tapSample": [
+          {
+            "tag": "A",
+            "label": "سرخطی",
+            "w": 38,
+            "h": 16
+          },
+          {
+            "tag": "DIV",
+            "label": "سرخطی×",
+            "w": 104,
+            "h": 35
+          },
+          {
+            "tag": "BUTTON",
+            "label": "بستن تب سرخطی",
+            "w": 36,
+            "h": 36
+          },
+          {
+            "tag": "BUTTON",
+            "label": "تب تازه",
+            "w": 24,
+            "h": 40
+          }
+        ],
+        "hscrollCount": 0,
+        "hscrollDetail": [],
+        "bottomBar": [
+          {
+            "testid": "mobile-nav",
+            "h": 53,
+            "paddingBottom": "4px",
+            "safeAreaInset": "4px",
+            "items": 5,
+            "labelsHidden": 0
+          }
+        ],
+        "contentUnderBar": 0,
+        "boardCards": 0,
+        "boardRows": 0,
+        "consolePageErrors": 0,
+        "settleMs": 354,
+        "hashOk": true,
+        "quiet": true,
+        "measuredRoute": "سرخطی"
+      }
+    },
+    "430": {
+      "market": {
+        "vw": 430,
+        "docOverflow": 0,
+        "clippedCount": 0,
+        "clippedSample": [],
+        "tinyCount": 0,
+        "tinySample": [],
+        "tapCount": 9,
+        "tapGroups": [
+          {
+            "ctrl": "تابلوخوانی",
+            "n": 2,
+            "minW": 49,
+            "minH": 16
+          },
+          {
+            "ctrl": "ws-tab-close-e3321480-3158-4d4b-a77b-5f6409d10874",
+            "n": 1,
+            "minW": 36,
+            "minH": 36
+          },
+          {
+            "ctrl": "ws-tab-new",
+            "n": 1,
+            "minW": 24,
+            "minH": 40
+          },
+          {
+            "ctrl": "جستجوی نماد",
+            "n": 1,
+            "minW": 177,
+            "minH": 26
+          },
+          {
+            "ctrl": "filters-disclosure",
+            "n": 1,
+            "minW": 52,
+            "minH": 24
+          },
+          {
+            "ctrl": "watch-tab-clock",
+            "n": 1,
+            "minW": 93,
+            "minH": 26
+          },
+          {
+            "ctrl": "watch-tab-susp",
+            "n": 1,
+            "minW": 128,
+            "minH": 26
+          },
+          {
+            "ctrl": "watch-tab-industries",
+            "n": 1,
+            "minW": 70,
+            "minH": 26
+          }
+        ],
+        "tapSample": [
+          {
+            "tag": "A",
+            "label": "تابلوخوانی",
+            "w": 49,
+            "h": 16
+          },
+          {
+            "tag": "DIV",
+            "label": "تابلوخوانی×",
+            "w": 104,
+            "h": 35
+          },
+          {
+            "tag": "BUTTON",
+            "label": "بستن تب تابلوخوانی",
+            "w": 36,
+            "h": 36
+          },
+          {
+            "tag": "BUTTON",
+            "label": "تب تازه",
+            "w": 24,
+            "h": 40
+          }
+        ],
+        "hscrollCount": 0,
+        "hscrollDetail": [],
+        "bottomBar": [
+          {
+            "testid": "mobile-nav",
+            "h": 53,
+            "paddingBottom": "4px",
+            "safeAreaInset": "4px",
+            "items": 5,
+            "labelsHidden": 0
+          }
+        ],
+        "contentUnderBar": 0,
+        "boardCards": 12,
+        "boardRows": 0,
+        "consolePageErrors": 0,
+        "settleMs": 351,
+        "hashOk": true,
+        "quiet": true,
+        "measuredRoute": "تابلوخوانی"
+      },
+      "market-status": {
+        "vw": 430,
+        "docOverflow": 0,
+        "clippedCount": 0,
+        "clippedSample": [],
+        "tinyCount": 0,
+        "tinySample": [],
+        "tapCount": 9,
+        "tapGroups": [
+          {
+            "ctrl": "وضعیت بازار",
+            "n": 2,
+            "minW": 60,
+            "minH": 16
+          },
+          {
+            "ctrl": "ws-tab-close-e3321480-3158-4d4b-a77b-5f6409d10874",
+            "n": 1,
+            "minW": 36,
+            "minH": 36
+          },
+          {
+            "ctrl": "ws-tab-new",
+            "n": 1,
+            "minW": 24,
+            "minH": 40
+          },
+          {
+            "ctrl": "جستجوی نماد",
+            "n": 1,
+            "minW": 177,
+            "minH": 26
+          },
+          {
+            "ctrl": "filters-disclosure",
+            "n": 1,
+            "minW": 52,
+            "minH": 24
+          },
+          {
+            "ctrl": "watch-tab-clock",
+            "n": 1,
+            "minW": 93,
+            "minH": 26
+          },
+          {
+            "ctrl": "watch-tab-susp",
+            "n": 1,
+            "minW": 128,
+            "minH": 26
+          },
+          {
+            "ctrl": "watch-tab-industries",
+            "n": 1,
+            "minW": 70,
+            "minH": 26
+          }
+        ],
+        "tapSample": [
+          {
+            "tag": "A",
+            "label": "وضعیت بازار",
+            "w": 60,
+            "h": 16
+          },
+          {
+            "tag": "DIV",
+            "label": "وضعیت بازار×",
+            "w": 115,
+            "h": 35
+          },
+          {
+            "tag": "BUTTON",
+            "label": "بستن تب وضعیت بازا",
+            "w": 36,
+            "h": 36
+          },
+          {
+            "tag": "BUTTON",
+            "label": "تب تازه",
+            "w": 24,
+            "h": 40
+          }
+        ],
+        "hscrollCount": 0,
+        "hscrollDetail": [],
+        "bottomBar": [
+          {
+            "testid": "mobile-nav",
+            "h": 53,
+            "paddingBottom": "4px",
+            "safeAreaInset": "4px",
+            "items": 5,
+            "labelsHidden": 0
+          }
+        ],
+        "contentUnderBar": 0,
+        "boardCards": 12,
+        "boardRows": 0,
+        "consolePageErrors": 0,
+        "settleMs": 343,
+        "hashOk": true,
+        "quiet": true,
+        "measuredRoute": "وضعیت بازار"
+      },
+      "watch": {
+        "vw": 430,
+        "docOverflow": 0,
+        "clippedCount": 0,
+        "clippedSample": [],
+        "tinyCount": 0,
+        "tinySample": [],
+        "tapCount": 10,
+        "tapGroups": [
+          {
+            "ctrl": "دیده‌بان بازار",
+            "n": 2,
+            "minW": 59,
+            "minH": 16
+          },
+          {
+            "ctrl": "ws-tab-close-e3321480-3158-4d4b-a77b-5f6409d10874",
+            "n": 1,
+            "minW": 36,
+            "minH": 36
+          },
+          {
+            "ctrl": "ws-tab-new",
+            "n": 1,
+            "minW": 24,
+            "minH": 40
+          },
+          {
+            "ctrl": "watch-add-input",
+            "n": 1,
+            "minW": 160,
+            "minH": 28
+          },
+          {
+            "ctrl": "watch-add-btn",
+            "n": 1,
+            "minW": 55,
+            "minH": 28
+          },
+          {
+            "ctrl": "watch-order-qty",
+            "n": 1,
+            "minW": 180,
+            "minH": 24
+          },
+          {
+            "ctrl": "watch-order-buy",
+            "n": 1,
+            "minW": 180,
+            "minH": 26
+          },
+          {
+            "ctrl": "watch-order-sell",
+            "n": 1,
+            "minW": 180,
+            "minH": 26
+          },
+          {
+            "ctrl": "watch-kill-switch",
+            "n": 1,
+            "minW": 70,
+            "minH": 20
+          }
+        ],
+        "tapSample": [
+          {
+            "tag": "A",
+            "label": "دیده‌بان بازار",
+            "w": 59,
+            "h": 16
+          },
+          {
+            "tag": "DIV",
+            "label": "دیده‌بان بازار×",
+            "w": 114,
+            "h": 35
+          },
+          {
+            "tag": "BUTTON",
+            "label": "بستن تب دیده‌بان ب",
+            "w": 36,
+            "h": 36
+          },
+          {
+            "tag": "BUTTON",
+            "label": "تب تازه",
+            "w": 24,
+            "h": 40
+          }
+        ],
+        "hscrollCount": 0,
+        "hscrollDetail": [],
+        "bottomBar": [
+          {
+            "testid": "mobile-nav",
+            "h": 53,
+            "paddingBottom": "4px",
+            "safeAreaInset": "4px",
+            "items": 5,
+            "labelsHidden": 0
+          }
+        ],
+        "contentUnderBar": 0,
+        "boardCards": 0,
+        "boardRows": 0,
+        "consolePageErrors": 0,
+        "settleMs": 446,
+        "hashOk": true,
+        "quiet": true,
+        "measuredRoute": "دیده‌بان بازار"
+      },
+      "notifications": {
+        "vw": 430,
+        "docOverflow": 0,
+        "clippedCount": 0,
+        "clippedSample": [],
+        "tinyCount": 0,
+        "tinySample": [],
+        "tapCount": 20,
+        "tapGroups": [
+          {
+            "ctrl": "ترمینال بورس",
+            "n": 1,
+            "minW": 64,
+            "minH": 16
+          },
+          {
+            "ctrl": "مرکز اعلان",
+            "n": 1,
+            "minW": 105,
+            "minH": 35
+          },
+          {
+            "ctrl": "ws-tab-close-e3321480-3158-4d4b-a77b-5f6409d10874",
+            "n": 1,
+            "minW": 36,
+            "minH": 36
+          },
+          {
+            "ctrl": "ws-tab-new",
+            "n": 1,
+            "minW": 24,
+            "minH": 40
+          },
+          {
+            "ctrl": "notice-native",
+            "n": 1,
+            "minW": 13,
+            "minH": 13
+          },
+          {
+            "ctrl": "notice-mark-all",
+            "n": 1,
+            "minW": 89,
+            "minH": 20
+          },
+          {
+            "ctrl": "notice-level-high",
+            "n": 1,
+            "minW": 31,
+            "minH": 20
+          },
+          {
+            "ctrl": "notice-level-medium",
+            "n": 1,
+            "minW": 50,
+            "minH": 20
+          },
+          {
+            "ctrl": "notice-level-low",
+            "n": 1,
+            "minW": 41,
+            "minH": 20
+          },
+          {
+            "ctrl": "notice-level-unclassified",
+            "n": 1,
+            "minW": 52,
+            "minH": 20
+          },
+          {
+            "ctrl": "notice-kind-statements",
+            "n": 1,
+            "minW": 78,
+            "minH": 20
+          },
+          {
+            "ctrl": "notice-kind-assembly",
+            "n": 1,
+            "minW": 45,
+            "minH": 20
+          }
+        ],
+        "tapSample": [
+          {
+            "tag": "A",
+            "label": "ترمینال بورس",
+            "w": 64,
+            "h": 16
+          },
+          {
+            "tag": "DIV",
+            "label": "مرکز اعلان×",
+            "w": 105,
+            "h": 35
+          },
+          {
+            "tag": "BUTTON",
+            "label": "بستن تب مرکز اعلان",
+            "w": 36,
+            "h": 36
+          },
+          {
+            "tag": "BUTTON",
+            "label": "تب تازه",
+            "w": 24,
+            "h": 40
+          }
+        ],
+        "hscrollCount": 0,
+        "hscrollDetail": [],
+        "bottomBar": [
+          {
+            "testid": "mobile-nav",
+            "h": 53,
+            "paddingBottom": "4px",
+            "safeAreaInset": "4px",
+            "items": 5,
+            "labelsHidden": 0
+          }
+        ],
+        "contentUnderBar": 0,
+        "boardCards": 0,
+        "boardRows": 0,
+        "consolePageErrors": 0,
+        "settleMs": 660,
+        "hashOk": true,
+        "quiet": true,
+        "measuredRoute": "ترمینال بورس"
+      },
+      "technical": {
+        "vw": 430,
+        "docOverflow": 0,
+        "clippedCount": 3,
+        "clippedSample": [
+          {
+            "tag": "BUTTON",
+            "text": "روزانه",
+            "lost": 5,
+            "ellipsis": false,
+            "title": true
+          },
+          {
+            "tag": "BUTTON",
+            "text": "هفتگی",
+            "lost": 8,
+            "ellipsis": false,
+            "title": true
+          },
+          {
+            "tag": "BUTTON",
+            "text": "ماهانه",
+            "lost": 7,
+            "ellipsis": false,
+            "title": true
+          }
+        ],
+        "tinyCount": 0,
+        "tinySample": [],
+        "tapCount": 32,
+        "tapGroups": [
+          {
+            "ctrl": "تحلیل تکنیکال",
+            "n": 1,
+            "minW": 68,
+            "minH": 16
+          },
+          {
+            "ctrl": "تکنیکال · فولاد",
+            "n": 1,
+            "minW": 126,
+            "minH": 35
+          },
+          {
+            "ctrl": "ws-tab-close-e3321480-3158-4d4b-a77b-5f6409d10874",
+            "n": 1,
+            "minW": 36,
+            "minH": 36
+          },
+          {
+            "ctrl": "ws-tab-new",
+            "n": 1,
+            "minW": 24,
+            "minH": 40
+          },
+          {
+            "ctrl": "sidebar-collapse",
+            "n": 1,
+            "minW": 24,
+            "minH": 24
+          },
+          {
+            "ctrl": "sidebar-fts-search",
+            "n": 1,
+            "minW": 268,
+            "minH": 30
+          },
+          {
+            "ctrl": "sidebar-tab-watch",
+            "n": 1,
+            "minW": 32,
+            "minH": 32
+          },
+          {
+            "ctrl": "sidebar-tab-fts",
+            "n": 1,
+            "minW": 32,
+            "minH": 32
+          },
+          {
+            "ctrl": "sidebar-tab-book",
+            "n": 1,
+            "minW": 32,
+            "minH": 32
+          },
+          {
+            "ctrl": "sidebar-tab-levels",
+            "n": 1,
+            "minW": 32,
+            "minH": 32
+          },
+          {
+            "ctrl": "fts-settings-btn",
+            "n": 1,
+            "minW": 87,
+            "minH": 34
+          },
+          {
+            "ctrl": "timeframe-D",
+            "n": 1,
+            "minW": 18,
+            "minH": 30
+          }
+        ],
+        "tapSample": [
+          {
+            "tag": "A",
+            "label": "تحلیل تکنیکال",
+            "w": 68,
+            "h": 16
+          },
+          {
+            "tag": "DIV",
+            "label": "تکنیکال · فولاد×",
+            "w": 126,
+            "h": 35
+          },
+          {
+            "tag": "BUTTON",
+            "label": "بستن تب تکنیکال · ",
+            "w": 36,
+            "h": 36
+          },
+          {
+            "tag": "BUTTON",
+            "label": "تب تازه",
+            "w": 24,
+            "h": 40
+          }
+        ],
+        "hscrollCount": 0,
+        "hscrollDetail": [],
+        "bottomBar": [
+          {
+            "testid": "mobile-nav",
+            "h": 53,
+            "paddingBottom": "4px",
+            "safeAreaInset": "4px",
+            "items": 5,
+            "labelsHidden": 0
+          }
+        ],
+        "contentUnderBar": 0,
+        "boardCards": 0,
+        "boardRows": 0,
+        "consolePageErrors": 0,
+        "settleMs": 694,
+        "hashOk": true,
+        "quiet": true,
+        "measuredRoute": "تحلیل تکنیکال"
+      },
+      "fundamental": {
+        "vw": 430,
+        "docOverflow": 0,
+        "clippedCount": 3,
+        "clippedSample": [
+          {
+            "tag": "BUTTON",
+            "text": "روزانه",
+            "lost": 5,
+            "ellipsis": false,
+            "title": true
+          },
+          {
+            "tag": "BUTTON",
+            "text": "هفتگی",
+            "lost": 8,
+            "ellipsis": false,
+            "title": true
+          },
+          {
+            "tag": "BUTTON",
+            "text": "ماهانه",
+            "lost": 7,
+            "ellipsis": false,
+            "title": true
+          }
+        ],
+        "tinyCount": 0,
+        "tinySample": [],
+        "tapCount": 32,
+        "tapGroups": [
+          {
+            "ctrl": "تحلیل بنیادی",
+            "n": 1,
+            "minW": 62,
+            "minH": 16
+          },
+          {
+            "ctrl": "بنیادی · فولاد",
+            "n": 1,
+            "minW": 120,
+            "minH": 35
+          },
+          {
+            "ctrl": "ws-tab-close-e3321480-3158-4d4b-a77b-5f6409d10874",
+            "n": 1,
+            "minW": 36,
+            "minH": 36
+          },
+          {
+            "ctrl": "ws-tab-new",
+            "n": 1,
+            "minW": 24,
+            "minH": 40
+          },
+          {
+            "ctrl": "sidebar-collapse",
+            "n": 1,
+            "minW": 24,
+            "minH": 24
+          },
+          {
+            "ctrl": "sidebar-fts-search",
+            "n": 1,
+            "minW": 268,
+            "minH": 30
+          },
+          {
+            "ctrl": "sidebar-tab-watch",
+            "n": 1,
+            "minW": 32,
+            "minH": 32
+          },
+          {
+            "ctrl": "sidebar-tab-fts",
+            "n": 1,
+            "minW": 32,
+            "minH": 32
+          },
+          {
+            "ctrl": "sidebar-tab-book",
+            "n": 1,
+            "minW": 32,
+            "minH": 32
+          },
+          {
+            "ctrl": "sidebar-tab-levels",
+            "n": 1,
+            "minW": 32,
+            "minH": 32
+          },
+          {
+            "ctrl": "fts-settings-btn",
+            "n": 1,
+            "minW": 87,
+            "minH": 34
+          },
+          {
+            "ctrl": "timeframe-D",
+            "n": 1,
+            "minW": 18,
+            "minH": 30
+          }
+        ],
+        "tapSample": [
+          {
+            "tag": "A",
+            "label": "تحلیل بنیادی",
+            "w": 62,
+            "h": 16
+          },
+          {
+            "tag": "DIV",
+            "label": "بنیادی · فولاد×",
+            "w": 120,
+            "h": 35
+          },
+          {
+            "tag": "BUTTON",
+            "label": "بستن تب بنیادی · ف",
+            "w": 36,
+            "h": 36
+          },
+          {
+            "tag": "BUTTON",
+            "label": "تب تازه",
+            "w": 24,
+            "h": 40
+          }
+        ],
+        "hscrollCount": 0,
+        "hscrollDetail": [],
+        "bottomBar": [
+          {
+            "testid": "mobile-nav",
+            "h": 53,
+            "paddingBottom": "4px",
+            "safeAreaInset": "4px",
+            "items": 5,
+            "labelsHidden": 0
+          }
+        ],
+        "contentUnderBar": 0,
+        "boardCards": 0,
+        "boardRows": 0,
+        "consolePageErrors": 0,
+        "settleMs": 335,
+        "hashOk": true,
+        "quiet": true,
+        "measuredRoute": "تحلیل بنیادی"
+      },
+      "portfolio": {
+        "vw": 430,
+        "docOverflow": 0,
+        "clippedCount": 3,
+        "clippedSample": [
+          {
+            "tag": "BUTTON",
+            "text": "روزانه",
+            "lost": 5,
+            "ellipsis": false,
+            "title": true
+          },
+          {
+            "tag": "BUTTON",
+            "text": "هفتگی",
+            "lost": 8,
+            "ellipsis": false,
+            "title": true
+          },
+          {
+            "tag": "BUTTON",
+            "text": "ماهانه",
+            "lost": 7,
+            "ellipsis": false,
+            "title": true
+          }
+        ],
+        "tinyCount": 0,
+        "tinySample": [],
+        "tapCount": 32,
+        "tapGroups": [
+          {
+            "ctrl": "مدیریت پرتفوی",
+            "n": 1,
+            "minW": 73,
+            "minH": 16
+          },
+          {
+            "ctrl": "مدیریت پرتفوی · فولاد",
+            "n": 1,
+            "minW": 162,
+            "minH": 35
+          },
+          {
+            "ctrl": "ws-tab-close-e3321480-3158-4d4b-a77b-5f6409d10874",
+            "n": 1,
+            "minW": 36,
+            "minH": 36
+          },
+          {
+            "ctrl": "ws-tab-new",
+            "n": 1,
+            "minW": 24,
+            "minH": 40
+          },
+          {
+            "ctrl": "sidebar-collapse",
+            "n": 1,
+            "minW": 24,
+            "minH": 24
+          },
+          {
+            "ctrl": "sidebar-fts-search",
+            "n": 1,
+            "minW": 268,
+            "minH": 30
+          },
+          {
+            "ctrl": "sidebar-tab-watch",
+            "n": 1,
+            "minW": 32,
+            "minH": 32
+          },
+          {
+            "ctrl": "sidebar-tab-fts",
+            "n": 1,
+            "minW": 32,
+            "minH": 32
+          },
+          {
+            "ctrl": "sidebar-tab-book",
+            "n": 1,
+            "minW": 32,
+            "minH": 32
+          },
+          {
+            "ctrl": "sidebar-tab-levels",
+            "n": 1,
+            "minW": 32,
+            "minH": 32
+          },
+          {
+            "ctrl": "fts-settings-btn",
+            "n": 1,
+            "minW": 87,
+            "minH": 34
+          },
+          {
+            "ctrl": "timeframe-D",
+            "n": 1,
+            "minW": 18,
+            "minH": 30
+          }
+        ],
+        "tapSample": [
+          {
+            "tag": "A",
+            "label": "مدیریت پرتفوی",
+            "w": 73,
+            "h": 16
+          },
+          {
+            "tag": "DIV",
+            "label": "مدیریت پرتفوی · فو",
+            "w": 162,
+            "h": 35
+          },
+          {
+            "tag": "BUTTON",
+            "label": "بستن تب مدیریت پرت",
+            "w": 36,
+            "h": 36
+          },
+          {
+            "tag": "BUTTON",
+            "label": "تب تازه",
+            "w": 24,
+            "h": 40
+          }
+        ],
+        "hscrollCount": 0,
+        "hscrollDetail": [],
+        "bottomBar": [
+          {
+            "testid": "mobile-nav",
+            "h": 53,
+            "paddingBottom": "4px",
+            "safeAreaInset": "4px",
+            "items": 5,
+            "labelsHidden": 0
+          }
+        ],
+        "contentUnderBar": 0,
+        "boardCards": 0,
+        "boardRows": 0,
+        "consolePageErrors": 0,
+        "settleMs": 336,
+        "hashOk": true,
+        "quiet": true,
+        "measuredRoute": "مدیریت پرتفوی"
+      },
+      "order-line": {
+        "vw": 430,
+        "docOverflow": 0,
+        "clippedCount": 0,
+        "clippedSample": [],
+        "tinyCount": 0,
+        "tinySample": [],
+        "tapCount": 5,
+        "tapGroups": [
+          {
+            "ctrl": "سرخطی",
+            "n": 2,
+            "minW": 38,
+            "minH": 16
+          },
+          {
+            "ctrl": "ws-tab-close-e3321480-3158-4d4b-a77b-5f6409d10874",
+            "n": 1,
+            "minW": 36,
+            "minH": 36
+          },
+          {
+            "ctrl": "ws-tab-new",
+            "n": 1,
+            "minW": 24,
+            "minH": 40
+          },
+          {
+            "ctrl": "order-add-tab",
+            "n": 1,
+            "minW": 64,
+            "minH": 24
+          }
+        ],
+        "tapSample": [
+          {
+            "tag": "A",
+            "label": "سرخطی",
+            "w": 38,
+            "h": 16
+          },
+          {
+            "tag": "DIV",
+            "label": "سرخطی×",
+            "w": 104,
+            "h": 35
+          },
+          {
+            "tag": "BUTTON",
+            "label": "بستن تب سرخطی",
+            "w": 36,
+            "h": 36
+          },
+          {
+            "tag": "BUTTON",
+            "label": "تب تازه",
+            "w": 24,
+            "h": 40
+          }
+        ],
+        "hscrollCount": 0,
+        "hscrollDetail": [],
+        "bottomBar": [
+          {
+            "testid": "mobile-nav",
+            "h": 53,
+            "paddingBottom": "4px",
+            "safeAreaInset": "4px",
+            "items": 5,
+            "labelsHidden": 0
+          }
+        ],
+        "contentUnderBar": 0,
+        "boardCards": 0,
+        "boardRows": 0,
+        "consolePageErrors": 0,
+        "settleMs": 1084,
+        "hashOk": true,
+        "quiet": true,
+        "measuredRoute": "سرخطی"
+      }
+    }
+  }
+}

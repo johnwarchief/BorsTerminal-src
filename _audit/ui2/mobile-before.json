@@ -1,0 +1,1151 @@
+{
+  "base": "http://127.0.0.1:8012",
+  "generatedAt": "2026-10-16T17:24:54.837Z",
+  "method": "v2 — فقطِ گره‌هایِ داخلِ viewport (بی‌sr-only وِ بی‌کشویِ آف‌کانون)، عرض‌هایِ ثابت",
+  "rows": {
+    "360": {
+      "market": {
+        "vw": 360,
+        "docOverflow": 0,
+        "clippedCount": 1,
+        "clippedSample": [
+          {
+            "tag": "SPAN",
+            "text": "شركت سرمايه گذاري مسكن شما",
+            "lost": 10,
+            "ellipsis": true,
+            "title": true
+          }
+        ],
+        "tinyCount": 0,
+        "tinySample": [],
+        "tapCount": 43,
+        "tapSample": [
+          {
+            "tag": "BUTTON",
+            "label": "بازکردن نوار کناری",
+            "w": 23,
+            "h": 23
+          },
+          {
+            "tag": "A",
+            "label": "وضعیت بازار",
+            "w": 38,
+            "h": 41
+          },
+          {
+            "tag": "A",
+            "label": "تابلوخوانی",
+            "w": 38,
+            "h": 41
+          },
+          {
+            "tag": "A",
+            "label": "تکنیکال",
+            "w": 38,
+            "h": 41
+          }
+        ],
+        "hscrollCount": 2,
+        "hscrollDetail": [
+          {
+            "testid": "flex min-h-0 flex-1 flex-col",
+            "over": 872,
+            "focusable": true
+          },
+          {
+            "testid": "tape-scroll",
+            "over": 872,
+            "focusable": true
+          }
+        ],
+        "bottomBar": [],
+        "contentUnderBar": null,
+        "boardCards": 0,
+        "boardRows": 25,
+        "consolePageErrors": 0
+      },
+      "market-status": {
+        "vw": 360,
+        "docOverflow": 0,
+        "clippedCount": 0,
+        "clippedSample": [],
+        "tinyCount": 0,
+        "tinySample": [],
+        "tapCount": 27,
+        "tapSample": [
+          {
+            "tag": "BUTTON",
+            "label": "بازکردن نوار کناری",
+            "w": 23,
+            "h": 23
+          },
+          {
+            "tag": "A",
+            "label": "وضعیت بازار",
+            "w": 38,
+            "h": 41
+          },
+          {
+            "tag": "A",
+            "label": "تابلوخوانی",
+            "w": 38,
+            "h": 41
+          },
+          {
+            "tag": "A",
+            "label": "تکنیکال",
+            "w": 38,
+            "h": 41
+          }
+        ],
+        "hscrollCount": 0,
+        "hscrollDetail": [],
+        "bottomBar": [],
+        "contentUnderBar": null,
+        "boardCards": 0,
+        "boardRows": 166,
+        "consolePageErrors": 0
+      },
+      "watch": {
+        "vw": 360,
+        "docOverflow": 0,
+        "clippedCount": 0,
+        "clippedSample": [],
+        "tinyCount": 0,
+        "tinySample": [],
+        "tapCount": 26,
+        "tapSample": [
+          {
+            "tag": "BUTTON",
+            "label": "بازکردن نوار کناری",
+            "w": 23,
+            "h": 23
+          },
+          {
+            "tag": "A",
+            "label": "وضعیت بازار",
+            "w": 38,
+            "h": 41
+          },
+          {
+            "tag": "A",
+            "label": "تابلوخوانی",
+            "w": 38,
+            "h": 41
+          },
+          {
+            "tag": "A",
+            "label": "تکنیکال",
+            "w": 38,
+            "h": 41
+          }
+        ],
+        "hscrollCount": 0,
+        "hscrollDetail": [],
+        "bottomBar": [],
+        "contentUnderBar": null,
+        "boardCards": 0,
+        "boardRows": 0,
+        "consolePageErrors": 0
+      },
+      "notifications": {
+        "vw": 360,
+        "docOverflow": 0,
+        "clippedCount": 0,
+        "clippedSample": [],
+        "tinyCount": 0,
+        "tinySample": [],
+        "tapCount": 44,
+        "tapSample": [
+          {
+            "tag": "BUTTON",
+            "label": "بازکردن نوار کناری",
+            "w": 23,
+            "h": 23
+          },
+          {
+            "tag": "A",
+            "label": "وضعیت بازار",
+            "w": 38,
+            "h": 41
+          },
+          {
+            "tag": "A",
+            "label": "تابلوخوانی",
+            "w": 38,
+            "h": 41
+          },
+          {
+            "tag": "A",
+            "label": "تکنیکال",
+            "w": 38,
+            "h": 41
+          }
+        ],
+        "hscrollCount": 0,
+        "hscrollDetail": [],
+        "bottomBar": [],
+        "contentUnderBar": null,
+        "boardCards": 0,
+        "boardRows": 0,
+        "consolePageErrors": 0
+      },
+      "technical": {
+        "vw": 360,
+        "docOverflow": 0,
+        "clippedCount": 3,
+        "clippedSample": [
+          {
+            "tag": "BUTTON",
+            "text": "روزانه",
+            "lost": 5,
+            "ellipsis": false,
+            "title": true
+          },
+          {
+            "tag": "BUTTON",
+            "text": "هفتگی",
+            "lost": 8,
+            "ellipsis": false,
+            "title": true
+          },
+          {
+            "tag": "BUTTON",
+            "text": "ماهانه",
+            "lost": 7,
+            "ellipsis": false,
+            "title": true
+          }
+        ],
+        "tinyCount": 0,
+        "tinySample": [],
+        "tapCount": 46,
+        "tapSample": [
+          {
+            "tag": "BUTTON",
+            "label": "بازکردن نوار کناری",
+            "w": 23,
+            "h": 23
+          },
+          {
+            "tag": "A",
+            "label": "وضعیت بازار",
+            "w": 38,
+            "h": 41
+          },
+          {
+            "tag": "A",
+            "label": "تابلوخوانی",
+            "w": 38,
+            "h": 41
+          },
+          {
+            "tag": "A",
+            "label": "تکنیکال",
+            "w": 38,
+            "h": 41
+          }
+        ],
+        "hscrollCount": 0,
+        "hscrollDetail": [],
+        "bottomBar": [],
+        "contentUnderBar": null,
+        "boardCards": 0,
+        "boardRows": 0,
+        "consolePageErrors": 0
+      },
+      "fundamental": {
+        "vw": 360,
+        "docOverflow": 0,
+        "clippedCount": 0,
+        "clippedSample": [],
+        "tinyCount": 0,
+        "tinySample": [],
+        "tapCount": 21,
+        "tapSample": [
+          {
+            "tag": "BUTTON",
+            "label": "بازکردن نوار کناری",
+            "w": 23,
+            "h": 23
+          },
+          {
+            "tag": "A",
+            "label": "وضعیت بازار",
+            "w": 38,
+            "h": 41
+          },
+          {
+            "tag": "A",
+            "label": "تابلوخوانی",
+            "w": 38,
+            "h": 41
+          },
+          {
+            "tag": "A",
+            "label": "تکنیکال",
+            "w": 38,
+            "h": 41
+          }
+        ],
+        "hscrollCount": 0,
+        "hscrollDetail": [],
+        "bottomBar": [],
+        "contentUnderBar": null,
+        "boardCards": 0,
+        "boardRows": 0,
+        "consolePageErrors": 0
+      },
+      "portfolio": {
+        "vw": 360,
+        "docOverflow": 0,
+        "clippedCount": 0,
+        "clippedSample": [],
+        "tinyCount": 0,
+        "tinySample": [],
+        "tapCount": 26,
+        "tapSample": [
+          {
+            "tag": "BUTTON",
+            "label": "بازکردن نوار کناری",
+            "w": 23,
+            "h": 23
+          },
+          {
+            "tag": "A",
+            "label": "وضعیت بازار",
+            "w": 38,
+            "h": 41
+          },
+          {
+            "tag": "A",
+            "label": "تابلوخوانی",
+            "w": 38,
+            "h": 41
+          },
+          {
+            "tag": "A",
+            "label": "تکنیکال",
+            "w": 38,
+            "h": 41
+          }
+        ],
+        "hscrollCount": 0,
+        "hscrollDetail": [],
+        "bottomBar": [],
+        "contentUnderBar": null,
+        "boardCards": 0,
+        "boardRows": 0,
+        "consolePageErrors": 0
+      },
+      "order-line": {
+        "vw": 360,
+        "docOverflow": 0,
+        "clippedCount": 0,
+        "clippedSample": [],
+        "tinyCount": 0,
+        "tinySample": [],
+        "tapCount": 21,
+        "tapSample": [
+          {
+            "tag": "BUTTON",
+            "label": "بازکردن نوار کناری",
+            "w": 23,
+            "h": 23
+          },
+          {
+            "tag": "A",
+            "label": "وضعیت بازار",
+            "w": 38,
+            "h": 41
+          },
+          {
+            "tag": "A",
+            "label": "تابلوخوانی",
+            "w": 38,
+            "h": 41
+          },
+          {
+            "tag": "A",
+            "label": "تکنیکال",
+            "w": 38,
+            "h": 41
+          }
+        ],
+        "hscrollCount": 0,
+        "hscrollDetail": [],
+        "bottomBar": [],
+        "contentUnderBar": null,
+        "boardCards": 0,
+        "boardRows": 0,
+        "consolePageErrors": 0
+      }
+    },
+    "390": {
+      "market": {
+        "vw": 390,
+        "docOverflow": 0,
+        "clippedCount": 1,
+        "clippedSample": [
+          {
+            "tag": "SPAN",
+            "text": "شركت سرمايه گذاري مسكن شما",
+            "lost": 10,
+            "ellipsis": true,
+            "title": true
+          }
+        ],
+        "tinyCount": 0,
+        "tinySample": [],
+        "tapCount": 45,
+        "tapSample": [
+          {
+            "tag": "BUTTON",
+            "label": "بازکردن نوار کناری",
+            "w": 23,
+            "h": 23
+          },
+          {
+            "tag": "A",
+            "label": "وضعیت بازار",
+            "w": 38,
+            "h": 41
+          },
+          {
+            "tag": "A",
+            "label": "تابلوخوانی",
+            "w": 38,
+            "h": 41
+          },
+          {
+            "tag": "A",
+            "label": "تکنیکال",
+            "w": 38,
+            "h": 41
+          }
+        ],
+        "hscrollCount": 2,
+        "hscrollDetail": [
+          {
+            "testid": "flex min-h-0 flex-1 flex-col",
+            "over": 842,
+            "focusable": true
+          },
+          {
+            "testid": "tape-scroll",
+            "over": 842,
+            "focusable": true
+          }
+        ],
+        "bottomBar": [],
+        "contentUnderBar": null,
+        "boardCards": 0,
+        "boardRows": 25,
+        "consolePageErrors": 0
+      },
+      "market-status": {
+        "vw": 390,
+        "docOverflow": 0,
+        "clippedCount": 0,
+        "clippedSample": [],
+        "tinyCount": 0,
+        "tinySample": [],
+        "tapCount": 27,
+        "tapSample": [
+          {
+            "tag": "BUTTON",
+            "label": "بازکردن نوار کناری",
+            "w": 23,
+            "h": 23
+          },
+          {
+            "tag": "A",
+            "label": "وضعیت بازار",
+            "w": 38,
+            "h": 41
+          },
+          {
+            "tag": "A",
+            "label": "تابلوخوانی",
+            "w": 38,
+            "h": 41
+          },
+          {
+            "tag": "A",
+            "label": "تکنیکال",
+            "w": 38,
+            "h": 41
+          }
+        ],
+        "hscrollCount": 0,
+        "hscrollDetail": [],
+        "bottomBar": [],
+        "contentUnderBar": null,
+        "boardCards": 0,
+        "boardRows": 166,
+        "consolePageErrors": 0
+      },
+      "watch": {
+        "vw": 390,
+        "docOverflow": 0,
+        "clippedCount": 0,
+        "clippedSample": [],
+        "tinyCount": 0,
+        "tinySample": [],
+        "tapCount": 26,
+        "tapSample": [
+          {
+            "tag": "BUTTON",
+            "label": "بازکردن نوار کناری",
+            "w": 23,
+            "h": 23
+          },
+          {
+            "tag": "A",
+            "label": "وضعیت بازار",
+            "w": 38,
+            "h": 41
+          },
+          {
+            "tag": "A",
+            "label": "تابلوخوانی",
+            "w": 38,
+            "h": 41
+          },
+          {
+            "tag": "A",
+            "label": "تکنیکال",
+            "w": 38,
+            "h": 41
+          }
+        ],
+        "hscrollCount": 0,
+        "hscrollDetail": [],
+        "bottomBar": [],
+        "contentUnderBar": null,
+        "boardCards": 0,
+        "boardRows": 0,
+        "consolePageErrors": 0
+      },
+      "notifications": {
+        "vw": 390,
+        "docOverflow": 0,
+        "clippedCount": 0,
+        "clippedSample": [],
+        "tinyCount": 0,
+        "tinySample": [],
+        "tapCount": 44,
+        "tapSample": [
+          {
+            "tag": "BUTTON",
+            "label": "بازکردن نوار کناری",
+            "w": 23,
+            "h": 23
+          },
+          {
+            "tag": "A",
+            "label": "وضعیت بازار",
+            "w": 38,
+            "h": 41
+          },
+          {
+            "tag": "A",
+            "label": "تابلوخوانی",
+            "w": 38,
+            "h": 41
+          },
+          {
+            "tag": "A",
+            "label": "تکنیکال",
+            "w": 38,
+            "h": 41
+          }
+        ],
+        "hscrollCount": 0,
+        "hscrollDetail": [],
+        "bottomBar": [],
+        "contentUnderBar": null,
+        "boardCards": 0,
+        "boardRows": 0,
+        "consolePageErrors": 0
+      },
+      "technical": {
+        "vw": 390,
+        "docOverflow": 0,
+        "clippedCount": 3,
+        "clippedSample": [
+          {
+            "tag": "BUTTON",
+            "text": "روزانه",
+            "lost": 5,
+            "ellipsis": false,
+            "title": true
+          },
+          {
+            "tag": "BUTTON",
+            "text": "هفتگی",
+            "lost": 8,
+            "ellipsis": false,
+            "title": true
+          },
+          {
+            "tag": "BUTTON",
+            "text": "ماهانه",
+            "lost": 7,
+            "ellipsis": false,
+            "title": true
+          }
+        ],
+        "tinyCount": 0,
+        "tinySample": [],
+        "tapCount": 48,
+        "tapSample": [
+          {
+            "tag": "BUTTON",
+            "label": "بازکردن نوار کناری",
+            "w": 23,
+            "h": 23
+          },
+          {
+            "tag": "A",
+            "label": "وضعیت بازار",
+            "w": 38,
+            "h": 41
+          },
+          {
+            "tag": "A",
+            "label": "تابلوخوانی",
+            "w": 38,
+            "h": 41
+          },
+          {
+            "tag": "A",
+            "label": "تکنیکال",
+            "w": 38,
+            "h": 41
+          }
+        ],
+        "hscrollCount": 0,
+        "hscrollDetail": [],
+        "bottomBar": [],
+        "contentUnderBar": null,
+        "boardCards": 0,
+        "boardRows": 0,
+        "consolePageErrors": 0
+      },
+      "fundamental": {
+        "vw": 390,
+        "docOverflow": 0,
+        "clippedCount": 0,
+        "clippedSample": [],
+        "tinyCount": 0,
+        "tinySample": [],
+        "tapCount": 21,
+        "tapSample": [
+          {
+            "tag": "BUTTON",
+            "label": "بازکردن نوار کناری",
+            "w": 23,
+            "h": 23
+          },
+          {
+            "tag": "A",
+            "label": "وضعیت بازار",
+            "w": 38,
+            "h": 41
+          },
+          {
+            "tag": "A",
+            "label": "تابلوخوانی",
+            "w": 38,
+            "h": 41
+          },
+          {
+            "tag": "A",
+            "label": "تکنیکال",
+            "w": 38,
+            "h": 41
+          }
+        ],
+        "hscrollCount": 0,
+        "hscrollDetail": [],
+        "bottomBar": [],
+        "contentUnderBar": null,
+        "boardCards": 0,
+        "boardRows": 0,
+        "consolePageErrors": 0
+      },
+      "portfolio": {
+        "vw": 390,
+        "docOverflow": 0,
+        "clippedCount": 0,
+        "clippedSample": [],
+        "tinyCount": 0,
+        "tinySample": [],
+        "tapCount": 26,
+        "tapSample": [
+          {
+            "tag": "BUTTON",
+            "label": "بازکردن نوار کناری",
+            "w": 23,
+            "h": 23
+          },
+          {
+            "tag": "A",
+            "label": "وضعیت بازار",
+            "w": 38,
+            "h": 41
+          },
+          {
+            "tag": "A",
+            "label": "تابلوخوانی",
+            "w": 38,
+            "h": 41
+          },
+          {
+            "tag": "A",
+            "label": "تکنیکال",
+            "w": 38,
+            "h": 41
+          }
+        ],
+        "hscrollCount": 0,
+        "hscrollDetail": [],
+        "bottomBar": [],
+        "contentUnderBar": null,
+        "boardCards": 0,
+        "boardRows": 0,
+        "consolePageErrors": 0
+      },
+      "order-line": {
+        "vw": 390,
+        "docOverflow": 0,
+        "clippedCount": 0,
+        "clippedSample": [],
+        "tinyCount": 0,
+        "tinySample": [],
+        "tapCount": 21,
+        "tapSample": [
+          {
+            "tag": "BUTTON",
+            "label": "بازکردن نوار کناری",
+            "w": 23,
+            "h": 23
+          },
+          {
+            "tag": "A",
+            "label": "وضعیت بازار",
+            "w": 38,
+            "h": 41
+          },
+          {
+            "tag": "A",
+            "label": "تابلوخوانی",
+            "w": 38,
+            "h": 41
+          },
+          {
+            "tag": "A",
+            "label": "تکنیکال",
+            "w": 38,
+            "h": 41
+          }
+        ],
+        "hscrollCount": 0,
+        "hscrollDetail": [],
+        "bottomBar": [],
+        "contentUnderBar": null,
+        "boardCards": 0,
+        "boardRows": 0,
+        "consolePageErrors": 0
+      }
+    },
+    "430": {
+      "market": {
+        "vw": 430,
+        "docOverflow": 0,
+        "clippedCount": 2,
+        "clippedSample": [
+          {
+            "tag": "SPAN",
+            "text": "شركت سرمايه گذاري مسكن شما",
+            "lost": 10,
+            "ellipsis": true,
+            "title": true
+          },
+          {
+            "tag": "SPAN",
+            "text": "سرمايه گذاري توسعه صنايع س",
+            "lost": 4,
+            "ellipsis": true,
+            "title": true
+          }
+        ],
+        "tinyCount": 0,
+        "tinySample": [],
+        "tapCount": 45,
+        "tapSample": [
+          {
+            "tag": "BUTTON",
+            "label": "بازکردن نوار کناری",
+            "w": 23,
+            "h": 23
+          },
+          {
+            "tag": "A",
+            "label": "وضعیت بازار",
+            "w": 38,
+            "h": 41
+          },
+          {
+            "tag": "A",
+            "label": "تابلوخوانی",
+            "w": 38,
+            "h": 41
+          },
+          {
+            "tag": "A",
+            "label": "تکنیکال",
+            "w": 38,
+            "h": 41
+          }
+        ],
+        "hscrollCount": 2,
+        "hscrollDetail": [
+          {
+            "testid": "flex min-h-0 flex-1 flex-col",
+            "over": 802,
+            "focusable": true
+          },
+          {
+            "testid": "tape-scroll",
+            "over": 802,
+            "focusable": true
+          }
+        ],
+        "bottomBar": [],
+        "contentUnderBar": null,
+        "boardCards": 0,
+        "boardRows": 25,
+        "consolePageErrors": 0
+      },
+      "market-status": {
+        "vw": 430,
+        "docOverflow": 0,
+        "clippedCount": 0,
+        "clippedSample": [],
+        "tinyCount": 0,
+        "tinySample": [],
+        "tapCount": 28,
+        "tapSample": [
+          {
+            "tag": "BUTTON",
+            "label": "بازکردن نوار کناری",
+            "w": 23,
+            "h": 23
+          },
+          {
+            "tag": "A",
+            "label": "وضعیت بازار",
+            "w": 38,
+            "h": 41
+          },
+          {
+            "tag": "A",
+            "label": "تابلوخوانی",
+            "w": 38,
+            "h": 41
+          },
+          {
+            "tag": "A",
+            "label": "تکنیکال",
+            "w": 38,
+            "h": 41
+          }
+        ],
+        "hscrollCount": 0,
+        "hscrollDetail": [],
+        "bottomBar": [],
+        "contentUnderBar": null,
+        "boardCards": 0,
+        "boardRows": 166,
+        "consolePageErrors": 0
+      },
+      "watch": {
+        "vw": 430,
+        "docOverflow": 0,
+        "clippedCount": 0,
+        "clippedSample": [],
+        "tinyCount": 0,
+        "tinySample": [],
+        "tapCount": 26,
+        "tapSample": [
+          {
+            "tag": "BUTTON",
+            "label": "بازکردن نوار کناری",
+            "w": 23,
+            "h": 23
+          },
+          {
+            "tag": "A",
+            "label": "وضعیت بازار",
+            "w": 38,
+            "h": 41
+          },
+          {
+            "tag": "A",
+            "label": "تابلوخوانی",
+            "w": 38,
+            "h": 41
+          },
+          {
+            "tag": "A",
+            "label": "تکنیکال",
+            "w": 38,
+            "h": 41
+          }
+        ],
+        "hscrollCount": 0,
+        "hscrollDetail": [],
+        "bottomBar": [],
+        "contentUnderBar": null,
+        "boardCards": 0,
+        "boardRows": 0,
+        "consolePageErrors": 0
+      },
+      "notifications": {
+        "vw": 430,
+        "docOverflow": 0,
+        "clippedCount": 0,
+        "clippedSample": [],
+        "tinyCount": 0,
+        "tinySample": [],
+        "tapCount": 46,
+        "tapSample": [
+          {
+            "tag": "BUTTON",
+            "label": "بازکردن نوار کناری",
+            "w": 23,
+            "h": 23
+          },
+          {
+            "tag": "A",
+            "label": "وضعیت بازار",
+            "w": 38,
+            "h": 41
+          },
+          {
+            "tag": "A",
+            "label": "تابلوخوانی",
+            "w": 38,
+            "h": 41
+          },
+          {
+            "tag": "A",
+            "label": "تکنیکال",
+            "w": 38,
+            "h": 41
+          }
+        ],
+        "hscrollCount": 0,
+        "hscrollDetail": [],
+        "bottomBar": [],
+        "contentUnderBar": null,
+        "boardCards": 0,
+        "boardRows": 0,
+        "consolePageErrors": 0
+      },
+      "technical": {
+        "vw": 430,
+        "docOverflow": 0,
+        "clippedCount": 3,
+        "clippedSample": [
+          {
+            "tag": "BUTTON",
+            "text": "روزانه",
+            "lost": 5,
+            "ellipsis": false,
+            "title": true
+          },
+          {
+            "tag": "BUTTON",
+            "text": "هفتگی",
+            "lost": 8,
+            "ellipsis": false,
+            "title": true
+          },
+          {
+            "tag": "BUTTON",
+            "text": "ماهانه",
+            "lost": 7,
+            "ellipsis": false,
+            "title": true
+          }
+        ],
+        "tinyCount": 0,
+        "tinySample": [],
+        "tapCount": 49,
+        "tapSample": [
+          {
+            "tag": "BUTTON",
+            "label": "بازکردن نوار کناری",
+            "w": 23,
+            "h": 23
+          },
+          {
+            "tag": "A",
+            "label": "وضعیت بازار",
+            "w": 38,
+            "h": 41
+          },
+          {
+            "tag": "A",
+            "label": "تابلوخوانی",
+            "w": 38,
+            "h": 41
+          },
+          {
+            "tag": "A",
+            "label": "تکنیکال",
+            "w": 38,
+            "h": 41
+          }
+        ],
+        "hscrollCount": 0,
+        "hscrollDetail": [],
+        "bottomBar": [],
+        "contentUnderBar": null,
+        "boardCards": 0,
+        "boardRows": 0,
+        "consolePageErrors": 0
+      },
+      "fundamental": {
+        "vw": 430,
+        "docOverflow": 0,
+        "clippedCount": 0,
+        "clippedSample": [],
+        "tinyCount": 0,
+        "tinySample": [],
+        "tapCount": 21,
+        "tapSample": [
+          {
+            "tag": "BUTTON",
+            "label": "بازکردن نوار کناری",
+            "w": 23,
+            "h": 23
+          },
+          {
+            "tag": "A",
+            "label": "وضعیت بازار",
+            "w": 38,
+            "h": 41
+          },
+          {
+            "tag": "A",
+            "label": "تابلوخوانی",
+            "w": 38,
+            "h": 41
+          },
+          {
+            "tag": "A",
+            "label": "تکنیکال",
+            "w": 38,
+            "h": 41
+          }
+        ],
+        "hscrollCount": 0,
+        "hscrollDetail": [],
+        "bottomBar": [],
+        "contentUnderBar": null,
+        "boardCards": 0,
+        "boardRows": 0,
+        "consolePageErrors": 0
+      },
+      "portfolio": {
+        "vw": 430,
+        "docOverflow": 0,
+        "clippedCount": 0,
+        "clippedSample": [],
+        "tinyCount": 0,
+        "tinySample": [],
+        "tapCount": 26,
+        "tapSample": [
+          {
+            "tag": "BUTTON",
+            "label": "بازکردن نوار کناری",
+            "w": 23,
+            "h": 23
+          },
+          {
+            "tag": "A",
+            "label": "وضعیت بازار",
+            "w": 38,
+            "h": 41
+          },
+          {
+            "tag": "A",
+            "label": "تابلوخوانی",
+            "w": 38,
+            "h": 41
+          },
+          {
+            "tag": "A",
+            "label": "تکنیکال",
+            "w": 38,
+            "h": 41
+          }
+        ],
+        "hscrollCount": 0,
+        "hscrollDetail": [],
+        "bottomBar": [],
+        "contentUnderBar": null,
+        "boardCards": 0,
+        "boardRows": 0,
+        "consolePageErrors": 0
+      },
+      "order-line": {
+        "vw": 430,
+        "docOverflow": 0,
+        "clippedCount": 0,
+        "clippedSample": [],
+        "tinyCount": 0,
+        "tinySample": [],
+        "tapCount": 21,
+        "tapSample": [
+          {
+            "tag": "BUTTON",
+            "label": "بازکردن نوار کناری",
+            "w": 23,
+            "h": 23
+          },
+          {
+            "tag": "A",
+            "label": "وضعیت بازار",
+            "w": 38,
+            "h": 41
+          },
+          {
+            "tag": "A",
+            "label": "تابلوخوانی",
+            "w": 38,
+            "h": 41
+          },
+          {
+            "tag": "A",
+            "label": "تکنیکال",
+            "w": 38,
+            "h": 41
+          }
+        ],
+        "hscrollCount": 0,
+        "hscrollDetail": [],
+        "bottomBar": [],
+        "contentUnderBar": null,
+        "boardCards": 0,
+        "boardRows": 0,
+        "consolePageErrors": 0
+      }
+    }
+  }
+}
