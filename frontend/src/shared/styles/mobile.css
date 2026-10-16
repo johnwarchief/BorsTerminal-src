@@ -17,11 +17,14 @@
   html.bors-mobile {
     font-size: 13px;
     -webkit-text-size-adjust: 100%;
-    /* ارتفاعِ نوارِ پایین درِ پورتره = دو ردیفِ ۴۴پیکسلی + فاصله و حاشیه.
+    /* ارتفاعِ نوارِ پایین درِ پورتره = سه ردیفِ ۴۴پیکسلی (دو ردیفِ تب، یک
+       ردیفِ ابزارها) + فاصله‌ها و حاشیه: ۴ + ۹۰ + ۴ + ۴۴ + ۴ = ۱۴۶.
        یکِ متغیر، همه‌جاست: paddingِ بدنه، بنرِ هشدار، کشوی اینسپکتور، راهنمایِ
        خروج و دکمه/پنلِ عیب‌یابی همه ازِ همین حساب می‌شوند تا هیچ کنترلی زیرِ
-       نوار یا بیرونِ دید نرود (بندِ «حرکتِ UI باید کنترل‌هایش را با خودش ببرد»). */
-    --bors-nav-h: 112px;
+       نوار یا بیرونِ دید نرود (بندِ «حرکتِ UI باید کنترل‌هایش را با خودش ببرد»).
+       اگر تعدادِ تب عوض شد، همین عدد و ردیف‌هایِ grid زیرش باید با هم بروین;
+       سنجۀ padClearsBar درِ کاوشگرِ viewport جا ماندنِ بدنه را قرمز می‌کند. */
+    --bors-nav-h: 146px;
   }
 
   /* ۱) سایدبار → نوار ناوبری چسبیده به پایین (الگوی رایج اپ‌های موبایل)
@@ -36,8 +39,8 @@
     top: auto;
     z-index: 60;
     box-sizing: border-box;
-    /* دو ردیف: تب‌ها، بعد خوشۀِ ابزارها. ارتفاع ازِ --bors-nav-h می‌آید تا
-       بدنه/بنر/کشو/عیب‌یابی همه یکِ عدد را ببینند. */
+    /* سه ردیف: دو ردیفِ تب‌ها، بعد خوشۀِ ابزارها. ارتفاع ازِ --bors-nav-h می‌آید
+       تا بدنه/بنر/کشو/عیب‌یابی همه یکِ عدد را ببینند. */
     flex-direction: column;
     align-items: stretch;
     gap: 4px;
@@ -62,8 +65,15 @@
     display: none;
   }
   html.bors-mobile aside[data-shell='sidebar'] nav {
-    flex-direction: row;
-    flex: 1 1 48px;
+    /* گریدِ چهارستونه، نه ردیفِ flexِ یک‌خطی: با هشت تب، ردیفِ flex هر تب را
+       به ۴۱px در ۳۶۰px می‌رساند (سنجشِ زنده) و زیرِ کفِ ۴۴pxِ لمس می‌رفت.
+       تب کم نشد — ردیفِ دومِ تب آمد: ۴×۲ ردیف ⇒ ۸۴px برایِ هر تب در ۳۶۰px.
+       flex: 0 0 auto: قدِ خودش را می‌گیرد؛ کفِ ارتفاعِ نوار از --bors-nav-h
+       می‌آید و سنجۀ padClearsBar همان هم‌خوانی را الزامی می‌کند. */
+    display: grid;
+    grid-template-columns: repeat(4, minmax(44px, 1fr));
+    grid-auto-rows: minmax(44px, auto);
+    flex: 0 0 auto;
     min-height: 0;
     gap: 2px;
     width: 100%;
@@ -75,9 +85,13 @@
     height: 0;
   }
   html.bors-mobile aside[data-shell='sidebar'] nav a {
-    flex: 1 0 auto;
     justify-content: center;
     min-height: 44px; /* هدف لمسی استاندارد */
+    /* کفِ عرضِ لمسی. انتخابگر باید nav a باشد: لینک‌ها درِ DOM نوهٔ nav
+       اند (هر بخش یک div واسط دارد) و `display: contents` فقط جعبه‌شان را درِ
+       زمینهٔ چیدمانِ nav می‌گذارد، نه درِ درختِ DOM — پس قاعدۀ `nav > a` که
+       این عدد را حمل می‌کرد هرگز نمی‌خوانده شد و تب‌ها تا ۴۱px له می‌شدند. */
+    min-width: 44px;
   }
   /* بندِ ۱ب — نوار ردیف شد ولی *درونش* ستونی ماند. اندازه‌گیریِ زنده درِ
    * ۳۶۰×۸۰۰ (کاوشگر tools/android_viewport_probe.mts): سه گروهِ nav هر کدام
@@ -87,29 +101,22 @@
    * جداکننده‌ها که برایِ ریلِ عمودی ساخته شده بودند درِ نوارِ پایین جایی
    * ندارند و پنهان می‌شوند.
    *
-   * ۱پ — عرضِ هدفِ لمس: لینک‌ها `flex: 1 0 auto` بودند، یعنی قدشان ۴۴px ولی
-   * عرضشان اندازهٔ خودِ آیکون (۲۱px در ۳۶۰×۸۰۰، اندازه‌گیریِ زنده). بی‌این که
-   * بخش‌ها را هم `flex: 1 1 0` کنیم سهم‌ها نابرابر می‌ماند (۲۰/۳۲/۶۵px); با
-   * `display: contents` خودِ لینک‌ها فرزندِ مستقیمِ flexِ nav می‌شوند و عرض
-   * یکسان (~۳۳px در ۳۶۰px) می‌گیرند. اگر WebView خیلی قدیمی contents را نفهمد،
-   * به همان چیدمانِ قبلی برمی‌گردد — خرابیِ آرام، نه به‌هم‌ریختگی.
+   * ۱پ — عرضِ هدفِ لمس: لینک‌ها باید *همه* درِ یکِ زمینهٔ چیدمانِ nav سهم
+   * بگیرند؛ `display: contents` جعبهٔ divِ هر بخش را حذف می‌کند و لینک‌ها
+   * (که درِ DOM نوه‌اند) آیتم‌هایِ خودِ nav می‌شوند. بی‌این، سهم‌ها نابرابر
+   * می‌ماند و عرضِ تب به اندازهٔ خودِ آیکون (۲۱px) می‌افتد. اگر WebView خیلی
+   * قدیمی contents را نفهمد، لینک‌ها درِ گروه‌هایِ خودشان می‌مانند — چیدمان
+   * زشت می‌شود، تبی ناپدید نمی‌شود.
    *
-   * باقی‌مانده که تصمیمِ مالک است: درِ ۳۶۰px، شش تب با سه دکمۀِ خوشۀِ پایین
-   * (۱۶۰px) هم‌زمان ۴۴pxِ کامل درِ عرض نمی‌شوند. دو راهِ واقعی هست — نوارِ
-   * لغزان، یا برداشتنِ آن سه دکمه به نوارِ بالا — و هیچ‌کدام یک‌طرفه انتخاب
-   * نشده که مبادا تبی درِ ساعتِ بازار از دسترس بیفتد. */
+   * ۱ت (این دور) — گریدِ ۴×۲ به‌جایِ ردیفِ flexِ یک‌خطی: با هشت تب، یکِ ردیف
+   * ۳۴۴پیکسلی سهمِ ۴۱px می‌داد و سنجۀ tabsHaveTouchWidth درِ ۳۶۰×۸۰۰ قرمز
+   * می‌شد. ردیفِ دومِ تب آمده، نه تبِ کمتر؛ ارتفاعِ نوار هم ازِ همان
+   * --bors-nav-h (۱۴۶px) می‌آید و paddingِ بدنه با آن هم‌خوان است. */
   html.bors-mobile aside[data-shell='sidebar'] nav > div {
     display: contents;
   }
   html.bors-mobile aside[data-shell='sidebar'] nav > div > div {
     display: none;
-  }
-  html.bors-mobile aside[data-shell='sidebar'] nav > a {
-    flex: 1 1 0;
-    /* کفِ عرض = هدفِ لمسی؛ بی‌این درِ ۳۶۰px تب‌ها تا ۳۲px له می‌شدند (سنجشِ
-       زندۀ دورِ پیشین). اگر زبانی/فونتِ بزرگ‌تری جا کم بیاورد، ردیف
-       می‌لغزد و تبی ناپدید نمی‌شود. */
-    min-width: 44px;
   }
   html.bors-mobile aside[data-shell='sidebar'] > div.mt-auto,
   html.bors-mobile aside[data-shell='sidebar'] > div.mt-auto > div {
@@ -387,15 +394,20 @@ html.bors-mobile [data-testid='app-update-btn'] {
    در افقی معادلهٔ فضا وارونه می‌شود: عرض فراوان است (۹۱۵) و ارتفاع کمیاب
    (۴۱۲). نوارِ چسبیده‌به‌پایین آنجا ۵۸ پیکسل از ۴۱۲ را می‌خورد — یعنی
    ۱۴٪ از چیزی که کم داریم. پس همان نوار به یک ریلِ عمودیِ باریک در کنار
-   برمی‌گردد که از عرضِ فراوان خرج می‌کند، نه از ارتفاع.             */
+   برمی‌گردد که از عرضِ فراوان خرج می‌کند، نه از ارتفاع.
+   ریلِ تک‌ستونه با شش تب ساخته شد؛ با هشت تب قدِ تب‌ها ۳۳۴px می‌شد و
+   خوشۀِ ابزارها از ۳۷۵pxِ ارتفاع بیرون می‌زد (سنجشِ زنده درِ ۸۱۲×۳۷۵:
+   utilityClipped=2، barScrolls=true، عرضِ تب ۴۲px). دو ستونه شد: همان
+   عرضِ فراوان خرج می‌شود تا هشت تب درِ چهار ردیفِ ۴۴pxکیِ کامل جا شوند. */
 @media (max-height: 520px) and (orientation: landscape) {
   html.bors-mobile aside[data-shell='sidebar'] {
     position: sticky;
     inset: 0 auto auto 0;
     top: 0;
     bottom: auto;
-    width: 52px !important;
-    max-width: 52px;
+    /* ۲×۴۴ + فاصله + حاشیه و قاب */
+    width: 104px !important;
+    max-width: 104px;
     height: 100dvh;
     min-height: 0;
     max-height: none;
@@ -408,12 +420,21 @@ html.bors-mobile [data-testid='app-update-btn'] {
     padding-bottom: max(4px, env(safe-area-inset-bottom));
   }
   html.bors-mobile aside[data-shell='sidebar'] nav {
-    flex-direction: column;
-    width: 100%;
-  }
-  html.bors-mobile aside[data-shell='sidebar'] nav a {
+    /* بازگشت ازِ گریدِ چهارستونِ پورتره به ریلِ دوبستونِ افقی */
+    display: grid;
+    grid-template-columns: repeat(2, minmax(44px, 1fr));
+    grid-auto-rows: minmax(44px, auto);
     flex: 0 0 auto;
-    min-height: 40px; /* در افقی ارتفاع کمیاب است؛ ۴۴ به ۴۰ کم می‌شود */
+    width: 100%;
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+  /* خوشۀِ ابزارها درِ ریلِ باریک ردیفِ افقی نمی‌شود (سه دکمۀ ۴۴pxکی درِ
+     ۹۵px جا نیست و دویشان بیرونِ نوار می‌زد)؛ ستونی می‌چیند. */
+  html.bors-mobile aside[data-shell='sidebar'] > div.mt-auto,
+  html.bors-mobile aside[data-shell='sidebar'] > div.mt-auto > div {
+    flex-direction: column;
+    min-height: 0;
   }
   /* بدنه دیگر لازم نیست برایِ نوارِ پایین جا باز کند */
   html.bors-mobile .app-content {
