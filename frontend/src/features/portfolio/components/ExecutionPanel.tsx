@@ -15,6 +15,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { Badge } from '@shared/components/Badge';
+import { ConnectBrokerRow } from './ConnectBrokerRow';
 import { HttpError } from '@shared/api/http';
 import { fmtInt, parseNum, toEnDigits, toFaDigits } from '@shared/lib/fmt';
 import type { MarketRow } from '@shared/types/marketRow';
@@ -250,6 +251,7 @@ export function ExecutionPanel({ symbol, row }: { symbol: string; row: MarketRow
       data-adapter={gate.status?.adapter ?? 'none'}
       data-session={gate.sessionState}
     >
+      <ConnectBrokerRow />
       <div className="mb-1 flex flex-wrap items-center justify-between gap-1">
         <h5 className="text-2xs font-black text-text-secondary">پنلِ معامله</h5>
         <div className="flex flex-wrap items-center gap-1">
