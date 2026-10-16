@@ -10,7 +10,7 @@
 // نیفتد.
 import { useEffect, useRef, useState } from 'react';
 import { toFaDigits } from '@shared/lib/fmt';
-import { WidgetFreshness, type WidgetFreshInput } from './WidgetFreshness';
+import { FreshnessSummary, type WidgetFreshInput } from './WidgetFreshness';
 
 export type MarketSection = {
   id: string;
@@ -134,9 +134,7 @@ export function SectionHeading({
           className="basis-full flex flex-wrap items-center gap-x-1.5 gap-y-0.5"
           data-testid={`section-freshness-${id}`}
         >
-          {freshness.map((f) => (
-            <WidgetFreshness key={f.label} label={f.label} input={f} />
-          ))}
+          <FreshnessSummary items={freshness.map((f) => ({ label: f.label, input: f }))} />
         </span>
       ) : null}
       {desc ? <p className="text-3xs text-text-muted">{desc}</p> : null}

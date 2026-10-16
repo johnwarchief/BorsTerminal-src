@@ -216,11 +216,17 @@ describe('نوار تک‌خطی فیلترها و dropdown بازارها', () 
   it('نوار فیلتر یک‌سطحی است و جستجو و شمارنده در سمتِ چپِ همان نوار', () => {
     render(<MarketFilters sectors={[]} shown={120} total={600} pollMs={15000} onPollChange={() => {}} />);
     const bar = screen.getByTestId('market-filters-bar');
-    expect(bar.className).not.toContain('flex-col');
+    // «یکِ نوار» یعنی یکِ پنل، نه یکِ خطِ دیداری: سنجشِ زندهٔ ۱۳۶ نشان داد چیپ‌ها درِ
+    // همانِ پنل پنجِ ردیف می‌شدند وِ ۱۹۰px ازِ ۷۶۸pxِ صفحه را می‌گرفتند. پس ادعا این است:
+    // یکِ پنل باِ دوِ گروه، که درِ عرضِ باریک دوِ خط می‌شود وِ خطِ جست‌وجو بالا می‌آید.
     const kids = Array.from(bar.children);
     expect(kids).toHaveLength(2);
-    expect(kids[0]).toBe(screen.getByTestId('quick-filters-bar'));
-    expect(kids[1]).toBe(screen.getByTestId('filters-side'));
+    expect(kids).toEqual(expect.arrayContaining([
+      screen.getByTestId('quick-filters-bar'), screen.getByTestId('filters-side'),
+    ]));
+    expect(bar.className).toContain('flex-col');
+    expect(bar.className).toContain('2xl:flex-row');
+    expect(screen.getByTestId('filters-side').className).toContain('order-first');
     // در RTL فرزندِ آخر سمتِ چپ می‌نشیند — جستجو، شمارنده و بازه همه آن‌جاوند
     const side = screen.getByTestId('filters-side');
     expect(within(side).getByLabelText('جستجوی نماد')).toBeInTheDocument();

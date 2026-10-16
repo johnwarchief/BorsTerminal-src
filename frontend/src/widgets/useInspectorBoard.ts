@@ -22,14 +22,14 @@ export type BoardRow = {
 /** ردیفِ خامِ تابلو — همان چیزی که قواعدِ درِ تابلو (`tapeFilterVerdict`) و
  *  `symbolStageProgress` رویِ خودش اجرا می‌شوند. تطبیقِ نماد از `findBoardRow`
  *  است (نوشتارِ عربی/فارسی + فاصله)، نه از مقایسهٔ خام. */
-export function useInspectorRawRow(): MarketRow | null {
+export function useInspectorRawRow(opts: { enabled?: boolean } = {}): MarketRow | null {
   const symbol = useSymbolStore((s) => s.symbol);
-  const { data } = useMarketFeed();
+  const { data } = useMarketFeed(opts);
   return useMemo(() => findBoardRow(data?.data ?? [], symbol), [symbol, data]);
 }
 
-export function useInspectorBoard(): BoardRow | null {
-  const r = useInspectorRawRow();
+export function useInspectorBoard(opts: { enabled?: boolean } = {}): BoardRow | null {
+  const r = useInspectorRawRow(opts);
   return useMemo(() => {
     if (!r) return null;
     return {

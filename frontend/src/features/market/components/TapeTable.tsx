@@ -45,11 +45,12 @@ type SortKey =
  * خانه به هم می‌چسبیدند و خواننده نمی‌فهمید عدد زیرِ کدام سرستون است. فاصلهٔ
  * ستون‌ها ۶→۴ و حاشیهٔ ردیف ۱۲→۸ آمد تا حدِ آستانهٔ عرض بالا نکند.
  */
+const ROW_H = 34;
 const ROW_GRID =
-  'grid-cols-[minmax(150px,1.6fr)_minmax(66px,0.85fr)_minmax(66px,0.85fr)_minmax(60px,0.6fr)_minmax(62px,0.8fr)_minmax(62px,0.8fr)_minmax(124px,1.0fr)_minmax(60px,0.8fr)_minmax(56px,0.78fr)_minmax(56px,0.75fr)_minmax(170px,1.45fr)_minmax(142px,1.5fr)]';
+  'grid-cols-[minmax(240px,2.1fr)_minmax(66px,0.85fr)_minmax(66px,0.85fr)_minmax(60px,0.6fr)_minmax(62px,0.8fr)_minmax(62px,0.8fr)_minmax(104px,0.85fr)_minmax(56px,0.7fr)_minmax(56px,0.72fr)_minmax(56px,0.72fr)_minmax(150px,1.25fr)_minmax(104px,1.0fr)]';
 
 /** کمترینِ عرضِ جدول = جمعِ مینیمم‌ها + فاصله‌ها + padding (زیرِ این، جدول افقی اسکرول می‌خورد) */
-const TABLE_MIN_W = 'min-w-[1100px]';
+const TABLE_MIN_W = 'min-w-[1150px]';
 
 /** سرستونِ بی‌مرتب‌سازی (کلیدِ null) — ستونِ بج‌ها عددی نیست که بشود مرتبش کرد */
 const HEADERS: { key: SortKey | null; label: string; hint?: string }[] = [
@@ -221,12 +222,12 @@ export const TapeRow = memo(function TapeRow({
         }
       }}
       title={tooltip}
-      className={`group grid w-full ${ROW_GRID} cursor-pointer items-center gap-1 border-b border-border-c/50 px-2 text-start text-base ${
+      className={`group grid w-full ${ROW_GRID} cursor-pointer items-center gap-1 border-b border-border-c/50 px-2 text-start text-[13px] ${
         selected ? 'bg-accent-blue/15' : 'odd:bg-bg-secondary even:bg-bg-primary hover:bg-bg-card/70'
       } ${atLimitUp ? 'border-s-2 border-s-accent-green' : atLimitDown ? 'border-s-2 border-s-accent-red' : ''}`}
-      style={{ height: 40 }}
+      style={{ height: ROW_H }}
     >
-      <span className="font-bold text-base text-text-primary flex items-center gap-1.5 truncate">
+      <span className="font-bold text-[13px] text-text-primary flex items-center gap-1.5 truncate">
         {/* جعبۀ انتخاب داخلِ همان ستونِ نماد است، نه ستونِ تازه: `ROW_GRID` با
             افزودنِ یک فرزندِ مستقیمِ grid از جا درمی‌رود. */}
         <SymbolSelectBox symbol={String(row.symbol ?? '')} name={String(row.name ?? '')}
@@ -331,7 +332,7 @@ export function TapeTable({
   const virtualizer = useVirtualizer({
     count: sorted.length,
     getScrollElement: () => parentRef.current,
-    estimateSize: () => 40,
+    estimateSize: () => ROW_H,
     overscan: 12,
   });
 
@@ -389,8 +390,8 @@ export function TapeTable({
   };
 
   return (
-    <div className="glass-panel overflow-hidden rounded-2xl">
-      <div className="overflow-x-auto overscroll-x-contain">
+    <div className="glass-panel flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl">
+      <div className="flex min-h-0 flex-1 flex-col overflow-x-auto overscroll-x-contain">
         <div data-testid="tape-head" className={`sticky top-0 z-10 grid w-full ${TABLE_MIN_W} ${ROW_GRID} gap-1 bg-bg-card/95 px-2 py-2.5 text-start text-2xs font-bold text-text-secondary backdrop-blur`}>
           {HEADERS.map((h) => {
             const k = h.key;
@@ -414,7 +415,7 @@ export function TapeTable({
             );
           })}
         </div>
-        <div ref={parentRef} className="h-[calc(100dvh-260px)] min-h-[420px] overflow-y-auto overscroll-contain" data-testid="tape-scroll">
+        <div ref={parentRef} className="min-h-[420px] flex-1 overflow-y-auto overscroll-contain" data-testid="tape-scroll">
           <div className={`relative w-full ${TABLE_MIN_W}`} style={{ height: virtualizer.getTotalSize() }}>
           {virtualizer.getVirtualItems().map((v) => {
             const row = sorted[v.index];

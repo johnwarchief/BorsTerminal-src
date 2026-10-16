@@ -64,10 +64,10 @@ export function AppShell() {
   // ریسپانسیو (فاز ۲): فاصله/اورلی سایدبار و داور با CSS و توکنها مدیریت میشود
   // (.app-content / .app-main در index.css) — بدون هک جاوااسکریپت در رندر.
   return (
-    <div className="flex min-h-screen overflow-hidden bg-bg-primary text-text-primary">
+    <div className="flex h-dvh overflow-hidden bg-bg-primary text-text-primary">
       <Sidebar />
       <div
-        className="app-content flex min-w-0 flex-1 flex-col overflow-y-auto overflow-x-hidden transition-[padding] duration-200 ease-out"
+        className="app-content flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto overflow-x-hidden transition-[padding] duration-200 ease-out"
         data-inspector={inspectorOpen ? 'open' : 'closed'}
       >
         <Topbar />
@@ -79,9 +79,9 @@ export function AppShell() {
           role="tabpanel"
           aria-labelledby={activeTab ? `ws-tab-${activeTab.id}` : undefined}
           tabIndex={0}
-          className="app-main flex-1 py-2 outline-none focus-visible:ring-2 focus-visible:ring-accent-blue"
+          className="app-main flex min-h-0 flex-1 flex-col py-2 outline-none focus-visible:ring-2 focus-visible:ring-accent-blue"
         >
-          <div className="panel-in flex w-full flex-col gap-4">
+          <div className="panel-in flex min-h-0 w-full flex-1 flex-col gap-4">
             <Outlet />
           </div>
         </main>

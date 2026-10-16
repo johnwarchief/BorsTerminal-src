@@ -233,7 +233,7 @@ export default function MarketPage() {
   }, [signals]);
 
   return (
-    <div className="flex w-full max-w-none flex-col gap-2">
+    <div className="flex h-full min-h-0 w-full max-w-none flex-col gap-2">
       {/* رأیِ مالک (۱۴۰۵-۰۷-۲۲): سه بلوکِ «وضعیت بازار»، «نبض» و «نمودارهای
           درون‌روز» تکرارِ تبِّ مستقلِ «وضعیت بازار»اند و ازِ این صفحه بیرون
           رفتند؛ تابلو فقط فیلتر + جدول + کشویِ نظارت می‌ماند. */}

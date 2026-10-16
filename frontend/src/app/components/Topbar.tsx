@@ -6,6 +6,7 @@ import { useNoticeFeed } from '@features/market/api/useNotifications';
 import { useNoticePrefsStore } from '@features/market/stores/noticePrefsStore';
 import { FreshnessBadge } from '@shared/components/FreshnessBadge';
 import { useSymbolStore } from '@shared/stores/symbolStore';
+import { resolveSymbolParam } from '@shared/lib/symbolParam';
 
 const TITLES: Record<string, string> = {
   '/market': 'تابلوخوانی',
@@ -30,6 +31,8 @@ export function Topbar() {
 
   const showSearch = base !== '/technical';
 
+  const shownSymbol = resolveSymbolParam({ path: pathname.split('/')[2], stored: symbol });
+
   const handlePinnedClick = (s: string) => {
     setSymbol(s);
     if (base === '/technical' || base === '/fundamental' || base === '/master' || base === '/strategy-tree') {
@@ -41,6 +44,7 @@ export function Topbar() {
     <header className="glass-strip sticky top-0 z-40 flex h-9 items-center justify-between px-3 sm:px-4">
       {/* سمت راست: نشانِ وضعیت (اتصال ≠ تازگی) + Breadcrumb ناوبری */}
       <div className="flex items-center gap-2 overflow-hidden">
+        <h1 className="sr-only">{title}</h1>
         <FreshnessBadge />
 
         <nav aria-label="موقعیت در برنامه" className="flex items-center gap-1.5 text-xs">
@@ -50,10 +54,10 @@ export function Topbar() {
           >
             {title}
           </Link>
-          {symbol ? (
+          {shownSymbol ? (
             <>
               <span className="text-text-muted select-none">/</span>
-              <span className="font-bold text-accent-blue truncate">{symbol}</span>
+              <span className="font-bold text-accent-blue truncate">{shownSymbol}</span>
             </>
           ) : null}
         </nav>

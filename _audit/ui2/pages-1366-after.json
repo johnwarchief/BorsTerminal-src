@@ -1,0 +1,2535 @@
+{
+ "base": "http://127.0.0.1:8010",
+ "buildLabel": "پس ازِ بازطراحیِ صفحات (فاز G)",
+ "bundle": "/assets/index-CgdOTBMv.js",
+ "viewport": {
+  "width": 1366,
+  "height": 768
+ },
+ "browser": "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
+ "generatedAt": "2026-10-16T07:37:32.348Z",
+ "consoleErrors": [],
+ "method": {
+  "density": "numberCellsInFirstScreen = سلول‌هایِ عددیِ دیدنی درِ ۰ تاِ innerHeight (برازِ «چگالیِ داده درِ یکِ screenful»)",
+  "hierarchy": "headings = تیترها باِ level/top/fontPx، مرتب ازِ بالا بهِ پایینِ همانِ صفحه",
+  "primaryAction": "primaryActionTop = اولینِ کنشِ دیدنیِ برچسب‌دار درِ screenfulِ اول (RTL: left ازِ راستِ صفحه اندازهِٔ پیکسلی)",
+  "scrollers": "scrollers = ظرف‌هایی که خودشون اسکرول می‌شن (scrollH > clientH + 12)، نه بدۀِ سند",
+  "tiny": "tinyTextCount = متنِ دیدنیِ زیرِ ۱۰٫۵ پیکسل درِ screenfulِ اول"
+ },
+ "pages": [
+  {
+   "name": "market",
+   "path": "/market",
+   "apiCount": 6,
+   "api": [
+    "200 /api/update/version",
+    "200 /api/selection/portfolio",
+    "200 /api/notifications/feed",
+    "200 /api/funnel",
+    "200 /api/market",
+    "200 /api/watchlist"
+   ],
+   "route": "#/market",
+   "urlSymbol": null,
+   "docScrollH": 768,
+   "viewportH": 768,
+   "hScrollPx": 0,
+   "contentWidthRatio": 1,
+   "headings": [],
+   "headingCount": 0,
+   "actionCount": 110,
+   "firstScreenActionCount": 90,
+   "firstScreenActions": [
+    {
+     "tag": "button",
+     "role": null,
+     "label": "جمع‌کردن نوار کناری",
+     "top": 15,
+     "left": 1209,
+     "w": 23,
+     "h": 23,
+     "inFirstScreen": true,
+     "disabled": false,
+     "testid": null
+    },
+    {
+     "tag": "a",
+     "role": null,
+     "label": "وضعیت بازار",
+     "top": 75,
+     "left": 1209,
+     "w": 146,
+     "h": 36,
+     "inFirstScreen": true,
+     "disabled": false,
+     "testid": null
+    },
+    {
+     "tag": "a",
+     "role": null,
+     "label": "تابلوخوانی",
+     "top": 113,
+     "left": 1209,
+     "w": 146,
+     "h": 36,
+     "inFirstScreen": true,
+     "disabled": false,
+     "testid": null
+    },
+    {
+     "tag": "a",
+     "role": null,
+     "label": "تکنیکال",
+     "top": 151,
+     "left": 1209,
+     "w": 146,
+     "h": 36,
+     "inFirstScreen": true,
+     "disabled": false,
+     "testid": null
+    },
+    {
+     "tag": "a",
+     "role": null,
+     "label": "بنیادی",
+     "top": 189,
+     "left": 1209,
+     "w": 146,
+     "h": 36,
+     "inFirstScreen": true,
+     "disabled": false,
+     "testid": null
+    },
+    {
+     "tag": "a",
+     "role": null,
+     "label": "استراتژی FTS",
+     "top": 256,
+     "left": 1209,
+     "w": 146,
+     "h": 36,
+     "inFirstScreen": true,
+     "disabled": false,
+     "testid": null
+    },
+    {
+     "tag": "a",
+     "role": null,
+     "label": "درخت استراتژی",
+     "top": 294,
+     "left": 1209,
+     "w": 146,
+     "h": 36,
+     "inFirstScreen": true,
+     "disabled": false,
+     "testid": null
+    },
+    {
+     "tag": "a",
+     "role": null,
+     "label": "مدیریت پرتفوی",
+     "top": 362,
+     "left": 1209,
+     "w": 146,
+     "h": 36,
+     "inFirstScreen": true,
+     "disabled": false,
+     "testid": null
+    },
+    {
+     "tag": "a",
+     "role": null,
+     "label": "دیده‌بان بازار",
+     "top": 400,
+     "left": 1209,
+     "w": 134,
+     "h": 36,
+     "inFirstScreen": true,
+     "disabled": false,
+     "testid": "nav-sub-watch"
+    },
+    {
+     "tag": "button",
+     "role": null,
+     "label": "⚙admin",
+     "top": 691,
+     "left": 1296,
+     "w": 50,
+     "h": 14,
+     "inFirstScreen": true,
+     "disabled": false,
+     "testid": "user-settings-btn"
+    },
+    {
+     "tag": "button",
+     "role": null,
+     "label": "خروج ⎋",
+     "top": 690,
+     "left": 1218,
+     "w": 47,
+     "h": 16,
+     "inFirstScreen": true,
+     "disabled": false,
+     "testid": null
+    },
+    {
+     "tag": "button",
+     "role": null,
+     "label": "تغییر تم",
+     "top": 719,
+     "left": 1318,
+     "w": 28,
+     "h": 28,
+     "inFirstScreen": true,
+     "disabled": false,
+     "testid": null
+    }
+   ],
+   "primaryActionTop": 15,
+   "tables": [],
+   "numberCellsInFirstScreen": 73,
+   "tinyTextCount": 31,
+   "tinySamples": [
+    {
+     "text": "FTS v2.1",
+     "fontPx": 9,
+     "top": 28
+    },
+    {
+     "text": "فضای تحلیل",
+     "fontPx": 10,
+     "top": 52
+    },
+    {
+     "text": "غربالگری FTS",
+     "fontPx": 10,
+     "top": 233
+    },
+    {
+     "text": "سرمایه و دارایی",
+     "fontPx": 10,
+     "top": 339
+    },
+    {
+     "text": "۶۰",
+     "fontPx": 10,
+     "top": 11
+    },
+    {
+     "text": "Ctrl+K",
+     "fontPx": 10,
+     "top": 10
+    }
+   ],
+   "clippedCount": 3,
+   "clippedSamples": [
+    {
+     "text": "شركت سرمايه گذاري مسكن شمالغرب",
+     "scrollWidth": 177,
+     "clientWidth": 167
+    },
+    {
+     "text": "سرمايه گذاري توسعه صنايع سيمان",
+     "scrollWidth": 165,
+     "clientWidth": 161
+    },
+    {
+     "text": "صندوق سرمايه گذاري قلك1-بخشي",
+     "scrollWidth": 166,
+     "clientWidth": 164
+    }
+   ],
+   "scrollers": [
+    {
+     "sel": "tape-scroll",
+     "scrollH": 37944,
+     "clientH": 442,
+     "top": 235
+    },
+    {
+     "sel": "inspector",
+     "scrollH": 782,
+     "clientH": 768,
+     "top": 0
+    }
+   ],
+   "empties": [
+    "وضعیتِ ناظر: اطلاعات در دسترس نیست"
+   ],
+   "inspectorOpen": true,
+   "inspectorTestId": null,
+   "testids": 283
+  },
+  {
+   "name": "market-status",
+   "path": "/market-status",
+   "apiCount": 23,
+   "api": [
+    "200 /api/update/version",
+    "200 /api/notifications/feed",
+    "200 /api/selection/portfolio",
+    "200 /api/market",
+    "200 /api/funnel",
+    "200 /api/live-stats",
+    "200 /api/mstat/series",
+    "200 /api/mstat/mainwatch",
+    "200 /api/mstat/treemap",
+    "200 /api/watchlist",
+    "200 /api/mstat/gold",
+    "200 /api/mstat/industries"
+   ],
+   "route": "#/market-status",
+   "urlSymbol": null,
+   "docScrollH": 768,
+   "viewportH": 768,
+   "hScrollPx": 0,
+   "contentWidthRatio": 1,
+   "headings": [
+    {
+     "level": 3,
+     "text": "ارزش معاملات خرد",
+     "top": 333,
+     "fontPx": 12,
+     "inFirstScreen": true
+    },
+    {
+     "level": 3,
+     "text": "جریان پول هوشمند",
+     "top": 333,
+     "fontPx": 12,
+     "inFirstScreen": true
+    },
+    {
+     "level": 3,
+     "text": "ارزش سفارش های خرید و فروش",
+     "top": 333,
+     "fontPx": 12,
+     "inFirstScreen": true
+    },
+    {
+     "level": 3,
+     "text": "درصد و سرانه خرید و فروش حقیقی",
+     "top": 333,
+     "fontPx": 12,
+     "inFirstScreen": true
+    },
+    {
+     "level": 2,
+     "text": "نمای کلیِ بازار",
+     "top": 487,
+     "fontPx": 14,
+     "inFirstScreen": true
+    },
+    {
+     "level": 3,
+     "text": "نگاهی به بازار",
+     "top": 564,
+     "fontPx": 12,
+     "inFirstScreen": true
+    },
+    {
+     "level": 3,
+     "text": "کارت‌های شاخص",
+     "top": 906,
+     "fontPx": 12,
+     "inFirstScreen": false
+    },
+    {
+     "level": 3,
+     "text": "توزیعِ درصدِ تغییرِ قیمت",
+     "top": 1120,
+     "fontPx": 12,
+     "inFirstScreen": false
+    },
+    {
+     "level": 3,
+     "text": "تفکیکِ خریدِ حقیقی و حقوقی",
+     "top": 1120,
+     "fontPx": 12,
+     "inFirstScreen": false
+    },
+    {
+     "level": 3,
+     "text": "چرخشِ وضعیتِ نمادها",
+     "top": 1120,
+     "fontPx": 12,
+     "inFirstScreen": false
+    },
+    {
+     "level": 3,
+     "text": "نمودارهای درون‌روزِ همین نشست",
+     "top": 1284,
+     "fontPx": 12,
+     "inFirstScreen": false
+    },
+    {
+     "level": 4,
+     "text": "ارزش سفارش های خرید و فروش (سهام، حق تقدم و ص.سهامی)",
+     "top": 1320,
+     "fontPx": 12,
+     "inFirstScreen": false
+    },
+    {
+     "level": 4,
+     "text": "نمادهای مثبت و منفی (سهام، حق تقدم و ص.سهامی)",
+     "top": 1320,
+     "fontPx": 12,
+     "inFirstScreen": false
+    },
+    {
+     "level": 2,
+     "text": "نقشۀ بازار",
+     "top": 1515,
+     "fontPx": 14,
+     "inFirstScreen": false
+    },
+    {
+     "level": 3,
+     "text": "نقشۀ بازار",
+     "top": 1554,
+     "fontPx": 12,
+     "inFirstScreen": false
+    },
+    {
+     "level": 2,
+     "text": "برترین‌ها و تأثیرگذاران",
+     "top": 2123,
+     "fontPx": 14,
+     "inFirstScreen": false
+    },
+    {
+     "level": 4,
+     "text": "تأثیر مثبت بر شاخص کل",
+     "top": 2196,
+     "fontPx": 12,
+     "inFirstScreen": false
+    },
+    {
+     "level": 4,
+     "text": "تأثیر منفی بر شاخص کل",
+     "top": 2196,
+     "fontPx": 12,
+     "inFirstScreen": false
+    },
+    {
+     "level": 4,
+     "text": "بیشترین ارزش معاملات",
+     "top": 2506,
+     "fontPx": 12,
+     "inFirstScreen": false
+    },
+    {
+     "level": 4,
+     "text": "بیشترین حجم معاملات",
+     "top": 2506,
+     "fontPx": 12,
+     "inFirstScreen": false
+    },
+    {
+     "level": 2,
+     "text": "سفارش‌ها و تغییرِ مالکیت",
+     "top": 2880,
+     "fontPx": 14,
+     "inFirstScreen": false
+    },
+    {
+     "level": 3,
+     "text": "حجم سفارشات خرید و فروش",
+     "top": 2957,
+     "fontPx": 12,
+     "inFirstScreen": false
+    },
+    {
+     "level": 4,
+     "text": "بیشترین حجمِ سفارشِ خرید",
+     "top": 3104,
+     "fontPx": 12,
+     "inFirstScreen": false
+    },
+    {
+     "level": 4,
+     "text": "بیشترین حجمِ سفارشِ فروش",
+     "top": 3104,
+     "fontPx": 12,
+     "inFirstScreen": false
+    }
+   ],
+   "headingCount": 40,
+   "actionCount": 178,
+   "firstScreenActionCount": 45,
+   "firstScreenActions": [
+    {
+     "tag": "button",
+     "role": null,
+     "label": "جمع‌کردن نوار کناری",
+     "top": 15,
+     "left": 1209,
+     "w": 23,
+     "h": 23,
+     "inFirstScreen": true,
+     "disabled": false,
+     "testid": null
+    },
+    {
+     "tag": "a",
+     "role": null,
+     "label": "وضعیت بازار",
+     "top": 75,
+     "left": 1209,
+     "w": 146,
+     "h": 36,
+     "inFirstScreen": true,
+     "disabled": false,
+     "testid": null
+    },
+    {
+     "tag": "a",
+     "role": null,
+     "label": "تابلوخوانی",
+     "top": 113,
+     "left": 1209,
+     "w": 146,
+     "h": 36,
+     "inFirstScreen": true,
+     "disabled": false,
+     "testid": null
+    },
+    {
+     "tag": "a",
+     "role": null,
+     "label": "تکنیکال",
+     "top": 151,
+     "left": 1209,
+     "w": 146,
+     "h": 36,
+     "inFirstScreen": true,
+     "disabled": false,
+     "testid": null
+    },
+    {
+     "tag": "a",
+     "role": null,
+     "label": "بنیادی",
+     "top": 189,
+     "left": 1209,
+     "w": 146,
+     "h": 36,
+     "inFirstScreen": true,
+     "disabled": false,
+     "testid": null
+    },
+    {
+     "tag": "a",
+     "role": null,
+     "label": "استراتژی FTS",
+     "top": 256,
+     "left": 1209,
+     "w": 146,
+     "h": 36,
+     "inFirstScreen": true,
+     "disabled": false,
+     "testid": null
+    },
+    {
+     "tag": "a",
+     "role": null,
+     "label": "درخت استراتژی",
+     "top": 294,
+     "left": 1209,
+     "w": 146,
+     "h": 36,
+     "inFirstScreen": true,
+     "disabled": false,
+     "testid": null
+    },
+    {
+     "tag": "a",
+     "role": null,
+     "label": "مدیریت پرتفوی",
+     "top": 362,
+     "left": 1209,
+     "w": 146,
+     "h": 36,
+     "inFirstScreen": true,
+     "disabled": false,
+     "testid": null
+    },
+    {
+     "tag": "a",
+     "role": null,
+     "label": "دیده‌بان بازار",
+     "top": 400,
+     "left": 1209,
+     "w": 134,
+     "h": 36,
+     "inFirstScreen": true,
+     "disabled": false,
+     "testid": "nav-sub-watch"
+    },
+    {
+     "tag": "button",
+     "role": null,
+     "label": "⚙admin",
+     "top": 691,
+     "left": 1296,
+     "w": 50,
+     "h": 14,
+     "inFirstScreen": true,
+     "disabled": false,
+     "testid": "user-settings-btn"
+    },
+    {
+     "tag": "button",
+     "role": null,
+     "label": "خروج ⎋",
+     "top": 690,
+     "left": 1218,
+     "w": 47,
+     "h": 16,
+     "inFirstScreen": true,
+     "disabled": false,
+     "testid": null
+    },
+    {
+     "tag": "button",
+     "role": null,
+     "label": "تغییر تم",
+     "top": 719,
+     "left": 1318,
+     "w": 28,
+     "h": 28,
+     "inFirstScreen": true,
+     "disabled": false,
+     "testid": null
+    }
+   ],
+   "primaryActionTop": 15,
+   "tables": [
+    {
+     "rows": 46,
+     "cols": 9,
+     "headers": [
+      "صنعت",
+      "نماد",
+      "مثبت",
+      "منفی",
+      "میانگین٪",
+      "ارزش",
+      "جریان",
+      "صف خرید",
+      "صف فروش"
+     ],
+     "top": 7353,
+     "height": 1056,
+     "stickyHead": true,
+     "scrollParentOverflow": "min-w-0 max-w-full max-h-[38vh] overflow"
+    },
+    {
+     "rows": 120,
+     "cols": 11,
+     "headers": [
+      "نماد",
+      "صنعت",
+      "آخرین",
+      "پایانی",
+      "کندل روز",
+      "تغییر٪",
+      "ساعت٪",
+      "نشان",
+      "ارزش",
+      "تعداد",
+      "قدرت"
+     ],
+     "top": 7695,
+     "height": 3260,
+     "stickyHead": true,
+     "scrollParentOverflow": "min-w-0 max-w-full max-h-[38vh] overflow"
+    }
+   ],
+   "numberCellsInFirstScreen": 7,
+   "tinyTextCount": 34,
+   "tinySamples": [
+    {
+     "text": "FTS v2.1",
+     "fontPx": 9,
+     "top": 28
+    },
+    {
+     "text": "فضای تحلیل",
+     "fontPx": 10,
+     "top": 52
+    },
+    {
+     "text": "غربالگری FTS",
+     "fontPx": 10,
+     "top": 233
+    },
+    {
+     "text": "سرمایه و دارایی",
+     "fontPx": 10,
+     "top": 339
+    },
+    {
+     "text": "۶۰",
+     "fontPx": 10,
+     "top": 11
+    },
+    {
+     "text": "Ctrl+K",
+     "fontPx": 10,
+     "top": 10
+    }
+   ],
+   "clippedCount": 9,
+   "clippedSamples": [
+    {
+     "text": "سهام، حق تقدم و ص.سهامی",
+     "scrollWidth": 127,
+     "clientWidth": 116
+    },
+    {
+     "text": "کمتر از ۵-",
+     "scrollWidth": 43,
+     "clientWidth": 28
+    },
+    {
+     "text": "بالاتر از ۵+",
+     "scrollWidth": 45,
+     "clientWidth": 28
+    },
+    {
+     "text": "(پایانی − دیروز) × سهامِ شرکت — ستونِ وا",
+     "scrollWidth": 363,
+     "clientWidth": 346
+    },
+    {
+     "text": "(پایانی − دیروز) × سهامِ شرکت — ستونِ وا",
+     "scrollWidth": 363,
+     "clientWidth": 346
+    },
+    {
+     "text": "هميان — صندوق س.پشتوانه طلا هميان سپهر",
+     "scrollWidth": 220,
+     "clientWidth": 214
+    },
+    {
+     "text": "نگين فارس — صندوق س.طلا زرديس خليج فارس",
+     "scrollWidth": 233,
+     "clientWidth": 214
+    },
+    {
+     "text": "گلديس — صندوق س.پشتوانه طلا گلديس نوين",
+     "scrollWidth": 224,
+     "clientWidth": 214
+    },
+    {
+     "text": "پتروسورين — صندوق س.بخشي ثروت آفرين1-ب",
+     "scrollWidth": 232,
+     "clientWidth": 214
+    }
+   ],
+   "scrollers": [
+    {
+     "sel": "div.app-content",
+     "scrollH": 8018,
+     "clientH": 768,
+     "top": 0
+    },
+    {
+     "sel": "div.min-w-0",
+     "scrollH": 1056,
+     "clientH": 292,
+     "top": 7353
+    },
+    {
+     "sel": "div.min-w-0",
+     "scrollH": 3260,
+     "clientH": 292,
+     "top": 7695
+    }
+   ],
+   "empties": [
+    "سپيدار۱۰٬۴۰۰-۰.۸٪سپيدار سيستم آسياارزش ۷ · حجم ۰",
+    "دزهراوي۵٬۱۳۰-۰.۶٪داروسازي‌زهراوي‌ارزش ۴۲ · حجم ۰",
+    "البرز۳٬۷۲۰-۱.۱٪بيمه البرزارزش ۴۵ · حجم ۰",
+    "زگلدشت۱۲٬۵۷۰-۱.۳٪كشت و دام گلدشت نمونه اصفهانارزش ۱۳ · حجم ۰",
+    "وتعاون۳٬۳۴۰-۰.۹٪بيمه تعاونارزش ۶ · حجم ۰",
+    "زعف0510پ20۲٬۶۹۱٬۴۹۰۰.۹٪زعفران0510نگين وحدت جام(پ)ارزش ۱۲ · ح",
+    "كپرسپوليس۹٬۰۸۰-۱.۲٪مجتمع كاشي و سنگ پرسپوليس يزدارزش ۱۲ · حج",
+    "غدشت۴٬۴۲۰-۲.۴٪دشت‌ مرغاب‌ارزش ۱۳ · حجم ۰",
+    "در حالِ خواندن…",
+    "جمعِ اثرها -۲۹۰۶۵ در برابرِ تغییرِ رسمیِ شاخص -۳۴۷۷۲ ⇒ پسمان",
+    "سهامِ شناور:TSETMC شاخص را با سهامِ شناور وزن می‌دهد و شناور",
+    "انسِ طلا (دلار/انس)بی‌منبعTSETMC انسِ جهانی را منتشر نمی‌کند",
+    "تتربی‌منبعبازارِ رمزارز در دامنه‌یِ داده‌هایِ بورسیِ این بان",
+    "دلارِ آمریکابی‌منبعنرخِ ارز در market.db نمی‌نشیندلازم: منبع",
+    "یک مترِ مربعِ مسکن درِ تهرانبی‌منبعداده‌یِ مسکن در این بانک ",
+    "نرخِ تورمِ نقطه‌به‌نقطهبی‌منبعشاخصِ تورمِ مرکزِ آمار در این ",
+    "سکهٔ امامی / بهار آزادی / گرمی (بازارِ فیزیکی)بی‌منبعنمادهای",
+    "قیمتِ آینده و ٪ اختلافِ چهار ماههبی‌منبعتعریفِ فرمول درِ مرج",
+    "ارزشِ ذاتیبی‌منبعدرِ مرجع پشتِ «ورود/عضویت» قفل است — محدودی",
+    "ارزشِ ذاتی:درِ مرجع پشتِ «ورود/عضویت» قفل است — محدودیتِ دست",
+    "انسِ طلا (دلار/انس)بی‌منبع — TSETMC انسِ جهانی را منتشر نمی‌",
+    "تتربی‌منبع — بازارِ رمزارز در دامنه‌یِ داده‌هایِ بورسیِ این ",
+    "دلارِ آمریکابی‌منبع — نرخِ ارز در market.db نمی‌نشیند",
+    "یک مترِ مربعِ مسکن درِ تهرانبی‌منبع — داده‌یِ مسکن در این با",
+    "نرخِ تورمِ نقطه‌به‌نقطهبی‌منبع — شاخصِ تورمِ مرکزِ آمار در ا",
+    "سکهٔ امامی / بهار آزادی / گرمی (بازارِ فیزیکی)بی‌منبع — نماد",
+    "قیمتِ آینده و ٪ اختلافِ چهار ماههبی‌منبع — تعریفِ فرمول درِ ",
+    "ارزشِ ذاتیبی‌منبع — درِ مرجع پشتِ «ورود/عضویت» قفل است — محد",
+    "دیده‌بان خالی است — نمادی از ستارۀ ردیف‌هایِ تابلو اضافه کن.",
+    "وضعیتِ ناظر: اطلاعات در دسترس نیست"
+   ],
+   "inspectorOpen": true,
+   "inspectorTestId": null,
+   "testids": 1225
+  },
+  {
+   "name": "fundamental",
+   "path": "/fundamental/فولاد",
+   "apiCount": 13,
+   "api": [
+    "200 /api/update/version",
+    "200 /api/selection/portfolio",
+    "200 /api/notifications/feed",
+    "200 /api/market",
+    "200 /api/funnel",
+    "200 /api/selection/portfolio",
+    "200 /api/chart/%D9%81%D9%88%D9%84%D8%A7%D8%AF/key-levels",
+    "200 /api/calendar/upcoming",
+    "200 /api/sync/codal/db-status",
+    "200 /api/fundamental/%D9%81%D9%88%D9%84%D8%A7%D8%AF/quarters",
+    "200 /api/screener",
+    "200 /api/fundamental/%D9%81%D9%88%D9%84%D8%A7%D8%AF"
+   ],
+   "route": "#/fundamental/%D9%81%D9%88%D9%84%D8%A7%D8%AF",
+   "urlSymbol": "فولاد",
+   "docScrollH": 768,
+   "viewportH": 768,
+   "hScrollPx": 0,
+   "contentWidthRatio": 1,
+   "headings": [
+    {
+     "level": 2,
+     "text": "فولاد",
+     "top": 85,
+     "fontPx": 16,
+     "inFirstScreen": true
+    },
+    {
+     "level": 3,
+     "text": "تصمیم استراتژیک FTS:",
+     "top": 148,
+     "fontPx": 14,
+     "inFirstScreen": true
+    },
+    {
+     "level": 3,
+     "text": "کارت ارزیابی ۵ شاخص FTS",
+     "top": 285,
+     "fontPx": 14,
+     "inFirstScreen": true
+    },
+    {
+     "level": 3,
+     "text": "دادهٔ کدال برای ۱ شاخص کامل نیست",
+     "top": 989,
+     "fontPx": 14,
+     "inFirstScreen": false
+    }
+   ],
+   "headingCount": 4,
+   "actionCount": 35,
+   "firstScreenActionCount": 32,
+   "firstScreenActions": [
+    {
+     "tag": "button",
+     "role": null,
+     "label": "جمع‌کردن نوار کناری",
+     "top": 15,
+     "left": 1209,
+     "w": 23,
+     "h": 23,
+     "inFirstScreen": true,
+     "disabled": false,
+     "testid": null
+    },
+    {
+     "tag": "a",
+     "role": null,
+     "label": "وضعیت بازار",
+     "top": 75,
+     "left": 1209,
+     "w": 146,
+     "h": 36,
+     "inFirstScreen": true,
+     "disabled": false,
+     "testid": null
+    },
+    {
+     "tag": "a",
+     "role": null,
+     "label": "تابلوخوانی",
+     "top": 113,
+     "left": 1209,
+     "w": 146,
+     "h": 36,
+     "inFirstScreen": true,
+     "disabled": false,
+     "testid": null
+    },
+    {
+     "tag": "a",
+     "role": null,
+     "label": "تکنیکال",
+     "top": 151,
+     "left": 1209,
+     "w": 146,
+     "h": 36,
+     "inFirstScreen": true,
+     "disabled": false,
+     "testid": null
+    },
+    {
+     "tag": "a",
+     "role": null,
+     "label": "بنیادی",
+     "top": 189,
+     "left": 1209,
+     "w": 146,
+     "h": 36,
+     "inFirstScreen": true,
+     "disabled": false,
+     "testid": null
+    },
+    {
+     "tag": "a",
+     "role": null,
+     "label": "استراتژی FTS",
+     "top": 256,
+     "left": 1209,
+     "w": 146,
+     "h": 36,
+     "inFirstScreen": true,
+     "disabled": false,
+     "testid": null
+    },
+    {
+     "tag": "a",
+     "role": null,
+     "label": "درخت استراتژی",
+     "top": 294,
+     "left": 1209,
+     "w": 146,
+     "h": 36,
+     "inFirstScreen": true,
+     "disabled": false,
+     "testid": null
+    },
+    {
+     "tag": "a",
+     "role": null,
+     "label": "مدیریت پرتفوی",
+     "top": 362,
+     "left": 1209,
+     "w": 146,
+     "h": 36,
+     "inFirstScreen": true,
+     "disabled": false,
+     "testid": null
+    },
+    {
+     "tag": "a",
+     "role": null,
+     "label": "دیده‌بان بازار",
+     "top": 400,
+     "left": 1209,
+     "w": 134,
+     "h": 36,
+     "inFirstScreen": true,
+     "disabled": false,
+     "testid": "nav-sub-watch"
+    },
+    {
+     "tag": "button",
+     "role": null,
+     "label": "⚙admin",
+     "top": 691,
+     "left": 1296,
+     "w": 50,
+     "h": 14,
+     "inFirstScreen": true,
+     "disabled": false,
+     "testid": "user-settings-btn"
+    },
+    {
+     "tag": "button",
+     "role": null,
+     "label": "خروج ⎋",
+     "top": 690,
+     "left": 1218,
+     "w": 47,
+     "h": 16,
+     "inFirstScreen": true,
+     "disabled": false,
+     "testid": null
+    },
+    {
+     "tag": "button",
+     "role": null,
+     "label": "تغییر تم",
+     "top": 719,
+     "left": 1318,
+     "w": 28,
+     "h": 28,
+     "inFirstScreen": true,
+     "disabled": false,
+     "testid": null
+    }
+   ],
+   "primaryActionTop": 15,
+   "tables": [],
+   "numberCellsInFirstScreen": 2,
+   "tinyTextCount": 33,
+   "tinySamples": [
+    {
+     "text": "FTS v2.1",
+     "fontPx": 9,
+     "top": 28
+    },
+    {
+     "text": "فضای تحلیل",
+     "fontPx": 10,
+     "top": 52
+    },
+    {
+     "text": "غربالگری FTS",
+     "fontPx": 10,
+     "top": 233
+    },
+    {
+     "text": "سرمایه و دارایی",
+     "fontPx": 10,
+     "top": 339
+    },
+    {
+     "text": "۶۰",
+     "fontPx": 10,
+     "top": 11
+    },
+    {
+     "text": "Ctrl+K",
+     "fontPx": 10,
+     "top": 10
+    }
+   ],
+   "clippedCount": 0,
+   "clippedSamples": [],
+   "scrollers": [
+    {
+     "sel": "div.app-content",
+     "scrollH": 1146,
+     "clientH": 768,
+     "top": 0
+    },
+    {
+     "sel": "inspector",
+     "scrollH": 782,
+     "clientH": 768,
+     "top": 0
+    },
+    {
+     "sel": "div.flex",
+     "scrollH": 2743,
+     "clientH": 721,
+     "top": 47
+    }
+   ],
+   "empties": [
+    "نمودار فصلی",
+    "وضعیتِ ناظر: اطلاعات در دسترس نیست"
+   ],
+   "inspectorOpen": true,
+   "inspectorTestId": null,
+   "testids": 112
+  },
+  {
+   "name": "technical",
+   "path": "/technical/فولاد",
+   "apiCount": 13,
+   "api": [
+    "200 /api/update/version",
+    "200 /api/selection/portfolio",
+    "200 /api/notifications/feed",
+    "200 /api/market",
+    "200 /api/chart/%D9%81%D9%88%D9%84%D8%A7%D8%AF/key-levels",
+    "200 /api/selection/portfolio",
+    "200 /api/funnel",
+    "200 /api/fts/%D9%81%D9%88%D9%84%D8%A7%D8%AF",
+    "200 /api/fts/config",
+    "200 /api/fts/%D9%81%D9%88%D9%84%D8%A7%D8%AF",
+    "200 /api/index/tedpix",
+    "200 /api/chart/%D9%81%D9%88%D9%84%D8%A7%D8%AF"
+   ],
+   "route": "#/technical/%D9%81%D9%88%D9%84%D8%A7%D8%AF",
+   "urlSymbol": "فولاد",
+   "docScrollH": 768,
+   "viewportH": 768,
+   "hScrollPx": 0,
+   "contentWidthRatio": 1,
+   "headings": [],
+   "headingCount": 0,
+   "actionCount": 76,
+   "firstScreenActionCount": 73,
+   "firstScreenActions": [
+    {
+     "tag": "button",
+     "role": null,
+     "label": "بازکردن نوار کناری",
+     "top": 44,
+     "left": 1322,
+     "w": 23,
+     "h": 23,
+     "inFirstScreen": true,
+     "disabled": false,
+     "testid": null
+    },
+    {
+     "tag": "a",
+     "role": null,
+     "label": "وضعیت بازار",
+     "top": 77,
+     "left": 1315,
+     "w": 42,
+     "h": 41,
+     "inFirstScreen": true,
+     "disabled": false,
+     "testid": null
+    },
+    {
+     "tag": "a",
+     "role": null,
+     "label": "تابلوخوانی",
+     "top": 120,
+     "left": 1315,
+     "w": 42,
+     "h": 41,
+     "inFirstScreen": true,
+     "disabled": false,
+     "testid": null
+    },
+    {
+     "tag": "a",
+     "role": null,
+     "label": "تکنیکال",
+     "top": 163,
+     "left": 1315,
+     "w": 42,
+     "h": 41,
+     "inFirstScreen": true,
+     "disabled": false,
+     "testid": null
+    },
+    {
+     "tag": "a",
+     "role": null,
+     "label": "بنیادی",
+     "top": 206,
+     "left": 1315,
+     "w": 42,
+     "h": 41,
+     "inFirstScreen": true,
+     "disabled": false,
+     "testid": null
+    },
+    {
+     "tag": "a",
+     "role": null,
+     "label": "استراتژی FTS",
+     "top": 266,
+     "left": 1315,
+     "w": 42,
+     "h": 41,
+     "inFirstScreen": true,
+     "disabled": false,
+     "testid": null
+    },
+    {
+     "tag": "a",
+     "role": null,
+     "label": "درخت استراتژی",
+     "top": 309,
+     "left": 1315,
+     "w": 42,
+     "h": 41,
+     "inFirstScreen": true,
+     "disabled": false,
+     "testid": null
+    },
+    {
+     "tag": "a",
+     "role": null,
+     "label": "مدیریت پرتفوی",
+     "top": 369,
+     "left": 1315,
+     "w": 42,
+     "h": 41,
+     "inFirstScreen": true,
+     "disabled": false,
+     "testid": null
+    },
+    {
+     "tag": "a",
+     "role": null,
+     "label": "دیده‌بان بازار",
+     "top": 412,
+     "left": 1315,
+     "w": 42,
+     "h": 41,
+     "inFirstScreen": true,
+     "disabled": false,
+     "testid": "nav-sub-watch"
+    },
+    {
+     "tag": "button",
+     "role": null,
+     "label": "تغییر تم",
+     "top": 620,
+     "left": 1322,
+     "w": 28,
+     "h": 28,
+     "inFirstScreen": true,
+     "disabled": false,
+     "testid": null
+    },
+    {
+     "tag": "button",
+     "role": null,
+     "label": "به‌روزرسانی ترمینال",
+     "top": 654,
+     "left": 1321,
+     "w": 30,
+     "h": 30,
+     "inFirstScreen": true,
+     "disabled": false,
+     "testid": "app-update-btn"
+    },
+    {
+     "tag": "button",
+     "role": null,
+     "label": "⚙",
+     "top": 690,
+     "left": 1324,
+     "w": 24,
+     "h": 30,
+     "inFirstScreen": true,
+     "disabled": false,
+     "testid": "user-settings-btn"
+    }
+   ],
+   "primaryActionTop": 44,
+   "tables": [],
+   "numberCellsInFirstScreen": 3,
+   "tinyTextCount": 30,
+   "tinySamples": [
+    {
+     "text": "۶۰",
+     "fontPx": 10,
+     "top": 12
+    },
+    {
+     "text": "+۲.۹۵%",
+     "fontPx": 10,
+     "top": 90
+    },
+    {
+     "text": "تعدیلِ عملکردیِ واقعی با دادهٔ همین نماد اثبات نشده‌است (eve",
+     "fontPx": 10,
+     "top": 171
+    },
+    {
+     "text": "log",
+     "fontPx": 10,
+     "top": 677
+    },
+    {
+     "text": "auto",
+     "fontPx": 10,
+     "top": 677
+    },
+    {
+     "text": "در یک نگاه",
+     "fontPx": 10,
+     "top": 47
+    }
+   ],
+   "clippedCount": 0,
+   "clippedSamples": [],
+   "scrollers": [
+    {
+     "sel": "inspector",
+     "scrollH": 782,
+     "clientH": 768,
+     "top": 0
+    },
+    {
+     "sel": "div.flex",
+     "scrollH": 2743,
+     "clientH": 721,
+     "top": 47
+    }
+   ],
+   "empties": [
+    "وضعیتِ ناظر: اطلاعات در دسترس نیست"
+   ],
+   "inspectorOpen": true,
+   "inspectorTestId": null,
+   "testids": 139
+  },
+  {
+   "name": "strategy-tree",
+   "path": "/strategy-tree/فولاد",
+   "apiCount": 7,
+   "api": [
+    "200 /api/update/version",
+    "200 /api/notifications/feed",
+    "200 /api/selection/portfolio",
+    "200 /api/market",
+    "200 /api/funnel",
+    "200 /api/chart/%D9%81%D9%88%D9%84%D8%A7%D8%AF/key-levels",
+    "200 /api/selection/portfolio"
+   ],
+   "route": "#/strategy-tree/%D9%81%D9%88%D9%84%D8%A7%D8%AF",
+   "urlSymbol": "فولاد",
+   "docScrollH": 768,
+   "viewportH": 768,
+   "hScrollPx": 0,
+   "contentWidthRatio": 1,
+   "headings": [
+    {
+     "level": 1,
+     "text": "درخت استراتژی FTS",
+     "top": 123,
+     "fontPx": 24,
+     "inFirstScreen": true
+    },
+    {
+     "level": 2,
+     "text": "۲ · T تکنیکال",
+     "top": 365,
+     "fontPx": 16,
+     "inFirstScreen": true
+    },
+    {
+     "level": 2,
+     "text": "۳ · S انتخاب",
+     "top": 367,
+     "fontPx": 16,
+     "inFirstScreen": true
+    },
+    {
+     "level": 2,
+     "text": "۱ · F بنیادی",
+     "top": 367,
+     "fontPx": 16,
+     "inFirstScreen": true
+    },
+    {
+     "level": 2,
+     "text": "۴ · M داوری و سرمایه",
+     "top": 367,
+     "fontPx": 16,
+     "inFirstScreen": true
+    }
+   ],
+   "headingCount": 5,
+   "actionCount": 39,
+   "firstScreenActionCount": 35,
+   "firstScreenActions": [
+    {
+     "tag": "button",
+     "role": null,
+     "label": "جمع‌کردن نوار کناری",
+     "top": 15,
+     "left": 1209,
+     "w": 23,
+     "h": 23,
+     "inFirstScreen": true,
+     "disabled": false,
+     "testid": null
+    },
+    {
+     "tag": "a",
+     "role": null,
+     "label": "وضعیت بازار",
+     "top": 75,
+     "left": 1209,
+     "w": 146,
+     "h": 36,
+     "inFirstScreen": true,
+     "disabled": false,
+     "testid": null
+    },
+    {
+     "tag": "a",
+     "role": null,
+     "label": "تابلوخوانی",
+     "top": 113,
+     "left": 1209,
+     "w": 146,
+     "h": 36,
+     "inFirstScreen": true,
+     "disabled": false,
+     "testid": null
+    },
+    {
+     "tag": "a",
+     "role": null,
+     "label": "تکنیکال",
+     "top": 151,
+     "left": 1209,
+     "w": 146,
+     "h": 36,
+     "inFirstScreen": true,
+     "disabled": false,
+     "testid": null
+    },
+    {
+     "tag": "a",
+     "role": null,
+     "label": "بنیادی",
+     "top": 189,
+     "left": 1209,
+     "w": 146,
+     "h": 36,
+     "inFirstScreen": true,
+     "disabled": false,
+     "testid": null
+    },
+    {
+     "tag": "a",
+     "role": null,
+     "label": "استراتژی FTS",
+     "top": 256,
+     "left": 1209,
+     "w": 146,
+     "h": 36,
+     "inFirstScreen": true,
+     "disabled": false,
+     "testid": null
+    },
+    {
+     "tag": "a",
+     "role": null,
+     "label": "درخت استراتژی",
+     "top": 294,
+     "left": 1209,
+     "w": 146,
+     "h": 36,
+     "inFirstScreen": true,
+     "disabled": false,
+     "testid": null
+    },
+    {
+     "tag": "a",
+     "role": null,
+     "label": "مدیریت پرتفوی",
+     "top": 362,
+     "left": 1209,
+     "w": 146,
+     "h": 36,
+     "inFirstScreen": true,
+     "disabled": false,
+     "testid": null
+    },
+    {
+     "tag": "a",
+     "role": null,
+     "label": "دیده‌بان بازار",
+     "top": 400,
+     "left": 1209,
+     "w": 134,
+     "h": 36,
+     "inFirstScreen": true,
+     "disabled": false,
+     "testid": "nav-sub-watch"
+    },
+    {
+     "tag": "button",
+     "role": null,
+     "label": "⚙admin",
+     "top": 691,
+     "left": 1296,
+     "w": 50,
+     "h": 14,
+     "inFirstScreen": true,
+     "disabled": false,
+     "testid": "user-settings-btn"
+    },
+    {
+     "tag": "button",
+     "role": null,
+     "label": "خروج ⎋",
+     "top": 690,
+     "left": 1218,
+     "w": 47,
+     "h": 16,
+     "inFirstScreen": true,
+     "disabled": false,
+     "testid": null
+    },
+    {
+     "tag": "button",
+     "role": null,
+     "label": "تغییر تم",
+     "top": 719,
+     "left": 1318,
+     "w": 28,
+     "h": 28,
+     "inFirstScreen": true,
+     "disabled": false,
+     "testid": null
+    }
+   ],
+   "primaryActionTop": 15,
+   "tables": [],
+   "numberCellsInFirstScreen": 9,
+   "tinyTextCount": 31,
+   "tinySamples": [
+    {
+     "text": "FTS v2.1",
+     "fontPx": 9,
+     "top": 28
+    },
+    {
+     "text": "فضای تحلیل",
+     "fontPx": 10,
+     "top": 52
+    },
+    {
+     "text": "غربالگری FTS",
+     "fontPx": 10,
+     "top": 233
+    },
+    {
+     "text": "سرمایه و دارایی",
+     "fontPx": 10,
+     "top": 339
+    },
+    {
+     "text": "۶۰",
+     "fontPx": 10,
+     "top": 11
+    },
+    {
+     "text": "Ctrl+K",
+     "fontPx": 10,
+     "top": 10
+    }
+   ],
+   "clippedCount": 0,
+   "clippedSamples": [],
+   "scrollers": [
+    {
+     "sel": "div.app-content",
+     "scrollH": 1111,
+     "clientH": 768,
+     "top": 0
+    },
+    {
+     "sel": "inspector",
+     "scrollH": 782,
+     "clientH": 768,
+     "top": 0
+    }
+   ],
+   "empties": [
+    "وضعیتِ ناظر: اطلاعات در دسترس نیست"
+   ],
+   "inspectorOpen": true,
+   "inspectorTestId": null,
+   "testids": 69
+  },
+  {
+   "name": "master",
+   "path": "/master",
+   "apiCount": 5,
+   "api": [
+    "200 /api/update/version",
+    "200 /api/selection/portfolio",
+    "200 /api/notifications/feed",
+    "200 /api/market",
+    "200 /api/funnel"
+   ],
+   "route": "#/master",
+   "urlSymbol": null,
+   "docScrollH": 768,
+   "viewportH": 768,
+   "hScrollPx": 0,
+   "contentWidthRatio": 1,
+   "headings": [
+    {
+     "level": 2,
+     "text": "تابلوخوانیمهندسی معکوس",
+     "top": 158,
+     "fontPx": 14,
+     "inFirstScreen": true
+    },
+    {
+     "level": 2,
+     "text": "غربالگری FTS",
+     "top": 182,
+     "fontPx": 14,
+     "inFirstScreen": true
+    },
+    {
+     "level": 3,
+     "text": "تابلوخوانی",
+     "top": 326,
+     "fontPx": 14,
+     "inFirstScreen": true
+    }
+   ],
+   "headingCount": 3,
+   "actionCount": 48,
+   "firstScreenActionCount": 48,
+   "firstScreenActions": [
+    {
+     "tag": "button",
+     "role": null,
+     "label": "جمع‌کردن نوار کناری",
+     "top": 15,
+     "left": 1209,
+     "w": 23,
+     "h": 23,
+     "inFirstScreen": true,
+     "disabled": false,
+     "testid": null
+    },
+    {
+     "tag": "a",
+     "role": null,
+     "label": "وضعیت بازار",
+     "top": 75,
+     "left": 1209,
+     "w": 146,
+     "h": 36,
+     "inFirstScreen": true,
+     "disabled": false,
+     "testid": null
+    },
+    {
+     "tag": "a",
+     "role": null,
+     "label": "تابلوخوانی",
+     "top": 113,
+     "left": 1209,
+     "w": 146,
+     "h": 36,
+     "inFirstScreen": true,
+     "disabled": false,
+     "testid": null
+    },
+    {
+     "tag": "a",
+     "role": null,
+     "label": "تکنیکال",
+     "top": 151,
+     "left": 1209,
+     "w": 146,
+     "h": 36,
+     "inFirstScreen": true,
+     "disabled": false,
+     "testid": null
+    },
+    {
+     "tag": "a",
+     "role": null,
+     "label": "بنیادی",
+     "top": 189,
+     "left": 1209,
+     "w": 146,
+     "h": 36,
+     "inFirstScreen": true,
+     "disabled": false,
+     "testid": null
+    },
+    {
+     "tag": "a",
+     "role": null,
+     "label": "استراتژی FTS",
+     "top": 256,
+     "left": 1209,
+     "w": 146,
+     "h": 36,
+     "inFirstScreen": true,
+     "disabled": false,
+     "testid": null
+    },
+    {
+     "tag": "a",
+     "role": null,
+     "label": "درخت استراتژی",
+     "top": 294,
+     "left": 1209,
+     "w": 146,
+     "h": 36,
+     "inFirstScreen": true,
+     "disabled": false,
+     "testid": null
+    },
+    {
+     "tag": "a",
+     "role": null,
+     "label": "مدیریت پرتفوی",
+     "top": 362,
+     "left": 1209,
+     "w": 146,
+     "h": 36,
+     "inFirstScreen": true,
+     "disabled": false,
+     "testid": null
+    },
+    {
+     "tag": "a",
+     "role": null,
+     "label": "دیده‌بان بازار",
+     "top": 400,
+     "left": 1209,
+     "w": 134,
+     "h": 36,
+     "inFirstScreen": true,
+     "disabled": false,
+     "testid": "nav-sub-watch"
+    },
+    {
+     "tag": "button",
+     "role": null,
+     "label": "⚙admin",
+     "top": 691,
+     "left": 1296,
+     "w": 50,
+     "h": 14,
+     "inFirstScreen": true,
+     "disabled": false,
+     "testid": "user-settings-btn"
+    },
+    {
+     "tag": "button",
+     "role": null,
+     "label": "خروج ⎋",
+     "top": 690,
+     "left": 1218,
+     "w": 47,
+     "h": 16,
+     "inFirstScreen": true,
+     "disabled": false,
+     "testid": null
+    },
+    {
+     "tag": "button",
+     "role": null,
+     "label": "تغییر تم",
+     "top": 719,
+     "left": 1318,
+     "w": 28,
+     "h": 28,
+     "inFirstScreen": true,
+     "disabled": false,
+     "testid": null
+    }
+   ],
+   "primaryActionTop": 15,
+   "tables": [],
+   "numberCellsInFirstScreen": 6,
+   "tinyTextCount": 31,
+   "tinySamples": [
+    {
+     "text": "FTS v2.1",
+     "fontPx": 9,
+     "top": 28
+    },
+    {
+     "text": "فضای تحلیل",
+     "fontPx": 10,
+     "top": 52
+    },
+    {
+     "text": "غربالگری FTS",
+     "fontPx": 10,
+     "top": 233
+    },
+    {
+     "text": "سرمایه و دارایی",
+     "fontPx": 10,
+     "top": 339
+    },
+    {
+     "text": "۶۰",
+     "fontPx": 10,
+     "top": 11
+    },
+    {
+     "text": "Ctrl+K",
+     "fontPx": 10,
+     "top": 10
+    }
+   ],
+   "clippedCount": 0,
+   "clippedSamples": [],
+   "scrollers": [
+    {
+     "sel": "inspector",
+     "scrollH": 782,
+     "clientH": 768,
+     "top": 0
+    }
+   ],
+   "empties": [
+    "هیچ نمادی از این مرحله عبور نکرد.",
+    "وضعیتِ ناظر: اطلاعات در دسترس نیست"
+   ],
+   "inspectorOpen": true,
+   "inspectorTestId": null,
+   "testids": 108
+  },
+  {
+   "name": "portfolio",
+   "path": "/portfolio/فولاد",
+   "apiCount": 8,
+   "api": [
+    "200 /api/update/version",
+    "200 /api/selection/portfolio",
+    "200 /api/notifications/feed",
+    "200 /api/market",
+    "200 /api/chart/%D9%81%D9%88%D9%84%D8%A7%D8%AF/key-levels",
+    "200 /api/funnel",
+    "200 /api/selection/portfolio",
+    "200 /api/fts/%D9%81%D9%88%D9%84%D8%A7%D8%AF"
+   ],
+   "route": "#/portfolio/%D9%81%D9%88%D9%84%D8%A7%D8%AF",
+   "urlSymbol": "فولاد",
+   "docScrollH": 768,
+   "viewportH": 768,
+   "hScrollPx": 0,
+   "contentWidthRatio": 1,
+   "headings": [
+    {
+     "level": 3,
+     "text": "تحلیل دارایی‌های پرتفو",
+     "top": 139,
+     "fontPx": 14,
+     "inFirstScreen": true
+    },
+    {
+     "level": 3,
+     "text": "تفکیک صنایع سهام (سند FTS)",
+     "top": 617,
+     "fontPx": 14,
+     "inFirstScreen": true
+    },
+    {
+     "level": 3,
+     "text": "پیشنهاد اقتصادی و مدیریت سرمایه FTS",
+     "top": 1009,
+     "fontPx": 14,
+     "inFirstScreen": false
+    }
+   ],
+   "headingCount": 3,
+   "actionCount": 34,
+   "firstScreenActionCount": 34,
+   "firstScreenActions": [
+    {
+     "tag": "button",
+     "role": null,
+     "label": "جمع‌کردن نوار کناری",
+     "top": 15,
+     "left": 1209,
+     "w": 23,
+     "h": 23,
+     "inFirstScreen": true,
+     "disabled": false,
+     "testid": null
+    },
+    {
+     "tag": "a",
+     "role": null,
+     "label": "وضعیت بازار",
+     "top": 75,
+     "left": 1209,
+     "w": 146,
+     "h": 36,
+     "inFirstScreen": true,
+     "disabled": false,
+     "testid": null
+    },
+    {
+     "tag": "a",
+     "role": null,
+     "label": "تابلوخوانی",
+     "top": 113,
+     "left": 1209,
+     "w": 146,
+     "h": 36,
+     "inFirstScreen": true,
+     "disabled": false,
+     "testid": null
+    },
+    {
+     "tag": "a",
+     "role": null,
+     "label": "تکنیکال",
+     "top": 151,
+     "left": 1209,
+     "w": 146,
+     "h": 36,
+     "inFirstScreen": true,
+     "disabled": false,
+     "testid": null
+    },
+    {
+     "tag": "a",
+     "role": null,
+     "label": "بنیادی",
+     "top": 189,
+     "left": 1209,
+     "w": 146,
+     "h": 36,
+     "inFirstScreen": true,
+     "disabled": false,
+     "testid": null
+    },
+    {
+     "tag": "a",
+     "role": null,
+     "label": "استراتژی FTS",
+     "top": 256,
+     "left": 1209,
+     "w": 146,
+     "h": 36,
+     "inFirstScreen": true,
+     "disabled": false,
+     "testid": null
+    },
+    {
+     "tag": "a",
+     "role": null,
+     "label": "درخت استراتژی",
+     "top": 294,
+     "left": 1209,
+     "w": 146,
+     "h": 36,
+     "inFirstScreen": true,
+     "disabled": false,
+     "testid": null
+    },
+    {
+     "tag": "a",
+     "role": null,
+     "label": "مدیریت پرتفوی",
+     "top": 362,
+     "left": 1209,
+     "w": 146,
+     "h": 36,
+     "inFirstScreen": true,
+     "disabled": false,
+     "testid": null
+    },
+    {
+     "tag": "a",
+     "role": null,
+     "label": "دیده‌بان بازار",
+     "top": 400,
+     "left": 1209,
+     "w": 134,
+     "h": 36,
+     "inFirstScreen": true,
+     "disabled": false,
+     "testid": "nav-sub-watch"
+    },
+    {
+     "tag": "button",
+     "role": null,
+     "label": "⚙admin",
+     "top": 691,
+     "left": 1296,
+     "w": 50,
+     "h": 14,
+     "inFirstScreen": true,
+     "disabled": false,
+     "testid": "user-settings-btn"
+    },
+    {
+     "tag": "button",
+     "role": null,
+     "label": "خروج ⎋",
+     "top": 690,
+     "left": 1218,
+     "w": 47,
+     "h": 16,
+     "inFirstScreen": true,
+     "disabled": false,
+     "testid": null
+    },
+    {
+     "tag": "button",
+     "role": null,
+     "label": "تغییر تم",
+     "top": 719,
+     "left": 1318,
+     "w": 28,
+     "h": 28,
+     "inFirstScreen": true,
+     "disabled": false,
+     "testid": null
+    }
+   ],
+   "primaryActionTop": 15,
+   "tables": [
+    {
+     "rows": 7,
+     "cols": 6,
+     "headers": [
+      "صنعت",
+      "بازهٔ سند",
+      "نمونه‌ها",
+      "وزن فعلی سبد",
+      "پوزیشن‌ها",
+      "وضعیت"
+     ],
+     "top": 671,
+     "height": 303,
+     "stickyHead": false,
+     "scrollParentOverflow": "app-content flex min-h-0 min-w-0 flex-1 "
+    }
+   ],
+   "numberCellsInFirstScreen": 1,
+   "tinyTextCount": 32,
+   "tinySamples": [
+    {
+     "text": "FTS v2.1",
+     "fontPx": 9,
+     "top": 28
+    },
+    {
+     "text": "فضای تحلیل",
+     "fontPx": 10,
+     "top": 52
+    },
+    {
+     "text": "غربالگری FTS",
+     "fontPx": 10,
+     "top": 233
+    },
+    {
+     "text": "سرمایه و دارایی",
+     "fontPx": 10,
+     "top": 339
+    },
+    {
+     "text": "۶۰",
+     "fontPx": 10,
+     "top": 11
+    },
+    {
+     "text": "Ctrl+K",
+     "fontPx": 10,
+     "top": 10
+    }
+   ],
+   "clippedCount": 0,
+   "clippedSamples": [],
+   "scrollers": [
+    {
+     "sel": "div.app-content",
+     "scrollH": 1100,
+     "clientH": 768,
+     "top": 0
+    },
+    {
+     "sel": "inspector",
+     "scrollH": 782,
+     "clientH": 768,
+     "top": 0
+    }
+   ],
+   "empties": [
+    "⌄ثبت ارزش دارایی‌ها (تومان) — برای محاسبهٔ وزن واقعی و مبلغ ",
+    "وضعیتِ ناظر: اطلاعات در دسترس نیست"
+   ],
+   "inspectorOpen": true,
+   "inspectorTestId": null,
+   "testids": 63
+  },
+  {
+   "name": "watch",
+   "path": "/watch",
+   "apiCount": 8,
+   "api": [
+    "200 /api/update/version",
+    "200 /api/selection/portfolio",
+    "200 /api/notifications/feed",
+    "200 /api/market",
+    "200 /api/funnel",
+    "200 /api/execution/status",
+    "200 /api/watchlist",
+    "200 /api/execution/status"
+   ],
+   "route": "#/watch",
+   "urlSymbol": null,
+   "docScrollH": 768,
+   "viewportH": 768,
+   "hScrollPx": 0,
+   "contentWidthRatio": 1,
+   "headings": [
+    {
+     "level": 2,
+     "text": "دیدهبانِ بازار",
+     "top": 84,
+     "fontPx": 14,
+     "inFirstScreen": true
+    },
+    {
+     "level": 4,
+     "text": "پنج مظنه",
+     "top": 213,
+     "fontPx": 12,
+     "inFirstScreen": true
+    },
+    {
+     "level": 4,
+     "text": "خلاصۀِ نماد",
+     "top": 213,
+     "fontPx": 12,
+     "inFirstScreen": true
+    },
+    {
+     "level": 5,
+     "text": "پنلِ معامله",
+     "top": 522,
+     "fontPx": 12,
+     "inFirstScreen": true
+    }
+   ],
+   "headingCount": 4,
+   "actionCount": 28,
+   "firstScreenActionCount": 28,
+   "firstScreenActions": [
+    {
+     "tag": "button",
+     "role": null,
+     "label": "جمع‌کردن نوار کناری",
+     "top": 15,
+     "left": 1209,
+     "w": 23,
+     "h": 23,
+     "inFirstScreen": true,
+     "disabled": false,
+     "testid": null
+    },
+    {
+     "tag": "a",
+     "role": null,
+     "label": "وضعیت بازار",
+     "top": 75,
+     "left": 1209,
+     "w": 146,
+     "h": 36,
+     "inFirstScreen": true,
+     "disabled": false,
+     "testid": null
+    },
+    {
+     "tag": "a",
+     "role": null,
+     "label": "تابلوخوانی",
+     "top": 113,
+     "left": 1209,
+     "w": 146,
+     "h": 36,
+     "inFirstScreen": true,
+     "disabled": false,
+     "testid": null
+    },
+    {
+     "tag": "a",
+     "role": null,
+     "label": "تکنیکال",
+     "top": 151,
+     "left": 1209,
+     "w": 146,
+     "h": 36,
+     "inFirstScreen": true,
+     "disabled": false,
+     "testid": null
+    },
+    {
+     "tag": "a",
+     "role": null,
+     "label": "بنیادی",
+     "top": 189,
+     "left": 1209,
+     "w": 146,
+     "h": 36,
+     "inFirstScreen": true,
+     "disabled": false,
+     "testid": null
+    },
+    {
+     "tag": "a",
+     "role": null,
+     "label": "استراتژی FTS",
+     "top": 256,
+     "left": 1209,
+     "w": 146,
+     "h": 36,
+     "inFirstScreen": true,
+     "disabled": false,
+     "testid": null
+    },
+    {
+     "tag": "a",
+     "role": null,
+     "label": "درخت استراتژی",
+     "top": 294,
+     "left": 1209,
+     "w": 146,
+     "h": 36,
+     "inFirstScreen": true,
+     "disabled": false,
+     "testid": null
+    },
+    {
+     "tag": "a",
+     "role": null,
+     "label": "مدیریت پرتفوی",
+     "top": 362,
+     "left": 1209,
+     "w": 146,
+     "h": 36,
+     "inFirstScreen": true,
+     "disabled": false,
+     "testid": null
+    },
+    {
+     "tag": "a",
+     "role": null,
+     "label": "دیده‌بان بازار",
+     "top": 400,
+     "left": 1209,
+     "w": 134,
+     "h": 36,
+     "inFirstScreen": true,
+     "disabled": false,
+     "testid": "nav-sub-watch"
+    },
+    {
+     "tag": "button",
+     "role": null,
+     "label": "⚙admin",
+     "top": 691,
+     "left": 1296,
+     "w": 50,
+     "h": 14,
+     "inFirstScreen": true,
+     "disabled": false,
+     "testid": "user-settings-btn"
+    },
+    {
+     "tag": "button",
+     "role": null,
+     "label": "خروج ⎋",
+     "top": 690,
+     "left": 1218,
+     "w": 47,
+     "h": 16,
+     "inFirstScreen": true,
+     "disabled": false,
+     "testid": null
+    },
+    {
+     "tag": "button",
+     "role": null,
+     "label": "تغییر تم",
+     "top": 719,
+     "left": 1318,
+     "w": 28,
+     "h": 28,
+     "inFirstScreen": true,
+     "disabled": false,
+     "testid": null
+    }
+   ],
+   "primaryActionTop": 15,
+   "tables": [],
+   "numberCellsInFirstScreen": 3,
+   "tinyTextCount": 30,
+   "tinySamples": [
+    {
+     "text": "FTS v2.1",
+     "fontPx": 9,
+     "top": 28
+    },
+    {
+     "text": "فضای تحلیل",
+     "fontPx": 10,
+     "top": 52
+    },
+    {
+     "text": "غربالگری FTS",
+     "fontPx": 10,
+     "top": 233
+    },
+    {
+     "text": "سرمایه و دارایی",
+     "fontPx": 10,
+     "top": 339
+    },
+    {
+     "text": "۶۰",
+     "fontPx": 10,
+     "top": 11
+    },
+    {
+     "text": "Ctrl+K",
+     "fontPx": 10,
+     "top": 10
+    }
+   ],
+   "clippedCount": 0,
+   "clippedSamples": [],
+   "scrollers": [],
+   "empties": [
+    "دیدهبانِ بازار خالی است. نمادِ موردِ رصد را بالا اضافه کن تا",
+    "پنلِ معاملهسرویسِ اجرا نیستمقدار (سهم)قدرت خرید / موجودیبی‌د",
+    "وضعیتِ ناظر: اطلاعات در دسترس نیست"
+   ],
+   "inspectorOpen": true,
+   "inspectorTestId": null,
+   "testids": 79
+  },
+  {
+   "name": "notifications",
+   "path": "/notifications",
+   "apiCount": 7,
+   "api": [
+    "200 /api/update/version",
+    "200 /api/selection/portfolio",
+    "200 /api/notifications/feed",
+    "200 /api/market",
+    "200 /api/notifications/feed",
+    "200 /api/funnel",
+    "200 /api/notifications/sources"
+   ],
+   "route": "#/notifications",
+   "urlSymbol": null,
+   "docScrollH": 768,
+   "viewportH": 768,
+   "hScrollPx": 0,
+   "contentWidthRatio": 1,
+   "headings": [],
+   "headingCount": 0,
+   "actionCount": 280,
+   "firstScreenActionCount": 53,
+   "firstScreenActions": [
+    {
+     "tag": "button",
+     "role": null,
+     "label": "جمع‌کردن نوار کناری",
+     "top": 15,
+     "left": 1209,
+     "w": 23,
+     "h": 23,
+     "inFirstScreen": true,
+     "disabled": false,
+     "testid": null
+    },
+    {
+     "tag": "a",
+     "role": null,
+     "label": "وضعیت بازار",
+     "top": 75,
+     "left": 1209,
+     "w": 146,
+     "h": 36,
+     "inFirstScreen": true,
+     "disabled": false,
+     "testid": null
+    },
+    {
+     "tag": "a",
+     "role": null,
+     "label": "تابلوخوانی",
+     "top": 113,
+     "left": 1209,
+     "w": 146,
+     "h": 36,
+     "inFirstScreen": true,
+     "disabled": false,
+     "testid": null
+    },
+    {
+     "tag": "a",
+     "role": null,
+     "label": "تکنیکال",
+     "top": 151,
+     "left": 1209,
+     "w": 146,
+     "h": 36,
+     "inFirstScreen": true,
+     "disabled": false,
+     "testid": null
+    },
+    {
+     "tag": "a",
+     "role": null,
+     "label": "بنیادی",
+     "top": 189,
+     "left": 1209,
+     "w": 146,
+     "h": 36,
+     "inFirstScreen": true,
+     "disabled": false,
+     "testid": null
+    },
+    {
+     "tag": "a",
+     "role": null,
+     "label": "استراتژی FTS",
+     "top": 256,
+     "left": 1209,
+     "w": 146,
+     "h": 36,
+     "inFirstScreen": true,
+     "disabled": false,
+     "testid": null
+    },
+    {
+     "tag": "a",
+     "role": null,
+     "label": "درخت استراتژی",
+     "top": 294,
+     "left": 1209,
+     "w": 146,
+     "h": 36,
+     "inFirstScreen": true,
+     "disabled": false,
+     "testid": null
+    },
+    {
+     "tag": "a",
+     "role": null,
+     "label": "مدیریت پرتفوی",
+     "top": 362,
+     "left": 1209,
+     "w": 146,
+     "h": 36,
+     "inFirstScreen": true,
+     "disabled": false,
+     "testid": null
+    },
+    {
+     "tag": "a",
+     "role": null,
+     "label": "دیده‌بان بازار",
+     "top": 400,
+     "left": 1209,
+     "w": 134,
+     "h": 36,
+     "inFirstScreen": true,
+     "disabled": false,
+     "testid": "nav-sub-watch"
+    },
+    {
+     "tag": "button",
+     "role": null,
+     "label": "⚙admin",
+     "top": 691,
+     "left": 1296,
+     "w": 50,
+     "h": 14,
+     "inFirstScreen": true,
+     "disabled": false,
+     "testid": "user-settings-btn"
+    },
+    {
+     "tag": "button",
+     "role": null,
+     "label": "خروج ⎋",
+     "top": 690,
+     "left": 1218,
+     "w": 47,
+     "h": 16,
+     "inFirstScreen": true,
+     "disabled": false,
+     "testid": null
+    },
+    {
+     "tag": "button",
+     "role": null,
+     "label": "تغییر تم",
+     "top": 719,
+     "left": 1318,
+     "w": 28,
+     "h": 28,
+     "inFirstScreen": true,
+     "disabled": false,
+     "testid": null
+    }
+   ],
+   "primaryActionTop": 15,
+   "tables": [],
+   "numberCellsInFirstScreen": 2,
+   "tinyTextCount": 30,
+   "tinySamples": [
+    {
+     "text": "FTS v2.1",
+     "fontPx": 9,
+     "top": 28
+    },
+    {
+     "text": "فضای تحلیل",
+     "fontPx": 10,
+     "top": 52
+    },
+    {
+     "text": "غربالگری FTS",
+     "fontPx": 10,
+     "top": 233
+    },
+    {
+     "text": "سرمایه و دارایی",
+     "fontPx": 10,
+     "top": 339
+    },
+    {
+     "text": "۶۰",
+     "fontPx": 10,
+     "top": 11
+    },
+    {
+     "text": "Ctrl+K",
+     "fontPx": 10,
+     "top": 10
+    }
+   ],
+   "clippedCount": 0,
+   "clippedSamples": [],
+   "scrollers": [
+    {
+     "sel": "div.app-content",
+     "scrollH": 10438,
+     "clientH": 768,
+     "top": 0
+    }
+   ],
+   "empties": [
+    "وضعیتِ ناظر: اطلاعات در دسترس نیست"
+   ],
+   "inspectorOpen": true,
+   "inspectorTestId": null,
+   "testids": 797
+  }
+ ]
+}

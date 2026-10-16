@@ -14,8 +14,12 @@ export function SymbolContextStrip() {
   const togglePin = useSymbolStore((s) => s.togglePin);
   const clearSymbol = useSymbolStore((s) => s.clearSymbol);
 
-  const rawRow = useInspectorRawRow();
-  const board = useInspectorBoard();
+  // نوارِ بی‌نماد هیچ چیز نمی‌فرمایاند، پس نباید خوراکِ تابلو را هم بخواهد:
+  // سنجشِ مستقیمِ ۱۳×۷۶۸ — همینِ دو فراخوانِ بی‌گیت، GET /api/market را
+  // رویِ هرِ نه مسیر می‌انداخت وِ پرسش‌هایِ خودِ صفحه را پشتِ آن می‌چرخاند.
+  const want = symbol.length > 0;
+  const rawRow = useInspectorRawRow({ enabled: want });
+  const board = useInspectorBoard({ enabled: want });
   const veto = useSymbolVeto(symbol);
 
   const location = useLocation();

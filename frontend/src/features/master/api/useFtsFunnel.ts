@@ -79,6 +79,8 @@ export function funnelQueryKey(req: FunnelRequest): string[] {
 export function useFtsFunnel(
   preset: TreePreset = 'trend',
   overrides: Partial<FunnelRequest> = {},
+  /** «اینِ هوک رویِ صفحه است ولی کاربر هنوز آن را باز نکرده» — پرسشِ چند‌مگابایتیِ قیف نباید پیشِ نیازِ کاربر ازِ پوسته بیفتد. */
+  qopts: { enabled?: boolean } = {},
 ): {
   funnel: Funnel;
   mode: FunnelMode;
@@ -159,6 +161,7 @@ export function useFtsFunnel(
   }), [preset, chainPref, quickFilters, addChainFilter, removeChainFilter]);
 
   const q = useQuery({
+    enabled: qopts.enabled ?? true,
     queryKey: funnelQueryKey(request),
     queryFn: (ctx) => http<ApiPayload>('/api/funnel', {
       method: 'POST',

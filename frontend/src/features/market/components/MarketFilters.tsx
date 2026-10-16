@@ -515,7 +515,7 @@ export function MarketFilters({
   return (
     <div
       data-testid="market-filters-bar"
-      className="glass-panel panel-in flex flex-wrap items-center gap-2 w-full rounded-2xl p-2 shadow-sm"
+      className="glass-panel panel-in flex w-full shrink-0 flex-col items-stretch gap-1.5 rounded-2xl p-1.5 2xl:flex-row 2xl:items-center 2xl:gap-2 shadow-sm"
     >
       {/* #171: یک نوار به‌جای دو سطحِ روی‌هم — صنایع و چیپ‌ها سمتِ راست،
           جستجو/شمارندۀ نماد/بازۀ بروزرسانی سمتِ چپِ همان نوار. */}
@@ -523,7 +523,7 @@ export function MarketFilters({
           پیش از این در صفحۀ باریک پنج‌صد‌و‌هفتاد‌وپنج پیکسل از کنترل‌ها بیرونِ
           کادر می‌ماند و no-scrollbar اسکرول را نامرئی می‌کرد. */}
       <div
-        className="flex min-w-0 flex-1 flex-wrap items-center gap-2 no-scrollbar"
+        className="flex w-full min-w-0 flex-wrap items-center gap-1.5 no-scrollbar 2xl:w-auto 2xl:flex-1"
         data-testid="quick-filters-bar"
       >
         <AssetFilterMenu />
@@ -578,7 +578,7 @@ export function MarketFilters({
         </button>
 
       </div>
-      <div className="flex shrink-0 flex-wrap items-center gap-2" data-testid="filters-side">
+      <div className="order-first flex shrink-0 flex-wrap items-center gap-2 2xl:order-none" data-testid="filters-side">
         <div className="flex items-center gap-2 flex-wrap">
           <div className="relative flex items-center">
             <input

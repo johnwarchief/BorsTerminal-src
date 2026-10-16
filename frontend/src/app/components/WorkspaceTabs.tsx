@@ -61,6 +61,7 @@ export function WorkspaceTabs() {
   const tabRefs = useRef(new Map<string, HTMLDivElement>());
   const focusNextRef = useRef<string | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
+  const firstTabNav = useRef(true);
 
   const active = tabs.find((t) => t.id === activeId);
   const path = useMemo(() => `/${location.pathname.replace(/^\/+/, '')}`, [location.pathname]);
@@ -75,7 +76,16 @@ export function WorkspaceTabs() {
   // ۲) فعال‌سازیِ تب ⇒ رفتن بهِ مسیرِ آنِ تب وِ برگرداندنِ نمادِ همانِ تب
   useEffect(() => {
     if (!active) return;
-    if (active.path !== path) navigate(active.path);
+    // رویِ اولینِ رندر اینِ هم‌گام‌سازی باید بخوابد: کاربرِ نشانیِ مستقیم
+    // (#/market-status ازِ نشانک یا Back) تبِ پیش‌فرضِ /master را نمی‌خواهد،
+    // وِ هم‌گامِ ۱ همین حالا همانِ نشانی را بهِ تبِ فعال داده است. بی‌اینِ نگهبان،
+    // سنجشِ زنده نشانداد کاربرِ نشانیِ مستقیم درِ #/master فرود می‌آمد وِ کارِ
+    // همانِ صفحه (قیف + تابلو) هم درِ راه می‌ماند.
+    if (firstTabNav.current) {
+      firstTabNav.current = false;
+    } else if (active.path !== path) {
+      navigate(active.path);
+    }
     if (active.symbol && active.symbol !== storedSymbol) setSymbol(active.symbol);
   }, [activeId]);
 

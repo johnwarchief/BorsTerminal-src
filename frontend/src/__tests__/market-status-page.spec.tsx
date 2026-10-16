@@ -174,29 +174,35 @@ describe('صفحۀ «وضعیت بازار» با داده', () => {
   });
 });
 
-describe('تازگیِ به‌ازایِ ویجت (فاز D)', () => {
-  it('سرِصفحۀ «نمای کلی» چهارِ برچسب دارد، یکی به‌ازایِ هرِ ویجتِ مستقل', async () => {
+describe('تازگیِ به‌ازایِ ویجت (فاز D، جمع‌بندیِ فاز G)', () => {
+  const chipsOf = () => Array.from(
+    screen.getByTestId('section-freshness-ms-sec-overview').querySelectorAll('[data-testid="widget-freshness"]'),
+  ).map((c) => c.textContent ?? '');
+
+  it('همۀ چهارِ ویجتِ مستقل باِ نامِ خودشان خوانده می‌شوند', async () => {
     renderPage(FULL);
     await waitFor(() => expect(screen.getByTestId('histo-bucket-0..1')).toBeInTheDocument());
-    const chips = Array.from(
-      screen.getByTestId('section-freshness-ms-sec-overview').querySelectorAll('[data-testid="widget-freshness"]'),
-    );
-    expect(chips).toHaveLength(4);
-    // نامِ هرِ ویجت درِ برچسبِ خودش می‌ماند، تاِ دوِ بخش باِ هم یکی خوانده نشوند
-    expect(chips.map((c) => c.textContent).join('|')).toContain('کارت‌های شاخص');
-    expect(chips.map((c) => c.textContent).join('|')).toContain('فازهای نشست');
+    const joined = chipsOf().join('|');
+    for (const name of ['کارت‌های شاخص', 'توزیعِ درصد', 'تفکیکِ مشتری', 'فازهای نشست']) {
+      expect(joined).toContain(name);
+    }
   });
 
-  it('ساعتِ ساختِ پاسخ را از خودِ همانِ پنل می‌خواند، نه از همسایه', async () => {
+  it('ساعتِ ساختِ پاسخ از خودِ همانِ پنل خوانده می‌شود، نه از همسایه', async () => {
     renderPage(FULL);
     await waitFor(() => expect(screen.getByTestId('histo-bucket-0..1')).toBeInTheDocument());
-    const texts = Array.from(
-      screen.getByTestId('section-freshness-ms-sec-overview').querySelectorAll('[data-testid="widget-freshness"]'),
-    ).map((c) => c.textContent ?? '');
+    const chips = chipsOf();
     // `computed_at` فقط درِ پاسخِ indexcards است ⇒ همانِ یک «ساعتِ منبع» دارد
-    expect(texts.filter((t) => t.includes('ساعتِ منبع: ۰۲:۴۳:۵۰'))).toHaveLength(1);
+    const withSource = chips.filter((t) => t.includes('ساعتِ منبع: ۰۲:۴۳:۵۰'));
+    expect(withSource).toHaveLength(1);
+    expect(withSource[0]).toContain('کارت‌های شاخص');
     // وِ سه پنلِ بی‌`computed_at` باید صریح بگویند «نیامد» — نه ساعتِ همسایه، نه صفر
-    expect(texts.filter((t) => t.includes('زمانِ داده از منبع نیامد')).length).toBeGreaterThanOrEqual(3);
+    const others = chips.filter((t) => !t.includes('ساعتِ منبع:'));
+    expect(others.length).toBeGreaterThanOrEqual(1);
+    const noSource = others.join('|');
+    expect(noSource).toContain('زمانِ داده از منبع نیامد');
+    for (const name of ['توزیعِ درصد', 'تفکیکِ مشتری', 'فازهای نشست']) expect(noSource).toContain(name);
+    expect(noSource).not.toContain('۰۲:۴۳:۵۰');
   });
 
   it('برچسبِ سراسریِ بالایِ صفحه جایِ برچسبِ هیچِ ویجتی را نمی‌گیرد', async () => {

@@ -107,3 +107,72 @@ export function WidgetFreshness({ label, input }: { label: string; input: Widget
     </span>
   );
 }
+
+export type FreshItem = { label: string; input: WidgetFreshInput };
+
+export type FreshGroup = { labels: string[]; view: WidgetFreshnessView };
+
+export type FreshSummary = {
+  total: number;
+  ok: number;
+  /** گروه‌هایِ یکسان ادغام می‌شوند، ولی هرِ ویجت باِ نامِ خودش خوانده می‌شود:
+   *  «یکی به‌ازایِ هرِ ویجت» یعنی هرِ ویجت داوریِ خودش را دارد، نه اینکه هرِ
+   *  ویجت یکِ DOMِ جدا بگیرد. */
+  groups: FreshGroup[];
+  /** کهنه‌ترینِ سنِ پاسخ‌هایِ سالم — صادقانۀ‌ترین کران برایِ «همه تازه است» */
+  oldestTs: number | null;
+};
+
+/** منطقِ خالصِ جمع‌بندی (بازطراحیِ صفحات): گرفتنیِ ۱۳۶ نشان داد چهارِ برچسبِ کاملِ
+ *  تازگی درِ یکِ بخش بهِ دیوارِ چیپ تبدیل می‌شوند — همانِ نقصِ «شلوغیِ خوانایی» که
+ *  برایِ رابطِ مرجع نوشته شده بود. آستانه اختراع نمی‌شود: فقط وضعیت‌هایِ موجود
+ *  دسته‌بندی می‌شوند وِ فقطِ یکسان‌ها ادغام می‌یابند. */
+export function summarizeFreshness(items: FreshItem[], now = Date.now()): FreshSummary {
+  const groups: FreshGroup[] = [];
+  let ok = 0;
+  let oldestTs: number | null = null;
+  for (const it of items) {
+    const view = freshnessOf({ ...it.input, now });
+    if (view.state === 'ok') {
+      ok += 1;
+      const ts = it.input.dataUpdatedAt;
+      if (Number.isFinite(ts) && ts > 0 && (oldestTs == null || ts < oldestTs)) oldestTs = ts;
+    }
+    const key = `${view.state}|${view.ageText ?? ''}|${view.sourceText}`;
+    const hit = groups.find((g) => `${g.view.state}|${g.view.ageText ?? ''}|${g.view.sourceText}` === key);
+    if (hit) hit.labels.push(it.label);
+    else groups.push({ labels: [it.label], view });
+  }
+  return { total: items.length, ok, groups, oldestTs };
+}
+
+export function FreshnessSummary({ items }: { items: FreshItem[] }) {
+  // ساعت از خودِ ورودی خوانده می‌شود (همانِ درزِ آزمونِ `freshnessOf`)؛ بی‌این،
+  // «کهنه‌ترین» باِ ساعتِ واقعیِ ماشین حساب می‌شد وِ آزمونِ زمان‌ثابت شکست می‌خورد.
+  const now = items[0]?.input.now ?? Date.now();
+  const sum = summarizeFreshness(items, now);
+  if (!sum.total) return null;
+  return (
+    <span
+      data-testid="freshness-summary"
+      data-state={sum.groups.every((g) => g.view.state === 'ok') ? 'all-ok' : 'attention'}
+      data-widgets={sum.total}
+      className="contents"
+    >
+      {sum.groups.map((g) => (
+        <span
+          key={g.labels.join('|')}
+          data-testid="widget-freshness"
+          data-widgets={g.labels.length}
+          title={`تازگیِ «${g.labels.join('، ')}» — سنِ رسیدنِ پاسخ، نه ساعتِ خودِ صفحه`}
+          className={`num-text inline-flex items-center gap-1 whitespace-nowrap rounded border border-border-c bg-bg-card/70 px-1.5 py-px text-3xs leading-4 ${g.view.toneClass}`}
+        >
+          <span className="font-bold text-text-secondary">{g.labels.join('، ')}</span>
+          <span>{g.view.label}</span>
+          {g.view.ageText ? <span className="text-text-muted">· {g.view.ageText}</span> : null}
+          {g.view.sourceText ? <span className="text-text-muted">· {g.view.sourceText}</span> : null}
+        </span>
+      ))}
+    </span>
+  );
+}
