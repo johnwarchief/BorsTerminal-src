@@ -2025,6 +2025,17 @@ def get_fundamental(symbol: str, months: int = 0):
                     norm_symbol = str(cands[0])
                     ref_reason = ("نمادِ پایه درِ کدال؛ خطِ کلاسِ تابلو «%s» — شاهد: %s"
                                   % (cands[0], ev))
+        if ref_reason is None:
+            # رأیِ مالک ۲۰۲۶-۱۰-۱۷: بی‌شاهدِ ISIN ادغام نمی‌شود. نامزد و علت را
+            # اعلام می‌کنیم تا «ادغامِ جلوگرفته‌شده» درِ رابط مثلِ «ردیفی نبود»
+            # خوانده نشود (کاربر بداند کجا باید ISIN را یکی کرد).
+            pend, pev = fts_engine.symbol_pending_variants(conn, symbol)
+            if not pend:
+                pend, pev = fts_engine.symbol_pending_siblings(conn, symbol)
+            if pend and pev == "pending-review":
+                ref_reason = ("نامزدِ الحاق («%s») پیدا شد ولی بی‌شاهدِ ISIN ادغام "
+                              "نشد؛ اگر گزارش‌ها واقعاً مالِ همین نمادند، ISINِ دو "
+                              "خط را درِ کدال یکی کنید." % "، ".join(sorted(pend)[:2]))
 
         # ارزش بازار: فقط از ستونِ رسمیِ تابلو (get_tsetmc_market_cap_info).
         # ضربهٔ پشتیبانِ «total_shares × p_closing» عمداً حذف شد — اگر تابلو عددِ
