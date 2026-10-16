@@ -5,6 +5,8 @@ import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { toFaDigits } from '@shared/lib/fmt';
 import { useScreenFilterStore } from '@shared/stores/screenFilterStore';
+import { useMediaQuery } from '@shared/lib/useMediaQuery';
+import { MEDIA_MOBILE } from '@shared/lib/breakpoints';
 import { fmtAge } from '@shared/lib/time';
 import { SearchIcon } from '@shared/components/Icons';
 import { ASSET_LABELS, ASSET_TYPES, classifyAssetType, type AssetType } from '../lib/assetType';
@@ -490,6 +492,13 @@ export function MarketFilters({
   const resetFilters = useTapeStore((s) => s.resetFilters);
 
   const [draft, setDraft] = useState(query);
+  // بندِ ۲.۱ مأموریتِ System ۲: درِ ۳۹۰×۸۴۴ خودِ اینِ نوار ۲۹۰px ازِ ۶۳۵pxِ ستونِ
+  // صفحّه را می‌خورد وِ بهِ جدولِ کارت فقطِ ~۱۵۱px اسکرول می‌رسید (اندازه‌گیری‌شده درِ
+  // `tools/ui_mobile_board_probe.mjs`). درِ گوشی هرچیزِ غیرازِ جست‌وجو/شمارش/پاک‌کردن
+  // پشتِ یکِ دروازه جمع می‌شود؛ چیزی حذف نمی‌شود، فقطِ باز می‌ماند.
+  const isMobile = useMediaQuery(MEDIA_MOBILE);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const showAdvanced = !isMobile || filtersOpen;
   useEffect(() => setDraft(query), [query]);
   useEffect(() => {
     const t = setTimeout(() => {
@@ -522,6 +531,7 @@ export function MarketFilters({
       {/* نوارِ کنترل: زیر 2xl سطرِ خودش را می‌گیرد تا هیچ چیپی پشتِ لبه نرود؛
           پیش از این در صفحۀ باریک پنج‌صد‌و‌هفتاد‌وپنج پیکسل از کنترل‌ها بیرونِ
           کادر می‌ماند و no-scrollbar اسکرول را نامرئی می‌کرد. */}
+      {showAdvanced ? (
       <div
         className="flex w-full min-w-0 flex-wrap items-center gap-1.5 no-scrollbar 2xl:w-auto 2xl:flex-1"
         data-testid="quick-filters-bar"
@@ -578,6 +588,7 @@ export function MarketFilters({
         </button>
 
       </div>
+      ) : null}
       <div className="order-first flex shrink-0 flex-wrap items-center gap-2 2xl:order-none" data-testid="filters-side">
         <div className="flex items-center gap-2 flex-wrap">
           <div className="relative flex items-center">
@@ -586,11 +597,12 @@ export function MarketFilters({
               onChange={(e) => setDraft(e.target.value)}
               placeholder="جستجوی نماد یا نام..."
               aria-label="جستجوی نماد"
-              className={`${CONTROL_CLS} w-44 sm:w-56 ps-7 placeholder:text-text-muted`}
+              className={`${CONTROL_CLS} min-w-0 flex-1 ps-7 placeholder:text-text-muted sm:w-56 sm:flex-none`}
             />
             <SearchIcon size={13} className="absolute start-2 text-text-muted pointer-events-none" />
           </div>
 
+          {showAdvanced ? (<>
           {/* #197: تا پیش از این «فقط زنده» در استور وجود داشت ولی هیچ‌جا
               روشن/خاموش نمی‌شد — و چون چیدمانِ پیش‌فرض ردیف‌هایِ بیرونِ تابلو
               را بالا می‌آورد، کاربر فلش را «خراب» می‌دید. */}
@@ -634,11 +646,29 @@ export function MarketFilters({
           >
             حذفِ پسوندِ عددی
           </button>
+          </>) : null}
+
+          {isMobile ? (
+            <button
+              type="button"
+              onClick={() => setFiltersOpen((v) => !v)}
+              aria-expanded={filtersOpen}
+              data-testid="filters-disclosure"
+              className={`shrink-0 rounded-lg border px-2 py-1 text-2xs font-bold transition-all ${
+                filtersOpen || activeCount > 0
+                  ? 'border-accent-blue/50 bg-accent-blue/15 text-accent-blue'
+                  : 'border-border-c bg-bg-card text-text-secondary'
+              }`}
+            >
+              فیلترها{activeCount > 0 ? ` (${toFaDigits(activeCount)})` : ''}
+            </button>
+          ) : null}
 
           {shown != null && total != null ? (
             <span
               className="inline-flex items-center gap-1 rounded-lg border border-border-c bg-bg-card px-2.5 py-1 text-2xs font-bold text-text-primary"
               title="تعداد نمادهای فعال در جدول"
+              data-testid="tape-shown-count"
             >
               <span className="num text-accent-blue">{toFaDigits(shown)}</span>
               <span className="text-text-muted font-normal">از</span>
@@ -674,7 +704,7 @@ export function MarketFilters({
         </div>
 
         <div className="flex items-center gap-2 ms-auto">
-          {pollMs != null && onPollChange != null ? (
+          {showAdvanced && pollMs != null && onPollChange != null ? (
             <div className="flex items-center gap-1.5 text-2xs text-text-secondary">
               <span className="hidden sm:inline">بازه:</span>
               <select
