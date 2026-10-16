@@ -162,6 +162,7 @@ a = Analysis(
                    # منجمد رویِ اولین /api/execution/status با ModuleNotFoundError
                    # می‌میرد و گاردِ HTTPِ محلی هیچ‌وقت این را نمی‌بیند.
                    'execution_easytrader',
+                   'execution_connect',
                    # دروازۀ ربات (مأموریتِ ۱۴۰۵-۰۷-۲۴، فاز ۳): مثلِ بقیۀ api/*
                    # درِ بدنهٔ `api_router()` ایمپورت می‌شود، پس اسکن ایستا
                    # نمی‌بیندش؛ بی‌این خط هر /api/bot/* درِ EXE روی 404 می‌ماند.

@@ -473,6 +473,14 @@ SUITES = [
     # سه قفلِ اجرایِ واقعی (env + capabilities از runtime + عبارتِ تأیید)،
     # ردِّ HALTED، بازنگشتِ TRIPPED، no_data بی‌صفرِ جعلی، خطایِ بانک به‌جای 500،
     # و نبودِ هرگونه credential درِ پاسخ.
+    # مأموریت ۱۴۰۵-۰۷-۲۶ (سرخطی): لایۀ «اتصال به EasyTrader». نشانیِ حدسی باز
+    # نمی‌شود (بی‌دامنۀ تأییدشده ⇒ NO_LOGIN_HOST و هیچ پروسه‌ای شروع نمی‌شود)،
+    # حالتِ نشست فقط از پرسشِ واقعی می‌آید (۴۰۱⇒EXPIRED، timeout⇒UNKNOWN)، پنجرۀ
+    # باز به‌تنهایی «متصل» نیست، راز هیچ‌جا نمی‌نشیند، و چرخۀ mock (preflight ←
+    # prepare ← دروازۀ توقف ← ارسال ← reconcile ← حسابرسی) یکِ قصد = یکِ ارسال را
+    # ثابت می‌کند. بی‌شبکه، بی‌سفارشِ واقعی، رویِ بانکِ ردِّپایِ موقت.
+    ('dev/sarkhati_connect_v1117.py',
+                                     'sarkhati connect layer: allow-listed login window, session state only from a real probe, no secret persistence, mock cycle with duplicate-send guard'),
     ('dev/bot_api_v1114.py', 'bot API contract: paper by default, manual run only, three live gates, halt honored, no fabricated zero, no leaked session'),
     # مأموریتِ ۱۴۰۵-۰۷-۲۳، بندِ ۶: رباتِ کاغذی و بک‌تست. سناریوهای ۱۷گانۀ
     # بندِ ۶-۵ (سیگنال، کهنگی، توقف، دامنۀ قیمت، سقفِ حجم، timeout، تکرار،

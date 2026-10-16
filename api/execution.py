@@ -45,6 +45,7 @@ from execution_easytrader import (
     EasyTraderAdapter, RefusingTransport, RequestsTransport, WIRE_HYPOTHESIS,
     easytrader_payload,
 )
+import execution_connect as EXC                            # noqa: E402
 from execution_ledger import ARMED, HALT, TRIPPED, default_ledger
 from execution_mock import MockBrokerAdapter
 from execution_service import ExecutionError, ExecutionService, Limits
@@ -492,6 +493,67 @@ def delete_session() -> dict[str, Any]:
     if isinstance(_ACTIVE_ADAPTER, EasyTraderAdapter):
         _ACTIVE_ADAPTER.clear_token()
     return {"status": "success", "live": _live_now(), "session": _session_dict()}
+
+
+# ── ۳) اتصالِ کاربر: پنجرۀ مرورگری و داوریِ حالتِ نشست ──────────────────────
+# لایه درِ `execution_connect.py` است. سه چیز عمداً اینجا *نیست*: هیچ نشانیِ
+# حدسی برایِ صفحۀ ورود، هیچ ذخیره‌ای ازِ رمز/کوکی/توکن رویِ دیسک، و هیچ
+# «متصل شد» که ازِ HTMLِ صفحه آمده باشد.
+_CONNECT_LAST: dict[str, Any] = {}
+
+
+@router.get("/api/execution/connect")
+def get_connect() -> dict[str, Any]:
+    return EXC.status_dict(_ACTIVE_ADAPTER, _CONNECT_LAST)
+
+
+@router.post("/api/execution/connect/browser")
+async def post_connect_browser(request: Request) -> dict[str, Any]:
+    raw = await request.body()
+    try:
+        parsed = json.loads(raw.decode("utf-8")) if raw else {}
+    except (ValueError, UnicodeDecodeError):
+        parsed = {}
+    url = str(parsed.get("url") or "").strip() if isinstance(parsed, dict) else ""
+    if not url:
+        hosts = EXC.login_hosts()
+        if not hosts:
+            return {"status": "error", "code": "NO_LOGIN_HOST",
+                    "detail": "هیچ دامنه‌ای برایِ ورودِ کاربر تأیید نشده — "
+                              "BORS_EXECUTION_CONNECT_HOSTS را بگذارید",
+                    "connect": EXC.status_dict(_ACTIVE_ADAPTER, _CONNECT_LAST)}
+        url = "https://%s/" % hosts[0]
+    h, why = EXC.open_login_window(url)
+    if h is None:
+        return {"status": "error", "code": "BROWSER_REFUSED", "detail": why,
+                "connect": EXC.status_dict(_ACTIVE_ADAPTER, _CONNECT_LAST)}
+    return {"status": "success", "opened": why != "already-open",
+            "note": why, "connect": EXC.status_dict(_ACTIVE_ADAPTER, _CONNECT_LAST)}
+
+
+@router.delete("/api/execution/connect/browser")
+def delete_connect_browser() -> dict[str, Any]:
+    _ok, note = EXC.close_login_window()
+    return {"status": "success", "note": note,
+            "connect": EXC.status_dict(_ACTIVE_ADAPTER, _CONNECT_LAST)}
+
+
+@router.post("/api/execution/connect/verify")
+def post_connect_verify() -> dict[str, Any]:
+    global _CONNECT_LAST
+    _CONNECT_LAST = EXC.verify(_ACTIVE_ADAPTER)
+    return {"status": "success", "verify": _CONNECT_LAST,
+            "connect": EXC.status_dict(_ACTIVE_ADAPTER, _CONNECT_LAST)}
+
+
+@router.delete("/api/execution/connect")
+def delete_connect() -> dict[str, Any]:
+    EXC.close_login_window()
+    if isinstance(_ACTIVE_ADAPTER, EasyTraderAdapter):
+        _ACTIVE_ADAPTER.clear_token()
+    _CONNECT_LAST = {}
+    return {"status": "success", "detail": "نشستِ حافظه‌ای و پنجره بسته شد",
+            "connect": EXC.status_dict(_ACTIVE_ADAPTER, _CONNECT_LAST)}
 
 
 @router.post("/api/execution/probe")
