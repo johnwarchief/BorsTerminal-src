@@ -58,7 +58,7 @@ def main(exe: str) -> int:
     try:
         # فقط همین PID؛ انتظارِ آرام تا درِ ۸۱۰۱ باز شود (بیلدِ منجمد چندِ ثانیه طول می‌کشد)
         up = None
-        deadline = time.time() + 90.0
+        deadline = time.time() + 300.0   # اولین اجرا market.db.lzma را ازِ کنارِ EXE باز می‌کند
         while time.time() < deadline:
             if proc.poll() is not None:
                 break
