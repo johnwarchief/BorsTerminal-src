@@ -1,0 +1,36 @@
+$ C:\Users\Johnkallnaya\AppData\Local\Programs\Python\Python314\python.exe dev/perf_output_equal_v1.py check --before before-perf-first-p0 --after after-perf-first-p0 --report OUTPUT_EQUALITY_PERF_FIRST_P0.json
+
+endpoint                 http  bytes before   bytes after  verdict
+------------------------------------------------------------------------------------------------
+market                    200     6,101,215     6,101,215  IDENTICAL
+live-stats                200           972           972  IDENTICAL
+mstat-summary             200         3,515         3,515  IDENTICAL
+mstat-histogram           200         1,474         1,474  IDENTICAL
+mstat-thermometer         200           357           357  IDENTICAL
+mstat-depth               200           503           503  IDENTICAL
+mstat-clientsplit         200           553           553  IDENTICAL
+mstat-phase               200           607           607  IDENTICAL
+mstat-mainwatch           200        72,561        72,561  IDENTICAL
+mstat-industries          200        13,001        13,001  IDENTICAL
+mstat-smart-money         200         2,668         2,668  IDENTICAL
+mstat-timeline            200         9,713         9,713  IDENTICAL
+mstat-phases              200           398           398  IDENTICAL
+mstat-treemap             200        82,827        82,827  VOLATILE-ONLY
+mstat-tops                200         7,890         7,890  VOLATILE-ONLY
+mstat-orderflows          200         8,895         8,895  VOLATILE-ONLY
+mstat-ownership           200        10,078        10,078  VOLATILE-ONLY
+mstat-indexcards          200         1,674         1,674  VOLATILE-ONLY
+mstat-gold                200        38,832        38,832  VOLATILE-ONLY
+mstat-series              200         3,170         3,170  VOLATILE-ONLY
+mstat-board               200       219,487       219,487  VOLATILE-ONLY
+screener                  200     1,060,269     1,060,269  IDENTICAL
+funnel-registry           200        10,618        10,618  IDENTICAL
+fts-config                200         1,020         1,020  IDENTICAL
+chart-foulad              200     1,132,444       132,012  EXTERNAL-SOURCE (13 drift, not gated)   e.g. $.degraded: ADDED (only in after)
+index-tedpix              200       743,357       743,357  IDENTICAL
+watchlist                 200            51            51  IDENTICAL
+
+OUTPUTS_EQUAL
+wrote _audit\perf\OUTPUT_EQUALITY_PERF_FIRST_P0.json
+
+EXIT=0

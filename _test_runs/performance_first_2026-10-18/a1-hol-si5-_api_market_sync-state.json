@@ -1,0 +1,102 @@
+[
+ {
+  "verb": "POST",
+  "cheap": "/api/market/sync-state",
+  "rig": "switch=5ms(default)",
+  "build_ms": 742,
+  "x_cache": [
+   "MISS"
+  ],
+  "bytes": 7489027,
+  "cheap_before_med": 1405.9,
+  "cheap_during_n": 0,
+  "cheap_during_med": null,
+  "cheap_during_max": null,
+  "cheap_during_series": [],
+  "tech_scan": {
+   "pending_symbols": 0,
+   "running": false,
+   "queued": 0,
+   "done": 0,
+   "failed": 0,
+   "in_flight": 0,
+   "last_ms": 0,
+   "error": null
+  }
+ },
+ {
+  "verb": "GET",
+  "cheap": "/api/market/sync-state",
+  "rig": "switch=5ms(default)",
+  "build_ms": 869,
+  "x_cache": [
+   "MISS"
+  ],
+  "bytes": 7489027,
+  "cheap_before_med": 1366.7,
+  "cheap_during_n": 0,
+  "cheap_during_med": null,
+  "cheap_during_max": null,
+  "cheap_during_series": [],
+  "tech_scan": {
+   "pending_symbols": 0,
+   "running": false,
+   "queued": 0,
+   "done": 0,
+   "failed": 0,
+   "in_flight": 0,
+   "last_ms": 0,
+   "error": null
+  }
+ },
+ {
+  "verb": "GET",
+  "cheap": "/api/market/sync-state",
+  "rig": "switch=5ms(default)",
+  "build_ms": 907,
+  "x_cache": [
+   "MISS"
+  ],
+  "bytes": 7489027,
+  "cheap_before_med": 1499.3,
+  "cheap_during_n": 0,
+  "cheap_during_med": null,
+  "cheap_during_max": null,
+  "cheap_during_series": [],
+  "tech_scan": {
+   "pending_symbols": 0,
+   "running": false,
+   "queued": 0,
+   "done": 0,
+   "failed": 0,
+   "in_flight": 0,
+   "last_ms": 0,
+   "error": null
+  }
+ },
+ {
+  "verb": "POST",
+  "cheap": "/api/market/sync-state",
+  "rig": "switch=5ms(default)",
+  "build_ms": 759,
+  "x_cache": [
+   "MISS"
+  ],
+  "bytes": 7489027,
+  "cheap_before_med": 1287.2,
+  "cheap_during_n": 0,
+  "cheap_during_med": null,
+  "cheap_during_max": null,
+  "cheap_during_series": [],
+  "tech_scan": {
+   "pending_symbols": 0,
+   "running": false,
+   "queued": 0,
+   "done": 0,
+   "failed": 0,
+   "in_flight": 0,
+   "last_ms": 0,
+   "error": null
+  }
+ }
+]

@@ -1,0 +1,24 @@
+=== dev/funnel_registry_v1.py rc=0 1.8s
+  ok   کنترلِ منفی برگشت و نسخه به عددِ اولش برگشت
+
+funnel_registry guard OK — 7 فیلتر، 21 پارامتر، ruleset 555648ebff52
+=== dev/funnel_engine_v1.py rc=0 3.5s
+  ok   ۵۰) بی‌حکم درِ نامزد و رد نمی‌نشیند: {'name': 'حجم مشکوک', 'matched': 1, 'removed': 0, 'unmeasured': 1, 'input': 2}
+
+funnel_engine guard OK — 75 بندِ مأموریت
+=== dev/funnel_preset_distinct_v1.py rc=0 1.5s
+  ok   کنترلِ منفی: دو گیت رویِ همین fixture رأیِ متفاوت می‌دهند (گارد کور نیست)
+
+funnel_preset_distinct_v1: 12 passed / 0 failed
+=== dev/test_screener_funnel_gate_v1.py rc=0 10.9s
+[screener] loaded from disk cache
+────────────────────────────────────────────────────────────────────────
+نتیجۀِ گاردِ قیفِ اسکرینر: 30_pass / 0_fail / 0_skip
+=== dev/test_mainwatch_flags_v1.py rc=0 2.5s
+  ok   ۷) پاسخِ خطا هیچ برچسبِ پرچمی نمی‌گیرد
+
+mainwatch tape-flags guard OK — ۷ بند
+=== dev/test_funnel_warm_deadlock_v1.py rc=0 2.6s
+  total 5ms  request 4ms  wait→[True]
+
+funnel_warm_deadlock_v1: 7 passed, 0 failed

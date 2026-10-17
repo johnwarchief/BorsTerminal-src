@@ -1,0 +1,55 @@
+$ python dev/funnel_registry_v1.py   (api/funnel.py sha bad4d71468f28d43d43d96fbf32c73133a193ecb8c86cd832cd8459c4b1054b9)
+  ok   7 فایلِ فیلتر درِ docs/ پیدا شد
+  ok   هر فایلِ ارجاع‌داده‌شده درِ docs/ واقعاً هست
+  ok   هیچ «متنِ غیرفرمول» درِ رجیستری جایگاه ندارد (فهرستِ بالا تقلبی نمی‌شود)
+  ok   همۀ فایل‌هایِ فرمولِ docs/*.txt درِ رجیستری‌اند (رجیسترشده 7 از 7)
+  ok   sha256ِ f_clock با فایلِ منبع می‌خواند (6637192e4d10a73d)
+  ok   sha256ِ f_susp با فایلِ منبع می‌خواند (b8a185c4168be33e)
+  ok   sha256ِ f_jet با فایلِ منبع می‌خواند (e93cab46073567c0)
+  ok   sha256ِ f_roobi با فایلِ منبع می‌خواند (053a12a7c96b6e4f)
+  ok   sha256ِ f_noqteh با فایلِ منبع می‌خواند (e5d4fd99a6811443)
+  ok   sha256ِ f_smart با فایلِ منبع می‌خواند (590e52a23c78166f)
+  ok   sha256ِ f_legal با فایلِ منبع می‌خواند (92adf93e9d5e1df4)
+  ok   f_clock درِ tape_flags.clock_flag قابلِ فراخوانی است
+  ok   f_susp درِ tape_flags.suspicious_flag قابلِ فراخوانی است
+  ok   f_jet درِ tape_flags.jet_flag قابلِ فراخوانی است
+  ok   f_roobi درِ tape_flags.roobi_flag قابلِ فراخوانی است
+  ok   f_noqteh درِ tape_flags.noqteh_flag قابلِ فراخوانی است
+  ok   f_smart درِ tape_flags.smart_money_flag قابلِ فراخوانی است
+  ok   f_legal درِ tape_flags.legal_to_retail_flag قابلِ فراخوانی است
+  ok   f_clock.clock_delta = 0.02 درِ متنِ الگوی ساعت.txt پیدا شد
+  ok   f_clock.vol_mult = 1.0 درِ متنِ الگوی ساعت.txt پیدا شد
+  ok   f_clock.min_trades = 30.0 درِ متنِ الگوی ساعت.txt پیدا شد
+  ok   f_clock.base_sessions = 30.0 درِ متنِ الگوی ساعت.txt پیدا شد
+  ok   f_susp.vol_mult = 3.0 درِ متنِ حجم مشکوک.txt پیدا شد
+  ok   f_susp.min_trades = 50.0 درِ متنِ حجم مشکوک.txt پیدا شد
+  ok   f_susp.base_sessions = 30.0 درِ متنِ حجم مشکوک.txt پیدا شد
+  ok   f_jet.vol_mult = 3.0 درِ متنِ فیلتر جت.txt پیدا شد
+  ok   f_jet.buyer_power = 1.5 درِ متنِ فیلتر جت.txt پیدا شد
+  ok   f_jet.min_trades = 100.0 درِ متنِ فیلتر جت.txt پیدا شد
+  ok   f_roobi.plp_max = -1.0 درِ متنِ کف روبی صف فروش.txt پیدا شد
+  ok   f_roobi.zd1_min = 1.0 درِ متنِ کف روبی صف فروش.txt پیدا شد
+  ok   f_roobi.qd1_min = 100.0 درِ متنِ کف روبی صف فروش.txt پیدا شد
+  ok   f_noqteh.max_dist = 3.0 درِ متنِ نقطه زنی.txt پیدا شد
+  ok   f_noqteh.low_window = 29.0 درِ متنِ نقطه زنی.txt حلقۀ `n=1; n<29 پیدا شد
+  ok   f_noqteh.vol_mult = 1.0 درِ متنِ نقطه زنی.txt پیدا شد
+  ok   f_noqteh.min_trades = 5.0 درِ متنِ نقطه زنی.txt پیدا شد
+  ok   f_smart.vol_mult = 1.5 درِ متنِ ورود پول هوشمند.txt پیدا شد
+  ok   f_smart.buyer_power_ge = 1.0 درِ متنِ ورود پول هوشمند.txt پیدا شد
+  ok   f_legal.legal_share = 0.5 درِ متنِ …کد به کد…txt پیدا شد
+  ok   زنجیرۀ swing فقط فیلترِ رجیستری دارد
+  ok   زنجیرۀ trend فقط فیلترِ رجیستری دارد
+  ok   زنجیرۀ hourglass فقط فیلترِ رجیستری دارد
+  ok   زنجیرۀ custom فقط فیلترِ رجیستری دارد
+  ok   ساعت‌شنی فیلترِ تابلوییِ بی‌منبع ندارد (زنجیره تهی، منتظرِ رأیِ مالک)
+  ok   ساعت‌شنی صریح unverified برچسب خورده است
+  ok   نوسان‌گیر همان چیدمانِ چارت ۳ است
+  ok   روندگیر کف‌روبی + نقطه‌زنی است و حجم مشکوک ندارد
+  ok   دو فیلترِ پولِ هوشمند/کد‌به‌کد از چیپِ تابلو به رجیستریِ قیف رسیده‌اند
+  ok   ruleset_version پایدار است (555648ebff52)
+  ok   کنترلِ منفی: با تکانِ یک آستانه، ruleset_version عوض می‌شود
+  ok   کنترلِ منفی برگشت و نسخه به عددِ اولش برگشت
+
+funnel_registry guard OK — 7 فیلتر، 21 پارامتر، ruleset 555648ebff52
+
+EXIT=0

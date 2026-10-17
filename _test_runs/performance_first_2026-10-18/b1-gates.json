@@ -1,0 +1,69 @@
+{
+ "pre": {
+  "2026-10-17 21:06:28": {
+   "port_8020_open": false,
+   "port_8123_open": false,
+   "port_8000_open": true,
+   "port_8010_open": true,
+   "app_processes": [
+    "13660|10/15/2026 04:02:45|C:\\Users\\Johnkallnaya\\AppData\\Local\\Programs\\Python\\Python314\\python.exe -u app.py",
+    "8028|10/16/2026 01:59:11|C:\\Users\\Johnkallnaya\\Desktop\\Borsterminal\\.worktrees\\uiux-2-0\\.venv-ui\\Scripts\\python.exe -m uvicorn app:app --host 127.0.0.1 --port 8010 --log-level warning",
+    "2676|10/16/2026 01:59:11|C:\\Users\\Johnkallnaya\\Desktop\\Borsterminal\\.worktrees\\uiux-2-0\\.venv-ui\\Scripts\\python.exe -m uvicorn app:app --host 127.0.0.1 --port 8010 --log-level warning"
+   ]
+  }
+ },
+ "fixture_sha_backup": "4539b6cfea91827e84ea878d0be95cd1678ff591eb9e6dd8135fc781f32f3bee",
+ "steps": {
+  "run_all_tests": {
+   "cmd": "C:\\Users\\Johnkallnaya\\AppData\\Local\\Programs\\Python\\Python314\\python.exe dev/run_all_tests.py",
+   "cwd": ".",
+   "rc": 1,
+   "start": "2026-10-17 21:06:29",
+   "dur_s": 1715.1,
+   "log": "b1-run_all_tests.txt"
+  },
+  "version_anchor_guard": {
+   "cmd": "C:\\Users\\Johnkallnaya\\AppData\\Local\\Programs\\Python\\Python314\\python.exe dev/version_anchor_guard.py",
+   "cwd": ".",
+   "rc": 0,
+   "start": "2026-10-17 21:35:04",
+   "dur_s": 0.1,
+   "log": "b1-version_anchor_guard.txt"
+  },
+  "npm-ci": {
+   "cmd": "npm.cmd ci",
+   "cwd": "frontend",
+   "rc": 0,
+   "start": "2026-10-17 21:35:04",
+   "dur_s": 206.3,
+   "log": "b1-npm-ci.txt"
+  },
+  "tsc": {
+   "cmd": "npx.cmd tsc -b",
+   "cwd": "frontend",
+   "rc": 0,
+   "start": "2026-10-17 21:38:30",
+   "dur_s": 104.5,
+   "log": "b1-tsc.txt"
+  },
+  "vitest": {
+   "cmd": "npx.cmd vitest run",
+   "cwd": "frontend",
+   "rc": 0,
+   "start": "2026-10-17 21:40:15",
+   "dur_s": 392.9,
+   "log": "b1-vitest.txt"
+  },
+  "build": {
+   "cmd": "npm.cmd run build",
+   "cwd": "frontend",
+   "rc": 0,
+   "start": "2026-10-17 21:46:48",
+   "dur_s": 25.7,
+   "log": "b1-build.txt"
+  }
+ },
+ "fixture_sha_after_gates": "230b8193a81a0b9f84015d659e934c82f1f6e2e8b63fe27f80e42753d2c5ae77",
+ "fixture_sha_after_restore": "4539b6cfea91827e84ea878d0be95cd1678ff591eb9e6dd8135fc781f32f3bee",
+ "fixture_restored_ok": true
+}
