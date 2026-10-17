@@ -22,7 +22,7 @@ export const TONE: Record<ActionState, string> = {
   busy: 'text-text-muted',
   ok: 'text-accent-green',
   warn: 'text-accent-yellow',
-  unknown: 'text-accent-orange',
+  unknown: 'text-accent-susp',
   error: 'text-accent-red',
 };
 

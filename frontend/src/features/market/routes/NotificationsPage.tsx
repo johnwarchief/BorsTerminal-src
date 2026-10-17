@@ -24,7 +24,7 @@ const LEVEL_FA: Record<string, string> = {
 };
 const LEVEL_TONE: Record<string, string> = {
   high: 'border-accent-red/50 bg-accent-red/10 text-accent-red',
-  medium: 'border-accent-amber/50 bg-accent-amber/10 text-accent-amber',
+  medium: 'border-accent-yellow/50 bg-accent-yellow/10 text-accent-yellow',
   low: 'border-border-c bg-bg-card text-text-secondary',
   unclassified: 'border-dashed border-border-c bg-bg-primary text-text-muted',
 };
@@ -140,7 +140,7 @@ export default function NotificationsPage() {
             آخرینِ واکشی {stampApp(src?.last_fetch)}
           </span>
         ) : srcState === 'empty' ? (
-          <span className="text-3xs text-accent-amber" data-testid="notice-source-empty">
+          <span className="text-3xs text-accent-yellow" data-testid="notice-source-empty">
             هیچ اطلاعیه‌ای درِ بانک نیست — این «خبری نیست» نیست، «واکشی نشده» است.
           </span>
         ) : (

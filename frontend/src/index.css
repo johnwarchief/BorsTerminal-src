@@ -22,6 +22,15 @@
   --color-neon-cyan: var(--neon-cyan);
   --color-neon-red: var(--neon-red);
   --color-on-accent: var(--on-accent);
+  /* پلِ لایۀ معنایی به Tailwind: `text-tone-pos` … از همینجا ساخته می‌شود.
+     بی‌این شش خط، `tones.ts` کلاسی می‌نویسد که هیچ تعریفی پشتش نیست و خانه
+     بی‌رنگ می‌ماند (همان نقصِ `accent-amber` که گاردِ توکن برایش نوشته شده). */
+  --color-tone-pos: var(--tone-pos);
+  --color-tone-neg: var(--tone-neg);
+  --color-tone-neutral: var(--tone-neutral);
+  --color-tone-warn: var(--tone-warn);
+  --color-tone-err: var(--tone-err);
+  --color-tone-unknown: var(--tone-unknown);
 
   /* Semantic UI slots (shadcn compatibility) */
   --color-background: var(--background);

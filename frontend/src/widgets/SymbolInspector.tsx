@@ -400,7 +400,7 @@ export function SymbolInspector() {
             title={pinned.includes(symbol) ? 'از سنجاق برداشته می‌شود' : 'به سنجاق‌ها اضافه می‌شود — در Ctrl+K صدر می‌آید'}
             className={`rounded-md border px-1.5 py-0.5 text-2xs transition-colors ${
               pinned.includes(symbol)
-                ? 'border-accent-amber/50 bg-accent-amber/15 text-accent-amber'
+                ? 'border-accent-yellow/50 bg-accent-yellow/15 text-accent-yellow'
                 : 'border-transparent text-text-muted hover:border-[var(--hairline)] hover:text-text-primary'
             }`}
           >
@@ -609,7 +609,7 @@ export function SymbolInspector() {
                       className="num flex items-baseline gap-1 text-[11px] font-bold text-accent-blue hover:underline">
                   {toFaDigits((shown * 100).toFixed(1))}٪
                   {differs ? (
-                    <span className="text-[8.5px] font-normal text-accent-amber"
+                    <span className="text-[8.5px] font-normal text-accent-yellow"
                           data-testid="inspector-i4-diverges">
                       (موتور: {toFaDigits(((cached as number) * 100).toFixed(1))}٪)
                     </span>
@@ -628,7 +628,7 @@ export function SymbolInspector() {
             <div className="flex items-center justify-between gap-1">
               <span className="text-[8.5px] text-text-muted">قدرت خرید/فروش</span>
               {rawRow?.f_clock || rawRow?.f_susp ? (
-                <span className="text-[8.5px] text-accent-amber" data-testid="inspector-power-pattern">
+                <span className="text-[8.5px] text-accent-yellow" data-testid="inspector-power-pattern">
                   {rawRow?.f_clock ? 'الگوی ساعت' : 'حجم مشکوک'}
                 </span>
               ) : null}
@@ -691,7 +691,7 @@ export function SymbolInspector() {
             <span className="flex items-center gap-1" data-testid="inspector-jet">
               <span className="text-[9px] text-text-muted">جت</span>
               <span className={`rounded px-1 font-bold ${
-                rawRow?.f_jet ? 'bg-accent-amber/15 text-accent-amber' : 'text-text-muted'
+                rawRow?.f_jet ? 'bg-accent-yellow/15 text-accent-yellow' : 'text-text-muted'
               }`} title={rawRow?.f_jet ? 'پرچمِ جت از داوریِ canonicalِ تابلو (f_jet)' : 'جتِ canonical روشن نیست'}>
                 {rawRow?.f_jet ? '✓' : '—'}
               </span>

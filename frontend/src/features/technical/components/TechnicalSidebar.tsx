@@ -149,7 +149,7 @@ export function TechnicalSidebar({
             >
               {t.icon}
               {isActive && (
-                <span className="absolute right-0 top-1 bottom-1 w-0.5 rounded-l bg-[#2962ff]" />
+                <span className="absolute start-0 top-1 bottom-1 w-0.5 rounded-e bg-[#2962ff]" />
               )}
             </button>
           );

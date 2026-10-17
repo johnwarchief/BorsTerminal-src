@@ -121,7 +121,7 @@ function NoticeBell() {
       data-state={known ? 'ok' : 'unknown'}
       className="relative flex items-center gap-1 rounded-lg border border-border-c bg-bg-card/70 px-2 py-1 text-2xs text-text-secondary transition-all hover:border-border-accent hover:text-accent-blue"
     >
-      <BellIcon size={13} className="text-accent-amber" />
+      <BellIcon size={13} className="text-accent-yellow" />
       {known && unread > 0 ? (
         <span className="num rounded-full bg-accent-red/20 px-1 text-[10px] font-black text-accent-red"
               data-testid="topbar-notifications-count">
