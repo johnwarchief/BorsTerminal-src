@@ -436,14 +436,13 @@ async def put_config(request: Request):
         if errs:
             return {"status": "error", "message": "پیکربندی رد شد", "errors": errs}
         if merged.get("mode") == "live":
-            g = _live_gates()
             # «واقعی» را حتی باِ قفل‌هایِ باز هم نمی‌پذیریم: این ربات آداپتورِ
             # کارگزاری ندارد، پس تنها وضعیتِ صادق که می‌توان ذخیره کرد paper است.
             # (بازماندهٔ پیکربندیِ قدیمیِ live درِ /run هم رد می‌شود.)
             merged["mode"] = "paper"
             merged["note"] = ("mode=live ذخیره نشد — ربات کاغذی است "
-                              "(broker_wired=%s)؛ اجرایِ واقعی فقط ازِ دروازۀ "
-                              "کنترل‌کنندۀ مرکزیِ سرخطی" % g.get("broker_wired"))
+                              "(broker_wired=paper_only)؛ اجرایِ واقعی فقط ازِ "
+                              "دروازۀ کنترل‌کنندۀ مرکزیِ سرخطی")
         led.save_state(CONFIG_KEY, merged)
     return {"status": "ok", "config": merged,
             "errors": [], "changed": {k: v for k, v in merged.items() if cur.get(k) != v}}

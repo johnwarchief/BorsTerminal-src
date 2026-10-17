@@ -95,7 +95,9 @@ def install_stubs(session_day=SESSIONS[-1]):
     BOT._bars = fake_bars
     BOT._live_gates = lambda: {"env_live": False, "adapter": "mock", "session": "none",
                                "capabilities": {}, "live_capable": False, "dry_run": True,
-                               "all_open": False}
+                               "all_open": False, "live_wired": False,
+                               "broker_wired": "paper_only",
+                               "live_wired_reason": "stub: کاغذیِ hard-wired"}
 
 
 def reset_state():
@@ -150,8 +152,12 @@ ck(r.json().get("status") == "error", "۱۵ بدنِ خراب JSON پاسخِ س
 r = client.put("/api/bot/config", json={"mode": "live"})
 ck(r.json()["config"]["mode"] == "paper",
    "۱۶ mode=live بی‌قفل‌ها به paper برمی‌گردد", r.json()["config"]["mode"])
-ck("paper باقی ماند" in json.dumps(r.json(), ensure_ascii=False),
-   "۱۷ دلیلِ برگشت به کاربر گفته می‌شود، نه سکوت")
+body17 = json.dumps(r.json(), ensure_ascii=False)
+note17 = str((r.json().get("config") or {}).get("note") or "")
+ck("paper_only" in body17 and "BOT_LIVE" not in body17,
+   "۱۷ دلیلِ برگشت باِ شاهدِ ماشین‌خوان گفته می‌شود، نه سکوت", note17[:160])
+ck("broker_wired" in body17,
+   "۱۷b علتِ نبودِ «واقعی» درِ پاسخِ config هم هست (paper_only)", body17[:120])
 # mode=live ازِ راهِ PUT ذخیره نمی‌شود (تست ۱۶)؛ اینجا عمداً ازِ راهِ دفتر
 # می‌نویسیم تا ببینیم /run هم تنها به config اکتفا نمی‌کند.
 cfg = dict(BOT.DEFAULTS); cfg["mode"] = "live"; cfg["enabled"] = True
