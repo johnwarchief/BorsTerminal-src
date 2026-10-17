@@ -26,6 +26,7 @@ token درِ همین پروسه و درِ حافظه می‌ماند (`POST /ap
 from __future__ import annotations
 
 import dataclasses
+import datetime as dt
 import json
 import os
 import sqlite3
@@ -35,12 +36,13 @@ import uuid
 from collections import deque
 from typing import Any
 
-from fastapi import APIRouter, Body, HTTPException, Request
+from fastapi import APIRouter, Body, HTTPException, Query, Request
 
 from bors_config import DB_PATH
 from execution_contract import (
     BrokerAdapter, BrokerError, Capabilities, ErrorCode, ExecutionRecord,
-    ExecutionStatus, InstrumentRef, OrderDraft, OrderMode, Resolution, Side,
+    ExecutionStatus, InstrumentRef, OrderDraft, OrderMode, OrderState, Resolution, Side,
+    UNRESOLVED_CODES, redact,
 )
 from execution_easytrader import (
     EasyTraderAdapter, RefusingTransport, RequestsTransport, WIRE_BASE_URL,
@@ -421,6 +423,22 @@ def _abort_gate(execution_id: str) -> threading.Event:
             entry.update({"abort": ev, "state": "waiting"})
             _SCHEDULES[execution_id] = entry
         return ev
+
+
+#: قفلِ «لغو» ردیف‌به‌ردیف. دو درخواستِ هم‌زمانِ لغو رویِ یکِ سفارش نباید دو بار
+#: «لغو شد» بنویسند — همان اشتباهی که درِ `delete_schedule` باِ قفلِ اتمی گرفته
+#: شد (§۴-د: «هر عملِ لغو یکِ صاحب دارد»). دومی بی‌انتظار رد می‌شود، چون
+#: ایستادنِ پشتِ قفلِ لغو یعنی دو اثرِ عملی از یکِ خواست.
+_CANCEL_LOCKS: dict[str, threading.Lock] = {}
+_CANCEL_LOCKS_GUARD = threading.Lock()
+
+
+def _cancel_lock(execution_id: str) -> threading.Lock:
+    with _CANCEL_LOCKS_GUARD:
+        lk = _CANCEL_LOCKS.get(execution_id)
+        if lk is None:
+            lk = _CANCEL_LOCKS[execution_id] = threading.Lock()
+        return lk
 
 
 def _gate_sleep(seconds: float, ev: threading.Event) -> None:
@@ -1055,6 +1073,51 @@ def get_queue(execution_id: str) -> dict[str, Any]:
             "snapshot": dataclasses.asdict(v.snapshot) if v.snapshot else None}
 
 
+@router.post("/api/execution/cancel/{execution_id}")
+def post_cancel(execution_id: str, body: dict[str, Any] = Body(default={})) -> dict[str, Any]:
+    """لغوِ سفارشی که به کارگزاری رفته — باِ تأییدِ صریح و باِ قفلِ ردیف‌به‌ردیف.
+
+    بی‌`confirm=true` هیچ درخواستی نمی‌رود (همان قاعدۀ `/resume`: «دکمه زده شد»
+    مجوزِ عملِ حساس نیست). تواناییِ لغو ازِ `capabilities` خودِ آداپتور خوانده
+    می‌شود؛ درِ EasyTrader صریح `false` است، پس این در «لغو نشد» را باِ دلیل
+    برمی‌گرداند و هیچ سوکتی نمی‌زند.
+    """
+    caps = _ACTIVE_ADAPTER.capabilities()
+    if body.get("confirm") is not True:
+        return {"status": "refused", "code": ErrorCode.CONFIRM_PHRASE_REQUIRED.value,
+                "detail": "لغو یک عملِ حساس است — صریحاً `confirm: true` لازم است",
+                "execution_id": execution_id, "confirm_gate": "explicit_confirm_required",
+                "cancel_supported": caps.cancel, "dry_run": DRY_RUN, "live": _live_now()}
+    lk = _cancel_lock(execution_id)
+    if not lk.acquire(blocking=False):
+        return {"status": "refused", "code": ErrorCode.DUPLICATE_GUARD.value,
+                "detail": "یکِ درخواستِ لغو همین حالا رویِ این سفارش در جریان است",
+                "execution_id": execution_id, "in_flight": True,
+                "cancel_supported": caps.cancel, "dry_run": DRY_RUN, "live": _live_now()}
+    t0 = time.monotonic()
+    try:
+        with _LOCK:
+            rec = _SERVICE.cancel(execution_id, reason=str(body.get("reason") or "کاربر"))
+    except ExecutionError as e:
+        _note_timing("cancel_ms", (time.monotonic() - t0) * 1000.0)
+        return {"status": "error", "code": e.code.value, "detail": e.detail,
+                "execution_id": execution_id, "cancel_supported": caps.cancel,
+                "unknown_result": e.code in UNRESOLVED_CODES,
+                "dry_run": DRY_RUN, "live": _live_now()}
+    finally:
+        lk.release()
+    _note_timing("cancel_ms", (time.monotonic() - t0) * 1000.0)
+    state = rec.order_state.value
+    confirmed = state == OrderState.CANCELLED.value
+    return {"status": "success", "execution_id": execution_id,
+            "order_state": state, "cancel_accepted": True,
+            "cancelled_confirmed": confirmed,
+            "note": ("لغو تأیید شد — بازخوانیِ وضعیت همان را نشان داد" if confirmed
+                     else "لغو پذیرفته شد ولی بازخوانی تأییدش نکرد — «تأییدِ لغو» "
+                          "ادعا نمی‌شود"),
+            "record": _record_dict(rec), "dry_run": DRY_RUN, "live": _live_now()}
+
+
 @router.get("/api/execution/ledger")
 def get_ledger() -> dict[str, Any]:
     return {"status": "success", "adapter": ADAPTER_KIND, "dry_run": DRY_RUN,
@@ -1119,3 +1182,61 @@ def get_audit(execution_id: str) -> dict[str, Any]:
     return {"status": "success", "execution_id": execution_id,
             "found": bool(ev), "events": ev,
             "latest": ev[-1] if ev else None}
+
+
+def _when_to_epoch(value: str) -> float | None:
+    """`epoch`ِ ثانیه یا `YYYY-MM-DD` (همان روز، ساعتِ محلی) — بی‌حدسِ منطقه‌ای."""
+    v = (value or "").strip()
+    if not v:
+        return None
+    try:
+        return float(v)
+    except ValueError:
+        pass
+    for fmt in ("%Y-%m-%dT%H:%M:%S", "%Y-%m-%d"):
+        try:
+            return dt.datetime.strptime(v, fmt).timestamp()
+        except ValueError:
+            continue
+    return None
+
+
+@router.get("/api/execution/events")
+def get_events(execution_id: str = Query(""), symbol: str = Query(""),
+               status: str = Query(""), order_state: str = Query(""),
+               kind: str = Query(""), since: str = Query(""), until: str = Query(""),
+               limit: int = Query(200)) -> dict[str, Any]:
+    """سابقۀِ رخدادها، فقط‌خواندنی و بی‌راز — فیلترها همه رویِ ستون‌هایِ ردِّپا.
+
+    `payload` درِ این فهرست نمی‌آید (ردِّپایِ کاملِ یکِ سفارش ازِ `/audit/{id}`
+    خوانده می‌شود) و `detail` از همان `redact`ِ خودِ قراردادِ اجرا می‌گذرد، پس
+    اگر روزی رشته‌ای ازِ کارگزاری اینجا بنشیند، نامِ کلیدِ حساس ردِّپا را
+    نمی‌شکند.
+    """
+    kinds = [k.strip() for k in kind.split(",") if k.strip()] or None
+    since_e, until_e = _when_to_epoch(since), _when_to_epoch(until)
+    bad = [name for name, raw, parsed in (("since", since, since_e), ("until", until, until_e))
+           if raw.strip() and parsed is None]
+    if bad:
+        return {"status": "error", "code": "INVALID_FILTER",
+                "detail": "قالبِ تاریخ نامعتبر: %s (مثالِ درست 2026-10-17)" % "، ".join(bad)}
+    rows = _AUDIT.events(execution_id=(execution_id.strip() or None),
+                         symbol=(symbol.strip() or None),
+                         status=(status.strip() or None),
+                         order_state=(order_state.strip() or None),
+                         kinds=kinds, since_epoch=since_e, until_epoch=until_e,
+                         limit=max(1, min(int(limit or 200), 500)))
+    out = []
+    for r in rows:
+        r = dict(r)
+        r.pop("payload", None)
+        if r.get("detail"):
+            r["detail"] = redact(str(r["detail"]))
+        out.append(r)
+    return {"status": "success", "adapter": ADAPTER_KIND, "dry_run": DRY_RUN,
+            "count": len(out), "events": out,
+            "filters": {"execution_id": execution_id or None, "symbol": symbol or None,
+                        "status": status or None, "order_state": order_state or None,
+                        "kind": kinds, "since": since_e, "until": until_e},
+            "note": "فقطِ ردِّپایِ ماندگارِ خودِ برنامه؛ هیچ داده‌ای ازِ کارگزاری "
+                    "اینجا ساخته نمی‌شود"}

@@ -12,6 +12,7 @@ import {
   FundamentalIcon,
   MarketIcon,
   MasterIcon,
+  BoltIcon,
   PortfolioIcon,
   StatusIcon,
   TechnicalIcon,
@@ -64,6 +65,9 @@ export const NAV_SECTIONS: NavSection[] = [
     title: 'سرمایه و دارایی',
     items: [
       { to: '/portfolio', icon: PortfolioIcon, label: 'مدیریت پرتفوی', end: false },
+      // رأیِ مأموریت 2026-10-17: سرخطی تبِّ مستقلِ ناوبری است (نه فقط پنلِ دیده‌بان)،
+      // چون جریانِ «اتصال ← سفارش ← زمان‌بندی ← نتیجه ← سابقه» جایِ خودش را می‌خواهد.
+      { to: '/sarkhati', icon: BoltIcon, label: 'سرخطی', end: false },
       // رأیِ مالک (1405-07-20): دیده‌بان از درونِ پرتفوی بیرون آمد و تبِّ مستقل شد،
       // ولی همان‌جا زیرِ گروهِ «سرمایه و دارایی» و با دندانه نشان داده می‌شود که
       // تعلقش به پرتفوی گم نشود.
@@ -134,7 +138,7 @@ export function Sidebar() {
                 end={item.end}
                 title={item.label}
                 aria-label={item.label}
-                data-testid={item.sub ? 'nav-sub-watch' : undefined}
+                data-testid={item.sub ? 'nav-sub-watch' : `nav-${item.to.slice(1)}`}
                 className={({ isActive }) =>
                   `group relative flex items-center overflow-hidden rounded-lg border border-transparent text-nav font-bold transition-all duration-200 ${item.sub && !collapsed ? 'ms-3 text-2xs' : ''} ${
                     collapsed ? 'justify-center px-0 py-2.5' : 'justify-start px-2 py-2'

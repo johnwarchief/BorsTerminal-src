@@ -112,6 +112,16 @@ export function StatusIcon({ className, size = 16 }: IconProps) {
   );
 }
 
+/** رعدِ «سرخطی» — نشانۀِ ناوبریِ تبِّ سفارشِ سریع. هیچ شمارۀِ «پیشیِ صف» یا
+ *  ادعایِ سرعتی درِ این SVG نیست؛ فقط شکل. */
+export function BoltIcon({ className, size = 16 }: IconProps) {
+  return (
+    <svg {...SVG_PROPS} className={className} width={size} height={size}>
+      <path d="M13 2 4 14h6l-1 8 9-12h-6z" />
+    </svg>
+  );
+}
+
 /** زنگولۀِ مرکزِ اعلان — فقط نشانۀِ ناوبری است؛ شمارۀِ ناخوانده درِ خودِ
  *  ناوبری وِژه می‌گیرد، نه درِ این SVG. */
 export function BellIcon({ className, size = 16 }: IconProps) {

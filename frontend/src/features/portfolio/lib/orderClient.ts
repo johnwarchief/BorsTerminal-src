@@ -79,6 +79,19 @@ export const ExecutionStatusSchema = z.object({
   clock_source: txt,
   clock_limit: txt,
   scheduled_pending: num,
+  // ── سه چیزی که پنل‌هایِ تبِّ «سرخطی» مستقیم می‌خوانند (§۴ و §۵ مأموریت) ──
+  // `mode_matrix` منشأش کدِ پایتون است، نه ادعایِ رابط؛ `queue_rank` صریح
+  // می‌گوید جایِ صف ادعا نشده؛ و `confirm_epoch` به رابط می‌گوید تأییدِ رویِ
+  // صفحه به دورۀِ جاری تعلق دارد یا کهنه شده است.
+  confirm_epoch: num,
+  mode_matrix: z.record(z.string(), z.object({
+    implemented: bool, active: bool, door: txt, proves: txt,
+    can_reach_broker: bool,
+  }).nullish()).nullish(),
+  queue_rank: z.object({
+    claims_first: bool, official_rank_source: z.string().nullish(), why: txt,
+  }).nullish(),
+  wire_provenance: z.unknown().nullish(),
 });
 export type ExecutionStatus = z.infer<typeof ExecutionStatusSchema>;
 
@@ -97,6 +110,14 @@ export const ExecutionRecordSchema = z.object({
   broker_order_id: txt,
   filled_quantity: num,
   queue_position: num,
+  // چهار زمانِ جداگانهٔ مسیر (بندِ C مأموریت) — همه ازِ خودِ رکورد، هیچ‌کدام
+  // محاسبهٔ رابط نیست. `null` یعنی آن مرحله رخ نداده، نه صفر.
+  scheduled_at: num,
+  actual_send_at: num,
+  clock_offset_ms: num,
+  drift_us: num,
+  volume_ahead: num,
+  queue_as_of: txt,
   error_code: txt,
   error_detail: txt,
   attempts: num,
@@ -335,12 +356,28 @@ export const orderApi = {
   refresh: (id: string) => http<Record<string, unknown>>(`/api/execution/refresh/${id}`,
     { method: 'POST', ...NO_RETRY }),
   queue: (id: string) => http<Record<string, unknown>>(`/api/execution/queue/${id}`),
-  audit: (id: string) => http<Record<string, unknown>>(`/api/execution/audit/${id}`),
+  audit: (id: string) => http<Record<string, unknown>>(`/api/execution/audit/${encodeURIComponent(id)}`),
+  events: (filters: EventFilters, signal?: AbortSignal) =>
+    http<EventsView>(`/api/execution/events${eventQuery(filters)}`,
+      { schema: EventsSchema, signal }),
   halt: (reason: string) => http<Record<string, unknown>>('/api/execution/halt',
     { method: 'POST', body: { reason }, ...NO_RETRY }),
   resume: (reason: string, confirm = false) => http<Record<string, unknown>>(
     '/api/execution/resume', { method: 'POST', body: { reason, confirm }, ...NO_RETRY }),
   probe: () => http<Record<string, unknown>>('/api/execution/probe', { method: 'POST', ...NO_RETRY }),
+  /**
+   * لغوِ سفارشی که به کارگزاری رفته. `confirm: true` درِ بک‌اند الزامی است —
+   * «دکمه زده شد» مجوزِ عملِ حساس نیست (همان قاعدۀ `/resume`). بی‌این، درِ
+   * بک‌اند هیچ فراخوانی به آداپتور نمی‌فرستد و همان را برمی‌گرداند.
+   */
+  cancel: (id: string, reason = 'لغو از رابط') => http<Record<string, unknown>>(
+    `/api/execution/cancel/${encodeURIComponent(id)}`,
+    { method: 'POST', body: { confirm: true, reason }, ...NO_RETRY }),
+  /** لغوِ زمان‌بندیِ *نجوشیده* — باِ لغوِ سفارشِ فرستاده‌شده دو کارِ جدا‌اند */
+  cancelSchedule: (id: string) => http<Record<string, unknown>>(
+    `/api/execution/schedule/${encodeURIComponent(id)}`, { method: 'DELETE', ...NO_RETRY }),
+  schedule: (id: string) => http<Record<string, unknown>>(
+    `/api/execution/schedule/${encodeURIComponent(id)}`),
   /** نشانی را فقط درِ حافظۀِ پروسۀِ بک‌اند می‌گذارد؛ پاسخ هیچ مقدارِ باز نمی‌گرداند */
   putSession: (token: string) => http<Record<string, unknown>>('/api/execution/session',
     { method: 'POST', body: { token }, ...NO_RETRY }),
@@ -476,4 +513,141 @@ export function phaseFromResponse(res: Record<string, unknown> | null): {
     return { phase: 'unknown', state: 'unknown' };
   }
   return { phase: 'errored', state: 'error' };
+}
+
+// ─────────────────────────── زمان، سقف‌ها و سابقه ───────────────────────────
+/** `GET /api/execution/timings` — مدتِ هر فاز رویِ monotonic باِ p50/p95/p99ِ
+ *  نمونه‌هایِ واقعی. `thin: true` یعنی نمونۀِ کم؛ رابط ازِ آن «تضمینِ زمان»
+ *  نمی‌سازد (§۵-۶: «هرگز اولِ صف را تضمین نکن»). */
+export const PhaseTimingSchema = z.object({
+  n: num, p50: num, p95: num, p99: num, min: num, max: num, thin: bool,
+});
+export type PhaseTiming = z.infer<typeof PhaseTimingSchema>;
+
+export const TimingsSchema = z.object({
+  status: z.string(),
+  dry_run: bool,
+  adapter: txt,
+  samples: num,
+  clock: txt,
+  phases: z.record(z.string(), PhaseTimingSchema.nullish()).nullish(),
+});
+export type TimingsView = z.infer<typeof TimingsSchema>;
+
+export function useExecutionTimings(enabled = true) {
+  return useQuery({
+    queryKey: ['execution-timings'],
+    queryFn: ({ signal }) =>
+      http<TimingsView>('/api/execution/timings', { schema: TimingsSchema, signal }),
+    enabled,
+    staleTime: 30_000,
+    refetchInterval: sessionPollMs(60_000),
+    retry: false,
+  });
+}
+
+/** `GET /api/execution/limits` — سقف‌هایِ تنظیم‌شده، باِ تفکیکِ «تعریف‌نشده» از
+ *  «صفر». اگر سقفی None باشد یعنی آن گیت خاموش است، نه اینکه مجازِ صفر است. */
+export const LimitsSchema = z.object({
+  status: z.string(),
+  limits: z.object({
+    max_orders: num,
+    max_total_value: num,
+    max_total_quantity: num,
+    require_confirmation: bool,
+    max_order_value: num,
+    max_symbol_exposure: num,
+    max_total_exposure: num,
+    max_daily_loss: num,
+    max_orders_per_window: num,
+    max_total_orders_per_window: num,
+    window_seconds: num,
+    max_data_age_s: num,
+  }).nullish(),
+  codes: z.array(z.string()).nullish(),
+});
+export type LimitsView = z.infer<typeof LimitsSchema>;
+
+export function useExecutionLimits() {
+  return useQuery({
+    queryKey: ['execution-limits'],
+    queryFn: ({ signal }) =>
+      http<LimitsView>('/api/execution/limits', { schema: LimitsSchema, signal }),
+    staleTime: 120_000,
+    retry: false,
+  });
+}
+
+/** `GET /api/execution/events` — سابقۀِ ماندگارِ خودِ برنامه، باِ فیلتر.
+ *  بی‌`payload` و باِ `detail`ِ ردact‌شده (سنجیده درِ dev/sarkhati_tab_v1122.py). */
+export const EventSchema = z.object({
+  id: z.number(),
+  execution_id: z.string(),
+  written_at: txt,
+  at_epoch: num,
+  kind: txt,
+  status: txt,
+  order_state: txt,
+  error_code: txt,
+  detail: txt,
+  broker: txt,
+  symbol: txt,
+  side: txt,
+  price: num,
+  quantity: num,
+  filled: num,
+  mode: txt,
+});
+export type ExecutionEvent = z.infer<typeof EventSchema>;
+
+export const EventsSchema = z.object({
+  status: z.string(),
+  adapter: txt,
+  dry_run: bool,
+  count: num,
+  events: z.array(EventSchema).nullish(),
+  note: txt,
+  code: txt,
+  detail: txt,
+});
+export type EventsView = z.infer<typeof EventsSchema>;
+
+export type EventFilters = {
+  executionId?: string;
+  symbol?: string;
+  status?: string;
+  orderState?: string;
+  kinds?: string;
+  /** `YYYY-MM-DD` — بک‌اند خودش به epoch می‌شکند؛ ساعتِ منطقه‌ای درِ فیلتر نقشی ندارد */
+  since?: string;
+  until?: string;
+  limit?: number;
+};
+
+export function eventQuery(f: EventFilters): string {
+  const q = new URLSearchParams();
+  if (f.executionId?.trim()) q.set('execution_id', f.executionId.trim());
+  if (f.symbol?.trim()) q.set('symbol', f.symbol.trim());
+  if (f.status?.trim()) q.set('status', f.status.trim());
+  if (f.orderState?.trim()) q.set('order_state', f.orderState.trim());
+  if (f.kinds?.trim()) q.set('kind', f.kinds.trim());
+  if (f.since?.trim()) q.set('since', f.since.trim());
+  if (f.until?.trim()) q.set('until', f.until.trim());
+  if (f.limit) q.set('limit', String(f.limit));
+  const s = q.toString();
+  return s ? `?${s}` : '';
+}
+
+export function useExecutionEvents(filters: EventFilters, enabled = true) {
+  return useQuery({
+    queryKey: ['execution-events', filters.executionId ?? '', filters.symbol ?? '',
+      filters.status ?? '', filters.orderState ?? '', filters.kinds ?? '',
+      filters.since ?? '', filters.until ?? '', filters.limit ?? 200],
+    queryFn: ({ signal }) => http<EventsView>(
+      `/api/execution/events${eventQuery(filters)}`, { schema: EventsSchema, signal }),
+    enabled,
+    staleTime: 10_000,
+    refetchInterval: enabled ? sessionPollMs(60_000) : false,
+    retry: false,
+  });
 }
