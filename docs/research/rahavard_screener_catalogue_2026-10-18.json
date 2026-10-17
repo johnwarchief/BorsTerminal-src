@@ -1,0 +1,758 @@
+{
+ "36": {
+  "optIdx": 36,
+  "indicator": "RSI(14)",
+  "outputs": [
+   "RSI Value - مقدار",
+   "Cross With Mid Line - تقاطع با سطح ۵۰",
+   "Cross With 30 Line - تقاطع با سطح ۳۰",
+   "Cross With 70 Line - تقاطع با سطح ۷۰",
+   "Trending Up - روند صعودی",
+   "Trending Down - روند نزولی"
+  ]
+ },
+ "37": {
+  "optIdx": 37,
+  "indicator": "RV(90)",
+  "outputs": [
+   "RV Value - مقدار",
+   "More than 2 - حجم مشکوک",
+   "Trending Up - روند صعودی",
+   "Trending Down - روند نزولی"
+  ]
+ },
+ "38": {
+  "optIdx": 38,
+  "indicator": "RV(30)",
+  "outputs": [
+   "RV Value - مقدار",
+   "More than 2 - حجم مشکوک",
+   "Trending Up - روند صعودی",
+   "Trending Down - روند نزولی"
+  ]
+ },
+ "39": {
+  "optIdx": 39,
+  "indicator": "RV(15)",
+  "outputs": [
+   "RV Value - مقدار",
+   "More than 2 - حجم مشکوک",
+   "Trending Up - روند صعودی",
+   "Trending Down - روند نزولی"
+  ]
+ },
+ "40": {
+  "optIdx": 40,
+  "indicator": "SM(15)",
+  "outputs": [
+   "SM Value - مقدار",
+   "More than 2 - حجم مشکوک",
+   "Trending Up - روند صعودی",
+   "Trending Down - روند نزولی"
+  ]
+ },
+ "41": {
+  "optIdx": 41,
+  "indicator": "MFI(14)",
+  "outputs": [
+   "MFI Value - مقدار",
+   "Cross With Mid Line - تقاطع با سطح ۵۰",
+   "Cross With 30 Line - تقاطع با سطح ۳۰",
+   "Cross With 70 Line - تقاطع با سطح ۷۰",
+   "Trending Up - روند صعودی",
+   "Trending Down - روند نزولی"
+  ]
+ },
+ "42": {
+  "optIdx": 42,
+  "indicator": "Ichimoku Cloud(9, 26, 52, 26)",
+  "outputs": [
+   "Tenken Sen Value - مقدار تنکن سن",
+   "Kijun Sen Value - مقدار کیجون سن",
+   "Senkou Span A Value - مقدار سنکو سپن A",
+   "Senkou Span B Value - مقدار سنکو سپن B",
+   "Tenken Sen %Distance Value - درصد فاصله آخرین قیمت و تنکن سن",
+   "Kijun Sen %Distance Value - درصد فاصله آخرین قیمت و کیجون سن",
+   "Senkou Span A %Distance Value - درصد فاصله آخرین قیمت و سنکو سپن A",
+   "Senkou Span B %Distance Value - درصد فاصله آخرین قیمت و سنکو سپن B",
+   "Senkou Span A and B %Distance Value - درصد فاصله سنکو سپن A و سنکو سپن B",
+   "Tenken and Kijun Sen %Distance Value - درصد فاصله تنکن و کیجون سن",
+   "Green Cloud - ابر سبز",
+   "Red Cloud - ابر قرمز",
+   "Cloud Change to Green - تغییر ابر به سبز",
+   "Cloud Change to Red - تغییر ابر به قرمز",
+   "Price Bullish Cloud Escape - خروج صعودی قیمت از ابر",
+   "Price Bearish Cloud Escape - خروج نزولی قیمت از ابر",
+   "Kijun Bullish Cloud Escape - خروج صعودی کیجون سن از ابر",
+   "Kijun Bearish Cloud Escape - خروج نزولی کیجون سن از ابر",
+   "Tenken Bullish Cloud Escape - خروج صعودی تنکن سن از ابر",
+   "Tenken Bearish Cloud Escape - خروج نزولی تنکن سن از ابر",
+   "Chiko Bullish Cloud Escape - خروج صعودی چیکو اسپن از ابر",
+   "Chiko Bearish Cloud Escape - خروج نزولی چیکو اسپن از ابر",
+   "Price Bullish Cross kijun Line - تقاطع آخرین قیمت و کیجون سن",
+   "Price Bullish Cross Tenken Line - تقاطع آخرین قیمت و تنکن سن",
+   "Price Price between Senko Span A and B - قیمت بین سنکو سپن A و B",
+   "Price between Kijun and Tenken sen - قیمت بین کینجون و تنکن سن",
+   "Tenken Trending Up - تنکن سن در روند صعودی",
+   "Tenken No Trend - تنکن سن در روند خنثی",
+   "Tenken Trending Down - تنکن سن در روند نزولی",
+   "Kijun Trending Up - کیجون سن در روند صعودی",
+   "Kijun No Trend - کیجون سن در روند خنثی",
+   "Kijun Trending Down - کیجون سن در روند نزولی",
+   "Chiko Trending Up - چیکو سپن در روند صعودی",
+   "Chiko No Trend - چیکو سپن در روند خنثی",
+   "Chiko Trending Down - چیکو سپن در روند نزولی",
+   "Senko Span A Trending Up - سنکو سپن A در روند صعودی",
+   "Senko Span A No Trend - سنکو سپن A در روند خنثی",
+   "Senko Span A Trending Down - سنکو سپن A در روند نزولی",
+   "Senko Span B Trending Up - سنکو سپن B در روند صعودی",
+   "Senko Span B No Trend - سنکو سپن B در روند خنثی",
+   "Senko Span B Trending Down - سنکو سپن B در روند نزولی",
+   "Tight Could - تنکن و کیجون با هم برابر",
+   "Tight Tenken and Kijun - تنکن و کیجون با هم برابر"
+  ]
+ },
+ "43": {
+  "optIdx": 43,
+  "indicator": "KELTNER(16)",
+  "outputs": [
+   "Upper Band - باند بالایی",
+   "Lower Band - باند پایینی",
+   "Price Distance to Upper Band - درصد فاصله آخرین قیمت و باند بالایی",
+   "Price Distance to Lower Band - درصد فاصله آخرین قیمت و باند پایینی",
+   "Price Crossed Lower Band - تقاطع آخرین قیمت با باند پایینی",
+   "Price Crossed Upper Band - تقاطع آخرین قیمت با باند بالایی",
+   "Bullish Lite Fuse - فرار صعودی کندل از باند",
+   "Bearish Lite Fuse - فرار نزولی کندل از باند",
+   "Band Tightening - باند در حال جمع شدن",
+   "Band Expanding - باند در حال باز شدن",
+   "Trending Up - روند صعودی",
+   "Trending Down - روند نزولی"
+  ]
+ },
+ "44": {
+  "optIdx": 44,
+  "indicator": "BB(20)",
+  "outputs": [
+   "Upper Band - باند بالایی",
+   "Lower Band - باند پایینی",
+   "Price Distance to Upper Band - درصد فاصله آخرین قیمت و باند بالایی",
+   "Price Distance to Lower Band - درصد فاصله آخرین قیمت و باند پایینی",
+   "Price Crossed Lower Band - تقاطع آخرین قیمت با باند پایینی",
+   "Price Crossed Upper Band - تقاطع آخرین قیمت با باند بالایی",
+   "Bullish Lite Fuse - فرار صعودی کندل از باند",
+   "Bearish Lite Fuse - فرار نزولی کندل از باند",
+   "Band Tightening - باند در حال جمع شدن",
+   "Band Expanding - باند در حال باز شدن",
+   "Trending Up - روند صعودی",
+   "Trending Down - روند نزولی"
+  ]
+ },
+ "45": {
+  "optIdx": 45,
+  "indicator": "EMA(5)",
+  "outputs": [
+   "EMA Value - مقدار",
+   "Price Distance to EMA - درصد فاصله از آخرین قیمت",
+   "EMA 5 Bullish Cross EMA 10 - تقاطع صعودی با میانگین 10 روزه",
+   "EMA 5 Bearish Cross EMA 10 - تقاطع نزولی با میانگین 10 روزه",
+   "EMA 5 Bullish Cross EMA 20 - تقاطع صعودی با میانگین 20 روزه",
+   "EMA 5 Bearish Cross EMA 20 - تقاطع نزولی میانگین 20 روزه",
+   "EMA 5 Bullish Cross EMA 30 - تقاطع صعودی با میانگین 30 روزه",
+   "EMA 5 Bearish Cross EMA 30 - تقاطع نزولی با میانگین 30 روزه",
+   "EMA 5 Bullish Cross EMA 50 - تقاطع صعودی با میانگین 50 روزه",
+   "EMA 5 Bearish Cross EMA 50 - تقاطع نزولی با میانگین 50 روزه",
+   "EMA 5 Bullish Cross EMA 100 - تقاطع صعودی با میانگین 100 روزه",
+   "EMA 5 Bearish Cross EMA 100 - تقاطع نزولی با میانگین 100 روزه",
+   "EMA 5 Bullish Cross EMA 200 - تقاطع صعودی با میانگین 200 روزه",
+   "EMA 5 Bearish Cross EMA 200 - تقاطع نزولی با میانگین 200 روزه"
+  ]
+ },
+ "46": {
+  "optIdx": 46,
+  "indicator": "EMA(10)",
+  "outputs": [
+   "EMA Value - مقدار",
+   "Price Distance to EMA - درصد فاصله از آخرین قیمت",
+   "EMA 10 Bullish Cross EMA 5 - تقاطع صعودی با میانگین 5 روزه",
+   "EMA 10 Bearish Cross EMA 5 - تقاطع نزولی با میانگین 5 روزه",
+   "EMA 10 Bullish Cross EMA 20 - تقاطع صعودی با میانگین 20 روزه",
+   "EMA 10 Bearish Cross EMA 20 - تقاطع نزولی با میانگین 20 روزه",
+   "EMA 10 Bullish Cross EMA 30 - تقاطع صعودی با میانگین 30 روزه",
+   "EMA 10 Bearish Cross EMA 30 - تقاطع نزولی با میانگین 30 روزه",
+   "EMA 10 Bullish Cross EMA 50 - تقاطع صعودی با میانگین 50 روزه",
+   "EMA 10 Bearish Cross EMA 50 - تقاطع نزولی با میانگین 50 روزه",
+   "EMA 10 Bullish Cross EMA 100 - تقاطع صعودی با میانگین 100 روزه",
+   "EMA 10 Bearish Cross EMA 100 - تقاطع نزولی با میانگین 100 روزه",
+   "EMA 10 Bullish Cross EMA 200 - تقاطع صعودی با میانگین 200 روزه",
+   "EMA 10 Bearish Cross EMA 200 - تقاطع نزولی با میانگین 200 روزه"
+  ]
+ },
+ "47": {
+  "optIdx": 47,
+  "indicator": "EMA(20)",
+  "outputs": [
+   "EMA Value - مقدار",
+   "Price Distance to EMA - درصد فاصله از آخرین قیمت",
+   "EMA 20 Bullish Cross EMA 5 - تقاطع صعودی با میانگین 5 روزه",
+   "EMA 20 Bearish Cross EMA 5 - تقاطع نزولی با میانگین 5 روزه",
+   "EMA 20 Bullish Cross EMA 10 - تقاطع صعودی با میانگین 10 روزه",
+   "EMA 20 Bearish Cross EMA 10 - تقاطع نزولی با میانگین 10 روزه",
+   "EMA 20 Bullish Cross EMA 30 - تقاطع صعودی با میانگین 30 روزه",
+   "EMA 20 Bearish Cross EMA 30 - تقاطع نزولی با میانگین 30 روزه",
+   "EMA 20 Bullish Cross EMA 50 - تقاطع صعودی با میانگین 50 روزه",
+   "EMA 20 Bearish Cross EMA 50 - تقاطع نزولی با میانگین 50 روزه",
+   "EMA 20 Bullish Cross EMA 100 - تقاطع صعودی با میانگین 100 روزه",
+   "EMA 20 Bearish Cross EMA 100 - تقاطع نزولی با میانگین 100 روزه",
+   "EMA 20 Bullish Cross EMA 200 - تقاطع صعودی با میانگین 200 روزه",
+   "EMA 20 Bearish Cross EMA 200 - تقاطع نزولی با میانگین 200 روزه"
+  ]
+ },
+ "48": {
+  "optIdx": 48,
+  "indicator": "EMA(30)",
+  "outputs": [
+   "EMA Value - مقدار",
+   "Price Distance to EMA - درصد فاصله از آخرین قیمت",
+   "EMA 30 Bullish Cross EMA 5 - تقاطع صعودی با میانگین 5 روزه",
+   "EMA 30 Bearish Cross EMA 5 - تقاطع نزولی با میانگین 5 روزه",
+   "EMA 30 Bullish Cross EMA 10 - تقاطع صعودی با میانگین 10 روزه",
+   "EMA 30 Bearish Cross EMA 10 - تقاطع نزولی با میانگین 10 روزه",
+   "EMA 30 Bullish Cross EMA 20 - تقاطع صعودی با میانگین 20 روزه",
+   "EMA 30 Bearish Cross EMA 20 - تقاطع نزولی با میانگین 20 روزه",
+   "EMA 30 Bullish Cross EMA 50 - تقاطع صعودی با میانگین 50 روزه",
+   "EMA 30 Bearish Cross EMA 50 - تقاطع نزولی با میانگین 50 روزه",
+   "EMA 30 Bullish Cross EMA 100 - تقاطع صعودی با میانگین 100 روزه",
+   "EMA 30 Bearish Cross EMA 100 - تقاطع نزولی با میانگین 100 روزه",
+   "EMA 30 Bullish Cross EMA 200 - تقاطع صعودی با میانگین 200 روزه",
+   "EMA 30 Bearish Cross EMA 200 - تقاطع نزولی با میانگین 200 روزه"
+  ]
+ },
+ "49": {
+  "optIdx": 49,
+  "indicator": "EMA(50)",
+  "outputs": [
+   "EMA Value - مقدار",
+   "Price Distance to EMA - درصد فاصله از آخرین قیمت",
+   "EMA 50 Bullish Cross EMA 5 - تقاطع صعودی با میانگین 5 روزه",
+   "EMA 50 Bearish Cross EMA 5 - تقاطع نزولی با میانگین 5 روزه",
+   "EMA 50 Bullish Cross EMA 10 - تقاطع صعودی با میانگین 10 روزه",
+   "EMA 50 Bearish Cross EMA 10 - تقاطع نزولی با میانگین 10 روزه",
+   "EMA 50 Bullish Cross EMA 20 - تقاطع صعودی با میانگین 20 روزه",
+   "EMA 50 Bearish Cross EMA 20 - تقاطع نزولی با میانگین 20 روزه",
+   "EMA 50 Bullish Cross EMA 30 - تقاطع صعودی با میانگین 30 روزه",
+   "EMA 50 Bearish Cross EMA 30 - تقاطع نزولی با میانگین 30 روزه",
+   "EMA 50 Bullish Cross EMA 100 - تقاطع صعودی با میانگین 100 روزه",
+   "EMA 50 Bearish Cross EMA 100 - تقاطع نزولی با میانگین 100 روزه",
+   "EMA 50 Bullish Cross EMA 200 - تقاطع صعودی با میانگین 200 روزه",
+   "EMA 50 Bearish Cross EMA 200 - تقاطع نزولی با میانگین 200 روزه"
+  ]
+ },
+ "50": {
+  "optIdx": 50,
+  "indicator": "EMA(100)",
+  "outputs": [
+   "EMA Value - مقدار",
+   "Price Distance to EMA - درصد فاصله از آخرین قیمت",
+   "EMA 100 Bullish Cross EMA 5 - تقاطع صعودی با میانگین 5 روزه",
+   "EMA 100 Bearish Cross EMA 5 - تقاطع نزولی با میانگین 5 روزه",
+   "EMA 100 Bullish Cross EMA 10 - تقاطع صعودی با میانگین 10 روزه",
+   "EMA 100 Bearish Cross EMA 10 - تقاطع نزولی با میانگین 10 روزه",
+   "EMA 100 Bullish Cross EMA 20 - تقاطع صعودی با میانگین 20 روزه",
+   "EMA 100 Bearish Cross EMA 20 - تقاطع نزولی با میانگین 20 روزه",
+   "EMA 100 Bullish Cross EMA 30 - تقاطع صعودی با میانگین 30 روزه",
+   "EMA 100 Bearish Cross EMA 30 - تقاطع نزولی با میانگین 30 روزه",
+   "EMA 100 Bullish Cross EMA 50 - تقاطع صعودی با میانگین 50 روزه",
+   "EMA 100 Bearish Cross EMA 50 - تقاطع نزولی با میانگین 50 روزه",
+   "EMA 100 Bullish Cross EMA 200 - تقاطع صعودی با میانگین 200 روزه",
+   "EMA 100 Bearish Cross EMA 200 - تقاطع نزولی با میانگین 200 روزه"
+  ]
+ },
+ "51": {
+  "optIdx": 51,
+  "indicator": "EMA(200)",
+  "outputs": [
+   "EMA Value - مقدار",
+   "Price Distance to EMA - درصد فاصله از آخرین قیمت",
+   "EMA 200 Bullish Cross EMA 5 - تقاطع صعودی با میانگین 5 روزه",
+   "EMA 200 Bearish Cross EMA 5 - تقاطع نزولی با میانگین 5 روزه",
+   "EMA 200 Bullish Cross EMA 10 - تقاطع صعودی با میانگین 10 روزه",
+   "EMA 200 Bearish Cross EMA 10 - تقاطع نزولی با میانگین 10 روزه",
+   "EMA 200 Bullish Cross EMA 20 - تقاطع صعودی با میانگین 20 روزه",
+   "EMA 200 Bearish Cross EMA 20 - تقاطع نزولی با میانگین 20 روزه",
+   "EMA 200 Bullish Cross EMA 30 - تقاطع صعودی با میانگین 30 روزه",
+   "EMA 200 Bearish Cross EMA 30 - تقاطع نزولی با میانگین 30 روزه",
+   "EMA 200 Bullish Cross EMA 50 - تقاطع صعودی با میانگین 50 روزه",
+   "EMA 200 Bearish Cross EMA 50 - تقاطع نزولی با میانگین 50 روزه",
+   "EMA 200 Bullish Cross EMA 100 - تقاطع صعودی با میانگین 100 روزه",
+   "EMA 200 Bearish Cross EMA 100 - تقاطع نزولی با میانگین 100 روزه"
+  ]
+ },
+ "52": {
+  "optIdx": 52,
+  "indicator": "SMA(5)",
+  "outputs": [
+   "SMA Value - مقدار",
+   "Price Distance to SMA - درصد فاصله از آخرین قیمت",
+   "SMA 5 Bullish Cross SMA 10 - تقاطع صعودی با میانگین 10 روزه",
+   "SMA 5 Bearish Cross SMA 10 - تقاطع نزولی با میانگین 10 روزه",
+   "SMA 5 Bullish Cross SMA 20 - تقاطع صعودی با میانگین 20 روزه",
+   "SMA 5 Bearish Cross SMA 20 - تقاطع نزولی با میانگین 20 روزه",
+   "SMA 5 Bullish Cross SMA 30 - تقاطع صعودی با میانگین 30 روزه",
+   "SMA 5 Bearish Cross SMA 30 - تقاطع نزولی با میانگین 30 روزه",
+   "SMA 5 Bullish Cross SMA 50 - تقاطع صعودی با میانگین 50 روزه",
+   "SMA 5 Bearish Cross SMA 50 - تقاطع نزولی با میانگین 50 روزه",
+   "SMA 5 Bullish Cross SMA 100 - تقاطع صعودی با میانگین 100 روزه",
+   "SMA 5 Bearish Cross SMA 100 - تقاطع نزولی با میانگین 100 روزه",
+   "SMA 5 Bullish Cross SMA 200 - تقاطع صعودی با میانگین 200 روزه",
+   "SMA 5 Bearish Cross SMA 200 - تقاطع نزولی با میانگین 200 روزه"
+  ]
+ },
+ "53": {
+  "optIdx": 53,
+  "indicator": "SMA(10)",
+  "outputs": [
+   "SMA Value - مقدار",
+   "Price Distance to SMA - درصد فاصله از آخرین قیمت",
+   "SMA 10 Bullish Cross SMA 5 - تقاطع صعودی با میانگین 5 روزه",
+   "SMA 10 Bearish Cross SMA 5 - تقاطع نزولی با میانگین 5 روزه",
+   "SMA 10 Bullish Cross SMA 20 - تقاطع صعودی با میانگین 20 روزه",
+   "SMA 10 Bearish Cross SMA 20 - تقاطع نزولی با میانگین 20 روزه",
+   "SMA 10 Bullish Cross SMA 30 - تقاطع صعودی با میانگین 30 روزه",
+   "SMA 10 Bearish Cross SMA 30 - تقاطع نزولی با میانگین 30 روزه",
+   "SMA 10 Bullish Cross SMA 50 - تقاطع صعودی با میانگین 50 روزه",
+   "SMA 10 Bearish Cross SMA 50 - تقاطع نزولی با میانگین 50 روزه",
+   "SMA 10 Bullish Cross SMA 100 - تقاطع صعودی با میانگین 100 روزه",
+   "SMA 10 Bearish Cross SMA 100 - تقاطع نزولی با میانگین 100 روزه",
+   "SMA 10 Bullish Cross SMA 200 - تقاطع صعودی با میانگین 200 روزه",
+   "SMA 10 Bearish Cross SMA 200 - تقاطع نزولی با میانگین 200 روزه"
+  ]
+ },
+ "54": {
+  "optIdx": 54,
+  "indicator": "SMA(20)",
+  "outputs": [
+   "SMA Value - مقدار",
+   "Price Distance to SMA - درصد فاصله از آخرین قیمت",
+   "SMA 20 Bullish Cross SMA 5 - تقاطع صعودی با میانگین 5 روزه",
+   "SMA 20 Bearish Cross SMA 5 - تقاطع نزولی با میانگین 5 روزه",
+   "SMA 20 Bullish Cross SMA 10 - تقاطع صعودی با میانگین 10 روزه",
+   "SMA 20 Bearish Cross SMA 10 - تقاطع نزولی با میانگین 10 روزه",
+   "SMA 20 Bullish Cross SMA 30 - تقاطع صعودی با میانگین 30 روزه",
+   "SMA 20 Bearish Cross SMA 30 - تقاطع نزولی با میانگین 30 روزه",
+   "SMA 20 Bullish Cross SMA 50 - تقاطع صعودی با میانگین 50 روزه",
+   "SMA 20 Bearish Cross SMA 50 - تقاطع نزولی با میانگین 50 روزه",
+   "SMA 20 Bullish Cross SMA 100 - تقاطع صعودی با میانگین 100 روزه",
+   "SMA 20 Bearish Cross SMA 100 - تقاطع نزولی با میانگین 100 روزه",
+   "SMA 20 Bullish Cross SMA 200 - تقاطع صعودی با میانگین 200 روزه",
+   "SMA 20 Bearish Cross SMA 200 - تقاطع نزولی با میانگین 200 روزه"
+  ]
+ },
+ "55": {
+  "optIdx": 55,
+  "indicator": "SMA(30)",
+  "outputs": [
+   "SMA Value - مقدار",
+   "Price Distance to SMA - درصد فاصله از آخرین قیمت",
+   "SMA 30 Bullish Cross SMA 5 - تقاطع صعودی با میانگین 5 روزه",
+   "SMA 30 Bearish Cross SMA 5 - تقاطع نزولی با میانگین 5 روزه",
+   "SMA 30 Bullish Cross SMA 10 - تقاطع صعودی با میانگین 10 روزه",
+   "SMA 30 Bearish Cross SMA 10 - تقاطع نزولی با میانگین 10 روزه",
+   "SMA 30 Bullish Cross SMA 20 - تقاطع صعودی با میانگین 20 روزه",
+   "SMA 30 Bearish Cross SMA 20 - تقاطع نزولی با میانگین 20 روزه",
+   "SMA 30 Bullish Cross SMA 50 - تقاطع صعودی با میانگین 50 روزه",
+   "SMA 30 Bearish Cross SMA 50 - تقاطع نزولی با میانگین 50 روزه",
+   "SMA 30 Bullish Cross SMA 100 - تقاطع صعودی با میانگین 100 روزه",
+   "SMA 30 Bearish Cross SMA 100 - تقاطع نزولی با میانگین 100 روزه",
+   "SMA 30 Bullish Cross SMA 200 - تقاطع صعودی با میانگین 200 روزه",
+   "SMA 30 Bearish Cross SMA 200 - تقاطع نزولی با میانگین 200 روزه"
+  ]
+ },
+ "56": {
+  "optIdx": 56,
+  "indicator": "SMA(50)",
+  "outputs": [
+   "SMA Value - مقدار",
+   "Price Distance to SMA - درصد فاصله از آخرین قیمت",
+   "SMA 50 Bullish Cross SMA 5 - تقاطع صعودی با میانگین 5 روزه",
+   "SMA 50 Bearish Cross SMA 5 - تقاطع نزولی با میانگین 5 روزه",
+   "SMA 50 Bullish Cross SMA 10 - تقاطع صعودی با میانگین 10 روزه",
+   "SMA 50 Bearish Cross SMA 10 - تقاطع نزولی با میانگین 10 روزه",
+   "SMA 50 Bullish Cross SMA 20 - تقاطع صعودی با میانگین 20 روزه",
+   "SMA 50 Bearish Cross SMA 20 - تقاطع نزولی با میانگین 20 روزه",
+   "SMA 50 Bullish Cross SMA 30 - تقاطع صعودی با میانگین 30 روزه",
+   "SMA 50 Bearish Cross SMA 30 - تقاطع نزولی با میانگین 30 روزه",
+   "SMA 50 Bullish Cross SMA 100 - تقاطع صعودی با میانگین 100 روزه",
+   "SMA 50 Bearish Cross SMA 100 - تقاطع نزولی با میانگین 100 روزه",
+   "SMA 50 Bullish Cross SMA 200 - تقاطع صعودی با میانگین 200 روزه",
+   "SMA 50 Bearish Cross SMA 200 - تقاطع نزولی با میانگین 200 روزه"
+  ]
+ },
+ "57": {
+  "optIdx": 57,
+  "indicator": "SMA(100)",
+  "outputs": [
+   "SMA Value - مقدار",
+   "Price Distance to SMA - درصد فاصله از آخرین قیمت",
+   "SMA 100 Bullish Cross SMA 5 - تقاطع صعودی با میانگین 5 روزه",
+   "SMA 100 Bearish Cross SMA 5 - تقاطع نزولی با میانگین 5 روزه",
+   "SMA 100 Bullish Cross SMA 10 - تقاطع صعودی با میانگین 10 روزه",
+   "SMA 100 Bearish Cross SMA 10 - تقاطع نزولی با میانگین 10 روزه",
+   "SMA 100 Bullish Cross SMA 20 - تقاطع صعودی با میانگین 20 روزه",
+   "SMA 100 Bearish Cross SMA 20 - تقاطع نزولی با میانگین 20 روزه",
+   "SMA 100 Bullish Cross SMA 30 - تقاطع صعودی با میانگین 30 روزه",
+   "SMA 100 Bearish Cross SMA 30 - تقاطع نزولی با میانگین 30 روزه",
+   "SMA 100 Bullish Cross SMA 50 - تقاطع صعودی با میانگین 50 روزه",
+   "SMA 100 Bearish Cross SMA 50 - تقاطع نزولی با میانگین 50 روزه",
+   "SMA 100 Bullish Cross SMA 200 - تقاطع صعودی با میانگین 200 روزه",
+   "SMA 100 Bearish Cross SMA 200 - تقاطع نزولی با میانگین 200 روزه"
+  ]
+ },
+ "58": {
+  "optIdx": 58,
+  "indicator": "SMA(200)",
+  "outputs": [
+   "SMA Value - مقدار",
+   "Price Distance to SMA - درصد فاصله از آخرین قیمت",
+   "SMA 200 Bullish Cross SMA 5 - تقاطع صعودی با میانگین 5 روزه",
+   "SMA 200 Bearish Cross SMA 5 - تقاطع نزولی با میانگین 5 روزه",
+   "SMA 200 Bullish Cross SMA 10 - تقاطع صعودی با میانگین 10 روزه",
+   "SMA 200 Bearish Cross SMA 10 - تقاطع نزولی با میانگین 10 روزه",
+   "SMA 200 Bullish Cross SMA 20 - تقاطع صعودی با میانگین 20 روزه",
+   "SMA 200 Bearish Cross SMA 20 - تقاطع نزولی با میانگین 20 روزه",
+   "SMA 200 Bullish Cross SMA 30 - تقاطع صعودی با میانگین 30 روزه",
+   "SMA 200 Bearish Cross SMA 30 - تقاطع نزولی با میانگین 30 روزه",
+   "SMA 200 Bullish Cross SMA 50 - تقاطع صعودی با میانگین 50 روزه",
+   "SMA 200 Bearish Cross SMA 50 - تقاطع نزولی با میانگین 50 روزه",
+   "SMA 200 Bullish Cross SMA 100 - تقاطع صعودی با میانگین 100 روزه",
+   "SMA 200 Bearish Cross SMA 100 - تقاطع نزولی با میانگین 100 روزه"
+  ]
+ },
+ "59": {
+  "optIdx": 59,
+  "indicator": "PivotPointClassic(30)",
+  "outputs": [
+   "Pivot Point - نقطه عطف",
+   "Resistance 1 - مقاومت اول",
+   "Support 1 - حمایت اول",
+   "Resistance 2 - مقاومت دوم",
+   "Support 2 - حمایت دوم",
+   "Resistance 3 - مقاومت سوم",
+   "Support 3 - حمایت سوم",
+   "Close Price on R1 - قیمت در مقاومت اول",
+   "Close Price on R2 - قیمت در مقاومت دوم",
+   "Close Price on R3 - قیمت در مقاومت سوم",
+   "Close Price on S1 - قیمت در حمایت اول",
+   "Close Price on S2 - قیمت در حمایت دوم",
+   "Close Price on S3 - قیمت در حمایت سوم",
+   "Close Price Above R3 - قیمت بالاتر از مقاومت سوم",
+   "Close Price Above S3 - قیمت پایینتر از حمایت سوم"
+  ]
+ },
+ "60": {
+  "optIdx": 60,
+  "indicator": "PivotPointWoodie(30)",
+  "outputs": [
+   "Pivot Point - نقطه عطف",
+   "Resistance 1 - مقاومت اول",
+   "Support 1 - حمایت اول",
+   "Resistance 2 - مقاومت دوم",
+   "Support 2 - حمایت دوم",
+   "Close Price on R1 - قیمت در مقاومت اول",
+   "Close Price on R2 - قیمت در مقاومت دوم",
+   "Close Price on S1 - قیمت در حمایت اول",
+   "Close Price on S2 - قیمت در حمایت دوم",
+   "Close Price Above R2 - قیمت بالاتر از مقاومت دوم",
+   "Close Price Above S2 - قیمت پایینتر از حمایت دوم"
+  ]
+ },
+ "61": {
+  "optIdx": 61,
+  "indicator": "PivotPointDeMark(30)",
+  "outputs": [
+   "Resistance 1 - مقاومت اول",
+   "Support 1 - حمایت اول",
+   "Close Price on R1 - قیمت در مقاومت اول",
+   "Close Price on S1 - قیمت در حمایت اول",
+   "Close Price Above R1 - قیمت بالاتر از مقاومت سوم",
+   "Close Price Above S1 - قیمت پایینتر از حمایت سوم"
+  ]
+ },
+ "62": {
+  "optIdx": 62,
+  "indicator": "PivotPointCamarilla(30)",
+  "outputs": [
+   "Resistance 4 - مقاومت چهارم",
+   "Resistance 3 - مقاومت سوم",
+   "Resistance 2 - مقاومت دوم",
+   "Resistance 1 - مقاومت اول",
+   "Support 1 - حمایت اول",
+   "Support 2 - حمایت دوم",
+   "Support 3 - حمایت سوم",
+   "Support 4 - حمایت چهارم",
+   "Close Price on R1 - قیمت در مقاومت اول",
+   "Close Price on R2 - قیمت در مقاومت دوم",
+   "Close Price on R3 - قیمت در مقاومت سوم",
+   "Close Price on R4 - قیمت در مقاومت چهارم",
+   "Close Price on S1 - قیمت در حمایت اول",
+   "Close Price on S2 - قیمت در حمایت دوم",
+   "Close Price on S3 - قیمت در حمایت سوم",
+   "Close Price on S4 - قیمت در حمایت چهارم",
+   "Close Price Above R4 - قیمت بالاتر از مقاومت چهارم",
+   "Close Price Above S4 - قیمت پایینتر از حمایت چهارم"
+  ]
+ },
+ "63": {
+  "optIdx": 63,
+  "indicator": "PivotPointFibonacci(30)",
+  "outputs": [
+   "Pivot Point - نقطه عطف",
+   "Resistance 1 - مقاومت اول",
+   "Support 1 - حمایت اول",
+   "Resistance 2 - مقاومت دوم",
+   "Support 2 - حمایت دوم",
+   "Resistance 3 - مقاومت سوم",
+   "Support 3 - حمایت سوم",
+   "Close Price on R1 - قیمت در مقاومت اول",
+   "Close Price on R2 - قیمت در مقاومت دوم",
+   "Close Price on R3 - قیمت در مقاومت سوم",
+   "Close Price on S1 - قیمت در حمایت اول",
+   "Close Price on S2 - قیمت در حمایت دوم",
+   "Close Price on S3 - قیمت در حمایت سوم",
+   "Close Price Above R3 - قیمت بالاتر از مقاومت سوم",
+   "Close Price Above S3 - قیمت پایینتر از حمایت سوم"
+  ]
+ },
+ "64": {
+  "optIdx": 64,
+  "indicator": "CCI(14)",
+  "outputs": [
+   "CCI Value - مقدار",
+   "Cross With 200 Line - تقاطع با سطح ۲۰۰",
+   "Cross With 100 Line - تقاطع با سطح ۱۰۰",
+   "Cross With 0 Line - تقاطع با سطح ۰",
+   "Cross With -100 Line - تقاطع با سطح ۱۰۰-",
+   "Cross With -200 Line - تقاطع با سطح ۲۰۰-",
+   "Trending Up - روند صعودی",
+   "Trending Down - روند نزولی"
+  ]
+ },
+ "65": {
+  "optIdx": 65,
+  "indicator": "WR(14)",
+  "outputs": [
+   "WR Value - مقدار",
+   "Cross With Mid Line - اندیکاتور خط ۵۰ را قطع کرده",
+   "Cross With 20 Line - اندیکاتور خط ۲۰ را قطع کرده",
+   "Cross With 80 Line - اندیکاتور خط ۸۰ را قطع کرده",
+   "Trending Up - روند صعودی",
+   "Trending Down - روند نزولی"
+  ]
+ },
+ "66": {
+  "optIdx": 66,
+  "indicator": "SO(14)",
+  "outputs": [
+   "%K - مقدار",
+   "%D - مقدار",
+   "%K Cross With Mid Line - تقاطع اندیکاتور K و خط ۵۰",
+   "%K Cross With 20 Line - تقاطع اندیکاتور K و خط ۲۰",
+   "%K Cross With 80 Line - تقاطع اندیکاتور K و خط ۸۰",
+   "%D Cross With Mid Line - تقاطع اندیکاتور D و خط ۵۰",
+   "%D Cross With 20 Line - تقاطع اندیکاتور D و خط ۲۰",
+   "%D Cross With 80 Line - تقاطع اندیکاتور D و خط ۸۰",
+   "%K Bullish Crossed %D - تقاطع صعودی خط K با خط D",
+   "%K Bearish Crossed %D - تقاطع نزولی خط K با خط D",
+   "Trending Up - روند صعودی",
+   "Trending Down - روند نزولی"
+  ]
+ },
+ "67": {
+  "optIdx": 67,
+  "indicator": "VRSI(14)",
+  "outputs": [
+   "VRSI Value - مقدار",
+   "Cross With Mid Line - تقاطع با سطح ۵۰",
+   "Cross With 30 Line - تقاطع با سطح ۳۰",
+   "Cross With 70 Line - تقاطع با سطح ۷۰",
+   "Trending Up - روند صعودی",
+   "Trending Down - روند نزولی"
+  ]
+ },
+ "68": {
+  "optIdx": 68,
+  "indicator": "ARRON(25)",
+  "outputs": [
+   "Arron Up Value - مقدار ارون بالا",
+   "Arron Down Value - مقدار ارون پایین",
+   "Cross Between Up and Down - تقاطع ارون بالا و ارون پایین",
+   "UP more than Down - ارون بالا بزرگتر از ارون پایین",
+   "UP Less than Down - ارون بالا کوچکتر از ارون پایین",
+   "Up Line Trending up - خط صعود روند صعودی",
+   "Up Line Trending Down - خط صعود روند نزولی",
+   "Down Line Trending up - خط نزول روند صعودی",
+   "Down Line Trending Down - خط نزول روند نزولی"
+  ]
+ },
+ "69": {
+  "optIdx": 69,
+  "indicator": "ADX(14)",
+  "outputs": [
+   "+DI Value - مقدار شاخص حرکت مثبت",
+   "-DI Value - مقدار شاخص حرکت منفی",
+   "ADX Value - مقدار شاخص حرکت جهت‌دار",
+   "+DI Bullish Cross -DI - تقاطع صعودی شاخص حرکت مثبت با شاخص حرکت منفی",
+   "+DI Bearish Cross -DI - تقاطع نزولی شاخص حرکت مثبت با شاخص حرکت منفی",
+   "+DI Above -DI - شاخص حرکت مثبت بالاتر از شاخص حرکت منفی باشد",
+   "+DI Below -DI - شاخص حرکت مثبت پایینتر از شاخص حرکت منفی باشد",
+   "+DI Line Trending up - شاخص حرکت مثبت روند صعودی",
+   "+DI Line Trending down - شاخص حرکت مثبت روند نزولی",
+   "-DI Line Trending up - شاخص حرکت منفی روند صعودی",
+   "-DI Line Trending down - شاخص حرکت منفی روند نزولی",
+   "ADX Line Trending up - شاخص حرکت منفی روند صعودی",
+   "ADX Line Trending down - شاخص حرکت جهت‌دار روند نزولی"
+  ]
+ },
+ "70": {
+  "optIdx": 70,
+  "indicator": "AO(5,34)",
+  "outputs": [
+   "AO Value - مقدار",
+   "AO Diff Value - اختلاف مقدار با روز قبل",
+   "Green AO - میله‌ سبز",
+   "Red AO - میله قرمز",
+   "AO Cross 0 Line - تقاطع با سطح ۰",
+   "Changed color to Green - تغییر رنگ به سبز",
+   "Changed color to Red - تغییر رنگ به قرمز",
+   "Trending Up - روند صعودی",
+   "Trending Down - روند نزولی"
+  ]
+ },
+ "71": {
+  "optIdx": 71,
+  "indicator": "StochRSI(14)",
+  "outputs": [
+   "StochRSI Value - مقدار",
+   "Cross With Mid Line - تقاطع با سطح ۰.۵",
+   "Cross With 0.2 Line - تقاطع با سطح ۰.۲",
+   "Cross With 0.8 Line - تقاطع با سطح ۰.۸",
+   "StochRSI Bullish Cross RSI - شاخص قدرت نسبی تصادفی شاخص قدرت نسبی را از زیر قطع کرده",
+   "StochRSI Bearish Cross RSI - شاخص قدرت نسبی تصادفی شاخص قدرت نسبی را از بالا قطع کرده",
+   "Trending Up - روند صعودی",
+   "Trending Down - روند نزولی"
+  ]
+ },
+ "72": {
+  "optIdx": 72,
+  "indicator": "MACD(26)",
+  "outputs": [
+   "MACD Value - خط مکدی",
+   "Signal Value - خط سیگنال",
+   "MACD Bullish Cross Signal line - تقاطع صعودی خط مکدی با خط سیگنال",
+   "MACD Bearish Cross Signal line - تقاطع نزولی خط مکدی با خط سیگنال",
+   "MACD Crossed 0 Line - تقاطع خط مکدی با سطح ۰",
+   "Signal Crossed 0 Line - تقاطع خط سیگنال با سطح ۰",
+   "MACD Above Signal - خط مکدی بزرگتر از خط سیگنال",
+   "Signal Above MACD - خط سیگنال کوچکتر از خط مکدی",
+   "Trending Up - روند صعودی",
+   "Trending Down - روند نزولی"
+  ]
+ },
+ "73": {
+  "optIdx": 73,
+  "indicator": "VMACD(26)",
+  "outputs": [
+   "VMACD Value - خط مکدی",
+   "Signal Value - خط سیگنال",
+   "MACD Bullish Cross Signal line - تقاطع صعودی خط مکدی با خط سیگنال",
+   "MACD Bearish Cross Signal line - تقاطع نزولی خط مکدی با خط سیگنال",
+   "MACD Crossed 0 Line - تقاطع خط مکدی با سطح ۰",
+   "Signal Crossed 0 Line - تقاطع خط سیگنال با سطح ۰",
+   "MACD Above Signal - خط مکدی بزرگتر از خط سیگنال",
+   "Signal Above MACD - خط سیگنال کوچکتر از خط مکدی",
+   "Trending Up - روند صعودی",
+   "Trending Down - روند نزولی"
+  ]
+ },
+ "74": {
+  "optIdx": 74,
+  "indicator": "OBV(20)",
+  "outputs": [
+   "OBV Value - مقدار",
+   "OBV MA Value - میانگین متحرک مقدار",
+   "OBV Bullish Crossed Average Line - تقاطع صعودی با خط میانگین",
+   "OBV Bearish Crossed Average Line - تقاطع نزولی با خط میانگین",
+   "Trending Up - روند صعودی",
+   "Trending Down - روند نزولی"
+  ]
+ },
+ "75": {
+  "optIdx": 75,
+  "indicator": "MTM(6)",
+  "outputs": [
+   "MTM Value - مقدار",
+   "MTM Crossed 0 Line - تقاطع با سطح ۰",
+   "Trending Up - روند صعودی",
+   "Trending Down - روند نزولی"
+  ]
+ },
+ "76": {
+  "optIdx": 76,
+  "indicator": "Candle Pattern",
+  "outputs": [
+   "Doji - دوجی",
+   "Dragonfly - سنجاقک",
+   "Bearish Engulfing - پوشای نزولی",
+   "Bullish Engulfing - پوشای صعودی",
+   "Four Price Doji - دوجی خطی",
+   "Gravestone - سنگ قبر",
+   "Hammer - چکش",
+   "Strong Hammer - چکش قوی",
+   "Hanging Man - مرد آویزان",
+   "Strong Hanging Man - مرد آویزان قوی",
+   "Inverted Hammer - چکش معکوس",
+   "Strong Inverted Hammer - چکش معکوس قوی",
+   "Long Lower Shadow - سایه پایینی بلند",
+   "Long Upper Shadow - سایه بالایی بلند",
+   "Bearish Maribozu - ماریبوزو نزولی",
+   "Bullish Maribozu - ماریبوزو صعودی",
+   "Morning Star - ستاره صبحگاهی",
+   "Shooting Star - ستاره رها شده",
+   "Spinning Top - فرفره",
+   "Strong Spinning Top - فرفره قوی"
+  ]
+ },
+ "77": {
+  "optIdx": 77,
+  "indicator": "Trend",
+  "outputs": [
+   "Short term Bullish Trend - روند کوتاه مدت صعودی",
+   "Short term No Trend - روند کوتاه مدت خنثی",
+   "Short term Bearish Trend - روند کوتاه مدت نزولی",
+   "Mid term Bullish Trend - روند میان مدت صعودی",
+   "Mid term No Trend - روند میان مدت خنثی",
+   "Mid term Bearish Trend - روند میان مدت نزولی",
+   "Long term Bullish Trend - روند بلند مدت صعودی",
+   "Long term No Trend - روند بلند مدت خنثی",
+   "Long term Bearish Trend - روند بلند مدت نزولی"
+  ]
+ },
+ "78": {
+  "optIdx": 78,
+  "indicator": "DT(5_3_8)",
+  "outputs": [
+   "SK - مقدار اندیکاتور",
+   "SD - مقدار اندیکاتور",
+   "SK Cross With Mid Line - اندیکاتور K خط ۵۰ را قطع کرده",
+   "SK Cross With 20 Line - اندیکاتور K خط ۲۰ را قطع کرده",
+   "SK Cross With 80 Line - اندیکاتور K خط ۸۰ را قطع کرده",
+   "SD Cross With Mid Line - اندیکاتور D خط ۵۰ را قطع کرده",
+   "SD Cross With 20 Line - اندیکاتور D خط ۲۰ را قطع کرده",
+   "SD Cross With 80 Line - اندیکاتور D خط ۸۰ را قطع کرده",
+   "SK Bullish Crossed SD - خط K خط D را از پایین قطع کرده",
+   "SK Bearish Crossed SD - خط K خط D را از بالا قطع کرده",
+   "Trending Up - روند صعودی",
+   "Trending Down - روند نزولی"
+  ]
+ }
+}
