@@ -937,6 +937,52 @@ def part_negative_control():
        "و خطایِ نامعلوم را که بدقلق هم درست می‌کند، اشتباهاً قرمز نمی‌کند")
 
 
+# ── ۱۳) فهرستِ مجازِ میزبانِ سیمی ──────────────────────────────────────────────
+# هر پرسشِ این آداپتور هدرِ `Authorization`ِ نشستِ کاربر را حمل می‌کند. بی‌نگهبان،
+# یکِ `base_url`ِ اشتباه همان توکن را به میزبانِ بیگانه (یا باِ http، درِ رده) می‌برد.
+def part_wire_host_allowlist():
+    print("── ۱۳ میزبانِ سیمی: فقط دامنهٔ تأییدشده")
+    import execution_easytrader as ET
+    ck(ET._validated_base_url(None) == "https://api-mts.orbis.easytrader.ir",
+       "پیش‌فرضِ بی‌`base_url` همان میزبانِ دیدہ‌شدہ است")
+    bad = [
+        "http://api-mts.orbis.easytrader.ir",
+        "https://evil.com",
+        "https://api-mts.orbis.easytrader.ir.evil.com",
+        "https://api-mts.orbis.easytrader.ir:8443",
+        "https://user@api-mts.orbis.easytrader.ir",
+        "https://api-mts.orbis.easytrader.ir/core",
+    ]
+    refused = []
+    for u in bad:
+        try:
+            ET._validated_base_url(u)
+        except ValueError:
+            refused.append(u)
+    ck(len(refused) == len(bad),
+       "هر ششِ شکلِ نادرِ میزبان/طرح/بندر/userinfo/مسیر رد می‌شود",
+       "accepted: %s" % [u for u in bad if u not in refused])
+    try:
+        EasyTraderAdapter(transport=ET.RefusingTransport(), token=SECRET,
+                          base_url="https://evil.com")
+        ck(False, "ساختِ آداپتور باِ میزبانِ بیگانه باید پیش ازِ هر چیز رد شود")
+    except ValueError as e:
+        ck("مجاز" in str(e) or "https" in str(e),
+           "ساختِ آداپتورِ بیگانه باِ دلیل رد می‌شود (نه ترافیک، نه توکنِ بیرون‌رفته)",
+           str(e)[:90])
+    os.environ["BORS_EXECUTION_WIRE_HOSTS"] = "api-mts.example-region.ir"
+    try:
+        ck(ET._validated_base_url("https://api-mts.example-region.ir").endswith(
+               "example-region.ir"),
+           "میزبانِ منطقه‌ای فقط باِ فهرستِ صریحِ محیطی پذیرفته می‌شود")
+    finally:
+        os.environ.pop("BORS_EXECUTION_WIRE_HOSTS", None)
+    try:
+        ET._validated_base_url("https://api-mts.example-region.ir")
+        ck(False, "پس ازِ برداشتنِ env، همان میزبان باید دوباره رد شود")
+    except ValueError:
+        ck(True, "بی‌envِ صریح، میزبانِ افزوده رد می‌ماند (فهرستِ مجاز واقعی است)")
+
 def part_server_clock():
     """ساعتِ کارگزاری ازِ درِ *مستندشده*، نه ازِ حدسِ مسیر.
 
@@ -1078,6 +1124,7 @@ def main():
     part_queue()
     part_door()
     part_negative_control()
+    part_wire_host_allowlist()
     part_server_clock()
     part_session_hardening()
     part_spec()
