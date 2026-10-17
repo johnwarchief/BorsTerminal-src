@@ -25,7 +25,7 @@ import sys
 import time
 
 CHROME = r"C:\Users\PCMOD\AppData\Local\ms-playwright\chromium-1234\chrome-win64\chrome.exe"
-BASE = "http://127.0.0.1:8103"
+BASE_DEFAULT = "http://127.0.0.1:8103"   # بک‌اندِ همین worktree درِ حالتِ توسعه
 OUT_DEFAULT = r"C:\Users\PCMOD\Desktop\_bors-sarkhati-tab\_test_runs\tab_live"
 # ارزشِ 'true' ازِ تصادف نیست: `authStore.ts:45` دقیقاً `=== 'true'` را بررسی
 # می‌کند، پس بی‌این دانه هر testid رویِ صفحۀِ ورود «نیست» می‌شود و منفیِ
@@ -46,7 +46,10 @@ def ck(cond, label, detail=""):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", default=OUT_DEFAULT)
+    ap.add_argument("--base", default=BASE_DEFAULT,
+                    help="نشانیِ بک‌اند؛ برایِ بیلدِ منجمد پورتِ خودش را بدهید")
     a = ap.parse_args()
+    base = a.base.rstrip("/")
     os.makedirs(a.out, exist_ok=True)
     from playwright.sync_api import sync_playwright
 
@@ -61,11 +64,23 @@ def main():
         page.on("pageerror", lambda e: errors.append("pageerror: " + str(e)[:160]))
 
         print("── ۱) نشانیِ مستقیم و سایدبار ──")
-        page.goto(BASE + "/#/sarkhati", wait_until="networkidle", timeout=45000)
-        page.wait_for_selector("[data-testid='sarkhati-page']", timeout=15000)
+        # `networkidle` درِ بیلدِ منجمد هرگز رخ نمی‌دهد (فیدِ تابلو مداوم پولینگ
+        # می‌کند)، پس نشانی باِ domcontentloaded باز و سپس lنگرِ صفحه انتظار
+        # می‌رود — همان چیزی که واقعاً لازم است.
+        page.goto(base + "/#/sarkhati", wait_until="domcontentloaded", timeout=45000)
+        page.wait_for_selector("[data-testid='sarkhati-page']", timeout=25000)
         ck(page.evaluate("() => location.hash") == "#/sarkhati", "hash router", page.evaluate("() => location.hash"))
         ck(page.get_by_test_id("sarkhati-status-strip").count() == 1, "خطِ وضعیت هست")
-        strip = page.get_by_test_id("sarkhati-status-strip").inner_text()
+        # صبر تا کوئریِ وضعیت بنشیند: درِ بیلدِ منجمد ilk ثانیه‌ها سرویس درگیر
+        # همگام‌سازیِ start-up است و اولین پاسخ ممکن است نیامده باشد (باگِ رابط
+        # نیست؛ باگِ سنجه است اگر بی‌صبر قضاوت کند).
+        strip = ""
+        _t0 = time.time()
+        while time.time() - _t0 < 30:
+            strip = page.get_by_test_id("sarkhati-status-strip").inner_text()
+            if "سرویسِ اجرا: " in strip:
+                break
+            page.wait_for_timeout(700)
         ck("سرویسِ اجرا: mock" in strip, "آداپتور از پاسخِ سرویس", strip[:120])
         ck("هیچ درخواستی از این ماشین بیرون نمی‌رود" in strip,
            "دروازۀِ ترافیک صادق اعلام شده", strip[:160])
@@ -121,7 +136,7 @@ def main():
         ck(page.get_by_test_id("watch-order-price").input_value() == "12610",
            "فرم باِ جابه\u200cجاییِ بینِ بخش\u200cها نمی\u200cسوزد",
            page.get_by_test_id("watch-order-price").input_value())
-        page.reload(wait_until="networkidle")
+        page.reload(wait_until="domcontentloaded")
         page.wait_for_selector("[data-testid='watch-order-price']", timeout=15000)
         ck(page.get_by_test_id("watch-order-price").input_value() == "12610",
            "فرم بعدِ reload هم می\u200cماند (لینکِ مستقیم و refresh)",
@@ -198,7 +213,7 @@ def main():
                       " عرض مسدود است؛ رفتارِ خودِ پوسته، نه این تب" % (w, h, blocked))
         page.evaluate("() => { try { localStorage.removeItem('bors-symbol'); } catch (e) {} }")
         page.set_viewport_size({"width": 900, "height": 700})
-        page.reload(wait_until="networkidle")
+        page.reload(wait_until="domcontentloaded")
         page.wait_for_selector("[data-testid='sarkhati-page']", timeout=15000)
         for t in ("schedule", "tracking", "risk", "monitor", "order"):
             page.get_by_test_id("sarkhati-tab-" + t).click(timeout=5000)

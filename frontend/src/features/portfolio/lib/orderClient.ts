@@ -15,7 +15,7 @@
 // نمی‌بینَد.
 import { useQuery, type QueryClient } from '@tanstack/react-query';
 import { z } from 'zod';
-import { http } from '@shared/api/http';
+import { http, HttpError } from '@shared/api/http';
 import { sessionPollMs } from '@shared/lib/marketHours';
 
 const bool = z.boolean().nullish();
@@ -307,7 +307,7 @@ export function useExecutionStatus() {
     refetchInterval: () => sessionPollMs(120_000),
     refetchOnWindowFocus: false,
     // نبودِ در (نسخۀ بی‌Sarkhati / بیلدِ کهنه) خطایِ صفحه نیست: «غیرفعال» است.
-    retry: false,
+    retry: (count, error) => count < 2 && !(error instanceof HttpError && error.status === 404),
   });
   const source: GateSource = q.isError ? 'absent' : (!q.data && q.isPending ? 'loading' : 'ok');
   return { ...q, gate: deriveGate(q.data ?? null, source) };

@@ -306,20 +306,44 @@ describe('لغو و ردِّپا باِ capability', () => {
 });
 
 describe('وضعیت‌هایِ خطا و نبودِ داده', () => {
-  it('بی‌سرویسِ اجرا: نه صفرِ سبز، نه دکمهٔ باز', async () => {
+  it('بی‌سرویسِ اجرا (۴۰۴ = در نیست): نه صفرِ سبز، نه دکمهٔ باز', async () => {
     fetchMock.mockImplementation(() => Promise.resolve(
-      { ok: false, status: 500, json: () => Promise.resolve({}) } as unknown as Response));
+      { ok: false, status: 404, json: () => Promise.resolve({}) } as unknown as Response));
     renderPage();
     // «در حالِ خواندنِ وضعیت» حالتِ اولیۀِ واقعی است؛ سنجشِ ما وضعیتی است که
     // سرویس *نیامده* (خطا)، نه وضعیتی که هنوز در راه است.
     // `http()` خودش دو بار با backoff تلاش می‌کند (~۲٫۴ ثانیه)؛ «نبودِ سرویس»
     // بعدِ تمامِ شدنِ آن تلاش‌ها اعلام می‌شود، نه بعدِ اولین خطا.
     await waitFor(() => expect(screen.getByTestId('sarkhati-status-strip').textContent)
-      .toContain('سرویسِ اجرا نیست'), { timeout: 15000 });
+      .toContain('سرویسِ اجرا نیست'), { timeout: 8000 });
     await waitFor(() => expect(screen.getByTestId('sarkhati-gate-reason').textContent)
       .toContain('سرویسِ اجرای سفارش در این نسخه پاسخ نمی‌دهد'), { timeout: 15000 });
     expect(screen.getByTestId('exec-submit')).toBeDisabled();
   }, 20000);
+
+  // بیلدِ منجمد درِ میانشِ همگام‌سازی یک‌بار ۵۰۰ داد و نوارِ وضعیت تا ابد
+  // «سرویسِ اجرا نیست» ماند؛ خطایِ گذرا باید خودش را بازیابد (۴۰۴ نه).
+  it('خطایِ گذرایِ وضعیت بی‌درنگ «سرویس نیست» نمی‌شود', async () => {
+    let hits = 0;
+    fetchMock.mockImplementation((url: string) => {
+      const u = String(url);
+      if (u.includes('/api/execution/status')) {
+        hits += 1;
+        if (hits < 3) {
+          return Promise.resolve({ ok: false, status: 500,
+            json: () => Promise.resolve({}) } as unknown as Response);
+        }
+        return Promise.resolve(json(statusBody()));
+      }
+      if (u.includes('/api/market')) return Promise.resolve(json(FEED));
+      if (u.includes('/api/execution/ledger')) return Promise.resolve(json(LEDGER));
+      return Promise.resolve(json({ status: 'success' }));
+    });
+    renderPage();
+    await waitFor(() => expect(screen.getByTestId('sarkhati-status-strip').textContent)
+      .toContain('سرویسِ اجرا: mock'), { timeout: 12000 });
+    expect(hits).toBeGreaterThanOrEqual(3);
+  }, 25000);
 
   it('سابقه اگر نرسد، «خالی» نمی‌گوید', async () => {
     fetchMock.mockImplementation((url: string) => {
