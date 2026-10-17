@@ -46,7 +46,7 @@ export function BotPanel() {
 
   const summary = useMemo(() => {
     if (!status) return 'در حال خواندنِ وضعیتِ ربات…';
-    const mode = status.config?.mode === 'live' ? 'واقعی' : 'کاغذی';
+    const mode = status.config?.mode === 'live' ? 'واقعی (دروازۀ ربات به بازار وصل نیست)' : 'کاغذی';
     const eq = status.account?.equity;
     return `ربات ${status.config?.enabled ? 'روشن' : 'خاموش'} · ${mode} · ${KILL_LABEL[status.kill] ?? status.kill}`
       + ` · ${n(status.account?.positions ?? 0)} موقعیت · سرمایهٔ نمایشی ${n(eq)} ریال`;

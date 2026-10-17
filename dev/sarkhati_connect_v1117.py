@@ -123,8 +123,13 @@ ck(XC.validate_url("http://api-mts.orbis.easytrader.ir/")[0] is False,
    "D1 http رد می‌شود")
 ck(XC.validate_url("https://evil.example/login")[0] is False,
    "D2 میزبانِ بیرونِ فهرست رد می‌شود")
-ok_wire, _ = XC.validate_url("https://api-mts.orbis.easytrader.ir/x")
-ck(ok_wire, "D3 تنها میزبانِ دیدہ‌شدہ درِ مخزن مجاز است")
+ok_wire, why_wire = XC.validate_url("https://api-mts.orbis.easytrader.ir/x")
+ck(ok_wire is False and "api-mts.orbis.easytrader.ir" in str(why_wire),
+   "D3 میزبانِ API درِ فهرستِ پنجره نیست — نقشِ API ازِ نقشِ ورود جدا است",
+   why_wire)
+ck("api-mts.orbis.easytrader.ir" in XC.ET.wire_hosts(),
+   "D3b همان میزبان از فهرستِ API می‌گذرد (wire_hosts)",
+   XC.ET.wire_hosts())
 os.environ["BORS_EXECUTION_CONNECT_HOSTS"] = "mts.example-broker.ir"
 ck(XC.validate_url("https://mts.example-broker.ir/")[0],
    "D4 میزبانِ تأییدشده با env پذیرفته می‌شود")
@@ -154,8 +159,22 @@ os.environ["BORS_CONNECT_BROWSER"] = sys.executable             # فایلِ م�
 h, why = XC.open_login_window("https://anything.example/")
 ck(h is None and "مجاز" in why, "E1 نشانیِ تأییدنشده پنجره باز نمی‌کند", why)
 h2, why2 = XC.open_login_window("https://api-mts.orbis.easytrader.ir/")
-ck(h2 is None and why2.startswith(XC.NO_LOGIN_HOST),
-   "E2 بی‌دامنۀ ورود، میزبانِ API هم پنجره باز نمی‌کند", why2)
+ck(h2 is None and "api-mts.orbis.easytrader.ir" in str(why2),
+   "E2 میزبانِ API حتی باِ پیش‌فرضِ تازهٔ ورود هم پنجره باز نمی‌کند", why2)
+# درِ بستنِ صریح: `none` یعنی هیچ میزبانی — وگرنه پیش‌فرضِ مشاهده‌شده فعال است.
+os.environ["BORS_EXECUTION_CONNECT_HOSTS"] = "none"
+h2b, why2b = XC.open_login_window("https://d.easytrader.ir/")
+ck(h2b is None, "E2b `none` پنجره را کلاً می‌بندد، بی‌افتادن به پیش‌فرض", why2b)
+ck(XC.allowed_hosts() == (),
+   "E2b2 با `none` فهرستِ پنجره خالی است، نهِ پیش‌فرضِ مشاهده‌شده",
+   XC.allowed_hosts())
+ck(XC.login_hosts() == (), "E2c بی‌میزبانِ تنظیم‌شده، فهرستِ ورود خالی است",
+   XC.login_hosts())
+os.environ.pop("BORS_EXECUTION_CONNECT_HOSTS", None)
+ck(XC.login_hosts() == XC.DEFAULT_LOGIN_HOSTS,
+   "E2d پیش‌فرضِ ورود ازِ مبدأهایِ مشاهده‌شده است، نه ازِ حدس", XC.login_hosts())
+ck("api-mts.orbis.easytrader.ir" not in XC.allowed_hosts(),
+   "E2e میزبانِ API درِ فهرستِ پنجره نیست (نقش‌ها جدا)", XC.allowed_hosts())
 ck(not opened, "E3 هیچ پروسه‌ای شروع نشد (دامنه تأیید نشده)", opened)
 
 os.environ["BORS_EXECUTION_CONNECT_HOSTS"] = "mts.example-broker.ir"

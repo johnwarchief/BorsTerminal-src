@@ -307,6 +307,12 @@ _SECRET_KEYS = ("authorization", "proxy-authorization", "cookie", "set-cookie",
                 "token", "password", "pass", "secret", "api_key", "apikey")
 _BEARER_RE = re.compile(r"(?i)\b(bearer\s+)[a-z0-9._~+/=-]{6,}")
 _KV_RE = re.compile(r"(?i)\b(" + "|".join(re.escape(k) for k in _SECRET_KEYS) + r")\b(\s*[=:]\s*)(\S+)")
+# دو سوراخی که باِ _KV_RE تنها بسته نمی‌شوند (§۶-۴ مأموریت، با کنترلِ منفی آزموده):
+# ۱) JWT/توکنِ یتیم — مقداری که هیچ «کلید:» پیشش نیست (وسطِ URL یا لاگِ آزاد).
+# ۲) دمِ Cookie — `_KV_RE` فقط نخستین token بعدِ برچسب را می‌گیرد و `a=1; b=2`
+#    را نیمه‌پاک می‌کند؛ نصفِ کوکیِ نشست هم نشتیِ نشست است.
+_JWT_RE = re.compile(r"\b[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{4,}\.[A-Za-z0-9_-]{4,}\b")
+_COOKIE_TAIL_RE = re.compile(r"(?i)\b(cookie|set-cookie)\b(\s*[=:]\s*)(\S[^\n]*)")
 
 
 def redact(value: Any) -> Any:
@@ -317,7 +323,9 @@ def redact(value: Any) -> Any:
     if isinstance(value, (list, tuple)):
         return [redact(v) for v in value]
     if isinstance(value, str):
-        s = _BEARER_RE.sub(lambda m: m.group(1) + "<redacted>", value)
+        s = _JWT_RE.sub("<redacted>", value)
+        s = _COOKIE_TAIL_RE.sub(lambda m: m.group(1) + m.group(2) + "<redacted>", s)
+        s = _BEARER_RE.sub(lambda m: m.group(1) + "<redacted>", s)
         return _KV_RE.sub(lambda m: m.group(1) + m.group(2) + "<redacted>", s)
     return value
 

@@ -32,6 +32,7 @@ import sqlite3
 import threading
 import time
 import uuid
+from collections import deque
 from typing import Any
 
 from fastapi import APIRouter, Body, HTTPException, Request
@@ -49,7 +50,7 @@ import execution_connect as EXC                            # noqa: E402
 from execution_ledger import ARMED, HALT, TRIPPED, default_ledger
 from execution_mock import MockBrokerAdapter
 from execution_service import ExecutionError, ExecutionService, Limits
-from execution_timing import Scheduler, TimeSource
+from execution_timing import Scheduler, TimeSource, percentile
 
 router = APIRouter()
 
@@ -329,6 +330,87 @@ class ScheduleAborted(RuntimeError):
     """توقف پیش ازِ آتش — هیچ درخواستی ساخته نشد."""
 
 
+#: هر تغییرِ token/نشست یک «دورۀ تأیید» تازه می‌سازد (§۴: «هر تغییر token یا
+#: session حساس باید confirmation قبلی را باطل کند»). بی‌این، سفارشِ
+#: زمان‌بندی‌شدّه پیش ازِ تعویضِ credential در صفِ حافظه می‌ماند و بعداً با
+#: نشستِ *دیگری* آتش می‌زند. تأیید فقط درِ دورۀ خودش اعتبار دارد.
+_CONFIRM_EPOCH = 0
+
+
+def _confirm_epoch() -> int:
+    with _SCHEDULE_LOCK:
+        return _CONFIRM_EPOCH
+
+
+def _confirm_still_valid(epoch: int) -> bool:
+    with _SCHEDULE_LOCK:
+        return _CONFIRM_EPOCH == int(epoch)
+
+
+def _void_confirmations(reason: str) -> int:
+    """دورۀ تأیید را بالا می‌برد و هر صفِ منتظرِ با تأییدِ کهنه را باطل می‌کند.
+
+    ورودیِ بی‌`confirm_epoch` هم باطل می‌شود (fail-closed): اگر ثبتِ تأیید را
+    ندیده‌ایم، حقِ آتش زدن نداریم.
+    """
+    global _CONFIRM_EPOCH
+    with _SCHEDULE_LOCK:
+        _CONFIRM_EPOCH += 1
+        epoch = _CONFIRM_EPOCH
+        voided = 0
+        for entry in _SCHEDULES.values():
+            if entry.get("state") not in ("waiting", "scheduled"):
+                continue
+            # مقایسهٔ مستقیم: `_SCHEDULE_LOCK` برگشت‌ناپذیر است، پس اینجا نباید
+            # `_confirm_still_valid()` صدا زده شود (دقۀِ واقعیِ قفل را خودمان می‌دهیم).
+            if int(entry.get("confirm_epoch", -1) or -1) != epoch:
+                ev = entry.get("abort")
+                if ev is not None:
+                    ev.set()
+                entry["state"] = "aborted"
+                entry["cancelled_by"] = "confirmation voided: %s" % reason
+                entry["detail"] = "تأییدِ پیشین با تغییرِ نشست باطل شد — هیچ " \
+                                  "درخواستی ساخته نشد"
+                voided += 1
+        return voided
+
+
+#: نمونه‌هایِ مدتِ هر فاز رویِ monotonic (§۵: latencyها جدا اندازه گرفته شوند و
+#: p50/p95/p99 ثبت شوند). این حلقۀ در-حافظه تنها چیزی است که *واقعاً* اندازه
+#: گرفته شده را نگه می‌دارد؛ بی‌نمونۀ کافی `None` می‌دهد، نه صفرِ بدل یا عددی
+#: از ریلِ دیسک. ساعتِ دیواری برایِ برچسبِ زمان مصرف شده، نه برایِ مدت.
+_TIMINGS = deque(maxlen=400)
+_TIMING_LOCK = threading.Lock()
+
+
+def _note_timing(phase: str, ms: Any) -> None:
+    try:
+        v = float(ms)
+    except (TypeError, ValueError):
+        return
+    if v < 0.0:
+        return
+    with _TIMING_LOCK:
+        _TIMINGS.append((str(phase), v))
+
+
+def _timing_summary() -> dict[str, Any]:
+    with _TIMING_LOCK:
+        pairs = list(_TIMINGS)
+    out: dict[str, Any] = {"samples": len(pairs), "clock": "monotonic",
+                           "phases": {}}
+    for phase in sorted({p for p, _ in pairs}):
+        xs = [v for p, v in pairs if p == phase]
+        out["phases"][phase] = {
+            "n": len(xs),
+            "p50": round(percentile(xs, 50.0), 2),
+            "p95": round(percentile(xs, 95.0), 2) if len(xs) >= 2 else None,
+            "p99": round(percentile(xs, 99.0), 2) if len(xs) >= 5 else None,
+            "min": round(min(xs), 2), "max": round(max(xs), 2),
+            "thin": len(xs) < 5}
+    return out
+
+
 def _abort_gate(execution_id: str) -> threading.Event:
     with _SCHEDULE_LOCK:
         entry = _SCHEDULES.get(execution_id) or {}
@@ -375,6 +457,11 @@ def _scheduled_send(prepared: Any, ev: threading.Event) -> None:
     try:
         if ev.is_set():
             raise ScheduleAborted("توقفِ دستوری پیش ازِ آتش")
+        with _SCHEDULE_LOCK:
+            armed_epoch = (_SCHEDULES.get(eid) or {}).get("confirm_epoch")
+        if armed_epoch is None or _CONFIRM_EPOCH != int(armed_epoch):
+            raise ScheduleAborted("تأییدِ این زمان‌بندی باطل شده (نشست/token عوض "
+                                  "شد) — هیچ درخواستی ساخته نشد")
         with _LOCK:
             rec = _SERVICE.execute(prepared,
                                    sleep=lambda s: _gate_sleep(s, ev),
@@ -457,6 +544,45 @@ def _wire_preview(draft: OrderDraft) -> dict[str, Any] | None:
     return easytrader_payload(draft)
 
 
+def _mode_matrix(live: bool) -> dict[str, Any]:
+    """وضعیتِ هر چهار حالت، از زبانِ کد، نه از ادعا (§۴).
+
+    کاغذی و بک‌تست **هستند**، ولی درِ دیگری: `api/bot.py` ← `PaperSession` که
+    سازنده‌اش `PaperBroker` را بی‌راهِ تزریق می‌سازد. چون آن دروازه هیچ‌وقت
+    آداپتورِ کارگزاری نمی‌بیند، «کاغذی» نمی‌تواند «واقعی» شود — و برچسبِ «واقعی»
+    درِ ربات عمداً بسته شد (کدِ BOT_LIVE_NOT_WIRED).
+    """
+    def _mod(name: str) -> bool:
+        try:
+            import importlib.util
+            return importlib.util.find_spec(name) is not None
+        except (ImportError, ValueError, AttributeError):
+            return False
+
+    return {
+        "mock": {"implemented": True, "active": ADAPTER_KIND == "mock",
+                 "door": "/api/execution/*",
+                 "proves": "گردشِ منطقِ مرکزی باِ ترافیکِ بدل؛ هیچ شاهدی ازِ "
+                           "کارگزاری نیست"},
+        "dry_run": {"implemented": True, "active": DRY_RUN,
+                    "door": "/api/execution/*",
+                    "proves": "مسیرِ HTTP، گیت‌ها و ردِّپا بی‌هیچ درخواستِ بیرونی"},
+        "live": {"implemented": ADAPTER_KIND == "easytrader", "active": bool(live),
+                 "door": "/api/execution/*",
+                 "proves": ("تنها دروازه‌ای که سوکت می‌زند؛ سیمِ سفارش هنوز "
+                            "WIRE_HYPOTHESIS است و بی‌نشستِ تأییدشده آتش نمی‌زند"
+                            if ADAPTER_KIND == "easytrader" else
+                            "آداپتورِ واقعی انتخاب نشده (BORS_EXECUTION_ADAPTER)")},
+        "paper": {"implemented": _mod("paper_trading"), "active": False,
+                  "door": "/api/bot/*", "can_reach_broker": False,
+                  "proves": "پرشدنِ شبیه‌سازی‌شده رویِ ردیفِ تابلو باِ سرمایهٔ "
+                            "نمایشی؛ به‌هیچ‌وجه سفارشِ بازار نیست"},
+        "backtest": {"implemented": _mod("backtest_engine"), "active": False,
+                     "door": None, "can_reach_broker": False,
+                     "proves": "موتورِ آفلاینِ سنجشِ استراتژی؛ اندپوینتِ HTTP ندارد "
+                               "و درِ کنترل‌کنندۀ مرکزی نیست"},
+    }
+
 @router.get("/api/execution/status")
 def get_status() -> dict[str, Any]:
     caps = _ACTIVE_ADAPTER.capabilities()
@@ -506,7 +632,29 @@ def get_status() -> dict[str, Any]:
         "clock_limit": _CLOCK_LIMIT,
         "scheduled_pending": sum(1 for e in _schedule_all()
                                  if e.get("state") in ("waiting", "scheduled")),
+        # §۴: تأیید درِ دورۀِ خودش اعتبار دارد — UI و آزمون باید ببینند آن دورۀ
+        # عوض شده یا نه (هر token/نشستِ تازه یک دورۀ تازه است).
+        "confirm_epoch": _confirm_epoch(),
+        "mode_matrix": _mode_matrix(live),
+        # §۵-۶: هیچ ادعایِ «اولِ صف» نمی‌کنیم مگر دادهٔ رسمیِ رتبه باشد.
+        "queue_rank": {"claims_first": False,
+                       "official_rank_source": None,
+                       "why": "رتبهٔ صف فقط ازِ دادهٔ رسمیِ کارگزاری خوانده می‌شود؛ "
+                              "بی‌آن، رابط محدود می‌ماند به «زمانِ ارسال» و "
+                              "«زمانِ پذیرش»"},
+        "timings": _timing_summary(),
     }
+
+
+@router.get("/api/execution/timings")
+def get_timings() -> dict[str, Any]:
+    """مدتِ جداگانهٔ هر فاز، رویِ monotonic، با p50/p95/p99ِ نمونه‌هایِ واقعی.
+
+    نمونه کم باشد `p95`/`p99` `None` است (`thin: true`) — عددِ بدلِ کم‌نمونه
+    منتشر نمی‌کنیم. این اندپوینت هیچ درخواستی به کارگزاری نمی‌فرستد.
+    """
+    return {"status": "success", "dry_run": DRY_RUN, "adapter": ADAPTER_KIND,
+            **_timing_summary()}
 
 
 def _schedule_all() -> list[dict[str, Any]]:
@@ -561,8 +709,10 @@ async def post_session(request: Request) -> dict[str, Any]:
         return {"status": "error", "code": "MISSING_TOKEN", "session": _session_dict(),
                 "detail": "هیچ نشانی داده نشد — نشست پاک نمانده"}
     _ACTIVE_ADAPTER.set_token(token)
+    voided = _void_confirmations("token replaced")
     return {"status": "success", "live": _live_now(), "dry_run": DRY_RUN,
             "session": _session_dict(),
+            "confirmations_voided": voided,
             "capabilities": dataclasses.asdict(_ACTIVE_ADAPTER.capabilities()),
             "detail": ("token فقط درِ حافظه ماند؛ با restart می‌میرد و هیچ‌جا "
                        "نوشته/لاگ نمی‌شود")}
@@ -572,7 +722,9 @@ async def post_session(request: Request) -> dict[str, Any]:
 def delete_session() -> dict[str, Any]:
     if isinstance(_ACTIVE_ADAPTER, EasyTraderAdapter):
         _ACTIVE_ADAPTER.clear_token()
-    return {"status": "success", "live": _live_now(), "session": _session_dict()}
+    voided = _void_confirmations("token cleared")
+    return {"status": "success", "live": _live_now(), "session": _session_dict(),
+            "confirmations_voided": voided}
 
 
 # ── ۳) اتصالِ کاربر: پنجرۀ مرورگری و داوریِ حالتِ نشست ──────────────────────
@@ -622,6 +774,11 @@ def delete_connect_browser() -> dict[str, Any]:
 def post_connect_verify() -> dict[str, Any]:
     global _CONNECT_LAST
     _CONNECT_LAST = EXC.verify(_ACTIVE_ADAPTER)
+    # اگر پرسیدنیِ واقعی نشست را تأیید نکرد، هیچ تأییدِ سفارشی از پیش نباید
+    # بماند: «متصل نبودن» و «تأییدِ معتبر» با هم زنده نمی‌مانند (§۴).
+    if str(_CONNECT_LAST.get("state") or "").strip().lower() != \
+            EXC.STATE_CONNECTED.lower():
+        _void_confirmations("verify: session not proven")
     return {"status": "success", "verify": _CONNECT_LAST,
             "connect": EXC.status_dict(_ACTIVE_ADAPTER, _CONNECT_LAST)}
 
@@ -632,6 +789,7 @@ def delete_connect() -> dict[str, Any]:
     if isinstance(_ACTIVE_ADAPTER, EasyTraderAdapter):
         _ACTIVE_ADAPTER.clear_token()
     _CONNECT_LAST = {}
+    _void_confirmations("connect reset")
     return {"status": "success", "detail": "نشستِ حافظه‌ای و پنجره بسته شد",
             "connect": EXC.status_dict(_ACTIVE_ADAPTER, _CONNECT_LAST)}
 
@@ -655,8 +813,10 @@ def post_probe() -> dict[str, Any]:
 
 @router.post("/api/execution/preflight")
 def post_preflight(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
+    t0 = time.monotonic()
     draft = _draft_from(body)
     p = _SERVICE.preflight(draft)
+    _note_timing("preflight_ms", (time.monotonic() - t0) * 1000.0)
     return {"status": "success", "adapter": ADAPTER_KIND, "dry_run": DRY_RUN,
             "live": _live_now(), "execution_id": draft.execution_id,
             "instrument": dataclasses.asdict(draft.instrument),
@@ -679,6 +839,7 @@ def post_prepare(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
     except ExecutionError as e:
         return {"status": "error", "code": e.code.value, "detail": e.detail,
                 "checks": e.checks, "execution_id": draft.execution_id}
+    _note_timing("prepare_ms", (time.monotonic() - t0) * 1000.0)
     return {"status": "success", "execution_id": draft.execution_id,
             "mode": prepared.mode.value, "dry_run": prepared.dry_run,
             "sendable": prepared.sendable,
@@ -712,6 +873,9 @@ def post_dispatch(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
         return {"status": "error", "code": ErrorCode.RISK_LIMIT.value,
                 "detail": why_gate, "execution_id": str(body.get("execution_id") or ""),
                 "risk_gate": "not_configured", "dry_run": DRY_RUN, "live": _live_now()}
+    #: دورۀِ تأیید *پس از*ِ گذشتنِ دو گیت خوانده می‌شود تا اگر نشست همین حالا
+    #: عوض شد، همین درخواست با تأییدِ کهنه رأی نگیرد.
+    confirm_epoch = _confirm_epoch()
     draft = _draft_from(body)
     target = body.get("target_wall_ms")
     try:
@@ -734,10 +898,24 @@ def post_dispatch(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
         # پاسخ‌گو باشد. نتیجه را UI ازِ /schedule و /ledger می‌خواند.
         ev = _abort_gate(draft.execution_id)
         with _SCHEDULE_LOCK:
-            entry = _SCHEDULES[draft.execution_id]
-            entry.update({"state": "scheduled", "send_at_wall_ms":
-                          prepared.plan.send_at_wall_ms, "target_wall_ms":
-                          prepared.plan.target_wall_ms})
+            if _CONFIRM_EPOCH != confirm_epoch:
+                stale = True
+            else:
+                stale = False
+                entry = _SCHEDULES[draft.execution_id]
+                entry.update({"state": "scheduled", "confirm_epoch": confirm_epoch,
+                              "send_at_wall_ms":
+                              prepared.plan.send_at_wall_ms, "target_wall_ms":
+                              prepared.plan.target_wall_ms})
+        if stale:
+            ev.set()
+            return {"status": "error",
+                    "code": ErrorCode.CONFIRM_PHRASE_REQUIRED.value,
+                    "detail": "بینِ تأییدِ شما و این لحظه نشست/token عوض شد — "
+                              "زمان‌بندی ثبت نشد و تأییدِ تازه لازم است",
+                    "execution_id": draft.execution_id,
+                    "confirm_gate": "stale_confirmation", "dry_run": DRY_RUN,
+                    "live": _live_now()}
         threading.Thread(target=_scheduled_send, args=(prepared, ev),
                          name="bors-schedule-%s" % draft.execution_id,
                          daemon=True).start()
@@ -751,6 +929,14 @@ def post_dispatch(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
                             "dispatch_ms": None, "response_ms": None,
                             "observed_ms": None}}
 
+    if not _confirm_still_valid(confirm_epoch):
+        return {"status": "error",
+                "code": ErrorCode.CONFIRM_PHRASE_REQUIRED.value,
+                "detail": "بینِ تأییدِ شما و این لحظه نشست/token عوض شد — ارسال "
+                          "نشد و تأییدِ تازه لازم است",
+                "execution_id": draft.execution_id,
+                "confirm_gate": "stale_confirmation", "dry_run": DRY_RUN,
+                "live": _live_now()}
     try:
         with _LOCK:
             rec = _SERVICE.execute(prepared)
@@ -762,6 +948,9 @@ def post_dispatch(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
                 "unknown_result": e.is_unknown_result,
                 "execution_id": draft.execution_id}
     dispatch_ms = round((time.monotonic() - t0) * 1000, 1)
+    _note_timing("dispatch_ms", dispatch_ms)
+    if getattr(rec, "rtt_ms", None) is not None:
+        _note_timing("response_ms", rec.rtt_ms)
     return {"status": "success", "adapter": ADAPTER_KIND, "dry_run": DRY_RUN,
             "live": _live_now(),
             "kill_switch": _AUDIT.kill_state(),
@@ -808,11 +997,13 @@ def delete_schedule(execution_id: str) -> dict[str, Any]:
 
 @router.post("/api/execution/reconcile/{execution_id}")
 def post_reconcile(execution_id: str) -> dict[str, Any]:
+    t0 = time.monotonic()
     try:
         with _LOCK:
             rec = _SERVICE.reconcile(execution_id)
     except ExecutionError as e:
         raise HTTPException(404, f"{e.code.value}: {e.detail}") from None
+    _note_timing("reconcile_ms", (time.monotonic() - t0) * 1000.0)
     return {"status": "success", "record": _record_dict(rec)}
 
 

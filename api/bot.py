@@ -375,6 +375,15 @@ def _live_gates() -> dict[str, Any]:
     except Exception as e:
         g["error"] = "%s: %s" % (type(e).__name__, str(e)[:120])
     g["all_open"] = bool(g["env_live"] and g["live_capable"] and g["session"] == "connected")
+    #: و اما نکتهٔ اصلی: سه قفلِ بالا فقط می‌گویند «اتصالِ واقعی وجود دارد».
+    #: این ربات هیچ‌وقت ازِ آن استفاده نمی‌کند — `PaperSession` درِ سازندۀ خودش
+    #: `PaperBroker` می‌سازد و هیچ راهی برایِ تزریقِ آداپتورِ کارگزاری ندارد. پس
+    #: `mode=live` درِ این دروازه **ساختنی نیست**، و نگه‌داشتنِ برچسبِ «واقعی» برایِ
+    #: کاربری که فکر می‌کند سفارشِ واقعی می‌رود، خطرناک‌تر از نبودِ قابلیت است.
+    g["live_wired"] = False
+    g["broker_wired"] = "paper_only"
+    g["live_wired_reason"] = ("ربات کاغذی است: `PaperSession` فقط `PaperBroker` "
+                              "می‌سازد و آداپتورِ کارگزاری به آن تزریق نمی‌شود")
     return g
 
 
@@ -400,8 +409,9 @@ def get_status():
         "pending_drafts": len(((led.load_state("paper_pending") or {}).get("drafts") or [])),
         "verdict_session": (led.load_state(MEMBERSHIP_KEY) or {}).get("session"),
         "auto_run": False,
-        "note": ("ربات تنها با POST /api/bot/run اجرا می‌شود؛ کاغذی پیش‌فرض است و "
-                 "هیچ سفارشی به بازار نمی‌رود مگر سه قفلِ اجرایِ واقعی باز باشد."),
+        "note": ("ربات کاغذی است و همیشه کاغذی اجرا می‌شود: آداپتورِ کارگزاری به "
+                 "این دروازه تزریق نمی‌شود، پس «واقعی» اینجا وجود ندارد. مسیرِ "
+                 "ارسالِ واقعی، کنترل‌کنندۀ مرکزیِ سرخطی است."),
     }
 
 
@@ -427,12 +437,13 @@ async def put_config(request: Request):
             return {"status": "error", "message": "پیکربندی رد شد", "errors": errs}
         if merged.get("mode") == "live":
             g = _live_gates()
-            if not g["all_open"] or str(body.get("confirm") or "") != LIVE_CONFIRM_PHRASE:
-                merged["mode"] = "paper"
-                merged["note"] = ("قفل‌های اجرایِ واقعی باز نبود ⇒ paper باقی ماند: "
-                                  + json.dumps({k: g[k] for k in
-                                                ("env_live", "live_capable", "session")},
-                                               ensure_ascii=False))
+            # «واقعی» را حتی باِ قفل‌هایِ باز هم نمی‌پذیریم: این ربات آداپتورِ
+            # کارگزاری ندارد، پس تنها وضعیتِ صادق که می‌توان ذخیره کرد paper است.
+            # (بازماندهٔ پیکربندیِ قدیمیِ live درِ /run هم رد می‌شود.)
+            merged["mode"] = "paper"
+            merged["note"] = ("mode=live ذخیره نشد — ربات کاغذی است "
+                              "(broker_wired=%s)؛ اجرایِ واقعی فقط ازِ دروازۀ "
+                              "کنترل‌کنندۀ مرکزیِ سرخطی" % g.get("broker_wired"))
         led.save_state(CONFIG_KEY, merged)
     return {"status": "ok", "config": merged,
             "errors": [], "changed": {k: v for k, v in merged.items() if cur.get(k) != v}}
@@ -457,9 +468,14 @@ async def run_once(request: Request):
                 "kill": led.kill_state()}
     if str(cfg.get("mode")) == "live":
         g = _live_gates()
-        if not g["all_open"]:
-            return {"status": "refused",
-                    "message": "mode=live ولی قفل‌ها باز نیستند", "live_gates": g}
+        # حتی باِ قفل‌هایِ باز هم رد می‌شود: «واقعی» درِ این دروازه پیاده نیست، و
+        # اجرایِ کاغذی زیرِ برچسبِ «واقعی» ازِ بی‌عملی بدتر است (کاربر فکر می‌کند
+        # سفارشِ واقعی رفته). مسیرِ اجرایِ واقعی، کنترل‌کنندۀ مرکزیِ سرخطی است.
+        return {"status": "refused", "code": "BOT_LIVE_NOT_WIRED",
+                "message": "mode=live درِ ربات پیاده نیست — ربات همیشه کاغذی اجرا "
+                           "می‌کند؛ برایِ ارسالِ واقعی ازِ کنترل‌کنندۀ مرکزیِ سرخطی "
+                           "استفاده کنید",
+                "live_gates": g}
     with _LOCK:
         try:
             day = _board_day()
