@@ -159,9 +159,20 @@ def main():
 
         print("\n── ۴) پیش‌فرود رأیِ سرویس را می‌آورد ──")
         net_len2 = len(net)
+        # «:not(:empty)» سنسورِ درستی نیست: خطِ پاسخ همیشه پر است (متنِ پیش‌فرضِ
+        # دروازۀِ اجرا)، پس این انتظار بی‌درنگ رد می‌شود و متنِ *پیش ازِ کلیک*
+        # خوانده می‌شود. آنچه ثابت می‌شود «تازه‌شدنِ خط به سببِ اقدام» است.
+        before = page.get_by_test_id("watch-order-reason").inner_text()
         page.get_by_test_id("exec-preflight").click()
-        page.wait_for_selector("[data-testid='watch-order-reason']:not(:empty)", timeout=8000)
-        reason = page.get_by_test_id("watch-order-reason").inner_text()
+        reason, waited = before, 0.0
+        while waited < 10.0:
+            page.wait_for_timeout(400)
+            waited += 0.4
+            reason = page.get_by_test_id("watch-order-reason").inner_text()
+            if reason != before:
+                break
+        ck(reason != before, "خطِ پاسخ باِ اقدام تازه شد (نه متنِ پیش‌فرضِ دروازه)",
+           (before[:80], reason[:80]))
         ck("پیش‌فرود" in reason, "خطِ پاسخ ازِ خودِ اقدام است", reason[:150])
         ck(any(u.endswith("/api/execution/preflight") and m == "POST" for m, u in net[net_len2:]),
            "پیش‌فرود واقعاً درخواست زده", net[net_len2:][:4])

@@ -9,11 +9,12 @@
 //  • نبودِ capability یعنی «این کار را نمی‌توانیم بکنیم» — پس درِ «اثبات‌نشده»
 //    نوشته می‌شود، نه درِ «آماده».
 //
-// کنشِ «توقف/ادامه» درِ کارتِ سفارش می‌ماند (تکِ صاحبِ عمل)؛ اینجا فقط وضعیتش
+// کنشِ «توقف/ادامه» درِ بخشِ سفارش می‌ماند (تکِ صاحبِ عمل)؛ اینجا فقط وضعیتش
 // خوانده می‌شود.
-import { Badge } from '@shared/components/Badge';
+import { CheckIcon, XIcon } from '@shared/components/Icons';
 import { toFaDigits } from '@shared/lib/fmt';
 import type { BrokerCapabilities, ExecutionStatus } from '../../lib/orderClient';
+import { Chip, Field, Line, Section, Table, Td, Tr } from './parts';
 
 const CAP_LABEL: Record<string, string> = {
   place: 'ساختنِ سفارش',
@@ -45,112 +46,132 @@ export function SarkhatiRiskCard({ status }: { status: ExecutionStatus | null })
   const limits = (status?.limits ?? {}) as Record<string, number | boolean | null | undefined>;
   const caps = (status?.capabilities ?? {}) as BrokerCapabilities;
   const cgate = (status?.confirm_gate ?? {}) as { required?: boolean; phrase?: string };
-  const provenance = (status?.wire_provenance ?? {}) as
+  const provenance = Object.entries((status?.wire_provenance ?? {}) as
     Record<string, { value?: unknown; kind?: string; hypothesis?: boolean;
       official_docs?: string; proves_session?: boolean; body_semantics?: string;
-      observed?: string }>;
+      observed?: string }>);
   const halted = status?.halted === true;
   const tripped = status?.kill_switch === 'TRIPPED';
 
   return (
-    <div className="glass-panel flex flex-col gap-1.5 rounded-2xl p-2.5"
-      data-testid="sarkhati-risk-card">
-      <div className="flex flex-wrap items-center gap-1.5">
-        <h4 className="text-2xs font-black text-text-secondary">ریسک و ایمنی</h4>
-        <Badge tone={halted ? (tripped ? 'orange' : 'red') : 'green'}
-          title={tripped ? 'توقفِ خودکارِ ریسک — بی‌confirm=True باز نمی‌شود' : undefined}>
-          {halted ? (tripped ? 'توقفِ خودکارِ ریسک' : 'توقفِ دستوری') : 'بدونِ توقف'}
-        </Badge>
-        <span className="text-3xs text-text-muted" data-testid="sarkhati-kill-reason">
-          {status?.kill_reason ? `علت: ${String(status.kill_reason)}` : 'علتی ثبت نشده'}
-        </span>
-      </div>
-
-      <ul className="flex flex-col gap-0.5 text-3xs leading-4" data-testid="sarkhati-gates">
-        <li>
-          <span className="font-bold text-text-primary">پیش‌فرود</span> — پیش ازِ هر
-          عملِ حساس؛ نتیجه‌اش درِ کارتِ سفارش است، و نبودِ پاسخ = عبور نیست.
-        </li>
-        <li>
-          <span className="font-bold text-text-primary">عبارتِ تأیید</span> —{' '}
-          {cgate.required === true
-            ? `الزامی است و درِ بک‌اند سنجیده می‌شود («${String(cgate.phrase ?? '')}»)`
-            : 'فعلاً لازم نیست، چون اجرایِ زنده خاموش است'}
-          {' '}· دورۀِ تأیید: <span className="num">{toFaDigits(String(status?.confirm_epoch ?? 0))}</span>
-          — با هر نشست/tokenِ تازه، تأییدهایِ قبلی بی‌اعتبار می‌شوند.
-        </li>
-        <li>
-          <span className="font-bold text-text-primary">شناسۀِ اجرا</span> — هر تلاشِ تازه
-          شناسۀِ تازه می‌گیرد؛ ردِّپایِ dispatch رویِ دیسک، «دو بار فرستادنِ همان سفارش» را
-          می‌گیرد (DUPLICATE_GUARD).
-        </li>
-        <li>
-          <span className="font-bold text-text-primary">توقفِ اضطراری</span> — رویِ دیسک
-          می‌ماند و زمان‌بندی‌هایِ درِ انتظار را همان لحظه لغو می‌کند؛ دکمه‌اش درِ کارتِ سفارش است.
-        </li>
-        <li>
-          <span className="font-bold text-text-primary">سرریزِ امن</span> — بی‌پیکربندیِ
-          معتبر یا وضعیتی مبهم، اقدامِ تازه ساخته نمی‌شود (نه دورزدنِ گیت).
-        </li>
-      </ul>
-
-      <div className="grid gap-x-3 gap-y-0.5 text-3xs sm:grid-cols-2"
-        data-testid="sarkhati-limits">
-        <span className="text-2xs font-bold text-text-secondary sm:col-span-2">سقف‌هایِ تنظیم‌شده</span>
-        {Object.entries(LIMIT_LABEL).map(([key, label]) => {
-          const v = limits[key];
-          return (
-            <span key={key} className="flex flex-wrap items-baseline gap-1"
-              data-testid={`sarkhati-limit-${key}`}>
-              <span className="text-text-muted">{label}:</span>
-              <span className={`num font-bold ${not(v) ? 'text-accent-yellow' : 'text-text-primary'}`}>
-                {not(v) ? 'تعریف‌نشده (گیت خاموش)'
-                  : typeof v === 'boolean' ? (v ? 'بله' : 'خیر')
-                    : toFaDigits(String(v))}
-              </span>
+    <div className="flex flex-col gap-2" data-testid="sarkhati-risk-card">
+      <Section title="گیت‌هایِ اجرا" testId="sarkhati-gates"
+        tone={halted ? 'alarm' : 'default'}
+        right={(
+          <>
+            <Chip tone={halted ? (tripped ? 'warn' : 'bad') : 'ok'}
+              title={tripped ? 'توقفِ خودکارِ ریسک — بی‌confirm=True باز نمی‌شود' : undefined}>
+              {halted ? (tripped ? 'توقفِ خودکارِ ریسک' : 'توقفِ دستوری') : 'بدونِ توقف'}
+            </Chip>
+            <span className="text-2xs text-text-muted" data-testid="sarkhati-kill-reason">
+              {status?.kill_reason ? `علت: ${String(status.kill_reason)}` : 'علتی ثبت نشده'}
             </span>
-          );
-        })}
-        <span className="flex flex-wrap items-baseline gap-1 sm:col-span-2"
-          data-testid="sarkhati-limit-confirm">
-          <span className="text-text-muted">تأییدِ صریح لازم است:</span>
-          <span className="num font-bold text-text-primary">
-            {limits.require_confirmation === true ? 'بله' : 'در پاسخِ سرویس نیامد'}
-          </span>
-        </span>
-      </div>
+          </>
+        )}>
+        <dl className="grid gap-x-4 gap-y-1 sm:grid-cols-2">
+          <Gate name="پیش‌فرود" body="پیش ازِ هر عملِ حساس؛ نتیجه‌اش درِ بخشِ سفارش است. نبودِ پاسخ = عبور نیست." />
+          <Gate name="عبارتِ تأیید" body={cgate.required === true
+            ? `الزامی است و درِ بک‌اند سنجیده می‌شود («${String(cgate.phrase ?? '')}») — با هر نشست/tokenِ تازه، تأییدهایِ قبلی بی‌اعتبار می‌شوند.`
+            : 'فعلاً لازم نیست، چون اجرایِ زنده خاموش است.'}
+            extra={`دورۀِ تأیید: ${toFaDigits(String(status?.confirm_epoch ?? 0))}`} />
+          <Gate name="شناسۀِ اجرا" body="هر تلاشِ تازه شناسۀِ تازه می‌گیرد؛ ردِّپایِ dispatch رویِ دیسک «دو بار فرستادنِ همان سفارش» را می‌گیرد (DUPLICATE_GUARD)." />
+          <Gate name="توقفِ اضطراری" body="رویِ دیسک می‌ماند و زمان‌بندی‌هایِ درِ انتظار را همان لحظه لغو می‌کند؛ دکمه‌اش درِ بخشِ سفارش است." />
+          <Gate name="سرریزِ امن" body="بی‌پیکربندیِ معتبر یا وضعیتی مبهم، اقدامِ تازه ساخته نمی‌شود — نه دورزدنِ گیت." />
+        </dl>
+      </Section>
 
-      <div className="flex flex-col gap-0.5 text-3xs" data-testid="sarkhati-caps">
-        <span className="text-2xs font-bold text-text-secondary">توانایی‌هایِ اعلامیِ اتصال</span>
+      {/* اندازه‌گیریِ ۱۳۶۶×۷۶۸ (_test_runs/sk_shot_probe.py): کنارِ هم گذاشتنِ این
+          دو بخش ارتفاعِ کارت را ۶۴۲ ← ۶۹۸ برد — درِ ستونِ ۴۷۰پیکسلی مقدارها
+          می‌شکنند و سطرها زیاد می‌شود. پس تک‌ستونی می‌ماند. */}
+      <Section title="توانایی‌هایِ اعلامیِ اتصال" testId="sarkhati-caps"
+        sub="اعلام‌نشده یعنی «نمی‌توانیم بکنیم»، نه صفر">
         <div className="flex flex-wrap gap-1">
-          {Object.entries(CAP_LABEL).map(([key, label]) => (
-            <Badge key={key} tone={caps[key as keyof BrokerCapabilities] === true ? 'green' : 'red'}
-              title={caps[key as keyof BrokerCapabilities] === true ? 'اعلام شده' : 'اعلام نشده — بی‌داده، نه صفر'}>
-              {label}: {caps[key as keyof BrokerCapabilities] === true ? '✓' : '✕'}
-            </Badge>
-          ))}
+          {Object.entries(CAP_LABEL).map(([key, label]) => {
+            const on = caps[key as keyof BrokerCapabilities] === true;
+            return (
+              <Chip key={key} tone={on ? 'ok' : 'bad'}
+                title={on ? 'اعلام شده' : 'اعلام نشده — بی‌داده، نه صفر'}>
+                {on ? <CheckIcon size={11} /> : <XIcon size={11} />}
+                {label}
+              </Chip>
+            );
+          })}
         </div>
-      </div>
+      </Section>
 
-      <div className="flex flex-col gap-0.5 text-3xs" data-testid="sarkhati-unproven">
-        <span className="text-2xs font-bold text-text-secondary">چیزی که هنوز اثبات نشده</span>
-        {Object.entries(provenance).map(([key, p]) => (
-          <span key={key} className="flex flex-wrap items-baseline gap-1.5"
-            data-testid={`sarkhati-prov-${key}`}>
-            <span className="num font-bold text-text-primary">{key}</span>
-            <span className="text-text-muted">{String(p.kind ?? '—')}</span>
-            {p.official_docs ? <span className="text-accent-yellow">سندِ رسمی: {String(p.official_docs)}</span> : null}
-            {p.hypothesis === true ? <span className="text-accent-yellow">فرضیه</span> : null}
-            {p.proves_session === false ? <span className="text-text-muted">نشست را ثابت نمی‌کند</span> : null}
-            {p.body_semantics === 'unverified' ? <span className="text-accent-yellow">معنایِ بدنۀ پاسخ تأیید نشده</span> : null}
-            {p.observed ? <span className="text-text-muted" title="مشاهدهٔ فقط‌خواندنی">دیده‌شدن: {String(p.observed)}</span> : null}
-          </span>
-        ))}
-        <span className="text-text-muted" data-testid="sarkhati-unproven-clock">
-          زمانِ سرورِ کارگزاری: NOT_PROVEN · رتبۀِ صفِ رسمی: NOT_PROVEN · هر عددِ
-          «چقدر نزدیک به هدف» فقط باِ همین دو منبع قابلِ ادعا است.
-        </span>
-      </div>
+      <Section title="سقف‌هایِ تنظیم‌شده" testId="sarkhati-limits"
+        sub="از /api/execution/limits، بی‌عددِ ساختگی">
+        <div className="grid gap-x-4 gap-y-0.5 sm:grid-cols-2 lg:grid-cols-3">
+          {Object.entries(LIMIT_LABEL).map(([key, label]) => {
+            const v = limits[key];
+            return (
+              <div key={key} data-testid={`sarkhati-limit-${key}`}>
+                <Field label={label} value={(
+                  <span className={not(v) ? 'text-accent-yellow' : ''}>
+                    {not(v) ? 'تعریف‌نشده (گیت خاموش)'
+                      : typeof v === 'boolean' ? (v ? 'بله' : 'خیر')
+                        : toFaDigits(String(v))}
+                  </span>
+                )} />
+              </div>
+            );
+          })}
+          <div data-testid="sarkhati-limit-confirm">
+            <Field label="تأییدِ صریح لازم است" value={(
+              <span>{limits.require_confirmation === true ? 'بله' : 'در پاسخِ سرویس نیامد'}</span>
+            )} />
+          </div>
+        </div>
+      </Section>
+
+      <Section title="چیزی که هنوز اثبات نشده" testId="sarkhati-unproven"
+        sub="هر ادعایِ «چقدر نزدیک به هدف» فقط با همین دو منبع قابلِ ادعا است"
+        tone="quiet">
+        {provenance.length ? (
+          <Table testId="sarkhati-prov-rows" minWidth={560}
+            head={['ماده', 'منشأ', 'سندِ رسمی', 'ثبتِ نشست', 'معنایِ بدنۀ پاسخ', 'مشاهده']}>
+            {provenance.map(([key, p]) => (
+              <Tr key={key} testId={`sarkhati-prov-${key}`}>
+                <Td num strong>{key}</Td>
+                <Td>
+                  <span className="text-text-secondary">{String(p.kind ?? '—')}</span>
+                  {p.hypothesis === true ? <Chip tone="warn" title="سیم از مهندسی معکوسِ منابعِ عمومی است">فرضیه</Chip> : null}
+                </Td>
+                <Td tone={p.official_docs ? 'warn' : 'muted'}>
+                  {p.official_docs ? `سندِ رسمی: ${String(p.official_docs)}` : '—'}
+                </Td>
+                <Td tone={p.proves_session === false ? 'warn' : 'muted'}>
+                  {p.proves_session == null ? '—' : (p.proves_session ? 'بله' : 'خیر')}
+                </Td>
+                <Td tone={p.body_semantics === 'unverified' ? 'warn' : 'muted'}>
+                  {p.body_semantics === 'unverified' ? 'تأیید نشده' : (p.body_semantics ? String(p.body_semantics) : '—')}
+                </Td>
+                <Td tone="muted">{p.observed ? String(p.observed) : '—'}</Td>
+              </Tr>
+            ))}
+          </Table>
+        ) : (
+          <Line testId="sarkhati-prov-none">
+            سرویس درِ این پاسخ هیچ مادۀِ منشأدارِ «اثبات‌نشده» اعلام نکرده است — این
+            یعنی «معلوم نیست»، نه یعنی «همه‌چیز تأیید شده».
+          </Line>
+        )}
+        <Line kind="warn" testId="sarkhati-unproven-clock">
+          زمانِ سرورِ کارگزاری: NOT_PROVEN · رتبۀِ صفِ رسمی: NOT_PROVEN
+        </Line>
+      </Section>
+    </div>
+  );
+}
+
+function Gate({ name, body, extra }: { name: string; body: string; extra?: string }) {
+  return (
+    <div className="min-w-0">
+      <dt className="text-2xs font-black text-text-primary">{name}</dt>
+      <dd className="text-2xs leading-4 text-text-secondary">
+        {body}
+        {extra ? <span className="text-text-muted"> · {extra}</span> : null}
+      </dd>
     </div>
   );
 }

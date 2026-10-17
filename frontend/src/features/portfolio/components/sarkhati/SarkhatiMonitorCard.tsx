@@ -11,7 +11,6 @@
 // فیلترها رویِ ستون‌هایِ خودِ ردِّپا هستند؛ تاریخ با قالبِ `YYYY-MM-DD` و
 // تبدیلش درِ بک‌اند انجام می‌شود، پس ساعتِ منطقۀِ مرورگر درِ فیلتر نقشی ندارد.
 import { useState } from 'react';
-import { Badge } from '@shared/components/Badge';
 import { fmtAge } from '@shared/lib/time';
 import { toFaDigits } from '@shared/lib/fmt';
 import { downloadCsvWithMeta, toExportTable } from '@shared/lib/tableExport';
@@ -19,9 +18,13 @@ import {
   CODE_LABEL, useExecutionEvents, useExecutionTimings,
   type EventFilters, type ExecutionEvent,
 } from '../../lib/orderClient';
+import { Chip, GhostBtn, Line, Note, Section, Table, Td, Tr } from './parts';
 
 const KINDS = ['connect', 'session', 'preflight', 'prepare', 'dispatch', 'state',
   'reconcile', 'cancel', 'halt', 'resume', 'duplicate'];
+
+const INPUT = 'rounded-lg border border-border-c bg-bg-primary px-1.5 py-0.5 text-2xs '
+  + 'text-text-primary placeholder:text-text-muted';
 
 function dayAgo(n: number): string {
   const d = new Date(Date.now() - n * 86_400_000);
@@ -61,127 +64,111 @@ export function SarkhatiMonitorCard({ lastStatusAt }: { lastStatusAt?: number | 
     ?.dispatch_ms?.p50;
 
   return (
-    <div className="glass-panel flex flex-col gap-1.5 rounded-2xl p-2.5"
-      data-testid="sarkhati-monitor-card">
-      <div className="flex flex-wrap items-center gap-1.5">
-        <h4 className="text-2xs font-black text-text-secondary">پایشِ ارتباط و سابقه</h4>
-        <Badge tone={failed ? 'red' : 'green'} title="خودِ درِ /api/execution/status">
-          {failed ? 'سرویسِ اجرا پاسخ نداد' : 'درِ اجرا پاسخ می‌دهد'}
-        </Badge>
-        <span className="text-3xs text-text-muted" data-testid="sarkhati-last-status">
-          آخرینِ خواندنِ وضعیت: {lastStatusAt ? fmtAge(Date.now() - lastStatusAt) : '—'}
-        </span>
-        <span className="text-3xs text-text-muted" data-testid="sarkhati-latency">
-          تأخیرِ dispatch p50:{' '}
-          <span className="num text-text-primary">
-            {p50 != null ? `${toFaDigits(String(p50))} ms` : 'اندازه‌گیری‌نشده'}
+    <Section title="پایشِ ارتباط و سابقه" testId="sarkhati-monitor-card"
+      sub="ردِّپایِ ماندگارِ خودِ برنامه، نه لاگِ کارگزاری"
+      right={(
+        <>
+          <Chip tone={failed ? 'bad' : 'ok'} title="خودِ درِ /api/execution/status">
+            {failed ? 'سرویسِ اجرا پاسخ نداد' : 'درِ اجرا پاسخ می‌دهد'}
+          </Chip>
+          <Chip tone="idle" testId="sarkhati-latency"
+            title="از /api/execution/timings — monotonic، نه ساعتِ دیواری">
+            تأخیرِ dispatch p50:{' '}
+            <span className="num">{p50 != null ? `${toFaDigits(String(p50))} ms` : 'اندازه‌گیری‌نشده'}</span>
+          </Chip>
+          <span className="text-2xs text-text-muted" data-testid="sarkhati-last-status">
+            آخرینِ خواندنِ وضعیت:{' '}
+            {lastStatusAt ? <span className="num">{fmtAge(Date.now() - lastStatusAt)}</span> : '—'}
           </span>
-        </span>
-      </div>
-
-      <div className="flex flex-wrap items-end gap-1.5 text-3xs" data-testid="sarkhati-event-filters">
-        <label className="flex flex-col gap-0.5 text-text-muted">نماد
+        </>
+      )}>
+      <div className="flex flex-wrap items-end gap-1.5" data-testid="sarkhati-event-filters">
+        <label className="flex flex-col gap-0.5 text-3xs text-text-muted">نماد
           <input value={sym} onChange={(e) => setSym(e.target.value)}
-            data-testid="sarkhati-ev-f-symbol"
-            className="w-24 rounded-lg border border-border-c bg-bg-primary px-1.5 py-0.5 text-text-primary" />
+            data-testid="sarkhati-ev-f-symbol" className={`${INPUT} w-24`} />
         </label>
-        <label className="flex flex-col gap-0.5 text-text-muted">شناسۀِ اجرا
+        <label className="flex flex-col gap-0.5 text-3xs text-text-muted">شناسۀِ اجرا
           <input value={id} onChange={(e) => setId(e.target.value)}
-            data-testid="sarkhati-ev-f-id"
-            className="w-28 rounded-lg border border-border-c bg-bg-primary px-1.5 py-0.5 text-text-primary" />
+            data-testid="sarkhati-ev-f-id" className={`${INPUT} num w-32`} />
         </label>
-        <label className="flex flex-col gap-0.5 text-text-muted">وضعیت
+        <label className="flex flex-col gap-0.5 text-3xs text-text-muted">وضعیت
           <input value={st} onChange={(e) => setSt(e.target.value)}
             placeholder="مثلاً acknowledged"
-            data-testid="sarkhati-ev-f-status"
-            className="w-32 rounded-lg border border-border-c bg-bg-primary px-1.5 py-0.5 text-text-primary" />
+            data-testid="sarkhati-ev-f-status" className={`${INPUT} w-32`} />
         </label>
-        <label className="flex flex-col gap-0.5 text-text-muted">گونه
+        <label className="flex flex-col gap-0.5 text-3xs text-text-muted">گونه
           <select value={kind} onChange={(e) => setKind(e.target.value)}
-            data-testid="sarkhati-ev-f-kind"
-            className="rounded-lg border border-border-c bg-bg-primary px-1 py-0.5 text-text-primary">
+            data-testid="sarkhati-ev-f-kind" className={INPUT}>
             <option value="">همۀِ گونه‌ها</option>
             {KINDS.map((k) => (<option key={k} value={k}>{k}</option>))}
           </select>
         </label>
-        <label className="flex flex-col gap-0.5 text-text-muted">از تاریخ
+        <label className="flex flex-col gap-0.5 text-3xs text-text-muted">از تاریخ
           <input type="date" value={since} onChange={(e) => setSince(e.target.value)}
-            data-testid="sarkhati-ev-f-since" dir="ltr"
-            className="num rounded-lg border border-border-c bg-bg-primary px-1.5 py-0.5 text-text-primary" />
+            data-testid="sarkhati-ev-f-since" dir="ltr" className={`${INPUT} num`} />
         </label>
-        <button type="button" onClick={apply}
-          data-testid="sarkhati-ev-apply"
-          className="rounded-lg border border-accent-blue/40 px-2 py-1 font-bold text-accent-blue hover:bg-accent-blue/10">
-        اعمالِ فیلتر
-        </button>
-        <button type="button" onClick={exportCsv} disabled={rows.length === 0}
-          data-testid="sarkhati-ev-export"
-          title={rows.length === 0 ? 'بدونِ ردیف، فایلِ خالی ساخته نمی‌شود' : 'CSV با سرستونِ فیلترها'}
-          className="rounded-lg border border-border-c px-2 py-1 font-bold text-text-secondary hover:bg-bg-card disabled:cursor-not-allowed disabled:opacity-40">
+        <GhostBtn testId="sarkhati-ev-apply" onClick={apply}
+          title="فیلترها فقط با این دکمه رویِ پرسشِ سرویس اعمال می‌شوند">
+          اعمالِ فیلتر
+        </GhostBtn>
+        <GhostBtn testId="sarkhati-ev-export" disabled={rows.length === 0}
+          title={rows.length === 0 ? 'بدونِ ردیف، فایلِ خالی ساخته نمی‌شود'
+            : 'CSV با سرستونِ فیلترها، بدونِ payload و بدونِ راز'}
+          onClick={exportCsv}>
           خروجیِ CSV
-        </button>
+        </GhostBtn>
       </div>
 
-      {badFilter ? (
-        <p className="text-3xs text-accent-red" data-testid="sarkhati-ev-badfilter">
-          {String(events.data?.detail ?? 'قالبِ فیلتر درست نیست')}
-        </p>
-      ) : null}
+      <div className="mt-2">
+        {badFilter ? (
+          <Line kind="error" testId="sarkhati-ev-badfilter">
+            {String(events.data?.detail ?? 'قالبِ فیلتر درست نیست')} — فرمتِ تاریخ YYYY-MM-DD است.
+          </Line>
+        ) : null}
 
-      {failed ? (
-        <p className="text-3xs text-accent-red" data-testid="sarkhati-ev-error">
-          سابقه نرسید — «خالی» با «نرسیدن» یکی نیست.
-        </p>
-      ) : rows.length === 0 ? (
-        <p className="text-3xs text-text-muted" data-testid="sarkhati-ev-empty">
-          ردیدی با این فیلترها نیست (صفرِ واقعی، نه خطا).
-        </p>
-      ) : (
-        <div className="max-h-[46vh] overflow-auto">
-          <table className="w-full min-w-[560px] text-3xs" data-testid="sarkhati-ev-rows">
-            <thead className="sticky top-0 bg-bg-primary/90">
-              <tr className="text-text-muted">
-                <th className="text-start font-bold">زمان</th>
-                <th className="text-start font-bold">شناسه</th>
-                <th className="text-start font-bold">گونه</th>
-                <th className="text-start font-bold">وضعیت</th>
-                <th className="text-start font-bold">نماد</th>
-                <th className="text-start font-bold">جزئیات</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((e) => (
-                <tr key={e.id} className="border-t border-border-c/40 align-top"
-                  data-testid={`sarkhati-ev-${e.id}`}>
-                  <td className="num py-0.5">{String(e.written_at ?? '')}</td>
-                  <td className="num">{e.execution_id}</td>
-                  <td className="font-bold">{String(e.kind ?? '')}</td>
-                  <td>
-                    {String(e.status ?? '')}
-                    {e.order_state ? `/${String(e.order_state)}` : ''}
-                    {e.error_code ? (
-                      <span className="ms-1 text-accent-red"
-                        title={String(e.detail ?? '')}>
-                        {CODE_LABEL[String(e.error_code)] ?? String(e.error_code)}
-                      </span>
-                    ) : null}
-                  </td>
-                  <td className="num">{e.symbol ?? '—'}</td>
-                  <td className="max-w-[42ch] break-words text-text-secondary">
-                    {String(e.detail ?? '—')}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+        {failed ? (
+          <Line kind="error" testId="sarkhati-ev-error">
+            سابقه نرسید — «خالی» با «نرسیدن» یکی نیست. با «اعمالِ فیلتر» دوباره بسنجید.
+          </Line>
+        ) : rows.length === 0 ? (
+          <Line testId="sarkhati-ev-empty">
+            ردیدی با این فیلترها نیست (صفرِ واقعی، نه خطا).
+          </Line>
+        ) : (
+          <Table testId="sarkhati-ev-rows" minWidth={620}
+            head={['زمان', 'شناسه', 'گونه', 'وضعیت', 'نماد', 'جزئیات']}>
+            {rows.map((e) => (
+              <Tr key={e.id} testId={`sarkhati-ev-${e.id}`}>
+                <Td num>{String(e.written_at ?? '')}</Td>
+                <Td num>{e.execution_id}</Td>
+                <Td strong>{String(e.kind ?? '')}</Td>
+                <Td>
+                  <span className="num-text">
+                    {String(e.status ?? '')}{e.order_state ? `/${String(e.order_state)}` : ''}
+                  </span>
+                  {e.error_code ? (
+                    <Chip tone="bad" title={String(e.detail ?? '')}>
+                      {CODE_LABEL[String(e.error_code)] ?? String(e.error_code)}
+                    </Chip>
+                  ) : null}
+                </Td>
+                <Td num>{e.symbol ?? '—'}</Td>
+                <Td tone="muted">
+                  <span className="block max-w-[46ch] break-words">{String(e.detail ?? '—')}</span>
+                </Td>
+              </Tr>
+            ))}
+          </Table>
+        )}
+      </div>
 
-      <p className="text-3xs leading-4 text-text-muted" data-testid="sarkhati-monitor-note">
-        این فهرست فقطِ رخدادهایِ خودِ برنامه است (اتصال، نشست، پیش‌فرود، آماده‌سازی،
-        ارسال، نتیجه، رفعِ ابهام، توقف، لغو). رمز، کوکی، JWT و نشانیِ نشست هیچ‌وقت
-        درِ آن نمی‌نشینند و درِ فایلِ خروجی هم نمی‌آیند.
-      </p>
-    </div>
+      <div className="mt-1.5">
+        <Note label="این سابقه چه چیزی نیست" testId="sarkhati-monitor-note">
+          این فهرست فقطِ رخدادهایِ خودِ برنامه است (اتصال، نشست، پیش‌فرود، آماده‌سازی،
+          ارسال، نتیجه، رفعِ ابهام، توقف، لغو) — نه لاگِ کارگزاری. رمز، کوکی، JWT و
+          نشانیِ نشست هیچ‌وقت درِ آن نمی‌نشینند و درِ فایلِ خروجی هم نمی‌آیند.
+        </Note>
+      </div>
+    </Section>
   );
 }

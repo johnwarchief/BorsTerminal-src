@@ -394,3 +394,91 @@ describe('وضعیت‌هایِ خطا و نبودِ داده', () => {
     expect(calls.filter((c) => c.includes('/dispatch'))).toEqual([]);
   });
 });
+
+describe('خطِ جریانِ اجرا (ستونِ فقراتِ صفحه)', () => {
+  /** وضعیتِ گره‌ها ازِ `data-state` خوانده می‌شود، نه ازِ رنگ — رنگِ تنها
+   *  اثباتِ کور است و درِ a11y هم رأی ندارد. همهٔ سنجش‌ها داخلِ waitFor هستند:
+   *  هر نُه گره ازِ أولِ رندر درِ DOM هست، پس «بودنش» اصلاً مدرک نیست و
+   *  سنجشِ بی‌انتظار، وضعیتِ «هنوز داده نرسیده» را می‌خواند. */
+  const node = (id: string) => screen.getByTestId('sarkhati-node-' + id);
+  const stateOf = (id: string) => node(id).getAttribute('data-state');
+  const titleOf = (id: string) => String(node(id).getAttribute('title') ?? '');
+
+  it('گره‌ها ازِ پاسخِ سرویس می‌آیند، نه ازِ متنِ ثابت: گیتِ اجرا بی‌live بسته است', async () => {
+    route({ '/api/execution/status': statusBody({
+      blocked_on: ['D1: نشستِ مالک درِ حافظه نیست'] }) });
+    renderPage();
+    // «held» تنها باِ یکِ رأیِ بک‌اند معنی دارد: بی‌رسیدنِ پاسخ هم gate held است،
+    // پس نخستِ آن‌چه ثابت می‌شود رسیدنِ خودِ وضعیت است (رخدادِ ماندگار > ۰).
+    await waitFor(() => expect(stateOf('history')).toBe('done'));
+    expect(stateOf('gate')).toBe('held');
+    // علت ازِ blocked_onِ خودِ پاسخ می‌آید؛ هیچ «قابلِ استفاده» یا «آمادهٔ
+    // ارسال» نوشته نمی‌شود (بندِ ۵ مأموریت).
+    expect(titleOf('gate')).toContain('گیتِ اجرا بسته است');
+    expect(titleOf('gate')).toContain('D1: نشستِ مالک درِ حافظه نیست');
+  });
+
+  it('گیتِ held بی‌علتِ سرویس «باز است» نمی‌شود — رابط دروغ‌گو نیست', async () => {
+    route({ '/api/execution/status': statusBody({ blocked_on: [], live_requested: false }) });
+    renderPage();
+    await waitFor(() => expect(stateOf('history')).toBe('done'));
+    expect(stateOf('gate')).toBe('held');
+    expect(titleOf('gate')).not.toContain('باز است');
+    expect(titleOf('gate')).toContain('درخواست نشده');
+  });
+
+  it('بی‌نماد، گرهٔ «نماد» نوبت را می‌گیرد و بقیه پیش ازِ نماد سبز نمی‌شوند', async () => {
+    useSymbolStore.getState().setSymbol('');
+    route({ '/api/execution/ledger': { ...LEDGER, records: [], open_ids: [] } });
+    renderPage();
+    await waitFor(() => expect(stateOf('symbol')).toBe('now'));
+    expect(stateOf('send')).toBe('idle');
+    expect(stateOf('accept')).toBe('idle');
+    expect(screen.getByTestId('sarkhati-pipeline-hint').getAttribute('data-node')).toBe('symbol');
+  });
+
+  it('unknown_result: «ارسال» مبهم می‌ماند، نه انجام‌شده و نه انجام‌نشده', async () => {
+    route();
+    renderPage();
+    // رکوردِ پیش‌فرضِ آزمون unknown_result است (ack گم شده).
+    await waitFor(() => expect(stateOf('send')).toBe('unknown'));
+    expect(stateOf('accept')).toBe('unknown');
+    expect(stateOf('check')).toBe('unknown');
+    expect(stateOf('send')).not.toBe('done');
+    expect(stateOf('send')).not.toBe('bad');
+    await waitFor(() => expect(screen.getByTestId('sarkhati-pipeline-hint').textContent)
+      .toContain('تعیینِ تکلیف نشده'));
+  });
+
+  it('مدتِ هر گره از /timings می‌آید؛ گرهٔ بی‌فاز «—» می‌گیرد نه صفر', async () => {
+    route();
+    renderPage();
+    await waitFor(() => expect(node('send').textContent).toContain('۴۱.۵ms'));
+    expect(node('confirm').textContent).toContain('—');
+    expect(node('preflight').textContent).toContain('—');
+    expect(node('send').textContent).not.toContain('۰ms');
+  });
+
+  it('توقفِ اضطراری: گیت، علتِ توقف را می‌گوید نه علتِ نبودِ اتصال', async () => {
+    route({ '/api/execution/status': statusBody({ halted: true, kill_switch: 'TRIPPED',
+      kill_reason: 'توقف از پنلِ معامله', blocked_on: ['D1: نشستِ مالک درِ حافظه نیست'] }) });
+    renderPage();
+    await waitFor(() => expect(titleOf('gate')).toContain('توقفِ اضطراری'));
+    expect(stateOf('gate')).toBe('held');
+    expect(titleOf('gate')).toContain('توقف از پنلِ معامله');
+    expect(titleOf('gate')).not.toContain('D1:');
+  });
+
+  it('اتصالِ زنده باِ شواهد: گیت باز می‌شود و «ارسال» هنوز ادعا ندارد', async () => {
+    route({ '/api/execution/status': statusBody({
+      live_enabled: true, live: true, dry_run: false, nothing_will_leave_the_machine: false,
+      halted: false, blocked_on: [],
+      session: { state: 'connected', account_label: 'mock-acct-1' },
+    }), '/api/execution/ledger': { ...LEDGER, records: [], open_ids: [] } });
+    renderPage();
+    await waitFor(() => expect(stateOf('gate')).toBe('done'));
+    expect(titleOf('gate')).toContain('گیتِ اجرا باز است');
+    expect(['idle', 'now']).toContain(stateOf('send'));
+    expect(stateOf('accept')).not.toBe('done');
+  });
+});

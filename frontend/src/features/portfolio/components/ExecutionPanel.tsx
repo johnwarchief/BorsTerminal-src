@@ -177,23 +177,32 @@ export function ExecutionPanel({ symbol, row, schedule = false }: {
 
   return (
     <div
-      className="mt-auto rounded-xl border border-dashed border-border-c bg-bg-card/40 p-2"
+      className={schedule
+        // درِ تبِّ «سرخطی» خودِ بخش قاب دارد؛ قابِ دوم زیرِ آن کارت‌در‌کارت می‌شود
+        ? 'rounded-lg bg-bg-primary/30 p-1.5'
+        : 'mt-auto rounded-xl border border-dashed border-border-c bg-bg-card/40 p-2'}
       data-testid="watch-order-panel"
       data-can-trade={gate.canTrade ? 'true' : 'false'}
       data-adapter={gate.status?.adapter ?? 'none'}
       data-session={gate.sessionState}
     >
       <ConnectBrokerRow />
-      <div className="mb-1 flex flex-wrap items-center justify-between gap-1">
-        <h5 className="text-2xs font-black text-text-secondary">پنلِ معامله</h5>
+      <div className="mb-1 flex flex-wrap items-center gap-1">
+        {schedule ? null : (
+          <h5 className="text-2xs font-black text-text-secondary">پنلِ معامله</h5>
+        )}
         <div className="flex flex-wrap items-center gap-1">
-          <Badge tone={gate.endpointPresent ? (gate.canTrade ? 'green' : 'yellow') : 'gray'}
-            title={gate.status?.adapter === 'easytrader'
-              ? 'سیمِ EasyTrader — هنوز هیچ ثابتش علیه کارگزاری تأیید نشده' : undefined}>
-            {gate.endpointPresent
-              ? `سرویسِ اجرا: ${gate.status?.adapter ?? '—'}${gate.dryRun ? ' · بدل' : ''}`
-              : 'سرویسِ اجرا نیست'}
-          </Badge>
+          {/* درِ تبِّ «سرخطی» همین برچسب را خطِ وضعیتِ بالا می‌گوید — دو خوانش از
+              یکِ پاسخ رویِ یکِ صفحه، همان چیزی که نباید بسازیم. */}
+          {schedule ? null : (
+            <Badge tone={gate.endpointPresent ? (gate.canTrade ? 'green' : 'yellow') : 'gray'}
+              title={gate.status?.adapter === 'easytrader'
+                ? 'سیمِ EasyTrader — هنوز هیچ ثابتش علیه کارگزاری تأیید نشده' : undefined}>
+              {gate.endpointPresent
+                ? `سرویسِ اجرا: ${gate.status?.adapter ?? '—'}${gate.dryRun ? ' · بدل' : ''}`
+                : 'سرویسِ اجرا نیست'}
+            </Badge>
+          )}
           <Badge tone={sessionTone} title="وضعیتِ نشست از پاسخِ خودِ سرویس">
             {sessionText}
           </Badge>
@@ -274,16 +283,16 @@ export function ExecutionPanel({ symbol, row, schedule = false }: {
                 className="num rounded-lg border border-border-c bg-bg-primary px-1.5 py-1 text-2xs font-bold text-text-primary" />
             </label>
           </div>
-          <p className="mt-1 text-3xs leading-4 text-text-muted" data-testid="exec-clock-facts">
+          <p className="mt-1 text-2xs leading-4 text-text-muted" data-testid="exec-clock-facts">
             ساعتِ این دستگاه: {toFaDigits(String(gate.status?.clock_source ?? '—'))} ·{' '}
             {String(gate.status?.clock_limit ?? 'بی‌اعلانِ محدودیت')}
           </p>
-          <p className="text-3xs leading-4 text-text-muted" data-testid="exec-server-clock">
+          <p className="text-2xs leading-4 text-text-muted" data-testid="exec-server-clock">
             زمانِ سرورِ کارگزاری:{' '}
-            <span className="font-bold text-accent-yellow">اثبات‌نشده (NOT_PROVEN)</span>{' '}
+            <span className="font-black text-accent-yellow">اثبات‌نشده (NOT_PROVEN)</span>{' '}
             — هیچ وعده‌ای برایِ «درستِ همان لحظه» ساخته نمی‌شود
           </p>
-          <p className="text-3xs leading-4 text-text-secondary" data-testid="exec-timings-line">
+          <p className="text-2xs leading-4 text-text-secondary" data-testid="exec-timings-line">
             {timingNote}
           </p>
         </div>
@@ -326,14 +335,15 @@ export function ExecutionPanel({ symbol, row, schedule = false }: {
             تأییدِ نهایی
           </label>
           {cgate.required ? (
-            <label className="flex items-center gap-1 text-2xs text-text-secondary"
+            <label className="flex flex-wrap items-center gap-1 text-2xs text-text-secondary"
               data-testid="exec-confirm-phrase-wrap">
-              <span>برایِ اجرایِ زنده تایپ کنید:</span>
+              <span>عبارتِ «{String(cgate.phrase ?? '')}» را بنویسید تا اجرایِ زنده باز شود:</span>
               <input value={phrase} onChange={(e) => setPhrase(e.target.value)}
-                placeholder={String(cgate.phrase ?? '')}
-                data-testid="exec-confirm-phrase" className="min-w-0 flex-1" />
+                placeholder={String(cgate.phrase ?? '')} aria-label="عبارتِ تأییدِ اجرایِ زنده"
+                data-testid="exec-confirm-phrase"
+                className="min-w-0 flex-1 rounded-lg border border-border-c bg-bg-primary px-1.5 py-0.5 text-2xs font-bold text-text-primary placeholder:text-text-muted" />
               <span className={phraseOk ? 'text-accent-green' : 'text-text-muted'}>
-                {phraseOk ? '✓' : '—'}</span>
+                {phraseOk ? 'مطابق است' : 'مطابق نیست'}</span>
             </label>
           ) : null}
           <button
@@ -343,8 +353,8 @@ export function ExecutionPanel({ symbol, row, schedule = false }: {
             onClick={() => void ask('dispatch', () => orderApi.dispatch(body()))}
             data-testid="exec-submit"
             title={canSubmit ? 'ارسالِ همین سفارش' : gate.reason || 'تأییدِ نهایی و مقدارِ معتبر لازم است'}
-            className={`rounded-lg px-2.5 py-0.5 text-3xs font-black ${
-              canSubmit ? 'bg-accent-blue/20 text-accent-blue hover:bg-accent-blue/30'
+            className={`inline-flex min-h-[28px] items-center rounded-lg px-2.5 text-2xs font-black ${
+              canSubmit ? 'bg-accent-blue/25 text-accent-blue hover:bg-accent-blue/35'
                 : 'cursor-not-allowed bg-accent-blue/10 text-accent-blue/50'}`}
           >
             ارسال

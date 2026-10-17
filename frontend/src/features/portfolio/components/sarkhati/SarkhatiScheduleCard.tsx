@@ -6,13 +6,16 @@
 // `/api/execution/timings` که monotonic است. زمانِ سرورِ کارگزاری «اثبات‌نشده»
 // نوشته می‌شود، چون هیچ اندپوینتِ مستندی برایِ آن نداریم (§۵ مأموریت: فقط
 // اندپوینت‌هایِ مستندشده؛ و «هرگز اولِ صف را تضمین نکن»).
+//
+// چرا دو جدول جدا: «برنامه‌هایِ زمان‌بندی» آینده‌اند و کنشِ لغو دارند؛ «زمان‌هایِ
+// رکوردها» گذشته‌اند و فقط خوانده می‌شوند. ترکیب‌کردنشان یک جدولِ نیمه‌خالی می‌سازد.
 import { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { Badge } from '@shared/components/Badge';
 import { fmtInt, toFaDigits } from '@shared/lib/fmt';
 import { invalidateExecution, orderApi, useExecutionTimings, type LedgerView }
   from '../../lib/orderClient';
 import { TONE, safeError, summarize, type ActionState } from '../../lib/orderActionView';
+import { Chip, GhostBtn, Line, Note, Table, Td, Tr } from './parts';
 
 type SchedEntry = {
   execution_id?: string;
@@ -44,6 +47,7 @@ export function SarkhatiScheduleCard({ ledger }: { ledger: LedgerView | null | u
   const pending = (ledger?.scheduled ?? []).filter(
     (e) => ['waiting', 'scheduled'].includes(String((e as SchedEntry).state)));
   const rows = (ledger?.scheduled ?? []) as SchedEntry[];
+  const times = (ledger?.records ?? []).slice(-4).reverse();
 
   const cancel = async (id: string) => {
     setBusy(id); setAnswer('');
@@ -65,145 +69,143 @@ export function SarkhatiScheduleCard({ ledger }: { ledger: LedgerView | null | u
   const phaseNames = Object.keys(phases);
 
   return (
-    <div className="glass-panel flex flex-col gap-1.5 rounded-2xl p-2.5"
-      data-testid="sarkhati-schedule-card">
-      <div className="flex flex-wrap items-center gap-1.5">
-        <h4 className="text-2xs font-black text-text-secondary">زمان‌بندیِ ارسال</h4>
-        <Badge tone={pending.length ? 'blue' : 'gray'}>
-          {toFaDigits(String(pending.length))} در انتظارِ مهلت
-        </Badge>
-      </div>
+    <div className="flex flex-col gap-2" data-testid="sarkhati-schedule-card">
+      <section className="rounded-xl border border-border-c/70 bg-bg-card/25 px-3 py-2.5">
+        <header className="mb-2 flex flex-wrap items-baseline gap-x-2 gap-y-1">
+          <h4 className="text-xs font-black leading-4 text-text-primary">زمان‌بندیِ ارسال</h4>
+          <Chip tone={pending.length ? 'live' : 'idle'}>
+            {toFaDigits(String(pending.length))} در انتظارِ مهلت
+          </Chip>
+          <span className="ms-auto text-2xs text-text-muted">
+            {toFaDigits(String(rows.length))} برنامه درِ دفتر
+          </span>
+        </header>
 
-      {rows.length === 0 ? (
-        <p className="text-3xs text-text-muted" data-testid="sarkhati-schedule-empty">
-          هیچ زمان‌بندیِ ثبت‌شده‌ای نیست. «زمانِ هدف» را درِ فرمِ سفارش بگذارید؛ تا
-          مهلت نرسیده هیچ درخواستی نمی‌رود و «توقف» همه را لغو می‌کند.
-        </p>
-      ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full text-3xs" data-testid="sarkhati-schedule-rows">
-            <thead>
-              <tr className="text-text-muted">
-                <th className="text-start font-bold">شناسۀ اجرا</th>
-                <th className="text-start font-bold">وضعیت</th>
-                <th className="text-start font-bold">هدف</th>
-                <th className="text-start font-bold">لحظۀ ارسال (پیش‌افت)</th>
-                <th className="text-start font-bold">چرا لغو شد</th>
-                <th className="text-start font-bold"></th>
-              </tr>
-            </thead>
-            <tbody>
+        {rows.length === 0 ? (
+          <Line testId="sarkhati-schedule-empty">
+            هیچ زمان‌بندیِ ثبت‌شده‌ای نیست. «زمانِ هدف» را درِ بخشِ سفارش بگذارید؛ تا
+            مهلت نرسیده هیچ درخواستی نمی‌رود و «توقف» همه را لغو می‌کند.
+          </Line>
+        ) : (
+          <Table testId="sarkhati-schedule-rows" minWidth={620}
+            head={['شناسۀ اجرا', 'وضعیت', 'هدف', 'لحظۀ ارسال (پیش‌افت)', 'چرا لغو شد', 'کنش']}>
               {rows.map((e, i) => (
-                <tr key={e.execution_id ?? i}
-                  data-testid={`sarkhati-sched-${e.execution_id ?? i}`}
-                  className="border-t border-border-c/40">
-                  <td className="num py-1 font-bold text-text-primary">{e.execution_id ?? '—'}</td>
-                  <td>{STATE_LABEL[String(e.state)] ?? String(e.state ?? '—')}</td>
-                  <td className="num">{clock(e.target_wall_ms)}</td>
-                  <td className="num">
+                <Tr key={e.execution_id ?? i} testId={`sarkhati-sched-${e.execution_id ?? i}`}>
+                  <Td num strong>{e.execution_id ?? '—'}</Td>
+                  <Td>{STATE_LABEL[String(e.state)] ?? String(e.state ?? '—')}</Td>
+                  <Td num>{clock(e.target_wall_ms)}</Td>
+                  <Td num>
                     {clock(e.send_at_wall_ms)}
                     {e.target_wall_ms && e.send_at_wall_ms ? (
                       <span className="text-text-muted">
                         {' '}({toFaDigits(fmtInt(e.target_wall_ms - e.send_at_wall_ms))} ms زودتر)
                       </span>
                     ) : null}
-                  </td>
-                  <td className="text-text-secondary">{e.cancelled_by ?? '—'}</td>
-                  <td className="text-start">
+                  </Td>
+                  <Td tone={e.cancelled_by ? 'muted' : undefined}>
+                    {e.cancelled_by ?? '—'}
+                  </Td>
+                  <Td>
                     {['waiting', 'scheduled'].includes(String(e.state)) ? (
-                      <button type="button"
-                        onClick={() => void cancel(String(e.execution_id))}
+                      <GhostBtn testId={`sarkhati-sched-cancel-${e.execution_id}`}
                         disabled={busy !== ''}
-                        data-testid={`sarkhati-sched-cancel-${e.execution_id}`}
-                        className="rounded-lg border border-accent-red/40 px-2 py-0.5 text-3xs font-bold text-accent-red hover:bg-accent-red/10 disabled:opacity-40">
+                        title="پیشِ مهلت: زمان‌بندی لغو می‌شود و هیچ درخواستی به کارگزاری نمی‌رود"
+                        onClick={() => void cancel(String(e.execution_id))}>
                         لغوِ زمان‌بندی
-                      </button>
+                      </GhostBtn>
                     ) : <span className="text-text-muted">—</span>}
-                  </td>
-                </tr>
+                  </Td>
+                </Tr>
               ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+          </Table>
+        )}
 
-      {answer ? (
-        <p className={`text-3xs leading-4 ${TONE[state]}`} data-testid="sarkhati-sched-answer">
-          {answer}
-        </p>
+        {answer ? (
+          <p className={`mt-1.5 text-2xs leading-4 ${TONE[state]}`} data-testid="sarkhati-sched-answer">
+            {answer}
+          </p>
+        ) : null}
+
+        <div className="mt-1.5">
+          <Note label="قواعدِ لغوِ زمان‌بندی" testId="sarkhati-schedule-rule">
+            پیش ازِ رسیدنِ مهلت، لغو ممکن است. پس ازِ POST، «لغوِ زمان‌بندی» هیچ سفارشی
+            را ازِ کارگزاری پس نمی‌گیرد؛ از آن به بعد فقط «لغوِ سفارش» معنی دارد، و آن هم
+            فقط اگر کارگزاری `cancel` را درِ capabilities اعلام کرده باشد.
+          </Note>
+        </div>
+      </section>
+
+      {times.length ? (
+        <section className="rounded-xl border border-border-c/70 bg-bg-card/25 px-3 py-2.5"
+          data-testid="sarkhati-record-times">
+          <header className="mb-2 flex flex-wrap items-baseline gap-x-2">
+            <h4 className="text-xs font-black leading-4 text-text-primary">
+              زمان‌هایِ چهارگانۀ آخرین رکوردها
+            </h4>
+            <span className="text-2xs text-text-muted">ازِ خودِ رکورد، بی‌محاسبۀِ رابط</span>
+          </header>
+          <Table testId="sarkhati-times-rows" minWidth={660}
+            head={['شناسۀ اجرا', 'برنامه‌ریزی', 'ارسال', 'پاسخ', 'RTT', 'آفست ساعت']}>
+              {times.map((r) => (
+                <Tr key={r.execution_id} testId={`sarkhati-times-${r.execution_id}`}>
+                  <Td num strong>{r.execution_id}</Td>
+                  <Td num>{clock(r.scheduled_at ? r.scheduled_at * 1000 : null)}</Td>
+                  <Td num>{clock(r.actual_send_wall_ms)}</Td>
+                  <Td num>{clock(r.response_at ? r.response_at * 1000 : null)}</Td>
+                  <Td num>{r.rtt_ms != null ? `${toFaDigits(String(Math.round(r.rtt_ms)))} ms` : 'بی‌اندازه'}</Td>
+                  <Td num>{r.clock_offset_ms != null
+                    ? `${toFaDigits(String(Math.round(r.clock_offset_ms)))} ms` : 'بی‌اندازه'}</Td>
+                </Tr>
+              ))}
+          </Table>
+        </section>
       ) : null}
 
-      <p className="text-3xs leading-4 text-text-muted" data-testid="sarkhati-schedule-rule">
-        پیش ازِ رسیدنِ مهلت، لغو ممکن است. پس ازِ POST، «لغوِ زمان‌بندی» هیچ سفارشی
-        را ازِ کارگزاری پس نمی‌گیرد؛ از آن به بعد فقط «لغوِ سفارش» معنی دارد، و آن هم
-        فقط اگر کارگزاری `cancel` را درِ capabilities اعلام کرده باشد.
-      </p>
-
-      <div className="flex flex-col gap-0.5 text-3xs" data-testid="sarkhati-record-times">
-        <span className="font-bold text-text-secondary">زمان‌هایِ چهارگانۀ آخرین رکوردها</span>
-        {(ledger?.records ?? []).slice(-4).reverse().map((r) => (
-          <div key={r.execution_id} className="flex flex-wrap items-baseline gap-1.5"
-            data-testid={`sarkhati-times-${r.execution_id}`}>
-            <span className="num font-bold text-text-primary">{r.execution_id}</span>
-            <span>برنامه‌ریزی: {clock(r.scheduled_at ? r.scheduled_at * 1000 : null)}</span>
-            <span>ارسال: {clock(r.actual_send_wall_ms)}</span>
-            <span>پاسخ: {clock(r.response_at ? r.response_at * 1000 : null)}</span>
-            <span>RTT: {r.rtt_ms != null ? `${toFaDigits(String(Math.round(r.rtt_ms)))} ms` : 'بی‌اندازه'}</span>
-            <span>آفست ساعت: {r.clock_offset_ms != null
-              ? `${toFaDigits(String(Math.round(r.clock_offset_ms)))} ms` : 'بی‌اندازه'}</span>
-          </div>
-        ))}
-      </div>
-
-      <div className="flex flex-col gap-0.5 text-3xs" data-testid="sarkhati-timings">
-        <span className="font-bold text-text-secondary">
-          تأخیرهایِ اندازه‌گیری‌شدۀ همین نشست (monotonic)
-        </span>
+      <section className="rounded-xl border border-border-c/70 bg-bg-card/25 px-3 py-2.5"
+        data-testid="sarkhati-timings">
+        <header className="mb-2 flex flex-wrap items-baseline gap-x-2">
+          <h4 className="text-xs font-black leading-4 text-text-primary">
+            تأخیرهایِ اندازه‌گیری‌شدۀ همین نشست
+          </h4>
+          <span className="text-2xs text-text-muted">monotonic — با پرشِ ساعتِ دیواری جابه‌جا نمی‌شود</span>
+        </header>
         {phaseNames.length === 0 ? (
-          <span className="text-text-muted" data-testid="sarkhati-timings-empty">
+          <Line testId="sarkhati-timings-empty">
             هنوز هیچ فازی درِ این نشست زمان‌سنجی نشده است — عددی برایِ «چقدر زودتر
             بفرستم» وجود ندارد، پس پیش‌افت را بی‌شاهد پر نکنید.
-          </span>
+          </Line>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-3xs">
-              <thead>
-                <tr className="text-text-muted">
-                  <th className="text-start font-bold">فاز</th>
-                  <th className="text-start font-bold">n</th>
-                  <th className="text-start font-bold">p50</th>
-                  <th className="text-start font-bold">p95</th>
-                  <th className="text-start font-bold">p99</th>
-                  <th className="text-start font-bold">min–max</th>
-                </tr>
-              </thead>
-              <tbody>
-                {phaseNames.map((name) => {
-                  const t = phases[name] ?? {};
-                  return (
-                    <tr key={name} className="border-t border-border-c/40"
-                      data-testid={`sarkhati-timing-${name}`}>
-                      <td className="py-1 font-bold text-text-primary">{name}
-                        {t.thin ? <span className="text-accent-yellow"> · نمونۀ کم</span> : null}
-                      </td>
-                      <td className="num">{toFaDigits(String(t.n ?? 0))}</td>
-                      <td className="num">{t.p50 != null ? toFaDigits(String(t.p50)) : '—'}</td>
-                      <td className="num">{t.p95 != null ? toFaDigits(String(t.p95)) : 'بی‌کافیِ نمونه'}</td>
-                      <td className="num">{t.p99 != null ? toFaDigits(String(t.p99)) : 'بی‌کافیِ نمونه'}</td>
-                      <td className="num">{t.min != null && t.max != null
-                        ? `${toFaDigits(String(t.min))}–${toFaDigits(String(t.max))}` : '—'}</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+          <Table testId="sarkhati-timings-rows" minWidth={560}
+            head={['فاز', 'n', 'p50 (ms)', 'p95 (ms)', 'p99 (ms)', 'min–max (ms)']}>
+              {phaseNames.map((name) => {
+                const t = phases[name] ?? {};
+                return (
+                  <Tr key={name} testId={`sarkhati-timing-${name}`}>
+                    <Td strong>
+                      {name}
+                      {t.thin ? <span className="text-accent-yellow"> · نمونۀ کم</span> : null}
+                    </Td>
+                    <Td num>{toFaDigits(String(t.n ?? 0))}</Td>
+                    <Td num>{t.p50 != null ? toFaDigits(String(t.p50)) : '—'}</Td>
+                    <Td num tone={t.p95 == null ? 'muted' : undefined}>
+                      {t.p95 != null ? toFaDigits(String(t.p95)) : 'بی‌کافیِ نمونه'}
+                    </Td>
+                    <Td num tone={t.p99 == null ? 'muted' : undefined}>
+                      {t.p99 != null ? toFaDigits(String(t.p99)) : 'بی‌کافیِ نمونه'}
+                    </Td>
+                    <Td num>{t.min != null && t.max != null
+                      ? `${toFaDigits(String(t.min))}–${toFaDigits(String(t.max))}` : '—'}</Td>
+                  </Tr>
+                );
+              })}
+          </Table>
         )}
-        <span className="text-text-muted" data-testid="sarkhati-server-clock-note">
-          ساعتِ سرورِ کارگزاری: اثبات‌نشده (NOT_PROVEN) — هیچ اندپوینتِ مستندِ
-          زمانِ سروری درِ قراردادِ فعلی نیست، پس «درستِ همان لحظه» وعده داده نمی‌شود.
-        </span>
-      </div>
+        <Line kind="warn" testId="sarkhati-server-clock-note">
+          <span className="font-black">ساعتِ سرورِ کارگزاری: اثبات‌نشده (NOT_PROVEN)</span>
+          {' '}— هیچ اندپوینتِ مستندِ زمانِ سروری درِ قراردادِ فعلی نیست، پس «درستِ همان
+          لحظه» وعده داده نمی‌شود.
+        </Line>
+      </section>
     </div>
   );
 }
