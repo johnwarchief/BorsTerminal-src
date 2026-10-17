@@ -532,6 +532,39 @@ async function maybeRefreshSnapshot(): Promise<void> {
   await runCheck({ manual: false });
 }
 
+// گوشیِ یک‌هفته‌باز رویِ میز تا پیش از این هرگز دوباره بسته را بررسی نمی‌کرد:
+// تایمرِ ۱۵ ثانیه‌ای یک‌بار می‌خواست و پنجرۀِ ۲۴ ساعته بی‌restartِ فرآیند باز
+// نمی‌شد («یک بار درِ عمرِ اپ» نه «هر ۲۴ ساعت»). دو دریچۀِ ارزان برایِ برنامۀِ
+// بلندمدت — هر دو از همانِ گیتِ runCheck رد می‌شوند (backoff، پنجرۀِ ۲۴ساعته،
+// اتصالِ سنجه‌دار)، پس هزینه‌شان درِ ۲۳ ساعت از ۲۴ صفرِ شبکه‌ای است:
+//   ۱) ضربانِ ساعتی؛ پنجره که باز شد، همان ساعتِ بعدی بررسی را اجرا می‌کند.
+//   ۲) برگشت ازِ پس‌زمینه — لحظه‌ای که کاربر منتظرِ تازه‌ترین است.
+const HOURLY_BEAT_MS = 3_600_000;
+const RESUME_COOLDOWN_MS = 60_000;
+let beatArmed = false;
+let lastResumeCheckAt = 0;
+
+function armHourlyBeat(): void {
+  if (beatArmed) return;
+  beatArmed = true;
+  // setInterval نه: تایمرِ فعال رویِ phoneِ خوابیده بی‌فایده است؛ هر دور با
+  // setTimeoutِ بلندِ بعدی از runCheck اجازه می‌گیرد.
+  const beat = () => {
+    void maybeRefreshSnapshot().finally(() => setTimeout(beat, HOURLY_BEAT_MS));
+  };
+  setTimeout(beat, HOURLY_BEAT_MS);
+}
+
+/** ازِ main.tsx رویِ visibilitychange (فقط موبایل) صدا زده می‌شود.
+ *  cooldownِ ۶۰ ثانیه‌ای جلویِ thrashِ تاگ‌هایِ پشت‌سرهم را می‌گیرد؛ گیتِ
+ *  اصلیِ تازگی همانِ پنجرۀِ runCheck است، نه این‌جا. */
+export function resumeSnapshotCheck(): void {
+  const now = Date.now();
+  if (now - lastResumeCheckAt < RESUME_COOLDOWN_MS) return;
+  lastResumeCheckAt = now;
+  void maybeRefreshSnapshot().catch(() => { /* پنلِ 🛠 گزارش را دارد */ });
+}
+
 /** فقط برایِ تست — مسیرِ بارگذاریِ بسته و راهِ دومش. */
 export const __isMeteredForTest = (): boolean => isMeteredConnection();
 
@@ -850,6 +883,8 @@ export function getDb(): Promise<Database> {
     }
     // چکِ بروزرسانی در پس‌زمینه — نه await می‌شود نه خطایش به UI می‌رسد
     setTimeout(() => { void maybeRefreshSnapshot(); }, 15000);
+    // و ضربانِ ساعتی برایِ برنامۀِ بلندمدت (خودِ runCheck گیت می‌کند).
+    armHourlyBeat();
     return db;
   })().catch((e: unknown) => {
     // بدون این بنر، هر تب فقط «بی‌داده» می‌ماند و کاربر سرنخی ندارد؛
