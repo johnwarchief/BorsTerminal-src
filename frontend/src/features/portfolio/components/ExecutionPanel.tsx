@@ -186,11 +186,12 @@ export function ExecutionPanel({ symbol, row }: { symbol: string; row: MarketRow
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [token, setToken] = useState('');
+  const [phrase, setPhrase] = useState('');
 
   // هر تغییرِ فرم یکِ شناسۀِ تازه می‌سازد: «یک execution_id = یکِ تلاش» قاعدۀ
   // سرویس است (ردِّپایِ dispatch رویِ دیسک تکرار را می‌گیرد)، پس فرمِ ویرایش‌شده
   // نباید شناسۀِ سفارشِ قبلی را حمل کند.
-  useEffect(() => { setEid(freshId()); setConfirmed(false); setPhase('idle'); },
+  useEffect(() => { setEid(freshId()); setConfirmed(false); setPhrase(''); setPhase('idle'); },
     [symbol, side, price, qty]);
 
   const body = useCallback(() => ({
@@ -200,7 +201,10 @@ export function ExecutionPanel({ symbol, row }: { symbol: string; row: MarketRow
     price_source: row?.p_last != null ? 'board.p_last' : 'unspecified',
     price_as_of: row?.row_h != null ? String(row.row_h) : null,
     confirmed,
-  }), [eid, symbol, side, price, qty, row?.p_last, row?.row_h, confirmed]);
+    // درِ اجرایِ زنده بک‌اند این عبارت را می‌خواهد، نه فقطِ یکِ true
+    confirm_phrase: phrase,
+  }), [eid, symbol, side, price, qty, row?.p_last, row?.row_h,
+      confirmed, phrase]);
 
   const ask = useCallback(async (kind: ExecAction,
     fn: () => Promise<Record<string, unknown>>) => {
@@ -230,7 +234,13 @@ export function ExecutionPanel({ symbol, row }: { symbol: string; row: MarketRow
 
   const records = useMemo(() => (ledger.data?.records ?? []).slice(-6).reverse(),
     [ledger.data]);
-  const canSubmit = gate.canTrade && confirmed && !!parseNum(toEnDigits(qty))
+  // گیتِ عبارتِ تأیید (§۲-۲): بک‌اند آن را الزامی می‌کند و همین‌جا هم تا
+  // برابرنکردنِ چیزی که رویِ صفحه نوشته، کلیدِ ارسال خاموش می‌ماند.
+  const cgate = (gate.status?.confirm_gate ?? {}) as
+    { required?: boolean; phrase?: string };
+  const phraseOk = !cgate.required || phrase.trim() === String(cgate.phrase ?? '');
+  const canSubmit = gate.canTrade && confirmed && phraseOk
+    && !!parseNum(toEnDigits(qty))
     && !!parseNum(toEnDigits(price)) && !busy;
   const canPreview = gate.endpointPresent && !busy;
   // سبز بودنِ نشست فقط وقتی مجاز است که اتصالِ زنده واقعاً برقرار باشد — وگرنه
@@ -349,6 +359,17 @@ export function ExecutionPanel({ symbol, row }: { symbol: string; row: MarketRow
               className="size-3 accent-accent-blue" />
             تأییدِ نهایی
           </label>
+          {cgate.required ? (
+            <label className="flex items-center gap-1 text-2xs text-text-secondary"
+              data-testid="exec-confirm-phrase-wrap">
+              <span>برایِ اجرایِ زنده تایپ کنید:</span>
+              <input value={phrase} onChange={(e) => setPhrase(e.target.value)}
+                placeholder={String(cgate.phrase ?? '')}
+                data-testid="exec-confirm-phrase" className="min-w-0 flex-1" />
+              <span className={phraseOk ? 'text-accent-green' : 'text-text-muted'}>
+                {phraseOk ? '✓' : '—'}</span>
+            </label>
+          ) : null}
           <button
             type="button"
             disabled={!canSubmit}
