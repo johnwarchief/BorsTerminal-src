@@ -68,7 +68,11 @@ async function collect(): Promise<string> {
     } catch { /* اسنپ‌شاتِ بی‌تاریخچه — همان چیزی که پنل باید بگوید */ }
     parts.push(row('تاریخچۀ چارت', ph));
     const ov = overlayStatus();
-    parts.push(row('آخرین رونشانیِ زندۀ تابلو', ov ? `${ov.patched} ردیف · ${ov.at}` : 'هنوز رونشانی نشده', !!ov));
+    parts.push(row('آخرین رونشانیِ زندۀ تابلو',
+      ov
+        ? `${ov.patched} ردیف · ${ov.at}${ov.fails ? ` · ${ov.fails} شکستِ زنده (آخر ${ov.lastFailAt})` : ''}`
+        : 'هنوز رونشانی نشده',
+      !!ov));
   } catch (e) {
     parts.push(row('بستهٔ داده', e instanceof Error ? `${e.name}: ${e.message}` : String(e), false));
   }

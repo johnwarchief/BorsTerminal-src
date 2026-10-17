@@ -8,6 +8,7 @@
 // یا پیاده‌سازی محلی (سبد). مسیر ناشناخته ⇒ HttpError(404) — همان رفتاری که
 // UI برای «بدون داده» می‌فهمد. هیچ دادهٔ ساختگی برنمی‌گردد.
 import { HttpError } from '../http';
+import { tehranOffsetMs } from '@shared/lib/marketHours';
 import { baked, metaValue, normFa, query } from './localData';
 import { deleteDecision, portfolioFeed, saveDecision, searchSymbols } from './selectionLocal';
 import { liveChart, liveClientType, liveTedpix, liveTodayCandle, liveWatch, overlayBoard, tehranToday } from './live';
@@ -18,6 +19,57 @@ const FTS_CONFIG_KEY = 'bors_mobile_fts_config_v1';
 // بار JSON.parse سنگین بزند؛ لایهٔ زنده همین آبجکت را درجا به‌روز می‌کند.
 let boardMemo: Record<string, unknown> | null = null;
 
+/** مبنایِ rev_at وقتی هنوز هیچ رونشانیِ زنده‌ای عددی را عوض نکرده: مهرِ
+ *  پختِ بسته. meta.last_sync (قالبِ «YYYY-MM-DD HH:MM:SS» خودِ بک‌اند) یا
+ *  built_at. بی‌این، بی‌رونشانی rev_at یا صفر می‌ماند (badge «نامعلوم») یا
+ *  — در نسخۀ خرابِ پیشین — هرگز. */
+let boardBaselineMs = 0;
+
+async function baselineMs(): Promise<number> {
+  if (boardBaselineMs > 0) return boardBaselineMs;
+  const meta = (boardMemo?.meta ?? {}) as Record<string, unknown>;
+  const lastSync = typeof meta.last_sync === 'string' ? meta.last_sync : '';
+  // مُهرِ «YYYY-MM-DD HH:MM:SS» بک‌اند ساعتِ دیواریِ تهران است؛ Date.parseی
+  // صرف، آن را به TZِ گوشی می‌بندد و رویِ گوشیِ غیرتهرانی کج می‌شود.
+  let ms = lastSync ? wallTehranToEpoch(lastSync) : NaN;
+  if (!Number.isFinite(ms)) {
+    const built = await metaValue('built_at').catch(() => null);
+    ms = built ? Date.parse(built) : NaN; // built_at درِ CI با Z ساخته می‌شود (UTC)
+  }
+  boardBaselineMs = Number.isFinite(ms) ? ms : 0;
+  return boardBaselineMs;
+}
+
+/** «YYYY-MM-DD HH:MM:SS»ِ تهران ← epoch. بی‌FALLBACK بهِ Date.parse که TZِ
+ *  گوشی رأی می‌دهد. */
+function wallTehranToEpoch(s: string): number {
+  const m = /^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})(?::(\d{2}))?$/.exec(s.trim());
+  if (!m) return Date.parse(s);
+  const asUtc = Date.UTC(+m[1], +m[2] - 1, +m[3], +m[4], +m[5], +(m[6] ?? 0));
+  return asUtc - tehranOffsetMs(asUtc);
+}
+
+// وضعیتِ لایهٔ زنده: برایِ پنلِ 🛠 و برایِ داوریِ صادقانۀ «تازگی».
+const overlayState = {
+  patched: 0, at: '', fails: 0, lastFailAt: null as string | null,
+  /** چکیدۀ عددیِ دورِ قبل (جمعِ حجم + جمعِ پایانی‌ها) — بی‌مقایسه، هر
+   *  پاسخِ موفقِ TSETMC بی‌هیچ معاملۀِ جدید هم «داده عوض شد» می‌شد و badge
+   *  سبزِ کاذب می‌ساخت. */
+  fingerprint: '',
+};
+
+/** چکیدۀِ پایدار از اعدادِ زنده: اگر یکِ قیمت یا یکِ حجم تکان بخورد، عوض
+ *  می‌شود؛ پاسخِ بی‌تغییریِ سرور، بیت‌به‌بیت همان چکیده را می‌دهد. */
+function watchFingerprint(mw: Map<string, { pcl: number | null; qtj: number | null }>): string {
+  let sumV = 0; let sumP = 0; let n = 0;
+  for (const m of mw.values()) {
+    sumV += m.qtj ?? 0;                    // جمعِ صحیح (سبدِ عددِ بزرگ بی‌خطایِ راندینگ)
+    sumP += Math.round((m.pcl ?? 0) * 100); // پایانی ×۱۰۰ تا گردِ عددِ اعشاری گم نشود
+    n += 1;
+  }
+  return `${n}:${sumV}:${sumP}`;
+}
+
 async function boardPayload(): Promise<Record<string, unknown>> {
   boardMemo ??= (await bakedOr404('market_board', '/api/market')) as Record<string, unknown>;
   const rows = boardMemo.data;
@@ -26,17 +78,81 @@ async function boardPayload(): Promise<Record<string, unknown>> {
     if (mw) {
       const ct = await liveClientType();
       const n = overlayBoard(rows as Record<string, unknown>[], mw, ct);
-      if (n > 0) boardMemo.live_overlay = { patched: n, at: new Date().toISOString() };
+      overlayState.patched = n;
+      overlayState.at = new Date().toISOString();
+      // سه ستونِ تازگی که درِ بدنهٔ پخته‌شده مُرده‌اند (rev=0 از روزِ پخت،
+      // live_count شمارشِ روزِ پخت، بی‌rev_at): با رونشانیِ زنده از نو
+      // حساب می‌شوند. بی‌این، پولینگِ دلتا درِ marketFeed هرگز rev را عوض
+      // ندیده و FreshnessBadge پنج دقیقه بعد از بالا آمدنِ اپ «ایستاده/کهنه»
+      // می‌گفت درحالی‌که اعداد هر ۵ ثانیه از TSETMC عوض می‌شدند — دقیقاً همان
+      // «درِ ساعاتِ معاملات درست کار نمی‌کند».
+      const liveRows = n > 0
+        ? (rows as Record<string, unknown>[]).filter((r) => r.is_live === true).length
+        : typeof boardMemo.live_count === 'number' ? boardMemo.live_count : 0;
+      if (n > 0) {
+        boardMemo.live_count = liveRows;
+        boardMemo.fossil_count = (rows as unknown[]).length - liveRows;
+      }
+      // rev فقط وقتی عوض می‌شود که یکِ عددِ واقعی جابه‌جا شده باشد: چکیدۀِ
+      // حجم‌وپایانیِ مارکت‌واچ. سرورِ بی‌معاملۀِ جدید همان چکیده را می‌دهد،
+      // پس «پاسخ رسید» با «داده عوض شد» خلط نمی‌شود — بازارِ ایستاده
+      // صادقانه «ایستاده» می‌ماند. دورِ نخست فقط مُهر می‌کند (تبدیلِ ۰→۱ِ
+      // بی‌مغزا ممنوع: rev درِ marketFeed سوپِ دلتا را گیت می‌کند).
+      const fp = watchFingerprint(mw);
+      if (n > 0 && overlayState.fingerprint && fp !== overlayState.fingerprint) {
+        const prev = typeof boardMemo.rev === 'number' ? boardMemo.rev : 0;
+        boardMemo.rev = prev + 1;
+        boardMemo.rev_at = Date.now();
+      }
+      overlayState.fingerprint = fp;
+    } else {
+      // خطایِ شبکه درِ live.ts بلعیده می‌شود (null)؛ اینجا تنها نقطه‌ای است
+      // که می‌فهمیم «زنده نبود» — درِ پنلِ 🛠 دیده می‌شود، نه پنهان.
+      if (overlayState.at) {
+        overlayState.fails += 1;
+        overlayState.lastFailAt = new Date().toISOString();
+      }
+      // بی‌لایهٔ زنده *درِ کلِ این نشست*: شمارشِ live_countِ بدنهٔ پخت
+      // «امروز» را اثبات نمی‌کند. اگر مهرِ نشستِ بسته با امروزِ تهران
+      // نمی‌خواند، ردیفِ زندهٔ امروز درِ دسترس نیست — صفر صادقانه بهتر ازِ
+      // ۳۶۱۴ فرسوده است. اگر همین نشست رونشانیِ موفقی داشته، ردیف‌ها همان
+      // اعدادِ روزِ جاری‌اند و live_countِ شمارش‌شدۀ بالا درست می‌ماند؛
+      // صفرکردنشان دروغِ جهۀِ مخالف می‌شد. بی‌مهرِ نشستِ معلوم هم
+      // دست‌نخورده می‌ماند (ندانستن ≠ صفر کردن).
+      const meta = (boardMemo.meta ?? {}) as Record<string, unknown>;
+      const sess = Number(meta.d_even);
+      if (!overlayState.at && Number.isFinite(sess) && sess > 0) {
+        const today = Number(tehranToday().replaceAll('-', ''));
+        if (Number.isFinite(today) && sess !== today) {
+          boardMemo.live_count = 0;
+          boardMemo.fossil_count = (rows as unknown[]).length;
+        }
+      }
     }
   }
+  // rev_at هرگز مُهرِ روزِ پخت را «عوض‌شدنِ همین حالا» وانمود نمی‌کند؛
+  // بی‌رونشانیِ زنده، مُهرِ پخت یعنی آخرین باری که *قطعاً* عددی عوض شده.
+  if (boardMemo.rev_at == null) boardMemo.rev_at = await baselineMs();
   return boardMemo;
 }
 
-/** برای پنل عیب‌یابی: آخرین رونشانیِ زندهٔ تابلو (چند ردیف، کِی) */
-export function overlayStatus(): { patched: number; at: string } | null {
-  const o = boardMemo?.live_overlay as { patched?: number; at?: string } | undefined;
-  if (!o || typeof o.at !== 'string') return null;
-  return { patched: Number(o.patched ?? 0), at: o.at };
+/** برای پنل عیب‌یابی: آخرین رونشانیِ زندهٔ تابلو (چند ردیف، کِی، چند شکست) */
+export function overlayStatus() {
+  if (!overlayState.at && !overlayState.lastFailAt) return null;
+  return { patched: overlayState.patched, at: overlayState.at,
+           fails: overlayState.fails, lastFailAt: overlayState.lastFailAt };
+}
+
+/** فقط برایِ تست — وضعیتِ ماژولِ تابلو را به حالتِ نخستِ فرآیند برمی‌گرداند
+ *  (boardMemo ممو سراسری است و تست‌ها باید از هم مستقل باشند). */
+export function __resetBoardForTest(): void {
+  boardMemo = null;
+  boardBaselineMs = 0;
+  overlayState.patched = 0;
+  overlayState.at = '';
+  overlayState.fails = 0;
+  overlayState.lastFailAt = null;
+  overlayState.fingerprint = '';
 }
 
 /** قیمت پایانی نمادها از تابلوی حافظه — برای وزن‌دهی ارزشی سبد */
