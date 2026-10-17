@@ -31,10 +31,12 @@ Mofid Online-Plus/Titan. دو پروتکلِ جدا با دو مدلِ احرا�
 from __future__ import annotations
 
 import json
+import os
 import time
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, Callable, Iterable, Mapping
+from urllib.parse import urlparse
 
 import execution_timing as TT
 from execution_contract import (
@@ -614,6 +616,49 @@ class _Secret:
         return "<redacted>"
 
 
+#: میزبان‌هایی که پرسشِ *برنامه‌ای* رویِ آن‌ها مجاز است. `api-mts.orbis…` تنها
+#: میزبانِ دیدہ‌شدہ درِ این مخزن است؛ `BORS_EXECUTION_WIRE_HOSTS` برایِ میزبانِ
+#: منطقه‌ایِ دیگر، و عمداً ازِ فهرستِ *ورودِ کاربر* (`execution_connect`) جداست.
+WIRE_HOSTS_ENV = "BORS_EXECUTION_WIRE_HOSTS"
+
+
+def wire_hosts() -> tuple[str, ...]:
+    raw = (os.environ.get(WIRE_HOSTS_ENV) or "").strip()
+    extra = tuple(h.strip().lower() for h in raw.split(",") if h.strip())
+    base = urlparse(WIRE_BASE_URL).hostname or ""
+    return tuple(dict.fromkeys((base.lower(),) + extra if base else extra))
+
+
+def _validated_base_url(base_url: str | None) -> str:
+    """هر پرسشی که ازِ این درِ می‌گذارد `Authorization`ِ کاربر را حمل می‌کند.
+
+    بی‌این نگهبان، یکِ `base_url`ِ اشتباه (یا یکِ تنظیمِ تازه درِ آینده) توکنِ
+    نشستِ واقعی را به میزبانِ بیگانه می‌فرستد — باِ http درِ ردهِ اول. مرجعِ
+    TypeScript هم اعتبارِ TLS را خاموش می‌کرد؛ اینجا نه طرحِ بی‌رمز پذیرفته
+    می‌شود، نه userinfo، نه بندرِ غیرپیش‌فرض، نه میزبانِ بیرونِ فهرست.
+    """
+    raw = (base_url or WIRE_BASE_URL).strip().rstrip("/")
+    try:
+        p = urlparse(raw)
+        port = p.port
+    except ValueError as e:
+        raise ValueError("wire base url: unparseable (%s)" % type(e).__name__) from None
+    if p.scheme != "https":
+        raise ValueError("wire base url: فقط https مجاز است (طرح: %r)" % (p.scheme or "-"))
+    host = (p.hostname or "").lower()
+    if not host or host != host.strip("."):
+        raise ValueError("wire base url: میزبانِ نشانی خالی یا نقطه‌دارِ انتهایی است")
+    if "@" in (p.netloc or "") or "\\" in raw:
+        raise ValueError("wire base url: userinfo یا جداکننده درِ نشانی مجاز نیست")
+    if port not in (None, 443):
+        raise ValueError("wire base url: فقط بندرِ ۴۴۳ مجاز است: %r" % (port,))
+    if host not in wire_hosts():
+        raise ValueError("wire base url: میزبان درِ فهرستِ مجاز نیست: %s" % host)
+    if p.path not in ("", "/"):
+        raise ValueError("wire base url: نشانیِ پایه نباید مسیر داشته باشد: %r" % (p.path,))
+    return "https://" + host + (":%d" % port if port else "")
+
+
 class EasyTraderAdapter(BrokerAdapter):
     """آداپتورِ EasyTrader/Orbis-MTS، با ترافیکِ تزریقی و بی‌هیچ ادعایِ تأیید."""
     name = ADAPTER_NAME
@@ -626,7 +671,7 @@ class EasyTraderAdapter(BrokerAdapter):
                  clock: Callable[[], float] = time.time) -> None:
         self._transport = transport or RefusingTransport()
         self._token = token if isinstance(token, _Secret) else _Secret(token)
-        self.base_url = (base_url or WIRE_BASE_URL).rstrip("/")
+        self.base_url = _validated_base_url(base_url)
         self._caps_override = capabilities
         self.timeouts = timeouts or Timeouts()
         self._clock = clock
