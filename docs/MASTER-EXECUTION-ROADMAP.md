@@ -19,6 +19,7 @@ BorsTerminal should become a reliable, data-correct, locally operable trading an
 - Efficient bulk operations and export across the actual tables.
 - A future local ML research system trained on versioned, time-correct historical data, including a separately validated strategy-discovery track that can generate and evaluate candidate rule sets.
 - A technical-first Strategy FTS mode that identifies canonical daily corrective/pullback setups before applying tape/market filters and canonical fundamental gates.
+- A configurable Strategy FTS Builder backed by a reusable, versioned filter/algorithm registry, with explicit condition semantics and reference parity checks against Rahavard where the relevant filters and evidence are available.
 - Source-linked, event-driven price explanations that connect verified CODAL/TSETMC events to daily candles without blocking the market-data path.
 - Desktop and Android builds that share canonical analytical meaning.
 
@@ -140,7 +141,76 @@ Capture end-of-day snapshots automatically and record intraday state transitions
 
 Keep historical observations immutable. If rules or source records are later revised, create a separately versioned recalculation rather than silently overwriting what the application recorded at the time.
 
-### 9. Strategy FTS technical-first corrective-pullback funnel (PLANNED / BLOCKED)
+### 9. Strategy FTS — configurable filter library and Strategy Builder (PLANNED / BLOCKED)
+
+**State: PLANNED / NOT STARTED. Recorded 2026-10-17.** This is the long-term architecture for making Strategy FTS genuinely customizable rather than hard-coding each requested strategy as a separate feature. Do not start implementation or redirect System 1/System 2 until the owner confirms their current UI/UX 2.1 and performance missions are complete and accepted. Record the target now; do not disturb those live missions.
+
+#### Product goal
+
+The owner must be able to construct most supported technical/tape/fundamental strategies by selecting filters, configuring their parameters, composing conditions and ordering stages in the UI—without writing code for every new combination. An algorithm/filter needs to be implemented and tested once, then exposed as a reusable building block. Configurability does not mean pretending an unavailable algorithm exists or letting arbitrary UI expressions execute code.
+
+The current symptom of near-universal «صف خرید» output must be diagnosed separately. A filter match, a technical setup, the real TSETMC queue state, and a final strategy decision are different facts and must never be conflated.
+
+#### Architecture
+
+1. **Versioned filter/algorithm registry.** Create a single discoverable registry with stable IDs, Persian display names/descriptions, category, input requirements, supported timeframes, parameter schema, allowed values/ranges/defaults, null/missing-data behavior, implementation version, data provenance, cost expectations and test references. Keep filter metadata separate from each saved strategy.
+2. **Reusable domains.** The registry should cover (as the audited code and reliable data support): trend and market structure; corrective/pullback and swing context; Fibonacci and price levels; candle/price patterns; Bollinger Bands and other indicators such as RSI/MACD/ADX/CCI/MFI; volume and volatility; tape/order-book/real-buyer-seller filters; and canonical FTS fundamental gates. Do not advertise a filter as available until its calculation, inputs, semantics and tests exist.
+3. **Declarative Strategy DSL/schema.** Persist strategies as validated, versioned data definitions—not arbitrary executable code. The schema must represent a filter instance and parameters; condition groups; AND/OR/NOT; comparisons and thresholds; timeframe; stage order; required versus optional gates; ranking/scoring rules; missing-data policy; and output semantics. Store schema/engine version and parameter values so historical runs can be reproduced.
+4. **Visual Strategy Builder.** Let the user add/remove/duplicate/reorder filters, configure parameters in context-specific controls, nest logical groups, set stage boundaries, name and describe strategies, save versions, duplicate a preset, enable/disable a filter without deleting its definition, and inspect a human-readable summary of the resulting logic before running it. Validate invalid or contradictory configurations before execution.
+5. **Preview and trace.** Before saving/running, show a readable rule expression and a sample of how each filter is evaluated. After running, show total universe, stage input/pass/reject/unknown/not-evaluated/error counts, filter-level reasons and timestamps. Preserve rejects and unknowns, not just successful candidates. Reuse the Market Signal Journal rather than creating another competing history store.
+6. **Built-in strategies.** Keep canonical FTS rules/presets distinct from user-defined experimental strategies. Canonical, owner-approved rules cannot be silently weakened by a preset or accidental UI setting; only parameters explicitly approved for customization may vary. New technical-first corrective-pullback strategy is a separate preset and should be assembled using the shared builder/filter registry rather than a one-off pipeline.
+7. **Research and ML connection.** The same validated schema may later let evolutionary search/genetic programming/AutoML generate candidate combinations and parameter sets. Generated candidates are experiments only: version, replay and evaluate them out-of-sample with chronological walk-forward splits, leakage/survivorship controls, realistic costs and comparison against deterministic baselines. No automatic promotion to operational FTS.
+
+#### Example — Bollinger filter is a setup condition, not a buy signal
+
+Support distinct, precisely-defined conditions such as:
+- candle low touches or crosses the lower band;
+- candle close is within a configured percentage of the lower band;
+- candle closes below the lower band;
+- after being outside the band, a later completed candle closes back inside;
+- lower-band slope or band width meets a separately defined condition.
+
+Expose the period, standard-deviation multiplier, timeframe, distance tolerance and closed-candle/current-candle policy only where applicable. Do not treat “touch,” “near,” “close below,” and “re-entered” as interchangeable. Define percentage denominator, use of high/low versus close, adjusted/unadjusted candle basis and equality/boundary semantics. Unknown candle/indicator inputs must yield UNKNOWN or ERROR, not silently PASS or REJECT. A Bollinger match identifies a chart condition; by itself it is not a buy recommendation, a صف خرید state, or proof of profitability.
+
+Use comparable exact semantics for RSI/MACD/other indicators. Every condition must resolve to a documented formula and test cases, not an ambiguous label.
+
+#### Rahavard filter parity / reverse-engineering workflow
+
+Rahavard is a valuable reference because the owner has access to its filter UI. Use it as a **validation oracle for visible, legitimately accessible conditions/results**, not as unquestioned source truth and not as permission to copy private implementation details.
+
+For every filter prioritized for parity:
+1. Record the visible filter name, exact UI settings, timeframe, comparison operator/threshold and what price/candle basis the UI discloses.
+2. Record a fixed set of representative symbols and the time/as-of state, along with visible outputs/evidence the owner is entitled to access.
+3. Implement the corresponding BorsTerminal condition from its documented semantics.
+4. Compare both systems on the same symbol set, completed candle, time window, adjustment basis and parameters. Record matches, mismatches, missing/unavailable evidence and any ambiguity.
+5. Investigate differences in formulas, session/candle timestamps, adjusted prices, indicator warm-up, rounding/boundary behavior and missing data. Do not adjust rules just to fit one sample.
+6. Store reproducible parity fixtures and regression tests where licensing, terms and data rights permit. Do not scrape or bypass access controls; do not store credentials/session tokens.
+
+A Rahavard visual match is supporting evidence for the specific filter/configuration tested, not proof that the full strategy is profitable or that the internal implementations are identical.
+
+#### Acceptance gates
+
+- At least one end-to-end strategy can be created, saved, edited, duplicated and replayed entirely through configuration—without a strategy-specific code change.
+- Bollinger lower-band cases cover touch, proximity, close-below and re-entry with boundary, missing-data, open-candle and timeframe tests.
+- AND/OR/NOT, grouping, sequential stages and the distinction between required gates and optional ranking are tested and displayed in plain language.
+- Every result can explain the exact filters/parameters/rule version, input values, data timestamp, result status and reason.
+- Pass / reject / unknown / not-evaluated / error are separate outcomes; unknown is never silently converted into a pass.
+- Full-universe accounting is conserved across each stage; no arbitrary symbol cap or hidden default narrows the universe.
+- Canonical FTS presets remain protected; custom presets cannot mutate their rule definitions.
+- Relevant Rahavard parity tests are recorded with match rates and mismatch examples; unavailable or unobservable semantics remain explicitly NOT_VERIFIED rather than guessed.
+- Strategy composition and execution do not regress real-market response time, memory use, chart interaction or existing FTS behavior; run measured before/after checks.
+- The UI is validated in a real browser with RTL, dense result tables, error/loading states and normal project resolutions.
+- Nothing is labelled as a buy signal or profitable strategy merely because filters match. The experimental-strategy promotion gate remains separate and owner-reviewed.
+
+#### Dependencies / sequencing
+
+- Blocked until the active System 1 UI/UX 2.1 and System 2 performance missions are complete and accepted.
+- First audit existing Strategy FTS UI/API/engine and supported filter semantics; reuse proven canonical implementations and avoid a parallel decision engine.
+- Implement the filter registry/schema and one complete vertical slice before broadening the catalog.
+- Then add the separate technical-first corrective-pullback preset from the next roadmap item using these reusable blocks.
+- ML/DL strategy discovery remains later work and depends on Market Signal Journal plus point-in-time data foundation.
+
+### 10. Strategy FTS technical-first corrective-pullback funnel (PLANNED / BLOCKED)
 
 **State: PLANNED / NOT STARTED. Recorded 2026-10-17.** Do not begin implementation, create a new parallel mission, or redirect either running agent until the owner confirms that System 1's current UI/UX 2.1 work and System 2's current performance work are complete and accepted. This item records the next strategic direction; it does not interrupt the active execution sequence above.
 
@@ -193,7 +263,7 @@ Evaluate lightweight baselines first, followed by evolutionary rule search / gen
 
 ---
 
-### 10. FTS Event Intelligence — event-to-candle context (DISCOVERED / DEFERRED)
+### 11. FTS Event Intelligence — event-to-candle context (DISCOVERED / DEFERRED)
 
 **Research reference:** [owengetinfo-design/PokieTicker](https://github.com/owengetinfo-design/PokieTicker), upstream commit reviewed: `c16b7e34e72c2d09bb50d7b3159fa5cd6697fd19` (MIT license declared by the upstream repository). This is an implementation/product reference only; it is not a data source of truth, FTS specification, or a model to import directly.
 
@@ -219,7 +289,7 @@ Evaluate lightweight baselines first, followed by evolutionary rule search / gen
 - Do not delay current speed/reliability gates to build this feature. Keep it `DEFERRED` until current market-performance verification and the required canonical event-source prerequisites are accepted.
 - Acceptance requires source-linked browser evidence on real symbols, correct event/candle alignment, explicit handling of corrections/missing data, no invented cause, no material regression in measured startup/market/chart performance, tests for boundary times and stale responses, and clear separation of observed versus reconstructed history.
 
-### 11. Local ML data foundation and ML Engine
+### 12. Local ML data foundation and ML Engine
 
 The Market Signal Journal is a prerequisite for serious local ML. Build a reproducible historical dataset with versioned feature schemas and separately versioned outcome labels, including configurable horizons such as 3/5/10 trading sessions, returns, maximum favorable/adverse excursion and explicit outcome definitions where data permits.
 
@@ -236,11 +306,11 @@ Hard requirements:
 
 Do not begin by training a large model over an unreliable dataset. First prove data contracts, historical point-in-time integrity, labels and evaluation methodology.
 
-### 12. Android release — independent, strictly gated lane
+### 13. Android release — independent, strictly gated lane
 
 Android release may proceed when all release prerequisites are actually satisfied; it does not have to wait for unrelated desktop feature work. Publish only if secure key custody/backup, CI public-key configuration, signing/verification, version compatibility, rollback, relevant CI and required device/WebView tests are verified. Otherwise keep publication blocked and continue any independent fix. Never generate or publish with an unverified production signing key.
 
-### 13. Final integration and release readiness
+### 14. Final integration and release readiness
 
 After the above workstreams reach their individual acceptance gates, reconcile their working branches/worktrees safely, verify the actual desktop runtime, run the complete regression suite and browser integration tests, and document the exact source commit and artifact. No merge, release, or completion claim is implied by a local commit or green unit tests alone.
 
