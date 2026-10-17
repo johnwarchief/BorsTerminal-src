@@ -10,7 +10,7 @@
 // CSS را هیچ تستِ رفتاری اجرا نمی‌کند، پس تنها راهِ گرفتنِ این خطا همین
 // است: هر انتخابگرِ ساختاریِ فایل باید در DOMِ واقعی وجود داشته باشد.
 import { describe, expect, it } from 'vitest';
-import { render } from '@testing-library/react';
+import { fireEvent, render } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import fs from 'node:fs';
@@ -48,6 +48,33 @@ describe('انتخابگرهایِ چیدمانِ موبایل مرده نباش
   it('سایدبار صفتی را دارد که CSS دنبالش می‌گردد', () => {
     const { container } = render(wrap(<Sidebar />));
     expect(container.querySelector("aside[data-shell='sidebar']")).not.toBeNull();
+  });
+
+  it('مسیرها و ابزارهایِ کم‌استفاده با دکمۀ بیشتر باز و بسته می‌شوند', () => {
+    const { container } = render(wrap(<Sidebar />));
+    const toggle = container.querySelector<HTMLButtonElement>('.mobile-nav-toggle');
+    const panel = container.querySelector<HTMLDivElement>('#mobile-nav-more-panel');
+    expect(toggle?.getAttribute('aria-expanded')).toBe('false');
+    expect(panel?.hasAttribute('hidden')).toBe(true);
+
+    fireEvent.click(toggle!);
+    expect(toggle?.getAttribute('aria-expanded')).toBe('true');
+    expect(panel?.hasAttribute('hidden')).toBe(false);
+
+    fireEvent.click(panel!.querySelector<HTMLAnchorElement>('a[href="/master"]')!);
+    expect(toggle?.getAttribute('aria-expanded')).toBe('false');
+    expect(panel?.hasAttribute('hidden')).toBe(true);
+  });
+
+  it('پنلِ ابزارهایِ بیشتر با کلیدِ Escape بسته می‌شود', () => {
+    const { container } = render(wrap(<Sidebar />));
+    const toggle = container.querySelector<HTMLButtonElement>('.mobile-nav-toggle');
+    const panel = container.querySelector<HTMLDivElement>('#mobile-nav-more-panel');
+    fireEvent.click(toggle!);
+    fireEvent.keyDown(window, { key: 'Escape' });
+    expect(toggle?.getAttribute('aria-expanded')).toBe('false');
+    expect(panel?.hasAttribute('hidden')).toBe(true);
+    expect(document.activeElement).toBe(toggle);
   });
 
   it('اینسپکتور هم همین‌طور', () => {

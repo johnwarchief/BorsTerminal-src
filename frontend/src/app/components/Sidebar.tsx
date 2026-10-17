@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { NavLink } from 'react-router';
 import { useUiStore } from '@shared/stores/uiStore';
 import { useAuthStore } from '@shared/stores/authStore';
@@ -23,6 +23,7 @@ interface NavItem {
   icon: React.ComponentType<{ size?: number; className?: string }>;
   label: string;
   end?: boolean;
+  mobilePrimary?: boolean;
   /** زیرِ آیتمِ همسایه نشان داده می‌شود (دیده‌بان: تبِّ مستقلِ زیرِ پرتفوی) */
   sub?: boolean;
 }
@@ -40,10 +41,10 @@ export const NAV_SECTIONS: NavSection[] = [
       // رأیِ مالک (۱۴۰۵-۰۷-۲۰): «وضعیت بازار» اولین تب است، و
       // «تابلوخوانی / بازار» دیگر «/بازار» ندارد -- چون وضعیتِ بازار از درونِ
       // تابلو به مقصدی مستقل رفته است.
-      { to: '/market-status', icon: StatusIcon, label: 'وضعیت بازار', end: true },
-      { to: '/market', icon: MarketIcon, label: 'تابلوخوانی', end: false },
-      { to: '/technical', icon: TechnicalIcon, label: 'تکنیکال', end: false },
-      { to: '/fundamental', icon: FundamentalIcon, label: 'بنیادی', end: false },
+      { to: '/market-status', icon: StatusIcon, label: 'وضعیت بازار', end: true, mobilePrimary: true },
+      { to: '/market', icon: MarketIcon, label: 'تابلوخوانی', end: false, mobilePrimary: true },
+      { to: '/technical', icon: TechnicalIcon, label: 'تکنیکال', end: false, mobilePrimary: true },
+      { to: '/fundamental', icon: FundamentalIcon, label: 'بنیادی', end: false, mobilePrimary: true },
       // رأیِ مالک (۱۴۰۵-۰۷-۲۲): «مرکز اعلان» تبِّ اصلی نیست — زنگِ نوارِ بالا
       // همان صفحّه را باز می‌کند، پس مقصد درِ routes.tsx می‌ماند و ازِ ناوبری
       // بیرون می‌آید.
@@ -85,12 +86,27 @@ export function Sidebar() {
 
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [updateOpen, setUpdateOpen] = useState(false);
+  const [mobileMoreOpen, setMobileMoreOpen] = useState(false);
+  const mobileMoreToggleRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (!mobileMoreOpen) return;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setMobileMoreOpen(false);
+        mobileMoreToggleRef.current?.focus();
+      }
+    };
+    window.addEventListener('keydown', closeOnEscape);
+    return () => window.removeEventListener('keydown', closeOnEscape);
+  }, [mobileMoreOpen]);
 
   return (
     <aside
       aria-label="نوار کناری"
       data-shell="sidebar"
       data-collapsed={collapsed ? 'true' : undefined}
+      data-mobile-expanded={mobileMoreOpen ? 'true' : 'false'}
       className={`glass-panel sticky top-0 flex h-screen shrink-0 flex-col gap-2.5 overflow-y-auto rounded-none border-y-0 border-e border-border-c transition-[width] duration-200 ease-out ${
         collapsed ? 'w-[var(--sidebar-w-collapsed)] items-center p-2' : 'w-[var(--sidebar-w)] px-2.5 py-3'
       }`}
@@ -109,6 +125,7 @@ export function Sidebar() {
           onClick={() => setSidebarCollapsed(!collapsed)}
           aria-label={collapsed ? 'بازکردن نوار کناری' : 'جمع‌کردن نوار کناری'}
           aria-expanded={!collapsed}
+          title={collapsed ? 'بازکردن نوار کناری' : 'جمع‌کردن نوار کناری'}
           className="ms-auto shrink-0 rounded-lg border border-[var(--hairline)] p-1 text-text-muted transition-colors hover:border-border-accent hover:text-accent-blue"
         >
           <ChevronIcon size={13} className={collapsed ? 'rotate-180' : ''} />
@@ -134,7 +151,9 @@ export function Sidebar() {
                 end={item.end}
                 title={item.label}
                 aria-label={item.label}
+                data-mobile-primary={item.mobilePrimary ? 'true' : undefined}
                 data-testid={item.sub ? 'nav-sub-watch' : undefined}
+                onClick={() => setMobileMoreOpen(false)}
                 className={({ isActive }) =>
                   `group relative flex items-center overflow-hidden rounded-lg border border-transparent text-nav font-bold transition-all duration-200 ${item.sub && !collapsed ? 'ms-3 text-2xs' : ''} ${
                     collapsed ? 'justify-center px-0 py-2.5' : 'justify-start px-2 py-2'
@@ -153,7 +172,10 @@ export function Sidebar() {
                       }`}
                     />
                     {collapsed ? (
-                      <item.icon size={19} />
+                      <>
+                        <item.icon size={19} />
+                        <span className="mobile-nav-label">{item.label}</span>
+                      </>
                     ) : (
                       <span className="flex items-center gap-2">
                         <item.icon size={18} />
@@ -166,7 +188,81 @@ export function Sidebar() {
             ))}
           </div>
         ))}
+        <button
+          type="button"
+          ref={mobileMoreToggleRef}
+          className="mobile-nav-toggle"
+          aria-label={mobileMoreOpen ? 'بستن ابزارها' : 'نمایش ابزارها'}
+          aria-controls="mobile-nav-more-panel"
+          aria-expanded={mobileMoreOpen}
+          title={mobileMoreOpen ? 'بستن ابزارها' : 'نمایش ابزارها و مسیرهای بیشتر'}
+          onClick={() => setMobileMoreOpen((open) => !open)}
+        >
+          <ChevronIcon size={16} className={mobileMoreOpen ? 'rotate-90' : '-rotate-90'} />
+          <span>بیشتر</span>
+        </button>
       </nav>
+
+      <div
+        id="mobile-nav-more-panel"
+        className="mobile-nav-more-panel"
+        role="region"
+        aria-label="مسیرها و ابزارهای بیشتر"
+        hidden={!mobileMoreOpen}
+      >
+        {mobileMoreOpen && (
+          <>
+            <div className="mobile-nav-more-links">
+              {NAV_SECTIONS.flatMap((section) => section.items)
+                .filter((item) => !item.mobilePrimary)
+                .map((item) => (
+                  <NavLink
+                    key={item.to}
+                    to={item.to}
+                    end={item.end}
+                    aria-label={item.label}
+                    onClick={() => setMobileMoreOpen(false)}
+                    className={({ isActive }) =>
+                      `flex min-h-11 items-center gap-2 rounded-lg border px-3 py-2 text-xs font-bold transition-colors ${
+                        isActive
+                          ? 'border-[var(--hairline)] bg-accent-blue/12 text-accent-blue'
+                          : 'border-transparent text-text-secondary hover:bg-bg-card/60 hover:text-accent-blue'
+                      }`
+                    }
+                  >
+                    <item.icon size={17} />
+                    <span>{item.label}</span>
+                  </NavLink>
+                ))}
+            </div>
+            <div className="mobile-nav-more-tools">
+              <ThemeToggle compact />
+              <button
+                type="button"
+                onClick={() => {
+                  setSettingsOpen(true);
+                  setMobileMoreOpen(false);
+                }}
+                data-testid="user-settings-btn"
+                className="min-h-11 min-w-11 rounded-lg border border-border-c bg-bg-card/60 px-3 text-xs font-bold text-text-secondary transition-colors hover:border-border-accent hover:text-accent-blue"
+                aria-label={`تنظیمات کاربر: ${username}`}
+                title="تنظیمات کاربر"
+              >
+                ⚙ <span>تنظیمات</span>
+              </button>
+              <button
+                type="button"
+                onClick={logout}
+                className="min-h-11 min-w-11 rounded-lg border border-border-c bg-bg-card/60 px-3 text-xs font-bold text-accent-red transition-colors hover:border-accent-red/40 hover:bg-accent-red/10"
+                aria-label="خروج از حساب"
+                title="خروج از حساب"
+              >
+                ⎋ <span>خروج</span>
+              </button>
+            </div>
+          </>
+        )}
+      </div>
 
       {/* Footer Controls & User Settings */}
       <div className={`mt-auto flex flex-col gap-2 ${collapsed ? 'w-full items-center' : ''}`}>

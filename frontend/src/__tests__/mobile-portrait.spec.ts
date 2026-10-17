@@ -22,22 +22,13 @@ describe('چیدمانِ موبایل', () => {
     expect(css).toMatch(/min-height:\s*44px/);
   });
 
-  it('تب‌ها درِ پورتره دو ردیفِ چهارتایی می‌شوند، نه یکِ ردیفِ ۴۱pxکی', () => {
-    // با شش تب یکِ ردیفِ flex کافی بود؛ سنجشِ زنده درِ ۳۶۰×۸۰۰ با هشت تب
-    // عرضِ ۴۱px داد (navItemsUnder44Wide=8). رفعِ چیدمان: گریدِ چهارستونه با
-    // دو ردیفِ تب ⇒ ۸۴px برایِ هر تب در ۳۶۰px، و هیچ تبی حذف نشده.
+  it('ناوبری اصلی موبایل یک ردیف است و مسیرهای دیگر در پنل بیشتر می‌مانند', () => {
     const b = mediaBlock('max-width: 820px');
-    expect(b).toMatch(/aside\[data-shell='sidebar'\] nav\s*\{[\s\S]*?grid-template-columns:\s*repeat\(4,/);
-    expect(b).toMatch(/grid-auto-rows:\s*minmax\(44px,\s*auto\)/);
-    // کفِ عرض باید رویِ انتخابگرِ زنده باشد: لینک‌ها درِ DOM نوهٔ nav‌اند
-    // (divِ هر بخش با display: contents جعبه‌اش را ازِ چیدمان می‌برد، نه
-    // جایگاهش را درِ درخت)، پس `nav > a` هرگز نمی‌خواند و همین ۴۴px را
-    // بی‌صدا مرده کرده بود.
-    expect(b).toMatch(/nav a\s*\{[\s\S]*?min-width:\s*44px/);
-    expect(css).not.toMatch(/nav > a\s*\{/);
-    // سه ردیفِ ۴۴ + فاصله‌ها و حاشیه = ۱۴۶؛ سنجۀ padClearsBar درِ کاوشگر
-    // paddingِ بدنه را با ارتفاعِ واقعیِ نوار هم‌خوان می‌بیند.
-    expect(css).toMatch(/--bors-nav-h:\s*146px/);
+    expect(b).toMatch(/aside\[data-shell='sidebar'\] nav\s*\{[\s\S]*?grid-template-columns:\s*repeat\(5,/);
+    expect(b).toMatch(/nav a:not\(\[data-mobile-primary='true'\]\)\s*\{[\s\S]*?display:\s*none/);
+    expect(b).toMatch(/mobile-nav-toggle\s*\{[\s\S]*?min-height:\s*48px/);
+    expect(b).toMatch(/mobile-nav-more-panel\[hidden\]\s*\{[\s\S]*?display:\s*none/);
+    expect(css).toMatch(/--bors-nav-h:\s*56px/);
   });
 
   it('ناحیهٔ امنِ بالا و پایین هر دو رعایت شده', () => {
