@@ -66,6 +66,10 @@ class Limits:
     max_daily_loss: float | None = None
     #: نرخِ ارسال: چند سفارش در `window_seconds` (§۶-۴: حدِ مجاز تعداد سفارش)
     max_orders_per_window: int | None = None
+    #: سقفِ *جمعِ* سفارش‌ها درِ پنجره، بی‌اعتبار به نماد. نبودِ این یکی همان
+    #: نقیصۀ مرجعِ Rust است: limiter آن‌جا هر-ترد بود و بودژۀ جهانی نداشت، پس
+    #: پنجاه نماد = پنجاه برابرِ نرخِ مجازِ حساب. `None` یعنی این گیت خاموش.
+    max_total_orders_per_window: int | None = None
     window_seconds: float = 60.0
     #: تازگیِ داده: اگر تازه‌ترین شاهدِ داده از این بیشتر گذشته باشد، رد (§۳-۳).
     #: `None` یعنی این گیت خاموش است (رفتارِ پیشینِ سرخطی).
@@ -688,6 +692,20 @@ class ExecutionService:
                 raise ExecutionError(ErrorCode.RISK_LIMIT,
                                      f"ضررِ امروز ({pnl:.0f}) به سقفِ {lim.max_daily_loss:.0f} "
                                      "رسیده — ارسالِ تازه ممنوع")
+
+        if lim.max_total_orders_per_window is not None:
+            total = None if self.audit is None else self.audit.orders_in_window(
+                lim.window_seconds, symbol=None)
+            if total is None:
+                raise ExecutionError(ErrorCode.RISK_LIMIT,
+                                     "سقفِ جمعیِ سفارش تعریف شده ولی ردِّپایِ ماندگار "
+                                     "وصل نیست — نمی‌دانیم درِ پنجره چندتا فرستاده",
+                                     checks={"order_rate_total": UNKNOWN})
+            if total + n > lim.max_total_orders_per_window:
+                raise ExecutionError(
+                    ErrorCode.RISK_LIMIT,
+                    f"{total + n} سفارش درِ {lim.window_seconds:.0f} ثانیه (همۀ نمادها)، "
+                    f"سقفِ جمعی {lim.max_total_orders_per_window}")
 
         if lim.max_orders_per_window is not None:
             sent = None if self.audit is None else self.audit.orders_in_window(

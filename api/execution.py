@@ -109,9 +109,59 @@ def _adapter() -> BrokerAdapter:
         queue_position=True, cancel=True, best_bid_ask=False, balances=False))
 
 
+def _env_int(name: str) -> int | None:
+    """عددِ محیط یا None. بی‌مقدارِ نامعتبرِ بی‌صدا: «تعریف‌نشده» با «صفر» یکی نیست."""
+    raw = (os.environ.get(name) or "").strip()
+    if not raw:
+        return None
+    try:
+        n = int(raw)
+    except ValueError:
+        return None
+    return n if n > 0 else None
+
+
+def _env_float(name: str, default: float) -> float:
+    raw = (os.environ.get(name) or "").strip()
+    try:
+        v = float(raw)
+    except (TypeError, ValueError):
+        return default
+    return v if v > 0 else default
+
+
+#: سقف‌هایِ ریسکِ دروازۀ HTTP. `BORS_EXECUTION_MAX_ORDERS_PER_SYMBOL` و
+#: `BORS_EXECUTION_MAX_ORDERS_TOTAL` هر دو اختیاری‌اند؛ ولی اگر *هیچ‌کدام* و
+#: هیچ سقفِ ارزشی هم تنظیم نشده باشد، اجرایِ زنده متوقف می‌شود (`_risk_gate`).
+_LIMITS = Limits(
+    max_orders_per_window=_env_int("BORS_EXECUTION_MAX_ORDERS_PER_SYMBOL"),
+    max_total_orders_per_window=_env_int("BORS_EXECUTION_MAX_ORDERS_TOTAL"),
+    max_order_value=_env_float("BORS_EXECUTION_MAX_ORDER_VALUE", 0.0) or None,
+    window_seconds=_env_float("BORS_EXECUTION_RATE_WINDOW_S", 60.0))
+
 _ACTIVE_ADAPTER = _adapter()
-_SERVICE = ExecutionService(_ACTIVE_ADAPTER, dry_run=DRY_RUN, limits=Limits(),
+_SERVICE = ExecutionService(_ACTIVE_ADAPTER, dry_run=DRY_RUN, limits=_LIMITS,
                             audit=_AUDIT, scheduler=_SCHEDULER)
+
+
+def _risk_gate() -> tuple[bool, str]:
+    """دروازۀ System 2: اجرایِ زنده بی‌پیکربندیِ ریسک مجاز نیست.
+
+    چرا این‌جا و نه داخلِ `ExecutionService`: سرویس واحدِ لایه‌هایِ بسیاری است و
+    آزمون‌هایِ واحدِ آن باِ سقفِ پیش‌فرضِ خاموش کار می‌کنند؛ چیزی که باید بسته
+    باشد، *دروازۀ HTTPِ ارسال* است، آن هم فقط وقتی ترافیکِ زنده واقعاً روشن است.
+    """
+    if DRY_RUN or not _live_now():
+        return True, ""
+    lim = _SERVICE.limits
+    if (lim.max_order_value is None and lim.max_orders_per_window is None
+            and lim.max_total_orders_per_window is None):
+        return False, ("هیچ سقفِ ریسکی تنظیم نشده (ارزشِ هر سفارش، یا سقفِ تعدادِ "
+                       "هر-نماد، یا سقفِ جمعی) — اجرایِ زنده متوقف است. "
+                       "BORS_EXECUTION_MAX_ORDER_VALUE / "
+                       "BORS_EXECUTION_MAX_ORDERS_PER_SYMBOL / "
+                       "BORS_EXECUTION_MAX_ORDERS_TOTAL")
+    return True, ""
 
 
 def _recover() -> int:
@@ -617,6 +667,11 @@ def post_prepare(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
 @router.post("/api/execution/dispatch")
 def post_dispatch(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
     t0 = time.monotonic()
+    ok_gate, why_gate = _risk_gate()
+    if not ok_gate:
+        return {"status": "error", "code": ErrorCode.RISK_LIMIT.value,
+                "detail": why_gate, "execution_id": str(body.get("execution_id") or ""),
+                "risk_gate": "not_configured", "dry_run": DRY_RUN, "live": _live_now()}
     draft = _draft_from(body)
     target = body.get("target_wall_ms")
     try:

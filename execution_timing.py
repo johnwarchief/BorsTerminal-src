@@ -353,6 +353,60 @@ class ClockNotTrusted(RuntimeError):
         self.detail = detail
 
 
+#: بالاترین آفستی که از «ساعتِ سرورِ کارگزاری» باور می‌کنیم. بیشتر یعنی یا خواندنِ
+#: معکوسِ دو طرف، یا منبعِ بی‌ربط — و عددِ بی‌مصدر جایِ هیچ تصمیمی نمی‌گیرد.
+MAX_SERVER_OFFSET_MS = 15 * 60 * 1000.0
+
+#: آستانۀ RTT برایِ TRUSTED شدنِ یکِ تک‌نمونۀ بَرست (چندنمونهای راهِ NTP است).
+_SERVER_TRUSTED_RTT_MS = 250.0
+_INF = float("inf")
+
+
+def _no_clock(detail: str) -> "ClockState":
+    return ClockState(offset_ms=None, quality=ClockQuality.UNAVAILABLE, detail=detail)
+
+
+def clock_from_server_time(*, diff_ms: object, server_timestamp_ms: object,
+                           client_ms: object, rtt_ms: object,
+                           source: str = "broker") -> "ClockState":
+    """آفستِ ساعتِ ما از نگاهِ سرور، با دو فیلدِ مستقلِ سازگار.
+
+    `diff` به‌تنهایی ادعا نیست: تا وقتی `serverTimestamp ≈ client + diff` نخواند
+    (در حدِ رفت‌وبرگشت + یک ثانیه تلورانسِ گردکردن) آن عدد می‌تواند هر چیزِ دیگری
+    باشد؛ در آن حالت `UNAVAILABLE` می‌آید، نه «صفر». بی‌کیفیتِ قابلِ اتکا،
+    `Scheduler` همان مسیرِ پیشین را می‌رود و هیچ زمانِ هدفی جابه‌جا نمی‌شود —
+    یعنی این منبع تازه هرگز بی‌صدا رفتارِ ارسال را عوض نمی‌کند.
+    """
+    try:
+        diff = float(diff_ms)            # type: ignore[arg-type]
+        server_ts = float(server_timestamp_ms)   # type: ignore[arg-type]
+        client = float(client_ms)        # type: ignore[arg-type]
+        rtt = float(rtt_ms)              # type: ignore[arg-type]
+    except (TypeError, ValueError):
+        return _no_clock("قالبِ عددیِ پاسخِ ساعتِ سرور خوانده نشد")
+    vals = (diff, server_ts, client, rtt)
+    if not all(v == v and -_INF < v < _INF for v in vals):
+        return _no_clock("پاسخِ ساعتِ سرور بی‌کران/NaN است")
+    if abs(diff) > MAX_SERVER_OFFSET_MS:
+        return _no_clock("آفستِ اعلامی از ۱۵ دقیقه بیشتر است — باور نمی‌کنیم")
+    if rtt < 0:
+        return _no_clock("رفت‌وبرگشتِ منفی")
+    # `serverTimestamp` جایی *میانِ* درخواستِ ما و پاسخ گرفته می‌شود، پس اختلافِ
+    # دو فیلد نمی‌تواند بیشتر از همان رفت‌وبرگشتِ اندازه‌گرفته‌شده باشد (باِ یکِ
+    # آستانۀِ کوچکِ گردکردن). بی‌این، هر دروغی درِ `diff` رد می‌شد — و دقیقاً
+    # همان چیزی که «عددِ بی‌مصدر» را ازِ «عددِ سنجیده» جدا می‌کند.
+    err = abs(server_ts - (client + diff))
+    if err > max(rtt * 1.5, 250.0):
+        return _no_clock("دو فیلدِ پاسخ با هم نمی‌خوانند (diff ≠ serverTimestamp − client)")
+    quality = (ClockQuality.TRUSTED if rtt <= _SERVER_TRUSTED_RTT_MS
+               else ClockQuality.DEGRADED)
+    return ClockState(offset_ms=diff, quality=quality,
+                      samples=(NtpSample(offset_ms=diff, rtt_ms=rtt, server=source),),
+                      spread_ms=None, measured_at=time.time(),
+                      detail="clock from broker server-time (single sample, err=%dms)"
+                             % round(err))
+
+
 def _spin_step() -> None:
     """یک گامِ spin: os.sched_yield اگر بود، وگرنه sleepِ صفر (کمتر از یکِ ms)."""
     yielder = getattr(os, "sched_yield", None)
@@ -367,5 +421,6 @@ def _spin_step() -> None:
 
 
 __all__ = ["ClockQuality", "NtpSample", "ClockState", "TimeSource", "NtpProber",
+           "clock_from_server_time", "MAX_SERVER_OFFSET_MS",
            "DispatchPlan", "DispatchTelemetry", "Scheduler", "ClockNotTrusted",
            "estimate_one_way", "percentile", "TEHRAN_UTC_OFFSET"]
