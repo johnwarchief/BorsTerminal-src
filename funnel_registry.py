@@ -114,7 +114,10 @@ class FunnelPreset:
 
 
 # ── هفت فیلترِ canonical از docs/*.txt ────────────────────────────────────
-_TESTS = ("dev/test_tape_flags_v1059.py", "tools/tape_formula_parity.py")
+# تنها ارجاع‌هایِ واقعی: فایلی که درِ دیسک هست و همان filter_id را می‌سنجد.
+# `tools/tape_formula_parity.py` پاریتیِ تمام‌ست با متنِ فایل است (هر هفت فیلتر)؛
+# بقیه درِ پایین فهرست می‌شوند. `dev/funnel_registry_v1.py` وجودِ هر مسیر را می‌سنجد.
+_TESTS = ("tools/tape_formula_parity.py",)
 
 FILTERS: tuple[FunnelFilter, ...] = (
     FunnelFilter(
@@ -125,7 +128,7 @@ FILTERS: tuple[FunnelFilter, ...] = (
         source_sha256="6637192e4d10a73d",
         formula_version="txt-1",
         backend_impl="tape_flags.clock_flag",
-        test_refs=_TESTS + ("frontend/src/__tests__/tape-fuzz-parity.spec.ts",),
+        test_refs=_TESTS + ("dev/tape_filters_v1034.py", "tools/tape_parity_fuzz.py", "dev/test_mainwatch_flags_v1.py", "frontend/src/__tests__/tape-fuzz-parity.spec.ts", "frontend/src/__tests__/tape-patterns.spec.tsx"),
         params=(
             FilterParam("clock_delta", "فاصلۀ آخرین از پایانی", "docs/الگوی ساعت.txt:1 `(pl)>=(pc)*1.02`",
                         value=TF.CLOCK_DELTA, unit="کسر",
@@ -148,7 +151,7 @@ FILTERS: tuple[FunnelFilter, ...] = (
         source_sha256="b8a185c4168be33e",
         formula_version="txt-1",
         backend_impl="tape_flags.suspicious_flag",
-        test_refs=_TESTS,
+        test_refs=_TESTS + ("dev/tape_filters_v1034.py", "tools/tape_parity_fuzz.py", "dev/test_mainwatch_flags_v1.py", "frontend/src/__tests__/tape-fuzz-parity.spec.ts", "frontend/src/__tests__/tape-patterns.spec.tsx"),
         params=(
             FilterParam("vol_mult", "ضریبِ حجم", "docs/حجم مشکوک.txt:1 `(tvol)>3*(Σ[ih][0..29]/30)`",
                         value=TF.SUSP_VOL_MULT, unit="×میانگین", configurable=True,
@@ -168,7 +171,7 @@ FILTERS: tuple[FunnelFilter, ...] = (
         source_sha256="e93cab46073567c0",
         formula_version="txt-1",
         backend_impl="tape_flags.jet_flag",
-        test_refs=_TESTS,
+        test_refs=_TESTS + ("dev/tape_filters_v1034.py", "tools/tape_parity_fuzz.py", "frontend/src/__tests__/tape-fuzz-parity.spec.ts", "frontend/src/__tests__/tape-patterns.spec.tsx"),
         params=(
             FilterParam("vol_mult", "ضریبِ حجم", "docs/فیلتر جت.txt:1 `(tvol)>3*(Σ…/30)`",
                         value=TF.JET_VOL_MULT, unit="×میانگین"),
@@ -191,7 +194,7 @@ FILTERS: tuple[FunnelFilter, ...] = (
         source_sha256="053a12a7c96b6e4f",
         formula_version="txt-1",
         backend_impl="tape_flags.roobi_flag",
-        test_refs=_TESTS,
+        test_refs=_TESTS + ("dev/tape_filters_v1034.py", "tools/tape_parity_fuzz.py", "frontend/src/__tests__/tape-fuzz-parity.spec.ts", "frontend/src/__tests__/tape-patterns.spec.tsx"),
         availability="backend-partial",
         params=(
             FilterParam("plp_max", "سقفِ درصدِ آخرین", "docs/کف روبی صف فروش.txt:1 `(plp)<-1`",
@@ -212,7 +215,7 @@ FILTERS: tuple[FunnelFilter, ...] = (
         source_sha256="e5d4fd99a6811443",
         formula_version="txt-1",
         backend_impl="tape_flags.noqteh_flag",
-        test_refs=_TESTS,
+        test_refs=_TESTS + ("dev/tape_filters_v1034.py", "tools/tape_parity_fuzz.py", "frontend/src/__tests__/tape-fuzz-parity.spec.ts"),
         params=(
             FilterParam("max_dist", "سقفِ فاصلۀ تا کفِ ماه", "docs/نقطه زنی.txt:1 `(cfield2)<3`",
                         value=TF.NOQTEH_MAX_DIST, unit="٪"),
@@ -233,7 +236,7 @@ FILTERS: tuple[FunnelFilter, ...] = (
         source_sha256="590e52a23c78166f",
         formula_version="txt-1",
         backend_impl="tape_flags.smart_money_flag",
-        test_refs=_TESTS,
+        test_refs=_TESTS + ("dev/tape_filters_v1034.py", "dev/tape_smartmoney_v1074.py", "dev/test_mainwatch_flags_v1.py"),
         availability="backend-partial",
         params=(
             FilterParam("vol_mult", "ضریبِ حجم", "docs/ورود پول هوشمند.txt:1 `(tvol)>1.5*(Σ…/30)`",
@@ -251,7 +254,7 @@ FILTERS: tuple[FunnelFilter, ...] = (
         source_sha256="92adf93e9d5e1df4",
         formula_version="txt-1",
         backend_impl="tape_flags.legal_to_retail_flag",
-        test_refs=_TESTS,
+        test_refs=_TESTS + ("dev/tape_smartmoney_v1074.py", "dev/test_mainwatch_flags_v1.py"),
         availability="backend-partial",
         params=(
             FilterParam("legal_share", "سهمِ هر دو طرف از حجمِ نشست",
