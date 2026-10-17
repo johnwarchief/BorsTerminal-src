@@ -1,0 +1,77 @@
+{
+ "port": 8020,
+ "path": "/api/market",
+ "n": 6,
+ "wall_ms": 675.2,
+ "per_request_ms": [
+  613.5,
+  627.9,
+  645.7,
+  659.9,
+  661.2,
+  673.7
+ ],
+ "p50_ms": 659.9,
+ "max_ms": 673.7,
+ "builds_observed_MISS": 0,
+ "x_cache_counts": {
+  "STALE": 6
+ },
+ "sum_of_server_seconds": 3.88,
+ "results": [
+  {
+   "i": 0,
+   "ms": 627.9,
+   "http": 200,
+   "bytes": 6997312,
+   "x_cache": "STALE",
+   "etag": "\"a55612fead0daa34\"",
+   "ct": "application/json"
+  },
+  {
+   "i": 1,
+   "ms": 661.2,
+   "http": 200,
+   "bytes": 6997312,
+   "x_cache": "STALE",
+   "etag": "\"a55612fead0daa34\"",
+   "ct": "application/json"
+  },
+  {
+   "i": 2,
+   "ms": 645.7,
+   "http": 200,
+   "bytes": 6997312,
+   "x_cache": "STALE",
+   "etag": "\"a55612fead0daa34\"",
+   "ct": "application/json"
+  },
+  {
+   "i": 3,
+   "ms": 659.9,
+   "http": 200,
+   "bytes": 6997312,
+   "x_cache": "STALE",
+   "etag": "\"a55612fead0daa34\"",
+   "ct": "application/json"
+  },
+  {
+   "i": 4,
+   "ms": 673.7,
+   "http": 200,
+   "bytes": 6997312,
+   "x_cache": "STALE",
+   "etag": "\"a55612fead0daa34\"",
+   "ct": "application/json"
+  },
+  {
+   "i": 5,
+   "ms": 613.5,
+   "http": 200,
+   "bytes": 6997312,
+   "x_cache": "STALE",
+   "etag": "\"a55612fead0daa34\"",
+   "ct": "application/json"
+  }
+ ]
+}

@@ -1,0 +1,261 @@
+{
+ "label": "after",
+ "port": 8020,
+ "base": "http://127.0.0.1:8020",
+ "started_wall": 1792220545.2119832,
+ "python": "3.14.4",
+ "orjson": true,
+ "steps": [
+  {
+   "phase": "cold-first-request",
+   "identity": [
+    {
+     "path": "/api/market",
+     "ms": 7246.3,
+     "http": 200,
+     "bytes": 6355843,
+     "x_cache": "MISS",
+     "etag": "\"fe2e4ee2043c40d2\"",
+     "encoding": null
+    }
+   ]
+  },
+  {
+   "phase": "warm-identity",
+   "repeat": 5,
+   "paths": {
+    "/api/market": {
+     "n": 5,
+     "p50_ms": 32.0,
+     "p95_ms": 37.4,
+     "max_ms": 37.4,
+     "bytes": [
+      6355843
+     ],
+     "x_cache": [
+      "HIT"
+     ],
+     "encoding": [
+      "None"
+     ],
+     "errors": []
+    },
+    "/api/funnel": {
+     "n": 5,
+     "p50_ms": 29.7,
+     "p95_ms": 2797.8,
+     "max_ms": 2797.8,
+     "bytes": [
+      7487332
+     ],
+     "x_cache": [
+      "HIT",
+      "MISS"
+     ],
+     "encoding": [
+      "None"
+     ],
+     "errors": []
+    },
+    "/api/mstat/board": {
+     "n": 5,
+     "p50_ms": 1720.0,
+     "p95_ms": 2202.6,
+     "max_ms": 2202.6,
+     "bytes": [
+      241970
+     ],
+     "x_cache": [
+      "None"
+     ],
+     "encoding": [
+      "None"
+     ],
+     "errors": []
+    },
+    "/api/market/delta": {
+     "n": 5,
+     "p50_ms": 6.3,
+     "p95_ms": 27.5,
+     "max_ms": 27.5,
+     "bytes": [
+      49
+     ],
+     "x_cache": [
+      "None"
+     ],
+     "encoding": [
+      "None"
+     ],
+     "errors": []
+    }
+   }
+  },
+  {
+   "phase": "warm-gzip",
+   "repeat": 5,
+   "paths": {
+    "/api/market": {
+     "n": 5,
+     "p50_ms": 46.2,
+     "p95_ms": 56.1,
+     "max_ms": 56.1,
+     "bytes": [
+      1503653
+     ],
+     "x_cache": [
+      "HIT"
+     ],
+     "encoding": [
+      "gzip"
+     ],
+     "errors": []
+    },
+    "/api/funnel": {
+     "n": 5,
+     "p50_ms": 46.7,
+     "p95_ms": 789.2,
+     "max_ms": 789.2,
+     "bytes": [
+      468467
+     ],
+     "x_cache": [
+      "HIT",
+      "MISS"
+     ],
+     "encoding": [
+      "gzip"
+     ],
+     "errors": []
+    },
+    "/api/mstat/board": {
+     "n": 5,
+     "p50_ms": 1505.7,
+     "p95_ms": 1999.5,
+     "max_ms": 1999.5,
+     "bytes": [
+      76390,
+      76392,
+      76396,
+      76402,
+      76433
+     ],
+     "x_cache": [
+      "None"
+     ],
+     "encoding": [
+      "gzip"
+     ],
+     "errors": []
+    },
+    "/api/market/delta": {
+     "n": 5,
+     "p50_ms": 5.1,
+     "p95_ms": 18.9,
+     "max_ms": 18.9,
+     "bytes": [
+      49
+     ],
+     "x_cache": [
+      "None"
+     ],
+     "encoding": [
+      "None"
+     ],
+     "errors": []
+    }
+   }
+  },
+  {
+   "phase": "concurrent-6-cached",
+   "port": 8020,
+   "path": "/api/market",
+   "n": 6,
+   "wall_ms": 600.2,
+   "per_request_ms": [
+    553.8,
+    559.4,
+    576.9,
+    588.8,
+    595.5,
+    598.1
+   ],
+   "p50_ms": 588.8,
+   "max_ms": 598.1,
+   "builds_observed_MISS": 0,
+   "x_cache_counts": {
+    "HIT": 6
+   },
+   "sum_of_server_seconds": 3.47,
+   "results": [
+    {
+     "i": 0,
+     "ms": 559.4,
+     "http": 200,
+     "bytes": 6355843,
+     "x_cache": "HIT",
+     "etag": "\"fe2e4ee2043c40d2\"",
+     "ct": "application/json"
+    },
+    {
+     "i": 1,
+     "ms": 588.8,
+     "http": 200,
+     "bytes": 6355843,
+     "x_cache": "HIT",
+     "etag": "\"fe2e4ee2043c40d2\"",
+     "ct": "application/json"
+    },
+    {
+     "i": 2,
+     "ms": 576.9,
+     "http": 200,
+     "bytes": 6355843,
+     "x_cache": "HIT",
+     "etag": "\"fe2e4ee2043c40d2\"",
+     "ct": "application/json"
+    },
+    {
+     "i": 3,
+     "ms": 598.1,
+     "http": 200,
+     "bytes": 6355843,
+     "x_cache": "HIT",
+     "etag": "\"fe2e4ee2043c40d2\"",
+     "ct": "application/json"
+    },
+    {
+     "i": 4,
+     "ms": 553.8,
+     "http": 200,
+     "bytes": 6355843,
+     "x_cache": "HIT",
+     "etag": "\"fe2e4ee2043c40d2\"",
+     "ct": "application/json"
+    },
+    {
+     "i": 5,
+     "ms": 595.5,
+     "http": 200,
+     "bytes": 6355843,
+     "x_cache": "HIT",
+     "etag": "\"fe2e4ee2043c40d2\"",
+     "ct": "application/json"
+    }
+   ]
+  },
+  {
+   "phase": "conditional-304",
+   "result": {
+    "path": "/api/market",
+    "ms": 5.6,
+    "http": 304,
+    "bytes": 0,
+    "error": "HTTPError"
+   }
+  }
+ ],
+ "summary": {
+  "total_requests": 40
+ }
+}
