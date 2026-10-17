@@ -492,6 +492,11 @@ jobs:
           # کلید، بیلدی است که هرگز تازه نمی‌شود؛ انتشار با publish=true پایین
           # همان‌جا بسته می‌شود.
           VITE_MOBILE_MANIFEST_PUBKEY: ${{ vars.MOBILE_MANIFEST_PUBKEY }}
+          # قلابِ __borsProbe (shared/api/local/probe.ts) فقط درِ رانِ bake روشن
+          # می‌شود — همان ران‌هایی که هرگز منتشر نمی‌شوند (publish gate پایین
+          # bake+publish را می‌بندد). بی‌این، سنجشِ قیفِ آفلاین رویِ APKِ واقعی
+          # درِ jobِ webview بی‌ابزار می‌ماند. بی‌پرچم، شاخه tree-shake می‌شود.
+          VITE_ANDROID_PROBE: ${{ github.event.inputs.bake_snapshot == 'true' && '1' || '' }}
         run: |
           set -e
           export VITE_BUILD_TAG="uiux-${GITHUB_SHA::7} · run${GITHUB_RUN_NUMBER}"
@@ -1178,6 +1183,15 @@ jobs:
     timeout-minutes: 34
     steps:
       - uses: actions/checkout@v4
+
+      # مادۀ «ارتقایِ رسمی» کاندیدِ واقعی را لازم دارد (همان APKِ امضاشده با
+      # کلیدِ انتشار، نه بیلدِ دورریختنیِ خودِ ماتریس): صحنۀ واقعیِ سنجه این است
+      # که کاربرِ android-1.1.0 رویِ گوشی، همین APK را ارتقا دهد.
+      - uses: actions/download-artifact@v4
+        with:
+          name: bors-mobile-candidate-${{ github.sha }}
+          path: apks
+          if-no-files-found: error
 
       - uses: actions/setup-node@v4
         with:

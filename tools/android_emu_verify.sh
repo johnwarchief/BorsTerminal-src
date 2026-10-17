@@ -234,6 +234,24 @@ else
     step "webview-$LABEL-a11y" FAIL "هیچ واژۀِ دیدنیِ برنامه درِ uiautomator نبود — شواهد: $OUT/a11y-$LABEL-evidence.txt"
   fi
 
+  # ── قیفِ آفلاین رویِ همین WebView ───────────────────────────────────────────
+  # بندِ ۵ مأموریت: «هر هشت ترکیب از دادهٔ بسته استفاده می‌کنند» را فقط
+  # resolveLocalِ خودِ APK می‌تواند ثابت کند. این گام همان CDPِ باز را مصرف
+  # می‌کند و از قلابِ __borsProbe (probe.ts، فقط با VITE_ANDROID_PROBE=1)
+  # می‌پرسد. exit 3 = بیلد بی‌قلاب ⇒ NOT_VERIFIED با متنِ پرچم، نه FAILِ اپ.
+  if timeout 240 node --experimental-strip-types tools/android_funnel_offline_check.mts \
+       --base http://127.0.0.1:9222 --out "$OUT/funnel.json" > "$OUT/funnel.log" 2>&1; then
+    step funnel-offline PASS "$(grep -o '"keys_ok":[0-9]*' "$OUT/funnel.json" | head -1 | json_escape)/8 · boot=$(grep -o '"boot":"[a-z]*"' "$OUT/funnel.log" | head -1 | json_escape)"
+  else
+    rc=$?
+    case "$rc" in
+      3) step funnel-offline NOT_VERIFIED "بیلد با VITE_ANDROID_PROBE=1 ساخته نشده؛ سنجشِ قیف ازِ این artifact ممکن نیست (NOT_PROVEN)" ;;
+      2) step funnel-offline NOT_VERIFIED "CDP برایِ قیف در دسترس نبود (همان دامِ webview-$LABEL)" ;;
+      124) step funnel-offline NOT_VERIFIED "سنجشِ قیف درِ CDP موند (240s)" ;;
+      *) step funnel-offline FAIL "exit=$rc · $(head -c 220 "$OUT/funnel.json" 2>/dev/null | tr '\n' ' ' | json_escape)" ;;
+    esac
+  fi
+
   adb forward --remove tcp:9222 2>/dev/null
 fi
 
