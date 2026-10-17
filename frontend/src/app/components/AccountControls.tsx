@@ -133,7 +133,7 @@ export function AccountControls({ layout }: { layout: 'rail' | 'card' | 'sheet' 
           title="مدیریت و بررسی به‌روزرسانی سیستم"
         >
           <span>🚀</span>
-          <span>آپدیت</span>
+          <span>به‌روزرسانی</span>
         </button>
       </div>
       {modals}
