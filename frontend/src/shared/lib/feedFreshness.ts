@@ -30,6 +30,8 @@ export type FeedFreshnessInput = {
   liveCount?: number | null;
   /** کلِ ردیفها؛ برایِ بافت. */
   totalCount?: number | null;
+  /** روزِ نشستِ تابلو (`meta.d_even`، YYYYMMDD)؛ null یعنی گزارش نشده. */
+  boardDay?: number | null;
   /** الان (epoch ms) — تزریقِ time برایِ تست‌پذیری. */
   now: number;
   /** ساعتِ بازار؛ تزریقِ marketHours.isMarketOpen() درِ محصول، ثابت درِ تست. */
@@ -51,6 +53,13 @@ export type FeedStatus = {
    *  `ageMs` فرق دارد: «درخواست رسید» پاسخِ HTTP است، «عدد عوض شد» بازار. */
   dataAgeMs?: number | null;
 };
+
+// `is_live` نسبت به آخرین روزِ خودِ بانک است، نه امروز؛ پس تابلویِ نشستِ پیشین هم `live_count` مثبت دارد.
+function boardFromPastDay(boardDay: number | null | undefined, now: number): boolean {
+  if (boardDay == null || boardDay <= 0) return false;
+  const d = new Date(now);
+  return boardDay < d.getFullYear() * 10_000 + (d.getMonth() + 1) * 100 + d.getDate();
+}
 
 /**
  * داوریِ اتصال و تازگی. ترتیبِ اولویت:
@@ -105,7 +114,7 @@ export function computeFeedStatus(s: FeedFreshnessInput): FeedStatus {
       tone: 'bg-text-muted', label: 'متصل — تازگیِ داده نامشخص',
     };
   }
-  if ((s.liveCount ?? 0) === 0) {
+  if ((s.liveCount ?? 0) === 0 || boardFromPastDay(s.boardDay, s.now)) {
     return {
       connection: 'ok', freshness: 'stale', pulse: false, ageMs, dataAgeMs,
       tone: 'bg-accent-yellow', label: 'کهنه — ردیفی از نشستِ جاری در تابلو نیست',
