@@ -460,7 +460,7 @@ def _ledger_events_for(symbol):
     except Exception:
         return []
     try:
-        _pred, _params = sym_pred("l_val18", symbol)
+        _pred, _params = sym_pred(conn, "l_val18", symbol, "board")
         row = conn.execute(
             f"SELECT ins_code FROM instruments WHERE {_pred}"
             " ORDER BY updated_at DESC LIMIT 1", _params).fetchone()
@@ -643,7 +643,7 @@ def _ledger_coverage(symbol, times, applied):
         return st
     try:
         conn.execute("PRAGMA query_only=ON")
-        _pred, _params = sym_pred("l_val18", symbol)
+        _pred, _params = sym_pred(conn, "l_val18", symbol, "board")
         row = conn.execute(
             f"SELECT ins_code FROM instruments WHERE {_pred}"
             " ORDER BY updated_at DESC LIMIT 1", _params).fetchone()
