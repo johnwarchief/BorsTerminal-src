@@ -42,13 +42,24 @@ BT=$(ls -d "$ANDROID_HOME"/build-tools/* 2>/dev/null | sort -V | tail -1)
 [ -n "$BT" ] || { step "toolchain" "NOT_VERIFIED" "build-tools پیدا نشد"; exit 0; }
 KEYTOOL="$(ls -d "$JAVA_HOME"/bin 2>/dev/null || echo /usr/bin)/keytool"
 
+PKGJSON="frontend/package.json"
 VC_BASE="${BORS_VERSION_CODE:-1001000}"
-VN="${BORS_VERSION_NAME:-1.1.0}"
+# مبنایِ نسخه باید ازِ خودِ package.json خوانده شود، نه ازِ envِ بیرونی.
+# شاهدِ رانِ 38952613699: چکِ «نسخه برگشت» package.json را با "$VN" می‌سنجید و
+# آن VN ازِ BORS_VERSION_NAME (یا پیش‌فرضِ 1.1.0) می‌آمد، درحالی‌که مبنایِ
+# چک‌اوت 1.1.1 بود ⇒ build_apk درست بازیابی کرد و سنجه دروغ قرمز گفت.
+VN="$(python3 -c "import json;print(json.load(open('$PKGJSON',encoding='utf-8'))['version'])" 2>/dev/null || true)"
+[ -n "$VN" ] || VN="${BORS_VERSION_NAME:-1.1.0}"
+# نسخه‌ای که Gradle ازِ همین فایل مشتق می‌کند با VN یکی است؛ VC_BASE هم باید از
+# همین‌جا بیاید تا «۱.۱.۰ → ۱.۱.۱» واقعاً همان دو عددِ واقعیِ بیلد باشند.
+VC_BASE=$(( $(python3 -c "
+import json
+maj,min_,pat = (int(x) for x in json.load(open('$PKGJSON',encoding='utf-8'))['version'].split('.'))
+print(maj*1000000+min_*1000+pat)" 2>/dev/null || echo "$VC_BASE") ))
 # نسخۀ بالاتر برایِ مادۀ «ارتقا»: patch یکی بیشتر ⇒ versionCode مشتق‌شده یکی
 # بالاتر (همان قاعدۀ build.gradle: major·1e6 + minor·1e3 + patch).
 VN_UP=$(awk -F. -v v="$VN" '{printf "%d.%d.%d", $1, $2, $3+1}' <<<"$VN")
 VC_UP=$((VC_BASE+1))
-PKGJSON="frontend/package.json"
 
 pkg_set_version() { # pkg_set_version <version>
   python3 - "$PKGJSON" "$1" <<'PY'
@@ -201,6 +212,92 @@ fi
 
 rm -rf "$D"/*.jks "$D"/*.properties
 printf 'تمیز شد: کلیدهایِ دورریختنی حذف شدند (هیچ‌وقت منتشر نمی‌شوند)\n' >&2
+
+# ── صحنۀ واقعیِ مأموریت: android-1.1.0ِ منتشرشده → APKِ کاندیدِ همین ران ─────
+# سه سنجهِ بالاتر مکانیکِ کلید را با کلیدهایِ دورریختنی می‌سنجیدند. اینجا همان
+# چهار قدمِ بندِ ۲ مأموریت با دو artifactِ واقعی اجرا می‌شود: نصبِ تمیزِ نسخۀ
+# رسمیِ منتشرشده، اجرایِ واقعی، ارتقایِ درجا به کاندید (بدونِ حذف)، و زنده
+# ماندنِ دادۀ محلی. APKهایِ رسمی debuggable نیستند، پس نشانهٔ داده با rootِ
+# شبیه‌ساز (AOSP: adb root مجاز است) نوشته/خوانده می‌شود؛ بی‌root ⇒ NOT_VERIFIED،
+# نه FAIL — نقصِ ابزارِ اندازه‌گیری رأیِ اپ نیست.
+CAND=$(find apks -type f -name 'app-release.apk' 2>/dev/null | head -1)
+OFF_URL="${BORS_OFFICIAL_URL:-https://github.com/johnwarchief/BorsTerminal/releases/download/android-1.1.0/app-release.apk}"
+OFF_SHA="${BORS_OFFICIAL_SHA256:-5655afa1432fce2feeed6959880be23412270808d3c22fa72fed9b16e03ae432}"
+if [ -z "$CAND" ]; then
+  step "official-upgrade-candidate" "NOT_VERIFIED" "artifactِ کاندید (apks/app-release.apk) درِ job نیست"
+else
+  adb uninstall "$PKG" >/dev/null 2>&1 || true
+  OFF_OK=no
+  for i in 1 2 3; do
+    curl -fsSL --retry 2 -o "$D/official.apk" "$OFF_URL" && OFF_OK=yes && break
+    sleep 10
+  done
+  GOT_SHA=$(sha256sum "$D/official.apk" 2>/dev/null | cut -d' ' -f1)
+  if [ "$OFF_OK" != "yes" ]; then
+    step "official-apk-fetched" "NOT_VERIFIED" "دانلودِ android-1.1.0 پسِ سه تلاش نشد ($OFF_URL) — رأیِ محیط"
+  elif [ "$GOT_SHA" != "$OFF_SHA" ]; then
+    # digestِ ریلیزِ منتشرشده هیچ‌وقت نباید عوض شود (دست‌نخورده بودنِ android-1.1.0
+    # قیدِ مأموریت است). نخواندن = نشانهٔ دست‌خوردگی یا جایگزینی؛ صریح قرمز.
+    step "official-apk-fetched" "FAIL" "sha256 نخواند: $GOT_SHA ≠ $OFF_SHA — نسخۀ رسمی دست‌خورده؟"
+  else
+    step "official-apk-fetched" "PASS" "android-1.1.0 · $(stat -c '%s' "$D/official.apk") B · sha $GOT_SHA…"
+    CAND_CERT=$(cert_of "$CAND"); OFF_CERT=$(cert_of "$D/official.apk")
+    OFF_VC=$(  "$BT/aapt2" dump badging "$D/official.apk" 2>/dev/null | grep -oE "versionCode='[0-9]+'" | grep -oE "[0-9]+")
+    CAND_VC=$( "$BT/aapt2" dump badging "$CAND"          2>/dev/null | grep -oE "versionCode='[0-9]+'" | grep -oE "[0-9]+")
+    if [ -z "$OFF_CERT" ] || [ -z "$CAND_CERT" ]; then
+      step "official-upgrade-candidate" "NOT_VERIFIED" "امضایِ یکی از دو APK خوانده نشد (کاندید امضانشده؟) — دروازۀ انتشار جدا می‌بنددش"
+    elif [ "$OFF_CERT" != "$CAND_CERT" ]; then
+      step "official-upgrade-candidate" "FAIL" "گواهیِ کاندید ($CAND_CERT…) ≠ گواهیِ رسمی ($OFF_CERT…) — ارتقایِ درجا رویِ گوشیِ کاربر ممکن نیست"
+    else
+      adb shell pm clear "$PKG" >/dev/null 2>&1 || true
+      if adb install -r -d "$D/official.apk" > "$D/i5.log" 2>&1; then
+        step "official-clean-install" "PASS" "versionCode ${OFF_VC:-?} (امضایِ رسمیِ واقعی)"
+      else
+        step "official-clean-install" "FAIL" "$(tail -2 "$D/i5.log" | tr '\n' ' ')"
+      fi
+      OLDPID=""
+      for i in 1 2 3; do
+        adb shell monkey -p "$PKG" -c android.intent.category.LAUNCHER 1 > "$D/moff_$i.log" 2>&1
+        sleep $((8 + i * 4))
+        OLDPID=$(adb shell pidof -s "$PKG" | tr -d '\r')
+        [ -n "$OLDPID" ] && break
+      done
+      [ -n "$OLDPID" ] && step "official-launch" "PASS" "pid=$OLDPID (تلاش $i)" \
+        || step "official-launch" "FAIL" "نسخۀ رسمیِ منتشرشده بالا نیامد — شواهد: $D/moff_3.log"
+      # نشانهٔ دادۀ محلی — بی‌rootِ تصویرِ AOSP نوشته نمی‌شود؛ آنگاه سنجهٔ
+      # «داده می‌ماند» کور است و صادقانه NOT_VERIFIED می‌شود.
+      MARK="/data/data/$PKG/files/.upmat_official"
+      adb root >/dev/null 2>&1; sleep 2; adb wait-for-device >/dev/null 2>&1
+      ROOT_OK=no
+      [ "$(adb shell id -u 2>/dev/null | tr -d '\r')" = "0" ] && ROOT_OK=yes
+      if [ "$ROOT_OK" = "yes" ] && [ -n "$OLDPID" ]; then
+        adb shell "mkdir -p /data/data/$PKG/files; echo official-1.1.0 > $MARK; chown \$(stat -c '%u:%g' /data/data/$PKG/app_webview 2>/dev/null || echo 0:0) $MARK 2>/dev/null; chmod 666 $MARK" >/dev/null 2>&1
+      fi
+      if adb install -r "$CAND" > "$D/i6.log" 2>&1; then
+        step "official-upgrade-candidate" "PASS" "${OFF_VC:-?} → ${CAND_VC:-?} با همان گواهی، بی‌حذف — صحنۀ واقعیِ کاربر"
+      else
+        step "official-upgrade-candidate" "FAIL" "$(tail -2 "$D/i6.log" | tr '\n' ' ')"
+      fi
+      NEWPID=""
+      for i in 1 2 3; do
+        adb shell monkey -p "$PKG" -c android.intent.category.LAUNCHER 1 > "$D/mcand_$i.log" 2>&1
+        sleep $((8 + i * 4))
+        NEWPID=$(adb shell pidof -s "$PKG" | tr -d '\r')
+        [ -n "$NEWPID" ] && break
+      done
+      [ -n "$NEWPID" ] && step "relaunch-after-official-upgrade" "PASS" "pid=$NEWPID · نسخه=${CAND_VC:-?}" \
+        || step "relaunch-after-official-upgrade" "FAIL" "کاندید پسِ ارتقا بالا نیامد — شواهد: $D/mcand_3.log"
+      if [ "$ROOT_OK" = "yes" ] && adb shell "cat $MARK" 2>/dev/null | grep -q "official-1.1.0"; then
+        step "data-retained-official-upgrade" "PASS" "نشانهٔ دادۀ محلی پسِ ارتقایِ درجا سرِ جایش (بی‌حذف)"
+      elif [ "$ROOT_OK" = "yes" ]; then
+        step "data-retained-official-upgrade" "FAIL" "نشانه ازِ /data/data رفت — یعنی ارتقا دادۀ کاربر را سوزاند"
+      else
+        step "data-retained-official-upgrade" "NOT_VERIFIED" "تصویرِ AVD بی‌root؛ نوشتنِ نشانه درِ /data/data ممکن نبود"
+      fi
+    fi
+  fi
+fi
+
 # مبنایِ یکتایِ نسخه باید دست‌نخورده برگشته باشد؛ اگر نه، هر گامِ بعدیِ همین
 # ران (متنِ ریلیز، بیلدِ دوباره) نسخۀ جعلیِ 1.1.1 را می‌بیند.
 if grep -q "\"version\": \"$VN\"" "$PKGJSON"; then
