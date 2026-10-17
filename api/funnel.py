@@ -173,7 +173,14 @@ def _need_scan(payload: dict) -> list[str]:
 @router.get("/api/funnel/registry")
 def get_registry():
     """همان رجیستری که موتور می‌خواند — فهرستِ Custom از اینجا می‌آید."""
-    return REG.as_json()
+    out = REG.as_json()
+    # سطحِ اشباع و دورۀ RSI ساعت‌شنی فقط یک جا تعریف می‌شوند: تنظیمِ فعالِ خودِ
+    # موتور (`_fts_hourglass_settings`). فرانت باید همین را بخواند، نه عددِ دومِ
+    # خودش (رأیِ ۲۴: «مقدار فرانت جدا از موتور… مجاز نیست»).
+    from api.chart import _fts_hourglass_settings
+
+    out["hourglass_settings"] = _fts_hourglass_settings()
+    return out
 
 
 @router.get("/api/funnel/trace")

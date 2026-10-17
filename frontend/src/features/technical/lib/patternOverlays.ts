@@ -390,7 +390,7 @@ export function buildPatternOverlays(
     });
   }
 
-  // ۹) ساعت شنی: نوارِ ورود پله‌ای حولِ MA52ِ هفتگی (RSI۵ِ هفتگی فقط در برچسب)
+  // ۹) ساعت شنی: نوارِ ورود پله‌ای حولِ MA52ِ هفتگی (RSI هفتگی فقط در برچسب)
   if (on('hourglass') && inputs.hourglass.active && inputs.hourglass.ma52Weekly != null && lastTs > 0) {
     pushBand(
       'hourglass',

@@ -34,6 +34,12 @@ export type RegistryPayload = {
   presets: RegistryPreset[];
   unimplemented_filters?: RegistryFilter[];
   gates?: Record<string, unknown>;
+  /** تنظیمِ فعالِ ساعت‌شنی از خودِ موتور — تنها منبعِ متنِ «دورۀ X / سطح Y» */
+  hourglass_settings?: {
+    hourglass_rsi_period?: number | null;
+    hourglass_rsi_oversold?: number | null;
+    hourglass_ma52_position?: string | null;
+  };
 };
 
 /** رجیستری ثابت است تا رجیستری بازتولید نشود (ruleset_version درِ کلید است). */
@@ -53,6 +59,7 @@ export function useFunnelRegistry() {
     presets: q.data?.presets ?? [],
     unimplemented: q.data?.unimplemented_filters ?? [],
     rulesetVersion: q.data?.ruleset_version ?? '',
+    hourglass: q.data?.hourglass_settings ?? null,
     loading: q.isPending,
     error: q.error ? String((q.error as Error).message ?? q.error) : null,
     byId: (id: string) => filters.find((f) => f.filter_id === id) ?? null,
