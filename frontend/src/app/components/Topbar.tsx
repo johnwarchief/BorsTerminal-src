@@ -50,7 +50,7 @@ export function Topbar() {
   };
 
   return (
-    <header className="glass-strip sticky top-0 z-40 flex h-11 items-center justify-between px-3 sm:px-4 md:h-9">
+    <header data-pinned="topbar" className="glass-strip sticky top-0 z-40 flex h-11 items-center justify-between px-3 sm:px-4 md:h-9">
       {/* سمت راست: نشانِ وضعیت (اتصال ≠ تازگی) + Breadcrumb ناوبری */}
       <div className="flex items-center gap-2 overflow-hidden">
         {/* یکِ h1 درِ هرِ صفحه: «کجا هستم» برایِ تکنولوژیِ کمکی هم نوشته می‌شود،

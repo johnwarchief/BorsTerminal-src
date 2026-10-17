@@ -43,10 +43,10 @@ export function SymbolContextStrip() {
   ];
 
   return (
-    <div
+    <div data-pinned="strip" 
       role="region"
       aria-label={`اطلاعات نماد ${symbol}`}
-      className="sticky top-9 z-30 flex min-h-[38px] w-full flex-wrap items-center justify-between gap-2 border-b border-border-c/70 bg-bg-secondary/95 px-3 py-1 text-xs backdrop-blur-md shadow-xs transition-all duration-150"
+      className="symbol-strip-bar sticky top-[var(--pinned-topbar,36px)] z-30 flex min-h-[38px] w-full flex-wrap items-center justify-between gap-2 border-b border-border-c/70 bg-bg-secondary/95 px-3 py-1 text-xs backdrop-blur-md shadow-xs transition-all duration-150"
     >
       {/* سمت راست (شروع): شناسه و مشخصات نماد */}
       <div className="flex flex-wrap items-center gap-2">
