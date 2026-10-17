@@ -49,8 +49,16 @@ from api import api_router
 # callable» → 500 می‌شود. در نبودِ orjson به JSONResponse استاندارد برگرد.
 app = FastAPI(title="BorsAgent Modern Terminal",
               default_response_class=(ORJSONResponse or JSONResponse))
-# GZip: responses >1KB are compressed -- /api/market 4.2MB -> ~450KB
-app.add_middleware(GZipMiddleware, minimum_size=1024, compresslevel=5)
+# GZip: پاسخ‌هایِ >۱KB فشرده می‌شوند. سطحِ فشرده‌سازی از ۵ به ۱ افتاد، چون
+# سنجشِ همین شب (۱۴۰۵-۰۷-۲۵، ریگِ کنترلیِ ۸۰۲۰ با orjson): یکِ پولینگِ کش‌خوردهٔ
+# `/api/market` با سطحِ ۵ از ۵۱ میلی‌ثانیه به ۱۴۹ میلی‌ثانیه رفت — ۹۸ میلی‌ثانیه
+# CPUِ خالصِ همین‌ماشینِ چهارهسته‌ای، در ازایِ ۶٫۳MB → ۸۵۳KB رویِ سیمی که
+# هرگز از ماشین بیرون نمی‌رود (`loopback_guard` پایینِ همین فایل هر میزبانِ
+# غیرمحلی را ۴۰۳ می‌کند). با سطحِ ۱ همان بدنه بعدِ inflate بایت‌به‌بایت یکی
+# است و حجمِ سیم بیشترِ سودِ سطحِ ۵ را نگه می‌دارد. `BORS_GZIP_LEVEL` برایِ
+# هر سنجشِ مقایسه‌ای باز است؛ عددِ پیش‌فرض همان چیزی است که اپِ نصبی لازم دارد.
+app.add_middleware(GZipMiddleware, minimum_size=1024,
+                   compresslevel=int(os.environ.get("BORS_GZIP_LEVEL", "1")))
 
 
 # میزبان‌هایی که «همین ماشین» شمرده می‌شوند. '::1' در برخی مسیرها با کروشه

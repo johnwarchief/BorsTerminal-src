@@ -21,7 +21,7 @@ import time
 from collections import OrderedDict
 from typing import Any
 
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Request, Response
 
 import funnel_engine as FE
 import funnel_registry as REG
@@ -81,6 +81,85 @@ def _cache_put(key: str, payload: dict, now: float) -> None:
         _FUNNEL_CACHE.move_to_end(key)
         while len(_FUNNEL_CACHE) > _FUNNEL_CACHE_MAX:
             _FUNNEL_CACHE.popitem(last=False)
+    # بدنهٔ سریال‌شدهٔ همین کلید می‌سوزد: آینهٔ پاسخ نباید از payloadِ تازه‌ترِ
+    # خودش کهنه‌تر بماند (وگرنه TTLِ بدنه رویِ TTLِ داده سوار می‌شد).
+    with _FUNNEL_BODY_LOCK:
+        for flag in ("F", "S"):
+            _FUNNEL_BODIES.pop(flag + key, None)
+
+
+# بدنهٔ سریال‌شدهٔ پاسخِ قیف. کشِ بالا دیکشنریِ پایتون را نگه می‌دارد، نه
+# سریالِ آن — پس هر پولینگ ۷٫۵ مگابایت را از نو dumps می‌کرد: در سنجشِ ریگِ
+# کنترلی با orjson فعال، p50 برابر ۹۶۳ میلی‌ثانیه در هر درخواستِ گرم، بی‌آنکه
+# هیچ داوریِ FTS عوض شده باشد. اینجا همان بایت‌ها تا پایانِ همان TTL دوباره
+# می‌روند، و If-None-Match آن‌ها را به صفر بایت می‌رساند.
+_FUNNEL_BODIES: "OrderedDict[str, tuple[bytes, str, float]]" = OrderedDict()
+_FUNNEL_BODIES_MAX = 6
+_FUNNEL_BODY_LOCK = threading.Lock()
+
+_ORJ = True
+try:
+    import orjson
+except Exception:      # نبودش اپ را نمی‌خواباند؛ فقط JSONِ استاندارد می‌ماند
+    _ORJ = False
+
+
+def _encode_funnel_body(payload: dict) -> tuple[bytes, str]:
+    """بدنه و etag، از همان کلاسِ پاسخی که فریم‌ورک امروز می‌سازد.
+
+    چرا `ORJSONResponse(...).body` و نه `orjson.dumps`ِ خام: مسیرِ قیف تا
+    پیشِ این دیکشنری را به `default_response_class` می‌سپارد؛ سریالِ خامِ
+    orjson گزینه‌هایِ همان کلاس را ندارد (رویِ numpy scalarها می‌شکند و
+    جداکننده‌ها فرق می‌کند). بدنهٔ کش‌شده باید *همان بایت‌ها* باشد، نه
+    «تقریباً همان». etag اثرِ انگشتِ خودِ بدنه است، نه زمانِ کش.
+    """
+    import hashlib
+    if _ORJ:
+        from fastapi.responses import ORJSONResponse
+        body = ORJSONResponse(payload).body
+    else:
+        from fastapi.responses import JSONResponse
+        body = JSONResponse(payload).body
+    return body, '"' + hashlib.md5(body).hexdigest()[:16] + '"'
+
+
+def _funnel_http(request: Request, preset: str, chain: list[str], fund_mode: str,
+                 params: dict[str, dict[str, Any]], exceptions: dict[str, list[str]],
+                 full: bool = False, drop_suffix: bool = True,
+                 logic: str = "and") -> Any:
+    """پاسخِ HTTP قیف، با بدنهٔ سریال‌شدهٔ کش‌خورده.
+
+    هیچ داوریِ FTS اینجا عوض نمی‌شود: `_run` همان `_run` است و همان کشِ
+    دیکشنریِ هشت‌ثانیه‌ای. تنها چیزی که حذف شده `dumps`ِ ۷٫۵ مگابایتیِ هر
+    پولینگ است. بدنهٔ خطا هرگز کش نمی‌شود (خطا باید هم‌زمانِ خودش پاسخ
+    برگردد، نه هشت ثانیه تکرار شود).
+    """
+    key = _cache_key(preset, chain, fund_mode, params, exceptions, drop_suffix, logic)
+    bkey = ("F" if full else "S") + key
+    now = time.time()
+    from_cache = False
+    with _FUNNEL_BODY_LOCK:
+        ent = _FUNNEL_BODIES.get(bkey)
+        if ent and now - ent[2] < TTL_S:
+            _FUNNEL_BODIES.move_to_end(bkey)
+            body, etag = ent[0], ent[1]
+            from_cache = True
+    if not from_cache:
+        payload = _run(preset, chain, fund_mode, params, exceptions, full=full,
+                       drop_suffix=drop_suffix, logic=logic)
+        if not isinstance(payload, dict) or payload.get("status") in ("error", "no_data"):
+            return payload
+        body, etag = _encode_funnel_body(payload if full else _strip(payload))
+        with _FUNNEL_BODY_LOCK:
+            _FUNNEL_BODIES[bkey] = (body, etag, time.time())
+            _FUNNEL_BODIES.move_to_end(bkey)
+            while len(_FUNNEL_BODIES) > _FUNNEL_BODIES_MAX:
+                _FUNNEL_BODIES.popitem(last=False)
+    inm = request.headers.get("if-none-match") if request is not None else None
+    if inm and inm == etag:
+        return Response(status_code=304, headers={"ETag": etag, "X-Cache": "HIT-304"})
+    return Response(content=body, media_type="application/json",
+                    headers={"ETag": etag, "X-Cache": "HIT" if from_cache else "MISS"})
 # قیف رویِ همان ریتمِ تابلو تازه می‌شود؛ کشِ کوتاه جلویِ هر-کلیدِ Custom را
 # از دوباره‌خوانیِ ۳۷۰۰ ردیف می‌گیرد، بی‌آنکه حکمی را کهنه کند.
 TTL_S = 8.0
@@ -210,10 +289,11 @@ def get_trace(symbol: str, preset: str = "trend", chain: str = "",
 
 
 @router.get("/api/funnel")
-def get_funnel(preset: str = "trend", chain: str = "", fund_mode: str = "standard",
+def get_funnel(request: Request, preset: str = "trend", chain: str = "",
+               fund_mode: str = "standard",
                drop_suffix: bool = True, logic: str = "and"):
-    return _run(preset, [c for c in chain.split(",") if c], fund_mode, {}, {},
-                 drop_suffix=drop_suffix, logic=logic)
+    return _funnel_http(request, preset, [c for c in chain.split(",") if c],
+                        fund_mode, {}, {}, drop_suffix=drop_suffix, logic=logic)
 
 
 @router.post("/api/funnel")
@@ -225,7 +305,8 @@ async def post_funnel(request: Request):
     drop_suffix = True if b.get("drop_suffix") is None else bool(b.get("drop_suffix"))
     # نبودِ `logic` = اشتراک (رفتارِ دیروز)؛ `or` صریح یعنی اجتماعِ چیپ‌هایِ تابلو.
     logic = str(b.get("logic") or "and")
-    return _run(
+    return _funnel_http(
+        request,
         str(b.get("preset") or "trend"),
         [str(x) for x in (b.get("chain") or [])],
         str(b.get("fund_mode") or "standard"),
@@ -247,6 +328,18 @@ def _strip(payload: dict) -> dict:
     return out
 
 
+def _cache_key(preset: str, chain: list[str], fund_mode: str,
+               params: dict[str, dict[str, Any]], exceptions: dict[str, list[str]],
+               drop_suffix: bool = True, logic: str = "and") -> str:
+    """یگانه تعریفِ کلیدِ کش — route و `_run` همان را می‌سازند، نه دو نسخهٔ
+    دست‌نویسِ جدا که روزی از هم واگن شوند. `full` درِ کلید نیست: شکلِ پاسخ
+    جدا نگه داشته می‌شود (پرچمِ F/S درِ کشِ بدنه)."""
+    return json.dumps([preset, chain, fund_mode, sorted(params.items()),
+                       sorted((k, sorted(v)) for k, v in exceptions.items()),
+                       bool(drop_suffix), logic],
+                      ensure_ascii=False)
+
+
 def _run(preset: str, chain: list[str], fund_mode: str,
          params: dict[str, dict[str, Any]], exceptions: dict[str, list[str]],
          full: bool = False, drop_suffix: bool = True, logic: str = "and") -> dict:
@@ -259,10 +352,7 @@ def _run(preset: str, chain: list[str], fund_mode: str,
     logic = (logic or "and").strip().lower()
     if logic not in ("and", "or"):
         return {"status": "error", "message": f"logicِ ناشناخته: {logic}"}
-    key = json.dumps([preset, chain, fund_mode, sorted(params.items()),
-                      sorted((k, sorted(v)) for k, v in exceptions.items()),
-                      bool(drop_suffix), logic],
-                     ensure_ascii=False)
+    key = _cache_key(preset, chain, fund_mode, params, exceptions, drop_suffix, logic)
     now = time.time()
     hit = _cache_get(key, now)
     if hit:
