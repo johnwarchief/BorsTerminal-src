@@ -320,9 +320,79 @@ def part_ledger():
         ck(e.code is ErrorCode.INVALID_EXECUTION_ID, "reconcile بی‌رکورد رد می‌شود")
 
 
+
+# ── ۷) سقفِ جمعیِ نرخِ سفارش (بودجۀ همۀ نمادها با هم) ──────────────────────
+# نقیصۀ مرجعِ Rust (`Sarkhati src/rate_limiter.rs:24-33` + `main.rs:846`) این بود که
+# limiter درِ *هر ترد* سفارشِ تازه می‌ساخت ⇒ پنجاه نماد = پنجاه برابرِ نرخِ مجازِ
+# حساب. سقفِ هر-نمادِ ما این را نمی‌گیرد؛ اینجا همان گیتِ جمعی سنجیده می‌شود، و
+# قاعدۀ «نمی‌دانیم ≠ می‌توانیم»: بی‌ردِّپا رد، نه پذیرش.
+def part_rate():
+    import tempfile
+    from execution_ledger import ExecutionLedger
+    print("── ۷ سقفِ جمعیِ نرخِ سفارش")
+
+    lim = Limits(require_confirmation=False, max_total_orders_per_window=1,
+                 window_seconds=60.0)
+
+    # الف) سقفِ تعریف‌شده ولی شمارشِ نامعلوم ⇒ رد باِ دلیل
+    s_nog = ExecutionService(MockBrokerAdapter(instruments=(FOOLAD, NO_ISIN)),
+                             dry_run=False, limits=lim)
+    try:
+        s_nog.execute(s_nog.prepare(d("RT-1")))
+        ck(False, "سقفِ جمعی بی‌ردِّپا نباید بگذرد")
+    except ExecutionError as e:
+        ck(e.code is ErrorCode.RISK_LIMIT
+           and str((e.checks or {}).get("order_rate_total")) == "UNKNOWN",
+           "بی‌ردِّپا: RISK_LIMIT باِ order_rate_total=UNKNOWN (نه صفرِ ساختگی)",
+           str(e.checks)[:110])
+
+    # ب) باِ ردِّپا: اولی می‌رود، دومی درِ همان پنجره رد
+    tmp = os.path.join(tempfile.mkdtemp(prefix="bors_rate_"), "ledger.db")
+    led = ExecutionLedger(tmp)
+    s = ExecutionService(MockBrokerAdapter(instruments=(FOOLAD, NO_ISIN)),
+                         dry_run=False, limits=lim, audit=led)
+    s.execute(s.prepare(d("RT-2")))
+    ck(len(submits(s.adapter)) == 1, "اولین سفارشِ پنجره می‌رود", str(submits(s.adapter))[:80])
+    try:
+        s.execute(s.prepare(d("RT-3")))
+        ck(False, "سفارشِ دوم باِ سقفِ جمعی=۱ نباید بگذرد")
+    except ExecutionError as e:
+        ck(e.code is ErrorCode.RISK_LIMIT and "همۀ نمادها" in e.detail,
+           "سفارشِ دوم باِ دلیلِ «همۀ نمادها» رد می‌شود", e.detail[:120])
+    led.close()
+
+    # پ) دامِ منفی: بی‌سقفِ جمعی (پیش‌فرضِ خاموش) رفتارِ پیشین دست‌نخورده است
+    tmp2 = os.path.join(tempfile.mkdtemp(prefix="bors_rate2_"), "ledger.db")
+    led2 = ExecutionLedger(tmp2)
+    s2 = ExecutionService(MockBrokerAdapter(instruments=(FOOLAD, NO_ISIN)),
+                          dry_run=False,
+                          limits=Limits(require_confirmation=False), audit=led2)
+    s2.execute(s2.prepare(d("RT-4")))
+    s2.execute(s2.prepare(d("RT-5")))
+    ck(len(submits(s2.adapter)) == 2,
+       "بی‌سقفِ جمعی، دو سفارشِ پشتِ هم می‌روند (پیش‌فرضِ خاموش)",
+       str(submits(s2.adapter))[:80])
+    # ت) و تفاوتِ واقعی باِ سقفِ هر-نماد: همان دو سفارش باِ سقفِ هر-نمادِ ۵ می‌روند،
+    #    درحالی‌که باِ سقفِ جمعیِ ۱ رد شدند — یعنی گیتِ تازه چیزی را تکرار نمی‌کند
+    tmp3 = os.path.join(tempfile.mkdtemp(prefix="bors_rate3_"), "ledger.db")
+    led3 = ExecutionLedger(tmp3)
+    s3 = ExecutionService(MockBrokerAdapter(instruments=(FOOLAD, NO_ISIN)),
+                          dry_run=False,
+                          limits=Limits(require_confirmation=False,
+                                        max_orders_per_window=5, window_seconds=60.0),
+                          audit=led3)
+    s3.execute(s3.prepare(d("RT-6")))
+    s3.execute(s3.prepare(d("RT-7")))
+    ck(len(submits(s3.adapter)) == 2,
+       "سقفِ هر-نمادِ ۵ دو سفارش را می‌گذراند؛ جمعیِ ۱ ردشان کرد (تفاوتِ سنجیده)",
+       str(submits(s3.adapter))[:80])
+    led3.close()
+
+
+
 def main():
     print("execution_service_v1 — سرویسِ اجرا: dry-run، حالت‌ها، reconcile، لیمیت")
-    part_dry_run(); part_modes(); part_unknown(); part_preflight(); part_repeat(); part_ledger()
+    part_dry_run(); part_modes(); part_unknown(); part_preflight(); part_repeat(); part_ledger(); part_rate()
     print(f"\nexecution_service_v1: {PASS} passed / {FAIL} failed")
     return 1 if FAIL else 0
 

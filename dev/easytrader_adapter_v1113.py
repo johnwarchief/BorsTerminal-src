@@ -564,9 +564,15 @@ def _with_easytrader(fn):
         EX._ACTIVE_ADAPTER = adapter
         EX._EASYTRADER = adapter
         EX._AUDIT = ledger
-        EX._SERVICE = ExecutionService(adapter, dry_run=False,
-                                       limits=Limits(require_confirmation=False),
-                                       audit=ledger, scheduler=Scheduler(TimeSource()))
+        # سقفِ ریسک *باید* تنظیم شده باشد، وگرنه دروازۀ تازه (`_risk_gate`) اجرایِ
+        # زنده را می‌بندد. بسته بودنِ دروازه هم پایین باِ همین fixture سنجیده
+        # می‌شود (`no_risk_config_blocks_live`)؛ این سطرِ کانفیگ دروازه را رد
+        # نمی‌کند، فقط مسیرِ درستِ کانفیگ را نشان می‌دهد.
+        EX._SERVICE = ExecutionService(
+            adapter, dry_run=False,
+            limits=Limits(require_confirmation=False, max_order_value=50_000_000.0,
+                          max_total_orders_per_window=20),
+            audit=ledger, scheduler=Scheduler(TimeSource()))
         fn(adapter, broker, ledger)
     finally:
         EX.ADAPTER_KIND, EX.LIVE_REQUESTED, EX.DRY_RUN, EX._ACTIVE_ADAPTER = saved[:4]
@@ -634,6 +640,27 @@ def part_door():
         rf = EX.post_refresh("door-1")
         ck(rf["status"] == "success" and rf["observed_ms"] is not None,
            "مشاهدهٔ سفارش جدا ازِ پذیرش اندازه می‌شود", str(rf)[:90])
+
+    def no_risk_config_blocks_live(adapter, broker, ledger):
+        """§۵ مأموریت (گیتِ System 2): نبودِ پیکربندیِ الزامیِ ریسک
+        باید اجرایِ واقعی را متوقف کند. باِ همان نشستِ واقعیِ بدیل، فقط
+        سقف‌ها را برمی‌داریم."""
+        saved_limits = EX._SERVICE.limits
+        posts_before = len([w for w in adapter.wire_calls
+                            if str(w).startswith("submit:")])
+        EX._SERVICE.limits = Limits(require_confirmation=False)     # بی‌هیچ سقف
+        try:
+            d = EX.post_dispatch({"symbol": "فولاد", "price": 12610, "quantity": 1000,
+                                  "confirmed": True, "execution_id": "door-nocfg"})
+            ck(d.get("status") == "error"
+               and d.get("code") == ErrorCode.RISK_LIMIT.value
+               and d.get("risk_gate") == "not_configured",
+               "بی‌سقفِ ریسک، dispatchِ زنده باِ دلیل رد می‌شود", str(d)[:130])
+            ck(len([w for w in adapter.wire_calls if str(w).startswith("submit:")])
+               == posts_before,
+               "و هیچ سفارشی به سرور نمی‌رود (رد پیش ازِ هر ترافیک)")
+        finally:
+            EX._SERVICE.limits = saved_limits
 
     def halt_aborts_schedule(adapter, broker, ledger):
         target = int(time.time() * 1000) + 700
@@ -843,6 +870,7 @@ def part_door():
 
     _with_easytrader(no_session)
     _with_easytrader(happy)
+    _with_easytrader(no_risk_config_blocks_live)
     _with_easytrader(halt_aborts_schedule)
     _with_easytrader(scheduled_unknown_stays_open)
     _with_easytrader(concurrent_same_id)
@@ -907,6 +935,80 @@ def part_negative_control():
        "سنسور، آداپتورِ «۲xx=پذیرش» را می‌بیند", str(sorted(bad))[:140])
     ck("timeout_becomes_unknown_result_with_server_side_order" not in bad,
        "و خطایِ نامعلوم را که بدقلق هم درست می‌کند، اشتباهاً قرمز نمی‌کند")
+
+
+def part_server_clock():
+    """ساعتِ کارگزاری ازِ درِ *مستندشده*، نه ازِ حدسِ مسیر.
+
+    شاهدِ این دور: capture عمومیِ مرجعِ ۲ (`mofid/docs/archive/d.easytrader.ir.har`)
+    `GET /easy/api/account/server-time/<clientEpochMs>` را باِ پاسخِ
+    `{"diff":45,"serverTimestamp":1767700032066}` نشان می‌دهد. دو چیز اینجا سنجیده
+    می‌شود: (الف) همان مسیر و همان دو فیلد، (ب) «diff» به‌تنهایی ادعا نیست — اگر دو
+    فیلد باِ رفت‌وبرگشتِ اندازه‌گرفته‌شده نخوانند، ساعت تأیید *نمی‌شود* و رفتارِ
+    ارسال دست‌نخورده می‌ماند. بی‌اینها، منبعِ ساعت فقط یکِ عددِ دیگر درِ UI بود.
+    """
+    print("── ۱۲ ساعتِ سرور: مسیرِ دیدہ‌شدہ، دو فیلدِ سازگار")
+    seen: list[str] = []
+
+    class ClockTransport:
+        name = "clock"
+        is_live = True
+
+        def __init__(self, mode):
+            self.mode = mode
+
+        def request(self, *, method, url, headers=None, payload=None, timeout_s=7.0):
+            seen.append("%s %s" % (method, url))
+            if url.rstrip("/").endswith("/core/api/order"):
+                return WireResponse(200, {}, _js({"orders": []}))
+            try:
+                client_ms = int(url.rsplit("/", 1)[1])
+            except ValueError:
+                # نشانیِ بی‌پارامترِ عددی یعنی آداپتر مسیرِ شاهد را رها کرده؛
+                # صبر کن تا سنجه‌ها این را قرمز کنند، بی‌کرَش کردنِ کلِ گارد.
+                return WireResponse(200, {}, _js({"diff": 0, "serverTimestamp": 0}))
+            if self.mode == "ok":
+                return WireResponse(200, {}, _js({"diff": 45,
+                                                  "serverTimestamp": client_ms + 45}))
+            if self.mode == "lie":
+                return WireResponse(200, {}, _js({"diff": 900,
+                                                  "serverTimestamp": client_ms + 45}))
+            if self.mode == "huge":
+                return WireResponse(200, {}, _js({"diff": 20 * 60 * 1000,
+                                                  "serverTimestamp": client_ms}))
+            return WireResponse(200, {}, "<html><body>login</body></html>")
+
+    del seen[:]
+    ok = EasyTraderAdapter(transport=ClockTransport("ok"), token=SECRET)
+    sc = ok.server_clock() or {}
+    ck(sc.get("verified") is True and sc.get("delta_ms") == 45.0
+       and sc.get("quality") == "trusted",
+       "پاسخِ سازگار ⇒ ساعتِ تأییدشده باِ آفستِ ۴۵ms", str(sc)[:130])
+    ck(any("/easy/api/account/server-time/" in u for u in seen)
+       and not any("/core/api/account/server-time" in u for u in seen),
+       "مسیرِ پرسش همان مسیرِ شاهد است، نه حدسِ پیشین", str(seen)[:130])
+    ck(all(not u.startswith("POST") for u in seen)
+       and not any("/core/api/v2/order" in u for u in seen),
+       "سنجشِ ساعت هرگز سفارش نمی‌فرستد", str(seen)[:130])
+
+    lie = EasyTraderAdapter(transport=ClockTransport("lie"), token=SECRET)
+    sl = lie.server_clock() or {}
+    ck(sl.get("verified") is False and sl.get("delta_ms") is None
+       and sl.get("quality") == "unavailable",
+       "دو فیلدِ ناهمخوان ⇒ هیچ ادعایی (verified False، آفست None)", str(sl)[:130])
+    huge = EasyTraderAdapter(transport=ClockTransport("huge"), token=SECRET)
+    ck((huge.server_clock() or {}).get("verified") is False,
+       "آفستِ بی‌کران (۲۰ دقیقه) باور نمی‌شود")
+    html = EasyTraderAdapter(transport=ClockTransport("html"), token=SECRET)
+    ck(html.server_clock() is None,
+       "۲۰۰ با بدنهٔ HTMLِ صفحۀ ورود ⇒ ساعتی درِ کار نیست")
+    before = len(seen)
+    silent = EasyTraderAdapter(transport=ClockTransport("ok"))
+    ck(silent.server_clock() is None and len(seen) == before,
+       "بی‌نشست هیچ پرسشی زده نمی‌شود و None می‌آید، نه «ساعت درست است»")
+    pr = ok.probe()
+    ck(pr.get("clock") is not None and pr.get("order_endpoint_touched") is False,
+       "probe ساعت را درِ پاسخ می‌آورد و درِ سفارش را لمس نمی‌کند", str(pr)[:150])
 
 
 def part_session_hardening():
@@ -976,6 +1078,7 @@ def main():
     part_queue()
     part_door()
     part_negative_control()
+    part_server_clock()
     part_session_hardening()
     part_spec()
     print(f"\neasytrader_adapter_v1113: {PASS} passed / {FAIL} failed")

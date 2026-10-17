@@ -36,6 +36,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, Callable, Iterable, Mapping
 
+import execution_timing as TT
 from execution_contract import (
     BrokerAdapter, BrokerError, Capabilities, ErrorCode, ExecutionRecord,
     ExecutionStatus, InstrumentRef, OrderDraft, OrderMode, OrderState,
@@ -62,9 +63,14 @@ WIRE_PATH_ORDER_LIST = "/core/api/order"
 #: جایِ صف. شاهد: `order.ts:291-301` — `actionType=get` و شناسه درِ
 #: سرِطلبِ `order-id`، نه درِ path/query.
 WIRE_PATH_QUEUE = "/ms/api/MarketSheet/order-place"
-#: کاندیدایِ ساعتِ فقط‌خواندنی (ماتریس §۲: `easy/api/account/server-time`).
-#: آزموده نشده؛ بی‌پاسخ یعنی «ساعتِ کارگزاری در دسترس نیست»، نه «ساعتِ ما درست است».
-WIRE_PATH_SERVER_TIME = "/core/api/account/server-time"
+#: ساعتِ فقط‌خواندنیِ کارگزاری. شاهدِ این دور: capture عمومیِ منتشرشده درِ مرجعِ ۲
+#: (`mofid/docs/archive/d.easytrader.ir.har`) مسیرِ `<clientEpochMs>` و پاسخِ
+#: `{"diff":45,"serverTimestamp":1767700032066}` را باِ ۲۰۰ نشان می‌دهد — یعنی
+#: آفستِ میلی‌ثانیه‌ای، نه متنِ ساعت. (کهنگیِ پیشینِ ما `/core/api/…` بود که هیچ
+#: شاهدی نداشت؛ ادعایِ ساعت را باِ حدسِ مسیر نمی‌سازیم.)
+#: آزموده‌نشده باقی می‌ماند تا درِ نشستِ مجاز دیده شود؛ بی‌پاسخ یعنی «ساعتِ
+#: کارگزاری در دسترس نیست»، نه «ساعتِ ما درست است».
+WIRE_PATH_SERVER_TIME = "/easy/api/account/server-time"
 
 #: بدنۀ سفارش درِ این سکو درهم‌پیچ است: همه‌چیز زیرِ کلیدِ `order`
 #: (`Sarkhati src/easy_trader.rs:62-80`). بدنۀِ تختِ Online-Plus/Titan عمداً
@@ -1121,21 +1127,35 @@ class EasyTraderAdapter(BrokerAdapter):
         """
         if not self.live:
             return None
+        client_ms = int(self._clock() * 1000)
+        t0 = time.monotonic()
         try:
-            resp = self._call("GET", WIRE_PATH_SERVER_TIME, tag="server_clock",
-                              timeout_s=self.timeouts.probe_s)
+            resp = self._call("GET", "%s/%d" % (WIRE_PATH_SERVER_TIME, client_ms),
+                              tag="server_clock", timeout_s=self.timeouts.probe_s)
         except BrokerError:
             return None
+        rtt_ms = round((time.monotonic() - t0) * 1000.0, 1)
         if not (200 <= resp.status < 300):
             return None
         env, _ = _envelope(resp.body)
-        txt = _text(_pick_any(env, "serverTime", "time", "now", "dateTime"))
-        if not txt:
-            return None
-        return {"source": "broker", "broker_time": txt,
+        if env is None:
+            return None                       # HTML/بدنهٔ بی‌قالب: ساعتی درِ کار نیست
+        cs = TT.clock_from_server_time(
+            diff_ms=_num(_pick(env, "diff")),
+            server_timestamp_ms=_num(_pick(env, "serverTimestamp")),
+            client_ms=client_ms, rtt_ms=rtt_ms, source="broker")
+        if cs.offset_ms is None:
+            return {"source": "broker", "broker_time": None,
+                    "system_time": datetime.now().isoformat(timespec="seconds"),
+                    "delta_ms": None, "verified": False, "quality": cs.quality.value,
+                    "rtt_ms": rtt_ms, "detail": cs.detail}
+        return {"source": "broker",
+                "broker_time": datetime.fromtimestamp(
+                    (client_ms + cs.offset_ms) / 1000.0
+                ).isoformat(timespec="milliseconds"),
                 "system_time": datetime.now().isoformat(timespec="seconds"),
-                "delta_ms": None, "verified": False,
-                "detail": "قالبِ ساعتِ کارگزاری تأیید نشده — فقط ثبتِ خام"}
+                "delta_ms": cs.offset_ms, "verified": True, "quality": cs.quality.value,
+                "rtt_ms": rtt_ms, "detail": cs.detail}
 
     # ---- کمکی -------------------------------------------------------------
     def _iso(self) -> str:
