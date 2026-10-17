@@ -37,14 +37,14 @@
 - `POST /api/adb/set` → `api/adb.py:47`
 
 ### `api/bot.py` — 18 تابع، 8 اندپوینت
-- `GET /api/bot/status` → `api/bot.py:382`
-- `GET /api/bot/config` → `api/bot.py:408`
-- `PUT /api/bot/config` → `api/bot.py:414`
-- `POST /api/bot/run` → `api/bot.py:441`
-- `GET /api/bot/history` → `api/bot.py:487`
-- `POST /api/bot/halt` → `api/bot.py:497`
-- `POST /api/bot/resume` → `api/bot.py:508`
-- `POST /api/bot/account/reset` → `api/bot.py:520`
+- `GET /api/bot/status` → `api/bot.py:391`
+- `GET /api/bot/config` → `api/bot.py:418`
+- `PUT /api/bot/config` → `api/bot.py:424`
+- `POST /api/bot/run` → `api/bot.py:451`
+- `GET /api/bot/history` → `api/bot.py:502`
+- `POST /api/bot/halt` → `api/bot.py:512`
+- `POST /api/bot/resume` → `api/bot.py:523`
+- `POST /api/bot/account/reset` → `api/bot.py:535`
 
 ### `api/chart.py` — 68 تابع، 9 اندپوینت
 - `GET /api/chart/{symbol}` → `api/chart.py:531`
@@ -71,30 +71,31 @@
 - `POST /api/adb/rotate` → `api/engine.py:57`
 - `GET /api/sync/pipeline` → `api/engine.py:64`
 
-### `api/execution.py` — 47 تابع، 23 اندپوینت
-- `GET /api/execution/status` → `api/execution.py:460`
-- `GET /api/execution/session` → `api/execution.py:517`
-- `POST /api/execution/session` → `api/execution.py:530`
-- `DELETE /api/execution/session` → `api/execution.py:571`
-- `GET /api/execution/connect` → `api/execution.py:585`
-- `POST /api/execution/connect/browser` → `api/execution.py:590`
-- `DELETE /api/execution/connect/browser` → `api/execution.py:614`
-- `POST /api/execution/connect/verify` → `api/execution.py:621`
-- `DELETE /api/execution/connect` → `api/execution.py:629`
-- `POST /api/execution/probe` → `api/execution.py:639`
-- `POST /api/execution/preflight` → `api/execution.py:656`
-- `POST /api/execution/prepare` → `api/execution.py:667`
-- `POST /api/execution/dispatch` → `api/execution.py:697`
-- `GET /api/execution/schedule/{execution_id}` → `api/execution.py:776`
-- `DELETE /api/execution/schedule/{execution_id}` → `api/execution.py:781`
-- `POST /api/execution/reconcile/{execution_id}` → `api/execution.py:809`
-- `POST /api/execution/refresh/{execution_id}` → `api/execution.py:819`
-- `GET /api/execution/queue/{execution_id}` → `api/execution.py:832`
-- `GET /api/execution/ledger` → `api/execution.py:844`
-- `GET /api/execution/limits` → `api/execution.py:855`
-- `POST /api/execution/halt` → `api/execution.py:861`
-- `POST /api/execution/resume` → `api/execution.py:882`
-- `GET /api/execution/audit/{execution_id}` → `api/execution.py:901`
+### `api/execution.py` — 54 تابع، 24 اندپوینت
+- `GET /api/execution/status` → `api/execution.py:587`
+- `GET /api/execution/timings` → `api/execution.py:672`
+- `GET /api/execution/session` → `api/execution.py:688`
+- `POST /api/execution/session` → `api/execution.py:701`
+- `DELETE /api/execution/session` → `api/execution.py:744`
+- `GET /api/execution/connect` → `api/execution.py:760`
+- `POST /api/execution/connect/browser` → `api/execution.py:765`
+- `DELETE /api/execution/connect/browser` → `api/execution.py:789`
+- `POST /api/execution/connect/verify` → `api/execution.py:796`
+- `DELETE /api/execution/connect` → `api/execution.py:809`
+- `POST /api/execution/probe` → `api/execution.py:820`
+- `POST /api/execution/preflight` → `api/execution.py:837`
+- `POST /api/execution/prepare` → `api/execution.py:850`
+- `POST /api/execution/dispatch` → `api/execution.py:881`
+- `GET /api/execution/schedule/{execution_id}` → `api/execution.py:988`
+- `DELETE /api/execution/schedule/{execution_id}` → `api/execution.py:993`
+- `POST /api/execution/reconcile/{execution_id}` → `api/execution.py:1021`
+- `POST /api/execution/refresh/{execution_id}` → `api/execution.py:1033`
+- `GET /api/execution/queue/{execution_id}` → `api/execution.py:1046`
+- `GET /api/execution/ledger` → `api/execution.py:1058`
+- `GET /api/execution/limits` → `api/execution.py:1069`
+- `POST /api/execution/halt` → `api/execution.py:1075`
+- `POST /api/execution/resume` → `api/execution.py:1096`
+- `GET /api/execution/audit/{execution_id}` → `api/execution.py:1115`
 
 ### `api/fundamental.py` — 61 تابع، 6 اندپوینت
 - `GET /api/fundamental/screen` → `api/fundamental.py:1896`
@@ -310,6 +311,7 @@
 | `dev/pulse_ta_scope_v1063.py` | pulse scopes match tradersarena + no half-written market total |
 | `dev/repo_hygiene_v97.py` | repo hygiene / dead-code stays gone |
 | `dev/sarkhati_connect_v1117.py` | sarkhati connect layer: allow-listed login window, session state only from a real probe, no secret persistence, mock cycle with duplicate-send guard |
+| `dev/sarkhati_protocol_v1119.py` | sarkhati protocol: provenance-marked wire fixtures, 2xx is never acceptance, no blind re-send after ambiguous, confirmation voided by session change, three distinct origins, honest mode/queue claims, monotonic percentiles, log redaction controls |
 | `dev/sidebar_market_fields_v1082.py` | sidebar Stage-2: p_first/p_max/p_min from real cols, lazy order-book binding |
 | `dev/single_writer_guard.py` | single writer: one backend per market.db |
 | `dev/soft_warnings_v974.py` | soft pass/warn/fail/nodata — no hard vetoes |
