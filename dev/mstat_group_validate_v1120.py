@@ -155,7 +155,7 @@ def main() -> int:
        "پ) با دروازۀ روشن همان درخواست ۴۰۰ است و موتور صدا زده نمی‌شود",
        (rr.status_code, CALLED))
 
-    print("\n%d checks, %d failed" % (PASS + FAIL, FAIL))
+    print("\n%d سنجه، %d خطا" % (PASS + FAIL, FAIL))
     print("MSTAT GROUP VALIDATION " + ("OK" if FAIL == 0 else "FAILED"))
     return 0 if FAIL == 0 else 1
 
