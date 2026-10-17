@@ -50,7 +50,7 @@ SIZES_NARROW = [(360, 800), (390, 844), (430, 932), (812, 375)]
 MEASURE_JS = r"""
 () => {
   const out = {overflow: false, docW: 0, winW: 0, clipped: [], tiny: [],
-               smallTargets: [], bodyH: 0, textLen: 0};
+               smallTargets: [], ellipsisOk: [], bodyH: 0, textLen: 0};
   const de = document.documentElement;
   out.docW = de.scrollWidth; out.winW = window.innerWidth; out.bodyH = de.scrollHeight;
   out.overflow = de.scrollWidth > window.innerWidth + 2;
@@ -80,8 +80,12 @@ MEASURE_JS = r"""
       if (fs < 11) out.tiny.push({px: Math.round(fs * 10) / 10, at: label(el)});
     }
     if (own && cs.overflowX !== 'visible' && el.scrollWidth > el.clientWidth + 2) {
-      if (!/(^|\s)truncate(\s|$)/.test(cs.textOverflow === 'ellipsis' ? '' : 'x')) {
+      const cls = (el.className && el.className.toString) ? el.className.toString() : '';
+      const deliberate = cs.textOverflow === 'ellipsis' || /(^|\s)truncate(\s|$)/.test(cls);
+      if (!deliberate) {
         out.clipped.push({lost: el.scrollWidth - el.clientWidth, at: label(el)});
+      } else {
+        out.ellipsisOk.push({lost: el.scrollWidth - el.clientWidth, at: label(el)});
       }
     }
     const inter = el.matches('button, a, input, select, textarea, [role="button"], [role="tab"], summary');
@@ -91,6 +95,7 @@ MEASURE_JS = r"""
   }
   const cap = (arr, n) => arr.slice(0, n);
   out.tinyCount = out.tiny.length; out.clippedCount = out.clipped.length;
+  out.ellipsisCount = out.ellipsisOk.length;
   out.smallTargetsCount = out.smallTargets.length;
   out.tiny = cap(out.tiny, 12); out.clipped = cap(out.clipped, 12);
   out.smallTargets = cap(out.smallTargets, 12);
@@ -147,9 +152,9 @@ def main() -> int:
         b = pw.chromium.launch(executable_path=CHROME, headless=True)
         for route in routes:
             anchor = "[data-testid='%s']" % {
-                // لنگرها ازِ DOMِ واقعیِ همینِ خط کشف شدند: نسخۀِ اولِ اینِ ابزار
-                // ششِ route را رویِ انتخابگرِ بی‌وجود ۲۰ ثانیه تایم‌اوت می‌کرد وِ
-                // بعدِ آن 23,000ms را «زمانِ بارگذاری» گزارش می‌داد — خطایِ سنجه.
+                # لنگرها ازِ DOMِ واقعیِ همینِ خط کشف شدند: نسخۀِ اولِ اینِ ابزار
+                # ششِ route را رویِ انتخابگرِ بی‌وجود ۲۰ ثانیه تایم‌اوت می‌کرد وِ
+                # بعدِ آن 23,000ms را «زمانِ بارگذاری» گزارش می‌داد — خطایِ سنجه.
                 "market": "market-page", "market-status": "market-status-page",
                 "technical": "technical-sidebar", "fundamental": "fundamental-page",
                 "master": "master-breadcrumb", "strategy-tree": "strategy-tree-overview",
@@ -181,6 +186,7 @@ def main() -> int:
                     "overflow": any(r["overflow"] for r in runs),
                     "docW": max(r["docW"] for r in runs),
                     "clipped": max(r["clippedCount"] for r in runs),
+                    "ellipsis": max(r.get("ellipsisCount", 0) for r in runs),
                     "tiny": max(r["tinyCount"] for r in runs),
                     "smallTargets": max(r["smallTargetsCount"] for r in runs),
                     "apiReqs": runs[0]["api"],
@@ -189,6 +195,7 @@ def main() -> int:
                     "warmMsMed": int(statistics.median(warm)),
                     "samples": [r["ms"] for r in runs],
                     "clippedAt": runs[0]["clipped"][:6],
+                    "ellipsisAt": runs[0]["ellipsisOk"][:6],
                     "tinyAt": runs[0]["tiny"][:6],
                     "smallAt": runs[0]["smallTargets"][:6],
                 }
