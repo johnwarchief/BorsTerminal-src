@@ -481,6 +481,14 @@ SUITES = [
     # ثابت می‌کند. بی‌شبکه، بی‌سفارشِ واقعی، رویِ بانکِ ردِّپایِ موقت.
     ('dev/sarkhati_connect_v1117.py',
                                      'sarkhati connect layer: allow-listed login window, session state only from a real probe, no secret persistence, mock cycle with duplicate-send guard'),
+    # §۲ مأموریتِ ۱۴۰۵-۰۷-۲۵: نُه گیتِ P0 پیش ازِ هر ادعایِ Live — نشستِ
+    # بی‌راستی‌آزمایی POST نمی‌کند، عبارتِ تأیید درِ بک‌اند اعتبارسنجی می‌شود،
+    # «نبودن درِ فهرست» شکستِ قطعی نیست، بی‌سقفِ ریسک fail-closed است،
+    # /api/* ناشناخته JSON 404 می‌دهد (نه HTMLِ ۲۰۰)، پیش‌نمایش/probe ازِ
+    # دروازۀ ارسال مستقل‌اند، و لغو درِ سطحِ HTTP قفلِ per-id دارد.
+    # همه باِ ترافیکِ بدل و tripwire؛ بی‌سفارشِ واقعی.
+    ('dev/p0_gates_v1118.py',
+     'p0 gates: unverified session cannot POST, confirm phrase validated in backend, absence from the order list is not failure, fail-closed risk config, JSON 404 for unknown /api/*, preview independent of the send gate, per-id cancel lock'),
     ('dev/bot_api_v1114.py', 'bot API contract: paper by default, manual run only, three live gates, halt honored, no fabricated zero, no leaked session'),
     # مأموریتِ ۱۴۰۵-۰۷-۲۳، بندِ ۶: رباتِ کاغذی و بک‌تست. سناریوهای ۱۷گانۀ
     # بندِ ۶-۵ (سیگنال، کهنگی، توقف، دامنۀ قیمت، سقفِ حجم، timeout، تکرار،

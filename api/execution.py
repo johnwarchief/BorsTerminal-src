@@ -144,6 +144,27 @@ _SERVICE = ExecutionService(_ACTIVE_ADAPTER, dry_run=DRY_RUN, limits=_LIMITS,
                             audit=_AUDIT, scheduler=_SCHEDULER)
 
 
+#: عبارتِ تأییدِ انسانی برایِ اجرایِ زنده. مقدارِ پیش‌فرض *اختراع نشده*: همان
+#: برچسبِ دکمهٔ پنلِ اجرا است (`ExecutionPanel.tsx`: «تأییدِ نهایی») تا کاربر
+#: چیزی را تایپ کند که رویِ صفحه می‌بیند. `BORS_EXECUTION_CONFIRM_PHRASE` برایِ
+#: عوض کردنش؛ بی‌اجرایِ زنده این گیت بی‌اثر است (تمرین/پیش‌نمایش نمی‌شکند).
+CONFIRM_PHRASE_ENV = "BORS_EXECUTION_CONFIRM_PHRASE"
+DEFAULT_CONFIRM_PHRASE = "تأییدِ نهایی"
+
+
+def _confirm_phrase() -> str:
+    return (os.environ.get(CONFIRM_PHRASE_ENV) or DEFAULT_CONFIRM_PHRASE).strip()
+
+
+def _confirm_gate(body: dict[str, Any]) -> tuple[bool, str]:
+    """`confirmed: true` تنها یعنی «یکِ boolean فرستادند». برایِ ارسالِ واقعی،
+    عبارتِ تأیید باید *خوانده* و باِ چیزی که UI نشان می‌دهد برابری کند."""
+    if DRY_RUN or not _live_now():
+        return True, ""
+    return (str(body.get("confirm_phrase") or "").strip() == _confirm_phrase(),
+            _confirm_phrase())
+
+
 def _risk_gate() -> tuple[bool, str]:
     """دروازۀ System 2: اجرایِ زنده بی‌پیکربندیِ ریسک مجاز نیست.
 
@@ -415,11 +436,13 @@ def _schedule_status(execution_id: str) -> dict[str, Any]:
 
 def _halt_pending(reason: str) -> int:
     """پرچمِ توقف را به همهٔ زمان‌بندی‌هایِ درِ انتظار می‌دهد. تعدادِ لغوشده‌ها."""
-    with _SCHEDULE_LOCK:
+    with _SCHEDULE_LOCK:                     # ادعا هم مثلِ پرچم یک‌بار نوشته می‌شود
         pending = [e for e in _SCHEDULES.values()
                    if e.get("state") in ("waiting", "scheduled") and e.get("abort")]
-    for e in pending:
-        e["abort"].set()
+        for e in pending:
+            e["abort"].set()
+            e["state"] = "aborted"
+            e["cancelled_by"] = "halt"
     return len(pending)
 
 
@@ -446,6 +469,12 @@ def get_status() -> dict[str, Any]:
         blocked.append("ترافیکِ زنده خاموش است (BORS_EXECUTION_LIVE=1 لازم است)")
     if ADAPTER_KIND == "easytrader" and LIVE_REQUESTED and not live:
         blocked.append("D1: نشستِ مالک درِ حافظه نیست — ورودِ تعاملی با خودِ مالک")
+    # گیتِ عبارتِ تأیید (§۲-۲): فقط وقتی که اجرایِ زنده واقعاً روشن است ازِ UI
+    # چیزی می‌خواهد؛ درِ dry-run تمرین و پیش‌نمایش نباید بشکند. «required»
+    # را UI می‌خواند تا بداند چه چیزی تایپ شود، نه اینکه حدس بزند.
+    confirm_required = bool(not DRY_RUN and live)
+    if confirm_required:
+        blocked.append("اجرایِ زنده: عبارتِ تأیید لازم است («%s»)" % _confirm_phrase())
     return {
         "status": "success",
         "adapter": ADAPTER_KIND,
@@ -461,6 +490,7 @@ def get_status() -> dict[str, Any]:
         "wire_hypothesis": (ADAPTER_KIND == "easytrader") and WIRE_HYPOTHESIS,
         "session": _session_dict(),
         "blocked_on": blocked,
+        "confirm_gate": {"required": confirm_required, "phrase": _confirm_phrase()},
         "capabilities": dataclasses.asdict(caps),
         "limits": dataclasses.asdict(_SERVICE.limits),
         "ledger_size": len(_SERVICE.ledger()),
@@ -667,6 +697,16 @@ def post_prepare(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
 @router.post("/api/execution/dispatch")
 def post_dispatch(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
     t0 = time.monotonic()
+    ok_cf, want_cf = _confirm_gate(body if isinstance(body, dict) else {})
+    if not ok_cf:
+        return {"status": "error",
+                "code": ErrorCode.CONFIRM_PHRASE_REQUIRED.value,
+                "detail": "برایِ اجرایِ زنده عبارتِ تأیید لازم است، نه فقطِ یکِ "
+                          "true — همان چیزی که رویِ دکمه می‌بینید را تایپ کنید",
+                "expected_phrase": want_cf,
+                "execution_id": str(body.get("execution_id") or ""),
+                "confirm_gate": "phrase_required", "dry_run": DRY_RUN,
+                "live": _live_now()}
     ok_gate, why_gate = _risk_gate()
     if not ok_gate:
         return {"status": "error", "code": ErrorCode.RISK_LIMIT.value,
@@ -742,14 +782,23 @@ def get_schedule(execution_id: str) -> dict[str, Any]:
 def delete_schedule(execution_id: str) -> dict[str, Any]:
     """لغوِ یکِ زمان‌بندی پیش ازِ آتش. پس ازِ POST هیچ‌چیز لغو نمی‌شود و این
      «لغو شد» را ادعا نمی‌کند."""
+    # خواندنِ حالت و گذاشتنِ پرچم *یکِ کارِ اتمی* است. بی‌این، دو درخواستِ
+    # هم‌زمانِ «لغو» هر دو حالتِ waiting را دیدند و هر دو «لغو شد» برگرداندند؛
+    # اثرِ عملی یکی بود اما ادعا دو بار نوشته می‌شد — و ادعایِ دوتایی درِ
+    # لغوِ سفارش همان چیزی است که بعداً تعیینِ تکلیف را گمراه می‌کند.
     with _SCHEDULE_LOCK:
         entry = _SCHEDULES.get(execution_id)
-    if not entry:
-        raise HTTPException(404, "no such schedule: %s" % execution_id)
-    ev = entry.get("abort")
-    state = entry.get("state")
-    if state in ("waiting", "scheduled") and ev is not None:
-        ev.set()
+        if not entry:
+            raise HTTPException(404, "no such schedule: %s" % execution_id)
+        ev = entry.get("abort")
+        state = entry.get("state")
+        mine = False
+        if state in ("waiting", "scheduled") and ev is not None:
+            ev.set()
+            entry["state"] = "aborted"
+            entry["cancelled_by"] = "explicit cancel"
+            mine = True
+    if mine:
         return {"status": "success", "execution_id": execution_id,
                 "aborted": True, "note": "پیش ازِ آتش لغو شد"}
     return {"status": "success", "execution_id": execution_id, "aborted": False,
