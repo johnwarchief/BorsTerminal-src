@@ -71,30 +71,30 @@
 - `POST /api/adb/rotate` → `api/engine.py:57`
 - `GET /api/sync/pipeline` → `api/engine.py:64`
 
-### `api/execution.py` — 45 تابع، 23 اندپوینت
-- `GET /api/execution/status` → `api/execution.py:437`
-- `GET /api/execution/session` → `api/execution.py:487`
-- `POST /api/execution/session` → `api/execution.py:500`
-- `DELETE /api/execution/session` → `api/execution.py:541`
-- `GET /api/execution/connect` → `api/execution.py:555`
-- `POST /api/execution/connect/browser` → `api/execution.py:560`
-- `DELETE /api/execution/connect/browser` → `api/execution.py:584`
-- `POST /api/execution/connect/verify` → `api/execution.py:591`
-- `DELETE /api/execution/connect` → `api/execution.py:599`
-- `POST /api/execution/probe` → `api/execution.py:609`
-- `POST /api/execution/preflight` → `api/execution.py:626`
-- `POST /api/execution/prepare` → `api/execution.py:637`
-- `POST /api/execution/dispatch` → `api/execution.py:667`
-- `GET /api/execution/schedule/{execution_id}` → `api/execution.py:736`
-- `DELETE /api/execution/schedule/{execution_id}` → `api/execution.py:741`
-- `POST /api/execution/reconcile/{execution_id}` → `api/execution.py:760`
-- `POST /api/execution/refresh/{execution_id}` → `api/execution.py:770`
-- `GET /api/execution/queue/{execution_id}` → `api/execution.py:783`
-- `GET /api/execution/ledger` → `api/execution.py:795`
-- `GET /api/execution/limits` → `api/execution.py:806`
-- `POST /api/execution/halt` → `api/execution.py:812`
-- `POST /api/execution/resume` → `api/execution.py:833`
-- `GET /api/execution/audit/{execution_id}` → `api/execution.py:852`
+### `api/execution.py` — 47 تابع، 23 اندپوینت
+- `GET /api/execution/status` → `api/execution.py:460`
+- `GET /api/execution/session` → `api/execution.py:517`
+- `POST /api/execution/session` → `api/execution.py:530`
+- `DELETE /api/execution/session` → `api/execution.py:571`
+- `GET /api/execution/connect` → `api/execution.py:585`
+- `POST /api/execution/connect/browser` → `api/execution.py:590`
+- `DELETE /api/execution/connect/browser` → `api/execution.py:614`
+- `POST /api/execution/connect/verify` → `api/execution.py:621`
+- `DELETE /api/execution/connect` → `api/execution.py:629`
+- `POST /api/execution/probe` → `api/execution.py:639`
+- `POST /api/execution/preflight` → `api/execution.py:656`
+- `POST /api/execution/prepare` → `api/execution.py:667`
+- `POST /api/execution/dispatch` → `api/execution.py:697`
+- `GET /api/execution/schedule/{execution_id}` → `api/execution.py:776`
+- `DELETE /api/execution/schedule/{execution_id}` → `api/execution.py:781`
+- `POST /api/execution/reconcile/{execution_id}` → `api/execution.py:809`
+- `POST /api/execution/refresh/{execution_id}` → `api/execution.py:819`
+- `GET /api/execution/queue/{execution_id}` → `api/execution.py:832`
+- `GET /api/execution/ledger` → `api/execution.py:844`
+- `GET /api/execution/limits` → `api/execution.py:855`
+- `POST /api/execution/halt` → `api/execution.py:861`
+- `POST /api/execution/resume` → `api/execution.py:882`
+- `GET /api/execution/audit/{execution_id}` → `api/execution.py:901`
 
 ### `api/fundamental.py` — 61 تابع، 6 اندپوینت
 - `GET /api/fundamental/screen` → `api/fundamental.py:1896`
@@ -298,6 +298,7 @@
 | `dev/mstat_swr_v1111.py` | mstat panels: stale-while-revalidate + stale cap + single-flight, errors never cached, 3 negative controls |
 | `dev/npm_lock_v1040.py` | قفلِ npm درِ CI هم نصب می‌شود (npm ci، نه فقط node_modules محلی) |
 | `dev/onedir_contract_v11.py` | onedir build contract: hiddenimports + shape |
+| `dev/p0_gates_v1118.py` | p0 gates: unverified session cannot POST, confirm phrase validated in backend, absence from the order list is not failure, fail-closed risk config, JSON 404 for unknown /api/*, preview independent of the send gate, per-id cancel lock |
 | `dev/pack_rowcount_guard_v1065.py` | pack refuses a baseline with fewer rows than the committed one |
 | `dev/patch_check_v10.py` | patch/update system guard |
 | `dev/per_capita_sell_v1107.py` | per-capita sell reaches the wire: drop-list, shared zero-denominator rule, schema and export column |
