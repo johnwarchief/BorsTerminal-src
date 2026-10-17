@@ -17,7 +17,8 @@ BorsTerminal should become a reliable, data-correct, locally operable trading an
 - A persistent history of what the application knew and decided at each time.
 - Safe execution timing and a separately controlled trading-bot layer.
 - Efficient bulk operations and export across the actual tables.
-- A future local ML research system trained on versioned, time-correct historical data.
+- A future local ML research system trained on versioned, time-correct historical data, including a separately validated strategy-discovery track that can generate and evaluate candidate rule sets.
+- A technical-first Strategy FTS mode that identifies canonical daily corrective/pullback setups before applying tape/market filters and canonical fundamental gates.
 - Source-linked, event-driven price explanations that connect verified CODAL/TSETMC events to daily candles without blocking the market-data path.
 - Desktop and Android builds that share canonical analytical meaning.
 
@@ -139,7 +140,60 @@ Capture end-of-day snapshots automatically and record intraday state transitions
 
 Keep historical observations immutable. If rules or source records are later revised, create a separately versioned recalculation rather than silently overwriting what the application recorded at the time.
 
-### 9. FTS Event Intelligence — event-to-candle context (DISCOVERED / DEFERRED)
+### 9. Strategy FTS technical-first corrective-pullback funnel (PLANNED / BLOCKED)
+
+**State: PLANNED / NOT STARTED. Recorded 2026-10-17.** Do not begin implementation, create a new parallel mission, or redirect either running agent until the owner confirms that System 1's current UI/UX 2.1 work and System 2's current performance work are complete and accepted. This item records the next strategic direction; it does not interrupt the active execution sequence above.
+
+#### Problem to investigate
+
+The current Strategy FTS output appears to classify almost every discovered symbol as صف خرید. Treat this as a serious selectivity / decision-semantics concern, not as proof that every candidate is genuinely at a buy queue. First determine whether the UI is showing a real, time-stamped TSETMC market state, a strategy/setup label, a stale value, or an incorrect mapping. Report the full-universe distribution, per-stage counts, missing/error states, and concrete source evidence.
+
+A corrective technical setup is **not equivalent** to a current صف خرید. Keep technical setup, board/order-book state, and final strategy decision as separate concepts and fields.
+
+#### New built-in strategy mode
+
+Add a separate built-in mode/preset in Strategy FTS; do not silently replace or weaken current modes.
+
+```text
+Full canonical universe
+  → weekly FTS context / eligibility
+  → daily trend and market-structure checks
+  → daily corrective-wave / pullback candidate
+  → validated FTS Fibonacci zone check
+  → تابلوخوانی / market-microstructure filters
+  → canonical Fundamental gates
+  → explainable final FTS result
+```
+
+- FTS analyses remain on the **daily** timeframe; the weekly timeframe supplies the canonical context/eligibility gate. Verify both against `docs/جزوه FTS.pdf`, `docs/FTS.CHART_3.pdf`, `docs/fts-notes/OWNER_RULINGS.md`, and the current technical implementation before coding.
+- Find symbols in a structurally valid corrective/pullback phase, rather than beginning with board filters. Make the setup explainable from candle structure, swing anchors, trend state and price position.
+- The owner's example of “around 30% Fibonacci” is a research hypothesis, **not an approved hard-coded threshold**. Reconcile it with the canonical FTS zones (including the documented 33–40% and 61.8–70% regions and 1.0 baseline, where confirmed by the primary source). Do not invent anchors, ratios or exception rules.
+- Only after the technical gate, apply the existing canonical board/tape filters; then assess fundamental evidence using the already-approved formulas and mandatory gates. Missing or stale inputs remain explicit unknown/error states, never silent passes.
+- Each stage must report input count, pass count, reject count, unknown/error count, parameter/rule version, data timestamp and reason codes. Keep rejected symbols in the diagnostic evidence and Market Signal Journal.
+- Keep “technical setup”, “actual board/queue status”, and “final strategy classification” distinct. Never force every result into صف خرید. Validate actual queue state against time-matched TSETMC evidence when available; if freshness cannot be proved, mark it NOT_PROVEN.
+- Keep the full universe; do not introduce arbitrary symbol caps or selectivity by hand-tuning on the same history used to evaluate results.
+- The new mode is additive until it passes acceptance. Existing presets, canonical FTS rules, chart features and output contracts must not regress.
+
+#### Acceptance
+
+- The false/universal صف خرید classification concern has been traced to a specific source field, mapping, stale-state problem, or strategy semantic, with reproducible evidence.
+- The technical-first mode is implemented as a separately named preset and uses canonical weekly context plus daily technical setup.
+- Fibonacci anchor/zone behavior is sourced and unit-tested against the primary FTS methodology; no unsupported 30% rule is smuggled in.
+- Stage counts and decisions are reproducible, with correct pass/reject/unknown/error distinctions and explicit provenance.
+- Time-matched representative symbols are browser-validated against charts and TSETMC; use the authenticated Rahavard reference where appropriate and available. Record unavailable validation explicitly.
+- Test cases cover bullish / bearish / range context, valid and invalid pullbacks, boundary zones, missing candles, stale market data and missing fundamental data.
+- The current full test gate, build, live-browser visual check and relevant chart/pixel checks pass; no unsupported claim of profitability is made.
+- The mode remains research/experimental until a separate owner-reviewed evidence gate is passed.
+
+#### Later ML/DL strategy-discovery track
+
+This is distinct from the deterministic technical-first funnel and depends on the Market Signal Journal plus the point-in-time ML data foundation below. The long-term research question is how to generate candidate strategies/algorithms and test them systematically, not let a model silently rewrite FTS rules.
+
+Evaluate lightweight baselines first, followed by evolutionary rule search / genetic programming, AutoML or other search methods; consider deep learning only where dataset size, labels and out-of-sample evidence justify its compute cost. Generated strategies must be versioned, replayable and sandboxed, compared against deterministic and simple non-ML baselines, and blocked from production until approved. Enforce chronological splits, walk-forward evaluation, look-ahead/survivorship/leakage controls, realistic costs and slippage, multiple-testing safeguards, and local-resource measurements. There is no automatic promotion into the live Strategy FTS funnel.
+
+---
+
+### 10. FTS Event Intelligence — event-to-candle context (DISCOVERED / DEFERRED)
 
 **Research reference:** [owengetinfo-design/PokieTicker](https://github.com/owengetinfo-design/PokieTicker), upstream commit reviewed: `c16b7e34e72c2d09bb50d7b3159fa5cd6697fd19` (MIT license declared by the upstream repository). This is an implementation/product reference only; it is not a data source of truth, FTS specification, or a model to import directly.
 
@@ -165,7 +219,7 @@ Keep historical observations immutable. If rules or source records are later rev
 - Do not delay current speed/reliability gates to build this feature. Keep it `DEFERRED` until current market-performance verification and the required canonical event-source prerequisites are accepted.
 - Acceptance requires source-linked browser evidence on real symbols, correct event/candle alignment, explicit handling of corrections/missing data, no invented cause, no material regression in measured startup/market/chart performance, tests for boundary times and stale responses, and clear separation of observed versus reconstructed history.
 
-### 10. Local ML data foundation and ML Engine
+### 11. Local ML data foundation and ML Engine
 
 The Market Signal Journal is a prerequisite for serious local ML. Build a reproducible historical dataset with versioned feature schemas and separately versioned outcome labels, including configurable horizons such as 3/5/10 trading sessions, returns, maximum favorable/adverse excursion and explicit outcome definitions where data permits.
 
@@ -182,11 +236,11 @@ Hard requirements:
 
 Do not begin by training a large model over an unreliable dataset. First prove data contracts, historical point-in-time integrity, labels and evaluation methodology.
 
-### 11. Android release — independent, strictly gated lane
+### 12. Android release — independent, strictly gated lane
 
 Android release may proceed when all release prerequisites are actually satisfied; it does not have to wait for unrelated desktop feature work. Publish only if secure key custody/backup, CI public-key configuration, signing/verification, version compatibility, rollback, relevant CI and required device/WebView tests are verified. Otherwise keep publication blocked and continue any independent fix. Never generate or publish with an unverified production signing key.
 
-### 12. Final integration and release readiness
+### 13. Final integration and release readiness
 
 After the above workstreams reach their individual acceptance gates, reconcile their working branches/worktrees safely, verify the actual desktop runtime, run the complete regression suite and browser integration tests, and document the exact source commit and artifact. No merge, release, or completion claim is implied by a local commit or green unit tests alone.
 
@@ -1534,6 +1588,9 @@ Provide verified presets for:
 - **روندگیر**
 - **ساعت شنی**
 - **Custom**
+- **تکنیکال‌محور — موج اصلاحی/فیبوناچی → تابلوخوانی → بنیادی** (**PLANNED / BLOCKED**; see current-order item 9 and §4.0.8)
+
+The technical-first mode is additive: preserve current modes and do not promote it to canonical/default until the explicit acceptance gate in item 9 passes.
 
 The current repository already contains preset concepts for these modes. Before treating their exact filter composition as canonical, verify each composition against the FTS chart/PDF/source material.
 
@@ -1599,6 +1656,16 @@ Do not consider the Funnel complete until:
 - Relevant filter results are checked against TSE/TSETMC in تابلوخوانی.
 - A saved custom preset can be reproduced exactly from its parameter set/version.
 
+### 4.0.8 Technical-first corrective-pullback mode (PLANNED / BLOCKED)
+
+See current-order item 9 for its dependency and acceptance gate. This subsection defines implementation boundaries, not permission to start early.
+
+- Establish the actual source of the apparent universal صف خرید result before changing filters. Separate setup type from actual live order-book/queue status.
+- Apply the canonical weekly-context rule first, then evaluate daily trend/market structure and a structurally valid corrective/pullback phase.
+- Validate the Fibonacci anchors and ratios against the primary FTS PDFs and owner rulings. The example “30%” does not override the canonical zones or authorize a new hard-coded threshold.
+- Apply canonical board/tape filters only after the technical candidate set, and fundamental checks after board filtering.
+- Keep pass/reject/unknown/error outputs, stage counts, provenance, observation times and rule versions available for audit. Do not hide rejected records from the journal or force unknown data into a pass.
+- Keep this mode separate from existing presets until browser-level, full-universe and TSETMC/reference validation passes. Do not modify the canonical FTS rules or promote any discovered ML strategy automatically.
 
 ## The most important long-term workstream
 
@@ -2426,6 +2493,9 @@ Longer-term:
 - Local ML training workflows
 - Model registry
 - Validated historical outcome collection
+- Strategy/algorithm discovery: evolutionary rule search, genetic programming and AutoML, evaluated against deterministic/simple baselines
+- Deep-learning candidates only when dataset volume, temporal integrity and out-of-sample evidence justify the added compute
+- Sandboxed generation, replay, versioning and explicit owner-approved promotion gates for machine-generated strategies
 
 ---
 
@@ -2559,7 +2629,7 @@ The long-term target is a BorsTerminal where:
 
 The current owner-approved order at the top of this document is authoritative.
 
-**Current active focus: close the in-flight Fundamental/CODAL work before opening new major workstreams.** Do not treat older dates or headings such as historical P0/P1 as permission to start parallel missions.
+**Current active focus: follow the in-flight work shown in the owner-approved order and do not open the new FTS technical-first strategy item until the owner confirms System 1 UI/UX 2.1 and System 2 performance work are complete and accepted.** Do not treat older dates or headings such as historical P0/P1 as permission to start parallel missions.
 
 After that closure, complete the fundamental auto-update pipeline and the already-assigned corporate-action adjustment chain; then capture performance baselines at a real market-open session, proceed to EasyTrader execution foundations and the trading bot, and continue to Global Bulk Actions, Market Signal Journal and the local ML data foundation.
 
