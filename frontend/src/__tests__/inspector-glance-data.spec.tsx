@@ -9,7 +9,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { useSymbolStore } from '@shared/stores/symbolStore';
 import { SymbolInspector } from '@widgets/SymbolInspector';
 import { MARKET_FEED_KEY } from '@shared/api/marketFeed';
-import { fmtInt, fmtPct, toFaDigits } from '@shared/lib/fmt';
+import { fmtInt, fmtPct } from '@shared/lib/fmt';
 import type { MarketRow } from '@shared/types/marketRow';
 import { FUNNEL_FIXTURE, REGISTRY_FIXTURE } from './fixtures/funnelApi';
 
@@ -133,7 +133,11 @@ describe('«در یک نگاه» — روند و پنج‌شاخصه (از هم�
     expect(screen.getByTestId('inspector-ind-i1').textContent).toContain(fmtPct(52));
     expect(screen.getByTestId('inspector-ind-i2').textContent).toContain(fmtInt(318));
     expect(screen.getByTestId('inspector-ind-i3').textContent).toContain(fmtPct(26));
-    expect(screen.getByTestId('inspector-ind-i4').textContent).toContain(toFaDigits('0.41'));
+    // رأیِ مالک ۱۴۰۵-۰۷-۲۰ (شاخص ۴ درصد نشان داده شود، نه «×») حالا درِ پنلِ چپ
+    // هم جاری است: 0.41 ⇒ «۴۱.۰٪» — همان عرضِ کارتِ بنیادی، تا یک شاخص دو
+    // جور دیده نشود. عددِ موتور دست‌نخورده، فقط ×۱۰ و ٪.
+    expect(screen.getByTestId('inspector-ind-i4').textContent).toContain(fmtPct(41));
+    expect(screen.getByTestId('inspector-ind-i4').textContent).not.toContain('×');
     // I5 مقدارِ عددی ندارد؛ نرخ‌گذاری متنی است نه صفر.
     expect(screen.getByTestId('inspector-ind-i5').textContent).not.toContain(fmtPct(0));
   });

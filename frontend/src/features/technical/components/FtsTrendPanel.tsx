@@ -45,7 +45,7 @@ export function FtsTrendPanel({ data }: { data: FtsAnalysisData | null | undefin
     return (
       <div className="glass-panel p-4">
         <h3 className="mb-2 text-sm font-black text-text-primary">تحلیل ساختاری FTS</h3>
-        <p className="text-xs text-text-muted">در انتظار داده تحلیل...</p>
+        <p className="text-xs text-text-muted">در انتظار دریافت تحلیل…</p>
       </div>
     );
   }
@@ -74,7 +74,7 @@ export function FtsTrendPanel({ data }: { data: FtsAnalysisData | null | undefin
 
       {/* روند چند تایم فریمی با پیوت ها */}
       <div>
-        <div className="mb-1.5 text-[11px] font-bold text-text-secondary">روند چند تایم فریمی (ساختار HH/HL)</div>
+        <div className="mb-1.5 text-3xs font-bold text-text-secondary">روند در چند تایم‌فریم (ساختار HH/HL)</div>
         <div className="grid grid-cols-3 gap-2">
           {(['D', 'W', 'M'] as const).map((k) => {
             const leg = t?.[k];
@@ -83,10 +83,10 @@ export function FtsTrendPanel({ data }: { data: FtsAnalysisData | null | undefin
             return (
               <div key={k} className="rounded-xl border border-[var(--hairline)] bg-bg-card/40 p-2">
                 <div className="mb-1 flex items-center justify-between">
-                  <span className="text-[10px] text-text-muted">{k === 'D' ? 'روزانه' : k === 'W' ? 'هفتگی' : 'ماهانه'}</span>
+                  <span className="text-3xs text-text-muted">{k === 'D' ? 'روزانه' : k === 'W' ? 'هفتگی' : 'ماهانه'}</span>
                   <Badge tone={tone}>{TREND_FA[tr] ?? TREND_FA.na}</Badge>
                 </div>
-                <div className="flex flex-col gap-0.5 text-[10px] text-text-secondary">
+                <div className="flex flex-col gap-0.5 text-3xs text-text-secondary">
                   <span className="flex justify-between">
                     <span>سقف اخیر</span>
                     <span className="num">{fmtPrice(leg?.last_high)}</span>
@@ -107,7 +107,7 @@ export function FtsTrendPanel({ data }: { data: FtsAnalysisData | null | undefin
         {t?.alignment === 'up' || t?.alignment === 'down' ? (
           <div className="mt-1.5">
             <Badge tone={t.alignment === 'up' ? 'green' : 'red'}>
-              هم راستایی سه تایم فریم: {t.alignment === 'up' ? 'صعودی' : 'نزولی'}
+              هم‌راستایی سه تایم‌فریم: {t.alignment === 'up' ? 'صعودی' : 'نزولی'}
             </Badge>
           </div>
         ) : null}
@@ -117,12 +117,12 @@ export function FtsTrendPanel({ data }: { data: FtsAnalysisData | null | undefin
       {t?.matrix ? (
         <div className={`rounded-xl border p-2.5 ${t.matrix.decision === 'PERMITTED' ? 'border-border-accent bg-accent-green/10' : t.matrix.decision === 'REJECT' ? 'border-border-c bg-accent-red/10' : 'border-border-c bg-bg-card/40'}`}>
           <div className="mb-1 flex items-center justify-between">
-            <span className="text-[11px] font-bold text-text-primary">ماتریس تصمیم‌گیری FTS</span>
+            <span className="text-3xs font-bold text-text-primary">ماتریس تصمیم‌گیری FTS</span>
             <Badge tone={t.matrix.decision === 'PERMITTED' ? 'green' : t.matrix.decision === 'REJECT' ? 'red' : 'gray'}>
               {t.matrix.decision === 'PERMITTED' ? 'ورود مجاز' : t.matrix.decision === 'REJECT' ? 'ممنوعیت ورود' : 'بدون رأی'}
             </Badge>
           </div>
-          <p className="text-[11px] text-text-secondary leading-relaxed">{t.matrix.desc}</p>
+          <p className="text-3xs text-text-secondary leading-relaxed">{t.matrix.desc}</p>
         </div>
       ) : null}
 
@@ -130,11 +130,11 @@ export function FtsTrendPanel({ data }: { data: FtsAnalysisData | null | undefin
       {data.hourglass?.active ? (
         <div className="rounded-xl border border-accent-green/40 bg-accent-green/15 p-2.5">
           <div className="mb-1 flex items-center justify-between">
-            <span className="text-[11px] font-bold text-accent-green">استراتژی ساعت شنی (اهرم ۲x-۴x)</span>
+            <span className="text-3xs font-bold text-accent-green">استراتژی ساعت شنی (اهرم ۲x-۴x)</span>
             <Badge tone="green">شتاب‌دهنده</Badge>
           </div>
-          <p className="mb-1.5 text-[10px] text-text-secondary">{data.hourglass.desc}</p>
-          <div className="flex justify-between text-[10px] text-text-secondary">
+          <p className="mb-1.5 text-3xs text-text-secondary">{data.hourglass.desc}</p>
+          <div className="flex justify-between text-3xs text-text-secondary">
             <span>قیمت هفتگی: <b className="num">{fmtPrice(data.hourglass.weekly_close)}</b></span>
             <span>MA52 هفتگی: <b className="num">{fmtPrice(data.hourglass.ma52)}</b></span>
             <span>RSI(5) هفتگی: <b className="num">{data.hourglass.weekly_rsi5 != null ? toFaDigits(data.hourglass.weekly_rsi5.toFixed(1)) : '-'}</b></span>
@@ -142,9 +142,11 @@ export function FtsTrendPanel({ data }: { data: FtsAnalysisData | null | undefin
         </div>
       ) : null}
 
-      {/* کمربند های فیبوناچی */}
+      {/* زون‌های فیبوناچی */}
       <div>
-        <div className="mb-1 text-[11px] font-bold text-text-secondary">کمربند های فیبوناچی (مقیاس لگاریتمی)</div>
+        <div className="mb-1 text-3xs font-bold text-text-secondary">
+          زون‌های فیبوناچی (مقیاس لگاریتمی) — زمینۀ تحلیل، نه سیگنال ورود
+        </div>
         {fib ? (
           <div className="grid grid-cols-2 gap-2">
             <div
@@ -152,9 +154,9 @@ export function FtsTrendPanel({ data }: { data: FtsAnalysisData | null | undefin
                 fib.zone_33_40?.in_zone ? 'border-border-accent bg-accent-blue/10' : 'border-[var(--hairline)]'
               }`}
             >
-              <div className="mb-0.5 flex items-center justify-between text-[10px]">
-                <span className="text-text-secondary">اصلاح ۳۳-۴۰٪</span>
-                {fib.zone_33_40?.in_zone ? <Badge tone="blue">داخل کمربند</Badge> : null}
+              <div className="mb-0.5 flex items-center justify-between text-3xs">
+                <span className="text-text-secondary">زون اصلاح ۳۳-۴۰٪</span>
+                {fib.zone_33_40?.in_zone ? <Badge tone="blue">داخل زون</Badge> : null}
               </div>
               <div className="num text-xs font-bold text-text-primary">
                 {fmtPrice(fib.zone_33_40?.lo)} تا {fmtPrice(fib.zone_33_40?.hi)}
@@ -165,9 +167,9 @@ export function FtsTrendPanel({ data }: { data: FtsAnalysisData | null | undefin
                 fib.zone_618_70?.in_zone ? 'border-border-accent bg-accent-blue/10' : 'border-[var(--hairline)]'
               }`}
             >
-              <div className="mb-0.5 flex items-center justify-between text-[10px]">
-                <span className="text-text-secondary">کمربند طلایی ۶۱.۸-۷۰٪</span>
-                {fib.zone_618_70?.in_zone ? <Badge tone="blue">داخل کمربند</Badge> : null}
+              <div className="mb-0.5 flex items-center justify-between text-3xs">
+                <span className="text-text-secondary">زون طلایی ۶۱.۸-۷۰٪</span>
+                {fib.zone_618_70?.in_zone ? <Badge tone="blue">داخل زون</Badge> : null}
               </div>
               <div className="num text-xs font-bold text-text-primary">
                 {fmtPrice(fib.zone_618_70?.lo)} تا {fmtPrice(fib.zone_618_70?.hi)}
@@ -175,13 +177,13 @@ export function FtsTrendPanel({ data }: { data: FtsAnalysisData | null | undefin
             </div>
           </div>
         ) : (
-          <p className="text-[10px] text-text-muted">سقف/کف پیوت کافی برای کمربند وجود ندارد</p>
+          <p className="text-3xs text-text-muted">سقف/کف پیوت کافی برای ساخت زون وجود ندارد</p>
         )}
       </div>
 
       {/* ستاپ های فعال سمت سرور */}
       <div>
-        <div className="mb-1 text-[11px] font-bold text-text-secondary">ستاپ های فعال (موتور سمت سرور)</div>
+        <div className="mb-1 text-3xs font-bold text-text-secondary">ستاپ های فعال (موتور سمت سرور)</div>
         {setups.length > 0 ? (
           <div className="flex flex-wrap gap-1">
             {setups.map((s) => (
@@ -191,13 +193,13 @@ export function FtsTrendPanel({ data }: { data: FtsAnalysisData | null | undefin
             ))}
           </div>
         ) : (
-          <p className="text-[10px] text-text-muted">ستاپ فعالی از موتور سمت سرور گزارش نشده</p>
+          <p className="text-3xs text-text-muted">موتور سرور هیچ ستاپ فعالی گزارش نکرده است</p>
         )}
       </div>
 
       {/* جزئیات موتور خروج */}
       <div>
-        <div className="mb-1 text-[11px] font-bold text-text-secondary">موتور خروج چهارلایه</div>
+        <div className="mb-1 text-3xs font-bold text-text-secondary">موتور خروج چهارلایه</div>
         <dl className="flex flex-col gap-1 text-xs">
           <Row
             label="حد ضرر سخت"
@@ -223,7 +225,7 @@ export function FtsTrendPanel({ data }: { data: FtsAnalysisData | null | undefin
       {data.point_hunt?.active ? (
         <div className="rounded-xl border border-[var(--hairline)] bg-bg-card/40 p-2">
           <div className="mb-1 flex items-center justify-between">
-            <span className="text-[11px] font-bold text-text-secondary">شکار نقطه (کف دایامتریک)</span>
+            <span className="text-3xs font-bold text-text-secondary">شکار نقطه (کف دایامتریک)</span>
             <Badge tone="blue">{toFaDigits(data.point_hunt.touches ?? 0)} لمس</Badge>
           </div>
           <dl className="flex flex-col gap-1 text-xs">

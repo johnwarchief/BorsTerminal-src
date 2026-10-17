@@ -32,7 +32,7 @@ function pctText(v: number | null | undefined): string | null {
 function unknownReason(row: ClientShareFields): string {
   if (row.pct_basis == null && row.ctv_d == null) {
     return 'ارزشِ خرید و فروشِ حقیقی و حقوقی برایِ این نماد منتشر نشده است. '
-      + 'TSETMC مبدأِ ارزش را پس از پایانِ نشست می‌دهد و ما هرگز از ضربِ حجم در '
+      + 'TSETMC مبدأِ ارزش را پس از پایانِ روز معاملاتی می‌دهد و ما هرگز از ضربِ حجم در '
       + 'قیمت نمی‌سازیم؛ پس «نامشخص» خوانده می‌شود، نه صفر.';
   }
   return 'ارزشِ مبدأ برایِ این نماد کامل نیست (یک گروه عدد ندارد)، پس سهمِ آن '
@@ -42,8 +42,8 @@ function unknownReason(row: ClientShareFields): string {
 function sessionNote(row: ClientShareFields): string {
   const d = dEvenToJalali(row.ctv_d);
   if (!d) return '';
-  if (row.pct_is_current === 1) return ` — از نشستِ همان روزِ تابلو (${d})`;
-  return ` — از نشستِ ${d}؛ TSETMC ارزشِ گروه‌ها را برایِ نشستِ جاری هنوز منتشر نکرده`;
+  if (row.pct_is_current === 1) return ` — از همان روزِ تابلو (${d})`;
+  return ` — از ${d}؛ TSETMC ارزشِ گروه‌ها را برای روزِ جاری هنوز منتشر نکرده`;
 }
 
 function SideRow({
@@ -65,16 +65,16 @@ function SideRow({
     <div className="flex items-center gap-1.5" data-testid={testId}
          data-state={known ? 'ok' : 'unknown'}
          title={`مبنایِ محاسبه: ${basis}${session}`}>
-      <span className={`shrink-0 ${dense ? 'text-3xs' : 'text-[9px]'} text-text-muted`}>{label}</span>
+      <span className={`shrink-0 ${dense ? 'text-3xs' : 'text-3xs'} text-text-muted`}>{label}</span>
       {known ? (
         <>
-          <span className={`num ${dense ? 'text-3xs' : 'text-[10px]'} font-bold text-accent-green`}>
+          <span className={`num ${dense ? 'text-3xs' : 'text-3xs'} font-bold text-accent-green`}>
             حقیقی {r}
           </span>
           <span aria-hidden="true" className="h-1 flex-1 min-w-6 overflow-hidden rounded-full bg-accent-blue/25">
             <span className="block h-full rounded-full bg-accent-green" style={{ width: `${share}%` }} />
           </span>
-          <span className={`num ${dense ? 'text-3xs' : 'text-[10px]'} font-bold text-accent-blue`}>
+          <span className={`num ${dense ? 'text-3xs' : 'text-3xs'} font-bold text-accent-blue`}>
             {l} حقوقی
           </span>
         </>

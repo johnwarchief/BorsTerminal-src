@@ -16,7 +16,8 @@ HDRS = cf._headers() if hasattr(cf, "_headers") else {"User-Agent": "Mozilla/5.0
 
 def last_publish(sym):
     conn = sqlite3.connect(DB, timeout=60)
-    r = conn.execute("SELECT MAX(publish_date) FROM codal_notices WHERE symbol=?", (sym,)).fetchone()
+    r = conn.execute("SELECT MAX(" + CP.pub_canon_sql() + ") FROM codal_notices"
+                       " WHERE symbol=?", (sym,)).fetchone()
     conn.close()
     if not r or not r[0]:
         return None
@@ -93,11 +94,10 @@ def update_symbol(sym, from_date=None):
 
 
 def dedupe_symbol(sym):
-    """Task 2 — جمعِ ردیف‌هایِ یکِ نماد، با **همان** قاعدۀ `codal_fetcher.collapse_symbol`.
+    """ورودی legacy؛ collapse_symbol رکوردهای منبع با tracing_no متفاوت را حفظ می‌کند.
 
-    این تابع نسخهٔ خودش را داشت («هر period_end فقط آخرین tracing_no») که رویِ
-    ۱۱ زوجِ مستقل+تلفیقیِ بانکِ امروز، ردیفِ مستقل را حذف و تلفیقی را نگه می‌داشت
-    — برعکسِ مبنایِ جزوه. قاعده باید درِ یکِ جا زندگی کند."""
+    انتخاب یک مرجع برای period در read-model انجام می‌شود؛ یک دورهٔ مشترک به‌تنهایی
+    مدرک تکراری‌بودن نیست و این wrapper عمداً رکوردی را حذف نمی‌کند."""
     conn = sqlite3.connect(DB, timeout=60, isolation_level=None)
     try:
         removed, removed_ms = cf.collapse_symbol(conn, sym)

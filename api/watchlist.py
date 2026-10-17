@@ -45,14 +45,19 @@ def post_watchlist(payload: dict = None):
     symbol = str(payload.get("symbol") or "").strip()
     if not symbol:
         return {"status": "error", "message": "نماد ارسال نشده"}
+    existed = False
     try:
         import watchlist_store
         conn = get_user_db()
         try:
             cap = int(load_fts_config().get("watchlist_max", 50) or 50)
             cap = max(1, min(cap, watchlist_store.USER_WATCHLIST_MAX))
-            if (watchlist_store.get(conn, fts_engine.norm_fa(symbol)) is None
-                    and watchlist_store.count(conn) >= cap):
+            # «از قبل موجود» را خودِ بانک می‌گوید، نه حافظۀ فرانت: افزودنِ
+            # دسته‌ای از جدول تحویل باید صادق بگوید «۳ تایِ تازه، ۲ تاش که
+            # از قبل بود» — حتی اگر کاربر فهرست را هرگز باز نکرده باشد.
+            prior = watchlist_store.get(conn, fts_engine.norm_fa(symbol))
+            existed = prior is not None
+            if prior is None and watchlist_store.count(conn) >= cap:
                 return {"status": "error", "message":
                         "سقف واچ‌لیست (%d سهم) پر است — از پنل تنظیمات کدال "
                         "آن را تغییر دهید" % cap, "limit": cap}
@@ -66,7 +71,8 @@ def post_watchlist(payload: dict = None):
         return {"status": "error", "message": str(e)[:200]}
     if rec is None:
         return {"status": "error", "message": "نماد نامعتبر (تهی پس از نرمال‌سازی)"}
-    return {"status": "success", "watch": rec, "count": n, "limit": cap}
+    return {"status": "success", "watch": rec, "count": n, "limit": cap,
+            "existed": existed}
 
 @router.delete("/api/watchlist/{symbol}")
 def delete_watchlist(symbol: str):

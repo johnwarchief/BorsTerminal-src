@@ -32,6 +32,7 @@ function candidate(status: Record<FunnelStageKey, StageStatus>, symbol = 'خود
     row: { p_last: 131, percent_change: 0.8 } as Candidate['row'],
     screen: null, jetEvidence: null, assemblyVeto: false, assemblyWhy: '',
     screenRank: 2,
+    fundCaveat: false, fundPassed: 4, fundMinPass: 3,
   };
 }
 

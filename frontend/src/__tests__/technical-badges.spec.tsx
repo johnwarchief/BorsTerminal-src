@@ -86,7 +86,7 @@ describe('بج استریپ رندر', () => {
   it('حالت خالی صادقانه پیام می دهد', () => {
     render(<FtsBadgeStrip data={null} empty={true} />);
     expect(screen.getByTestId('fts-badges-empty')).toBeInTheDocument();
-    expect(screen.getByText(/تحلیل سمت سرور برای این نماد موجود نیست/)).toBeInTheDocument();
+    expect(screen.getByText(/برای این نماد تحلیل FTS آماده نیست/)).toBeInTheDocument();
   });
 
   it('در حال بارگذاری نشان انتظار', () => {
@@ -101,7 +101,7 @@ describe('بج استریپ رندر', () => {
     expect(strip.textContent).toContain('روند روزانه');
     expect(strip.textContent).toContain('شکار نقطه');
     expect(strip.textContent).toContain('موتور خروج');
-    // فیبو طلایی داخل کمربند است
+    // فیبو طلایی داخل زون است
     expect(strip.textContent).toContain('۶۱.۸-۷۰٪');
     // حکم احتیاط
     expect(strip.textContent).toContain('احتیاط');
@@ -111,7 +111,7 @@ describe('بج استریپ رندر', () => {
 describe('کارت تحلیل ساختاری', () => {
   it('بدون داده حالت انتظار', () => {
     render(<FtsTrendPanel data={null} />);
-    expect(screen.getByText('در انتظار داده تحلیل...')).toBeInTheDocument();
+    expect(screen.getByText('در انتظار دریافت تحلیل…')).toBeInTheDocument();
   });
 
   it('سه تایم فریم، فیبو، موتور خروج و ستاپ ها', () => {
@@ -120,9 +120,9 @@ describe('کارت تحلیل ساختاری', () => {
     expect(panel.textContent).toContain('روزانه');
     expect(panel.textContent).toContain('هفتگی');
     expect(panel.textContent).toContain('ماهانه');
-    expect(panel.textContent).toContain('کمربند طلایی');
+    expect(panel.textContent).toContain('زون طلایی');
     expect(panel.textContent).toContain('حد ضرر سخت');
-    expect(panel.textContent).toContain('زیرِ کف ۲۰ نشستِ اخیر');
+    expect(panel.textContent).toContain('زیرِ کف ۲۰ روز معاملاتیِ اخیر');
     expect(panel.textContent).toContain('RSI');
     // ستاپ شکار نقطه فعال
     const setups = setupBadgesOf(fixture());

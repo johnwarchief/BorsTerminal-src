@@ -160,7 +160,7 @@ describe('شاخص ۲ — مبنایِ غیرتلفیقی (ص ۴)', () => {
         physicalApplicable
       />,
     );
-    expect(screen.getByTestId('drilldown-eps-na').textContent).toContain('N/A');
+    expect(screen.getByTestId('drilldown-eps-na').textContent).toContain('کاربرد ندارد');
     expect(screen.getByTestId('drilldown-eps-na').textContent).toContain('تلفیقی');
     expect(screen.queryByText(/سه سالِ متوالی بالاتر ✓/)).toBeNull();
   });
@@ -174,7 +174,7 @@ describe('شاخص ۲ — مبنایِ غیرتلفیقی (ص ۴)', () => {
       i1_pass: true, i3_pass: true, i4_pass: true, i5_pass: true, excluded: false,
     } as unknown as FtsScreenRow;
     render(<FtsScreenTable rows={[r]} onSelect={() => {}} />);
-    expect(screen.getByTestId('fts-na-2_eps_trend').textContent).toContain('N/A (تلفیقی)');
+    expect(screen.getByTestId('fts-na-2_eps_trend').textContent).toContain('کاربرد ندارد (تلفیقی)');
     expect(rejectedFor(r as unknown as FtsScreenRow, '2')).toBeNull();
   });
 });
@@ -212,7 +212,7 @@ describe('شاخص ۴ — پتانسیل سود + شاهدِ فروش/ارزش (
     // ارزشِ بازارِ غایب «صفرِ مردود» نمی‌شود: علت در جای خودش می‌آید و فرمول
     // تا همان متغیر سالم نمایش داده می‌شود.
     expect(panel.textContent).toContain('ارزش بازار در دسترس نیست');
-    expect(panel.textContent).toContain('خروجی قابل محاسبه نیست');
+    expect(panel.textContent).toContain('این مقدار با اطلاعات فعلی قابل محاسبه نیست');
     expect(panel.textContent).toContain('حاشیه ناخالص');
   });
 });

@@ -6,7 +6,7 @@
 // محاسبه می‌شوند (آخرین EPS ۱۲ماهه به‌عنوان جانشین NAV تا وقتی بک‌اند
 // ستون NAV منتشر کند) و از مقایسه با گروه نامربوط «سایر» پرهیز می‌شود.
 import { useEffect, useMemo, useState } from 'react';
-import { useParams } from 'react-router';
+import { useParams, useSearchParams } from 'react-router';
 import { Badge } from '@shared/components/Badge';
 import { EmptyState } from '@shared/components/EmptyState';
 import { RetryAction } from '@shared/components/RetryAction';
@@ -32,6 +32,7 @@ import { DataGapBanner } from '../components/DataGapBanner';
 import { QuarterlyTrend } from '../components/QuarterlyTrend';
 import { FtsScreenTable } from '../ui/FtsScreenTable';
 import { FtsSettingsTrigger } from '../ui/FtsSettingsDrawer';
+import { CodalHealthStrip } from '../components/CodalHealthStrip';
 
 const DIR_TONE = { bullish: 'green', bearish: 'red', neutral: 'gray' } as const;
 const DIR_LABEL = { bullish: 'بنیاد روبه‌رشد', bearish: 'بنیاد روبه‌افت', neutral: 'بنیاد معادل' } as const;
@@ -39,15 +40,36 @@ const DIR_LABEL = { bullish: 'بنیاد روبه‌رشد', bearish: 'بنیا�
 /** گروه صنعتی نامرتبط برای مقایسه (هلدینگ‌ها با آن سنجیده نمی‌شوند) */
 const OTHER_GROUP = 'سایر';
 
+/** `?drill=` فقط پنج مقدارِ مجاز دارد؛ هر چیزِ دیگر یعنی «پنل بسته» — نه حدس. */
+function readDrill(raw: string | null): DrillDownKey | null {
+  return raw === '1' || raw === '2' || raw === '3' || raw === '4' || raw === '5'
+    ? (raw as DrillDownKey) : null;
+}
+
 
 export default function FundamentalPage() {
   const params = useParams();
+  const [query, setQuery] = useSearchParams();
   const stored = useSymbolStore((s) => s.symbol);
   const setSymbol = useSymbolStore((s) => s.setSymbol);
   const symbol = params.symbol ?? stored;
   const [drawerOpen, setDrawerOpen] = useState(false);
   /** شاخص فعال در Drill-Down — null یعنی پنل بسته */
-  const [drillKey, setDrillKey] = useState<DrillDownKey | null>(null);
+  const [drillKey, setDrillKey] = useState<DrillDownKey | null>(() => readDrill(query.get('drill')));
+  /** پنلِ چپ (`SymbolInspector`) و جدولِ غربالگری با `?drill=N` همین‌جا می‌آیند.
+   *  بی‌این همنگامی، کلیکِ دوباره رویِ همان کارت پس از بستنِ پنل هیچ اتفاقی
+   *  نمی‌انداخت (آدرس عوض نشده بود) — و بستنِ پنل هم آدرسِ «باز» جا می‌گذاشت. */
+  const urlDrill = readDrill(query.get('drill'));
+  useEffect(() => {
+    setDrillKey(urlDrill);
+  }, [urlDrill]);
+  const toggleDrill = (k: DrillDownKey) => {
+    const next = drillKey === k ? null : k;
+    setDrillKey(next);
+    const q = new URLSearchParams(query);
+    if (next) q.set('drill', next); else q.delete('drill');
+    setQuery(q, { replace: true });
+  };
 
   const screen = useFtsScreen();
   /** تقویم مجمعِ کل بازار در یک درخواست — برای برچسبِ ردیف‌ها */
@@ -107,6 +129,15 @@ export default function FundamentalPage() {
   const qRows = useMemo(() => quarters.data?.quarters ?? [], [quarters.data]);
   const fiscal = useMemo(() => deCumulateQuarters(qRows), [qRows]);
   const yoy = useMemo(() => profitYoY(fiscal), [fiscal]);
+
+  /** وقتی نشانی با `?drill=` آمده (لینکِ پنلِ چپ، یا هر ورودِ بیرونی) پنلِ
+   * *همان* شاخص باز می‌شود و به چشم هم می‌آید — بی‌این، ردیفِ پنل زیرِ تاشِ
+   * صفحه می‌ماند و کاربر فکر می‌کند کلیک بی‌اثر بوده است. */
+  useEffect(() => {
+    if (!urlDrill) return;
+    const el = document.querySelector(`[data-testid="fts-drilldown-${urlDrill}"]`);
+    if (el && typeof el.scrollIntoView === 'function') el.scrollIntoView({ block: 'center' });
+  }, [urlDrill, symbol, card.data?.symbol]);
 
   const history = useMemo(() => card.data?.history ?? [], [card.data]);
   const latestPeriod = qRows[0]?.period_end ?? history[0]?.period_end ?? null;
@@ -176,6 +207,9 @@ export default function FundamentalPage() {
     // جدول کلِ صفحه را در دیدگاه‌های کوچک از کادر بیرون می‌زند.
     return (
       <div className="flex flex-col gap-2 min-w-0">
+        {/* تازگیِ دادهٔ بنیادی پیشِ جدول: «چرا این عدد دیروز است» سؤالِ اولِ
+            این تب است، و پاسخ از خودِ خطِ دریافت می‌آید نه از حدسِ رابط. */}
+        <CodalHealthStrip />
         {screen.isLoading ? (
           /* پیش از این در حینِ بارگذاری، rows=[] بود و جدول پیامِ
            * «ردیفی از غربالگری FTS نیامد» نشان می‌داد — اولین اسکنِ بازار
@@ -247,7 +281,8 @@ export default function FundamentalPage() {
   // #205: علتِ رد را همان پرچم‌های موتور می‌گوید، با عدد و آستانۀ خودشان
   const rejectLines = rejectReasons(passes, card.data.indicators ?? null);
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-4" data-testid="fundamental-page">
+      <CodalHealthStrip />
       <div className="flex flex-wrap items-center gap-2">
         <h2 className="text-base font-black text-text-primary">{symbol}</h2>
         {sector ? <span className="text-xs text-text-secondary">{sector}</span> : null}
@@ -272,7 +307,7 @@ export default function FundamentalPage() {
         <div className="glass-panel panel-in p-4" data-testid="holding-pnav-panel">
           <div className="mb-2 flex items-center justify-between">
             <h3 className="text-sm font-black text-text-primary">ارزش‌گذاری هلدینگ</h3>
-            <Badge tone="yellow">N/A</Badge>
+            <Badge tone="yellow">قابل ارزیابی نیست</Badge>
           </div>
           <p className="text-2xs leading-relaxed text-text-secondary" data-testid="holding-nav-na">
             این نماد سرمایه‌گذاری/هلدینگ است و در کدال ارزش خالص دارایی (NAV) منتشر نشده؛
@@ -411,7 +446,7 @@ export default function FundamentalPage() {
         audit={audit}
         physicalApplicable={physicalApplicable}
         activeDrill={drillKey}
-        onDrill={(k) => setDrillKey((cur) => (cur === k ? null : k))}
+        onDrill={toggleDrill}
         quarters={fiscal}
       />
 

@@ -177,8 +177,11 @@ describe('پنلِ معامله: قراردادِ بی‌سفارشِ واقعی
     const before = fetchMock.mock.calls.length;
     await waitFor(() => expect(screen.getByTestId('watch-order-qty')).toBeInTheDocument());
     fireEvent.change(screen.getByTestId('watch-order-qty'), { target: { value: '۱۰۰' } });
+    // رقمِ فارسی باید رویِ سطر بماند: sanitationِ پیشین با `\d` (که درِ JS فقط
+    // لاتین است) عددِ خودش را می‌بلعید و «۱۰۰» به '' می‌رسید — یعنی همان
+    // چیزی که این آزمون تصادفاً سبز می‌کرد.
+    expect(screen.getByTestId('watch-order-qty')).toHaveValue('۱۰۰');
     fireEvent.click(screen.getByTestId('watch-order-buy'));
-    expect(screen.getByTestId('watch-order-qty')).toHaveValue('');
     expect(fetchMock.mock.calls.length).toBe(before);
   });
 });
@@ -195,10 +198,18 @@ describe('ورودِ بی‌کلیک به زیرتبِ دیده‌بان', () =>
         <W />
       </QueryClientProvider>,
     );
+    // پرونده درِ تب‌هاست (مأموریتِ پروندۀ نماد، بندِ ۲): سه پنل حذف نشده‌اند،
+    // هر یک تبِّ خودش را دارد — پس تست هم تب را می‌زند و همان ادعا را می‌کند.
+    await waitFor(() => expect(screen.getByTestId('watch-summary')).toHaveAttribute('data-symbol', 'شپنا'));
+    fireEvent.click(screen.getByTestId('watch-tab-chart'));
     await waitFor(() => expect(screen.getByTestId('watch-chart')).toHaveAttribute('data-symbol', 'شپنا'));
-
-    expect(screen.getByTestId('watch-orderbook')).toHaveAttribute('data-symbol', 'شپنا');
-    expect(screen.getByTestId('watch-summary')).toHaveAttribute('data-symbol', 'شپنا');
+    fireEvent.click(screen.getByTestId('watch-tab-market'));
+    await waitFor(() => expect(screen.getByTestId('watch-orderbook')).toHaveAttribute('data-symbol', 'شپنا'));
+    // تب با انتخابِ نماد عوض نمی‌شود (کاربر وسطِ بررسیِ چارت نباید به اول بپرد)
+    fireEvent.click(screen.getByTestId('watch-tab-chart'));
+    fireEvent.click(screen.getByTestId('watch-row-فولاد'));
+    await waitFor(() => expect(screen.getByTestId('watch-chart')).toHaveAttribute('data-symbol', 'فولاد'));
+    expect(screen.getByTestId('watch-tab-chart')).toHaveAttribute('aria-selected', 'true');
   });
 });
 
@@ -273,6 +284,24 @@ describe('ستون‌هایِ «تکنیکال» و «بنیادی» درِ دی
     const tr = screen.getByTestId('watch-row-ولرز');
     expect(tr.textContent).toContain('—');
     expect(screen.getByTestId('watch-matrix-state').textContent).toContain('۰ نماد');
+  });
+
+  it('ستونِ «برچسب‌های تابلو» همان هفت پرچمِ فید را با MicroBadgeِ خودِ تابلو می‌زند (رأیِ مالک ۱۴۰۵-۰۷-۲۱)', async () => {
+    // بی‌موتورِ دوم: چیپ‌ها فقط از f_*ِ همان ردیفِ فید می‌آیند (patternBadges).
+    const hot = row({ symbol: 'زرنخ', ins_code: 'Z1', f_smart: true, f_legal: true, f_roobi: false });
+    const cold = row();
+    mockFeed([hot, cold]);
+    renderTable([hot, cold]);
+    await cellHas('watch-row-زرنخ', '۱٬۰۲۵');
+    const chips = screen.getByTestId('watch-tape-badges-زرنخ');
+    expect(chips.textContent).toContain('پول هوشمند');
+    expect(chips.textContent).toContain('کد به کد');
+    expect(chips.textContent).not.toContain('کف‌روب');
+    // بج‌ها همان کامپوننتِ تابلویند (data-testid=badge-<pattern>) — ترجمۀ دوم نیست
+    expect(chips.querySelector('[data-testid="badge-smart"]')).not.toBeNull();
+    expect(chips.querySelector('[data-testid="badge-legal"]')).not.toBeNull();
+    // نمادِ بی‌پرچم «بی‌برچسب» می‌گیرد، نه جایِ خالیِ بی‌دلیل
+    expect(screen.getByTestId('watch-tape-badges-شپنا').textContent).toBe('بی‌برچسب');
   });
 
   it('بی‌ماتریس جدول نمی‌شکند: هم «۲۰۰ با statusِ error» و هم HTTP ۴۰۴ به پاورقی می‌آیند', async () => {

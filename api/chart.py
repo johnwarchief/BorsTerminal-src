@@ -835,7 +835,7 @@ def _corporate_events(symbol):
     except Exception:
         return []
     try:
-        _pred, _params = sym_pred("l_val18", symbol)
+        _pred, _params = sym_pred(conn, "l_val18", symbol, "board")
         row = conn.execute(
             f"SELECT ins_code FROM instruments WHERE {_pred}"
             " ORDER BY updated_at DESC LIMIT 1", _params).fetchone()
@@ -886,8 +886,8 @@ def _watch_live_bar(symbol, after_date):
             # (p_open/p_max/p_min وجود نداشتند → OperationalError هر بار توسط
             #  exceptِ خاموش بلعیده می‌شد و کندل زندهٔ امروز هرگز تزریق نمی‌شد).
             #  price_first = اولین معامله (هم‌خانمان با FIX-1)، p_closing = پایانی.
-            _p18, _a18 = sym_pred("i.l_val18", symbol)
-            _p30, _a30 = sym_pred("i.l_val30", symbol)
+            _p18, _a18 = sym_pred(conn, "i.l_val18", symbol, "board")
+            _p30, _a30 = sym_pred(conn, "i.l_val30", symbol, "board")
             row = conn.execute(
                 "SELECT m.price_first, m.price_max, m.price_min, m.p_closing, m.q_tot_tran, "
                 "       m.d_even, m.p_last "
@@ -1119,20 +1119,24 @@ def get_chart_tsetmc(symbol: str):
         # ردیفِ دلخواهِ SQLite را می‌گرفتند → در دو اجرا، نمودارِ یک اوراقِ «دیگر»
         # با همان نام سرو می‌شد. اکنون newest-first: ردیفِ به‌روزتر (ابزارِ فعلیِ
         # بازار) به‌صورت قطعی انتخاب می‌شود.
-        _pred, _params = sym_pred("l_val18", symbol)
+        _pred, _params = sym_pred(conn, "l_val18", symbol, "board")
         ins = conn.execute(
             f"SELECT ins_code FROM instruments WHERE {_pred} ORDER BY updated_at DESC LIMIT 1", _params
         ).fetchone()
         if not ins:
+            # همان خانوادۀ نوشتاریِ خودِ تابلو (فاصله/نیم‌فاصله/ي-ك) — نه حذفِ
+            # رقمِ انتهایی: درِ جهانِ تابلو «خودرو2» ابزارِ دیگری است.
             try:
                 import fts_engine
-                norm_s = fts_engine.norm_fa(symbol)
+                _bvar = list(fts_engine.symbol_variants(conn, symbol, "board"))
             except Exception:
-                norm_s = symbol
-            ins = conn.execute(
-                "SELECT ins_code FROM instruments WHERE REPLACE(REPLACE(REPLACE(l_val18, 'ك', 'ک'), 'ي', 'ی'), 'ى', 'ی') = ? ORDER BY updated_at DESC LIMIT 1",
-                (norm_s,)
-            ).fetchone()
+                _bvar = [symbol]
+            if _bvar:
+                ins = conn.execute(
+                    "SELECT ins_code FROM instruments WHERE l_val18 IN (%s) "
+                    "ORDER BY updated_at DESC LIMIT 1" % ",".join("?" * len(_bvar)),
+                    _bvar,
+                ).fetchone()
         conn.close()
         if not ins:
             fb = _fallback_local()
@@ -1343,7 +1347,7 @@ def get_key_levels(symbol: str):
     try:
         conn = sqlite3.connect(DB_PATH, timeout=30)
         conn.execute("PRAGMA journal_mode=WAL")
-        _pred, _params = sym_pred("symbol", symbol)
+        _pred, _params = sym_pred(conn, "symbol", symbol, "board")
         _raw = conn.execute(
             "SELECT symbol, date, open, high, low, close, volume, last FROM price_history "
             "WHERE %s ORDER BY date DESC, volume DESC LIMIT 250" % _pred,
@@ -1395,7 +1399,7 @@ def get_order_book(symbol: str):
     try:
         conn = sqlite3.connect(DB_PATH, timeout=30)
         conn.row_factory = sqlite3.Row
-        _pred, _params = sym_pred("l_val18", symbol)
+        _pred, _params = sym_pred(conn, "l_val18", symbol, "board")
         ins = conn.execute(
             f"SELECT ins_code FROM instruments WHERE {_pred}"
             " ORDER BY updated_at DESC LIMIT 1", _params).fetchone()
@@ -1697,7 +1701,7 @@ def get_ma_events(symbol: str, days: int = Query(730)):
     try:
         conn = sqlite3.connect(DB_PATH, timeout=30)
         conn.execute("PRAGMA journal_mode=WAL")
-        _pred, _params = sym_pred("symbol", symbol)
+        _pred, _params = sym_pred(conn, "symbol", symbol, "board")
         _raw = conn.execute(
             "SELECT date, close, volume, last FROM price_history WHERE %s "
             "ORDER BY date DESC, volume DESC LIMIT ?" % _pred,
@@ -1757,7 +1761,7 @@ def get_chart_db(symbol: str, adjustment: int = 3):
         conn = sqlite3.connect(DB_PATH, timeout=30)
         conn.execute("PRAGMA journal_mode=WAL")
         try:
-            _pred, _params = sym_pred("symbol", symbol)
+            _pred, _params = sym_pred(conn, "symbol", symbol, "board")
             _raw = conn.execute(
                 "SELECT date, open, high, low, close, volume, last, value FROM price_history "
                 "WHERE %s ORDER BY date DESC, volume DESC" % _pred, _params).fetchall()
@@ -1852,7 +1856,7 @@ def get_patterns(symbol: str):
     try:
         conn = sqlite3.connect(DB_PATH, timeout=30)
         conn.execute("PRAGMA journal_mode=WAL")
-        _pred, _params = sym_pred("symbol", symbol)
+        _pred, _params = sym_pred(conn, "symbol", symbol, "board")
         _raw = conn.execute(
             "SELECT symbol, date, open, high, low, close, volume, last FROM price_history "
             "WHERE %s ORDER BY date DESC, volume DESC LIMIT 250" % _pred,

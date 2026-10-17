@@ -74,7 +74,22 @@ DST = "market.db.lzma"
 # نشستِ آخر این را نمی‌بیند. سنجشِ ۱۴۰۵-۰۷-۰۹: daily_prices این ماشین ۷۲٬۲۸۰ در
 # برابر ۸۷٬۱۴۶ِ فایلِ منتشرشده، و tape_historyِ بانکِ نصبی ۱۵۱٬۳۵۶ در برابر
 # ۱۸۳٬۹۷۳ — هر دو «تازه» بودند و --pack بی‌استثنا قبول می‌کرد.
-COUNT_TABLES = ("daily_prices", "financial_statements", "codal_notices", "tape_history")
+COUNT_TABLES = ("daily_prices", "financial_statements", "codal_notices", "tape_history",
+                # پنجرۀ [ih] اسلات‌محورِ دیدهبان و [is5]/[is6]: بی این دو،
+                # «پول هوشمند/کدبه‌کد» روی همان نمادهایی که سایت کلید ۶ را
+                # منتشر نمی‌کند خاموش می‌مانند و پنج فیلتر با پنجرۀ کهنه
+                # حساب می‌شوند. نبودِ جدول `None` است (بیس‌لاینِ قدیمی)، پس
+                # release را بی‌دلیل نمی‌بندد — ولی کوچک‌ترشدنش بسته می‌شود.
+                "tape_ih_slot", "tse_inst_stat")
+
+# (جدول، چه چیزی بی‌آن خاموش می‌ماند) — کفِ عمقِ پنجره از `MIN_SLOT`.
+TAPE_WINDOWS = (
+    ("tape_ih_slot", "پنج فیلترِ فایلِ [ih][k] و پلکانِ جت"),
+    ("tse_inst_stat", "مبناءِ [is6] درِ «پول هوشمند» و «کدبه‌کد»"),
+)
+# پنجرۀ فایل رویِ اسلات‌هایِ ۰..۲۹ می‌گردد؛ کمتر از آن یعنی داوریِ پنج فیلتر
+# رویِ تاریخچۀ نصفه حساب می‌شود (باندِ خودِ سایت: 181,971 خانۀ اسلات ۰..۵۹).
+MIN_SLOT = 29
 
 
 def row_counts(conn, tables=COUNT_TABLES):
@@ -203,6 +218,30 @@ def check_structure(conn, tag):
     miss = sorted(REQUIRED - have)
     if miss:
         print("%s_INCOMPLETE missing=%s" % (tag.upper(), ",".join(miss)))
+        return 1
+    # ── پنجرۀ [ih] اسلات‌محور و کلیدهای [is] ────────────────────────────────
+    # رأیِ مالک (بند ۲ از مأموریت ۱۴۰۵-۰۷-۲۱): بی‌این دو، `api/market` بی‌صدا
+    # به مسیرِ کهنه می‌افتد و «تطبیق با سایت» رویِ پنجرۀ غایب اعلام می‌شود.
+    # نبودِ جدول یا پنجرۀ کوتاه‌تر از ۳۰ اسلات ریلیز را می‌بندد، نه اینکه فقط
+    # هشدار بدهد. کفِ *حجمِ* ردیف این‌جا نیست: «کم‌شدنِ» بیس‌لاین را
+    # `shrinking()` رویِ همان COUNT_TABLES می‌بندد، و گاردهایِ بانکِ مصنوعی
+    # باید بتوانند با چند ردیفِ سالم هم ساختار را ثابت کنند.
+    for t, why in TAPE_WINDOWS:
+        if t not in have:
+            print("%s_NO_TAPE_WINDOW table=%s required_by=%s" % (tag.upper(), t, why))
+            return 1
+    try:
+        top = conn.execute("SELECT MAX(slot) FROM tape_ih_slot").fetchone()[0]
+        has_is6 = conn.execute("SELECT COUNT(is6) FROM tse_inst_stat").fetchone()[0]
+    except sqlite3.Error as e:
+        print("%s_TAPE_WINDOW_UNREADABLE err=%r" % (tag.upper(), e))
+        return 1
+    if (top if top is not None else -1) < MIN_SLOT:
+        print("%s_TAPE_WINDOW_SHORT_MAX_SLOT max_slot=%s required=%d"
+              % (tag.upper(), top, MIN_SLOT))
+        return 1
+    if has_is6 < 1:
+        print("%s_NO_IS6 mabna_for_smart_money_absent" % tag.upper())
         return 1
     if fs < MIN_FS:
         print("%s_TOO_SMALL financial_statements rows=%d" % (tag.upper(), fs))

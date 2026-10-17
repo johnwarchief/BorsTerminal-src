@@ -14,8 +14,12 @@ export function SymbolContextStrip() {
   const togglePin = useSymbolStore((s) => s.togglePin);
   const clearSymbol = useSymbolStore((s) => s.clearSymbol);
 
-  const rawRow = useInspectorRawRow();
-  const board = useInspectorBoard();
+  // نوارِ بی‌نماد هیچ چیز نمی‌فرمایاند، پس نباید خوراکِ تابلو را هم بخواهد:
+  // سنجشِ مستقیمِ ۱۳×۷۶۸ — همینِ دو فراخوانِ بی‌گیت، GET /api/market را
+  // رویِ هرِ نه مسیر می‌انداخت وِ پرسش‌هایِ خودِ صفحه را پشتِ آن می‌چرخاند.
+  const want = symbol.length > 0;
+  const rawRow = useInspectorRawRow({ enabled: want });
+  const board = useInspectorBoard({ enabled: want });
   const veto = useSymbolVeto(symbol);
 
   const location = useLocation();
@@ -39,10 +43,10 @@ export function SymbolContextStrip() {
   ];
 
   return (
-    <div
+    <div data-pinned="strip" 
       role="region"
       aria-label={`اطلاعات نماد ${symbol}`}
-      className="sticky top-9 z-30 flex min-h-[38px] w-full flex-wrap items-center justify-between gap-2 border-b border-border-c/70 bg-bg-secondary/95 px-3 py-1 text-xs backdrop-blur-md shadow-xs transition-all duration-150"
+      className="symbol-strip-bar sticky top-[var(--pinned-topbar,36px)] z-30 flex min-h-[38px] w-full flex-wrap items-center justify-between gap-2 border-b border-border-c/70 bg-bg-secondary/95 px-3 py-1 text-xs backdrop-blur-md shadow-xs transition-all duration-150"
     >
       {/* سمت راست (شروع): شناسه و مشخصات نماد */}
       <div className="flex flex-wrap items-center gap-2">

@@ -108,7 +108,7 @@ function SplitFilterChip({
   const chipTitle =
     !hidden || hidden.count === 0
       ? QUICK_LABELS[filter]
-      : `${QUICK_LABELS[filter]} — ${toFaDigits(hidden.count)} ردیفِ واجدِ شرط در تابلویِ فعلی دیده نمی‌شوند`
+      : `${QUICK_LABELS[filter]} — ${toFaDigits(hidden.count)} نمادِ واجدِ شرایط در تابلویِ فعلی نمایش داده نمی‌شود`
         + (doorLabel ? ` (${doorLabel})` : '')
         + doorHint;
   // شمارشِ «سنجیده نشد» هم‌محدودۀ شمارشِ خودِ چیپ است (ردیف‌های همین نما)، نه
@@ -153,7 +153,7 @@ function SplitFilterChip({
             onClick={handleOpenConfig}
             title={`تنظیم آستانه‌های ${QUICK_LABELS[filter]}`}
             aria-label={`تنظیمات ${QUICK_LABELS[filter]}`}
-            className="flex items-center justify-center ps-1 pe-2 py-0.5 text-[11px] text-text-muted hover:text-accent-blue border-s border-border-c/60 focus:outline-none"
+            className="flex items-center justify-center ps-1 pe-2 py-0.5 text-3xs text-text-muted hover:text-accent-blue border-s border-border-c/60 focus:outline-none"
           >
             ⚙
           </button>
@@ -276,65 +276,83 @@ function AssetFilterMenu() {
   );
 }
 
-/** تعداد ردیف‌هایی که هر فیلتر سریع را فعال می‌کنند */
+/** یک بایتِ وضعیت برایِ هر ردیف: بیتِ f = «این ردیف فیلتر f را پاس می‌کند»،
+ *  بیتِ (f+۸) = «فیلتر f رویِ این ردیف سنجیده نشده». یک‌بار حساب می‌شود و
+ *  هر هفت شمارش از همین بایت‌ها خوانده می‌شود — پیش از این هر چیپ کلِ ردیف‌ها
+ *  را جدا می‌پیمود (۷ × ۶٬۰۰۰ داوری درِ هر بارِ رندر). */
+function verdictBits(rows: MarketRowsLike, config?: TapeFilterConfig): Uint16Array {
+  const bits = new Uint16Array(rows.length);
+  rows.forEach((r, i) => {
+    QUICK_FILTERS.forEach((f, j) => {
+      const state = config
+        ? tapeFilterState(r as unknown as Parameters<typeof tapeFilterState>[0], f, config)
+        : r[f] == null ? 'unevaluated' : r[f] ? 'pass' : 'fail';
+      if (state === 'pass') bits[i] |= 1 << j;
+      else if (state === 'unevaluated') bits[i] |= 1 << (j + 8);
+    });
+  });
+  return bits;
+}
+
+const bitOf = (f: QuickFilter) => 1 << QUICK_FILTERS.indexOf(f);
+
+/** شمارشِ **وابسته به نامزدِ جاری** (رأیِ مالک ۱۴۰۵-۰۷-۲۱): عددِ کنارِ هر چیپ
+ *  می‌گوید درِ همان مجموعه‌ای که الان رویِ میز است این فیلتر چند نامزد دارد —
+ *  نه درِ کلِّ بازار. برایِ خودِ فیلترِ انتخاب‌شده «مجموعۀ جاری» = ردیف‌هایی
+ *  که بقیۀ چیپ‌هایِ روشن را پاس کرده‌اند (leave-one-out)، پس چیپِ روشن هم
+ *  بی‌معنی به شمارۀ کلِّ ردیف‌ها نمی‌چسبد.
+ *  درِ «اجتماع» همان قاعده با اتحادِ بقیه است: چندتا از نامزدهایِ فعلی. */
+export function countQuickFilters(
+  rows: MarketRowsLike,
+  config?: TapeFilterConfig,
+  selected: readonly QuickFilter[] = [],
+  logic: 'and' | 'or' = 'and',
+): { matched: Record<QuickFilter, number>; unevaluated: Record<QuickFilter, number> } {
+  const bits = verdictBits(rows, config);
+  const zero = () => QUICK_FILTERS.reduce((a, f) => ({ ...a, [f]: 0 }), {} as Record<QuickFilter, number>);
+  const matched = zero();
+  const unevaluated = zero();
+  const sel = new Set(selected);
+  for (const f of QUICK_FILTERS) {
+    const others = QUICK_FILTERS.filter((g) => g !== f && sel.has(g));
+    const mask = others.reduce((m, g) => m | bitOf(g), 0);
+    const passBit = bitOf(f);
+    const unBit = bitOf(f) << 8;
+    for (const b of bits) {
+      const inBase = others.length === 0
+        ? true
+        : logic === 'or' ? (b & mask) !== 0 : (b & mask) === mask;
+      if (!inBase) continue;
+      if (b & passBit) matched[f] += 1;
+      if (b & unBit) unevaluated[f] += 1;
+    }
+  }
+  return { matched, unevaluated };
+}
+
+/** تعداد ردیف‌هایی که هر فیلتر سریع را فعال می‌کنند — درِ نامزدِ جاری. */
 export function countQuickMatches(
   rows: MarketRowsLike,
   config?: TapeFilterConfig,
+  selected: readonly QuickFilter[] = [],
+  logic: 'and' | 'or' = 'and',
 ): Record<QuickFilter, number> {
-  const out: Record<QuickFilter, number> = {
-    f_clock: 0,
-    f_susp: 0,
-    f_jet: 0,
-    f_roobi: 0,
-    f_noqteh: 0,
-    f_smart: 0,
-    f_legal: 0,
-  };
-  for (const r of rows) {
-    for (const f of QUICK_FILTERS) {
-      if (config) {
-        if (tapeFilterVerdict(r as unknown as Parameters<typeof tapeFilterVerdict>[0], f, config)) {
-          out[f] += 1;
-        }
-      } else {
-        if (r[f]) out[f] += 1;
-      }
-    }
-  }
-  return out;
+  return countQuickFilters(rows, config, selected, logic).matched;
 }
 
 /**
  * ردیف‌هایی که فیلتر رویشان اصلاً اجرا نشده (پرچمِ null)، به تفکیکِ فیلتر.
  * جدا از شمارشِ pass می‌ماند تا تولتیپِ چیپ بگوید «N سنجیده نشد» — نه اینکه
  * عددِ کوچکِ چیپ به‌جای «رد»، «نبودِ داده» را هم پنهان کند (مأموریت P0).
+ * همان نامزدِ جاری را می‌شمارد که `countQuickMatches` می‌شمارد.
  */
 export function countUnevaluated(
   rows: MarketRowsLike,
   config?: TapeFilterConfig,
+  selected: readonly QuickFilter[] = [],
+  logic: 'and' | 'or' = 'and',
 ): Record<QuickFilter, number> {
-  const out: Record<QuickFilter, number> = {
-    f_clock: 0,
-    f_susp: 0,
-    f_jet: 0,
-    f_roobi: 0,
-    f_noqteh: 0,
-    f_smart: 0,
-    f_legal: 0,
-  };
-  for (const r of rows) {
-    for (const f of QUICK_FILTERS) {
-      const state = config
-        ? tapeFilterState(r as unknown as Parameters<typeof tapeFilterState>[0], f, config)
-        : r[f] == null
-          ? 'unevaluated'
-          : r[f]
-            ? 'pass'
-            : 'fail';
-      if (state === 'unevaluated') out[f] += 1;
-    }
-  }
-  return out;
+  return countQuickFilters(rows, config, selected, logic).unevaluated;
 }
 
 type MarketRowsLike = { [K in QuickFilter]?: boolean | null }[];
@@ -515,7 +533,7 @@ export function MarketFilters({
   return (
     <div
       data-testid="market-filters-bar"
-      className="glass-panel panel-in flex flex-wrap items-center gap-2 w-full rounded-2xl p-2 shadow-sm"
+      className="glass-panel panel-in sticky top-[var(--pinned-h)] z-20 flex flex-wrap items-center gap-2 w-full rounded-2xl p-2 shadow-sm"
     >
       {/* #171: یک نوار به‌جای دو سطحِ روی‌هم — صنایع و چیپ‌ها سمتِ راست،
           جستجو/شمارندۀ نماد/بازۀ بروزرسانی سمتِ چپِ همان نوار. */}
@@ -566,10 +584,10 @@ export function MarketFilters({
           aria-pressed={screenLogic === 'or'}
           data-testid="screen-logic-toggle"
           title={quickFilters.length === 0
-            ? 'دو یا چند فیلتر را روشن کنید تا اشتراک/اجتماع معنا پیدا کند'
+            ? 'برای انتخاب اشتراک یا اجتماع، دست‌کم دو فیلتر را روشن کنید'
             : screenLogic === 'and'
-              ? `اشتراک: نماد باید هر ${toFaDigits(quickFilters.length)} فیلترِ روشن را داشته باشد`
-              : `اجتماع: داشتنِ کم‌از‌یکی از ${toFaDigits(quickFilters.length)} فیلترِ روشن کافی است`}
+              ? `اشتراک (AND): نماد باید هر ${toFaDigits(quickFilters.length)} فیلترِ روشن را داشته باشد`
+              : `اجتماع (OR): داشتنِ حداقل یکی از ${toFaDigits(quickFilters.length)} فیلترِ روشن کافی است`}
           className={`${CONTROL_CLS} shrink-0 disabled:opacity-40 ${
             screenLogic === 'or' ? 'border-accent-blue text-accent-blue' : ''
           }`}
@@ -601,7 +619,7 @@ export function MarketFilters({
             data-testid="live-only-toggle"
             title={
               liveOnly
-                ? 'روشن: فقط نمادهای همین نشستِ تابلو. برای دیدن نمادهای خاموش/قدیمی خاموشش کنید.'
+                ? 'روشن: فقط نمادهای امروزِ تابلو. برای دیدنِ نمادهای خاموش/قدیمی خاموشش کنید.'
                 : 'خاموش: نمادهای بیرونِ تابلو هم در جدول می‌مانند (اعدادشان تکان نمی‌خورد).'
             }
             className={`shrink-0 rounded-lg border px-2 py-1 text-2xs font-bold transition-all ${
@@ -623,7 +641,7 @@ export function MarketFilters({
             data-testid="numeric-suffix-toggle"
             title={
               showNumericSuffix
-                ? 'روشن: ردیف‌هایِ نمادِ پسونددار (فولاد۱، وخار۲ …) در جدول می‌مانند؛ این‌ها بیشترِ ردیف‌هایِ نشست‌هایِ قدیمی‌اند و تازگیِ تابلو را مخدوش می‌کنند.'
+                ? 'روشن: ردیف‌هایِ نمادِ پسونددار (فولاد۱، وخار۲ …) در جدول می‌مانند؛ این‌ها بیشترِ ردیف‌هایِ روزهایِ معاملاتیِ قدیمی‌اند و تازگیِ تابلو را مخدوش می‌کنند.'
                 : 'خاموش: ردیف‌هایِ نمادِ پسونددار از نما کنار گذاشته می‌شوند (پیش‌فرضِ تابلو). روشنش کنید تا همان ردیف‌ها در جدول بمانند؛ شمارِ +Nِ چیپ‌ها به همان اندازه کم می‌شود.'
             }
             className={`shrink-0 rounded-lg border px-2 py-1 text-2xs font-bold transition-all ${

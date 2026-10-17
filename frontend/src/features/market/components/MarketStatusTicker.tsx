@@ -133,7 +133,7 @@ export function MarketStatusTicker({
         </>
       ) : (
         <span className="text-2xs text-text-muted" data-testid="ticker-no-depth">
-          عمقِ صف برایِ این نشست نرسید — «بی‌داده» یعنی اندازه‌گیری ممکن نبود، نه صفِ خالی.
+          عمقِ صف برایِ امروز نرسید — «بی‌داده» یعنی اندازه‌گیری ممکن نبود، نه صفِ خالی.
         </span>
       ),
     };

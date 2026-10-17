@@ -1,5 +1,6 @@
 // features/market/stores/tapeStore.ts -- فیلترهای محلی تابلو
 import { create } from 'zustand';
+import { TAPE_FLAG_LABELS } from '@shared/lib/tapeFlags';
 import { ASSET_TYPES, type AssetType } from '../lib/assetType';
 
 import {
@@ -14,17 +15,10 @@ import {
 export const QUICK_FILTERS = ['f_clock', 'f_susp', 'f_jet', 'f_roobi', 'f_noqteh', 'f_smart', 'f_legal'] as const;
 export type QuickFilter = (typeof QUICK_FILTERS)[number];
 
-export const QUICK_LABELS: Record<QuickFilter, string> = {
-  f_clock: 'الگوی ساعت',
-  f_susp: 'حجم مشکوک',
-  f_jet: 'فیلتر جت',
-  f_roobi: 'کف‌روبی',
-  f_noqteh: 'نقطه زنی',
-  // نام‌ها عینِ دو فایلِ جزوه؛ داوری درِ tape_flags.py است و رابط فقط پرچم را
-  // می‌خواند (case پیش‌فرضِ evaluateDynamicQuickFilter).
-  f_smart: 'ورود پول هوشمند',
-  f_legal: 'کد به کد حقوقی به حقیقی',
-};
+// نام‌ها از تک‌منبعِ `shared/lib/tapeFlags.ts` خوانده می‌شوند: پروندۀ نماد درِ
+// غربالگری، دیدهبان و برآیند هم همان هفت فیلتر را نام می‌برد و دو منبعِ حقیقت
+// روزی دو نام می‌سازد. خودِ کلیدها همین‌جا می‌مانند (این store صاحبِ فهرست است).
+export const QUICK_LABELS: Record<QuickFilter, string> = TAPE_FLAG_LABELS;
 
 /** آستانه تقریبی صف در TSETMC (۵ درصد منهای ارف) */
 export const LIMIT_PCT = 4.9;

@@ -76,7 +76,7 @@ export function MasterVerdictCard({
       ? 'ورود ممنوع (توقف در فیلتر اول)'
       : decision?.action === 'veto_gate2' || decision?.action === 'veto'
         ? 'ورود ممنوع (توقف در فیلتر دوم)'
-        : 'ورود ممنوع (فاقد تایید)';
+        : 'ورود ممنوع (تأیید نشده)';
 
   const pct = Math.max(0, Math.min(100, (verdict.compositeScore + 100) / 2));
   const r = 52;
@@ -157,7 +157,7 @@ export function MasterVerdictCard({
             {isVeto ? (
               <>
                 <text x="65" y="58" textAnchor="middle" fontSize="12" fontWeight="900" fill="var(--accent-red)">
-                  وتو / فاقد تایید
+                  وتو / تأیید نشده
                 </text>
                 <text x="65" y="78" textAnchor="middle" fontSize="9.5" fill="var(--text-muted)">
                   ورود متوقف
@@ -181,7 +181,7 @@ export function MasterVerdictCard({
             {isVeto ? (
               <>
                 <Badge tone="red">{vetoBadgeLabel}</Badge>
-                <Badge tone="gray">فاقد تایید</Badge>
+                <Badge tone="gray">تأیید نشده</Badge>
               </>
             ) : (
               <>
@@ -193,11 +193,11 @@ export function MasterVerdictCard({
           <div className="text-xs leading-6 text-text-secondary">
             {isVeto ? (
               <>
-                <span className="text-sm font-black text-accent-red">فاقد تایید</span> · نمره تجمیعی در وضعیت وتو بی‌اعتبار است
+                <span className="text-sm font-black text-accent-red">تأیید نشده</span> · نمره تجمیعی در وضعیت وتو بی‌اعتبار است
               </>
             ) : (
               <>
-                <span className="num text-base font-black text-text-primary">{fa1(pct)}٪</span> توافق ایجنت ها ·{' '}
+                <span className="num text-base font-black text-text-primary">{fa1(pct)}٪</span> توافق ایجنت‌ها ·{' '}
                 <span className="num">{fa0(activeCount)}</span> از <span className="num">۴</span> سیگنال فعال
                 {verdict.discardedSignalIds.length > 0 ? (
                   <span className="text-text-muted"> ({toFaDigits(verdict.discardedSignalIds.length)} کنارگذاشته شده)</span>

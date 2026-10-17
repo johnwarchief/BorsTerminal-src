@@ -50,23 +50,51 @@ export function csvBlobParts(text: string): BlobPart[] {
 }
 
 /** نامِ فایل: برچسبِ فارسیِ جدول + زمانِ محلی؛ `:` و `/` در نامِ فایلِ ویندوز ممنوع‌اند */
-export function csvFilename(base: string, d: Date = new Date()): string {
+export function stampedName(base: string, d: Date = new Date()): string {
   const p = (n: number) => String(n).padStart(2, '0');
   const stamp = `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}_${p(d.getHours())}-${p(d.getMinutes())}`;
-  return `${base.replace(/[\\/:*?"<>|]/g, '')}-${stamp}.csv`;
+  return `${base.replace(/[\\/:*?"<>|]/g, '')}-${stamp}`;
+}
+
+export function csvFilename(base: string, d: Date = new Date()): string {
+  return `${stampedName(base, d)}.csv`;
 }
 
 /** دانلودِ بی‌فرم: یک لینکِ موقت که همان لحظه از DOM برداشته می‌شود */
-export function downloadCsv(base: string, table: ExportTable, d: Date = new Date()): void {
-  const blob = new Blob(csvBlobParts(csvText(table)), { type: 'text/csv;charset=utf-8' });
+export function saveBlob(blob: Blob, filename: string): void {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = csvFilename(base, d);
+  a.download = filename;
   a.rel = 'noopener';
   document.body.appendChild(a);
   a.click();
   a.remove();
   // بی‌تأخیر revoke در بعضی مرورگرها فایل را نصفه می‌گذارد؛ یک تیکِ تایمر کافی است
   setTimeout(() => URL.revokeObjectURL(url), 0);
+}
+
+export function downloadCsv(base: string, table: ExportTable, d: Date = new Date()): void {
+  saveBlob(new Blob(csvBlobParts(csvText(table)), { type: 'text/csv;charset=utf-8' }), csvFilename(base, d));
+}
+
+/** سطرهایِ ردپا (منبع، زمان snapshot، تازگی) بعد از جدول و با پیشوند `#` —
+ *  یعنی خوانندۀ جدولی همان N ردیف را می‌بیند و Excel هم ردِ منشأ را نگه می‌دارد. */
+export function csvTextWithMeta(table: ExportTable, meta: readonly (readonly [string, string])[]): string {
+  const head = csvText(table);
+  if (!meta.length) return head;
+  const lines = meta.map(([k, v]) => [`# ${k}`, v].map(csvCell).join(CSV_SEP));
+  return `${head}\r\n${lines.join('\r\n')}\r\n`;
+}
+
+export function downloadCsvWithMeta(
+  base: string,
+  table: ExportTable,
+  meta: readonly (readonly [string, string])[],
+  d: Date = new Date(),
+): void {
+  saveBlob(
+    new Blob(csvBlobParts(csvTextWithMeta(table, meta)), { type: 'text/csv;charset=utf-8' }),
+    csvFilename(base, d),
+  );
 }

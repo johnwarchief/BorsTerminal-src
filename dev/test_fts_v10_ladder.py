@@ -74,11 +74,18 @@ ROWS = [
 ]
 
 conn = sqlite3.connect(":memory:")
-conn.execute("CREATE TABLE financial_statements (symbol TEXT, period_end TEXT, "
-             "period_months INTEGER, title TEXT, basic_eps REAL, net_profit REAL)")
+# `tracing_no` و `unit_norm` لازم‌اند: نردبانِ EPS ردیفِ مرجع را با `tracing_no`
+# اعلام می‌کند (بندِ ۵ مأموریت — «کدامِ گزارش») و `FS_COLS` ستونِ مقیاس را می‌خواند.
+# فیکچرِ دستیِ بی‌این دو، مسیرِ واقعی را با OperationalError می‌ترکاند نه اینکه
+# قواعدِ ladder را بسنجد.
+conn.execute("CREATE TABLE financial_statements (tracing_no INTEGER PRIMARY KEY,"
+             " symbol TEXT, period_end TEXT, period_months INTEGER, title TEXT,"
+             " basic_eps REAL, net_profit REAL, unit_norm TEXT)")
 # net_profit درِ بانکِ واقعی هست و نردبانِ EPS آن را هم برمی‌گرداند؛ اینجا NULL
 # می‌ماند تا هیچ‌یک از سطوحِ EPS (که فقط basic_eps را می‌سنجد) دست‌کاری نشود.
-conn.executemany("INSERT INTO financial_statements VALUES (?,?,?,?,?,NULL)", ROWS)
+conn.executemany("INSERT INTO financial_statements (tracing_no, symbol, period_end,"
+                 " period_months, title, basic_eps, net_profit) VALUES (?,?,?,?,?,?,NULL)",
+                 [(9000 + i, *r) for i, r in enumerate(ROWS)])
 conn.commit()
 
 RES = []

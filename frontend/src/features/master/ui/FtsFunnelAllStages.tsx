@@ -17,12 +17,16 @@ import { useVirtualizer } from '@tanstack/react-virtual';
 import { useSymbolStore } from '@shared/stores/symbolStore';
 import { useScreenFilterStore } from '@shared/stores/screenFilterStore';
 import { QUICK_FILTERS, QUICK_LABELS, type QuickFilter } from '@features/market/stores/tapeStore';
-import { MicroBadge, type MicroTone } from '@features/market/components/TapeTable';
+import { MicroBadge, type MicroTone } from '@features/market/components/MicroBadge';
 import { absurdHint } from '@features/fundamental/lib/numFmt';
 import { SymbolBasketAction } from '@features/portfolio/components/SymbolBasketAction';
 import { SymbolWatchAction } from '@features/portfolio/components/SymbolWatchAction';
+import SymbolSelectBox from '@shared/components/SymbolSelectBox';
+import { useSelectedSymbolsStore } from '@shared/stores/selectedSymbolsStore';
+import { useWatchlistAddMany } from '@shared/api/userWatchlist';
 import { FormingCandle } from '@shared/components/FormingCandle';
 import { fmtInt, fmtPct, toFaDigits } from '@shared/lib/fmt';
+import { normalizeFa } from '@shared/lib/normalizeFa';
 import { useFlip } from '@shared/lib/useFlip';
 import { useVerdictChanges } from '../lib/funnelChangeTrack';
 import { FunnelErrorBanner } from './FunnelErrorBanner';
@@ -65,10 +69,10 @@ const STAGE_TITLE: Record<FunnelStageKey, string> = {
 };
 
 const STAGE_RULE: Record<FunnelStageKey, string> = {
-  tape: 'نمادهایی که از درِ فیلترهایِ روشنِ همین نشست عبور کرده‌اند — عینِ داوریِ چیپ و بجِ تبِّ تابلو. مردودها درِ جدول نمی‌نشینند؛ شمارشان درِ همین سرخط است.',
-  technical: 'ترتیبِ T: اول روند هفتگی، بعد روند روزانه؛ هفتگی نزولی/خنثی = وتو. هر سه شاخهٔ روزانهٔ صعودی/نزولی/خنثی معتبرند؛ جت، پولبک، فیبو، CHoCH و دیگر ستاپ‌ها فقط شواهد و امتیاز کمکی‌اند، نه گیت.',
+  tape: 'نمادهایی که از درِ فیلترهایِ روشنِ امروز عبور کرده‌اند — عینِ داوریِ چیپ و بجِ تبِّ تابلو. نمادهای عبورنکرده درِ جدول نمی‌نشینند؛ شمارشان درِ همین سرخط است.',
+  technical: 'ابتدا روند هفتگی بررسی می‌شود؛ اگر نزولی یا خنثی باشد، نماد از این مسیر عبور نمی‌کند. سپس روند روزانه سنجیده می‌شود و شواهدی مانند جت، پولبک و فیبوناچی امتیاز می‌دهند — هر سه شاخۀ روزانۀ صعودی/نزولی/خنثی معتبرند و این شواهد گیت نیستند.',
   fundamental: '',
-  handover: 'فقط آنچه بنیادش قبول شده و تا ۱۴ روز مجمعِ عمومی پیشِ رو ندارد. وتوی مجمع زمان‌بندیِ ورود است نه ضعفِ بنیادی — نمره دست‌نخورده می‌ماند و فردا خودش برمی‌گردد.',
+  handover: 'فقط نمادهایی به مرحلۀ تحویل می‌رسند که شرط بنیادی لازم را دارند و در ۱۴ روز آیندۀ کاری مجمع عمومی پیشِ رو ندارند. وجودِ مجمع به‌تنهایی به معنای ضعفِ بنیادی نیست و فقط زمانِ بررسیِ ورود را جابه‌جا می‌کند؛ نمره دست‌نخورده می‌ماند.',
 };
 
 /** شرحِ درِ بنیادی به دو پیچِ دستِ کاربر وصل است تا متنِ rule دروغِ پیش‌فرض نگوید. */
@@ -149,6 +153,7 @@ const MARK_DOT: Record<StageStatus, string> = {
   unavailable: 'bg-border-c',
   not_required: 'bg-border-c/40',
   not_in_universe: 'bg-bg-secondary',
+  not_applicable: 'bg-border-c/30',
 };
 /** واژگانِ داوری از خودِ مدلِ canonical می‌آید — دو نسخهٔ برچسب نداریم. */
 const MARK_LABEL = STATUS_LABEL;
@@ -171,7 +176,7 @@ const COL: Record<ColKey, { label: string; title: string; end?: boolean }> = {
   last: { label: 'آخرین', title: 'قیمت آخرین معامله', end: true },
   chg: { label: 'تغییر٪', title: 'تغییر درصدی امروز', end: true },
   vol: { label: 'حجم/ماه', title: 'حجم امروز ÷ میانگین ماهانه', end: true },
-  pattern: { label: 'نشانه', title: 'نشانه‌هایِ همان نشست، با همان برچسب و رنگِ تبِّ تابلو' },
+  pattern: { label: 'نشانه', title: 'الگوهای تابلوخوانی که این نماد امروز دارد — همان برچسب و رنگِ تبِّ تابلو' },
   weekly: { label: 'هفتگی', title: 'روند هفتگی — چارت ۲: نزولی و خنثی = reject', end: true },
   daily: { label: 'روزانه', title: 'روند روزانه — شاخه بعدی بر اساس این روند تعیین می‌شود', end: true },
   branch: { label: 'شاخه', title: 'شاخه FTS بر اساس روند روزانه' },
@@ -191,7 +196,7 @@ const COL: Record<ColKey, { label: string; title: string; end?: boolean }> = {
   // تازه: رأیِ مالک ۱۴۰۵-۰۷-۲۲ «جاهایی که می‌طلبد نمودار هم باشد» — جدولِ
   // غربالگری تنها جایِ برنامه بود که همین ردیف‌ها را بی‌شکلِ نشست می‌نمود.
   // بی‌OHLC همان «—»ِ خودِ ویجت می‌آید؛ کندلِ ساختگی ساخته نمی‌شود.
-  candle: { label: 'کندل روز', title: 'اولین، بیشترین، کمترین و آخرینِ همین نشست — عینِ تبِّ تابلو' },
+  candle: { label: 'کندل روز', title: 'اولین، بیشترین، کمترین و آخرینِ همین روز معاملاتی — عینِ تبِّ تابلو' },
   basket: { label: 'سبد', title: 'افزودن به سبد', end: true },
   // رأیِ مالک: رسیدۀ «تحویل» باید راهِ رفتن به «دیده‌بان» را هم داشته باشد —
   // رصد، نه تصمیمِ سرمایه‌ای.
@@ -406,6 +411,7 @@ function Cell({ k, e, mark, why }: { k: ColKey; e: FunnelEntry; mark: StageStatu
  */
 const VERDICT_RANK: Record<StageStatus, number> = {
   pass: 0, pending: 1, unavailable: 2, reject: 3, not_required: 4, not_in_universe: 5,
+  not_applicable: 6,
 };
 
 export function orderStageRows(key: FunnelStageKey, entries: FunnelEntry[]): FunnelEntry[] {
@@ -602,7 +608,7 @@ function StageCard({
           }`}
           title={unseen === 0
             ? 'تک‌تکِ نمادهایِ جامعۀ غربالگری درِ این گام حکم دارند (pass + reject + pending + بی‌داده + لازم نبود = Y)'
-            : `${toFaDigits(unseen)} نماد درِ این گام حکم ندارد — نقصِ معماری، نه حالتِ عادی`}
+            : `${toFaDigits(unseen)} نماد در این گام بی‌حکم مانده است؛ نتیجهٔ این مرحله برایشان مشخص نشده و نیاز به بررسی دارد`}
         >
           حکم: {toFaDigits(stage.ruled)}{unseen === 0 ? ' = کلِ جامعۀ غربالگری' : ` ≠ ${toFaDigits(stage.ruled + unseen)}`}
         </span>
@@ -645,16 +651,28 @@ function StageCard({
         <span className="ms-auto max-w-[46ch] text-3xs leading-4 text-text-muted">{rule}</span>
       </header>
 
+      {/* انتخاب و عملیاتِ دسته‌ای — فقط درِ «جدول تحویل» (بندِ اول مأموریتِ
+          پروندۀ نماد). بیرون از بدنهٔ اسکرول‌شونده می‌نشیند تا با سرستونِ
+          چسبانِ جدول در نیفتد، و یک خط نازک است: کنترلی که دیده نشود، کنترلی
+          است که حذف شده خوانده می‌شود. */}
+      {stage.key === 'handover' && !collapsed ? (
+        <HandoverActions rows={rows} onPick={onPick} />
+      ) : null}
+
       {/* بدنه: درِ حالتِ بسته هیچ جدولی نمی‌راند (نه display:none) — چهار مرحلۀ
           باز رویِ نمایشگرِ ۱۳۶۶×۷۶۸ یعنی اسکرولِ بی‌پایان پیش از رسیدن به تحویل. */}
       {collapsed ? null : (<>
-      <div ref={bodyRef} className="relative h-[calc(100dvh-392px)] min-h-[380px] overflow-y-auto" data-testid={`funnel-scroll-${stage.key}`}>
+      <div ref={bodyRef} className="relative h-[calc(100dvh-392px)] min-h-[380px] overflow-y-auto overflow-x-auto" data-testid={`funnel-scroll-${stage.key}`}>
         {rows.length === 0 ? (
           <p className="px-3 py-4 text-xs text-text-muted" data-testid={`funnel-empty-${stage.key}`}>
             {emptyWhy ?? 'هیچ نمادی از این مرحله عبور نکرد.'}
           </p>
         ) : (
-          <table className="w-full table-fixed border-collapse text-sm">
+          <table className="w-full min-w-[720px] table-fixed border-collapse text-sm">
+            {/* `min-w-[720px]` + اسکرولِ افقیِ همان ظرف: درِ ۳۹۰px ستونِ نماد به
+                ~۴۸px می‌افتاد و نامِ خودِ نماد وسطِ حروف می‌شکست («آبنو/س») —
+                یعنی بریدگیِ تازه، نه حلِّ بریدگی. با کفِ عرض ستون‌ها جا
+                می‌مانند و اسکرولِ افقی جدول را می‌خواند. */}
             <ColGroup cols={cols} />
             <thead className="sticky top-0 bg-bg-primary/95 text-2xs text-text-muted backdrop-blur-sm">
               <tr>
@@ -676,6 +694,7 @@ function StageCard({
                 return (
                   <StageRow key={r.symbol} entry={r} cols={cols} showMark={showMark}
                             stageKey={stage.key} onPick={onPick}
+                            selectable={stage.key === 'handover'}
                             changed={changed.has(r.symbol)} />
                 );
               })}
@@ -693,11 +712,11 @@ function StageCard({
         <div data-testid={`funnel-pending-${stage.key}`} className="border-t border-dashed border-border-c/70 bg-bg-secondary/40">
           <p className="px-3 py-1.5 text-3xs font-bold text-text-muted">
             {stage.key === 'handover'
-              ? `متوقف درِ تحویل — نه رد شده، نه آماده (${toFaDigits(stage.pending.length)})`
-              : `در انتظارِ حکم — موتور نگاه کرد و نظر نداد (${toFaDigits(stage.pending.length)})`}
+              ? `نگه‌داشته در مرحلۀ تحویل: هنوز آمادهٔ عبور نیست و رد قطعی هم نشده است (${toFaDigits(stage.pending.length)})`
+              : `بررسی شده اما نتیجهٔ قطعی ندارد؛ بنابراین رد نشده است (${toFaDigits(stage.pending.length)})`}
           </p>
-          <div ref={pendingRef} className="max-h-[160px] overflow-y-auto">
-            <table className="w-full table-fixed border-collapse text-sm">
+          <div ref={pendingRef} className="max-h-[160px] overflow-y-auto overflow-x-auto">
+            <table className="w-full min-w-[720px] table-fixed border-collapse text-sm">
               {/* سرستونِ همان مرحله، با همان colgroup: ردیف‌هایِ انتظار هم باید
                   بدانند کدام ✓/✗ کدام شاخص است، و ستون‌هایِ دو جدول رویِ هم
                   بنشینند وگرنه «سرستونِ دوم» کج می‌آید. */}
@@ -723,6 +742,7 @@ function StageCard({
                       showMark={stage.key === 'handover' ? 'handover' : 'fund'}
                       stageKey={stage.key}
                       onPick={onPick}
+                      selectable={stage.key === 'handover'}
                     />
                   );
                 })}
@@ -737,13 +757,127 @@ function StageCard({
   );
 }
 
-function StageRow({
+/** نوارِ انتخاب و عملیاتِ «جدول تحویل» (بندِ اول مأموریتِ پروندۀ نماد).
+ *
+ *  سه چیز را با هم نگه می‌دارد: انتخاب از فهرست، افزودنِ دسته‌ای به واچ‌لیست،
+ *  و بردنِ نماد به برآیند. «افزودنِ دسته‌ای» انتخاب را پاک نمی‌کند (مالک:
+ *  «انتخاب‌ها در زمان عملیات دسته‌ای از بین نروند»)، و پیغامِ نتیجه سه شمارۀ
+ *  جدا می‌دهد: افزوده‌شده، از قبل موجود، و نپذیرفته‌شده (سقفِ واچ‌لیست درِ
+ *  `api/watchlist.py:53` واقعی است و بی‌این شمار کاربر ردِّ بی‌صدا می‌دید).
+ *  عملیات فقط رویِ نمادهایِ واقعاً انتخاب‌شده می‌دود؛ «همه» یعنی همان
+ *  ردیف‌هایی که همین حالا درِ جدولِ تحویل‌اند (عبورکرده‌هایِ دورِ جاری). */
+function HandoverActions({ rows, onPick }: {
+  rows: FunnelEntry[];
+  onPick: (s: string) => void;
+}) {
+  const items = useSelectedSymbolsStore((s) => s.items);
+  const addMany = useSelectedSymbolsStore((s) => s.addMany);
+  const clearSel = useSelectedSymbolsStore((s) => s.clear);
+  const addWatch = useWatchlistAddMany();
+  const [msg, setMsg] = useState<string | null>(null);
+  const selectedCount = items.length;
+  // «چندتای انتخابی درِ همین جدول‌اند» با «چندتا انتخاب شده» یکی نیست: فهرستِ
+  // انتخاب سراسری است و از تابلو/بنیادی هم پر می‌شود.
+  const inRows = useMemo(() => {
+    const norms = new Set(items.map((i) => i.norm));
+    return rows.filter((r) => norms.has(normalizeFa(r.symbol))).length;
+  }, [items, rows]);
+  const target = useMemo(() => {
+    const norms = new Set(items.map((i) => i.norm));
+    const hit = rows.find((r) => norms.has(normalizeFa(r.symbol)));
+    return hit?.symbol ?? items[0]?.symbol ?? null;
+  }, [items, rows]);
+
+  const runAdd = () => {
+    setMsg(null);
+    addWatch.mutate(items.map((i) => ({ symbol: i.symbol, name: i.name })), {
+      onSuccess: (r) => {
+        const parts = [`افزوده شد: ${toFaDigits(r.added)}`,
+                       `از قبل در واچ‌لیست: ${toFaDigits(r.already)}`];
+        if (r.failed) parts.push(`نشد: ${toFaDigits(r.failed)}`);
+        setMsg(parts.join(' · ') + (r.message ? ` — ${r.message}` : ''));
+      },
+      onError: (e) => setMsg(`افزودن ناموفق: ${e instanceof Error ? e.message : 'خطا'}`),
+    });
+  };
+
+  return (
+    <div
+      data-testid="funnel-handover-actions"
+      className="relative flex flex-wrap items-center gap-1.5 border-b border-border-c/60 bg-bg-secondary/50 px-3 py-1 text-2xs"
+    >
+      <button
+        type="button"
+        data-testid="funnel-select-all"
+        onClick={() => { setMsg(null); addMany(rows.map((r) => ({ symbol: r.symbol, name: r.name }))); }}
+        disabled={!rows.length}
+        title="همۀ عبوری‌های همین دور از جدول تحویل انتخاب می‌شوند؛ نمادی که انتخاب است دوباره شمارش نمی‌شود"
+        className="rounded-md border border-border-c bg-bg-card px-2 py-0.5 font-bold text-text-secondary hover:border-accent-blue/60 hover:text-accent-blue disabled:opacity-40"
+      >
+        انتخاب همۀ نتایج فعلی ({toFaDigits(rows.length)})
+      </button>
+      {selectedCount > 0 ? (
+        <button
+          type="button"
+          data-testid="funnel-select-clear"
+          onClick={() => { clearSel(); setMsg(null); }}
+          className="rounded-md border border-border-c bg-bg-card px-2 py-0.5 font-bold text-text-muted hover:border-accent-red/60 hover:text-accent-red"
+        >
+          لغو انتخاب
+        </button>
+      ) : null}
+      <span
+        data-testid="funnel-selection-count"
+        className={`font-bold ${selectedCount ? 'text-accent-blue' : 'text-text-muted'}`}
+      >
+        {selectedCount
+          ? `${toFaDigits(selectedCount)} نماد انتخاب شده (${toFaDigits(inRows)} در این جدول)`
+          : 'چیزی انتخاب نشده'}
+      </span>
+      {selectedCount > 0 ? (
+        <>
+          <button
+            type="button"
+            data-testid="funnel-bulk-watch"
+            onClick={runAdd}
+            disabled={addWatch.isPending}
+            title="نمادهای انتخاب‌شده به واچ‌لیست اضافه می‌شوند؛ رکورد تکراری ساخته نمی‌شود و انتخاب نمی‌سوزد"
+            className="rounded-md border border-accent-blue/50 bg-accent-blue/15 px-2 py-0.5 font-black text-accent-blue hover:bg-accent-blue/25 disabled:opacity-50"
+          >
+            {addWatch.isPending ? 'در حال افزودن…' : `افزودن به واچ‌لیست (${toFaDigits(selectedCount)})`}
+          </button>
+          {target ? (
+            <button
+              type="button"
+              data-testid="funnel-bulk-review"
+              onClick={() => { setMsg(null); onPick(target); }}
+              title="پروندۀ کاملِ همین نماد در صفحهٔ برآیند باز می‌شود؛ از همان‌جا می‌توان به نماد بعدیِ انتخابی رفت"
+              className="rounded-md border border-border-c bg-bg-card px-2 py-0.5 font-bold text-text-secondary hover:border-accent-blue/60 hover:text-accent-blue"
+            >
+              بررسی در برآیند
+            </button>
+          ) : null}
+        </>
+      ) : null}
+      {msg ? (
+        <span data-testid="funnel-bulk-result" className="min-w-0 truncate text-text-muted" title={msg}>
+          {msg}
+        </span>
+      ) : null}
+    </div>
+  );
+}
+
+/** صادر شده تا تستِ واحد بتواند یکِ ردیفِ تنها را بسنجد (بندِ ۱ مأموریتِ رابط:
+ *  نامِ نماد درِ حضورِ برچسبِ بلند نباید بریده شود). */
+export function StageRow({
   entry,
   cols,
   showMark,
   stageKey,
   onPick,
   changed,
+  selectable = false,
 }: {
   entry: FunnelEntry;
   cols: ColKey[];
@@ -756,6 +890,10 @@ function StageRow({
   /** حکمِ این نماد درِ دورِ اخیر عوض شده — ردیف یک لحظه روشن می‌شود تا
    *  «زنده بودنِ» قیف دیده شود (نه یک داوریِ تازه). */
   changed?: boolean;
+  /** جعبۀ انتخاب فقط درِ «جدول تحویل» (بندِ اول مأموریتِ پروندۀ نماد). ستونِ
+   *  تازه نمی‌سازد — داخلِ همان سلولِ نماد می‌نشیند، همان قراردادی که
+   *  `SymbolSelectBox` درِ تابلو رعایت می‌کند و افزودنِ ستونِ جدید grid را کج کرد. */
+  selectable?: boolean;
 }) {
   const key = showMark === 'tech' ? 'technical' : showMark === 'handover' ? 'handover' : 'fundamental';
   const mark = showMark ? entry.status[key] : entry.status[stageKey] || null;
@@ -768,27 +906,53 @@ function StageRow({
     <tr
       data-fkey={entry.symbol}
       data-changed={changed ? '1' : undefined}
-      className={`border-b border-border-c/40 last:border-0 hover:bg-bg-card/70${changed ? ' fts-row-changed' : ''}`}
+      className={`group border-b border-border-c/40 last:border-0 hover:bg-bg-card/70${changed ? ' fts-row-changed' : ''}`}
       title={rowTitle}
     >
       <td className="px-2 py-1 text-start">
-        <button
-          type="button"
-          onClick={() => onPick(entry.symbol)}
-          className="flex max-w-[16ch] items-center gap-1 truncate font-black text-text-primary hover:text-accent-blue"
-        >
-          {mark ? <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${MARK_DOT[mark]}`} /> : null}
-          <span className="truncate">{entry.symbol}</span>
-          {entry.assemblyVeto ? (
-            <span
-              data-testid={`funnel-assembly-veto-${entry.symbol}`}
-              className="shrink-0 rounded border border-accent-red/40 bg-accent-red/15 px-1 text-[9px] font-bold text-accent-red"
-              title={entry.assemblyWhy}
+        {/* دو خط: خطِ اول خودِ نماد (همیشه کامل)، خطِ دوم برچسبِ وضعیت.
+            پیش‌تر نامک و برچسب‌ها درِ یک `flex … truncate` با `max-w-[15ch]`
+            بودند و هر دو برچسب `shrink-0` — یعنی «عبور با ملاحظات» (۱۴ نویسه)
+            نماد را به «…» می‌کوبید. نام نماد نباید قربانیِ برچسب شود. */}
+        <div className="flex min-w-0 flex-col gap-0.5">
+          <div className="flex min-w-0 items-center gap-1">
+            {selectable ? <SymbolSelectBox symbol={entry.symbol} name={entry.name ?? ''} /> : null}
+            <button
+              type="button"
+              onClick={() => onPick(entry.symbol)}
+              className="flex min-w-0 items-center gap-1 text-start font-black text-text-primary hover:text-accent-blue"
             >
-              وتوی مجمع
-            </span>
+              {mark ? <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${MARK_DOT[mark]}`} /> : null}
+              <span className="min-w-0 whitespace-normal break-words leading-tight">{entry.symbol}</span>
+            </button>
+          </div>
+          {entry.assemblyVeto || entry.fundCaveat ? (
+            <div data-testid={`funnel-row-marks-${entry.symbol}`}
+                 className="flex min-w-0 flex-wrap items-center gap-1 ps-4">
+              {entry.assemblyVeto ? (
+                <span
+                  data-testid={`funnel-assembly-veto-${entry.symbol}`}
+                  className="shrink-0 rounded border border-accent-red/40 bg-accent-red/15 px-1 text-3xs font-bold text-accent-red"
+                  title={entry.assemblyWhy}
+                >
+                  وتوی مجمع
+                </span>
+              ) : null}
+              {/* عبور با ملاحظات: رأیِ مالک ۱۴۰۵-۰۷-۲۱ — سه PASS کافی است، پس این
+                  نماد درِ فهرستِ عبوری‌هاست؛ زرد فقط می‌گوید کدام‌ها سنجیده نشدند یا
+                  رد شدند. متنِ علت را خودِ موتور نوشته، اینجا بازنویسی نمی‌شود. */}
+              {entry.fundCaveat ? (
+                <span
+                  data-testid={`funnel-fund-caveat-${entry.symbol}`}
+                  className="shrink-0 rounded border border-accent-yellow/50 bg-accent-yellow/15 px-1 text-3xs font-bold text-accent-yellow"
+                  title={entry.why.fundamental || 'عبور با ملاحظات'}
+                >
+                  عبور با ملاحظات
+                </span>
+              ) : null}
+            </div>
           ) : null}
-        </button>
+        </div>
       </td>
       {cols.filter((k) => k !== 'symbol').map((k) => (
         <Cell key={k} k={k} e={entry} mark={mark} why={why} />
@@ -801,10 +965,12 @@ function StageRow({
  * چیپ‌هایِ هفت فیلترِ رجیستری + کلیدِ اشتراک/اجتماع. با رأیِ مالکِ ۱۴۰۵-۰۷-۲۰
  * از سرِ کارتِ «تابلوخوانی» به **نوارِ بالایِ غربالگری** آمد: سه مرحلۀ اول
  * بسته‌اند، پس کنترلی که داخلِ کارتِ بسته است درِ عمل دیده نمی‌شد.
- * عددِ کنارِ هر چیپ نامزدِ خودِ همان فیلتر رویِ کلِّ جامعۀ غربالگری است
- * (`funnel_engine.filter_counts`) — مستقل از زنجیره و از اشتراک/اجتماع، تا
- * معلوم باشد کدام فیلتر گرسنۀ دادۀِ سینک است. این همان `quickFilters` تبِّ
- * تابلو است، پس دو منبعِ حقیقت نیست و از قیف روشن شدنش هم عوضی در نمی‌آید.
+ * عددِ کنارِ هر چیپ نامزدِ همان فیلتر رویِ **نامزدِ جاری** است
+ * (`funnel_engine.filter_counts` با زنجیره و منطقِ همین دور) — رأیِ مالک
+ * ۱۴۰۵-۰۷-۲۱: «وقتی حجم مشکوک روشن است، جت بگوید از این‌ها چندتا». بی‌هیچ
+ * چیپِ روشن مبنایِ شمارش کلِّ جامعۀ غربالگری است، پس عددِ همیشگی می‌ماند.
+ * این همان `quickFilters` تبِّ تابلو است، پس دو منبعِ حقیقت نیست و از قیف روشن
+ * شدنش هم عوضی در نمی‌آید.
  */
 function TapeStagePrefs({ picked, counts, filters }: {
   picked: number;
@@ -817,7 +983,7 @@ function TapeStagePrefs({ picked, counts, filters }: {
   return (
     <span
       data-testid="funnel-tape-prefs"
-      className="flex flex-wrap items-center justify-end gap-1"
+      className="sticky top-[var(--pinned-h)] z-20 -mx-1 flex flex-wrap items-center justify-end gap-1 rounded-lg bg-bg-card/95 px-1 py-0.5 backdrop-blur-sm"
       role="group"
       aria-label="فیلترهای ورودی غربالگری"
     >
@@ -832,8 +998,9 @@ function TapeStagePrefs({ picked, counts, filters }: {
             aria-pressed={on}
             onClick={() => filters.toggle(f)}
             title={c
-              ? `${QUICK_LABELS[f]} — ${toFaDigits(c.matched)} نامزد از ${toFaDigits(c.input)} نمادِ غربالگری`
+              ? `${QUICK_LABELS[f]} — ${toFaDigits(c.matched)} نامزد از ${toFaDigits(c.input)} ردیفِ نامزدِ فعلی`
                 + `؛ ${toFaDigits(c.removed)} رد، ${toFaDigits(c.unmeasured)} بی‌حکم`
+                + (c.universe ? ` (کلِّ جامعۀ غربالگری: ${toFaDigits(c.universe)})` : '')
               : `${QUICK_LABELS[f]} — شمارشِ نامزد از سرور نرسید`}
             className={`rounded-md border px-1.5 py-0.5 text-2xs font-bold transition-colors ${
               on
@@ -848,8 +1015,9 @@ function TapeStagePrefs({ picked, counts, filters }: {
           </button>
         );
       })}
-      {/* یک کلید، دو حالت: «اشتراک» یعنی هر چیپِ روشن لازم است، «اجتماع» یعنی
-          کم‌از‌یکی. همان `bors.screen.logic.v1` که کنارِ چیپ‌هایِ تبِّ تابلو است. */}
+      {/* یک کلید، دو حالت: «اشتراک» یعنی هر چیپِ روشن لازم است (AND)، «اجتماع» یعنی
+          داشتنِ یکی کافی است (OR). همان `bors.screen.logic.v1` که کنارِ چیپ‌هایِ تبِّ
+          تابلو است. */}
       <button
         type="button"
         data-testid="funnel-screen-logic"
@@ -857,10 +1025,10 @@ function TapeStagePrefs({ picked, counts, filters }: {
         disabled={onCount === 0}
         onClick={() => setLogic(logic === 'or' ? 'and' : 'or')}
         title={onCount === 0
-          ? 'بی‌فیلترِ روشن معنی ندارد — اول کم‌از‌یکی از چیپ‌هایِ بالا را روشن کن'
+          ? 'برای شروع غربالگری، دست‌کم یک فیلتر را روشن کنید'
           : logic === 'or'
-            ? `اجتماع: داشتنِ کم‌از‌یکی از ${toFaDigits(onCount)} فیلترِ روشن کافی است`
-            : `اشتراک: نماد باید هر ${toFaDigits(onCount)} فیلترِ روشن را داشته باشد`}
+            ? `اجتماع (OR): داشتنِ حداقل یکی از ${toFaDigits(onCount)} فیلترِ روشن کافی است`
+            : `اشتراک (AND): نماد باید هر ${toFaDigits(onCount)} فیلترِ روشن را داشته باشد`}
         className={`rounded-md border px-1.5 py-0.5 text-2xs font-bold transition-colors ${
           logic === 'or'
             ? 'border-accent-yellow bg-accent-yellow/15 text-accent-yellow'
@@ -893,10 +1061,13 @@ function FundStagePrefs({ passed, techScreens }: { passed: number; techScreens: 
       data-testid="funnel-prefs"
       className="flex flex-wrap items-center gap-x-2 gap-y-1"
     >
-      <span className="text-2xs font-black text-text-secondary" title={`پیش‌فرضِ جزوه: ${toFaDigits(DEFAULT_FUND_FLOOR)} از ${toFaDigits(FUND_FLOOR_MAX)}`}>
-        کفِ نمره
+      <span
+        className="text-2xs font-black text-text-secondary"
+        title={`پیش‌فرض FTS: ${toFaDigits(DEFAULT_FUND_FLOOR)} از ${toFaDigits(FUND_FLOOR_MAX)}`}
+      >
+        حداقل امتیاز بنیادی
       </span>
-      <span className="flex items-center gap-1" role="group" aria-label="کفِ نمرۀ پنج‌شاخصه">
+      <span className="flex items-center gap-1" role="group" aria-label="حداقل امتیاز بنیادی از پنج شاخص">
         {Array.from({ length: FUND_FLOOR_MAX }, (_, i) => i + 1).map((n) => (
           <button
             key={n}
@@ -905,7 +1076,7 @@ function FundStagePrefs({ passed, techScreens }: { passed: number; techScreens: 
             aria-pressed={fundFloor === n}
             onClick={() => setFundFloor(n)}
             className={`num h-6 w-6 rounded-md border text-2xs font-black transition-colors ${chip(fundFloor === n)}`}
-            title={n === DEFAULT_FUND_FLOOR ? 'پیش‌فرضِ جزوه' : undefined}
+            title={n === DEFAULT_FUND_FLOOR ? 'پیش‌فرض FTS' : undefined}
           >
             {toFaDigits(n)}
           </button>
@@ -930,8 +1101,14 @@ function FundStagePrefs({ passed, techScreens }: { passed: number; techScreens: 
         عبور با این پیچ‌ها: {toFaDigits(passed)}
       </span>
       {fundFloor !== DEFAULT_FUND_FLOOR || unmeasured !== 'hold' || !techScreens ? (
-        <button type="button" data-testid="funnel-prefs-reset" onClick={reset} className="text-3xs font-bold text-text-muted underline hover:text-accent-yellow">
-          بازگشت به جزوه
+        <button
+          type="button"
+          data-testid="funnel-prefs-reset"
+          onClick={reset}
+          title="بازگردانی تنظیمات به پیش‌فرض FTS"
+          className="text-3xs font-bold text-text-muted underline hover:text-accent-yellow"
+        >
+          بازگردانی به پیش‌فرض FTS
         </button>
       ) : null}
     </div>
@@ -970,6 +1147,18 @@ function OutOfUniversePanel({ funnel, onPick }: { funnel: Funnel; onPick: (s: st
         ))}
         {!reasons.length ? <span data-testid="funnel-exclusion-none">چیزی خارج از جامعه نیست.</span> : null}
       </div>
+      {/* توضیحِ تفاوتِ شمارۀ تابلو با غربالگری (گزینهٔ الف): شمارۀ چیپِ تبِّ تابلو
+          این نمادها را هم می‌شمرد (چون فیلتر را پاس می‌کنند)؛ اینجا فقط علتِ بیرون‌
+          ماندنشان از غربالگری نوشته می‌شود. تفاوت از جامعۀ نماد/قواعدِ پذیرش است،
+          نه از اختلافِ محاسبه — و شمارۀ تابلو برایِ برابرشدن کم نمی‌شود. */}
+      {rows.length ? (
+        <p className="mb-1 text-3xs leading-4 text-text-muted" data-testid="funnel-universe-reconcile">
+          این نمادها فیلترِ تابلو را پاس می‌کنند و درِ شمارۀ چیپِ تبِّ «تابلوخوانی» شمرده
+          می‌شوند؛ قواعدِ پذیرشِ غربالگری (توقف/ممنوعیت/پسوندِ عددی) آن‌ها را از جامعۀ
+          غربالگری بیرون می‌گذارد. پس تفاوتِ شمارۀ تابلو و غربالگری از جامعۀ نماد است،
+          نه اختلافِ محاسبه.
+        </p>
+      ) : null}
       <div ref={ref} className="max-h-56 overflow-y-auto">
         <div className="relative" style={{ height: virt.getTotalSize() }}>
           {virt.getVirtualItems().map((it) => {
@@ -1086,7 +1275,7 @@ export function FtsFunnelStages({
   const fund = funnel.stages.fundamental;
   const hand = funnel.stages.handover;
   const emptyWhy: Record<FunnelStageKey, string | null> = {
-    tape: funnel.total ? null : 'هیچ نمادی درِ جامعۀ غربالگریِ این نشست نبود (تابلو یا وضعیتِ رسمیِ نمادها اجازهٔ غربال نداد).',
+    tape: funnel.total ? null : 'هیچ نمادی درِ جامعۀ غربالگریِ این روز نبود (تابلو یا وضعیتِ رسمیِ نمادها اجازهٔ غربال نداد).',
     technical: funnel.stages.technical.entries.length
       ? null
       : 'مرحلۀ تابلو خالی بود تا تکنیکال چیزی برای داوری داشته باشد.',
@@ -1147,7 +1336,7 @@ export function FtsFunnelStages({
           <span
             className="rounded-full border border-border-c bg-bg-secondary px-2 py-0.5 text-3xs font-bold text-text-muted"
             data-testid="funnel-tape-freshness"
-            title="تازگیِ خوراکِ تابلو — دادهٔ آخرینِ نشست جایِ زنده خوانده نمی‌شود"
+            title="تازگیِ خوراکِ تابلو — دادهٔ آخرین روز معاملاتی جایِ زنده خوانده نمی‌شود"
           >
             {TAPE_FRESHNESS_LABEL[tape]}
           </span>
@@ -1190,7 +1379,7 @@ export function FtsFunnelStages({
             جمله می‌افتادند و خواننده فکر می‌کرد کاراکترِ خراب است. */}
         <span className="flex items-center gap-x-2 rounded-full border border-[var(--hairline)] bg-bg-card/50 px-2 py-0.5">
         <span className="text-text-secondary" data-testid="funnel-universe-market"
-              title="تک‌تکِ نمادهایِ این نشستِ تابلو (ردیفِ تکراری یکی‌شده)">
+              title="تک‌تکِ نمادهایِ امروزِ تابلو (ردیفِ تکراری یکی‌شده)">
           جامعۀ تابلو: {toFaDigits(funnel.marketUniverse)}
         </span>
         <span className="text-accent-blue" data-testid="funnel-universe-screening"
@@ -1218,7 +1407,7 @@ export function FtsFunnelStages({
             className="num rounded-full bg-accent-yellow/15 px-2 py-0.5 text-3xs font-bold text-accent-yellow"
             title="عددِ فعلی از آخرینِ پاسخِ کامل است؛ پاسخِ تازه در راه است"
           >
-            در حالِ تازه‌سازی
+            در حالِ به‌روزرسانی
           </span>
         ) : null}
       </div>

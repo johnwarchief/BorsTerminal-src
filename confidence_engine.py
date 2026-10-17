@@ -376,7 +376,7 @@ def _bars(conn: sqlite3.Connection, symbol: str, entry: dict = None,
             cands.append(k)
     al = []
     for k in cands:
-        for a in fts_engine.symbol_aliases(k):
+        for a in fts_engine.symbol_variants(conn, k, "board"):
             if a not in al:
                 al.append(a)
     if not al:

@@ -190,7 +190,7 @@ describe('سوییچر دوگانه و پرتفوی هدف', () => {
     expect(await screen.findByText('شکاف فعلی با هدف (ری‌بالانس)')).toBeInTheDocument();
     expect(screen.getByText('سبد')).toBeInTheDocument();
     expect(screen.getByText('زیر نظر')).toBeInTheDocument();
-    expect(screen.getByText('حذف شده')).toBeInTheDocument();
+    expect(screen.getByText('حذف‌شده')).toBeInTheDocument();
   });
 });
 
@@ -247,10 +247,10 @@ describe('پرتفوی فعلی — جدول سه‌گانه', () => {
     });
   });
 
-  it('تب حذف شده: ردیف رد شده دیده می شود', async () => {
+  it('تب حذف‌شده: ردیف رد شده دیده می شود', async () => {
     renderPage();
     await openCurrentView();
-    fireEvent.click(await screen.findByRole('button', { name: /^حذف شده/ }));
+    fireEvent.click(await screen.findByRole('button', { name: /^حذف‌شده/ }));
     await waitFor(() => {
       expect(screen.getByText('ویسا')).toBeInTheDocument();
     });

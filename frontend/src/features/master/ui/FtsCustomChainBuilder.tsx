@@ -211,9 +211,10 @@ export default function FtsCustomChainBuilder() {
             type="button"
             data-testid="funnel-chain-reset"
             onClick={() => { resetToCanonical(); setName(''); }}
+            title="بازگردانی زنجیره به پیش‌فرض FTS"
             className="rounded-lg border border-border-c px-2 py-0.5 text-2xs font-bold text-text-muted hover:text-accent-yellow"
           >
-            بازگشت به جزوه
+            بازگردانی به پیش‌فرض FTS
           </button>
         </span>
       </div>

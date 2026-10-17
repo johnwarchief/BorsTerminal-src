@@ -119,7 +119,7 @@ function labOverlays(bars: EngineBar[], symbol: string): ChartOverlaySpec[] {
       group: LAB_GROUP,
       points: [{ timestamp: last.timestamp, value: last.close }],
       color: '#ef5350',
-      label: `آخرین نشستِ ${symbol}`,
+      label: `آخرین دادهٔ ${symbol}`,
       dashed: false,
     },
   ];

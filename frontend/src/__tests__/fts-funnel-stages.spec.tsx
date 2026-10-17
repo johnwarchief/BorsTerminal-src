@@ -402,7 +402,7 @@ describe('بازگشتِ Custom و چیپ‌هایِ زندهٔ نوارِ غر�
     expect(screen.getByTestId('funnel-tape-chip-f_susp').textContent).toContain('۳');
     expect(screen.getByTestId('funnel-tape-chip-f_clock').textContent).toContain('(۰)');
     expect(screen.getByTestId('funnel-tape-chip-f_susp').getAttribute('title'))
-      .toContain('۳ نامزد از ۴ نمادِ غربالگری');
+      .toContain('۳ نامزد از ۴ ردیفِ نامزدِ فعلی');
   });
 
   it('درِ Custom کلیکِ چیپ همان زنجیره را کم و زیاد می‌کند (دو نما، یک منبع)', async () => {

@@ -34,6 +34,7 @@ const STATUS_BADGE_STYLE: Record<StageStatus, { bg: string; text: string; label:
   unavailable: { bg: 'bg-border-c/40 border-border-c', text: 'text-text-muted', label: 'بی‌داده (UNAVAILABLE)' },
   not_required: { bg: 'bg-border-c/25 border-border-c/60', text: 'text-text-muted', label: 'لازم نبود (NOT REQUIRED)' },
   not_in_universe: { bg: 'bg-bg-secondary border-border-c/40', text: 'text-text-muted', label: 'خارج از جامعۀ غربالگری' },
+  not_applicable: { bg: 'bg-bg-secondary border-border-c/40', text: 'text-text-muted', label: 'کاربرد ندارد' },
 };
 
 export const StrategyStageCandidateTable = React.memo(function StrategyStageCandidateTable({

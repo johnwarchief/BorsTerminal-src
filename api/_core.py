@@ -12,6 +12,8 @@ import math
 import os
 import sqlite3
 import subprocess
+import threading
+import time
 
 import sys
 
@@ -250,9 +252,27 @@ def _num(v):
     except (TypeError, ValueError):
         return 0
 
-def _count_procs(pattern):
+# ── کشِ شمارشِ فرایند (بندِ ۶ مأموریتِ کاراییِ بازارِ زنده، ۱۴۰۵-۰۷-۲۷) ──────
+# اندازه‌گیریِ این نشست رویِ بک‌اندِ زنده (۲۰ نمونه، ۱۰:۴۲:۵۹→۱۰:۴۷:۱۵):
+#   GET /api/market/sync-state  p50 = 573.1 ms  (بدنۀ پاسخ ۱۴۱ بایت!)
+# و تنها کارِ آن endpoint یکِ `_count_procs("test_tsetmc")` است. رویِ ویندوز هر
+# شمارش یعنی بالا آوردنِ یکِ `powershell.exe` و `Get-CimInstance Win32_Process`
+# رویِ **همهٔ** فرایندهای سیستم. `/api/sync/status` هم درِ یکِ درخواست دو تا سه
+# بار این را صدا می‌زند ⇒ UI با هر پولینگِ ۳۰ ثانیه‌ای چند صد میلی‌ثانیه CPU بابت
+# چیزی می‌پردازد که دقیقه‌ها عوض نمی‌شود.
+# کشِ ttl-ثانیه‌ای رفتار را عوض نمی‌کند: «آیا سینکر در کار است؟» boolean است و
+# مصرف‌کننده‌ها (نشانۀ زنده، heuristicِ status_frozen با آستانۀ ۶۰ ثانیه) با ۳
+# ثانیه کهنگی هیچ حکمی را برعکس نمی‌کنند. بی‌کش هم هنوز با `ttl_s=0` ممکن است.
+_PROC_CACHE: dict = {}
+_PROC_LOCK = threading.Lock()
+_PROC_TTL_S = 10.0
+_PROC_WAIT: dict = {}
+
+
+def _count_procs_raw(pattern):
     """تعداد پروسههای python در حال اجرا که CommandLine شامل pattern است.
-    کراس-پلتفرم: ویندوز → PowerShell/CimInstance؛ لینوکس/macOS → pgrep."""
+    کراس-پلتفرم: ویندوز → PowerShell/CimInstance؛ لینوکس/macOS → pgrep.
+    این بدنه دست‌نخورده است؛ کش لایۀ رویش است."""
     try:
         if os.name == "nt":
             out = subprocess.run(
@@ -266,6 +286,91 @@ def _count_procs(pattern):
         return bool(out.stdout.strip())
     except Exception:
         return False
+
+
+def _count_procs(pattern, ttl_s=None, now=None, refresh="bg"):
+    """`_count_procs_raw` با کشِ ttl-ثانیه‌ای، stale-while-revalidate و تک‌پروازگی.
+
+    چرا این لایه: خودِ شمارش رویِ ویندوز ~۵۹۰ms است (PowerShell + CIM؛ با queryِ
+    فیلترشده هم بهتر نمی‌شود — سنجیده شد: ۵۸۹ در برابر ۵۷۹ms). اگر پاسخِ هر
+    پولینگِ UI این را بپردازد، `sync-state` با بدنۀ ۱۴۱ بایت ۵۷۳ms کشیده می‌شود.
+    «آیا سینکر در کار است؟» boolean است و تازگیِ **داده** از `last`ِ همان
+    `market_sync.json` می‌آید، نه از این شمارش ⇒ کهنه‌دادنِ حداکثر به اندازهٔ ttl
+    هیچ عددی از تابلو را کهنه نمی‌کند.
+
+    `refresh`: `bg` ⇒ پاسخِ کهنه فوراً + بازسازیِ پس‌زمینه (پیش‌فرضِ تولید)؛
+    `inline` ⇒ همان مسیرِ قدیمی، درخواست‌کننده می‌سازد؛ `none` ⇒ فقط پاسخِ کهنه،
+    بی‌هیچ کاری (برایِ آزمونِ قطعی). `ttl_s=0` ⇒ بی‌کش، لحظه‌ای (تصمیمِ کشتن).
+    """
+    ttl = _PROC_TTL_S if ttl_s is None else float(ttl_s)
+    if ttl <= 0:
+        return _count_procs_raw(pattern)
+    t = time.monotonic() if now is None else float(now)
+    with _PROC_LOCK:
+        hit = _PROC_CACHE.get(pattern)
+        fresh = hit is not None and (t - hit[0]) < ttl
+        if fresh:
+            return hit[1]
+        stale = hit[1] if hit is not None else None
+        waiter = _PROC_WAIT.get(pattern)
+        if waiter is not None:
+            owner, ev = False, waiter
+        else:
+            if stale is not None and refresh != "inline":
+                if refresh == "bg":
+                    _PROC_WAIT[pattern] = ev = threading.Event()
+                    owner = True
+                else:                       # refresh="none"
+                    return stale
+            else:
+                _PROC_WAIT[pattern] = ev = threading.Event()
+                owner = True
+    if not owner:
+        # شمارشِ اول دارندگانِ دیگرِ همین الگو را بلوکه نمی‌کند که بج‌بخورد؛
+        # فقط منتظرِ همان یکِ نتیجه می‌مانند (سقفِ منطقی، بی‌بن‌بست).
+        ev.wait(timeout=max(5.0, ttl + 5.0))
+        with _PROC_LOCK:
+            hit = _PROC_CACHE.get(pattern)
+        if hit is not None:
+            return hit[1]
+        return stale if stale is not None else False
+    try:
+        if stale is None:
+            val = _count_procs_raw(pattern)
+            with _PROC_LOCK:
+                # همان `t` ذخیره می‌شود، نه ساعتِ دوباره‌خوانده‌شده — وگرنه
+                # آزمونِ ttl با ساعتِ تزریقی معنایش را از دست می‌داد.
+                _PROC_CACHE[pattern] = (t, val)
+            return val
+        threading.Thread(target=_proc_refresh, args=(pattern,), daemon=True).start()
+        return stale
+    finally:
+        if stale is None:
+            with _PROC_LOCK:
+                _PROC_WAIT.pop(pattern, None)
+            ev.set()
+
+
+def _proc_refresh(pattern):
+    """بازسازیِ پس‌زمینه؛ خطا نباید تردِ درخواست‌کننده را بمیراند."""
+    try:
+        val = _count_procs_raw(pattern)
+        with _PROC_LOCK:
+            _PROC_CACHE[pattern] = (time.monotonic(), val)
+    except Exception:
+        pass
+    finally:
+        with _PROC_LOCK:
+            ev = _PROC_WAIT.pop(pattern, None)
+    if ev is not None:
+        ev.set()
+
+
+def _proc_cache_clear():
+    """فقط برایِ آزمون — کشِ شمارشِ فرایند را خالی می‌کند."""
+    with _PROC_LOCK:
+        _PROC_CACHE.clear()
+        _PROC_WAIT.clear()
 
 def _kill_procs(pattern):
     """کشتن همه پروسههای python دارای pattern در CommandLine — کراس-پلتفرم."""
@@ -285,25 +390,25 @@ def _kill_procs(pattern):
         pass
 
 
-# ==================================== تطبیق نمادِ چند-نویشتاری (رفع باگ ک/ي عربی)
-# ستون symbol در price_history/instruments برای شماری از نمادها با «ك/ي» عربی
-# ذخیره شده (۳۴۴ نماد با ك عربی و ۵۵۴ با ي عربی، از ۲۵۱۵ نماد price_history)
-# ولی ورودیِ کاربر/واچلیست/اسکرینر نوشتار فارسی می‌دهد (fts_engine.norm_fa).
-# تطبیقِ دقیقِ `symbol = ?` برای این نمادها بی‌صدا صفر ردیف برمی‌گرداند →
-# تاریخچهٔ خالی، بج/تحلیل FTS خالی، چارت بی‌سری. sym_pred همهٔ نوشتارهای یک
-# نماد را در پایتون می‌سازد و به شکل `col IN (?,?)` به SQL می‌فرستد تا از
-# ایندکس (ix_ph_sym_date2) استفاده شود — نه `norm_fa(col) = ?` که اسکن کامل
-# می‌خورد (۵۷۴× کندتر؛ همان اندازه‌گیریِ fts_engine). این همان الگوی
-# موردتأییدِ پروژه است: confidence_engine._bars و fundamental.sym_in.
-def sym_pred(col: str, symbol):
-    """(شرطِ SQL, پارامترها) برای تطبیق «هر نوشتارِ» نماد روی ستونِ نماد.
+# ==================================== تطبیقِ هویتِ نماد (Stage 1.2)
+# ستون symbol در بانک‌های کدال/تابلو برای شماری از نمادها با «ك/ي» عربی یا
+# نیم‌فاصله ذخیره شده، ولی ورودیِ کاربر/واچلیست/اسکرینر نوشتارِ فارسی می‌دهد.
+# تطبیقِ `symbol = ?` برای آن‌ها بی‌صدا صفر ردیف برمی‌گرداند (تاریخچۀ خالی،
+# بج خالی، چارت بی‌سری). راه‌حلِ پیشین «ساختنِ جایگشتِ نوشتارها در پایتون» بود؛
+# Stage 1.2 آن را با نامزدهایِ واقعیِ همان بانک عوض کرد (`symbol_identity`),
+# چون جایگشت هیچ‌وقت نیم‌فاصله را نمی‌ساخت و کارت را از ۶ از ۷ ردیفِ یک
+# صادرکننده بی‌خبر می‌گذاشت، در حالی که قیف هر ۷ را می‌دید.
+# شکلِ خروجی عوض نشده (`col IN (?,?)`) تا ایندکس بماند: اندازه‌گیریِ همین بانک
+# `norm(col)=?` را ~۵٫۷ms در برابرِ ~۰٫۰۱ms برای `symbol=?` نشان داد.
+def sym_pred(conn, col: str, symbol, domain=None):
+    """(شرح SQL, پارامترها) برای «همۀ نوشتارهایِ این نماد در همین بانک».
 
-    مثال: pred, params = sym_pred("symbol", "داریک")
-           f"... WHERE {pred}"  →  "symbol IN (?,?)"  (فارسی + عربی).
-    ورودیِ تهی → شرطی که هرگز درست نمی‌شود (رفتار «بدون داده» حفظ می‌شود).
+    مثال: pred, params = sym_pred(conn, "symbol", "داریک")
+    ورودیِ تهی ⇒ شرطی که هرگز درست نمی‌شود (رفتارِ «بدون داده» حفظ می‌شود).
+    `conn` اجباری است: بدونِ بانک نمی‌شود دانست کدامِ نوشتار واقعاً وجود دارد.
     """
     try:
         import fts_engine
-        return fts_engine.sym_in(col, symbol)
+        return fts_engine.sym_in(conn, col, symbol, domain)
     except Exception:
         return "%s = ?" % col, [symbol]

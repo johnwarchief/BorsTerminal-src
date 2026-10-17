@@ -20,7 +20,6 @@ vi.mock('@tanstack/react-virtual', async (orig) => {
     }),
   };
 });
-import { EpsLadder } from '@features/fundamental/components/EpsLadder';
 import { FtsDrillDown } from '@features/fundamental/components/FtsDrillDown';
 import { FtsCard as EpsCardPanel } from '@features/fundamental/components/FtsCard';
 import type { FtsScreenRow } from '@features/fundamental/api/useFtsScreen';
@@ -221,7 +220,8 @@ describe('جدول غربالگری — شاخص ۲ با ۲ سال سابقه', 
 });
 
 describe('سازگاری برچسب بین جدول، نردبان EPS و drill-down (برچسب و منطق یکی)', () => {
-  it('هر سه نما برای همان «۲ از ۳ سال» یک متن برچسب می‌دهند', () => {
+  // «نردبان»ِ مرده حذف شد؛ parity حالا بین دو نمایِ زنده است (جدول + دریل‌دان)
+  it('هر دو نمایِ زنده برای همان «۲ از ۳ سال» یک متن برچسب می‌دهند', () => {
     const expected = 'مردود در شاخص ۲ — سابقهٔ ناقص (۲ از ۳ سال)';
     // نرمال‌سازی: حذف نشانگر ⓘ و فاصله‌های اضافی
     const norm = (t: string | null) => (t ?? '').replace(/ⓘ/g, '').replace(/\s+/g, ' ').trim();
@@ -229,20 +229,18 @@ describe('سازگاری برچسب بین جدول، نردبان EPS و drill-
     render(
       <>
         <FtsScreenTable rows={[row()]} onSelect={() => {}} />
-        <EpsLadder slots={['1403', '1404', '1405']} series={[null, 590, 990]} partial requiredYears={3} />
         <FtsDrillDown card={card2year()} active="2" quarters={[]} physicalApplicable />
       </>,
     );
     const labels = screen.getAllByTestId(EPS_PARTIAL_TESTID).map((el) => norm(el.textContent));
-    expect(labels).toHaveLength(3);
+    expect(labels).toHaveLength(2);
     for (const l of labels) expect(l).toBe(expected);
   });
 
-  it('هر سه نما با ۱ سال سابقه، برچسب سابقهٔ ناقص نمی‌زنند', () => {
+  it('هر دو نمایِ زنده با ۱ سال سابقه، برچسب سابقهٔ ناقص نمی‌زنند', () => {
     render(
       <>
         <FtsScreenTable rows={[row({ eps_series: [50, null, null] })]} onSelect={() => {}} />
-        <EpsLadder slots={['1405']} series={[50]} partial requiredYears={3} />
       </>,
     );
     expect(screen.queryByTestId(EPS_PARTIAL_TESTID)).not.toBeInTheDocument();
@@ -379,22 +377,6 @@ describe('#101 کارت EPS (شاخص ۲) — درصدها کنارِ عدد', (
 });
 
 describe('#101 نردبان EPS و دریل‌دان — همان درصدها، یک منبع', () => {
-  it('نردبان: درصدِ هر سال زیرِ همان سال نوشته می‌شود و سالِ نخست «—» است', () => {
-    render(<EpsLadder slots={['1403', '1404', '1405']} series={[100, 150, 300]} partial={false} />);
-    const ladder = screen.getByTestId('eps-ladder');
-    expect(ladder.textContent).toContain('+۵۰.۰٪');
-    expect(ladder.textContent).toContain('+۱۰۰.۰٪');
-    expect(within(ladder).getByTestId('eps-cell-change-0').textContent).toBe('—');
-  });
-
-  it('نردبان با سالِ غایب: هیچ درصد و هیچ رنگی برای آن فاصله نیست', () => {
-    render(<EpsLadder slots={['1403', '1404', '1405']} series={[null, 590, 990]} partial requiredYears={3} />);
-    const ladder = screen.getByTestId('eps-ladder');
-    // ۵۹۰ ← ۹۹۰ = ۶۷.۸٪ هست، ولی ۱۴۰۳ مبنای ندارد
-    expect(ladder.textContent).toContain('+۶۷.۸٪');
-    expect(within(ladder).getByTestId('eps-cell-change-1').textContent).toBe('—');
-  });
-
   it('دریل‌دان شاخص ۲: زیرِ هر میله درصد رشد نوشته می‌شود', () => {
     const card = {
       status: 'success',

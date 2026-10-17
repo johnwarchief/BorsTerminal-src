@@ -554,7 +554,7 @@ export function FtsSettingsDrawer({ open, onClose }: { open: boolean; onClose: (
 
           <ToggleRow
             label="حذف نمادهای مشمول تعلیق"
-            hint="نماد با ۳ نشست عقب‌مانده از تابلو"
+            hint="نماد با ۳ روز معاملاتی عقب‌ماندگی از تابلو"
             checked={draft.suspended_max_stale_sessions > 0}
             onChange={(v) =>
               setDraft((d) => ({ ...d, suspended_max_stale_sessions: v ? FTS_GUIDE_DEFAULTS.suspended_max_stale_sessions : 0 }))
@@ -656,7 +656,7 @@ export function FtsSettingsDrawer({ open, onClose }: { open: boolean; onClose: (
             disabled={save.isPending}
             className="rounded-full border border-[var(--hairline)] bg-bg-card/60 px-4 py-2 text-xs font-bold text-text-secondary transition-all hover:border-accent-yellow hover:text-accent-yellow disabled:opacity-50"
           >
-            بازگشت به مقادیر جزوه
+            بازگردانی تنظیمات به پیش‌فرض FTS
           </button>
         </div>
       </div>

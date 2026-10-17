@@ -94,6 +94,10 @@ export const MarketRowSchema = z.object({
   buyer_power: num,
   buyer_power_raw: num,
   buy_power_i: num,
+  // سرانۀ فروش (حجمِ فروشِ حقیقی ÷ تعدادِ فروشندهٔ حقیقی) — درِ مرجع ستون است و
+  // خروجیِ دیدهبان هم آن را می‌خواهد؛ تا ویرایشِ ۱۴۰۵-۰۷-۲۳ درِ `_DROP_FIELDS`
+  // دور ریخته می‌شد، پس «بی‌داده» نبود، «فرستاده نمی‌شد».
+  sell_power_i: num,
   // درصدِ «آخرین» نسبت به دیروز: percent_change پایانی را می‌سنجد، این آخرین را.
   percent_last: num,
   f_roobi: flag,
@@ -105,6 +109,13 @@ export const MarketRowSchema = z.object({
   // می‌خواند (بی‌آینۀِ منطقیِ دوم).
   f_smart: flag,
   f_legal: flag,
+  // [is5]/[is6] از `InstValue.aspx` خودِ TSETMC. داوریِ «ورود پول هوشمند» و
+  // «کدبه‌کد» خطِ سومِ فایلشان است و مبنایش [is6]؛ [is5] فقط درِ خطِ دوم اجرا
+  // می‌شود و ارزشش دور ریخته می‌شود، پس دروازه نیست. نبودِ [is6] درِ سایت
+  // `undefined` است ⇒ NaN ⇒ ردیف از فهرست بیرون می‌افتد؛ پس null اینجا
+  // یعنی «این فیلتر بر این نماد سنجیده نشده»، نه «صفر» و نه «رد».
+  is5: num,
+  is6: num,
   is_live: flag,
   // سقفِ تک‌روزیِ kامین نشستِ آخر — [ih][k].PriceMax در فرمول‌هایِ TSETMC.
   // نبودنش یعنی آن نشست بی‌معامله بوده و سایت همان‌جا صفر می‌گذارد؛ «پلکانِ
@@ -142,6 +153,14 @@ export const MarketRowSchema = z.object({
   stop_state: z.string().nullish(),
   stop_since: z.string().nullish(),
   stop_reasons: z.string().nullish(),
+  // ── «خارج از غربالگری» (گزینهٔ الف) ──────────────────────────────────────────
+  // رأیِ خودِ موتورِ غربالگری (`funnel_engine.screening_eligibility`) رویِ ردیفِ
+  // تابلو، تا رابط بگوید کدام نمادِ دارایِ فیلترِ تابلو به چه علتی واردِ قیف نمی‌شود.
+  // فقط نمایش است: شمارۀ چیپ و داوریِ فیلترها را دست نمی‌زند. نبودِ کلید (پاسخِ
+  // قدیمی) ⇒ «نمی‌دانیم»، نه «خارج است» — پس `nullish` و رابط بی‌اطلاعی را نمی‌بندد.
+  screening_eligible: z.boolean().nullish(),
+  screening_exclusion_code: z.string().nullish(),
+  screening_exclusion_reason: z.string().nullish(),
   // مبدأِ ارزشِ حقیقی/حقوقی: native | mixed | reconstructed. یک‌بار درِ نویسنده
   // حساب شده و همین‌جا خوانده می‌شود؛ رابط حق ندارد از خودِ عددها بازسازیش کند.
   // فقط درِ «جزئیات» نشان داده می‌شود — نه بج، نه ستونِ تابلو، و هرگز وارد

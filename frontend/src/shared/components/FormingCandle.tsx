@@ -68,7 +68,7 @@ export function FormingCandle({
     return (
       <span className="num-text text-3xs text-text-muted" data-testid={testId}
             data-state="incomplete"
-            title="اول/بیشترین/کمترینِ همین نشست نرسیده — کندلی رسم نمی‌شود">—</span>
+            title="اول/بیشترین/کمترینِ همین روز نرسیده — کندلی رسم نمی‌شود">—</span>
     );
   }
   // محورِ قیمت افقی است (چپ = کمترین، راست = بیشترین) تا با محورِ زمانِ چارت‌های
@@ -104,9 +104,9 @@ export function FormingCandleStrip({
 }) {
   const g = candleGeometry(candle);
   const cell = (label: string, v: number | null) => (
-    <span className="flex items-baseline gap-1" title={`${label}ِ همین نشست`}>
+    <span className="flex items-baseline gap-1" title={`${label}ِ همین روز`}>
       <span className="text-3xs text-text-muted">{label}</span>
-      <span className="num text-[10px] font-bold text-text-primary">{v != null && v > 0 ? fmtInt(v) : '—'}</span>
+      <span className="num text-3xs font-bold text-text-primary">{v != null && v > 0 ? fmtInt(v) : '—'}</span>
     </span>
   );
   return (

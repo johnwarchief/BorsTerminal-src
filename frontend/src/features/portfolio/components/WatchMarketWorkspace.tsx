@@ -1,9 +1,8 @@
 // features/portfolio/components/WatchMarketWorkspace.tsx — زیرتبِ «دیده‌بان بازار»
 //
-// چیدمانِ چهارناحیه‌ای که مالک خواسته: بالا جدولِ زنده؛ پایین سه‌تاییِ
-// چپ=کندلِ روزانه، وسط=عمقِ پنج‌سطحی، راست=خلاصۀِ نماد + جایگاهِ خالیِ پنلِ
-// ربات (دکمه‌ها غیرفعال). درِ ۱۳۶۶×۷۶۸ سه ستون می‌ماند (xl = ۱۲۸۰) و هر پنل
-// `min-w-0` است تا جدول/چارت صفحه را بیرون نبرند.
+// چیدمان: بالا جدولِ زنده؛ زیرِ آن نوارِ تب‌هایِ افقیِ اسکرول‌پذیر و پروندۀ همان
+// نماد (تابلو+سابقه / نمودار / پنج کارت بنیادی / بازار در یک نگاه). درِ ۱۳۶۶
+// پیکسل یک پنلِ تمام‌عرض می‌ماند و هیچ‌کدام `min-w-0` را نمی‌شکنند.
 //
 // انتخابِ نماد ازِ همان `useSymbolStore` سراسری است: یک کلیک رویِ ردیف هر سه
 // پنلِ پایین را هم‌زمان به همان نماد می‌بَرَد (هر سه با queryKeyِ نماد).
@@ -12,14 +11,29 @@ import { fmtAge } from '@shared/lib/time';
 import { toFaDigits } from '@shared/lib/fmt';
 import { useSymbolStore } from '@shared/stores/symbolStore';
 import { useMarketFeedShared } from '@shared/api/marketFeed';
-import { useUserWatchlist } from '@shared/api/userWatchlist';
+import { useUserWatchlist, useWatchlistToggle } from '@shared/api/userWatchlist';
+import { useInsCodeFor } from '@shared/api/tapeHistory';
+import TapeHistoryPanel from '@shared/components/TapeHistoryPanel';
 import { normalizeFa } from '@shared/lib/normalizeFa';
+import { patternBadges } from '@features/market/lib/tapeBadges';
+import { useTapeStore } from '@features/market/stores/tapeStore';
+import { FtsCardDossier } from '@features/fundamental/components/FtsCardDossier';
 import { useSymbolSearch } from '../api/useSymbolSearch';
 import { useWatchSymbolsStore, WATCH_MAX } from '../stores/watchSymbolsStore';
 import { WatchTable } from './WatchTable';
 import { WatchChartDeck } from './WatchChartDeck';
 import { OrderBookFive } from '@shared/components/OrderBookFive';
 import { WatchSummaryPanel } from './WatchSummaryPanel';
+
+/** تب‌های پروندۀ نماد — هر چهار پنلِ قبلی این صفحه زنده ماندند، فقط درِ تب
+ *  خودشان می‌نشینند (چهارستونه رویِ ۱۳۶۶ پیکسل یعنی اسکرولِ افقیِ جدول). */
+type WatchTab = 'tape' | 'chart' | 'fund' | 'market';
+const TABS: Array<{ id: WatchTab; label: string; hint: string }> = [
+  { id: 'tape', label: 'خلاصه و تابلوخوانی', hint: 'قیمت و حجمِ همین نشست + برچسبِ فیلترها + سابقۀ چندروزهٔ هر فیلتر' },
+  { id: 'chart', label: 'نمودار تکنیکال', hint: 'همان کارتِ نمودارِ چندصفحهایِ همین نمادها، با همان موتور' },
+  { id: 'fund', label: 'بنیادی (پنج کارت)', hint: 'پنج کارت FTS از همان /api/fundamental — بی‌موتورِ دوم' },
+  { id: 'market', label: 'بازار در یک نگاه', hint: 'عمقِ پنج‌سطحی و خلاصۀ تابلو درِ یک نگاه' },
+];
 
 function AddSymbolBar() {
   const [query, setQuery] = useState('');
@@ -100,17 +114,40 @@ function AddSymbolBar() {
 }
 
 export default function WatchMarketWorkspace() {
-  const symbols = useWatchSymbolsStore((s) => s.symbols);
-  const remove = useWatchSymbolsStore((s) => s.remove);
+  const localSymbols = useWatchSymbolsStore((s) => s.symbols);
+  const removeLocal = useWatchSymbolsStore((s) => s.remove);
   const selected = useSymbolStore((s) => s.symbol);
   const setSymbol = useSymbolStore((s) => s.setSymbol);
-  // ستارۀِ واچ‌لیستِ سرور همان ردیفِ `/api/watchlist` را روشن نگه می‌دارد (§۳۱
-  // — دو چیزِ جدا: رصدِ محلیِ این جدول، و ستاره درِ پنج سطح).
+  // ستارۀِ واچ‌لیستِ سرور + دیدهبانِ محلی. پیش از این دو فهرست درِ دو جمله
+  // جدا نگه داشته می‌شدند («این جدولِ معاملاتیِ همین زیرتب است») و نتیجه‌اش این
+  // بود که نمادی که از جدول تحویل ستاره‌دار شده درِ هابِ رصد دیده نمی‌شد. اینجا
+  // یکی می‌شوند: اتحادِ دو فهرست با کلیدِ نرمال، بی‌سومینِ منبعِ حقیقت.
   const { rows: serverRows } = useUserWatchlist();
   const serverNorm = useMemo(() => new Set(serverRows.map((r) => normalizeFa(r.symbol))), [serverRows]);
+  const watchToggle = useWatchlistToggle();
+
+  const symbols = useMemo(() => {
+    const seen = new Set<string>();
+    const out: string[] = [];
+    for (const s of [...localSymbols, ...serverRows.map((r) => r.symbol)]) {
+      const n = normalizeFa(s);
+      if (!n || seen.has(n)) continue;
+      seen.add(n);
+      out.push(s);
+    }
+    return out;
+  }, [localSymbols, serverRows]);
+
+  /** حذف = برداشتنِ عضویت از هر دو جا؛ اگر فقط یکی پاک شود، نماد «برنمی‌دارد»
+   *  و کاربر آن را درِ همان فهرست بازمی‌بیند. */
+  const removeOne = (s: string) => {
+    const n = normalizeFa(s);
+    if (localSymbols.some((x) => normalizeFa(x) === n)) removeLocal(s);
+    if (serverNorm.has(n)) watchToggle.mutate({ symbol: s, remove: true });
+  };
 
   // نمادِ مؤثرِ پنل‌ها: انتخابِ سراسری اگر درِ رصد باشد، وگرنه اولینِ رصدشده —
-  // تا تازه‌وارد بدونِ کلیک هم سه پنلِ پر ببیند (نه پنلِ نمادِ بی‌ربطِ قبلی).
+  // تا تازه‌وارد بدونِ کلیک هم پروندۀ پر ببیند (نه پروندۀ نمادِ بی‌ربطِ قبلی).
   // پیش از این همان `?? selected` برمی‌گشت، یعنی با انتخابِ خالی هر سه پنل
   // بی‌نماد می‌ماندند و کامنتِ بالایِ خودش را نقض می‌کرد (سنجشِ زنده: عمقِ
   // پنج‌سطحی ۰ سطر تا پیش از نخستین کلیک).
@@ -121,11 +158,23 @@ export default function WatchMarketWorkspace() {
     return symbols.find((s) => normalizeFa(s) === norm) || selected || symbols[0] || '';
   }, [selected, symbols]);
 
+  // تبِ پرونده: با انتخابِ نماد نمی‌سوزد (مالک: تغییرِ نماد نباید کارِ کاربر را
+  // بی‌صدا به تبِ اول برگرداند).
+  const [tab, setTab] = useState<WatchTab>('tape');
+
   // خلاصه از همان فیدِ مشترک — ردیفِ نمادِ مؤثر (selectِ باریک، بی‌درخواستِ دوم)
   const summaryRow = useMarketFeedShared(
     (f) => (f.data ?? []).find((r) => normalizeFa(String(r.symbol ?? '')) === normalizeFa(effective)) ?? null,
     60_000,
   );
+  // برچسبِ فیلترها از همان `patternBadges` تبِّ تابلو می‌آیند (نه فرمولِ دوم)؛
+  // سابقه هم با `ins_code` پرسیده می‌شود، نه با نام.
+  const tapeCfg = useTapeStore((s) => s.tapeFilterConfig);
+  const liveBadges = useMemo(
+    () => (summaryRow.data ? patternBadges(summaryRow.data, tapeCfg).filter((b) => b.filter) : []),
+    [summaryRow.data, tapeCfg],
+  );
+  const insCode = useInsCodeFor(effective);
 
   return (
     <div className="flex w-full max-w-none flex-col gap-3" data-testid="watch-market-workspace">
@@ -148,24 +197,83 @@ export default function WatchMarketWorkspace() {
           جدول هیچ‌وقت واردِ سبد/وزن نمی‌شود.) — سقفِ فهرست <span className="num">{toFaDigits(WATCH_MAX)}</span> نماد است.
         </p>
       ) : (
-        <WatchTable symbols={symbols} selected={effective} onSelect={setSymbol} onRemove={remove} />
+        <WatchTable symbols={symbols} selected={effective} onSelect={setSymbol} onRemove={removeOne} />
       )}
 
-      <div className="grid min-w-0 max-w-full grid-cols-1 gap-3 lg:grid-cols-2 xl:grid-cols-3">
-        {/* کارتِ نمودار چندصفحهایِ خودِ نمادها شد (دو ورقه درِ هر نماد، با دو
-            شاخصِ بنیادی درِ ورقۀِ اول و سه‌تایِ آخر درِ ورقۀِ دوم)؛ پس این خانه
-            از سه ستونِ هم‌قدِ نمادِ مؤثر بیرون است و تنها می‌ایستد. */}
-        <div className="lg:col-span-2 xl:col-span-3">
-          <WatchChartDeck symbols={symbols} selected={effective} onSelect={setSymbol} />
-        </div>
-        <OrderBookFive symbol={effective} candle={summaryRow.data ?? null} testId="watch-orderbook"
-                      className="glass-panel h-full min-w-0 rounded-2xl p-2.5" />
-        <WatchSummaryPanel symbol={effective} row={summaryRow.data ?? null} />
-      </div>
+      {symbols.length > 0 ? (
+        <>
+          {/* تب‌های افقیِ اسکرول‌پذیر: پروندۀ همان نمادِ انتخابی. چارت، عمق و
+              خلاصه از این صفحه حذف نشده‌اند — هر چهار پنل درِ یک تب زنده‌اند تا
+              عرضِ ۱۳۶۶ پیکسل جدول را بیرون نبرد. */}
+          <div
+            role="tablist"
+            data-testid="watch-dossier-tabs"
+            className="flex min-w-0 gap-1 overflow-x-auto rounded-xl border border-border-c bg-bg-card/50 p-1"
+          >
+            {TABS.map((t) => (
+              <button
+                key={t.id}
+                type="button"
+                role="tab"
+                aria-selected={tab === t.id}
+                data-testid={`watch-tab-${t.id}`}
+                onClick={() => setTab(t.id)}
+                title={t.hint}
+                className={`shrink-0 rounded-lg px-2.5 py-1 text-2xs font-bold transition-colors ${
+                  tab === t.id
+                    ? 'bg-accent-blue/20 text-accent-blue'
+                    : 'text-text-muted hover:bg-bg-primary hover:text-text-primary'
+                }`}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+
+          <div className="min-w-0" data-testid={`watch-dossier-${tab}`} role="tabpanel">
+            {tab === 'tape' ? (
+              <div className="grid min-w-0 grid-cols-1 gap-3 lg:grid-cols-2">
+                <WatchSummaryPanel symbol={effective} row={summaryRow.data ?? null} />
+                <div className="glass-panel min-w-0 rounded-2xl p-2.5">
+                  <div className="mb-1 flex flex-wrap items-center gap-1" data-testid={`watch-badges-${effective}`}>
+                    {liveBadges.length ? (
+                      liveBadges.map((b) => (
+                        <span key={b.key} title={b.title}
+                              className={`rounded border px-1.5 py-0.5 text-3xs font-bold ${
+                                b.tone === 'red' ? 'border-accent-red/40 bg-accent-red/15 text-accent-red'
+                                                 : 'border-accent-blue/40 bg-accent-blue/15 text-accent-blue'}`}>
+                          {b.label}
+                        </span>
+                      ))
+                    ) : (
+                      <span className="text-3xs text-text-muted">
+                        هیچ فیلترِ تابلویی همین حالا رویِ این نماد روشن نیست (وضعیتِ امروز، جدا از سابقه).
+                      </span>
+                    )}
+                  </div>
+                  <TapeHistoryPanel insCode={insCode} symbol={effective} days={5} />
+                </div>
+              </div>
+            ) : null}
+            {tab === 'chart' ? (
+              <WatchChartDeck symbols={symbols} selected={effective} onSelect={setSymbol} />
+            ) : null}
+            {tab === 'fund' ? <FtsCardDossier symbol={effective} /> : null}
+            {tab === 'market' ? (
+              <div className="grid min-w-0 grid-cols-1 gap-3 lg:grid-cols-2">
+                <OrderBookFive symbol={effective} candle={summaryRow.data ?? null} testId="watch-orderbook"
+                               className="glass-panel h-full min-w-0 rounded-2xl p-2.5" />
+                <WatchSummaryPanel symbol={effective} row={summaryRow.data ?? null} />
+              </div>
+            ) : null}
+          </div>
+        </>
+      ) : null}
 
       <p className="text-3xs leading-5 text-text-muted" data-testid="watch-server-note">
-        ستارۀ «واچ‌لیست» (<span className="num">{toFaDigits(serverNorm.size)}</span> نماد درِ سرور) و این دیدهبانِ محلی دو چیزند:
-        اولی برایِ رصدِ چندصفحهای، دومی جدولِ معاملاتیِ همین زیرتب.
+        این فهرست اتحادِ دو منبع است: ستارۀ «واچ‌لیست» (<span className="num">{toFaDigits(serverNorm.size)}</span> نماد
+        درِ سرور، ماندگار) و دیدهبانِ محلی (<span className="num">{toFaDigits(localSymbols.length)}</span> نماد درِ همین
+        دستگاه). حذف، عضویت را از هردو برمی‌دارد. رصد با «داراییِ پرتفوی» فرق دارد: هیچ‌وقت واردِ سبد/وزن نمی‌شود.
       </p>
     </div>
   );

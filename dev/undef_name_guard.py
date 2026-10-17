@@ -79,6 +79,17 @@ def main():
     targets = ["app.py", "bors_config.py", "bors_entry.py", "bors_minisign.py",
                "codal_fetcher.py", "fts_engine.py", "mstat_engine.py", "tape_flags.py",
                "watchlist_stack.py", "watchlist_store.py", "bootstrap_first_run.py"]
+    # ستونِ فقراتِ اجرا و ربات (مأموریتِ ۱۴۰۵-۰۷-۲۳): این ماژول‌ها سالِ پیش به
+    # فهرستِ دستی اضافه نشدند، پس «۰ ایراد» دربارهٔ آن‌ها *سکوت* بود نه تأیید —
+    # همان الگویی که درِ `guard-fixtures-hide-a-dead-branch` ثبت شده.
+    targets += ["execution_contract.py", "execution_service.py", "execution_mock.py",
+                "execution_timing.py", "execution_latency.py", "execution_ledger.py",
+                "trade_sim.py", "backtest_engine.py", "paper_trading.py", "bot_signals.py",
+                "price_basis.py", "candle_contract.py", "codal_periods.py",
+                "codal_pipeline.py", "codal_units.py", "client_split.py",
+                "funnel_engine.py", "funnel_registry.py", "funnel_tech_scan.py",
+                "confidence_engine.py", "tape_flag_history.py", "market_state.py",
+                "symbol_identity.py"]
     targets += [p.replace(os.sep, "/") for p in glob.glob(os.path.join(ROOT, "api", "*.py"))]
 
     problems = []

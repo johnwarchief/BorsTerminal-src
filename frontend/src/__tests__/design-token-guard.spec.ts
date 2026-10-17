@@ -58,7 +58,7 @@ function isSpecFile(p: string): boolean {
 /** هر ارجاعِ رنگیِ اختصاصی درِ رشته‌یِ className */
 function usedCustomColors(text: string): string[] {
   const hits: string[] = [];
-  for (const m of text.matchAll(/(?:^|[\s"'`:])(?:text|bg|border|ring|fill|stroke|from|to|via|outline|decoration|shadow|accent|divide|placeholder)-(accent-[a-z0-9-]+|neon-[a-z0-9-]+)/g)) {
+  for (const m of text.matchAll(/(?:^|[\s"'`:])(?:text|bg|border|ring|fill|stroke|from|to|via|outline|decoration|shadow|accent|divide|placeholder)-(accent-[a-z0-9-]+|neon-[a-z0-9-]+|tone-[a-z0-9-]+)/g)) {
     hits.push(m[1].split('/')[0]);
   }
   return hits;
@@ -73,6 +73,11 @@ describe('نگهبانِ رنگِ اختصاصی (مرحلۀ ۵ — کلاسِ �
     // قرمز شود نه اینکه بی‌صدا «سبزِ بی‌محتوا» بدهد.
     expect(defined.has('accent-blue')).toBe(true);
     expect(defined.has('accent-yellow')).toBe(true);
+    // لایۀ معناییِ وضعیت‌ها (بند ۳ معماری): شش واژه باید باشند، وگرنه کلاس‌های
+    // text-tone-* در build سبز ولی بی‌رنگ می‌مانند — همان نقصِ accent-amber.
+    for (const tone of ['tone-pos', 'tone-neg', 'tone-neutral', 'tone-warn', 'tone-err', 'tone-unknown']) {
+      expect(defined.has(tone), `--color-${tone} در @theme نیست`).toBe(true);
+    }
     expect(defined.size).toBeGreaterThan(8);
     expect(files.length).toBeGreaterThan(80);
   });
@@ -89,6 +94,22 @@ describe('نگهبانِ رنگِ اختصاصی (مرحلۀ ۵ — کلاسِ �
       }
     }
     expect(missing, `کلاس‌هایِ رنگی که هیچ CSSی نمی‌سازند:\n${missing.join('\n')}`).toEqual([]);
+  });
+
+  it('هیچ اندازهٔ متنِ پیکسلیِ بیرونِ نردبانِ --fs-* در کد نیست', () => {
+    // 163 بار درِ 34 فایل `text-[8.5px]` … `text-[13px]` نوشته شده بود. آن
+    // اعداد عضوِ نردبان نیستند، پسِ هر تغییرِ --fs-3xs آن‌ها را لمس نمی‌کند:
+    // کفِ خواناییِ گوشی (که درِ tokens.css باِ همانِ نردبان بالا کشیده شد) درِ
+    // دسکتاق بی‌اثر می‌ماند. نگهبانِ اندازه (dev/typography_guard.py) فقطِ پله‌هایِ
+    // مصرفی را می‌بیند، نه اینِ ارقامِ صریح — پسِ اینجا بسته می‌شود.
+    const offenders: string[] = [];
+    for (const f of files) {
+      const text = readFileSync(f, 'utf8');
+      for (const m of text.matchAll(/text-\[([0-9.]+)px\]/g)) {
+        offenders.push(`${relative(SRC, f)} → text-[${m[1]}px]`);
+      }
+    }
+    expect(offenders, `اندازه‌هایِ بیرونِ نردبان:\n${offenders.join('\n')}`).toEqual([]);
   });
 
   it('نمونۀ ثابت: نامِ جعلیِ همان نقصِ رفع‌شده را می‌گیرد', () => {

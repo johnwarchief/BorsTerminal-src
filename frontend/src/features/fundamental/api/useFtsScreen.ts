@@ -56,6 +56,10 @@ export const FtsScreenRowSchema = z.object({
   excluded: z.boolean().nullish(),
   /** صندوق در پنج‌شاخصه نمی‌گنجد ⇒ حکمِ NOT_APPLICABLE، نه REJECTED */
   applicable: z.boolean().nullish(),
+  /** «عبور با ملاحظات» (رأیِ مالک ۱۴۰۵-۰۷-۲۱): حداقل سه شاخص PASS ولی بعضی
+   *  رد/ناقص. از خودِ موتورِ قیف می‌آید — جدول شمار را دوباره حساب نمی‌کند. */
+  fund_caveat: z.boolean().nullish(),
+  fund_passed: z.number().nullish(),
   exclusion_reasons: z.string().nullish(),
   m141: z.boolean().nullish(),
   watchlist: z.boolean().nullish(),
@@ -134,10 +138,12 @@ export type FtsFunnelGate = NonNullable<FtsScreen['funnel_gate']>;
 /** `limit = 0` یعنی کلِ universe. بک‌اند (`api/screener.py`) اصلاً پارامتر
  *  `limit` ندارد، پس برابریِ دسکتاپ/موبایل همان «همه» است؛ برشِ ۶۰تاییِ
  *  پیشین رویِ اندروید ۸۷۳ شرکت را به «۵۹ شرکت از ۶۰» می‌رساند. */
-export function useFtsScreen(limit = 0) {
+export function useFtsScreen(limit = 0, opts: { enabled?: boolean } = {}) {
   const suffix = limit > 0 ? `?limit=${limit}` : '';
   return useQuery({
     queryKey: ['fts-screen', limit],
+    // همانِ دلیلی که قیف: بی‌نماد، فهرستِ اسکرینر چیزی برایِ نشان دادن ندارد.
+    enabled: opts.enabled ?? true,
     queryFn: ({ signal }) =>
       http<FtsScreen>(`/api/screener${suffix}`, { schema: FtsScreenSchema, signal }),
     staleTime: 5 * 60_000,

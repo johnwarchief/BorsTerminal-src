@@ -79,7 +79,7 @@ export function screenRowCells(r: FtsScreenRow): ExportCell[] {
     // صنعت با کلیدِ `'regulated'` سنجیده می‌شد در حالی که بک‌اند `'mandatory'`
     // می‌فرستد — یعنی هر شرکتِ دستوری در فایل «آزاد» نوشته می‌شد.
     `${pct(r.rev_growth)} (الف: ${mark(r.i1a_pass)} / ب: ${
-      r.i1b_applicable === false ? 'N/A' : mark(r.i1b_pass)})`,
+      r.i1b_applicable === false ? 'کاربرد ندارد' : mark(r.i1b_pass)})`,
     `${eps}${r.eps_last != null ? ` | ${toFaDigits(r.eps_last)}` : ''}${r.eps_data_gap ? ' | بی‌داده' : ''}`,
     pct(r.gross_margin),
     r.profit_potential_pct == null ? '—' : pct(r.profit_potential_pct),
@@ -342,7 +342,7 @@ const ScreenerRow = memo(function ScreenerRow({
                           {r.symbol}
                         </span>
                         {r.tech_hourglass_active ? (
-                          <span className="shrink-0 rounded px-1.5 py-0.5 text-[9px] font-bold bg-accent-green/20 text-accent-green border border-accent-green/30" title="استراتژی ساعت شنی FTS فعال (خرید ۲x-۴x)">
+                          <span className="shrink-0 rounded px-1.5 py-0.5 text-3xs font-bold bg-accent-green/20 text-accent-green border border-accent-green/30" title="استراتژی ساعت شنی FTS فعال (خرید ۲x-۴x)">
                             ساعت شنی
                           </span>
                         ) : null}
@@ -350,18 +350,27 @@ const ScreenerRow = memo(function ScreenerRow({
                           <span
                             data-testid="row-funnel-candidate"
                             title="هر سه گامِ قیف (تابلوخوانی ← تکنیکال ← بنیادی) pass و بی‌وتو"
-                            className="shrink-0 rounded px-1.5 py-0.5 text-[9px] font-bold bg-neon-cyan/20 text-neon-cyan border border-neon-cyan/30"
+                            className="shrink-0 rounded px-1.5 py-0.5 text-3xs font-bold bg-neon-cyan/20 text-neon-cyan border border-neon-cyan/30"
                           >
                             کاندیدِ قیف
                           </span>
                         ) : null}
+                        {r.fund_caveat ? (
+                          <span
+                            data-testid="row-fund-caveat"
+                            title={`عبور با ملاحظات: ${r.fund_passed ?? '—'} شاخص PASS — حداقل ۳ کافی است؛ بقیهٔ شاخص‌ها رد شده‌اند یا داده ندارند`}
+                            className="shrink-0 rounded px-1.5 py-0.5 text-3xs font-bold bg-accent-yellow/20 text-accent-yellow border border-accent-yellow/30"
+                          >
+                            عبور با ملاحظات
+                          </span>
+                        ) : null}
                         {r.tech_jet ? (
-                          <span className="shrink-0 rounded px-1.5 py-0.5 text-[9px] font-bold bg-accent-blue/20 text-accent-blue border border-accent-blue/30" title="ستاپ جت FTS (شکست مقاومت)">
+                          <span className="shrink-0 rounded px-1.5 py-0.5 text-3xs font-bold bg-accent-blue/20 text-accent-blue border border-accent-blue/30" title="ستاپ جت FTS (شکست مقاومت)">
                             جت
                           </span>
                         ) : null}
                         {r.tech_matrix_decision === 'REJECT' ? (
-                          <span className="shrink-0 rounded px-1.5 py-0.5 text-[9px] font-bold bg-accent-red/20 text-accent-red border border-accent-red/30" title={r.tech_matrix_desc ?? 'ممنوعیت ورود FTS'}>
+                          <span className="shrink-0 rounded px-1.5 py-0.5 text-3xs font-bold bg-accent-red/20 text-accent-red border border-accent-red/30" title={r.tech_matrix_desc ?? 'ممنوعیت ورود FTS'}>
                             وتوی روند
                           </span>
                         ) : null}
@@ -378,7 +387,7 @@ const ScreenerRow = memo(function ScreenerRow({
                             title={`مجمع عمومی در پیش است — ورود وتو شد${
                               r.assembly_date ? ` · تاریخ: ${jalaliOf(r.assembly_date)}` : ''
                             }${typeof r.assembly_days === 'number' ? ` · ${toFaDigits(r.assembly_days)} روز دیگر` : ''}`}
-                            className="shrink-0 rounded px-1.5 py-0.5 text-[9px] font-bold border bg-accent-red/20 text-accent-red border-accent-red/30"
+                            className="shrink-0 rounded px-1.5 py-0.5 text-3xs font-bold border bg-accent-red/20 text-accent-red border-accent-red/30"
                           >
                             وتوی مجمع{r.assembly_date ? ` ${jalaliOf(r.assembly_date)}` : ''}
                           </span>
@@ -386,7 +395,7 @@ const ScreenerRow = memo(function ScreenerRow({
                           <span
                             data-testid={`row-${assembly.testId}`}
                             title={assembly.detail ? `${assembly.label} · ${assembly.detail}` : assembly.label}
-                            className={`shrink-0 rounded px-1.5 py-0.5 text-[9px] font-bold border ${
+                            className={`shrink-0 rounded px-1.5 py-0.5 text-3xs font-bold border ${
                               assembly.kind === 'near'
                                 ? 'bg-accent-yellow/20 text-accent-yellow border-accent-yellow/30'
                                 : 'bg-accent-blue/20 text-accent-blue border-accent-blue/30'
@@ -411,7 +420,7 @@ const ScreenerRow = memo(function ScreenerRow({
                                 ? `افزایش سرمایه در پیش است — فقط هشدارِ تاریخ است، وتو نیست · تاریخ: ${capital.jalali} · ${capital.detail}`
                                 : `افزایش سرمایه در پیش است — فقط هشدارِ تاریخ است، وتو نیست · تاریخ: ${capital.jalali}`
                             }
-                            className="shrink-0 rounded px-1.5 py-0.5 text-[9px] font-bold border bg-accent-blue/15 text-accent-blue border-accent-blue/30"
+                            className="shrink-0 rounded px-1.5 py-0.5 text-3xs font-bold border bg-accent-blue/15 text-accent-blue border-accent-blue/30"
                           >
                             افزایش سرمایه {capital.jalali.split('-').slice(-2).join('/')}
                           </span>
@@ -426,7 +435,7 @@ const ScreenerRow = memo(function ScreenerRow({
                     <div className="flex items-center justify-start gap-2 min-w-0">
                       <div className="shrink-0 flex items-center gap-1.5">
                         <span className="inline-flex items-center gap-0.5" title="۱-الف: رشد ریالی">
-                          <span className="text-[10px] text-text-muted font-bold">الف</span>
+                          <span className="text-3xs text-text-muted font-bold">الف</span>
                           {i1a === 'gap' ? (
                             <AxisGapMark axis="1a_monetary_growth" evidence={ev.i1a} />
                           ) : (
@@ -438,7 +447,7 @@ const ScreenerRow = memo(function ScreenerRow({
                           )}
                         </span>
                         <span className="inline-flex items-center gap-0.5" title="۱-ب: رشد تولیدی (تناژ)">
-                          <span className="text-[10px] text-text-muted font-bold">ب</span>
+                          <span className="text-3xs text-text-muted font-bold">ب</span>
                           {r.i1b_applicable === false ? (
                             /* «قابل اعمال نیست» را خودِ موتور می‌گوید
                                (`company_profile.volume_applicable`) — نه از
@@ -446,7 +455,7 @@ const ScreenerRow = memo(function ScreenerRow({
                                واقعیِ ✓/✗ پشتِ N/A پنهان می‌شد و درِ ۱۰۲ ردیف
                                N/Aِ اشتباه می‌خورد. */
                             <GapMark
-                              label="N/A (قابل اعمال نیست)"
+                              label="کاربرد ندارد"
                               tooltip="رشد تولیدی/تناژ برایِ این ماهیت (مالی، هلدینگ، صندوق، خدماتِ بی‌کالای فیزیکی) معنا ندارد — اعلامِ خودِ موتور FTS، نه شکاف داده."
                               evidence={ev.i1b}
                               testId="fts-na-1b_volume_growth"
@@ -482,7 +491,7 @@ const ScreenerRow = memo(function ScreenerRow({
                              ندارد — نه ✓ و نه ✗. علت را خودِ موتور می‌گوید
                              (`ind2_na` + `eps_consolidated`)، نه حدسِ جدول. */
                           <GapMark
-                            label={r.eps_consolidated ? 'N/A (تلفیقی)' : 'N/A'}
+                            label={r.eps_consolidated ? "کاربرد ندارد (تلفیقی)" : "کاربرد ندارد"}
                             tooltip={
                               r.eps_consolidated
                                 ? 'برخی سال‌ها فقط به‌صورت تلفیقی منتشر شده‌اند؛ جزوه (ص ۴) صورتِ شرکت اصلی را مبنای می‌گیرد، پس این شاخص سنجیده نمی‌شود. با همگام‌سازیِ تازه هم بسته نمی‌شود.'
@@ -531,7 +540,7 @@ const ScreenerRow = memo(function ScreenerRow({
                                (`ind3_na`) — نه regexِ نام/صنعت. بی‌این، ۱۱۲
                                ردیف از ۲۹۶ ردیفِ نادرست «N/A» می‌گرفت. */
                             <GapMark
-                              label="N/A (ماهیت مالی)"
+                              label="کاربرد ندارد"
                               tooltip="موتور FTS برای همین نماد «سود ناخالص» را بی‌کاربرد اعلام کرده است (بانک/بیمه/هلدینگ/صندوق)؛ شکاف داده نیست."
                               evidence={ev.i3}
                               testId="fts-na-3_gross_margin"
@@ -562,7 +571,7 @@ const ScreenerRow = memo(function ScreenerRow({
                         {i4 === 'gap' ? (
                           r.i4_na === true ? (
                             <GapMark
-                              label="N/A (ماهیت مالی)"
+                              label="کاربرد ندارد"
                               tooltip="موتور FTS همین نماد را از شرط «فروش ÷ ارزش بازار» معاف دانسته است (`ind4_na`)؛ شکاف داده نیست."
                               evidence={ev.i4}
                               testId="fts-na-4_sales_to_mcap"
@@ -674,7 +683,7 @@ function FunnelGateChip({ gate }: { gate?: FtsFunnelGate | null }) {
         ? `زنجیرۀ تابلوخوانی: ${(gate.chain ?? []).join('، ') || 'بی‌فیلتر'} · `
           + 'کاندیدِ قیف فقط ردیفی است که هر سه گام pass باشد و وتوی هفتگی/مجمع نداشته باشد.'
         : String(gate.message ?? gate.state)}
-      className={`ms-auto shrink-0 rounded-lg border px-2 py-1 text-[10px] font-bold ${
+      className={`ms-auto shrink-0 rounded-lg border px-2 py-1 text-3xs font-bold ${
         applied ? 'border-[var(--hairline)] bg-bg-primary text-text-secondary'
                 : 'border-accent-red/40 bg-accent-red/10 text-accent-red'
       }`}
@@ -992,9 +1001,11 @@ export function FtsScreenTable({
             <col className="w-[18%]" />
             {/* شاخص ۲ سری EPS دارد (سه عدد + درصد رشد) — با بزرگ‌ترشدنِ فونتِ این ستون،
                 عرضش از ستونِ صنعت گرفته شد که کوتاه‌ترین مقدار را دارد. ۲۸→۲۳:
-                سنجشِ زنده (ws10) نشان داد خانۀ الف/ب با «N/A (قابل اعمال نیست)» ۲۰۸
-                پیکسل می‌خواهد و ۱۶۲ می‌گیرد؛ «N/A» واژۀ خودِ جزوه است (رأیِ ۱۳) و
-                کوتاه‌تر نمی‌شود، پس عرض جابه‌جا شد. */}
+                سنجشِ زنده (ws10) نشان داد خانۀ الف/ب با برچسبِ بلند ۲۰۸
+                پیکسل می‌خواهد و 162 می‌گیرد. رأیِ 2026-10-12 (بند ۳) به‌جای «N/A» واژۀ
+                خودِ وضعیت را می‌نشیند («کاربرد ندارد» برایِ شاخصِ بی‌کاربرد،
+                «قابل ارزیابی نیست» برایِ دادهٔ نرسیده) و علت درِ tooltip می‌ماند،
+                پس خانۀ جدول کوتاه ماند. */}
             <col className="w-[23%]" />
             <col className="w-[11%]" />
             <col className="w-[12%]" />

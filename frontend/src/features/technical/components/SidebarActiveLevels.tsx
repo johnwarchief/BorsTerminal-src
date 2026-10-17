@@ -71,7 +71,7 @@ function Row({
       title={title}
       className="flex items-center justify-between gap-2 border-b border-[var(--hairline)] py-1.5 last:border-b-0"
     >
-      <dt className="shrink-0 text-[11px] text-text-secondary">{label}</dt>
+      <dt className="shrink-0 text-3xs text-text-secondary">{label}</dt>
       <dd className={`num truncate text-xs font-bold ${color}`}>{value}</dd>
     </div>
   );
@@ -80,7 +80,7 @@ function Row({
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-1">
-      <span className="px-0.5 text-[10px] font-bold text-text-muted">{title}</span>
+      <span className="px-0.5 text-3xs font-bold text-text-muted">{title}</span>
       <dl className="rounded-xl border border-border-c bg-bg-card/40 px-2.5">{children}</dl>
     </div>
   );
@@ -124,7 +124,7 @@ export function SidebarActiveLevels({ active }: { active: ActiveLevelsView }) {
       </div>
 
       {l1?.stop_hit ? (
-        <p className="rounded-lg bg-accent-red/15 px-2 py-1 text-[11px] font-bold text-accent-red" data-testid="levels-stop-hit">
+        <p className="rounded-lg bg-accent-red/15 px-2 py-1 text-3xs font-bold text-accent-red" data-testid="levels-stop-hit">
           پایانیِ امروز زیرِ حد ضرر رفته است
         </p>
       ) : null}
@@ -174,16 +174,24 @@ export function SidebarActiveLevels({ active }: { active: ActiveLevelsView }) {
 
       <Section title="ترازها">
         <Row
-          label="کمربند ۳۳–۴۰٪ (لگاریتمی)"
+          label="زون اصلاح ۳۳–۴۰٪ (لگاریتمی)"
           value={zone(fts?.fib?.zone_33_40?.lo, fts?.fib?.zone_33_40?.hi)}
           tone="blue"
-          title={fts?.fib?.zone_33_40?.in_zone ? 'پایانیِ امروز داخل این کمربند است' : 'پایانیِ امروز بیرون از این کمربند'}
+          title={
+            fts?.fib?.zone_33_40?.in_zone
+              ? 'قیمت پایانی امروز داخل این زون است؛ این زون زمینۀ تحلیل است، نه سیگنال مستقل ورود'
+              : 'قیمت پایانی امروز بیرون از این زون است'
+          }
         />
         <Row
-          label="کمربند طلایی ۶۱.۸–۷۰٪"
+          label="زون طلایی ۶۱.۸–۷۰٪"
           value={zone(fts?.fib?.zone_618_70?.lo, fts?.fib?.zone_618_70?.hi)}
           tone="blue"
-          title={fts?.fib?.zone_618_70?.in_zone ? 'پایانیِ امروز داخل این کمربند است' : 'پایانیِ امروز بیرون از این کمربند'}
+          title={
+            fts?.fib?.zone_618_70?.in_zone
+              ? 'قیمت پایانی امروز داخل این زون است؛ این زون زمینۀ تحلیل است، نه سیگنال مستقل ورود'
+              : 'قیمت پایانی امروز بیرون از این زون است'
+          }
         />
         <Row label="تراز مبنا (کف موج ۱.۰)" value={price(fts?.fib?.retrace_base_low)} />
         {active.ma100 != null ? <Row label="خط ماژور MA(100)" value={price(active.ma100)} /> : null}
@@ -212,7 +220,7 @@ export function SidebarActiveLevels({ active }: { active: ActiveLevelsView }) {
 
       {active.context.length > 0 ? (
         <div className="flex flex-wrap items-center gap-1" data-testid="sidebar-fts-context">
-          <span className="text-[10px] text-text-muted">زمینه:</span>
+          <span className="text-3xs text-text-muted">زمینه:</span>
           {active.context.map((c) => (
             <Badge key={c} tone="gray">
               {CONTEXT_FA[c] ?? c}
@@ -226,7 +234,7 @@ export function SidebarActiveLevels({ active }: { active: ActiveLevelsView }) {
       {active.boardFlags && (active.boardFlags.stopped || active.boardFlags.supervised
         || (active.boardFlags.recentEvents?.length ?? 0) > 0) ? (
         <div className="flex flex-wrap items-center gap-1" data-testid="sidebar-board-context">
-          <span className="text-[10px] text-text-muted">از تابلو:</span>
+          <span className="text-3xs text-text-muted">از تابلو:</span>
           {active.boardFlags.stopped ? (
             <Badge tone="red" title={`متوقف از ${toFaDigits(active.boardFlags.stopSince ?? '')} — جزئیات درِ Inspector`}>
               متوقف
@@ -245,9 +253,9 @@ export function SidebarActiveLevels({ active }: { active: ActiveLevelsView }) {
         </div>
       ) : null}
 
-      <p className="text-[10px] leading-4 text-text-muted">
+      <p className="text-3xs leading-4 text-text-muted">
         همهٔ اعداد از تحلیلِ سرورِ همین نماد است (FTS_SPEC بخش اول، بندهای ۳ و ۵). قیمت خریدِ سبد در حد ضرر لحاظ
-        می‌شود؛ اگر نماد در سبد نباشد، مبنای حد ضرر کف ۲۰ نشستِ اخیر است.
+        می‌شود؛ اگر نماد در سبد نباشد، مبنای حد ضرر کف ۲۰ روز معاملاتیِ اخیر است.
       </p>
     </div>
   );

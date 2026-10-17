@@ -144,13 +144,15 @@ describe('FunnelErrorBanner — خطا ≠ بازارِ خالی', () => {
   it('blocking و degraded دو متنِ جدا دارند و Retryِ واقعی صدا زده می‌شود', () => {
     const onRetry = vi.fn();
     const { unmount } = render(<FunnelErrorBanner onRetry={onRetry} blocking />);
-    expect(screen.getByTestId('funnel-error').textContent).toContain('این «بازارِ خالی» نیست');
+    expect(screen.getByTestId('funnel-error').textContent).toContain(
+      'این وضعیت به معنای خالی بودن بازار نیست',
+    );
     fireEvent.click(screen.getByTestId('funnel-error-retry'));
     expect(onRetry).toHaveBeenCalledTimes(1);
     unmount();
-    // حالتِ غیربلاکینگ (دادهٔ قبلی رویِ صفحه هست) ⇒ متنِ «تازه‌سازی ناموفق»
+    // حالتِ غیربلاکینگ (دادهٔ قبلی رویِ صفحه هست) ⇒ متنِ «به‌روزرسانی ناموفق»
     render(<FunnelErrorBanner onRetry={vi.fn()} />);
-    expect(screen.getByTestId('funnel-error').textContent).toContain('تازه‌سازیِ قیف ناموفق');
+    expect(screen.getByTestId('funnel-error').textContent).toContain('به‌روزرسانی قیف ناموفق');
   });
 });
 

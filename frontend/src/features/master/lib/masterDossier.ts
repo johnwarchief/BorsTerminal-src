@@ -56,6 +56,7 @@ const STATUS_ICON: Record<StageStatus, string> = {
   unavailable: '○',
   not_required: '·',
   not_in_universe: '⊘',
+  not_applicable: '∅',
 };
 
 export type DossierStage = {

@@ -245,7 +245,7 @@ export function CommandPalette() {
             }}
             placeholder="جستجوی نماد، صفحه یا فرمان... (↑↓ جابه‌جایی، Enter انتخاب)"
             className="flex-1 bg-transparent text-sm text-text-primary outline-none placeholder:text-text-muted"
-            aria-label="جستجو در نمادها، صفحه ها و فرمان ها"
+            aria-label="جست‌وجوی نمادها، صفحه‌ها و فرمان‌ها"
           />
           <kbd className="rounded-md border border-border-c bg-bg-card/70 px-1.5 py-0.5 text-2xs text-text-muted">
             Esc
@@ -254,7 +254,7 @@ export function CommandPalette() {
 
         {/* انتخاب مقصد باز کردن نماد */}
         <div className="flex flex-wrap items-center gap-2 border-b border-border-c/40 bg-bg-card/30 px-4 py-2">
-          <span className="text-2xs font-medium text-text-muted">مقصد بازگشایی:</span>
+          <span className="text-2xs font-medium text-text-muted">باز کردن نماد در:</span>
           {DESTS.map((d) => (
             <button
               key={d.id}
@@ -284,7 +284,7 @@ export function CommandPalette() {
 
           {error && !loading && (
             <div className="p-4 text-center text-xs text-accent-red">
-              خطا در دریافت برخط داده‌ها — نتایج محلی و فرمان‌ها در دسترس هستند.
+              دریافت داده‌های برخط ناموفق بود؛ نتایج محلی و فرمان‌ها همچنان در دسترس‌اند.
             </div>
           )}
 

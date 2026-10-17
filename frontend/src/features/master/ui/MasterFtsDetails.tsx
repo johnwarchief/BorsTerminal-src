@@ -4,6 +4,8 @@
 // تبِ تابلو)، `IND_COLUMNS` (همان پنج شاخصِ جزوه) و payloadِ `/api/fts` می‌آیند.
 import type { ReactNode } from 'react';
 import { Badge } from '@shared/components/Badge';
+import TapeHistoryPanel from '@shared/components/TapeHistoryPanel';
+import { useInsCodeFor } from '@shared/api/tapeHistory';
 import { toFaDigits, fmtInt, fmtPct } from '@shared/lib/fmt';
 import type { TapeBadge } from '@features/market/lib/tapeBadges';
 import { IND_COLUMNS, type Candidate, type StageStatus } from '../lib/ftsFunnel';
@@ -16,6 +18,7 @@ const MARK: Record<StageStatus, { icon: string; tone: 'green' | 'red' | 'yellow'
   unavailable: { icon: '○', tone: 'blue', word: 'بی‌داده' },
   not_required: { icon: '·', tone: 'blue', word: 'لازم نبود' },
   not_in_universe: { icon: '⊘', tone: 'blue', word: 'خارج از جامعه' },
+  not_applicable: { icon: '∅', tone: 'blue', word: 'کاربرد ندارد' },
 };
 
 const n = (v: number | null | undefined): string =>
@@ -62,6 +65,9 @@ export function MasterFtsDetails({
   const inds = candidate?.inds ?? [];
   const t = dossier.technical;
   const tapeFilters = badges.filter((b) => b.filter);
+  // سابقه با `ins_code` پرسیده می‌شود (نامِ نماد معیارِ هویت نیست)؛ از همان
+  // فیدِ مشترکِ تابلو خوانده می‌شود، بی‌درخواستِ دوم.
+  const insCode = useInsCodeFor(candidate?.symbol ?? dossier.symbol);
 
   return (
     <div className="flex flex-col gap-2" data-testid="master-fts-details">
@@ -79,6 +85,11 @@ export function MasterFtsDetails({
         ) : (
           <li>هیچ‌یک از پنج فیلترِ فایل برایِ همین نماد فعال نیست (نشانهٔ رد، نه کمبودِ داده).</li>
         )}
+        {/* سابقۀ چندروزه از خودِ `tape_flag_day` خوانده می‌شود، نه از وضعیتِ
+            همین لحظه: «همین امروز روشن است» و «در سه روزِ اخیر دو بار روشن بوده»
+            دو چیزند و پرونده باید هر دو را ببیند (بندِ سوم مأموریت). */}
+        <TapeHistoryPanel insCode={insCode} symbol={candidate?.symbol ?? dossier.symbol} days={5}
+                          className="mt-1" />
       </Section>
 
       {/* ── T — تکنیکال ── */}

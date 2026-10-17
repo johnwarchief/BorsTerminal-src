@@ -2,6 +2,7 @@ import datetime
 import sqlite3
 
 import codal_fetcher
+import codal_periods as CP
 
 
 def force_sync():
@@ -19,7 +20,7 @@ def force_sync():
     pool = [tuple(r) for r in conn.execute(
         "SELECT tracing_no, symbol, company_name, title, letter_code, publish_date,"
         " sent_date, url, fetched_at, pdf_url, excel_url FROM codal_notices"
-        " ORDER BY publish_date DESC LIMIT 300")]
+        " ORDER BY " + CP.pub_order_expr() + " LIMIT 300")]
     fs_targets = [n for n in pool if codal_fetcher.kind_of(n[3]) == "Financial Statements"]
     fs = []
     for i, n in enumerate(fs_targets, 1):

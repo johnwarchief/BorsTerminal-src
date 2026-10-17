@@ -164,7 +164,7 @@ describe('لایۀ ریاضیاتِ فصلی هیچ داوری FTS نمی‌سا
 });
 
 describe('فایلِ دانلودی با صفحه یکی است', () => {
-  it('«الف» از i1a_pass، «ب» از i1b_pass (یا N/A)، و رژیمِ دستوری از mandatory', () => {
+  it('«الف» از i1a_pass، «ب» از i1b_pass (یا «کاربرد ندارد»)، و رژیمِ دستوری از mandatory', () => {
     const cells = screenRowCells(row({
       i1_pass: true, i1a_pass: false, i1b_pass: true, i1b_applicable: true,
       i2_pass: false, pricing_mode: 'mandatory',
@@ -175,8 +175,8 @@ describe('فایلِ دانلودی با صفحه یکی است', () => {
     expect(cells[5]).toContain('دستوری');
   });
 
-  it('«ب» وقتی موتور می‌گوید قابل‌اعمال نیست، N/A نوشته می‌شود', () => {
+  it('«ب» وقتی موتور می‌گوید قابل‌اعمال نیست، «کاربرد ندارد» نوشته می‌شود', () => {
     const cells = screenRowCells(row({ i1b_applicable: false, i1b_pass: true }));
-    expect(cells[1]).toContain('ب: N/A');
+    expect(cells[1]).toContain('ب: کاربرد ندارد');
   });
 });

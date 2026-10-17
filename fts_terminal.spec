@@ -73,6 +73,25 @@ a = Analysis(
                    # codal_fetcher سطح-بال importش می‌کنند. نبودنش EXE را رویِ اولین
                    # درخواستِ بنیادی می‌کشد.
                    'codal_periods',
+                   # مرحلۀ ۴ مأموریت بنیادی (۱۴۰۵-۰۷-۲۳): `codal_units` تنها
+                   # تعریفِ «واحدِ پول» است؛ fts_engine (مقیاسِ هر ردیف),
+                   # codal_fetcher (`_classify_unit`) و api.fundamental (ضریب‌های
+                   # نمایش) سطح-بال importش می‌کنند. بی‌این خط EXE رویِ اولین
+                   # درخواستِ بنیادی ModuleNotFoundError می‌دهد.
+                   'codal_units',
+                   # مأموریت «خطِ دریافت خودکار کدال» (۱۴۰۵-۰۷-۲۴):
+                   # `codal_pipeline` صف/checkpoint/قفلِ worker است و `app.py`
+                   # (حلقۀ استارتاپ) و `api/_sync_codal.py` (دستۀ چرخه و سلامت)
+                   # سطح-بال importش می‌کنند؛ بی‌این خط EXE رویِ اولین چرخه
+                   # ModuleNotFoundError می‌دهد.
+                   'codal_pipeline',
+                   # مرحلۀ ۱.۲ مأموریت بنیادی (۱۴۰۵-۰۷-۲۲): `symbol_identity` تنها
+                   # تعریفِ «این ردیف مالکِ کدام ابزار است» است و fts_engine /
+                   # api._core / api.fundamental / api.chart / api.screener و
+                   # confidence_engine آن را صدا می‌زنند. بی‌این خط EXE رویِ اولین
+                   # درخواستِ بنیادی ModuleNotFoundError می‌دهد (همان قاعدۀ
+                   # AGENTS.md برایِ هر ماژولِ ریشه).
+                   'symbol_identity',
                    # بند ۲ مأموریت (1405-07-20): `client_split` تنها تعریفِ
                    # درصدِ حقیقی/حقوقی است و api/market.py + mstat_engine آن را
                    # سطح-بال import می‌کنند؛ نبودنش EXE را رویِ اولین درخواستِ
@@ -97,6 +116,12 @@ a = Analysis(
                    # بیازماید. ایمپورتش سطح-بال است اما صریح فهرست می‌شود:
                    # نبودنش EXE را روی اولین درخواست /api/market می‌کشد.
                    'tape_flags',
+                   # سابقۀ ماندگارِ هفت فیلتر (مأموریتِ پروندۀ نماد، ۱۴۰۵-۰۷-۲۱):
+                   # api/market.py آن را سطح-بال import می‌کند و هر دو نوشتنِ
+                   # تابلو و خواندنِ /api/tape-history از همین ماژول می‌گذرند؛
+                   # نبودنش EXE را رویِ اولین درخواستِ تابلو می‌کشد (همان قاعدۀ
+                   # AGENTS.md برایِ هر ماژولِ ریشه).
+                   'tape_flag_history',
                    # حالتِ داغِ تابلو (کار #73): api.market و test_tsetmc آن را import
                    # می‌کنند (test_tsetmc درِ بدنهٔ تابع، پس ایستیک‌اسکن نمی‌بیند).
                    # نبودنش EXE را روی اولین تیکِ زنده می‌کشد.
@@ -128,6 +153,29 @@ a = Analysis(
                    # می‌کند؛ `api_router` هم ماژول را درِ بدنهٔ تابع import می‌کند، پس
                    # هر دو صریح فهرست می‌شوند (گاردِ dev/onedir_contract_v11.py).
                    'api.structure3', 'structure_engine3',
+                   # دروازۀ اجرای سفارش (مأموریت ۱۴۰۵-۰۷-۲۳، بند ۵): مثلِ بقیه درِ
+                   # بدنهٔ `api_router` ایمپورت می‌شود (api/__init__.py:12) و
+                   # ایستیک‌اسکن آن را نمی‌بیند. بی‌این خط EXE روی اولین
+                   # /api/execution/status می‌شکند — همان مسیرِی که
+                   # frontend/src/features/portfolio/lib/orderClient.ts:147 صدا می‌زند.
+                   # خودِ execution_contract/mock/service/timing/latency/ledger در
+                   # سرِ api/execution.py سطح-بال import‌اند، پس اسکن ایستا می‌بیندشان.
+                   'api.execution',
+                   # آداپتورِ EasyTrader (مأموریتِ ۱۴۰۵-۰۷-۲۴): سطح-بال است و اسکن
+                   # ایستا باید پیدایش کند — ولی قاعدۀ مخزن این است که چیزی که
+                   # درِ EXE کشنده است، به حدسِ اسکن سپرده نشود. بی‌این خط، بیلدِ
+                   # منجمد رویِ اولین /api/execution/status با ModuleNotFoundError
+                   # می‌میرد و گاردِ HTTPِ محلی هیچ‌وقت این را نمی‌بیند.
+                   'execution_easytrader',
+                   'execution_connect',
+                   # دروازۀ ربات (مأموریتِ ۱۴۰۵-۰۷-۲۴، فاز ۳): مثلِ بقیۀ api/*
+                   # درِ بدنهٔ `api_router()` ایمپورت می‌شود، پس اسکن ایستا
+                   # نمی‌بیندش؛ بی‌این خط هر /api/bot/* درِ EXE روی 404 می‌ماند.
+                   # سه ماژولِ بعدی سطح‌بالِ خودِ api/bot.py‌اند و اسکن باید
+                   # پیدایشان کند — اینجا هم فهرست شده‌اند چون قاعدۀ مخزن این
+                   # است: چیزی که درِ بستهٔ نهایی کشنده است، به حدس سپرده نشود.
+                   'api.bot', 'bot_signals', 'paper_trading', 'trade_sim',
+                   'backtest_engine',
                    # پنجرهٔ مستقلِ بومی (Edge WebView2): pywebview روی ویندوز به
                    # pythonnet/clr نیاز دارد. نبودشان کشنده نیست — bors_entry
                    # عمداً به پنجرهٔ مرورگر برمی‌گردد — ولی بودنشان همان پنجرهٔ

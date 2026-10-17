@@ -34,6 +34,8 @@ from typing import Optional
 import mstat_engine
 # تنها تعریفِ «دورۀ گزارش» (شکل، بی‌دوره، سالِ مالی) — ببین `codal_periods.py`.
 import codal_periods as CP
+import codal_units as CU                # تنها تعریفِ «واحدِ پول» (mrl/btl/بی‌واحد)
+import symbol_identity as SI            # تنها تعریفِ «این ردیف مالکِ کدام ابزار است»
 
 
 # ============================================================ نرمال‌سازی نوشتار
@@ -65,7 +67,7 @@ def norm_fa(text) -> str:
 #   bulk_scan            → کلید از خودِ دیتابیس (نوشتار عربی) → داده کامل
 # یعنی /api/fts/{symbol} و /api/screener دو پاسخ متفاوت به یک نماد می‌دادند.
 #
-# چرا `WHERE norm_fa(symbol)=?` راه‌حل نیست (روی همین market.db اندازه گرفته شد):
+# چرا `WHERE SI.key(symbol)=?` راه‌حل نیست (روی همین market.db اندازه گرفته شد):
 #   نماد خام =  ۰٫۰۱ میلی‌ثانیه   (SEARCH USING COVERING INDEX ix_fs_symbol)
 #   norm_fa() =  ۵٫۷۴ میلی‌ثانیه   (اسکن کامل ۸۰۰۹ ردیف — ایندکس قابل استفاده نیست)
 # هر scan_symbol ~۱۹ کوئری می‌زند و scan_all روی ۸۶۸+ نماد اجرا می‌شود →
@@ -78,83 +80,69 @@ for _c in _YA_CLASS:
     _CHAR_CLASS[_c] = _YA_CLASS
 for _c in _KAF_CLASS:
     _CHAR_CLASS[_c] = _KAF_CLASS
+# «فاصله ↔ نیم‌فاصله» عمداً اینجا اضافه نشده: ضربِ آن با جایگشت‌هایِ ی/ك
+# بی‌حد می‌شود (سنجشِ بانکِ کاری: با سقفِ ۹۶ بیشینۀ جایگشت ۲۱۶ و با سقفِ ۲۵۶
+# باز ۶۴۸ شد، یعنی سقف فقط نقطۀ برش را جابه‌جا می‌کند). واگراییِ «شهر فرش»
+# که از این می‌آید درِ `docs/fts-notes/CODAL-AUDIT-ROUND2-2026-10-12.md` بند
+# ۹-پ) با عدد ثبت شده و راهِ درستش مقایسه رویِ کلیدِ نرمال‌شده است، نه
+# حدسِ نوشتارها.
 del _c
 
 
-def symbol_aliases(symbol, limit: int = 27) -> tuple:
-    """همهٔ نوشتارهای خامِ یک نماد که norm_fa یکسانی تولید می‌کنند.
+def sym_in(conn, col: str, symbol, domain=None):
+    """(شرح SQL, پارامترها) برای «همۀ نوشتارهایِ همین ابزار در همین بانک».
 
-    بدون کوئری و بدون تابع سمت SQL: جای‌گذاریِ هر کاراکترِ «چند-نویشتاری»
-    با تمام نمونه‌های همان دسته (ی/ي/ى و ک/ک). ورودی خالی → تاپل خالی.
+    Stage 1.2: این تابع دیگر هیچ جایگشتِ نویسه‌ای نمی‌سازد؛ نامزدها از خودِ
+    بانک خوانده می‌شوند (`symbol_identity`). پیش‌تر کارت با جایگشتِ ي/ك/ى و
+    حذفِ نیم‌فاصله، نوشتارِ «شهر »+نیم‌فاصله+«فرش» را هرگز نمی‌ساخت، پس ۶ از ۷
+    گزارشِ آن صادرکننده را نمی‌دید (۱۶۷۵ جفتِ نماد×جدول واگرایی، سنجیده‌شده؛
+    همیشه در جهت «قیف می‌بیند، کارت نمی‌بیند»).
 
-    ترتیب خروجی **قطعی** است (اول خودِ ورودی، سپس جایگشت‌ها به ترتیب
-    ساخت) تا خروجی اسکنرها و لاگ‌ها بین اجراها عوض نشود؛ به همین دلیل از
-    set() استفاده نمی‌شود (هشِ رشته‌ها در پایتون تصادفی است).
-
-    سقف limit از آنجاست که نمادی با ۳ کاراکتر «ی‌کلاس» ۲۷ جایگشت می‌دهد؛
-    ۴ تا ۸۱ می‌شود که بی‌معناست. در عمل نمادهای TSETMC ۰ تا ۲ بار این
-    کاراکترها را دارند، پس سقف عملاً فعال نمی‌شود.
+    `conn` اجباری است: بی‌بانک نمی‌توان دانست کدام نوشتار واقعیت دارد.
     """
-    s = "" if symbol is None else str(symbol)
-    if not s:
-        return ()
-    base = s.replace(_ZWNJ, "")
-    out, seen = [], set()
-    for cand in (s, base):
-        if cand and cand not in seen:
-            seen.add(cand)
-            out.append(cand)
-    # v9.10.4 — TSETMC یک رقمِ انتهایی به نماد می‌چسباند تا ردیفِ تابلو را از
-    # شرکت جدا کند (مبين / مبين3 همان صادرکننده‌اند). صورت‌های مالی فقط زیرِ
-    # نامِ بی‌رقم ذخیره می‌شوند، پس مبين3 هیچ‌وقت به دادهٔ CODAL نمی‌رسید:
-    # ۳۹۶ نماد از ۱۴۳۹ سهام به‌نظر می‌رسید «دادهٔ بنیادی ندارد» در حالی که
-    # شرکتشان کامل بود. فقط یک رقمِ تکی (نه دنبالهٔ چندرقمی مثل صشرق512)
-    # و فقط وقتی پایه ≥۲ حرف باشد. تأییدِ ایمنی روی همین بانک: ۳۹۶/۳۹۶
-    # تعدادِ سهامِ کاملاً یکسان = همان صادرکننده، ۰ مثالِ نادرست.
-    if len(base) >= 3 and base[-1] in "0123456789" and base[-2] not in "0123456789":
-        stripped = base[:-1]
-        if len(stripped) >= 2 and stripped not in seen:
-            seen.add(stripped)
-            out.append(stripped)
-    pos = [i for i, ch in enumerate(base) if ch in _CHAR_CLASS]
-    variants = [base]
-    for i in pos:
-        if len(variants) >= max(int(limit), 1):
-            break
-        nxt = []
-        for v in variants:
-            for al in _CHAR_CLASS[base[i]]:
-                if v[i] == al:
-                    if v not in nxt:
-                        nxt.append(v)
-                else:
-                    w = v[:i] + al + v[i + 1:]
-                    if w not in nxt:
-                        nxt.append(w)
-        variants = nxt
-    for v in variants:
-        if v and v not in seen:
-            seen.add(v)
-            out.append(v)
-    return tuple(out)
+    return SI.pred(conn, col, symbol, domain or SI.CODAL)
 
 
-def sym_in(col: str, symbol, alias_limit: int = 27):
-    """(شرح SQL, پارامترها) برای تطبیق «هر نوشتارِ این نماد» با ایندکس.
+def symbol_variants(conn, symbol, domain=None):
+    """نامزدهای خامِ یک نماد — جانشینِ `symbol_aliases` در مصرف‌کننده‌های متنی."""
+    return SI.variants(conn, symbol)
 
-    مثال:  pred, params = sym_in("symbol", "داریک")
-           f"SELECT ... WHERE {pred}"  →  "symbol IN (?,?,?)"
-    اگر ناماد تهی باشد، شرطی برمی‌گردد که هیچ‌وقت درست نمی‌شود (به‌جای
-    خطای SQL) — یعنی رفتار «بدون داده» حفظ می‌شود.
-    """
-    al = symbol_aliases(symbol, limit=alias_limit)
-    if not al:
-        return "1=0", []
-    return "%s IN (%s)" % (col, ",".join("?" * len(al))), list(al)
+
+def sym_key(symbol) -> str:
+    """کلیدِ هویتِ نماد — تنها چیزی که نقشه‌های کل‌بازاری با آن می‌سازند."""
+    return SI.key(symbol)
+
+
+def symbol_class_siblings(conn, symbol):
+    """خطِ کلاسِ یکتای همان نام درِ تابلو — فقط با ردپا، بی‌رقم‌چندنفری."""
+    return SI.class_siblings(conn, symbol)
+
+
+def symbol_pending_siblings(conn, symbol):
+    """نامزدِ خطِ کلاس که ادغامش بسته شده — برایِ اعلام درِ کارت، بی‌ادغام."""
+    return SI.pending_siblings(conn, symbol)
+
+
+def symbol_pending_variants(conn, symbol, domain=None):
+    """نامزدهایِ الحاقِ بسته‌شدۀ خودِ نماد (پسوندِ رقمی) با شاهد."""
+    return SI.pending_variants(conn, symbol, domain or SI.CODAL)
+
+
+def symbol_evidence(conn, symbol, domain=None) -> str:
+    """چطور این نماد به ردیف‌ها رسید: same-key | isin-agree | pending-review |
+    isin-clash | unmatched. «بی‌شاهدِ ISIN» دیگر ادغام نمی‌شود (رأیِ مالک)."""
+    return SI.evidence(conn, symbol, domain or SI.CODAL)
 
 
 def register_sql(conn):
-    """norm_fa را به‌عنوان تابع SQLite ثبت می‌کند (برای فیلترهای سمت SQL).
+    """`sym_key` را به SQLite می‌دهد (کنارِ `norm_fa` برای مصرف‌های نوشتاری).
+
+    چرا لازم است: تا وقتی کوئریِ SQL روی ستونِ نماد تابع می‌نشاند، آن تابع
+    **باید** همان کلیدِ پایتون باشد. `api/fundamental._INSTR_SQL` زنجیرۀ
+    REPLACE دست‌سازِ خودش را داشت (ي/ك را یکی می‌کرد ولی نیم‌فاصله و فاصله را
+    نه) — یعنی چهارمین تعریفِ هویت. حالا آن کوئری `sym_key` را صدا می‌زند.
+    هزینه تابع در WHERE عوض نمی‌شود (~۵٫۷ms در برابر ~۰٫۰۱ms برای IN)، پس
+    `sym_in` همان `IN` را با نامزدهایِ واقعی می‌دهد.
 
     توجه: این تابع در مسیرِ «کوئری تک‌نمادی» استفاده **نمی‌شود** — همان‌طور
     که بالاتر اندازه گرفته شد، ۵۷۴ برابر کند از ایندکس است. جای درستش
@@ -163,6 +151,7 @@ def register_sql(conn):
     """
     try:
         conn.create_function("norm_fa", 1, norm_fa, deterministic=True)
+        conn.create_function("sym_key", 1, SI.key, deterministic=True)
     except Exception:
         pass                       # اتصال read-only / نسخهٔ بی‌deterministic
     return conn
@@ -208,11 +197,11 @@ def sector_of(conn, symbol: str, fallback: str = "") -> str:
                 for sym, name in conn.execute(
                         "SELECT symbol, sector_name FROM symbol_sectors"):
                     if sym and name:
-                        tab[norm_fa(sym)] = name
+                        tab[SI.key(sym)] = name
             except Exception:
                 tab = {}
         _SECTOR_CACHE[key] = tab
-    return tab.get(norm_fa(symbol)) or fallback
+    return tab.get(SI.key(symbol)) or fallback
 
 
 def market_cap_at(conn, symbol: str, date: str = "",
@@ -240,14 +229,14 @@ def market_cap_at(conn, symbol: str, date: str = "",
                         "SELECT symbol, date, market_cap FROM market_cap_snapshots"):
                     if not sym or mc is None:
                         continue
-                    buckets.setdefault(norm_fa(sym), []).append((d or "", _f(mc)))
+                    buckets.setdefault(SI.key(sym), []).append((d or "", _f(mc)))
                 for k, lst in buckets.items():
                     lst.sort(key=lambda t: t[0])
                     tab[k] = lst
             except Exception:
                 tab = {}
         _MCAP_CACHE[key] = tab
-    lst = tab.get(norm_fa(symbol))
+    lst = tab.get(SI.key(symbol))
     if not lst:
         return fallback
     if not date:
@@ -290,15 +279,28 @@ _FTS_RESULTS_COLS = (
 )
 
 
-def invalidate_fts_results(conn) -> int:
-    """حذفِ همهٔ ردیف‌های مادی‌شده (و کشِ خواننده).
+def invalidate_fts_results(conn, symbols=None) -> int:
+    """حذفِ ردیف‌های مادی‌شده (و کشِ خواننده).
 
     سینکِ کدال/تابلو هر دو کشِ اسکرینر و این جدول را کثیف می‌کند؛
     invalidate_screener_cache این را صدا میزند. برمی‌گرداند: تعداد ردیفِ حذف‌شده.
+
+    `symbols` (افزودنی، بندِ ۷ مأموریتِ خودکارسازی): فقط ردیفِ همان نمادها
+    می‌رود، پس یکِ اطلاعیهٔ تازه کلِ جدولِ مادی‌شده را بی‌دلیل دور نمی‌ریزد.
+    کشِ خواننده به‌هرحال پوپ می‌شود: کلیدهایِ آن `norm_symbol` است و حذفِ
+    تک‌نمادیِ آن نقشه بی‌مدرک درست نمی‌ماند — یکِ SELECTِ دوباره‌سازی به‌ازایِ
+    محاسبۀ مجددِ کلِ بازار خیلی ارزان‌تر است (محاسبۀ محافظه‌کارانهٔ بیشتر،
+    نتیجهٔ کهنه نه).
     """
     n = 0
+    syms = [str(x) for x in (symbols or []) if str(x or "").strip()]
     try:
-        n = int(conn.execute("DELETE FROM fts_results").rowcount or 0)
+        if syms:
+            ph = ",".join("?" * len(syms))
+            n = int(conn.execute(
+                "DELETE FROM fts_results WHERE symbol IN (%s)" % ph, syms).rowcount or 0)
+        else:
+            n = int(conn.execute("DELETE FROM fts_results").rowcount or 0)
         conn.commit()
     except Exception:
         n = 0
@@ -317,6 +319,22 @@ def ind4_na(card_ind4) -> bool:
     """
     return bool(card_ind4) and (card_ind4.get("na") is True
                                 or card_ind4.get("exempt") is True)
+
+
+def ind1_na(card_ind1) -> bool:
+    """آیا کارت، محور ۱ (رشد فروش/درآمد) را «سنجیده نشده» اعلام کرده؟
+
+    همان رأیِ ۱۶ که برای ۲/۳/۴ جاری است و برایِ محور ۱ جا افتاده بود:
+    `api/screener` برایِ سه محورِ دیگر `_na2/_na3/_na4` را می‌پرسد و سپس
+    `i{n}_pass` را None می‌کند، ولی محور ۱ را بی‌پرسش از `passes` برمی‌داشت
+    که عمداً bool است. سنجشِ زندهٔ ۱۴۰۵-۰۷-۲۳: «شهر فرش» و «شتهران» درِ کارت
+    «بی‌داده» و درِ `/api/screener` «مردود» بودند — دو پاسخ برایِ یکِ نماد.
+    «بی‌داده» یعنی هیچ درصدی ساخته نشده (مخرج YoY غایب)، نه درصدِ زیرِ کف.
+    """
+    if not card_ind1:
+        return False
+    mon = card_ind1.get("monetary") if isinstance(card_ind1.get("monetary"), dict) else card_ind1
+    return bool(mon.get("data_gap")) or mon.get("monetary_pct") is None
 
 
 def ind2_na(card_ind2) -> bool:
@@ -424,7 +442,7 @@ def _fts_results_table(conn, cfg_hash: str = "") -> Optional[dict]:
         return None
     tab = {"cfg_hash": cfg_hash or stored or "", "rows": {}}
     for r in rows:
-        k = norm_fa(r[0])
+        k = SI.key(r[0])
         if k and k not in tab["rows"]:
             tab["rows"][k] = r
     return tab
@@ -446,7 +464,7 @@ def fts_results_of(conn, symbol: str, cfg_hash: str = "") -> Optional[dict]:
         if tab is None:
             tab = {"cfg_hash": cfg_hash or "", "rows": {}}
         _FTS_RESULTS_CACHE[key] = tab
-    r = (tab.get("rows") or {}).get(norm_fa(symbol))
+    r = (tab.get("rows") or {}).get(SI.key(symbol))
     if r is None:
         return None
     return _fts_row_to_result(r)
@@ -560,6 +578,105 @@ def _is_amendment(title: str) -> bool:
     return "اصلاحیه" in norm_fa(title)
 
 
+def row_conflicts(period_end, title, period_months) -> list:
+    """تناقض‌هایِ اعلامی یکِ ردیف: دوره/ماه درِ متن با درِ ستون نمی‌خواند.
+
+    بندِ ۱.۲/۱۰ مأموریت: ردیفی که عنوان، شرکت، دوره و نمادش یکی نیستند باید
+    درِ انتخابِ مرجع **دیده** شود، نه خاموش رد یا خاموش پذیرفته. اینجا هیچ
+    آستانه‌ای وضع نمی‌شود و هیچ ردیفی کنار نمی‌رود (آن رأیِ مالک است، نه
+    حدسِ مهندس) — فقط برچسبِ تناقض رویِ ردیف می‌نشیند و درِ همان
+    `reference_identity` که ابهامِ هویت را اعلام می‌کند خوانده می‌شود.
+
+    دو تناقضِ سنجیده‌شده رویِ ۸٬۷۲۳ ردیفِ بانکِ کاری (۱۴۰۵-۰۷-۲۲):
+      * `title_period`: دورۀ داخلِ عنوان ≠ دورۀ ستون — صفر ردیف؛ یعنی
+        زنجیرۀ `codal_periods.derive` امروز می‌خواند و این نگهبانِ روزِ بعد است.
+      * `title_months`: «X ماهه» درِ عنوان ≠ `period_months` — ۱ ردیف
+        («۶ ماهه» با `period_months=12`، tracing_no 1447293) و ۳۸ ردیفِ
+        `period_months` خالی. شاخص ۲ فقط سالانۀ ۱۲ماهه می‌خواهد، پس همین
+        یکی هم رأیِ «دو تا سالِ کامل» را می‌تواند بسازد؛ اعلام می‌شود تا
+        داوریِ بعدی رویِ عددِ حدسی نشیند.
+    """
+    out = []
+    t = str(title or "")
+    tp = CP.from_title(t)
+    pe = CP.canonicalize(period_end)
+    if tp and pe and tp != pe:
+        out.append("title_period")
+    tm = CP.months_from_title(t)
+    try:
+        pm = int(period_months) if period_months is not None and str(period_months).strip() else None
+    except (TypeError, ValueError):
+        pm = None
+    if tm and pm and tm != pm:
+        out.append("title_months")
+    return out
+
+
+# پسوندهای پرانتزیِ «مقطعِ نامه»، نه نامِ شرکت — همان سه زیررشته‌ای که
+# `_is_audited`/`_is_consolidated`/`_is_amendment` می‌خوانند.
+_TITLE_SCOPE_MARKS = ("حسابرس", "تلفیق", "اصلاحی")
+
+# نشانۀ «اسمِ یکِ شخصیتِ حقوقی»: کدال شرکتِ فرعی را درِ پرانتز با نامِ
+# خودش و با این پیشوندها می‌نویسد. بی‌این شرط، صفت‌هایِ بی‌نام هم «شرکتِ
+# دیگر» خوانده می‌شدند — سنجشِ بانکِ کاری: از ۱۹۱ پسوندِ درِ
+# financial_statements دقیقاً ۱۸۹ تا با نشانۀ شخصیت‌اند و ۲ تایِ باقی‌مانده
+# صفتِ «شامل مقادیر برآوردی» (بی‌نام) بودند.
+_TITLE_ENTITY_MARKS = ("شرکت", "شرکای", "موسسه", "مؤسسه", "گروه",
+                        "بانک", "بانك", "صندوق", "بیمه", "بيمه")
+# واژه‌هایِ عمومیِ پس از نشانهد: «(شرکت اصلی)» نامِ شرکتِ دیگری نیست.
+_TITLE_ENTITY_GENERIC = ("اصلی", "مادر", "خود", "دیگر", "همه", "فرعی")
+_TITLE_PAREN_OPEN = "（("
+_TITLE_PAREN_CLOSE = "）)"
+
+
+def _entity_span(span):
+    """آیا این پرانتزِ عنوان نامِ یکِ شخصیتِ حقوقی است؟ اگر نه، رشتهٔ خالی."""
+    t = str(span or "").strip()
+    if len(t) <= 2 or any(m in t for m in _TITLE_SCOPE_MARKS):
+        return ""
+    if not t.startswith(_TITLE_ENTITY_MARKS):
+        return ""
+    rest = t.split(" ", 1)[1].strip() if " " in t else ""
+    if not rest or rest in _TITLE_ENTITY_GENERIC:
+        return ""
+    return t
+
+
+def title_entity_suffix(title: str) -> str:
+    """نامِ شرکتِ دیگری که درِ پایانِ عنوانِ نامه آمده، یا ''.
+
+    کدال صورتِ مالیِ شرکت‌هایِ فرعی را زیرِ نمادِ هلدینگ منتشر می‌کند و آن شرکت
+    را در پرانتزِ آخرِ عنوان می‌نویسد: «… (حسابرسی شده) (شرکت هلپاک)». چنین
+    ردیفی *وضعیتِ مالیِ شرکتِ دیگری* است، نه خودِ نماد — پس نمی‌تواند نمایندۀ
+    آن نماد باشد. این تابع فقط «هویتِ filed-by» را می‌خواند؛ هیچ رأیِ مالیِ
+    دوم نمی‌سازد و هیچِ توابعِ بالا را تغییر نمی‌دهد. بی‌regex، چون این ماژول
+    `re` را وارد نمی‌کند (همان قراردادی که `_is_consolidated` را ساده نگه داشته).
+
+    مصرفِ همین حالا: لایۀ صفرِ `statement_rank` — یعنی کارتِ بنیادی،
+    موتورِ قیف (`annual_statements`/`pick_reference`)، نویسندۀ
+    `codal_fetcher.period_winners` و سریِ فصلی (`quarter_reference_rows`)
+    هر چهار رأیِ «کدامِ ردیف نمایندۀ این نماد است» را از یکِ تابع می‌گیرند.
+    هیچ ردیفی به‌خاطرِ این لایه حذف نمی‌شود؛ فقط از دیدِ انتخابِ مرجع کنار
+    می‌رود (سیاستِ CA-3: تاریخچه حفظ است).
+    """
+    s = str(title or "")
+    found = ""
+    i, n = 0, len(s)
+    while i < n:
+        if s[i] in _TITLE_PAREN_OPEN:
+            j = i + 1
+            while j < n and s[j] not in _TITLE_PAREN_CLOSE:
+                j += 1
+            span = norm_fa(s[i + 1:j]).strip()
+            hit = _entity_span(span)
+            if hit:
+                found = hit
+            i = j + 1
+        else:
+            i += 1
+    return found
+
+
 # ═══════════════════════════════════════════════════════════════════════════
 #  تک‌منبعِ «کدامِ ردیف، این دورۀ این نماد را نمایندگی می‌کند»
 #  (نویسنده: codal_fetcher.period_winners — خواننده‌ها: annual_statements،
@@ -581,9 +698,14 @@ def row_completeness(keys, row) -> int:
     return n
 
 
-def statement_rank(keys, consolidated, completeness, tracing_no) -> tuple:
-    """کلیدِ ascendingِ «برنده اول»: مبنایِ جزوه، سپس کامل‌بودن، سپس تازگی.
+def statement_rank(keys, consolidated, completeness, tracing_no,
+                   other_entity=False) -> tuple:
+    """کلیدِ ascendingِ «برنده اول»: هویتِ شرکت، مبنایِ جزوه، کامل‌بودن، تازگی.
 
+    ۰) ردیفی که *شرکتِ دیگری* درِ عنوانش ذکر شده (صورتِ مالیِ شرکتِ فرعی که
+       کدال زیرِ نمادِ هلدینگ منتشر می‌کند: «… (شرکت هلپاک)») نمایندۀ این نماد
+       نیست و همیشه کنار می‌رود. این لایه *همین‌جا* است، نه درِ خواننده‌ها —
+       وگرنه کارت/قیف/سریِ فصلی سه رأیِ متفاوت می‌گرفتند (`title_entity_suffix`).
     ۱) غیرتلفیقی (مبنایِ جزوه) برِ تلفیقی — این جابه‌جا نمی‌شود.
     ۲) ردیفی که ستون‌هایِ کلیدیِ پُرتر دارد برنده است. این لایه پیش ازِ این نبود
        و نتیجه‌اش آن بود که پوستۀ بی‌عددِ تازه‌تر (نامه‌ای که پارسر عددش را
@@ -591,11 +713,100 @@ def statement_rank(keys, consolidated, completeness, tracing_no) -> tuple:
        ۱۴۰۵-۰۷-۱۰: ومهرگان ۱۴۰۱/۰۶/۳۱ و ۱۴۰۲/۰۶/۳۱ (۸ ستونِ پُر در برابر ۰).
     ۳) درِ تساوی، newest `tracing_no` (اصلاحیه) — قراردادِ پیشین دست‌نخورده.
     """
-    return (1 if consolidated else 0, -completeness, -int(tracing_no or 0))
+    return (1 if other_entity else 0,
+            1 if consolidated else 0, -completeness, -int(tracing_no or 0))
 
 
+def quarter_reference_rows(rows, limit=16) -> list[dict]:
+    """ساختِ نمای مرجعِ سری فصلی بدون حذفِ اطلاعیه‌های منبع.
+
+    یک دوره ممکن است اطلاعیه‌های مستقل، تلفیقی یا اصلاحیه‌های مشروع داشته باشد.
+    این تابع صرفاً برای نمودار یک مرجع در هر (period_end, period_months, report_kind)
+    انتخاب می‌کند. تقدمِ مرجع: دامنۀ شرکت (`title_entity_suffix`، شرکتِ فرعیِ
+    زیرِ نمادِ هلدینگ کنار می‌رود) و سپس همان `statement_rank` موجود
+    (غیرتلفیقی ← کامل‌بودن ← tracing_no بالاتر). publish_date خام عمداً در
+    رتبه‌بندی نیست؛ چون encoding فارسی/ASCII آن در داده یکسان نیست و مقایسهٔ
+    لغوی قابل اعتماد نیست.
+
+    limit پس از انتخابِ مرجع اعمال می‌شود تا چند نسخهٔ یک دوره پنجره را پر نکنند.
+    """
+    best = {}
+    stable_fields = (
+        "title", "report_kind", "revenue", "gross_profit",
+        "operating_profit", "net_profit", "basic_eps",
+    )
+    for raw in rows or ():
+        row = dict(raw)
+        period_end = CP.canonicalize(row.get("period_end"))
+        if not period_end:
+            continue
+        row["period_end"] = period_end
+        # طولِ دوره از `effective_months` (بندِ ۲.۳): کلیدِ «یکِ دوره» نمی‌تواند
+        # درِ سریِ فصلی ۶ باشد و درِ پنجرۀ سالانۀ همان ردیف ۱۲ — یکِ قاعده،
+        # سه reader.
+        months, months_src = CP.effective_months(period_end, row.get("period_months"),
+                                                row.get("title"))
+        row["period_months"] = months
+        if months_src == "title" or months_src is None:
+            row["months_source"] = months_src or "unknown"
+        report_kind = str(row.get("report_kind") or "")
+        key = (period_end, months, report_kind)
+        title = str(row.get("title") or "")
+        # لایۀ صفر «دامنۀ شرکت» است: کدال صورتِ مالیِ شرکتِ فرعی را زیرِ نمادِ
+        # هلدینگ منتشر می‌کند و آن شرکت را در پرانتزِ عنوان می‌نویسد؛ چنین ردیفی
+        # وضعیتِ مالیِ شرکتِ دیگری است و نمی‌تواند نمایندۀ این نماد باشد.
+        # پس ازِ آن همان `statement_rank`ِ موتور (غیرتلفیقی ← کامل‌بودن ← newest
+        # tracing_no). اگر همهٔ ردیف‌هایِ یکِ دوره فرعی باشند، همان قاعده بینِ
+        # آن‌ها می‌گزیند — پاسخی حذف نمی‌شود.
+        rank = statement_rank(
+            FS_NUMBER_KEYS,
+            _is_consolidated(title),
+            row_completeness(FS_NUMBER_KEYS, row),
+            row.get("tracing_no") or 0,
+            bool(title_entity_suffix(title)),
+        )
+        # tracing_no در DB یکتا است؛ این signature فقط برای ورودی ناسازگارِ موقت
+        # که دو ردیف با رتبه یکسان دارد، ترتیب را قطعی می‌کند.
+        signature = tuple(
+            "" if row.get(name) is None else str(row.get(name))
+            for name in stable_fields
+        )
+        current = best.get(key)
+        if current is None or rank < current[0] or (rank == current[0] and signature > current[1]):
+            best[key] = (rank, signature, row)
+
+    selected = [entry[2] for entry in best.values()]
+
+    def order_key(row):
+        try:
+            months = int(row.get("period_months") or 0)
+        except (TypeError, ValueError):
+            months = 0
+        try:
+            tracing_no = int(row.get("tracing_no") or 0)
+        except (TypeError, ValueError):
+            tracing_no = 0
+        return (
+            str(row.get("period_end") or ""),
+            months,
+            str(row.get("report_kind") or ""),
+            tracing_no,
+        )
+
+    selected.sort(key=order_key, reverse=True)
+    try:
+        bounded_limit = max(1, min(int(limit), 40))
+    except (TypeError, ValueError):
+        bounded_limit = 16
+    return selected[:bounded_limit]
+
+
+# `unit_norm` از همین دور درِ **هر دو** مسیرِ خواندن هست: مقیاسِ پولِ یک ردیف فقط
+# از خودِ ردیف خوانده می‌شود (`codal_units`)، نه از ثابتِ ماژول. تا پیش از این
+# ستون درِ بانک پر می‌شد ولی هیچ کوئری‌ای نمی‌خواندش، پس «بی‌واحد» با «میلیون
+# ریال» یکی به‌نظر می‌رسید.
 FS_COLS = ("period_end, period_months, title, revenue, gross_profit, "
-           "operating_profit, net_profit, basic_eps")
+           "operating_profit, net_profit, basic_eps, company_name, unit_norm")
 
 
 def annual_statements(conn: sqlite3.Connection, symbol: str, require_audit: bool = True,
@@ -604,7 +815,7 @@ def annual_statements(conn: sqlite3.Connection, symbol: str, require_audit: bool
 
     پیش‌فرض: فقط «حسابرسی‌شده» و فقط «شرکت اصلی» (غیرتلفیقی) — شرط شاخص ۲.
     """
-    pred, params = sym_in("symbol", symbol)
+    pred, params = sym_in(conn, "symbol", symbol)
     # پنجرهٔ خواند عمداً بزرگ است و غربال در Python انجام می‌شود:
     # `limit*4` (یعنی ۴ ردیف برای limit=1) باعث می‌شد صورت‌مالیِ ۱۲ماههٔ
     # حسابرسی‌شده‌ای که در ترتیب period_end عقب‌تر از ۴ ردیف اول می‌افتد هرگز
@@ -614,7 +825,10 @@ def annual_statements(conn: sqlite3.Connection, symbol: str, require_audit: bool
     window = max(int(limit), 1) * 12 + 48
     rows = conn.execute(
         f"SELECT {FS_COLS}, tracing_no FROM financial_statements "
-        f"WHERE {pred} AND {CP.DATED_SQL} AND period_months>=12 "
+        # پیش‌فیلترِ SQL فقط «حداکثرِ ممکن» را نگه می‌دارد؛ داوریِ «سالانہ بودن»
+        # با `CP.effective_months` درِ Python است (ستونِ تهی از عنوان پر می‌شود و
+        # دورۀ گذارِ شش‌ماهه با ستونِ ۱۲ رد می‌شود).
+        f"WHERE {pred} AND {CP.DATED_SQL} AND (period_months>=12 OR period_months IS NULL) "
         "ORDER BY period_end DESC LIMIT ?",
         (*params, window)).fetchall()
     # یکِ سالِ مالی = یکِ صورتِ مالی. اگر برایِ یکِ دوره چند ردیف باشد (اصلی +
@@ -622,8 +836,15 @@ def annual_statements(conn: sqlite3.Connection, symbol: str, require_audit: bool
     # نه با ترتیبِ پیشآمدِ SQLite — وگرنه یکِ پوستۀ بی‌عددِ تازه‌تر، ردیفِ
     # عدددار را از دیدِ کلِ لایه‌ها پنهان می‌کرد.
     by_year: dict = {}
-    for pe, pm, title, rev, gp, op, np_, eps, tn in rows:
+    for pe, pm, title, rev, gp, op, np_, eps, cn, un, tn in rows:
         t = title or ""
+        # طولِ دوره از `CP.effective_months` خوانده می‌شود، نه از ستونِ خام:
+        # یکِ ردیفِ بانک «دورۀ ۶ ماهه» است ولی `period_months=12` دارد، و ۲۴
+        # ردیفِ بی‌ستون از عنوان قابل‌تعیین‌اند. بی‌این، دورۀ گذار به‌عنوان
+        # «سالِ مالی» درِ پنجرۀ سه‌ساله می‌نشست (بندِ ۲.۳ سیاستِ بنیادی).
+        months, months_src = CP.effective_months(pe, pm, t)
+        if months is None or months < 12:
+            continue
         if exclude_consolidated and _is_consolidated(t):
             continue
         if require_audit and not _is_audited(t):
@@ -631,12 +852,27 @@ def annual_statements(conn: sqlite3.Connection, symbol: str, require_audit: bool
         yr = CP.fiscal_year(pe)
         if not yr:
             continue
-        cand = {"period_end": pe, "fiscal_year": yr, "period_months": pm, "title": t,
+        cand = {"period_end": pe, "fiscal_year": yr, "period_months": months,
+                "months_source": months_src, "title": t,
                 "audited": _is_audited(t), "consolidated": _is_consolidated(t),
+                "other_entity": bool(title_entity_suffix(t)),
+                "conflicts": row_conflicts(pe, t, months),
+                # مقیاسِ همین ردیف، از خودِ ردیف. `unit_valid` نقیضِ
+                # `codal_units.PRESENT_SQL` است — یکِ تعریف، دوconsumer.
+                "unit_norm": un, "unit_valid": CU.is_valid(un),
+                "tracing_no": tn, "company_name": str(cn or ""),
                 "amended": _is_amendment(t), "revenue": _fn(rev), "gross_profit": _fn(gp),
                 "operating_profit": _fn(op), "net_profit": _fn(np_), "basic_eps": _fn(eps)}
+        # لایۀ «شرکتِ دیگر» درِ هر دو مسیر فعال است: از دورِ Stage 1.2 کارت و قیف
+        # نامزدها را از خودِ بانک می‌خوانند (`symbol_identity`)، پس این پرچم دیگر
+        # دو جواب نمی‌سازد. بی‌این لایه، ردیفِ شرکتِ فرعی درِ سبدِ یکِ سالِ مالی
+        # برنده می‌شد و صورتِ مالیِ **خودِ نماد** را از پنجره بیرون می‌انداخت —
+        # آن‌وقت `pick_reference` که ردیفِ فرعی را رد می‌کند، آن سال را هرگز
+        # نمی‌دید («شهر فرش» ۱۴۰۴: ردیفِ «شرکت داتیس نوین ایرانیان» جای
+        # صورتِ مالیِ خودِ نماد را می‌گرفت).
         rank = statement_rank(FS_NUMBER_KEYS, _is_consolidated(t),
-                              row_completeness(FS_NUMBER_KEYS, cand), tn)
+                              row_completeness(FS_NUMBER_KEYS, cand), tn,
+                              cand["other_entity"])
         cur = by_year.get(yr)
         if cur is None or rank < cur[0]:
             by_year[yr] = (rank, cand)
@@ -648,13 +884,90 @@ def annual_statements(conn: sqlite3.Connection, symbol: str, require_audit: bool
     return out
 
 
-def pick_reference(rows) -> Optional[dict]:
+_CONFLICT_LABEL = {"title_period": "دورۀ داخلِ عنوان با دورۀ ستون یکی نیست",
+                   "title_months": "شمارِ ماه‌هایِ دورۀ عنوان با ستون نمی‌خواند"}
+
+
+def reference_identity(rows, reference):
+    # آیا گزارشِ منتخب واقعاً به همین نماد تعلق دارد؟ بله/نه + دلیل، بی‌رأیِ مالی.
+
+    # کدال شناسۀ مستقلِ شرکت ندارد (خودِ فیدِ زنده فقط Symbol/CompanyName/
+    # TracingNo می‌دهد — سنجیده ۱۴۰۵-۰۷-۲)، پس تنها شاهدِ موجود درِ بانک
+    # «نامِ شرکتِ غالبِ همین نماد» در برابرِ «نامِ شرکتِ ردیفِ منتخب» است.
+    # این دو نخوانند، انتخاب **قطعی نیست** و باید دیده شود: نه رد، نه پاس،
+    # نه صفر. سنجشِ بانکِ کاری (فقط‌خواندنی): از ۱۱۹۵ نمادِ دارای صورتِ مالی
+    # ۴۴ تا بیش از یک نامِ شرکت دارند و ۱۸ تا ردیفِ منتخبشان با نامِ غالبِ
+    # خودشان نمی‌خواند (اکثراً صندوق/سریِ صندوق زیرِ یکِ نماد مثلِ «گوهر» و
+    # «ستاره»، و یکِ تغییرِ نامِ واقعی: «غگز»).
+
+    # برگردان: {"checked", "match", "reason", "reference_company",
+    #          "dominant_company", "names", "conflicts", "conflict_note"}
+    # `checked`/`match` تنها از نامِ شرکت حرف می‌زنند (معنایشان درِ این دور عوض
+    # نشد). `conflicts` چیزِ دیگری است: برچسب‌هایِ `row_conflicts` رویِ همان
+    # ردیفِ منتخب — تناقضِ متن/ستون، که رأیِ هویت نیست ولی باید درِ ردپا باشد.
+    ref = reference or {}
+    conflicts = list(ref.get("conflicts") or [])
+    note = "؛ ".join(_CONFLICT_LABEL.get(c, c) for c in conflicts)
+    rc = norm_fa(str(ref.get("company_name") or ""))
+    if not rc:
+        return {"checked": False, "match": None, "reason": None,
+                "reference_company": "", "dominant_company": "", "names": 0,
+                "conflicts": conflicts, "conflict_note": note}
+    counts = {}
+    for r in rows or []:
+        n = norm_fa(str(r.get("company_name") or ""))
+        if n:
+            counts[n] = counts.get(n, 0) + 1
+    if not counts:
+        return {"checked": False, "match": None, "reason": None,
+                "reference_company": rc, "dominant_company": "", "names": 0,
+                "conflicts": conflicts, "conflict_note": note}
+    dominant = max(counts, key=lambda k: (counts[k], k))
+    if rc == dominant:
+        return {"checked": True, "match": True, "reason": None,
+                "reference_company": rc, "dominant_company": dominant,
+                "names": len(counts), "conflicts": conflicts,
+                "conflict_note": note}
+    return {"checked": True, "match": False,
+            "reason": ("نامِ شرکتِ گزارشِ منتخب («" + rc + "») با نامِ غالبِ این نماد («"
+                       + dominant + "») یکی نیست" + (("؛ " + note) if note else "")),
+            "reference_company": rc, "dominant_company": dominant,
+            "names": len(counts), "conflicts": conflicts, "conflict_note": note}
+
+
+# آنچه شاخص ۳ برایِ ساختنِ یک عدد لازم دارد: صورتِ سود و زیانی که هم «سود
+# ناخالص» در آن خوانده شده و هم درآمدِ عملیاتی. نبودِ هر دو ⇒ «قابل محاسبه
+# نبود»، نه صفر.
+MARGIN_NEED = ("gross_profit", "revenue")
+
+
+def row_carries(row, need=MARGIN_NEED) -> bool:
+    for k in need or ():
+        v = (row or {}).get(k)
+        if v is None or (isinstance(v, str) and not v.strip()):
+            return False
+        if k == "revenue" and _f(v) <= 0:
+            return False
+    return True
+
+
+def pick_reference(rows, need=None) -> Optional[dict]:
     """ردیفٔ مرجعٔ شاخص‌های ۳ و ۴ — خالص روی هر فهرست ردیف.
 
     سلسلۀ‌مراتب همانِ `reference_annual` است: سالانۀ حسابرسی‌شدۀ غیرتلفیقی →
     سالانۀ غیرتلفیقی → سالانۀ اخیر. انتخابِ داخلِ هر سالِ مالی با `statement_rank`
-    (مبنا ← کامل‌بودن ← تازگی) است، پس مسیرِ تک‌نمادی (SQL) و مسیرِ کل‌بازار
-    (`bulk_scan` که ردیف‌ها را از پیش خوانده) یکِ ردیف را مرجع می‌گیرند، نه دو تا.
+    (دامنۀ شرکت ← مبنا ← کامل‌بودن ← تازگی) است، پس مسیرِ تک‌نمادی (SQL) و مسیرِ
+    کل‌بازار (`bulk_scan` که ردیف‌ها را از پیش خوانده) یکِ ردیف را مرجع می‌گیرند،
+    نه دو تا.
+
+    آرگومانِ `need` برایِ بندِ P-2 سیاست نوشته شده: جزوه «غیرتلفیقی بودن» را درِ
+    بندِ **شاخص ۲** شرط کرده، نه درِ حاشیۀ سود. بی‌آن، نمادی که آخرین سالانۀ
+    غیرتلفیقی‌اش عددِ سودِ ناخالص ندارد حاشیه‌اش `None` می‌شد، در حالی که
+    سالانۀ تلفیقیِ همان شرکت با هر دو عدد درِ بانک بود (`وكادو` ۱۴۰۴ با
+    ۲۹٫۶٪، `سيتا` ۱۴۰۴ با ۴۰٫۲٪). با `need`، اول ردیفی که آن ستون‌ها را دارد
+    جست‌وجو می‌شود و اگر نبود، همان ردیفِ پیشین برمی‌گردد (یعنی عددِ شرکتِ
+    دیگر هرگز نیاید، ولی نبودِ یک ستون هم باعث نشود سالِ دارایِ عدد دور ریخته
+    شود).
     """
     by_year: dict = {}
     for r in rows or []:
@@ -665,38 +978,80 @@ def pick_reference(rows) -> Optional[dict]:
             continue
         rank = statement_rank(FS_NUMBER_KEYS, bool(r.get("consolidated")),
                               row_completeness(FS_NUMBER_KEYS, r),
-                              r.get("tracing_no") or 0)
+                              r.get("tracing_no") or 0,
+                              bool(r.get("other_entity")))
         cur = by_year.get(yr)
         if cur is None or rank < cur[0]:
             by_year[yr] = (rank, r)
     cand = sorted(by_year.values(), key=lambda t: str(t[1].get("fiscal_year") or ""),
                   reverse=True)
-    for want in (lambda a, c: a and not c,      # حسابرسی‌شدۀ غیرتلفیقی
-                 lambda a, c: not c,            # غیرتلفیقی
-                 lambda a, c: True):            # هر سالانۀ اخیر
-        for _rank, r in cand:
-            if want(bool(r.get("audited")), bool(r.get("consolidated"))):
+    tiers = (lambda a, c, o: a and not c,      # حسابرسی‌شدۀ غیرتلفیقی
+             lambda a, c, o: not c,            # غیرتلفیقی
+             lambda a, c, o: True)             # هر سالانۀ اخیر
+    # دو گذر، نه دو قاعده: اگر `need` داده شد، اول **هر سه پلّه** با شرطِ «این
+    # عدد را دارد» جست‌وجو می‌شود و فقط اگر هیچ‌کدام نداشت، همان پلّه‌ها بی‌آن
+    # شرط. بی‌این ترتیب، پلۀ اول با یکِ ردیفِ تهی برنده می‌شد و گذرِ دوم هرگز
+    # دیده نمی‌شد (همان اشتباهی که `وكادو` را بی‌حاشیه می‌گذاشت).
+    for require_numbers in ((True, False) if need else (False,)):
+        for want in tiers:
+            # قاعدۀ «هرگز» برایِ ردیفِ شرکتِ دیگر: پلِ سوم هم آن را بیرون
+            # می‌گذارد، و اگر سالِ مالی تنها ردیفش آن بود، آن سال درِ این
+            # پلکان حضور ندارد. دلیل: عددِ آن ردیف صورتِ مالیِ آن شرکت است،
+            # نه این نماد — «شهر فرش» دقیقاً همین‌جا دو جواب می‌داد (۲۰٪ از
+            # ردیفِ «شرکت داتیس نوین ایرانیان» در برابرِ ۳۷٫۹٪ از تلفیقیِ خودِ نماد).
+            for _rank, r in cand:
+                if bool(r.get("other_entity")):
+                    continue
+                if not want(bool(r.get("audited")), bool(r.get("consolidated")), False):
+                    continue
+                if require_numbers and not row_carries(r, need):
+                    continue
                 return r
     return None
 
 
-def reference_annual(conn: sqlite3.Connection, symbol: str) -> Optional[dict]:
+def reference_annual(conn: sqlite3.Connection, symbol: str,
+                     need=None) -> Optional[dict]:
     """آخرین صورت مالی سالانۀ «حسابرسی‌شدۀ غیرتلفیقی»؛ در نبودش سلسلۀ‌مراتب تنزل:
     سالانۀ غیرتلفیقی → سالانۀ اخیر. (منبع قطعی شاخص‌های ۳ و ۴)
 
     یک پنجرۀ ۱۲ماهه از DB خوانده می‌شود و انتخاب در `pick_reference` است — همان
-    تابعی که `bulk_scan` روی ردیف‌های ازپیش‌خواندۀ خودش صدا می‌زند.
+    تابعی که `bulk_scan` روی ردیف‌های ازپیش‌خواندۀ خودش صدا می‌زند. `need` فقط
+    جست‌وجو را برایِ همان شاخص دقیق‌تر می‌کند (بندِ P-2 سیاست) و منبعِ انتخابی را
+    عوض نمی‌کند جز در موردِ «این عدد را نداشت».
     """
     return pick_reference(annual_statements(conn, symbol, require_audit=False,
-                                           exclude_consolidated=False, limit=12))
+                                           exclude_consolidated=False, limit=12),
+                          need=need)
 
 
 
 
 # ============================================================ تبدیل واحد
+# مقیاس‌ها از `codal_units` می‌آیند (تنها تعریف). دو ثابتِ این فایل دیگر «عددِ
+# ماژول» نیستند، فقط نامِ محلّیِ همان جدول‌اند: اگر روزی مقیاسِ تازه‌ای به
+# `CU.SCALES` بیافزایید، اینجا خودبه‌خود درست می‌شود و هیچ consumer دومی برای
+# اصلاح باقی نمی‌ماند (`api/fundamental` هم از همین‌جا واگرد می‌کند).
+MRL_TO_BTM_FACTOR = CU.SCALES["mrl"] / CU.RIAL_PER_BTM     # = 1e-4 (قاعدۀ جزوه)
+
+
 def normalize_mrl_to_btom(value_million_rials) -> float:
-    """میلیون ریال → میلیارد تومان (حذف ۴ رقم سمت راست — قاعدهٔ جزوه)."""
-    return _f(value_million_rials) / 10_000.0
+    """میلیون ریال → میلیارد تومان (حذف ۴ رقم سمت راست — قاعدهٔ جزوه).
+
+    ورودی این تابع **باید** میلیون ریال باشد؛ تبدیلِ خودِ ردیف (که ممکن است
+    میلیارد تومانِ خالصِ منبع باشد) از `fs_amount_mrl` می‌گذرد، نه اینجا.
+    """
+    return _f(value_million_rials) * MRL_TO_BTM_FACTOR
+
+
+def fs_amount_mrl(row, key: str = "revenue"):
+    """پولِ یک ردیفِ صورتِ مالی ← مبناىِ داخلیِ موتور (میلیون ریال).
+
+    مقیاس از خودِ `unit_norm`ِ ردیف می‌آید (`codal_units.to_mrl`). ردیفِ
+    بی‌واحد **None** می‌دهد: نه صفر، نه فرضِ «مثلِ بقیه میلیون ریال است». مصرف‌
+    کننده باید آن را «قابل محاسبه نبود» اعلام کند، نه رأیِ منفی.
+    """
+    return CU.to_mrl((row or {}).get(key), (row or {}).get("unit_norm"))
 
 
 def _f(v) -> float:
@@ -747,7 +1102,10 @@ def _dedupe_ym(rows, ytd_idx: int = 3):
 
 
 
-MRL_TO_RIAL = 1e6                        # جداول کدال همگی «میلیون ریال» هستند
+MRL_TO_RIAL = CU.SCALES["mrl"]        # مبناىِ داخلی = میلیون ریال؛ مقیاسِ هر
+#                                       # ردیفِ صورتِ مالی جدا خوانده می‌شود
+#                                       # (`fs_amount_mrl`) — این ثابت تنها برایِ
+#                                       # مسیری است که خودش میلیون ریال ساخته.
 
 
 # فالۀبکِ آستانه‌ها وقتی کلید در cfg نباشد، فقط همین‌جا
@@ -779,7 +1137,8 @@ def _th(cfg, key):
 
 
 # =============================================== شاخص ۱: رشد فروش تجمیعی (YoY)
-MS_SERIES_COLS = "year, month, monthly_revenue, ytd_revenue, ytd_revenue_prev, period_end"
+MS_SERIES_COLS = ("year, month, monthly_revenue, ytd_revenue, ytd_revenue_prev, "
+                  "period_end, title")
 
 
 def monthly_series(conn: sqlite3.Connection, symbol: str, limit: int = 60) -> list:
@@ -791,13 +1150,19 @@ def monthly_series(conn: sqlite3.Connection, symbol: str, limit: int = 60) -> li
     گزارشِ تجمیعی دارد، ردیفِ «همان دورۀ سالِ قبل» بیرونِ پنجره می‌ماند و موتور
     data_gap می‌داد جایی که کارت عدد می‌داد. سقفِ تازه = همان ۶۰.
     """
-    pred, params = sym_in("symbol", symbol)
+    pred, params = sym_in(conn, "symbol", symbol)
     rows = conn.execute(
         "SELECT " + MS_SERIES_COLS + " FROM monthly_sales WHERE " + pred +
         " AND ytd_revenue IS NOT NULL AND ytd_revenue>0 "
         "ORDER BY year DESC, month DESC LIMIT ?",
         (*params, max(int(limit or 60), 1))).fetchall()
-    return _dedupe_ym([list(r) for r in rows])
+    # بندِ ۲.۱ سیاستِ بنیادی: گزارشِ شرکتِ دیگر برای **هیچ** شاخصی قابل‌قبول نیست.
+    # همین قاعده درِ `financial_statements` نوشته شده بود و سریِ ماهانه از آن
+    # مستثنا بود: سنجشِ بانک — ۱ ردیف از ۱۴٬۹۵۷ ردیفِ `monthly_sales` شرکتِ
+    # دیگری را نام می‌برد (tn 1591838، «غنوش» ← «شرکت سرمایه گذاری نوش مازندران»
+    # با `ytd_revenue = -62`)؛ امروز شرطِ `ytd_revenue>0` همان ردیف را بیرون
+    # می‌انداخت، پس این بند امروز رفتار را عوض نمی‌کند و نگهبانِ فرداست.
+    return _dedupe_ym([list(r[:-1]) for r in rows if not title_entity_suffix(r[-1] or "")])
 
 
 def ytd_denominator(rows):
@@ -949,31 +1314,49 @@ def eps_ladder(conn: sqlite3.Connection, symbol: str, years: int = 3) -> dict:
     آخرین سالِ کامل باشد. قاعدهٔ «سطر هرگز حذف نشود»: اگر کمتر از need دوره
     موجود است، `partial=True` با خانه‌هایِ None برمی‌گردد (نه نتیجهٔ تهی).
     """
-    pred, params = sym_in("symbol", symbol)
+    pred, params = sym_in(conn, "symbol", symbol)
     rows = conn.execute(
-        "SELECT period_end, period_months, title, basic_eps, net_profit"
+        "SELECT period_end, period_months, title, basic_eps, net_profit, tracing_no"
         " FROM financial_statements "
-        "WHERE %s AND basic_eps IS NOT NULL AND period_months > 0 "
+        "WHERE %s AND basic_eps IS NOT NULL "
+        "AND (period_months > 0 OR period_months IS NULL) "
         "AND %s ORDER BY period_end DESC LIMIT 120" % (pred, CP.DATED_SQL),
         params).fetchall()
     per_year: dict = {}
-    for pe, pm, title, eps, net in rows:
+    for pe, pm, title, eps, net, tn in rows:
+        # همان قاعدۀ «شرکتِ دیگر» که درِ `statement_rank` و `quarter_reference_rows`
+        # می‌نشیند: این نردبان یگانۀ readerِ شاخص ۲ است و بی‌این خط، EPS یکِ
+        # شرکتِ فرعی واردِ سابقۀ سودسازی نماد می‌شد. سنجشِ فقط‌خواندنی رویِ
+        # همین بانک: از ۷٬۳۰۹ ردیفِ EPS‌دار، ۱۷۹ ردیف عنوانشان شرکتِ دیگری را
+        # نام می‌برد (زیرِ ۷۸ نوشتارِ نماد) — «شهر فرش» دقیقاً همین بود: سالِ
+        # ۱۴۰۴ با EPS 109 از ردیفِ «شرکت داتیس نوین ایرانیان» خوانده می‌شد، در
+        # حالی که خودِ نماد برایِ همان سال EPS 382 (تلفیقیِ حسابرسی‌شده) دارد.
+        # قاعدۀ شاخص ۲ «سالانۀ حسابرسی‌شدۀ غیرتلفیقی» است؛ صورتِ مالیِ شرکتِ
+        # دیگر هیچ‌کدام از این‌ها نیست — پیش ازِ این، نبودِ برچسبِ «تلفیقی» درِ
+        # عنوان کافی بود تا آن ردیف از فیلترِ غیرتلفیقی رد شود.
+        if title_entity_suffix(title or ""):
+            continue
+        # طولِ دوره از `effective_months` (بندِ ۲.۳ سیاست): «دورۀ ۶ ماهه» با
+        # ستونِ ۱۲ ⇒ شش‌ماهه حساب می‌شود و از سبدِ «سالِ مالی» بیرون می‌ماند،
+        # و ۲۴ ردیفِ بی‌ستون که عنوانشان دورۀ صریح دارد از گم‌شدن نجات
+        # می‌یابند. ستونِ تهیِ بی‌عنوانِ دوره‌دار همان‌جا تهی می‌ماند — حدس نیست.
+        months, _msrc = CP.effective_months(pe, pm, title)
         try:
-            y, months, ev = int(CP.fiscal_year(pe)), int(_f(pm)), float(eps)
+            y, ev = int(CP.fiscal_year(pe)), float(eps)
         except (TypeError, ValueError):
             continue
-        if y <= 0 or months <= 0:
+        if y <= 0 or not months:
             continue
         cons = _is_consolidated(title or "")
         bucket = per_year.setdefault(y, {"annual": [], "interim": []})
         (bucket["annual"] if months >= 12 else bucket["interim"]).append(
             (months, _is_audited(title or ""), ev, _fn(net), CP.canonicalize(pe) or "",
-             cons))
+             cons, tn))
     if not per_year:
         return {}
 
     def _rank(r):
-        pm, aud, eps, net, pe, cons = r
+        pm, aud, eps, net, pe, cons, _tn = r
         if pm >= 12:
             return ((2 if cons else 0) + (0 if aud else 1), -pm, pe)
         return (4, -pm, pe)
@@ -982,12 +1365,12 @@ def eps_ladder(conn: sqlite3.Connection, symbol: str, years: int = 3) -> dict:
         """بهترین رکوردِ یکِ سال مالی → (eps, period_end, quality, months, cons, net)."""
         b = per_year[y]
         best = sorted(list(b["annual"]) + list(b["interim"]), key=_rank)[0]
-        pm, aud, eps, net, pe, cons = best
+        pm, aud, eps, net, pe, cons, tn = best
         if pm >= 12:
-            return eps, pe, _EPS_QUALITY[_rank(best)[0]], pm, cons, net
+            return eps, pe, _EPS_QUALITY[_rank(best)[0]], pm, cons, net, tn
         return (round(eps * 12.0 / pm, 2), pe,
                 "annualized_interim_short" if pm < 6 else "annualized_interim",
-                pm, cons, None)
+                pm, cons, None, tn)
 
     def _has_annual(y):
         return bool(per_year[y]["annual"])
@@ -1028,6 +1411,7 @@ def eps_ladder(conn: sqlite3.Connection, symbol: str, years: int = 3) -> dict:
             "evidence": [picked_g[y][2] if y in picked_g else "missing" for y in slots],
             "period_months": [picked_g[y][3] if y in picked_g else None for y in slots],
             "net_profit_series": [(picked_g[y][5] if y in picked_g else None) for y in slots],
+            "ref_tracing_nos": [(picked_g[y][6] if y in picked_g else None) for y in slots],
             "available_periods": len(have),
             "periods_missing": need - len(have),
             "partial": True,
@@ -1048,6 +1432,8 @@ def eps_ladder(conn: sqlite3.Connection, symbol: str, years: int = 3) -> dict:
         "evidence": ev,
         "period_months": [p[3] for p in reversed(picked)],
         "net_profit_series": [p[5] for p in reversed(picked)],
+        # ردپایِ بندِ ۵: هر خانه از سری EPS به کدامِ گزارش برمی‌گردد.
+        "ref_tracing_nos": [p[6] for p in reversed(picked)],
         "consecutive_years": True,
         "strictly_rising": all(series[i] < series[i + 1] for i in range(len(series) - 1)),
         "all_profitable": all(_f(s) > 0 for s in series),
@@ -1153,8 +1539,47 @@ def eps_trend_3y(conn: sqlite3.Connection, symbol: str, years: int = 3,
 
 
 # ==================================== شاخص ۳: حاشیه سود ناخالص (Gross Margin)
+def margin_reference(conn: sqlite3.Connection, symbol: str, ref=None,
+                     rows=None) -> Optional[dict]:
+    """ردیفی که شاخص ۳ از آن حاشیه می‌سازد — همان پلکان، با اولویتِ عددِ موجود.
+
+    مسیرِ تک‌نمادی با یک کوئری اضافه کار می‌کند؛ `bulk_scan` ردیف‌هایِ ازپیش‌خوانده
+    را می‌دهد (`rows=annual[key]`) تا به‌ازایِ هر نماد کوئریِ دوم زده نشود. بی‌این،
+    دو نماد (`وكادو`، `سيتا`) حاشیه‌شان `None` می‌ماند در حالی که تلفیقیِ حسابرسی‌
+    شدۀ *خودِ شرکت* با هر دو عدد درِ بانک بود — شرطِ «غیرتلفیقی» مالِ شاخص ۲ است،
+    نه مالِ حاشیه (بندِ P-2 سیاست).
+    """
+    if row_carries(ref, MARGIN_NEED):
+        return ref
+    if rows is not None:
+        return pick_reference(rows, need=MARGIN_NEED) or ref
+    return reference_annual(conn, symbol, need=MARGIN_NEED) or ref
+
+
+def ind4_vote(annual, s2m_d, pot_d, exempt: bool, mcap=None):
+    """سه‌حالۀ رأیِ شاخص ۴ — درِ **هر سه** مسیر (کارت، `scan_symbol`، `bulk_scan`).
+
+    سه حالتِ «None» با هم یکی نیستند ولی هر سه نظر ندادن‌اند، و هیچ‌کدام «رد» نیست:
+      * معافیتِ هلدینگ/صندوق (رأی ۱۶) — مدلِ کسب‌وکار فروشِ عملیاتیِ ماهانه ندارد؛
+      * نبودِ فروشِ سالانۀ راستی‌آزمایی‌شده (نه گزارشِ ماهانه، نه صورتِ مالیِ
+        واحددار) — چیزی که هرگز ساخته نشده مردود نیست؛
+      * نبودِ ارزشِ بازار — مخرجِ کسر غایب است، نه بزرگ.
+    بی‌این سه‌حالگی، ۱۰۳ ردیفِ بی‌ارزش‌بازار و چند ردیفِ بی‌شاهدِ فروش درِ قیف
+    «رد» می‌خوردند (بندِ ۵ مأموریت: فیلدِ گمشده با رأی جایگزین نشود). ردِ واقعی
+    فقط وقتی است که عدد باشد و زیرِ آستانه بماند.
+    """
+    if exempt:
+        return None
+    if mcap is not None and _f(mcap) <= 0:
+        return None
+    if not annual or _f(annual.get("annual_sales_mrl")) <= 0:
+        return None
+    return bool((s2m_d or {}).get("pass") or (pot_d or {}).get("pass"))
+
+
 def gross_margin(conn: sqlite3.Connection, symbol: str, min_margin: float = 20.0,
-                 optimal: float = 30.0, ref: Optional[dict] = None) -> Optional[dict]:
+                 optimal: float = 30.0, ref: Optional[dict] = None,
+                 rows=None) -> Optional[dict]:
     """حاشیه = (سود ناخالص ÷ درآمدهای عملیاتی) × ۱۰۰.
 
     ممیزی v8: فرمول v7.3 درست بود؛ **منبع** غلط بود — `ORDER BY period_end DESC
@@ -1162,7 +1587,10 @@ def gross_margin(conn: sqlite3.Connection, symbol: str, min_margin: float = 20.0
     آخرین صورت مالی **سالانهٔ حسابرسی‌شدهٔ غیرتلفیقی** مبنا قرار میگیرد.
     تأیید: `net_profit` و `operating_profit` در این شاخص هیچ نقشی ندارند.
     """
-    row = ref or reference_annual(conn, symbol)
+    # مرجعِ این شاخص با «توانِ محاسبه» گزینش می‌شود، نه تنها با مبنایِ صورتِ مالی:
+    # `margin_reference` همان پلکانِ مشترک است، فقط ردیفِ دارایِ عدد را ترجیح
+    # می‌دهد (بندِ P-2 سیاست: شرطِ غیرتلفیقی مالِ شاخص ۲ است، نه حاشیه).
+    row = margin_reference(conn, symbol, ref=ref, rows=rows)
     if not row:
         return None
     rev, gp = _f(row.get("revenue")), row.get("gross_profit")
@@ -1186,6 +1614,16 @@ def gross_margin(conn: sqlite3.Connection, symbol: str, min_margin: float = 20.0
         "revenue_bt": round(normalize_mrl_to_btom(rev), 1),
         "period_end": str(row.get("period_end"))[:10],
         "basis": src,
+        # ردپایِ بندِ ۵ مأموریت: «کدامِ گزارش» نه فقط «چه دوره‌ای». بی‌`tracing_no`
+        # خواننده نمی‌تواند ردیفِ منبع را درِ کدال بازبینی کند، و بی‌`unit` معلوم
+        # نیست عدد مقیاسش را از کجا آورده (بندِ P-4 سیاست).
+        "ref_tracing_no": row.get("tracing_no"),
+        "ref_company": str(row.get("company_name") or ""),
+        "fiscal_year": fy or None,
+        "unit": row.get("unit_norm"),
+        "unit_label": CU.label(row.get("unit_norm")),
+        "unit_valid": CU.is_valid(row.get("unit_norm")),
+        "source": "کدال — صورت سود و زیان سالانه",
         "pass": margin >= min_margin,
         "optimal": margin >= optimal,
         "threshold": min_margin,
@@ -1258,7 +1696,7 @@ _OP_BASIS_KINDS = ("financial", "service", "fund", "holding")
 ANNUALIZATION_SCALE = (3, 4, 5, 6, 9, 12)
 
 
-def annualize_rows(rows, fs_rev: float, op_basis: bool = False) -> dict:
+def annualize_rows(rows, fs_rev, op_basis: bool = False, fs_unit_known: bool = True) -> dict:
     """خالصِ سالانه‌سازی — **یک** قاعده برای مسیرِ SQL و مسیرِ کل‌بازار.
 
     قاعده (رأیِ مالک، OWNER_RULINGS ردیف ۴ + سند v2.1):
@@ -1273,9 +1711,15 @@ def annualize_rows(rows, fs_rev: float, op_basis: bool = False) -> dict:
     نه از تقویم — تا نمادی که ماهِ جاافتاده دارد درست annualize شود.
     `rows`: [(سال, ماه، فروشِ ماه، تجمیعی), …] — ردیف‌هایِ تازه‌ترینِ سالِ مالی اول.
     برگردان: {} یعنی «قابل محاسبه نبود» (هیچ‌وقت صفرِ ساختگی نه).
+
+    `fs_rev` **باید** با مقیاسِ خودِ ردیف به میلیون‌ریال تبدیل شده باشد
+    (`fs_amount_mrl`)، و `fs_unit_known` بگوید آن تبدیل شاهدِ واحد داشته یا نه.
+    بی‌شاهدِ واحد، هیچ یک از سه قاعدۀ وابسته به مقیاس (۰، ۳، ۴) اجرا نمی‌شود:
+    ضریبِ حدسیِ ۱e۶ رویِ عددی که منبعش مقیاسش را نگفته گذاشته نمی‌شود. این
+    «بی‌رأی» است، نه رأیِ منفی.
     """
     if op_basis:
-        if fs_rev <= 0:
+        if fs_rev is None or not fs_unit_known or _f(fs_rev) <= 0:
             return {}
         return {"annual_sales_mrl": fs_rev, "months_used": 12, "reconciled": True,
                 "operational_revenue_basis": True,
@@ -1294,20 +1738,31 @@ def annualize_rows(rows, fs_rev: float, op_basis: bool = False) -> dict:
                           % (months, year, months, 12.0 / months))
                          if months < 12 else
                          "تجمیعی ۱۲ ماهِ کاملِ سال مالی %d (×۱٫۰)" % year)
-    if annual <= 0 and fs_rev > 0:
-        annual, months = fs_rev, 12
+    # هر دو شاخۀ وابسته به مقیاسِ صورتِ مالی از `fsr` می‌گذرند: ردیفی که واحدش
+    # اعلام نشده نه صفرِ واقعی است و نه مبنایِ محاسبه.
+    fsr = _f(fs_rev) if fs_unit_known else 0.0
+    if annual <= 0 and fsr > 0:
+        annual, months = fsr, 12
         basis = "مراجعه به فروش صورت مالی سالانه (بی‌گزارش ماهانه)"
     if annual <= 0:
         return {}
     # گیتِ «واحد مشکوک» فقط برای سالانه‌سازیِ واقعی (۰ < م < ۱۲) معنا دارد؛
     # گزارشی که خودش ۱۲ ماهِ کامل را پوشش می‌دهد مستقیم پذیرفته می‌شود.
-    if (fs_rev > 0 and 0 < months < 12
-            and (annual > fs_rev * 4.0 or annual < fs_rev * 0.25)):
+    if (fsr > 0 and 0 < months < 12
+            and (annual > fsr * 4.0 or annual < fsr * 0.25)):
         reconciled = False
-        annual, months = fs_rev, 12
+        annual, months = fsr, 12
         basis = "ضریب پویا مردود شد (واحد مشکوک) → فروش سالانهٔ کدال"
+        witness = True
+    else:
+        # ردیفِ مرجعِ بی‌واحد تنها شاهدِ مقیاسِ `monthly_sales` را از کار می‌اندازد
+        # (آن جدول ستونِ واحدِ پول ندارد). بی‌شاهد، عددِ ماهانه **راستی‌آزمایی‌نشده**
+        # می‌ماند و رأیِ وابسته به مقیاس داده نمی‌شود — «قابل محاسبه نبود»، نه صفر
+        # و نه PASSِ ساختگی (بندِ ۵ مأموریت).
+        witness = fs_unit_known
     return {"annual_sales_mrl": annual, "months_used": months, "basis": basis,
-            "reconciled": reconciled, "operational_revenue_basis": False}
+            "reconciled": reconciled and witness, "unit_unverified": not witness,
+            "operational_revenue_basis": False}
 
 
 def annualized_sales(conn: sqlite3.Connection, symbol: str,
@@ -1323,15 +1778,18 @@ def annualized_sales(conn: sqlite3.Connection, symbol: str,
     months_used، scale_factor، basis، reconciled، revenue_basis،
     operational_revenue_basis، na، ytd_sales_bt، scale_table.
     """
-    pred, params = sym_in("symbol", symbol)
+    pred, params = sym_in(conn, "symbol", symbol)
     if series is None:
         series = conn.execute(
-            "SELECT year, month, monthly_revenue, ytd_revenue FROM monthly_sales "
+            "SELECT year, month, monthly_revenue, ytd_revenue, title FROM monthly_sales "
             "WHERE " + pred + " AND ytd_revenue IS NOT NULL AND ytd_revenue>0 "
             "ORDER BY year DESC, month DESC", params).fetchall()
+        series = [list(r[:-1]) for r in series if not title_entity_suffix(r[-1] or "")]
     series = _dedupe_ym([list(r) for r in series])
     ref_row = ref if ref is not None else reference_annual(conn, symbol)
-    fs_rev = _f((ref_row or {}).get("revenue"))
+    # مقیاس از خودِ ردیفِ مرجع، نه از ثابتِ ماژول (`fs_amount_mrl` بی‌واحد → None).
+    fs_rev = fs_amount_mrl(ref_row, "revenue")
+    fs_unit_known = CU.is_valid((ref_row or {}).get("unit_norm"))
     prof = profile or company_profile()
     _na = (prof.get("kind") == "holding") if exempt is None else bool(exempt)
     if _na:
@@ -1341,9 +1799,13 @@ def annualized_sales(conn: sqlite3.Connection, symbol: str,
                 "reconciled": True, "revenue_basis": prof.get("revenue_basis", ""),
                 "operational_revenue_basis": False, "na": True}
     core = annualize_rows(series, fs_rev,
-                          op_basis=(prof.get("kind") in _OP_BASIS_KINDS) and fs_rev > 0)
+                          op_basis=(prof.get("kind") in _OP_BASIS_KINDS)
+                          and _f(fs_rev) > 0 and fs_unit_known,
+                          fs_unit_known=fs_unit_known)
     if not core:
         return None
+    core["fs_unit"] = (ref_row or {}).get("unit_norm")
+    core["fs_unit_label"] = CU.label((ref_row or {}).get("unit_norm"))
     months = core["months_used"]
     annual = core["annual_sales_mrl"]
     out = dict(core)
@@ -1424,7 +1886,7 @@ def company_name_of(conn, symbol) -> str:
     if conn is None:
         return ""
     try:
-        pred, params = sym_in("symbol", symbol)
+        pred, params = sym_in(conn, "symbol", symbol)
         row = conn.execute(
             "SELECT company_name FROM financial_statements "
             "WHERE %s AND company_name IS NOT NULL "
@@ -1435,7 +1897,7 @@ def company_name_of(conn, symbol) -> str:
 
 
 def company_name_map(conn: sqlite3.Connection) -> dict:
-    """نقشهٔ norm_fa(symbol) -> نامِ شرکت، تک‌کوئری (همان ردیفِ company_name_of).
+    """نقشهٔ SI.key(symbol) -> نامِ شرکت، تک‌کوئری (همان ردیفِ company_name_of).
 
     «آخرین» اینجا هم دقیقاً `codal_periods.latest_order_sql()` است (دورۀ canonical
     اول، بی‌دوره آخر، سپس tracing_no DESC)؛ اگر ترتیبش فرق کند، اسکرینر و کارت
@@ -1450,7 +1912,7 @@ def company_name_map(conn: sqlite3.Connection) -> dict:
         return out
     best = {}
     for sym, name, pe, tn in rows:
-        key = norm_fa(sym)
+        key = SI.key(sym)
         if not key:
             continue
         rank = (CP.desc_sort_key(pe), int(tn or 0))
@@ -1470,7 +1932,7 @@ def company_name_for(conn: sqlite3.Connection, symbol: str) -> str:
     یک نماد بین اسکرینر و کارت دو جواب می‌شود، و رأی ۱۵ همان واگرایی را ممنوع
     کرده است.
     """
-    al = [a for a in symbol_aliases(symbol) if a]
+    al = [a for a in SI.variants(conn, symbol) if a]
     if not al:
         return ""
     try:
@@ -1498,7 +1960,7 @@ def has_operating_sales(conn: sqlite3.Connection, symbol: str) -> Optional[int]:
         # و با مقایسهٔ خام، همان نماد بسته به نوشتارِ ورودی دو جواب متفاوت
         # می‌گرفت (امتیاز ۲ در برابر ۳ روی شارپيلن/شارپیلن و هانيكو/هانیکو).
         # norm_fa سمت SQL هم راه‌حل نیست — v9.7.3 روی همین بانک اندازه گرفت.
-        pred, params = sym_in("symbol", symbol)
+        pred, params = sym_in(conn, "symbol", symbol)
         row = conn.execute(
             "SELECT has_operating_sales FROM financial_statements "
             "WHERE %s ORDER BY tracing_no DESC LIMIT 1" % pred, params).fetchone()
@@ -1537,7 +1999,7 @@ def ind4_exempt(conn, symbol: str, sector_norm: str = "", *,
     if holding_class_match("", company_name_of(conn, symbol)):
         return True
     if _precomputed is not None:
-        return norm_fa(symbol) in _precomputed
+        return SI.key(symbol) in _precomputed
     if conn is None:
         return False
     return has_operating_sales(conn, symbol) == 0
@@ -1574,7 +2036,7 @@ def no_sales_symbols(conn: sqlite3.Connection) -> set:
     for sym, flag, tn in rows:
         if not sym:
             continue
-        key = norm_fa(sym)
+        key = SI.key(sym)
         cur = best.get(key)
         if cur is None or (tn or 0) > cur[1]:
             best[key] = (flag, tn or 0)
@@ -1731,7 +2193,7 @@ def is_suspended(conn: sqlite3.Connection, symbol: str, max_stale_sessions: int 
         return False
     cut_idx = min(max(int(max_stale_sessions), 0), len(sess) - 1)
     cutoff = sess[cut_idx]
-    pred18, params = sym_in("i.l_val18", symbol)
+    pred18, params = sym_in(conn, "i.l_val18", symbol, SI.BOARD)
     pred30 = pred18.replace("i.l_val18", "i.l_val30")
     row = conn.execute(
         "SELECT m.d_even FROM market_watch m JOIN instruments i ON i.ins_code=m.ins_code "
@@ -1754,25 +2216,31 @@ def m141_map(conn: sqlite3.Connection) -> dict:
     در تساوی، تازه‌ترین publish_date). نمادهای بدون صورت‌مالی سالانهٔ
     قابل‌استفاده در نقشه نمی‌آیند → مشمول نمی‌شوند (نه اینکه مردود شوند).
 
-    چرا فیلتر تک‌نمادی روی این کوئری نمی‌چسبد: کلیدهای خروجی norm_fa(symbol)
+    چرا فیلتر تک‌نمادی روی این کوئری نمی‌چسبد: کلیدهای خروجی SI.key(symbol)
     است، ولی ستونِ دیتابیس نوشتار خام (گاهی عربی: ي/ك/ى) دارد. اگر در SQL
     بنویسیم `symbol = ?`، نمادهایی که دیتابیس‌شان عربی‌نویسی است بی‌صدا
     «پیدا نمی‌شوند» و m141 = False برمی‌گردد — یعنی خطای داده‌ای که هیچ‌وقت
     در لاگ دیده نمی‌شود. تست dev/fts_m141_parity_v97.py همین را روی ۲۲۴ نماد
     گرفت. راه‌حلِ همین‌جا «کلیدِ نرمال در Python» است (کوئری کل‌بازار است و
     از قبل همه‌چیز را می‌خواند). برای کوئریِ تک‌نماد، `symbol_aliases`/`sym_in`
-    باید استفاده شود — نه `WHERE norm_fa(symbol)=?`، که به اندازه‌گیریِ
+    باید استفاده شود — نه `WHERE SI.key(symbol)=?`، که به اندازه‌گیریِ
     v9.7.3 روی همین بانک ۵۷۴ برابر اسکنِ ایندکسی هزینه دارد.
     """
     rows = conn.execute("""
-        SELECT symbol, capital, total_equity, period_end, publish_date
+        SELECT symbol, capital, total_equity, period_end, publish_date, period_months, title
         FROM financial_statements
-        WHERE period_months >= 12 AND capital > 0 AND total_equity IS NOT NULL
-        ORDER BY symbol, %s, publish_date DESC""" % CP.order_expr()).fetchall()
+        WHERE (period_months >= 12 OR period_months IS NULL)
+          AND capital > 0 AND total_equity IS NOT NULL
+        ORDER BY symbol, %s, %s""" % (CP.order_expr(), CP.pub_order_expr())).fetchall()
     out = {}
-    for sym, cap, eq, _pe, _pd in rows:
-        key = norm_fa(sym)
+    for sym, cap, eq, _pe, _pd, _pm, _t in rows:
+        key = SI.key(sym)
         if key in out:                      # فقط جدیدترین سال مالی ملاک است
+            continue
+        # «سالانہ بودن» هم از همان `effective_months` — وگرنه نقشۀ ماده ۱۴۱ با
+        # پنجرۀ سالانۀ کارت دو «آخرین سالِ مالی» مختلف می‌داد.
+        months, _src = CP.effective_months(_pe, _pm, _t)
+        if months is None or months < 12:
             continue
         try:
             cap, eq = float(cap), float(eq)
@@ -1803,7 +2271,7 @@ def avg_trade_value_hmt(conn: sqlite3.Connection, sessions: int = 30) -> dict:
         WHERE d.q_tot_cap > 0 AND d.d_even >= ?
         GROUP BY i.l_val18""", (cutoff,)).fetchall()
     # همت = ۱۰^۱۰ ریال
-    return {norm_fa(sym): (val or 0.0) / 1e10
+    return {SI.key(sym): (val or 0.0) / 1e10
             for sym, val, _n in rows if sym}
 
 
@@ -1865,10 +2333,17 @@ def scan_symbol(conn: sqlite3.Connection, symbol: str, market_cap_rials: float =
         # می‌کرد و موتور به آن تراز شد.
         passes_s2m = None
     else:
-        passes_s2m = bool((s2m and s2m.get("pass")) or (pot and pot.get("pass")))
+        # سه‌حالۀ مشترک با `bulk_scan` (تابعِ `ind4_vote`): بی‌شاهدِ فروشِ سالانه
+        # «رد» نیست، «سنجیده نشد» است. پیش از این همین‌جا `bool(None or None)`
+        # صفر می‌شد و نمادِ بی‌داده مردود شمرده می‌شد.
+        passes_s2m = ind4_vote(annual, s2m, pot, False, mcap=mcap)
 
-    passes = {"1_growth": bool(g and g["pass"]),
-              "2_eps_trend": bool(e and e["pass"]),
+    # رأیِ ۱۶ رویِ I1 و I2 هم، درِ هر دو مسیر: چیزی که هرگز محاسبه نشد «سنجیده
+    # نشده» است نه «رد». بی‌این، قاعدهٔ «حداقل سه شاخص PASS» نمادِ بی‌گزارش را
+    # مردود می‌شمرد و کارت با اسکرین دو جوابِ متفاوت می‌داد (گاردِ پاریتیِ
+    # پنج‌محوره درِ dev/fts_engine_paths_parity_v1076.py).
+    passes = {"1_growth": (None if not g or g.get("growth_pct") is None else bool(g["pass"])),
+              "2_eps_trend": (None if not e or e.get("data_gap") else bool(e["pass"])),
               # رأی ۱۶ برایِ شاخص ۳ هم: حاشیه‌ای که هرگز ساخته نشد «سنجیده نشده»
               # است نه «رد». شاخص ۴ درِ همین دیکشنری از قبل سه‌حالۀ None داشت؛
               # این ستون bool بود ⇒ `bulk_scan` (None) با `/api/fts` (False) دو
@@ -1898,7 +2373,7 @@ def scan_symbol(conn: sqlite3.Connection, symbol: str, market_cap_rials: float =
     # هر دو نقشه کل‌بازاری‌اند؛ scan_all/bulk_scan یک‌بار می‌سازند و پاس می‌دهند
     # (m141_hit / avg_trade_val) تا به N+1 نیفتد. این شاخه‌های None فقط برای
     # فراخوانی تکیِ /api/fts/{symbol} است.
-    key = norm_fa(symbol)
+    key = SI.key(symbol)
     if m141_hit is None:
         m141_hit = bool(m141_map(conn).get(key, False))
     if cfg.get("filter_m141") and m141_hit:
@@ -1971,7 +2446,7 @@ def scan_all(conn: sqlite3.Connection, limit: int = 0, cfg: dict = None) -> list
     # که جای واچ‌لیستِ سهمِ اصلی را می‌گرفت.
     best, order = {}, []
     for r in rows:
-        key = norm_fa(r[0])
+        key = SI.key(r[0])
         if not key:
             continue
         if key not in best:
@@ -2092,19 +2567,31 @@ def bulk_scan(conn: sqlite3.Connection, cfg: dict = None) -> list[dict]:
     pot_min = _th(cfg, "profit_potential_min")
 
     # ۱) صورت‌های مالی سالانه — مرجع + سری EPS
-    # v9.7.3: کلید = norm_fa(symbol). با کلیدِ خام، یک شرکت با دو نوشتار
+    # v9.7.3: کلید = SI.key(symbol). با کلیدِ خام، یک شرکت با دو نوشتار
     # (داریک/داريك) دو ردیف اسکنر می‌ساخت و نوشتارِ بی‌داده امتیاز ۰ می‌گرفت.
     annual, disp_of = {}, {}
-    for sym, pe, pm, title, rev, gp, op, np_, eps, tn in conn.execute(
+    for sym, pe, pm, title, rev, gp, op, np_, eps, cn, un, tn in conn.execute(
             "SELECT symbol, " + FS_COLS + ", tracing_no FROM financial_statements "
-            "WHERE period_months>=12 ORDER BY symbol, %s" % CP.order_expr()):
-        key = norm_fa(sym)
+            "WHERE period_months>=12 OR period_months IS NULL "
+            "ORDER BY symbol, %s" % CP.order_expr()):
+        key = SI.key(sym)
         if not key:
             continue
+        # همان قاعدۀ کارت، درِ قیف: «سالانہ بودن» را `effective_months` می‌گوید
+        # (ستونِ تهی از عنوان، و دورۀ گذارِ شش‌ماهۀ با ستونِ ۱۲ رد). بی‌این یکی
+        # از دو مسیر پنجره‌هایِ متفاوتی می‌دید و گاردِ پاریتی قرمز می‌شد.
+        months, months_src = CP.effective_months(pe, pm, title)
+        if months is None or months < 12:
+            continue
         annual.setdefault(key, []).append(
-            {"period_end": pe, "period_months": _fn(pm), "tracing_no": tn,
+            {"period_end": pe, "period_months": months, "months_source": months_src,
+             "tracing_no": tn,
              "fiscal_year": CP.fiscal_year(pe), "title": title or "",
+             "company_name": str(cn or ""),
+             "conflicts": row_conflicts(pe, title, months),
              "audited": _is_audited(title), "consolidated": _is_consolidated(title),
+             "other_entity": bool(title_entity_suffix(title)),
+             "unit_norm": un, "unit_valid": CU.is_valid(un),
              "revenue": _fn(rev), "gross_profit": _fn(gp), "net_profit": _fn(np_),
              "basic_eps": _fn(eps)})
         if key not in disp_of:
@@ -2124,7 +2611,7 @@ def bulk_scan(conn: sqlite3.Connection, cfg: dict = None) -> list[dict]:
     for key in annual:
         annual[key].sort(key=lambda r: CP.desc_sort_key(r["period_end"]), reverse=True)
 
-    def _ref(sym):
+    def _ref(sym, need=None):
         """مرجعِ شاخص‌های ۳ و ۴ درِ bulk — همان `pick_reference` که مسیرِ
         تک‌نمادی (`reference_annual`) می‌زند.
 
@@ -2134,19 +2621,21 @@ def bulk_scan(conn: sqlite3.Connection, cfg: dict = None) -> list[dict]:
         که لازم بود این است که ردیفِ هر سالِ مالی با `statement_rank` انتخاب
         شود — که حالا درِ هر دو مسیر همین کار می‌کند.
         """
-        return pick_reference(annual.get(sym) or [])
+        return pick_reference(annual.get(sym) or [], need=need)
 
 
 
     # ۲) گزارش‌های ماهانه — رشد تجمیعی + فروش Annualized
     # کلید نرمال + مرتب‌سازی/حذف تکرارِ (سال,ماه) پس از ادغام دو نوشتار.
     ms = {}
-    for sym, y, mo, mrev, ytd, ytdp in conn.execute(
-            "SELECT symbol, year, month, monthly_revenue, ytd_revenue, ytd_revenue_prev "
+    for sym, y, mo, mrev, ytd, ytdp, ms_title in conn.execute(
+            "SELECT symbol, year, month, monthly_revenue, ytd_revenue, ytd_revenue_prev, title "
             "FROM monthly_sales WHERE ytd_revenue IS NOT NULL AND ytd_revenue>0 "
             "ORDER BY symbol, year DESC, month DESC"):
-        key = norm_fa(sym)
-        if not key:
+        key = SI.key(sym)
+        if not key or title_entity_suffix(ms_title or ""):
+            # همان بندِ ۲.۱: سریِ ماهانهٔ یکِ شرکتِ فرعی، فروشِ این نماد نیست
+            # (کوئریِ تک‌نمادیِ `monthly_series` هم همین را می‌گذارد).
             continue
         ms.setdefault(key, []).append((int(y or 0), int(mo or 0), _f(mrev), _f(ytd), _f(ytdp)))
     for key in ms:
@@ -2165,7 +2654,7 @@ def bulk_scan(conn: sqlite3.Connection, cfg: dict = None) -> list[dict]:
                COALESCE(i.sector_name, ''), m.d_even
         FROM instruments i LEFT JOIN market_watch m ON m.ins_code = i.ins_code"""
             % mcap_bulk_expr(conn)):
-        key = norm_fa(sym)
+        key = SI.key(sym)
         mcap_of[key] = _f(mcap)
         sector_of[key] = sector or ""
         if d_even:
@@ -2207,7 +2696,11 @@ def bulk_scan(conn: sqlite3.Connection, cfg: dict = None) -> list[dict]:
         growth = None
         if d and d["ytd_prev"]:
             growth = (d["ytd_now"] / d["ytd_prev"] - 1.0) * 100.0
-        i1 = growth is not None and growth >= g_min
+        # رأیِ ۱۶ رویِ هر دو شاخصِ اول: رشدی که هرگز ساخته نشد «سنجیده نشده»،
+        # نه «رد». بی‌این، قاعدهٔ «حداقل سه شاخص PASS» نمادِ بی‌گزارش را با
+        # نمادِ مردود یکِ عدد می‌شمرد. (امتیازِ عددی عوض نمی‌شود: `None` مثلِ
+        # `False` در `sum(1 for _p in … if _p)` شمرده نمی‌شود.)
+        i1 = None if growth is None else growth >= g_min
 
         # ۲) روند EPS — همان نردبانی که کارت می‌خواند: `eps_assessment`.
         # پیش از این bulk سلسلۀ‌مراتبِ دومِ خودش را داشت («۲ ردیفِ همگن یا بیشتر»
@@ -2217,8 +2710,16 @@ def bulk_scan(conn: sqlite3.Connection, cfg: dict = None) -> list[dict]:
         # است (ix_fs_symbol) — عددش درِ گزارشِ این دور سنجیده شده.
         _eps = eps_assessment(conn, key, years=eps_years, sector=sector)
         eps_series = _eps.get("eps_series")
-        i2 = bool(_eps.get("pass"))
         data_gap2 = bool(_eps.get("data_gap"))
+        # همان پیش‌گیتِ کارت: برایِ صنعتِ بیمه شاخص ۲ رأی نمی‌دهد
+        # (`eps_trend_3y` بی‌این، کارت را از اسکرینر جدا می‌کرد — سنجشِ
+        # dev/fts_engine_paths_parity_v1076.py: ۳۰ نماد واگرا). «رأی نمی‌دهد»
+        # یعنی None + i2_na، همان قراردادِ آزمونِ جزوه
+        # (`i2_na: true, i2_pass: null`) — نه رد، نه قبول.
+        _ins2 = is_insurance_sector(sector)
+        # رأیِ ۱۶ رویِ I2 هم: سابقۀ ناکافی «سنجیده نشده» است، نه «رد»؛
+        # `i2_na` (ص ۴ جزوه — مبنایِ تلفیقی) درِ قیف NOT_APPLICABLE می‌شود.
+        i2 = None if (data_gap2 or _ins2) else bool(_eps.get("pass"))
         eps_avail = int(_eps.get("years_available") or 0)
 
         # ۳) حاشیه سود ناخالص = سود ناخالص ÷ درآمدهای عملیاتی × ۱۰۰
@@ -2229,8 +2730,14 @@ def bulk_scan(conn: sqlite3.Connection, cfg: dict = None) -> list[dict]:
         # با عددِ گرد شده می‌شد، حاشیۀ ۱۹٫۹۶٪ «≥ ۲۰» می‌شد — واگراییِ واقعیِ
         # این دور درِ لخزر/كمينا/شرنگي/سجام، که بندِ تازهٔ گاردِ پاریتی گرفتش.
         margin_raw = margin = None
-        if ref and _f(ref["revenue"]) > 0 and ref["gross_profit"] is not None:
-            margin_raw = (ref["gross_profit"] / _f(ref["revenue"])) * 100.0
+        # همان `margin_reference`ِ کارت، رویِ همان ردیف‌هایِ ازپیش‌خوانده: اگر
+        # مرجعِ اصلی سودِ ناخالص نداشت، سالِ دارایِ عدد جانشین می‌شود و `basis`
+        # آن را اعلام می‌کند. بی‌این، کارت و قیف دو عددِ متفاوت می‌دادند.
+        mref = ref
+        if not row_carries(ref, MARGIN_NEED):
+            mref = pick_reference(annual.get(key) or [], need=MARGIN_NEED) or ref
+        if mref and _f(mref["revenue"]) > 0 and mref["gross_profit"] is not None:
+            margin_raw = (mref["gross_profit"] / _f(mref["revenue"])) * 100.0
             margin = round(margin_raw, 1)
         # رأی ۱۶ روی شاخص ۳: حاشیه‌ای که هرگز ساخته نشد سنجیده نشده، نه رد —
         # همان قاعده‌ای که برای شاخص ۴ و در api/screener جاری است. (حاشیۀ صفرِ
@@ -2243,11 +2750,13 @@ def bulk_scan(conn: sqlite3.Connection, cfg: dict = None) -> list[dict]:
         # نسخۀ بی‌`op_basis` نوشته شده بود: طبقۀ مالی/خدماتی/هلدینگ در کارت
         # «درآمد صورت مالی سالانه» می‌گرفت و در اسکرینر «YTD×۱۲÷م» — ۵۰ نماد
         # واگرا در سنجشِ این دور (docs/fts-notes/FUND_LIVE_AUDIT.md).
-        fs_rev = _f(ref["revenue"]) if ref else 0.0
+        fs_rev = fs_amount_mrl(ref, "revenue") if ref else None
+        fs_unit_known = bool(ref) and CU.is_valid(ref.get("unit_norm"))
         prof = company_profile(sector, cname_of.get(key, ""))
         core = annualize_rows(recs or [], fs_rev,
                               op_basis=(prof.get("kind") in _OP_BASIS_KINDS)
-                              and fs_rev > 0)
+                              and _f(fs_rev) > 0 and fs_unit_known,
+                              fs_unit_known=fs_unit_known)
         annual_sales = _f(core.get("annual_sales_mrl"))
         months_used = int(core.get("months_used") or 0)
         # شاخص ۴ و پتانسیل سود از **خودِ توابعِ مشترک** می‌آیند (نسخۀ سومِ فرمول
@@ -2283,9 +2792,10 @@ def bulk_scan(conn: sqlite3.Connection, cfg: dict = None) -> list[dict]:
             # با آستانه). پیش‌ازین این‌جا با مقدارِ **گردشدۀ منتشرشده** مقایسه
             # می‌شد: نسبتِ ۰٫۳۲۹۹ به ۰٫۳۳ گرد می‌شد و «≥ ⅓» می‌شد — سه نماد
             # (سجام/نمرينو/بپيوند) درِ اسکرینر پاس و درِ /api/fts مردود بودند.
-            sales_pass = bool((s2m_d or {}).get("pass"))
-            pot_pass = bool((pot_d or {}).get("pass"))
-            i4 = bool(sales_pass or pot_pass)
+            # از این دور همان `ind4_vote`ِ کارت این‌جا هم می‌نشیند: بی‌شاهدِ فروشِ
+            # سالانه (مثلاً ردیفِ مرجعِ بی‌واحد در برابرِ نبودِ گزارشِ ماهانه) رأی
+            # نمی‌دهد، نه اینکه «رد» بخورد.
+            i4 = ind4_vote(ann_core, s2m_d, pot_d, False, mcap=mcap)
 
         # ۵) فیلتر صنعت (قیمت‌گذاری آزاد/بورس کالا در برابر دستوری)
         sec = sector_filter(sector, cfg=cfg, market_cap_rials=mcap,
@@ -2320,7 +2830,7 @@ def bulk_scan(conn: sqlite3.Connection, cfg: dict = None) -> list[dict]:
             # جدول همان ✗ «رد» را می‌گیرد در حالی که جزوه (ص ۴) تلفیقی را
             # مبنایِ داوری نمی‌داند — نه مردود و نه مطلوب.
             "eps_consolidated": bool(_eps.get("consolidated_used")),
-            "i2_na": bool(_eps.get("na")),
+            "i2_na": bool(_eps.get("na")) or _ins2,
             "eps_years_available": min(eps_avail, eps_years),
             "eps_years_required": eps_years,
             "gross_margin": None if margin is None else round(margin, 1),
@@ -2328,6 +2838,11 @@ def bulk_scan(conn: sqlite3.Connection, cfg: dict = None) -> list[dict]:
             "profit_potential_pct": None if pot is None else round(pot, 1),
             "annual_sales_bt": round(normalize_mrl_to_btom(annual_sales), 1),
             "annualize_months": months_used,
+            # «مقیاسِ این عدد از کجا آمد»: واحدِ خودِ ردیفِ مرجع، و پرچمِ
+            # راستی‌آزمایی‌نشدن وقتی آن واحد اعلام نشده (`unit_unverified`). بی‌این
+            # دو ستون، عددِ شاخص ۴ بی‌شاهدِ مقیاس هم «سنجیده‌شده» به‌نظر می‌رسید.
+            "fs_unit": CU.label((ref or {}).get("unit_norm")),
+            "unit_unverified": bool(core.get("unit_unverified")),
             "mcap": mcap, "score": int(sum(1 for _p in (i1, i2, i3, i4, i5) if _p)),
             # همان قاعدهٔ ص ۶ جزوه در مسیرِ bulk (پاریتیِ scan_symbol ⇄ bulk_scan)
             "primary_score": int(sum(1 for _p in (i1, i2, i3) if _p)),

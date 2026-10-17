@@ -38,7 +38,14 @@ PERSIAN_ONLY = re.compile(r"[پچژگ۰-۹]")             # امضایِ «ای�
 #: رشتهٔ تست، مثبتِ کاذب نسازد.
 BARE_BANNER = re.compile(r"^\s*#\s*──\s*\)")
 CODE_SPAN = re.compile(r"`[^`]*`")
-EXTS = (".py", ".md", ".ts", ".tsx", ".css", ".iss", ".ps1")
+# .mts تا این دور درِ فهرست نبود: ۱۱۹ فایلِ ردیابی‌شده با این پسوند (۱۱۲ عددِ
+# دارایِ متنِ فارسی) هیچ‌وقت اسکن نمی‌شدند و یکِ CJKِ واقعی
+# (tools/screen_chips_probe.mts:141) ازِ گارد در رفت. selftest هم بی‌دلیل سبز بود:
+# سم را مستقیم به hits_in() می‌داد و ازِ فیلترِ پسوندِ scan() عبور می‌کرد؛ آن را
+# درِ coverage_selftest اصلاح کردم. پسوندهایِ باینری (png/pdf/ttf/ex4/ex5/ico/
+# icns/jpg) عمداً اضافه نمی‌شوند: با errors="replace" هر کدام CJKِ جعلی می‌سازند
+# (سنجشِ این دور: ۳۳+۱۲+۵+۴+۳+۱+۱+۱ مثبتِ کاذب).
+EXTS = (".py", ".md", ".ts", ".tsx", ".mts", ".css", ".iss", ".ps1")
 
 MABNA = "_audit/mabnaIndicators.wip-1405-07-11.ts"
 #: نامِ ژاپنیِ ایچیموکو درِ یادداشتِ شاخص؛ با کدپوینت ساخته شده تا حتی یک
@@ -150,10 +157,48 @@ def selftest():
        str(empty))
 
 
+def coverage_selftest():
+    """پوششِ *فیلترِ پسوند* را می‌آزماید، نه فقطِ خودِ سنسورها را.
+
+    چرا لازم است: selftestِ موجود سم را مستقیم به hits_in() می‌داد — یعنی اگر یکِ
+    پسوند ازِ EXTS جا بیفتد (همان کاری که .mts کرد و ۱۱۹ فایلِ فارسی‌نویس را بی‌سنسور
+    گذاشت) همه‌چیز سبز می‌ماند. اینجا سم رویِ دیسک نوشته می‌شود و ازِ scan() واقعی
+    می‌گذرد، پس «اینِ پسوند اسکن می‌شود» ثابت می‌شود — درِ .tsx و درِ .mts.
+    """
+    import shutil
+    import tempfile
+    tmp = tempfile.mkdtemp(prefix="glyph_cov_")
+    try:
+        for ext in (".tsx", ".mts"):
+            poison = os.path.join(tmp, "poison" + ext)
+            clean = os.path.join(tmp, "clean" + ext)
+            with io.open(poison, "w", encoding="utf-8") as fo:
+                fo.write("// این یک واژۀِ " + POISON_CJK + "شده است\n")
+            with io.open(clean, "w", encoding="utf-8") as fo:
+                fo.write("// این یک واژۀِ فارسیِ سالم است\n")
+            c, b, y = scan([poison])
+            ck("selftest: coverage — سمِ CJK درِ «" + ext + "» ازِ scan() در می‌آید",
+               any(POISON_CJK in x for x in c), str(c))
+            c2, _b2, _y2 = scan([clean])
+            ck("selftest: coverage — فایلِ سالمِ «" + ext + "» رأی نمی‌گیرد",
+               not c2, str(c2))
+        # پسوندِ بیرونِ فهرست باید اسکن نشود (تا سنسورِ coverage خودش هم کور نباشد:
+        # اگر این هم سم را دید، یعنی دو فایلِ بالا به‌دلیلِ چیزِ دیگری رأی داده‌اند)
+        outside = os.path.join(tmp, "poison.txt")
+        with io.open(outside, "w", encoding="utf-8") as fo:
+            fo.write("واژۀِ " + POISON_CJK + " درِ پسوندِ پوشش‌داده\u200cنشده\n")
+        co, _cb, _cy = scan([outside])
+        ck("selftest: coverage — پسوندِ پوشش‌داده\u200cنشده اسکن نمی‌شود (کنترلِ منفی)",
+           not co, str(co))
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+
+
 def main():
     print("persian_glyph_guard — نویسهٔ بیگانه و رقمِ افتاده درِ متنِ فارسی")
     if "--selftest" in sys.argv[1:]:
         selftest()
+        coverage_selftest()
     else:
         files = tracked()
         c, b, y = scan(files)

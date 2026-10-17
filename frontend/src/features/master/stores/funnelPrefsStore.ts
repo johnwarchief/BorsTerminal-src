@@ -62,7 +62,7 @@ export const TECH_SCREEN_HINT = {
   off: 'وتوی هفتگی فقط برچسب می‌خورد و به بنیادی می‌رسد؛ ستاپ‌ها در هیچ حالتی گیت حذف نیستند.',
 } as const;
 
-/** سه حالتِ سخت‌گیریِ بنیادی — رأیِ مالک ۱۴۰-۰۷-۱۶ بند ۱۸.
+/** سه حالتِ سخت‌گیریِ بنیادی — رأیِ مالک ۱۴۰۵-۰۷-۱۶ بند ۱۸.
  *  standard پیش‌فرض است: I1/I2/I3 بلاکر، I4/I5 شاهد. */
 export type FundStrictness = 'hard' | 'standard' | 'exception';
 export const DEFAULT_FUND_MODE: FundStrictness = 'standard';

@@ -78,15 +78,15 @@ function BookColumn({
                     className={`absolute inset-y-0 ${side === 'buy' ? 'start-0' : 'end-0'} ${bg}`}
                     style={{ width: `${barPct(vol ?? 0, max)}%` }} />
             ) : null}
-            <span className="num relative text-center text-[9px] leading-none text-text-muted"
+            <span className="num relative text-center text-3xs leading-none text-text-muted"
                   title={live ? 'تعدادِ سفارشِ این سطر' : 'بی‌سطر'}>
               {live && cnt != null ? toFaDigits(String(cnt)) : '—'}
             </span>
-            <span className="num relative text-center text-[10px] text-text-primary"
+            <span className="num relative text-center text-3xs text-text-primary"
                   title={live ? 'حجمِ سفارشِ این سطر (سهم)' : 'بی‌سطر'}>
               {live ? cellText(vol) : '—'}
             </span>
-            <span className={`num relative text-end text-[11px] font-bold ${live ? tone : 'text-text-muted'}`}
+            <span className={`num relative text-end text-3xs font-bold ${live ? tone : 'text-text-muted'}`}
                   title={live ? 'قیمتِ این سطر (ریال)' : 'این سطرِ صف درِ تابلو ثبت نشده — صفر نمی‌نشیند'}>
               {live ? cellText(px) : '—'}
             </span>
@@ -121,7 +121,7 @@ export function OrderBookFive({
     <div className={`flex min-w-0 flex-col gap-1.5 ${className}`}
          data-testid={testId} data-symbol={symbol}>
       <div className="flex flex-wrap items-baseline justify-between gap-1.5">
-        <h4 className={`font-black text-text-primary ${compact ? 'text-[10px]' : 'text-xs'}`}>
+        <h4 className={`font-black text-text-primary ${compact ? 'text-3xs' : 'text-xs'}`}>
           پنج مظنه {symbol ? <span className="text-accent-blue">{symbol}</span> : null}
         </h4>
         <span className="text-3xs text-text-muted" title="زمانِ آخرین همگام‌سازیِ تابلو برایِ این نماد">
@@ -182,7 +182,7 @@ export function OrderBookFive({
           </div>
           {!compact ? (
             <p className="text-3xs leading-4 text-text-muted">
-              قیمت و حجم از blDsِ همین نشستِ خودِ تابلو است؛ «—» یعنی آن سطر برایِ
+              قیمت و حجم از blDsِ همین روزِ خودِ تابلو است؛ «—» یعنی آن سطر برایِ
               این نماد ثبت نشده، نه اینکه صف صفر باشد.
             </p>
           ) : null}

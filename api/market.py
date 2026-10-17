@@ -5,12 +5,13 @@ Every statement is byte-for-byte identical to app.py; only the route
 decorators changed from @app.<verb> to @router.<verb>.
 Audit map of source line spans: MIGRATED_LINES.txt
 """
-from ._core import _count_procs, get_db
+from ._core import _count_procs, get_db, get_user_db
 from bors_config import DB_PATH, FTS_CONFIG_PATH, FTS_DEFAULTS, FTS_LEGACY_LISTS, FTS_LEGACY_SCALARS, FTS_LIST_KEYS, FTS_STR_KEYS, MARKET_STATUS_PATH
 from bors_flags import _ORJ
 import market_state
 from client_split import shares as _client_shares
 from tape_flags import apply_tape_flags
+import tape_flag_history
 from fastapi import APIRouter
 from fastapi import Request
 from fastapi.responses import Response
@@ -394,6 +395,48 @@ WITH -- ── پنجرۀ [ih]، عینِ منبعِ خودِ سایت ───
 SELECT * FROM fv
 """
 
+_HIST_FV_SLOT_SQL = """
+WITH -- ── پنجرۀ [ih] از باندِ خودِ دیدۀبان: شاخصِ اسلات، نه ترتیبِ ردیف ─────
+            -- `tape_ih_slot` را `test_tsetmc.refresh_tape_slots` از
+            -- `tsev2/data/ClosingPriceAll.aspx` می‌سازد — همان درخواستی که خودِ
+            -- `mw.LoadInstHistory` با آن `[ih]` را می‌چیند و اسلاتش **شمارۀ
+            -- نشستِ همان نماد** است (۰ = آخرینِ منتشرشده). سنجشِ ۱۴۰۵-۰۷-۲۰:
+            -- ۱۸۱٬۹۷۱ ردیف از ۳٬۶۰۹ نماد، و ۴۷٪ شان ردیفِ بی‌معامله‌اند (حجم
+            -- صفر، قیمت صفر) — همان‌ها که پنجرۀ ردیف‌محورِ قدیمی نداشت و
+            -- ۳۵٬۵۸۸ اسلاتِ سایت درِ بانک غایب بود (۱۸٬۶۰۶ تای داخل [0..29]).
+            -- قاعدهٔ داوری هم عینِ JS است: اگر اسلاتِ خواسته‌شده نبود،
+            -- `[ih][k]` درِ سایت `undefined` است و `.QTotTran5J` روی آن
+            -- TypeError می‌دهد ⇒ ردیف بیرون می‌افتد. پس «سی اسلاتِ کامل»
+            -- پیش‌شرط است، نه «بر تعدادِ موجود تقسیم کن».
+            th AS MATERIALIZED (
+                SELECT ins_code, slot, price_min, price_max, q_tot_tran5j AS volume
+                FROM tape_ih_slot WHERE slot <= 59
+            ),
+            fv AS (
+                SELECT ins_code,
+                       COUNT(CASE WHEN slot <= 29 THEN 1 END) AS n30,
+                       SUM(CASE WHEN slot <= 29 THEN volume END) AS prior30_vol,
+                       MAX(slot) + 1 AS hist_sessions,
+                       COUNT(CASE WHEN slot <= 28 THEN 1 END) AS n29,
+                       MIN(CASE WHEN slot <= 28 THEN price_min END) AS min_low_29,
+                       MAX(CASE WHEN slot = 2  THEN price_max END) AS h2_max,
+                       MAX(CASE WHEN slot = 5  THEN price_max END) AS h5_max,
+                       MAX(CASE WHEN slot = 9  THEN price_max END) AS h9_max,
+                       MAX(CASE WHEN slot = 19 THEN price_max END) AS h19_max,
+                       MAX(CASE WHEN slot = 29 THEN price_max END) AS h29_max,
+                       MAX(CASE WHEN slot = 39 THEN price_max END) AS h39_max,
+                       MAX(CASE WHEN slot = 49 THEN price_max END) AS h49_max,
+                       MAX(CASE WHEN slot = 59 THEN price_max END) AS h59_max
+                FROM th GROUP BY ins_code
+            )
+SELECT ins_code,
+       CASE WHEN n30 < 30 THEN NULL ELSE prior30_vol END AS prior30_vol,
+       hist_sessions,
+       CASE WHEN n29 < 29 THEN 0 ELSE min_low_29 END AS min_low_29,
+       h2_max, h5_max, h9_max, h19_max, h29_max, h39_max, h49_max, h59_max
+FROM fv
+"""
+
 _HIST_LOCK = threading.Lock()
 
 # تاریخِ نشستِ جاری به قالبِ `price_history.date`. سینکِ کندل از تابلو همین
@@ -401,6 +444,51 @@ _HIST_LOCK = threading.Lock()
 # امضا که این ردیف‌ها را ببیند، کش را بی‌دلیل می‌سوزاند.
 _LIVE_DT = ("(SELECT printf('%04d-%02d-%02d', d/10000, (d/100)%100, d%100)"
             " FROM (SELECT MAX(d_even) AS d FROM market_watch))")
+
+
+def ensure_window_tables(conn):
+    """دو جدولِ تازه را درِ مسیرِ خواندن هم موجود می‌کند.
+
+    بانکِ baselineِ نصاب آن‌ها را ندارد و کوئریِ تابلو آن‌ها را **بی‌قید**
+    می‌خواند؛ بی‌این، نخستین درخواستِ پس از نصب با «no such table» می‌شکست.
+    ساختنِ خالی هیچ داوری‌ای را عوض نمی‌کند (همان `LEFT JOIN` رویِ جدولِ خالی
+    ⇒ ستون‌ها NULL ⇒ «سنجیده نشد»)، و سینک بعداً پرش می‌کند.
+    """
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS tape_ih_slot ("
+        " ins_code TEXT NOT NULL, slot INTEGER NOT NULL, d_even INTEGER,"
+        " price_min REAL, price_max REAL, q_tot_tran5j REAL, q_tot_cap REAL,"
+        " z_tot_tran REAL, p_closing REAL, fetched_at TEXT,"
+        " PRIMARY KEY (ins_code, slot))")
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS tse_inst_stat ("
+        " ins_code TEXT PRIMARY KEY, is5 REAL, is6 REAL,"
+        " q_tot_tran5j_avg REAL, fetched_at TEXT)")
+
+
+_SLOT_WARNED = False
+
+
+def _has_tape_slots(conn):
+    """آیا پنجرۀ اسلات‌محورِ دیدۀبان نشسته است؟ (نبود ⇒ همان مسیرِ ردیف‌محور)
+
+    افتادن به مسیرِ کهنه یک بار **گزارش** می‌شود: بی‌این، نبودِ `tape_ih_slot`
+    یا خالی‌بودنش همان «تطبیقِ صفر اختلاف» را رویِ پنجرۀ غایه می‌ساخت و هیچ‌کس
+    نمی‌فهمید کدام مسیر جاری بوده (رأیِ مالک ۱۴۰۵-۰۷-۲۱، بند ).
+    """
+    global _SLOT_WARNED
+    try:
+        n = conn.execute("SELECT COUNT(*) FROM tape_ih_slot").fetchone()[0]
+    except sqlite3.Error:
+        n = -1
+    if n > 0:
+        return True
+    if not _SLOT_WARNED:
+        _SLOT_WARNED = True
+        print(f"{time.strftime('%Y-%m-%d %H:%M:%S')} [market] پنجرۀ اسلات‌محورِ [ih] "
+              f"در دسترس نیست (rows={n}) — پنج فیلتر رویِ پنجرۀ ردیف‌محورِ کهنه "
+              f"حساب می‌شوند")
+    return False
 
 
 def _history_signature(conn):
@@ -423,6 +511,19 @@ def _history_signature(conn):
     بازنویسیِ بی‌تغییریِ یک نشستِ پیشین (حذفِ همسان و درجِ همسان) پنجره را
     عوض نمی‌کند که ارزشِ بازسازی داشته باشد.
     """
+    def _has(name):
+        # بانکِ baselineِ نصاب این جدول‌ها را ندارد؛ اشاره‌کردنِ آن‌ها درِ SQL
+        # پیش از ساخت‌شدن خطای «no such table» می‌دهد و کلِ کوئریِ تابلو را
+        # می‌شکند، پس فقط وقتی به متنِ امضا افزوده می‌شوند که موجود باشند.
+        return conn.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name=?",
+                            (name,)).fetchone() is not None
+
+    extra = ""
+    for name, terms in (("tape_ih_slot", ("COUNT(*)", "COALESCE(SUM(q_tot_tran5j)"
+                                          " + SUM(price_max), 0)")),
+                        ("tse_inst_stat", ("COUNT(*)", "COALESCE(SUM(is6), 0)"))):
+        if _has(name):
+            extra += "".join(f",\n       (SELECT {t} FROM {name})" for t in terms)
     row = conn.execute(
         "SELECT (SELECT MAX(d_even) FROM market_watch),"
         "       (SELECT COUNT(*) FROM price_history)"
@@ -437,6 +538,10 @@ def _history_signature(conn):
         "         WHERE d_even < (SELECT MAX(d_even) FROM market_watch)),"
         "       (SELECT COUNT(*) FROM tape_history),"
         "       (SELECT SUM(price_max) + SUM(price_min) + SUM(q_tot_tran5j) FROM tape_history)"
+        # پنجرۀ اسلات‌محور و [is5]/[is6] هم باید بی‌از‌نو‌سازیِ پنجره را
+        # بی‌امضا نکنند: هر دو درِ یک دورِ سینک عوض می‌شوند و داوریِ پنج فیلتر
+        # مستقیماً به آن‌ها وابسته است.
+        + extra
     ).fetchone()
     try:
         tape_ok = conn.execute(
@@ -457,8 +562,14 @@ def _rebuild_history_windows(conn):
     باید پنجرۀ [ih] خالی بدهد، نه خطا — همان چیزی که کوئریِ تکپیسّه هم
     می‌داد (LEFT JOIN رویِ fvِ خالی ⇒ ستون‌ها NULL).
     """
-    for table, sql, source in (("board_hist_v", _HIST_V_SQL, "price_history"),
-                               ("board_hist_fv", _HIST_FV_SQL, "tape_history")):
+    for table, sql, source in (
+            ("board_hist_v", _HIST_V_SQL, "price_history"),
+            # پنجرۀ [ih]: اگر باندِ دیدۀبان نشسته باشد اسلات‌محور (عینِ سایت)،
+            # وگرنه همان ردیف‌محورِ قدیمی — بانکِ تازه‌نصب یا دوری که
+            # ClosingPriceAll.aspx نگرفته هنوز پنجره دارد و بی‌دلیل خاموش نمی‌شود.
+            ("board_hist_fv",
+             _HIST_FV_SLOT_SQL if _has_tape_slots(conn) else _HIST_FV_SQL,
+             "tape_ih_slot" if _has_tape_slots(conn) else "tape_history")):
         n_src = conn.execute(f"SELECT COUNT(*) FROM {source}").fetchone()[0]
         tmp = table + "_new"
         conn.execute(f"DROP TABLE IF EXISTS {tmp}")
@@ -476,6 +587,7 @@ def _rebuild_history_windows(conn):
 def ensure_board_history(conn):
     """دو پنجره باید پیش از کوئریِ تابلو موجود و به‌روز باشند."""
     global _HIST_CACHE_KEY
+    ensure_window_tables(conn)
     sig = _history_signature(conn)
     with _HIST_LOCK:
         have = _HIST_CACHE_KEY[0] == sig
@@ -683,7 +795,11 @@ _DROP_FIELDS = frozenset((
     # چاره‌ای نداشت جز N درخواستِ `/api/order-book` برایِ هر ردیف.
     "prev_day_vol", "d1_vol", "max30_high",
     "plp_raw",                                                  # تنها ورودیِ فیلترها، نه نمایش
-    "tmax", "vol_trend", "sell_power_i", "suspicious_vol",       # میانگینِ ماه فرستاده می‌شود: typeِ فرانت آن را اعلام می‌کند
+    # `sell_power_i` از این فهرست بیرون آمد (مأموریت ۱۴۰۵-۰۷-۲۳، بند ۴):
+    # سرانۀ فروش درِ هر دو مرجع (تریدرزآرنا و رهاورد) ستون است و خروجیِ دیدهبان
+    # هم آن را می‌خواهد؛ عدد از قبل درِ همان پاسِ ساختِ سرانۀ خرید حساب می‌شد
+    # (`df["sell_power_i"]`) و فقط سریال‌سازی آن را دور می‌ریخت. بی‌فرمولِ دوم.
+    "tmax", "vol_trend", "suspicious_vol",       # میانگینِ ماه فرستاده می‌شود: typeِ فرانت آن را اعلام می‌کند
 
     "d_even", "resistance_59", "dist_min30_pct",
     # چهار ارزشِ خامِ مبدأ فقط ورودیِ `client_split.py`‌اند؛ رابط عددِ
@@ -883,6 +999,14 @@ _BOARD_SQL = """
                 JOIN (SELECT ins_code, MAX(d_even) d FROM client_type_value
                       GROUP BY ins_code) m
                   ON m.ins_code = v.ins_code AND m.d = v.d_even
+            ),
+            isv AS (
+                -- [is5]/[is6] عینِ عددِ سایت از `InstValue.aspx?t=a` — همان
+                -- چیزی که خطِ دوم/سومِ «ورود پول هوشمند» و «کدبه‌کد» می‌خواهد.
+                -- نبودنِ ردیف = `undefined` درِ JS = ردیف از فهرست بیرون
+                -- (سنجشِ ۱۴۰۵-۰۷-۲۰: کلید ۶ فقط برایِ ۹۸۵ از ۳٬۴۴۶ نمادِ
+                -- جامعۀ امروز منتشر می‌شود). اینجا هم NULL می‌ماند، نه صفر.
+                SELECT ins_code, is5, is6 FROM tse_inst_stat
             )
             SELECT m.ins_code, i.l_val18 AS symbol, i.l_val30 AS name,
                    COALESCE(NULLIF(i.sector_name, ''), 'سایر') AS sector_name,
@@ -915,6 +1039,13 @@ _BOARD_SQL = """
                    fv.h2_max, fv.h5_max, fv.h9_max, fv.h19_max, fv.h29_max,
                    fv.h39_max, fv.h49_max, fv.h59_max,
                    fv.prior30_vol, fv.min_low_29, fv.hist_sessions,
+                   -- [is5]/[is6] درِ فیلترنویس؛ نبودنش‌شان «رد» نیست،
+                   -- «سنجیده نشد» است (خطِ دوم/سومِ فایل رویِ همان عدد می‌شکند).
+                   -- [is5]/[is6] درِ فیلترنویس؛ نبودنش‌شان «رد» نیست،
+                   -- «سنجیده نشد» است (خطِ دوم/سومِ فایل رویِ همان عدد می‌شکند).
+                   -- نامِ ستون عینِ توکنِ فایل است، چون `tape_flags` همان را
+                   -- می‌خواند و رابط هم با همان پرچمِ «سنجیده نشد» را جدا می‌کند.
+                   isv.is5 AS is5, isv.is6 AS is6,
                    -- st_* / sup_* / stop_* : فقط برایِ نمادی که ردیفش هست
                    -- می‌آیند (باقی NULL ⇒ _slim_records کلید را می‌اندازد، پس
                    -- بدنه برایِ 5400 نماد بزرگ نمی‌شود).
@@ -950,6 +1081,7 @@ _BOARD_SQL = """
             LEFT JOIN client_type ct ON ct.ins_code = m.ins_code AND ct.d_even = ctm.d
             LEFT JOIN v ON v.symbol = i.l_val18
             LEFT JOIN fv ON fv.ins_code = m.ins_code
+            LEFT JOIN isv ON isv.ins_code = m.ins_code
             LEFT JOIN st ON st.ins_code = m.ins_code
             LEFT JOIN sv ON sv.ins_code = m.ins_code
             LEFT JOIN sr ON sr.symbol = i.l_val18
@@ -1152,6 +1284,11 @@ def _build_market_response(request: Request, drop_unused=True, store_cache=True)
                       "h2_max", "h5_max", "h9_max", "h19_max",
                       "h29_max", "h39_max", "h49_max", "h59_max",
                       "min30_low", "max30_high",
+                      # [is5]/[is6] هم null-نگهدار: نبودششان درِ سایت «ردیف
+                      # بیرون می‌افتد» است، نه «مبنای صفر». اگر به ۰ تبدیل شوند،
+                      # `tvol > 1.5*0` برایِ هر نمادی درست می‌شود و رابط هم هیچ‌وقت
+                      # نمی‌تواند «سنجیده نشد» را از «رد» جدا کند.
+                      "is5", "is6",
                       # P0-3/P0-1: نبودِ ردیفِ وضعیت/نظارت/علتِ توقف «موردی ثبت
                       # نشده» است، نه «سالم» و نه «متوقف». اگر این کلیدها از پاسِ
                       # «JSON safety» بگذرند، NaN به صفر بدل می‌شود و صفر درِ رابط
@@ -1184,7 +1321,49 @@ def _build_market_response(request: Request, drop_unused=True, store_cache=True)
         for _k in ("f_roobi", "f_susp", "f_clock", "f_jet", "f_noqteh", "f_smart", "f_legal"):
             df[_k] = df[_k].fillna(False)
 
+        # ── سابقۀ ماندگارِ «کدام فیلتر، کدام نماد، کدام روز» ────────────────────
+        # فقط ردیف‌هایِ زنده ثبت می‌شوند. `[is6]`، آستانۀ مجاز و صفِ امروز درِ
+        # بانکِ کهنه نیستند (`tse_inst_stat` و `market_watch` بازنویسی می‌شوند)،
+        # پس داوریِ امروز را به روزِ پیشین نسبت دادن همان «دادۀ ساختگی» است که
+        # مالک منع کرده؛ روزِ ثبت = `d_even` خودِ ردیفِ زنده. نشانه (`sync_count`)
+        # می‌گوید این داده نو است؛ بی‌آن هر پولینگ بعد از تعطیلی بازار یک «دفعۀ»
+        # جعلی به شمارش اضافه می‌کرد.
+        # محلِ نگهداری `user.db` است نه `market.db`: بیس‌لاینِ ریلیز با هر نصب/
+        # بروزرسانی عوض می‌شود و سابقۀ کاربر نباید با آن برود. خطای اینجا تابلو
+        # را نمی‌شکند (بلعیده و درِ پاسخِ `/api/tape-history` گزارش می‌شود).
+        _live_df = df[df["is_live"]] if "is_live" in df.columns else df
+        if len(_live_df):
+            _hconn = None
+            try:
+                _hconn = get_user_db()
+                tape_flag_history.record_observations(
+                    _hconn, _live_df, int(_live_df["d_even"].max() or 0),
+                    token=market_state.sync_count())
+            except Exception as _he:                      # noqa: BLE001
+                tape_flag_history.note_error(_he)
+            finally:
+                if _hconn is not None:
+                    try:
+                        _hconn.close()
+                    except sqlite3.Error:
+                        pass
+
         records = _slim_records(df, drop_unused)
+        # ── برچسبِ «خارج از غربالگری» (رأیِ مالک، گزینهٔ الف) ────────────────────
+        # شمارۀ چیپِ تابلو «واقعاً» جامعۀ تابلو را می‌شمرد و هیچ نمادی را برای
+        # برابرشدن با قیف کم نمی‌کند. در عوض هر ردیف رأیِ خودِ موتورِ غربالگری را
+        # می‌گیرد — همان `funnel_engine.screening_eligibility` که قیف مصرف می‌کند،
+        # نه فرمولِ دوم. این فقط *خواندنِ* رأی است: هیچ قاعدۀ FTS، هیچ جامعۀ مجاز
+        # و هیچ شمارشی عوض نمی‌شود؛ رابط با آن می‌گوید «این نماد فیلتر را دارد ولی
+        # به این علت واردِ غربالگری نمی‌شود». importِ محلی، مثلِ `_tape_unmeasurable`.
+        from funnel_engine import screening_eligibility as _screening_eligibility
+        _sday = market_state.session_day()
+        for _rec in records:
+            _ok, _code, _reason = _screening_eligibility(_rec, _sday)
+            _rec["screening_eligible"] = bool(_ok)
+            if not _ok:
+                _rec["screening_exclusion_code"] = _code
+                _rec["screening_exclusion_reason"] = _reason
         # یکِ پاس رویِ ستونِ bool، نه سه تا (`sum` و بعد `~df[...]` و `sum` دوبار):
         # دو تای آخرِ پیشین برایِ هر بازسازی یکِ قابِ ۵٬۶۰۰×۱ جدید می‌ساختند، فقط
         # برایِ «منفیِ» همان عدد.
@@ -1246,7 +1425,11 @@ def get_market_delta(since: int = -1):
         return _ORJ_JSON({"status": "full", "rev": cur, "reason": "no-cache"})
     if since == mirror_rev and since == cur:
         return _ORJ_JSON({"status": "unchanged", "rev": mirror_rev, "meta": meta, **counts})
-    if since > mirror_rev or not (0 <= since <= cur):
+    if since < 0:
+        # «کلاینت هنوز هیچ ویرایشی ندارد» با «کلاینت جلوتر است» یکی نیست؛ هر دو
+        # full می‌گیرند ولی علتِ دوم درِ لاگِ میدان چیزِ دیگری را معنا می‌کند.
+        return _ORJ_JSON({"status": "full", "rev": mirror_rev, "reason": "no-cache"})
+    if since > mirror_rev or since > cur:
         return _ORJ_JSON({"status": "full", "rev": mirror_rev, "reason": "stale-client"})
     codes = market_state.codes_between(since, mirror_rev)
     if codes is None:
@@ -1261,6 +1444,27 @@ def get_market_delta(since: int = -1):
         _kick_market_rebuild()
     return _ORJ_JSON({"status": "delta", "rev": mirror_rev, "rows": rows,
                       "meta": meta, **counts})
+
+
+@router.get("/api/tape-history")
+def get_tape_history(codes: str = "", days: int = 20):
+    """سابقۀ چندروزۀ هفت فیلترِ تابلو، از ردیف‌هایِ واقعاً ثبت‌شده.
+
+    هیچ داوریِ تازه‌ای نمی‌سازد: همان `tape_flag_day` را می‌خواند که مسیرِ تابلو
+    نوشته است. `codes` فهرستِ `ins_code` است (شناسۀ پایدار، نه نامِ نمایشی).
+    `days` تقویمِ روزهایِ **رصدشده** است (نه روزهای تقویمی)؛ پس
+    `by_symbol[...][flag]["days"]` فقط روزهای ثبت‌شده را دارد و نبودِ یک روز یعنی
+    «ثبت نشده» — که با «غیرفعال» یکی نیست. `reliable_from` اولین روزی است که این
+    جدول درِ آن نوشته شده و پیش‌از آن هیچ سابقه‌ای قابل‌اعتماد نیست.
+    """
+    wanted = [s.strip() for s in codes.split(",") if s.strip()][:400]
+    conn = get_user_db()
+    try:
+        tape_flag_history.ensure(conn)
+        body = tape_flag_history.history_for(conn, wanted, days=max(1, min(int(days or 20), 120)))
+    finally:
+        conn.close()
+    return _ORJ_JSON(dict(status="success", **body))
 
 
 def _ORJ_JSON(payload) -> Response:

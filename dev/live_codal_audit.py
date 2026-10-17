@@ -150,7 +150,7 @@ def audit_symbol(s, sym, role, conn, rows_out):
     tn = top.get("TracingNo") or top.get("tracingNo")
     pred, params = "symbol=?", (sym,)
     try:
-        pred, params = fe.sym_in("symbol", sym)
+        pred, params = sym_in(conn, "symbol", sym)
     except Exception:
         pass
     # (الف) تطبیقِ دقیق روی tracing_no — قوی‌ترین نشانهٔ یکسان بودنِ گزارش
@@ -321,7 +321,7 @@ def main():
             pred, params = "symbol=?", (sym,)
             try:
                 import fts_engine as fe
-                pred, params = fe.sym_in("symbol", sym)
+                pred, params = sym_in(conn, "symbol", sym)
             except Exception:
                 pass
             r = conn.execute("SELECT symbol, monthly_revenue, ytd_revenue, year, month "

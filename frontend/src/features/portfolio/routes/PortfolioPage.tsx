@@ -9,6 +9,9 @@ import { fmtInt, toFaDigits } from '@shared/lib/fmt';
 import { fmtAge } from '@shared/lib/time';
 import { FlashNum } from '@shared/components/FlashNum';
 import { useSymbolStore } from '@shared/stores/symbolStore';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@shared/components/ui/tabs';
+import { useParams } from 'react-router';
+import { resolveSymbolParam } from '@shared/lib/symbolParam';
 import { publishSignal } from '@shared/lib/signalBus';
 import { useMarketCloses, usePortfolio } from '../api/usePortfolio';
 import { portfolioSignal, stopAsNumber } from '../model/portfolioSignals';
@@ -24,10 +27,11 @@ import { useStopLossBoard } from '../api/useStopLossBoard';
 import { SymbolBasketAction, weightSourceLabel } from '../components/SymbolBasketAction';
 import { SectorMatrix } from '../components/SectorMatrix';
 import WatchlistSection from '../components/WatchlistSection';
+import { BotPanel } from '../components/BotPanel';
 import { TwinDonuts, ActualPortfolioCard } from '../components/TwinDonuts';
 
 const STATUS_TONE = { accept: 'green', reject: 'red', monitor: 'yellow', pending: 'gray' } as const;
-const STATUS_LABEL: Record<string, string> = { accept: 'نگهداری', reject: 'حذف شده', monitor: 'زیر نظر', pending: 'در انتظار' };
+const STATUS_LABEL: Record<string, string> = { accept: 'نگهداری', reject: 'حذف‌شده', monitor: 'زیر نظر', pending: 'در انتظار' };
 
 type BoardTab = 'portfolio' | 'monitor' | 'rejects';
 
@@ -59,7 +63,10 @@ function dcaLabel(fib1: { lo: number | null; hi: number | null } | null, fib2: {
 }
 
 export default function PortfolioPage() {
-  const symbol = useSymbolStore((s) => s.symbol);
+  const storedSymbol = useSymbolStore((s) => s.symbol);
+  const routeParams = useParams();
+  // `/portfolio/<symbol>`: نشانی ازِ استور برنده‌تر است (آزمونِ symbol-url-param).
+  const symbol = resolveSymbolParam({ path: routeParams.symbol, stored: storedSymbol });
   const setSymbol = useSymbolStore((s) => s.setSymbol);
   const portfolio = usePortfolio();
   const closes = useMarketCloses();
@@ -133,24 +140,24 @@ export default function PortfolioPage() {
   ) : portfolio.isError ? (
     <EmptyState
       title="خطا در دریافت سبد"
-      hint="اتصال بک اند را بررسی کن"
+      hint="اتصال بک‌اند را بررسی کنید"
       action={<RetryAction onRetry={() => void portfolio.refetch()} testId="portfolio-retry" />}
     />
   ) : null;
 
   const rows = tab === 'portfolio' ? holdings : tab === 'monitor' ? monitor : rejects;
-  const rowLabel = tab === 'portfolio' ? 'سبد' : tab === 'monitor' ? 'رادار زیر نظر' : 'حذف شده ها';
+  const rowLabel = tab === 'portfolio' ? 'سبد' : tab === 'monitor' ? 'رادار زیر نظر' : 'حذف‌شده‌ها';
   const sumWeight = limits?.sum_weight_pct;
   const weightCap = limits?.weight_cap_pct;
 
   const tabs: { id: BoardTab; label: string; count: number }[] = [
     { id: 'portfolio', label: 'سبد', count: holdings.length },
     { id: 'monitor', label: 'زیر نظر', count: monitor.length },
-    { id: 'rejects', label: 'حذف شده', count: rejects.length },
+    { id: 'rejects', label: 'حذف‌شده', count: rejects.length },
   ];
 
   return (
-    <div className="relative flex w-full max-w-none flex-col gap-4 overflow-clip">
+    <div className="relative flex w-full max-w-none flex-col gap-4 overflow-clip" data-testid="portfolio-page">
       {/* رأیِ مالک (۱۴۰۵-۰۷-۲۲): «دیده‌بان بازار» تبِّ اصلیِ ناوبری است (/watch)،
           پس زیرتبِّ تکراری ازِ این ناحیه بیرون رفت. «واچ‌لیست» (§۱ و §۶task)
           همان‌جا می‌ماند: فهرستِ ستاره‌دارِ خودِ کاربر، نه رصدِ بازار. */}
@@ -158,38 +165,25 @@ export default function PortfolioPage() {
         mineGate
       ) : (
         <>
-          {/* سوییچر دوگانه */}
-      <div className="flex flex-wrap items-center gap-2" role="tablist" aria-label="انتخاب نمای پرتفوی">
-        <button
-          type="button"
-          role="tab"
-          aria-selected={view === 'target'}
-          onClick={() => setView('target')}
-          className={`rounded-full border px-4 py-1.5 text-xs font-bold transition-colors duration-200 ${
-            view === 'target'
-              ? 'border-neon-cyan/50 bg-neon-cyan/15 text-neon-cyan'
-              : 'border-border-c bg-bg-card text-text-secondary hover:bg-bg-secondary hover:text-text-primary'
-          }`}
-        >
-          پرتفوی هدف
-        </button>
-        <button
-          type="button"
-          role="tab"
-          aria-selected={view === 'current'}
-          onClick={() => setView('current')}
-          className={`rounded-full border px-4 py-1.5 text-xs font-bold transition-colors duration-200 ${
-            view === 'current'
-              ? 'border-neon-cyan/50 bg-neon-cyan/15 text-neon-cyan'
-              : 'border-border-c bg-bg-card text-text-secondary hover:bg-bg-secondary hover:text-text-primary'
-          }`}
-        >
-          پرتفوی فعلی
-        </button>
+          {/* فاز D (انتقالِ انتخابی ازِ System 2): سوییچر ازِ دستِ خودِ اینِ فایل بهِ
+              اصلِ ui/tabs.tsx بسته شد. پیش‌تر role=tab داشت ولی بی‌صفحه‌کلید؛ حالا
+              roving tabindex وِ پیکان/Home/End ازِ خودِ اصل می‌آید
+              (آزمون: __tests__/ui-tabs-a11y.spec.tsx). */}
+      <Tabs value={view} onValueChange={(v) => setView(v as 'target' | 'current')}>
+      <div className="flex flex-wrap items-center gap-2">
+        <TabsList aria-label="انتخاب نمای پرتفوی"
+          className="h-auto gap-1 border-none bg-transparent p-0">
+          <TabsTrigger value="target" className="rounded-full px-4 py-1.5 text-xs font-bold">
+            پرتفوی هدف
+          </TabsTrigger>
+          <TabsTrigger value="current" className="rounded-full px-4 py-1.5 text-xs font-bold">
+            پرتفوی فعلی
+          </TabsTrigger>
+        </TabsList>
         {basketAgeMs > 30_000 ? (
           <span
             data-testid="portfolio-basket-age"
-            title="قیمت‌ها از فیدِ زندهٔ تابلو می‌آیند؛ وزن/تخصیصِ سبد از snapshotِ جدا (۳۰s درِ نشست) است"
+            title="قیمت‌ها از فیدِ زندهٔ تابلو می‌آیند؛ وزن/تخصیصِ سبد از snapshotِ جدا (هر ۳۰ ثانیه) است"
             className="num ms-auto rounded-full bg-accent-yellow/10 px-2 py-0.5 text-3xs font-bold text-accent-yellow"
           >
             سبد: {fmtAge(portfolio.dataUpdatedAt)} · قیمت: {fmtAge(closes.dataUpdatedAt)}
@@ -197,7 +191,7 @@ export default function PortfolioPage() {
         ) : null}
       </div>
 
-      {view === 'target' ? (
+      <TabsContent value="target">
         /* ─── بخش اول: پرتفوی هدف — بدون کارت‌های عریض تکراری، جدول صنایع بالا می‌آید ─── */
         <>
           {/* پنل بالای تب: دونات هدف + سنجهٔ هم‌ترازی (دونات واقعی منحصراً در تب فعلی است) */}
@@ -210,7 +204,9 @@ export default function PortfolioPage() {
 
           <TargetEditModal open={editOpen} onClose={() => setEditOpen(false)} />
         </>
-      ) : (
+      </TabsContent>
+
+      <TabsContent value="current">
         /* ─── بخش دوم: پرتفوی فعلی ─── */
         <>
           {/* چارت دونات پرتفوی واقعی و درصد پر شده از کل سرمایه */}
@@ -225,7 +221,7 @@ export default function PortfolioPage() {
             <SymbolBasketAction symbol="" addMode />
             <Badge tone="green">نگهداری {toFaDigits(counts.accept ?? 0)}</Badge>
             <Badge tone="yellow">زیر نظر {toFaDigits(counts.monitor ?? 0)}</Badge>
-            <Badge tone="red">حذف شده {toFaDigits(counts.reject ?? 0)}</Badge>
+            <Badge tone="red">حذف‌شده {toFaDigits(counts.reject ?? 0)}</Badge>
             {sumWeight != null ? (
               <Badge tone={weightCap != null && sumWeight > weightCap ? 'orange' : 'blue'}>
                 جمع وزن {toFaDigits(sumWeight)} درصد
@@ -239,7 +235,8 @@ export default function PortfolioPage() {
             ) : null}
             {limits?.value_missing_count ? (
               <Badge tone="gray">
-                {toFaDigits(limits.value_missing_count)} ردیف تعداد ندارد — وزن خودکار حساب نمی‌شود
+                در {toFaDigits(limits.value_missing_count)} ردیف تعداد ثبت نشده است؛ وزن این
+                ردیف‌ها به‌صورت خودکار محاسبه نمی‌شود
               </Badge>
             ) : null}
             {weightCap != null ? <Badge tone="gray">سقف وزن هر نماد {toFaDigits(weightCap)} درصد</Badge> : null}
@@ -352,8 +349,8 @@ export default function PortfolioPage() {
                             {h.qty != null && h.qty > 0 ? (
                               <span className="num text-xs text-text-primary">{fmtInt(h.qty)}</span>
                             ) : (
-                              <span className="text-xs text-text-muted" title="تعداد ثبت نشده؛ وزن خودکار حساب نمی‌شود">
-                                بدون تعداد
+                              <span className="text-xs text-text-muted" title="تعداد ثبت نشده؛ وزن این ردیف به‌صورت خودکار محاسبه نمی‌شود">
+                                تعداد ثبت نشده
                               </span>
                             )}
                           </td>
@@ -421,8 +418,11 @@ export default function PortfolioPage() {
 
           {/* واچ‌لیست داخلِ همین workspace است (§۱): نه تبِ ناوبری، نه صفحۀ دیگر */}
           <WatchlistSection />
+          {/* ربات هم همین‌جا: کاغذی، دستی، و با یکِ سطرِ وضعیت — نه صفحۀ جدا */}
+          <BotPanel />
         </>
-      )}
+      </TabsContent>
+      </Tabs>
         </>
       )}
     </div>

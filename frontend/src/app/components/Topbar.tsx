@@ -6,8 +6,11 @@ import { useNoticeFeed } from '@features/market/api/useNotifications';
 import { useNoticePrefsStore } from '@features/market/stores/noticePrefsStore';
 import { FreshnessBadge } from '@shared/components/FreshnessBadge';
 import { useSymbolStore } from '@shared/stores/symbolStore';
+import { resolveSymbolParam } from '@shared/lib/symbolParam';
 
-const TITLES: Record<string, string> = {
+// صادر شد تاِ نگهبانِ «هرِ route عنوانِ معنادار دارد» (route-title-guard) همانِ
+// یکِ جدول را بخواند، نه نسخۀِ دومِ آن را درِ متنِ آزمون.
+export const TITLES: Record<string, string> = {
   '/market': 'تابلوخوانی',
   '/market-status': 'وضعیت بازار',
   '/watch': 'دیده‌بان بازار',
@@ -16,6 +19,11 @@ const TITLES: Record<string, string> = {
   '/portfolio': 'مدیریت پرتفوی',
   '/master': 'غربالگری FTS',
   '/strategy-tree': 'درخت استراتژی FTS',
+  // سه مقصد بی‌عنوان بود: نوارِ بالا رویِ «ترمینال بورس» می‌ماند وِ کاربر
+  // نمی‌فهمید کدامِ صفحه باز است (سنجشِ عنوانِ هر route درِ فاز ۷.۱).
+  '/sarkhati': 'سرخطی',
+  '/notifications': 'مرکزِ اعلان',
+  '/engine-lab': 'آزمایشگاهِ موتور',
 };
 
 export function Topbar() {
@@ -30,6 +38,10 @@ export function Topbar() {
 
   const showSearch = base !== '/technical';
 
+  // فاز D: نشانیِ خودِ آدرس برنده است — `/technical/فولاد` باید درِ نوارِ بالا هم
+  // «فولاد» بگوید، نه نمادی که ازِ نشستِ قبلی درِ استور مانده است.
+  const shownSymbol = resolveSymbolParam({ path: pathname.split('/')[2], stored: symbol });
+
   const handlePinnedClick = (s: string) => {
     setSymbol(s);
     if (base === '/technical' || base === '/fundamental' || base === '/master' || base === '/strategy-tree') {
@@ -38,9 +50,12 @@ export function Topbar() {
   };
 
   return (
-    <header className="glass-strip sticky top-0 z-40 flex h-9 items-center justify-between px-3 sm:px-4">
+    <header data-pinned="topbar" className="glass-strip sticky top-0 z-40 flex h-11 items-center justify-between px-3 sm:px-4 md:h-9">
       {/* سمت راست: نشانِ وضعیت (اتصال ≠ تازگی) + Breadcrumb ناوبری */}
       <div className="flex items-center gap-2 overflow-hidden">
+        {/* یکِ h1 درِ هرِ صفحه: «کجا هستم» برایِ تکنولوژیِ کمکی هم نوشته می‌شود،
+            نه فقطِ دیده می‌شود. */}
+        <h1 className="sr-only">{title}</h1>
         <FreshnessBadge />
 
         <nav aria-label="موقعیت در برنامه" className="flex items-center gap-1.5 text-xs">
@@ -50,10 +65,10 @@ export function Topbar() {
           >
             {title}
           </Link>
-          {symbol ? (
+          {shownSymbol ? (
             <>
               <span className="text-text-muted select-none">/</span>
-              <span className="font-bold text-accent-blue truncate">{symbol}</span>
+              <span className="font-bold text-accent-blue truncate">{shownSymbol}</span>
             </>
           ) : null}
         </nav>
@@ -87,13 +102,13 @@ export function Topbar() {
           <button
             type="button"
             onClick={() => window.dispatchEvent(new Event(PALETTE_OPEN_EVENT))}
-            className="flex items-center gap-2 rounded-lg border border-border-c bg-bg-card/70 px-2.5 py-1 text-2xs text-text-secondary transition-all hover:border-border-accent hover:text-accent-blue hover:bg-bg-card shadow-2xs"
+            className="flex items-center gap-2 rounded-lg border border-border-c bg-bg-card/70 px-2.5 py-1 text-2xs text-text-secondary transition-all hover:border-border-accent hover:text-accent-blue hover:bg-bg-card shadow-2xs max-md:min-h-[40px]"
             aria-label="باز کردن پالت فرمان"
           >
             <SearchIcon size={12} className="text-neon-cyan" />
             <span className="hidden sm:inline">جستجوی سریع نماد...</span>
             <span className="sm:hidden">جستجو</span>
-            <kbd className="rounded border border-border-c/80 bg-bg-secondary px-1 py-0.2 text-[10px] text-text-muted">
+            <kbd className="rounded border border-border-c/80 bg-bg-secondary px-1 py-0.2 text-3xs text-text-muted">
               Ctrl+K
             </kbd>
           </button>
@@ -103,9 +118,9 @@ export function Topbar() {
   );
 }
 
-/** زنگولۀِ مرکزِ اعلان — شمارۀِ ناخوانده از همان فیدِ خودِ صفحه می‌آید؛ خودِ
+/** زنگولۀِ مرکزِ اعلان — شمارۀِ خوانده‌نشده از همان فیدِ خودِ صفحه می‌آید؛ خودِ
  *  آیکون هیچ منطقِ خبری‌ای ندارد (رأیِ مالک، بند ۶: «زنگوله بی‌منبع کافی نیست»).
- *  بی‌پاسخ/خطا ⇒ بی‌شماره، نه «صفر ناخوانده» و نه انیمیشنِ هشدار. */
+ *  بی‌پاسخ/خطا ⇒ بی‌شماره، نه «صفر خوانده‌نشده» و نه انیمیشنِ هشدار. */
 function NoticeBell() {
   const feed = useNoticeFeed([], 60);
   const read = useNoticePrefsStore((st) => st.read);
@@ -115,15 +130,15 @@ function NoticeBell() {
   return (
     <Link
       to="/notifications"
-      aria-label={known ? `مرکز اعلان — ${unread} ناخوانده` : 'مرکز اعلان'}
-      title="مرکزِ اعلان: اطلاعیه‌هایِ کدال با لینکِ اصلی و دلیلِ اهمیت"
+      aria-label={known ? `اعلان‌ها — ${unread} خوانده‌نشده` : 'اعلان‌ها'}
+      title="اعلان‌ها: اطلاعیه‌های کدال همراه با پیوند اصلی و توضیح اهمیت هر مورد"
       data-testid="topbar-notifications"
       data-state={known ? 'ok' : 'unknown'}
       className="relative flex items-center gap-1 rounded-lg border border-border-c bg-bg-card/70 px-2 py-1 text-2xs text-text-secondary transition-all hover:border-border-accent hover:text-accent-blue"
     >
       <BellIcon size={13} className="text-accent-yellow" />
       {known && unread > 0 ? (
-        <span className="num rounded-full bg-accent-red/20 px-1 text-[10px] font-black text-accent-red"
+        <span className="num rounded-full bg-accent-red/20 px-1 text-3xs font-black text-accent-red"
               data-testid="topbar-notifications-count">
           {toFaDigits(unread)}
         </span>

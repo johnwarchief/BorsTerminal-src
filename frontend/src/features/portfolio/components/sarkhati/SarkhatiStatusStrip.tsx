@@ -1,0 +1,121 @@
+// features/portfolio/components/sarkhati/SarkhatiStatusStrip.tsx — خطِ وضعیتِ
+// همیشه‌دیدنیِ تبِّ «سرخطی»
+//
+// هرچی اینجا هست ازِ `/api/execution/status` و `/api/execution/connect` است.
+// دو چیز عمداً **نیست**:
+//  • «نتیجۀ آخرین عملیات» — آن خط درِ همان مؤلفه‌ای است که عمل را انجام داده
+//    (پنلِ سفارش، کارتِ پیگیری). نوشتنِ دوباره‌اش اینجا یعنی دو خوانش از یکِ
+//    پاسخ، همان بیماری‌ای که درِ «نبض بازار» دیدیم.
+//  • رنگِ «متصل» بی‌شاهد: نشستِ بدل باِ `live_enabled: false` خاکستری می‌ماند.
+//
+// چیدمان: سه ردیفِ باریک — (۱) سه داوریِ کلیِ درِ یک نگاه، (۲) علتِ باز یا بسته
+// بودنِ دروازۀِ اجرا، (۳) چیپ‌هایِ حالت و شمارش‌ها. عددِ داده زیرِ `text-2xs`
+// نمی‌رود؛ فقط برچسبِ واحد درِ `3xs` می‌ماند.
+import { Badge } from '@shared/components/Badge';
+import { toFaDigits } from '@shared/lib/fmt';
+import { matchFa } from '@shared/lib/normalizeFa';
+import type { TradingGate } from '../../lib/orderClient';
+import { Chip } from './parts';
+
+const MODE_LABEL: Record<string, string> = {
+  mock: 'بدلِ سرویس (mock)',
+  dry_run: 'مسیرِ بی‌ترافیک (dry_run)',
+  live: 'واقعی (live)',
+  paper: 'کاغذی (paper)',
+  backtest: 'بک‌تست',
+};
+
+type ModeCell = { implemented?: boolean | null; active?: boolean | null;
+  door?: string | null; can_reach_broker?: boolean | null };
+
+export function SarkhatiStatusStrip({ gate }: { gate: TradingGate }) {
+  const st = gate.status;
+  const modes = (st?.mode_matrix ?? {}) as Record<string, ModeCell>;
+  const caps = gate.caps;
+  const sessionBadges = gate.sessionState === 'connected'
+    ? (st?.live_enabled === true ? 'ok' : 'idle')
+    : (gate.sessionState === 'expired' || gate.sessionState === 'auth_failed') ? 'warn'
+      : gate.sessionState === 'unknown' ? 'idle' : 'bad';
+  // علتِ بسته بودنِ دروازه یک‌بار گفته می‌شود: `blocked_on` اغلب همان جمله‌ای است
+    // که `gate.reason` ازِ خودِشان ساخته، و تکرارش صفحه را شلوغ می‌کند.
+  const reasonText = gate.canTrade
+    ? 'دروازۀ اجرا باز است؛ پیش‌فرود، سقف‌ها و عبارتِ تأیید را خودِ سرویس نگه می‌دارد.'
+    : gate.reason;
+  return (
+    <div className="flex flex-col gap-1 rounded-xl border border-border-c/70 bg-bg-card/25 px-3 py-2"
+      data-testid="sarkhati-status-strip"
+      data-session={gate.sessionState}
+      data-live={st?.live_enabled === true ? 'true' : 'false'}
+      data-halted={gate.halted ? 'true' : 'false'}>
+      <div className="flex flex-wrap items-center gap-1.5">
+        <Badge tone={gate.endpointPresent ? (gate.canTrade ? 'green' : 'yellow') : 'gray'}>
+          {gate.endpointPresent
+            ? `سرویسِ اجرا: ${st?.adapter ?? '—'}${gate.dryRun ? ' · بدل' : ''}`
+            : 'سرویسِ اجرا نیست'}
+        </Badge>
+        <Chip tone={sessionBadges} title="وضعیتِ نشست از پاسخِ خودِ سرویس">
+          {st?.session?.account_label
+            ? `${String(st.session.account_label)} · نشستِ ${gate.sessionState === 'connected' && st.live_enabled !== true ? 'بدل' : 'زنده'}`
+            : 'نشست'}
+        </Chip>
+        <Chip tone={gate.halted ? 'bad' : 'idle'}>
+          {gate.halted ? `توقفِ اضطراری${st?.kill_reason ? `: ${st.kill_reason}` : ''}` : 'مسیر باز است'}
+        </Chip>
+        {st?.nothing_will_leave_the_machine === true ? (
+          <Chip tone="ok" title="از پاسخِ خودِ سرویس، نه از متنِ رابط">
+            هیچ درخواستی از این ماشین بیرون نمی‌رود
+          </Chip>
+        ) : null}
+        {st?.wire_hypothesis === true ? (
+          <Chip tone="warn" title="سیمِ سفارش از پنج منبعِ عمومی استخراج شده و علیه کارگزاری تأیید نشده">
+            سیم: فرضیۀ تأییدنشده
+          </Chip>
+        ) : null}
+        <span className="ms-auto flex flex-wrap items-baseline gap-x-3 gap-y-0.5 text-2xs text-text-muted"
+          data-testid="sarkhati-counters">
+          <span>دفتر: <span className="num font-bold text-text-primary">
+            {toFaDigits(String(st?.ledger_size ?? 0))}</span></span>
+          <span>در انتظارِ مهلت: <span className="num font-bold text-text-primary">
+            {toFaDigits(String(st?.scheduled_pending ?? 0))}</span></span>
+          <span>رخدادِ ماندگار: <span className="num font-bold text-text-primary">
+            {toFaDigits(String(st?.durable_events ?? 0))}</span></span>
+          <span>بازیابیِ پسِ restart: <span className="num font-bold text-text-primary">
+            {toFaDigits(String(st?.recovered_after_restart ?? 0))}</span></span>
+          <span>دورۀِ تأیید: <span className="num font-bold text-text-primary">
+            {toFaDigits(String(st?.confirm_epoch ?? 0))}</span></span>
+          <span>لغو: <span className={`font-bold ${caps?.cancel === true ? 'text-accent-green' : 'text-text-secondary'}`}>
+            {caps?.cancel === true ? 'مجاز' : 'مجاز نیست'}</span></span>
+        </span>
+      </div>
+
+      <p className="text-2xs leading-4 text-text-secondary" data-testid="sarkhati-gate-reason">
+        {reasonText}
+      </p>
+
+      <div className="flex flex-wrap items-center gap-1" data-testid="sarkhati-mode-chips" role="group"
+        aria-label="حالت‌هایِ اجرا">
+        {Object.entries(MODE_LABEL).map(([key, label]) => {
+          const m = modes[key] ?? {};
+          const tone = m.active === true ? 'ok' : m.implemented === true ? 'idle' : 'bad';
+          return (
+            <Chip key={key} tone={tone} testId={`sarkhati-mode-${key}`}
+              title={m.implemented === true
+                ? `پیاده‌شده · دروازۀ ${m.door ?? '—'}${typeof m.can_reach_broker === 'boolean' ? ` · به کارگزاری می‌رسد: ${m.can_reach_broker ? 'بله' : 'خیر'}` : ''}`
+                : 'درِ این نسخه پیاده نشده است'}>
+              {label}: {m.active === true ? 'فعال' : m.implemented === true ? 'خاموش' : 'نیست'}
+            </Chip>
+          );
+        })}
+      </div>
+
+      {(st?.blocked_on ?? []).filter((b) => !matchFa(reasonText, b)).length > 0 ? (
+        <ul className="flex flex-wrap gap-x-3 gap-y-0.5 text-2xs text-accent-yellow"
+          data-testid="sarkhati-blockers"
+          aria-label="چرا دروازۀ اجرایِ واقعی بسته است">
+          {(st?.blocked_on ?? []).filter((b) => !matchFa(reasonText, b))
+            .map((b) => (<li key={b}>· {b}</li>))}
+        </ul>
+      ) : null}
+    </div>
+  );
+}

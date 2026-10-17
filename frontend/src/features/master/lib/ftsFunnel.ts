@@ -104,7 +104,7 @@ export const PRESET_MOTIVE: Record<TreePreset, string> = {
  *  `funnel_engine.STATUSES`؛ ششمین (`not_in_universe`) حکمِ گام نیست، عضو
  *  نبودنِ نماد درِ خودِ جامعۀ غربالگری است). */
 export type StageStatus = 'pass' | 'reject' | 'pending' | 'unavailable'
-  | 'not_required' | 'not_in_universe';
+  | 'not_required' | 'not_in_universe' | 'not_applicable';
 
 export const STATUS_LABEL: Record<StageStatus, string> = {
   pass: 'تأیید',
@@ -113,15 +113,19 @@ export const STATUS_LABEL: Record<StageStatus, string> = {
   unavailable: 'داده در دسترس نیست',
   not_required: 'لازم نبود',
   not_in_universe: 'خارج از جامعۀ غربالگری',
+  // «کاربرد ندارد» با «قابل ارزیابی نیست» دو چیزند (رأیِ مالک ۱۴۰۵-۰۷-۲۱):
+  // این یکی یعنی خودِ منبع نظر نمی‌دهد، آن یکی یعنی داده نرسیده است.
+  not_applicable: 'کاربرد ندارد',
 };
 
 export const STATUS_HINT: Record<StageStatus, string> = {
   pass: 'درِ جزوه باز است.',
   reject: 'موتور صریحاً رد کرد — این تصمیم است، نه کمبودِ داده.',
-  pending: 'موتور نگاه کرد و نظر نداد (نقطه‌زنی سنجیده‌نشده، روند هفتگی بی‌حکم، ابزار بی‌FTS).',
+  pending: 'این نماد بررسی شده اما هنوز نتیجهٔ قطعی ندارد؛ بنابراین رد نشده است (نقطه‌زنی سنجیده‌نشده، روند هفتگی بی‌حکم، ابزار بی‌FTS).',
   unavailable: 'هیچ منبعی برایِ این مرحله نبود؛ «رد» نیست و نباید رد خوانده شود.',
   not_required: 'گامِ پیشینِ غربالگری نماد را رد کرده بود؛ این گام اجرا نمی‌شود. توقفِ توضیح‌دار است، نه «سنجیده نشده».',
-  not_in_universe: 'این نماد عضو جامعۀ غربالگری نبود: وضعیتِ رسمیِ بازار (تعلیق، ممنوع، یا ردیفِ نشستِ کهنه) اجازهٔ غربال نمی‌دهد. نه «رد» است و نه «سنجیده نشده».',
+  not_in_universe: 'این نماد عضو جامعۀ غربالگری نبود: وضعیتِ رسمیِ بازار (تعلیق، ممنوع، یا ردیفِ روزِ معاملاتیِ کهنه) اجازهٔ غربال نمی‌دهد. نه «رد» است و نه «سنجیده نشده».',
+  not_applicable: 'این شاخص برایِ این نماد معنا ندارد (مبنایِ تلفیقی، نبودِ سطرِ بهای تمام‌شده، یا طبقۀ صندوق/هلدینگ)؛ بنابراین نه رد شده و نه در انتظارِ داده است.',
 };
 
 export type FunnelMode = 'reverse' | 'review';
@@ -148,7 +152,7 @@ export type TapeFreshness = 'live' | 'stale' | 'unavailable';
 
 export const TAPE_FRESHNESS_LABEL: Record<TapeFreshness, string> = {
   live: 'تابلویِ زنده',
-  stale: 'تابلو — آخرینِ نشست',
+  stale: 'تابلو — آخرین روز معاملاتی',
   unavailable: 'تابلو در دسترس نیست',
 };
 
@@ -235,8 +239,14 @@ export type Candidate = {
   setups: string;
   /** امتیازِ کمکیِ تکنیکال برای Ranking؛ هرگز درِ T را به‌تنهایی باز/بسته نمی‌کند. */
   technicalPoints: number | null;
-  /** تک‌تکِ پنج شاخص: pass / reject / pending — همان سطرهای صفحۀ ۱ چارت */
+  /** تک‌تکِ پنج شاخص: pass / reject / pending / not_required — همان سطرهای صفحۀ ۱ چارت */
   inds: StageStatus[];
+  /** «عبور با ملاحظات» از خودِ موتور: حداقل سه PASS ولی بعضی شاخص‌ها رد یا ناقص.
+   *  نشانِ زرد است و هیچ وزنی در امتیاز/رتبه ندارد (رأیِ مالک ۱۴۰۵-۰۷-۲۱). */
+  fundCaveat: boolean;
+  /** شمارِ واقعیِ شاخص‌های PASS و کفِ عبور — برایِ متنِ علت، نه شمارشِ رابط */
+  fundPassed: number | null;
+  fundMinPass: number | null;
   /** رأیِ تکنیکال از کجا آمده: `live` = `/api/fts/{symbol}`، `screen` = غنی‌سازیِ
    *  اسکرینر (سقفِ `watchlist_max`)، `null` = هیچ‌کدام — «بی‌داده» */
   techSource: 'live' | 'screen' | null;
@@ -309,11 +319,13 @@ export type UniverseExclusion = {
   isLive: boolean | null;
 };
 
-/** شمارشِ مستقلِ یک فیلتر رویِ کلِّ جامعۀ غربالگری — از `stages.tape.filter_counts`
- *  خودِ موتور. «نامزد» همان `matched` است؛ `unmeasured` پرچمی است که موتور درباره‌اش
- *  نظر نداد (نه رد، نه قبول). */
+/** شمارشِ یک فیلتر رویِ **نامزدِ جاری** — از `stages.tape.filter_counts` خودِ
+ *  موتور. «نامزد» همان `matched` است رویِ همان مجموعه‌ای که همین حالا رویِ میز
+ *  است (leave-one-out از چیپ‌هایِ روشن)؛ `unmeasured` پرچمی است که موتور درباره‌اش
+ *  نظر نداد (نه رد، نه قبول). `universe` کلِّ جامعۀ غربالگری است. */
 export type FilterCount = {
-  name: string; matched: number; removed: number; unmeasured: number; input: number;
+  name: string; matched: number; removed: number; unmeasured: number;
+  input: number; universe?: number;
 };
 
 export type Funnel = {

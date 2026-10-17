@@ -30,7 +30,7 @@ const ITEMS = [
 
 function mockFeed(over: Record<string, unknown> = {}, sources: unknown = {
   status: 'ok', note: 'تک‌منبع: کدال', sources: [{ source: 'codal', label: 'کدال (سازمانِ بورس)',
-    rows: 36350, newest_publish: '۱۴۵-۰۷-۰۹ ۱۰:۰۰:۰۰', last_fetch: '2026-10-10 02:00:00', state: 'ok' }],
+    rows: 36350, newest_publish: '1405/07/09 10:00:00', last_fetch: '2026-10-10 02:00:00', state: 'ok' }],
 }) {
   fetchMock.mockImplementation((url: string) => {
     if (String(url).includes('/sources')) return Promise.resolve(json(sources));
@@ -63,6 +63,8 @@ describe('مرکزِ اعلان', () => {
     await waitFor(() => expect(screen.getAllByTestId('notice-row').length).toBe(2));
     const strip = screen.getByTestId('notice-source-fresh').textContent ?? '';
     expect(strip).toContain('۳۶۳۵۰ اطلاعیه');
+    // پاسخِ API از دور ۳ canonicalِ لاتین است؛ رابط باید رقمِ فارسی بسازد
+    expect(strip).toContain('۱۴۰۵/۰۷/۰۹');
     expect(screen.getByTestId('notice-sources').getAttribute('data-state')).toBe('ok');
   });
 
@@ -88,9 +90,19 @@ describe('مرکزِ اعلان', () => {
     mockFeed({ items: [...ITEMS, { ...ITEMS[0], id: 9, kind: 'other', level: 'unclassified',
                                    title: 'بازخرید سهام' }] });
     page();
-    await waitFor(() => expect(screen.getAllByTestId('notice-level')[2]).toBeInTheDocument());
-    expect(screen.getAllByTestId('notice-level')[2].textContent).toBe('بی‌طبقه');
-    expect(screen.getAllByTestId('notice-level')[0].getAttribute('title')).toContain('EPS');
+    // گروه‌بندیِ روزانه ترتیبِ خطی را عوض می‌کند، پسِ سطرِ بی‌طبقه باِ نامِ خودش
+    // پیدا می‌شود نه باِ شمارۀِ مرتبۀِ ۳ — آنچه سنجیده می‌شود «سطحِ بی‌طبقه باِ
+    // پایین یکی نیست» است، نه اینکه کدامِ سطر سوم نشسته.
+    let unclass: HTMLElement | null = null;
+    await waitFor(() => {
+      unclass = document.querySelector<HTMLElement>(
+        "[data-testid='notice-row'][data-level='unclassified'] [data-testid='notice-level']");
+      expect(unclass).not.toBeNull();
+    });
+    expect(unclass!.textContent).toBe('بی‌طبقه');
+    const top = document.querySelector<HTMLElement>(
+      "[data-testid='notice-row'][data-level='high'] [data-testid='notice-level']");
+    expect(top?.getAttribute('title')).toContain('EPS');
   });
 
   it('«خوانده شد» درِ همین دستگاه می‌ماند و شمارۀِ ناخوانده کم می‌شود', async () => {

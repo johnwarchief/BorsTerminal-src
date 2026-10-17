@@ -429,7 +429,7 @@ describe('دستگیره‌های ۲۲۶ — مبنایِ داوری', () => {
     });
   });
 
-  it('(الف) امروز داخلِ مبناء: نسبت از ۴ به ۳۱×۴÷۳۴ (≈۳.۶۴۷) می‌آید و آستانۀ مرزی می‌شکند', () => {
+  it('(الف) لحاظِ حجم امروز در میانگین: نسبت از ۴ به ۳۱×۴÷۳۴ (≈۳.۶۴۷) می‌آید و آستانۀ مرزی می‌شکند', () => {
     const row = passingRow();  // tvol=۴۰۰۰۰۰۰، Σ=۳۰۰۰۰۰۰۰ → vrf=۴
     const cfg = {
       ...DEFAULT_TAPE_FILTER_CONFIG,
@@ -466,8 +466,8 @@ describe('دستگیره‌های ۲۲۶ — مبنایِ داوری', () => {
   it('تب «مبنای داوری» در مودال هر دو دستگیره را در استور می‌نویسد', () => {
     render(<TapeFilterSettingsModal open={true} onClose={() => {}} />);
     fireEvent.click(screen.getByText('🧮 مبنای داوری'));
-    const todayBox = screen.getByRole('checkbox', { name: /امروز داخلِ مبنایِ میانگین/ });
-    const histBox = screen.getByRole('checkbox', { name: /دروازۀ ۲۹-نشستِ تاریخچه/ });
+    const todayBox = screen.getByRole('checkbox', { name: /حجم امروز در محاسبۀ میانگین لحاظ شود/ });
+    const histBox = screen.getByRole('checkbox', { name: /شرط سابقۀ ۲۹ روز معاملاتی/ });
     expect(todayBox).not.toBeChecked();
     expect(histBox).toBeChecked();
     fireEvent.click(todayBox);

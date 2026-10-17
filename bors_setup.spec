@@ -34,6 +34,10 @@ a = Analysis(
         'uvicorn.logging', 'uvicorn.loops.auto', 'uvicorn.protocols.http.auto',
         'uvicorn.protocols.websockets.auto', 'uvicorn.lifespan.on',
         'codal_fetcher', 'app', 'test_tsetmc', 'fts_engine', 'mstat_engine',
+        # `app.py` هوکِ استارتش `codal_pipeline` را داخلِ بدنهٔ تابع import
+        # می‌کند (خطِ دریافت خودکار کدال)؛ اسکنِ ایستای PyInstaller آن را نمی‌بیند
+        # و EXE رویِ اولین بوت با ModuleNotFoundError می‌مرد.
+        'codal_pipeline',
         'confidence_engine', 'watchlist_store', 'notifier', 'codal_engine',
         'bors_config', 'bors_flags', 'api',
         'api._core', 'api.market', 'api.chart', 'api.selection',
@@ -41,6 +45,15 @@ a = Analysis(
         'api.screener', 'api._sync_market', 'api._export',
         'api._sync_codal', 'api.adb', 'api.notify',
         'api._pipeline', 'api.engine', 'api.market_index',
+        # دروازۀ اجرای سفارش (api_router آن را درِ بدنهٔ تابع import می‌کند؛
+        # ایستیک‌اسکن نمی‌بیند). مثلِ fts_terminal.spec باید اینجا هم باشد.
+        'api.execution',
+        # آداپتورِ EasyTrader — سطح-بالِ api/execution.py، ولی به حدسِ اسکن
+        # سپرده نمی‌شود (قاعدۀ مخزن؛ مأموریتِ ۱۴۰۵-۰۷-۲۴).
+        'execution_easytrader',
+        # دروازۀ ربات و سه ماژولِ پشتِ آن (فاز ۳ مأموریتِ ۱۴۰۵-۰۷-۲۴) — مثلِ
+        # fts_terminal.spec؛ بی‌این /api/bot/* درِ بستهٔ نصاب 404 می‌ماند.
+        'api.bot', 'bot_signals', 'paper_trading', 'trade_sim', 'backtest_engine',
         'api.update', 'bors_minisign', 'winreg',
         'orjson', 'pandas', 'numpy', 'docx', 'openpyxl', 'reportlab',
         'lxml', 'lxml.etree', 'click', 'cryptography', 'dateutil',

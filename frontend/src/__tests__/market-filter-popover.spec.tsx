@@ -55,19 +55,19 @@ describe('پاپ‌اور «تنظیم آستانه‌ها» در تابلو', (
   });
 
 describe('دستگیره‌های مبنایِ داوری در پاپ‌اورِ هر فیلتر (#226)', () => {
-  it('الگوی ساعت: دستگیرۀ «امروز داخلِ مبنایِ میانگین» را دارد و در استور می‌نویسد', () => {
+  it('الگوی ساعت: دستگیرۀ «حجم امروز در محاسبۀ میانگین لحاظ شود» را دارد و در استور می‌نویسد', () => {
     useTapeStore.getState().resetTapeFilterConfig();
     render(<FilterConfigPopover filter="f_clock" open anchorRect={ANCHOR} onClose={() => {}} />);
-    const box = screen.getByRole('checkbox', { name: /امروز داخلِ مبنایِ میانگین/ });
+    const box = screen.getByRole('checkbox', { name: /حجم امروز در محاسبۀ میانگین لحاظ شود/ });
     expect(box).not.toBeChecked();
     fireEvent.click(box);
     expect(useTapeStore.getState().tapeFilterConfig.basis.includeTodayInVolumeBase).toBe(true);
   });
 
-  it('نقطه‌زنی: هر دو دستگیره هست («دروازۀ ۲۹-نشست» فقط اینجا)', () => {
+  it('نقطه‌زنی: هر دو دستگیره هست («شرط سابقۀ ۲۹ روز معاملاتی» فقط اینجا)', () => {
     render(<FilterConfigPopover filter="f_noqteh" open anchorRect={ANCHOR} onClose={() => {}} />);
-    expect(screen.getByRole('checkbox', { name: /امروز داخلِ مبنایِ میانگین/ })).toBeInTheDocument();
-    const hist = screen.getByRole('checkbox', { name: /دروازۀ ۲۹-نشستِ تاریخچه/ });
+    expect(screen.getByRole('checkbox', { name: /حجم امروز در محاسبۀ میانگین لحاظ شود/ })).toBeInTheDocument();
+    const hist = screen.getByRole('checkbox', { name: /شرط سابقۀ ۲۹ روز معاملاتی/ });
     expect(hist).toBeChecked();
     fireEvent.click(hist);
     expect(useTapeStore.getState().tapeFilterConfig.basis.requireLowBaseHistory).toBe(false);
@@ -75,7 +75,7 @@ describe('دستگیره‌های مبنایِ داوری در پاپ‌اورِ
 
   it('جت — که مبناءش دست‌نخورده می‌ماند — این ردیف‌ها را ندارد', () => {
     render(<FilterConfigPopover filter="f_jet" open anchorRect={ANCHOR} onClose={() => {}} />);
-    expect(screen.queryByRole('checkbox', { name: /امروز داخلِ مبنایِ میانگین/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('checkbox', { name: /حجم امروز در محاسبۀ میانگین لحاظ شود/ })).not.toBeInTheDocument();
   });
 });
 });

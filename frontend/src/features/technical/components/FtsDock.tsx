@@ -18,14 +18,14 @@ export function FtsDock({ tabs, defaultOpen = false }: { tabs: DockTab[]; defaul
         open ? 'h-[32%] min-h-[180px]' : 'h-7'
       }`}
     >
-      <div className="flex h-7 shrink-0 items-center gap-0.5 px-1" role="tablist" aria-label="داک پایین چارت">
+      <div className="flex h-7 shrink-0 items-center gap-0.5 px-1" role="tablist" aria-label="پنل پایین نمودار">
         <button
           type="button"
           data-testid="fts-dock-toggle"
           aria-expanded={open}
           onClick={() => setOpen((v) => !v)}
           title={open ? 'جمع کردن پنل‌ها' : 'باز کردن پنل‌ها'}
-          className="group inline-flex shrink-0 items-center gap-1.5 rounded-full border border-border-c bg-bg-card px-2 py-0.5 text-[11px] font-bold text-text-secondary transition-colors duration-200 hover:border-border-accent hover:text-accent-blue"
+          className="group inline-flex shrink-0 items-center gap-1.5 rounded-full border border-border-c bg-bg-card px-2 py-0.5 text-3xs font-bold text-text-secondary transition-colors duration-200 hover:border-border-accent hover:text-accent-blue"
         >
           <span className={`transition-transform duration-200 ease-out ${open ? 'rotate-180' : ''}`}>⌃</span>
           {open ? null : <span className="text-3xs font-black text-accent-blue">باز کردنِ پنل</span>}
@@ -41,7 +41,7 @@ export function FtsDock({ tabs, defaultOpen = false }: { tabs: DockTab[]; defaul
               setActive(t.id);
               setOpen(true);
             }}
-            className={`rounded px-2 py-0.5 text-[11px] font-semibold transition-colors ${
+            className={`rounded px-2 py-0.5 text-3xs font-semibold transition-colors ${
               open && active === t.id ? 'bg-accent-blue/15 text-accent-blue' : 'text-text-muted hover:text-text-secondary'
             }`}
           >

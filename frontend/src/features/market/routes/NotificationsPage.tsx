@@ -35,11 +35,41 @@ const KIND_FA: Record<string, string> = {
   other: 'بی‌طبقه',
 };
 
-/** «۱۴۰/۰۷/۰ ۱۵:۳۸» — تاریخِ جلالیِ خودِ کدال، بی‌تبدیلِ دوباره درِ رابط */
+/** «۱۴۰۵/۰۷/۰۹ ۱۵:۳۸» — رابط رقمِ فارسی می‌دهد، حتی وقتی پاسخ canonicalِ لاتین است */
 function stamp(iso: string | null | undefined): string {
   const s = String(iso || '').trim();
   if (!s) return '—';
-  return s.replace('T', ' ').slice(0, 16);
+  // `sources()` از دور ۳ نمایشِ canonicalِ لاتین برمی‌گرداند (تا رقمِ مخلوط
+  // «تازۀترین» را عوض نکند)، پس رابط رقمِ فارسی می‌سازد — تبدیل درِ نمایش است،
+  // نه درِ داده.
+  return toFaDigits(s.replace('T', ' ').slice(0, 16));
+}
+
+/** زمانِ *خودِ برنامه* (میلادی، ASCII) — همان‌طور که درِ بانک نوشته شده می‌ماند؛
+ *  قاعدۀ رابط فقط تاریخِ جلالیِ کدال را فارسی رقم می‌کند. */
+function stampApp(iso: string | null | undefined): string {
+  const s = String(iso || '').trim();
+  return s ? s.replace('T', ' ').slice(0, 16) : '—';
+}
+
+/** گروه‌بندیِ روزانه. کلید، همانِ تاریخِ جلالیِ خودِ کدال است (نه تبدیلِ ساعتِ
+ *  کلاینت): «امروز/دیروز» گفتن بهِ یکِ رشتهٔ بی‌منطقِ منطقه‌زمانی نیاز دارد وِ
+ *  آنِ دروغ است. ترتیبِ خودِ فید نگه داشته می‌شود. */
+export type NoticeDay = { day: string; items: NoticeItem[]; unread: number };
+
+export function groupByDay(items: NoticeItem[], isRead: (id: string) => boolean): NoticeDay[] {
+  const out: NoticeDay[] = [];
+  for (const n of items) {
+    const day = stamp(n.publish_date).slice(0, 10);
+    let g = out.find((x) => x.day === day);
+    if (!g) {
+      g = { day, items: [], unread: 0 };
+      out.push(g);
+    }
+    g.items.push(n);
+    if (!isRead(String(n.id))) g.unread += 1;
+  }
+  return out;
 }
 
 function NoticeRow({ n, read, onOpen }: { n: NoticeItem; read: boolean; onOpen: () => void }) {
@@ -76,7 +106,7 @@ function NoticeRow({ n, read, onOpen }: { n: NoticeItem; read: boolean; onOpen: 
             rel="noreferrer noopener"
             onClick={onOpen}
             data-testid="notice-open"
-            className="rounded-md border border-border-c px-1.5 py-0.5 text-3xs font-bold text-accent-blue hover:border-accent-blue"
+            className="min-h-[24px] rounded-md border border-border-c px-1.5 py-0.5 text-3xs font-bold text-accent-blue hover:border-accent-blue max-md:inline-flex max-md:min-h-[40px] max-md:min-w-[44px] max-md:items-center max-md:justify-center"
             title="درِ خودِ کدال باز می‌شود (لینکِ اصلیِ اطلاعیه)"
           >
             منبع ↗
@@ -85,7 +115,7 @@ function NoticeRow({ n, read, onOpen }: { n: NoticeItem; read: boolean; onOpen: 
             <span className="text-3xs text-text-muted" data-testid="notice-read-mark">خوانده شد</span>
           ) : (
             <button type="button" onClick={onOpen} data-testid="notice-mark"
-                    className="rounded-md border border-border-c px-1.5 py-0.5 text-3xs text-text-muted hover:text-text-primary">
+                    className="min-h-[24px] rounded-md border border-border-c px-1.5 py-0.5 text-3xs text-text-muted hover:text-text-primary max-md:min-h-[40px] max-md:min-w-[44px]">
               خوانده شد
             </button>
           )}
@@ -93,7 +123,7 @@ function NoticeRow({ n, read, onOpen }: { n: NoticeItem; read: boolean; onOpen: 
       </div>
       <p className="line-clamp-2 text-2xs leading-5 text-text-primary" title={n.title}>{n.title}</p>
       <p className="num-text text-3xs text-text-muted">
-        انتشار: {stamp(n.publish_date)} · دریافتِ برنامه: {stamp(n.received_at)}
+        انتشار: {stamp(n.publish_date)} · دریافتِ برنامه: {stampApp(n.received_at)}
         {n.company ? ` · ${n.company}` : ''}
       </p>
     </li>
@@ -111,6 +141,10 @@ export default function NotificationsPage() {
     [items, prefs.kinds],
   );
   const unread = visible.filter((n) => !prefs.read.includes(String(n.id))).length;
+  const days = useMemo(
+    () => groupByDay(visible, (id) => prefs.read.includes(id)),
+    [visible, prefs.read],
+  );
 
   const src = sources.data?.sources?.[0] ?? null;
   const srcState = src?.state ?? 'unknown';
@@ -120,14 +154,14 @@ export default function NotificationsPage() {
       {/* ── سلامتِ منبع: «چیزی نیست» با «نرسیده» یکی نیست ─────────────────── */}
       <section className="glass-panel flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border border-border-c px-2.5 py-2"
                data-testid="notice-sources" data-state={srcState}>
-        <span className="text-2xs font-black text-text-primary">مرکزِ اعلان</span>
+        <span className="text-2xs font-black text-text-primary">اعلان‌ها</span>
         <span className="text-3xs text-text-muted" data-testid="notice-source-name">
           منبع: {src?.label ?? 'کدال (سازمانِ بورس)'}
         </span>
         {srcState === 'ok' ? (
           <span className="num text-3xs text-text-muted" data-testid="notice-source-fresh">
             {toFaDigits(src?.rows ?? 0)} اطلاعیه درِ بانک · تازه‌ترینِ انتشار {stamp(src?.newest_publish)} ·
-            آخرینِ واکشی {stamp(src?.last_fetch)}
+            آخرینِ واکشی {stampApp(src?.last_fetch)}
           </span>
         ) : srcState === 'empty' ? (
           <span className="text-3xs text-accent-yellow" data-testid="notice-source-empty">
@@ -147,7 +181,7 @@ export default function NotificationsPage() {
           </label>
           <button type="button" data-testid="notice-mark-all"
                   onClick={() => prefs.markAllRead(visible.map((n) => String(n.id)))}
-                  className="rounded-md border border-border-c px-1.5 py-0.5 text-3xs font-bold text-text-secondary hover:text-text-primary">
+                  className="min-h-[24px] rounded-md border border-border-c px-1.5 py-0.5 text-3xs font-bold text-text-secondary hover:text-text-primary">
             خوانده‌شدنِ همه
           </button>
         </span>
@@ -159,7 +193,7 @@ export default function NotificationsPage() {
         {Object.entries(LEVEL_FA).map(([k, lbl]) => (
           <button key={k} type="button" data-testid={`notice-level-${k}`} aria-pressed={prefs.levels.includes(k)}
                   onClick={() => prefs.toggleLevel(k)}
-                  className={`rounded-full border px-2 py-0.5 font-bold transition-colors ${
+                  className={`min-h-[24px] rounded-full border px-2 py-0.5 font-bold transition-colors ${
                     prefs.levels.includes(k) ? LEVEL_TONE[k] : 'border-border-c bg-bg-primary text-text-muted'
                   }`}>
             {lbl}
@@ -169,7 +203,7 @@ export default function NotificationsPage() {
         {Object.entries(KIND_FA).map(([k, lbl]) => (
           <button key={k} type="button" data-testid={`notice-kind-${k}`} aria-pressed={prefs.kinds.includes(k)}
                   onClick={() => prefs.toggleKind(k)}
-                  className={`rounded-full border px-2 py-0.5 font-bold transition-colors ${
+                  className={`min-h-[24px] rounded-full border px-2 py-0.5 font-bold transition-colors ${
                     prefs.kinds.includes(k) ? 'border-accent-blue/60 bg-accent-blue/15 text-accent-blue'
                                             : 'border-border-c bg-bg-primary text-text-muted'
                   }`}>
@@ -177,7 +211,7 @@ export default function NotificationsPage() {
           </button>
         ))}
         <Badge tone="gray">
-          ناخوانده: <span className="num">{toFaDigits(unread)}</span> از {toFaDigits(visible.length)}
+          خوانده‌نشده: <span className="num">{toFaDigits(unread)}</span> از {toFaDigits(visible.length)}
         </Badge>
       </div>
 
@@ -200,12 +234,38 @@ export default function NotificationsPage() {
         <EmptyState title="چیزی درِ این فیلتر نیست"
                     hint="فیلترها را بردارید؛ خالی بودنِ این فهرست به معنای بی‌خبریِ بازار نیست." />
       ) : (
-        <ul className="flex min-w-0 flex-col gap-1.5" data-testid="notice-list">
-          {visible.map((n) => (
-            <NoticeRow key={String(n.id)} n={n} read={prefs.read.includes(String(n.id))}
-                       onOpen={() => prefs.markRead(String(n.id))} />
+        // بندِ بازطراحی: ۲۷۰ اطلاعیه درِ یکِ <ul> بی‌تیتر، ستونی ۱۰٬۴۴۶pxِ بی‌نقطهٔ
+        // اتّصال بود (سنجشِ زنده: heads=0). هرِ روز یکِ <section> باِ <h2> چسبان است،
+        // پس «کجایِ تاریخچهم؟» بدونِ اسکرولِ کور خوانده می‌شود.
+        <div className="flex min-w-0 flex-col gap-3" data-testid="notice-list">
+          {days.map((g) => (
+            <section key={g.day} data-testid={`notice-day-${g.day}`} className="flex min-w-0 flex-col gap-1.5">
+              <h2
+                data-testid={`notice-day-title-${g.day}`}
+                className="sticky top-0 z-10 -mx-1 flex flex-wrap items-center gap-x-2 rounded-md bg-bg-primary/95 px-1 py-1 text-2xs font-black text-text-primary backdrop-blur"
+              >
+                <span className="num">{g.day}</span>
+                <span className="num-text text-3xs font-medium text-text-muted">
+                  {toFaDigits(g.items.length)} اطلاعیه
+                </span>
+                {g.unread > 0 ? (
+                  <span
+                    data-testid={`notice-day-unread-${g.day}`}
+                    className="num-text rounded-full bg-accent-blue/15 px-1.5 py-px text-3xs font-bold text-accent-blue"
+                  >
+                    {toFaDigits(g.unread)} ناخوانده
+                  </span>
+                ) : null}
+              </h2>
+              <ul className="flex min-w-0 flex-col gap-1.5">
+                {g.items.map((n) => (
+                  <NoticeRow key={String(n.id)} n={n} read={prefs.read.includes(String(n.id))}
+                             onOpen={() => prefs.markRead(String(n.id))} />
+                ))}
+              </ul>
+            </section>
           ))}
-        </ul>
+        </div>
       )}
 
       <p className="text-3xs leading-5 text-text-muted" data-testid="notice-note">

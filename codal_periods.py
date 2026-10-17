@@ -44,6 +44,8 @@ __all__ = [
     "canonicalize", "from_title", "derive", "is_canonical", "is_undated",
     "ym", "fiscal_year", "desc_sort_key", "latest",
     "undated_counts", "tables",
+    "pub_canon_sql", "pub_order_expr", "pub_key",
+    "pub_date_only",
 ]
 
 # ── شکلِ canonical ──────────────────────────────────────────────────────────
@@ -148,6 +150,28 @@ def from_title(title) -> str | None:
     return canonicalize(s)
 
 
+_MONTHS_ANCHOR = re.compile(r"([0-9]+)\s*ماهه")
+
+
+def months_from_title(title) -> int | None:
+    """شمارِ ماه‌هایِ دورۀ اعلام‌شده درِ عنوانِ نامه («دوره ۶ ماهه») یا None.
+
+    یگانۀ خواندنِ این عبارت است: `fts_engine.row_conflicts` همان را با ستونِ
+    `period_months` می‌سنجد تا تناقضِ یکِ ردیف **اعلام** شود (نه ردِ خاموش، نه
+    پذیرشِ خاموش). رقمِ فارسی با همان `_DIGITS` ترجمه می‌شود که `canonicalize`
+    می‌زند، پس الگویِ regex فقط رقمِ ASCII می‌خواهد. بی‌حدسِ تقویم: عنوان
+    رقمی پیشِ «ماهه» نداشت ⇒ None، نه ۱۲.
+    """
+    m = _MONTHS_ANCHOR.search(str(title or "").translate(_DIGITS))
+    if not m:
+        return None
+    try:
+        n = int(m.group(1))
+    except (TypeError, ValueError):
+        return None
+    return n if 1 <= n <= 12 else None
+
+
 def derive(datasource_end=None, title=None):
     """زنجیرۀ قرارداد: اول datasource، در نبودش عنوان. `(period, source)` می‌دهد.
 
@@ -160,6 +184,52 @@ def derive(datasource_end=None, title=None):
     if pe:
         return pe, "title"
     return None, None
+
+
+def effective_months(period_end, period_months, title):
+    """تنها تعریفِ «این گزارش چند ماهه است» → `(months, source)`.
+
+    چرا تابع لازم است: شاخص ۲ «سالانۀ پایانِ سالِ مالی» می‌خواهد و سریِ فصلی
+    «X ماهه» را می‌شمارد؛ هر دو تا پیش از این ستونِ خامِ `period_months` را
+    می‌خواندند. سنجشِ بانکِ کاری (۸٬۷۲۳ ردیف، فقط‌خواندنی):
+      * ۶٬۱۶۹ ردیف عنوانشان «X ماهه» دارد و با ستون می‌خواند؛
+      * **۱** ردیف می‌ستاند (tn 1447293، فپردیس: «دورۀ ۶ ماهه منتهی به
+        ۱۴۰۰/۰۶/۳۱» با `period_months=12`) — اگر همان‌طور بماند، یک دورۀ
+        شش‌ماهۀ گذار به‌عنوان یک «سالِ مالی» درِ پنجرۀ سه‌ساله می‌نشیند؛
+      * **۳۸** ردیف `period_months` تهی دارند که **۲۴** تایشان از عنوان
+        قابل‌تعیین‌اند (۹×سه‌ماهه، ۱۰×شش‌ماهه، ۵×نه‌ماهه) — امروز هیچ‌جا
+        خوانده نمی‌شوند چون شرطِ `period_months > 0` تهی را رد می‌کند.
+
+    قاعده (بی‌حدسِ تقویمی): «ماه» از عنوان فقط وقتی معتبر است که *خودِ عنوان* با
+    دورۀ ستون نجنگد — یعنی یا عنوان تاریخِ «منتهی به» ندارد، یا همان
+    `period_end` را می‌گوید. این تفکیک مهم است: سالِ مالیِ شرکت‌هایِ ایرانی
+    12/29 نیست (فپردیس 06/31 را تمام می‌کند)، پس «ماهِ period_end» هرگز
+    دلیلی بر طولِ دوره نیست — ۲٬۶۲۶ ردیف دقیقاً به همین سبب اشتباه شمرده
+    می‌شدند اگر از تقویم حدس می‌زدیم.
+    منبعِ برگزیده درِ خروجی اعلام می‌شود (`column` | `title`) تا درِ ردپا
+    پیدا باشد؛ اگر ستون تهی بود و عنوان هم دوره نداشت ⇒ `(None, None)`.
+    """
+    col = None
+    raw = str(period_months).strip() if period_months is not None else ""
+    if raw:
+        try:
+            col = int(float(raw))
+        except (TypeError, ValueError):
+            col = None
+        if col is not None and not 1 <= col <= 12:
+            col = None
+    t = str(title or "")
+    tm = months_from_title(t)
+    if tm is None:
+        return col, ("column" if col is not None else None)
+    tp = from_title(t)
+    pe = canonicalize(period_end)
+    if tp and pe and tp != pe:
+        # عنوان و ستون دو دورۀ متفاوت می‌گویند: هیچ‌کدام شاهدِ دیگری نیست
+        return col, ("column" if col is not None else None)
+    if col == tm:
+        return col, "column"
+    return tm, "title"
 
 
 def is_canonical(value) -> bool:
@@ -226,3 +296,84 @@ def undated_counts(conn) -> dict:
         total += n
     out["total"] = total
     return out
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+#  «زمانِ انتشار» — نمایشِ canonicalِ قابلِ مقایسه (CA-1 ممیزیِ بنیادی)
+# ═══════════════════════════════════════════════════════════════════════════
+# publish_date با period_end دو فرقِ ساختاری دارد و به همان دلیل دو تابع جدا
+# است (نه یکِ تابع با پرچم):
+#   • معنا «لحظۀ انتشار» است، پس ساعت هم دارد — بریدنش «دو اطلاعیه در یکِ روز»
+#     را به تساوی می‌برد و newest را بی‌دلیل عوض می‌کند؛
+#   • درِ بانکِ امروز **دو encoding درِ یکِ ستون** است: ۲۲٬۵۶۰ ردیفِ
+#     `۱۴۰۵/۰۶/۱۳ ۲۳:۵۳:۵۷` (ارقامِ فارسی) و ۱۳٬۷۸۸ ردیفِ `1405/06/01`
+#     (لاتین، بی‌ساعت) درِ `codal_notices`. قفسۀ U+06F0 درِ واژگانِ SQLite
+#     **بعد** از U+0030 می‌آید، پس `MAX(publish_date)` /
+#     `ORDER BY publish_date DESC` همیشه ردیفِ فارسی‌رقم را «تازه‌ترین»
+#     می‌گزیند — حتی وقتی سه سال کهنه‌تر است.
+# قاعده: ستونِ خام **دست‌نخورده** می‌ماند (ردیابیِ منبع و شکلِ اصلیِ کدال)، و
+# هر مقایسه/ترتیب/پنجره از همین‌جا خوانده می‌شود. بی‌ستونِ افزوده، بی‌migration.
+_PUB_DIGITS = tuple(
+    [(chr(0x06F0 + d), str(d)) for d in range(10)] +
+    [(chr(0x0660 + d), str(d)) for d in range(10)]
+)
+# «۱۴۰۵/۰۶/۱۳ ۲۳:۵۳:۵۷» و «1405-06-01» و «1405/6/1 23:11» — ساعت اختیاری است.
+_PUB_RE = re.compile(
+    r"(?<!\d)(\d{4})\s*[-/]\s*(\d{1,2})\s*[-/]\s*(\d{1,2})"
+    r"(?:\s+(\d{1,2}):(\d{2})(?::(\d{2}))?)?"
+)
+
+
+def pub_canon_sql(col: str = "publish_date") -> str:
+    """عبارتِ SQLِ «همین تاریخ، با ارقامِ لاتین و جداکنندۀ یکسان».
+
+    بی‌`ORDER BY` برمی‌گردد تا درِ `MAX(…)`, `ORDER BY …` و `CASE` هر سه مصرف
+    شود. ترتیبِ واژگانیِ خروجیِ این عبارت = ترتیبِ زمانی، چون هر دو شکلِ موجود
+    درِ بانک پهنایثابت‌اند (`YYYY/MM/DD` و `YYYY/MM/DD HH:MM:SS`) و رشتهٔ
+    کوتاه‌تر (بی‌ساعت) درِ برابریِ تاریخ پیش از رشتهٔ بلند می‌آید — یعنی
+    «ساعتِ نامعلوم = آغازِ روز»، نه «نامعلوم = تازه‌ترین».
+    """
+    expr = f"trim({col})"
+    for src, dst in _PUB_DIGITS:
+        expr = f"replace({expr}, '{src}', '{dst}')"
+    return f"replace({expr}, '-', '/')"
+
+
+def pub_order_expr(col: str = "publish_date") -> str:
+    """ترتیبِ «تازۀ‌ترینِ انتشار اول» — NULL آخر می‌نشیند (SQLite در DESC)."""
+    return f"{pub_canon_sql(col)} DESC"
+
+
+
+def pub_key(raw) -> str | None:
+    """نمایشِ canonicalِ پایتونِ همان مقدار: `'YYYY/MM/DD[ HH:MM:SS]'` یا None.
+
+    هیچ چیزی حدس زده نمی‌شود: بی‌تاریخ ⇒ None، و بی‌ساعت ⇒ رشته بی‌ساعت
+    (نه `00:00:00` ساختگی). مقایسه‌هایِ پایتون و SQL با همین دو تابع
+    (`pub_key` / `pub_canon_sql`) باید یکِ جواب بدهند — گاردِ
+    `dev/codal_publish_date_v1089.py` همین هم‌سنجی را رویِ دادهٔ واقعی می‌آزماید.
+    """
+    if raw is None:
+        return None
+    s = str(raw).translate(_DIGITS).strip()
+    m = _PUB_RE.search(s)
+    if not m:
+        return None
+    y, mo, d = m.group(1), int(m.group(2)), int(m.group(3))
+    if not 1 <= mo <= 12 or not 1 <= d <= 31:
+        return None
+    out = f"{y}/{mo:02d}/{d:02d}"
+    if m.group(4) is not None:
+        hh, mi = int(m.group(4)), int(m.group(5))
+        ss = int(m.group(6) or 0)
+        if hh <= 23 and mi <= 59 and ss <= 59:
+            out += f" {hh:02d}:{mi:02d}:{ss:02d}"
+    return out
+
+
+def pub_date_only(raw) -> str | None:
+    """فقطِ روزِ انتشار (`YYYY/MM/DD`) — برایِ پنجرۀ `FromDate` خودِ کدال، که
+    تاریخِ روز می‌خواهد نه لحظه. بی‌ساعتِ ساختگی."""
+    k = pub_key(raw)
+    return k[:10] if k else None
+

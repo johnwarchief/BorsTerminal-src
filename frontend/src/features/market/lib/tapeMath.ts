@@ -214,7 +214,7 @@ export function resistanceLadderHigh(r: MarketRow, lookback: number): number | n
     const v = num(LADDER_HIGH[k](r));
     if (v != null && v > hi) hi = v;
   }
-  return hi > 0 ? hi : null;
+  return hi;
 }
 
 /** درگاه‌هایِ فیلتر جت — همان بلوکِ `jet` در TapeFilterConfig */
@@ -249,7 +249,7 @@ export function detectJetBreakout(r: MarketRow, g: JetGates): JetResult {
   if (last == null) return fail('آخرین معامله ندارد');
 
   const mult = filterVolumeRatio(r);
-  if (mult == null) return fail('مبنای حجمِ سی نشستِ کامل را ندارد');
+  if (mult == null) return fail('مبنای حجمِ ۳۰ روزِ کامل نیست');
   if (g.minVolRatio > 0 && mult <= g.minVolRatio) return fail('حجم کمتر از آستانه');
 
   const tno = num(r.z_tot_tran);

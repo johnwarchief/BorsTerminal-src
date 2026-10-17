@@ -12,6 +12,7 @@ import type {
   PhasesFeed,
 } from '../api/useMarketStatusFeed';
 import { asOfText } from '../api/useMarketStatusFeed';
+import { WidgetFreshness } from './WidgetFreshness';
 
 /** شمارشی که نیامده خط تیره است، نه صفر — صفر ادعای «سنجیده شد و نبود» می‌کند */
 function countOrDash(v: number | null | undefined): string {
@@ -24,12 +25,16 @@ export function StatusPanel({
   title,
   hint,
   asof,
+  fresh,
   children,
 }: {
   testId: string;
   title: string;
   hint?: string;
   asof?: AsOf | null;
+  /** `status` وِ `dataUpdatedAt` خودِ کوئریِ همینِ ویجت — برایِ تفکیکِ
+   *  «در حالِ خواندن / خطا رویِ دادهٔ کهنه / بی‌پاسخ» ازِ ساعتِ منبع. */
+  fresh?: { status?: string; dataUpdatedAt?: number; error?: boolean };
   children: React.ReactNode;
 }) {
   const stamp = asOfText(asof);
@@ -42,8 +47,18 @@ export function StatusPanel({
         <h3 className="text-2xs font-black text-text-primary" title={hint}>
           {title}
         </h3>
-        <span className="num-text text-3xs text-text-muted" data-testid={`${testId}-asof`}>
-          {stamp ? `ساعتِ داده: ${stamp}` : 'ساعتِ داده: بی‌داده'}
+        <span className="flex flex-wrap items-baseline gap-x-2">
+          {fresh ? (
+            <WidgetFreshness
+              label={title}
+              testId={`${testId}-fresh`}
+              input={{ status: fresh.status ?? '', dataUpdatedAt: fresh.dataUpdatedAt ?? 0,
+                       error: fresh.error }}
+            />
+          ) : null}
+          <span className="num-text text-3xs text-text-muted" data-testid={`${testId}-asof`}>
+            {stamp ? `ساعتِ داده: ${stamp}` : 'ساعتِ داده: بی‌داده'}
+          </span>
         </span>
       </div>
       {children}
@@ -81,11 +96,13 @@ export function BreadthHistogram({
   isLoading,
   isError,
   onRetry,
+  fresh,
 }: {
   data: HistogramFeed | undefined;
   isLoading: boolean;
   isError: boolean;
   onRetry: () => void;
+  fresh?: { status?: string; dataUpdatedAt?: number; error?: boolean };
 }) {
   const buckets = data?.histo12 ?? [];
   const max = buckets.reduce((m, b) => Math.max(m, b.count), 0);
@@ -95,7 +112,7 @@ export function BreadthHistogram({
       testId="status-histogram"
       title="توزیعِ درصدِ تغییرِ قیمت"
       hint={data?.basis ? `مبنایِ سنجش: ${data.basis}` : undefined}
-      asof={data?.asof}
+      asof={data?.asof} fresh={fresh}
     >
       {isError && !data ? (
         <PanelError testId="status-histogram" onRetry={onRetry} />
@@ -103,7 +120,7 @@ export function BreadthHistogram({
         <PanelLoading testId="status-histogram" />
       ) : buckets.length === 0 ? (
         <p data-testid="status-histogram-empty" className="text-2xs text-text-muted">
-          سطلی برایِ این نشست ساخته نشده — «بی‌داده» یعنی اندازه‌گیری ممکن نبود، نه بازارِ بی‌حرکت.
+          سطلی برایِ این نوبت ساخته نشده — «بی‌داده» یعنی اندازه‌گیری ممکن نبود، نه بازارِ بی‌حرکت.
         </p>
       ) : (
         <>
@@ -159,18 +176,20 @@ export function ClientSplitPanel({
   isLoading,
   isError,
   onRetry,
+  fresh,
 }: {
   data: ClientSplitFeed | undefined;
   isLoading: boolean;
   isError: boolean;
   onRetry: () => void;
+  fresh?: { status?: string; dataUpdatedAt?: number; error?: boolean };
 }) {
   const rows: Array<{ key: 'retail' | 'institutional'; label: string }> = [
     { key: 'retail', label: 'حقیقی' },
     { key: 'institutional', label: 'حقوقی' },
   ];
   return (
-    <StatusPanel testId="status-clientsplit" title="تفکیکِ خریدِ حقیقی و حقوقی" asof={data?.asof}>
+    <StatusPanel testId="status-clientsplit" title="تفکیکِ خریدِ حقیقی و حقوقی" asof={data?.asof} fresh={fresh}>
       {isError && !data ? (
         <PanelError testId="status-clientsplit" onRetry={onRetry} />
       ) : isLoading && !data ? (
@@ -221,11 +240,13 @@ export function SessionPhasesPanel({
   isLoading,
   isError,
   onRetry,
+  fresh,
 }: {
   data: PhasesFeed | undefined;
   isLoading: boolean;
   isError: boolean;
   onRetry: () => void;
+  fresh?: { status?: string; dataUpdatedAt?: number; error?: boolean };
 }) {
   const rows = [
     { key: 'green', tone: 'text-accent-green border-accent-green/40 bg-accent-green/10', items: data?.green ?? [] },
@@ -235,6 +256,7 @@ export function SessionPhasesPanel({
     <StatusPanel
       testId="status-phases"
       title="چرخشِ وضعیتِ نمادها"
+      fresh={fresh}
       hint="جابه‌جاییِ وضعیتِ هر نماد (صفِ خرید/فروش/مثبت/منفی) بین دو نقطۀِ نمونه‌برداریِ متوالی"
     >
       {isError && !data ? (

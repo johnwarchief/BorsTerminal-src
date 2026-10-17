@@ -22,6 +22,15 @@
   --color-neon-cyan: var(--neon-cyan);
   --color-neon-red: var(--neon-red);
   --color-on-accent: var(--on-accent);
+  /* پلِ لایۀ معنایی به Tailwind: `text-tone-pos` … از همینجا ساخته می‌شود.
+     بی‌این شش خط، `tones.ts` کلاسی می‌نویسد که هیچ تعریفی پشتش نیست و خانه
+     بی‌رنگ می‌ماند (همان نقصِ `accent-amber` که گاردِ توکن برایش نوشته شده). */
+  --color-tone-pos: var(--tone-pos);
+  --color-tone-neg: var(--tone-neg);
+  --color-tone-neutral: var(--tone-neutral);
+  --color-tone-warn: var(--tone-warn);
+  --color-tone-err: var(--tone-err);
+  --color-tone-unknown: var(--tone-unknown);
 
   /* Semantic UI slots (shadcn compatibility) */
   --color-background: var(--background);
@@ -266,84 +275,95 @@ details[open] > summary .disclosure-chevron {
 }
 }
 
-/* #198 پلتو و سپس محو، به‌جای محوِ از ثانیهٔ صفر.
-   عددِ اندازه‌گیری‌شده رویِ برنامۀِ زنده (خواندنِ alpha از CSS در هر ۵۰ms):
-   با دورۀِ ۰.۹s و ease-out رنگ در ۳۰۰ میلی‌ثانیه به alpha ۰.۲۳ و در ۵۰۰
-   به ۰.۱۰ می‌رسید، یعنی عملاً ~۴۰۰ میلی‌ثانیه «فلش» داشتیم نه ۹۰۰؛ و چون
-   ردیف‌هایِ جدول با هر تازه‌شدنِ داده از نو ساخته می‌شوند، انیمیشنِ سلول‌هایِ
-   واقعی هرگز به animationend نمی‌رسید (۱۵۵ شروع، صفر پایان) پس محوِ تدریجی
-   هم دیده نمی‌شد. پلتو یعنی حتی اگر انیمیشن نیمه‌کاره بریده شود، تا لحظۀِ
-   بریده‌شدن رنگِ کامل رویِ سلول بوده است. رأیِ jev-pilot: A (اطمینان ۰.۹۴). */
+/* فلاشِ تغییرِ عدد — الگویِ مشترکِ همهٔ اعدادِ زنده (تابلو، دیده‌بان، نبض، بازرس).
+   پیش‌تر صفرِ درصد روی «پُررنگ» شروع می‌شد و خطی می‌رفت: عدد یک‌باره سبز
+   می‌شد و بعدِ ~۲ ثانیه بریده می‌شد («خشک» و «پرش به عقب»). حالا پوششِ
+   نرمِ سه‌مرحله‌ای است: از شفاف بالا می‌آید (fade-in)، لحظه‌ای می‌ماند
+   (hold)، و آرام تا شفاف پایین می‌رود (fade-out) — کم‌مزاحم و بدونِ رنگِ
+   گیرکرده. چون هر دو مرحلۀِ شروع و پایان شفاف‌اند، رنگ هیچ‌وقت در میانه
+   بریده و «پرش» نمی‌کند. شکلِ منحنی یک‌جا همین‌جاست و بقیه فقط مدت را
+   از ریتمِ تیک می‌گیرند (flashClock)؛ پس منطقِ زمان‌بندی در ده‌ها مؤلفه
+   کپی نمی‌شود. سرانۀِ درصدِ اوجِ رنگ: fade-in ≈ ۱۲٪، hold تا ≈ ۳۰٪.
+   رأیِ jev-pilot: A (اطمینانِ ۰٫۹۴). */
 @keyframes flash-up {
   0% {
-    background: color-mix(in srgb, var(--accent-green) 50%, transparent);
-    box-shadow: 0 0 10px color-mix(in srgb, var(--accent-green) 40%, transparent);
+    background-color: transparent;
+    box-shadow: none;
   }
-  45% {
-    background: color-mix(in srgb, var(--accent-green) 46%, transparent);
+  12% {
+    background-color: color-mix(in srgb, var(--accent-green) 46%, transparent);
     box-shadow: 0 0 9px color-mix(in srgb, var(--accent-green) 34%, transparent);
   }
+  30% {
+    background-color: color-mix(in srgb, var(--accent-green) 38%, transparent);
+    box-shadow: 0 0 7px color-mix(in srgb, var(--accent-green) 26%, transparent);
+  }
   100% {
-    background: transparent;
+    background-color: transparent;
     box-shadow: none;
   }
 }
 @keyframes flash-down {
   0% {
-    background: color-mix(in srgb, var(--accent-red) 50%, transparent);
-    box-shadow: 0 0 10px color-mix(in srgb, var(--accent-red) 40%, transparent);
+    background-color: transparent;
+    box-shadow: none;
   }
-  45% {
-    background: color-mix(in srgb, var(--accent-red) 46%, transparent);
+  12% {
+    background-color: color-mix(in srgb, var(--accent-red) 46%, transparent);
     box-shadow: 0 0 9px color-mix(in srgb, var(--accent-red) 34%, transparent);
   }
+  30% {
+    background-color: color-mix(in srgb, var(--accent-red) 38%, transparent);
+    box-shadow: 0 0 7px color-mix(in srgb, var(--accent-red) 26%, transparent);
+  }
   100% {
-    background: transparent;
+    background-color: transparent;
     box-shadow: none;
   }
 }
 /* مدت از --bors-flash-dur می‌آید (shared/lib/flashClock.ts): ۷۰٪ِ بازۀِ تازۀِ
-   تابلو، با کفِ ۱.۲s و سقفِ ۴s. نبودنِ متغیر = همان ۱.۶sِ پیشین. */
+   تابلو، با کفِ ۱٫۲s و سقفِ ۴s. نبودنِ متغیر = همان ۱٫۶sِ پیشین. */
 @layer components {
 .flash-up {
-  animation: flash-up var(--bors-flash-dur, 1.6s) linear both;
+  animation: flash-up var(--bors-flash-dur, 1.6s) ease-out both;
 }
 }
 @layer components {
 .flash-down {
-  animation: flash-down var(--bors-flash-dur, 1.6s) linear both;
+  animation: flash-down var(--bors-flash-dur, 1.6s) ease-out both;
 }
 }
 
-/* فلش ملایم و سریع برای اعداد زنده (LiveNumber) — الهام‌گرفته از ترمینال‌های مالی و VibafarsiUI */
-@keyframes live-flash-up {
-  0% {
-    background-color: color-mix(in srgb, var(--accent-green) 28%, transparent);
-    box-shadow: 0 0 8px color-mix(in srgb, var(--accent-green) 24%, transparent);
-  }
-  100% {
-    background-color: transparent;
-    box-shadow: none;
-  }
-}
-
-@keyframes live-flash-down {
-  0% {
-    background-color: color-mix(in srgb, var(--accent-red) 28%, transparent);
-    box-shadow: 0 0 8px color-mix(in srgb, var(--accent-red) 24%, transparent);
-  }
-  100% {
-    background-color: transparent;
-    box-shadow: none;
-  }
-}
-
+/* فلاشِ اعدادِ درشت (LiveNumber) — همان منحنیِ مشترکِ بالا، فقط با دورۀِ
+   کوتاه‌ترِ ۱٫۱s تا عددِ قهرمانِ صفحه به‌اندازۀِ یک نگاهِ سریع روشن بماند و
+   آرام خاموش شود. --bors-flash-soft-dur را اگر خواستیم از ریشه عوض می‌کنیم. */
 @layer components {
   .live-flash-up {
-    animation: live-flash-up 0.65s ease-out both;
+    animation: flash-up var(--bors-flash-soft-dur, 1.1s) ease-out both;
   }
   .live-flash-down {
-    animation: live-flash-down 0.65s ease-out both;
+    animation: flash-down var(--bors-flash-soft-dur, 1.1s) ease-out both;
+  }
+}
+
+/* فلاشِ آبیِ «دیده‌بان» — رنگِ خودِ عدد، بی‌جهت، سریع و زیرِ یک ثانیه. برخلافِ
+   فلاشِ تابلو (سبز/قرمزِ جهت‌دار) اینجا رنگ هیچ معنایی جز «همین حالا عوض شد»
+   ندارد؛ شروعش آنی است (آبیِ کامل در ۰٪)، لحظه‌ای می‌ماند، و نرم به رنگِ عادیِ
+   همان سلول (--flash-rest که خودِ FlashNum پیش از فلاش می‌خواند) برمی‌گردد. */
+@keyframes flash-neutral {
+  0% {
+    color: var(--accent-blue);
+  }
+  22% {
+    color: var(--accent-blue);
+  }
+  100% {
+    color: var(--flash-rest, currentColor);
+  }
+}
+@layer components {
+  .flash-neutral {
+    animation: flash-neutral var(--bors-flash-neutral-dur, 0.75s) ease-out both;
   }
 }
 
@@ -491,6 +511,19 @@ details[open] > summary .disclosure-chevron {
   .app-content[data-inspector='open'] {
     padding-left: var(--inspector-w);
   }
+
+  /* ارتفاعِ چیزی که بالایِ `.app-content` چسبان مانده (تاپ‌بار h-9 = ۳۶px، و
+     نوارِ نماد sticky top-9 با min-h-[38px] + py-1 ≈ ۴۶px دیگر). هر نوارِ
+     چسبانِ میانی باید از همین متغیر فاصله بگیرد تا هیچ‌چیز را نپوشاند —
+     پیش از این مقدارِ top دستی درِ هر کامپوننت نوشته می‌شد و با تغییرِ
+     تاپ‌بار زیرِ نوارِ فیلترها سرستون قاطی می‌شد. */
+  .app-content {
+    --pinned-h: 36px;
+  }
+
+  .app-content:has(.symbol-strip-bar) {
+    --pinned-h: 82px;
+  }
 }
 
 @media (max-width: 1023.98px) {
@@ -518,6 +551,9 @@ details[open] > summary .disclosure-chevron {
   .conflict-pulse,
   .flash-up,
   .flash-down,
+  .flash-neutral,
+  .live-flash-up,
+  .live-flash-down,
   .hud-beam,
   .animate-spin-slow {
     animation: none !important;
@@ -607,7 +643,10 @@ html[data-idle='1'] *::after {
    حالتی که مالک نگاه می‌کند هرگز رنگ نمی‌دید. با حرکتِ موس همان گره
    playState=running و currentTime=297ms شد. */
 html[data-idle='1'] .flash-up,
-html[data-idle='1'] .flash-down {
+html[data-idle='1'] .flash-down,
+html[data-idle='1'] .flash-neutral,
+html[data-idle='1'] .live-flash-up,
+html[data-idle='1'] .live-flash-down {
   animation-play-state: running !important;
 }
 
@@ -654,4 +693,59 @@ tr.fts-row-changed > td {
 .fts-delta-chip { animation: fts-chip-fade 9s ease-out forwards; }
 @media (prefers-reduced-motion: reduce) {
   .fts-delta-chip { animation: none; }
+}
+
+/* ── تبِّ «سرخطی»: حرکتِ مؤلفِ خطِ جریان + سطح‌هایِ مرورگر ──────────────
+   دو چیز که تا این پاسِ طراحی نبود:
+   ۱) گره‌ای که «نوبتِ تصمیمِ شما» است هیچ علامتِ زنده‌ای نداشت — وضعیت‌ها فقط
+      رنگِ ثابت بودند و چشمِ کاربر درِ شش کارت نمی‌فهمید کار کجاست. یک حلقه‌ای
+      که از گره به بیرون باز می‌شود و محو می‌شود (نه بی‌نهایت): ease-outِ نمایی
+      از حالتِ پیش‌فرضِ دیدنی، و بی‌«کاهشِ حرکت» حلقه‌ای ثابت می‌ماند.
+   ۲) اسکرول‌بار و متنِ انتخاب‌شدۀِ این تب کرومیومِ خاموش بود — نوارِ روشنِ
+      ویندوز رویِ زمینۀِ شبی و انتخابِ آبیِ پیش‌فرض، همان جایی است که نشان
+      می‌دهد صفحه «چیده» شده نه «ساخته». دامۀِش فقطِ همین تب است
+      ([data-testid="sarkhati-page"]) تا بقیۀِ صفحات دست‌نخورده بمانند؛ تمِ
+      سراسری رأیِ مالک را می‌خواهد. */
+
+@keyframes sarkhati-pulse {
+  0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--neon-cyan) 60%, transparent); }
+  100% { box-shadow: 0 0 0 7px rgba(34, 211, 238, 0); }
+}
+.sk-node-now {
+  animation: sarkhati-pulse 1.5s cubic-bezier(0.16, 1, 0.3, 1) 2;
+}
+@media (prefers-reduced-motion: reduce) {
+  /* بی‌حرکت هم نوبت را می‌گوید: حلقه‌ای ثابت به‌جایِ پالس. */
+  .sk-node-now {
+    animation: none;
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--neon-cyan) 32%, transparent);
+  }
+}
+
+/* اسکرول‌بارِ درونِ کارت‌ها (دفترِ رکوردها، ردِّپا، خطِ جریان) */
+.sk-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--border-accent) 45%, transparent) transparent;
+}
+.sk-scroll::-webkit-scrollbar { width: 9px; height: 9px; }
+.sk-scroll::-webkit-scrollbar-track { background: transparent; }
+.sk-scroll::-webkit-scrollbar-thumb {
+  border: 2px solid transparent;
+  border-radius: 9999px;
+  background-clip: content-box;
+  background-color: color-mix(in srgb, var(--border-accent) 40%, transparent);
+}
+.sk-scroll::-webkit-scrollbar-thumb:hover {
+  background-color: color-mix(in srgb, var(--border-accent) 70%, transparent);
+}
+
+/* متنِ انتخاب‌شده و نشانگرِ ورودی درِ همین تب — رنگِ انتخابِ ویندوز رویِ
+   زمینۀِ تیره خواندن را بد می‌کند؛ از همان hueیِ سطح گرفته می‌شود. */
+[data-testid='sarkhati-page'] ::selection {
+  background-color: color-mix(in srgb, var(--accent-blue) 34%, transparent);
+  color: var(--text-primary);
+}
+[data-testid='sarkhati-page'] input,
+[data-testid='sarkhati-page'] select {
+  caret-color: var(--accent-blue);
 }

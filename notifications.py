@@ -32,6 +32,8 @@ from __future__ import annotations
 
 import re
 
+import codal_periods as CP
+
 SOURCE = "codal"
 SOURCE_LABEL = "کدال (سازمانِ بورس)"
 
@@ -111,7 +113,8 @@ def feed(conn, since=None, levels=None, limit: int = 120) -> dict:
     want = {str(x).strip() for x in (levels or []) if str(x).strip()}
     try:
         rows = conn.execute(
-            "SELECT %s FROM codal_notices ORDER BY publish_date DESC LIMIT ?" % _COLS,
+            ("SELECT %s FROM codal_notices ORDER BY " % _COLS) + CP.pub_order_expr()
+            + " LIMIT ?",
             (max(1, min(int(limit or 120), 2000)) * 3,)).fetchall()
     except Exception as e:
         return {"status": "error", "source": SOURCE, "items": [],
@@ -159,7 +162,8 @@ def sources(conn) -> dict:
     out = []
     try:
         n, newest, fetched = conn.execute(
-            "SELECT COUNT(*), MAX(publish_date), MAX(fetched_at) FROM codal_notices"
+            "SELECT COUNT(*), MAX(" + CP.pub_canon_sql() + "), MAX(fetched_at)"
+                " FROM codal_notices"
         ).fetchone()
         out.append({"source": SOURCE, "label": SOURCE_LABEL, "rows": int(n or 0),
                     "newest_publish": newest, "last_fetch": fetched,

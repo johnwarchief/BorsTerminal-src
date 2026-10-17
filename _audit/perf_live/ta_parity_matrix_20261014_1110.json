@@ -1,0 +1,165 @@
+{
+ "taken_at": "2026-10-14 11:05:42",
+ "ours_source": "api:http://127.0.0.1:8001",
+ "backend_version": {
+  "version": "1.0.87",
+  "tauri": false,
+  "mode": "installed",
+  "instance": "2515efd740a9"
+ },
+ "comparable": true,
+ "not_comparable_reason": null,
+ "ta_day": "1405/07/22",
+ "ta_hour": 1106,
+ "app_asof": {
+  "d_even": 20261014,
+  "h_even": 110524,
+  "client_d_even": 20261014,
+  "client_lag_days": false,
+  "depth": true,
+  "top50": 50,
+  "n": 3019
+ },
+ "rows": [
+  {
+   "ta_row": "m",
+   "ta_label": "کل بازار",
+   "our_key": "all",
+   "metric": "ارزش",
+   "ta_bt": 47612.0,
+   "our_bt": 43320.6,
+   "status": "MISMATCH",
+   "err_pct": -9.01
+  },
+  {
+   "ta_row": "m",
+   "ta_label": "کل بازار",
+   "our_key": "all",
+   "metric": "جریان",
+   "ta_bt": -2036.6,
+   "our_bt": -2022.4,
+   "status": "MISMATCH",
+   "err_pct": -0.7
+  },
+  {
+   "ta_row": "st",
+   "ta_label": "سهام و حق تقدم",
+   "our_key": "stock_right",
+   "metric": "جریان",
+   "ta_bt": -336.3,
+   "our_bt": -335.6,
+   "status": "MATCH",
+   "err_pct": -0.21
+  },
+  {
+   "ta_row": "afl",
+   "ta_label": "سهام و واحدهایِ سهمی",
+   "our_key": "eq_all",
+   "metric": "جریان",
+   "ta_bt": -579.6,
+   "our_bt": -630.1,
+   "status": "MISMATCH",
+   "err_pct": 8.72
+  },
+  {
+   "ta_row": "st",
+   "ta_label": "سهام و حق تقدم",
+   "our_key": "stock_right",
+   "metric": "ارزش",
+   "ta_bt": 32362.5,
+   "our_bt": 32479.5,
+   "status": "MATCH",
+   "err_pct": 0.36
+  },
+  {
+   "ta_row": "sf",
+   "ta_label": "صندوق‌های سهامی و مختلط",
+   "our_key": "eq_fund",
+   "metric": "ارزش",
+   "ta_bt": 7536.9,
+   "our_bt": 3141.8,
+   "status": "MISMATCH",
+   "err_pct": -58.31
+  },
+  {
+   "ta_row": "nsf",
+   "ta_label": "صندوق درآمد ثابت",
+   "our_key": "fixed_fund",
+   "metric": "ارزش",
+   "ta_bt": 7712.6,
+   "our_bt": 7699.3,
+   "status": "MATCH",
+   "err_pct": -0.17
+  },
+  {
+   "ta_row": "lf",
+   "ta_label": "صندوق‌های اهرمی",
+   "our_key": "lev_fund",
+   "metric": "ارزش",
+   "ta_bt": 4602.5,
+   "our_bt": 4605.8,
+   "status": "MATCH",
+   "err_pct": 0.07
+  },
+  {
+   "ta_row": "cf",
+   "ta_label": "صندوق‌های طلا",
+   "our_key": "gold_fund",
+   "metric": "ارزش",
+   "ta_bt": 0.0,
+   "our_bt": 2.2,
+   "status": "NOT_COMPARABLE",
+   "err_pct": null
+  },
+  {
+   "ta_row": "scf",
+   "ta_label": "صندوق‌های نقره",
+   "our_key": "silver_fund",
+   "metric": "ارزش",
+   "ta_bt": 0.0,
+   "our_bt": 0.0,
+   "status": "NOT_COMPARABLE",
+   "err_pct": null
+  },
+  {
+   "ta_row": "afl",
+   "ta_label": "سهام و واحدهایِ سهمی",
+   "our_key": "eq_all",
+   "metric": "ارزش",
+   "ta_bt": 39899.4,
+   "our_bt": 35621.3,
+   "status": "MISMATCH",
+   "err_pct": -10.72
+  }
+ ],
+ "combos": [
+  {
+   "label": "ص.سهامی + درآمدِ ثابت",
+   "ta_bt": 15249.5,
+   "our_bt": 57659.3,
+   "err_pct": 278.11
+  },
+  {
+   "label": "طلا + نقره + کالا",
+   "ta_bt": 0.0,
+   "our_bt": 22744.4,
+   "err_pct": null
+  },
+  {
+   "label": "اهرمی (تنها)",
+   "ta_bt": 4602.5,
+   "our_bt": 4452.2,
+   "err_pct": -3.27
+  }
+ ],
+ "identity": {
+  "i1": {
+   "m": 47611.9830314253,
+   "st+sf+nsf": 47611.9830314253
+  },
+  "i5": {
+   "m": -2036.5850210907,
+   "st+sf+nsf": -2036.5850210905
+  }
+ }
+}

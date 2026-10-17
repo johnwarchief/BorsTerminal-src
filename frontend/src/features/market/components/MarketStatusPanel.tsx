@@ -57,13 +57,13 @@ function Chip({ label, value, tone, title, testId }: {
 const UNIVERSE_LABEL: Record<string, string> = {
   total: 'کلِ تابلو',
   trading: 'در حالِ معامله',
-  quote: 'مظنه بی‌معامله',
-  no_trade: 'بدونِ معاملۀ اخیر',
+  quote: 'قیمت اعلام‌شده، بی‌معامله',
+  no_trade: 'در بازۀ اخیر معامله‌ای ندارد',
   suspended: 'متوقف',
   stale: 'دادهٔ کهنه',
   unknown: 'نامعلوم',
   market_closed: 'بازار بسته',
-  eligible: 'واجدِ غربالگری',
+  eligible: 'واجدِ شرایط غربالگری',
   duplicate_rows: 'ردیفِ تکراری',
   observed_rows: 'نماد دیدۀ‌شده',
 };
@@ -148,7 +148,7 @@ export function MarketStatusPanel() {
         />
         <Chip
           label="اتصال"
-          value={fs.connection === 'ok' ? 'رسید' : fs.connection === 'error' ? 'نمی‌رسد' : 'در راه'}
+          value={fs.connection === 'ok' ? 'متصل' : fs.connection === 'error' ? 'قطع' : 'در حال اتصال'}
           tone={fs.connection === 'ok' ? 'text-accent-green'
             : fs.connection === 'error' ? 'text-accent-red' : 'text-accent-yellow'}
           title={`آخرین پاسخِ فید: ${fmtSpan(feed.dataUpdatedAt ? now - feed.dataUpdatedAt : null)} پیش`}
@@ -157,24 +157,24 @@ export function MarketStatusPanel() {
           label="آخرین دادهٔ بازار"
           value={cycleAgoMs == null ? 'گزارش نشده' : fmtSpan(cycleAgoMs)}
           tone={tone(cycleAgoMs == null || cycleAgoMs < 60_000)}
-          title={`چرخۀ تیکِ سرور: ${d.last_cycle_at ?? '—'} · ویرایش: ${toFaDigits(d.revision ?? 0)}`}
+          title={`چرخۀ تیکِ سرور: ${d.last_cycle_at ?? '—'} · شمارۀ به‌روزرسانی: ${toFaDigits(d.revision ?? 0)}`}
         />
         <Chip
-          label="عوض‌شدنِ عدد"
+          label="آخرین تغییر داده"
           value={feed.revAt ? fmtSpan(now - feed.revAt) : 'نامعلوم'}
           tone={tone(fs.freshness === 'live' || fs.freshness === 'closed')}
           testId="msp-data-age"
           title="سنِ آخرینِ revisionِ دیده‌شده در همین مرورگر — «تازگی» یعنی همین، نه رسیدنِ پاسخ"
         />
         <Chip
-          label="ویرایش"
+          label="شمارۀ به‌روزرسانی"
           value={feed.rev == null ? '—' : toFaDigits(feed.rev)}
           tone="text-text-secondary"
-          title={`ردیفِ نشستِ جاری: ${feed.liveCount == null ? '—' : toFaDigits(feed.liveCount)} از ${feed.total == null ? '—' : toFaDigits(feed.total)}`}
+          title={`ردیف‌هایِ امروزِ تابلو: ${feed.liveCount == null ? '—' : toFaDigits(feed.liveCount)} از ${feed.total == null ? '—' : toFaDigits(feed.total)}`}
         />
         {stalledByServer ? (
           <Chip
-            label="خنک"
+            label="وقفهٔ موقت دریافت"
             value={fmtSec(tick.cooldown_remaining_s ?? null)}
             tone="text-accent-red"
             testId="msp-cooldown"
@@ -206,13 +206,13 @@ export function MarketStatusPanel() {
             <span className="font-black text-text-primary">حلقۀ تیک</span>
             <span>چرخه‌ها: {d.cycles == null ? '—' : toFaDigits(d.cycles)} · بدونِ تغییر: {d.nochange_cycles == null ? '—' : toFaDigits(d.nochange_cycles)}</span>
             <span>مدتِ آخرین چرخه: {tick ? fmtSec(d.last_cycle_s ?? null) : '—'}</span>
-            <span className="num">گوش‌دادن: {tick.listening ? 'بله' : 'نه'} ·
+            <span className="num">دریافت خودکار: {tick.listening ? 'فعال' : 'غیرفعال'} ·
               بی‌تغییری: {fmtSec(tick.since_change_s ?? null)}</span>
-            <span className="num">درخواست‌های خنک‌شده: {tick.cooldown_level == null ? '—' : toFaDigits(tick.cooldown_level)} ·
-              آویزان بیش از ۱۰s: {tick.cycle?.slow_over_10s == null ? '—' : toFaDigits(tick.cycle.slow_over_10s)}</span>
+            <span className="num">درخواست‌های متوقف‌شدۀ موقت: {tick.cooldown_level == null ? '—' : toFaDigits(tick.cooldown_level)} ·
+              چرخه‌های بیش از ۱۰ ثانیه: {tick.cycle?.slow_over_10s == null ? '—' : toFaDigits(tick.cycle.slow_over_10s)}</span>
           </div>
           <div className="flex flex-col gap-0.5">
-            <span className="font-black text-text-primary">جهانِ نمادها</span>
+            <span className="font-black text-text-primary">مجموعهٔ نمادها</span>
             {Object.keys(UNIVERSE_LABEL).filter((k) => counts[k] != null).map((k) => (
               <span key={k} className="num flex justify-between gap-2">
                 <span>{UNIVERSE_LABEL[k]}</span>
@@ -221,10 +221,10 @@ export function MarketStatusPanel() {
             ))}
             {uni.observed_rows ? (
               <span className="text-3xs text-text-muted">
-                مشاهده در ویرایشِ {toFaDigits(uni.revision ?? 0)}
+                مشاهده در به‌روزرسانیِ {toFaDigits(uni.revision ?? 0)}
               </span>
             ) : (
-              <span className="text-3xs text-accent-yellow">جهان هنوز در این اجرا مشاهده نشده</span>
+              <span className="text-3xs text-accent-yellow">فهرست نمادهای این نوبت هنوز دریافت نشده است</span>
             )}
           </div>
         </div>
