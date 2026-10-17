@@ -146,8 +146,9 @@ def main() -> int:
     base = a.base.rstrip("/")
     from playwright.sync_api import sync_playwright
 
+    shot_err = []
     report = {"tag": a.tag, "base": base, "ts": time.strftime("%Y-%m-%d %H:%M:%S"),
-              "routes": {}}
+              "routes": {}, "screenshotErrors": shot_err}
     with sync_playwright() as pw:
         b = pw.chromium.launch(executable_path=CHROME, headless=True)
         for route in routes:
@@ -176,9 +177,12 @@ def main() -> int:
                     m = load_once(page, base, route, anchor, net[net_len:], errors)
                     m["api"] = len([1 for meth, u in net[net_len:] if "/api/" in u])
                     runs.append(m)
-                    page.screenshot(path=os.path.join(
-                        a.out, "%s_%s_%dx%d_%d.png" % (a.tag, route, w, h, i)),
-                        full_page=(i == 0))
+                    try:
+                        page.screenshot(path=os.path.join(
+                            a.out, "%s_%s_%dx%d_%d.png" % (a.tag, route, w, h, i)),
+                            full_page=(i == 0), timeout=20000, animations="disabled")
+                    except Exception as se:      # تصویرِ نگرفته = نقصِ ابزار است، نه نقصِ صفحه
+                        shot_err.append("%s %dx%d: %s" % (route, w, h, str(se)[:60]))
                 ctx.close()
                 cold, warm = runs[0]["ms"], [r["ms"] for r in runs[1:]] or [runs[0]["ms"]]
                 per_size["%dx%d" % (w, h)] = {

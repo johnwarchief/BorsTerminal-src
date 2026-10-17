@@ -36,7 +36,7 @@ export function AccountControls({ layout }: { layout: 'rail' | 'card' | 'sheet' 
           type="button"
           onClick={() => setUpdateOpen(true)}
           data-testid="app-update-btn"
-          className="rounded-lg border border-border-c bg-bg-card/60 p-1.5 text-xs text-text-secondary transition-all hover:border-neon-cyan hover:text-neon-cyan"
+          className="min-h-[24px] min-w-[24px] rounded-lg border border-border-c bg-bg-card/60 p-1.5 text-xs text-text-secondary transition-all hover:border-neon-cyan hover:text-neon-cyan"
           title="به‌روزرسانی ترمینال"
           aria-label="به‌روزرسانی ترمینال"
         >
@@ -46,7 +46,7 @@ export function AccountControls({ layout }: { layout: 'rail' | 'card' | 'sheet' 
           type="button"
           onClick={() => setSettingsOpen(true)}
           data-testid="user-settings-btn"
-          className="rounded-lg border border-border-c bg-bg-card/60 p-1.5 text-xs text-text-secondary transition-all hover:border-border-accent hover:text-accent-blue"
+          className="min-h-[24px] min-w-[24px] rounded-lg border border-border-c bg-bg-card/60 p-1.5 text-xs text-text-secondary transition-all hover:border-border-accent hover:text-accent-blue"
           title={`تنظیمات کاربر: ${username}`}
         >
           ⚙
@@ -54,7 +54,7 @@ export function AccountControls({ layout }: { layout: 'rail' | 'card' | 'sheet' 
         <button
           type="button"
           onClick={logout}
-          className="rounded-lg border border-border-c bg-bg-card/60 p-1.5 text-xs text-accent-red transition-all hover:border-accent-red/40 hover:bg-accent-red/10"
+          className="min-h-[24px] min-w-[24px] rounded-lg border border-border-c bg-bg-card/60 p-1.5 text-xs text-accent-red transition-all hover:border-accent-red/40 hover:bg-accent-red/10"
           title="خروج از حساب"
         >
           ⎋
@@ -117,7 +117,7 @@ export function AccountControls({ layout }: { layout: 'rail' | 'card' | 'sheet' 
         <button
           type="button"
           onClick={logout}
-          className="rounded border border-transparent px-1 text-2xs text-accent-red hover:border-accent-red/40 hover:bg-accent-red/10 transition-colors"
+          className="min-h-[24px] rounded border border-transparent px-1 text-2xs text-accent-red hover:border-accent-red/40 hover:bg-accent-red/10 transition-colors"
           title="خروج از حساب"
         >
           خروج ⎋

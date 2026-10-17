@@ -106,7 +106,7 @@ function NoticeRow({ n, read, onOpen }: { n: NoticeItem; read: boolean; onOpen: 
             rel="noreferrer noopener"
             onClick={onOpen}
             data-testid="notice-open"
-            className="rounded-md border border-border-c px-1.5 py-0.5 text-3xs font-bold text-accent-blue hover:border-accent-blue max-md:inline-flex max-md:min-h-[40px] max-md:min-w-[44px] max-md:items-center max-md:justify-center"
+            className="min-h-[24px] rounded-md border border-border-c px-1.5 py-0.5 text-3xs font-bold text-accent-blue hover:border-accent-blue max-md:inline-flex max-md:min-h-[40px] max-md:min-w-[44px] max-md:items-center max-md:justify-center"
             title="درِ خودِ کدال باز می‌شود (لینکِ اصلیِ اطلاعیه)"
           >
             منبع ↗
@@ -115,7 +115,7 @@ function NoticeRow({ n, read, onOpen }: { n: NoticeItem; read: boolean; onOpen: 
             <span className="text-3xs text-text-muted" data-testid="notice-read-mark">خوانده شد</span>
           ) : (
             <button type="button" onClick={onOpen} data-testid="notice-mark"
-                    className="rounded-md border border-border-c px-1.5 py-0.5 text-3xs text-text-muted hover:text-text-primary max-md:min-h-[40px] max-md:min-w-[44px]">
+                    className="min-h-[24px] rounded-md border border-border-c px-1.5 py-0.5 text-3xs text-text-muted hover:text-text-primary max-md:min-h-[40px] max-md:min-w-[44px]">
               خوانده شد
             </button>
           )}
@@ -181,7 +181,7 @@ export default function NotificationsPage() {
           </label>
           <button type="button" data-testid="notice-mark-all"
                   onClick={() => prefs.markAllRead(visible.map((n) => String(n.id)))}
-                  className="rounded-md border border-border-c px-1.5 py-0.5 text-3xs font-bold text-text-secondary hover:text-text-primary">
+                  className="min-h-[24px] rounded-md border border-border-c px-1.5 py-0.5 text-3xs font-bold text-text-secondary hover:text-text-primary">
             خوانده‌شدنِ همه
           </button>
         </span>
@@ -193,7 +193,7 @@ export default function NotificationsPage() {
         {Object.entries(LEVEL_FA).map(([k, lbl]) => (
           <button key={k} type="button" data-testid={`notice-level-${k}`} aria-pressed={prefs.levels.includes(k)}
                   onClick={() => prefs.toggleLevel(k)}
-                  className={`rounded-full border px-2 py-0.5 font-bold transition-colors ${
+                  className={`min-h-[24px] rounded-full border px-2 py-0.5 font-bold transition-colors ${
                     prefs.levels.includes(k) ? LEVEL_TONE[k] : 'border-border-c bg-bg-primary text-text-muted'
                   }`}>
             {lbl}
@@ -203,7 +203,7 @@ export default function NotificationsPage() {
         {Object.entries(KIND_FA).map(([k, lbl]) => (
           <button key={k} type="button" data-testid={`notice-kind-${k}`} aria-pressed={prefs.kinds.includes(k)}
                   onClick={() => prefs.toggleKind(k)}
-                  className={`rounded-full border px-2 py-0.5 font-bold transition-colors ${
+                  className={`min-h-[24px] rounded-full border px-2 py-0.5 font-bold transition-colors ${
                     prefs.kinds.includes(k) ? 'border-accent-blue/60 bg-accent-blue/15 text-accent-blue'
                                             : 'border-border-c bg-bg-primary text-text-muted'
                   }`}>
