@@ -14,8 +14,12 @@ export function SymbolContextStrip() {
   const togglePin = useSymbolStore((s) => s.togglePin);
   const clearSymbol = useSymbolStore((s) => s.clearSymbol);
 
-  const rawRow = useInspectorRawRow();
-  const board = useInspectorBoard();
+  // نوارِ بی‌نماد هیچ چیز نمی‌فرمایاند، پس نباید خوراکِ تابلو را هم بخواهد:
+  // سنجشِ مستقیمِ ۱۳×۷۶۸ — همینِ دو فراخوانِ بی‌گیت، GET /api/market را
+  // رویِ هرِ نه مسیر می‌انداخت وِ پرسش‌هایِ خودِ صفحه را پشتِ آن می‌چرخاند.
+  const want = symbol.length > 0;
+  const rawRow = useInspectorRawRow({ enabled: want });
+  const board = useInspectorBoard({ enabled: want });
   const veto = useSymbolVeto(symbol);
 
   const location = useLocation();
@@ -33,7 +37,7 @@ export function SymbolContextStrip() {
   const routes = [
     { id: 'technical', label: 'تکنیکال', path: `/technical/${encodeURIComponent(symbol)}` },
     { id: 'fundamental', label: 'بنیادی', path: `/fundamental/${encodeURIComponent(symbol)}` },
-    { id: 'master', label: 'استراتژی FTS', path: `/master/${encodeURIComponent(symbol)}` },
+    { id: 'master', label: 'مستر FTS', path: `/master/${encodeURIComponent(symbol)}` },
     { id: 'strategy-tree', label: 'درخت FTS', path: `/strategy-tree/${encodeURIComponent(symbol)}` },
     { id: 'market', label: 'تابلو', path: '/market' },
   ];
@@ -42,7 +46,7 @@ export function SymbolContextStrip() {
     <div
       role="region"
       aria-label={`اطلاعات نماد ${symbol}`}
-      className="symbol-strip-bar sticky top-9 z-30 flex min-h-[38px] w-full flex-wrap items-center justify-between gap-2 border-b border-border-c/70 bg-bg-secondary/95 px-3 py-1 text-xs backdrop-blur-md shadow-xs transition-all duration-150"
+      className="sticky top-9 z-30 flex min-h-[38px] w-full flex-wrap items-center justify-between gap-2 border-b border-border-c/70 bg-bg-secondary/95 px-3 py-1 text-xs backdrop-blur-md shadow-xs transition-all duration-150"
     >
       {/* سمت راست (شروع): شناسه و مشخصات نماد */}
       <div className="flex flex-wrap items-center gap-2">
@@ -187,8 +191,8 @@ export function SymbolContextStrip() {
         <button
           type="button"
           onClick={clearSymbol}
-          title="بستن نوار اطلاعات نماد"
-          aria-label="بستن نوار اطلاعات نماد"
+          title="بستن کانتکست نماد"
+          aria-label="بستن کانتکست نماد"
           className="rounded-md border border-border-c/60 p-1 text-2xs text-text-muted transition-colors hover:border-accent-red/50 hover:bg-accent-red/10 hover:text-accent-red"
         >
           ✕

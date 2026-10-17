@@ -182,8 +182,6 @@ export function SymbolInspector() {
   const clearSymbol = useSymbolStore((s) => s.clearSymbol);
   const togglePin = useSymbolStore((s) => s.togglePin);
   const pinned = useSymbolStore((s) => s.pinned);
-  const row = useInspectorBoard();
-  const feed = useMarketFeed();
   const { pathname } = useLocation();
   const stageIdx = stageIndexForPath(pathname);
   // نشانی منبعِ نماد هم هست. پیش‌تر این پنل فقط استور را می‌خواند، پس هر
@@ -196,6 +194,13 @@ export function SymbolInspector() {
     try { return decodeURIComponent(m[1]); } catch { return m[1]; }
   }, [pathname]);
   const symbol = routeSymbol ?? storedSymbol;
+
+  // فاز D (انتقالِ انتخابی ازِ System 2): پنجره بسته ⇒ هیچ‌کدام ازِ پرسش‌هایِ این
+  // گره نمی‌رود. پنجره درِ DOM می‌ماند، پسِ پیش‌تر باِ هر رندرِ پوسته تابلو،
+  // قیف (۷ تا ۱۱ مگابایت) وِ اسکرینر پرسیده می‌شد.
+  const drawerOpen = symbol.length > 0;
+  const row = useInspectorBoard({ enabled: drawerOpen });
+  const feed = useMarketFeed({ enabled: drawerOpen });
   useEffect(() => {
     if (routeSymbol && routeSymbol !== storedSymbol) setSymbol(routeSymbol);
   }, [routeSymbol, storedSymbol, setSymbol]);
@@ -234,11 +239,11 @@ export function SymbolInspector() {
   // زردِ درانتظار است و نباید واژۀ «وتو» را قرض بگیرد (رأیِ pilot گزینهٔ a،
   // همان قاعدۀ «بی‌داده وتو نیست» که بک‌اند هم به آن گارد دارد).
   const veto = useSymbolVeto(symbol);
-  const rawRow = useInspectorRawRow();
+  const rawRow = useInspectorRawRow({ enabled: drawerOpen });
   /** جایِ خودِ نماد در قیف — از همان پاسخِ /api/funnel که جدول می‌خواند: یکیِ
    *  presetِ فعال (URL > انتخابِ کاربر > افق)، نه `'custom'`ِ ثابت. بی‌این سه سطح
    *  (جدول، dossier، سایدبار) سه مدلِ متفاوت از یک universe را می‌سنجیدند. */
-  const { funnel, request: funnelRequest, error: funnelError, hasData: funnelHasData, retry: funnelRetry } = useFtsFunnel(useActiveFunnelPreset());
+  const { funnel, request: funnelRequest, error: funnelError, hasData: funnelHasData, retry: funnelRetry } = useFtsFunnel(useActiveFunnelPreset(), {}, { enabled: drawerOpen });
   // ردیفِ غنیِ همین نماد از همان پاسخِ غربالگری (یک findsِ اضافی به‌جای پنج تا):
   // مخرجِ I4 و شمارۀِ sales از همین‌جا خوانده می‌شود، نه از یک پرس‌وجویِ تازه.
   const cand = useMemo(() => {
@@ -255,7 +260,7 @@ export function SymbolInspector() {
    *  شاخصِ همین نماد را عوض می‌کرد (رأیِ مالک ۱۴۰۵-۰۷-۱۹: «اصلاً نباید ربطی
    *  داشته باشن»). اسکرینر کلِ جامعۀ غربالگری را یک‌جا می‌سنجد — همان اعداد،
    *  بی‌وابستگی به فیلترِ تابلو. درخواستِ این‌جا تازه نیست: همان کلیدِ کشِ تب. */
-  const screenRes = useFtsScreen(0);
+  const screenRes = useFtsScreen(0, { enabled: drawerOpen });
   const screen = useMemo(() => {
     const rows = screenRes.data?.data;
     if (!rows?.length || !symbol) return veto.screen;

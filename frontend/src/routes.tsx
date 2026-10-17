@@ -40,7 +40,10 @@ export const mainRoutes: RouteObject[] = [
     path: 'strategy-tree/:symbol?',
     element: page(() => import('@features/master/routes/StrategyTreePage')),
   },
-  { path: 'portfolio', element: page(() => import('@features/portfolio/routes/PortfolioPage')) },
+  // فاز D (انتقالِ انتخابی): «سیگنال پرتفوی {symbol}» نماد می‌خواهد ولی تاِ اینِ دور
+  // تنها ازِ استورِ سراسری خوانده می‌شد، پس آنِ بلوک ازِ بیرون آدرس‌پذیر نبود و
+  // پیوندِ «بازکردنِ نماد درِ پرتفوی» بی‌معنا می‌ماند. نشانی برنده است.
+  { path: 'portfolio/:symbol?', element: page(() => import('@features/portfolio/routes/PortfolioPage')) },
   // مأموریت 2026-10-17: «سرخطی» مقصدِ مستقل است — اتصال، سفارش، زمان‌بندی،
   // پیگیری، ریسک و پایش درِ یکِ صفحه. پنلِ معامله درِ دیده‌بان هم می‌ماند
   // (`WatchSummaryPanel`) تا هیچ مقصدِ پیشینی نبکشد.

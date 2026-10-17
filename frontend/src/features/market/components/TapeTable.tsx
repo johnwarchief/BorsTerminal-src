@@ -6,20 +6,15 @@ import type { MarketRow } from '@shared/types/marketRow';
 import { billionRialText, fmtInt, fmtPct, toBillionRial, toFaDigits } from '@shared/lib/fmt';
 import { EmptyState } from '@shared/components/EmptyState';
 import { FlashNum } from '@shared/components/FlashNum';
-import {
-  STRONG_CLOCK_HINT,
-  detectBoxExit,
-  detectGoldenHour,
-  detectStrongHour,
-  detectSweep,
-  lastCloseDiff,
-} from '../lib/tapePatterns';
+import { lastCloseDiff } from '../lib/tapePatterns';
 import { FTS_VOL_RATIO_HOT, buyPerCapitaMt, sellPerCapitaMt } from '../lib/tapeFts';
 import { patternBadges } from '../lib/tapeBadges';
 import { BuySellCell } from './BuySellCell';
 import { LIMIT_PCT, useTapeStore } from '../stores/tapeStore';
 import SymbolSelectBox from '@shared/components/SymbolSelectBox';
 import WatchlistStar from '@shared/components/WatchlistStar';
+import { MicroBadge } from './MicroBadge';
+import { pctTone, rowTooltip } from '../lib/tapeRowTone';
 
 type SortKey =
   | 'symbol'
@@ -129,62 +124,6 @@ function sortVal(r: MarketRow, key: SortKey): number | string {
   }
 }
 
-/** رنگ ردیف از روی جهت و صف -- فقط رنگ متن، بدون بکس‌های درشت */
-function pctTone(pct: number | null | undefined): string {
-  if (pct == null) return 'text-text-muted';
-  if (pct >= LIMIT_PCT) return 'text-accent-green font-bold';
-  if (pct > 0) return 'text-accent-green';
-  if (pct <= -LIMIT_PCT) return 'text-accent-red font-bold';
-  if (pct < 0) return 'text-accent-red';
-  return 'text-text-secondary';
-}
-
-/** پالتِ بج‌هایِ تابلو — صادر شده تا جدولِ غربالگری هم *همان* برچسب‌ها را با
- *  همان رنگ بدهد (رأیِ مالک ۱۴۰۵-۰۷-۱۹: «همون برچسب‌های تابلوخوانی») و نه
- *  ترجمۀ دومی از них. */
-export const MICRO_TONES = {
-  violet: 'bg-purple-100 text-purple-950 border border-purple-300 dark:bg-[#8b5cf6]/25 dark:text-[#ddd6fe] dark:border-[#8b5cf6]/40',
-  amber: 'bg-amber-100 text-amber-950 border border-amber-300 dark:bg-accent-yellow/25 dark:text-[#fef08a] dark:border-accent-yellow/45',
-  cyan: 'bg-sky-100 text-sky-950 border border-sky-300 dark:bg-neon-cyan/20 dark:text-[#a5f3fc] dark:border-neon-cyan/40',
-  emerald: 'bg-emerald-100 text-emerald-950 border border-emerald-300 dark:bg-accent-green/20 dark:text-[#bbf7d0] dark:border-accent-green/40',
-  green: 'bg-green-100 text-green-950 border border-green-300 dark:bg-accent-green/20 dark:text-[#bbf7d0] dark:border-accent-green/40',
-  red: 'bg-red-100 text-red-950 border border-red-300 dark:bg-accent-red/20 dark:text-[#fecaca] dark:border-accent-red/40',
-  gray: 'bg-slate-200 text-slate-900 border border-slate-300 dark:bg-bg-card/90 dark:text-text-primary dark:border-border-c',
-} as const;
-
-export type MicroTone = keyof typeof MICRO_TONES;
-
-/** میکرو-بج متنی های‌دنسیتی با کنتراست و خوانایی بالا؛ جزئیات عددی در title (Tooltip) هر بج */
-export function MicroBadge({ pattern, tone, title, children }: { pattern: string; tone: MicroTone; title: string; children: React.ReactNode }) {
-  return (
-    <span
-      data-testid={`badge-${pattern}`}
-      data-pattern={pattern}
-      title={title}
-      className={`shrink-0 inline-flex items-center justify-center rounded-md px-1 py-px text-3xs font-bold leading-none tracking-tight shadow-2xs whitespace-nowrap select-none ${MICRO_TONES[tone]}`}
-    >
-      {children}
-    </span>
-  );
-}
-
-/** tooltip یکپارچهٔ ردیف: جزئیات عددی که از چشمِ بج‌ها برداشته شده */
-export function rowTooltip(r: MarketRow): string {
-  const bits: string[] = [];
-  if (typeof r.vol_ratio === 'number' && Number.isFinite(r.vol_ratio)) {
-    bits.push(`حجم ${toFaDigits(r.vol_ratio.toFixed(1))} برابر حجم ماهانه`);
-  }
-  const diff = lastCloseDiff(r);
-  if (diff != null) bits.push(`اختلاف آخرین و پایانی ${fmtPct(diff * 100)}`);
-  const active: string[] = [];
-  if (detectStrongHour(r)) active.push(`ساعت قوی (${STRONG_CLOCK_HINT})`);
-  else if (detectGoldenHour(r)) active.push('ساعت طلایی');
-  else if (r.f_clock) active.push('الگوی ساعت');
-  if (detectSweep(r)) active.push('کف‌روبی');
-  if (detectBoxExit(r)) active.push('خروج از باکس');
-  if (active.length) bits.push(`اعتبار الگو: ${active.join('، ')}`);
-  return bits.join(' · ');
-}
 
 export const TapeRow = memo(function TapeRow({
   row,

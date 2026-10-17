@@ -9,6 +9,8 @@ import { fmtInt, toFaDigits } from '@shared/lib/fmt';
 import { fmtAge } from '@shared/lib/time';
 import { FlashNum } from '@shared/components/FlashNum';
 import { useSymbolStore } from '@shared/stores/symbolStore';
+import { useParams } from 'react-router';
+import { resolveSymbolParam } from '@shared/lib/symbolParam';
 import { publishSignal } from '@shared/lib/signalBus';
 import { useMarketCloses, usePortfolio } from '../api/usePortfolio';
 import { portfolioSignal, stopAsNumber } from '../model/portfolioSignals';
@@ -60,7 +62,10 @@ function dcaLabel(fib1: { lo: number | null; hi: number | null } | null, fib2: {
 }
 
 export default function PortfolioPage() {
-  const symbol = useSymbolStore((s) => s.symbol);
+  const storedSymbol = useSymbolStore((s) => s.symbol);
+  const routeParams = useParams();
+  // `/portfolio/<symbol>`: نشانی ازِ استور برنده‌تر است (آزمونِ symbol-url-param).
+  const symbol = resolveSymbolParam({ path: routeParams.symbol, stored: storedSymbol });
   const setSymbol = useSymbolStore((s) => s.setSymbol);
   const portfolio = usePortfolio();
   const closes = useMarketCloses();

@@ -16,7 +16,10 @@ export function findBoardRow<T extends { symbol: string }>(rows: T[], symbol: st
 }
 
 export function useSymbolFlow(symbol: string) {
-  const { data, isLoading } = useMarketFeed();
+  // بی‌نماد، نمودارِ جریان هیچ چیزی برایِ نشان دادن ندارد؛ پس خوراکِ تابلو هم
+  // پرسیده نمی‌شود (مصرف‌کنندۀِ اینِ هوک درِ پنجرۀِ جزئیات است، وِ آن پنجره
+  // بسته هم درِ DOM می‌ماند).
+  const { data, isLoading } = useMarketFeed({ enabled: symbol.length > 0 });
   const [buckets, setBuckets] = useState<FlowBucket[]>(() => readFlow(symbol));
   const stampRef = useRef('');
 
