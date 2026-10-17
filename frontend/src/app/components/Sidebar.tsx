@@ -96,7 +96,7 @@ export function Sidebar() {
         </div>
         <div className={collapsed ? 'hidden' : 'min-w-0'}>
           <span className="block text-xs font-black text-text-primary truncate">ترمینال بورس</span>
-          <span className="block text-[9px] tracking-wider text-text-muted truncate">FTS v2.1</span>
+          <span className="block text-3xs tracking-wider text-text-muted truncate">FTS v2.1</span>
         </div>
         <button
           type="button"
@@ -114,7 +114,7 @@ export function Sidebar() {
         {NAV_SECTIONS.map((sec, secIdx) => (
           <div key={sec.title} className="flex flex-col gap-0.5">
             {!collapsed ? (
-              <div className="px-2 pt-1 pb-0.5 text-[10px] font-black uppercase tracking-wider text-text-muted select-none">
+              <div className="px-2 pt-1 pb-0.5 text-3xs font-black uppercase tracking-wider text-text-muted select-none">
                 {sec.title}
               </div>
             ) : secIdx > 0 ? (

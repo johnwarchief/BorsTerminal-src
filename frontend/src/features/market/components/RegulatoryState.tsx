@@ -100,7 +100,7 @@ export function RegulatoryState({
       </div>
 
       <details className="mt-0.5">
-        <summary className="cursor-pointer select-none text-[9.5px] text-text-muted">جزئیات</summary>
+        <summary className="cursor-pointer select-none text-3xs text-text-muted">جزئیات</summary>
         <ul className="mt-0.5 flex flex-col gap-0.5 ps-3 text-3xs text-text-secondary">
           {titled ? (
             <li>

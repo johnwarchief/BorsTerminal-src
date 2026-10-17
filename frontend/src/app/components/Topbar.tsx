@@ -138,7 +138,7 @@ function NoticeBell() {
     >
       <BellIcon size={13} className="text-accent-yellow" />
       {known && unread > 0 ? (
-        <span className="num rounded-full bg-accent-red/20 px-1 text-[10px] font-black text-accent-red"
+        <span className="num rounded-full bg-accent-red/20 px-1 text-3xs font-black text-accent-red"
               data-testid="topbar-notifications-count">
           {toFaDigits(unread)}
         </span>

@@ -932,7 +932,7 @@ export function StageRow({
               {entry.assemblyVeto ? (
                 <span
                   data-testid={`funnel-assembly-veto-${entry.symbol}`}
-                  className="shrink-0 rounded border border-accent-red/40 bg-accent-red/15 px-1 text-[9px] font-bold text-accent-red"
+                  className="shrink-0 rounded border border-accent-red/40 bg-accent-red/15 px-1 text-3xs font-bold text-accent-red"
                   title={entry.assemblyWhy}
                 >
                   وتوی مجمع
@@ -944,7 +944,7 @@ export function StageRow({
               {entry.fundCaveat ? (
                 <span
                   data-testid={`funnel-fund-caveat-${entry.symbol}`}
-                  className="shrink-0 rounded border border-accent-yellow/50 bg-accent-yellow/15 px-1 text-[9px] font-bold text-accent-yellow"
+                  className="shrink-0 rounded border border-accent-yellow/50 bg-accent-yellow/15 px-1 text-3xs font-bold text-accent-yellow"
                   title={entry.why.fundamental || 'عبور با ملاحظات'}
                 >
                   عبور با ملاحظات

@@ -529,19 +529,19 @@ export function MarketPulseBar({ pulse, isLoading = false }: { pulse: MarketPuls
               <span className="h-full bg-slate-400/40" style={{ width: `${((thermo.zero as number) / thermoTotal) * 100}%` }} />
               <span className="h-full bg-accent-red" style={{ width: `${((thermo.negative as number) / thermoTotal) * 100}%` }} />
             </div>
-            <div className="flex items-center justify-between gap-1 text-[11px] font-bold">
+            <div className="flex items-center justify-between gap-1 text-3xs font-bold">
               <span className="inline-flex items-center gap-1 text-accent-green" title="نمادهای مثبت">
-                <span className="text-[10px]">▲</span>
+                <span className="text-3xs">▲</span>
                 <span className="num">{fa(thermo.positive as number, 0)}</span>
                 <span className="text-3xs font-medium text-text-muted">مثبت</span>
               </span>
               <span className="inline-flex items-center gap-1 text-text-secondary" title="نمادهای بدون تغییر">
-                <span className="text-[10px]">■</span>
+                <span className="text-3xs">■</span>
                 <span className="num">{fa(thermo.zero as number, 0)}</span>
                 <span className="text-3xs font-medium text-text-muted">خنثی</span>
               </span>
               <span className="inline-flex items-center gap-1 text-accent-red" title="نمادهای منفی">
-                <span className="text-[10px]">▼</span>
+                <span className="text-3xs">▼</span>
                 <span className="num">{fa(thermo.negative as number, 0)}</span>
                 <span className="text-3xs font-medium text-text-muted">منفی</span>
               </span>

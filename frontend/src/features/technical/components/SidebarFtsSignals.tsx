@@ -25,11 +25,11 @@ export function SidebarFtsSignals({ onSelect }: { onSelect: (s: string) => void 
         className="w-full rounded-lg border border-border-c bg-bg-card px-2.5 py-1.5 text-xs text-text-primary outline-none focus:border-border-accent"
       />
 
-      {isLoading ? <span className="px-1 text-[11px] text-text-secondary">در حال اسکن سیگنال‌های FTS...</span> : null}
-      {isError ? <span className="px-1 text-[11px] text-accent-red">خطا در دریافت اسکرینر</span> : null}
+      {isLoading ? <span className="px-1 text-3xs text-text-secondary">در حال اسکن سیگنال‌های FTS...</span> : null}
+      {isError ? <span className="px-1 text-3xs text-accent-red">خطا در دریافت اسکرینر</span> : null}
 
       {!isLoading && !isError && rows.length === 0 ? (
-        <span className="px-1 text-[11px] text-text-muted" data-testid="sidebar-fts-empty">
+        <span className="px-1 text-3xs text-text-muted" data-testid="sidebar-fts-empty">
           ستاپ فعالی برای کل بازار گزارش نشده
         </span>
       ) : null}
@@ -48,7 +48,7 @@ export function SidebarFtsSignals({ onSelect }: { onSelect: (s: string) => void 
                   <span className="min-w-0 truncate text-xs font-bold text-text-primary">
                     {r.symbol} <span className="font-normal text-text-muted">{r.name ?? ''}</span>
                   </span>
-                  {r.score != null ? <span className="num shrink-0 text-[10px] text-text-muted">امتیاز {toFaDigits(r.score)}</span> : null}
+                  {r.score != null ? <span className="num shrink-0 text-3xs text-text-muted">امتیاز {toFaDigits(r.score)}</span> : null}
                 </span>
                 <span className="flex flex-wrap gap-1">
                   {tags.map((t) => (

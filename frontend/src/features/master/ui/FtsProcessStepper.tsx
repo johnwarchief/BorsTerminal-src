@@ -70,13 +70,13 @@ export function FtsProcessStepper({
               aria-current={isActive ? 'step' : undefined}
               data-testid={`fts-step-${stage.key}`}
               title={`${stage.page}: ${stage.title} — ${badge.title}`}
-              className={`flex items-center gap-1.5 rounded-xl border px-3 py-2 text-[13px] leading-none transition-colors ${
+              className={`flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs leading-none transition-colors ${
                 isActive
                   ? 'border-accent-blue bg-accent-blue/15 font-black text-accent-blue'
                   : 'border-border-c bg-bg-card/60 font-bold text-text-secondary hover:border-accent-blue/50 hover:text-text-primary'
               }`}
             >
-              <span className={`num grid h-4.5 w-4.5 shrink-0 place-items-center rounded-md border text-[10px] font-black ${
+              <span className={`num grid h-4.5 w-4.5 shrink-0 place-items-center rounded-md border text-3xs font-black ${
                 isActive ? 'border-accent-blue/50 bg-accent-blue/20 text-accent-blue'
                          : 'border-border-c bg-bg-primary/70 text-text-muted'
               }`}>
@@ -84,7 +84,7 @@ export function FtsProcessStepper({
               </span>
               <span className="whitespace-nowrap">{stage.title}</span>
               <span data-testid={`fts-step-count-${stage.key}`}
-                    className={`num shrink-0 rounded-md border px-1.5 py-0.5 text-[11px] font-black ${badge.tone}`}>
+                    className={`num shrink-0 rounded-md border px-1.5 py-0.5 text-3xs font-black ${badge.tone}`}>
                 {badge.text}
               </span>
             </Link>

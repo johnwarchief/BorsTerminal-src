@@ -153,7 +153,7 @@ function SplitFilterChip({
             onClick={handleOpenConfig}
             title={`تنظیم آستانه‌های ${QUICK_LABELS[filter]}`}
             aria-label={`تنظیمات ${QUICK_LABELS[filter]}`}
-            className="flex items-center justify-center ps-1 pe-2 py-0.5 text-[11px] text-text-muted hover:text-accent-blue border-s border-border-c/60 focus:outline-none"
+            className="flex items-center justify-center ps-1 pe-2 py-0.5 text-3xs text-text-muted hover:text-accent-blue border-s border-border-c/60 focus:outline-none"
           >
             ⚙
           </button>
