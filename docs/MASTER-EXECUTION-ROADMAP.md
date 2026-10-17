@@ -1,9 +1,9 @@
 # BorsTerminal — Master Execution Roadmap
 
-> **مرجع ترتیب فعلی کارها — به‌روزرسانی مالک در 2026-10-13:** این سند هم roadmap فعال است و هم ledger تاریخی. ترتیب اجراییِ بخش «Current owner-approved execution order» مرجع فعلی است؛ بخش‌های قدیمی‌ترِ تاریخ‌دار برای حفظ تصمیم‌ها، شواهد و جزئیات فنی باقی می‌مانند و نباید ترتیب‌های تاریخی آن‌ها را جایگزین اولویت فعلی کنند.
+> **مرجع ترتیب فعلی کارها — به‌روزرسانی مالک در 2026-10-17:** این سند هم roadmap فعال است و هم ledger تاریخی. ترتیب اجراییِ بخش «Current owner-approved execution order» مرجع فعلی است؛ بخش‌های قدیمی‌ترِ تاریخ‌دار برای حفظ تصمیم‌ها، شواهد و جزئیات فنی باقی می‌مانند و نباید ترتیب‌های تاریخی آن‌ها را جایگزین اولویت فعلی کنند.
 
 **Status:** Current owner-approved execution order + historical implementation ledger.  
-**Last owner-priority refresh:** 2026-10-13  
+**Last owner-priority refresh:** 2026-10-17  
 **Repository:** `johnwarchief/BorsTerminal-src` — desktop/main source repository, not the Android branch.  
 **Source-of-truth hierarchy:** `docs/README.md`, canonical FTS sources, and explicit owner rulings.
 
@@ -18,13 +18,45 @@ BorsTerminal should become a reliable, data-correct, locally operable trading an
 - Safe execution timing and a separately controlled trading-bot layer.
 - Efficient bulk operations and export across the actual tables.
 - A future local ML research system trained on versioned, time-correct historical data.
+- Source-linked, event-driven price explanations that connect verified CODAL/TSETMC events to daily candles without blocking the market-data path.
 - Desktop and Android builds that share canonical analytical meaning.
 
-## Current owner-approved execution order (2026-10-13)
+## Current owner-approved execution order (2026-10-17)
 
-**Current active gate: close the in-flight Fundamental/CODAL work first.** Do not launch unrelated major workstreams or fragment the active agent across new missions until Fundamental/CODAL closure has passed its real API, browser, and regression gates. Already-assigned work must be preserved, but no new parallel scope should be introduced merely because another task is available.
+**Current active owner priority (2026-10-17): speed first.** The user's highest product priority is low real-world waiting time and responsive behavior, especially from the start of a live market session. The immediate gate is to finish the existing Performance Market Hours verification and capture a reproducible baseline at the next officially confirmed trading-session open (target date: 2026-10-18; verify the official calendar/session time before testing). This priority does not cancel already-assigned Fundamental/CODAL or corporate-action work and does not authorize risky service restarts, release changes, invented data, capability removal, or unverified performance claims. While awaiting a live session, complete safe offline verification and prepare the measurement runbook; preserve existing work and do not start unrelated heavy implementation.
 
-### 1. Finish the current Fundamental/CODAL closure
+### 1. Performance-first: live-market verification and measurable speed
+
+**State: IN PROGRESS / NOT YET ACCEPTED.** The existing branch `mission/system2-perf-market-hours-2026-10-17` at reported commit `6907af9` is a candidate for review, not an accepted merge. Its final-verification report recorded a real paired-browser wire-volume increase from 3,760,680 bytes (gzip level 5) to 5,632,244 bytes (gzip level 1), about **+50%**, while request counts were similar (75 vs. 74 HTTP 200 responses in the reported windows; 304/If-None-Match remained zero). The report also withdrew the earlier funnel p50 claim of 963→30 ms under normal 20-second polling because that run had no cache HITs, and withdrew the CPU-savings claim because the runs were not isolated. A separate package smoke reported 3038→26.6 ms when the body was byte-identical, but that does not by itself prove a benefit in the live UI's normal polling pattern. The full test gate initially ended with 120/123 suites and exit 1; clean, policy-compliant full-gate verification remains required.
+
+The user explicitly prioritizes speed first. Measure the **time the user waits for useful, correct information**, not just an isolated endpoint. Preserve the full universe, FTS logic, polling semantics, chart tools, animations and existing features; performance fixes must not hide slowness by removing capability or showing stale/frozen data as live.
+
+#### Before the next session
+- Review the final verification report and the exact source diff; correct any incorrect assumptions about HTTP validators. In particular, do not treat a POST `304 Not Modified` as normal standards-based conditional-request behavior without a documented and tested protocol.
+- Run the complete offline test gate only when development servers are stopped, as required by `AGENTS.md`. Do not replace the first failing run with a later green retry without recording and explaining both.
+- Compare gzip levels 1 and 5 under the same payload, request sequence, cache state, and resource conditions. Record latency (p50/p95/max), actual wire bytes, CPU/RAM, errors and data freshness. Decide using repeatable results: speed is the primary objective, but claimed CPU savings must be measured and the network/resource trade-off made explicit.
+- Prepare a non-invasive measurement runbook. Do not restart or alter the real port-8000 service; that coordination belongs to System 1. Do not kill processes from other worktrees without identifying ownership and coordinating.
+
+#### Next official market session — target 2026-10-18, calendar/time to be verified
+Capture baseline from before session start through first usable data and the opening period using the normal, permitted data-fetch path and normal polling rate. Verify the official market calendar and exact session time first. Measure:
+- app startup, first valid market response, first usable market board and first usable FTS funnel;
+- `/api/market`, `/api/funnel`, `/api/mstat/board`, Screener and `sync-state` latency with p50/p95/max where sample size permits;
+- source/snapshot timestamp → API response → client receipt → UI/DOM usability, with clock/provenance limitations stated;
+- actual request counts and bytes transferred, cache HIT/MISS/STALE behavior, console errors, timeouts and failed refreshes;
+- CPU/RAM across a defined interval and browser long tasks/scroll responsiveness;
+- cold start versus warm behavior, without adding synthetic traffic to the live data sources.
+
+If the network/firewall or source blocks live data, report `NOT_PROVEN`; do not substitute frozen data or a successful HTTP status for proof of live freshness. No real orders are part of these tests.
+
+#### Acceptance
+- Complete clean test gate and tested build/smoke evidence are attached to the exact commit.
+- The gzip choice is supported by comparable, repeated latency/resource/wire measurements.
+- Cache behavior is verified through the actual client request path and correct HTTP semantics.
+- No unexplained data diff, staleness regression, API-contract change or visible UI regression exists.
+- A live-market report includes exact timestamps, environment, sample sizes and explicit `PASS` / `FAIL` / `NOT_RUN` / `NOT_PROVEN` / `INCONCLUSIVE` states.
+- No merge or release follows until the relevant evidence has been reviewed; service restart and port-8000 discrepancies remain coordinated with System 1.
+
+### 2. Finish the current Fundamental/CODAL closure
 
 Complete the existing work on issuer identity, canonical report selection, reporting periods, units, extraction, five FTS fundamental indicators, coverage, card/funnel/screener parity, stale-response handling, and browser-level verification.
 
@@ -36,7 +68,7 @@ Acceptance means:
 - The remaining changed votes and missing margins are individually explained.
 - Actual browser checks and final test gates are run against the final code state.
 
-### 2. Make Fundamental/CODAL self-updating
+### 3. Make Fundamental/CODAL self-updating
 
 Treat automatic data refresh as part of completing the fundamental subsystem, not as recurring manual agent work.
 
@@ -52,17 +84,11 @@ Required operational behavior:
 
 An in-process worker cannot collect data while the application and worker are stopped. If collection while BorsTerminal is closed is required, separately evaluate a supported Windows scheduled/background worker. Do not claim that intraday events were collected while no collector was running. On restart, reconstruct historical states only from sources that support the required as-of timestamp, and mark reconstructed results as such.
 
-### 3. Complete the already-assigned corporate-action adjustment chain
+### 4. Complete the already-assigned corporate-action adjustment chain
 
 Continue the existing adjustment-engine work without reimplementing the proven math from scratch. Complete typed event ingestion from official TSETMC/CODAL inputs, official event reference prices, contribution/rights offer price where required, canonical event ledger, and safe integration with the chart path.
 
 Use Playwright with Microsoft Edge and the user's already-authenticated Rahavard365 session for a fixed, pre-registered validation set when the session is available. Do not collect credentials or claim live validation without actual browser evidence. Keep unresolved reference-method differences explicit.
-
-### 4. Performance: measure during a real market-open session
-
-Performance work is deferred until the market is open, as requested by the owner. Capture a reproducible live-market baseline before optimizing. Measure startup, first usable data, API/database latency, full-universe filtering, FTS computation, chart/render responsiveness, CPU/RAM, polling frequency, payload size and redundant work.
-
-Optimize from measured bottlenecks; preserve the full analytical universe, indicators, drawing tools, animations and canonical results. Report before/after under the same workload. Synthetic benchmarks alone are not a substitute for live-market measurements.
 
 ### 5. Complete سرخطی / EasyTrader execution foundations
 
@@ -113,7 +139,33 @@ Capture end-of-day snapshots automatically and record intraday state transitions
 
 Keep historical observations immutable. If rules or source records are later revised, create a separately versioned recalculation rather than silently overwriting what the application recorded at the time.
 
-### 9. Local ML data foundation and ML Engine
+### 9. FTS Event Intelligence — event-to-candle context (DISCOVERED / DEFERRED)
+
+**Research reference:** [owengetinfo-design/PokieTicker](https://github.com/owengetinfo-design/PokieTicker), upstream commit reviewed: `c16b7e34e72c2d09bb50d7b3159fa5cd6697fd19` (MIT license declared by the upstream repository). This is an implementation/product reference only; it is not a data source of truth, FTS specification, or a model to import directly.
+
+**Why it belongs:** PokieTicker's most useful ideas for BorsTerminal are news/event markers on candlestick charts, event categories, source-linked explanations of price moves, and historical comparison with similar events. For BorsTerminal, adapt that product pattern to Persian-market evidence: official CODAL disclosures, TSETMC market/supervisor messages and the canonical corporate-action/event ledger. Do not import the upstream database, US-market data pipeline, AI provider assumptions, or its prediction model as-is.
+
+#### Proposed stages
+1. **E0 — Research and contract design (required before implementation):** inventory available canonical event sources, stable instrument identity, event type, publication timestamp, source URL/document ID, correction/amendment lineage, trading-session boundaries, and links to the existing candle/event contracts. Record coverage and missingness; do not invent event times or causes.
+2. **E1 — Non-AI event markers:** show verified events on the existing daily chart with a compact panel for event type, publication time, original document/message, and provenance. Keep current chart APIs/rendering performant and avoid a second competing fetch/poll path.
+3. **E2 — Historical event comparison:** where point-in-time evidence is available, find similar events using event type/text and pre-event market context. Show sample size, selected windows, realized outcome and missing-data limitations. Separate the event's publication time from session/candle time and avoid look-ahead.
+4. **E3 — Optional AI explanation:** only after E1/E2 and source grounding are accepted, generate a non-blocking explanation using retrieved source documents and measured market context. Link every factual claim to a source; describe association, not proven causation. Cache safe results and ensure failure/latency cannot stall market data, chart interaction or FTS decisions.
+
+#### Lessons from the upstream code review — do not copy uncritically
+- Its chart/news workflow is a useful UX reference, but the upstream data pipeline uses Polygon and is not a substitute for canonical Iranian-market data.
+- Its TF-IDF similarity path uses English stop-word settings; Persian text requires its own normalization/tokenization/evaluation.
+- The inspected `train_unified` path splits the concatenated multi-symbol feature frame without first guaranteeing a global chronological sort; this cannot be treated as a valid chronological holdout without correction and proof.
+- In `features.py`, future-return targets are built by comparing shifted closes and immediately casting to integer; terminal rows without future observations can be labelled as down/zero rather than excluded.
+- In `alignment.py`, publication timestamps are reduced to UTC calendar dates before mapping to trading days; session cut-offs and after-hours publication time are not represented. This can attach post-close events to the wrong candle for causal analysis.
+- Therefore, do not adopt its XGBoost predictions or accuracy claims as evidence for FTS. Any later model research must meet this roadmap's point-in-time data and walk-forward requirements.
+
+#### Dependencies and acceptance
+- Dependencies: canonical and traceable CODAL/TSETMC event records; stable instrument identity; verified publication/session-time semantics; existing chart overlay integration; and, for outcome research, the Market Signal Journal / point-in-time dataset.
+- No change to FTS rules, technical calculations, fundamental indicators, screen/funnel decisions or trading execution. Event Intelligence is an evidence/explanation layer only.
+- Do not delay current speed/reliability gates to build this feature. Keep it `DEFERRED` until current market-performance verification and the required canonical event-source prerequisites are accepted.
+- Acceptance requires source-linked browser evidence on real symbols, correct event/candle alignment, explicit handling of corrections/missing data, no invented cause, no material regression in measured startup/market/chart performance, tests for boundary times and stale responses, and clear separation of observed versus reconstructed history.
+
+### 10. Local ML data foundation and ML Engine
 
 The Market Signal Journal is a prerequisite for serious local ML. Build a reproducible historical dataset with versioned feature schemas and separately versioned outcome labels, including configurable horizons such as 3/5/10 trading sessions, returns, maximum favorable/adverse excursion and explicit outcome definitions where data permits.
 
@@ -130,11 +182,11 @@ Hard requirements:
 
 Do not begin by training a large model over an unreliable dataset. First prove data contracts, historical point-in-time integrity, labels and evaluation methodology.
 
-### 10. Android release — independent, strictly gated lane
+### 11. Android release — independent, strictly gated lane
 
 Android release may proceed when all release prerequisites are actually satisfied; it does not have to wait for unrelated desktop feature work. Publish only if secure key custody/backup, CI public-key configuration, signing/verification, version compatibility, rollback, relevant CI and required device/WebView tests are verified. Otherwise keep publication blocked and continue any independent fix. Never generate or publish with an unverified production signing key.
 
-### 11. Final integration and release readiness
+### 12. Final integration and release readiness
 
 After the above workstreams reach their individual acceptance gates, reconcile their working branches/worktrees safely, verify the actual desktop runtime, run the complete regression suite and browser integration tests, and document the exact source commit and artifact. No merge, release, or completion claim is implied by a local commit or green unit tests alone.
 
