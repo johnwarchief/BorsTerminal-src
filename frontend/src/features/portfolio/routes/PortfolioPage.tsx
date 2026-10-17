@@ -9,6 +9,7 @@ import { fmtInt, toFaDigits } from '@shared/lib/fmt';
 import { fmtAge } from '@shared/lib/time';
 import { FlashNum } from '@shared/components/FlashNum';
 import { useSymbolStore } from '@shared/stores/symbolStore';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@shared/components/ui/tabs';
 import { useParams } from 'react-router';
 import { resolveSymbolParam } from '@shared/lib/symbolParam';
 import { publishSignal } from '@shared/lib/signalBus';
@@ -164,34 +165,21 @@ export default function PortfolioPage() {
         mineGate
       ) : (
         <>
-          {/* سوییچر دوگانه */}
-      <div className="flex flex-wrap items-center gap-2" role="tablist" aria-label="انتخاب نمای پرتفوی">
-        <button
-          type="button"
-          role="tab"
-          aria-selected={view === 'target'}
-          onClick={() => setView('target')}
-          className={`rounded-full border px-4 py-1.5 text-xs font-bold transition-colors duration-200 ${
-            view === 'target'
-              ? 'border-neon-cyan/50 bg-neon-cyan/15 text-neon-cyan'
-              : 'border-border-c bg-bg-card text-text-secondary hover:bg-bg-secondary hover:text-text-primary'
-          }`}
-        >
-          پرتفوی هدف
-        </button>
-        <button
-          type="button"
-          role="tab"
-          aria-selected={view === 'current'}
-          onClick={() => setView('current')}
-          className={`rounded-full border px-4 py-1.5 text-xs font-bold transition-colors duration-200 ${
-            view === 'current'
-              ? 'border-neon-cyan/50 bg-neon-cyan/15 text-neon-cyan'
-              : 'border-border-c bg-bg-card text-text-secondary hover:bg-bg-secondary hover:text-text-primary'
-          }`}
-        >
-          پرتفوی فعلی
-        </button>
+          {/* فاز D (انتقالِ انتخابی ازِ System 2): سوییچر ازِ دستِ خودِ اینِ فایل بهِ
+              اصلِ ui/tabs.tsx بسته شد. پیش‌تر role=tab داشت ولی بی‌صفحه‌کلید؛ حالا
+              roving tabindex وِ پیکان/Home/End ازِ خودِ اصل می‌آید
+              (آزمون: __tests__/ui-tabs-a11y.spec.tsx). */}
+      <Tabs value={view} onValueChange={(v) => setView(v as 'target' | 'current')}>
+      <div className="flex flex-wrap items-center gap-2">
+        <TabsList aria-label="انتخاب نمای پرتفوی"
+          className="h-auto gap-1 border-none bg-transparent p-0">
+          <TabsTrigger value="target" className="rounded-full px-4 py-1.5 text-xs font-bold">
+            پرتفوی هدف
+          </TabsTrigger>
+          <TabsTrigger value="current" className="rounded-full px-4 py-1.5 text-xs font-bold">
+            پرتفوی فعلی
+          </TabsTrigger>
+        </TabsList>
         {basketAgeMs > 30_000 ? (
           <span
             data-testid="portfolio-basket-age"
@@ -203,7 +191,7 @@ export default function PortfolioPage() {
         ) : null}
       </div>
 
-      {view === 'target' ? (
+      <TabsContent value="target">
         /* ─── بخش اول: پرتفوی هدف — بدون کارت‌های عریض تکراری، جدول صنایع بالا می‌آید ─── */
         <>
           {/* پنل بالای تب: دونات هدف + سنجهٔ هم‌ترازی (دونات واقعی منحصراً در تب فعلی است) */}
@@ -216,7 +204,9 @@ export default function PortfolioPage() {
 
           <TargetEditModal open={editOpen} onClose={() => setEditOpen(false)} />
         </>
-      ) : (
+      </TabsContent>
+
+      <TabsContent value="current">
         /* ─── بخش دوم: پرتفوی فعلی ─── */
         <>
           {/* چارت دونات پرتفوی واقعی و درصد پر شده از کل سرمایه */}
@@ -431,7 +421,8 @@ export default function PortfolioPage() {
           {/* ربات هم همین‌جا: کاغذی، دستی، و با یکِ سطرِ وضعیت — نه صفحۀ جدا */}
           <BotPanel />
         </>
-      )}
+      </TabsContent>
+      </Tabs>
         </>
       )}
     </div>
