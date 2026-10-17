@@ -9,8 +9,9 @@ interface polls. This probe answers the questions the bench cannot:
      body byte-identical?
   2. Across the TTL, what exactly changes in the body — data, or only the
      `as_of` stamp? (This is why an ETag can exist and still never repeat.)
-  3. Does a conditional request actually return 304 with zero bytes, per
-     method? The interface calls the funnel with POST, which never revalidates.
+  3. Does a conditional request honour RFC 9110 §13.1.2 per method — 304 with
+     zero bytes on GET, 412 on POST? The interface calls the funnel with POST
+     and never sends If-None-Match there, so neither code is on the UI path.
   4. Wire bytes vs decoded bytes per gzip level, with the decoded hash proving
      the level changes the stream and never the payload.
   5. Server RSS and CPU-time deltas around the whole sequence.
@@ -23,6 +24,7 @@ import gzip
 import hashlib
 import io
 import json
+import re
 import subprocess
 import time
 import urllib.error
@@ -62,6 +64,15 @@ def canon_sha(obj):
 
 def raw_sha(b):
     return hashlib.sha256(b).hexdigest()[:16]
+
+
+AGE = re.compile(rb',"cached_for_ms":(\d+)\}$')
+
+
+def split_age(b):
+    """پاسخِ ازِ‌کشِ قیف کلیدِ آخرِ `cached_for_ms` دارد؛ بایت‌هایِ بی‌آن + سن."""
+    m = AGE.search(b)
+    return (b[:m.start()] + b"}", int(m.group(1))) if m else (b, None)
 
 
 def rss_cpu(pid):
@@ -105,12 +116,16 @@ def main():
         if hd.get("content-encoding") == "gzip":
             blob = gzip.decompress(blob)
         dec = json.loads(blob.decode("utf-8")) if blob else None
+        bare, age = split_age(blob)
+        if isinstance(dec, dict):
+            dec.pop("cached_for_ms", None)
         res["steps"].append({"name": name, "method": method, "path": path, "gzip": gz,
                              "ms": ms, "status": status, "wire_bytes": wire,
                              "enc": hd.get("content-encoding", "identity"),
                              "x_cache": hd.get("x-cache", ""), "etag": hd.get("etag", ""),
                              "decoded_bytes": len(blob),
-                             "raw_sha": raw_sha(blob) if blob else "",
+                             "cached_for_ms": age,
+                             "raw_sha": raw_sha(bare) if blob else "",
                              "data_sha": canon_sha(dec) if dec is not None else "",
                              "as_of": (dec or {}).get("as_of") if isinstance(dec, dict) else None})
 
@@ -157,8 +172,12 @@ def main():
             s["funnel-1-cold"]["as_of"] != s["funnel-5-after-ttl"]["as_of"],
         "etag_repeats_within_ttl":
             s["funnel-2-at+2s"]["etag"] == s["funnel-4-at+6s-5s-rhythm"]["etag"],
+        "cached_for_ms_only_on_hits":
+            s["funnel-1-cold"]["cached_for_ms"] is None
+            and all(s[n]["cached_for_ms"] is not None
+                    for n in ("funnel-2-at+2s", "funnel-3-at+4s", "funnel-4-at+6s-5s-rhythm")),
         "get_conditional_returns_304": s["funnel-get-2-conditional"]["status"] == 304,
-        "post_conditional_returns_304": s["funnel-post-conditional"]["status"] == 304,
+        "post_conditional_returns_412": s["funnel-post-conditional"]["status"] == 412,
         "market_304_wire_bytes": s["market-conditional-304"]["wire_bytes"],
         "gzip_decodes_identically_market":
             s["market-identity"]["raw_sha"] == s["market-gzip"]["raw_sha"],
