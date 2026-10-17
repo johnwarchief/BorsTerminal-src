@@ -312,6 +312,10 @@ SUITES = [
     # بند ۷.۱ مأموریت: اسکرینر بقایایِ قیف را می‌خواند و هیچ دروازۀ دورزدن ندارد.
     ('dev/test_screener_funnel_gate_v1.py',
                                       'screener candidate = tape∧technicalfundamental pass; no bypass door'),
+    # قفلِ ساختِ قیف بیرونِ انتظارِ رشتهٔ گرمِ اسکرینر: درِ استارت‌آپ همان رشته
+    # `_run` همان کلید را صدا می‌زند (اسموکِ B2 ۱۸۰ ثانیه ایستاد).
+    ('dev/test_funnel_warm_deadlock_v1.py',
+                                      'funnel build lock never held while waiting for the screener warm-up'),
     # بند ۶ مأموریت: مرکزِ اعلان از کدال، با ادغامِ تکراری و بی‌تيترِ ساختگی.
     ('dev/test_notifications_v1.py',
                                       'notification centre: codal-only source, explainable levels, dedupe'),
