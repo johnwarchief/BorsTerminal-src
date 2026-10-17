@@ -222,7 +222,11 @@ def main():
                     "return d ? getComputedStyle(d).opacity : 'none'; }")
                 print("   %dx%d: بازرسِ نماد تمام‌صفحه (opacity=%s) — کلیکِ تب درِ این"
                       " عرض مسدود است؛ رفتارِ خودِ پوسته، نه این تب" % (w, h, blocked))
-        page.evaluate("() => { try { localStorage.removeItem('bors-symbol'); } catch (e) {} }")
+        # «بی‌نماد» یعنی هیچ منبعی نماد نمی‌دهد: هم استورِ سراسری و هم
+        # stateِ تب‌هایِ فضایِ کاری (bors-workspace-tabs) که درِ فاز ۵ منبعِ
+        # دومِ نمادِ هرِ تب شد وِ پسِ reload آن را برمی‌گرداند.
+        page.evaluate("() => { try { localStorage.removeItem('bors-symbol');"
+                      " localStorage.removeItem('bors-workspace-tabs'); } catch (e) {} }")
         page.set_viewport_size({"width": 900, "height": 700})
         page.reload(wait_until="domcontentloaded")
         page.wait_for_selector("[data-testid='sarkhati-page']", timeout=15000)

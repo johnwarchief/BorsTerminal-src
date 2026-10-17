@@ -157,7 +157,7 @@ export default function PortfolioPage() {
   ];
 
   return (
-    <div className="relative flex w-full max-w-none flex-col gap-4 overflow-clip">
+    <div className="relative flex w-full max-w-none flex-col gap-4 overflow-clip" data-testid="portfolio-page">
       {/* رأیِ مالک (۱۴۰۵-۰۷-۲۲): «دیده‌بان بازار» تبِّ اصلیِ ناوبری است (/watch)،
           پس زیرتبِّ تکراری ازِ این ناحیه بیرون رفت. «واچ‌لیست» (§۱ و §۶task)
           همان‌جا می‌ماند: فهرستِ ستاره‌دارِ خودِ کاربر، نه رصدِ بازار. */}

@@ -147,12 +147,15 @@ def main() -> int:
         b = pw.chromium.launch(executable_path=CHROME, headless=True)
         for route in routes:
             anchor = "[data-testid='%s']" % {
-                "market": "board-table", "market-status": "mstat-page",
-                "technical": "chart-area", "fundamental": "codal-health-strip",
-                "master": "fts-funnel-workspace", "strategy-tree": "tree-canvas",
-                "portfolio": "portfolio-page", "watch": "watch-add-area",
+                // لنگرها ازِ DOMِ واقعیِ همینِ خط کشف شدند: نسخۀِ اولِ اینِ ابزار
+                // ششِ route را رویِ انتخابگرِ بی‌وجود ۲۰ ثانیه تایم‌اوت می‌کرد وِ
+                // بعدِ آن 23,000ms را «زمانِ بارگذاری» گزارش می‌داد — خطایِ سنجه.
+                "market": "market-page", "market-status": "market-status-page",
+                "technical": "technical-sidebar", "fundamental": "fundamental-page",
+                "master": "master-breadcrumb", "strategy-tree": "strategy-tree-overview",
+                "portfolio": "portfolio-page", "watch": "watch-market-workspace",
                 "notifications": "notifications-page", "sarkhati": "sarkhati-page",
-                "engine-lab": "engine-lab-page"}.get(route, "#root")
+                "engine-lab": "engine-lab"}.get(route, "#root")
             per_size = {}
             for (w, h) in sizes:
                 ctx = b.new_context(viewport={"width": w, "height": h})

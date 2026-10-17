@@ -1,8 +1,10 @@
 // widgets/SymbolInspector.tsx -- داک باریک نماد در لبه چپ (فاز 8)
 // دید متمرکز روی تک‌سهم در کنار دید کلان همه تب‌ها.
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router';
 import { useSymbolStore } from '@shared/stores/symbolStore';
+import { useMediaQuery } from '@shared/lib/useMediaQuery';
+import { MEDIA_COMPACT } from '@shared/lib/breakpoints';
 import { useSignalStore, getActiveSignals } from '@shared/stores/signalStore';
 import { billionRialText, fmtHemmat, fmtInt, toBillionRial, toFaDigits } from '@shared/lib/fmt';
 import { fmtPct } from '@shared/lib/fmt';
@@ -307,7 +309,34 @@ export function SymbolInspector() {
             ? `${toFaDigits(verdict.usedSignalIds.length)}/۴ سیگنال`
             : 'بی‌سیگنالِ فعال';
 
-  const open = symbol.length > 0;
+  // زیرِ ۱۰۲۴px اینِ پنل کشویِ تمام‌صفحه است وِ پشتزمینۀِ `fixed inset-0`
+  // کلیکِ هر چیزِ زیرش را می‌گیرد. پیش‌تر کشو با «نمادی وجود دارد» باز می‌شد،
+  // پسِ بازیابیِ نشستیِ نماد (استور، آدرس، یا تبِ فضایِ کاری) صفحه را درِ گوشی
+  // قفل می‌کرد بی‌آنکه کاربر چیزی باز کرده باشد. حالا درِ نمای فشرده فقط باِ
+  // اقدامِ خودِ کاربر باز می‌شود؛ تغییرِ نماد پس ازِ mount یعنی کلیکِ ردیف.
+  const compact = useMediaQuery(MEDIA_COMPACT);
+  const [openedByUser, setOpenedByUser] = useState(false);
+  const [gestured, setGestured] = useState(false);
+  const seenSymbol = useRef(symbol);
+  useEffect(() => {
+    // «اقدامِ کاربر» = pointer/keydownِ واقعی، نه هر تغییرِ نماد. بازیابیِ نشستی
+    // (استور، آدرس، تبِ فضایِ کاری) نماد را پسِ mount عوض می‌کند بی‌آنکه کسی
+    // چیزی باز کرده باشد؛ تشخیصِ «تغییر پسِ mount» تنها، آن را ازِ کلیکِ ردیف
+    // جدا نمی‌کند — پسِ اینِ پرچم لازم است.
+    const mark = () => setGestured(true);
+    window.addEventListener('pointerdown', mark, { capture: true });
+    window.addEventListener('keydown', mark, { capture: true });
+    return () => {
+      window.removeEventListener('pointerdown', mark, { capture: true });
+      window.removeEventListener('keydown', mark, { capture: true });
+    };
+  }, []);
+  useEffect(() => {
+    if (!symbol) setOpenedByUser(false);
+    else if (symbol !== seenSymbol.current && gestured) setOpenedByUser(true);
+    seenSymbol.current = symbol;
+  }, [symbol, gestured]);
+  const open = symbol.length > 0 && (!compact || openedByUser);
   const pct = isVeto ? 0 : verdict ? (verdict.compositeScore + 100) / 2 : 50;
   const gaugeColor = isVeto
     ? 'var(--accent-red)'
