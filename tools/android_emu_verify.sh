@@ -176,14 +176,33 @@ else
   if [ -n "$SOCK" ]; then
     adb forward tcp:9222 "localabstract:$SOCK" >/dev/null 2>&1
     echo "devtools socket: $SOCK (پروسۀ اپ pid=$PID)" >> "$OUT/steps.tsv"
+    # socket درِ /proc/net/unix مدرکِ endpointِ زنده نیست: رویِ AVDِ کند، پروسۀ
+    # رندرِ WebView اول socket را باز می‌کند و بعد سرو می‌کند (شاهدِ رانِ
+    # 38984722035: اولین فریم +56s، کاوشگر زودتر fetch کرد و «fetch failed»
+    # گرفت درحالی‌که اپ سالم بود). پس تا ۲۴۰s صبر می‌کنیم تا /json/version
+    # جواب بدهد؛ اگر pidِ رندر عوض شد، forward را با نامِ تازه می‌بندیم.
+    CDP_UP=no
+    for cdp_i in $(seq 1 24); do
+      if curl -fsS --max-time 6 http://127.0.0.1:9222/json/version >/dev/null 2>&1; then CDP_UP=yes; break; fi
+      sleep 10
+      SOCK2=$(adb shell cat /proc/net/unix 2>/dev/null | tr -d '\r' \
+              | grep -oE "webview_devtools_remote_[0-9]+" | head -1)
+      if [ -n "$SOCK2" ] && [ "$SOCK2" != "$SOCK" ]; then
+        SOCK="$SOCK2"; adb forward tcp:9222 "localabstract:$SOCK" >/dev/null 2>&1
+      fi
+    done
+    echo "cdp_endpoint_up=$CDP_UP پسِ $((cdp_i * 10))s (socket=$SOCK)" >> "$OUT/steps.tsv"
   else
     { echo "== unix sockets (webview/devtools)"; adb shell cat /proc/net/unix 2>/dev/null | grep -iE "webview|devtools" | head -8
       echo "== processes"; adb shell ps -A 2>/dev/null | grep -E "$PKG|webview" | head -6
     } > "$OUT/no_cdp_evidence.txt" 2>&1
   fi
-  sleep 25                      # 16 مگابایت gz ← 70 مگابایت SQLite رویِ AVDِ کند
   dismiss_anr_dialog
-  if wait_for_focus 6; then FOCUS_OK=yes; else FOCUS_OK=no; fi
+  # ترتیب عمدی: endpointِ CDP **پیش ازِ فوکوس** سنجیده می‌شود. رویِ AVDِ کند
+  # rendererِ WebView از پنجره زودتر بالا می‌آید؛ کاوشگرِ پیشین fetch را
+  # هم‌زمانِ لحظۀ فوکوس می‌زد و «fetch failed» می‌گرفت درحالی‌که اپ سالم بود
+  # (شاهدِ 38984722035؛ first frame +56s).
+  if wait_for_focus 8; then FOCUS_OK=yes; else FOCUS_OK=no; fi
   FOCUS_NOTE=$(printf '%s' "${FOCUS:-none}" | tr -d '"' | cut -c1-90)
   adb exec-out screencap -p > "$OUT/$LABEL.png"
   if timeout 300 node --experimental-strip-types tools/android_webview_check.mts         --base http://127.0.0.1:9222 --label "$LABEL" --out "$OUT/webview-$LABEL.json" > "$OUT/webview-$LABEL.log" 2>&1; then
