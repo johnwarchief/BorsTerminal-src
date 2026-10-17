@@ -19,7 +19,7 @@ export function weeklyFromFts(fts: FtsAnalysisData | null | undefined): WeeklyTr
   return {
     uptrend: w === 'up' ? true : w === 'down' || w === 'range' ? false : null,
     belowMa52: hg?.weekly_close != null && hg?.ma52 != null ? hg.weekly_close < hg.ma52 : null,
-    rsi: hg?.weekly_rsi5 ?? null,
+    rsi: hg?.weekly_rsi ?? null,
     basis: fts.trend?.W?.basis ?? null,
     reason: fts.trend?.matrix?.basis?.weekly ?? null,
     matrixDecision: fts.trend?.matrix?.decision ?? null,

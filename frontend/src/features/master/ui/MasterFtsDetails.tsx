@@ -155,7 +155,8 @@ export function MasterFtsDetails({
             ساعت شنی (هفتگی، سازۀ مستقلِ صفحهٔ ۴): {dossier.hourglass.active === null ? 'سنجیده نشد'
               : dossier.hourglass.active ? 'فعال' : 'غیرفعال'}
             {' · '}MA52 هفتگی: {n(dossier.hourglass.ma52)}
-            {' · '}RSI5 هفتگی: {dossier.hourglass.rsi5 != null ? toFaDigits(dossier.hourglass.rsi5) : '—'}
+            {' · '}RSI هفتگی{dossier.hourglass.rsiPeriod != null
+              ? ` (دورۀ ${toFaDigits(dossier.hourglass.rsiPeriod)})` : ''}: {dossier.hourglass.weeklyRsi != null ? toFaDigits(dossier.hourglass.weeklyRsi) : '—'}
           </li>
           <li>{dossier.hourglass.desc ?? '—'}</li>
           {dossier.hourglass.action ? <li>اقدامِ سازۀ ساعت شنی: {dossier.hourglass.action}</li> : null}

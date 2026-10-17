@@ -118,7 +118,7 @@ function fts(weeklyTrend: string, matrix: string, reason = 'مبنا: ۵۲ کن�
       W: { trend: weeklyTrend, basis: weeklyTrend === 'na' ? 'pivots' : 'recent-window' },
       matrix: { decision: matrix, setup: 'JET_OR_PULLBACK_HOLD', desc: '…', basis: { weekly: reason, daily: reason } },
     },
-    hourglass: { active: false, weekly_close: 3700, ma52: 2055, weekly_rsi5: 78, action: 'NORMAL', desc: '' },
+    hourglass: { active: false, weekly_close: 3700, ma52: 2055, weekly_rsi: 78, rsi_period: 7, action: 'NORMAL', desc: '' },
   } as unknown as FtsAnalysisData;
 }
 

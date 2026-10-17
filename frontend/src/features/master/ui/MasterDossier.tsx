@@ -131,7 +131,10 @@ export function MasterDossierPanel({ dossier }: { dossier: MasterDossier }) {
         {d.hourglass.active !== null ? (
           <span>
             ساعت شنی: {d.hourglass.active ? 'فعال' : 'غیرفعال'}
-            {d.hourglass.rsi5 !== null ? ` · RSI هفتگی ${toFaDigits(d.hourglass.rsi5)}` : ''}
+            {d.hourglass.weeklyRsi !== null
+              ? ` · RSI هفتگی${d.hourglass.rsiPeriod != null ? ` (دورۀ ${toFaDigits(d.hourglass.rsiPeriod)})` : ''}: `
+                + `${toFaDigits(d.hourglass.weeklyRsi)}`
+              : ''}
           </span>
         ) : (
           <span>ساعت شنی: سنجیده نشد</span>

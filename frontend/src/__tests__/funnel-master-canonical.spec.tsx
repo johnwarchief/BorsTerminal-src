@@ -54,7 +54,7 @@ const feed = (over: { vetoed?: boolean; code?: string; text?: string; trigger?: 
       },
       jet: { active: true, resistance: 134, ceiling: 139, ath: false, close: 135, pct_above_res: 0.7 },
       exit_engine: { verdict: 'hold', l1: { hard_stop: 127, ma14: 130 } },
-      hourglass: { active: false, action: 'NORMAL', ma52: 128, weekly_rsi5: 61 },
+      hourglass: { active: false, action: 'NORMAL', ma52: 128, weekly_rsi: 61, rsi_period: 7 },
     },
   }) as unknown as FtsPlanFeed;
 

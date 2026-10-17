@@ -105,7 +105,7 @@ export type MasterDossier = {
   };
   levels: { resistance: number | null; ceiling: number | null; hardStop: number | null; ma14: number | null };
   hourglass: { active: boolean | null; action: string | null; ma52: number | null;
-    rsi5: number | null; desc: string | null };
+    weeklyRsi: number | null; rsiPeriod: number | null; desc: string | null };
   /** نماد در جامعۀ قیف بود؟ اگر نه، خطوطِ S/F «سنجیده نشد» می‌مانند */
   inFunnel: boolean;
 };
@@ -197,7 +197,8 @@ export function buildDossier(
     active: fts?.hourglass?.active ?? null,
     action: fts?.hourglass?.action ?? null,
     ma52: fts?.hourglass?.ma52 ?? null,
-    rsi5: fts?.hourglass?.weekly_rsi5 ?? null,
+    weeklyRsi: fts?.hourglass?.weekly_rsi ?? null,
+    rsiPeriod: fts?.hourglass?.rsi_period ?? null,
     desc: fts?.hourglass?.desc ?? null,
   };
 

@@ -216,7 +216,8 @@ for tok in ("swingHighs", "swingLows", "ma14TrailingExit", "sma(", "rsi(", "dete
     ck("لایۀ نگاشت هیچ محاسبۀ اندیکاتوری نمی‌کند: " + tok, tok not in po)
 ck("نگاشت از دهانۀ خودِ سرور می‌خواند",
    "patternInputsFromFts" in po and "jet?.resistance" in po and "third_peak_level" in po
-   and "weekly_rsi5" in po and "floor_date" in po)
+   and "weekly_rsi" in po and "rsi_period" in po and "floor_date" in po
+   and "weekly_rsi5" not in po)
 ck("چارت همان نگاشت را صدا می‌زند و دیگر detect* ندارد",
    "patternInputsFromFts(" in wrapper and "detectJet(" not in wrapper
    and "detectFibZigzag(" not in wrapper)

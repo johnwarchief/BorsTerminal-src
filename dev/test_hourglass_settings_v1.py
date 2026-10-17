@@ -69,8 +69,10 @@ def main():
             series = bars()
             below = CH._fts_analyze_candles("HG-TEST", series)["hourglass"]
             ck("analysis returns active RSI period and threshold", below.get("rsi_period") == 7 and below.get("rsi_oversold") == 30.0)
-            ck("legacy weekly_rsi5 alias equals RSI value for compatibility",
-               below.get("weekly_rsi") is not None and below.get("weekly_rsi") == below.get("weekly_rsi5"))
+            ck("weekly_rsi همان مقدارِ دورۀ فعال است و rsi_period همراهِ آن می‌آید",
+               below.get("weekly_rsi") is not None and below.get("rsi_period") == 7)
+            ck("aliasِ گمراه‌کنندهٔ weekly_rsi5 از payload بیرون رفت (رأیِ مالک 2026-10-18)",
+               "weekly_rsi5" not in below)
             ck("MA52 is only computed with at least 52 weekly bars",
                below.get("weekly_bars", 0) >= 52 and below.get("ma52") is not None)
 
