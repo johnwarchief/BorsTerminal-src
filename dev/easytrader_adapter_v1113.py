@@ -401,7 +401,12 @@ def part_unknown():
     except BrokerError as e:
         ck(e.code is ErrorCode.TIMEOUT and e.is_unknown_result and e.retry_forbidden,
            "timeout ⇒ نامعلومِ غیرقابلِ‌تکرار", e.code.value)
-    ck(len(a.wire_calls) == 1, "یکِ POST — آداپتور خودش retry نمی‌کند", str(a.wire_calls))
+    posts = [w for w in a.wire_calls if str(w).startswith("submit:POST")]
+    ck(len(posts) == 1, "یکِ POST — آداپتور خودش retry نمی‌کند", str(a.wire_calls))
+    ck(str(a.wire_calls[0]).startswith("authenticate")
+       and str(a.wire_calls[-1]).startswith("submit:POST"),
+       "پیش ازِ هر POST یکِ پرسشِ فقط‌خواندنیِ راستی‌آزمایی می‌آید (P0-۱)",
+       str(a.wire_calls))
     remote = a.get_orders()
     hit = [r for r in remote if r.execution_id == "EX-1"]
     ck(len(hit) == 1 and hit[0].broker_order_id,
@@ -601,7 +606,7 @@ def part_door():
            "درِ واقعی انتخاب شد و «فرضیه بودنِ سیم» اعلام می‌شود", str(st)[:90])
         ck(bool(st["blocked_on"]), "دلیلِ بلوکم بودن درِ پاسخ هست", str(st["blocked_on"]))
         d = EX.post_dispatch({"symbol": "فولاد", "price": 100, "quantity": 2,
-                              "confirmed": True})
+                              "confirmed": True, "confirm_phrase": EX._confirm_phrase()})
         ck(d["status"] == "error" and d.get("code") in (ErrorCode.UNSUPPORTED.value,
                                                         ErrorCode.NOT_ORDERABLE.value),
            "dispatch بی‌نشست رد می‌شود و چیزی بیرون نمی‌رود", str(d)[:110])
@@ -616,7 +621,7 @@ def part_door():
         ck(st["live_enabled"] is True and st["capabilities"]["place"] is True,
            "با نشست: live و capabilities ازِ خودِ آداپتور خوانده می‌شود", str(st)[:110])
         prep = EX.post_prepare({"symbol": "فولاد", "price": 12610, "quantity": 1000,
-                                "confirmed": True})
+                                "confirmed": True, "confirm_phrase": EX._confirm_phrase()})
         ck(prep["status"] == "success" and prep["wire_preview"],
            "پیش‌نمایشِ *بدنۀِ واقعی* به UI می‌رسد", str(prep)[:120])
         ck((prep["wire_preview"] or {}).get("order", {}).get("symbolIsin")
@@ -624,7 +629,7 @@ def part_door():
            "پیش‌نمایش همان ISINِ بانکِ محلی را می‌برد (نه حدسِ آداپتور)",
            str(prep["wire_preview"])[:110])
         d = EX.post_dispatch({"symbol": "فولاد", "price": 12610, "quantity": 1000,
-                              "confirmed": True, "execution_id": "door-1"})
+                              "confirmed": True, "confirm_phrase": EX._confirm_phrase(), "execution_id": "door-1"})
         rec = d.get("record") or {}
         ck(d["status"] == "success" and rec.get("status") == "reconciled",
            "پذیرش و *بازخوانی* درِ فهرستِ سرور: SAFE پیش ازِ تأییدِ مسدودکننده "
@@ -651,7 +656,7 @@ def part_door():
         EX._SERVICE.limits = Limits(require_confirmation=False)     # بی‌هیچ سقف
         try:
             d = EX.post_dispatch({"symbol": "فولاد", "price": 12610, "quantity": 1000,
-                                  "confirmed": True, "execution_id": "door-nocfg"})
+                                  "confirmed": True, "confirm_phrase": EX._confirm_phrase(), "execution_id": "door-nocfg"})
             ck(d.get("status") == "error"
                and d.get("code") == ErrorCode.RISK_LIMIT.value
                and d.get("risk_gate") == "not_configured",
@@ -663,9 +668,13 @@ def part_door():
             EX._SERVICE.limits = saved_limits
 
     def halt_aborts_schedule(adapter, broker, ledger):
-        target = int(time.time() * 1000) + 700
+        # فاصلۀ زمانی باید * روشن* بالایِ IMMEDIATE_WINDOW_MS (۲۵۰ms) باشد:
+        # بینِ ساختنِ target و تصمیمِ دروازۀ «فوری»، preflight و شمارشِ ردِّپا هم
+        # زمان می‌برند، و باِ ۳۲۰ms این سنجه رویِ ماشینِ شلوغ بهِ ارسالِ فوری
+        # می‌لزی‌د (خودِ سنجه را سنجیدم، نه محصول را).
+        target = int(time.time() * 1000) + 1200
         d = EX.post_dispatch({"symbol": "فولاد", "price": 12610, "quantity": 1000,
-                              "confirmed": True, "execution_id": "door-sched",
+                              "confirmed": True, "confirm_phrase": EX._confirm_phrase(), "execution_id": "door-sched",
                               "target_wall_ms": target})
         ck(d["status"] == "scheduled" and d.get("wait_ms", 0) > 0,
            "زمان‌بندی درِ همان درخواست نمی‌خوابد — فوراً پاسخ می‌دهد", str(d)[:110])
@@ -710,7 +719,7 @@ def part_door():
         ck(SECRET not in _js(ses) and ses["token_present"] is True,
            "session فقط «هست/نیست» را می‌گوید", str(ses)[:90])
         ck(SECRET not in _js(EX.post_prepare({"symbol": "فولاد", "price": 12610,
-                                             "quantity": 1000, "confirmed": True})),
+                                             "quantity": 1000, "confirmed": True, "confirm_phrase": EX._confirm_phrase()})),
            "پیش‌نمایشِ بدنه token ندارد")
 
     def restart(adapter, broker, ledger):
@@ -736,9 +745,9 @@ def part_door():
         رفعِ ابهام شود. یکِ سطرِ «done» ازِ در بیرون‌اندازنده‌اش می‌کرد — همان
         چیزی که این سنجه now نگهبانش است."""
         broker.script("door-unk", ["timeout"])
-        target = int(time.time() * 1000) + 320
+        target = int(time.time() * 1000) + 1200   # همان دلیلِ بالا
         d = EX.post_dispatch({"symbol": "فولاد", "price": 12610, "quantity": 1000,
-                              "confirmed": True, "execution_id": "door-unk",
+                              "confirmed": True, "confirm_phrase": EX._confirm_phrase(), "execution_id": "door-unk",
                               "target_wall_ms": target})
         ck(d["status"] == "scheduled", "زمان‌بندیِ بی‌ack رویِ راه افتاد", str(d)[:90])
         s = {}
@@ -760,7 +769,7 @@ def part_door():
            "و رکوردِ حافظه هم UNKNOWN است", str(rec.status if rec else None))
         # و تکرارِ همان execution_id هر دو مسیر رد می‌شود: هم preflightِ پایدار
         second = EX.post_dispatch({"symbol": "فولاد", "price": 12610, "quantity": 1000,
-                                   "confirmed": True, "execution_id": "door-unk"})
+                                   "confirmed": True, "confirm_phrase": EX._confirm_phrase(), "execution_id": "door-unk"})
         ck(second["status"] == "error"
            and second.get("code") == ErrorCode.DUPLICATE_GUARD.value,
            "ارسالِ دوبارهٔ همان شناسه رد شد — حتی پسِ نامعلوم بودن", str(second)[:110])
@@ -774,7 +783,7 @@ def part_door():
         def fire(eid, target_ms=None):
             try:
                 body = {"symbol": "فولاد", "price": 12610, "quantity": 1000,
-                        "confirmed": True, "execution_id": eid}
+                        "confirmed": True, "confirm_phrase": EX._confirm_phrase(), "execution_id": eid}
                 if target_ms is not None:
                     body["target_wall_ms"] = int(time.time() * 1000) + target_ms
                 responses.append(EX.post_dispatch(body))

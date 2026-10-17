@@ -410,7 +410,17 @@ app.include_router(api_router())
 
 @app.get("/{full_path:path}", include_in_schema=False)
 def spa_catch_all(full_path: str):
-    """فایل موجود در dist سرو می‌شود؛ هر مسیر دیگر -> index.html (رفرش SPA سالم)."""
+    """فایل موجود در dist سرو می‌شود؛ هر مسیر دیگر -> index.html (رفرش SPA سالم).
+
+    استثنایِ صریح: `api/…` ناشناخته هرگز index.html نمی‌شود. صفحۀ SPA باِ ۲۰۰
+    برایِ یکِ درِ بسته یعنی کلاینت «موفق» ببیند و JSON نبیند — بدترین شکلِ خطا
+    برایِ مصرف‌کنندهٔ برنامه‌ای. مسیرهایِ شناخته‌شده درِ `include_router` جلوتر
+    می‌گیرند، پس اینجا فقطِ همان درهایِ بسته می‌آیند.
+    """
+    if full_path == "api" or full_path.startswith("api/"):
+        return JSONResponse(status_code=404, content={
+            "status": "error", "code": "UNKNOWN_ROUTE",
+            "detail": "چنین اندپوینتی ثبت نشده: /%s" % full_path})
     idx = _get_index_html()
     if idx and full_path:
         candidate = os.path.normpath(os.path.join(_FRONTEND_DIST, full_path))

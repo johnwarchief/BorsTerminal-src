@@ -535,9 +535,15 @@ class ExecutionService:
             _carry_state(rec, hit, "reconciled from broker order list")
             self._audit_state(rec, "reconcile", "found on broker list")
         else:
-            rec.status = ExecutionStatus.FAILED
-            rec.note("reconciled: broker has no such order")
-            self._audit_state(rec, "reconcile", "broker has no such order")
+            # نبودنِ ردیف درِ فهرستِ کارگزاری اثباتِ «نرسیدن» نیست: همان فهرست
+            # ممکن است عقب بماند یا ردیفِ تازه را هنوز نسازد، و تطبیقِ این لایه
+            # باِ `execution_id` فقط وقتی کار می‌کند که ردیف پیش‌تر وصل شده باشد.
+            # پس حالت *ناشناخته* می‌ماند — تنها حالتی که دروازۀ «اول تعیین تکلیف،
+            # بعد هر چیزِ دیگر» را باز نمی‌کند. `FAILED` فقط باِ شواهدِ مثبتِ رد
+            # نوشته می‌شود (پاسخِ صریحِ OMS)، نه باِ غیبت.
+            rec.note("reconcile inconclusive: broker list does not show it "
+                     "(absence is not proof of failure)")
+            self._audit_state(rec, "reconcile", "inconclusive: absent from broker list")
         return rec
 
     # ---- ۴-پ) خواندنِ وضعیت / صف (بندِ ۱۸) ---------------------------------

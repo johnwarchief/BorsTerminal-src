@@ -693,6 +693,11 @@ class EasyTraderAdapter(BrokerAdapter):
         #: ردِّپایِ ترافیک، همه از `redact()` گذشته.
         self.redacted_log: list[dict] = []
         self.last_verdict: WireVerdict | None = None
+        #: توکنی که *یکِ پرسشِ فقط‌خواندنی* آن را راستی‌آزمایی کرده. بی‌این،
+        #: هر رشته‌ای که کاربر بچسباند مجوزِ POSTِ سفارش داشت — یعنی «.Live»
+        #: ازِ صرفِ حضورِ توکن. مقایسه باِ identity است، نه مقدار: باِ
+        #: `set_token`ِ تازه، برچسبِ تأیید خودبه‌خود می‌افتد.
+        self._verified_token: _Secret | None = None
 
     # ---- هویت و وضعیت -----------------------------------------------------
     def __repr__(self) -> str:
@@ -711,6 +716,7 @@ class EasyTraderAdapter(BrokerAdapter):
     def set_token(self, value: Any) -> None:
         """token را درِ حافظه می‌گذارد؛ هیچ‌جا نوشته/لاگ نمی‌شود و `repr` ندارد."""
         self._token = _Secret(value)
+        self._verified_token = None        # توکنِ تازه = راستی‌آزماییِ تازه لازم
         self._session = SessionStatus(SessionState.UNKNOWN if self._token
                                       else SessionState.DISCONNECTED,
                                       checked_at=self._iso())
@@ -721,6 +727,7 @@ class EasyTraderAdapter(BrokerAdapter):
 
     def clear_token(self) -> None:
         self._token = _Secret(None)
+        self._verified_token = None
         self._session = SessionStatus(SessionState.DISCONNECTED, checked_at=self._iso())
 
     def capabilities(self) -> Capabilities:
@@ -823,6 +830,7 @@ class EasyTraderAdapter(BrokerAdapter):
                               broker_message="unreadable body")
         label = _text(_pick_any(env, "accountCode", "clientCode", "code"))
         self._ingest_rows(resp)
+        self._verified_token = self._token
         self._session = SessionStatus(SessionState.CONNECTED,
                                       label or "easytrader-session", self._iso())
         return self._session
@@ -853,6 +861,12 @@ class EasyTraderAdapter(BrokerAdapter):
     # ---- ۸) ارسال ----------------------------------------------------------
     def submit_order(self, draft: OrderDraft) -> ExecutionRecord:
         """یکِ POST، یکِ قصد، بی‌retry. نتیجهٔ نامعلوم ⇒ `BrokerError` نامعلوم."""
+        if self._verified_token is not self._token:
+            # یکِ پرسشِ فقط‌خواندنی (فهرستِ سفارش‌ها) لازم است، وگرنه رشته‌ای که
+            # هیچ‌وقت کارگزاری ندیده‌اش «نشست» حساب می‌شود. خطا یعنی بی‌POST؛
+            # و چون *پیش ازِ ثبتِ قصد* رخ می‌دهد، تلاشِ دوباره پس ازِ رفعِ خطای
+            # احرازی باِ قفلِ تکرار مسدود نمی‌شود.
+            self.authenticate()
         if draft.execution_id in self._intents:
             raise BrokerError(ErrorCode.DUPLICATE_GUARD,
                               "%s پیش‌تر ارسال شده — تکرارِ همان execution_id "

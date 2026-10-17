@@ -205,8 +205,15 @@ def part_unknown():
     ck(r2.status is ExecutionStatus.UNKNOWN_RESULT,
        "5xx هم UNKNOWN_RESULT است (نتیجه نامعلوم، نه شکستِ قطعی)", str(r2.status))
     out2 = s2.reconcile("EX-1")
-    ck(out2.status is ExecutionStatus.FAILED and "no such order" in out2.events[-1],
-       "اگر سرور چیزی نداشت، FAILED با دلیل — نه retry")
+    # قراردادِ تازه (P0-۳ مأموریت): نبودنِ ردیف درِ فهرستِ *احتمالاً ناقص*
+    # شکستِ قطعی نیست. پیش‌تر اینجا FAILED می‌نشست و آن یعنی «این قصد مُرد،
+    # تازه‌اش بساز» — درحالی‌که سفارش ممکن است رویِ سرور باشد. حالا ناشناخته
+    # می‌ماند و دروازۀ تکرار باز نمی‌شود.
+    ck(out2.status is ExecutionStatus.UNKNOWN_RESULT,
+       "نبودن درِ فهرستِ سرور UNKNOWN_RESULT می‌ماند، نه FAILED", str(out2.status))
+    ck(any("inconclusive" in str(e) for e in out2.events),
+       "و بی‌دلیلِ روشن نمی‌ماند: ردیفِ «inconclusive» درِ رکورد است",
+       str(out2.events[-1])[:110])
     ck(len(submits(a2)) == 1, "این هم ارسالِ دوم نمی‌سازد", str(submits(a2)))
 
     s3, a3, _ = svc(script={"EX-1": ["timeout"]}, dry_run=False,
