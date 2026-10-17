@@ -172,9 +172,11 @@ def _fetch_loops_enabled() -> bool:
     رویِ نسخۀِ dev (پورتِ دوم) نیاز است، ولی آن اجرا هم همان `market.db` و همان
     IPِ نسخۀِ نصب‌شده را می‌گیرد؛ دو حلقۀِ تیکِ ۵ثانیه‌ای رویِ یکِ IP یعنی ۴۲۹ و
     یعنی «اعدادِ دیر عوض می‌شوند» درِ همانِ نشستِ واقعیِ مالک. با این درب، dev
-    فقط می‌خواند و چیزی از TSETMC نمی‌گیرد.
+    فقط می‌خواند و چیزی از TSETMC نمی‌گیرد. داوری در `bors_flags.fetch_loops_enabled`
+    است تا مسیرهایِ بیرونِ این فایل (ترمیمِ تاریخچه در api/chart.py) همان درب را ببینند.
     """
-    return (os.environ.get("BORS_NO_FETCH_LOOPS") or "").strip().lower() not in ("1", "true", "yes")
+    import bors_flags
+    return bors_flags.fetch_loops_enabled()
 
 
 @app.on_event("startup")

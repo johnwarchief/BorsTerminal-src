@@ -113,6 +113,10 @@ SUITES = [
     # dry_run بی‌اثر، اولویتِ src حفظِ ردیفِ منتشرشده. نوشتنِ عملیاتی قفل است.
     ('dev/test_history_gap_repair_v1.py',
      'RC4: gap-fill writes only missing dates, idempotent (2nd run = 0), dry_run writes nothing, never fabricates open/last, published row never downgraded by board'),
+    # مرحلۀ B (تطبیقِ چارت، ۱۴۰۵-۰۷-۲۶): `BORS_NO_FETCH_LOOPS=1` باید دربِ *همهٔ*
+    # دریافت‌ها باشد، نه فقط حلقه‌هایِ app — ترمیمِ تاریخچۀِ چارت ازِ این درب رد می‌شد.
+    ('dev/history_repair_env_gate_v1.py',
+     'env contract: no repair thread, no fetch, no timestamp stamp and historyRepairScheduled=False while loops are gated; unchanged single-symbol/15-min behaviour when open'),
     # Phase 4 (مرحلۀِ ۵/۷): موتورِ canonicalِ نوع‌محورِ تعدیل — فرمولِ هر نوع با مثالِ دستی،
     # مرز/نامعتبر/مفقود → incomplete/invalid (بی‌حدس، بی‌خنثیِ خاموش)، زنجیرۀِ deterministic با
     # لنگرِ تاریخِ بیشینه، idempotent، بی‌اعمالِ دوباره، و نمونۀِ واقعیِ مستند (وبصادر/طلا) درِ برابرِ type7.

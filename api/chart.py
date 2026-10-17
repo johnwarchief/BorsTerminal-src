@@ -9,6 +9,7 @@ from bors_config import (DB_PATH, FTS_CONFIG_PATH, FTS_DEFAULTS, MA_WINDOWS,
                          _CAL_CACHE_PATH, _cal_cache, APP_VERSION)
 from tape_flags import JET_LADDER
 import adjustment_engine as AE
+import bors_flags
 import candle_contract
 import corporate_ledger as CL
 import price_basis
@@ -958,7 +959,13 @@ def _schedule_history_repair(symbol, last_date, target_date):
     ۱۵ دقیقه یک‌بار (علامت‌گذاری درونِ همان قفل، پس دو درخواستِ هم‌زمان یکی را
     دوباره نمی‌فرستند)؛ پاسخِ چارت را هرگز نگه نمی‌دارد؛ و از همان
     `fetch_price_history` می‌گذرد که خودش min_interval و سقفِ ۴۲۹ دارد.
+    با `BORS_NO_FETCH_LOOPS=1` هیچ درخواستی بیرون نمی‌رود و علامتِ
+    `historyRepairScheduled` درِ پاسخ `False` می‌ماند — همان دربِ حلقه‌هایِ app،
+    وگرنه اجرایِ dev («فقط بخوان») همان IP را با ترمیمِ پس‌زمینه اشباع می‌کرد.
     """
+    if not bors_flags.fetch_loops_enabled():
+        return False
+
     with _HISTORY_REPAIR_LOCK:
         if not _history_repair_due(last_date, target_date, symbol):
             return False
