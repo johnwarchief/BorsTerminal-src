@@ -25,14 +25,18 @@ async function ask(url: string, body?: unknown): Promise<ProbeReply> {
   try {
     const data = (await resolveLocal(url, 'GET', body)) as {
       status?: string; universe?: { joined?: number };
-      entries?: unknown[]; status_matrix?: Record<string, unknown>;
+      entries?: unknown; status_matrix?: Record<string, unknown>;
     } | null;
     const matrix = data?.status_matrix;
+    // `entries` درِ بارِ قیفِ پخته‌شده dict است (سبدِ نمادها به تفکیکِ مرحله)،
+    // نه array؛ همان‌طور که CI درِ گامِ bundle با truthiness می‌سنجدش.
+    const ent = data?.entries;
     return {
       ok: true,
       status: data?.status ?? null,
       joined: data?.universe?.joined ?? null,
-      entries: Array.isArray(data?.entries) ? data.entries.length : null,
+      entries: Array.isArray(ent) || (ent && typeof ent === 'object')
+        ? Object.keys(ent as object).length : null,
       matrixCells: matrix ? Object.keys(matrix).length : null,
     };
   } catch (e) {

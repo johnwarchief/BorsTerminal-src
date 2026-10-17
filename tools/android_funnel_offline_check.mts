@@ -68,10 +68,13 @@ function makeClient(ws: WebSocket) {
       }, ms);
       pending.set(mid, (v: unknown) => {
         clearTimeout(t);
-        const r = v as { result?: { value?: unknown }; exceptionDetails?: { exception?: { description?: string } } };
+        // پاسخِ Runtime.evaluate دو سطح دارد: {result:{result:{value}}}
+        // (شاهدِ سنجشِ رومیزی: خواندنِ یک‌سطحی هرگز yes نمی‌دید و NOT_PROVEN
+        // جعلی می‌داد حتی وقتی قلاب رویِ صفحه بود)
+        const r = v as { result?: { result?: { value?: unknown }; value?: unknown }; exceptionDetails?: { exception?: { description?: string } } };
         if (r?.exceptionDetails) {
           res({ ok: false, err: r.exceptionDetails.exception?.description || 'exception' });
-        } else res({ ok: true, value: r?.result?.value });
+        } else res({ ok: true, value: r?.result?.result?.value ?? r?.result?.value });
       });
       ws.send(JSON.stringify({ id: mid, method: 'Runtime.evaluate',
         params: { expression: expr, returnByValue: true, awaitPromise: true } }));
@@ -92,7 +95,13 @@ let pages: { url: string; webSocketDebuggerUrl?: string }[] = [];
 try {
   const res = await fetch(`${BASE}/json/list`, { signal: AbortSignal.timeout(10000) });
   if (!res.ok) throw new Error(`CDP list ${res.status}`);
-  pages = ((await res.json()) as any[]).filter((p) => p.type === 'page' && p.webSocketDebuggerUrl);
+  const all = ((await res.json()) as any[]).filter((p) => p.type === 'page' && p.webSocketDebuggerUrl);
+  // صفحۀ واقعیِ برنامه با تک‌صفحه‌ای «pages[0]» پیدا نمی‌شود: مرورگرِ میزبان
+  // صفحه‌هایِ edge://chrome:// و evenِ وب‌سایتِ افزونه هم type='page' دارد
+  // (شاهدِ سنجشِ رومیزی: صفحه‌ای بی‌__borsProbe درِ index ۰ نشست و ادعای
+  // NOT_PROVEN داد درحالی‌که صفحۀ اپ سالم بود). فهرستِ کامل می‌ماند؛ انتخابِ
+  // واقعی با آزمونِ __borsProbe درِ حلقهٔ پایین انجام می‌شود.
+  pages = all;
 } catch (e) {
   report.fatal = `no CDP endpoint: ${(e as Error).message}`;
   mkdirSync(dirname(OUT), { recursive: true });
@@ -107,25 +116,33 @@ if (!pages.length) {
   process.exit(2);
 }
 
-const ws = await connect(pages[0].webSocketDebuggerUrl!);
-const c = makeClient(ws);
-await c.send('Runtime.enable');
-await new Promise((r) => setTimeout(r, WAIT_MS));
-
-// قلابِ probe درِ main.tsx داینامیک ایمپورت می‌شود؛ پیش ازِ پاسخِ بانک ممکن
-// است هنوز ننشسته باشد — پنج تلاشِ رشدیافته بی‌دروغ‌گویی.
+// صفحۀ اپ را با خودِ قلاب پیدا کن، نه با حدسِ URL/ترتیب: مرورگرِ میزبان
+// صفحه‌هایِ edge://chrome:// وبافزونه هم type='page' دارد و هیچ‌کدام
+// pages[0] نیستند. پنج دورِ رشدیافته رویِ همۀِ صفحات — دورِ دوم به بعد
+// برایِ این است که قلابِ داینامیکِ main.tsx هنوز ننشسته باشد.
+let ws: WebSocket | null = null;
+let c: ReturnType<typeof makeClient> | null = null;
 let haveProbe = false;
-for (let i = 1; i <= 5; i++) {
-  const r = await c.evaluate('typeof window.__borsProbe==="object"&&__borsProbe.version===1? "yes":"no"');
-  if (r.ok && r.value === 'yes') { haveProbe = true; break; }
-  await new Promise((r2) => setTimeout(r2, 4000 * i));
+for (let round = 1; round <= 5 && !haveProbe; round++) {
+  for (const pg of pages) {
+    let w: WebSocket | null = null;
+    try {
+      w = await connect(pg.webSocketDebuggerUrl!);
+      const cc = makeClient(w);
+      await cc.send('Runtime.enable');
+      const r = await cc.evaluate('typeof window.__borsProbe==="object"&&__borsProbe.version===1? "yes":"no"');
+      if (r.ok && r.value === 'yes') { ws = w; c = cc; haveProbe = true; break; }
+    } catch { /* صفحۀ مرده/مسدود — بعدی */ }
+    try { w?.close(); } catch { /* بسته باشه کافیه */ }
+  }
+  if (!haveProbe) await new Promise((r2) => setTimeout(r2, 4000 * round));
 }
-if (!haveProbe) {
-  report.fatal = 'window.__borsProbe نیست ⇒ این بیلد با VITE_ANDROID_PROBE ساخته نشده؛ سنجشِ قیفِ آفلاین ازِ این artifact ممکن نیست (NOT_PROVEN، نه FAILِ اپ)';
+report.pages_seen = pages.map((p) => String(p.url).slice(0, 90));
+if (!haveProbe || !ws || !c) {
+  report.fatal = 'window.__borsProbe درِ هیچ page نبود ⇒ این بیلد با VITE_ANDROID_PROBE ساخته نشده یا صفحۀ اپ باز نیست؛ سنجشِ قیفِ آفلاین ممکن نیست (NOT_PROVEN، نه FAILِ اپ)';
   mkdirSync(dirname(OUT), { recursive: true });
   writeFileSync(OUT, JSON.stringify(report, null, 2), 'utf8');
   console.log(JSON.stringify(report));
-  ws.close();
   process.exit(3);
 }
 
