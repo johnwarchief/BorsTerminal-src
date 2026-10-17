@@ -9,6 +9,11 @@
 
 اجرا (ریگ را تازه بالا آورده باشید، کشِ سرد):
   python tools/perf_market_concurrency_probe.py --port 8020 --n 6
+
+همان سنجه برایِ قیف (POST، با کلیدِ سردِ تازه — `logic: or` کلیدِ دیگری می‌سازد):
+  python tools/perf_market_concurrency_probe.py --port 8020 --n 6 --path /api/funnel \
+    --post '{"preset":"trend","chain":[],"logic":"or","fund_mode":"standard",
+             "exceptions":{},"drop_suffix":true}'
 """
 import argparse
 import json
@@ -20,10 +25,12 @@ ap = argparse.ArgumentParser()
 ap.add_argument("--port", type=int, default=8020)
 ap.add_argument("--n", type=int, default=6)
 ap.add_argument("--path", default="/api/market")
+ap.add_argument("--post", default="", help="JSON body -> POST (برایِ /api/funnel)")
 ap.add_argument("--out", default="")
 ARGS = ap.parse_args()
 
 URL = "http://127.0.0.1:%d%s" % (ARGS.port, ARGS.path)
+POST_BODY = ARGS.post.encode() if ARGS.post else None
 results = []
 lock = threading.Lock()
 start = threading.Barrier(ARGS.n + 1)
@@ -33,7 +40,12 @@ def worker(i):
     start.wait()          # همه از یک لحظه بیرون بزنند (بی‌این، سنجه قفل می‌کرد)
     t0 = time.monotonic()
     try:
-        with urllib.request.urlopen(URL, timeout=180) as r:
+        # قیف POST است (`useFtsFunnel.ts:163-172`)، پس سنجهٔ همزمانی‌اش بی‌بدنۀ
+        # JSON اصلاً به همان مسیر نمی‌خورد.
+        req = urllib.request.Request(
+            URL, data=POST_BODY, method="POST",
+            headers={"Content-Type": "application/json"} if POST_BODY else {})
+        with urllib.request.urlopen(req, timeout=180) as r:
             body = r.read()
             rec = {"i": i, "ms": round((time.monotonic() - t0) * 1000, 1),
                    "http": r.status, "bytes": len(body),
@@ -59,6 +71,7 @@ def main():
     built = [r for r in results if r.get("x_cache") == "MISS"]
     out = {
         "port": ARGS.port, "path": ARGS.path, "n": ARGS.n,
+        "method": "POST" if POST_BODY else "GET",
         "wall_ms": wall, "per_request_ms": ms,
         "p50_ms": ms[len(ms) // 2] if ms else None,
         "max_ms": ms[-1] if ms else None,

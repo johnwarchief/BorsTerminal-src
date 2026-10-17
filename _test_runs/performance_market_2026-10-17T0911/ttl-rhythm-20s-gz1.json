@@ -1,0 +1,74 @@
+{
+ "mode": "rhythm",
+ "rhythm_s": 20.0,
+ "polls": 6,
+ "x_cache_counts": {
+  "MISS": 6
+ },
+ "distinct_etags": 6,
+ "distinct_as_of": 6,
+ "ms_list": [
+  958.9,
+  2856.6,
+  840.4,
+  721.3,
+  2084.2,
+  811.4
+ ],
+ "rows": [
+  {
+   "offset_s": 0.0,
+   "ms": 958.9,
+   "status": 200,
+   "bytes": 7489027,
+   "xc": "MISS",
+   "etag": "\"a86e7ac6be490643\"",
+   "as_of": "1792238431"
+  },
+  {
+   "offset_s": 20.96,
+   "ms": 2856.6,
+   "status": 200,
+   "bytes": 7489027,
+   "xc": "MISS",
+   "etag": "\"24d850b12f7b374c\"",
+   "as_of": "1792238454"
+  },
+  {
+   "offset_s": 43.83,
+   "ms": 840.4,
+   "status": 200,
+   "bytes": 7489027,
+   "xc": "MISS",
+   "etag": "\"1276e6a5a12f53b7\"",
+   "as_of": "1792238475"
+  },
+  {
+   "offset_s": 64.67,
+   "ms": 721.3,
+   "status": 200,
+   "bytes": 7489027,
+   "xc": "MISS",
+   "etag": "\"9b343d3e1c5e0f0e\"",
+   "as_of": "1792238496"
+  },
+  {
+   "offset_s": 85.39,
+   "ms": 2084.2,
+   "status": 200,
+   "bytes": 7489027,
+   "xc": "MISS",
+   "etag": "\"805d1993af480793\"",
+   "as_of": "1792238518"
+  },
+  {
+   "offset_s": 107.48,
+   "ms": 811.4,
+   "status": 200,
+   "bytes": 7489027,
+   "xc": "MISS",
+   "etag": "\"336ea77305b46066\"",
+   "as_of": "1792238539"
+  }
+ ]
+}

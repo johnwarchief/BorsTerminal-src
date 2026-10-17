@@ -1,0 +1,79 @@
+{
+ "port": 8020,
+ "path": "/api/funnel",
+ "n": 6,
+ "method": "POST",
+ "wall_ms": 1104.8,
+ "per_request_ms": [
+  1042.4,
+  1071.5,
+  1080.1,
+  1091.0,
+  1098.4,
+  1100.3
+ ],
+ "p50_ms": 1091.0,
+ "max_ms": 1100.3,
+ "builds_observed_MISS": 1,
+ "x_cache_counts": {
+  "HIT": 5,
+  "MISS": 1
+ },
+ "sum_of_server_seconds": 6.48,
+ "results": [
+  {
+   "i": 0,
+   "ms": 1098.4,
+   "http": 200,
+   "bytes": 7959925,
+   "x_cache": "HIT",
+   "etag": "\"fb25650aa3deb5d5\"",
+   "ct": "application/json"
+  },
+  {
+   "i": 1,
+   "ms": 1071.5,
+   "http": 200,
+   "bytes": 7959925,
+   "x_cache": "HIT",
+   "etag": "\"fb25650aa3deb5d5\"",
+   "ct": "application/json"
+  },
+  {
+   "i": 2,
+   "ms": 1042.4,
+   "http": 200,
+   "bytes": 7959925,
+   "x_cache": "MISS",
+   "etag": "\"fb25650aa3deb5d5\"",
+   "ct": "application/json"
+  },
+  {
+   "i": 3,
+   "ms": 1091.0,
+   "http": 200,
+   "bytes": 7959925,
+   "x_cache": "HIT",
+   "etag": "\"fb25650aa3deb5d5\"",
+   "ct": "application/json"
+  },
+  {
+   "i": 4,
+   "ms": 1080.1,
+   "http": 200,
+   "bytes": 7959925,
+   "x_cache": "HIT",
+   "etag": "\"fb25650aa3deb5d5\"",
+   "ct": "application/json"
+  },
+  {
+   "i": 5,
+   "ms": 1100.3,
+   "http": 200,
+   "bytes": 7959925,
+   "x_cache": "HIT",
+   "etag": "\"fb25650aa3deb5d5\"",
+   "ct": "application/json"
+  }
+ ]
+}

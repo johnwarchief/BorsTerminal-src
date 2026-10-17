@@ -30,6 +30,14 @@ const { chromium } = req('playwright-core');
 const BASE = arg('url', 'http://127.0.0.1:8020').replace(/\/$/, '');
 const OUT = resolve(arg('out', join(HERE, '../_audit/perf-market-hours')));
 const WINDOW_S = Number(arg('window', '90'));
+// چقدر برایِ آمدنِ ردیف‌ها صبر کنیم. قبلاً همین `WINDOW_S` بود: وقتی سلکتور
+// ردیف نمی‌خورد (پایین‌تر توضیح داده شده) کلِ پنجره درِ انتظار می‌سوخت.
+const READY_S = Number(arg('ready', '25'));
+// ساعتِ *کلاینت* را می‌توان میخکوب کرد (`--clock=2026-10-17T10:00:00`).
+// چرا لازم است: ریتمِ پولینگ از `isMarketOpen()` رویِ `new Date()`ِ مرورگر
+// می‌آید، و سنجشِ «کارایی درِ ساعتِ معاملات» بیرونِ آن پنجره هیچ وقتِ باز را
+// نمی‌بیند. سرور دست‌نخورده و ساعتِ واقعی می‌ماند؛ فقط صفحه ساعتِ جعلی می‌بیند.
+const CLOCK = arg('clock', '');
 mkdirSync(OUT, { recursive: true });
 
 async function run(label: string, route: string, vw: number, vh: number) {
@@ -42,19 +50,25 @@ async function run(label: string, route: string, vw: number, vh: number) {
   const page = await ctx.newPage();
 
   const reqs: Array<{ url: string; method: string; ms: number; bytes: number;
-    status: number; failed: boolean }> = [];
+    status: number; failed: boolean; xc: string; enc: string; inm: boolean }> = [];
   const t0 = Date.now();
   page.on('response', (res) => {
     const u = res.url();
     if (!u.includes('/api/')) return;
+    const h = res.headers();
     reqs.push({ url: u.replace(BASE, '').slice(0, 90), method: res.request().method(),
-      ms: Date.now() - t0, bytes: Number(res.headers()['content-length'] ?? 0),
-      status: res.status(), failed: !res.ok() });
+      ms: Date.now() - t0, bytes: Number(h['content-length'] ?? 0),
+      status: res.status(), failed: !res.ok(),
+      // `x-cache` ثابت می‌کند پاسخ از کشِ سرور آمده یا ساخته شده؛ `enc` فقط برای
+      // این است که حجمِ واقعیِ سیم (gzip) با حجمِ بدنه اشتباه گرفته نشود؛ `inm`
+      // نشان می‌دهد کلاینت واقعاً If-None-Match فرستاده یا نه.
+      xc: h['x-cache'] ?? '', enc: h['content-encoding'] ?? 'identity',
+      inm: Boolean(res.request().headers()['if-none-match']) });
   });
   page.on('requestfailed', (r) => {
     if (!r.url().includes('/api/')) return;
     reqs.push({ url: r.url().replace(BASE, '').slice(0, 90), method: r.method(),
-      ms: Date.now() - t0, bytes: 0, status: 0, failed: true });
+      ms: Date.now() - t0, bytes: 0, status: 0, failed: true, xc: '', enc: '', inm: false });
   });
   const consoleErrors: string[] = [];
   page.on('console', (m) => { if (m.type() === 'error') consoleErrors.push(m.text().slice(0, 200)); });
@@ -94,18 +108,30 @@ async function run(label: string, route: string, vw: number, vh: number) {
     });
   });
 
+  if (CLOCK) await page.clock.install({ time: new Date(CLOCK) });
   await page.goto(`${BASE}/#${route}`, { waitUntil: 'domcontentloaded' });
-  // آمادگی را از خودِ صفحه می‌گیریم، نه از حدسِ testid
+  // آمادگی را از خودِ صفحه می‌گیریم، نه از حدسِ testid.
+  //
+  // «ردیف» در این اپ `tbody tr` **نیست**: تابلو با div/span رندر می‌شود و
+  // مجازی‌سازی دارد، پس آن سلکتور همیشه صفر می‌ماند و حلقه تا آخرِ تایم‌اوت
+  // معطل می‌شد (سابقِ `first_rows_ready: null` در گزارشِ پیشین از همین‌جا
+  // آمد، نه از صفحهٔ خالی). نشانهٔ پایدارِ ردیف، ستارهٔ نظارتِ هر سطر است.
   const readyAt = await page.evaluate(async (win: number) => {
+    const count = () => Math.max(
+      document.querySelectorAll('[data-testid^="watch-star-"]').length,
+      document.querySelectorAll('tbody tr').length);
     const start = performance.now();
     const t = Date.now();
     while (Date.now() - t < win * 1000) {
-      const rows = document.querySelectorAll('tbody tr').length;
+      const rows = count();
       if (rows > 5) return { rows, ms: Math.round(performance.now() - start) };
       await new Promise((r) => setTimeout(r, 200));
     }
-    return { rows: document.querySelectorAll('tbody tr').length, ms: null };
-  }, WINDOW_S);
+    return { rows: count(), ms: null };
+  }, READY_S);
+  // پنجرۀ اندازه‌گیری از *بعدِ* آمادگی شروع می‌شود: وگرنه بارِ اولیه (که ریتم
+  // ندارد) با پولینگِ نشست قاطی می‌شود و «درخواست در دقیقه» معنایش می‌بازد.
+  const winStart = Date.now() - t0;
 
   const scrollProbe = await page.evaluate(() => {
     const sc = document.scrollingElement as Element | null;
@@ -126,7 +152,14 @@ async function run(label: string, route: string, vw: number, vh: number) {
     return {
       scrollAfter: target ? target.scrollTop : null, scrollBefore: before ?? null,
       domNodes: document.getElementsByTagName('*').length,
-      rows: document.querySelectorAll('tbody tr').length,
+      rows: Math.max(
+        document.querySelectorAll('[data-testid^="watch-star-"]').length,
+        document.querySelectorAll('tbody tr').length),
+      // نشانهٔ خودِ اپ از وضعیتِ نشست: ریتمِ پولینگ از همین «بازار باز/بسته»
+      // می‌آید (`shared/lib/marketHours.ts`)، پس بی‌این خط نمی‌شود فهمید
+      // «درخواستِ کم» یعنی بهینه یا یعنی پنجره بیرونِ نشست بوده.
+      banner: (document.querySelector('[data-freshness]')?.textContent ?? '').trim().slice(0, 80),
+      clock: new Date().toString().slice(0, 33),
       perf: { longTasks: w.__perf.longTasks.length, longTotalMs: Math.round(w.__perf.longTotalMs),
         maxLongMs: Math.round(w.__perf.maxLongMs), mutations: w.__perf.mutations,
         parseMs: w.__perf.parseMs, worstLongTasks: w.__perf.longTasks
@@ -137,18 +170,40 @@ async function run(label: string, route: string, vw: number, vh: number) {
   await page.screenshot({ path: join(OUT, `${label}.png`) });
   await browser.close();
 
-  const byPath = new Map<string, { n: number; bytes: number; failed: number }>();
+  type Agg = { n: number; n_all: number; bytes: number; failed: number; n200: number;
+    n304: number; n_other: number; revalidated: number; methods: Record<string, number>;
+    xc: Record<string, number>; enc: Record<string, number>; };
+  // پنجرۀ واقعیِ سنجش: فقط پولینگِ بعدِ آماده‌شدن، نه بارِ اولیه.
+  const win = reqs.filter((r) => r.ms >= winStart);
+  const byPath = new Map<string, Agg>();
   for (const r of reqs) {
     const key = r.url.split('?')[0];
-    const e = byPath.get(key) ?? { n: 0, bytes: 0, failed: 0 };
+    const e = byPath.get(key) ?? { n: 0, n_all: 0, bytes: 0, failed: 0, n200: 0, n304: 0,
+      n_other: 0, revalidated: 0, methods: {}, xc: {}, enc: {} };
+    e.n_all += 1;
+    if (r.ms < winStart) { byPath.set(key, e); continue; }
     e.n += 1; e.bytes += r.bytes; e.failed += r.failed ? 1 : 0;
+    if (r.status === 304) e.n304 += 1; else if (r.status === 200) e.n200 += 1; else e.n_other += 1;
+    if (r.inm) e.revalidated += 1;
+    e.methods[r.method] = (e.methods[r.method] ?? 0) + 1;
+    if (r.xc) e.xc[r.xc] = (e.xc[r.xc] ?? 0) + 1;
+    e.enc[r.enc] = (e.enc[r.enc] ?? 0) + 1;
     byPath.set(key, e);
   }
+  const sum = (arr: typeof reqs, f: (r: typeof reqs[number]) => number) =>
+    arr.reduce((a, r) => a + f(r), 0);
   return {
     label, route, viewport: `${vw}x${vh}`, window_s: WINDOW_S,
+    clock: CLOCK || 'real', ready_wait_s: READY_S,
     first_rows_ready: readyAt, requests_total: reqs.length,
-    requests_per_min: +(reqs.length / (WINDOW_S / 60)).toFixed(1),
-    transfer_bytes_total: reqs.reduce((a, r) => a + r.bytes, 0),
+    requests_in_window: win.length,
+    requests_per_min: +(win.length / (WINDOW_S / 60)).toFixed(1),
+    // wire_bytes = بایت‌هایِ واقعیِ رویِ سوکت (content-lengthِ فشرده)؛ 304 صفر است.
+    transfer_bytes_total: sum(reqs, (r) => r.bytes),
+    transfer_bytes_in_window: sum(win, (r) => r.bytes),
+    responses_304: win.filter((r) => r.status === 304).length,
+    responses_200: win.filter((r) => r.status === 200).length,
+    requests_with_inm: win.filter((r) => r.inm).length,
     by_path: [...byPath.entries()].map(([p, v]) => ({ path: p, ...v }))
       .sort((a, b) => b.bytes - a.bytes),
     console_errors: consoleErrors.slice(0, 10),
@@ -163,13 +218,19 @@ results.push(await run('market-1920x1080', '/market', 1920, 1080));
 
 const file = join(OUT, 'browser-perf.json');
 writeFileSync(file, JSON.stringify({ ran_at: new Date().toISOString(), base: BASE,
-  window_s: WINDOW_S, results }, null, 2), 'utf8');
+  window_s: WINDOW_S, clock: CLOCK || 'real', ready_wait_s: READY_S, results }, null, 2), 'utf8');
 for (const r of results) {
   console.log(`\n### ${r.label}  rows=${r.rows} ready=${r.first_rows_ready.ms}ms`);
-  console.log(`requests=${r.requests_total} (${r.requests_per_min}/min) transfer=${(r.transfer_bytes_total / 1048576).toFixed(1)}MB`);
+  console.log(`clock=${r.clock}  banner=${r.banner}`);
+  console.log(`window: req=${r.requests_in_window} (${r.requests_per_min}/min) ` +
+    `200=${r.responses_200} 304=${r.responses_304} inm=${r.requests_with_inm} ` +
+    `wire=${(r.transfer_bytes_in_window / 1048576).toFixed(2)}MB   ` +
+    `(all incl. first load: ${r.requests_total} / ${(r.transfer_bytes_total / 1048576).toFixed(2)}MB)`);
   console.log(`longTasks=${r.perf.longTasks} total=${r.perf.longTotalMs}ms max=${r.perf.maxLongMs}ms mutations=${r.perf.mutations} domNodes=${r.domNodes}`);
   console.log(`parse: ${JSON.stringify(r.perf.parseMs.slice(0, 6))}`);
   console.log(`scroll ${r.scrollBefore} -> ${r.scrollAfter}  consoleErrors=${r.console_errors.length}`);
-  console.log(r.by_path.slice(0, 6).map((b) => `  ${b.path} n=${b.n} ${(b.bytes / 1048576).toFixed(2)}MB fail=${b.failed}`).join('\n'));
+  console.log(r.by_path.slice(0, 6).map((b) => `  ${b.path} n=${b.n}/${b.n_all} ` +
+    `200=${b.n200} 304=${b.n304} inm=${b.revalidated} ${(b.bytes / 1048576).toFixed(2)}MB ` +
+    `xc=${JSON.stringify(b.xc)} fail=${b.failed}`).join('\n'));
 }
 console.log(`\n→ ${file}`);
