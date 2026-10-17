@@ -28,6 +28,8 @@ const APP_VERSION = (import.meta.env.VITE_APP_VERSION as string | undefined)
 
 const SNAPSHOT_URL =
   (import.meta.env.VITE_SNAPSHOT_URL as string | undefined) ?? '/mobile_snapshot.db.gz';
+/** نشانهٔ SQLite؛ بستۀ همراهِ APK گاهی همین بایت‌ها را با نامِ بی‌`.gz` می‌دهد. */
+const SQLITE_MAGIC = 'SQLite format 3';
 const CACHE_NAME = 'bors-mobile-snapshot-v1';
 
 // بستۀ همراهِ APK تا چه تاریخِ پختی است. CI آن را از meta.json کنارِ همان gz
@@ -557,6 +559,17 @@ function isGz(buf: ArrayBuffer | null, minBytes = 1_000_000): buf is ArrayBuffer
   return h[0] === 0x1f && h[1] === 0x8b;
 }
 
+/** سرِ «SQLite format 3\0» — همان چیزی که aapt2 از assetِ gz‌شده باقی می‌گذارد
+ *  (بازکرده، بی‌پسوند). صفحهٔ HTMLِ جایگزین هرگز این شانزده بایت را ندارد. */
+function isSqlitePackage(buf: ArrayBuffer | null): buf is ArrayBuffer {
+  if (!buf || buf.byteLength < 1024) return false;
+  const head = new Uint8Array(buf, 0, SQLITE_MAGIC.length + 1);
+  for (let i = 0; i < SQLITE_MAGIC.length; i++) {
+    if (head[i] !== SQLITE_MAGIC.charCodeAt(i)) return false;
+  }
+  return head[SQLITE_MAGIC.length] === 0x00; // بایتِ پایانیِ رشتهٔ جادو
+}
+
 async function fetchSnapshot(): Promise<ArrayBuffer> {
   // ترتیب: ۱) نسخۀ **فعال** (pointer) اگر از بستۀ خودِ APK تازه‌تر باشد
   //        ۲) بستۀ همراهِ APK (مسیر عادی — بی‌نیاز به شبکه)
@@ -595,25 +608,32 @@ async function fetchSnapshot(): Promise<ArrayBuffer> {
   // ۲) بستۀ همراهِ APK. دیگر درِ Cache API ذخیره نمی‌شود: رویِ گوشی هست،
   // خواندنش از asset بی‌شبکه است، و یک‌برگِ ۱۵ مگابایتیِ اضافه فقط حافظه
   // وِ گوشی را می‌گیرد و بعداً دادهٔ کهنه می‌شود.
-  let local: Response | null = null;
+  // هر دو نام آزموده می‌شود: aapt2 assetهایِ gzip‌شده را هنگامِ بسته‌بندیِ APK
+  // **باز می‌کند و پسوندِ .gz را از نام می‌کَنَد** (شاهد: رانِ 38952613699 —
+  // داخلِ app-release.apk تنها `assets/public/mobile_snapshot.db` است و CRCِ
+  // محتوایش بایت‌به‌بایت با dbِ بازِ شده از gzِ پخته می‌خواند). اگر تنها نامِ
+  // `.gz` زده می‌شد، گوشی ۴۰۴ می‌گرفت و بی‌صدا به ریلیزِ کهنه می‌افتاد.
   let localWhy = '';
-  try {
-    local = await fetch(SNAPSHOT_URL);
-    if (!local.ok) { localWhy = `HTTP ${local.status}`; local = null; }
-  } catch (e) {
-    localWhy = e instanceof Error ? e.message : String(e);
-  }
-
-  if (local) {
+  const bundleUrls = [SNAPSHOT_URL];
+  if (SNAPSHOT_URL.endsWith('.gz')) bundleUrls.push(SNAPSHOT_URL.slice(0, -3));
+  for (const url of bundleUrls) {
+    let local: Response | null = null;
+    try {
+      local = await fetch(url);
+      if (!local.ok) { localWhy = `${url} → HTTP ${local.status}`; local = null; }
+    } catch (e) {
+      localWhy = e instanceof Error ? e.message : String(e);
+    }
+    if (!local) continue;
     const buf = await responseArrayBufferWithProgress(local, 'bundle');
-    if (isGz(buf, 2)) {
+    if (isGz(buf, 2) || isSqlitePackage(buf)) {
       bootTiming.source = 'bundle';
       // اگر دورِ پیش چیزی درِ کشِ کهنه بود، حالا خودِ برنامه مرجع است و برگۀ
       // کهنه‌اش باید برود — هم ۱۵ مگابایتِ حافظه آزاد می‌شود هم دادهٔ کهنه.
       if (legacyCache && legacyStamp) await dropCachedSnapshot(legacyCache);
       return buf;
     }
-    localWhy = 'بستۀ همراهِ برنامه gz نبود';
+    localWhy = `بستۀ همراهِ برنامه (${url}) gz یا SQLite نبود`;
   }
 
   // ۳) پشتیبان: ریلیز، ولی از همۀِ گام‌هایِ اعتبارسنجیِ یکِ «بررسی» می‌گذرد:

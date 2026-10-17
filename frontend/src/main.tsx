@@ -12,6 +12,11 @@ if (import.meta.env.VITE_LOCAL_DATA === '1') {
   document.documentElement.classList.add('bors-mobile');
   void import('./shared/api/local/diagnostics').then((m) => m.mountDiagnostics()).catch(() => {});
   void import('./shared/api/local/androidShell').then((m) => m.mountAndroidBack()).catch(() => {});
+  // قلابِ خواندنیِ سنجهٔ دستگاه — فقط بیلدِ آزمایشیِ bake؛ درِ artifactِ
+  // منتشرشدنی این شاخه بی‌بایت است (خروجیِ bake هرگز منتشر نمی‌شود).
+  if (import.meta.env.VITE_ANDROID_PROBE === '1') {
+    void import('./shared/api/local/probe').then((m) => m.mountProbe()).catch(() => {});
+  }
 }
 
 const queryClient = new QueryClient({

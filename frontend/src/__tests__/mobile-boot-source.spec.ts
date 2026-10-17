@@ -55,6 +55,14 @@ const gzBytes = (n = 1_048_576): ArrayBuffer => {
   return b.buffer;
 }
 
+/** بایت‌هایی با سرِ «SQLite format 3\0» — همان چیزی که aapt2 از assetِ gz‌شده
+ *  درِ APK باقی می‌گذارد (بازکرده، بی‌پسوندِ .gz). */
+const sqliteBytes = (n = 2_097_152): ArrayBuffer => {
+  const b = new Uint8Array(n);
+  new TextEncoder().encodeInto('SQLite format 3\u0000', b.subarray(0, 16));
+  return b.buffer;
+}
+
 /** پاسخِ streaming با content-lengthِ اعلامی — همان چیزی که WebView می‌دهد. */
 function streamed(bytes: ArrayBuffer, declareLength = true): Response {
   const body = new ReadableStream<Uint8Array>({
@@ -130,6 +138,40 @@ describe('منبعِ بستۀ دادهٔ آفلاین', () => {
     expect(h.del).not.toHaveBeenCalled(); // کش خالی بود — چیزی برای پاک کردن نبود
     expect(events.at(-1)?.percent).toBe(100);
     expect(events.every((e) => e.loadedBytes <= e.totalBytes)).toBe(true);
+  });
+
+  it('assetِ بی‌.gz درِ APK (بازکردهٔ aapt) را به‌عنوانِ بستۀ SQLite می‌پذیرد', async () => {
+    // aapt2 assetِ gzip‌شده را درِ APK باز می‌کند و پسوندِ .gz را از نام می‌کَنَد؛
+    // گوشی پس `/mobile_snapshot.db.gz` ۴۰۴ است و `.db` همان بایت‌هاست. بی‌این
+    // شعبه، بستۀ پخت‌شده هرگز مصرف نمی‌شد (شاهد: رانِ 38952613699).
+    h.match.mockResolvedValue(undefined);
+    const plain = sqliteBytes();
+    routeFetch({
+      [GZ_URL]: () => new Response(null, { status: 404 }),
+      '/mobile_snapshot.db': () => streamed(plain),
+    });
+    mod = await load('2026-10-08T16:16:15');
+
+    const buf = await mod.__fetchSnapshotForTest();
+    expect(buf.byteLength).toBe(2_097_152);
+    expect(mod.bootTiming.source).toBe('bundle');
+    expect(h.put).not.toHaveBeenCalled();
+  });
+
+  it('htmlِ ۲۰۰ درِ assetِ بی‌.gz را بسته نمی‌گیرد و به ریلیز می‌افتد', async () => {
+    // پذیرفتنِ «هر بایتی» به‌اسمِ dbِ ساده، همان صفحهٔ index.html را جایِ
+    // دیتابیس می‌نشاند. جادویِ SQLite تنها مدرکِ پذیرشِ مسیرِ بی‌.gz است.
+    h.match.mockResolvedValue(undefined);
+    const html = () => new Response('<html>'.padEnd(2_000_000, 'x'), { status: 200 });
+    routeFetch({
+      [GZ_URL]: () => new Response(null, { status: 404 }),
+      '/mobile_snapshot.db': html,
+      [RELEASE_URL]: () => new Response(null, { status: 404 }),
+    });
+    mod = await load('2026-10-08T16:16:15');
+
+    await expect(mod.__fetchSnapshotForTest()).rejects.toThrow();
+    expect(mod.bootTiming.source).not.toBe('bundle');
   });
 
   it('کشِ کهنه را به APK می‌بازد و همان‌جا پاکش می‌کند', async () => {
