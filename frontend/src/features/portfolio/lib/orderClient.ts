@@ -66,6 +66,7 @@ export const ExecutionStatusSchema = z.object({
   nothing_will_leave_the_machine: bool,
   wire_hypothesis: bool,
   blocked_on: z.array(z.string()).nullish(),
+  confirm_gate: z.record(z.string(), z.unknown()).nullish(),
   capabilities: BrokerCapabilitiesSchema.nullish(),
   session: SessionStatusSchema.nullish(),
   limits: z.unknown().nullish(),

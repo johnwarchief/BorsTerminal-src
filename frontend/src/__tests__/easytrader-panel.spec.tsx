@@ -127,6 +127,46 @@ describe('درِ رابط فقط با پشتیبانِ واقعی باز می‌
       .toBe(true));
   });
 
+  it('گیتِ عبارتِ تأیید (§۲-۲): تا عبارتِ اعلامیِ بک‌اند تایپ نشود، ارسال خاموش است',
+    async () => {
+      const calls = route(statusEasy({
+        confirm_gate: { required: true, phrase: 'تأییدِ نهایی' },
+      }));
+      renderPanel();
+      await waitFor(() => expect(screen.getByTestId('exec-confirm')).toBeInTheDocument());
+      fireEvent.change(screen.getByTestId('watch-order-price'), { target: { value: '۱۰۲۵' } });
+      fireEvent.change(screen.getByTestId('watch-order-qty'), { target: { value: '۱۰۰' } });
+      fireEvent.click(screen.getByTestId('exec-confirm'));
+      await waitFor(() => expect(screen.getByTestId('exec-confirm-phrase'))
+        .toBeInTheDocument());
+      expect(screen.getByTestId('exec-submit')).toBeDisabled();
+      // پیشوند/نزدیک کافی است؟ نه — و این همان چیزی است که بک‌اند هم رد می‌کند
+      fireEvent.change(screen.getByTestId('exec-confirm-phrase'),
+        { target: { value: 'تأیید' } });
+      expect(screen.getByTestId('exec-submit')).toBeDisabled();
+      fireEvent.change(screen.getByTestId('exec-confirm-phrase'),
+        { target: { value: 'تأییدِ نهایی' } });
+      await waitFor(() => expect(screen.getByTestId('exec-submit')).not.toBeDisabled());
+      const before = calls.length;
+      fireEvent.click(screen.getByTestId('exec-submit'));
+      await waitFor(() => expect(calls.some((u) => u.includes('/api/execution/dispatch')))
+        .toBe(true));
+      expect(calls.length).toBeGreaterThan(before);
+      const sent = fetchMock.mock.calls
+        .map((c) => String((c[1] as { body?: string } | undefined)?.body ?? ''))
+        .find((b) => b.includes('confirm_phrase'));
+      expect(sent).toBeTruthy();
+      expect(sent ?? '').toContain('confirm_phrase');
+    });
+
+  it('بی‌الزامِ بک‌اند (dry-run/بدل)، فیلدِ عبارت ساخته نمی‌شود', async () => {
+    route(statusEasy({ dry_run: true, live: false,
+      confirm_gate: { required: false, phrase: 'تأییدِ نهایی' } }));
+    renderPanel();
+    await waitFor(() => expect(screen.getByTestId('exec-confirm')).toBeInTheDocument());
+    expect(screen.queryByTestId('exec-confirm-phrase')).toBeNull();
+  });
+
   it('توقف درِ حالتِ بدل هم کار می‌کند — توقف به نشستِ کارگزاری نیاز ندارد', async () => {
     const calls = route(statusEasy());
     renderPanel();
