@@ -13,6 +13,7 @@
 | `bors-build-install-guard` | هنگامِ بیلد/نصبِ بسته تا گاردهای موجود (pinِ numpy، بسته‌بندیِ onedir، `hiddenimports` در `fts_terminal.spec`، fallbackها) نشکنند |
 | `bors-code-review` | **بعد از** نوشتنِ کد و **پیش از** کامیت — بازبینیِ امنیت، باگ، race، لبه‌ها، کارایی و تست‌ها بر پایهٔ حالت‌های شکستِ همین پروژه |
 | `bors-frontend-ui-guard` | هنگامِ تغییرِ رابط کاربری (چیدمان، تراز جدول‌ها، RTL، ارتفاع، ارقامِ فارسی) |
+| `bors-frontend-design` | پیش از طراحی/بازطراحی بصری، انتخاب و یکپارچه‌سازی shadcn/ui، یا بازبینی کیفیت طراحی؛ همراه `DESIGN.md` لازم‌الاجراست |
 | `bors-dual-jev-verification` | **روش Jev قدیمی/جایگزین موقت** در دورهٔ مهاجرت؛ مسیر canonical تازه نیست |
 | `bors-jev-verification` | راهنمای میراثیِ pilot/Jev؛ تا اثبات Laya فقط برای fallback یا مقایسه استفاده شود |
 | `bors-live-ui-check` | بعد از هر تغییرِ دیدنی: سنجشِ زنده با Chromium و قضاوت از JSONِ خودِ سنجش |
@@ -21,7 +22,7 @@
 
 ## ترتیبِ معمولِ یک واحدِ کار
 
-۱) `bors-architecture` (اگر ساختار در خطر است) → ۲) کد → ۳) `bors-frontend-ui-guard` /
+۱) `bors-architecture` (اگر ساختار در خطر است) → ۲) `DESIGN.md` + `bors-frontend-design` برای هر تغییر دیداری → ۳) کد → ۴) `bors-frontend-ui-guard` /
 `bors-installed-vs-dev-diagnosis` هرکدام که به تغییرِ شما می‌خورد → ۴) `bors-code-review` →
 ۵) راستی‌آزمایی مرورگر زنده با Laya پس از اثبات اتصال؛ تا آن زمان Playwright/CDP موجود را اجرا و وضعیت Laya را `UNVERIFIED` ثبت کنید → ۶) اگر ریلیز است: `bors-build-install-guard`
 سپس `bors-build-release`.
