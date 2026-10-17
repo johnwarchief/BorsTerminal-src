@@ -372,6 +372,13 @@ SUITES = [
     # SMART-MONEY: «ورود پول هوشمند» و «کد به کد» عینِ دو فایلِ تازهٔ جزوه،
     # درِ همان tape_flags؛ ماتریسِ حدی/بی‌داده + سیم‌کشیِ رابطِ بی‌آینه.
     ('dev/tape_smartmoney_v1074.py', 'tape smart-money: two new file filters, one canonical judge'),
+    # BOUNDARIES (رأیِ مالک 2026-10-18، پاسخ ۶): برای پنج آستانه‌ای که فقط پاریتی
+    # داشتند و هیچ تستِ یک‌واحدی نداشتند — CLOCK_TRADES، SUSP_TRADES،
+    # NOQTEH_MAX_DIST، LEGAL_SHARE_OF_TVOL، ROOBI_QD1_MIN — حالتِ زیر/رویِ/بالایِ
+    # آستانه با عملگرِ واقعیِ tape_flags سنجیده می‌شود. هیچ عددی عوض نمی‌شود؛
+    # گارد صریحاً برمی‌گردد اگر مقدارِ ثابت درِ منبع جابه‌جا شده باشد.
+    ('dev/tape_threshold_boundaries_v1.py',
+     'tape thresholds: below/at/above boundary for the five untested constants'),
     # TAPE-HISTORY: سابقۀ ماندگارِ «کدام فیلتر، کدام نماد، کدام روز» در user.db؛
     # یک روز = یک ردیف (دفعاتِ ساختگی ممنوع)، «غیرفعال» ≠ «ثبت نشده»، و ماضی
     # از دادهٔ امروز بازسازی نمی‌شود.
