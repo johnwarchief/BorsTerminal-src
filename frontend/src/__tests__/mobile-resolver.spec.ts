@@ -4,6 +4,15 @@
 // می‌شود، چون همان‌جا بود که ۸۷۳ شرکت به ۶۰ رسید و چارت خالی ماند.
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+const codal = vi.hoisted(() => ({
+  syncLatestMonthlySales: vi.fn(),
+  readLatestStoredMonthlySales: vi.fn(),
+}));
+const codalFinancial = vi.hoisted(() => ({
+  syncLatestAnnualFinancialStatement: vi.fn(),
+  readLatestStoredFinancialStatement: vi.fn(),
+}));
+
 const bakedMap = new Map<string, unknown>();
 const sql = vi.fn(async (text: string, params?: unknown[]) => {
   void [text, params]; // پیش‌فرض: هیچ کوئری‌ای ردیفی برنمی‌گرداند؛ هر تست جا را عوض می‌کند
@@ -30,6 +39,8 @@ const live = {
   mwRowFromJson: (r: Record<string, unknown>) => r,
 };
 vi.mock('@shared/api/local/live', () => live);
+vi.mock('@shared/api/local/codalMonthly', () => codal);
+vi.mock('@shared/api/local/codalFinancial', () => codalFinancial);
 
 const { resolveLocal } = await import('@shared/api/local/resolvers');
 
@@ -45,6 +56,45 @@ beforeEach(() => {
   live.liveClientType.mockResolvedValue(null);
   live.liveTodayCandle.mockResolvedValue(null);
   live.overlayBoard.mockReturnValue(0);
+  codal.syncLatestMonthlySales.mockReset();
+  codal.readLatestStoredMonthlySales.mockReset();
+  codalFinancial.syncLatestAnnualFinancialStatement.mockReset();
+  codalFinancial.readLatestStoredFinancialStatement.mockReset();
+});
+
+describe('local Codal monthly-sales routes', () => {
+  it('syncs one explicitly requested symbol through the local Codal service', async () => {
+    codal.syncLatestMonthlySales.mockResolvedValue({ status: 'PARSED', symbol: 'خساپا' });
+    await expect(resolveLocal('/api/codal/monthly-sales/sync?symbol=%D8%AE%D8%B3%D8%A7%D9%BE%D8%A7', 'POST'))
+      .resolves.toEqual({ status: 'PARSED', symbol: 'خساپا' });
+    expect(codal.syncLatestMonthlySales).toHaveBeenCalledWith('خساپا');
+  });
+
+  it('reads the local row and never accepts a sync request over GET', async () => {
+    codal.readLatestStoredMonthlySales.mockResolvedValue({ status: 'NOT_EVALUATED', data: null });
+    await expect(resolveLocal('/api/codal/monthly-sales?symbol=%D8%AE%D8%B3%D8%A7%D9%BE%D8%A7', 'GET'))
+      .resolves.toEqual({ status: 'NOT_EVALUATED', data: null });
+    await expect(resolveLocal('/api/codal/monthly-sales/sync?symbol=A', 'GET'))
+      .rejects.toMatchObject({ status: 405 });
+  });
+});
+
+describe('local Codal annual-financial-statement routes', () => {
+  it('syncs only an explicitly requested symbol and uses POST', async () => {
+    codalFinancial.syncLatestAnnualFinancialStatement.mockResolvedValue({ status: 'PARSED', symbol: 'خساپا' });
+    await expect(resolveLocal('/api/codal/annual-financial-statements/sync?symbol=%D8%AE%D8%B3%D8%A7%D9%BE%D8%A7', 'POST'))
+      .resolves.toEqual({ status: 'PARSED', symbol: 'خساپا' });
+    expect(codalFinancial.syncLatestAnnualFinancialStatement).toHaveBeenCalledWith('خساپا');
+    await expect(resolveLocal('/api/codal/annual-financial-statements/sync?symbol=A', 'GET'))
+      .rejects.toMatchObject({ status: 405 });
+  });
+
+  it('reads the local annual row using GET', async () => {
+    codalFinancial.readLatestStoredFinancialStatement.mockResolvedValue({ status: 'NOT_EVALUATED', data: null });
+    await expect(resolveLocal('/api/codal/annual-financial-statements?symbol=%D8%AE%D8%B3%D8%A7%D9%BE%D8%A7', 'GET'))
+      .resolves.toEqual({ status: 'NOT_EVALUATED', data: null });
+    expect(codalFinancial.readLatestStoredFinancialStatement).toHaveBeenCalledWith('خساپا');
+  });
 });
 
 describe('/api/screener در حالتِ آفلاین', () => {

@@ -811,7 +811,7 @@ let sqlPromise: Promise<Awaited<ReturnType<typeof initSqlJs>>> | null = null;
 
 /** همان sql.js که مصرف‌کنندهٔ واقعی استفاده می‌کند — اعتبارسنجیِ بسته با
  *  **همین** موتور انجام می‌شود، نه با یک شبیه‌سازِ دیگر. */
-function getSql() {
+export function getSql() {
   sqlPromise ??= initSqlJs({ locateFile: () => wasmUrl });
   return sqlPromise;
 }

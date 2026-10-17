@@ -14,6 +14,13 @@
 // پشت پرچم VITE_LOCAL_DATA است) — بیلد دسکتاپ هیچ بایتی از آن ندارد.
 import { Capacitor, CapacitorHttp } from '@capacitor/core';
 
+export type NativeHttpResult<T> = {
+  status: number;
+  data: T | null;
+  headers: Record<string, string>;
+  error?: string;
+};
+
 function isNative(): boolean {
   try {
     return Capacitor.isNativePlatform();
@@ -53,6 +60,64 @@ export async function nativeGetText(
   const res = await fetch(url, { headers: { ...headers, Accept: 'text/plain' } });
   if (!res.ok) return null;
   return res.text();
+}
+
+function normalizeHeaders(value: unknown): Record<string, string> {
+  if (!value || typeof value !== 'object') return {};
+  return Object.fromEntries(Object.entries(value).map(([key, item]) => [key.toLowerCase(), String(item)]));
+}
+
+/** GET that preserves HTTP status and transport failures for bounded sync jobs. */
+export async function nativeGetJsonResult(
+  url: string,
+  headers: Record<string, string> = {},
+): Promise<NativeHttpResult<unknown>> {
+  try {
+    if (isNative()) {
+      const res = await CapacitorHttp.get({ url, headers, responseType: 'json',
+                                            connectTimeout: 15000, readTimeout: 30000 });
+      const responseHeaders = normalizeHeaders(res.headers);
+      if (res.status < 200 || res.status >= 300) {
+        return { status: res.status, data: null, headers: responseHeaders };
+      }
+      const data = typeof res.data === 'string' ? JSON.parse(res.data) : res.data;
+      return { status: res.status, data: data ?? null, headers: responseHeaders };
+    }
+    const res = await fetch(url, { headers });
+    const responseHeaders = Object.fromEntries(res.headers.entries());
+    if (!res.ok) return { status: res.status, data: null, headers: responseHeaders };
+    return { status: res.status, data: await res.json(), headers: responseHeaders };
+  } catch (error) {
+    return { status: 0, data: null, headers: {},
+      error: error instanceof Error ? error.message : String(error) };
+  }
+}
+
+/** Text counterpart of nativeGetJsonResult. */
+export async function nativeGetTextResult(
+  url: string,
+  headers: Record<string, string> = {},
+): Promise<NativeHttpResult<string>> {
+  try {
+    if (isNative()) {
+      const res = await CapacitorHttp.get({ url, headers, responseType: 'text',
+                                            connectTimeout: 15000, readTimeout: 60000 });
+      const responseHeaders = normalizeHeaders(res.headers);
+      if (res.status < 200 || res.status >= 300) {
+        return { status: res.status, data: null, headers: responseHeaders };
+      }
+      return { status: res.status,
+        data: typeof res.data === 'string' ? res.data : JSON.stringify(res.data),
+        headers: responseHeaders };
+    }
+    const res = await fetch(url, { headers: { ...headers, Accept: 'text/html,text/plain' } });
+    const responseHeaders = Object.fromEntries(res.headers.entries());
+    if (!res.ok) return { status: res.status, data: null, headers: responseHeaders };
+    return { status: res.status, data: await res.text(), headers: responseHeaders };
+  } catch (error) {
+    return { status: 0, data: null, headers: {},
+      error: error instanceof Error ? error.message : String(error) };
+  }
 }
 
 /** base64 → بایت. حلقۀ بایت‌به‌بایت رویِ بستۀ چندده‌مگابایتیِ داده رویِ گوشی

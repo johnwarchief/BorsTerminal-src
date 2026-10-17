@@ -12,6 +12,11 @@ import { tehranOffsetMs } from '@shared/lib/marketHours';
 import { baked, metaValue, normFa, query } from './localData';
 import { deleteDecision, portfolioFeed, saveDecision, searchSymbols } from './selectionLocal';
 import { liveChart, liveClientType, liveTedpix, liveTodayCandle, liveWatch, overlayBoard, tehranToday } from './live';
+import { readLatestStoredMonthlySales, syncLatestMonthlySales } from './codalMonthly';
+import {
+  readLatestStoredFinancialStatement,
+  syncLatestAnnualFinancialStatement,
+} from './codalFinancial';
 
 const FTS_CONFIG_KEY = 'bors_mobile_fts_config_v1';
 
@@ -361,6 +366,23 @@ export async function resolveLocal(
   const path = decodeURIComponent(u.pathname).replace(/\/+$/, '');
   const seg = path.split('/').filter(Boolean); // ['api', ...]
   const p = (i: number) => seg[i] ?? '';
+
+  if (path === '/api/codal/monthly-sales/sync') {
+    if (method !== 'POST') throw new HttpError(405, url, 'POST required');
+    return syncLatestMonthlySales(u.searchParams.get('symbol') ?? '');
+  }
+  if (path === '/api/codal/monthly-sales') {
+    if (method !== 'GET') throw new HttpError(405, url, 'GET required');
+    return readLatestStoredMonthlySales(u.searchParams.get('symbol') ?? '');
+  }
+  if (path === '/api/codal/annual-financial-statements/sync') {
+    if (method !== 'POST') throw new HttpError(405, url, 'POST required');
+    return syncLatestAnnualFinancialStatement(u.searchParams.get('symbol') ?? '');
+  }
+  if (path === '/api/codal/annual-financial-statements') {
+    if (method !== 'GET') throw new HttpError(405, url, 'GET required');
+    return readLatestStoredFinancialStatement(u.searchParams.get('symbol') ?? '');
+  }
 
   // --- تابلو و اسکرینر --------------------------------------------------
   if (path === '/api/market') return boardPayload();
