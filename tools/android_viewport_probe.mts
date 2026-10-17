@@ -136,6 +136,14 @@ for (const spec of SIZES) {
         navBox: box(bar),
         navPadBottom: bar ? getComputedStyle(bar).paddingBottom : null,
         appContentPadBottom: app ? getComputedStyle(app).paddingBottom : null,
+        // هم‌پوشانیِ افقیِ جعبۀ محتوا با ریلِ کنارى (سهمِ چپِ ریل که محتوا
+        // زیرش می‌رود). درِ پورتره صفر است چون ریل پایینِ صفحه است نه کنار.
+        railOverlapX: (() => {
+          if (!bar || !app) return null;
+          const rb = bar.getBoundingClientRect();
+          const ab = app.getBoundingClientRect();
+          return Math.max(0, Math.min(ab.right, rb.right) - Math.max(ab.left, rb.left));
+        })(),
         lastRowBottom: last ? Math.round(last.getBoundingClientRect().bottom) : null,
         safeAreaBottom: inset,
         touchTargetsUnder44: Array.from(document.querySelectorAll("aside[data-shell='sidebar'] button, aside[data-shell='sidebar'] a"))
@@ -203,8 +211,14 @@ for (const spec of SIZES) {
     // فقط routeهایی که جدول دارند باید ردیف بدهند؛ technical (چارت)،
     // strategy-tree (گراف) و master (نمایِ مرحلۀ یکِ نماد، بی‌نماد = راهنما)
     // ردیفِ جدولی ندارند و صفرشان ایراد نیست.
+    // رأی باید رویِ routeِ *هدایت‌شده* باشد نه درخواستی: `''` ازِ دورِ
+    // ۱۴۰۵-۰۷-۱۷ به `/master` ریدایرکت می‌شود (routes.tsx) و master بی‌نماد
+    // جدول ندارد؛ شمارشِ «(index) باید ردیف بدهد» ازِ پیشِ این ریدایرکت
+    // مانده بود و سه ردیفِ دروغین می‌ساخت (سنجشِ ۲۰۲۶-۱۰-۱۶: ۳۶۰/۳۹۰/۴۳۰ ×
+    // index همگی rowsRendered=false رویِ همان چیدمانِ سالمِ market).
     const TABLE_ROUTES = ['', 'market', 'fundamental', 'engine-lab', 'portfolio'];
-    const expectRows = TABLE_ROUTES.includes(route);
+    const resolved = String(m.route || '').replace(/^#\/?/, '').split('?')[0].split('/')[0];
+    const expectRows = TABLE_ROUTES.includes(route) && !(route === '' && resolved !== '');
     results.push({
       size: spec, route: route || '(index)', measured: m,
       consoleErrors: errs.slice(0, 8), blockedByHarness: errs.length - realErrs.length,
@@ -220,11 +234,22 @@ for (const spec of SIZES) {
         barStaysPut: m.barScrolls !== true,
         /* ارتفاعِ واقعیِ نوار و فاصلۀِ زیرِ محتوا باید همیشه هم‌خوان باشد،
            وگرنه ردیفِ آخرِ جدول زیرِ نوار می‌ماند (این همان چیزی است که با
-           عددِ جادوییِ ۵۸/۶۶ درِ دورِ پیشین شکست). */
+           عددِ جادوییِ ۵۸/۶۶ درِ دورِ پیشین شکست).
+           نسخهٔ پیشین همین عدد را درِ افقی هم می‌سنجید؛ آن‌جا نوار، ریلِ
+           کنارىِ 100dvh است (position sticky، x=708 در ۸۱۲) و مقایسۀ
+           paddingِ پایینِ بدنه با ارتفاعِ ۳۷۵pxیِ ریل بی‌معنی است — سنجه
+           همیشه False می‌داد و پنهانش نکردیم (سه ران: nav_before/nav_fix/
+           nav_verify). سنجۀ درست درِ ریلِ کنارى، هم‌پوشانیِ افقی است:
+           جعبۀ محتوا هرگز نباید زیرِ ریل برود. اندازه‌گیریِ ۲۰۲۶-۱۰-۱۶:
+           app.right=708 == rail.x ⇒ صفر هم‌پوشانی در هر سه route. */
         padClearsBar: (() => {
-          const pad = parseFloat(String(m.appContentPadBottom));
-          const h = m.navBox ? Number(m.navBox.h) : 0;
-          return !m.navBox || (isFinite(pad) && pad + 1 >= h);
+          if (!m.navBox) return true;
+          const isBottomBar = Number(m.navBox.w) >= Number(m.vw) * 0.8;
+          if (isBottomBar) {
+            const pad = parseFloat(String(m.appContentPadBottom));
+            return isFinite(pad) && pad + 1 >= Number(m.navBox.h);
+          }
+          return Number(m.railOverlapX ?? -1) <= 0;
         })(),
         cleanConsole: realErrs.length === 0,
         /* آدرسِ ثبت‌شده نباید به صفحۀ «این نشانی در اپ ثبت نشده است» بیفتد؛
