@@ -90,6 +90,15 @@ export type CodalMonthlySalesRow = MonthlySalesValues & {
   processingStatus: CodalProcessingStatus;
 };
 
+export type CodalMonthlyRevenueSeries = {
+  /** The sidecar currently has no complete symbol-identity/history marker. */
+  coverage: 'INCOMPLETE';
+  reason: 'identity_or_history_coverage_unverified';
+  rows: Array<Pick<CodalMonthlySalesRow, 'tracingNo' | 'symbol' | 'periodEnd'
+    | 'monthlyRevenue' | 'ytdRevenue' | 'ytdRevenuePrev' | 'source' | 'sourceUrl'
+    | 'publishedAt' | 'receivedAt' | 'lastUpdatedAt' | 'processingStatus'>>;
+};
+
 export type CodalFinancialStatementRow = FinancialStatementValues & {
   tracingNo: string;
   symbol: string;
@@ -374,6 +383,73 @@ function readLatestMonthlySales(db: Database, symbol: string): CodalMonthlySales
   }
 }
 
+function titleHasOtherEntity(titleValue: unknown): boolean {
+  const title = String(titleValue ?? '');
+  const open = new Set(['(', '（']);
+  const close = new Set([')', '）']);
+  const scopeMarks = ['حسابرس', 'تلفیق', 'اصلاحی'];
+  const entityMarks = ['شرکت', 'شرکای', 'موسسه', 'مؤسسه', 'گروه', 'بانک', 'بانك', 'صندوق', 'بیمه', 'بيمه'];
+  const genericNames = new Set(['اصلی', 'مادر', 'خود', 'دیگر', 'همه', 'فرعی']);
+  let found = false;
+  for (let i = 0; i < title.length; i += 1) {
+    if (!open.has(title[i]!)) continue;
+    let end = i + 1;
+    while (end < title.length && !close.has(title[end]!)) end += 1;
+    const span = title.slice(i + 1, end).replace(/[يى]/g, 'ی').replace(/ك/g, 'ک')
+      .replace(/\u200c/g, '').trim();
+    if (span.length > 2 && !scopeMarks.some((mark) => span.includes(mark))
+      && entityMarks.some((mark) => span.startsWith(mark))) {
+      const firstSpace = span.indexOf(' ');
+      const rest = firstSpace < 0 ? '' : span.slice(firstSpace + 1).trim();
+      if (rest && !genericNames.has(rest)) found = true;
+    }
+    i = end;
+  }
+  return found;
+}
+
+function readMonthlyRevenueSeries(db: Database, symbol: string, limit: number): CodalMonthlyRevenueSeries {
+  const boundedLimit = Math.max(1, Math.min(60, Math.trunc(limit) || 60));
+  const stmt = db.prepare(`SELECT ms.tracing_no, ms.symbol, ms.report_period,
+    ms.monthly_revenue, ms.ytd_revenue, ms.ytd_revenue_prev, ms.source, ms.source_url,
+    ms.published_at, ms.received_at, ms.last_updated_at, ms.processing_status,
+    docs.title FROM monthly_sales ms JOIN codal_documents docs
+      ON docs.tracing_no = ms.tracing_no
+    WHERE ms.symbol = ? AND ms.ytd_revenue IS NOT NULL AND ms.ytd_revenue > 0
+      AND ms.processing_status = 'PARSED'
+    ORDER BY CAST(substr(ms.report_period, 1, 4) AS INTEGER) DESC,
+      CAST(substr(ms.report_period, instr(ms.report_period, '/') + 1) AS INTEGER) DESC,
+      ms.ytd_revenue DESC, ms.last_updated_at DESC LIMIT ?`);
+  const byPeriod = new Map<string, CodalMonthlyRevenueSeries['rows'][number]>();
+  try {
+    stmt.bind([symbol, boundedLimit]);
+    while (stmt.step()) {
+      const row = stmt.getAsObject();
+      if (titleHasOtherEntity(row.title)) continue;
+      const periodEnd = String(row.report_period ?? '');
+      const period = /^(\d{4})\/(\d{1,2})\/(\d{1,2})$/.exec(periodEnd);
+      if (!period) continue;
+      const periodKey = `${Number(period[1])}/${Number(period[2])}`;
+      if (byPeriod.has(periodKey)) continue;
+      const number = (key: string): number | null =>
+        typeof row[key] === 'number' && Number.isFinite(row[key]) ? Number(row[key]) : null;
+      byPeriod.set(periodKey, {
+        tracingNo: String(row.tracing_no), symbol: String(row.symbol), periodEnd,
+        monthlyRevenue: number('monthly_revenue'), ytdRevenue: number('ytd_revenue'),
+        ytdRevenuePrev: number('ytd_revenue_prev'), source: String(row.source),
+        sourceUrl: String(row.source_url),
+        publishedAt: typeof row.published_at === 'string' ? row.published_at : null,
+        receivedAt: String(row.received_at), lastUpdatedAt: String(row.last_updated_at),
+        processingStatus: String(row.processing_status) as CodalProcessingStatus,
+      });
+    }
+  } finally {
+    stmt.free();
+  }
+  const rows = [...byPeriod.values()];
+  return { coverage: 'INCOMPLETE', reason: 'identity_or_history_coverage_unverified', rows };
+}
+
 export function createCodalStore(
   storage: CodalArtifactStorage = cacheStorage,
   runtime: () => Promise<SqlRuntime> = () => getSql(),
@@ -434,6 +510,9 @@ export function createCodalStore(
     },
     readLatestMonthlySales(symbol: string): Promise<CodalMonthlySalesRow | null> {
       return withRead((db) => readLatestMonthlySales(db, symbol));
+    },
+    readMonthlyRevenueSeries(symbol: string, limit = 60): Promise<CodalMonthlyRevenueSeries> {
+      return withRead((db) => readMonthlyRevenueSeries(db, symbol, limit));
     },
     readLatestFinancialStatement(symbol: string): Promise<CodalFinancialStatementRow | null> {
       return withRead((db) => readLatestFinancialStatement(db, symbol));

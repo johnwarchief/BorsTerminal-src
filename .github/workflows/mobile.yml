@@ -1316,6 +1316,10 @@ jobs:
           # uiautomator ۵۷ بایت داد — AVD پیش‌فرض زیرِ WebView + ۱۶ مگابایت SQLite
           # نفَس نمی‌آورد. RAMِ صریح، همان دام نیست: تخصیصِ خودِ runner است.
           ram-size: 5120
+          # AVD دو هسته‌ای درِ سنجش WebView فشارِ CPU تا ۸۵٪ نشان داد؛ چهار هستۀ
+          # مجازی فضایِ زمان‌بندی بیشتری به سیستم و renderer می‌دهد تا رقابتِ CPU
+          # کمتر شود. نتیجه فقط بعد از اجرایِ دوبارۀ همین job سنجیده می‌شود.
+          cores: 4
           script: bash tools/android_emu_verify.sh
 
       - name: Record the result honestly when the emulator cannot run

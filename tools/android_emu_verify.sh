@@ -44,6 +44,16 @@ adb wait-for-device
 MODEL=$(adb shell getprop ro.product.model | tr -d '\r')
 RELEASE=$(adb shell getprop ro.build.version.release | tr -d '\r')
 SDK=$(adb shell getprop ro.build.version.sdk | tr -d '\r')
+PHYSICAL_SIZE=$(adb shell wm size 2>/dev/null | sed -n 's/^Physical size: //p' | head -1 | tr -d '\r')
+PHYSICAL_DENSITY=$(adb shell wm density 2>/dev/null | sed -n 's/^Physical density: //p' | head -1 | tr -d '\r')
+LABEL="native-unknown"
+if [[ "$PHYSICAL_SIZE" =~ ^[0-9]+x[0-9]+$ ]] && [[ "$PHYSICAL_DENSITY" =~ ^[0-9]+$ ]] && [ "$PHYSICAL_DENSITY" -gt 0 ]; then
+  IFS=x read -r PHYSICAL_WIDTH PHYSICAL_HEIGHT <<< "$PHYSICAL_SIZE"
+  CSS_WIDTH=$(( (PHYSICAL_WIDTH * 160 + PHYSICAL_DENSITY / 2) / PHYSICAL_DENSITY ))
+  CSS_HEIGHT=$(( (PHYSICAL_HEIGHT * 160 + PHYSICAL_DENSITY / 2) / PHYSICAL_DENSITY ))
+  LABEL="native-${CSS_WIDTH}x${CSS_HEIGHT}"
+fi
+step viewport INFO "physical_size=${PHYSICAL_SIZE:-unknown} physical_density=${PHYSICAL_DENSITY:-unknown} viewport=$LABEL"
 adb install -r -g "$APK" > "$OUT/install.log" 2>&1 && step install PASS "$(basename "$APK") on android-$RELEASE(api$SDK) $MODEL" || step install FAIL "$(tail -2 "$OUT/install.log" | tr '\n' ' ' | json_escape)"
 
 adb logcat -c
@@ -75,7 +85,7 @@ fi
 if [ -z "$PID" ]; then
   # بی‌پروسه، «دکمهٔ بازگشت اپ را بست» و «ازِ home برنگشت» فقط طنینِ همان
   # شکستِ اول‌اند. ادامه نده: هر سنجهٔ بعدی را NOT_VERIFIED بنویس و خارج شو.
-  for s in webview-360x800 webview-390x844 webview-412x915 back_button background_foreground; do
+  for s in "webview-$LABEL" back_button background_foreground; do
     step "$s" NOT_VERIFIED "اپ بالا نیامد"
   done
   kill "$LOGD" 2>/dev/null
@@ -87,10 +97,9 @@ fi
 # ── ۲) اندازۀ تلفن رویِ دستگاه واقعی ─────────────────────────────────────────
 # سه اندازۀ لازم (360×800 / 390×844 / 412×915) درِ Chromium با
 # tools/android_viewport_probe.mts سنجیده شده (27 رکورد، صفر سنجۀ رد). رویِ
-# شبیه‌ساز عمداً یک اندازۀ ثابت می‌ماند: درِ رانِ 38671378595 تغییرِ مکررِ
-# wm size/density رویِ AVDِ دو‌هسته‌ایِ CI چنان فشاری آورد که system_server
-# قفل کرد («Process system isn't responding» درِ هر سه اسکرین‌شات) و هیچ ادعایِ
-# DOMی ازِ آن ران قابلِ استناد نبود. 360×800 = 1080x2400 با density 480 (÷۳).
+# شبیه‌ساز اندازۀ native را می‌خوانیم و دست‌کاری نمی‌کنیم: تغییرِ wm size/density
+# فشارِ system_server را بالا می‌برد و می‌تواند پنجرۀ برنامه را بی‌فوکوس کند.
+# اندازهٔ واقعی درِ گزارش ثبت می‌شود.
 ensure_running() {  # $1 = برچسب
   local pid
   for i in 1 2 3 4 5 6; do
@@ -153,15 +162,12 @@ wait_for_focus() { # wait_for_focus <تلاش‌ها>
   return 1
 }
 
-LABEL=360x800
 RSS_START=$(adb shell dumpsys meminfo "$PKG" 2>/dev/null | tr -d '
 ' | awk '/^TOTAL/{print $2; exit}')
-adb shell wm size 1080x2400 >/dev/null 2>&1 && adb shell wm density 480 >/dev/null 2>&1
-sleep 6
 PID=$(ensure_running "$LABEL")
 if [ -z "$PID" ]; then
   adb logcat -d 2>/dev/null | grep -iE "$PKG|lowmemorykiller|am_proc_died" | tail -12 > "$OUT/died-$LABEL.txt"
-  step "view-$LABEL" FAIL "اپ پس ازِ wm size بالا نیامد (شاهد: $OUT/died-$LABEL.txt)"
+  step "view-$LABEL" FAIL "اپ پیش ازِ سنجۀ WebView بالا نیامد (شاهد: $OUT/died-$LABEL.txt)"
 else
   keep_awake
   # رانِ 38797140980: «CDP در دسترس نیست (webview_devtools_remote_2611)» درحالی‌که
@@ -275,8 +281,6 @@ else
 fi
 
 # ── ۳) بازگشت، background/foreground، crash/ANR ─────────────────────────────
-adb shell wm size reset >/dev/null 2>&1; adb shell wm density reset >/dev/null 2>&1
-sleep 3
 # بازگشت رویِ اپِ **بالا آمده** سنجیده می‌شود؛ بی‌این، طنینِ شکست‌هایِ قبلی به
 # حسابِ «اپ با یکِ بازگشت بست» گزارش می‌شد.
 PID=$(ensure_running "back" "")
@@ -300,14 +304,14 @@ adb shell input keyevent KEYCODE_APP_SWITCH 2>/dev/null
 sleep 2
 # ── ۳ب) رشدِ حافظه: دو نمونه، نه یکِ حکم ─────────────────────────────────────
 # «نشتِ حافظه» با یکِ عدد اثبات نمی‌شود؛ اینجا فقط فاصلۀ TOTAL RSS بینِ «بلافاصله
-# پس ازِ بالا آمدن» و «بعد ازِ سه تغییرِ اندازه + بازگشت + home» ثبت می‌شود و
+# پس ازِ بالا آمدن» و «بعد ازِ بازگشت + home» ثبت می‌شود و
 # نتیجه MEASURED نوشته می‌شود، نه PASS/FAIL — آستانه‌ای را که نساختم حکمِ
 # سبز/قرمز نمی‌کنم. قضاوتِ واقعی به دو دورِ پیاپی رویِ همین مسیرِ ثابت و رویِ
 # گوشیِ واقعی لازم است (AVDِ x86 کشۀِ حافظه‌اش متفاوت است).
 rss_kb() { adb shell dumpsys meminfo "$PKG" 2>/dev/null | awk '/^TOTAL/{print $2; exit}' | tr -d '\r'; }
 RSS_END=$(rss_kb)
 if [ -n "${RSS_START:-}" ] && [ -n "$RSS_END" ]; then
-  step mem_growth MEASURED "TOTAL RSS $RSS_START -> $RSS_END KB (سه تغییرِ اندازه + بازگشت + home)"
+  step mem_growth MEASURED "TOTAL RSS $RSS_START -> $RSS_END KB (بازگشت + home)"
 else
   step mem_growth NOT_VERIFIED "dumpsys meminfo عدد نداد (start=${RSS_START:-none} end=${RSS_END:-none})"
 fi

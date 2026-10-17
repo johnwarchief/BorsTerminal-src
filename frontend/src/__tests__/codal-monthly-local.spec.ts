@@ -160,6 +160,46 @@ describe('Codal local SQLite schema and writes', () => {
     }), outcome({ status: 'UNSUPPORTED', dataStored: false, error: 'datasource_missing_or_invalid' }));
     expect((await store.readLatestMonthlySales('خساپا'))?.processingStatus).toBe('NOT_EVALUATED');
   });
+
+  it('builds a bounded desktop-shaped monthly series and excludes reports for another entity', async () => {
+    const local = memoryStorage();
+    const store = createCodalStore(local.storage, testSql);
+    await store.recordReport(record({ tracingNo: '100', periodEnd: '1404/06/31',
+      values: { monthlyRevenue: 300, ytdRevenue: 2100, monthlyRevenuePrev: null,
+        ytdRevenuePrev: null, monthlyVolume: null, ytdVolume: null, volumeUnit: null } }), outcome());
+    await store.recordReport(record({ tracingNo: '101', periodEnd: '1405/06/31',
+      values: { monthlyRevenue: 400, ytdRevenue: 3600, monthlyRevenuePrev: null,
+        ytdRevenuePrev: 2100, monthlyVolume: null, ytdVolume: null, volumeUnit: null } }), outcome());
+    await store.recordReport(record({ tracingNo: '102', title: 'گزارش فعالیت ماهانه (شرکت هلپاک)',
+      periodEnd: '1405/07/30', values: { monthlyRevenue: 9000, ytdRevenue: 99000,
+        monthlyRevenuePrev: null, ytdRevenuePrev: null, monthlyVolume: null,
+        ytdVolume: null, volumeUnit: null } }), outcome());
+
+    const series = await store.readMonthlyRevenueSeries('خساپا', 60);
+    expect(series).toMatchObject({ coverage: 'INCOMPLETE',
+      reason: 'identity_or_history_coverage_unverified' });
+    expect(series.rows.map(({ periodEnd, ytdRevenue, ytdRevenuePrev }) =>
+      ({ periodEnd, ytdRevenue, ytdRevenuePrev }))).toEqual([
+      { periodEnd: '1405/06/31', ytdRevenue: 3600, ytdRevenuePrev: 2100 },
+      { periodEnd: '1404/06/31', ytdRevenue: 2100, ytdRevenuePrev: null },
+    ]);
+  });
+
+  it('keeps desktop scope exemptions and only returns rows with positive YTD revenue', async () => {
+    const local = memoryStorage();
+    const store = createCodalStore(local.storage, testSql);
+    await store.recordReport(record({ tracingNo: '200', title: 'گزارش فعالیت ماهانه (حسابرسی شده)',
+      values: { monthlyRevenue: 100, ytdRevenue: 100, monthlyRevenuePrev: null,
+        ytdRevenuePrev: null, monthlyVolume: null, ytdVolume: null, volumeUnit: null } }), outcome());
+    await store.recordReport(record({ tracingNo: '201', periodEnd: '1405/07/30',
+      values: { monthlyRevenue: -1, ytdRevenue: -1, monthlyRevenuePrev: null,
+        ytdRevenuePrev: null, monthlyVolume: null, ytdVolume: null, volumeUnit: null } }), outcome());
+
+    const series = await store.readMonthlyRevenueSeries('خساپا', 1);
+    expect(series.rows).toHaveLength(1);
+    expect(series.rows[0]).toMatchObject({ tracingNo: '200', periodEnd: '1405/06/31',
+      source: 'codal.ir', processingStatus: 'PARSED' });
+  });
 });
 
 describe('Codal monthly sync vertical slice', () => {
