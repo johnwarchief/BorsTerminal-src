@@ -156,6 +156,10 @@ SUITES = [
                                        'incremental sync: new symbol + new monthly report'),
     # R1/R2 housekeeping (plans/codal-final-audit.md): dedupe اصلاحیه‌ها +
     # backfill ستون‌های «سال قبل». یدم‌پذیر و روی کپیِ تازه اجرا می‌شود.
+    # مأموریت تطبیق 2026-10-17: گروه/تبِ نامعتبر نباید «صفرِ معتبر» بدهد،
+    # و صفرِ واقعیِ یک دستۀ معتبر نباید رد شود.
+    ('dev/mstat_group_validate_v1120.py',
+     'mstat params: unknown group/tab is a loud 400, a legitimately-empty category still returns 200'),
     ('dev/db_housekeeping.py --selftest',
                                        'R1/R2 housekeeping: dedupe + prev-year backfill'),
     # Phase B (plans/production-packaging-and-unpark-plan.md): onedir build.
