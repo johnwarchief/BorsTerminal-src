@@ -339,6 +339,15 @@ def main() -> int:
        "ت) درِ کاغذی اعلام می‌شود، نه یکی‌شدنِ دو دروازه", mm.get("paper"))
     ck(st6.get("queue_rank", {}).get("claims_first") is False,
        "ث) هیچ ادعایِ «اولِ صف» درِ وضعیت نیست", st6.get("queue_rank"))
+    wp = st6.get("wire_provenance") or {}
+    ck(wp.get("order_create", {}).get("kind") == "third-party-code-only" and
+       wp.get("order_create", {}).get("hypothesis") is True,
+       "ح) درِ سفارش صریح «فقط کدِ شخصِ ثالث + فرضیه» است، نه قرارداد", wp.get("order_create"))
+    ck(wp.get("host", {}).get("kind") == "first-party-config" and
+       "orbis.easytrader.ir" in str(wp.get("host", {}).get("value")),
+       "خ) میزبان ازِ پیکربندیِ انتشاریافتۀِ خودِ کارگزاری شاهد دارد", wp.get("host"))
+    ck(wp.get("host_health", {}).get("proves_session") is False,
+       "ص) «میزبانِ سالم» هرگز شاهدِ نشست نیست", wp.get("host_health"))
     import api.bot as BOT
     g = BOT._live_gates()
     ck(g.get("live_wired") is False and g.get("broker_wired") == "paper_only",

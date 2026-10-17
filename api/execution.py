@@ -43,7 +43,8 @@ from execution_contract import (
     ExecutionStatus, InstrumentRef, OrderDraft, OrderMode, Resolution, Side,
 )
 from execution_easytrader import (
-    EasyTraderAdapter, RefusingTransport, RequestsTransport, WIRE_HYPOTHESIS,
+    EasyTraderAdapter, RefusingTransport, RequestsTransport, WIRE_BASE_URL,
+    WIRE_HYPOTHESIS, WIRE_PROBE_HOST_HEALTH, WIRE_SESSION_PROBE_CANDIDATES,
     easytrader_payload,
 )
 import execution_connect as EXC                            # noqa: E402
@@ -614,6 +615,28 @@ def get_status() -> dict[str, Any]:
         "nothing_will_leave_the_machine": bool(DRY_RUN or not live),
         "live_requested": LIVE_REQUESTED,
         "wire_hypothesis": (ADAPTER_KIND == "easytrader") and WIRE_HYPOTHESIS,
+        # منشأِ هر مسیرِ سیم (§۳-۲): «فقط درِ کدِ شخصِ ثالث» از «پیکربندیِ
+        # انتشاریافتۀِ خودِ کارگزاری» و «رفتارِ دیده‌شده» جداست. بی‌این تفکیک،
+        # نامِ یکِ میدان درِ مرجع، مدرکِ قراردادِ زنده شمرده می‌شود.
+        "wire_provenance": {
+            "host": {"value": WIRE_BASE_URL, "kind": "first-party-config",
+                     "evidence": "d.easytrader.ir/app-version.json gives apiPath"},
+            "order_create": {"value": "/core/api/v2/order",
+                             "kind": "third-party-code-only",
+                             "official_docs": "absent (swagger/openapi = 403)",
+                             "hypothesis": WIRE_HYPOTHESIS},
+            "order_list": {"value": "/core/api/order",
+                           "kind": "third-party-code-only",
+                           "hypothesis": WIRE_HYPOTHESIS},
+            "host_health": {"value": WIRE_PROBE_HOST_HEALTH,
+                            "kind": "first-party-config",
+                            "proves_session": False},
+            "session_probe_candidates": {
+                "value": list(WIRE_SESSION_PROBE_CANDIDATES),
+                "kind": "observed-read-only",
+                "observed": "401 + www-authenticate: Bearer",
+                "body_semantics": "unverified"},
+        },
         "session": _session_dict(),
         "blocked_on": blocked,
         "confirm_gate": {"required": confirm_required, "phrase": _confirm_phrase()},

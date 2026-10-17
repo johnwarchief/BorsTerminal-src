@@ -74,6 +74,25 @@ WIRE_PATH_QUEUE = "/ms/api/MarketSheet/order-place"
 #: کارگزاری در دسترس نیست»، نه «ساعتِ ما درست است».
 WIRE_PATH_SERVER_TIME = "/easy/api/account/server-time"
 
+#: منشأِ هر مسیر درِ یکِ جمله، تا «فرضیه» و «دیده‌شده» از هم جدا بمانند (§۳-۲).
+#: • `WIRE_BASE_URL`  : حالا دو شاهد دارد — کدِ شخصِ ثالث، و پیکربندیِ
+#:   انتشاریافتۀِ خودِ کارگزاری: `GET https://d.easytrader.ir/app-version.json`
+#:   ⇒ `"apiPath":"https://api-mts.orbis.easytrader.ir/boot/api/build-number?…"`
+#: • `boot/api/build-number` : فقط‌خواندنی و بی‌نیازِ نشست ⇒ مناسبِ «میزبان سالم
+#:   است» — و هرگز شاهدِ نشست نیست.
+#: • `easy/api/account/server-time`، `symbols/api/TradingTime`،
+#:   `easy/api/clientAppSetting` : درِ نشستِ 2026-10-17 باِ GETِ فقط‌خواندنی
+#:   **۴۰۱ + `www-authenticate: Bearer`** برگرداندند؛ پس «۴۰۱ یا ۲۰۰» داوریِ
+#:   دوضابطهٔ نشست می‌دهد. معنایِ بدنۀِ ۲۰۰ هنوز دیده نشده ⇒ فرضیه.
+#: • `/core/api/v2/order` و `/core/api/order`: فقط درِ کدِ شخصِ ثالث. هیچ سندِ
+#:   رسمیِ API نیست (swagger/openapi/docs ⇒ ۴۰۳). `WIRE_HYPOTHESIS` برایِ
+#:   سفارشِ واقعی پس تا دیدنِ پاسخِ واقعی درِ نشستِ مجاز true می‌ماند.
+WIRE_PROBE_HOST_HEALTH = "/boot/api/build-number"
+WIRE_SESSION_PROBE_CANDIDATES = (
+    "/easy/api/account/server-time", "/symbols/api/TradingTime",
+    "/easy/api/clientAppSetting",
+)
+
 #: بدنۀ سفارش درِ این سکو درهم‌پیچ است: همه‌چیز زیرِ کلیدِ `order`
 #: (`Sarkhati src/easy_trader.rs:62-80`). بدنۀِ تختِ Online-Plus/Titan عمداً
 #: اینجا نمی‌آید؛ آن پروتکلِ دیگری است.
@@ -1227,7 +1246,8 @@ class EasyTraderAdapter(BrokerAdapter):
 
 
 __all__ = [
-    "ADAPTER_NAME", "WIRE_HYPOTHESIS", "EasyTraderAdapter", "WireResponse",
+    "ADAPTER_NAME", "WIRE_HYPOTHESIS", "WIRE_PROBE_HOST_HEALTH",
+    "WIRE_SESSION_PROBE_CANDIDATES", "EasyTraderAdapter", "WireResponse",
     "WireVerdict", "Transport", "RefusingTransport", "RequestsTransport",
     "TransportRefused", "TransportTimeout", "TransportNetwork", "Timeouts",
     "PROTOCOL_CAPS", "NO_CAPS", "interpret_easytrader_response",
