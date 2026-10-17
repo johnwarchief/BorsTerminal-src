@@ -77,10 +77,6 @@ export function AppShell() {
     return stopIdleGate;
   }, []);
 
-  if (!isAuthenticated) {
-    return <LoginScreen />;
-  }
-
   // ارتفاعِ نوارهایِ چسبانِ بالایِ محتوا اندازه‌گیری می‌شود، نه حدس:
   // `--pinned-h` ازِ قبل درِ index.css تعریف بود ولی قاعدۀِ
   // `.app-content:has(.symbol-strip-bar)` هرگز نمی‌خورد (هیچ المانی کلاسِ
@@ -110,6 +106,7 @@ export function AppShell() {
         observed.add(el);
         ro.observe(el);
       });
+
       sync();
     };
     const ro = new ResizeObserver(sync);
@@ -121,6 +118,10 @@ export function AppShell() {
     attach();
     return () => { ro.disconnect(); mo.disconnect(); };
   }, []);
+
+  if (!isAuthenticated) {
+    return <LoginScreen />;
+  }
 
   // ریسپانسیو (فاز ۲): فاصله/اورلی سایدبار و داور با CSS و توکنها مدیریت میشود
   // (.app-content / .app-main در index.css) — بدون هک جاوااسکریپت در رندر.
