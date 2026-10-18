@@ -1,9 +1,9 @@
 # BorsTerminal — Master Execution Roadmap
 
-> **مرجع ترتیب فعلی کارها — به‌روزرسانی مالک در 2026-10-17:** این سند هم roadmap فعال است و هم ledger تاریخی. ترتیب اجراییِ بخش «Current owner-approved execution order» مرجع فعلی است؛ بخش‌های قدیمی‌ترِ تاریخ‌دار برای حفظ تصمیم‌ها، شواهد و جزئیات فنی باقی می‌مانند و نباید ترتیب‌های تاریخی آن‌ها را جایگزین اولویت فعلی کنند.
+> **مرجع ترتیب فعلی کارها — به‌روزرسانی مالک در 2026-10-18:** این سند هم roadmap فعال است و هم ledger تاریخی. ترتیب اجراییِ بخش «Current owner-approved execution order (2026-10-18)» مرجع فعلی است و بخشِ 2026-10-17 درِ زیرِ آن برایِ تاریخچه و پذیرش‌هایِ الزامی‌اش می‌ماند؛ بخش‌های قدیمی‌ترِ تاریخ‌دار برای حفظ تصمیم‌ها، شواهد و جزئیات فنی باقی می‌مانند و نباید ترتیب‌های تاریخی آن‌ها را جایگزین اولویت فعلی کنند.
 
 **Status:** Current owner-approved execution order + historical implementation ledger.  
-**Last owner-priority refresh:** 2026-10-17  
+**Last owner-priority refresh:** 2026-10-18 (indicator engineering, global UI/UX, five-page strategy tree) — previous refresh 2026-10-17 (speed first) remains gated by P0-A  
 **Repository:** `johnwarchief/BorsTerminal-src` — desktop/main source repository, not the Android branch.  
 **Source-of-truth hierarchy:** `docs/README.md`, canonical FTS sources, and explicit owner rulings.
 
@@ -22,6 +22,109 @@ BorsTerminal should become a reliable, data-correct, locally operable trading an
 - A configurable Strategy FTS Builder backed by a reusable, versioned filter/algorithm registry, with explicit condition semantics and reference parity checks against Rahavard where the relevant filters and evidence are available.
 - Source-linked, event-driven price explanations that connect verified CODAL/TSETMC events to daily candles without blocking the market-data path.
 - Desktop and Android builds that share canonical analytical meaning.
+
+## Current owner-approved execution order (2026-10-18)
+
+**Owner priority refresh 2026-10-18**, from the mission «مأموریت مهندسی اندیکاتورها، بازطراحی
+سراسری UI/UX و درخت پنج‌صفحه‌ای FTS». This list changes the *order* of work only. It does not
+cancel any acceptance gate written in the 2026-10-17 order below, and it does not authorize
+resetting, overwriting, silently merging or stopping any branch, worktree or service that
+another engineer owns. Where a prerequisite has not actually been accepted, its state is
+recorded here as `NOT_PROVEN` / `BLOCKED` rather than assumed.
+
+### P0-A — the time-gated live-session speed baseline is still the owner's top product priority
+
+The 2026-10-17 priority ("speed first", measured at the official session open) is **not**
+cancelled by this mission. Target session: 2026-10-18 08:45 Tehran. Heavy implementation must
+pause before that window and the measurement runbook must be executed against the real,
+permitted data path. **State today: NOT_RUN.** No performance claim in this document is
+`PASS` until that capture exists.
+
+### P0-B — reconcile the release line before any new tag
+
+Established by direct git evidence on 2026-10-18 (see §Release-line reconciliation below):
+the newest published desktop release (`v1.0.90`, published 2026-10-17) is **not** an ancestor of
+`github/main`, and an unpublished `release/v1.0.91` already carries eight P0 security gates plus
+the six 1.0.91 version anchors. A release cut from `main` would silently delete the سرخطی /
+CODAL work that paying users already have. Therefore the next release must be built on the
+published line, not on `main`, and `main` may not be force-pushed to "fix" this.
+
+### Release-line reconciliation (evidence, 2026-10-18)
+
+| Ref | Commit | What it is |
+|---|---|---|
+| `github/main` | `f9cea521` | 9 commits ahead of the shared base `c0402614`; those 9 are docs + `docs/technical-indicators/inbox/*` uploads only. Still reports `APP_VERSION = 1.0.89`. |
+| `v1.0.90` tag | `56747f43` | The newest **published** desktop release (2026-10-17), on the `release/v1.0.90` line: 14 commits of سرخطی/EasyTrader + CODAL work that `main` does not contain. |
+| `release/v1.0.91` | `79895345` | Descendant of `v1.0.90`; eight P0 security gates + `dev/p0_gates_v1118.py` + six anchors at 1.0.91. **Untagged, unpublished, by owner decision.** |
+| `mission/strategy-fts-technical-2026-10-18` | `fbcccac9` | The technical-first Strategy FTS mission work (registry, engine, API, UI, guards), based on `main`. |
+| `release/strategy-fts-1091` | `ca530d63` | `v1.0.90` + the mission branch (clean merge, zero conflicting files) + this roadmap/doc updates. |
+| `release/1.0.91-strategy-fts` | `2bc3db21` | **The line to release from:** `release/v1.0.91` + the mission work. Six anchors verified 1.0.91 by `dev/version_anchor_guard.py`. |
+
+Neither published tag nor the pending 1.0.91 line was moved, rebased or force-pushed; the three
+new branches above are additive refs pushed to `github`.
+
+### Execution order for this mission
+
+| # | Workstream | Depends on | State (2026-10-18) |
+|---|---|---|---|
+| 0 | Stage Zero: read roadmap/DESIGN/skills/rulings, audit the five named active branches, inventory every indicator source, reconcile the release line | nothing | IMPLEMENTING — branch audit and indicator inventory running; release line reconciled into `release/1.0.91-strategy-fts` |
+| 1 | Shared design foundation: real shadcn/ui primitives (one primitive family, current tokens preserved), then route-by-route migration with before/after browser evidence | Stage Zero branch audit (do not build a parallel component set) | DISCOVERED — see "current component reality" below |
+| 2 | Workspace tabs + named sessions (B4/B5): reuse whatever `WorkspaceTabs.tsx` / `workspaceStore.ts` work already exists in the audited branches | #1 for shared controls | PLANNED — blocked on the branch audit result |
+| 3 | Indicator engineering (A1–A7): complete intake triage of every file in `docs/technical-indicators/`, then implement accepted indicators in the real technical chart, with a registry-driven selector (search, categories, overlay vs pane, params, multi-instance, reset, persisted workspace) | Stage Zero inventory; must not change canonical FTS rules | IMPLEMENTING (inventory first) |
+| 4 | Five-page Strategy Tree (C): pages 1–4 faithful to the four PDF chart pages; page 5 a genuine unified graph, not four images glued together | PDF reference set + existing tree code | PLANNED |
+| 5 | Integrated validation (E1–E4): per-area acceptance evidence, real-browser visual evidence, full gate, no removed test, no loosened tolerance | #1–#4 | NOT_RUN |
+| 6 | Release (F): version from the repo, all six anchors, release notes, real build + distribution-package smoke, checksums, tag + GitHub Release | P0-A measured, P0-B resolved, #5 green | BLOCKED on P0-A and #5 |
+
+### Stage Zero branch audit — verified result and the integration decision (2026-10-18)
+
+Every claim below was re-checked with `git ls-tree` / `git merge-tree` / `git log` in
+`_bors-fts-technical`; nothing is copied from an old report.
+
+| Branch | Tip | What it actually holds | Relation to the release line |
+|---|---|---|---|
+| `mission/uiux-polish-integration-2026-10-17` | `1d3ff6fe` | 20 commits on top of `release/v1.0.91`: semantic `tone` layer + token/direction guards, 163 pixel font sizes migrated to the `--fs-*` ladder, shared components, **`app/components/WorkspaceTabs.tsx` + `shared/stores/workspaceStore.ts`**, سرجخطی tab design, shell/inspector/layout fixes | **merges clean** into `release/1.0.91-strategy-fts` (tree `68fcd1b2`), 0 behind `release/v1.0.91` |
+| `mission/uiux-2-0-redesign-2026-10-16` | `a3984f02` | the earlier 66-commit UI/UX line; its workspace tabs are the **same files** as polish's, differing by 3 className lines (touch-target minimums) | 26 conflicts with the release line; superseded by polish → **do not merge** |
+| `github/mission/fts-indicator-engineering` | `ff6b2fb4` | 51 commits: FTS indicator catalogue, three-layer structure engine, anti-repaint stage, Rahavard parity work | strict ancestor of both siblings above; 13 conflicts with the release line; it carries **both** `ftsIndicatorCatalog.ts` and `tvIndicatorCatalog.ts` |
+| `github/mission/system2-perf-market-hours-2026-10-17` | `9594c7ff` | the 51-commit core + 10 perf commits (funnel cached body, build lock, stale board, market-hours audit, perf harness). The roadmap's `6907af9` is real: `6907af90` | 14 conflicts with the release line; it is the branch P0-A measures |
+| `github/mission/qa-full-uiux-perf-2026-10-16` | `402acbfe` | route inventory + QA guard only (3 commits) | clean, small, no chart/UI overlap |
+| `integration/uiux-2-0-review-2026-10-16` | `65080701` | 2 of 3 commits are patch-duplicates of `87509dc1`; only `docs/AGENT-INDEX.md` is unique | its market card work (`TapeCards`, `MicroBadge`, `tapeColumns`) is **not** in polish or the release line |
+| `github/uiux-fts-roadmap-2026-10-07` | `2391f136` | roadmap work | **already contained** in `main`, `release/v1.0.91` and the release line → closed, nothing to redo |
+
+Decisions this forces (the mission forbids building a parallel implementation):
+
+1. **Section B (global UI/UX + workspace tabs + sessions) is not greenfield.** `WorkspaceTabs.tsx`
+   and `workspaceStore.ts` exist only on the two UI/UX branches and are absent from the release
+   line. The release line must *integrate* polish (`1d3ff6fe`, clean merge, newest version of those
+   files), then review it against `DESIGN.md` §5 and capture before/after browser evidence — not
+   re-author a second tab system.
+2. **Section A must reconcile two catalogues, not create a third.** The indicator line already
+   ships `ftsIndicatorCatalog.ts` next to the release line's `tvIndicatorCatalog.ts` /
+   `tvIndicators.ts` / `mabnaIndicators.ts`. Whatever gets integrated must end with **one**
+   registry feeding the chart's selector; a second catalogue under a different name is exactly the
+   "two versions of one formula" case `DESIGN.md`/`AGENTS.md` forbid.
+3. **P0-A belongs to `system2-perf-market-hours` (`9594c7ff`)**, not to the release line; the
+   baseline today is what the installed app actually does, and that branch's own report claims
+   must be re-measured, not repeated.
+4. `uiux-2-0-redesign` and its third sibling `github/mission/ui-audit-system-2-2026-10-15`
+   (`3feb5257`) are **not** to be merged or re-run; polish already re-executes them on the release
+   base.
+
+### Current component reality (measured 2026-10-18, this branch)
+
+- `frontend/package.json` has **no** `@radix-ui/*`, no `shadcn`, no `lucide-react`, no `clsx`,
+  no `tailwind-merge`, and there is **no** `components.json`. `cn()` in
+  `frontend/src/shared/lib/cn.ts` is a hand-written class joiner, not clsx+tailwind-merge.
+- `frontend/src/shared/components/ui/` already contains 18 files named like shadcn primitives
+  (`button.tsx`, `dialog.tsx`, `select.tsx`, `tabs.tsx`, `dropdown-menu.tsx`, `tooltip.tsx`,
+  `command.tsx`, `sheet.tsx`, `switch.tsx`, …) but they are hand-styled and Radix-free, and
+  almost nothing imports them: outside that folder, only `CommandPalette.tsx`,
+  `SymbolContextStrip.tsx`, `DataTable.tsx`, `SymbolInspector.tsx` and two specs reference
+  `@shared/components/ui/*`. This is exactly the "CSS variables are not proof shadcn is
+  installed" case that `DESIGN.md` §3 warns about.
+- Consequence: section B is a real integration (dependencies, `components.json`, alias config,
+  primitive family choice) followed by a migration, not a re-skin. The ~15 unused hand-styled
+  primitives must be replaced or deliberately deleted — deleting one is an owner-visible change,
+  so each removal needs a reason in the report.
 
 ## Current owner-approved execution order (2026-10-17)
 
@@ -210,7 +313,22 @@ A Rahavard visual match is supporting evidence for the specific filter/configura
 - Then add the separate technical-first corrective-pullback preset from the next roadmap item using these reusable blocks.
 - ML/DL strategy discovery remains later work and depends on Market Signal Journal plus point-in-time data foundation.
 
-### 10. Strategy FTS technical-first corrective-pullback funnel (PLANNED / BLOCKED)
+### 10. Strategy FTS technical-first corrective-pullback funnel (IMPLEMENTED / NOT_PROVEN-IN-BROWSER)
+
+**State update 2026-10-18 — the owner opened this work with a direct mission on 2026-10-18, so
+the 2026-10-17 "do not start" gate below no longer blocks it.** What is now in the code: a
+`tech_first` preset in `funnel_registry.py` (its `flow` is read by the engine), a technical stage
+that runs the canonical weekly gate plus 16 selectable technical filters over the *whole*
+screening universe (no cap), the `tech_chain` API parameter with cache-key isolation, and the
+Strategy FTS tab where the technical table is the first main table with per-condition verdicts.
+Measured on the real local `market.db`: 1035 symbols judged in the technical stage, 117 reaching
+the tape stage; the weekly veto was not breakable by selecting a setup. Guards:
+`dev/funnel_engine_v1.py` 179 checks, `dev/funnel_registry_v1.py` OK (ruleset `5296bba79190`),
+frontend suite 1705 passing. **Still NOT_PROVEN:** real-browser visual verification of the new
+first-table layout, the «۳۰٪ فیبو» hypothesis reconciliation (only the documented 33–40 and
+61.8–70 zones exist in data today), time-matched Rahavard/TSETMC checks, and the separate
+`صف خرید` selectivity diagnosis, which did not reproduce in the run recorded on 2026-10-17.
+The original 2026-10-17 gate text is kept below as history.
 
 **State: PLANNED / NOT STARTED. Recorded 2026-10-17.** Do not begin implementation, create a new parallel mission, or redirect either running agent until the owner confirms that System 1's current UI/UX 2.1 work and System 2's current performance work are complete and accepted. This item records the next strategic direction; it does not interrupt the active execution sequence above.
 
