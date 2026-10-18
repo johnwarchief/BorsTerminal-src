@@ -124,10 +124,10 @@ export const ExecutionStatusSchema = z.object({
   }).nullish(),
   wire_provenance: z.unknown().nullish(),
   // ── سه گیتِ جدا (مأموریتِ 2026-10-18) ──
-  // `live_enabled` = «ارسالِ سفارش آزاد است»، `read_only` = «فقط GET مجاز است»،
-  // `traffic_allowed` = «هیچ ترافیکی ازِ این进程 بیرون می‌رود». پیش ازِ این تنها
-  // اولی بود، پس «تأییدِ نشست» هم ناگزیر به گیتِ نوشتن گره می‌خورد و هرگز ممکن
-  // نمی‌شد. `connection_config` هم «ذخیره شد» را از «اعمال شد» جدا می‌گوید.
+  // `live_enabled` = «ارسالِ سفارش آزاد است»، `read_only` = «این برنامه فقط می‌خواند»،
+  // `traffic_allowed` = «ترافیک ازِ این پروسه بیرون می‌رود (حتی GET)». پیش ازِ این
+  // تنها اولی بود، پس «تأییدِ نشست» هم ناگزیر به گیتِ نوشتن گره می‌خورد و هرگز
+  // ممکن نمی‌شد. `connection_config` هم «ذخیره شد» را از «اعمال شد» جدا می‌گوید.
   read_only: bool,
   session_live: bool,
   traffic_allowed: bool,
