@@ -42,7 +42,11 @@ function statusBody(patch: Record<string, unknown> = {}) {
     live_enabled: false, live: false, live_requested: false,
     nothing_will_leave_the_machine: true, wire_hypothesis: false, blocked_on: [],
     confirm_gate: { required: false, phrase: 'تأییدِ نهایی' },
-    capabilities: CAPS_ON, session: { state: 'disconnected' },
+    capabilities: CAPS_ON,
+    // نشستِ اتصال‌شده همان چیزی است که بیلدِ mock واقعاً می‌دهد (خواندۀ زنده از
+    // /api/execution/status در ۸۱۰۱: state=connected، account_label=mock-acct-1).
+    // حالت‌هایِ بی‌نشست درِ بخشِ «قدمِ راهنما» سنجیده می‌شوند، نه اینجا.
+    session: { state: 'connected', account_label: 'mock-acct-1' },
     kill_switch: 'ARMED', halted: false, kill_reason: '', ledger_size: 1,
     durable_events: 3, recovered_after_restart: 0, scheduled_pending: 0,
     confirm_epoch: 2, clock_source: 'system', clock_limit: 'ساعتِ سیستم بی‌NTP',
@@ -151,8 +155,12 @@ describe('مقصدِ مستقل', () => {
     route();
     renderPage();
     await waitFor(() => expect(screen.getByTestId('sarkhati-page')).toBeInTheDocument());
+    // نشست ازِ همان پاسخِ `statusBody()` خوانده می‌شود (mock بیلدِ واقعی هم
+    // connected می‌دهد)؛ شاخه‌هایِ دیگرِ نشست — disconnected/expired/error — درِ
+    // `sarkhati-guided-flow.spec.tsx` پاسخ‌هایِ متفاوت سنجیده می‌شوند، پس این
+    // سنجش «متنِ ثابت» نیست: دو پاسخِ دیگر، دو خوانشِ دیگر می‌دهد.
     await waitFor(() => expect(screen.getByTestId('sarkhati-status-strip')
-      .getAttribute('data-session')).toBe('disconnected'));
+      .getAttribute('data-session')).toBe('connected'));
     expect(screen.getByTestId('sarkhati-status-strip').textContent).toContain('سرویسِ اجرا: mock');
     expect(screen.getByTestId('sarkhati-mode-live').textContent).toContain('نیست');
     expect(screen.getByTestId('sarkhati-mode-paper').textContent).toContain('خاموش');
@@ -178,7 +186,7 @@ describe('حالَتِ فرم', () => {
     // نمادِ تازه هیچ‌وقت قیمتِ نمادِ قبلی را زیرِ خودش نمی‌گذارد
     useSymbolStore.getState().setSymbol('شپنا');
     await waitFor(() => expect(screen.getByTestId('watch-order-price')).toHaveValue(''));
-    expect(screen.getByTestId('sarkhati-chosen-symbol').textContent).toContain('شپنا');
+    expect(screen.getByTestId('sarkhati-symbol-chip').textContent).toContain('شپنا');
     expect(useSarkhatiFormStore.getState().bySymbol['شپنا']).toBeUndefined();
   });
 
@@ -318,6 +326,13 @@ describe('وضعیت‌هایِ خطا و نبودِ داده', () => {
       .toContain('سرویسِ اجرا نیست'), { timeout: 8000 });
     await waitFor(() => expect(screen.getByTestId('sarkhati-gate-reason').textContent)
       .toContain('سرویسِ اجرای سفارش در این نسخه پاسخ نمی‌دهد'), { timeout: 15000 });
+    // بازطراحیِ ۲۰۲۶-۱۰-۱۸: بی‌سرویس، نگاهِ اول «اتصال» است و فرم اصلاً ساخته
+    // نمی‌شود — «دکمهٔ باز» نمی‌تواند باشد، و رفتنِ کاربر به آن هم دروازه را باز
+    // نمی‌کند: اگر فرم باز شد، «ارسال» باید خاموش باشد.
+    expect(screen.getByTestId('sarkhati-page').getAttribute('data-step')).toBe('connect');
+    expect(screen.queryByTestId('exec-submit')).toBeNull();
+    fireEvent.click(screen.getByTestId('sarkhati-tab-order'));
+    await waitFor(() => expect(screen.getByTestId('exec-submit')).toBeInTheDocument());
     expect(screen.getByTestId('exec-submit')).toBeDisabled();
   }, 20000);
 

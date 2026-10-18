@@ -57,11 +57,15 @@ function Chip({ onClick, disabled, children, testId, tone = 'ghost', title }: {
   );
 }
 
-export function ExecutionPanel({ symbol, row, schedule = false }: {
+export function ExecutionPanel({ symbol, row, schedule = false, connect = true }: {
   symbol: string; row: MarketRow | null;
   /** تبِّ «سرخطی»: زمانِ هدف و پیش‌افت را هم نشان می‌دهد. دیده‌بان بدونِ آن
    *  دست‌نخورده می‌ماند (ارتفاعِ فشرده‌اش حفظ می‌شود). */
   schedule?: boolean;
+  /** ردیفِ اتصال. درِ «سرخطی» اتصال خودِ قدمِ ۱ است و دو جایِ هم‌زمانِ همان
+   *  کنترل‌ها کاربر را می‌گرداند؛ آن‌جا صفحه `false` می‌دهد و ردیف را خودش
+   *  می‌راند. دیده‌بان و بقیه بی‌این پارامتر دست‌نخورده‌اند. */
+  connect?: boolean;
 }) {
   const { gate } = useExecutionStatus();
   const ledger = useExecutionLedger(gate.endpointPresent);
@@ -186,7 +190,7 @@ export function ExecutionPanel({ symbol, row, schedule = false }: {
       data-adapter={gate.status?.adapter ?? 'none'}
       data-session={gate.sessionState}
     >
-      <ConnectBrokerRow />
+      {connect ? <ConnectBrokerRow /> : null}
       <div className="mb-1 flex flex-wrap items-center gap-1">
         {schedule ? null : (
           <h5 className="text-2xs font-black text-text-secondary">پنلِ معامله</h5>
