@@ -21,7 +21,12 @@ import funnel_registry as REG  # noqa: E402
 FAILED: list[str] = []
 
 
+BANDS = 0
+
+
 def ck(cond: bool, msg: str) -> None:
+    global BANDS
+    BANDS += 1
     print(("  ok   " if cond else "  FAIL ") + msg)
     if not cond:
         FAILED.append(msg)
@@ -753,8 +758,93 @@ _fc4 = _o4["stages"]["tape"]["filter_counts"]["f_susp"]
 ck(_fc4["matched"] == 1 and _fc4["removed"] == 0 and _fc4["unmeasured"] == 1,
    "۵۰) بی‌حکم درِ نامزد و رد نمی‌نشیند: " + str(_fc4))
 
+# ── ۵۱..۶۱) جریانِ «تکنیکال اول» (مأموریتِ ۱۴۰۵-۰۷-۲۶) ─────────────────────
+# همان ردیف‌هایِ بالا، اما با presetِ تازه. انتظارها بیرونِ موتور نوشته شده‌اند:
+# تکنیکال رویِ **کلِ جامعۀ غربالگری** داوری می‌شود و تابلو رویِ ماندگانِ آن.
+_TB = [board("الف", f_susp=True, f_jet=True), board("ب", f_susp=True, f_jet=True),
+       board("پ", f_susp=True, f_jet=False), board("ت", f_susp=True, f_jet=True)]
+_TS = [screen("الف", **UP, **OK_FUND, tech_jet=1),
+       screen("ب", **W_DOWN, **OK_FUND, tech_jet=1),
+       screen("پ", **UP, **OK_FUND, tech_jet=0),
+       screen("ت", **UP, **OK_FUND, tech_jet=1)]
+_TECH_SCAN = {r["symbol"]: {k: v for k, v in r.items() if k.startswith("tech_")} for r in _TS}
+
+_to = FE.evaluate([dict(r) for r in _TB], [dict(r) for r in _TS], preset="tech_first",
+                   tech_scan=_TECH_SCAN)
+ck(_to["flow"] == "tech_first", "۵۱) flow از خودِ preset خوانده می‌شود: " + str(_to["flow"]))
+ck(_to["stages"]["technical"]["input"] == 4,
+   "۵۱) درِ تکنیکال‌اول، ورودیِ گامِ تکنیکال کلِ جامعۀ غربالگری است (۴)")
+ck(_to["stages"]["tape"]["input"] == len(_to["stages"]["technical"]["survivors"]),
+   "۵۱) ورودیِ تابلو = ماندگانِ تکنیکال، نه کلِ جامعه")
+# بی‌انتخابِ فیلترِ اضافه، فقط وتوی هفتگی داوری می‌کند ⇒ همهٔ صعودی‌های هفتگی
+ck(_to["stages"]["technical"]["survivors"] == ["الف", "پ", "ت"],
+   "۵۲) هفتگی نزولی («ب») درِ همان گامِ اول رد می‌شود: " + str(_to["stages"]["technical"]["survivors"]))
+ck(_to["status_matrix"]["ب"]["tape"]["status"] == FE.NOT_REQUIRED
+   and _to["status_matrix"]["ب"]["tape"]["reason_code"] == "NOT_REQUIRED_AFTER_TECHNICAL_REJECT",
+   "۵۲) گامِ تابلو برایِ مردودِ هفتگی «اجرا نشده» است، نه «سنجیده‌نشده»: "
+   + str(_to["status_matrix"]["ب"]["tape"]))
+
+# ۵۳) گیت با انتخابِ فیلترِ اختیاری نمی‌شکند: «ب» ستاپِ جت دارد ولی هفتگی‌اش نزولی است
+_j = FE.evaluate([dict(r) for r in _TB], [dict(r) for r in _TS], preset="tech_first",
+                 tech_chain=["t_setup_jet"], tech_scan=_TECH_SCAN)
+ck("ب" not in _j["stages"]["technical"]["survivors"],
+   "۵۳) انتخابِ «ستاپ جت» وتوی هفتگیِ «ب» را ردیف نمی‌کند")
+ck(_j["stages"]["technical"]["survivors"] == ["الف", "ت"],
+   "۵۴) فیلترِ ورودیِ انتخابی درست همان نمادهایی را نگه می‌دارد که ستاپ دارند: "
+   + str(_j["stages"]["technical"]["survivors"]))
+ck([c["filter_id"] for c in _j["trace"]["technical"][0]["checks"]] == ["t_weekly_up", "t_setup_jet"],
+   "۶۰) چک‌هایِ هر نماد به ترتیبِ گیت←انتخاب ثبت می‌شود")
+
+# ۵۵) بی‌تحلیل ≠ رد: نمادی که هیچ ستونِ تکنیکالی ندارد PENDING می‌ماند
+_TN = [board("ث", f_susp=True), board("ج", f_susp=True)]
+_SN = [screen("ث", **OK_FUND), screen("ج", **UP, **OK_FUND)]
+_tn = FE.evaluate(_TN, _SN, preset="tech_first",
+                  tech_scan={"ج": dict(UP)})
+ck(_tn["status_matrix"]["ث"]["technical"]["status"] in (FE.PENDING, FE.UNAVAILABLE),
+   "۵۵) بی‌تحلیل درِ گامِ تکنیکال «رد» نیست: " + str(_tn["status_matrix"]["ث"]["technical"]["status"]))
+ck(_tn["status_matrix"]["ث"]["tape"]["status"] == FE.NOT_REQUIRED,
+   "۵۵) و گامِ تابلو هم برایش «اجرا نشده» می‌نشیند")
+
+# ۵۶) شاهدِ ریسک (خروج) نماد را رد می‌کند با کدِ همان شاهد
+_TR = [screen("ح", **UP, **OK_FUND, tech_exit_signals='["third_peak"]')]
+_tr = FE.evaluate([board("ح", f_susp=True)], _TR, preset="tech_first",
+                  tech_chain=["t_risk_third_peak"],
+                  tech_scan={"ح": {"tech_trend_w": "up", "tech_trend_d": "up",
+                                   "tech_matrix_decision": "PERMITTED",
+                                   "tech_exit_signals": '["third_peak"]'}})
+ck("ح" not in _tr["stages"]["technical"]["survivors"]
+   and any(c["status"] == FE.REJECT and c["filter_id"] == "t_risk_third_peak"
+           for c in _tr["trace"]["technical"][0]["checks"]),
+   "۵۶) شاهدِ «سقفِ سوم» درِ انتخابِ ریسک، نماد را رد می‌کند: "
+   + str(_tr["trace"]["technical"][0]["checks"][-1]))
+
+# ۵۷) مسیرِ امروز (تابلو-اول) بی‌تغییر ماند: نه flow عوض می‌شود نه زنجیرۀ تکنیکال
+_so = FE.evaluate([dict(r) for r in _TB], [dict(r) for r in _TS], preset="swing")
+ck(_so["flow"] == "tape_first" and _so["technical_chain"] == [],
+   "۵۷) presetهایِ امروز tape_first و زنجیرۀ تکنیکالِ تهی می‌مانند")
+ck(_so["stages"]["technical"]["input"] == _so["stages"]["tape"]["matched"],
+   "۵۷) درِ tape_first هنوز تکنیکال رویِ ماندگانِ تابلو اجرا می‌شود")
+
+# ۵۸) جمعِ پنج وضعیت با جامعۀ غربالگری درِ هر دو flow می‌خواند
+for _nm, _pay in (("tech_first", _to), ("tape_first", _so)):
+    for _st in ("technical", "tape", "fundamental", "handover"):
+        _tot = sum(_pay["coverage"][_st].values())
+        ck(_tot == _pay["universe"]["screening"],
+           f"۵۸) جمعِ coverage[{_st}] درِ {_nm} با جامعۀ غربالگری می‌خواند ({_tot})")
+
+# ۵۹) فیلتری که ستونش ساخته نشده «رد» نیست؛ PENDING است
+_TU = [screen("خ", **UP, **OK_FUND)]
+_tu = FE.evaluate([board("خ", f_susp=True)], _TU, preset="tech_first",
+                  tech_chain=["t_setup_range_break"],
+                  tech_scan={"خ": {"tech_trend_w": "up", "tech_trend_d": "up",
+                                   "tech_matrix_decision": "PERMITTED"}})
+ck("خ" not in _tu["stages"]["technical"]["survivors"]
+   and any(c["status"] == FE.UNAVAILABLE for c in _tu["trace"]["technical"][0]["checks"]),
+   "۵۹) ستونِ ساخته‌نشده ⇒ سنجیده‌نشده، نه ردِ قطعی")
+
+
 print()
 if FAILED:
     print(f"funnel_engine guard: {len(FAILED)} FAILED")
     sys.exit(1)
-print(f"funnel_engine guard OK — {43 + 9 + 7 + 8 + 2 + 6} بندِ مأموریت")
+print(f"funnel_engine guard OK — {BANDS} بندِ مأموریت")
