@@ -14,7 +14,12 @@
 //  • «HTTP 200 ⇒ متصل» — نه؛ پاسخِ ۲۰۰ با بدنۀ HTML درِ بک‌اند `UNKNOWN_RESULT`
 //    می‌شود و همان‌طور هم اینجا نمایش داده می‌شود.
 import { ConnectBrokerRow } from '../ConnectBrokerRow';
-import { useBrokerConnect, type ConnectState } from '../../lib/orderClient';
+import { SarkhatiConnectionSettings } from './SarkhatiConnectionSettings';
+import { toFaDigits } from '@shared/lib/fmt';
+import { PORTFOLIO_LABEL, PORTFOLIO_STATES, TRAFFIC_LABEL, TRAFFIC_MODES,
+  useBrokerConnect, useExecutionPortfolio, useExecutionStatus,
+  type ConnectState, type ExecutionStatus, type PortfolioState, type TrafficMode }
+  from '../../lib/orderClient';
 import { Chip, Field, Line, Note, Section } from './parts';
 
 const ROLE_LABEL: Record<string, string> = {
@@ -23,8 +28,25 @@ const ROLE_LABEL: Record<string, string> = {
   api: 'آدرسِ API که سفارش به آن می‌رود',
 };
 
+const TRUTH_MOCK = 'آداپتورِ بدل — هیچ پرسشی به کارگزاری نرفته';
+const TRUTH_UNPROVEN = 'نشست تأیید نشده (پرسشِ موفق در کار نیست)';
+const TRUTH_HYPOTHESIS = 'نشست تأیید شد — ازِ «فهرستِ سفارش»، مسیری که درِ سندِ رسمی نیست';
+const TRUTH_OBSERVED = 'نشست تأیید شد — ازِ مسیرِ فقط‌خواندنیِ دیدہ‌شدہ';
+const TRUTH_NO_REPLY = 'پاسخِ نشست نیامده';
+
+/** برچسبِ نشست: «هست» و «اثبات‌شده» دو چیزند، و شاهدِ هر مسیر جدا خوانده می‌شود. */
+export function sessionTruth(s: ExecutionStatus | null | undefined): string {
+  const sess = s?.session;
+  if (!sess) return TRUTH_NO_REPLY;
+  if (sess.proven !== true) return sess.origin === 'mock' ? TRUTH_MOCK : TRUTH_UNPROVEN;
+  const by = sess.verified_by as Record<string, unknown> | undefined;
+  return by?.hypothesis === true ? TRUTH_HYPOTHESIS : TRUTH_OBSERVED;
+}
+
 export function SarkhatiConnectionCard() {
   const q = useBrokerConnect();
+  const st = useExecutionStatus();
+  const pf = useExecutionPortfolio();
   const c = q.data;
   const last = (c?.last_verify ?? {}) as Record<string, unknown>;
   const browser = (c?.browser ?? {}) as Record<string, unknown>;
@@ -33,6 +55,14 @@ export function SarkhatiConnectionCard() {
   const evidence = String(roles.evidence ?? '');
   const state = String(last.state ?? 'UNKNOWN') as ConnectState;
   const blocked = String(c?.login_host_blocked_reason ?? '');
+  const traffic = (TRAFFIC_MODES as readonly string[]).includes(String(c?.traffic_mode))
+    ? String(c?.traffic_mode) as TrafficMode : 'blocked';
+  const p = pf.data;
+  const pfState = (PORTFOLIO_STATES as readonly string[]).includes(String(p?.status))
+    ? String(p?.status) as PortfolioState : null;
+  const pfRows = Array.isArray(p?.rows) ? (p?.rows?.length ?? null) : null;
+  const pfAsOf = p?.as_of ?? p?.cached_at ?? null;
+  const pfError = p?.error ?? (pf.isError ? 'پرسشِ پرتفوی خطا داد' : null);
   const verdict = state === 'CONNECTED' ? 'تأیید شده' : state === 'EXPIRED' ? 'منقضی'
     : state === 'DISCONNECTED' ? 'تأیید نشده' : 'نامعلوم';
   const verdictTone = state === 'CONNECTED' ? 'ok' : state === 'UNKNOWN' ? 'idle' : 'warn';
@@ -64,6 +94,42 @@ export function SarkhatiConnectionCard() {
         <span className="text-2xs text-text-muted" title="دو ادعایِ جدا، نه یکِ ادعا">
           «پنجره باز شد» به‌تنهایی اتصال نیست
         </span>
+      </div>
+
+      {/* آنچه بک‌اند *واقعاً* ثابت کرده، نه آنچه رابط آرزو دارد. سه حالتِ ترافیک و
+          شاهدِ نشست ازِ دو پاسخِ جدا می‌آیند (`/connect` و `/status`). */}
+      <div className="mt-1.5 flex flex-wrap items-baseline gap-x-4 gap-y-1"
+           data-testid="sarkhati-traffic-and-proof">
+        <Field label="راه" value={(
+          <Chip tone={TRAFFIC_LABEL[traffic].tone} testId="sarkhati-traffic-mode">
+            {TRAFFIC_LABEL[traffic].text}
+          </Chip>)} />
+        <span className="text-2xs text-text-secondary" data-testid="sarkhati-session-truth">
+          {sessionTruth(st.data)}
+        </span>
+      </div>
+
+      <SarkhatiConnectionSettings />
+
+      {/* پرتفوی: «ردیفِ خالی» و «بی‌منبع» دو چیزند. عدد فقط ازِ پاسخ می‌آید. */}
+      <div className="mt-1.5 flex flex-wrap items-baseline gap-x-4 gap-y-1"
+           data-testid="sarkhati-portfolio-line">
+        <Field label="پرتفویِ فقط‌خواندنی" value={(
+          <span className="text-2xs text-text-secondary" data-testid="sarkhati-portfolio-status">
+            {pfState ? PORTFOLIO_LABEL[pfState] : 'پاسخی نیامده'}
+            {pfRows != null ? ` · ${toFaDigits(pfRows)} ردیف` : ''}
+          </span>)} />
+        {pfAsOf ? (
+          <span className="num text-3xs text-text-muted" data-testid="sarkhati-portfolio-asof"
+                dir="ltr">
+            {String(pfAsOf)}
+          </span>
+        ) : null}
+        {pfError ? (
+          <span className="text-3xs text-accent-yellow" data-testid="sarkhati-portfolio-error">
+            {pfError}
+          </span>
+        ) : null}
       </div>
 
       <div className="mt-1.5 flex flex-col gap-0.5" data-testid="sarkhati-host-roles">

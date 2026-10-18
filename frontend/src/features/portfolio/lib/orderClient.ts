@@ -37,6 +37,13 @@ export const SessionStatusSchema = z.object({
   state: txt,
   account_label: txt,
   checked_at: txt,
+  // مأموریتِ 2026-10-18: «هست» و «اثبات‌شده» دو چیزند. `origin` می‌گوید آداپتورِ
+  // جاری کدام است (mock هیچ‌وقت به کارگزاری وصل نمی‌شود) و `proven` فقط وقتی true
+  // است که یکِ پرسشِ *واقعاً* پاسخِ ۲xx داده باشد. بی‌این دو، رابط «متصل» را ازِ
+  // حضورِ رشته‌ای درِ حافظه می‌ساخت.
+  origin: txt,
+  proven: bool,
+  verified_by: z.record(z.string(), z.unknown()).nullish(),
 });
 export type SessionStatusView = z.infer<typeof SessionStatusSchema>;
 
@@ -53,6 +60,30 @@ export const SESSION_LABEL: Record<SessionStateValue, string> = {
   auth_failed: 'اجازۀ دسترسی داده نشد',
   error: 'پاسخِ کارگزاری نامفهوم بود',
   unknown: 'وضعیتِ نشست روشن نیست',
+};
+
+/** `traffic_mode` ازِ `execution_connect.status_dict` — سه راهِ جدا، نه یکِ بُولین */
+export const TRAFFIC_MODES = ['writes', 'read_only', 'blocked'] as const;
+export type TrafficMode = (typeof TRAFFIC_MODES)[number];
+
+export const TRAFFIC_LABEL: Record<TrafficMode, { text: string; tone: 'ok' | 'warn' | 'idle' }> = {
+  writes: { text: 'خواندن و ارسال آزاد', tone: 'warn' },
+  read_only: { text: 'فقط‌خواندنی: خواندن بله، ارسال نه', tone: 'ok' },
+  blocked: { text: 'هیچ ترافیکی مجاز نیست', tone: 'idle' },
+};
+
+/** `status` ازِ `/api/execution/portfolio` — «بی‌منبع» و «خالی» دو چیزند */
+export const PORTFOLIO_STATES = ['success', 'cached', 'no_source', 'unverified_session',
+  'blocked', 'error'] as const;
+export type PortfolioState = (typeof PORTFOLIO_STATES)[number];
+
+export const PORTFOLIO_LABEL: Record<PortfolioState, string> = {
+  success: 'ازِ کارگزاری خوانده شد',
+  cached: 'نسخۀِ انبارِ همین نشست',
+  no_source: 'منبعِ مستندِ خواندنی برایِ پرتفوی نداریم',
+  unverified_session: 'نشست تأیید نشده — پرسشی زده نشد',
+  blocked: 'ترافیک مجاز نیست',
+  error: 'پرسش انجام شد و پاسخِ معنادار نداد',
 };
 
 export const ExecutionStatusSchema = z.object({
@@ -92,6 +123,15 @@ export const ExecutionStatusSchema = z.object({
     claims_first: bool, official_rank_source: z.string().nullish(), why: txt,
   }).nullish(),
   wire_provenance: z.unknown().nullish(),
+  // ── سه گیتِ جدا (مأموریتِ 2026-10-18) ──
+  // `live_enabled` = «ارسالِ سفارش آزاد است»، `read_only` = «فقط GET مجاز است»،
+  // `traffic_allowed` = «هیچ ترافیکی ازِ این进程 بیرون می‌رود». پیش ازِ این تنها
+  // اولی بود، پس «تأییدِ نشست» هم ناگزیر به گیتِ نوشتن گره می‌خورد و هرگز ممکن
+  // نمی‌شد. `connection_config` هم «ذخیره شد» را از «اعمال شد» جدا می‌گوید.
+  read_only: bool,
+  session_live: bool,
+  traffic_allowed: bool,
+  connection_config: z.record(z.string(), z.unknown()).nullish(),
 });
 export type ExecutionStatus = z.infer<typeof ExecutionStatusSchema>;
 
@@ -264,6 +304,17 @@ export function deriveGate(status: ExecutionStatus | null | undefined, source: G
   if (status.live_enabled !== true) {
     const blocked = (status.blocked_on ?? []).join(' · ');
     const sess = sessionState !== 'connected' ? ` — ${SESSION_LABEL[sessionState]}` : '';
+    // حالتِ فقط‌خواندنی «اتصالِ فعال نیست» نیست: خواندن وصل است و نشست هم می‌تواند
+    // ثابت‌شده باشد؛ چیزی که بسته است درِ *ارسال* است. متنِ «فعال نیست» کاربر را
+    // به سراغِ تنظیمِ اتصال می‌فرستد وقتی تنظیم درست بوده.
+    if (status.read_only === true && status.traffic_allowed === true) {
+      const proof = status.session?.proven === true ? 'نشست تأیید شده' : 'نشست تأیید نشده';
+      return {
+        ...base, canTrade: false, dryRun: true,
+        reason: `حالتِ فقط‌خواندنی: خواندن بله، ارسال نه — ${proof}. `
+          + 'برایِ ارسال، BORS_EXECUTION_LIVE=1 لازم است (گیتِ جدا، درِ این برنامه روشن نمی‌شود)',
+      };
+    }
     return {
       ...base,
       canTrade: false,
@@ -423,6 +474,11 @@ const VerifySchema = z.object({
   verify_max_age_s: z.number().nullish(),
   stale: z.boolean().nullish(),
   verified_state: z.string().nullish(),
+  // «چه چیزی این اتصال را ثابت کرد» و «درِ کدام حالتیم» — هر دو ازِ بک‌اند.
+  // `proof.path` می‌گوید پاسخ ازِ مسیرِ دیدہ‌شدہ آمد یا ازِ مسیرِ فرضی، پس رابط
+  // می‌تواند «تأییدِ نشست (فرضِ مسیر)» را از «تأییدِ نشست» جدا بنویسد.
+  proof: z.record(z.string(), z.unknown()).nullish(),
+  read_only: z.boolean().nullish(),
 }).nullish();
 
 export const ConnectSchema = z.object({
@@ -435,6 +491,10 @@ export const ConnectSchema = z.object({
   last_verify: VerifySchema,
   secrets_stored: z.boolean().nullish(),
   detail: z.string().nullish(),
+  // `traffic_mode` سه مقدارِ جدا دارد: writes | read_only | blocked. «blocked»
+  // یعنی حتی GET هم نمی‌رود — پس «پنجره را باز کردم» هرگز اتصال نیست.
+  traffic_mode: z.string().nullish(),
+  session_proven: z.boolean().nullish(),
   // پاسخ‌هایِ خطا (NO_LOGIN_HOST / BROWSER_REFUSED) کلیدهایِ دیگری هم دارند؛
   // بی‌catchall کلِ پاسخ درِ parse می‌افتاد و رابط «نرسید» می‌گفت.
 }).catchall(z.unknown());
@@ -453,6 +513,87 @@ export const connectApi = {
   disconnect: () => http<Record<string, unknown>>('/api/execution/connect',
     { method: 'DELETE', ...NO_RETRY }),
 };
+
+/**
+ * تنظیمِ اتصال — دو کلید، هیچ‌کدام محرمانه نیست (`adapter`, `read_only`).
+ * نشانی/رمز ازِ این مسیر *نمی‌گذرد*: بک‌اند کلیدِ ناشناخته را رد می‌کند و درِ
+ * `execution_settings` تنها همین دو را می‌پذیرد. چون آداپتور درِ `import` ساخته
+ * می‌شود، `applies_on_restart` یعنی «ذخیره شد ≠ اعمال شد» — رابط همین را می‌گوید.
+ */
+export const BrokerConfigSchema = z.object({
+  status: z.string(),
+  stored: z.object({
+    adapter: z.string().nullish(),
+    read_only: z.boolean().nullish(),
+    source: z.string().nullish(),
+    updated_at: z.number().nullish(),
+  }).nullish(),
+  effective: z.object({
+    adapter: z.string().nullish(),
+    traffic_allowed: z.boolean().nullish(),
+    read_only: z.boolean().nullish(),
+    live_requested: z.boolean().nullish(),
+    session_live: z.boolean().nullish(),
+    writes_gate: z.string().nullish(),
+  }).nullish(),
+  applies_on_restart: z.boolean().nullish(),
+  secrets_stored: z.boolean().nullish(),
+  detail: z.string().nullish(),
+  code: z.string().nullish(),
+}).catchall(z.unknown());
+export type BrokerConfig = z.infer<typeof BrokerConfigSchema>;
+
+/** پرتفویِ فقط‌خواندنی. `rows: null` باِ `rows: []` یکی نیست — «بی‌منبع» ≠ «خالی». */
+export const PortfolioSchema = z.object({
+  status: z.string(),
+  adapter: z.string().nullish(),
+  live: z.boolean().nullish(),
+  session_proven: z.boolean().nullish(),
+  as_of: z.string().nullish(),
+  source: z.string().nullish(),
+  rows: z.array(z.record(z.string(), z.unknown())).nullish(),
+  cached_at: z.string().nullish(),
+  error: z.string().nullish(),
+  detail: z.string().nullish(),
+  code: z.string().nullish(),
+}).catchall(z.unknown());
+export type PortfolioView = z.infer<typeof PortfolioSchema>;
+
+export const configApi = {
+  get: (signal?: AbortSignal) =>
+    http<BrokerConfig>('/api/execution/config', { schema: BrokerConfigSchema, signal }),
+  put: (body: { adapter?: string; read_only?: boolean }) =>
+    http<BrokerConfig>('/api/execution/config',
+      { method: 'POST', schema: BrokerConfigSchema, body, ...NO_RETRY }),
+};
+
+export const portfolioApi = {
+  get: (signal?: AbortSignal) =>
+    http<PortfolioView>('/api/execution/portfolio', { schema: PortfolioSchema, signal }),
+};
+
+/** یک‌بار در هر نشست کافی است؛ تنظیمِ دیسک بی‌restart عوض نمی‌شود. */
+export function useBrokerConfig() {
+  return useQuery({
+    queryKey: ['execution-config'],
+    queryFn: ({ signal }) => configApi.get(signal),
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
+    retry: (count, error) => count < 2 && !(error instanceof HttpError && error.status === 404),
+  });
+}
+
+/** پرتفوی فقط وقتی خوانده می‌شود که درِ فقط‌خواندنی یا نوشتن باز باشد. */
+export function useExecutionPortfolio(enabled = true) {
+  return useQuery({
+    queryKey: ['execution-portfolio'],
+    queryFn: ({ signal }) => portfolioApi.get(signal),
+    enabled,
+    staleTime: 30_000,
+    refetchOnWindowFocus: false,
+    retry: (count, error) => count < 2 && !(error instanceof HttpError && error.status === 404),
+  });
+}
 
 /**
  * حالت‌های یک اقدامِ UI. «unknown» صراحتاً یک حالتِ جداست: اگر نتیجهٔ ارسال
