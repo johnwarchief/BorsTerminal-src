@@ -239,10 +239,36 @@ ck(BOT.Limits is not None and "max_daily_loss" in BOT.Limits.__dataclass_fields_
    "۳۸ ربات همان Limitsِ execution_service را می‌سازد، نه داورِ دوم")
 ck(BOT.STATE_KEY == "paper_account", "۳۹ حسابِ کاغذی همان کلیدِ دفتر را دارد")
 import api as API
+import re as _re
 src = open(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
                         "api", "__init__.py"), encoding="utf-8").read()
-ck("bot]" in src.replace(" ", "").replace("\n", "") or ", bot)" in src,
-   "۴۰ api_router ماژولِ bot را ثبت می‌کند (وگرنه هر /api/bot/* درِ EXE 404 است)")
+# سنجه عینِ کد نبود، جستارِ متنیِ «bot]» بود — درِ دورِ ادغام که فهرستِ ماژول‌ها
+# اتحاد خورد و `…, execution, bot, structure3]` شد، همان جستار قرمز شد *بدین‌حالی
+# که bot ثبت بود*: قرمزِ جعلی. جایش یکِ داوریِ ساختاری نشست: آیا واقعاً مسیری
+# زیرِ `/api/bot/` درِ روترِ تجمیعی هست یا نه — همان چیزی که EXE لازم دارد.
+def _all_paths(node, acc):
+    """همۀ مسیرهایِ یک روتر. درِ این نسخۀ FastAPI `include_router` تنبل است:
+    `.routes` شیءِ `_IncludedRouter` می‌دهد بی‌`path`؛ روترِ واقعی زیرِ
+    `original_router` نشسته است. بی‌این، هر شمارشِ مسیر صفر می‌شود و سنجه
+    «هیچ /api/bot/* نیست» قرمزِ جعلی می‌داد (همین‌جا اتفاق افتاد)."""
+    inner = getattr(node, "original_router", None)
+    if inner is not None:
+        node = inner
+    for r in getattr(node, "routes", []) or []:
+        p = getattr(r, "path", None)
+        if p:
+            acc.append(p)
+        _all_paths(r, acc)
+    return acc
+
+
+_paths = _all_paths(API.api_router(), [])
+ck(any(p.startswith("/api/bot/") for p in _paths),
+   "۴۰ api_router ماژولِ bot را ثبت می‌کند (وگرنه هر /api/bot/* درِ EXE 404 است)",
+   "%d مسیر، هیچ /api/bot/* نیست" % len(_paths))
+# و همان داوریِ متنی، این‌بار به‌شکلی که اتحادِ فهرست را ببیند (نه فقط انتهای فهرست)
+ck(_re.search(r"mods\s*=\s*\[[^\]]*?\bbot\b", src) is not None,
+   "۴۰‑ب bot درِ فهرستِ `mods` نوشته شده (منبع، نه فقط روترِ ساخته‌شده)")
 for spec in ("fts_terminal.spec", "bors_setup.spec"):
     s = open(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), spec),
              encoding="utf-8").read()

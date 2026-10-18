@@ -131,9 +131,15 @@ def main() -> int:
             ck(False, "تبِ معتبر «%s» باید ۲۰۰ بدهد" % t, rr.status_code)
     ck(True, "ت) تب‌هایِ معتبرِ رابط (all/stock/gold/fixed/top50) پذیرفته شدند")
 
-    print("\n── ۵) سه اندپوینت دیگر هم همین دروازه را دارند ──")
+    print("\n── ۵) هفت اندپوینت دیگر هم همین دروازه را دارند ──")
+    # چهار روتِ System 2 (treemap / tops / orderflows / ownership) درِ شاخۀ خودشان
+    # بی‌دروازه بودند: `mstat_panels.py:98` گروهِ بیگانه را بی‌صدا «all» می‌کرد و
+    # همان رشتهٔ بیگانه را درِ `group_label` پس می‌داد — یعنی پرسشِ غلط باِ
+    # پاسخِ «همۀ بازار» جواب می‌گفت، نه باِ خطا. دورِ ادغام دروازه افزوده شد.
     for path, param in (("/api/mstat/histogram", "group"), ("/api/mstat/depth", "group"),
-                        ("/api/mstat/mainwatch", "group")):
+                        ("/api/mstat/mainwatch", "group"),
+                        ("/api/mstat/treemap", "group"), ("/api/mstat/tops", "group"),
+                        ("/api/mstat/orderflows", "group"), ("/api/mstat/ownership", "group")):
         rr = c.get("%s?%s=not_a_group" % (path, param))
         ck(rr.status_code == 400 and (rr.json() or {}).get("code") == "UNKNOWN_GROUP",
            "%s ⇒ ۴۰۰" % path, rr.status_code)

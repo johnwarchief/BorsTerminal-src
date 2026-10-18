@@ -165,6 +165,24 @@ def _strategy_params(preset: str, tech_chain: list[str] | None,
     return (None, tc, stg)
 
 
+def _basics_error(preset: str, fund_mode: str, logic: str):
+    """سه بررسیِ اولِ System 1 به همان ترتیبِ پیشین: preset ← fund_mode ← logic.
+
+    چرا جدا شده: درِ دورِ ادغام، `_funnel_http` پارامترهایِ استراتژی را *پیش از*
+    `_run_entry` می‌سنجد؛ درخواستی که هم `fund_mode` غلط داشت و هم فیلترِ
+    تکنیکالِ ناشناخته، پیامِ دومی را می‌گرفت در حالی که پیش ازِ ادغام پیامِ اول
+    را می‌داد. ترتیبِ پیام، خودِ رابط است. `(خطا|None, logic`ِ نرمال‌شده) می‌دهد.
+    """
+    if preset not in REG.PRESET_BY_ID:
+        return {"status": "error", "message": f"presetِ ناشناخته: {preset}"}, logic
+    if fund_mode not in ("hard", "standard", "exception"):
+        return {"status": "error", "message": f"fund_modeِ ناشناخته: {fund_mode}"}, logic
+    logic = (logic or "and").strip().lower()
+    if logic not in ("and", "or"):
+        return {"status": "error", "message": f"logicِ ناشناخته: {logic}"}, logic
+    return None, logic
+
+
 def _funnel_http(request: Request, preset: str, chain: list[str], fund_mode: str,
                  params: dict[str, dict[str, Any]], exceptions: dict[str, list[str]],
                  full: bool = False, drop_suffix: bool = True,
@@ -178,6 +196,9 @@ def _funnel_http(request: Request, preset: str, chain: list[str], fund_mode: str
     شرطی‌ها طبقِ RFC 9110 §13.1.2: etagِ هم‌خوان رویِ GET/HEAD ⇒ ۳۰۴، رویِ
     هر روشِ دیگر ⇒ ۴۱۲ (رابط رویِ POST هرگز `If-None-Match` نمی‌فرستد).
     """
+    err, logic = _basics_error(preset, fund_mode, logic)
+    if err is not None:
+        return _shape(err, None, False, full)
     err, tc, stg = _strategy_params(preset, tech_chain, settings)
     if err is not None:
         # پاسخِ خطا هرگز درِ کشِ بدنه نمی‌نشیند (همان قاعدۀ پایین)
@@ -529,15 +550,11 @@ def _run_entry(preset: str, chain: list[str], fund_mode: str,
                settings: dict[str, Any] | None = None,
                ) -> tuple[dict, float | None, bool]:
     """(payloadِ کامل، زمانِ آغازِ ساختش، همین فراخوان ساختش؟) — خطا/`no_data` با زمانِ None."""
-    if preset not in REG.PRESET_BY_ID:
-        return {"status": "error", "message": f"presetِ ناشناخته: {preset}"}, None, False
-    if fund_mode not in ("hard", "standard", "exception"):
-        return {"status": "error", "message": f"fund_modeِ ناشناخته: {fund_mode}"}, None, False
     # کلیدِ اشتراک/اجتماع (رأیِ مالک ۱۴۰۵-۰۷-۲۰): بی‌استثنایِ مقداریِ دیگر،
     # پیش‌فرض «and» است و کشِ دو حالت از هم جدا می‌ماند.
-    logic = (logic or "and").strip().lower()
-    if logic not in ("and", "or"):
-        return {"status": "error", "message": f"logicِ ناشناخته: {logic}"}, None, False
+    err, logic = _basics_error(preset, fund_mode, logic)
+    if err is not None:
+        return err, None, False
     # کارِ System 1: زنجیرۀ تکنیکال و تنظیمِ مستقلِ استراتژی (رأیِ مالک ۱۴-۰۷-۲۷).
     # اعتبارسنجی درِ `_strategy_params` است تا route و همین‌جا یکِ ترجمان داشته باشند.
     err, tc, stg = _strategy_params(preset, tech_chain, settings)

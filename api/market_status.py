@@ -400,6 +400,8 @@ def mstat_treemap(group: str = Query("eq_all"), industry: str = Query(""),
     """صفحۀ ۲ و ۱۲ — نقشۀ بازار. `metric` سطحِ مستطیل را عوض می‌کند
     (value|volume|cap|trades) و رنگ از درصدِ پایانی/دیروز است.
     «ارزش بازار» فقط وقتی ستونش در بانک هست می‌آید؛ وگرنه `no_source`."""
+    if not _check_group("group", group):
+        return _bad_param("group", group)
     return _mstat_call(_panels.treemap, group, industry, metric, limit)
 
 
@@ -412,6 +414,8 @@ def mstat_tops(group: str = Query("eq_all"), limit: int = Query(5)):
     تغییرِ رسمی درِ `reconciliation` اعلام می‌شود، چون سهامِ شناور در این بانک
     نیست و وزنِ اینجا سهامِ کل است.
     """
+    if not _check_group("group", group):
+        return _bad_param("group", group)
     return _mstat_call(_panels.tops, group, limit)
 
 
@@ -422,6 +426,8 @@ def mstat_order_flows(group: str = Query("all"), limit: int = Query(10)):
     این دو در مرجع دو پنلِ جدااند و یکی‌گرفتنشان رایج‌ترین خطایِ داشبورد است.
     عمقِ دفتر در بانک نباشد `orders_available=false` و پنل «منبع نرسیده»
     می‌گوید، نه صفر."""
+    if not _check_group("group", group):
+        return _bad_param("group", group)
     return _mstat_call(_panels.order_book_flows, group, limit)
 
 
@@ -432,6 +438,8 @@ def mstat_ownership(group: str = Query("all"), limit: int = Query(10)):
     با «خالصِ ورودِ پول» (ریالی، درِ clientsplit) و «سرانه» یکی نیست و
     تکرارشان نمی‌آید. `client_data_lags_session` یعنی ردیفِ مشتری از نشستِ
     قبل است — همان شکافِ دو‌روزه‌ای که درِ نبض هم اعلام می‌شود."""
+    if not _check_group("group", group):
+        return _bad_param("group", group)
     return _mstat_call(_panels.ownership_change, group, limit)
 
 
