@@ -109,6 +109,53 @@ min/max بی‌پیوتِ فراکتالی «در حالِ تشکیل» است،
 5. هر مرحله باِ `git merge-tree --write-tree` پیش‌سنجیده شود و تعارض‌ها باِ نامِ
    فایل و تصمیم درِ همین سند افزوده شوند.
 
+## ۴-الف) رأی‌های مالک (۲۰۲۶-۱۰-۱۹) — تصمیمِ هر ۱۸ فایل
+
+**رأیِ ۱ — `api/chart.py`:** جهتِ موجِ System 1 می‌ماند
+(`direction = "up" if lo_idx <= hi_idx else "down"`) و `provisional: True` ازِ
+System 2 افزوده می‌شود. هیچ رأیِ FTS یا کمربندِ فیبو بی‌اجازه جابه‌جا نمی‌شود.
+تست‌هایِ لازم: موجِ موقت (بی‌پیوتِ فراکتالی)، موجِ تأییدشده، دادهٔ ناکافی،
+نقطۀِ مرزیِ `hi == lo`، و یکِ آزمونِ برابریِ رأیِ FTS پیش/پس ازِ افزودنِ پرچم.
+
+**رأیِ ۲ — `api/market_status.py`:** گزینهٔ C. «یکِ پویشِ حالتِ بانک درِ هر
+درخواست»ِ System 1 حفظ می‌شود (ده پنل ازِ تکرارِ پویش نجات می‌یابد) و
+«یکِ اتصال برایِ نشانک + پنل»ِ System 2 (PERF-S3) رویش سوار می‌شود. مبنایِ
+تصمیم، اعدادِ خودِ System 2 است: سه حالت (S1 / S2 / ترکیب) باِ ورودیِ یکسان
+باِ p50/p95/p99، شمارِ اتصال‌ها، محاسبۀِ تکراری، همزمانی، invalidation، تازگی و
+برابریِ بدنهٔ پاسخ سنجیده می‌شوند. اگر ترکیب برتریِ S2 را نگه ندارد، اصلاح و
+دوباره سنجیده می‌شود — بی‌عدد، برتری ادعا نمی‌شود.
+
+| فایل | تصمیم |
+| --- | --- |
+| `api/__init__.py` | اتحادِ فهرست: `market_index, diagnostics, execution, bot, structure3` + هر دو کامنتِ توضیحی |
+| `dev/run_all_tests.py` | ours (شمارش ازِ `dev/guard_counts.summarize`) و **انتقالِ چهار الگویِ شمارشِ System 2 بهِ خودِ `guard_counts.py`** (`N/M passed`، «N بررسی سبز، M شکست»، «N سبز، M قرمز»، `N_pass / M_fail`) — وگرنه گاردِ «شمارشِ واقعی» دوباره سکوت را سبز می‌خواند |
+| `docs/README.md` | اتحادِ سه سطرِ جدولِ research (TECH-FIRST، RAHAVARD-CANDLE-ADJUSTMENT-PARITY، TECHNICAL-RAHAVARD-PARITY-AUDIT) |
+| `fts_terminal.spec` | اتحادِ `hiddenimports` (جاافتادن = `ModuleNotFoundError` درِ EXE) |
+| `design-token-guard.spec.ts` | **گارد حفظ می‌شود** (نسخۀ کامل‌تر + ثبتِ درِ `run_all_tests`). حذفِ گارد مجاز نیست |
+| `market/lib/tones.ts` | ترکیب باِ **بازگشت بهِ توکن** (`text-tone-pos` …)؛ اگر کلاسِ System 2 گارد را می‌شکند، کلاس اصلاح می‌شود نه گارد |
+| `api/funnel.py` | ساختارِ theirs (`_run_entry`/`_shape`/`_funnel_http`/`_cache_key`) + پارامترهایِ ours (`tech_chain`، `weekly_mode`، `daily_mode`، `clock_delta_pct`، `REG.TECH_BY_ID`، `REG.validate_settings`). **کلیدِ کش باید `tech_chain`/`settings` را هم ببرد.** معیارِ پذیرش: تطبیقِ بدنهٔ `/api/funnel` برایِ پنج preset × دو منطقِ اشتراک/اجتماع پیش و پس، باِ ثبتِ اعداد |
+| `api/market_status.py` / `api/chart.py` | §۴-الف بالا |
+| `technical-feed.spec.tsx`، `technical-pattern-wiring.spec.tsx` | theirs، سپس Vitestِ کامل؛ اگر باِ `provisional` درافتادند، **تست اصلاح می‌شود، نه حذف** |
+| `MarketStatusPage.tsx`، `FtsStatusCard.tsx`، `useFtsAnalysis.ts`، `patternOverlays.ts`، `SymbolInspector.tsx`، `FtsFunnelAllStages.tsx`، `FtsCustomChainBuilder.tsx` | theirs برایِ ویژگی‌هایِ تازه، باِ حفظِ هر سطرِ رابطیِ System 1؛ دو قید: هیچ کلاسِ رنگِ تازه بی‌توکنِ موجود درِ `tokens.css`، و پلکانِ چهارسطریِ اتصالِ سرخطی دست‌نخورده |
+
+**ترتیبِ اجرا:** (۰) این سند کامیت و push شود — **پیش ازِ هر تلاشِ ادغام**، چون
+`git merge --abort` تغییراتِ حل‌نشدهٔ همین فایل را هم برگرداند (تجربۀِ همین
+جلسه). (۱) `git merge --no-ff github/mission/system2-perf-market-hours-2026-10-17`
+(۲) چهار فایلِ اتحادِ ساده (۳) `chart.py` + تست (۴) `funnel.py` + تطبیقِ پنج
+preset × دو منطق (۵) `market_status.py` + بنچمارکِ سه‌حالته (۶) `tones.ts` +
+گاردِ توکن (۷) هفت فایلِ فرانت → `tsc -b` + `eslint src` +
+`vitest run --maxWorkers=2` (۸) `dev/run_all_tests.py` باِ
+`npm_config_allow_scripts` پاک‌شده + `dev/version_anchor_guard.py`
+(۹) ادغامِ `7d9d0e4f` و `65080701` (تعارضشان فقط `AGENT-INDEX.md` تولیدشدنی و
+`TapeTable.tsx` است) (۱۰) bumpِ ششِ لنگرۀِ نسخه → fast-forwardِ `main` (بی‌force)
+→ تگ → بیلدِ CI ازِ همان تگ → تستِ خودِ بسته → انتشار درِ کانالِ پایدار.
+
+**یادآوریِ محیط (تا قرمزِ جعلی تکرار نشود):** درِ worktree تازه `npm ci` باید باِ
+`npm_config_allow_scripts= npm ci` اجرا شود و وجودِ `node_modules/vitest`
+بررسی شود؛ و گاردهایِ نماد→کارگزاری به `market.db` **هم‌سازی‌شده** نیاز دارند
+(۶٬۰۱۸ نماد، نه ۵٬۲۹۶ِ baseline) وگرنه `p0_gates` چهار `NOT_ORDERABLE`ِ دروغین
+می‌دهد.
+
 ## ۵) آنچه بی‌تغییر ماند
 
 `main` (محلی `92703183` / `github/main f9cea521`)، `release/1.0.91-strategy-fts`
