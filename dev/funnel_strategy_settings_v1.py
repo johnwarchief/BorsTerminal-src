@@ -53,7 +53,7 @@ def status_of(out, sym):
 
 print("dev/funnel_strategy_settings_v1 — تنظیماتِ مستقلِ استراتژی + شاهدِ فیبو")
 
-# ── ) رجیستری: چارچوبِ تنظیم وجود دارد، پیش‌فرض‌ها بی‌اجبارند ────────────────
+# ── ۱) رجیستری: چارچوبِ تنظیم وجود دارد، پیش‌فرض‌ها بی‌اجبارند ────────────────
 defs = {s.setting_id: s for s in REG.STRATEGY_SETTINGS["tech_first"]}
 ck(set(defs) == {"weekly_mode", "daily_mode", "clock_delta_pct"},
    "A1 سه پیچِ تنظیمی برایِ tech_first تعریف شده", sorted(defs))
@@ -79,7 +79,7 @@ ck(REG.PRESET_BY_ID["tech_first"].technical_gate == REG.NO_GATE,
 ck(REG.PRESET_BY_ID["trend"].technical_gate == REG.TREND_GATE,
    "A9 استراتژیِ قدیمی همان دروازۀ همیشگی را دارد (دست‌نخورده)")
 
-# ── ) هفتگی/روزانه: تنظیم، رأی را عوض می‌کند ────────────────────────────────
+# ── ۲) هفتگی/روزانه: تنظیم، رأی را عوض می‌کند ────────────────────────────────
 r_na = row("خ-نا", "na", "down", mat="UNKNOWN", fib="33-40", pct=35.0)
 r_dn = row("خ-نز", "down", "down", fib="33-40", pct=35.0)
 r_rg = row("خ-خن", "range", "up", fib="33-40", pct=35.0)
@@ -143,7 +143,7 @@ ck("ساخته نشده" in o["decisions"][0]["checks"][0]["human_reason"],
    "C8 ردیفِ بی‌ستونِ شاهد «عمقِ اصلاح ساخته نشده» می‌گوید، نه عددِ بدل",
    o["decisions"][0]["checks"][0]["human_reason"])
 
-# ── ) الگوی ساعت: عددِ انتخابی واقعاً درِ محاسبه می‌نشیند ────────────────────
+# ── ۴) الگوی ساعت: عددِ انتخابی واقعاً درِ محاسبه می‌نشیند ────────────────────
 r1 = {"symbol": "س-۹۸", "p_last": 1030.0, "p_closing": 1020.0, "tvol": 100.0,
       "prior30_vol": 300.0, "hist_sessions": 30, "z_tot_tran": 60.0}
 m2 = FE._tape_miss(r1, "f_clock", {"clock_delta": 0.02})
