@@ -3,7 +3,7 @@ v9.5 — اجرای همهٔ تست‌های آفلاین (بدون نیاز ب�
 اجرا:  python dev/run_all_tests.py
 تست نیازمند سرور جدا است:  python dev/serve_check_v95.py
 """
-import os, re, subprocess, sys
+import io, os, re, subprocess, sys
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
 _ROOT = os.path.dirname(_HERE)
@@ -670,6 +670,27 @@ def _basis_guard(label, before):
     bad.append(label + ' [mutated price_basis]')
 
 
+# متنِ کاملِ فرزند درِ یکِ فایلِ UTF-8 می‌نشیند. پیش از این، سطرِ شکست تنها با
+# `encode('ascii','replace')` چاپ می‌شد تا سرخطی رویِ کنسولِ cp1252 نمُرد؛ همان
+# `?`ها دو سطرِ شکستِ `price_last_value_v1070` را ناخواندہ کردند و علتِ واقعی
+# (دو ارجاعِ متنیِ کهنه، نه افتِ ترتیبی) سه دورِ کامل پنهان ماند.
+GATE_DIR = os.path.join(_ROOT, '_audit', 'gate_suites')
+_seq = [0]
+
+
+def _dump(label, argv, rc, txt):
+    _seq[0] += 1
+    slug = re.sub(r'[^A-Za-z0-9._-]+', '_', label)[:60] or 'suite'
+    path = os.path.join(GATE_DIR, '%03d_%s.log' % (_seq[0], slug))
+    try:
+        os.makedirs(GATE_DIR, exist_ok=True)
+        with io.open(path, 'w', encoding='utf-8', newline='\n') as f:
+            f.write('cmd: %s\nlabel: %s\nrc: %s\n\n%s' % (argv, label, rc, txt))
+    except OSError as ex:
+        return '(نوشته نشد: %s)' % ex
+    return path
+
+
 def run(argv, label):
     basis_before = _basis_snapshot()
     try:
@@ -700,20 +721,28 @@ def run(argv, label):
         bad.append(label)
         print('\n'.join('       ' + l for l in txt.strip().split('\n')[-12:])
               .encode('ascii', 'replace').decode('ascii'))
+        # سطرِ راهنما هم ASCII است تا این چاپ رویِ کنسولِ cp1252 ننماید؛ متنِ
+        # شکست درِ فایلِ نشانه‌گذاری‌شده است، نه درِ کنسول.
+        print('       >> full child output (UTF-8): %s' % _dump(label, argv, r.returncode, txt))
 
 
-# Data-Lifecycle: برخی سوئیت‌ها آرگومان می‌گیرند (مثلاً --selftest)؛
-# script.split() مسیر و آرگومان‌ها را از هم جدا می‌کند.
-for script, label in SUITES:
-    run([sys.executable] + [a.replace('/', os.sep) for a in script.split()], label)
-if os.path.exists(FIXTURE_GEN):
-    run([sys.executable, FIXTURE_GEN.replace('/', os.sep)], 'fixture: fts_v10 payloads')
-for script, label in JS_SUITES:
-    run(['node', script.replace('/', os.sep)], label)
+def main():
+    # Data-Lifecycle: برخی سوئیت‌ها آرگومان می‌گیرند (مثلاً --selftest)؛
+    # script.split() مسیر و آرگومان‌ها را از هم جدا می‌کند.
+    for script, label in SUITES:
+        run([sys.executable] + [a.replace('/', os.sep) for a in script.split()], label)
+    if os.path.exists(FIXTURE_GEN):
+        run([sys.executable, FIXTURE_GEN.replace('/', os.sep)], 'fixture: fts_v10 payloads')
+    for script, label in JS_SUITES:
+        run(['node', script.replace('/', os.sep)], label)
 
-total_suites = len(SUITES) + len(JS_SUITES) + (1 if os.path.exists(FIXTURE_GEN) else 0)
-print('\n%d suite counted, %d silent (exit-code only)' % (total_suites - len(uncounted), len(uncounted)))
-if uncounted:
-    print('  silent: ' + ', '.join(uncounted))
-print('\n%s' % ('ALL SUITES PASSED' if not bad else 'FAILED: ' + ', '.join(bad)))
-sys.exit(1 if bad else 0)
+    total_suites = len(SUITES) + len(JS_SUITES) + (1 if os.path.exists(FIXTURE_GEN) else 0)
+    print('\n%d suite counted, %d silent (exit-code only)' % (total_suites - len(uncounted), len(uncounted)))
+    if uncounted:
+        print('  silent: ' + ', '.join(uncounted))
+    print('\n%s' % ('ALL SUITES PASSED' if not bad else 'FAILED: ' + ', '.join(bad)))
+    return 1 if bad else 0
+
+
+if __name__ == '__main__':
+    sys.exit(main())
