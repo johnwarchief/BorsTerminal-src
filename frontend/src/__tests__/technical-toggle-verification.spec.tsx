@@ -56,7 +56,6 @@ describe('اعتبارسنجی دوطرفه (Two-Way Toggle Verification) و م�
         timezone: 'Asia/Tehran',
         showXAxis: true,
         showYAxis: true,
-        splitLayout: 1,
         fibLogarithmic: false,
         axisScaleLock: false,
         legendAlways: false,

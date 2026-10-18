@@ -55,8 +55,6 @@ export type ChartView = {
   showLegend: boolean;
   showXAxis: boolean;
   showYAxis: boolean;
-  /** چیدمان چارت: تک/۲/۴ پنل با همگام‌سازی */
-  splitLayout: 1 | 2 | 4;
   statusShowOhlc: boolean;
   statusShowSymbol: boolean;
   statusShowIndicators: boolean;
@@ -110,7 +108,6 @@ export const VIEW_DEFAULTS: ChartView = {
   showLegend: true,
   showXAxis: true,
   showYAxis: true,
-  splitLayout: 1,
   statusShowOhlc: true,
   statusShowSymbol: true,
   statusShowIndicators: true,
