@@ -253,16 +253,23 @@ describe('چارت پورت‌شدهٔ NahayatNegar روی klinecharts v10', () 
   });
 
   // ── «نمایِ بازدهی» (نمایِ بازدهی) ─────────────────────────────────────
-  it('پیش‌فرضِ چارت «نمایِ بازدهی» است و دقتِ محور دو رقم؛ با «بدون تعدیل» صفر می‌شود (#186)', () => {
+  it('پیش‌فرضِ چارت محورِ ریالیِ تعدیل‌شده است (دقتِ ۰) و «نمایِ بازدهی» دستی دقتِ ۲ می‌گیرد (#186)', () => {
     render(<KLineChartWrapper initialSymbol="فولاد" />);
 
     const calls = chart().setSymbol.mock.calls;
     expect(calls.length).toBeGreaterThan(0);
-    expect(calls[calls.length - 1][0].pricePrecision).toBe(2);
+    // رأیِ مالک (#186) «تعدیل عملکردی» بود و رهاورد درِ همان حالت ریال می‌کشد
+    // (برچسبِ O 4,410). این تست پیش از این دقتِ ۲ یعنی «شاخصِ ۱۰۰» را قفل کرده بود —
+    // همان ناهنجاریِ محورِ ۱۴۷٬۰۰۰ رویِ فولاد. پس رفتارِ غلط اصلاح شد، نه تست حذف.
+    expect(calls[calls.length - 1][0].pricePrecision).toBe(0);
 
     act(() => { fireEvent.click(screen.getByTitle('نوع تعدیل قیمت')); });
     const perfItem = item('نمایِ بازدهی');
     expect(perfItem.className).not.toContain('nn-disabled');
+    act(() => { fireEvent.click(perfItem); });
+    expect(chart().setSymbol.mock.calls.slice(-1)[0][0].pricePrecision).toBe(2);
+
+    act(() => { fireEvent.click(screen.getByTitle('نوع تعدیل قیمت')); });
     act(() => { fireEvent.click(item('بدون تعدیل')); });
     expect(chart().setSymbol.mock.calls.slice(-1)[0][0].pricePrecision).toBe(0);
   });

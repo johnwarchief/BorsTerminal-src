@@ -27,7 +27,7 @@ import { nahayatNegarDarkTheme, nahayatNegarLightTheme } from '../lib/chartTheme
 import { useUiStore } from '@shared/stores/uiStore';
 import {
   AdjustmentCapability, AdjustmentMode, AdjustFactor, CorporateAction,
-  applyAdjustmentToCandles, functionalGapNote, getAdjustmentFactor,
+  applyAdjustmentToCandles, DEFAULT_ADJUSTMENT_MODE, functionalGapNote, getAdjustmentFactor,
   mapBackendAdjustEvents, pricePrecisionFor, readAdjustmentCapability
 } from '../lib/adjustments';
 import { aggregateCandles, timeframePeriod, resolveTimeframe, INTRADAY_CAPABILITY, rangeVisibleBars, VIEW_RANGES, type Timeframe } from '../lib/timeframe';
@@ -396,9 +396,13 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
   // استیت‌های نوار بالا
   const [activeTimeframe, setActiveTimeframe] = useState<Timeframe>('D');
   const [activeCandleType, setActiveCandleType] = useState<string>('candle_solid');
-  // پیش‌فرضِ مالک (#186): «تعدیل عملکردی». لایهٔ FTS خود را به فضایِ همین
-  // نمایش می‌برد، پس تغییرِ این مقدار نباید چیزی را جابه‌جا یا ناپدید کند.
-  const [activeAdjustment, setActiveAdjustment] = useState<AdjustmentMode>('performance');
+  // رأیِ مالک (#186) «تعدیل عملکردی» بود — یعنی محورِ **ریالیِ** تعدیل‌شده، همان‌طور
+  // که رهاورد همان حالت را با برچسبِ O 4,410 می‌رسمد. این state درِ ادامه همان را
+  // `performance` (شاخصِ ۱۰۰) گرفته بود و فولاد را با محورِ ۶۵٬۰۰۰ تا ۱۶۶٬۰۰۰ نشان
+  // می‌داد؛ مبنایِ درست از `DEFAULT_ADJUSTMENT_MODE` می‌آید تا دو جا واگرا نشود.
+  // لایهٔ FTS خود را به فضایِ همین نمایش می‌برد، پس تغییرِ این مقدار نباید چیزی را
+  // جابه‌جا یا ناپدید کند.
+  const [activeAdjustment, setActiveAdjustment] = useState<AdjustmentMode>(DEFAULT_ADJUSTMENT_MODE);
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
   const [showIndicatorsModal, setShowIndicatorsModal] = useState<boolean>(false);
   const [templateName, setTemplateName] = useState<string>('');

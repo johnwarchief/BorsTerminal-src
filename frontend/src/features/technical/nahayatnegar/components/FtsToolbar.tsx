@@ -382,9 +382,11 @@ export const FtsToolbar: React.FC<FtsToolbarProps> = ({
         </button>
       </div>
 
-      {/* موتورِ رندر: همان داده و همان لایه‌ها، موتورِ دیگر. انتخاب اینجا
-          ذخیره می‌شود و چارتِ اصلی (klinecharts) پیش‌فرض می‌ماند. */}
-      {onEngineChange && chartEngine ? (
+      {/* موتورِ رندر: تنها وقتی سوییچ دارد که بیش از یک موتورِ production درِ
+          رجیستری باشد. با رأیِ مالک (۱۴۰۵-۰۷-۲۷) موتورِ دوم ازِ انتخابِ کاربر
+          بیرون رفت، پس این گروه یک‌دکمه نمی‌شود — دکمۀِ یک‌گزینهای که هیچ
+          حالتی را عوض نمی‌کند، همان کنترلِ مرده است. */}
+      {onEngineChange && chartEngine && ENGINE_REGISTRY.filter((e) => e.production).length > 1 ? (
         <div className="nn-toolbar-group" role="group" aria-label="موتور چارت" data-testid="nn-engine-switch">
           {ENGINE_REGISTRY.filter((e) => e.production).map((e) => (
             <button

@@ -3,8 +3,7 @@
 // مقیاس، `factors=[{time,factor}]`ِ همان پاسخِ `/api/chart` است (`AE.chain_factors`).
 import { describe, expect, it } from 'vitest';
 import {
-  applyAdjustmentToCandles,
-  functionalGapNote,
+  applyAdjustmentToCandles, DEFAULT_ADJUSTMENT_MODE, functionalGapNote,
   getAdjustmentFactor,
   mapBackendAdjustEvents,
   pricePrecisionFor,
@@ -41,13 +40,56 @@ describe('تعدیل چارت نهایت‌نگر (ضریبِ سرور)', () => 
     expect(out[2].close).toBe(50);
   });
 
-  it('تعدیل ترکیبی ⇒ پیشِ رویداد در ضریب سرور ضرب، حجم تقسیم، پس از رویداد خام', () => {
+  it('تعدیل ترکیبی ⇒ پیشِ رویداد در ضریب سرور ضرب، پس از رویداد خام — حجم دست‌نخورده', () => {
     const out = applyAdjustmentToCandles(candles, factors, 'combined');
     expect(out[0].close).toBe(50);       // 100 × 0.5
     expect(out[1].close).toBe(50);
-    expect(out[0].volume).toBe(2000);    // 1000 ÷ 0.5
     expect(out[2].close).toBe(50);       // کندلِ پس از رویداد دست‌نخورده
+    // حجم تقسیم نمی‌شود: درِ مرجع (ره‌آورد) سریِ حجمِ خام و تعدیل‌شده در ۶۰۱ از ۶۰۱
+    // تاریخِ مشترکِ فولاد یکسان بود (`_audit/ra365_ref_bars.json`، سنجشِ ۱۴۰۵-۰۷-۲۷).
+    // این سطر پیش از آن «۱۰۰۰ ÷ ۰٫۵ = ۲۰۰۰» را قفل کرده بود — رفتارِ غلط، نه تستِ غلط.
+    expect(out[0].volume).toBe(1000);
     expect(out[2].volume).toBe(2000);
+  });
+
+  it('هیچ حالتِ تعدیلی حجم را مقیاس نمی‌کند (قیمت نیست که ضریب بخورد)', () => {
+    for (const mode of ['none', 'combined', 'performance'] as const) {
+      const out = applyAdjustmentToCandles(candles, factors, mode);
+      expect(out.map((c) => c.volume)).toEqual([1000, 1000, 2000]);
+    }
+  });
+
+  it('قیمتِ کهنۀ زیرِ واحد گم نمی‌شود: ۱۹۰۰ × ۰٫۰۰۱۶۷۴۸۹۷۸ = ۳٫۱۸۲۳، نه ۳', () => {
+    // ضریبِ واقعیِ زنجیرهٔ فولاد درِ ۲۰۰۷-۰۳-۱۱ (پاسخِ زندهٔ /api/chart).
+    // صحیح‌گردانیِ پیشین ۵٫۷٪ از آن قیمت می‌خورد و چون «نمایِ بازدهی» بر همان
+    // عددِ گِرد تقسیم می‌کرد، کلِ محورِ صفحه ۶٪ جابه‌جا می‌شد.
+    const old = [{ timestamp: t('2007-03-11'), open: 1900, high: 1938, low: 1900,
+                   close: 1900, volume: 500 }] as unknown as KLineData[];
+    const out = applyAdjustmentToCandles(old, [{ time: '2007-03-11', factor: 0.0016748978 }], 'combined');
+    expect(out[0].close).toBeCloseTo(3.1823, 4);
+    expect(out[0].high).toBeCloseTo(3.246, 3);
+  });
+
+  it('پایۀ «نمایِ بازدهی» از قیمتِ گم‌شده ساخته نمی‌شود: ۴۴۱۰ ⇒ ۱۳۸٬۵۷۸ نه ۱۴۷٬۰۰۰', () => {
+    // ۱۴۷٬۰۰۰ همان عددی بود که کاربر رویِ محورِ فولاد می‌خواند؛ از تقسیم بر ۳
+    // (به‌جای ۳٫۱۸۲۳) می‌آمد. تست، عددِ درست را قفل می‌کند و عددِ غلط را رد.
+    const pair = [
+      { timestamp: t('2007-03-11'), open: 1900, high: 1900, low: 1900, close: 1900, volume: 1 },
+      { timestamp: t('2026-10-17'), open: 4410, high: 4410, low: 4410, close: 4410, volume: 1 },
+    ] as unknown as KLineData[];
+    const fs: AdjustFactor[] = [
+      { time: '2007-03-11', factor: 0.0016748978 },
+      { time: '2026-10-17', factor: 1 },
+    ];
+    const out = applyAdjustmentToCandles(pair, fs, 'performance');
+    expect(out[0].close).toBe(100);
+    expect(out[1].close).not.toBe(147000);
+    expect(out[1].close).toBeCloseTo(4410 / 3.1823 * 100, 1);
+  });
+
+  it('پیش‌فرضِ چارت محورِ ریالی است، نه شاخصِ ۱۰۰ (رأیِ مالک #186 = تعدیلِ عملکردی)', () => {
+    expect(DEFAULT_ADJUSTMENT_MODE).toBe('combined');
+    expect(DEFAULT_ADJUSTMENT_MODE).not.toBe('performance');
   });
 
   it('نگاشت رویدادِ سرور نسبت را برایِ نشانگر حفظ می‌کند و timestamp درست می‌سازد', () => {

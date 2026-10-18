@@ -32,6 +32,19 @@ export interface CorporateAction {
  */
 export type AdjustmentMode = 'none' | 'combined' | 'performance';
 
+/**
+ * مبنایِ پیش‌فرضِ چارت. «عملکردی» درِ رهاورد محورِ **ریالی** را نگه می‌دارد
+ * (برچسبِ همان صفحه: O 4,410 H 4,410 …)، پس پیش‌فرضِ چارتِ خودی هم باید سریِ
+ * ریالیِ تعدیل‌شده باشد، نه شاخصِ ۱۰۰.
+ *
+ * پیش از این، `KLineChartWrapper` با همان نیتِ مالک («تعدیل عملکردی») رویِ
+ * `performance` باز می‌شد و محورِ فولاد ۶۵٬۰۰۰ تا ۱۶۶٬۰۰۰ نشان می‌داد در حالی که
+ * آخرین کندلِ همان پاسخِ API ۴٬۴۱۰ بود (سنجشِ ۱۴۰۵-۰۷-۲۷، `_audit/chart_axis_stages.json`:
+ * `axisValues.candle = {topValue: 166820.57, bottomValue: 65106.08}` در برابرِ
+ * `api.lastClose = 4410`). سرجایش همین‌جا بسته می‌شود تا دو حالتِ واگرا نسازد.
+ */
+export const DEFAULT_ADJUSTMENT_MODE: AdjustmentMode = 'combined';
+
 /** پایهٔ نمایِ بازدهی — همان چیزی که رویِ محورِ عمودی خوانده می‌شود */
 export const PERFORMANCE_BASE = 100;
 
@@ -139,6 +152,18 @@ function round2(v: number): number {
   return Math.round(v * 100) / 100;
 }
 
+/**
+ * گردکردنِ قیمتِ تعدیل‌شده. صحیح‌گردانیِ بی‌قید اینجا خطایِ بزرگی می‌سازد: ضریبِ تجمعیِ فولاد در
+ * ۲۰۰۷-۰۳-۱۱ برابر ۰٫۰۰۱۶۷۴۸۹۷۸ است و پایانیِ خام ۱٬۹۰۰ ⇒ ۳٫۱۸۲۳. صحیح‌گردانی آن را
+ * به ۳ می‌اندازد (۵٫۷٪ خطا) و چون «نمایِ بازدهی» بر همان ۳ تقسیم می‌کند، خطا به کلِ
+ * محورِ صفحهٔ نمودار (۱۴۷٬۰۰۰ به‌جای ۱۳۸٬۵۷۸) و به ارتفاعِ همهٔ کندل‌هایِ کهنه
+ * سرایت می‌کند. پس چهار رقمِ ممیز می‌ماند و خوانا‌بودنِ محور به `pricePrecisionFor`
+ * واگذار شده است — نه به تحریفِ داده.
+ */
+function roundAdjustedPrice(v: number): number {
+  return Math.round(v * 1e4) / 1e4;
+}
+
 export function getAdjustmentFactor(action: CorporateAction): number {
   return action.ratio > 0 ? Math.min(Math.max(action.ratio, 0.0001), 50) : 1.0;
 }
@@ -181,9 +206,11 @@ export function pricePrecisionFor(mode: AdjustmentMode): number {
  * می‌کرد، در حالی که حلقۀِ سرور همان‌ها را نگه می‌داشت — دو مقیاسِ متفاوت برایِ یک
  * نماد درِ یک صفحه. حالا یک محاسبه هست و مرورگر فقط همان را اعمال می‌کند.
  *
- * اعمالِ ضریب: قیمت‌ها ×k و حجم ÷k تا ارزشِ معامله ثابت بماند. کندلی که سرور برایش
- * ضریبی نفرستاده (سریِ محلیِ بی‌factors، کندلِ تزریق‌شدۀِ محلی) ضریبِ ۱ می‌گیرد —
- * «بی‌اثر»، نه حذفِ کندل و نه عددِ ساخته‌شده.
+ * اعمالِ ضریب: فقط قیمت‌ها ×k. حجم و گردشِ ارزش دست‌نخورده می‌مانند — مرجعِ ره‌آورد
+ * هم درِ هر دو_seriesِ خام و تعدیل‌شده همان حجم را می‌رسمد (سنجشِ بالا)، و تقسیمِ حجم
+ * بر ضریبِ کهنه (۰٫۰۰۱۶) محورِ حجم را تا صدبرابرِ منبع بالا می‌برد.
+ * کندلی که سرور برایش ضریبی نفرستاده (سریِ محلیِ بی‌factors، کندلِ تزریق‌شدۀِ محلی)
+ * ضریبِ ۱ می‌گیرد — «بی‌اثر»، نه حذفِ کندل و نه عددِ ساخته‌شده.
  */
 export function applyAdjustmentToCandles(
   rawCandles: KLineData[],
@@ -210,11 +237,17 @@ export function applyAdjustmentToCandles(
     const factor = byDate.get(key) ?? 1.0;
     return {
       timestamp: candle.timestamp,
-      open: Math.round(candle.open * factor),
-      high: Math.round(candle.high * factor),
-      low: Math.round(candle.low * factor),
-      close: Math.round(candle.close * factor),
-      volume: candle.volume !== undefined ? Math.round(candle.volume / factor) : undefined,
+      open: roundAdjustedPrice(candle.open * factor),
+      high: roundAdjustedPrice(candle.high * factor),
+      low: roundAdjustedPrice(candle.low * factor),
+      close: roundAdjustedPrice(candle.close * factor),
+      // حجم دست‌نخورده می‌ماند. تقسیمِ حجم بر ضریب («تا ارزشِ ثابت بماند») با
+      // مرجعِ measured نمی‌خواند: درِ سنجشِ ۱۴۰۵-۰۷-۲۷ از ۶۰۱ تاریخِ مشترکِ فولاد،
+      // سریِ حجمِ خام (type0) و سریِ حجمِ تعدیل‌شدهٔ رهاورد (type7) در ۶۰۱ از ۶۰۱
+      // تاریخ *یکسان* بودند (`_audit/ra365_ref_bars.json`). تقسیم، محورِ حجم را در
+      // نمایِ کاملِ تاریخچه ۱۷۶ برابرِ منبع می‌کرد (۲٫۲۹e۱۲ به‌جای ۱٫۳e۱۰،
+      // `_audit/chart_axis_stages.json`).
+      volume: candle.volume,
       turnover: candle.turnover
     };
   });
