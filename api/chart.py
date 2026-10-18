@@ -1785,10 +1785,16 @@ def _fts_fib_leg(candles, swings):
     highs = [s for s in swings if s["kind"] == "high"]
     lows = [s for s in swings if s["kind"] == "low"]
     if not highs and not lows:
+        # هیچ پیوتی نیست ⇒ جهت را حدس نمی‌زنیم: جایِ نسبیِ دو Extreme خودش را
+        # می‌گوید. اگر سقف بعد از کف آمده باشد موج صعودی است، وگرنه نزولی.
+        # (پیش از این این شاخه همیشه «up» برمی‌گرداند، پس سریِ سقف‌سپس‌کف هم
+        # صعودی حساب می‌شد و کمربندها سرِ جایِ غلط می‌نشستند.)
         hi_idx = max(range(n), key=lambda i: candles[i]["high"])
-        return {"direction": "up", "start_idx": 0, "end_idx": n - 1,
+        lo_idx = min(range(n), key=lambda i: candles[i]["low"])
+        return {"direction": "up" if lo_idx <= hi_idx else "down",
+                "start_idx": min(hi_idx, lo_idx), "end_idx": n - 1,
                 "high": float(candles[hi_idx]["high"]),
-                "low": min(float(c["low"]) for c in candles)}
+                "low": float(candles[lo_idx]["low"])}
     # «هیچ پایانیِ پس از idx زیرِ قیمت نبسته» — با کمینهٔ پس‌رو، یک‌بار محاسبه
     close = [float(c["close"]) for c in candles]
     suf_min = [0.0] * (n + 1)
@@ -1874,6 +1880,18 @@ def _fts_fib_zones(candles, swings):
         return None
     zones = {}
     direction = leg.get("direction") or "up"
+    last = float(candles[-1]["close"]) if candles else 0.0
+    # عمقِ اصلاح رویِ همان مقیاسِ لگاریتمیِ کمربندها، درِ جهتِ موج: ۰ سرِ موج،
+    # ۱ کلِ موج برگشته. بی‌این عدد «نخوردنِ کمربند» بی‌فاصله می‌ماند — نمادی
+    # ۰٫۴٪ بالایِ ۳۳ با نمادی ۳۰٪ پایین‌تر یکی حساب می‌شد.
+    # موجِ نزولی قرینه است نه منفی: `raw` از سقف سنجیده می‌شود، پس عمقِ بازگشت
+    # از کف = ۱ − raw. (با `-raw` عددِ منفی درمی‌آمد و با لبه‌هایِ کمربند
+    # نمی‌خواند — سنجشِ آواک: ۱۵٫۹۵٪ در برابرِ کمربندِ ۲۷۰۴–۲۷۵۵ رویِ کفِ ۲۴۸۰.)
+    span = math.log(top) - math.log(bot)
+    retrace = None
+    if last > 0 and span > 0:
+        raw = (math.log(top) - math.log(last)) / span
+        retrace = round(100.0 * (raw if direction == "up" else 1.0 - raw), 2)
     for key, p1, p2 in _FTS_FIB_BELTS:
         # کمربند در جهتِ موج سنجیده می‌شود: صعودی از سقف به پایین، نزولی از کف
         # به بالا. پیش از این هر دو «از سقف به پایین» بودند، پس روی موجِ ریزشی
@@ -1881,11 +1899,17 @@ def _fts_fib_zones(candles, swings):
         # بود — منطقۀ بازگشت نه، ابتدایِ ریزش.
         a, b = _fts_fib_retrace(top, bot, p1, direction), _fts_fib_retrace(top, bot, p2, direction)
         hi_p, lo_p = max(a, b), min(a, b)
-        last = float(candles[-1]["close"]) if candles else 0.0
         zones[key] = {"lo": round(lo_p, 2), "hi": round(hi_p, 2),
-                      "in_zone": bool(lo_p <= last <= hi_p)}
+                      "from_ratio": p1, "to_ratio": p2,
+                      "in_zone": bool(lo_p <= last <= hi_p),
+                      # فاصلۀ آخرین تا هر دو لبۀ کمربند، درصدِ قیمت (منفی = زیرِ کمربند)
+                      "gap_lo_pct": (round(100.0 * (last - lo_p) / lo_p, 2)
+                                     if lo_p > 0 and last > 0 else None),
+                      "gap_hi_pct": (round(100.0 * (last - hi_p) / hi_p, 2)
+                                     if hi_p > 0 and last > 0 else None)}
     return {
         "retrace_base_high": round(top, 2), "retrace_base_low": round(bot, 2),
+        "retrace_pct": retrace, "last_close": round(last, 2),
         **zones,
         "levels": [{"ratio": r, "price": round(_fts_fib_retrace(top, bot, r, direction), 2)}
                    for r in _FTS_FIB_LEVELS],

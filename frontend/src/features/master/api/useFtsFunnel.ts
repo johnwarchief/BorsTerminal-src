@@ -36,6 +36,10 @@ export type FunnelRequest = {
    *  مصرف نمی‌کند، ولی درِ کلیدِ کش می‌ماند تا انتخابِ کاربر پاسخِ حالتِ دیگر
    *  را نشان ندهد. فهرستِ مجاز از `technical_filtersِ` رجیستری است. */
   techChain: string[];
+  /** تنظیماتِ مستقلِ همین استراتژی — همان چیزی که موتور اجرا می‌کند. */
+  /** اختیاری درِ *نوع* (فیچرهایِ تستیِ بی‌تنظیم)؛ درِ مسیرِ واقعی همیشه
+   *  ساخته و فرستاده می‌شود، پس بدنهٔ درخواست هیچ‌وقت بی‌این کلید نمی‌رود. */
+  strategySettings?: Record<string, string>;
   /** ترکیبِ چیپ‌هایِ روشن: «and» = هرچه دارد، «or» = کم‌از‌یکی. پیش‌فرضِ موتور
    *  هم and است، پس بی‌کلیدِ تازه رفتارِ دیروز می‌ماند. */
   logic: 'and' | 'or';
@@ -55,7 +59,8 @@ const emptyStage = (key: FunnelStageKey): FunnelStage => ({
 const EMPTY: Funnel = {
   mode: 'reverse', tape: 'unavailable',
   // بی‌پاسخ، ترتیبِ جزوه حاکم است — نه یک ترتیبِ دومِ اختراع‌شده.
-  flow: 'tape_first', stageOrder: [...STAGE_KEYS], techChain: [], techFilterCounts: {},
+  flow: 'tape_first', stageOrder: [...STAGE_KEYS], techChain: [], strategySettings: {},
+  techFilterCounts: {},
   techCoverage: { universe: 0, live: 0, fromScreen: 0, none: 0 },
   stages: {
     tape: emptyStage('tape'),
@@ -81,7 +86,11 @@ export function funnelQueryKey(req: FunnelRequest): string[] {
           JSON.stringify(req.exceptions), req.dropSuffix ? 'ds1' : 'ds0',
           // ترتیبِ انتخاب معنایی ندارد (گیت همیشه مقدم است)، پس مرتب‌شده درِ
           // کلید می‌نشیند تا دو چیدمانِ یک‌مجموعه یک پاسخ را دوباره نگیرند.
-          [...req.techChain].sort().join('+')];
+          [...req.techChain].sort().join('+'),
+          // دو تنظیمِ متفاوت نباید یکِ کلیدِ کش داشته باشند، وگرنه انتخابِ
+          // «۱٪» پاسخِ «۲٪» را نشان می‌دهد.
+          Object.entries(req.strategySettings ?? {}).sort()
+            .map(([k, v]) => `${k}=${v}`).join('&')];
 }
 
 /** درخواستِ قیف از سرور. `mode` فقط نمایشِ ریتمِ کشف است (معکوس/مرور) و داوری
@@ -126,6 +135,7 @@ export function useFtsFunnel(
   const exceptions = useFunnelPrefsStore((s) => s.exceptions);
   const dropSuffixPref = useFunnelPrefsStore((s) => s.dropSuffix);
   const techChainPref = useFunnelPrefsStore((s) => s.techChain);
+  const strategySettingsPref = useFunnelPrefsStore((s) => s.strategySettings);
   const toggleTechPref = useFunnelPrefsStore((s) => s.toggleTechFilter);
   const opts: FunnelOptions = {
     ...DEFAULT_FUNNEL_OPTIONS,
@@ -162,12 +172,15 @@ export function useFtsFunnel(
     chain: overrides.chain ?? urlChain
       ?? (preset === 'custom' ? chainPref : quickFilters),
     techChain: overrides.techChain ?? urlTechChain ?? techChainPref,
+    strategySettings: overrides.strategySettings
+      ?? strategySettingsPref[preset ?? ''] ?? {},
     logic: overrides.logic ?? screenLogic,
     fundMode: overrides.fundMode ?? fundMode,
     exceptions: overrides.exceptions ?? exceptions,
     dropSuffix: dropSuffixPref,
     ...overrides,
-  }), [preset, overrides, urlChain, urlTechChain, chainPref, techChainPref, fundMode,
+  }), [preset, overrides, urlChain, urlTechChain, chainPref, techChainPref,
+    strategySettingsPref, fundMode,
       exceptions, dropSuffixPref, quickFilters, screenLogic]);
 
   // چیپ‌هایِ نوارِ غربالگری با همان منبعی که داوری می‌شود حرف می‌زنند: درِ
@@ -205,6 +218,7 @@ export function useFtsFunnel(
       signal: ctx.signal,
       body: { preset: request.preset, chain: request.chain, logic: request.logic,
               fund_mode: request.fundMode, tech_chain: request.techChain,
+              strategy_settings: request.strategySettings ?? {},
               exceptions: request.exceptions, drop_suffix: request.dropSuffix },
     }),
     // کلیدِ تازه = پاسخِ تازه، و بی‌این خط جدولِ مسلطِ قیف برایِ چند صدمیلی‌ثانیه

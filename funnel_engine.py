@@ -365,8 +365,26 @@ def _row_ladder(r: dict[str, Any]) -> float | None:
     return max((_num(r.get(f"h{k}_max")) or 0.0) for k in JET_LADDER)
 
 
-def _tape_miss(r: dict[str, Any], fid: str) -> str | None:
-    """اولین قیدِ ردشده درِ همان فایل، با عددِ ردیف — یا None."""
+def _param_num(sp: dict[str, Any] | None, key: str, default: float) -> float:
+    """مقدارِ مؤثرِ یک پارامتر. نبودش یعنی پیش‌فرضِ فایل، نه صفر."""
+    v = (sp or {}).get(key)
+    try:
+        f = float(v)                                   # type: ignore[arg-type]
+    except (TypeError, ValueError):
+        return default
+    return f if f > 0 else default
+
+
+def _tape_miss(r: dict[str, Any], fid: str,
+               sp: dict[str, Any] | None = None) -> str | None:
+    """اولین قیدِ ردشده درِ همان فایل، با عددِ ردیف — یا None.
+
+    `sp` پارامترهایِ *مؤثر* همین درخواست است. تا پیش از این `params` فقط درِ
+    نمایش (`parameter_set`) می‌نشست و `_tape_miss` هیچ‌وقت آن را نمی‌خواند —
+    یعنی «ضریبِ حجم» و «آستانۀ ساعت» تنظیمِ دیدنیِ بی‌اثر بودند (همان برچسبِ
+    مرده). حالا عددِ انتخابیِ کاربر درِ همان قید می‌نشیند و درِ دلیل هم با همان
+    عدد نوشته می‌شود.
+    """
     import tape_flags as TF
 
     pl, pc = _num(r.get("p_last")), _num(r.get("p_closing"))
@@ -404,12 +422,16 @@ def _tape_miss(r: dict[str, Any], fid: str) -> str | None:
                 f"فایل دستِ‌کم {_fa_n(mult)}× می‌خواهد")
 
     if fid == "f_clock":
+        # آستانه ازِ تنظیمِ همین استراتژی می‌آید؛ نبودش یعنی همان ۲٪ِ فایل.
+        delta = _param_num(sp, "clock_delta", TF.CLOCK_DELTA)
+        mult = _param_num(sp, "vol_mult", 1.0)
         for chk in (
-            lambda: (None if (pc and pl is not None and pl >= pc * (1 + TF.CLOCK_DELTA)) else
+            lambda: (None if (pc and pl is not None and pl >= pc * (1 + delta)) else
                      f"اختلافِ آخرین و پایانی "
                      f"{_fa_num(100 * (pl - pc) / pc) if (pc and pl is not None) else '—'}٪ است، "
-                     f"فایل دستِ‌کم {_fa_n(round(TF.CLOCK_DELTA * 100))}٪ بالا می‌خواهد"),
-            lambda: vol_over(1.0),
+                     f"دستِ‌کم {_fa_num(delta * 100)}٪ بالا می‌خواهد"
+                     + (" (تنظیمِ همین استراتژی)" if delta != TF.CLOCK_DELTA else "")),
+            lambda: vol_over(mult),
             lambda: trades_over(TF.CLOCK_TRADES),
         ):
             if (msg := chk()) is not None:
@@ -576,7 +598,7 @@ def _tape_stage_union(rows: list[dict], chain: tuple[str, ...],
         if falses:
             parts = []
             for fid in falses[:3]:
-                miss = _tape_miss(r, fid)
+                miss = _tape_miss(r, fid, params.get(fid))
                 parts.append(f"{REG.BY_ID[fid].name} — {miss}" if miss
                              else REG.BY_ID[fid].name)
             if len(falses) > 3:
@@ -706,7 +728,7 @@ def tape_stage(rows: list[dict], chain: tuple[str, ...],
             elif fv is False:
                 # «کدام بندِ فایل نخورد» با عددِ خودِ ردیف؛ اگر چیزی قابلِ اثبات
                 # نبود همان متنِ عمومیِ صادق می‌ماند (ادعایِ جعلی ساخته نمی‌شود).
-                miss = _tape_miss(r, fid)
+                miss = _tape_miss(r, fid, params.get(fid))
                 r["_tape_why_text"] = (f"{f.name} — {miss}" if miss
                                        else f"{f.name} — نشانه در این نماد نیست")
                 _why_of(r).append({"stage": "tape", "seq": len(steps) + 1, "filter_id": fid,
@@ -761,9 +783,69 @@ BRANCH_OF = {
 _TECH_KEYS = ("tech_trend_w", "tech_trend_d", "tech_trend_m", "tech_alignment",
               "tech_status", "tech_matrix_decision", "tech_matrix_setup",
               "tech_jet", "tech_choch_bull", "tech_choch_bear", "tech_double_bottom",
-              "tech_range_break", "tech_fib_zone", "tech_exit_verdict",
+              "tech_range_break", "tech_fib_zone",
+              # شاهدِ همان برچسب: عمقِ اصلاح و نقاطِ موج. رأیِ مالک ۲۰۲۶-۱۰-۱۸:
+              # جدول باید «مقدارِ اصلاح» و «نقاطِ مبنایِ محاسبه» را نشان دهد، نه
+              # فقط خوردن/نخوردنِ یکِ برچسب.
+              "tech_fib_pct", "tech_fib_leg_dir", "tech_fib_leg_from", "tech_fib_leg_to",
+              "tech_fib_leg_high", "tech_fib_leg_low",
+              "tech_exit_verdict",
               "tech_exit_signals", "tech_hourglass_active", "tech_hourglass_action")
 
+
+
+def _strategy_verdict(r: dict, st: dict[str, str], sigs: dict[str, str] | None, sym: str,
+                      w: str | None, d: str | None, mat: str | None) -> tuple[str, list[dict]]:
+    """داوریِ گامِ تکنیکال درِ «تکنیکال اول» — ازِ تنظیم، نه ازِ ارث.
+
+    رأیِ مالک: قواعدِ استراتژیِ قدیمی خودکار منتقل نمی‌شود و شرطِ هر تایم‌فریم
+    قابلِ انتخاب است:
+      weekly_mode=off         هیچ وتویی ازِ هفتگی نمی‌آید (پیش‌فرضِ همین استراتژی)
+      weekly_mode=require_up  همان قاعدۀ کلاسیک (رأیِ ۱۲): نزولی/خنثی ⇒ رد
+      weekly_mode=reject_down فقط نزولی رد می‌شود؛ خنثی و بی‌داده رد نیست
+      daily_mode=require_up   روزانۀ صعودی هم لازم است
+    «بی‌داده» هیچ‌وقت رد نیست: PENDING/UNAVAILABLE سرِ جایش می‌ماند.
+    """
+    why: list[dict] = []
+    wm = st.get("weekly_mode") or "off"
+    dm = st.get("daily_mode") or "off"
+    if not (w or d or mat):
+        if sigs is not None and not sigs.get(sym):
+            return UNAVAILABLE, [{"code": "TECH_NO_HISTORY",
+                                  "text": "هیچ سابقۀ قیمتی در بانکِ محلی برایِ این نماد نیست"}]
+        if sigs is not None:
+            return PENDING, [{"code": "TECH_SCAN_PENDING",
+                              "text": "داوریِ تکنیکال این نماد هنوز ساخته نشده — اسکن در جریان است"}]
+        return UNAVAILABLE, [{"code": "TECH_UNMEASURED", "text": "تکنیکال این نماد سنجیده نشده"}]
+    if wm == "require_up":
+        if mat == "UNKNOWN":
+            return PENDING, [{"code": "WEEKLY_UNMEASURED",
+                              "text": "هفتگی به اندازهٔ کافی پیوت ندارد — رأی دادن حدس است"}]
+        if w in ("down", "range"):
+            return REJECT, [{"code": "WEEKLY_TREND_" + ("DOWN" if w == "down" else "NEUTRAL"),
+                             "text": f"روند هفتگی {w} — شرطِ «فقط صعودی» ازِ تنظیماتِ استراتژی"}]
+        if w != "up":
+            return PENDING, [{"code": "WEEKLY_UNCLASSIFIED", "text": "هفتگی دسته‌بندی نشده"}]
+        why.append({"code": "WEEKLY_TREND_UP", "text": "روند هفتگی صعودی (شرطِ برآورده)"})
+    elif wm == "reject_down":
+        if w == "down":
+            return REJECT, [{"code": "WEEKLY_TREND_DOWN",
+                             "text": "روند هفتگی نزولی — شرطِ «فقط نزولی رد شود»"}]
+        why.append({"code": "WEEKLY_NOT_VETOING",
+                    "text": f"هفتگی «{w or '-'}» وتو نیست (تنظیم: فقط نزولی رد می‌شود)"})
+    else:
+        why.append({"code": "WEEKLY_GATE_NOT_APPLIED",
+                    "text": f"شرطِ هفتگی اعمال نمی‌شود (هفتگی: {w or '-'})"})
+    if dm == "require_up":
+        if d == "up":
+            why.append({"code": "DAILY_TREND_UP", "text": "روند روزانه صعودی (شرطِ برآورده)"})
+        elif d is None:
+            return PENDING, why + [{"code": "DAILY_UNMEASURED",
+                                    "text": "روزانه دسته‌بندی نشده — شرطِ روزانه سنجیده نشد"}]
+        else:
+            return REJECT, why + [{"code": "DAILY_TREND_NOT_UP",
+                                   "text": f"روند روزانه «{d}» است و شرطِ «روزانۀ صعودی» لازم است"}]
+    return PASS, why
 
 def _hourglass_verdict(r: dict, sigs: dict[str, str] | None, sym: str) -> tuple[str, list[dict]]:
     """دروازۀِ «ساعتِ شنی»: رأی از سیگنالِ هفتگیِ MA52/RSI(5)، نه از داورِ روند.
@@ -817,11 +899,70 @@ def _tech_signals(row: dict) -> list | None:
     return got if isinstance(got, list) else None
 
 
-def _tech_check(row: dict, tf, gate_status: str) -> dict:
+
+def _fib_evidence(row: dict, tf) -> dict:
+    """شاهدِ کمربندِ فیبو: عمقِ اصلاح، نقاطِ موج، و فاصله تا لبه‌ها.
+
+    رأیِ مالک: جدول باید مقدارِ اصلاح و نقاطِ مبنایِ محاسبه را نشان دهد. این‌ها
+    عددِ تازه نیستند — `_fts_fib_zones` همان‌ها را می‌ساخت و اسکن فقط برچسبِ
+    کمربند را نگه می‌داشت. بی‌ستونِ شاهد ⇒ None، نه صفر.
+    """
+    lp, hp = tf.param("fib_lo"), tf.param("fib_hi")
+    lo = lp.value if lp else None
+    hi = hp.value if hp else None
+    pct = _num(row.get("tech_fib_pct"))
+    out: dict[str, Any] = {"band_lo": lo, "band_hi": hi, "retrace_pct": pct,
+                           "where": None, "distance_pct": None, "leg": None}
+    if row.get("tech_fib_leg_from") or row.get("tech_fib_leg_dir"):
+        out["leg"] = {"direction": str(row.get("tech_fib_leg_dir") or ""),
+                      "from": row.get("tech_fib_leg_from"), "to": row.get("tech_fib_leg_to"),
+                      "low": _num(row.get("tech_fib_leg_low")),
+                      "high": _num(row.get("tech_fib_leg_high"))}
+    if pct is not None and lo is not None and hi is not None:
+        if pct < lo:
+            out["where"], out["distance_pct"] = "below", round(lo - pct, 2)
+        elif pct > hi:
+            out["where"], out["distance_pct"] = "above", round(pct - hi, 2)
+        else:
+            out["where"], out["distance_pct"] = "inside", 0.0
+    return out
+
+
+def _fib_reason(tf, ev: dict, status: str) -> str:
+    """یک خطِ عددی: چه عمقی، رویِ چه موجی، چقدر تا کمربند."""
+    pct, lo, hi = ev.get("retrace_pct"), ev.get("band_lo"), ev.get("band_hi")
+    band = f"{_fa_num(lo)}-{_fa_num(hi)}%" if lo is not None else "-"
+    if pct is None:
+        return (f"{tf.name}: عمقِ اصلاح درِ این ردیف ساخته نشده — داوریِ این نماد "
+                "پیشِ افزودنِ ستونِ شاهد ساخته شده (بازنشانیِ اسکن لازم دارد)")
+    leg = ev.get("leg") or {}
+    basis = ""
+    if leg.get("from"):
+        arrow = "سقف به کف" if leg.get("direction") == "down" else "کف به سقف"
+        basis = (f" | موجِ {arrow} {leg['from']} تا {leg.get('to')}"
+                 f" ({_fa_n(leg.get('low'))} تا {_fa_n(leg.get('high'))})")
+    if status == PASS:
+        return f"اصلاحِ {_fa_num(pct)}% داخلِ کمربندِ {band}{basis}"
+    side = {"below": "پایین‌تر از", "above": "بالاتر از"}.get(ev.get("where"), "خارج از")
+    gap = ev.get("distance_pct")
+    return (f"اصلاحِ {_fa_num(pct)}% — {side} {band}"
+            + (f"، {_fa_num(gap)} واحدِ درصدی فاصله" if gap else "") + basis)
+
+
+def _tech_check(row: dict, tf, gate_status: str, settings: dict | None = None) -> dict:
     """خوردنِ یک شرطِ تکنیکال از همان ستونی که `funnel_tech_scan` ساخته است."""
     out: dict = {"filter_id": tf.filter_id, "label": tf.name, "role": tf.role,
                  "column": tf.column, "source": tf.source, "origin": tf.origin}
+    if tf.column == "tech_fib_zone":
+        out["measure"] = _fib_evidence(row, tf)
     if tf.role == "gate":
+        # خاموش‌بودنِ شرطِ هفتگی باید *دیده* شود، نه اینکه غیبش بزنند.
+        if (settings or {}).get("weekly_mode") == "off":
+            out.update({"status": NOT_REQUIRED, "value": row.get(tf.column),
+                        "reason_code": "WEEKLY_GATE_NOT_APPLIED",
+                        "human_reason": "شرطِ روند هفتگی درِ این استراتژی خاموش است "
+                                        "(تنظیم: اعمال نشود) — وتویی ازِ هفتگی نمی‌آید"})
+            return out
         # گیتِ هفتگی را دوباره حساب نمی‌کنیم: رأیِ خودِ داورِ رسمی برگردانده می‌شود.
         out.update({"status": gate_status, "value": row.get(tf.column),
                     "reason_code": "TECH_GATE_" + gate_status.upper(),
@@ -866,18 +1007,23 @@ def _tech_check(row: dict, tf, gate_status: str) -> dict:
             status = REJECT if tf.column in _TECH_ABSENT_REJECT else UNAVAILABLE
         else:
             status = PASS if str(val) == str(target) else REJECT
+    reason = None
+    if tf.column == "tech_fib_zone":
+        reason = _fib_reason(tf, out["measure"], status)
     out.update({"status": status, "value": val,
                 "reason_code": tf.filter_id.upper() + "_" + status.upper(),
-                "human_reason": (f"{tf.name}: خورده شد" if status == PASS else
-                                 (f"{tf.name} — ستونِ {tf.column} مقدارِ داوری‌شده ندارد"
-                                  if status == UNAVAILABLE else f"{tf.name}: نخورد"))})
+                "human_reason": reason or (
+                    f"{tf.name}: خورده شد" if status == PASS else
+                    (f"{tf.name} — ستونِ {tf.column} مقدارِ داوری‌شده ندارد"
+                     if status == UNAVAILABLE else f"{tf.name}: نخورد"))})
     return out
 
 
 def technical_stage(rows: list[dict], tech: dict[str, dict] | None = None,
                     sigs: dict[str, str] | None = None,
                     gate: str | None = None,
-                    tech_chain: tuple[str, ...] = ()) -> dict:
+                    tech_chain: tuple[str, ...] = (),
+                    settings: dict[str, str] | None = None) -> dict:
     """گیتِ تکنیکال — داور همان موتورِ production است، نه محاسبۀ دوباره.
 
     `tech` ردیف‌هایِ `funnel_tech_scan` است (نماد → ستون‌هایِ tech_*). چرا لازم
@@ -894,6 +1040,7 @@ def technical_stage(rows: list[dict], tech: dict[str, dict] | None = None,
     `gate` دروازۀِ خودِ preset است (`REG.TREND_GATE` یا `REG.HOURGLASS_GATE`).
     """
     gate = gate or REG.TREND_GATE
+    st = dict(settings or {})
     kept, steps, dropped = [], [], []
     counts = {PASS: 0, REJECT: 0, PENDING: 0, UNAVAILABLE: 0}
     for r in rows:
@@ -911,6 +1058,8 @@ def technical_stage(rows: list[dict], tech: dict[str, dict] | None = None,
         why: list[dict[str, str]] = []
         if gate == REG.HOURGLASS_GATE:
             status, why = _hourglass_verdict(r, sigs, sym)
+        elif gate == REG.NO_GATE:
+            status, why = _strategy_verdict(r, st, sigs, sym, w, d, mat)
         elif not (w or d or mat):
             if sigs is not None and not sigs.get(sym):
                 status = UNAVAILABLE
@@ -948,7 +1097,7 @@ def technical_stage(rows: list[dict], tech: dict[str, dict] | None = None,
         # ترکیبی از فیلترهای اختیاری نمادِ مردودِ هفتگی را ردیف نمی‌کند.
         checks: list[dict] = []
         for tf in (REG.get_tech_filter(fid) for fid in tech_chain):
-            chk = _tech_check(r, tf, status)
+            chk = _tech_check(r, tf, status, st)
             checks.append(chk)
             if chk["filter_id"] in TECH_GATE_IDS:
                 continue
@@ -1602,6 +1751,7 @@ def evaluate(board_rows: list[dict], screen_rows: list[dict], *,
              drop_numeric_suffix: bool = False,
              tape_logic: str = "and",
              tech_chain: Iterable[str] | None = None,
+             settings: dict[str, Any] | None = None,
              as_of: int | None = None) -> dict:
     """قیفِ کامل رویِ کلِ جامعۀ ورودی. هیچ جایی slice نمی‌زند."""
     as_of = as_of or int(time.time())
@@ -1659,10 +1809,20 @@ def evaluate(board_rows: list[dict], screen_rows: list[dict], *,
     preset_obj = REG.PRESET_BY_ID.get(preset)
     flow = (preset_obj.flow if preset_obj else "tape_first") or "tape_first"
     chosen_tech = REG.resolve_tech_chain(preset, tech_chain) if flow == "tech_first" else ()
+    # تنظیماتِ همین استراتژی: پیش‌فرض ازِ رجیستری، انتخابِ کاربر رویِ آن سوار
+    # می‌شود و مقدارِ *مؤثر* به موتور می‌رسد (نه به نمایش). بی‌این، «تنظیم» فقط
+    # یک برچسبِ دیدنی بود — همان ایرادی که درِ `parameter_set` وجود داشت.
+    stg = REG.validate_settings(preset, settings)
+    if stg.get("clock_delta_pct"):
+        eff = dict(params or {})
+        fc = dict(eff.get("f_clock") or {})
+        fc["clock_delta"] = float(stg["clock_delta_pct"]) / 100.0
+        eff["f_clock"] = fc
+        params = eff
     if flow == "tech_first":
         # تکنیکال رویِ **کلِ جامعۀ غربالگری** داوری می‌شود، بعد تابلو رویِ ماندگان.
         tech = technical_stage(screening, tech_scan, tech_sigs, gate=gate_of(preset),
-                               tech_chain=chosen_tech)
+                               tech_chain=chosen_tech, settings=stg)
         tape = tape_stage(tech["survivors"], chain, params, logic=tape_logic)
     else:
         tape = tape_stage(screening, chain, params, logic=tape_logic)
@@ -1672,7 +1832,7 @@ def evaluate(board_rows: list[dict], screen_rows: list[dict], *,
             else REG.TREND_GATE)
     if flow != "tech_first":
         tech = technical_stage(tape["survivors"], tech_scan, tech_sigs, gate=gate,
-                               tech_chain=chosen_tech)
+                               tech_chain=chosen_tech, settings=stg)
     fund = fundamental_stage(tech["survivors"], fund_mode, exceptions, now=as_of)
     hand = handover_stage(fund["survivors"], tape, tech, fund,
                           assembly_vetoed=[str(r.get("symbol") or "") for r in screening
@@ -1718,6 +1878,9 @@ def evaluate(board_rows: list[dict], screen_rows: list[dict], *,
         "status": "success",
         "engine_version": ENGINE_VERSION,
         "ruleset_version": REG.RULESET_VERSION,
+        # تنظیماتِ مؤثرِ همین درخواست — تا trace و UI همان عددی را ببینند که
+        # موتور واقعاً استفاده کرد، نه پیش‌فرضِ رجیستری را.
+        "strategy_settings": stg,
         "as_of": as_of,
         "preset": preset,
         "chain": list(chain),

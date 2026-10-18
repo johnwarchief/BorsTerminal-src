@@ -76,7 +76,10 @@ describe('مدلِ قیف از پاسخ', () => {
     const t = funnelFromApi(TECH_FIRST_FIXTURE);
     expect(t.flow).toBe('tech_first');
     expect(t.stageOrder).toEqual(['technical', 'tape', 'fundamental', 'handover']);
-    expect(t.techChain).toEqual(['t_weekly_up', 't_setup_jet']);
+    expect(t.techChain).toEqual(['t_weekly_up', 't_setup_jet', 't_setup_fib_33_40']);
+    // تنظیماتِ مؤثر ازِ خودِ پاسخ خوانده می‌شود، نه از stateِ رابط
+    expect(t.strategySettings).toEqual({ weekly_mode: 'off', daily_mode: 'off',
+                                        clock_delta_pct: '1' });
     const r = funnelFromApi(FUNNEL_FIXTURE);
     expect(r.flow).toBe('tape_first');
     expect(r.stageOrder).toEqual(['tape', 'technical', 'fundamental', 'handover']);
@@ -226,5 +229,48 @@ describe('چیپ‌هایِ شرطِ تکنیکال', () => {
       const last = funnelCalls[funnelCalls.length - 1] as { tech_chain?: string[] };
       expect(last.tech_chain).toContain('t_risk_third_peak');
     }, { timeout: 4000 });
+  });
+});
+
+describe('تنظیماتِ مستقلِ استراتژی و شاهدِ فیبو (رأیِ مالک ۱۴۰۵-۰۷-۲۷)', () => {
+  it('پیچ‌ها از رجیستری ساخته می‌شوند و انتخاب، درِ درخواستِ بعدی می‌رود', async () => {
+    await ready(TECH_FIRST_FIXTURE, at('tech_first', 'technical'));
+    const row = screen.getByTestId('funnel-strategy-settings');
+    // دو پیچ، دقیقاً آن‌طور که رجیستری تعریف کرده — رابط چیزی اختراع نمی‌کند
+    expect(within(row).getByTestId('funnel-setting-weekly_mode')).toBeInTheDocument();
+    const clock = within(row).getByTestId('funnel-setting-clock_delta_pct') as HTMLSelectElement;
+    expect(clock.value).toBe('1');                     // پیش‌فرضِ همین استراتژی
+    fireEvent.change(clock, { target: { value: '2' } });
+    await waitFor(() => {
+      const last = funnelCalls[funnelCalls.length - 1] as
+        { strategy_settings?: Record<string, string> };
+      expect(last.strategy_settings?.clock_delta_pct).toBe('2');
+    }, { timeout: 4000 });
+  });
+
+  it('presetِ بی‌تعریف، هیچ پیچی نمی‌سازد (تنظیماتِ تازه به قدیمی‌ها نشت نمی‌کند)',
+    async () => {
+      await ready(FUNNEL_FIXTURE, at('trend', 'tape'));
+      expect(screen.queryByTestId('funnel-strategy-settings')).toBeNull();
+    });
+
+  it('مقدارِ اصلاح درِ ردیفِ جدول دیده می‌شود، نه فقط خوردنِ یک برچسب', async () => {
+    await ready(TECH_FIRST_FIXTURE, at('tech_first', 'technical'));
+    const pct = await screen.findByTestId('funnel-fib-pct-فولاد-t_setup_fib_33_40',
+                                        {}, { timeout: 4000 });
+    expect(pct.textContent).toBe('۳۵.۲٪');   // همان fmtPctِ همیشگیِ رابط
+    const chip = screen.getByTestId('funnel-tech-check-فولاد-t_setup_fib_33_40');
+    // نقاطِ مبنایِ محاسبه (مبدأ/مقصد/کف/سقفِ موج) درِ همان سطر حمل می‌شود
+    expect(String(chip.getAttribute('title'))).toContain('33-40');
+  });
+
+  it('دو تنظیمِ متفاوت، یکِ کلیدِ کش ندارند', () => {
+    const base = { preset: 'tech_first' as const, chain: [], logic: 'and' as const,
+      fundMode: 'standard' as const, exceptions: {}, dropSuffix: true, techChain: [] };
+    const a = funnelQueryKey({ ...base, strategySettings: { clock_delta_pct: '1' } });
+    const b = funnelQueryKey({ ...base, strategySettings: { clock_delta_pct: '2' } });
+    const none = funnelQueryKey(base);
+    expect(a).not.toEqual(b);
+    expect(a).not.toEqual(none);
   });
 });

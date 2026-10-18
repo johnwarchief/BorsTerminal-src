@@ -312,6 +312,16 @@ export type Candidate = {
  *  درِ بک‌اند ساخته است. `value` عینِ ستونِ `funnel_tech_scan` است و `status` حکمِ
  *  همان سطر؛ هیچ‌کدام درِ فرانت دوباره حساب نمی‌شود. `origin` می‌گوید شاهد از
  *  جزوه آمده یا از برنامۀ خودِ برنامه (ستاپی که سطرِ مستقلِ جزوه ندارد). */
+/** شاهدِ عددیِ یک شرط (فعلاً فقط کمربندهایِ فیبو): عمقِ اصلاح، نقاطِ موج و
+ *  فاصله تا لبه‌ها. بی‌این، جدول فقط «خورد/نخورد» می‌گفت و مالک نمی‌توانست
+ *  ببیند داوری رویِ چه موجی نشسته است (رأیِ ۱۴۰-۰۷-۲۷). */
+export type CheckMeasure = {
+  bandLo?: number | null; bandHi?: number | null; retracePct?: number | null;
+  where?: string | null; distancePct?: number | null;
+  leg?: { direction?: string; from?: string | null; to?: string | null;
+          low?: number | null; high?: number | null } | null;
+};
+
 export type TechCheck = {
   filterId: string;
   label: string;
@@ -323,6 +333,7 @@ export type TechCheck = {
   humanReason: string;
   source: string;
   origin: string;
+  measure?: CheckMeasure | null;
 };
 
 /** شمارشِ یک فیلترِ تکنیکال رویِ ورودیِ همین گام
@@ -403,6 +414,10 @@ export type Funnel = {
   stageOrder: FunnelStageKey[];
   /** زنجیرۀ فیلترهایِ تکنیکالِ اجراشده (گیتِ هفتگی همیشه مقدم) */
   techChain: string[];
+  /** تنظیماتِ *مؤثرِ* همین استراتژی، آن‌طور که خودِ موتور برگردانده است —
+   *  نه آن‌طور که رابط آرزو دارد. بی‌این، «تنظیم» درِ UI و «عدد» درِ داوری
+   *  دو نسخه از یک قاعده می‌شدند. */
+  strategySettings: Record<string, string>;
   tape: TapeFreshness;
   /** پوششِ داوریِ تکنیکال: چند کاندید رأیِ زنده داشت، چند تا فقط از غنی‌سازیِ
    *  اسکرینر (`watchlist_max`) خوانده شد، و چند تا هیچ منبعی نداشتند (#12).

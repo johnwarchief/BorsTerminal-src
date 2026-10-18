@@ -31,10 +31,18 @@ export type RegistryPreset = {
 
 /** یک شرطِ تکنیکالِ قابلِ انتخاب — ستونِ `funnel_tech_scan` که موتور می‌خواند.
  *  نام/شرح/منبع/نقش همه از همین‌جا می‌آید؛ فرانت هیچ فیلتری نمی‌سازد. */
+/** یک پیچِ تنظیمیِ استراتژی، از خودِ رجیستری (پیش‌فرض، دامنه، معنا، اثر). */
+export type RegistrySetting = {
+  setting_id: string; label: string; owner: string; description?: string | null;
+  choices: { value: string; label: string }[]; default: string;
+  source?: string | null; effect?: string | null;
+};
+
 export type RegistryTechFilter = {
   filter_id: string; name: string; description?: string | null;
   role?: string | null; column?: string | null; source?: string | null;
   origin?: string | null; note?: string | null;
+  params?: RegistryParam[];
 };
 
 export type RegistryPayload = {
@@ -44,6 +52,8 @@ export type RegistryPayload = {
   presets: RegistryPreset[];
   technical_filters?: RegistryTechFilter[];
   technical_filter_groups?: Record<string, string[]>;
+  /** تنظیماتِ مستقلِ هر استراتژی (کلید = preset_id) — بی‌این، رابط پیچی نمی‌سازد */
+  strategy_settings?: Record<string, RegistrySetting[]>;
   unimplemented_filters?: RegistryFilter[];
   gates?: Record<string, unknown>;
   /** تنظیمِ فعالِ ساعت‌شنی از خودِ موتور — تنها منبعِ متنِ «دورۀ X / سطح Y» */
@@ -70,6 +80,9 @@ export function useFunnelRegistry() {
   return {
     filters,
     presets: q.data?.presets ?? [],
+    /** تنظیماتِ مستقلِ هر استراتژی (کلید = preset_id). خالی یعنی «این استراتژی
+     *  پیچی ندارد» — رابط هیچ کنترلِ ساختگی‌ای نمی‌سازد. */
+    strategySettings: q.data?.strategy_settings ?? {},
     unimplemented: q.data?.unimplemented_filters ?? [],
     /** شرط‌هایِ قابلِ انتخابِ گامِ تکنیکال — تنها منبعِ نام و نقش و منبعِ عدد */
     techFilters,

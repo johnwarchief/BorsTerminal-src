@@ -30,6 +30,7 @@ const chk = (
 
 const GATE = 'روندِ هفتگی صعودی';
 const JET = 'ستاپ جت';
+const FIB = 'ناحیۀ فیبوناتچی ۳۳-۴۰';
 const PEAK = 'شاهدِ سقفِ سوم';
 
 export const TECH_FIRST_FIXTURE: ApiPayload = {
@@ -40,7 +41,9 @@ export const TECH_FIRST_FIXTURE: ApiPayload = {
   preset: 'tech_first',
   flow: 'tech_first',
   chain: [],
-  technical_chain: ['t_weekly_up', 't_setup_jet'],
+  technical_chain: ['t_weekly_up', 't_setup_jet', 't_setup_fib_33_40'],
+  strategy_settings: { weekly_mode: 'off', daily_mode: 'off',
+                       clock_delta_pct: '1' },
   fund_mode: 'standard',
   universe: {
     board: 5, screened: 4, joined: 5, duplicate_rows: 0,
@@ -54,10 +57,11 @@ export const TECH_FIRST_FIXTURE: ApiPayload = {
     technical: {
       input: 4, matched: 1,
       counts: { pass: 1, reject: 2, pending: 0, unavailable: 1, not_required: 0 },
-      chain: ['t_weekly_up', 't_setup_jet'],
+      chain: ['t_weekly_up', 't_setup_jet', 't_setup_fib_33_40'],
       filter_counts: {
         t_weekly_up: { pass: 2, reject: 1, pending: 0, unavailable: 1 },
         t_setup_jet: { pass: 2, reject: 1, pending: 0, unavailable: 1 },
+        t_setup_fib_33_40: { pass: 1, reject: 2, pending: 0, unavailable: 1 },
       },
     },
     tape: { input: 1, matched: 1, removed: 0, steps: [], filter_counts: {} },
@@ -81,6 +85,13 @@ export const TECH_FIRST_FIXTURE: ApiPayload = {
               'روند هفتگی صعودی', 'docs/چارت-سه.txt:34'),
           chk('t_setup_jet', JET, 'entry', 'tech_jet', 'pass', 1,
               'ستاپ جت: خورده شد', 'docs/چارت-سه.txt:36'),
+          // کمربندِ ۳۳-۴۰ با شاهدِ عددی: عمقِ اصلاح و نقاطِ موج (رأیِ مالک)
+          { ...chk('t_setup_fib_33_40', FIB, 'entry', 'tech_fib_zone', 'pass', '33-40',
+                   'اصلاحِ ۳۵٫۲٪ داخلِ کمربندِ ۳۳-۴۰٪', 'docs/چارت-سه.txt:38'),
+            measure: { band_lo: 33, band_hi: 40, retrace_pct: 35.2, where: 'inside',
+                       distance_pct: 0,
+                       leg: { direction: 'up', from: '2026-06-21', to: '2026-10-17',
+                              low: 16080, high: 18928 } } },
         ],
         why: { technical: [{ code: 'WEEKLY_TREND_UP', text: 'روند هفتگی صعودی' }] },
       }),

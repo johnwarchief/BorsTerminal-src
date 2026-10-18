@@ -438,6 +438,11 @@ SUITES = [
     # حالتِ بنیادی، استثنایِ برچسب‌دار و رتبۀ تحویل. ۲۲ بندِ مأموریت، همگی
     # با انتظارِ نوشته‌شدۀ بیرونِ موتور.
     ('dev/funnel_engine_v1.py', 'funnel engine: ordered intersection, weekly gate, fund modes'),
+    # STRATEGY SETTINGS (رأیِ مالک ۱۴-۰۷-۷): کمربند ۳۳-۴۰ با شاهدِ عددی،
+    # شرطِ هفتگی/روزانۀ قابلِ انتخاب، و آستانۀ الگوی ساعت که *واقعاً* درِ
+    # محاسبه می‌نشیند. بی‌این بند، «تنظیم» فقط یک برچسبِ دیدنی می‌ماند.
+    ('dev/funnel_strategy_settings_v1.py',
+     'strategy settings: fib evidence, per-timeframe conditions, clock threshold'),
     # FUNNEL PRESET DISTINCT: هر Preset باید **خروجِ موتور** را عوض کند، نه فقط
     # عنوانِ دکمه. این گارد تا پیش از این درِ `run_all_tests` ثبت نبود (باگِ P0:
     # «تغییر Preset جدول را عوض نمی‌کند» سبز می‌ماند) و فقط رجیستری را می‌خواند؛

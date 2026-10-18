@@ -218,10 +218,14 @@ def get_trace(symbol: str, preset: str = "trend", chain: str = "",
 
 @router.get("/api/funnel")
 def get_funnel(preset: str = "trend", chain: str = "", fund_mode: str = "standard",
-               drop_suffix: bool = True, logic: str = "and", tech_chain: str = ""):
+               drop_suffix: bool = True, logic: str = "and", tech_chain: str = "",
+               weekly_mode: str = "", daily_mode: str = "", clock_delta_pct: str = ""):
+    # تنظیمات هم ازِ GET می‌پذیرد تا لینکِ قابل‌اشتراک بماند؛ خالی یعنی پیش‌فرض.
+    stg = {k: v for k, v in (("weekly_mode", weekly_mode), ("daily_mode", daily_mode),
+                             ("clock_delta_pct", clock_delta_pct)) if v}
     return _run(preset, [c for c in chain.split(",") if c], fund_mode, {}, {},
                  drop_suffix=drop_suffix, logic=logic,
-                 tech_chain=[c for c in tech_chain.split(",") if c])
+                 tech_chain=[c for c in tech_chain.split(",") if c], settings=stg)
 
 
 @router.post("/api/funnel")
@@ -243,6 +247,7 @@ async def post_funnel(request: Request):
         drop_suffix=drop_suffix,
         logic=logic,
         tech_chain=[str(x) for x in (b.get("tech_chain") or [])],
+        settings=b.get("strategy_settings") if isinstance(b.get("strategy_settings"), dict) else {},
     )
 
 
@@ -259,7 +264,8 @@ def _strip(payload: dict) -> dict:
 def _run(preset: str, chain: list[str], fund_mode: str,
          params: dict[str, dict[str, Any]], exceptions: dict[str, list[str]],
          full: bool = False, drop_suffix: bool = True, logic: str = "and",
-         tech_chain: list[str] | None = None) -> dict:
+         tech_chain: list[str] | None = None,
+         settings: dict[str, Any] | None = None) -> dict:
     if preset not in REG.PRESET_BY_ID:
         return {"status": "error", "message": f"presetِ ناشناخته: {preset}"}
     if fund_mode not in ("hard", "standard", "exception"):
@@ -274,9 +280,16 @@ def _run(preset: str, chain: list[str], fund_mode: str,
     unknown_tech = [t for t in tech_chain if t not in REG.TECH_BY_ID]
     if unknown_tech:
         return {"status": "error", "message": "فیلترِ تکنیکالِ ناشناخته: " + ", ".join(unknown_tech)}
+    # تنظیماتِ مستقلِ همین استراتژی (رأیِ مالک ۱۴-۰۷-۲۷). انتخابِ ناشناخته
+    # بی‌صدا اصلاح نمی‌شود؛ کاربر پیام می‌گیرد، نه داوریِ دیگری.
+    try:
+        stg = REG.validate_settings(preset, settings if isinstance(settings, dict) else None)
+    except KeyError as e:
+        return {"status": "error", "message": f"تنظیمِ نامعتبر: {str(e).strip(chr(39))}"}
     key = json.dumps([preset, chain, fund_mode, sorted(params.items()),
                       sorted((k, sorted(v)) for k, v in exceptions.items()),
-                      bool(drop_suffix), logic, sorted(tech_chain)],
+                      bool(drop_suffix), logic, sorted(tech_chain),
+                      sorted(stg.items())],
                      ensure_ascii=False)
     now = time.time()
     hit = _cache_get(key, now)
@@ -302,7 +315,7 @@ def _run(preset: str, chain: list[str], fund_mode: str,
                               tech_scan=scan, tech_sigs=sigs, session_day=session,
                               universe_priority=uni_pri, universe_status=uni_st,
                               drop_numeric_suffix=drop_suffix, tape_logic=logic,
-                              tech_chain=tech_chain)
+                              tech_chain=tech_chain, settings=stg)
     except KeyError as e:
         return {"status": "error", "message": str(e)}
     # داوریِ ناکام‌نشده: همان نمادها درِ پس‌زمینه ساخته می‌شوند. پاسخِ همین

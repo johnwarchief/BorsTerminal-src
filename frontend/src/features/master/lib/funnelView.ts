@@ -54,10 +54,18 @@ export type FunnelScreenView = {
 };
 
 /** یک شرطِ تکنیکال از `technical_stage`ِ بک‌اند — نام، ستون، مقدار، حکم و دلیل. */
+export type ApiMeasure = {
+  band_lo?: number | null; band_hi?: number | null; retrace_pct?: number | null;
+  where?: string | null; distance_pct?: number | null;
+  leg?: { direction?: string; from?: string | null; to?: string | null;
+          low?: number | null; high?: number | null } | null;
+};
+
 export type ApiCheck = {
   filter_id?: string; label?: string; role?: string; column?: string;
   value?: string | number | null; status?: StageStatus;
   reason_code?: string; human_reason?: string; source?: string; origin?: string;
+  measure?: ApiMeasure | null;
 };
 
 /** یک ردیفِ `entries.<stage>` درِ پاسخِ /api/funnel. */
@@ -121,6 +129,8 @@ export type ApiPayload = {
   preset?: TreePreset; chain?: string[]; fund_mode?: string;
   /** ترتیبِ واقعیِ اجرا از موتور؛ نبودش یعنی همان ترتیبِ جزوه (`tape_first`) */
   flow?: string; technical_chain?: string[];
+  /** تنظیماتِ مؤثرِ همین استراتژی، از خودِ موتور (رأیِ ۱۴۰-۰۷-۲۷) */
+  strategy_settings?: Record<string, string> | null;
   /** `board` ردیف خامِ تابلو است (با تکراری)، `market` جامعۀ نمادها (یک‌شده)،
    *  `screening` فقط زنده‌ها/واجدِ شرایط، `excluded` باقیِ نمادها. همیشۀ
    *  `market = screening + excluded` درِ گاردِ بک‌اند بسته شده. */
@@ -188,6 +198,11 @@ function techCheckOf(c: ApiCheck): TechCheck {
     humanReason: c.human_reason ?? '',
     source: c.source ?? '',
     origin: c.origin ?? '',
+    measure: c.measure
+      ? { bandLo: c.measure.band_lo ?? null, bandHi: c.measure.band_hi ?? null,
+          retracePct: c.measure.retrace_pct ?? null, where: c.measure.where ?? null,
+          distancePct: c.measure.distance_pct ?? null, leg: c.measure.leg ?? null }
+      : null,
   };
 }
 
@@ -398,6 +413,7 @@ function build(payload: ApiPayload, fallbackMode: FunnelMode): Funnel {
     flow,
     stageOrder: order,
     techChain: payload.technical_chain ?? [],
+    strategySettings: payload.strategy_settings ?? {},
     techFilterCounts,
     tape: (payload.as_of && Date.now() / 1000 - payload.as_of < 900) ? 'live' : 'stale',
     techCoverage: {

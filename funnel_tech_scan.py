@@ -53,6 +53,14 @@ import funnel_registry as REG  # noqa: E402
 TABLE = "funnel_tech_scan"
 
 # DDL این جدول تنها درِ همین فایل است (همان قراردادی که tsetmc_p0_schema دارد).
+# `SCHEMA_VERSION` شمارۀِ خودِ ستون‌هاست، نه شمارۀِ قواعد: کمربندِ فیبو تا
+# ۱۴۰-۰۷-۲۶ فقط یک *برچسب* بود («۳۳-۴۰»)، ولی مالک می‌خواهد جدول بگوید عمقِ
+# اصلاح چقدر بوده و موج از کجا تا کجا سنجیده شده. آن عدد درِ پاسخِ تحلیل هست و
+# دور ریخته می‌شد. ستون‌هایِ تازه بی‌بازنشانیِ ردیف‌هایِ کهنه پر نمی‌شوند، پس
+# همین شمارۀِ جدا هم دارد (بی‌`schema_version` ردیف‌هایِ قدیمی «سنجیده‌نشده»
+# می‌مانند، نه «صفر»).
+SCHEMA_VERSION = "2"
+
 DDL = f"""CREATE TABLE IF NOT EXISTS {TABLE} (
     symbol TEXT PRIMARY KEY,
     basis TEXT,
@@ -72,13 +80,20 @@ DDL = f"""CREATE TABLE IF NOT EXISTS {TABLE} (
     tech_double_bottom INTEGER,
     tech_range_break INTEGER,
     tech_fib_zone TEXT,
+    tech_fib_pct REAL,
+    tech_fib_leg_dir TEXT,
+    tech_fib_leg_from TEXT,
+    tech_fib_leg_to TEXT,
+    tech_fib_leg_high REAL,
+    tech_fib_leg_low REAL,
     tech_exit_verdict TEXT,
     tech_exit_signals TEXT,
     tech_hourglass_active INTEGER,
     tech_hourglass_action TEXT,
     as_of INTEGER,
     engine_version TEXT,
-    ruleset_version TEXT
+    ruleset_version TEXT,
+    schema_version TEXT
 )"""
 
 # ستون‌هایی که از دیکشنریِ `fts` ساخته می‌شوند — ترتیبش با DDL یکی است تا
@@ -87,12 +102,24 @@ _COLUMNS = ("basis", "sessions", "sig", "tech_trend_w", "tech_trend_d", "tech_tr
             "tech_alignment", "tech_status", "tech_matrix_decision", "tech_matrix_setup",
             "tech_matrix_desc", "tech_jet", "tech_choch_bull", "tech_choch_bear",
             "tech_double_bottom", "tech_range_break", "tech_fib_zone",
+            "tech_fib_pct", "tech_fib_leg_dir", "tech_fib_leg_from", "tech_fib_leg_to",
+            "tech_fib_leg_high", "tech_fib_leg_low",
             "tech_exit_verdict", "tech_exit_signals", "tech_hourglass_active",
             "tech_hourglass_action")
+
+# چیزی که `ensure_schema` رویِ بانکِ موجود اضافه می‌کند (بانکِ منتشرشده این
+# ستون‌ها را ندارد؛ CREATE TABLE IF NOT EXISTS تنها چیزی است که می‌سازد).
+_ADDED = ("tech_fib_pct REAL", "tech_fib_leg_dir TEXT", "tech_fib_leg_from TEXT",
+          "tech_fib_leg_to TEXT", "tech_fib_leg_high REAL", "tech_fib_leg_low REAL",
+          "schema_version TEXT")
 
 
 def ensure_schema(conn: sqlite3.Connection) -> None:
     conn.execute(DDL)
+    have = {r[1] for r in conn.execute(f"PRAGMA table_info({TABLE})")}
+    for decl in _ADDED:
+        if decl.split()[0] not in have:
+            conn.execute(f"ALTER TABLE {TABLE} ADD COLUMN {decl}")
 
 
 def tech_fields_from_fts(fts: dict | None, *, basis: str = "", sessions: int = 0,
@@ -124,6 +151,22 @@ def tech_fields_from_fts(fts: dict | None, *, basis: str = "", sessions: int = 0
         fib_zone = "61.8-70"
     else:
         fib_zone = None
+    # شاهدِ همان برچسب: عمقِ اصلاح (درصد، رویِ لگاریتم، در جهتِ موج) و نقاطِ موج.
+    # هیچ‌کدام عددِ تازه‌ای نیست — `_fts_fib_zones` همین‌ها را می‌ساخته و دور
+    # می‌ریخته. بی‌تحلیل ⇒ None، نه صفر.
+    leg = fib.get("leg") or {}
+
+    def _num_or_none(v):
+        return None if v is None else float(v)
+
+    fib_basis = {
+        "tech_fib_pct": _num_or_none(fib.get("retrace_pct")),
+        "tech_fib_leg_dir": leg.get("direction"),
+        "tech_fib_leg_from": leg.get("start"),
+        "tech_fib_leg_to": leg.get("end"),
+        "tech_fib_leg_high": _num_or_none(leg.get("high")),
+        "tech_fib_leg_low": _num_or_none(leg.get("low")),
+    }
 
     return {
         "basis": basis or None,
@@ -143,6 +186,7 @@ def tech_fields_from_fts(fts: dict | None, *, basis: str = "", sessions: int = 0
         "tech_double_bottom": _int(_tri((f.get("double_bottom") or {}).get("active"))),
         "tech_range_break": _int(_tri((f.get("range_box") or {}).get("active"))),
         "tech_fib_zone": fib_zone,
+        **fib_basis,
         "tech_exit_verdict": ex.get("verdict"),
         "tech_exit_signals": json.dumps(ex.get("signals") or [], ensure_ascii=False),
         "tech_hourglass_active": _int(_tri(hg.get("active"))),
@@ -180,8 +224,9 @@ def stored(conn: sqlite3.Connection) -> dict[str, dict]:
     دوم و نه حدسِ زمانِ درخواست.
     """
     ensure_schema(conn)
-    cur = conn.execute(f"SELECT symbol, {', '.join(_COLUMNS)}, as_of FROM {TABLE}")
-    cols = ["symbol", *_COLUMNS, "as_of"]
+    cur = conn.execute(f"SELECT symbol, {', '.join(_COLUMNS)}, as_of,"
+                       f" ruleset_version, schema_version FROM {TABLE}")
+    cols = ["symbol", *_COLUMNS, "as_of", "ruleset_version", "schema_version"]
     return {str(r[0]): dict(zip(cols, r)) for r in cur.fetchall()}
 
 
@@ -204,6 +249,17 @@ def _one(symbol: str, sig: str) -> tuple[str, dict | None]:
     return symbol, fields
 
 
+def _is_stale(row: dict | None, sig: str, ruleset: str) -> bool:
+    """آیا این ردیف باید دوباره بسازد؟ سه چیز: داده، قواعد، یا خودِ ستون‌ها."""
+    if not row:
+        return True
+    if row.get("sig") != sig:
+        return True
+    if str(row.get("ruleset_version") or "") != str(ruleset):
+        return True
+    return str(row.get("schema_version") or "") != SCHEMA_VERSION
+
+
 def run(conn: sqlite3.Connection, *, force: bool = False, workers: int = 1,
         limit: int = 0) -> dict:
     """بازنشانیِ (افزایشی|کامل) داوریِ تکنیکال. خلاصهٔ عددی برمی‌گرداند."""
@@ -211,17 +267,20 @@ def run(conn: sqlite3.Connection, *, force: bool = False, workers: int = 1,
     ensure_schema(conn)
     have = stored(conn)
     uni = universe(conn)
-    todo = [(s, sig) for s, sig in uni
-            if force or have.get(s, {}).get("sig") != sig]
+    eng = os.environ.get("BORS_ENGINE_VERSION") or "dev"
+    ruleset = REG.RULESET_VERSION
+    # سه چیز یک ردیف را بازنشانی‌کردنی می‌کند: داده عوض شده، قواعد عوض شده،
+    # یا ستون‌هایِ خودِ ردیف قدیمی‌اند. دومی و سومی پیش از این نبودند:
+    # `ruleset_version` نوشته می‌شد ولی هیچ‌جا مقایسه نمی‌شد، پس رأیِ
+    # ساخته‌شدۀ زیرِ قواعدِ دیروز تا ابد «امروز» جا می‌زد.
+    todo = [(s, sig) for s, sig in uni if force or _is_stale(have.get(s), sig, ruleset)]
     # «بازاستفاده» یعنی امضایش با ردیفِ ذخیره‌شده می‌خواند و اصلاً لازم نبود
     # fetch شود — پیش از برشِ --limit شمرده می‌شود، وگرنه عددِ ساختگی می‌شود.
     reusable = len(uni) - len(todo)
     if limit > 0:
         todo = todo[:limit]
-    done = reused = failed = 0
+    done = failed = 0
     now = int(time.time())
-    eng = os.environ.get("BORS_ENGINE_VERSION") or "dev"
-    ruleset = REG.RULESET_VERSION
 
     def write(sym: str, fields: dict | None) -> None:
         if fields is None:
@@ -229,8 +288,9 @@ def run(conn: sqlite3.Connection, *, force: bool = False, workers: int = 1,
         vals = [fields.get(c) for c in _COLUMNS]
         conn.execute(
             f"INSERT OR REPLACE INTO {TABLE}(symbol, {', '.join(_COLUMNS)}, as_of,"
-            f" engine_version, ruleset_version) VALUES (?, {', '.join('?' * len(_COLUMNS))}, ?, ?, ?)",
-            [sym, *vals, now, eng, ruleset])
+            f" engine_version, ruleset_version, schema_version)"
+            f" VALUES (?, {', '.join('?' * len(_COLUMNS))}, ?, ?, ?, ?)",
+            [sym, *vals, now, eng, ruleset, SCHEMA_VERSION])
 
     if todo:
         with ThreadPoolExecutor(max_workers=max(1, min(workers, 16))) as pool:

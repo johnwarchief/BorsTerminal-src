@@ -145,12 +145,24 @@ class TechFilter:
     source: str
     origin: str
     note: str = ""
+    # هر شرط می‌تواند پارامترهایِ خودش را داشته باشد (آستانه، بازه، منبعِ عدد).
+    # تا پیش از این فقط فیلترهایِ تابلو پارامتر داشتند؛ رأیِ مالک ۲۰۲۶-۱۰-۱۸
+    # می‌گوید «هر فیلتر باید تنظیماتِ مربوط به خودش را داشته باشد» — پس همان
+    # `FilterParam` اینجا هم می‌آید، با همان قاعده: بی‌منبع، عدد نمی‌گذاریم.
+    params: tuple[FilterParam, ...] = ()
+
+    def param(self, param_id: str) -> FilterParam | None:
+        for p in self.params:
+            if p.param_id == param_id:
+                return p
+        return None
 
     def as_json(self) -> dict[str, Any]:
         return {"filter_id": self.filter_id, "name": self.name,
                 "description": self.description, "role": self.role,
                 "column": self.column, "expect": dict(self.expect),
-                "source": self.source, "origin": self.origin, "note": self.note or None}
+                "source": self.source, "origin": self.origin, "note": self.note or None,
+                "params": [p.as_json() for p in self.params]}
 
 
 # ── هفت فیلترِ canonical از docs/*.txt ────────────────────────────────────
@@ -327,13 +339,32 @@ TECH_FILTERS: tuple[TechFilter, ...] = (
                "عبور از سقفِ ایستا با حجم و قدرتِ خریدار، از همان داورِ `jet`ِ تحلیل.",
                "entry", "tech_jet", {"truthy": "1"}, f"{C3}:36,142", "chart"),
     TechFilter("t_setup_fib_33_40", "ناحیۀ فیبوناتچی ۳۳–۴۰",
-               "قیمت در کمربندِ اولِ اصلاحِ موج است.",
+               "قیمت در کمربندِ اولِ اصلاحِ موج است — درِ روند صعودی، موجی که "
+               "به این ناحیه رسیده برایِ بررسیِ ورود می‌ایستد.",
                "entry", "tech_fib_zone", {"equals": "33-40"},
-               f"{C3}:38 · frontend/src/features/technical/lib/indicators.ts:78-81", "chart"),
+               f"{C3}:38 · jozve_FTS_handwritten_pages_1-24.md:529 · "
+               "transcription_p10-p18.md:300", "chart",
+               "کمربندِ اصلیِ ورودِ جزوه؛ رأیِ مالک ۱۴۰۵-۰۷-۲۷: «۳۳ تا ۴۰ یک نیاز "
+               "اصلی است، با نزدیک ۳۰٪ یا ۶۱٫۸–۷۰ ادغام نشود». شاهدِ داوری "
+               "(عمقِ اصلاح و نقاطِ موج) از ستون‌هایِ tech_fib_* خوانده می‌شود.",
+               (FilterParam("fib_lo", "کفِ کمربند (٪ اصلاح)",
+                            "docs/fts-notes/jozve_FTS_handwritten_pages_1-24.md:529 «رن فیبو 33 تا 40»",
+                            value=33.0, unit="٪",
+                            note="مقیاسِ سنجش لگاریتمی است، نه خطی (جزوه ص ۹: «Fib levels on log»)."),
+                FilterParam("fib_hi", "سقفِ کمربند (٪ اصلاح)",
+                            "docs/fts-notes/jozve_FTS_handwritten_pages_1-24.md:529",
+                            value=40.0, unit="٪"))),
     TechFilter("t_setup_fib_618_70", "ناحیۀ فیبوناتچی ۶۱٫۸–۷۰",
-               "قیمت در کمربندِ دومِ اصلاحِ موج است.",
+               "قیمت در کمربندِ دومِ اصلاحِ موج است (پلۀ دومِ ورود).",
                "entry", "tech_fib_zone", {"equals": "61.8-70"},
-               f"{C3}:38 · indicators.ts:78-81", "chart"),
+               f"{C3}:38 · jozve_FTS_handwritten_pages_1-24.md:739 «یک پله ورود در 60-70»",
+               "chart", "کمربندِ دوم؛ جدا از ۳۳–۴۰ شمرده و گزارش می‌شود.",
+               (FilterParam("fib_lo", "کفِ کمربند (٪ اصلاح)",
+                            "docs/fts-notes/jozve_FTS_handwritten_pages_1-24.md:739",
+                            value=61.8, unit="٪"),
+                FilterParam("fib_hi", "سقفِ کمربند (٪ اصلاح)",
+                            "docs/fts-notes/jozve_FTS_handwritten_pages_1-24.md:739",
+                            value=70.0, unit="٪"))),
     TechFilter("t_setup_choch", "CHoCH صعودی",
                "شکستِ آخرین کف در روندِ نزولی (تغییرِ ساختارِ صعودی).",
                "entry", "tech_choch_bull", {"truthy": "1"}, f"{C3}:39", "chart"),
@@ -387,6 +418,12 @@ TECH_RISK_IDS = tuple(f.filter_id for f in TECH_FILTERS if f.role == "risk")
 # گیتِ تکنیکالِ پیش‌فرض همان داورِ رسمیِ روند است (هفتگی داورِ جهت، روزانه
 # داورِ ورود) که درِ `_fts_analyze_candles` (api/chart.py:2791، شاخه‌ها :2840-2891)
 # ساخته می‌شود.
+# «none» یعنی این استراتژی هیچ دروازۀ تحمیلی‌شدنی ندارد. رأیِ مالک
+# ۱۴۰۵-۰۷-۲۷: «قواعد، آستانه‌ها و گیت‌های هفتگی و روزانۀ استراتژی قدیمی را
+# خودکار به استراتژی جدید منتقل نکن». بی‌این نشان، `technical_gate` تهی را موتور
+# همان `TREND_GATE` همیشگی می‌خواند و «خاموش‌کردن» فقط در ظاهر می‌ماند.
+NO_GATE = "none"
+
 TREND_GATE = "trend_matrix"
 HOURGLASS_GATE = "hourglass_ma52_rsi5_weekly"
 
@@ -412,10 +449,12 @@ PRESETS: tuple[FunnelPreset, ...] = (
     ),
     FunnelPreset(
         preset_id="tech_first", label="تکنیکال اول (غربالِ نموداری پیش از تابلو)",
-        chain=(), technical_gate=TREND_GATE, flow="tech_first",
-        source="مأموریتِ مالک ۱۴۰۵-۰۷-۲۶: «تکنیکال ← تابلوخوانی ← بنیادی ← تحویل»",
-        note="فیلترهایِ این مسیر از ستون‌های funnel_tech_scan خوانده می‌شوند؛ "
-             "وتوی هفتگی درِ هر حالت اجباری می‌ماند.",
+        chain=(), technical_gate=NO_GATE, flow="tech_first",
+        source="مأموریتِ مالک ۱۴۰-۰۷-۲۶: «تکنیکال ← تابلوخوانی ← بنیادی ← تحویل»",
+        note="فیلترهایِ این مسیر از ستون‌های funnel_tech_scan خوانده می‌شوند. "
+             "تصحيحِ رأیِ ۱۴۰۵-۰۷-۲۷: وتوی هفتگی دیگر خودکار تحمیل نمی‌شود؛ "
+             "شرطِ هفتگی و روزانه درِ `STRATEGY_SETTINGS[tech_first]` انتخاب "
+             "می‌شوند و پیش‌فرضِ هر قاعدۀ تأییدنشده «اعمال‌نشدن» است.",
     ),
     FunnelPreset(
         preset_id="custom", label="مسیر سفارشی (انتخاب دستی)",
@@ -478,6 +517,94 @@ def preset_chain(preset_id: str, custom: Iterable[str] | None = None) -> tuple[s
     return chain
 
 
+# ── تنظیماتِ مستقلِ هر استراتژی ───────────────────────────────────────────
+@dataclass(frozen=True)
+class StrategySetting:
+    """یک پیچِ تنظیمیِ *همین* استراتژی — با پیش‌فرض، دامنه، معنا و اثرش.
+
+    سه قاعده که این ساختار برایِ آن نوشته شد (رأیِ مالک ۱۴۵-۰۷-۲۷):
+      • «هر فیلتر باید تنظیماتِ مربوط به خودش را داشته باشد» ⇒ `owner` می‌گوید
+        این پیچ مالِ کدام فیلتر یا کدام گام است.
+      • «تغییرِ تنظیم باید واقعاً درِ موتور اثر بگذارد» ⇒ `effect` نامِ همان
+        نقطۀ اجرا را می‌برد؛ تنظیمی که خواننده ندارد اینجا جایی ندارد.
+      • «قاعدۀ تأییدنشده را پیش‌فرضِ اجباری مکن» ⇒ `default` برایِ هر چیزی که
+        رأیِ صریحِ مالک ندارد `off` است، نه «همان قاعدۀ قدیمی».
+    """
+    setting_id: str
+    label: str
+    owner: str            # filter_id یا "stage:technical"
+    description: str
+    choices: tuple[tuple[str, str], ...]
+    default: str
+    source: str
+    effect: str
+
+    def as_json(self) -> dict[str, Any]:
+        return {"setting_id": self.setting_id, "label": self.label, "owner": self.owner,
+                "description": self.description,
+                "choices": [{"value": v, "label": t} for v, t in self.choices],
+                "default": self.default, "source": self.source, "effect": self.effect}
+
+
+STRATEGY_SETTINGS: dict[str, tuple[StrategySetting, ...]] = {
+    "tech_first": (
+        StrategySetting(
+            "weekly_mode", "شرطِ روند هفتگی", "stage:technical",
+            "سرنوشتِ نمادی که هفتگی‌اش صعودی نیست.",
+            (("off", "اعمال نشود (هیچ وتویی ازِ هفتگی نمی‌آید)"),
+             ("require_up", "فقط صعودی قبول است (قاعدۀ استراتژی کلاسیک، رأیِ ۱۲)"),
+             ("reject_down", "نزولی ⇒ رد؛ خنثی و بی‌داده ⇒ رد نیست")),
+            "off",
+            "رأیِ مالک ۱۴۵-۰۷-۲۷: «شرط‌هایی مانند روند هفتگی خنثی یا نزولی ⇒ رد "
+            "را بدون تعریف و تأیید برای استراتژی جدید اعمال نکن»",
+            "technical_stage → `weekly_mode`"),
+        StrategySetting(
+            "daily_mode", "شرطِ روند روزانه", "stage:technical",
+            "آیا روزانۀ صعودی هم لازم باشد.",
+            (("off", "اعمال نشود"),
+             ("require_up", "روزانه هم صعودی باشد (شاخۀ پولبک/جت)")),
+            "off",
+            "رأیِ مالک ۱۴۰۵-۰۷-۲۷: «الزام به صعودی‌بودن هم‌زمان هفتگی و روزانه "
+            "بدون تعریف اعمال نشود»",
+            "technical_stage → `daily_mode`"),
+        StrategySetting(
+            "clock_delta_pct", "آستانۀ الگوی ساعت", "f_clock",
+            "اختلافِ آخرین از پایانی چقدر باشد تا «الگوی ساعت» بخورد.",
+            (("1", "۱٪ — متنِ چارت ۳ و FTS_SPEC:73"),
+             ("2", "۲٪ — متنِ فایلِ «الگوی ساعت» و پاریتیِ سطر‌به‌سطرِ سایت")),
+            "1",
+            "رأیِ مالک ۱۴۰۵-۰۷-۲۷: «برای اجرای اولیهٔ استراتژی جدید، ۱٪ پیش‌فرض "
+            "قابل تغییر باشد؛ این فقط پیش‌فرض همین استراتژی است»",
+            "funnel_engine._tape_miss → f_clock (به‌جای TF.CLOCK_DELTA)"),
+    ),
+}
+
+
+def settings_defaults(preset_id: str) -> dict[str, str]:
+    return {st.setting_id: st.default for st in STRATEGY_SETTINGS.get(preset_id, ())}
+
+
+def validate_settings(preset_id: str, given: dict[str, Any] | None) -> dict[str, str]:
+    """تنظیماتِ درخواستی را به همان چارچوبِ تعریف‌شده برمی‌گرداند.
+
+    انتخابِ ناشناخته بی‌صدا اصلاح نمی‌شود: KeyError. پیش‌فرضِ هر پیچ هم از خودِ
+    تعریف خوانده می‌شود، نه ازِ یک جایِ دوم.
+    """
+    defs = STRATEGY_SETTINGS.get(preset_id)
+    if not defs:
+        return {}
+    allowed = {st.setting_id: {v for v, _ in st.choices} for st in defs}
+    out = settings_defaults(preset_id)
+    for k, v in (given or {}).items():
+        if k not in allowed:
+            raise KeyError(f"تنظیمِ ناشناخته برایِ «{preset_id}»: {k}")
+        v = str(v)
+        if v not in allowed[k]:
+            raise KeyError(f"مقدارِ «{v}» برایِ «{k}» مجاز نیست ({', '.join(sorted(allowed[k]))})")
+        out[k] = v
+    return out
+
+
 def _fingerprint() -> str:
     """اثرِ انگشتیِ کلِ تعاریف — همان چیزی که درِ Trace باید مهر شود.
 
@@ -493,6 +620,12 @@ def _fingerprint() -> str:
             h.update(f"{p.param_id}={p.value if p.value is not None else p.value_text}".encode())
     for t in TECH_FILTERS:
         h.update(f"{t.filter_id}:{t.role}:{t.column}:{sorted(t.expect.items())}".encode())
+        for p in t.params:
+            h.update(f"{t.filter_id}/{p.param_id}={p.value}".encode())
+    # پیش‌فرضِ هر پیچِ تنظیمی هم قاعدۀ داوری است؛ اگر جابه‌جا شد، نسخه باید عوض شود.
+    for pid, sts in sorted(STRATEGY_SETTINGS.items()):
+        for st in sts:
+            h.update(f"{pid}/{st.setting_id}={st.default}".encode())
     for p in PRESETS:
         h.update(f"{p.preset_id}:{'>'.join(p.chain)}:{p.technical_gate}:{p.flow}".encode())
     return h.hexdigest()[:12]
@@ -510,6 +643,8 @@ def as_json() -> dict[str, Any]:
         "presets": [p.as_json() for p in PRESETS],
         "unimplemented_filters": dict(UNIMPLEMENTED_FILTERS),
         "technical_filters": [t.as_json() for t in TECH_FILTERS],
+        "strategy_settings": {k: [st.as_json() for st in v]
+                              for k, v in sorted(STRATEGY_SETTINGS.items())},
         "technical_filter_groups": {"gate": list(TECH_GATE_IDS), "entry": list(TECH_ENTRY_IDS),
                                     "risk": list(TECH_RISK_IDS)},
         "gates": {

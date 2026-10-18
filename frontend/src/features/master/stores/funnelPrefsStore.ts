@@ -88,6 +88,14 @@ const CHAIN_KEY = ['fts', 'funnel', 'chain', 'v1'].join('.');
 const PRESETS_KEY = ['fts', 'funnel', 'presets', 'v1'].join('.');
 const EXC_KEY = ['fts', 'funnel', 'exceptions', 'v1'].join('.');
 const TECH_CHAIN_KEY = ['fts', 'funnel', 'tech_chain', 'v1'].join('.');
+// تنظیماتِ مستقلِ هر استراتژی درِ کلیدِ *خودش* می‌نشیند، نه درِ `STORAGE_KEY`ِ
+// مشترک: رأیِ مالک ۱۴۰-۰۷-۲۷ «رفتارِ استراتژی‌ها و presetهایِ موجود تغییر
+// نکند؛ تنظیماتِ استراتژیِ جدید مستقل ذخیره و اعمال شوند». بی‌این تفکیک،
+// یک فایلِ تنظیمیِ مشترک دو استراتژی را به هم می‌دوزید.
+const STRATEGY_SETTINGS_KEY = ['fts', 'funnel', 'strategy_settings', 'v1'].join('.');
+
+/** یک پیچِ تنظیمی → مقدارِ انتخابی؛ فقط presetهایی که درِ رجیستری تعریف دارند. */
+export type StrategySettingMap = Record<string, string>;
 
 function readJson<T>(key: string, fallback: T): T {
   try {
@@ -118,6 +126,9 @@ export type FunnelPrefsState = {
    *  انتخاب‌هایِ کاربر می‌ماند، نه یک تعریفِ دومِ فیلتر. */
   techChain: string[];
   setTechChain: (ids: string[]) => void;
+  /** تنظیماتِ مستقلِ هر preset (کلید = preset_id). بی‌انتخاب = پیش‌فرضِ رجیستری. */
+  strategySettings: Record<string, StrategySettingMap>;
+  setStrategySetting: (preset: string, settingId: string, value: string) => void;
   toggleTechFilter: (id: string) => void;
   fundMode: FundStrictness;
   setFundMode: (m: FundStrictness) => void;
@@ -210,6 +221,8 @@ export const useFunnelPrefsStore = create<FunnelPrefsState>((set, get) => {
   const init = saved();
   const chains = readJson<string[]>(CHAIN_KEY, []);
   const techChains = readJson<string[]>(TECH_CHAIN_KEY, []);
+  const strategySettings = readJson<Record<string, StrategySettingMap>>(
+    STRATEGY_SETTINGS_KEY, {});
   const fundMode = readJson<FundStrictness>(MODE_KEY, DEFAULT_FUND_MODE);
   const exceptions = readJson<Record<string, string[]>>(EXC_KEY, {});
   const savedChains = readJson<SavedChain[]>(PRESETS_KEY, []);
@@ -234,6 +247,14 @@ export const useFunnelPrefsStore = create<FunnelPrefsState>((set, get) => {
     setTechChain: (ids) => {
       const next = Array.from(new Set(ids));
       writeJson(TECH_CHAIN_KEY, next); set({ techChain: next });
+    },
+    strategySettings,
+    setStrategySetting: (preset, settingId, value) => {
+      const next = {
+        ...get().strategySettings,
+        [preset]: { ...(get().strategySettings[preset] || {}), [settingId]: value },
+      };
+      writeJson(STRATEGY_SETTINGS_KEY, next); set({ strategySettings: next });
     },
     toggleTechFilter: (id) => {
       const cur = get().techChain;
@@ -311,7 +332,9 @@ export const useFunnelPrefsStore = create<FunnelPrefsState>((set, get) => {
     resetToCanonical: () => {
       writeJson(CHAIN_KEY, []); writeJson(MODE_KEY, DEFAULT_FUND_MODE);
       writeJson(EXC_KEY, {}); writeJson(TECH_CHAIN_KEY, []);
-      set({ chain: [], techChain: [], fundMode: DEFAULT_FUND_MODE, exceptions: {} });
+      set({ chain: [], techChain: [], fundMode: DEFAULT_FUND_MODE, exceptions: {},
+        strategySettings: {} });
+      writeJson(STRATEGY_SETTINGS_KEY, {});
     },
   };
 });

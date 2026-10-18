@@ -394,9 +394,18 @@ function Cell({ k, e, mark, why }: { k: ColKey; e: FunnelEntry; mark: StageStatu
                   <span key={c.filterId}
                         data-testid={`funnel-tech-check-${e.symbol}-${c.filterId}`}
                         title={`${c.label} · ${c.column}${c.value != null ? ` = ${c.value}` : ' بدونِ مقدار'} — ${c.humanReason}${c.source ? ` (${c.source})` : ''}`}
-                        className={`inline-flex max-w-[13ch] shrink-0 items-center gap-0.5 truncate rounded-md border px-1 py-0.5 text-3xs font-black ${CHECK_TONE[c.status] ?? CHECK_TONE.unavailable}`}>
+                        className={`inline-flex shrink-0 items-center gap-0.5 truncate rounded-md border px-1 py-0.5 text-3xs font-black ${c.measure?.retracePct != null ? 'max-w-[22ch]' : 'max-w-[13ch]'} ${CHECK_TONE[c.status] ?? CHECK_TONE.unavailable}`}>
                     <span aria-hidden>{CHECK_GLYPH[c.status] ?? '—'}</span>
                     <span className="truncate font-bold">{c.label}</span>
+                    {/* رأیِ مالک ۱۴۰-۰۷-۲۷: «مقدارِ اصلاح» و «نقاطِ مبنایِ محاسبه»
+                        باید درِ جدول دیده شوند، نه فقط خوردنِ یکِ برچسب. عمقِ
+                        اصلاح این‌جا می‌آید؛ مبدأ/مقصدِ موج درِ title همان سطر. */}
+                    {c.measure?.retracePct != null ? (
+                      <span className="num-text shrink-0 font-black"
+                            data-testid={`funnel-fib-pct-${e.symbol}-${c.filterId}`}>
+                        {fmtPct(c.measure.retracePct)}
+                      </span>
+                    ) : null}
                   </span>
                 ))
               : <span className="text-2xs text-text-muted">بی‌شرط</span>}
@@ -1148,6 +1157,44 @@ function TapeStagePrefs({ picked, counts, filters }: {
  *
  *  `applied` صریح گفته می‌شود: درِ ترتیبِ جزوه (`tape_first`) موتور این شرط‌ها
  *  را اجرا نمی‌کند، پس نباید هم‌رنگِ حالتِ فعال دیده شوند. */
+/** تنظیماتِ مستقلِ همین استراتژی — ازِ رجیستری خوانده می‌شود، پس رابط چیزی
+ *  اختراع نمی‌کند: اگر رجیستری برایِ preset پیچی تعریف نکرده باشد، این ردیف
+ *  اصلاً ساخته نمی‌شود. مقدارِ نشان‌داده‌شده همان `strategy_settingsِ` خودِ
+ *  موتور است (پاسخِ داوری)، نه stateِ محلیِ رابط — تا «تنظیم» و «عددِ اجراشده»
+ *  دو نسخه از یک قاعده نشوند.
+ */
+function StrategySettingsRow({ funnel, registry, preset }: {
+  funnel: Funnel; registry: ReturnType<typeof useFunnelRegistry>; preset: string;
+}) {
+  const defs = registry.strategySettings[preset] ?? [];
+  const setSetting = useFunnelPrefsStore((s) => s.setStrategySetting);
+  if (!defs.length) return null;
+  const applied = funnel.strategySettings || {};
+  return (
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-1"
+         role="group" aria-label="تنظیماتِ این استراتژی"
+         data-testid="funnel-strategy-settings">
+      <span className="text-3xs font-bold text-text-muted">تنظیماتِ این استراتژی:</span>
+      {defs.map((st) => {
+        const value = applied[st.setting_id] ?? st.default;
+        return (
+          <label key={st.setting_id} className="flex items-center gap-1 text-3xs"
+                 title={`${st.description ?? ''}${st.effect ? ` | اثر: ${st.effect}` : ''}${st.source ? ` | ${st.source}` : ''}`}>
+            <span className="font-bold text-text-secondary">{st.label}</span>
+            <select value={value} data-testid={`funnel-setting-${st.setting_id}`}
+                    onChange={(e) => setSetting(preset, st.setting_id, e.target.value)}
+                    className="rounded-md border border-border-c bg-bg-primary px-1 py-0.5 text-3xs text-text-primary">
+              {st.choices.map((c) => (
+                <option key={c.value} value={c.value}>{c.label}</option>
+              ))}
+            </select>
+          </label>
+        );
+      })}
+    </div>
+  );
+}
+
 function TechFilterChips({
   active, counts, filters, groups, applied, onToggle,
 }: {
@@ -1588,12 +1635,15 @@ export function FtsFunnelStages({
           اگر کاربر شرطی را انتخاب کرده ولی ترتیبِ جزوه برگشته، چیپ‌ها بی‌اثر و
           بی‌دروغ نشان داده می‌شوند (`applied={false}`)، نه اینکه پنهان بمانند. */}
       {(funnel.flow === 'tech_first' || techFilters.active.length > 0) && registry.techFilters.length ? (
-        <TechFilterChips active={techFilters.active}
-                         counts={funnel.techFilterCounts}
-                         filters={registry.techFilters}
-                         groups={registry.techGroups}
-                         applied={funnel.flow === 'tech_first'}
-                         onToggle={techFilters.toggle} />
+        <>
+          <StrategySettingsRow funnel={funnel} registry={registry} preset={preset} />
+          <TechFilterChips active={techFilters.active}
+                           counts={funnel.techFilterCounts}
+                           filters={registry.techFilters}
+                           groups={registry.techGroups}
+                           applied={funnel.flow === 'tech_first'}
+                           onToggle={techFilters.toggle} />
+        </>
       ) : null}
       {showExcluded ? <OutOfUniversePanel funnel={funnel} onPick={pick} /> : null}
       {/* فهرستِ چهار گام این‌جا حذف شد (رأیِ مالک ۱۴۰۵-۰۷-۱۹): «بالاش همین هست

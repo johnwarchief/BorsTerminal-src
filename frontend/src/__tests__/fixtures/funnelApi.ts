@@ -249,6 +249,19 @@ export const REGISTRY_FIXTURE = {
   ],
   technical_filter_groups: { gate: ['t_weekly_up'], entry: ['t_setup_jet'],
                              risk: ['t_risk_third_peak'] },
+  strategy_settings: {
+    tech_first: [
+      { setting_id: 'weekly_mode', label: 'شرطِ روند هفتگی', owner: 'stage:technical',
+        description: 'سرنوشتِ نمادی که هفتگی‌اش صعودی نیست.',
+        choices: [{ value: 'off', label: 'اعمال نشود' },
+                  { value: 'require_up', label: 'فقط صعودی' }],
+        default: 'off', source: 'رأیِ مالک', effect: 'technical_stage' },
+      { setting_id: 'clock_delta_pct', label: 'آستانۀ الگوی ساعت', owner: 'f_clock',
+        description: 'اختلافِ آخرین از پایانی.',
+        choices: [{ value: '1', label: '۱٪' }, { value: '2', label: '۲٪' }],
+        default: '1', source: 'چارت ۳ / فایلِ الگوی ساعت', effect: 'f_clock' },
+    ],
+  },
 };
 
 /** بدنهٔ هر پرسشِ `/api/funnel` که ازِ این mock رد شده — برایِ اثباتِ اینکه

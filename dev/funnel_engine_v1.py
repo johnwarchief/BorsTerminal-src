@@ -776,22 +776,36 @@ ck(_to["stages"]["technical"]["input"] == 4,
    "۵۱) درِ تکنیکال‌اول، ورودیِ گامِ تکنیکال کلِ جامعۀ غربالگری است (۴)")
 ck(_to["stages"]["tape"]["input"] == len(_to["stages"]["technical"]["survivors"]),
    "۵۱) ورودیِ تابلو = ماندگانِ تکنیکال، نه کلِ جامعه")
-# بی‌انتخابِ فیلترِ اضافه، فقط وتوی هفتگی داوری می‌کند ⇒ همهٔ صعودی‌های هفتگی
-ck(_to["stages"]["technical"]["survivors"] == ["الف", "پ", "ت"],
-   "۵۲) هفتگی نزولی («ب») درِ همان گامِ اول رد می‌شود: " + str(_to["stages"]["technical"]["survivors"]))
-ck(_to["status_matrix"]["ب"]["tape"]["status"] == FE.NOT_REQUIRED
-   and _to["status_matrix"]["ب"]["tape"]["reason_code"] == "NOT_REQUIRED_AFTER_TECHNICAL_REJECT",
+# رأیِ مالک ۱۴۰-۰۷-۷: وتوی هفتگی خودکار به این استراتژی منتقل نمی‌شود. بی‌انتخاب
+# هیچ نمادی ازِ هفتگی رد نمی‌شود؛ باِ weekly_mode=require_up همان قاعدۀ کلاسیک
+# برمی‌گردد. پس انتظارِ پیشین حذف نشده — فقط صریحاً زیرِ تنظیمِ خودش سنجیده می‌شود.
+_tr = FE.evaluate([dict(r) for r in _TB], [dict(r) for r in _TS], preset="tech_first",
+                  tech_scan=_TECH_SCAN, settings={"weekly_mode": "require_up"})
+ck(_tr["stages"]["technical"]["survivors"] == ["الف", "پ", "ت"],
+   "۵۲) باِ require_up هفتگی نزولی («ب») درِ همان گامِ اول رد می‌شود: "
+   + str(_tr["stages"]["technical"]["survivors"]))
+ck(_to["stages"]["technical"]["survivors"] == ["الف", "ب", "پ", "ت"],
+   "۵۲ب) پیش‌فرضِ استراتژیِ تازه هیچ وتویی ازِ هفتگی ندارد: "
+   + str(_to["stages"]["technical"]["survivors"]))
+ck(_tr["status_matrix"]["ب"]["tape"]["status"] == FE.NOT_REQUIRED
+   and _tr["status_matrix"]["ب"]["tape"]["reason_code"] == "NOT_REQUIRED_AFTER_TECHNICAL_REJECT",
    "۵۲) گامِ تابلو برایِ مردودِ هفتگی «اجرا نشده» است، نه «سنجیده‌نشده»: "
-   + str(_to["status_matrix"]["ب"]["tape"]))
+   + str(_tr["status_matrix"]["ب"]["tape"]))
 
 # ۵۳) گیت با انتخابِ فیلترِ اختیاری نمی‌شکند: «ب» ستاپِ جت دارد ولی هفتگی‌اش نزولی است
 _j = FE.evaluate([dict(r) for r in _TB], [dict(r) for r in _TS], preset="tech_first",
-                 tech_chain=["t_setup_jet"], tech_scan=_TECH_SCAN)
+                 tech_chain=["t_setup_jet"], tech_scan=_TECH_SCAN,
+                 settings={"weekly_mode": "require_up"})
 ck("ب" not in _j["stages"]["technical"]["survivors"],
    "۵۳) انتخابِ «ستاپ جت» وتوی هفتگیِ «ب» را ردیف نمی‌کند")
 ck(_j["stages"]["technical"]["survivors"] == ["الف", "ت"],
    "۵۴) فیلترِ ورودیِ انتخابی درست همان نمادهایی را نگه می‌دارد که ستاپ دارند: "
    + str(_j["stages"]["technical"]["survivors"]))
+_j2 = FE.evaluate([dict(r) for r in _TB], [dict(r) for r in _TS], preset="tech_first",
+                  tech_chain=["t_setup_jet"], tech_scan=_TECH_SCAN)
+ck(_j2["stages"]["technical"]["survivors"] == ["الف", "ب", "ت"],
+   "۵۴ب) بی‌وتوی هفتگی، همان جت سه نماد را نگه می‌دارد: "
+   + str(_j2["stages"]["technical"]["survivors"]))
 ck([c["filter_id"] for c in _j["trace"]["technical"][0]["checks"]] == ["t_weekly_up", "t_setup_jet"],
    "۶۰) چک‌هایِ هر نماد به ترتیبِ گیت←انتخاب ثبت می‌شود")
 
@@ -851,7 +865,8 @@ _tc = {s_: {"tech_trend_w": w, "tech_trend_d": "up", "tech_matrix_decision": "PE
 _tp = [screen("الف", tech_trend_w="up", tech_jet=1), screen("پ", tech_trend_w="down", tech_jet=1)]
 _tv = FE.evaluate([board("الف", f_susp=True), board("پ", f_susp=True)], _tp,
                   preset="tech_first", tech_chain=["t_setup_jet"], tech_scan=_tc,
-                  tech_sigs={"الف": "x|1", "پ": "y|1"})
+                  tech_sigs={"الف": "x|1", "پ": "y|1"},
+                  settings={"weekly_mode": "require_up"})
 _by = {e["symbol"]: e for e in _tv["entries"]["technical"]}
 ck(all(isinstance(e.get("checks"), list) and e["checks"] for e in _by.values()),
    "۶۰) هر ردیفِ گامِ تکنیکال دفترچۀ شرط خودش را دارد (نه فقط عبوری‌ها)")
@@ -865,6 +880,13 @@ ck(_by["الف"]["checks"][1]["column"] == "tech_jet"
    "۶۰) هر شرط ستون، دلیل و حکمِ خودش را درِ ردیف دارد")
 ck([c["status"] for c in _by["پ"]["checks"]] == [FE.REJECT, FE.PASS],
    "۶۰) درِ ردیفِ مردود: جت قبول و وتوی هفتگی رد — دو حکم جدا درِ همان ردیف")
+# خاموشیِ گیت هم باید درِ همان دفترچه خوانده شود؛ «نبودِ سطر» با «اعمال‌نشدن»
+_tv0 = FE.evaluate([board("الف", f_susp=True), board("پ", f_susp=True)], _tp,
+                   preset="tech_first", tech_chain=["t_setup_jet"], tech_scan=_tc,
+                   tech_sigs={"الف": "x|1", "پ": "y|1"})
+_g0 = {e["symbol"]: e for e in _tv0["entries"]["technical"]}["پ"]["checks"][0]
+ck(_g0["status"] == FE.NOT_REQUIRED and _g0["reason_code"] == "WEEKLY_GATE_NOT_APPLIED",
+   "۶۰ب) گیتِ خاموش درِ دفترچه «اعمال نشد» می‌خورد، نه اینکه غیبش بزنند")
 
 # ۶۱) سه گامِ دیگر دفترچۀ شرط نمی‌برند: پاسخِ ده‌مگابایتی سه‌بار بزرگ نمی‌شود
 ck(all("checks" not in e for k in ("tape", "fundamental", "handover")
