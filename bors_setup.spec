@@ -51,6 +51,10 @@ a = Analysis(
         # آداپتورِ EasyTrader — سطح-بالِ api/execution.py، ولی به حدسِ اسکن
         # سپرده نمی‌شود (قاعدۀ مخزن؛ مأموریتِ ۱۴۰۵-۰۷-۲۴).
         'execution_easytrader',
+        # تنظیمِ اتصال (`execution_settings`) درِ بدنهٔ تابع import می‌شود؛ بی‌این
+        # درِ بستهٔ ساخته‌شده با این spec، اولین `/api/execution/config` یا
+        # `/api/execution/status` با ModuleNotFoundError می‌افتد (مأموریتِ ۲۰۲۶-۱۰-۱۸).
+        'execution_settings',
         # دروازۀ ربات و سه ماژولِ پشتِ آن (فاز ۳ مأموریتِ ۱۴۰۵-۰۷-۲۴) — مثلِ
         # fts_terminal.spec؛ بی‌این /api/bot/* درِ بستهٔ نصاب 404 می‌ماند.
         'api.bot', 'bot_signals', 'paper_trading', 'trade_sim', 'backtest_engine',

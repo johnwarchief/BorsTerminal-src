@@ -454,6 +454,8 @@ def interpret_easytrader_response(status: int, body: Any, *,
       ۴۰۱                → SESSION_EXPIRED — نشست باطل شد، بی‌retry، بی‌ارسالِ دوباره
       ۴۰۳                → AUTH_FAILED     — از اول اجازه‌ای نبود، پایانی
       ۴۰۰/۴۰۴/۴۰۵/۴۲۲/۴xx → BROKER_REJECTED — پایانی؛ پیام و کدِ OMS منتقل می‌شود
+      ۴۰۴/۴۰۵ رویِ `where="session"` و بی omsError → UNKNOWN_RESULT — «آدرس نبود»
+                            ≠ «نشست بد است»؛ احراز به مسیرهایِ دیدہ‌شدہ می‌رود
       ۴۲۹                → RATE_LIMITED     — پایانی + Retry-After (درِ پنج مخزن نبود)
       ۴۰۸                → TIMEOUT          — نامعلوم؛ فقط reconcile
       ۵xx                → NETWORK_ERROR    — نامعلوم؛ سرور شاید پذیرفته باشد
@@ -493,6 +495,14 @@ def interpret_easytrader_response(status: int, body: Any, *,
                            head, errs, code, True,
                            "http %d: بازارسال — رویِ سفارش قبول نمی‌کنیم" % code, after)
     if 400 <= code < 500:
+        if where == "session" and code in (404, 405) and not errs:
+            # رویِ پرسشِ *نشست*، ۴۰۴/۴۰۵ می‌گوید «این آدرس نیست»، نه «نشستت بد است».
+            # مسیرِ آزمون ازِ کدِ شخصِ ثالث برداشته شده (فرضیه)، پس پاسخِ نامعلوم است و
+            # احراز به مسیرهایِ دیدہ‌شدہ می‌رود. رویِ سفارش همین کد پایانی می‌ماند.
+            return WireVerdict(None, ErrorCode.UNKNOWN_RESULT, OrderState.UNKNOWN, None,
+                               head, errs, code, True,
+                               "http %d: این آدرسِ آزمونِ نشست نبود — شاهد ازِ مسیرِ دیدہ‌شدہ"
+                               % code, after)
         return WireVerdict(False, _oms_error_code(errs, msg),
                            OrderState.REJECTED, None,
                            head, errs, code, False, "http %d: ردِ پایانی" % code, after)
@@ -564,6 +574,12 @@ PROTOCOL_CAPS = Capabilities(place=True, list_orders=True, order_state=True,
 NO_CAPS = Capabilities(place=False, list_orders=False, order_state=False,
                        queue_position=False, cancel=False, best_bid_ask=False,
                        balances=False)
+
+#: همان PROTOCOL_CAPS بی‌«place» — برایِ حالتی که نشست تأیید می‌شود ولی
+#: ارسالِ سفارش آزاد نیست.
+_READ_ONLY_CAPS = Capabilities(place=False, list_orders=True, order_state=True,
+                               queue_position=True, cancel=False, best_bid_ask=False,
+                               balances=False)
 
 
 @dataclass(frozen=True)
@@ -687,11 +703,20 @@ class EasyTraderAdapter(BrokerAdapter):
                  instruments: Iterable[InstrumentRef] = (),
                  capabilities: Capabilities | None = None,
                  timeouts: Timeouts | None = None,
+                 writes_allowed: bool = True,
                  clock: Callable[[], float] = time.time) -> None:
         self._transport = transport or RefusingTransport()
         self._token = token if isinstance(token, _Secret) else _Secret(token)
         self.base_url = _validated_base_url(base_url)
         self._caps_override = capabilities
+        #: «ترافیک وصل است» با «ارسالِ سفارش آزاد است» دو چیز است. خواندنِ نشست
+        #: نباید منتظرِ کلیدِ نوشتن بماند (درِ v1.0.93 هر دو با هم قفل بودند، پس
+        #: درِ بیلدِ نصب‌شده «تأییدِ نشست» هرگز ممکن نبود). پیش‌فرض True می‌ماند
+        #: تا آداپتوری که مستقیم ساخته می‌شود رفتارِ دیروز را داشته باشد.
+        self._writes_allowed = bool(writes_allowed)
+        #: چه چیزی نشست را ثابت کرده: مسیر، وضعیت، و نوعِ شاهد. بی‌این «متصل»
+        #: می‌توانست ازِ یکِ مسیرِ فرضیه بیاید.
+        self.session_proof: dict[str, Any] = {}
         self.timeouts = timeouts or Timeouts()
         self._clock = clock
         self._by_symbol: dict[str, InstrumentRef] = {i.symbol: i for i in instruments}
@@ -735,6 +760,39 @@ class EasyTraderAdapter(BrokerAdapter):
         """هم ترافیک وصل باشد و هم tokenِ مالک باشد. یکی نبود ⇒ «هیچ»."""
         return bool(getattr(self._transport, "is_live", False)) and bool(self._token)
 
+    @property
+    def writes_allowed(self) -> bool:
+        """فقط‌خواندنی یعنی: نشست تأیید می‌شود و فهرست‌ها خوانده می‌شوند، ولی
+        هیچ POST سفارشی ازِ این آداپتور بیرون نمی‌رود."""
+        return bool(self._writes_allowed) and self.live
+
+    @property
+    def read_only_mode(self) -> bool:
+        return self.live and not bool(self._writes_allowed)
+
+    def _accept_probe_proof(self) -> bool:
+        """نشست را ازِ مسیرِ مشاهده‌شده اثبات کن. True یعنی «متصل، با شاهد»."""
+        pr = self.session_probe()
+        if not pr.get("proven"):
+            return False
+        self.session_proof = {"path": pr.get("path"), "status": pr.get("status"),
+                              "kind": pr.get("kind"), "hypothesis": False,
+                              "note": pr.get("detail")}
+        self._verified_token = self._token
+        self._session = SessionStatus(SessionState.CONNECTED, "easytrader-session",
+                                      self._iso())
+        return True
+
+    def session_proven(self) -> bool:
+        """نشست ازِ پرسشِ واقعی ثابت شده باشد، نه ازِ حضورِ رشته."""
+        return bool(self._verified_token is not None
+                    and self._token is self._verified_token)
+
+    def _refuse_write(self, what: str) -> None:
+        raise BrokerError(ErrorCode.UNSUPPORTED,
+                          "حالتِ فقط‌خواندنی: %s بیرون نمی‌رود "
+                          "(BORS_EXECUTION_LIVE=1 لازم است)" % what)
+
     def set_token(self, value: Any) -> None:
         """token را درِ حافظه می‌گذارد؛ هیچ‌جا نوشته/لاگ نمی‌شود و `repr` ندارد."""
         self._token = _Secret(value)
@@ -755,7 +813,10 @@ class EasyTraderAdapter(BrokerAdapter):
     def capabilities(self) -> Capabilities:
         if self._caps_override is not None:
             return self._caps_override
-        return PROTOCOL_CAPS if self.live else NO_CAPS
+        if not self.live:
+            return NO_CAPS
+        # «خواندنِ نشست» مجوزِ «نوشتنِ سفارش» نیست؛ UI همین جدول را می‌خواند.
+        return PROTOCOL_CAPS if self._writes_allowed else _READ_ONLY_CAPS
 
     def session_status(self) -> SessionStatus:
         return self._session
@@ -814,6 +875,48 @@ class EasyTraderAdapter(BrokerAdapter):
         return resp
 
     # ---- ۶) نشست -----------------------------------------------------------
+    def session_probe(self) -> dict[str, Any]:
+        """کم‌خطرترین پرسشِ ممکن: سه مسیرِ فقط‌خواندنی که *واقعاً دیده شده‌اند*.
+
+        `authenticate()` از `/core/api/order` می‌پرسد و provenanceِ آن مسیر
+        «third-party-code-only + hypothesis» است (سندِ رسمی ۴۰۳ می‌دهد). اگر آن
+        مسیر ۴۰۴/بدنۀِ نامفهوم بدهد، معنایش «نشست باطل است» نیست — معنایش «این
+        مسیر را نمی‌شناسیم» است. سه کاندیدِ دیگر درِ نشستِ 2026-10-17 با GETِ
+        فقط‌خواندنی دیده شده‌اند و `401 + www-authenticate: Bearer` برمی‌گردانند،
+        پس وجودشان اثبات‌شده است. این متد می‌گوید کدام مسیر پاسخ داد.
+        """
+        out: dict[str, Any] = {"attempted": [], "proven": False, "path": None,
+                               "status": None, "kind": "observed-read-only",
+                               "detail": ""}
+        if not self.live:
+            out["detail"] = "بی‌ترافیک یا بی‌token — هیچ درخواستی ساخته نشد"
+            return out
+        for path in WIRE_SESSION_PROBE_CANDIDATES:
+            out["attempted"].append(path)
+            try:
+                resp = self._call("GET", path, tag="session_probe",
+                                  timeout_s=self.timeouts.probe_s)
+            except BrokerError as e:
+                out["detail"] = str(redact(e.detail))[:160]
+                if e.code in (ErrorCode.SESSION_EXPIRED, ErrorCode.AUTH_FAILED):
+                    out["status"] = 401 if e.code is ErrorCode.SESSION_EXPIRED else 403
+                    return out
+                continue
+            out["status"] = resp.status
+            if 200 <= resp.status < 300:
+                env, _rows = _envelope(resp.body)
+                if env is None and not str(resp.body or "").strip():
+                    out["detail"] = "۲xx بی‌بدن — چیزی ثابت نمی‌کند"
+                    continue
+                out.update({"proven": True, "path": path,
+                            "detail": "پاسخِ ۲xx ازِ مسیرِ مشاهده‌شده"})
+                return out
+            if resp.status in (401, 403):
+                out.update({"path": path,
+                            "detail": "%d — سرور نشستِ این نشانی را نپذیرفت" % resp.status})
+                return out
+        return out
+
     def authenticate(self) -> SessionStatus:
         """کم‌خطرترین پرسیدنی که وجودِ نشستِ معتبر را ثابت می‌کند: فهرستِ سفارش‌ها.
 
@@ -830,6 +933,8 @@ class EasyTraderAdapter(BrokerAdapter):
             resp = self._call("GET", WIRE_PATH_ORDER_LIST, tag="authenticate",
                               timeout_s=self.timeouts.probe_s)
         except BrokerError as e:
+            if e.code is ErrorCode.UNKNOWN_RESULT and self._accept_probe_proof():
+                return self._session
             state = {ErrorCode.SESSION_EXPIRED: SessionState.EXPIRED,
                      ErrorCode.AUTH_FAILED: SessionState.AUTH_FAILED}.get(
                          e.code, SessionState.ERROR)
@@ -838,6 +943,8 @@ class EasyTraderAdapter(BrokerAdapter):
         if not (200 <= resp.status < 300):
             v = interpret_easytrader_response(resp.status, resp.body, where="session",
                                               headers=resp.headers)
+            if v.error is ErrorCode.UNKNOWN_RESULT and self._accept_probe_proof():
+                return self._session
             state = {ErrorCode.SESSION_EXPIRED: SessionState.EXPIRED,
                      ErrorCode.AUTH_FAILED: SessionState.AUTH_FAILED}.get(
                          v.error, SessionState.ERROR)
@@ -852,6 +959,10 @@ class EasyTraderAdapter(BrokerAdapter):
                               broker_message="unreadable body")
         label = _text(_pick_any(env, "accountCode", "clientCode", "code"))
         self._ingest_rows(resp)
+        self.session_proof = {"path": WIRE_PATH_ORDER_LIST, "status": resp.status,
+                              "kind": "third-party-code-only",
+                              "hypothesis": True,
+                              "note": "فهرستِ سفارش خوانده شد؛ مسیرش درِ سندِ رسمی نیست"}
         self._verified_token = self._token
         self._session = SessionStatus(SessionState.CONNECTED,
                                       label or "easytrader-session", self._iso())
@@ -883,6 +994,9 @@ class EasyTraderAdapter(BrokerAdapter):
     # ---- ۸) ارسال ----------------------------------------------------------
     def submit_order(self, draft: OrderDraft) -> ExecutionRecord:
         """یکِ POST، یکِ قصد، بی‌retry. نتیجهٔ نامعلوم ⇒ `BrokerError` نامعلوم."""
+        if not self._writes_allowed:
+            self.wire_calls.append("submit:REFUSED-read-only")
+            self._refuse_write("ارسالِ سفارش")
         if self._verified_token is not self._token:
             # یکِ پرسشِ فقط‌خواندنی (فهرستِ سفارش‌ها) لازم است، وگرنه رشته‌ای که
             # هیچ‌وقت کارگزاری ندیده‌اش «نشست» حساب می‌شود. خطا یعنی بی‌POST؛

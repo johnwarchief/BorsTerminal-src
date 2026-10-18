@@ -71,16 +71,40 @@ def _env_flag(name: str) -> bool:
     return (os.environ.get(name) or "").strip().lower() in ("1", "true", "yes", "on")
 
 
-def _configured_adapter() -> str:
-    """انتخابِ آداپتور فقط ازِ محیط، و بی‌اعتبار ⇒ mock. هیچ بدنه‌ای اینجا رأی ندارد."""
+def _settings_snapshot() -> dict[str, Any]:
+    """تنظیمِ غیرمحرمانۀ ذخیره‌شده. خرابیِ بانک هرگز انتخابِ آداپتور را نمی‌شکند."""
+    try:
+        import execution_settings as ES
+        return ES.read()
+    except Exception as e:                       # noqa: BLE001 - بانک/دیسک/قفل
+        return {"adapter": "", "source": "unavailable", "read_only": False,
+                "live_env": _env_flag(LIVE_ENV), "error": type(e).__name__}
+
+
+def _configured_adapter(settings: dict[str, Any]) -> str:
+    """انتخابِ آداپتور: اول محیط، بعد تنظیمِ درون‌برنامه، وگرنه mock.
+
+    پیش از این **فقط** env بود؛ درِ بیلدِ منجمدِ دسکتاپ هیچ راهی برای ست‌کردنش
+    نبود، پس «اتصال به مفید» برایِ کاربرِ واقعی عملاً خاموش می‌ماند (سنجشِ
+    v1.0.93 رویِ همین ماشین: adapter=mock). env همچنان مقدم است، چون گاردها و CI
+    به آن تکیه می‌کنند.
+    """
     got = (os.environ.get(ADAPTER_ENV) or "").strip().lower()
+    if got:
+        return got if got in ALLOWED_ADAPTERS else "mock"
+    got = str(settings.get("adapter") or "").strip().lower()
     return got if got in ALLOWED_ADAPTERS else "mock"
 
 
-#: تنها adapterهایِ ممکن. `easytrader` بی‌`LIVE_ENV` با `RefusingTransport`
-#: می‌نشیند — یعنی کدِ آداپتور موجود و آزمودنی است، ولی هیچ سوکتی باز نمی‌شود.
-ADAPTER_KIND = _configured_adapter()
+_CFG = _settings_snapshot()
+# تنها adapterهایِ ممکن. بی‌ترافیک، `RefusingTransport` می‌نشیند.
+ADAPTER_KIND = _configured_adapter(_CFG)
 LIVE_REQUESTED = ADAPTER_KIND == "easytrader" and _env_flag(LIVE_ENV)
+# حالتِ فقط‌خواندنی: GETها مجازند تا نشست *واقعاً* تأیید شود و فهرست‌ها خوانده
+# شوند. ارسالِ سفارش همچنان فقط با `BORS_EXECUTION_LIVE=1` — دو گیتِ جدا.
+READ_ONLY_REQUESTED = (ADAPTER_KIND == "easytrader" and bool(_CFG.get("read_only"))
+                       and not LIVE_REQUESTED)
+TRAFFIC_ALLOWED = bool(LIVE_REQUESTED or READ_ONLY_REQUESTED)
 DRY_RUN = not LIVE_REQUESTED
 
 #: ردِّپایِ ماندگار رویِ `user.db` + قفلِ توقفِ اضطراری. بی‌این، هر restart
@@ -103,7 +127,8 @@ def _adapter() -> BrokerAdapter:
     global _EASYTRADER
     if ADAPTER_KIND == "easytrader":
         _EASYTRADER = EasyTraderAdapter(
-            transport=RequestsTransport() if LIVE_REQUESTED else RefusingTransport())
+            transport=RequestsTransport() if TRAFFIC_ALLOWED else RefusingTransport(),
+            writes_allowed=bool(LIVE_REQUESTED))
         return _EASYTRADER
     # صف/وضعیت/لیست را بدل «می‌دهد» تا مسیرِ reconcile و پایشِ صف قابلِ دیدن
     # باشد؛ `balances` عمداً False است تا پیش‌فرود «بی‌داده» را از «صفر» جدا
@@ -315,9 +340,16 @@ def _live_now() -> bool:
 
 
 def _session_dict() -> dict[str, Any]:
+    """حالتِ نشست + **منشأش**. «connected» ازِ بدل با «connected» ازِ کارگزاری یکی نیست.
+
+    `proven` فقط با یکِ پرسشِ فقط‌خواندنیِ واقعی true می‌شود؛ حضورِ رشته هرگز.
+    """
     st = _ACTIVE_ADAPTER.session_status()
     return {"state": st.state.value, "account_label": st.account_label,
-            "checked_at": st.checked_at}
+            "checked_at": st.checked_at,
+            "origin": ADAPTER_KIND,
+            "proven": bool(getattr(_ACTIVE_ADAPTER, "session_proven", lambda: False)()),
+            "verified_by": dict(getattr(_ACTIVE_ADAPTER, "session_proof", {}) or {})}
 
 
 # ── زمان‌بندیِ سرخطی: توقف‌پذیر، بی‌بلوکه‌کردنِ درِ halt ───────────────────────
@@ -607,17 +639,34 @@ def get_status() -> dict[str, Any]:
     caps = _ACTIVE_ADAPTER.capabilities()
     stopped, kstate = _SERVICE.halted()
     live = _live_now()
+    # «ارسالِ سفارش آزاد است» با «ترافیک وصل است» دو چیز است. درِ فقط‌خواندنی
+    # ترافیک هست ولی نوشتن نه.
+    writes_open = bool(getattr(_ACTIVE_ADAPTER, "writes_allowed", live))
     blocked: list[str] = []
     if ADAPTER_KIND == "mock":
-        blocked.append("آداپتورِ واقعی انتخاب نشده (BORS_EXECUTION_ADAPTER=easytrader)")
+        if str(_CFG.get("adapter") or "").lower() == "easytrader":
+            blocked.append("تنظیمِ «easytrader» ذخیره شده ولی نشستِ جاری بدل است — "
+                           "restart لازم است تا اعمال شود")
+        else:
+            blocked.append("آداپتورِ واقعی انتخاب نشده (تنظیمِ اتصال یا "
+                           "BORS_EXECUTION_ADAPTER=easytrader)")
     if ADAPTER_KIND == "easytrader" and not LIVE_REQUESTED:
-        blocked.append("ترافیکِ زنده خاموش است (BORS_EXECUTION_LIVE=1 لازم است)")
+        # سنجشِ زندهٔ 2026-10-18: این متن درِ حالتِ «فقط‌خواندنی روشن، بی‌نشست» فرستادنِ
+        # `BORS_EXECUTION_LIVE=1` را کمبودِ اصلی می‌گفت — یعنی همان کاری که کاربر
+        # نباید بکند. چیزی که واقعاً کم است نشانیِ نشست است.
+        if READ_ONLY_REQUESTED:
+            blocked.append("حالتِ فقط‌خواندنی روشن است: ترافیکِ خواندن مجاز، ارسال نه — "
+                           "کمبود، نشستِ شماست (ورود درِ پنجرۀ کارگزاری، سپس نشانی به "
+                           "POST /api/execution/session)")
+        else:
+            blocked.append("ترافیک خاموش است — «تنظیمِ اتصال» را رویِ فقط‌خواندنی بگذارید "
+                           "(یا BORS_EXECUTION_LIVE=1 برایِ ارسالِ سفارش) و restart کنید")
     if ADAPTER_KIND == "easytrader" and LIVE_REQUESTED and not live:
         blocked.append("D1: نشستِ مالک درِ حافظه نیست — ورودِ تعاملی با خودِ مالک")
     # گیتِ عبارتِ تأیید (§۲-۲): فقط وقتی که اجرایِ زنده واقعاً روشن است ازِ UI
     # چیزی می‌خواهد؛ درِ dry-run تمرین و پیش‌نمایش نباید بشکند. «required»
     # را UI می‌خواند تا بداند چه چیزی تایپ شود، نه اینکه حدس بزند.
-    confirm_required = bool(not DRY_RUN and live)
+    confirm_required = bool(not DRY_RUN and live and writes_open)
     if confirm_required:
         blocked.append("اجرایِ زنده: عبارتِ تأیید لازم است («%s»)" % _confirm_phrase())
     return {
@@ -626,12 +675,26 @@ def get_status() -> dict[str, Any]:
         "dry_run": DRY_RUN,
         "experimental": True,
         # وضعیتِ واقعی، نه ثابت: live یعنی آداپتورِ درست + ترافیکِ وصل + tokenِ مالک.
-        "live_enabled": live,
-        # «چیزی از این ماشین بیرون نمی‌رود» = یا dry-run است یا نشستی نداریم.
-        # جدا از `dry_run` اعلام می‌شود تا `dry_run` دروغِ دو طرفه نگویَد: هم
-        # «flag روشن است ولی نشست نیست» و هم «flag خاموش است» یک معنا دارند.
-        "nothing_will_leave_the_machine": bool(DRY_RUN or not live),
+        "live_enabled": writes_open,
+        # «هیچ درخواستی به کارگزاری نمی‌رود» = ترافیک بسته است. درِ فقط‌خواندنی
+        # یک GET بیرون می‌رود، پس این صادقانه false است؛ «ارسالِ سفارش» را
+        # `live_enabled` جدا می‌گوید.
+        "nothing_will_leave_the_machine": bool(not live),
         "live_requested": LIVE_REQUESTED,
+        # سه گیتِ جدا و *بی‌وابستگی به نشانی*: «آیا فقط‌خواندنی پیکربندی شده» با
+        # «آیا نشستی درِ حافظه هست» یکی نیست. `and live` این را درِ حالتِ تازه‌کانفیگ
+        # false می‌کرد، و رابط را به پیامِ «ارسال لازم است» می‌انداخت (سنجشِ زنده).
+        "read_only": bool(READ_ONLY_REQUESTED),
+        "session_live": bool(live),
+        "traffic_allowed": bool(TRAFFIC_ALLOWED),
+        # تنظیمِ مؤثر + چه چیزی با restart عوض می‌شود. بی‌این «ذخیره شد» با
+        # «اعمال شد» یکی خوانده می‌شود.
+        "connection_config": {"adapter": ADAPTER_KIND,
+                              "adapter_source": str(_CFG.get("source") or "default"),
+                              "read_only": bool(READ_ONLY_REQUESTED),
+                              "writes_gate": "env:BORS_EXECUTION_LIVE",
+                              "applies_on_restart": True,
+                              "secrets_stored": False},
         "wire_hypothesis": (ADAPTER_KIND == "easytrader") and WIRE_HYPOTHESIS,
         # منشأِ هر مسیرِ سیم (§۳-۲): «فقط درِ کدِ شخصِ ثالث» از «پیکربندیِ
         # انتشاریافتۀِ خودِ کارگزاری» و «رفتارِ دیده‌شده» جداست. بی‌این تفکیک،
@@ -741,11 +804,13 @@ async def post_session(request: Request) -> dict[str, Any]:
     if ADAPTER_KIND != "easytrader":
         return {**refused, "detail": "آداپتورِ فعال token نمی‌پذیرد (adapter=%s)"
                 % ADAPTER_KIND}
-    if not LIVE_REQUESTED or not isinstance(_ACTIVE_ADAPTER, EasyTraderAdapter):
+    if not TRAFFIC_ALLOWED or not isinstance(_ACTIVE_ADAPTER, EasyTraderAdapter):
         # نگه‌داشتنِ credential درِ حافظه برایِ مسیری که هیچ‌وقت ترافیک نمی‌زند
         # فقط سطحِ نشتی را بالا می‌برد، نه قابلیت را.
-        return {**refused, "detail": "ترافیکِ زنده خاموش است — token ذخیره نمی‌شود "
-                "(BORS_EXECUTION_LIVE=1 لازم است)"}
+        return {**refused, "detail": "هیچ ترافیکی مجاز نیست — token ذخیره نمی‌شود. "
+                "اول «تنظیمِ اتصال» را رویِ easytrader + فقط‌خواندنی بگذارید "
+                "(یا BORS_EXECUTION_LIVE=1 برایِ ارسالِ سفارش) و برنامه را "
+                "restart کنید"}
     if not token:
         return {"status": "error", "code": "MISSING_TOKEN", "session": _session_dict(),
                 "detail": "هیچ نشانی داده نشد — نشست پاک نمانده"}
@@ -756,7 +821,8 @@ async def post_session(request: Request) -> dict[str, Any]:
             "confirmations_voided": voided,
             "capabilities": dataclasses.asdict(_ACTIVE_ADAPTER.capabilities()),
             "detail": ("token فقط درِ حافظه ماند؛ با restart می‌میرد و هیچ‌جا "
-                       "نوشته/لاگ نمی‌شود")}
+                      "نوشته/لاگ نمی‌شود. تأییدِ نشست باِ «ذخیره‌شدن» یکی نیست: "
+                      "POST /api/execution/connect/verify بپرسید.")}
 
 
 @router.delete("/api/execution/session")
@@ -766,6 +832,130 @@ def delete_session() -> dict[str, Any]:
     voided = _void_confirmations("token cleared")
     return {"status": "success", "live": _live_now(), "session": _session_dict(),
             "confirmations_voided": voided}
+
+
+# ── ۲.۵) تنظیمِ اتصال و پرتفویِ فقط‌خواندنی ─────────────────────────────────
+@router.get("/api/execution/config")
+def get_config() -> dict[str, Any]:
+    """تنظیمِ اتصال (هیچ مقدارِ محرمانه‌ای نیست) + آنچه **همین حالا** مؤثر است.
+
+    دو چیز جدا نگه داشته می‌شوند: «ذخیره شد» و «اعمال شد». آداپتور و نوعِ
+    ترافیک درِ `import` خوانده می‌شوند، پس تا restart پاسخِ همین نشست عوض
+    نمی‌شود — بی‌این تفکیک، کاربر «ذخیره» را «متصل» می‌خواند.
+    """
+    cfg = _settings_snapshot()
+    return {"status": "success",
+            "stored": {"adapter": str(cfg.get("adapter") or ""),
+                       "read_only": bool(cfg.get("read_only")),
+                       "source": str(cfg.get("source") or "default"),
+                       "updated_at": cfg.get("updated_at")},
+            "effective": {"adapter": ADAPTER_KIND,
+                          "traffic_allowed": bool(TRAFFIC_ALLOWED),
+                          "read_only": bool(READ_ONLY_REQUESTED),
+                          "live_requested": bool(LIVE_REQUESTED),
+                          "session_live": bool(_live_now()),
+                          "writes_gate": "env:BORS_EXECUTION_LIVE"},
+            "applies_on_restart": True,
+            "secrets_stored": False,
+            "detail": "token/رمز/کوکی هیچ‌جا درِ این تنظیم نمی‌نشیند؛ نشانیِ نشست "
+                      "فقط باِ POST /api/execution/session درِ حافظه می‌آید و با "
+                      "restart می‌میرد"}
+
+
+@router.post("/api/execution/config")
+async def post_config(request: Request) -> dict[str, Any]:
+    """انتخابِ آداپتور و حالتِ فقط‌خواندنی. نوشتنِ سفارش از این مسیر باز نمی‌شود."""
+    raw = await request.body()
+    try:
+        parsed = json.loads(raw.decode("utf-8")) if raw else {}
+    except (ValueError, UnicodeDecodeError):
+        parsed = {}
+    if not isinstance(parsed, dict):
+        parsed = {}
+    wanted = {k: v for k, v in parsed.items() if k in ("adapter", "read_only")}
+    unknown = [k for k in parsed if k not in ("adapter", "read_only")]
+    if unknown:
+        return {"status": "error", "code": "UNKNOWN_KEY",
+                "detail": "کلیدهایِ مجاز فقط adapter و read_only هستند: "
+                          + ", ".join(sorted(unknown)),
+                "config": get_config()}
+    if not wanted:
+        return {"status": "error", "code": "EMPTY_CONFIG",
+                "detail": "هیچ تنظیمی داده نشد", "config": get_config()}
+    import execution_settings as ES
+    try:
+        for k, v in wanted.items():
+            cfg = ES.set_value(k, v)
+    except ValueError as e:
+        return {"status": "error", "code": "BAD_VALUE", "detail": str(e),
+                "config": get_config()}
+    except Exception as e:                        # noqa: BLE001 - بانک/دیسک
+        return {"status": "error", "code": "STORE_FAILED",
+                "detail": "نوشتنِ تنظیم ممکن نشد: %s" % type(e).__name__,
+                "config": get_config()}
+    _AUDIT.record(execution_id="-", kind="config", status="stored",
+                  detail="adapter=%s read_only=%s (env مقدم است)"
+                         % (cfg.get("adapter"), bool(cfg.get("read_only"))))
+    out = get_config()
+    out["applied_now"] = bool(str(cfg.get("adapter") or "") == ADAPTER_KIND)
+    return out
+
+
+@router.get("/api/execution/portfolio")
+def get_portfolio() -> dict[str, Any]:
+    """موجودی و دارایی — فقط‌خواندنی، و فقط آنچه سرویس **واقعاً** برمی‌گرداند.
+
+    امروز هیچ مسیرِ «دارایی‌ها» نه درِ سندِ رسمی (swagger/openapi = 403) و نه درِ
+    شواهدِ مشاهده‌شده وجود دارد؛ `get_balances()` عمداً None است و
+    `capabilities.balances` false. پس پاسخِ این در «صفر» یا «لیستِ خالی» نیست —
+    «بی‌منبع» است با دلیلِ خودش. بی‌نشستِ تأییدشده هیچ درخواستی هم نمی‌زند.
+    """
+    live = bool(_live_now())
+    proven = bool(getattr(_ACTIVE_ADAPTER, "session_proven", lambda: False)())
+    has_token = bool(getattr(_ACTIVE_ADAPTER, "has_token", lambda: False)())
+    caps = _ACTIVE_ADAPTER.capabilities()
+    base = {"status": "success", "adapter": ADAPTER_KIND, "live": live,
+            "session_proven": proven, "as_of": None, "source": "none",
+            "rows": None, "cached_at": None, "error": None}
+    # سنجشِ زندهٔ 2026-10-18: «بی‌نشانی» با «ترافیک بسته» یکی بود و پیامِ restart
+    # می‌داد در حالی که کاربر restart کرده بود. چهار حالتِ جدا: ترافیک، نشانی،
+    # تأیید، منبع.
+    if not TRAFFIC_ALLOWED:
+        base["status"] = "blocked"
+        base["error"] = ("هیچ ترافیکی مجاز نیست — «تنظیمِ اتصال» را رویِ easytrader + "
+                         "فقط‌خواندنی (یا BORS_EXECUTION_LIVE=1) بگذارید و restart کنید")
+        return base
+    if not has_token:
+        base["status"] = "unverified_session"
+        base["error"] = ("نشستِ کارگزاری درِ حافظه نیست: خودِ شما درِ پنجره وارد شوید، "
+                         "سپس نشانی را باِ POST /api/execution/session بدهید. "
+                         "بی‌نشانی هیچ پرسشی به کارگزاری نمی‌رود")
+        return base
+    if not proven:
+        base["status"] = "unverified_session"
+        base["error"] = ("نشست هنوز باِ یکِ پرسشِ فقط‌خواندنی تأیید نشده — "
+                         "POST /api/execution/connect/verify")
+        return base
+    if not bool(getattr(caps, "balances", False)):
+        base["status"] = "no_source"
+        base["error"] = ("کارگزاری مسیرِ دارایی‌ها را درِ هیچ شاهدِ مستندِ بازشده‌ای "
+                         "نمی‌دهد؛ عددی ساخته نمی‌شود. مسیرهایِ آزمودنیِ فقط‌خواندنی: "
+                         + ", ".join(WIRE_SESSION_PROBE_CANDIDATES))
+        return base
+    try:
+        rows = _ACTIVE_ADAPTER.get_balances()
+    except Exception as e:                        # noqa: BLE001 - BrokerError و غیره
+        base["status"] = "error"
+        base["error"] = "%s: %s" % (type(e).__name__, str(e)[:160])
+        return base
+    if rows is None:
+        base["status"] = "no_source"
+        base["error"] = "آداپتور None داد — «نمی‌دانیم»، نه «صفر»"
+        return base
+    base.update({"status": "success", "source": "live", "rows": rows,
+                 "as_of": time.strftime("%Y-%m-%dT%H:%M:%S")})
+    return base
+
 
 
 # ── ۳) اتصالِ کاربر: پنجرۀ مرورگری و داوریِ حالتِ نشست ──────────────────────

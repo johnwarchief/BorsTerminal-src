@@ -425,6 +425,16 @@ def verify(adapter: Any) -> dict[str, Any]:
         out["reason"] = "آداپتور حالتِ ناشناخته‌ای داد (%s)" % getattr(raw, "value", raw)
     else:
         out["reason"] = "از پرسشِ صریحِ کارگزاری"
+    proof = getattr(adapter, "session_proof", None) or {}
+    if proof:
+        # «متصل» باید بگوید کدام مسیر ثابتش کرد و آن مسیر چه‌قدر شاهد است؛
+        # بی‌این، یکِ پاسخِ ۲xx ازِ مسیرِ حدسی با ۲xx ازِ مسیرِ دیده‌شده یکی می‌شود.
+        out["proof"] = {"path": str(proof.get("path") or ""),
+                        "status": proof.get("status"),
+                        "kind": str(proof.get("kind") or ""),
+                        "hypothesis": bool(proof.get("hypothesis")),
+                        "note": str(proof.get("note") or "")[:160]}
+    out["read_only"] = bool(getattr(adapter, "read_only_mode", False))
     return out
 
 
@@ -447,6 +457,17 @@ def status_dict(adapter: Any, last: Mapping[str, Any] | None) -> dict[str, Any]:
                                           "ورودِ کاربر تأیید نشده؛ "
                                           "BORS_EXECUTION_CONNECT_HOSTS را بگذارید"),
             "last_verify": effective_verify(last),
+            # ترافیکِ فقط‌خواندنی با «ارسالِ سفارش آزاد» یکی نیست؛ UI باید بداند
+            # کدام حالت روشن است، نه اینکه از رویِ رنگِ دکمه حدس بزند.
+            # «فقط‌خواندنی» به *ترانسپورت* نگاه می‌کند نه به نشست: سنجشِ زندهٔ
+            # 2026-10-18 نشان داد گره‌زدنش به `live` (که توکن می‌خواهد) همان
+            # تناقض را می‌سازد — `/status` می‌گوید ترافیک مجاز و اینجا «مسدود».
+            "traffic_mode": ("writes" if bool(getattr(adapter, "writes_allowed", False))
+                              else "read_only"
+                              if bool(getattr(getattr(adapter, "transport", None),
+                                              "is_live", False))
+                              else "blocked"),
+            "session_proven": bool(getattr(adapter, "session_proven", lambda: False)()),
             "secrets_stored": False,
             "detail": ("رمز/CAPTCHA/MFA باِ خودِ کاربر است؛ این لایه فقط پنجره را "
                        "باز می‌کند و حالت را از پرسشِ واقعی می‌خواند")}
