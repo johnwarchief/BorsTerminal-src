@@ -579,7 +579,7 @@ export function buildCanonicalStrategyGraph(options: GraphBuildOptions): Canonic
     stage: 'capital',
     page: 'چارت صفحه ۴',
     label: 'استراتژی ساعت شنی (بلندمدت / بازنشستگی)',
-    subLabel: 'سهام بزرگ بنیادی، هفتگی بالای MA52 و RSI5 اشباع',
+    subLabel: 'سهام بزرگ بنیادی، هفتگی بالای MA52 و RSI هفتگی در اشباع',
     description: 'سهام لیدر و سوپربنیادی در تایم هفتگی؛ قیمت بالای میانگین MA52 و RSI دوره ۵ یا ۷ در اشباع فروش (زیر ۳۰ یا ۲۰)؛ ضریب خرید ۲ تا ۴ برابر',
     formula: 'Weekly Close > MA52 & Weekly RSI(5) <= 30',
     depth: 2,

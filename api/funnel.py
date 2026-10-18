@@ -173,7 +173,14 @@ def _need_scan(payload: dict) -> list[str]:
 @router.get("/api/funnel/registry")
 def get_registry():
     """همان رجیستری که موتور می‌خواند — فهرستِ Custom از اینجا می‌آید."""
-    return REG.as_json()
+    out = REG.as_json()
+    # سطحِ اشباع و دورۀ RSI ساعت‌شنی فقط یک جا تعریف می‌شوند: تنظیمِ فعالِ خودِ
+    # موتور (`_fts_hourglass_settings`). فرانت باید همین را بخواند، نه عددِ دومِ
+    # خودش (رأیِ ۲۴: «مقدار فرانت جدا از موتور… مجاز نیست»).
+    from api.chart import _fts_hourglass_settings
+
+    out["hourglass_settings"] = _fts_hourglass_settings()
+    return out
 
 
 @router.get("/api/funnel/trace")
@@ -211,9 +218,10 @@ def get_trace(symbol: str, preset: str = "trend", chain: str = "",
 
 @router.get("/api/funnel")
 def get_funnel(preset: str = "trend", chain: str = "", fund_mode: str = "standard",
-               drop_suffix: bool = True, logic: str = "and"):
+               drop_suffix: bool = True, logic: str = "and", tech_chain: str = ""):
     return _run(preset, [c for c in chain.split(",") if c], fund_mode, {}, {},
-                 drop_suffix=drop_suffix, logic=logic)
+                 drop_suffix=drop_suffix, logic=logic,
+                 tech_chain=[c for c in tech_chain.split(",") if c])
 
 
 @router.post("/api/funnel")
@@ -234,6 +242,7 @@ async def post_funnel(request: Request):
         if isinstance(b.get("exceptions"), dict) else {},
         drop_suffix=drop_suffix,
         logic=logic,
+        tech_chain=[str(x) for x in (b.get("tech_chain") or [])],
     )
 
 
@@ -249,7 +258,8 @@ def _strip(payload: dict) -> dict:
 
 def _run(preset: str, chain: list[str], fund_mode: str,
          params: dict[str, dict[str, Any]], exceptions: dict[str, list[str]],
-         full: bool = False, drop_suffix: bool = True, logic: str = "and") -> dict:
+         full: bool = False, drop_suffix: bool = True, logic: str = "and",
+         tech_chain: list[str] | None = None) -> dict:
     if preset not in REG.PRESET_BY_ID:
         return {"status": "error", "message": f"presetِ ناشناخته: {preset}"}
     if fund_mode not in ("hard", "standard", "exception"):
@@ -259,9 +269,14 @@ def _run(preset: str, chain: list[str], fund_mode: str,
     logic = (logic or "and").strip().lower()
     if logic not in ("and", "or"):
         return {"status": "error", "message": f"logicِ ناشناخته: {logic}"}
+    # زنجیرۀ فیلترهای تکنیکال (جریانِ «تکنیکال اول») — ناشناخته بی‌صدا رد نمی‌شود.
+    tech_chain = [str(x) for x in (tech_chain or [])]
+    unknown_tech = [t for t in tech_chain if t not in REG.TECH_BY_ID]
+    if unknown_tech:
+        return {"status": "error", "message": "فیلترِ تکنیکالِ ناشناخته: " + ", ".join(unknown_tech)}
     key = json.dumps([preset, chain, fund_mode, sorted(params.items()),
                       sorted((k, sorted(v)) for k, v in exceptions.items()),
-                      bool(drop_suffix), logic],
+                      bool(drop_suffix), logic, sorted(tech_chain)],
                      ensure_ascii=False)
     now = time.time()
     hit = _cache_get(key, now)
@@ -286,7 +301,8 @@ def _run(preset: str, chain: list[str], fund_mode: str,
                               fund_mode=fund_mode, params=params, exceptions=exceptions,
                               tech_scan=scan, tech_sigs=sigs, session_day=session,
                               universe_priority=uni_pri, universe_status=uni_st,
-                              drop_numeric_suffix=drop_suffix, tape_logic=logic)
+                              drop_numeric_suffix=drop_suffix, tape_logic=logic,
+                              tech_chain=tech_chain)
     except KeyError as e:
         return {"status": "error", "message": str(e)}
     # داوریِ ناکام‌نشده: همان نمادها درِ پس‌زمینه ساخته می‌شوند. پاسخِ همین

@@ -1,6 +1,7 @@
 import { Link } from 'react-router';
 import { toFaDigits } from '@shared/lib/fmt';
-import type { FunnelStageKey, StageSummary } from '../lib/ftsFunnel';
+import type { FunnelFlow, FunnelStageKey, StageSummary } from '../lib/ftsFunnel';
+import { stageOrderOf } from '../lib/ftsFunnel';
 
 export const FUNNEL_STAGES = [
   { key: 'tape' as FunnelStageKey, index: 1, short: 'S', title: 'تابلوخوانی', page: 'گام ۱' },
@@ -8,6 +9,17 @@ export const FUNNEL_STAGES = [
   { key: 'fundamental' as FunnelStageKey, index: 3, short: 'F', title: 'بنیادی', page: 'گام ۳' },
   { key: 'handover' as FunnelStageKey, index: 4, short: 'M', title: 'تحویل و جمع‌بندی', page: 'گام ۴' },
 ] as const;
+
+/** ترتیبِ تب‌ها از `flowِ` پاسخِ موتور می‌آید، نه از یک فهرستِ دوم: درِ
+ *  استراتژیِ «تکنیکال‌محور» گامِ تکنیکال گامِ ۱ است و تابلوخوانی گامِ ۲.
+ *  شمارۀ هر تب هم همان‌جا بازنویسی می‌شود تا «گام ۲» دو معنی ندهد. */
+export function funnelStagesFor(flow: FunnelFlow = 'tape_first') {
+  const order = stageOrderOf(flow);
+  return order.map((key, i) => {
+    const base = FUNNEL_STAGES.find((s) => s.key === key) ?? FUNNEL_STAGES[0];
+    return { ...base, index: i + 1, page: `گام ${toFaDigits(i + 1)}` };
+  });
+}
 
 export function funnelStagePath(stage: FunnelStageKey, preset?: string, symbol?: string | null) {
   const q = new URLSearchParams({ stage });
@@ -49,18 +61,21 @@ export function FtsProcessStepper({
   preset,
   symbol,
   counts,
+  flow = 'tape_first',
   state = 'ready',
 }: {
   active: FunnelStageKey;
   preset?: string;
   symbol?: string | null;
   counts?: Partial<Record<FunnelStageKey, StageSummary>>;
+  flow?: FunnelFlow;
   state?: 'ready' | 'loading' | 'error';
 }) {
+  const stages = funnelStagesFor(flow);
   return (
     <nav aria-label="مراحل غربالگری FTS" data-testid="fts-process-stepper" className="w-full">
       <div className="flex flex-wrap items-stretch gap-1.5">
-        {FUNNEL_STAGES.map((stage) => {
+        {stages.map((stage) => {
           const isActive = stage.key === active;
           const badge = stageBadge(counts?.[stage.key], state);
           return (

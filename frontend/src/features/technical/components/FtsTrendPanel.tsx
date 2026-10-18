@@ -130,7 +130,7 @@ export function FtsTrendPanel({ data }: { data: FtsAnalysisData | null | undefin
           <div className="flex justify-between text-[10px] text-text-secondary">
             <span>قیمت هفتگی: <b className="num">{fmtPrice(data.hourglass.weekly_close)}</b></span>
             <span>MA52 هفتگی: <b className="num">{fmtPrice(data.hourglass.ma52)}</b></span>
-            <span>RSI(5) هفتگی: <b className="num">{data.hourglass.weekly_rsi5 != null ? toFaDigits(data.hourglass.weekly_rsi5.toFixed(1)) : '-'}</b></span>
+            <span>RSI{data.hourglass.rsi_period != null ? `(${toFaDigits(data.hourglass.rsi_period)})` : ''} هفتگی: <b className="num">{data.hourglass.weekly_rsi != null ? toFaDigits(data.hourglass.weekly_rsi.toFixed(1)) : '-'}</b></span>
           </div>
         </div>
       ) : null}

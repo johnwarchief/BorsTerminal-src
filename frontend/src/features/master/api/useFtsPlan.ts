@@ -75,7 +75,8 @@ const Hourglass = z
     active: z.boolean().nullish(),
     action: z.string().nullish(),
     ma52: z.number().nullish(),
-    weekly_rsi5: z.number().nullish(),
+    weekly_rsi: z.number().nullish(),
+    rsi_period: z.number().int().nullish(),
     desc: z.string().nullish(),
   })
   .nullish();

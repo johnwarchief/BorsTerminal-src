@@ -33,7 +33,7 @@ import { jalaliOf } from '@features/fundamental/lib/assemblyEvent';
 import { OrderBookFive } from '@shared/components/OrderBookFive';
 import { FormingCandle } from '@shared/components/FormingCandle';
 import { useMarketFeed } from '@features/market/api/useMarketFeed';
-import { INSPECTOR_STAGES, stageHref, stageIndexForPath } from './inspectorStage';
+import { INSPECTOR_STAGES, stageHrefOf, stageIndexForPath, stageKeyForPath } from './inspectorStage';
 import { useInspectorBoard, useInspectorRawRow } from './useInspectorBoard';
 import { useSymbolVeto } from './useSymbolVeto';
 import { useFtsFunnel } from '@features/master/api/useFtsFunnel';
@@ -249,6 +249,20 @@ export function SymbolInspector() {
     return null;
   }, [funnel, symbol]);
   const progress = useMemo(() => stageProgressFor(funnel, symbol), [funnel, symbol]);
+  // حلقه‌هایِ سایدبار به همان ترتیبی که موتور اجرا کرده می‌چیند: درِ استراتژیِ
+  // «تکنیکال‌محور» گامِ اول تکنیکال است، پس «بعدی» هم باید تابلوخوانی باشد.
+  // نام و مسیرِ هر گام از INSPECTOR_STAGES می‌آید (تبهایِ خودِ برنامه).
+  const stageList = useMemo(() => {
+    const meta = new Map(INSPECTOR_STAGES.map((s) => [s.key, s]));
+    const order = funnel.stageOrder?.length
+      ? funnel.stageOrder
+      : INSPECTOR_STAGES.map((s) => s.key);
+    return order.map((k) => meta.get(k) ?? { key: k, label: k, base: '/master' });
+  }, [funnel.stageOrder]);
+  const activeIdx = useMemo(() => {
+    const key = stageKeyForPath(pathname);
+    return stageList.findIndex((s) => s.key === key);
+  }, [pathname, stageList]);
 
   /** سنجشِ بی‌زنجیره. ردیفِ قیف فقط برایِ نمادی پُر است که از درِ زنجیرۀِ انتخابی
    *  گذشته باشد؛ پس تاگلِ «اشتراک/اجتماع» و حتی بازکردنِ تبِ بنیادی، روند و پنج
@@ -720,19 +734,19 @@ export function SymbolInspector() {
               data-testid="inspector-stage"
               className="flex flex-wrap items-center gap-1 text-[10px] font-bold"
             >
-              {INSPECTOR_STAGES.map((s, i) => {
+              {stageList.map((s, i) => {
                 const p = progress[i];
                 const st = p?.state ?? 'unknown';
                 return (
                   <Link
                     key={s.key}
-                    to={stageHref(i, symbol)}
-                    aria-current={i === stageIdx ? 'step' : undefined}
+                    to={stageHrefOf(s, symbol)}
+                    aria-current={i === activeIdx ? 'step' : undefined}
                     data-testid={`inspector-stage-${s.key}`}
                     data-stage-state={st}
                     title={p?.why || `${s.label}: هنوز منبعی برای داوری این مرحله نیست`}
                     className={`flex items-center gap-1 rounded-md border px-1.5 py-0.5 transition-colors ${
-                      i === stageIdx
+                      i === activeIdx
                         ? 'border-accent-blue bg-accent-blue/15 text-accent-blue'
                         : 'border-border-c/60 bg-bg-primary text-text-muted hover:text-text-primary'
                     }`}
@@ -772,10 +786,10 @@ export function SymbolInspector() {
                 {progress[0]?.state === 'not_in_universe'
                   ? `خارج از جامعۀ غربالگری — ${progress[0].why}`
                   : stoppedAt >= 0
-                  ? `ایستاده در «${INSPECTOR_STAGES[stoppedAt].label}» — ${progress[stoppedAt].why}`
-                  : stageIdx < INSPECTOR_STAGES.length - 1
-                    ? `مرحلۀ فعلی: ${INSPECTOR_STAGES[stageIdx].label} · بعدی: ${INSPECTOR_STAGES[stageIdx + 1].label}`
-                    : `مرحلۀ فعلی: ${INSPECTOR_STAGES[stageIdx].label} — پایِ غربالگری`}
+                  ? `ایستاده در «${stageList[stoppedAt]?.label}» — ${progress[stoppedAt].why}`
+                  : activeIdx >= 0 && activeIdx < stageList.length - 1
+                    ? `مرحلۀ فعلی: ${stageList[activeIdx].label} · بعدی: ${stageList[activeIdx + 1].label}`
+                    : `مرحلۀ فعلی: ${stageList[activeIdx]?.label ?? ''} — پایِ غربالگری`}
               </span>
             </nav>
           ) : funnelError && !funnelHasData ? (

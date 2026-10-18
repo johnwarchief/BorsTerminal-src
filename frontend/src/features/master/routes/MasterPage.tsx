@@ -142,8 +142,8 @@ export default function MasterPage() {
     [funnel, symbol],
   );
   const dossier = useMemo(
-    () => buildDossier(candidate, planFeed.data, symbol ?? ''),
-    [candidate, planFeed.data, symbol],
+    () => buildDossier(candidate, planFeed.data, symbol ?? '', funnel.stageOrder),
+    [candidate, planFeed.data, symbol, funnel.stageOrder],
   );
   // S: بج‌هایِ ستونِ «الگو» از همان تابعِ تبِ تابلو · T: پشتیبان/مقاومت از key-levels
   const keyLevels = useKeyLevels(symbol ?? '');

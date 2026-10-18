@@ -4,7 +4,7 @@
 اگر روی ماشینِ تازه‌ای clone کردید، **همین فایل + پوشۀ `skills/`** باید برای کار کافی باشد؛
 چیزِ دیگری از حافظۀ ماشینِ من لازم نباشد. (استثنائات در بندِ «چی در گیت نیست».)
 
-**پیش از استفاده از دستورهای مستندات، `docs/README.md` را هم بخوانید.** آن فایل تقدم منابع FTS را روشن می‌کند و اسناد handoff/roadmap تاریخ‌دار را از وضعیت جاری جدا می‌کند. `docs/AGENT-INDEX.md` نقشهٔ کدِ تولیدشده است؛ آن را دستی ویرایش نکنید.
+**پیش از استفاده از دستورهای مستندات، `docs/README.md` را هم بخوانید.** آن فایل تقدم منابع FTS را روشن می‌کند و اسناد handoff/roadmap تاریخ‌دار را از وضعیت جاری جدا می‌کند. `docs/AGENT-INDEX.md` نقشهٔ کدِ تولیدشده است؛ آن را دستی ویرایش نکنید. برای هر تغییر دیداری یا بازطراحی فرانت‌اند، `DESIGN.md` و اسکیل `skills/bors-frontend-design/SKILL.md` را هم پیش از کدنویسی بخوانید.
 
 ## ساختارِ ریپو
 
@@ -20,6 +20,7 @@
 | `scripts/` | زنجیرۀ بیلد و انتشار (`build_all.py`, `check_release_db.py`, `make_patch.py`, `publish_github_release.py`) |
 | `installer/` | Inno Setup (`bors_setup.iss`) و خروجیِ نصاب در `installer/out/` |
 | `docs/` | جزوۀ روش‌شناسی FTS (`docs/fts-notes/`)، SPECها، `PLAN-remaining.md`، `RELEASE_NOTES.md`، و نقشۀ کدِ هر ایجنت (`docs/AGENT-INDEX.md` — با `python tools/build_agent_index.py` بازتولید می‌شود) |
+| `DESIGN.md` | مرجع سراسری جهت بصری و معیار پذیرش رابط؛ برای تغییرهای UI لازم‌القراءة است |
 | `skills/` | ده اسکیلِ قراردادِ کار — جدولِ زمان‌بندی‌شان در `skills/README.md` |
 
 ## فرمان‌ها

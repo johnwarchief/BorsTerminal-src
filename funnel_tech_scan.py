@@ -173,10 +173,15 @@ def universe(conn: sqlite3.Connection) -> list[tuple[str, str]]:
 
 
 def stored(conn: sqlite3.Connection) -> dict[str, dict]:
-    """همۀ ردیف‌هایِ ذخیره‌شده — همان چیزی که اسکرینر به‌جایِ fetch می‌خواند."""
+    """همۀ ردیف‌هایِ ذخیره‌شده — همان چیزی که اسکرینر به‌جایِ fetch می‌خواند.
+
+    `as_of` هم برداشته می‌شود: جدولِ تکنیکالِ قیف باید بگوید این داوری درِ کِی
+    ساخته شده (ستونِ «تاریخِ داوری»). فقط ستونِ موجودِ همان جدول است، نه عددِ
+    دوم و نه حدسِ زمانِ درخواست.
+    """
     ensure_schema(conn)
-    cur = conn.execute(f"SELECT symbol, {', '.join(_COLUMNS)} FROM {TABLE}")
-    cols = ["symbol", *_COLUMNS]
+    cur = conn.execute(f"SELECT symbol, {', '.join(_COLUMNS)}, as_of FROM {TABLE}")
+    cols = ["symbol", *_COLUMNS, "as_of"]
     return {str(r[0]): dict(zip(cols, r)) for r in cur.fetchall()}
 
 

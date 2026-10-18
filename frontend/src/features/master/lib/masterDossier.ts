@@ -105,7 +105,7 @@ export type MasterDossier = {
   };
   levels: { resistance: number | null; ceiling: number | null; hardStop: number | null; ma14: number | null };
   hourglass: { active: boolean | null; action: string | null; ma52: number | null;
-    rsi5: number | null; desc: string | null };
+    weeklyRsi: number | null; rsiPeriod: number | null; desc: string | null };
   /** نماد در جامعۀ قیف بود؟ اگر نه، خطوطِ S/F «سنجیده نشد» می‌مانند */
   inFunnel: boolean;
 };
@@ -129,9 +129,11 @@ export function findCandidate(candLists: Array<Candidate[] | undefined>, symbol:
  * حکم از اولین دری می‌آید که بسته است؛ اگر هیچ دربندی نبود و تحویل باز است،
  * «تأیید» و اگر تحویل نگه داشته «واچ» — همان دلیلی که مدلِ قیف نوشته است.
  */
-export function deriveVerdict(status: Record<FunnelStageKey, StageStatus>):
-  { verdict: DossierVerdict; stage: FunnelStageKey } {
-  for (const k of STAGE_KEYS) {
+export function deriveVerdict(
+  status: Record<FunnelStageKey, StageStatus>,
+  order: readonly FunnelStageKey[] = STAGE_KEYS,
+): { verdict: DossierVerdict; stage: FunnelStageKey } {
+  for (const k of order) {
     if (status[k] === 'reject') return { verdict: 'reject', stage: k };
   }
   if (status.handover === 'pass') return { verdict: 'confirmed', stage: 'handover' };
@@ -146,6 +148,7 @@ export function buildDossier(
   candidate: Candidate | null,
   feed: FtsPlanFeed | null | undefined,
   symbol: string,
+  order: readonly FunnelStageKey[] = STAGE_KEYS,
 ): MasterDossier {
   const fts = feed?.fts ?? null;
   const status = fts?.status ?? null;
@@ -197,7 +200,8 @@ export function buildDossier(
     active: fts?.hourglass?.active ?? null,
     action: fts?.hourglass?.action ?? null,
     ma52: fts?.hourglass?.ma52 ?? null,
-    rsi5: fts?.hourglass?.weekly_rsi5 ?? null,
+    weeklyRsi: fts?.hourglass?.weekly_rsi ?? null,
+    rsiPeriod: fts?.hourglass?.rsi_period ?? null,
     desc: fts?.hourglass?.desc ?? null,
   };
 
@@ -216,7 +220,7 @@ export function buildDossier(
       // «تعیین‌کننده» فقط وقتی معنا دارد که یک در واقع بسته باشد؛ بی‌کاندید
       // هیچ دری رأی نداده، پس این فیلد خالی می‌ماند (مگر گیتِ هفتگی بسته باشد)
       verdictStage: gated ? 'technical' : null,
-      stages: STAGE_KEYS.map((k) => ({
+      stages: order.map((k) => ({
         key: k, label: STAGE_LABEL[k], status: k === 'technical' && gated ? 'reject' : 'unavailable',
         icon: STATUS_ICON[k === 'technical' && gated ? 'reject' : 'unavailable'],
         why: k === 'technical'
@@ -231,7 +235,7 @@ export function buildDossier(
     };
   }
 
-  const v = deriveVerdict(candidate.status);
+  const v = deriveVerdict(candidate.status, order);
   return {
     symbol: candidate.symbol,
     name: candidate.name,
@@ -242,7 +246,7 @@ export function buildDossier(
     // متنِ موتور مقدم است؛ اگر موتور چیزی نگفت، برچسبِ خنثیِ همان حکم
     verdictText: (v.verdict === 'reject' ? candidate.why[v.stage] : '') || status?.text || VERDICT_LABEL[v.verdict],
     verdictStage: v.stage,
-    stages: STAGE_KEYS.map((k) => ({
+    stages: order.map((k) => ({
       key: k,
       label: STAGE_LABEL[k],
       status: candidate.status[k],

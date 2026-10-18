@@ -34,7 +34,7 @@ const payload = {
   point_hunt: { active: true, floor_price: 1105, touches: 4, floor_date: '2026-01-08',
                  trigger_date: '2026-01-08' },
   exit_engine: { verdict: 'caution', l1: { hard_stop: 1049, ma14: 1270, ma14_exit: true }, l3: { third_peak: true, third_peak_level: 1500 } },
-  hourglass: { active: true, ma52: 1250, weekly_rsi5: 24 },
+  hourglass: { active: true, ma52: 1250, weekly_rsi: 24, rsi_period: 7 },
 } as unknown as FtsAnalysisData;
 
 describe('نگاشتِ FTS → لایه‌های رابطِ موتور', () => {
