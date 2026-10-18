@@ -742,26 +742,62 @@ def main():
     except Exception as e:
         print(f"[!] انتقالِ codal.db.lzma خطا داد (ریلیز متوقف نمی‌شود): {e!r}")
 
-    # latest.json از همان URLای که آپدیتِرِ کاربر می‌خواند (releases/latest)
-    # بررسی می‌شود: نسخه باید همین TAG باشد.
-    manifest_url = (f"https://github.com/{REPO}/releases/latest/download/latest.json")
-    remote_manifest_bytes = _fetch_remote(manifest_url)
-    if remote_manifest_bytes is None:
-        print("[-] latest.json از URLِ آپدیتِر دانلود نشد.")
-        verify_ok = False
-    else:
-        try:
-            remote_manifest = json.loads(remote_manifest_bytes.decode("utf-8", errors="replace"))
-        except Exception as e:
-            print(f"[-] latest.json از راه دور JSON نیست: {e!r}")
-            remote_manifest = {}
-        if remote_manifest.get("version") != TAG.lstrip("v"):
-            print(f"[-] latest.json از راه دور نسخهٔ {remote_manifest.get('version')!r} "
-                  f"دارد (انتظار: {TAG.lstrip('v')!r}).")
+    if PRE_RELEASE:
+        # دو راستی‌آزمایی برایِ این نوعِ ریلیز (pre-release):
+        # یک: latest.jsonِ مسیرِ مستقیمِ تگ باید همین نسخه را بگوید.
+        # دو: releases/latest هرگز نباید این نسخه را بگوید — اگر بگوید،
+        #     یعنی Preview خودکار به همهٔ مشتریانِ نصب‌شده رسیده است.
+        tag_manifest = _fetch_remote(
+            f"https://github.com/{REPO}/releases/download/{TAG}/latest.json")
+        if tag_manifest is None:
+            print("[-] latest.json from the explicit tag path could not be downloaded.")
             verify_ok = False
         else:
-            print(f"[✓] latest.json از URLِ آپدیتِر نسخهٔ {remote_manifest.get('version')} "
-                  f"را اعلام می‌کند.")
+            try:
+                _tm = json.loads(tag_manifest.decode("utf-8", errors="replace"))
+            except Exception as e:
+                print(f"[-] tag-path latest.json is not JSON: {e!r}")
+                _tm = {}
+            if _tm.get("version") != TAG.lstrip("v"):
+                print(f"[-] tag-path latest.json says {_tm.get('version')!r}, "
+                      f"expected {TAG.lstrip('v')!r}.")
+                verify_ok = False
+            else:
+                print(f"[+] tag-path latest.json serves version "
+                      f"{_tm.get('version')} (installer + {len(_tm.get('patches') or [])} patches).")
+        gate = _fetch_remote(f"https://github.com/{REPO}/releases/latest/download/latest.json")
+        served = "unreadable"
+        if gate is not None:
+            try:
+                served = json.loads(gate.decode("utf-8", errors="replace")).get("version")
+            except Exception:
+                pass
+        if served == TAG.lstrip("v"):
+            print("[-] pre-release marked, but releases/latest serves this version: "
+                  "installed clients would be force-updated.")
+            verify_ok = False
+        else:
+            print(f"[OK] releases/latest still serves {served!r} - no installed client "
+                  "is pulled into this pre-release.")
+    else:
+        manifest_url = (f"https://github.com/{REPO}/releases/latest/download/latest.json")
+        remote_manifest_bytes = _fetch_remote(manifest_url)
+        if remote_manifest_bytes is None:
+            print("[-] latest.json از URLِ آپدیتِر دانلود نشد.")
+            verify_ok = False
+        else:
+            try:
+                remote_manifest = json.loads(remote_manifest_bytes.decode("utf-8", errors="replace"))
+            except Exception as e:
+                print(f"[-] latest.json از راه دور JSON نیست: {e!r}")
+                remote_manifest = {}
+            if remote_manifest.get("version") != TAG.lstrip("v"):
+                print(f"[-] latest.json از راه دور نسخهٔ {remote_manifest.get('version')!r} "
+                      f"دارد (انتظار: {TAG.lstrip('v')!r}).")
+                verify_ok = False
+            else:
+                print(f"[✓] latest.json از URLِ آپدیتِر نسخهٔ {remote_manifest.get('version')} "
+                      f"را اعلام می‌کند.")
 
     if not verify_ok:
         print("[-] راستی‌آزماییِ پس از آپلود شکست خورد؛ ریلیز را دستی بررسی کن.")
