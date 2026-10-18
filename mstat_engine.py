@@ -980,6 +980,50 @@ def queue_state(row, m) -> str:
     return ST_FLAT
 
 
+# ================================================== یگانه قاعدهٔ «پهنای بازار»
+# کارتِ دماسنج و نقطۀ تایم‌لاینِ همین لحظه یک شاخص‌اند. تا پیش از این هر کدام
+# از مسیرِ خودش می‌شمرد و رویِ یکِ صفحه دو عددِ متفاوت می‌شد (سنجشِ ۱۴۰۵-۰۷-۲۵:
+# ۲۵۴/۷۴۹ درِ کارت در برابر ۳۴۳/۱۰۷۷ درِ سریِ mstat_snap؛ دومی بی‌فیلترِ
+# «معامله‌شده» و بی‌جامعه، یعنی شمارشِ کلِ ردیف‌هایِ تابلو). این سه تابع تنها
+# راهِ شمارش‌اند و گاردِ dev/mstat_breadth_basis_v1121.py هم‌بودنشان را قفل می‌کند.
+BREADTH_BASIS = "cat_all_traded"
+QUEUE_BASIS = "cat_all_depth"
+
+
+def breadth_universe(rows, group: str = "all") -> list:
+    """جامعۀ کارت: داخلِ `in_category(group)` و معامله‌شده (حجمِ این نشست > ۰).
+
+    معامله‌نشده‌ها شمارش نمی‌شوند: جزوه قانونِ ۸۰٪ را رویِ «بازارِ امروز» می‌خواند
+    و فهرستِ سردِ نمادهای بی‌معامله همیشه «فرصتِ ورود»ِ جعلی می‌سازد.
+    """
+    return [r for r in rows
+            if in_category(r, group, None) and _f(r["_m"]["vol"]) > 0]
+
+
+def queue_universe(rows, group: str = "all") -> list:
+    """جامعۀ صف: داخلِ `in_category(group)` و دارایِ عمق (None یعنی عمق نیست)."""
+    return [r for r in rows
+            if in_category(r, group, None) and r["_m"]["bq_val"] is not None]
+
+
+def breadth_counts(sel) -> tuple:
+    """(مثبت، منفی، صفر) بر پایهٔ بازدهیِ پایانی نسبت به دیروز (`pct`).
+
+    `pct` وقتی مرتبۀ قیمتِ دیروز با پایانی نخواند None است؛ آن ردیف هیچ‌کدام
+    نیست و درِ `known` نمی‌نشیند — صفرِ جعلی از نبودنِ داده ساخته نمی‌شود.
+    """
+    pos = neg = zero = 0
+    for r in sel:
+        pct = r.get("pct")
+        if (pct or 0) > 0:
+            pos += 1
+        elif (pct or 0) < 0:
+            neg += 1
+        elif pct == 0:
+            zero += 1
+    return pos, neg, zero
+
+
 # ============================================================ تجمیع مشترک
 def enrich(conn, force: bool = False) -> tuple:
     """(ردیف‌ها با شاخص‌های پولی, متادیتا) — یک بار به‌ازای هر اسنپ‌شات.
@@ -2117,10 +2161,8 @@ def thermometer(conn, group: str = "all") -> dict:
     معامله‌نشده‌ها همیشه «فرصت ورود» جعلی می‌سازد.
     """
     rows, meta = enrich(conn)
-    sel = [r for r in rows if in_category(r, group, None) and r["_m"]["vol"] > 0]
-    pos = sum(1 for r in sel if (r["pct"] or 0) > 0)
-    neg = sum(1 for r in sel if (r["pct"] or 0) < 0)
-    flat = sum(1 for r in sel if r["pct"] == 0)
+    sel = breadth_universe(rows, group)
+    pos, neg, flat = breadth_counts(sel)
     known = pos + neg + flat
     pos_pct = 100.0 * pos / known if known else None
     neg_pct = 100.0 * neg / known if known else None
@@ -2132,7 +2174,8 @@ def thermometer(conn, group: str = "all") -> dict:
             "negative_pct": None if neg_pct is None else round(neg_pct, 1),
             "entry_opportunity": bool(neg_pct is not None
                                        and neg_pct >= ENTRY_OPPORTUNITY_NEG_PCT),
-            "entry_rule_pct": ENTRY_OPPORTUNITY_NEG_PCT}
+            "entry_rule_pct": ENTRY_OPPORTUNITY_NEG_PCT,
+            "breadth_basis": "cat_%s_traded" % group}
 
 
 # ================================================ گام ۲.۳ و ۳.۱: عمق و تفکیک صف‌ها
@@ -2143,8 +2186,7 @@ def depth(conn, group: str = "all") -> dict:
     می‌شود و UI به‌جای صفر، «دادهٔ عمق موجود نیست» را نشان می‌دهد.
     """
     rows, meta = enrich(conn)
-    sel = [r for r in rows if in_category(r, group, None)]
-    have = [r for r in sel if r["_m"]["bq_val"] is not None]
+    have = queue_universe(rows, group)
     buy_val = sum(r["_m"]["bq_val"] or 0.0 for r in have)
     sell_val = sum(r["_m"]["sq_val"] or 0.0 for r in have)
 
@@ -2180,7 +2222,8 @@ def depth(conn, group: str = "all") -> dict:
             "ratio": None if not sell_val else round(buy_val / sell_val, 2),
             "buy_queue_count": sum(1 for r in have if r["_m"]["qstate"] == ST_BUYQ),
             "sell_queue_count": sum(1 for r in have if r["_m"]["qstate"] == ST_SELLQ),
-            "buy": one_q_split("buy"), "sell": one_q_split("sell")}
+            "buy": one_q_split("buy"), "sell": one_q_split("sell"),
+            "queue_basis": "cat_%s_depth" % group}
 
 
 # ================================== گام ۲.۴ و ۵.۱: تفکیک حقیقی/حقوقی (تب‌های جدول)
@@ -2423,22 +2466,23 @@ def _dec_states(blob):
 
 
 def snapshot_agg(conn) -> dict:
-    """مقدارهای scalarِ همین لحظه + وضعیتِ تک‌حرفیِ همهٔ نمادها (فشرده)."""
+    """مقدارهای scalarِ همین لحظه + وضعیتِ تک‌حرفیِ همهٔ نمادها (فشرده).
+
+    پهنای بازار و صف‌ها از همان سه تابعِ کارت‌ها می‌آیند (`breadth_universe` +
+    `breadth_counts`، `queue_universe`) و قاعدۀ استفاده‌شده درِ خودِ نقطه ثبت
+    می‌شود: نقطه‌ای که برچسب ندارد یا برچسبش فرق دارد درِ سریِ آن شاخص
+    نمی‌نشیند (`timeline`)، پس قاعدۀ عوض‌شده بی‌صدا با نقاطِ قدیمی مخلوط نمی‌شود.
+    نقشۀ ردیفِ فشردهٔ `st` هنوز کلِ تابلو است — آن شمارشِ نمادبه‌نماد است، نه
+    یکِ شاخصِ تجمیعی که با کارت مقایسه شود.
+    """
     rows, meta = enrich(conn)
     eq = _agg([r for r in rows if in_category(r, "eq_all", None)])
     fx = _agg([r for r in rows if in_category(r, "fixed_fund", None)])
     allr = _agg(rows)
-    have = [r for r in rows if r["_m"]["bq_val"] is not None]
-    pos = neg = zero = 0
+    have = queue_universe(rows, "all")
+    pos, neg, zero = breadth_counts(breadth_universe(rows, "all"))
     st = {}
     for r in rows:
-        p = r.get("pct")
-        if p is not None and p > 0:
-            pos += 1
-        elif p is not None and p < 0:
-            neg += 1
-        elif p == 0:
-            zero += 1
         q = r["_m"]["qstate"]
         if q != ST_NONE:
             st[r["ins_code"]] = q
@@ -2450,6 +2494,7 @@ def snapshot_agg(conn) -> dict:
         "pc_buy": None if eq["pc_buy_mt"] is None else round(eq["pc_buy_mt"], 1),
         "pc_sell": None if eq["pc_sell_mt"] is None else round(eq["pc_sell_mt"], 1),
         "pos": pos, "neg": neg, "zero": zero,
+        "breadth_basis": BREADTH_BASIS, "queue_basis": QUEUE_BASIS,
         "bq_bt": round(sum(r["_m"]["bq_val"] or 0.0 for r in have) / B_TUMAN_FROM_RIAL, 1),
         "sq_bt": round(sum(r["_m"]["sq_val"] or 0.0 for r in have) / B_TUMAN_FROM_RIAL, 1),
         "bq_n": sum(1 for r in have if r["_m"]["qstate"] == ST_BUYQ),
@@ -2518,6 +2563,17 @@ def _hhmm(h) -> str:
 _SERIES = ("val_bt", "flow_eq_bt", "flow_fixed_bt", "pos", "neg",
            "bq_bt", "sq_bt", "pc_buy", "pc_sell", "bq_n", "sq_n")
 
+# کدام سری به کدام قاعدۀ شمارش وابسته است. نقطه‌ای که برچسبِ قاعدۀ امروز را
+# ندارد (یا برچسبِ دیگری دارد) از همان قاعده حساب نشده، پس رویِ نمودارِ این
+# شاخص نمی‌نشیند — مخلوط‌کردنِ دو قاعده درِ یکِ خط، همان چیزی است که یک شاخص
+# را دو عدد می‌کند.
+_SERIES_BASIS = {"pos": ("breadth_basis", BREADTH_BASIS),
+                 "neg": ("breadth_basis", BREADTH_BASIS),
+                 "bq_bt": ("queue_basis", QUEUE_BASIS),
+                 "sq_bt": ("queue_basis", QUEUE_BASIS),
+                 "bq_n": ("queue_basis", QUEUE_BASIS),
+                 "sq_n": ("queue_basis", QUEUE_BASIS)}
+
 
 def timeline(conn, mode: str = "cum") -> dict:
     """گام ۴ — سری‌های ۰۹:۰۰ تا ۱۳:۰۰. cum=تجمعیِ همان نشست، inst=تفاوتِ دو
@@ -2527,7 +2583,16 @@ def timeline(conn, mode: str = "cum") -> dict:
     می‌نویسد — نه یک خطِ صافِ دروغین از روی یک نقطه.
     """
     pts = _points(conn)
-    cum = {k: [p.get(k) for p in pts] for k in _SERIES}
+    cum, dropped = {}, {}
+    for k in _SERIES:
+        field, want = _SERIES_BASIS.get(k, (None, None))
+        if field is None:
+            cum[k] = [p.get(k) for p in pts]
+            continue
+        cum[k] = [p.get(k) if p.get(field) == want else None for p in pts]
+        n_drop = sum(1 for p in pts if p.get(field) != want)
+        if n_drop:
+            dropped[k] = n_drop
     cum["t"] = [_hhmm(p.get("h_even")) for p in pts]
 
     def instantaneous(key):
@@ -2565,9 +2630,13 @@ def timeline(conn, mode: str = "cum") -> dict:
         # تاریخ‌ها در دیتابیس میلادی ذخیره می‌شوند؛ عددِ خام را به کاربر
         # نشان نمی‌دهیم چون آن‌طور که خوانده می‌شود «تاریخِ فارسی» است.
         note = "این تایم‌لاین به نشستی غیر از آخرین نشستِ تابلو برمی‌گردد — وضعیتِ امروز نیست"
+    elif dropped:
+        note = "شمارشِ مثبت/منفی و صف از این نسخه همان قاعدۀ کارت‌هاست؛ نقاطِ پیشِ این قاعده درِ نمودار نمی‌نشینند"
     return {"status": "ok", "mode": "inst" if mode == "inst" else "cum",
             "ready": len(pts) >= 2, "points": len(pts),
             "day": day, "board_day": board_day, "stale": stale, "series": ser,
+            "basis": {k: v[1] for k, v in _SERIES_BASIS.items()},
+            "basis_dropped": dropped,
             "session_open": _hhmm(SESSION_OPEN_HM), "session_close": _hhmm(SESSION_CLOSE_HM),
             "note": note}
 

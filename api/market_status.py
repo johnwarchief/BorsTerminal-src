@@ -10,6 +10,7 @@ Audit map of source line spans: MIGRATED_LINES.txt
 from ._core import get_db
 from fastapi import APIRouter
 from fastapi import Query
+from fastapi.responses import JSONResponse
 import threading
 import time
 
@@ -20,6 +21,37 @@ import funnel_engine as _FE
 
 
 router = APIRouter()
+
+
+# ── گروهِ نامعتبر ⇒ خطایِ روشن، نه صفرِ معتبر ──────────────────────────────
+# سنجشِ زندۀ 2026-10-17 (سرورِ نصبی، h_even 100502):
+#   thermometer?group=all          ⇒ 254/749/8
+#   thermometer?group=eq           ⇒ status:"ok" با 0/0/0
+#   thermometer?group=idx|fund|bond|am|tf|mutual|fund_etf ⇒ همان صفرها
+# علت: `_select(rows, cat)` برایِ دسته‌ناشناخته فهرستِ خالی می‌دهد و شمارشِ خالی
+# درِ پاسخ «بازارِ صفر/آرام» خوانده می‌شود. این دادهٔ ناقص است که معتبر نمایش
+# داده می‌شود، و درِ مقایسه باِ مرجع دقیقاً همان جایی است که عددِ بدل می‌سازد.
+# `clientsplit?tab=<بیگانه>` هم بدتر بود: `_TAB_CAT.get(tab, "all")` آن را بی‌صدا
+# به «کل بازار» تبدیل می‌کرد، یعنی پاسخِ درست برایِ پرسشِ غلط.
+#
+# چرا اصلاح بی‌خطر است: رابطِ ما فقط `all` و `eq_all` می‌فرستد
+# (features/market/api/useMarketPulse.ts:368-369 و useMstatHistogram(group='all')
+# در useMarketStatusFeed.ts:52). و صفرِ **واقعی** هنوز 200 است: دسته‌ای که امروز
+# معامله‌ای ندارد (مثلاً `silver_fund`) همان `positive:0` را می‌گیرد — تفکیکِ
+# «گروه نامعتبر» از «گروهِ معتبرِ بی‌معامله» عمدی است و گارد می‌سنجدش.
+_VALID_GROUP = frozenset(k for k, _ in _mstat.CATEGORY_ROWS) | frozenset(_mstat._TAB_CAT)
+
+
+def _bad_param(param: str, value: str) -> JSONResponse:
+    return JSONResponse(status_code=400, content={
+        "status": "error", "code": "UNKNOWN_GROUP", param: value,
+        "allowed": sorted(_VALID_GROUP),
+        "detail": "گروه/تبِ داده‌شده درِ تعریفِ موتور نیست؛ بی‌داوریِ خالی "
+                  "پاسخ داده نمی‌شود"})
+
+
+def _check_group(param: str, value: str) -> bool:
+    return str(value or "") in _VALID_GROUP
 
 # ---- Phase پرفورمنس (N3): کشِ نتیجه به‌ازای revision واقعیِ بانک ----
 # هر پنل mstat کل ۵٫۵هزار ردیف را می‌روبید (~250-830ms هسته در هر درخواست)؛
@@ -299,21 +331,29 @@ def mstat_summary():
 @router.get("/api/mstat/histogram")
 def mstat_histogram(group: str = Query("all")):
     """گام ۲.۱ و ۳.۳ — توزیع بازدهی ۱۲بازه + محدودهٔ قیمتی ۷بازه."""
+    if not _check_group("group", group):
+        return _bad_param("group", group)
     return _mstat_call(_mstat.histogram, group)
 
 @router.get("/api/mstat/thermometer")
 def mstat_thermometer(group: str = Query("all")):
     """گام ۲.۲ — نوار مثبت/منفی و قانون فرصت ورود."""
+    if not _check_group("group", group):
+        return _bad_param("group", group)
     return _mstat_call(_mstat.thermometer, group)
 
 @router.get("/api/mstat/depth")
 def mstat_depth(group: str = Query("all")):
     """گام ۲.۳ و ۳.۱ — ارزش ۵ خط اول + تفکیک صف‌ها."""
+    if not _check_group("group", group):
+        return _bad_param("group", group)
     return _mstat_call(_mstat.depth, group)
 
 @router.get("/api/mstat/clientsplit")
 def mstat_clientsplit(tab: str = Query("all")):
     """گام ۲.۴ و ۵.۱ — تفکیک حقیقی/حقوقی به تفکیک تب."""
+    if not _check_group("tab", tab):
+        return _bad_param("tab", tab)
     return _mstat_call(_mstat.client_split, tab)
 
 @router.get("/api/mstat/phase")
@@ -339,6 +379,8 @@ def mstat_mainwatch(group: str = Query("eq_all"), industry: str = Query(""),
                     sort: str = Query("clock"), desc: bool = Query(True),
                     limit: int = Query(120)):
     """گام ۵.۲ — تابلوی نمادها؛ ستونِ اختلاف آخرین/پایانی مرتب‌شدنی است."""
+    if not _check_group("group", group):
+        return _bad_param("group", group)
     return _mstat_call(_mainwatch_with_flags, group, industry, sort, desc, limit)
 
 @router.get("/api/mstat/industries")
