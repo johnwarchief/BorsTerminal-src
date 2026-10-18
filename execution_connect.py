@@ -85,7 +85,7 @@ def verify_age_s(last: Mapping[str, Any] | None) -> float | None:
 
 
 def effective_verify(last: Mapping[str, Any] | None) -> dict[str, Any]:
-    """نتيجۀِ پرسش + قاعدۀ تازگی، یک‌جا و درِ همین لایه (نه درِ رابط).
+    """نتیجە پرسش + قاعدۀ تازگی، یک‌جا و درِ همین لایه (نه درِ رابط).
 
     «متصل»ی که زمانش نیامده یا ازِ سقف گذشته است، «متصل» گزارش نمی‌شود؛ حالتِ
     اصلی درِ `verified_state` و علت درِ `reason` می‌ماند — چیزی پاک نمی‌شود،
