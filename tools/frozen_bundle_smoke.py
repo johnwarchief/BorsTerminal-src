@@ -6,6 +6,7 @@
 """
 import os
 ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
+import io
 import json
 import os
 import subprocess
@@ -89,7 +90,18 @@ try:
         raise SystemExit(1)
 
     st, v = get("/api/update/version")
-    note("version_is_1089", v.get("version") == "1.0.89", json.dumps(v, ensure_ascii=False)[:300])
+    # انتظار از خودِ ریپو خوانده می‌شود، نه یک نسخۀ دست‌نویسِ کهنه: pinned
+    # بودنِ "1.0.89" هر ریلزِ تازه را سرخ می‌کرد و سرخی‌اش هیچ معنایی نداشت.
+    try:
+        import re as _re
+        _av = _re.search(r'^APP_VERSION\s*=\s*"([^"]+)"',
+                         io.open(os.path.join(ROOT, "bors_config.py"), encoding="utf-8").read(),
+                         _re.M).group(1)
+    except Exception:
+        _av = None
+    note("version_matches_repo_anchor", v.get("version") == _av,
+         "bundle=%s repo-anchor=%s :: %s" % (v.get("version"), _av,
+                                            json.dumps(v, ensure_ascii=False)[:200]))
 
     # --- market data actually readable inside the package -------------------
     try:
