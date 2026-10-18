@@ -162,6 +162,9 @@ SUITES = [
      'trend engine flag: legacy is byte-identical, hybrid is a drop-in, jet unchanged, cache isolated by engine, weekly gate rule preserved'),
     ('_audit/candle_integrity_roundj.py',
      'candle integrity + published-TSETMC parity along feed → engine → chart'),
+    ('dev/candle_source_fidelity_v1.py',
+     'کندلِ سرویس‌شده بیت‌به‌بیت همان منبع: open=<FIRST>، close=<CLOSE>/<LAST>، حجم=<VOL>، '
+     'تنها تحریفِ مجاز گِشادِ سایه است و ردیفِ بی‌معامله کندلِ جعلی نمی‌شود'),
     ('dev/test_fts_market_cap.py',    'TSETMC market-cap source of truth + risk filters'),
     # شاخص ۴: حکمِ معافیت/N/A باید بین fts_engine (اسکرینر) و api/fundamental
     # (کارت) یکی باشد — پیش از این این سوئیت اصلاً در SUITES نبود و پاریتیِ
