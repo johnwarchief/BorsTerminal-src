@@ -403,7 +403,7 @@ export function ChartSettingsDialog({
                   onClick={() => setView({ axisScaleLock: !(view.axisScaleLock === true) })}
                 />
               </Row>
-              <Row label="قفلِ اسکرول و زومِ محور (موتورِ کهنه)" hint="در موتورِ lightweight اعمال می‌شود">
+              <Row label="قفلِ درگِ محورها" hint="درگِ رویِ محورِ قیمت/زمان، مقیاس را عوض نمی‌کند">
                 <Toggle
                   on={view.axisDragLock}
                   label="قفل درگ محور"

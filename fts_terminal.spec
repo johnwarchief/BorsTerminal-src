@@ -126,6 +126,15 @@ a = Analysis(
                    # می‌کنند (test_tsetmc درِ بدنهٔ تابع، پس ایستیک‌اسکن نمی‌بیند).
                    # نبودنش EXE را روی اولین تیکِ زنده می‌کشد.
                    'market_state',
+                   # دورِ ادغامِ System 2 (۱۴۰۵-۰۷-۲۸): سه ماژولِ ریشۀ تازه که هر
+                   # کدام سطح-بال ازِ دروازۀ API خوانده می‌شوند —
+                   # `adjustment_engine` و `corporate_ledger` از `api/chart.py:11,13`
+                   # و `mstat_panels` از `api/market_status.py:18`. نبودنِ هر سه
+                   # خودِ import آن دروازۀ API را می‌کشد، یعنی EXE روی اولین
+                   # /api/chart یا /api/market-status می‌میرد. ایستیک‌اسکن احتمالاً
+                   # پیدایشان می‌کند، ولی قاعدۀ مخزن این است: چیزی که درِ بستهٔ
+                   # نهایی کشنده است، به حدسِ اسکن سپرده نشود.
+                   'adjustment_engine', 'corporate_ledger', 'mstat_panels',
                    'api._core', 'api.market', 'api.chart', 'api.selection',
                    'api.watchlist', 'api.fundamental', 'api.market_status',
                    'api.screener',
@@ -175,6 +184,11 @@ a = Analysis(
                    # است: چیزی که درِ بستهٔ نهایی کشنده است، به حدس سپرده نشود.
                    'api.bot', 'bot_signals', 'paper_trading', 'trade_sim',
                    'backtest_engine',
+                   # مرحلۀ ۲ دورِ تطبیقِ دوم: `/api/structure3` موتورِ سوم را به‌عنوان
+                   # رابطِ بی‌رأی منتشر می‌کند و `structure_engine3` را سطح-بال import
+                   # می‌کند؛ `api_router` هم ماژول را درِ بدنهٔ تابع import می‌کند، پس
+                   # هر دو صریح فهرست می‌شوند (گاردِ dev/onedir_contract_v11.py).
+                   'api.structure3', 'structure_engine3',
                    # پنجرهٔ مستقلِ بومی (Edge WebView2): pywebview روی ویندوز به
                    # pythonnet/clr نیاز دارد. نبودشان کشنده نیست — bors_entry
                    # عمداً به پنجرهٔ مرورگر برمی‌گردد — ولی بودنشان همان پنجرهٔ

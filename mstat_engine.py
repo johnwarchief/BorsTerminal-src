@@ -33,6 +33,7 @@ import datetime
 import json
 import math
 import sqlite3
+import threading
 import zlib
 from typing import Optional
 
@@ -503,7 +504,89 @@ def classify(paper_type, l_val30: str = "", l_val18: str = "", sector_name: str 
 
 
 # ============================================================ بارگذاری اسنپ‌شات
-_CTX = {}   # امضای بانک → ctx — از تکرار اسکنِ ۳۵۰۰ سطری در هر درخواست می‌کاهد
+_CTX = {}   # آخرین اتصال/امضا → ctx — مسیرِ سریعِ «همان درخواست»
+# PERF-S3: کشِ سطحِ پروسه. `api/_core.get_db()` برایِ هرِ درخواست یکِ اتصالِ تازه
+# می‌سازد، و قفلِ کشِ قدیمی روی «خودِ شیء اتصال» بود ⇒ درِ HTTP هرگز به آنِ کش
+# نمی‌رسید و هرِ پنلِ «وضعیت بازار» همانِ اسکنِ کاملِ بانک را دوباره می‌خواند.
+# سنجشِ _audit/perf/MSTAT_PROFILE.json رویِ کپیِ بانک: load_snapshot = 304ms و
+# enrich = 93ms به‌ازای هرِ پنل؛ دوازدهِ پنلِ یکِ بازِ تب = 6.4 ثانیه CPU (درِ
+# مرورگر: 12.1 ثانیه تا آمادگیِ تب). کلیدِ تازه «آدرسِ فایلِ بانک + امضایِ داده +
+# وضعیتِ revision» است، پس دوِ بانکِ متفاوت (نصبی/dev/موقت) هرگز یکی نشمرده
+# می‌شوند و هرِ همگام‌سازی کلید را عوض می‌کند — کشِ کهنه ممکن نیست.
+_SNAP_CACHE: "dict[tuple, dict]" = {}
+_SNAP_LOCK = threading.Lock()
+_SNAP_KEEP = 2               # اسنپ‌شاتِ جاری + یکیِ پیشین؛ بیشتر از این درِ حافظه بی‌فایده
+
+
+def _db_identity(conn) -> str:
+    """آدرسِ واقعیِ فایلِ بانکِ این اتصال (PRAGMA database_list).
+
+    جایگزینِ «هویتِ شیءِ اتصال»: ارزان‌تر، و درستْ دو بانک را از هم جدا می‌کند
+    بدونِ این‌که به عمرِ اتصال وابسته باشد. بانکِ درحافظه ⇒ همانِ رشته‌یِ :memory:.
+    """
+    try:
+        row = conn.execute("PRAGMA database_list").fetchone()
+        return str(row[2] or "") if row and len(row) > 2 else ""
+    except Exception:
+        return ""
+
+
+def _state_key(conn, sig=None) -> tuple:
+    """کلیدِ «حالتِ بانک»: فایل + امضایِ داده + شمارنده‌هایِ in-process.
+
+    revision/static_rev/session_day از `market_state` همان نشانه‌هایی هستند که
+    `api/market_status._mstat_call` برایِ کشِ نتیجه می‌برد؛ اینجا هم یکی می‌شوند
+    تا نوشتنِ درون‌فرآیندی (که fetched_at را نمی‌چرخاند) کش را نگه ندارد. بی‌
+    `market_state` (ابزارِ خطِ فرمان) فقطِ فایل+امضا می‌ماند — همانِ قراردادِ قبلی.
+
+    `sig` را از بیرون می‌گیرد: امضا خودِ کوئریِ COUNT/MAX است (سنجش: ~19ms) و
+    یکِ درخواست نباید دو بار بپردازدش.
+    """
+    if sig is None:
+        sig = _signature(conn)
+    ident = _db_identity(conn)
+    try:
+        import market_state as _MS
+        return (ident, sig, _MS.revision(), _MS.static_rev(), _MS.session_day())
+    except Exception:
+        return (ident, sig)
+
+
+def _snap_put(key: tuple, data: dict) -> None:
+    with _SNAP_LOCK:
+        _SNAP_CACHE[key] = data
+        while len(_SNAP_CACHE) > _SNAP_KEEP:
+            _SNAP_CACHE.pop(next(iter(_SNAP_CACHE)))
+
+
+def load_snapshot(conn, force: bool = False) -> dict:
+    """یک اسکن کامل → فهرست دیکشنری‌های آمادهٔ تجمیع (تک‌کوئری، بدون N+1).
+
+    `depth=False` یعنی ستون‌های عمق هنوز در این بانک پر نشده‌اند (همگام‌سازی
+    نسخهٔ قدیمی). آن‌وقت پنل‌های صف «بی‌داده» می‌شوند، نه صفرِ قرمز — همان
+    تفکیک fail/nodata که در confidence_engine اصلِ کار است.
+
+    ردیف‌هایِ برگشتی فقط‌خواندنی‌اند: پنل‌ها ازِ آن‌ها فهرستِ *جدیدِ خودشان*
+    را می‌سازند و رویِ ردیفِ اسنپ‌شات نمی‌نویسند (گاردِ
+    `dev/mstat_snapshot_cache_v1.py` با mutation-check همین را می‌سنجد،
+    چون ازِ اینجا به بعدِ یکِ اسنپ‌شات میانِ چندِ درخواستِ هم‌زمان مشترک است).
+    """
+    sig = _signature(conn)
+    if not force and _CTX.get("conn") is conn and _CTX.get("sig") == sig:
+        return _CTX["data"]
+
+    key = _state_key(conn, sig)
+    if not force:
+        hit = _SNAP_CACHE.get(key)
+        if hit is not None:
+            _CTX["conn"] = conn
+            _CTX["sig"] = sig
+            _CTX["data"] = hit
+            return hit
+        ident = key[0]
+        if not ident:                 # بانکِ ناشناس: کشِ مشترک سازِ اشتباه نیست
+            return _build_snapshot(conn, sig, None)
+    return _build_snapshot(conn, sig, key)
 
 
 def _signature(conn) -> tuple:
@@ -525,6 +608,18 @@ def _has_queue_cols(conn) -> bool:
     return "buy_q_val" in cols
 
 
+def has_mcap_col(conn) -> bool:
+    """آیا `market_cap` در این بانک پر شده است؟ ستونش را `test_tsetmc.
+    ensure_market_cap_schema` می‌سازد، نه `MIGRATIONS`ِ همین فایل — پس بانکِ
+    بسته‌بندی‌شدۀ نسخۀ قبلی ممکن است اصلاً ستون نداشته باشد و کوئری بسوزد.
+    سنجه یکی است با «عمق»: نبودِ ستون ⇒ None در ردیف ⇒ «بی‌داده»، نه صفر."""
+    try:
+        cols = {r[1] for r in conn.execute("PRAGMA table_info(market_watch)")}
+    except Exception:
+        return False
+    return "market_cap" in cols
+
+
 # ترتیبِ ستون‌های client_type در کوئریِ بارگذاری — تنها مرجعِ اندیس‌ها.
 _CT_FIELDS = {"ins_code": 0, "buy_i_vol": 1, "buy_n_vol": 2, "buy_ddd_vol": 3,
               "buy_count_i": 4, "buy_count_n": 5, "sell_i_vol": 6, "sell_n_vol": 7,
@@ -532,7 +627,7 @@ _CT_FIELDS = {"ins_code": 0, "buy_i_vol": 1, "buy_n_vol": 2, "buy_ddd_vol": 3,
 _CT_ORDER = ", ".join(sorted(_CT_FIELDS, key=_CT_FIELDS.get))
 
 
-def _row_keys(have_depth: bool):
+def _row_keys(have_depth: bool, have_mcap: bool = False):
     keys = ["ins_code", "symbol", "name", "sector_code", "sector_name",
             "p_closing", "p_last", "p_yesterday", "p_first", "p_min", "p_max",
             "allowed_min", "allowed_max"]
@@ -543,24 +638,19 @@ def _row_keys(have_depth: bool):
                  "buy_q1_cnt"]
     keys += ["q_vol", "q_val", "n_trades", "price_change", "total_shares",
              "base_vol", "h_even", "paper_type"]
+    # درِ انتهای فهرست: ستون‌هایِ اختیاری هرگز به‌واسطۀ میانی جابه‌جا نمی‌شوند،
+    # پس کوئری و این فهرست باید همین ترتیب را نگه دارند.
+    if have_mcap:
+        keys += ["market_cap"]
     return keys
 
 
-def load_snapshot(conn, force: bool = False) -> dict:
-    """یک اسکن کامل → فهرست دیکشنری‌های آمادهٔ تجمیع (تک‌کوئری، بدون N+1).
+def _build_snapshot(conn, sig, key) -> dict:
+    """بدنۀ یک اسکنِ کامل؛ `load_snapshot()` فراخوانِ عمومی است.
 
-    `depth=False` یعنی ستون‌های عمق هنوز در این بانک پر نشده‌اند (همگام‌سازی
-    نسخهٔ قدیمی). آن‌وقت پنل‌های صف «بی‌داده» می‌شوند، نه صفرِ قرمز — همان
-    تفکیک fail/nodata که در confidence_engine اصلِ کار است.
-
-    کش روی «همان اتصال» قفل می‌شود، نه فقط روی امضای داده: دو بانکِ متفاوت
-    می‌توانند دقیقاً همان روز/ساعت/تعداد را داشته باشند و آن‌وقت سطرهای یکی
-    به نامِ دیگری سرو می‌شد. مقایسهٔ هویتِ اتصال ارزان و قطعی است.
+    `key` همان «حالتِ بانک» است؛ None یعنی کشِ سطح‌پروسه برای این اتصال
+    سازِ نیست (بانکِ ناشناس) و فقط مسیرِ سریعِ همانِ درخواست پر می‌شود.
     """
-    sig = _signature(conn)
-    if not force and _CTX.get("conn") is conn and _CTX.get("sig") == sig:
-        return _CTX["data"]
-
     day = conn.execute("SELECT MAX(d_even) FROM market_watch").fetchone()[0]
     hour = conn.execute(
         "SELECT MAX(h_even) FROM market_watch WHERE d_even=?", (day,)).fetchone()[0] or 0
@@ -571,6 +661,7 @@ def load_snapshot(conn, force: bool = False) -> dict:
     cday = conn.execute(
         "SELECT MAX(d_even) FROM client_type WHERE d_even<=?", (day,)).fetchone()[0]
     have_depth = _has_queue_cols(conn)
+    have_mcap = has_mcap_col(conn)
 
     cols = """m.ins_code, i.l_val18, i.l_val30, i.sector_code, i.sector_name,
               m.p_closing, m.p_last, m.price_yesterday, m.price_first,
@@ -582,6 +673,8 @@ def load_snapshot(conn, force: bool = False) -> dict:
                     m.buy_q1_cnt,"""
     cols += """ m.q_tot_tran, m.q_tot_cap, m.z_tot_tran, m.price_change,
                m.total_shares, i.base_vol, m.h_even, i.paper_type"""
+    if have_mcap:
+        cols += ", m.market_cap"
     rows = conn.execute(
         "SELECT %s FROM market_watch m LEFT JOIN instruments i ON i.ins_code=m.ins_code "
         "WHERE m.d_even=?" % cols, (day,)).fetchall()
@@ -603,7 +696,7 @@ def load_snapshot(conn, force: bool = False) -> dict:
         pass                                  # بانکِ کهنه: جدول هنوز نساخته نشده
 
     out = []
-    keys = _row_keys(have_depth)
+    keys = _row_keys(have_depth, have_mcap)
     for r in rows:
         d = dict(zip(keys, tuple(r)))
         d["symbol"] = (d.get("symbol") or "").strip()
@@ -625,16 +718,22 @@ def load_snapshot(conn, force: bool = False) -> dict:
 
     _CTX["conn"] = conn
     _CTX["sig"] = sig
-    _CTX["data"] = {"asof": {"d_even": day, "h_even": hour, "client_d_even": cday,
+    _CTX["data"] = data = {"asof": {"d_even": day, "h_even": hour, "client_d_even": cday,
                              # صفر یعنی هم‌نشست؛ هیچ‌وقت منفی نیست (بالا محدود شد).
                              # مصرف‌کننده با این عدد می‌فهمد سرانهٔ خرید/فروش
                              # مربوط به نشستِ جاری است یا یک نشست عقب‌تر.
                              "client_lag_days": None if not (cday and day) else
                                                  (str(day) > str(cday)),
-                             "depth": have_depth},
-                    "rows": out, "depth": have_depth,
+                             "depth": have_depth,
+                             # «ارزش بازار» یا ستونش در این بانک نیست، یا هست و
+                             # خالی. مصرف‌کننده (mstat_panels.treemap) با همین
+                             # تفکیک می‌گوید «منبع نیست» به‌جای «صفر».
+                             "market_cap": have_mcap},
+                    "rows": out, "depth": have_depth, "market_cap": have_mcap,
                     "base_est": _base_volume_estimate(conn, day)}
-    return _CTX["data"]
+    if key is not None:
+        _snap_put(key, data)
+    return data
 
 
 def _base_volume_estimate(conn, day) -> dict:
@@ -839,6 +938,14 @@ def money(row, base_est) -> dict:
     m["n_sell_i"] = int(_f(cget("sell_count_i")))
     m["n_buy_n"] = int(_f(cget("buy_count_n")))
     m["n_sell_n"] = int(_f(cget("sell_count_n")))
+    # حجمِ خامِ هر گروه (سهم)، نه ارزشِ بازسازی‌شده. «تغییرِ مالکیت» یک عددِ
+    # سهمی است تا با «خالصِ ورودِ پول» (ریالی) و «سرانه» (ریال بر نفر) اشتباه
+    # نشود؛ این چهار خانه تنها مصرف‌کننده‌شان `mstat_panels` است و هیچ فرمولِ
+    # دومی نمی‌سازند — فقط همان ستون‌هایِ `client_type` را نام‌دار می‌کنند.
+    m["iv_buy"] = _f(cget("buy_i_vol"))
+    m["iv_sell"] = _f(cget("sell_i_vol"))
+    m["nv_buy"] = _f(cget("buy_n_vol"))
+    m["nv_sell"] = _f(cget("sell_n_vol"))
 
     # سرانه = ارزش ÷ تعدادِ همان گروه؛ None یعنی «مخرج صفر بود» نه «صفر»
     m["pc_buy"] = _div(m["retail_buy"], m["n_buy_i"])
@@ -875,14 +982,31 @@ def queue_state(row, m) -> str:
 
 # ============================================================ تجمیع مشترک
 def enrich(conn, force: bool = False) -> tuple:
-    """(ردیف‌ها با شاخص‌های پولی, متادیتا) — یک بار به‌ازای هر اسنپ‌شات."""
+    """(ردیف‌ها با شاخص‌های پولی, متادیتا) — یک بار به‌ازای هر اسنپ‌شات.
+
+    PERF-S3: «یک‌بار به‌ازای هر اسنپ‌شات» تا پیش از این فقطِ وصفِ docstring بود:
+    هرِ پنلِ همینِ اسنپ‌شات را دوباره می‌پیماید و `_m` را از نو می‌سازد (سنجشِ
+    `_audit/perf/MSTAT_PROFILE.json`: enrich = 93ms × 16 پنل درِ یکِ `/board`).
+    حالا نتیجه رویِ همانِ اسنپ‌شات می‌نشیند و باِ آن باطل می‌شود — کلیدِ
+    اسنپ‌شات خودش «حالتِ بانک» است، پس نسخه‌کردنِ عددِ جدید ممکن نیست.
+    """
     snap = load_snapshot(conn, force=force)
-    rows, base_est = snap["rows"], snap["base_est"]
-    top50 = top50_codes(rows)
-    for r in rows:
-        r["_m"] = money(r, base_est)
-        r["_top50"] = r["ins_code"] in top50
-    return rows, dict(snap["asof"], top50=len(top50), n=len(rows))
+    if not force:
+        hit = snap.get("enriched")
+        if hit is not None:
+            return hit
+    with _SNAP_LOCK:
+        hit = snap.get("enriched")
+        if hit is not None and not force:
+            return hit
+        rows, base_est = snap["rows"], snap["base_est"]
+        top50 = top50_codes(rows)
+        for r in rows:
+            r["_m"] = money(r, base_est)
+            r["_top50"] = r["ins_code"] in top50
+        out = (rows, dict(snap["asof"], top50=len(top50), n=len(rows)))
+        snap["enriched"] = out
+        return out
 
 
 def _agg(rows) -> dict:
@@ -2464,10 +2588,21 @@ def phases(conn) -> dict:
     نبود (مثلاً تازه باز شده) شمرده نمی‌شود — «از هیچ به صف خرید» چرخش نیست.
     """
     pts = _points(conn)
+    # وضعیت‌های هر نقطه یک‌بار باز می‌شوند، نه دو بار: نقطۀ i در دورِ «پیشین»
+    # همین حالا باز شده و دوباره base64+zlib+json روی همان blob فقطِ اتلافِ CPU
+    # است (سنجش: phases 566ms روی لپ‌تاپ — نصفش همین تکرار بود). خروجی بی‌تغییر.
+    decoded: list = [None] * len(pts)
+
+    def _st(i: int) -> dict:
+        got = decoded[i]
+        if got is None:
+            got = decoded[i] = _dec_states(pts[i].get("st"))
+        return got
+
     counts = {(a, b): 0 for a, b, _l, _c in _TRANS}
     for i in range(1, len(pts)):
-        prev = _dec_states(pts[i - 1].get("st"))
-        cur = _dec_states(pts[i].get("st"))
+        prev = _st(i - 1)
+        cur = _st(i)
         if not prev or not cur:
             continue
         for ic, now in cur.items():

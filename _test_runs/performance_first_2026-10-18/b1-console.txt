@@ -1,0 +1,8 @@
+run_all_tests 1 1715.1
+version_anchor_guard 0 0.1
+npm-ci 0 206.3
+tsc 0 104.5
+vitest 0 392.9
+build 0 25.7
+fixture 4539b6cfea91 230b8193a81a True
+exit=0

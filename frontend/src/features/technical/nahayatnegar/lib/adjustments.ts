@@ -25,14 +25,36 @@ export interface CorporateAction {
  * «تعدیل عملکردیِ واقعی» (ره‌آورد/نهایات‌نگر) سودِ نقدی را **سرمایه‌گذاریِ دوباره**
  * می‌کند (history را تا ده برابر پایین‌تر می‌کشند — docs/CHART-PARITY-REFERENCE.md §۸)
  * و به DPSِ تفکیکیِ هر رویداد، آورده/حق‌تقدم، افزایشِ سرمایه و تاریخِ معافیت نیاز دارد.
- * هیچ‌یک از این‌ها درِ فیدِ TSETMC و درِ هیچ جدولِ این بانک نیست؛ پس این حالت اینجا
- * ساخته نمی‌شود و در `capability.functionalAvailable` صریح `false` می‌ماند.
- * هیچ عددِ حدسی به‌جایِ آن نمی‌نشیند.
+ * سرور از این دور همان الزامات را از داده می‌خواند (`_functional_state` درِ
+ * api/chart.py) و `functionalAvailable` را **محاسبه** می‌کند؛ هر مانع هم با عددِ
+ * همان نماد درِ `functionalBlockers` می‌آید. مرورگر دیگر خودش تصمیم نمی‌گیرد که
+ * تعدیلِ عملکردی هست یا نه، و هیچ عددِ حدسی جای ضریبِ سرور نمی‌نشیند.
  */
 export type AdjustmentMode = 'none' | 'combined' | 'performance';
 
 /** پایهٔ نمایِ بازدهی — همان چیزی که رویِ محورِ عمودی خوانده می‌شود */
 export const PERFORMANCE_BASE = 100;
+
+/**
+ * موتورِ دوم (FFC) کرکرۀ «نوع تعدیل قیمت» را ندارد — آن کرکره درِ نوارِ ابزارِ
+ * KLineCharts است. سریِ این موتور همیشه همین مبنای واحد است، و برچسبِ رویِ صحنه
+ * از همین دو ثابت ساخته می‌شود: اعلامِ UI و داده‌ای که رسم می‌شود یک منبع دارند،
+ * پس «موتورِ دوم خام نشان می‌دهد در حالی که عملکردی می‌گوید» ممکن نیست.
+ */
+export const FFC_ADJUSTMENT_MODE: AdjustmentMode = 'combined';
+export const FFC_ADJUSTMENT_BASIS_LABEL = 'عملکردی (خام × ضریبِ سرور) — این موتور کرکرۀ تعدیل ندارد';
+
+/**
+ * ضریبِ هر کندل آن‌طور که سرور محاسبه کرده است (`factors=[{time,factor}]`).
+ * از این دور این آرایه **تنها** ورودیِ مقیاسِ قیمت درِ مرورگر است: حلقۀِ محلیِ
+ * «دوباره ضرب‌کردنِ رویدادها» حذف شد، چون سنجشِ قدمِ ۵ نشان داد دو مسیر یکی نیستند —
+ * مرورگر نسبتِ بیرونِ بازۀِ باورپذیر را دور می‌انداخت (فیلترِ ۰٫۰۲ تا ۵۰ درِ
+ * `mapBackendAdjustEvents`) در حالی که حلقۀِ CDN همان را می‌ضرب کرد.
+ */
+export interface AdjustFactor {
+  time: string;
+  factor: number;
+}
 
 /** آنچه سرور دربارهٔ تواناییِ تعدیل اعلام می‌کند (api/chart.py::_adjust_capability) */
 export interface AdjustmentCapability {
@@ -41,10 +63,16 @@ export interface AdjustmentCapability {
   source: string;
   /** مجموعهٔ رویدادِ کاننیکال در دسترس است ⇒ `combined` معنایِ واقعی دارد */
   combinedAvailable: boolean;
-  /** تعدیلِ عملکردیِ واقعی (DPSِ سرمایه‌گذاری‌شده) — با دادهٔ این برنامه هیچ‌گاه true نیست */
+  /** تعدیلِ عملکردیِ واقعی (DPSِ سرمایه‌گذاری‌شده) — محاسبه‌شده از الزاماتِ همین نماد */
   functionalAvailable: boolean;
   /** دلیلِ human-readableِ نبودِ تعدیلِ عملکردی (متنِ سرور، بی‌بازنویسی) */
   functionalReason: string;
+  /** موانعِ شمارشیِ همین نماد، هر کدام با عددِ خودش (بی‌سکوت درِ پاسخ) */
+  functionalBlockers: string[];
+  /** `false` = رویدادِ ناقص درِ زنجیره، `null` = سرور اعلام نکرده است */
+  chainComplete: boolean | null;
+  /** پوششِ دفترِ رسمیِ همین ابزار (ردیف‌ها، بی‌همتاها، کندل‌هایِ پیشِ پوشش) */
+  coverage: Record<string, unknown> | null;
 }
 
 const UNKNOWN_CAPABILITY: AdjustmentCapability = {
@@ -52,6 +80,9 @@ const UNKNOWN_CAPABILITY: AdjustmentCapability = {
   combinedAvailable: false,
   functionalAvailable: false,
   functionalReason: 'پاسخِ سرور بلوکِ تواناییِ تعدیل ندارد؛ تعدیلِ رویداد تأیید نشده است.',
+  functionalBlockers: ['unreported:سرور بلوکِ توانایی را نفرستاد'],
+  chainComplete: null,
+  coverage: null,
 };
 
 /**
@@ -68,6 +99,11 @@ export function readAdjustmentCapability(raw: unknown): AdjustmentCapability {
     combinedAvailable: c.combined_available === true,
     functionalAvailable: c.functional_available === true,
     functionalReason: String(c.functional_reason ?? UNKNOWN_CAPABILITY.functionalReason),
+    functionalBlockers: Array.isArray(c.functional_blockers)
+      ? (c.functional_blockers as unknown[]).map(String) : [],
+    chainComplete: typeof c.chain_complete === 'boolean' ? c.chain_complete : null,
+    coverage: (c.coverage && typeof c.coverage === 'object')
+      ? (c.coverage as Record<string, unknown>) : null,
   };
 }
 
@@ -82,6 +118,20 @@ export function adjustmentGapNote(mode: AdjustmentMode, cap: AdjustmentCapabilit
   return mode === 'performance'
     ? `نمایِ بازدهی رویِ قیمتِ خام (تعدیلِ رویداد در دسترس نیست — منبع: ${cap.source}).`
     : `تعدیلِ ترکیبی در دسترس نیست (منبع: ${cap.source})؛ اعدادِ محور خام‌اند.`;
+}
+
+/**
+ * آنچه سرور دربارهٔ تعدیلِ عملکردیِ واقعی می‌گوید، به زبانِ همان نماد.
+ * «عملکردی» درِ رهاورد یعنی سرمایه‌گذاریِ دوبلۀِ سود و با «تعدیلِ ترکیبی» یکی
+ * نیست؛ تا پیش از این، رابط هیچ‌جا این تفاوت را به کاربر نمی‌گفت (متنِ سرور
+ * خوانده می‌شد ولی هیچ‌جا نمایش داده نمی‌شد). نبودِ ادعایِ فعال = نمایشِ مانع،
+ * با همان شمارۀِ اعلام‌شدۀِ سرور — نه یک «داده نیست» کلی.
+ */
+export function functionalGapNote(cap: AdjustmentCapability): string | null {
+  if (cap.functionalAvailable) return null;
+  const first = (cap.functionalBlockers ?? []).slice(0, 2).join('، ');
+  return `تعدیلِ عملکردیِ واقعی با دادهٔ همین نماد اثبات نشده‌است${first ? ` (${first})` : ''} — `
+    + 'محور، سریِ تعدیلِ ترکیبی است.';
 }
 
 /** ده‌دقیقه‌ایِ ممیز برای عددِ بازدهی؛ قیمتِ ریالی گردِ صحیح می‌ماند */
@@ -120,37 +170,44 @@ export function pricePrecisionFor(mode: AdjustmentMode): number {
 }
 
 /**
- * تنها نسخهٔ ضربِ ضریبِ تعدیل در کل مرورگر. هیچ مصرف‌کننده‌ای (چارت، تجمیعِ
- * هفتگی/ماهانه، FFC، موتورِ دوم) نباید دوباره این را بنویسد یا خروجیِ این را
- * یک‌بارِ دیگر ضرب کند — «تعدیلِ دوباره» تاریخِ گذشته را دو‌بار مقیاس می‌کند.
+ * تنها نقطۀ ضربِ ضریبِ تعدیل درِ کلِ مرورگر. هیچ مصرف‌کننده‌ای (چارت، تجمیعِ
+ * هفتگی/ماهانه، FFC، موتورِ دوم، سریِ مقایسه) نباید دوباره این را بنویسد یا
+ * خروجیِ این را یک‌بارِ دیگر ضرب کند — «تعدیلِ دوباره» تاریخِ گذشته را دو‌بار
+ * مقیاس می‌کند.
  *
- * اعمال ضرایب تعدیل بر روی سری زمانی کندل‌ها (KLineData v10)
+ * ضریب‌ها از سرور می‌آیند (`api/chart.py::_canonical_adjustment` ⇒ `AE.chain_factors`).
+ * پیش از این دور همین فایل از `adjustEvents` یک زنجیرۀِ *دوم* می‌ساخت و با سریِ سرور
+ * واگرا می‌شد: فیلترِ نسبتِ بیرونِ (۰٫۰۲،۵۰) درِ `mapBackendAdjustEvents` رویدادها را کم
+ * می‌کرد، در حالی که حلقۀِ سرور همان‌ها را نگه می‌داشت — دو مقیاسِ متفاوت برایِ یک
+ * نماد درِ یک صفحه. حالا یک محاسبه هست و مرورگر فقط همان را اعمال می‌کند.
+ *
+ * اعمالِ ضریب: قیمت‌ها ×k و حجم ÷k تا ارزشِ معامله ثابت بماند. کندلی که سرور برایش
+ * ضریبی نفرستاده (سریِ محلیِ بی‌factors، کندلِ تزریق‌شدۀِ محلی) ضریبِ ۱ می‌گیرد —
+ * «بی‌اثر»، نه حذفِ کندل و نه عددِ ساخته‌شده.
  */
 export function applyAdjustmentToCandles(
   rawCandles: KLineData[],
-  actions: CorporateAction[],
+  factors: AdjustFactor[],
   mode: AdjustmentMode
 ): KLineData[] {
-  if (mode === 'none' || !actions || actions.length === 0 || !rawCandles || rawCandles.length === 0) {
+  if (mode === 'none' || !rawCandles || rawCandles.length === 0) {
     return mode === 'performance' ? toIndexedSeries(rawCandles.map(c => ({ ...c })))
                                   : rawCandles.map(c => ({ ...c }));
   }
 
-  // مرتب‌سازی زمانی رویدادها از قدیم به جدید
-  const sortedActions = [...actions].sort((a, b) => a.timestamp - b.timestamp);
+  const byDate = new Map<string, number>();
+  for (const f of factors ?? []) {
+    const d = String(f?.time ?? '').slice(0, 10);
+    const v = Number(f?.factor ?? NaN);
+    if (d && Number.isFinite(v) && v > 0) byDate.set(d, v);
+  }
 
   const scaled = rawCandles.map(candle => {
-    let cumulativeFactor = 1.0;
-
-    // کندل‌های ماقبل هر مجمع، در ضریب آن مجمع ضرب می‌شوند
-    for (const act of sortedActions) {
-      if (candle.timestamp < act.timestamp) {
-        cumulativeFactor *= getAdjustmentFactor(act);
-      }
-    }
-
-    // قیمت‌ها ضرب و حجم معاملات بر ضریب تقسیم می‌شود تا ارزش معامله ثابت بماند
-    const factor = cumulativeFactor;
+    // سرور ضریب را با کلیدِ تاریخِ ISO می‌فرستد و کندل‌ها از همان تاریخِ UTC-نیمه‌شب
+    // ساخته شده‌اند (`Date.parse(time + 'T00:00:00Z')` / `Date.UTC(...)` درِ
+    // `parseCandleTimestamp`)، پس این بازگشتِ روز بی‌جابه‌جایی است.
+    const key = new Date(candle.timestamp).toISOString().slice(0, 10);
+    const factor = byDate.get(key) ?? 1.0;
     return {
       timestamp: candle.timestamp,
       open: Math.round(candle.open * factor),

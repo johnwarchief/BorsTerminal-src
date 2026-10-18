@@ -1,0 +1,14 @@
+  market                       200  first=   3545ms p50=    124 p95=   3545 max=   3545  raw=6,997,312 gz= 868,605  etag304=304/0B@24ms
+  mstat board                  200  first=   1843ms p50=   1339 p95=   1843 max=   1843  raw=  241,968 gz=  50,374
+  mstat summary                200  first=     83ms p50=     15 p95=     83 max=     83  raw=    3,727 gz=   1,353
+  mstat mainwatch              200  first=    306ms p50=    104 p95=    306 max=    306  raw=   77,596 gz=  13,600
+  mstat treemap                200  first=     74ms p50=     65 p95=     74 max=     74  raw=   93,921 gz=  16,713
+  mstat industries             200  first=     38ms p50=     17 p95=     38 max=     38  raw=   13,937 gz=   3,039
+  mstat phases                 200  first=    449ms p50=     18 p95=    449 max=    449  raw=      474 gz=     474
+  mstat smart-money            200  first=    537ms p50=     14 p95=    537 max=    537  raw=    3,573 gz=   1,525
+  chart cached                 200  first=    225ms p50=     57 p95=    225 max=    225  raw=      295 gz=     295
+  funnel registry              200  first=     14ms p50=      9 p95=     14 max=     14  raw=   13,418 gz=   3,814
+  index tedpix                 502  first=  63320ms p50=  63150 p95=  63320 max=  63320  raw=      482 gz=     482
+
+[IDLE_C] window=140s  backend_cpu=6.5s  total_p50_sum=64912ms  median=57ms
+wrote _audit/perf/CONTEND.json#IDLE_C

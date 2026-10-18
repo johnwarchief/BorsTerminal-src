@@ -101,9 +101,21 @@ for sym, ds in by_sym.items():
         gapped.append((sym, len(gaps), gaps[0]))
 dp_last = con.execute("SELECT MAX(d_even) FROM daily_prices").fetchone()[0]
 ph_last = max_date.replace("-", "")
-ck(str(dp_last) == str(ph_last) or str(dp_last) >= str(ph_last),
+# ادعایِ عنوان: کندل‌ها بهِ آخرینِ نشستِ تابلو **رسیده‌اند** ⇒ مقابله باید «آیا روزِ
+# dp_last درِ price_history هست» باشد، نه `dp_last >= ph_last`. جهتِ قبلی دقیقاً
+# مخالفِ عنوان بود: وقتی backfillِ رسمی (`src='published'`) یکِ نشست جلوتر از
+# snapshotِ تابلو می‌افتد (سنجشِ ۱۴۰۵-۰۷-۲۲: board=۲۰۲۶۱۰۱۲، candles=۲۰۲۶۱۰۱۳ با ۱۹
+# ردیفِ published)، تازگیِ کندل رعایت شده ولی سوئیت سرخ می‌شد — پیش‌fallشِ
+# جهتِ اشتباه، نه نقصِ داده. تلورانس باز نشده؛ مؤفقِ همان ادعا شده است.
+dp_in_ph = con.execute("SELECT COUNT(*) FROM price_history WHERE date=?",
+                       ("%s-%s-%s" % (str(dp_last)[:4], str(dp_last)[4:6], str(dp_last)[6:]),)).fetchone()[0]
+ck(bool(dp_in_ph),
    "آخرین کندل به آخرین نشستِ تابلو رسیده (جبرانِ کندل از تابلو کار می‌کند)",
-   "board=%s candles=%s" % (dp_last, ph_last))
+   "board=%s درِ کندل=%s ردیف | candles_last=%s" % (dp_last, dp_in_ph, ph_last))
+if str(ph_last) > str(dp_last):
+    notes.append("کندل یکِ نشست از تابلو جلوتر است (board=%s < candles=%s) — "
+                 "منبعِ published نه snapshotِ تابلو؛ تازگیِ کندل نقض نشده"
+                 % (dp_last, ph_last))
 print("  نشست‌هایِ distinct در کندل:", dlen, "| نمادها:", len(by_sym),
       "| نمادهای با پرش:", len(gapped), gapped[:2])
 notes.append("پرشِ میانِ نشست‌ها طبیعی است (تعطیلات/بی‌معامله); سنجش: %d نماد با پرش" % len(gapped))

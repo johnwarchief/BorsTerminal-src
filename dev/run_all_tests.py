@@ -29,6 +29,10 @@ SUITES = [
     # شمارِ سطل را در ۲۹ از ۴۰ نماد جدا می‌دید. گارد با منفی‌کنترلِ ISO.
     ('dev/ce_weekly_bucket_v1073.py', 'confidence_engine weekly bucket == chart Saturday bucket'),
     ('dev/mstat_local_v975.py',       'mstat dashboard computed from local market.db'),
+    # PERF-S3: اسنپ‌شات حالا میانِ اتصال‌ها مشترک است ⇒ باید ثابت بماند که هیچ
+    # پنلی رویِ ردیف‌هایش نمی‌نویسد، نوشتنِ تازه کش را باطل می‌کند، و دوِ فایلِ
+    # بانکِ مختلف هرگز یکی نشمرده می‌شوند.
+    ('dev/mstat_snapshot_cache_v1.py', 'shared mstat snapshot cache: read-only rows, real invalidation, per-file isolation'),
     # رأیِ مالک (۱۴۰۵-۰۷-۲۲): «نمادهای زیرِ نظر» هم پرچم‌هایِ تابلو را می‌بیند —
     # انتقال از فید، بی‌محاسبۀِ دوم، و «بی‌منبع» هرگز «پرچمی ندارد» نمی‌شود.
     ('dev/test_mainwatch_flags_v1.py', 'mainwatch rows carry the tape flags, never a fabricated one'),
@@ -89,6 +93,36 @@ SUITES = [
      'weekly gate + weekly hourglass stay frozen (measured on real bank rows)'),
     ('dev/test_adjustment_phasea.py',
      'canonical adjustment: mode semantics split, single scaled series, honest fallback'),
+    # مرحلۀِ ۲ (Phase 2): ریشۀِ تعدیل/منبعِ قیمت — ادغامِ بلوکِ VOL=0، ثباتِ لنگرِ تعدیل
+    # نسبت به مبنایِ نمایش، هم‌سنجیِ MA با زنجیرۀِ تعدیلِ چارت، و مرزهایِ هندسۀِ کندل.
+    ('dev/test_fts_zero_volume_collapse_v1.py',
+     'RC3: several VOL=0 halt rows collapse to ONE event; telescoped factor (series) unchanged; independent events never merge'),
+    ('dev/test_fts_basis_anchor_v1.py',
+     'RC1: switching display basis (last<->closing) never moves the CLOSING adjustment anchor and never fabricates a missing last'),
+    ('dev/test_fts_ma_source_v1.py',
+     'api/ma: SMA == independent rolling mean, None before window-1, and the canonical adjustment factor actually shifts the MA'),
+    ('dev/test_candle_boundary_v1.py',
+     'RC2: zero-volume day never becomes a candle; FIRST/LAST/CLOSE never silently substituted; widen grows shadow, never crushes price'),
+    # مرحلۀِ ۳ (§B): هویتِ رویداد از محاسبۀِ ضریب جدا شود — ضریبِ دقیق از ردیفِ مبدأ می‌نشیند
+    # ولی تاریخِ دیدہ‌شدہ جابه‌جا نمی‌شود؛ ردیفِ مبدأِ ناهمخوان جای عددِ درست را نمی‌گیرد؛
+    # مطالبۀِ یکِ ردیفِ مبدأ با دو رویداد → هیچ‌کدام تیز/حذف نمی‌شود؛ بی‌دفتر → نه صفر نه حدس.
+    ('dev/test_fts_event_identity_v1.py',
+     '§B/RC3: event identity (date, kept) is separated from coefficient (exact from source row); disagreeing source never overwrites; shared ledger row -> ambiguous not dropped; no ledger -> unchanged'),
+    # مرحلۀِ ۳ (§C): RC4 — تشخیصِ تکرارپذیرِ شکافِ price_history و ترمیمِ idempotentِ
+    # «فقطِ روزهایِ مفقود» رویِ بانکِ موقت؛ بی‌حذف، بی‌duplicate، بی‌جعلِ open/last،
+    # dry_run بی‌اثر، اولویتِ src حفظِ ردیفِ منتشرشده. نوشتنِ عملیاتی قفل است.
+    ('dev/test_history_gap_repair_v1.py',
+     'RC4: gap-fill writes only missing dates, idempotent (2nd run = 0), dry_run writes nothing, never fabricates open/last, published row never downgraded by board'),
+    # Phase 4 (مرحلۀِ ۵/۷): موتورِ canonicalِ نوع‌محورِ تعدیل — فرمولِ هر نوع با مثالِ دستی،
+    # مرز/نامعتبر/مفقود → incomplete/invalid (بی‌حدس، بی‌خنثیِ خاموش)، زنجیرۀِ deterministic با
+    # لنگرِ تاریخِ بیشینه، idempotent، بی‌اعمالِ دوباره، و نمونۀِ واقعیِ مستند (وبصادر/طلا) درِ برابرِ type7.
+    ('dev/test_adjustment_engine_v1.py',
+     'Phase4 engine: per-type factor formulas (hand-checkable), missing/invalid -> incomplete (never fabricated/never silent ratio=1), deterministic anchored chain, idempotent, real type7 cross-check'),
+    # Phase 5 (مرحلۀِ ۳): ledgerِ canonicalِ رویداد — نسبتِ رسمی از خودِ ردیف (بی‌proxy)، همانِ
+    # روز ادغام با تقدمِ priceAdjust (بی‌اعمالِ دوباره)، مفقود→incomplete، خارجازکران→invalid،
+    # idempotent، ابزارِ نادرست→تهی، نوع فقط وقتی CODAL یکتا (مختلط→unresolved)، مؤثر≠انتشار.
+    ('dev/test_corporate_ledger_v1.py',
+     'Phase5 ledger: official source-ratio (no proxy), same-day dedup w/ priceAdjust precedence, incomplete/invalid never fabricated, idempotent, wrong-instrument empty, CODAL type only when unique, effective!=publish'),
     ('dev/fts_chart_engine_v1037.py', 'chart fib belts and setup markers come from the one server engine, over the current wave'),
     ('dev/repo_hygiene_v97.py',       'repo hygiene / dead-code stays gone'),
     ('dev/test_fts_v10_ladder.py',    'FTS v10 EPS evidence ladder + partial table row'),
@@ -98,6 +132,28 @@ SUITES = [
      'Round J: jet is last-candle-only, point-hunt trigger ≠ anchor, exit tri-state, roles + status priority'),
     ('dev/test_fts_asof_cutoff.py',
      'FTS analysis as_of is a real input cutoff; the cache key carries as_of + ruleset so cutoffs never leak'),
+    # مرحلۀ ۲ دورِ تطبیقِ دوم: موتورِ سوم حالا رابطِ APIِ جدایِ بی‌رأی دارد
+    # (`/api/structure3`)، پس قراردادش باید آزمودنی باشد نه فقط harness:
+    # چهار حالتِ صریحِ ورودی، آستانه‌هایی که فقط از خودِ موتور خوانده می‌شوند،
+    # پیشوند-پایداری/بی‌دادهٔ آینده، تفکیکِ ATR از کف، و اینکه هیچ چیزی درِ
+    # کشِ رأیِ رسمی FTS نوشته نمی‌شود.
+    ('dev/test_structure3_engine.py',
+     'engine 3 contract: explicit input states, thresholds only from the engine itself, '
+     'prefix-stability (no future data), ATR-vs-floor split, and zero writes to the FTS vote'),
+    # مرحلۀ ۳ دورِ تطبیقِ دوم: جدولِ «قاعده → الگوریتم → ترسیم» اگر اسمِ بی‌کد
+    # ببرد، رجیستریِ توهمی می‌شود (مرحلۀ ۹ همان را ممنوع می‌کند). این گارد
+    # ارجاع‌های سند را با خودِ کد می‌سنجد: وجودِ نام، سطرِ `NAME:LINE`،
+    # پربودنِ ستونِ «کد» به‌جز ردیف‌های صریحاً AMBIGUOUS، و درستِ موتورِ
+    # نسبت‌داده‌شده (`engine1`/`CE`/`tape`). چهار سندِ دست‌کاری‌شده هم به‌عنوان
+    # کنترلِ منفی روی‌اش اجرا می‌شود — سبزی که خطا را نمی‌بیند دلیلِ درستی نیست.
+    ('dev/test_rule_map_citations.py',
+     'FTS rule->algorithm map cites real code: names exist, NAME:LINE is current, every row has code or is AMBIGUOUS, engine label matches the defining file'),
+    # مرحلۀ ۳: سه مسیرِ زندۀ موتورِ اول که هیچ آزمونِ مستقیمی نداشتند (پولبک،
+    # سطوحِ کلیدی + order-block، نقاطِ ساختاری) و قاعدۀ اکیدِ پیوت — کندلِ
+    # تک‌قیمتیِ TSETMC (فولاد: ۳۰٪ سطرها H==L) نباید «سقفِ تأییدشده» بسازد،
+    # بدونِ آنکه هیچ حکمی جابه‌جا شود (سنجیده شد: ۹ نماد، داوری بایت‌به‌بایت یکسان).
+    ('dev/test_fts_untested_paths_v1.py',
+     'pullback / key-levels / structure-points behavior + the strict pivot rule (flat TSETMC rows draw no ceiling)'),
     ('dev/test_trend_engine_flag.py',
      'trend engine flag: legacy is byte-identical, hybrid is a drop-in, jet unchanged, cache isolated by engine, weekly gate rule preserved'),
     ('_audit/candle_integrity_roundj.py',
@@ -411,6 +467,10 @@ SUITES = [
     # بند ۷.۱ مأموریت: اسکرینر بقایایِ قیف را می‌خواند و هیچ دروازۀ دورزدن ندارد.
     ('dev/test_screener_funnel_gate_v1.py',
                                       'screener candidate = tape∧technicalfundamental pass; no bypass door'),
+    # قفلِ ساختِ قیف بیرونِ انتظارِ رشتهٔ گرمِ اسکرینر: درِ استارت‌آپ همان رشته
+    # `_run` همان کلید را صدا می‌زند (اسموکِ B2 ۱۸۰ ثانیه ایستاد).
+    ('dev/test_funnel_warm_deadlock_v1.py',
+                                      'funnel build lock never held while waiting for the screener warm-up'),
     # بند ۶ مأموریت: مرکزِ اعلان از کدال، با ادغامِ تکراری و بی‌تيترِ ساختگی.
     ('dev/test_notifications_v1.py',
                                       'notification centre: codal-only source, explainable levels, dedupe'),
@@ -582,6 +642,21 @@ SUITES = [
     # برمی‌گردد.
     ('dev/boot_page_v1081.py',
                                      'boot page: real download/extract progress, RTL page, handoff + error'),
+    # مرحلۀ ۷ (مأموریتِ مهندسیِ اندیکاتورهای FTS): «موتورِ سوم» باید تفاوتِ
+    # الگوریتمیِ محاسبه‌پذیر داشته باشد، نه بازمصرفِ فراکتال با نامِ تازه. این
+    # harness همان سری را به هر دو موتور می‌دهد و روی دادهٔ محلی هم می‌سنجد.
+    ('dev/structure_engine3_compare_v1.py',
+                                     'engine3 vs engine1: provably different pivot sets, both anti-repaint'),
+    # مرحلۀ ۱۰: هر لایه دو زمان دارد (وقوع و تأیید) و هیچ انوتیشنی از آینده نگاه
+    # نمی‌کند — prefix-stability در هر دو موتور + payload کاملِ /api/fts + کندلِ
+    # در حال تشکیل + هر دو مبنایِ رأیِ روند.
+    ('dev/fts_antirepaint_v1086.py',
+                                     'anti-repaint: two-time pivots, prefix-stability, no future-look in payload'),
+    # دورِ ادغامِ System 2 (رأیِ مالک ۱۴۰۵-۰۷-۲۸): جهتِ موجِ System 1 نگه داشته
+    # شد و پرچمِ `provisional` از System 2 افزوده شد. این harness ثابت می‌کند
+    # پرچم هیچ کمربند و هیچ رأیی را جابه‌جا نمی‌کند (و دو فرمول هم یکی بودند).
+    ('dev/fts_wave_direction_v1125.py',
+                                     'wave direction: extremes rule kept, provisional flag moves no fib zone'),
 ]
 
 # تست‌هایِ Node (رابطِ جدول بنیادی با DOMِ ساختگی) — اگر node نصب نباشد رد میشوند

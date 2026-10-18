@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import {
   IconCrosshair, IconDot, IconArrowCursor, IconEraser,
   IconTrendLine, IconRay, IconInfoLine, IconHorizontalLine, IconVerticalLine, IconParallelChannel,
-  IconFibRetracement, IconPitchfork,
+  IconFibRetracement,
   IconBrush, IconRectangle,
   IconText, IconPriceLabel,
   IconPatterns,
@@ -85,13 +85,13 @@ export const DrawingToolbar: React.FC<DrawingToolbarProps> = ({
     },
     {
       slotId: 'fib',
-      name: 'فیبوناچی و چنگال',
+      name: 'فیبوناچی و کانال',
       defaultTool: { id: 'fibRetracement', name: 'بازگشتی فیبوناچی', overlayType: 'fibonacciLine', icon: <IconFibRetracement /> },
       items: [
         { id: 'fibRetracement', name: 'بازگشتی فیبوناچی', overlayType: 'fibonacciLine', icon: <IconFibRetracement /> },
         { id: 'fibExtension', name: 'اکستنشن فیبوناچی', overlayType: 'fibonacciExtension', icon: <IconFibRetracement /> },
         { id: 'fibFan', name: 'بادبزن فیبوناچی', overlayType: 'fibonacciSpeedResistanceFan', icon: <IconFibRetracement /> },
-        { id: 'pitchfork', name: 'کانال موازی (پیشرفته)', overlayType: 'parallelChannel', icon: <IconPitchfork /> },
+        { id: 'pitchfork', name: 'کانال موازی (پیشرفته)', overlayType: 'parallelChannel', icon: <IconParallelChannel /> },
       ]
     },
     {

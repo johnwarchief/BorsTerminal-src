@@ -1681,8 +1681,31 @@ def market_state_touch():
         pass
 
 
-P0_STATE_DDL = ("CREATE TABLE IF NOT EXISTS tsetmc_p0_state ("
-                " name TEXT PRIMARY KEY, last_run TEXT)")
+# DDL درِ tsetmc_p0_schema است (تک‌منبع)؛ این نام فقط برایِ سازگاریِ فراخوانی‌هایِ موجود.
+P0_STATE_DDL = _P0.P0_STATE
+
+
+def p0_state_migrate(conn) -> None:
+    _P0.migrate_p0_state(conn)
+    conn.execute(P0_STATE_DDL)
+
+
+def p0_status_of(stats) -> str:
+    """`ok` / `partial` / `failed` از خودِ شمارش‌ها — نه ازِ نبودِ exception.
+
+    `fetch_corporate_events` چهار flow می‌زند و `failed` را یکی‌یکی می‌شمارد؛ «۴ از ۴
+    شکست» با «۰ شکست» یکی نیست، و پیش ازِ این دور هر دو یک‌سان `last_run` می‌گرفتند،
+    پس یکِ روزِ کاملِ بی‌داده، بی‌تلاشِ دوباره می‌ماند (ادعایِ موفقیت با سکوت).
+    """
+    if not isinstance(stats, dict):
+        return "ok"
+    failed = int(stats.get("failed") or 0)
+    written = int(stats.get("adjust") or 0) + int(stats.get("share") or 0) \
+        + int(stats.get("state") or 0) + int(stats.get("messages") or 0) \
+        + int(stats.get("written") or 0)
+    if failed and not written:
+        return "failed"
+    return "partial" if failed else "ok"
 
 
 def p0_due(conn, name, every_s, now=None):
@@ -1691,11 +1714,13 @@ def p0_due(conn, name, every_s, now=None):
     بانکِ بی‌ردیف = «هرگز اجرا نشده» = وقتش رسیده. بی‌this، اولین اجرای بعد از
     ارتقا هیچ‌وقت رخ نمی‌داد.
     """
-    conn.execute(P0_STATE_DDL)
-    row = conn.execute("SELECT last_run FROM tsetmc_p0_state WHERE name=?",
-                       (name,)).fetchone()
+    p0_state_migrate(conn)
+    row = conn.execute("SELECT last_run, COALESCE(last_status,'') FROM tsetmc_p0_state"
+                       " WHERE name=?", (name,)).fetchone()
     if not row or not row[0]:
         return True
+    if str(row[1] or "") == "failed":
+        return True          # شکستِ کامل = فردا را منتظر نمی‌مانیم؛ درِ same-day retry
     try:
         age = (datetime.datetime.now()
                - datetime.datetime.strptime(row[0], "%Y-%m-%d %H:%M:%S")).total_seconds()
@@ -1704,17 +1729,28 @@ def p0_due(conn, name, every_s, now=None):
     return age >= every_s
 
 
-def p0_mark(conn, name, now=None):
-    conn.execute(P0_STATE_DDL)
-    conn.execute("INSERT OR REPLACE INTO tsetmc_p0_state(name, last_run) VALUES (?,?)",
-                 (name, now or datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+def p0_mark(conn, name, now=None, stats=None):
+    """ثبتِ «چه شد» نه فقط «چه زمانی دویدیم» — زمانِ آخرینِ اجرایِ **موفق** دیدنی بماند."""
+    p0_state_migrate(conn)
+    stamp = now or datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    status = p0_status_of(stats)
+    prev = conn.execute("SELECT COALESCE(last_success,'') FROM tsetmc_p0_state WHERE name=?",
+                        (name,)).fetchone()
+    last_success = stamp if status != "failed" else (prev[0] if prev else "")
+    result = ""
+    if isinstance(stats, dict):
+        result = " ".join(f"{k}={stats[k]}" for k in sorted(stats)
+                          if isinstance(stats[k], (int, float)))
+    conn.execute("INSERT OR REPLACE INTO tsetmc_p0_state(name, last_run, last_status,"
+                 " last_result, last_success) VALUES (?,?,?,?,?)",
+                 (name, stamp, status, result, last_success))
 
 
 def p0_summarize(name, stats):
     """خلاصۀ یک‌سطری برایِ لاگ — هیچ عددی را از خود نمی‌سازد، فقط echo."""
     if not isinstance(stats, dict):
         return ""
-    keys = {"corporate-events": ("adjust", "share", "failed"),
+    keys = {"corporate-events": ("adjust", "share", "failed", "amended", "late_rows"),
             "state-notices": ("state", "messages", "supervision", "stops", "failed"),
             "client-values": ("written", "total", "errors", "skipped")}.get(name, ())
     return " ".join(f"{k}={stats[k]}" for k in keys if k in stats)
@@ -1779,6 +1815,58 @@ def ensure_corporate_schema(conn):
     conn.execute(P0.SHARE_CHANGE_EVENTS)
 
 
+def _existing_by_key(conn, table, rows, chunk=400):
+    """{ (ins_code, d_even): ردیفِ بانکیِ فعلی } فقط برایِ کلیدهایِ درخواستی.
+
+    چرا «فقط درخواستی»: جدول‌ها هزاران ردیف دارند و این تابع درِ حلقۀِ ۹۰ ثانیه‌ای
+    صدا زده می‌شود؛ خواندنِ کلِ جدول هر بار، تابلو را کند می‌کرد.
+    """
+    keys = [(str(r[0]), r[1]) for r in rows]
+    if not keys:
+        return {}
+    ins = sorted({k[0] for k in keys})
+    found = {}
+    for i in range(0, len(ins), chunk):
+        part = ins[i:i + chunk]
+        ph = ",".join("?" * len(part))
+        for row in conn.execute(f"SELECT * FROM {table} WHERE ins_code IN ({ph})", part):
+            found[(str(row[0]), row[1])] = row
+    return found
+
+
+def _count_amendments(conn, table, ratio_idx, rows):
+    """چند ردیفِ **شناخته‌شده** عددِ نسبتش عوض شده است (= اصلاحیهٔ مبدأ)."""
+    try:
+        old = _existing_by_key(conn, table, rows)
+    except Exception:      # noqa: BLE001 — بانکِ قدیمی/بدونِ جدول = شمارشِ ناممکن، نه صفرِ جعلی
+        return -1
+    n = 0
+    for r in rows:
+        prev = old.get((str(r[0]), r[1]))
+        if prev is None:
+            continue
+        try:
+            a = float(prev[ratio_idx]) if prev[ratio_idx] is not None else None
+            b = float(r[ratio_idx]) if r[ratio_idx] is not None else None
+        except (TypeError, ValueError):
+            continue
+        if a is None or b is None:
+            if a != b:
+                n += 1
+        elif abs(a - b) > 1e-12:
+            n += 1
+    return n
+
+
+def _count_new_keys(conn, table, rows):
+    """چند ردیفِ جدید (کلیدش درِ بانک نبوده) آمده — «اعلانِ دیررس» از همین دیده می‌شود."""
+    try:
+        old = _existing_by_key(conn, table, rows)
+    except Exception:      # noqa: BLE001
+        return -1
+    return sum(1 for r in rows if (str(r[0]), r[1]) not in old)
+
+
 def fetch_corporate_events(s, conn, now=None, get=None):
     """هر دو خانوادۀ رویداد، بازارِ کامل، در چهار درخواست.
 
@@ -1809,6 +1897,13 @@ def fetch_corporate_events(s, conn, now=None, get=None):
     # flow نشان بدهد، بی‌dedupe شمارشِ لاگ دو‌برابرِ ردیفِ بانک می‌شد.
     adj = list({(r[0], r[1]): r for r in adj}.values())
     shr = list({(r[0], r[1]): r for r in shr}.values())
+    # «اصلاحیه» = همان (ins_code, d_even) با نسبتِ **متفاوت**. پیش ازِ این دور
+    # INSERT OR REPLACE بی‌صدا بازنویسی می‌کرد؛ داده درست می‌شد ولی هیچ‌کس نمی‌دانست
+    # دیروز چه عددی بود و امروز چه شد (و «اعلانِ دیررس» از «تغییرِ عدد» جدا نمی‌شد).
+    stats["amended"] = _count_amendments(conn, "price_adjust_events", 6, adj) \
+        + _count_amendments(conn, "share_change_events", 5, shr)
+    stats["late_rows"] = _count_new_keys(conn, "price_adjust_events", adj) \
+        + _count_new_keys(conn, "share_change_events", shr)
     if adj:
         conn.executemany("INSERT OR REPLACE INTO price_adjust_events VALUES ("
                          + ",".join("?" * 9) + ")", adj)
@@ -3139,10 +3234,18 @@ def main():
              CTV_RETRY_S)):
         try:
             if p0_due(conn, _name, _every):
-                print(f"  [{_name}] {p0_summarize(_name, _fn())}")
-                p0_mark(conn, _name, now)
+                _st = _fn()
+                print(f"  [{_name}] {p0_summarize(_name, _st)}")
+                p0_mark(conn, _name, now, _st)
         except Exception as e:      # noqa: BLE001
             print(f"  [{_name}] خطای غیرمنتظره: {type(e).__name__}: {e}")
+            # پیش ازِ این دور، استثنایِ پیش‌بینی‌نشده هیچِ `last_run` نمی‌گذاشت ولی
+            # `last_run`ِ *اجرایِ موفقِ دیروز* سرِ جایِ خودش بود → تا ۲۴ ساعتِ بعدی
+            # دوباره تلاش نمی‌شد. حالا شکست ثبت می‌شود و `p0_due` همان روز برمی‌گردد.
+            try:
+                p0_mark(conn, _name, now, {"failed": 1})
+            except Exception:      # noqa: BLE001 — ثبتِ شکست هرگز همگام‌سازی را نمی‌شکند
+                pass
     conn.commit()
 
     # کندل‌ها از خودِ تابلو — این تنها راهی است که price_history را در برنامه‌ای

@@ -1,0 +1,38 @@
+{
+ "idle": {
+  "market": 119.97680000058608,
+  "mstat board": 1451.8887499980337,
+  "mstat summary": 10.91939999605529,
+  "mstat mainwatch": 29.94350000153645,
+  "mstat treemap": 29.993500003911322,
+  "mstat industries": 15.074250000907341,
+  "mstat phases": 11.17579999845475,
+  "mstat smart-money": 12.995999997656327,
+  "chart cached": 47.50694999893312,
+  "funnel registry": 8.849849997204728
+ },
+ "in_scan": {
+  "market": 126.06550000054995,
+  "mstat board": 1439.6730000007665,
+  "mstat summary": 10.980200000631157,
+  "mstat mainwatch": 28.84970000013709,
+  "mstat treemap": 31.31609999400098,
+  "mstat industries": 13.31709999794839,
+  "mstat phases": 11.44209999620216,
+  "mstat smart-money": 11.009599998942576,
+  "chart cached": 37.57149999728426,
+  "funnel registry": 7.7741999994032085
+ },
+ "ratio": {
+  "market": 1.05,
+  "mstat board": 0.99,
+  "mstat summary": 1.01,
+  "mstat mainwatch": 0.96,
+  "mstat treemap": 1.04,
+  "mstat industries": 0.88,
+  "mstat phases": 1.02,
+  "mstat smart-money": 0.85,
+  "chart cached": 0.79,
+  "funnel registry": 0.88
+ }
+}

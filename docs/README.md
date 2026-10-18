@@ -29,9 +29,14 @@
 |---|---|---|
 | [`AGENT-INDEX.md`](AGENT-INDEX.md) | مسیر‌یابی کد، به‌صورت تولیدشده | وضعیت جاری کارها یا منبع قواعد کسب‌وکار نیست |
 | [`FTS-USER-CONFIGURATION-SPEC.md`](FTS-USER-CONFIGURATION-SPEC.md) | قرارداد پارامترهای قابل تنظیم FTS، ساعت‌شنی و معیارهای پذیرش | سند طراحی؛ اجرای کد فقط پس از پاس‌شدن تست‌های پذیرش تأیید می‌شود |
+| [`FTS-RULE-ALGORITHM-MAP.md`](FTS-RULE-ALGORITHM-MAP.md) | نگاشتِ قاعدۀ جزوه → الگوریتم → ترسیم، با سطرهای AMBIGUOUS | منبع قاعده همان PDF است؛ سطر «نیازمند رأی» آستانه ندارد و اختراع نمی‌شود |
+| [`FTS-INDICATOR-MISSION-PLAN.md`](FTS-INDICATOR-MISSION-PLAN.md) | نقشۀ مأموریتِ مهندسی لایه‌ها و تصمیم‌های معماری (ازجمله مرز موتور سوم) | snapshotِ یک دور است؛ وضعیت جاری کار را از کد و گیت‌ها بپرسید |
+| [`technical-indicators/reviewed/FTS-MISSION-CLOSURE-1405-07-20.md`](technical-indicators/reviewed/FTS-MISSION-CLOSURE-1405-07-20.md) | معیارهای بستنِ پروندۀ تکنیکال، هشت گیتِ اجرای‌شد با خروجیِ واقعی، فهرستِ صریحِ «سنجیده‌نشده» و رأی‌هایِ بازِ مالک | تاریخ‌دار است (۱۴۰۵-۰۷-۲۰/۲۱، HEADِ سنجش `3527929`، push نشده)؛ تطبیقِ دیدنی با رهاورد درِ آن **باز** ثبت شده و هیچ ادعایِ تطبیقِ کلی ندارد |
 | [`CANDLE-CONTRACT.md`](CANDLE-CONTRACT.md) | قرارداد داده و مبنای کندل | گزارش parity تاریخ‌دار، برابری کامل امروز را اثبات نمی‌کند |
 | [`RAHAVARD-PARITY-INVENTORY.md`](RAHAVARD-PARITY-INVENTORY.md) | inventory فنی و شواهد یک سنجش | یافته‌ها را بدون تاریخ/کد جاری تعمیم ندهید |
 | [`research/TECH-FIRST-STRATEGY-CHANGE-PLAN-2026-10-18.md`](research/TECH-FIRST-STRATEGY-CHANGE-PLAN-2026-10-18.md) | طرحِ تغییر و وضعیتِ اجرایِ استراتژیِ «تکنیکال ← تابلو ← بنیادی ← تحویل» (E1 تا E5) با اعدادِ سنجیده‌شده | سندِ زمان‌دار است؛ خطِ انتشار، رأیِ مالک و کدِ جاری را دوباره بررسی کنید. محدودیتِ «تاریخِ سیگنال» درِ همین سند ثبت شده |
+| [`RAHAVARD-CANDLE-ADJUSTMENT-PARITY-1405-07-20.md`](RAHAVARD-CANDLE-ADJUSTMENT-PARITY-1405-07-20.md) | سنجشِ ۲۹ نمادِ OHLCV و زنجیرۀِ تعدیل در برابرِ رهاورد ۳۶۵ (تاریخ ۱۴۰۵-۰۷-۲۰)، با قاعدۀِ بازسازی‌شدۀِ رویداد و چهار علتِ ریشه‌ای | فقط سریِ قیمت سنجیده شده؛ درستیِ اندیکاتورها، ترسیم‌ها و رأی FTS را اثبات نمی‌کند و هیچ رفعی در آن انجام نشده (مرحلۀِ ۸) |
+| [`TECHNICAL-RAHAVARD-PARITY-AUDIT.md`](TECHNICAL-RAHAVARD-PARITY-AUDIT.md) | سنجش ۲۷ نمادِ لایه‌های FTS (پیوت/ساختار/روند) با مرجع رهاورد، تاریخ ۱۴۰۵-۰۷-۱۹ | پاریتیِ داده و ثباتِ رأی را اثبات می‌کند، نه درستیِ برچسبِ روند؛ دو شکافِ منطقی و دو واگراییِ ضریبِ تعدیل در آن باز مانده‌اند |
 | [`CHART-PARITY-REFERENCE.md`](CHART-PARITY-REFERENCE.md) | رفتار و قابلیت‌های UX چارت با مرجع TradingView/Arshan | مرجع روش‌شناسی FTS یا حقیقت داده/تعدیل نیست |
 | [`validation/TRADERSARENA-MARKET-STATUS-PARITY.md`](validation/TRADERSARENA-MARKET-STATUS-PARITY.md) | سنجش وضعیت بازار در یک زمان مشخص | PASS یک فیلد/نشست به همهٔ فیلدها/نشست‌ها تعمیم نمی‌یابد |
 | [`TSETMC-DATA-GAP-MATRIX.md`](TSETMC-DATA-GAP-MATRIX.md) | نقشهٔ شکاف‌های داده در زمان ممیزی | بدون تطبیق مجدد، فهرست قطعی باگ‌های امروز نیست |

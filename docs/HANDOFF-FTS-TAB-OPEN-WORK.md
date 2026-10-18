@@ -159,10 +159,10 @@ x=۱۳۵۰/۱۰۸۰/۷۸۰/۴۸۰/۱۸۰ است. در عرض‌های کم، م�
    نمی‌رسد. (این همان کلاسِ باگی است که `td.num` داشت: چیزی که رد می‌شود، دیده
    نمی‌شود.)
 3. `weekly.basis` هیچ مصرف‌کننده‌ای ندارد (`strictGates.ts:60` اعلام، `:122` پر) ⇒
-   یا در `GatePipeline.tsx:63-68` / `FtsTrendPanel.tsx:71-95` نمایشش دهید یا حذفش
+   یا در `GatePipeline.tsx:63-68` / `FtsTrendPanel.tsx:78-102` نمایشش دهید یا حذفش
    کنید. «متنِ مرده» نگذارید.
 4. رگرسیون: شاخۀ «ساختار کهنه» در `chart.py:1166-1171` مقدار
-   `last_high/prev_high/last_low` را null می‌کند، و `FtsTrendPanel.tsx:81-91` همان‌ها
+   `last_high/prev_high/last_low` را null می‌کند، و `FtsTrendPanel.tsx:88-98` همان‌ها
    را نشان می‌دهد ⇒ «سقفِ اخیر —» رویِ همان سهم‌هایی که رفع برای آن‌هاست.
 5. موتورِ دوم از UI قابل‌وصول نیست: `engine/registry.ts:18-35` (ffc با
    `production:false`) فقط در `/engine-lab` (`routes.tsx:21`) مصرف می‌شود و آن

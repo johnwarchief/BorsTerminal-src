@@ -1,0 +1,7 @@
+$ python dev/test_screener_funnel_gate_v1.py   (api/funnel.py sha bad4d71468f28d43d43d96fbf32c73133a193ecb8c86cd832cd8459c4b1054b9)
+2026-10-17 23:25:44 [market] history windows rebuilt in 4.68s (sig=(20261014, 439272, 18541176656852.64, 118957, 3411352200126.0, 182139, 6325322768594.0, 20261014))
+[screener] loaded from disk cache
+────────────────────────────────────────────────────────────────────────
+نتیجۀِ گاردِ قیفِ اسکرینر: 30_pass / 0_fail / 0_skip
+
+EXIT=0

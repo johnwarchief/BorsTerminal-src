@@ -26,7 +26,8 @@ function readCrosshair(ch: Chart | null | undefined): CrosshairLike | null {
 import { nahayatNegarDarkTheme, nahayatNegarLightTheme } from '../lib/chartTheme';
 import { useUiStore } from '@shared/stores/uiStore';
 import {
-  AdjustmentMode, CorporateAction, applyAdjustmentToCandles, getAdjustmentFactor,
+  AdjustmentCapability, AdjustmentMode, AdjustFactor, CorporateAction,
+  applyAdjustmentToCandles, functionalGapNote, getAdjustmentFactor,
   mapBackendAdjustEvents, pricePrecisionFor, readAdjustmentCapability
 } from '../lib/adjustments';
 import { aggregateCandles, timeframePeriod, resolveTimeframe, INTRADAY_CAPABILITY, rangeVisibleBars, VIEW_RANGES, type Timeframe } from '../lib/timeframe';
@@ -37,6 +38,7 @@ import type { ChartEngineId } from '../../engine';
 import {
   registerFtsOverlays,
   FTS_CORP_ACTION_OVERLAY,
+  PULLBACK_MARKER_OVERLAY,
 } from '../../lib/ftsOverlays';
 import { corpEventMarkers, type RawCorporateEvent } from '../../lib/corpEvents';
 import {
@@ -72,7 +74,7 @@ import { useFtsConfigStore, type ChartView } from '../../stores/ftsConfigStore';
 import { useChartTemplateStore, type ChartTemplate } from '../../stores/chartTemplateStore';
 import { useReplayStore } from '../../stores/replayStore';
 import { replaySlice } from '../../lib/replay';
-import { fetchCandleFeed, toKLineData, type RawAdjustEvent } from '../../api/useCandleFeed';
+import { fetchCandleFeed, toKLineData } from '../../api/useCandleFeed';
 import { comparePctLabel, compareRows } from '../../lib/compareSeries';
 import {
   COMPARE_INDICATOR,
@@ -88,12 +90,17 @@ import '../styles/nahayatNegarStyles.css';
 // تحلیل FTS را صفحه می‌دهد (#161)؛ چارت هیچ چیز را دوباره حساب نمی‌کند و خودشان
 // کوئری نمی‌زند — همان شیئی که پنلِ «وضعیت FTS» می‌خواند به این اورلی‌ها می‌رسد.
 import type { FtsAnalysisData } from '../../api/useFtsAnalysis';
+import type { Structure3Data } from '../../api/useStructure3';
+import { e3KlinechartsOverlay, structure3Layers } from '../../lib/structure3Layers';
 
 export interface ChartProps {
   initialSymbol?: string;
   initialName?: string;
   boardRow?: { p_last?: number | null; p_closing?: number | null; percent_change?: number | null } | null;
   fts?: FtsAnalysisData | null;
+  /** قراردادِ موتورِ سوم از صفحه (`/api/structure3`)؛ چارت کوئری نمی‌زند،
+   *  فقط نقشه می‌زند -- همان قاعدۀ #161. بی‌آن یا بی‌`showStructure3` لایه نیست. */
+  e3?: Structure3Data | null;
   replayActive?: boolean;
   onToggleReplay?: () => void;
   onOpenSettings?: () => void;
@@ -170,6 +177,8 @@ function formatJalali(timestamp: number, type?: string): string {  try {
 // --- فاز ۴: نگاشت خروجی داورهای FTSِ سرور به اورلی‌های موتور چارت (آورلی‌های توکار v10) ---
 // گروه مستقل «fts_pattern_overlays»؛ الگوی خاموش ⇒ هیچ اورلی‌ای ساخته نمی‌شود.
 const PATTERN_GROUP_ID = 'fts_pattern_overlays';
+/** گروهِ لایۀ موتورِ سوم؛ جدا از الگوها تا ترسیمِ این موتور با FTS قاطی نشود */
+const E3_GROUP_ID = 'fts_e3_overlays';
 
 function patternOverlayColor(spec: PatternOverlaySpec): string {
   const st = spec.styles as { color?: unknown } | undefined;
@@ -182,15 +191,16 @@ function toChartOverlay(spec: PatternOverlaySpec, startTs: number): Record<strin
   const p0 = spec.points[0];
 
   // گرامرِ بصریِ per-pattern — هر الگو شکل/استایلِ مخصوصِ خودش را دارد (فاز ۴+).
-  // ۱) مارکرها (نقطه‌زنی ◎ / خروج زیر MA14 ⨯): چیپِ برچسب‌دار روی خودِ کندل.
-  if (spec.overlayName === 'ftsPointHunt' || spec.overlayName === 'ftsExitCross') {
-    const glyph = spec.kind === 'ma14exit' ? '⨯' : '◎';
+  // ۱) مارکرها (نقطه‌زنی ◎ / خروج زیر MA14 ⨯ / ساختار HH…HL…): چیپِ برچسب‌دار روی خودِ کندل.
+  if (spec.overlayName === 'ftsPointHunt' || spec.overlayName === 'ftsExitCross'
+      || spec.overlayName === 'ftsStructureMarker') {
+    const glyph = spec.kind === 'ma14exit' ? '⨯' : spec.kind === 'structure' ? '' : '◎';
     return {
       name: 'simpleAnnotation',
       groupId: PATTERN_GROUP_ID,
       lock: true,
       points: [{ timestamp: p0.timestamp, value: p0.value }],
-      extendData: `${glyph} ${spec.label}`,
+      extendData: glyph ? `${glyph} ${spec.label}` : spec.label,
       styles: {
         text: {
           color,
@@ -206,6 +216,17 @@ function toChartOverlay(spec: PatternOverlaySpec, startTs: number): Record<strin
           paddingBottom: 1,
         },
       },
+    };
+  }
+
+  // ۱ب) مارکرِ مثلثیِ پولبک — اورلیِ ثبت‌شدۀ خودش (چیپِ متن نبود، سهمِ بصریِ ستاپ)
+  if (spec.overlayName === PULLBACK_MARKER_OVERLAY) {
+    return {
+      name: PULLBACK_MARKER_OVERLAY,
+      groupId: PATTERN_GROUP_ID,
+      lock: true,
+      points: [{ timestamp: p0.timestamp, value: p0.value }],
+      extendData: { label: spec.label, color },
     };
   }
 
@@ -225,19 +246,23 @@ function toChartOverlay(spec: PatternOverlaySpec, startTs: number): Record<strin
     };
   }
 
-  // ۳) زون/کمربند (فیبو ۱ و ۲، سقف سوم، ساعت شنی): مستطیلِ تمام‌عرض با پرِ ملایم و بوردرِ خط‌چین.
+  // ۳) زون/کمربند (فیبو ۱ و ۲، سقف سوم، ساعت شنی، جعبه رنج): مستطیلِ پر با
+  //    بوردرِ خط‌چین. جعبه‌هایِ کراندار (`bounded`) فقط بینِ دو timestampِ خودشان
+  //    رسم می‌شوند؛ بی‌این باکسِ ۲۰ کندلی روی کلِ تاریخچه کشیده می‌شد.
   if (spec.points.length >= 2) {
     const a = spec.points[0].value;
     const b = spec.points[1].value;
     const hi = Math.max(a, b);
     const lo = Math.min(a, b);
+    const bounded = (spec.extendData as { bounded?: boolean } | undefined)?.bounded === true;
+    const leftTs = bounded ? spec.points[0].timestamp : startTs;
     const lastTs = spec.points[1].timestamp || p0.timestamp;
     return {
       name: 'rect',
       groupId: PATTERN_GROUP_ID,
       lock: true,
       points: [
-        { timestamp: startTs, value: hi },
+        { timestamp: leftTs, value: hi },
         { timestamp: lastTs, value: lo },
       ],
       styles: { polygon: { color, borderColor: color, borderSize: 1, borderStyle: 'dashed' } },
@@ -270,12 +295,14 @@ function toZoneFallback(spec: PatternOverlaySpec, startTs: number): Record<strin
   const color = patternOverlayColor(spec);
   const a = spec.points[0].value;
   const b = spec.points.length > 1 ? spec.points[1].value : a;
+  const bounded = (spec.extendData as { bounded?: boolean } | undefined)?.bounded === true;
+  const leftTs = bounded ? spec.points[0].timestamp : startTs;
   const lastTs = spec.points.length > 1 ? (spec.points[1].timestamp || startTs) : startTs;
   return {
     name: 'priceChannelLine',
     groupId: PATTERN_GROUP_ID,
     lock: true,
-    points: [{ timestamp: startTs, value: a }, { timestamp: lastTs, value: b }],
+    points: [{ timestamp: leftTs, value: a }, { timestamp: lastTs, value: b }],
     styles: { line: { color, size: 1, style: 'dashed' } },
   };
 }
@@ -285,6 +312,7 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
   initialName = 'ایران خودرو',
   boardRow,
   fts,
+  e3,
   replayActive,
   chartEngine,
   onEngineChange,
@@ -304,6 +332,25 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
   /** نگهبانِ مقیاسِ عمودی (#167) — یک نمونهٔ پایدار، تا overrideYAxis هر بار
    *  حالتش را از صفر نسازد */
   const scaleLock = useRef(createScaleLock()).current;
+
+  /** تنها نقطۀ نوشتنِ override محورِ چارت.
+   *
+   *  نامِ مقیاس و قفلِ درگ **باید** با هم بروند: `overrideYAxis` درِ v10 ادغام
+   *  نمی‌کند، محور را از نو می‌سازد و همان شیءِ فرستاده‌شده را جای گزینه‌ها
+   *  می‌گذارد (`node_modules/klinecharts/dist/index.esm.js:15561` ←
+   *  `createOrOverrideYAxis`، و هشدارِ خودِ vendor درِ `:10351`). پس فراخوانیِ
+   *  `{name}` تنها، `scrollZoomEnabled`ِ پیشین را برمی‌گرداند روی پیش‌فرض و
+   *  پرچمِ «قفل درگ محور» بی‌صدا می‌میرد — همان نقصِ D-1ِ قدمِ صفر. */
+  const applyAxisOverride = useCallback((chart: Chart, name: string) => {
+    const dragLocked = useFtsConfigStore.getState().view.axisDragLock === true;
+    chart.overrideYAxis({
+      paneId: 'candle_pane',
+      name,
+      scrollZoomEnabled: !dragLocked,
+      createRange: scaleLock.createRange,
+    } as never);
+    chart.overrideXAxis({ scrollZoomEnabled: !dragLocked } as never);
+  }, [scaleLock]);
 
   // استیت‌های نماد جاری
   const [currentSymbol, setCurrentSymbol] = useState<string>(initialSymbol);
@@ -382,6 +429,7 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
   const ftsChartType = useFtsConfigStore((s) => s.chartType);
   const ftsShowGrid = useFtsConfigStore((s) => s.showGrid);
   const ftsShowCrosshair = useFtsConfigStore((s) => s.showCrosshair);
+  const setFtsView = useFtsConfigStore((s) => s.setView);
 
   // مبنایِ اولیه «All»: چارت با تمامِ سریِ دریافتی باز می‌شود. «۱Y» هایلایت می‌شد
   // در حالی که هیچ زومی انجام نمی‌گرفت — برچسبِ دروغ‌گفتۀ کنترلِ مرده.
@@ -391,7 +439,7 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
 
   // همسنجیِ دو نماد رویِ همان چارت (جاافتادۀ ره‌آورد RA-3)
   const [compareSymbol, setCompareSymbol] = useState<string | null>(null);
-  const [compareBars, setCompareBars] = useState<{ candles: KLineData[]; events: RawAdjustEvent[] } | null>(null);
+  const [compareBars, setCompareBars] = useState<{ candles: KLineData[]; factors: AdjustFactor[] } | null>(null);
   const [compareBusy, setCompareBusy] = useState<boolean>(false);
   const [compareNoOverlap, setCompareNoOverlap] = useState<boolean>(false);
   /** «همسنج منهای این نماد» از میلهٔ مبنایِ مشترک؛ null یعنی هنوز عددی معنا ندارد */
@@ -426,6 +474,17 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
   // داده‌های چارت
   const [rawCandles, setRawCandles] = useState<KLineData[]>([]);
   const [corporateActions, setCorporateActions] = useState<CorporateAction[]>([]);
+  // ضریبِ هر کندل آن‌طور که سرور شمرده است (`factors`) — تنها ورودیِ مقیاسِ قیمت.
+  // `corporateActions` بالا فقط برایِ نشانگرِ رویداد است؛ دیگر هیچ‌جا از آن ضریب
+  // ساخته نمی‌شود (سنجشِ قدمِ ۵: دو زنجیرۀِ جدا، دو مقیاسِ متفاوت برایِ یک نماد).
+  const [adjustFactors, setAdjustFactors] = useState<AdjustFactor[]>([]);
+  // اعلامِ تواناییِ تعدیل از خودِ سرور — برایِ یادداشتِ صادقانۀِ پایینِ چارت
+  const [capability, setCapability] = useState<AdjustmentCapability | null>(null);
+  // مبنایِ واقعیِ اعدادِ محور: سرور می‌گوید تعدیلِ عملکردی (سرمایه‌گذاریِ دوبلۀِ سود)
+  // با دادهٔ همین نماد اثبات شده یا نه. اگر نه، چیزی که رسم می‌شود «تعدیلِ ترکیبی»
+  // است و کاربر باید همان را بخواند — نه یک برچسبِ کلیِ «تعدیل‌شده». تا این دور
+  // متنِ سرور خوانده می‌شد ولی هیچ‌جا نمایش داده نمی‌شد.
+  const functionalNote = capability ? functionalGapNote(capability) : null;
   // رویدادهایِ شرکتیِ مبدأ (TSETMC) — برایِ نشانگر، بی‌هیچ ضریبِ تازه
   const [corpEvents, setCorpEvents] = useState<RawCorporateEvent[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -449,8 +508,13 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
   // و دستی روشن می‌شوند: ۱) هفت سطحِ فیبو (کمربندها همیشه می‌مانند) و
   // ۲) رویدادهایِ تاریخیِ CHoCH/دابل‌باتم. جتِ تاریخی اصلاً رسم نمی‌شود — موتور
   // هم دیگر آن را در `setups` نمی‌فرستد.
-  const [showFibLevels, setShowFibLevels] = useState<boolean>(false);
-  const [showHistoryEvents, setShowHistoryEvents] = useState<boolean>(false);
+  // این دو دیگر stateِ این کامپوننت نیستند (ftsConfigStore.view): پنلِ کاتالوگِ
+  // لایه‌ها بیرونِ چارت است و باید همان پرچم را به هر دو موتور برساند؛ دو
+  // سوییچِ واگرا یعنی یک رجیستریِ دروغگو (مرحلۀ ۶).
+  const showFibLevels = ftsView.showFibLevels === true;
+  const showHistoryEvents = ftsView.showHistoryEvents === true;
+  // لایۀ موتورِ سوم (`/api/structure3`)؛ پیش‌فرض خاموش و بی‌رأیِ رسمی.
+  const showStructure3 = ftsView.showStructure3 === true;
 
   // اندیکاتورهای فعال
   const [indicators, setIndicators] = useState<{ [key: string]: boolean }>({
@@ -472,10 +536,10 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
     [rawCandles, replayCursor]
   );
 
-  // مپ کردن داده‌های تعدیل‌شده
+  // مپ کردن داده‌های تعدیل‌شده — ضریب‌ها از سرور، کلیدِ تطبیق تاریخِ همان کندل
   const adjustedCandles = useMemo(() => {
-    return applyAdjustmentToCandles(shownRawCandles, corporateActions, activeAdjustment);
-  }, [shownRawCandles, corporateActions, activeAdjustment]);
+    return applyAdjustmentToCandles(shownRawCandles, adjustFactors, activeAdjustment);
+  }, [shownRawCandles, adjustFactors, activeAdjustment]);
 
   // رفرنس پایدار به دیتای جاری کندل‌ها جهت پیشگیری از closure قدیمی در دیتا لودر
   const adjustedCandlesRef = useRef<KLineData[]>(adjustedCandles);
@@ -522,9 +586,9 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
   // در بازپخش همین سری برش می‌خورد، وگرنه سطحِ تحلیل روی کندل‌هایِ پنه‌رسمده می‌ماند.
   const analysisCandles = useMemo(
     () => activeAdjustment === 'performance'
-      ? applyAdjustmentToCandles(shownRawCandles, corporateActions, 'combined')
+      ? applyAdjustmentToCandles(shownRawCandles, adjustFactors, 'combined')
       : adjustedCandles,
-    [activeAdjustment, adjustedCandles, shownRawCandles, corporateActions]
+    [activeAdjustment, adjustedCandles, shownRawCandles, adjustFactors]
   );
 
   // تحلیل FTS: همان شیئی که پنلِ «وضعیت FTS» می‌خواند (#161). قبلاً چارت با
@@ -648,20 +712,26 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
         )
         .sort((a: KLineData, b: KLineData) => a.timestamp - b.timestamp);
 
-      // نگاشت رویدادهای مجمع و تعدیل
+      // نگاشت رویدادهای مجمع و تعدیل — از این دور **فقط برایِ نشانگر**؛ ضریبِ هر
+      // کندل را سرور می‌فرستد (`factors`) و اینجا دوباره زنجیره ساخته نمی‌شود.
       const parsedActions = mapBackendAdjustEvents(rawEvents);
-
-      if (stale()) return;   // نماد یا زمانی عوض شده است — سریِ قبلی نباید بنشیند
-      setCorporateActions(parsedActions);
-      // نبودِ این کلید (پاسخِ قدیمی/محلی) یعنی «رویدادی نگرفته‌ایم»، نه «رویدادی نیست»
-      setCorpEvents(Array.isArray(json?.corporateEvents) ? json.corporateEvents : []);
-      setRawCandles(parsedCandles);
-      setHasData(parsedCandles.length > 0);
+      const parsedFactors: AdjustFactor[] = (Array.isArray(json?.factors) ? json.factors : [])
+        .filter((f: any) => f && typeof f.time === 'string' && Number.isFinite(Number(f.factor)))
+        .map((f: any) => ({ time: String(f.time), factor: Number(f.factor) }));
       // منبعِ جایگزین و تواناییِ تعدیل هر دو باید خوانا باشند. سریِ محلی حالا همان
       // مجموعۀ رویدادِ کاننیکال را دارد؛ ولی اگر سرور بگوید «داوریِ تعدیل در دسترس
       // نیست» (لنگر پذیرفته نشده یا نماد هنوز دیده نشده)، اعدادِ سریِ تعدیل‌شده در
       // واقع خام‌اند — این را سرور اعلام می‌کند، نه حدسِ ما.
       const cap = readAdjustmentCapability(json);
+
+      if (stale()) return;   // نماد یا زمانی عوض شده است — سریِ قبلی نباید بنشیند
+      setCorporateActions(parsedActions);
+      setAdjustFactors(parsedFactors);
+      setCapability(cap);
+      // نبودِ این کلید (پاسخِ قدیمی/محلی) یعنی «رویدادی نگرفته‌ایم»، نه «رویدادی نیست»
+      setCorpEvents(Array.isArray(json?.corporateEvents) ? json.corporateEvents : []);
+      setRawCandles(parsedCandles);
+      setHasData(parsedCandles.length > 0);
       const capNote = cap.combinedAvailable ? null
         : `تعدیلِ رویداد در دسترس نیست (منبع: ${cap.source}) — اعدادِ سریِ تعدیل خام‌اند`;
       if ((layer === 'local' || degradedCdn || capNote) && parsedCandles.length > 0) {
@@ -715,7 +785,7 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
         const all = chart.getOverlays() as { id?: string; name?: string; groupId?: string; points?: unknown; styles?: unknown; extendData?: unknown }[];
         return all
           .filter((o) => o && typeof o.name === 'string' &&
-            (o.groupId === 'fts-draw' || (!o.groupId && !['VOL', 'MA', 'EMA', 'RSI', 'MACD', 'BOLL', 'fts_strategy_overlays', 'fts_pattern_overlays', 'fts_corp_actions'].includes(o.name))))
+            (o.groupId === 'fts-draw' || (!o.groupId && !['VOL', 'MA', 'EMA', 'RSI', 'MACD', 'BOLL', 'fts_strategy_overlays', 'fts_pattern_overlays', 'fts_corp_actions', 'fts_e3_overlays'].includes(o.name))))
           .map((o) => ({
             name: o.name as string,
             groupId: 'fts-draw',
@@ -1057,12 +1127,19 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
     const showWicks = ftsView?.showWicks !== false;
     const rawWickUp = ftsView?.wickUp;
     const rawWickDown = ftsView?.wickDown;
-    const wickUpColor = showWicks
-      ? ((rawWickUp && rawWickUp !== 'transparent') ? rawWickUp : candleUpColor)
-      : 'transparent';
-    const wickDownColor = showWicks
-      ? ((rawWickDown && rawWickDown !== 'transparent') ? rawWickDown : candleDownColor)
-      : 'transparent';
+    // «سایهٔ خاکستری» (wickGray): سایه‌ها هم‌رنگِ بدنه نمی‌مانند، خاکستری می‌شوند.
+    // تا این دور سوییچ ذخیره می‌شد و هیچ‌جا خوانده نمی‌شد (D-1ِ قدمِ صفر)؛ حالا رنگِ
+    // سایه از همان پرچم می‌آید، پس کاربر دقیقاً همان چیزی را می‌بیند که روشن کرده است.
+    const grayWickColor = ftsView?.wickGray === true ? '#787b86' : null;
+    const wickUpColor = !showWicks ? 'transparent'
+      : grayWickColor ?? ((rawWickUp && rawWickUp !== 'transparent') ? rawWickUp : candleUpColor);
+    const wickDownColor = !showWicks ? 'transparent'
+      : grayWickColor ?? ((rawWickDown && rawWickDown !== 'transparent') ? rawWickDown : candleDownColor);
+
+    // ۱.۵ حاشیۀ برچسبِ محورها (پیش‌فرضِ استور ۳ پیکسل) — تنظیماتِ خوانده‌شده، نه ذخیره‌شده
+    const tickMargin = Number.isFinite(ftsView?.axisTickMargin as number)
+      ? Math.max(0, Math.min(24, Number(ftsView?.axisTickMargin)))
+      : 3;
 
     // ۲. نگاشت قطعی نوع چارت به یکی از ۶ مقدار مجاز کتابخانه KlineCharts v10
     // «خط» همان اریا است با بی‌رنگِ زیرِ خط؛ «Heikin-Ashi» از سریِ renderCandles
@@ -1127,8 +1204,12 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
             size: 12,
             family: 'Vazirmatn',
             color: isLight ? '#434651' : '#d1d4dc',
-            marginStart: 4,
-            marginEnd: 4
+            // «حاشیۀ برچسبِ محورها» از تنظیمات — تا این دور ذخیره می‌شد و هیچ‌جا
+            // خوانده نمی‌شد (D-1ِ قدمِ صفر). v10 همان دو فیلدِ marginStart/marginEnd
+            // را درِ `Styles.xAxis.tickText` دارد، پس عددِ انتخابیِ کاربر مستقیم
+            // به کتابخانه می‌رود و نه به یک stateِ بی‌مصرف.
+            marginStart: tickMargin,
+            marginEnd: tickMargin
           },
           tickLine: {
             show: true,
@@ -1265,7 +1346,9 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
           tickText: {
             color: isLight ? '#64748b' : '#d1d4dc',
             size: 11,
-            family: 'Vazirmatn'
+            family: 'Vazirmatn',
+            marginStart: tickMargin,
+            marginEnd: tickMargin
           }
         }
       } as never);
@@ -1292,12 +1375,9 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
         ? 'percentage'
         : 'normal';
 
-      chart.overrideYAxis({
-        paneId: 'candle_pane',
-        name: yAxisName,
-        // #167: درگِ افقی مقیاسِ عمودی را نمی‌پراند؛ زوم و دادۀ تازه آزادش می‌کنند
-        createRange: scaleLock.createRange,
-      } as never);
+      // مقیاس و قفلِ درگ از یک نقطه — توضیحِ «چرا با هم»: `applyAxisOverride`
+      applyAxisOverride(chart, yAxisName);
+
 
       // ۵. تزریق فوری و بازنشانی کندل‌های جاری جهت رندر بی‌درنگ و تضمین عدم خالی ماندن بوم
       if (renderCandlesRef.current && renderCandlesRef.current.length > 0) {
@@ -1728,6 +1808,50 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
     };
   }, [corporateActions, corpEvents, displayCandles, ftsView?.showCorporateActions]);
 
+  // لایۀ موتورِ سوم (`/api/structure3`) — خطِ شکستۀ زیگزاگ + برچسبِ پیوت‌ها و
+  // رویدادهای CHoCHِ خودِ موتور. گروه، رنگ و امضایِ برچسب («م۳») جدا از لایه‌های
+  // FTS است، پس درِ چارت با نقاطِ ساختاریِ موتورِ اول یکی خوانده نمی‌شود و
+  // رأیِ رسمی FTS را جابه‌جا نمی‌کند (بند ۴ طرحِ مأموریت). بی‌`showStructure3`
+  // نه درخواستی می‌رود و نه اورلی‌ای می‌ماند؛ `pending`ِ موتور هرگز رسم نمی‌شود
+  // (پیوتِ تأییدنشده = repaint).
+  useEffect(() => {
+    const chart = chartRef.current;
+    if (!chart) return;
+    const clearE3 = () => {
+      try {
+        chart.removeOverlay({ groupId: E3_GROUP_ID } as never);
+      } catch {
+        // safe
+      }
+    };
+    clearE3();
+    const payload = e3;
+    if (!showStructure3 || payload?.status !== 'success' || renderCandles.length === 0) return;
+    const aLast = typeof payload.ref_close === 'number' && payload.ref_close > 0 ? payload.ref_close : 0;
+    const dLast = renderCandles[renderCandles.length - 1].close;
+    const k = aLast > 0 && dLast > 0 ? dLast / aLast : 1;
+    const specs = structure3Layers({
+      e3: payload,
+      startTs: renderCandles[0].timestamp,
+      anchorTs: renderCandles[renderCandles.length - 1].timestamp,
+      toDisp: (p) => p * k,
+      tsForDate: (date) => {
+        const ts = parseCandleTimestamp(date);
+        return Number.isFinite(ts) && ts > 0 ? ts : null;
+      },
+    });
+    for (const s of specs) {
+      const made = e3KlinechartsOverlay(s, E3_GROUP_ID);
+      if (!made) continue;
+      try {
+        chart.createOverlay(made as never);
+      } catch {
+        // اورلیِ نگرفته‌شده نباید رسمِ بقیۀ لایه را متوقف کند
+      }
+    }
+    return clearE3;
+  }, [e3, showStructure3, renderCandles]);
+
   // هندلرهای رویداد ماوس برای ابزار خط‌کش / اندازه‌گیری (Measure / Ruler Tool)
   const handleCanvasMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
     if (e.shiftKey || activeToolId === 'ruler') {
@@ -1937,7 +2061,7 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
     }
     if (t.priceScale && PRICE_SCALES.includes(t.priceScale) && chart) {
       const scale = t.priceScale as PriceScaleName;
-      chart.overrideYAxis({ paneId: 'candle_pane', name: scale } as never);
+      applyAxisOverride(chart, scale);
       useFtsConfigStore.getState().setPriceScale(scale as never);
       setIsLogScale(scale === 'logarithm');
     }
@@ -1958,9 +2082,10 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
       try {
         const feed = await fetchCandleFeed(compareSymbol);
         if (cancelled) return;
-        setCompareBars({ candles: toKLineData(feed.candles, feed.volumes), events: feed.adjustEvents ?? [] });
+        setCompareBars({ candles: toKLineData(feed.candles, feed.volumes),
+                         factors: feed.factors ?? [] });
       } catch {
-        if (!cancelled) setCompareBars({ candles: [], events: [] });
+        if (!cancelled) setCompareBars({ candles: [], factors: [] });
       } finally {
         if (!cancelled) setCompareBusy(false);
       }
@@ -1998,7 +2123,7 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
     }
     const adjusted = applyAdjustmentToCandles(
       compareBars.candles,
-      mapBackendAdjustEvents(compareBars.events),
+      compareBars.factors,
       activeAdjustment,
     );
     const other = aggregateCandles(adjusted, activeTimeframe);
@@ -2303,10 +2428,7 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
     const next = !isLogScale;
     setIsLogScale(next);
     useFtsConfigStore.getState().setPriceScale(next ? 'logarithm' : 'normal');
-    chart.overrideYAxis({
-      paneId: 'candle_pane',
-      name: next ? 'logarithm' : 'normal'
-    } as never);
+    applyAxisOverride(chart, next ? 'logarithm' : 'normal');
   };
 
   // ریست اسکیل خودکار با اسکرول به زمان حال و بازنشانی محور قیمت
@@ -2380,9 +2502,9 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
         isFtsActive={isFtsActive}
         onToggleFts={() => setIsFtsActive(!isFtsActive)}
         showFibLevels={showFibLevels}
-        onToggleFibLevels={() => setShowFibLevels(!showFibLevels)}
+        onToggleFibLevels={() => setFtsView({ showFibLevels: !showFibLevels })}
         showHistoryEvents={showHistoryEvents}
-        onToggleHistoryEvents={() => setShowHistoryEvents(!showHistoryEvents)}
+        onToggleHistoryEvents={() => setFtsView({ showHistoryEvents: !showHistoryEvents })}
         chartEngine={chartEngine}
         onEngineChange={onEngineChange}
         replayActive={replayActive}
@@ -2472,6 +2594,17 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
             </div>
           ) : null}
 
+          {/* مبنایِ اعدادِ محور — همان دلیلی که سرور برایِ همین نماد شمارده است */}
+          {functionalNote ? (
+            <div
+              className="nn-feed-note"
+              data-testid="chart-functional-note"
+              title={capability?.functionalReason ?? functionalNote}
+            >
+              <span>{functionalNote}</span>
+            </div>
+          ) : null}
+
           {/* تنزلِ بازه: درخواستِ کندلِ درون‌روزی، نه خرابیِ چارت */}
           {tfNote ? (
             <div
@@ -2524,6 +2657,24 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
             ref={chartContainerRef}
             className={`nn-kline-chart ${activeToolId && !['crosshair', 'arrow', 'dot'].includes(activeToolId) ? 'drawing-active-crosshair' : ''}`}
           />
+
+          {/* واترمارک — لایۀ واقعیِ DOM روی بومِ چارت. `klinecharts` v10 دیگر سبکِ
+              `watermark` را ندارد (سنجشِ همین دور: `grep -n watermark
+              node_modules/klinecharts/dist/index.d.ts` → صفر ردیف)، پس اینجا خودمان
+              یک لایه می‌گذاریم؛ تا این دور `showWatermark` و `watermarkOpacity`
+              ذخیره می‌شدند و هیچ لایه‌ای رسم نمی‌شد (D-1ِ قدمِ صفر).
+              `pointer-events: none` عمدی است: لایه نباید کلیک/مگنتِ چارت را بلوکه کند. */}
+          {ftsView?.showWatermark !== false ? (
+            <div
+              className="nn-chart-watermark"
+              data-testid="chart-watermark"
+              aria-hidden="true"
+              style={{ opacity: (Number(ftsView?.watermarkOpacity ?? 10) || 10) / 100 }}
+            >
+              <span className="nn-watermark-symbol">{currentSymbol}</span>
+              <span className="nn-watermark-brand">BorsTerminal</span>
+            </div>
+          ) : null}
 
           {/* ابزار اندازه‌گیری / خط‌کش تعاملی (Measure / Ruler Tool) */}
           {measureState && (
@@ -2596,7 +2747,7 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
               onClick={() => {
                 const next = ftsPriceScale === 'percentage' ? 'normal' : 'percentage';
                 useFtsConfigStore.getState().setPriceScale(next);
-                chartRef.current?.overrideYAxis({ paneId: 'candle_pane', name: next } as never);
+                if (chartRef.current) applyAxisOverride(chartRef.current, next);
               }}
               title="مقیاس درصدی (%)"
               data-testid="axis-btn-percent"

@@ -10,11 +10,11 @@ import { computeFeedStatus, type FeedStatus } from '@shared/lib/feedFreshness';
 import { fmtAge } from '@shared/lib/time';
 
 type Snap = { status: string; dataUpdatedAt: number; dataChangedAt: number | null;
-              liveCount: number | null; total: number | null };
+              liveCount: number | null; total: number | null; boardDay: number | null };
 
 function readSnap(qc: ReturnType<typeof useQueryClient>): Snap {
   const q = qc.getQueryCache().find({ queryKey: MARKET_FEED_KEY });
-  if (!q) return { status: 'idle', dataUpdatedAt: 0, dataChangedAt: null, liveCount: null, total: null };
+  if (!q) return { status: 'idle', dataUpdatedAt: 0, dataChangedAt: null, liveCount: null, total: null, boardDay: null };
   const d = q.state.data as MarketFeed | undefined;
   return {
     status: q.state.status,
@@ -23,6 +23,7 @@ function readSnap(qc: ReturnType<typeof useQueryClient>): Snap {
     dataChangedAt: d?.rev_at ?? null,
     liveCount: d?.live_count ?? null,
     total: d?.count ?? null,
+    boardDay: d?.meta?.d_even ?? null,
   };
 }
 
@@ -38,7 +39,8 @@ export function FreshnessBadge() {
         const next = readSnap(qc);
         setSnap((prev) => (prev.status === next.status && prev.dataUpdatedAt === next.dataUpdatedAt
           && prev.dataChangedAt === next.dataChangedAt
-          && prev.liveCount === next.liveCount && prev.total === next.total ? prev : next));
+          && prev.liveCount === next.liveCount && prev.total === next.total
+          && prev.boardDay === next.boardDay ? prev : next));
         setNow(Date.now());
       });
     });
@@ -49,7 +51,7 @@ export function FreshnessBadge() {
 
   const st: FeedStatus = computeFeedStatus({
     status: snap.status, dataUpdatedAt: snap.dataUpdatedAt, dataChangedAt: snap.dataChangedAt,
-    liveCount: snap.liveCount, totalCount: snap.total, now,
+    liveCount: snap.liveCount, totalCount: snap.total, boardDay: snap.boardDay, now,
   });
 
   return (

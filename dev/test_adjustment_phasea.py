@@ -60,8 +60,17 @@ HAS_BANK = _db_ok()
 # ══════════════ ۱) چهار مفهوم، دو تا ساختنی ══════════════
 SRC = io.open(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
                            "api", "chart.py"), encoding="utf-8").read()
-ck("سرور هیچ‌جا functional_available را true نمی‌کند (منبعِ واگرایِ ادعا)",
-   '"functional_available": False' in SRC and '"functional_available": True' not in SRC)
+# این چک درِ دورِ پیشین «hardcode شده» را pin کرده بود (`"functional_available": False`).
+# دورِ پنجم قدمِ ۵ همان سخت‌کد را **عمداً** برداشت: پرچم از قاعدۀ `_functional_state`
+# حساب می‌شود. چیزی که باید ثابت بماند همان است که خطرناک بود: ادعایِ فعالِ بی‌سنجش.
+# پس «True سخت‌کدشده» ممنوع است و منبعِ مقدار باید همان قاعده باشد، نه یک بولینِ ثابت.
+ck("سرور functional_available را با True سخت‌کد نمی‌کند (ادعایِ بی‌سنجش ممنوع)",
+   '"functional_available": True' not in SRC)
+ck("مقدار از قاعدۀ محاسبه‌شده می‌آید، نه از ثابتِ بولین",
+   '"functional_available": available' in SRC and "def _functional_state(" in SRC
+   and "_functional_state(chain, coverage)" in SRC, SRC.count("_functional_state"))
+ck("دفترِ رسمی درِ همان مسیر خوانده می‌شود (پوشش/اعتبار از داده، نه از متن)",
+   "corporate_ledger.build_typed_events" in SRC or "CL.build_typed_events" in SRC)
 ck("بلوکِ توانایی درِ پاسخ می‌آید، نه فقط درِ متنِ خطا",
    SRC.count('"adjustCapability"') >= 3, SRC.count('"adjustCapability"'))
 ck("دلیلِ نبودِ تعدیلِ عملکردی درِ خودِ پاسخ است (کاربر با متنِ سرور می‌خواند)",
@@ -75,8 +84,65 @@ ck("«رویدادی نیستِ تأییدشده» با «نداریم» یکی 
    cap2["combined_available"] is True and cap0["combined_available"] is False)
 ck("لنگرِ NAV (صندوق) که داوریِ تعدیل ندارد، combined را «هست» جا نمی‌زند",
    cap3["combined_available"] is False and cap3["event_count"] == 0)
-ck("با رویداد، combined در دسترس است و functional نه (هیچ‌وقت)",
-   cap1["combined_available"] is True and cap1["functional_available"] is False)
+ck("با رویداد، combined در دسترس است", cap1["combined_available"] is True)
+ck("بی‌سنجشِ زنجیره/پوشش، functional در دسترس اعلام نمی‌شود (سنجش‌نشده ≠ موجود)",
+   cap1["functional_available"] is False and
+   any(str(b).startswith("unmeasured") for b in cap1["functional_blockers"]),
+   cap1["functional_blockers"])
+
+# ─── قاعدۀِ محاسبه‌شدۀِ functional: کنترلِ مثبت و هشت کنترلِ منفی ───
+# پرچم باید **بتواند** True شود؛ اگر تنها با «هرگز» سبز می‌ماند، همان سخت‌کدِ
+# قبلی است با لباسِ تابع. پس یک وضعیتِ کاملِ ساخته‌شده (هر الزامِ `_functional_state`
+# برقرار) می‌آید و سپس هر الزام یکی‌یکی می‌شکند: هر شکست باید با نامِ خودش و با
+# `False` پاسخ دهد — نه با سکوت. داده‌هایِ این بخش مصنوعی‌اند و **فقط** منطقِ
+# داوری را می‌سنجند؛ به هیچ جدولی نوشته نمی‌شوند.
+_FULL_CHAIN = {"provenance": [], "incomplete": [], "complete": True, "anchored_last": True}
+_FULL_COV = {"available": True, "ins_code": "1", "error": None, "rows_total": 2,
+             "rows_valid": 2, "rows_rejected": 0, "rows_unmatched": 0,
+             "coverage_start": "2019-01-01", "coverage_end": "2026-01-01",
+             "pre_coverage_candles": 0, "typed_events": 2, "unresolved_events": 0,
+             "needs_offer_price_events": 0, "truncated_flow": False, "flow_cap": 500}
+_EV2 = [{"date": "2020-01-11", "ratio": 0.5}, {"date": "2021-06-01", "ratio": 0.8}]
+cap_full = CH._adjust_capability(_EV2, "base-price-discontinuity",
+                                chain=_FULL_CHAIN, coverage=dict(_FULL_COV))
+ck("کنترلِ مثبت: با همهٔ الزاماتِ برقرار، پرچم واقعاً True می‌شود (پس سخت‌کد نیست)",
+   cap_full["functional_available"] is True and cap_full["functional_blockers"] == [],
+   cap_full["functional_blockers"])
+for _fld, _val, _want in [
+        ("unresolved_events", 1, "event-type-unresolved"),
+        ("rows_unmatched", 1, "ledger-rows-unmatched-by-price-series"),
+        ("pre_coverage_candles", 5, "candles-before-ledger-coverage"),
+        ("truncated_flow", True, "ledger-flow-truncated-at-cap"),
+        ("rows_rejected", 1, "ledger-rows-rejected"),
+        ("needs_offer_price_events", 1, "offer-price-missing"),
+        ("available", False, "ledger-unavailable"),
+        ("rows_total", 0, "no-official-rows-for-instrument")]:
+    _c = dict(_FULL_COV)
+    _c[_fld] = _val
+    if _fld == "rows_total":
+        _c["rows_valid"] = 0
+    _r = CH._adjust_capability(_EV2, "base-price-discontinuity",
+                               chain=_FULL_CHAIN, coverage=_c)
+    ck(f"کنترلِ منفی: شکستِ «{_fld}» ⇒ False با دلیلِ {_want}",
+       _r["functional_available"] is False and
+       any(str(b).startswith(_want) for b in _r["functional_blockers"]),
+       _r["functional_blockers"])
+_chain_bad = {"provenance": [{"date": "2020-01-11", "status": "incomplete:ratio"}],
+              "incomplete": [{"date": "2020-01-11"}], "complete": False,
+              "anchored_last": True}
+_r = CH._adjust_capability(_EV2, "base-price-discontinuity",
+                           chain=_chain_bad, coverage=dict(_FULL_COV))
+ck("کنترلِ منفی: رویدادِ ناقص درِ زنجیره ⇒ False با دلیلِ chain-incomplete",
+   _r["functional_available"] is False and _r["chain_complete"] is False and
+   any(str(b).startswith("chain-incomplete") for b in _r["functional_blockers"]),
+   _r["functional_blockers"])
+ck("شکستِ هیچ الزامی دلیلی را خاموش نمی‌کند (بی‌سکوت درِ پاسخ)",
+   all(len(CH._adjust_capability(_EV2, "base-price-discontinuity",
+                                 chain=_FULL_CHAIN,
+                                 coverage=dict(_FULL_COV, **{_f: _v}))
+              ["functional_blockers"]) == 1
+       for _f, _v in [("unresolved_events", 1), ("rows_unmatched", 2),
+                      ("pre_coverage_candles", 3)]))
 
 # ══════════════ ۲) ضرایب: یک‌بار، ترتیب‌مستقل، یکنوا ══════════════
 evs = [{"date": "2020-01-13", "ratio": 0.8}, {"date": "2020-01-11", "ratio": 0.5}]
@@ -237,6 +303,108 @@ if HAS_BANK:
        (d_unk.get("adjustSource"), d_unk.get("count")))
 else:
     ck("بانکِ محلی برایِ سنجشِ فال‌بک", None, "market.db درِ این محیط نیست — SKIP")
+
+# ─── جانشینیِ مجموعهٔ کش (ردیفِ شبح) ───
+# بازنویسیِ بانکِ واقعی نشود: این بخش رویِ یک بانکِ موقتِ جدا اجرا می‌شود.
+# چرا آزمون لازم است: نویسندۀِ کشupsert-only بود و هیچ‌گاه ردیفِ کهنه را برنمی‌داشت.
+# کاشفِ زنده هر بار CSV کاملِ تاریخ را می‌پیماید، پس ردیفی که درِ آن پیمایش نیست
+# دیگر پشتیبانیِ داده‌ای ندارد؛ ماندنش یعنی «یک ضریبِ اضافی روی کلِ تاریخِ قبل» —
+# همان نقصی که میانۀِ بازوِ دیتابیس را ۰٫۶۴٪ → ۶٫۱۵٪ برد (`_audit/_ghost_probe.py`).
+import tempfile  # noqa: E402
+_tmp_db = os.path.join(tempfile.mkdtemp(prefix="adj_ghost_"), "ghost.db")
+_DB_OLD = CH.DB_PATH
+CH.DB_PATH = _tmp_db
+try:
+    GSYM = "شبحِ_آزمون"
+    g_all = [{"date": "2024-01-05", "ratio": 0.90, "source": "base-price-discontinuity"},
+             {"date": "2024-06-02", "ratio": 0.80, "source": "base-price-discontinuity"},
+             {"date": "2024-09-01", "ratio": 0.95, "source": "priceAdjust"}]
+    CH._store_adjust_events(GSYM, g_all, "base-price-discontinuity")
+    ck("کشِ initial هر سه ردیف را دارد",
+       [str(e["date"]) for e in CH._stored_adjust_events(GSYM)]
+       == ["2024-01-05", "2024-06-02", "2024-09-01"],
+       CH._stored_adjust_events(GSYM))
+    # کشفِ تازه همان نماد، ردیفِ میانی را دیگر نمی‌بیند (بک‌فیلِ مبدأ) → باید برود
+    CH._store_adjust_events(GSYM, [g_all[0], g_all[2]], "base-price-discontinuity")
+    g_after = [str(e["date"]) for e in CH._stored_adjust_events(GSYM)]
+    ck("کشفِ کاملِ تازه، ردیفِ نمانده را از کش می‌زداید (جانشینی، نه upsert)",
+       g_after == ["2024-01-05", "2024-09-01"], g_after)
+    g_fac = CH._factors_from_events(["2024-01-01"], CH._stored_adjust_events(GSYM))
+    ck("کنترلِ منفی: ضریبِ ردیفِ زدوده‌شده از فاکتور بیرون می‌آید (۰٫۸۵۵ نه ۰٫۶۸۴)",
+       abs(g_fac[0] - 0.855) < 1e-9, g_fac)
+    # منبعِ «کشف‌شده از CSV» نه: حقِّ پاک‌کردنِ ردیفِ دیدہ‌شدۀِ دیگر را ندارد
+    CH._store_adjust_events(GSYM, g_all, "base-price-discontinuity")
+    CH._store_adjust_events(GSYM, [g_all[0]], "local-cache")
+    ck("منبعِ غیرِکشفی (local-cache) هیچ ردیفِ دیدہ‌شدۀِ دیگری را پاک نمی‌کند",
+       [str(e["date"]) for e in CH._stored_adjust_events(GSYM)]
+       == ["2024-01-05", "2024-06-02", "2024-09-01"],
+       CH._stored_adjust_events(GSYM))
+    # «رویدادی نیست» یک داوریِ کامل است: مجموعه باید خالی شود، نه پر از شبح
+    CH._store_adjust_events(GSYM, [], "no-adjustment-event")
+    ck("داوریِ «رویدادی نیست» مجموعهٔ کش را خالی می‌کند",
+       CH._stored_adjust_events(GSYM) == [], CH._stored_adjust_events(GSYM))
+    # منبعِ خارج از شمارۀِ منابع: نه ردیفی می‌نویسد، نه ردیفِ دیگری را می‌زداید
+    CH._store_adjust_events(GSYM, g_all, "base-price-discontinuity")
+    CH._store_adjust_events(GSYM, [g_all[1]], "some-future-source")
+    ck("منبعِ ناشناخته نه ردیفی می‌نویسد نه ردیفِ دیدہ‌شده را پاک می‌کند",
+       [str(e["date"]) for e in CH._stored_adjust_events(GSYM)]
+       == ["2024-01-05", "2024-06-02", "2024-09-01"],
+       CH._stored_adjust_events(GSYM))
+finally:
+    CH.DB_PATH = _DB_OLD
+
+# ─── تیزکردنِ ضریبِ رویداد با دفترِ رویدادِ مبدأ (RC3) ───
+# ledger جعلی تزریق می‌شود (`_ledger_events_for`) تا هر چهار شاخۀِ قاعدۀِ پذیرش
+# بدونِ وابستگی به پوششِ بانکِ واقعی سنجیده شوند. عددِ مرجع از خودِ پروندهاست:
+# بانکِ واقعی پوششِ ناقص دارد (پیشِ ۲۰۲۴-۰۷-۲۱ هیچ ردیفِ تعدیل، ولانا صفر ردیف)،
+# پس نبودِ ردیف باید «دست‌نخورده» بدهد نه «صفر» و نه «حدس».
+_LED = [{"date": "2026-09-17", "ratio": 0.2836879433, "kind": "priceAdjust"},
+        {"date": "2026-09-17", "ratio": 0.2836879433, "kind": "shareChange"},
+        {"date": "2024-03-17", "ratio": 1.0031515, "kind": "priceAdjust"},
+        {"date": "2020-01-05", "ratio": 0.9, "kind": "priceAdjust"}]
+_LED_OLD = CH._ledger_events_for
+CH._ledger_events_for = lambda s: list(_LED)
+try:
+    # ۱) همان رویداد، عددِ گردِ ما ← عددِ بی‌گردِ مبدأ؛ تاریخ دست‌نخورده
+    ev = [{"date": "2026-09-20", "ratio": 0.283787, "source": "base-price-discontinuity"}]
+    o, n_sharp, n_amb = CH._sharpen_events_with_ledger("تست", ev)
+    o1 = [dict(x) for x in o]
+    ck("ردیفِ مبدأ درِ پنجره و تلورانس ⇒ عددِ دقیقِ مبدأ می‌نشیند",
+       n_sharp == 1 and abs(o[0]["ratio"] - round(0.2836879433, 8)) < 1e-12 and
+       o[0]["source"] == "priceAdjust", o)
+    ck("تاریخِ رویدادِ دیدہ‌شده جابه‌جا نمی‌شود (۱۰ روز فاصله با ردیفِ مبدأ)",
+       o[0]["date"] == "2026-09-20", o[0]["date"])
+    ck("درِ تساویِ فاصله، priceAdjust بر shareChange تقدم دارد",
+       o[0]["source"] == "priceAdjust", o[0]["source"])
+    # ۲) ردیفِ مبدأ «رویدادِ دیگر» نباید مصرف شود (ولانا: ۰٫۳۰۰ در برابرِ ۰٫۳۷۵۵)
+    ev = [{"date": "2026-09-20", "ratio": 0.3755, "source": "base-price-discontinuity"}]
+    o, n_sharp, n_amb = CH._sharpen_events_with_ledger("تست", ev)
+    ck("اختلافِ بیش از تلورانس ⇒ دست‌نخورده و بی‌برچسبِ مبدأ",
+       n_sharp == 0 and abs(o[0]["ratio"] - 0.3755) < 1e-12 and
+       o[0]["source"] == "base-price-discontinuity", o)
+    # ۳) دو رویدادِ یک ردیف ⇒ هیچ‌کدام تیز نمی‌شود (بی‌طرفی، نه حذف)
+    ev = [{"date": "2019-12-28", "ratio": 0.9005, "source": "base-price-discontinuity"},
+          {"date": "2020-01-12", "ratio": 0.8998, "source": "base-price-discontinuity"}]
+    o, n_sharp, n_amb = CH._sharpen_events_with_ledger("تست", ev)
+    ck("دو رویداد برایِ یک ردیفِ مبدأ ⇒ هیچ‌کدام تیز نمی‌شود، هیچ‌کدام حذف نمی‌شود",
+       n_sharp == 0 and n_amb == 2 and len(o) == 2 and
+       all(e["source"] == "base-price-discontinuity" for e in o), (o, n_amb))
+    # ۴) بی‌ردیفِ مبدأ (پوششِ ناقصِ بانک) ⇒ دقیقاً رفتارِ پیشین
+    CH._ledger_events_for = lambda s: []
+    ev = [{"date": "2026-07-01", "ratio": 0.333453, "source": "base-price-discontinuity"}]
+    o, n_sharp, n_amb = CH._sharpen_events_with_ledger("ولانا", ev)
+    ck("بی‌ردیفِ مبدأ: عددِ پیشین دست‌نخورده برمی‌گردد (نه صفر، نه حدس)",
+       n_sharp == 0 and abs(o[0]["ratio"] - 0.333453) < 1e-12, o)
+    # ۵) تیزکردن رویِ تکرارِ خواندن نباید چیزی را عوض کند (مسیرِ کش هر بار می‌خواند)
+    CH._ledger_events_for = lambda s: list(_LED)
+    one = [dict(x) for x in o1]
+    twice = CH._sharpen_events_with_ledger("تست", one)[0]
+    ck("تیزکردن idempotent است (خواندنِ دوبلۀِ کش عدد را جابه‌جا نمی‌کند)",
+       [(e["date"], round(e["ratio"], 10), e.get("source")) for e in one]
+       == [(e["date"], round(e["ratio"], 10), e.get("source")) for e in twice],
+       (one, twice))
+finally:
+    CH._ledger_events_for = _LED_OLD
 
 print("─" * 72)
 print(f"نتیجه: {PASS}_pass / {FAIL}_fail / {SKIP}_skip")

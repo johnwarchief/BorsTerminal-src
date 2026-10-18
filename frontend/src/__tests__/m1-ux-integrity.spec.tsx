@@ -81,6 +81,30 @@ describe('computeFeedStatus — اتصال ≠ تازگی', () => {
     expect(st.label).not.toContain('عوض');
   });
 
+  // BOARD-DAY: تمرینِ ۱۴۰۵-۰۷-۲۵ — تابلویِ ۲۰۲۶۱۰۱۴ زیرِ ساعتِ بازارِ باز ۴۳ از ۴۳ نمونه «مستقیم» خوانده شد.
+  it('بازارِ باز ولی تابلو از نشستِ پیشین است ⇒ stale، حتی با `rev` تازه و `live_count` مثبت', () => {
+    const st = computeFeedStatus({
+      status: 'success', dataUpdatedAt: NOW - 3_000, dataChangedAt: NOW - 4_000,
+      liveCount: 2890, totalCount: 5865, boardDay: 20261009, now: NOW, marketOpen: true,
+    });
+    expect(st.freshness).toBe('stale');
+    expect(st.pulse).toBe(false);
+    expect(st.label).toContain('نشستِ جاری');
+  });
+
+  it('تابلویِ همان روز ⇒ live؛ روزِ تابلو نامعلوم ⇒ رفتارِ پیشین', () => {
+    const base = { status: 'success', dataUpdatedAt: NOW - 3_000, dataChangedAt: NOW - 4_000,
+                   liveCount: 2890, totalCount: 5865, now: NOW, marketOpen: true } as const;
+    expect(computeFeedStatus({ ...base, boardDay: 20261012 }).freshness).toBe('live');
+    expect(computeFeedStatus({ ...base, boardDay: null }).freshness).toBe('live');
+  });
+
+  it('بازارِ بسته با تابلویِ نشستِ پیشین ⇒ همان closed', () => {
+    const st = computeFeedStatus({ status: 'success', dataUpdatedAt: NOW - 3_000, liveCount: 2890,
+                                   totalCount: 5865, boardDay: 20261009, now: NOW, marketOpen: false });
+    expect(st.freshness).toBe('closed');
+  });
+
   it('live_count گزارش نشده ⇒ unknown (تازگی را قطعی نمی‌کند)', () => {
     const st = computeFeedStatus({ status: 'success', dataUpdatedAt: NOW - 2_000, liveCount: null, totalCount: null, now: NOW, marketOpen: true });
     expect(st.freshness).toBe('unknown');

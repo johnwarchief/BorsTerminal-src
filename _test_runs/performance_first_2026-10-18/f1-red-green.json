@@ -1,0 +1,27 @@
+{
+ "at": "2026-10-17 22:06:06",
+ "green_fixed": {
+  "rc": 0,
+  "dur_s": 15.0,
+  "tests_line": "\u001b[22m \u001b[1m\u001b[32m19 passed\u001b[39m\u001b[22m\u001b[90m (19)\u001b[39m",
+  "failed_titles": [],
+  "log": "f1-vitest-1-green-fixed.txt"
+ },
+ "head_put_sha": "2e258ab8125011997b280b57561d0b96a92755dbd5bd4c2dbef4386304ed73b1",
+ "red_head": {
+  "rc": 1,
+  "dur_s": 12.0,
+  "tests_line": "1 \u001b[49m\u001b[22m\u001b[31m⎯⎯⎯⎯⎯⎯⎯\u001b[39m",
+  "failed_titles": [],
+  "log": "f1-vitest-2-red-head.txt"
+ },
+ "fix_put_sha": "c84a0689453aabda74b033ac70f8797c959d628bbd004aa47a5106a6409656eb",
+ "green_restored": {
+  "rc": 0,
+  "dur_s": 12.9,
+  "tests_line": "\u001b[22m \u001b[1m\u001b[32m19 passed\u001b[39m\u001b[22m\u001b[90m (19)\u001b[39m",
+  "failed_titles": [],
+  "log": "f1-vitest-3-green-restored.txt"
+ },
+ "verdict": "RED_GREEN_OK"
+}

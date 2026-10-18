@@ -15,9 +15,23 @@ const KeyLevelsSchema = z.object({
   status: z.string(),
   symbol: z.string().nullish(),
   levels: z.array(Level).nullish(),
+  // P0#1/#12: پیامِ «چرا سطحی نیست» با تعدادِ واقعی باید به رابط برسد؛ پیش از
+  // این اسکیمایِ فرانت فقط status/symbol/levels را می‌خواند و message را
+  // بی‌صدا دور می‌ریخت — «۰ سطح» با «۳۰ روز سابقه، ۶۰ لازم» یکی می‌شد.
+  message: z.string().nullish(),
+  insufficient_history: z.boolean().nullish(),
+  bars_effective: z.number().nullish(),
+  raw_rows: z.number().nullish(),
 });
 
 export type KeyLevelsFeed = z.infer<typeof KeyLevelsSchema>;
+
+/** تنها متنِ مجازِ «بی‌سطح»: همان پیامی که سرور با تعدادِ واقعی نوشته. */
+export function keyLevelsNote(feed: KeyLevelsFeed | null | undefined): string | null {
+  if (!feed) return null;
+  if (feed.status === 'ok' && (feed.levels?.length ?? 0) > 0) return null;
+  return feed.message ?? null;
+}
 
 export function useKeyLevels(symbol: string) {
   return useQuery({

@@ -18,7 +18,7 @@ let overlays: OverlayCfg[] = [];
 const chartStub = () => ({
   setDataLoader: vi.fn(), setSymbol: vi.fn<(o: unknown) => void>(), setPeriod: vi.fn(),
   setFormatter: vi.fn(), createIndicator: vi.fn(), removeIndicator: vi.fn(),
-  setPaneOptions: vi.fn(), setStyles: vi.fn(), overrideYAxis: vi.fn(), overrideOverlay: vi.fn(),
+  setPaneOptions: vi.fn(), setStyles: vi.fn(), overrideYAxis: vi.fn(), overrideXAxis: vi.fn(), overrideOverlay: vi.fn(),
   removeOverlay: vi.fn((q?: { groupId?: string }) => {
     if (q?.groupId === 'fts_strategy_overlays') overlays = [];
   }),

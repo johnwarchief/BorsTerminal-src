@@ -19,7 +19,7 @@ const chartStub = () => {
     removeIndicator: vi.fn(),
     setPaneOptions: vi.fn(),
     setStyles: vi.fn(),
-    overrideYAxis: vi.fn(),
+    overrideYAxis: vi.fn(), overrideXAxis: vi.fn(),
     overrideOverlay: vi.fn(),
     removeOverlay: vi.fn(),
     createOverlay: vi.fn(() => 'ov-1'),

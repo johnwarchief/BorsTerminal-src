@@ -1,0 +1,79 @@
+{
+ "at": "2026-10-17 23:24:59",
+ "v2_sha": "bad4d71468f28d43d43d96fbf32c73133a193ecb8c86cd832cd8459c4b1054b9",
+ "bug_sha": "32eb1841d2501a9278ca1e75f776006a6c6355cf73bf9fabf226d159f86aa1db",
+ "db_pristine_before": true,
+ "red_bug": {
+  "script": "dev/test_funnel_warm_deadlock_v1.py",
+  "rc": 1,
+  "dur_s": 15.3,
+  "log": "p0v2-deadlock-red-bug.txt"
+ },
+ "v2_put_sha": "bad4d71468f28d43d43d96fbf32c73133a193ecb8c86cd832cd8459c4b1054b9",
+ "green_v2": {
+  "script": "dev/test_funnel_warm_deadlock_v1.py",
+  "rc": 0,
+  "dur_s": 2.7,
+  "log": "p0v2-deadlock-green-v2.txt"
+ },
+ "suites": [
+  {
+   "script": "dev/funnel_registry_v1.py",
+   "rc": 0,
+   "dur_s": 1.6,
+   "log": "p0v2-suite-funnel_registry_v1.txt",
+   "db_sha_before": "9d557a533fc51e83",
+   "db_sha_after": "9d557a533fc51e83",
+   "db_changed": false
+  },
+  {
+   "script": "dev/funnel_engine_v1.py",
+   "rc": 0,
+   "dur_s": 3.1,
+   "log": "p0v2-suite-funnel_engine_v1.txt",
+   "db_sha_before": "9d557a533fc51e83",
+   "db_sha_after": "9d557a533fc51e83",
+   "db_changed": false
+  },
+  {
+   "script": "dev/funnel_preset_distinct_v1.py",
+   "rc": 0,
+   "dur_s": 1.3,
+   "log": "p0v2-suite-funnel_preset_distinct_v1.txt",
+   "db_sha_before": "9d557a533fc51e83",
+   "db_sha_after": "9d557a533fc51e83",
+   "db_changed": false
+  },
+  {
+   "script": "dev/test_screener_funnel_gate_v1.py",
+   "rc": 0,
+   "dur_s": 10.7,
+   "log": "p0v2-suite-test_screener_funnel_gate_v1.txt",
+   "db_sha_before": "9d557a533fc51e83",
+   "db_sha_after": "05b15c1c890b6fba",
+   "db_changed": true,
+   "db_restored": true
+  },
+  {
+   "script": "dev/test_mainwatch_flags_v1.py",
+   "rc": 0,
+   "dur_s": 2.6,
+   "log": "p0v2-suite-test_mainwatch_flags_v1.txt",
+   "db_sha_before": "9d557a533fc51e83",
+   "db_sha_after": "9d557a533fc51e83",
+   "db_changed": false
+  },
+  {
+   "script": "dev/test_funnel_warm_deadlock_v1.py",
+   "rc": 0,
+   "dur_s": 2.6,
+   "log": "p0v2-suite-test_funnel_warm_deadlock_v1.txt",
+   "db_sha_before": "9d557a533fc51e83",
+   "db_sha_after": "9d557a533fc51e83",
+   "db_changed": false
+  }
+ ],
+ "db_pristine_after": true,
+ "src_final_is_v2": true,
+ "verdict": "RED_GREEN_OK"
+}

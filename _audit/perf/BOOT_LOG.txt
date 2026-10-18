@@ -1,0 +1,51 @@
+C:\Users\Johnkallnaya\Desktop\Borsterminal\BorsTerminal-src\app.py:180: DeprecationWarning: 
+        on_event is deprecated, use lifespan event handlers instead.
+
+        Read more about it in the
+        [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+        
+  @app.on_event("startup")
+INFO:     Started server process [6168]
+INFO:     Waiting for application startup.
+[startup] codal schema migrated (additive, idempotent)
+[startup] market sync thread spawned
+[startup] screener warm thread spawned
+[startup] board refresh loop spawned (90s, session-windowed)
+[startup] board tick loop spawned (5s, session-windowed)
+[startup] pulse snapshot loop spawned (300s, session-windowed)
+[startup] candle projection spawned (local-only, one pass)
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
+INFO:     127.0.0.1:5635 - "GET /api/live-stats HTTP/1.1" 200 OK
+[startup] market sync already running — skip
+[startup] screener warm deferred to market sync
+  [candles-from-board] latest: 2318 کندل از 1 نشست برایِ 2٬318 نماد (نوشتۀ تازه/بازنشانی‌شده: 0)
+[market-sync] thread started[startup] market sync thread spawned
+Starting full market-watch fetch ...
+
+  Market CLOSED (weekend/after-hours) — preserving last known queues & date.
+Symbols fetched: 3,387
+  market date: 20261014 (from GetMarketOverview)
+Client-type records: 2,403
+2026-10-15 02:07:22 [market] history windows rebuilt in 4.12s (sig=(20261014, 439272, 18541176656852.64, 118957, 3411352200126.0, 182139, 6325322768594.0, 20261014))
+Boards map: 3,387
+INFO:     127.0.0.1:5636 - "GET /api/market HTTP/1.1" 200 OK
+INFO:     127.0.0.1:6110 - "GET /api/market HTTP/1.1" 200 OK
+Paper-type map: 1,636
+  [order-book] پنج خطِ عمق برایِ 3,215 نماد در order_book
+  [market-total] 28,879.3 همت (TSETMC GetMarketOverview)
+  [market-index] 8425725.03 / هموزن 2225797.27
+  [market-liquidity] همتِ همین نشست در market_liquidity ثبت شد
+  [snapshot] skipped — outside 09:00-12:35 trading window (timeline stays clean)
+  [candles-from-board] latest: 2318 کندل از 1 نشست برایِ 2٬318 نماد (نوشتۀ تازه/بازنشانی‌شده: 0)
+============================================================
+Saved symbols: 3,387 | client-type records: 2,403
+Total trade value: 2,259,958,298,557,237.0 Rials
+Total volume: 125,808,808,350.0 shares
+Updated: 2026-10-15 02:07:18
+============================================================
+[market-sync] done
+[screener] cache miss, running heavy bulk scan...
+[screener] fts_results miss — محاسبهٔ زندهٔ evaluate_v10
+[screener] saved to disk cache
+[screener] cache warmed

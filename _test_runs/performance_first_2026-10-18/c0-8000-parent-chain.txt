@@ -1,0 +1,9 @@
+13660 ppid=1736 created=10/15/2026 4:02:45 AM name=python.exe
+1736 ppid=784 created=10/15/2026 4:02:45 AM name=nohup.exe
+2952 ppid=13128 created=10/15/2026 4:02:44 AM name=bash.exe
+2952|2026-10-15T04:02:44|"C:\Program Fil NO_FETCH ui-audit-system-2
+1736|2026-10-15T04:02:45|"C:\Program Fil  
+13660|2026-10-15T04:02:45|C:\Users\Johnk  
+784 gone
+13128 gone
+C:\Users\Johnkallnaya\AppData\Local\Programs\Python\Python314\python.exe

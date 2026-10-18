@@ -50,7 +50,7 @@ function Section({
 }
 
 export function MasterFtsDetails({
-  candidate, dossier, badges, support, srResistance,
+  candidate, dossier, badges, support, srResistance, levelsNote,
 }: {
   candidate: Candidate | null;
   dossier: MasterDossier;
@@ -58,6 +58,8 @@ export function MasterFtsDetails({
   badges: TapeBadge[];
   support: number | null;
   srResistance: number | null;
+  /** پیامِ سرور وقتی سطحی منتشر نشده، با تعدادِ واقعی (P0#12) — بی‌آن «—» بی‌علت می‌ماند */
+  levelsNote?: string | null;
 }) {
   const sc = candidate?.screen ?? null;
   const inds = candidate?.inds ?? [];
@@ -100,6 +102,9 @@ export function MasterFtsDetails({
             {' · '}مقاومت: {n(dossier.levels.resistance ?? srResistance)}
             {' · '}حمایت: {n(support)}
           </li>
+          {levelsNote && support === null && srResistance === null ? (
+            <li data-testid="master-levels-note" className="text-text-muted">{levelsNote}</li>
+          ) : null}
           <li className="num">
             حد ضرر: {n(dossier.levels.hardStop)}
             {' · '}مبنا: {t.stopBasis ?? '—'}

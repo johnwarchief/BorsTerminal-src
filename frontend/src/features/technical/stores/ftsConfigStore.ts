@@ -70,6 +70,16 @@ export type ChartView = {
   showWatermark: boolean;
   showCorporateActions: boolean;
   fibLogarithmic: boolean;
+  /** سطوحِ کاملِ فیبو (۰ تا ۱) — پیش‌فرض خاموش چون زمینهٔ بصری است و دیدِ کندل
+   *  را می‌گیرد. تا این نسخه درِ هر موتور state محلیِ جدا بود، پس سوییچِ کاتالوگ
+   *  نمی‌توانست به موتورِ دوم برسد؛ حالا یک منبعِ حقیقت است (مرحلۀ ۶). */
+  showFibLevels: boolean;
+  /** رویدادهایِ تاریخیِ ستاپ‌ها رویِ چارت — پیش‌فرض خاموش تا price action
+   *  مزاحم نداشته باشد؛ همان پرچم درِ هر دو موتور خوانده می‌شود. */
+  showHistoryEvents: boolean;
+  /** لایۀ موتورِ سوم (زیگزاگِ آستانه‌دار، `/api/structure3`): بی‌رأیِ رسمی و
+   *  پیش‌فرض خاموش، چون آستانه‌هایش رأیِ جزوه ندارند و فقط لایۀ مقایسه‌اند. */
+  showStructure3: boolean;
   /** قفلِ کاملِ مقیاسِ عمودی (معادلِ «قفل قیمت به نسبت کندل»ِ ره‌آورد): زوم هم
    *  مقیاس را نمی‌شکند. بی‌این هم درگِ افقی مقیاس را نمی‌پراند (#167). */
   axisScaleLock: boolean;
@@ -114,6 +124,9 @@ export const VIEW_DEFAULTS: ChartView = {
   showWatermark: true,
   showCorporateActions: true,
   fibLogarithmic: false,
+  showFibLevels: false,
+  showHistoryEvents: false,
+  showStructure3: false,
   axisScaleLock: false,
   legendAlways: false,
   pricePrecision: 'auto',

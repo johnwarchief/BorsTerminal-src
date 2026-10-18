@@ -10,3 +10,38 @@ _audit/last_blast_radius/csv_cache/
 _audit/last_blast_radius/market_copy.db
 _audit/last_blast_radius/partial.jsonl
 _audit/last_blast_radius/run.log
+# scratchِ دورِ «تطبیقِ عددی و بصری با ره‌آورد ۳۶۵»: لاگِ stdout، گرفتنی‌هایِ HTML/JSِ بیرونی،
+# اسکریپت‌هایِ تشخیصِ ویندوز و نشانه‌هایِ موقت (هیچ‌کدام شاهدِ قابلِ بازبینی نیستند)
+*.stdout.txt
+*_stdout.txt
+*_home.html
+*_buildmanifest.js
+*_chartpage.html
+# استثنا: این یکی درِ `docs/CANDLE-CONTRACT.md` (§ timeframes) و `_audit/ra_monthly_bucket.py`
+# به‌عنوان شاهدِ «کدِ timeframe از markupِ خودِ صفحه» ارجاع شده، پس درِ گیت می‌ماند.
+!ra_chartpage.html
+ps_*.ps1
+ra365_session_host.port
+ra365_session_host.log
+ta_ui_probe.json
+ta_ui_recon.json
+merge_gates.txt
+merge_gate.log
+ta_chart_nocookie.html
+commitmsg.txt
+# stdout/لاگِ عدّادها (ra365_*.py) — بازتولیدشدنی‌اند؛ شاهدِ عددی درِ CSV/JSON وِ §۹ِ
+# گزارشِ parity است، نه درِ این فایل‌ها.
+_*.out
+_*.log
+
+# اسکریپت‌هایِ جای‌گزین‌شده‌ای که هیچ سندِ منتشرشده‌ای به آن‌ها ارجاع نمی‌دهد (نسخۀ
+# نهاییِ همان سنجش‌ها کامیت شده: `_ghost_probe.py`، `_lakhazar_csv2.py`). رویِ دیسک
+# می‌مانند تا اگر لازمی شد دوباره اجرا شوند، ولی شاهدِ قابلِ بازبینی نیستند
+# (قاعدۀ AGENTS: فایلِ موقتِ untracked نماند و کامیت هم نشود).
+_20230328_probe.py
+_cache_probe.py
+_ghost_probe_clean.py
+_ghost_probe_v3.py
+_lakhazar_csv_probe.py
+_live_probe.py
+RA365-ADJUST-RULERULE-2026-10-12.csv

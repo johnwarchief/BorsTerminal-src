@@ -1,0 +1,214 @@
+[
+ {
+  "round": 0,
+  "arm": "A",
+  "si_ms": 5.0,
+  "db_pristine": true,
+  "ready_s": 3.2,
+  "warmup": [
+   8735.3,
+   "MISS"
+  ],
+  "builds": [
+   [
+    "POST",
+    569.0,
+    "MISS"
+   ],
+   [
+    "GET",
+    605.9,
+    "MISS"
+   ],
+   [
+    "POST",
+    550.4,
+    "MISS"
+   ],
+   [
+    "GET",
+    506.9,
+    "MISS"
+   ],
+   [
+    "POST",
+    666.0,
+    "MISS"
+   ],
+   [
+    "GET",
+    519.6,
+    "MISS"
+   ],
+   [
+    "POST",
+    2165.4,
+    "MISS"
+   ],
+   [
+    "GET",
+    535.9,
+    "MISS"
+   ]
+  ]
+ },
+ {
+  "round": 1,
+  "arm": "B",
+  "si_ms": 0.5,
+  "db_pristine": true,
+  "ready_s": 3.1,
+  "warmup": [
+   9327.5,
+   "MISS"
+  ],
+  "builds": [
+   [
+    "POST",
+    655.2,
+    "MISS"
+   ],
+   [
+    "GET",
+    675.3,
+    "MISS"
+   ],
+   [
+    "POST",
+    568.4,
+    "MISS"
+   ],
+   [
+    "GET",
+    758.0,
+    "MISS"
+   ],
+   [
+    "POST",
+    625.5,
+    "MISS"
+   ],
+   [
+    "GET",
+    749.3,
+    "MISS"
+   ],
+   [
+    "POST",
+    1996.1,
+    "MISS"
+   ],
+   [
+    "GET",
+    597.4,
+    "MISS"
+   ]
+  ]
+ },
+ {
+  "round": 2,
+  "arm": "B",
+  "si_ms": 0.5,
+  "db_pristine": true,
+  "ready_s": 3.6,
+  "warmup": [
+   9630.9,
+   "MISS"
+  ],
+  "builds": [
+   [
+    "POST",
+    560.2,
+    "MISS"
+   ],
+   [
+    "GET",
+    761.9,
+    "MISS"
+   ],
+   [
+    "POST",
+    526.5,
+    "MISS"
+   ],
+   [
+    "GET",
+    511.6,
+    "MISS"
+   ],
+   [
+    "POST",
+    546.4,
+    "MISS"
+   ],
+   [
+    "GET",
+    578.4,
+    "MISS"
+   ],
+   [
+    "POST",
+    1939.8,
+    "MISS"
+   ],
+   [
+    "GET",
+    548.9,
+    "MISS"
+   ]
+  ]
+ },
+ {
+  "round": 3,
+  "arm": "A",
+  "si_ms": 5.0,
+  "db_pristine": true,
+  "ready_s": 3.1,
+  "warmup": [
+   8433.7,
+   "MISS"
+  ],
+  "builds": [
+   [
+    "POST",
+    497.2,
+    "MISS"
+   ],
+   [
+    "GET",
+    606.2,
+    "MISS"
+   ],
+   [
+    "POST",
+    514.1,
+    "MISS"
+   ],
+   [
+    "GET",
+    493.9,
+    "MISS"
+   ],
+   [
+    "POST",
+    545.4,
+    "MISS"
+   ],
+   [
+    "GET",
+    543.9,
+    "MISS"
+   ],
+   [
+    "POST",
+    1958.2,
+    "MISS"
+   ],
+   [
+    "GET",
+    528.2,
+    "MISS"
+   ]
+  ]
+ }
+]

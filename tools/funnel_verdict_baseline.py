@@ -314,21 +314,120 @@ def selftest(out_dir: str) -> int:
     return 0
 
 
+def ab_compare(pre_ref: str, out_dir: str) -> int:
+    """«پیش» و «پس» درِ یکِ فرآیند و رویِ یکِ داده — بدونِ وابستگی بهِ زمان.
+
+    چرا: دورِ اولِ این مقایسه دوِ فایلِ JSON گرفته‌شده درِ دو ساعت را با هم سنجید
+    و ۲۳ «جابه‌جایی» داد؛ علتِ هر ۲۳،نوشتنِ جدولِ `funnel_tech_scan` توسطِ بک‌اندِ
+    زنده بود (`scan_as_of` و روند روزانه عوض شده بود)، نه ادغام. وقتی زمینۀ داده
+    میانِ دو گرفتن جابه‌جا شود، مقایسه بی‌معنا است. اینجا هر چهل حالت درِ یکِ
+    فرآیند از هر دو `api/funnel.py` می‌گذرد: همان تابلو، همان اسکرینر، همان
+    امضایِ اسکن، همان ثانیه.
+
+    این حالت فقط `api/funnel.py` را عوض می‌کند؛ `git diff --stat` ثابت کرد ادغام
+    درِ این مسیر هیچ فایلِ دیگری را دست نزده (`fts_engine`، `funnel_registry`،
+    `funnel_tech_scan`، `api/market`، `api/screener` بی‌تغییر).
+    """
+    import api.funnel as F
+    import funnel_tech_scan as SCAN
+
+    calls: list[int] = []
+
+    def stub_start_refresh(symbols):
+        syms = list(symbols)
+        calls.append(len(syms))
+        return {"running": False, "queued": 0, "done": 0, "failed": 0,
+                "in_flight": 0, "error": None, "stubbed": True}
+
+    SCAN.start_refresh = stub_start_refresh  # type: ignore[attr-defined]
+
+    legacy_src = subprocess.run(["git", "-C", ROOT, "show", pre_ref],
+                                capture_output=True, text=True, encoding="utf-8",
+                                check=True).stdout
+    legacy = type(sys)("api.funnel_legacy")
+    legacy.__dict__["__file__"] = os.path.join(ROOT, "api", "funnel.py")
+    legacy.__dict__["__name__"] = "api.funnel_legacy"
+    legacy.__dict__["__package__"] = "api"
+    if ROOT not in sys.path:
+        sys.path.insert(0, ROOT)
+    import api  # noqa: F401  بستۀ میزبان برایِ import نسبی
+    sys.modules["api.funnel_legacy"] = legacy
+    exec(compile(legacy_src, "<api.funnel_legacy>", "exec"), legacy.__dict__)
+
+    ctx = _context_fingerprint()
+    moved = same = 0
+    rows = []
+    for case in _cases():
+        kw = dict(case["kw"])
+        kw.setdefault("preset", "trend")
+
+        def call(mod):
+            k = dict(kw)
+            return mod._run(k.pop("preset"), list(k.pop("chain", [])),
+                            k.pop("fund_mode", "standard"), k.pop("params", {}),
+                            k.pop("exceptions", {}), full=True,
+                            drop_suffix=k.pop("drop_suffix", True),
+                            logic=k.pop("logic", "and"),
+                            tech_chain=list(k.pop("tech_chain", [])),
+                            settings=k.pop("settings", {}))
+
+        try:
+            before = call(legacy)
+        except Exception as e:  # noqa: BLE001
+            before = {"status": "raised", "message": f"{type(e).__name__}: {e}"}
+        try:
+            after = call(F)
+        except Exception as e:  # noqa: BLE001
+            after = {"status": "raised", "message": f"{type(e).__name__}: {e}"}
+        d1, d2 = _digest(before), _digest(after)
+        if d1 == d2:
+            same += 1
+        else:
+            moved += 1
+        fields = _diff_fields(json.loads(_canonical(before)), json.loads(_canonical(after))) \
+            if d1 != d2 else []
+        rows.append({"name": case["name"], "legacy": d1, "merged": d2, "fields": fields[:12]})
+
+    doc = {"mode": "ab_in_process", "legacy_ref": pre_ref, "context": ctx,
+           "git_sha": subprocess.run(["git", "-C", ROOT, "rev-parse", "HEAD"],
+                                     capture_output=True, text=True).stdout.strip(),
+           "cases": rows}
+    path = os.path.join(out_dir, "funnel_verdict_ab.json")
+    os.makedirs(out_dir, exist_ok=True)
+    with open(path, "w", encoding="utf-8") as fh:
+        json.dump(doc, fh, ensure_ascii=False, indent=1)
+    print(f"\n═══ تطبیقِ درجریانِ یکِ فرآیند: api/funnel.py در «{pre_ref}» در برابرِ ادغام‌شده ═══\n")
+    print(f"مبنایِ زمینه: {json.dumps(ctx, ensure_ascii=False)}")
+    print(f"حالت‌هایِ یکسان: {same} | جابه‌جا: {moved}")
+    for r in rows:
+        if r["legacy"] == r["merged"]:
+            continue
+        print(f"\n── {r['name']}: {r['legacy']} → {r['merged']}")
+        for f in r["fields"]:
+            print("   " + f)
+    print(f"\n[verdict] نوشته شد: {path}")
+    return 1 if moved else 0
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description="مبنایِ رأیِ قیف")
     ap.add_argument("--label", help="یکِ اجرا ثبت می‌کند (pre یا post)")
     ap.add_argument("--compare", nargs=2, metavar=("A", "B"))
+    ap.add_argument("--ab", metavar="REF",
+                    help="«REF:api/funnel.py» — هر دو نسخۀ تابع درِ یکِ فرآیند سنجیده می‌شوند")
     ap.add_argument("--selftest", action="store_true")
     ap.add_argument("--out", default=os.path.join(ROOT, "_audit"))
     args = ap.parse_args()
     os.environ.setdefault("PYTHONIOENCODING", "utf-8")
     out_dir = args.out
+    if args.ab:
+        return ab_compare(args.ab, out_dir)
     if args.compare:
         return compare(out_dir, *args.compare)
     if args.selftest:
         return selftest(out_dir)
     if not args.label:
-        raise SystemExit("[verdict] یا --label یا --compare یا --selftest")
+        raise SystemExit("[verdict] یا --label یا --compare یا --ab یا --selftest")
     return capture(out_dir=out_dir, label=args.label)
 
 

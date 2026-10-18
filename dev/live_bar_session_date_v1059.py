@@ -36,6 +36,7 @@
 """
 import io
 import os
+import re
 import sqlite3
 import sys
 import tempfile
@@ -263,9 +264,19 @@ def main():
     ck(src.count("_watch_live_bar(") >= 3,
        "both chart routes reach the live bar through the one helper",
        str(src.count("_watch_live_bar(")))
-    ck("_attach_live_bar(symbol, _cached[1])" in src and
-       "_attach_live_bar(symbol, result)" in src,
+    # ادعایِ این سنجه «هر دو فراخوانیِ `_attach_live_bar` موجود است» (هم رویِ hitِ کش،
+    # هم رویِ fetchِ تازه) است، نه «این رشتهٔ دقیق با این آرگومان‌ها درِ فایل هست».
+    # Phase 5 آرگومانِ `built_at=` را به آن فراخوانی‌ها اضافه کرد (برایِ `payloadAgeS`)؛
+    # تطبیقِ رشتهٔ خام، آن افزودن را مثلِ شکستنِ سیم‌کشی نشان می‌داد. الگویِ kwargs-پذیر
+    # همان ادعا را نگه می‌دارد — و کنترلِ منفیِ بلافاصله پایین ثابت می‌کند الگو هنوز
+    # بی‌رحم است: اگر یکی از دو مسیر حذف شود، همان الگو قرمز می‌شود.
+    CDN_HIT = r"_attach_live_bar\(\s*symbol,\s*_cached\[1\]\s*(,[^)]*)?\)"
+    CDN_FRESH = r"_attach_live_bar\(\s*symbol,\s*result\s*(,[^)]*)?\)"
+    ck(re.search(CDN_HIT, src) and re.search(CDN_FRESH, src),
        "the CDN path injects on both the cache hit and a fresh fetch")
+    ck(bool(re.search(CDN_HIT, src)) and not re.search(CDN_FRESH, src.replace(
+           re.search(CDN_FRESH, src).group(0), "_attach_live_bar(symbol, untouched)", 1)),
+       "NEGATIVE CONTROL: removing either CDN inject site trips this guard")
     ck('"degraded": True' in src, "a local-fallback response is marked as degraded")
     ck('"historyRepairScheduled": ' in src or "res[\"historyRepairScheduled\"]" in src,
        "the fallback says whether it scheduled a refresh")

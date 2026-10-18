@@ -59,8 +59,20 @@ def test_known_shapes():
        "۱ «N سنجه، M خطا»", got)
 
     got = parse_counts("paths parity: ۹ سبز، ۲ قرمز\n")
-    ck(got and got["total"] == 9 and got["passed"] == 7 and got["failed"] == 2,
-       "۱ «N سبز، M قرمز»", got)
+    # تصحیحِ دورِ ادغامِ System 2: مبدأِ واقعی (`dev/fts_engine_paths_parity_v1076.py:120`)
+    # عددِ اول را «سبزها» می‌شمارد، پس ۹ سبز و ۲ قرمز یعنی ۹/۱۱ — نه ۷/۹ که
+    # expectationِ پیشین این سنجه بود.
+    ck(got and got["total"] == 11 and got["passed"] == 9 and got["failed"] == 2,
+       "۱ «N سبز، M قرمز» = موفق/کل", got)
+
+    got = parse_counts("نتیجه: 12_pass / 0_fail / 3_skip\n")
+    ck(got and got["pattern"] == "N_pass / M_fail" and got["passed"] == 12
+       and got["failed"] == 0 and got["total"] == 15 and got["skipped"] == 3,
+       "۱ «N_pass / M_fail / K_skip» (چهار گاردِ phase بی‌این بی‌شمارش می‌ماندند)", got)
+
+    got = parse_counts("نتیجه: 5_pass / 2_fail\n")
+    ck(got and got["passed"] == 5 and got["failed"] == 2 and got["total"] == 7,
+       "۱ «N_pass / M_fail» بی‌سطرِ skip", got)
 
     got = parse_counts("OK — 12/12\n")
     ck(got and got["passed"] == 12 and got["total"] == 12, "۱ «OK — N/M»", got)

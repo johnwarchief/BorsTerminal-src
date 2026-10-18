@@ -1,0 +1,3 @@
+$ (cwd=frontend) npx.cmd tsc -b
+
+EXIT=0

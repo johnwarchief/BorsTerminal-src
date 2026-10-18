@@ -1,0 +1,63 @@
+copied market.db -> C:\Users\JOHNKA~1\AppData\Local\Temp\bors_perf_dbcopy\market.db in 2.3s
+DB = C:\Users\JOHNKA~1\AppData\Local\Temp\bors_perf_dbcopy\market.db (233.2 MB)
+
+rows: {"market_watch": 5986, "instruments": 5981, "client_type": 103707, "client_type_value": 2531, "daily_prices": 122391, "price_history": 441568, "mstat_snap": 1472}
+
+(a) load_snapshot(force), one conn : med=   304.1ms max=   309.7ms
+    snapshot SQL breakdown:
+         244.5ms x3  rows=18249   SELECT ins_code, q_tot_tran FROM daily_prices WHERE d_even < ? AND q_tot_t
+         134.3ms x3  rows=10302   SELECT m.ins_code, i.l_val18, i.l_val30, i.sector_code, i.sector_name, m.p
+          59.1ms x3  rows=7092    SELECT ins_code, buy_i_vol, buy_n_vol, buy_ddd_vol, buy_count_i, buy_count
+          45.2ms x3  rows=3       SELECT MAX(d_even) FROM client_type WHERE d_even<=?
+           8.3ms x3  rows=3       SELECT MAX(d_even), MAX(h_even), COUNT(*), MAX(fetched_at) FROM market_wat
+           2.6ms x3  rows=3       SELECT MAX(h_even) FROM market_watch WHERE d_even=?
+           2.5ms x3  rows=3       SELECT MAX(d_even) FROM market_watch
+           1.1ms x3  rows=0       SELECT ins_code, buy_i_val, buy_n_val, sell_i_val, sell_n_val, buy_ddd_val
+           1.1ms x6  rows=216     PRAGMA table_info(market_watch)
+(a) enrich() with warm snapshot    : med=    93.5ms max=    97.2ms
+
+(a) per-panel cost with the snapshot ALREADY warm:
+      mstat.summary            med=   161.3ms max=   170.3ms
+      mstat.thermometer        med=    94.2ms max=    99.3ms
+      mstat.histogram          med=    99.5ms max=   102.3ms
+      mstat.depth              med=    95.7ms max=    99.3ms
+      mstat.client_split       med=   102.3ms max=   111.5ms
+      mstat.mainwatch          med=   122.3ms max=   124.4ms
+      mstat.industries         med=    94.9ms max=    95.3ms
+      mstat.smart_money        med=   382.5ms max=   469.6ms
+      mstat.timeline           med=    27.6ms max=    32.1ms
+      mstat.phases             med=   483.2ms max=   495.3ms
+      panels.treemap           med=   113.8ms max=   116.7ms
+      panels.tops              med=   136.0ms max=   138.6ms
+      panels.orderflows        med=   132.0ms max=   132.4ms
+      panels.ownership         med=   112.0ms max=   113.8ms
+      panels.indexcards        med=     6.9ms max=     7.2ms
+      panels.gold              med=   111.1ms max=   119.6ms
+      SUM warm, one conn                2275.4ms
+
+(b) same panels, a NEW get_db() connection each (what HTTP actually does):
+      mstat.summary               463.3ms  stmts=14
+      mstat.thermometer           411.3ms  stmts=10
+      mstat.histogram             437.8ms  stmts=10
+      mstat.depth                 398.5ms  stmts=10
+      mstat.client_split          407.7ms  stmts=10
+      mstat.mainwatch             452.4ms  stmts=10
+      mstat.industries            416.2ms  stmts=10
+      mstat.smart_money           704.4ms  stmts=17
+      mstat.timeline               31.0ms  stmts=3
+      mstat.phases                498.1ms  stmts=2
+      panels.treemap              444.1ms  stmts=10
+      panels.tops                 445.1ms  stmts=13
+      panels.orderflows           452.7ms  stmts=10
+      panels.ownership            424.4ms  stmts=10
+      panels.indexcards             8.3ms  stmts=5
+      panels.gold                 426.0ms  stmts=11
+      SUM fresh-conn                      6421.2ms
+2026-10-15 00:21:49 [market] history windows rebuilt in 3.77s (sig=(20261014, 439272, 18541176656852.64, 118957, 3411352200126.0, 138105, 5897538405451.0, 20261011))
+
+  /api/mstat/board (fresh conn, 16 panels): med=  3197.8ms max=  8339.4ms panels=18 errors=[]
+  _mstat_call(summary) miss             : med=     5.8ms
+  _mstat_call(summary) hit              : med=     5.3ms
+  get_db() open+DDL storm, no query     : med=     4.3ms
+
+wrote _audit/perf/MSTAT_PROFILE.json

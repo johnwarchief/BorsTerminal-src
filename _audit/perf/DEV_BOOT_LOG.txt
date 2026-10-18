@@ -1,0 +1,42 @@
+C:\Users\Johnkallnaya\Desktop\Borsterminal\BorsTerminal-src\app.py:180: DeprecationWarning: 
+        on_event is deprecated, use lifespan event handlers instead.
+
+        Read more about it in the
+        [FastAPI docs for Lifespan Events](https://fastapi.tiangolo.com/advanced/events/).
+        
+  @app.on_event("startup")
+INFO:     Started server process [7432]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
+[startup] codal schema migrated (additive, idempotent)
+[startup] market sync thread spawned
+[startup] screener warm thread spawned
+[startup] board refresh loop spawned (90s, session-windowed)
+[startup] board tick loop spawned (5s, session-windowed)
+[startup] pulse snapshot loop spawned (300s, session-windowed)
+[startup] candle projection spawned (local-only, one pass)
+[startup] market sync already running — skip
+[screener] loaded from disk cache
+[market-sync] thread started
+Starting full market-watch fetch ...
+[startup] market sync thread spawned
+  Market CLOSED (weekend/after-hours) — preserving last known queues & date.
+  [candles-from-board] latest: 2296 کندل از 1 نشست برایِ 2٬296 نماد (نوشتۀ تازه/بازنشانی‌شده: 0)
+Symbols fetched: 3,436
+  market date: 20261014 (from GetMarketOverview)
+Client-type records: 2,403
+2026-10-15 00:48:40 [market] history windows rebuilt in 3.65s (sig=(20261014, 439272, 18541176656852.64, 118957, 3411352200126.0, 138105, 5897538405451.0, 20261011))
+Boards map: 3,436
+[screener] cache warmed
+Paper-type map: 2,326
+  [order-book] پنج خطِ عمق برایِ 3,263 نماد در order_book
+  [market-total] 28,879.3 همت (TSETMC GetMarketOverview)
+  [market-index] 8425725.03 / هموزن 2225797.27
+  [market-liquidity] همتِ همین نشست در market_liquidity ثبت شد
+  [snapshot] skipped — outside 09:00-12:35 trading window (timeline stays clean)
+  [tape-history] 182,139 ردیفِ [ih] از سایت (نشست تا 20261014)
+  [corporate-events] adjust=1000 share=3488 failed=0 amended=0 late_rows=7
+  [state-notices] state=500 messages=600 supervision=68 stops=0 failed=0
+INFO:     127.0.0.1:4571 - "GET /api/live-stats HTTP/1.1" 200 OK
+INFO:     127.0.0.1:4572 - "GET /api/market HTTP/1.1" 200 OK

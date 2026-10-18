@@ -1,0 +1,13 @@
+$ (cwd=.) C:\Users\Johnkallnaya\AppData\Local\Programs\Python\Python314\python.exe dev/version_anchor_guard.py
+  PASS هر 6 لنگه روی 1.0.86
+    ok  bors_config.APP_VERSION = 1.0.86
+    ok  frontend/package.json = 1.0.86
+    ok  package-lock.json#version = 1.0.86
+    ok  package-lock.json#packages[""] = 1.0.86
+    ok  src-tauri/tauri.conf.json = 1.0.86
+    ok  installer/bors_setup.iss AppVersion = 1.0.86
+
+6 checks, 0 failed
+VERSION ANCHOR GUARD OK
+
+EXIT=0

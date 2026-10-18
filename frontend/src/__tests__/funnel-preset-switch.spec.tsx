@@ -1,4 +1,3 @@
-// @ts-nocheck
 /* P0 regression: تغییر Preset باید منبعِ معتبر (URL) را عوض کند تا جدول تازه شود.
    قبل ازِ اصلاح: دکمه فقط store را عوض می‌کرد و `useActiveFunnelPreset` رویِ
    `?preset=`ِ URL قفل می‌ماند ⇒ جدول با کلیک تغییر نمی‌کرد. */

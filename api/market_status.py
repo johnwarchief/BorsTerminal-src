@@ -15,6 +15,7 @@ import time
 
 import market_state as _MS
 import mstat_engine as _mstat
+import mstat_panels as _panels
 import funnel_engine as _FE
 
 
@@ -90,10 +91,18 @@ def _mstat_store(full_key, now, out):
     return True
 
 
-def _mstat_compute(fn, args, kw):
+def _mstat_compute(fn, args, kw, conn=None):
     """یک اتصال، یک فراخوانی. خطای موتور ⇒ status=error نه ۵۰۰، چون یک پنلِ خراب
-    نباید کل تب وضعیت بازار را از کار بیندازد."""
-    conn = get_db()
+    نباید کل تب وضعیت بازار را از کار بیندازد.
+
+    `conn` داده شود (PERF-S3 ازِ System 2): پنل روی همان اتصالی خوانده می‌شود که
+    نشانکِ کش رویش خوانده شده — بی‌این هر پنلِ سرد دو اتصال می‌ساخت و هر
+    `get_db()` ≈۴ms است (شاهدِ `_audit/perf/SQLITE_CONN_BASELINE.json`). مالکیّت
+    بستن با همان فراخوان است: اتصالِ امانی بسته نمی‌شود.
+    """
+    own = conn is None
+    if own:
+        conn = get_db()
     try:
         out = fn(conn, *args, **kw)
         if isinstance(out, dict):
@@ -101,7 +110,8 @@ def _mstat_compute(fn, args, kw):
     except Exception as e:
         return {"status": "error", "message": str(e), "source": "local:market.db"}
     finally:
-        conn.close()
+        if own:
+            conn.close()
     return out
 
 
@@ -119,7 +129,53 @@ def _mstat_bg_rebuild(full_key, fn, args, kw):
             _MSTAT_BG.discard(full_key)
 
 
+def _mstat_hashkey(value):
+    """نرمالِ کلیدِ کش: فهرست/دیکشنری به شیءِ هاش‌شدنی تبدیل می‌شود.
+
+    نقصِ کشف‌شده درِ ادغام (از خودِ System 2): `key = (fn.__name__, args, …)` آرگومانِ
+    فهرستی را هاش می‌خواست و `/api/mstat/series?symbols=…` — تنها روتی که فهرست
+    می‌فرستد — روی `TypeError: cannot use 'tuple' as a dict key` ۵۰۰ می‌داد
+    (شاهد: گاردِ `dev/mstat_status_panels_contract_v1.py`). فقط **کلید** نرمال
+    می‌شود؛ آرگومانِ واقعی دست‌نخورده به موتور می‌رود، پس `series` همان list را
+    می‌گیرد.
+    """
+    if isinstance(value, (list, tuple, set, frozenset)):
+        return tuple(_mstat_hashkey(v) for v in value)
+    if isinstance(value, dict):
+        return tuple(sorted((str(k), _mstat_hashkey(v)) for k, v in value.items()))
+    return value
+
+
 def _mstat_call(fn, *args, ttl_s=None, refresh="bg", state=None, stale_ok=True, **kw):
+    """دروازۀ پنلِ mstat: تصمیمِ ttl/refresh اینجا است، کشِ هر-حالت درِ
+    `_mstat_call_cached`.
+
+    PERF-S3 (ادغامِ System 2، رأیِ مالک ۱۴۰۵-۰۷-۲۸ گزینهٔ C): وقتی حالتِ بانک ازِ
+    بالا داده نشده — یعنی همهٔ مسیرهایِ پنلِ تنها — نشانکِ کش و خودِ پنل روی
+    **یکِ اتصال** می‌خوانده می‌شوند. پیش از این دو اتصال باز می‌شد و هر
+    `get_db()` ≈۴ms هزینه دارد (شاهدِ `_audit/perf/SQLITE_CONN_BASELINE.json`).
+    پویشِ مشترکِ System 1 هم سرِ جایش است: `state` درِ مسیرِ تب (`_board_all`) یک‌بار
+    ساخته می‌شود و ده پنل همان را می‌برند، پس این شاخه برایِ تب اصلاً اجرا نمی‌شود.
+    """
+    ttl = _MSTAT_TTL_S if ttl_s is None else float(ttl_s)
+    key = (fn.__name__, _mstat_hashkey(args), _mstat_hashkey(kw))
+    if ttl <= 0 or refresh == "inline":
+        return dict(_mstat_compute(fn, args, kw))
+    if state is not None:
+        return dict(_mstat_call_cached(fn, key, args, kw, ttl, stale_ok, state))
+    conn = get_db()
+    try:
+        marker = _mstat_marker(conn)
+        if marker is None:
+            # بانک هنوز نشاندۀ تایم‌لاین ندارد ⇒ کش درِ کار وسط نمی‌آید (رفتارِ دیروز)
+            return dict(_mstat_compute(fn, args, kw, conn=conn))
+        state = (_MS.revision(), _MS.static_rev(), _MS.session_day(), marker)
+        return dict(_mstat_call_cached(fn, key, args, kw, ttl, stale_ok, state, conn))
+    finally:
+        conn.close()
+
+
+def _mstat_call_cached(fn, key, args, kw, ttl, stale_ok, state, shared=None):
     """پنلِ mstat با کشِ هر-حالت + stale-while-revalidate + تک‌پروازگی.
 
     چرا این لایه اضافه شد (سنجشِ همین شب، بک‌اندِ HEAD با حلقه‌هایِ روشن،
@@ -134,20 +190,17 @@ def _mstat_call(fn, *args, ttl_s=None, refresh="bg", state=None, stale_ok=True, 
 
     `stale_ok=False` برایِ پنل‌هایی است که عددشان از *ساعتِ دیوار* ساخته می‌شود:
 
-    تازگیِ لازم برایِ تصمیمِ حساس دست‌نخورده: `ttl_s=0` بی‌کش است، نشانه‌یِ جابه‌جا
-    شده کلیدِ تازه می‌خواهد (پس هیچ دادهٔ روزِ پیشی سرو نمی‌شود)، و beyond-cap
-    درون‌خطی می‌سازد. `refresh="inline"` رفتارِ قدیمِ کاملِ همین مسیر است.
+    تازگیِ لازم برایِ تصمیمِ حساس دست‌نخورده: نشانه‌یِ جابه‌جا شده کلیدِ تازه
+    می‌خواهد (پس هیچ دادهٔ روزِ پیشی سرو نمی‌شود)، و بی‌نشانه درون‌خطی می‌سازد.
+    `shared` اتصالِ ازِ پیش بازِ `_mstat_call` است (PERF-S3); درِ مسیرِ تب None
+    می‌ماند و هر پنل اتصالِ خودش را باز می‌کند.
     """
-    ttl = _MSTAT_TTL_S if ttl_s is None else float(ttl_s)
-    key = (fn.__name__, args, tuple(sorted(kw.items())))
-    if ttl <= 0 or refresh == "inline":
-        return dict(_mstat_compute(fn, args, kw))
     try:
         full_key = _mstat_key_for(key, state)
     except Exception:
         full_key = None
     if full_key is None:
-        return dict(_mstat_compute(fn, args, kw))
+        return dict(_mstat_compute(fn, args, kw, conn=shared))
 
     now = time.monotonic()
     with _MSTAT_LOCK:
@@ -186,9 +239,9 @@ def _mstat_call(fn, *args, ttl_s=None, refresh="bg", state=None, stale_ok=True, 
             hit = _MSTAT_CACHE.get(full_key)
         if hit is not None:
             return dict(hit[1])
-        return dict(_mstat_compute(fn, args, kw))
+        return dict(_mstat_compute(fn, args, kw, conn=shared))
     try:
-        out = _mstat_compute(fn, args, kw)
+        out = _mstat_compute(fn, args, kw, conn=shared)
         _mstat_store(full_key, now, out)
     finally:
         with _MSTAT_LOCK:
@@ -293,6 +346,92 @@ def mstat_industries():
     """گام ۵.۳ — خلاصهٔ صنایع (کلیک ⇒ فیلتر جدول پایین)."""
     return _mstat_call(_mstat.industries)
 
+
+# ═══════════ نماهایِ صفحۀ «وضعیت بازار» (مرجعِ Binder1.pdf — مأموریت ۱۴۰۵-۰۷-۲۳)
+# همه از همان `mstat_engine.enrich` می‌آیند: یک اسکنِ تابلو، چند نما. هیچ
+# کوئریِ دومی رویِ market_watch زده نمی‌شود و هیچ عددی درِ رابط ساخته نمی‌شود؛
+# نبودِ منبع درِ خودِ پاسخ با `no_source` / `blockers` و علت می‌آید.
+
+@router.get("/api/mstat/treemap")
+def mstat_treemap(group: str = Query("eq_all"), industry: str = Query(""),
+                  metric: str = Query("value"), limit: int = Query(220)):
+    """صفحۀ ۲ و ۱۲ — نقشۀ بازار. `metric` سطحِ مستطیل را عوض می‌کند
+    (value|volume|cap|trades) و رنگ از درصدِ پایانی/دیروز است.
+    «ارزش بازار» فقط وقتی ستونش در بانک هست می‌آید؛ وگرنه `no_source`."""
+    return _mstat_call(_panels.treemap, group, industry, metric, limit)
+
+
+@router.get("/api/mstat/tops")
+def mstat_tops(group: str = Query("eq_all"), limit: int = Query(5)):
+    """صفحۀ ۸ — چهار پنل: تأثیر مثبت/منفی بر شاخص، بیشترین ارزش، بیشترین حجم.
+
+    ترتیبِ پنل‌هایِ شاخص از «درصدِ رشدِ قیمت» نیست: از تغییرِ ارزشِ بازار
+    (ریالی، بی‌فرض) می‌آید و ستونِ «واحدِ شاخص» برآورد است — پسماندش نسبت به
+    تغییرِ رسمی درِ `reconciliation` اعلام می‌شود، چون سهامِ شناور در این بانک
+    نیست و وزنِ اینجا سهامِ کل است.
+    """
+    return _mstat_call(_panels.tops, group, limit)
+
+
+@router.get("/api/mstat/orderflows")
+def mstat_order_flows(group: str = Query("all"), limit: int = Query(10)):
+    """صفحۀ ۹ — حجمِ *سفارش* (ماندهٔ دفترِ سفارش) جدا از حجمِ *معامله*.
+
+    این دو در مرجع دو پنلِ جدااند و یکی‌گرفتنشان رایج‌ترین خطایِ داشبورد است.
+    عمقِ دفتر در بانک نباشد `orders_available=false` و پنل «منبع نرسیده»
+    می‌گوید، نه صفر."""
+    return _mstat_call(_panels.order_book_flows, group, limit)
+
+
+@router.get("/api/mstat/ownership")
+def mstat_ownership(group: str = Query("all"), limit: int = Query(10)):
+    """صفحۀ ۹ — تغییرِ مالکیت حقیقی ⇄ حقوقی در *سهم* و *درصدِ سهامِ شرکت*.
+
+    با «خالصِ ورودِ پول» (ریالی، درِ clientsplit) و «سرانه» یکی نیست و
+    تکرارشان نمی‌آید. `client_data_lags_session` یعنی ردیفِ مشتری از نشستِ
+    قبل است — همان شکافِ دو‌روزه‌ای که درِ نبض هم اعلام می‌شود."""
+    return _mstat_call(_panels.ownership_change, group, limit)
+
+
+@router.get("/api/mstat/indexcards")
+def mstat_index_cards(days: int = Query(30)):
+    """صفحۀ ۶ و ۷ — سه کارت (کل بورس، کل هم‌وزن، قیمتِ وزنیِ ارزشی) + sparkline.
+
+    «قیمتِ وزنیِ ارزشی» = q_tot_cap ÷ q_tot_tran از همان ردیفِ رسمی، نه
+    میانگینِ درصدها. `history_points` می‌گوید sparkline واقعاً چند روز دارد."""
+    return _mstat_call(_panels.index_cards, days)
+
+
+@router.get("/api/mstat/gold")
+def mstat_gold(history_days: int = Query(60)):
+    """صفحۀ ۱، ۳، ۱۰، ۱۱ و ۱۲ — نمادهایِ طلا/نقرۀ *واقعاً* رویِ تابلو + تاریخچه.
+
+    طبقه از `classify()` می‌آید نه از فهرستِ دستی. هر چیزی که منبع ندارد
+    (انس، سکهٔ فیزیکی، تتر، دلار، مسکن، تورم، قیمتِ آینده، ارزشِ ذاتیِ قفل‌شده)
+    درِ `no_source` با علت و «چه منبعی لازم است» می‌آید و عددش ساخته نمی‌شود."""
+    return _mstat_call(_panels.gold_market, history_days)
+
+
+@router.get("/api/mstat/goldhistory")
+def mstat_gold_history(symbol: str = Query(...), days: int = Query(250)):
+    """تاریخچۀِ خوانِ یک نماد — نمودارِ خطیِ «مدیریتِ سبد» و مقایسه.
+
+    بی‌ردیف `available:false`، و خطِ صافِ یک‌نقطه‌ای هرگز نمی‌کشد."""
+    return _mstat_call(_panels.gold_history, symbol, days)
+
+
+@router.get("/api/mstat/series")
+def mstat_series(symbols: str = Query(""), days: int = Query(730)):
+    """سریِ روزانۀ چند نماد در یک کوئری — نمودارِ مقایسه (صفحۀ ۱۳).
+
+    `symbols` با کاما. دسته‌ای بودنش لازم است: هوکِ React درِ حلقه مجاز نیست و
+    یک درخواست به‌ازای هر نماد همان round-tripِ واحد را می‌شکند که `/board`
+    برایش ساخته شد. مبنای صریح: `price_history.close` پایانیِ **خام** است، پس
+    مقایسه «نسبت به پایۀ ۱۰۰» خوانده می‌شود نه «بازدهیِ تعدیل‌شده».
+    """
+    return _mstat_call(_panels.series, [s for s in symbols.split(",") if s.strip()], days)
+
+
 @router.get("/api/mstat/smart-money")
 def mstat_smart_money():
     """v9.8.0 — بنر نقدینگی کلان + جریان پول هوشمند FTS.
@@ -334,16 +473,14 @@ def _panel(fn, *args, state=None):
     return out
 
 
-def _board_all(conn, group: str, limit: int, state=None) -> dict:
-    """ده پنلِ تب وضعیت بازار در یکِ بدنه — تنها پیاده‌سازیِ این ترکیب.
+def _board_all(group: str, limit: int, state=None) -> dict:
+    """شانزده پنلِ تب وضعیت بازار در یکِ بدنه — تنها پیاده‌سازیِ این ترکیب.
 
     هر پنل از **همان** `_mstat_call` می‌گذرد که مسیرهایِ تک‌پنلی می‌گذرند، پس
     «کل تب» و «پنلِ تنها» یک محاسبه را دو بار نمی‌سازند: UIِ امروز هم
     `/api/mstat/board` را می‌زند هم `summary`/`depth`/`thermometer` را
     (`useMarketPulse`) و پیش از این هر دو گروه، ده پنل را جدا جدا حساب
     می‌کردند (اندازه: 753ms p50 برایِ تابلو + ~۱۳۰ms برایِ هر پنلِ تنها).
-    `conn` این‌جا مصرف نمی‌شود — هر پنل اتصالِ خودش را باز می‌کند تا کشِ
-    هر-حالت درست کلید بخورد.
 
     خودِ این بدنه دیگر رکوردِ کشِ جدا ندارد (سنجشِ ۱۴۰۵-۰۷-۲۳، بندِ ۲.۲): کشِ
     دو سطحی هم «دو بار ساختنِ همان پنل» می‌ساخت (بازسازیِ پس‌زمینۀ تب درِ
@@ -362,7 +499,18 @@ def _board_all(conn, group: str, limit: int, state=None) -> dict:
             "industries": _panel(_mstat.industries, state=st),
             "smartmoney": _panel(_mstat.smart_money, state=st),
             "timeline": _panel(_mstat.timeline, "cum", state=st),
-            "phases": _panel(_mstat.phases, state=st)}
+            "phases": _panel(_mstat.phases, state=st),
+            # شش نمایِ تازهٔ System 2 (treemap / tops / orderflows / ownership /
+            # indexcards / gold). دورِ ادغام: پیش‌تر درونِ خودِ `mstat_board` و
+            # بی‌کش ساخته می‌شدند؛ حالا ازِ همان `_panel` می‌گذرند، پس تب و
+            # routeِ تک‌پنلی یکِ محاسبه را دو بار نمی‌سازند (همان قاعدۀ ده پنلِ
+            # بالا) و argهایشان عینِ پیش‌فرضِ routeها است تا کلیدِ کش یکی بماند.
+            "treemap": _panel(_panels.treemap, group, "", "value", 220, state=st),
+            "tops": _panel(_panels.tops, group, 5, state=st),
+            "orderflows": _panel(_panels.order_book_flows, "all", 10, state=st),
+            "ownership": _panel(_panels.ownership_change, "all", 10, state=st),
+            "indexcards": _panel(_panels.index_cards, 30, state=st),
+            "gold": _panel(_panels.gold_market, 60, state=st)}
 
 
 @router.get("/api/mstat/board")
@@ -377,14 +525,15 @@ def mstat_board(group: str = Query("eq_all"), limit: int = Query(60)):
     ۲٬۵۷۰ms می‌شد. حالا تب از پنل‌هایِ کش‌خورده می‌سازد: یکِ بازسازی به‌ازای هر
     پنل، سروِ کهنه به‌جایِ بلوکه‌شدن، و بدنه‌ای که همهٔ پنل‌هایش از یکِ حالتِ بانک
     اند. پاسخ و شمارِ ردیف‌ها دست‌نخورده (تطبیقِ بدنه: §بندِ ۲.۲ِ سندِ مأموریت)."""
-    st = _mstat_state()
-    conn = get_db()
     try:
-        return _board_all(conn, group, limit, state=st)
+        # یکِ پویشِ حالتِ بانک برایِ هر شانزده پنل (System 1) و بی‌اتصالِ اضافه
+        # (PERF-S3): هر پنل اتصالِ خودش را باز می‌کند تا کشِ هر-حالت درست کلید
+        # بخورد؛ سنجشِ این دور (tools/mstat_cache_benchmark.py) نشان داد این‌جا
+        # یکِ `get_db()` بی‌مصرف باز می‌شد ≈۴ms به‌ازای هر درخواستِ تب.
+        st = _mstat_state()
+        return _board_all(group, limit, state=st)
     except Exception as e:
         return {"status": "error", "message": str(e), "source": "local:market.db"}
-    finally:
-        conn.close()
 
 @router.post("/api/mstat/snapshot")
 def mstat_snapshot_now():

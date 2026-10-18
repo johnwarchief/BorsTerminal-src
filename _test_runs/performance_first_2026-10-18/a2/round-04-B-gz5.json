@@ -1,0 +1,642 @@
+{
+ "round": 4,
+ "arm": "B",
+ "gzip_level": 5,
+ "db_pristine": true,
+ "pid": 8288,
+ "ready_s": 3.6,
+ "cold_cpu_ms": 5265.6,
+ "warm_wall_s": 56.2,
+ "warm_cpu_ms": 16343.8,
+ "warm_cpu_pct_of_core": 29.1,
+ "ext_10424_cpu_pct_of_core": 74.2,
+ "ws_mb_max": 268.6,
+ "ws_mb_median": 236.2,
+ "peak_ws_mb": 269.3,
+ "private_mb_end": 459.0,
+ "cheap_mstat_phase_ms": {
+  "n": 430,
+  "median": 18.9,
+  "p95": 39.6,
+  "max": 898.5
+ },
+ "cheap_errors": 0,
+ "paths": {
+  "cold-funnel": {
+   "n": 1,
+   "errors": 0,
+   "status": [
+    200
+   ],
+   "x_cache": [
+    "HIT"
+   ],
+   "ms": {
+    "n": 1,
+    "median": 5465.1,
+    "p95": 5465.1,
+    "max": 5465.1
+   },
+   "ttfb_ms": {
+    "n": 1,
+    "median": 5463.7,
+    "p95": 5463.7,
+    "max": 5463.7
+   },
+   "client_inflate_ms": {
+    "n": 1,
+    "median": 26.4,
+    "p95": 26.4,
+    "max": 26.4
+   },
+   "wire_bytes": {
+    "n": 1,
+    "median": 288394.0,
+    "p95": 288394.0,
+    "max": 288394
+   },
+   "wire_bytes_total": 288394,
+   "decoded_bytes_total": 7489048,
+   "decoded_sha": [
+    "59feeb8107180e13"
+   ]
+  },
+  "cold-market": {
+   "n": 1,
+   "errors": 0,
+   "status": [
+    200
+   ],
+   "x_cache": [
+    "HIT"
+   ],
+   "ms": {
+    "n": 1,
+    "median": 107.8,
+    "p95": 107.8,
+    "max": 107.8
+   },
+   "ttfb_ms": {
+    "n": 1,
+    "median": 106.7,
+    "p95": 106.7,
+    "max": 106.7
+   },
+   "client_inflate_ms": {
+    "n": 1,
+    "median": 17.6,
+    "p95": 17.6,
+    "max": 17.6
+   },
+   "wire_bytes": {
+    "n": 1,
+    "median": 853540.0,
+    "p95": 853540.0,
+    "max": 853540
+   },
+   "wire_bytes_total": 853540,
+   "decoded_bytes_total": 6355843,
+   "decoded_sha": [
+    "796050990127096c"
+   ]
+  },
+  "funnel-miss": {
+   "n": 6,
+   "errors": 0,
+   "status": [
+    200
+   ],
+   "x_cache": [
+    "MISS",
+    "MISS",
+    "MISS",
+    "MISS",
+    "MISS",
+    "MISS"
+   ],
+   "ms": {
+    "n": 6,
+    "median": 842.9,
+    "p95": 1270.6,
+    "max": 1357.1
+   },
+   "ttfb_ms": {
+    "n": 6,
+    "median": 841.8,
+    "p95": 1269.3,
+    "max": 1356.0
+   },
+   "client_inflate_ms": {
+    "n": 6,
+    "median": 18.2,
+    "p95": 27.9,
+    "max": 29.6
+   },
+   "wire_bytes": {
+    "n": 6,
+    "median": 288379.0,
+    "p95": 288379.0,
+    "max": 288379
+   },
+   "wire_bytes_total": 1730274,
+   "decoded_bytes_total": 44934162,
+   "decoded_sha": [
+    "07270e91c4449a7a",
+    "0df8fc785f31fe3e",
+    "644b1edc757f7129",
+    "96babaa1a5caae47",
+    "9e63e99d74892a66",
+    "e76af1c99655e1d1"
+   ]
+  },
+  "market": {
+   "n": 12,
+   "errors": 0,
+   "status": [
+    200
+   ],
+   "x_cache": [
+    "HIT",
+    "HIT",
+    "HIT",
+    "HIT",
+    "HIT",
+    "HIT",
+    "HIT",
+    "HIT",
+    "HIT",
+    "STALE",
+    "HIT",
+    "HIT"
+   ],
+   "ms": {
+    "n": 12,
+    "median": 182.6,
+    "p95": 388.0,
+    "max": 523.1
+   },
+   "ttfb_ms": {
+    "n": 12,
+    "median": 180.2,
+    "p95": 385.0,
+    "max": 521.4
+   },
+   "client_inflate_ms": {
+    "n": 12,
+    "median": 25.6,
+    "p95": 31.8,
+    "max": 32.3
+   },
+   "wire_bytes": {
+    "n": 12,
+    "median": 853540.0,
+    "p95": 853540.0,
+    "max": 853540
+   },
+   "wire_bytes_total": 10242480,
+   "decoded_bytes_total": 76270116,
+   "decoded_sha": [
+    "796050990127096c"
+   ]
+  },
+  "funnel-hit": {
+   "n": 6,
+   "errors": 0,
+   "status": [
+    200
+   ],
+   "x_cache": [
+    "HIT",
+    "HIT",
+    "HIT",
+    "HIT",
+    "HIT",
+    "HIT"
+   ],
+   "ms": {
+    "n": 6,
+    "median": 200.2,
+    "p95": 374.6,
+    "max": 380.6
+   },
+   "ttfb_ms": {
+    "n": 6,
+    "median": 188.1,
+    "p95": 372.2,
+    "max": 378.6
+   },
+   "client_inflate_ms": {
+    "n": 6,
+    "median": 21.6,
+    "p95": 25.4,
+    "max": 26.0
+   },
+   "wire_bytes": {
+    "n": 6,
+    "median": 288393.5,
+    "p95": 288394.0,
+    "max": 288394
+   },
+   "wire_bytes_total": 1730361,
+   "decoded_bytes_total": 44934288,
+   "decoded_sha": [
+    "07270e91c4449a7a",
+    "0df8fc785f31fe3e",
+    "644b1edc757f7129",
+    "96babaa1a5caae47",
+    "9e63e99d74892a66",
+    "e76af1c99655e1d1"
+   ]
+  }
+ },
+ "steps": [
+  {
+   "name": "cold-funnel",
+   "method": "POST",
+   "path": "/api/funnel",
+   "status": 200,
+   "enc": "gzip",
+   "x_cache": "HIT",
+   "wire_bytes": 288394,
+   "decoded_bytes": 7489048,
+   "ttfb_ms": 5463.7,
+   "ms": 5465.1,
+   "client_inflate_ms": 26.4,
+   "decoded_sha": "59feeb8107180e13"
+  },
+  {
+   "name": "cold-market",
+   "method": "GET",
+   "path": "/api/market",
+   "status": 200,
+   "enc": "gzip",
+   "x_cache": "HIT",
+   "wire_bytes": 853540,
+   "decoded_bytes": 6355843,
+   "ttfb_ms": 106.7,
+   "ms": 107.8,
+   "client_inflate_ms": 17.6,
+   "decoded_sha": "796050990127096c"
+  },
+  {
+   "name": "funnel-miss",
+   "method": "POST",
+   "path": "/api/funnel",
+   "status": 200,
+   "enc": "gzip",
+   "x_cache": "MISS",
+   "wire_bytes": 288379,
+   "decoded_bytes": 7489027,
+   "ttfb_ms": 689.8,
+   "ms": 690.8,
+   "client_inflate_ms": 16.4,
+   "decoded_sha": "0df8fc785f31fe3e",
+   "at_s": 0.0
+  },
+  {
+   "name": "market",
+   "method": "GET",
+   "path": "/api/market",
+   "status": 200,
+   "enc": "gzip",
+   "x_cache": "HIT",
+   "wire_bytes": 853540,
+   "decoded_bytes": 6355843,
+   "ttfb_ms": 120.7,
+   "ms": 122.3,
+   "client_inflate_ms": 18.1,
+   "decoded_sha": "796050990127096c",
+   "at_s": 1.0
+  },
+  {
+   "name": "funnel-hit",
+   "method": "POST",
+   "path": "/api/funnel",
+   "status": 200,
+   "enc": "gzip",
+   "x_cache": "HIT",
+   "wire_bytes": 288394,
+   "decoded_bytes": 7489048,
+   "ttfb_ms": 74.2,
+   "ms": 75.8,
+   "client_inflate_ms": 12.3,
+   "decoded_sha": "0df8fc785f31fe3e",
+   "at_s": 2.0
+  },
+  {
+   "name": "market",
+   "method": "GET",
+   "path": "/api/market",
+   "status": 200,
+   "enc": "gzip",
+   "x_cache": "HIT",
+   "wire_bytes": 853540,
+   "decoded_bytes": 6355843,
+   "ttfb_ms": 245.6,
+   "ms": 247.1,
+   "client_inflate_ms": 24.2,
+   "decoded_sha": "796050990127096c",
+   "at_s": 6.0
+  },
+  {
+   "name": "funnel-miss",
+   "method": "POST",
+   "path": "/api/funnel",
+   "status": 200,
+   "enc": "gzip",
+   "x_cache": "MISS",
+   "wire_bytes": 288379,
+   "decoded_bytes": 7489027,
+   "ttfb_ms": 1009.4,
+   "ms": 1011.3,
+   "client_inflate_ms": 17.7,
+   "decoded_sha": "644b1edc757f7129",
+   "at_s": 10.0
+  },
+  {
+   "name": "market",
+   "method": "GET",
+   "path": "/api/market",
+   "status": 200,
+   "enc": "gzip",
+   "x_cache": "HIT",
+   "wire_bytes": 853540,
+   "decoded_bytes": 6355843,
+   "ttfb_ms": 170.5,
+   "ms": 173.6,
+   "client_inflate_ms": 26.6,
+   "decoded_sha": "796050990127096c",
+   "at_s": 11.0
+  },
+  {
+   "name": "funnel-hit",
+   "method": "POST",
+   "path": "/api/funnel",
+   "status": 200,
+   "enc": "gzip",
+   "x_cache": "HIT",
+   "wire_bytes": 288394,
+   "decoded_bytes": 7489048,
+   "ttfb_ms": 195.6,
+   "ms": 214.3,
+   "client_inflate_ms": 26.0,
+   "decoded_sha": "644b1edc757f7129",
+   "at_s": 12.0
+  },
+  {
+   "name": "market",
+   "method": "GET",
+   "path": "/api/market",
+   "status": 200,
+   "enc": "gzip",
+   "x_cache": "HIT",
+   "wire_bytes": 853540,
+   "decoded_bytes": 6355843,
+   "ttfb_ms": 190.0,
+   "ms": 191.7,
+   "client_inflate_ms": 29.3,
+   "decoded_sha": "796050990127096c",
+   "at_s": 16.0
+  },
+  {
+   "name": "funnel-miss",
+   "method": "POST",
+   "path": "/api/funnel",
+   "status": 200,
+   "enc": "gzip",
+   "x_cache": "MISS",
+   "wire_bytes": 288379,
+   "decoded_bytes": 7489027,
+   "ttfb_ms": 993.7,
+   "ms": 995.0,
+   "client_inflate_ms": 18.7,
+   "decoded_sha": "9e63e99d74892a66",
+   "at_s": 20.0
+  },
+  {
+   "name": "market",
+   "method": "GET",
+   "path": "/api/market",
+   "status": 200,
+   "enc": "gzip",
+   "x_cache": "HIT",
+   "wire_bytes": 853540,
+   "decoded_bytes": 6355843,
+   "ttfb_ms": 167.7,
+   "ms": 168.9,
+   "client_inflate_ms": 24.1,
+   "decoded_sha": "796050990127096c",
+   "at_s": 21.0
+  },
+  {
+   "name": "funnel-hit",
+   "method": "POST",
+   "path": "/api/funnel",
+   "status": 200,
+   "enc": "gzip",
+   "x_cache": "HIT",
+   "wire_bytes": 288393,
+   "decoded_bytes": 7489048,
+   "ttfb_ms": 353.1,
+   "ms": 356.7,
+   "client_inflate_ms": 20.8,
+   "decoded_sha": "9e63e99d74892a66",
+   "at_s": 22.0
+  },
+  {
+   "name": "market",
+   "method": "GET",
+   "path": "/api/market",
+   "status": 200,
+   "enc": "gzip",
+   "x_cache": "HIT",
+   "wire_bytes": 853540,
+   "decoded_bytes": 6355843,
+   "ttfb_ms": 130.1,
+   "ms": 131.3,
+   "client_inflate_ms": 29.1,
+   "decoded_sha": "796050990127096c",
+   "at_s": 26.0
+  },
+  {
+   "name": "funnel-miss",
+   "method": "POST",
+   "path": "/api/funnel",
+   "status": 200,
+   "enc": "gzip",
+   "x_cache": "MISS",
+   "wire_bytes": 288379,
+   "decoded_bytes": 7489027,
+   "ttfb_ms": 643.8,
+   "ms": 644.9,
+   "client_inflate_ms": 29.6,
+   "decoded_sha": "96babaa1a5caae47",
+   "at_s": 30.0
+  },
+  {
+   "name": "market",
+   "method": "GET",
+   "path": "/api/market",
+   "status": 200,
+   "enc": "gzip",
+   "x_cache": "HIT",
+   "wire_bytes": 853540,
+   "decoded_bytes": 6355843,
+   "ttfb_ms": 106.1,
+   "ms": 107.2,
+   "client_inflate_ms": 24.3,
+   "decoded_sha": "796050990127096c",
+   "at_s": 31.0
+  },
+  {
+   "name": "funnel-hit",
+   "method": "POST",
+   "path": "/api/funnel",
+   "status": 200,
+   "enc": "gzip",
+   "x_cache": "HIT",
+   "wire_bytes": 288394,
+   "decoded_bytes": 7489048,
+   "ttfb_ms": 164.7,
+   "ms": 166.7,
+   "client_inflate_ms": 21.8,
+   "decoded_sha": "96babaa1a5caae47",
+   "at_s": 32.0
+  },
+  {
+   "name": "market",
+   "method": "GET",
+   "path": "/api/market",
+   "status": 200,
+   "enc": "gzip",
+   "x_cache": "HIT",
+   "wire_bytes": 853540,
+   "decoded_bytes": 6355843,
+   "ttfb_ms": 245.2,
+   "ms": 246.8,
+   "client_inflate_ms": 24.7,
+   "decoded_sha": "796050990127096c",
+   "at_s": 36.0
+  },
+  {
+   "name": "funnel-miss",
+   "method": "POST",
+   "path": "/api/funnel",
+   "status": 200,
+   "enc": "gzip",
+   "x_cache": "MISS",
+   "wire_bytes": 288379,
+   "decoded_bytes": 7489027,
+   "ttfb_ms": 1356.0,
+   "ms": 1357.1,
+   "client_inflate_ms": 22.8,
+   "decoded_sha": "07270e91c4449a7a",
+   "at_s": 40.0
+  },
+  {
+   "name": "market",
+   "method": "GET",
+   "path": "/api/market",
+   "status": 200,
+   "enc": "gzip",
+   "x_cache": "HIT",
+   "wire_bytes": 853540,
+   "decoded_bytes": 6355843,
+   "ttfb_ms": 521.4,
+   "ms": 523.1,
+   "client_inflate_ms": 27.7,
+   "decoded_sha": "796050990127096c",
+   "at_s": 41.0
+  },
+  {
+   "name": "funnel-hit",
+   "method": "POST",
+   "path": "/api/funnel",
+   "status": 200,
+   "enc": "gzip",
+   "x_cache": "HIT",
+   "wire_bytes": 288393,
+   "decoded_bytes": 7489048,
+   "ttfb_ms": 180.5,
+   "ms": 186.2,
+   "client_inflate_ms": 21.5,
+   "decoded_sha": "07270e91c4449a7a",
+   "at_s": 42.0
+  },
+  {
+   "name": "market",
+   "method": "GET",
+   "path": "/api/market",
+   "status": 200,
+   "enc": "gzip",
+   "x_cache": "STALE",
+   "wire_bytes": 853540,
+   "decoded_bytes": 6355843,
+   "ttfb_ms": 214.3,
+   "ms": 228.4,
+   "client_inflate_ms": 32.3,
+   "decoded_sha": "796050990127096c",
+   "at_s": 46.0
+  },
+  {
+   "name": "funnel-miss",
+   "method": "POST",
+   "path": "/api/funnel",
+   "status": 200,
+   "enc": "gzip",
+   "x_cache": "MISS",
+   "wire_bytes": 288379,
+   "decoded_bytes": 7489027,
+   "ttfb_ms": 663.0,
+   "ms": 664.0,
+   "client_inflate_ms": 14.2,
+   "decoded_sha": "e76af1c99655e1d1",
+   "at_s": 50.0
+  },
+  {
+   "name": "market",
+   "method": "GET",
+   "path": "/api/market",
+   "status": 200,
+   "enc": "gzip",
+   "x_cache": "HIT",
+   "wire_bytes": 853540,
+   "decoded_bytes": 6355843,
+   "ttfb_ms": 273.4,
+   "ms": 277.5,
+   "client_inflate_ms": 31.4,
+   "decoded_sha": "796050990127096c",
+   "at_s": 51.0
+  },
+  {
+   "name": "funnel-hit",
+   "method": "POST",
+   "path": "/api/funnel",
+   "status": 200,
+   "enc": "gzip",
+   "x_cache": "HIT",
+   "wire_bytes": 288393,
+   "decoded_bytes": 7489048,
+   "ttfb_ms": 378.6,
+   "ms": 380.6,
+   "client_inflate_ms": 23.4,
+   "decoded_sha": "e76af1c99655e1d1",
+   "at_s": 52.0
+  },
+  {
+   "name": "market",
+   "method": "GET",
+   "path": "/api/market",
+   "status": 200,
+   "enc": "gzip",
+   "x_cache": "HIT",
+   "wire_bytes": 853540,
+   "decoded_bytes": 6355843,
+   "ttfb_ms": 143.3,
+   "ms": 147.5,
+   "client_inflate_ms": 24.1,
+   "decoded_sha": "796050990127096c",
+   "at_s": 56.0
+  }
+ ]
+}

@@ -1,0 +1,53 @@
+{
+ "funnel-post-ui": {
+  "leaves": 172282,
+  "volatile_in_control": 1,
+  "volatile_sample": [
+   "$.as_of"
+  ],
+  "after_drift_outside_volatile": 0,
+  "drift_sample": [],
+  "verdict": "EQUAL"
+ },
+ "funnel-get": {
+  "leaves": 172282,
+  "volatile_in_control": 1,
+  "volatile_sample": [
+   "$.as_of"
+  ],
+  "after_drift_outside_volatile": 0,
+  "drift_sample": [],
+  "verdict": "EQUAL"
+ },
+ "mstat-board": {
+  "leaves": 12127,
+  "volatile_in_control": 7,
+  "volatile_sample": [
+   "$.gold.computed_at",
+   "$.indexcards.computed_at",
+   "$.orderflows.computed_at",
+   "$.ownership.computed_at",
+   "$.summary.phase.clock_now",
+   "$.tops.computed_at"
+  ],
+  "after_drift_outside_volatile": 0,
+  "drift_sample": [],
+  "verdict": "EQUAL"
+ },
+ "mstat-mainwatch": {
+  "leaves": 3981,
+  "volatile_in_control": 0,
+  "volatile_sample": [],
+  "after_drift_outside_volatile": 0,
+  "drift_sample": [],
+  "verdict": "EQUAL"
+ },
+ "market": {
+  "leaves": 320734,
+  "volatile_in_control": 0,
+  "volatile_sample": [],
+  "after_drift_outside_volatile": 0,
+  "drift_sample": [],
+  "verdict": "EQUAL"
+ }
+}

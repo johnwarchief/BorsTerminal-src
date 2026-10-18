@@ -49,8 +49,16 @@ from api import api_router
 # callable» → 500 می‌شود. در نبودِ orjson به JSONResponse استاندارد برگرد.
 app = FastAPI(title="BorsAgent Modern Terminal",
               default_response_class=(ORJSONResponse or JSONResponse))
-# GZip: responses >1KB are compressed -- /api/market 4.2MB -> ~450KB
-app.add_middleware(GZipMiddleware, minimum_size=1024, compresslevel=5)
+# GZip: پاسخ‌هایِ >۱KB فشرده می‌شوند. سطحِ فشرده‌سازی از ۵ به ۱ افتاد، چون
+# سنجشِ همین شب (۱۴۰۵-۰۷-۲۵، ریگِ کنترلیِ ۸۰۲۰ با orjson): یکِ پولینگِ کش‌خوردهٔ
+# `/api/market` با سطحِ ۵ از ۵۱ میلی‌ثانیه به ۱۴۹ میلی‌ثانیه رفت — ۹۸ میلی‌ثانیه
+# CPUِ خالصِ همین‌ماشینِ چهارهسته‌ای، در ازایِ ۶٫۳MB → ۸۵۳KB رویِ سیمی که
+# هرگز از ماشین بیرون نمی‌رود (`loopback_guard` پایینِ همین فایل هر میزبانِ
+# غیرمحلی را ۴۰۳ می‌کند). با سطحِ ۱ همان بدنه بعدِ inflate بایت‌به‌بایت یکی
+# است و حجمِ سیم بیشترِ سودِ سطحِ ۵ را نگه می‌دارد. `BORS_GZIP_LEVEL` برایِ
+# هر سنجشِ مقایسه‌ای باز است؛ عددِ پیش‌فرض همان چیزی است که اپِ نصبی لازم دارد.
+app.add_middleware(GZipMiddleware, minimum_size=1024,
+                   compresslevel=int(os.environ.get("BORS_GZIP_LEVEL", "1")))
 
 
 # میزبان‌هایی که «همین ماشین» شمرده می‌شوند. '::1' در برخی مسیرها با کروشه
@@ -237,6 +245,9 @@ def _startup_sync_market():
             threading.Thread(target=_sync_market_on_start, daemon=True).start()
             print("[startup] market sync thread spawned")
         else:
+            # هیچ سینکی در کار نیست ⇒ گرم‌کردنِ اسکرینر نباید پشتِ داوریِ سینک بماند
+            import api._sync_market as _SM
+            _SM.mark_sync_not_scheduled()
             print("[startup] BORS_NO_FETCH_LOOPS=1 — حلقه‌هایِ شبکه‌ایِ تابلو خاموش "
                   "(دست‌نخورده خواندنِ بانکِ مشترک؛ برایِ سنجشِ dev کنارِ نسخۀِ نصبی)")
     except Exception as e:
@@ -247,6 +258,13 @@ def _startup_sync_market():
         try:
             import time as _t
             _t.sleep(1)          # شروع سریع در ترد پس‌زمینه
+            # PERF-S6: اگر همگام‌سازیِ بوت در کار است، سینک درِ پایانِ خودش
+            # اسکرینر را بازمی‌سازد؛ گرم‌کردنِ هم‌زمان یعنی دوِ بیلدِ کاملِ
+            # `bulk_scan` و بیلدِ اول دور ریخته می‌شود.
+            import api._sync_market as _SM
+            if _SM.screener_warm_should_skip():
+                print("[startup] screener warm deferred to market sync")
+                return
             from api.screener import warm_screener_cache
             warm_screener_cache()
         except Exception as _e:

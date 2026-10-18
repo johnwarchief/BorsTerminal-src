@@ -1,0 +1,51 @@
+{
+ "at": "2026-10-17 22:15:39",
+ "head": "6907af9018e4902e6fbda739cec4459a68c9424e",
+ "branch": "mission/system2-perf-market-hours-2026-10-17",
+ "diff_stat_vs_head": "api/funnel.py                                      | 213 +++++++++++++++------\n dev/funnel_body_cache_v1.py                        | 170 ++++++++++++----\n frontend/src/__tests__/m1-ux-integrity.spec.tsx    |  24 +++\n .../market/components/MarketStatusPanel.tsx        |   3 +-\n frontend/src/shared/components/FreshnessBadge.tsx  |  10 +-\n frontend/src/shared/lib/feedFreshness.ts           |  11 +-\n tools/perf_cache_rhythm_gzip_probe.py              |  27 ++-\n 7 files changed, 352 insertions(+), 106 deletions(-)",
+ "src_sha256": {
+  "api/funnel.py": "32eb1841d2501a9278ca1e75f776006a6c6355cf73bf9fabf226d159f86aa1db",
+  "app.py": "bcdc793e1f377378ab206f0aa0bd59edcedca7bf9f9c024a03cafd4d9f6c790d",
+  "frontend/src/shared/api/http.ts": "cc24e6fa1a18519b2bb1445ec1e359093ef74233376a1f5953b5ea4a2e71d366",
+  "dev/funnel_body_cache_v1.py": "9e07f78e4fc48132fb36cf8897144964e85d1afd819a122312844939d804839d",
+  "tools/perf_cache_rhythm_gzip_probe.py": "eac7358f44d57f76163f03d7cd0ff3d13f286b5fa9a708438b0ae38392a93d04",
+  "frontend/src/shared/lib/feedFreshness.ts": "c84a0689453aabda74b033ac70f8797c959d628bbd004aa47a5106a6409656eb",
+  "frontend/src/shared/components/FreshnessBadge.tsx": "dca05d9162c2288fc3356949dd940fccfcee0b85116d39471c8ac54e35810569",
+  "frontend/src/features/market/components/MarketStatusPanel.tsx": "4608b581e0cfd78a709fc75954be77380f3a1602eaf50b2339d84cf97596d08c",
+  "frontend/src/__tests__/m1-ux-integrity.spec.tsx": "082a1776c071fb9f8971813954e1b0087fcd8f12e3720cc3c76673e37748b402"
+ },
+ "py": "3.14.4 2.5.2 3.0.5",
+ "check_build_env": {
+  "cmd": "venv_build\\Scripts\\python.exe scripts/check_build_env.py",
+  "rc": 0,
+  "dur_s": 0.1,
+  "log": "b2-check_build_env.txt"
+ },
+ "build_all": {
+  "cmd": "venv_build\\Scripts\\python.exe scripts/build_all.py",
+  "rc": 0,
+  "dur_s": 204.9,
+  "log": "b2-build_all.txt"
+ },
+ "dist": {
+  "path": "dist\\BorsTerminal_Ultimate",
+  "files": 940,
+  "bytes": 125220413,
+  "exe": "dist\\BorsTerminal_Ultimate\\BorsTerminal_Ultimate.exe",
+  "exe_bytes": 16752006,
+  "exe_sha256": "c89c5f385f5b3047fcd727cc867095d9fd27df580c16d96c2a84e4c9d251e621",
+  "exe_mtime": "2026-10-17 22:19:00"
+ },
+ "src_sha256_after_build": {
+  "api/funnel.py": "32eb1841d2501a9278ca1e75f776006a6c6355cf73bf9fabf226d159f86aa1db",
+  "app.py": "bcdc793e1f377378ab206f0aa0bd59edcedca7bf9f9c024a03cafd4d9f6c790d",
+  "frontend/src/shared/api/http.ts": "cc24e6fa1a18519b2bb1445ec1e359093ef74233376a1f5953b5ea4a2e71d366",
+  "dev/funnel_body_cache_v1.py": "9e07f78e4fc48132fb36cf8897144964e85d1afd819a122312844939d804839d",
+  "tools/perf_cache_rhythm_gzip_probe.py": "eac7358f44d57f76163f03d7cd0ff3d13f286b5fa9a708438b0ae38392a93d04",
+  "frontend/src/shared/lib/feedFreshness.ts": "c84a0689453aabda74b033ac70f8797c959d628bbd004aa47a5106a6409656eb",
+  "frontend/src/shared/components/FreshnessBadge.tsx": "dca05d9162c2288fc3356949dd940fccfcee0b85116d39471c8ac54e35810569",
+  "frontend/src/features/market/components/MarketStatusPanel.tsx": "4608b581e0cfd78a709fc75954be77380f3a1602eaf50b2339d84cf97596d08c",
+  "frontend/src/__tests__/m1-ux-integrity.spec.tsx": "082a1776c071fb9f8971813954e1b0087fcd8f12e3720cc3c76673e37748b402"
+ },
+ "src_unchanged_by_build": true
+}

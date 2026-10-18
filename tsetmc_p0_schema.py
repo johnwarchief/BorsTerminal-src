@@ -93,10 +93,16 @@ CREATE TABLE IF NOT EXISTS tsetmc_messages (
 """
 
 # throttle/بودجهٔ سه خانوادۀ P0 (هیچ‌کدام در حلقۀ ۹۰ ثانیه‌ای نمی‌دوند)
+#   last_status / last_result / last_success: «چه شد» را از «کی دویدیم» جدا می‌کنند.
+#   پیش ازِ این سه ستون، یکِ روزِ کاملِ بی‌پاسخ (۴ از ۴ flow شکست) دقیقاً مثلِ یکِ روزِ
+#   موفق `last_run` می‌گرفت و تا ۲۴ ساعتِ بعدی هیچِ تلاشی نمی‌شد — یعنی شکست با سکوت
+#   به‌عنوانِ موفقیت ثبت می‌شد (قیدِ مأموریت: «failure با سکوت به‌عنوان موفقیت ثبت نمی‌شود»).
 P0_STATE = """
 CREATE TABLE IF NOT EXISTS tsetmc_p0_state (
-    name TEXT PRIMARY KEY, last_run TEXT)
+    name TEXT PRIMARY KEY, last_run TEXT,
+    last_status TEXT, last_result TEXT, last_success TEXT)
 """
+P0_STATE_EXTRA_COLUMNS = ("last_status", "last_result", "last_success")
 
 ALL = (CLIENT_TYPE_VALUE, CLIENT_TYPE_VALUE_STATE, PRICE_ADJUST_EVENTS,
        SHARE_CHANGE_EVENTS, INSTRUMENT_STATE, STOP_REASONS, SUPERVISION_STATE,
@@ -105,6 +111,27 @@ ALL = (CLIENT_TYPE_VALUE, CLIENT_TYPE_VALUE_STATE, PRICE_ADJUST_EVENTS,
 TABLES = ("client_type_value", "client_type_value_state", "price_adjust_events",
           "share_change_events", "instrument_state", "stop_reasons",
           "supervision_state", "tsetmc_messages", "tsetmc_p0_state")
+
+
+def migrate_p0_state(conn) -> int:
+    """افزودنِ بی‌خطرِ ستون‌هایِ جدید برِ بانک‌هایِ ساخته‌شده با DDLِ قدیمی (idempotent).
+
+    `CREATE TABLE IF NOT EXISTS` هرگز جدولِ موجود را عوض نمی‌کند، پس بدونِ این،
+    SELECTِ ستونِ تازه رویِ بانکِ کاربر خطا می‌داد و حلقۀِ تابلو را می‌شکست.
+    """
+    try:
+        have = {r[1] for r in conn.execute("PRAGMA table_info(tsetmc_p0_state)")}
+    except Exception:
+        return 0
+    added = 0
+    for col in P0_STATE_EXTRA_COLUMNS:
+        if col not in have:
+            try:
+                conn.execute(f"ALTER TABLE tsetmc_p0_state ADD COLUMN {col} TEXT")
+                added += 1
+            except Exception:
+                pass    # بانکِ قفل‌شده نباید یکِ درخواستِ خواندن را ۵۰۰ کند
+    return added
 
 
 def create_all(conn):
@@ -117,4 +144,5 @@ def create_all(conn):
             made += 1
         except Exception:
             pass
+    migrate_p0_state(conn)      # افزودنیِ بی‌خطر؛ بانکِ قدیمی هم ستون‌هایِ وضعیت را ببیند
     return made

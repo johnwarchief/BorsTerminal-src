@@ -1,0 +1,138 @@
+$ npx vitest run src/__tests__/m1-ux-integrity.spec.tsx  (feedFreshness.ts sha=2e258ab8125011997b280b57561d0b96a92755dbd5bd4c2dbef4386304ed73b1)
+
+[1m[46m RUN [49m[22m [36mv3.2.7 [39m[90mC:/Users/Johnkallnaya/Desktop/Borsterminal/.worktrees/system2-perf/frontend[39m
+
+ [32m✓[39m src/__tests__/m1-ux-integrity.spec.tsx[2m > [22mcomputeFeedStatus — اتصال ≠ تازگی[2m > [22mبازارِ باز + ردیفِ نشستِ جاری + تازه‌سازیِ روان ⇒ live[32m 6[2mms[22m[39m
+ [32m✓[39m src/__tests__/m1-ux-integrity.spec.tsx[2m > [22mcomputeFeedStatus — اتصال ≠ تازگی[2m > [22mبازارِ بسته ⇒ closed (نه «آنلاینِ متحرک»، نه کهنه، نه خطا)[32m 1[2mms[22m[39m
+ [32m✓[39m src/__tests__/m1-ux-integrity.spec.tsx[2m > [22mcomputeFeedStatus — اتصال ≠ تازگی[2m > [22mخطا بر همه‌چیز غالب است و «خالی» نیست[32m 1[2mms[22m[39m
+ [32m✓[39m src/__tests__/m1-ux-integrity.spec.tsx[2m > [22mcomputeFeedStatus — اتصال ≠ تازگی[2m > [22mبازارِ باز ولی ردیفِ نشستِ جاری نیست ⇒ stale (نه live)[32m 0[2mms[22m[39m
+ [32m✓[39m src/__tests__/m1-ux-integrity.spec.tsx[2m > [22mcomputeFeedStatus — اتصال ≠ تازگی[2m > [22mبازارِ باز ولی تازه‌سازی بیش از ریتمِ بسته خوابیده ⇒ stale[32m 1[2mms[22m[39m
+ [32m✓[39m src/__tests__/m1-ux-integrity.spec.tsx[2m > [22mcomputeFeedStatus — اتصال ≠ تازگی[2m > [22mدرخواست‌ها می‌رسند ولی هیچ عددی عوض نشده ⇒ stale، با گفتنِ هر دو سن[32m 1[2mms[22m[39m
+ [32m✓[39m src/__tests__/m1-ux-integrity.spec.tsx[2m > [22mcomputeFeedStatus — اتصال ≠ تازگی[2m > [22mبا عوض‌شدنِ اخیرِ داده، همان ورودی ⇒ live[32m 0[2mms[22m[39m
+ [32m✓[39m src/__tests__/m1-ux-integrity.spec.tsx[2m > [22mcomputeFeedStatus — اتصال ≠ تازگی[2m > [22mبک‌اندِ بی‌`rev_at` (نسخۀ قدیمیِ نصبی) ⇒ رفتارِ پیشین، نه برچسبِ ساختگی[32m 1[2mms[22m[39m
+ [31m×[39m src/__tests__/m1-ux-integrity.spec.tsx[2m > [22mcomputeFeedStatus — اتصال ≠ تازگی[2m > [22mبازارِ باز ولی تابلو از نشستِ پیشین است ⇒ stale، حتی با `rev` تازه و `live_count` مثبت[32m 26[2mms[22m[39m
+[31m   → expected 'live' to be 'stale' // Object.is equality[39m
+ [32m✓[39m src/__tests__/m1-ux-integrity.spec.tsx[2m > [22mcomputeFeedStatus — اتصال ≠ تازگی[2m > [22mتابلویِ همان روز ⇒ live؛ روزِ تابلو نامعلوم ⇒ رفتارِ پیشین[32m 1[2mms[22m[39m
+ [32m✓[39m src/__tests__/m1-ux-integrity.spec.tsx[2m > [22mcomputeFeedStatus — اتصال ≠ تازگی[2m > [22mبازارِ بسته با تابلویِ نشستِ پیشین ⇒ همان closed[32m 1[2mms[22m[39m
+ [32m✓[39m src/__tests__/m1-ux-integrity.spec.tsx[2m > [22mcomputeFeedStatus — اتصال ≠ تازگی[2m > [22mlive_count گزارش نشده ⇒ unknown (تازگی را قطعی نمی‌کند)[32m 0[2mms[22m[39m
+ [32m✓[39m src/__tests__/m1-ux-integrity.spec.tsx[2m > [22mcomputeFeedStatus — اتصال ≠ تازگی[2m > [22mهنوز داده‌ای نیامده ⇒ connecting/idle، بدونِ سن[32m 1[2mms[22m[39m
+ [32m✓[39m src/__tests__/m1-ux-integrity.spec.tsx[2m > [22musePortfolio — ریتمِ نشست‌محور، نه هر نفس[2m > [22mدرِ بازارِ باز poll می‌زند و بیرونِ نشست به ریتمِ آرام می‌نشیند[32m 6[2mms[22m[39m
+[90mstderr[2m | src/__tests__/m1-ux-integrity.spec.tsx[2m > [22m[2mCommandPalette — فیدِ مشترک، بی‌fetchِ دوم[2m > [22m[2mنمادها از MARKET_FEED_KEY خوانده می‌شوند؛ درخواستِ /api/marketِ مستقل نیست
+[22m[39mWarning: An update to CommandPalette inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at CommandPalette (C:\Users\Johnkallnaya\Desktop\Borsterminal\.worktrees\system2-perf\frontend\src\app\components\CommandPalette.tsx:49:42)
+    at Router (file:///C:/Users/Johnkallnaya/Desktop/Borsterminal/.worktrees/system2-perf/frontend/node_modules/react-router/dist/development/chunk-BV7QT456.mjs:7134:13)
+    at MemoryRouter (file:///C:/Users/Johnkallnaya/Desktop/Borsterminal/.worktrees/system2-perf/frontend/node_modules/react-router/dist/development/chunk-BV7QT456.mjs:7044:3)
+    at QueryClientProvider (file:///C:/Users/Johnkallnaya/Desktop/Borsterminal/.worktrees/system2-perf/frontend/node_modules/@tanstack/react-query/build/modern/QueryClientProvider.js:12:32)
+Warning: An update to CommandPalette inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at CommandPalette (C:\Users\Johnkallnaya\Desktop\Borsterminal\.worktrees\system2-perf\frontend\src\app\components\CommandPalette.tsx:49:42)
+    at Router (file:///C:/Users/Johnkallnaya/Desktop/Borsterminal/.worktrees/system2-perf/frontend/node_modules/react-router/dist/development/chunk-BV7QT456.mjs:7134:13)
+    at MemoryRouter (file:///C:/Users/Johnkallnaya/Desktop/Borsterminal/.worktrees/system2-perf/frontend/node_modules/react-router/dist/development/chunk-BV7QT456.mjs:7044:3)
+    at QueryClientProvider (file:///C:/Users/Johnkallnaya/Desktop/Borsterminal/.worktrees/system2-perf/frontend/node_modules/@tanstack/react-query/build/modern/QueryClientProvider.js:12:32)
+Warning: An update to CommandPalette inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at CommandPalette (C:\Users\Johnkallnaya\Desktop\Borsterminal\.worktrees\system2-perf\frontend\src\app\components\CommandPalette.tsx:49:42)
+    at Router (file:///C:/Users/Johnkallnaya/Desktop/Borsterminal/.worktrees/system2-perf/frontend/node_modules/react-router/dist/development/chunk-BV7QT456.mjs:7134:13)
+    at MemoryRouter (file:///C:/Users/Johnkallnaya/Desktop/Borsterminal/.worktrees/system2-perf/frontend/node_modules/react-router/dist/development/chunk-BV7QT456.mjs:7044:3)
+    at QueryClientProvider (file:///C:/Users/Johnkallnaya/Desktop/Borsterminal/.worktrees/system2-perf/frontend/node_modules/@tanstack/react-query/build/modern/QueryClientProvider.js:12:32)
+
+[90mstderr[2m | src/__tests__/m1-ux-integrity.spec.tsx[2m > [22m[2mSuspiciousPanel — داوری از tapeFilterVerdict و configِ کاربر (#M2.3)[2m > [22m[2mبا بالا بردنِ آستانه به ۱۰، همان ردیف دیگر مشکوک نیست — پنل config را رعایت می‌کند
+[22m[39mWarning: An update to SuspiciousPanel inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at SuspiciousPanel (C:\Users\Johnkallnaya\Desktop\Borsterminal\.worktrees\system2-perf\frontend\src\features\market\components\SuspiciousPanel.tsx:25:3)
+
+ [32m✓[39m src/__tests__/m1-ux-integrity.spec.tsx[2m > [22mCommandPalette — فیدِ مشترک، بی‌fetchِ دوم[2m > [22mنمادها از MARKET_FEED_KEY خوانده می‌شوند؛ درخواستِ /api/marketِ مستقل نیست[33m 733[2mms[22m[39m
+ [32m✓[39m src/__tests__/m1-ux-integrity.spec.tsx[2m > [22mFunnelErrorBanner — خطا ≠ بازارِ خالی[2m > [22mblocking و degraded دو متنِ جدا دارند و Retryِ واقعی صدا زده می‌شود[32m 28[2mms[22m[39m
+ [32m✓[39m src/__tests__/m1-ux-integrity.spec.tsx[2m > [22mSuspiciousPanel — داوری از tapeFilterVerdict و configِ کاربر (#M2.3)[2m > [22mبا آستانۀ پیش‌فرض (minRatio=3) ردیفِ ۵ برابری درِ «حجم مشکوک» می‌آید[32m 31[2mms[22m[39m
+ [32m✓[39m src/__tests__/m1-ux-integrity.spec.tsx[2m > [22mSuspiciousPanel — داوری از tapeFilterVerdict و configِ کاربر (#M2.3)[2m > [22mبا بالا بردنِ آستانه به ۱۰، همان ردیف دیگر مشکوک نیست — پنل config را رعایت می‌کند[32m 23[2mms[22m[39m
+[90mstderr[2m | src/__tests__/m1-ux-integrity.spec.tsx[2m > [22m[2museActiveFunnelPreset — تصمیمِ واحدِ preset (Master و درخت) (#M2.1)[2m > [22m[2mURL > انتخابِ ذخیره‌شده > افق؛ بی‌URL، savedPreset غالب بر horizon است
+[22m[39mWarning: An update to TestComponent inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at TestComponent (C:\Users\Johnkallnaya\Desktop\Borsterminal\.worktrees\system2-perf\frontend\node_modules\@testing-library\react\dist\pure.js:337:5)
+    at Router (file:///C:/Users/Johnkallnaya/Desktop/Borsterminal/.worktrees/system2-perf/frontend/node_modules/react-router/dist/development/chunk-BV7QT456.mjs:7134:13)
+    at MemoryRouter (file:///C:/Users/Johnkallnaya/Desktop/Borsterminal/.worktrees/system2-perf/frontend/node_modules/react-router/dist/development/chunk-BV7QT456.mjs:7044:3)
+    at W (C:\Users\Johnkallnaya\Desktop\Borsterminal\.worktrees\system2-perf\frontend\src\__tests__\m1-ux-integrity.spec.tsx:258:43)
+Warning: An update to TestComponent inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://reactjs.org/link/wrap-tests-with-act
+    at TestComponent (C:\Users\Johnkallnaya\Desktop\Borsterminal\.worktrees\system2-perf\frontend\node_modules\@testing-library\react\dist\pure.js:337:5)
+    at Router (file:///C:/Users/Johnkallnaya/Desktop/Borsterminal/.worktrees/system2-perf/frontend/node_modules/react-router/dist/development/chunk-BV7QT456.mjs:7134:13)
+    at MemoryRouter (file:///C:/Users/Johnkallnaya/Desktop/Borsterminal/.worktrees/system2-perf/frontend/node_modules/react-router/dist/development/chunk-BV7QT456.mjs:7044:3)
+    at W (C:\Users\Johnkallnaya\Desktop\Borsterminal\.worktrees\system2-perf\frontend\src\__tests__\m1-ux-integrity.spec.tsx:258:43)
+
+ [32m✓[39m src/__tests__/m1-ux-integrity.spec.tsx[2m > [22museActiveFunnelPreset — تصمیمِ واحدِ preset (Master و درخت) (#M2.1)[2m > [22mURL > انتخابِ ذخیره‌شده > افق؛ بی‌URL، savedPreset غالب بر horizon است[32m 246[2mms[22m[39m
+
+[31m⎯⎯⎯⎯⎯⎯⎯[39m[1m[41m Failed Tests 1 [49m[22m[31m⎯⎯⎯⎯⎯⎯⎯[39m
+
+[41m[1m FAIL [22m[49m src/__tests__/m1-ux-integrity.spec.tsx[2m > [22mcomputeFeedStatus — اتصال ≠ تازگی[2m > [22mبازارِ باز ولی تابلو از نشستِ پیشین است ⇒ stale، حتی با `rev` تازه و `live_count` مثبت
+[31m[1mAssertionError[22m: expected 'live' to be 'stale' // Object.is equality[39m
+
+Expected: [32m"[7mstal[27me"[39m
+Received: [31m"[7mliv[27me"[39m
+
+[36m [2m❯[22m src/__tests__/m1-ux-integrity.spec.tsx:[2m90:26[22m[39m
+    [90m 88| [39m      liveCount: 2890, totalCount: 5865, boardDay: 20261009, now: NOW,…
+    [90m 89| [39m    })[33m;[39m
+    [90m 90| [39m    [34mexpect[39m(st[33m.[39mfreshness)[33m.[39m[34mtoBe[39m([32m'stale'[39m)[33m;[39m
+    [90m   | [39m                         [31m^[39m
+    [90m 91| [39m    [34mexpect[39m(st[33m.[39mpulse)[33m.[39m[34mtoBe[39m([35mfalse[39m)[33m;[39m
+    [90m 92| [39m    [34mexpect[39m(st[33m.[39mlabel)[33m.[39m[34mtoContain[39m([32m'نشستِ جاری'[39m)[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯[22m[39m
+
+
+[2m Test Files [22m [1m[31m1 failed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[31m1 failed[39m[22m[2m | [22m[1m[32m18 passed[39m[22m[90m (19)[39m
+[2m   Start at [22m 22:06:24
+[2m   Duration [22m 7.65s[2m (transform 871ms, setup 663ms, collect 789ms, tests 1.11s, environment 3.40s, prepare 371ms)[22m
+
+
+EXIT=1
