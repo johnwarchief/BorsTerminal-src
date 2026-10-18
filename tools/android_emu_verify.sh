@@ -41,6 +41,19 @@ json_escape() { sed 's/\\/\\\\/g; s/"/\\"/g' | tr -d '\n' | cut -c1-400; }
 
 # ── ۱) نصب ───────────────────────────────────────────────────────────────────
 adb wait-for-device
+# صبر برای تکمیل بوت و آمادگی کامل سرویس package manager (جلوگیری از خطای Broken pipe)
+for _ in $(seq 1 60); do
+  BOOT=$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')
+  [ "$BOOT" = "1" ] && break
+  sleep 3
+done
+for _ in $(seq 1 30); do
+  if adb shell pm path android >/dev/null 2>&1; then
+    break
+  fi
+  sleep 3
+done
+
 MODEL=$(adb shell getprop ro.product.model | tr -d '\r')
 RELEASE=$(adb shell getprop ro.build.version.release | tr -d '\r')
 SDK=$(adb shell getprop ro.build.version.sdk | tr -d '\r')
@@ -54,23 +67,44 @@ if [[ "$PHYSICAL_SIZE" =~ ^[0-9]+x[0-9]+$ ]] && [[ "$PHYSICAL_DENSITY" =~ ^[0-9]
   LABEL="native-${CSS_WIDTH}x${CSS_HEIGHT}"
 fi
 step viewport INFO "physical_size=${PHYSICAL_SIZE:-unknown} physical_density=${PHYSICAL_DENSITY:-unknown} viewport=$LABEL"
-adb install -r -g "$APK" > "$OUT/install.log" 2>&1 && step install PASS "$(basename "$APK") on android-$RELEASE(api$SDK) $MODEL" || step install FAIL "$(tail -2 "$OUT/install.log" | tr '\n' ' ' | json_escape)"
+
+# سه تلاش برای نصب با تشخیص خطای ترابری adb/package
+INSTALL_OK=no
+INSTALL_TRIED=0
+for i in 1 2 3 4; do
+  INSTALL_TRIED=$i
+  rm -f "$OUT/install.log"
+  if adb install -r -g "$APK" > "$OUT/install.log" 2>&1; then
+    INSTALL_OK=yes
+    break
+  fi
+  grep -qiE "Broken pipe|Failure calling service package|device .*not found|closed" "$OUT/install.log" || break
+  echo "تلاش $i: خطای ترابری adb/package هنگام نصب APK — صبر و تکرار" >&2
+  sleep 10
+  adb wait-for-device >/dev/null 2>&1 || true
+done
+
+if [ "$INSTALL_OK" = "yes" ]; then
+  step install PASS "$(basename "$APK") on android-$RELEASE(api$SDK) $MODEL (تلاش $INSTALL_TRIED)"
+else
+  step install FAIL "$(tail -2 "$OUT/install.log" | tr '\n' ' ' | json_escape)"
+  echo "NOT_VERIFIED	install-failed	نصب ناموفق بود؛ اجرای برنامه غیرممکن است" >> "$OUT/steps.tsv"
+  cat "$OUT/steps.tsv"
+  exit 1
+fi
 
 adb logcat -c
 adb logcat -v time > "$OUT/logcat.txt" 2>&1 &
 LOGD=$!
-# رانِ 38796223802: `launch [FAIL] no process after 30s` رویِ همان APK ای که درِ
-# رانِ پیشین pid داده بود. یک monkeyِ تنها + خوابِ ثابت، flakeِ system_server را
-# به‌حسابِ اپ رد می‌کند و هیچ مدرکی هم نمی‌گذارد. پس: بیدارکردنِ صفحه، سه تلاشِ
-# راه‌اندازی با فاصلۀ رشدیافته، و درِ شکست شواهد (نصب‌شده؟ کرش کرده؟ monkey
-# چه گفت؟). اگر باز هم بالا نیامد، FAIL است — اما با شاهد.
+# بیدارکردن صفحه، راه‌اندازی با am start و monkey، و در شکست شواهد
 adb shell svc power stayon true >/dev/null 2>&1
 adb shell input keyevent KEYCODE_WAKEUP >/dev/null 2>&1
 adb shell wm dismiss-keyguard >/dev/null 2>&1
 PID=""
-for i in 1 2 3; do
-  adb shell monkey -p "$PKG" -c android.intent.category.LAUNCHER 1 > "$OUT/monkey_$i.log" 2>&1
-  sleep $((12 + i * 6))
+for i in 1 2 3 4; do
+  adb shell am start -n "$PKG/.MainActivity" -a android.intent.action.MAIN -c android.intent.category.LAUNCHER > "$OUT/am_start_$i.log" 2>&1 || true
+  adb shell monkey -p "$PKG" -c android.intent.category.LAUNCHER 1 > "$OUT/monkey_$i.log" 2>&1 || true
+  sleep $((10 + i * 5))
   PID=$(adb shell pidof -s "$PKG" | tr -d '\r')
   [ -n "$PID" ] && { step launch PASS "pid=$PID (تلاش $i)"; break; }
 done
