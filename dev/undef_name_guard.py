@@ -249,10 +249,10 @@ def main():
 
     # سنجانِ دوم: شکلِ فراخوان (امضایِ عوض‌شده‌ای که یک ادغامِ متعارض بازمی‌گرداند)
     # ماژول‌به‌ماژول، باِ importهایِ حل‌شدنی — نسخهٔ سراسری ده اسباتِ کاذب داد.
-    defs_by_module = {rel: file_defs(tree) for rel, tree, _src in parsed}
+    defs_by_module = {rel: file_defs(tree) for rel, tree in parsed}
     arity_hits = []
     resolvable = 0
-    for rel, tree, _src in parsed:
+    for rel, tree in parsed:
         vis = visible_arity(rel, tree, defs_by_module)
         if vis:
             resolvable += 1
