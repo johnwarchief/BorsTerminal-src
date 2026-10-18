@@ -164,3 +164,73 @@ preset × دو منطق (۵) `market_status.py` + بنچمارکِ سه‌حال
 دست‌نخورده‌اند. تنها اهرمِ بازگشتِ ساخته‌شده: `integration/system1-2-2026-10-19`
 (محلی + `github`) و باندلِ `bors-s12-refs.bundle` (۵٬۳۰۴٬۰۳۶ بایت، ۱۹ ref،
 `git bundle verify` سالم).
+
+
+## ۵-الف) مبنایِ رأیِ قیف — ثبت‌شده پیش ازِ هر تلاشِ ادغام (۲۰۲۶-۰۱:۰۱)
+
+`tools/funnel_verdict_baseline.py` (تازۀِ همین مرحلۀِ ادغام) چهلِ حالت را درون‌فرآیندی
+ازِ `api.funnel._run` می‌خواند: پنج preset × دو منطقِ اشتراک/اجتماع، سه زنجیرۀ
+دستیِ تابلو، چهار زنجیرۀ فیلترِ تکنیکال، چهار تنظیمِ مستقلِ «تکنیکال اول»، سه
+حالتِ بنیادی، دو حالتِ `drop_suffix`، یکِ `params`+`exceptions`، و شش خطایِ
+اعتبارسنجی. `as_of`/`cached_for_ms`/`timeline` ازِ هش بیرون‌اند؛ `start_refresh`
+رشتهٔ پس‌زمینه خاموش می‌ماند تا دو اجرا رویِ یکِ داده مقایسه شوند (شمارۀ
+`pending_symbols` همچنان ثبت می‌شود).
+
+**خودِ سنجش قبل ازِ استفاده سنجیده شد** (بی‌این، «صفر جابه‌جایی» بی‌معیار است):
+
+| CONTROL | نتیجه |
+| --- | --- |
+| دو اجرایِ پیاپی درِ یکِ کد (`pre` ↔ `pre2`) | ۴۰/۴۰ هشِ یکسان → قطعی |
+| آستانۀ کذایی: `logic` درِ `api/funnel.py` به «and» قفل شد (`ruleset_version` دست‌نخورده) | ۶ حالت جابه‌جا، دقیقاً شش `__or`؛ ۳۴ حالتِ دیگر یکسان → حساس درِ سطحِ رأی، نه فقط درِ مهرِ نسخه |
+| بازگردانی ازِ copy و اجرایِ سوم | دوباره ۴۰/۴۰ یکسان باِ `pre` |
+
+مبنایِ زمینه: `instruments=6018`، `tape_history=145516`، نشستِ `20261014`. هر
+مقایسۀِ پیش/پس که این دو عدد را نبیند، بی‌اعتبار است (`--compare` خودش هشدار
+می‌دهد).
+
+| حالت | digest | status |
+| --- | --- | --- |
+| `swing__and` | `086873426362d5b2` | success |
+| `swing__or` | `acd20ca1753be42d` | success |
+| `trend__and` | `2eb9c4f6e46f5063` | success |
+| `trend__or` | `340d07623cb7dc9d` | success |
+| `hourglass__and` | `f0bf811aac266230` | success |
+| `hourglass__or` | `f0bf811aac266230` | success |
+| `tech_first__and` | `eac186c5f56fb3c2` | success |
+| `tech_first__or` | `eac186c5f56fb3c2` | success |
+| `custom__and` | `b270b8c92c40fcd7` | success |
+| `custom__or` | `b270b8c92c40fcd7` | success |
+| `custom_chain0__and` | `985506f04f091ab3` | success |
+| `custom_chain0__or` | `0f0224e4957d5255` | success |
+| `custom_chain1__and` | `4c2d495f00d8fa0c` | success |
+| `custom_chain1__or` | `cd1910eb5f75c3a6` | success |
+| `custom_chain2__and` | `da42ebf1460eb07e` | success |
+| `custom_chain2__or` | `a1d632d9c3d2c233` | success |
+| `tech_weekly_up__and` | `22135ee77051d78b` | success |
+| `tech_weekly_up__or` | `22135ee77051d78b` | success |
+| `tech_weekly_up_daily_up__and` | `c23f583792995831` | success |
+| `tech_weekly_up_daily_up__or` | `c23f583792995831` | success |
+| `tech_setup_jet_risk_divergence__and` | `a1f5b00baeb942c0` | success |
+| `tech_setup_jet_risk_divergence__or` | `a1f5b00baeb942c0` | success |
+| `tech_hourglass_accelerate__and` | `0acaa8cf1230781a` | success |
+| `tech_hourglass_accelerate__or` | `0acaa8cf1230781a` | success |
+| `set_weekly_mode=require_up` | `d662a69006a1f2fe` | success |
+| `set_daily_mode=require_up_weekly_mode=reject_down` | `cc8bd37b64abbe9d` | success |
+| `set_clock_delta_pct=2_daily_mode=require_up` | `60afc3c71cbdcd92` | success |
+| `set_clock_delta_pct=2` | `8dd04e22f29f69ca` | success |
+| `fund_hard__trend` | `db9e34c6a2d20892` | success |
+| `fund_standard__trend` | `2eb9c4f6e46f5063` | success |
+| `fund_exception__trend` | `54bd04d4263db5e9` | success |
+| `keep_suffix__swing` | `a6baf99709a347b2` | success |
+| `keep_suffix__trend` | `2df67e74fe26e194` | success |
+| `params__custom` | `7e35355a8fd253fe` | success |
+| `err_unknown_preset` | `1b028d43d4ce8264` | error |
+| `err_unknown_logic` | `ce7d059ed95f4ff0` | error |
+| `err_unknown_tech` | `ebda5d5bb4b0cb2f` | error |
+| `err_unknown_setting_key` | `6eb414a48fc1a44c` | error |
+| `err_unknown_setting_value` | `d48d7cbeaec2b0cf` | error |
+| `err_unknown_fund_mode` | `ff6f378dec848be7` | error |
+
+sha: 245eea4768f5e7502348649db70b9f36d3532220 | context: {"instruments": 6018, "tape_history": 145516}
+
+معيارِ پذیرشِ حلِّ `api/funnel.py`: `--compare pre post` باید صفرِ جابه‌جایی بدهد، یا هر جابه‌جاییِ باقی‌مانده توضیحِ طرح‌دار درِ همین سند داشته باشد.
