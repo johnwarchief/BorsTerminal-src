@@ -12,7 +12,9 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { SarkhatiConnectionCard, sessionTruth } from '@features/portfolio/components/sarkhati/SarkhatiConnectionCard';
-import { PORTFOLIO_LABEL, TRAFFIC_LABEL, type ExecutionStatus } from '@features/portfolio/lib/orderClient';
+import { DRY_RUN_LABEL, PORTFOLIO_LABEL, TRAFFIC_LABEL, deriveGate,
+  type ExecutionStatus } from '@features/portfolio/lib/orderClient';
+import { statusLine } from '@features/portfolio/lib/sarkhatiFlow';
 
 const fetchMock = vi.fn();
 vi.stubGlobal('fetch', fetchMock);
@@ -183,6 +185,25 @@ describe('راستِ نشست و ترافیک', () => {
     const s = (statusEasy({ adapter: 'mock', session: { state: 'connected',
       origin: 'mock', proven: false, verified_by: {} } }) as unknown) as ExecutionStatus;
     expect(sessionTruth(s)).toBe('آداپتورِ بدل — هیچ پرسشی به کارگزاری نرفته');
+  });
+});
+
+describe('خطِ وضعیتِ اولِ صفحه (قدمِ «سرخطی»)', () => {
+  it('درِ فقط‌خواندنی «بی‌ترافیک» نمی‌گوید: یکِ GET واقعاً بیرون می‌رود', () => {
+    const s = (statusEasy() as unknown) as ExecutionStatus;
+    const gate = deriveGate(s, 'ok');
+    expect(statusLine(gate)).toContain('فقط‌خواندنی');
+    expect(statusLine(gate)).not.toContain('بی‌ترافیک');
+    expect(gate.canTrade).toBe(false);
+    expect(gate.reason).toContain('فقط‌خواندنی');
+  });
+
+  it('بی‌ترافیکِ واقعی همان «بی‌ارسال» می‌ماند و باِ فقط‌خواندنی یکی نمی‌شود', () => {
+    const s = (statusEasy({ read_only: false, traffic_allowed: false,
+      blocked_on: ['ترافیک خاموش است'] }) as unknown) as ExecutionStatus;
+    const line = statusLine(deriveGate(s, 'ok'));
+    expect(line).not.toContain('فقط‌خواندنی');
+    expect(line).toContain(DRY_RUN_LABEL);
   });
 });
 

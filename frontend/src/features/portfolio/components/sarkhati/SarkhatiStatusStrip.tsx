@@ -14,12 +14,15 @@
 import { Badge } from '@shared/components/Badge';
 import { toFaDigits } from '@shared/lib/fmt';
 import { matchFa } from '@shared/lib/normalizeFa';
+import { DRY_RUN_LABEL } from '../../lib/orderClient';
 import type { TradingGate } from '../../lib/orderClient';
 import { Chip } from './parts';
 
 const MODE_LABEL: Record<string, string> = {
   mock: 'بدلِ سرویس (mock)',
-  dry_run: 'مسیرِ بی‌ترافیک (dry_run)',
+  // `dry_run` یعنی «سفارش ارسال نمی‌شود» — نه «هیچ درخواستی بیرون نمی‌رود»؛
+  // درِ حالتِ فقط‌خواندنی یک GET به کارگزاری می‌رود و برچسب نباید آن را انکار کند.
+  dry_run: DRY_RUN_LABEL,
   live: 'واقعی (live)',
   paper: 'کاغذی (paper)',
   backtest: 'بک‌تست',

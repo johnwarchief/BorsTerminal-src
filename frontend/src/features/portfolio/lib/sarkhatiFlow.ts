@@ -14,6 +14,7 @@
 // می‌شود: درِ توقفِ اضطراری قدمِ مسیر رویِ «سفارش» می‌ماند، ولی چیزی که قفل را
 // باز می‌کند درِ «ریسک و ایمنی» است. پیشنهادی که مقصدِ کار ندارد، گم‌کردنِ کاربر
 // است، نه راهنمایی.
+import { DRY_RUN_LABEL } from './orderClient';
 import type { SessionStateValue, TradingGate } from './orderClient';
 
 export type SarkhatiStep = 'connect' | 'symbol' | 'order' | 'tracking';
@@ -123,7 +124,11 @@ export function statusLine(gate: TradingGate): string {
   if (!gate.endpointPresent) return 'سرویسِ اجرا نمی‌رسد';
   if (gate.halted) return 'توقفِ اضطراری فعال است';
   const mode = st?.adapter === 'mock' ? 'بدلِ سرویس (mock)'
-    : st?.dry_run === true ? 'مسیرِ بی‌ترافیک (dry_run)'
-      : st?.live_enabled === true ? 'اتصالِ زنده' : 'نشستِ بی‌ترافیک';
+    // درِ فقط‌خواندنی یک GET ازِ ماشین بیرون می‌رود؛ «بی‌ترافیک» گفتنش همان
+    // دروغِ وارونه است. `dry_run` فقط می‌گوید «سفارش ارسال نمی‌شود».
+    : st?.read_only === true && st?.traffic_allowed === true
+      ? 'فقط‌خواندنی: خواندن بله، ارسال نه'
+      : st?.dry_run === true ? DRY_RUN_LABEL
+        : st?.live_enabled === true ? 'اتصالِ زنده' : 'نشستِ بی‌ترافیک';
   return `${mode}${SESSION_SHORT[gate.sessionState] ? ` · ${SESSION_SHORT[gate.sessionState]}` : ''}`;
 }

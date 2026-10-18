@@ -66,6 +66,10 @@ export const SESSION_LABEL: Record<SessionStateValue, string> = {
 export const TRAFFIC_MODES = ['writes', 'read_only', 'blocked'] as const;
 export type TrafficMode = (typeof TRAFFIC_MODES)[number];
 
+/** یکِ واژه برایِ یکِ حالت، درِ دو جایِ صفحه (هدر و نوارِ وضعیت): «dry_run» یعنی
+ *  سفارش ارسال نمی‌شود — نه اینکه هیچ درخواستی بیرون نمی‌رود. */
+export const DRY_RUN_LABEL = 'بی‌ارسالِ سفارش (dry_run)';
+
 export const TRAFFIC_LABEL: Record<TrafficMode, { text: string; tone: 'ok' | 'warn' | 'idle' }> = {
   writes: { text: 'خواندن و ارسال آزاد', tone: 'warn' },
   read_only: { text: 'فقط‌خواندنی: خواندن بله، ارسال نه', tone: 'ok' },
