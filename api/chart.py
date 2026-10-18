@@ -1777,27 +1777,40 @@ def get_chart_db(symbol: str):
         try:
             _pred, _params = sym_pred(conn, "symbol", symbol, "board")
             _raw = conn.execute(
-                "SELECT date, open, high, low, close, volume, last, value FROM price_history "
-                "WHERE %s ORDER BY date DESC, volume DESC" % _pred, _params).fetchall()
+                candle_contract.SELECT_SQL + " WHERE %s ORDER BY date DESC, volume DESC"
+                % _pred, _params).fetchall()
             # حذف تکراریِ روز: کلید price_history = (symbol,date)؛ نمادِ دو-املا
             # می‌تواند همان روز را در دو نوشتار داشته باشد — پرحجم‌تر می‌ماند.
+            # درِ قراردادِ DB (`DB_COLUMNS`) ستونِ دوم `date` است، نه نخستین.
             _seen, rows = set(), []
             for r in _raw:
-                if r[0] in _seen:
+                if r[1] in _seen:
                     continue
-                _seen.add(r[0])
+                _seen.add(r[1])
                 rows.append(r)
             rows.reverse()          # صعودی (قرارداد پیشین: ORDER BY date ASC)
-            # `close` = «قیمت پایانی» و `last` = «آخرین قیمت»؛ این دو ستونِ جدا‌اند و
-            # جعلِ `last := close` حذف شده (docs/CANDLE-CONTRACT.md §۱-ث شرطِ ۳). ردیفی
-            # که منبعش «آخرین» نداشته (مثلاً GetInstrmentsHistoryInDay) صریح null
-            # می‌رود، تا مصرف‌کننده بتواند «نداریم» را تشخیص دهد، نه اینکه عددِ پایانی
-            # را با نامِ «آخرین» بخورد.
-            candles = [{"time": r[0], "open": float(r[1]), "high": float(r[2]),
-                        "low": float(r[3]), "close": float(r[4]),
-                        "last": float(r[6]) if r[6] is not None else None,
-                        "value": float(r[7]) if r[7] is not None else None,
-                        "volume": float(r[5] or 0)} for r in rows]
+            # سازندۀِ یکتای ردیفِ بانک: `candle_contract.from_db_row`.
+            # پیش از این اینجا دستی ساخته می‌شد و هیچ فیلتری نداشت، پس ۳۰۶ ردیفِ
+            # `open=high=low=0` (۲۹۴ ردیفش سایۀ صفر) کندلِ ناممکن می‌ساخت: پایانیِ
+            # معتبرِ منتشرشده در برابرِ High/Lowِ صفر ⇒ `Low ≤ min(O,C)` نقض می‌شد و
+            # دامانۀِ خودکارِ محور تا صفر باز می‌شد (همان «کندلِ زیرِ صفرِ دیدنی» که
+            # درِ ممیزیِ کلِ نمادها برایِ مسیرِ CDN منع شد، اینجا از مسیرِ محلی می‌آمد).
+            # قراردادِ مشترک همان ردیف را این‌طور می‌خواند: صفر درِ high/low یعنی
+            # «منبع هنوز پر نکرده» ⇒ سایه از بدنه گِشاد می‌شود و `open` از پایانیِ
+            # منتشرشده برمی‌دارد؛ هیچ عددِ منتشرشده کُنده نمی‌شود. ردیفِ حجم‌صفر
+            # (روزِ بی‌معامله) کندل نمی‌شود — همان قاعدۀِ مسیرِ CDN.
+            # شمارش‌ها درِ پاسخ می‌آیند تا «کم شدنِ کندل» حذفِ خاموش نباشد.
+            _db_rows = len(rows)
+            candles, _drop_no_trade, _drop_invalid = [], 0, 0
+            for r in rows:
+                ck = candle_contract.from_db_row(r)
+                if ck is None:
+                    if float(r[6] or 0) <= 0:
+                        _drop_no_trade += 1
+                    else:
+                        _drop_invalid += 1
+                    continue
+                candles.append(ck)
         finally:
             conn.close()
 
@@ -1843,6 +1856,11 @@ def get_chart_db(symbol: str):
 
         return _stamp_data_time(price_basis.resolve_payload(
             {"status": "success", "symbol": symbol, "count": len(candles),
+             # اعلامِ صادقانۀِ شمارش: هر ردیفِ حذف‌شده با علتش. بی‌این، «کم شدنِ کندل»
+             # درِ مسیرِ محلی حذفِ خاموش به‌نظر می‌رسید (سنجشِ ۱۴۰-۰۷-۲۷: ۲٬۶۹۲ ردیفِ
+             # حجم‌صفر و ۳۰۶ ردیفِ بی‌سایه درِ کلِ بانک).
+             "dbRows": _db_rows, "dbNoTradeRows": _drop_no_trade,
+             "dbInvalidRows": _drop_invalid,
              "candles": candles, "volumes": vols, "factors": facts,
              "adjustEvents": _applied, "adjustRejected": _rejected,
              "adjustSource": _src,

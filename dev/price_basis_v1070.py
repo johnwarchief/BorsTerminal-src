@@ -175,12 +175,18 @@ def main():
     OHLC_BUILDERS = (
         '"close": c, "last": last})',                             # مسیرِ ۵: _parse_tsetmc_csv
         '"close": p_close, "volume": vol,',                       # مسیرِ ۶: کندلِ زندۀ تابلو
-        '"low": float(r[3]), "close": float(r[4]),',              # مسیرِ ۷: get_chart_db
         '"close": r[5], "volume": r[6], "last": r[7]}',           # مسیرِ key-levels و patterns
         '"time": r[0], "close": r[1], "last": r[3]',              # مسیرِ /api/ma
     )
     for _b in OHLC_BUILDERS:
         ck(_b in chart, "سازندۀ کندل درِ chart.py دست‌نخورده شناسایی می‌شود: %s" % _b[:34], "")
+    # مسیرِ ۷ (get_chart_db) از دورِ ممیزیِ کلِ نمادها دیگر سازندۀِ دستی نیست: از
+    # `candle_contract.from_db_row` می‌گذرد. این دو چک همین جایِ کد را قفل می‌کنند —
+    # اگر ساختارِ دستی (که ۳۰۶ ردیفِ بی‌سایه را کندلِ ناممکن می‌ساخت) برگردد، قرمز است.
+    _gdb = chart[chart.index("def get_chart_db"):chart.index("def get_patterns")]
+    ck('"low": float(r[3]), "close": float(r[4]),' not in _gdb
+       and "candle_contract.from_db_row(" in _gdb,
+       "NEGATIVE CONTROL: مسیرِ بانک به سازندۀِ دستیِ بدونِ هندسه برنمی‌گردد", "")
     ck(chart.count('"last": p_last if p_last > 0 else p_close') == 0,
        "NEGATIVE CONTROL: کندلِ زنده دیگر lastِ نبود را با پایانی پر نمی‌کند", "")
     # استثنایِ قدمِ ۵ («`_fts_scaled` هنوز last را از close می‌سازد») درِ
