@@ -156,8 +156,62 @@ ck("1.00" in m1.replace("۱٫۰۰", "1.00"), "D۲ دلیل، همان عددِ �
 ck(FE._tape_miss(r1, "f_clock") is not None,
    "D۳ بی‌تنظیم، پیش‌فرضِ فایل (۲٪) می‌ماند — رفتارِ بقیۀ استراتژی‌ها عوض نمی‌شود")
 
+# ── ۴.۵) رأیِ *گام*، نه فقط متنِ دلیل (سنجشِ زندهٔ ۱۴-۰۷-۲۷ این را لو داد) ──────
+# درِ بیلدِ منتشرشدهٔ v1.0.91 هر سه آستانه (۱٪، ۲٪، ۵۰٪) یک شمارۀ ۳۲ می‌دادند:
+# دلیل از تنظیم می‌خواند ولی داوری از ستونِ ازپیش‌ساختۀ تابلو (۲٪). این سه بند
+# همان درز را می‌بندد — رویِ خودِ `evaluate`، نه تابعِ دلیل.
+def _brd(sym, chg, live=True):
+    """یک ردیفِ تابلو که فقط شرطِ «الگوی ساعت» را می‌سنجد: حجم و تعدادِ معاملۀ
+    کافی، و اختلافِ آخرین/پایانیِ انتخابیِ ما."""
+    return {"symbol": sym, "p_closing": 1000.0, "p_last": 1000.0 * (1.0 + chg),
+            "tvol": 100.0, "z_tot_tran": 40.0, "prior30_vol": 1500.0,
+            "hist_sessions": 40, "is_live": live,
+            # پرچمِ تابلو همیشه با ۲٪ِ فایل ساخته می‌شود؛ تنظیمِ استراتژی باید
+            # همین ستون را دوباره بسازد، نه اینکه فقط متن را عوض کند.
+            "f_clock": chg >= 0.02, "f_susp": False, "f_jet": False,
+            "f_roobi": False, "f_noqteh": False, "f_smart": False, "f_legal": False,
+            "tech_trend_w": "up", "tech_trend_d": "up",
+            "tech_matrix_decision": "PERMITTED", "score": 5, "primary_score": 3,
+            "i1_pass": 1, "i2_pass": 1, "i3_pass": 1, "i4_pass": 1, "i5_pass": 1}
+
+
+def _scr(sym):
+    return {"symbol": sym, "score": 0, "primary_score": 0, "i1_pass": 1, "i2_pass": 1,
+            "i3_pass": 1, "i4_pass": 1, "i5_pass": 1, "tech_trend_w": "up",
+            "tech_trend_d": "up", "tech_matrix_decision": "PERMITTED"}
+
+
+def _ev(pct, preset="tech_first", chain=("f_clock",)):
+    B = [_brd("ک-۱٫۵", 0.015), _brd("ک-۲٫۵", 0.025)]
+    S = [_scr("ک-۱٫۵"), _scr("ک-۲٫۵")]
+    o = FE.evaluate([dict(r) for r in B], [dict(x) for x in S], preset=preset,
+                    custom_chain=list(chain), fund_mode="standard",
+                    tech_scan={}, tech_sigs={},
+                    settings=({"clock_delta_pct": pct} if preset == "tech_first" else None))
+    t = (o.get("stages") or {}).get("tape") or {}
+    h = (o.get("stages") or {}).get("handover") or {}
+    surv = list(t.get("survivors") or [])
+    pool = ["ک-۱٫۵", "ک-۲٫۵"]
+    return surv, list(h.get("survivors") or []), [x for x in pool if x not in surv]
+
+
+s1, h1, r1_ = _ev("1")
+s2, h2, r2_ = _ev("2")
+ck("ک-۱٫۵" in s1 and "ک-۱٫۵" not in s2,
+   "D۴ آستانه، رأیِ گامِ تابلو را عوض می‌کند: ۱٫۵٪ درِ ۱٪ عبور می‌کند و درِ ۲٪ رد",
+   {"1%": s1, "2%": s2, "removed@2%": r2_})
+ck(len(s1) == 2 and len(s2) == 1, "D۵ شمارۀِ عبوری‌ها باِ عددِ انتخابی جابه‌جا می‌شود",
+   "%d → %d" % (len(s1), len(s2)))
+ck("ک-۱٫۵" not in h2,
+   "D۶ نمادی که درِ گامِ تابلو رد شده درِ تحویل هم زنده نمی‌ماند",
+   {"tape_removed": r2_, "handover": h2})
+
 # ── ۵) استراتژی‌هایِ قدیمی دست‌نخورده ────────────────────────────────────────
 legacy = stage(rows, REG.TREND_GATE)
+_ls, _lh, _lr = _ev("1", preset="trend")
+ck(_ls == ["ک-۲٫۵"] and "ک-۱٫۵" in _lr,
+   "E0 presetِ قدیمی بی‌تنظیم: آستانه‌اش همان ۲٪ِ فایل می‌ماند و تنظیمی نمی‌گیرد",
+   {"survivors": _ls, "removed": _lr})
 ck(status_of(legacy, "خ-نز") == REJECT and status_of(legacy, "خ-خن") == REJECT,
    "E1 دروازۀ کلاسیک برایِ preset قدیمی همان وتوی همیشگی است",
    [status_of(legacy, s) for s in ("خ-نا", "خ-نز", "خ-خن", "خ-صع")])

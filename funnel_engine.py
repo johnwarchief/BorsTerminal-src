@@ -1819,6 +1819,16 @@ def evaluate(board_rows: list[dict], screen_rows: list[dict], *,
         fc["clock_delta"] = float(stg["clock_delta_pct"]) / 100.0
         eff["f_clock"] = fc
         params = eff
+    # آستانه باید رأی را عوض کند، نه فقط متنِ دلیل. پرچمِ `f_clock` درِ تابلو با
+    # ۲٪ِ فایل ساخته می‌شود و گامِ تابلو همان ستون را می‌خواند؛ پس اگر تنظیمِ
+    # همین استراتژی عددِ دیگری است، همان `clock_flag` رویِ ردیف‌ها دوباره اجرا
+    # می‌شود (نه فرمولِ دوم). بی‌این، سنجشِ زنده نشان داد ۱٪ و ۲٪ و حتی ۵۰٪ هر سه
+    # یک شمارۀِ یکسان می‌دادند — کنترلِ دیدنی، داوریِ بی‌اثر.
+    from tape_flags import CLOCK_DELTA as _FILE_CLOCK_DELTA, rejudge_clock
+    _cd = _param_num((params or {}).get("f_clock") or {}, "clock_delta", _FILE_CLOCK_DELTA)
+    if abs(_cd - _FILE_CLOCK_DELTA) > 1e-12:
+        for _r, _hit in zip(screening, rejudge_clock(screening, _cd)):
+            _r["f_clock"] = bool(_hit)
     if flow == "tech_first":
         # تکنیکال رویِ **کلِ جامعۀ غربالگری** داوری می‌شود، بعد تابلو رویِ ماندگان.
         tech = technical_stage(screening, tech_scan, tech_sigs, gate=gate_of(preset),
@@ -1833,7 +1843,12 @@ def evaluate(board_rows: list[dict], screen_rows: list[dict], *,
     if flow != "tech_first":
         tech = technical_stage(tape["survivors"], tech_scan, tech_sigs, gate=gate,
                                tech_chain=chosen_tech, settings=stg)
-    fund = fundamental_stage(tech["survivors"], fund_mode, exceptions, now=as_of)
+    # درِ «تکنیکال اول» تابلو بعد از تکنیکال اجرا می‌شود، پس بنیادی باید رویِ
+    # ماندگانِ *تابلو* بخواند، نه ماندگانِ تکنیکال — وگرنه نمادی که درِ گامِ ۲ رد
+    # شده درِ گامِ ۳ و ۴ زنده می‌ماند (سنجشِ زندهٔ ۱۴-۰۷-۲۷: ردشدۀ تابلو درِ
+    # handover هم آمد). درِ ترتیبِ قدیمی همین دو فهرست یکی است.
+    fund = fundamental_stage(tape["survivors"] if flow == "tech_first" else tech["survivors"],
+                             fund_mode, exceptions, now=as_of)
     hand = handover_stage(fund["survivors"], tape, tech, fund,
                           assembly_vetoed=[str(r.get("symbol") or "") for r in screening
                                            if _tri(r.get("assembly_veto")) is True])
