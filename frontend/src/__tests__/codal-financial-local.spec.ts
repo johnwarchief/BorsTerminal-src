@@ -123,7 +123,7 @@ describe('Codal annual financial-statement parser', () => {
   });
 });
 
-describe('Codal financial-statements SQLite v2', () => {
+describe('Codal financial-statements SQLite migrations', () => {
   it('upserts corrections once and keeps v1 data during the additive migration', async () => {
     const SQL = await testSql();
     const db = new SQL.Database();
@@ -144,9 +144,10 @@ describe('Codal financial-statements SQLite v2', () => {
     db.run('DROP TABLE financial_statements');
     db.run('PRAGMA user_version = 1');
     migrateCodalDatabase(db);
-    expect(Number(db.exec('PRAGMA user_version')[0]?.values[0]?.[0])).toBe(2);
+    expect(Number(db.exec('PRAGMA user_version')[0]?.values[0]?.[0])).toBe(3);
     expect(db.exec('SELECT value FROM preserved_marker')[0]?.values).toEqual([['kept']]);
     expect(db.exec("SELECT name FROM sqlite_master WHERE name='financial_statements'")[0]?.values).toHaveLength(1);
+    expect(db.exec("SELECT name FROM sqlite_master WHERE name='codal_monthly_history_checkpoint'")[0]?.values).toHaveLength(1);
     expect(db.exec('SELECT COUNT(*) FROM monthly_sales')[0]?.values[0]?.[0]).toBe(1);
     expect(db.exec('SELECT COUNT(*) FROM codal_documents')[0]?.values[0]?.[0]).toBe(1);
     db.close();

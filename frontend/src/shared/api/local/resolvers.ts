@@ -12,7 +12,7 @@ import { tehranOffsetMs } from '@shared/lib/marketHours';
 import { baked, metaValue, normFa, query } from './localData';
 import { deleteDecision, portfolioFeed, saveDecision, searchSymbols } from './selectionLocal';
 import { liveChart, liveClientType, liveTedpix, liveTodayCandle, liveWatch, overlayBoard, tehranToday } from './live';
-import { readLatestStoredMonthlySales, syncLatestMonthlySales } from './codalMonthly';
+import { readLatestStoredMonthlySales, syncLatestMonthlySales, syncMonthlyHistory } from './codalMonthly';
 import {
   readLatestStoredFinancialStatement,
   syncLatestAnnualFinancialStatement,
@@ -370,6 +370,12 @@ export async function resolveLocal(
   if (path === '/api/codal/monthly-sales/sync') {
     if (method !== 'POST') throw new HttpError(405, url, 'POST required');
     return syncLatestMonthlySales(u.searchParams.get('symbol') ?? '');
+  }
+  if (path === '/api/codal/monthly-sales/history-sync') {
+    if (method !== 'POST') throw new HttpError(405, url, 'POST required');
+    const maxPages = Number(u.searchParams.get('max_pages') ?? 1);
+    const maxReports = Number(u.searchParams.get('max_reports') ?? 5);
+    return syncMonthlyHistory(u.searchParams.get('symbol') ?? '', { maxPages, maxReports });
   }
   if (path === '/api/codal/monthly-sales') {
     if (method !== 'GET') throw new HttpError(405, url, 'GET required');

@@ -2,6 +2,7 @@ import { nativeGetJsonResult, nativeGetTextResult, type NativeHttpResult } from 
 import {
   codalStore,
   type CodalDocumentRecord,
+  type CodalMonthlyHistoryCheckpoint,
   type CodalProcessingStatus,
   type CodalSyncOutcome,
   type CodalSyncState,
@@ -11,6 +12,7 @@ import {
 const SEARCH_API = 'https://search.codal.ir/api/search/v2/q';
 const MIN_REQUEST_GAP_MS = 1700;
 const MAX_REPORT_CHARS = 8_000_000;
+const CODAL_SEARCH_PAGE_SIZE = 20;
 const REPORT_HEADERS = {
   Accept: 'text/html,application/xhtml+xml,application/json;q=0.9,*/*;q=0.8',
   Origin: 'https://codal.ir',
@@ -235,14 +237,15 @@ export function parseMonthlyActivityReportHtml(html: string): MonthlyActivityPar
     values: null, error };
 }
 
-function buildSearchUrl(symbol: string, lastPublishedAt: string | null): string {
+function buildSearchUrl(symbol: string, lastPublishedAt: string | null, pageNumber = 1): string {
   const published = /^(\d{4})[/-](\d{2})[/-](\d{2})/.exec(lastPublishedAt ?? '');
   const fromDate = published ? `${published[1]}/${published[2]}/${published[3]}` : '1400/01/01';
   const params = new URLSearchParams({
     Audited: 'true', AuditorRef: '-1', Category: '3', Childs: 'false',
     CompanyState: '-1', CompanyType: '-1', Consolidatable: 'true', IsNotAudited: 'false',
     Length: '-1', LetterType: '-1', Mains: 'true', NotAudited: 'true',
-    NotConsolidatable: 'true', PageNumber: '1', Publisher: 'false', TracingNo: '-1',
+    NotConsolidatable: 'true', PageNumber: String(Math.max(1, Math.trunc(pageNumber))),
+    Publisher: 'false', TracingNo: '-1',
     Symbol: symbol, Title: '', Type: '-1', search: 'true', FromDate: fromDate,
   });
   return `${SEARCH_API}?${params.toString()}`;
@@ -265,6 +268,265 @@ function responseLetters(data: unknown): Record<string, unknown>[] | null {
   if (!data || typeof data !== 'object' || !Array.isArray((data as Record<string, unknown>).Letters)) return null;
   return (data as { Letters: unknown[] }).Letters.filter((item): item is Record<string, unknown> =>
     Boolean(item) && typeof item === 'object' && !Array.isArray(item));
+}
+
+function responseTotal(data: unknown): number | null {
+  if (!data || typeof data !== 'object') return null;
+  const value = (data as Record<string, unknown>).Total
+    ?? (data as Record<string, unknown>).TotalCount
+    ?? (data as Record<string, unknown>).totalCount;
+  if (value == null || value === '') return null;
+  const total = Number(value);
+  return Number.isSafeInteger(total) && total >= 0 ? total : null;
+}
+
+export type CodalMonthlyHistoryResult = {
+  symbol: string;
+  status: 'IN_PROGRESS' | 'COMPLETE' | 'RETRY' | 'INVALID_SYMBOL' | 'STORAGE_UNAVAILABLE';
+  nextPage: number;
+  pagesCompleted: number;
+  reportsStored: number;
+  totalLetters: number | null;
+  error?: string;
+};
+
+type MonthlyHistoryDependencies = SyncDependencies & {
+  maxPages: number;
+  maxReports: number;
+};
+
+function historyResult(
+  symbol: string,
+  checkpoint: CodalMonthlyHistoryCheckpoint,
+  reportsStored: number,
+  error?: string,
+): CodalMonthlyHistoryResult {
+  return { symbol, status: checkpoint.status, nextPage: checkpoint.nextPage,
+    pagesCompleted: checkpoint.pagesCompleted, reportsStored,
+    totalLetters: checkpoint.totalLetters, ...(error ? { error } : {}) };
+}
+
+/**
+ * Bounded, resumable backfill of monthly activity reports. Codal's search API
+ * currently returns at most 20 letters per page even when Length=-1 is sent;
+ * the checkpoint advances only after the page's reports are stored atomically.
+ */
+export async function syncMonthlyHistory(
+  symbolValue: string,
+  options: { maxPages?: number; maxReports?: number } = {},
+  overrides: Partial<SyncDependencies> = {},
+): Promise<CodalMonthlyHistoryResult> {
+  const bounded = (value: number | undefined, fallback: number, maximum: number) => {
+    const normalized = value !== undefined && Number.isFinite(value) ? Math.trunc(value) : fallback;
+    return Math.max(1, Math.min(maximum, normalized));
+  };
+  const deps: MonthlyHistoryDependencies = {
+    ...defaults, ...overrides,
+    maxPages: bounded(options.maxPages, 1, 5),
+    maxReports: bounded(options.maxReports, 5, 20),
+  };
+  const symbol = symbolValue.trim();
+  if (!symbol || symbol.length > 64) {
+    return { symbol, status: 'INVALID_SYMBOL', nextPage: 1, pagesCompleted: 0,
+      reportsStored: 0, totalLetters: null };
+  }
+
+  let checkpoint: CodalMonthlyHistoryCheckpoint | null;
+  try { checkpoint = await deps.store.readMonthlyHistoryCheckpoint(symbol); }
+  catch (error) {
+    return { symbol, status: 'STORAGE_UNAVAILABLE', nextPage: 1, pagesCompleted: 0,
+      reportsStored: 0, totalLetters: null, error: error instanceof Error ? error.message : String(error) };
+  }
+  if (checkpoint?.status === 'COMPLETE') return historyResult(symbol, checkpoint, 0);
+
+  let page = checkpoint?.nextPage ?? 1;
+  let pagesCompleted = checkpoint?.pagesCompleted ?? 0;
+  let totalLetters = checkpoint?.totalLetters ?? null;
+  let oldestPublishedAt = checkpoint?.oldestPublishedAt ?? null;
+  let reportsStored = 0;
+  let pageBudget = 0;
+  const nowIso = () => deps.now().toISOString();
+
+  const persistCheckpoint = async (
+    status: CodalMonthlyHistoryCheckpoint['status'], nextPage: number,
+    httpStatus: number | null, error: string | null,
+  ) => {
+    const next: CodalMonthlyHistoryCheckpoint = {
+      symbol, nextPage, totalLetters, pagesCompleted, oldestPublishedAt,
+      status, lastAttemptAt: nowIso(), lastHttpStatus: httpStatus, lastError: error,
+    };
+    await deps.store.recordMonthlyHistoryPage([], next);
+    checkpoint = next;
+  };
+
+  while (pageBudget < deps.maxPages && reportsStored < deps.maxReports) {
+    const search = await runCodalRequest(
+      () => deps.getJson(buildSearchUrl(symbol, null, page), REPORT_HEADERS),
+      deps.now, deps.sleep);
+    if (search.status < 200 || search.status >= 300 || !search.data) {
+      const error = search.error ?? `search_http_${search.status || 'unknown'}`;
+      try { await persistCheckpoint('RETRY', page, search.status || null, error); }
+      catch (storageError) {
+        return { symbol, status: 'STORAGE_UNAVAILABLE', nextPage: page,
+          pagesCompleted, reportsStored, totalLetters,
+          error: storageError instanceof Error ? storageError.message : String(storageError) };
+      }
+      return historyResult(symbol, checkpoint!, reportsStored, error);
+    }
+
+    const letters = responseLetters(search.data);
+    if (!letters) {
+      const error = 'letters_array_missing';
+      try { await persistCheckpoint('RETRY', page, search.status, error); }
+      catch (storageError) {
+        return { symbol, status: 'STORAGE_UNAVAILABLE', nextPage: page,
+          pagesCompleted, reportsStored, totalLetters,
+          error: storageError instanceof Error ? storageError.message : String(storageError) };
+      }
+      return historyResult(symbol, checkpoint!, reportsStored, error);
+    }
+    totalLetters = responseTotal(search.data) ?? totalLetters;
+    if (!letters.length) {
+      if (totalLetters !== null && (page - 1) * CODAL_SEARCH_PAGE_SIZE < totalLetters) {
+        const error = 'pagination_empty_page_before_reported_total';
+        try { await persistCheckpoint('RETRY', page, search.status, error); }
+        catch (storageError) {
+          return { symbol, status: 'STORAGE_UNAVAILABLE', nextPage: page,
+            pagesCompleted, reportsStored, totalLetters,
+            error: storageError instanceof Error ? storageError.message : String(storageError) };
+        }
+        return historyResult(symbol, checkpoint!, reportsStored, error);
+      }
+      pagesCompleted += 1;
+      try { await persistCheckpoint('COMPLETE', page, search.status, null); }
+      catch (storageError) {
+        return { symbol, status: 'STORAGE_UNAVAILABLE', nextPage: page,
+          pagesCompleted, reportsStored, totalLetters,
+          error: storageError instanceof Error ? storageError.message : String(storageError) };
+      }
+      return historyResult(symbol, checkpoint!, reportsStored);
+    }
+
+    const pageRecords: Array<{ record: CodalDocumentRecord; outcome: CodalSyncOutcome }> = [];
+    let pageError: string | null = null;
+    let pageHttpStatus: number | null = search.status;
+    let budgetReached = false;
+    for (const letter of letters) {
+      if (!normalizeLabel(letter.Title).includes('گزارشفعالیتماهانه')) continue;
+      const tracingNo = String(letter.TracingNo ?? '').trim();
+      const sourceUrl = normalizeCodalReportUrl(letter.Url);
+      if (!/^\d+$/.test(tracingNo) || !sourceUrl) {
+        pageError = `invalid_report_reference:${tracingNo || 'missing'}`;
+        break;
+      }
+      let alreadyStored: boolean;
+      try { alreadyStored = await deps.store.hasMonthlyReport(tracingNo); }
+      catch (error) {
+        return { symbol, status: 'STORAGE_UNAVAILABLE', nextPage: page,
+          pagesCompleted, reportsStored, totalLetters,
+          error: error instanceof Error ? error.message : String(error) };
+      }
+      if (alreadyStored) continue;
+      if (reportsStored + pageRecords.length >= deps.maxReports) {
+        budgetReached = true;
+        break;
+      }
+
+      const report = await runCodalRequest(
+        () => deps.getText(sourceUrl, REPORT_HEADERS), deps.now, deps.sleep);
+      pageHttpStatus = report.status || null;
+      if (report.status < 200 || report.status >= 300 || report.data === null) {
+        pageError = report.error ?? `report_http_${report.status || 'unknown'}`;
+        break;
+      }
+      if (report.data.length > MAX_REPORT_CHARS) {
+        pageError = 'report_html_exceeds_local_limit';
+        break;
+      }
+
+      const parsed = parseMonthlyActivityReportHtml(report.data);
+      const receivedAt = nowIso();
+      let contentHash: string;
+      try {
+        const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(report.data));
+        contentHash = [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, '0')).join('');
+      } catch (error) {
+        pageError = error instanceof Error ? error.message : 'sha256_unavailable';
+        break;
+      }
+      const publishedAt = normalizeDigits(letter.PublishDateTime);
+      if (publishedAt && (!oldestPublishedAt || publishedAt < oldestPublishedAt)) {
+        oldestPublishedAt = publishedAt;
+      }
+      const record: CodalDocumentRecord = {
+        tracingNo, symbol,
+        companyName: typeof letter.CompanyName === 'string' ? letter.CompanyName : '',
+        title: typeof letter.Title === 'string' ? letter.Title : '', sourceUrl,
+        publishedAt, periodEnd: parsed.periodEnd, receivedAt, lastUpdatedAt: receivedAt,
+        contentHash, rawHtml: report.data, processingStatus: parsed.status,
+        processingError: parsed.error, values: parsed.values,
+      };
+      const dataStored = parsed.status === 'PARSED' && Boolean(parsed.periodEnd) && Boolean(parsed.values);
+      pageRecords.push({ record, outcome: {
+        symbol, attemptedAt: receivedAt, status: parsed.status, httpStatus: report.status,
+        error: parsed.error, nextRetryAt: null, failureStreak: 0, dataStored,
+      } });
+    }
+
+    if (pageError) {
+      const failed: CodalMonthlyHistoryCheckpoint = {
+        symbol, nextPage: page, totalLetters, pagesCompleted, oldestPublishedAt,
+        status: 'RETRY', lastAttemptAt: nowIso(), lastHttpStatus: pageHttpStatus,
+        lastError: pageError,
+      };
+      try { await deps.store.recordMonthlyHistoryPage(pageRecords, failed); }
+      catch (storageError) {
+        return { symbol, status: 'STORAGE_UNAVAILABLE', nextPage: page,
+          pagesCompleted, reportsStored, totalLetters,
+          error: storageError instanceof Error ? storageError.message : String(storageError) };
+      }
+      reportsStored += pageRecords.length;
+      return historyResult(symbol, failed, reportsStored, pageError);
+    }
+
+    const pageComplete = !budgetReached;
+    if (pageComplete) pagesCompleted += 1;
+    const nextPage = pageComplete ? page + 1 : page;
+    const moreByTotal = totalLetters !== null
+      ? page * CODAL_SEARCH_PAGE_SIZE < totalLetters
+      : letters.length === CODAL_SEARCH_PAGE_SIZE;
+    const complete = pageComplete && !moreByTotal;
+    const next: CodalMonthlyHistoryCheckpoint = {
+      symbol, nextPage, totalLetters, pagesCompleted, oldestPublishedAt,
+      status: complete ? 'COMPLETE' : 'IN_PROGRESS', lastAttemptAt: nowIso(),
+      lastHttpStatus: search.status, lastError: null,
+    };
+    try { await deps.store.recordMonthlyHistoryPage(pageRecords, next); }
+    catch (error) {
+      return { symbol, status: 'STORAGE_UNAVAILABLE', nextPage: page,
+        pagesCompleted, reportsStored,
+        totalLetters, error: error instanceof Error ? error.message : String(error) };
+    }
+    reportsStored += pageRecords.length;
+    checkpoint = next;
+    if (complete) return historyResult(symbol, checkpoint, reportsStored);
+    if (budgetReached) return historyResult(symbol, checkpoint, reportsStored);
+    page += 1;
+    pageBudget += 1;
+  }
+  if (!checkpoint) {
+    const fallback: CodalMonthlyHistoryCheckpoint = {
+      symbol, nextPage: page, totalLetters, pagesCompleted, oldestPublishedAt,
+      status: 'IN_PROGRESS', lastAttemptAt: nowIso(), lastHttpStatus: null, lastError: null,
+    };
+    try { await deps.store.recordMonthlyHistoryPage([], fallback); checkpoint = fallback; }
+    catch (error) {
+      return { symbol, status: 'STORAGE_UNAVAILABLE', nextPage: page,
+        pagesCompleted, reportsStored, totalLetters,
+        error: error instanceof Error ? error.message : String(error) };
+    }
+  }
+  return historyResult(symbol, checkpoint, reportsStored);
 }
 
 function secondsFromRetryAfter(value: string | undefined, now: Date): number | null {

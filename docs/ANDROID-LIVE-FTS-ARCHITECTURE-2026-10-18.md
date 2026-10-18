@@ -103,8 +103,12 @@ schema محلی به نسخهٔ 2 افزوده شد و مسیر دریافت Cat
 
 ## مرحلهٔ ۵ — query سری ماهانهٔ محلی — 2026-10-18
 
-`codalStore.readMonthlyRevenueSeries()` با پنجره و قواعد انتخاب ردیفِ `monthly_series()` دسکتاپ هم‌راستا شد و عنوانِ گزارشِ شرکت دیگر را کنار می‌گذارد. چون همگام‌ساز هنوز تاریخچه را backfill نمی‌کند و alias/هویت نماد تأییدشده در sidecar وجود ندارد، پوشش صریحاً `INCOMPLETE` می‌ماند؛ این سری به API FTS یا قیف وصل نشده است. نتیجهٔ تست و مرزهای این مرحله در [`ANDROID-LIVE-FTS-STAGE5-RESULT-2026-10-18.md`](ANDROID-LIVE-FTS-STAGE5-RESULT-2026-10-18.md) ثبت شده است.
+`codalStore.readMonthlyRevenueSeries()` با پنجره و قواعد انتخاب ردیفِ `monthly_series()` دسکتاپ هم‌راستا شد و عنوانِ گزارشِ شرکت دیگر را کنار می‌گذارد. backfill تاریخچه اکنون به‌صورت صفحه‌بندی‌شده و قابل‌ازسرگیری پیاده شده، اما alias/هویت نماد و کامل‌بودن دامنه هنوز اثبات نشده است؛ بنابراین پوشش سری صریحاً `INCOMPLETE` می‌ماند و به API FTS یا قیف وصل نشده است. نتیجهٔ مرحلهٔ query در [`ANDROID-LIVE-FTS-STAGE5-RESULT-2026-10-18.md`](ANDROID-LIVE-FTS-STAGE5-RESULT-2026-10-18.md) و backfill در [`ANDROID-LIVE-FTS-STAGE6-RESULT-2026-10-18.md`](ANDROID-LIVE-FTS-STAGE6-RESULT-2026-10-18.md) ثبت شده است.
 
 بررسیِ خودِ بستهٔ `mobile-latest-v2` از مخزن توزیع (digest فایل با GitHub برابر بود) نشان داد فقط `baked/meta/instruments/price_history` دارد، هیچ دادهٔ خام Codal ندارد و صفر کلیدِ baked برای `funnel/` دارد. پس release فعلی تب استراتژی را با قیف آماده از بسته تغذیه نمی‌کند؛ تا موتور محلی و دادهٔ لازم به‌درستی پیاده و سنجیده نشوند، عرضهٔ آن به‌عنوان FTS زنده درست نیست.
 
-در همان بررسی، workflow قبلی روی commit `e97e486a` در build و ماتریس نصب موفق بود اما jobِ WebView/emulator شکست خورد: تصویر نهایی launcher را نشان می‌داد، rendererِ WebView با `SIGTRAP` خارج شده بود، و Activity به‌علت نداشتن پنجرهٔ فوکوس ANR ثبت کرده بود؛ فشار CPU در گزارش آن اجرا avg10≈87.77% بود. harness اصلاح شد تا اندازهٔ native را بدون تغییر بخواند و چهار هسته به emulator اختصاص دهد. این اصلاح هنوز با اجرای workflow راستی‌آزمایی نشده و انتشار جدید تا آن زمان تأییدشده نیست.
+در اجرای بعدی harness روی commit `bc80a0f3`، build و APK امضاشده موفق شدند؛ آزمون WebView و ماتریس نصب هنوز در جریان ثبت این گزارش‌اند و نتیجهٔ نهایی‌شان باید از workflow خوانده شود. harness اندازهٔ native را بدون تغییر می‌خواند و چهار هسته به emulator اختصاص می‌دهد. انتشار جدید تا ثبت نتیجهٔ نهایی و تکمیل قابلیت FTS محلی تأییدشده نیست.
+
+## مرحلهٔ ۶ — backfill ماهانهٔ قابل‌ازسرگیری — 2026-10-18
+
+schema به نسخهٔ ۳ ارتقا یافت و جدول checkpoint، دریافت محدود صفحه‌های Codal، نوشتن اتمیک هر صفحه، retry با dedupe بر اساس `TracingNo` و مسیر محلی `POST /api/codal/monthly-sales/history-sync` اضافه شد. جزئیات در [`ANDROID-LIVE-FTS-STAGE6-RESULT-2026-10-18.md`](ANDROID-LIVE-FTS-STAGE6-RESULT-2026-10-18.md) است. مسیر هنوز از UI/هماهنگ‌ساز پس‌زمینه فراخوانی نمی‌شود و هیچ سری‌ای را `COMPLETE` برای FTS اعلام نمی‌کند؛ آزمون گوشی و استفاده در محاسبه‌گر هنوز باقی است.

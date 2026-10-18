@@ -7,6 +7,7 @@ import {
 } from '@shared/api/local/codalStore';
 import {
   __resetCodalThrottleForTest, parseMonthlyActivityReportHtml, syncLatestMonthlySales,
+  syncMonthlyHistory,
 } from '@shared/api/local/codalMonthly';
 
 const cell = (rowSequence: number, columnSequence: number, value: string) =>
@@ -99,15 +100,21 @@ describe('Codal local SQLite schema and writes', () => {
     db.run('CREATE TABLE legacy_marker (value TEXT)');
     migrateCodalDatabase(db);
     migrateCodalDatabase(db);
-    expect(Number(db.exec('PRAGMA user_version')[0]?.values[0]?.[0])).toBe(2);
+    expect(Number(db.exec('PRAGMA user_version')[0]?.values[0]?.[0])).toBe(3);
     expect(db.exec("SELECT name FROM sqlite_master WHERE type='table' AND name='codal_documents'")[0]?.values).toHaveLength(1);
+    expect(db.exec("SELECT name FROM sqlite_master WHERE type='table' AND name='codal_monthly_history_checkpoint'")[0]?.values).toHaveLength(1);
     expect(db.exec("SELECT name FROM sqlite_master WHERE type='table' AND name='legacy_marker'")[0]?.values).toHaveLength(1);
     db.run('DROP TABLE financial_statements');
     db.run('PRAGMA user_version = 1');
     migrateCodalDatabase(db);
-    expect(Number(db.exec('PRAGMA user_version')[0]?.values[0]?.[0])).toBe(2);
+    expect(Number(db.exec('PRAGMA user_version')[0]?.values[0]?.[0])).toBe(3);
     expect(db.exec("SELECT name FROM sqlite_master WHERE type='table' AND name='financial_statements'")[0]?.values).toHaveLength(1);
     expect(db.exec('SELECT COUNT(*) FROM legacy_marker')[0]?.values[0]?.[0]).toBe(0);
+    db.run('DROP TABLE codal_monthly_history_checkpoint');
+    db.run('PRAGMA user_version = 2');
+    migrateCodalDatabase(db);
+    expect(Number(db.exec('PRAGMA user_version')[0]?.values[0]?.[0])).toBe(3);
+    expect(db.exec("SELECT name FROM sqlite_master WHERE type='table' AND name='codal_monthly_history_checkpoint'")[0]?.values).toHaveLength(1);
     db.run('PRAGMA user_version = 99');
     expect(() => migrateCodalDatabase(db)).toThrow('Unsupported Codal schema version 99');
     expect(Number(db.exec('PRAGMA user_version')[0]?.values[0]?.[0])).toBe(99);
@@ -263,5 +270,77 @@ describe('Codal monthly sync vertical slice', () => {
     expect(first.status).toBe('RATE_LIMITED');
     expect(second.status).toBe('COOLDOWN');
     expect(getJson).toHaveBeenCalledTimes(1);
+  });
+
+  it('backfills one bounded Codal page, stores raw reports, and resumes to completion', async () => {
+    const local = memoryStorage();
+    const store = createCodalStore(local.storage, testSql);
+    const now = new Date('2026-10-18T08:00:00.000Z');
+    const firstPage = Array.from({ length: 20 }, (_, index) => index < 2 ? ({
+      TracingNo: 8000 + index, Symbol: 'خساپا', CompanyName: 'شرکت نمونه',
+      Title: 'گزارش فعالیت ماهانه دوره یک ماهه',
+      Url: `/Reports/Decision.aspx?LetterSerial=history${index}`,
+      PublishDateTime: `1405/07/0${index + 1} 18:00:00`,
+    }) : ({ TracingNo: 9000 + index, Title: 'گزارش دیگر' }));
+    const secondPage = [{ TracingNo: 9100, Title: 'گزارش دیگر' }];
+    const getJson = vi.fn(async (url: string) => ({ status: 200, headers: {}, data: {
+      Letters: new URL(url).searchParams.get('PageNumber') === '1' ? firstPage : secondPage,
+      Total: 21,
+    } }));
+    const getText = vi.fn(async () => ({ status: 200, headers: {}, data: monthlyHtml() }));
+    const deps = { store, getJson, getText, now: () => now, sleep: async () => {} };
+
+    const first = await syncMonthlyHistory('خساپا', { maxPages: 1, maxReports: 5 }, deps);
+    expect(first).toMatchObject({ status: 'IN_PROGRESS', nextPage: 2,
+      pagesCompleted: 1, reportsStored: 2, totalLetters: 21 });
+    expect(getText).toHaveBeenCalledTimes(2);
+    expect(await store.hasMonthlyReport('8000')).toBe(true);
+    expect(await store.hasMonthlyReport('8001')).toBe(true);
+
+    const second = await syncMonthlyHistory('خساپا', { maxPages: 1, maxReports: 5 }, deps);
+    expect(second).toMatchObject({ status: 'COMPLETE', nextPage: 3,
+      pagesCompleted: 2, reportsStored: 0, totalLetters: 21 });
+    expect(getJson).toHaveBeenCalledTimes(2);
+    expect(getJson.mock.calls[1]?.[0]).toContain('PageNumber=2');
+    expect(getText).toHaveBeenCalledTimes(2);
+    expect((await store.readMonthlyHistoryCheckpoint('خساپا'))?.status).toBe('COMPLETE');
+  });
+
+  it('retries a partially fetched page without duplicating the already stored report', async () => {
+    const local = memoryStorage();
+    const store = createCodalStore(local.storage, testSql);
+    const now = new Date('2026-10-18T08:00:00.000Z');
+    const letters = [0, 1].map((index) => ({
+      TracingNo: 8200 + index, Symbol: 'خساپا', CompanyName: 'شرکت نمونه',
+      Title: 'گزارش فعالیت ماهانه دوره یک ماهه',
+      Url: `/Reports/Decision.aspx?LetterSerial=retry${index}`,
+      PublishDateTime: `1405/07/0${index + 1} 18:00:00`,
+    }));
+    const getJson = vi.fn(async () => ({ status: 200, headers: {}, data: { Letters: letters, Total: 2 } }));
+    let failSecond = true;
+    const getText = vi.fn(async (url: string) => {
+      if (url.includes('retry1') && failSecond) {
+        return { status: 429, headers: {}, data: null, error: 'rate_limited' };
+      }
+      return { status: 200, headers: {}, data: monthlyHtml() };
+    });
+    const deps = { store, getJson, getText, now: () => now, sleep: async () => {} };
+
+    const first = await syncMonthlyHistory('خساپا', {}, deps);
+    expect(first).toMatchObject({ status: 'RETRY', nextPage: 1,
+      pagesCompleted: 0, reportsStored: 1, error: 'rate_limited' });
+    expect(await store.hasMonthlyReport('8200')).toBe(true);
+    expect(await store.hasMonthlyReport('8201')).toBe(false);
+
+    failSecond = false;
+    const second = await syncMonthlyHistory('خساپا', {}, deps);
+    expect(second).toMatchObject({ status: 'COMPLETE', nextPage: 2,
+      pagesCompleted: 1, reportsStored: 1 });
+    expect(getJson).toHaveBeenCalledTimes(2);
+    expect(getText).toHaveBeenCalledTimes(3);
+    const SQL = await testSql();
+    const db = new SQL.Database(local.current()!);
+    expect(db.exec('SELECT COUNT(*) FROM codal_documents')[0]?.values[0]?.[0]).toBe(2);
+    db.close();
   });
 });

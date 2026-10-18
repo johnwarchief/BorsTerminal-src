@@ -6,6 +6,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const codal = vi.hoisted(() => ({
   syncLatestMonthlySales: vi.fn(),
+  syncMonthlyHistory: vi.fn(),
   readLatestStoredMonthlySales: vi.fn(),
 }));
 const codalFinancial = vi.hoisted(() => ({
@@ -57,6 +58,7 @@ beforeEach(() => {
   live.liveTodayCandle.mockResolvedValue(null);
   live.overlayBoard.mockReturnValue(0);
   codal.syncLatestMonthlySales.mockReset();
+  codal.syncMonthlyHistory.mockReset();
   codal.readLatestStoredMonthlySales.mockReset();
   codalFinancial.syncLatestAnnualFinancialStatement.mockReset();
   codalFinancial.readLatestStoredFinancialStatement.mockReset();
@@ -68,6 +70,17 @@ describe('local Codal monthly-sales routes', () => {
     await expect(resolveLocal('/api/codal/monthly-sales/sync?symbol=%D8%AE%D8%B3%D8%A7%D9%BE%D8%A7', 'POST'))
       .resolves.toEqual({ status: 'PARSED', symbol: 'خساپا' });
     expect(codal.syncLatestMonthlySales).toHaveBeenCalledWith('خساپا');
+  });
+
+  it('exposes bounded, resumable monthly-history sync through a POST route', async () => {
+    codal.syncMonthlyHistory.mockResolvedValue({ status: 'IN_PROGRESS', symbol: 'خساپا', nextPage: 2 });
+    await expect(resolveLocal(
+      '/api/codal/monthly-sales/history-sync?symbol=%D8%AE%D8%B3%D8%A7%D9%BE%D8%A7&max_pages=2&max_reports=10',
+      'POST',
+    )).resolves.toMatchObject({ status: 'IN_PROGRESS', symbol: 'خساپا', nextPage: 2 });
+    expect(codal.syncMonthlyHistory).toHaveBeenCalledWith('خساپا', { maxPages: 2, maxReports: 10 });
+    await expect(resolveLocal('/api/codal/monthly-sales/history-sync?symbol=A', 'GET'))
+      .rejects.toMatchObject({ status: 405 });
   });
 
   it('reads the local row and never accepts a sync request over GET', async () => {

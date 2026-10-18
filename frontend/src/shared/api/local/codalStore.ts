@@ -78,6 +78,18 @@ export type CodalSyncState = {
   failureStreak: number;
 };
 
+export type CodalMonthlyHistoryCheckpoint = {
+  symbol: string;
+  nextPage: number;
+  totalLetters: number | null;
+  pagesCompleted: number;
+  oldestPublishedAt: string | null;
+  status: 'IN_PROGRESS' | 'RETRY' | 'COMPLETE';
+  lastAttemptAt: string;
+  lastHttpStatus: number | null;
+  lastError: string | null;
+};
+
 export type CodalMonthlySalesRow = MonthlySalesValues & {
   tracingNo: string;
   symbol: string;
@@ -120,7 +132,7 @@ export type CodalArtifactStorage = {
 
 type SqlRuntime = Awaited<ReturnType<typeof getSql>>;
 
-const SCHEMA_VERSION = 2;
+const SCHEMA_VERSION = 3;
 const REPORT_TYPE = 'monthly_activity';
 const FINANCIAL_REPORT_TYPE = 'annual_financial_statement';
 const CACHE_NAME = 'bors-mobile-codal-local-v1';
@@ -246,6 +258,21 @@ export function migrateCodalDatabase(db: Database): void {
       CREATE INDEX IF NOT EXISTS ix_codal_financial_statements_symbol_period
         ON financial_statements(symbol, report_period DESC, published_at DESC);
     `);
+    if (version < 3) db.exec(`
+      CREATE TABLE IF NOT EXISTS codal_monthly_history_checkpoint (
+        symbol TEXT PRIMARY KEY,
+        next_page INTEGER NOT NULL DEFAULT 1 CHECK (next_page >= 1),
+        total_letters INTEGER CHECK (total_letters IS NULL OR total_letters >= 0),
+        pages_completed INTEGER NOT NULL DEFAULT 0 CHECK (pages_completed >= 0),
+        oldest_published_at TEXT,
+        status TEXT NOT NULL CHECK (status IN ('IN_PROGRESS', 'RETRY', 'COMPLETE')),
+        last_attempt_at TEXT NOT NULL,
+        last_http_status INTEGER,
+        last_error TEXT
+      );
+      CREATE INDEX IF NOT EXISTS ix_codal_monthly_history_status
+        ON codal_monthly_history_checkpoint(status, last_attempt_at);
+    `);
     db.run(`PRAGMA user_version = ${SCHEMA_VERSION}`);
     db.run('COMMIT');
   } catch (error) {
@@ -287,6 +314,48 @@ function readSyncState(db: Database, symbol: string, reportType = REPORT_TYPE): 
   } finally {
     stmt.free();
   }
+}
+
+function readMonthlyHistoryCheckpoint(db: Database, symbol: string): CodalMonthlyHistoryCheckpoint | null {
+  const stmt = db.prepare(`SELECT symbol, next_page, total_letters, pages_completed,
+    oldest_published_at, status, last_attempt_at, last_http_status, last_error
+    FROM codal_monthly_history_checkpoint WHERE symbol = ?`);
+  try {
+    stmt.bind([symbol]);
+    if (!stmt.step()) return null;
+    const row = stmt.getAsObject();
+    return {
+      symbol: String(row.symbol), nextPage: Number(row.next_page),
+      totalLetters: typeof row.total_letters === 'number' ? Number(row.total_letters) : null,
+      pagesCompleted: Number(row.pages_completed),
+      oldestPublishedAt: typeof row.oldest_published_at === 'string' ? row.oldest_published_at : null,
+      status: String(row.status) as CodalMonthlyHistoryCheckpoint['status'],
+      lastAttemptAt: String(row.last_attempt_at),
+      lastHttpStatus: typeof row.last_http_status === 'number' ? Number(row.last_http_status) : null,
+      lastError: typeof row.last_error === 'string' ? row.last_error : null,
+    };
+  } finally {
+    stmt.free();
+  }
+}
+
+function upsertMonthlyHistoryCheckpoint(db: Database, checkpoint: CodalMonthlyHistoryCheckpoint): void {
+  db.run(`INSERT INTO codal_monthly_history_checkpoint
+    (symbol, next_page, total_letters, pages_completed, oldest_published_at,
+     status, last_attempt_at, last_http_status, last_error)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT(symbol) DO UPDATE SET
+      next_page = excluded.next_page,
+      total_letters = COALESCE(excluded.total_letters, codal_monthly_history_checkpoint.total_letters),
+      pages_completed = excluded.pages_completed,
+      oldest_published_at = COALESCE(excluded.oldest_published_at,
+        codal_monthly_history_checkpoint.oldest_published_at),
+      status = excluded.status, last_attempt_at = excluded.last_attempt_at,
+      last_http_status = excluded.last_http_status, last_error = excluded.last_error`, [
+    checkpoint.symbol, checkpoint.nextPage, checkpoint.totalLetters,
+    checkpoint.pagesCompleted, checkpoint.oldestPublishedAt, checkpoint.status,
+    checkpoint.lastAttemptAt, checkpoint.lastHttpStatus, checkpoint.lastError,
+  ]);
 }
 
 function upsertSyncState(db: Database, outcome: CodalSyncOutcome): void {
@@ -450,6 +519,58 @@ function readMonthlyRevenueSeries(db: Database, symbol: string, limit: number): 
   return { coverage: 'INCOMPLETE', reason: 'identity_or_history_coverage_unverified', rows };
 }
 
+function writeMonthlyReport(
+  db: Database, record: CodalDocumentRecord, outcome: CodalSyncOutcome, updateSyncState = true,
+): void {
+  db.run(`INSERT INTO codal_documents
+    (tracing_no, symbol, company_name, title, report_type, source, source_url,
+     published_at, report_period, received_at, last_updated_at, content_hash,
+     raw_html, processing_status, processing_error)
+    VALUES (?, ?, ?, ?, ?, 'codal.ir', ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ON CONFLICT(tracing_no) DO UPDATE SET
+      symbol = excluded.symbol, company_name = excluded.company_name,
+      title = excluded.title, report_type = excluded.report_type,
+      source = excluded.source, source_url = excluded.source_url,
+      published_at = excluded.published_at, report_period = excluded.report_period,
+      last_updated_at = excluded.last_updated_at, content_hash = excluded.content_hash,
+      raw_html = excluded.raw_html, processing_status = excluded.processing_status,
+      processing_error = excluded.processing_error`, [
+    record.tracingNo, record.symbol, record.companyName, record.title, REPORT_TYPE,
+    record.sourceUrl, record.publishedAt, record.periodEnd, record.receivedAt,
+    record.lastUpdatedAt, record.contentHash, record.rawHtml,
+    record.processingStatus, record.processingError,
+  ]);
+
+  if (record.processingStatus === 'PARSED' && record.periodEnd && record.values) {
+    const v = record.values;
+    db.run(`INSERT INTO monthly_sales
+      (tracing_no, symbol, report_period, monthly_revenue, ytd_revenue,
+       monthly_revenue_prev, ytd_revenue_prev, monthly_volume, ytd_volume,
+       volume_unit, source, source_url, published_at, received_at,
+       last_updated_at, processing_status)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'codal.ir', ?, ?, ?, ?, 'PARSED')
+      ON CONFLICT(tracing_no) DO UPDATE SET
+        symbol = excluded.symbol, report_period = excluded.report_period,
+        monthly_revenue = excluded.monthly_revenue, ytd_revenue = excluded.ytd_revenue,
+        monthly_revenue_prev = excluded.monthly_revenue_prev,
+        ytd_revenue_prev = excluded.ytd_revenue_prev,
+        monthly_volume = excluded.monthly_volume, ytd_volume = excluded.ytd_volume,
+        volume_unit = excluded.volume_unit, source = excluded.source,
+        source_url = excluded.source_url, published_at = excluded.published_at,
+        last_updated_at = excluded.last_updated_at,
+        processing_status = 'PARSED'`, [
+      record.tracingNo, record.symbol, record.periodEnd, v.monthlyRevenue,
+      v.ytdRevenue, v.monthlyRevenuePrev, v.ytdRevenuePrev, v.monthlyVolume,
+      v.ytdVolume, v.volumeUnit, record.sourceUrl, record.publishedAt,
+      record.receivedAt, record.lastUpdatedAt,
+    ]);
+  } else {
+    db.run(`UPDATE monthly_sales SET processing_status = 'NOT_EVALUATED',
+      last_updated_at = ? WHERE tracing_no = ?`, [record.lastUpdatedAt, record.tracingNo]);
+  }
+  if (updateSyncState) upsertSyncState(db, outcome);
+}
+
 export function createCodalStore(
   storage: CodalArtifactStorage = cacheStorage,
   runtime: () => Promise<SqlRuntime> = () => getSql(),
@@ -508,6 +629,18 @@ export function createCodalStore(
     readFinancialSyncState(symbol: string): Promise<CodalSyncState | null> {
       return withRead((db) => readSyncState(db, symbol, FINANCIAL_REPORT_TYPE));
     },
+    readMonthlyHistoryCheckpoint(symbol: string): Promise<CodalMonthlyHistoryCheckpoint | null> {
+      return withRead((db) => readMonthlyHistoryCheckpoint(db, symbol));
+    },
+    hasMonthlyReport(tracingNo: string): Promise<boolean> {
+      return withRead((db) => {
+        const stmt = db.prepare('SELECT 1 FROM codal_documents WHERE tracing_no = ? AND report_type = ? LIMIT 1');
+        try {
+          stmt.bind([tracingNo, REPORT_TYPE]);
+          return stmt.step();
+        } finally { stmt.free(); }
+      });
+    },
     readLatestMonthlySales(symbol: string): Promise<CodalMonthlySalesRow | null> {
       return withRead((db) => readLatestMonthlySales(db, symbol));
     },
@@ -521,54 +654,15 @@ export function createCodalStore(
       return withWrite((db) => { upsertSyncState(db, outcome); });
     },
     recordReport(record: CodalDocumentRecord, outcome: CodalSyncOutcome): Promise<void> {
+      return withWrite((db) => { writeMonthlyReport(db, record, outcome); });
+    },
+    recordMonthlyHistoryPage(
+      records: Array<{ record: CodalDocumentRecord; outcome: CodalSyncOutcome }>,
+      checkpoint: CodalMonthlyHistoryCheckpoint,
+    ): Promise<void> {
       return withWrite((db) => {
-        db.run(`INSERT INTO codal_documents
-          (tracing_no, symbol, company_name, title, report_type, source, source_url,
-           published_at, report_period, received_at, last_updated_at, content_hash,
-           raw_html, processing_status, processing_error)
-          VALUES (?, ?, ?, ?, ?, 'codal.ir', ?, ?, ?, ?, ?, ?, ?, ?, ?)
-          ON CONFLICT(tracing_no) DO UPDATE SET
-            symbol = excluded.symbol, company_name = excluded.company_name,
-            title = excluded.title, report_type = excluded.report_type,
-            source = excluded.source, source_url = excluded.source_url,
-            published_at = excluded.published_at, report_period = excluded.report_period,
-            last_updated_at = excluded.last_updated_at, content_hash = excluded.content_hash,
-            raw_html = excluded.raw_html, processing_status = excluded.processing_status,
-            processing_error = excluded.processing_error`, [
-          record.tracingNo, record.symbol, record.companyName, record.title, REPORT_TYPE,
-          record.sourceUrl, record.publishedAt, record.periodEnd, record.receivedAt,
-          record.lastUpdatedAt, record.contentHash, record.rawHtml,
-          record.processingStatus, record.processingError,
-        ]);
-
-        if (record.processingStatus === 'PARSED' && record.periodEnd && record.values) {
-          const v = record.values;
-          db.run(`INSERT INTO monthly_sales
-            (tracing_no, symbol, report_period, monthly_revenue, ytd_revenue,
-             monthly_revenue_prev, ytd_revenue_prev, monthly_volume, ytd_volume,
-             volume_unit, source, source_url, published_at, received_at,
-             last_updated_at, processing_status)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'codal.ir', ?, ?, ?, ?, 'PARSED')
-            ON CONFLICT(tracing_no) DO UPDATE SET
-              symbol = excluded.symbol, report_period = excluded.report_period,
-              monthly_revenue = excluded.monthly_revenue, ytd_revenue = excluded.ytd_revenue,
-              monthly_revenue_prev = excluded.monthly_revenue_prev,
-              ytd_revenue_prev = excluded.ytd_revenue_prev,
-              monthly_volume = excluded.monthly_volume, ytd_volume = excluded.ytd_volume,
-              volume_unit = excluded.volume_unit, source = excluded.source,
-              source_url = excluded.source_url, published_at = excluded.published_at,
-              last_updated_at = excluded.last_updated_at,
-              processing_status = 'PARSED'`, [
-            record.tracingNo, record.symbol, record.periodEnd, v.monthlyRevenue,
-            v.ytdRevenue, v.monthlyRevenuePrev, v.ytdRevenuePrev, v.monthlyVolume,
-            v.ytdVolume, v.volumeUnit, record.sourceUrl, record.publishedAt,
-            record.receivedAt, record.lastUpdatedAt,
-          ]);
-        } else {
-          db.run(`UPDATE monthly_sales SET processing_status = 'NOT_EVALUATED',
-            last_updated_at = ? WHERE tracing_no = ?`, [record.lastUpdatedAt, record.tracingNo]);
-        }
-        upsertSyncState(db, outcome);
+        for (const item of records) writeMonthlyReport(db, item.record, item.outcome, false);
+        upsertMonthlyHistoryCheckpoint(db, checkpoint);
       });
     },
     recordFinancialStatement(
