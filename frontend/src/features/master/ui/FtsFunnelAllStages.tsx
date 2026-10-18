@@ -31,11 +31,11 @@ import { fmtDate } from '@shared/lib/time';
 import { useFlip } from '@shared/lib/useFlip';
 import { useVerdictChanges } from '../lib/funnelChangeTrack';
 import { FunnelErrorBanner } from './FunnelErrorBanner';
+import { FtsFilterPanel } from './FtsFilterPanel';
 import {
   MODE_HINT,
   MODE_LABEL,
   MODE_PATH,
-  TAPE_FRESHNESS_LABEL,
   PRESET_ENTRY,
   STATUS_LABEL,
   STATUS_HINT,
@@ -765,13 +765,25 @@ function StageCard({
       ) : null}
 
       {/* بدنه: درِ حالتِ بسته هیچ جدولی نمی‌راند (نه display:none) — چهار مرحلۀ
-          باز رویِ نمایشگرِ ۱۳۶۶×۷۶۸ یعنی اسکرولِ بی‌پایان پیش از رسیدن به تحویل. */}
+          باز رویِ نمایشگرِ ۱۳۶۶×۷۶۸ یعنی اسکرولِ بی‌پایان پیش از رسیدن به تحویل.
+          ارتفاعِ ثابت فقط وقتی جدول ردیف دارد لازم است؛ بی‌ردیف، همان ارتفاعِ
+          خالی صفحه را می‌خورد و «خالی» شبیه «خطا» می‌شد (مأموریتِ ۲۰۲۶-۱۰-۱۸). */}
       {collapsed ? null : (<>
-      <div ref={bodyRef} className="relative h-[calc(100dvh-392px)] min-h-[380px] overflow-y-auto overflow-x-auto" data-testid={`funnel-scroll-${stage.key}`}>
+      <div ref={bodyRef}
+           className={`relative overflow-y-auto overflow-x-auto ${
+             rows.length ? 'h-[calc(100dvh-420px)] min-h-[300px]' : 'h-auto'}`}
+           data-testid={`funnel-scroll-${stage.key}`}>
         {rows.length === 0 ? (
-          <p className="px-3 py-4 text-xs text-text-muted" data-testid={`funnel-empty-${stage.key}`}>
-            {emptyWhy ?? 'هیچ نمادی از این مرحله عبور نکرد.'}
-          </p>
+          <div className="px-3 py-2.5" data-testid={`funnel-empty-${stage.key}`}>
+            <p className="text-xs font-bold text-text-secondary">
+              {emptyWhy ?? 'هیچ نمادی از این مرحله عبور نکرد.'}
+            </p>
+            <p className="num mt-1 text-2xs text-text-muted" data-testid={`funnel-empty-tally-${stage.key}`}>
+              درِ این گام: {toFaDigits(stage.summary.reject)} رد · {toFaDigits(stage.summary.pending)} سنجیده‌نشده
+              · {toFaDigits(stage.summary.unavailable)} بی‌منبع — از {toFaDigits(stage.ruled)} نمادِ داوری‌شده.
+              فیلترها را شل کنید یا گامِ بعدی را ببینید.
+            </p>
+          </div>
         ) : (
           <table className="w-full min-w-[720px] table-fixed border-collapse text-sm">
             {/* `min-w-[720px]` + اسکرولِ افقیِ همان ظرف: درِ ۳۹۰px ستونِ نماد به
@@ -1089,7 +1101,7 @@ function TapeStagePrefs({ picked, counts, filters }: {
   return (
     <span
       data-testid="funnel-tape-prefs"
-      className="sticky top-[var(--pinned-h)] z-20 -mx-1 flex flex-wrap items-center justify-end gap-1 rounded-lg bg-bg-card/95 px-1 py-0.5 backdrop-blur-sm"
+      className="flex flex-wrap items-center justify-end gap-1"
       role="group"
       aria-label="فیلترهای ورودی غربالگری"
     >
@@ -1108,12 +1120,14 @@ function TapeStagePrefs({ picked, counts, filters }: {
                 + `؛ ${toFaDigits(c.removed)} رد، ${toFaDigits(c.unmeasured)} بی‌حکم`
                 + (c.universe ? ` (کلِّ جامعۀ غربالگری: ${toFaDigits(c.universe)})` : '')
               : `${QUICK_LABELS[f]} — شمارشِ نامزد از سرور نرسید`}
-            className={`rounded-md border px-1.5 py-0.5 text-2xs font-bold transition-colors ${
+            className={`rounded-md border px-2 py-1 text-xs font-bold transition-colors ${
               on
                 ? 'border-accent-blue bg-accent-blue/15 text-accent-blue'
-                : 'border-border-c bg-bg-card text-text-muted hover:border-accent-blue/60'
+                : 'border-border-c bg-bg-card text-text-secondary hover:border-accent-blue/60'
             }`}
           >
+            {/* حالت باِ شکل هم خوانده شود، نه فقط باِ رنگ (مأموریتِ ۲۰۲۶-۱۰-۱۸) */}
+            <span aria-hidden className="me-1">{on ? '✓' : '○'}</span>
             {QUICK_LABELS[f]}
             <span className="num ms-1 font-black opacity-95">
               {c ? `(${toFaDigits(c.matched)})` : '(—)'}
@@ -1143,7 +1157,7 @@ function TapeStagePrefs({ picked, counts, filters }: {
       >
         {logic === 'or' ? 'اجتماع' : 'اشتراک'}
       </button>
-      <span className="num text-3xs text-text-muted">ورودی: {toFaDigits(picked)}</span>
+      <span className="num text-2xs font-bold text-text-secondary">ورودی: {toFaDigits(picked)}</span>
     </span>
   );
 }
@@ -1174,16 +1188,16 @@ function StrategySettingsRow({ funnel, registry, preset }: {
     <div className="flex flex-wrap items-center gap-x-3 gap-y-1"
          role="group" aria-label="تنظیماتِ این استراتژی"
          data-testid="funnel-strategy-settings">
-      <span className="text-3xs font-bold text-text-muted">تنظیماتِ این استراتژی:</span>
+      <span className="text-2xs font-bold text-text-secondary">تنظیماتِ این استراتژی:</span>
       {defs.map((st) => {
         const value = applied[st.setting_id] ?? st.default;
         return (
-          <label key={st.setting_id} className="flex items-center gap-1 text-3xs"
+          <label key={st.setting_id} className="flex items-center gap-1.5 text-2xs"
                  title={`${st.description ?? ''}${st.effect ? ` | اثر: ${st.effect}` : ''}${st.source ? ` | ${st.source}` : ''}`}>
             <span className="font-bold text-text-secondary">{st.label}</span>
             <select value={value} data-testid={`funnel-setting-${st.setting_id}`}
                     onChange={(e) => setSetting(preset, st.setting_id, e.target.value)}
-                    className="rounded-md border border-border-c bg-bg-primary px-1 py-0.5 text-3xs text-text-primary">
+                    className="num rounded-md border border-border-c bg-bg-primary px-1.5 py-0.5 text-2xs text-text-primary">
               {st.choices.map((c) => (
                 <option key={c.value} value={c.value}>{c.label}</option>
               ))}
@@ -1212,11 +1226,11 @@ function TechFilterChips({
   return (
     <div className="flex flex-wrap items-center gap-1" role="group"
          aria-label="شرط‌هایِ تکنیکال" data-testid="funnel-tech-chips">
-      <span className="text-3xs font-bold text-text-muted">شرط‌هایِ تکنیکال:</span>
+      <span className="text-2xs font-bold text-text-secondary">شرط‌هایِ تکنیکال:</span>
       {gate.map((f) => (
         <span key={f.filter_id} data-testid={`funnel-tech-gate-${f.filter_id}`}
               title={`گیتِ اجباریِ این استراتژی — انتخابی نیست. ${f.description ?? ''}${f.source ? ` (${f.source})` : ''}`}
-              className="rounded-full border border-accent-blue/50 bg-accent-blue/10 px-2 py-0.5 text-3xs font-black text-accent-blue">
+              className="rounded-full border border-accent-blue/50 bg-accent-blue/10 px-2 py-0.5 text-2xs font-black text-accent-blue">
           {f.name}
         </span>
       ))}
@@ -1233,13 +1247,14 @@ function TechFilterChips({
                   title={`${f.description ?? ''} — ${roleHint}${f.source ? ` · منبع: ${f.source}` : ''}${
                     c ? ` · عبور ${toFaDigits(c.pass)}، رد ${toFaDigits(c.reject)}، بلاتکلیف ${toFaDigits(c.pending)}، بی‌داده ${toFaDigits(c.unavailable)}`
                       : ' · هنوز رویِ این جامعۀ ورودی اجرا نشده'}${applied ? '' : ' · درِ ترتیبِ جزوه اجرا نمی‌شود'}`}
-                  className={`rounded-full border px-2 py-0.5 text-3xs font-bold transition-all ${
+                  className={`rounded-full border px-2.5 py-1 text-2xs font-bold transition-all ${
                     !applied
                       ? 'border-border-c/60 bg-bg-card/40 text-text-muted/60'
                       : on
                         ? 'border-accent-blue bg-accent-blue/15 text-accent-blue'
                         : 'border-border-c bg-bg-card text-text-muted hover:border-accent-blue/60 hover:text-text-primary'
                   }`}>
+            <span aria-hidden className="me-1">{!applied ? '–' : (on ? '✓' : '○')}</span>
             {f.name}
             {c ? <span className="num ms-1 opacity-70">{toFaDigits(c.pass)}</span> : null}
           </button>
@@ -1409,6 +1424,9 @@ export function FtsFunnelStages({
   // «خارج از جامعۀ غربالگری» بسته است تا جدولِ گام‌ها با این ردیف‌ها شلوغ
   // نشود؛ خطِ خلاصه خودش Z را می‌گوید و همین دکمه علتِ تک‌تکشان را باز می‌کند.
   const [showExcluded, setShowExcluded] = useState(false);
+  // منطقِ اشتراک/اجتماع درِ همان `bors.screen.logic.v1` است که چیپ‌هایِ تبِّ تابلو
+  // هم می‌خوانند — فقط برایِ نوشتنِ متنِ پنل اینجا خوانده می‌شود.
+  const screenLogic = useScreenFilterStore((s) => s.logic);
   const [activeState] = useState<FunnelStageKey>(() => snap?.stage ?? 'tape');
   // رأیِ مالک (۱۴۰۵-۰۷-۲۲): سه جدولِ اول بسته‌اند و «نمادهای عبوری» (تحویل) باز —
   // چیزی که کاربر می‌خواهد ببیند همان آخری است، نه اینکه چهار جدول را اسکرول کند.
@@ -1441,7 +1459,7 @@ export function FtsFunnelStages({
 
   // یک مدل، چند رندرر: قیف از `useFtsFunnel` می‌آید — همان چیزی که فهرستِ تحویل
   // و سایدبار هم می‌خوانند، پس دو دورۀ داوری درِ این تب نداریم.
-  const { funnel, mode, tape, tech, scan, refreshing, screenFilters, techFilters, opts, error, hasData, retry } = useFtsFunnel(preset);
+  const { funnel, mode, tech, scan, refreshing, screenFilters, techFilters, opts, error, hasData, retry } = useFtsFunnel(preset);
   // نام/نقش/منبعِ هر شرطِ تکنیکال از رجیستریِ همان سرور — نه از یک فهرستِ دستی.
   const registry = useFunnelRegistry();
   const setMode = useFunnelPrefsStore((s) => s.setMode);
@@ -1528,9 +1546,9 @@ export function FtsFunnelStages({
           دو حالتِ کشف، تازگیِ تابلو و ساعتِ محاسبه. خطِ شمارش‌ها پایین‌تر همان
           لبۀِ چپ را نگه می‌دارد (رأیِ ۱۴۰۵-۰۷-۲۰). */}
       <div className="flex flex-wrap items-center justify-start gap-2">
-        <h2 className="text-sm font-black text-text-primary">غربالگری FTS</h2>
         {/* دو حالتِ کشف، یک قراردادِ داوری (#2 و #14): مهندسیِ معکوس مسیرِ اصلیِ
             جزوه است؛ مرورِ بازار برایِ بازارِ بسته یا بررسیِ کلِ universe. */}
+        <span className="text-2xs font-bold text-text-secondary">حالتِ کشف:</span>
         <div className="flex flex-wrap items-center gap-1" role="group" aria-label="حالتِ کشفِ نماد" data-testid="funnel-mode-picker">
           {(['reverse', 'review'] as const).map((m) => (
             <button
@@ -1540,7 +1558,7 @@ export function FtsFunnelStages({
               data-testid={`funnel-mode-${m}`}
               title={MODE_HINT[m] + ' — ' + MODE_PATH[m]}
               onClick={() => setMode(m)}
-              className={`rounded-full border px-2 py-0.5 text-3xs font-bold transition-all ${
+              className={`rounded-full border px-2.5 py-1 text-2xs font-bold transition-all ${
                 mode === m
                   ? 'border-accent-blue bg-accent-blue/15 text-accent-blue'
                   : 'border-border-c bg-bg-card text-text-muted hover:border-accent-blue/60 hover:text-text-primary'
@@ -1549,25 +1567,6 @@ export function FtsFunnelStages({
               {MODE_LABEL[m]}
             </button>
           ))}
-          <span
-            className="rounded-full border border-border-c bg-bg-secondary px-2 py-0.5 text-3xs font-bold text-text-muted"
-            data-testid="funnel-tape-freshness"
-            title="تازگیِ خوراکِ تابلو — دادهٔ آخرین روز معاملاتی جایِ زنده خوانده نمی‌شود"
-          >
-            {TAPE_FRESHNESS_LABEL[tape]}
-          </span>
-          {/* آخرین محاسبۀِ *موفق* از خودِ سرور (`as_of`) — ساعتِ همان ماشین. بی‌این،
-              «در حال محاسبه» هیچ نقطۀِ پایانی نداشت و کاربر نمی‌دانست عددی که می‌بیند
-              متعلق به کِی است (بندِ «وضعیت پردازش و تازگی» مأموریت). */}
-          <span
-            className="num rounded-full border border-border-c bg-bg-secondary px-2 py-0.5 text-3xs font-bold text-text-muted"
-            data-testid="funnel-as-of"
-            title="زمانِ داوریِ این پاسخ درِ سرور"
-          >
-            {funnel.asOf
-              ? `محاسبه: ${new Date(funnel.asOf * 1000).toLocaleTimeString('fa-IR', { hour: '2-digit', minute: '2-digit' })}`
-              : 'محاسبه: گزارش نشده'}
-          </span>
         </div>
       </div>
       {/* شمارشِ واقعیِ درِ تحویل (#15): Qualified / Pending / Rejected / Unavailable
@@ -1578,7 +1577,7 @@ export function FtsFunnelStages({
           `justify-end` با رأیِ مالک (۱۴۰۵-۰۷-۲۰) آمده: درِ RTL لبۀِ پایانِ خطِ
           اصلی سمتِ چپِ صفحه است — سرستون و شمارش‌ها باید آن‌جا بایستند. */}
       <div
-        className="flex flex-wrap items-center justify-end gap-x-3 gap-y-1 text-3xs font-bold text-text-muted"
+        className="flex flex-wrap items-center justify-end gap-x-3 gap-y-1 text-2xs font-bold text-text-secondary"
         data-testid="funnel-counts"
       >
         <span className="text-accent-green" data-testid="funnel-count-pass">جامعِ چهار در: {toFaDigits(hc.pass)}</span>
@@ -1629,22 +1628,50 @@ export function FtsFunnelStages({
       </div>
       {/* چیپ‌هایِ فیلتر + کلیدِ اشتراک/اجتماع، با نامزدِ زندهٔ هر فیلتر — نوارِ
           بالایِ غربالگری (رأیِ مالک ۱۴۰۵-۰۷-۲۰). */}
-      <TapeStagePrefs picked={funnel.counts.tape.pass} counts={funnel.filterCounts}
-                      filters={screenFilters} />
-      {/* درِ استراتژیِ «تکنیکال‌محور» همین چیپ‌ها دربِ اولِ غربالگری را تعیین می‌کنند.
-          اگر کاربر شرطی را انتخاب کرده ولی ترتیبِ جزوه برگشته، چیپ‌ها بی‌اثر و
-          بی‌دروغ نشان داده می‌شوند (`applied={false}`)، نه اینکه پنهان بمانند. */}
-      {(funnel.flow === 'tech_first' || techFilters.active.length > 0) && registry.techFilters.length ? (
-        <>
-          <StrategySettingsRow funnel={funnel} registry={registry} preset={preset} />
-          <TechFilterChips active={techFilters.active}
-                           counts={funnel.techFilterCounts}
-                           filters={registry.techFilters}
-                           groups={registry.techGroups}
-                           applied={funnel.flow === 'tech_first'}
-                           onToggle={techFilters.toggle} />
-        </>
-      ) : null}
+      <FtsFilterPanel
+        activeCount={screenFilters.active.length
+          + (funnel.flow === 'tech_first' ? techFilters.active.length : 0)}
+        sourceLabel={screenFilters.source === 'chain' ? 'زنجیرۀِ خودِ شما'
+          : (screenFilters.active.length ? 'چیپ‌هایِ روشنِ تابلو'
+            : (preset === 'custom' ? 'زنجیرۀِ Custom خالی است' : PRESET_ENTRY[preset].label))}
+        logicLabel={screenFilters.active.length
+          ? (screenLogic === 'or'
+            ? `اجتماع (OR): یکی از ${toFaDigits(screenFilters.active.length)} کافی است`
+            : `اشتراک (AND): همهٔ ${toFaDigits(screenFilters.active.length)} لازم‌اند`)
+          : 'هیچ فیلتری روشن نیست — کلِ جامعۀ غربالگری داوری می‌شود'}
+        onClearAll={screenFilters.active.length
+          ? () => { [...screenFilters.active].forEach((f) => screenFilters.toggle(f)); }
+          : undefined}
+        groups={[
+          { key: 'tape', label: 'فیلترهایِ تابلوخوانی',
+            hint: 'هر چیپ یکِ شرطِ اضافه؛ عددِ کنارش نامزدِ زندهٔ همان شرط است',
+            node: (
+              <TapeStagePrefs picked={funnel.counts.tape.pass} counts={funnel.filterCounts}
+                              filters={screenFilters} />
+            ) },
+          ...((funnel.flow === 'tech_first' || techFilters.active.length > 0)
+            && registry.techFilters.length
+            ? [{
+                key: 'technical',
+                label: 'شرط‌هایِ تکنیکال',
+                hint: 'گیتِ روندِ هفتگی انتخابی نیست؛ موتور همیشه پیش ازِ این شرط‌ها '
+                  + 'آن را داوری می‌کند. اگر ترتیبِ جزوه برگشته باشد این چیپ‌ها بی‌اثر '
+                  + 'نشان داده می‌شوند، نه پنهان.',
+                node: (
+                  <TechFilterChips active={techFilters.active}
+                                   counts={funnel.techFilterCounts}
+                                   filters={registry.techFilters}
+                                   groups={registry.techGroups}
+                                   applied={funnel.flow === 'tech_first'}
+                                   onToggle={techFilters.toggle} />
+                ),
+              }]
+            : []),
+        ]}
+        advanced={(funnel.flow === 'tech_first' || techFilters.active.length > 0)
+          ? <StrategySettingsRow funnel={funnel} registry={registry} preset={preset} />
+          : undefined}
+      />
       {showExcluded ? <OutOfUniversePanel funnel={funnel} onPick={pick} /> : null}
       {/* فهرستِ چهار گام این‌جا حذف شد (رأیِ مالک ۱۴۰۵-۰۷-۱۹): «بالاش همین هست
           که انتخاب می‌کنیم کدام صفحه» — ناوبریِ `FtsProcessStepper` بالایِ همین
@@ -1679,7 +1706,7 @@ export function FtsFunnelStages({
             اعمال‌نشده درِ سرور
           </span>
         ) : null}
-        <span className="ms-auto text-3xs text-text-muted">
+        <span className="ms-auto max-w-[70ch] text-2xs leading-5 text-text-secondary">
           {/* منبعِ فعلیِ زنجیره صریح گفته می‌شود: درِ Custom چیپ‌ها زنجیرۀِ خودِ
               شخص را کم و زیاد می‌کنند، درِ بقیۀ اشخاص چیپ‌هایِ تبِّ تابلو. */}
           ورودیِ غربالگری:{' '}
@@ -1718,6 +1745,16 @@ export function FtsFunnelStages({
 
 
       <div className="flex flex-col gap-2">
+        {/* عنوانِ بخشِ نتایج + شمارۀ همان گام (نه شمارۀ گامِ دیگر). درِ حالتِ
+            «فقط یک گام» نامِ همان گام نوشته می‌شود تا عددِ بالا با جدولِ پایین
+            یکی خوانده شود. */}
+        <h2 className="text-sm font-black text-text-primary" data-testid="funnel-results-title">
+          نتایجِ گامِ جاری{only ? ` — ${STAGE_TITLE[only]}` : ''}
+          <span className="num ms-2 text-2xs font-bold text-text-secondary"
+                data-testid="funnel-results-count">
+            {toFaDigits(shownKeys.length ? (funnel.counts[shownKeys[0] as FunnelStageKey]?.pass ?? 0) : 0)} نماد
+          </span>
+        </h2>
         {stages.map((s, i) => (shownKeys.includes(s.key) ? (
           <StageCard
             key={s.key}

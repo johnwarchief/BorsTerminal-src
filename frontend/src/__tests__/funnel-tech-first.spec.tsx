@@ -235,6 +235,9 @@ describe('چیپ‌هایِ شرطِ تکنیکال', () => {
 describe('تنظیماتِ مستقلِ استراتژی و شاهدِ فیبو (رأیِ مالک ۱۴۰۵-۰۷-۲۷)', () => {
   it('پیچ‌ها از رجیستری ساخته می‌شوند و انتخاب، درِ درخواستِ بعدی می‌رود', async () => {
     await ready(TECH_FIRST_FIXTURE, at('tech_first', 'technical'));
+    // مأموریتِ UI/UX ۲۰۲۶-۱۰-۱۸: پیچ‌هایِ استراتژی زیرِ «جزئیات و تنظیمات» نشستند
+    // (تغییرِ نمایش، نه تغییرِ معنا). بازشان می‌کنیم و همان ادعاها می‌مانند.
+    fireEvent.click(screen.getByTestId('fts-filter-advanced-toggle'));
     const row = screen.getByTestId('funnel-strategy-settings');
     // دو پیچ، دقیقاً آن‌طور که رجیستری تعریف کرده — رابط چیزی اختراع نمی‌کند
     expect(within(row).getByTestId('funnel-setting-weekly_mode')).toBeInTheDocument();
@@ -251,6 +254,8 @@ describe('تنظیماتِ مستقلِ استراتژی و شاهدِ فیبو 
   it('presetِ بی‌تعریف، هیچ پیچی نمی‌سازد (تنظیماتِ تازه به قدیمی‌ها نشت نمی‌کند)',
     async () => {
       await ready(FUNNEL_FIXTURE, at('trend', 'tape'));
+      // پنلِ فیلتر رسم می‌شود (پس بی‌نتیجه بودنِ سطرِ بعد ازِ «صفحه خالی» نیست)
+      expect(screen.getByTestId('fts-filter-panel')).toBeDefined();
       expect(screen.queryByTestId('funnel-strategy-settings')).toBeNull();
     });
 
