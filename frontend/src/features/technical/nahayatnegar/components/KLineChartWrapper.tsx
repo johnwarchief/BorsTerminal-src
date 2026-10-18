@@ -785,6 +785,11 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
   const candlesRef = useRef<KLineData[]>(displayCandles);
   candlesRef.current = displayCandles;
   const drawHistRef = useRef(initHistory<StoredOverlay[]>([]));
+  // ردیف‌هایی که موتور تمپلیتشان را نمی‌شناسد. ref است چون سه جایِ مختلف باید به آن
+  // دسترسی داشته باشند: بازگردانی (پُرکردن)، snapshot (حفظ) و هر حذفِ صریحِ کاربر
+  // (خالی‌کردن) — بی‌خالی‌کردنِ پس ازِ حذف، ردیفِ پاک‌شده درِ انبار می‌ماند و پس ازِ
+  // بازخوانی برمی‌گردد (سنجشِ ماتریسِ v4: موتور ۱، انبار ۲ درِ «خط اطلاعاتی» و «خط عمودی»).
+  const unrestorableRef = useRef<StoredOverlay[]>([]);
   // وعدهٔ ثبتِ تمپلیت‌هایِ TV (درِ effectِ سازندۀِ چارت پر می‌شود)
   const tvToolsReadyRef = useRef<Promise<unknown> | null>(null);
 
@@ -796,9 +801,9 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
     // پس آن ترسیم درِ چارت نمی‌نشیند و اگر اینجا نگهش نداریم، tickِ بعدی‌اش از
     // انبار پاک می‌کند (سنجشِ ۱۴۰۵-۰۷-۲۷: رسمِ «الگوی هارمونیک» پس ازِ یکِ
     // بازخوانی کامل از بین می‌رفت).
-    let unrestorable: StoredOverlay[] = [];
     let restoreSettled = false;
     let cancelled = false;
+    unrestorableRef.current = [];
 
     const snapshot = (): StoredOverlay[] => {
       try {
@@ -824,7 +829,7 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
             ...(o.needDefaultXAxisFigure === undefined ? {} : { needDefaultXAxisFigure: o.needDefaultXAxisFigure }),
             ...(o.needDefaultYAxisFigure === undefined ? {} : { needDefaultYAxisFigure: o.needDefaultYAxisFigure }),
           }));
-        for (const u of unrestorable) {
+        for (const u of unrestorableRef.current) {
           const seen = rows.some((r) => r.name === u.name &&
             JSON.stringify(r.points) === JSON.stringify(u.points));
           if (!seen) rows.push(u);
@@ -859,10 +864,10 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
     const applySnapshot = (rows: StoredOverlay[]) => {
       try {
         chart.removeOverlay({ groupId: 'fts-draw' });
-        unrestorable = [];
+        unrestorableRef.current = [];
         rows.forEach((o) => {
           const id = chart.createOverlay({ ...o, groupId: 'fts-draw', ...interactionOf() } as never) as string | null;
-          if (!id) unrestorable.push(o);
+          if (!id) unrestorableRef.current.push(o);
         });
       } catch (e) {
         void e;
@@ -948,6 +953,8 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
       }
 
       if (ev.key === 'Delete' || ev.key === 'Backspace') {
+        // حذفِ صریحِ کاربر ⇒ هیچ ردیفِ محفوظِ ناشناس حقِ برگشتن ندارد
+        unrestorableRef.current = [];
         try {
           const selectedId = selectedOverlayIdRef.current;
           if (selectedId) {
@@ -2342,6 +2349,8 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
     }
 
     if (overlayType === 'eraser') {
+      // حذفِ صریحِ کاربر: دیگر هیچ ردیفِ «ناشناس» حقِ حفظ شدن ندارد
+      unrestorableRef.current = [];
       chart.removeOverlay({ groupId: 'fts-draw' });
       setSelectedOverlayId(null);
       flushDrawings();
@@ -2477,6 +2486,8 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
 
   const handleDeleteSelectedOverlay = () => {
     if (chartRef.current && selectedOverlayId) {
+      // حذفِ صریحِ کاربر، ردیفِ ناشناسِ محفوظ را هم با خودش می‌برد
+      unrestorableRef.current = [];
       chartRef.current.removeOverlay({ id: selectedOverlayId } as never);
       setSelectedOverlayId(null);
     }
@@ -2484,6 +2495,7 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
 
   // پاک‌سازی تمام ترسیم‌های اختصاصی نماد
   const handleClearDrawings = () => {
+    unrestorableRef.current = [];
     if (chartRef.current) {
       chartRef.current.removeOverlay({ groupId: 'fts-draw' });
       drawHistRef.current = initHistory([]);
