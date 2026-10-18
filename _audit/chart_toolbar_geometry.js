@@ -34,10 +34,11 @@ const MEASURE = () => {
       const r = b.getBoundingClientRect();
       const label = norm(b.getAttribute('title') || b.getAttribute('aria-label') || b.textContent).slice(0, 28);
       const chain = [];
-      for (let a = b.parentElement; a && chain.length < 4; a = a.parentElement) {
+      for (let a = b.parentElement; a && chain.length < 9; a = a.parentElement) {
         const cs = getComputedStyle(a);
-        chain.push((a.className && String(a.className).split(' ')[0]) || a.tagName.toLowerCase());
-        if (cs.position === 'absolute' || cs.position === 'fixed') { chain.push('!' + cs.position); break; }
+        const r = a.getBoundingClientRect();
+        chain.push(((a.className && String(a.className).split(' ')[0]) || a.tagName.toLowerCase())
+          + `[${Math.round(r.left)},${Math.round(r.top)} ${Math.round(r.width)}x${Math.round(r.height)} ${cs.display.slice(0, 4)}/${cs.position.slice(0, 3)}]`);
       }
       return {
         label, testid: b.getAttribute('data-testid'), x: Math.round(r.left), y: Math.round(r.top),
@@ -64,8 +65,25 @@ const MEASURE = () => {
     }
   }
   const clipped = ctrls.filter((c) => c.clippedX || c.clippedY);
-  // هر کنترلِ بیرونِ viewport؟
-  const outside = ctrls.filter((c) => c.x < 0 || c.y < 0 || c.x + c.w > window.innerWidth + 1 || c.y + c.h > window.innerHeight + 1);
+  // هر کنترلِ بیرونِ viewport نقصِ هندسی نیست: سطرِ آخرِ یکِ فهرستِ اسکرول‌شدنی
+  // (مثلِ دیدهبانِ کناری) نصفه زیرِ تا دیده می‌شود و این رفتارِ درستِ فهرست است.
+  const scrollClipped = (el) => {
+    for (let a = el.parentElement; a; a = a.parentElement) {
+      const cs = getComputedStyle(a);
+      if (/(auto|scroll)/.test(cs.overflowY + ' ' + cs.overflowX)) return true;
+    }
+    return false;
+  };
+  const outside = [...document.querySelectorAll('button,[role="button"],[role="combobox"],select')]
+    .filter(visible)
+    .filter((b) => !scrollClipped(b))
+    .map((b) => {
+      const r = b.getBoundingClientRect();
+      return { label: norm(b.getAttribute('title') || b.getAttribute('aria-label') || b.textContent).slice(0, 28),
+               testid: b.getAttribute('data-testid'), x: Math.round(r.left), y: Math.round(r.top),
+               w: Math.round(r.width), h: Math.round(r.height) };
+    })
+    .filter((c) => c.x < 0 || c.y < 0 || c.x + c.w > window.innerWidth + 1 || c.y + c.h > window.innerHeight + 1);
   return { viewport: [window.innerWidth, window.innerHeight], controls: ctrls.length, overlaps, clipped, outside,
            toolbars: document.querySelectorAll('.nn-top-toolbar').length,
            canvases: document.querySelectorAll('canvas').length,
