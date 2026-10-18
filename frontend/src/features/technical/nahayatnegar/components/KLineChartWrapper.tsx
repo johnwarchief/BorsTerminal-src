@@ -785,15 +785,28 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
   const candlesRef = useRef<KLineData[]>(displayCandles);
   candlesRef.current = displayCandles;
   const drawHistRef = useRef(initHistory<StoredOverlay[]>([]));
+  // وعدهٔ ثبتِ تمپلیت‌هایِ TV (درِ effectِ سازندۀِ چارت پر می‌شود)
+  const tvToolsReadyRef = useRef<Promise<unknown> | null>(null);
 
   useEffect(() => {
     const chart = chartRef.current;
     if (!chart) return;
 
+    // ردیف‌هایی که موتور تمپلیتشان را نمی‌شناسد: createOverlay بی‌صدا null می‌دهد،
+    // پس آن ترسیم درِ چارت نمی‌نشیند و اگر اینجا نگهش نداریم، tickِ بعدی‌اش از
+    // انبار پاک می‌کند (سنجشِ ۱۴۰۵-۰۷-۲۷: رسمِ «الگوی هارمونیک» پس ازِ یکِ
+    // بازخوانی کامل از بین می‌رفت).
+    let unrestorable: StoredOverlay[] = [];
+    let restoreSettled = false;
+    let cancelled = false;
+
     const snapshot = (): StoredOverlay[] => {
       try {
-        const all = chart.getOverlays() as { id?: string; name?: string; groupId?: string; points?: unknown; styles?: unknown; extendData?: unknown }[];
-        return all
+        const all = chart.getOverlays() as { id?: string; name?: string; groupId?: string;
+          points?: unknown; styles?: unknown; extendData?: unknown; zLevel?: number;
+          needDefaultPointFigure?: boolean; needDefaultXAxisFigure?: boolean;
+          needDefaultYAxisFigure?: boolean }[];
+        const rows: StoredOverlay[] = all
           .filter((o) => o && typeof o.name === 'string' &&
             (o.groupId === 'fts-draw' || (!o.groupId && !['VOL', 'MA', 'EMA', 'RSI', 'MACD', 'BOLL', 'fts_strategy_overlays', 'fts_pattern_overlays', 'fts_corp_actions', 'fts_e3_overlays'].includes(o.name))))
           .map((o) => ({
@@ -802,17 +815,55 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
             points: (o.points ?? []) as StoredOverlay['points'],
             ...(o.styles ? { styles: o.styles as Record<string, unknown> } : {}),
             ...(o.extendData ? { extendData: o.extendData as Record<string, unknown> } : {}),
+            // zLevel و سه پرچمِ figure هم با ترسیم می‌آیند: بی‌zLevelِ درست،
+            // ترسیمِ بازگردانده‌شده زیرِ لایه‌هایِ موتور می‌ماند و ماوس دیگر به آن
+            // نمی‌رسد؛ بی‌پرچم‌ها هم محورِ x/y برچسبِ اضافه می‌گیرد
+            // (سنجشِ _scratch/live/probe_fields.json: ۷۵ → ۰ پس ازِ بازخوانی).
+            ...(typeof o.zLevel === 'number' ? { zLevel: o.zLevel } : {}),
+            ...(o.needDefaultPointFigure === undefined ? {} : { needDefaultPointFigure: o.needDefaultPointFigure }),
+            ...(o.needDefaultXAxisFigure === undefined ? {} : { needDefaultXAxisFigure: o.needDefaultXAxisFigure }),
+            ...(o.needDefaultYAxisFigure === undefined ? {} : { needDefaultYAxisFigure: o.needDefaultYAxisFigure }),
           }));
+        for (const u of unrestorable) {
+          const seen = rows.some((r) => r.name === u.name &&
+            JSON.stringify(r.points) === JSON.stringify(u.points));
+          if (!seen) rows.push(u);
+        }
+        return rows;
       } catch (e) {
         void e;
         return [];
       }
     };
 
+    // همان callbackهایِ تعامل که نوارِ ابزار هنگامِ ساختِ ترسیم می‌دهد. بی‌این‌ها
+    // ترسیمِ بازگردانده‌شده «بی‌صدا»ست: هرگز selected نمی‌شود (نوارِ شناسایی و
+    // میانبرِ Delete به آن نمی‌رسند) و چون `onPressedMoveStart` زنجیرِ اسکرول را
+    // نبسته، کشیدنِ ماوس رویِ آن به‌جایِ بردنِ ترسیم، چارت را جابه‌جا می‌کند —
+    // یعنی امتیازهایِ `points` درِ داده دست‌نخورده می‌مانند. سنجش:
+    // `_scratch/live/probe_edit2.js` (تازہ جابه‌جا شد، بازیابی‌شده تکان نخورد) و
+    // `_scratch/live/probe_fields.json`.
+    const interactionOf = () => ({
+      onDrawStart: () => { chart.setScrollEnabled(false); },
+      onDrawEnd: () => { chart.setScrollEnabled(true); },
+      onPressedMoveStart: () => { chart.setScrollEnabled(false); },
+      onPressedMoveEnd: () => { chart.setScrollEnabled(true); },
+      onSelected: (params: any) => {
+        if (params?.overlay?.id) {
+          setSelectedOverlayId(String(params.overlay.id));
+          setSelectedOverlayName(String(params.overlay.name || ''));
+        }
+      },
+    });
+
     const applySnapshot = (rows: StoredOverlay[]) => {
       try {
         chart.removeOverlay({ groupId: 'fts-draw' });
-        rows.forEach((o) => chart.createOverlay({ ...o, groupId: 'fts-draw' } as never));
+        unrestorable = [];
+        rows.forEach((o) => {
+          const id = chart.createOverlay({ ...o, groupId: 'fts-draw', ...interactionOf() } as never) as string | null;
+          if (!id) unrestorable.push(o);
+        });
       } catch (e) {
         void e;
       }
@@ -826,12 +877,25 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
     }
 
     // ۲) بازیابی ترسیم‌های اختصاصی این نماد (کلید اختصاصی fts.drawings.v1.{symbol} یا تایم‌فریم)
-    const symDrawings = loadSymbolDrawings(currentSymbol);
-    const restored = symDrawings.length > 0 ? symDrawings : loadDrawings(currentSymbol, activeTimeframe);
-    if (restored.length > 0) {
-      applySnapshot(restored);
-    }
-    drawHistRef.current = initHistory(restored);
+    //    پیش ازِ applySnapshot باید ثبتِ تمپلیت‌هایِ TV تمام شده باشد، وگرنه
+    //    createOverlay برایِ آن نام‌ها null می‌دهد و رسمِ ذخیره‌شده نابود می‌شود.
+    const runRestore = async () => {
+      try {
+        await (tvToolsReadyRef.current ?? Promise.resolve());
+        if (cancelled || chartRef.current !== chart) return;
+        const symDrawings = loadSymbolDrawings(currentSymbol);
+        const restored = symDrawings.length > 0 ? symDrawings : loadDrawings(currentSymbol, activeTimeframe);
+        if (restored.length > 0) {
+          applySnapshot(restored);
+        }
+        drawHistRef.current = initHistory(restored);
+      } finally {
+        // اگر درِ همین فاصلۀ اندک نماد عوض شد، این دور حقِ بازنویسیِ انبار را ندارد؛
+        // effectِ تازه برایِ خودش از نو «منتظرِ بازیابی» است.
+        if (!cancelled) restoreSettled = true;
+      }
+    };
+    void runRestore();
 
     const maybeSnap = () => {
       if (!magnetRef.current) return;
@@ -857,6 +921,9 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
 
     // ۳) ذخیرهٔ خودکار تغییرات ترسیم در دو سطح نماد و تایم‌فریم + اعمال مگنت
     const tick = () => {
+      // تا بازیابیِ همین نماد تمام نشده، انبار بازنویسی نمی‌شود: وگرنه اولین
+      // tick وضعِ «چارتِ هنوز ترسیمي ندارد» را جایِ دادهٔ کاربر می‌گذارد
+      if (!restoreSettled) return;
       maybeSnap();
       const snap = snapshot();
       const h = drawHistRef.current;
@@ -911,6 +978,7 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
     window.addEventListener('keydown', onKey);
 
     return () => {
+      cancelled = true;
       clearInterval(timer);
       window.removeEventListener('keydown', onKey);
     };
@@ -936,8 +1004,11 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
     // بادبزن، پوزیشن لانگ/شورت، مثلث و فلش). عمداً lazy import است: بستهٔ
     // تمپلیت‌ها سنگین است و پیش از این هرگز در این چارت ثبت نمی‌شد — تولبار
     // فقط نامشان را نشان می‌داد و createOverlay بی‌صدا هیچی می‌ساخت.
+    // وعدهٔ ثبت درِ tvToolsReadyRef می‌نشیند تا effectِ ماندگاری پیش ازِ
+    // applySnapshot منتظرش بماند (بدونِ این، رسمِ این ابزارها پس ازِ یکِ
+    // بازخوانی بی‌صدا نابود می‌شد — شاهد: _scratch/live/probe_reload_loss.json).
     if (registerOverlayFn) {
-      void import('../../lib/tvTools')
+      tvToolsReadyRef.current = import('../../lib/tvTools')
         .then(({ registerTvOverlays }) => {
           registerTvOverlays({
             registerOverlay: registerOverlayFn,
@@ -947,6 +1018,7 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
         })
         .catch(() => {
           // تمپلیتی ثبت نشد: همان تولبارِ قبلی بدونِ ابزارهای پیشرفته
+          return null;
         });
     }
 
@@ -1958,6 +2030,10 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
         lock?: boolean;
         styles?: Record<string, unknown>;
         extendData?: Record<string, unknown>;
+        zLevel?: number;
+        needDefaultPointFigure?: boolean;
+        needDefaultXAxisFigure?: boolean;
+        needDefaultYAxisFigure?: boolean;
       }[];
       const snap: StoredOverlay[] = all
         .filter((o) => o?.groupId === 'fts-draw' && o?.name && Array.isArray(o.points))
@@ -1968,6 +2044,10 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
           lock: !!o.lock,
           styles: o.styles,
           extendData: o.extendData,
+          zLevel: typeof o.zLevel === 'number' ? o.zLevel : undefined,
+          needDefaultPointFigure: o.needDefaultPointFigure,
+          needDefaultXAxisFigure: o.needDefaultXAxisFigure,
+          needDefaultYAxisFigure: o.needDefaultYAxisFigure,
         }));
       if (snap.length > 0) {
         saveSymbolDrawings(currentSymbol, snap);
