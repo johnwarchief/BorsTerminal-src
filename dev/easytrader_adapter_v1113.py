@@ -556,7 +556,8 @@ def _instrument_bank() -> str:
 
 def _with_easytrader(fn):
     """درِ واقعی را با آداپتورِ EasyTrader + ترافیکِ بدیل جایگزین می‌کند."""
-    saved = (EX.ADAPTER_KIND, EX.LIVE_REQUESTED, EX.DRY_RUN, EX._ACTIVE_ADAPTER,
+    saved = (EX.ADAPTER_KIND, EX.LIVE_REQUESTED, EX.TRAFFIC_ALLOWED, EX.DRY_RUN,
+             EX._ACTIVE_ADAPTER,
              EX._SERVICE, EX._AUDIT, EX.DB_PATH)
     broker = ScriptedBroker()
     adapter = EasyTraderAdapter(transport=ScriptedTransport(broker), token=SECRET)
@@ -569,6 +570,9 @@ def _with_easytrader(fn):
         EX.DB_PATH = bank
         EX.ADAPTER_KIND = ADAPTER_NAME
         EX.LIVE_REQUESTED = True
+        # ترافیکِ واقعیِ همین fixture است: ScriptedTransport. ماژول این سه را با هم
+        # می‌سازد (TRAFFIC_ALLOWED از LIVE_REQUESTED ⇒ می‌آید)؛ پس اینجا هم با هم.
+        EX.TRAFFIC_ALLOWED = True
         EX.DRY_RUN = False
         EX._ACTIVE_ADAPTER = adapter
         EX._EASYTRADER = adapter
@@ -584,8 +588,9 @@ def _with_easytrader(fn):
             audit=ledger, scheduler=Scheduler(TimeSource()))
         fn(adapter, broker, ledger)
     finally:
-        EX.ADAPTER_KIND, EX.LIVE_REQUESTED, EX.DRY_RUN, EX._ACTIVE_ADAPTER = saved[:4]
-        EX._SERVICE, EX._AUDIT, EX.DB_PATH = saved[4], saved[5], saved[6]
+        (EX.ADAPTER_KIND, EX.LIVE_REQUESTED, EX.TRAFFIC_ALLOWED, EX.DRY_RUN,
+         EX._ACTIVE_ADAPTER) = saved[:5]
+        EX._SERVICE, EX._AUDIT, EX.DB_PATH = saved[5], saved[6], saved[7]
         ledger.close()
         os.environ.pop("BORS_EXECUTION_DB", None)
         for f in (tmp, bank):
@@ -892,19 +897,20 @@ def part_door():
     _with_easytrader(restart)
 
     # درِ پیش‌فرض (بدونِ هیچ متغیرِ محیطی) باید همان مسیرِ آزموده‌شده بماند
-    ck(EX.ADAPTER_KIND == "mock" or EX._configured_adapter() == "mock",
-       "پیش‌فرضِ بی‌متغیرِ محیطی: mock", EX._configured_adapter())
+    ck(EX.ADAPTER_KIND == "mock" or EX._configured_adapter({}) == "mock",
+       "پیش‌فرضِ بی‌env و بی‌تنظیمِ ذخیره‌شده: mock", EX._configured_adapter({}))
     ck(EX.DRY_RUN is True, "پیش‌فرض: dry_run=true", str(EX.DRY_RUN))
     os.environ["BORS_EXECUTION_ADAPTER"] = "easytrader"
     try:
-        ck(EX._configured_adapter() == "easytrader",
-           "انتخابِ آداپتور فقط ازِ محیط (نه ازِ بدنهٔ درخواست)")
+        ck(EX._configured_adapter({"adapter": "mock"}) == "easytrader",
+           "env بر تنظیمِ ذخیره‌شده مقدم است (بدنهٔ درخواست رأی ندارد)")
     finally:
         os.environ.pop("BORS_EXECUTION_ADAPTER", None)
     os.environ["BORS_EXECUTION_ADAPTER"] = "titan"
     try:
-        ck(EX._configured_adapter() == "mock",
-           "مقدارِ نامعلومِ محیط ⇒ mock (پیش‌فرضِ ایمن)", EX._configured_adapter())
+        ck(EX._configured_adapter({"adapter": "easytrader"}) == "mock",
+           "مقدارِ نامعلومِ محیط ⇒ mock (پیش‌فرضِ ایمن، و بر تنظیمِ دیسک هم پیشی می‌گیرد)",
+           EX._configured_adapter({"adapter": "easytrader"}))
     finally:
         os.environ.pop("BORS_EXECUTION_ADAPTER", None)
     body = open(os.path.join(ROOT, "api", "execution.py"), encoding="utf-8").read()
@@ -1078,12 +1084,16 @@ def part_session_hardening():
     from fastapi import FastAPI
     from fastapi.testclient import TestClient
 
-    saved = (EX.ADAPTER_KIND, EX.LIVE_REQUESTED, EX._ACTIVE_ADAPTER)
+    saved = (EX.ADAPTER_KIND, EX.LIVE_REQUESTED, EX.TRAFFIC_ALLOWED, EX._ACTIVE_ADAPTER)
     broker = ScriptedBroker()
     adapter = EasyTraderAdapter(transport=ScriptedTransport(broker), token=None)
     broker.adapter = adapter
     EX.ADAPTER_KIND = ADAPTER_NAME
     EX.LIVE_REQUESTED = True
+    # TRAFFIC_ALLOWED درِ ماژول ازِ LIVE_REQUESTED ساخته می‌شود؛ اگر اینجا ست نشود،
+    # fixture وضعیتی می‌سازد که خودِ برنامه هرگز در آن نیست (live و بی‌ترافیک) و
+    # در /session نشانی را رد می‌کند — نه به‌خاطرِ باگ، به‌خاطرِ سناریویِ ناممکن.
+    EX.TRAFFIC_ALLOWED = True
     EX._ACTIVE_ADAPTER = adapter
     try:
         app = FastAPI()
@@ -1106,7 +1116,8 @@ def part_session_hardening():
         ck("await request.body()" in src,
            "درِ نشست با Request خام خوانده می‌شود (نه Bodyِ pydantic)")
     finally:
-        EX.ADAPTER_KIND, EX.LIVE_REQUESTED, EX._ACTIVE_ADAPTER = saved
+        (EX.ADAPTER_KIND, EX.LIVE_REQUESTED, EX.TRAFFIC_ALLOWED,
+         EX._ACTIVE_ADAPTER) = saved
 
 
 def part_ack_not_observed():

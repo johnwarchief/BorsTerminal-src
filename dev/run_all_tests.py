@@ -521,6 +521,11 @@ SUITES = [
     # زمان‌سنجیِ monotonic با p50/p95/p99، و کنترل‌هایِ منفیِ پاک‌سازیِ لاگ.
     ('dev/sarkhati_protocol_v1119.py',
      'sarkhati protocol: provenance-marked wire fixtures, 2xx is never acceptance, no blind re-send after ambiguous, confirmation voided by session change, three distinct origins, honest mode/queue claims, monotonic percentiles, log redaction controls'),
+    # مأموریتِ 2026-10-18 (عیب‌یابیِ اتصالِ مفید): انتخابِ آداپتور ازِ خودِ برنامه
+    # با مقدم‌بودنِ env، گیتِ نوشتن که هیچ تنظیمِ دیسکی بازش نمی‌کند، حالتِ
+    # فقط‌خواندنی (خواندن بله / POST نه)، و «متصل» فقط باِ شاهدِ مسیرِ واقعی.
+    ('dev/broker_connect_v1120.py',
+     'broker connection: disk adapter selection with env precedence, write gate env-only, read-only mode refuses POST, session proof names the route that verified it, 401 never connected, config/portfolio leak nothing'),
     # تبِ مستقلِ «سرخطی» (مأموریتِ 2026-10-17): لغوِ واقعی باِ تأییدِ صریح و
     # قفلِ ردیفی، و سابقۀِ فیلترشدنیِ بی‌راز.
     ('dev/sarkhati_tab_v1122.py',

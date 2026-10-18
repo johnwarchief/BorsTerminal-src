@@ -127,9 +127,11 @@ def test_wiring():
     # بخش شد تا اگر روزی پیش‌فرض عوض شد، گارد فریاد بزند.
     ck(EX.DRY_RUN is True and EX.ADAPTER_KIND == "mock",
        "۳ پیش‌فرضِ EXE (بی‌متغیرِ محیطی): mock و dry-run قفل")
-    ck(EX.ADAPTER_KIND == EX._configured_adapter()
-       and EX._configured_adapter() == "mock",
-       "۳ انتخابِ آداپتور فقط ازِ محیط خوانده می‌شود", EX._configured_adapter())
+    _snap = EX._settings_snapshot()
+    ck(EX.ADAPTER_KIND == EX._configured_adapter(_snap)
+       and EX._configured_adapter(_snap) == _snap.get("adapter", "mock"),
+       "۳ انتخابِ آداپتور ازِ همان دو منبعِ import: محیط، سپس تنظیمِ ذخیره‌شده",
+       EX._configured_adapter(_snap))
     ck("easytrader" in EX.ALLOWED_ADAPTERS and "titan" not in EX.ALLOWED_ADAPTERS
        and "onlineplus" not in EX.ALLOWED_ADAPTERS,
        "۳ سکوی مجاز: mock/easytrader — Online-Plus/Titan درِ فهرست نیست "
