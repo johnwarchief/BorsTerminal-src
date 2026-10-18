@@ -127,6 +127,7 @@ describe('کنترل‌هایِ تنظیمات باید به موتورِ چار
     useFtsConfigStore.getState().setView({
       axisDragLock: false, axisTickMargin: 3, wickGray: false,
       showWatermark: true, watermarkOpacity: 20, showBorders: true, showWicks: true,
+      showXAxis: true, showYAxis: true,
       candleUp: '#089981', candleDown: '#f23645', wickUp: null, wickDown: null,
     } as never);
   });
@@ -259,5 +260,73 @@ describe('موتورِ دوم: مبنایِ سریِ رسم‌شده خوانا 
     );
     const line = screen.getByTestId('ffc-adjust-basis');
     expect(line.textContent).toContain(FFC_ADJUSTMENT_BASIS_LABEL);
+  });
+
+  // ── ۷) مخفی/روشن‌کردنِ محورِ زمان و محورِ قیمت ───────────────────────────
+  // `show:false` به‌تنهایی درِ klinecharts v10 بی‌اثر است: سورسِ نصب‌شده آن را فقط
+  // داخلِ شاخۀِ auto-size می‌خواند، پس اندازه باید صفر شود تاِ واقعاً محوری نماند.
+  it('پیش‌فرض: هر دو محور دیده می‌شوند (measureهایِ خودی: xAxis=32، yAxis=auto)', () => {
+    render(<KLineChartWrapper initialSymbol="فولاد" />);
+    // حالتِ پایه صریح پین می‌شود: setView درِ beforeEach بیرونِ act اجرا
+    // می‌شود و مقدارِ سنجۀِ قبلی می‌تواند به این سنجه نشت کند.
+    act(() => { useFtsConfigStore.getState().setView({ showXAxis: true, showYAxis: true }); });
+    const s = lastStyles();
+    expect(s.xAxis.show).toBe(true);
+    expect(s.xAxis.size).toBe(32);
+    expect(s.yAxis.show).toBe(true);
+    expect(s.yAxis.size).toBe('auto');
+  });
+
+  it('«نمایش محورِ زمان» خاموش ⇒ show=false و size=0، و محورِ قیمت دست‌نخورده', () => {
+    render(<KLineChartWrapper initialSymbol="فولاد" />);
+    // حالتِ پایه صریح پین می‌شود: setView درِ beforeEach بیرونِ act اجرا
+    // می‌شود و مقدارِ سنجۀِ قبلی می‌تواند به این سنجه نشت کند.
+    act(() => { useFtsConfigStore.getState().setView({ showXAxis: true, showYAxis: true }); });
+    act(() => { useFtsConfigStore.getState().setView({ showXAxis: false }); });
+    const s = lastStyles();
+    expect(s.xAxis.show).toBe(false);
+    expect(s.xAxis.size).toBe(0);
+    expect(s.yAxis.show).toBe(true);
+  });
+
+  it('«نمایش محورِ قیمت» خاموش ⇒ show=false و size=0، و عرضِ محورِ زمان نمی‌آید', () => {
+    render(<KLineChartWrapper initialSymbol="فولاد" />);
+    // حالتِ پایه صریح پین می‌شود: setView درِ beforeEach بیرونِ act اجرا
+    // می‌شود و مقدارِ سنجۀِ قبلی می‌تواند به این سنجه نشت کند.
+    act(() => { useFtsConfigStore.getState().setView({ showXAxis: true, showYAxis: true }); });
+    act(() => { useFtsConfigStore.getState().setView({ showYAxis: false }); });
+    const s = lastStyles();
+    expect(s.yAxis.show).toBe(false);
+    expect(s.yAxis.size).toBe(0);
+    expect(s.xAxis.size).toBe(32);
+  });
+
+  it('هر دو محور خاموش ⇒ روشن‌کردنِ دوباره همان حالتِ اول را برمی‌گرداند', () => {
+    render(<KLineChartWrapper initialSymbol="فولاد" />);
+    // حالتِ پایه صریح پین می‌شود: setView درِ beforeEach بیرونِ act اجرا
+    // می‌شود و مقدارِ سنجۀِ قبلی می‌تواند به این سنجه نشت کند.
+    act(() => { useFtsConfigStore.getState().setView({ showXAxis: true, showYAxis: true }); });
+    act(() => { useFtsConfigStore.getState().setView({ showXAxis: false, showYAxis: false }); });
+    expect(lastStyles().xAxis.size).toBe(0);
+    expect(lastStyles().yAxis.size).toBe(0);
+    act(() => { useFtsConfigStore.getState().setView({ showXAxis: true, showYAxis: true }); });
+    const s = lastStyles();
+    expect(s.xAxis.show).toBe(true);
+    expect(s.xAxis.size).toBe(32);
+    expect(s.yAxis.show).toBe(true);
+    expect(s.yAxis.size).toBe('auto');
+  });
+
+  it('مخفی‌کردنِ محورِ قیمت، بقیۀِ چیدمان را نمی‌شکند (جایگاه، برگشت و حاشیه سرِ جا)', () => {
+    render(<KLineChartWrapper initialSymbol="فولاد" />);
+    // حالتِ پایه صریح پین می‌شود: setView درِ beforeEach بیرونِ act اجرا
+    // می‌شود و مقدارِ سنجۀِ قبلی می‌تواند به این سنجه نشت کند.
+    act(() => { useFtsConfigStore.getState().setView({ showXAxis: true, showYAxis: true }); });
+    act(() => { useFtsConfigStore.getState().setView({ showYAxis: false, axisTickMargin: 10 }); });
+    const s = lastStyles();
+    expect(s.yAxis.position).toBe('right');
+    expect(s.yAxis.reverse).toBe(false);
+    expect(s.yAxis.tickText.marginStart).toBe(10);
+    expect(s.xAxis.tickText.marginEnd).toBe(10);
   });
 });

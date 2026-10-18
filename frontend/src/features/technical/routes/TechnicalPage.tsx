@@ -263,9 +263,14 @@ export default function TechnicalPage() {
       <main className="flex min-h-0 min-w-0 flex-1 flex-col">
         {/* چارت تمام‌فضا (بدون کادر تودرتو/حاشیهٔ مرده) */}
         <div className="relative min-h-0 min-w-0 flex-1" data-testid="chart-area">
-          <div className="absolute end-3 top-3 z-50" data-testid="technical-fts-settings">
-            <FtsSettingsTrigger open={ftsSettingsOpen} onToggle={() => setFtsSettingsOpen((open) => !open)} />
-          </div>
+          {/* موتورِ دوم نوارِ ابزار ندارد؛ همان‌جا شناور می‌ماند. درِ مسیرِ klinecharts
+              این کنترل داخلِ نوارِ ابزار رندر می‌شود — پیش از این همینجا رویِ بوم شناور
+              بود و دکمۀ «تنظیمات چارت» را می‌پوشاند (۳۶۸px² هم‌پوشانی سنجیده‌شده). */}
+          {chartEngine === 'ffc' && (
+            <div className="absolute end-3 top-3 z-50" data-testid="technical-fts-settings">
+              <FtsSettingsTrigger open={ftsSettingsOpen} onToggle={() => setFtsSettingsOpen((open) => !open)} />
+            </div>
+          )}
           {chartEngine === 'ffc' ? (
             <div className="h-full w-full overflow-hidden" data-testid="ffc-chart-host">
               <FtsEngineChart
@@ -313,6 +318,7 @@ export default function TechnicalPage() {
                   onEngineChange={setChartEngine}
                   onToggleReplay={() => (replayActive ? stopReplay() : startReplay(Math.max(0, nn.data.length - 1)))}
                   onOpenSettings={() => setSettingsOpen(true)}
+                  settingsSlot={<FtsSettingsTrigger open={ftsSettingsOpen} onToggle={() => setFtsSettingsOpen((open) => !open)} />}
                   onSymbolChange={(s) => selectSymbol(s.symbol)}
                 />
               </Suspense>

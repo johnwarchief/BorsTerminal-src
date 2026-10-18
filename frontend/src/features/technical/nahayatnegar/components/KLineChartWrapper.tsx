@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars -- registerOverlay و registerIndicator در اعلان نوعِ npm نیامده‌اند؛ بدون any کامپایل نمی‌شود */
-import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
+import React, { useEffect, useRef, useState, useCallback, useMemo, type ReactNode } from 'react';
 import * as klinecharts from 'klinecharts';
 import { init, dispose, Chart, KLineData } from 'klinecharts';
 import { http } from '@shared/api/http';
@@ -104,6 +104,7 @@ export interface ChartProps {
   replayActive?: boolean;
   onToggleReplay?: () => void;
   onOpenSettings?: () => void;
+  settingsSlot?: ReactNode;
   onSymbolChange?: (sym: SymbolInfo) => void;
   onTimeframeChange?: (tf: Timeframe) => void;
   onAdjustmentChange?: (adj: AdjustmentMode) => void;
@@ -318,6 +319,7 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
   onEngineChange,
   onToggleReplay,
   onOpenSettings,
+  settingsSlot,
   onSymbolChange,
   onTimeframeChange,
   onAdjustmentChange,
@@ -1141,6 +1143,12 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
       ? Math.max(0, Math.min(24, Number(ftsView?.axisTickMargin)))
       : 3;
 
+    // ۱.۶ نمایش/مخفی‌کردنِ خودِ محورها. `show:false` درِ v10 تنها داخلِ شاخۀِ auto-size
+    // خوانده می‌شود (index.esm.js:10955 / :1204)، پس اندازه هم صفر می‌شود؛ بی‌این،
+    // خاموش‌کردن فقط state بود و جایِ محورِ ۳۲px یا ۵۴px سرِ جای خود می‌ماند.
+    const showXAxis = ftsView?.showXAxis !== false;
+    const showYAxis = ftsView?.showYAxis !== false;
+
     // ۲. نگاشت قطعی نوع چارت به یکی از ۶ مقدار مجاز کتابخانه KlineCharts v10
     // «خط» همان اریا است با بی‌رنگِ زیرِ خط؛ «Heikin-Ashi» از سریِ renderCandles
     // می‌آید و اینجا نوعش کندلِ معمولی می‌ماند.
@@ -1194,7 +1202,8 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
           activeBackgroundColor: 'rgba(41, 98, 255, 0.2)'
         },
         xAxis: {
-          size: 32,
+          show: showXAxis,
+          size: showXAxis ? 32 : 0,
           axisLine: {
             show: true,
             color: isLight ? '#e0e3eb' : '#2a2e39',
@@ -1330,6 +1339,8 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
           }
         },
         yAxis: {
+          show: showYAxis,
+          size: showYAxis ? 'auto' : 0,
           reverse: !!ftsView?.yAxisReverse,
           inside: !!ftsView?.yAxisInside,
           position: ftsView?.priceScalePos ?? 'right',
@@ -2512,6 +2523,7 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
         isFullscreen={isFullscreen}
         onToggleFullscreen={handleToggleFullscreen}
         onOpenSettings={onOpenSettings}
+        settingsSlot={settingsSlot}
         onTakeSnapshot={handleTakeSnapshot}
         compareSymbol={compareSymbol}
         compareBusy={compareBusy}

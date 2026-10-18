@@ -4,6 +4,7 @@ import {
   IconAdjustments, IconFx, IconFts, IconSettings, IconCamera,
   IconFullscreen, IconExitFullscreen, IconChevronDown, IconCheck, IconSearch
 } from './TradingViewIcons';
+import type { ReactNode } from 'react';
 import { toFaDigits } from '@shared/lib/fmt';
 import type { AdjustmentMode } from '../lib/adjustments';
 import { SUPPORTED_TIMEFRAMES, TIMEFRAME_LABELS, type Timeframe } from '../lib/timeframe';
@@ -35,6 +36,8 @@ interface FtsToolbarProps {
   isFullscreen: boolean;
   onToggleFullscreen: () => void;
   onOpenSettings?: () => void;
+  /** جایِ کنترلِ شناورِ تنظیمات (دروازۀ FTS) تا رویِ همین نوار بشیند، نه رویِ بومِ کندل */
+  settingsSlot?: ReactNode;
   onTakeSnapshot?: () => void;
   /** همسنجیِ دو نماد روی همین چارت */
   compareSymbol?: string | null;
@@ -72,6 +75,7 @@ export const FtsToolbar: React.FC<FtsToolbarProps> = ({
   isFullscreen,
   onToggleFullscreen,
   onOpenSettings,
+  settingsSlot,
   onTakeSnapshot,
   compareSymbol,
   compareBusy,
@@ -420,6 +424,9 @@ export const FtsToolbar: React.FC<FtsToolbarProps> = ({
           >
             <IconSettings size={16} />
           </button>
+        )}
+        {settingsSlot && (
+          <div className="shrink-0" data-testid="technical-fts-settings">{settingsSlot}</div>
         )}
         {/* هشدارِ قیمتی: آستانه‌هایِ کاربر روی نمادها، داوری‌شده روی فیدِ تابلو */}
         <div className="relative">
