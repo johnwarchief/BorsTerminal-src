@@ -345,11 +345,18 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
    *  پرچمِ «قفل درگ محور» بی‌صدا می‌میرد — همان نقصِ D-1ِ قدمِ صفر. */
   const applyAxisOverride = useCallback((chart: Chart, name: string) => {
     const dragLocked = useFtsConfigStore.getState().view.axisDragLock === true;
+    // قفلِ مقیاس باید بداند محور درِ کدام فضا است؛ بی‌این، درِ لگاریتمی
+    // realFrom/realTo درِ فضایِ ریال می‌ماند و همهٔ کندل‌ها بیرونِ پن افتاد
+    // (سنجشِ زنده: `_audit/chart_log_cause.js`).
+    scaleLock.setSpace(name === 'logarithm' || name === 'percentage'
+      ? (name as 'logarithm' | 'percentage') : 'normal');
+    // `createRange` درِ override جایِ تبدیلِ خودِ محور را می‌گیرد، پس فقط درِ فضاهایی
+    // که بازتولیدش می‌کنیم می‌فرستیمش؛ درِ «درصدی» تبدیلِ vendor را نمی‌شکنیم.
     chart.overrideYAxis({
       paneId: 'candle_pane',
       name,
       scrollZoomEnabled: !dragLocked,
-      createRange: scaleLock.createRange,
+      ...(name === 'percentage' ? {} : { createRange: scaleLock.createRange }),
     } as never);
     chart.overrideXAxis({ scrollZoomEnabled: !dragLocked } as never);
   }, [scaleLock]);
