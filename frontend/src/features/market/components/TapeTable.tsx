@@ -8,26 +8,17 @@ import { EmptyState } from '@shared/components/EmptyState';
 import { FlashNum } from '@shared/components/FlashNum';
 import { lastCloseDiff } from '../lib/tapePatterns';
 import { FTS_VOL_RATIO_HOT, buyPerCapitaMt, sellPerCapitaMt } from '../lib/tapeFts';
+import { HEADERS, sortVal, type SortKey } from '../lib/tapeColumns';
+import { pctTone, rowTooltip } from '../lib/tapeRowTone';
 import { patternBadges } from '../lib/tapeBadges';
 import { BuySellCell } from './BuySellCell';
+import { MicroBadge } from './MicroBadge';
+import { TapeCards } from './TapeCards';
+import { MEDIA_MOBILE } from '@shared/lib/breakpoints';
+import { useMediaQuery } from '@shared/lib/useMediaQuery';
 import { LIMIT_PCT, useTapeStore } from '../stores/tapeStore';
 import SymbolSelectBox from '@shared/components/SymbolSelectBox';
 import WatchlistStar from '@shared/components/WatchlistStar';
-import { MicroBadge } from './MicroBadge';
-import { pctTone, rowTooltip } from '../lib/tapeRowTone';
-
-type SortKey =
-  | 'symbol'
-  | 'p_closing'
-  | 'p_last'
-  | 'percent_change'
-  | 'percent_last'
-  | 'tvol'
-  | 'z_tot_tran'
-  | 'q_tot_cap'
-  | 'vol_ratio'
-  | 'buyer_power'
-  | 'last_vs_close';
 
 /**
  * دوازده ستونِ تابلو (۱۲). عرض‌ها از روی سنجشِ واقعیِ «پهنای لازمِ محتوا» در فونتِ
@@ -47,82 +38,6 @@ const ROW_GRID =
 const TABLE_MIN_W = 'min-w-[1100px]';
 
 /** سرستونِ بی‌مرتب‌سازی (کلیدِ null) — ستونِ بج‌ها عددی نیست که بشود مرتبش کرد */
-const HEADERS: { key: SortKey | null; label: string; hint?: string }[] = [
-  // برچسبِ ستون «فیلتر» نیست و فقط خواندنِ سرستون را می‌سازد؛ پس کوتاه‌ترین
-  // شکلِ ممکن نوشته می‌شود و نامِ کامل + واحد در title می‌ماند. رویِ
-  // نمایشگرِ ۱۳۶۶ این تیترهای بلند در ستونِ ۶۲-۷۸ پیکسلی می‌شکستند و
-  // سرستون افقی اسکرول می‌خورد.
-  { key: 'symbol', label: 'نماد' },
-  { key: 'p_last', label: 'آخرین' },
-  { key: 'p_closing', label: 'پایانی', hint: 'قیمت پایانیِ همین روز معاملاتی (p_closing)' },
-  // اختلافِ آخرین تا پایانی بغلِ پایانی نشسته (#194): هر دو ستونِ یک مقایسه‌اند
-  // — «آخرین» و «پایانی» و «فاصلۀ این دو» — و جدا از هم خوانده نمی‌شوند.
-  {
-    key: 'last_vs_close',
-    label: 'اختلاف٪',
-    hint: 'آخرین نسبت به پایانی — منفی یعنی پایانی بالاتر از آخرین، همان شرطِ الگوی ساعت',
-  },
-  {
-    key: 'percent_change',
-    label: 'تغییر٪',
-    hint: 'پایانی نسبت به دیروز — همان متغیرِ pcp در فیلترنویسیِ TSETMC',
-  },
-  {
-    key: 'percent_last',
-    label: 'آخرین٪',
-    hint: 'آخرین نسبت به دیروز — همان متغیرِ plp در فیلترنویسیِ TSETMC، و با درصدِ پایانی فرق دارد',
-  },
-  { key: 'tvol', label: 'حجم' },
-  {
-    key: 'z_tot_tran',
-    label: 'تعداد',
-    hint: 'تعدادِ معاملات — همان متغیرِ tno در فیلترنویسیِ TSETMC (z_tot_tran)',
-  },
-  { key: 'q_tot_cap', label: 'ارزش', hint: 'ارزش معاملات — میلیارد ریال (q_tot_cap)' },
-  { key: 'vol_ratio', label: 'حجم/ماه', hint: 'نسبت حجمِ امروز به میانگینِ حجمِ ماه' },
-  {
-    key: 'buyer_power',
-    label: 'خرید / فروش',
-    hint:
-      'بالا: سرانۀ خرید حقیقی (سبز) و سرانۀ فروش حقیقی (قرمز) به میلیون تومان. ' +
-      'پایین: نوارِ سهمِ هر طرف و نسبتِ خرید به فروش',
-  },
-  {
-    key: null,
-    label: 'الگو',
-    hint: 'برچسبِ الگوهایِ فعال روی همان ردیف: ساعت، حجم مشکوک، جت، کف‌روب، نقطه‌زنی، صف خرید و صف فروش',
-  },
-];
-
-
-const NEG = Number.NEGATIVE_INFINITY;
-
-function sortVal(r: MarketRow, key: SortKey): number | string {
-  switch (key) {
-    case 'symbol':
-      return r.symbol ?? '';
-    case 'p_last':
-      return r.p_last ?? NEG;
-    case 'p_closing':
-      return r.p_closing ?? NEG;
-    case 'percent_change':
-      return r.percent_change ?? NEG;
-    case 'percent_last':
-      return r.percent_last ?? NEG;
-    case 'tvol':
-      return r.tvol ?? NEG;
-    case 'z_tot_tran':
-      return r.z_tot_tran ?? NEG;
-    case 'q_tot_cap':
-      return r.q_tot_cap ?? NEG;
-    case 'vol_ratio':
-      return r.vol_ratio ?? NEG;
-    case 'buyer_power':
-      return r.buyer_power ?? NEG;
-    case 'last_vs_close':
-      return lastCloseDiff(r) ?? NEG;
-  }
-}
 
 
 export const TapeRow = memo(function TapeRow({
@@ -263,6 +178,10 @@ export function TapeTable({
 }) {
   const [sortKey, setSortKey] = useState<SortKey>('vol_ratio');
   const [desc, setDesc] = useState(true);
+  const isMobile = useMediaQuery(MEDIA_MOBILE);
+  /** 'auto' = گوشی کارت، دسکتاپ جدول. کلیدِ دستی فقط درِ گوشی دیده می‌شود، چون
+      درِ ۳۹۰px جدولِ کامل یعنی ~۷۶۰px اسکرولِ افقی. */
+  const [view, setView] = useState<'auto' | 'table' | 'cards'>('auto');
   const parentRef = useRef<HTMLDivElement>(null);
 
   const sorted = useMemo(() => {
@@ -340,9 +259,46 @@ export function TapeTable({
     }
   };
 
+  const cardsMode = view === 'cards' || (view === 'auto' && isMobile);
+
+  const segCls = (on: boolean) => `min-h-[40px] rounded-lg border px-3 text-2xs font-bold ${
+    on ? 'border-accent-blue bg-accent-blue/15 text-accent-blue' : 'border-border-c text-text-secondary'}`;
+
+  const viewToggle = isMobile ? (
+    <div className="flex items-center gap-1 border-b border-border-c bg-bg-card/60 px-2 py-1"
+         data-testid="tape-view-toggle">
+      <button type="button" onClick={() => setView('cards')} aria-pressed={cardsMode}
+              data-testid="tape-view-cards" className={segCls(cardsMode)}>
+        کارتی
+      </button>
+      <button type="button" onClick={() => setView('table')} aria-pressed={!cardsMode}
+              data-testid="tape-view-table" className={segCls(!cardsMode)}>
+        جدولِ کامل (اسکرولِ افقی)
+      </button>
+    </div>
+  ) : null;
+
+  const footer = (
+    <div className="border-t border-border-c bg-bg-secondary/60 px-3 py-1 text-2xs text-text-muted">
+      <span className="num font-bold">{toFaDigits(sorted.length)}</span> نماد
+    </div>
+  );
+
+  if (cardsMode) {
+    return (
+      <div className="glass-panel flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl">
+        {viewToggle}
+        <TapeCards rows={sorted} selected={selected} onSelect={onSelect}
+                   sortKey={sortKey} desc={desc} onSort={toggle} />
+        {footer}
+      </div>
+    );
+  }
+
   return (
-    <div className="glass-panel overflow-hidden rounded-2xl">
-      <div className="overflow-x-auto overscroll-x-contain">
+    <div className="glass-panel flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl">
+      {viewToggle}
+      <div className="flex min-h-0 flex-1 flex-col overflow-x-auto overscroll-x-contain">
         <div data-testid="tape-head" className={`sticky top-0 z-10 grid w-full ${TABLE_MIN_W} ${ROW_GRID} gap-1 bg-bg-card/95 px-2 py-2.5 text-start text-2xs font-bold text-text-secondary backdrop-blur`}>
           {HEADERS.map((h) => {
             const k = h.key;
@@ -390,9 +346,7 @@ export function TapeTable({
         </div>
       </div>
     </div>
-    <div className="border-t border-border-c bg-bg-secondary/60 px-3 py-1 text-2xs text-text-muted">
-      <span className="num font-bold">{toFaDigits(sorted.length)}</span> نماد
-    </div>
+    {footer}
   </div>
 );
 }
