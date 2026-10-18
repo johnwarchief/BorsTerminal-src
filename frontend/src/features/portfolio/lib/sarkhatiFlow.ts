@@ -213,7 +213,7 @@ export function connectionLadder(input: {
       tone: 'ok', title: 'متغیرِ محیطی برِ تنظیمِ دیسک مقدم است' };
   } else if (src === 'unavailable') {
     config = { key: 'config', label: 'تنظیمِ کارگزاری', text: 'تنظیمِ دیسک خوانده نشد',
-      tone: 'bad', title: 'خودِ برنامه این دو کلید را نمی‌خواند؛ وضعیت از «بدونِ تنظیم» معتبرتر نیست' };
+      tone: 'bad', title: 'خواندنِ تنظیمِ ذخیره‌شده شکست خورد؛ وضعیت از «بدونِ تنظیم» معتبرتر نیست' };
   } else if (src === 'default' || !savedAdapter) {
     config = { key: 'config', label: 'تنظیمِ کارگزاری', text: 'تنظیمی ذخیره نشده',
       tone: 'idle', title: `پیش‌فرضِ همین پروسه: ${effAdapter || 'بدونِ آداپتور'}` };
@@ -247,7 +247,7 @@ export function connectionLadder(input: {
       title: 'پاسخِ واقعی ازِ مسیری آمد که درِ سندِ رسمیِ کارگزاری نیست' + path };
   } else {
     provenRow = { key: 'proven', label: 'تأییدِ واقعی', text: 'تأیید شد', tone: 'ok',
-      title: 'ازِ پرسشِ فقط‌خواندنیِ دیدہ‌شدہیِ کارگزاری' + path };
+      title: 'ازِ یکِ پرسشِ فقط‌خواندنیِ دیدہ‌شدہ' + path };
   }
 
   const canPlace = st?.capabilities?.place === true;
