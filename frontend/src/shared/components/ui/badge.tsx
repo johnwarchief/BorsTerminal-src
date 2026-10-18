@@ -55,7 +55,7 @@ export function Badge({
   const sizeStyles = {
     default: 'px-2 py-0.5 text-2xs font-bold rounded-full',
     sm: 'px-1.5 py-0.2 text-3xs font-semibold rounded-md',
-    xs: 'px-1 py-0 text-[10px] font-medium rounded',
+    xs: 'px-1 py-0 text-3xs font-medium rounded',
   }[size];
 
   return (

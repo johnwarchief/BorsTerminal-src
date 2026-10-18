@@ -2638,7 +2638,7 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
       {/* نوار پایینی تفکیک‌شده و هماهنگ */}
       <footer className="nn-bottom-bar">
         <div className="nn-range-buttons">
-          <span className="pe-1 text-[11px] font-semibold text-[var(--nn-text-secondary)]">بازه زمانی:</span>
+          <span className="pe-1 text-3xs font-semibold text-[var(--nn-text-secondary)]">بازه زمانی:</span>
           {VIEW_RANGES.map((rng) => (
             <button
               key={rng}

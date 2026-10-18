@@ -46,7 +46,7 @@ export function Price({
           </span>
           <span
             className={cn(
-              'num rounded px-1 py-0.2 text-[10px] font-bold tabular-nums',
+              'num rounded px-1 py-0.2 text-3xs font-bold tabular-nums',
               diffPct > 0 ? 'bg-accent-green/15 text-accent-green' : 'bg-accent-red/15 text-accent-red',
             )}
           >

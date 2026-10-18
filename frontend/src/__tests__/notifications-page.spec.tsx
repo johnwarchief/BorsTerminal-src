@@ -90,9 +90,19 @@ describe('مرکزِ اعلان', () => {
     mockFeed({ items: [...ITEMS, { ...ITEMS[0], id: 9, kind: 'other', level: 'unclassified',
                                    title: 'بازخرید سهام' }] });
     page();
-    await waitFor(() => expect(screen.getAllByTestId('notice-level')[2]).toBeInTheDocument());
-    expect(screen.getAllByTestId('notice-level')[2].textContent).toBe('بی‌طبقه');
-    expect(screen.getAllByTestId('notice-level')[0].getAttribute('title')).toContain('EPS');
+    // گروه‌بندیِ روزانه ترتیبِ خطی را عوض می‌کند، پسِ سطرِ بی‌طبقه باِ نامِ خودش
+    // پیدا می‌شود نه باِ شمارۀِ مرتبۀِ ۳ — آنچه سنجیده می‌شود «سطحِ بی‌طبقه باِ
+    // پایین یکی نیست» است، نه اینکه کدامِ سطر سوم نشسته.
+    let unclass: HTMLElement | null = null;
+    await waitFor(() => {
+      unclass = document.querySelector<HTMLElement>(
+        "[data-testid='notice-row'][data-level='unclassified'] [data-testid='notice-level']");
+      expect(unclass).not.toBeNull();
+    });
+    expect(unclass!.textContent).toBe('بی‌طبقه');
+    const top = document.querySelector<HTMLElement>(
+      "[data-testid='notice-row'][data-level='high'] [data-testid='notice-level']");
+    expect(top?.getAttribute('title')).toContain('EPS');
   });
 
   it('«خوانده شد» درِ همین دستگاه می‌ماند و شمارۀِ ناخوانده کم می‌شود', async () => {

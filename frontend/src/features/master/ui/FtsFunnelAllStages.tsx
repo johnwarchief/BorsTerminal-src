@@ -17,7 +17,7 @@ import { useVirtualizer } from '@tanstack/react-virtual';
 import { useSymbolStore } from '@shared/stores/symbolStore';
 import { useScreenFilterStore } from '@shared/stores/screenFilterStore';
 import { QUICK_FILTERS, QUICK_LABELS, type QuickFilter } from '@features/market/stores/tapeStore';
-import { MicroBadge, type MicroTone } from '@features/market/components/TapeTable';
+import { MicroBadge, type MicroTone } from '@features/market/components/MicroBadge';
 import { absurdHint } from '@features/fundamental/lib/numFmt';
 import { SymbolBasketAction } from '@features/portfolio/components/SymbolBasketAction';
 import { SymbolWatchAction } from '@features/portfolio/components/SymbolWatchAction';
@@ -735,8 +735,8 @@ function StageCard({
                 title={on ? TECH_SCREEN_HINT.on : TECH_SCREEN_HINT.off}
                 className={`rounded-md border px-1.5 py-0.5 text-2xs font-bold transition-colors ${
                   techScreens === on
-                    ? 'border-accent-amber bg-accent-amber/15 text-accent-amber'
-                    : 'border-border-c bg-bg-card text-text-muted hover:border-accent-amber/60'
+                    ? 'border-accent-yellow bg-accent-yellow/15 text-accent-yellow'
+                    : 'border-border-c bg-bg-card text-text-muted hover:border-accent-yellow/60'
                 }`}
               >
                 {on ? TECH_SCREEN_LABEL.on : TECH_SCREEN_LABEL.off}
@@ -1029,7 +1029,7 @@ export function StageRow({
               {entry.assemblyVeto ? (
                 <span
                   data-testid={`funnel-assembly-veto-${entry.symbol}`}
-                  className="shrink-0 rounded border border-accent-red/40 bg-accent-red/15 px-1 text-[9px] font-bold text-accent-red"
+                  className="shrink-0 rounded border border-accent-red/40 bg-accent-red/15 px-1 text-3xs font-bold text-accent-red"
                   title={entry.assemblyWhy}
                 >
                   وتوی مجمع
@@ -1041,7 +1041,7 @@ export function StageRow({
               {entry.fundCaveat ? (
                 <span
                   data-testid={`funnel-fund-caveat-${entry.symbol}`}
-                  className="shrink-0 rounded border border-accent-yellow/50 bg-accent-yellow/15 px-1 text-[9px] font-bold text-accent-yellow"
+                  className="shrink-0 rounded border border-accent-yellow/50 bg-accent-yellow/15 px-1 text-3xs font-bold text-accent-yellow"
                   title={entry.why.fundamental || 'عبور با ملاحظات'}
                 >
                   عبور با ملاحظات
@@ -1128,8 +1128,8 @@ function TapeStagePrefs({ picked, counts, filters }: {
             : `اشتراک (AND): نماد باید هر ${toFaDigits(onCount)} فیلترِ روشن را داشته باشد`}
         className={`rounded-md border px-1.5 py-0.5 text-2xs font-bold transition-colors ${
           logic === 'or'
-            ? 'border-accent-amber bg-accent-amber/15 text-accent-amber'
-            : 'border-border-c bg-bg-card text-text-muted hover:border-accent-amber/60'
+            ? 'border-accent-yellow bg-accent-yellow/15 text-accent-yellow'
+            : 'border-border-c bg-bg-card text-text-muted hover:border-accent-yellow/60'
         }`}
       >
         {logic === 'or' ? 'اجتماع' : 'اشتراک'}
@@ -1211,7 +1211,7 @@ function FundStagePrefs({ passed, techScreens }: { passed: number; techScreens: 
 
   const chip = (on: boolean) =>
     `rounded-md border px-1.5 py-0.5 text-2xs font-bold transition-colors ${
-      on ? 'border-accent-amber bg-accent-amber/15 text-accent-amber' : 'border-border-c bg-bg-card text-text-muted hover:border-accent-amber/60'
+      on ? 'border-accent-yellow bg-accent-yellow/15 text-accent-yellow' : 'border-border-c bg-bg-card text-text-muted hover:border-accent-yellow/60'
     }`;
 
   return (
@@ -1264,7 +1264,7 @@ function FundStagePrefs({ passed, techScreens }: { passed: number; techScreens: 
           data-testid="funnel-prefs-reset"
           onClick={reset}
           title="بازگردانی تنظیمات به پیش‌فرض FTS"
-          className="text-3xs font-bold text-text-muted underline hover:text-accent-amber"
+          className="text-3xs font-bold text-text-muted underline hover:text-accent-yellow"
         >
           بازگردانی به پیش‌فرض FTS
         </button>

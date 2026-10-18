@@ -16,130 +16,20 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { Badge } from '@shared/components/Badge';
 import { ConnectBrokerRow } from './ConnectBrokerRow';
-import { HttpError } from '@shared/api/http';
 import { fmtInt, parseNum, toEnDigits, toFaDigits } from '@shared/lib/fmt';
 import type { MarketRow } from '@shared/types/marketRow';
 import {
-  CODE_LABEL, PHASE_LABEL, SESSION_LABEL, invalidateExecution, messageOf,
-  orderApi, phaseFromResponse, phaseOf, useExecutionLedger, useExecutionStatus,
-  type ActionState, type ExecutionRecord, type OrderPhase,
+  CODE_LABEL, PHASE_LABEL, SESSION_LABEL, invalidateExecution,
+  orderApi, phaseOf, useExecutionLedger, useExecutionStatus, useExecutionTimings,
+  type ExecutionRecord, type OrderPhase,
 } from '../lib/orderClient';
-
-const freshId = () => 'ui-' + Math.random().toString(36).slice(2, 10);
-
-/** متنِ امنِ خطا — هیچ‌وقت بدنهٔ پاسخ یا هدرِ درخواست را نشان نمی‌دهیم */
-function safeError(e: unknown): string {
-  if (e instanceof HttpError) return `خطایِ ${e.status} درِ ${e.url.replace(/^https?:\/\/[^/]+/, '')}`;
-  if (e instanceof Error) return e.message.slice(0, 140);
-  return 'خطایِ نامعلوم';
-}
-
-const TONE: Record<ActionState, string> = {
-  idle: 'text-text-secondary',
-  busy: 'text-text-muted',
-  ok: 'text-accent-green',
-  warn: 'text-accent-yellow',
-  unknown: 'text-accent-orange',
-  error: 'text-accent-red',
-};
-
-type ExecAction = 'preflight' | 'preview' | 'dispatch' | 'refresh' | 'reconcile'
-  | 'queue' | 'halt' | 'resume' | 'probe' | 'session';
-
-/**
- * پاسخِ هر اقدام جدا معنا می‌شود، چون فازهایِ مسیرِ اجرا جداوند: «پیش‌فرود»
- * ارسال نیست، «توقف» وضعیتِ هیچ سفارشی را عوض نمی‌کند، و «نامعلوم» هرگز به
- * «ردشده» برگردانده نمی‌شود (بندِ ۴-ج مأموریت). عددِ پاسخ ازِ خودِ پاسخِ
- * سرویس می‌آید، نه ازِ متنِ ثابتِ رابط.
- */
-function summarize(kind: ExecAction, res: Record<string, unknown>, wireHypothesis: boolean):
-  { state: ActionState; phase: OrderPhase | null; text: string } {
-  const err = messageOf(res);
-  if (res.status === 'error' || res.status === 'refused') {
-    const unknown = res.unknown_result === true
-      || ['TIMEOUT', 'NETWORK_ERROR', 'UNKNOWN_RESULT'].includes(String(res.code));
-    return { state: unknown ? 'unknown' : 'error',
-      phase: unknown ? 'unknown' : 'errored',
-      text: err || (unknown ? 'نتیجه نامعلوم — فقط رفعِ ابهام، نه ارسالِ دوباره' : 'رد شد') };
-  }
-  switch (kind) {
-    case 'preflight': {
-      const checks = (res.checks ?? {}) as Record<string, string>;
-      const vals = Object.values(checks);
-      const fail = vals.filter((v) => v === 'FAIL').length;
-      const unk = vals.filter((v) => v === 'UNKNOWN').length;
-      const reasons = (res.reasons ?? {}) as Record<string, string>;
-      const why = Object.entries(checks).filter(([, v]) => v === 'FAIL')
-        .map(([k]) => `${k}${reasons[k] ? ` (${reasons[k]})` : ''}`).join('، ');
-      return { state: fail ? 'warn' : 'ok', phase: 'preflight',
-        text: `پیش‌فرود: ${toFaDigits(vals.length - fail - unk)} سبز`
-          + (fail ? `، ${toFaDigits(fail)} رد${why ? ` — ${why}` : ''}` : '')
-          + (unk ? `، ${toFaDigits(unk)} نامعلوم` : '') };
-    }
-    case 'preview':
-      return { state: 'ok', phase: 'preflight',
-        text: 'پیش‌نمایشِ بدنۀ واقعی آماده شد'
-          + (wireHypothesis ? ' — سیم هنوز علیه کارگزاری تأیید نشده' : '') };
-    case 'dispatch': {
-      const r = phaseFromResponse(res);
-      if (r.phase === 'scheduled') {
-        return { state: 'ok', phase: 'scheduled',
-          text: 'زمان‌بندی شد — تا مهلت هیچ درخواستی نمی‌رود و «توقف» آن را لغو می‌کند' };
-      }
-      const rec = res.record as ExecutionRecord | undefined;
-      return { state: r.state, phase: r.phase,
-        text: r.phase === 'unknown'
-          ? 'نتیجه نامعلوم — «رفعِ ابهام» از فهرستِ سفارش، نه ارسالِ دوباره'
-          : `${PHASE_LABEL[r.phase]}${rec?.broker_order_id ? ` — ${rec.broker_order_id}` : ''}` };
-    }
-    case 'refresh':
-    case 'reconcile': {
-      const rec = res.record as ExecutionRecord | undefined;
-      const ph = phaseOf(rec ?? null);
-      return { state: ph === 'unknown' ? 'unknown' : 'ok', phase: ph,
-        text: `${kind === 'reconcile' ? 'رفعِ ابهام' : 'بازخوانی'}: ${PHASE_LABEL[ph]}`
-          + (rec?.broker_order_id ? ` — ${rec.broker_order_id}` : '') };
-    }
-    case 'queue': {
-      if (res.supported === false) {
-        return { state: 'warn', phase: null, text: String(res.reason ?? 'کارگزاری جایِ صف نمی‌دهد') };
-      }
-      const snap = res.snapshot as { position?: number | null; volume_ahead?: number | null } | null;
-      if (!res.known || snap?.position == null) {
-        return { state: 'warn', phase: null,
-          text: String(res.reason ?? 'جایِ صف داده نشد — «نمی‌دانیم»، نه صفر') };
-      }
-      return { state: 'ok', phase: null,
-        text: `جایِ صف: ${toFaDigits(snap.position)}`
-          + (snap.volume_ahead != null
-            ? ` (حجمِ جلوتر ${toFaDigits(snap.volume_ahead)} — واحدش تأیید نشده)` : '') };
-    }
-    case 'halt':
-      return { state: 'warn', phase: null,
-        text: 'توقف برقرار شد — رویِ دیسک می‌ماند'
-          + (Number(res.aborted_schedules) > 0
-            ? ` و ${toFaDigits(Number(res.aborted_schedules))} زمان‌بندی لغو شد` : '') };
-    case 'resume':
-      return { state: 'ok', phase: null,
-        text: 'ادامه باز شد'
-          + (Array.isArray(res.open_ids) && res.open_ids.length
-            ? ` — ${toFaDigits(res.open_ids.length)} سفارشِ باز برایِ رفعِ ابهام` : '') };
-    case 'probe':
-      return res.ok
-        ? { state: 'ok', phase: null,
-          text: `اتصالِ فقط‌خواندنی تأیید شد (${toFaDigits(Math.round(Number(res.response_ms) || 0))} ms`
-            + (res.orders_seen != null
-              ? `، ${toFaDigits(Number(res.orders_seen))} سفارش دیده شد` : '') + ')' }
-        : { state: 'warn', phase: null,
-          text: String(res.detail ?? messageOf(res) ?? 'اتصال برقرار نشد') };
-    case 'session':
-      return res.status === 'success'
-        ? { state: 'ok', phase: null,
-          text: res.live ? 'نشست باز شد — اتصالِ زنده فعال است'
-            : 'نشست در حافظه ماند (ترافیک هنوز خاموش است)' }
-        : { state: 'warn', phase: null, text: messageOf(res) || 'نشست ذخیره نشد' };
-  }
-}
+import {
+  TONE, freshId, safeError, summarize, type ActionState, type ExecAction,
+} from '../lib/orderActionView';
+import {
+  EMPTY_FIELDS, leadMs, targetWallMs,
+  useSarkhatiFormStore, type OrderFields, type SarkhatiSide,
+} from '../stores/sarkhatiFormStore';
 
 function Chip({ onClick, disabled, children, testId, tone = 'ghost', title }: {
   onClick: () => void; disabled?: boolean; children: React.ReactNode;
@@ -167,14 +57,25 @@ function Chip({ onClick, disabled, children, testId, tone = 'ghost', title }: {
   );
 }
 
-export function ExecutionPanel({ symbol, row }: { symbol: string; row: MarketRow | null }) {
+export function ExecutionPanel({ symbol, row, schedule = false }: {
+  symbol: string; row: MarketRow | null;
+  /** تبِّ «سرخطی»: زمانِ هدف و پیش‌افت را هم نشان می‌دهد. دیده‌بان بدونِ آن
+   *  دست‌نخورده می‌ماند (ارتفاعِ فشرده‌اش حفظ می‌شود). */
+  schedule?: boolean;
+}) {
   const { gate } = useExecutionStatus();
   const ledger = useExecutionLedger(gate.endpointPresent);
   const qc = useQueryClient();
 
-  const [side, setSide] = useState<'buy' | 'sell'>('buy');
-  const [qty, setQty] = useState('');
-  const [price, setPrice] = useState('');
+  // قیمت/مقدار/جهت درِ storeِ نماد‌به‌نماد می‌مانند (رفتن از این تب و برگشتن
+  // فرم را بی‌دلیل خالی نمی‌کند)؛ تأیید، عبارتِ تأیید و execution_id هرگز
+  // آنجا نمی‌نشینند — یک‌مصرف‌اند و ماندنشان یعنی عبورِ رأیِ کهنه ازِ گیتِ تازه.
+  const fields = useSarkhatiFormStore((st) => st.bySymbol[symbol] ?? EMPTY_FIELDS);
+  const patch = useSarkhatiFormStore((st) => st.set);
+  const side = fields.side;
+  const qty = fields.quantity;
+  const price = fields.price;
+  const setField = (p: Partial<OrderFields>) => patch(symbol, p);
   const [eid, setEid] = useState(freshId);
   const [confirmed, setConfirmed] = useState(false);
   const [phase, setPhase] = useState<OrderPhase>('idle');
@@ -203,8 +104,17 @@ export function ExecutionPanel({ symbol, row }: { symbol: string; row: MarketRow
     confirmed,
     // درِ اجرایِ زنده بک‌اند این عبارت را می‌خواهد، نه فقطِ یکِ true
     confirm_phrase: phrase,
+    // زمانِ هدف فقط وقتی کاربر خودش آن را نوشته اضافه می‌شود؛ رشتهٔ خالی
+    // «بی‌هدف» است نه «صفر»، پس کلید هم نمی‌نشیند.
+    ...(schedule && targetWallMs(fields.targetLocal) != null
+      ? {
+          target_wall_ms: targetWallMs(fields.targetLocal),
+          ...(leadMs(fields.oneWayMs) != null ? { one_way_ms: leadMs(fields.oneWayMs) } : {}),
+          ...(leadMs(fields.marginMs) != null ? { margin_ms: leadMs(fields.marginMs) } : {}),
+        }
+      : {}),
   }), [eid, symbol, side, price, qty, row?.p_last, row?.row_h,
-      confirmed, phrase]);
+      confirmed, phrase, schedule, fields.targetLocal, fields.oneWayMs, fields.marginMs]);
 
   const ask = useCallback(async (kind: ExecAction,
     fn: () => Promise<Record<string, unknown>>) => {
@@ -243,6 +153,18 @@ export function ExecutionPanel({ symbol, row }: { symbol: string; row: MarketRow
     && !!parseNum(toEnDigits(qty))
     && !!parseNum(toEnDigits(price)) && !busy;
   const canPreview = gate.endpointPresent && !busy;
+
+  // یادآوریِ زمان‌بندی فقط ازِ `/api/execution/timings` می‌آید (خودِ اندازه‌گیریِ
+  // همین نشست). بی‌نمونه صریح «اندازه‌گیری نشده» می‌نویسیم تا کاربر پیش‌افتِ
+  // ساختگی پر نکند (§۵: هیچ عددِ بدلِ کم‌نمونه‌ای منتشر نمی‌شود).
+  const tphase = (useExecutionTimings(schedule).data?.phases ?? {}) as
+    Record<string, { n?: number | null; p50?: number | null; thin?: boolean | null }>;
+  const tdisp = tphase['dispatch_ms'] ?? null;
+  const timingNote = tdisp && tdisp.n
+    ? `اندازۀ همین نشست: dispatch p50 ${toFaDigits(String(tdisp.p50 ?? 0))} ms`
+      + ` (n=${toFaDigits(String(tdisp.n))})${tdisp.thin ? ' — نمونۀ کم' : ''}`
+    : 'هیچ durationی در این نشست اندازه‌گیری نشده — پیش‌افت را بی‌شاهد پر نکنید';
+
   // سبز بودنِ نشست فقط وقتی مجاز است که اتصالِ زنده واقعاً برقرار باشد — وگرنه
   // «نشستِ بدل» با رنگِ خنثی نشان داده می‌شود، تا هیچ‌وقت «Connected»ِ ظاهری
   // جایِ «به کارگزاری وصل نیستیم» را نگیرد (بندِ ۴-ب مأموریت).
@@ -255,23 +177,32 @@ export function ExecutionPanel({ symbol, row }: { symbol: string; row: MarketRow
 
   return (
     <div
-      className="mt-auto rounded-xl border border-dashed border-border-c bg-bg-card/40 p-2"
+      className={schedule
+        // درِ تبِّ «سرخطی» خودِ بخش قاب دارد؛ قابِ دوم زیرِ آن کارت‌در‌کارت می‌شود
+        ? 'rounded-lg bg-bg-primary/30 p-1.5'
+        : 'mt-auto rounded-xl border border-dashed border-border-c bg-bg-card/40 p-2'}
       data-testid="watch-order-panel"
       data-can-trade={gate.canTrade ? 'true' : 'false'}
       data-adapter={gate.status?.adapter ?? 'none'}
       data-session={gate.sessionState}
     >
       <ConnectBrokerRow />
-      <div className="mb-1 flex flex-wrap items-center justify-between gap-1">
-        <h5 className="text-2xs font-black text-text-secondary">پنلِ معامله</h5>
+      <div className="mb-1 flex flex-wrap items-center gap-1">
+        {schedule ? null : (
+          <h5 className="text-2xs font-black text-text-secondary">پنلِ معامله</h5>
+        )}
         <div className="flex flex-wrap items-center gap-1">
-          <Badge tone={gate.endpointPresent ? (gate.canTrade ? 'green' : 'yellow') : 'gray'}
-            title={gate.status?.adapter === 'easytrader'
-              ? 'سیمِ EasyTrader — هنوز هیچ ثابتش علیه کارگزاری تأیید نشده' : undefined}>
-            {gate.endpointPresent
-              ? `سرویسِ اجرا: ${gate.status?.adapter ?? '—'}${gate.dryRun ? ' · بدل' : ''}`
-              : 'سرویسِ اجرا نیست'}
-          </Badge>
+          {/* درِ تبِّ «سرخطی» همین برچسب را خطِ وضعیتِ بالا می‌گوید — دو خوانش از
+              یکِ پاسخ رویِ یکِ صفحه، همان چیزی که نباید بسازیم. */}
+          {schedule ? null : (
+            <Badge tone={gate.endpointPresent ? (gate.canTrade ? 'green' : 'yellow') : 'gray'}
+              title={gate.status?.adapter === 'easytrader'
+                ? 'سیمِ EasyTrader — هنوز هیچ ثابتش علیه کارگزاری تأیید نشده' : undefined}>
+              {gate.endpointPresent
+                ? `سرویسِ اجرا: ${gate.status?.adapter ?? '—'}${gate.dryRun ? ' · بدل' : ''}`
+                : 'سرویسِ اجرا نیست'}
+            </Badge>
+          )}
           <Badge tone={sessionTone} title="وضعیتِ نشست از پاسخِ خودِ سرویس">
             {sessionText}
           </Badge>
@@ -285,7 +216,7 @@ export function ExecutionPanel({ symbol, row }: { symbol: string; row: MarketRow
             type="button"
             disabled={!gate.endpointPresent}
             aria-disabled={!gate.endpointPresent}
-            onClick={() => setSide(s)}
+            onClick={() => setField({ side: s as SarkhatiSide })}
             data-testid={s === 'buy' ? 'watch-order-buy' : 'watch-order-sell'}
             aria-pressed={side === s}
             title={gate.endpointPresent
@@ -307,7 +238,7 @@ export function ExecutionPanel({ symbol, row }: { symbol: string; row: MarketRow
           قیمت (ریال)
           <input
             type="text" inputMode="numeric" value={price}
-            onChange={(e) => setPrice(e.target.value.replace(/[^0-9۰-۹٠-٩٬]/g, ''))}
+            onChange={(e) => setField({ price: e.target.value.replace(/[^0-9۰-۹٠-٩٬]/g, '') })}
             data-testid="watch-order-price" placeholder={row?.p_last != null ? toFaDigits(String(row.p_last)) : '—'}
             className="num rounded-lg border border-border-c bg-bg-primary px-1.5 py-1 text-2xs font-bold text-text-primary placeholder:text-text-muted"
           />
@@ -316,12 +247,56 @@ export function ExecutionPanel({ symbol, row }: { symbol: string; row: MarketRow
           مقدار (سهم)
           <input
             type="text" inputMode="numeric" value={qty}
-            onChange={(e) => setQty(e.target.value.replace(/[^0-9۰-۹٠-٩٬]/g, ''))}
+            onChange={(e) => setField({ quantity: e.target.value.replace(/[^0-9۰-۹٠-٩٬]/g, '') })}
             data-testid="watch-order-qty" placeholder="مثلاً ۱۰۰۰"
             className="num rounded-lg border border-border-c bg-bg-primary px-1.5 py-1 text-2xs font-bold text-text-primary placeholder:text-text-muted"
           />
         </label>
       </div>
+
+      {schedule ? (
+        <div className="mb-1 rounded-lg border border-border-c/60 bg-bg-card/40 p-1.5"
+          data-testid="exec-schedule">
+          <div className="flex flex-wrap items-end gap-1.5">
+            <label className="flex min-w-0 flex-1 flex-col gap-0.5 text-3xs text-text-muted">
+              زمانِ هدفِ ارسال — خالی یعنی همین حالا
+              <input type="datetime-local" dir="ltr" value={fields.targetLocal}
+                disabled={!canPreview}
+                onChange={(e) => setField({ targetLocal: e.target.value })}
+                data-testid="exec-target-time"
+                className="num rounded-lg border border-border-c bg-bg-primary px-1.5 py-1 text-2xs font-bold text-text-primary" />
+            </label>
+            <label className="flex w-[86px] flex-col gap-0.5 text-3xs text-text-muted">
+              پیش‌افت (ms)
+              <input inputMode="numeric" dir="ltr" value={fields.oneWayMs}
+                placeholder="بی‌عدد"
+                onChange={(e) => setField({ oneWayMs: e.target.value.replace(/[^0-9۰-۹٠-٩٬]/g, '') })}
+                data-testid="exec-one-way"
+                className="num rounded-lg border border-border-c bg-bg-primary px-1.5 py-1 text-2xs font-bold text-text-primary" />
+            </label>
+            <label className="flex w-[86px] flex-col gap-0.5 text-3xs text-text-muted">
+              حاشیه (ms)
+              <input inputMode="numeric" dir="ltr" value={fields.marginMs}
+                placeholder="بی‌عدد"
+                onChange={(e) => setField({ marginMs: e.target.value.replace(/[^0-9۰-۹٠-٩٬]/g, '') })}
+                data-testid="exec-margin"
+                className="num rounded-lg border border-border-c bg-bg-primary px-1.5 py-1 text-2xs font-bold text-text-primary" />
+            </label>
+          </div>
+          <p className="mt-1 text-2xs leading-4 text-text-muted" data-testid="exec-clock-facts">
+            ساعتِ این دستگاه: {toFaDigits(String(gate.status?.clock_source ?? '—'))} ·{' '}
+            {String(gate.status?.clock_limit ?? 'بی‌اعلانِ محدودیت')}
+          </p>
+          <p className="text-2xs leading-4 text-text-muted" data-testid="exec-server-clock">
+            زمانِ سرورِ کارگزاری:{' '}
+            <span className="font-black text-accent-yellow">اثبات‌نشده (NOT_PROVEN)</span>{' '}
+            — هیچ وعده‌ای برایِ «درستِ همان لحظه» ساخته نمی‌شود
+          </p>
+          <p className="text-2xs leading-4 text-text-secondary" data-testid="exec-timings-line">
+            {timingNote}
+          </p>
+        </div>
+      ) : null}
 
       {/* موجودی: هرگز صفرِ جعلی. نبودِ capability یعنی «نمی‌دانیم»، و عددِ
           تابلو هم جایِ «موجودِ نقدِ کارگزاری» را نمی‌گیرد. */}
@@ -360,14 +335,15 @@ export function ExecutionPanel({ symbol, row }: { symbol: string; row: MarketRow
             تأییدِ نهایی
           </label>
           {cgate.required ? (
-            <label className="flex items-center gap-1 text-2xs text-text-secondary"
+            <label className="flex flex-wrap items-center gap-1 text-2xs text-text-secondary"
               data-testid="exec-confirm-phrase-wrap">
-              <span>برایِ اجرایِ زنده تایپ کنید:</span>
+              <span>عبارتِ «{String(cgate.phrase ?? '')}» را بنویسید تا اجرایِ زنده باز شود:</span>
               <input value={phrase} onChange={(e) => setPhrase(e.target.value)}
-                placeholder={String(cgate.phrase ?? '')}
-                data-testid="exec-confirm-phrase" className="min-w-0 flex-1" />
+                placeholder={String(cgate.phrase ?? '')} aria-label="عبارتِ تأییدِ اجرایِ زنده"
+                data-testid="exec-confirm-phrase"
+                className="min-w-0 flex-1 rounded-lg border border-border-c bg-bg-primary px-1.5 py-0.5 text-2xs font-bold text-text-primary placeholder:text-text-muted" />
               <span className={phraseOk ? 'text-accent-green' : 'text-text-muted'}>
-                {phraseOk ? '✓' : '—'}</span>
+                {phraseOk ? 'مطابق است' : 'مطابق نیست'}</span>
             </label>
           ) : null}
           <button
@@ -377,8 +353,8 @@ export function ExecutionPanel({ symbol, row }: { symbol: string; row: MarketRow
             onClick={() => void ask('dispatch', () => orderApi.dispatch(body()))}
             data-testid="exec-submit"
             title={canSubmit ? 'ارسالِ همین سفارش' : gate.reason || 'تأییدِ نهایی و مقدارِ معتبر لازم است'}
-            className={`rounded-lg px-2.5 py-0.5 text-3xs font-black ${
-              canSubmit ? 'bg-accent-blue/20 text-accent-blue hover:bg-accent-blue/30'
+            className={`inline-flex min-h-[28px] items-center rounded-lg px-2.5 text-2xs font-black ${
+              canSubmit ? 'bg-accent-blue/25 text-accent-blue hover:bg-accent-blue/35'
                 : 'cursor-not-allowed bg-accent-blue/10 text-accent-blue/50'}`}
           >
             ارسال

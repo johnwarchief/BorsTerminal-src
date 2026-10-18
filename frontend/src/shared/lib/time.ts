@@ -1,3 +1,4 @@
+import { toFaDigits } from './fmt';
 // shared/lib/time.ts -- تاریخ جلالی و زمان با Intl (بدون وابستگی اضافه)
 const FA_TIME = new Intl.DateTimeFormat('fa-IR', {
   dateStyle: 'medium',
@@ -42,4 +43,17 @@ export function fmtAge(ts: number, now = Date.now()): string {
   if (h < 24) return `${h} ساعت پیش`;
   const days = Math.floor(h / 24);
   return `${days} روز پیش`;
+}
+
+/** «2026-10-16T02:43:50» (ساعتِ ساختِ پاسخ درِ `_stamp()`ِ بک‌اند) → «۰۲:۴۳:۵۰».
+ *  بی‌هیچ محاسبه‌ای: همانِ رشته بریده وِ باِ رقمِ فارسی. چرا از `fmtClock(ts)` جدا
+ *  می‌ماند: اینِ رشته ساعتِ *همانِ ماشینی* است که سرور روی آن است وِ درِ اپِ رومیزی
+ *  سرور وِ کلاینت یک دستگاه‌اند (`MarketStatusPanel` همین فرض را سند کرده)؛ تبدیلش
+ *  به epoch اینجا یکِ حدسِ منطقهٔ زمانی اضافه می‌کرد.
+ *  null یعنی پاسخ آنِ ستون را نداشته — وِ رابط باید نبودنش را بگوید، نه اینکه
+ *  ساعتِ پنلِ همسایه را بهِ آنِ نسبت دهد. */
+export function serverStamp(computedAt: string | null | undefined): string | null {
+  if (!computedAt) return null;
+  const t = computedAt.slice(11, 19);
+  return /^\d{2}:\d{2}:\d{2}$/.test(t) ? toFaDigits(t) : null;
 }

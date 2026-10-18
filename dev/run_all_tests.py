@@ -511,6 +511,15 @@ SUITES = [
     # همه باِ ترافیکِ بدل و tripwire؛ بی‌سفارشِ واقعی.
     ('dev/p0_gates_v1118.py',
      'p0 gates: unverified session cannot POST, confirm phrase validated in backend, absence from the order list is not failure, fail-closed risk config, JSON 404 for unknown /api/*, preview independent of the send gate, per-id cancel lock'),
+    # مأموریتِ 2026-10-17 (§۲–۵): فیکسچرِ قراردادِ سیم باِ منشأ، ابطالِ تأیید با
+    # تغییرِ نشست، سه مبدأِ جدا (ورود/UI/API)، صداقتِ حالت‌ها و رتبۀِ صف،
+    # زمان‌سنجیِ monotonic با p50/p95/p99، و کنترل‌هایِ منفیِ پاک‌سازیِ لاگ.
+    ('dev/sarkhati_protocol_v1119.py',
+     'sarkhati protocol: provenance-marked wire fixtures, 2xx is never acceptance, no blind re-send after ambiguous, confirmation voided by session change, three distinct origins, honest mode/queue claims, monotonic percentiles, log redaction controls'),
+    # تبِ مستقلِ «سرخطی» (مأموریتِ 2026-10-17): لغوِ واقعی باِ تأییدِ صریح و
+    # قفلِ ردیفی، و سابقۀِ فیلترشدنیِ بی‌راز.
+    ('dev/sarkhati_tab_v1122.py',
+     'sarkhati tab: cancel semantics (explicit confirm, per-row lock, read-back proof) + events filters'),
     ('dev/bot_api_v1114.py', 'bot API contract: paper by default, manual run only, three live gates, halt honored, no fabricated zero, no leaked session'),
     # مأموریتِ ۱۴۰۵-۰۷-۲۳، بندِ ۶: رباتِ کاغذی و بک‌تست. سناریوهای ۱۷گانۀ
     # بندِ ۶-۵ (سیگنال، کهنگی، توقف، دامنۀ قیمت، سقفِ حجم، timeout، تکرار،

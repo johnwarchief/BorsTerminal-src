@@ -12,8 +12,9 @@
   ۱) **هیچ نشانی ازِ حدس ساخته نمی‌شود.** دامنۀ ورود درِ این مخزن مشاهده نشده
      است (سنجش: `grep` رویِ کد فقط `WIRE_BASE_URL = api-mts.orbis.easytrader.ir`
      را می‌دهد — نشانیِ API، نه صفحۀ ورود). پس دامنۀ ورود ازِ
-     `BORS_EXECUTION_CONNECT_HOSTS` خوانده می‌شود؛ بی‌آن، پنجره باز نمی‌شود و
-     علتِ مسدودبودن اعلام می‌شود. میزبانِ API به‌تنهایی جایِ ورود نیست.
+     `BORS_EXECUTION_CONNECT_HOSTS` جایِ پیش‌فرضِ *مشاهده‌شده* را می‌گیرد (سه
+     مبدأِ راستی‌آزمایی‌شده: account.emofid.com، login.emofid.com، d.easytrader.ir)
+     و `none` درِ پنجره را کلاً می‌بندد. میزبانِ API به‌تنهایی جایِ ورود نیست.
   ۲) **رمز/CAPTCHA/MFA را این برنامه نمی‌شکند.** پنجره فقط باز می‌شود؛ ورودِ
      واقعی باِ خودِ کاربر است. هیچ خواندنِ فرم، هیچ کلیکِ خودکار، هیچ
      دورزدنی نیست.
@@ -71,15 +72,46 @@ NO_LOGIN_HOST = "NO_LOGIN_HOST"
 
 
 def allowed_hosts() -> tuple[str, ...]:
-    """دامنه‌هایی که *پرسشِ* نشست رویِ آن‌ها مجاز است.
+    """دامنه‌هایی که *پنجرۀ مرورگر/پرسیدنیِ لایۀ اتصال* رویِ آن‌ها مجاز است.
 
-    پیش‌فرضِ امن: فقطِ همان یکِ میزبانِ دیدہ‌شدہ. فهرستِ کاربر فقط *افزوده* می‌شود
-    و هیچ‌گاه جایِ آن را نمی‌گیرد؛ بی‌`CONNECT_ENV` هم پرسشِ API ممکن است.
+    دو فهرست، دو نقش: این یکی از `login_hosts()` می‌آید (محیط یا پیش‌فرضِ
+    مشاهده‌شده). میزبانِ API اینجا **نیست** — دیدنِ میزبانِ API دلیل نیست که صفحۀ
+    ورود آنجاست، و «پنجره‌ای که نشانیِ API باز می‌کند» همان اشتباهی است که لایه
+    برایِ جلوگیری از آن نوشته شده. پرسشِ نشستیِ که `Authorization` حمل می‌کند هم
+    این فهرست را نمی‌خواند؛ آن `wire_hosts()` در `execution_easytrader.py` است با
+    محیطِ جدا (`BORS_EXECUTION_WIRE_HOSTS`)، پس گذاشتنِ دامنهٔ ورود درِ API را
+    باز نمی‌کند و برعکس.
     """
-    raw = (os.environ.get(CONNECT_ENV) or "").strip()
-    extra = tuple(h.strip().lower() for h in raw.split(",") if h.strip())
-    out = list(dict.fromkeys(list(extra) + ([KNOWN_WIRE_HOST] if KNOWN_WIRE_HOST else [])))
-    return tuple(out)
+    return tuple(dict.fromkeys(h for h in login_hosts() if h))
+
+
+#: مبدأهای *مشاهده‌شده*. هر سه در نشستِ 2026-10-17 با درخواستِ فقط‌خواندنی
+#: راستی‌آزمایی شدند (صفر POST، صفر سفارش، صفر رمز) و سه نقشِ جدا دارند، چون سه
+#: میزبانِ جدا‌اند:
+#:   ورود  `account.emofid.com` ⇒ 302 به `login.emofid.com`؛ و
+#:         `login.emofid.com/.well-known/openid-configuration` ⇒ 200 با
+#:         "issuer":"https://login.emofid.com" و <title>ورود - کارگزاری مفید</title>
+#:   UI    `d.easytrader.ir` ⇒ 200 با <title>EasyTrader</title>؛ پیوندِ رسمی در
+#:         `emofid.com/easytrader/` به همین نشانی می‌رود و باندلِ first-partyِ
+#:         `d.orbis.easytrader.ir` خودش `window.location.href` را همین می‌دهد
+#:   API   `api-mts.orbis.easytrader.ir` از `d.easytrader.ir/app-version.json`
+#:         خودِ UI («apiPath») — پس این را «تنها نشانیِ دیدۀِ کدِ شخصِ ثالث»
+#:         نیست، پیکربندیِ انتشاریافتهٔ خودِ کارگزاری است
+#: هیچ wildcard در هیچ‌کدام. `BORS_EXECUTION_CONNECT_HOSTS` این فهرست را *جایگزین*
+#: می‌کند (تصمیمِ صریحِ مالک)، نه گشاده‌تر؛ و میزبانِ API هرگز جایِ ورود نیست.
+PROVEN_AUTH_HOSTS = ("account.emofid.com", "login.emofid.com")
+PROVEN_UI_HOSTS = ("d.easytrader.ir",)
+DEFAULT_LOGIN_HOSTS = PROVEN_AUTH_HOSTS + PROVEN_UI_HOSTS
+
+
+def auth_hosts() -> tuple[str, ...]:
+    """میزبان‌های *احراز هویت* — برایِ برچسبِ درست درِ رابط."""
+    return PROVEN_AUTH_HOSTS
+
+
+def ui_hosts() -> tuple[str, ...]:
+    """میزبانِ رابطِ معاملاتی؛ ورود از همین‌جا هم ممکن است ولی احرازِ هویت آنجاست."""
+    return PROVEN_UI_HOSTS
 
 
 def login_hosts() -> tuple[str, ...]:
@@ -90,7 +122,13 @@ def login_hosts() -> tuple[str, ...]:
     خالی است ⇒ پنجره باز نمی‌شود.
     """
     raw = (os.environ.get(CONNECT_ENV) or "").strip()
-    return tuple(h.strip().lower() for h in raw.split(",") if h.strip())
+    # درِ بستنِ صریح: «هیچ میزبانی» با «بی‌تنظیم» یکی نیست. اگر مالک بخواهد
+    # پنجرۀ مرورگر را کلاً ببندد، `none` درست است؛ بی‌این، پیش‌فرضِ مشاهده‌شده
+    # فعال می‌ماند و راهِ بستن فقط پاک‌کردنِ محیط بود.
+    if raw.lower() in ("none", "off", "disable", "0"):
+        return ()
+    got = tuple(h.strip().lower() for h in raw.split(",") if h.strip())
+    return got or DEFAULT_LOGIN_HOSTS
 
 
 def validate_url(url: str) -> tuple[bool, str]:
@@ -356,6 +394,13 @@ def status_dict(adapter: Any, last: Mapping[str, Any] | None) -> dict[str, Any]:
             "browser": browser_state(),
             "allowed_hosts": list(allowed_hosts()),
             "login_hosts_configured": hosts,
+            # سه نقش، سه فهرست: چه‌کسی نباید با چه‌کسی اشتباه شود.
+            "host_roles": {"auth": list(auth_hosts()), "ui": list(ui_hosts()),
+                           "api": list(ET.wire_hosts()),
+                           "evidence": ("هر سه مبدأ با درخواستِ فقط‌خواندنی در "
+                                        "2026-10-17 دیده شده‌اند؛ سندِ رسمیِ API "
+                                        "(swagger/openapi) منتشر نشده — ۴۰۳ — پس "
+                                        "سیمِ سفارش همچنان فرضیه است")},
             "login_host_blocked_reason": ("" if hosts else
                                           NO_LOGIN_HOST + " — هیچ دامنه‌ای برایِ "
                                           "ورودِ کاربر تأیید نشده؛ "

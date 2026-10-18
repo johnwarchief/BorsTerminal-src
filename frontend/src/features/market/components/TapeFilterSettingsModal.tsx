@@ -218,7 +218,7 @@ export function TapeFilterSettingsModal({
                     >
                       <div className="flex w-full items-center justify-between">
                         <span className="text-xs font-black text-text-primary group-hover:text-accent-blue transition-colors">{p.label}</span>
-                        <span className="rounded-md bg-bg-secondary px-2 py-0.5 text-[10px] font-semibold text-text-muted group-hover:bg-accent-blue/20 group-hover:text-accent-blue transition-colors">
+                        <span className="rounded-md bg-bg-secondary px-2 py-0.5 text-3xs font-semibold text-text-muted group-hover:bg-accent-blue/20 group-hover:text-accent-blue transition-colors">
                           اعمال
                         </span>
                       </div>
@@ -430,7 +430,7 @@ export function TapeFilterSettingsModal({
                         }`}
                       >
                         <span className="text-xs font-black">{opt.label}</span>
-                        <span className="text-[10px] text-text-muted mt-0.5">{opt.sub}</span>
+                        <span className="text-3xs text-text-muted mt-0.5">{opt.sub}</span>
                       </button>
                     );
                   })}

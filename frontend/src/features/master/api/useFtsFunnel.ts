@@ -89,6 +89,7 @@ export function funnelQueryKey(req: FunnelRequest): string[] {
 export function useFtsFunnel(
   preset: TreePreset = 'trend',
   overrides: Partial<FunnelRequest> = {},
+  queryOpts: { enabled?: boolean } = {},
 ): {
   funnel: Funnel;
   mode: FunnelMode;
@@ -192,6 +193,10 @@ export function useFtsFunnel(
 
   const q = useQuery({
     queryKey: funnelQueryKey(request),
+    // پنجرۀِ جزئیات بسته است ⇒ اینِ بدندۀِ چندمگابایتی پرسیده نمی‌شود
+    // (سنجه: __tests__/inspector-closed-no-requests.spec.tsx). بی‌درخواستِ تازه،
+    // نه باِ لغوِ بعدِ ارسال.
+    enabled: queryOpts.enabled ?? true,
     queryFn: (ctx) => http<ApiPayload>('/api/funnel', {
       method: 'POST',
       // لغوِ درخواستِ کهنه: هر پاسخِ قیف چندِ مگابایت است (سنجشِ زنده: ۷٫۷ تا

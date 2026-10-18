@@ -617,6 +617,74 @@ class ExecutionService:
                 sleep(interval_ms / 1000.0)
         return seen
 
+    # ---- ۴-ت) لغوِ سفارش (بندِ ۱۹) ----------------------------------------
+    def cancel(self, execution_id: str, *, reason: str = "user") -> ExecutionRecord:
+        """لغوِ سفارشی که *واقعاً* به کارگزاری رفته است — باِ شواهد، نه باِ خواست.
+
+        چهار رأیِ جدا، و هیچ‌کدام بدلِ دیگری نمی‌شود:
+          • `capabilities.cancel` صریح False ⇒ `UNSUPPORTED` و **هیچ** درخواستی
+            ساخته نمی‌شود (سیمِ لغو درِ هیچ مرجعِ بازبینی‌شده‌ای نبود — §۷-الف).
+          • بی‌`broker_order_id` ⇒ لغوِ چیزی که اثبات نشده فرستاده شده ممکن نیست؛
+            «لغوِ پیش‌نویس» کارِ این در نیست (زمان‌بندیِ نجوشیده ازِ
+            `DELETE /schedule` لغو می‌شود).
+          • سفارش درِ حالتِ بسته ⇒ بی‌اثر، ولی یادداشت و ردِّپا می‌ماند: «لغو شد»
+            دربارهٔ سفارشِ پرشده ادعایِ دروغ است.
+          • ادapte `True` می‌گوید ولی بازخوانیِ وضعیت `cancelled` را نشان ندهد ⇒
+            فقط «پذیرفته شد، تأیید نشده» نوشته می‌شود. پاسخِ موفقِ یکِ فراخوان
+            به‌تنهایی «لغو تأیید شد» نیست — همان قاعدۀ «۲۰۰ ≠ پذیرش» (§۴-ج).
+        خطایِ شبکه/timeout درِ لغو هم نتیجه را نامعلوم می‌گذارد و هیچ تلاشِ
+        دوباره‌ای نمی‌شود؛ ابهام باِ «رفعِ ابهام» حل می‌شود، نه باِ تکرار.
+        """
+        rec = self._ledger.get(execution_id)
+        if rec is None:
+            raise ExecutionError(ErrorCode.INVALID_EXECUTION_ID,
+                                 f"no such execution {execution_id}")
+        caps = self.adapter.capabilities()
+        if not caps.cancel:
+            raise ExecutionError(ErrorCode.UNSUPPORTED,
+                                 "لغو درِ capabilities این اتصال اعلام نشده "
+                                 "(cancel=false) — هیچ درخواستی ساخته نمی‌شود")
+        if not rec.broker_order_id:
+            raise ExecutionError(ErrorCode.NOT_ORDERABLE,
+                                 "شناسۀِ کارگزاری این اجرا معلوم نیست؛ لغوِ سفارشی "
+                                 "که رفتنش اثبات نشده ممکن نیست")
+        if rec.order_state in TERMINAL_ORDER_STATES:
+            rec.note(f"cancel skipped: order already {rec.order_state.value}")
+            self._audit_state(rec, "cancel",
+                              f"skipped: terminal {rec.order_state.value} ({reason})")
+            return rec
+        try:
+            accepted = bool(self.adapter.cancel_order(rec.broker_order_id))
+        except BrokerError as e:
+            rec.note("cancel ambiguous: no clean answer from the broker — "
+                     "nothing was retried")
+            self._audit_state(rec, "cancel", f"ambiguous: {e.code.value}")
+            raise ExecutionError(e.code,
+                                 "از لغو پاسخِ روشنی نرسید — نتیجه نامعلوم؛ "
+                                 "«رفعِ ابهام» با «تلاشِ دوباره» یکی نیست") from None
+        if not accepted:
+            rec.note("cancel refused by broker")
+            self._audit_state(rec, "cancel", f"refused by broker ({reason})")
+            raise ExecutionError(ErrorCode.BROKER_REJECTED,
+                                 "کارگزاری لغو را رد کرد (سفارش لغوپذیر نیست)")
+        proof = None
+        if caps.order_state:
+            try:
+                proof = self.adapter.get_order(rec.broker_order_id)
+            except BrokerError:
+                proof = None
+        if proof is not None and proof.order_state is OrderState.CANCELLED:
+            _carry_state(rec, proof, "cancelled — confirmed by broker read-back")
+            self._audit_state(rec, "cancel", f"confirmed ({reason})")
+        else:
+            rec.note("cancel accepted but read-back does not confirm it yet")
+            self._audit_state(rec, "cancel",
+                              "accepted, unconfirmed (%s) — %s" % (
+                                  reason,
+                                  "read-back unavailable" if proof is None
+                                  else "read-back says " + proof.order_state.value))
+        return rec
+
     # ---- ۵) تکرار با گارد (بندِ ۱۵) ---------------------------------------
     def plan_repeat(self, draft: OrderDraft, count: int, delay_ms: int, *,
                     confirmed: bool = False) -> list[int]:

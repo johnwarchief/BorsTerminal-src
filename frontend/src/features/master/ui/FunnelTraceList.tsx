@@ -38,7 +38,7 @@ export function FunnelTraceList({ steps, rulesetVersion, asOf }: {
 }) {
   if (steps.length === 0) {
     return (
-      <p className="text-[10px] text-text-muted" data-testid="funnel-trace-empty">
+      <p className="text-3xs text-text-muted" data-testid="funnel-trace-empty">
         ردپایی برایِ این نماد ثبت نشده
       </p>
     );
@@ -51,16 +51,16 @@ export function FunnelTraceList({ steps, rulesetVersion, asOf }: {
           <span aria-hidden
                 className={`mt-1 h-1.5 w-1.5 shrink-0 rounded-full ${TONE[s.status] ?? 'bg-border-c'}`} />
           <span className="min-w-0 flex-1">
-            <span className="block truncate text-[10px] font-bold text-text-primary"
+            <span className="block truncate text-3xs font-bold text-text-primary"
                   title={stepTitle(s)}>
               {stepTitle(s)}
               {typeof s.input_count === 'number' && typeof s.output_count === 'number' ? (
-                <span className="num ms-1 text-[9px] font-normal text-text-muted">
+                <span className="num ms-1 text-3xs font-normal text-text-muted">
                   {` (ورودی ${toFaDigits(s.input_count)} → خروجی ${toFaDigits(s.output_count)})`}
                 </span>
               ) : null}
             </span>
-            <span className="block truncate text-[9.5px] text-text-secondary"
+            <span className="block truncate text-3xs text-text-secondary"
                   title={`${s.human_reason ?? ''}${s.reason_code ? ` · ${s.reason_code}` : ''}${s.source ? ` · منبع: ${s.source}` : ''}`}>
               {STATUS_LABEL[s.status as keyof typeof STATUS_LABEL] ?? s.status}
               {s.human_reason ? ` — ${s.human_reason}` : ''}
@@ -69,7 +69,7 @@ export function FunnelTraceList({ steps, rulesetVersion, asOf }: {
         </li>
       ))}
       {/* explainability (#12): هر داوری باید نسخهٔ قاعده و زمانش را نشان دهد */}
-      <li className="num text-[8.5px] text-text-muted" data-testid="funnel-trace-meta">
+      <li className="num text-3xs text-text-muted" data-testid="funnel-trace-meta">
         نسخهٔ قواعد: {rulesetVersion ?? '—'}
         {asOf ? ` · داده: ${new Date(asOf * 1000).toLocaleTimeString('fa-IR')}` : ''}
       </li>

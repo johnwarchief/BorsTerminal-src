@@ -6,9 +6,9 @@ import { useQuery } from '@tanstack/react-query';
 import { marketFeedOptions } from '@shared/api/marketFeed';
 import { useMarketStore } from '@shared/stores/marketStore';
 
-export function useMarketFeed() {
+export function useMarketFeed(opts: { enabled?: boolean } = {}) {
   const refetchIntervalMs = useMarketStore((s) => s.refetchIntervalMs);
   const paused = useMarketStore((s) => s.paused);
-  return useQuery(marketFeedOptions(refetchIntervalMs, paused));
+  return useQuery({ ...marketFeedOptions(refetchIntervalMs, paused), enabled: opts.enabled ?? true });
 }
 

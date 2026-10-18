@@ -281,7 +281,7 @@ export default function FundamentalPage() {
   // #205: علتِ رد را همان پرچم‌های موتور می‌گوید، با عدد و آستانۀ خودشان
   const rejectLines = rejectReasons(passes, card.data.indicators ?? null);
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-4" data-testid="fundamental-page">
       <CodalHealthStrip />
       <div className="flex flex-wrap items-center gap-2">
         <h2 className="text-base font-black text-text-primary">{symbol}</h2>

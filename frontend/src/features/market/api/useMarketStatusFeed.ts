@@ -4,7 +4,7 @@
 // بار می‌کند؛ صفحۀ «وضعیت بازار» همان بانک را در نقشِ پخش‌شده می‌خواهد (توزیع
 // درصد، تفکیک مشتری، فازهای نشست، نظارت اصلی) و هر بلوک سنجشِ خودش را دارد.
 // هیچ عددی اینجا ساخته نمی‌شود: هر خانۀ null «بی‌داده» می‌ماند.
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, type QueryFunctionContext } from '@tanstack/react-query';
 import { z } from 'zod';
 import { http } from '@shared/api/http';
 import { sessionPollMs } from '@shared/lib/marketHours';
@@ -49,10 +49,11 @@ export const HistogramSchema = z.object({
 });
 export type HistogramFeed = z.infer<typeof HistogramSchema>;
 
-export function useMstatHistogram(group = 'all') {
-  return useQuery({
+/** کلید + آدرس + قراردادِ هیستوگرام، یک‌جا (همان دلیلی که برایِ کارت‌های شاخص). */
+export function histogramQueryOptions(group = 'all') {
+  return {
     queryKey: ['mstat-histogram', group],
-    queryFn: ({ signal }) =>
+    queryFn: ({ signal }: QueryFunctionContext) =>
       http<HistogramFeed>(`/api/mstat/histogram?group=${encodeURIComponent(group)}`, {
         schema: HistogramSchema,
         signal,
@@ -61,7 +62,11 @@ export function useMstatHistogram(group = 'all') {
     gcTime: 10 * 60_000,
     refetchInterval: () => sessionPollMs(SNAPSHOT_POLL_MS),
     refetchOnWindowFocus: false,
-  });
+  };
+}
+
+export function useMstatHistogram(group = 'all') {
+  return useQuery(histogramQueryOptions(group));
 }
 
 const side = z.object({

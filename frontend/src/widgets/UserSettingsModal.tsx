@@ -180,7 +180,7 @@ export function UserSettingsModal({ open, onClose }: UserSettingsModalProps) {
               <button
                 type="button"
                 onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                className="text-[11px] text-text-muted hover:text-text-primary"
+                className="text-3xs text-text-muted hover:text-text-primary"
               >
                 {showCurrentPassword ? 'پنهان' : 'نمایش'}
               </button>
@@ -203,7 +203,7 @@ export function UserSettingsModal({ open, onClose }: UserSettingsModalProps) {
               <button
                 type="button"
                 onClick={() => setShowNewPassword(!showNewPassword)}
-                className="text-[11px] text-text-muted hover:text-text-primary"
+                className="text-3xs text-text-muted hover:text-text-primary"
               >
                 {showNewPassword ? 'پنهان' : 'نمایش'}
               </button>

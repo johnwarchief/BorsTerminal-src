@@ -47,7 +47,7 @@ export function ComparePanel({ activeSymbol }: { activeSymbol: string }) {
   return (
     <div className="glass-panel flex flex-col gap-2 rounded-2xl p-3" data-testid="compare-panel">
       <div className="flex flex-wrap items-center gap-2">
-        <span className="text-[11px] font-bold text-text-secondary">مقایسهٔ نمادها (پایه ۱۰۰)</span>
+        <span className="text-3xs font-bold text-text-secondary">مقایسهٔ نمادها (پایه ۱۰۰)</span>
         <button
           type="button"
           data-testid="compare-toggle"
@@ -85,12 +85,12 @@ export function ComparePanel({ activeSymbol }: { activeSymbol: string }) {
                 type="button"
                 data-testid={`compare-remove-${s}`}
                 onClick={() => setExtra((prev) => prev.filter((x) => x !== s))}
-                className="rounded-full border border-border-c px-2.5 py-0.5 text-[11px] text-text-secondary hover:border-accent-red/50 hover:text-accent-red"
+                className="rounded-full border border-border-c px-2.5 py-0.5 text-3xs text-text-secondary hover:border-accent-red/50 hover:text-accent-red"
               >
                 {s} ✕
               </button>
             ))}
-            {loading ? <span className="text-[10px] text-text-muted">در حال دریافت دادهٔ نمادها...</span> : null}
+            {loading ? <span className="text-3xs text-text-muted">در حال دریافت دادهٔ نمادها...</span> : null}
           </>
         ) : null}
       </div>
@@ -105,13 +105,13 @@ export function ComparePanel({ activeSymbol }: { activeSymbol: string }) {
               ))}
             </svg>
           ) : (
-            <div className="rounded-xl border border-dashed border-border-c p-4 text-center text-[11px] text-text-muted" data-testid="compare-empty">
+            <div className="rounded-xl border border-dashed border-border-c p-4 text-center text-3xs text-text-muted" data-testid="compare-empty">
               دادهٔ مشترک کافی برای مقایسه نیست (زمان‌های مشترک کمتر از دو نقطه است)
             </div>
           )}
           <div className="flex flex-wrap items-center gap-3" data-testid="compare-legend">
             {result.lines.map((l, i) => (
-              <span key={l.symbol} className="num text-[11px] font-bold" style={{ color: geo?.lines[i]?.color }}>
+              <span key={l.symbol} className="num text-3xs font-bold" style={{ color: geo?.lines[i]?.color }}>
                 {l.symbol}:{' '}
                 {l.changePct == null ? 'بدون داده' : `${l.changePct >= 0 ? '+' : ''}${toFaDigits(l.changePct.toFixed(1))}٪`}
               </span>

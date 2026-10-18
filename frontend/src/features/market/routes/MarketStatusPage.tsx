@@ -36,18 +36,21 @@ export default function MarketStatusPage() {
 
       <div className="grid grid-cols-1 gap-2 xl:grid-cols-3">
         <BreadthHistogram
+          fresh={{ status: histo.status, dataUpdatedAt: histo.dataUpdatedAt, error: histo.isError }}
           data={histo.data}
           isLoading={histo.isLoading}
           isError={histo.isError}
           onRetry={() => void histo.refetch()}
         />
         <ClientSplitPanel
+          fresh={{ status: split.status, dataUpdatedAt: split.dataUpdatedAt, error: split.isError }}
           data={split.data}
           isLoading={split.isLoading}
           isError={split.isError}
           onRetry={() => void split.refetch()}
         />
         <SessionPhasesPanel
+          fresh={{ status: phases.status, dataUpdatedAt: phases.dataUpdatedAt, error: phases.isError }}
           data={phases.data}
           isLoading={phases.isLoading}
           isError={phases.isError}
