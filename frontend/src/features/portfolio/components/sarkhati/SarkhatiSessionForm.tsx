@@ -19,11 +19,17 @@
 //  • نشانیِ خالی را نمی‌فرستد: «چیزی ننوشتی» پیامِ خودِ رابط است، نه خطایِ سرور.
 import { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
+import { toFaDigits } from '@shared/lib/fmt';
 import { messageOf, orderApi, useBrokerConfig, useExecutionStatus } from '../../lib/orderClient';
 import { connectionLadder } from '../../lib/sarkhatiFlow';
 import { Chip, GhostBtn, Note } from './parts';
 
-const VOIDED = ' · تأییدهایِ پیشینِ این صفحه بی‌اعتبار شد';
+/** `confirmations_voided` درِ قرارداد *شمارش* است، نه بُولین (سنجشِ زندۀ
+ *  `/api/execution/session`: `0`). بی‌این، سطرِ بی‌اعتبارشدن هرگز اجرا نمی‌شد. */
+function voidedNote(n: unknown): string {
+  const c = Number(n ?? 0);
+  return Number.isFinite(c) && c > 0 ? ` · ${toFaDigits(c)} تأییدِ پیشین بی‌اعتبار شد` : '';
+}
 
 export function SarkhatiSessionForm() {
   const st = useExecutionStatus();
@@ -32,7 +38,7 @@ export function SarkhatiSessionForm() {
   const [token, setToken] = useState('');
   const [busy, setBusy] = useState<'' | 'set' | 'clear'>('');
   const [note, setNote] = useState('');
-  const [tone, setTone] = useState<'ok' | 'warn' | 'bad'>('warn');
+  const [tone, setTone] = useState<'ok' | 'bad'>('bad');
 
   const blank = token.trim() === '';
   const ladder = connectionLadder({ cfg: cfg.data, st: st.data });
@@ -51,19 +57,19 @@ export function SarkhatiSessionForm() {
       const r = kind === 'set' ? await orderApi.putSession(value) : await orderApi.delSession();
       const ok = String((r as Record<string, unknown>).status ?? '') === 'success';
       const detail = String((r as Record<string, unknown>).detail ?? '');
-      const voided = (r as Record<string, unknown>).confirmations_voided === true;
+      const voided = voidedNote((r as Record<string, unknown>).confirmations_voided);
       setTone(ok ? 'ok' : 'bad');
       setNote((ok ? (detail || (kind === 'set'
         ? 'نشست ثبت شد — تأییدِ واقعی فقط با «بررسی اتصال»'
         : 'نشست پاک شد'))
-        : (messageOf(r) || 'پاسخِ سرویس خوانا نبود')) + (ok && voided ? VOIDED : ''));
+        : (messageOf(r) || 'پاسخِ سرویس خوانا نبود')) + voided);
       fresh();
     } catch (e) {
       setTone('bad');
       // متنِ خطا ازِ `HttpError` است (کدِ وضعیت + آدرس)؛ نشانی درِ هیچ‌کدام نیست.
       setNote(e instanceof Error ? e.message.slice(0, 160) : 'خطای نامعلوم');
-      // پرسش نرسید ⇒ نه «ثبت شد» و نه «پاک شد»؛ وضعیت ازِ خودِ سرویس تازه خوانده
-      // می‌شود تا رابط برایِ خودش نتیجه بسازد.
+      // پرسش نرسید ⇒ نه «ثبت شد» گفته می‌شود نه «پاک شد»؛ وضعیت ازِ خودِ سرویس
+      // تازه خوانده می‌شود تا رابط برایِ خودش نتیجه نسازد.
       qc.invalidateQueries({ queryKey: ['execution-status'] });
     } finally {
       setBusy('');

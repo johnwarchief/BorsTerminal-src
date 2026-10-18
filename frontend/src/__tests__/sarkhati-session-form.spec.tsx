@@ -63,7 +63,8 @@ const CONFIG_RO = {
 
 const OK_SET = { status: 'success', live: false, dry_run: true,
   session: { state: 'unknown', origin: 'easytrader', proven: false },
-  confirmations_voided: true, capabilities: CAPS_RO,
+  // شکلِ قرارداد: شمارشِ بی‌اعتبارشده‌ها، نه بُولین (سنجشِ زندۀ /session: `0`)
+  confirmations_voided: 2, capabilities: CAPS_RO,
   detail: 'token فقط درِ حافظه ماند؛ با restart می‌میرد' };
 
 type Calls = Array<{ url: string; method: string; body: string }>;
@@ -271,7 +272,7 @@ describe('چهار وضعیت ازِ هم جدا می‌مانند', () => {
     expect(gateText('writes')).toBe('خاموش');
     const post = r.calls.find((c) => c.method === 'POST' && c.url.includes('/session'));
     expect(post?.body).toBe(JSON.stringify({ token: SECRET }));
-    await settled('sarkhati-session-note', 'بی‌اعتبار شد');
+    await settled('sarkhati-session-note', '۲ تأییدِ پیشین بی‌اعتبار شد');
   });
 
   it('پسِ «پاک کردنِ نشست» رابط برمی‌گردد به «نشانی وارد نشده»', async () => {
@@ -327,6 +328,17 @@ describe('چهار وضعیت ازِ هم جدا می‌مانند', () => {
     // عمدلاً می‌گوید «تأیید شد» تنها با «بررسی اتصال» می‌آید.
     expect(screen.getByTestId('sarkhati-session-note').textContent ?? '')
       .not.toContain('تأیید شد');
+  });
+
+  it('صفرِ بی‌اعتبارشده سطرِ اضافه نمی‌سازد (کنترلِ منفیِ همان شمارش)', async () => {
+    route({ '/api/execution/session': { ...OK_SET, confirmations_voided: 0 } });
+    renderForm();
+    await settled('sarkhati-gate-config', 'ذخیره');
+    fireEvent.change(screen.getByTestId('sarkhati-token-input'), { target: { value: SECRET } });
+    fireEvent.click(screen.getByTestId('sarkhati-token-save'));
+    await settled('sarkhati-session-note', 'token فقط درِ حافظه ماند');
+    expect(screen.getByTestId('sarkhati-session-note').textContent ?? '')
+      .not.toContain('بی‌اعتبار');
   });
 
   it('نشستِ درِ حافظه باِ restart برنمی‌گردد: بارگذاریِ تازه «نشانی وارد نشده» است', async () => {
