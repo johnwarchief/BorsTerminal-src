@@ -472,6 +472,7 @@ export function tapeFilterUnmeasured(
     // بک‌اند حالا عیناً همان `[is6]` را می‌سنجد). خطِ دوم `[is5]` است، ولی
     // مقدارش درِ `eval` دور ریخته می‌شود و استثنای هم نمی‌دهد، پس نبودش
     // «سنجیده نشد» نیست (۱۳۱ موجودِ InstValue کلید ۶ دارند و کلید ۵ نه).
+    // fall through: همان داوریِ «پول هوشمند» (توضیح بالا)
     case 'f_legal': {
       const flag = (r as unknown as Record<string, unknown>)[filterKey] === true;
       return !flag && num(r.is6) == null;

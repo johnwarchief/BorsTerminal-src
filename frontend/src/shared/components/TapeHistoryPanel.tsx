@@ -21,7 +21,7 @@ const WEEKDAY = ['یکشنبه', 'دوشنبه', 'سه‌شنبه', 'چهارش�
 function dayLabel(dEven: number): string {
   const s = String(dEven);
   const jal = dEvenToJalali(dEven);
-  const jd = jal ? jal.split(/[\/\-]/).pop() : s.slice(6, 8);
+  const jd = jal ? jal.split(/[/-]/).pop() : s.slice(6, 8);
   const dt = new Date(Number(s.slice(0, 4)), Number(s.slice(4, 6)) - 1, Number(s.slice(6, 8)));
   const wd = Number.isNaN(dt.getDay()) ? '' : WEEKDAY[dt.getDay()];
   return `${wd} ${toFaDigits(String(jd ?? '').replace(/^0+/, ''))}`;
