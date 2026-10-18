@@ -6,6 +6,7 @@ v9.5 — اجرای همهٔ تست‌های آفلاین (بدون نیاز ب�
 import os, re, subprocess, sys
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
+_ROOT = os.path.dirname(_HERE)
 # ترجمانِ شمارشِ گاردها (مأموریتِ ۱۴۰۵-۰۷-۲۳، بندِ ۷): «۰ pass / ۰ fail» بودنِ
 # یکِ suite یعنی گزارشگر خروجی‌اش را نفهمیده، نه اینکه صفرِ بررسی سبز شده باشد.
 if _HERE not in sys.path:
@@ -591,6 +592,7 @@ SUITES = [
     # شمارۀِ بخش که بی‌صدا می‌افتد، و ك/ي عربی درِ فایل‌هایِ سرخطی. هر سه
     # سنسور با سمِ --selftest راستی‌آزمایی می‌شوند؛ بیرونِ سرخطی ك/ي عربی
     # فقط شمارشِ اطلاعیه (۳۵۰ سطر، اکثراً املایِ خودِ نمادهایِ تابلو).
+    ('dev/basis_guard.py',        'نگهبانِ خودآزمون: هیچ سوئیتی حق ندارد تنظیمِ price_basisِ محصول را عوض کند'),
     ('dev/persian_glyph_guard.py', 'persian text: no stray CJK, no eaten section digit'),
     # SARKHATI Stage G: خواندنِ وضعیتِ سفارش و جایِ صف. سه معنایِ متفاوتِ
     # «نمی‌دانیم» (بی‌capability / پاسخِ خالی / ردیفِ بی‌مقدار) را از صفر
@@ -654,16 +656,29 @@ bad = []
 uncounted = []
 
 
+import basis_guard  # نگهبانِ تنظیمِ مبنایِ قیمت (dev/basis_guard.py)
+_basis_snapshot = basis_guard.snapshot
+
+
+def _basis_guard(label, before):
+    if basis_guard.check(label, before):
+        return
+    bad.append(label + ' [mutated price_basis]')
+
+
 def run(argv, label):
+    basis_before = _basis_snapshot()
     try:
         r = subprocess.run(argv, capture_output=True, text=True, encoding='utf-8',
                            errors='replace', timeout=600, env=env, shell=False)
     except FileNotFoundError:
         print('  SKIP %-40s (%s not found)' % (label, argv[0]))
+        _basis_guard(label, basis_before)
         return
     except Exception as ex:
         print('  FAIL %-40s (%s)' % (label, str(ex)[:60]))
         bad.append(label)
+        _basis_guard(label, basis_before)
         return
     txt = (r.stdout or '') + (r.stderr or '')
     # شمارش از `dev/guard_counts.summarize` می‌آید، نه از اینجا: پیش‌تر تنها سه
