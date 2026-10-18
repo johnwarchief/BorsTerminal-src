@@ -160,6 +160,40 @@ def _tech_context(max_age_s: float = 60.0) -> tuple[dict, dict]:
     return scan, sigs
 
 
+import funnel_tech_scan as _SCAN_MOD  # noqa: E402  (کلیدِ مقایسه درِ گارد)
+
+SCAN_SCHEMA_VERSION = _SCAN_MOD.SCHEMA_VERSION
+_STALE_QUEUE_CAP = 300
+
+
+def _stale_scan_symbols(tech_chain: list[str], payload: dict) -> list[str]:
+    """ردیف‌هایی که زیرِ قواعد یا ستون‌هایِ امروز ساخته نشده‌اند.
+
+    `_need_scan` فقط «ردیفِ ناکام» را صف می‌کرد، پس نمادی که رأیِ دیروزِ معتبر
+    دارد هرگز بازنشانی نمی‌شد و ستون‌هایِ تازه (شاهدِ فیبر) تا ابد خالی می‌ماندند
+    — سنجشِ زنده رویِ بیلدِ منتشرشده همان را نشان داد: ۹۹۶ ردیف، صفر شاهد.
+    فقط وقتی صف می‌کنیم که درخواستِ جاری فیلترِ تکنیکال داشته باشد، و سقفِ
+    هر درخواست محدود است تا بازِ برنامه سیلِ واکشیِ ۲۴۴۶ نماد نشود.
+    """
+    if not tech_chain:
+        return []
+    import funnel_tech_scan as SCAN
+
+    scan = _TECH_CTX.get("scan") or {}
+    if not scan:
+        return []
+    want: list[str] = []
+    for dec in (payload.get("trace") or {}).get("technical") or []:
+        sym = str(dec.get("symbol") or "")
+        row = scan.get(sym)
+        if not row:
+            continue
+        if (str(row.get("ruleset_version") or "") != REG.RULESET_VERSION
+                or str(row.get("schema_version") or "") != SCAN.SCHEMA_VERSION):
+            want.append(sym)
+    return want[:_STALE_QUEUE_CAP]
+
+
 def _need_scan(payload: dict) -> list[str]:
     """نمادهایی که به این گام رسیده‌اند ولی داوریِ ساخته‌شدۀ تکنیکال ندارند."""
     out = []
@@ -320,7 +354,8 @@ def _run(preset: str, chain: list[str], fund_mode: str,
         return {"status": "error", "message": str(e)}
     # داوریِ ناکام‌نشده: همان نمادها درِ پس‌زمینه ساخته می‌شوند. پاسخِ همین
     # درخواست تغییرِ وضعیت نمی‌دهد (منتظر نمی‌مانیم)، ولی پرسشِ بعدی رأی دارد.
-    todo = _need_scan(payload)
+    todo = list(dict.fromkeys(_need_scan(payload)
+                              + _stale_scan_symbols(tech_chain, payload)))
     if todo:
         import funnel_tech_scan as SCAN
         payload["tech_scan"] = {"pending_symbols": len(todo), **(SCAN.start_refresh(todo))}

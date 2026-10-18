@@ -206,6 +206,29 @@ ck("ک-۱٫۵" not in h2,
    "D۶ نمادی که درِ گامِ تابلو رد شده درِ تحویل هم زنده نمی‌ماند",
    {"tape_removed": r2_, "handover": h2})
 
+# ── ۶) ردیفِ کهنه بازنشانی می‌شود، وگرنه شاهدِ فیبر هرگز نمی‌آید ───────────────
+# درِ بیلدِ منتشرشده سنجیدیم: ۹۹۶ ردیفِ جدولِ تکنیکال صفر شاهدِ فیبر داشتند، چون
+# `_need_scan` فقط ردیفِ ناکام را صف می‌کرد و ردیفِ «رأیِ دیروز زیرِ قواعدِ دیروز»
+# برایِ همیشه reused می‌ماند.
+import api.funnel as AP                                  # noqa: E402
+
+AP._TECH_CTX["scan"] = {
+    "ش-کهنه": {"ruleset_version": "000000000000", "schema_version": None},
+    "ش-امروز": {"ruleset_version": REG.RULESET_VERSION,
+                "schema_version": AP.SCAN_SCHEMA_VERSION},
+}
+_pl = {"trace": {"technical": [{"symbol": "ش-کهنه"}, {"symbol": "ش-امروز"}]}}
+_q = AP._stale_scan_symbols(["t_setup_fib_33_40"], _pl)
+ck(_q == ["ش-کهنه"], "F۱ ردیفِ زیرِ قواعدِ دیروز درِ صفِ بازنشانی می‌نشیند، ردیفِ امروز نه", _q)
+ck(AP._stale_scan_symbols([], _pl) == [],
+   "F۲ بی‌فیلترِ تکنیکال هیچ سیلی صف نمی‌شود (استراتژی‌هایِ تابلو-محاول بی‌واکشیِ تازه)")
+AP._TECH_CTX["scan"] = {f"ن-{i}": {"ruleset_version": "x", "schema_version": None}
+                       for i in range(AP._STALE_QUEUE_CAP + 120)}
+_big = {"trace": {"technical": [{"symbol": f"ن-{i}"} for i in range(AP._STALE_QUEUE_CAP + 120)]}}
+ck(len(AP._stale_scan_symbols(["t_setup_jet"], _big)) == AP._STALE_QUEUE_CAP,
+   "F۳ صفِ هر درخواست سقف دارد", AP._STALE_QUEUE_CAP)
+AP._TECH_CTX["scan"] = {}
+
 # ── ۵) استراتژی‌هایِ قدیمی دست‌نخورده ────────────────────────────────────────
 legacy = stage(rows, REG.TREND_GATE)
 _ls, _lh, _lr = _ev("1", preset="trend")
