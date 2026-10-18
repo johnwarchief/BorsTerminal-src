@@ -546,6 +546,10 @@ SUITES = [
     # سنسور با سمِ --selftest راستی‌آزمایی می‌شوند؛ بیرونِ سرخطی ك/ي عربی
     # فقط شمارشِ اطلاعیه (۳۵۰ سطر، اکثراً املایِ خودِ نمادهایِ تابلو).
     ('dev/persian_glyph_guard.py', 'persian text: no stray CJK, no eaten section digit'),
+    # ابزارِ آزمونِ ریسپانسیو (clip_audit) یکِ جدولِ دستیِ ۱۰ سطری داشت که باِ
+    # routes.tsx هم‌خوان نبود: '#/' را تابلو می‌شمرد (به /master می‌رود) و چهار
+    # صفحه را نمی‌شناخت. این گارد همان رانش را می‌بندد — با سمِ --selftest.
+    ('dev/qa_routes_guard.py', 'QA route table is derived from routes.tsx, never hand-listed'),
     # SARKHATI Stage G: خواندنِ وضعیتِ سفارش و جایِ صف. سه معنایِ متفاوتِ
     # «نمی‌دانیم» (بی‌capability / پاسخِ خالی / ردیفِ بی‌مقدار) را از صفر
     # جدا می‌گذارد، و ثابت می‌کند هیچ refresh یا پایشی سفارشِ تازه
