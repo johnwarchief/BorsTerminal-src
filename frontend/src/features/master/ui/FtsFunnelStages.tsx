@@ -19,6 +19,7 @@ import { useFtsFunnel } from '../api/useFtsFunnel';
 import FtsFunnelStageView from './FtsFunnelStageView';
 import FtsCustomChainBuilder from './FtsCustomChainBuilder';
 import { FUNNEL_STAGES, FtsProcessStepper } from './FtsProcessStepper';
+import { FtsFunnelHeader } from './FtsFunnelHeader';
 import { FtsFunnelStages as FtsFunnelAllStages } from './FtsFunnelAllStages';
 import { stageOrderOf, type FunnelFlow, type FunnelStageKey, type TreePreset } from '../lib/ftsFunnel';
 import { FILTER_LABEL, PRESET_MOTIVE, PRESET_ENTRY } from '../lib/ftsFunnel';
@@ -71,7 +72,7 @@ export function FtsFunnelStages({
   // شمارندۀ تب‌هایِ گام از *همان* پاسخِ سرور خوانده می‌شود که جدول می‌خواند
   // (TanStack Query با یک کلیدِ یکی، یک درخواست). اینجا هنوز هیچ داوری‌ای حساب
   // نمی‌شود — فقط `counts`ِ خودِ موتور به تب‌ها می‌رسد.
-  const { funnel, loading, error, hasData } = useFtsFunnel(activePreset);
+  const { funnel, mode, tape, tech, scan, loading, error, hasData } = useFtsFunnel(activePreset);
   // ترتیبِ گام‌ها را پاسخِ موتور می‌گوید (`flow`). تا پاسخ نرسیده‌ایم از
   // رجیستریِ همان سرور می‌خوانیم که این شخص چه ترتیبی دارد — پس تب‌ها بی‌جهت
   // یک دور «تابلو» را گامِ اول نشان نمی‌دهند و بعد می‌پرند.
@@ -81,6 +82,14 @@ export function FtsFunnelStages({
   const flow: FunnelFlow = hasData ? funnel.flow : presetFlow;
   const firstStage = stageOrderOf(flow)[0];
   const stage = rawStage && VALID_STAGES.includes(rawStage) ? rawStage : snapStage ?? firstStage;
+  // ورودیِ هر گام ازِ خودِ پاسخ (`stages[k].input`) برداشته می‌شود؛ رابط هیچ
+  // زنجیره‌ای ازِ عبوریِ گامِ پیشین نمی‌سازد، وگرنه دو عدد برایِ یک خط داریم.
+  const stageInputs = {
+    tape: funnel.stages.tape?.input,
+    technical: funnel.stages.technical?.input,
+    fundamental: funnel.stages.fundamental?.input,
+    handover: funnel.stages.handover?.input,
+  } as Partial<Record<FunnelStageKey, number>>;
   const stepperState: 'ready' | 'loading' | 'error' =
     error ? 'error' : (!hasData && loading ? 'loading' : 'ready');
   const choose = (p: FunnelPreset) => {
@@ -123,6 +132,15 @@ export function FtsFunnelStages({
 
   return (
     <div className="flex w-full flex-col gap-2" data-testid="fts-funnel-workspace">
+      {/* سربرگ: کدام استراتژی، چه می‌کند، الان در چه وضعیتی است، عدد از کِی است،
+          و نتایج کجاست — پیش ازِ هر چیزِ دیگر و بی‌اسکرول. */}
+      <FtsFunnelHeader preset={activePreset} mode={mode} stage={stage} flow={flow}
+                       counts={funnel.counts} universe={funnel.total} asOf={funnel.asOf}
+                       tape={tape} computing={loading && !hasData}
+                       stageInput={funnel.stages[stage]?.input}
+                       scan={{ running: scan.running, done: scan.done, queued: scan.queued }}
+                       techResolved={tech.resolved} techWanted={tech.wanted} />
+
       <div
         className="flex flex-wrap items-center gap-1"
         role="group"
@@ -183,7 +201,8 @@ export function FtsFunnelStages({
       ) : null}
 
       <FtsProcessStepper active={stage} preset={activePreset} symbol={symbol}
-                         counts={funnel.counts} flow={flow} state={stepperState} />
+                         counts={funnel.counts} flow={flow} state={stepperState}
+                         inputs={stageInputs} universe={funnel.total} />
 
       {/* Custom همان‌جا ویرایش می‌شود (§۲۹): نه صفحۀ تازه، نه drawerِ سنگین. */}
       {activePreset === 'custom' ? <FtsCustomChainBuilder /> : null}
