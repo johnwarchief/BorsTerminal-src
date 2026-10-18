@@ -27,6 +27,8 @@ function candidate(status: Record<FunnelStageKey, StageStatus>, symbol = 'خود
   return {
     symbol, name: 'سایپا', sector: 'خودرو', status, why,
     score: 4, trendW: 'up', trendD: 'up', setups: 'جت',
+    techChecks: [],
+    techVerdictAt: null,
     dailyStrategy: 'جت / پولبک', technicalPoints: 5,
     inds: [], patterns: [], techSource: 'live', kind: 'stock',
     row: { p_last: 131, percent_change: 0.8 } as Candidate['row'],
@@ -54,7 +56,7 @@ const feed = (over: { vetoed?: boolean; code?: string; text?: string; trigger?: 
       },
       jet: { active: true, resistance: 134, ceiling: 139, ath: false, close: 135, pct_above_res: 0.7 },
       exit_engine: { verdict: 'hold', l1: { hard_stop: 127, ma14: 130 } },
-      hourglass: { active: false, action: 'NORMAL', ma52: 128, weekly_rsi5: 61 },
+      hourglass: { active: false, action: 'NORMAL', ma52: 128, weekly_rsi: 61, rsi_period: 7 },
     },
   }) as unknown as FtsPlanFeed;
 

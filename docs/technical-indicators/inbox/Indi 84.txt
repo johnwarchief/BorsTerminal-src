@@ -1,0 +1,755 @@
+// This Pine Script™ code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// Join our channel for more free tools: https://t.me/IndicatorsforTV
+
+//@version=6
+// ══════════════════════════════════════════════════════════
+// ADAPTIVE ICHIMOKU NEXUS [WillyAlgoTrader]
+// ══════════════════════════════════════════════════════════
+// Author:  Willy | WillyAlgoTrader
+// Version: 2.0.1
+
+indicator(
+    title            = "Adaptive Ichimoku Nexus [WillyAlgoTrader]",
+    shorttitle       = "IchiNexus",
+    overlay          = true,
+    max_labels_count = 500,
+    max_lines_count  = 500,
+    max_boxes_count  = 200,
+    max_bars_back    = 5000)
+
+// ══════════════════════════════════════
+// CONSTANTS
+// ══════════════════════════════════════
+GRP_MAIN   = "⚙️ Main Settings"
+GRP_ADAPT  = "🔄 Adaptive Engine"
+GRP_VISUAL = "🎨 Visual Settings"
+GRP_FILTER = "🔍 Filters"
+GRP_TPSL   = "🎯 Smart TP/SL"
+GRP_KUMO   = "💥 Kumo Breakout"
+GRP_MTF    = "🔄 Multi-Timeframe"
+GRP_DASH   = "📊 Dashboard"
+GRP_ALERT  = "🔔 Alerts"
+GRP_COLORS = "🎨 Colors"
+
+INDICATOR_VERSION = "v2.0.1"
+
+// ══════════════════════════════════════
+// INPUTS
+// ══════════════════════════════════════
+
+// ── Main Settings ───────────────────
+modeInput = input.string("Adaptive", "Calculation Mode", options = ["Classic", "Adaptive"], group = GRP_MAIN, tooltip = "Classic: fixed Ichimoku periods.\nAdaptive: periods scale with market volatility.\nAdaptive reacts faster in volatile markets, slower in quiet ones.")
+conversionBaseInput = input.int(9, "Conversion Period", minval = 3, maxval = 50, group = GRP_MAIN, tooltip = "Tenkan-Sen lookback. In Adaptive mode scales ±40%.\nLower = faster, noisier. Default: 9")
+baseBaseInput = input.int(26, "Base Period", minval = 10, maxval = 100, group = GRP_MAIN, tooltip = "Kijun-Sen lookback. Adaptive scales with volatility.\nDefault: 26")
+spanBBaseInput = input.int(52, "Span B Period", minval = 20, maxval = 200, group = GRP_MAIN, tooltip = "Senkou Span B lookback. Longer = thicker cloud.\nDefault: 52")
+displacementInput = input.int(26, "Displacement", minval = 1, maxval = 100, group = GRP_MAIN, tooltip = "Cloud/Chikou displacement in bars.\nDefault: 26")
+sourceInput = input.source(close, "Source", group = GRP_MAIN, tooltip = "Price source for calculations.\nDefault: close")
+
+// ── Adaptive Engine ─────────────────
+adaptLenInput = input.int(50, "Volatility Lookback", minval = 10, maxval = 200, group = GRP_ADAPT, tooltip = "ATR measurement window for adaptive scaling.\nHigher = smoother adaptation. Default: 50")
+adaptStrengthInput = input.float(0.4, "Adapt Strength", minval = 0.1, maxval = 0.8, step = 0.05, group = GRP_ADAPT, tooltip = "Period stretch range (0.1=±10%, 0.8=±80%).\nDefault: 0.4")
+
+// ── Filters ─────────────────────────
+minScoreInput = input.int(50, "Min Confluence Score", minval = 0, maxval = 100, step = 5, group = GRP_FILTER, tooltip = "Minimum score (0–100) to trigger TK cross signal.\nHigher = fewer, better signals. Default: 50")
+kumoFilterInput = input.bool(true, "Kumo Thickness Filter", group = GRP_FILTER, tooltip = "Suppress signals in very thin Kumo zones.")
+volFilterInput = input.bool(true, "Volume Filter", group = GRP_FILTER, tooltip = "Require above-average volume. Auto-disabled on forex.")
+chikouFilterInput = input.bool(true, "Chikou Confirmation", group = GRP_FILTER, tooltip = "Require Chikou Span trend alignment.")
+
+// ── Smart TP/SL ─────────────────────
+showTPSLInput = input.bool(true, "Show TP/SL Lines", group = GRP_TPSL, tooltip = "Display stop-loss and take-profit levels after signals.")
+slModeInput = input.string("Kumo Edge", "SL Mode", options = ["Kumo Edge", "Kijun", "ATR"], group = GRP_TPSL, tooltip = "Stop-loss calculation method:\n• Kumo Edge: nearest cloud boundary + ATR buffer\n• Kijun: Kijun-Sen level + ATR buffer\n• ATR: fixed ATR multiple from entry")
+slAtrMultInput = input.float(0.5, "SL ATR Buffer", minval = 0.1, maxval = 3.0, step = 0.1, group = GRP_TPSL, tooltip = "ATR multiplier added as buffer beyond SL level.\nDefault: 0.5")
+tp1MultInput = input.float(1.5, "TP1 R:R", minval = 0.5, maxval = 5.0, step = 0.1, group = GRP_TPSL, tooltip = "Take-profit 1 as risk multiple.\n1.5 = 1.5x the SL distance. Default: 1.5")
+tp2MultInput = input.float(2.5, "TP2 R:R", minval = 1.0, maxval = 8.0, step = 0.1, group = GRP_TPSL, tooltip = "Take-profit 2 as risk multiple.\nDefault: 2.5")
+tp3MultInput = input.float(4.0, "TP3 R:R", minval = 1.5, maxval = 12.0, step = 0.1, group = GRP_TPSL, tooltip = "Take-profit 3 as risk multiple.\nDefault: 4.0")
+
+// ── Kumo Breakout ───────────────────
+showBreakoutInput = input.bool(true, "Show Kumo Breakouts", group = GRP_KUMO, tooltip = "Show signals when price breaks through the cloud.")
+breakVolMultInput = input.float(1.3, "Breakout Vol Mult", minval = 1.0, maxval = 3.0, step = 0.1, group = GRP_KUMO, tooltip = "Volume must exceed SMA * this multiplier for breakout.\nDefault: 1.3")
+breakRetestInput = input.bool(true, "Show Retest Signals", group = GRP_KUMO, tooltip = "Show when price retests Kumo edge after breakout.")
+
+// ── Multi-Timeframe ─────────────────
+showMTFInput = input.bool(true, "Show MTF Panel", group = GRP_MTF, tooltip = "Display multi-timeframe Ichimoku alignment panel.")
+mtfTF1Input = input.timeframe("15", "TF 1", group = GRP_MTF, tooltip = "First timeframe for MTF analysis.")
+mtfTF2Input = input.timeframe("60", "TF 2", group = GRP_MTF, tooltip = "Second timeframe for MTF analysis.")
+mtfTF3Input = input.timeframe("240", "TF 3", group = GRP_MTF, tooltip = "Third timeframe for MTF analysis.")
+
+// ── Visual Settings ─────────────────
+themeInput = input.string("Auto", "Theme", options = ["Auto", "Dark", "Light"], group = GRP_VISUAL, tooltip = "Chart color theme. Auto detects from background.")
+showCloudInput = input.bool(true, "Show Cloud", group = GRP_VISUAL, tooltip = "Display the Kumo cloud fill.")
+showTKInput = input.bool(true, "Show TK Lines", group = GRP_VISUAL, tooltip = "Display Tenkan-Sen and Kijun-Sen.")
+showChikouInput = input.bool(true, "Show Chikou Span", group = GRP_VISUAL, tooltip = "Display the Chikou (lagging) span.")
+showSignalsInput = input.bool(true, "Show TK Signal Labels", group = GRP_VISUAL, tooltip = "Display Long/Short labels on TK cross signals.")
+showScoreInput = input.bool(true, "Show Score on Signals", group = GRP_VISUAL, tooltip = "Include confluence score % in signal labels.")
+showBreakLabelsInput = input.bool(true, "Show Breakout Labels", group = GRP_VISUAL, tooltip = "Display labels on Kumo breakout signals.")
+showTPSLLabelsInput = input.bool(true, "Show TP/SL Labels", group = GRP_VISUAL, tooltip = "Display price labels next to TP/SL lines.")
+showZonesInput = input.bool(true, "Show S/R Zones", group = GRP_VISUAL, tooltip = "Highlight flat Kijun-Sen as S/R.")
+showBgInput = input.bool(false, "Show Trend Background", group = GRP_VISUAL, tooltip = "Tint background by trend direction.")
+signalSizeInput = input.string("Small", "Signal Label Size", options = ["Tiny", "Small", "Normal", "Large"], group = GRP_VISUAL, tooltip = "Size of Long/Short signal labels on chart.\nDefault: Small")
+showWatermarkInput = input.bool(true, "Show Watermark", group = GRP_VISUAL, tooltip = "Display 'WillyAlgoTrader - by Willy' watermark.")
+
+// ── Dashboard ───────────────────────
+showDashInput = input.bool(true, "Show Dashboard", group = GRP_DASH, tooltip = "Display info dashboard.")
+dashPosStr = input.string("Top Right", "Position", options = ["Top Left", "Top Right", "Bottom Left", "Bottom Right"], group = GRP_DASH, tooltip = "Dashboard position on chart.")
+dashFontInput = input.string("Small", "Font Size", options = ["Tiny", "Small", "Normal"], group = GRP_DASH, tooltip = "Dashboard text size.\nDefault: Small")
+
+// ── Alerts ──────────────────────────
+webhookInput = input.bool(false, "Webhook JSON Format", group = GRP_ALERT, tooltip = "Send alerts in JSON for webhook integrations.")
+
+// ── Colors ──────────────────────────
+bullColorInput = input.color(#00E676, "Bull", inline = "sig", group = GRP_COLORS, tooltip = "Bullish signals and TP lines color.")
+bearColorInput = input.color(#FF5252, "Bear", inline = "sig", group = GRP_COLORS, tooltip = "Bearish signals and SL line color.")
+tenkanColorInput = input.color(#2962FF, "Tenkan", inline = "lines", group = GRP_COLORS, tooltip = "Tenkan-Sen (conversion) line color.")
+kijunColorInput = input.color(#E91E63, "Kijun", inline = "lines", group = GRP_COLORS, tooltip = "Kijun-Sen (base) line color.")
+chikouColorInput = input.color(#FF9800, "Chikou", inline = "extra", group = GRP_COLORS, tooltip = "Chikou (lagging) span color.")
+breakoutColorInput = input.color(#00BCD4, "Breakout", inline = "extra", group = GRP_COLORS, tooltip = "Kumo breakout signal color.")
+
+// ══════════════════════════════════════
+// THEME DETECTION & COLORS
+// ══════════════════════════════════════
+isDark = switch themeInput
+    "Dark"  => true
+    "Light" => false
+    => color.r(chart.bg_color) < 128
+
+TEXT_COLOR    = isDark ? #E0E0E0 : #1A1A1A
+TEXT_MUTED    = isDark ? color.new(#9E9E9E, 0) : color.new(#757575, 0)
+TABLE_BG     = isDark ? color.new(#131722, 5) : color.new(#FFFFFF, 5)
+TABLE_BORDER = isDark ? color.new(#2A2E39, 0) : color.new(#D0D0D0, 0)
+TABLE_ROW_ALT = isDark ? color.new(#1C2030, 0) : color.new(#F0F4F8, 0)
+HEADER_BG    = color.new(#2962FF, 0)
+HEADER_TEXT  = #FFFFFF
+LABEL_TEXT   = #FFFFFF
+WM_COLOR     = isDark ? color.new(#FFFFFF, 80) : color.new(#000000, 80)
+NEUTRAL_COLOR = isDark ? color.new(#FFAB00, 0) : color.new(#E65100, 0)
+
+CLOUD_BULL = color.new(bullColorInput, 88)
+CLOUD_BEAR = color.new(bearColorInput, 88)
+
+// Size resolution
+signalSize = switch signalSizeInput
+    "Tiny"   => size.tiny
+    "Small"  => size.small
+    "Normal" => size.normal
+    "Large"  => size.large
+    => size.small
+
+dashFontSize = switch dashFontInput
+    "Tiny"   => size.tiny
+    "Small"  => size.small
+    "Normal" => size.normal
+    => size.small
+
+// ══════════════════════════════════════
+// FUNCTIONS
+// ══════════════════════════════════════
+
+safeDiv(float num, float den, float fallback = 0.0) =>
+    den != 0 and not na(num) and not na(den) ? num / den : fallback
+
+adaptiveDonchian(int basePeriod, float volRatio, float strength) =>
+    int minP = math.max(math.round(basePeriod * (1.0 - strength)), 3)
+    int maxP = math.round(basePeriod * (1.0 + strength))
+    int adaptedLen = math.round(basePeriod * (1.0 + strength * (1.0 - 2.0 * volRatio)))
+    int safePeriod = math.max(math.min(adaptedLen, maxP), minP)
+    float hi = ta.highest(high, safePeriod)
+    float lo = ta.lowest(low, safePeriod)
+    math.avg(nz(hi, high), nz(lo, low))
+
+classicDonchian(int len) =>
+    float hi = ta.highest(high, len)
+    float lo = ta.lowest(low, len)
+    math.avg(nz(hi, high), nz(lo, low))
+
+// MTF: helper expression for request.security (computed at global scope)
+// Tuple approach not supported inside user functions in Pine v6.
+// Instead, we compute a composite state inline per TF at call site.
+
+// ══════════════════════════════════════
+// CALCULATIONS
+// ══════════════════════════════════════
+
+int WARMUP_BARS = math.max(spanBBaseInput + displacementInput, 80)
+bool isWarmedUp = bar_index >= WARMUP_BARS
+
+// ── Volatility engine ───────────────
+float atrBase = nz(ta.atr(14), 0.0)
+float atrHigh = nz(ta.highest(atrBase, adaptLenInput), atrBase)
+float atrLow = nz(ta.lowest(atrBase, adaptLenInput), 0.0)
+float volRange = atrHigh - atrLow
+float volRatio = volRange > 0 ? math.min(math.max(safeDiv(atrBase - atrLow, volRange, 0.5), 0.0), 1.0) : 0.5
+
+// ── Core Ichimoku lines ─────────────
+bool isAdaptive = modeInput == "Adaptive"
+float tenkanSen = isAdaptive ? adaptiveDonchian(conversionBaseInput, volRatio, adaptStrengthInput) : classicDonchian(conversionBaseInput)
+float kijunSen = isAdaptive ? adaptiveDonchian(baseBaseInput, volRatio, adaptStrengthInput) : classicDonchian(baseBaseInput)
+float senkouA = math.avg(tenkanSen, kijunSen)
+float senkouB = isAdaptive ? adaptiveDonchian(spanBBaseInput, volRatio, adaptStrengthInput) : classicDonchian(spanBBaseInput)
+float chikouSpan = sourceInput
+
+tenkanSen := nz(tenkanSen, close)
+kijunSen := nz(kijunSen, close)
+senkouA := nz(senkouA, close)
+senkouB := nz(senkouB, close)
+
+// ── Kumo at current bar (displaced) ──
+int dOff = displacementInput - 1
+float kumoSpanACurr = nz(senkouA[dOff], senkouA)
+float kumoSpanBCurr = nz(senkouB[dOff], senkouB)
+float kumoTop = math.max(kumoSpanACurr, kumoSpanBCurr)
+float kumoBot = math.min(kumoSpanACurr, kumoSpanBCurr)
+float kumoThickness = kumoTop - kumoBot
+float kumoThickAvg = nz(ta.sma(kumoThickness, 50), kumoThickness)
+bool isThinKumo = kumoThickness < kumoThickAvg * 0.3
+
+// Price vs Cloud
+bool priceAboveCloud = close > kumoTop
+bool priceBelowCloud = close < kumoBot
+bool priceInCloud = not priceAboveCloud and not priceBelowCloud
+
+// TK relationship
+bool tkBullish = tenkanSen > kijunSen
+bool tkBearish = tenkanSen < kijunSen
+bool tkCrossUp = ta.crossover(tenkanSen, kijunSen)
+bool tkCrossDown = ta.crossunder(tenkanSen, kijunSen)
+
+// Chikou confirmation
+float priceAtChikou = nz(sourceInput[displacementInput], close)
+bool chikouBull = chikouSpan > priceAtChikou
+bool chikouBear = chikouSpan < priceAtChikou
+
+// Kijun flatness (S/R)
+bool kijunFlat = kijunSen == nz(kijunSen[1], kijunSen) and kijunSen == nz(kijunSen[2], kijunSen) and kijunSen == nz(kijunSen[3], kijunSen)
+bool kijunFlatPrev = kijunFlat[1] == true
+bool kijunWasFlat = kijunFlatPrev and not kijunFlat
+
+// Volume
+bool hasVolume = nz(volume, 0) > 0
+float volSma = hasVolume ? nz(ta.sma(volume, 20), 0.0) : 0.0
+bool volConfirm = hasVolume ? volume > volSma * 1.2 : true
+bool volStrong = hasVolume ? volume > volSma * breakVolMultInput : true
+
+// ══════════════════════════════════════
+// MOMENTUM PULSE ENGINE
+// ══════════════════════════════════════
+// Measures trend acceleration via TK spread rate-of-change + cloud slope
+
+float tkSpread = tenkanSen - kijunSen
+float tkSpreadNorm = atrBase > 0 ? tkSpread / atrBase : 0.0
+float tkSpreadPrev = nz(tkSpreadNorm[3], tkSpreadNorm)
+float tkAcceleration = tkSpreadNorm - tkSpreadPrev
+
+// Cloud slope (future cloud direction)
+float cloudSlope = (senkouA - nz(senkouA[5], senkouA)) - (senkouB - nz(senkouB[5], senkouB))
+float cloudSlopeNorm = atrBase > 0 ? cloudSlope / atrBase : 0.0
+
+// Combined momentum pulse: -100 to +100
+float rawMomentum = (tkSpreadNorm * 40.0) + (tkAcceleration * 100.0) + (cloudSlopeNorm * 30.0)
+float momentumPulse = math.max(math.min(rawMomentum, 100.0), -100.0)
+float momentumSmooth = nz(ta.ema(momentumPulse, 5), 0.0)
+
+// Momentum state
+bool momentumRising = momentumSmooth > nz(momentumSmooth[1], 0.0) and momentumSmooth > 0
+bool momentumFading = momentumSmooth < nz(momentumSmooth[1], 0.0) and momentumSmooth > 0
+bool momentumBearAccel = momentumSmooth < nz(momentumSmooth[1], 0.0) and momentumSmooth < 0
+bool momentumBearFading = momentumSmooth > nz(momentumSmooth[1], 0.0) and momentumSmooth < 0
+
+// ══════════════════════════════════════
+// CONFLUENCE SCORING ENGINE (0–100)
+// ══════════════════════════════════════
+// 8 factors for v2.0
+
+confluenceScore(bool isBull) =>
+    float score = 0.0
+    // Factor 1: Price vs Cloud (20 pts)
+    score += isBull ? (priceAboveCloud ? 20.0 : priceInCloud ? 8.0 : 0.0) : (priceBelowCloud ? 20.0 : priceInCloud ? 8.0 : 0.0)
+    // Factor 2: TK alignment (15 pts)
+    score += isBull ? (tkBullish ? 15.0 : 0.0) : (tkBearish ? 15.0 : 0.0)
+    // Factor 3: Chikou (15 pts)
+    score += isBull ? (chikouBull ? 15.0 : 0.0) : (chikouBear ? 15.0 : 0.0)
+    // Factor 4: Cloud direction (10 pts)
+    float spanAslope = senkouA - nz(senkouA[3], senkouA)
+    float spanBslope = senkouB - nz(senkouB[3], senkouB)
+    bool futureCloudBull = spanAslope > spanBslope
+    score += isBull ? (futureCloudBull ? 10.0 : 0.0) : (not futureCloudBull ? 10.0 : 0.0)
+    // Factor 5: Kumo thickness (8 pts)
+    score += not isThinKumo ? 8.0 : 2.0
+    // Factor 6: Volume (10 pts)
+    score += volConfirm ? 10.0 : 0.0
+    // Factor 7: Momentum alignment (12 pts) — NEW
+    score += isBull ? (momentumSmooth > 20 ? 12.0 : momentumSmooth > 0 ? 6.0 : 0.0) : (momentumSmooth < -20 ? 12.0 : momentumSmooth < 0 ? 6.0 : 0.0)
+    // Factor 8: Momentum acceleration (10 pts) — NEW
+    score += isBull ? (momentumRising ? 10.0 : 0.0) : (momentumBearAccel ? 10.0 : 0.0)
+    math.min(score, 100.0)
+
+// ══════════════════════════════════════
+// TK CROSS SIGNAL LOGIC
+// ══════════════════════════════════════
+
+float bullScore = confluenceScore(true)
+float bearScore = confluenceScore(false)
+
+bool passKumo = kumoFilterInput ? not isThinKumo : true
+bool passVol = volFilterInput ? volConfirm : true
+bool passChikou = chikouFilterInput ? chikouBull : true
+bool passChikouSell = chikouFilterInput ? chikouBear : true
+bool passScoreBuy = bullScore >= minScoreInput
+bool passScoreSell = bearScore >= minScoreInput
+
+bool buyCondition = tkCrossUp and passKumo and passVol and passChikou and passScoreBuy
+bool sellCondition = tkCrossDown and passKumo and passVol and passChikouSell and passScoreSell
+
+bool confirmedBuy = buyCondition and barstate.isconfirmed and isWarmedUp
+bool confirmedSell = sellCondition and barstate.isconfirmed and isWarmedUp
+
+string buyGrade = bullScore >= 80 ? "Strong" : bullScore >= 50 ? "Standard" : "Weak"
+string sellGrade = bearScore >= 80 ? "Strong" : bearScore >= 50 ? "Standard" : "Weak"
+
+// ══════════════════════════════════════
+// KUMO BREAKOUT ENGINE
+// ══════════════════════════════════════
+
+// Previous bar cloud position (for transition detection)
+float prevKumoTop = nz(kumoTop[1], kumoTop)
+float prevKumoBot = nz(kumoBot[1], kumoBot)
+bool wasBelowOrIn = nz(close[1], close) <= prevKumoTop
+bool wasAboveOrIn = nz(close[1], close) >= prevKumoBot
+
+bool kumoBreakUp = close > kumoTop and wasBelowOrIn and barstate.isconfirmed and isWarmedUp and volStrong
+bool kumoBreakDown = close < kumoBot and wasAboveOrIn and barstate.isconfirmed and isWarmedUp and volStrong
+
+// Retest detection: price returns to cloud edge within 10 bars of breakout
+var int lastBreakUpBar = 0
+var int lastBreakDownBar = 0
+
+if kumoBreakUp
+    lastBreakUpBar := bar_index
+if kumoBreakDown
+    lastBreakDownBar := bar_index
+
+bool retestBull = breakRetestInput and (bar_index - lastBreakUpBar > 1) and (bar_index - lastBreakUpBar <= 10) and low <= kumoTop and close > kumoTop and barstate.isconfirmed and isWarmedUp
+bool retestBear = breakRetestInput and (bar_index - lastBreakDownBar > 1) and (bar_index - lastBreakDownBar <= 10) and high >= kumoBot and close < kumoBot and barstate.isconfirmed and isWarmedUp
+
+// ══════════════════════════════════════
+// SMART TP/SL ENGINE
+// ══════════════════════════════════════
+
+var float activeSL = na
+var float activeTP1 = na
+var float activeTP2 = na
+var float activeTP3 = na
+var float activeEntryPrice = na
+var int activeDir = 0
+var bool tp1Hit = false
+var bool tp2Hit = false
+var bool tp3Hit = false
+var bool slHit = false
+
+// Calculate SL level based on mode
+calcSL(bool isLong, float entry) =>
+    float slLevel = 0.0
+    float atrBuf = atrBase * slAtrMultInput
+    if slModeInput == "Kumo Edge"
+        slLevel := isLong ? kumoBot - atrBuf : kumoTop + atrBuf
+    else if slModeInput == "Kijun"
+        slLevel := isLong ? kijunSen - atrBuf : kijunSen + atrBuf
+    else
+        slLevel := isLong ? entry - atrBase * 2.0 : entry + atrBase * 2.0
+    slLevel
+
+// Check for new trade entry on any confirmed signal
+bool anyBuy = confirmedBuy or (showBreakoutInput and kumoBreakUp) or (showBreakoutInput and retestBull)
+bool anySell = confirmedSell or (showBreakoutInput and kumoBreakDown) or (showBreakoutInput and retestBear)
+
+if anyBuy and showTPSLInput
+    activeEntryPrice := close
+    activeSL := calcSL(true, close)
+    float riskDist = math.max(math.abs(close - activeSL), atrBase * 0.5)
+    activeTP1 := close + riskDist * tp1MultInput
+    activeTP2 := close + riskDist * tp2MultInput
+    activeTP3 := close + riskDist * tp3MultInput
+    activeDir := 1
+    tp1Hit := false
+    tp2Hit := false
+    tp3Hit := false
+    slHit := false
+
+if anySell and showTPSLInput
+    activeEntryPrice := close
+    activeSL := calcSL(false, close)
+    float riskDist = math.max(math.abs(activeSL - close), atrBase * 0.5)
+    activeTP1 := close - riskDist * tp1MultInput
+    activeTP2 := close - riskDist * tp2MultInput
+    activeTP3 := close - riskDist * tp3MultInput
+    activeDir := -1
+    tp1Hit := false
+    tp2Hit := false
+    tp3Hit := false
+    slHit := false
+
+// Track TP/SL hits (with na guards for safety)
+// Trade stays open until TP3 or SL is reached
+if activeDir == 1 and not slHit and not na(activeSL)
+    if not na(activeTP1) and high >= activeTP1 and not tp1Hit
+        tp1Hit := true
+    if not na(activeTP2) and high >= activeTP2 and not tp2Hit
+        tp2Hit := true
+    if not na(activeTP3) and high >= activeTP3 and not tp3Hit
+        tp3Hit := true
+        activeDir := 0
+    if low <= activeSL
+        slHit := true
+        activeDir := 0
+
+if activeDir == -1 and not slHit and not na(activeSL)
+    if not na(activeTP1) and low <= activeTP1 and not tp1Hit
+        tp1Hit := true
+    if not na(activeTP2) and low <= activeTP2 and not tp2Hit
+        tp2Hit := true
+    if not na(activeTP3) and low <= activeTP3 and not tp3Hit
+        tp3Hit := true
+        activeDir := 0
+    if high >= activeSL
+        slHit := true
+        activeDir := 0
+
+// ══════════════════════════════════════
+// MTF CONFLUENCE
+// ══════════════════════════════════════
+// Each TF: single request.security returning pre-computed state int
+// Formula: tenkan > kijun AND close > max(spanA, spanB) → +1 (bull)
+//          tenkan < kijun AND close < min(spanA, spanB) → -1 (bear)
+//          else → 0 (neutral)
+
+mtfCalcState() =>
+    float t = classicDonchian(conversionBaseInput)
+    float k = classicDonchian(baseBaseInput)
+    float sa = math.avg(t, k)
+    float sb = classicDonchian(spanBBaseInput)
+    float c = close
+    float hi = math.max(sa, sb)
+    float lo = math.min(sa, sb)
+    int st = c > hi and t > k ? 1 : c < lo and t < k ? -1 : 0
+    st
+
+int mtf1State = nz(request.security(syminfo.tickerid, mtfTF1Input, mtfCalcState()[1], barmerge.gaps_off, barmerge.lookahead_on), 0)
+int mtf2State = nz(request.security(syminfo.tickerid, mtfTF2Input, mtfCalcState()[1], barmerge.gaps_off, barmerge.lookahead_on), 0)
+int mtf3State = nz(request.security(syminfo.tickerid, mtfTF3Input, mtfCalcState()[1], barmerge.gaps_off, barmerge.lookahead_on), 0)
+int mtfSum = mtf1State + mtf2State + mtf3State
+bool mtfAllBull = mtfSum == 3
+bool mtfAllBear = mtfSum == -3
+
+// ══════════════════════════════════════
+// TRACKING & STATE
+// ══════════════════════════════════════
+
+var string lastSignal = "None"
+var int lastSignalBar = 0
+
+if confirmedBuy
+    lastSignal := "Buy"
+    lastSignalBar := bar_index
+if confirmedSell
+    lastSignal := "Sell"
+    lastSignalBar := bar_index
+if kumoBreakUp and showBreakoutInput
+    lastSignal := "Break ▲"
+    lastSignalBar := bar_index
+if kumoBreakDown and showBreakoutInput
+    lastSignal := "Break ▼"
+    lastSignalBar := bar_index
+
+string trendState = priceAboveCloud and tkBullish ? "Bullish" : priceBelowCloud and tkBearish ? "Bearish" : "Neutral"
+color trendColor = trendState == "Bullish" ? bullColorInput : trendState == "Bearish" ? bearColorInput : NEUTRAL_COLOR
+
+// Momentum state label
+string momentumStr = momentumRising ? "Accelerating" : momentumFading ? "Bull Fading" : momentumBearAccel ? "Bear Accel" : momentumBearFading ? "Bear Fading" : momentumSmooth > 0 ? "Bullish" : momentumSmooth < 0 ? "Bearish" : "Neutral"
+color momentumColor = momentumRising ? bullColorInput : momentumFading ? NEUTRAL_COLOR : momentumBearAccel ? bearColorInput : momentumBearFading ? NEUTRAL_COLOR : momentumSmooth > 0 ? bullColorInput : TEXT_MUTED
+
+// ══════════════════════════════════════
+// PLOTS & VISUALS
+// ══════════════════════════════════════
+
+plot(showTKInput ? tenkanSen : na, "Tenkan-Sen", color = tenkanColorInput, linewidth = 1)
+plot(showTKInput ? kijunSen : na, "Kijun-Sen", color = kijunColorInput, linewidth = 1)
+plot(showChikouInput ? chikouSpan : na, "Chikou Span", color = chikouColorInput, offset = -displacementInput + 1, linewidth = 1)
+
+p1 = plot(showCloudInput ? senkouA : na, "Senkou A", color = color.new(bullColorInput, 100), offset = displacementInput - 1, display = display.pane)
+p2 = plot(showCloudInput ? senkouB : na, "Senkou B", color = color.new(bearColorInput, 100), offset = displacementInput - 1, display = display.pane)
+fill(p1, p2, title = "Kumo Cloud", color = senkouA > senkouB ? CLOUD_BULL : CLOUD_BEAR)
+
+bgcolor(showBgInput ? (priceAboveCloud and tkBullish ? color.new(bullColorInput, 93) : priceBelowCloud and tkBearish ? color.new(bearColorInput, 93) : na) : na, title = "Trend Background")
+
+// ══════════════════════════════════════
+// SIGNALS VISUAL
+// ══════════════════════════════════════
+
+// TK Cross signals — combined label (offset from candles by 0.5 ATR)
+float labelOffset = atrBase * 0.5
+
+if confirmedBuy and showSignalsInput
+    string buyLabelText = showScoreInput ? "Long " + str.tostring(math.round(bullScore)) + "%" : "Long"
+    label.new(bar_index, low - labelOffset, buyLabelText, color = bullColorInput, textcolor = LABEL_TEXT, style = label.style_label_up, size = signalSize, tooltip = "TK Buy | Score: " + str.tostring(math.round(bullScore)) + "% | Grade: " + buyGrade + " | Momentum: " + str.tostring(math.round(momentumSmooth)))
+
+if confirmedSell and showSignalsInput
+    string sellLabelText = showScoreInput ? "Short " + str.tostring(math.round(bearScore)) + "%" : "Short"
+    label.new(bar_index, high + labelOffset, sellLabelText, color = bearColorInput, textcolor = LABEL_TEXT, style = label.style_label_down, size = signalSize, tooltip = "TK Sell | Score: " + str.tostring(math.round(bearScore)) + "% | Grade: " + sellGrade + " | Momentum: " + str.tostring(math.round(momentumSmooth)))
+
+// Kumo Breakout signals
+plotshape(showBreakLabelsInput and showBreakoutInput and kumoBreakUp ? low : na, "Kumo Break Up", style = shape.diamond, location = location.belowbar, color = breakoutColorInput, textcolor = LABEL_TEXT, text = "☁▲", size = size.small)
+plotshape(showBreakLabelsInput and showBreakoutInput and kumoBreakDown ? high : na, "Kumo Break Down", style = shape.diamond, location = location.abovebar, color = breakoutColorInput, textcolor = LABEL_TEXT, text = "☁▼", size = size.small)
+
+// Retest signals
+plotshape(showBreakLabelsInput and showBreakoutInput and retestBull ? low : na, "Retest Bull", style = shape.circle, location = location.belowbar, color = color.new(breakoutColorInput, 30), size = size.tiny)
+plotshape(showBreakLabelsInput and showBreakoutInput and retestBear ? high : na, "Retest Bear", style = shape.circle, location = location.abovebar, color = color.new(breakoutColorInput, 30), size = size.tiny)
+
+// ══════════════════════════════════════
+// SMART TP/SL VISUAL
+// ══════════════════════════════════════
+
+// Draw TP/SL lines on active trade (or recently closed)
+var line entryLine = na
+var line slLine = na
+var line tp1Line = na
+var line tp2Line = na
+var line tp3Line = na
+var label entryLabel = na
+var label slLabel = na
+var label tp1Label = na
+var label tp2Label = na
+var label tp3Label = na
+
+// Show lines while trade is active OR just closed this bar (TP3/SL hit)
+bool tradeVisible = activeDir != 0 or tp3Hit or slHit
+
+if showTPSLInput and tradeVisible and barstate.islast
+    // Clean previous drawings
+    if not na(entryLine)
+        line.delete(entryLine)
+    if not na(slLine)
+        line.delete(slLine)
+    if not na(tp1Line)
+        line.delete(tp1Line)
+    if not na(tp2Line)
+        line.delete(tp2Line)
+    if not na(tp3Line)
+        line.delete(tp3Line)
+    if not na(entryLabel)
+        label.delete(entryLabel)
+    if not na(slLabel)
+        label.delete(slLabel)
+    if not na(tp1Label)
+        label.delete(tp1Label)
+    if not na(tp2Label)
+        label.delete(tp2Label)
+    if not na(tp3Label)
+        label.delete(tp3Label)
+
+    int startBar = math.max(lastSignalBar, bar_index - 100)
+
+    // Entry price line — blue, solid
+    entryLine := line.new(startBar, activeEntryPrice, bar_index + 5, activeEntryPrice, color = #2962FF, style = line.style_solid, width = 1)
+    if showTPSLLabelsInput
+        string entryText = "Entry " + str.tostring(activeEntryPrice, format.mintick)
+        entryLabel := label.new(bar_index + 6, activeEntryPrice, entryText, color = #2962FF, textcolor = LABEL_TEXT, style = label.style_label_left, size = size.small)
+
+    // SL line
+    slLine := line.new(startBar, activeSL, bar_index + 5, activeSL, color = bearColorInput, style = line.style_solid, width = 2)
+    if showTPSLLabelsInput
+        string slText = slHit ? "SL ✗ " + str.tostring(activeSL, format.mintick) : "SL " + str.tostring(activeSL, format.mintick)
+        slLabel := label.new(bar_index + 6, activeSL, slText, color = bearColorInput, textcolor = LABEL_TEXT, style = label.style_label_left, size = size.small)
+
+    // TP1 line — always visible, ✓ when hit
+    tp1Line := line.new(startBar, activeTP1, bar_index + 5, activeTP1, color = bullColorInput, style = line.style_solid, width = 2)
+    if showTPSLLabelsInput
+        string tp1Text = tp1Hit ? "TP1 ✓ " + str.tostring(activeTP1, format.mintick) : "TP1 " + str.tostring(activeTP1, format.mintick)
+        tp1Label := label.new(bar_index + 6, activeTP1, tp1Text, color = bullColorInput, textcolor = LABEL_TEXT, style = label.style_label_left, size = size.small)
+
+    // TP2 line — always visible, ✓ when hit
+    tp2Line := line.new(startBar, activeTP2, bar_index + 5, activeTP2, color = bullColorInput, style = line.style_dashed, width = 2)
+    if showTPSLLabelsInput
+        string tp2Text = tp2Hit ? "TP2 ✓ " + str.tostring(activeTP2, format.mintick) : "TP2 " + str.tostring(activeTP2, format.mintick)
+        tp2Label := label.new(bar_index + 6, activeTP2, tp2Text, color = bullColorInput, textcolor = LABEL_TEXT, style = label.style_label_left, size = size.small)
+
+    // TP3 line — always visible, ✓ when hit
+    tp3Line := line.new(startBar, activeTP3, bar_index + 5, activeTP3, color = bullColorInput, style = line.style_dotted, width = 2)
+    if showTPSLLabelsInput
+        string tp3Text = tp3Hit ? "TP3 ✓ " + str.tostring(activeTP3, format.mintick) : "TP3 " + str.tostring(activeTP3, format.mintick)
+        tp3Label := label.new(bar_index + 6, activeTP3, tp3Text, color = bullColorInput, textcolor = LABEL_TEXT, style = label.style_label_left, size = size.small)
+
+// ══════════════════════════════════════
+// KIJUN S/R ZONES
+// ══════════════════════════════════════
+if showZonesInput and kijunWasFlat and isWarmedUp
+    float srLevel = nz(kijunSen[1], kijunSen)
+    float atrBand = atrBase * 0.15
+    box.new(bar_index - 5, srLevel + atrBand, bar_index + 10, srLevel - atrBand, border_color = color.new(kijunColorInput, 60), bgcolor = color.new(kijunColorInput, 90), border_width = 1)
+
+// Cleanup
+if array.size(label.all) > 450
+    label.delete(array.shift(label.all))
+if array.size(box.all) > 180
+    box.delete(array.shift(box.all))
+
+// ══════════════════════════════════════
+// DASHBOARD
+// ══════════════════════════════════════
+dashPos = switch dashPosStr
+    "Top Left"     => position.top_left
+    "Top Right"    => position.top_right
+    "Bottom Left"  => position.bottom_left
+    "Bottom Right" => position.bottom_right
+    => position.top_right
+
+int DASH_ROWS = showMTFInput ? 14 : 10
+var dashTable = table.new(dashPos, 2, DASH_ROWS, TABLE_BG, TABLE_BORDER, 1, TABLE_BORDER, 1)
+
+if showDashInput and barstate.islast
+    int r = 0
+
+    // Header
+    table.cell(dashTable, 0, r, "WillyAlgoTrader — Ichi Nexus", text_color = HEADER_TEXT, bgcolor = HEADER_BG, text_size = dashFontSize, text_halign = text.align_center)
+    table.merge_cells(dashTable, 0, r, 1, r)
+    r += 1
+
+    // Mode
+    table.cell(dashTable, 0, r, "Mode", text_color = TEXT_MUTED, text_size = dashFontSize, bgcolor = TABLE_BG)
+    table.cell(dashTable, 1, r, isAdaptive ? "Adaptive" : "Classic", text_color = TEXT_COLOR, text_size = dashFontSize, bgcolor = TABLE_BG)
+    r += 1
+
+    // Trend
+    table.cell(dashTable, 0, r, "Trend", text_color = TEXT_MUTED, text_size = dashFontSize, bgcolor = TABLE_ROW_ALT)
+    table.cell(dashTable, 1, r, trendState, text_color = trendColor, text_size = dashFontSize, bgcolor = TABLE_ROW_ALT)
+    r += 1
+
+    // Signal
+    int barsSince = bar_index - lastSignalBar
+    bool hasSigHistory = lastSignal != "None" and barsSince > 0
+    string sigStr = confirmedBuy or kumoBreakUp ? "BUY" : confirmedSell or kumoBreakDown ? "SELL" : hasSigHistory ? lastSignal + " (" + str.tostring(barsSince) + ")" : "Wait"
+    color sigColor = confirmedBuy or kumoBreakUp ? bullColorInput : confirmedSell or kumoBreakDown ? bearColorInput : TEXT_COLOR
+    table.cell(dashTable, 0, r, "Signal", text_color = TEXT_MUTED, text_size = dashFontSize, bgcolor = TABLE_BG)
+    table.cell(dashTable, 1, r, sigStr, text_color = sigColor, text_size = dashFontSize, bgcolor = TABLE_BG)
+    r += 1
+
+    // Score
+    float dispScore = confirmedBuy or kumoBreakUp ? bullScore : confirmedSell or kumoBreakDown ? bearScore : math.max(bullScore, bearScore)
+    color scoreCol = dispScore >= 70 ? bullColorInput : dispScore >= 40 ? NEUTRAL_COLOR : TEXT_MUTED
+    table.cell(dashTable, 0, r, "Score", text_color = TEXT_MUTED, text_size = dashFontSize, bgcolor = TABLE_ROW_ALT)
+    table.cell(dashTable, 1, r, str.tostring(math.round(dispScore)) + "%", text_color = scoreCol, text_size = dashFontSize, bgcolor = TABLE_ROW_ALT)
+    r += 1
+
+    // Momentum
+    table.cell(dashTable, 0, r, "Momentum", text_color = TEXT_MUTED, text_size = dashFontSize, bgcolor = TABLE_BG)
+    table.cell(dashTable, 1, r, momentumStr + " (" + str.tostring(math.round(momentumSmooth)) + ")", text_color = momentumColor, text_size = dashFontSize, bgcolor = TABLE_BG)
+    r += 1
+
+    // Cloud
+    string kumoStr = isThinKumo ? "Thin" : priceAboveCloud ? "Above" : priceBelowCloud ? "Below" : "Inside"
+    color kumoCol = priceAboveCloud ? bullColorInput : priceBelowCloud ? bearColorInput : NEUTRAL_COLOR
+    table.cell(dashTable, 0, r, "Cloud", text_color = TEXT_MUTED, text_size = dashFontSize, bgcolor = TABLE_ROW_ALT)
+    table.cell(dashTable, 1, r, kumoStr, text_color = kumoCol, text_size = dashFontSize, bgcolor = TABLE_ROW_ALT)
+    r += 1
+
+    // Active TP/SL status
+    if showTPSLInput and (activeDir != 0 or tp3Hit or slHit)
+        string rrStr = slHit ? "SL ✗ Closed" : tp3Hit ? "TP3 ✓ Closed" : tp2Hit ? "TP1 ✓ TP2 ✓ → TP3" : tp1Hit ? "TP1 ✓ → TP2" : "→ TP1"
+        color rrCol = slHit ? bearColorInput : tp3Hit ? bullColorInput : tp1Hit ? bullColorInput : TEXT_COLOR
+        table.cell(dashTable, 0, r, "Trade", text_color = TEXT_MUTED, text_size = dashFontSize, bgcolor = TABLE_BG)
+        table.cell(dashTable, 1, r, rrStr, text_color = rrCol, text_size = dashFontSize, bgcolor = TABLE_BG)
+        r += 1
+    else
+        table.cell(dashTable, 0, r, "Trade", text_color = TEXT_MUTED, text_size = dashFontSize, bgcolor = TABLE_BG)
+        table.cell(dashTable, 1, r, "No Active", text_color = TEXT_MUTED, text_size = dashFontSize, bgcolor = TABLE_BG)
+        r += 1
+
+    // MTF Panel (if enabled)
+    if showMTFInput
+        table.cell(dashTable, 0, r, "── MTF ──", text_color = TEXT_MUTED, text_size = dashFontSize, bgcolor = TABLE_ROW_ALT)
+        table.cell(dashTable, 1, r, "", text_color = TEXT_MUTED, text_size = dashFontSize, bgcolor = TABLE_ROW_ALT)
+        r += 1
+
+        string s1 = mtf1State == 1 ? "Bull ●" : mtf1State == -1 ? "Bear ●" : "Neutral ○"
+        color c1 = mtf1State == 1 ? bullColorInput : mtf1State == -1 ? bearColorInput : TEXT_MUTED
+        table.cell(dashTable, 0, r, mtfTF1Input, text_color = TEXT_MUTED, text_size = dashFontSize, bgcolor = TABLE_BG)
+        table.cell(dashTable, 1, r, s1, text_color = c1, text_size = dashFontSize, bgcolor = TABLE_BG)
+        r += 1
+
+        string s2 = mtf2State == 1 ? "Bull ●" : mtf2State == -1 ? "Bear ●" : "Neutral ○"
+        color c2 = mtf2State == 1 ? bullColorInput : mtf2State == -1 ? bearColorInput : TEXT_MUTED
+        table.cell(dashTable, 0, r, mtfTF2Input, text_color = TEXT_MUTED, text_size = dashFontSize, bgcolor = TABLE_ROW_ALT)
+        table.cell(dashTable, 1, r, s2, text_color = c2, text_size = dashFontSize, bgcolor = TABLE_ROW_ALT)
+        r += 1
+
+        string s3 = mtf3State == 1 ? "Bull ●" : mtf3State == -1 ? "Bear ●" : "Neutral ○"
+        color c3 = mtf3State == 1 ? bullColorInput : mtf3State == -1 ? bearColorInput : TEXT_MUTED
+        table.cell(dashTable, 0, r, mtfTF3Input, text_color = TEXT_MUTED, text_size = dashFontSize, bgcolor = TABLE_BG)
+        table.cell(dashTable, 1, r, s3, text_color = c3, text_size = dashFontSize, bgcolor = TABLE_BG)
+        r += 1
+
+        string mtfAlignStr = mtfAllBull ? "ALL BULL ✓" : mtfAllBear ? "ALL BEAR ✓" : "Mixed"
+        color mtfAlignCol = mtfAllBull ? bullColorInput : mtfAllBear ? bearColorInput : NEUTRAL_COLOR
+        table.cell(dashTable, 0, r, "Align", text_color = TEXT_MUTED, text_size = dashFontSize, bgcolor = TABLE_ROW_ALT)
+        table.cell(dashTable, 1, r, mtfAlignStr, text_color = mtfAlignCol, text_size = dashFontSize, bgcolor = TABLE_ROW_ALT)
+
+    // Version (always last used row)
+    int vRow = DASH_ROWS - 1
+    table.cell(dashTable, 0, vRow, "Version", text_color = TEXT_MUTED, text_size = dashFontSize, bgcolor = TABLE_ROW_ALT)
+    table.cell(dashTable, 1, vRow, INDICATOR_VERSION, text_color = TEXT_MUTED, text_size = dashFontSize, bgcolor = TABLE_ROW_ALT)
+else if not showDashInput
+    table.clear(dashTable, 0, 0, 1, DASH_ROWS - 1)
+
+// ══════════════════════════════════════
+// WATERMARK — WillyAlgoTrader
+// ══════════════════════════════════════
+var wmTable = table.new(position = position.bottom_center, columns = 1, rows = 1, bgcolor = color.new(color.black, 100), border_color = color.new(color.black, 100), border_width = 0, frame_color = color.new(color.black, 100), frame_width = 0)
+
+if barstate.islast and showWatermarkInput
+    table.cell(wmTable, 0, 0, "WillyAlgoTrader", text_color = WM_COLOR, text_size = size.normal, text_halign = text.align_center, bgcolor = color.new(color.black, 100))
+else if not showWatermarkInput
+    table.clear(wmTable, 0, 0, 0, 0)
+
+// ══════════════════════════════════════
+// ALERTS
+// ══════════════════════════════════════
+string tickerStr = syminfo.tickerid
+string priceStr = str.tostring(close, format.mintick)
+string tfStr = timeframe.period
+string bsStr = str.tostring(math.round(bullScore))
+string ssStr = str.tostring(math.round(bearScore))
+string slStr = str.tostring(nz(activeSL, 0.0), format.mintick)
+string tp1Str = str.tostring(nz(activeTP1, 0.0), format.mintick)
+string tp2Str = str.tostring(nz(activeTP2, 0.0), format.mintick)
+string tp3Str = str.tostring(nz(activeTP3, 0.0), format.mintick)
+
+// TK Cross alerts
+string buyJson = '{"action":"buy","ticker":"' + tickerStr + '","price":' + priceStr + ',"tf":"' + tfStr + '","score":' + bsStr + ',"sl":' + slStr + ',"tp1":' + tp1Str + ',"tp2":' + tp2Str + ',"tp3":' + tp3Str + '}'
+string buyText = "🟢 BUY | " + tickerStr + " | TF: " + tfStr + " | Price: " + priceStr + " | Score: " + bsStr + "% | SL: " + slStr + " | TP1: " + tp1Str + " | TP2: " + tp2Str + " | TP3: " + tp3Str
+string sellJson = '{"action":"sell","ticker":"' + tickerStr + '","price":' + priceStr + ',"tf":"' + tfStr + '","score":' + ssStr + ',"sl":' + slStr + ',"tp1":' + tp1Str + ',"tp2":' + tp2Str + ',"tp3":' + tp3Str + '}'
+string sellText = "🔴 SELL | " + tickerStr + " | TF: " + tfStr + " | Price: " + priceStr + " | Score: " + ssStr + "% | SL: " + slStr + " | TP1: " + tp1Str + " | TP2: " + tp2Str + " | TP3: " + tp3Str
+
+if confirmedBuy
+    alert(webhookInput ? buyJson : buyText, alert.freq_once_per_bar_close)
+if confirmedSell
+    alert(webhookInput ? sellJson : sellText, alert.freq_once_per_bar_close)
+
+// Kumo Breakout alerts
+string breakUpJson = '{"action":"kumo_break_up","ticker":"' + tickerStr + '","price":' + priceStr + ',"tf":"' + tfStr + '"}'
+string breakUpText = "☁️▲ KUMO BREAK UP | " + tickerStr + " | TF: " + tfStr + " | Price: " + priceStr
+string breakDnJson = '{"action":"kumo_break_down","ticker":"' + tickerStr + '","price":' + priceStr + ',"tf":"' + tfStr + '"}'
+string breakDnText = "☁️▼ KUMO BREAK DOWN | " + tickerStr + " | TF: " + tfStr + " | Price: " + priceStr
+
+if kumoBreakUp and showBreakoutInput
+    alert(webhookInput ? breakUpJson : breakUpText, alert.freq_once_per_bar_close)
+if kumoBreakDown and showBreakoutInput
+    alert(webhookInput ? breakDnJson : breakDnText, alert.freq_once_per_bar_close)
+
+// TP/SL hit alerts (edge detection: true now, false previous bar)
+bool tp1JustHit = tp1Hit and (tp1Hit[1] == false) and activeDir != 0
+bool slJustHit = slHit and (slHit[1] == false)
+
+if tp1JustHit
+    alert("🎯 TP1 HIT | " + tickerStr + " | " + tp1Str, alert.freq_once_per_bar_close)
+if slJustHit
+    alert("🛑 SL HIT | " + tickerStr + " | " + slStr, alert.freq_once_per_bar_close)
+
+

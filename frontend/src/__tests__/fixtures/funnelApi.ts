@@ -9,7 +9,7 @@
 //   «شپنا» پاسخِ بنیادی‌اش pending است ⇒ نباید درِ تحویل ظاهر شود.
 import type { ApiPayload } from '@features/master/lib/funnelView';
 
-const row = (
+export const row = (
   symbol: string, name: string, over: Record<string, unknown> = {},
 ) => ({
   symbol, name, sector: 'فلزات اساسي', last: 1000, closing: 990, change_pct: 1.0,
@@ -30,6 +30,10 @@ export const FUNNEL_FIXTURE: ApiPayload = {
   as_of: Math.floor(Date.now() / 1000),
   preset: 'custom',
   chain: ['f_susp', 'f_noqteh'],
+  // ترتیبِ اجرا را موتور می‌گوید؛ نبودِ این دو کلید هم (پاسخِ قدیمی) یعنی
+  // همان ترتیبِ جزوه، پس تستِ below بی‌flu هم باید tape اول بدهد.
+  flow: 'tape_first',
+  technical_chain: [],
   fund_mode: 'standard',
   universe: { board: 5, screened: 3, joined: 5, duplicate_rows: 0,
               market: 5, screening: 4, excluded: 1,
@@ -63,7 +67,7 @@ export const FUNNEL_FIXTURE: ApiPayload = {
         f_legal: { name: 'کد به کد حقوقی به حقیقی', matched: 1, removed: 3, unmeasured: 0, input: 4 },
       },
     },
-    technical: { matched: 2, counts: { pass: 2, reject: 1, pending: 0, unavailable: 0, not_required: 1 } },
+    technical: { input: 4, matched: 2, counts: { pass: 2, reject: 1, pending: 0, unavailable: 0, not_required: 1 } },
     fundamental: { matched: 1, mode: 'standard',
                    counts: { pass: 1, reject: 0, pending: 1, unavailable: 0, not_required: 2 } },
     handover: { matched: 1, counts: { pass: 1, reject: 2, pending: 1, unavailable: 0, not_required: 0 } },
@@ -221,9 +225,30 @@ export const REGISTRY_FIXTURE = {
       formula_version: 'txt-1', backend_impl: 'tape_flags.legal_transfer_flag',
       availability: 'backend', status: 'canonical', params: [] },
   ],
-  presets: [],
+  presets: [
+    { preset_id: 'swing', label: 'نوسان‌گیر', chain: ['f_clock', 'f_jet', 'f_susp'], flow: 'tape_first' },
+    { preset_id: 'trend', label: 'روندگیر', chain: ['f_roobi', 'f_noqteh'], flow: 'tape_first' },
+    { preset_id: 'tech_first', label: 'تکنیکال‌محور', chain: [],
+      technical_gate: 'trend_gate', flow: 'tech_first' },
+  ],
   unimplemented_filters: [],
   gates: {},
+  // سه نمونۀ شرطِ تکنیکال از `TECH_FILTERSِ` رجیستری: یک گیتِ اجباری، یک
+  // شاهدِ ورودی و یک ریسک. نام‌ها عینِ خودِ رجیستری‌اند تا ثابت شود رابط از
+  // سرور می‌خواند، نه از آرایۀِ دستیِ فرانت.
+  technical_filters: [
+    { filter_id: 't_weekly_up', name: 'روندِ هفتگی صعودی', role: 'gate',
+      column: 'tech_trend_w', description: 'وتوی رسمی: نزولی یا خنثی هفتگی ⇒ رد',
+      source: 'docs/چارت-سه.txt:34', origin: 'chart' },
+    { filter_id: 't_setup_jet', name: 'ستاپ جت', role: 'entry',
+      column: 'tech_jet', description: 'عبور از سقفِ ایستا با حجم و قدرتِ خریدار',
+      source: 'docs/چارت-سه.txt:36', origin: 'chart' },
+    { filter_id: 't_risk_third_peak', name: 'شاهدِ سقفِ سوم', role: 'risk',
+      column: 'tech_exit_signals', description: 'نزدیکی به خطِ روند در سومینِ سقف',
+      source: 'docs/چارت-سه.txt:45', origin: 'chart' },
+  ],
+  technical_filter_groups: { gate: ['t_weekly_up'], entry: ['t_setup_jet'],
+                             risk: ['t_risk_third_peak'] },
 };
 
 /** بدنهٔ هر پرسشِ `/api/funnel` که ازِ این mock رد شده — برایِ اثباتِ اینکه

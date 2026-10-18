@@ -18,7 +18,12 @@ vi.stubGlobal('fetch', fetchMock);
 
 const funnelPosts = () => fetchMock.mock.calls
   .map((c) => String(c[0]))
-  .filter((u) => u.includes('/api/funnel') && !u.includes('/trace'));
+  // شمارشِ «محاسبۀ قیف» است، نه هر چیزی که آدرسش با /api/funnel شروع می‌شود:
+  // /trace خطِ زمانِ یک نماد است و /registry فهرستِ ثابتِ فیلترها (کشیده، tiny،
+  // و از ۱۴۰۵-۰۷-۲۷ توسط چند مصرف‌کننده خوانده می‌شود). هیچ‌کدام «دورِ دومِ
+  // داوری» نیستند، پس نباید این گارد را قرمز کنند.
+  .filter((u) => u.includes('/api/funnel') && !u.includes('/trace')
+                 && !u.includes('/registry'));
 
 function Consumer({ preset }: { preset: TreePreset }) {
   useFtsFunnel(preset);

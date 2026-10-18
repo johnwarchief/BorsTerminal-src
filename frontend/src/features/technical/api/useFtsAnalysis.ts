@@ -183,8 +183,6 @@ const HourglassStrategy = z.object({
   rsi_oversold: z.number().nullish(),
   ma52_position_mode: z.enum(["below", "above", "either"]).nullish(),
   ma52_position_match: z.boolean().nullable().nullish(),
-  /** نام legacy؛ backend همین مقدار را برای سازگاری هم برمی‌گرداند. */
-  weekly_rsi5: z.number().nullable().nullish(),
   action: z.string().nullish(),
   desc: z.string().nullish(),
 });

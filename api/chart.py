@@ -2949,8 +2949,6 @@ def _fts_analyze_candles(symbol, candles, entry_hint=None):
         "ma52": round(last_ma52, 2) if last_ma52 is not None else None,
         "weekly_bars": len(closes_w),
         "weekly_rsi": round(last_rsi, 1) if last_rsi is not None else None,
-        # Alias سازگاری برای UI قدیمی؛ مقدار با دوره فعال محاسبه می‌شود.
-        "weekly_rsi5": round(last_rsi, 1) if last_rsi is not None else None,
         "rsi_period": rsi_period,
         "rsi_oversold": rsi_oversold,
         "ma52_position_mode": ma52_position_mode,

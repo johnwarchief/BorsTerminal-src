@@ -1,6 +1,9 @@
 // features/master/lib/ftsFunnel.ts -- قراردادِ نمایشِ قیف FTS (مدل، نه داور)
 //
-// ترتیبِ مرحله از خودِ جزوه است: تابلوخوانیِ امروز ← تکنیکال ← بنیادیِ پنج‌شاخصه ← تحویل.
+// ترتیبِ گام‌ها را خودِ موتور درِ پاسخ می‌گوید (`flow`)؛ پیش‌فرضِ جزوه
+// تابلوخوانیِ امروز ← تکنیکال ← بنیادیِ پنج‌شاخصه ← تحویل است و استراتژیِ
+// «تکنیکال‌محور» همان چهار گام را با ترتیبِ تکنیکال ← تابلو ← بنیادی ← تحویل
+// اجرا می‌کند. فرانت فقط می‌خواند.
 //
 // داوریِ کشفِ نماد دیگر درِ این فایل نیست. `funnel_engine.py` حکمِ canonical را
 // می‌سازد، `/api/funnel` همان را می‌دهد و `lib/funnelView.ts` فقط نام‌هایِ پاسخ
@@ -66,7 +69,7 @@ export const IND_COLUMNS = [
  * با MA=52 و RSI=5 هفتگی تعریف شده و فیلترِ تابلوییِ جدا ندارد، پس همان دو
  * گره‌ای که درخت برایش گذاشته (کف‌روبی + ساعت) می‌ماند و چیزی اضافه نمی‌شود.
  */
-export type TreePreset = 'swing' | 'trend' | 'hourglass' | 'custom';
+export type TreePreset = 'swing' | 'trend' | 'hourglass' | 'custom' | 'tech_first';
 
 export const PRESET_ENTRY: Record<TreePreset, { label: string; filters: string[] }> = {
   swing: { label: 'شخص نوسان‌گیر (زیر ۳ ماه)', filters: ['f_clock', 'f_jet', 'f_susp'] },
@@ -75,6 +78,9 @@ export const PRESET_ENTRY: Record<TreePreset, { label: string; filters: string[]
   // (تعریفش گیتِ هفتگی MA=52/RSI=5 است). آینهٔ فرانت پیش‌تر کف‌روبی+ساعت را
   // قرض می‌گرفت که بی‌منبع بود و با موتور نمی‌خواند.
   hourglass: { label: 'استراتژی ساعت شنی (۳ تا ۱۰ ساله)', filters: [] },
+  // استراتژیِ «تکنیکال اول»: زنجیرۀ تابلو از چیپ‌هایِ خودِ کاربر می‌آید (مثلِ
+  // بقیۀ اشخاص)، ولی موتور اول گیتِ هفتگی و شرط‌هایِ تکنیکال را اجرا می‌کند.
+  tech_first: { label: 'تکنیکال‌محور (تکنیکال ← تابلو ← بنیادی ← تحویل)', filters: [] },
   // مسیرِ دستی: خودِ کاربر گره‌ها را چیده، پس قیف با پنج فیلتر باز می‌شود و
   // چیپ‌هایِ روشنِ تبِ تابلو همان‌ها را باریک می‌کنند.
   custom: { label: 'مسیر سفارشی (انتخاب دستی)', filters: [...FILE_FILTERS] },
@@ -97,6 +103,7 @@ export const PRESET_MOTIVE: Record<TreePreset, string> = {
   swing: 'نوسان‌گیر: از تابلو وارد می‌شود؛ ساعت و جت و حجم مشکوک نشانهٔ پولِ امروزند.',
   trend: 'روندگیر: کف سوم یا پنجم؛ حجم مشکوک لازم نیست (جزوه: «روندگیر به حجم مشکوک نیازی ندارد»).',
   hourglass: 'ساعت شنی: فیلترِ تابلویی ندارد؛ دربش MA=52 و RSI=5 در تایم هفتگی است.',
+  tech_first: 'تکنیکال‌محور: اول ساختارِ هفتگی و شرط‌هایِ تکنیکالِ شما رأی می‌دهد، سپس تابلوخوانی رویِ همان ماندگان. گیتِ هفتگی با انتخابِ ستاپ خاموش نمی‌شود.',
   custom: 'مسیر سفارشی: خودتان فیلترها را انتخاب و مرتب می‌کنید؛ چیپ‌هایِ بالایِ غربالگری همین زنجیره را کم و زیاد می‌کنند.',
 };
 
@@ -159,6 +166,33 @@ export const TAPE_FRESHNESS_LABEL: Record<TapeFreshness, string> = {
 export type FunnelStageKey = 'tape' | 'technical' | 'fundamental' | 'handover';
 
 export const STAGE_KEYS: readonly FunnelStageKey[] = ['tape', 'technical', 'fundamental', 'handover'];
+
+/** ترتیبِ واقعیِ اجرا را `funnel_engine` درِ پاسخ می‌نویسد (`flow`)؛ فرانت آن را
+ *  می‌خواند و هیچ قاعده‌ای دربارهٔ ترتیب نمی‌سازد. `tape_first` همان ترتیبِ
+ *  جزوه است و `tech_first` استراتژیِ تازه: گیتِ هفتگی و شرط‌هایِ تکنیکال اول،
+ *  فیلترهایِ تابلو بعد. */
+export type FunnelFlow = 'tape_first' | 'tech_first';
+
+export const FLOW_LABEL: Record<FunnelFlow, string> = {
+  tape_first: 'تابلو ← تکنیکال',
+  tech_first: 'تکنیکال ← تابلو',
+};
+
+export const FLOW_PATH: Record<FunnelFlow, string> = {
+  tape_first: 'تابلوخوانی ← تکنیکال ← بنیادی ← تحویل',
+  tech_first: 'تکنیکال ← تابلوخوانی ← بنیادی ← تحویل',
+};
+
+export const FLOW_HINT: Record<FunnelFlow, string> = {
+  tape_first: 'ترتیبِ جزوه (صفحۀ ۴): اول نشانه‌هایِ تابلویِ امروز، سپس گیتِ هفتگی.',
+  tech_first: 'اول گیتِ روندِ هفتگی و شرط‌هایِ تکنیکالِ انتخابی؛ فیلترهایِ تابلو رویِ همان ماندگان اجرا می‌شوند.',
+};
+
+/** ترتیبِ گام‌ها برایِ هر جریان — تنها جایِ تعریفِ «کدام جدول اول می‌آید». */
+export function stageOrderOf(flow: FunnelFlow): FunnelStageKey[] {
+  if (flow === 'tech_first') return ['technical', 'tape', 'fundamental', 'handover'];
+  return [...STAGE_KEYS];
+}
 
 /**
  * دو پیچِ تنظیمی که درِ بنیادی را به دستِ خودِ مالک می‌دهند (بی‌آنکه سخت‌گیریِ
@@ -237,6 +271,12 @@ export type Candidate = {
   dailyStrategy: string | null;
   /** ستاپ‌های فعالِ این نماد (جت/فیبو/CHoCH/…) — فقط شواهدِ مثبت/کمکی، نه گیت */
   setups: string;
+  /** شرط‌هایِ اجراشدۀ همین گام (گیتِ هفتگی + انتخاب‌هایِ کاربر) به ترتیبِ اجرا */
+  techChecks: TechCheck[];
+  /** زمانِ ساختِ همین داوری درِ `funnel_tech_scan` (epoch ثانیه). تاریخِ خودِ
+   *  ماشه درِ اسکن ذخیره نمی‌شود، پس رابط این را «تاریخِ داوری» می‌خواند، نه
+   *  «تاریخِ سیگنال» — عددِ ساخته‌نشده. */
+  techVerdictAt: number | null;
   /** امتیازِ کمکیِ تکنیکال برای Ranking؛ هرگز درِ T را به‌تنهایی باز/بسته نمی‌کند. */
   technicalPoints: number | null;
   /** تک‌تکِ پنج شاخص: pass / reject / pending / not_required — همان سطرهای صفحۀ ۱ چارت */
@@ -268,6 +308,30 @@ export type Candidate = {
   universeStatus?: string | null;
 };
 
+/** نتیجۀ یک شرطِ تکنیکال رویِ همین نماد — همان دیکشنری‌هایی که `technical_stage`
+ *  درِ بک‌اند ساخته است. `value` عینِ ستونِ `funnel_tech_scan` است و `status` حکمِ
+ *  همان سطر؛ هیچ‌کدام درِ فرانت دوباره حساب نمی‌شود. `origin` می‌گوید شاهد از
+ *  جزوه آمده یا از برنامۀ خودِ برنامه (ستاپی که سطرِ مستقلِ جزوه ندارد). */
+export type TechCheck = {
+  filterId: string;
+  label: string;
+  role: string;
+  column: string;
+  value: string | number | null;
+  status: StageStatus;
+  reasonCode: string;
+  humanReason: string;
+  source: string;
+  origin: string;
+};
+
+/** شمارشِ یک فیلترِ تکنیکال رویِ ورودیِ همین گام
+ *  (`stages.technical.filter_counts`ِ خودِ موتور). نامِ فیلتر از رجیستریِ همان
+ *  سرور می‌آید، پس اینجا عددِ مستقلی برایِ متن نداریم. */
+export type TechFilterCount = {
+  pass: number; reject: number; pending: number; unavailable: number;
+};
+
 /** سازۀ پیشینِ `FunnelEntry` — نامِ کوتاهِ همان کاندید، برایِ خواناییِ رندررها. */
 export type FunnelEntry = Candidate;
 
@@ -285,6 +349,9 @@ export type FunnelStage = {
   entries: Candidate[];
   /** گام‌هایِ درونیِ همین مرحله (فعلاً تابلو: هر فیلتر با شمارشِ خودش) */
   steps: StageStep[];
+  /** چند نماد واردِ این گام شد — از `stages.<key>.inputِ` خودِ موتور. بدونِ آن
+   *  «۱۰ از ۱۰۳۵» با «۱۰ از ۱۰» یکی خوانده می‌شد. */
+  input: number;
   /** چه تعداد از مرحلۀ قبل بیرون افتاد (تکنیکال و بنیادی هر دو حذف می‌کنند) */
   dropped: number;
   /** چه تعداد روی این مرحله برچسبِ «رد» خوردند — با «رد نکند، خودم چک می‌کنم»
@@ -330,6 +397,12 @@ export type FilterCount = {
 
 export type Funnel = {
   mode: FunnelMode;
+  /** ترتیبِ واقعیِ اجرا از خودِ موتور (`flow`) — تنها مبنایِ «کدام جدول اول» */
+  flow: FunnelFlow;
+  /** ترتیبِ گام‌ها همان `flow` است؛ رندررها این را می‌خوانند، نه فهرستِ دستی */
+  stageOrder: FunnelStageKey[];
+  /** زنجیرۀ فیلترهایِ تکنیکالِ اجراشده (گیتِ هفتگی همیشه مقدم) */
+  techChain: string[];
   tape: TapeFreshness;
   /** پوششِ داوریِ تکنیکال: چند کاندید رأیِ زنده داشت، چند تا فقط از غنی‌سازیِ
    *  اسکرینر (`watchlist_max`) خوانده شد، و چند تا هیچ منبعی نداشتند (#12).
@@ -362,6 +435,9 @@ export type Funnel = {
   /** نامزدِ هر یک از هفت فیلتر، مستقل از زنجیره و از اشتراک/اجتماع — برایِ عددِ
    *  کنارِ چیپ‌هایِ نوارِ غربالگری. `{}` = پاسخِ سرورِ قدیمی این را نگفته. */
   filterCounts: Record<string, FilterCount>;
+  /** شمارشِ هر فیلترِ تکنیکال رویِ ورودیِ گامِ تکنیکال
+   *  (`stages.technical.filter_counts`) — عددِ کنارِ چیپ‌هایِ همین گام. */
+  techFilterCounts: Record<string, TechFilterCount>;
   /** هدف‌هایِ جزوه (رأیِ ۶): هیچ‌کدام گیت نیستند، فقط مرجعِ نمایش‌اند. */
   targets: { initial: number; watchlist: number; basketMin: number; basketMax: number };
 };

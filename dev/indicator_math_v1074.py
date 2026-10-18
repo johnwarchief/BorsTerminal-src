@@ -315,8 +315,8 @@ def main():
     hg = (fts.get("hourglass") or {})
     ck(isinstance(fts, dict) and fts.get("trend"), "تحلیلِ کامل برمی‌گردد",
        str(list(fts)[:6]))
-    ck(hg.get("weekly_rsi5") is None or 0.0 <= float(hg.get("weekly_rsi5")) <= 100.0,
-       "weekly_rsi5 درِ بازۀ ۰..۱۰۰ است (یا صریح None)", str(hg))
+    ck(hg.get("weekly_rsi") is None or 0.0 <= float(hg.get("weekly_rsi")) <= 100.0,
+       "weekly_rsi درِ بازۀ ۰..۱۰۰ است (یا صریح None)", str(hg))
     l4 = (fts.get("exit_engine") or {}).get("l4") or {}
     ck("rsi" not in l4 or l4.get("rsi") is None or 0.0 <= float(l4["rsi"]) <= 100.0,
        "RSIِ لایۀ ۴ درِ بازۀ منطقی است", str({k: l4.get(k) for k in ("rsi", "divergence")}))

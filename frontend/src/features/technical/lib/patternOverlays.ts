@@ -121,7 +121,8 @@ export type PatternInputs = {
   headShoulders: { active: boolean; neckline: number | null };
   thirdPeak: { active: boolean; level: number | null };
   ma14Exit: { active: boolean; level: number | null };
-  hourglass: { active: boolean; ma52Weekly: number | null; rsi5Weekly: number | null };
+  hourglass: { active: boolean; ma52Weekly: number | null; weeklyRsi: number | null;
+    rsiPeriod: number | null };
   roles: Record<string, SignalRole>;
 };
 
@@ -186,8 +187,9 @@ export function patternInputsFromFts(
     hourglass: {
       active: fts?.hourglass?.active === true,
       ma52Weekly: price(fts?.hourglass?.ma52, toDisp),
-      // ساعتِ شنی با RSIِ هفتگیِ دورهٔ ۵ سنجیده می‌شود (جزوه)، نه RSI۱۴
-      rsi5Weekly: typeof fts?.hourglass?.weekly_rsi5 === 'number' ? fts.hourglass.weekly_rsi5 : null,
+      // دورۀ RSIِ ساعت‌شنی تنظیمِ کاربر است (رأیِ ۲۴: پیش‌فرض ۷)؛ متن باید همان را بگوید
+      weeklyRsi: typeof fts?.hourglass?.weekly_rsi === 'number' ? fts.hourglass.weekly_rsi : null,
+      rsiPeriod: typeof fts?.hourglass?.rsi_period === 'number' ? fts.hourglass.rsi_period : null,
     },
     roles: (fts?.roles ?? {}) as Record<string, SignalRole>,
   };
@@ -208,6 +210,14 @@ const DEFAULT_ROLES: Record<string, SignalRole> = {
   third_peak: 'warning',
   ma14_exit: 'exit',
 };
+
+/** «هفتگیِ دورۀ ۷: ۲۴» — و فقط «هفتگی: ۲۴» وقتی دورۀ فعال درِ پاسخ نیست */
+function hgRsiLabel(inputs: PatternInputs): string {
+  const v = toFaDigits(Math.round(inputs.hourglass.weeklyRsi ?? 0));
+  return inputs.hourglass.rsiPeriod == null
+    ? ` هفتگی: ${v})`
+    : ` هفتگیِ دورۀ ${toFaDigits(inputs.hourglass.rsiPeriod)}: ${v})`;
+}
 
 /** ساخت اورلیها بر اساس انتخاب کاربر — هیچ داوری از نو اینجا نمی‌شود */
 export function buildPatternOverlays(
@@ -380,13 +390,13 @@ export function buildPatternOverlays(
     });
   }
 
-  // ۹) ساعت شنی: نوارِ ورود پله‌ای حولِ MA52ِ هفتگی (RSI۵ِ هفتگی فقط در برچسب)
+  // ۹) ساعت شنی: نوارِ ورود پله‌ای حولِ MA52ِ هفتگی (RSI هفتگی فقط در برچسب)
   if (on('hourglass') && inputs.hourglass.active && inputs.hourglass.ma52Weekly != null && lastTs > 0) {
     pushBand(
       'hourglass',
       roleOf('hourglass'),
       'ftsZoneBands',
-      `ساعت شنی (RSI۵ ${toFaDigits(Math.round(inputs.hourglass.rsi5Weekly ?? 0))})`,
+      `ساعت شنی (RSI${hgRsiLabel(inputs)})`,
       inputs.hourglass.ma52Weekly * 1.03,
       inputs.hourglass.ma52Weekly * 0.97,
     );

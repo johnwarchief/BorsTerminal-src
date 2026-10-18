@@ -12,6 +12,7 @@ import {
   ZONE_BY_KEY,
   type FtsZone,
 } from '../lib/ftsChartModel';
+import { useFunnelRegistry } from '../api/useFunnelRegistry';
 import { useStrategyParamsStore } from '../stores/strategyParamsStore';
 import { StrategyTreeStepper, treeStagePath } from './StrategyTreeStepper';
 
@@ -48,7 +49,13 @@ export default function StrategyTreeOverview() {
   // presetِ درخت از همان تصمیمِ canonicalِ سراسری می‌آید (URL > انتخابِ کاربر > افق)،
   // نه از URL→horizon تنها؛ وگرنه همان universe دوِ قیفِ متفاوت می‌ساخت (#M2.1).
   const preset = useActiveFunnelPreset(horizon);
-  const model = useMemo(() => buildFtsChartModel(strategyParams), [strategyParams]);
+  const { hourglass } = useFunnelRegistry();
+  const model = useMemo(
+    () => buildFtsChartModel(strategyParams, {
+      rsiPeriod: hourglass?.hourglass_rsi_period ?? null,
+      oversoldLevel: hourglass?.hourglass_rsi_oversold ?? null,
+    }),
+    [strategyParams, hourglass]);
   const active = useMemo(() => activeIdsForPreset(preset, model), [preset, model]);
   const { funnel } = useFtsFunnel(preset);
 

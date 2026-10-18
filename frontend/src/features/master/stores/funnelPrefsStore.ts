@@ -12,8 +12,8 @@ import { create } from 'zustand';
 
 /** سه سیستمِ انتخاب + ساعت‌شنی — همان `TreePreset` درِ `lib/ftsFunnel.ts`.
  *  اینجا دوباره نوشته شده تا store به لایۀ UI وابسته نشود (چرخۀ import). */
-export type FunnelPreset = 'swing' | 'trend' | 'hourglass' | 'custom';
-const PRESETS: readonly FunnelPreset[] = ['swing', 'trend', 'hourglass', 'custom'];
+export type FunnelPreset = 'swing' | 'trend' | 'hourglass' | 'custom' | 'tech_first';
+const PRESETS: readonly FunnelPreset[] = ['swing', 'trend', 'hourglass', 'custom', 'tech_first'];
 /** unset یعنی «کاربر هنوز خودش انتخاب نکرده» — تا آن وقت propِ والد (افقِ
  *  سراسری) مرجع است؛ بعد از اولین انتخاب، همان چیزی که کاربر زد می‌ماند. */
 export const DEFAULT_PRESET: FunnelPreset | null = null;
@@ -87,6 +87,7 @@ export type SavedChain = {
 const CHAIN_KEY = ['fts', 'funnel', 'chain', 'v1'].join('.');
 const PRESETS_KEY = ['fts', 'funnel', 'presets', 'v1'].join('.');
 const EXC_KEY = ['fts', 'funnel', 'exceptions', 'v1'].join('.');
+const TECH_CHAIN_KEY = ['fts', 'funnel', 'tech_chain', 'v1'].join('.');
 
 function readJson<T>(key: string, fallback: T): T {
   try {
@@ -112,6 +113,12 @@ export type FunnelPrefsState = {
   moveFilter: (from: number, to: number) => void;
   addFilter: (id: string) => void;
   removeFilter: (id: string) => void;
+  /** زنجیرۀ شرط‌هایِ تکنیکالِ استراتژیِ «تکنیکال‌محور». فهرستِ مجاز را خودِ
+   *  `GET /api/funnel/registry` می‌گوید (`technical_filters`)؛ اینجا فقط
+   *  انتخاب‌هایِ کاربر می‌ماند، نه یک تعریفِ دومِ فیلتر. */
+  techChain: string[];
+  setTechChain: (ids: string[]) => void;
+  toggleTechFilter: (id: string) => void;
   fundMode: FundStrictness;
   setFundMode: (m: FundStrictness) => void;
   /** استثنایِ صریحِ نماد → شاخص‌ها؛ هیچ جبرانِ خودکاری اینجا نیست */
@@ -202,6 +209,7 @@ function moved<T>(list: T[], from: number, to: number): T[] {
 export const useFunnelPrefsStore = create<FunnelPrefsState>((set, get) => {
   const init = saved();
   const chains = readJson<string[]>(CHAIN_KEY, []);
+  const techChains = readJson<string[]>(TECH_CHAIN_KEY, []);
   const fundMode = readJson<FundStrictness>(MODE_KEY, DEFAULT_FUND_MODE);
   const exceptions = readJson<Record<string, string[]>>(EXC_KEY, {});
   const savedChains = readJson<SavedChain[]>(PRESETS_KEY, []);
@@ -221,6 +229,16 @@ export const useFunnelPrefsStore = create<FunnelPrefsState>((set, get) => {
     removeFilter: (id) => {
       const next = get().chain.filter((x) => x !== id);
       writeJson(CHAIN_KEY, next); set({ chain: next });
+    },
+    techChain: techChains,
+    setTechChain: (ids) => {
+      const next = Array.from(new Set(ids));
+      writeJson(TECH_CHAIN_KEY, next); set({ techChain: next });
+    },
+    toggleTechFilter: (id) => {
+      const cur = get().techChain;
+      const next = cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id];
+      writeJson(TECH_CHAIN_KEY, next); set({ techChain: next });
     },
     fundMode: (fundMode === 'hard' || fundMode === 'exception') ? fundMode : DEFAULT_FUND_MODE,
     setFundMode: (m) => { writeJson(MODE_KEY, m); set({ fundMode: m }); },
@@ -292,8 +310,8 @@ export const useFunnelPrefsStore = create<FunnelPrefsState>((set, get) => {
     /** بازگشت به canon: زنجیرۀ Custom و استثنناها پاک می‌شوند، presetِ افق نه. */
     resetToCanonical: () => {
       writeJson(CHAIN_KEY, []); writeJson(MODE_KEY, DEFAULT_FUND_MODE);
-      writeJson(EXC_KEY, {});
-      set({ chain: [], fundMode: DEFAULT_FUND_MODE, exceptions: {} });
+      writeJson(EXC_KEY, {}); writeJson(TECH_CHAIN_KEY, []);
+      set({ chain: [], techChain: [], fundMode: DEFAULT_FUND_MODE, exceptions: {} });
     },
   };
 });

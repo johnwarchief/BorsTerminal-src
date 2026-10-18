@@ -32,7 +32,7 @@ function noPatterns(): PatternInputs {
     headShoulders: { active: false, neckline: null },
     thirdPeak: { active: false, level: null },
     ma14Exit: { active: false, level: null },
-    hourglass: { active: false, ma52Weekly: null, rsi5Weekly: null },
+    hourglass: { active: false, ma52Weekly: null, weeklyRsi: null, rsiPeriod: null },
     roles: {},
   };
 }
@@ -49,7 +49,7 @@ describe('نگاشتِ payloadِ سرور به ورودیِ الگوها (#193)'
       l1: { ma14_exit: true, ma14: 2450 },
       l3: { hs_break: true, neckline: 2210, third_peak: true, third_peak_level: 3050 },
     },
-    hourglass: { active: true, ma52: 2980, weekly_rsi5: 24.6 },
+    hourglass: { active: true, ma52: 2980, weekly_rsi: 24.6, rsi_period: 7 },
     roles: { jet: 'entry', point_hunt: 'entry', choch_bullish: 'entry', double_bottom: 'entry',
              hs_break: 'exit', third_peak: 'warning', ma14_exit: 'exit', fib_zone: 'context' },
   } as unknown as FtsAnalysisData;
@@ -68,7 +68,7 @@ describe('نگاشتِ payloadِ سرور به ورودیِ الگوها (#193)'
     expect(i.headShoulders).toEqual({ active: true, neckline: 2210 });
     expect(i.thirdPeak).toEqual({ active: true, level: 3050 });
     expect(i.ma14Exit).toEqual({ active: true, level: 2450 });
-    expect(i.hourglass).toEqual({ active: true, ma52Weekly: 2980, rsi5Weekly: 24.6 });
+    expect(i.hourglass).toEqual({ active: true, ma52Weekly: 2980, weeklyRsi: 24.6, rsiPeriod: 7 });
     expect(i.roles.jet).toBe('entry');
     expect(i.roles.third_peak).toBe('warning');
   });
@@ -155,9 +155,9 @@ describe('buildPatternOverlays — احترام به انتخاب کاربر، �
   });
 
   it('ساعت شنی بی‌MA52 باندِ تخت نمی‌سازد؛ با MA52 هم‌عرضِ ۳٪ می‌کشد', () => {
-    const bare = buildPatternOverlays({ ...noPatterns(), hourglass: { active: true, ma52Weekly: null, rsi5Weekly: 24 } }, PATTERN_PREFS_DEFAULT, barRows);
+    const bare = buildPatternOverlays({ ...noPatterns(), hourglass: { active: true, ma52Weekly: null, weeklyRsi: 24, rsiPeriod: 7 } }, PATTERN_PREFS_DEFAULT, barRows);
     expect(bare.find((s) => s.kind === 'hourglass')).toBeUndefined();
-    const full = buildPatternOverlays({ ...noPatterns(), hourglass: { active: true, ma52Weekly: 2980, rsi5Weekly: 24.6 } }, PATTERN_PREFS_DEFAULT, barRows);
+    const full = buildPatternOverlays({ ...noPatterns(), hourglass: { active: true, ma52Weekly: 2980, weeklyRsi: 24.6, rsiPeriod: 7 } }, PATTERN_PREFS_DEFAULT, barRows);
     const band = full.find((s) => s.kind === 'hourglass')!;
     expect(band.points[0].value).toBeCloseTo(2980 * 1.03, 6);
     expect(band.points[1].value).toBeCloseTo(2980 * 0.97, 6);
@@ -194,7 +194,7 @@ describe('buildPatternOverlays — احترام به انتخاب کاربر، �
     });
 
     it('ساعت شنی هم از همان سقفِ ارتفاعِ بصری عبور می‌کند', () => {
-      const hg = { active: true, ma52Weekly: 101, rsi5Weekly: 22 };
+      const hg = { active: true, ma52Weekly: 101, weeklyRsi: 22, rsiPeriod: 7 };
       const tight = buildPatternOverlays({ ...noPatterns(), hourglass: hg }, PATTERN_PREFS_DEFAULT, tightRows).filter((s) => s.kind === 'hourglass');
       const wide = buildPatternOverlays({ ...noPatterns(), hourglass: hg }, PATTERN_PREFS_DEFAULT, wideRows).filter((s) => s.kind === 'hourglass');
       expect(tight).toHaveLength(2);
