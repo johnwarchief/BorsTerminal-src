@@ -13,12 +13,19 @@
 //    رو‌به‌رو می‌گذارم تا تفاوتِش دیده شود، نه درِ دو پاراگرافِ جدا.
 //  • «HTTP 200 ⇒ متصل» — نه؛ پاسخِ ۲۰۰ با بدنۀ HTML درِ بک‌اند `UNKNOWN_RESULT`
 //    می‌شود و همان‌طور هم اینجا نمایش داده می‌شود.
+//
+// دورِ دومِ همین مأموریت (2026-10-18): «نشست تأیید نشده» بدونِ هیچ دری برای
+// واردکردنِ نشانی، کاربر را درِ بن‌بست می‌گذاشت. فرمِ نشست (`SarkhatiSessionForm`)
+// همان `POST/DELETE /api/execution/session` را باز می‌کند و چهار وضعیتِ خواستۀ
+// مالک — تنظیمِ ذخیره‌شده، نشانیِ واردشده، تأییدِ واقعی، اجازهٔ ارسال — درِ چهار
+// سطرِ جدا خوانده می‌شوند، نه درِ یک جمله.
 import { ConnectBrokerRow } from '../ConnectBrokerRow';
 import { SarkhatiConnectionSettings } from './SarkhatiConnectionSettings';
+import { SarkhatiSessionForm } from './SarkhatiSessionForm';
 import { toFaDigits } from '@shared/lib/fmt';
 import { PORTFOLIO_LABEL, PORTFOLIO_STATES, TRAFFIC_LABEL, TRAFFIC_MODES,
-  useBrokerConnect, useExecutionPortfolio, useExecutionStatus,
-  type ConnectState, type ExecutionStatus, type PortfolioState, type TrafficMode }
+  useBrokerConnect, useExecutionPortfolio,
+  type ConnectState, type PortfolioState, type TrafficMode }
   from '../../lib/orderClient';
 import { Chip, Field, Line, Note, Section } from './parts';
 
@@ -28,24 +35,8 @@ const ROLE_LABEL: Record<string, string> = {
   api: 'آدرسِ API که سفارش به آن می‌رود',
 };
 
-const TRUTH_MOCK = 'آداپتورِ بدل — هیچ پرسشی به کارگزاری نرفته';
-const TRUTH_UNPROVEN = 'نشست تأیید نشده (پرسشِ موفق در کار نیست)';
-const TRUTH_HYPOTHESIS = 'نشست تأیید شد — ازِ «فهرستِ سفارش»، مسیری که درِ سندِ رسمی نیست';
-const TRUTH_OBSERVED = 'نشست تأیید شد — ازِ مسیرِ فقط‌خواندنیِ دیدہ‌شدہ';
-const TRUTH_NO_REPLY = 'پاسخِ نشست نیامده';
-
-/** برچسبِ نشست: «هست» و «اثبات‌شده» دو چیزند، و شاهدِ هر مسیر جدا خوانده می‌شود. */
-export function sessionTruth(s: ExecutionStatus | null | undefined): string {
-  const sess = s?.session;
-  if (!sess) return TRUTH_NO_REPLY;
-  if (sess.proven !== true) return sess.origin === 'mock' ? TRUTH_MOCK : TRUTH_UNPROVEN;
-  const by = sess.verified_by as Record<string, unknown> | undefined;
-  return by?.hypothesis === true ? TRUTH_HYPOTHESIS : TRUTH_OBSERVED;
-}
-
 export function SarkhatiConnectionCard() {
   const q = useBrokerConnect();
-  const st = useExecutionStatus();
   const pf = useExecutionPortfolio();
   const c = q.data;
   const last = (c?.last_verify ?? {}) as Record<string, unknown>;
@@ -96,20 +87,19 @@ export function SarkhatiConnectionCard() {
         </span>
       </div>
 
-      {/* آنچه بک‌اند *واقعاً* ثابت کرده، نه آنچه رابط آرزو دارد. سه حالتِ ترافیک و
-          شاهدِ نشست ازِ دو پاسخِ جدا می‌آیند (`/connect` و `/status`). */}
+      {/* «راه» ازِ `/connect` است (ترافیکِ واقعیِ همین پروسه). ادعاهایِ نشست و
+          تأیید به چهار سطرِ جدا رفته‌اند (`connectionLadder` درِ فرمِ نشست)، تا
+          یکِ جملهٔ بلند جایِ چهار وضعیت را نگیرد. */}
       <div className="mt-1.5 flex flex-wrap items-baseline gap-x-4 gap-y-1"
            data-testid="sarkhati-traffic-and-proof">
         <Field label="راه" value={(
           <Chip tone={TRAFFIC_LABEL[traffic].tone} testId="sarkhati-traffic-mode">
             {TRAFFIC_LABEL[traffic].text}
           </Chip>)} />
-        <span className="text-2xs text-text-secondary" data-testid="sarkhati-session-truth">
-          {sessionTruth(st.data)}
-        </span>
       </div>
 
       <SarkhatiConnectionSettings />
+      <SarkhatiSessionForm />
 
       {/* پرتفوی: «ردیفِ خالی» و «بی‌منبع» دو چیزند. عدد فقط ازِ پاسخ می‌آید. */}
       <div className="mt-1.5 flex flex-wrap items-baseline gap-x-4 gap-y-1"

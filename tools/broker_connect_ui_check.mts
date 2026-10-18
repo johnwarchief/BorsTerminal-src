@@ -5,7 +5,9 @@
 // واقعاً به `POST /api/execution/config` می‌نشیند. سه چیز صریح چک می‌شود:
 //  ۱) هیچ درخواستی به میزبانِ کارگزاری نمی‌رود (zero-traffic proof)،
 //  ۲) «ذخیره شد» و «اعمال شد» دو متنِ جدا می‌مانند،
-//  ۳) برچسبِ نشست ازِ `proven` می‌آید، نه ازِ `state: connected`.
+//  ۳) برچسبِ نشست ازِ `proven` می‌آید، نه ازِ `state: connected`،
+//  ۴) پلکانِ چهارسطری (تنظیم / نشستِ واردشده / تأیید / ارسال) هر وضعیت را جدا
+//     می‌گوید و فرمِ نشانی، نشانی را هیچ‌جا بازنمی‌گرداند.
 // درِ ورودِ خودِ ترمینال (admin/bors123 درِ کدِ منبعی) دست‌نخورده می‌ماند؛ تنها
 // کلیدِ نشستِ محلی درِ sessionStorage می‌نشیند تا سنجه رابط را ببیند نه دروازه.
 import { mkdirSync } from 'node:fs';
@@ -52,11 +54,35 @@ const read = async (id: string) => page.evaluate((sel) => {
   return el ? (el.textContent || '').trim() : null;
 }, `[data-testid="${id}"]`);
 
+/** صبر تا هر چهار سطرِ پلکان از «پاسخی نیامده» (حالتِ میانۀ بارگذاری) دربیایند.
+ *  بی‌این، خواندنِ درِ لحظۀِ اول هر چهار را «پاسخی نیامده» نشان می‌دهد و آن
+ *  حالتِ گذرا را با نبودِ پاسخِ واقعی اشتباه می‌خوانَد. */
+const SETTLED = 'پاسخی نیامده';
+await page.waitForFunction(([id, wrong]: string[]) => {
+  const el = document.querySelector(`[data-testid="${id}"]`);
+  return !!el && (el.textContent || '').trim() !== wrong && (el.textContent || '').trim() !== '';
+}, [`sarkhati-gate-config`, SETTLED], { timeout: 20000 }).catch(() => undefined);
+
+// سه دور: `read` فقط می‌خواند (پاسِ پسِ restart)، `save` کلیکِ ذخیرهٔ تنظیم را
+// می‌سنجد، و `token` فرمِ نشانیِ نشست را (پاسخِ ردِ بک‌اند درِ آداپتورِ بدل هم
+// یکِ پاسخِ صادق است؛ مهم این است که نشانی هیچ‌جا باقی نمانَد).
+const MODE = process.argv[3] || 'save';
+
 const pass1: Record<string, unknown> = {
   href: page.url(),
-  gateBypassed: await page.evaluate(() => !document.querySelector('input[type=password]')),
+  loginGateShown: await page.evaluate(
+    () => !!document.querySelector('input[placeholder="admin"]')),
   traffic: await read('sarkhati-traffic-mode'),
-  sessionTruth: await read('sarkhati-session-truth'),
+  gates: {
+    config: await read('sarkhati-gate-config'),
+    entered: await read('sarkhati-gate-entered'),
+    proven: await read('sarkhati-gate-proven'),
+    writes: await read('sarkhati-gate-writes'),
+  },
+  tokenInputMasked: await page.evaluate(() => {
+    const el = document.querySelector('[data-testid="sarkhati-token-input"]') as HTMLInputElement | null;
+    return el ? el.type === 'password' : null;
+  }),
   stored: await read('sarkhati-config-stored'),
   effective: await read('sarkhati-config-effective'),
   source: await read('sarkhati-config-source'),
@@ -66,10 +92,30 @@ const pass1: Record<string, unknown> = {
   windowVsSession: await read('sarkhati-window-vs-session'),
 };
 
-// کلیکِ واقعی: کارگزاری ← فقط‌خواندنی ← ذخیره  (mode=read فقط می‌خواند، برایِ پاسِ پسِ restart)
-const MODE = process.argv[3] || 'save';
-const pass2: Record<string, unknown> = { skipped: MODE === 'read' };
-if (MODE !== 'read') {
+// نشانیِ جعلیِ سنجه: اگر رابط آن را هیچ‌جا بازنگرداند، درِ DOM هم پیدا نمی‌شود.
+const PROBE_TOKEN = 'BORS-UIPROBE-NOT-A-REAL-SESSION';
+let tokenPass: Record<string, unknown> = { skipped: true };
+if (MODE === 'token') {
+  await page.fill('[data-testid="sarkhati-token-input"]', PROBE_TOKEN);
+  await page.click('[data-testid="sarkhati-token-save"]');
+  await page.waitForSelector('[data-testid="sarkhati-session-note"]', { timeout: 15000 });
+  tokenPass = {
+    note: await read('sarkhati-session-note'),
+    gates: {
+      entered: await read('sarkhati-gate-entered'),
+      proven: await read('sarkhati-gate-proven'),
+      writes: await read('sarkhati-gate-writes'),
+    },
+    tokenStillInDom: await page.evaluate(
+      (s) => (document.body.textContent || '').includes(s), PROBE_TOKEN),
+    orderishRequests: await page.evaluate(() => performance.getEntriesByType('resource')
+      .map((r) => r.name).filter((n) => /preflight|prepare|dispatch|cancel|\/order/i.test(n))),
+  };
+}
+
+// کلیکِ واقعی: کارگزاری ← فقط‌خواندنی ← ذخیره
+const pass2: Record<string, unknown> = { skipped: MODE !== 'save' };
+if (MODE === 'save') {
   await page.click('[data-testid="sarkhati-adapter-easytrader"]');
   await page.click('[data-testid="sarkhati-read-only"]');
   const reqsBefore = await page.evaluate(() => performance.getEntriesByType('resource').length);
@@ -89,10 +135,17 @@ await page.screenshot({ path: OUT + '/settings.jpeg', type: 'jpeg', quality: 60 
 const card = await page.locator('[data-testid="sarkhati-connection-card"]').boundingBox();
 const height = card ? Math.round(card.height) : -1;
 
+const orderPaths = await page.evaluate(() => performance.getEntriesByType('resource')
+  .map((r) => r.name)
+  .filter((n) => /\/api\/execution\/(preflight|prepare|dispatch|reconcile|refresh|cancel|schedule)/.test(n)));
+
 const result = {
+  mode: MODE,
   pass1_mockDefault: pass1,
   pass2_afterSave: pass2,
+  tokenPass,
   cardHeightPx: height,
+  orderPathRequests: orderPaths,
   brokerTrafficRequests: brokerHits,
   consoleErrors: errors.slice(0, 8),
 };

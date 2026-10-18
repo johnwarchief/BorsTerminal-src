@@ -11,10 +11,10 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { SarkhatiConnectionCard, sessionTruth } from '@features/portfolio/components/sarkhati/SarkhatiConnectionCard';
+import { SarkhatiConnectionCard } from '@features/portfolio/components/sarkhati/SarkhatiConnectionCard';
 import { DRY_RUN_LABEL, PORTFOLIO_LABEL, TRAFFIC_LABEL, deriveGate,
-  type ExecutionStatus } from '@features/portfolio/lib/orderClient';
-import { statusLine } from '@features/portfolio/lib/sarkhatiFlow';
+  type BrokerConfig, type ExecutionStatus } from '@features/portfolio/lib/orderClient';
+import { connectionLadder, statusLine, type GateRow } from '@features/portfolio/lib/sarkhatiFlow';
 
 const fetchMock = vi.fn();
 vi.stubGlobal('fetch', fetchMock);
@@ -99,6 +99,10 @@ async function settled(testId: string, re: RegExp | string) {
 
 const FA_DIGIT = /[۰-۹]/;
 
+/** یک سطر ازِ پلکانِ چهارسطریِ اتصال؛ نبودِ سطر = سطرِ خالی، نه ادعا */
+const gateRow = (rows: GateRow[], key: GateRow['key']): GateRow =>
+  rows.find((r) => r.key === key) ?? { key, label: '', text: '', tone: 'idle', title: '' };
+
 describe('تنظیمِ اتصالِ کارگزاری', () => {
   beforeEach(() => fetchMock.mockReset());
 
@@ -166,25 +170,66 @@ describe('راستِ نشست و ترافیک', () => {
 
   it('نشستِ تأییدشده ازِ مسیرِ دیدہ‌شدہ باِ تأییدِ مسیرِ فرضی فرق دارد', () => {
     const observed = (statusEasy() as unknown) as ExecutionStatus;
-    expect(sessionTruth(observed)).toBe(
-      'نشست تأیید شد — ازِ مسیرِ فقط‌خواندنیِ دیدہ‌شدہ');
+    expect(gateRow(connectionLadder({ st: observed }), 'proven').text).toBe('تأیید شد');
+    expect(gateRow(connectionLadder({ st: observed }), 'proven').tone).toBe('ok');
     const hypo = (statusEasy({ session: { ...observed.session,
       verified_by: { path: '/core/api/order', hypothesis: true } } }) as unknown) as ExecutionStatus;
-    expect(sessionTruth(hypo)).toContain('فهرستِ سفارش');
+    const row = gateRow(connectionLadder({ st: hypo }), 'proven');
+    expect(row.text).toBe('تأییدِ مسیرِ فرضی');
+    expect(row.tone).toBe('warn');
+    expect(row.title).toContain('سندِ رسمی');
   });
 
-  it('بی‌`proven` هیچ «تأیید شد» ای نوشته نمی‌شود — حتی باِ نشستِ connected', () => {
-    const s = (statusEasy({ session: { state: 'connected', origin: 'easytrader',
+  it('«نشست وارد شد» و «تأیید شد» دو سطرِ جداوند — بی‌`proven` هیچ تأییدی نوشته نمی‌شود', () => {
+    const s = (statusEasy({ session: { state: 'unknown', origin: 'easytrader',
       proven: false, verified_by: {} } }) as unknown) as ExecutionStatus;
-    const text = sessionTruth(s);
-    expect(text).toBe('نشست تأیید نشده (پرسشِ موفق در کار نیست)');
-    expect(text).not.toContain('تأیید شد');
+    const rows = connectionLadder({ st: s });
+    expect(gateRow(rows, 'entered').text).toContain('نشانی وارد شد');
+    expect(gateRow(rows, 'proven').text).toBe('تأیید نشده');
+    expect(gateRow(rows, 'proven').text).not.toContain('تأیید شد');
   });
 
-  it('آداپتورِ بدل هرگز «متصلِ کارگزاری» نمی‌شود', () => {
+  it('نشستِ منقضی یا ردِ اجازۀ دسترسی، «وارد شده»یِ سالم خوانده نمی‌شود', () => {
+    const expired = (statusEasy({ session: { state: 'expired', origin: 'easytrader',
+      proven: false } }) as unknown) as ExecutionStatus;
+    expect(gateRow(connectionLadder({ st: expired }), 'entered').text).toBe('نشست منقضی شده');
+    const denied = (statusEasy({ session: { state: 'auth_failed', origin: 'easytrader',
+      proven: false } }) as unknown) as ExecutionStatus;
+    expect(gateRow(connectionLadder({ st: denied }), 'entered').tone).toBe('bad');
+  });
+
+  it('آداپتورِ بدل هیچ سطرِ «تأیید» ای نمی‌سازد — حتی باِ `proven: true`', () => {
     const s = (statusEasy({ adapter: 'mock', session: { state: 'connected',
-      origin: 'mock', proven: false, verified_by: {} } }) as unknown) as ExecutionStatus;
-    expect(sessionTruth(s)).toBe('آداپتورِ بدل — هیچ پرسشی به کارگزاری نرفته');
+      origin: 'mock', proven: true, verified_by: { path: '/x' } } }) as unknown) as ExecutionStatus;
+    const rows = connectionLadder({ st: s });
+    expect(gateRow(rows, 'proven').text).not.toContain('تأیید شد');
+    expect(gateRow(rows, 'entered').text).toContain('بدل');
+  });
+
+  it('تنظیمِ ذخیره‌شدۀ «فقط‌خواندنی» سطرِ «ارسالِ سفارش» را باز نمی‌کند', () => {
+    const cfg = CONFIG_SAVED as unknown as BrokerConfig;
+    const s = (statusEasy() as unknown) as ExecutionStatus;
+    const rows = connectionLadder({ cfg, st: s });
+    expect(gateRow(rows, 'config').text).toContain('ذخیره');
+    expect(gateRow(rows, 'writes').text).toBe('خاموش');
+    expect(gateRow(rows, 'writes').title).toContain('BORS_EXECUTION_LIVE');
+  });
+
+  it('بی‌پاسخِ سرویس هیچ وضعیتی ساخته نمی‌شود؛ هر چهار سطر «پاسخی نیامده» است', () => {
+    const rows = connectionLadder({ cfg: null, st: null });
+    expect(rows).toHaveLength(4);
+    rows.forEach((r) => expect(r.text).toBe('پاسخی نیامده'));
+  });
+
+  it('منشأِ «متغیرِ محیطی» و «تنظیمِ دیسک خوانده نشد» سطرهایِ جدا می‌سازند', () => {
+    const env = { ...CONFIG_SAVED, stored: { adapter: 'easytrader', read_only: true, source: 'env' } };
+    expect(gateRow(connectionLadder({ cfg: env as unknown as BrokerConfig }), 'config').text)
+      .toBe('ازِ متغیرِ محیطی — مؤثر');
+    const unread = { ...CONFIG_SAVED, stored: { source: 'unavailable' } };
+    expect(gateRow(connectionLadder({ cfg: unread as unknown as BrokerConfig }), 'config').text)
+      .toBe('تنظیمِ دیسک خوانده نشد');
+    expect(gateRow(connectionLadder({ cfg: unread as unknown as BrokerConfig }), 'config').tone)
+      .toBe('bad');
   });
 });
 
@@ -230,5 +275,21 @@ describe('خطِ پرتفویِ فقط‌خواندنی', () => {
     expect(line).toContain(PORTFOLIO_LABEL.success);
     expect(line).toMatch(FA_DIGIT);
     expect(screen.getByTestId('sarkhati-portfolio-asof')).toBeDefined();
+  });
+
+  // سازگاریِ رابط باِ چهار حالتِ مستندِ `/portfolio` (بندِ ۹ مرحلۀ سه): هرکدام
+  // متنِ *خودِ بک‌اند* را می‌گیرد و هیچ‌کدام ردیف نمی‌سازد.
+  (['blocked', 'unverified_session', 'error'] as const).forEach((st) => {
+    it(`حالتِ ${st} باِ علتِ خودش خوانده می‌شود، نه باِ «صفر ردیف»`, async () => {
+      route({ '/api/execution/portfolio': { ...PORTFOLIO_NONE, status: st, rows: null,
+        error: 'علتِ ثبت‌شدۀ همین حالت درِ بک‌اند' } });
+      renderCard();
+      await settled('sarkhati-portfolio-status', PORTFOLIO_LABEL[st]);
+      const line = screen.getByTestId('sarkhati-portfolio-status').textContent ?? '';
+      expect(line).toBe(PORTFOLIO_LABEL[st]);
+      expect(line).not.toMatch(FA_DIGIT);
+      expect(screen.getByTestId('sarkhati-portfolio-error').textContent)
+        .toContain('علتِ ثبت‌شدۀ همین حالت');
+    });
   });
 });

@@ -15,7 +15,7 @@
 // باز می‌کند درِ «ریسک و ایمنی» است. پیشنهادی که مقصدِ کار ندارد، گم‌کردنِ کاربر
 // است، نه راهنمایی.
 import { DRY_RUN_LABEL } from './orderClient';
-import type { SessionStateValue, TradingGate } from './orderClient';
+import type { BrokerConfig, ExecutionStatus, SessionStateValue, TradingGate } from './orderClient';
 
 export type SarkhatiStep = 'connect' | 'symbol' | 'order' | 'tracking';
 
@@ -131,4 +131,144 @@ export function statusLine(gate: TradingGate): string {
       : st?.dry_run === true ? DRY_RUN_LABEL
         : st?.live_enabled === true ? 'اتصالِ زنده' : 'نشستِ بی‌ترافیک';
   return `${mode}${SESSION_SHORT[gate.sessionState] ? ` · ${SESSION_SHORT[gate.sessionState]}` : ''}`;
+}
+
+// ── چهار وضعیتِ جداِ اتصال ────────────────────────────────────────────────
+// مأموریتِ مالک (2026-10-18) این چهار را از هم می‌خواهد: «تنظیمات ذخیره شد»،
+// «نشست وارد شد»، «نشست با پاسخِ واقعی تأیید شد»، «ارسال سفارش مجاز است».
+// رابطِ قبلی دومی و سومی را یکی می‌خواند (هر «نشستی» که درِ حافظه بود متصل
+// به‌نظر می‌رسید) و «ذخیره شد» را گاهی به‌جایِ «تأیید شد» می‌گذاشت. هر چهار سطر
+// این تابع از *یک* فیلدِ متفاوتِ پاسخ‌هایِ موجود می‌آید و هیچ‌کدام از دیگری
+// مشتق نمی‌شود؛ پس روشن‌شدنِ یکی، دیگری را روشن نمی‌کند. هیچ عدد و متنی اینجا
+// ساخته نمی‌شود: نبودِ پاسخ، خودش یک حالتِ خواناست («پاسخی نیامده»).
+export type GateKey = 'config' | 'entered' | 'proven' | 'writes';
+export type GateTone = 'ok' | 'warn' | 'bad' | 'idle';
+
+export type GateRow = {
+  key: GateKey; label: string; text: string; tone: GateTone; title: string;
+};
+
+const NO_REPLY = 'پاسخی نیامده';
+
+/** حالتِ نشستِ بک‌اند به زبانِ مأموریت. `connected` باِ `proven` یکی نیست:
+ *  نشانیِ واردشده «هست» است و پرسشِ موفقِ کارگزاری «اثبات». */
+function enteredText(state: string, proven: boolean):
+  { text: string; tone: GateTone; title: string } {
+  if (state === 'expired') {
+    return { text: 'نشست منقضی شده', tone: 'warn',
+      title: 'کارگزاری گفت منقضی شده؛ نشانیِ تازه لازم است، نه پرسشِ دوباره' };
+  }
+  if (state === 'auth_failed') {
+    return { text: 'اجازۀ دسترسی داده نشد', tone: 'bad',
+      title: 'اجازۀ دسترسی رد شد — نشانیِ داده‌شده به این نشست تعلق ندارد' };
+  }
+  if (state === 'error') {
+    return { text: 'پاسخِ کارگزاری نامفهوم بود', tone: 'bad',
+      title: 'پاسخ خوانا نبود؛ نتیجه نامعلوم می‌مانَد و هیچ چیز تأیید نمی‌شود' };
+  }
+  if (state === 'disconnected') {
+    return { text: 'نشانی وارد نشده', tone: 'idle',
+      title: 'هیچ نشانی درِ حافظۀِ همین پروسه نیست — بی‌نشانی هیچ پرسشی به کارگزاری نمی‌رود' };
+  }
+  // `set_token` حالت را unknown می‌گذارد (نه connected): نشانی هست، پرسشی زده
+  // نشده. «روشن نیست» گفتنش همان پرسش‌نزدن را پنهان می‌کرد.
+  if (state === 'unknown' || state === 'connected') {
+    return proven
+      ? { text: 'نشانی وارد و تأیید شده', tone: 'ok',
+          title: 'نشانی درِ حافظه است و یک پرسشِ فقط‌خواندنی پاسخ گرفته — با restart می‌میرد' }
+      : { text: 'نشانی وارد شد — بی‌تأیید', tone: 'warn',
+          title: 'نشانی فقط درِ حافظۀِ همین پروسه می‌نشینَد و هیچ‌جا نوشته نمی‌شود؛ '
+            + 'تأیید تنها با «بررسی اتصال» و پاسخِ واقعیِ کارگزاری است' };
+  }
+  return { text: 'وضعیتِ نشست روشن نیست', tone: 'idle',
+    title: 'سرویس حالتِ نشست را نفرستاده — از نبودِ پاسخ نتیجه ساخته نمی‌شود' };
+}
+
+export function connectionLadder(input: {
+  cfg?: BrokerConfig | null;
+  st?: ExecutionStatus | null;
+}): GateRow[] {
+  const cfg = input.cfg ?? null;
+  const st = input.st ?? null;
+  const sess = st?.session ?? null;
+  const origin = String(sess?.origin ?? st?.adapter ?? '');
+  const isMock = origin === 'mock' || st?.adapter === 'mock';
+  const by = (sess?.verified_by ?? null) as Record<string, unknown> | null;
+  // بدل هیچ‌وقت «تأییدِ کارگزاری» ندارد، حتی اگر پاسخی `proven` بفرستد.
+  const proven = sess?.proven === true && !isMock;
+  const path = by?.path ? ` · ${String(by.path)}` : '';
+
+  const stored = cfg?.stored ?? null;
+  const eff = cfg?.effective ?? null;
+  const src = String(stored?.source ?? 'default');
+  const savedAdapter = stored?.adapter ? String(stored.adapter) : '';
+  const effAdapter = eff?.adapter ? String(eff.adapter) : '';
+
+  let config: GateRow;
+  if (!cfg) {
+    config = { key: 'config', label: 'تنظیمِ کارگزاری', text: NO_REPLY, tone: 'idle',
+      title: 'درِ تنظیمِ اتصال پاسخی نبود — ادعایی از آن ساخته نمی‌شود' };
+  } else if (src === 'env') {
+    config = { key: 'config', label: 'تنظیمِ کارگزاری', text: 'ازِ متغیرِ محیطی — مؤثر',
+      tone: 'ok', title: 'متغیرِ محیطی برِ تنظیمِ دیسک مقدم است' };
+  } else if (src === 'unavailable') {
+    config = { key: 'config', label: 'تنظیمِ کارگزاری', text: 'تنظیمِ دیسک خوانده نشد',
+      tone: 'bad', title: 'خودِ برنامه این دو کلید را نمی‌خواند؛ وضعیت از «بدونِ تنظیم» معتبرتر نیست' };
+  } else if (src === 'default' || !savedAdapter) {
+    config = { key: 'config', label: 'تنظیمِ کارگزاری', text: 'تنظیمی ذخیره نشده',
+      tone: 'idle', title: `پیش‌فرضِ همین پروسه: ${effAdapter || 'بدونِ آداپتور'}` };
+  } else if (savedAdapter === effAdapter) {
+    config = { key: 'config', label: 'تنظیمِ کارگزاری', text: 'ذخیره شد و مؤثر است',
+      tone: 'ok', title: 'ذخیره‌شدنِ تنظیمِ دیسک فقط دو کلیدِ غیرمحرمانه را می‌شناسد؛ رمز، کوکی و نشانی هیچ‌جا نوشته نمی‌شود' };
+  } else {
+    config = { key: 'config', label: 'تنظیمِ کارگزاری', text: 'ذخیره شد، مؤثر نشد',
+      tone: 'warn', title: `ذخیره ≠ اعمال: ${savedAdapter} ذخیره شده، ${effAdapter || '—'} مؤثر است — آداپتور درِ راه‌اندازی خوانده می‌شود` };
+  }
+
+  const entered = isMock
+    ? { text: 'آداپتورِ بدل — نشانی در کار نیست', tone: 'idle' as GateTone,
+        title: 'درِ بدل هیچ ترافیکی به کارگزاری نمی‌رود، پس نشانیِ نشست معنا ندارد' }
+    : !st || !sess
+      ? { text: NO_REPLY, tone: 'idle' as GateTone, title: 'پاسخِ نشست ازِ سرویس نیامده' }
+      : enteredText(String(sess.state ?? 'unknown'), proven);
+
+  let provenRow: GateRow;
+  if (isMock) {
+    provenRow = { key: 'proven', label: 'تأییدِ واقعی', text: 'بدل — تأییدِ کارگزاری ندارد',
+      tone: 'idle', title: 'هیچ پرسشی به کارگزاری نرفته، پس هیچ اثباتی هم نیست' };
+  } else if (!sess) {
+    provenRow = { key: 'proven', label: 'تأییدِ واقعی', text: NO_REPLY, tone: 'idle',
+      title: 'بدونِ پاسخِ نشست، تأیید گفته نمی‌شود' };
+  } else if (!proven) {
+    provenRow = { key: 'proven', label: 'تأییدِ واقعی', text: 'تأیید نشده', tone: 'idle',
+      title: '«بررسی اتصال» باید پاسخِ موفقی ازِ کارگزاری بگیرد؛ ثبتِ نشانی به‌تنهایی تأیید نیست' };
+  } else if (by?.hypothesis === true) {
+    provenRow = { key: 'proven', label: 'تأییدِ واقعی', text: 'تأییدِ مسیرِ فرضی', tone: 'warn',
+      title: 'پاسخِ واقعی ازِ مسیری آمد که درِ سندِ رسمیِ کارگزاری نیست' + path };
+  } else {
+    provenRow = { key: 'proven', label: 'تأییدِ واقعی', text: 'تأیید شد', tone: 'ok',
+      title: 'ازِ پرسشِ فقط‌خواندنیِ دیدہ‌شدہیِ کارگزاری' + path };
+  }
+
+  const canPlace = st?.capabilities?.place === true;
+  let writes: GateRow;
+  if (!st) {
+    writes = { key: 'writes', label: 'ارسالِ سفارش', text: NO_REPLY, tone: 'idle',
+      title: 'سرویسِ اجرا پاسخ نداده؛ مجاز بودن از نبودِ پاسخ ساخته نمی‌شود' };
+  } else if (st.live_enabled === true && canPlace) {
+    writes = { key: 'writes', label: 'ارسالِ سفارش', text: 'مجاز', tone: 'warn',
+      title: 'گیتِ نوشتن باِ متغیرِ محیطیِ پروسه باز شده است — پولِ واقعی' };
+  } else if (st.live_enabled === true) {
+    writes = { key: 'writes', label: 'ارسالِ سفارش', text: 'گیت باز، آداپتور ارسال را نمی‌پذیرد',
+      tone: 'warn', title: 'ارسال درِ capabilityهایِ همین اتصال بسته است' };
+  } else {
+    writes = { key: 'writes', label: 'ارسالِ سفارش', text: 'خاموش', tone: 'idle',
+      title: 'هیچ دکمه‌ای درِ این صفحه گیتِ نوشتن را باز نمی‌کند؛ ذخیرۀ «فقط‌خواندنی» '
+        + 'هم روشنش نمی‌کند. تنها متغیرِ محیطیِ BORS_EXECUTION_LIVE=1 درِ خودِ پروسه '
+        + 'تصمیمِ جداِ شماست' };
+  }
+
+  return [config,
+    { key: 'entered', label: 'نشستِ واردشده', ...entered },
+    provenRow, writes];
 }
