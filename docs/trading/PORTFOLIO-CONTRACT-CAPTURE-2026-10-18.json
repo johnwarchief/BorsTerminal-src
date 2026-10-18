@@ -1,0 +1,227 @@
+{
+ "base": "http://127.0.0.1:8106",
+ "records": [
+  {
+   "method": "GET",
+   "path": "/api/execution/status",
+   "request_fields": null,
+   "status": 200,
+   "content_type": "application/json",
+   "body_kind": "object{adapter,audit_db,blocked_on,capabilities,clock_limit,clock_source,confirm_epoch,confirm_gate,connection_config,dry_run,durable_events,experimental,halted,kill_reason,kill_switch,ledger_size,limits,live_enabled,live_requested,mode_matrix,nothing_will_leave_the_machine,queue_rank,read_only,recovered_after_restart,scheduled_pending,session,session_live,status,timings,traffic_allowed,wire_hypothesis,wire_provenance}",
+   "fields": {
+    "adapter": "string(len=4)",
+    "audit_db": "string(len=50)",
+    "blocked_on": "array(1 x string(len=78))",
+    "capabilities": "object{balances,best_bid_ask,cancel,list_orders,order_state,place,queue_position}",
+    "clock_limit": "string(len=162)",
+    "clock_source": "string(len=6)",
+    "confirm_epoch": "number",
+    "confirm_gate": "object{phrase,required}",
+    "connection_config": "object{adapter,adapter_source,applies_on_restart,read_only,secrets_stored,writes_gate}",
+    "dry_run": "bool(True)",
+    "durable_events": "number",
+    "experimental": "bool(True)",
+    "halted": "bool(False)",
+    "kill_reason": "string(len=0)",
+    "kill_switch": "string(len=5)",
+    "ledger_size": "number",
+    "limits": "object{max_daily_loss,max_data_age_s,max_order_value,max_orders,max_orders_per_window,max_symbol_exposure,max_total_exposure,max_total_orders_per_window,max_total_quantity,max_total_value,require_confirmation,window_seconds}",
+    "live_enabled": "bool(False)",
+    "live_requested": "bool(False)",
+    "mode_matrix": "object{backtest,dry_run,live,mock,paper}",
+    "nothing_will_leave_the_machine": "bool(True)",
+    "queue_rank": "object{claims_first,official_rank_source,why}",
+    "read_only": "bool(False)",
+    "recovered_after_restart": "number",
+    "scheduled_pending": "number",
+    "session": "object{account_label,checked_at,origin,proven,state,verified_by}",
+    "session_live": "bool(False)",
+    "status": "string(len=7)",
+    "timings": "object{clock,phases,samples}",
+    "traffic_allowed": "bool(False)",
+    "wire_hypothesis": "bool(False)",
+    "wire_provenance": "object{host,host_health,order_create,order_list,session_probe_candidates}"
+   },
+   "notable": {
+    "status": "success",
+    "adapter": "mock"
+   }
+  },
+  {
+   "method": "GET",
+   "path": "/api/execution/config",
+   "request_fields": null,
+   "status": 200,
+   "content_type": "application/json",
+   "body_kind": "object{applies_on_restart,detail,effective,secrets_stored,status,stored}",
+   "fields": {
+    "applies_on_restart": "bool(True)",
+    "detail": "string(len=132)",
+    "effective": "object{adapter,live_requested,read_only,session_live,traffic_allowed,writes_gate}",
+    "secrets_stored": "bool(False)",
+    "status": "string(len=7)",
+    "stored": "object{adapter,read_only,source,updated_at}"
+   },
+   "notable": {
+    "status": "success",
+    "detail": "token/رمز/کوکی هیچ‌جا درِ این تنظیم نمی‌نشیند؛ نشانیِ نشست فقط باِ POST /api/execution/session درِ حافظه می‌آید و با res",
+    "applies_on_restart": true,
+    "secrets_stored": false
+   }
+  },
+  {
+   "method": "GET",
+   "path": "/api/execution/portfolio",
+   "request_fields": null,
+   "status": 200,
+   "content_type": "application/json",
+   "body_kind": "object{adapter,as_of,cached_at,error,live,rows,session_proven,source,status}",
+   "fields": {
+    "adapter": "string(len=4)",
+    "as_of": "null",
+    "cached_at": "null",
+    "error": "string(len=121)",
+    "live": "bool(False)",
+    "rows": "null",
+    "session_proven": "bool(False)",
+    "source": "string(len=4)",
+    "status": "string(len=7)"
+   },
+   "notable": {
+    "status": "blocked",
+    "error": "هیچ ترافیکی مجاز نیست — «تنظیمِ اتصال» را رویِ easytrader + فقط‌خواندنی (یا BORS_EXECUTION_LIVE=1) بگذارید و restart کنی",
+    "rows": null,
+    "as_of": null,
+    "source": "none",
+    "session_proven": false,
+    "live": false,
+    "adapter": "mock"
+   }
+  },
+  {
+   "method": "GET",
+   "path": "/api/execution/connect",
+   "request_fields": null,
+   "status": 200,
+   "content_type": "application/json",
+   "body_kind": "object{allowed_hosts,browser,detail,host_roles,last_verify,login_host_blocked_reason,login_hosts_configured,secrets_stored,session_proven,states_supported,status,traffic_mode}",
+   "fields": {
+    "allowed_hosts": "array(3 x string(len=18))",
+    "browser": "object{open,pid,profile_kept,url}",
+    "detail": "string(len=102)",
+    "host_roles": "object{api,auth,evidence,ui}",
+    "last_verify": "object{}",
+    "login_host_blocked_reason": "string(len=0)",
+    "login_hosts_configured": "array(3 x string(len=18))",
+    "secrets_stored": "bool(False)",
+    "session_proven": "bool(False)",
+    "states_supported": "array(4 x string(len=9))",
+    "status": "string(len=7)",
+    "traffic_mode": "string(len=7)"
+   },
+   "notable": {
+    "status": "success",
+    "detail": "رمز/CAPTCHA/MFA باِ خودِ کاربر است؛ این لایه فقط پنجره را باز می‌کند و حالت را از پرسشِ واقعی می‌خواند",
+    "session_proven": false,
+    "secrets_stored": false
+   }
+  },
+  {
+   "method": "POST",
+   "path": "/api/execution/session",
+   "request_fields": [
+    "token"
+   ],
+   "status": 200,
+   "content_type": "application/json",
+   "body_kind": "object{code,detail,session,status}",
+   "fields": {
+    "code": "string(len=11)",
+    "detail": "string(len=44)",
+    "session": "object{account_label,checked_at,origin,proven,state,verified_by}",
+    "status": "string(len=5)"
+   },
+   "notable": {
+    "status": "error",
+    "code": "UNSUPPORTED",
+    "detail": "آداپتورِ فعال token نمی‌پذیرد (adapter=mock)"
+   }
+  },
+  {
+   "method": "GET",
+   "path": "/api/execution/portfolio",
+   "request_fields": null,
+   "status": 200,
+   "content_type": "application/json",
+   "body_kind": "object{adapter,as_of,cached_at,error,live,rows,session_proven,source,status}",
+   "fields": {
+    "adapter": "string(len=4)",
+    "as_of": "null",
+    "cached_at": "null",
+    "error": "string(len=121)",
+    "live": "bool(False)",
+    "rows": "null",
+    "session_proven": "bool(False)",
+    "source": "string(len=4)",
+    "status": "string(len=7)"
+   },
+   "notable": {
+    "status": "blocked",
+    "error": "هیچ ترافیکی مجاز نیست — «تنظیمِ اتصال» را رویِ easytrader + فقط‌خواندنی (یا BORS_EXECUTION_LIVE=1) بگذارید و restart کنی",
+    "rows": null,
+    "as_of": null,
+    "source": "none",
+    "session_proven": false,
+    "live": false,
+    "adapter": "mock"
+   }
+  },
+  {
+   "method": "DELETE",
+   "path": "/api/execution/session",
+   "request_fields": null,
+   "status": 200,
+   "content_type": "application/json",
+   "body_kind": "object{confirmations_voided,live,session,status}",
+   "fields": {
+    "confirmations_voided": "number",
+    "live": "bool(False)",
+    "session": "object{account_label,checked_at,origin,proven,state,verified_by}",
+    "status": "string(len=7)"
+   },
+   "notable": {
+    "status": "success",
+    "live": false
+   }
+  },
+  {
+   "method": "GET",
+   "path": "/api/execution/portfolio",
+   "request_fields": null,
+   "status": 200,
+   "content_type": "application/json",
+   "body_kind": "object{adapter,as_of,cached_at,error,live,rows,session_proven,source,status}",
+   "fields": {
+    "adapter": "string(len=4)",
+    "as_of": "null",
+    "cached_at": "null",
+    "error": "string(len=121)",
+    "live": "bool(False)",
+    "rows": "null",
+    "session_proven": "bool(False)",
+    "source": "string(len=4)",
+    "status": "string(len=7)"
+   },
+   "notable": {
+    "status": "blocked",
+    "error": "هیچ ترافیکی مجاز نیست — «تنظیمِ اتصال» را رویِ easytrader + فقط‌خواندنی (یا BORS_EXECUTION_LIVE=1) بگذارید و restart کنی",
+    "rows": null,
+    "as_of": null,
+    "source": "none",
+    "session_proven": false,
+    "live": false,
+    "adapter": "mock"
+   }
+  }
+ ]
+}
