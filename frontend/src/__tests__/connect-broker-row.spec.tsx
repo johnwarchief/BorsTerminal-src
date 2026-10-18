@@ -62,4 +62,22 @@ describe('ردیفِ اتصالِ کارگزاری', () => {
     const urls = fetchMock.mock.calls.map((c) => String(c[0]));
     expect(urls.some((u) => u.endsWith('/api/execution/connect/verify'))).toBe(true);
   });
+
+  // تازگیِ ادعا درِ لایۀ canonical ساخته می‌شود (`effective_verify`)؛ رابط فقط
+  // همان را نشان می‌دهد — پس چیپِ سبز بی‌پرسشِ تازه نمی‌ماند.
+  it('پرسشِ کهنه «متصل» نیست و سنِ پرسش درِ جزئیات خوانده می‌شود', async () => {
+    respond({ status: 'success',
+              last_verify: { state: 'UNKNOWN', verified_state: 'CONNECTED', stale: true,
+                             age_s: 7200, reason: 'پرسشِ اتصال قدیمی است' },
+              browser: { open: false }, login_hosts_configured: ['mts.example'] });
+    render_();
+    // خطِ سنِ پرسش حتی بی‌داده هم رندر می‌شود؛ پس شاهدِ واقعی باید خودِ عدد باشد،
+    // وگرنه آزمون بی‌ رسیدنِ پاسخ هم سبز می‌ماند (سنجشِ خودِ سنجه).
+    await waitFor(() => expect(screen.getByTestId('connect-verify-age').textContent)
+      .toContain('کهنه'));
+    expect(screen.getByTestId('connect-verify-age').textContent).toContain('۱۲۰');
+    expect(screen.getByTestId('connect-broker-row').textContent).not.toContain('متصل');
+    expect(screen.getByTestId('connect-broker-row').textContent).toContain('نامعلوم');
+  });
 });
+

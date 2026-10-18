@@ -65,6 +65,47 @@ STATE_CONNECTED = "CONNECTED"
 STATE_DISCONNECTED = "DISCONNECTED"
 STATE_EXPIRED = "EXPIRED"
 STATE_UNKNOWN = "UNKNOWN"
+
+#: یکِ «متصل» تا کی می‌ارزد؟ بی‌این سقف، چیپِ سبزِ رابط می‌تواند ساعت‌ها بی‌هیچ
+#: پاسخِ تازه‌ای سبز بماند (the only writer of `last_verify` is POST /connect/verify).
+#: باِ BORS_EXECUTION_VERIFY_MAX_AGE_S تنظیم می‌شود؛ پیش‌فرض ۱۵ دقیقه.
+VERIFY_MAX_AGE_S = float(os.environ.get("BORS_EXECUTION_VERIFY_MAX_AGE_S") or 900.0)
+
+
+def verify_age_s(last: Mapping[str, Any] | None) -> float | None:
+    """چند ثانیه ازِ آخرینِ پرسشِ واقعی می‌گذرد؟ بی‌زمان ⇒ None، نه صفر."""
+    raw = str((last or {}).get("checked_at") or "").strip()
+    if not raw:
+        return None
+    try:
+        stamp = time.strptime(raw, "%Y-%m-%dT%H:%M:%S")
+    except ValueError:
+        return None
+    return max(0.0, time.time() - time.mktime(stamp))
+
+
+def effective_verify(last: Mapping[str, Any] | None) -> dict[str, Any]:
+    """نتيجۀِ پرسش + قاعدۀ تازگی، یک‌جا و درِ همین لایه (نه درِ رابط).
+
+    «متصل»ی که زمانش نیامده یا ازِ سقف گذشته است، «متصل» گزارش نمی‌شود؛ حالتِ
+    اصلی درِ `verified_state` و علت درِ `reason` می‌ماند — چیزی پاک نمی‌شود،
+    فقط بی‌اعتبار علامت می‌خورد.
+    """
+    out = dict(last or {})
+    if not out:
+        return out
+    age = verify_age_s(out)
+    out["age_s"] = None if age is None else round(age, 1)
+    out["verify_max_age_s"] = VERIFY_MAX_AGE_S
+    stale = age is None or age > VERIFY_MAX_AGE_S
+    out["stale"] = bool(stale)
+    if stale and out.get("state") == STATE_CONNECTED:
+        out["verified_state"] = STATE_CONNECTED
+        out["state"] = STATE_UNKNOWN
+        out["reason"] = ("پرسشِ اتصال زمانش مشخص نیست یا ازِ "
+                         f"{int(VERIFY_MAX_AGE_S // 60)} دقیقه گذشته است — "
+                         "«بررسی اتصال» را دوباره بزنید")
+    return out
 STATES = (STATE_CONNECTED, STATE_DISCONNECTED, STATE_EXPIRED, STATE_UNKNOWN)
 
 #: چرا پنجره باز نشده — رشته‌ای ثابت که UI و گارد رویِ آن می‌خوانند، نه بر اساسِ متن.
@@ -405,7 +446,7 @@ def status_dict(adapter: Any, last: Mapping[str, Any] | None) -> dict[str, Any]:
                                           NO_LOGIN_HOST + " — هیچ دامنه‌ای برایِ "
                                           "ورودِ کاربر تأیید نشده؛ "
                                           "BORS_EXECUTION_CONNECT_HOSTS را بگذارید"),
-            "last_verify": dict(last or {}),
+            "last_verify": effective_verify(last),
             "secrets_stored": False,
             "detail": ("رمز/CAPTCHA/MFA باِ خودِ کاربر است؛ این لایه فقط پنجره را "
                        "باز می‌کند و حالت را از پرسشِ واقعی می‌خواند")}

@@ -142,6 +142,10 @@ class ScriptedBroker:
             self._next += 1
             self.orders.append(second)
             raise TransportNetwork("scripted network error after two creates")
+        if oc == "accepted_not_listed":
+            # سرور پذیرفت و شناسه داد، ولی درِ فهرستِ بعدی ردیفی ازِ ما نیست.
+            # همین دو چیز را از هم جدا می‌کند: «پذیرش» با «دیدنِ ردیفِ سرور».
+            return 200, {"isSuccessful": True, "id": row["id"], "message": "ok"}
         if oc == "http5xx":
             return 500, {"raw": "internal error"}
         if oc == "html200":
@@ -1105,6 +1109,41 @@ def part_session_hardening():
         EX.ADAPTER_KIND, EX.LIVE_REQUESTED, EX._ACTIVE_ADAPTER = saved
 
 
+def part_ack_not_observed():
+    """۱۴) پذیرشِ POST مدرکِ «دیده‌شدن درِ فهرستِ سرور» نیست.
+
+    پیش ازِ این اصلاح، `submit_order` رکوردِ خودِ خودش را درِ `server_orders`
+    می‌گذاشت و `refresh()` همان را به‌عنوانِ «refreshed from broker» برمی‌داشت —
+    یعنی RECONCILED بی‌هیچ ردیفِ سرور. حالا «شناخته‌شده» و «دیده‌شده» دو دفترند.
+    """
+    print("── ۱۴ پذیرش ≠ دیدنِ ردیف درِ فهرستِ سرور")
+    a = et_build(script={"EX-ECHO": ["accepted_not_listed"]})
+    rec = a.submit_order(draft("EX-ECHO"))
+    rid = rec.broker_order_id
+    ck(bool(rid) and len(a.server_orders) == 1,
+       "پذیرش درِ «شناخته‌شده‌ها» می‌ماند (همان چیزی که قراردادِ مشترک می‌خواهد)",
+       str(rid))
+    remote = a.get_orders()
+    ck([r for r in remote if r.execution_id == "EX-ECHO"] == [],
+       "فهرستِ سرور ما را ندارد ⇒ get_orders آن را «دیده‌شده» گزارش نمی‌کند",
+       str([r.broker_order_id for r in remote])[:90])
+    ck(a.get_order(rid) is None,
+       "get_order بی‌ردیفِ دیده‌شده None می‌دهد، نه رکوردِ خودِ خودمان", str(rid))
+    b = et_build(script={"EX-SAW": ["ok"]})
+    r2 = b.submit_order(draft("EX-SAW"))
+    ck(b.get_order(r2.broker_order_id) is not None,
+       "کنترلِ منفی: اگر ردیف درِ فهرست باشد، دیده و برگردانده می‌شود", "")
+    c = et_build(script={"EX-TIMEOUT": ["timeout"]})
+    try:
+        c.submit_order(draft("EX-TIMEOUT"))
+        ck(False, "timeout باید BrokerError بدهد")
+    except BrokerError:
+        pass
+    ck(c.get_orders() and c.get_orders()[0].execution_id == "EX-TIMEOUT",
+       "مسیرِ timeout (تطبیقِ ردیفِ سرور به قصدِ بی‌ack) دست‌نخورده باقی می‌ماند",
+       str([r.execution_id for r in c.get_orders()])[:90])
+
+
 def part_spec():
     print("── ۹ spec: آداپتور درِ بیلدِ منجمد گم نمی‌شود")
     import re
@@ -1136,6 +1175,7 @@ def main():
     part_wire_host_allowlist()
     part_server_clock()
     part_session_hardening()
+    part_ack_not_observed()
     part_spec()
     print(f"\neasytrader_adapter_v1113: {PASS} passed / {FAIL} failed")
     return 1 if FAIL else 0

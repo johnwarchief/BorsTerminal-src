@@ -294,6 +294,28 @@ ck(st["state"] != XC.STATE_CONNECTED,
    "G1 پنجرۀ باز و نشانیِ بی‌حافظه به‌تنهایی «متصل» نیست", st)
 
 print("\n── ح) راز هیچ‌جا نمی‌نشیند ──")
+# گ2/گ3 — تازگیِ ادعا: «متصل» بی‌پرسشِ تازه، متصل نیست. `last_verify` فقط باِ
+# POST /connect/verify نوشته می‌شود، پس اگر کسی آن را نزند چیپ تا ابد سبز می‌ماند.
+_T = __import__("time")
+_NOW = _T.strftime("%Y-%m-%dT%H:%M:%S")
+_OLD = _T.strftime("%Y-%m-%dT%H:%M:%S", _T.localtime(_T.time() - 7200))
+_f = XC.effective_verify({"state": XC.STATE_CONNECTED, "checked_at": _NOW})
+ck(_f["state"] == XC.STATE_CONNECTED and _f["stale"] is False,
+   "گ2 پرسشِ تازه دست‌نخورده می‌ماند (تازگی بی‌دلیل ادعا را نمی‌خورد)", _f)
+_o = XC.effective_verify({"state": XC.STATE_CONNECTED, "checked_at": _OLD})
+ck(_o["state"] == XC.STATE_UNKNOWN and _o.get("verified_state") == XC.STATE_CONNECTED
+   and _o["stale"] is True,
+   "گ2 پرسشِ دوساعته «متصل» نیست؛ حالتِ اصلی هم پاک نمی‌شود (verified_state)", _o)
+_n = XC.effective_verify({"state": XC.STATE_CONNECTED})
+ck(_n["state"] == XC.STATE_UNKNOWN and _n["age_s"] is None,
+   "گ2 بی‌زمانِ پرسش هم «متصل» گزارش نمی‌شود — fail-closed", _n)
+_d = XC.status_dict(FakeAdapter(token="t"), {"state": XC.STATE_CONNECTED, "checked_at": _OLD})
+ck(_d["last_verify"]["state"] == XC.STATE_UNKNOWN,
+   "گ3 قاعدۀ تازگی درِ لایۀ canonical است، نه درِ رابط: خودِ /connect هم همین را می‌دهد",
+   str(_d["last_verify"].get("reason"))[:70])
+ck(XC.VERIFY_MAX_AGE_S > 0, "گ3 سقفِ تازگی عددِ بی‌نام نیست (BORS_EXECUTION_VERIFY_MAX_AGE_S)",
+   str(XC.VERIFY_MAX_AGE_S))
+
 SECRET = "SECRETTOKEN-must-never-appear"
 d = XC.status_dict(FakeAdapter(token=SECRET), XC.verify(FakeAdapter(token=SECRET)))
 blob = json.dumps(d, ensure_ascii=False, default=str)

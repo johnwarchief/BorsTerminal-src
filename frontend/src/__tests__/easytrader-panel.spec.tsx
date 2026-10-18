@@ -287,4 +287,27 @@ describe('پاسخِ کارگزاری درِ رابط تعبیر نمی‌شود
     expect(screen.getByTestId('exec-token-input')).toHaveValue('');
     expect(document.body.textContent ?? '').not.toContain(secret);
   });
+
+  // مأموریتِ ۲۰۲۶-۱۰-۱۸، بندِ ۴: «UI نباید صرفاً به‌دلیلِ حضورِ توکن، آمادهٔ
+  // ارسال نشان دهد». بک‌اند POST را بی‌نشستِ راستی‌آزمایی‌شده می‌بندد؛ رابط
+  // نباید دروازه‌ای بازتر از سرویس خودش داشته باشد.
+  it('live_enabled=true ولی نشستِ راستی‌آزمایی‌نشده ⇒ درِ ارسال بسته است با علت', async () => {
+    route(statusEasy({ session: { state: 'unknown', account_label: '' } }));
+    renderPanel();
+    await waitFor(() => expect(screen.getByTestId('watch-order-panel')).toBeTruthy());
+    await waitFor(() => expect(screen.getByTestId('watch-order-panel')
+      .getAttribute('data-can-trade')).toBe('false'));
+    // خطِ علت، نه عنوانِ tooltip: کاربر باید بداند چه کاری لازم است.
+    expect(screen.getByTestId('watch-order-reason').textContent)
+      .toContain('بررسی اتصال');
+  });
+
+  it('همان وضعیت با نشستِ منقضی ⇒ علتِ «منقضی» گفته می‌شود، نه «خطایِ نامعلوم»', async () => {
+    route(statusEasy({ session: { state: 'expired', account_label: 'easytrader-session' } }));
+    renderPanel();
+    await waitFor(() => expect(screen.getByTestId('watch-order-reason').textContent)
+      .toContain('منقضی'));
+    expect(screen.getByTestId('watch-order-panel').getAttribute('data-can-trade')).toBe('false');
+  });
+
 });

@@ -706,6 +706,9 @@ class EasyTraderAdapter(BrokerAdapter):
         #: آنچه از فهرستِ سرور *دیده‌ایم*، به‌علاوهٔ پذیرش‌هایِ قطعیِ خودِ ما.
         #: درِ حالتِ timeout چیزی اینجا نیست — و همین تفاوتِ ما با بدل است.
         self.server_orders: dict[str, ExecutionRecord] = {}
+        #: شناسه‌هایی که درِ *تازۀترین* خواندنِ فهرستِ سرور واقعاً دیده شده‌اند.
+        #: تنها همین‌ها مدرکِ «وجود درِ سمتِ سرور»اند؛ پذیرشِ POST به‌تنهایی نه.
+        self._observed_ids: set[str] = set()
         self.queue_by_order: dict[str, QueueSnapshot] = {}
         #: فقطِ برچسبِ عملیات، نه بدن و نه سر — برایِ اثباتِ «چیزی بیرون نرفت».
         self.wire_calls: list[str] = []
@@ -949,6 +952,11 @@ class EasyTraderAdapter(BrokerAdapter):
         if v.broker_order_id:
             intent.broker_order_id = v.broker_order_id
             self._claimed_rows[v.broker_order_id] = draft.execution_id
+            # پذیرشِ POST را درِ «شناخته‌شده‌ها» نگه می‌داریم (قراردادِ مخزن همین را
+            # می‌گوید)، ولی «دیده‌شدنِ ردیف درِ فهرستِ سرور» جدا ثبت می‌شود:
+            # `_observed_ids`. بی‌این تفکیک، refresh()/get_order() رکوردِ خودِ خودمان
+            # را به‌عنوانِ بازخوانیِ سرور بازمی‌گرداند و RECONCILEDِ بی‌شاهد ساخته
+            # می‌شد — همان چیزی که درِ سندِ ایمنی منع شده.
             self.server_orders[v.broker_order_id] = rec
         return rec
 
@@ -992,7 +1000,8 @@ class EasyTraderAdapter(BrokerAdapter):
             raise BrokerError(v.error or ErrorCode.UNKNOWN_RESULT, v.detail,
                               broker_message=v.message)
         rows = self._ingest_rows(resp)
-        return list(self.server_orders.values()) + self._ambiguous_records(rows)
+        return ([rec for rid, rec in self.server_orders.items() if rid in self._observed_ids]
+                + self._ambiguous_records(rows))
 
     def _ingest_rows(self, resp: WireResponse) -> list[Mapping[str, Any]]:
         """ردیف‌هایِ سرور ← رکورد، با تطبیقِ دو-گذریِ بی‌ادعا.
@@ -1009,10 +1018,13 @@ class EasyTraderAdapter(BrokerAdapter):
                      and self._row_owner(r) is None]
             if len(cands) == 1:
                 self._bind(it, cands[0])
+        seen: set[str] = set()
         for row in rows:
             rec = self._record_from_row(row)
             if rec.broker_order_id:
                 self.server_orders[rec.broker_order_id] = rec
+                seen.add(str(rec.broker_order_id))
+        self._observed_ids = seen
         return rows
 
     @staticmethod
@@ -1113,7 +1125,11 @@ class EasyTraderAdapter(BrokerAdapter):
         if not self.capabilities().order_state:
             raise BrokerError(ErrorCode.UNSUPPORTED, "easytrader: order_state unsupported")
         self.get_orders()
-        return self.server_orders.get(str(broker_order_id))
+        rid = str(broker_order_id)
+        if rid not in self._observed_ids:
+            # ردیف درِ فهرستِ سرور دیده نشد: None، نه رکوردِ پذیرشِ خودِ ما.
+            return None
+        return self.server_orders.get(rid)
 
     # ---- ۱۰) صف — فقط نمایش، با واحدِ نامعلوم (قفلِ ۸) ─────────────────────
     def get_queue_position(self, broker_order_id: str) -> QueueSnapshot | None:

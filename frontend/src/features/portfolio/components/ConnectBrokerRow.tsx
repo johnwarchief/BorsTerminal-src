@@ -9,6 +9,7 @@
 //  • باز کردنِ هر نشانیِ دلخواه — میزبان باید درِ `BORS_EXECUTION_CONNECT_HOSTS`
 //    باشد؛ بی‌آن پیامِ BLOCKED با علت نشان داده می‌شود و دکمه بی‌عمل نمی‌ماند.
 import { useState } from 'react';
+import { toFaDigits } from '@shared/lib/fmt';
 import { Badge } from '@shared/components/Badge';
 import { connectApi, CONNECT_LABEL, useBrokerConnect, type ConnectState } from '../lib/orderClient';
 
@@ -71,6 +72,13 @@ export function ConnectBrokerRow() {
         <details className="text-3xs text-text-muted" data-testid="connect-details">
           <summary>جزئیات نشست</summary>
           <p>{String(last.reason ?? 'پرسشی انجام نشده')}</p>
+          {/* تازگیِ ادعا بخشی ازِ خودِ ادعا است: «متصل» بی‌پرسشِ تازه، متصل نیست. */}
+          <p data-testid="connect-verify-age">
+            {last.age_s == null
+              ? 'پرسشِ اتصالِ زمان‌دار ثبت نشده'
+              : `پرسشِ اتصال: ${toFaDigits(Math.max(0, Math.round(Number(last.age_s) / 60)))} دقیقه پیش`
+                + (last.stale ? ' — کهنه' : '')}
+          </p>
           {blocked ? <p className="text-accent-yellow" data-testid="connect-blocked">{blocked}</p> : null}
           <p>پنجره: {browser.open ? 'باز' : 'بسته'} · پروفایل موقت: {browser.profile_kept ? 'نگه داشته' : 'پاک می‌شود'}</p>
           <p>دامنه‌های ورود: {((c?.login_hosts_configured ?? []) as string[]).join('، ') || '—'}</p>

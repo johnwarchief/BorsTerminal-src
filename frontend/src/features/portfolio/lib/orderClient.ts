@@ -277,14 +277,19 @@ export function deriveGate(status: ExecutionStatus | null | undefined, source: G
     return { ...base, canTrade: false, dryRun: status.dry_run !== false,
       reason: 'سازندۀ سفارش (place) در این adapter فعال اعلام نشده است' };
   }
-  return {
-    ...base,
-    canTrade: status.dry_run !== true,
-    dryRun: status.dry_run === true,
-    reason: status.dry_run === true
-      ? 'حالتِ بدل (dry_run) فعال است — هیچ سفارشی به کارگزاری نمی‌رود'
-      : '',
-  };
+  if (status.dry_run === true) {
+    return { ...base, canTrade: false, dryRun: true,
+      reason: 'حالتِ بدل (dry_run) فعال است — هیچ سفارشی به کارگزاری نمی‌رود' };
+  }
+  // «توکن هست» مجوزِ ارسال نیست. بک‌اند هم POST را باِ همین قفل می‌بندد
+  // (`_verified_token is not _token`)؛ رابط نباید دروازه‌ای بازتر از خودِ سرویس
+  // نشان دهد، وگرنه کاربر «آمادهٔ ارسال» می‌بیند و ارسال بی‌پاسخ می‌ماند.
+  if (sessionState !== 'connected') {
+    return { ...base, canTrade: false, dryRun: false,
+      reason: SESSION_LABEL[sessionState]
+        + ' — «بررسی اتصال» لازم است؛ حضورِ توکن به‌تنهایی نشانهٔ نشست نیست' };
+  }
+  return { ...base, canTrade: true, dryRun: false, reason: '' };
 }
 
 /** وضعیتِ اتصالِ اجرا یک‌بار در هر نشستِ بازار کافی است؛ ثابت‌تر از آن نیست */
@@ -412,6 +417,12 @@ const VerifySchema = z.object({
   live: z.boolean().nullish(),
   token_present: z.boolean().nullish(),
   adapter: z.string().nullish(),
+  // تازگیِ ادعا درِ بک‌اند ساخته می‌شود (`effective_verify`)؛ این چهار کلید باید
+  // درِ parse زنده بمانند، وگرنه «متصلِ کهنه» درِ رابط بی‌علت خاموش می‌شود.
+  age_s: z.number().nullish(),
+  verify_max_age_s: z.number().nullish(),
+  stale: z.boolean().nullish(),
+  verified_state: z.string().nullish(),
 }).nullish();
 
 export const ConnectSchema = z.object({

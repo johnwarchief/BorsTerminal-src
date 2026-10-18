@@ -394,7 +394,7 @@ function Cell({ k, e, mark, why }: { k: ColKey; e: FunnelEntry; mark: StageStatu
                   <span key={c.filterId}
                         data-testid={`funnel-tech-check-${e.symbol}-${c.filterId}`}
                         title={`${c.label} · ${c.column}${c.value != null ? ` = ${c.value}` : ' بدونِ مقدار'} — ${c.humanReason}${c.source ? ` (${c.source})` : ''}`}
-                        className={`inline-flex max-w-[13ch] shrink-0 items-center gap-0.5 truncate rounded-md border px-1 py-0.5 text-[10px] font-black ${CHECK_TONE[c.status] ?? CHECK_TONE.unavailable}`}>
+                        className={`inline-flex max-w-[13ch] shrink-0 items-center gap-0.5 truncate rounded-md border px-1 py-0.5 text-3xs font-black ${CHECK_TONE[c.status] ?? CHECK_TONE.unavailable}`}>
                     <span aria-hidden>{CHECK_GLYPH[c.status] ?? '—'}</span>
                     <span className="truncate font-bold">{c.label}</span>
                   </span>
