@@ -17,6 +17,9 @@ import {
   readLatestStoredFinancialStatement,
   syncLatestAnnualFinancialStatement,
 } from './codalFinancial';
+import { codalStore } from './codalStore';
+import { evaluateRevenueGrowthYoy } from './ftsGrowth';
+import { resolveSymbolIdentity, calculateIdentityStats } from './symbolIdentity';
 
 const FTS_CONFIG_KEY = 'bors_mobile_fts_config_v1';
 
@@ -357,6 +360,112 @@ function nearestUpcomingKey(days: number): string {
   return `calendar/upcoming/${pick}`;
 }
 
+/**
+ * تحلیل محلی FTS برای نماد مشخص:
+ * ابتدا اسنپ‌شات پخته را بررسی می‌کند و در صورت وجود با آخرین دادهٔ کدال غنی‌سازی می‌کند.
+ * در صورت عدم وجود در اسنپ‌شات، با استفاده از تاریخچهٔ کندل‌ها و سری محلی کدال
+ * وضعیت را با پرچم‌های شفاف محاسبه و بازمی‌گرداند.
+ */
+async function ftsSymbolPlan(symbol: string, url: string): Promise<unknown> {
+  const bakedPlan = await baked(`fts/${symbol}`);
+  if (bakedPlan && typeof bakedPlan === 'object') {
+    try {
+      const series = await codalStore.readMonthlyRevenueSeries(symbol);
+      if (series && series.rows.length > 0) {
+        const growth = evaluateRevenueGrowthYoy({
+          coverage: series.coverage,
+          rows: series.rows.map((r) => ({
+            periodEnd: r.periodEnd,
+            ytdRevenue: r.ytdRevenue,
+            ytdRevenuePrev: r.ytdRevenuePrev,
+          })),
+        });
+        return {
+          ...(bakedPlan as Record<string, unknown>),
+          growth,
+          local_codal: {
+            coverage: series.coverage,
+            history_rows: series.rows.length,
+          },
+        };
+      }
+    } catch {
+      // استفاده از داده پخته بدون تغییر
+    }
+    return bakedPlan;
+  }
+
+  // اگر در اسنپ‌شات پخته نشده بود: بررسی دیتابیس محلی
+  const h = await historyPayload(symbol).catch(() => null);
+  const series = await codalStore.readMonthlyRevenueSeries(symbol).catch(() => null);
+  const hasCandles = h && h.candles.length > 0;
+  const hasCodal = series && series.rows.length > 0;
+
+  if (!hasCandles && !hasCodal) {
+    throw new HttpError(404, url, `دادهٔ تحلیلی FTS برای ${symbol} در پایگاه محلی یافت نشد`);
+  }
+
+  const growth = series
+    ? evaluateRevenueGrowthYoy({
+        coverage: series.coverage,
+        rows: series.rows.map((r) => ({
+          periodEnd: r.periodEnd,
+          ytdRevenue: r.ytdRevenue,
+          ytdRevenuePrev: r.ytdRevenuePrev,
+        })),
+      })
+    : {
+        status: 'NOT_EVALUATED' as const,
+        dataGap: true as const,
+        reason: 'comparable_ytd_missing' as const,
+        threshold: 40,
+        growthTarget: 60,
+      };
+
+  const lastCandle = hasCandles ? h.candles[h.candles.length - 1] : null;
+  const ma14 = hasCandles && h.candles.length >= 14
+    ? Math.round(h.candles.slice(-14).reduce((acc, c) => acc + c.close, 0) / 14)
+    : null;
+
+  return {
+    status: 'success',
+    symbol,
+    analysis_basis: 'local-first',
+    growth,
+    fts: {
+      fib: null,
+      jet: null,
+      exit_engine: lastCandle
+        ? {
+            verdict: ma14 && lastCandle.close < ma14 ? 'EXIT_WATCH' : 'HOLD',
+            l1: {
+              hard_stop: Math.round(lastCandle.close * 0.95),
+              stop_basis: '5_pct_below_close',
+              stop_hit: false,
+              ma14_exit: ma14 ? lastCandle.close < ma14 : false,
+              ma14_exit_pending: false,
+              ma14,
+              close: lastCandle.close,
+            },
+          }
+        : null,
+      status: {
+        code: (series?.coverage as string) === 'DESKTOP_COMPATIBLE' ? 'LOCAL_EVALUATED' : 'COVERAGE_INCOMPLETE',
+        text: (series?.coverage as string) === 'DESKTOP_COMPATIBLE' ? 'محاسبهٔ محلی FTS' : 'پوشش تاریخی کدال ناقص است (در حال همگام‌سازی)',
+        trigger: null,
+        vetoed: false,
+      },
+      hourglass: null,
+      trend: null,
+    },
+    local_provenance: {
+      candles: h ? h.candles.length : 0,
+      codal_rows: series ? series.rows.length : 0,
+      coverage: series?.coverage ?? 'INCOMPLETE',
+    },
+  };
+}
+
 export async function resolveLocal(
   url: string,
   method: 'GET' | 'POST' | 'PUT' | 'DELETE',
@@ -390,6 +499,15 @@ export async function resolveLocal(
     return readLatestStoredFinancialStatement(u.searchParams.get('symbol') ?? '');
   }
 
+  if (path === '/api/symbol-identity') {
+    if (method !== 'GET') throw new HttpError(405, url, 'GET required');
+    return resolveSymbolIdentity(u.searchParams.get('symbol') ?? '');
+  }
+  if (path === '/api/symbol-identity/stats') {
+    if (method !== 'GET') throw new HttpError(405, url, 'GET required');
+    return calculateIdentityStats();
+  }
+
   // --- تابلو و اسکرینر --------------------------------------------------
   if (path === '/api/market') return boardPayload();
   if (path === '/api/screener') {
@@ -415,7 +533,7 @@ export async function resolveLocal(
     return { status: 'success' };
   }
   if (path === '/api/fts') return bakedOr404('fts', url);
-  if (p(1) === 'fts' && seg.length === 3) return bakedOr404(`fts/${p(2)}`, url);
+  if (p(1) === 'fts' && seg.length === 3) return ftsSymbolPlan(p(2), url);
   if (path === '/api/fundamental/screen') return bakedOr404('screener', url);
   if (path === '/api/fundamental/sectors') return bakedOr404('sectors', url);
   if (p(1) === 'fundamental' && seg.length === 3) return bakedOr404(`fundamental/${p(2)}`, url);

@@ -217,3 +217,42 @@ describe('/api/order-book رویِ گوشی', () => {
     expect(empty.levels).toEqual([]);
   });
 });
+
+describe('/api/symbol-identity و /api/fts/:symbol محلی', () => {
+  it('/api/symbol-identity هویت نماد را برمی‌گرداند', async () => {
+    sql.mockResolvedValue([
+      { l_val18: 'فولاد', isin: 'IRO1FOLD0001' },
+    ]);
+    const out = (await resolveLocal('/api/symbol-identity?symbol=فولاد', 'GET')) as {
+      symbol: string;
+      key: string;
+      resolved: boolean;
+    };
+    expect(out.symbol).toBe('فولاد');
+    expect(out.key).toBe('فولاد');
+    expect(out.resolved).toBe(true);
+  });
+
+  it('/api/fts/:symbol دادهٔ پخته را با اولویت بازمی‌گرداند یا به صورت محلی ارزیابی می‌کند', async () => {
+    bakedMap.set('fts/فولاد', { status: 'success', symbol: 'فولاد', score: 85 });
+    const outBaked = (await resolveLocal('/api/fts/فولاد', 'GET')) as {
+      status: string;
+      symbol: string;
+    };
+    expect(outBaked.status).toBe('success');
+    expect(outBaked.symbol).toBe('فولاد');
+
+    // نمادی که در اسنپ‌شات پخته نیست ولی در پایگاه محلی کندل دارد
+    sql.mockResolvedValue([
+      { date: '2026-10-06', open: 100, high: 110, low: 95, close: 105, volume: 10 },
+    ]);
+    const outLocal = (await resolveLocal('/api/fts/جدید', 'GET')) as {
+      status: string;
+      symbol: string;
+      analysis_basis: string;
+    };
+    expect(outLocal.status).toBe('success');
+    expect(outLocal.symbol).toBe('جدید');
+    expect(outLocal.analysis_basis).toBe('local-first');
+  });
+});
