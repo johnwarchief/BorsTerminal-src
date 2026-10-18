@@ -252,41 +252,64 @@ describe('چارت پورت‌شدهٔ NahayatNegar روی klinecharts v10', () 
     expect(parsed[0].name).toBe('segment');
   });
 
-  // ── «نمایِ بازدهی» (نمایِ بازدهی) ─────────────────────────────────────
-  it('پیش‌فرضِ چارت محورِ ریالیِ تعدیل‌شده است (دقتِ ۰) و «نمایِ بازدهی» دستی دقتِ ۲ می‌گیرد (#186)', () => {
+  // ── دو حالتِ سریِ قیمت و اعشارِ محور ───────────────────────────────────
+  it('هر دو حالتِ سری محورِ ریالی با دقتِ ۰ می‌گیرد؛ اعشار فقط از تنظیمِ صریحِ کاربر می‌آید (#186)', () => {
     render(<KLineChartWrapper initialSymbol="فولاد" />);
 
     const calls = chart().setSymbol.mock.calls;
     expect(calls.length).toBeGreaterThan(0);
     // رأیِ مالک (#186) «تعدیل عملکردی» بود و رهاورد درِ همان حالت ریال می‌کشد
     // (برچسبِ O 4,410). این تست پیش از این دقتِ ۲ یعنی «شاخصِ ۱۰۰» را قفل کرده بود —
-    // همان ناهنجاریِ محورِ ۱۴۷٬۰۰۰ رویِ فولاد. پس رفتارِ غلط اصلاح شد، نه تست حذف.
+    // همان ناهنجاریِ محورِ ۱۴۷٬۰۰۰ رویِ فولاد. نمایِ ۱۰۰ از رابط بیرون رفت، پس هر دو
+    // حالتِ باقی‌مانده ریال‌اند و عددِ صریحِ کاربر هنوز بر «auto» مقدم است.
     expect(calls[calls.length - 1][0].pricePrecision).toBe(0);
 
     act(() => { fireEvent.click(screen.getByTitle('نوع تعدیل قیمت')); });
-    const perfItem = item('نمایِ بازدهی');
-    expect(perfItem.className).not.toContain('nn-disabled');
-    act(() => { fireEvent.click(perfItem); });
-    expect(chart().setSymbol.mock.calls.slice(-1)[0][0].pricePrecision).toBe(2);
+    const items = Array.from(document.querySelectorAll('.nn-dropdown-item'));
+    expect(items).toHaveLength(2);
+    const labels = items.map((e) => (e.textContent ?? '').slice(0, 12));
+    expect(labels.some((l) => l.startsWith('عملکردی'))).toBe(true);
+    expect(labels.some((l) => l.startsWith('خام'))).toBe(true);
+    expect(document.body.textContent).not.toContain('نمایِ بازدهی');
+    expect(document.body.textContent).not.toContain('شاخصِ ۱۰۰');
+
+    act(() => { fireEvent.click(item('خام')); });
+    expect(chart().setSymbol.mock.calls.slice(-1)[0][0].pricePrecision).toBe(0);
 
     act(() => { fireEvent.click(screen.getByTitle('نوع تعدیل قیمت')); });
-    act(() => { fireEvent.click(item('بدون تعدیل')); });
+    act(() => { fireEvent.click(item('عملکردی')); });
     expect(chart().setSymbol.mock.calls.slice(-1)[0][0].pricePrecision).toBe(0);
+
+    act(() => { useFtsConfigStore.getState().setView({ pricePrecision: 2 }); });
+    expect(chart().setSymbol.mock.calls.slice(-1)[0][0].pricePrecision).toBe(2);
+    act(() => { useFtsConfigStore.getState().setView({ pricePrecision: 'auto' }); });
   });
 
-  it('در حالتِ عملکردی محور percentage روی دادهٔ درصدی نمی‌نشیند (درصدِ درصد = ۰٫۰۱٪)', () => {
+  it('مقیاسِ محور از نوعِ سری مستقل است (خطی/لگاریتمی/درصدی با خام↔عملکردی عوض نمی‌شود)', () => {
+    // قاعدۀِ تازه: «نوعِ نمایشِ قیمت» و «نوعِ سریِ قیمت» دو چیزِ جدايند. نمایِ شاخصِ ۱۰۰
+    // پیش از این محور را بی‌صدا به `normal` برمی‌گرداند تا «درصدِ درصد» نشود؛ آن حالت رفت،
+    // پس مقیاسِ انتخابیِ کاربر باید از هر جابه‌جاییِ سری سالم بیرون بیاید.
     act(() => { useFtsConfigStore.getState().setPriceScale('percentage'); });
     render(<KLineChartWrapper initialSymbol="فولاد" />);
-    act(() => { fireEvent.click(screen.getByTitle('نوع تعدیل قیمت')); });
-    act(() => { fireEvent.click(item('نمایِ بازدهی')); });
+    const axisName = () => {
+      const y = chart().overrideYAxis.mock.calls;
+      return y[y.length - 1][0].name;
+    };
+    expect(axisName()).toBe('percentage');
 
-    const y = chart().overrideYAxis.mock.calls;
-    expect(y[y.length - 1][0].name).toBe('normal');
+    act(() => { fireEvent.click(screen.getByTitle('نوع تعدیل قیمت')); });
+    act(() => { fireEvent.click(item('خام')); });
+    expect(axisName()).toBe('percentage');
 
     act(() => { fireEvent.click(screen.getByTitle('نوع تعدیل قیمت')); });
-    act(() => { fireEvent.click(item('بدون تعدیل')); });
-    const y2 = chart().overrideYAxis.mock.calls;
-    expect(y2[y2.length - 1][0].name).toBe('percentage');
+    act(() => { fireEvent.click(item('عملکردی')); });
+    expect(axisName()).toBe('percentage');
+
+    act(() => { useFtsConfigStore.getState().setPriceScale('logarithm'); });
+    expect(axisName()).toBe('logarithm');
+    act(() => { fireEvent.click(screen.getByTitle('نوع تعدیل قیمت')); });
+    act(() => { fireEvent.click(item('خام')); });
+    expect(axisName()).toBe('logarithm');
     act(() => { useFtsConfigStore.getState().setPriceScale('normal'); });
   });
 });

@@ -1,15 +1,17 @@
 // تست موتور تعدیلِ چارت نهایت‌نگر (T-17): منبع واحد = ضریبِ هر کندل آن‌طور که **سرور** شمرده
 // قدمِ ۵: `applyAdjustmentToCandles` دیگر از `adjustEvents` زنجیرۀِ دوم نمی‌سازد؛ ورودیِ
 // مقیاس، `factors=[{time,factor}]`ِ همان پاسخِ `/api/chart` است (`AE.chain_factors`).
+// دورِ ممیزیِ کلِ نمادها: رابط دو حالتِ سری دارد (خام / عملکردی). نمایِ شاخصِ ۱۰۰ که
+// `performance` نام داشت حذف شد، پس همین فایل همان عددِ تاریخی را رویِ دو حالتِ باقی‌مانده
+// و رویِ کوچکتِ تنظیمِ کهنه قفل می‌کند — نه اینکه ادعایِ قبلی را بی‌جایگزین پاک کند.
 import { describe, expect, it } from 'vitest';
 import {
   applyAdjustmentToCandles, DEFAULT_ADJUSTMENT_MODE, functionalGapNote,
   getAdjustmentFactor,
   mapBackendAdjustEvents,
-  pricePrecisionFor,
+  migrateAdjustmentMode,
   adjustmentGapNote,
   readAdjustmentCapability,
-  toIndexedSeries,
   type AdjustFactor,
 } from '@features/technical/nahayatnegar/lib/adjustments';
 import type { KLineData } from 'klinecharts';
@@ -53,7 +55,7 @@ describe('تعدیل چارت نهایت‌نگر (ضریبِ سرور)', () => 
   });
 
   it('هیچ حالتِ تعدیلی حجم را مقیاس نمی‌کند (قیمت نیست که ضریب بخورد)', () => {
-    for (const mode of ['none', 'combined', 'performance'] as const) {
+    for (const mode of ['none', 'combined'] as const) {
       const out = applyAdjustmentToCandles(candles, factors, mode);
       expect(out.map((c) => c.volume)).toEqual([1000, 1000, 2000]);
     }
@@ -70,9 +72,12 @@ describe('تعدیل چارت نهایت‌نگر (ضریبِ سرور)', () => 
     expect(out[0].high).toBeCloseTo(3.246, 3);
   });
 
-  it('پایۀ «نمایِ بازدهی» از قیمتِ گم‌شده ساخته نمی‌شود: ۴۴۱۰ ⇒ ۱۳۸٬۵۷۸ نه ۱۴۷٬۰۰۰', () => {
-    // ۱۴۷٬۰۰۰ همان عددی بود که کاربر رویِ محورِ فولاد می‌خواند؛ از تقسیم بر ۳
-    // (به‌جای ۳٫۱۸۲۳) می‌آمد. تست، عددِ درست را قفل می‌کند و عددِ غلط را رد.
+  it('لنگرِ سری نمی‌کَد: ۴۴۱۰ ریال می‌ماند و ۱۴۷٬۰۰۰ هرگز ساخته نمی‌شود', () => {
+    // ۱۴۷٬۰۰۰ عددی بود که کاربر رویِ محورِ فولاد می‌خواند: نمایِ شاخصِ ۱۰۰ بر ۳
+    // (پایانیِ گِردشدۀِ ۲۰۰۷) تقسیم می‌کرد، در حالی که عددِ درست ۳٫۱۸۲۳ است و
+    // محور باید ۱۳۸٬۵۷۸ را نشان می‌داد. با حذفِ آن نمای، این تست همان دام را درِ
+    // حالتِ باقی‌مانده می‌بندد: سریِ عملکردی ریال است، پایانیِ تازه‌ترینِ کندل
+    // دست‌نخورده (لنگرِ factor=1) و هیچ مقیاسِ ۱۰۰‌مبنایی رویِ آن نمی‌نشیند.
     const pair = [
       { timestamp: t('2007-03-11'), open: 1900, high: 1900, low: 1900, close: 1900, volume: 1 },
       { timestamp: t('2026-10-17'), open: 4410, high: 4410, low: 4410, close: 4410, volume: 1 },
@@ -81,15 +86,19 @@ describe('تعدیل چارت نهایت‌نگر (ضریبِ سرور)', () => 
       { time: '2007-03-11', factor: 0.0016748978 },
       { time: '2026-10-17', factor: 1 },
     ];
-    const out = applyAdjustmentToCandles(pair, fs, 'performance');
-    expect(out[0].close).toBe(100);
-    expect(out[1].close).not.toBe(147000);
-    expect(out[1].close).toBeCloseTo(4410 / 3.1823 * 100, 1);
+    const out = applyAdjustmentToCandles(pair, fs, 'combined');
+    expect(out[0].close).toBeCloseTo(3.1823, 4);
+    expect(out[1].close).toBe(4410);
+    expect(out.map((c) => c.close)).not.toContain(147000);
+    expect(out[1].close / out[0].close).toBeCloseTo(4410 / 3.1823, 2);
   });
 
-  it('پیش‌فرضِ چارت محورِ ریالی است، نه شاخصِ ۱۰۰ (رأیِ مالک #186 = تعدیلِ عملکردی)', () => {
+  it('پیش‌فرضِ چارت محورِ ریالیِ تعدیل‌شده است، نه شاخصِ ۱۰۰ (رأیِ مالک #186)', () => {
     expect(DEFAULT_ADJUSTMENT_MODE).toBe('combined');
-    expect(DEFAULT_ADJUSTMENT_MODE).not.toBe('performance');
+    // آخرینِ کندل درِ زنجیرۀِ سرور لنگر است (factor = ۱)، پس پیش‌فرضِ درست همان
+    // ریالِ تابلو را می‌دهد؛ اگر حالتِ ۱۰۰‌مبنا برمی‌گشت، همین‌جا ۱۰۰ می‌شد.
+    const out = applyAdjustmentToCandles(candles, factors, DEFAULT_ADJUSTMENT_MODE);
+    expect(out[out.length - 1].close).toBe(50);
   });
 
   it('نگاشت رویدادِ سرور نسبت را برایِ نشانگر حفظ می‌کند و timestamp درست می‌سازد', () => {
@@ -138,57 +147,54 @@ describe('تعدیل چارت نهایت‌نگر (ضریبِ سرور)', () => 
     expect(getAdjustmentFactor({ ...a, ratio: 500 })).toBe(50);        // clamp بالا
   });
 
-  // ── تعدیل عملکردی (نمایِ بازدهی) ───────────────────────────────────────
+  // ── دو حالتِ سری + کوچکتِ تنظیمِ کهنه ──────────────────────────────────
   it('«عملکردی» رویِ سریِ تعدیل‌شده می‌نشیند، نه رویِ قیمتِ خام', () => {
-    // ترکیبی: [50,50,50] — سهمِ افزایش سرمایه در قیمتِ پایه خنثی شده
-    // عملکردی: همان سری ÷ ۵۰ × ۱۰۰ ⇒ [۱۰۰،۱۰۰،۱۰۰]
-    const out = applyAdjustmentToCandles(candles, factors, 'performance');
-    expect(out.map((c) => c.close)).toEqual([100, 100, 100]);
+    const out = applyAdjustmentToCandles(candles, factors, 'combined');
+    expect(out.map((c) => c.close)).toEqual([50, 50, 50]);
     expect(out[0].timestamp).toBe(candles[0].timestamp);
   });
 
-  it('«عملکردی» بی‌ضریب ⇒ بازدهیِ خام، و حجم/گردش دست‌نخورده (قیمت نیستند)', () => {
-    const out = applyAdjustmentToCandles(candles, [], 'performance');
+  it('«خام» بی‌ضریب برمی‌گرداند و حجم/گردش دست‌نخورده می‌مانند (قیمت نیستند)', () => {
+    const out = applyAdjustmentToCandles(candles, [], 'none');
     expect(out.map((c) => c.close)).toEqual([100, 100, 50]);
     expect(out[2].volume).toBe(2000);
   });
 
-  it('پایهٔ صفر یا تهی ⇒ سری بی‌تغییر برمی‌گردد، نه صفرِ جعلی یا بی‌نهایت', () => {
-    const zero = [{ timestamp: t('2020-01-08'), open: 0, high: 0, low: 0, close: 0 }] as unknown as KLineData[];
-    expect(toIndexedSeries(zero)[0].close).toBe(0);
-    expect(toIndexedSeries([])).toEqual([]);
+  it('تنظیمِ کهنهٔ «performance» به همان سریِ ریالیِ تعدیل‌شده کوچکت می‌شود', () => {
+    // قالب‌هایِ ذخیره‌شده و stateِ قدیمی این رشته را نگه داشته‌اند. اگر بی‌کوچکت
+    // به `applyAdjustmentToCandles` برسد، یا حالتِ سوم زنده می‌ماند یا خام; اینجا
+    // دقیقاً همان combined می‌شود — و هیچ حالتِ سومی درِ رابط نیست.
+    expect(migrateAdjustmentMode('performance')).toBe('combined');
+    expect(migrateAdjustmentMode('capital')).toBe('combined');
+    expect(migrateAdjustmentMode('cash')).toBe('combined');
+    expect(migrateAdjustmentMode('none')).toBe('none');
+    expect(migrateAdjustmentMode('combined')).toBe('combined');
+    const migrated = applyAdjustmentToCandles(candles, factors,
+      migrateAdjustmentMode('performance')!);
+    expect(migrated.map((c) => c.close)).toEqual([50, 50, 50]);
   });
 
-  it('بازدهی دو رقمِ ممیز دارد — گردکردنِ صحیح یعنی ۱۰۰٫۴٪ بشود ۱۰۰٪', () => {
-    const mild = [{ timestamp: t('2020-01-08'), open: 1000, high: 1000, low: 1000, close: 1000 },
-                  { timestamp: t('2020-01-09'), open: 1004, high: 1004, low: 1004, close: 1004 }] as unknown as KLineData[];
-    const out = applyAdjustmentToCandles(mild, [], 'performance');
-    expect(out[1].close).toBe(100.4);
+  it('رشتهٔ ناشناخته حدس زده نمی‌شود: `null` می‌ماند تا پیش‌فرضِ جاری سرِ جایش بماند', () => {
+    expect(migrateAdjustmentMode('شاخص-۱۰۰')).toBeNull();
+    expect(migrateAdjustmentMode(undefined)).toBeNull();
+    expect(migrateAdjustmentMode(null)).toBeNull();
+    expect(migrateAdjustmentMode(7)).toBeNull();
   });
 
-  it('دقتِ محور با حالت عوض می‌شود (عملکردی ۲ رقم، بقیه صحیح)', () => {
-    expect(pricePrecisionFor('performance')).toBe(2);
-    expect(pricePrecisionFor('combined')).toBe(0);
-    expect(pricePrecisionFor('none')).toBe(0);
+  it('هیچِ حالتِ سومی برایِ ضربِ دوباره باقی نمانده (دو ورودی، دو خروجی)', () => {
+    // «auto» بودنِ اعشارِ محور درِ خودِ چارت آزمون می‌شود (`technical-nn-chart.spec.tsx`);
+    // اینجا مسیرِ عددی قفل می‌ماند: دو حالتِ سری، دو جوابِ متفاوت، بی‌سوم.
+    const raw = applyAdjustmentToCandles(candles, factors, 'none');
+    const adj = applyAdjustmentToCandles(candles, factors, 'combined');
+    expect(raw.map((c) => c.close)).toEqual([100, 100, 50]);
+    expect(adj.map((c) => c.close)).toEqual([50, 50, 50]);
+    expect(raw).not.toEqual(adj);
   });
 });
 
-// PHASE A (Round K) + قدمِ ۵: جداسازیِ معناییِ تعدیل — چهار مفهوم، یک ضرب
+// PHASE A (Round K) + قدمِ ۵: جداسازیِ معناییِ تعدیل — دو حالتِ سری، یکِ ضرب
 describe("PHASE A — جداسازیِ معناییِ تعدیل", () => {
-  it("«نمایِ بازدهی» فقط شاخصِ نخستینِ پایانی نیست: با ضریب ≠ شاخصِ خام", () => {
-    const perf = applyAdjustmentToCandles(candles, factors, "performance");
-    const indexedRaw = toIndexedSeries(candles);
-    expect(perf.map((c) => c.close)).not.toEqual(indexedRaw.map((c) => c.close));
-  });
-
-  it("combined ≠ indexed: indexed همان combined ÷ پایانیِ اول × ۱۰۰ است، نه سرمایه‌گذاریِ دوبارهٔ سود", () => {
-    const comb = applyAdjustmentToCandles(candles, factors, "combined");
-    const perf = applyAdjustmentToCandles(candles, factors, "performance");
-    const k = 100 / comb[0].close;
-    perf.forEach((c, i) => expect(c.close).toBeCloseTo(comb[i].close * k, 2));
-  });
-
-  it("تعدیلِ دوباره سری را عوض می‌کند ⇒ مصرف‌کننده باید خام بدهد؛ «none» بی‌تغییر برمی‌گرداند", () => {
+  it("تعدیلِ دوباره سری را عوض می‌کند ⇒ مصرف‌کننده باید خام بدهد", () => {
     const once = applyAdjustmentToCandles(candles, factors, "combined");
     const twice = applyAdjustmentToCandles(once, factors, "combined");
     expect(twice[0].close).not.toBe(once[0].close);
@@ -208,7 +214,7 @@ describe("PHASE A — جداسازیِ معناییِ تعدیل", () => {
     expect(unseen.functionalAvailable).toBe(false);
     expect(unseen.chainComplete).toBeNull();
     expect(unseen.functionalBlockers.length).toBeGreaterThan(0);
-    expect(adjustmentGapNote("performance", unseen)).toContain("در دسترس نیست");
+    expect(adjustmentGapNote("combined", unseen)).toContain("در دسترس نیست");
     const cached = readAdjustmentCapability({ adjustCapability: {
       source: "local-cache", combined_available: true, functional_available: false,
       functional_reason: "r", functional_blockers: ["event-type-unresolved:3"],
@@ -216,7 +222,7 @@ describe("PHASE A — جداسازیِ معناییِ تعدیل", () => {
     expect(cached.combinedAvailable).toBe(true);
     expect(cached.chainComplete).toBe(true);
     expect(cached.coverage).toEqual({ rows_total: 4 });
-    expect(adjustmentGapNote("performance", cached)).toBeNull();
+    expect(adjustmentGapNote("combined", cached)).toBeNull();
     expect(adjustmentGapNote("none", unseen)).toBeNull();
   });
 
@@ -236,7 +242,7 @@ describe("PHASE A — جداسازیِ معناییِ تعدیل", () => {
   });
 
   it("هندسهٔ OHLC پس از هر دو حالت حفظ می‌شود", () => {
-    for (const mode of ["combined", "performance"] as const) {
+    for (const mode of ["none", "combined"] as const) {
       for (const c of applyAdjustmentToCandles(candles, factors, mode)) {
         expect(c.low).toBeLessThanOrEqual(Math.min(c.open, c.close));
         expect(c.high).toBeGreaterThanOrEqual(Math.max(c.open, c.close));

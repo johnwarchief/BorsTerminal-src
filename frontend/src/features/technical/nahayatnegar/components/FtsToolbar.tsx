@@ -103,27 +103,28 @@ export const FtsToolbar: React.FC<FtsToolbarProps> = ({
     { label: 'هایکن آشی (Heikin Ashi)', value: 'heikin_ashi', icon: <IconHeikinAshi size={16} /> },
   ];
 
-  // فهرستِ کاملِ حالت‌های نهایات‌نگار/ره‌آورد؛ سه‌تا با دادهٔ سرورِ ما ساختنی‌اند.
-  // سرور فقط «نسبت گسست قیمت پایه» را می‌دهد = اثرِ ترکیبیِ افزایش سرمایه و سود نقدی
-  // (همان حالتِ پیش‌فرضِ نهایات‌نگار). تفکیکِ سودِ نقدی از سهامِ جایزه از یک نسبتِ واحد
-  // استخراج نمی‌شود، پس دو حالتِ آخر غیرفعال‌اند (نه عددِ ساختگی).
-  // شماره‌هایِ adjustmentType و سنجشِ کمیِ فاکتورِ ما با هر پنج حالت:
-  // docs/CHART-PARITY-REFERENCE.md §۸ (ابزار: tools/nn_adjust_parity.py).
-  const adjustments: { label: string; value: AdjustmentMode | 'capital' | 'cash'; desc: string }[] = [
-    { label: 'افزایش سرمایه و سود نقدی', value: 'combined', desc: 'حالتِ پیش‌فرضِ نهایت‌نگار — مبنای گسست قیمتِ پایهٔ TSETMC' },
-    { label: 'بدون تعدیل', value: 'none', desc: 'قیمت‌های خام و واقعی تابلوی معاملات' },
+  // دو حالتِ سریِ قیمت — و فقط همین دو (رأیِ مالک درِ دورِ ممیزیِ کلِ نمادها).
+  // سرور برای هر رویداد تنها «نسبتِ گسستِ قیمتِ پایه» را می‌دهد = اثرِ ترکیبیِ افزایش
+  // سرمایه و سود نقدی (همان حالتِ پیش‌فرضِ نهایت‌نگار؛ docs/CHART-PARITY-REFERENCE.md §۸).
+  // تفکیکِ سودِ نقدی از سهامِ جایزه از یکِ نسبتِ واحد استخراج نمی‌شود، پس حالتِ جدا
+  // ندارد — و «نمایِ بازدهی (شاخصِ ۱۰۰)» هم که از این فهرست بیرون رفت *نوعِ سری نبود*:
+  // یکِ مقیاسِ نمایشی رویِ همان سریِ عملکردی بود که حالا همان کار را «محور درصدی» درِ
+  // تنظیماتِ مقیاس‌ها می‌کند (نوعِ نمایش، نه نوعِ داده).
+  const adjustments: { label: string; value: AdjustmentMode; desc: string }[] = [
     {
-      label: 'نمایِ بازدهی (شاخصِ ۱۰۰)',
-      value: 'performance',
-      desc: 'نمایِ بازدهی رویِ سریِ تعدیل‌شده — نخستین کندل = ۱۰۰ و محور Percent است. ' +
-            'افزایشِ سرمایه و سودِ نقدی هر دو لحاظ می‌شوند، اما سودِ نقدی اینجا ' +
-            'سرمایه‌گذاریِ دوباره نمی‌شود (آن کار به DPSِ تفکیکیِ هر رویداد نیاز دارد ' +
-            'که در بانکِ ما نیست)، پس عدد با «عملکردیِ» ره‌آورد و نهایت‌نگر یک‌سان نیست.',
+      label: 'عملکردی (افزایش سرمایه و سود نقدی)',
+      value: 'combined',
+      desc: 'پیش‌فرض — ضریبِ تجمعیِ گسستِ قیمتِ پایهٔ TSETMC روی کندل‌هایِ ماقبلِ رویداد، ' +
+            'با محورِ ریالی. سودِ نقدی اینجا سرمایه‌گذاریِ دوباره نمی‌شود (آن به DPSِ ' +
+            'تفکیکیِ هر رویداد نیاز دارد که در بانکِ ما نیست)، پس عدد با «عملکردیِ» ' +
+            'ره‌آورد یک‌سان نیست و مانعش روی چارت اعلام می‌شود.',
     },
-    { label: 'افزایش سرمایه', value: 'capital', desc: 'نهی — به دادهٔ تفکیکیِ درصدِ افزایش سرمایه نیاز دارد' },
-    { label: 'سود نقدی', value: 'cash', desc: 'نهی — به دادهٔ تفکیکیِ DPS نیاز دارد' },
+    {
+      label: 'خام (بدون تعدیل)',
+      value: 'none',
+      desc: 'قیمت‌های خام و واقعیِ تابلوی معاملات — بی‌هیچ ضریبی.',
+    },
   ];
-  const AVAILABLE_MODES: AdjustmentMode[] = ['combined', 'none', 'performance'];
   const currentAdj = adjustments.find(a => a.value === activeAdjustment) || adjustments[0];
   const currentCandle = candleTypes.find(c => c.value === activeCandleType) || candleTypes[0];
 
@@ -222,7 +223,7 @@ export const FtsToolbar: React.FC<FtsToolbarProps> = ({
 
         <div className="nn-separator" />
 
-        {/* منوی ۶‌گانه تعدیل قیمت بورس تهران */}
+        {/* دو حالتِ سریِ قیمت: خام و عملکردی */}
         <div className="nn-select-dropdown">
           <button
             className="nn-btn"
@@ -239,16 +240,13 @@ export const FtsToolbar: React.FC<FtsToolbarProps> = ({
           </button>
           {showAdjMenu && (
             <div className="nn-dropdown-menu" style={{ minWidth: '250px' }}>
-              {adjustments.map(adj => {
-                const available = AVAILABLE_MODES.includes(adj.value as AdjustmentMode);
-                return (
+              {adjustments.map(adj => (
                 <div
                   key={adj.value}
-                  className={`nn-dropdown-item ${activeAdjustment === adj.value ? 'selected' : ''} ${!available ? 'nn-disabled' : ''}`}
-                  title={available ? adj.desc : 'این حالت به دادهٔ تفکیکیِ سود نقدی و سهام جایزه نیاز دارد که TSETMC آن را منتشر نمی‌کند'}
+                  className={`nn-dropdown-item ${activeAdjustment === adj.value ? 'selected' : ''}`}
+                  title={adj.desc}
                   onClick={() => {
-                    if (!available) return;
-                    onAdjustmentChange(adj.value as AdjustmentMode);
+                    onAdjustmentChange(adj.value);
                     setShowAdjMenu(false);
                   }}
                   style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '2px' }}
@@ -259,8 +257,7 @@ export const FtsToolbar: React.FC<FtsToolbarProps> = ({
                   </div>
                   <span style={{ fontSize: '10px', color: '#787b86' }}>{adj.desc}</span>
                 </div>
-                );
-              })}
+              ))}
             </div>
           )}
         </div>

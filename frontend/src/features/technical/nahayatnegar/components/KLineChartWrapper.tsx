@@ -28,7 +28,7 @@ import { useUiStore } from '@shared/stores/uiStore';
 import {
   AdjustmentCapability, AdjustmentMode, AdjustFactor, CorporateAction,
   applyAdjustmentToCandles, DEFAULT_ADJUSTMENT_MODE, functionalGapNote, getAdjustmentFactor,
-  mapBackendAdjustEvents, pricePrecisionFor, readAdjustmentCapability
+  mapBackendAdjustEvents, migrateAdjustmentMode, readAdjustmentCapability
 } from '../lib/adjustments';
 import { aggregateCandles, timeframePeriod, resolveTimeframe, INTRADAY_CAPABILITY, rangeVisibleBars, VIEW_RANGES, type Timeframe } from '../lib/timeframe';
 import { buildBarClick, type OverlayRef } from '../lib/barClicks';
@@ -118,7 +118,6 @@ const CHART_TYPES = [
   'candle_solid', 'candle_stroke', 'candle_up_stroke', 'candle_down_stroke',
   'ohlc', 'area', 'line', 'heikin_ashi', 'renko', 'kagi', 'pnf',
 ];
-const ADJUSTMENT_MODES: AdjustmentMode[] = ['combined', 'none', 'performance'];
 type PriceScaleName = 'normal' | 'logarithm' | 'percentage';
 const PRICE_SCALES: string[] = ['normal', 'logarithm', 'percentage'];
 
@@ -132,9 +131,11 @@ function legendRule(enabled: boolean | undefined, always: boolean | undefined): 
   return always === true ? 'always' : 'follow_cross';
 }
 
-/** اعشارِ محورِ قیمت (#166): 'auto' همان منطقِ تعدیل است؛ عددِ صریح اولویت دارد */
-function pricePrecisionOf(precision: ChartView['pricePrecision'] | undefined, mode: AdjustmentMode): number {
-  return typeof precision === 'number' ? precision : pricePrecisionFor(mode);
+/** اعشارِ محورِ قیمت (#166): 'auto' همان ریالِ بی‌ممیز است؛ عددِ صریح اولویت دارد.
+ *  هر دو حالتِ سریِ قیمت ریالی‌اند (خام / عملکردی)، پس «auto» به حالت وابسته نیست —
+ *  نمایِ شاخصِ ۱۰۰ که این عدد را برایِ یکِ حالت ۲ می‌کرد از رابط بیرون رفت. */
+function pricePrecisionOf(precision: ChartView['pricePrecision'] | undefined): number {
+  return typeof precision === 'number' ? precision : 0;
 }
 
 /** شش مطالعۀ همیشگیِ منو؛ نامشان در موتور ثبت است و در کاتالوگ TV نمی‌آید */
@@ -403,10 +404,11 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
   // استیت‌های نوار بالا
   const [activeTimeframe, setActiveTimeframe] = useState<Timeframe>('D');
   const [activeCandleType, setActiveCandleType] = useState<string>('candle_solid');
-  // رأیِ مالک (#186) «تعدیل عملکردی» بود — یعنی محورِ **ریالیِ** تعدیل‌شده، همان‌طور
-  // که رهاورد همان حالت را با برچسبِ O 4,410 می‌رسمد. این state درِ ادامه همان را
-  // `performance` (شاخصِ ۱۰۰) گرفته بود و فولاد را با محورِ ۶۵٬۰۰۰ تا ۱۶۶٬۰۰۰ نشان
-  // می‌داد؛ مبنایِ درست از `DEFAULT_ADJUSTMENT_MODE` می‌آید تا دو جا واگرا نشود.
+  // یکی از دو حالتِ سریِ قیمت: `none` (خام) یا `combined` (عملکردی). رأیِ مالک (#186)
+  // محورِ **ریالیِ** تعدیل‌شده بود — همان‌طور که رهاورد آن را با برچسبِ O 4,410 می‌رسمد.
+  // نمایِ شاخصِ ۱۰۰ که این را `performance` می‌گرفت و فولاد را با محورِ ۶۵٬۰۰۰ تا
+  // ۱۶۶٬۰۰۰ نشان می‌داد از رابط و کد بیرون رفت؛ مبنایِ درست از `DEFAULT_ADJUSTMENT_MODE`
+  // می‌آید تا دو جا واگرا نشود.
   // لایهٔ FTS خود را به فضایِ همین نمایش می‌برد، پس تغییرِ این مقدار نباید چیزی را
   // جابه‌جا یا ناپدید کند.
   const [activeAdjustment, setActiveAdjustment] = useState<AdjustmentMode>(DEFAULT_ADJUSTMENT_MODE);
@@ -593,16 +595,11 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
     chart.scrollToRealTime();
   }, []);
 
-  // سریِ «قیمت» برای محاسبات: تحلیل FTS همیشه در ریال حساب می‌شود، حتی وقتی نمایش
-  // روی نمایِ بازدهی است. بی‌این تفکیک، شاخصِ ۱۰۰ جایش را روی قیمتِ ۳۰٬۰۰۰ می‌گیرد
-  // و منطقِ قیمت‌محور بی‌صدا یک تحلیلِ بی‌معنا تولید می‌کند.
+  // سریِ «قیمت» برای محاسبات: تحلیل FTS همیشه در ریال حساب می‌شود. تا پیش از این،
+  // نمایِ شاخصِ ۱۰۰ جایش را روی قیمتِ ۳۰٬۰۰۰ می‌گرفت و منطقِ قیمت‌محور بی‌صدا یک
+  // تحلیلِ بی‌معنا تولید می‌کرد؛ آن نمایش دیگر حالتِ سری نیست، پس اینجا یک سری هست.
   // در بازپخش همین سری برش می‌خورد، وگرنه سطحِ تحلیل روی کندل‌هایِ پنه‌رسمده می‌ماند.
-  const analysisCandles = useMemo(
-    () => activeAdjustment === 'performance'
-      ? applyAdjustmentToCandles(shownRawCandles, adjustFactors, 'combined')
-      : adjustedCandles,
-    [activeAdjustment, adjustedCandles, shownRawCandles, adjustFactors]
-  );
+  const analysisCandles = adjustedCandles;
 
   // تحلیل FTS: همان شیئی که پنلِ «وضعیت FTS» می‌خواند (#161). قبلاً چارت با
   // `analyzeFts` یک موتورِ دوم داشت — کمربندِ فیبو را از ۱۰۰ کندلِ آخر می‌گرفت
@@ -1043,7 +1040,7 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
     // تنظیم سمبل و بازه زمانی
     chart.setSymbol({
       ticker: currentSymbol,
-      pricePrecision: pricePrecisionOf(ftsView?.pricePrecision, activeAdjustment),
+      pricePrecision: pricePrecisionOf(ftsView?.pricePrecision),
       volumePrecision: 0
     });
     chart.setPeriod(timeframePeriod(activeTimeframe));
@@ -1385,17 +1382,14 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
         (chart as any).setTimezone?.(ftsView.timezone);
       }
 
-      // ۴. مقیاس قیمت — استفاده از نام استاندارد رجیسترشده در v10 (normal / logarithm / percentage)
-      // در «تعدیل عملکردی» خودِ دیتا شاخصِ بازدهی است (نخستین کندل = ۱۰۰). اگر محور
-      // هم‌زمان percentage بماند، دو تبدیل روی یک عدد می‌نشیند و نمودار ۰٫۰۱٪ نشان
-      // می‌دهد — پس اینجا محور عادی/لگاریتمی می‌ماند و درصد را داده می‌سازد.
-      const yAxisName = activeAdjustment === 'performance'
-        ? (ftsPriceScale === 'logarithm' ? 'logarithm' : 'normal')
-        : ftsPriceScale === 'logarithm'
-        ? 'logarithm'
-        : ftsPriceScale === 'percentage'
-        ? 'percentage'
-        : 'normal';
+      // ۴. مقیاس قیمت — نامِ استانداردِ رجیسترشده در v10 (normal / logarithm / percentage).
+      // این تنها انتخابِ مقیاس است: نوعِ *نمایش*، نه نوعِ سریِ قیمت. پیش از این، حالتِ
+      // شاخصِ ۱۰۰ اینجا را هم عوض می‌کرد و «درصدِ درصد» (۰٫۰۱٪) می‌ساخت؛ با بیرون‌رفتنِ
+      // آن حالت، مقیاس فقط از تنظیمِ خودی خوانده می‌شود.
+      const yAxisName: PriceScaleName =
+        ftsPriceScale === 'logarithm' ? 'logarithm'
+          : ftsPriceScale === 'percentage' ? 'percentage'
+            : 'normal';
 
       // مقیاس و قفلِ درگ از یک نقطه — توضیحِ «چرا با هم»: `applyAxisOverride`
       applyAxisOverride(chart, yAxisName);
@@ -1435,7 +1429,7 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
     try {
       chart.setSymbol({
         ticker: currentSymbol,
-        pricePrecision: pricePrecisionOf(ftsView?.pricePrecision, activeAdjustment),
+        pricePrecision: pricePrecisionOf(ftsView?.pricePrecision),
         volumePrecision: 0,
       });
     } catch {
@@ -1457,7 +1451,7 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
 
     chart.setSymbol({
       ticker: currentSymbol,
-      pricePrecision: pricePrecisionOf(ftsView?.pricePrecision, activeAdjustment),
+      pricePrecision: pricePrecisionOf(ftsView?.pricePrecision),
       volumePrecision: 0
     });
     chart.setPeriod(timeframePeriod(activeTimeframe));
@@ -2078,8 +2072,11 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
     if (t.candleType && t.candleType !== activeCandleType && CHART_TYPES.includes(t.candleType)) {
       handleCandleTypeChange(t.candleType);
     }
-    if (t.adjustment && ADJUSTMENT_MODES.includes(t.adjustment as AdjustmentMode) && t.adjustment !== activeAdjustment) {
-      handleAdjustmentChange(t.adjustment as AdjustmentMode);
+    // قالب‌هایِ قدیمی ممکن است رشته‌یِ حالتِ حذف‌شده را نگه دارند؛ کنترل‌شده کوچکت
+    // می‌شود تا یکِ قالبِ کهنه چارت را با سریِ نامعلوم باز نکند.
+    const tMode = migrateAdjustmentMode(t.adjustment);
+    if (tMode && tMode !== activeAdjustment) {
+      handleAdjustmentChange(tMode);
     }
     if (t.priceScale && PRICE_SCALES.includes(t.priceScale) && chart) {
       const scale = t.priceScale as PriceScaleName;

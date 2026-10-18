@@ -778,15 +778,18 @@ def _adjust_capability(events, source, ledger=None, chain=None, coverage=None):
 
     `functional_available` از این دور **محاسبه** می‌شود، نه سخت‌کد: قاعدۀِ قدمِ ۵
     (`_functional_state`) الزاماتِ واقعیِ تعدیلِ عملکردی را یکی‌یکی از داده می‌خواند و
-    هر nào که برقرار نباشد با عددِ خودش درِ `functional_blockers` می‌نشیند. بی‌`chain`
+    هر کدام که برقرار نباشد با عددِ خودش درِ `functional_blockers` می‌نشیند. بی‌`chain`
     یا بی‌`coverage` یعنی «سنجشِ این نماد انجام نشده» ⇒ نه. ادعایِ فعالِ بی‌سنجش،
     همان چیزی است که کلِ این کار برایِ کشتنش نوشته شد.
+
+    `indexed_available` اینجا حذف شد: یکِ `True`ِ سخت‌کدشده برایِ حالتی بود که هیچ
+    مصرف‌کننده‌ای نمی‌خواند و درِ رابط هم دیگر وجود ندارد (نمایِ شاخصِ ۱۰۰). همان
+    شکلی از ادعایِ بی‌سنجش که بالا ممنوع شد، فقط با نامِ دیگر.
     """
     available, blockers = _functional_state(chain, coverage)
     return {
         "source": source,
         "combined_available": source in _ADJ_KNOWN_SOURCES,
-        "indexed_available": True,
         "functional_available": available,
         "functional_reason": _ADJ_FUNCTIONAL_REASON if blockers else
                              "الزاماتِ تعدیلِ عملکردی از دادهٔ همین نماد اثبات شد.",
@@ -1757,12 +1760,16 @@ def _adjust_events_for(symbol, rows=None):
         return []
 
 @router.get("/api/chart-db/{symbol}")
-def get_chart_db(symbol: str, adjustment: int = 3):
+def get_chart_db(symbol: str):
     """(v7.3.2 — Hybrid Data Fusion) تمام تاریخچه از price_history + تزریق کندل امروز از تابلوخوانی.
 
     - تاریخچه کامل (بدون limit) — اندیکاتورها به عمق نیاز دارند
     - کندل امروز (اگر در price_history نیست یا کهنه است) از market_watch زنده تزریق میشود
-    - adjustment: 0=خام، 3=عملکردی (فقط برای فرانت که factor را اعمال میکند؛ اینجا raw میفرستیم)
+
+    پارامترِ `adjustment: 0|3` اینجا حذف شد: هیچ‌کس آن را نمی‌فرستید (endpoint فقط
+    `symbol` می‌گیرد)، هیچ شاخه‌ای به آن وصل نبود، و پاسخ همیشه خام + `factors`
+    می‌داد. یکِ دستکۀِ تزئینی که فقط عددِ خودش را echo می‌کرد، دقیقاً همان «حالتِ
+    بی‌مسیر» است که رأیِ مالک درِ دورِ ممیزی از رابط و کد بیرون رفت.
     """
     try:
         conn = sqlite3.connect(DB_PATH, timeout=30)
@@ -1843,7 +1850,6 @@ def get_chart_db(symbol: str, adjustment: int = 3):
              "corporateEvents": _corporate_events(symbol),
              "liveInjected": live_injected,
              "liveError": live_error,
-             "adjustment": adjustment,
              "fts": fts_payload}))
     except Exception as e:
         return {"status": "error", "message": str(e)}
