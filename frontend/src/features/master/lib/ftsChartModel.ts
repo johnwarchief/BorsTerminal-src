@@ -22,7 +22,7 @@ import { toFaDigits } from '@shared/lib/fmt';
 import type { StrategyParameters } from '../stores/strategyParamsStore';
 
 export type FtsZone = 'F' | 'T' | 'S' | 'M';
-export type FtsPreset = 'swing' | 'trend' | 'hourglass' | 'custom';
+export type FtsPreset = 'swing' | 'trend' | 'hourglass' | 'custom' | 'tech_first';
 /** جهتِ ریل: مهندسی معکوسِ جزوه (S→T→F→M) یا جریانِ کلاسیکِ تحلیلی (F→T→S→M).
  *  فقط ترتیبِ روشن‌شدن و فلشِ ریل را عوض می‌کند — هیچ گره، هیچ parent و هیچ
  *  جایگاهِ Zone را جابه‌جا نمی‌کند (قیدِ مالک: جهت، توپولوژی را نسازد). */
@@ -1427,10 +1427,14 @@ export function railOrder(flow: FlowDirection): FtsZone[] {
  *
  *  ساعت شنی ستاپِ مستقل ندارد؛ خودِ همان اشباعِ هفتگی (MA=52 + RSI)
  *  در ستونِ هفتگی روشن می‌شود. */
-export const PRESET_ACTIVE: Record<'swing' | 'trend' | 'hourglass', string[]> = {
+export const PRESET_ACTIVE: Record<'swing' | 'trend' | 'hourglass' | 'tech_first', string[]> = {
   swing: ['fund_good', 'fund_medium', 'tech_weekly_up', 'setup_jet', 'setup_fib', 'tape_clock', 'tape_volume', 'stop_swing', 'exit_half'],
   trend: ['fund_super', 'fund_good', 'tech_weekly_up', 'setup_fib', 'setup_choch', 'setup_jet', 'setup_point_hunt', 'tape_floor_sweep', 'stop_trend'],
   hourglass: ['fund_super', 'tech_weekly_hourglass', 'tape_floor_sweep', 'tape_clock', 'stop_hourglass'],
+  // استراتژیِ «تکنیکال‌محور» درِ نقشۀ چارت فقط یک گیتِ ثابت دارد: روندِ صعودیِ
+  // هفتگی. شرط‌هایِ انتخابی درِ قیف‌اند و گره‌ای درِ این نقشه ندارند (رجیستری
+  // `technical_gate` را همین می‌گوید)، پس چیزی به نقشه اضافه نمی‌شود.
+  tech_first: ['tech_weekly_up'],
 };
 
 /** پرست ⇒ گره‌هایِ روشن + جدّهایِ مسیرشان، تا ریل رویِ نقشه بُرش نداشته باشد. */

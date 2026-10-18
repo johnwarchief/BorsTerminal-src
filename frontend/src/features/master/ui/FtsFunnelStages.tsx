@@ -14,12 +14,13 @@ import { useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router';
 import { useFunnelPrefsStore, type FunnelPreset } from '../stores/funnelPrefsStore';
 import { useActiveFunnelPreset } from '../lib/useActiveFunnelPreset';
+import { useFunnelRegistry } from '../api/useFunnelRegistry';
 import { useFtsFunnel } from '../api/useFtsFunnel';
 import FtsFunnelStageView from './FtsFunnelStageView';
 import FtsCustomChainBuilder from './FtsCustomChainBuilder';
 import { FUNNEL_STAGES, FtsProcessStepper } from './FtsProcessStepper';
 import { FtsFunnelStages as FtsFunnelAllStages } from './FtsFunnelAllStages';
-import type { FunnelStageKey, TreePreset } from '../lib/ftsFunnel';
+import { stageOrderOf, type FunnelFlow, type FunnelStageKey, type TreePreset } from '../lib/ftsFunnel';
 import { FILTER_LABEL, PRESET_MOTIVE, PRESET_ENTRY } from '../lib/ftsFunnel';
 
 export const FUNNEL_SNAP_KEY = 'bors.funnel.snapshot.v1';
@@ -36,6 +37,7 @@ const VALID_STAGES: readonly FunnelStageKey[] = ['tape', 'technical', 'fundament
 export const FUNNEL_MODES: readonly { key: FunnelPreset; label: string; hint: string }[] = [
   { key: 'swing', label: 'نوسان‌گیر', hint: 'الگوی ساعت + جت + حجم مشکوک' },
   { key: 'trend', label: 'روندگیر', hint: 'کف‌روبی + نقطه‌زنی' },
+  { key: 'tech_first', label: 'تکنیکال‌محور', hint: 'تکنیکال ← تابلو ← بنیادی ← تحویل' },
   { key: 'custom', label: 'Custom', hint: 'خودت فیلتر را انتخاب و مرتب می‌کنی' },
 ];
 
@@ -62,8 +64,6 @@ export function FtsFunnelStages({
       return null;
     }
   });
-  const stage = rawStage && VALID_STAGES.includes(rawStage) ? rawStage : snapStage ?? 'tape';
-
   const setPreset = useFunnelPrefsStore((s) => s.setPreset);
   // presetِ فعال از تنها منبعِ مشترک (URL > انتخابِ کاربر > prop=افق) — همانی که
   // dossier و سایدبار می‌خوانند، پس یک درخواستِ canonical به هر سه سطح می‌رسد.
@@ -72,6 +72,15 @@ export function FtsFunnelStages({
   // (TanStack Query با یک کلیدِ یکی، یک درخواست). اینجا هنوز هیچ داوری‌ای حساب
   // نمی‌شود — فقط `counts`ِ خودِ موتور به تب‌ها می‌رسد.
   const { funnel, loading, error, hasData } = useFtsFunnel(activePreset);
+  // ترتیبِ گام‌ها را پاسخِ موتور می‌گوید (`flow`). تا پاسخ نرسیده‌ایم از
+  // رجیستریِ همان سرور می‌خوانیم که این شخص چه ترتیبی دارد — پس تب‌ها بی‌جهت
+  // یک دور «تابلو» را گامِ اول نشان نمی‌دهند و بعد می‌پرند.
+  const { presets: regPresets } = useFunnelRegistry();
+  const presetFlow: FunnelFlow = regPresets.some(
+    (p) => p.preset_id === activePreset && p.flow === 'tech_first') ? 'tech_first' : 'tape_first';
+  const flow: FunnelFlow = hasData ? funnel.flow : presetFlow;
+  const firstStage = stageOrderOf(flow)[0];
+  const stage = rawStage && VALID_STAGES.includes(rawStage) ? rawStage : snapStage ?? firstStage;
   const stepperState: 'ready' | 'loading' | 'error' =
     error ? 'error' : (!hasData && loading ? 'loading' : 'ready');
   const choose = (p: FunnelPreset) => {
@@ -88,7 +97,7 @@ export function FtsFunnelStages({
     }, { replace: true });
     // «Custom» افقِ سراسری نیست (پلنِ معامله و وزنِ پله به افق نگاه می‌کنند)؛
     // سه افقِ واقعی درِ هر دو جا نوشته می‌شوند.
-    if (p !== 'custom') onPresetChange?.(p);
+    if (p !== 'custom' && p !== 'tech_first') onPresetChange?.(p);
   };
   const symbol = params.get('symbol');
   // پیش‌نمایشِ هر شخص (رأیِ مالک ۱۴۰۵-۰۷-۲۰): با هاور یا فوکوس، فهرستِ فیلترها
@@ -174,7 +183,7 @@ export function FtsFunnelStages({
       ) : null}
 
       <FtsProcessStepper active={stage} preset={activePreset} symbol={symbol}
-                         counts={funnel.counts} state={stepperState} />
+                         counts={funnel.counts} flow={flow} state={stepperState} />
 
       {/* Custom همان‌جا ویرایش می‌شود (§۲۹): نه صفحۀ تازه، نه drawerِ سنگین. */}
       {activePreset === 'custom' ? <FtsCustomChainBuilder /> : null}

@@ -16,6 +16,7 @@ import { useTapeStore, type QuickFilter } from '@features/market/stores/tapeStor
 import { useScreenFilterStore } from '@shared/stores/screenFilterStore';
 import {
   DEFAULT_FUNNEL_OPTIONS,
+  STAGE_KEYS,
   type Funnel,
   type FunnelMode,
   type FunnelOptions,
@@ -31,6 +32,10 @@ import { useFunnelPrefsStore, type FundStrictness } from '../stores/funnelPrefsS
 export type FunnelRequest = {
   preset: TreePreset;
   chain: string[];
+  /** شرط‌هایِ تکنیکالِ استراتژیِ «تکنیکال‌محور». درِ جریانِ جزوه موتور این را
+   *  مصرف نمی‌کند، ولی درِ کلیدِ کش می‌ماند تا انتخابِ کاربر پاسخِ حالتِ دیگر
+   *  را نشان ندهد. فهرستِ مجاز از `technical_filtersِ` رجیستری است. */
+  techChain: string[];
   /** ترکیبِ چیپ‌هایِ روشن: «and» = هرچه دارد، «or» = کم‌از‌یکی. پیش‌فرضِ موتور
    *  هم and است، پس بی‌کلیدِ تازه رفتارِ دیروز می‌ماند. */
   logic: 'and' | 'or';
@@ -43,12 +48,14 @@ export type FunnelRequest = {
 
 const EMPTY_SUM: StageSummary = { pass: 0, reject: 0, pending: 0, unavailable: 0, not_required: 0 };
 const emptyStage = (key: FunnelStageKey): FunnelStage => ({
-  key, entries: [], steps: [], dropped: 0, rejected: 0, unmeasured: 0, notRequired: 0,
+  key, entries: [], steps: [], input: 0, dropped: 0, rejected: 0, unmeasured: 0, notRequired: 0,
   ruled: 0, pending: [], summary: { ...EMPTY_SUM },
 });
 
 const EMPTY: Funnel = {
   mode: 'reverse', tape: 'unavailable',
+  // بی‌پاسخ، ترتیبِ جزوه حاکم است — نه یک ترتیبِ دومِ اختراع‌شده.
+  flow: 'tape_first', stageOrder: [...STAGE_KEYS], techChain: [], techFilterCounts: {},
   techCoverage: { universe: 0, live: 0, fromScreen: 0, none: 0 },
   stages: {
     tape: emptyStage('tape'),
@@ -71,7 +78,10 @@ const EMPTY: Funnel = {
 
 export function funnelQueryKey(req: FunnelRequest): string[] {
   return ['funnel', req.preset, req.chain.join(','), req.logic, req.fundMode,
-          JSON.stringify(req.exceptions), req.dropSuffix ? 'ds1' : 'ds0'];
+          JSON.stringify(req.exceptions), req.dropSuffix ? 'ds1' : 'ds0',
+          // ترتیبِ انتخاب معنایی ندارد (گیت همیشه مقدم است)، پس مرتب‌شده درِ
+          // کلید می‌نشیند تا دو چیدمانِ یک‌مجموعه یک پاسخ را دوباره نگیرند.
+          [...req.techChain].sort().join('+')];
 }
 
 /** درخواستِ قیف از سرور. `mode` فقط نمایشِ ریتمِ کشف است (معکوس/مرور) و داوری
@@ -98,6 +108,10 @@ export function useFtsFunnel(
    *  کلیدِ روشن/خاموشی که به همان منبع می‌نویسد (درِ Custom زنجیرۀِ شخص،
    *  درِ بقیه چیپ‌هایِ تبِّ تابلو). بی‌این، چیپ درِ Custom بی‌اثر می‌شد. */
   screenFilters: { active: string[]; source: 'chips' | 'chain'; toggle: (f: string) => void };
+  /** چیپ‌هایِ شرطِ تکنیکال (استراتژیِ تکنیکال‌محور): همان فهرستی که موتور اجرا
+   *  می‌کند و کلیدِ روشن/خاموشِ خودش. گیتِ هفتگی درِ این فهرست انتخابی نیست؛
+   *  موتور همیشه پیش از هر رأیِ دیگری آن را داوری می‌کند. */
+  techFilters: { active: string[]; toggle: (id: string) => void };
   opts: FunnelOptions;
   request: FunnelRequest;
 } {
@@ -110,6 +124,8 @@ export function useFtsFunnel(
   const removeChainFilter = useFunnelPrefsStore((s) => s.removeFilter);
   const exceptions = useFunnelPrefsStore((s) => s.exceptions);
   const dropSuffixPref = useFunnelPrefsStore((s) => s.dropSuffix);
+  const techChainPref = useFunnelPrefsStore((s) => s.techChain);
+  const toggleTechPref = useFunnelPrefsStore((s) => s.toggleTechFilter);
   const opts: FunnelOptions = {
     ...DEFAULT_FUNNEL_OPTIONS,
     ...useFunnelPrefsStore.getState(),
@@ -127,6 +143,14 @@ export function useFtsFunnel(
     const ids = raw.split(',').map((s) => s.trim()).filter(Boolean);
     return ids.length ? ids : null;
   }, [searchParams]);
+  // لینکِ «برو به این استراتژی با این شرط‌ها» مثلِ `?chain=` باید بر انتخابِ
+  // ذخیره‌شده بردگی کند، وگرنه جدولِ بازِ همان لینک با زنجیرۀِ دیگری می‌آید.
+  const urlTechChain = useMemo(() => {
+    const raw = searchParams.get('tech');
+    if (!raw) return null;
+    const ids = raw.split(',').map((s) => s.trim()).filter(Boolean);
+    return ids.length ? ids : null;
+  }, [searchParams]);
 
   const request = useMemo<FunnelRequest>(() => ({
     preset,
@@ -136,13 +160,14 @@ export function useFtsFunnel(
     // ساخته می‌شوند؛ بی‌انتخاب، زنجیرۀِ خودِ شخصِ رجیستری درِ سرور می‌ماند.
     chain: overrides.chain ?? urlChain
       ?? (preset === 'custom' ? chainPref : quickFilters),
+    techChain: overrides.techChain ?? urlTechChain ?? techChainPref,
     logic: overrides.logic ?? screenLogic,
     fundMode: overrides.fundMode ?? fundMode,
     exceptions: overrides.exceptions ?? exceptions,
     dropSuffix: dropSuffixPref,
     ...overrides,
-  }), [preset, overrides, urlChain, chainPref, fundMode, exceptions, dropSuffixPref,
-      quickFilters, screenLogic]);
+  }), [preset, overrides, urlChain, urlTechChain, chainPref, techChainPref, fundMode,
+      exceptions, dropSuffixPref, quickFilters, screenLogic]);
 
   // چیپ‌هایِ نوارِ غربالگری با همان منبعی که داوری می‌شود حرف می‌زنند: درِ
   // Custom زنجیرۀِ شخص، درِ بقیه چیپ‌هایِ تبِّ تابلو.
@@ -158,6 +183,13 @@ export function useFtsFunnel(
     },
   }), [preset, chainPref, quickFilters, addChainFilter, removeChainFilter]);
 
+  // چیپ‌هایِ شرطِ تکنیکال با همان `tech_chain` حرف می‌زنند که داوری می‌شود:
+  // کلیک رویِ چیپ درخواستِ تازه می‌زند، نه فقط بجِ نمایشی.
+  const techFilters = useMemo(() => ({
+    active: request.techChain,
+    toggle: (id: string) => toggleTechPref(id),
+  }), [request.techChain, toggleTechPref]);
+
   const q = useQuery({
     queryKey: funnelQueryKey(request),
     queryFn: (ctx) => http<ApiPayload>('/api/funnel', {
@@ -167,7 +199,7 @@ export function useFtsFunnel(
       // بدنه‌ها تا آخر دانلود می‌مانند و می‌توانند *بعدِ* پاسخِ تازه بنشینند.
       signal: ctx.signal,
       body: { preset: request.preset, chain: request.chain, logic: request.logic,
-              fund_mode: request.fundMode,
+              fund_mode: request.fundMode, tech_chain: request.techChain,
               exceptions: request.exceptions, drop_suffix: request.dropSuffix },
     }),
     // کلیدِ تازه = پاسخِ تازه، و بی‌این خط جدولِ مسلطِ قیف برایِ چند صدمیلی‌ثانیه
@@ -225,6 +257,7 @@ export function useFtsFunnel(
       ?.decisions ?? []).map((d) => d.symbol)),
     quickFilters,
     screenFilters,
+    techFilters,
     opts,
     request,
   };

@@ -348,9 +348,9 @@ describe('زنجیرۀ Custom', () => {
     useScreenFilterStore.getState().setLogic('or');
     await ready('/master?stage=tape');
     expect(funnelCalls[funnelCalls.length - 1].logic).toBe('or');
-    expect(funnelQueryKey({ preset: 'custom', chain: ['f_susp'], logic: 'or',
+    expect(funnelQueryKey({ preset: 'custom', chain: ['f_susp'], techChain: [], logic: 'or',
                             fundMode: 'standard', exceptions: {}, dropSuffix: true }))
-      .not.toEqual(funnelQueryKey({ preset: 'custom', chain: ['f_susp'], logic: 'and',
+      .not.toEqual(funnelQueryKey({ preset: 'custom', chain: ['f_susp'], techChain: [], logic: 'and',
                                     fundMode: 'standard', exceptions: {}, dropSuffix: true }));
     useScreenFilterStore.getState().setLogic('and');
   });
@@ -430,7 +430,7 @@ describe('بازگشتِ Custom و چیپ‌هایِ زندهٔ نوارِ غر�
   });
 
   it('درخواستِ قیف logic را هم با خود می‌برد (کلیدِ کشِ بی‌logic گمراه‌کننده بود)', () => {
-    const k = funnelQueryKey({ preset: 'trend', chain: [], logic: 'and', fundMode: 'standard',
+    const k = funnelQueryKey({ preset: 'trend', chain: [], techChain: [], logic: 'and', fundMode: 'standard',
                                exceptions: {}, dropSuffix: true });
     expect(k).toContain('and');
   });
@@ -501,9 +501,9 @@ describe('پیش‌فرضِ دیدنیِ مرحلۀ تحویل (رأیِ مال�
     await waitFor(() => expect(funnelCalls.at(-1)?.drop_suffix).toBe(false));
     // خاموش‌کردن همِ پیش‌فرضِ همیشگیِ موتور نیست که بی‌درخواست بماند؛ کلیدِ کش
     // عوض می‌شود تا پاسخِ حالتِ دیگر رویِ جدول ننشیند.
-    expect(funnelQueryKey({ preset: 'custom', chain: [], logic: 'and', fundMode: 'standard',
+    expect(funnelQueryKey({ preset: 'custom', chain: [], techChain: [], logic: 'and', fundMode: 'standard',
                             exceptions: {}, dropSuffix: false }))
-      .not.toEqual(funnelQueryKey({ preset: 'custom', chain: [], logic: 'and', fundMode: 'standard',
+      .not.toEqual(funnelQueryKey({ preset: 'custom', chain: [], techChain: [], logic: 'and', fundMode: 'standard',
                                     exceptions: {}, dropSuffix: true }));
   });
 });

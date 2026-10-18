@@ -9,13 +9,17 @@ import type {
   Candidate,
   FilterCount,
   Funnel,
+  FunnelFlow,
   FunnelMode,
   FunnelStageKey,
   StageStatus,
   StageSummary,
+  TechCheck,
+  TechFilterCount,
   TreePreset,
   UniverseExclusion,
 } from './ftsFunnel';
+import { stageOrderOf } from './ftsFunnel';
 
 export type ApiWhy = { code?: string; text?: string; stage?: string; seq?: number;
   label?: string; filter_id?: string; status?: StageStatus; reason_code?: string; human_reason?: string;
@@ -49,6 +53,13 @@ export type FunnelScreenView = {
   applicable: boolean | null;
 };
 
+/** یک شرطِ تکنیکال از `technical_stage`ِ بک‌اند — نام، ستون، مقدار، حکم و دلیل. */
+export type ApiCheck = {
+  filter_id?: string; label?: string; role?: string; column?: string;
+  value?: string | number | null; status?: StageStatus;
+  reason_code?: string; human_reason?: string; source?: string; origin?: string;
+};
+
 /** یک ردیفِ `entries.<stage>` درِ پاسخِ /api/funnel. */
 export type ApiRow = {
   symbol: string; name?: string; sector?: string; last?: number | null;
@@ -79,6 +90,10 @@ export type ApiRow = {
   /** وضعیتِ معاملاتیِ این نماد درِ جهانِ زنده (از `market_universe`) — نمایش و
    *  اولویت، نه داوری: هیچ نمادی به‌خاطرِ وضعیتش از غربالگری حذف نمی‌شود. */
   universe_priority?: number | null; universe_status?: string | null;
+  /** شرط‌هایِ گامِ تکنیکال رویِ همین نماد (فقط ردیفِ همین گام آن را دارد) */
+  checks?: ApiCheck[];
+  /** زمانِ ساختِ همین داوری درِ `funnel_tech_scan` — تاریخِ ماشه نیست */
+  scan_as_of?: number | null;
   /** رتبۀ رسمیِ بک‌اند (/api/screener) — حملِ عدد است، نه رتبۀ تازه */
   rank?: number | null;
   /** رأیِ اسکرینر (STRONG/WATCH/…) و کاربرد در پنج‌شاخصه — ممکن است پاسخِ
@@ -104,6 +119,8 @@ export type ApiPayload = {
   status: string; message?: string;
   engine_version?: string; ruleset_version?: string; as_of?: number;
   preset?: TreePreset; chain?: string[]; fund_mode?: string;
+  /** ترتیبِ واقعیِ اجرا از موتور؛ نبودش یعنی همان ترتیبِ جزوه (`tape_first`) */
+  flow?: string; technical_chain?: string[];
   /** `board` ردیف خامِ تابلو است (با تکراری)، `market` جامعۀ نمادها (یک‌شده)،
    *  `screening` فقط زنده‌ها/واجدِ شرایط، `excluded` باقیِ نمادها. همیشۀ
    *  `market = screening + excluded` درِ گاردِ بک‌اند بسته شده. */
@@ -120,9 +137,14 @@ export type ApiPayload = {
   stages?: Record<FunnelStageKey, {
     steps?: ApiStep[]; input?: number; matched?: number; removed?: number;
     counts?: Partial<Record<StageStatus, number>>; mode?: string;
-    /** نامزدِ مستقلِ هر فیلتر رویِ جامعۀ غربالگری (`funnel_engine.filter_counts`) */
+    chain?: string[];
+    /** نامزدِ مستقلِ هر فیلتر رویِ جامعۀ غربالگری. تابلو از `funnel_engine.filter_counts`
+     *  می‌آید (matched/removed/unmeasured) و تکنیکال از شمارشِ خودِ گام
+     *  (pass/reject/pending/unavailable)؛ هر دو درِ همین یک کلیداند و نگاشتِ
+     *  پایین خوانندۀ همان شکلِ خودش است. */
     filter_counts?: Record<string, { name?: string; matched?: number;
-      removed?: number; unmeasured?: number; input?: number }> }>;
+      removed?: number; unmeasured?: number; input?: number;
+      pass?: number; reject?: number; pending?: number; unavailable?: number }> }>;
   entries?: Partial<Record<FunnelStageKey, ApiRow[]>>;
   /** وضعیتِ هر چهار گام برایِ تک‌تکِ نمادهایِ جامعۀ ورودی — منبعِ canonicalِ
    *  «این نماد درِ این گام چه حکمی دارد». خطِ زمانِ خودِ نماد با
@@ -149,6 +171,24 @@ function markOf(v: StageStatus | boolean | null | undefined): StageStatus {
   if (v === 'not_required') return 'not_required';
   if (v === 'not_applicable') return 'not_applicable';
   return 'unavailable';
+}
+
+/** یک شرطِ تکنیکالِ پاسخِ سرور ⇒ همان چیزی که جدولِ تکنیکال می‌خواند. نام‌های
+ *  زیرخطیِ DTO به مدلِ نمایشی برگردانده می‌شود؛ نه داوریِ دوم، نه مقدارِ جانشین:
+ *  ستونی که موتور نگفته `null` می‌ماند و رابط «—» نشان می‌دهد. */
+function techCheckOf(c: ApiCheck): TechCheck {
+  return {
+    filterId: c.filter_id ?? '',
+    label: c.label ?? c.filter_id ?? '',
+    role: c.role ?? 'entry',
+    column: c.column ?? '',
+    value: c.value ?? null,
+    status: markOf(c.status ?? null),
+    reasonCode: c.reason_code ?? '',
+    humanReason: c.human_reason ?? '',
+    source: c.source ?? '',
+    origin: c.origin ?? '',
+  };
 }
 
 function summaryOf(v: Partial<Record<StageStatus, number>> | undefined): StageSummary {
@@ -218,6 +258,8 @@ function toCandidate(sym: string, own: ApiRow | undefined, base: ApiRow | undefi
     trendW: r?.weekly ?? null, trendD: r?.daily ?? null,
     dailyStrategy: r?.branch ?? null,
     setups: ftsSignalListText(r?.evidence ?? []),
+    techChecks: (r?.checks ?? []).map(techCheckOf),
+    techVerdictAt: typeof r?.scan_as_of === 'number' ? r.scan_as_of : null,
     technicalPoints: r?.tech_points ?? null,
     inds,
     fundCaveat: !!r?.fund_caveat,
@@ -252,6 +294,10 @@ const BUILD_CACHE = new WeakMap<ApiPayload, { mode: FunnelMode; funnel: Funnel }
 
 function build(payload: ApiPayload, fallbackMode: FunnelMode): Funnel {
   const matrix = payload.status_matrix ?? {};
+  // ترتیبِ گام‌ها از خودِ پاسخ است (`flow`)؛ پاسخِ سرورِ قدیمی این کلید را ندارد
+  // و نبودش یعنی همان ترتیبِ جزوه، نه حدسِ تازه.
+  const flow: FunnelFlow = payload.flow === 'tech_first' ? 'tech_first' : 'tape_first';
+  const order = stageOrderOf(flow);
   const richBy = {} as Record<FunnelStageKey, Map<string, ApiRow>>;
   for (const k of STAGES) {
     richBy[k] = new Map((payload.entries?.[k] ?? []).map((r) => [r.symbol, r]));
@@ -299,6 +345,9 @@ function build(payload: ApiPayload, fallbackMode: FunnelMode): Funnel {
         })();
     stages[key] = {
       key,
+      // چند نماد وارد این گام شد — از خودِ موتور؛ پاسخِ قدیمی نداشت ⇒ شمارِ
+      // ردیف‌هایِ همین گام (نه یک عددِ ساختگی).
+      input: payload.stages?.[key]?.input ?? rows.length,
       // حملِ بی‌داوریِ گام‌هایِ درونیِ تابلو (شمارشِ ترتیب‌محور از موتور)
       steps: (payload.stages?.[key]?.steps ?? []).map((s) => ({
         seq: s.seq ?? 0, filter_id: s.filter_id ?? '', label: s.label ?? s.filter_id ?? '',
@@ -335,8 +384,21 @@ function build(payload: ApiPayload, fallbackMode: FunnelMode): Funnel {
       unmeasured: c.unmeasured ?? 0, input: c.input ?? 0,
     };
   }
+  // شمارشِ فیلترهایِ تکنیکال شکلِ دیگری دارد (چهار وضعیت، بی‌نام): نام را از
+  // رجیستریِ همان سرور می‌گیریم، پس اینجا عددِ متنیِ دوم ساخته نمی‌شود.
+  const techFilterCounts = {} as Record<string, TechFilterCount>;
+  for (const [fid, c] of Object.entries(payload.stages?.technical?.filter_counts ?? {})) {
+    techFilterCounts[fid] = {
+      pass: c.pass ?? 0, reject: c.reject ?? 0,
+      pending: c.pending ?? 0, unavailable: c.unavailable ?? 0,
+    };
+  }
   return {
     mode: fallbackMode,
+    flow,
+    stageOrder: order,
+    techChain: payload.technical_chain ?? [],
+    techFilterCounts,
     tape: (payload.as_of && Date.now() / 1000 - payload.as_of < 900) ? 'live' : 'stale',
     techCoverage: {
       universe: screening,
@@ -373,13 +435,16 @@ export function stageProgressFor(
   funnel: Funnel, symbol: string,
 ): { key: FunnelStageKey; state: 'passed' | 'blocked' | 'waiting' | 'not_required'
                 | 'not_in_universe' | 'unknown'; why: string }[] {
+  // خطِ زمانِ نماد باید همان ترتیبِ اجرا را نشان دهد، نه ترتیبِ جزوه به‌عنوانِ
+  // ثابت: درِ استراتژیِ «تکنیکال‌محور» گامِ تکنیکال اول می‌آید.
+  const order = funnel.stageOrder?.length ? funnel.stageOrder : STAGES;
   // نمادِ خارج از جامعۀ غربالگری درِ هیچ جدولِ گامی نیست (رأیِ مالک)؛ اگر اینجا
   // بی‌کار می‌ماند، سایدبار او را «سنجیده نشده» می‌خواند — دقیقاً همان چیزی که
   // ممنوع است. علتش را از `exclusionsِ` خودِ سرور می‌گیرد.
   const out = funnel.exclusions.find((e) => e.symbol === symbol);
   if (out) {
     const why = out.humanReason || out.reasonCode || '';
-    return STAGES.map((key) => ({ key, state: 'not_in_universe' as const, why }));
+    return order.map((key) => ({ key, state: 'not_in_universe' as const, why }));
   }
   // هر گام ردیفِ خودش را دارد و status همان گام را می‌گوید؛ پس وضعیت‌ها از
   // همهٔ ردیف‌هایِ همین نماد جمع می‌شوند (نخستِ یافت‌شده کافی نبود: ردیفِ گامِ
@@ -388,13 +453,13 @@ export function stageProgressFor(
   const merged: Record<FunnelStageKey, StageStatus> = {
     tape: 'unavailable', technical: 'unavailable', fundamental: 'unavailable', handover: 'unavailable',
   };
-  for (const key of STAGES) {
+  for (const key of order) {
     const hit = funnel.stages[key].entries.find((e) => e.symbol === symbol);
     if (!hit) continue;
     found = found ?? hit;
     if (hit.status[key]) merged[key] = hit.status[key];
   }
-  return STAGES.map((key) => {
+  return order.map((key) => {
     const st = merged[key] === 'unavailable' ? found?.status[key] : merged[key];
     // «لازم نبود» یک حکمِ صریح است (گامِ پیشین جلوش را گرفته) و با «بی‌حکم/unknown»
     // یکی نیست — قاعدۀ مالک: هیچ نمادی با «سنجیده نشده» از قیف بیرون نمی‌ماند.

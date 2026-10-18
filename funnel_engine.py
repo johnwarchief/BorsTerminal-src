@@ -845,11 +845,11 @@ def _tech_check(row: dict, tf, gate_status: str) -> dict:
             code, txt = f"TECH_{tok}_ABSENT", "لایۀ شاهد ساخته نشده (بی‌تحلیل)"
         elif tf.role == "risk":
             code = "TECH_RISK_" + tok
-            txt = (f"شاهدِ «{tf.name}» رویِ این نماد ثبت شده — با انتخابِ شما رد می‌شود"
-                   if status == REJECT else f"شاهدِ «{tf.name}» ثبت نشده")
+            txt = (f"«{tf.name}» رویِ این نماد ثبت شده — با انتخابِ شما رد می‌شود"
+                   if status == REJECT else f"«{tf.name}» ثبت نشده")
         else:
             code = "TECH_" + tok
-            txt = f"شاهدِ «{tf.name}» ثبت شده" if status == PASS else f"شاهدِ «{tf.name}» ثبت نشده"
+            txt = f"«{tf.name}» ثبت شده" if status == PASS else f"«{tf.name}» ثبت نشده"
         out.update({"status": status, "value": ",".join(sigs or []) or None,
                     "signal": want["signal"], "reason_code": code, "human_reason": txt})
         return out
@@ -972,6 +972,11 @@ def technical_stage(rows: list[dict], tech: dict[str, dict] | None = None,
             "matrix": mat, "evidence": evidence,
             "points": _num(r.get("tech_points")) if r.get("tech_points") is not None else None,
             "checks": checks,
+            # زمانِ ساختِ همین داوری از خودِ ردیفِ `funnel_tech_scan`. تاریخِ
+            # خودِ ماشه (یکِ_specificِ نماد درِ کدام کندل خورده) درِ بانکِ اسکن
+            # ذخیره نمی‌شود، پس اینجا عددی نمی‌سازیم: این ستون «تاریخِ داوری»
+            # خوانده می‌شود.
+            "scan_as_of": (t or {}).get("as_of"),
             "why": why,
         })
     # شمارشِ هر شرط رویِ همان ورودیِ گام — برایِ عددِ کنارِ چیپ‌ها (همان کاری که
@@ -1521,11 +1526,18 @@ def _view(screening: list[dict], tape: dict, tech: dict, fund: dict, hand: dict,
                 continue
             if stage_key == "handover" and h is None and st["fundamental"] != PASS:
                 continue
-            entries[stage_key].append(_display(
-                r, patterns=None,
-                status={stage_key: st[stage_key]},
-                why={stage_key: [dict(i) for i in items[stage_key]]},
-                chain=chain, tech=t, fund=f))
+            row = _display(r, patterns=None,
+                           status={stage_key: st[stage_key]},
+                           why={stage_key: [dict(i) for i in items[stage_key]]},
+                           chain=chain, tech=t, fund=f)
+            if stage_key == "technical":
+                # جدولِ تکنیکال «نتیجۀ هر شرط» را می‌خواهد، نه فقط حکمِ جمع.
+                # همان دیکشنری‌هایی که `technical_stage` ساخته است بی‌داوریِ دوم
+                # رویِ ردیف می‌نشینند؛ برایِ سه گامِ دیگر فرستاده نمی‌شوند چون
+                # پاسخِ ۱۰ مگابایتی را بی‌جهتِ سوم و چهارم می‌کنند.
+                row["checks"] = list((t or {}).get("checks") or [])
+                row["scan_as_of"] = (t or {}).get("scan_as_of")
+            entries[stage_key].append(row)
         step_rows = [{"stage": "universe", "status": PASS,
                       "reason_code": "IN_SCREENING_UNIVERSE",
                       "human_reason": "وضعیتِ رسمیِ نماد اجازهٔ غربال می‌دهد؛ "

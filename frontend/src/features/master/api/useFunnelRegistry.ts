@@ -24,7 +24,17 @@ export type RegistryFilter = {
 
 export type RegistryPreset = {
   preset_id: string; label: string; chain: string[]; technical_gate?: string | null;
+  /** ترتیبِ اجرایِ این شخص از خودِ رجیستری: `tape_first` | `tech_first` */
+  flow?: string | null;
   source?: string | null; status?: string | null; note?: string | null;
+};
+
+/** یک شرطِ تکنیکالِ قابلِ انتخاب — ستونِ `funnel_tech_scan` که موتور می‌خواند.
+ *  نام/شرح/منبع/نقش همه از همین‌جا می‌آید؛ فرانت هیچ فیلتری نمی‌سازد. */
+export type RegistryTechFilter = {
+  filter_id: string; name: string; description?: string | null;
+  role?: string | null; column?: string | null; source?: string | null;
+  origin?: string | null; note?: string | null;
 };
 
 export type RegistryPayload = {
@@ -32,6 +42,8 @@ export type RegistryPayload = {
   ruleset_version?: string;
   filters: RegistryFilter[];
   presets: RegistryPreset[];
+  technical_filters?: RegistryTechFilter[];
+  technical_filter_groups?: Record<string, string[]>;
   unimplemented_filters?: RegistryFilter[];
   gates?: Record<string, unknown>;
   /** تنظیمِ فعالِ ساعت‌شنی از خودِ موتور — تنها منبعِ متنِ «دورۀ X / سطح Y» */
@@ -54,10 +66,15 @@ export function useFunnelRegistry() {
     staleTime: 300_000,
   });
   const filters = q.data?.filters ?? [];
+  const techFilters = q.data?.technical_filters ?? [];
   return {
     filters,
     presets: q.data?.presets ?? [],
     unimplemented: q.data?.unimplemented_filters ?? [],
+    /** شرط‌هایِ قابلِ انتخابِ گامِ تکنیکال — تنها منبعِ نام و نقش و منبعِ عدد */
+    techFilters,
+    techGroups: q.data?.technical_filter_groups ?? {},
+    techFilterById: (id: string) => techFilters.find((f) => f.filter_id === id) ?? null,
     rulesetVersion: q.data?.ruleset_version ?? '',
     hourglass: q.data?.hourglass_settings ?? null,
     loading: q.isPending,

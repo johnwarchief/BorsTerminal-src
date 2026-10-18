@@ -842,6 +842,45 @@ ck("خ" not in _tu["stages"]["technical"]["survivors"]
    and any(c["status"] == FE.UNAVAILABLE for c in _tu["trace"]["technical"][0]["checks"]),
    "۵۹) ستونِ ساخته‌نشده ⇒ سنجیده‌نشده، نه ردِ قطعی")
 
+# ۶۰) ردیفِ جدولِ تکنیکال شرط‌ها را با خودش می‌برد (رابطِ میزِ نتیجهٔ هر شرط)
+# هر دو نماد ستاپِ جت دارند؛ تنها تفاوتشان روندِ هفتگی است. هدفِ همین بند همین
+# است: «جت قبول + وتوی هفتگی رد» درِ ردیفِ مردود هم خوانده شود.
+_tc = {s_: {"tech_trend_w": w, "tech_trend_d": "up", "tech_matrix_decision": "PERMITTED",
+            "tech_jet": 1, "as_of": 1_760_000_000}
+       for s_, w in (("الف", "up"), ("پ", "down"))}
+_tp = [screen("الف", tech_trend_w="up", tech_jet=1), screen("پ", tech_trend_w="down", tech_jet=1)]
+_tv = FE.evaluate([board("الف", f_susp=True), board("پ", f_susp=True)], _tp,
+                  preset="tech_first", tech_chain=["t_setup_jet"], tech_scan=_tc,
+                  tech_sigs={"الف": "x|1", "پ": "y|1"})
+_by = {e["symbol"]: e for e in _tv["entries"]["technical"]}
+ck(all(isinstance(e.get("checks"), list) and e["checks"] for e in _by.values()),
+   "۶۰) هر ردیفِ گامِ تکنیکال دفترچۀ شرط خودش را دارد (نه فقط عبوری‌ها)")
+_gate = _by["الف"]["checks"][0]
+ck(_gate["filter_id"] in REG.TECH_GATE_IDS and _gate["status"] == FE.PASS,
+   "۶۰) گیت درِ دفترچۀ شرط مقدم است و همان رأیِ رسمیِ روند هفتگی را می‌برد")
+ck([c["filter_id"] for c in _by["الف"]["checks"]] == ["t_weekly_up", "t_setup_jet"],
+   "۶۰) ترتیبِ شرط‌هایِ ردیف همان ترتیبِ اجرایِ موتور است")
+ck(_by["الف"]["checks"][1]["column"] == "tech_jet"
+   and _by["الف"]["checks"][1]["human_reason"],
+   "۶۰) هر شرط ستون، دلیل و حکمِ خودش را درِ ردیف دارد")
+ck([c["status"] for c in _by["پ"]["checks"]] == [FE.REJECT, FE.PASS],
+   "۶۰) درِ ردیفِ مردود: جت قبول و وتوی هفتگی رد — دو حکم جدا درِ همان ردیف")
+
+# ۶۱) سه گامِ دیگر دفترچۀ شرط نمی‌برند: پاسخِ ده‌مگابایتی سه‌بار بزرگ نمی‌شود
+ck(all("checks" not in e for k in ("tape", "fundamental", "handover")
+       for e in _tv["entries"].get(k, [])),
+   "۶۱) شرط‌ها فقط درِ ردیفِ گامِ تکنیکال می‌نشینند")
+
+# ۶۲) تاریخِ داوری از ردیفِ اسکن است؛ نبودش None می‌ماند نه زمانِ درخواست
+ck(_by["الف"].get("scan_as_of") == 1_760_000_000,
+   "۶۲) تاریخِ داوری از as_of خودِ funnel_tech_scan خوانده می‌شود")
+_nh = FE.evaluate([board("ت", f_susp=True)], [screen("ت", tech_trend_w="up")],
+                  preset="tech_first", tech_chain=["t_setup_jet"],
+                  tech_scan={}, tech_sigs={})
+ck(_nh["entries"]["technical"][0].get("scan_as_of") is None,
+   "۶۲) بی‌ردیفِ اسکن، تاریخ نمی‌سازیم — None می‌ماند و رابط «—» نشان می‌دهد")
+
+
 
 print()
 if FAILED:
