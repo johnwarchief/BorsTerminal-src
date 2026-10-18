@@ -287,8 +287,14 @@ const SPOTS = [[0.20, 0.30], [0.34, 0.55], [0.50, 0.34], [0.66, 0.58], [0.80, 0.
     rec.n0 = before0.savedCount;
     rec.engineOwn0 = ids0.size;
     let clicks = 0;
+    // مختصاتِ خودِ کلیک‌ها: ردیفِ localStorage و حتی getOverlays() درِ این محصول گاه
+    // بی‌نقطه برمی‌گردند، پس نشانیِ نقطه از جایِ واقعیِ کلیک ساخته می‌شود.
+    const clicked = [];
     for (const [fx, fy] of SPOTS) {
-      await page.mouse.click(pane.left + Math.round(pane.w * fx), pane.top + Math.round(pane.h * fy));
+      const cx = pane.left + Math.round(pane.w * fx);
+      const cy = pane.top + Math.round(pane.h * fy);
+      clicked.push([cx, cy]);
+      await page.mouse.click(cx, cy);
       clicks++;
       await page.waitForTimeout(650);
       const s1 = await waitSaved((x) => (x.saved || []).some((o) =>
@@ -325,8 +331,11 @@ const SPOTS = [[0.20, 0.30], [0.34, 0.55], [0.50, 0.34], [0.66, 0.58], [0.80, 0.
       || s2.engineTotal >= s2.savedCount;
     rec.engineAtDraw = { drawGroup: s2.engineDrawGroup, total: s2.engineTotal, saved: s2.savedCount };
 
-    // ۴) ویرایش: درگِ نقطۀِ اول (ابزارِ انتخاب + پیکسلِ واقعیِ همان نقطه)
-    const px = await page.evaluate(`(() => {
+    // ۴) ویرایش: درگ از نقطۀِ اول. نشانیِ نقطه از خودِ کلیکِ واقعی گرفته می‌شود،
+    // نه از بازخوانیِ نقاط: همِ ردیفِ localStorage و هم getOverlays() درِ این محصول
+    // گاهِ بی‌نقطه برمی‌گردند (سنجشِ اجرا: stored.pts=[] با آن‌که رسم وجود داشت) و
+    // آنگاه «px=null» ویرایش/حذف را بی‌آزمون رد می‌کرد (edit=0، deleteOne=1/21).
+    const pxFromChart = await page.evaluate(`(() => {
       const c = window.__borsChart;
       const p = ${JSON.stringify((rec.stored.pts || [])[0] || {})};
       if (!p.t) return null;
@@ -338,7 +347,9 @@ const SPOTS = [[0.20, 0.30], [0.34, 0.55], [0.50, 0.34], [0.66, 0.58], [0.80, 0.
         return { x: Math.round(b.left + q.x), y: Math.round(b.top + q.y) };
       } catch (e) { return null; }
     })()`);
+    const px = pxFromChart || (clicked.length ? { x: clicked[0][0], y: clicked[0][1] } : null);
     rec.editPixel = px;
+    rec.pixelSource = pxFromChart ? 'convertToPixel' : (px ? 'known click coordinate' : 'none');
     if (px) {
       await page.locator('.nn-left-toolbar .tool-item[title="پیکان انتخاب"]').first()
         .click({ timeout: 3000 }).catch(async () => {
@@ -361,6 +372,10 @@ const SPOTS = [[0.20, 0.30], [0.34, 0.55], [0.50, 0.34], [0.66, 0.58], [0.80, 0.
       rec.editChangedEngine = !!q3 && !!anchorOwn && JSON.stringify(q3.pts) !== anchorOwn;
       rec.editChangedStored = !!row3 && JSON.stringify(row3.pts) !== anchorPts;
       rec.ptsAfterEditEngine = q3 ? q3.pts : null;
+      // بی‌نقطه بودنِ هرِ دو سو یعنی سنسور نقطه‌ها را نمی‌بیند، نه این‌که ابزار
+      // ویرایش نمی‌شود؛ «نادانسته» را با «رد» قاطی نمی‌کنیم.
+      rec.editUnmeasurable = !rec.editChangedEngine && !rec.editChangedStored &&
+        !(q3 && (q3.pts || []).length) && !(anchorOwn && anchorOwn.length > 0);
       rec.ptsAfterEdit = row3 ? row3.pts : null;
       rec.othersUntouchedByEdit = s3.savedCount === s2.savedCount;
       await page.keyboard.press('Escape').catch(() => {});
@@ -443,6 +458,7 @@ const SPOTS = [[0.20, 0.30], [0.34, 0.55], [0.50, 0.34], [0.66, 0.58], [0.80, 0.
     drew: list.filter(([, v]) => v.drew).length,
     persisted: list.filter(([, v]) => v.storedAdded > 0).length,
     editedEngine: list.filter(([, v]) => v.editChangedEngine).length,
+    editUnmeasurable: list.filter(([, v]) => v.editUnmeasurable).length,
     editedStored: list.filter(([, v]) => v.editChangedStored).length,
     storedRowsWithoutId: list.filter(([, v]) => v.stored && v.stored.id === null).length,
     visibilityToggled: list.filter(([, v]) => v.visibilityToggle && v.visibilityToggle.changed).length,
@@ -459,6 +475,7 @@ const SPOTS = [[0.20, 0.30], [0.34, 0.55], [0.50, 0.34], [0.66, 0.58], [0.80, 0.
   const s = rep.summary;
   console.log(`registry=${s.registryTools} tested=${s.tested} reachable=${s.reachable} ` +
               `drew=${s.drew} persisted=${s.persisted}`);
+  console.log(`edit unmeasurable (sensor blind to points)=${s.editUnmeasurable}`);
   console.log(`edited(engine)=${s.editedEngine} edited(store)=${s.editedStored} storedRowsWithoutId=${s.storedRowsWithoutId} visibility=${s.visibilityToggled} deleteOne=${s.deletedOne} ` +
               `isolated=${s.isolatedDelete} engineCoherent=${s.engineCoherent}`);
   console.log(`deleteAll: cancel holds=${s.deleteAll.cancelHeld} accept clears=${s.deleteAll.acceptCleared} ` +
