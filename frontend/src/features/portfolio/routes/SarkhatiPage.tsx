@@ -25,7 +25,7 @@
 // نشانی: `#/sarkhati` (Hash Router) — refresh و لینکِ مستقیم کار می‌کند.
 import { useEffect, useMemo, useState } from 'react';
 import { useMarketFeedShared } from '@shared/api/marketFeed';
-import { toFaDigits } from '@shared/lib/fmt';
+import { toEnDigits, toFaDigits } from '@shared/lib/fmt';
 import { useSymbolStore } from '@shared/stores/symbolStore';
 import { useExecutionLedger, useExecutionStatus, useExecutionTimings, phaseOf } from '../lib/orderClient';
 import { deriveStep, statusLine, panelLabel, stepIndex,
@@ -33,6 +33,7 @@ import { deriveStep, statusLine, panelLabel, stepIndex,
 import { appStateForJev } from '../lib/jevSarkhati';
 import { useSarkhatiFormStore } from '../stores/sarkhatiFormStore';
 import { ExecutionPanel } from '../components/ExecutionPanel';
+import { SarkhatiBudgetCard } from '../components/sarkhati/SarkhatiBudgetCard';
 import { SarkhatiConnectionCard } from '../components/sarkhati/SarkhatiConnectionCard';
 import { SarkhatiMonitorCard } from '../components/sarkhati/SarkhatiMonitorCard';
 import { SarkhatiPipeline } from '../components/sarkhati/SarkhatiPipeline';
@@ -263,7 +264,15 @@ export default function SarkhatiPage() {
             ))}
           </p>
           {symbol ? (
-            <ExecutionPanel symbol={symbol} row={row.data ?? null} schedule connect={false} />
+            <>
+              <ExecutionPanel symbol={symbol} row={row.data ?? null} schedule connect={false} />
+              {/* پیشِ هر تأیید، همین شش چیز باید دیده شود: کارگزاری، نماد، جهت،
+                  قیمت، حداکثرِ تعداد و مبلغِ تقریبی — باِ قدرتِ خریدی که *کارگزاری*
+                  گفته، نه تخمینِ خودِ رابط. */}
+              <SarkhatiBudgetCard symbol={symbol} side={fields?.side ?? 'buy'}
+                price={toEnDigits(fields?.price ?? '').replace(/[٬,]/g, '')}
+                adapter={gate.status?.adapter ?? ''} />
+            </>
           ) : (
             <p className="text-2xs leading-5 text-text-muted" data-testid="sarkhati-order-empty">
               پیشِ انتخابِ نماد، فرمِ سفارش ساخته نمی‌شود — «—» نماد نیست و هیچ

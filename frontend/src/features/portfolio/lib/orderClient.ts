@@ -594,6 +594,42 @@ export const portfolioApi = {
     http<PortfolioView>('/api/execution/portfolio', { schema: PortfolioSchema, signal }),
 };
 
+/** پیش‌نمایشِ «باِ این قیمت چقدر می‌توانم؟» — هیچ‌وقت سفارش نیست و هیچ‌وقت
+ *  پاسخِ کارگزاری هم نیست (`from_broker: false`). بی‌قدرتِ خریدِ واقعی،
+ *  `plan.status = UNKNOWN` و `quantity = null` است؛ رابط هیچ عددی نمی‌سازد. */
+export const BudgetSchema = z.object({
+  status: z.string(),
+  symbol: z.string().nullish(),
+  side: z.string().nullish(),
+  instrument: z.object({ ins_code: z.string().nullish(), isin: z.string().nullish(),
+    resolved: z.boolean().nullish() }).nullish(),
+  band: z.object({ present: z.boolean().nullish(), source: z.string().nullish(),
+    lot_size: z.number().nullish(), p_last: z.number().nullish(),
+    allowed_min: z.number().nullish(), allowed_max: z.number().nullish(),
+    as_of: z.string().nullish(), error: z.string().nullish() })
+    .catchall(z.unknown()).nullish(),
+  price: z.number().nullish(),
+  price_basis: z.string().nullish(),
+  buying_power_rial: z.number().nullish(),
+  buying_power_source: z.string().nullish(),
+  plan: z.object({ status: z.string().nullish(), quantity: z.number().nullish(),
+    gross_rial: z.number().nullish(), fee_rial: z.number().nullish(),
+    total_rial: z.number().nullish(), remaining_rial: z.number().nullish(),
+    lot_size: z.number().nullish(), max_qty: z.number().nullish(),
+    caps_verified: z.boolean().nullish(), why: z.string().nullish(),
+    assumptions: z.array(z.string()).nullish() }).catchall(z.unknown()).nullish(),
+  blockers: z.array(z.string()).nullish(),
+  is_order: z.boolean().nullish(),
+  from_broker: z.boolean().nullish(),
+}).catchall(z.unknown());
+export type BudgetView = z.infer<typeof BudgetSchema>;
+
+export const budgetApi = {
+  get: (symbol: string, side = 'buy', price = '', signal?: AbortSignal) =>
+    http<BudgetView>(`/api/execution/budget?${new URLSearchParams(
+      { symbol, side, price }).toString()}`, { schema: BudgetSchema, signal }),
+};
+
 /** یک‌بار در هر نشست کافی است؛ تنظیمِ دیسک بی‌restart عوض نمی‌شود. */
 export function useBrokerConfig() {
   return useQuery({
@@ -605,13 +641,25 @@ export function useBrokerConfig() {
   });
 }
 
-/** پرتفوی فقط وقتی خوانده می‌شود که درِ فقط‌خواندنی یا نوشتن باز باشد. */
-export function useExecutionPortfolio(enabled = true) {
+/** پرتفوی فقط وقتی خوانده می‌شود که درِ فقط‌خواندنی یا نوشتن باز باشد. */export function useExecutionPortfolio(enabled = true) {
   return useQuery({
     queryKey: ['execution-portfolio'],
     queryFn: ({ signal }) => portfolioApi.get(signal),
     enabled,
     staleTime: 30_000,
+    refetchOnWindowFocus: false,
+    retry: (count, error) => count < 2 && !(error instanceof HttpError && error.status === 404),
+  });
+}
+
+/** بودجه فقط وقتی پرسیده می‌شود که نمادی انتخاب شده باشد — بی‌نماد «—» هم
+ *  معنی ندارد. بی‌پاسخ، رابط هیچ عددی نمی‌سازد. */
+export function useExecutionBudget(symbol: string, side = 'buy', price = '', enabled = true) {
+  return useQuery({
+    queryKey: ['execution-budget', symbol, side, price],
+    queryFn: ({ signal }) => budgetApi.get(symbol, side, price, signal),
+    enabled: enabled && !!symbol.trim(),
+    staleTime: 5_000,
     refetchOnWindowFocus: false,
     retry: (count, error) => count < 2 && !(error instanceof HttpError && error.status === 404),
   });
