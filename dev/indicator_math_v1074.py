@@ -255,6 +255,12 @@ def main():
     fac = [{"time": c["time"], "factor": (2.0 if i < split else 1.0)} for i, c in enumerate(cd)]
     vols = [{"time": c["time"], "value": c["volume"] * 1.0} for c in cd]
 
+    # بخش‌هایِ پایینِ همین main مبنایِ قیمت را عوض می‌کنند. جعبۀِ بخشِ ۱ درِ
+    # `finally` بسته شده بود، پس اینجا مسیر به فایلِ **واقعیِ** محصول برمی‌گشت وِ
+    # آخرین `set_basis("closing")` رویِ `price_basis.json` می‌ماند (سنجشِ
+    # ۱۴۰-۰۷-۲۷: پس ازِ گیت، چارت با مبنایِ اشتباه باز می‌شد). جعبهٔ امنِ مشترک.
+    import basis_sandbox
+    basis_sandbox.use_sandboxed_basis("indicator_math")
     price_basis.set_basis("closing")
     sc_c = CH._fts_scaled(cd, fac, vols)
     price_basis.set_basis("last")

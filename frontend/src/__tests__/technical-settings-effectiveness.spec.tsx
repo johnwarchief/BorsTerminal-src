@@ -135,6 +135,7 @@ describe('کنترل‌هایِ تنظیمات باید به موتورِ چار
     useFtsConfigStore.getState().setView({
       axisDragLock: false, axisTickMargin: 3, wickGray: false,
       showWatermark: true, watermarkOpacity: 20, showBorders: true, showWicks: true,
+      showXAxis: true, showYAxis: true,
       candleUp: '#089981', candleDown: '#f23645', wickUp: null, wickDown: null,
     } as never);
   });
@@ -198,18 +199,21 @@ describe('کنترل‌هایِ تنظیمات باید به موتورِ چار
   });
 
   // ── ۵) ضریبِ سرور، نه زنجیرۀِ مرورگر ──────────────────────────────────
-  it('سریِ رسم‌شدنه از ضریبِ سرور می‌آید: حجم ÷factor می‌شود (قیمت نیست که ایندکس شود)', async () => {
+  it('سریِ رسم‌شدنه از ضریبِ سرور می‌آید: پیش‌فرض ریال است و حجم مقیاس نمی‌شود', async () => {
     const { http } = await import('@shared/api/http');
     (http as ReturnType<typeof vi.fn>).mockResolvedValueOnce(CHART_PAYLOAD);
     render(<KLineChartWrapper initialSymbol="فولاد" />);
     await flush();
     const bars = loaderBars();
     expect(bars.length).toBe(3);
-    // دو کندلِ پیشِ رویداد: ۱۰۰۰ ÷ ۰٫۵ = ۲۰۰۰؛ کندلِ آخر دست‌نخورده
-    expect(bars[0].volume).toBe(2000);
-    expect(bars[1].volume).toBe(2000);
-    expect(bars[2].volume).toBe(1000);
-    // نسبتِ(first÷last) با ضریب عوض می‌شود: خام ≈ ۱۰۰/۱۰۲، تعدیل‌شده ≠ آن
+    // پیش‌فرضِ جدید (`DEFAULT_ADJUSTMENT_MODE = combined`) محورِ ریالی است:
+    // ۱۰۰ × ۰٫۵ = ۵۰. درِ حالتِ پیشین («نمایِ بازدهی») نخستین کندل ۱۰۰ می‌شد و
+    // کاربر رویِ فولاد ۱۴۷٬۰۰۰ می‌خواند — همان ناهنجاریِ مرحلۀ ۳ و ۶.
+    expect(bars[0].close).toBe(50);
+    // رقمِ ممیزِ قیمتِ تعدیل‌شده گم نمی‌شود (۱۰۱ × ۰٫۵ = ۵۰٫۵، نه ۵۱)
+    expect(bars[1].close).toBe(50.5);
+    // حجم ÷ ضریب نمی‌شود — مرجعِ ره‌آورد در هر دو سری همان حجم را می‌کشد
+    expect(bars.map((b) => b.volume)).toEqual([1000, 1000, 1000]);
     expect(bars[0].timestamp).toBe(T0);
     expect(bars[2].timestamp).toBe(T0 + 4 * DAY);
   });
@@ -267,5 +271,96 @@ describe('موتورِ دوم: مبنایِ سریِ رسم‌شده خوانا 
     );
     const line = screen.getByTestId('ffc-adjust-basis');
     expect(line.textContent).toContain(FFC_ADJUSTMENT_BASIS_LABEL);
+  });
+
+  // ── ۷) مخفی/روشن‌کردنِ محورِ زمان و محورِ قیمت ───────────────────────────
+  // `show:false` به‌تنهایی درِ klinecharts v10 بی‌اثر است: سورسِ نصب‌شده آن را فقط
+  // داخلِ شاخۀِ auto-size می‌خواند، پس اندازه باید صفر شود تاِ واقعاً محوری نماند.
+  it('پیش‌فرض: هر دو محور دیده می‌شوند (measureهایِ خودی: xAxis=32، yAxis=auto)', () => {
+    render(<KLineChartWrapper initialSymbol="فولاد" />);
+    // حالتِ پایه صریح پین می‌شود: setView درِ beforeEach بیرونِ act اجرا
+    // می‌شود و مقدارِ سنجۀِ قبلی می‌تواند به این سنجه نشت کند.
+    act(() => { useFtsConfigStore.getState().setView({ showXAxis: true, showYAxis: true }); });
+    const s = lastStyles();
+    expect(s.xAxis.show).toBe(true);
+    expect(s.xAxis.size).toBe(32);
+    expect(s.yAxis.show).toBe(true);
+    expect(s.yAxis.size).toBe('auto');
+  });
+
+  it('«نمایش محورِ زمان» خاموش ⇒ show=false و size=0، و محورِ قیمت دست‌نخورده', () => {
+    render(<KLineChartWrapper initialSymbol="فولاد" />);
+    // حالتِ پایه صریح پین می‌شود: setView درِ beforeEach بیرونِ act اجرا
+    // می‌شود و مقدارِ سنجۀِ قبلی می‌تواند به این سنجه نشت کند.
+    act(() => { useFtsConfigStore.getState().setView({ showXAxis: true, showYAxis: true }); });
+    act(() => { useFtsConfigStore.getState().setView({ showXAxis: false }); });
+    const s = lastStyles();
+    expect(s.xAxis.show).toBe(false);
+    expect(s.xAxis.size).toBe(0);
+    expect(s.yAxis.show).toBe(true);
+  });
+
+  it('«نمایش محورِ قیمت» خاموش ⇒ show=false و size=0، و عرضِ محورِ زمان نمی‌آید', () => {
+    render(<KLineChartWrapper initialSymbol="فولاد" />);
+    // حالتِ پایه صریح پین می‌شود: setView درِ beforeEach بیرونِ act اجرا
+    // می‌شود و مقدارِ سنجۀِ قبلی می‌تواند به این سنجه نشت کند.
+    act(() => { useFtsConfigStore.getState().setView({ showXAxis: true, showYAxis: true }); });
+    act(() => { useFtsConfigStore.getState().setView({ showYAxis: false }); });
+    const s = lastStyles();
+    expect(s.yAxis.show).toBe(false);
+    expect(s.yAxis.size).toBe(0);
+    expect(s.xAxis.size).toBe(32);
+  });
+
+  it('هر دو محور خاموش ⇒ روشن‌کردنِ دوباره همان حالتِ اول را برمی‌گرداند', () => {
+    render(<KLineChartWrapper initialSymbol="فولاد" />);
+    // حالتِ پایه صریح پین می‌شود: setView درِ beforeEach بیرونِ act اجرا
+    // می‌شود و مقدارِ سنجۀِ قبلی می‌تواند به این سنجه نشت کند.
+    act(() => { useFtsConfigStore.getState().setView({ showXAxis: true, showYAxis: true }); });
+    act(() => { useFtsConfigStore.getState().setView({ showXAxis: false, showYAxis: false }); });
+    expect(lastStyles().xAxis.size).toBe(0);
+    expect(lastStyles().yAxis.size).toBe(0);
+    act(() => { useFtsConfigStore.getState().setView({ showXAxis: true, showYAxis: true }); });
+    const s = lastStyles();
+    expect(s.xAxis.show).toBe(true);
+    expect(s.xAxis.size).toBe(32);
+    expect(s.yAxis.show).toBe(true);
+    expect(s.yAxis.size).toBe('auto');
+  });
+
+  it('مخفی‌کردنِ محورِ قیمت، بقیۀِ چیدمان را نمی‌شکند (جایگاه، برگشت و حاشیه سرِ جا)', () => {
+    render(<KLineChartWrapper initialSymbol="فولاد" />);
+    // حالتِ پایه صریح پین می‌شود: setView درِ beforeEach بیرونِ act اجرا
+    // می‌شود و مقدارِ سنجۀِ قبلی می‌تواند به این سنجه نشت کند.
+    act(() => { useFtsConfigStore.getState().setView({ showXAxis: true, showYAxis: true }); });
+    act(() => { useFtsConfigStore.getState().setView({ showYAxis: false, axisTickMargin: 10 }); });
+    const s = lastStyles();
+    expect(s.yAxis.position).toBe('right');
+    expect(s.yAxis.reverse).toBe(false);
+    expect(s.yAxis.tickText.marginStart).toBe(10);
+    expect(s.xAxis.tickText.marginEnd).toBe(10);
+  });
+});
+
+// ── ۸) موتورِ دوم ازِ انتخابِ کاربر بیرون است (رأیِ مالک ۱۴۰۵-۰۷-۲۷) ──────
+describe('انتخابِ موتورِ رندر درِ رابطِ کاربر', () => {
+  it('فقط یک موتور «production» می‌ماند و آن klinecharts است', async () => {
+    const { ENGINE_REGISTRY } = await import('@features/technical/engine/registry');
+    expect(ENGINE_REGISTRY.filter((e) => e.production).map((e) => e.id)).toEqual(['klinecharts']);
+    // موتورِ دوم ازِ رجیستری حذف نشده — آزمایشگاهِ موتور هنوز آن را می‌شناسد
+    expect(ENGINE_REGISTRY.map((e) => e.id)).toContain('ffc');
+  });
+
+  it("setChartEngine('ffc') بی‌اثر است و انتخاب رویِ موتورِ فعال می‌ماند", () => {
+    const before = useFtsConfigStore.getState().chartEngine;
+    act(() => { useFtsConfigStore.getState().setChartEngine('ffc'); });
+    expect(useFtsConfigStore.getState().chartEngine).toBe(before);
+    expect(useFtsConfigStore.getState().chartEngine).toBe('klinecharts');
+  });
+
+  it('نوارِ ابزار دیگر سوییچِ موتورِ یک‌دکمه‌ای نشان نمی‌دهد (کنترلِ مرده نساز)', async () => {
+    const { container } = render(<KLineChartWrapper initialSymbol="فولاد" />);
+    expect(container.querySelector('[data-testid="nn-engine-switch"]')).toBeNull();
+    expect(container.querySelector('[data-testid="nn-engine-ffc"]')).toBeNull();
   });
 });

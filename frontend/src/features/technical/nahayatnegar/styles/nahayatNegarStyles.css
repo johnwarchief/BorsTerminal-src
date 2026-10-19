@@ -556,10 +556,6 @@
   border-color: rgba(41, 98, 255, 0.4);
 }
 
-/* حالت‌های تعدیلِ بدون دادهٔ تفکیکی — غیرفعال و با شفافیت کم */
-.nn-dropdown-item.nn-disabled { opacity: .38; cursor: not-allowed; }
-.nn-dropdown-item.nn-disabled:hover { background-color: transparent; }
-
 /* لِجِندِ الگوهای فعالِ FTS روی چارت (بالا-چپ؛ جمع‌شونده و کامپکت) */
 .nn-pattern-legend {
   position: absolute;

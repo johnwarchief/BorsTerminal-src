@@ -163,6 +163,31 @@ describe('قالب در منوی اندیکاتورها', () => {
     expect(screen.getByTestId('template-empty')).toBeInTheDocument();
   });
 
+  it('قالبِ کهنه با حالتِ سریِ حذف‌شده ⇒ همان سریِ ریالیِ عملکردی، بی‌حالتِ سوم', () => {
+    // «نمایِ بازدهی (شاخصِ ۱۰۰)» از رابط و کد بیرون رفت، ولی قالب‌هایِ ذخیره‌شده
+    // همان رشته را نگه داشته‌اند. اگر بی‌کوچکت برسد، حالتِ سوم زنده می‌ماند؛ اگر
+    // نادیده گرفته شود، کاربر چارتِ خام را به‌جای تعدیل‌شده می‌بیند. معیارِ آزمون
+    // همان اثرِ اندازه‌گیری‌شدن است: برچسبِ زندهٔ کرکره باید به «عملکردی» برود.
+    // ذخیره پیش از mount (همان قراردادِ همین فایل: بی‌صدا وسطِ render نشوید)
+    const legacy = useChartTemplateStore.getState().saveTemplate({
+      name: 'قالبِ قدیمی', indicators: ['VOL'], adjustment: 'performance',
+    })!;
+    render(<KLineChartWrapper initialSymbol="فولاد" />);
+    const adjButton = () => screen.getByTitle('نوع تعدیل قیمت');
+
+    // اول دستی روی «خام» می‌نشینیم تا عوض‌شدنِ واقعیِ حالت سنجیده شود، نه پیش‌فرض
+    fireEvent.click(screen.getByTitle('پنل اندیکاتورها'));
+    fireEvent.click(adjButton());
+    fireEvent.click(Array.from(document.querySelectorAll('.nn-dropdown-item'))
+      .find((e) => (e.textContent ?? '').startsWith('خام'))!);
+    expect(adjButton().textContent).toContain('خام');
+
+    fireEvent.click(screen.getByTestId(`template-apply-${legacy.id}`));
+    expect(adjButton().textContent).toContain('عملکردی');
+    expect(adjButton().textContent).not.toContain('شاخص');
+    expect(document.body.textContent).not.toContain('نمایِ بازدهی');
+  });
+
   // capabilityِ منبع: بازۀ درون‌روزی سورسِ داده ندارد، پس قالبِ کهنه آن را
   // «سرو» نمی‌کند — تنزلِ صریح به روزانه با دلیلِ خوانا.
   it('قالبِ با بازۀ درون‌روزی ⇒ تنزلِ صریح به روزانه و نمایشِ دلیل، نه برچسبِ جعلی', () => {

@@ -78,8 +78,13 @@ export function FtsTrendPanel({ data }: { data: FtsAnalysisData | null | undefin
         <div className="grid grid-cols-3 gap-2">
           {(['D', 'W', 'M'] as const).map((k) => {
             const leg = t?.[k];
+            const mj = t?.major_swings?.[k];
             const tr = leg?.trend ?? 'na';
             const tone = trendTone(tr);
+            // اطلاعِ موقتِ جدا از حکمِ قطعی: Extreme در حالِ شکل‌گیری که پنجرۀ
+            // تأییدش کامل نشده. رسمِ جهت و رأیِ قیف به این عدد وابسته نیست.
+            const prov = mj?.provisional;
+            const provPrice = prov?.high?.price ?? prov?.low?.price ?? null;
             return (
               <div key={k} className="rounded-xl border border-[var(--hairline)] bg-bg-card/40 p-2">
                 <div className="mb-1 flex items-center justify-between">
@@ -99,11 +104,43 @@ export function FtsTrendPanel({ data }: { data: FtsAnalysisData | null | undefin
                     <span>کف اخیر</span>
                     <span className="num">{fmtPrice(leg?.last_low)}</span>
                   </span>
+                  {mj?.counts ? (
+                    <span className="flex justify-between" data-testid={`fts-major-counts-${k}`}>
+                      <span>ماژور (سقف/کف)</span>
+                      <span className="num">
+                        {toFaDigits(mj.counts.major_highs ?? 0)}/{toFaDigits(mj.counts.major_lows ?? 0)}
+                        {mj.counts.dropped_minor ? ` · ${toFaDigits(mj.counts.dropped_minor)} کوچک` : ''}
+                      </span>
+                    </span>
+                  ) : null}
+                  {provPrice != null ? (
+                    <span className="flex justify-between text-text-muted" data-testid={`fts-provisional-${k}`}>
+                      <span>در حال شکل‌گیری (تأیید نشده)</span>
+                      <span className="num">{fmtPrice(provPrice)}</span>
+                    </span>
+                  ) : null}
                 </div>
               </div>
             );
           })}
         </div>
+        {t?.major_swings?.D?.as_of || t?.major_swings?.D?.reason ? (
+          <div className="mt-1.5 flex flex-col gap-1 text-3xs text-text-muted">
+            {t.major_swings.D?.as_of ? (
+              <span data-testid="fts-trend-asof">
+                مبنایِ سریِ بسته: <b className="num">{toFaDigits(t.major_swings.D.as_of)}</b>
+              </span>
+            ) : null}
+            {/* «دو Extreme ماژور نداریم» با «روند نزولی است» یکی نیست — هر دو متن
+                درِ رابط خوانده می‌شوند تا کاربر علتِ رد را حدس نزند. */}
+            {t.major_swings.D?.reason ? (
+              <span data-testid="fts-trend-reason-d">روزانۀِ ساختار: {t.major_swings.D.reason}</span>
+            ) : null}
+            {t.major_swings.W?.reason ? (
+              <span data-testid="fts-trend-reason-w">هفتگیِ ساختار: {t.major_swings.W.reason}</span>
+            ) : null}
+          </div>
+        ) : null}
         {t?.alignment === 'up' || t?.alignment === 'down' ? (
           <div className="mt-1.5">
             <Badge tone={t.alignment === 'up' ? 'green' : 'red'}>

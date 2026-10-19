@@ -14,13 +14,17 @@ export interface CorporateAction {
 }
 
 /**
- * سه مفهومِ جدا — یکی نکن، جای یکی را به دیگری ندِه:
- *   none        — قیمتِ خامِ تابلو (محور ریال)
- *   combined    — ضریبِ تجمعیِ گسستِ «قیمت پایه» روی کندل‌هایِ ماقبلِ رویداد (محور ریال)
- *   performance — **نمایِ بازدهی (شاخصِ ۱۰۰)**: همان سریِ combined تقسیم بر نخستین
- *                 پایانی × ۱۰۰. مقدارِ `performance` درِ این فایل و درِ stateِ ذخیره‌شده
- *                 فقط نامِ سیمِ رابط است (نمایه‌هایِ چارت با همین رشته ذخیره شده‌اند)؛
- *                 معنایش شاخصِ بازدهی است، **نه** Functional Adjustment.
+ * دو حالتِ سریِ قیمت — و فقط همین دو (رأیِ مالک، دورِ ممیزیِ کلِ نمادها):
+ *   none      — قیمتِ خامِ تابلو (محور ریال)
+ *   combined  — عملکردی: ضریبِ تجمعیِ گسستِ «قیمت پایه» روی کندل‌هایِ ماقبلِ رویداد (ریال)
+ *
+ * «نمایِ بازدهی (شاخصِ ۱۰۰)» که با نامِ `performance` درِ این فایل و درِ stateِ
+ * ذخیره‌شده بود حذف شد. آن حالت *نوعِ سریِ قیمت نبود*: یک مقیاس‌کردنِ نمایشی رویِ
+ * همان سریِ combined (÷ نخستینِ پایانی × ۱۰۰) بود، و نامش دقیقاً همان چیزی است که
+ * درِ رأیِ ۲۰۲۶-۰۹-۲۴ از UI و کد بیرون رفت — چون کاربر آن را «تعدیلِ عملکردی» می‌خواند
+ * و چارت را با محورِ ۶۵٬۰۰۰ تا ۱۶۶٬۰۰۰ برای فولادی باز می‌کرد که آخرین کندلش ۴٬۴۱۰ است.
+ * امروز آن مقیاسِ نمایشی همان «محور درصدی» درِ تنظیماتِ مقیاس‌ها است (نوعِ نمایش، نه
+ * نوعِ سری) و همان‌جا می‌ماند.
  *
  * «تعدیل عملکردیِ واقعی» (ره‌آورد/نهایات‌نگر) سودِ نقدی را **سرمایه‌گذاریِ دوباره**
  * می‌کند (history را تا ده برابر پایین‌تر می‌کشند — docs/CHART-PARITY-REFERENCE.md §۸)
@@ -30,10 +34,41 @@ export interface CorporateAction {
  * همان نماد درِ `functionalBlockers` می‌آید. مرورگر دیگر خودش تصمیم نمی‌گیرد که
  * تعدیلِ عملکردی هست یا نه، و هیچ عددِ حدسی جای ضریبِ سرور نمی‌نشیند.
  */
-export type AdjustmentMode = 'none' | 'combined' | 'performance';
+export type AdjustmentMode = 'none' | 'combined';
 
-/** پایهٔ نمایِ بازدهی — همان چیزی که رویِ محورِ عمودی خوانده می‌شود */
-export const PERFORMANCE_BASE = 100;
+/** هر حالتِ دیگری که درِ تنظیمِ قدیمی پیدا شود، به این دو کوچکت می‌شود */
+const LEGACY_MODE_TARGETS: Record<string, AdjustmentMode> = {
+  none: 'none',
+  combined: 'combined',
+  // نمایِ بازدهی رویِ سریِ تعدیل‌شده می‌نشست، پس نزدیک‌ترین معنایِ ریالیِ همان عدد
+  performance: 'combined',
+  // دو حالتی که هرگز دادهٔ پشتیبان نداشتند و درِ UI غیرفعال بودند
+  capital: 'combined',
+  cash: 'combined',
+};
+
+/**
+ * خواندنِ یکِ مبنایِ ذخیره‌شده — از قالبِ چارت یا stateِ کهنه.
+ * سازگاریِ داخلی، نه یکِ حالتِ سومِ رابط: رشته‌ای که نمی‌شناسیم `null` می‌ماند تا
+ * فراخوانِ خودش پیش‌فرضِ جاری را نگه دارد (بی‌ساختنِ حالت از رویِ حدس).
+ */
+export function migrateAdjustmentMode(stored: unknown): AdjustmentMode | null {
+  if (typeof stored !== 'string') return null;
+  return LEGACY_MODE_TARGETS[stored] ?? null;
+}
+
+/**
+ * مبنایِ پیش‌فرضِ چارت. «عملکردی» درِ رهاورد محورِ **ریالی** را نگه می‌دارد
+ * (برچسبِ همان صفحه: O 4,410 H 4,410 …)، پس پیش‌فرضِ چارتِ خودی هم باید سریِ
+ * ریالیِ تعدیل‌شده باشد، نه شاخصِ ۱۰۰.
+ *
+ * پیش از این، `KLineChartWrapper` با همان نیتِ مالک («تعدیل عملکردی») رویِ
+ * `performance` باز می‌شد و محورِ فولاد ۶۵٬۰۰۰ تا ۱۶۶٬۰۰۰ نشان می‌داد در حالی که
+ * آخرین کندلِ همان پاسخِ API ۴٬۴۱۰ بود (سنجشِ ۱۴۰۵-۰۷-۲۷، `_audit/chart_axis_stages.json`:
+ * `axisValues.candle = {topValue: 166820.57, bottomValue: 65106.08}` در برابرِ
+ * `api.lastClose = 4410`). سرجایش همین‌جا بسته می‌شود تا دو حالتِ واگرا نسازد.
+ */
+export const DEFAULT_ADJUSTMENT_MODE: AdjustmentMode = 'combined';
 
 /**
  * موتورِ دوم (FFC) کرکرۀ «نوع تعدیل قیمت» را ندارد — آن کرکره درِ نوارِ ابزارِ
@@ -110,14 +145,12 @@ export function readAdjustmentCapability(raw: unknown): AdjustmentCapability {
 /**
  * هشدارِ صادقِ همان حالت — نه «داده نیست» کلی، بلکه علتِ همان محور.
  * فقط وقتی آتش می‌زند که مجموعهٔ رویداد در دسترس نباشد؛ آن‌وقت هر عددی که
- * `combined` یا «نمایِ بازدهی» خوانده می‌شود در واقع ریالِ خام است.
+ * درِ حالتِ «عملکردی» خوانده می‌شود در واقع ریالِ خام است.
  */
 export function adjustmentGapNote(mode: AdjustmentMode, cap: AdjustmentCapability): string | null {
   if (mode === 'none') return null;
   if (cap.combinedAvailable) return null;
-  return mode === 'performance'
-    ? `نمایِ بازدهی رویِ قیمتِ خام (تعدیلِ رویداد در دسترس نیست — منبع: ${cap.source}).`
-    : `تعدیلِ ترکیبی در دسترس نیست (منبع: ${cap.source})؛ اعدادِ محور خام‌اند.`;
+  return `تعدیلِ رویداد در دسترس نیست (منبع: ${cap.source})؛ اعدادِ محور خام‌اند.`;
 }
 
 /**
@@ -134,39 +167,19 @@ export function functionalGapNote(cap: AdjustmentCapability): string | null {
     + 'محور، سریِ تعدیلِ ترکیبی است.';
 }
 
-/** ده‌دقیقه‌ایِ ممیز برای عددِ بازدهی؛ قیمتِ ریالی گردِ صحیح می‌ماند */
-function round2(v: number): number {
-  return Math.round(v * 100) / 100;
+/**
+ * گردکردنِ قیمتِ تعدیل‌شده. صحیح‌گردانیِ بی‌قید اینجا خطایِ بزرگی می‌سازد: ضریبِ تجمعیِ فولاد در
+ * ۲۰۰۷-۰۳-۱۱ برابر ۰٫۰۰۱۶۷۴۸۹۷۸ است و پایانیِ خام ۱٬۹۰۰ ⇒ ۳٫۱۸۲۳. صحیح‌گردانی آن را
+ * به ۳ می‌اندازد (۵٫۷٪ خطا) و آن خطا به ارتفاعِ همهٔ کندل‌هایِ کهنه و به هر عددی که
+ * از همان سری حساب می‌شود سرایت می‌کند. پس چهار رقمِ ممیز می‌ماند؛ خوانا‌بودنِ محور
+ * تنظیمِ جدا است (`pricePrecision` درِ ftsConfigStore) — نه تحریفِ داده.
+ */
+function roundAdjustedPrice(v: number): number {
+  return Math.round(v * 1e4) / 1e4;
 }
 
 export function getAdjustmentFactor(action: CorporateAction): number {
   return action.ratio > 0 ? Math.min(Math.max(action.ratio, 0.0001), 50) : 1.0;
-}
-
-/**
- * تبدیلِ سریِ قیمت به شاخصِ بازدهی: هر کندل ÷ پایانیِ نخستین کندل × ۱۰۰.
- * این **فقط یک مقیاس‌کردن است** — هیچ رویدادِ شرکتی در آن لحاظ نمی‌شود، پس
- * «تعدیل» نامیده نمی‌شود مگر رویِ سریِ از پیش `combined`.
- *
- * حجم و گردشِ ارزش **دست‌نخورده** می‌مانند — آن‌ها قیمت نیستند که مقیاس شوند.
- * سریِ بی‌پایه (نخستین close صفر یا تهی) بدونِ تغییر برمی‌گردد: تقسیمِ بر صفر
- * یعنی بی‌نهایتِ سبزِ جعلی رویِ محور، نه «۰٪».
- */
-export function toIndexedSeries(candles: KLineData[]): KLineData[] {
-  const base = candles.length ? Number(candles[0].close) : 0;
-  if (!(base > 0)) return candles.map(c => ({ ...c }));
-  return candles.map(c => ({
-    ...c,
-    open: round2(Number(c.open) / base * PERFORMANCE_BASE),
-    high: round2(Number(c.high) / base * PERFORMANCE_BASE),
-    low: round2(Number(c.low) / base * PERFORMANCE_BASE),
-    close: round2(Number(c.close) / base * PERFORMANCE_BASE),
-  }));
-}
-
-/** دقتِ محورِ قیمت برای هر حالت — نمایِ بازدهی بدونِ دو رقمِ ممیز خوانده نمی‌شود */
-export function pricePrecisionFor(mode: AdjustmentMode): number {
-  return mode === 'performance' ? 2 : 0;
 }
 
 /**
@@ -181,9 +194,11 @@ export function pricePrecisionFor(mode: AdjustmentMode): number {
  * می‌کرد، در حالی که حلقۀِ سرور همان‌ها را نگه می‌داشت — دو مقیاسِ متفاوت برایِ یک
  * نماد درِ یک صفحه. حالا یک محاسبه هست و مرورگر فقط همان را اعمال می‌کند.
  *
- * اعمالِ ضریب: قیمت‌ها ×k و حجم ÷k تا ارزشِ معامله ثابت بماند. کندلی که سرور برایش
- * ضریبی نفرستاده (سریِ محلیِ بی‌factors، کندلِ تزریق‌شدۀِ محلی) ضریبِ ۱ می‌گیرد —
- * «بی‌اثر»، نه حذفِ کندل و نه عددِ ساخته‌شده.
+ * اعمالِ ضریب: فقط قیمت‌ها ×k. حجم و گردشِ ارزش دست‌نخورده می‌مانند — مرجعِ ره‌آورد
+ * هم درِ هر دو_seriesِ خام و تعدیل‌شده همان حجم را می‌رسمد (سنجشِ بالا)، و تقسیمِ حجم
+ * بر ضریبِ کهنه (۰٫۰۰۱۶) محورِ حجم را تا صدبرابرِ منبع بالا می‌برد.
+ * کندلی که سرور برایش ضریبی نفرستاده (سریِ محلیِ بی‌factors، کندلِ تزریق‌شدۀِ محلی)
+ * ضریبِ ۱ می‌گیرد — «بی‌اثر»، نه حذفِ کندل و نه عددِ ساخته‌شده.
  */
 export function applyAdjustmentToCandles(
   rawCandles: KLineData[],
@@ -191,8 +206,7 @@ export function applyAdjustmentToCandles(
   mode: AdjustmentMode
 ): KLineData[] {
   if (mode === 'none' || !rawCandles || rawCandles.length === 0) {
-    return mode === 'performance' ? toIndexedSeries(rawCandles.map(c => ({ ...c })))
-                                  : rawCandles.map(c => ({ ...c }));
+    return rawCandles ? rawCandles.map(c => ({ ...c })) : [];
   }
 
   const byDate = new Map<string, number>();
@@ -210,17 +224,22 @@ export function applyAdjustmentToCandles(
     const factor = byDate.get(key) ?? 1.0;
     return {
       timestamp: candle.timestamp,
-      open: Math.round(candle.open * factor),
-      high: Math.round(candle.high * factor),
-      low: Math.round(candle.low * factor),
-      close: Math.round(candle.close * factor),
-      volume: candle.volume !== undefined ? Math.round(candle.volume / factor) : undefined,
+      open: roundAdjustedPrice(candle.open * factor),
+      high: roundAdjustedPrice(candle.high * factor),
+      low: roundAdjustedPrice(candle.low * factor),
+      close: roundAdjustedPrice(candle.close * factor),
+      // حجم دست‌نخورده می‌ماند. تقسیمِ حجم بر ضریب («تا ارزشِ ثابت بماند») با
+      // مرجعِ measured نمی‌خواند: درِ سنجشِ ۱۴۰۵-۰۷-۲۷ از ۶۰۱ تاریخِ مشترکِ فولاد،
+      // سریِ حجمِ خام (type0) و سریِ حجمِ تعدیل‌شدهٔ رهاورد (type7) در ۶۰۱ از ۶۰۱
+      // تاریخ *یکسان* بودند (`_audit/ra365_ref_bars.json`). تقسیم، محورِ حجم را در
+      // نمایِ کاملِ تاریخچه ۱۷۶ برابرِ منبع می‌کرد (۲٫۲۹e۱۲ به‌جای ۱٫۳e۱۰،
+      // `_audit/chart_axis_stages.json`).
+      volume: candle.volume,
       turnover: candle.turnover
     };
   });
 
-  // نمایِ بازدهی رویِ همان سریِ تعدیل‌شده می‌نشیند؛ بی‌ضریبِ قیمتی، درصدِ بازدهی
-  return mode === 'performance' ? toIndexedSeries(scaled) : scaled;
+  return scaled;
 }
 
 /**

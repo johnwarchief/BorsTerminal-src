@@ -123,10 +123,14 @@ describe('نگاشتِ FTS → لایه‌های رابطِ موتور', () => {
     expect(broken).toEqual([]);
   });
 
-  it('موتورِ دوم در رجیستری «تولیدی» است و klinecharts همان پیش‌فرضِ ساخت است', () => {
+  it('موتورِ دوم درِ رجیستری می‌ماند ولی ازِ انتخابِ کاربر بیرون است (#186، رأیِ ۱۴۰۵-۷-۲۷)', () => {
     const ffc = ENGINE_REGISTRY.find((e) => e.id === 'ffc');
-    expect(ffc?.production).toBe(true);
-    expect(ENGINE_REGISTRY.filter((e) => e.production).map((e) => e.id)).toEqual(['klinecharts', 'ffc']);
+    // کدِ موتور و آزمایشگاهِ موتور سرجای خوداند؛ فقط چارتِ اصلی آن را انتخاب‌پذیر
+    // نمی‌کند. این سطر پیش از این `production: true` را قفل کرده بود — همان
+    // انتخابی که مالک ازِ رابط بیرون کرد، پس اصلاح می‌شود نه حذف.
+    expect(ffc).toBeTruthy();
+    expect(ffc?.production).toBe(false);
+    expect(ENGINE_REGISTRY.filter((e) => e.production).map((e) => e.id)).toEqual(['klinecharts']);
   });
 });
 

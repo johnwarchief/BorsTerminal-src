@@ -55,8 +55,6 @@ export type ChartView = {
   showLegend: boolean;
   showXAxis: boolean;
   showYAxis: boolean;
-  /** چیدمان چارت: تک/۲/۴ پنل با همگام‌سازی */
-  splitLayout: 1 | 2 | 4;
   statusShowOhlc: boolean;
   statusShowSymbol: boolean;
   statusShowIndicators: boolean;
@@ -110,7 +108,6 @@ export const VIEW_DEFAULTS: ChartView = {
   showLegend: true,
   showXAxis: true,
   showYAxis: true,
-  splitLayout: 1,
   statusShowOhlc: true,
   statusShowSymbol: true,
   statusShowIndicators: true,
@@ -251,10 +248,14 @@ function initial(): PersistedState {
     };
 
     // موتور فقط از رجیستری خوانده می‌شود؛ مقدارِ ناشناخته (یا موتورِ حذف‌شده)
-    // به پیش‌فرضِ تولید برمی‌گردد، نه به رندرِ نشدنی.
+    // به پیش‌فرضِ تولید برمی‌گردد، نه به رندرِ نشدنی. «production» هم همین‌جا
+    // داوری می‌شود: اگر روزی موتوری ازِ انتخابِ کاربر بیرون برود، آن انتخابِ
+    // ذخیره‌شده باید بی‌صدا به موتورِ فعالِ ساخت برگردد، نه اینکه چارتِ بی‌رندر
+    // بماند (رأیِ مالک دربارهٔ موتورِ دوم، ۱۴۰۵-۰۷-۲۷).
     const rawEngine = parsed.chartEngine as string | undefined;
     const chartEngine: ChartEngineId =
-      rawEngine && ENGINE_REGISTRY.some((e) => e.id === rawEngine) ? (rawEngine as ChartEngineId) : PERSIST_DEFAULTS.chartEngine;
+      rawEngine && ENGINE_REGISTRY.some((e) => e.id === rawEngine && e.production)
+        ? (rawEngine as ChartEngineId) : PERSIST_DEFAULTS.chartEngine;
 
     return {
       ...PERSIST_DEFAULTS,
