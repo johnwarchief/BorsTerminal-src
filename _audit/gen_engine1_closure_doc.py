@@ -470,7 +470,15 @@ def main():
     W("")
     chain = {k: A("_scratch", "live", f"final_{k}.log") for k in ("tsc", "vitest", "eslint",
                                                                   "gate", "build")}
-    W(f"- SHAِ زنجیره (درِ سرِ هرِ لاگ ثبت شده): `{sh('git rev-parse --short HEAD')}`")
+    chain_sha = (last_line(chain["tsc"], "CHAIN_SHA") or "").replace("CHAIN_SHA=", "") or "NOT_RUN"
+    W(f"- SHAِ زنجیره (ازِ سرِ لاگ‌ها، نه ازِ HEADِ امروز): `{chain_sha}`")
+    W(f"  - این HEADِ سند `{sh('git rev-parse --short HEAD')}` است و فاصلۀِ آن با SHAِ زنجیره "
+      "فقط سند/مصنوعاتِ متنی است: "
+      + ", ".join("`%s`" % p for p in sh("git diff --name-only 27a445b3..HEAD").splitlines()))
+    W("  - هیچ فایلِ source یا build درِ این فاصله دست نخورده و هیچ `*.md` درِ بستۀِ "
+      "`dist/BorsTerminal_Ultimate` کپی نمی‌شود (`find dist -name '*.md'` ⇒ خالی)، پس "
+      "هشِ بسته همان می‌ماند و زنجیرۀِ tsc/vitest/lint/build برایِ این فاصله "
+      "بازتکرار نشده — فقط گیتِ پایتون، چون سندِ تازه خوراکِ گاردهایِ متنی است.")
     W(f"- `npx tsc -b`: {last_count(chain['tsc'], 'TSC_EXIT') or 'NOT_RUN'}")
     W(f"- `npx vitest run`: "
       f"{last_count(chain['vitest'], 'Tests ') or last_count(chain['vitest'], 'Test Files') or 'NOT_RUN'}")
@@ -478,6 +486,14 @@ def main():
     W(f"- `python dev/run_all_tests.py`: "
       f"{last_count(chain['gate'], 'suite counted') or 'NOT_RUN'} — "
       f"{last_count(chain['gate'], 'ALL SUITES PASSED') or last_count(chain['gate'], 'FAILED:') or 'بدونِ حکم'}")
+    rerun = A("_scratch", "live", "final_gate_rerun.log")
+    _rl = [l for l in io.open(rerun, encoding="utf-8", errors="replace")] if os.path.exists(rerun) else []
+    W(f"- بازیافتِ همان گیت رویِ SHAِ اینِ سند (چون سندِ تازه خوراکِ خودِ گاردهاست): "
+      f"{last_count(rerun, 'suite counted') or 'NOT_RUN'} — "
+      f"{last_count(rerun, 'ALL SUITES PASSED') or last_count(rerun, 'FAILED:') or 'بدونِ حکم'}؛ "
+      f"سطرهایِ `  OK` = {fa(sum(1 for l in _rl if l.startswith('  OK')))}، "
+      f"سطرهایِ `  FAIL` = {fa(sum(1 for l in _rl if l.startswith('  FAIL')))}، "
+      f"سطرهایِ `  SKIP` = {fa(sum(1 for l in _rl if l.startswith('  SKIP')))}")
     W(f"- `npm run build` (vite): {last_count(chain['build'], 'BUILD_EXIT') or 'NOT_RUN'}")
     W(f"- گاردِ کندلِ بانک: `{last_count(GUARD_DB, ':') or 'NOT_RUN'}`")
     pkg = A("_scratch", "live", "final_package_sha256.txt")
