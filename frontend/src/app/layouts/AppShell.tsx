@@ -127,7 +127,10 @@ export function AppShell() {
   // (.app-content / .app-main در index.css) — بدون هک جاوااسکریپت در رندر.
   return (
     <div className="flex h-dvh overflow-hidden bg-bg-primary text-text-primary">
-      {!isMobile && <Sidebar />}
+      {/* درِ تکنیکال، سایدبارِ اصلی «رندر نمی‌شود» (نه فقط جمع‌شده): عرضِ ۶۰px ریل
+          و کفِ لمسیِ ۳۸px درِ گوشی هم برداشته می‌شود. ناوبری از WorkspaceTabs و
+          MobileNav می‌آید؛ ترجیحِ جمع‌شدگیِ ذخیره‌شده دست‌نخورده می‌ماند. */}
+      {!isMobile && !/^\/technical(?:\/|$)/.test(pathname) && <Sidebar />}
       <div
         ref={contentRef}
         className="app-content flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto overflow-x-hidden transition-[padding] duration-200 ease-out"

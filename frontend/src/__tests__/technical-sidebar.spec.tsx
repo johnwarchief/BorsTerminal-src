@@ -1,11 +1,21 @@
-// تست سایدبار راست تکنیکال (فاز ۲) — سه تب، فیلترهای خالص و ترازهای نماد فعال
+// تست سایدبار راست تکنیکال — تبِ لایه‌های FTS پیش‌فرض، فیلترهای خالصِ اسکرینر
+// و ترازهای نماد فعال. «دیده‌بان» عمداً از این سایدبار حذف شده (بند ب مأموریت)؛
+// نبودنش همین‌جا قفل می‌شود تا با «فراموشی» برنگردد.
 import { fireEvent, render, screen } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { describe, expect, it } from 'vitest';
 import { TechnicalSidebar } from '@features/technical/components/TechnicalSidebar';
+import { SidebarFtsSignals } from '@features/technical/components/SidebarFtsSignals';
 import { SidebarActiveLevels, type ActiveLevelsView } from '@features/technical/components/SidebarActiveLevels';
 import { filterWatchlist, tradingValue } from '@features/technical/api/useWatchlist';
-import { filterFtsSignals, firstScreenerSymbol, ftsSignalTags, type ScreenerRow } from '@features/technical/api/useScreener';
+import {
+  FTS_FILTERS_DEFAULT,
+  filterFtsSignalRows,
+  filterFtsSignals,
+  firstScreenerSymbol,
+  ftsSignalTags,
+  type ScreenerRow,
+} from '@features/technical/api/useScreener';
 import type { FtsAnalysisData } from '@features/technical/api/useFtsAnalysis';
 import type { MarketRow } from '@shared/types/marketRow';
 
@@ -57,6 +67,37 @@ const ACTIVE_STOP_HIT: ActiveLevelsView = {
   },
 };
 
+/** همان شیئی که TechnicalPage از کوئریِ `/api/fts` می‌سازد — بی‌داده یا با داده */
+const FTS_CONTEXT = {
+  fts: FTS,
+  status: 'ok',
+  message: null,
+  isLoading: false,
+  isError: false,
+  basis: 'tsetmc-adjusted',
+  bars: 320,
+  lastBarDate: '۱۴۰۴/۱۱/۲۱',
+  fetchedAtMs: Date.parse('2026-05-12T09:30:00Z'),
+  adjustmentEvents: 2,
+  e3: null,
+};
+
+function renderSidebar(props: Partial<React.ComponentProps<typeof TechnicalSidebar>> = {}) {
+  return withQuery(
+    <TechnicalSidebar
+      active={ACTIVE}
+      symbol="فولاد"
+      onSelect={() => undefined}
+      ftsContext={FTS_CONTEXT}
+      {...props}
+    />,
+  );
+}
+
+function screenerRow(partial: Partial<ScreenerRow>): ScreenerRow {
+  return { symbol: 'x', ...partial } as ScreenerRow;
+}
+
 describe('فیلتر دیده‌بان', () => {
   it('ارزش معامله = قیمت × حجم', () => {
     expect(tradingValue(row({ p_last: 10, q_tot_tran: 5 }))).toBe(50);
@@ -88,10 +129,34 @@ describe('فیلتر سیگنال‌های FTS', () => {
     expect(tags.filter((t) => t.role === 'context').map((t) => t.label)).toEqual(['موقعیت فیبو in']);
   });
 
-  it('نماد بی‌سیگنال حذف می‌شود؛ «فقط زمینه» هم سیگنال نیست', () => {
-    const rows = [srow({ symbol: 'الف', tech_jet: true }), srow({ symbol: 'ب' }),
-                  srow({ symbol: 'پ', tech_fib_zone: '33-40' })];
-    expect(filterFtsSignals(rows, '').map((r) => r.symbol)).toEqual(['الف']);
+  it('نماد بی‌سیگنال حذف می‌شود؛ فیبو زمینه است و «نگهداری» هم خروج نیست', () => {
+    const rows = [
+      srow({ symbol: 'الف', tech_jet: true }),
+      srow({ symbol: 'ب' }),
+      srow({ symbol: 'پ', tech_fib_zone: '33-40' }),
+      srow({ symbol: 'ث', tech_exit_signals: ['rsi_rollover'], tech_exit_verdict: 'caution' }),
+      srow({ symbol: 'ج', tech_exit_verdict: 'hold' }),
+    ];
+    expect(filterFtsSignals(rows, '').map((r) => r.symbol)).toEqual(['الف', 'ث']);
+  });
+
+  it('وتوی هفتگی و سیگنال خروج به فیلدهای واقعی وصل‌اند و تهی سیگنال نیست', () => {
+    const rows = [
+      srow({ symbol: 'وتو', tech_matrix_decision: 'REJECT', tech_trend_w: 'down' }),
+      srow({ symbol: 'خروج', tech_exit_signals: ['ma14_trail'], tech_exit_verdict: 'exit' }),
+      srow({ symbol: 'تهی', tech_exit_signals: null, tech_matrix_decision: null }),
+    ];
+    expect(filterFtsSignals(rows, '', { ...FTS_FILTERS_DEFAULT, kind: 'weekly_veto' }).map((r) => r.symbol)).toEqual(['وتو']);
+    expect(filterFtsSignals(rows, '', { ...FTS_FILTERS_DEFAULT, kind: 'exit_signal' }).map((r) => r.symbol)).toEqual(['خروج']);
+    expect(filterFtsSignals(rows, '').map((r) => r.symbol)).toEqual(['وتو', 'خروج']);
+  });
+
+  it('سقفِ نمایش پس از فیلتر شمرده می‌شود، نه پیش از آن', () => {
+    const rows = Array.from({ length: 5 }, (_, i) => srow({ symbol: `س${i}`, tech_jet: true }));
+    const r = filterFtsSignalRows(rows, '', FTS_FILTERS_DEFAULT, 2);
+    expect(r.total).toBe(5);
+    expect(r.rows.map((x) => x.symbol)).toEqual(['س0', 'س1']);
+    expect(r.truncated).toBe(true);
   });
 });
 
@@ -150,30 +215,143 @@ describe('پنل ترازها', () => {
 });
 
 describe('شل سایدبار و تب‌ها', () => {
-  it('سه تب هست و پیش‌فرض، سیگنال‌های FTS است (#184)', () => {
-    withQuery(<TechnicalSidebar active={ACTIVE} symbol="فولاد" onSelect={() => undefined} />);
+  it('پیش‌فرض «لایه‌های FTS» است: خلاصهٔ ساختاری و کاتالوگ کامل همان‌جا رندر می‌شوند', () => {
+    renderSidebar();
     expect(screen.getByTestId('technical-sidebar')).toBeInTheDocument();
-    expect(screen.getByTestId('sidebar-tab-watch')).toBeInTheDocument();
+    expect(screen.getByTestId('sidebar-tab-layers')).toBeInTheDocument();
     expect(screen.getByTestId('sidebar-tab-fts')).toBeInTheDocument();
     expect(screen.getByTestId('sidebar-tab-book')).toBeInTheDocument();
     expect(screen.getByTestId('sidebar-tab-levels')).toBeInTheDocument();
-    expect(screen.getByTestId('sidebar-fts')).toBeInTheDocument();
-    // دیده‌بان حذف نشده، فقط پیش‌فرض نیست
-    fireEvent.click(screen.getByTestId('sidebar-tab-watch'));
-    expect(screen.getByTestId('sidebar-watchlist')).toBeInTheDocument();
+    expect(screen.getByTestId('sidebar-layers')).toBeInTheDocument();
+    expect(screen.getByTestId('technical-structure-summary')).toHaveAttribute('data-state', 'ready');
+    expect(screen.getByTestId('fts-layer-panel')).toBeInTheDocument();
+  });
+
+  it('«دیده‌بان» از سایدبار فنی کلاً حذف شده، نه فقط پیش‌فرضِ دیگری گرفته', () => {
+    renderSidebar();
+    expect(screen.queryByTestId('sidebar-tab-watch')).toBeNull();
+    expect(screen.queryByTestId('sidebar-watchlist')).toBeNull();
+    expect(screen.queryByLabelText('دیده‌بان')).toBeNull();
+  });
+
+  it('بی‌پیلود: خلاصه «بدون داده» است و هیچ روند/رأیی نمی‌سازد', () => {
+    renderSidebar({
+      ftsContext: { ...FTS_CONTEXT, fts: null, status: 'empty', isLoading: false, isError: false, basis: null, bars: null },
+    });
+    expect(screen.getByTestId('technical-structure-summary')).toHaveAttribute('data-state', 'empty');
+    expect(screen.getByTestId('tech-summary-state').textContent).toContain('بدون داده');
+    expect(screen.queryByTestId('tech-summary-trends')).toBeNull();
+    expect(screen.queryByTestId('tech-summary-matrix')).toBeNull();
+  });
+
+  it('خطای موتور به «بدون داده» تبدیل نمی‌شود و علتش دیده می‌شود', () => {
+    renderSidebar({
+      ftsContext: {
+        ...FTS_CONTEXT,
+        fts: null,
+        status: 'error',
+        message: 'موتور تحلیل خطا داد',
+        isLoading: false,
+        isError: true,
+      },
+    });
+    expect(screen.getByTestId('technical-structure-summary')).toHaveAttribute('data-state', 'error');
+    expect(screen.getByTestId('tech-summary-state').textContent).toContain('موتور تحلیل خطا داد');
   });
 
   it('کلیک روی تب ترازها پنل نماد فعال را نشان می‌دهد', () => {
-    withQuery(<TechnicalSidebar active={ACTIVE} symbol="فولاد" onSelect={() => undefined} />);
+    renderSidebar();
     fireEvent.click(screen.getByTestId('sidebar-tab-levels'));
     expect(screen.getByTestId('sidebar-levels')).toBeInTheDocument();
     expect(screen.getByTestId('sidebar-levels').textContent).toContain('فولاد');
   });
 
   it('تب «نبض کلان» حذف شده است', () => {
-    withQuery(<TechnicalSidebar active={ACTIVE} symbol="فولاد" onSelect={() => undefined} />);
+    renderSidebar();
     expect(screen.queryByTestId('sidebar-tab-macro')).toBeNull();
     expect(screen.queryByText('نبض کلان')).toBeNull();
+  });
+
+  it('تبِ سیگنال‌های FTS با کشوی تب باز می‌شود و فیلترهایش را می‌آورد', () => {
+    renderSidebar();
+    fireEvent.click(screen.getByTestId('sidebar-tab-fts'));
+    expect(screen.getByTestId('sidebar-fts')).toBeInTheDocument();
+    expect(screen.getByTestId('sidebar-fts-filters')).toBeInTheDocument();
+  });
+});
+
+describe('فیلترهای کشوییِ سیگنال‌های FTS', () => {
+  const ROWS: ScreenerRow[] = [
+    screenerRow({ symbol: 'الف', name: 'نماد الف', tech_jet: true, tech_trend_w: 'up', tech_matrix_decision: 'PERMITTED' }),
+    screenerRow({ symbol: 'ب', name: 'نماد ب', tech_double_bottom: true, tech_trend_w: 'down', tech_matrix_decision: 'REJECT' }),
+    screenerRow({ symbol: 'پ', name: 'نماد پ', tech_choch_bear: true, tech_trend_w: 'up', tech_matrix_decision: 'UNKNOWN' }),
+    screenerRow({ symbol: 'ت', name: 'نماد ت', tech_range_break: true }),
+    screenerRow({
+      symbol: 'ث',
+      name: 'نماد ث',
+      tech_exit_signals: ['rsi_rollover'],
+      tech_exit_verdict: 'caution',
+      tech_trend_w: 'up',
+      tech_matrix_decision: 'PERMITTED',
+    }),
+  ];
+
+  function renderSignals() {
+    const qc = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } });
+    qc.setQueryData(['technical-fts-screener'], { status: 'ok', count: ROWS.length, data: ROWS });
+    return render(
+      <QueryClientProvider client={qc}>
+        <SidebarFtsSignals onSelect={() => undefined} />
+      </QueryClientProvider>,
+    );
+  }
+
+  const symbols = () => Array.from(screen.getByTestId('sidebar-fts-list').querySelectorAll('li')).map((li) => li.textContent);
+
+  it('شمارشِ صادق و «گزارش نشده» جدا از رأیِ منفی', () => {
+    renderSignals();
+    expect(screen.getByTestId('sidebar-fts-count').textContent).toContain('۵ نماد');
+    fireEvent.change(screen.getByTestId('sidebar-fts-filter-verdict'), { target: { value: 'not_reported' } });
+    expect(symbols().length).toBe(1);
+    expect(symbols()[0]).toContain('ت');
+  });
+
+  it('گزینه‌های وتوی هفتگی و سیگنال خروج از فیلدهای واقعی می‌آیند', () => {
+    renderSignals();
+    const kind = screen.getByTestId('sidebar-fts-filter-kind') as HTMLSelectElement;
+    const values = Array.from(kind.options).map((o) => o.value);
+    expect(values).toContain('weekly_veto');
+    expect(values).toContain('exit_signal');
+    fireEvent.change(kind, { target: { value: 'weekly_veto' } });
+    expect(symbols().length).toBe(1);
+    expect(symbols()[0]).toContain('ب');
+    fireEvent.change(kind, { target: { value: 'exit_signal' } });
+    expect(symbols().length).toBe(1);
+    expect(symbols()[0]).toContain('ث');
+  });
+
+  it('نوع سیگنال، روند هفتگی و رأیِ FTS با هم AND می‌شوند', () => {
+    renderSignals();
+    fireEvent.change(screen.getByTestId('sidebar-fts-filter-kind'), { target: { value: 'jet' } });
+    expect(symbols().length).toBe(1);
+    expect(symbols()[0]).toContain('الف');
+    fireEvent.change(screen.getByTestId('sidebar-fts-filter-weekly'), { target: { value: 'down' } });
+    expect(symbols().length).toBe(0);
+    expect(screen.getByTestId('sidebar-fts-empty').textContent).toContain('هیچ نمادی با این فیلترها نیست');
+    expect(screen.getByTestId('sidebar-fts-count').textContent).toContain('۰ نماد');
+    fireEvent.change(screen.getByTestId('sidebar-fts-filter-kind'), { target: { value: 'choch_bear' } });
+    expect(symbols().length).toBe(0);
+  });
+
+  it('جستجو با فیلترها AND می‌شود و بازنشانی همه را برمی‌گرداند', () => {
+    renderSignals();
+    fireEvent.change(screen.getByTestId('sidebar-fts-filter-kind'), { target: { value: 'choch_bear' } });
+    fireEvent.change(screen.getByTestId('sidebar-fts-search'), { target: { value: 'ب' } });
+    expect(symbols().length).toBe(0);
+    fireEvent.click(screen.getByTestId('sidebar-fts-reset'));
+    expect(symbols().length).toBe(5);
+    expect((screen.getByTestId('sidebar-fts-search') as HTMLInputElement).value).toBe('');
+    expect((screen.getByTestId('sidebar-fts-filter-kind') as HTMLSelectElement).value).toBe(FTS_FILTERS_DEFAULT.kind);
   });
 });
 

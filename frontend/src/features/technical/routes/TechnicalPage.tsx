@@ -24,7 +24,6 @@ import { FtsSettingsTrigger } from '../../fundamental/ui/FtsSettingsDrawer';
 import { FtsTrendPanel } from '../components/FtsTrendPanel';
 import { FtsStatusCard } from '../components/FtsStatusCard';
 import { FtsDock } from '../components/FtsDock';
-import { FtsIndicatorPanel } from '../components/FtsIndicatorPanel';
 import { FtsLayerLegend } from '../components/FtsLayerLegend';
 import { PatternToggles } from '../components/PatternToggles';
 import { epochToJalali } from '../lib/jalaliDate';
@@ -67,15 +66,6 @@ export default function TechnicalPage() {
   // هشدارهایِ قیمتی روی همین فید داوری می‌شوند — برای هر نمادی که کاربر
   // آستانه گذاشته، نه فقط نمادِ بازِ چارت.
   usePriceAlertWatch(marketData?.data);
-
-  // جمع شدن خودکار نوار اصلی سمت راست هنگام ورود به تب تکنیکال جهت بیشینه‌سازی بوم چارت.
-  // هنگام خروج از تب، حالت را به «خودکار» برمی‌گردانیم تا سایدبار روی سایر تب‌ها بماند.
-  useEffect(() => {
-    useUiStore.getState().setSidebarCollapsed(true);
-    return () => {
-      useUiStore.getState().setSidebarCollapsed(null);
-    };
-  }, []);
 
   const enforceRiskGates = useFtsConfigStore((s) => s.enforceRiskGates);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -258,7 +248,24 @@ export default function TechnicalPage() {
 
   return (
     <div className="tv-workbench flex h-[calc(100dvh-3rem)] min-h-0 min-w-0 w-full flex-col overflow-hidden xl:flex-row">
-      <TechnicalSidebar active={activeLevels} symbol={viewSymbol} onSelect={selectSymbol} />
+      <TechnicalSidebar
+        active={activeLevels}
+        symbol={viewSymbol}
+        onSelect={selectSymbol}
+        ftsContext={{
+          fts: analysis.data?.fts ?? null,
+          status: analysis.data?.status ?? null,
+          message: analysis.data?.message ?? null,
+          isLoading: analysis.isLoading,
+          isError: analysis.isError,
+          basis: analysis.data?.analysis_basis ?? null,
+          bars: analysis.data?.bars ?? null,
+          lastBarDate,
+          fetchedAtMs: analysis.dataUpdatedAt > 0 ? analysis.dataUpdatedAt : null,
+          adjustmentEvents: adjustEvents?.length ?? null,
+          e3: e3.data ?? null,
+        }}
+      />
 
       <main className="flex min-h-0 min-w-0 flex-1 flex-col">
         {/* چارت تمام‌فضا (بدون کادر تودرتو/حاشیهٔ مرده) */}
@@ -367,21 +374,6 @@ export default function TechnicalPage() {
               ),
             },
             { id: 'trend', label: 'تحلیل ساختاری', node: <FtsTrendPanel data={analysis.data?.fts ?? null} /> },
-            {
-              id: 'layers',
-              label: 'لایه‌های FTS',
-              node: (
-                <FtsIndicatorPanel
-                  fts={analysis.data?.fts ?? null}
-                  basis={analysis.data?.analysis_basis ?? null}
-                  bars={analysis.data?.bars ?? null}
-                  lastBarDate={lastBarDate}
-                  fetchedAtMs={analysis.dataUpdatedAt > 0 ? analysis.dataUpdatedAt : null}
-                  adjustmentEvents={adjustEvents?.length ?? null}
-                  e3={e3.data ?? null}
-                />
-              ),
-            },
             { id: 'replay', label: 'بازپخش', node: <ReplayBar total={nn.data.length} /> },
             { id: 'patterns', label: 'الگوهای FTS', node: <PatternToggles /> },
 

@@ -1,21 +1,39 @@
 // features/technical/components/TechnicalSidebar.tsx -- سایدبار راست چندمنظوره سبک تریدینگ‌ویو (Right Icon Rail + Collapsible Drawer)
 import { useState } from 'react';
-import { SidebarWatchlist } from './SidebarWatchlist';
 import { SidebarFtsSignals } from './SidebarFtsSignals';
 import { OrderBookFive } from '@shared/components/OrderBookFive';
 import { SidebarActiveLevels, type ActiveLevelsView } from './SidebarActiveLevels';
+import { FtsIndicatorPanel } from './FtsIndicatorPanel';
+import { TechnicalStructureSummary } from './TechnicalStructureSummary';
+import type { FtsAnalysisData } from '../api/useFtsAnalysis';
+import type { Structure3Data } from '../api/useStructure3';
 
-export type SidebarTabId = 'watch' | 'fts' | 'book' | 'levels';
+export type SidebarTabId = 'layers' | 'fts' | 'book' | 'levels';
+
+/** داده‌هایِ همان کوئری‌هایِ صفحه — سایدبار هیچ درخواست یا محاسبهٔ دومی ندارد */
+export type FtsSidebarContext = {
+  fts: FtsAnalysisData | null;
+  status?: string | null;
+  message?: string | null;
+  isLoading: boolean;
+  isError: boolean;
+  basis?: string | null;
+  bars?: number | null;
+  lastBarDate?: string | null;
+  fetchedAtMs?: number | null;
+  adjustmentEvents?: number | null;
+  e3?: Structure3Data | null;
+};
 
 const TABS: { id: SidebarTabId; label: string; icon: React.ReactNode }[] = [
   {
-    id: 'watch',
-    label: 'دیده‌بان',
+    id: 'layers',
+    label: 'لایه‌های FTS',
     icon: (
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-        <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
-        <line x1="9" y1="9" x2="15" y2="9" />
-        <line x1="9" y1="13" x2="13" y2="13" />
+        <polygon points="12 2 2 7 12 12 22 7 12 2" />
+        <polyline points="2 17 12 22 22 17" />
+        <polyline points="2 12 12 17 22 12" />
       </svg>
     ),
   },
@@ -57,12 +75,15 @@ export function TechnicalSidebar({
   active,
   symbol,
   onSelect,
-  defaultTab = 'fts',
+  ftsContext,
+  defaultTab = 'layers',
 }: {
   active: ActiveLevelsView;
   /** همان نمادی که رویِ چارت است، حتی اگر کاربر هنوز چیزی انتخاب نکرده باشد */
   symbol: string;
   onSelect: (s: string) => void;
+  /** تبِ پیش‌فرض «لایه‌های FTS» از همین شیء تغذیه می‌شود */
+  ftsContext: FtsSidebarContext;
   defaultTab?: SidebarTabId;
 }) {
   const [tab, setTab] = useState<SidebarTabId>(defaultTab);
@@ -104,7 +125,27 @@ export function TechnicalSidebar({
 
           {/* بدنه دراور */}
           <div role="tabpanel" className="min-h-0 flex-1 overflow-y-auto p-2" data-testid="sidebar-body">
-            {tab === 'watch' ? <SidebarWatchlist onSelect={onSelect} /> : null}
+            {tab === 'layers' ? (
+              <div className="flex flex-col gap-2" data-testid="sidebar-layers">
+                <TechnicalStructureSummary
+                  fts={ftsContext.fts}
+                  status={ftsContext.status}
+                  message={ftsContext.message}
+                  isLoading={ftsContext.isLoading}
+                  isError={ftsContext.isError}
+                />
+                <FtsIndicatorPanel
+                  fts={ftsContext.fts}
+                  basis={ftsContext.basis}
+                  bars={ftsContext.bars}
+                  lastBarDate={ftsContext.lastBarDate}
+                  fetchedAtMs={ftsContext.fetchedAtMs}
+                  adjustmentEvents={ftsContext.adjustmentEvents}
+                  e3={ftsContext.e3}
+                  compact
+                />
+              </div>
+            ) : null}
             {tab === 'fts' ? <SidebarFtsSignals onSelect={onSelect} /> : null}
             {tab === 'book' ? <OrderBookFive symbol={symbol} testId="sidebar-orderbook" /> : null}
             {tab === 'levels' ? <SidebarActiveLevels active={active} /> : null}

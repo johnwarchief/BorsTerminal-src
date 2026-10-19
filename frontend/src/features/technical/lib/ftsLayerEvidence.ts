@@ -11,6 +11,7 @@ import type { FtsAnalysisData } from '../api/useFtsAnalysis';
 import type { Structure3Data } from '../api/useStructure3';
 import { TREND_FA } from '../components/FtsBadgeStrip';
 import type { FtsIndicatorEntry } from './ftsIndicatorCatalog';
+import { MATRIX_DECISION_FA } from './ftsMatrixLabels';
 
 /** حالتِ لایه، فقط از پرچم‌هایِ خودِ موتور */
 export type LayerState = 'active' | 'forming' | 'inactive' | 'insufficient' | 'not-published';
@@ -87,11 +88,6 @@ function shortage(
 }
 
 /** رأیِ ماتریسِ هفتگی — همان دو واژه‌ای که پنلِ تحلیل ساختاری می‌گوید */
-const MATRIX_FA: Record<string, string> = {
-  PERMITTED: 'ورود مجاز',
-  REJECT: 'ممنوعیت ورود',
-};
-
 type Reader = (fts: FtsAnalysisData | null | undefined, feed: EvidenceFeed) => LayerEvidence;
 
 const READERS: Record<string, Reader> = {
@@ -107,11 +103,13 @@ const READERS: Record<string, Reader> = {
   'trend-weekly-gate': (fts) => {
     const m = fts?.trend?.matrix;
     if (!m?.decision) return ev('not-published');
-    const facts: EvidenceFact[] = [{ label: 'رأی', value: MATRIX_FA[m.decision] ?? m.decision }];
+    const facts: EvidenceFact[] = [{ label: 'رأی', value: MATRIX_DECISION_FA[m.decision] ?? m.decision }];
     txt(facts, 'ستاپ', m.setup);
     txt(facts, 'مبنایِ هفتگی', m.basis?.weekly);
     txt(facts, 'مبنایِ روزانه', m.basis?.daily);
-    return ev(m.decision === 'REJECT' ? 'inactive' : 'active', facts, null, null, m.desc ?? null);
+    // فقط PERMITTED لایهٔ «فعال» است؛ REJECT وتو است و UNKNOWN رأیی نبوده —
+    // هیچ‌کدام نباید با نشانِ سبزِ «فعال» دیده شوند.
+    return ev(m.decision === 'PERMITTED' ? 'active' : 'inactive', facts, null, null, m.desc ?? null);
   },
 
   'structure-points': (fts) => {
