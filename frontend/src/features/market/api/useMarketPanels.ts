@@ -107,7 +107,10 @@ export const TreemapSchema = z.object({
   group: str,
   group_label: str,
   industry: str,
-  metric: z.string(),
+  // تنها فیلدِ غیرnullishِ این اسکیماد. بی‌nullish‌بودنش، بدنهٔ «خطا باِ HTTP 200»
+  // درِ zod می‌شکست و رابط خطایِ انتقالی می‌داد — یعنی علتِ واقعیِ سرویس
+  // (مثلاً «NoneType کانتینر نیست») هرگز خوانده نمی‌شد.
+  metric: str,
   metric_label: str,
   metric_unit: str,
   basis: str,
@@ -115,11 +118,22 @@ export const TreemapSchema = z.object({
   total_nodes: num,
   shown: num,
   skipped_nodata: num,
+  // «چند نماد درِ این دامنه بود» باِ «چند خانه رویِ نقشه است» یکی نیست؛ سه علتِ
+  // جدا: بی‌معیار (`skipped_nodata`)، سطحِ گردشدۀ صفر (`skipped_zerosize`)، و
+  // سقفِ نمایش (`limit`). بیِ این، شمارۀِ پایینِ نقشه ادعایِ درستی می‌شد.
+  scope_nodes: num,
+  skipped_zerosize: num,
   total_size: num,
   rows: z.array(TreemapNodeSchema).nullish(),
   groups: z.array(TreemapGroupSchema).nullish(),
   no_source: z.array(ReasonSchema).nullish(),
   source: str,
+  // پوششِ «خطا باِ HTTP 200»: دروازۀ mstat استثنا را درِ بدنه می‌گذارد، پس رابط
+  // باید بتواند «خطایِ سرویس» را از «ردیفی نیست» جدا کند.
+  message: str,
+  code: str,
+  group_fallback: z.boolean().nullish(),
+  group_requested: str,
 });
 export type TreemapFeed = z.infer<typeof TreemapSchema>;
 

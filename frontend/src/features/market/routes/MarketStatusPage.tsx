@@ -137,7 +137,7 @@ export default function MarketStatusPage() {
           id="ms-sec-treemap"
           title="نقشۀ بازار"
           pages={[2]}
-          desc="سطح هر بلوک = sizeِ همان معیار؛ رنگ = مثبت/منفی/صفر/بی‌داده. کلیک، نماد را درِ چارتِ پایین باز می‌کند."
+          desc="سطح هر بلوک = sizeِ همان معیار؛ رنگ = مثبت/منفی/صفر/بی‌داده. کلیک، همان نماد را درِ صفحۀ «تحلیل تکنیکال» باز می‌کند."
         />
         <MarketTreemap industries={industryOptions} />
       </section>

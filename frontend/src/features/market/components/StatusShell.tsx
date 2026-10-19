@@ -84,13 +84,21 @@ export function StatusLoading({ testId }: { testId: string }) {
   );
 }
 
-export function StatusError({ testId, onRetry }: { testId: string; onRetry: () => void }) {
+export function StatusError({
+  testId, onRetry, reason,
+}: {
+  testId: string; onRetry: () => void;
+  /** علتِ خودِ پاسخِ سرویس. بی‌این، «خطایِ دریافت» و «ردیفی نیست» درِ یکِ پیام
+   *  یکی می‌شدند — و آن‌وقت باگِ بک‌اند را کاربر «بی‌داده» می‌خواند. */
+  reason?: string | null;
+}) {
   return (
     <div
       data-testid={`${testId}-error`}
+      data-error-kind={reason ? 'service-error' : 'transport'}
       className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-dashed border-accent-red/50 bg-accent-red/5 px-2 py-1.5 text-2xs text-text-secondary"
     >
-      <span>داده نمی‌رسد — بقیۀ صفحه کار می‌کند</span>
+      <span>{reason ? `پاسخِ سرویس خطا داد: ${reason}` : 'داده نمی‌رسد — بقیۀ صفحه کار می‌کند'}</span>
       <RetryAction onRetry={onRetry} testId={`${testId}-retry`} />
     </div>
   );

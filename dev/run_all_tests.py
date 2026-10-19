@@ -216,6 +216,10 @@ SUITES = [
     # و صفرِ واقعیِ یک دستۀ معتبر نباید رد شود.
     ('dev/mstat_group_validate_v1120.py',
      'mstat params: unknown group/tab is a loud 400, a legitimately-empty category still returns 200'),
+    # مرحلۀ ۲ مأموریت تب بازار (2026-10-19): دامنهٔ نقشه باید همان چیزی باشد که
+    # برچسب می‌گوید — و top50 نباید بترکد. بی‌این گارد، «طلا» کلِ بازار می‌شد.
+    ('dev/market_treemap_scope_v1.py',
+     'market map scope: alias groups resolve, top50 uses the engine stamp, label never lies'),
     # مأموریت تطبیق 2026-10-17: «یک شاخص، یک قاعده» — کارتِ دماسنج/عمق و
     # نقطۀ تایم‌لاین باید رویِ ورودیِ یکسان عددِ یکی بدهند؛ پوشاندنِ
     # درِ سریِ تاریخی مخلوط نشود.

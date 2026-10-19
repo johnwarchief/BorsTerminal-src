@@ -1,0 +1,168 @@
+{
+ "base": "http://127.0.0.1:8011/",
+ "runs": [
+  {
+   "width": 1440,
+   "count": 220,
+   "overlaps": 0,
+   "outside": 0,
+   "degenerate": 0,
+   "pairSamples": [],
+   "top3area": [
+    "فزر",
+    "فولاد",
+    "فملي"
+   ],
+   "hostBox": {
+    "w": 1272,
+    "h": 568
+   },
+   "svgBox": {
+    "w": 1248,
+    "h": 420
+   },
+   "interaction": {
+    "key": "فزر",
+    "tipShown": "فزرپويا زركان آق درهارزش معاملات: ۲۳۷۳.۱۸ میلیارد تومان۰.۵٪پایانی ۳۸۱٬۴۰۰ · استخراج کانه هاي فلزي",
+    "tipHasKey": true,
+    "urlAfterClick": "http://127.0.0.1:8011/#/technical/%D9%81%D8%B2%D8%B1",
+    "chosenText": "تحلیل تکنیکال"
+   },
+   "groups": [
+    {
+     "label": "کل بازار",
+     "cells": 220,
+     "error": null,
+     "errorKind": null,
+     "nodata": null,
+     "declared": "۲۲۰ خانه رویِ نقشه از ۱۰۸۵ نمادِ این دامنه · دامنه: کل بازار · مجموعِ سطح: ۳۹۴۹۵ میلیارد ت"
+    },
+    {
+     "label": "سهام، حق تقدم و ص.سهامی",
+     "cells": 220,
+     "error": null,
+     "errorKind": null,
+     "nodata": null,
+     "declared": "۲۲۰ خانه رویِ نقشه از ۹۷۸ نمادِ این دامنه · دامنه: سهام، حق تقدم و ص.سهامی · مجموعِ سطح: ۲"
+    },
+    {
+     "label": "سهام و حق تقدم",
+     "cells": 220,
+     "error": null,
+     "errorKind": null,
+     "nodata": null,
+     "declared": "۲۲۰ خانه رویِ نقشه از ۷۸۲ نمادِ این دامنه · دامنه: سهام و حق تقدم · مجموعِ سطح: ۲۵۳۹۰ میلی"
+    },
+    {
+     "label": "صندوق‌های سهامی و مختلط",
+     "cells": 174,
+     "error": null,
+     "errorKind": null,
+     "nodata": null,
+     "declared": "۱۷۴ خانه رویِ نقشه از ۱۹۶ نمادِ این دامنه · دامنه: صندوق‌های سهامی و مختلط · مجموعِ سطح: ۳"
+    },
+    {
+     "label": "صندوق‌های طلا",
+     "cells": 2,
+     "error": null,
+     "errorKind": null,
+     "nodata": null,
+     "declared": "۲ خانه رویِ نقشه از ۱۲ نمادِ این دامنه · دامنه: صندوق‌های طلا · مجموعِ سطح: ۶۰ میلیارد توم"
+    },
+    {
+     "label": "صندوق‌های نقره",
+     "cells": 0,
+     "error": null,
+     "errorKind": null,
+     "nodata": "با این دامنه/صنعت/معیار خانه‌ای نماند — «بی‌داده» یعنی در این نشست ارز",
+     "declared": null
+    },
+    {
+     "label": "صندوق‌های اهرمی",
+     "cells": 9,
+     "error": null,
+     "errorKind": null,
+     "nodata": null,
+     "declared": "۹ خانه رویِ نقشه از ۱۲ نمادِ این دامنه · دامنه: صندوق‌های اهرمی · مجموعِ سطح: ۵۶۹۴ میلیارد"
+    },
+    {
+     "label": "صندوق درآمد ثابت",
+     "cells": 102,
+     "error": null,
+     "errorKind": null,
+     "nodata": null,
+     "declared": "۱۰۲ خانه رویِ نقشه از ۱۰۷ نمادِ این دامنه · دامنه: صندوق درآمد ثابت · مجموعِ سطح: ۱۰۶۷۱ می"
+    },
+    {
+     "label": "۵۰ نماد بزرگ",
+     "cells": 50,
+     "error": null,
+     "errorKind": null,
+     "nodata": null,
+     "declared": "۵۰ خانه رویِ نقشه از ۵۰ نمادِ این دامنه · دامنه: پنجاه شرکت بزرگ (شاخص ۵۰ شرکت) · مجموعِ س"
+    }
+   ],
+   "errors": []
+  },
+  {
+   "width": 1100,
+   "count": 220,
+   "overlaps": 0,
+   "outside": 0,
+   "degenerate": 0,
+   "pairSamples": [],
+   "top3area": [
+    "فزر",
+    "فولاد",
+    "فملي"
+   ],
+   "hostBox": {
+    "w": 1016,
+    "h": 468
+   },
+   "svgBox": {
+    "w": 992,
+    "h": 320
+   },
+   "interaction": {
+    "key": "فزر",
+    "tipShown": "فزرپويا زركان آق درهارزش معاملات: ۲۳۷۳.۱۸ میلیارد تومان۰.۵٪پایانی ۳۸۱٬۴۰۰ · استخراج کانه هاي فلزي",
+    "tipHasKey": true,
+    "urlAfterClick": "http://127.0.0.1:8011/#/technical/%D9%81%D8%B2%D8%B1",
+    "chosenText": "تحلیل تکنیکال"
+   },
+   "groups": [],
+   "errors": []
+  },
+  {
+   "width": 820,
+   "count": 220,
+   "overlaps": 0,
+   "outside": 0,
+   "degenerate": 0,
+   "pairSamples": [],
+   "top3area": [
+    "فزر",
+    "فولاد",
+    "فملي"
+   ],
+   "hostBox": {
+    "w": 736,
+    "h": 512
+   },
+   "svgBox": {
+    "w": 712,
+    "h": 320
+   },
+   "interaction": {
+    "key": "فزر",
+    "tipShown": "فزرپويا زركان آق درهارزش معاملات: ۲۳۷۳.۱۸ میلیارد تومان۰.۵٪پایانی ۳۸۱٬۴۰۰ · استخراج کانه هاي فلزي",
+    "tipHasKey": true,
+    "urlAfterClick": "http://127.0.0.1:8011/#/technical/%D9%81%D8%B2%D8%B1",
+    "chosenText": "تحلیل تکنیکال"
+   },
+   "groups": [],
+   "errors": []
+  }
+ ]
+}

@@ -244,6 +244,18 @@ describe('نقشۀ بازار (صفحۀ ۲ و ۱۲)', () => {
     expect(screen.queryByTestId('ms-gold-treemap-apply')).toBeDisabled();
   });
 
+  it('خطای سرویس با HTTP 200 «خانه‌ای نماند» نمی‌شود — علتِ خودش را می‌گوید', async () => {
+    // این همان حالتِ top50 در پایۀِ قبل از اصلاح بود: دروازۀ mstat استثنا را
+    // درِ بدنه می‌گذارد و HTTP 200 است، پس رابط آن را «بی‌داده» می‌خواند.
+    renderTreemap({ status: 'error', message: "argument of type 'NoneType' is not a container",
+      source: 'local:market.db' });
+    await waitFor(() => expect(screen.getByTestId('ms-treemap-error')).toBeInTheDocument());
+    const err = screen.getByTestId('ms-treemap-error');
+    expect(err.getAttribute('data-error-kind')).toBe('service-error');
+    expect(err.textContent).toContain('NoneType');
+    expect(screen.queryByText(/خانه‌ای نماند/)).not.toBeInTheDocument();
+  });
+
   it('معیارِ بی‌منبع (ارزش بازار در بانکِ بی‌ستون) صریح اعلام می‌شود، نه با صفر', async () => {
     renderTreemap({
       ...TREEMAP,

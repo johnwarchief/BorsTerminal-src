@@ -87,18 +87,39 @@ def _company_key(row) -> tuple:
     return (nm, round(E._f(row.get("total_shares")), 2))
 
 
+def _resolve_group(group: str) -> tuple:
+    """کلیدِ درخواستی ⇒ (دامنۀِ واقعی، بی‌صدا-همه-بازار-شدن).
+
+    دو حفره‌ای که مرحلۀ ۲ مأموریتِ 2026-10-19 باز کرد:
+
+    • دروازۀ API (`_VALID_GROUP`) کلیدهایِ تبِ جدول را هم می‌پذیرد (`stock`،
+      `gold`، `fixed`، `lev`، `silver`، `eq_funds`) ولی `TREEMAP_GROUPS` فقط
+      ده کلیدِ رده‌ای را می‌شناسد. پس «طلا» بی‌صدا «کلِ بازار» می‌شد و
+      `group_label` همان کلیدِ بیگانه را پس می‌داد — پرسشِ غلط، پاسخِ «همه».
+      مرجعِ همین نگاشت خودِ موتور است (`_TAB_CAT`)؛ فهرستِ دوم نمی‌سازیم.
+    • `top50` دامنه‌ای است که خودِ `enrich` با `_top50` مُهر می‌کند؛ بی‌عبور
+      کردنِ همان مجموعه به `in_category`، نقشه با «کل بازار» جواب می‌داد.
+    """
+    cat = E._TAB_CAT.get(group, group)
+    if cat in TREEMAP_GROUPS:
+        return cat, False
+    return "all", True
+
+
 def _scope(rows, group: str, industry: str = "") -> list:
     """ردیف‌هایِ enrich درِ دامنه‌یِ کرکره‌ها — بدونِ کوئریِ تازه.
 
-    `group` همان کلیدهایِ `CATEGORY_ROWS` است (کرکرۀِ مرجع «سهام/همه صنایع»
-    را به همین دامنه‌ها نگاشت می‌کند)، پس نقشۀ بازار، برترین‌ها و نبض یک
-    دامنه می‌سازند نه سه دامنهٔ متفاوت. کلیدِ ناشناخته ⇒ «کل بازار»، نه
-    «هیچ»: فهرستِ خالی با سربرگِ سالم بدترین پیامِ ممکن به کاربر است.
+    `group` کلیدِ رابط است (تب یا رده) و به دامنه‌یِ موتور نگاشت می‌شود، پس نقشۀ
+    بازار، برترین‌ها و نبض یک دامنه می‌سازند نه سه دامنهٔ متفاوت. کلیدِ بیگانه ⇒
+    «کل بازار»، نه «هیچ»: فهرستِ خالی با سربرگِ سالم بدترین پیامِ ممکن به کاربر
+    است — ولی این بار *برچسب* همان دامنه‌یِ اعمال‌شده را می‌گوید، نه کلیدِ
+    درخواستی را (`group_fallback` درِ پاسخ همین را اعلام می‌کند).
     """
-    cat = group if group in TREEMAP_GROUPS else "all"
+    cat, _fell_back = _resolve_group(group)
+    top50 = {r["ins_code"] for r in rows if r.get("_top50")} if cat == "top50" else None
     out = []
     for r in rows:
-        if not E.in_category(r, cat, None):
+        if not E.in_category(r, cat, top50):
             continue
         if industry and (r.get("sector_name") or "").strip() != industry:
             continue
@@ -136,7 +157,7 @@ def treemap(conn, group: str = "eq_all", industry: str = "",
     rows, meta = E.enrich(conn)
     sel = _scope(rows, group, industry)
     mcap_ok = bool(meta.get("market_cap"))
-    nodes, skipped_nodata = [], 0
+    nodes, skipped_nodata, skipped_zerosize = [], 0, 0
     for r in sel:
         m = r["_m"]
         cap = E._f(r.get("market_cap")) if mcap_ok else None
@@ -149,13 +170,21 @@ def treemap(conn, group: str = "eq_all", industry: str = "",
         if size is None or size <= 0:
             skipped_nodata += 1
             continue
+        # دو چیزِ جدا: «داده‌ای نیست» و «داده هست ولی سطحش درِ دقتِ ما صفر می‌شود».
+        # دومی پیش از این درِ `rows` می‌ماند و `squarify` بی‌صدا دورش می‌انداخت
+        # (سنجشِ زنده: ۱۳ صندوق از ۱۸۷ درِ دامنهٔ «ص.سهامی» — صفحه می‌گفت
+        # «۱۸ خانه از ۱۸۷» ولی ۱۷۴ خانه رندر شده بود).
+        drawn = round(size, 3)
+        if drawn <= 0:
+            skipped_zerosize += 1
+            continue
         nodes.append({
             "symbol": r["symbol"], "ins_code": r["ins_code"], "name": r["name"],
             "industry": (r.get("sector_name") or "").strip() or None,
             "cls": r["cls"], "kind": r["kind"],
             "pct": None if r.get("pct") is None else round(r["pct"], 2),
             "tone": _pct_class(r.get("pct")),
-            "size": round(size, 3),
+            "size": drawn,
             "size_field": TREEMAP_METRICS[metric]["field"],
             "unit": TREEMAP_METRICS[metric]["unit"],
             "p_closing": E._f(r.get("p_closing")),
@@ -187,6 +216,7 @@ def treemap(conn, group: str = "eq_all", industry: str = "",
         b["size"] = round(b["size"], 2)
         b["share_pct"] = round(100.0 * b["size"] / total, 2) if total else None
 
+    cat, fell_back = _resolve_group(group)
     no_source = []
     if metric == "cap" and not mcap_ok:
         no_source.append({
@@ -195,7 +225,8 @@ def treemap(conn, group: str = "eq_all", industry: str = "",
         })
     return {
         "status": "ok", "asof": meta, "computed_at": _stamp(),
-        "group": group, "group_label": TREEMAP_GROUPS.get(group, group),
+        "group": cat, "group_requested": group,
+        "group_fallback": fell_back, "group_label": TREEMAP_GROUPS[cat],
         "industry": industry or None, "metric": metric,
         "metric_label": TREEMAP_METRICS[metric]["label"],
         "metric_unit": TREEMAP_METRICS[metric]["unit"],
@@ -203,7 +234,10 @@ def treemap(conn, group: str = "eq_all", industry: str = "",
         "formula": {"pct": "(p_closing − price_yesterday) ÷ price_yesterday × 100",
                     "size": "%s از ردیفِ تابلویِ همان نشست" % TREEMAP_METRICS[metric]["label"]},
         "total_nodes": len(nodes), "shown": min(len(nodes), limit),
+        # سه شمارشِ جدا، سه علتِ جدا — تا «چرا این‌قدر خانه کم است» جواب داشته باشد
+        "scope_nodes": len(sel),
         "skipped_nodata": skipped_nodata,
+        "skipped_zerosize": skipped_zerosize,
         "total_size": round(total, 2),
         "rows": nodes[:limit],
         "groups": sorted(groups.values(), key=lambda b: b["size"], reverse=True),
@@ -374,7 +408,8 @@ def tops(conn, group: str = "eq_all", limit: int = 5) -> dict:
                          limit))
 
     return {"status": "ok", "asof": meta, "computed_at": _stamp(), "group": group,
-            "group_label": TREEMAP_GROUPS.get(group, group), "panels": panels,
+            "group_label": TREEMAP_GROUPS[_resolve_group(group)[0]],
+            "group_fallback": _resolve_group(group)[1], "panels": panels,
             "index": mi, "market_total_source": total_src,
             "reconciliation": reconciliation, "blockers": blockers,
             "traded_only": True}
