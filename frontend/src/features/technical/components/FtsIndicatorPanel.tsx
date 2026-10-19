@@ -79,6 +79,7 @@ export function FtsIndicatorPanel({
   fetchedAtMs,
   adjustmentEvents,
   e3,
+  compact = false,
 }: {
   fts: FtsAnalysisData | null | undefined;
   basis?: string | null;
@@ -88,6 +89,8 @@ export function FtsIndicatorPanel({
   adjustmentEvents?: number | null;
   /** قراردادِ موتورِ سوم (`/api/structure3`) -- شواهدِ دو سطرِ e3 فقط از این است */
   e3?: Structure3Data | null;
+  /** عرضِ سایدبار (۲۸۵px): همان کاتالوگ، فشرده‌تر — نه کاتالوگِ دوم */
+  compact?: boolean;
 }) {
   const prefs = usePatternPrefsStore((s) => s.prefs);
   const togglePattern = usePatternPrefsStore((s) => s.toggle);
@@ -124,7 +127,11 @@ export function FtsIndicatorPanel({
     layerEvidence(entry, fts, { adjustmentEvents: adjustmentEvents ?? null, structure3: e3 ?? null });
 
   return (
-    <div className="glass-panel flex flex-col gap-2.5 p-3" data-testid="fts-layer-panel" dir="rtl">
+    <div
+      className={`glass-panel flex flex-col ${compact ? 'gap-2 p-2' : 'gap-2.5 p-3'}`}
+      data-testid="fts-layer-panel"
+      dir="rtl"
+    >
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h3 className="text-xs font-black text-text-primary">کاتالوگِ لایه‌های FTS</h3>
         <span className="text-3xs text-text-muted" data-testid="fts-layer-freshness">
@@ -141,7 +148,7 @@ export function FtsIndicatorPanel({
             return (
               <div
                 key={e.id}
-                className="flex flex-wrap items-center gap-2 rounded border border-border-c bg-bg-card/40 px-2 py-1"
+                className={`flex flex-wrap items-center rounded border border-border-c bg-bg-card/40 ${compact ? 'gap-1.5 px-1.5 py-1' : 'gap-2 px-2 py-1'}`}
                 data-testid={`fts-layer-row-${e.id}`}
               >
                 <input
@@ -165,6 +172,7 @@ export function FtsIndicatorPanel({
                   onClick={() => setSelected(e)}
                   data-testid={`fts-layer-evidence-btn-${e.id}`}
                   aria-expanded={selected?.id === e.id}
+                  title={e.fa}
                   className="min-w-0 flex-1 truncate text-start text-3xs text-text-secondary transition-colors hover:text-text-primary"
                 >
                   {e.fa}
