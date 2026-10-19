@@ -296,9 +296,17 @@ export function ExecutionPanel({ symbol, row, schedule = false, connect = true }
             <span className="font-black text-accent-yellow">اثبات‌نشده (NOT_PROVEN)</span>{' '}
             — هیچ وعده‌ای برایِ «درستِ همان لحظه» ساخته نمی‌شود
           </p>
-          <p className="text-2xs leading-4 text-text-secondary" data-testid="exec-timings-line">
-            {timingNote}
-          </p>
+          {/* متنِ بلندِ NTP/یکنواخت‌بودن ساعت این‌جا می‌ماند، ولی بسته: تصمیمِ
+              زمان‌بندی به آن وابسته است و آزمون هم همان testid را می‌خواند. */}
+          <details className="mt-0.5 text-2xs leading-4 text-text-secondary"
+                   data-testid="exec-timings-details">
+            <summary className="cursor-pointer text-text-muted hover:text-text-primary">
+              جزئیاتِ زمان‌بندی و NTP
+            </summary>
+            <p className="mt-0.5" data-testid="exec-timings-line">
+              {timingNote}
+            </p>
+          </details>
         </div>
       ) : null}
 

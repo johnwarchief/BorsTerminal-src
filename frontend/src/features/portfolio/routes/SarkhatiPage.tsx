@@ -37,7 +37,6 @@ import { SarkhatiConnectionCard } from '../components/sarkhati/SarkhatiConnectio
 import { SarkhatiMonitorCard } from '../components/sarkhati/SarkhatiMonitorCard';
 import { SarkhatiPipeline } from '../components/sarkhati/SarkhatiPipeline';
 import { SarkhatiProTools } from '../components/sarkhati/SarkhatiProTools';
-import { chipClass } from '../components/sarkhati/parts';
 import { SarkhatiRiskCard } from '../components/sarkhati/SarkhatiRiskCard';
 import { SarkhatiScheduleCard } from '../components/sarkhati/SarkhatiScheduleCard';
 import { SarkhatiStatusStrip } from '../components/sarkhati/SarkhatiStatusStrip';
@@ -114,15 +113,29 @@ export default function SarkhatiPage() {
   const stepBtn = (id: SarkhatiPanel, label: string, testId: string, n?: number) => {
     const on = panel === id;
     const isSuggested = suggested.go === id;
+    // «گذشته» از تنها منبعِ خودی می‌آید: قدمِ پیشنهادی اولین پرسشِ بی‌پاسخ است،
+    // پس هر گامِ شماره‌کمتر از آن پاسخ گرفته است. این داوریِ تازه نیست.
+    const isDone = !on && n != null && n < stepIndex(suggested.step);
     return (
       <button key={id} type="button" role="tab" aria-selected={on}
         data-testid={testId} data-suggested={isSuggested ? 'true' : 'false'}
+        data-state={on ? 'current' : isDone ? 'done' : isSuggested ? 'suggested' : 'next'}
         onClick={() => setLanded(id)}
-        className={chipClass(on, isSuggested)}>
+        className={`inline-flex items-center gap-1 rounded-lg border px-2 py-1 text-2xs font-bold transition-colors ${
+          on
+            ? 'border-neon-cyan/60 bg-neon-cyan/15 text-neon-cyan'
+            : isSuggested
+              ? 'border-accent-blue/50 bg-accent-blue/10 text-accent-blue'
+              : isDone
+                ? 'border-accent-green/25 bg-accent-green/5 text-text-secondary'
+                : 'border-border-c bg-bg-card text-text-muted hover:border-accent-blue/40 hover:text-text-primary'
+        }`}>
         {n != null ? (
           <span className={`num grid h-4 w-4 place-items-center rounded-md border text-3xs font-black ${
-            on ? 'border-neon-cyan/50 bg-neon-cyan/20' : 'border-border-c bg-bg-primary'}`}>
-            {toFaDigits(n)}
+            on ? 'border-neon-cyan/50 bg-neon-cyan/20'
+              : isDone ? 'border-accent-green/40 bg-accent-green/10 text-accent-green'
+                : 'border-border-c bg-bg-primary'}`}>
+            {isDone ? '✓' : toFaDigits(n)}
           </span>
         ) : null}
         {label}
@@ -163,28 +176,30 @@ export default function SarkhatiPage() {
   return (
     <div className="flex w-full min-w-0 flex-col gap-1.5 p-2" data-testid="sarkhati-page"
       data-symbol={symbol || ''} data-step={panel} data-suggested-step={suggested.step}>
-      {/* یک خطِ وضعیت، یک قدم، یک کنش — پیشِ ازِ هر جدول و هر چیپ. */}
-      <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1"
-        data-testid="sarkhati-headline">
-        <h3 className="text-sm font-black leading-5 text-text-primary">سرخطی</h3>
-        <span className="text-2xs font-bold text-text-secondary" data-testid="sarkhati-status-line"
-              data-open={gate.endpointPresent ? 'true' : 'false'}
-              data-tradeable={gate.canTrade ? 'true' : 'false'}>
-          {statusLine(gate)}
-        </span>
-        <span className="text-2xs text-text-muted" data-testid="sarkhati-current-step"
-              data-step={suggested.step} data-go={suggested.go}>
-          قدمِ شما: {toFaDigits(stepIndex(suggested.step))} · {panelLabel(suggested.step)}
-        </span>
-        {suggested.go !== panel ? (
-          <button type="button" data-testid="sarkhati-next-action"
-            data-go={suggested.go}
-            onClick={() => setLanded(suggested.go)}
-            className="rounded-lg border border-accent-blue/60 bg-accent-blue/15 px-2 py-0.5 text-2xs font-black text-accent-blue">
-            برو به {panelLabel(suggested.go)}
-          </button>
-        ) : null}
-        <span className="min-w-0 flex-1 truncate text-3xs text-text-muted"
+      {/* یک خطِ وضعیت، یک قدم، یک کنش — پیشِ ازِ هر جدول و هر چیپ. «چرا» در
+          خطِ دوم می‌نشیند تا جملهٔ وضعیت و پیشنهاد در هم نپیچند. */}
+      <div className="flex flex-col gap-0.5" data-testid="sarkhati-headline">
+        <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
+          <h3 className="sr-only">سرخطی</h3>
+          <span className="text-2xs font-bold text-text-secondary" data-testid="sarkhati-status-line"
+                data-open={gate.endpointPresent ? 'true' : 'false'}
+                data-tradeable={gate.canTrade ? 'true' : 'false'}>
+            {statusLine(gate)}
+          </span>
+          <span className="text-2xs text-text-muted" data-testid="sarkhati-current-step"
+                data-step={suggested.step} data-go={suggested.go}>
+            قدم پیشنهادی: {toFaDigits(stepIndex(suggested.step))} · {panelLabel(suggested.step)}
+          </span>
+          {suggested.go !== panel ? (
+            <button type="button" data-testid="sarkhati-next-action"
+              data-go={suggested.go}
+              onClick={() => setLanded(suggested.go)}
+              className="rounded-lg border border-accent-blue/60 bg-accent-blue/15 px-2 py-0.5 text-2xs font-black text-accent-blue">
+              برو به {panelLabel(suggested.go)}
+            </button>
+          ) : null}
+        </div>
+        <span className="min-w-0 truncate text-2xs text-text-muted"
               data-testid="sarkhati-step-why" title={suggested.why}>
           {suggested.why}
         </span>
@@ -209,20 +224,17 @@ export default function SarkhatiPage() {
       {panel === 'connect' ? (
         <div className="rounded-xl border border-border-c/70 bg-bg-card/25 px-3 py-2.5"
           data-testid="sarkhati-connect-section">
-          <h4 className="mb-1 text-xs font-black leading-4 text-text-primary">اتصال</h4>
           <SarkhatiConnectionCard />
         </div>
       ) : panel === 'symbol' ? (
         <div className="rounded-xl border border-border-c/70 bg-bg-card/25 px-3 py-2.5"
           data-testid="sarkhati-symbol-section">
-          <h4 className="mb-1 text-xs font-black leading-4 text-text-primary">نماد</h4>
           <SarkhatiSymbolCard symbol={symbol} row={row.data ?? null} onSelect={setSymbol} />
         </div>
       ) : panel === 'order' ? (
         <div className="rounded-xl border border-border-c/70 bg-bg-card/25 px-3 py-2.5"
           data-testid="sarkhati-order-section">
           <div className="mb-1 flex flex-wrap items-baseline gap-x-2 gap-y-1">
-            <h4 className="text-xs font-black leading-4 text-text-primary">سفارش</h4>
             {symbol ? (
               <span className="text-2xs text-text-secondary" data-testid="sarkhati-symbol-chip">
                 نماد: <b className="font-black text-text-primary">{symbol}</b>
@@ -290,6 +302,12 @@ export default function SarkhatiPage() {
           جزئیاتِ فنی — خطِ جریانِ اجرا، حالت‌ها و شمارش‌هایِ دفتر
         </summary>
         <div className="mt-1.5 flex flex-col gap-1.5">
+          <p className="text-2xs leading-4 text-text-muted" data-testid="sarkhati-ledger-counts">
+            دفترِ اجرا <span className="num font-bold text-text-secondary">
+              {toFaDigits(String(gate.status?.ledger_size ?? 0))}</span> رکورد و{' '}
+            <span className="num font-bold text-text-secondary">
+              {toFaDigits(String(gate.status?.durable_events ?? 0))}</span> رخدادِ ماندگار.
+          </p>
           <SarkhatiStatusStrip gate={gate} />
           <SarkhatiPipeline status={gate.status} timings={timings.data ?? null}
             latest={latest} hasSymbol={!!symbol} />
@@ -297,12 +315,7 @@ export default function SarkhatiPage() {
       </details>
 
       <p className="text-2xs leading-4 text-text-muted" data-testid="sarkhati-footnote">
-        شمارۀِ ردیف‌ها ازِ پاسخِ سرویس است: دفترِ اجرا{' '}
-        <span className="num font-bold text-text-secondary">
-          {toFaDigits(String(gate.status?.ledger_size ?? 0))}</span> رکورد و{' '}
-        <span className="num font-bold text-text-secondary">
-          {toFaDigits(String(gate.status?.durable_events ?? 0))}</span> رخدادِ ماندگار.
-        بی‌نشستِ تأییدشده هیچ سفارشی ازِ این صفحه ارسال نمی‌شود.
+        بدونِ نشستِ تأییدشده هیچ سفارشی ازِ این صفحه ارسال نمی‌شود.
       </p>
     </div>
   );
