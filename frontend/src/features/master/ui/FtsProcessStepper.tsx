@@ -104,7 +104,6 @@ export function FtsProcessStepper({
 }) {
   const stages = funnelStagesFor(flow);
   const activeIdx = Math.max(0, stages.findIndex((s) => s.key === active));
-  const next = stages[activeIdx + 1];
   const inputOf = (key: FunnelStageKey, i: number) => {
     const fromApi = inputs?.[key];
     if (typeof fromApi === 'number') return fromApi;
@@ -184,11 +183,6 @@ export function FtsProcessStepper({
           );
         })}
       </ol>
-      <p className="mt-1 text-2xs text-text-secondary" data-testid="fts-stepper-next">
-        {next
-          ? <>گامِ بعدی: <b className="text-text-primary">{next.title}</b> — {STAGE_DESC[next.key]}</>
-          : <>آخرین گام همین است: {stages[activeIdx]?.title ?? ''} — فهرستِ نهاییِ پیگیری</>}
-      </p>
     </nav>
   );
 }

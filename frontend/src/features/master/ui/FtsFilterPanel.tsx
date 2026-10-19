@@ -32,7 +32,9 @@ export function FtsFilterPanel({
   const live = groups.filter((g) => g.node);
   return (
     <section className="rounded-xl border border-border-c bg-bg-card/50 px-2.5 py-2"
-             data-testid="fts-filter-panel" aria-label="فیلترها">
+             data-testid="fts-filter-panel" aria-label="فیلترها"
+             title={[sourceLabel ? `زنجیره: ${sourceLabel}` : '', logicLabel ?? '']
+               .filter(Boolean).join(' · ') || undefined}>
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
         <h2 className="text-sm font-black text-text-primary">فیلترها</h2>
         <span className="num rounded-md border border-border-c bg-bg-primary/70 px-1.5 py-0.5 text-2xs font-bold text-text-secondary"
@@ -40,12 +42,6 @@ export function FtsFilterPanel({
               title="هر چیپِ روشن یکِ شرطِ اضافه بر جامعۀ غربالگری است">
           {toFaDigits(activeCount)} فیلتر فعال
         </span>
-        <span className="text-2xs text-text-secondary" data-testid="fts-filter-source">
-          زنجیره: {sourceLabel}
-        </span>
-        {logicLabel ? (
-          <span className="text-2xs text-text-secondary" data-testid="fts-filter-logic">{logicLabel}</span>
-        ) : null}
         {onClearAll && activeCount > 0 ? (
           <button type="button" onClick={onClearAll} data-testid="fts-filter-clear"
                   className="rounded-lg border border-border-c bg-bg-card px-2 py-0.5 text-2xs font-bold
