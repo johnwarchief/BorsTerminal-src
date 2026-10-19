@@ -1,8 +1,8 @@
 # تشخیص روند ماژور روزانۀ/هفتگی و اتصال آن به قیف FTS — سند فنی و شواهد
 
-**تاریخ:** ۱۴۰۵-۰۷-۲۷ (2026-10-19 17:55) · **شاخه:** `mission/major-swing-trend-2026-10-19` · **کامیت پایه:** `a853cc75a4c9` · **کامیت جاری:** `5780709b5ff9`
+**تاریخ:** ۱۴۰۵-۰۷-۲۷ (2026-10-19 18:41) · **شاخه:** `mission/major-swing-trend-2026-10-19` · **کامیت پایه:** `a853cc75a4c9` · **کامیت جاری:** `973ab8e25e57`
 
-**زنجیرۀ راستی‌آزمایی روی:** `(اجرا نشده)`
+**زنجیرۀ راستی‌آزمایی روی:** `973ab8e25e57`
 
 این سند نتیجهٔ مأموریت P0 «اصلاح تشخیص روند ماژور» است. دامنهٔ آن فقط لایۀ
 تشخیص جهت و اتصال آن به دروازۀ قیف است؛ چهار مورد باقی‌ماندۀ System 2 (۹ ویرایش
@@ -31,7 +31,7 @@
 
 ```
 branch        : mission/major-swing-trend-2026-10-19
-HEAD (this)   : 5780709b5ff903afa2d6f7926220f5be0f73787e
+HEAD (this)   : 973ab8e25e57ec2b6c5ef158f7aeedbb50c20019
 base          : a853cc75a4c953146863263071b06c145d3ccd84  ← همان چیزی که گزارش System 2 آن را HEAD نهایی خواند
 worktree      : C:\Users\Johnkallnaya\Desktop\Borsterminal\.worktrees\major-swing-trend\
 ```
@@ -41,14 +41,14 @@ worktree      : C:\Users\Johnkallnaya\Desktop\Borsterminal\.worktrees\major-swin
 
 ```
 M _audit/gen_major_swing_report.py
- M _audit/run_major_swing_chain.sh
  M docs/technical-indicators/reviewed/MAJOR-SWING-TREND-1405-07-27.md
 ?? _scratch/
 ```
 
-کامیت‌های این مأموریت (از `a853cc75` تا `5780709b`):
+کامیت‌های این مأموریت (از `a853cc75` تا `973ab8e2`):
 
 ```
+973ab8e2 chore(chain)+docs: لاگ هر دور زنجیره در پوشهٔ خودش + ثبت حادثهٔ هم‌زمانی
 5780709b refactor(major-swing): برش دنبالهٔ provisional با «زمان» به‌جای index + اصلاح متن سند
 56affb77 fix(docs)+chore(chain): ارجاع‌های NAME:LINE کهنه‌شدہ و باگ مسیرِ اسکریپت زنجیره
 6d0f3470 docs(major-swing): سند فنی مأموریت ماژور با ارقامِ بازتولیدشدنی + اصلاح تاریخ جلالی و واژگان
@@ -179,7 +179,7 @@ M _audit/gen_major_swing_report.py
   بدون ردیف ماژور» در `technical-badges.spec.tsx` سبز است.
 - هر دو مسیرِ پرچمِ موتورِ روند آزموده شد: `BORS_TREND_ENGINE=legacy` (پیش‌فرض،
   همان `_fts_classify_trend`) و `hybrid` (`trend_classify.classify_trend`) — پروندۀ
-  `major_swings` درِ هر دو منتشر می‌شود و `dev/test_trend_engine_flag.py` (در لاگ یافت نشد)
+  `major_swings` درِ هر دو منتشر می‌شود؛ سطرِ باتریِ `dev/test_trend_engine_flag.py` (پس ازِ `rc=`): 0 | 8/8
 - مرزِ شواهد رابط: آنچه سنجیده شد **کامپوننت در vitest با payloadِ واقعیِ سرور** است
   (ردیفِ «ماژور (سقف/کف)»، «در حال شکل‌گیری (تأیید نشده)»، as_of و reason). دیدنِ
   اپِ نصبی رویِ میزکار درِ این دور انجام نشد و `NOT_VERIFIED` است (§۹).
@@ -284,7 +284,7 @@ repaint. با مرجع‌گذاریِ درست (همان as-of، تنها تکا
 
 ## ۹) اعتبارسنجی میدانی
 
-`PENDING_LIVE_VALIDATION` — زنجیره در (بی‌زمان) (+۰۳:۳۰) اجرا شد، بیرون از نشستِ
+`PENDING_LIVE_VALIDATION` — زنجیره در ۱۷:۵۶ (+۰۳:۳۰) اجرا شد، بیرون از نشستِ
    معاملاتیِ ۰۹:۰۰–۱۲:۳۰ تهران؛ لذا شاهدِ میدانیِ زنده‌ای سنجیده نشده و هیچ نتیجه‌ای
 از replay یا fixture به‌عنوان «دادۀ زنده» نام نگرفته است. آزمونِ میدانی آماده است:
 `_audit/major_swing_before_after.py` و `_audit/major_swing_ref_compare.py` در روز
@@ -300,19 +300,24 @@ repaint. با مرجع‌گذاریِ درست (همان as-of، تنها تکا
 ## ۱۰) گیت‌ها — روی یک SHA، با خروجی خام
 
 SHAِ زنجیره (از سرِ `chain_head.txt` درِ پوشۀِ همان دور خوانده شد، نه از HEADِ روزِ سند):
-پوشۀ لاگ این دور: `(پوشۀِ دوری پیدا نشد)`
-`(اجرا نشده)`
+پوشۀ لاگ این دور: `C:\Users\Johnkallnaya\Desktop\Borsterminal\.worktrees\major-swing-trend\_scratch\live\run_973ab8e2_20261019T175604`
+`973ab8e25e57ec2b6c5ef158f7aeedbb50c20019`
 
 | گام | کد خروج | خط نتیجه |
 |---|---|---|
-| `python dev/run_all_tests.py` | (no record) | — |
-| `npx tsc -b` | (no record) | بدون خطای type |
-| `npx vitest run` | (no record) | — |
-| `npm run lint` (eslint .) | (no record) | — |
-| `npm run build` (vite) | (no record) | — |
-| `dev/price_basis_v1070.py` (مبنایِ قیمت، صریح) | (no record) | — |
-| `dev/db_candle_contract_v1.py` (قراردادِ کندلِ بانک) | (no record) | — |
-| `dev/version_anchor_guard.py` (لنگرِ نسخه) | (no record) | — |
+| `python dev/run_all_tests.py` | 0 | ALL SUITES PASSED |
+| `npx tsc -b` | 0 | بدون خطای type |
+| `npx vitest run` | 0 | Tests  1908 passed | 5 skipped (1913) |
+| `npm run lint` (eslint .) | 1 | ✖ 6 problems (6 errors, 0 warnings) |
+| `npm run build` (vite) | 0 | ✓ built in 14.73s |
+| `dev/price_basis_v1070.py` (مبنایِ قیمت، صریح) | 0 | ok   ضرایبِ /api/chart-db تحتِ دو مبنای یکسان‌اند |
+| `dev/db_candle_contract_v1.py` (قراردادِ کندلِ بانک) | 0 | db_candle_contract_v1: 32 passed, 0 failed |
+| `dev/version_anchor_guard.py` (لنگرِ نسخه) | 0 | VERSION ANCHOR GUARD OK |
+
+ESLint قرمز است و قرمز هم ثبت می‌شود (نه سبز): ۶ خطا در ۵ فایل — 
+«TapeHistoryPanel.tsx»، «engine-klinecharts-adapter.spec.ts»، «funnel-preset-switch.spec.tsx»، «tapeAlgorithms.ts»، «technical-settings-effectiveness.spec.tsx».
+فایل‌های رابطِ این مأموریت: `frontend/src/__tests__/technical-badges.spec.tsx`، `frontend/src/features/technical/api/useFtsAnalysis.ts`، `frontend/src/features/technical/components/FtsTrendPanel.tsx`.
+هیچ خطایی از این دو هم‌پوشانی ندارد؛ یعنی baselineِ دورِ قبل است و این دور خطای تازه افزوده نیست. گارد «تست ناموفق را حذف یا تضعیف نکن» اینجا هم اجرا شده: خطا حذف نشد، فقط علت و مالکیتش ثبت شد.
 
 ### ۱۰-پ) تلاش‌هایِ جانشین‌شدہ (شاهدِ حادثه، نه نتیجه)
 
@@ -338,19 +343,19 @@ SHAِ زنجیره (از سرِ `chain_head.txt` درِ پوشۀِ همان دو
 (این هشِ مجمّع است، نه هشِ EXE — درِ این دور PyInstaller ساخته نشد؛ ساختارِ
 بستهٔ ویندوز درِ سندِ دورِ قبل با SHAِ خودش ثبت شده است.)
 
-سوئیتِ این مأموریت (`dev/major_swing_trend_v1.py`): —  [exit (no record)]
-فیکسچرهای System 1 (`dev/fts_trend_fixtures_v1075.py`): —  [exit (no record)]
-گاردِ ارجاع‌های سندِ نقشه (`dev/test_rule_map_citations.py`): —  [exit (no record)]
+سوئیتِ این مأموریت (`dev/major_swing_trend_v1.py`): 94 checks, 0 failed  [exit 0]
+فیکسچرهای System 1 (`dev/fts_trend_fixtures_v1075.py`): fts_trend_fixtures_v1075: 28 passed / 0 failed  [exit 0]
+گاردِ ارجاع‌های سندِ نقشه (`dev/test_rule_map_citations.py`): 11/11 passed  (7579 نمادِ تعریف‌شده، 14 ارجاعِ سند)  [exit 0]
 
 
-### ۱۰-پ) اثرِ جانبیِ این دور رویِ سندِ نقشهٔ قواعد (خودکار نه، با بازرسی)
+### ۱۰-چ) اثرِ جانبیِ این دور رویِ سندِ نقشهٔ قواعد (خودکار نه، با بازرسی)
 
 جابه‌جا شدنِ سطرهای `api/chart.py` سه ارجاعِ `NAME:LINE` درِ
 `docs/FTS-RULE-ALGORITHM-MAP.md` را کهنه کرد و گارد `dev/test_rule_map_citations.py`
 درِ همان زنجیره قرمز شد (درست همان چیزی که باید بکند). رفع با
 `_audit/fix_rule_map_lines.py` انجام شد: نام‌ها صریح فهرست شده‌اند و سطرِ هر نام
 از خودِ فایل با الگوی `^def NAME(` دوباره خوانده می‌شود — نه از پیامِ گارد
-(درسِ دورِ قبل: regexِ حریص روی لاگ، سطرِ غلط نوشت). نتیجه‌ی گارد: (در لاگ یافت نشد)
+(درسِ دورِ قبل: regexِ حریص روی لاگ، سطرِ غلط نوشت). سطرِ گارد درِ باتری (پس ازِ `rc=`، یعنی «کدِ خروج | شمارشِ آزمون»): 0 | 11/11
 
 ### فایل‌های این مأموریت (`git diff --name-only a853cc75..HEAD`)
 

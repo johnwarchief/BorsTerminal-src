@@ -541,7 +541,8 @@ def main():
     W("  بدون ردیف ماژور» در `technical-badges.spec.tsx` سبز است.")
     W("- هر دو مسیرِ پرچمِ موتورِ روند آزموده شد: `BORS_TREND_ENGINE=legacy` (پیش‌فرض،")
     W("  همان `_fts_classify_trend`) و `hybrid` (`trend_classify.classify_trend`) — پروندۀ")
-    W("  `major_swings` درِ هر دو منتشر می‌شود و `dev/test_trend_engine_flag.py` %s" % flag_line)
+    W("  `major_swings` درِ هر دو منتشر می‌شود؛ سطرِ باتریِ `dev/test_trend_engine_flag.py` "
+      "(پس ازِ `rc=`): %s" % flag_line)
     W("- مرزِ شواهد رابط: آنچه سنجیده شد **کامپوننت در vitest با payloadِ واقعیِ سرور** است")
     W("  (ردیفِ «ماژور (سقف/کف)»، «در حال شکل‌گیری (تأیید نشده)»، as_of و reason). دیدنِ")
     W("  اپِ نصبی رویِ میزکار درِ این دور انجام نشد و `NOT_VERIFIED` است (§۹).")
@@ -663,7 +664,8 @@ def main():
     W("")
     W("## ۹) اعتبارسنجی میدانی")
     W("")
-    W("`PENDING_LIVE_VALIDATION` — زنجیره در %s (+۰۳:۳۰) اجرا شد، بیرون از نشستِ" % chain_hm)
+    W("`PENDING_LIVE_VALIDATION` — زنجیره در %s (+۰۳:۳۰) اجرا شد، بیرون از نشستِ"
+      % fan(chain_hm))
     W("   معاملاتیِ ۰۹:۰۰–۱۲:۳۰ تهران؛ لذا شاهدِ میدانیِ زنده‌ای سنجیده نشده و هیچ نتیجه‌ای")
     W("از replay یا fixture به‌عنوان «دادۀ زنده» نام نگرفته است. آزمونِ میدانی آماده است:")
     W("`_audit/major_swing_before_after.py` و `_audit/major_swing_ref_compare.py` در روز")
@@ -688,21 +690,23 @@ def main():
     W("| `npx tsc -b` | %s | %s |" % (exit_of("TSC_EXIT"), tsc or "بدون خطای type"))
     W("| `npx vitest run` | %s | %s |" % (exit_of("VITEST_EXIT"), vit or "—"))
     W("| `npm run lint` (eslint .) | %s | %s |" % (exit_of("LINT_EXIT"), lint_err or "—"))
+    lint_note = []
     lint_counts = lint_baseline()
     if lint_counts[0]:
         n_err, n_files, lint_files, mine = lint_counts
-        W("")
-        W("ESLint قرمز است و قرمز هم ثبت می‌شود (نه سبز): %s خطا در %s فایل — "
-          % (fa(n_err), fa(n_files)))
-        W("«%s»." % "»، «".join(lint_files))
-        W("فایل‌های رابطِ این مأموریت: %s." % "، ".join(
+        lint_note.append("ESLint قرمز است و قرمز هم ثبت می‌شود (نه سبز): %s خطا در %s فایل — "
+                         % (fa(n_err), fa(n_files)))
+        lint_note.append("«%s»." % "»، «".join(lint_files))
+        lint_note.append("فایل‌های رابطِ این مأموریت: %s." % "، ".join(
             "`%s`" % f for f in changed if f.startswith("frontend/")))
         if mine:
-            W("**%s خطا در هم‌پوشانیِ دو فهرست است و باید درِ همین دور بسته شود.**" % fa(len(mine)))
+            lint_note.append("**%s خطا در هم‌پوشانیِ دو فهرست است و باید درِ همین دور "
+                             "بسته شود.**" % fa(len(mine)))
         else:
-            W("هیچ خطایی از این دو هم‌پوشانی ندارد؛ یعنی baselineِ دورِ قبل است و این دور "
-              "خطای تازه افزوده نیست. گارد «تست ناموفق را حذف یا تضعیف نکن» اینجا هم اجرا "
-              "شده: خطا حذف نشد، فقط علت و مالکیتش ثبت شد.")
+            lint_note.append("هیچ خطایی از این دو هم‌پوشانی ندارد؛ یعنی baselineِ دورِ قبل "
+                             "است و این دور خطای تازه افزوده نیست. گارد «تست ناموفق را حذف یا "
+                             "تضعیف نکن» اینجا هم اجرا شده: خطا حذف نشد، فقط علت و مالکیتش "
+                             "ثبت شد.")
     W("| `npm run build` (vite) | %s | %s |" % (exit_of("BUILD_EXIT"), build or "—"))
     W("| `dev/price_basis_v1070.py` (مبنایِ قیمت، صریح) | %s | %s |"
       % (exit_of("BASIS_EXIT"), log_tail(R("chain_basis.log"), "/") or "—"))
@@ -710,7 +714,11 @@ def main():
       % (exit_of("CANDLE_EXIT"),
          log_tail(R("chain_candle.log"), "passed") or "—"))
     W("| `dev/version_anchor_guard.py` (لنگرِ نسخه) | %s | %s |"
-      % (exit_of("ANCHOR_EXIT"), log_tail(R("chain_anchor.log"), "anchor") or "—"))
+      % (exit_of("ANCHOR_EXIT"), log_tail(R("chain_anchor.log"), "ANCHOR") or "—"))
+    if lint_note:
+        W("")
+        for _ln in lint_note:
+            W(_ln)
     if OLD_RUNS:
         W("")
         W("### ۱۰-پ) تلاش‌هایِ جانشین‌شدہ (شاهدِ حادثه، نه نتیجه)")
@@ -754,14 +762,15 @@ def main():
           % (chain_sha[:8], head_sha[:8]))
         W("فاصله فقط مستندات است. هیچ نتیجۀ گامی به SHA دیگری نسبت داده نشده.")
     W("")
-    W("### ۱۰-پ) اثرِ جانبیِ این دور رویِ سندِ نقشهٔ قواعد (خودکار نه، با بازرسی)")
+    W("### ۱۰-چ) اثرِ جانبیِ این دور رویِ سندِ نقشهٔ قواعد (خودکار نه، با بازرسی)")
     W("")
     W("جابه‌جا شدنِ سطرهای `api/chart.py` سه ارجاعِ `NAME:LINE` درِ")
     W("`docs/FTS-RULE-ALGORITHM-MAP.md` را کهنه کرد و گارد `dev/test_rule_map_citations.py`")
     W("درِ همان زنجیره قرمز شد (درست همان چیزی که باید بکند). رفع با")
     W("`_audit/fix_rule_map_lines.py` انجام شد: نام‌ها صریح فهرست شده‌اند و سطرِ هر نام")
     W("از خودِ فایل با الگوی `^def NAME(` دوباره خوانده می‌شود — نه از پیامِ گارد")
-    W("(درسِ دورِ قبل: regexِ حریص روی لاگ، سطرِ غلط نوشت). نتیجه‌ی گارد: %s" % (
+    W("(درسِ دورِ قبل: regexِ حریص روی لاگ، سطرِ غلط نوشت). سطرِ گارد درِ باتری "
+      "(پس ازِ `rc=`، یعنی «کدِ خروج | شمارشِ آزمون»): %s" % (
         rulemap_line or "(در لاگ یافت نشد)"))
     W("")
     W("### فایل‌های این مأموریت (`git diff --name-only %s..HEAD`)" % BASE_SHA)
