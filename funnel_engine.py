@@ -1364,7 +1364,7 @@ def handover_stage(rows: list[dict], tape: dict, tech: dict, fund: dict,
 # آن یک داورِ دوم است نه نمایش.
 _LABEL_OF = {"f_clock": "ساعت", "f_susp": "مشکوک", "f_jet": "جت", "f_roobi": "کف‌روب",
              "f_noqteh": "نقطه", "f_smart": "پول هوشمند",
-             "f_legal": "پول هوشمند و کد به کد"}
+             "f_legal": "ورود پول هوشمند و کد به کد"}
 
 
 def _display(r: dict, *, patterns: list[str] | None = None,
