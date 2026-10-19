@@ -72,7 +72,7 @@ function TableShell({
 const WATCH_FLAGS: { key: 'f_susp' | 'f_smart' | 'f_legal'; chip: string; full: string; tone: string }[] = [
   { key: 'f_susp', chip: 'مشکوک', full: 'حجم مشکوک', tone: 'bg-accent-yellow/15 text-accent-yellow' },
   { key: 'f_smart', chip: 'پول هوشمند', full: 'ورود پول هوشمند', tone: 'bg-accent-green/15 text-accent-green' },
-  { key: 'f_legal', chip: 'کد به کد', full: 'کد به کد حقوقی به حقیقی', tone: 'bg-accent-red/15 text-accent-red' },
+  { key: 'f_legal', chip: 'پول هوشمند و کد به کد', full: 'پول هوشمند و کد به کد حقوقی به حقیقی', tone: 'bg-accent-red/15 text-accent-red' },
 ];
 
 function FlagChips({ row, sourced }: { row: MainWatchRow; sourced: boolean }) {
@@ -182,7 +182,7 @@ export function MainWatchTable() {
               : 'قواعدِ نرسیده'}{' '}
             ساخته می‌شود.
             {' '}«نشان» همان سه پرچمِ فیلترنویسِ تابلوست (حجم مشکوک، ورود پول هوشمند،
-            کد به کد حقوقی به حقیقی){sourced ? '' : ' — پرچم از فیدِ تابلو نرسید'}.
+            پول هوشمند و کد به کد){sourced ? '' : ' — پرچم از فیدِ تابلو نرسید'}.
           </p>
         </>
       ) : null}

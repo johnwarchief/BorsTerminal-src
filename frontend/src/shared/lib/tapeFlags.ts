@@ -17,7 +17,7 @@ export const TAPE_FLAG_LABELS: Record<TapeFlag, string> = {
   f_roobi: 'کف‌روبی',
   f_noqteh: 'نقطه زنی',
   f_smart: 'ورود پول هوشمند',
-  f_legal: 'کد به کد حقوقی به حقیقی',
+  f_legal: 'پول هوشمند و کد به کد حقوقی به حقیقی',
 };
 
 /** ستونِ شواهد: نامِ فیلدِ ثبت‌شده درِ `tape_flag_history.EVIDENCE_COLS`. */

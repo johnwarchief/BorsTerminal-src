@@ -239,7 +239,7 @@ const PATTERN_TONE: Record<string, MicroTone> = {
   'کف‌روب': 'emerald',
   'نقطه': 'amber',
   'نقطه‌زنی': 'amber',
-  'کد به کد': 'violet',
+  'پول هوشمند و کد به کد': 'violet',
   'صف+': 'green',
   'صف−': 'red',
 };

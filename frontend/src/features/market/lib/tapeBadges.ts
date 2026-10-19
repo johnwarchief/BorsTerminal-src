@@ -126,7 +126,7 @@ export function patternBadges(row: MarketRow, cfg: TapeFilterConfig): TapeBadge[
       key: 'legal',
       pattern: 'legal',
       tone: 'violet',
-      label: 'کد به کد',
+      label: 'پول هوشمند و کد به کد',
       title:
         'کدبه‌کد حقوقی به حقیقی: شرط پول هوشمند برقرار است و خرید حقوقی و فروش حقیقی، '
         + 'هرکدام بیش از نیمی از حجم معاملات امروز هستند',
