@@ -261,28 +261,31 @@ def forming(series, graded, k=3):
     n = len(series)
     if n == 0:
         return None
-    last_idx = max((int(x["idx"]) for x in graded), default=-1)
-    start = last_idx + 1
-    if k < 0:
-        k = 0
-    tail = series[start:]
+    # دنباله با **زمانِ** آخرینِ پیوتِ تأییدشده بریده می‌شود، نه با index: فهرستِ
+    # پیوت‌ها از سریِ «کندل‌هایِ بسته» می‌آید و این تابع سریِ کامل (با ردیفِ
+    # تکمیل‌نشده) را می‌گیرد. برابر بودنِ شمارۀِ سطرهایِ دو سری تنها وقتی تضمین شده
+    # است که ردیفِ زنده آخرینِ ردیف باشد؛ با زمان، آن فرض لازم نمی‌ماند.
+    dates = [str(c.get("time") or "")[:10] for c in series]
+    since = max((str(x.get("time") or "")[:10] for x in graded), default="")
+    start = 0 if not since else sum(1 for d in dates if d <= since)
+    tail = list(enumerate(series))[start:] if start < n else []
     if not tail:
         return None
-    hi_i = max(range(len(tail)), key=lambda j: _f(tail[j].get("high")) or 0.0)
-    lo_i = min(range(len(tail)), key=lambda j: _f(tail[j].get("low")) or float("inf"))
+    k = max(0, int(k))
+    hi_i = max(range(len(tail)), key=lambda j: _f(tail[j][1].get("high")) or 0.0)
+    lo_i = min(range(len(tail)), key=lambda j: _f(tail[j][1].get("low")) or float("inf"))
 
     def leg(j):
-        c = tail[j]
-        idx = start + j
-        return {"idx": idx, "time": str(c.get("time") or "")[:10],
+        idx, c = tail[j]
+        gap = n - 1 - idx
+        return {"idx": idx, "time": dates[idx],
                 "price": _f(c.get("high")) if j == hi_i else _f(c.get("low")),
                 "provisional": True, "confirmed": False,
-                "bars_since": n - 1 - idx, "bars_to_confirm": max(0, k - (n - 1 - idx))}
+                "bars_since": gap, "bars_to_confirm": max(0, k - gap)}
 
     hi, lo = leg(hi_i), leg(lo_i)
-    return {"since_pivot_time": (str(series[last_idx].get("time") or "")[:10]
-                                 if last_idx >= 0 else None),
-            "bars_since_last_pivot": n - 1 - last_idx if last_idx >= 0 else n,
+    return {"since_pivot_time": since or None,
+            "bars_since_last_pivot": n - start,
             "high": hi, "low": lo,
             "note": "پنجرۀ تأیید این دو کامل نشده؛ رأیِ قطعی روی آن‌ها ساخته نمی‌شود"}
 
