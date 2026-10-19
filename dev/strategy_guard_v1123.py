@@ -340,6 +340,32 @@ def main() -> int:
     ck("structure" in pr and "value" not in pblob and "token" not in pblob
        and "cookie" not in pblob,
        "الف) Probe فقط ساختار است؛ هیچ مقدار/token/cookie ندارد", pr)
+    ck(pr.get("host") == "mock.local" and pr.get("origin_ok") is True
+       and pr.get("read_only") is True,
+       "الف‌۲) Probe مقصدِ نهایی و origin_ok را گزارش می‌کند",
+       {"host": pr.get("host"), "origin_ok": pr.get("origin_ok")})
+    net = pr.get("network") or {}
+    ck(net.get("order_posts") == 0 and net.get("requests") == 0
+       and net.get("source") == "mock-no-network",
+       "الف‌۴) Probe شمارشِ شبکه را بدونِ POSTِ سفارش گزارش می‌کند", net)
+    _old_probe = EB.MockBrowserDriver.probe
+
+    def _pw_probe(self, selectors=None):
+        got = _old_probe(self, selectors)
+        got["inputs"] = got["inputs"] + [{
+            "tag": "input", "type": "password", "name": "Password",
+            "visible": True, "enabled": True, "readonly": False}]
+        return got
+
+    EB.MockBrowserDriver.probe = _pw_probe
+    try:
+        pr_pw = eng.probe(SC.PLAYWRIGHT_DOM)
+    finally:
+        EB.MockBrowserDriver.probe = _old_probe
+    ck(pr_pw.get("login") == "LOGIN_REQUIRED"
+       and pr_pw.get("login_source") == "password-input-visible",
+       "الف‌۳) فیلدِ رمزِ نمایان ⇒ LOGIN_REQUIRED با شاهدِ ساختاری",
+       {"login": pr_pw.get("login"), "source": pr_pw.get("login_source")})
     ok_runtime, _why = EB.browser_runtime_available(
         SC.default_settings(SC.PLAYWRIGHT_DOM))
     ck(ok_runtime is True, "پ) مرورگرِ Chromiumِ سیستم/محلی شناسایی شد")
@@ -402,6 +428,84 @@ def main() -> int:
        "ح) ۴۰۱ مرورگر پذیرش نمی‌شود و پاسخ تازه/تکرار ندارد", r401.public())
     current["response_override"] = None
     store.save(SC.PLAYWRIGHT_DOM, mode=SC.MODE_SHADOW)
+
+    print("\n── ۱۲) Probe/امنیتِ production و Stop ──")
+    store.save(SC.PLAYWRIGHT_DOM, options={"login_selector": "[data-testid=login]"})
+    current["draft"] = draft("G-PROBE-LOGIN")
+    current["form"] = None
+    pr_login = eng.probe(SC.PLAYWRIGHT_DOM)
+    ck(pr_login.get("login") == "LOGIN_REQUIRED"
+       and pr_login.get("login_source") == "configured-login-selector"
+       and pr_login.get("read_only") is True,
+       "الف) Probe صفحهٔ ورود را گزارش می‌کند، بدونِ کلیک", pr_login.get("login"))
+    store.save(SC.PLAYWRIGHT_DOM, options={"login_selector": ""})
+
+    ds = SC.default_settings(SC.PLAYWRIGHT_DOM).options
+    ck(str(ds.get("order_url", "")).startswith("https://d.easytrader.ir")
+       and ds.get("ignore_https_errors") is False
+       and ds.get("no_proxy") is False
+       and ds.get("keep_driver_alive") is False,
+       "پ) پیش‌فرضِ مرورگری Production است، نه Mock", ds)
+    import execution_easytrader as ET
+    try:
+        ET._validated_base_url("https://127.0.0.1:12345")
+        host_gate = False
+    except ValueError:
+        host_gate = True
+    ck(host_gate, "ت) بی‌envِ مجاز، loopback حتی با seam هم پذیرفته نمی‌شود")
+    _old_hosts = os.environ.get("BORS_EXECUTION_WIRE_HOSTS")
+    os.environ["BORS_EXECUTION_WIRE_HOSTS"] = "127.0.0.1"
+    try:
+        try:
+            ET._validated_base_url("https://127.0.0.1:12345")
+            port_gate = False
+        except ValueError:
+            port_gate = True
+        ck(port_gate, "ث) با envِ مجاز، seamِ پورت بدونِ flag بسته است")
+        ck(ET._validated_base_url("https://127.0.0.1:12345",
+                                  allow_loopback_port=True) == "https://127.0.0.1:12345",
+           "ج) seamِ صریحِ bench فقط loopback را باز می‌کند")
+    finally:
+        if _old_hosts is None:
+            os.environ.pop("BORS_EXECUTION_WIRE_HOSTS", None)
+        else:
+            os.environ["BORS_EXECUTION_WIRE_HOSTS"] = _old_hosts
+    api_src = open(os.path.join(ROOT, "api", "execution.py"), encoding="utf-8").read()
+    ck("allow_loopback_base_url" not in api_src,
+       "چ) APIِ production پرچمِ Mock را پاس نمی‌دهد")
+
+    store.save(SC.PLAYWRIGHT_DOM, mode=SC.MODE_LIVE)
+    eng_live_html = SE.StrategyEngine(
+        FakeAdapter(writes_allowed=True), settings_store=store,
+        mock_browser=True, driver_factory=factory, server_clock=clock_ok,
+        live_allowed=True, halted=lambda: (False, ""))
+    current["draft"] = draft("G-200HTML")
+    current["form"] = None
+    current["response_override"] = {
+        "status": 200, "body": "<html><body>login</body></html>"}
+    o_html = eng_live_html.prepare(current["draft"], SC.PLAYWRIGHT_DOM)
+    r_html = eng_live_html.trigger(o_html.prepared_id, live=True, live_allowed=True)
+    ck(not r_html.accepted and r_html.http_status == 200,
+       "ح) ۲۰۰ HTMLِ صفحهٔ ورود پذیرش نیست", r_html.public())
+    current["response_override"] = None
+    store.save(SC.PLAYWRIGHT_DOM, mode=SC.MODE_SHADOW)
+
+    current["draft"] = draft("G-STOP")
+    current["form"] = None
+    o_stop = eng.prepare(current["draft"], SC.PLAYWRIGHT_DOM)
+    eng.abort(o_stop.prepared_id)
+    r_stop = eng.trigger(o_stop.prepared_id, live=False)
+    ck(r_stop.status == "aborted",
+       "خ) Stop پیش از trigger ⇒ aborted و بی‌درخواست", r_stop.status)
+
+    current["draft"] = draft("G-STOP-AFTER")
+    current["form"] = None
+    o_done = eng.prepare(current["draft"], SC.PLAYWRIGHT_DOM)
+    r_done = eng.trigger(o_done.prepared_id, live=False)
+    after = eng.abort(o_done.prepared_id)
+    ck((after.get("result") or {}).get("status") == r_done.status
+       and after.get("state") == r_done.status,
+       "د) Stop بعد از نتیجه، نتیجهٔ قبلی را جعل نمی‌کند", after)
 
     import shutil
     shutil.rmtree(tmp, ignore_errors=True)

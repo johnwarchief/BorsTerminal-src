@@ -279,21 +279,82 @@ class BrowserStrategyBase:
             raise StrategyError("LOGIN_REQUIRED",
                                 "صفحهٔ ورود دیده شد؛ مالک باید در همین پنجره وارد شود")
 
+    def _selector_map(self, ctx: StrategyContext) -> dict[str, str]:
+        o = ctx.settings.options
+        keys = ("symbol_selector", "price_selector", "quantity_selector",
+                "submit_selector", "login_selector", "clock_selector",
+                "focus_selector", "symbol_confirm_selector")
+        return {k: str(o.get(k) or "") for k in keys}
+
     def probe(self, ctx: StrategyContext) -> dict[str, Any]:
+        """Probe فقط‌خواندنی: ساختار، login/selector/visibility و profile.
+
+        برخلافِ prepare، دیدنِ صفحهٔ ورود اینجا خطا نیست؛ وضعیت گزارش می‌شود
+        تا مالک بتواند تصمیم بگیرد. هیچ مقدارِ input خوانده/برگردانده نمی‌شود.
+        """
         sel = self._sel(ctx)
         driver = ctx.driver_factory(
             ctx.settings, strategy_id=self.spec.id, mock=ctx.mock_browser,
             **ctx.mock_driver_kwargs)
         driver.start()
+        t0 = now_ms()
         try:
             driver.goto(sel["order_url"])
-            self._check_origin(driver, ctx)
-            self._check_login(driver, sel)
-            structure = driver.probe(sel)
-            return {"strategy": self.spec.id, "kind": "browser",
-                    "url": _path_only(driver.url()),
-                    "title": str(driver.title() or "")[:80],
-                    "structure": structure}
+            structure = driver.probe(self._selector_map(ctx))
+            try:
+                network = driver.network()
+            except Exception:
+                network = {"requests": None, "by_host": {}, "order_posts": None,
+                           "truncated": None, "source": "unavailable"}
+            final_url = str(driver.url() or "")
+            host = urlparse(final_url).netloc.lower()
+            allow = ctx.settings.options.get("origin_allowlist") or []
+            if isinstance(allow, str):
+                allow = [allow]
+            allowed = {urlparse(str(a)).netloc.lower() for a in allow if a}
+            # ریدایرکتِ SPA به صفحهٔ ورود برای Probe خطا نیست؛ فقط مقصد گزارش
+            # می‌شود. مسیرِ trigger همچنان _check_origin سخت‌گیرانه را دارد.
+            origin_ok = bool(host and host in allowed)
+            login = "UNKNOWN"
+            login_source = "unconfigured"
+            visible_password = any(
+                str(i.get("type") or "").lower() == "password" and i.get("visible")
+                for i in (structure.get("inputs") or []))
+            if sel.get("login_selector"):
+                login_source = "configured-login-selector"
+                login = ("LOGIN_REQUIRED" if driver.wait_for(sel["login_selector"], 600)
+                         else "NOT_VISIBLE")
+            elif visible_password:
+                # فیلدِ رمزِ نمایان یک شاهدِ ساختاری است، نه selectorِ حدسی؛
+                # صفحهٔ سفارش هیچ‌گاه رمز نمی‌خواهد.
+                login, login_source = "LOGIN_REQUIRED", "password-input-visible"
+            browser = {
+                "driver": str(getattr(driver, "name", "") or ""),
+                "headless": bool(ctx.settings.options.get("headless", False)),
+                "profile_source": ("settings"
+                                   if str(ctx.settings.options.get("profile_dir") or "")
+                                   else "default"),
+                "profile_configured": bool(
+                    str(ctx.settings.options.get("profile_dir") or "")),
+                "alive": bool(driver.is_alive()),
+            }
+            return {
+                "strategy": self.spec.id, "kind": "browser",
+                "url": _path_only(final_url), "host": host,
+                "origin_ok": origin_ok,
+                "title": str(driver.title() or "")[:80],
+                "login": login, "login_source": login_source,
+                "browser": browser,
+                "network": network,
+                "selectors": structure.get("selectors") or {},
+                "structure": {
+                    "inputs": structure.get("inputs") or [],
+                    "buttons": structure.get("buttons") or [],
+                    "login_candidates": structure.get("login_candidates") or [],
+                },
+                "elapsed_ms": round(now_ms() - t0, 1),
+                "read_only": True,
+            }
         finally:
             try:
                 driver.close()
@@ -806,7 +867,13 @@ class StrategyEngine:
         fn = getattr(strategy, "probe", None)
         if not callable(fn):
             raise StrategyError("UNSUPPORTED", "probe not implemented")
-        return fn(ctx)
+        t0 = now_ms()
+        result = fn(ctx)
+        if isinstance(result, dict):
+            result.setdefault("available", True)
+            result.setdefault("read_only", True)
+            result.setdefault("elapsed_ms", round(now_ms() - t0, 1))
+        return result
 
     def _settings(self, strategy_id: str) -> SC.StrategySettings:
         return self.settings_store.load()[strategy_id]

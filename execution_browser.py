@@ -219,10 +219,23 @@ class MockBrowserDriver:
         return self.last_response
 
     def probe(self, selectors: Optional[Mapping[str, Any]] = None) -> dict[str, Any]:
-        return {"url": self.order_url, "title": "mock-order",
-                "inputs": [{"selector": s, "tag": "input"}
-                           for s in (selectors or {}).values() if s],
-                "buttons": [], "login_present": False}
+        sel = {str(k): str(v) for k, v in (selectors or {}).items() if v}
+        return {
+            "url": urlparse(self.order_url).path or "/",
+            "title": "mock-order",
+            "inputs": [{"tag": "input", "type": "text", "name": k,
+                        "visible": True, "enabled": True, "readonly": False}
+                       for k in sel],
+            "buttons": [{"tag": "button", "text": "send",
+                         "visible": True, "enabled": True}],
+            "selectors": {k: {"count": 1, "first_visible": True,
+                              "first_enabled": True} for k in sel},
+            "login_candidates": [],
+        }
+
+    def network(self) -> dict[str, Any]:
+        return {"requests": 0, "by_host": {}, "order_posts": 0,
+                "truncated": False, "source": "mock-no-network"}
 
     def screenshot(self, path: str) -> str:
         return path
@@ -553,26 +566,109 @@ class PlaywrightBrowserDriver:
             return sorted({r["host"] for r in self._all_requests
                            if r.get("host") and r["host"] not in ("", "about:blank")})
 
+    def _do_network(self) -> dict[str, Any]:
+        """شمارشِ متد/میزبان برای شواهدِ فقط‌خواندنی؛ مسیرها برنمی‌گردند.
+
+        `order_posts` هر POSTِ منطبق با الگویِ interception است (پیش‌فرض:
+        مسیرِ سفارش)؛ در Probe باید صفر بماند.
+        """
+        with self._lock:
+            reqs = list(self._all_requests)
+            truncated = len(self._all_requests) >= 500
+        by_host: dict[str, dict[str, int]] = {}
+        for r in reqs:
+            host = str(r.get("host") or "(none)")
+            method = (str(r.get("method") or "").upper() or "(none)")
+            bucket = by_host.setdefault(host, {})
+            bucket[method] = bucket.get(method, 0) + 1
+        needle = (self._intercept_pattern or "").replace("**/", "").rstrip("*")
+        order_posts = sum(
+            1 for r in reqs
+            if (str(r.get("method") or "").upper() == "POST"
+                and needle and needle in str(r.get("path") or "")))
+        return {"requests": len(reqs), "by_host": by_host,
+                "order_posts": order_posts, "truncated": truncated,
+                "source": "browser-events", "order_path_matched": bool(needle)}
+
     def _do_probe(self, selectors: Optional[Mapping[str, Any]] = None) -> dict[str, Any]:
-        js = """() => {
-          const clean = (s, n) => String(s || '').replace(/\\s+/g, ' ').trim().slice(0, n);
+        """فقط‌خواندنی؛ SPAهایی که پس از load به صفحهٔ ورود می‌روند را هم می‌پذیرد.
+
+        EasyTrader پس از `goto` یک ریدایرکتِ سمتِ کلاینت می‌زند و
+        `Execution context was destroyed` می‌دهد. این‌جا فقط همان خطا با
+        انتظارِ کوتاه و تلاشِ دوباره پاسخ داده می‌شود؛ هیچ کلیک/ارسال/مقداری
+        خوانده نمی‌شود.
+        """
+        js = """(selectors) => {
+          const clean = (s, n) => String(s || '')
+            .replace(/[0-9\\u06F0-\\u06F9\\u0660-\\u0669]/g, '•')
+            .replace(/\\s+/g, ' ').trim().slice(0, n);
+          const vis = el => { try {
+            const r = el.getBoundingClientRect(); const s = getComputedStyle(el);
+            return !!(r.width || r.height) && s.visibility !== 'hidden'
+              && s.display !== 'none' && Number(s.opacity) !== 0;
+          } catch (e) { return false; } };
           const inputs = Array.from(document.querySelectorAll('input,select,textarea')).slice(0, 60).map(el => ({
             tag: el.tagName.toLowerCase(), type: clean(el.getAttribute('type'), 24),
             name: clean(el.getAttribute('name'), 60), id: clean(el.id, 60),
             testid: clean(el.getAttribute('data-testid'), 60),
             aria: clean(el.getAttribute('aria-label'), 80),
-            placeholder: clean(el.getAttribute('placeholder'), 80)
+            placeholder: clean(el.getAttribute('placeholder'), 80),
+            visible: vis(el), enabled: !el.disabled, readonly: !!el.readOnly
           }));
           const buttons = Array.from(document.querySelectorAll('button,[role=button],a')).slice(0, 80).map(el => ({
             tag: el.tagName.toLowerCase(), text: clean(el.innerText, 60),
             id: clean(el.id, 60), testid: clean(el.getAttribute('data-testid'), 60),
-            aria: clean(el.getAttribute('aria-label'), 80)
+            aria: clean(el.getAttribute('aria-label'), 80),
+            visible: vis(el), enabled: !el.disabled
           })).filter(x => x.text || x.id || x.testid || x.aria);
-          return {url: location.href, title: document.title, inputs, buttons};
+          const matches = {};
+          for (const [k, s] of Object.entries(selectors || {})) {
+            if (!s) continue;
+            let nodes = []; try { nodes = Array.from(document.querySelectorAll(s)); } catch (e) {}
+            matches[k] = {count: nodes.length, first_visible: nodes.some(vis),
+                          first_enabled: nodes.some(el => !el.disabled)};
+          }
+          const loginCandidates = buttons.filter(b => /ورود|login|sign\\s*in|ثبت\\s*نام/i.test(b.text || '')).slice(0, 10);
+          return {url: location.pathname, title: clean(document.title, 80),
+                  inputs, buttons, selectors: matches,
+                  login_candidates: loginCandidates};
         }"""
-        got = self._page.evaluate(js)
-        return got if isinstance(got, dict) else {"url": self._page.url, "title": self._page.title(),
-                                                  "inputs": [], "buttons": []}
+        try:
+            self._page.wait_for_load_state("networkidle", timeout=6000)
+        except Exception:
+            pass
+        arg = dict(selectors or {})
+        last: Optional[str] = None
+        for _ in range(3):
+            before = self._page.url
+            try:
+                got = self._page.evaluate(js, arg)
+            except Exception as e:                   # noqa: BLE001
+                msg = str(e)
+                if "Execution context was destroyed" not in msg:
+                    raise
+                last = msg[:160]
+                try:
+                    self._page.wait_for_load_state("domcontentloaded", timeout=5000)
+                except Exception:
+                    pass
+                try:
+                    self._page.wait_for_timeout(300)
+                except Exception:
+                    pass
+                continue
+            if self._page.url != before:
+                # ریدایرکتِ SPA در حینِ سنجش؛ نتیجهٔ صفحهٔ قبلی معتبر نیست.
+                self._page.wait_for_timeout(300)
+                continue
+            if isinstance(got, dict):
+                return got
+            break
+        if last:
+            raise BrowserCommandError("probe: صفحه مدام در حالِ ناوبری است (%s)" % last)
+        return {"url": urlparse(self._page.url).path or "/",
+                "title": self._page.title(), "inputs": [], "buttons": [],
+                "selectors": {}, "login_candidates": []}
 
     def _do_screenshot(self, path: str) -> str:
         self._page.screenshot(path=path, full_page=False)
@@ -641,8 +737,15 @@ class PlaywrightBrowserDriver:
         except Exception:
             return []
 
+    def network(self) -> dict[str, Any]:
+        try:
+            return dict(self._call("network"))
+        except Exception:
+            return {"requests": None, "by_host": {}, "order_posts": None,
+                    "truncated": None, "source": "unavailable"}
+
     def probe(self, selectors: Optional[Mapping[str, Any]] = None) -> dict[str, Any]:
-        return self._call("probe", selectors=selectors)
+        return self._call("probe", selectors=dict(selectors or {}))
 
     def screenshot(self, path: str) -> str:
         return str(self._call("screenshot", path=path))
