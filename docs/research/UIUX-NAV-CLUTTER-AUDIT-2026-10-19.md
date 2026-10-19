@@ -3,7 +3,7 @@
 شاخه: `mission/uiux-nav-audit-2026-10-19` (پایه: `33f7d16f`، همان `github/main`).
 هیچ merge به `main` و هیچ انتشارِ نسخه‌ای انجام نشد. اسکرین‌شات‌های خام در
 `_audit/uiux-nav/` هستند (۲۳۶ PNG، چهار اندازه، در git نمی‌روند؛ ابزار
-`tools/uiux_route_probe.mts` بازتولیدشان می‌کند).
+`_audit/uiux-route-probe.mts` بازتولیدشان می‌کند).
 
 ## ۱) بند A — بازگشت/بعدی
 

@@ -100,6 +100,7 @@ CF.write_progress = lambda *a, **k: None
 SLEEPS = []
 _REAL_SLEEP = time.sleep
 CF.time.sleep = lambda s: SLEEPS.append(float(s))
+CF.rotate_ip_via_adb = lambda *a, **k: False  # آزمونِ آفلاین: هیچ کنترلِ واقعیِ دستگاه
 
 
 def ledger_checks():
