@@ -135,15 +135,24 @@ def main():
 
     # ── ۴) خواننده دیگر دروغ نمی‌فروشد ───────────────────────────────────────
     print("\n[۴] /api/chart-db")
+    # ۱۴۰۵-۰۷-۲۷، قدمِ «کندلِ مسیرِ بانک از قراردادِ مشترک» (6bb50cb8): کوئری و
+    # سازندۀِ دستیِ این مسیر جابه‌جابه‌شدنی از `candle_contract` بیرون رفتند. دو
+    # چکِ پیشین **متنِ** همان دست‌نویس را می‌خواست و با رفتنش قرمز شدند، بی‌آنکه
+    # عددی عوض شده باشد. اینجا همان دو قاعده (ستونِ last و value درِ خواندن،
+    # بی‌جعلِ last := close) رویِ قراردادِ نام‌دار + یکِ سنجشِ رفتاریِ واقعی
+    # بازنویسی شده‌اند، پس دیگر به هجّیِ کدِ api/chart.py وابسته نیستند.
     src = io.open(os.path.join(ROOT, "api", "chart.py"), encoding="utf-8").read()
     body = src[src.index("def get_chart_db"):src.index("@router.get(\"/api/patterns")]
-    ck('"last": float(r[6]) if r[6] is not None else None' in body.replace("\n            ", " "),
-       "last از ستونِ خودش خوانده می‌شود", "")
+    import candle_contract as CC  # noqa: E402
+    ck("candle_contract.SELECT_SQL" in body and "candle_contract.from_db_row(" in body,
+       "خوانندۀِ بانک کوئری و سازنده را از قراردادِ مشترک می‌گیرد (سازندۀِ دستیِ جایگاهی برنگشته)", "")
+    ck("last" in CC.DB_COLUMNS and "value" in CC.DB_COLUMNS,
+       "قراردادِ ستون‌ها، last و value را نام‌دار نگه می‌دارد", str(CC.DB_COLUMNS))
     ck("last\": float(r[4])" not in body and '"last": float(r[4])' not in body,
        "NEGATIVE CONTROL: جعلِ last := close حذف شد", "")
-    ck("SELECT date, open, high, low, close, volume, last, value FROM price_history"
-       in body.replace("\n                ", " "),
-       "کوئریِ خواننده هر دو ستون را می‌آورد", "")
+    ck("def from_db_row" in io.open(os.path.join(ROOT, "candle_contract.py"),
+                                    encoding="utf-8").read(),
+       "سازندۀِ ردیفِ بانک یکجا تعریف شده است، نه درِ هر مصرف‌کننده", "")
 
     # ── ۵) لنگرِ تعدیل به last وصل نمی‌شود (§۱-پ: B1 فاجعه است) ───────────────
     print("\n[۵] لنگرِ تعدیل")
@@ -162,6 +171,61 @@ def main():
     dp = io.open(os.path.join(ROOT, "test_tsetmc.py"), encoding="utf-8").read()
     ck(dp.count("p_last") >= 5,
        "p_last درِ هر دو نگاشتِ تابلو (سینک و تیکِ زنده) و INSERT هست", str(dp.count("p_last")))
+
+    # ── ۷) سنجشِ رفتاریِ /api/chart-db رویِ بانکِ موقت ────────────────────────
+    # چک‌هایِ [۴] متن‌محورند و تنها «قاعده» را قفل می‌کنند؛ عددِ رسیدۀِ last از
+    # ستونِ خودش باید سنجیده شود، وگرنه جایِ «سازندۀِ دستی» یکِ قراردادِ مشترک
+    # نشسته که همان اشتباه را با نامی دیگر تکرار کند.
+    print("\n[۷] /api/chart-db رفتاری (کپیِ موقت)")
+    import basis_sandbox
+    basis_sandbox.use_sandboxed_basis("price_last_value_v1070")
+    import api._core as CORE  # noqa: E402
+    import api.chart as CH  # noqa: E402
+    c, p = db_with_instruments()
+    c.executemany("INSERT INTO price_history (symbol, date, open, high, low, close,"
+                  " volume, last, value) VALUES (?,?,?,?,?,?,?,?,?)",
+                  [("فولاد", "2026-09-20", 3430.0, 3560.0, 3400.0, 3495.0, 2.5e9, 3520.0, 7.4e12),
+                   ("فولاد", "2026-09-21", 3500.0, 3520.0, 3480.0, 3500.0, 1.9e9, None, 8.1e12),
+                   # روزِ بی‌معامله: حجمِ صفر ⇒ کندل نمی‌شود، ولی شمارشِ باعلت می‌خواهد
+                   ("فولاد", "2026-09-22", 3500.0, 0.0, 0.0, 3500.0, 0.0, None, 0.0)])
+    c.commit(); c.close()
+    real_db = t.DB_PATH
+    t.DB_PATH = CH.DB_PATH = CORE.DB_PATH = p
+    try:
+        r = CH.get_chart_db("فولاد")
+        by = {k["time"]: k for k in r.get("candles") or []}
+        ck(r.get("status") == "success" and len(by) == 2,
+           "دو ردیفِ مفید کندل می‌شود و ردیفِ حجم‌صفر کندل نمی‌شود",
+           "%s | %s" % (r.get("status"), sorted(by)))
+        ck(by.get("2026-09-20", {}).get("last") == 3520.0,
+           "lastِ پاسخ همان ستونِ lastِ بانک است", str(by.get("2026-09-20")))
+        ck(by.get("2026-09-20", {}).get("closing") == 3495.0
+           and by.get("2026-09-20", {}).get("value") == 7.4e12,
+           "لنگر (پایانی) و گردش کنارِ last و دست‌نخورده می‌مانند",
+           str((by.get("2026-09-20", {}).get("closing"),
+                by.get("2026-09-20", {}).get("value"))))
+        ck(by.get("2026-09-21", {}).get("last") is None
+           and by.get("2026-09-21", {}).get("closing") == 3500.0,
+           "NEGATIVE CONTROL: بی‌last درِ بانک، ستون null است نه کپیِ پایانی",
+           str(by.get("2026-09-21")))
+        ck(r.get("dbNoTradeRows") == 1 and r.get("dbRows") == 3,
+           "حذفِ روزِ بی‌معامله با شمارشِ علت درِ پاسخ اعلام می‌شود",
+           "%s/%s" % (r.get("dbRows"), r.get("dbNoTradeRows")))
+        _keep = CC.DB_COLUMNS, CC.SELECT_SQL
+        CC.DB_COLUMNS = tuple(x for x in _keep[0] if x != "last")
+        CC.SELECT_SQL = "SELECT " + ", ".join(CC.DB_COLUMNS) + " FROM price_history"
+        try:
+            rm = CH.get_chart_db("فولاد")
+            seen = {k["time"]: k for k in rm.get("candles") or []
+                    }.get("2026-09-20", {}).get("last")
+        finally:
+            CC.DB_COLUMNS, CC.SELECT_SQL = _keep
+        moved = seen != 3520.0
+        ck(moved, "NEGATIVE CONTROL: حذفِ last از قراردادِ ستون‌ها دیده می‌شود",
+           "lastِ پاسخ با کوئریِ بی‌last: %r" % (seen,))
+    finally:
+        t.DB_PATH = CH.DB_PATH = CORE.DB_PATH = real_db
+        os.unlink(p)
 
     print(f"\nprice_last_value_v1070: {PASS} passed, {FAIL} failed")
     return 1 if FAIL else 0

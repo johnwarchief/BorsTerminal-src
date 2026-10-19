@@ -149,10 +149,11 @@ function Choice<T extends string | number>({
   );
 }
 
-function Toggle({ on, label, hint, onClick }: { on: boolean; label: string; hint?: string; onClick: () => void }) {
+function Toggle({ on, label, hint, onClick, testId }: { on: boolean; label: string; hint?: string; onClick: () => void; testId?: string }) {
   return (
     <button
       type="button"
+      data-testid={testId}
       onClick={onClick}
       aria-pressed={on}
       title={hint}
@@ -422,6 +423,22 @@ export function ChartSettingsDialog({
                   options={[0, 3, 6, 10].map((m) => ({ key: m, label: `${m}px` }))}
                   value={view.axisTickMargin}
                   onPick={(m) => setView({ axisTickMargin: m })}
+                />
+              </Row>
+              <Row label="نمایش محورِ زمان" hint="نوارِ برچسبِ تاریخ درِ پایینِ چارت">
+                <Toggle
+                  on={view.showXAxis !== false}
+                  label="محورِ زمان"
+                  testId="settings-toggle-show-x-axis"
+                  onClick={() => setView({ showXAxis: !(view.showXAxis !== false) })}
+                />
+              </Row>
+              <Row label="نمایش محورِ قیمت" hint="ستونِ برچسب‌هایِ قیمت؛ با خاموش‌کردن، جایش به بومِ کندل برمی‌گردد">
+                <Toggle
+                  on={view.showYAxis !== false}
+                  label="محورِ قیمت"
+                  testId="settings-toggle-show-y-axis"
+                  onClick={() => setView({ showYAxis: !(view.showYAxis !== false) })}
                 />
               </Row>
             </div>

@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars -- registerOverlay و registerIndicator در اعلان نوعِ npm نیامده‌اند؛ بدون any کامپایل نمی‌شود */
-import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
+import React, { useEffect, useRef, useState, useCallback, useMemo, type ReactNode } from 'react';
 import * as klinecharts from 'klinecharts';
 import { init, dispose, Chart, KLineData } from 'klinecharts';
 import { http } from '@shared/api/http';
@@ -27,8 +27,8 @@ import { nahayatNegarDarkTheme, nahayatNegarLightTheme } from '../lib/chartTheme
 import { useUiStore } from '@shared/stores/uiStore';
 import {
   AdjustmentCapability, AdjustmentMode, AdjustFactor, CorporateAction,
-  applyAdjustmentToCandles, functionalGapNote, getAdjustmentFactor,
-  mapBackendAdjustEvents, pricePrecisionFor, readAdjustmentCapability
+  applyAdjustmentToCandles, DEFAULT_ADJUSTMENT_MODE, functionalGapNote, getAdjustmentFactor,
+  mapBackendAdjustEvents, migrateAdjustmentMode, readAdjustmentCapability
 } from '../lib/adjustments';
 import { aggregateCandles, timeframePeriod, resolveTimeframe, INTRADAY_CAPABILITY, rangeVisibleBars, VIEW_RANGES, type Timeframe } from '../lib/timeframe';
 import { buildBarClick, type OverlayRef } from '../lib/barClicks';
@@ -104,6 +104,7 @@ export interface ChartProps {
   replayActive?: boolean;
   onToggleReplay?: () => void;
   onOpenSettings?: () => void;
+  settingsSlot?: ReactNode;
   onSymbolChange?: (sym: SymbolInfo) => void;
   onTimeframeChange?: (tf: Timeframe) => void;
   onAdjustmentChange?: (adj: AdjustmentMode) => void;
@@ -117,7 +118,6 @@ const CHART_TYPES = [
   'candle_solid', 'candle_stroke', 'candle_up_stroke', 'candle_down_stroke',
   'ohlc', 'area', 'line', 'heikin_ashi', 'renko', 'kagi', 'pnf',
 ];
-const ADJUSTMENT_MODES: AdjustmentMode[] = ['combined', 'none', 'performance'];
 type PriceScaleName = 'normal' | 'logarithm' | 'percentage';
 const PRICE_SCALES: string[] = ['normal', 'logarithm', 'percentage'];
 
@@ -131,9 +131,11 @@ function legendRule(enabled: boolean | undefined, always: boolean | undefined): 
   return always === true ? 'always' : 'follow_cross';
 }
 
-/** اعشارِ محورِ قیمت (#166): 'auto' همان منطقِ تعدیل است؛ عددِ صریح اولویت دارد */
-function pricePrecisionOf(precision: ChartView['pricePrecision'] | undefined, mode: AdjustmentMode): number {
-  return typeof precision === 'number' ? precision : pricePrecisionFor(mode);
+/** اعشارِ محورِ قیمت (#166): 'auto' همان ریالِ بی‌ممیز است؛ عددِ صریح اولویت دارد.
+ *  هر دو حالتِ سریِ قیمت ریالی‌اند (خام / عملکردی)، پس «auto» به حالت وابسته نیست —
+ *  نمایِ شاخصِ ۱۰۰ که این عدد را برایِ یکِ حالت ۲ می‌کرد از رابط بیرون رفت. */
+function pricePrecisionOf(precision: ChartView['pricePrecision'] | undefined): number {
+  return typeof precision === 'number' ? precision : 0;
 }
 
 /** شش مطالعۀ همیشگیِ منو؛ نامشان در موتور ثبت است و در کاتالوگ TV نمی‌آید */
@@ -318,6 +320,7 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
   onEngineChange,
   onToggleReplay,
   onOpenSettings,
+  settingsSlot,
   onSymbolChange,
   onTimeframeChange,
   onAdjustmentChange,
@@ -343,11 +346,18 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
    *  پرچمِ «قفل درگ محور» بی‌صدا می‌میرد — همان نقصِ D-1ِ قدمِ صفر. */
   const applyAxisOverride = useCallback((chart: Chart, name: string) => {
     const dragLocked = useFtsConfigStore.getState().view.axisDragLock === true;
+    // قفلِ مقیاس باید بداند محور درِ کدام فضا است؛ بی‌این، درِ لگاریتمی
+    // realFrom/realTo درِ فضایِ ریال می‌ماند و همهٔ کندل‌ها بیرونِ پن افتاد
+    // (سنجشِ زنده: `_audit/chart_log_cause.js`).
+    scaleLock.setSpace(name === 'logarithm' || name === 'percentage'
+      ? (name as 'logarithm' | 'percentage') : 'normal');
+    // `createRange` درِ override جایِ تبدیلِ خودِ محور را می‌گیرد، پس فقط درِ فضاهایی
+    // که بازتولیدش می‌کنیم می‌فرستیمش؛ درِ «درصدی» تبدیلِ vendor را نمی‌شکنیم.
     chart.overrideYAxis({
       paneId: 'candle_pane',
       name,
       scrollZoomEnabled: !dragLocked,
-      createRange: scaleLock.createRange,
+      ...(name === 'percentage' ? {} : { createRange: scaleLock.createRange }),
     } as never);
     chart.overrideXAxis({ scrollZoomEnabled: !dragLocked } as never);
   }, [scaleLock]);
@@ -394,9 +404,14 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
   // استیت‌های نوار بالا
   const [activeTimeframe, setActiveTimeframe] = useState<Timeframe>('D');
   const [activeCandleType, setActiveCandleType] = useState<string>('candle_solid');
-  // پیش‌فرضِ مالک (#186): «تعدیل عملکردی». لایهٔ FTS خود را به فضایِ همین
-  // نمایش می‌برد، پس تغییرِ این مقدار نباید چیزی را جابه‌جا یا ناپدید کند.
-  const [activeAdjustment, setActiveAdjustment] = useState<AdjustmentMode>('performance');
+  // یکی از دو حالتِ سریِ قیمت: `none` (خام) یا `combined` (عملکردی). رأیِ مالک (#186)
+  // محورِ **ریالیِ** تعدیل‌شده بود — همان‌طور که رهاورد آن را با برچسبِ O 4,410 می‌رسمد.
+  // نمایِ شاخصِ ۱۰۰ که این را `performance` می‌گرفت و فولاد را با محورِ ۶۵٬۰۰۰ تا
+  // ۱۶۶٬۰۰۰ نشان می‌داد از رابط و کد بیرون رفت؛ مبنایِ درست از `DEFAULT_ADJUSTMENT_MODE`
+  // می‌آید تا دو جا واگرا نشود.
+  // لایهٔ FTS خود را به فضایِ همین نمایش می‌برد، پس تغییرِ این مقدار نباید چیزی را
+  // جابه‌جا یا ناپدید کند.
+  const [activeAdjustment, setActiveAdjustment] = useState<AdjustmentMode>(DEFAULT_ADJUSTMENT_MODE);
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
   const [showIndicatorsModal, setShowIndicatorsModal] = useState<boolean>(false);
   const [templateName, setTemplateName] = useState<string>('');
@@ -580,16 +595,11 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
     chart.scrollToRealTime();
   }, []);
 
-  // سریِ «قیمت» برای محاسبات: تحلیل FTS همیشه در ریال حساب می‌شود، حتی وقتی نمایش
-  // روی نمایِ بازدهی است. بی‌این تفکیک، شاخصِ ۱۰۰ جایش را روی قیمتِ ۳۰٬۰۰۰ می‌گیرد
-  // و منطقِ قیمت‌محور بی‌صدا یک تحلیلِ بی‌معنا تولید می‌کند.
+  // سریِ «قیمت» برای محاسبات: تحلیل FTS همیشه در ریال حساب می‌شود. تا پیش از این،
+  // نمایِ شاخصِ ۱۰۰ جایش را روی قیمتِ ۳۰٬۰۰۰ می‌گرفت و منطقِ قیمت‌محور بی‌صدا یک
+  // تحلیلِ بی‌معنا تولید می‌کرد؛ آن نمایش دیگر حالتِ سری نیست، پس اینجا یک سری هست.
   // در بازپخش همین سری برش می‌خورد، وگرنه سطحِ تحلیل روی کندل‌هایِ پنه‌رسمده می‌ماند.
-  const analysisCandles = useMemo(
-    () => activeAdjustment === 'performance'
-      ? applyAdjustmentToCandles(shownRawCandles, adjustFactors, 'combined')
-      : adjustedCandles,
-    [activeAdjustment, adjustedCandles, shownRawCandles, adjustFactors]
-  );
+  const analysisCandles = adjustedCandles;
 
   // تحلیل FTS: همان شیئی که پنلِ «وضعیت FTS» می‌خواند (#161). قبلاً چارت با
   // `analyzeFts` یک موتورِ دوم داشت — کمربندِ فیبو را از ۱۰۰ کندلِ آخر می‌گرفت
@@ -775,15 +785,33 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
   const candlesRef = useRef<KLineData[]>(displayCandles);
   candlesRef.current = displayCandles;
   const drawHistRef = useRef(initHistory<StoredOverlay[]>([]));
+  // ردیف‌هایی که موتور تمپلیتشان را نمی‌شناسد. ref است چون سه جایِ مختلف باید به آن
+  // دسترسی داشته باشند: بازگردانی (پُرکردن)، snapshot (حفظ) و هر حذفِ صریحِ کاربر
+  // (خالی‌کردن) — بی‌خالی‌کردنِ پس ازِ حذف، ردیفِ پاک‌شده درِ انبار می‌ماند و پس ازِ
+  // بازخوانی برمی‌گردد (سنجشِ ماتریسِ v4: موتور ۱، انبار ۲ درِ «خط اطلاعاتی» و «خط عمودی»).
+  const unrestorableRef = useRef<StoredOverlay[]>([]);
+  // وعدهٔ ثبتِ تمپلیت‌هایِ TV (درِ effectِ سازندۀِ چارت پر می‌شود)
+  const tvToolsReadyRef = useRef<Promise<unknown> | null>(null);
 
   useEffect(() => {
     const chart = chartRef.current;
     if (!chart) return;
 
+    // ردیف‌هایی که موتور تمپلیتشان را نمی‌شناسد: createOverlay بی‌صدا null می‌دهد،
+    // پس آن ترسیم درِ چارت نمی‌نشیند و اگر اینجا نگهش نداریم، tickِ بعدی‌اش از
+    // انبار پاک می‌کند (سنجشِ ۱۴۰۵-۰۷-۲۷: رسمِ «الگوی هارمونیک» پس ازِ یکِ
+    // بازخوانی کامل از بین می‌رفت).
+    let restoreSettled = false;
+    let cancelled = false;
+    unrestorableRef.current = [];
+
     const snapshot = (): StoredOverlay[] => {
       try {
-        const all = chart.getOverlays() as { id?: string; name?: string; groupId?: string; points?: unknown; styles?: unknown; extendData?: unknown }[];
-        return all
+        const all = chart.getOverlays() as { id?: string; name?: string; groupId?: string;
+          points?: unknown; styles?: unknown; extendData?: unknown; zLevel?: number;
+          needDefaultPointFigure?: boolean; needDefaultXAxisFigure?: boolean;
+          needDefaultYAxisFigure?: boolean }[];
+        const rows: StoredOverlay[] = all
           .filter((o) => o && typeof o.name === 'string' &&
             (o.groupId === 'fts-draw' || (!o.groupId && !['VOL', 'MA', 'EMA', 'RSI', 'MACD', 'BOLL', 'fts_strategy_overlays', 'fts_pattern_overlays', 'fts_corp_actions', 'fts_e3_overlays'].includes(o.name))))
           .map((o) => ({
@@ -792,17 +820,55 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
             points: (o.points ?? []) as StoredOverlay['points'],
             ...(o.styles ? { styles: o.styles as Record<string, unknown> } : {}),
             ...(o.extendData ? { extendData: o.extendData as Record<string, unknown> } : {}),
+            // zLevel و سه پرچمِ figure هم با ترسیم می‌آیند: بی‌zLevelِ درست،
+            // ترسیمِ بازگردانده‌شده زیرِ لایه‌هایِ موتور می‌ماند و ماوس دیگر به آن
+            // نمی‌رسد؛ بی‌پرچم‌ها هم محورِ x/y برچسبِ اضافه می‌گیرد
+            // (سنجشِ _scratch/live/probe_fields.json: ۷۵ → ۰ پس ازِ بازخوانی).
+            ...(typeof o.zLevel === 'number' ? { zLevel: o.zLevel } : {}),
+            ...(o.needDefaultPointFigure === undefined ? {} : { needDefaultPointFigure: o.needDefaultPointFigure }),
+            ...(o.needDefaultXAxisFigure === undefined ? {} : { needDefaultXAxisFigure: o.needDefaultXAxisFigure }),
+            ...(o.needDefaultYAxisFigure === undefined ? {} : { needDefaultYAxisFigure: o.needDefaultYAxisFigure }),
           }));
+        for (const u of unrestorableRef.current) {
+          const seen = rows.some((r) => r.name === u.name &&
+            JSON.stringify(r.points) === JSON.stringify(u.points));
+          if (!seen) rows.push(u);
+        }
+        return rows;
       } catch (e) {
         void e;
         return [];
       }
     };
 
+    // همان callbackهایِ تعامل که نوارِ ابزار هنگامِ ساختِ ترسیم می‌دهد. بی‌این‌ها
+    // ترسیمِ بازگردانده‌شده «بی‌صدا»ست: هرگز selected نمی‌شود (نوارِ شناسایی و
+    // میانبرِ Delete به آن نمی‌رسند) و چون `onPressedMoveStart` زنجیرِ اسکرول را
+    // نبسته، کشیدنِ ماوس رویِ آن به‌جایِ بردنِ ترسیم، چارت را جابه‌جا می‌کند —
+    // یعنی امتیازهایِ `points` درِ داده دست‌نخورده می‌مانند. سنجش:
+    // `_scratch/live/probe_edit2.js` (تازہ جابه‌جا شد، بازیابی‌شده تکان نخورد) و
+    // `_scratch/live/probe_fields.json`.
+    const interactionOf = () => ({
+      onDrawStart: () => { chart.setScrollEnabled(false); },
+      onDrawEnd: () => { chart.setScrollEnabled(true); },
+      onPressedMoveStart: () => { chart.setScrollEnabled(false); },
+      onPressedMoveEnd: () => { chart.setScrollEnabled(true); },
+      onSelected: (params: any) => {
+        if (params?.overlay?.id) {
+          setSelectedOverlayId(String(params.overlay.id));
+          setSelectedOverlayName(String(params.overlay.name || ''));
+        }
+      },
+    });
+
     const applySnapshot = (rows: StoredOverlay[]) => {
       try {
         chart.removeOverlay({ groupId: 'fts-draw' });
-        rows.forEach((o) => chart.createOverlay({ ...o, groupId: 'fts-draw' } as never));
+        unrestorableRef.current = [];
+        rows.forEach((o) => {
+          const id = chart.createOverlay({ ...o, groupId: 'fts-draw', ...interactionOf() } as never) as string | null;
+          if (!id) unrestorableRef.current.push(o);
+        });
       } catch (e) {
         void e;
       }
@@ -816,12 +882,25 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
     }
 
     // ۲) بازیابی ترسیم‌های اختصاصی این نماد (کلید اختصاصی fts.drawings.v1.{symbol} یا تایم‌فریم)
-    const symDrawings = loadSymbolDrawings(currentSymbol);
-    const restored = symDrawings.length > 0 ? symDrawings : loadDrawings(currentSymbol, activeTimeframe);
-    if (restored.length > 0) {
-      applySnapshot(restored);
-    }
-    drawHistRef.current = initHistory(restored);
+    //    پیش ازِ applySnapshot باید ثبتِ تمپلیت‌هایِ TV تمام شده باشد، وگرنه
+    //    createOverlay برایِ آن نام‌ها null می‌دهد و رسمِ ذخیره‌شده نابود می‌شود.
+    const runRestore = async () => {
+      try {
+        await (tvToolsReadyRef.current ?? Promise.resolve());
+        if (cancelled || chartRef.current !== chart) return;
+        const symDrawings = loadSymbolDrawings(currentSymbol);
+        const restored = symDrawings.length > 0 ? symDrawings : loadDrawings(currentSymbol, activeTimeframe);
+        if (restored.length > 0) {
+          applySnapshot(restored);
+        }
+        drawHistRef.current = initHistory(restored);
+      } finally {
+        // اگر درِ همین فاصلۀ اندک نماد عوض شد، این دور حقِ بازنویسیِ انبار را ندارد؛
+        // effectِ تازه برایِ خودش از نو «منتظرِ بازیابی» است.
+        if (!cancelled) restoreSettled = true;
+      }
+    };
+    void runRestore();
 
     const maybeSnap = () => {
       if (!magnetRef.current) return;
@@ -847,6 +926,9 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
 
     // ۳) ذخیرهٔ خودکار تغییرات ترسیم در دو سطح نماد و تایم‌فریم + اعمال مگنت
     const tick = () => {
+      // تا بازیابیِ همین نماد تمام نشده، انبار بازنویسی نمی‌شود: وگرنه اولین
+      // tick وضعِ «چارتِ هنوز ترسیمي ندارد» را جایِ دادهٔ کاربر می‌گذارد
+      if (!restoreSettled) return;
       maybeSnap();
       const snap = snapshot();
       const h = drawHistRef.current;
@@ -871,6 +953,8 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
       }
 
       if (ev.key === 'Delete' || ev.key === 'Backspace') {
+        // حذفِ صریحِ کاربر ⇒ هیچ ردیفِ محفوظِ ناشناس حقِ برگشتن ندارد
+        unrestorableRef.current = [];
         try {
           const selectedId = selectedOverlayIdRef.current;
           if (selectedId) {
@@ -901,6 +985,7 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
     window.addEventListener('keydown', onKey);
 
     return () => {
+      cancelled = true;
       clearInterval(timer);
       window.removeEventListener('keydown', onKey);
     };
@@ -926,8 +1011,11 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
     // بادبزن، پوزیشن لانگ/شورت، مثلث و فلش). عمداً lazy import است: بستهٔ
     // تمپلیت‌ها سنگین است و پیش از این هرگز در این چارت ثبت نمی‌شد — تولبار
     // فقط نامشان را نشان می‌داد و createOverlay بی‌صدا هیچی می‌ساخت.
+    // وعدهٔ ثبت درِ tvToolsReadyRef می‌نشیند تا effectِ ماندگاری پیش ازِ
+    // applySnapshot منتظرش بماند (بدونِ این، رسمِ این ابزارها پس ازِ یکِ
+    // بازخوانی بی‌صدا نابود می‌شد — شاهد: _scratch/live/probe_reload_loss.json).
     if (registerOverlayFn) {
-      void import('../../lib/tvTools')
+      tvToolsReadyRef.current = import('../../lib/tvTools')
         .then(({ registerTvOverlays }) => {
           registerTvOverlays({
             registerOverlay: registerOverlayFn,
@@ -937,6 +1025,7 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
         })
         .catch(() => {
           // تمپلیتی ثبت نشد: همان تولبارِ قبلی بدونِ ابزارهای پیشرفته
+          return null;
         });
     }
 
@@ -1030,7 +1119,7 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
     // تنظیم سمبل و بازه زمانی
     chart.setSymbol({
       ticker: currentSymbol,
-      pricePrecision: pricePrecisionOf(ftsView?.pricePrecision, activeAdjustment),
+      pricePrecision: pricePrecisionOf(ftsView?.pricePrecision),
       volumePrecision: 0
     });
     chart.setPeriod(timeframePeriod(activeTimeframe));
@@ -1141,6 +1230,12 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
       ? Math.max(0, Math.min(24, Number(ftsView?.axisTickMargin)))
       : 3;
 
+    // ۱.۶ نمایش/مخفی‌کردنِ خودِ محورها. `show:false` درِ v10 تنها داخلِ شاخۀِ auto-size
+    // خوانده می‌شود (index.esm.js:10955 / :1204)، پس اندازه هم صفر می‌شود؛ بی‌این،
+    // خاموش‌کردن فقط state بود و جایِ محورِ ۳۲px یا ۵۴px سرِ جای خود می‌ماند.
+    const showXAxis = ftsView?.showXAxis !== false;
+    const showYAxis = ftsView?.showYAxis !== false;
+
     // ۲. نگاشت قطعی نوع چارت به یکی از ۶ مقدار مجاز کتابخانه KlineCharts v10
     // «خط» همان اریا است با بی‌رنگِ زیرِ خط؛ «Heikin-Ashi» از سریِ renderCandles
     // می‌آید و اینجا نوعش کندلِ معمولی می‌ماند.
@@ -1194,7 +1289,8 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
           activeBackgroundColor: 'rgba(41, 98, 255, 0.2)'
         },
         xAxis: {
-          size: 32,
+          show: showXAxis,
+          size: showXAxis ? 32 : 0,
           axisLine: {
             show: true,
             color: isLight ? '#e0e3eb' : '#2a2e39',
@@ -1330,6 +1426,8 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
           }
         },
         yAxis: {
+          show: showYAxis,
+          size: showYAxis ? 'auto' : 0,
           reverse: !!ftsView?.yAxisReverse,
           inside: !!ftsView?.yAxisInside,
           position: ftsView?.priceScalePos ?? 'right',
@@ -1363,17 +1461,14 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
         (chart as any).setTimezone?.(ftsView.timezone);
       }
 
-      // ۴. مقیاس قیمت — استفاده از نام استاندارد رجیسترشده در v10 (normal / logarithm / percentage)
-      // در «تعدیل عملکردی» خودِ دیتا شاخصِ بازدهی است (نخستین کندل = ۱۰۰). اگر محور
-      // هم‌زمان percentage بماند، دو تبدیل روی یک عدد می‌نشیند و نمودار ۰٫۰۱٪ نشان
-      // می‌دهد — پس اینجا محور عادی/لگاریتمی می‌ماند و درصد را داده می‌سازد.
-      const yAxisName = activeAdjustment === 'performance'
-        ? (ftsPriceScale === 'logarithm' ? 'logarithm' : 'normal')
-        : ftsPriceScale === 'logarithm'
-        ? 'logarithm'
-        : ftsPriceScale === 'percentage'
-        ? 'percentage'
-        : 'normal';
+      // ۴. مقیاس قیمت — نامِ استانداردِ رجیسترشده در v10 (normal / logarithm / percentage).
+      // این تنها انتخابِ مقیاس است: نوعِ *نمایش*، نه نوعِ سریِ قیمت. پیش از این، حالتِ
+      // شاخصِ ۱۰۰ اینجا را هم عوض می‌کرد و «درصدِ درصد» (۰٫۰۱٪) می‌ساخت؛ با بیرون‌رفتنِ
+      // آن حالت، مقیاس فقط از تنظیمِ خودی خوانده می‌شود.
+      const yAxisName: PriceScaleName =
+        ftsPriceScale === 'logarithm' ? 'logarithm'
+          : ftsPriceScale === 'percentage' ? 'percentage'
+            : 'normal';
 
       // مقیاس و قفلِ درگ از یک نقطه — توضیحِ «چرا با هم»: `applyAxisOverride`
       applyAxisOverride(chart, yAxisName);
@@ -1413,7 +1508,7 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
     try {
       chart.setSymbol({
         ticker: currentSymbol,
-        pricePrecision: pricePrecisionOf(ftsView?.pricePrecision, activeAdjustment),
+        pricePrecision: pricePrecisionOf(ftsView?.pricePrecision),
         volumePrecision: 0,
       });
     } catch {
@@ -1435,7 +1530,7 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
 
     chart.setSymbol({
       ticker: currentSymbol,
-      pricePrecision: pricePrecisionOf(ftsView?.pricePrecision, activeAdjustment),
+      pricePrecision: pricePrecisionOf(ftsView?.pricePrecision),
       volumePrecision: 0
     });
     chart.setPeriod(timeframePeriod(activeTimeframe));
@@ -1942,6 +2037,10 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
         lock?: boolean;
         styles?: Record<string, unknown>;
         extendData?: Record<string, unknown>;
+        zLevel?: number;
+        needDefaultPointFigure?: boolean;
+        needDefaultXAxisFigure?: boolean;
+        needDefaultYAxisFigure?: boolean;
       }[];
       const snap: StoredOverlay[] = all
         .filter((o) => o?.groupId === 'fts-draw' && o?.name && Array.isArray(o.points))
@@ -1952,6 +2051,10 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
           lock: !!o.lock,
           styles: o.styles,
           extendData: o.extendData,
+          zLevel: typeof o.zLevel === 'number' ? o.zLevel : undefined,
+          needDefaultPointFigure: o.needDefaultPointFigure,
+          needDefaultXAxisFigure: o.needDefaultXAxisFigure,
+          needDefaultYAxisFigure: o.needDefaultYAxisFigure,
         }));
       if (snap.length > 0) {
         saveSymbolDrawings(currentSymbol, snap);
@@ -2056,8 +2159,11 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
     if (t.candleType && t.candleType !== activeCandleType && CHART_TYPES.includes(t.candleType)) {
       handleCandleTypeChange(t.candleType);
     }
-    if (t.adjustment && ADJUSTMENT_MODES.includes(t.adjustment as AdjustmentMode) && t.adjustment !== activeAdjustment) {
-      handleAdjustmentChange(t.adjustment as AdjustmentMode);
+    // قالب‌هایِ قدیمی ممکن است رشته‌یِ حالتِ حذف‌شده را نگه دارند؛ کنترل‌شده کوچکت
+    // می‌شود تا یکِ قالبِ کهنه چارت را با سریِ نامعلوم باز نکند.
+    const tMode = migrateAdjustmentMode(t.adjustment);
+    if (tMode && tMode !== activeAdjustment) {
+      handleAdjustmentChange(tMode);
     }
     if (t.priceScale && PRICE_SCALES.includes(t.priceScale) && chart) {
       const scale = t.priceScale as PriceScaleName;
@@ -2243,6 +2349,8 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
     }
 
     if (overlayType === 'eraser') {
+      // حذفِ صریحِ کاربر: دیگر هیچ ردیفِ «ناشناس» حقِ حفظ شدن ندارد
+      unrestorableRef.current = [];
       chart.removeOverlay({ groupId: 'fts-draw' });
       setSelectedOverlayId(null);
       flushDrawings();
@@ -2378,6 +2486,8 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
 
   const handleDeleteSelectedOverlay = () => {
     if (chartRef.current && selectedOverlayId) {
+      // حذفِ صریحِ کاربر، ردیفِ ناشناسِ محفوظ را هم با خودش می‌برد
+      unrestorableRef.current = [];
       chartRef.current.removeOverlay({ id: selectedOverlayId } as never);
       setSelectedOverlayId(null);
     }
@@ -2385,6 +2495,7 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
 
   // پاک‌سازی تمام ترسیم‌های اختصاصی نماد
   const handleClearDrawings = () => {
+    unrestorableRef.current = [];
     if (chartRef.current) {
       chartRef.current.removeOverlay({ groupId: 'fts-draw' });
       drawHistRef.current = initHistory([]);
@@ -2512,6 +2623,7 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
         isFullscreen={isFullscreen}
         onToggleFullscreen={handleToggleFullscreen}
         onOpenSettings={onOpenSettings}
+        settingsSlot={settingsSlot}
         onTakeSnapshot={handleTakeSnapshot}
         compareSymbol={compareSymbol}
         compareBusy={compareBusy}

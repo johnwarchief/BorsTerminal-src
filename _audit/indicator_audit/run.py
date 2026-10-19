@@ -358,6 +358,11 @@ def main():
             % (diff, min(len(sat_closes), len(iso_closes))))
 
     # ── پروبِ قراردادِ سریِ FTS (input price) ──────────────────────────────
+    # این پروب set_basis می‌زند و درِ پایان «closing» را ول می‌کرد — رویِ فایلِ
+    # تنظیمِ واقعیِ محصول. پیش ازِ هر set_basis، مسیر به جعبۀِ موقت می‌رود.
+    sys.path.insert(0, os.path.join(ROOT, "dev"))
+    import basis_sandbox
+    basis_sandbox.use_sandboxed_basis("indicator_audit")
     import price_basis as PB
     probe = [{"time": "2026-01-02", "open": 100.0, "high": 110.0, "low": 95.0,
               "closing": 105.0, "close": 105.0, "last": 108.0, "volume": 10.0}]

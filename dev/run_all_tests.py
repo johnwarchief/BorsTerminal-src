@@ -185,6 +185,12 @@ SUITES = [
     ('dev/fts_defaults_parity_guard.py', 'FTS guide defaults: FE drawer mirrors the server'),
     ('dev/test_hourglass_settings_v1.py', 'hourglass RSI period, oversold threshold and MA52 mode are configurable'),
     ('dev/weekly_veto_guard.py',      'weekly downtrend/neutral is a hard veto; no-data is not'),
+    # مأموریتِ ۱۴۰۵-۰۷-۲۷: پیوتِ Minor نباید روندِ ماژور را برگرداند، داورِ جهت همان
+    # `_fts_classify_trend` می‌ماند (اثباتِ بایت‌به‌بایت با نسخۀِ a853cc75)، کندلِ
+    # تکمیل‌نشده درِ ساختارِ جهت نمی‌نشیند و `provisional` رأی یا حکمِ قیف را عوض
+    # نمی‌کند. بی‌شبکه و بی‌market.db — همه فیکسچر؛ سنجشِ دادهٔ واقعی جداست
+    # (`_audit/major_swing_before_after.py`).
+    ('dev/major_swing_trend_v1.py',   'major-swing trend grading: System 1 judge preserved, no lookahead, provisional is information only'),
     # وتوی مجمع (رأیِ مالک، نه چارت): برچسبِ جدول و وتوی اسکرینر باید یک افق و یک
     # پنجرۀ تقویم داشته باشند، و وتو بیرونِ کشِ ۱۲ ساعته حساب شود. بی‌شبکه —
     # هم تقویم و هم کشِ اسکرینر جعل می‌شوند.
@@ -678,6 +684,14 @@ JS_SUITES = [
 # فایلِ generated هم سبز بماند و «تست به‌خاطر نبودِ داده شکست» رخ ندهد.
 FIXTURE_GEN = 'dev/make_fts_ui_fixture.py'
 
+#: دادهٔ مرجعِ این سوئیت‌ها عمداً در Git نیست (gitignored) و در clone تازه هم
+#: نیست. نبودِ فایل = SKIP صریح با نامِ فایل، نه FAILِ محیطی و نه سبزِ بی‌سنجش.
+#: با حضورِ فایل، همان سوئیت کامل و بی‌تغییر اجرا می‌شود.
+REQUIRES = {
+    'dev/test_adjustment_engine_v1.py': '_audit/ra365_ref_bars.json',
+    'dev/db_housekeeping.py --selftest': 'market.db.lzma',
+}
+
 
 env = dict(os.environ, PYTHONIOENCODING='utf-8')
 bad = []
@@ -717,7 +731,13 @@ def run(argv, label):
 
 # Data-Lifecycle: برخی سوئیت‌ها آرگومان می‌گیرند (مثلاً --selftest)؛
 # script.split() مسیر و آرگومان‌ها را از هم جدا می‌کند.
+skipped = []
 for script, label in SUITES:
+    need = REQUIRES.get(script)
+    if need and not os.path.exists(need.replace('/', os.sep)):
+        skipped.append((label, need))
+        print('  SKIP %-40s (fixture missing: %s)' % (label, need))
+        continue
     run([sys.executable] + [a.replace('/', os.sep) for a in script.split()], label)
 if os.path.exists(FIXTURE_GEN):
     run([sys.executable, FIXTURE_GEN.replace('/', os.sep)], 'fixture: fts_v10 payloads')
@@ -725,8 +745,12 @@ for script, label in JS_SUITES:
     run(['node', script.replace('/', os.sep)], label)
 
 total_suites = len(SUITES) + len(JS_SUITES) + (1 if os.path.exists(FIXTURE_GEN) else 0)
-print('\n%d suite counted, %d silent (exit-code only)' % (total_suites - len(uncounted), len(uncounted)))
+print('\n%d suite counted, %d silent (exit-code only), %d skipped (fixture missing)' % (
+    total_suites - len(uncounted) - len(skipped), len(uncounted), len(skipped)))
 if uncounted:
     print('  silent: ' + ', '.join(uncounted))
+if skipped:
+    for label, need in skipped:
+        print('  skip: %s (%s)' % (label, need))
 print('\n%s' % ('ALL SUITES PASSED' if not bad else 'FAILED: ' + ', '.join(bad)))
 sys.exit(1 if bad else 0)

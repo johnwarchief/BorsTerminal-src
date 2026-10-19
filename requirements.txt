@@ -19,3 +19,7 @@ pythonnet
 openpyxl==3.1.5
 python-docx==1.2.0
 reportlab==5.0.1
+# ابزارِ سنجشِ جزوه (tools/notebook_evidence.py) جزوهٔ PDF را با همین می‌خواند؛
+# اعلام‌نشده بود پس درِ محیطِ تازه `dev/fts_notebook_examples_v1089.py` ده سنجه‌اش
+# صفر‌بایت می‌شد. این تنها مصرف‌کننده‌اش است (درِ EXE نمی‌رود، پس hiddenimports لازم ندارد).
+pypdfium2==5.14.0
