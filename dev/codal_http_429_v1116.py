@@ -101,6 +101,7 @@ SLEEPS = []
 _REAL_SLEEP = time.sleep
 CF.time.sleep = lambda s: SLEEPS.append(float(s))
 CF.rotate_ip_via_adb = lambda *a, **k: False  # آزمونِ آفلاین: هیچ کنترلِ واقعیِ دستگاه
+CF._control_sleep = lambda total, slice_=5.0: (SLEEPS.append(float(total)), "ok")[1]
 
 
 def ledger_checks():
