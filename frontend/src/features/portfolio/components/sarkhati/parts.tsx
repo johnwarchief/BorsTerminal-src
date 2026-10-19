@@ -204,3 +204,14 @@ export function Note({ label, testId, children }: {
     </details>
   );
 }
+
+/** کلاسِ مشترکِ چیپ‌هایِ «قدم» و «ابزارهایِ حرفه‌ای» — یک منبعِ استایل برایِ هر
+ *  دو ردیف، تا چیدنِ دوباره‌شده درِ `SarkhatiProTools` خواهرِ همِ خودش باشد.
+ *  `on` = پنلِ باز، `suggested` = مقصدِ پیشنهادیِ «قدمِ شما». */
+export function chipClass(on: boolean, suggested: boolean): string {
+  return 'flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-2xs font-bold '
+    + 'transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 '
+    + (on ? 'border-neon-cyan bg-neon-cyan/15 text-neon-cyan'
+      : suggested ? 'border-accent-yellow/60 bg-accent-yellow/10 text-accent-yellow'
+        : 'border-border-c/60 text-text-secondary hover:bg-bg-card hover:text-text-primary');
+}

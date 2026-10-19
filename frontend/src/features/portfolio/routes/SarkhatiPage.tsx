@@ -17,19 +17,27 @@
 //  • قابلیتِ معتبری حذف نشده: هرچی ازِ صفحهٔ پیشین رفتنِ چشم بود، به
 //    «ابزارهایِ حرفه‌ای» یا بازشونده رفته — نه به سطلِ زباله.
 //
+// لایۀ jev-ui (2026-10-19): فقط ردیفِ ثانویِ «ابزارهایِ حرفه‌ای» و یک خطِ
+// راهنمایِ *اضافه* از آن می‌آیند (`SarkhatiProTools`). ترتیبِ قدم‌هایِ اصلی،
+// فرمِ سفارش، دروازۀِ ارسال و هیچ پیامِ ضروری به آن وابسته نیست؛ resolverِ
+// آن‌جا هم قاعدۀِ قطعیِ خودی است، نه مدلِ شبکه‌ای (`lib/jevSarkhati.ts`).
+//
 // نشانی: `#/sarkhati` (Hash Router) — refresh و لینکِ مستقیم کار می‌کند.
 import { useEffect, useMemo, useState } from 'react';
 import { useMarketFeedShared } from '@shared/api/marketFeed';
 import { toFaDigits } from '@shared/lib/fmt';
 import { useSymbolStore } from '@shared/stores/symbolStore';
-import { useExecutionLedger, useExecutionStatus, useExecutionTimings } from '../lib/orderClient';
+import { useExecutionLedger, useExecutionStatus, useExecutionTimings, phaseOf } from '../lib/orderClient';
 import { deriveStep, statusLine, panelLabel, stepIndex,
   type SarkhatiPanel, type SarkhatiStep } from '../lib/sarkhatiFlow';
+import { appStateForJev } from '../lib/jevSarkhati';
 import { useSarkhatiFormStore } from '../stores/sarkhatiFormStore';
 import { ExecutionPanel } from '../components/ExecutionPanel';
 import { SarkhatiConnectionCard } from '../components/sarkhati/SarkhatiConnectionCard';
 import { SarkhatiMonitorCard } from '../components/sarkhati/SarkhatiMonitorCard';
 import { SarkhatiPipeline } from '../components/sarkhati/SarkhatiPipeline';
+import { SarkhatiProTools } from '../components/sarkhati/SarkhatiProTools';
+import { chipClass } from '../components/sarkhati/parts';
 import { SarkhatiRiskCard } from '../components/sarkhati/SarkhatiRiskCard';
 import { SarkhatiScheduleCard } from '../components/sarkhati/SarkhatiScheduleCard';
 import { SarkhatiStatusStrip } from '../components/sarkhati/SarkhatiStatusStrip';
@@ -110,10 +118,7 @@ export default function SarkhatiPage() {
       <button key={id} type="button" role="tab" aria-selected={on}
         data-testid={testId} data-suggested={isSuggested ? 'true' : 'false'}
         onClick={() => setLanded(id)}
-        className={`flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-2xs font-bold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 ${
-          on ? 'border-neon-cyan bg-neon-cyan/15 text-neon-cyan'
-            : isSuggested ? 'border-accent-yellow/60 bg-accent-yellow/10 text-accent-yellow'
-              : 'border-border-c/60 text-text-secondary hover:bg-bg-card hover:text-text-primary'}`}>
+        className={chipClass(on, isSuggested)}>
         {n != null ? (
           <span className={`num grid h-4 w-4 place-items-center rounded-md border text-3xs font-black ${
             on ? 'border-neon-cyan/50 bg-neon-cyan/20' : 'border-border-c bg-bg-primary'}`}>
@@ -124,6 +129,31 @@ export default function SarkhatiPage() {
       </button>
     );
   };
+
+  // ورودیِ لایۀ jev-ui: فقط پرچم‌هایِ غیرحساسِ همان پاسخِ سرویس. نماد، قیمت،
+  // حجم و برچسبِ حساب هرگز به `app` نمی‌روند (آزمونِ sarkhati-jev.spec.tsx
+  // serializedِ همین شیء را می‌خواند، نه فقط این کامنت را).
+  const jevApp = useMemo(() => {
+    const recs = ledger.data?.records ?? [];
+    return appStateForJev({
+      canTrade: gate.canTrade, halted: gate.halted, session: gate.sessionState,
+      status: gate.status,
+      hasScheduled: recs.some((r) => phaseOf(r) === 'scheduled'),
+      hasUnclear: recs.some((r) => ['unknown', 'rejected', 'errored'].includes(phaseOf(r))),
+      panel,
+    });
+  }, [gate, ledger.data, panel]);
+
+  // متنِ راهنما از فیلدهایِ خودِ سرویس است و همان جمله‌هایی هستند که درِ
+  // `SarkhatiStatusStrip` (پشتِ بازشو)‌اند؛ پس راهنما تکرارِ خطِ بالایِ صفحه
+  // نیست، و چیزی هم از خودِش نمی‌سازد.
+  const hint = useMemo(() => ({
+    short: gate.canTrade
+      ? 'دروازۀ اجرا باز است؛ پیش‌فرود، سقف‌ها و عبارتِ تأیید را خودِ سرویس نگه می‌دارد'
+      : gate.reason,
+    extra: `مسیرِ بازکردن: «${panelLabel(suggested.go)}»`,
+    detail: gate.halted ? '«ادامۀ دستوری» درِ ریسک و ایمنی لازم است' : '',
+  }), [gate.canTrade, gate.reason, gate.halted, suggested.go]);
 
   return (
     <div className="flex w-full min-w-0 flex-col gap-1.5 p-2" data-testid="sarkhati-page"
@@ -162,13 +192,13 @@ export default function SarkhatiPage() {
             stepIndex(s.id as SarkhatiStep)))}
         </div>
         <span className="mx-1 h-4 w-px bg-border-c" aria-hidden="true" />
-        <span className="text-3xs font-bold text-text-muted" data-testid="sarkhati-pro-label">
-          ابزارهایِ حرفه‌ای:
-        </span>
-        <div className="flex flex-wrap items-center gap-1" role="tablist"
-          aria-label="ابزارهایِ حرفه‌ای" data-testid="sarkhati-pro-sections">
-          {PRO_SECTIONS.map((sec) => stepBtn(sec.id, panelLabel(sec.id), sec.testId))}
-        </div>
+        {/* آرایشِ سه پنلِ ثانویه و یک خطِ راهنمایِ *اضافه*، از لایۀ jev-ui با
+            resolverِ قطعیِ آفلاین. فرمِ سفارش و دروازۀ ارسال بیرونِ این‌اند. */}
+        <SarkhatiProTools
+          items={PRO_SECTIONS.map((sec) => ({
+            id: sec.id, label: panelLabel(sec.id), testId: sec.testId }))}
+          app={jevApp} panel={panel} suggestedGo={suggested.go} hint={hint}
+          onSelect={setLanded} />
       </div>
 
       {panel === 'connect' ? (
