@@ -1,0 +1,462 @@
+{
+ "base": "http://127.0.0.1:8011/",
+ "tag": "before",
+ "runs": [
+  {
+   "width": 1440,
+   "secs": [
+    {
+     "i": 0,
+     "id": null,
+     "title": "",
+     "top": 80,
+     "height": 34,
+     "width": 1272
+    },
+    {
+     "i": 1,
+     "id": null,
+     "title": "",
+     "top": 122,
+     "height": 74,
+     "width": 1272
+    },
+    {
+     "i": 2,
+     "id": "ms-sec-overview",
+     "title": "نمای کلیِ بازار",
+     "top": 597,
+     "height": 1000,
+     "width": 1272
+    },
+    {
+     "i": 3,
+     "id": "ms-sec-treemap",
+     "title": "نقشۀ بازار",
+     "top": 1605,
+     "height": 600,
+     "width": 1272
+    },
+    {
+     "i": 4,
+     "id": "ms-sec-tops",
+     "title": "برترین‌ها و تأثیرگذاران",
+     "top": 2213,
+     "height": 711,
+     "width": 1272
+    },
+    {
+     "i": 5,
+     "id": "ms-sec-orders",
+     "title": "سفارش‌ها و تغییرِ مالکیت",
+     "top": 2932,
+     "height": 1470,
+     "width": 1272
+    },
+    {
+     "i": 6,
+     "id": "ms-sec-gold",
+     "title": "طلا، سکه و صندوق‌های طلا",
+     "top": 4410,
+     "height": 881,
+     "width": 1272
+    },
+    {
+     "i": 7,
+     "id": "ms-sec-compare",
+     "title": "نمودارِ مقایسه‌ای",
+     "top": 5299,
+     "height": 1302,
+     "width": 1272
+    },
+    {
+     "i": 8,
+     "id": "ms-sec-chart",
+     "title": "نمودارِ پیشرفته",
+     "top": 6609,
+     "height": 573,
+     "width": 1272
+    },
+    {
+     "i": 9,
+     "id": "ms-sec-tables",
+     "title": "جدول‌های تابلو",
+     "top": 7190,
+     "height": 854,
+     "width": 1272
+    }
+   ],
+   "marks": [
+    {
+     "testId": "status-ticker",
+     "box": {
+      "top": 122,
+      "height": 74,
+      "width": 1272
+     }
+    },
+    {
+     "testId": "ms-glance",
+     "box": {
+      "top": 629,
+      "height": 334,
+      "width": 1272
+     }
+    },
+    {
+     "testId": "ms-index-cards",
+     "box": {
+      "top": 972,
+      "height": 207,
+      "width": 1272
+     }
+    },
+    {
+     "testId": "ms-treemap",
+     "box": {
+      "top": 1637,
+      "height": 568,
+      "width": 1272
+     }
+    },
+    {
+     "testId": "ms-compare",
+     "box": {
+      "top": 5331,
+      "height": 1270,
+      "width": 1272
+     }
+    },
+    {
+     "testId": "ms-gold",
+     "box": {
+      "top": 4442,
+      "height": 849,
+      "width": 1272
+     }
+    },
+    {
+     "testId": "ms-toplists",
+     "box": null
+    },
+    {
+     "testId": "ms-orders",
+     "box": {
+      "top": 2964,
+      "height": 715,
+      "width": 1272
+     }
+    }
+   ],
+   "docHeight": 900,
+   "overflowX": false,
+   "scrollW": 1440,
+   "errors": [],
+   "badStatus": []
+  },
+  {
+   "width": 1280,
+   "secs": [
+    {
+     "i": 0,
+     "id": null,
+     "title": "",
+     "top": 80,
+     "height": 34,
+     "width": 1112
+    },
+    {
+     "i": 1,
+     "id": null,
+     "title": "",
+     "top": 122,
+     "height": 74,
+     "width": 1112
+    },
+    {
+     "i": 2,
+     "id": "ms-sec-overview",
+     "title": "نمای کلیِ بازار",
+     "top": 622,
+     "height": 1000,
+     "width": 1112
+    },
+    {
+     "i": 3,
+     "id": "ms-sec-treemap",
+     "title": "نقشۀ بازار",
+     "top": 1630,
+     "height": 500,
+     "width": 1112
+    },
+    {
+     "i": 4,
+     "id": "ms-sec-tops",
+     "title": "برترین‌ها و تأثیرگذاران",
+     "top": 2138,
+     "height": 711,
+     "width": 1112
+    },
+    {
+     "i": 5,
+     "id": "ms-sec-orders",
+     "title": "سفارش‌ها و تغییرِ مالکیت",
+     "top": 2857,
+     "height": 1470,
+     "width": 1112
+    },
+    {
+     "i": 6,
+     "id": "ms-sec-gold",
+     "title": "طلا، سکه و صندوق‌های طلا",
+     "top": 4334,
+     "height": 908,
+     "width": 1112
+    },
+    {
+     "i": 7,
+     "id": "ms-sec-compare",
+     "title": "نمودارِ مقایسه‌ای",
+     "top": 5251,
+     "height": 1302,
+     "width": 1112
+    },
+    {
+     "i": 8,
+     "id": "ms-sec-chart",
+     "title": "نمودارِ پیشرفته",
+     "top": 6561,
+     "height": 573,
+     "width": 1112
+    },
+    {
+     "i": 9,
+     "id": "ms-sec-tables",
+     "title": "جدول‌های تابلو",
+     "top": 7141,
+     "height": 854,
+     "width": 1112
+    }
+   ],
+   "marks": [
+    {
+     "testId": "status-ticker",
+     "box": {
+      "top": 122,
+      "height": 74,
+      "width": 1112
+     }
+    },
+    {
+     "testId": "ms-glance",
+     "box": {
+      "top": 654,
+      "height": 334,
+      "width": 1112
+     }
+    },
+    {
+     "testId": "ms-index-cards",
+     "box": {
+      "top": 996,
+      "height": 207,
+      "width": 1112
+     }
+    },
+    {
+     "testId": "ms-treemap",
+     "box": {
+      "top": 1662,
+      "height": 468,
+      "width": 1112
+     }
+    },
+    {
+     "testId": "ms-compare",
+     "box": {
+      "top": 5283,
+      "height": 1270,
+      "width": 1112
+     }
+    },
+    {
+     "testId": "ms-gold",
+     "box": {
+      "top": 4366,
+      "height": 876,
+      "width": 1112
+     }
+    },
+    {
+     "testId": "ms-toplists",
+     "box": null
+    },
+    {
+     "testId": "ms-orders",
+     "box": {
+      "top": 2889,
+      "height": 715,
+      "width": 1112
+     }
+    }
+   ],
+   "docHeight": 900,
+   "overflowX": false,
+   "scrollW": 1280,
+   "errors": [],
+   "badStatus": []
+  },
+  {
+   "width": 1100,
+   "secs": [
+    {
+     "i": 0,
+     "id": null,
+     "title": "",
+     "top": 80,
+     "height": 34,
+     "width": 1016
+    },
+    {
+     "i": 1,
+     "id": null,
+     "title": "",
+     "top": 122,
+     "height": 74,
+     "width": 1016
+    },
+    {
+     "i": 2,
+     "id": "ms-sec-overview",
+     "title": "نمای کلیِ بازار",
+     "top": 829,
+     "height": 1186,
+     "width": 1016
+    },
+    {
+     "i": 3,
+     "id": "ms-sec-treemap",
+     "title": "نقشۀ بازار",
+     "top": 2024,
+     "height": 500,
+     "width": 1016
+    },
+    {
+     "i": 4,
+     "id": "ms-sec-tops",
+     "title": "برترین‌ها و تأثیرگذاران",
+     "top": 2532,
+     "height": 711,
+     "width": 1016
+    },
+    {
+     "i": 5,
+     "id": "ms-sec-orders",
+     "title": "سفارش‌ها و تغییرِ مالکیت",
+     "top": 3251,
+     "height": 2592,
+     "width": 1016
+    },
+    {
+     "i": 6,
+     "id": "ms-sec-gold",
+     "title": "طلا، سکه و صندوق‌های طلا",
+     "top": 5850,
+     "height": 1188,
+     "width": 1016
+    },
+    {
+     "i": 7,
+     "id": "ms-sec-compare",
+     "title": "نمودارِ مقایسه‌ای",
+     "top": 7046,
+     "height": 1606,
+     "width": 1016
+    },
+    {
+     "i": 8,
+     "id": "ms-sec-chart",
+     "title": "نمودارِ پیشرفته",
+     "top": 8660,
+     "height": 876,
+     "width": 1016
+    },
+    {
+     "i": 9,
+     "id": "ms-sec-tables",
+     "title": "جدول‌های تابلو",
+     "top": 9544,
+     "height": 854,
+     "width": 1016
+    }
+   ],
+   "marks": [
+    {
+     "testId": "status-ticker",
+     "box": {
+      "top": 122,
+      "height": 74,
+      "width": 1016
+     }
+    },
+    {
+     "testId": "ms-glance",
+     "box": {
+      "top": 861,
+      "height": 334,
+      "width": 1016
+     }
+    },
+    {
+     "testId": "ms-index-cards",
+     "box": {
+      "top": 1203,
+      "height": 220,
+      "width": 1016
+     }
+    },
+    {
+     "testId": "ms-treemap",
+     "box": {
+      "top": 2056,
+      "height": 468,
+      "width": 1016
+     }
+    },
+    {
+     "testId": "ms-compare",
+     "box": {
+      "top": 7078,
+      "height": 1574,
+      "width": 1016
+     }
+    },
+    {
+     "testId": "ms-gold",
+     "box": {
+      "top": 5882,
+      "height": 1156,
+      "width": 1016
+     }
+    },
+    {
+     "testId": "ms-toplists",
+     "box": null
+    },
+    {
+     "testId": "ms-orders",
+     "box": {
+      "top": 3283,
+      "height": 1276,
+      "width": 1016
+     }
+    }
+   ],
+   "docHeight": 900,
+   "overflowX": false,
+   "scrollW": 1100,
+   "errors": [],
+   "badStatus": []
+  }
+ ]
+}

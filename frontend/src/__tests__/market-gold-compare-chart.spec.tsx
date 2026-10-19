@@ -190,6 +190,27 @@ describe('نمودارِ مقایسه‌ای (صفحۀ ۱۳)', () => {
     expect(screen.getByTestId('ms-compare-svg').textContent).toContain('پایۀ ۱۰۰');
   });
 
+  it('محورها خوانده می‌شوند و ترتیب/رنگِ سری‌ها پایدار است', async () => {
+    mockRoutes({ '/api/mstat/gold': GOLD, '/api/mstat/series': SERIES, '/api/index/tedpix': TEDPIX });
+    wrap(<MarketCompareSection />);
+    await waitFor(() => expect(screen.getByTestId('ms-compare-svg')).toBeInTheDocument());
+    // محورِ عمودی: پنج تیکِ درصدی؛ محورِ افقی: سه تاریخ.
+    const y = screen.getByTestId('ms-compare-yaxis');
+    expect(y.querySelectorAll('text')).toHaveLength(5);
+    expect(y.textContent).toContain('٪');
+    expect(screen.getByTestId('ms-compare-xaxis').querySelectorAll('text')).toHaveLength(3);
+    // ترتیب: شاخص → طلا → سریِ خارج از فهرستِ طلا.
+    const labels = Array.from(screen.getByTestId('ms-compare-legend').querySelectorAll('button'))
+      .map((b) => b.textContent);
+    expect(labels).toEqual(['کل بورس', 'عيار', 'فولاد']);
+    // رنگ به نماد بسته است: حذفِ فولاد رنگِ عيار را عوض نمی‌کند.
+    const before = screen.getByTestId('ms-compare-line-عيار').getAttribute('stroke');
+    fireEvent.click(screen.getByTestId('ms-compare-unpick-فولاد'));
+    await waitFor(() => expect(screen.getByTestId('ms-compare-line-عيار')).toBeInTheDocument());
+    expect(screen.queryByTestId('ms-compare-line-فولاد')).not.toBeInTheDocument();
+    expect(screen.getByTestId('ms-compare-line-عيار').getAttribute('stroke')).toBe(before);
+  });
+
   it('سریِ بی‌منبع درِ فهرست «غیرفعال + علت» می‌نشیند و خطِ ساختگی نمی‌شود', async () => {
     mockRoutes({ '/api/mstat/gold': GOLD, '/api/mstat/series': SERIES, '/api/index/tedpix': TEDPIX });
     wrap(<MarketCompareSection />);
@@ -211,11 +232,14 @@ describe('نمودارِ مقایسه‌ای (صفحۀ ۱۳)', () => {
     );
   });
 
-  it('بازۀ وعده‌دادنی اعلام می‌شود: «۵ سال» بی‌پنج‌سالِ واقعی درِ بانک نوشته نمی‌شود', async () => {
+  it('کوتاهیِ تاریخچه اعلام می‌شود: «۱ سال» یعنی ۳۶۵ ردیفِ معاملاتی، نه ۳۶۵ روزِ تقویمی', async () => {
     mockRoutes({ '/api/mstat/gold': GOLD, '/api/mstat/series': SERIES, '/api/index/tedpix': TEDPIX });
     wrap(<MarketCompareSection />);
     await waitFor(() => expect(screen.getByTestId('ms-compare-span')).toBeInTheDocument());
-    expect(screen.getByTestId('ms-compare-span').textContent).toContain('«۱ سال»ِ درخواستی واقعی نیست');
+    expect(screen.getByTestId('ms-compare-span').textContent)
+      .toContain('کوتاه‌ترین سری فقط ۳ ردیف دارد');
+    expect(screen.getByTestId('ms-compare-range-1y').getAttribute('title'))
+      .toContain('۳۶۵ ردیفِ معاملاتی');
   });
 
   it('کمتر از دو زمانِ مشترک: نمودار نمی‌کشیم، «بی‌داده» می‌گوییم', async () => {

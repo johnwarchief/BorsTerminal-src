@@ -110,13 +110,20 @@ export function MarketTreemap({
   const width = Math.max(0, wrapW);
   const height = CANVAS_H[xlKey(width)] ?? 320;
 
+  // `dropped` ازِ چیدمان پنهان نمی‌ماند: اگر روزی ردیفی باِ سطحِ غیرقابل‌رسم
+  // به اینجا برسد، شمارشِ پایینِ نقشه باید همان را بگوید، نه اینکه نماد بی‌خبر
+  // غیب شود (این همان باگی بود که ۱۳ صندوقِ بی‌خانه از ۱۸۷ را پنهان می‌کرد).
   const layout = useMemo(() => {
-    if (!width || !rows.length) return [];
-    const { rects } = squarify(rows.map((r) => ({ key: r.ins_code ?? r.symbol, value: r.size })));
+    if (!width || !rows.length) return { list: [], dropped: 0 };
+    const { rects, dropped } = squarify(
+      rows.map((r) => ({ key: r.ins_code ?? r.symbol, value: r.size })));
     const byKey = new Map(rows.map((r) => [r.ins_code ?? r.symbol, r]));
-    return rects
-      .map((rc) => ({ rc, node: byKey.get(rc.key) }))
-      .filter((x): x is { rc: (typeof x.rc & object); node: TreemapNode } => !!x.node);
+    return {
+      dropped,
+      list: rects
+        .map((rc) => ({ rc, node: byKey.get(rc.key) }))
+        .filter((x): x is { rc: (typeof x.rc & object); node: TreemapNode } => !!x.node),
+    };
   }, [rows, width]);
 
   const open = useCallback(
@@ -216,6 +223,12 @@ export function MarketTreemap({
         <StatusError testId={testId} onRetry={() => void refetch()} />
       ) : isLoading && !data ? (
         <StatusLoading testId={testId} />
+      ) : data?.status === 'error' ? (
+        // خطایِ سرویس باِ HTTP 200 می‌آید (دروازۀ mstat استثنا را درِ بدنه
+        // می‌گذارد). بیِ این شاخه، «خانه‌ای نماند» زیرِ یکِ باگِ بک‌اند نوشته
+        // می‌شد — یعنی علتِ واقعی به «بی‌داده» ترجمه می‌گشت.
+        <StatusError testId={testId} onRetry={() => void refetch()}
+                     reason={data?.message ?? null} />
       ) : !rows.length ? (
         <>
           <StatusNoData
@@ -242,7 +255,7 @@ export function MarketTreemap({
               aria-label={`نقشۀ بازار بر حسبِ ${metricLabel ?? 'معیار'}`}
               data-testid={`${testId}-svg`}
             >
-              {layout.map(({ rc, node }) => {
+              {layout.list.map(({ rc, node }) => {
                 const pxW = rc.w * width;
                 const pxH = rc.h * height;
                 const tone = toneOf(node.tone);
@@ -325,13 +338,19 @@ export function MarketTreemap({
           </div>
 
           <p className="num-text text-3xs text-text-muted" data-testid={`${testId}-count`}>
-            {toFaDigits(data?.shown ?? rows.length)} خانه از{' '}
-            {toFaDigits(data?.total_nodes ?? rows.length)} نمادِ دارایِ {metricLabel?.toLowerCase() ?? 'معیار'} ·
+            {toFaDigits(data?.shown ?? rows.length)} خانه رویِ نقشه از{' '}
+            {toFaDigits(data?.scope_nodes ?? data?.total_nodes ?? rows.length)} نمادِ این دامنه ·
             دامنه: {data?.group_label ?? applied.group}
-            {applied.industry ? ` · صنعت: ${applied.industry}` : ''} · مجموع:{' '}
+            {applied.industry ? ` · صنعت: ${applied.industry}` : ''} · مجموعِ سطح:{' '}
             {toFaDigits(data?.total_size?.toFixed(0) ?? '0')} {data?.metric_unit} ·{' '}
-            {toFaDigits(data?.skipped_nodata ?? 0)} نمادِ بی‌{metricLabel?.toLowerCase() ?? 'داده'} در
-            چیدمان نیست.
+            {toFaDigits(data?.skipped_nodata ?? 0)} نمادِ بی‌{metricLabel?.toLowerCase() ?? 'داده'}
+            {data?.skipped_zerosize
+              ? ` · ${toFaDigits(data.skipped_zerosize)} نماد که سطحش درِ دقتِ نقشه صفر می‌شود`
+              : ''}
+            {layout.dropped
+              ? ` · ${toFaDigits(layout.dropped)} ردیف را خودِ چیدمان نپذیرفت`
+              : ''}
+            {' '}درِ چیدمان نیست.
           </p>
           <SourceNotice testId={testId} items={data?.no_source} />
         </>

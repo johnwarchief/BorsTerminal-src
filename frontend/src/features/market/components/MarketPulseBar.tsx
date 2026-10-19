@@ -3,8 +3,7 @@
 // بخش ۳: تراز صف‌ها و پهنای باند | بخش ۴: برتری سرانه حقیقی.
 // هر دادهٔ غایب «بدون داده» خاکستری است، نه عدد ساختگی (Circuit Breaker).
 import { useState } from 'react';
-import { toFaDigits, fmtInt, fmtPct } from '@shared/lib/fmt';
-import { FlashNum } from '@shared/components/FlashNum';
+import { toFaDigits, fmtInt } from '@shared/lib/fmt';
 import {
   ALPHA_TRIO_LABEL,
   GOLD_WINDOW_LABEL,
@@ -18,7 +17,6 @@ import {
   pulseGoldFlowB,
   pulseGroupRows,
   pulseHemat,
-  pulseIndex,
   pulseVerdict,
   type DayVerdict,
   type HematState,
@@ -48,50 +46,6 @@ function Section({
         {hint ? <span className="truncate text-3xs font-medium text-text-muted" title={hint}>{hint}</span> : null}
       </div>
       <div className="flex min-w-0 flex-col gap-1.5 text-xs">{children}</div>
-    </div>
-  );
-}
-
-/** یک خانهٔ شاخص: عددِ پایانی + تغییرِ عددی + درصد. هیچ‌کدام بازسازی نمی‌شود. */
-function IndexCell({
-  label,
-  hint,
-  last,
-  change,
-  pct,
-}: {
-  label: string;
-  hint: string;
-  last?: number | null;
-  change?: number | null;
-  pct?: number | null;
-}) {
-  const up = typeof pct === 'number' ? pct >= 0 : null;
-  const tone = up == null ? 'text-text-secondary' : up ? 'text-accent-green' : 'text-accent-red';
-  // جهت فقط وقتی که درصد هست؛ بی‌درصد هیچ فلشی نقاشی نمی‌شود.
-  const delta = [
-    up == null ? null : up ? '▲' : '▼',
-    change != null ? fmtInt(Math.abs(change)) : null,
-    typeof pct === 'number' ? fmtPct(pct, 2) : null,
-  ].filter(Boolean);
-  return (
-    <div className="flex min-w-0 shrink-0 flex-col gap-0" title={hint}>
-      <span className="text-3xs font-bold text-text-secondary">{label}</span>
-      {last == null ? (
-        <span className="text-xs">{MISSING}</span>
-      ) : (
-        <span className="flex flex-wrap items-baseline gap-x-1.5">
-          {/* عددِ بزرگِ نبض هم مثلِ ستون‌هایِ تابلو فلاش می‌گیرد: ریتمِ این پنل
-              خودش ۳۰ ثانیه است و تا پیش از این عدد بی‌خبر عوض می‌شد («کدام
-              عدد همین حالا تاز شد؟» بی‌جواب می‌ماند). */}
-          <FlashNum
-            value={last}
-            className="num text-sm font-black leading-5 text-text-primary"
-            render={(v) => (v == null ? '—' : fmtInt(v))}
-          />
-          {delta.length ? <span className={`num text-3xs font-bold ${tone}`}>{delta.join(' ')}</span> : null}
-        </span>
-      )}
     </div>
   );
 }
@@ -279,7 +233,6 @@ export function MarketPulseBar({ pulse, isLoading = false }: { pulse: MarketPuls
   const gold = pulseGoldFlowB(pulse);
   const trio = computeAlphaTrio(pulse);
   const allMarket = pulseTradeValueAllMarketHemat(pulse);
-  const ix = pulseIndex(pulse);
   const verdict = pulseVerdict(pulse);
   const marketValue = pulseMarketValueHemat(pulse);
   // آستانه‌هایِ همین دماسنج از payload خوانده می‌شوند؛ عددِ دستی در لایهٔ نمایش ممنوع.
@@ -316,32 +269,11 @@ export function MarketPulseBar({ pulse, isLoading = false }: { pulse: MarketPuls
     >
       {isLoading && !pulse ? <span className="text-xs text-text-secondary">در حال دریافت نبض بازار...</span> : null}
 
-      {/* نوارِ شاخص + حکمِ امروز — دو شاخصِ جمع‌وجور روی هم در ستونِ راستِ
-          RTL، و حکمِ بازار کنارِ آن‌ها. عددِ شاخص خامِ TSETMC است (سازندهٔ
-          عدد: save_market_index در سینک)؛ داوری هم فقط موتور می‌کند. */}
+      {/* حکمِ امروز تنها ساکنِ این ردیف است: دو شاخص به «کارت‌هایِ شاخص»
+          درِ بالایِ همان صفحه رفتند (مرحلۀ ۱ مأموریتِ 2026-10-19) و نگه‌داشتن
+          کپیِ آن‌ها اینجا یعنی دو جا یکِ عدد، باِ دو ارتفاعِ مختلف.
+          فلاشِ تغییرِ عدد هم باِ خودِ شاخص‌ها رفته (IndexCards.tsx). */}
       <div className="col-span-full flex flex-wrap items-stretch gap-2.5">
-        <div
-          data-testid="pulse-index"
-          className="flex w-44 shrink-0 flex-col justify-center gap-1.5 rounded-2xl border border-border-c bg-bg-card/60 px-3 py-1.5 shadow-xs"
-        >
-          <IndexCell
-            label="شاخص کل"
-            hint="میانگین وزنِ ارزش بازاری"
-            last={ix?.last}
-            change={ix?.change}
-            pct={ix?.pct}
-          />
-          <IndexCell
-            label="شاخص هموزن"
-            hint="هر نماد یک وزن — نبضِ واقعیِ بازار"
-            last={ix?.ewLast}
-            change={ix?.ewChange}
-            pct={ix?.ewPct}
-          />
-        </div>
-
-        {/* حکمِ امروز — «آیا امروز برای ورود مناسب است؟». همان سه قدمِ جزوه +
-            تداوم و پنجرهٔ ساعت. تنها داوری‌کننده موتور است. */}
         <VerdictStrip v={verdict} />
       </div>
 

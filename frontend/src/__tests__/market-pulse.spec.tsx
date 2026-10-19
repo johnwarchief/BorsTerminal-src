@@ -12,7 +12,6 @@ import {
   powerTone,
   pulseGoldFlowB,
   pulseHemat,
-  pulseIndex,
   useMarketPulse,
   type DepthFeed,
   type MarketPulseData,
@@ -490,10 +489,10 @@ describe('گرید ۴بخشی با fetch ماک‌شده', () => {
     expect(cont.getAttribute('title')).toContain('بدون داده');
     expect(cont.textContent).toContain('؟');
     expect(screen.getByTestId('pulse-verdict-mark-continuity').className).toContain('text-text-muted');
-    // دو شاخص روی هم در ستونِ راست و حکم کنارشان
-    const idx = screen.getByTestId('pulse-index');
-    expect(idx.className).toContain('flex-col');
-    expect(idx.parentElement).toBe(screen.getByTestId('pulse-verdict').parentElement);
+    // حکمِ امروز تنها ساکنِ ردیفِ بالایِ نبض است؛ دو شاخص به کارت‌هایِ بالایِ
+    // صفحه رفتند (مرحلۀ ۱ مأموریتِ 2026-10-19).
+    const verdict = screen.getByTestId('pulse-verdict');
+    expect(verdict.parentElement?.parentElement).toHaveTextContent('ورود به بازار');
   });
 
   // #61 — «rtl شروعش رو درست کن»: .num شامل direction:ltr است و رویِ رشته‌ای که
@@ -594,21 +593,14 @@ describe('گرید ۴بخشی با fetch ماک‌شده', () => {
   });
 });
 
-describe('نوارِ شاخص کل و هموزن', () => {
-  it('pulseIndex فقط عددِ خام را رد می‌کند؛ شاخصِ غایب null است', () => {
-    expect(pulseIndex(null)).toBeNull();
-    expect(pulseIndex({ smartMoney: smartMoney(), summary: null, depth: null, thermometer: null })).toBeNull();
-    const withIx: MarketPulseData = {
-      smartMoney: smartMoney(22.5, 300.5, -120.2, 172.2, {
-        d_even: 20260926, last: 7153088.29, change: -103955.13, pct: -1.43,
-        ew_last: 1929823.43, ew_change: -9196.9, ew_pct: -0.48,
-      }),
-      summary: null, depth: null, thermometer: null,
-    };
-    expect(pulseIndex(withIx)).toMatchObject({ last: 7153088.29, pct: -1.43, ewLast: 1929823.43 });
-  });
-
-  it('دو عددِ رسمی با رقمِ فارسی و علامتِ درصد نمایش داده می‌شوند', async () => {
+// قراردادِ نمایشِ «مقدار + تغییر + درصد + جهت»، «بی‌درصد ⇒ بی‌فلش» و «غایب ⇒ بدون
+// داده، نه صفر» از این فایل به `market-status-sections.spec.tsx` منتقل شد، چون
+// نمایشِ شاخص‌ها از ستونِ راستِ نبض به کارت‌هایِ بالایِ صفحه رفت (مرحلۀ ۱
+// مأموریتِ 2026-10-19، بندِ «نمایشِ تکراری باقی نماند»). آن چهار آزمون همان
+// چهار ضمانت را رویِ `index-card-*` می‌سنجند؛ این یکی فقط می‌گذارد تا کپیِ دوم
+// بی‌خبر برگردد و قرمز شود.
+describe('تکراری‌نبودنِ نمایشِ شاخص درِ نبض بازار', () => {
+  it('نبض بازار دیگر شاخصِ کل/هموزن را دوباره نمی‌نویسد', async () => {
     mockRoutes({
       'mstat/smart-money': () =>
         jsonResponse(smartMoney(22.5, 300.5, -120.2, 172.2, {
@@ -617,38 +609,8 @@ describe('نوارِ شاخص کل و هموزن', () => {
         })),
     });
     renderPulse();
-    // نوار همیشه رندر می‌شود؛ باید منتظر نشستِ کوئری ماند، نه نخستین رندر
-    await waitFor(() =>
-      expect(screen.getByTestId('pulse-index').textContent).toContain('۷٬۱۵۳٬۰۸۸'),
-    );
-    const strip = screen.getByTestId('pulse-index');
-    expect(strip.textContent).toContain('۱٬۹۲۹٬۸۲۳');
-    expect(strip.textContent).toContain('-۱.۴۳٪');
-    expect(strip.querySelector('.text-accent-red')).not.toBeNull();
-  });
-
-  it('شاخصِ غایب «بدون داده» است، نه صفر — و بقیهٔ پنل می‌ماند', async () => {
-    mockRoutes({ 'mstat/smart-money': () => jsonResponse(smartMoney()) });
-    renderPulse();
     await waitFor(() => expect(screen.getByTestId('pulse-hemat').textContent).toContain('۲۲.۵'));
-    const strip = screen.getByTestId('pulse-index');
-    expect(strip.textContent).toContain('بدون داده');
-    expect(strip.textContent).not.toMatch(/۰٫۰۰٪/);
-    expect(strip.textContent).not.toMatch(/[▲▼]/);
-  });
-
-  it('فقط عددِ پایانی بیاید: درصدِ ساختگی و فلشِ جهت ساخته نمی‌شود', async () => {
-    mockRoutes({
-      'mstat/smart-money': () =>
-        jsonResponse(smartMoney(22.5, 300.5, -120.2, 172.2, { d_even: 20260926, last: 7153088.29 })),
-    });
-    renderPulse();
-    await waitFor(() =>
-      expect(screen.getByTestId('pulse-index').textContent).toContain('۷٬۱۵۳٬۰۸۸'),
-    );
-    const strip = screen.getByTestId('pulse-index');
-    expect(strip.textContent).not.toContain('٪');
-    expect(strip.textContent).not.toMatch(/[▲▼]/);
-    expect(strip.textContent).toContain('بدون داده'); // هموزنِ بی‌عدد
+    expect(screen.queryByTestId('pulse-index')).not.toBeInTheDocument();
+    expect(screen.queryByText('شاخص هموزن')).not.toBeInTheDocument();
   });
 });

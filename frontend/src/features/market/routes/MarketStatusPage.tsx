@@ -28,7 +28,6 @@ import { IndustriesTable, MainWatchTable } from '../components/MarketStatusTable
 import { IndexCards } from '../components/IndexCards';
 import { MarketChartSection } from '../components/MarketChartSection';
 import { MarketCompareSection } from '../components/MarketCompareSection';
-import { MarketGlanceCards } from '../components/MarketGlanceCards';
 import { MarketTreemap } from '../components/MarketTreemap';
 import { TopListsGrid } from '../components/RankedPanels';
 import { OrdersPanel, OwnershipPanel } from '../components/OrderOwnershipSection';
@@ -41,6 +40,10 @@ import {
   useMstatHistogram,
   useMstatPhases,
 } from '../api/useMarketStatusFeed';
+// «نگاهی به بازار» از نمای اصلی حذف شد (مرحلۀ ۱ مأموریتِ 2026-10-19): تنها کنشش
+// یک پیوند بود که جدولِ «جدول‌های تابلو» همان را می‌داد، و 334 پیکسل از بالایِ
+// صفحه را می‌گرفت. اندپوینتش (`/api/mstat/mainwatch`) و دو مصرف‌کنندۀ دیگرش
+// دست‌نخورده‌اند — `MarketChartSection.tsx:35` و `MarketStatusTables.tsx:11`.
 import { useMstatIndexCards, useMstatOrderFlows, useMstatOwnership, useMstatTops } from '../api/useMarketPanels';
 
 const SECTIONS: MarketSection[] = [
@@ -74,6 +77,16 @@ export default function MarketStatusPage() {
 
   return (
     <div className="flex w-full max-w-none flex-col gap-2" data-testid="market-status-page">
+      {/* اولویتِ اطلاعاتیِ نمای بالایی: اول شاخص‌ها (کارت‌های فشرده)، بعد
+          وضعیتِ اتصال و تازگی، بعد نبضِ بازار. پیش از این، کارت‌های شاخص روی
+          top=972 در viewportِ 900 نشسته بودند — یعنی زیرِ خطِ تاشو
+          (`_audit/market-tab-layout/before-layout.json`). */}
+      <IndexCards
+        data={cards.data}
+        isLoading={cards.isLoading}
+        isError={cards.isError}
+        onRetry={() => void cards.refetch()}
+      />
       <MarketStatusPanel />
       <MarketStatusTicker pulse={pulse} split={split.data} />
       <MarketPulseBar pulse={pulse ?? null} isLoading={pulseLoading} />
@@ -85,14 +98,7 @@ export default function MarketStatusPage() {
           id="ms-sec-overview"
           title="نمای کلیِ بازار"
           pages={[6, 7]}
-          desc="کارت‌های شاخص، توزیعِ درصد، تفکیکِ مشتری و فازهایِ همین نشست — همۀ اعداد از یک اسکنِ market.db"
-        />
-        <MarketGlanceCards />
-        <IndexCards
-          data={cards.data}
-          isLoading={cards.isLoading}
-          isError={cards.isError}
-          onRetry={() => void cards.refetch()}
+          desc="توزیعِ درصد، تفکیکِ مشتری و فازهایِ همین نشست — همۀ اعداد از یک اسکنِ market.db"
         />
         <div className="grid grid-cols-1 gap-2 xl:grid-cols-3">
           {/* `fresh` ازِ System 1 ماند: تازگیِ همان پنل درِ هر کارت خوانده
@@ -131,7 +137,7 @@ export default function MarketStatusPage() {
           id="ms-sec-treemap"
           title="نقشۀ بازار"
           pages={[2]}
-          desc="سطح هر بلوک = sizeِ همان معیار؛ رنگ = مثبت/منفی/صفر/بی‌داده. کلیک، نماد را درِ چارتِ پایین باز می‌کند."
+          desc="سطح هر بلوک = sizeِ همان معیار؛ رنگ = مثبت/منفی/صفر/بی‌داده. کلیک، همان نماد را درِ صفحۀ «تحلیل تکنیکال» باز می‌کند."
         />
         <MarketTreemap industries={industryOptions} />
       </section>
