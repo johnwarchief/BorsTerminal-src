@@ -20,12 +20,16 @@ import {
 import { codalStore } from './codalStore';
 import { evaluateRevenueGrowthYoy } from './ftsGrowth';
 import { resolveSymbolIdentity, calculateIdentityStats } from './symbolIdentity';
+import { refreshTapeFlags } from './tapeFlagsLocal';
+import { evaluateFunnelLocal } from './funnelEngineLocal';
+import { registryAsJson } from './funnelRegistryLocal';
 
 const FTS_CONFIG_KEY = 'bors_mobile_fts_config_v1';
 
 // تابلوی ۷مگابایتی را یک‌بار پارس نگه می‌داریم: پولینگ ۵ثانیه‌ای UI نباید هر
 // بار JSON.parse سنگین بزند؛ لایهٔ زنده همین آبجکت را درجا به‌روز می‌کند.
 let boardMemo: Record<string, unknown> | null = null;
+let latestFunnelMemo: Record<string, unknown> | null = null;
 
 /** مبنایِ rev_at وقتی هنوز هیچ رونشانیِ زنده‌ای عددی را عوض نکرده: مهرِ
  *  پختِ بسته. meta.last_sync (قالبِ «YYYY-MM-DD HH:MM:SS» خودِ بک‌اند) یا
@@ -98,6 +102,9 @@ async function boardPayload(): Promise<Record<string, unknown>> {
         ? (rows as Record<string, unknown>[]).filter((r) => r.is_live === true).length
         : typeof boardMemo.live_count === 'number' ? boardMemo.live_count : 0;
       if (n > 0) {
+        for (const r of rows as Record<string, unknown>[]) {
+          refreshTapeFlags(r);
+        }
         boardMemo.live_count = liveRows;
         boardMemo.fossil_count = (rows as unknown[]).length - liveRows;
       }
@@ -155,6 +162,7 @@ export function overlayStatus() {
  *  (boardMemo ممو سراسری است و تست‌ها باید از هم مستقل باشند). */
 export function __resetBoardForTest(): void {
   boardMemo = null;
+  latestFunnelMemo = null;
   boardBaselineMs = 0;
   overlayState.patched = 0;
   overlayState.at = '';
@@ -374,11 +382,13 @@ async function ftsSymbolPlan(symbol: string, url: string): Promise<unknown> {
       if (series && series.rows.length > 0) {
         const growth = evaluateRevenueGrowthYoy({
           coverage: series.coverage,
-          rows: series.rows.map((r) => ({
-            periodEnd: r.periodEnd,
-            ytdRevenue: r.ytdRevenue,
-            ytdRevenuePrev: r.ytdRevenuePrev,
-          })),
+          rows: series.rows
+            .filter((r) => Boolean(r.periodEnd))
+            .map((r) => ({
+              periodEnd: String(r.periodEnd),
+              ytdRevenue: r.ytdRevenue,
+              ytdRevenuePrev: r.ytdRevenuePrev,
+            })),
         });
         return {
           ...(bakedPlan as Record<string, unknown>),
@@ -408,11 +418,13 @@ async function ftsSymbolPlan(symbol: string, url: string): Promise<unknown> {
   const growth = series
     ? evaluateRevenueGrowthYoy({
         coverage: series.coverage,
-        rows: series.rows.map((r) => ({
-          periodEnd: r.periodEnd,
-          ytdRevenue: r.ytdRevenue,
-          ytdRevenuePrev: r.ytdRevenuePrev,
-        })),
+        rows: series.rows
+          .filter((r) => Boolean(r.periodEnd))
+          .map((r) => ({
+            periodEnd: String(r.periodEnd),
+            ytdRevenue: r.ytdRevenue,
+            ytdRevenuePrev: r.ytdRevenuePrev,
+          })),
       })
     : {
         status: 'NOT_EVALUATED' as const,
@@ -542,21 +554,84 @@ export async function resolveLocal(
   }
 
   // --- غربالگری (قیف FTS) ------------------------------------------------
-  // داورِ رسمی درِ `api/funnel.py` است و گوشی هیچ سروری ندارد، پس تنها چیزی که
-  // آفلاین سرو می‌شود **خروجیِ پختۀ همان موتور** است. هیچ داوریِ تازه درِ
-  // کلاینت ساخته نمی‌شود — همان قاعدۀ «یک داور» که با حذفِ `buildFunnel` بسته شد.
-  // ترکیبی که پخته نشده ⇒ HttpError با علتِ روشن؛ نه جدولِ خالی (که «بازار خالی»
-  // خوانده می‌شود) و نه حدس.
+  // در صورت وجود داده‌های زنده روی تابلو (یا درخواست صریح recompute)، موتور کانونی
+  // محلی قیف را روی داده‌های به‌روزشده با منطق رسمی دسکتاپ از نو ارزیابی می‌کند.
+  // در حالت کاملاً آفلاین یا عدم وجود تابلوی زنده، همان خروجی پختهٔ اسنپ‌شات سرو می‌شود.
   if (path === '/api/funnel') {
+    const b = (body && typeof body === 'object' ? body : {}) as Record<string, unknown>;
+    const forceRecompute = b.recompute === true || u.searchParams.get('recompute') === 'true';
+
+    if (overlayState.patched > 0 || forceRecompute) {
+      try {
+        const board = await boardPayload();
+        const scr = await baked('screener');
+        const boardRows = (board?.data as Record<string, unknown>[]) ?? [];
+        const screenRows = ((scr as Record<string, unknown>)?.data as Record<string, unknown>[]) ?? [];
+        if (boardRows.length > 0) {
+          const preset = String(b.preset ?? u.searchParams.get('preset') ?? 'trend');
+          const logic = (String(b.logic ?? u.searchParams.get('logic') ?? 'and').toLowerCase() === 'or' ? 'or' : 'and') as 'and' | 'or';
+          const fundMode = String(b.fund_mode ?? u.searchParams.get('fund_mode') ?? 'standard') as 'standard' | 'hard' | 'exception';
+          const dropRaw = b.drop_suffix ?? u.searchParams.get('drop_suffix');
+          const dropSuffix = dropRaw === undefined || dropRaw === null ? true : (dropRaw === true || dropRaw === 'true');
+          const customChain = Array.isArray(b.chain)
+            ? b.chain.map(String)
+            : String(u.searchParams.get('chain') ?? '').split(',').map((s) => s.trim()).filter(Boolean);
+
+          const evaluated = evaluateFunnelLocal(boardRows, screenRows, {
+            preset,
+            customChain,
+            fundMode,
+            dropNumericSuffix: dropSuffix,
+            tapeLogic: logic,
+            params: (b.params as Record<string, Record<string, unknown>>) ?? {},
+            exceptions: (b.exceptions as Record<string, string[]>) ?? {},
+            dataSource: overlayState.patched > 0 ? 'live_overlay' : 'snapshot_db',
+            marketDataAt: overlayState.at ? new Date(overlayState.at).getTime() : undefined,
+          });
+          latestFunnelMemo = evaluated;
+          return evaluated;
+        }
+      } catch {
+        // بازگشت امن به بسته آفلاین
+      }
+    }
     return funnelOffline(u, body, url);
   }
   if (path === '/api/funnel/registry') {
-    return bakedOr404('funnel_registry', url);
+    try {
+      const bReg = await baked('funnel_registry');
+      if (bReg) return bReg;
+    } catch { /* نبودِ اسنپ‌شات رجیستری */ }
+    return registryAsJson();
   }
   if (path === '/api/funnel/trace') {
+    const sym = normFa(u.searchParams.get('symbol') ?? '');
+    if (!sym) throw new HttpError(400, url, 'پارامتر symbol الزامی است');
+    if (latestFunnelMemo) {
+      const tl = (latestFunnelMemo.timeline as Record<string, unknown[]>)?.[sym];
+      const cell = (latestFunnelMemo.status_matrix as Record<string, unknown>)?.[sym];
+      if (tl || cell) {
+        return {
+          status: 'success',
+          symbol: sym,
+          timeline: tl ?? [],
+          matrix: cell,
+          universe: latestFunnelMemo.universe,
+          engine_version: latestFunnelMemo.engine_version,
+          ruleset_version: latestFunnelMemo.ruleset_version,
+          as_of: latestFunnelMemo.as_of,
+        };
+      }
+      return {
+        status: 'not_found',
+        symbol: sym,
+        message: 'این نماد در جامعۀ این نشست نیست',
+        universe: latestFunnelMemo.universe,
+      };
+    }
     throw new HttpError(404, url,
       'ردپایِ یکِ نماد درِ بستۀ آفلاین پخته نمی‌شود؛ وضعیتِ هر نماد درِ هر گام از '
-      + 'خودِ پاسخِ قیف رویِ دستگاه است، اما خطِ زمانِ رویدادها فقط درِ دسکتاپ ساخته می‌شود');
+      + 'خودِ پاسخِ قیف رویِ دستگاه است، اما خطِ زمانِ رویدادها فقط درِ دسکتاپ یا پس از ارزیابیِ زنده ساخته می‌شود');
   }
 
   // --- نبض بازار و شاخص ---------------------------------------------------
