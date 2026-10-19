@@ -110,11 +110,11 @@
 - `GET /api/sync/codal/fts-coverage` → `api/fundamental.py:2516`
 - `GET /api/sync/codal/pipeline` → `api/fundamental.py:2528`
 
-### `api/funnel.py` — 28 تابع، 4 اندپوینت
-- `GET /api/funnel/registry` → `api/funnel.py:369`
-- `GET /api/funnel/trace` → `api/funnel.py:382`
-- `GET /api/funnel` → `api/funnel.py:415`
-- `POST /api/funnel` → `api/funnel.py:428`
+### `api/funnel.py` — 29 تابع، 4 اندپوینت
+- `GET /api/funnel/registry` → `api/funnel.py:390`
+- `GET /api/funnel/trace` → `api/funnel.py:403`
+- `GET /api/funnel` → `api/funnel.py:436`
+- `POST /api/funnel` → `api/funnel.py:449`
 
 ### `api/market.py` — 46 تابع، 12 اندپوینت
 - `GET /api/market/sync-state` → `api/market.py:119`
@@ -143,18 +143,18 @@
 - `GET /api/mstat/mainwatch` → `api/market_status.py:377`
 - `GET /api/mstat/industries` → `api/market_status.py:386`
 - `GET /api/mstat/treemap` → `api/market_status.py:397`
-- `GET /api/mstat/tops` → `api/market_status.py:406`
-- `GET /api/mstat/orderflows` → `api/market_status.py:418`
-- `GET /api/mstat/ownership` → `api/market_status.py:428`
-- `GET /api/mstat/indexcards` → `api/market_status.py:438`
-- `GET /api/mstat/gold` → `api/market_status.py:447`
-- `GET /api/mstat/goldhistory` → `api/market_status.py:457`
-- `GET /api/mstat/series` → `api/market_status.py:465`
-- `GET /api/mstat/smart-money` → `api/market_status.py:477`
-- `GET /api/mstat/timeline` → `api/market_status.py:488`
-- `GET /api/mstat/phases` → `api/market_status.py:499`
-- `GET /api/mstat/board` → `api/market_status.py:558`
-- `POST /api/mstat/snapshot` → `api/market_status.py:580`
+- `GET /api/mstat/tops` → `api/market_status.py:408`
+- `GET /api/mstat/orderflows` → `api/market_status.py:422`
+- `GET /api/mstat/ownership` → `api/market_status.py:434`
+- `GET /api/mstat/indexcards` → `api/market_status.py:446`
+- `GET /api/mstat/gold` → `api/market_status.py:455`
+- `GET /api/mstat/goldhistory` → `api/market_status.py:465`
+- `GET /api/mstat/series` → `api/market_status.py:473`
+- `GET /api/mstat/smart-money` → `api/market_status.py:485`
+- `GET /api/mstat/timeline` → `api/market_status.py:496`
+- `GET /api/mstat/phases` → `api/market_status.py:507`
+- `GET /api/mstat/board` → `api/market_status.py:566`
+- `POST /api/mstat/snapshot` → `api/market_status.py:588`
 
 ### `api/notifications.py` — 2 تابع، 2 اندپوینت
 - `GET /api/notifications/sources` → `api/notifications.py:23`
@@ -212,7 +212,7 @@
 - **features/fundamental** — 35 فایل: `features/fundamental/api/useCalendarEvents.ts`, `features/fundamental/api/useCalendarUpcoming.ts`, `features/fundamental/api/useCodalHealth.ts`, `features/fundamental/api/useFtsCard.ts`, `features/fundamental/components/SectorPePanel.tsx`, `features/fundamental/routes/FundamentalPage.tsx` (+29 فایل)
 - **features/market** — 62 فایل: `features/market/api/useIndustries.ts`, `features/market/api/useIntradayCache.ts`, `features/market/api/useLiveStats.ts`, `features/market/api/useMarketFeed.ts`, `features/market/components/MarketStatusPanel.tsx`, `features/market/components/SuspiciousPanel.tsx` (+56 فایل)
 - **features/master** — 53 فایل: `features/master/api/useFtsFunnel.ts`, `features/master/api/useFtsPlan.ts`, `features/master/api/useFunnelRegistry.ts`, `features/master/api/useFunnelTrace.ts`, `features/master/components/StrategyStageCandidateTable.tsx`, `features/master/routes/MasterPage.tsx` (+47 فایل)
-- **features/portfolio** — 49 فایل: `features/portfolio/api/usePortfolio.ts`, `features/portfolio/api/useStopLossBoard.ts`, `features/portfolio/api/useSymbolBasket.ts`, `features/portfolio/api/useSymbolSearch.ts`, `features/portfolio/components/BotPanel.tsx`, `features/portfolio/components/ExecutionPanel.tsx` (+43 فایل)
+- **features/portfolio** — 51 فایل: `features/portfolio/api/usePortfolio.ts`, `features/portfolio/api/useStopLossBoard.ts`, `features/portfolio/api/useSymbolBasket.ts`, `features/portfolio/api/useSymbolSearch.ts`, `features/portfolio/components/BotPanel.tsx`, `features/portfolio/components/ExecutionPanel.tsx` (+45 فایل)
 - **features/technical** — 81 فایل: `features/technical/engine/index.ts`, `features/technical/api/useCandleFeed.ts`, `features/technical/api/useFtsAnalysis.ts`, `features/technical/api/useFundGate.ts`, `features/technical/api/useScreener.ts`, `features/technical/components/ComparePanel.tsx` (+75 فایل)
 - **features/updater** — 4 فایل: `features/updater/index.ts`, `features/updater/useAppUpdater.ts` (+2 فایل)
 
