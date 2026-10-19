@@ -684,6 +684,14 @@ JS_SUITES = [
 # فایلِ generated هم سبز بماند و «تست به‌خاطر نبودِ داده شکست» رخ ندهد.
 FIXTURE_GEN = 'dev/make_fts_ui_fixture.py'
 
+#: دادهٔ مرجعِ این سوئیت‌ها عمداً در Git نیست (gitignored) و در clone تازه هم
+#: نیست. نبودِ فایل = SKIP صریح با نامِ فایل، نه FAILِ محیطی و نه سبزِ بی‌سنجش.
+#: با حضورِ فایل، همان سوئیت کامل و بی‌تغییر اجرا می‌شود.
+REQUIRES = {
+    'dev/test_adjustment_engine_v1.py': '_audit/ra365_ref_bars.json',
+    'dev/db_housekeeping.py --selftest': 'market.db.lzma',
+}
+
 
 env = dict(os.environ, PYTHONIOENCODING='utf-8')
 bad = []
@@ -723,7 +731,13 @@ def run(argv, label):
 
 # Data-Lifecycle: برخی سوئیت‌ها آرگومان می‌گیرند (مثلاً --selftest)؛
 # script.split() مسیر و آرگومان‌ها را از هم جدا می‌کند.
+skipped = []
 for script, label in SUITES:
+    need = REQUIRES.get(script)
+    if need and not os.path.exists(need.replace('/', os.sep)):
+        skipped.append((label, need))
+        print('  SKIP %-40s (fixture missing: %s)' % (label, need))
+        continue
     run([sys.executable] + [a.replace('/', os.sep) for a in script.split()], label)
 if os.path.exists(FIXTURE_GEN):
     run([sys.executable, FIXTURE_GEN.replace('/', os.sep)], 'fixture: fts_v10 payloads')
@@ -731,8 +745,12 @@ for script, label in JS_SUITES:
     run(['node', script.replace('/', os.sep)], label)
 
 total_suites = len(SUITES) + len(JS_SUITES) + (1 if os.path.exists(FIXTURE_GEN) else 0)
-print('\n%d suite counted, %d silent (exit-code only)' % (total_suites - len(uncounted), len(uncounted)))
+print('\n%d suite counted, %d silent (exit-code only), %d skipped (fixture missing)' % (
+    total_suites - len(uncounted) - len(skipped), len(uncounted), len(skipped)))
 if uncounted:
     print('  silent: ' + ', '.join(uncounted))
+if skipped:
+    for label, need in skipped:
+        print('  skip: %s (%s)' % (label, need))
 print('\n%s' % ('ALL SUITES PASSED' if not bad else 'FAILED: ' + ', '.join(bad)))
 sys.exit(1 if bad else 0)
