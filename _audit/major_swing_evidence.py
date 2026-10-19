@@ -155,7 +155,8 @@ def main():
         "deciding_leg_pct": [], "deciding_leg_atr_x": [],
         "tiny_decides": 0, "live_nudge_flips": 0, "live_nudge_flips_by": {},
         "cand": {k: {"changed": 0, "toward_w": 0, "away_from_w": 0, "na_more": 0,
-                     "gate_changed": 0, "verdict_now": {}, "verdict_new": {}} for k in CAND},
+                     "pivots_total": 0, "kept": 0,
+                     "verdict_now": {}, "verdict_new": {}} for k in CAND},
         "per_symbol": [],
     }
     for sym in syms:
@@ -219,6 +220,11 @@ def main():
             v1 = decide(sub, series)
             t1 = v1.get("trend")
             c = rep["cand"][name]
+            # پوششِ داوری: چند پیوت از فهرست حذف شد؟ (آستانه‌هایِ بلندتر ساختارِ
+            # بیشتری دور می‌ریزند، حتی وقتی رأیِ کمتری عوض می‌شود — بدونِ این ستون،
+            # مقایسه‌یِ کاندیدها فقط «چند رأی تکان خورد» بود و بس.)
+            c["pivots_total"] += len(swings)
+            c["kept"] += len(sub)
             if t1 != v0.get("trend"):
                 c["changed"] += 1
                 c["verdict_now"][sym] = v0.get("trend")
@@ -267,16 +273,19 @@ def main():
               (round(statistics.median(da), 2), round(q(da, .10), 2), round(min(da), 2)))
         print("   symbols whose deciding leg is under 1.0 ATR: %d of %d" %
               (rep["tiny_decides"], rep["symbols_usable"]))
-    print("   verdict flips on a ±2%% move of the LAST candle: %d observations" % rep["live_nudge_flips"])
+    print("   verdict flips on a ±2%% move of the LAST candle (بی‌نشانۀ live_forming = "
+          "رفتارِ پیش ازِ این دور): %d observations" % rep["live_nudge_flips"])
     for k, v in sorted(rep["live_nudge_flips_by"].items(), key=lambda x: -x[1])[:8]:
         print("      %-22s %d" % (k, v))
     print("\nsensitivity of the major-criterion candidates:")
-    print("%-22s %7s %9s %9s %8s" % ("candidate", "changed", "toward W", "away W", "na more"))
+    print("%-22s %7s %9s %9s %8s %11s" % ("candidate", "changed", "toward W", "away W",
+                                           "na more", "pivots kept"))
     for name, c in sorted(rep["cand"].items(), key=lambda kv: -kv[1]["changed"]):
         n = max(rep["symbols_usable"], 1)
-        print("%-22s %5d (%4.1f%%) %7d %9d %8d" %
+        keep = (100.0 * c["kept"] / c["pivots_total"]) if c["pivots_total"] else 0.0
+        print("%-22s %5d (%4.1f%%) %7d %9d %8d %7.1f%%" %
               (name, c["changed"], 100.0 * c["changed"] / n, c["toward_w"],
-               c["away_from_w"], c["na_more"]))
+               c["away_from_w"], c["na_more"], keep))
     with io.open(a.out, "w", encoding="utf-8", newline="\n") as f:
         json.dump(rep, f, ensure_ascii=False, indent=1)
     print("\nout: " + a.out)

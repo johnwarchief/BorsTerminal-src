@@ -2461,7 +2461,7 @@ def _fts_major_context(tf, row, daily_series, full_series=None):
                         جهت بسازد یا دروازۀ قیف را باز/بسته کند
       timeframe / as_of / reason
     `as_of` آخرینِ کندلِ **بستهٔ** همان سری است (کندلِ تکمیل‌نشده در ساختار نیست).
-    `provisional` برعکسش از `full_series` خوانده می‌شود: همان ردیفی که از رأی
+    `provisional` برعکسِ آن از `full_series` خوانده می‌شود: همان ردیفی که از رأی
     بیرون است، دقیقاً چیزی است که «در حالِ شکل‌گیری» است و باید گزارش شود.
     """
     series = row["series"]
