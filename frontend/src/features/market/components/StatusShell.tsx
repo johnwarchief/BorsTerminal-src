@@ -14,6 +14,15 @@ import { TONE_CLASS, toneOf, type PanelTone } from '../lib/tones';
 import type { AsOf } from '../api/useMarketStatusFeed';
 import { asOfText } from '../api/useMarketStatusFeed';
 
+/** `d_even` میلادی است (همان ستونِ `daily_prices.d_even`؛ تبدیلِ جلالیِ قابلِ
+ *  اعتماد درِ این مخزن نیست، پس رقم را نمی‌چرخانیم). بی‌ساعت، «روز» تنها شاهدِ
+ *  در دسترس است — و «بی‌داده» گفتن وقتی یکِ روزِ ثبت‌شده هست، خودش غلط است. */
+export function dayText(d: number | null | undefined): string | null {
+  if (typeof d !== 'number' || d < 10000000) return null;
+  const s = String(d);
+  return toFaDigits(`${s.slice(0, 4)}-${s.slice(4, 6)}-${s.slice(6, 8)}`);
+}
+
 export function StatusSection({
   testId,
   title,
@@ -33,6 +42,7 @@ export function StatusSection({
   children: React.ReactNode;
 }) {
   const stamp = asOfText(asof);
+  const day = stamp ? null : dayText(asof?.d_even);
   return (
     <section
       data-testid={testId}
@@ -42,8 +52,9 @@ export function StatusSection({
         <h3 className="text-2xs font-black text-text-primary" title={hint}>
           {title}
         </h3>
-        <span className="num-text text-3xs text-text-muted" data-testid={`${testId}-asof`}>
-          {stamp ? `ساعتِ داده: ${stamp}` : 'ساعتِ داده: بی‌داده'}
+        <span className="num-text text-3xs text-text-muted" data-testid={`${testId}-asof`}
+              title={day ? 'ساعتِ ثبت در این پاسخ نیامده؛ روزِ معاملۀِ همان ردیف نوشته می‌شود' : undefined}>
+          {stamp ? `ساعتِ داده: ${stamp}` : day ? `روزِ داده: ${day}` : 'ساعتِ داده: بی‌داده'}
         </span>
       </div>
       {badge ? (

@@ -148,6 +148,19 @@ describe('صفحۀ بازسازی‌شداده — هر هفت بخش', () => {
       { timeout: 12_000 },
     );
   }, 20_000);
+
+  // مرحلۀ ۱ مأموریت (2026-10-19): کارت‌های شاخص باید *اولین* بلوکِ صفحه باشند و
+  // «نگاهی به بازار» ازِ نمایِ اصلی برود. این دو را درِ خودِ DOM می‌سنجم، نه با
+  // خواندنِ متنِ فایل — گاردهایی که متنِ سورس را grep می‌کنند، جابه‌جاییِ واقعی
+  // را نمی‌بینند.
+  it('کارت‌های شاخص اولین بلوکِ صفحه‌اند و «نگاهی به بازار» دیگر نیست', async () => {
+    wrap(<MarketStatusPage />);
+    await waitFor(() => expect(screen.getByTestId('ms-index-cards')).toBeInTheDocument());
+    const page = screen.getByTestId('market-status-page');
+    expect(page.firstElementChild).toBe(screen.getByTestId('ms-index-cards'));
+    expect(screen.queryByTestId('ms-glance')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('ms-glance-grid')).not.toBeInTheDocument();
+  });
 });
 
 describe('نقشۀ بازار (صفحۀ ۲ و ۱۲)', () => {
@@ -381,5 +394,55 @@ describe('کارت‌های شاخص (صفحۀ ۶/۷)', () => {
   it('تاریخچۀ کوتاه درِ همان کارت اعلام می‌شود، نه به‌عنوان سریِ کامل', () => {
     wrap(<IndexCards data={{ ...CARDS, history_points: 2 }} isLoading={false} isError={false} onRetry={() => {}} />);
     expect(screen.getByTestId('ms-index-cards-span').textContent).toContain('۲ روزِ شاخصِ رسمی');
+  });
+
+  // ── مرحلۀ ۱ مأموریت (2026-10-19): کارت‌های شاخص به بالایِ صفحه رفتند، پس
+  //    قراردادِ هر چهار فیلد (مقدار، تغییرِ مطلق، درصد، جهت) باید همین‌جا میخکوب
+  //    شود — و «بی‌ساعت» با «بی‌داده» یکی نشود.
+  const fa = (t: unknown) => (String(t ?? '').match(/[۰-۹]/g) ?? [])
+    .map((c) => String(c.charCodeAt(0) - 0x06f0)).join('');
+
+  it('مقدار، تغییرِ مطلق، درصد و جهت هر چهار از خودِ پاسخ نوشته می‌شوند', () => {
+    wrap(<IndexCards data={CARDS} isLoading={false} isError={false} onRetry={() => {}} />);
+    expect(fa(screen.getByTestId('index-card-value-tedpix').textContent)).toBe('2145000');
+    expect(fa(screen.getByTestId('index-card-change-tedpix').textContent)).toContain('34771');
+    const pct = screen.getByTestId('index-card-pct-tedpix').textContent ?? '';
+    expect(pct).toContain('٪');
+    expect(pct.trim().startsWith('-')).toBe(true);
+    expect(fa(pct)).toBe('16');
+    expect(screen.getByTestId('index-card-arrow-tedpix').textContent).toBe('▼');
+    expect(screen.getByTestId('index-card-arrow-ewindex').textContent).toBe('▲');
+    // رنگ از همان toneِ پاسخ می‌آید، نه از حدسِ خودِ رابط (توکنِ طراحیِ سراسری)
+    expect(screen.getByTestId('index-card-tedpix').getAttribute('data-tone')).toBe('neg');
+    expect(screen.getByTestId('index-card-value-tedpix').className).toContain('text-tone-neg');
+    expect(screen.getByTestId('index-card-value-ewindex').className).toContain('text-tone-pos');
+  });
+
+  it('بی‌درصد: نه فلشِ جهت ساخته می‌شود نه ٪', () => {
+    const base = CARDS.cards ?? [];
+    const noPct = {
+      ...CARDS,
+      cards: [{ ...base[0], pct: null }, base[1], base[2]],
+    } as unknown as IndexCardsFeed;
+    wrap(<IndexCards data={noPct} isLoading={false} isError={false} onRetry={() => {}} />);
+    expect(screen.getByTestId('index-card-arrow-tedpix').textContent).toBe('');
+    expect(screen.getByTestId('index-card-pct-tedpix').textContent).toBe('—');
+  });
+
+  it('ساعت نیامده ولی روزِ معاملۀ ردیف آمده ⇒ «روزِ داده»، نه «بی‌داده»', () => {
+    wrap(<IndexCards data={CARDS} isLoading={false} isError={false} onRetry={() => {}} />);
+    const asof = screen.getByTestId('ms-index-cards-asof').textContent ?? '';
+    expect(asof).toContain('روزِ داده');
+    expect(fa(asof)).toBe('20261012');
+    expect(asof).not.toContain('بی‌داده');
+  });
+
+  it('نه ساعت نه روز ⇒ همان «بی‌داده» می‌ماند (روز از خودِ رابط نمی‌آید)', () => {
+    const noDay = {
+      ...CARDS,
+      cards: (CARDS.cards ?? []).map((c) => ({ ...c, asof_d_even: null })),
+    } as unknown as IndexCardsFeed;
+    wrap(<IndexCards data={noDay} isLoading={false} isError={false} onRetry={() => {}} />);
+    expect(screen.getByTestId('ms-index-cards-asof').textContent).toContain('بی‌داده');
   });
 });
