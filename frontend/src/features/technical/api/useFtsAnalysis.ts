@@ -235,7 +235,7 @@ const StructurePoint = z.object({
   label: z.string(),
   ref_time: z.string().nullish(),
   ref_price: z.number().nullish(),
-  // درجۀبندیِ ماژور (مأموریت ۱۴۰۵-۰۷-۲۸): فهرستِ لایۀِ ساختار حالا فقط
+  // درجۀبندیِ ماژور (مأموریت ۱۴۰۵-۰۷-۲۷): فهرستِ لایۀِ ساختار حالا فقط
   // Extremeهایِ ماژور است، پس رابط باید بتواند بگوید این نقطه با چه عددی ماژور
   // شمرده شده است.
   major: z.boolean().nullish(),

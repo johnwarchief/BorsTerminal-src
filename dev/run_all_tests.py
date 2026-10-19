@@ -105,7 +105,7 @@ SUITES = [
     ('dev/test_candle_boundary_v1.py',
      'RC2: zero-volume day never becomes a candle; FIRST/LAST/CLOSE never silently substituted; widen grows shadow, never crushes price'),
     # مرحلۀِ ۳ (§B): هویتِ رویداد از محاسبۀِ ضریب جدا شود — ضریبِ دقیق از ردیفِ مبدأ می‌نشیند
-    # ولی تاریخِ دیدہ‌شدہ جابه‌جا نمی‌شود؛ ردیفِ مبدأِ ناهمخوان جای عددِ درست را نمی‌گیرد؛
+    # ولی تاریخِ دیده‌شده جابه‌جا نمی‌شود؛ ردیفِ مبدأِ ناهمخوان جای عددِ درست را نمی‌گیرد؛
     # مطالبۀِ یکِ ردیفِ مبدأ با دو رویداد → هیچ‌کدام تیز/حذف نمی‌شود؛ بی‌دفتر → نه صفر نه حدس.
     ('dev/test_fts_event_identity_v1.py',
      '§B/RC3: event identity (date, kept) is separated from coefficient (exact from source row); disagreeing source never overwrites; shared ledger row -> ambiguous not dropped; no ledger -> unchanged'),
@@ -193,7 +193,7 @@ SUITES = [
     ('dev/fts_defaults_parity_guard.py', 'FTS guide defaults: FE drawer mirrors the server'),
     ('dev/test_hourglass_settings_v1.py', 'hourglass RSI period, oversold threshold and MA52 mode are configurable'),
     ('dev/weekly_veto_guard.py',      'weekly downtrend/neutral is a hard veto; no-data is not'),
-    # مأموریتِ ۱۴۰۵-۰۷-۲۸: پیوتِ Minor نباید روندِ ماژور را برگرداند، داورِ جهت همان
+    # مأموریتِ ۱۴۰۵-۰۷-۲۷: پیوتِ Minor نباید روندِ ماژور را برگرداند، داورِ جهت همان
     # `_fts_classify_trend` می‌ماند (اثباتِ بایت‌به‌بایت با نسخۀِ a853cc75)، کندلِ
     # تکمیل‌نشده درِ ساختارِ جهت نمی‌نشیند و `provisional` رأی یا حکمِ قیف را عوض
     # نمی‌کند. بی‌شبکه و بی‌market.db — همه فیکسچر؛ سنجشِ دادهٔ واقعی جداست
@@ -678,7 +678,7 @@ def _basis_guard(label, before):
 
 # متنِ کاملِ فرزند درِ یکِ فایلِ UTF-8 می‌نشیند. پیش از این، سطرِ شکست تنها با
 # `encode('ascii','replace')` چاپ می‌شد تا سرخطی رویِ کنسولِ cp1252 نمُرد؛ همان
-# `?`ها دو سطرِ شکستِ `price_last_value_v1070` را ناخواندہ کردند و علتِ واقعی
+# `?`ها دو سطرِ شکستِ `price_last_value_v1070` را ناخوانده کردند و علتِ واقعی
 # (دو ارجاعِ متنیِ کهنه، نه افتِ ترتیبی) سه دورِ کامل پنهان ماند.
 GATE_DIR = os.path.join(_ROOT, '_audit', 'gate_suites')
 _seq = [0]
