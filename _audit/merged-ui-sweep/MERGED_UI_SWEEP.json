@@ -1,17 +1,19 @@
 {
   "base": "http://127.0.0.1:8173/",
-  "at": "2026-10-19T01:29:51.044Z",
+  "at": "2026-10-19T01:54:47.878Z",
   "rows": [
     {
-      "route": "#/master",
-      "probe": "fts-funnel-workspace",
+      "route": "#/market",
+      "name": "market",
+      "probe": "market-page",
+      "probeExpected": true,
       "probeBeforeData": 0,
       "probeAfterWait": 1,
-      "loadMs": 3939,
+      "loadMs": 5179,
       "metrics": {
         "docHeight": 1100,
         "mainHeight": 1028,
-        "testids": 166,
+        "testids": 380,
         "rowsInTables": 0
       },
       "consoleErrors": [
@@ -19,31 +21,16 @@
       ],
       "httpFailures": [],
       "externalRequests": [],
-      "shot": "01-master.png"
-    },
-    {
-      "route": "#/market",
-      "probe": "market-page",
-      "probeBeforeData": 0,
-      "probeAfterWait": 1,
-      "loadMs": 3948,
-      "metrics": {
-        "docHeight": 1100,
-        "mainHeight": 1028,
-        "testids": 380,
-        "rowsInTables": 0
-      },
-      "consoleErrors": [],
-      "httpFailures": [],
-      "externalRequests": [],
-      "shot": "02-market.png"
+      "shot": "market.png"
     },
     {
       "route": "#/market-status",
+      "name": "market-status",
       "probe": "market-status-page",
+      "probeExpected": true,
       "probeBeforeData": 0,
       "probeAfterWait": 1,
-      "loadMs": 3952,
+      "loadMs": 3973,
       "metrics": {
         "docHeight": 1100,
         "mainHeight": 1028,
@@ -53,48 +40,132 @@
       "consoleErrors": [],
       "httpFailures": [],
       "externalRequests": [],
-      "shot": "03-market-status.png"
+      "shot": "market-status.png"
     },
     {
-      "route": "#/technical/%D9%81%D9%88%D9%84%D8%A7%D8%AF",
-      "probe": "chart-area",
-      "probeBeforeData": 0,
-      "probeAfterWait": 1,
-      "loadMs": 3922,
+      "route": "#/notifications",
+      "name": "notifications",
+      "probe": null,
+      "probeExpected": false,
+      "probeBeforeData": null,
+      "probeAfterWait": null,
+      "loadMs": 3906,
       "metrics": {
         "docHeight": 1100,
         "mainHeight": 1028,
-        "testids": 157,
+        "testids": 97,
         "rowsInTables": 0
       },
       "consoleErrors": [],
       "httpFailures": [],
       "externalRequests": [],
-      "shot": "04-technical.png"
+      "shot": "notifications.png"
     },
     {
       "route": "#/fundamental/%D9%81%D9%88%D9%84%D8%A7%D8%AF",
+      "name": "fundamental",
       "probe": "fundamental-page",
+      "probeExpected": true,
       "probeBeforeData": 0,
       "probeAfterWait": 1,
-      "loadMs": 3936,
+      "loadMs": 3948,
       "metrics": {
         "docHeight": 1100,
-        "mainHeight": 963,
-        "testids": 154,
+        "mainHeight": 1028,
+        "testids": 141,
         "rowsInTables": 0
       },
       "consoleErrors": [],
       "httpFailures": [],
       "externalRequests": [],
-      "shot": "05-fundamental.png"
+      "shot": "fundamental.png"
+    },
+    {
+      "route": "#/technical/%D9%81%D9%88%D9%84%D8%A7%D8%AF",
+      "name": "technical",
+      "probe": "chart-area",
+      "probeExpected": true,
+      "probeBeforeData": 0,
+      "probeAfterWait": 1,
+      "loadMs": 3978,
+      "metrics": {
+        "docHeight": 1100,
+        "mainHeight": 963,
+        "testids": 170,
+        "rowsInTables": 0
+      },
+      "consoleErrors": [],
+      "httpFailures": [],
+      "externalRequests": [],
+      "shot": "technical.png"
+    },
+    {
+      "route": "#/engine-lab",
+      "name": "engine-lab",
+      "probe": null,
+      "probeExpected": false,
+      "probeBeforeData": null,
+      "probeAfterWait": null,
+      "loadMs": 3925,
+      "metrics": {
+        "docHeight": 1100,
+        "mainHeight": 963,
+        "testids": 92,
+        "rowsInTables": 38
+      },
+      "consoleErrors": [],
+      "httpFailures": [
+        "404 http://127.0.0.1:8173/@fs/C:/Users/PCMOD/Desktop/_bors-sarkhati-jev/frontend/node_modules/.vite/deps/indicator"
+      ],
+      "externalRequests": [],
+      "shot": "engine-lab.png"
+    },
+    {
+      "route": "#/strategy-tree/%D9%81%D9%88%D9%84%D8%A7%D8%AF",
+      "name": "strategy-tree",
+      "probe": null,
+      "probeExpected": false,
+      "probeBeforeData": null,
+      "probeAfterWait": null,
+      "loadMs": 3919,
+      "metrics": {
+        "docHeight": 1100,
+        "mainHeight": 963,
+        "testids": 102,
+        "rowsInTables": 0
+      },
+      "consoleErrors": [],
+      "httpFailures": [],
+      "externalRequests": [],
+      "shot": "strategy-tree.png"
+    },
+    {
+      "route": "#/portfolio/%D9%81%D9%88%D9%84%D8%A7%D8%AF",
+      "name": "portfolio",
+      "probe": null,
+      "probeExpected": false,
+      "probeBeforeData": null,
+      "probeAfterWait": null,
+      "loadMs": 3932,
+      "metrics": {
+        "docHeight": 1100,
+        "mainHeight": 963,
+        "testids": 97,
+        "rowsInTables": 7
+      },
+      "consoleErrors": [],
+      "httpFailures": [],
+      "externalRequests": [],
+      "shot": "portfolio.png"
     },
     {
       "route": "#/sarkhati",
+      "name": "sarkhati",
       "probe": "sarkhati-page",
+      "probeExpected": true,
       "probeBeforeData": 0,
       "probeAfterWait": 1,
-      "loadMs": 3914,
+      "loadMs": 3930,
       "metrics": {
         "docHeight": 1100,
         "mainHeight": 963,
@@ -104,7 +175,45 @@
       "consoleErrors": [],
       "httpFailures": [],
       "externalRequests": [],
-      "shot": "06-sarkhati.png"
+      "shot": "sarkhati.png"
+    },
+    {
+      "route": "#/watch",
+      "name": "watch",
+      "probe": null,
+      "probeExpected": false,
+      "probeBeforeData": null,
+      "probeAfterWait": null,
+      "loadMs": 3915,
+      "metrics": {
+        "docHeight": 1100,
+        "mainHeight": 963,
+        "testids": 91,
+        "rowsInTables": 0
+      },
+      "consoleErrors": [],
+      "httpFailures": [],
+      "externalRequests": [],
+      "shot": "watch.png"
+    },
+    {
+      "route": "#/master/%D9%81%D9%88%D9%84%D8%A7%D8%AF",
+      "name": "master",
+      "probe": "master-breadcrumb",
+      "probeExpected": true,
+      "probeBeforeData": 0,
+      "probeAfterWait": 1,
+      "loadMs": 3916,
+      "metrics": {
+        "docHeight": 1100,
+        "mainHeight": 963,
+        "testids": 128,
+        "rowsInTables": 7
+      },
+      "consoleErrors": [],
+      "httpFailures": [],
+      "externalRequests": [],
+      "shot": "master.png"
     }
   ]
 }
