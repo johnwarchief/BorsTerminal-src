@@ -172,6 +172,10 @@ a = Analysis(
                    # می‌میرد و گاردِ HTTPِ محلی هیچ‌وقت این را نمی‌بیند.
                    'execution_easytrader',
                    'execution_connect',
+                   # providerِ مخزنِ اعتبارنامۀ ویندوز (`BorsTerminal:EasyTrader`):
+                   # api/execution.py آن را درِ صدرِ فایل import می‌کند و
+                   # /api/execution/status هر بار از آن می‌خواند.
+                   'execution_credentials',
                    # تنظیمِ اتصال (مأموریتِ ۱۴۰۵-۰۷-۲۹): درِ بدنهٔ تابع import می‌شود
                    # تا انتخابِ آداپتور از خودِ برنامه هم ممکن باشد؛ بی‌این خط
                    # بیلدِ منجمد رویِ اولین /api/execution/status می‌میرد.

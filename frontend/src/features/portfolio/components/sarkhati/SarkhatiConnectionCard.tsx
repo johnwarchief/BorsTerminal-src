@@ -24,7 +24,7 @@ import { SarkhatiConnectionSettings } from './SarkhatiConnectionSettings';
 import { SarkhatiSessionForm } from './SarkhatiSessionForm';
 import { toFaDigits } from '@shared/lib/fmt';
 import { PORTFOLIO_LABEL, PORTFOLIO_STATES, TRAFFIC_LABEL, TRAFFIC_MODES,
-  useBrokerConnect, useExecutionPortfolio,
+  useBrokerConnect, useExecutionPortfolio, useExecutionStatus,
   type ConnectState, type PortfolioState, type TrafficMode }
   from '../../lib/orderClient';
 import { Chip, Field, Line, Note, Section } from './parts';
@@ -38,6 +38,7 @@ const ROLE_LABEL: Record<string, string> = {
 export function SarkhatiConnectionCard() {
   const q = useBrokerConnect();
   const pf = useExecutionPortfolio();
+  const { gate } = useExecutionStatus();
   const c = q.data;
   const last = (c?.last_verify ?? {}) as Record<string, unknown>;
   const browser = (c?.browser ?? {}) as Record<string, unknown>;
@@ -57,6 +58,20 @@ export function SarkhatiConnectionCard() {
   const verdict = state === 'CONNECTED' ? 'تأیید شده' : state === 'EXPIRED' ? 'منقضی'
     : state === 'DISCONNECTED' ? 'تأیید نشده' : 'نامعلوم';
   const verdictTone = state === 'CONNECTED' ? 'ok' : state === 'UNKNOWN' ? 'idle' : 'warn';
+  // اعتبارنامه از `/api/execution/status` می‌آید و درِ `ExecutionStatusSchema`
+  // محدود شده است؛ پس هر فیلدِ اضافی (رمز، نامِ کامل) پیش ازِ رسیدن به اینجا
+  // افتاده می‌کند. «بی‌کلید» با «بی‌پاسخ» یکی نیست: نبودِ پاسخ ← «پاسخی نیامده».
+  const cred = gate.status?.credential ?? null;
+  const credCode = cred ? String(cred.code ?? '') : (gate.endpointPresent ? 'ABSENT' : '');
+  const credText = !gate.endpointPresent ? 'پاسخی نیامده'
+    : credCode === 'ABSENT' ? 'پاسخِ بی‌این بخش'
+      : credCode === 'OK' ? `هست · ${String(cred?.user_masked || '—')}`
+        : credCode === 'MISSING' ? 'نیست'
+          : credCode === 'UNSUPPORTED' ? 'این سامانه پشتیبانی نمی‌کند'
+            : credCode === 'DENIED' ? 'دسترسی رد شد'
+              : credCode === 'MALFORMED' ? 'ساختارش خوانده نشد' : 'نامعلوم';
+  const credHint = ['MISSING', 'MALFORMED', 'DENIED'].includes(credCode)
+    ? String(cred?.hint || '') : '';
 
   return (
     <Section title="اتصالِ کارگزاری" testId="sarkhati-connection-card"
@@ -96,6 +111,21 @@ export function SarkhatiConnectionCard() {
           <Chip tone={TRAFFIC_LABEL[traffic].tone} testId="sarkhati-traffic-mode">
             {TRAFFIC_LABEL[traffic].text}
           </Chip>)} />
+        {/* اعتبارنامۀ محلی: پنجمین واقعیتِ جدا. «هست» هیچ‌وقت به معنی «وارد شدیم»
+            نیست، و نامِ کاملِ کاربری هرگز نشان داده نمی‌شود. */}
+        <Field label="اعتبارنامۀ ویندوز" value={(
+          <span className="text-2xs" data-testid="sarkhati-credential-state"
+                data-code={credCode || 'NONE'}
+                title={cred?.target
+                  ? `مخزن: ${cred.target} — رمز هیچ‌جا درِ این برنامه ذخیره نمی‌شود`
+                  : 'مخزنِ اعتبارنامۀ ویندوز'}>
+            {credText}
+          </span>)} />
+        {credHint ? (
+          <span className="text-3xs text-accent-yellow" data-testid="sarkhati-credential-hint">
+            {credHint}
+          </span>
+        ) : null}
       </div>
 
       <SarkhatiConnectionSettings />

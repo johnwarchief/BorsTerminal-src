@@ -531,6 +531,8 @@ SUITES = [
     # باشند. کنترلِ منفی: SloppyAdapter (retry + fallback به ISINِ «زر» + صفرِ
     # جعلیِ صف) باید درِ همین سوئیت بیفتد، وگرنه سوئیت کور است.
     ('dev/execution_contract_v1.py', 'sarkhati: broker contract on mock, no blind retry'),
+    ('dev/execution_credentials_v1.py',
+     'sarkhati: windows credential provider, redaction, malformed layout'),
     # SARKHATI Stage H: موتورِ زمان. آفستِ NTP چندنمونه‌ای با *حالتِ* کیفیت
     # (TRUSTED/DEGRADED/UNTRUSTED/UNAVAILABLE) و fail-safe بی‌صدا رد نمی‌شود؛
     # مهلت رویِ monotonic است پس پرشِ ساعتِ دیواری dispatch را جابه‌جا نمی‌کند؛

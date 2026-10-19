@@ -50,6 +50,7 @@ from execution_easytrader import (
     easytrader_payload,
 )
 import execution_connect as EXC                            # noqa: E402
+import execution_credentials as CREDS                      # noqa: E402
 from execution_ledger import ARMED, HALT, TRIPPED, default_ledger
 from execution_mock import MockBrokerAdapter
 from execution_service import ExecutionError, ExecutionService, Limits
@@ -634,6 +635,32 @@ def _mode_matrix(live: bool) -> dict[str, Any]:
                                "و درِ کنترل‌کنندۀ مرکزی نیست"},
     }
 
+#: وضعیتِ اعتبارنامه یک‌بار درِ هر _CRED_TTL ثانیه ازِ مخزنِ ویندوز خوانده می‌شود.
+#: چرا کش: رابطِ تبِّ سرخطی `/api/execution/status` را مکرر می‌پرسد، و هر پرسش
+#: نباید یکِ CredReadW (و در نتیجه رمزِ تازه درِ حافظه) بسازد. خودِ رمز هرگز درِ
+#: این کش نمی‌ماند — فقط نتیجهٔ پوشیده.
+_CRED_TTL_S = 30.0
+_CRED_CACHE: dict[str, Any] = {"at": 0.0, "payload": None}
+
+
+def _credential_status(force: bool = False) -> dict[str, Any]:
+    now = time.monotonic()
+    if (not force) and _CRED_CACHE["payload"] and (now - float(_CRED_CACHE["at"])) < _CRED_TTL_S:
+        return dict(_CRED_CACHE["payload"])
+    payload = CREDS.public_status()          # public_status خودش رمز را بیرون نمی‌دهد
+    payload["checked_at"] = int(time.time())
+    _CRED_CACHE["at"] = now
+    _CRED_CACHE["payload"] = dict(payload)
+    return payload
+
+
+@router.post("/api/execution/credential/refresh")
+def post_credential_refresh() -> dict[str, Any]:
+    """بعد از اینکه کاربر اعتبارنامه را درِ Control Panel اضافه/ویرایش کرد، رابط
+    با این دروازه دوباره می‌خواند — بی‌restart و بی‌هیچ درخواستی به کارگزاری."""
+    return {"status": "success", "credential": _credential_status(force=True)}
+
+
 @router.get("/api/execution/status")
 def get_status() -> dict[str, Any]:
     caps = _ACTIVE_ADAPTER.capabilities()
@@ -662,7 +689,14 @@ def get_status() -> dict[str, Any]:
             blocked.append("ترافیک خاموش است — «تنظیمِ اتصال» را رویِ فقط‌خواندنی بگذارید "
                            "(یا BORS_EXECUTION_LIVE=1 برایِ ارسالِ سفارش) و restart کنید")
     if ADAPTER_KIND == "easytrader" and LIVE_REQUESTED and not live:
-        blocked.append("D1: نشستِ مالک درِ حافظه نیست — ورودِ تعاملی با خودِ مالک")
+        cred = _credential_status()
+        if cred.get("present"):
+            who = str(cred.get("user_masked") or "—")
+            blocked.append("نشستِ معاملاتی درِ حافظه نیست؛ اعتبارنامۀ ذخیره‌شده "
+                           "(%s) درِ مخزنِ ویندوز هست — ورودِ فقط‌خواندنی لازم است" % who)
+        else:
+            blocked.append("D1: نشستِ مالک درِ حافظه نیست و اعتبارنامۀ ویندوز هم "
+                           "پیدا نشد — " + str(cred.get("hint") or "ورودِ تعاملی با خودِ مالک"))
     # گیتِ عبارتِ تأیید (§۲-۲): فقط وقتی که اجرایِ زنده واقعاً روشن است ازِ UI
     # چیزی می‌خواهد؛ درِ dry-run تمرین و پیش‌نمایش نباید بشکند. «required»
     # را UI می‌خواند تا بداند چه چیزی تایپ شود، نه اینکه حدس بزند.
@@ -694,7 +728,12 @@ def get_status() -> dict[str, Any]:
                               "read_only": bool(READ_ONLY_REQUESTED),
                               "writes_gate": "env:BORS_EXECUTION_LIVE",
                               "applies_on_restart": True,
+                              # «برنامه هیچ رمزی ذخیره نمی‌کند» همچنان درست است:
+                              # اعتبارنامه درِ مخزنِ خودِ ویندوز می‌ماند، نه درِ
+                              # فایل/دیتابیس/Git این برنامه. `credential` جدا
+                              # می‌گوید آن مخزن رویِ این ماشین چه می‌گوید.
                               "secrets_stored": False},
+        "credential": _credential_status(),
         "wire_hypothesis": (ADAPTER_KIND == "easytrader") and WIRE_HYPOTHESIS,
         # منشأِ هر مسیرِ سیم (§۳-۲): «فقط درِ کدِ شخصِ ثالث» از «پیکربندیِ
         # انتشاریافتۀِ خودِ کارگزاری» و «رفتارِ دیده‌شده» جداست. بی‌این تفکیک،

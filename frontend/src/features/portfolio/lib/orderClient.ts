@@ -136,6 +136,14 @@ export const ExecutionStatusSchema = z.object({
   session_live: bool,
   traffic_allowed: bool,
   connection_config: z.record(z.string(), z.unknown()).nullish(),
+  // اعتبارنامۀ محلی (مأموریت 2026-10-19): «هست یا نه» + نامِ پوشیده + راهنما.
+  // هیچ میدانِ دیگری درِ این قرارداد پذیرفته نمی‌شود؛ اگر بک‌اند (یا هر
+  // پاسخِ جعلی) `password` یا نامِ کامل بفرستد، همین‌جا افتاد می‌کند و به
+  // رابط نمی‌رسد — سانسور درِ مرزِ قرارداد است، نه درِ انتخابِ مؤلفه.
+  credential: z.object({
+    provider: txt, target: txt, present: bool, code: txt,
+    user_masked: txt, last_written: txt, hint: txt, checked_at: num,
+  }).nullish(),
 });
 export type ExecutionStatus = z.infer<typeof ExecutionStatusSchema>;
 
