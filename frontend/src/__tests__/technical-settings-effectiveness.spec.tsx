@@ -112,8 +112,14 @@ const flush = async () => {
 /** آنچۀ واقعیِ چیزی که `setStyles` می‌گیرد، تنها درِ همین آزمون خوانده می‌شود —
  *  بی‌`any`، تا اگر کلیدِ سبک جابه‌جا شود سنجه قرمز شود نه بی‌صدا. */
 type AppliedStyles = {
-  xAxis: { tickText: { marginStart: number; marginEnd: number } };
-  yAxis: { tickText: { marginStart: number; marginEnd: number } };
+  xAxis: { show: boolean; size: number; tickText: { marginStart: number; marginEnd: number } };
+  yAxis: {
+    show: boolean;
+    size: number | 'auto';
+    position: 'left' | 'right';
+    reverse: boolean;
+    tickText: { marginStart: number; marginEnd: number };
+  };
   candle: { bar: { upWickColor: string; downWickColor: string } };
 };
 
