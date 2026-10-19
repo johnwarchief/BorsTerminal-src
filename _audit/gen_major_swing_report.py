@@ -213,6 +213,8 @@ def main():
     vit = log_tail(A("_scratch", "live", "chain_vitest.log"), "Tests ")
     lint_err = log_tail(A("_scratch", "live", "chain_lint.log"), "problem")
     build = log_tail(A("_scratch", "live", "chain_build.log"), "built in")
+    rulemap_raw = log_tail(A("_scratch", "live", "chain_all_tests.log"), "FTS rule->algorithm map")
+    rulemap_line = rulemap_raw.split("rc=")[-1].strip() if rulemap_raw else None
 
     def exit_of(tag):
         for ln in exits.splitlines():
@@ -305,6 +307,7 @@ def main():
             ("api/chart.py", "def _watch_live_bar", "تزریق کندل جلسۀ جاری"),
             ("api/chart.py", "def _fts_scaled", "تعدیل + انتخاب ستون قیمت"),
             ("api/chart.py", "def _candles_upto_asof", "برش واقعی as-of"),
+            ("api/chart.py", '@router.get("/api/fts/{symbol}")', "همان مسیر API که تست §F می‌سنجد"),
             ("funnel_engine.py", "def technical_stage", "گام تکنیکال قیف"),
             ("api/screener.py", 'r["tech_trend_w"] =', "ستون tech_* اسکرینر"),
             ("major_swings.py", "def grade", "درجۀبندی ماژور"),
@@ -575,6 +578,16 @@ def main():
         W("**تذکرِ attribution:** زنجیره روی `%s` اجرا شد و این سند روی `%s` است؛"
           % (chain_sha[:8], head_sha[:8]))
         W("فاصله فقط مستندات است. هیچ نتیجۀ گامی به SHA دیگری نسبت داده نشده.")
+    W("")
+    W("### ۱۰-پ) اثرِ جانبیِ این دور رویِ سندِ نقشهٔ قواعد (خودکار نه، با بازرسی)")
+    W("")
+    W("جابه‌جا شدنِ سطرهای `api/chart.py` سه ارجاعِ `NAME:LINE` درِ")
+    W("`docs/FTS-RULE-ALGORITHM-MAP.md` را کهنه کرد و گارد `dev/test_rule_map_citations.py`")
+    W("درِ همان زنجیره قرمز شد (درست همان چیزی که باید بکند). رفع با")
+    W("`_audit/fix_rule_map_lines.py` انجام شد: نام‌ها صریح فهرست شده‌اند و سطرِ هر نام")
+    W("از خودِ فایل با الگوی `^def NAME(` دوباره خوانده می‌شود — نه از پیامِ گارد")
+    W("(درسِ دورِ قبل: regexِ حریص روی لاگ، سطرِ غلط نوشت). نتیجه‌ی گارد: %s" % (
+        rulemap_line or "(در لاگ یافت نشد)"))
     W("")
     W("### فایل‌های این مأموریت (`git diff --name-only %s..HEAD`)" % BASE_SHA)
     W("")
