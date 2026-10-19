@@ -533,6 +533,8 @@ SUITES = [
     ('dev/execution_contract_v1.py', 'sarkhati: broker contract on mock, no blind retry'),
     ('dev/execution_credentials_v1.py',
      'sarkhati: windows credential provider, redaction, malformed layout'),
+    ('dev/execution_budget_v1.py',
+     'sarkhati: buying-power budget, never an estimated amount'),
     # SARKHATI Stage H: موتورِ زمان. آفستِ NTP چندنمونه‌ای با *حالتِ* کیفیت
     # (TRUSTED/DEGRADED/UNTRUSTED/UNAVAILABLE) و fail-safe بی‌صدا رد نمی‌شود؛
     # مهلت رویِ monotonic است پس پرشِ ساعتِ دیواری dispatch را جابه‌جا نمی‌کند؛
