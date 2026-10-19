@@ -34,7 +34,7 @@ import threading
 import time
 import uuid
 from collections import deque
-from typing import Any
+from typing import Any, Optional
 
 from fastapi import APIRouter, Body, HTTPException, Query, Request
 
@@ -49,6 +49,7 @@ from execution_easytrader import (
     WIRE_HYPOTHESIS, WIRE_PROBE_HOST_HEALTH, WIRE_SESSION_PROBE_CANDIDATES,
     easytrader_payload,
 )
+import execution_budget as EB                              # noqa: E402
 import execution_connect as EXC                            # noqa: E402
 import execution_credentials as CREDS                      # noqa: E402
 from execution_ledger import ARMED, HALT, TRIPPED, default_ledger
@@ -634,6 +635,107 @@ def _mode_matrix(live: bool) -> dict[str, Any]:
                      "proves": "موتورِ آفلاینِ سنجشِ استراتژی؛ اندپوینتِ HTTP ندارد "
                                "و درِ کنترل‌کنندۀ مرکزی نیست"},
     }
+
+# ── پیش‌نمایشِ بودجه (اصلاحیۀ 2026-10-19: حداکثرِ قدرت خرید، بی‌هیچ تخمینی) ─
+def _instrument_band(symbol: str) -> dict[str, Any]:
+    """بازۀ مجازِ قیمت، آخرین قیمت و تازگی از همان بانکِ محلی (منبعِ TSETMC).
+    بی‌ردیف هیچ عددی ساخته نمی‌شود؛ `present: false` خودش یکِ پاسخِ کامل است."""
+    out: dict[str, Any] = {"present": False, "source": "market.db"}
+    try:
+        conn = sqlite3.connect(f"file:{DB_PATH}?mode=ro", uri=True, timeout=15)
+    except sqlite3.Error:
+        out["error"] = "بانکِ بازار باز نشد"
+        return out
+    try:
+        conn.row_factory = sqlite3.Row
+        row = conn.execute(
+            "SELECT i.ins_code, i.isin, i.base_vol, m.d_even, m.p_last, m.p_closing,"
+            "       m.allowed_min, m.allowed_max, m.fetched_at"
+            "  FROM instruments i LEFT JOIN market_watch m ON m.ins_code = i.ins_code"
+            " WHERE TRIM(i.l_val18) = ?"
+            " ORDER BY m.d_even DESC, m.h_even DESC LIMIT 1", (symbol,)).fetchone()
+    except sqlite3.OperationalError as exc:
+        out["error"] = "پرسشِ بازه خطا داد: %s" % str(exc)[:60]
+        return out
+    finally:
+        try:
+            conn.close()
+        except Exception:                                     # noqa: BLE001
+            pass
+    if not row or row["d_even"] is None:
+        out["error"] = "ردیفی برای این نماد در تابلو نیست"
+        return out
+    d = dict(row)
+    out.update(present=True, ins_code=d.get("ins_code"), isin=d.get("isin"),
+               lot_size=d.get("base_vol"), d_even=d.get("d_even"),
+               p_last=d.get("p_last"), p_closing=d.get("p_closing"),
+               allowed_min=d.get("allowed_min"), allowed_max=d.get("allowed_max"),
+               as_of=d.get("fetched_at"))
+    return out
+
+
+def _buying_power() -> tuple[Any, str]:
+    """قدرت خرید فقط ازِ خودِ آداپتور. نه ازِ رابط، نه ازِ قیمتِ دیروز، نه ازِ
+    حدسِ سرمایه. نبودنش همان UNKNOWN است، نه صفر."""
+    snap = getattr(_ACTIVE_ADAPTER, "account_snapshot", None)
+    if not callable(snap):
+        return None, "آداپتورِ فعلی هیچ خوانشِ حسابی ندارد (balances اعلام نشده)"
+    try:
+        data = snap() or {}
+    except Exception as exc:                                  # noqa: BLE001
+        return None, "خوانشِ حساب خطا داد: %s" % type(exc).__name__
+    val = data.get("buying_power_rial")
+    if val is None:
+        return None, "کارگزاری قدرت خرید را برنگرداند"
+    return val, str(data.get("source") or "broker")
+
+
+def budget_preview(symbol: str, side: str = "buy", price: Any = None) -> dict[str, Any]:
+    """هستۀِ خالص: هویتِ نماد + بازۀ مجاز + مبنایِ قیمت + بودجه.
+    تابعِ جداست تا بدونِ HTTP و بدونِ نشستِ کارگزاری آزمون‌پذیر بماند."""
+    sym = (symbol or "").strip()
+    band = _instrument_band(sym) if sym else {"present": False, "error": "بی‌نماد"}
+    blockers: list[str] = []
+    chosen: Optional[int] = None
+    basis = "explicit"
+    if price not in (None, "", 0):
+        try:
+            chosen = int(float(str(price).replace(",", "")))
+        except ValueError:
+            blockers.append("قیمتِ داده‌شده عدد نیست")
+    elif band.get("present"):
+        cap = band.get("allowed_max") if side == "buy" else band.get("allowed_min")
+        if cap:
+            chosen = int(cap)
+            basis = "allowed_max" if side == "buy" else "allowed_min"
+            blockers.append("مبنایِ قیمت: سقفِ مجازِ اعلام‌شده برای همین نماد "
+                            "(سرخطی روی همین قیمت بسته می‌شود)")
+        else:
+            blockers.append("بازۀ مجازِ قیمت درِ دادهٔ بازار نیست؛ قیمت حدس نمی‌شود")
+    else:
+        blockers.append("نماد درِ تابلویِ امروز ردیفی ندارد")
+    power, power_src = _buying_power()
+    if power is None:
+        blockers.append("قدرت خرید ازِ کارگزاری نرسیده — " + power_src)
+    plan = EB.max_affordable(power, chosen, lot_size=band.get("lot_size"))
+    return {
+        "status": "success", "symbol": sym, "side": side,
+        "instrument": {"ins_code": band.get("ins_code"), "isin": band.get("isin"),
+                       "resolved": bool(band.get("isin"))},
+        "band": band, "price": chosen, "price_basis": basis,
+        "buying_power_rial": power, "buying_power_source": power_src,
+        "plan": plan.as_dict(), "blockers": blockers,
+        # صریح: این پیش‌نمایش است؛ نه سفارش، نه پاسخِ کارگزاری
+        "is_order": False, "from_broker": False,
+    }
+
+
+@router.get("/api/execution/budget")
+def get_budget(symbol: str = Query(""), side: str = Query("buy"),
+               price: str = Query("")) -> dict[str, Any]:
+    return budget_preview(symbol, side=side if side in ("buy", "sell") else "buy",
+                          price=price or None)
+
 
 #: وضعیتِ اعتبارنامه یک‌بار درِ هر _CRED_TTL ثانیه ازِ مخزنِ ویندوز خوانده می‌شود.
 #: چرا کش: رابطِ تبِّ سرخطی `/api/execution/status` را مکرر می‌پرسد، و هر پرسش

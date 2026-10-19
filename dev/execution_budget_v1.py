@@ -57,8 +57,10 @@ def main():
 
     # ── سقف/گامِ ناشناخته ⇒ ادعا نمی‌شود ──
     r2 = EB.max_affordable(10_000_000, 12340, fee_rate=Decimal("0.0012"))
-    ck(r2.status == EB.LIMITS_UNKNOWN, "بی‌سقفِ تعداد ⇒ LIMITS_UNKNOWN", r2.status)
-    ck(r2.quantity == 0, "درِ این حالت تعدادی گزارش نمی‌شود")
+    ck(r2.status == EB.OK and r2.caps_verified is False,
+       "بی‌سقفِ تعداد ⇒ تعداد حساب می‌شود ولی مجازبودنش تأیید نشده", r2.status)
+    ck(any("سقف" in a for a in r2.assumptions), "فقدانِ سقفِ کارگزاری درِ فرضها نوشته می‌شود")
+    ck(r2.as_dict()["caps_verified"] is False, "پرچمِ caps_verified درِ پاسخ هم هست")
 
     # ── حالتِ کامل: حسابِ درست و هیچ‌گاه بیشتر ازِ پول ──
     # 10_000_000 / (12_340 * 1.0012) = 809.4 -> 809 سهم

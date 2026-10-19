@@ -535,6 +535,8 @@ SUITES = [
      'sarkhati: windows credential provider, redaction, malformed layout'),
     ('dev/execution_budget_v1.py',
      'sarkhati: buying-power budget, never an estimated amount'),
+    ('dev/execution_budget_api_v1.py',
+     'sarkhati: budget preview endpoint, price basis, unknown buying power'),
     # SARKHATI Stage H: موتورِ زمان. آفستِ NTP چندنمونه‌ای با *حالتِ* کیفیت
     # (TRUSTED/DEGRADED/UNTRUSTED/UNAVAILABLE) و fail-safe بی‌صدا رد نمی‌شود؛
     # مهلت رویِ monotonic است پس پرشِ ساعتِ دیواری dispatch را جابه‌جا نمی‌کند؛

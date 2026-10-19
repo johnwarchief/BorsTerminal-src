@@ -54,6 +54,7 @@ a = Analysis(
         # providerِ Windows Credential Manager — بی‌این، بیلدِ نصاب رویِ اولین
         # /api/execution/status با ModuleNotFoundError می‌میرد.
         'execution_credentials',
+        'execution_budget',
         # تنظیمِ اتصال (`execution_settings`) درِ بدنهٔ تابع import می‌شود؛ بی‌این
         # درِ بستهٔ ساخته‌شده با این spec، اولین `/api/execution/config` یا
         # `/api/execution/status` با ModuleNotFoundError می‌افتد (مأموریتِ ۲۰۲۶-۱۰-۱۸).

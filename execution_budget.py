@@ -61,6 +61,9 @@ class BudgetPlan:
     fee_rate: Optional[float] = None
     lot_size: int = 1
     max_qty: Optional[int] = None
+    #: سقفِ تعداد ازِ خودِ کارگزاری رسیده است؟ بی‌آن، تعداد حساب می‌شود ولی
+    #: «مجاز بودنش» تأیید نشده است — این را ازِ OKِ بی‌قید جدا نگه می‌داریم.
+    caps_verified: bool = False
     assumptions: tuple[str, ...] = ()
     why: str = ""
 
@@ -77,6 +80,7 @@ class BudgetPlan:
             "fee_rate": self.fee_rate,
             "lot_size": self.lot_size,
             "max_qty": self.max_qty,
+            "caps_verified": self.caps_verified,
             "assumptions": list(self.assumptions),
             "why": self.why,
             # صریح: این یکِ *پیش‌نمایشِ محلی* است، نه پاسخِ کارگزاری
@@ -125,11 +129,10 @@ def max_affordable(buying_power_rial: Any, price_rial: Any,
     cap = _dec(max_qty)
     cap_i = int(cap) if (cap is not None and cap >= 0) else None
     if cap is None:
-        return BudgetPlan(LIMITS_UNKNOWN, price=int(price),
-                          buying_power_rial=int(money), fee_rate=float(fee),
-                          lot_size=lot_i, assumptions=tuple(assumptions),
-                          why="سقفِ تعداد ازِ قراردادِ کارگزاری نرسیده؛ "
-                             "حداکثرِ پولی محاسبه می‌شود ولی «مجاز بودنش» تأیید نیست")
+        # تعداد ازِ پول قابلِ محاسبه است؛ چیزی که نمی‌دانیم این است که کارگزاری
+        # چنین حجمی را در یکِ سفارش می‌پذیرد یا نه. پس OK باِ پرچمِ جدا، نه
+        # ردِ کلِ محاسبه و نه ادعایِ مجازبودن.
+        assumptions.append("سقفِ تعداد ازِ کارگزاری نرسیده ⇒ مجازبودنِ این حجم تأیید نشده")
 
     # تعدادِ حداکثر: k * lot * price * (1 + fee) <= money، گرد به پایین
     per_lot = price * (Decimal("1") + fee)
@@ -139,7 +142,7 @@ def max_affordable(buying_power_rial: Any, price_rial: Any,
     lots = int((money / per_lot) // _PRICE_STEP) if lot_i == 1 else \
         int((money / (per_lot * Decimal(lot_i))).to_integral_value(rounding=ROUND_DOWN))
     qty = lots * lot_i
-    if cap_i > 0:
+    if cap_i is not None and cap_i > 0:
         allowed = (cap_i // lot_i) * lot_i
         if qty > allowed:
             qty = allowed
@@ -157,7 +160,7 @@ def max_affordable(buying_power_rial: Any, price_rial: Any,
         OK, quantity=qty, price=int(price), gross_rial=int(gross), fee_rial=fee_rial,
         total_rial=total, remaining_rial=int(money) - total,
         buying_power_rial=int(money), fee_rate=float(fee), lot_size=lot_i,
-        max_qty=cap_i, assumptions=tuple(assumptions),
+        max_qty=cap_i, assumptions=tuple(assumptions), caps_verified=cap_i is not None,
         why="حداکثرِ تعداد ازِ قدرت خریدِ گزارش‌شده؛ تأییدِ کارگزاری نیست")
 
 
