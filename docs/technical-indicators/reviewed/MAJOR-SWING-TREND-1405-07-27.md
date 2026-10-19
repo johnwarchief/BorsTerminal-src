@@ -1,8 +1,8 @@
 # تشخیص روند ماژور روزانۀ/هفتگی و اتصال آن به قیف FTS — سند فنی و شواهد
 
-**تاریخ:** ۱۴۰۵-۰۷-۲۷ (2026-10-19 16:05) · **شاخه:** `mission/major-swing-trend-2026-10-19` · **کامیت پایه:** `a853cc75a4c9` · **کامیت جاری:** `19708a93871d`
+**تاریخ:** ۱۴۰۵-۰۷-۲۷ (2026-10-19 17:55) · **شاخه:** `mission/major-swing-trend-2026-10-19` · **کامیت پایه:** `a853cc75a4c9` · **کامیت جاری:** `5780709b5ff9`
 
-**زنجیرۀ راستی‌آزمایی روی:** `19708a93871d`
+**زنجیرۀ راستی‌آزمایی روی:** `(اجرا نشده)`
 
 این سند نتیجهٔ مأموریت P0 «اصلاح تشخیص روند ماژور» است. دامنهٔ آن فقط لایۀ
 تشخیص جهت و اتصال آن به دروازۀ قیف است؛ چهار مورد باقی‌ماندۀ System 2 (۹ ویرایش
@@ -22,7 +22,7 @@
 | فقط هفتگی صعودی و سپس روزانۀ صعودی عبور کنند | **PARTIAL — طبق رأی مالک** | جزوه: هفتگی وتو است، روزانه شاخه را می‌گزیند؛ روزانۀ نزولی/خنثی زیر چتر صعودی «رد» نیست (§۶-پ) |
 | کمبود داده / RANGE / جهت تأییدنشده پیش‌فرض پاس نشوند | **PASS** | `UNKNOWN` و `PENDING` با کدِ جدا از `REJECT`؛ هیچ `up` ساختگی نیست (§۶) |
 | Future leak و repainting در آزمون‌ها رد شده باشند | **PASS** | §۷: تکانِ کندل تکمیل‌نشده روی ۱۵۰ نماد — قبل ۲۷ تغییر رأی، بعد ۰ |
-| خروجی موتور، API قیف و UI سازگار باشند | **PASS** | تست §F: موتور = `/api/fts/{symbol}` = `technical_stage`؛ UI با همان payload (§۵) |
+| خروجی موتور، API قیف و UI سازگار باشند | **PASS (API/موتور/قیف) + PARTIAL (UI)** | تست §F: موتور = `/api/fts/{symbol}` = `technical_stage`؛ شواهد UI در سطحِ کامپوننت است (vitest با payload واقعیِ سرور)، نه اپِ نصبیِ روشن‌شده — دیدنِ زندهٔ میزکار درِ این دور انجام نشد؛ وضعیتش `NOT_VERIFIED` است (§۹) |
 | تست‌ها و گزارش روی SHAهای مشخص | **PASS** | §۱۰ |
 
 ---
@@ -31,7 +31,7 @@
 
 ```
 branch        : mission/major-swing-trend-2026-10-19
-HEAD (this)   : 19708a93871d85bee87a337b989d65cb7544aa89
+HEAD (this)   : 5780709b5ff903afa2d6f7926220f5be0f73787e
 base          : a853cc75a4c953146863263071b06c145d3ccd84  ← همان چیزی که گزارش System 2 آن را HEAD نهایی خواند
 worktree      : C:\Users\Johnkallnaya\Desktop\Borsterminal\.worktrees\major-swing-trend\
 ```
@@ -40,22 +40,18 @@ worktree      : C:\Users\Johnkallnaya\Desktop\Borsterminal\.worktrees\major-swin
 قاعدهٔ مأموریت: حفظ و بی‌دلیل commit نکردن):
 
 ```
-M api/chart.py
- M dev/fts_trend_fixtures_v1075.py
- M dev/major_swing_trend_v1.py
- M dev/run_all_tests.py
- M frontend/src/__tests__/technical-badges.spec.tsx
- M frontend/src/features/technical/api/useFtsAnalysis.ts
- M fts_terminal.spec
- M major_swings.py
-?? _audit/gen_major_swing_report.py
+M _audit/gen_major_swing_report.py
+ M _audit/run_major_swing_chain.sh
+ M docs/technical-indicators/reviewed/MAJOR-SWING-TREND-1405-07-27.md
 ?? _scratch/
-?? docs/technical-indicators/reviewed/MAJOR-SWING-TREND-1405-07-27.md
 ```
 
-کامیت‌های این مأموریت (از `a853cc75` تا `19708a93`):
+کامیت‌های این مأموریت (از `a853cc75` تا `5780709b`):
 
 ```
+5780709b refactor(major-swing): برش دنبالهٔ provisional با «زمان» به‌جای index + اصلاح متن سند
+56affb77 fix(docs)+chore(chain): ارجاع‌های NAME:LINE کهنه‌شدہ و باگ مسیرِ اسکریپت زنجیره
+6d0f3470 docs(major-swing): سند فنی مأموریت ماژور با ارقامِ بازتولیدشدنی + اصلاح تاریخ جلالی و واژگان
 19708a93 evidence(major-swing): سنجش آستانه با کدِ محصول + مقایسۀ ساختار با دادهٔ خودِ منبع
 7ed33204 feat(trend): رأیِ جهت روی دو Extreme ماژور، با کندل تکمیل‌نشده بیرون از ساختار
 ```
@@ -78,6 +74,7 @@ M api/chart.py
 - **تزریق کندل جلسۀ جاری** → `api/chart.py:۸۷۴`
 - **تعدیل + انتخاب ستون قیمت** → `api/chart.py:۴۰۰۱`
 - **برش واقعی as-of** → `api/chart.py:۴۱۰۶`
+- **همان مسیر API که تست §F می‌سنجد** → `api/chart.py:۴۲۰۹`
 - **گام تکنیکال قیف** → `funnel_engine.py:۷۹۶`
 - **ستون tech_* اسکرینر** → `api/screener.py:۶۱۱`
 - **درجۀبندی ماژور** → `major_swings.py:۱۵۷`
@@ -180,6 +177,18 @@ M api/chart.py
 - سازگاریِ backward: همهٔ کلیدهای جدید **اختیاری**اند؛ zod سمت رابط
   (`useFtsAnalysis.ts`) همان‌ها را nullish تعریف می‌کند و آزمونِ «payload قدیمی
   بدون ردیف ماژور» در `technical-badges.spec.tsx` سبز است.
+- هر دو مسیرِ پرچمِ موتورِ روند آزموده شد: `BORS_TREND_ENGINE=legacy` (پیش‌فرض،
+  همان `_fts_classify_trend`) و `hybrid` (`trend_classify.classify_trend`) — پروندۀ
+  `major_swings` درِ هر دو منتشر می‌شود و `dev/test_trend_engine_flag.py` (در لاگ یافت نشد)
+- مرزِ شواهد رابط: آنچه سنجیده شد **کامپوننت در vitest با payloadِ واقعیِ سرور** است
+  (ردیفِ «ماژور (سقف/کف)»، «در حال شکل‌گیری (تأیید نشده)»، as_of و reason). دیدنِ
+  اپِ نصبی رویِ میزکار درِ این دور انجام نشد و `NOT_VERIFIED` است (§۹).
+- کلیدِ `live_forming` رویِ ردیفِ تزریق‌شده از `api/chart` به بیرونِ لایۀ تحلیل هم
+  می‌رود، پس باید اثرش بر رابط سنجیده می‌شد: `RawCandle` درِ `useCandleFeed.ts:12`
+  ``z.object``ِ معمولی است (بدونِ passthrough)، zod با پیش‌فرضِ strip کلیدِ
+  ناشناخته را می‌اندازد؛ `liveInjected` هم درِ هیچ فایلِ فرانت خوانده نمی‌شود. دو
+  `passthrough()`ِ موجود درِ رابط به مسیرِ کندل و FTS ربطی ندارند:
+  (`useMarketPanels.ts:58`، `botClient.ts:120`).
 
 ## ۶) سلسله‌مراتب دروازه و جدول هفتگی × روزانه
 
@@ -275,16 +284,24 @@ repaint. با مرجع‌گذاریِ درست (همان as-of، تنها تکا
 
 ## ۹) اعتبارسنجی میدانی
 
-`PENDING_LIVE_VALIDATION` — زنجیره در 15:46 (+۰۳:۳۰) اجرا شد، بیرون از نشستِ
+`PENDING_LIVE_VALIDATION` — زنجیره در (بی‌زمان) (+۰۳:۳۰) اجرا شد، بیرون از نشستِ
    معاملاتیِ ۰۹:۰۰–۱۲:۳۰ تهران؛ لذا شاهدِ میدانیِ زنده‌ای سنجیده نشده و هیچ نتیجه‌ای
-از replay یا fixture به‌عنوان «دادۀ زنده» نام نگرفته است. آزمونِ میدانی آماده
-است: `_audit/major_swing_before_after.py` و `_audit/major_swing_ref_compare.py`
-را در روز معاملاتی اجرا کرده و `as_of` امروز را با چارت مرجع مقایسه کرد.
+از replay یا fixture به‌عنوان «دادۀ زنده» نام نگرفته است. آزمونِ میدانی آماده است:
+`_audit/major_swing_before_after.py` و `_audit/major_swing_ref_compare.py` در روز
+معاملاتی اجرا می‌شوند و `as_of` امروز با چارت مرجع مقایسه می‌گردد.
+
+طبقه‌بندیِ وضعیتِ «دیدن» درِ این دور:
+
+- `PENDING_LIVE_VALIDATION` — حکمِ میدانیِ روند روی دادۀ زندۀ امروز (بیرون از نشست).
+- `NOT_OBSERVED` — تطبیقِ دیداریِ زنده با چارت رهاورد؛ نشستِ معتبرِ مرورگر در دسترس
+  نبود و از نشستِ دیگر یا استخراجِ Cookie استفاده نمی‌شود (وضعیتِ دورِ قبل حفظ شد).
+- `NOT_VERIFIED` — نمایشِ این فیلدها در اپِ نصبیِ دسکتاپ؛ شواهد در سطحِ کامپوننت است.
 
 ## ۱۰) گیت‌ها — روی یک SHA، با خروجی خام
 
-SHAِ زنجیره (از سرِ `chain_head.txt` خوانده شد، نه از HEAD روزِ سند):
-`19708a93871d85bee87a337b989d65cb7544aa89`
+SHAِ زنجیره (از سرِ `chain_head.txt` درِ پوشۀِ همان دور خوانده شد، نه از HEADِ روزِ سند):
+پوشۀ لاگ این دور: `(پوشۀِ دوری پیدا نشد)`
+`(اجرا نشده)`
 
 | گام | کد خروج | خط نتیجه |
 |---|---|---|
@@ -293,22 +310,64 @@ SHAِ زنجیره (از سرِ `chain_head.txt` خوانده شد، نه از H
 | `npx vitest run` | (no record) | — |
 | `npm run lint` (eslint .) | (no record) | — |
 | `npm run build` (vite) | (no record) | — |
+| `dev/price_basis_v1070.py` (مبنایِ قیمت، صریح) | (no record) | — |
+| `dev/db_candle_contract_v1.py` (قراردادِ کندلِ بانک) | (no record) | — |
+| `dev/version_anchor_guard.py` (لنگرِ نسخه) | (no record) | — |
 
-گیتِ ماژول روند: (در لاگ یافت نشد)
-فیکسچرهای System 1: —
+### ۱۰-پ) تلاش‌هایِ جانشین‌شدہ (شاهدِ حادثه، نه نتیجه)
 
+پیش ازِ انجمادِ SHA، دو اجرا هم‌زمان درِ یکِ فایلِ لاگِ تخت نوشتند. نتیجه:
+
+| اجرا | OK | FAIL | rc=3221225794 |
+|---|---|---|---|
+| زنجیرۀِ هم‌زمانِ اول | ۱۵۹ | ۲۲ | ۲۱ |
+| باتریِ تنها (هم‌زمان با گام‌های فرانت) | ۱۶۰ | ۰ | ۰ |
+
+آن ۲۱ قرمز همگی `rc=3221225794` (STATUS_DLL_INIT_FAILED) بودند: خطایِ
+راه‌اندازیِ پروسه در ویندوز، نه خطایِ آزمون — همه از یک نقطه به بعد، با یک کد،
+و بی‌هیچ خروجیِ درونِ سوئیت. علتِ هر دو هم‌زمانیِ خودِ من بود: زنجیرۀِ قبلی را
+برایِ انجمادِ SHA «توقف» کردم ولی اسکریپتِ یتیم تا
+پایانِ کار ادامه یافت، و باتریِ دوبارۀ من هم با گام‌هایِ فرانتِ آن دور
+تداخل کرد. دو اصلاح انجام شد: اسکریپتِ زنجیره هر دور را درِ پوشۀِ لاگِ خودش
+می‌نویسد (`run_<sha>_<زمان>/`) و هیچ دستوری هم‌زمان با باتری اجرا نشد.
+هیچ سوئیتی از نتیجه حذف نشد؛ فقط اعدادِ این دو اجرا به‌عنوانِ نتیجه استفاده
+نشدند و سطرِ بالای همین بند (پوشۀِ دورِ معتبر) ملاک است.
+
+مصنوعِ Build (`frontend/dist`): ۵۰ فایل، ۳٬۱۶۷٬۷۲۷ بایت، digestِ مجمّعِ relpath+sha256:
+`9211d25ab4bd491ccb97ed70e18787bcf0cd55e8775da238dea74f72b19fd8ca`
+(این هشِ مجمّع است، نه هشِ EXE — درِ این دور PyInstaller ساخته نشد؛ ساختارِ
+بستهٔ ویندوز درِ سندِ دورِ قبل با SHAِ خودش ثبت شده است.)
+
+سوئیتِ این مأموریت (`dev/major_swing_trend_v1.py`): —  [exit (no record)]
+فیکسچرهای System 1 (`dev/fts_trend_fixtures_v1075.py`): —  [exit (no record)]
+گاردِ ارجاع‌های سندِ نقشه (`dev/test_rule_map_citations.py`): —  [exit (no record)]
+
+
+### ۱۰-پ) اثرِ جانبیِ این دور رویِ سندِ نقشهٔ قواعد (خودکار نه، با بازرسی)
+
+جابه‌جا شدنِ سطرهای `api/chart.py` سه ارجاعِ `NAME:LINE` درِ
+`docs/FTS-RULE-ALGORITHM-MAP.md` را کهنه کرد و گارد `dev/test_rule_map_citations.py`
+درِ همان زنجیره قرمز شد (درست همان چیزی که باید بکند). رفع با
+`_audit/fix_rule_map_lines.py` انجام شد: نام‌ها صریح فهرست شده‌اند و سطرِ هر نام
+از خودِ فایل با الگوی `^def NAME(` دوباره خوانده می‌شود — نه از پیامِ گارد
+(درسِ دورِ قبل: regexِ حریص روی لاگ، سطرِ غلط نوشت). نتیجه‌ی گارد: (در لاگ یافت نشد)
 
 ### فایل‌های این مأموریت (`git diff --name-only a853cc75..HEAD`)
 
 ```
 _audit/MAJOR-SWING-REF-COMPARE.csv
+_audit/fix_rule_map_lines.py
+_audit/gen_major_swing_report.py
 _audit/major_swing_before_after.py
 _audit/major_swing_evidence.py
 _audit/major_swing_ref_compare.py
+_audit/run_major_swing_chain.sh
 api/chart.py
 dev/fts_trend_fixtures_v1075.py
 dev/major_swing_trend_v1.py
 dev/run_all_tests.py
+docs/FTS-RULE-ALGORITHM-MAP.md
+docs/technical-indicators/reviewed/MAJOR-SWING-TREND-1405-07-27.md
 frontend/src/__tests__/technical-badges.spec.tsx
 frontend/src/features/technical/api/useFtsAnalysis.ts
 frontend/src/features/technical/components/FtsTrendPanel.tsx

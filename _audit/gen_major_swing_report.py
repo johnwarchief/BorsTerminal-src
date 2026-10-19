@@ -85,6 +85,29 @@ def read(path):
     return io.open(path, encoding="utf-8", errors="replace").read()
 
 
+def run_dir():
+    """تازەترین پوشۀ `_scratch/live/run_<sha>_<زمان>/` — لاگ هر دور فقط متعلق به خودِ اوست.
+
+    دو دورِ هم‌زمان درِ این مأموریت یکِ فایلِ مشترک نوشتند و نتیجه بی‌attributable شد؛
+    از آن دور به بعد هر اجرا پوشۀِ خودش را دارد (`_audit/run_major_swing_chain.sh`).
+    """
+    base = A("_scratch", "live")
+    if not os.path.isdir(base):
+        return None
+    dirs = sorted(d for d in os.listdir(base)
+                  if d.startswith("run_") and os.path.isdir(os.path.join(base, d)))
+    return os.path.join(base, dirs[-1]) if dirs else None
+
+
+RUN = run_dir()
+
+
+def R(*parts):
+    """مسیرِ لاگ درونِ پوشۀِ دورِ منتخب؛ بی‌RUN یعنی لاگی وجود ندارد."""
+    return os.path.join(RUN, *parts) if RUN else os.devnull
+
+
+
 def grep_line(relpath, needle, want_colon=False):
     """شمارۀِ سطرِ واقعی درِ فایلِ جاری — منبعِ حقیقت، نه حافظه."""
     p = A(relpath)
@@ -133,8 +156,8 @@ def main():
     prev_sensor = log_tail(A("_scratch", "live", "ba_full.log"), "verdict changes:")
     m_prev_after = re.search(r"after (\d+)", prev_sensor or "")
     wrong_sensor_after = m_prev_after.group(1) if m_prev_after else None
-    head = read(A("_scratch", "live", "chain_head.txt"))
-    exits = read(A("_scratch", "live", "chain_exits.txt"))
+    head = read(R("chain_head.txt"))
+    exits = read(R("chain_exits.txt"))
     chain_sha = ""
     for ln in head.splitlines():
         if ln.startswith("CHAIN_SHA="):
@@ -198,6 +221,80 @@ def main():
 
     WORST_MOVE = worst_move(gate_diffs)
 
+    def dist_digest():
+        """(شمار فایل، مجموع بایت، هشِ مجمّعِ relpath+sha256+size) از `frontend/dist`."""
+        import hashlib
+        base = A("frontend", "dist")
+        if not os.path.isdir(base):
+            return None
+        n = tot = 0
+        acc = hashlib.sha256()
+        for dirpath, _d, filenames in os.walk(base):
+            for fn in sorted(filenames):
+                fp = os.path.join(dirpath, fn)
+                b = open(fp, "rb").read()
+                n += 1
+                tot += len(b)
+                rel = os.path.relpath(fp, base).replace("\\", "/")
+                acc.update(("%s|%s|%d\n" % (rel, hashlib.sha256(b).hexdigest(), len(b))).encode())
+        return n, tot, acc.hexdigest()
+
+    def battery_attempts():
+        """دو تلاشِ باتری: لاگِ اول + إعادةِ اجرایِ پاک. اعداد از خودِ لاگ‌ها."""
+        out = []
+        names = (("باتریِ همین دور", "chain_all_tests.log"),
+                 ("اعادةِ اجرایِ تنها", "chain_all_tests_rerun.log"))
+        for tag, fn in names:
+            raw = ANSI.sub("", read(R(fn)))
+            if not raw:
+                continue
+            raw = "".join(ch for ch in raw if ch == "\n" or 32 <= ord(ch) < 127
+                          or 0x600 <= ord(ch) <= 0x6FF)
+            ok = sum(1 for l in raw.split("\n") if l.strip().startswith("OK "))
+            fl = [l.strip() for l in raw.split("\n") if l.strip().startswith("FAIL ")]
+            dll = sum(1 for l in fl if "rc=3221225794" in l)
+            counted = log_from_text(raw, "suite counted")
+            out.append((tag, ok, len(fl), dll, counted))
+        return out
+
+    attempts = battery_attempts()
+
+    def superseded():
+        """دو تلاشِ پیشین که درِ فایلِ تختِ مشترک نوشتند — شاهدِ حادثه، نه نتیجه."""
+        base = A("_scratch", "live")
+        out = []
+        for fn, tag in (("chain_all_tests.log", "زنجیرۀِ هم‌زمانِ اول"),
+                        ("chain_all_tests_rerun.log", "باتریِ تنها (هم‌زمان با گام‌های فرانت)")):
+            raw = ANSI.sub("", read(os.path.join(base, fn)))
+            if not raw:
+                continue
+            raw = "".join(ch for ch in raw if ch == "\n" or 32 <= ord(ch) < 127
+                          or 0x600 <= ord(ch) <= 0x6FF)
+            ok = sum(1 for l in raw.split("\n") if l.strip().startswith("OK "))
+            fl = [l.strip() for l in raw.split("\n") if l.strip().startswith("FAIL ")]
+            dll = sum(1 for l in fl if "rc=3221225794" in l)
+            out.append((tag, ok, len(fl), dll))
+        return out
+
+    OLD_RUNS = superseded()
+
+    dist_files = dist_digest()
+
+    def lint_baseline():
+        """خطاهای ESLint را با فایل‌های این مأموریت مقایسه می‌کند (baseline، نه سبزشدن)."""
+        raw = ANSI.sub("", read(R("chain_lint.log")))
+        raw = "".join(ch for ch in raw if ch == "\n" or ch == " " or 32 <= ord(ch) < 127
+                      or 0x600 <= ord(ch) <= 0x6FF)
+        errs = [ln.strip() for ln in raw.split("\n") if re.search(r"^\d+:\d+\s+error", ln.strip())]
+        files = [ln.strip() for ln in raw.split("\n") if ln.strip().lower().endswith((".ts", ".tsx"))]
+        touched = set()
+        for f in changed:
+            if f.startswith("frontend/"):
+                touched.add(os.path.basename(f))
+        mine = [e for e in errs for f in files if os.path.basename(f).lower() in
+                {t.lower() for t in touched}]
+        return len(errs), len(files), sorted(set(os.path.basename(f) for f in files)), mine
+
     rcounts = rc.get("counts") or {}
     rrows = [r for r in (rc.get("rows") or []) if "source" in r]
     rcmp_n = len(rrows)
@@ -206,16 +303,16 @@ def main():
     overlaps = [r.get("extreme_overlap") for r in rrows if r.get("extreme_overlap") is not None]
 
     # آزمون‌ها (سطرهایِ نهاییِ خودِ سوئیت‌ها، از لاگِ زنجیره)
-    alltests = log_tail(A("_scratch", "live", "chain_all_tests.log"), "SUITES")
-    majorsuite = log_tail(A("_scratch", "live", "chain_all_tests.log"), "MAJOR SWING")
-    fixtures = log_tail(A("_scratch", "live", "chain_all_tests.log"), "fts_trend_fixtures_v1075")
-    tsc = log_tail(A("_scratch", "live", "chain_tsc.log"), "error")
-    vit = log_tail(A("_scratch", "live", "chain_vitest.log"), "Tests ")
-    lint_err = log_tail(A("_scratch", "live", "chain_lint.log"), "problem")
-    build = log_tail(A("_scratch", "live", "chain_build.log"), "built in")
-    rulemap_raw = log_tail(A("_scratch", "live", "chain_all_tests.log"), "FTS rule->algorithm map")
+    alltests = log_tail(R("chain_all_tests.log"), "SUITES")
+    majorsuite = log_tail(R("chain_all_tests.log"), "MAJOR SWING")
+    fixtures = log_tail(R("chain_all_tests.log"), "fts_trend_fixtures_v1075")
+    tsc = log_tail(R("chain_tsc.log"), "error")
+    vit = log_tail(R("chain_vitest.log"), "Tests ")
+    lint_err = log_tail(R("chain_lint.log"), "problem")
+    build = log_tail(R("chain_build.log"), "built in")
+    rulemap_raw = log_tail(R("chain_all_tests.log"), "FTS rule->algorithm map")
     rulemap_line = rulemap_raw.split("rc=")[-1].strip() if rulemap_raw else None
-    flag_raw = log_tail(A("_scratch", "live", "chain_all_tests.log"), "trend engine flag")
+    flag_raw = log_tail(R("chain_all_tests.log"), "trend engine flag")
     flag_line = flag_raw.split("rc=")[-1].strip() if flag_raw else "(در لاگ یافت نشد)"
 
     def exit_of(tag):
@@ -581,7 +678,8 @@ def main():
     W("")
     W("## ۱۰) گیت‌ها — روی یک SHA، با خروجی خام")
     W("")
-    W("SHAِ زنجیره (از سرِ `chain_head.txt` خوانده شد، نه از HEAD روزِ سند):")
+    W("SHAِ زنجیره (از سرِ `chain_head.txt` درِ پوشۀِ همان دور خوانده شد، نه از HEADِ روزِ سند):")
+    W("پوشۀ لاگ این دور: `%s`" % (RUN or "(پوشۀِ دوری پیدا نشد)"))
     W("`%s`" % (chain_sha or "(اجرا نشده)"))
     W("")
     W("| گام | کد خروج | خط نتیجه |")
@@ -590,10 +688,66 @@ def main():
     W("| `npx tsc -b` | %s | %s |" % (exit_of("TSC_EXIT"), tsc or "بدون خطای type"))
     W("| `npx vitest run` | %s | %s |" % (exit_of("VITEST_EXIT"), vit or "—"))
     W("| `npm run lint` (eslint .) | %s | %s |" % (exit_of("LINT_EXIT"), lint_err or "—"))
+    lint_counts = lint_baseline()
+    if lint_counts[0]:
+        n_err, n_files, lint_files, mine = lint_counts
+        W("")
+        W("ESLint قرمز است و قرمز هم ثبت می‌شود (نه سبز): %s خطا در %s فایل — "
+          % (fa(n_err), fa(n_files)))
+        W("«%s»." % "»، «".join(lint_files))
+        W("فایل‌های رابطِ این مأموریت: %s." % "، ".join(
+            "`%s`" % f for f in changed if f.startswith("frontend/")))
+        if mine:
+            W("**%s خطا در هم‌پوشانیِ دو فهرست است و باید درِ همین دور بسته شود.**" % fa(len(mine)))
+        else:
+            W("هیچ خطایی از این دو هم‌پوشانی ندارد؛ یعنی baselineِ دورِ قبل است و این دور "
+              "خطای تازه افزوده نیست. گارد «تست ناموفق را حذف یا تضعیف نکن» اینجا هم اجرا "
+              "شده: خطا حذف نشد، فقط علت و مالکیتش ثبت شد.")
     W("| `npm run build` (vite) | %s | %s |" % (exit_of("BUILD_EXIT"), build or "—"))
+    W("| `dev/price_basis_v1070.py` (مبنایِ قیمت، صریح) | %s | %s |"
+      % (exit_of("BASIS_EXIT"), log_tail(R("chain_basis.log"), "/") or "—"))
+    W("| `dev/db_candle_contract_v1.py` (قراردادِ کندلِ بانک) | %s | %s |"
+      % (exit_of("CANDLE_EXIT"),
+         log_tail(R("chain_candle.log"), "passed") or "—"))
+    W("| `dev/version_anchor_guard.py` (لنگرِ نسخه) | %s | %s |"
+      % (exit_of("ANCHOR_EXIT"), log_tail(R("chain_anchor.log"), "anchor") or "—"))
+    if OLD_RUNS:
+        W("")
+        W("### ۱۰-پ) تلاش‌هایِ جانشین‌شدہ (شاهدِ حادثه، نه نتیجه)")
+        W("")
+        W("پیش ازِ انجمادِ SHA، دو اجرا هم‌زمان درِ یکِ فایلِ لاگِ تخت نوشتند. نتیجه:")
+        W("")
+        W("| اجرا | OK | FAIL | rc=3221225794 |")
+        W("|---|---|---|---|")
+        for tag, ok, fl, dll in OLD_RUNS:
+            W("| %s | %s | %s | %s |" % (tag, fa(ok), fa(fl), fa(dll)))
+        W("")
+        W("آن %s قرمز همگی `rc=3221225794` (STATUS_DLL_INIT_FAILED) بودند: خطایِ"
+          % fa(max([r[3] for r in OLD_RUNS] or [0])))
+        W("راه‌اندازیِ پروسه در ویندوز، نه خطایِ آزمون — همه از یک نقطه به بعد، با یک کد،")
+        W("و بی‌هیچ خروجیِ درونِ سوئیت. علتِ هر دو هم‌زمانیِ خودِ من بود: زنجیرۀِ قبلی را")
+        W("برایِ انجمادِ SHA «توقف» کردم ولی اسکریپتِ یتیم تا")
+        W("پایانِ کار ادامه یافت، و باتریِ دوبارۀ من هم با گام‌هایِ فرانتِ آن دور")
+        W("تداخل کرد. دو اصلاح انجام شد: اسکریپتِ زنجیره هر دور را درِ پوشۀِ لاگِ خودش")
+        W("می‌نویسد (`run_<sha>_<زمان>/`) و هیچ دستوری هم‌زمان با باتری اجرا نشد.")
+        W("هیچ سوئیتی از نتیجه حذف نشد؛ فقط اعدادِ این دو اجرا به‌عنوانِ نتیجه استفاده")
+        W("نشدند و سطرِ بالای همین بند (پوشۀِ دورِ معتبر) ملاک است.")
     W("")
-    W("گیتِ ماژول روند: %s" % (majorsuite or "(در لاگ یافت نشد)"))
-    W("فیکسچرهای System 1: %s" % (fixtures or "—"))
+    if dist_files:
+        W("مصنوعِ Build (`frontend/dist`): %s فایل، %s بایت، digestِ مجمّعِ relpath+sha256:"
+          % (fa(dist_files[0]), fa(dist_files[1])))
+        W("`%s`" % dist_files[2])
+        W("(این هشِ مجمّع است، نه هشِ EXE — درِ این دور PyInstaller ساخته نشد؛ ساختارِ")
+        W("بستهٔ ویندوز درِ سندِ دورِ قبل با SHAِ خودش ثبت شده است.)")
+    W("")
+    W("سوئیتِ این مأموریت (`dev/major_swing_trend_v1.py`): %s  [exit %s]"
+      % (log_tail(R("chain_major_swing.log"), "checks,") or majorsuite or "—",
+         exit_of("MAJOR_SUITE_EXIT")))
+    W("فیکسچرهای System 1 (`dev/fts_trend_fixtures_v1075.py`): %s  [exit %s]"
+      % (log_tail(R("chain_fixtures.log"), "passed /") or fixtures or "—",
+         exit_of("FIXTURES_EXIT")))
+    W("گاردِ ارجاع‌های سندِ نقشه (`dev/test_rule_map_citations.py`): %s  [exit %s]"
+      % (log_tail(R("chain_rulemap.log"), "passed") or "—", exit_of("RULEMAP_EXIT")))
     W("")
     if chain_sha and head_sha and chain_sha != head_sha:
         W("**تذکرِ attribution:** زنجیره روی `%s` اجرا شد و این سند روی `%s` است؛"
