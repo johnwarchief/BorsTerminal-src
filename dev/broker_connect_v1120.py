@@ -297,6 +297,23 @@ try:
     ck(con9.get("traffic_mode") == "read_only" and con9.get("session_proven") is False,
        "۹) /connect درِ همین حالت «فقط‌خواندنی» می‌گوید، نه «مسدود»",
        str(con9.get("traffic_mode")))
+    # «بررسی اتصال» درِ همین حالت چه می‌گوید؟ `live` = ترافیک **و** نشانی، پس
+    # بی‌نشانی هم `live` false است — و پیامِ «BORS_EXECUTION_LIVE=1 لازم است»
+    # کاربرِ فقط‌خواندنی را به روشن‌کردنِ درِ ارسالِ سفارش دعوت می‌کرد. کمبودِ
+    # واقعی ازِ خودِ دو شاهد جدا خوانده می‌شود.
+    v9 = EXC.verify(_ro)
+    ck(v9["state"] == EXC.STATE_UNKNOWN
+       and "BORS_EXECUTION_LIVE=1 لازم است" not in v9["blocked_reason"]
+       and "نشست" in v9["blocked_reason"],
+       "۹) «بررسی اتصال» بی‌نشست می‌گوید نشست برنداشته‌اید، نه درِ ارسال را باز کن",
+       v9["blocked_reason"][:150])
+    _withtok = EasyTraderAdapter(transport=RefusingTransport(),
+                                 token="Bearer x.probe.y", writes_allowed=False)
+    v9b = EXC.verify(_withtok)
+    ck(v9b["state"] == EXC.STATE_UNKNOWN
+       and "BORS_EXECUTION_LIVE=1" in v9b["blocked_reason"],
+       "۹) باِ نشانیِ موجود ولی ترافیکِ بسته، همان متنِ محیطی درست است (سنسور یک‌طرفه نیست)",
+       v9b["blocked_reason"][:150])
     _blocked = EasyTraderAdapter(transport=RefusingTransport(), token=None,
                                 writes_allowed=False)
     ck(EXC.status_dict(_blocked, None).get("traffic_mode") == "blocked",

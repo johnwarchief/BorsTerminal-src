@@ -177,6 +177,10 @@ a = Analysis(
                    # /api/execution/status هر بار از آن می‌خواند.
                    'execution_credentials',
                    'execution_budget',
+                   # برداشتِ نشست از پروندۀ HAR (بندِ ۷ مأموریتِ ۱۴۰۵-۰۷-۲۸):
+                   # api/execution.py آن را درِ صدرِ فایل import می‌کند و دو درِ
+                   # /api/execution/har/* از آن می‌خوانند.
+                   'execution_har',
                    # تنظیمِ اتصال (مأموریتِ ۱۴۰۵-۰۷-۲۹): درِ بدنهٔ تابع import می‌شود
                    # تا انتخابِ آداپتور از خودِ برنامه هم ممکن باشد؛ بی‌این خط
                    # بیلدِ منجمد رویِ اولین /api/execution/status می‌میرد.

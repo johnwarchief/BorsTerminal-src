@@ -451,6 +451,16 @@ export const orderApi = {
     { method: 'POST', body: { token }, ...NO_RETRY }),
   delSession: () => http<Record<string, unknown>>('/api/execution/session',
     { method: 'DELETE', ...NO_RETRY }),
+  /** ساختارِ یکِ HAR (بدنۀِ خام، نه مسیرِ دیسک) — نامِ میزبان/مسیر/کلیدها، بی‌هیچ
+   *  مقداری. پاسخ هیچ‌وقت هدرِ `authorization` یا بدنۀِ کارگزاری را ندارد. */
+  harInspect: (text: string) => http<Record<string, unknown>>('/api/execution/har/inspect',
+    { method: 'POST', rawBody: text, headers: { 'Content-Type': 'application/json' },
+      ...NO_RETRY }),
+  /** نشانی را ازِ خودِ پروندۀِ HAR درِ حافظه می‌گذارد؛ رشته هرگز درِ رابطِ کاربری
+   *  نشان داده نمی‌شود و درِ پاسخ برنمی‌گردد (گارد: `dev/execution_har_api_v1.py`). */
+  harSession: (text: string) => http<Record<string, unknown>>('/api/execution/har/session',
+    { method: 'POST', rawBody: text, headers: { 'Content-Type': 'application/json' },
+      ...NO_RETRY }),
 };
 
 /** وضعیتِ صریحِ نشستِ کارگزاری — همان چهار حالتِ `execution_connect.py`.

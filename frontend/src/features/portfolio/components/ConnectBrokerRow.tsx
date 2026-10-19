@@ -1,6 +1,9 @@
-// features/portfolio/components/ConnectBrokerRow.tsx -- «اتصال به EasyTrader»
+// features/portfolio/components/ConnectBrokerRow.tsx -- «ورود به ایزی‌تریدر»
 //
 // یک خط پاسخ + چیپِ حالت + سه کنش، و جزئیات درِ <details> (قاعدۀ ارتفاعِ فشرده).
+// نامِ دکمه از «اتصال به EasyTrader» به «ورود به ایزی‌تریدر» عوض شد چون دو چیز را
+// از هم جدا می‌کند: این دکمه فقط پنجرۀِ رسمیِ ورود را باز می‌کند و «اتصال» را
+// هرگز ادعا نمی‌کند — ادعایِ اتصال تنها از «بررسی اتصال» می‌آید.
 // سه چیزی که این مؤلفه *ادعا نمی‌کند*:
 //  • «متصل» شدن با دیدنِ صفحۀ ورود — حالت فقط از `POST /connect/verify` می‌آید
 //    که پرسشِ واقعیِ کارگزاری است؛
@@ -55,7 +58,7 @@ export function ConnectBrokerRow() {
         <Badge tone={TONE[state]}>{CONNECT_LABEL[state]}</Badge>
         <button type="button" className={btn} onClick={() => act('open')}
                 disabled={busy !== ''} data-testid="connect-open-browser">
-          اتصال به EasyTrader
+          ورود به ایزی‌تریدر
         </button>
         <button type="button" className={btn} onClick={() => act('verify')}
                 disabled={busy !== ''} data-testid="connect-verify">

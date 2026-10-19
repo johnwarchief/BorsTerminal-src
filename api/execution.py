@@ -20,8 +20,9 @@
 می‌شود، نه صفر؛ و `live_enabled` ازِ وضعیتِ واقعیِ آداپتور خوانده می‌شود، نه
 ازِ یکِ ثابت.
 
-token درِ همین پروسه و درِ حافظه می‌ماند (`POST /api/execution/session`): هیچ
-مسیری آن را درِ فایل، دیتابیس، لاگ یا پاسخِ HTTP نمی‌نویسد.
+token درِ همین پروسه و درِ حافظه می‌ماند (`POST /api/execution/session` و
+`POST /api/execution/har/session`): هیچ مسیری آن را درِ فایل، دیتابیس، لاگ یا
+پاسخِ HTTP نمی‌نویسد.
 """
 from __future__ import annotations
 
@@ -52,6 +53,7 @@ from execution_easytrader import (
 import execution_budget as EB                              # noqa: E402
 import execution_connect as EXC                            # noqa: E402
 import execution_credentials as CREDS                      # noqa: E402
+import execution_har as EH                                 # noqa: E402
 from execution_ledger import ARMED, HALT, TRIPPED, default_ledger
 from execution_mock import MockBrokerAdapter
 from execution_service import ExecutionError, ExecutionService, Limits
@@ -785,8 +787,8 @@ def get_status() -> dict[str, Any]:
         # نباید بکند. چیزی که واقعاً کم است نشانیِ نشست است.
         if READ_ONLY_REQUESTED:
             blocked.append("حالتِ فقط‌خواندنی روشن است: ترافیکِ خواندن مجاز، ارسال نه — "
-                           "کمبود، نشستِ شماست (ورود درِ پنجرۀ کارگزاری، سپس نشانی به "
-                           "POST /api/execution/session)")
+                           "کمبود، نشستِ شماست (ورود درِ پنجرۀ کارگزاری، سپس "
+                           "«برداشتِ نشست» ازِ پروندۀ HAR درِ همین تب)")
         else:
             blocked.append("ترافیک خاموش است — «تنظیمِ اتصال» را رویِ فقط‌خواندنی بگذارید "
                            "(یا BORS_EXECUTION_LIVE=1 برایِ ارسالِ سفارش) و restart کنید")
@@ -973,6 +975,78 @@ def delete_session() -> dict[str, Any]:
     voided = _void_confirmations("token cleared")
     return {"status": "success", "live": _live_now(), "session": _session_dict(),
             "confirmations_voided": voided}
+
+
+# ── ۲.۴) برداشتِ نشست از HARِ خودِ کاربر (بندِ ۷ مأموریتِ ۲۰۲۶-۱۰-۱۹) ────────
+#: ورودی این دو در **بدنۀِ خامِ پروندۀ HAR** است، نه مسیرِ دیسک. «فایلِ X را بخوان»
+#: رویِ یکِ سرورِ بی‌احرازِ 127.0.0.1 یعنی خواندنِ دلخواهِ فایل‌هایِ ماشین؛ پس
+#: پرونده را خودِ مرورگر باِ گفت‌وگویِ استانداردِ ویندوز انتخاب و بدن را می‌فرستد.
+async def _har_body(request: Request) -> tuple[bytes, Optional[dict[str, Any]]]:
+    declared = (request.headers.get("content-length") or "").strip()
+    if declared.isdigit() and int(declared) > EH.MAX_HAR_BYTES:
+        return b"", {"status": "error", "code": "TOO_LARGE", "imported": False,
+                     "detail": "پروندۀ بزرگ‌تر از سقفِ مجاز است — پیشِ خواندن رد شد",
+                     "session": _session_dict()}
+    raw = await request.body()
+    if not raw:
+        return b"", {"status": "error", "code": "EMPTY", "imported": False,
+                     "detail": "بدنه‌ای نرسید — هیچ نشانی‌ای نوشته نشد",
+                     "session": _session_dict()}
+    return raw, None
+
+
+@router.post("/api/execution/har/inspect")
+async def post_har_inspect(request: Request) -> dict[str, Any]:
+    """چه میزبان/مسیر/کلیدهایی درِ HAR هست. هیچ مقدارِ هدر یا بدنه برنمی‌گردد و
+    هیچ نشانی‌ای نوشته نمی‌شود — این در برایِ کشفِ مسیرِ موجودی است، نه احراز.
+
+    چرا اصلاً لازم شد: `docs/trading/PORTFOLIO-READ-CONTRACT-2026-10-18.md` §۳
+    رأیِ «بی‌منبع» را تنها باِ یکِ شاهدِ بیرونی قابلِ تغییر می‌داند. این در آن
+    شاهد را ازِ نشستِ واقعیِ خودِ مالک می‌سازد، بی‌آنکه رازی ازِ ماشین خارج شود.
+    """
+    raw, err = await _har_body(request)
+    if err is not None:
+        return err
+    try:
+        return EH.inspect(raw)
+    except EH.HarError as e:
+        return {"status": "error", "code": e.code, "detail": e.detail,
+                "api_paths": [], "hosts": [], "entries_total": 0,
+                "session_touched": False, "is_order": False}
+
+
+@router.post("/api/execution/har/session")
+async def post_har_session(request: Request) -> dict[str, Any]:
+    """نشست را ازِ HAR درِ حافظه می‌گذارد — همان `set_token`ِ `/session`، بی‌آنکه
+    رشته ازِ دستِ کاربر به فیلدِ متنی برود.
+
+    دو گیتِ `/session` اینجا هم عیناً برجا می‌ماند: آداپتورِ token‌پذیر و
+    ترافیکِ مجاز. بی‌آنها نشانی ذخیره نمی‌شود، نه اینکه ذخیره و بی‌استفاده بماند.
+    """
+    raw, err = await _har_body(request)
+    if err is not None:
+        return err
+    refused = {"status": "error", "code": ErrorCode.UNSUPPORTED.value,
+               "imported": False, "session": _session_dict()}
+    if ADAPTER_KIND != "easytrader":
+        return {**refused, "detail": "آداپتورِ فعال token نمی‌پذیرد (adapter=%s)"
+                % ADAPTER_KIND}
+    if not TRAFFIC_ALLOWED or not isinstance(_ACTIVE_ADAPTER, EasyTraderAdapter):
+        return {**refused, "detail": "هیچ ترافیکی مجاز نیست — token ذخیره نمی‌شود. "
+                "اول «تنظیمِ اتصال» را رویِ easytrader + فقط‌خواندنی بگذارید "
+                "(یا BORS_EXECUTION_LIVE=1 برایِ ارسالِ سفارش) و برنامه را "
+                "restart کنید"}
+    try:
+        out = EH.import_session(raw, _ACTIVE_ADAPTER)
+    except EH.HarError as e:
+        return {"status": "error", "code": e.code, "detail": e.detail,
+                "imported": False, "session": _session_dict()}
+    if out.get("imported"):
+        out["confirmations_voided"] = _void_confirmations("token replaced by HAR")
+        out["capabilities"] = dataclasses.asdict(_ACTIVE_ADAPTER.capabilities())
+    out["live"] = _live_now()
+    out["session"] = _session_dict()
+    return {"status": "success", **out}
 
 
 # ── ۲.۵) تنظیمِ اتصال و پرتفویِ فقط‌خواندنی ─────────────────────────────────

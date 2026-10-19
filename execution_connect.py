@@ -394,9 +394,19 @@ def verify(adapter: Any) -> dict[str, Any]:
                            "token_present": has_token,
                            "adapter": type(adapter).__name__}
     if not live:
-        out["blocked_reason"] = ("ترافیکِ زنده خاموش است (BORS_EXECUTION_LIVE=1 لازم "
-                                 "است) — بی‌پرسش ازِ کارگزاری هیچ حالتی تأیید نمی‌شود")
-        out["reason"] = "ناشناخته؛ پرسش انجام نشد"
+        # `live` = ترافیکِ وصل **و** نشانیِ مالک. بی‌این تفکیک، کاربری که ترافیکِ
+        # فقط‌خواندنی‌اش روشن است و فقط نشست برنداشته، پیامِ «BORS_EXECUTION_LIVE=1
+        # لازم است» می‌خواند — یعنی دقیقاً همان کاری که نباید بکند. کمبودِ واقعی
+        # ازِ خودِ دو شاهد جدا خوانده می‌شود.
+        if not has_token:
+            out["blocked_reason"] = ("نشستی درِ حافظه نیست — اول درِ پنجرۀِ کارگزاری "
+                                     "وارد شوید و سپس «برداشتِ نشست» یا «ثبتِ نشست» "
+                                     "را بزنید؛ بی‌نشست هیچ پرسشی زده نمی‌شود")
+            out["reason"] = "ناشناخته؛ پرسش انجام نشد"
+        else:
+            out["blocked_reason"] = ("ترافیکِ زنده خاموش است (BORS_EXECUTION_LIVE=1 لازم "
+                                     "است) — بی‌پرسش ازِ کارگزاری هیچ حالتی تأیید نمی‌شود")
+            out["reason"] = "ناشناخته؛ پرسش انجام نشد"
         return out
     if not has_token:
         out["state"] = STATE_DISCONNECTED

@@ -537,6 +537,10 @@ SUITES = [
      'sarkhati: buying-power budget, never an estimated amount'),
     ('dev/execution_budget_api_v1.py',
      'sarkhati: budget preview endpoint, price basis, unknown buying power'),
+    ('dev/execution_har_v1.py',
+     'sarkhati: HAR reader — structure out, no header or body value ever out'),
+    ('dev/execution_har_api_v1.py',
+     'sarkhati: HAR session intake — same two gates as /session, no token in reply'),
     # SARKHATI Stage H: موتورِ زمان. آفستِ NTP چندنمونه‌ای با *حالتِ* کیفیت
     # (TRUSTED/DEGRADED/UNTRUSTED/UNAVAILABLE) و fail-safe بی‌صدا رد نمی‌شود؛
     # مهلت رویِ monotonic است پس پرشِ ساعتِ دیواری dispatch را جابه‌جا نمی‌کند؛

@@ -55,6 +55,9 @@ a = Analysis(
         # /api/execution/status با ModuleNotFoundError می‌میرد.
         'execution_credentials',
         'execution_budget',
+        # برداشتِ نشست از پروندۀ HAR (بندِ ۷ مأموریتِ ۱۴۰۵-۰۷-۲۸) — بی‌این خط
+        # بیلدِ نصاب رویِ /api/execution/har/* با ModuleNotFoundError می‌میرد.
+        'execution_har',
         # تنظیمِ اتصال (`execution_settings`) درِ بدنهٔ تابع import می‌شود؛ بی‌این
         # درِ بستهٔ ساخته‌شده با این spec، اولین `/api/execution/config` یا
         # `/api/execution/status` با ModuleNotFoundError می‌افتد (مأموریتِ ۲۰۲۶-۱۰-۱۸).
