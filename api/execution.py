@@ -20,7 +20,8 @@
 می‌شود، نه صفر؛ و `live_enabled` ازِ وضعیتِ واقعیِ آداپتور خوانده می‌شود، نه
 ازِ یکِ ثابت.
 
-token درِ همین پروسه و درِ حافظه می‌ماند (`POST /api/execution/session`): هیچ
+token درِ همین پروسه و درِ حافظه می‌ماند (`POST /api/execution/session`) و پس از
+restart، فقط اگر ترافیک مجاز باشد، از مخزنِ امنِ ویندوز بازیابی می‌شود؛ هیچ
 مسیری آن را درِ فایل، دیتابیس، لاگ یا پاسخِ HTTP نمی‌نویسد.
 """
 from __future__ import annotations
@@ -50,6 +51,7 @@ from execution_easytrader import (
     easytrader_payload,
 )
 import execution_connect as EXC                            # noqa: E402
+import execution_session_store as SESS                     # noqa: E402
 from execution_ledger import ARMED, HALT, TRIPPED, default_ledger
 from execution_mock import MockBrokerAdapter
 from execution_service import ExecutionError, ExecutionService, Limits
@@ -171,6 +173,25 @@ _LIMITS = Limits(
 _ACTIVE_ADAPTER = _adapter()
 _SERVICE = ExecutionService(_ACTIVE_ADAPTER, dry_run=DRY_RUN, limits=_LIMITS,
                             audit=_AUDIT, scheduler=_SCHEDULER)
+
+
+def _recover_session() -> dict[str, Any]:
+    """بازیابیِ توکنِ ذخیره‌شده پس از restart — فقط وقتی ترافیک مجاز است.
+
+    هیچ درخواستی به کارگزاری نمی‌زند؛ فقط مخزنِ امن را می‌خواند. بی‌ترافیک،
+    خواندن هم انجام نمی‌شود تا رازِ بی‌مصرف درِ حافظه ننشیند. انقضا داخلِ
+    `execution_session_store` بررسی می‌شود و توکنِ منقضی هرگز ست نمی‌شود.
+    """
+    off = {"attempted": False, "loaded": False, "code": "NOT_APPLICABLE",
+           "source": "none", "present": False, "exp": None, "exp_iso": None}
+    if ADAPTER_KIND != "easytrader":
+        return off
+    if not TRAFFIC_ALLOWED or not isinstance(_ACTIVE_ADAPTER, EasyTraderAdapter):
+        return {**off, "code": "TRAFFIC_OFF"}
+    return SESS.restore_session(_ACTIVE_ADAPTER)
+
+
+_SESSION_RECOVERY: dict[str, Any] = _recover_session()
 
 
 #: عبارتِ تأییدِ انسانی برایِ اجرایِ زنده. مقدارِ پیش‌فرض *اختراع نشده*: همان
@@ -655,9 +676,16 @@ def get_status() -> dict[str, Any]:
         # `BORS_EXECUTION_LIVE=1` را کمبودِ اصلی می‌گفت — یعنی همان کاری که کاربر
         # نباید بکند. چیزی که واقعاً کم است نشانیِ نشست است.
         if READ_ONLY_REQUESTED:
-            blocked.append("حالتِ فقط‌خواندنی روشن است: ترافیکِ خواندن مجاز، ارسال نه — "
-                           "کمبود، نشستِ شماست (ورود درِ پنجرۀ کارگزاری، سپس نشانی به "
-                           "POST /api/execution/session)")
+            if live:
+                blocked.append("حالتِ فقط‌خواندنی: ترافیکِ خواندن مجاز است، ارسال نه")
+            else:
+                blocked.append("حالتِ فقط‌خواندنی روشن است: ترافیکِ خواندن مجاز، ارسال نه — "
+                               "کمبود، نشستِ شماست (ورود درِ پنجرۀ کارگزاری، سپس نشانی به "
+                               "POST /api/execution/session)")
+                if _SESSION_RECOVERY.get("code") in ("MISSING", "EXPIRED", "NO_EXP",
+                                                     "MALFORMED", "DENIED"):
+                    blocked.append("بازیابیِ خودکارِ نشست از مخزنِ امن: %s — ورود/استخراجِ "
+                                   "تازه لازم است" % _SESSION_RECOVERY.get("code"))
         else:
             blocked.append("ترافیک خاموش است — «تنظیمِ اتصال» را رویِ فقط‌خواندنی بگذارید "
                            "(یا BORS_EXECUTION_LIVE=1 برایِ ارسالِ سفارش) و restart کنید")
@@ -686,6 +714,8 @@ def get_status() -> dict[str, Any]:
         # false می‌کرد، و رابط را به پیامِ «ارسال لازم است» می‌انداخت (سنجشِ زنده).
         "read_only": bool(READ_ONLY_REQUESTED),
         "session_live": bool(live),
+        # بازیابیِ پس از restart: فقط metadata؛ توکن هیچ‌جا درِ این پاسخ نیست.
+        "session_recovery": dict(_SESSION_RECOVERY),
         "traffic_allowed": bool(TRAFFIC_ALLOWED),
         # تنظیمِ مؤثر + چه چیزی با restart عوض می‌شود. بی‌این «ذخیره شد» با
         # «اعمال شد» یکی خوانده می‌شود.
@@ -771,7 +801,8 @@ def get_session() -> dict[str, Any]:
     """وضعیتِ نشست — هیچ‌وقت مقدارِ token نه. UI فقط *حالت* می‌بیند."""
     return {"status": "success", "adapter": ADAPTER_KIND, "live": _live_now(),
             "dry_run": DRY_RUN, "session": _session_dict(),
-            "token_present": _has_token()}
+            "token_present": _has_token(),
+            "session_recovery": dict(_SESSION_RECOVERY)}
 
 
 def _has_token() -> bool:

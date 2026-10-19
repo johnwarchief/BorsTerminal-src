@@ -80,16 +80,18 @@ WIRE_PATH_SERVER_TIME = "/easy/api/account/server-time"
 #:   ⇒ `"apiPath":"https://api-mts.orbis.easytrader.ir/boot/api/build-number?…"`
 #: • `boot/api/build-number` : فقط‌خواندنی و بی‌نیازِ نشست ⇒ مناسبِ «میزبان سالم
 #:   است» — و هرگز شاهدِ نشست نیست.
-#: • `easy/api/account/server-time`، `symbols/api/TradingTime`،
-#:   `easy/api/clientAppSetting` : درِ نشستِ 2026-10-17 باِ GETِ فقط‌خواندنی
-#:   **۴۰۱ + `www-authenticate: Bearer`** برگرداندند؛ پس «۴۰۱ یا ۲۰۰» داوریِ
-#:   دوضابطهٔ نشست می‌دهد. معنایِ بدنۀِ ۲۰۰ هنوز دیده نشده ⇒ فرضیه.
+#: • `symbols/api/TradingTime` و `easy/api/clientAppSetting`: درِ نشستِ
+#:   2026-10-20 باِ GETِ فقط‌خواندنی ۲۰۰ دادند. مسیرِ
+#:   `easy/api/account/server-time` بدونِ timestamp در همان سنجش 404 بود؛
+#:   فقط شکلِ timestamp‌دارش در `server_clock()` پاسخ داد.
 #: • `/core/api/v2/order` و `/core/api/order`: فقط درِ کدِ شخصِ ثالث. هیچ سندِ
 #:   رسمیِ API نیست (swagger/openapi/docs ⇒ ۴۰۳). `WIRE_HYPOTHESIS` برایِ
 #:   سفارشِ واقعی پس تا دیدنِ پاسخِ واقعی درِ نشستِ مجاز true می‌ماند.
 WIRE_PROBE_HOST_HEALTH = "/boot/api/build-number"
+#: مسیرِ بدونِ timestamp در 2026-10-20 رویِ نشستِ واقعی 404 داد؛ کاندیدهایِ
+#: اینجا هر دو 200 دادند. شکلِ timestamp‌دارِ server-time فقط در `server_clock()`.
 WIRE_SESSION_PROBE_CANDIDATES = (
-    "/easy/api/account/server-time", "/symbols/api/TradingTime",
+    "/symbols/api/TradingTime",
     "/easy/api/clientAppSetting",
 )
 
@@ -851,6 +853,10 @@ class EasyTraderAdapter(BrokerAdapter):
                               "اتصالِ زنده وصل نیست — هیچ درخواستی ساخته نشد")
         url = self.base_url + path
         hdrs = self._headers(headers)
+        # WAFِ کارگزاری هر GETِ دارایِ Content-Type را با 200 + HTML پاسخ می‌دهد
+        # (سنجشِ 2026-10-20)؛ بدنه‌دارها Content-Type را نگه می‌دارند.
+        if payload is None:
+            hdrs.pop("Content-Type", None)
         t0 = time.monotonic()
         try:
             resp = self._transport.request(method=method, url=url, headers=hdrs,

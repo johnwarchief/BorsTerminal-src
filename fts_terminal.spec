@@ -181,6 +181,10 @@ a = Analysis(
                    # تا انتخابِ آداپتور از خودِ برنامه هم ممکن باشد؛ بی‌این خط
                    # بیلدِ منجمد رویِ اولین /api/execution/status می‌میرد.
                    'execution_settings',
+                   # بازیابیِ نشست از Windows Credential Manager (۲۰۲۶-۱۰-۲۰):
+                   # سطح-بالِ api/execution.py است؛ بی‌این خط EXE درِ startup
+                   # با ModuleNotFoundError می‌میرد.
+                   'execution_session_store',
                    # دروازۀ ربات (مأموریتِ ۱۴۰۵-۰۷-۲۴، فاز ۳): مثلِ بقیۀ api/*
                    # درِ بدنهٔ `api_router()` ایمپورت می‌شود، پس اسکن ایستا
                    # نمی‌بیندش؛ بی‌این خط هر /api/bot/* درِ EXE روی 404 می‌ماند.

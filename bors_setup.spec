@@ -55,6 +55,9 @@ a = Analysis(
         # درِ بستهٔ ساخته‌شده با این spec، اولین `/api/execution/config` یا
         # `/api/execution/status` با ModuleNotFoundError می‌افتد (مأموریتِ ۲۰۲۶-۱۰-۱۸).
         'execution_settings',
+        # بازیابیِ نشست از Windows Credential Manager (۲۰۲۶-۱۰-۲۰) — سطح-بالِ
+        # api/execution.py؛ بی‌این خط بستۀ نصاب درِ startup می‌شکند.
+        'execution_session_store',
         # دروازۀ ربات و سه ماژولِ پشتِ آن (فاز ۳ مأموریتِ ۱۴۰۵-۰۷-۲۴) — مثلِ
         # fts_terminal.spec؛ بی‌این /api/bot/* درِ بستهٔ نصاب 404 می‌ماند.
         'api.bot', 'bot_signals', 'paper_trading', 'trade_sim', 'backtest_engine',

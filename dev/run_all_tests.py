@@ -600,6 +600,10 @@ SUITES = [
     # زمان‌سنجیِ monotonic با p50/p95/p99، و کنترل‌هایِ منفیِ پاک‌سازیِ لاگ.
     ('dev/sarkhati_protocol_v1119.py',
      'sarkhati protocol: provenance-marked wire fixtures, 2xx is never acceptance, no blind re-send after ambiguous, confirmation voided by session change, three distinct origins, honest mode/queue claims, monotonic percentiles, log redaction controls'),
+    # مأموریتِ 2026-10-20: WAFِ Content-Type روی GET، مسیرِ زمان سرور، و بازیابیِ
+    # نشست از Credential Manager با بررسی exp؛ هیچ POSTِ واقعی در گارد نیست.
+    ('dev/sarkhati_waf_header_v1121.py',
+     'sarkhati WAF header: GET without Content-Type, POST with Content-Type, WAF simulator green only without the header, dead server-time candidate removed, read-only gate never reaches the transport, session vault rejects expired/no-exp tokens and leaks none'),
     # مأموریتِ 2026-10-18 (عیب‌یابیِ اتصالِ مفید): انتخابِ آداپتور ازِ خودِ برنامه
     # با مقدم‌بودنِ env، گیتِ نوشتن که هیچ تنظیمِ دیسکی بازش نمی‌کند، حالتِ
     # فقط‌خواندنی (خواندن بله / POST نه)، و «متصل» فقط باِ شاهدِ مسیرِ واقعی.

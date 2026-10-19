@@ -32,12 +32,14 @@ from api import execution as EX                                        # noqa: E
 from execution_contract import BrokerError, ErrorCode, SessionState    # noqa: E402
 from execution_easytrader import (EasyTraderAdapter, WireResponse,     # noqa: E402
                                   WIRE_BASE_URL, WIRE_PATH_ORDER_CREATE,
-                                  WIRE_PATH_ORDER_LIST, WIRE_PATH_SERVER_TIME)
+                                  WIRE_PATH_ORDER_LIST)
 
 SECRET = "super-secret-token-value-for-guard-only"
 #: همان «مسیرِ دیدہ‌شدہ» که درِ ماتریس capture عمومی است — از ثابتِ خودِ ماژول برداشته
 #: می‌شود تا گارد به عددِ دستِ‌نویسِ تاریخ‌خورده گره نخورد.
-SERVER_TIME = WIRE_PATH_SERVER_TIME
+#: مسیرِ server-time بدونِ timestamp در 2026-10-20 رویِ نشستِ واقعی 404 بود؛
+#: کاندیدِ مشاهده‌شدهٔ باقی‌مانده همان TradingTime است.
+SESSION_PROBE = "/symbols/api/TradingTime"
 PASS = FAIL = 0
 
 
@@ -172,19 +174,19 @@ ck(a.session_proof.get("path") == WIRE_PATH_ORDER_LIST
    str(a.session_proof)[:140])
 
 # ── ۴) مسیرِ حدسی ۴۰۴ ⇒ شاهد ازِ مسیرِ دیدہ‌شدہ ─────────────────────────────
-t2 = PathTransport({SERVER_TIME: (200, {"diff": 45, "serverTimestamp": 1767700032066})})
+t2 = PathTransport({SESSION_PROBE: (200, {"ok": True})})
 b = EasyTraderAdapter(transport=t2, token=SECRET, writes_allowed=False)
 st2 = b.authenticate()
 ck(st2.state is SessionState.CONNECTED,
    "۴) ۴۰۴ رویِ «فهرستِ سفارش» نشست را باطل اعلام نمی‌کند",
    str(t2.calls)[:150])
 ck(b.session_proof.get("kind") == "observed-read-only"
-   and str(b.session_proof.get("path") or "").startswith(SERVER_TIME),
+   and str(b.session_proof.get("path") or "").startswith(SESSION_PROBE),
    "۴) اتصال ازِ مسیرِ مشاهده‌شده ثابت شد، نه ازِ کدِ شخصِ ثالث",
    str(b.session_proof)[:150])
 
 # ── ۵) کنترلِ منفی: ۴۰۱ هیچ‌وقت «متصل» نمی‌شود ─────────────────────────────
-t3 = PathTransport({SERVER_TIME: (401, {"isSuccessful": False, "message": "expired"}),
+t3 = PathTransport({SESSION_PROBE: (401, {"isSuccessful": False, "message": "expired"}),
                     WIRE_PATH_ORDER_LIST: (401, {"isSuccessful": False,
                                                  "message": "expired"})})
 c = EasyTraderAdapter(transport=t3, token=SECRET, writes_allowed=False)
