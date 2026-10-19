@@ -14,7 +14,7 @@
 // می‌خواند) می‌آید. `asOf` اگر نباشد صریح «گزارش نشده» می‌نویسیم، نه ساعتِ ماشین.
 import { useEffect, useMemo, useState } from 'react';
 import { toFaDigits } from '@shared/lib/fmt';
-import { FILTER_LABEL, MODE_LABEL, MODE_PATH, PRESET_ENTRY, PRESET_MOTIVE,
+import { FILTER_LABEL, MODE_LABEL, MODE_PATH, PRESET_ENTRY,
   TAPE_FRESHNESS_LABEL } from '../lib/ftsFunnel';
 import type { FunnelFlow, FunnelStageKey, StageSummary, TapeFreshness } from '../lib/ftsFunnel';
 import { funnelStagesFor } from './FtsProcessStepper';
@@ -41,32 +41,23 @@ function fmtTime(epochSec: number | null | undefined): string {
 export function FtsFunnelHeader({
   preset,
   mode,
-  stage,
+  onModeChange,
   flow,
   counts,
-  universe,
   asOf,
   tape,
   computing,
   scan,
-  techResolved = 0,
-  techWanted = 0,
-  stageInput,
 }: {
   preset: keyof typeof PRESET_ENTRY;
   mode: 'reverse' | 'review';
-  stage: FunnelStageKey;
+  onModeChange: (m: 'reverse' | 'review') => void;
   flow: FunnelFlow;
   counts: Partial<Record<FunnelStageKey, StageSummary>>;
-  universe: number;
   asOf: number | null;
   tape: TapeFreshness;
   computing: boolean;
   scan: { running: boolean; done: number; queued: number };
-  techResolved?: number;
-  techWanted?: number;
-  /** `stages[current].input` ازِ خودِ موتور — رابط آن را از گامِ پیشین نمی‌سازد */
-  stageInput?: number;
 }) {
   const [howOpen, setHowOpen] = useState(false);
   const [guide, setGuide] = useState(false);
@@ -85,13 +76,6 @@ export function FtsFunnelHeader({
   };
 
   const order = funnelStagesFor(flow);
-  const idx = Math.max(0, order.findIndex((s) => s.key === stage));
-  const cur = order[idx];
-  const curSum = counts[stage];
-  const inferred = idx === 0
-    ? universe
-    : (counts[order[idx - 1].key]?.pass ?? 0);
-  const input = typeof stageInput === 'number' ? stageInput : inferred;
   const entry = PRESET_ENTRY[preset];
   const filters = (entry?.filters ?? []).map((f) => FILTER_LABEL[f] ?? f);
   const status = useMemo(() => {
@@ -104,16 +88,36 @@ export function FtsFunnelHeader({
   return (
     <header className="flex w-full flex-col gap-1.5" data-testid="fts-funnel-header">
       <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-        <h1 className="text-base font-black text-text-primary">استراتژی FTS</h1>
+        {/* عنوان در نوارِ بالا و تبِ فضایِ کاری هست؛ تکرارش سه‌بار در ۹۰px
+            شلوغی بود. برایِ صفحه‌خوان می‌ماند. */}
+        <h1 className="sr-only">استراتژی FTS</h1>
         <span className="rounded-lg border border-accent-blue/50 bg-accent-blue/10 px-2 py-0.5
                          text-xs font-black text-accent-blue"
               data-testid="fts-active-strategy">
           {entry?.label ?? preset}
         </span>
-        <span className="rounded-lg border border-border-c bg-bg-card px-2 py-0.5 text-2xs font-bold text-text-secondary"
-              data-testid="fts-active-mode" title={MODE_PATH[mode]}>
-          {MODE_LABEL[mode]}
-        </span>
+        {/* یک‌جا برایِ حالتِ کشف: پیش‌تر یک چیپِ ثابت این‌جا و یک ردیفِ دکمه داخلِ
+            جدول بود؛ حالا همین سوییچ هم می‌گوید چیست، هم عوضش می‌کند. */}
+        <div className="flex items-center gap-1" role="group"
+             aria-label="حالت کشف" data-testid="fts-active-mode">
+          {(['reverse', 'review'] as const).map((m) => (
+            <button
+              key={m}
+              type="button"
+              aria-pressed={mode === m}
+              data-testid={`funnel-mode-${m}`}
+              title={MODE_PATH[m]}
+              onClick={() => onModeChange(m)}
+              className={`rounded-lg border px-2 py-0.5 text-2xs font-bold transition-colors ${
+                mode === m
+                  ? 'border-accent-blue bg-accent-blue/15 text-accent-blue'
+                  : 'border-border-c bg-bg-card text-text-muted hover:border-accent-blue/60 hover:text-text-primary'
+              }`}
+            >
+              {MODE_LABEL[m]}
+            </button>
+          ))}
+        </div>
         <button
           type="button"
           data-testid="fts-how-it-works-toggle"
@@ -126,11 +130,8 @@ export function FtsFunnelHeader({
         </button>
       </div>
 
-      <p className="max-w-[110ch] text-xs leading-5 text-text-secondary" data-testid="fts-strategy-purpose">
-        {PRESET_MOTIVE[preset] ?? ''}
-      </p>
-
-      {/* یک خطِ وضعیت: چه‌اتفاقی دارد می‌افتد، عدد از کِی است، و کجا ایستاده‌ایم */}
+      {/* یک خطِ وضعیت: چه‌اتفاقی دارد می‌افتد و عدد از کِی است. گام/ورودی/عبوری
+          این‌جا تکرار نمی‌شوند — استپر و سرِ جدول همان دو عدد را می‌گویند. */}
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-2xs"
            data-testid="fts-status-line">
         <span className={`inline-flex items-center gap-1.5 rounded-md border px-2 py-0.5 font-black ${status.tone}`}
@@ -146,22 +147,9 @@ export function FtsFunnelHeader({
               title="تازگیِ خوراکِ تابلو — دادهٔ آخرین روز معاملاتی جایِ زنده خوانده نمی‌شود">
           {TAPE_FRESHNESS_LABEL[tape]}
         </span>
-        <span className="text-text-secondary" data-testid="fts-current-step">
-          گام {toFaDigits(cur.index)} از {toFaDigits(order.length)}: <b className="text-text-primary">{cur.title}</b>
-        </span>
-        <span className="num text-text-secondary" data-testid="fts-stage-flow">
-          ورودیِ این گام: {toFaDigits(input)} · عبوری: {toFaDigits(curSum?.pass ?? 0)}
-        </span>
         {scan.queued > 0 ? (
           <span className="num text-accent-yellow" data-testid="fts-scan-progress">
             در صفِ محاسبه: {toFaDigits(scan.queued)} · ساخته‌شده: {toFaDigits(scan.done)}
-          </span>
-        ) : null}
-        {/* پوششِ رأیِ تکنیکال پنهان نمی‌ماند: «سنجیده نشد» با «رد شده» یکی نیست. */}
-        {techWanted > 0 ? (
-          <span className="num text-text-secondary" data-testid="fts-tech-coverage"
-                title="داوریِ تکنیکال برایِ هر نمادی که به این گام رسیده ساخته شده">
-            تکنیکال سنجیده‌شده: {toFaDigits(techResolved)} از {toFaDigits(techWanted)}
           </span>
         ) : null}
       </div>

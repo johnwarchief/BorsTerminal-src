@@ -44,6 +44,11 @@ const isTypingTarget = (el: EventTarget | null): boolean => {
   return node.isContentEditable === true;
 };
 
+/** راهنمای یک‌بارهٔ چند‌تبی‌بودن: دکمهٔ «+» برای کاربرِ تازه تنها یک علامت است؛
+ *  این خط کنارش می‌گوید هر تب صفحهٔ مستقل خودش را نگه می‌دارد. بعد از ساختِ
+ *  دومین تب یا بستنِ راهنما دیگر برنمی‌گردد. */
+const TAB_HINT_KEY = 'bors.workspace.tab-hint.v1';
+
 export function WorkspaceTabs() {
   const tabs = useWorkspaceStore((s) => s.tabs);
   const activeId = useWorkspaceStore((s) => s.activeId);
@@ -61,7 +66,30 @@ export function WorkspaceTabs() {
   const tabRefs = useRef(new Map<string, HTMLDivElement>());
   const focusNextRef = useRef<string | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [showHint, setShowHint] = useState(false);
   const firstTabNav = useRef(true);
+
+  useEffect(() => {
+    try {
+      setShowHint(localStorage.getItem(TAB_HINT_KEY) !== '1');
+    } catch {
+      setShowHint(true);
+    }
+  }, []);
+
+  const dismissHint = useCallback(() => {
+    setShowHint(false);
+    try {
+      localStorage.setItem(TAB_HINT_KEY, '1');
+    } catch {
+      /* بی‌حافظه هم فقط همین نشست را ساکت می‌کند */
+    }
+  }, []);
+
+  // دومین تب خودش درس را داده است؛ راهنما را برای همیشه کنار بگذار.
+  useEffect(() => {
+    if (tabs.length > 1 && showHint) dismissHint();
+  }, [tabs.length, showHint, dismissHint]);
 
   const active = tabs.find((t) => t.id === activeId);
   const path = useMemo(() => `/${location.pathname.replace(/^\/+/, '')}`, [location.pathname]);
@@ -211,16 +239,30 @@ export function WorkspaceTabs() {
         })}
       </div>
 
+      {tabs.length === 1 && showHint ? (
+        <span role="note" data-testid="ws-tab-hint"
+              className="hidden shrink-0 items-center gap-1 ps-1 text-3xs text-text-muted md:flex">
+          هر تب یک صفحهٔ جداست
+          <button type="button" data-testid="ws-tab-hint-close"
+                  aria-label="بستن راهنمای تب‌ها"
+                  onClick={dismissHint}
+                  className="rounded p-0.5 text-text-muted hover:text-text-primary focus-visible:ring-2 focus-visible:ring-accent-blue">
+            <span aria-hidden="true">×</span>
+          </button>
+        </span>
+      ) : null}
+
       <div role="toolbar" aria-label="کنترل تب‌ها" className="flex shrink-0 items-center gap-1">
         <button
           type="button"
           onClick={() => openTab(DEFAULT_TAB_PATH, '', { forceNew: true })}
           aria-label="تب تازه"
-          title="تب تازه (Ctrl+T)"
+          title="تب تازه (Ctrl+T) — هر تب صفحهٔ مستقل خودش را نگه می‌دارد"
           data-testid="ws-tab-new"
-          className="min-h-[24px] min-w-[24px] rounded px-2 text-sm font-black text-text-secondary transition hover:bg-accent-blue/12 hover:text-accent-blue focus-visible:ring-2 focus-visible:ring-accent-blue max-md:min-h-[40px]"
+          className="inline-flex min-h-[24px] min-w-[24px] items-center gap-1 rounded px-2 text-sm font-black text-text-secondary transition hover:bg-accent-blue/12 hover:text-accent-blue focus-visible:ring-2 focus-visible:ring-accent-blue max-md:min-h-[40px]"
         >
           <span aria-hidden="true">+</span>
+          <span className="hidden text-2xs font-bold sm:inline">تب جدید</span>
         </button>
         {overflowing ? (
           <div className="relative">

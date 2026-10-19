@@ -33,9 +33,6 @@ import { useVerdictChanges } from '../lib/funnelChangeTrack';
 import { FunnelErrorBanner } from './FunnelErrorBanner';
 import { FtsFilterPanel } from './FtsFilterPanel';
 import {
-  MODE_HINT,
-  MODE_LABEL,
-  MODE_PATH,
   PRESET_ENTRY,
   STATUS_LABEL,
   STATUS_HINT,
@@ -239,7 +236,7 @@ const PATTERN_TONE: Record<string, MicroTone> = {
   'کف‌روب': 'emerald',
   'نقطه': 'amber',
   'نقطه‌زنی': 'amber',
-  'کد به کد': 'violet',
+  'ورود پول هوشمند و کد به کد': 'violet',
   'صف+': 'green',
   'صف−': 'red',
 };
@@ -1101,7 +1098,7 @@ function TapeStagePrefs({ picked, counts, filters }: {
   return (
     <span
       data-testid="funnel-tape-prefs"
-      className="flex flex-wrap items-center justify-end gap-1"
+      className="flex flex-wrap items-center justify-start gap-1"
       role="group"
       aria-label="فیلترهای ورودی غربالگری"
     >
@@ -1459,11 +1456,9 @@ export function FtsFunnelStages({
 
   // یک مدل، چند رندرر: قیف از `useFtsFunnel` می‌آید — همان چیزی که فهرستِ تحویل
   // و سایدبار هم می‌خوانند، پس دو دورۀ داوری درِ این تب نداریم.
-  const { funnel, mode, tech, scan, refreshing, screenFilters, techFilters, opts, error, hasData, retry } = useFtsFunnel(preset);
+  const { funnel, tech, scan, refreshing, screenFilters, techFilters, opts, error, hasData, retry } = useFtsFunnel(preset);
   // نام/نقش/منبعِ هر شرطِ تکنیکال از رجیستریِ همان سرور — نه از یک فهرستِ دستی.
   const registry = useFunnelRegistry();
-  const setMode = useFunnelPrefsStore((s) => s.setMode);
-
   // بازگردانی scroll: قیف پولینگ می‌شود و سطرهایش چند دور بعد جا می‌افتند؛
   // تا سطر به اندازه نگه داشته نشده، تلاشِ بعدی رندر دوباره می‌آزماید.
   const scrollRestored = useRef(false);
@@ -1542,90 +1537,6 @@ export function FtsFunnelStages({
   return (
     <section className="flex flex-col gap-2">
       {error ? <FunnelErrorBanner onRetry={retry} blocking={!hasData} /> : null}
-      {/* سرستونِ غربالگری سمتِ راست می‌ایستد (رأیِ مالک ۱۴۰۵-۰۷-۱۹): عنوانِ صفحه،
-          دو حالتِ کشف، تازگیِ تابلو و ساعتِ محاسبه. خطِ شمارش‌ها پایین‌تر همان
-          لبۀِ چپ را نگه می‌دارد (رأیِ ۱۴۰۵-۰۷-۲۰). */}
-      <div className="flex flex-wrap items-center justify-start gap-2">
-        {/* دو حالتِ کشف، یک قراردادِ داوری (#2 و #14): مهندسیِ معکوس مسیرِ اصلیِ
-            جزوه است؛ مرورِ بازار برایِ بازارِ بسته یا بررسیِ کلِ universe. */}
-        <span className="text-2xs font-bold text-text-secondary">حالتِ کشف:</span>
-        <div className="flex flex-wrap items-center gap-1" role="group" aria-label="حالتِ کشفِ نماد" data-testid="funnel-mode-picker">
-          {(['reverse', 'review'] as const).map((m) => (
-            <button
-              key={m}
-              type="button"
-              aria-pressed={mode === m}
-              data-testid={`funnel-mode-${m}`}
-              title={MODE_HINT[m] + ' — ' + MODE_PATH[m]}
-              onClick={() => setMode(m)}
-              className={`rounded-full border px-2.5 py-1 text-2xs font-bold transition-all ${
-                mode === m
-                  ? 'border-accent-blue bg-accent-blue/15 text-accent-blue'
-                  : 'border-border-c bg-bg-card text-text-muted hover:border-accent-blue/60 hover:text-text-primary'
-              }`}
-            >
-              {MODE_LABEL[m]}
-            </button>
-          ))}
-        </div>
-      </div>
-      {/* شمارشِ واقعیِ درِ تحویل (#15): Qualified / Pending / Rejected / Unavailable
-          / Not-required با عددِ خودِ بازار. این پنج از `coverage`ِ بک‌اند می‌آیند،
-          یعنی شمارشِ **کلِ جامعۀ غربالگری** درِ هر گام — پس جمعشان همان Y است
-          و نمادی بی‌حکم نمی‌ماند. هدف‌هایِ جزوه (۵۰ و ۱۰ و ۵-۷) فقط مرجعِ کناری‌اند
-          و هیچ‌جا گیتِ عبور نیستند.
-          `justify-end` با رأیِ مالک (۱۴۰۵-۰۷-۲۰) آمده: درِ RTL لبۀِ پایانِ خطِ
-          اصلی سمتِ چپِ صفحه است — سرستون و شمارش‌ها باید آن‌جا بایستند. */}
-      <div
-        className="flex flex-wrap items-center justify-end gap-x-3 gap-y-1 text-2xs font-bold text-text-secondary"
-        data-testid="funnel-counts"
-      >
-        <span className="text-accent-green" data-testid="funnel-count-pass">جامعِ چهار در: {toFaDigits(hc.pass)}</span>
-        <span data-testid="funnel-count-pending">در انتظار: {toFaDigits(hc.pending)}</span>
-        <span data-testid="funnel-count-reject">رد: {toFaDigits(hc.reject)}</span>
-        <span data-testid="funnel-count-unavailable">بی‌داده: {toFaDigits(hc.unavailable)}</span>
-        <span data-testid="funnel-count-not-required" title={STATUS_HINT.not_required}>
-          لازم نبود: {toFaDigits(hc.not_required)}
-        </span>
-        {/* دو جامعۀ جدا (رأیِ مالک ۱۴۰۵-۰۷-۱۶): تابلو ≠ غربالگری. Z درِ این خطِ
-            خلاصه می‌نشیند نه درِ جدولِ گام‌ها، و بازشونده است تا علتِ هر نماد
-            (متوقف / ممنوع / ردیفِ نشستِ کهنه) دیده شود. سه عدد درِ یک خانۀ
-            مرزی‌اند و «|» و «/» متنِ جداکننده حذف شد: درِ RTL آن‌ها لبهٔ
-            جمله می‌افتادند و خواننده فکر می‌کرد کاراکترِ خراب است. */}
-        <span className="flex items-center gap-x-2 rounded-full border border-[var(--hairline)] bg-bg-card/50 px-2 py-0.5">
-        <span className="text-text-secondary" data-testid="funnel-universe-market"
-              title="تک‌تکِ نمادهایِ امروزِ تابلو (ردیفِ تکراری یکی‌شده)">
-          جامعۀ تابلو: {toFaDigits(funnel.marketUniverse)}
-        </span>
-        <span className="text-accent-blue" data-testid="funnel-universe-screening"
-              title="فقط نمادهایِ زنده/واجدِ شرایط — همان که جدولِ چهار گام از آن ساخته می‌شود">
-          واجدِ غربالگری: {toFaDigits(funnel.total)}
-        </span>
-        <button
-          type="button"
-          data-testid="funnel-universe-excluded"
-          aria-expanded={showExcluded}
-          onClick={() => setShowExcluded((v) => !v)}
-          title="این نمادها رد نشده‌اند و «سنجیده نشده» هم نیستند: اصلاً عضو جامعۀ غربالگری نیستند"
-          className={`rounded-full px-1.5 py-0.5 transition-colors ${
-            showExcluded ? 'bg-accent-yellow/15 text-accent-yellow' : 'text-text-muted hover:text-text-primary'
-          }`}
-        >
-          خارج از جامعۀ غربالگری: {toFaDigits(funnel.excludedCount)} {showExcluded ? '▲' : '▼'}
-        </button>
-        </span>
-        {/* عددِ رویِ صفحه کهنه است و تازه‌اش در راه — صریح گفته می‌شود، چون
-            پاسخِ قبلی عمداً رویِ جدول نگه داشته شده (بی‌صفرفلاش شدنِ جدول). */}
-        {refreshing && funnel.total > 0 ? (
-          <span
-            data-testid="funnel-refreshing"
-            className="num rounded-full bg-accent-yellow/15 px-2 py-0.5 text-3xs font-bold text-accent-yellow"
-            title="عددِ فعلی از آخرینِ پاسخِ کامل است؛ پاسخِ تازه در راه است"
-          >
-            در حالِ به‌روزرسانی
-          </span>
-        ) : null}
-      </div>
       {/* چیپ‌هایِ فیلتر + کلیدِ اشتراک/اجتماع، با نامزدِ زندهٔ هر فیلتر — نوارِ
           بالایِ غربالگری (رأیِ مالک ۱۴۰۵-۰۷-۲۰). */}
       <FtsFilterPanel
@@ -1706,15 +1617,6 @@ export function FtsFunnelStages({
             اعمال‌نشده درِ سرور
           </span>
         ) : null}
-        <span className="ms-auto max-w-[70ch] text-2xs leading-5 text-text-secondary">
-          {/* منبعِ فعلیِ زنجیره صریح گفته می‌شود: درِ Custom چیپ‌ها زنجیرۀِ خودِ
-              شخص را کم و زیاد می‌کنند، درِ بقیۀ اشخاص چیپ‌هایِ تبِّ تابلو. */}
-          ورودیِ غربالگری:{' '}
-          {screenFilters.active.length
-            ? `${screenFilters.source === 'chain' ? 'زنجیرۀِ خودِ شما' : 'چیپ‌هایِ روشنِ تابلو'} (${toFaDigits(screenFilters.active.length)})`
-            : (preset === 'custom' ? 'زنجیرۀِ Custom خالی است' : PRESET_ENTRY[preset].label)} ·{' '}
-          از {toFaDigits(funnel.marketUniverse)} نمادِ تابلو، {toFaDigits(funnel.total)} درِ جامعۀ غربالگری
-        </span>
         {/* پوششِ رأیِ تکنیکال پنهان نمی‌ماند: «سنجیده نشد» با «رد شده» یکی نیست،
             و «هنوز اسکن نشده» با هر دوی آنها یکی نیست. اسکن درِ پس‌زمینه می‌رود،
             پس سرخطِ پیشرفتِ خودش را می‌گیرد — و وقتی در حالِ ساختن است همین خط
@@ -1745,16 +1647,68 @@ export function FtsFunnelStages({
 
 
       <div className="flex flex-col gap-2">
-        {/* عنوانِ بخشِ نتایج + شمارۀ همان گام (نه شمارۀ گامِ دیگر). درِ حالتِ
-            «فقط یک گام» نامِ همان گام نوشته می‌شود تا عددِ بالا با جدولِ پایین
-            یکی خوانده شود. */}
-        <h2 className="text-sm font-black text-text-primary" data-testid="funnel-results-title">
-          نتایجِ گامِ جاری{only ? ` — ${STAGE_TITLE[only]}` : ''}
-          <span className="num ms-2 text-2xs font-bold text-text-secondary"
-                data-testid="funnel-results-count">
-            {toFaDigits(shownKeys.length ? (funnel.counts[shownKeys[0] as FunnelStageKey]?.pass ?? 0) : 0)} نماد
-          </span>
-        </h2>
+        {/* نوارِ جدولِ نتایج: عنوان و شمارش‌ها یک‌جا (رأیِ مالک ۱۴۰۵-۰۷-۲۹)؛
+            شمارش‌ها پیش‌تر بالایِ پنلِ فیلتر بودند و صفحه را دو تکه می‌کردند. */}
+        <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1"
+             data-testid="funnel-results-toolbar">
+          <h2 className="text-sm font-black text-text-primary" data-testid="funnel-results-title">
+            نتایجِ گامِ جاری{only ? ` — ${STAGE_TITLE[only]}` : ''}
+            <span className="num ms-2 text-2xs font-bold text-text-secondary"
+                  data-testid="funnel-results-count">
+              {toFaDigits(shownKeys.length ? (funnel.counts[shownKeys[0] as FunnelStageKey]?.pass ?? 0) : 0)} نماد
+            </span>
+          </h2>
+          <div
+            className="flex flex-wrap items-center justify-start gap-x-3 gap-y-1 text-2xs font-bold text-text-secondary"
+            data-testid="funnel-counts"
+          >
+            <span className="text-accent-green" data-testid="funnel-count-pass">جامعِ چهار در: {toFaDigits(hc.pass)}</span>
+            <span data-testid="funnel-count-pending">در انتظار: {toFaDigits(hc.pending)}</span>
+            <span data-testid="funnel-count-reject">رد: {toFaDigits(hc.reject)}</span>
+            <span data-testid="funnel-count-unavailable">بی‌داده: {toFaDigits(hc.unavailable)}</span>
+            <span data-testid="funnel-count-not-required" title={STATUS_HINT.not_required}>
+              لازم نبود: {toFaDigits(hc.not_required)}
+            </span>
+            {/* دو جامعۀ جدا (رأیِ مالک ۱۴۰۵-۰۷-۱۶): تابلو ≠ غربالگری. Z درِ این خطِ
+                خلاصه می‌نشیند نه درِ جدولِ گام‌ها، و بازشونده است تا علتِ هر نماد
+                (متوقف / ممنوع / ردیفِ نشستِ کهنه) دیده شود. سه عدد درِ یک خانۀ
+                مرزی‌اند و «|» و «/» متنِ جداکننده حذف شد: درِ RTL آن‌ها لبهٔ
+                جمله می‌افتادند و خواننده فکر می‌کرد کاراکترِ خراب است. */}
+            <span className="flex items-center gap-x-2 rounded-full border border-[var(--hairline)] bg-bg-card/50 px-2 py-0.5">
+            <span className="text-text-secondary" data-testid="funnel-universe-market"
+                  title="تک‌تکِ نمادهایِ امروزِ تابلو (ردیفِ تکراری یکی‌شده)">
+              جامعۀ تابلو: {toFaDigits(funnel.marketUniverse)}
+            </span>
+            <span className="text-accent-blue" data-testid="funnel-universe-screening"
+                  title="فقط نمادهایِ زنده/واجدِ شرایط — همان که جدولِ چهار گام از آن ساخته می‌شود">
+              واجدِ غربالگری: {toFaDigits(funnel.total)}
+            </span>
+            <button
+              type="button"
+              data-testid="funnel-universe-excluded"
+              aria-expanded={showExcluded}
+              onClick={() => setShowExcluded((v) => !v)}
+              title="این نمادها رد نشده‌اند و «سنجیده نشده» هم نیستند: اصلاً عضو جامعۀ غربالگری نیستند"
+              className={`rounded-full px-1.5 py-0.5 transition-colors ${
+                showExcluded ? 'bg-accent-yellow/15 text-accent-yellow' : 'text-text-muted hover:text-text-primary'
+              }`}
+            >
+              خارج از جامعۀ غربالگری: {toFaDigits(funnel.excludedCount)} {showExcluded ? '▲' : '▼'}
+            </button>
+            </span>
+            {/* عددِ رویِ صفحه کهنه است و تازه‌اش در راه — صریح گفته می‌شود، چون
+                پاسخِ قبلی عمداً رویِ جدول نگه داشته شده (بی‌صفرفلاش شدنِ جدول). */}
+            {refreshing && funnel.total > 0 ? (
+              <span
+                data-testid="funnel-refreshing"
+                className="num rounded-full bg-accent-yellow/15 px-2 py-0.5 text-3xs font-bold text-accent-yellow"
+                title="عددِ فعلی از آخرینِ پاسخِ کامل است؛ پاسخِ تازه در راه است"
+              >
+                در حالِ به‌روزرسانی
+              </span>
+            ) : null}
+          </div>
+        </div>
         {stages.map((s, i) => (shownKeys.includes(s.key) ? (
           <StageCard
             key={s.key}

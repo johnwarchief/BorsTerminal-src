@@ -201,6 +201,11 @@ _audit/*.json
 _audit/fts_live_audit/
 _audit/market_tape_live_audit/
 
+# جاروبِ بصریِ مسیرها (UI/UX، 2026-10-19): 242 اسکرین‌شاتِ قبل/بعد در چهار اندازه
+# (~47MB) + JSONِ سنجه‌ها. با tools/uiux_route_probe.mts بازتولید می‌شود؛ تصویرِ
+# 47 مگابایتی مخزن نمی‌شود و JSON هم زیرِ قاعدهٔ بالا gitignored است.
+_audit/uiux-nav/
+
 # کپی‌هایِ یدکیِ market.db که ایجنت‌ها پیشِ یک migration می‌گیرند (هر کدام ~۹۸ مگابایت،
 # و -shm/-wal پیوستشان). هیچ‌کدام دادهٔ مخزن نیست: خودِ market.db هم gitignored است.
 market.db.baseline

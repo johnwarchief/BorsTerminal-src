@@ -64,6 +64,17 @@ describe('تب‌های فضای کاری (الگویِ ARIA APG باِ تطبی
     expect(tabs()).toHaveLength(3);
   });
 
+  it('چند‌تبی‌بودن از نگاهِ اول پیداست: برچسبِ «تب جدید» و راهنمای یک‌باره', () => {
+    renderTabs();
+    // برچسبِ دیدنیِ دکمه (در موبایل با CSS پنهان می‌شود، در DOM هست)
+    expect(screen.getByTestId('ws-tab-new').textContent).toContain('تب جدید');
+    expect(screen.getByTestId('ws-tab-hint').textContent).toContain('هر تب یک صفحهٔ جداست');
+    // ساختِ دومین تب، درس را داده است ⇒ راهنما برای همیشه کنار می‌رود
+    fireEvent.click(screen.getByTestId('ws-tab-new'));
+    expect(screen.queryByTestId('ws-tab-hint')).not.toBeInTheDocument();
+    expect(localStorage.getItem('bors.workspace.tab-hint.v1')).toBe('1');
+  });
+
   it('پیوندِ «بازکردنِ نماد» اگرِ همانِ مسیر باز باشد، تبِ موجود را فعال می‌کند', () => {
     renderTabs();
     const store = useWorkspaceStore.getState;

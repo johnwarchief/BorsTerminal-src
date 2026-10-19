@@ -66,13 +66,14 @@ export function FtsFunnelStages({
     }
   });
   const setPreset = useFunnelPrefsStore((s) => s.setPreset);
+  const setMode = useFunnelPrefsStore((s) => s.setMode);
   // presetِ فعال از تنها منبعِ مشترک (URL > انتخابِ کاربر > prop=افق) — همانی که
   // dossier و سایدبار می‌خوانند، پس یک درخواستِ canonical به هر سه سطح می‌رسد.
   const activePreset = useActiveFunnelPreset(preset);
   // شمارندۀ تب‌هایِ گام از *همان* پاسخِ سرور خوانده می‌شود که جدول می‌خواند
   // (TanStack Query با یک کلیدِ یکی، یک درخواست). اینجا هنوز هیچ داوری‌ای حساب
   // نمی‌شود — فقط `counts`ِ خودِ موتور به تب‌ها می‌رسد.
-  const { funnel, mode, tape, tech, scan, loading, error, hasData } = useFtsFunnel(activePreset);
+  const { funnel, mode, tape, scan, loading, error, hasData } = useFtsFunnel(activePreset);
   // ترتیبِ گام‌ها را پاسخِ موتور می‌گوید (`flow`). تا پاسخ نرسیده‌ایم از
   // رجیستریِ همان سرور می‌خوانیم که این شخص چه ترتیبی دارد — پس تب‌ها بی‌جهت
   // یک دور «تابلو» را گامِ اول نشان نمی‌دهند و بعد می‌پرند.
@@ -134,12 +135,10 @@ export function FtsFunnelStages({
     <div className="flex w-full flex-col gap-2" data-testid="fts-funnel-workspace">
       {/* سربرگ: کدام استراتژی، چه می‌کند، الان در چه وضعیتی است، عدد از کِی است،
           و نتایج کجاست — پیش ازِ هر چیزِ دیگر و بی‌اسکرول. */}
-      <FtsFunnelHeader preset={activePreset} mode={mode} stage={stage} flow={flow}
-                       counts={funnel.counts} universe={funnel.total} asOf={funnel.asOf}
+      <FtsFunnelHeader preset={activePreset} mode={mode} onModeChange={setMode}
+                       flow={flow} counts={funnel.counts} asOf={funnel.asOf}
                        tape={tape} computing={loading && !hasData}
-                       stageInput={funnel.stages[stage]?.input}
-                       scan={{ running: scan.running, done: scan.done, queued: scan.queued }}
-                       techResolved={tech.resolved} techWanted={tech.wanted} />
+                       scan={{ running: scan.running, done: scan.done, queued: scan.queued }} />
 
       <div
         className="flex flex-wrap items-center gap-1"

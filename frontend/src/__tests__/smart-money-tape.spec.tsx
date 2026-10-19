@@ -8,6 +8,8 @@ import {
   tapeFilterVerdict,
 } from '@features/market/lib/tapeAlgorithms';
 import { patternBadges } from '@features/market/lib/tapeBadges';
+import { TAPE_FLAG_LABELS } from '@shared/lib/tapeFlags';
+import { FILTER_LABEL } from '@features/master/lib/ftsFunnel';
 import type { MarketRow } from '@shared/types/marketRow';
 
 const cfg = DEFAULT_TAPE_FILTER_CONFIG;
@@ -24,7 +26,7 @@ const MATCHES = {
   f_clock: 0, f_susp: 0, f_jet: 0, f_roobi: 0, f_noqteh: 0, f_smart: 3, f_legal: 1,
 };
 
-describe('پول هوشمند و کد به کد — داوریِ واحد درِ رابط', () => {
+describe('ورود پول هوشمند و کد به کد — داوریِ واحد درِ رابط', () => {
   it('داوری عینِ پرچم است؛ نه فرمولِ دوم، نه جهتِ اعداد', () => {
     expect(tapeFilterVerdict({ ...base, f_smart: true }, 'f_smart', cfg)).toBe(true);
     // ردیفی که ریاضی‌اش «شبیه» پول هوشمند است ولی پرچم ندارد ⇒ رد — آینه‌ای درِ کار نیست
@@ -39,17 +41,31 @@ describe('پول هوشمند و کد به کد — داوریِ واحد درِ
   it('بج‌ها از همان پرچم می‌آیند — چیپ و بج یکی‌اند', () => {
     const labels = patternBadges({ ...base, f_smart: true, f_legal: true }, cfg).map((b) => b.label);
     expect(labels).toContain('پول هوشمند');
-    expect(labels).toContain('کد به کد');
+    expect(labels).toContain('ورود پول هوشمند و کد به کد');
     // ردیفِ بی‌پرچم هیچ‌کدام را نمی‌گیرد، با این‌که ارقامش شبیه است
     expect(patternBadges(base, cfg).map((b) => b.label)).not.toContain('پول هوشمند');
   });
 
+  // نامِ این فیلتر «ورود پول هوشمند و کد به کد» است، نه «کد به کد» (دستورِ مالک
+  // 2026-10-19، و عینِ نامِ خودِ رجیستری و عنوانِ فایلِ جزوه:
+  // `docs/ورود پول هوشمند و کد به کد حقوقی به حقیقی.txt`). دلیلِ نامِ دو قسمتی
+  // این است که شرطِ اولِ آن، همان چهار قیدِ پول هوشمند است — نامِ کوتاهِ قبلی
+  // یکِ شرطِ لازم را پنهان می‌کرد.
+  it('نامِ فیلتر درِ هر سه منبعِ رابط یکی است و باِ رجیستری می‌خواند', () => {
+    const badge = patternBadges({ ...base, f_legal: true }, cfg).find((b) => b.pattern === 'legal');
+    expect(badge?.label).toBe('ورود پول هوشمند و کد به کد');
+    expect(TAPE_FLAG_LABELS.f_legal).toBe('ورود پول هوشمند و کد به کد حقوقی به حقیقی');
+    expect(FILTER_LABEL.f_legal).toBe(TAPE_FLAG_LABELS.f_legal);
+  });
+
   it('چیپ‌ها درِ نوارِ فیلتر رندر می‌شوند و چرخ‌دندۀ بی‌محتوا ندارند', () => {
     render(<MarketFilters sectors={[]} matches={MATCHES} />);
-    expect(screen.getByText(/ورود پول هوشمند/)).toBeInTheDocument();
-    expect(screen.getByText(/کد به کد حقوقی به حقیقی/)).toBeInTheDocument();
+    // دو فیلترِ جدا با نامِ «ورود پول هوشمند…»: کوتاه و بلند. هر دو باید باشند.
+    expect(screen.getAllByText(/ورود پول هوشمند/).length).toBeGreaterThanOrEqual(2);
+    expect(screen.getByText(/ورود پول هوشمند و کد به کد حقوقی به حقیقی/)).toBeInTheDocument();
     expect(screen.queryByLabelText('تنظیمات ورود پول هوشمند')).not.toBeInTheDocument();
-    expect(screen.queryByLabelText('تنظیمات کد به کد حقوقی به حقیقی')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('تنظیمات ورود پول هوشمند و کد به کد حقوقی به حقیقی'))
+      .not.toBeInTheDocument();
     // مقایسه: فیلترِ تنظیم‌شدنی چرخ‌دنده دارد و این، ادعایِ «بی‌دکمهٔ جعلی» را معنادار می‌کند
     expect(screen.getByLabelText('تنظیمات الگوی ساعت')).toBeInTheDocument();
   });

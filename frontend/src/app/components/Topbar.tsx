@@ -1,5 +1,6 @@
 import { useLocation, useNavigate, Link } from 'react-router';
 import { PALETTE_OPEN_EVENT } from './CommandPalette';
+import { NavHistoryControls } from './NavHistoryControls';
 import { SearchIcon, BellIcon } from '@shared/components/Icons';
 import { toFaDigits } from '@shared/lib/fmt';
 import { useNoticeFeed } from '@features/market/api/useNotifications';
@@ -57,6 +58,11 @@ export function Topbar() {
             نه فقطِ دیده می‌شود. */}
         <h1 className="sr-only">{title}</h1>
         <FreshnessBadge />
+
+        {/* بندِ A مأموریتِ UI/UX: دو کنترلِ بازگشت/بعدی درست کنارِ «موقعیت در
+            برنامه» می‌نشینند — بیِ ردیفِ تازه وِ بیِ افزایشِ ارتفاعِ `h-11 md:h-9`.
+            درِ RTL اینِ گروه سمتِ راستِ عنوانِ مسیر می‌آید («قبلی» راست، «بعدی» چپ). */}
+        <NavHistoryControls />
 
         <nav aria-label="موقعیت در برنامه" className="flex items-center gap-1.5 text-xs">
           <Link

@@ -76,14 +76,15 @@ describe('هم‌عددیِ سربرگ، استپر و نتایج باِ پاس�
       .toBe(fa(st.handover.counts.pass));
   });
 
-  it('سربرگ، استپر و عنوانِ نتایج یک عدد می‌دهند (دو شمارندۀ جدا نداریم)', async () => {
+  it('استپر و عنوانِ نتایج یک عدد می‌دهند و گامِ جاری در استپر مشخص است', async () => {
     await ready('/master?preset=trend&stage=fundamental');
     const pass = (FUNNEL_FIXTURE as unknown as FixtureStages)
       .stages.fundamental.counts.pass;
-    expect(screen.getByTestId('fts-stage-flow').textContent).toContain(fa(pass));
+    // سربرگ عمداً عددِ گام را تکرار نمی‌کند (رأیِ 2026-10-19)؛ دو منبعِ باقی‌مانده
+    // باید یکی بخوانند و گامِ جاری هم در همان استپر نشانه داشته باشد.
     expect(screen.getByTestId('funnel-results-count').textContent).toContain(fa(pass));
     expect(screen.getByTestId('fts-step-count-fundamental').textContent).toBe(fa(pass));
-    expect(screen.getByTestId('fts-current-step').textContent).toContain('بنیادی');
+    expect(screen.getByTestId('fts-step-current-fundamental')).toBeInTheDocument();
   });
 
   it('وضعیتِ هر گام باِ متن است، نه فقط رنگ: «سنجشِ ناتمام» با «تکمیل‌شده» فرق دارد', async () => {

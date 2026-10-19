@@ -17,6 +17,7 @@ import { MEDIA_MOBILE } from '@shared/lib/breakpoints';
 import { useMarketStore } from '@shared/stores/marketStore';
 import { startIdleGate } from '@shared/lib/idleGate';
 import { useFlashClock } from '@shared/lib/flashClock';
+import { useNavHistorySync } from '@shared/lib/useNavHistorySync';
 import { LoginScreen } from '../../widgets/LoginScreen';
 import { preloadMarketStatusFirstScreen } from '@features/market/lib/preloadMarketStatusFirstScreen';
 
@@ -42,6 +43,11 @@ export function AppShell() {
 
   // طولِ فلاشِ اعداد از ریتمِ واقعیِ تازۀِ تابلو می‌آید (رأیِ مالک: ۵s ← ~۳٫۵s)
   useFlashClock();
+
+  // تاریخچۀِ درونِ برنامه (بندِ A مأموریتِ UI/UX): هر تغییرِ نشانی باِ نوعش
+  // (`PUSH`/`REPLACE`/`POP`) ثبت می‌شود تاِ دو دکمۀِ «بازگشت/بعدی» درِ `Topbar`
+  // دروازه‌شان را ازِ همینِ مدلِ بخوانند، نه ازِ `window.history.length`.
+  useNavHistorySync();
 
   // فاز G بندِ ۵: صفحۀِ اولِ «وضعیت بازار» ازِ همینِ لحظه خوانده می‌شود، نه ازِ بعدِ
   // رسیدنِ chunkِ تنبلِ خودِ صفحه. `prefetchQuery` باِ همانِ کلیدِ isِ hook است، پسِ
