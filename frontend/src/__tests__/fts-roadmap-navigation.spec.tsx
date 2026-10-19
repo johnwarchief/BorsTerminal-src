@@ -26,22 +26,24 @@ describe('FTS funnel navigation', () => {
 });
 
 describe('FTS strategy tree navigation', () => {
-  it('builds separate page URLs for all four chart pages', () => {
+  it('builds separate page URLs for all four chart pages and the master page', () => {
     for (const zone of ['S', 'T', 'F', 'M'] as const) {
       const url = treeStagePath(zone, 'trend', 'فولاد');
       expect(url).toContain('/strategy-tree?');
       expect(url).toContain(`page=${zone}`);
       expect(url).toContain('preset=trend');
     }
+    expect(treeStagePath('master', 'trend', 'فولاد')).toContain('page=master');
   });
 
-  it('renders a four-page roadmap stepper', () => {
+  it('renders the five-page navigation (four charts + master)', () => {
     render(
       <MemoryRouter>
         <StrategyTreeStepper active="T" preset="trend" />
       </MemoryRouter>,
     );
     expect(screen.getByTestId('strategy-tree-stepper')).toBeInTheDocument();
-    expect(screen.getAllByRole('link')).toHaveLength(4);
+    expect(screen.getAllByRole('link')).toHaveLength(5);
+    expect(screen.getByTestId('tree-page-master')).toBeInTheDocument();
   });
 });
