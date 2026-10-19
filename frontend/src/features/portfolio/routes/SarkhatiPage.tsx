@@ -144,16 +144,21 @@ export default function SarkhatiPage() {
     });
   }, [gate, ledger.data, panel]);
 
-  // متنِ راهنما از فیلدهایِ خودِ سرویس است و همان جمله‌هایی هستند که درِ
+  // متنِ راهنما از فیلدهایِ خودِ پاسخِ سرویس است و همان جمله‌هایی هستند که درِ
   // `SarkhatiStatusStrip` (پشتِ بازشو)‌اند؛ پس راهنما تکرارِ خطِ بالایِ صفحه
-  // نیست، و چیزی هم از خودِش نمی‌سازد.
-  const hint = useMemo(() => ({
-    short: gate.canTrade
-      ? 'دروازۀ اجرا باز است؛ پیش‌فرود، سقف‌ها و عبارتِ تأیید را خودِ سرویس نگه می‌دارد'
-      : gate.reason,
-    extra: `مسیرِ بازکردن: «${panelLabel(suggested.go)}»`,
-    detail: gate.halted ? '«ادامۀ دستوری» درِ ریسک و ایمنی لازم است' : '',
-  }), [gate.canTrade, gate.reason, gate.halted, suggested.go]);
+  // نیست، و چیزی هم از خودِش نمی‌سازد. سه بریده سه *واقعیتِ جدا*ند: علتِ
+  // بسته‌بودن، مقصدِ بازکردن، و شمارۀِ شرط‌هایِ `blocked_on` — درِ سنجشِ زنده
+  // دیدیم که «ادامۀ دستوری» را دو بار می‌نوشت اگر هر سه ازِ یکِ فیلد بیایند.
+  const hint = useMemo(() => {
+    const blocked = Array.isArray(gate.status?.blocked_on) ? gate.status.blocked_on.length : 0;
+    return {
+      short: gate.canTrade
+        ? 'دروازۀ اجرا باز است؛ پیش‌فرود، سقف‌ها و عبارتِ تأیید را خودِ سرویس نگه می‌دارد'
+        : gate.reason,
+      extra: `مسیرِ بازکردن: «${panelLabel(suggested.go)}»`,
+      detail: blocked > 0 ? `بسته بر ${toFaDigits(String(blocked))} شرطِ خودِ سرویس` : '',
+    };
+  }, [gate.canTrade, gate.reason, gate.status, suggested.go]);
 
   return (
     <div className="flex w-full min-w-0 flex-col gap-1.5 p-2" data-testid="sarkhati-page"
