@@ -23,6 +23,7 @@ import { useQuery } from '@tanstack/react-query';
 import { z } from 'zod';
 import { http } from '@shared/api/http';
 import { toFaDigits, fmtPct } from '@shared/lib/fmt';
+import { fmtDate } from '@shared/lib/time';
 import { alignCompare, COMPARE_BASE } from '@features/technical/lib/compare';
 import { toKLine } from '@features/technical/nahayatnegar/lib/useNnData';
 import type { KLineData } from '@vendor/klinecharts';
@@ -74,8 +75,11 @@ const PALETTE = [
 ] as const;
 
 const W = 760;
-const H = 260;
-const PAD = 14;
+const H = 280;
+const PAD_L = 10;
+const PAD_R = 38;
+const PAD_T = 12;
+const PAD_B = 26;
 
 const DAY_MS = 86_400_000;
 
@@ -138,8 +142,29 @@ export function MarketCompareSection() {
       if (cs.length)
         out.push({ symbol: s, label: s, candles: cs, basis: seriesQ.data?.basis ?? 'قیمتِ پایانیِ خام' });
     }
-    return out;
-  }, [wantIndex, indexQ.data, symbols, seriesQ.data]);
+    return out.sort((a, b) => {
+      // ترتیبِ پایدار: شاخصِ کل، بعد صندوق‌هایِ طلا، نقره، بقیه، و در آخر
+      // سری‌هایِ خارج از فهرستِ طلا. درِ هر گروه، الفبا (fa) — تا با هر
+      // روشن/خاموش‌کردنِ یک چک‌باکس، ترتیبِ بقیه نپرد.
+      const rank = (sym: string) => {
+        if (sym === 'شاخص کل') return 0;
+        const g = goldSymbols.find((x) => x.symbol === sym);
+        if (!g) return 4;
+        return g.kind === 'gold' ? 1 : g.kind === 'silver' ? 2 : 3;
+      };
+      return rank(a.symbol) - rank(b.symbol) || a.label.localeCompare(b.label, 'fa');
+    });
+  }, [wantIndex, indexQ.data, symbols, seriesQ.data, goldSymbols]);
+
+  /** رنگِ هر سری به نماد بسته است، نه به ترتیبِ فعلیِ انتخاب؛ خاموش‌کردنِ یک
+   *  سری رنگِ بقیه را عوض نمی‌کند. */
+  const colorOf = useMemo(() => {
+    const map = new Map<string, string>();
+    const master = ['شاخص کل', ...goldSymbols.map((s) => s.symbol),
+      ...symbols.filter((s) => !goldSymbols.some((g) => g.symbol === s))];
+    master.forEach((s, i) => map.set(s, PALETTE[i % PALETTE.length]));
+    return map;
+  }, [goldSymbols, symbols]);
 
   const aligned = useMemo(
     () => alignCompare(series.map((s) => ({ symbol: s.symbol, candles: s.candles }))),
@@ -157,26 +182,47 @@ export function MarketCompareSection() {
       min -= 1;
       max += 1;
     }
-    const innerW = W - PAD * 2;
-    const innerH = H - PAD * 2;
-    const xOf = (i: number) => PAD + (i * innerW) / (aligned.timestamps.length - 1);
-    const yOf = (v: number) => PAD + innerH * (1 - (tf(v) - min) / (max - min));
+    const innerW = W - PAD_L - PAD_R;
+    const innerH = H - PAD_T - PAD_B;
+    const xOf = (i: number) => PAD_L + (i * innerW) / (aligned.timestamps.length - 1);
+    const yOf = (v: number) => PAD_T + innerH * (1 - (tf(v) - min) / (max - min));
+    // پنج تیکِ عمودی: درِ حالتِ درصد، «درصدِ تغییرِ تجمعی» (پایه = ۰٪) و درِ
+    // حالتِ log، خودِ پایهٔ ۱۰۰ — محورِ لگاریتمیِ درصدِ منفی معنی ندارد.
+    const yTicks = Array.from({ length: 5 }, (_, k) => {
+      const f = k / 4;
+      const t = min + (max - min) * f;
+      const raw = scale === 'log' ? 10 ** t : t;
+      return {
+        y: PAD_T + innerH * (1 - f),
+        label: scale === 'pct'
+          ? `${raw - COMPARE_BASE >= 0 ? '+' : ''}${toFaDigits(Math.round(raw - COMPARE_BASE))}٪`
+          : toFaDigits(Math.round(raw)),
+      };
+    });
+    const mid = Math.floor((aligned.timestamps.length - 1) / 2);
+    const xTicks = [...new Set([0, mid, aligned.timestamps.length - 1])].map((i) => {
+      const anchor: 'start' | 'middle' | 'end' =
+        i === 0 ? 'start' : i === aligned.timestamps.length - 1 ? 'end' : 'middle';
+      return { x: xOf(i), label: fmtDate(aligned.timestamps[i]), anchor };
+    });
     return {
       xOf,
       min,
       max,
       baseY: yOf(COMPARE_BASE),
+      yTicks,
+      xTicks,
       lines: aligned.lines.map((l, i) => ({
         symbol: l.symbol,
         label: series.find((s) => s.symbol === l.symbol)?.label ?? l.symbol,
-        color: PALETTE[i % PALETTE.length],
+        color: colorOf.get(l.symbol) ?? PALETTE[i % PALETTE.length],
         path: l.values
           .map((v, k) => `${k === 0 ? 'M' : 'L'}${xOf(k).toFixed(2)} ${yOf(v).toFixed(2)}`)
           .join(' '),
         line: l,
       })),
     };
-  }, [aligned, scale, series]);
+  }, [aligned, scale, series, colorOf]);
 
   const spanDays = useMemo(
     () =>
@@ -195,13 +241,22 @@ export function MarketCompareSection() {
     return picked.filter((p) => p !== 'شاخص کل' && ns.includes(p));
   }, [seriesQ.data, picked]);
 
+  /** کوتاه‌ترین سریِ درخواستی — «days» در قراردادِ سرور تعدادِ ردیف است، نه روزِ
+   *  تقویمی؛ اگر بانک به این تعداد ردیف نرسد، صریح گفته می‌شود. */
+  const shortestPoints = useMemo(
+    () => (symbols.length
+      ? Math.min(...symbols.map((s) => seriesQ.data?.points?.[s] ?? 0))
+      : null),
+    [symbols, seriesQ.data],
+  );
+
   return (
     <StatusSection
       testId="ms-compare"
       title="نمودارِ مقایسه‌ای"
-      hint="سری‌ها رویِ زمانِ مشترک و به پایۀِ ۱۰۰ نرمال می‌شوند — مقایسۀ درصدی، نه قیمتِ خامِ واحدهایِ بی‌ربط"
+      hint="سری‌ها رویِ زمانِ مشترک نرمال می‌شوند؛ محورِ عمودی درصدِ تغییرِ تجمعی از اولین زمانِ مشترک است (پایۀ ۰٪)."
       asof={gold.data?.asof}
-      badge={`پایۀ نرمال‌سازی: اولین زمانِ مشترک = ۱۰۰ (alignCompare) · مبدأِ هر سری درِ فهرستِ کنار می‌آید`}
+      badge={`پایهٔ نرمال‌سازی: اولین زمانِ مشترک · مقیاس: ${scale === 'log' ? 'پایۀ ۱۰۰ روی محورِ لگاریتمی' : 'درصدِ تغییرِ تجمعی'} · سری‌ها: شاخص، طلا، نقره، بقیه`}
       toolbar={
         <div className="flex flex-wrap items-center gap-2" data-testid="ms-compare-controls">
           <div className="flex flex-wrap items-center gap-1" role="group" aria-label="بازۀِ زمانی">
@@ -211,6 +266,7 @@ export function MarketCompareSection() {
                 type="button"
                 data-testid={`ms-compare-range-${r.key}`}
                 aria-pressed={range === r.key}
+                title={`آخرین ${toFaDigits(r.days)} ردیفِ معاملاتیِ هر سری`}
                 onClick={() => setRange(r.key)}
                 className={`rounded-full border px-2 py-0.5 text-3xs font-bold ${
                   range === r.key
@@ -293,9 +349,9 @@ export function MarketCompareSection() {
                 <div className="w-full overflow-hidden" data-testid="ms-compare-canvas">
                   <svg
                     viewBox={`0 0 ${W} ${H}`}
-                    className="h-[260px] w-full"
+                    className="h-[280px] w-full"
                     role="img"
-                    aria-label="نمودارِ مقایسه‌ایِ نرمال‌شده"
+                    aria-label="نمودارِ مقایسه‌ایِ درصدیِ تجمعی"
                     data-testid="ms-compare-svg"
                     onMouseMove={(e) => {
                       const svg = (e.currentTarget as SVGSVGElement) ?? null;
@@ -303,18 +359,49 @@ export function MarketCompareSection() {
                       const box = svg.getBoundingClientRect();
                       if (box.width <= 0) return;
                       const rel = ((e.clientX - box.left) / box.width) * W;
-                      const i = Math.round(((rel - PAD) / (W - PAD * 2)) * (aligned.timestamps.length - 1));
+                      const i = Math.round(((rel - PAD_L) / (W - PAD_L - PAD_R)) * (aligned.timestamps.length - 1));
                       setHover(Math.max(0, Math.min(aligned.timestamps.length - 1, i)));
                     }}
                     onMouseLeave={() => setHover(null)}
                   >
                     <line
-                      x1={PAD} y1={geo.baseY} x2={W - PAD} y2={geo.baseY}
+                      x1={PAD_L} y1={H - PAD_B} x2={W - PAD_R} y2={H - PAD_B}
+                      stroke="var(--border-c)" strokeWidth="0.8"
+                    />
+                    <line
+                      x1={W - PAD_R} y1={PAD_T} x2={W - PAD_R} y2={H - PAD_B}
+                      stroke="var(--border-c)" strokeWidth="0.8"
+                    />
+                    <text x={W - PAD_R + 4} y={PAD_T + 2} className="fill-text-muted" style={{ fontSize: 8 }}>
+                      {scale === 'log' ? 'پایۀ ۱۰۰ (log)' : 'درصدِ تغییرِ تجمعی'}
+                    </text>
+                    <g data-testid="ms-compare-yaxis">
+                      {geo.yTicks.map((t) => (
+                        <g key={`${t.y}`}>
+                          <line x1={PAD_L} x2={W - PAD_R} y1={t.y} y2={t.y}
+                                stroke="var(--border-c)" strokeOpacity="0.25" strokeWidth="0.5" />
+                          <text x={W - PAD_R + 4} y={t.y + 3}
+                                textAnchor="start" className="fill-text-muted" style={{ fontSize: 9 }}>
+                            {t.label}
+                          </text>
+                        </g>
+                      ))}
+                    </g>
+                    <line
+                      x1={PAD_L} y1={geo.baseY} x2={W - PAD_R} y2={geo.baseY}
                       stroke="var(--text-muted)" strokeDasharray="3 3" strokeWidth="0.8"
                     />
-                    <text x={PAD + 2} y={geo.baseY - 3} className="fill-text-muted" style={{ fontSize: 8 }}>
+                    <text x={PAD_L + 2} y={geo.baseY - 3} className="fill-text-muted" style={{ fontSize: 8 }}>
                       پایۀ ۱۰۰
                     </text>
+                    <g data-testid="ms-compare-xaxis">
+                      {geo.xTicks.map((t) => (
+                        <text key={`${t.x}`} x={t.x} y={H - 8} textAnchor={t.anchor}
+                              className="fill-text-muted" style={{ fontSize: 9 }}>
+                          {t.label}
+                        </text>
+                      ))}
+                    </g>
                     {geo.lines.map((l) => (
                       <path
                         key={l.symbol}
@@ -327,7 +414,7 @@ export function MarketCompareSection() {
                     ))}
                     {hover != null ? (
                       <line
-                        x1={geo.xOf(hover)} y1={PAD} x2={geo.xOf(hover)} y2={H - PAD}
+                        x1={geo.xOf(hover)} y1={PAD_T} x2={geo.xOf(hover)} y2={H - PAD_B}
                         stroke="var(--text-muted)" strokeWidth="0.6"
                         data-testid="ms-compare-crosshair"
                       />
@@ -348,20 +435,22 @@ export function MarketCompareSection() {
                         {l.label}
                       </button>
                       <span className="num-text text-text-secondary">
-                        {toFaDigits(
-                          (hover != null ? l.line.values[hover] : l.line.last)?.toFixed?.(1) ?? '—',
+                        {fmtPct(
+                          hover != null && Number.isFinite(l.line.values[hover])
+                            ? l.line.values[hover] - COMPARE_BASE
+                            : l.line.changePct,
                         )}
                       </span>
-                      <span className="num-text text-accent-blue">{fmtPct(l.line.changePct ?? null)}</span>
                     </li>
                   ))}
                 </ul>
                 <p className="num-text text-3xs text-text-muted" data-testid="ms-compare-span">
-                  {toFaDigits(aligned.timestamps.length)} زمانِ مشترک · {toFaDigits(spanDays)} روزِ دیدنی از
-                  بازۀِ درخواستیِ «{RANGES.find((r) => r.key === range)?.label}» ({toFaDigits(days)} روز) ·
-                  مقیاسِ {scale === 'log' ? 'لگاریتمی' : 'درصدی'}
-                  {spanDays < days
-                    ? ` (بانک تا این اندازه تاریخچه دارد — «${RANGES.find((r) => r.key === range)?.label}»ِ درخواستی واقعی نیست)`
+                  {toFaDigits(aligned.timestamps.length)} زمانِ مشترک · {toFaDigits(spanDays)} روزِ تقویمی ·
+                  بازه: آخرین {toFaDigits(days)} ردیفِ معاملاتیِ هر سری (برچسبِ
+                  «{RANGES.find((r) => r.key === range)?.label}») · مقیاسِ
+                  {scale === 'log' ? ' لگاریتمی' : ' درصدی'}
+                  {shortestPoints != null && shortestPoints < days
+                    ? ` — کوتاه‌ترین سری فقط ${toFaDigits(shortestPoints)} ردیف دارد؛ برچسبِ بازه روزِ تقویمی نیست.`
                     : ''}.
                 </p>
                 {hover != null ? (
