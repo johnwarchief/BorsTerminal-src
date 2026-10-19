@@ -1,0 +1,110 @@
+{
+  "base": "http://127.0.0.1:8173/",
+  "at": "2026-10-19T01:29:51.044Z",
+  "rows": [
+    {
+      "route": "#/master",
+      "probe": "fts-funnel-workspace",
+      "probeBeforeData": 0,
+      "probeAfterWait": 1,
+      "loadMs": 3939,
+      "metrics": {
+        "docHeight": 1100,
+        "mainHeight": 1028,
+        "testids": 166,
+        "rowsInTables": 0
+      },
+      "consoleErrors": [
+        "Failed to load resource: the server responded with a status of 404 (Not Found)"
+      ],
+      "httpFailures": [],
+      "externalRequests": [],
+      "shot": "01-master.png"
+    },
+    {
+      "route": "#/market",
+      "probe": "market-page",
+      "probeBeforeData": 0,
+      "probeAfterWait": 1,
+      "loadMs": 3948,
+      "metrics": {
+        "docHeight": 1100,
+        "mainHeight": 1028,
+        "testids": 380,
+        "rowsInTables": 0
+      },
+      "consoleErrors": [],
+      "httpFailures": [],
+      "externalRequests": [],
+      "shot": "02-market.png"
+    },
+    {
+      "route": "#/market-status",
+      "probe": "market-status-page",
+      "probeBeforeData": 0,
+      "probeAfterWait": 1,
+      "loadMs": 3952,
+      "metrics": {
+        "docHeight": 1100,
+        "mainHeight": 1028,
+        "testids": 1254,
+        "rowsInTables": 166
+      },
+      "consoleErrors": [],
+      "httpFailures": [],
+      "externalRequests": [],
+      "shot": "03-market-status.png"
+    },
+    {
+      "route": "#/technical/%D9%81%D9%88%D9%84%D8%A7%D8%AF",
+      "probe": "chart-area",
+      "probeBeforeData": 0,
+      "probeAfterWait": 1,
+      "loadMs": 3922,
+      "metrics": {
+        "docHeight": 1100,
+        "mainHeight": 1028,
+        "testids": 157,
+        "rowsInTables": 0
+      },
+      "consoleErrors": [],
+      "httpFailures": [],
+      "externalRequests": [],
+      "shot": "04-technical.png"
+    },
+    {
+      "route": "#/fundamental/%D9%81%D9%88%D9%84%D8%A7%D8%AF",
+      "probe": "fundamental-page",
+      "probeBeforeData": 0,
+      "probeAfterWait": 1,
+      "loadMs": 3936,
+      "metrics": {
+        "docHeight": 1100,
+        "mainHeight": 963,
+        "testids": 154,
+        "rowsInTables": 0
+      },
+      "consoleErrors": [],
+      "httpFailures": [],
+      "externalRequests": [],
+      "shot": "05-fundamental.png"
+    },
+    {
+      "route": "#/sarkhati",
+      "probe": "sarkhati-page",
+      "probeBeforeData": 0,
+      "probeAfterWait": 1,
+      "loadMs": 3914,
+      "metrics": {
+        "docHeight": 1100,
+        "mainHeight": 963,
+        "testids": 152,
+        "rowsInTables": 0
+      },
+      "consoleErrors": [],
+      "httpFailures": [],
+      "externalRequests": [],
+      "shot": "06-sarkhati.png"
+    }
+  ]
+}
