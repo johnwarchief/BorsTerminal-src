@@ -1,6 +1,6 @@
 # بستنِ Engine 1 — ماتریسِ ابزارهایِ ترسیم، قراردادِ کندلِ بانک، مقایسۀِ بیرونی و گیت‌ها
 
-- شاخه: `mission/system2-chart-parity-engine1-2026-10-18` — SHAِ این سند: `4e811d78`
+- شاخه: `mission/system2-chart-parity-engine1-2026-10-18` — SHAِ این سند: `1c1d0be5`
 - تاریخ: ۱۴۰۵-۰۷-۲۷ · انتشار: هیچ Push/Merge/Tag انجام نشده (شاخه بی‌upstream است: `git rev-parse --abbrev-ref @{u}` ⇒ fatal: no upstream configured).
 
 ## ۰) علتِ قطعیِ اختلافِ «گیتِ کامل» با «اجرایِ مستقل» (بندِ ۱ مأموریت)
@@ -168,7 +168,7 @@
 ## ۴) زنجیرۀِ راستی‌آزمایی رویِ یکِ SHA
 
 - SHAِ زنجیره (ازِ سرِ لاگ‌ها، نه ازِ HEADِ امروز): `27a445b3ba7239411cf385a81ecc813d953a94ae`
-  - این HEADِ سند `4e811d78` است و فاصلۀِ آن با SHAِ زنجیره فقط سند/مصنوعاتِ متنی است: `_audit/chart_drawing_matrix_v4.csv`, `_audit/gen_engine1_closure_doc.py`, `docs/technical-indicators/reviewed/ENGINE-1-CLOSURE-1405-07-27.md`
+  - این HEADِ سند `1c1d0be5` است و فاصلۀِ آن با SHAِ زنجیره فقط سند/مصنوعاتِ متنی است: `_audit/chart_drawing_matrix_v4.csv`, `_audit/gen_engine1_closure_doc.py`, `docs/technical-indicators/reviewed/ENGINE-1-CLOSURE-1405-07-27.md`
   - هیچ فایلِ source یا build درِ این فاصله دست نخورده و هیچ `*.md` درِ بستۀِ `dist/BorsTerminal_Ultimate` کپی نمی‌شود (`find dist -name '*.md'` ⇒ خالی)، پس هشِ بسته همان می‌ماند و زنجیرۀِ tsc/vitest/lint/build برایِ این فاصله بازتکرار نشده — فقط گیتِ پایتون، چون سندِ تازه خوراکِ گاردهایِ متنی است.
 - `npx tsc -b`: TSC_EXIT=0
 - `npx vitest run`: Tests  1903 passed | 5 skipped (1908)
@@ -189,6 +189,7 @@ f4ace8f4|2026-10-19|test(gates): علتِ قطعیِ قرمزیِ گیت پید�
 aaa9b379|2026-10-19|fix(chart): ردیفِ محافظت‌شده پس ازِ حذفِ کاربر دیگر درِ انبار نمی‌ماند
 27a445b3|2026-10-19|test(audit): هارنسِ v4ِ ماتریسِ ۲۹ ابزار + کاوشِ ثبتِ نام، قابِ مختصات و ردیفِ رسمیِ رویدادها
 4e811d78|2026-10-19|docs(closure): سندِ بستنِ Engine 1 با ارقامِ بازتولیدشدہ — بندِ ۰ (علتِ گیت)، ماتریسِ ۲۹×۸، قراردادِ بانک، مقایسۀِ بیرونی و زنجیرۀِ 27a445b3
+1c1d0be5|2026-10-19|docs(closure): SHAِ زنجیره ازِ لاگ‌ها خوانده شد، نه ازِ HEADِ روزِ سند + بازیافتِ گیت ثبت شد
 ```
 
 فایل‌هایِ دست‌خورده درِ همین بازه (`git diff --name-only 146b5acd..HEAD`):
