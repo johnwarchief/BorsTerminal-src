@@ -16,6 +16,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { Badge } from '@shared/components/Badge';
 import { ConnectBrokerRow } from './ConnectBrokerRow';
+import { SarkhatiStrategyRow } from './sarkhati/SarkhatiStrategyRow';
 import { fmtInt, parseNum, toEnDigits, toFaDigits } from '@shared/lib/fmt';
 import type { MarketRow } from '@shared/types/marketRow';
 import {
@@ -392,6 +393,8 @@ export function ExecutionPanel({ symbol, row, schedule = false, connect = true }
           وضعیتِ سفارش: {PHASE_LABEL[phase]}
         </span>
       </div>
+
+      {schedule ? <SarkhatiStrategyRow body={body} enabled={gate.endpointPresent} /> : null}
 
       <p className={`mt-1 text-3xs leading-4 ${TONE[state]}`} data-testid="watch-order-reason">
         {answer || (gate.canTrade

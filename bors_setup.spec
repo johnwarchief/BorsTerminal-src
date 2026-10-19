@@ -1,6 +1,7 @@
 # -*- mode: python ; coding: utf-8 -*-
 # BorsTerminal Ultimate - PyInstaller onedir spec (Base repo)
 import os
+from PyInstaller.utils.hooks import collect_data_files
 BASE = os.path.abspath(os.path.dirname(SPEC)) if 'SPEC' in locals() else os.getcwd()
 
 # رمزِ نصب‌کننده (gitignore شده، فقط محلی) برای /VERYSILENTِ آپدیتِر. بدون
@@ -28,8 +29,10 @@ a = Analysis(
         ('bors_flags.py', '.'),
         ('fts_thresholds.json', '.'),
         ('test_tsetmc.py', '.'),
-    ] + ([(os.path.join('installer', '.setup_password.iss'), '.')]
-         if os.path.exists(_pw_file) else []),
+    # داده‌های driverِ Playwright (node.exe و package/) برای Strategyهای مرورگری.
+    ] + collect_data_files('playwright') + (
+        [(os.path.join('installer', '.setup_password.iss'), '.')]
+        if os.path.exists(_pw_file) else []),
     hiddenimports=[
         'uvicorn.logging', 'uvicorn.loops.auto', 'uvicorn.protocols.http.auto',
         'uvicorn.protocols.websockets.auto', 'uvicorn.lifespan.on',
@@ -58,6 +61,9 @@ a = Analysis(
         # بازیابیِ نشست از Windows Credential Manager (۲۰۲۶-۱۰-۲۰) — سطح-بالِ
         # api/execution.py؛ بی‌این خط بستۀ نصاب درِ startup می‌شکند.
         'execution_session_store',
+        # Strategyهای چندروشی (۲۰۲۶-۱۰-۲۰) — سطح-بالِ api/execution.py.
+        'execution_strategy_core', 'execution_strategy_engine',
+        'execution_browser', 'playwright', 'playwright.sync_api',
         # دروازۀ ربات و سه ماژولِ پشتِ آن (فاز ۳ مأموریتِ ۱۴۰۵-۰۷-۲۴) — مثلِ
         # fts_terminal.spec؛ بی‌این /api/bot/* درِ بستهٔ نصاب 404 می‌ماند.
         'api.bot', 'bot_signals', 'paper_trading', 'trade_sim', 'backtest_engine',

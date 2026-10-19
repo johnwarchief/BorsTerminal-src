@@ -13,6 +13,9 @@
 # چرا DB داخل EXE نیست: market.db خام ~98MB است؛ در onefile هر اجرا یک بار
 # استخراج کامل می‌شد (کندی چند ده ثانیه‌ای). الگوی lzma-کنار-exe همان
 # قرارداد v10 قبل از فاز 7 است و "پوشه داده‌ها به مسیر اجرایی" را برآورده می‌کند.
+import os
+from PyInstaller.utils.hooks import collect_data_files
+
 a = Analysis(
     ['bors_entry.py'],
     pathex=['.'],
@@ -35,7 +38,9 @@ a = Analysis(
         # می‌شود → اسکنِ ایستایِ PyInstaller آن را نمی‌بیند، پس صریحاً باندل
         # می‌کنیم تا نصبِ سایلنتِ آپدیت در نسخهٔ باندل‌شده کار کند.
         ('bors_minisign.py', '.'),
-    ] + [t for t in (('adb_config.json', '.'), ('codal_control.json', '.'),
+    # Playwright فقط پکیجِ پایتون نیست: driver/node.exe و package/ هم داده‌اند.
+    # بی‌این، Strategyهای مرورگری در EXE با «Driver not found» می‌میرند.
+    ] + collect_data_files('playwright') + [t for t in (('adb_config.json', '.'), ('codal_control.json', '.'),
                     # setup.pw: رمزِ نصب‌کنندهٔ Inno برای /VERYSILENT (gitignored؛
                     # فقط اگر موجود باشد باندل می‌شود — بدون آن آپدیت به /SILENT
                     # تنزل می‌کند و کاربر یک‌بار رمز را وارد می‌کند).
@@ -185,6 +190,13 @@ a = Analysis(
                    # سطح-بالِ api/execution.py است؛ بی‌این خط EXE درِ startup
                    # با ModuleNotFoundError می‌میرد.
                    'execution_session_store',
+                   # Strategyهای چندروشی (۲۰۲۶-۱۰-۲۰): سطح-بالِ api/execution.py.
+                   'execution_strategy_core',
+                   'execution_strategy_engine',
+                   'execution_browser',
+                   # Playwright برایِ Strategyهای مرورگری؛ باینریِ مرورگر از
+                   # سیستم (Edge/Chrome) یا نصبِ محلی می‌آید، نه از بسته.
+                   'playwright', 'playwright.sync_api',
                    # دروازۀ ربات (مأموریتِ ۱۴۰۵-۰۷-۲۴، فاز ۳): مثلِ بقیۀ api/*
                    # درِ بدنهٔ `api_router()` ایمپورت می‌شود، پس اسکن ایستا
                    # نمی‌بیندش؛ بی‌این خط هر /api/bot/* درِ EXE روی 404 می‌ماند.
@@ -215,7 +227,7 @@ a = Analysis(
     excludes=['tkinter', 'matplotlib', 'pytest', 'scipy', 'sympy', 'selenium',
               'setuptools', 'pip',
               'boto3', 'botocore', 's3transfer',
-              'camoufox', 'playwright',
+              'camoufox',
               'engineio', 'socketio',
               # هوکِ pywebview در PyInstaller همهٔ بک‌ندهایِ گرافیکی را جمع می‌کند،
               # نه فقط همان که رویِ ویندوز استفاده می‌شود: PySide6 به‌تنهایی ۴۴ مگ

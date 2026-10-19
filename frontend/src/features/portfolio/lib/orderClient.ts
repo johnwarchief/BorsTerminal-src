@@ -76,6 +76,36 @@ export const TRAFFIC_LABEL: Record<TrafficMode, { text: string; tone: 'ok' | 'wa
   blocked: { text: 'هیچ ترافیکی مجاز نیست', tone: 'idle' },
 };
 
+/** Strategyهای چندروشی: متریک‌ها فقط از نمونهٔ واقعیِ همان پروسه می‌آیند؛
+ *  p95/p99 با نمونهٔ کم null است، نه صفر. */
+export type StrategyPhaseMetrics = {
+  count: number; ok: number; failed: number;
+  p50: number | null; p95: number | null; p99: number | null;
+  last_ms: number | null; last_error: string; last_at: number | null; thin: boolean;
+};
+export type StrategyRowView = {
+  id: string; label: string; kind: string; description: string;
+  requires_browser: boolean; available: boolean; configured: boolean;
+  unavailable_reason: string; live_ready: boolean;
+  settings: { strategy: string; enabled: boolean; mode: string; priority: number;
+    options: Record<string, unknown>; updated_at: number };
+  metrics: Record<string, StrategyPhaseMetrics>;
+  outcomes: Record<string, number>;
+  last_result: Record<string, unknown> | null;
+};
+export type StrategySelectionRow = {
+  strategy: string; count: number;
+  p50: number | null; p95: number | null; p99: number | null;
+  accepted: number; unknown: number;
+  usable_dry: boolean; usable_live: boolean;
+  reason_dry: string; reason_live: string;
+};
+export type StrategiesView = {
+  status: string; strategies: StrategyRowView[]; selection: StrategySelectionRow[];
+  rate_limiter: Record<string, unknown>; orders: Record<string, unknown>[];
+  live_allowed: boolean; dry_run: boolean; adapter: string;
+};
+
 /** `status` ازِ `/api/execution/portfolio` — «بی‌منبع» و «خالی» دو چیزند */
 export const PORTFOLIO_STATES = ['success', 'cached', 'no_source', 'unverified_session',
   'blocked', 'error'] as const;
@@ -390,6 +420,20 @@ export function useExecutionLedger(enabled = true) {
 export function invalidateExecution(qc: QueryClient) {
   qc.invalidateQueries({ queryKey: ['execution-status'] });
   qc.invalidateQueries({ queryKey: ['execution-ledger'] });
+  qc.invalidateQueries({ queryKey: ['execution-strategies'] });
+}
+
+export function useExecutionStrategies(enabled: boolean) {
+  return useQuery({
+    queryKey: ['execution-strategies'],
+    queryFn: ({ signal }) =>
+      http<StrategiesView>('/api/execution/strategies', { signal }),
+    enabled,
+    staleTime: 5_000,
+    refetchInterval: enabled ? sessionPollMs(15_000) : false,
+    refetchOnWindowFocus: false,
+    retry: false,
+  });
 }
 
 /**
@@ -405,6 +449,35 @@ export function invalidateExecution(qc: QueryClient) {
 const NO_RETRY = { retries: 0 } as const;
 
 export const orderApi = {
+  strategies: () => http<StrategiesView>('/api/execution/strategies'),
+  strategySettings: (id: string, body: Record<string, unknown>) =>
+    http<Record<string, unknown>>(
+      `/api/execution/strategies/${encodeURIComponent(id)}/settings`,
+      { method: 'POST', body, ...NO_RETRY }),
+  strategyPrepare: (body: unknown) =>
+    http<Record<string, unknown>>('/api/execution/strategies/prepare',
+      { method: 'POST', body, ...NO_RETRY }),
+  strategyTrigger: (body: Record<string, unknown>) =>
+    http<Record<string, unknown>>('/api/execution/strategies/trigger',
+      { method: 'POST', body, ...NO_RETRY }),
+  /** مسیرِ زندهٔ Strategy — فقط با env، نشست و عبارتِ تأیید. رابط فعلاً از آن
+   *  استفاده نمی‌کند؛ تا مجوزِ صریح، فقط `/trigger`ِ dry-run صدا زده می‌شود. */
+  strategyDispatch: (body: Record<string, unknown>) =>
+    http<Record<string, unknown>>('/api/execution/strategies/dispatch',
+      { method: 'POST', body, ...NO_RETRY }),
+  strategyAbort: (id: string) =>
+    http<Record<string, unknown>>('/api/execution/strategies/abort',
+      { method: 'POST', body: { prepared_id: id }, ...NO_RETRY }),
+  strategyReconcile: (id: string) =>
+    http<Record<string, unknown>>('/api/execution/strategies/reconcile',
+      { method: 'POST', body: { prepared_id: id }, ...NO_RETRY }),
+  strategyOrder: (id: string) =>
+    http<Record<string, unknown>>(
+      `/api/execution/strategies/order/${encodeURIComponent(id)}`),
+  strategyProbe: (id: string) =>
+    http<Record<string, unknown>>(
+      `/api/execution/strategies/${encodeURIComponent(id)}/probe`,
+      { method: 'POST', ...NO_RETRY }),
   preflight: (body: unknown) => http<Record<string, unknown>>('/api/execution/preflight',
     { method: 'POST', body, ...NO_RETRY }),
   prepare: (body: unknown) => http<Record<string, unknown>>('/api/execution/prepare',

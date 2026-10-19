@@ -52,6 +52,8 @@ from execution_easytrader import (
 )
 import execution_connect as EXC                            # noqa: E402
 import execution_session_store as SESS                     # noqa: E402
+import execution_strategy_core as SC                       # noqa: E402
+import execution_strategy_engine as SE                     # noqa: E402
 from execution_ledger import ARMED, HALT, TRIPPED, default_ledger
 from execution_mock import MockBrokerAdapter
 from execution_service import ExecutionError, ExecutionService, Limits
@@ -192,6 +194,22 @@ def _recover_session() -> dict[str, Any]:
 
 
 _SESSION_RECOVERY: dict[str, Any] = _recover_session()
+
+
+def _strategy_server_clock() -> dict[str, Any] | None:
+    if not isinstance(_ACTIVE_ADAPTER, EasyTraderAdapter):
+        return None
+    try:
+        return _ACTIVE_ADAPTER.server_clock()
+    except Exception:
+        return None
+
+
+#: موتورِ Strategyها رویِ همان آداپتور/سرویس می‌نشیند. live_allowed اینجا
+#: ثابت نیست؛ در هر درخواست از گیت‌های env/تأیید/ترافیک گرفته می‌شود.
+_STRATEGY_ENGINE = SE.StrategyEngine(
+    _ACTIVE_ADAPTER, scheduler=_SCHEDULER, server_clock=_strategy_server_clock,
+    live_allowed=False, halted=lambda: _SERVICE.halted())
 
 
 #: عبارتِ تأییدِ انسانی برایِ اجرایِ زنده. مقدارِ پیش‌فرض *اختراع نشده*: همان
@@ -863,6 +881,207 @@ def delete_session() -> dict[str, Any]:
     voided = _void_confirmations("token cleared")
     return {"status": "success", "live": _live_now(), "session": _session_dict(),
             "confirmations_voided": voided}
+
+
+# ── ۲.۵) Strategyهای چندروشی (Direct/AutoClicker/DOM/JS/Keyboard/Selenium) ──
+@router.get("/api/execution/strategies")
+def get_strategies() -> dict[str, Any]:
+    _STRATEGY_ENGINE.live_allowed = bool(LIVE_REQUESTED and _live_now())
+    st = _STRATEGY_ENGINE.status()
+    st.update({"status": "success", "adapter": ADAPTER_KIND, "dry_run": DRY_RUN,
+               "live_requested": LIVE_REQUESTED,
+               "read_only": bool(READ_ONLY_REQUESTED),
+               "traffic_allowed": bool(TRAFFIC_ALLOWED),
+               "session": _session_dict(),
+               "wire_hypothesis": (ADAPTER_KIND == "easytrader") and WIRE_HYPOTHESIS})
+    return st
+
+
+@router.post("/api/execution/strategies/{strategy_id}/settings")
+def post_strategy_settings(strategy_id: str,
+                           body: dict[str, Any] = Body(...)) -> dict[str, Any]:
+    try:
+        SC.spec(strategy_id)
+        saved = _STRATEGY_ENGINE.settings_store.save(
+            strategy_id,
+            enabled=body.get("enabled") if "enabled" in body else None,
+            mode=body.get("mode") if "mode" in body else None,
+            priority=body.get("priority") if "priority" in body else None,
+            options=body.get("options") if "options" in body else None)
+    except ValueError as e:
+        return {"status": "error", "code": "INVALID_SETTINGS",
+                "detail": str(e)[:200]}
+    return {"status": "success", "settings": saved.public()}
+
+
+@router.post("/api/execution/strategies/prepare")
+def post_strategy_prepare(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
+    try:
+        draft = _draft_from(body)
+    except HTTPException as e:
+        return {"status": "error", "code": "BAD_DRAFT", "detail": str(e.detail)}
+    sid = str(body.get("strategy") or SC.DIRECT_API)
+    target = body.get("target_wall_ms")
+    try:
+        order = _STRATEGY_ENGINE.prepare(
+            draft, sid, target_wall_ms=int(target) if target is not None else None,
+            live_intent=False)
+    except SE.StrategyError as e:
+        return {"status": "error", "code": e.code, "detail": e.detail,
+                "strategy": sid, "evidence": dict(e.evidence)}
+    except Exception as e:                           # noqa: BLE001
+        return {"status": "error", "code": "PREPARE_FAILED", "strategy": sid,
+                "detail": "%s: %s" % (type(e).__name__, str(e)[:180])}
+    _note_timing("strategy_prepare_ms", float(order.preparation_ms or 0.0))
+    return {"status": "success", "strategy": sid, "prepared_id": order.prepared_id,
+            "order": order.public(), "dry_run": DRY_RUN,
+            "live": _live_now(),
+            "wire_preview": _wire_preview(draft),
+            "wire_hypothesis": (ADAPTER_KIND == "easytrader") and WIRE_HYPOTHESIS}
+
+
+@router.post("/api/execution/strategies/trigger")
+def post_strategy_trigger(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
+    """همیشه dry-run: درخواستِ سفارش در مرورگر/ترابری ساخته نمی‌شود.
+
+    مسیرِ زنده عمداً یک درِ جدا دارد (`/strategies/dispatch`) تا یک فیلدِ
+    بدنه نتواند dry-run را به ارسالِ واقعی بدل کند.
+    """
+    prepared_id = str(body.get("prepared_id") or "").strip()
+    if not prepared_id:
+        return {"status": "error", "code": "MISSING_PREPARED_ID"}
+    order = _STRATEGY_ENGINE.get_order(prepared_id)
+    if order is None:
+        return {"status": "error", "code": "INVALID_EXECUTION_ID",
+                "detail": "no such prepared order"}
+    target = order.target_wall_ms
+    wait_ms = (int(target) - int(time.time() * 1000)) if target else None
+    if wait_ms is not None and wait_ms > IMMEDIATE_WINDOW_MS:
+        def _run_dry() -> None:
+            try:
+                _STRATEGY_ENGINE.trigger(prepared_id, live=False)
+            except Exception:
+                return
+        threading.Thread(target=_run_dry,
+                         name="bors-strategy-dry-%s" % prepared_id[:40],
+                         daemon=True).start()
+        return {"status": "scheduled", "prepared_id": prepared_id,
+                "send_at_wall_ms": int(target), "wait_ms": wait_ms,
+                "dry_run": True, "live": False}
+    try:
+        result = _STRATEGY_ENGINE.trigger(prepared_id, live=False)
+    except SE.StrategyError as e:
+        return {"status": "error", "code": e.code, "detail": e.detail}
+    except Exception as e:                           # noqa: BLE001
+        return {"status": "error", "code": "TRIGGER_FAILED",
+                "detail": "%s: %s" % (type(e).__name__, str(e)[:180])}
+    return {"status": "success", "result": result.public(),
+            "dry_run": True, "live": False}
+
+
+@router.post("/api/execution/strategies/dispatch")
+def post_strategy_dispatch(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
+    """مسیرِ زندهٔ Strategyها — فقط با env، نشست، عبارتِ تأیید و دروازهٔ ریسک.
+
+    این در با `/trigger` یکی نیست: `/trigger` حتی وقتی live روشن است هم
+    dry-run می‌ماند. ارسالِ زنده فقط از اینجا و فقط پس از تأییدِ صریح.
+    """
+    prepared_id = str(body.get("prepared_id") or "").strip()
+    if not prepared_id:
+        return {"status": "error", "code": "MISSING_PREPARED_ID"}
+    ok_cf, want_cf = _confirm_gate(body)
+    if not ok_cf:
+        return {"status": "error",
+                "code": ErrorCode.CONFIRM_PHRASE_REQUIRED.value,
+                "detail": "برایِ اجرایِ زنده عبارتِ تأیید لازم است",
+                "expected_phrase": want_cf}
+    ok_gate, why_gate = _risk_gate()
+    if not ok_gate:
+        return {"status": "error", "code": ErrorCode.RISK_LIMIT.value,
+                "detail": why_gate}
+    if not LIVE_REQUESTED or not _live_now():
+        return {"status": "error", "code": "LIVE_GATED",
+                "detail": "ارسالِ زنده خاموش است (env/ترافیک/نشست)"}
+    order = _STRATEGY_ENGINE.get_order(prepared_id)
+    if order is None:
+        return {"status": "error", "code": "INVALID_EXECUTION_ID",
+                "detail": "no such prepared order"}
+    confirm_epoch = _confirm_epoch()
+    target = order.target_wall_ms
+    wait_ms = (int(target) - int(time.time() * 1000)) if target else None
+
+    def _run_live() -> None:
+        if not _confirm_still_valid(confirm_epoch):
+            return
+        if not (LIVE_REQUESTED and _live_now()):
+            return
+        try:
+            _STRATEGY_ENGINE.trigger(prepared_id, live=True, live_allowed=True)
+        except Exception:
+            return
+
+    if wait_ms is not None and wait_ms > IMMEDIATE_WINDOW_MS:
+        threading.Thread(target=_run_live,
+                         name="bors-strategy-live-%s" % prepared_id[:40],
+                         daemon=True).start()
+        return {"status": "scheduled", "prepared_id": prepared_id,
+                "send_at_wall_ms": int(target), "wait_ms": wait_ms,
+                "dry_run": False, "live": True}
+    if not _confirm_still_valid(confirm_epoch):
+        return {"status": "error",
+                "code": ErrorCode.CONFIRM_PHRASE_REQUIRED.value,
+                "detail": "تأیید میانِ درخواست و ارسال کهنه شد — تأییدِ تازه لازم است"}
+    try:
+        result = _STRATEGY_ENGINE.trigger(prepared_id, live=True,
+                                          live_allowed=True)
+    except SE.StrategyError as e:
+        return {"status": "error", "code": e.code, "detail": e.detail}
+    except Exception as e:                           # noqa: BLE001
+        return {"status": "error", "code": "DISPATCH_FAILED",
+                "detail": "%s: %s" % (type(e).__name__, str(e)[:180])}
+    return {"status": "success", "result": result.public(),
+            "dry_run": False, "live": True,
+            "confirm_epoch": confirm_epoch}
+
+
+@router.post("/api/execution/strategies/abort")
+def post_strategy_abort(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
+    prepared_id = str(body.get("prepared_id") or "").strip()
+    try:
+        return {"status": "success",
+                "order": _STRATEGY_ENGINE.abort(prepared_id)}
+    except SE.StrategyError as e:
+        return {"status": "error", "code": e.code, "detail": e.detail}
+
+
+@router.post("/api/execution/strategies/reconcile")
+def post_strategy_reconcile(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
+    prepared_id = str(body.get("prepared_id") or "").strip()
+    try:
+        return {"status": "success",
+                "result": _STRATEGY_ENGINE.reconcile(prepared_id).public()}
+    except SE.StrategyError as e:
+        return {"status": "error", "code": e.code, "detail": e.detail}
+
+
+@router.get("/api/execution/strategies/order/{prepared_id}")
+def get_strategy_order(prepared_id: str) -> dict[str, Any]:
+    order = _STRATEGY_ENGINE.get_order(prepared_id)
+    if order is None:
+        return {"status": "error", "code": "INVALID_EXECUTION_ID"}
+    return {"status": "success", "order": order.public()}
+
+
+@router.post("/api/execution/strategies/{strategy_id}/probe")
+def post_strategy_probe(strategy_id: str) -> dict[str, Any]:
+    try:
+        return {"status": "success", "probe": _STRATEGY_ENGINE.probe(strategy_id)}
+    except SE.StrategyError as e:
+        return {"status": "error", "code": e.code, "detail": e.detail,
+                "evidence": dict(e.evidence)}
+    except Exception as e:                           # noqa: BLE001
+        return {"status": "error", "code": "PROBE_FAILED",
+                "detail": "%s: %s" % (type(e).__name__, str(e)[:180])}
 
 
 # ── ۲.۵) تنظیمِ اتصال و پرتفویِ فقط‌خواندنی ─────────────────────────────────

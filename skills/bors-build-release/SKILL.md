@@ -58,8 +58,13 @@ Also note: the spec uses `sys.executable` rather than a bare `python`, because a
 install on PATH can hold a stale `__pycache__` of the spec and make PyInstaller fail on
 `datas` entries that were already removed.
 
-`excludes` deliberately drops `playwright`, `camoufox`, `selenium`, `scipy`, `sympy`,
-`matplotlib`, `boto3` — keep them excluded; they are fetcher fallbacks, not runtime deps.
+`excludes` drops `camoufox`, `selenium`, `scipy`, `sympy`, `matplotlib`, `boto3` — fetcher
+fallbacks, not runtime deps. **Playwright is no longer excluded**: `execution_browser` uses it
+for the browser strategies, and both specs collect its driver data with
+`collect_data_files('playwright')`. The browser executable itself is not bundled; the strategy
+uses the system Edge/Chrome/Brave or a locally installed Playwright Chromium and reports
+UNAVAILABLE if none exists. Selenium remains excluded (its strategy stays UNAVAILABLE unless
+the dependency is deliberately bundled).
 
 ## 3. The database contract
 

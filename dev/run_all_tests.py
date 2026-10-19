@@ -604,6 +604,8 @@ SUITES = [
     # نشست از Credential Manager با بررسی exp؛ هیچ POSTِ واقعی در گارد نیست.
     ('dev/sarkhati_waf_header_v1121.py',
      'sarkhati WAF header: GET without Content-Type, POST with Content-Type, WAF simulator green only without the header, dead server-time candidate removed, read-only gate never reaches the transport, session vault rejects expired/no-exp tokens and leaks none'),
+    ('dev/strategy_guard_v1123.py',
+     'sarkhati strategies: settings reject secrets, metrics p50/p95/p99 only from real samples, one-submit arbiter, direct/browser dry-run sends no POST, mismatch hard stop, clock gate, reconcile uniqueness'),
     # مأموریتِ 2026-10-18 (عیب‌یابیِ اتصالِ مفید): انتخابِ آداپتور ازِ خودِ برنامه
     # با مقدم‌بودنِ env، گیتِ نوشتن که هیچ تنظیمِ دیسکی بازش نمی‌کند، حالتِ
     # فقط‌خواندنی (خواندن بله / POST نه)، و «متصل» فقط باِ شاهدِ مسیرِ واقعی.

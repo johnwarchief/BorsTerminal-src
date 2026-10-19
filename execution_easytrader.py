@@ -666,7 +666,8 @@ def wire_hosts() -> tuple[str, ...]:
     return tuple(dict.fromkeys((base.lower(),) + extra if base else extra))
 
 
-def _validated_base_url(base_url: str | None) -> str:
+def _validated_base_url(base_url: str | None, *,
+                        allow_loopback_port: bool = False) -> str:
     """هر پرسشی که ازِ این درِ می‌گذارد `Authorization`ِ کاربر را حمل می‌کند.
 
     بی‌این نگهبان، یکِ `base_url`ِ اشتباه (یا یکِ تنظیمِ تازه درِ آینده) توکنِ
@@ -688,7 +689,11 @@ def _validated_base_url(base_url: str | None) -> str:
     if "@" in (p.netloc or "") or "\\" in raw:
         raise ValueError("wire base url: userinfo یا جداکننده درِ نشانی مجاز نیست")
     if port not in (None, 443):
-        raise ValueError("wire base url: فقط بندرِ ۴۴۳ مجاز است: %r" % (port,))
+        # seamِ صریح و فقط-loopback برایِ Mockِ محلیِ بنچمارک؛ production این
+        # پارامتر را نمی‌فرستد و همان قیدِ ۴۴۳ برجا می‌ماند.
+        loopback = host in ("127.0.0.1", "localhost", "::1")
+        if not (allow_loopback_port and loopback):
+            raise ValueError("wire base url: فقط بندرِ ۴۴۳ مجاز است: %r" % (port,))
     if host not in wire_hosts():
         raise ValueError("wire base url: میزبان درِ فهرستِ مجاز نیست: %s" % host)
     if p.path not in ("", "/"):
@@ -706,10 +711,12 @@ class EasyTraderAdapter(BrokerAdapter):
                  capabilities: Capabilities | None = None,
                  timeouts: Timeouts | None = None,
                  writes_allowed: bool = True,
+                 allow_loopback_base_url: bool = False,
                  clock: Callable[[], float] = time.time) -> None:
         self._transport = transport or RefusingTransport()
         self._token = token if isinstance(token, _Secret) else _Secret(token)
-        self.base_url = _validated_base_url(base_url)
+        self.base_url = _validated_base_url(
+            base_url, allow_loopback_port=allow_loopback_base_url)
         self._caps_override = capabilities
         #: «ترافیک وصل است» با «ارسالِ سفارش آزاد است» دو چیز است. خواندنِ نشست
         #: نباید منتظرِ کلیدِ نوشتن بماند (درِ v1.0.93 هر دو با هم قفل بودند، پس

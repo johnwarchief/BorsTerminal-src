@@ -137,9 +137,17 @@ def main():
     if not npm:
         warn("npm در این ماشین نیست؛ داوریِ ساختاری بس است")
     else:
+        # Qoder/npx یک `npm_config_allow_scripts` تزریق می‌کند؛ npm 12 آن را در
+        # نصبِ project-scoped رد می‌کند (EALLOWSCRIPTS) — این متغیر در CI نیست و
+        # ربطی به قفل ندارد. env را برایِ همان داوریِ CI پاک می‌کنیم.
+        env = {k: v for k, v in os.environ.items()
+               if not k.lower().startswith(("npm_config_", "npm_lifecycle_",
+                                            "npm_package_json", "npm_command",
+                                            "npm_execpath", "npm_node_execpath"))}
         try:
             p = subprocess.run([npm, "ci", "--dry-run"], cwd=FE, capture_output=True,
-                               text=True, encoding="utf-8", errors="replace", timeout=420)
+                               text=True, encoding="utf-8", errors="replace",
+                               timeout=420, env=env)
         except subprocess.TimeoutExpired:
             warn("npm ci --dry-run بیشتر از ۴۲۰ ثانیه کشید (شبکه؟)")
             p = None
