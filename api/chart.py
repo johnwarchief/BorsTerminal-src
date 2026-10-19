@@ -14,6 +14,7 @@ import candle_contract
 import corporate_ledger as CL
 import price_basis
 import os as _os
+import major_swings
 import trend_classify
 # موتورِ تشخیصِ روند: legacy (پیش‌فرض = رفتارِ امروز) | hybrid. با env عوض می‌شود تا
 # درِ dev مسیرِ ترکیبی واقعاً فعال/قابل‌مشاهده باشد و برگشت به قبلی روشن بماند.
@@ -924,6 +925,11 @@ def _watch_live_bar(symbol, after_date):
     h_l, l_l = candle_contract.widen(o_l, p_max, p_min, p_close)
     return ({"time": session_date, "open": o_l, "high": h_l, "low": l_l,
              "close": p_close, "volume": vol,
+             # نشانهٔ «کندلِ تکمیل‌نشده»: `_watch_live_bar` کندلِ *همانِ جلسه* را
+             # می‌سازد، پس قیمتش تا بستهٔ market شدنِ جلسه عوض می‌شود. موتورِ
+             # ساختارِ روند این ردیف را از تصمیم بیرون می‌گذارد (`major_swings.closed_only`)
+             # تا یکِ تیکِ درون‌جلسه پیوتِ «تأییدشده» نسازد یا نبیند.
+             "live_forming": True,
              # «آخرین معامله» زنده از market_watch.p_last؛ بی‌fallback به پایانی
              # (کارِ #73 قدمِ ۳، شرطِ ۳ قرارداد). p_last نبود ⇒ None، و price_basis
              # خودش اعلام می‌کند که این سری last ندارد.
@@ -2047,7 +2053,7 @@ _FTS_EQUAL_TOL = 0.005    # اختلاف ≤ ۰.۵٪ دو پیوت = «مساو�
 # شد باید یک واحد بالا برود — وگرنه کشِ پاسخِ کهنه با قواعدِ نو جواب می‌دهد.
 # (بیلدِ منتشرشده: `APP_VERSION`. قواعدِ فیلترِ قیف جایِ دیگری نسخه دارد و با این
 # یکی نمی‌شود، چون rulebookهایِ متفاوت‌اند.)
-FTS_TECH_RULESET_VERSION = "5"   # «۵»: قاعدۀ اکیدِ پیوت (`_fts_swings` — مساویِ دوطرفه دیگر پیوت نیست؛ کندلِ تک‌قیمتیِ TSETMC لایۀ ساختار را پر نمی‌کند). «۴»: خروج MA14 با مرجع هم‌خوان شد (یک کندل کامل بسته زیر MA، نه دو بدنه) + فیبو بدون پایِ ساختگی + پیام‌هایِ ناکافی با تعداد
+FTS_TECH_RULESET_VERSION = "6"   # «۶»: رأیِ جهت روی **دو Extreme ماژور** ساخته می‌شود (`major_swings`)، نه هر پیوتِ تأییدشده؛ کندلِ تکمیل‌نشده از سریِ ساختار بیرون است (`live_forming`) و `provisional` از حکمِ قطعی جدا منتشر می‌شود. «۵»: قاعدۀ اکیدِ پیوت (`_fts_swings` — مساویِ دوطرفه دیگر پیوت نیست؛ کندلِ تک‌قیمتیِ TSETMC لایۀ ساختار را پر نمی‌کند). «۴»: خروج MA14 با مرجع هم‌خوان شد (یک کندل کامل بسته زیر MA، نه دو بدنه) + فیبو بدون پایِ ساختگی + پیام‌هایِ ناکافی با تعداد
 # «قطعی» بودنِ CHoCH: چند بستهٔ متوالی + چقدر حاشیه. تک‌منبع — هم `_fts_choch`
 # این‌ها را پیش‌فرض می‌گیرد و هم `_fts_setup_history` (مارکر) همان را می‌خواند،
 # پس مارکر و پنل از دو عددِ جدا رأی نمی‌دهند. سنجشِ تاریخی: دوروزه/۱٪ دقتِ
@@ -2385,15 +2391,21 @@ def _fts_fa(v):
     return str(v).translate(str.maketrans("0123456789", "۰۱۲۳۴۵۶۷۸۹"))
 
 
-def _fts_trend_reason(t):
+def _fts_trend_reason(t, ctx=None):
     """مبنایِ رأیِ روند به فارسی — ردِ ورود باید بگوید با چه عددی قضاوت شده.
 
     پیش‌تر فقط «تایم هفتگی خنثی» نوشته می‌شد و کاربر راهی نداشت بفهمد کدام دو پیوت
     مقایسه شده‌اند (شاهد: کايزد با ۴۴ کندلِ صعودیِ بی‌پیوت «نزولی» می‌گرفت). تاریخ‌ها
     همان رشته‌هایِ محورِ زمانِ خودِ چارت‌اند تا عددِ متن و عددِ چارت یکی باشد.
+
+    `ctx` همان پروندۀِ `_fts_major_context` است و فقط متن را دقیق‌تر می‌کند: رأی را
+    عوض نمی‌کند و هیچ دروازۀ FTS به این رشته وابسته نیست. با آن، «ماژورِ کافی نبود»
+    (کمبودِ ساختار) از «پیوتِ کامل نداریم» (کمبودِ داده) و از «نزولیِ قطعی» جدا
+    خوانده می‌شود — سه چیزی که قبلاً یکی به نظر می‌رسیدند.
     """
     if not isinstance(t, dict):
         return ""
+    has_ctx = isinstance(ctx, dict) and "enough_extremes" in ctx
     if t.get("basis") == "recent-window":
         pos = "بالای" if t.get("above_ma") else "زیر"
         txt = (f"مبنا: {_fts_fa(t.get('window'))} کندلِ اخیر، "
@@ -2401,14 +2413,93 @@ def _fts_trend_reason(t):
         stale = t.get("stale_bars")
         if stale is not None:
             txt += f" (تازه‌ترین پیوتِ تأییدشده {_fts_fa(stale)} کندل عقب است)"
+        if has_ctx and not ctx.get("enough_extremes") and ctx.get("reason"):
+            txt += f" — ساختارِ ماژور کافی نبود: {_fts_fa(ctx['reason'])}"
         return txt
     if t.get("trend") == "na":
-        return "مبنا: کمتر از دو پیوتِ کامل"
-    return (f"مبنا: سقف‌ها {_fts_fa(t.get('prev_high_time'))} "
+        if has_ctx and ctx.get("reason"):
+            return f"مبنا: {_fts_fa(ctx['reason'])} — دو Extreme ماژور نیست، جهت اعلام نمی‌شود"
+        return "مبنا: کمتر از دو پیوتِ کامل (کمبود داده)"
+    head = ("مبنایِ ماژور" if (has_ctx and ctx.get("enough_extremes")) else "مبنا")
+    return (f"{head}: سقف‌ها {_fts_fa(t.get('prev_high_time'))} "
             f"({_fts_fa(t.get('prev_high'))}) ← {_fts_fa(t.get('last_high_time'))} "
             f"({_fts_fa(t.get('last_high'))})، کف‌ها {_fts_fa(t.get('prev_low_time'))} "
             f"({_fts_fa(t.get('prev_low'))}) ← {_fts_fa(t.get('last_low_time'))} "
             f"({_fts_fa(t.get('last_low'))})")
+
+
+def _fts_bucket_forming(tf, series, daily_series):
+    """آیا آخرینِ سبدِ تجمیعی (هفتگی/ماهانه) هنوز کندلِ روزانهٔ جدید می‌گیرد؟
+
+    اطلاع است، نه رأی: تا وقتی سبدِ باز است high/low آن عوض می‌شود، پس پیوتی که در
+    آن افتاده «ساختارِ قطعیِ تاریخ» نیست. مبنایِ تقویمیِ بی‌آستانه — هفتهٔ معاملاتیِ
+    ایران شنبه تا چهارشنبه است و همان شنبه‌محورِ `_fts_resample`.
+    """
+    if tf == "D" or not series or not daily_series:
+        return None
+    d_last = str(daily_series[-1].get("time") or "")[:10]
+    if not d_last:
+        return None
+    if tf == "M":
+        last = str(series[-1].get("time") or "")[:10]
+        return bool(last) and d_last[:7] == last[:7]
+    try:
+        d = datetime.date.fromisoformat(str(series[-1].get("time") or "")[:10])
+    except ValueError:
+        return None
+    sat = d - datetime.timedelta(days=(d.weekday() + 2) % 7)
+    return d_last < (sat + datetime.timedelta(days=4)).isoformat()
+
+
+def _fts_major_context(tf, row, daily_series, full_series=None):
+    """پروندۀِ «چه چیزی رأی را ساخت» — کنارِ رأی، نه داخلِ آن.
+
+    قراردادِ خروجی (همین شش کلید را رابط و ممیزی می‌خوانند):
+      confirmed_trend - رأیِ داورِ System 1 (`_fts_classify_trend`) روی ماژورها
+      major_swings    - فهرستِ Extremeهایِ ماژوری که داوری با آن‌ها شد
+      provisional     - اطلاعِ موقتِ **جدا**؛ هیچ مصرف‌کننده‌ای حق ندارد با آن
+                        جهت بسازد یا دروازۀ قیف را باز/بسته کند
+      timeframe / as_of / reason
+    `as_of` آخرینِ کندلِ **بستهٔ** همان سری است (کندلِ تکمیل‌نشده در ساختار نیست).
+    `provisional` برعکسش از `full_series` خوانده می‌شود: همان ردیفی که از رأی
+    بیرون است، دقیقاً چیزی است که «در حالِ شکل‌گیری» است و باید گزارش شود.
+    """
+    series = row["series"]
+    info = row["info"]
+    verdict = row["verdict"] or {}
+    k = _FTS_SWING_K if tf == "D" else 2
+
+    def pt(p):
+        return {"idx": p["idx"], "time": p.get("time"), "kind": p["kind"],
+                "price": round(float(p["price"]), 2),
+                "confirm_idx": p.get("confirm_idx"), "confirm_time": p.get("confirm_time"),
+                "confirm_age_bars": p.get("confirm_age_bars"),
+                "leg_pct": p.get("leg_pct"), "leg_pct_in": p.get("leg_pct_in"),
+                "leg_pct_out": p.get("leg_pct_out"), "out_pending": p.get("out_pending"),
+                "leg_atr_x": p.get("leg_atr_x"),
+                "recent": p.get("recent"), "ma100_ctx": p.get("ma100_ctx")}
+
+    return {
+        "timeframe": tf,
+        "confirmed_trend": verdict.get("trend"),
+        "verdict_basis": verdict.get("basis"),
+        "as_of": (str(series[-1].get("time") or "")[:10] if series else None),
+        "daily_as_of": (str(daily_series[-1].get("time") or "")[:10]
+                        if daily_series else None),
+        "bars": len(series),
+        "bucket_forming": _fts_bucket_forming(tf, series, daily_series),
+        "major_swings": [pt(p) for p in row["majors"][-12:]],
+        "counts": {"pivots": info["graded"], "majors": len(row["majors"]),
+                   "major_highs": info["major_highs"], "major_lows": info["major_lows"],
+                   "minor_highs": info["minor_highs"], "minor_lows": info["minor_lows"],
+                   "undecided": info["undecided"], "dropped_minor": info["dropped_minor"]},
+        "threshold": {"atr_x": info["atr_x"], "floor_pct": info["floor_pct"]},
+        "enough_extremes": info["enough"],
+        "provisional": major_swings.forming(full_series or series, row["graded"], k=k),
+        # متنِ نمایشی با رقمِ فارسی (قاعدۀِ سراسریِ رابط); None باید None بماند تا
+        # مصرف‌کننده بتواند «دلیلی لازم نبود» را از «متنِ خالی» تشخیص دهد.
+        "reason": (None if info["reason"] is None else _fts_fa(info["reason"])),
+    }
 
 
 def _fts_ma(closes, period=14):
@@ -3654,18 +3745,47 @@ def _fts_analyze_candles(symbol, candles, entry_hint=None):
     """
     candles = _fts_clean_candles(candles)
     swings_d = _fts_swings(candles, k=_FTS_SWING_K)
+    # سریِ **ساختارِ روند** کندلِ تکمیل‌نشده را نمی‌بیند: `_fts_swings` برایِ پیوتِ
+    # iام پنجرۀِ [i+1, i+k] را می‌خواند و آن پنجره تا آخرینِ ردیف می‌رسد، پس یکِ
+    # تیکِ درون‌جلسه می‌توانست پیوتِ «تأییدشده» بسازد یا ببیند. لایه‌هایِ ستاپِ
+    # ورودی (جت/خروج/ساعت‌شنی) مثلِ قبل خودِ جلسه را می‌بینند؛ فقط جهت نباید با
+    # نوسانِ تکمیل‌نشده بازنویسی شود. (سنجش: تکانِ ±۲٪ آخرینِ بسته درِ ۳ نماد از
+    # ۱۲۹ رأیِ D را عوض می‌کرد، هر سه up→down — `_audit/major_swing_evidence.py`.)
+    struct_d = major_swings.closed_only(candles)
+    w_struct = _fts_resample(struct_d, "W")
+    m_struct = _fts_resample(struct_d, "M")
+    # بقیۀ لایه‌ها (ساعت‌شنی، خروج، MA52 هفتگی) همان سریِ امروز را می‌بینند:
+    # حذفِ کندلِ جاری از آنها هم رأیِ «خروج/تازه» را عقب می‌انداخت و خارجِ خواستِ
+    # این دور است — اینجا فقط «جهتِ ساختاری» نباید با تیکِ درون‌جلسه بازنویسی شود.
     w = _fts_resample(candles, "W")
     m = _fts_resample(candles, "M")
     # dispatchِ موتورِ روند (flag). legacy = دقیقاً رفتارِ امروز؛ hybrid = طبقه‌بندِ
     # ترکیبیِ قابل‌توضیح. jet (بالا) و باقیِ مصرف‌کننده‌ها از همین trend می‌خوانند؛
     # classify_trend خروجیِ سازگارِ legacy می‌دهد (neutral→range، کم‌داده→na).
     _tf = trend_classify.classify_trend if TREND_ENGINE == "hybrid" else _fts_classify_trend
-    swings_w = _fts_swings(w, k=2)
+    # درجه‌بندیِ ماژور/مینور: داورِ جهت **همان** `_fts_classify_trend` می‌ماند و
+    # فقط فهرستِ پیوت‌ها به «سقف/کفِ ماژور» محدود می‌شود، تا دو پیوتِ کوچکِ آخر
+    # روندِ بزرگ را برعکس نکنند. بی‌دو سقف و دو کفِ ماژور، خودِ داور `na` می‌دهد
+    # (یا fallbackِ اعلام‌شدۀِ recent-window) — هیچ‌وقت جهتِ پیش‌فرض ساخته نمی‌شود.
+    # یک قاعده روی هر سه مقیاس: روزانه تحلیلِ اصلی، هفتگی وتو، ماهانه زمینه.
+    swings_d_s = _fts_swings(struct_d, k=_FTS_SWING_K)
+    swings_w_s = _fts_swings(w_struct, k=2)
+    swings_m_s = _fts_swings(m_struct, k=2)
+
+    def _trend_tf(series, swings):
+        g = major_swings.grade(swings, series)
+        mj, info = major_swings.summarize(g)
+        return {"graded": g, "majors": mj, "info": info,
+                "series": series, "verdict": _tf(mj, series=series)}
+
+    tfs = {"D": _trend_tf(struct_d, swings_d_s),
+           "W": _trend_tf(w_struct, swings_w_s),
+           "M": _trend_tf(m_struct, swings_m_s)}
     out = {
         "trend": {
-            "D": _tf(swings_d, series=candles),
-            "W": _tf(swings_w, series=w),
-            "M": _tf(_fts_swings(m, k=2), series=m),
+            "D": tfs["D"]["verdict"],
+            "W": tfs["W"]["verdict"],
+            "M": tfs["M"]["verdict"],
             "alignment": "na",
         },
         "fib": _fts_fib_zones(candles, swings_d),
@@ -3677,11 +3797,21 @@ def _fts_analyze_candles(symbol, candles, entry_hint=None):
                       "start_date": None, "end_date": None, "pct_above_top": None},
         "exit_engine": None,
     }
+    # پروندۀِ «چه چیزی رأی را ساخت» در کنارِ رأی: فهرستِ ماژورهایِ به‌کاررفته،
+    # پیوت‌هایِ کنارگذاشته‌شده، اطلاعِ موقتِ جدا از حکمِ قطعی، و زمانِ مبنایِ سری.
+    out["trend"]["major_swings"] = {
+        tf: _fts_major_context(tf, tfs[tf], struct_d,
+                               full_series={"D": candles, "W": w, "M": m}[tf])
+        for tf in ("D", "W", "M")}
+    # مبنایِ «قطعی بودن»ِ کلِ رأی: آخرینِ کندلِ **بستهٔ** روزانۀ ساختار. کندلِ
+    # تکمیل‌نشده درِ این زمان نمی‌گنجد و فقط زیرِ `provisional` گزارش می‌شود.
+    out["trend"]["as_of"] = out["trend"]["major_swings"]["D"]["as_of"]
     # نقاطِ ساختاریِ برچسب‌دار (HH/HL/LH/LL) — لایۀ «ساختار روند» روی چارت، با
     # زمانِ وقوع جدا از زمانِ تأیید (anti-repaint). روزانه تحلیل اصلی است؛ هفتگی
-    # زمینه/فیلتر.
-    out["structure_points"] = {"D": _fts_structure_points(swings_d),
-                               "W": _fts_structure_points(swings_w)}
+    # زمینه/فیلتر. فهرست، ماژورهایِ گزینش‌شده‌اند: برچسبِ HH/LH نسبت به ماژورِ
+    # هم‌جنسِ قبلی خوانده می‌شود، نه نسبت به یکِ پیوتِ کوچکِ میانی.
+    out["structure_points"] = {"D": _fts_structure_points(tfs["D"]["majors"]),
+                               "W": _fts_structure_points(tfs["W"]["majors"])}
     # Alignment: all three timeframes agree and are directional.
     tD = out["trend"]["D"]["trend"]
     tW = out["trend"]["W"]["trend"]
@@ -3740,8 +3870,9 @@ def _fts_analyze_candles(symbol, candles, entry_hint=None):
                 "desc": "هفتگی صعودی + روزانه خنثی: کف دوقلو یا ورود در آخرین کف روند صعودی/آخرین سقف روند نزولی",
             }
 
-    w_reason = _fts_trend_reason(out["trend"]["W"])
-    d_reason = _fts_trend_reason(out["trend"]["D"])
+    _ms = out["trend"]["major_swings"]
+    w_reason = _fts_trend_reason(out["trend"]["W"], ctx=_ms["W"])
+    d_reason = _fts_trend_reason(out["trend"]["D"], ctx=_ms["D"])
     _mx = out["trend"].get("matrix")
     if _mx is not None:
         _mx["basis"] = {"weekly": w_reason, "daily": d_reason}
@@ -3909,10 +4040,16 @@ def _fts_scaled(candles, factors, volumes):
         ls = c.get("last")
         ls = float(ls) if ls else None
         v = vol.get(t[:10], float(c.get("volume") or 0))
-        out.append({"time": t[:10], "open": r(o * k), "high": r(h * k), "low": r(l * k),
-                    "closing": r(anchor * k) if anchor > 0 else None,
-                    "last": r(ls * k) if ls is not None else None,
-                    "volume": r(v / k)})
+        row = {"time": t[:10], "open": r(o * k), "high": r(h * k), "low": r(l * k),
+               "closing": r(anchor * k) if anchor > 0 else None,
+               "last": r(ls * k) if ls is not None else None,
+               "volume": r(v / k)}
+        # نشانهٔ «تکمیل‌نشده» باید از اینِ بازسازیِ ردیف زنده بماند، وگرنه لایهٔ
+        # ساختارِ روند (`major_swings.closed_only`) کندلِ میانهٔ جلسه را بسته
+        # می‌پندارد و رأیِ جهت با یک تیکِ درون‌جلسه بازنویسی می‌شود.
+        if c.get("live_forming"):
+            row["live_forming"] = True
+        out.append(row)
     # تنها نقطۀ انتخابِ ستونِ قیمت: `close` اینجا ساخته نمی‌شود، از ریزالویِ
     # قرارداد می‌آید (و هندسه هم از همان `widen`ِ مشترک عبور می‌کند).
     price_basis.apply_basis(out)

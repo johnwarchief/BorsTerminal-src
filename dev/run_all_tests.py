@@ -193,6 +193,12 @@ SUITES = [
     ('dev/fts_defaults_parity_guard.py', 'FTS guide defaults: FE drawer mirrors the server'),
     ('dev/test_hourglass_settings_v1.py', 'hourglass RSI period, oversold threshold and MA52 mode are configurable'),
     ('dev/weekly_veto_guard.py',      'weekly downtrend/neutral is a hard veto; no-data is not'),
+    # مأموریتِ ۱۴۰۵-۰۷-۲۸: پیوتِ Minor نباید روندِ ماژور را برگرداند، داورِ جهت همان
+    # `_fts_classify_trend` می‌ماند (اثباتِ بایت‌به‌بایت با نسخۀِ a853cc75)، کندلِ
+    # تکمیل‌نشده درِ ساختارِ جهت نمی‌نشیند و `provisional` رأی یا حکمِ قیف را عوض
+    # نمی‌کند. بی‌شبکه و بی‌market.db — همه فیکسچر؛ سنجشِ دادهٔ واقعی جداست
+    # (`_audit/major_swing_before_after.py`).
+    ('dev/major_swing_trend_v1.py',   'major-swing trend grading: System 1 judge preserved, no lookahead, provisional is information only'),
     # وتوی مجمع (رأیِ مالک، نه چارت): برچسبِ جدول و وتوی اسکرینر باید یک افق و یک
     # پنجرۀ تقویم داشته باشند، و وتو بیرونِ کشِ ۱۲ ساعته حساب شود. بی‌شبکه —
     # هم تقویم و هم کشِ اسکرینر جعل می‌شوند.

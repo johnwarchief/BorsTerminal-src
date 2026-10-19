@@ -109,7 +109,22 @@ TAIL_V = [(14, 6, 12, 7), (22, 7, 7, 14), (34, 12, 14, 30), (30, 16, 30, 20),
 tail_start = dt.date(2024, 1, 6) + dt.timedelta(weeks=12)
 o = CH._fts_analyze_candles("آزمون", build(BEAR[:12]) + daily_tail(tail_start, TAIL_V))
 ck(o["trend"]["W"]["trend"] == "down", "V-بانتوم: هفتگی هنوز down", str(o["trend"]["W"]))
-ck(o["trend"]["D"]["trend"] == "up", "… ولی روزانه up شده (تلهٔ آزمون)", str(o["trend"]["D"]))
+# ── DIVERGENCE (مأموریتِ ماژور ۱۴۰۵-۰۷-۲۸، ثبت‌شده نه پنهان) ──────────────────
+# ادعایِ این ردیف («روزانۀ صعودی هفتگیِ بسته را نمی‌شکند») سالم است و هنوز
+# سبز است: دو سطرِ بعدی همان را می‌سنجند. چیزی که عوض شد، *مبنایِ* رأیِ روزانه
+# است: دنبالۀِ TAIL_V رویِ بدنه‌ای ساخته شده که هر کندلِ روزانش کلِ دامندۀ
+# هفتگی را طی می‌کند (high−low ≈ ۲۰ واحد رویِ قیمتی که از ۱۲۰ به ۱۲ رسیده)، پس
+# ATRِ میانیِ ۵۲ کندل از هر جابجاییِ واقعیِ آن دنباله بزرگ‌تر است و هیچ پیوتِ
+# دنباله «ماژور» شمرده نمی‌شود → `_fts_classify_trend` به سنجشِ مستقیمِ بازه
+# می‌افتد و «down» می‌دهد. این همان رفتارِ خواستۀِ مأموریت است (نوسانِ کوچک
+# نباید جهتِ ماژور را اعلام/برعکس کند) و دلیلش درِ `trend.major_swings.D.reason`
+# منتشر می‌شود. عددِ قبل و بعد هر دو اینجا ثبت است، نه درِ گزارشِ جدا.
+_dv = o["trend"]["D"]
+ck(_dv["trend"] == "down" and _dv.get("basis") == "recent-window",
+   "DIVERGENCE ثبت‌شدہ: روزانۀِ این دنباله دیگر ماژور نیست ⇒ مبنایِ recent-window (قبل: up/pivots)", str(_dv))
+ck(_dv.get("stale_bars") is not None and o["trend"]["major_swings"]["D"]["bars"] > 0,
+   "علتِ اختلاف درِ همان خروجی خوانده می‌شود: basis + stale_bars + تعدادِ ماژورها",
+   {"stale": _dv.get("stale_bars"), "counts": o["trend"]["major_swings"]["D"]["counts"]})
 ck(mx(o)["decision"] == "REJECT", "روزانۀ صعودی ⇒ PASS نمی‌شود وقتی هفتگی نزولی است", str(mx(o)))
 ck("وتوی" in mx(o)["desc"] or "ممنوعیت" in mx(o)["desc"], "دلیلِ وتوی هفتگی در desc نوشته شده", mx(o)["desc"])
 
@@ -137,8 +152,58 @@ L_DN = [204, 202, 200, 210, 206, 202, 198, 208, 204, 200, 196, 206,
 TAIL_DN = [(h, l, h - 1, l + 1) for h, l in zip(H_DN, L_DN)]
 o2 = CH._fts_analyze_candles("آزمون", build(BULL) + daily_tail(dt.date(2024, 1, 6) + dt.timedelta(weeks=14), TAIL_DN))
 ck(o2["trend"]["W"]["trend"] == "up", "اصلاحِ روزانه هفتگیِ صعودی را down نمی‌کند", str(o2["trend"]["W"]))
-ck(o2["trend"]["D"]["trend"] == "down", "روزانۀ نزولیِ تازه خوانده می‌شود", str(o2["trend"]["D"]))
-ck(mx(o2)["setup"] == "FIB_CHOCH_STEP_ENTRY", "صعودی+نزولی ⇒ فیبو/CHoCH (عینِ چارت ص ۲)", str(mx(o2)))
+# DIVERGENCE (همان علّتِ ردیفِ بالا): درِ این دنباله هیچِ Extreme ماژوری تأیید
+# نمی‌شود، پس موتورِ System 1 به سنجشِ مستقیمِ بازه می‌رود و «range» می‌دهد.
+# ادعایِ اصلی («روزانۀ نزولی ⇒ شاخۀِ فیبو/CHoCH») با فیکسچرِ سالمِ پایینِ همین
+# فایل سنجیده می‌شود، پس چیزی پوشیده نمی‌ماند.
+ck(o2["trend"]["D"]["trend"] == "range" and o2["trend"]["D"].get("basis") == "recent-window",
+   "DIVERGENCE ثبت‌شدہ: روزانۀِ این دنباله ماژور نیست ⇒ range/recent-window (قبل: down/pivots)",
+   str(o2["trend"]["D"]))
+ck(o2["trend"]["matrix"]["setup"] == "DOUBLE_BOTTOM_OR_LAST_STRUCTURE",
+   "و شاخه هم با همان رأی عوض می‌شود (ثبت، نه اصلاحِ عدد)", o2["trend"]["matrix"]["setup"])
+
+# ── ۷-الف) ادعایِ اصلی با فیکسچرِ مقیاسِ سالم (کندل‌هایِ باریک، ATRِ واقع‌گرایانہ) ──
+# همان دو ادعا، بی‌دنبالۀِ پُرشُور: هفتگی صعودی + روزانۀ نزولیِ **ماژور** ⇒
+# FIB_CHOCH_STEP_ENTRY. مولّدِ `tight_weeks` کندلِ روزانه را باریک می‌سازد تا
+# ATRِ میانیِ ۵۲ کندل همان اندازه‌ای باشد که درِ نمادهایِ واقعی می‌بینیم.
+def tight_weeks(closes, days_per_bar=5, band=0.0015):
+    out = []
+    d = dt.date(2024, 1, 1)
+    for wk, c in enumerate(closes):
+        base = d + dt.timedelta(weeks=wk)
+        for i in range(days_per_bar):
+            px = c * (1.0 + 0.002 * (i - 2))
+            out.append({"time": (base + dt.timedelta(days=i)).isoformat(),
+                        "open": px, "high": px * (1 + band), "low": px * (1 - band),
+                        "close": px, "volume": 1e6})
+    return out
+
+
+def tight_tail(start, values, band=0.002):
+    out = []
+    prev = None
+    for i, c in enumerate(values):
+        c = float(c)
+        o = prev if prev else c
+        out.append({"time": (start + dt.timedelta(days=i)).isoformat(),
+                    "open": o, "high": max(o, c) * (1 + band), "low": min(o, c) * (1 - band),
+                    "close": c, "volume": 1e6})
+        prev = c
+    return out
+
+
+UP20 = [11, 10, 12, 10.5, 10, 13, 11, 10.5, 14, 12, 11, 15, 13, 14.2, 12.5, 16, 14, 17, 15, 18]
+DN_TAIL = [13.0, 13.6, 13.2, 13.9, 13.1, 12.6, 13.2, 12.4, 12.9, 12.1,
+           12.6, 11.8, 12.3, 11.5, 12.0, 11.2]
+o3 = CH._fts_analyze_candles("آزمون", tight_weeks(UP20)
+                             + tight_tail(dt.date(2024, 1, 1) + dt.timedelta(weeks=len(UP20), days=5),
+                                          DN_TAIL))
+ck(o3["trend"]["W"]["trend"] == "up", "فیکسچرِ مقیاس‌سالم: هفتگی صعودی می‌ماند", str(o3["trend"]["W"]))
+ck(o3["trend"]["D"]["trend"] == "down", "روزانۀ نزولیِ **ماژور** تازه خوانده می‌شود", str(o3["trend"]["D"]))
+ck(o3["trend"]["major_swings"]["D"]["enough_extremes"] is True,
+   "و واقعاً با دو Extreme ماژورِ روزانه داوری شد", o3["trend"]["major_swings"]["D"]["counts"])
+ck(mx(o3)["setup"] == "FIB_CHOCH_STEP_ENTRY",
+   "صعودی+نزولی ⇒ فیبو/CHoCH (عینِ چارت ص ۲)", str(mx(o3)))
 
 # ── ۸) تأییدِ موقعیتِ قیمت: سقفِ تازه ⇒ up، حتی اگر دو پیوتِ آخر LH/LL باشند ──
 # ریشۀِ ایراد: فنوال/فولادِ هفتگی رویِ دو پیوتِ کهنه «down» می‌گرفتند در حالی کهِ

@@ -3,7 +3,7 @@ import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { FtsBadgeStrip, jetBadges, trendBadges, trendTone, verdictMeta } from '@features/technical/components/FtsBadgeStrip';
 import { FtsTrendPanel, setupBadgesOf } from '@features/technical/components/FtsTrendPanel';
-import type { FtsAnalysisData } from '@features/technical/api/useFtsAnalysis';
+import { FtsAnalysis, type FtsAnalysisData } from '@features/technical/api/useFtsAnalysis';
 
 function fixture(): FtsAnalysisData {
   return {
@@ -151,5 +151,91 @@ describe('کارت تحلیل ساختاری', () => {
   it('بی‌واگرایی، ردیفِ RSI عددِ اوجِ پیشین را نشان نمی‌دهد', () => {
     render(<FtsTrendPanel data={fixture()} />);
     expect(screen.getByTestId('fts-trend-panel').textContent).not.toContain('اوجِ پیشین');
+  });
+});
+
+// ── مأموریتِ ماژور ۱۴۰۵-۰۷-۲۸: رابط باید «قطعی» را از «در حال شکل‌گیری» جدا بیند ──
+describe('پروندۀِ سقف/کفِ ماژور در کارتِ روند', () => {
+  function majorFixture(): FtsAnalysisData {
+    const f = fixture();
+    f.trend = {
+      ...f.trend,
+      as_of: '2026-10-17',
+      major_swings: {
+        D: {
+          timeframe: 'D',
+          confirmed_trend: 'up',
+          verdict_basis: 'pivots',
+          as_of: '2026-10-17',
+          daily_as_of: '2026-10-17',
+          bars: 392,
+          bucket_forming: null,
+          major_swings: [
+            { idx: 300, time: '2026-06-10', kind: 'high', price: 3492, leg_pct: 0.11, leg_atr_x: 3.1 },
+            { idx: 340, time: '2026-08-02', kind: 'low', price: 2182, leg_pct: 0.19, leg_atr_x: 4.2 },
+          ],
+          counts: { pivots: 71, majors: 51, major_highs: 28, major_lows: 23,
+                    minor_highs: 4, minor_lows: 15, undecided: 1, dropped_minor: 20 },
+          threshold: { atr_x: 2, floor_pct: 0.005 },
+          enough_extremes: true,
+          provisional: {
+            since_pivot_time: '2026-10-05', bars_since_last_pivot: 6,
+            high: { idx: 389, time: '2026-10-12', price: 3600, provisional: true, confirmed: false,
+                    bars_since: 2, bars_to_confirm: 1 },
+            low: { idx: 386, time: '2026-10-06', price: 3100, provisional: true, confirmed: false,
+                   bars_since: 5, bars_to_confirm: 0 },
+            note: 'پنجرۀ تأیید این دو کامل نشده؛ رأیِ قطعی روی آن‌ها ساخته نمی‌شود',
+          },
+          reason: null,
+        },
+        W: { timeframe: 'W', confirmed_trend: 'na', counts: { major_highs: 1, major_lows: 1,
+              dropped_minor: 8 }, enough_extremes: false, bucket_forming: true,
+             reason: 'تنها ۱ سقف و ۱ کفِ ماژور از ۹ پیوت (آستانه ۲٫۰×ATR)' },
+        M: { timeframe: 'M', confirmed_trend: 'na', enough_extremes: false, reason: null },
+      },
+    } as unknown as FtsAnalysisData['trend'];
+    return f;
+  }
+
+  it('شمارِ ماژور و ردیفِ «در حال شکل‌گیری» نشان داده می‌شود', () => {
+    render(<FtsTrendPanel data={majorFixture()} />);
+    const d = screen.getByTestId('fts-major-counts-D');
+    expect(d.textContent).toContain('۲۸/۲۳');
+    expect(d.textContent).toContain('۲۰ کوچک');
+    const p = screen.getByTestId('fts-provisional-D');
+    expect(p.textContent).toContain('در حال شکل‌گیری (تأیید نشده)');
+    expect(p.textContent).toContain('۳۶۰۰');
+  });
+
+  it('مبنایِ زمانیِ سریِ بسته و دلیلِ کمبودِ ماژور درِ رابط خوانده می‌شود', () => {
+    render(<FtsTrendPanel data={majorFixture()} />);
+    expect(screen.getByTestId('fts-trend-asof').textContent).toContain('۲۰۲۶-۱۰-۱۷');
+    expect(screen.getByTestId('fts-trend-reason-w').textContent).toContain('ماژور');
+  });
+
+  it('رأیِ قطعی با بی‌ماژور بودنِ ماهانه عوض نمی‌شود (provisional فقط اطلاع است)', () => {
+    const f = majorFixture();
+    render(<FtsTrendPanel data={f} />);
+    const panel = screen.getByTestId('fts-trend-panel');
+    // همان Badgeِ روزانۀِ fixture (down) با رأیِ ماژورِ سرور یکی است؛ رابط هیچ
+    // جهتِ تازه‌ای از `provisional` یا `confirmed_trend` نمی‌سازد.
+    expect(panel.textContent).toContain('تحلیل ساختاری FTS');
+    expect(f.trend!.D!.trend).toBe('down');
+    expect(f.trend!.major_swings!.D!.confirmed_trend).toBe('up');
+  });
+
+  it('نطقۀِ zod پروندۀِ ماژور را دور نمی‌ریزد', () => {
+    const parsed = FtsAnalysis.parse({ ...majorFixture(), trend: { ...majorFixture().trend } });
+    expect(parsed.trend?.major_swings?.W?.counts?.major_highs).toBe(1);
+    expect(parsed.trend?.major_swings?.W?.reason).toContain('ماژور');
+    expect(parsed.trend?.major_swings?.D?.provisional?.high?.confirmed).toBe(false);
+    expect(parsed.trend?.as_of).toBe('2026-10-17');
+  });
+
+  it('ساختارِ بدونِ پروندۀِ ماژور (payloadِ قدیمی) همانجا می‌شکند، نه با رأیِ تازه', () => {
+    render(<FtsTrendPanel data={fixture()} />);
+    expect(screen.queryByTestId('fts-major-counts-D')).toBeNull();
+    expect(screen.queryByTestId('fts-provisional-D')).toBeNull();
+    expect(screen.getByTestId('fts-trend-panel').textContent).toContain('روزانه');
   });
 });

@@ -235,6 +235,80 @@ const StructurePoint = z.object({
   label: z.string(),
   ref_time: z.string().nullish(),
   ref_price: z.number().nullish(),
+  // درجۀبندیِ ماژور (مأموریت ۱۴۰۵-۰۷-۲۸): فهرستِ لایۀِ ساختار حالا فقط
+  // Extremeهایِ ماژور است، پس رابط باید بتواند بگوید این نقطه با چه عددی ماژور
+  // شمرده شده است.
+  major: z.boolean().nullish(),
+  leg_pct: z.number().nullish(),
+  leg_atr_x: z.number().nullish(),
+  recent: z.boolean().nullish(),
+});
+
+// ── پروندۀِ «چه چیزی رأی را ساخت» — کنارِ رأی، نه داخلِ آن ────────────────────
+// `confirmed_trend` رأیِ داورِ System 1 رویِ ماژورهاست؛ `provisional` فقط اطلاع
+// است و هیچِ کامپوننتی حق ندارد با آن جهت یا حکمِ قیف را عوض کند.
+const MajorSwingPoint = z.object({
+  idx: z.number(),
+  time: z.string(),
+  kind: z.string(),
+  price: z.number(),
+  confirm_idx: z.number().nullish(),
+  confirm_time: z.string().nullish(),
+  confirm_age_bars: z.number().nullish(),
+  leg_pct: z.number().nullish(),
+  leg_pct_in: z.number().nullish(),
+  leg_pct_out: z.number().nullish(),
+  out_pending: z.boolean().nullish(),
+  leg_atr_x: z.number().nullish(),
+  recent: z.boolean().nullish(),
+  ma100_ctx: z.string().nullish(),
+});
+
+const ProvisionalLeg = z.object({
+  idx: z.number(),
+  time: z.string(),
+  price: z.number().nullish(),
+  provisional: z.boolean().nullish(),
+  confirmed: z.boolean().nullish(),
+  bars_since: z.number().nullish(),
+  bars_to_confirm: z.number().nullish(),
+});
+
+const MajorContext = z.object({
+  timeframe: z.string().nullish(),
+  confirmed_trend: z.string().nullish(),
+  verdict_basis: z.string().nullish(),
+  /** آخرینِ کندلِ **بستهٔ** همان سری — مبنایِ «قطعی بودن»ِ رأی */
+  as_of: z.string().nullish(),
+  daily_as_of: z.string().nullish(),
+  bars: z.number().nullish(),
+  /** سبدِ هفتگی/ماهانۀِ آخر هنوز کندلِ روزانۀِ جدید می‌گیرد (اطلاع، نه رأی) */
+  bucket_forming: z.boolean().nullish(),
+  major_swings: z.array(MajorSwingPoint).nullish(),
+  counts: z
+    .object({
+      pivots: z.number().nullish(),
+      majors: z.number().nullish(),
+      major_highs: z.number().nullish(),
+      major_lows: z.number().nullish(),
+      minor_highs: z.number().nullish(),
+      minor_lows: z.number().nullish(),
+      undecided: z.number().nullish(),
+      dropped_minor: z.number().nullish(),
+    })
+    .nullish(),
+  threshold: z.object({ atr_x: z.number().nullish(), floor_pct: z.number().nullish() }).nullish(),
+  enough_extremes: z.boolean().nullish(),
+  provisional: z
+    .object({
+      since_pivot_time: z.string().nullish(),
+      bars_since_last_pivot: z.number().nullish(),
+      high: ProvisionalLeg.nullish(),
+      low: ProvisionalLeg.nullish(),
+      note: z.string().nullish(),
+    })
+    .nullish(),
+  reason: z.string().nullish(),
 });
 
 // وضعیتِ عمومیِ canonical و جدولِ نقش‌ها — تنها منبعِ متنِ «وضعیت FTS» و تنها
@@ -268,6 +342,16 @@ export const FtsAnalysis = z.object({
       M: TrendLeg.nullish(),
       alignment: z.string().nullish(),
       matrix: MatrixDecision.nullish(),
+      // مبنایِ زمانیِ رأی: آخرینِ کندلِ بستهٔ روزانۀِ ساختار (کندلِ تکمیل‌نشده
+      // درِ ساختارِ جهت نیست، فقط زیرِ `provisional` گزارش می‌شود).
+      as_of: z.string().nullish(),
+      major_swings: z
+        .object({
+          D: MajorContext.nullish(),
+          W: MajorContext.nullish(),
+          M: MajorContext.nullish(),
+        })
+        .nullish(),
     })
     .nullish(),
   fib: Fib,
