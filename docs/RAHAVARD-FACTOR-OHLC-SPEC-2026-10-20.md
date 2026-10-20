@@ -18,6 +18,7 @@ ref_factor(d) = type7.close(d) / type0.close(d)
 - `type0` = بدون تعدیل؛ `type7` = عملکردی.
 - آخرین کندل مرجع `factor = 1.0` است (لنگر back-adjustment).
 - گام (step) وقتی است که `|factor(d)/factor(prev)-1| > 0.0005`.
+- در `parity_v4_steps.csv`، `ref_ratio = 1 / (factor(d)/factor(prev))` است؛ یعنی **نسبت قیمت** (تعدیل)، نه نسبت factor. `ref_ratio < 1` یعنی قیمت کاهش یافته و factor افزایش یافته است.
 - جفت‌کردن گام‌ها: فاصلهٔ حداکثر 5 روز و نسبت گام حداکثر 20%؛ «اختلاف گام» وقتی نسبت دو گام بیش از 1% فرق کند.
 - مقایسهٔ Factor دو سطح دارد: **مطلق** (بدون لنگر) و **نرمال‌شده** (تقسیم بر factor اولین تاریخ مشترک). لنگر/رویداد آینده فقط سطح مطلق را جابه‌جا می‌کند.
 
@@ -92,10 +93,11 @@ functional_price(t) = raw_price(t) * factor(t)
 گام سالانهٔ مرجع، تعدیل نقدی DPS است:
 
 ```
-step_ratio = base_close / (base_close - dps)
+factor_step = base_close / (base_close - dps)
+price_ratio  = (base_close - dps) / base_close = 1 / factor_step
 ```
 
-که معادل `1 - dps/base_close` در سمت قیمت است.
+`ref_ratio` در رجیستر گام‌ها همان `price_ratio` است. جدول زیر `implied = 1 - 1/factor_step` را نشان می‌دهد تا مستقیماً با `ref_ratio` قابل مقایسه باشد.
 
 ### آزمون عددی (روی گام‌های 2020+)
 
@@ -111,6 +113,28 @@ step_ratio = base_close / (base_close - dps)
 - وجود و هم‌ترازی DPS با گام‌ها: **CONFIRMED**.
 - فرمول دقیق و «base_close» مرجع: **PARTIALLY_CONFIRMED**. برای `داسوه` 2026، base ضمنی `1800 / 0.070093 = 25680` است؛ آخرین close در دسترس `24920` است، پس مرجع احتمالاً از قیمت پایه/پایانیِ روز رویداد یا قیمت پایهٔ سطر بی‌معامله استفاده می‌کند، نه صرفاً close قبل از گام.
 - نتیجهٔ عملی: استفاده از نسبت رسمی `priceAdjust` به‌تنهایی کافی نیست؛ گام‌های سالانه باید از DPS + قیمت پایهٔ همان رویداد ساخته شوند.
+
+### 4.1. REF_ONLY چیست؟ DPS یا افزایش سرمایه؟
+
+از 658 گام REF_ONLY:
+
+| جهت `ref_ratio` | تعداد | تفسیر |
+|---|---:|---|
+| `< 0.995` (قیمت کاهش، factor افزایش) | 578 | DPS/افزایش سرمایه |
+| `0.995..1.005` | 78 | گام کوچک/نزدیک یک |
+| `> 1.005` (قیمت افزایش) | 2 | تجزیه/کاهش سرمایه |
+
+`timescale_marks` علاوه بر DPS، ردیف‌های `type_id=4` با `capital_change` دارد:
+
+```
+{contribution_percent, reserve_percent, premium_percent,
+ previous_capital, new_capital}
+```
+
+برای 6 نماد REF_ONLY نمونه (`ولانا`, `غانيزان`, `كربن`, `سشمال`, `سهرمز`, `فبيرا`) همهٔ گام‌ها در جهت `<0.995` بودند و در بازهٔ نزدیک گام، DPS و/یا capital_change وجود داشت؛ مثلاً `ولانا` 2026-06-28 و 2026-07-25 دو capital_change دارد و `سهرمز` 2026-02-14 DPS=10000.
+
+- وجود منبع (DPS + capital_change) و هم‌ترازی تاریخی: **CONFIRMED**.
+- فرمول دقیق ترکیب DPS و capital_change: **UNVERIFIED**؛ باید `previous_capital/new_capital` و DPS را با هم روی قیمت پایهٔ همان رویداد آزمود.
 
 ## 5. تداخل گسست پایه و رویداد رسمی
 
