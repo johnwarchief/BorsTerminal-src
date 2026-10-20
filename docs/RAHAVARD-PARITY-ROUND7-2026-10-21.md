@@ -93,7 +93,9 @@
 - تست جدید `dev/test_dps_formula_v1.py` در SUITES ثبت شد.
 - اجرای کامل (اول): **139 suite counted، 34 silent، 0 skipped**؛ تنها شکست `FTS rule->algorithm map` بود — ارجاع‌های `NAME:LINE` با جابه‌جایی خطوط `api/chart.py` کهنه شده بودند. سند به `_fts_analyze_candles:4349`, `_fts_jet_setup:3327`, `_fts_analyze_symbol:4757` به‌روز شد و تست مستقل **11/11** سبز است.
 - `PROTECTED_DB_UNCHANGED` برای هر دو اجرا؛ اثرانگشت منطقی `cdb73c40…3fcd4`.
-- اجرای تمیز نهایی پس از این اصلاح: **در حال اجرا**؛ نتیجه در همین بخش تکمیل می‌شود.
+- **اجرای تمیز نهایی: `ALL SUITES PASSED`** — **139 suite counted، 34 silent، 0 skipped، 0 failed**. تست جدید DPS در همان اجرا rc=0 است (در فهرست silent چون شمارندهٔ assertion چاپ نمی‌کند؛ 20/20 مستقل سبز است).
+- sha256 دیتابیس عملیاتی پس از گیت: `fff358a78be74e8d21961251a727116e102df84cea70f87b4dcb7da198667004` (بدون تغییر).
+- `main`، tagها، releaseها و push/merge: دست‌نخورده.
 
 ## ۸. فایل‌ها
 
