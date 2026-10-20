@@ -2,7 +2,7 @@
 
 **تاریخ اجرا:** ۲۰۲۶-۱۰-۲۰ (۱۴۰۵-۰۷-۲۸) · **شاخه:** `mission/market-status-data-parity-qoder3-2026-10-20`
 **مبنای کار:** `origin/main` = `a14375c14cfb8fc616fb3312c685f8a5b0f79ab3`
-**HEAD تا پیش از commitِ این گزارش:** `1057ca3e` (کد/تست: `8bbb0a72`)؛ SHA نهایی در §۱۴ و commitِ ثبتِ SHA
+**HEAD تا پیش از commitِ ثبتِ SHA:** `c9f469b0` (کد/تست: `8bbb0a72`، مستندات/شواهد: `1057ca3e`)
 **دامنه:** فقط تبِ «وضعیت بازار»؛ داده، قرارداد، API، UI، تازگی و universe. موتور تکنیکال، FTS، Sarkhati، اجرای سفارش، installer و طراحیِ کلی خارج از دامنه ماندند.
 
 > **حکمِ نهایی: `BLOCKED` — نه `PASS — 100%`.**
@@ -283,8 +283,9 @@ Snapshotها:
 | commitهای قبلی | `dc9896a447e161c659fd09a13b6d8be07c8d6688`، `c3bb0eebda09805fce935ef4afde4a3f160f7bff` |
 | commitِ کد/تستِ این دور | `8bbb0a72` |
 | commitِ مستندات/شواهدِ این دور | `1057ca3e` |
-| commitِ همین گزارش | `[self]` (پس از ثبت، SHA در commitِ بعدی ثبت می‌شود) |
-| جلوتر از `origin/main` | ۵ (پس از همین commit)؛ با commitِ ثبتِ SHA: ۶ |
+| commitِ همین گزارش | `c9f469b0` |
+| commitِ ثبتِ SHA | commitِ بعدی؛ SHA در پاسخِ نهایی گزارش می‌شود |
+| جلوتر از `origin/main` | ۶ (با commitِ ثبتِ SHA) |
 | push/merge/tag/release | انجام نشد |
 | `main` محلی | `33f7d16fbaabe8805a348072a68601c9616c5298` — دست‌نخورده |
 | `origin/main` | `a14375c14cfb8fc616fb3312c685f8a5b0f79ab3` |
