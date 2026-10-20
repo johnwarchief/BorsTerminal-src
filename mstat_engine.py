@@ -1172,6 +1172,28 @@ def market_index(conn) -> dict | None:
             "pi_last": _opt(r[7]), "pi_change": _opt(r[8]), "pi_pct": _opt(r[9])}
 
 
+def market_impact(conn) -> dict | None:
+    """اثرِ رسمیِ هر نماد بر شاخص کل از `market_impact` — یا None.
+
+    فقط تازه‌ترین نشستِ ثبت‌شده؛ جدولِ غایب/خالی = None، نه صفر.
+    """
+    try:
+        d = conn.execute("SELECT MAX(d_even) FROM market_impact").fetchone()[0]
+        if not d:
+            return None
+        rows = conn.execute(
+            "SELECT ins_code, symbol, name, effect, p_closing, rank FROM market_impact"
+            " WHERE d_even=? ORDER BY rank", (int(d),)).fetchall()
+    except sqlite3.Error:
+        return None
+    if not rows:
+        return None
+    return {"d_even": int(d),
+            "by_ins": {str(r[0]): {"symbol": r[1], "name": r[2], "effect": r[3],
+                                   "p_closing": r[4], "rank": r[5]}
+                       for r in rows}}
+
+
 def market_total_rials(conn) -> tuple:
     """(کل ارزش بازار به ریال, منبع) — تنها نقطهٔ خواندنِ این عدد در کل مخزن.
 

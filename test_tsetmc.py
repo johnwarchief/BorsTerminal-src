@@ -301,6 +301,54 @@ def fetch_price_index(s):
     return None
 
 
+MARKET_IMPACT_TABLE = "market_impact"
+
+
+def fetch_inst_effect(s, flow: int = 1, top: int = 500):
+    """اثرِ رسمیِ هر نماد بر شاخصِ کل — `Index/GetInstEffect/0/{flow}/{top}`.
+
+    flow=1 بورس است. برگرداندنِ [] یعنی منبع چیزی نداد؛ هیچ اثرِ ساختگی ساخته
+    نمی‌شود. `instEffectValue` همان واحدی است که TSETMC زیر «اثر بر شاخص»
+    نشان می‌دهد.
+    """
+    rows = polite_get(s, f"{BASE}/Index/GetInstEffect/0/{flow}/{top}", "instEffect")
+    return rows or []
+
+
+def ensure_market_impact_schema(conn):
+    conn.execute(
+        f"CREATE TABLE IF NOT EXISTS {MARKET_IMPACT_TABLE} ("
+        " d_even INTEGER, ins_code TEXT, symbol TEXT, name TEXT, effect REAL,"
+        " p_closing REAL, rank INTEGER, source TEXT, updated_at TEXT,"
+        " PRIMARY KEY (d_even, ins_code))")
+
+
+def save_market_impact(conn, rows, d_even, now=None):
+    """اثرهای رسمیِ همان نشست را می‌نویسد؛ نبودِ پاسخ ردیف‌های قبلی را پاک نمی‌کند."""
+    if not rows or not d_even:
+        return 0
+    ensure_market_impact_schema(conn)
+    now = now or datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    recs = []
+    for i, x in enumerate(rows, start=1):
+        inst = x.get("instrument") or {}
+        ins = str(x.get("insCode") or inst.get("insCode") or "").strip()
+        eff = num(x.get("instEffectValue"))
+        if not ins or eff is None:
+            continue
+        recs.append((int(d_even), ins, (inst.get("lVal18AFC") or "").strip() or None,
+                     (inst.get("lVal30") or "").strip() or None, eff,
+                     num(x.get("pClosing")), i, "tsetmc:Index/GetInstEffect", now))
+    if not recs:
+        return 0
+    conn.executemany(
+        f"INSERT OR REPLACE INTO {MARKET_IMPACT_TABLE}"
+        " (d_even, ins_code, symbol, name, effect, p_closing, rank, source, updated_at)"
+        " VALUES (?,?,?,?,?,?,?,?,?)", recs)
+    conn.commit()
+    return len(recs)
+
+
 def ensure_market_index_schema(conn):
     """جدولِ شاخصِ رسمی را idempotent می‌سازد.
 
@@ -2801,6 +2849,10 @@ def _save_market_snapshot(s, conn):
         print(f"  [market-index] {bourse_ov.get('indexLastValue')} / هموزن "
               f"{bourse_ov.get('indexEqualWeightedLastValue')} / قیمتِ وزنی "
               f"{(price_idx or {}).get('last')} (d_even {total_deven or d_even})")
+    imp = fetch_inst_effect(s)
+    n_imp = save_market_impact(conn, imp, total_deven or d_even, now)
+    if n_imp:
+        print(f"  [market-impact] اثرِ رسمیِ {nfmt(n_imp)} نماد بر شاخص ثبت شد")
     if save_market_liquidity(conn, total_deven or d_even, now):
         print("  [market-liquidity] همتِ همین نشست در market_liquidity ثبت شد")
     conn.commit()
@@ -3256,6 +3308,10 @@ def main():
         print(f"  [market-index] {bourse_ov.get('indexLastValue')} / هموزن "
               f"{bourse_ov.get('indexEqualWeightedLastValue')} / قیمتِ وزنی "
               f"{(price_idx or {}).get('last')}")
+    imp = fetch_inst_effect(s)
+    n_imp = save_market_impact(conn, imp, total_deven or d_even_today, now)
+    if n_imp:
+        print(f"  [market-impact] اثرِ رسمیِ {nfmt(n_imp)} نماد ثبت شد")
     if save_market_liquidity(conn, total_deven or d_even_today, now):
         print("  [market-liquidity] همتِ همین نشست در market_liquidity ثبت شد")
     # v9.8.1 — گارد پنجرهٔ بازار (۰۹:۰۰–۱۲:۳۵): بعد از بسته شدن بازار نقطهٔ

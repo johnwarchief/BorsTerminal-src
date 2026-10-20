@@ -44,6 +44,8 @@ SUITES = [
      'official price-weighted index card; missing index stays unavailable, not zero'),
     ('dev/mstat_value_source_semantics_v1.py',
      'client value provenance: native/mixed/reconstructed, no hidden fallback'),
+    ('dev/market_impact_official_v1.py',
+     'official TSETMC index impact; derived fallback is explicitly labelled'),
     # رأیِ مالک (۱۴۰۵-۰۷-۲۲): «نمادهای زیرِ نظر» هم پرچم‌هایِ تابلو را می‌بیند —
     # انتقال از فید، بی‌محاسبۀِ دوم، و «بی‌منبع» هرگز «پرچمی ندارد» نمی‌شود.
     ('dev/test_mainwatch_flags_v1.py', 'mainwatch rows carry the tape flags, never a fabricated one'),
