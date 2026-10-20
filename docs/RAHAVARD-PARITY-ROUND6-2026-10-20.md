@@ -19,7 +19,7 @@
 | مورد | مقدار |
 |---|---|
 | HEAD مبنا | `b5504c5c` |
-| کامیت‌های این دور | `354ac2e6` (DB isolation)، `6fc5f8c4` (ledger dedupe)، `9f290721` (history writer test) |
+| کامیت‌های این دور | `354ac2e6` (DB isolation)، `6fc5f8c4` (ledger dedupe)، `9f290721` (history writer test)، `a0b5cb6d` (gate fixes)؛ docs: `c1944cdc..df55cf40` |
 | `market.db` عملیاتی (Round 5) | `fff358a78be74e8d21961251a727116e102df84cea70f87b4dcb7da198667004` |
 | اثرانگشت منطقی عملیاتی | `cdb73c40a14f3fefbf6053bb65716e3cbc50f2af464b4dd2a1934ace2b73fcd4` |
 | وضعیت پس از تحقیق | بدون تغییر (byte و logical) |
@@ -203,8 +203,13 @@ CSV کامل: `docs/RAHAVARD-PARITY-CORPUS-2026-10-20.csv`.
 - اثرانگشت DB عملیاتی قبل/بعد مقایسه می‌شود؛ تغییر منطقی ⇒ `PROTECTED_DB_CHANGED` و شکست گیت.
 - در اجرای اول، `dev/chart_api_check_v95.py` در worktree تازه 10/18 شد چون `frontend/node_modules` وجود نداشت. با اتصال (junction) به نصب موجود `klinecharts 10.0.3`، همین گارد مستقل **18/18** سبز شد؛ این یک رفع محیطی است، نه تغییر کد.
 - اجرای تمیز (با junction): `chart_api_check` 18/18، `confidence_engine` 107/107، `mstat` 207/207، `screener<->card` 1/1؛ تنها شکست تا این لحظه `test_rule_map_citations` بود. علت: جابه‌جایی خطوط `api/chart.py` در اصلاح ledger، ارجاع‌های `NAME:LINE` را کهنه کرد. سند به `_fts_analyze_candles:4281`, `_fts_jet_setup:3259`, `_fts_analyze_symbol:4689` به‌روز شد و تست مستقل **11/11** سبز است.
-- اجرای کامل تمیز همچنان در جریان است. نتیجهٔ نهایی (ALL SUITES PASSED یا فهرست شکست‌ها) در پایان همین بخش ثبت می‌شود؛ تا آن زمان هیچ سبزی کامل ادعا نمی‌شود.
-- اثرانگشت DB عملیاتی در طول اجرا **بدون تغییر** ماند: `cdb73c40a14f3fefbf6053bb65716e3cbc50f2af464b4dd2a1934ace2b73fcd4`.
+- اجرای کامل تمیز: **140 suite counted، 32 silent، 0 skipped**. سه شکست:
+  1. `official fund distributions + single-session backfill` → 19/20 (امضای برگشتی `_merge_official_price_adjust`).
+  2. `FTS rule->algorithm map` → 10/11 (ارجاع‌های NAME:LINE).
+  3. `portable mode` → 33/9 (تعارض `BORS_WORK_DIR` با قرارداد portable).
+- پس از اصلاح، همان سه سوئیت مستقل: fund/backfill **20/20**، rule-map **11/11**، portable **42/42**. تست‌های جدید: ledger **7/7**، isolation **12/12**، history writer **6/6**، chart API **18/18**. سوئیت‌های سنگین در همان اجرای کامل: confidence **107/107**، mstat **207/207**، screener **1/1**.
+- یک اجرای کامل تمیز دیگر پس از این سه اصلاح انجام نشد؛ بنابراین `ALL SUITES PASSED` ادعا نمی‌شود. با این فرمان، اجرای بعدی باید هر سه را سبز ببیند: `python dev/run_all_tests.py`.
+- اثرانگشت DB عملیاتی در طول اجرا **بدون تغییر** ماند: `cdb73c40a14f3fefbf6053bb65716e3cbc50f2af464b4dd2a1934ace2b73fcd4`؛ sha256: `fff358a78be74e8d21961251a727116e102df84cea70f87b4dcb7da198667004`. کپی worktree مأموریت نیز منطقاً بدون تغییر ماند.
 
 ## 8. فایل‌ها و شواهد
 
