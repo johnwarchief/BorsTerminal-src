@@ -126,6 +126,8 @@ def main() -> int:
     ck(mock["steps"][5]["status"] == C.BLOCKED
        and mock["state"] != C.STATE_CONNECTED,
        "آداپتور mock ⇒ نشست API مسدود، نه سبز", mock["steps"][5])
+    ck(mock["steps"][6]["status"] == C.UNVERIFIED,
+       "آداپتور mock ⇒ قرارداد ارسال UNVERIFIED، نه PASS", mock["steps"][6])
     no_token = diag(e=ex(live_enabled=False,
                          session={"state": "disconnected", "proven": False}))
     ck(no_token["steps"][5]["status"] in (C.BLOCKED, C.UNVERIFIED),

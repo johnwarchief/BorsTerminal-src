@@ -830,7 +830,9 @@ def get_status() -> dict[str, Any]:
                               "writes_gate": "env:BORS_EXECUTION_LIVE",
                               "applies_on_restart": True,
                               "secrets_stored": False},
-        "wire_hypothesis": (ADAPTER_KIND == "easytrader") and WIRE_HYPOTHESIS,
+        # سیم حتی وقتی آزموده نشده، فرضیه است؛ «آزموده‌نشده» را با «تأییدشده»
+        # یکی نکن. آزمون‌شدن از mode_matrix/live می‌آید، نه از این پرچم.
+        "wire_hypothesis": WIRE_HYPOTHESIS,
         # منشأِ هر مسیرِ سیم (§۳-۲): «فقط درِ کدِ شخصِ ثالث» از «پیکربندیِ
         # انتشاریافتۀِ خودِ کارگزاری» و «رفتارِ دیده‌شده» جداست. بی‌این تفکیک،
         # نامِ یکِ میدان درِ مرجع، مدرکِ قراردادِ زنده شمرده می‌شود.
@@ -980,7 +982,7 @@ def get_strategies() -> dict[str, Any]:
                "read_only": bool(READ_ONLY_REQUESTED),
                "traffic_allowed": bool(TRAFFIC_ALLOWED),
                "session": _session_dict(),
-               "wire_hypothesis": (ADAPTER_KIND == "easytrader") and WIRE_HYPOTHESIS})
+               "wire_hypothesis": WIRE_HYPOTHESIS})
     return st
 
 
@@ -1041,7 +1043,7 @@ def post_strategy_prepare(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
             "order": order.public(), "dry_run": DRY_RUN,
             "live": _live_now(),
             "wire_preview": _wire_preview(draft),
-            "wire_hypothesis": (ADAPTER_KIND == "easytrader") and WIRE_HYPOTHESIS}
+            "wire_hypothesis": WIRE_HYPOTHESIS}
 
 
 @router.post("/api/execution/strategies/trigger")

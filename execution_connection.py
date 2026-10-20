@@ -237,16 +237,27 @@ def diagnose(*, app_version: str, host: Mapping[str, Any],
     contract_raw = execution.get("wire_hypothesis")
     contract_hypothesis = contract_raw is True
     contract_known = contract_raw is not None
+    mock_adapter = adapter == "mock"
+    contract_pass = (not mock_adapter and contract_known
+                     and not contract_hypothesis)
+    if mock_adapter:
+        contract_reason = "این حالت آزمایشی است؛ مسیر ارسال سفارش آزموده نشده"
+        contract_action = "برای آزمون قرارداد، روش اتصال را روی EasyTrader بگذارید"
+    elif not contract_known:
+        contract_reason = "وضعیت ارسال سفارش از سرویس نیامده"
+        contract_action = "بدون شاهد واقعی، تأییدنشده می‌ماند"
+    elif contract_hypothesis:
+        contract_reason = "مسیر ارسال سفارش هنوز تأیید نشده است"
+        contract_action = "بدون شاهد واقعی، تأییدنشده می‌ماند"
+    else:
+        contract_reason = "مسیر ارسال سفارش تأیید شده است"
+        contract_action = ""
     steps.append(_step(
-        "contract",
-        PASS if (contract_known and not contract_hypothesis) else UNVERIFIED,
+        "contract", PASS if contract_pass else UNVERIFIED,
         "wire_hypothesis=%s source=%s" % (
             contract_raw,
             (execution.get("wire_provenance") or {}).get("order_create", {}).get("kind", "?")),
-        "وضعیت ارسال سفارش از سرویس نیامده" if not contract_known else
-        ("مسیر ارسال سفارش هنوز تأیید نشده است" if contract_hypothesis
-         else "مسیر ارسال سفارش تأیید شده است"),
-        "بدون شاهد واقعی، تأییدنشده می‌ماند"))
+        contract_reason, contract_action))
 
     proof = session.get("verified_by") or {}
     read_status = PASS if proven and proof.get("path") else BLOCKED
