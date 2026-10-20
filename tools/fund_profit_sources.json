@@ -1,0 +1,243 @@
+{
+  "note": "Official fund-manager distribution portals (Rayan Ham Afza). Amounts are per unit in rials; profitDate is Jalali.",
+  "funds": [
+    {
+      "asset_id": "1951",
+      "symbol": "پارند",
+      "symbols": [
+        "پارند",
+        "پارند2"
+      ],
+      "name": "صندوق س. پارند پایدار سپهر",
+      "portal": "https://www.parandfund.ir/",
+      "endpoint": "https://www.parandfund.ir/api/v1/public/fundProfits/1",
+      "fund_id": 1,
+      "source": "fund-portal:parandfund.ir",
+      "evidence": "HTTP 200, 114 monthly records, 1396/02..1405/07"
+    },
+    {
+      "asset_id": "1656",
+      "symbol": "ارمغان",
+      "symbols": [
+        "ارمغان",
+        "ارمغان2"
+      ],
+      "name": "ص سرمايه گذاري ارمغان ايرانيان",
+      "portal": "https://armaghanfund.ir/",
+      "endpoint": "https://armaghanfund.ir/api/v1/public/fundProfits/1",
+      "fund_id": 1,
+      "source": "fund-portal:armaghanfund.ir",
+      "evidence": "HTTP 200 with certificate hostname mismatch; same Rayan Ham Afza bundle; monthly records returned"
+    },
+    {
+      "asset_id": "19858",
+      "symbol": "نخل",
+      "symbols": [
+        "نخل",
+        "نخل2",
+        "نخل4"
+      ],
+      "name": "نخل (تأمین سرمایه خلیج فارس)",
+      "portal": "https://nakhl.pgibc.ir/",
+      "endpoint": "https://nakhl.pgibc.ir/api/v1/public/fundProfits/1",
+      "fund_id": 1,
+      "source": "fund-portal:nakhl.pgibc.ir",
+      "evidence": "HTTP 200 Rayan Ham Afza fundProfits/1; identified by subagent web audit 2026-10-20"
+    },
+    {
+      "asset_id": "6734",
+      "symbol": "دارا",
+      "symbols": [
+        "دارا",
+        "دارا2",
+        "دارا4"
+      ],
+      "name": "دارا (سبدگردان الگوریتم)",
+      "portal": "https://darafund.ir/",
+      "endpoint": "https://darafund.ir/api/v1/public/fundProfits/1",
+      "fund_id": 1,
+      "source": "fund-portal:darafund.ir",
+      "evidence": "HTTP 200 Rayan Ham Afza fundProfits/1; identified by subagent web audit 2026-10-20"
+    },
+    {
+      "asset_id": "19938",
+      "symbol": "ترنج ثابت",
+      "symbols": [
+        "ترنج ثابت",
+        "ترنج ثابت2"
+      ],
+      "name": "ترنج سودمند (مشاور سرمایه‌گذاری ترنج)",
+      "portal": "https://toranj.fund/",
+      "endpoint": "https://toranj.fund/api/v1/public/fundProfits/1",
+      "fund_id": 1,
+      "source": "fund-portal:toranj.fund",
+      "evidence": "HTTP 200 Rayan Ham Afza fundProfits/1; identified by subagent web audit 2026-10-20"
+    },
+    {
+      "asset_id": "20618",
+      "symbol": "بلوط",
+      "symbols": [
+        "بلوط",
+        "بلوط2"
+      ],
+      "name": "بلوط (سبدگردان زاگرس)",
+      "portal": "https://shokouhfund.ir/",
+      "endpoint": "https://shokouhfund.ir/api/v1/public/fundProfits/1",
+      "fund_id": 1,
+      "source": "fund-portal:shokouhfund.ir",
+      "evidence": "HTTP 200 Rayan Ham Afza fundProfits/1; identified by subagent web audit 2026-10-20"
+    },
+    {
+      "asset_id": "28330",
+      "symbol": "همگام",
+      "symbols": [
+        "همگام",
+        "همگام2"
+      ],
+      "name": "همگام (سبدگردان آشنا)",
+      "portal": "https://hamgamfund.ir/",
+      "endpoint": "https://hamgamfund.ir/api/v1/public/fundProfits/1",
+      "fund_id": 1,
+      "source": "fund-portal:hamgamfund.ir",
+      "evidence": "HTTP 200 Rayan Ham Afza fundProfits/1; identified by subagent web audit 2026-10-20"
+    },
+    {
+      "asset_id": "811",
+      "symbol": "سخند",
+      "symbols": [
+        "سخند",
+        "سخند4"
+      ],
+      "name": "سخند (امین نیکان آفاق)",
+      "portal": "https://khobreganetf.com/",
+      "endpoint": "https://khobreganetf.com/api/v1/public/fundProfits/1",
+      "fund_id": 1,
+      "source": "fund-portal:khobreganetf.com",
+      "evidence": "HTTP 200 Rayan Ham Afza fundProfits/1; identified by subagent web audit 2026-10-20"
+    },
+    {
+      "asset_id": "1598",
+      "symbol": "آسا",
+      "symbols": [
+        "آسا",
+        "آسا2"
+      ],
+      "name": "آسا (کارگزاری بانک کارآفرین)",
+      "portal": "https://www.akfund.ir/",
+      "endpoint": "https://www.akfund.ir/api/v1/public/fundProfits/1",
+      "fund_id": 1,
+      "source": "fund-portal:www.akfund.ir",
+      "evidence": "HTTP 200 Rayan Ham Afza fundProfits/1; identified by subagent web audit 2026-10-20"
+    },
+    {
+      "asset_id": "19160",
+      "symbol": "پاداش",
+      "symbols": [
+        "پاداش",
+        "پاداش2",
+        "پاداش4"
+      ],
+      "name": "پاداش (سبدگردان پاداش سرمایه)",
+      "portal": "https://arzeshpadash.com/",
+      "endpoint": "https://arzeshpadash.com/api/v1/public/fundProfits/1",
+      "fund_id": 1,
+      "source": "fund-portal:arzeshpadash.com",
+      "evidence": "HTTP 200 Rayan Ham Afza fundProfits/1; identified by subagent web audit 2026-10-20"
+    },
+    {
+      "asset_id": "803",
+      "symbol": "تداوم",
+      "symbols": [
+        "تداوم",
+        "تداوم4"
+      ],
+      "name": "صندوق تداوم اطمینان تمدن",
+      "portal": "https://tadavomtamadon.ir",
+      "endpoint": "https://tadavomtamadon.ir/Reports/FundDividendProfitReport",
+      "legacy": true,
+      "report_path": "/Reports/FundDividendProfitReport",
+      "fund_id": "legacy",
+      "source": "fund-portal:tadavomtamadon.ir",
+      "evidence": "legacy ASP.NET report; monthly table"
+    },
+    {
+      "asset_id": "18624",
+      "symbol": "هامرز",
+      "symbols": [
+        "هامرز"
+      ],
+      "name": "صندوق اعتماد هامرز",
+      "portal": "https://hummersfund.ir",
+      "endpoint": "https://hummersfund.ir/Reports/FundDividendProfitReport",
+      "legacy": true,
+      "report_path": "/Reports/FundDividendProfitReport",
+      "fund_id": "legacy",
+      "source": "fund-portal:hummersfund.ir",
+      "evidence": "legacy ASP.NET report; monthly table",
+      "zero_profit_months": [
+        "1403/11"
+      ]
+    },
+    {
+      "asset_id": "19692",
+      "symbol": "آفاق",
+      "symbols": [
+        "آفاق",
+        "آفاق4"
+      ],
+      "name": "صندوق افق آتی",
+      "portal": "https://ofoghati.ir",
+      "endpoint": "https://ofoghati.ir/Reports/FundDividendProfitReport",
+      "legacy": true,
+      "report_path": "/Reports/FundDividendProfitReport",
+      "fund_id": "legacy",
+      "source": "fund-portal:ofoghati.ir",
+      "evidence": "legacy ASP.NET report; monthly table"
+    },
+    {
+      "asset_id": "1702",
+      "symbol": "آسان",
+      "symbols": [
+        "آسان"
+      ],
+      "name": "صندوق گنجینه مهر",
+      "portal": "https://ganjinehmehrfund.ir",
+      "endpoint": "https://ganjinehmehrfund.ir/Reports/FundDividendProfitReport",
+      "legacy": true,
+      "report_path": "/Reports/FundDividendProfitReport",
+      "fund_id": "legacy",
+      "source": "fund-portal:ganjinehmehrfund.ir",
+      "evidence": "legacy ASP.NET report; monthly table"
+    },
+    {
+      "asset_id": "25624",
+      "symbol": "دامون",
+      "symbols": [
+        "دامون",
+        "دامون4"
+      ],
+      "name": "صندوق آسمان دامون",
+      "portal": "https://admfund.ir",
+      "endpoint": "https://admfund.ir/Reports/FundDividendProfitReport",
+      "legacy": true,
+      "report_path": "/Reports/FundDividendProfitReport",
+      "fund_id": "legacy",
+      "source": "fund-portal:admfund.ir",
+      "evidence": "legacy ASP.NET report; monthly table"
+    },
+    {
+      "asset_id": "1464",
+      "symbol": "اطلس",
+      "symbols": [
+        "اطلس",
+        "اطلس4"
+      ],
+      "name": "صندوق توسعه اطلس مفید",
+      "portal": "https://atlas.mofidfund.com",
+      "endpoint": "https://atlas.mofidfund.com",
+      "no_distributions": true,
+      "source": "fund-portal:atlas.mofidfund.com",
+      "evidence": "official Mofid portal /periodic-profit returns 200 with 0 items; equity fund has no periodic profit records"
+    }
+  ]
+}

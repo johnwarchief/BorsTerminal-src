@@ -108,5 +108,21 @@ ck("functional_status/availability present",
    cap.get("functional_status"))
 ck("functional_available is derived, not hard-coded", cap.get("functional_available") is True)
 
+print("[8] descending candle order is normalized at the boundary")
+av_d, bl_d, st_d, info_d = CH._functional_state(
+    CHAIN, dict(COV), kind="stock", times=list(reversed(TIMES)))
+ck("descending times keep AVAILABLE and the same window",
+   st_d == "AVAILABLE" and info_d["requested_start"] == TIMES[0]
+   and info_d["requested_end"] == TIMES[-1], info_d)
+ck("valid points do not depend on input order",
+   info_d["valid_points"] == info["valid_points"], (info_d, info))
+import datetime as _dt
+_today = _dt.date.today().isoformat()
+_old = (_dt.date.today() - _dt.timedelta(days=30)).isoformat()
+ck("staleness reads the newest candle, not the last array item",
+   CH._candles_stale([{"time": _today}, {"time": _old}]) is False)
+ck("old series still reports stale",
+   CH._candles_stale([{"time": _old}, {"time": "2019-01-01"}]) is True)
+
 print(f"\n{checks - fails}/{checks} checks passed")
 sys.exit(0 if fails == 0 else 1)

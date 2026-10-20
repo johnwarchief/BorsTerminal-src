@@ -84,6 +84,24 @@ def jalali_of(date):
     return g2j(date.year, date.month, date.day)
 
 
+def j2g(jy, jm, jd):
+    """جلالی → میلادی با همان g2j؛ جست‌وجویِ دودویی روی تقویمِ ۱۹۰۰–۲۱۰۰."""
+    target = (int(jy), int(jm), int(jd))
+    lo = dt.date(1900, 1, 1).toordinal()
+    hi = dt.date(2100, 12, 31).toordinal()
+    while lo <= hi:
+        mid = (lo + hi) // 2
+        d = dt.date.fromordinal(mid)
+        cur = g2j(d.year, d.month, d.day)
+        if cur == target:
+            return d
+        if cur < target:
+            lo = mid + 1
+        else:
+            hi = mid - 1
+    return None
+
+
 def validate_jalali():
     """سنجشِ تبدیل با oracleِ خودِ مرجع: ستونِ jalaliِ ردیف‌هایِ رهاورد.
 

@@ -101,7 +101,21 @@
 
 **PASS** برای معنای basis/فرمول: type0 = LAST، type7 = back-adjusted با لنگر آخر، weekly = مستقیم/شنبه/جمع حجم. شرطِ ادامه: هر مقایسه باید snapshot تازهٔ منبع و وضعیتِ بازنویسی را ثبت کند؛ دادهٔ کهنه نباید «اختلافِ محصول» خوانده شود.
 
-## ۱۱. بازتولید
+## ۱۱. قرارداد تکمیلی دور سوم (۲۰۲۶-۱۰-۲۰)
+
+**توزیع نقدی صندوق:** `type0/type7` تنها منبع تعدیل صندوق نیست. TSETMC برای ۱۶ صندوقِ بررسی‌شده `priceAdjust` صفر دارد، ولی پورتال رسمی مدیر صندوق تاریخ سود و `unitProfit` (ریال به ازای هر واحد) را منتشر می‌کند. قرارداد:
+
+- تاریخ اثر = **اولین سشن معاملاتی پس از** `profitDate` پورتال؛ قیمت مرجع = `LAST` آخرین سشن پیش از آن.
+- نسبت = `(P − D) / P`؛ اگر چند ماهِ بی‌معامله به یک سشن برسند، `D`ها جمع می‌شوند.
+- منبع و شناسهٔ رکورد در `fund_profit_events` (`source_id`، `profit_date`، `unit_profit`) می‌ماند؛ جدول `price_adjust_events` دست‌کاری نمی‌شود.
+- ۱۰ صندوق روی API `fundProfits/1` سامانهٔ Rayan Ham Afza، ۵ صندوق روی گزارش ASP.NET `FundDividendProfitReport`، و اطلس بدون رکورد دوره‌ای است.
+- اگر پورتال «سود صفر» بدهد یا ماه در گزارش نباشد، گام مرجع با `REFERENCE_CONTRACT_UNCLEAR` یا `SOURCE_GAP_CONFIRMED` می‌ماند؛ نسبت از نمودار مرجع ساخته نمی‌شود.
+
+**جلسهٔ گم‌شده:** اگر CSV تاریخی یک سشن را جا انداخته باشد، `session_backfill` فقط ردیف رسمی `GetClosingPriceDaily/<ins>/<YYYYMMDD>` را وارد می‌کند. ردیف حجم‌صفر/OHLC صفر «اداری» است و کندل نمی‌شود؛ ردیف معامله‌شده با OHLC رسمی کندل می‌شود. هیچ کپی از روز مجاور مجاز نیست.
+
+**ناهنجاری بازار-گسترده:** جدول `session_anomalies` از اسکن cross-sectional پر می‌شود (`official_symbols=0`، `product_only_steps≥10`، `median_abs_ratio_deviation≤2%`). گسست پایه در این تاریخ‌ها با `session-wide-base-gap` رد می‌شود؛ تاریخ در کد hard-code نیست.
+
+## ۱۲. بازتولید
 
 ```bash
 python tools/ra365_contract_probe.py --ref _audit/ref_bars.jsonl --out _audit/contract_probe.json

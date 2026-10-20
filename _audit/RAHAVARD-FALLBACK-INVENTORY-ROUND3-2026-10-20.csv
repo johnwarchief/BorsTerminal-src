@@ -1,0 +1,958 @@
+﻿symbol,asset_id,class,lifecycle,round2_status,round3_status,adjust_source,candles,last_candle,root_cause
+آسمان08,41101,bonds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,4,2026-07-19,fresh pull succeeded
+آمل08,45527,bonds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,4,2026-10-11,fresh pull succeeded
+اخزا202,26112,bonds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,669,2026-10-19,fresh pull succeeded
+اخزا203,27868,bonds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,566,2026-10-19,fresh pull succeeded
+اخزا204,27869,bonds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,368,2026-10-19,fresh pull succeeded
+اخزا210,28602,bonds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,570,2026-10-19,fresh pull succeeded
+اخزا211,28760,bonds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,558,2026-10-07,fresh pull succeeded
+اخزا212,28761,bonds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,567,2026-10-19,fresh pull succeeded
+اخزا213,28762,bonds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,563,2026-10-19,fresh pull succeeded
+اخزا301,39204,bonds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,345,2026-10-19,fresh pull succeeded
+اخزا401,49274,bonds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,5,2026-10-19,fresh pull succeeded
+اخزا402,44670,bonds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,190,2026-10-19,fresh pull succeeded
+اخزا403,46596,bonds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,111,2026-10-19,fresh pull succeeded
+اخزا404,46598,bonds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,130,2026-10-19,fresh pull succeeded
+اخزا405,48381,bonds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,51,2026-10-19,fresh pull succeeded
+اخزا406,48382,bonds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,98,2026-10-19,fresh pull succeeded
+اخزا407,48418,bonds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,86,2026-10-19,fresh pull succeeded
+اخزا501,51167,bonds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,17,2026-10-19,fresh pull succeeded
+اخزا502,51169,bonds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,21,2026-10-19,fresh pull succeeded
+اراد103,18764,bonds,historical,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,6,2026-09-13,fresh pull succeeded
+اراد115,20580,bonds,historical,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,46,2026-09-08,fresh pull succeeded
+اراد212,38586,bonds,historical,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,1,2026-09-27,fresh pull succeeded
+اراد214,40747,bonds,historical,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,3,2026-09-19,fresh pull succeeded
+اراد215,40748,bonds,historical,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,1,2026-09-27,fresh pull succeeded
+اراد216,40749,bonds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,7,2026-10-19,fresh pull succeeded
+اراد217,40750,bonds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,5,2026-10-03,fresh pull succeeded
+اراد218,40751,bonds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,6,2026-10-18,fresh pull succeeded
+اراد219,40774,bonds,historical,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,4,2026-09-28,fresh pull succeeded
+اراد220,40775,bonds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,7,2026-10-19,fresh pull succeeded
+اراد221,41179,bonds,historical,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,32,2026-10-03,fresh pull succeeded
+اراد224,41182,bonds,historical,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,15,2026-09-15,fresh pull succeeded
+اراد225,41563,bonds,historical,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,52,2026-10-18,fresh pull succeeded
+اراد226,41564,bonds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,63,2026-10-18,fresh pull succeeded
+اراد227,41721,bonds,historical,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,34,2026-10-13,fresh pull succeeded
+اراد228,41720,bonds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,93,2026-10-12,fresh pull succeeded
+اراد229,42012,bonds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,34,2026-10-11,fresh pull succeeded
+اراد231,43023,bonds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,38,2026-10-19,fresh pull succeeded
+اراد232,43024,bonds,active,PRODUCT_LIVE_UNAVAILABLE,DB_FALLBACK,local-db-fallback,10,2026-06-27,BOND_EXPIRED_OR_NO_LIVE_ROW
+اراد233,43228,bonds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,54,2026-10-10,fresh pull succeeded
+اراد234,43350,bonds,historical,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,43,2026-10-13,fresh pull succeeded
+اراد235,43643,bonds,historical,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,40,2026-09-23,fresh pull succeeded
+اراد236,43644,bonds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,28,2026-10-19,fresh pull succeeded
+اراد237,43645,bonds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,25,2026-10-12,fresh pull succeeded
+اراد240,43917,bonds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,37,2026-10-05,fresh pull succeeded
+اراد241,43918,bonds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,12,2026-10-14,fresh pull succeeded
+اراد243,44153,bonds,historical,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,4,2026-06-16,fresh pull succeeded
+اراد244,44154,bonds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,47,2026-10-07,fresh pull succeeded
+اراد246,44279,bonds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,43,2026-10-03,fresh pull succeeded
+بجنورد72,48304,bonds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,2,2026-07-25,fresh pull succeeded
+خنورح,50831,warrants,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,28,2026-10-19,fresh pull succeeded
+درپادح,43916,warrants,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,12,2026-10-19,fresh pull succeeded
+دلر,318,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,4336,2026-10-19,fresh pull succeeded
+دلقما,19,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,4804,2026-10-19,fresh pull succeeded
+دماوند,469,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,2390,2026-10-19,fresh pull succeeded
+دوام,19760,etf_funds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,27,2026-10-19,fresh pull succeeded
+دپارس,27,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,5093,2026-10-19,fresh pull succeeded
+ذرت,30034,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,66,2026-10-19,fresh pull succeeded
+ذوب,246,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,1056,2026-10-19,fresh pull succeeded
+رادان,44589,etf_funds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,150,2026-10-19,fresh pull succeeded
+رايبد,45399,etf_funds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,170,2026-10-19,fresh pull succeeded
+رايكا,20789,etf_funds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,926,2026-10-19,fresh pull succeeded
+رتكو,408,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,base-price-discontinuity,560,2026-10-19,fresh pull succeeded
+رخش,28914,etf_funds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,464,2026-10-19,fresh pull succeeded
+رز ترنج,40917,etf_funds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,281,2026-10-19,fresh pull succeeded
+رزگلد,43675,etf_funds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,229,2026-10-19,fresh pull succeeded
+رسانا,33195,etf_funds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,468,2026-10-19,fresh pull succeeded
+رشد,19101,etf_funds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,1042,2026-10-19,fresh pull succeeded
+رشدي كيان,4582,etf_funds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,438,2026-10-19,fresh pull succeeded
+رفاه,277,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,base-price-discontinuity,918,2026-10-19,fresh pull succeeded
+ركيش,666,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,3139,2026-10-19,fresh pull succeeded
+رمپنا,442,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,3816,2026-10-19,fresh pull succeeded
+رنيك,6273,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,1600,2026-10-19,fresh pull succeeded
+رهنو,51114,etf_funds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,16,2026-10-19,fresh pull succeeded
+رونق,37627,etf_funds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,302,2026-10-19,fresh pull succeeded
+رويش,2079,etf_funds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,140,2026-09-13,fresh pull succeeded
+رويش همراه,39452,etf_funds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,245,2026-10-19,fresh pull succeeded
+رويين,25205,etf_funds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,626,2026-10-19,fresh pull succeeded
+ريتون,42705,etf_funds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,251,2026-10-19,fresh pull succeeded
+ريشمك,2662,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,2046,2026-10-19,fresh pull succeeded
+رپويا,35564,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,268,2026-10-19,fresh pull succeeded
+زاگرس,648,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,3300,2026-10-19,fresh pull succeeded
+زبينا,2909,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,1857,2026-10-19,fresh pull succeeded
+زدشت,4714,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,1741,2026-10-19,fresh pull succeeded
+زر,2878,etf_funds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,2037,2026-10-19,fresh pull succeeded
+زرفام,19633,etf_funds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,1014,2026-10-19,fresh pull succeeded
+زروان,35805,etf_funds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,421,2026-10-19,fresh pull succeeded
+زريران,49850,etf_funds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,61,2026-10-19,fresh pull succeeded
+زرين,16436,etf_funds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,1291,2026-10-19,fresh pull succeeded
+زرين صنعت08,45529,bonds,historical,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,12,2026-09-08,fresh pull succeeded
+زرگر,42120,etf_funds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,253,2026-10-19,fresh pull succeeded
+زشريف,5347,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,1639,2026-10-19,fresh pull succeeded
+زشك,50822,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,11,2026-10-19,fresh pull succeeded
+زشگزا,2084,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,1965,2026-10-19,fresh pull succeeded
+زفارس,28075,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,173,2026-10-19,fresh pull succeeded
+زفجر,17838,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,723,2026-10-19,fresh pull succeeded
+زفكا,5306,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,1722,2026-10-19,fresh pull succeeded
+زقيام,2967,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,1848,2026-10-19,fresh pull succeeded
+زكشت,4473,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,1734,2026-10-19,fresh pull succeeded
+زكوثر,7802,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,1408,2026-10-19,fresh pull succeeded
+زماهان,5178,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,1635,2026-10-19,fresh pull succeeded
+زمرد,37683,etf_funds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,377,2026-10-19,fresh pull succeeded
+زمرد كوروش,35302,etf_funds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,437,2026-10-19,fresh pull succeeded
+زملارد,4600,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,1313,2026-10-19,fresh pull succeeded
+زمگسا,345,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,3625,2026-10-19,fresh pull succeeded
+زنجان,625,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,base-price-discontinuity,2982,2026-10-19,fresh pull succeeded
+زهلال,24484,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,79,2026-10-19,fresh pull succeeded
+زيتون,18060,etf_funds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,1129,2026-10-19,fresh pull succeeded
+زپارس,4432,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,1652,2026-10-19,fresh pull succeeded
+زگلدشت,1893,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,2258,2026-10-19,fresh pull succeeded
+سآبيك,477,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,981,2026-10-19,fresh pull succeeded
+ساحل,19934,etf_funds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,971,2026-10-19,fresh pull succeeded
+ساذري,121,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,base-price-discontinuity,1675,2026-10-19,fresh pull succeeded
+ساراب,304,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,3572,2026-10-19,fresh pull succeeded
+ساربيل,331,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,2583,2026-10-19,fresh pull succeeded
+ساروج,1585,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,1078,2026-10-19,fresh pull succeeded
+ساروم,117,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,4300,2026-10-19,fresh pull succeeded
+سافرون,16431,etf_funds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,1340,2026-10-19,fresh pull succeeded
+سام,21984,etf_funds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,857,2026-10-19,fresh pull succeeded
+سامان,510,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,614,2026-10-19,fresh pull succeeded
+ساوه,399,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,1470,2026-10-19,fresh pull succeeded
+ساينا,566,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,2389,2026-10-19,fresh pull succeeded
+سباقر,746,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,341,2026-10-19,fresh pull succeeded
+سبجنو,391,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,3209,2026-10-18,fresh pull succeeded
+سبزآبنوس,49845,etf_funds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,53,2026-10-19,fresh pull succeeded
+سبزوا,623,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,2755,2026-10-19,fresh pull succeeded
+ستاره,1714,etf_funds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,423,2026-10-19,fresh pull succeeded
+ستاره سيمين09,49066,bonds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,1,2026-06-13,fresh pull succeeded
+ستران,111,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,5318,2026-10-19,fresh pull succeeded
+سجام,557,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,698,2026-10-19,fresh pull succeeded
+سخند,811,etf_funds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,base-price-discontinuity,1934,2026-10-19,fresh pull succeeded
+سخواف,682,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,base-price-discontinuity,2891,2026-10-19,fresh pull succeeded
+سخوز,589,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,2607,2026-10-19,fresh pull succeeded
+سدبير,504,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,3025,2026-10-19,fresh pull succeeded
+سرير09,49796,bonds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,12,2026-10-19,fresh pull succeeded
+سصوفي,113,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,4271,2026-10-19,fresh pull succeeded
+سغدير,471,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,1075,2026-10-19,fresh pull succeeded
+سفاسي,220,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,base-price-discontinuity,1993,2026-10-19,fresh pull succeeded
+سقاين,248,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,3284,2026-10-19,fresh pull succeeded
+سكارون,297,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,base-price-discontinuity,1471,2026-10-19,fresh pull succeeded
+سكرد,249,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,3763,2026-10-19,fresh pull succeeded
+سكرما,110,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,4799,2026-10-19,fresh pull succeeded
+سليم,550,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,434,2026-10-19,fresh pull succeeded
+سمايه,641,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,1545,2026-10-19,fresh pull succeeded
+سمنتوداريوش,51181,etf_funds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,12,2026-10-19,fresh pull succeeded
+سمهريز,44710,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,38,2026-10-19,fresh pull succeeded
+سنوين,545,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,base-price-discontinuity,1805,2026-10-19,fresh pull succeeded
+سنير,449,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,2432,2026-10-19,fresh pull succeeded
+سيان,50389,etf_funds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,39,2026-10-19,fresh pull succeeded
+سيتا,15216,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,1403,2026-10-19,fresh pull succeeded
+سيدكو,479,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,2719,2026-10-19,fresh pull succeeded
+سيستم,563,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,2216,2026-10-19,fresh pull succeeded
+سيسكو,4733,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,344,2026-10-19,fresh pull succeeded
+سيلام,389,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,3063,2026-10-19,fresh pull succeeded
+سيلوا,50396,etf_funds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,33,2026-10-19,fresh pull succeeded
+سيلور,45640,etf_funds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,173,2026-10-19,fresh pull succeeded
+سيمان,50251,etf_funds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,38,2026-10-19,fresh pull succeeded
+سيمانا,32323,etf_funds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,489,2026-10-19,fresh pull succeeded
+سيمانو,28114,etf_funds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,535,2026-10-19,fresh pull succeeded
+سيمانيا,34510,etf_funds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,410,2026-10-19,fresh pull succeeded
+سيمرغ,716,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,1636,2026-10-19,fresh pull succeeded
+سيمين,45639,etf_funds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,173,2026-10-19,fresh pull succeeded
+سيناد,17331,etf_funds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,1213,2026-10-19,fresh pull succeeded
+سينرژي,35129,etf_funds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,437,2026-10-19,fresh pull succeeded
+سيگلو,49195,etf_funds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,64,2026-10-19,fresh pull succeeded
+سپيد,15828,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,1126,2026-10-19,fresh pull succeeded
+سپيدار,16033,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,1223,2026-10-19,fresh pull succeeded
+سپيدما,16748,etf_funds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,1304,2026-10-19,fresh pull succeeded
+سپينود,28006,etf_funds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,486,2026-10-19,fresh pull succeeded
+شاراك,323,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,5471,2026-10-19,fresh pull succeeded
+شتهران,26,stocks,historical,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,base-price-discontinuity,764,2026-09-29,fresh pull succeeded
+شغدير,475,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,1166,2026-10-19,fresh pull succeeded
+شكام,17302,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,1076,2026-10-19,fresh pull succeeded
+شكبير,336,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,base-price-discontinuity,2770,2026-10-19,fresh pull succeeded
+شكربن,184,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,5324,2026-10-19,fresh pull succeeded
+شكلر,374,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,4389,2026-10-19,fresh pull succeeded
+شكيميا,50080,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,14,2026-10-19,fresh pull succeeded
+شليا,506,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,base-price-discontinuity,842,2026-10-19,fresh pull succeeded
+شملي,223,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,766,2026-10-19,fresh pull succeeded
+شمواد,217,stocks,historical,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,base-price-discontinuity,1495,2026-10-19,fresh pull succeeded
+شميم,33077,etf_funds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,512,2026-10-19,fresh pull succeeded
+شوينده,4081,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,1980,2026-10-19,fresh pull succeeded
+شيراز,440,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,3890,2026-10-19,fresh pull succeeded
+شيران,230,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,4420,2026-10-19,fresh pull succeeded
+شيفته,44704,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,87,2026-10-19,fresh pull succeeded
+شيلد,1617,etf_funds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,178,2026-10-19,fresh pull succeeded
+شپاكسا,11,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,5229,2026-10-19,fresh pull succeeded
+شپديس,636,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,3232,2026-10-19,fresh pull succeeded
+شپلي,254,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,base-price-discontinuity,1586,2026-10-19,fresh pull succeeded
+شگلح,1104,warrants,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,121,2026-10-19,fresh pull succeeded
+شگويا,7801,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,1436,2026-10-19,fresh pull succeeded
+صاف فيلم52,22044,bonds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,64,2026-09-30,fresh pull succeeded
+صاميا601,22745,bonds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,25,2026-09-05,fresh pull succeeded
+صاميا606,34313,bonds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,8,2026-09-08,fresh pull succeeded
+صامين807,43676,bonds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,38,2026-06-20,fresh pull succeeded
+صايند,809,etf_funds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,base-price-discontinuity,2494,2026-10-19,fresh pull succeeded
+صايپا710,36803,bonds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,7,2026-09-09,fresh pull succeeded
+صتاير073,28940,bonds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,166,2026-10-17,fresh pull succeeded
+صتاير703,28941,bonds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,33,2026-09-05,fresh pull succeeded
+صريخت805,50828,bonds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,2,2026-09-20,fresh pull succeeded
+صصيكو81,46203,bonds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,2,2026-08-23,fresh pull succeeded
+صعبيد69,26104,bonds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,16,2026-08-17,fresh pull succeeded
+صعبيد802,48383,bonds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,14,2026-10-14,fresh pull succeeded
+صعبيد803,48456,bonds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,3,2026-07-22,fresh pull succeeded
+صغدير707,34678,bonds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,83,2026-10-12,fresh pull succeeded
+صكاوان94,50062,bonds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,5,2026-10-05,fresh pull succeeded
+صكسرا510,26705,bonds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,10,2026-08-05,fresh pull succeeded
+صكسرا612,27930,bonds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,64,2026-06-16,fresh pull succeeded
+صكشو707,51837,bonds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,1,2026-09-28,fresh pull succeeded
+صكشو77,51838,bonds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,3,2026-10-04,fresh pull succeeded
+صكوير510,27059,bonds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,31,2026-10-13,fresh pull succeeded
+صكوير606,20538,bonds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,12,2026-09-05,fresh pull succeeded
+صكوير701,28107,bonds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,13,2026-06-21,fresh pull succeeded
+صكوير904,50041,bonds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,2,2026-07-20,fresh pull succeeded
+صمپنا062,38148,bonds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,17,2026-08-24,fresh pull succeeded
+صنوين,1465,etf_funds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,base-price-discontinuity,2664,2026-10-19,fresh pull succeeded
+صهمدا806,43018,bonds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,5,2026-09-20,fresh pull succeeded
+صهمدا86,43019,bonds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,7,2026-08-11,fresh pull succeeded
+صهمدا860,43017,bonds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,4,2026-09-19,fresh pull succeeded
+صيدك601,22744,bonds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,20,2026-10-12,fresh pull succeeded
+صپترو605,24686,bonds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,53,2026-09-01,fresh pull succeeded
+صپترو705,24486,bonds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,5,2026-08-02,fresh pull succeeded
+صپويا62,38553,bonds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,49,2026-09-21,fresh pull succeeded
+ضاطلس060909,49675,options,historical,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,3,2026-08-31,fresh pull succeeded
+ضاطلس060910,49676,options,historical,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,4,2026-08-29,fresh pull succeeded
+ضاطلس062200,49622,options,historical,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,9,2026-09-13,fresh pull succeeded
+ضاطلس062201,49623,options,historical,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,3,2026-09-12,fresh pull succeeded
+ضاطلس062202,49624,options,historical,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,10,2026-09-12,fresh pull succeeded
+ضاطلس062203,49625,options,historical,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,12,2026-09-13,fresh pull succeeded
+ضاطلس062204,49626,options,historical,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,6,2026-09-12,fresh pull succeeded
+ضاطلس062205,49627,options,historical,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,15,2026-09-13,fresh pull succeeded
+ضاطلس062206,49628,options,historical,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,23,2026-09-13,fresh pull succeeded
+ضاطلس062207,49629,options,historical,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,23,2026-09-13,fresh pull succeeded
+ضاطلس062208,49630,options,historical,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,21,2026-09-13,fresh pull succeeded
+ضاطلس062209,49631,options,historical,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,12,2026-09-13,fresh pull succeeded
+ضاطلس062210,49632,options,historical,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,4,2026-09-13,fresh pull succeeded
+ضاطلس070500,50516,options,historical,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,8,2026-09-26,fresh pull succeeded
+ضاطلس070501,50517,options,historical,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,4,2026-09-26,fresh pull succeeded
+ضاطلس070502,50518,options,historical,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,2,2026-09-26,fresh pull succeeded
+ضاطلس070503,50519,options,historical,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,6,2026-09-27,fresh pull succeeded
+ضاطلس070504,50520,options,historical,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,3,2026-09-05,fresh pull succeeded
+ضاطلس070505,50521,options,historical,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,16,2026-09-27,fresh pull succeeded
+ضاطلس070506,50522,options,historical,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,19,2026-09-27,fresh pull succeeded
+ضاطلس070507,50523,options,historical,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,17,2026-09-27,fresh pull succeeded
+ضاطلس070508,50524,options,historical,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,14,2026-09-27,fresh pull succeeded
+ضاطلس070509,50525,options,historical,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,11,2026-09-27,fresh pull succeeded
+ضاطلس070510,50526,options,historical,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,9,2026-09-27,fresh pull succeeded
+ضاطلس071900,50538,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,8,2026-10-11,fresh pull succeeded
+ضاطلس071901,50539,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,3,2026-09-15,fresh pull succeeded
+ضاطلس071902,50540,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,8,2026-10-11,fresh pull succeeded
+ضاطلس071903,50541,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,3,2026-10-06,fresh pull succeeded
+ضاطلس071904,50542,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,5,2026-10-10,fresh pull succeeded
+ضاطلس071905,50543,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,15,2026-10-11,fresh pull succeeded
+ضاطلس071906,50544,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,13,2026-10-11,fresh pull succeeded
+ضاطلس071907,50545,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,17,2026-10-11,fresh pull succeeded
+ضاطلس071908,50546,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,15,2026-10-11,fresh pull succeeded
+ضاطلس071909,50547,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,14,2026-10-11,fresh pull succeeded
+ضاطلس071910,50548,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,12,2026-10-07,fresh pull succeeded
+ضاطلس080304,51287,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,1,2026-10-05,fresh pull succeeded
+ضاطلس080305,51288,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,5,2026-10-19,fresh pull succeeded
+ضاطلس080306,51289,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,10,2026-10-19,fresh pull succeeded
+ضاطلس080307,51290,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,11,2026-10-19,fresh pull succeeded
+ضاطلس080308,51291,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,12,2026-10-19,fresh pull succeeded
+ضاطلس080309,51292,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,5,2026-10-19,fresh pull succeeded
+ضاطلس081700,51327,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,2,2026-10-10,fresh pull succeeded
+ضاطلس081702,51329,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,2,2026-09-29,fresh pull succeeded
+ضاطلس081704,51331,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,2,2026-10-12,fresh pull succeeded
+ضاطلس081705,51332,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,3,2026-10-13,fresh pull succeeded
+ضاطلس081709,51336,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,5,2026-10-19,fresh pull succeeded
+ضاطلس081710,51337,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,6,2026-10-19,fresh pull succeeded
+ضبساما722,50215,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,45,2026-10-18,fresh pull succeeded
+ضبساما723,50216,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,27,2026-10-18,fresh pull succeeded
+ضبساما724,50217,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,41,2026-10-18,fresh pull succeeded
+ضبساما725,50218,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,38,2026-10-18,fresh pull succeeded
+ضبساما726,50219,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,43,2026-10-18,fresh pull succeeded
+ضبساما727,50220,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,48,2026-10-18,fresh pull succeeded
+ضبساما728,50221,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,52,2026-10-18,fresh pull succeeded
+ضبساما729,50222,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,53,2026-10-18,fresh pull succeeded
+ضبساما730,50223,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,49,2026-10-18,fresh pull succeeded
+ضبساما731,50224,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,50,2026-10-18,fresh pull succeeded
+ضبساما732,50225,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,48,2026-10-18,fresh pull succeeded
+ضبساما733,51785,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,21,2026-10-18,fresh pull succeeded
+ضبساما734,51786,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,19,2026-10-18,fresh pull succeeded
+ضبساما735,51787,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,2,2026-10-06,fresh pull succeeded
+ضبساما737,51789,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,4,2026-10-04,fresh pull succeeded
+ضبساما922,51123,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,4,2026-10-19,fresh pull succeeded
+ضبساما923,51124,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,3,2026-10-18,fresh pull succeeded
+ضبساما924,51125,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,9,2026-10-13,fresh pull succeeded
+ضبساما925,51126,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,23,2026-10-19,fresh pull succeeded
+ضبساما926,51127,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,19,2026-10-19,fresh pull succeeded
+ضبساما927,51128,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,31,2026-10-19,fresh pull succeeded
+ضبساما928,51129,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,25,2026-10-19,fresh pull succeeded
+ضبساما929,51130,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,26,2026-10-19,fresh pull succeeded
+ضبساما930,51131,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,19,2026-10-19,fresh pull succeeded
+ضبساما931,51132,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,11,2026-10-19,fresh pull succeeded
+ضبساما932,51133,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,23,2026-10-19,fresh pull succeeded
+ضتاص1000,52053,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,10,2026-10-19,fresh pull succeeded
+ضتاص1001,52054,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,8,2026-10-19,fresh pull succeeded
+ضتاص1005,52058,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,7,2026-10-19,fresh pull succeeded
+ضتاص1006,52059,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,4,2026-10-19,fresh pull succeeded
+ضتاص1007,52060,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,6,2026-10-18,fresh pull succeeded
+ضتاص1008,52061,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,3,2026-10-14,fresh pull succeeded
+ضتاص1011,52052,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,9,2026-10-19,fresh pull succeeded
+ضتاص8000,52028,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,10,2026-10-19,fresh pull succeeded
+ضتاص8001,52029,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,8,2026-10-19,fresh pull succeeded
+ضتوان638,49482,options,historical,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,20,2026-09-20,fresh pull succeeded
+ضتوان639,49483,options,historical,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,14,2026-09-20,fresh pull succeeded
+ضتوان640,49484,options,historical,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,7,2026-09-20,fresh pull succeeded
+ضتوان641,49485,options,historical,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,6,2026-09-20,fresh pull succeeded
+ضتوان728,50635,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,15,2026-10-18,fresh pull succeeded
+ضتوان732,50639,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,2,2026-10-11,fresh pull succeeded
+ضتوان733,50640,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,9,2026-10-18,fresh pull succeeded
+ضتوان734,50641,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,18,2026-10-18,fresh pull succeeded
+ضتوان735,50642,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,18,2026-10-18,fresh pull succeeded
+ضتوان736,50643,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,16,2026-10-18,fresh pull succeeded
+ضتوان737,50644,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,23,2026-10-18,fresh pull succeeded
+ضتوان738,50645,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,20,2026-10-18,fresh pull succeeded
+ضتوان824,51748,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,3,2026-10-19,fresh pull succeeded
+ضجار1080,51379,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,27,2026-10-19,fresh pull succeeded
+ضجار1081,51380,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,10,2026-10-14,fresh pull succeeded
+ضجار1082,51381,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,19,2026-10-19,fresh pull succeeded
+ضجار1083,51382,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,6,2026-10-18,fresh pull succeeded
+ضجار1086,51385,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,22,2026-10-18,fresh pull succeeded
+ضجار1087,51386,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,20,2026-10-18,fresh pull succeeded
+ضجار1088,51387,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,6,2026-10-13,fresh pull succeeded
+ضجار1089,51388,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,4,2026-10-14,fresh pull succeeded
+ضجار1090,51389,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,5,2026-10-12,fresh pull succeeded
+ضجار1091,51390,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,11,2026-10-18,fresh pull succeeded
+ضجار1092,51391,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,21,2026-10-17,fresh pull succeeded
+ضجار8022,49873,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,60,2026-10-19,fresh pull succeeded
+ضجار8023,49874,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,41,2026-10-19,fresh pull succeeded
+ضجار8024,49875,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,31,2026-10-19,fresh pull succeeded
+ضجار8025,49876,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,41,2026-10-19,fresh pull succeeded
+ضجار8026,49877,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,55,2026-10-19,fresh pull succeeded
+ضجار8027,49878,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,63,2026-10-19,fresh pull succeeded
+ضجار8028,49879,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,59,2026-10-19,fresh pull succeeded
+ضجار8029,49880,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,51,2026-10-19,fresh pull succeeded
+ضجار8030,49881,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,55,2026-10-19,fresh pull succeeded
+ضجار8031,49882,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,52,2026-10-19,fresh pull succeeded
+ضجار8032,49883,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,56,2026-10-19,fresh pull succeeded
+ضجار8033,50967,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,36,2026-10-19,fresh pull succeeded
+ضجار8034,50968,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,36,2026-10-19,fresh pull succeeded
+ضجار9015,51867,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,1,2026-10-04,fresh pull succeeded
+ضجار9022,51874,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,3,2026-10-07,fresh pull succeeded
+ضجوا8000,50609,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,4,2026-10-12,fresh pull succeeded
+ضجوا8002,50611,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,3,2026-10-06,fresh pull succeeded
+ضجوا8003,50612,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,12,2026-10-07,fresh pull succeeded
+ضجوا8004,50613,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,6,2026-10-04,fresh pull succeeded
+ضجوا8007,50616,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,12,2026-10-19,fresh pull succeeded
+ضجوا8008,50617,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,5,2026-10-06,fresh pull succeeded
+ضجوا8009,50618,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,10,2026-10-19,fresh pull succeeded
+ضخود1314,51980,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,13,2026-10-19,fresh pull succeeded
+ضخود1315,51981,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,10,2026-10-19,fresh pull succeeded
+ضخود1316,51982,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,13,2026-10-19,fresh pull succeeded
+ضخود1317,51983,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,11,2026-10-18,fresh pull succeeded
+ضخود1318,51984,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,11,2026-10-19,fresh pull succeeded
+ضخود1319,51985,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,11,2026-10-19,fresh pull succeeded
+ضخود1320,51986,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,12,2026-10-19,fresh pull succeeded
+ضخود1321,51987,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,10,2026-10-18,fresh pull succeeded
+ضخود1322,51988,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,8,2026-10-19,fresh pull succeeded
+ضخود1323,51989,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,4,2026-10-19,fresh pull succeeded
+ضخود1324,51990,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,10,2026-10-18,fresh pull succeeded
+ضخود1325,51991,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,3,2026-10-19,fresh pull succeeded
+ضخود1326,51992,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,13,2026-10-19,fresh pull succeeded
+ضذوب8037,51573,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,19,2026-10-19,fresh pull succeeded
+ضذوب8038,51574,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,19,2026-10-19,fresh pull succeeded
+ضذوب9033,51236,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,26,2026-10-19,fresh pull succeeded
+ضذوب9034,51237,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,21,2026-10-19,fresh pull succeeded
+ضذوب9035,51238,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,19,2026-10-19,fresh pull succeeded
+ضذوب9039,51242,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,26,2026-10-19,fresh pull succeeded
+ضذوب9040,51243,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,18,2026-10-19,fresh pull succeeded
+ضذوب9041,51244,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,19,2026-10-19,fresh pull succeeded
+ضذوب9042,51245,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,21,2026-10-19,fresh pull succeeded
+ضذوب9043,51246,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,13,2026-10-19,fresh pull succeeded
+ضذوب9044,51235,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,26,2026-10-19,fresh pull succeeded
+ضراز1000,50884,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,13,2026-10-13,fresh pull succeeded
+ضراز1001,50885,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,4,2026-10-13,fresh pull succeeded
+ضراز1002,50886,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,10,2026-10-13,fresh pull succeeded
+ضراز1003,50887,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,4,2026-10-04,fresh pull succeeded
+ضراز1004,50888,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,7,2026-10-07,fresh pull succeeded
+ضراز1006,50890,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,15,2026-10-12,fresh pull succeeded
+ضراز1007,50891,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,19,2026-10-19,fresh pull succeeded
+ضراز1008,50892,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,21,2026-10-19,fresh pull succeeded
+ضراز8000,49547,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,11,2026-10-17,fresh pull succeeded
+ضراز8001,49548,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,4,2026-10-17,fresh pull succeeded
+ضراز8002,49549,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,5,2026-09-22,fresh pull succeeded
+ضراز8003,49550,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,8,2026-09-22,fresh pull succeeded
+ضراز8004,49551,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,6,2026-09-22,fresh pull succeeded
+ضراز8005,49552,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,20,2026-10-19,fresh pull succeeded
+ضراز8006,49553,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,7,2026-10-07,fresh pull succeeded
+ضراز8007,49554,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,49,2026-10-19,fresh pull succeeded
+ضراز8008,49555,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,35,2026-10-19,fresh pull succeeded
+ضراز8009,49556,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,35,2026-10-17,fresh pull succeeded
+ضراز8010,49557,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,36,2026-10-18,fresh pull succeeded
+ضراز8011,49558,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,28,2026-10-19,fresh pull succeeded
+ضراز8012,51415,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,23,2026-10-19,fresh pull succeeded
+ضستا8049,50275,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,48,2026-10-19,fresh pull succeeded
+ضستا8050,50276,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,36,2026-10-18,fresh pull succeeded
+ضستا8051,50277,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,37,2026-10-19,fresh pull succeeded
+ضستا8052,50278,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,23,2026-10-17,fresh pull succeeded
+ضستا8053,50279,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,38,2026-10-18,fresh pull succeeded
+ضستا8054,50280,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,34,2026-10-14,fresh pull succeeded
+ضستا8055,50281,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,48,2026-10-19,fresh pull succeeded
+ضستا8056,50282,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,50,2026-10-19,fresh pull succeeded
+ضستا8057,50283,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,50,2026-10-19,fresh pull succeeded
+ضستا8058,50284,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,46,2026-10-19,fresh pull succeeded
+ضستا8059,50285,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,42,2026-10-19,fresh pull succeeded
+ضستا8060,50286,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,40,2026-10-19,fresh pull succeeded
+ضستا8061,50287,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,50,2026-10-19,fresh pull succeeded
+ضستا8062,51723,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,21,2026-10-19,fresh pull succeeded
+ضستا8063,51724,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,23,2026-10-19,fresh pull succeeded
+ضستا8064,51725,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,21,2026-10-19,fresh pull succeeded
+ضستا9047,51042,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,32,2026-10-18,fresh pull succeeded
+ضستا9048,51043,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,25,2026-10-19,fresh pull succeeded
+ضستا9049,51044,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,10,2026-10-19,fresh pull succeeded
+ضستا9050,51045,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,22,2026-10-18,fresh pull succeeded
+ضستا9051,51046,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,14,2026-10-14,fresh pull succeeded
+ضستا9052,51047,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,26,2026-10-19,fresh pull succeeded
+ضستا9053,51048,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,32,2026-10-19,fresh pull succeeded
+ضستا9054,51049,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,32,2026-10-19,fresh pull succeeded
+ضستا9055,51050,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,32,2026-10-19,fresh pull succeeded
+ضستا9056,51051,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,26,2026-10-19,fresh pull succeeded
+ضستا9057,51052,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,27,2026-10-19,fresh pull succeeded
+ضستا9058,51053,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,33,2026-10-19,fresh pull succeeded
+ضسپا7021,50013,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,55,2026-10-19,fresh pull succeeded
+ضسپا7022,50014,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,28,2026-10-19,fresh pull succeeded
+ضسپا7023,50015,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,15,2026-10-12,fresh pull succeeded
+ضسپا7024,50016,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,32,2026-10-19,fresh pull succeeded
+ضسپا7025,50017,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,54,2026-10-19,fresh pull succeeded
+ضسپا7026,50018,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,44,2026-10-19,fresh pull succeeded
+ضسپا7027,50019,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,61,2026-10-19,fresh pull succeeded
+ضسپا7028,50020,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,58,2026-10-19,fresh pull succeeded
+ضسپا7029,50021,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,55,2026-10-19,fresh pull succeeded
+ضسپا7030,50022,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,53,2026-10-19,fresh pull succeeded
+ضسپا7031,50023,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,51,2026-10-19,fresh pull succeeded
+ضسپا7032,50024,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,47,2026-10-19,fresh pull succeeded
+ضسپا7033,50025,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,48,2026-10-19,fresh pull succeeded
+ضسپا7034,51201,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,28,2026-10-19,fresh pull succeeded
+ضسپا7035,51202,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,28,2026-10-19,fresh pull succeeded
+ضسپا8081,50663,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,34,2026-10-19,fresh pull succeeded
+ضسپا8082,50664,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,42,2026-10-19,fresh pull succeeded
+ضسپا8083,50665,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,34,2026-10-19,fresh pull succeeded
+ضسپا8084,50666,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,42,2026-10-19,fresh pull succeeded
+ضسپا8085,50667,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,37,2026-10-19,fresh pull succeeded
+ضسپا8086,50668,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,36,2026-10-19,fresh pull succeeded
+ضسپا8087,50669,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,41,2026-10-19,fresh pull succeeded
+ضسپا8088,50670,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,40,2026-10-19,fresh pull succeeded
+ضسپا8089,50671,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,29,2026-10-19,fresh pull succeeded
+ضسپا8090,50672,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,29,2026-10-19,fresh pull succeeded
+ضسپا8091,50673,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,38,2026-10-19,fresh pull succeeded
+ضسپا8092,50674,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,41,2026-10-19,fresh pull succeeded
+ضسپا9021,51682,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,23,2026-10-19,fresh pull succeeded
+ضسپا9022,51683,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,17,2026-10-19,fresh pull succeeded
+ضسپا9025,51686,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,5,2026-10-19,fresh pull succeeded
+ضسپا9026,51687,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,14,2026-10-19,fresh pull succeeded
+ضسپا9028,51689,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,4,2026-10-19,fresh pull succeeded
+ضسپا9030,51691,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,15,2026-10-18,fresh pull succeeded
+ضسپا9031,51692,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,3,2026-10-03,fresh pull succeeded
+ضسپا9032,51693,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,19,2026-10-19,fresh pull succeeded
+ضشنا1300,51259,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,15,2026-10-03,fresh pull succeeded
+ضشنا1301,51260,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,11,2026-10-03,fresh pull succeeded
+ضشنا1302,51261,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,15,2026-10-03,fresh pull succeeded
+ضشنا1303,51262,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,5,2026-10-03,fresh pull succeeded
+ضشنا1304,51263,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,9,2026-09-30,fresh pull succeeded
+ضشنا1305,51264,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,7,2026-10-03,fresh pull succeeded
+ضشنا1306,51265,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,6,2026-10-03,fresh pull succeeded
+ضشنا1307,51266,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,8,2026-10-03,fresh pull succeeded
+ضشنا1308,51267,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,5,2026-10-03,fresh pull succeeded
+ضشنا1309,51268,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,3,2026-10-03,fresh pull succeeded
+ضشنا1310,51269,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,3,2026-09-30,fresh pull succeeded
+ضشنا1311,51270,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,12,2026-10-03,fresh pull succeeded
+ضشنا8056,49851,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,54,2026-10-03,fresh pull succeeded
+ضشنا8057,49852,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,46,2026-10-03,fresh pull succeeded
+ضشنا8058,49853,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,52,2026-10-03,fresh pull succeeded
+ضشنا8059,49854,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,52,2026-10-03,fresh pull succeeded
+ضشنا8060,49855,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,46,2026-10-03,fresh pull succeeded
+ضشنا8061,49856,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,48,2026-10-03,fresh pull succeeded
+ضشنا8062,49857,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,50,2026-10-03,fresh pull succeeded
+ضشنا8063,49858,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,42,2026-10-03,fresh pull succeeded
+ضشنا8064,49859,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,27,2026-10-03,fresh pull succeeded
+ضشنا8065,49860,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,34,2026-10-03,fresh pull succeeded
+ضشنا8066,49861,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,51,2026-10-03,fresh pull succeeded
+ضشنا9000,51522,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,12,2026-10-03,fresh pull succeeded
+ضشنا9001,51523,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,3,2026-09-30,fresh pull succeeded
+ضشنا9003,51525,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,1,2026-09-16,fresh pull succeeded
+ضشنا9005,51527,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,4,2026-10-03,fresh pull succeeded
+ضشنا9006,51528,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,5,2026-10-03,fresh pull succeeded
+ضشنا9009,51531,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,2,2026-09-21,fresh pull succeeded
+ضشنا9010,51532,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,11,2026-10-03,fresh pull succeeded
+ضشنا9011,51533,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,7,2026-09-29,fresh pull succeeded
+ضصاد8055,51498,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,12,2026-10-19,fresh pull succeeded
+ضصاد8056,51499,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,7,2026-10-14,fresh pull succeeded
+ضصاد8066,51509,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,4,2026-10-19,fresh pull succeeded
+ضصاد9036,50451,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,35,2026-10-19,fresh pull succeeded
+ضصاد9037,50452,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,7,2026-10-19,fresh pull succeeded
+ضصاد9038,50453,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,11,2026-10-17,fresh pull succeeded
+ضصاد9039,50454,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,4,2026-10-10,fresh pull succeeded
+ضصاد9040,50455,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,7,2026-10-19,fresh pull succeeded
+ضصاد9041,50456,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,6,2026-10-19,fresh pull succeeded
+ضصاد9042,50457,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,6,2026-10-14,fresh pull succeeded
+ضصاد9043,50458,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,44,2026-10-19,fresh pull succeeded
+ضصاد9044,50459,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,21,2026-10-19,fresh pull succeeded
+ضصاد9045,50460,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,32,2026-10-19,fresh pull succeeded
+ضصاد9046,50461,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,3,2026-10-19,fresh pull succeeded
+ضصاد9047,50462,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,17,2026-10-19,fresh pull succeeded
+ضطعام600,49704,options,historical,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,2,2026-09-06,fresh pull succeeded
+ضطعام601,49705,options,historical,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,8,2026-08-24,fresh pull succeeded
+ضطعام602,49706,options,historical,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,3,2026-09-06,fresh pull succeeded
+ضطعام603,49707,options,historical,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,7,2026-08-08,fresh pull succeeded
+ضطعام604,49708,options,historical,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,19,2026-09-06,fresh pull succeeded
+ضطعام605,49709,options,historical,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,22,2026-09-06,fresh pull succeeded
+ضطعام606,49710,options,historical,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,31,2026-09-06,fresh pull succeeded
+ضطعام607,49711,options,historical,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,30,2026-09-06,fresh pull succeeded
+ضطعام608,49712,options,historical,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,29,2026-09-06,fresh pull succeeded
+ضطعام609,49713,options,historical,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,10,2026-09-06,fresh pull succeeded
+ضطعام610,49714,options,historical,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,6,2026-09-06,fresh pull succeeded
+ضطعام800,50984,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,3,2026-09-21,fresh pull succeeded
+ضطعام801,50985,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,1,2026-09-16,fresh pull succeeded
+ضطعام802,50986,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,2,2026-10-05,fresh pull succeeded
+ضطعام803,50987,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,2,2026-10-05,fresh pull succeeded
+ضطعام804,50988,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,8,2026-10-05,fresh pull succeeded
+ضطعام805,50989,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,23,2026-10-18,fresh pull succeeded
+ضطعام806,50990,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,24,2026-10-19,fresh pull succeeded
+ضطعام807,50991,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,22,2026-10-19,fresh pull succeeded
+ضطعام808,50992,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,20,2026-10-19,fresh pull succeeded
+ضطعام809,50993,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,18,2026-10-19,fresh pull succeeded
+ضفرابورس700,50345,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,21,2026-10-18,fresh pull succeeded
+ضفرابورس701,50346,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,4,2026-10-13,fresh pull succeeded
+ضفرابورس703,50348,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,7,2026-10-13,fresh pull succeeded
+ضفرابورس704,50349,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,20,2026-10-18,fresh pull succeeded
+ضفرابورس705,50350,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,26,2026-10-18,fresh pull succeeded
+ضفرابورس706,50351,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,33,2026-10-18,fresh pull succeeded
+ضفرابورس707,50352,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,44,2026-10-18,fresh pull succeeded
+ضفرابورس708,50353,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,32,2026-10-18,fresh pull succeeded
+ضفرابورس709,50354,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,24,2026-10-18,fresh pull succeeded
+ضفرابورس710,50355,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,34,2026-10-18,fresh pull succeeded
+ضفرابورس925,50323,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,27,2026-10-19,fresh pull succeeded
+ضفرابورس928,50326,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,3,2026-09-16,fresh pull succeeded
+ضفرابورس929,50327,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,19,2026-10-14,fresh pull succeeded
+ضفرابورس930,50328,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,6,2026-10-19,fresh pull succeeded
+ضفرابورس931,50329,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,21,2026-10-19,fresh pull succeeded
+ضفرابورس932,50330,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,9,2026-10-17,fresh pull succeeded
+ضفرابورس933,50331,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,10,2026-10-12,fresh pull succeeded
+ضفرابورس934,50332,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,28,2026-10-17,fresh pull succeeded
+ضفرابورس935,50333,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,30,2026-10-05,fresh pull succeeded
+ضفزر614,50367,options,historical,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,27,2026-09-20,fresh pull succeeded
+ضفزر615,50368,options,historical,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,26,2026-09-20,fresh pull succeeded
+ضفزر616,50369,options,historical,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,27,2026-09-20,fresh pull succeeded
+ضفزر617,50370,options,historical,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,26,2026-09-20,fresh pull succeeded
+ضفزر618,50371,options,historical,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,27,2026-09-20,fresh pull succeeded
+ضفزر619,50372,options,historical,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,27,2026-09-20,fresh pull succeeded
+ضفزر620,50373,options,historical,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,28,2026-09-20,fresh pull succeeded
+ضفزر621,50374,options,historical,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,28,2026-09-20,fresh pull succeeded
+ضفزر622,50375,options,historical,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,28,2026-09-20,fresh pull succeeded
+ضفزر623,50376,options,historical,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,28,2026-09-20,fresh pull succeeded
+ضفزر624,50377,options,historical,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,28,2026-09-20,fresh pull succeeded
+ضفزر625,50974,options,historical,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,12,2026-09-20,fresh pull succeeded
+ضفزر626,50975,options,historical,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,11,2026-09-20,fresh pull succeeded
+ضفزر627,50976,options,historical,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,11,2026-09-20,fresh pull succeeded
+ضفزر628,50977,options,historical,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,12,2026-09-20,fresh pull succeeded
+ضفزر629,50978,options,historical,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,12,2026-09-20,fresh pull succeeded
+ضفزر709,50932,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,32,2026-10-18,fresh pull succeeded
+ضفزر710,50933,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,25,2026-10-18,fresh pull succeeded
+ضفزر711,50934,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,29,2026-10-18,fresh pull succeeded
+ضفزر712,50935,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,23,2026-10-18,fresh pull succeeded
+ضفزر713,50936,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,32,2026-10-18,fresh pull succeeded
+ضفزر714,50937,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,33,2026-10-18,fresh pull succeeded
+ضفزر715,50938,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,32,2026-10-18,fresh pull succeeded
+ضفزر716,50939,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,30,2026-10-18,fresh pull succeeded
+ضفزر717,50940,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,29,2026-10-18,fresh pull succeeded
+ضفزر718,50941,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,32,2026-10-18,fresh pull succeeded
+ضفزر719,50942,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,33,2026-10-18,fresh pull succeeded
+ضفزر720,51156,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,24,2026-10-18,fresh pull succeeded
+ضفزر721,51157,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,22,2026-10-18,fresh pull succeeded
+ضفزر722,51158,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,25,2026-10-18,fresh pull succeeded
+ضفزر723,51159,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,25,2026-10-18,fresh pull succeeded
+ضفزر724,51160,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,24,2026-10-18,fresh pull succeeded
+ضفزر725,51804,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,18,2026-10-18,fresh pull succeeded
+ضفزر726,51805,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,18,2026-10-18,fresh pull succeeded
+ضفزر727,51806,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,19,2026-10-18,fresh pull succeeded
+ضفزر728,51807,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,18,2026-10-18,fresh pull succeeded
+ضفزر729,51808,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,19,2026-10-18,fresh pull succeeded
+ضكاريس928,51420,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,8,2026-10-19,fresh pull succeeded
+ضكاريس931,51423,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,6,2026-10-13,fresh pull succeeded
+ضكاريس932,51424,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,6,2026-09-29,fresh pull succeeded
+ضكاريس933,51425,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,12,2026-10-19,fresh pull succeeded
+ضكاريس934,51426,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,8,2026-10-19,fresh pull succeeded
+ضكاريس935,51427,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,9,2026-10-19,fresh pull succeeded
+ضمخا9013,50475,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,47,2026-10-19,fresh pull succeeded
+ضمخا9014,50476,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,20,2026-10-19,fresh pull succeeded
+ضمخا9015,50477,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,11,2026-10-10,fresh pull succeeded
+ضمخا9016,50478,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,1,2026-09-15,fresh pull succeeded
+ضمخا9019,50481,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,18,2026-10-19,fresh pull succeeded
+ضمخا9020,50482,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,43,2026-10-19,fresh pull succeeded
+ضمخا9021,50483,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,21,2026-10-19,fresh pull succeeded
+ضمخا9022,50484,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,32,2026-10-19,fresh pull succeeded
+ضمخا9023,50485,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,4,2026-10-17,fresh pull succeeded
+ضمخا9024,50486,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,25,2026-10-19,fresh pull succeeded
+ضملت8068,50399,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,47,2026-10-19,fresh pull succeeded
+ضملت8069,50400,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,46,2026-10-19,fresh pull succeeded
+ضملت8070,50401,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,47,2026-10-19,fresh pull succeeded
+ضملت8071,50402,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,47,2026-10-19,fresh pull succeeded
+ضملت8072,50403,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,46,2026-10-19,fresh pull succeeded
+ضملت8073,50404,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,47,2026-10-19,fresh pull succeeded
+ضملت8074,50405,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,46,2026-10-19,fresh pull succeeded
+ضملت8075,50406,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,46,2026-10-19,fresh pull succeeded
+ضملت8076,50407,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,42,2026-10-19,fresh pull succeeded
+ضملت8077,50408,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,44,2026-10-19,fresh pull succeeded
+ضملت8078,50409,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,41,2026-10-19,fresh pull succeeded
+ضملت8079,50410,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,42,2026-10-19,fresh pull succeeded
+ضملت8080,50411,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,44,2026-10-19,fresh pull succeeded
+ضملت9036,51209,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,28,2026-10-19,fresh pull succeeded
+ضملت9037,51210,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,27,2026-10-19,fresh pull succeeded
+ضملت9038,51211,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,25,2026-10-19,fresh pull succeeded
+ضملت9039,51212,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,28,2026-10-19,fresh pull succeeded
+ضملت9040,51213,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,28,2026-10-19,fresh pull succeeded
+ضملت9041,51214,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,28,2026-10-19,fresh pull succeeded
+ضملت9042,51215,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,27,2026-10-19,fresh pull succeeded
+ضملت9043,51216,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,27,2026-10-19,fresh pull succeeded
+ضملت9044,51217,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,19,2026-10-19,fresh pull succeeded
+ضملت9045,51218,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,17,2026-10-19,fresh pull succeeded
+ضملت9046,51219,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,22,2026-10-19,fresh pull succeeded
+ضملت9047,51220,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,27,2026-10-19,fresh pull succeeded
+ضملت9048,51221,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,28,2026-10-19,fresh pull succeeded
+ضملي1000,52006,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,13,2026-10-19,fresh pull succeeded
+ضملي1001,52007,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,10,2026-10-19,fresh pull succeeded
+ضملي1002,52008,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,11,2026-10-19,fresh pull succeeded
+ضملي1003,52009,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,9,2026-10-18,fresh pull succeeded
+ضملي1004,52010,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,8,2026-10-19,fresh pull succeeded
+ضملي1005,52011,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,6,2026-10-17,fresh pull succeeded
+ضملي1006,52012,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,9,2026-10-19,fresh pull succeeded
+ضملي1007,52013,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,12,2026-10-19,fresh pull succeeded
+ضملي1008,52014,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,10,2026-10-19,fresh pull succeeded
+ضملي1009,52015,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,10,2026-10-19,fresh pull succeeded
+ضملي1010,52016,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,13,2026-10-19,fresh pull succeeded
+ضملي8088,51840,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,13,2026-10-19,fresh pull succeeded
+ضملي8089,51841,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,13,2026-10-19,fresh pull succeeded
+ضملي8090,51842,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,15,2026-10-19,fresh pull succeeded
+ضملي8091,51843,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,11,2026-10-19,fresh pull succeeded
+ضملي8092,51844,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,11,2026-10-19,fresh pull succeeded
+ضملي8093,51845,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,3,2026-10-13,fresh pull succeeded
+ضملي8094,51846,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,11,2026-10-19,fresh pull succeeded
+ضملي8095,51847,options,active,PRODUCT_LIVE_UNAVAILABLE,DB_FALLBACK,local-db-fallback,10,2026-09-30,OPTION_NO_LIVE_OR_EXPIRED
+ضملي8096,51848,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,14,2026-10-19,fresh pull succeeded
+ضملي8097,51849,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,13,2026-10-19,fresh pull succeeded
+ضملي8098,51850,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,15,2026-10-19,fresh pull succeeded
+ضملي8099,51851,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,15,2026-10-19,fresh pull succeeded
+ضملي8100,52373,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,5,2026-10-19,fresh pull succeeded
+ضملي9033,50253,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,51,2026-10-19,fresh pull succeeded
+ضملي9034,50254,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,50,2026-10-19,fresh pull succeeded
+ضملي9035,50255,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,44,2026-10-19,fresh pull succeeded
+ضملي9036,50256,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,46,2026-10-19,fresh pull succeeded
+ضملي9037,50257,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,44,2026-10-19,fresh pull succeeded
+ضملي9038,50258,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,44,2026-10-19,fresh pull succeeded
+ضملي9039,50259,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,47,2026-10-18,fresh pull succeeded
+ضملي9040,50260,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,49,2026-10-19,fresh pull succeeded
+ضملي9041,50261,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,45,2026-10-19,fresh pull succeeded
+ضملي9042,50262,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,51,2026-10-19,fresh pull succeeded
+ضملي9043,50263,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,50,2026-10-19,fresh pull succeeded
+ضملي9044,51152,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,30,2026-10-19,fresh pull succeeded
+ضملي9045,51153,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,30,2026-10-19,fresh pull succeeded
+ضملي9046,51546,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,25,2026-10-19,fresh pull succeeded
+ضملي9047,51547,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,25,2026-10-19,fresh pull succeeded
+ضموج637,49043,options,historical,PRODUCT_LIVE_UNAVAILABLE,DB_FALLBACK,local-db-fallback,36,2026-07-28,OPTION_NO_LIVE_OR_EXPIRED
+ضموج638,49044,options,historical,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,11,2026-09-20,fresh pull succeeded
+ضموج641,49047,options,historical,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,6,2026-09-20,fresh pull succeeded
+ضموج643,49049,options,historical,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,9,2026-09-20,fresh pull succeeded
+ضموج644,49050,options,historical,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,1,2026-09-20,fresh pull succeeded
+ضموج645,49051,options,historical,PRODUCT_LIVE_UNAVAILABLE,DB_FALLBACK,local-db-fallback,1,2026-09-20,OPTION_NO_LIVE_OR_EXPIRED
+ضموج646,49052,options,historical,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,12,2026-09-20,fresh pull succeeded
+ضموج647,49053,options,historical,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,22,2026-09-20,fresh pull succeeded
+ضموج648,49511,options,historical,PRODUCT_LIVE_UNAVAILABLE,DB_FALLBACK,local-db-fallback,29,2026-08-11,OPTION_NO_LIVE_OR_EXPIRED
+ضموج649,49512,options,historical,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,25,2026-09-20,fresh pull succeeded
+ضموج650,49513,options,historical,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,21,2026-09-20,fresh pull succeeded
+ضموج651,49514,options,historical,PRODUCT_LIVE_UNAVAILABLE,DB_FALLBACK,local-db-fallback,20,2026-08-16,OPTION_NO_LIVE_OR_EXPIRED
+ضموج652,49515,options,historical,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,16,2026-09-20,fresh pull succeeded
+ضموج653,51579,options,historical,PRODUCT_LIVE_UNAVAILABLE,DB_FALLBACK,local-db-fallback,2,2026-09-19,OPTION_NO_LIVE_OR_EXPIRED
+ضموج654,51580,options,historical,PRODUCT_LIVE_UNAVAILABLE,DB_FALLBACK,local-db-fallback,1,2026-09-20,OPTION_NO_LIVE_OR_EXPIRED
+ضموج715,50779,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,3,2026-10-18,fresh pull succeeded
+ضموج717,50781,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,2,2026-09-21,fresh pull succeeded
+ضموج718,50782,options,active,PRODUCT_LIVE_UNAVAILABLE,DB_FALLBACK,local-db-fallback,4,2026-09-14,OPTION_NO_LIVE_OR_EXPIRED
+ضموج720,50784,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,9,2026-10-10,fresh pull succeeded
+ضموج722,50786,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,3,2026-10-05,fresh pull succeeded
+ضموج723,50787,options,active,PRODUCT_LIVE_UNAVAILABLE,DB_FALLBACK,local-db-fallback,5,2026-09-26,OPTION_NO_LIVE_OR_EXPIRED
+ضموج724,50788,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,15,2026-10-18,fresh pull succeeded
+ضموج725,50789,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,26,2026-10-18,fresh pull succeeded
+ضموج726,51589,options,active,PRODUCT_LIVE_UNAVAILABLE,DB_FALLBACK,local-db-fallback,16,2026-09-21,OPTION_NO_LIVE_OR_EXPIRED
+ضموج728,51591,options,active,PRODUCT_LIVE_UNAVAILABLE,DB_FALLBACK,local-db-fallback,10,2026-09-22,OPTION_NO_LIVE_OR_EXPIRED
+ضموج834,50735,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,7,2026-10-18,fresh pull succeeded
+ضموج844,50745,options,active,PRODUCT_LIVE_UNAVAILABLE,DB_FALLBACK,local-db-fallback,6,2026-09-27,OPTION_NO_LIVE_OR_EXPIRED
+ضموج918,50757,options,active,PRODUCT_LIVE_UNAVAILABLE,DB_FALLBACK,local-db-fallback,12,2026-09-14,OPTION_NO_LIVE_OR_EXPIRED
+ضموج919,50758,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,3,2026-10-05,fresh pull succeeded
+ضموج920,50759,options,active,PRODUCT_LIVE_UNAVAILABLE,DB_FALLBACK,local-db-fallback,2,2026-09-22,OPTION_NO_LIVE_OR_EXPIRED
+ضموج921,50760,options,active,PRODUCT_LIVE_UNAVAILABLE,DB_FALLBACK,local-db-fallback,3,2026-09-21,OPTION_NO_LIVE_OR_EXPIRED
+ضموج922,50761,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,2,2026-10-17,fresh pull succeeded
+ضموج923,50762,options,active,PRODUCT_LIVE_UNAVAILABLE,DB_FALLBACK,local-db-fallback,5,2026-09-01,OPTION_NO_LIVE_OR_EXPIRED
+ضموج924,50763,options,active,PRODUCT_LIVE_UNAVAILABLE,DB_FALLBACK,local-db-fallback,1,2026-09-22,OPTION_NO_LIVE_OR_EXPIRED
+ضهرم7050,50098,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,60,2026-10-19,fresh pull succeeded
+ضهرم7051,50099,options,active,PRODUCT_LIVE_UNAVAILABLE,DB_FALLBACK,local-db-fallback,57,2026-07-25,OPTION_NO_LIVE_OR_EXPIRED
+ضهرم7052,50100,options,active,PRODUCT_LIVE_UNAVAILABLE,DB_FALLBACK,local-db-fallback,53,2026-07-25,OPTION_NO_LIVE_OR_EXPIRED
+ضهرم7053,50101,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,60,2026-10-19,fresh pull succeeded
+ضهرم7054,50102,options,active,PRODUCT_LIVE_UNAVAILABLE,DB_FALLBACK,local-db-fallback,52,2026-07-27,OPTION_NO_LIVE_OR_EXPIRED
+ضهرم7055,50103,options,active,PRODUCT_LIVE_UNAVAILABLE,DB_FALLBACK,local-db-fallback,58,2026-07-25,OPTION_NO_LIVE_OR_EXPIRED
+ضهرم7056,50104,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,58,2026-10-19,fresh pull succeeded
+ضهرم7057,50105,options,active,PRODUCT_LIVE_UNAVAILABLE,DB_FALLBACK,local-db-fallback,56,2026-07-25,OPTION_NO_LIVE_OR_EXPIRED
+ضهرم7058,50106,options,active,PRODUCT_LIVE_UNAVAILABLE,DB_FALLBACK,local-db-fallback,55,2026-07-28,OPTION_NO_LIVE_OR_EXPIRED
+ضهرم7059,50107,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,56,2026-10-19,fresh pull succeeded
+ضهرم7060,50108,options,active,PRODUCT_LIVE_UNAVAILABLE,DB_FALLBACK,local-db-fallback,58,2026-07-25,OPTION_NO_LIVE_OR_EXPIRED
+ضهرم7061,50109,options,active,PRODUCT_LIVE_UNAVAILABLE,DB_FALLBACK,local-db-fallback,56,2026-07-25,OPTION_NO_LIVE_OR_EXPIRED
+ضهرم7062,50110,options,active,PRODUCT_LIVE_UNAVAILABLE,DB_FALLBACK,local-db-fallback,58,2026-07-25,OPTION_NO_LIVE_OR_EXPIRED
+ضهرم7063,51021,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,35,2026-10-19,fresh pull succeeded
+ضهرم7064,51022,options,active,PRODUCT_LIVE_UNAVAILABLE,DB_FALLBACK,local-db-fallback,31,2026-09-01,OPTION_NO_LIVE_OR_EXPIRED
+ضهرم7065,51559,options,active,PRODUCT_LIVE_UNAVAILABLE,DB_FALLBACK,local-db-fallback,21,2026-09-15,OPTION_NO_LIVE_OR_EXPIRED
+ضهرم7066,51560,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,25,2026-10-19,fresh pull succeeded
+ضهرم8024,50713,options,active,PRODUCT_LIVE_UNAVAILABLE,DB_FALLBACK,local-db-fallback,39,2026-08-21,OPTION_NO_LIVE_OR_EXPIRED
+ضهرم8025,50714,options,active,PRODUCT_LIVE_UNAVAILABLE,DB_FALLBACK,local-db-fallback,36,2026-08-21,OPTION_NO_LIVE_OR_EXPIRED
+ضهرم8026,50715,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,37,2026-10-19,fresh pull succeeded
+ضهرم8027,50716,options,active,PRODUCT_LIVE_UNAVAILABLE,DB_FALLBACK,local-db-fallback,39,2026-08-21,OPTION_NO_LIVE_OR_EXPIRED
+ضهرم8028,50717,options,active,PRODUCT_LIVE_UNAVAILABLE,DB_FALLBACK,local-db-fallback,39,2026-08-21,OPTION_NO_LIVE_OR_EXPIRED
+ضهرم8029,50718,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,42,2026-10-19,fresh pull succeeded
+ضهرم8030,50719,options,active,PRODUCT_LIVE_UNAVAILABLE,DB_FALLBACK,local-db-fallback,38,2026-08-21,OPTION_NO_LIVE_OR_EXPIRED
+ضهرم8031,50720,options,active,PRODUCT_LIVE_UNAVAILABLE,DB_FALLBACK,local-db-fallback,39,2026-08-21,OPTION_NO_LIVE_OR_EXPIRED
+ضهرم8032,50721,options,active,PRODUCT_LIVE_UNAVAILABLE,DB_FALLBACK,local-db-fallback,39,2026-08-21,OPTION_NO_LIVE_OR_EXPIRED
+ضهرم8033,50722,options,active,PRODUCT_LIVE_UNAVAILABLE,DB_FALLBACK,local-db-fallback,39,2026-08-21,OPTION_NO_LIVE_OR_EXPIRED
+ضهرم8034,50723,options,active,PRODUCT_LIVE_UNAVAILABLE,DB_FALLBACK,local-db-fallback,39,2026-08-21,OPTION_NO_LIVE_OR_EXPIRED
+ضهرم8035,51800,options,active,PRODUCT_LIVE_UNAVAILABLE,DB_FALLBACK,local-db-fallback,15,2026-09-23,OPTION_NO_LIVE_OR_EXPIRED
+ضهرم8036,51801,options,active,PRODUCT_LIVE_UNAVAILABLE,DB_FALLBACK,local-db-fallback,15,2026-09-23,OPTION_NO_LIVE_OR_EXPIRED
+ضهرم9024,51638,options,active,PRODUCT_LIVE_UNAVAILABLE,DB_FALLBACK,local-db-fallback,19,2026-09-19,OPTION_NO_LIVE_OR_EXPIRED
+ضهرم9025,51639,options,active,PRODUCT_LIVE_UNAVAILABLE,DB_FALLBACK,local-db-fallback,17,2026-09-19,OPTION_NO_LIVE_OR_EXPIRED
+ضهرم9026,51640,options,active,PRODUCT_LIVE_UNAVAILABLE,DB_FALLBACK,local-db-fallback,14,2026-09-22,OPTION_NO_LIVE_OR_EXPIRED
+ضهرم9027,51641,options,active,PRODUCT_LIVE_UNAVAILABLE,DB_FALLBACK,local-db-fallback,18,2026-09-19,OPTION_NO_LIVE_OR_EXPIRED
+ضهرم9028,51642,options,active,PRODUCT_LIVE_UNAVAILABLE,DB_FALLBACK,local-db-fallback,19,2026-09-19,OPTION_NO_LIVE_OR_EXPIRED
+ضهرم9029,51643,options,active,PRODUCT_LIVE_UNAVAILABLE,DB_FALLBACK,local-db-fallback,18,2026-09-20,OPTION_NO_LIVE_OR_EXPIRED
+ضهرم9030,51644,options,active,PRODUCT_LIVE_UNAVAILABLE,DB_FALLBACK,local-db-fallback,18,2026-09-20,OPTION_NO_LIVE_OR_EXPIRED
+ضهرم9031,51645,options,active,PRODUCT_LIVE_UNAVAILABLE,DB_FALLBACK,local-db-fallback,18,2026-09-20,OPTION_NO_LIVE_OR_EXPIRED
+ضهرم9032,51646,options,active,PRODUCT_LIVE_UNAVAILABLE,DB_FALLBACK,local-db-fallback,19,2026-09-19,OPTION_NO_LIVE_OR_EXPIRED
+ضهرم9033,51647,options,active,PRODUCT_LIVE_UNAVAILABLE,DB_FALLBACK,local-db-fallback,18,2026-09-19,OPTION_NO_LIVE_OR_EXPIRED
+ضهرم9034,51648,options,active,PRODUCT_LIVE_UNAVAILABLE,DB_FALLBACK,local-db-fallback,19,2026-09-19,OPTION_NO_LIVE_OR_EXPIRED
+ضهمن7027,50583,options,active,PRODUCT_LIVE_UNAVAILABLE,DB_FALLBACK,local-db-fallback,29,2026-08-18,OPTION_NO_LIVE_OR_EXPIRED
+ضهمن7029,50585,options,active,PRODUCT_LIVE_UNAVAILABLE,DB_FALLBACK,local-db-fallback,3,2026-10-12,OPTION_NO_LIVE_OR_EXPIRED
+ضهمن7031,50587,options,active,PRODUCT_LIVE_UNAVAILABLE,DB_FALLBACK,local-db-fallback,13,2026-08-19,OPTION_NO_LIVE_OR_EXPIRED
+ضهمن7032,50588,options,active,PRODUCT_LIVE_UNAVAILABLE,DB_FALLBACK,local-db-fallback,40,2026-08-19,OPTION_NO_LIVE_OR_EXPIRED
+ضهمن7033,50589,options,active,PRODUCT_LIVE_UNAVAILABLE,DB_FALLBACK,local-db-fallback,20,2026-08-21,OPTION_NO_LIVE_OR_EXPIRED
+ضهمن7034,50590,options,active,PRODUCT_LIVE_UNAVAILABLE,DB_FALLBACK,local-db-fallback,32,2026-08-21,OPTION_NO_LIVE_OR_EXPIRED
+ضهمن7035,50591,options,active,PRODUCT_LIVE_UNAVAILABLE,DB_FALLBACK,local-db-fallback,33,2026-08-21,OPTION_NO_LIVE_OR_EXPIRED
+ضهمن7036,50592,options,active,PRODUCT_LIVE_UNAVAILABLE,DB_FALLBACK,local-db-fallback,10,2026-09-14,OPTION_NO_LIVE_OR_EXPIRED
+ضهمن7037,50593,options,active,PRODUCT_LIVE_UNAVAILABLE,DB_FALLBACK,local-db-fallback,14,2026-08-29,OPTION_NO_LIVE_OR_EXPIRED
+ضهمن7038,50594,options,active,PRODUCT_LIVE_UNAVAILABLE,DB_FALLBACK,local-db-fallback,28,2026-08-21,OPTION_NO_LIVE_OR_EXPIRED
+ضهمن7039,50595,options,active,PRODUCT_LIVE_UNAVAILABLE,DB_FALLBACK,local-db-fallback,33,2026-08-21,OPTION_NO_LIVE_OR_EXPIRED
+ضهمن9026,50687,options,active,PRODUCT_LIVE_UNAVAILABLE,DB_FALLBACK,local-db-fallback,21,2026-09-13,OPTION_NO_LIVE_OR_EXPIRED
+ضهمن9032,50693,options,active,PRODUCT_LIVE_UNAVAILABLE,DB_FALLBACK,local-db-fallback,10,2026-09-12,OPTION_NO_LIVE_OR_EXPIRED
+ضهمن9033,50694,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,1,2026-09-12,fresh pull succeeded
+ضپيك8001,52196,options,active,PRODUCT_LIVE_UNAVAILABLE,DB_FALLBACK,local-db-fallback,2,2026-10-12,OPTION_NO_LIVE_OR_EXPIRED
+ضپيك8002,52197,options,active,PRODUCT_LIVE_UNAVAILABLE,DB_FALLBACK,local-db-fallback,6,2026-10-06,OPTION_NO_LIVE_OR_EXPIRED
+ضپيك8003,52198,options,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,9,2026-10-19,fresh pull succeeded
+ضپيك8004,52199,options,active,PRODUCT_LIVE_UNAVAILABLE,DB_FALLBACK,local-db-fallback,6,2026-10-06,OPTION_NO_LIVE_OR_EXPIRED
+ضپيك8005,52200,options,active,PRODUCT_LIVE_UNAVAILABLE,DB_FALLBACK,local-db-fallback,4,2026-10-11,OPTION_NO_LIVE_OR_EXPIRED
+غمينو,732,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,2832,2026-10-19,fresh pull succeeded
+غنيلي,2825,stocks,active,PRODUCT_LIVE_UNAVAILABLE,DB_FALLBACK,local-db-fallback,422,2024-08-24,STOCK_NO_LIVE_SINCE_2024_08_24 (delisted/transferred)
+غويتا,41,stocks,active,PRODUCT_LIVE_UNAVAILABLE,DB_FALLBACK,local-db-fallback,438,2024-08-24,STOCK_NO_LIVE_SINCE_2024_08_24 (delisted/transferred)
+غپاك,34,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,4670,2026-10-19,fresh pull succeeded
+غپينو,31,stocks,active,PRODUCT_LIVE_UNAVAILABLE,DB_FALLBACK,local-db-fallback,433,2024-08-24,STOCK_NO_LIVE_SINCE_2024_08_24 (delisted/transferred)
+غچين,35,stocks,active,PRODUCT_LIVE_UNAVAILABLE,DB_FALLBACK,local-db-fallback,441,2024-08-24,STOCK_NO_LIVE_SINCE_2024_08_24 (delisted/transferred)
+غگرجي,30,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,3820,2026-10-19,fresh pull succeeded
+غگيلا,7792,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,1412,2026-10-19,fresh pull succeeded
+فاراك,205,stocks,active,PRODUCT_LIVE_UNAVAILABLE,DB_FALLBACK,local-db-fallback,437,2024-08-24,STOCK_NO_LIVE_SINCE_2024_08_24 (delisted/transferred)
+فاران06,24591,bonds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,16,2026-10-17,fresh pull succeeded
+فارما كيان,27342,etf_funds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,569,2026-10-19,fresh pull succeeded
+فارماني,36255,etf_funds,active,PRODUCT_LIVE_UNAVAILABLE,DB_FALLBACK,local-db-fallback,362,2024-12-17,FUND_NO_LIVE_SOURCE
+فاسمين,288,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,19,2026-10-14,fresh pull succeeded
+فايرا,240,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,2898,2026-10-19,fresh pull succeeded
+فبيرا,158,stocks,active,PRODUCT_LIVE_UNAVAILABLE,DB_FALLBACK,local-db-fallback,397,2024-08-24,STOCK_NO_LIVE_SINCE_2024_08_24 (delisted/transferred)
+فجهان062,24462,bonds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,18,2026-10-17,fresh pull succeeded
+فدك07,23967,bonds,historical,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,40,2026-09-16,fresh pull succeeded
+فرا الگوريتم,38269,etf_funds,active,PRODUCT_LIVE_UNAVAILABLE,DB_FALLBACK,local-db-fallback,318,2025-03-04,FUND_NO_LIVE_SOURCE
+فرداموتور06,27145,bonds,historical,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,55,2026-09-12,fresh pull succeeded
+فروسيل,16744,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,971,2026-10-19,fresh pull succeeded
+فروي,7129,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,1476,2026-10-19,fresh pull succeeded
+فزرين,683,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,2999,2026-10-19,fresh pull succeeded
+فسديد,403,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,1974,2026-10-19,fresh pull succeeded
+فغدير,17510,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,915,2026-10-19,fresh pull succeeded
+فكمند,16764,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,base-price-discontinuity,972,2026-10-19,fresh pull succeeded
+فكور,45321,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,5,2026-10-19,fresh pull succeeded
+فلامي,148,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,3867,2026-10-19,fresh pull succeeded
+فلزفارابي,25206,etf_funds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,658,2026-10-19,fresh pull succeeded
+فماك,4174,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,1026,2026-10-19,fresh pull succeeded
+فملي,451,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,4311,2026-10-19,fresh pull succeeded
+فن افزار08,52239,bonds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,2,2026-10-13,fresh pull succeeded
+فوكا,385,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,150,2026-10-19,fresh pull succeeded
+فولاي,624,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,3210,2026-10-19,fresh pull succeeded
+فيروزا,4080,etf_funds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,2070,2026-10-19,fresh pull succeeded
+فيروزه,768,etf_funds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,base-price-discontinuity,2578,2026-10-19,fresh pull succeeded
+فپرديس,38323,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,9,2026-10-19,fresh pull succeeded
+قزوين,314,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,3805,2026-10-19,fresh pull succeeded
+قشكر,224,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,4168,2026-10-19,fresh pull succeeded
+قشير,227,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,2994,2026-10-19,fresh pull succeeded
+قلك گلد,49196,etf_funds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,73,2026-10-19,fresh pull succeeded
+قم612,36307,bonds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,21,2026-09-09,fresh pull succeeded
+قنيشا,50,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,3966,2026-10-19,fresh pull succeeded
+قهكمت,55,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,3781,2026-10-19,fresh pull succeeded
+قيراط,36719,etf_funds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,402,2026-10-19,fresh pull succeeded
+قيستو,46,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,base-price-discontinuity,1420,2026-10-19,fresh pull succeeded
+قپيرا,225,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,4196,2026-10-19,fresh pull succeeded
+كابگن,97,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,base-price-discontinuity,1847,2026-10-14,fresh pull succeeded
+كاج,20648,etf_funds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,916,2026-10-19,fresh pull succeeded
+كاخ,47382,etf_funds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,115,2026-10-19,fresh pull succeeded
+كاذر,371,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,4546,2026-10-19,fresh pull succeeded
+كارآمد,34552,etf_funds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,462,2026-10-19,fresh pull succeeded
+كارا,17976,etf_funds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,1169,2026-10-19,fresh pull succeeded
+كارام,4180,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,base-price-discontinuity,624,2026-10-19,fresh pull succeeded
+كاردان,802,etf_funds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,base-price-discontinuity,2110,2026-10-19,fresh pull succeeded
+كارما,28146,etf_funds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,576,2026-10-19,fresh pull succeeded
+كارون071,33576,bonds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,6,2026-08-11,fresh pull succeeded
+كارون072,33577,bonds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,4,2026-10-06,fresh pull succeeded
+كاريز,18130,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,base-price-discontinuity,650,2026-10-19,fresh pull succeeded
+كاريس,1462,etf_funds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,base-price-discontinuity,2619,2026-10-19,fresh pull succeeded
+كارين,2534,etf_funds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,1367,2026-10-19,fresh pull succeeded
+كازرو,533,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,base-price-discontinuity,2112,2026-10-19,fresh pull succeeded
+كاسپين,491,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,2289,2026-10-19,fresh pull succeeded
+كاشانه,39608,etf_funds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,273,2026-10-19,fresh pull succeeded
+كالا,537,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,1657,2026-10-19,fresh pull succeeded
+كاله52,22049,bonds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,13,2026-10-05,fresh pull succeeded
+كاما,404,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,4559,2026-10-19,fresh pull succeeded
+كامياب,17332,etf_funds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,1238,2026-10-19,fresh pull succeeded
+كانسار,34437,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,310,2026-10-19,fresh pull succeeded
+كاوه,767,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,2011,2026-10-19,fresh pull succeeded
+كايتا,98,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,base-price-discontinuity,1470,2026-10-19,fresh pull succeeded
+كايزد,18088,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,940,2026-10-19,fresh pull succeeded
+كباده,709,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,base-price-discontinuity,1166,2026-10-19,fresh pull succeeded
+كبافق,273,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,3964,2026-10-19,fresh pull succeeded
+كترام,339,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,4376,2026-10-19,fresh pull succeeded
+كتوسعه,17496,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,684,2026-10-19,fresh pull succeeded
+كتوكا,605,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,2438,2026-10-19,fresh pull succeeded
+كحافظ,123,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,2876,2026-10-19,fresh pull succeeded
+كخاك,245,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,3787,2026-10-19,fresh pull succeeded
+كدما,335,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,2889,2026-10-19,fresh pull succeeded
+كرازي,432,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,3378,2026-10-19,fresh pull succeeded
+كربن,28076,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,371,2026-10-19,fresh pull succeeded
+كرماشا,346,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,3384,2026-10-19,fresh pull succeeded
+كرمان,228,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,2972,2026-10-19,fresh pull succeeded
+كرمان063,35618,bonds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,2,2026-09-08,fresh pull succeeded
+كرمان5126,28024,bonds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,20,2026-09-14,fresh pull succeeded
+كروميت,22387,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,595,2026-10-19,fresh pull succeeded
+كروي,341,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,22,2026-10-19,fresh pull succeeded
+كزغال,16430,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,1259,2026-10-19,fresh pull succeeded
+كساوه,295,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,4161,2026-10-19,fresh pull succeeded
+كساپا,414,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,3566,2026-10-19,fresh pull succeeded
+كسرا,413,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,3678,2026-10-19,fresh pull succeeded
+كسرام,92,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,3525,2026-10-19,fresh pull succeeded
+كسعدي,122,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,4000,2026-10-13,fresh pull succeeded
+كشرق,668,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,2916,2026-10-19,fresh pull succeeded
+كصدف,651,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,base-price-discontinuity,1682,2026-10-19,fresh pull succeeded
+كطبس,405,stocks,active,PRODUCT_LIVE_UNAVAILABLE,DB_FALLBACK,local-db-fallback,452,2024-08-24,STOCK_NO_LIVE_SINCE_2024_08_24 (delisted/transferred)
+كفرآور,620,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,base-price-discontinuity,1849,2026-10-19,fresh pull succeeded
+كفرا,124,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,3902,2026-10-19,fresh pull succeeded
+كفپارس,307,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,2918,2026-10-19,fresh pull succeeded
+كقزوي,94,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,base-price-discontinuity,2384,2026-10-19,fresh pull succeeded
+كلر,7536,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,1489,2026-10-19,fresh pull succeeded
+كلور082,39287,bonds,active,PRODUCT_LIVE_UNAVAILABLE,DB_FALLBACK,local-db-fallback,2,2026-07-07,BOND_EXPIRED_OR_NO_LIVE_ROW
+كلوند,106,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,3768,2026-10-19,fresh pull succeeded
+كليد,34513,etf_funds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,base-price-discontinuity,427,2026-10-19,fresh pull succeeded
+كماسه,105,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,3651,2026-10-19,fresh pull succeeded
+كمان,17481,etf_funds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,219,2026-10-17,fresh pull succeeded
+كمرجان,540,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,3621,2026-10-19,fresh pull succeeded
+كمند,2768,etf_funds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,2166,2026-10-19,fresh pull succeeded
+كمنگنز,363,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,4641,2026-10-19,fresh pull succeeded
+كمينا,1769,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,base-price-discontinuity,1495,2026-10-19,fresh pull succeeded
+كمينا07,33491,bonds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,4,2026-07-12,fresh pull succeeded
+كنور,463,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,2707,2026-10-19,fresh pull succeeded
+نبروج,74,stocks,historical,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,base-price-discontinuity,289,2026-09-23,fresh pull succeeded
+وتوسمح,854,warrants,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,92,2026-10-19,fresh pull succeeded
+ولكار,16447,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,1193,2026-10-19,fresh pull succeeded
+ولنوين,16259,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,base-price-discontinuity,272,2026-10-19,fresh pull succeeded
+وليز,418,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,base-price-discontinuity,740,2026-10-18,fresh pull succeeded
+ومدير,16715,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,1095,2026-10-19,fresh pull succeeded
+وملي,60,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,2979,2026-10-19,fresh pull succeeded
+ونوين,393,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,4658,2026-10-19,fresh pull succeeded
+ونيرو,417,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,4034,2026-10-19,fresh pull succeeded
+ونيكي,62,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,5545,2026-10-19,fresh pull succeeded
+ويسا,688,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,base-price-discontinuity,1040,2026-10-19,fresh pull succeeded
+ويستا,17987,etf_funds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,1069,2026-10-19,fresh pull succeeded
+وپايا,31257,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,304,2026-10-19,fresh pull succeeded
+وپويا,2049,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,1412,2026-10-19,fresh pull succeeded
+يارا,18616,etf_funds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,1092,2026-10-19,fresh pull succeeded
+ياس,50659,etf_funds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,32,2026-10-19,fresh pull succeeded
+ياقوت,7806,etf_funds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,1550,2026-10-19,fresh pull succeeded
+يكم,43344,etf_funds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,167,2026-10-19,fresh pull succeeded
+يلدا,1692,etf_funds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,base-price-discontinuity,242,2026-10-19,fresh pull succeeded
+يلداي كوير09,51371,bonds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,12,2026-10-03,fresh pull succeeded
+يوتيليتي,46180,etf_funds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,53,2026-10-19,fresh pull succeeded
+پاآبان,43677,futures,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,65,2026-10-19,fresh pull succeeded
+پارس ميكا06,25299,bonds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,6,2026-10-11,fresh pull succeeded
+پارسيان,520,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,3522,2026-10-19,fresh pull succeeded
+پاريز,35451,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,82,2026-10-19,fresh pull succeeded
+پاسار06,24155,bonds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,22,2026-09-14,fresh pull succeeded
+پاسار09,49280,bonds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,1,2026-06-15,fresh pull succeeded
+پاكديس091,50971,bonds,historical,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,1,2026-08-31,fresh pull succeeded
+پاكديس092,50972,bonds,historical,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,1,2026-08-31,fresh pull succeeded
+پاكشو,753,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,2826,2026-10-19,fresh pull succeeded
+پالايش,15687,etf_funds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,base-price-discontinuity,1324,2026-09-30,fresh pull succeeded
+پامهر,42876,futures,historical,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,56,2026-09-19,fresh pull succeeded
+پايا,21544,etf_funds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,869,2026-10-19,fresh pull succeeded
+پايدار,49277,etf_funds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,60,2026-10-19,fresh pull succeeded
+پايش,27960,etf_funds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,578,2026-10-19,fresh pull succeeded
+پتاير,174,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,4358,2026-10-19,fresh pull succeeded
+پتروداريوش,24675,etf_funds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,654,2026-10-19,fresh pull succeeded
+پتروسورين,43439,etf_funds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,118,2026-10-19,fresh pull succeeded
+پتروپاريز07,37677,bonds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,3,2026-07-12,fresh pull succeeded
+پرديس,308,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,3901,2026-10-19,fresh pull succeeded
+پرديس صنعت06,37135,bonds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,2,2026-09-02,fresh pull succeeded
+پرديس صنعت081,44195,bonds,historical,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,2,2026-09-15,fresh pull succeeded
+پرسپوليس,18752,stocks,historical,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,base-price-discontinuity,706,2026-09-19,fresh pull succeeded
+پرنيا06,25392,bonds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,14,2026-07-12,fresh pull succeeded
+پشمينه09,51835,bonds,historical,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,1,2026-09-28,fresh pull succeeded
+پكاشيمي071,38331,bonds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,39,2026-07-25,fresh pull succeeded
+پكاشيمي072,38332,bonds,historical,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,16,2026-09-28,fresh pull succeeded
+پكرمان,285,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,3885,2026-10-18,fresh pull succeeded
+پكوير,539,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,2568,2026-10-19,fresh pull succeeded
+پكويرح,1380,warrants,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,232,2026-10-19,fresh pull succeeded
+پلاسك,179,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,3137,2026-10-19,fresh pull succeeded
+پلي استر07,37272,bonds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,4,2026-09-08,fresh pull succeeded
+پي پاد,19940,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,750,2026-10-19,fresh pull succeeded
+پيروز,25176,etf_funds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,599,2026-10-19,fresh pull succeeded
+پيزد,327,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,1384,2026-10-19,fresh pull succeeded
+پيشران,1620,etf_funds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,279,2026-10-19,fresh pull succeeded
+پيشرو051,27502,bonds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,19,2026-08-03,fresh pull succeeded
+پيل سان09,50067,bonds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,2,2026-08-05,fresh pull succeeded
+چاشني,44361,etf_funds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,144,2026-10-19,fresh pull succeeded
+چفيبر,126,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,3895,2026-10-19,fresh pull succeeded
+چكارن,127,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,4244,2026-10-19,fresh pull succeeded
+چكاوه,238,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,base-price-discontinuity,4362,2026-10-19,fresh pull succeeded
+چكاپا,1768,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,base-price-discontinuity,1352,2026-10-19,fresh pull succeeded
+گارانتي,24253,etf_funds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,601,2026-10-19,fresh pull succeeded
+گام050661,44264,bonds,historical,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,14,2026-09-06,fresh pull succeeded
+گام050864,50138,bonds,historical,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,1,2026-08-22,fresh pull succeeded
+گام050913,48308,bonds,historical,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,9,2026-10-19,fresh pull succeeded
+گام051013,49279,bonds,historical,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,4,2026-09-14,fresh pull succeeded
+گام051015,48168,bonds,historical,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,4,2026-09-09,fresh pull succeeded
+گام051113,50045,bonds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,8,2026-10-19,fresh pull succeeded
+گام051115,48167,bonds,historical,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,3,2026-09-12,fresh pull succeeded
+گام051116,52241,bonds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,1,2026-10-14,fresh pull succeeded
+گام051213,50044,bonds,historical,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,4,2026-09-14,fresh pull succeeded
+گام060113,50505,bonds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,3,2026-09-14,fresh pull succeeded
+گام060216,50504,bonds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,4,2026-10-10,fresh pull succeeded
+گام060222,49818,bonds,historical,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,4,2026-09-14,fresh pull succeeded
+گام060261,50139,bonds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,7,2026-10-19,fresh pull succeeded
+گام060264,49820,bonds,historical,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,5,2026-10-19,fresh pull succeeded
+گام060317,51836,bonds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,1,2026-10-12,fresh pull succeeded
+گام060364,50043,bonds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,8,2026-10-19,fresh pull succeeded
+گام060461,50302,bonds,historical,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,3,2026-09-19,fresh pull succeeded
+گام060564,52109,bonds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,3,2026-10-19,fresh pull succeeded
+گكوثر,2192,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,ledger+base-price-discontinuity,2010,2026-10-19,fresh pull succeeded
+گكيش,695,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,base-price-discontinuity,2024,2026-10-19,fresh pull succeeded
+گلديران06,24962,bonds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,5,2026-08-23,fresh pull succeeded
+گلديس,1618,etf_funds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,370,2026-10-19,fresh pull succeeded
+گنجين,2762,etf_funds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,1531,2026-10-19,fresh pull succeeded
+گنجينه,7037,etf_funds,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,no-adjustment-event,1617,2026-10-19,fresh pull succeeded
+گنگين,5191,stocks,active,PRODUCT_LIVE_UNAVAILABLE,LIVE_RECOVERED,base-price-discontinuity,988,2026-10-19,fresh pull succeeded

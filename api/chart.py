@@ -282,7 +282,9 @@ _ADJ_VERDICT_DDL = ("CREATE TABLE IF NOT EXISTS adjust_verdict("
                     "symbol TEXT PRIMARY KEY, source TEXT, checked_at TEXT)")
 _ADJ_KNOWN_SOURCES = ("base-price-discontinuity", "no-adjustment-event", "local-cache",
                       # کشف از گسستِ CSV، عددِ رویداد از دفترِ رویدادِ مبدأِ TSETMC
-                      "ledger+base-price-discontinuity")
+                      "ledger+base-price-discontinuity",
+                      # توزیعِ رسمیِ صندوق از پورتالِ مدیرِ صندوق
+                      "fund-portal")
 # فقط این سه «از CSVِ کاملِ تاریخِ زنده خوانده‌ایم» است، پس فقط همین‌ها حقِّ
 # جانشینیِ کلِ مجموعهٔ کشِ یک نماد را دارند. `local-cache` برچسبِ *خواندن* است، نه
 # کشفِ تازه؛ اگر روزی به نویسندۀِ کش برسد، نباید ردیفِ دیده‌شدۀِ دیگری را پاک کند.
@@ -673,6 +675,7 @@ def _filter_unproven_base_events(symbol, events):
     if not ev:
         return ev, []
     name, paper_type = "", None
+    anomaly_dates = set()
     try:
         conn = sqlite3.connect(DB_PATH, timeout=15)
         try:
@@ -683,6 +686,13 @@ def _filter_unproven_base_events(symbol, events):
             if row:
                 name = str(row[0] or "").replace("\u200c", " ")
                 paper_type = row[1]
+            try:
+                for d, cause in conn.execute(
+                        "SELECT d_even, cause FROM session_anomalies"):
+                    if cause == "MARKET_WIDE_SESSION_DIFFERENCE":
+                        anomaly_dates.add(_d_even_to_date(d))
+            except Exception:
+                pass
         finally:
             conn.close()
     except Exception:
@@ -702,7 +712,11 @@ def _filter_unproven_base_events(symbol, events):
         src = e.get("source") or "base-price-discontinuity"
         status = None
         if src == "base-price-discontinuity":
-            if is_option:
+            if str(e.get("date"))[:10] in anomaly_dates:
+                # گسستِ بازار-گسترده در همان سشن، نه اقدام شرکتی؛ شاهدش جدولِ
+                # cross-sectional است، نه یک تاریخِ نوشته‌شده در کد.
+                status = "session-wide-base-gap"
+            elif is_option:
                 status = "option-base-gap"
             elif is_bond:
                 status = "bond-base-gap"
@@ -748,7 +762,14 @@ def _engine_events(events):
         if not d:
             continue
         ev = dict(e)
-        ev.update({"kind": AE.KIND_SOURCE_RATIO, "date": d})
+        # رویدادِ نوع‌دارِ کامل (مثلِ توزیعِ رسمیِ صندوق با reference_price و
+        # dividend_per_share) همین‌طور به موتور می‌رود تا خودش نسبت را بسازد و
+        # اعتبار بزند. رویدادِ کشف‌شده از گسستِ CSV نسبتش را از قبل دارد و
+        # برچسبِ source_ratio می‌گیرد.
+        if ev.get("kind") not in AE.KNOWN_KINDS or ev.get("kind") == AE.KIND_SOURCE_RATIO:
+            ev.update({"kind": AE.KIND_SOURCE_RATIO, "date": d})
+        else:
+            ev["date"] = d
         ratio, status = AE.event_factor(ev)
         if status == AE.OK and ratio is not None:
             applied.append(e)
@@ -862,7 +883,8 @@ _NO_EVENT_KINDS = ("option", "bond", "future", "right")
 def _candles_stale(candles, days=7):
     """آیا آخرین کندل از امروز قدیمی‌تر از `days` است؟ بی‌تاریخ/خطا → False."""
     try:
-        last = datetime.date.fromisoformat(str(candles[-1]["time"])[:10])
+        last = datetime.date.fromisoformat(
+            max(str(c["time"])[:10] for c in candles))
         return (datetime.date.today() - last).days > days
     except Exception:
         return False
@@ -881,7 +903,7 @@ def _functional_state(chain, coverage, *, kind=None, source=None, times=None, st
       * right: ۴ ابزار warrants صفر گام ⇒ همان قرارداد.
     برای stock/fund نبودِ ردیف رسمی به‌تنهایی «بی‌رویداد» اثبات نمی‌شود؛ SOURCE_GAP.
     """
-    times10 = [str(t)[:10] for t in (times or [])]
+    times10 = sorted(str(t)[:10] for t in (times or []))
     first = times10[0] if times10 else None
     last = times10[-1] if times10 else None
     if chain is None or coverage is None:
@@ -968,6 +990,140 @@ def _functional_state(chain, coverage, *, kind=None, source=None, times=None, st
     return available, reasons, status, availability
 
 
+def _session_backfill(symbol):
+    """ردیف‌هایِ رسمیِ تک‌جلسه‌ای که CSV جا انداخته بود؛ بی‌جدول/بی‌ردیف → []."""
+    try:
+        conn = sqlite3.connect(DB_PATH, timeout=15)
+        try:
+            conn.execute("PRAGMA query_only=ON")
+            _pred, _params = sym_pred(conn, "l_val18", symbol, "board")
+            row = conn.execute(
+                f"SELECT ins_code FROM instruments WHERE {_pred}"
+                " ORDER BY updated_at DESC LIMIT 1", _params).fetchone()
+            if not row:
+                return []
+            rows = conn.execute(
+                "SELECT d_even, open, high, low, close, last, base, volume"
+                " FROM session_backfill WHERE ins_code=? ORDER BY d_even",
+                (str(row[0]),)).fetchall()
+        finally:
+            conn.close()
+    except Exception:
+        return []
+    out = []
+    for d, o, h, l, c, last, base, vol in rows:
+        dt = _d_even_to_date(d)
+        if not dt:
+            continue
+        out.append({"time": dt, "open": o, "high": h, "low": l, "close": c,
+                    "last": last, "base": base, "volume": vol})
+    return out
+
+
+def _merge_session_backfill(candles, volumes, all_rows, rows, descending):
+    """ردیفِ رسمیِ گم‌شده را به سری اضافه می‌کند، بی‌ساختنِ کندلِ جعلی.
+
+    روزِ اداریِ بی‌معامله (H=L=0) فقط به `all_rows` می‌رود تا زنجیرهٔ پایه/پایانی
+    درست بماند؛ کندل برایش ساخته نمی‌شود (قراردادِ no-trade).
+    """
+    if not rows:
+        return candles, volumes, all_rows
+    have = {str(c["time"])[:10] for c in candles}
+    lo = min(have) if have else None
+    hi = max(have) if have else None
+    added_c, added_v = [], []
+    for r in rows:
+        t = r["time"]
+        if t in have or (lo and not (lo <= t <= hi)):
+            continue
+        if r.get("base") and r.get("close"):
+            all_rows.append({"time": t, "base": float(r["base"]),
+                             "close": float(r["close"]),
+                             "vol": float(r.get("volume") or 0)})
+        h, l, c = float(r.get("high") or 0), float(r.get("low") or 0), float(r.get("close") or 0)
+        if h <= 0 or l <= 0 or c <= 0:
+            continue
+        o = float(r.get("open") or 0)
+        base = float(r.get("base") or 0)
+        if o <= 0:
+            o = min(max(base, l), h) if base > 0 else c
+        last = float(r.get("last") or 0) or c
+        added_c.append({"time": t, "open": o, "high": h, "low": l, "close": c,
+                        "last": last})
+        added_v.append({"time": t, "value": float(r.get("volume") or 0)})
+    if added_c:
+        candles.extend(added_c)
+        volumes.extend(added_v)
+        key = lambda x: str(x["time"])[:10]
+        candles.sort(key=key, reverse=descending)
+        volumes.sort(key=key, reverse=descending)
+    return candles, volumes, all_rows
+
+
+def _fund_profit_events(symbol):
+    """توزیع‌هایِ رسمیِ صندوق از `fund_profit_events`؛ بی‌جدول/بی‌ردیف → [].
+
+    مقدار و تاریخ از پورتالِ رسمیِ مدیرِ صندوق می‌آید. خودِ جدول را ingestِ
+    `tools/fund_profits_ingest.py` می‌سازد و پر می‌کند؛ مسیرِ چارت فقط می‌خواند.
+    """
+    try:
+        conn = sqlite3.connect(DB_PATH, timeout=15)
+        try:
+            conn.execute("PRAGMA query_only=ON")
+            _pred, _params = sym_pred(conn, "l_val18", symbol, "board")
+            row = conn.execute(
+                f"SELECT ins_code FROM instruments WHERE {_pred}"
+                " ORDER BY updated_at DESC LIMIT 1", _params).fetchone()
+            if not row:
+                return []
+            rows = conn.execute(
+                "SELECT d_even, unit_profit, reference_price, ratio, source, profit_date, source_id"
+                " FROM fund_profit_events WHERE ins_code=? ORDER BY d_even",
+                (str(row[0]),)).fetchall()
+        finally:
+            conn.close()
+    except Exception:
+        return []
+    out = []
+    for d, unit, ref, ratio, src, pdate, sid in rows:
+        dt = _d_even_to_date(d)
+        if not dt or unit is None or ref is None:
+            continue
+        out.append({"date": dt, "kind": AE.KIND_CASH_DIVIDEND,
+                    "reference_price": float(ref),
+                    "dividend_per_share": float(unit),
+                    "ratio": float(ratio) if ratio is not None else None,
+                    "source": src or "fund-portal",
+                    "profit_date": pdate, "source_id": sid})
+    return out
+
+
+def _merge_official_fund_events(events, official):
+    """رویدادِ رسمیِ صندوق جایِ رویدادِ کشف‌شدهٔ همان تاریخ را می‌گیرد.
+
+    توزیعِ صندوق در CSV معمولاً گسستِ پایه نمی‌سازد؛ اگر ساخت، عددش گرد و
+    تقریبی است. ردیفِ رسمی همان تاریخ را با ورودی‌هایِ دقیق جایگزین می‌کنیم تا
+    یک توزیع دوبار اعمال نشود. رویدادهایِ نوع‌دارِ دیگر (تجزیه/تجمیع) دست‌نخورده
+    می‌مانند.
+    """
+    by_key = {}
+    official_dates = {str(e.get("date"))[:10] for e in official}
+    typed_keep = (AE.KIND_SPLIT, AE.KIND_MERGE, AE.KIND_CAPITAL_RESERVE,
+                  AE.KIND_CAPITAL_CONTRIBUTION)
+    for e in events or []:
+        d = str(e.get("date") or "")[:10]
+        if not d:
+            continue
+        kind = e.get("kind")
+        if d in official_dates and kind not in typed_keep:
+            continue
+        by_key[(d, kind or "")] = e
+    for e in official:
+        d = str(e["date"])[:10]
+        by_key[(d, AE.KIND_CASH_DIVIDEND)] = e
+    return sorted(by_key.values(), key=lambda e: str(e.get("date"))[:10])
+
+
 def _canonical_adjustment(symbol, times, events):
     """(applied, rejected, factors, chain, coverage) — تنها محاسبۀِ تعدیلِ هر دو مسیر.
 
@@ -975,6 +1131,9 @@ def _canonical_adjustment(symbol, times, events):
     هم‌ردیفِ همان `times` برمی‌گردد.
     """
     t10 = [str(t)[:10] for t in (times or [])]
+    official = _fund_profit_events(symbol)
+    if official:
+        events = _merge_official_fund_events(events, official)
     applied, rejected, wrapped = _engine_events(events)
     factors, chain = AE.chain_factors(t10, wrapped)
     return applied, rejected, factors, chain, _ledger_coverage(symbol, t10, wrapped)
@@ -1019,7 +1178,8 @@ def _adjust_capability(events, source, ledger=None, chain=None, coverage=None,
         reason = _ADJ_FUNCTIONAL_REASON
     return {
         "source": source,
-        "combined_available": source in _ADJ_KNOWN_SOURCES,
+        "combined_available": (source in _ADJ_KNOWN_SOURCES
+                               or str(source).startswith("fund-portal")),
         "functional_available": available,
         "functional_status": status,
         "functional_reason": reason,
@@ -1412,6 +1572,8 @@ def get_chart_tsetmc(symbol: str):
                 return fb
             return {"status": "error", "message": f"CSV HTTP {r.status_code}"}
         candles, volumes, all_rows = _parse_tsetmc_csv(r.text)
+        candles, volumes, all_rows = _merge_session_backfill(
+            candles, volumes, all_rows, _session_backfill(symbol), descending=True)
         # رویدادهای تعدیل: گسستِ «قیمت پایه» در همین CSV، به‌علاوهٔ درِ لنگر. منطق و
         # دلیلِ حذفِ APF/gap-detector در _adjust_events_from_rows مستند است.
         adj_events, anchored = _adjust_events_from_rows(all_rows)
@@ -1443,6 +1605,13 @@ def get_chart_tsetmc(symbol: str):
         _applied, _rejected, _fac, _chain, _cov = _canonical_adjustment(
             symbol, _times, adj_events)
         _rejected.extend(_false_rejected)
+        _fund_n = sum(1 for e in _applied
+                      if str(e.get("source") or "").startswith("fund-portal"))
+        if _fund_n:
+            adjust_source = ("fund-portal" if adjust_source in
+                             ("no-adjustment-event", "base-not-anchored")
+                             else adjust_source if str(adjust_source).startswith("fund-portal")
+                             else "fund-portal+" + adjust_source)
         factors = [{"time": c["time"], "factor": f} for c, f in zip(candles, _fac)]
 
         # صفر کندل ≠ موفق. اوراق/نمادهای منقضی CSV خالی می‌دهند؛ قبلاً
@@ -2053,6 +2222,10 @@ def get_chart_db(symbol: str):
         finally:
             conn.close()
 
+        # ردیفِ رسمیِ جلسه‌ای که CSV/بانک جا انداخته بود (مثلاً 2023-03-27).
+        candles, _ignore_v, _ignore_rows = _merge_session_backfill(
+            candles, [], [], _session_backfill(symbol), descending=False)
+
         # ---- تزریق کندلِ جلسهٔ جاری از market_watch (دادهٔ زندهٔ تابلوخوانی) ----
         # تاریخِ کندل را خودِ جلسه (d_even) می‌دهد، نه ساعتِ سیستم — دلیلش در
         # _watch_live_bar مستند است. سریِ اینجا صعودی است، پس آخرینِ لیست تازه‌ترین.
@@ -2077,6 +2250,13 @@ def get_chart_db(symbol: str):
         _applied, _rejected, _fac, _chain, _cov = _canonical_adjustment(
             symbol, [str(c["time"])[:10] for c in candles], _evs if _known else [])
         _rejected.extend(_false_rejected)
+        _fund_n = sum(1 for e in _applied
+                      if str(e.get("source") or "").startswith("fund-portal"))
+        if _fund_n:
+            _src = ("fund-portal" if _src in
+                    ("local-cache", "local-db-unseen", "no-adjustment-event", "base-not-anchored")
+                    else _src if str(_src).startswith("fund-portal")
+                    else "fund-portal+" + _src)
         _cap = _adjust_capability(
             _applied, _src, chain=_chain, coverage=_cov, symbol=symbol,
             times=[str(c["time"])[:10] for c in candles],
@@ -2217,6 +2397,25 @@ def get_patterns(symbol: str):
 CHART_CACHE = {}   # {_chart_cache_key(symbol): (fetch_time, json_data, ttl)}
 
 
+def _fund_events_rev():
+    """نسخهٔ کشِ رویدادهایِ رسمی/بک‌فیل؛ تغییرِ هر جدول باید کشِ چارت را بشکند."""
+    vals = []
+    try:
+        conn = sqlite3.connect(DB_PATH, timeout=5)
+        try:
+            for table in ("fund_profit_events", "session_backfill"):
+                try:
+                    row = conn.execute(f"SELECT MAX(fetched_at) FROM {table}").fetchone()
+                    vals.append(str(row[0] or "") if row else "")
+                except Exception:
+                    vals.append("")
+        finally:
+            conn.close()
+    except Exception:
+        return ""
+    return "|".join(vals)
+
+
 def _chart_cache_key(symbol):
     """کلیدِ کشِ چارت **مبنا را هم می‌برد** — همان قراردادی که MA_CACHE دارد
     (`api/chart.py::get_ma_events`: `f"{symbol}|{days}|{price_basis.current()}"`).
@@ -2231,7 +2430,7 @@ def _chart_cache_key(symbol):
       ۲) دو مبنایِ متفاوت، یکِ خانه را اشغال می‌کردند و هر تغییرِ مبنا سریِ دیگری
          را از کشِ بیرونیِ خودِ آن مبنای می‌خواند.
     """
-    return f"{symbol}|{price_basis.current()}"
+    return f"{symbol}|{price_basis.current()}|{_fund_events_rev()}"
 
 
 ADJ_TOL = 0.001

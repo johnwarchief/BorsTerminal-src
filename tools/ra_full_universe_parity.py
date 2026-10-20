@@ -538,7 +538,8 @@ def main():
             print(f"  {done_assets}/{len(by_asset)} assets", flush=True)
 
     with open(os.path.join(a.out_dir, "parity_symbols.csv"), "w", newline="", encoding="utf-8-sig") as fh:
-        w = csv.DictWriter(fh, fieldnames=list(symbol_rows[0].keys()) if symbol_rows else ["symbol"])
+        fields = sorted({k for r in symbol_rows for k in r}) if symbol_rows else ["symbol"]
+        w = csv.DictWriter(fh, fieldnames=fields)
         w.writeheader(); w.writerows(symbol_rows)
     with open(os.path.join(a.out_dir, "parity_steps.csv"), "w", newline="", encoding="utf-8-sig") as fh:
         w = csv.DictWriter(fh, fieldnames=["symbol", "asset_id", "ref_date", "prod_date", "ref_ratio",
