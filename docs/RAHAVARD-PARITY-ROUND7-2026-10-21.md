@@ -91,8 +91,9 @@
 
 - دستور: `python dev/run_all_tests.py` (خودکار → `dev/gate_db_guard.py`).
 - تست جدید `dev/test_dps_formula_v1.py` در SUITES ثبت شد.
-- اجرای کامل این دور: **در حال اجرا**؛ نتیجهٔ نهایی (counted/silent/skipped/failed) پس از پایان ثبت می‌شود.
-- اثرانگشت DB عملیاتی قبل/بعد بررسی می‌شود؛ تغییر منطقی ⇒ شکست گیت.
+- اجرای کامل (اول): **139 suite counted، 34 silent، 0 skipped**؛ تنها شکست `FTS rule->algorithm map` بود — ارجاع‌های `NAME:LINE` با جابه‌جایی خطوط `api/chart.py` کهنه شده بودند. سند به `_fts_analyze_candles:4349`, `_fts_jet_setup:3327`, `_fts_analyze_symbol:4757` به‌روز شد و تست مستقل **11/11** سبز است.
+- `PROTECTED_DB_UNCHANGED` برای هر دو اجرا؛ اثرانگشت منطقی `cdb73c40…3fcd4`.
+- اجرای تمیز نهایی پس از این اصلاح: **در حال اجرا**؛ نتیجه در همین بخش تکمیل می‌شود.
 
 ## ۸. فایل‌ها
 
