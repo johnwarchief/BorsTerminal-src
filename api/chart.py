@@ -547,6 +547,7 @@ def _sharpen_events_with_ledger(symbol, events):
         if lr and len(owners[lr["date"] + "|" + lr["kind"]]) == 1:
             e["ratio"] = round(lr["ratio"], 8)
             e["source"] = lr["kind"]
+            e["_ledger_key"] = (lr["date"], lr["kind"])
             sharpened += 1
         else:
             if lr:
@@ -1093,19 +1094,33 @@ def _official_price_adjust_events(symbol, times=None):
             continue
         if not dt or not (AE._RATIO_MIN <= r <= AE._RATIO_MAX) or abs(r - 1.0) < 1e-7:
             continue
+        orig = dt
         if candle_dates:
             nxt = next((t for t in candle_dates if t >= dt), None)
             if not nxt:
                 continue
             dt = nxt
-        out.append({"date": dt, "ratio": r, "source": src or "priceAdjust"})
+        out.append({"date": dt, "ratio": r, "source": src or "priceAdjust",
+                    "_ledger_key": (orig, "priceAdjust")})
     return out
 
 
 def _merge_official_price_adjust(events, official):
-    """رویداد رسمی را فقط وقتی اضافه می‌کند که کاشفِ CSV همان را ندیده باشد."""
+    """رویداد رسمی را فقط وقتی اضافه می‌کند که کاشفِ CSV همان را ندیده باشد.
+
+    هویتِ ردیف دفتری (`_ledger_key`) مهم است: یک ردیف می‌تواند در CSV به‌صورت
+    گسستِ پایه دیده شود و هم در `_official_price_adjust_events` به اولین کندلِ
+    بعدی نگاشت شود. اگر تاریخِ مؤثرِ این دو یکی نباشد (تعطیلی/توقفِ طولانی)،
+    مقایسهٔ تاریخِ خام آن‌ها را «دو رویداد» می‌بیند و ضریب دوبار اعمال می‌شود.
+    """
     kept = [dict(e) for e in (events or [])]
+    claimed = {e.get("_ledger_key") for e in kept if e.get("_ledger_key")}
+    rejected = []
     for o in official:
+        if o.get("_ledger_key") and o["_ledger_key"] in claimed:
+            rejected.append({"date": o.get("date"), "ratio": o.get("ratio"),
+                             "factor_status": "duplicate-ledger-row"})
+            continue
         d = str(o["date"])[:10]
         dup = False
         for e in kept:
@@ -1123,7 +1138,9 @@ def _merge_official_price_adjust(events, official):
                     pass
         if not dup:
             kept.append(o)
-    return sorted(kept, key=lambda e: str(e.get("date"))[:10])
+            if o.get("_ledger_key"):
+                claimed.add(o["_ledger_key"])
+    return sorted(kept, key=lambda e: str(e.get("date"))[:10]), rejected
 
 
 def _fund_profit_events(symbol):
@@ -1201,9 +1218,14 @@ def _canonical_adjustment(symbol, times, events):
     if official:
         events = _merge_official_fund_events(events, official)
     official_pa = _official_price_adjust_events(symbol, t10)
+    dup_rejected = []
     if official_pa:
-        events = _merge_official_price_adjust(events, official_pa)
+        events, dup_rejected = _merge_official_price_adjust(events, official_pa)
+    # کلیدِ هویتِ دفتری فقط برای همین تصمیم است؛ نه در payload و نه در موتور.
+    events = [{k: v for k, v in e.items() if not str(k).startswith("_")}
+              for e in events]
     applied, rejected, wrapped = _engine_events(events)
+    rejected.extend(dup_rejected)
     factors, chain = AE.chain_factors(t10, wrapped)
     return applied, rejected, factors, chain, _ledger_coverage(symbol, t10, wrapped)
 
