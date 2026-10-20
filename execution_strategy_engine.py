@@ -252,7 +252,8 @@ class BrowserStrategyBase:
 
     def _sel(self, ctx: StrategyContext) -> dict[str, str]:
         o = ctx.settings.options
-        keys = ("order_url", "symbol_selector", "price_selector", "quantity_selector",
+        keys = ("order_url", "symbol_selector", "form_symbol_selector",
+                "open_form_selector", "price_selector", "quantity_selector",
                 "submit_selector", "login_selector", "clock_selector",
                 "symbol_confirm_selector", "focus_selector", "intercept_pattern",
                 "api_path")
@@ -394,7 +395,7 @@ class BrowserStrategyBase:
     def _verify_form(self, driver: Any, sel: Mapping[str, str],
                      draft: OrderDraft, ctx: StrategyContext,
                      evidence: dict[str, Any]) -> None:
-        sym_sel = sel.get("symbol_selector") or ""
+        sym_sel = sel.get("form_symbol_selector") or sel.get("symbol_selector") or ""
         price_sel = sel.get("price_selector") or ""
         qty_sel = sel.get("quantity_selector") or ""
         submit_sel = sel.get("submit_selector") or ""
@@ -452,6 +453,18 @@ class BrowserStrategyBase:
             driver.goto(sel["order_url"])
             self._check_origin(driver, ctx)
             self._check_login(driver, sel)
+            if sel.get("open_form_selector") and self.spec.id != SC.JAVASCRIPT:
+                # فرمِ بازمانده از نمادِ قبلی stale است؛ پیش از هر خواندنی،
+                # فرم را برایِ نمادِ فعال دوباره باز می‌کنیم (کلیکِ بازکردن، نه ارسال).
+                opener = getattr(driver, "open_form", None)
+                if callable(opener):
+                    opener(sel["open_form_selector"], timeout_ms=int(
+                        ctx.settings.options.get("action_timeout_ms") or 1200))
+                else:
+                    driver.click(sel["open_form_selector"], timeout_ms=int(
+                        ctx.settings.options.get("action_timeout_ms") or 1200))
+                if sel.get("price_selector"):
+                    driver.wait_for(sel["price_selector"], 1500)
             evidence: dict[str, Any] = {
                 "url": _path_only(driver.url()),
                 "title": str(driver.title() or "")[:80],

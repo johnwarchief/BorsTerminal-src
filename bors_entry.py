@@ -858,6 +858,10 @@ def _serve_with_boot(port, boot_port):
 
 
 def main():
+    if "--schedule-daemon" in sys.argv:
+        import execution_daemon
+        raise SystemExit(execution_daemon.main(
+            [a for a in sys.argv[1:] if a != "--schedule-daemon"]))
     # نشانِ [exit] بی‌این‌که خودِ لانچر بنویسد هرگز رویِ دیسک نمی‌آمد: پس از
     # بسته‌شدنِ پنجرهٔ بومی، .NET پروسه را می‌بندد و پایتون به قلابِ خروجِ
     # مفسر نمی‌رسد (سنجشِ لاگِ نصبی: ۱۰ اجرا و ۸ بارِ بستنِ پنجره، صفر سطرِ

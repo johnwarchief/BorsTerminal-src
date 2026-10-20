@@ -421,6 +421,7 @@ export function invalidateExecution(qc: QueryClient) {
   qc.invalidateQueries({ queryKey: ['execution-status'] });
   qc.invalidateQueries({ queryKey: ['execution-ledger'] });
   qc.invalidateQueries({ queryKey: ['execution-strategies'] });
+  qc.invalidateQueries({ queryKey: ['execution-durable-schedules'] });
 }
 
 export function useExecutionStrategies(enabled: boolean) {
@@ -877,6 +878,55 @@ export function useExecutionEvents(filters: EventFilters, enabled = true) {
     enabled,
     staleTime: 10_000,
     refetchInterval: enabled ? sessionPollMs(60_000) : false,
+    retry: false,
+  });
+}
+
+// ── زمان‌بندیِ ماندگار (execution_schedule.py) ─────────────────────────────
+// این لایه فقط نمایش می‌دهد؛ داوریِ اعتبارسنجی/وضعیت در بک‌اند است. مبلغ/حجم
+// پیش‌فرض ندارد و live درِ پاسخِ readiness باید false باشد تا دکمهٔ زنده نیاید.
+export type DurableSchedule = {
+  id: string; execution_id: string; symbol: string; isin: string;
+  full_name?: string | null; side: string; price: number; quantity: number;
+  order_type: string; validity: string; mode: string; state: string;
+  target_ms: number; target_local: string; tz: string; attempts: number;
+  validation_ok?: boolean | null; last_validation?: Record<string, unknown> | null;
+  result?: Record<string, unknown> | null; last_error?: string | null;
+};
+export type ScheduleBlocker = { code: string; detail: string };
+export type ScheduleReadiness = {
+  live_ready: boolean; dry_run_scheduling: boolean; executor: string;
+  blockers: ScheduleBlocker[];
+};
+export type DurableSchedulesView = {
+  status: string; schedules: DurableSchedule[]; readiness: ScheduleReadiness;
+};
+
+export const scheduleApi = {
+  list: () => http<DurableSchedulesView>('/api/execution/schedules'),
+  readiness: () => http<Record<string, unknown>>('/api/execution/schedules/readiness'),
+  instrument: (symbol: string) => http<Record<string, unknown>>(
+    `/api/execution/schedules/instrument?symbol=${encodeURIComponent(symbol)}`),
+  create: (body: Record<string, unknown>) => http<Record<string, unknown>>(
+    '/api/execution/schedules', { method: 'POST', body, ...NO_RETRY }),
+  arm: (id: string) => http<Record<string, unknown>>(
+    `/api/execution/schedules/${encodeURIComponent(id)}/arm`,
+    { method: 'POST', ...NO_RETRY }),
+  cancel: (id: string) => http<Record<string, unknown>>(
+    `/api/execution/schedules/${encodeURIComponent(id)}/cancel`,
+    { method: 'POST', body: { reason: 'user' }, ...NO_RETRY }),
+  reset: (id: string) => http<Record<string, unknown>>(
+    `/api/execution/schedules/${encodeURIComponent(id)}/reset`,
+    { method: 'POST', ...NO_RETRY }),
+};
+
+export function useDurableSchedules(enabled = true) {
+  return useQuery({
+    queryKey: ['execution-durable-schedules'],
+    queryFn: () => scheduleApi.list(),
+    enabled,
+    staleTime: 5_000,
+    refetchInterval: enabled ? 10_000 : false,
     retry: false,
   });
 }

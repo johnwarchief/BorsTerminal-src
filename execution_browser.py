@@ -120,6 +120,7 @@ class MockBrowserDriver:
         self.last_request: Optional[dict] = None
         self.last_response: Optional[dict] = None
         self.click_count = 0
+        self.form_open_count = 0
 
     def start(self) -> None:
         self.started = True
@@ -185,6 +186,13 @@ class MockBrowserDriver:
         }
         self.events.append({"kind": "response", "status": self.last_response["status"]})
         return self.last_response
+
+    def open_form(self, selector: str, timeout_ms: int = 1200) -> dict[str, Any]:
+        """بازکردنِ فرم در Mock: هیچ درخواستِ سفارشی ساخته نمی‌شود."""
+        self.form_open_count += 1
+        self.events.append({"kind": "open_form", "selector": selector,
+                            "mono_ms": _now_ms()})
+        return {"ok": True, "opened": True}
 
     def click(self, selector: str, timeout_ms: int = 1200,
               force: bool = True) -> dict[str, Any]:
@@ -709,6 +717,10 @@ class PlaywrightBrowserDriver:
               force: bool = True) -> dict[str, Any]:
         return self._call("click", selector=selector, timeout_ms=timeout_ms,
                           force=force)
+
+    def open_form(self, selector: str, timeout_ms: int = 0) -> dict[str, Any]:
+        """کلیکِ «بازکردن فرم»؛ در صفحهٔ واقعی یک کلیک است، نه ارسال."""
+        return self.click(selector, timeout_ms=timeout_ms, force=True)
 
     def press(self, key: str, selector: str = "", timeout_ms: int = 0) -> dict[str, Any]:
         return self._call("press", key=key, selector=selector, timeout_ms=timeout_ms)

@@ -418,6 +418,19 @@ def _startup_sync_market():
         print(f"[startup] candle projection failed: {_e}")
 
 
+@app.on_event("startup")
+def _startup_schedule_runner() -> None:
+    """زمان‌بندِ ماندگار: recovery به NEEDS_REVIEW، سپس فقط dry-run. هیچ ارسالِ زنده‌ای
+    این‌جا وصل نیست؛ شکستش هم startup را پایین نمی‌آورد."""
+    try:
+        import api.execution as _ex
+        got = _ex.start_schedule_runner()
+        print("[startup] schedule runner: %s" % (
+            "started" if got.get("started") else got.get("reason", "not started")))
+    except Exception as _e:                      # noqa: BLE001
+        print(f"[startup] schedule runner failed (non-fatal): {_e}")
+
+
 @app.get("/", include_in_schema=False)
 def serve_home():
     """صفحه اصلی = SPA React (فاز 7)."""

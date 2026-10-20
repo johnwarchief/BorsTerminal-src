@@ -606,6 +606,11 @@ SUITES = [
      'sarkhati WAF header: GET without Content-Type, POST with Content-Type, WAF simulator green only without the header, dead server-time candidate removed, read-only gate never reaches the transport, session vault rejects expired/no-exp tokens and leaks none'),
     ('dev/strategy_guard_v1123.py',
      'sarkhati strategies: settings reject secrets, metrics p50/p95/p99 only from real samples, one-submit arbiter, direct/browser dry-run sends no POST, mismatch hard stop, clock gate, reconcile uniqueness'),
+    # مأموریتِ ۲۰۲۶-۱۰-۲۰ (Darvand P0): ذخیرهٔ ماندگارِ سفارش/زمان‌بندی، claim
+    # اتمیک، NEEDS_REVIEW پس از restart، MISSED_TARGET بدون جبران، و مسدودماندنِ
+    # مسیر زنده تا تأیید قرارداد/نشست. هیچ شبکه/سفارشی صدا زده نمی‌شود.
+    ('dev/execution_schedule_v1130.py',
+     'durable schedule: atomic store/claim, restart -> NEEDS_REVIEW, missed-target no catch-up, no retry after UNKNOWN, dedupe, halt/cancel, Darvand validator, live gates closed (dry-run only)'),
     # مأموریتِ 2026-10-18 (عیب‌یابیِ اتصالِ مفید): انتخابِ آداپتور ازِ خودِ برنامه
     # با مقدم‌بودنِ env، گیتِ نوشتن که هیچ تنظیمِ دیسکی بازش نمی‌کند، حالتِ
     # فقط‌خواندنی (خواندن بله / POST نه)، و «متصل» فقط باِ شاهدِ مسیرِ واقعی.

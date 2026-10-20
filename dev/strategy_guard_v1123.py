@@ -163,18 +163,21 @@ def main() -> int:
         def get_orders(self):
             return list(self.rows)
 
-    current = {"draft": None, "form": None, "response_override": None}
+    current = {"draft": None, "form": None, "response_override": None,
+               "last_driver": None}
 
     def factory(settings, strategy_id, mock=False, **kw):
         d = current["draft"]
         form = current["form"] or {"symbol": d.instrument.symbol,
                                    "price": "1000", "quantity": "10"}
-        return EB.MockBrowserDriver(
+        drv = EB.MockBrowserDriver(
             order_url=settings.options["order_url"],
             intercept_pattern=settings.options["intercept_pattern"],
             on_submit=lambda payload: current["response_override"] or {
                 "status": 200, "body": {"isSuccessful": True, "id": "MOCK-1"}},
             initial_form=form)
+        current["last_driver"] = drv
+        return drv
 
     clock_ok = lambda: {"verified": True, "delta_ms": 0.0, "rtt_ms": 1.0,
                         "broker_time": "2026-10-20T00:00:00"}
@@ -489,6 +492,34 @@ def main() -> int:
        "ح) ۲۰۰ HTMLِ صفحهٔ ورود پذیرش نیست", r_html.public())
     current["response_override"] = None
     store.save(SC.PLAYWRIGHT_DOM, mode=SC.MODE_SHADOW)
+
+    print("\n── ۱۳) بازکردن مجدد فرم و کنترل هدر نماد ──")
+    store.save(SC.PLAYWRIGHT_DOM, options={
+        "open_form_selector": "[data-testid=open-buy]",
+        "form_symbol_selector": "[data-testid=form-symbol]"})
+    current["draft"] = draft("G-FORM-REOPEN")
+    current["form"] = {"symbol": "TEST", "price": "1000", "quantity": "10",
+                       "form-symbol": "TEST"}
+    o_form = eng.prepare(current["draft"], SC.PLAYWRIGHT_DOM)
+    drv = current.get("last_driver")
+    ck(drv is not None and drv.form_open_count == 1 and drv.click_count == 0,
+       "الف) بازکردنِ فرم یک بار و بدونِ کلیکِ ارسال",
+       {"open": getattr(drv, "form_open_count", None),
+        "click": getattr(drv, "click_count", None)})
+    ck(str((o_form.prepared.evidence or {}).get("symbol") or "") == "TEST",
+       "پ) هدرِ فرم با قصد یکی است",
+       (o_form.prepared.evidence or {}).get("symbol"))
+    current["draft"] = draft("G-FORM-MISMATCH")
+    current["form"] = {"symbol": "TEST", "price": "1000", "quantity": "10",
+                       "form-symbol": "OTHER"}
+    try:
+        eng.prepare(current["draft"], SC.PLAYWRIGHT_DOM)
+        mismatch = False
+    except Exception as e:                       # noqa: BLE001
+        mismatch = "SYMBOL_MISMATCH" in str(e)
+    ck(mismatch, "ت) هدرِ ناهماهنگ ⇒ SYMBOL_MISMATCH و توقف")
+    store.save(SC.PLAYWRIGHT_DOM, options={"open_form_selector": "",
+                                           "form_symbol_selector": ""})
 
     current["draft"] = draft("G-STOP")
     current["form"] = None

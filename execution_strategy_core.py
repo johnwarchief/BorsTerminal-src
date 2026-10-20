@@ -63,6 +63,8 @@ _COMMON_BROWSER = {
     "origin_allowlist": ["https://d.easytrader.ir"],
     "submit_selector": "",
     "symbol_selector": "",
+    "form_symbol_selector": "",
+    "open_form_selector": "",
     "price_selector": "",
     "quantity_selector": "",
     "login_selector": "",

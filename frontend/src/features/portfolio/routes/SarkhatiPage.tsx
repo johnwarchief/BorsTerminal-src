@@ -39,6 +39,7 @@ import { SarkhatiPipeline } from '../components/sarkhati/SarkhatiPipeline';
 import { SarkhatiProTools } from '../components/sarkhati/SarkhatiProTools';
 import { SarkhatiRiskCard } from '../components/sarkhati/SarkhatiRiskCard';
 import { SarkhatiScheduleCard } from '../components/sarkhati/SarkhatiScheduleCard';
+import { SarkhatiDurableScheduleCard } from '../components/sarkhati/SarkhatiDurableScheduleCard';
 import { SarkhatiStatusStrip } from '../components/sarkhati/SarkhatiStatusStrip';
 import { SarkhatiSymbolCard, estValue, selectRowFor }
   from '../components/sarkhati/SarkhatiSymbolCard';
@@ -287,7 +288,10 @@ export default function SarkhatiPage() {
         <SarkhatiTrackingCard ledger={ledger.data ?? null} caps={gate.caps}
             status={gate.status} endpointPresent={gate.endpointPresent} />
       ) : panel === 'schedule' ? (
-        <SarkhatiScheduleCard ledger={ledger.data ?? null} />
+        <div className="flex flex-col gap-2">
+          <SarkhatiDurableScheduleCard />
+          <SarkhatiScheduleCard ledger={ledger.data ?? null} />
+        </div>
       ) : panel === 'risk' ? (
         <SarkhatiRiskCard status={gate.status} />
       ) : (

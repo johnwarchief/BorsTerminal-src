@@ -39,7 +39,7 @@ from typing import Any
 
 from fastapi import APIRouter, Body, HTTPException, Query, Request
 
-from bors_config import DB_PATH
+from bors_config import DB_PATH, WORK_DIR
 from execution_contract import (
     BrokerAdapter, BrokerError, Capabilities, ErrorCode, ExecutionRecord,
     ExecutionStatus, InstrumentRef, OrderDraft, OrderMode, OrderState, Resolution, Side,
@@ -51,6 +51,7 @@ from execution_easytrader import (
     easytrader_payload,
 )
 import execution_connect as EXC                            # noqa: E402
+import execution_schedule as SCH                           # noqa: E402
 import execution_session_store as SESS                     # noqa: E402
 import execution_strategy_core as SC                       # noqa: E402
 import execution_strategy_engine as SE                     # noqa: E402
@@ -175,6 +176,57 @@ _LIMITS = Limits(
 _ACTIVE_ADAPTER = _adapter()
 _SERVICE = ExecutionService(_ACTIVE_ADAPTER, dry_run=DRY_RUN, limits=_LIMITS,
                             audit=_AUDIT, scheduler=_SCHEDULER)
+
+# ── زمان‌بندیِ ماندگار (execution_schedule.py) ─────────────────────────────
+#: store جدا از market.db است؛ live executor این‌جا عمداً وصل نیست.
+_SCHEDULE_STORE: SCH.ScheduleStore | None = None
+_SCHEDULE_RUNNER: SCH.ScheduleRunner | None = None
+_SCHEDULE_STORE_LOCK = threading.Lock()
+_SCHEDULE_RUNNER_LOCK = threading.Lock()
+SCHEDULE_DB_ENV = "BORS_SCHEDULE_DB"
+SCHEDULE_RUNNER_ENV = "BORS_SCHEDULE_RUNNER"
+
+
+def _schedule_store() -> SCH.ScheduleStore:
+    global _SCHEDULE_STORE
+    with _SCHEDULE_STORE_LOCK:
+        if _SCHEDULE_STORE is None:
+            path = (os.environ.get(SCHEDULE_DB_ENV) or "").strip() \
+                or SCH.default_store_path(WORK_DIR)
+            _SCHEDULE_STORE = SCH.ScheduleStore(path)
+        return _SCHEDULE_STORE
+
+
+def _schedule_calendar() -> SCH.LocalTradingCalendar:
+    return SCH.LocalTradingCalendar(DB_PATH)
+
+
+def _schedule_facts(rec: SCH.ScheduleRecord, at_ms: int | None = None) -> SCH.DarvandFacts:
+    facts = SCH.local_identity_facts(DB_PATH, rec.symbol)
+    facts.now_ms = SCH.now_ms() if at_ms is None else int(at_ms)
+    return facts
+
+
+def _schedule_runner() -> SCH.ScheduleRunner:
+    global _SCHEDULE_RUNNER
+    with _SCHEDULE_RUNNER_LOCK:
+        if _SCHEDULE_RUNNER is None:
+            _SCHEDULE_RUNNER = SCH.ScheduleRunner(
+                _schedule_store(), SCH.LocalFactsProvider(DB_PATH, _schedule_calendar()),
+                calendar=_schedule_calendar(), executor=SCH.DryRunExecutor(),
+                halted=lambda: _SERVICE.halted(),
+                live_enabled=False, contract_verified=False)
+        return _SCHEDULE_RUNNER
+
+
+def start_schedule_runner() -> dict[str, Any]:
+    """هوکِ startup؛ در تست‌ها با BORS_SCHEDULE_RUNNER=0 خاموش می‌شود."""
+    if (os.environ.get(SCHEDULE_RUNNER_ENV) or "1").strip().lower() in ("0", "false", "no", "off"):
+        return {"started": False, "reason": "disabled by env"}
+    runner = _schedule_runner()
+    runner.start()
+    return {"started": True, "recovered": runner.last_tick,
+            "readiness": SCH.readiness()}
 
 
 def _recover_session() -> dict[str, Any]:
@@ -1084,6 +1136,150 @@ def post_strategy_probe(strategy_id: str) -> dict[str, Any]:
                 "detail": "%s: %s" % (type(e).__name__, str(e)[:180])}
 
 
+# ── ۲.۴) زمان‌بندیِ ماندگار: ذخیره، اعتبارسنجی، مسلح‌کردن، لغو ───────────────
+def _schedule_error(e: SCH.ScheduleError) -> dict[str, Any]:
+    return {"status": "error", "code": e.code, "detail": e.detail or e.code}
+
+
+@router.get("/api/execution/schedules/readiness")
+def get_schedule_readiness() -> dict[str, Any]:
+    try:
+        rows = _schedule_store().list(500)
+    except Exception as e:                       # noqa: BLE001
+        return {"status": "error", "code": "SCHEDULE_STORE_UNAVAILABLE",
+                "detail": "%s: %s" % (type(e).__name__, str(e)[:160]),
+                "readiness": SCH.readiness()}
+    counts: dict[str, int] = {}
+    for r in rows:
+        counts[r.state] = counts.get(r.state, 0) + 1
+    runner = _schedule_runner()
+    return {"status": "success", "readiness": SCH.readiness(),
+            "counts": counts,
+            "runner": {"live_enabled": runner.live_enabled,
+                       "contract_verified": runner.contract_verified,
+                       "last_error": runner.last_error,
+                       "last_tick": runner.last_tick}}
+
+
+@router.get("/api/execution/schedules/instrument")
+def get_schedule_instrument(symbol: str = Query(...)) -> dict[str, Any]:
+    sym = (symbol or "").strip()
+    facts = SCH.local_identity_facts(DB_PATH, sym)
+    if not facts.isin:
+        return {"status": "error", "code": "IDENTITY_UNVERIFIED",
+                "detail": "این نماد در دادهٔ محلی با ISIN پیدا نشد؛ شناسه حدس زده نمی‌شود"}
+    return {"status": "success",
+            "instrument": {"symbol": facts.symbol, "isin": facts.isin,
+                           "full_name": facts.full_name,
+                           "source": facts.identity_source}}
+
+
+@router.get("/api/execution/schedules")
+def get_schedules(limit: int = 100) -> dict[str, Any]:
+    try:
+        rows = [r.public() for r in _schedule_store().list(limit)]
+    except Exception as e:                       # noqa: BLE001
+        return {"status": "error", "code": "SCHEDULE_STORE_UNAVAILABLE",
+                "detail": "%s: %s" % (type(e).__name__, str(e)[:160])}
+    return {"status": "success", "schedules": rows, "readiness": SCH.readiness()}
+
+
+@router.post("/api/execution/schedules")
+def post_schedule(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
+    symbol = str(body.get("symbol") or "").strip()
+    if symbol != SCH.DEFAULT_SYMBOL:
+        return {"status": "error", "code": "SYMBOL_NOT_SUPPORTED",
+                "detail": "این نسخه فقط داروند را اعتبارسنجی می‌کند"}
+    facts = SCH.local_identity_facts(DB_PATH, symbol)
+    if not facts.isin:
+        return {"status": "error", "code": "IDENTITY_UNVERIFIED",
+                "detail": "شناسهٔ مستقل نماد در دادهٔ محلی پیدا نشد"}
+    got_isin = str(body.get("isin") or "").strip().upper()
+    if not got_isin or got_isin != facts.isin.upper():
+        return {"status": "error", "code": "IDENTITY_MISMATCH",
+                "detail": "ISIN با هویتِ محلی نماد یکی نیست",
+                "expected_isin": facts.isin}
+    try:
+        rec = _schedule_store().create(
+            symbol=symbol, isin=facts.isin, full_name=facts.full_name or "",
+            side=str(body.get("side") or "").strip().lower(),
+            price=body.get("price"), quantity=body.get("quantity"),
+            target_ms=(int(body["target_ms"]) if body.get("target_ms") is not None else None),
+            target_local=str(body.get("target_local") or ""),
+            mode=str(body.get("mode") or "dry_run").strip().lower(),
+            order_type=str(body.get("order_type") or "normal").strip().lower(),
+            validity=str(body.get("validity") or "day").strip().lower(),
+            strategy=str(body.get("strategy") or SC.PLAYWRIGHT_DOM),
+            execution_id=str(body.get("execution_id") or ""),
+            settings_version=int(body.get("settings_version") or 1))
+    except SCH.ScheduleError as e:
+        return _schedule_error(e)
+    except (TypeError, ValueError) as e:
+        return {"status": "error", "code": "BAD_REQUEST",
+                "detail": "%s: %s" % (type(e).__name__, str(e)[:160])}
+    report = SCH.validate_darvand(rec, _schedule_facts(rec), check_target_future=True)
+    rec = _schedule_store().set_validation(
+        rec.id, report.to_dict(), report.ok_for_arm(rec.mode),
+        "" if report.ok_for_arm(rec.mode) else "; ".join(report.blockers[:4]))
+    return {"status": "success", "schedule": rec.public(),
+            "validation": report.to_dict(), "readiness": SCH.readiness()}
+
+
+@router.post("/api/execution/schedules/{sid}/arm")
+def post_schedule_arm(sid: str) -> dict[str, Any]:
+    store = _schedule_store()
+    rec = store.get(sid)
+    if rec is None:
+        return {"status": "error", "code": "NOT_FOUND"}
+    report = SCH.validate_darvand(rec, _schedule_facts(rec), check_target_future=True)
+    if rec.mode == "live":
+        store.set_validation(sid, report.to_dict(), False, "live not verified")
+        return {"status": "error", "code": "LIVE_NOT_VERIFIED",
+                "detail": "مسیر زنده تا تأیید قرارداد/نشست/مجوز فعال نمی‌شود",
+                "validation": report.to_dict(), "readiness": SCH.readiness()}
+    if not report.ok_for_arm(rec.mode):
+        store.set_validation(sid, report.to_dict(), False,
+                             "; ".join(report.blockers[:4]))
+        return {"status": "error", "code": "VALIDATION_FAILED",
+                "detail": "کنترل‌های حیاتیِ داروند تأیید نشد",
+                "validation": report.to_dict()}
+    try:
+        rec = store.arm(sid, report.to_dict(), ok_for_arm=True,
+                        at_ms=SCH.now_ms())
+    except SCH.ScheduleError as e:
+        return _schedule_error(e)
+    return {"status": "success", "schedule": rec.public(),
+            "validation": report.to_dict(), "readiness": SCH.readiness()}
+
+
+@router.post("/api/execution/schedules/{sid}/cancel")
+def post_schedule_cancel(sid: str, body: dict[str, Any] | None = Body(default=None)) -> dict[str, Any]:
+    try:
+        rec = _schedule_store().cancel(sid, str((body or {}).get("reason") or "user"))
+    except SCH.ScheduleError as e:
+        return _schedule_error(e)
+    return {"status": "success", "schedule": rec.public()}
+
+
+@router.post("/api/execution/schedules/{sid}/reset")
+def post_schedule_reset(sid: str) -> dict[str, Any]:
+    try:
+        rec = _schedule_store().reset_to_prepared(sid, at_ms=SCH.now_ms())
+    except SCH.ScheduleError as e:
+        return _schedule_error(e)
+    return {"status": "success", "schedule": rec.public()}
+
+
+@router.get("/api/execution/schedules/{sid}")
+def get_schedule(sid: str) -> dict[str, Any]:
+    store = _schedule_store()
+    rec = store.get(sid)
+    if rec is None:
+        return {"status": "error", "code": "NOT_FOUND"}
+    return {"status": "success", "schedule": rec.public(),
+            "events": store.events(sid), "readiness": SCH.readiness()}
+
+
 # ── ۲.۵) تنظیمِ اتصال و پرتفویِ فقط‌خواندنی ─────────────────────────────────
 @router.get("/api/execution/config")
 def get_config() -> dict[str, Any]:
@@ -1590,9 +1786,16 @@ def post_halt(body: dict[str, Any] = Body(default={})) -> dict[str, Any]:
     # باشد و «توقف» نباید پشتِ آن بایستد. خودِ ledger قفلِ رشته‌ایِ دارد.
     _AUDIT.set_kill(state, reason, actor=str(body.get("actor") or "user"))
     aborted = _halt_pending(reason)
+    durable_review = 0
+    try:
+        if _SCHEDULE_STORE is not None:
+            durable_review = _SCHEDULE_STORE.set_kill(reason)
+    except Exception:                       # noqa: BLE001 - halt نباید بشکند
+        durable_review = 0
     return {"status": "success", "kill_switch": _AUDIT.kill_state(),
             "halted": _AUDIT.halted(), "reason": reason,
             "aborted_schedules": aborted,
+            "durable_schedules_needs_review": durable_review,
             "dry_run": DRY_RUN, "adapter": ADAPTER_KIND}
 
 
