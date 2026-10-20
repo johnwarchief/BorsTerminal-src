@@ -12,6 +12,14 @@ if _HERE not in sys.path:
     sys.path.insert(0, _HERE)
 from guard_counts import summarize  # noqa: E402
 
+# Gate safety: a bare `python dev/run_all_tests.py` must not run against the
+# operational DB. Delegate to the wrapper that copies the DB, sets
+# BORS_WORK_DIR/BORS_DB and BORS_NO_FETCH_LOOPS=1, and fingerprints the source.
+if __name__ == "__main__" and os.environ.get("BORS_GATE_ISOLATED") != "1":
+    print("[gate] unisolated invocation — delegating to dev/gate_db_guard.py")
+    _args = [sys.executable, os.path.join(_HERE, "gate_db_guard.py")] + sys.argv[1:]
+    raise SystemExit(subprocess.call(_args))
+
 os.chdir(os.path.join(_HERE, '..'))
 
 SUITES = [
@@ -191,6 +199,7 @@ SUITES = [
                                       "indicator-3 no-data is 'not measured', never 'rejected' (both cache paths)"),
     ('dev/codal_logic_guard.py',      'codal logic contract F-01..F-05 (amendment)'),
     ('dev/db_contract_v11.py',        'FTS v2.2 db contract: writer/reader/schema agree'),
+    ('dev/test_db_isolation_v1.py',   'DB isolation: temp copy, logical fingerprint, fetch-loop gate'),
     ('dev/version_anchor_guard.py',   'all six version anchors state the same release'),
     ('dev/fts_defaults_parity_guard.py', 'FTS guide defaults: FE drawer mirrors the server'),
     ('dev/test_hourglass_settings_v1.py', 'hourglass RSI period, oversold threshold and MA52 mode are configurable'),
