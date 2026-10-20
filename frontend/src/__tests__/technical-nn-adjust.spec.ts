@@ -256,6 +256,35 @@ describe("PHASE A — جداسازیِ معناییِ تعدیل", () => {
     const noRowsNote = functionalStatusNote(noRows);
     expect(noRowsNote?.summary).toContain("هیچ ردیف رسمیِ تعدیل در بانک نیست");
     expect(noRowsNote?.summary).not.toContain("no-official-rows");
+
+    const partial = readAdjustmentCapability({ adjustCapability: {
+      source: "base-price-discontinuity", combined_available: true,
+      functional_available: false, functional_status: "PARTIAL",
+      functional_reason: "r",
+      functional_blockers: ["candles-before-ledger-coverage:120"],
+      availability: { status: "PARTIAL", requested_start: "2020-01-01",
+        requested_end: "2026-01-01", covered_start: "2023-01-01",
+        covered_end: "2026-01-01", window_start: "2023-01-01",
+        valid_points: 400, incomplete_points: 120,
+        source: "base-price-discontinuity", stale: false } } });
+    expect(partial.functionalStatus).toBe("PARTIAL");
+    expect(partial.availability).not.toBeNull();
+    const partialNote = functionalStatusNote(partial);
+    expect(partialNote?.summary).toContain("بخشی از تاریخچه");
+    expect(partialNote?.details.join(" ")).toContain("نقاط معتبر");
+    expect(partialNote?.details.join(" ")).toContain(`${toFaDigits(120)} کندل پیش از پوشش`);
+
+    const stale = readAdjustmentCapability({ adjustCapability: {
+      source: "local-cache", combined_available: true,
+      functional_available: false, functional_status: "STALE",
+      functional_reason: "r", functional_blockers: [] } });
+    expect(functionalStatusNote(stale)?.summary).toContain("کهنه");
+
+    const noEvent = readAdjustmentCapability({ adjustCapability: {
+      source: "no-adjustment-event", combined_available: true,
+      functional_available: true, functional_status: "AVAILABLE_NO_EVENTS",
+      functional_reason: "r", functional_blockers: [] } });
+    expect(functionalStatusNote(noEvent)).toBeNull();
   });
 
   it("هندسهٔ OHLC پس از هر دو حالت حفظ می‌شود", () => {

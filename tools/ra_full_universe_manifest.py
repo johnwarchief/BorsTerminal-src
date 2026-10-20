@@ -28,11 +28,14 @@ def main():
     a = ap.parse_args()
 
     name_map = collections.defaultdict(list)
+    norm_map = collections.defaultdict(list)
     for r in csv.DictReader(open(a.bulk, encoding="utf-8-sig")):
         if r.get("class") == "funds" or not r.get("name"):
             continue
-        name_map[r["name"]].append({"class": r["class"], "asset_id": str(r["asset_id"]),
-                                    "exchange_id": r.get("exchange_id")})
+        hit = {"class": r["class"], "asset_id": str(r["asset_id"]),
+               "exchange_id": r.get("exchange_id")}
+        name_map[r["name"]].append(hit)
+        norm_map[norm(r["name"])].append(hit)
     con = sqlite3.connect(f"file:{a.db}?mode=ro", uri=True)
     con.execute("PRAGMA query_only=ON")
     con.row_factory = sqlite3.Row
@@ -54,7 +57,7 @@ def main():
         if not m:
             continue
         base = by_sym.get(m.group(1))
-        if not base or not name_map.get(base["symbol"]):
+        if not base or not (name_map.get(base["symbol"]) or norm_map.get(norm(base["symbol"]))):
             continue
         if norm(base["name"]) != norm(r["name"]):
             continue
@@ -62,23 +65,41 @@ def main():
             continue
         variant_map[r["symbol"]] = base["symbol"]
 
+    def hits_for(sym):
+        h = name_map.get(sym)
+        if h:
+            return h, "raw"
+        h = norm_map.get(norm(sym))
+        if h:
+            return h, "normalized"
+        return None, None
+
     rows = []
     for r in inst:
-        hits = name_map.get(r["symbol"])
-        hit, method = None, None
+        hits, how = hits_for(r["symbol"])
+        hit, method, note = None, None, ""
         if hits:
             if len(hits) == 1:
-                hit, method = hits[0], "rahavard-bulk-exact-trade-symbol"
+                hit = hits[0]
+                method = ("rahavard-bulk-exact-trade-symbol" if how == "raw"
+                          else "rahavard-bulk-exact-normalized")
+                if how == "normalized":
+                    note = "normalized-exact:" + norm(r["symbol"])
             else:
                 pref = {1: "stocks", 8: "etf_funds", 2: "bonds", 4: "warrants"}.get(r["paper_type"])
                 cand = [h for h in hits if h["class"] == pref]
                 if len(cand) == 1:
-                    hit, method = cand[0], "rahavard-bulk-exact-trade-symbol+class"
+                    hit = cand[0]
+                    method = ("rahavard-bulk-exact-trade-symbol+class" if how == "raw"
+                              else "rahavard-bulk-exact-normalized+class")
                 else:
-                    method = "IDENTITY_AMBIGUOUS:" + ",".join(sorted(h["asset_id"] for h in hits))
+                    method = ("IDENTITY_AMBIGUOUS:" + ",".join(sorted(h["asset_id"] for h in hits))
+                              if how == "raw" else
+                              "IDENTITY_AMBIGUOUS_NORMALIZED:" + ",".join(sorted(h["asset_id"] for h in hits)))
         elif r["symbol"] in variant_map:
             base = variant_map[r["symbol"]]
-            hit = name_map[base][0]
+            bh, bhow = hits_for(base)
+            hit = bh[0]
             method = f"rahavard-bulk-variant-of:{base}"
         status = ("active" if int(r["watch_last"] or 0) >= 20261001
                   else ("historical" if r["hist_count"] else "no-product-data"))
@@ -92,7 +113,10 @@ def main():
             "ra_asset_id": hit["asset_id"] if hit else "",
             "ra_class": hit["class"] if hit else "",
             "identity_method": method or "NO_EXACT_IDENTITY",
-            "exclusion_reason": "" if hit else ("NO_REFERENCE_DATA" if not hits else "IDENTITY_AMBIGUOUS"),
+            "identity_note": note,
+            "exclusion_reason": ("" if hit else
+                                 ("IDENTITY_AMBIGUOUS" if method and method.startswith("IDENTITY_AMBIGUOUS")
+                                  else "NO_REFERENCE_DATA")),
         })
     with open(a.out, "w", newline="", encoding="utf-8-sig") as fh:
         w = csv.DictWriter(fh, fieldnames=list(rows[0].keys()))

@@ -31,6 +31,8 @@ def main():
     ap.add_argument("--done-from", default="")
     ap.add_argument("--no-fts", action="store_true")
     ap.add_argument("--limit", type=int, default=0)
+    ap.add_argument("--retries", type=int, default=2,
+                    help="live retries when TSETMC falls back to the local DB")
     a = ap.parse_args()
 
     if not os.path.exists(a.db):
@@ -78,11 +80,20 @@ def main():
         todo = todo[:a.limit]
     print(f"mapped={len(mapped)} done={len(done)} todo={len(todo)}")
 
+    import datetime as _dt
     with open(a.out, "a", encoding="utf-8") as fh:
         for i, sym in enumerate(todo, 1):
             t0 = time.time()
+            attempts = 0
             try:
-                res = CH.get_chart_tsetmc(sym) if a.live else CH.get_chart_db(sym)
+                while True:
+                    attempts += 1
+                    res = CH.get_chart_tsetmc(sym) if a.live else CH.get_chart_db(sym)
+                    if (not a.live or res.get("status") != "success"
+                            or res.get("adjustSource") != "local-db-fallback"
+                            or attempts > a.retries):
+                        break
+                    time.sleep(1.2 * attempts)
                 if res.get("status") != "success":
                     rec = {"symbol": sym, "error": res.get("message") or f"status:{res.get('status')}"}
                 else:
@@ -98,6 +109,9 @@ def main():
                         "factors": res.get("factors") or [], "adjustEvents": res.get("adjustEvents") or [],
                         "adjustRejected": res.get("adjustRejected") or [],
                         "adjustCapability": res.get("adjustCapability") or {},
+                        "liveError": res.get("liveError"),
+                        "fetchAttempts": attempts,
+                        "fetchedAt": _dt.datetime.now().isoformat(timespec="seconds"),
                     }
             except Exception as e:  # one symbol must not kill the run
                 rec = {"symbol": sym, "error": f"{type(e).__name__}: {str(e)[:200]}"}

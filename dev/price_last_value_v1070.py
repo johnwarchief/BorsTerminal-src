@@ -156,7 +156,9 @@ def main():
 
     # ── ۵) لنگرِ تعدیل به last وصل نمی‌شود (§۱-پ: B1 فاجعه است) ───────────────
     print("\n[۵] لنگرِ تعدیل")
-    adj = src[src.index("def _adjust_events_from_rows"):src.index("def _d_even_to_date")]
+    # The slice must cover exactly the anchor-discovery chain; helpers added later
+    # (availability/status) may legitimately use a local named `last` for a date.
+    adj = src[src.index("def _adjust_events_from_rows"):src.index("def _store_adjust_events")]
     ck("last" not in adj.replace("last_d_even", ""),
        "NEGATIVE CONTROL: زنجیرِ کشفِ لنگر هیچ «last» نمی‌خواند", "")
     ck("base" in adj and "close" in adj, "لنگر همان pairِ پایه/پایانی است", "")

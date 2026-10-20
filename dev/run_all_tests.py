@@ -95,6 +95,10 @@ SUITES = [
      'canonical adjustment: mode semantics split, single scaled series, honest fallback'),
     ('dev/test_unproven_base_events_v1.py',
      'unproven base-price gaps (positive, fund micro) never enter the adjustment chain'),
+    ('dev/test_functional_availability_v1.py',
+     'functional availability statuses: complete, partial window, no-event classes, source gap, stale'),
+    ('dev/test_rahavard_contract_v1.py',
+     'Rahavard data contract fixture: type0/type7 factor, OHLC, weekly sum, LAST basis'),
     # مرحلۀِ ۲ (Phase 2): ریشۀِ تعدیل/منبعِ قیمت — ادغامِ بلوکِ VOL=0، ثباتِ لنگرِ تعدیل
     # نسبت به مبنایِ نمایش، هم‌سنجیِ MA با زنجیرۀِ تعدیلِ چارت، و مرزهایِ هندسۀِ کندل.
     ('dev/test_fts_zero_volume_collapse_v1.py',

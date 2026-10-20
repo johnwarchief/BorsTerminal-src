@@ -583,6 +583,70 @@ def _sharpen_events_with_ledger(symbol, events):
 # اینکه آیا آن‌ها گامِ واقعیِ دیگري هستند درِ قدمِ ۶ با مرجعِ رهاورد سنجیده می‌شود.
 
 
+def _is_option_name(name):
+    return "اختيار" in name or "اختیار" in name
+
+
+def _is_bond_name(name):
+    if not name or "صندوق" in name or "بورس اوراق بهادار" in name:
+        return False
+    if any(k in name for k in (
+            "مرابحه", "اسناد", "مشاركت", "مشارکت", "اجاره", "صكوک", "صکوک",
+            "سلف موازي", "سلف موازی", "اخزا", "اوراق")):
+        return True
+    return (name.startswith("گام") or name.startswith("گواهي اعتبار")
+            or name.startswith("گواهی اعتبار"))
+
+
+def _is_right_name(name, paper_type):
+    return (paper_type == 4 or name.startswith("ح ") or name.startswith("ح.")
+            or "حق تقدم" in name)
+
+
+def _is_future_name(name):
+    if not name:
+        return False
+    if name.startswith(("آتي ", "آتی ", "بار پايه", "بار پایه")):
+        return True
+    return ("ماهه" in name) and any(k in name for k in ("فروش", "خرید", "تحویل"))
+
+
+def _instrument_kind(symbol):
+    """option|bond|right|fund|future|stock|unknown — از نام/نوعِ خودِ ابزار.
+
+    این طبقه‌بندی برایِ **قراردادِ دسترسی** است، نه برایِ نگاشتِ هویت: اختیار/آتی
+    اقدامِ شرکتی ندارند و اوراق/حق‌تقدم در قراردادِ عملکردیِ فعلی گامِ تعدیل ندارند.
+    قواعدِ نام با تطبیقِ ۱۰۰٪ رویِ فهرست‌هایِ خودِ رهاورد سنجیده شده‌اند
+    (۱٬۰۲۷ اختیار، ۵۲۸ اوراق، ۴ warrants).
+    """
+    name, paper_type, sector = "", None, ""
+    try:
+        conn = sqlite3.connect(DB_PATH, timeout=15)
+        try:
+            _pred, _params = sym_pred(conn, "l_val18", symbol, "board")
+            row = conn.execute(
+                f"SELECT l_val30, paper_type, sector_name FROM instruments WHERE {_pred}"
+                " ORDER BY updated_at DESC LIMIT 1", _params).fetchone()
+            if row:
+                name = str(row[0] or "").replace("\u200c", " ")
+                paper_type, sector = row[1], str(row[2] or "")
+        finally:
+            conn.close()
+    except Exception:
+        return "unknown"
+    if _is_option_name(name):
+        return "option"
+    if _is_bond_name(name):
+        return "bond"
+    if _is_right_name(name, paper_type):
+        return "right"
+    if _is_future_name(name):
+        return "future"
+    if paper_type == 8 or "صندوق" in sector or "صندوق" in name:
+        return "fund"
+    return "stock"
+
+
 def _filter_unproven_base_events(symbol, events):
     """(kept, rejected) — گسستِ پایهٔ بی‌شاهدِ دفتر را از زنجیره بیرون می‌گذارد.
 
@@ -623,17 +687,9 @@ def _filter_unproven_base_events(symbol, events):
             conn.close()
     except Exception:
         pass
-    is_option = "اختيار" in name or "اختیار" in name
-    is_right = (paper_type == 4 or name.startswith("ح ") or name.startswith("ح.")
-                or "حق تقدم" in name)
-    is_bond = False
-    if name and "صندوق" not in name and "بورس اوراق بهادار" not in name:
-        is_bond = any(k in name for k in (
-            "مرابحه", "اسناد", "مشاركت", "مشارکت", "اجاره", "صكوک", "صکوک",
-            "سلف موازي", "سلف موازی", "اخزا", "اوراق"))
-        if not is_bond:
-            is_bond = (name.startswith("گام") or name.startswith("گواهي اعتبار")
-                       or name.startswith("گواهی اعتبار"))
+    is_option = _is_option_name(name)
+    is_right = _is_right_name(name, paper_type)
+    is_bond = _is_bond_name(name)
     kept, rejected = [], []
     for e in ev:
         try:
@@ -800,16 +856,41 @@ def _ledger_coverage(symbol, times, applied):
             pass
 
 
-def _functional_state(chain, coverage):
-    """(available, blockers) — تعدیلِ عملکردی فقط وقتی همهٔ الزاماتِ واقعی برقرارند.
+_NO_EVENT_KINDS = ("option", "bond", "future", "right")
 
-    هیچ ادعایِ کلی درِ این قاعده نیست: هر مانع با عددِ همان نماد اعلام می‌شود، و اگر
-    روزی دفترِ رسمی کامل شد (نوعِ هر رویدادِ اعمال‌شده از مبدأ، بی‌ردیفِ بی‌همتا، بی‌کرانِ
-    خردشدۀِ flow، و پوششِ تا نخستین کندل) همین‌جا `True` می‌شود. بی‌`chain` یا
-    بی‌`coverage` یعنی سنجش انجام نشده — و «سنجش‌نشده» هرگز «موجود» خوانده نمی‌شود.
+
+def _candles_stale(candles, days=7):
+    """آیا آخرین کندل از امروز قدیمی‌تر از `days` است؟ بی‌تاریخ/خطا → False."""
+    try:
+        last = datetime.date.fromisoformat(str(candles[-1]["time"])[:10])
+        return (datetime.date.today() - last).days > days
+    except Exception:
+        return False
+
+
+def _functional_state(chain, coverage, *, kind=None, source=None, times=None, stale=False):
+    """(available, blockers, status, availability) — تعدیل عملکردی با وضعیت صریح.
+
+    `available` فقط برای `AVAILABLE`/`AVAILABLE_NO_EVENTS` True است. `status` دلیلِ
+    قابل‌ممیزی می‌دهد و `availability` پوششِ بازهٔ درخواستی را از پوشش کل تاریخچه
+    جدا می‌کند (`window_available`).
+
+    قراردادهای نوع‌محور (با شاهدِ ۱۰۰٪ روی فهرست‌های خود رهاورد سنجیده شد):
+      * option/future: اقدام شرکتی ندارند ⇒ raw = functional.
+      * bond: سری عملکردی رهاورد برای ۵۲۸ ابزار صفر گام دارد ⇒ قرارداد price-only.
+      * right: ۴ ابزار warrants صفر گام ⇒ همان قرارداد.
+    برای stock/fund نبودِ ردیف رسمی به‌تنهایی «بی‌رویداد» اثبات نمی‌شود؛ SOURCE_GAP.
     """
+    times10 = [str(t)[:10] for t in (times or [])]
+    first = times10[0] if times10 else None
+    last = times10[-1] if times10 else None
     if chain is None or coverage is None:
-        return False, ["unmeasured:زنجیره یا پوششِ این نماد سنجیده نشده است"]
+        av = {"status": "UNMEASURED", "source": source, "requested_start": first,
+              "requested_end": last, "covered_start": None, "covered_end": None,
+              "window_start": first, "window_end": last, "valid_points": 0,
+              "incomplete_points": len(times10), "window_available": False,
+              "stale": bool(stale), "kind": kind}
+        return False, ["unmeasured:زنجیره یا پوششِ این نماد سنجیده نشده است"], "UNMEASURED", av
     reasons = []
     if not coverage.get("available"):
         reasons.append("ledger-unavailable:" + (coverage.get("error") or "no-rows"))
@@ -833,7 +914,58 @@ def _functional_state(chain, coverage):
     pc = coverage.get("pre_coverage_candles")
     if pc:
         reasons.append(f"candles-before-ledger-coverage:{pc}")
-    return (not reasons), reasons
+
+    no_event = kind in _NO_EVENT_KINDS
+    pre_only = bool(reasons) and all(r.startswith("candles-before-ledger-coverage")
+                                     for r in reasons)
+    # For no-event instruments, absence of official rows is expected: the contract is
+    # price-only. Any other blocker (unresolved/duplicate/truncated/chain) still fails.
+    no_event_ok = no_event and all(
+        r.startswith(("no-official-rows-for-instrument",
+                      "candles-before-ledger-coverage")) for r in reasons)
+    if stale:
+        status = "STALE"
+    elif not coverage.get("available"):
+        status = ("FAILED" if coverage.get("error") in ("db-unopenable", "instrument-unresolved")
+                  else "SOURCE_GAP")
+    elif no_event_ok:
+        status = "AVAILABLE_NO_EVENTS"
+    elif not reasons:
+        status = "AVAILABLE"
+    elif pre_only:
+        status = "PARTIAL"
+    elif any(r.startswith("no-official-rows") for r in reasons):
+        status = "SOURCE_GAP"
+    else:
+        status = "UNVERIFIED"
+    available = status in ("AVAILABLE", "AVAILABLE_NO_EVENTS")
+    cov_start = coverage.get("coverage_start")
+    cov_end = coverage.get("coverage_end")
+    if no_event:
+        win_start, win_avail = first, True
+    elif cov_start and first and cov_start > first:
+        win_start = cov_start
+        win_avail = not any(not r.startswith("candles-before-ledger-coverage")
+                            for r in reasons)
+    else:
+        win_start, win_avail = first, available
+    valid = sum(1 for t in times10 if win_start is None or t >= win_start) if times10 else 0
+    availability = {
+        "status": status,
+        "source": source,
+        "requested_start": first,
+        "requested_end": last,
+        "covered_start": cov_start,
+        "covered_end": cov_end,
+        "window_start": win_start,
+        "window_end": last,
+        "valid_points": valid,
+        "incomplete_points": max(0, len(times10) - valid),
+        "window_available": bool(win_avail and not stale),
+        "stale": bool(stale),
+        "kind": kind,
+    }
+    return available, reasons, status, availability
 
 
 def _canonical_adjustment(symbol, times, events):
@@ -848,7 +980,8 @@ def _canonical_adjustment(symbol, times, events):
     return applied, rejected, factors, chain, _ledger_coverage(symbol, t10, wrapped)
 
 
-def _adjust_capability(events, source, ledger=None, chain=None, coverage=None):
+def _adjust_capability(events, source, ledger=None, chain=None, coverage=None,
+                       symbol=None, times=None, stale=False):
     """اعلامِ توانایی — «نداریم» با «هست و صفر است» یکی نیست.
 
     `ledger` شمارۀِ تیزکردنِ مبدأ است (چند رویداد از دفترِ مبدأ عدد گرفت، چند رویداد
@@ -866,14 +999,32 @@ def _adjust_capability(events, source, ledger=None, chain=None, coverage=None):
     مصرف‌کننده‌ای نمی‌خواند و درِ رابط هم دیگر وجود ندارد (نمایِ شاخصِ ۱۰۰). همان
     شکلی از ادعایِ بی‌سنجش که بالا ممنوع شد، فقط با نامِ دیگر.
     """
-    available, blockers = _functional_state(chain, coverage)
+    kind = _instrument_kind(symbol) if symbol else None
+    available, blockers, status, availability = _functional_state(
+        chain, coverage, kind=kind, source=source, times=times, stale=stale)
+    if available and status == "AVAILABLE_NO_EVENTS":
+        reason = ("این ابزار در قراردادِ عملکردیِ فعلی رویدادِ تعدیلِ رسمی ندارد؛ "
+                  "سریِ عملکردی همان خام است.")
+    elif available:
+        reason = "الزاماتِ تعدیلِ عملکردی از دادهٔ همین نماد اثبات شد."
+    elif status == "PARTIAL":
+        reason = ("بخشی از تاریخچه پیش از پوششِ دفتر است؛ بازهٔ پس از پوشش قابل استفاده است.")
+    elif status == "STALE":
+        reason = "دادهٔ این نماد از پایگاه محلی و کهنه است؛ تعدیلِ عملکردی تأیید نشد."
+    elif status == "SOURCE_GAP":
+        reason = "دادهٔ رسمیِ رویداد برای این نماد ناقص است؛ تعدیلِ عملکردی تأیید نشد."
+    elif status == "UNMEASURED":
+        reason = "زنجیره/پوششِ این نماد سنجیده نشده است."
+    else:
+        reason = _ADJ_FUNCTIONAL_REASON
     return {
         "source": source,
         "combined_available": source in _ADJ_KNOWN_SOURCES,
         "functional_available": available,
-        "functional_reason": _ADJ_FUNCTIONAL_REASON if blockers else
-                             "الزاماتِ تعدیلِ عملکردی از دادهٔ همین نماد اثبات شد.",
+        "functional_status": status,
+        "functional_reason": reason,
         "functional_blockers": blockers,
+        "availability": availability,
         "event_count": len(events or []),
         "ledger_sharpened": (ledger or {}).get("sharpened"),
         "ledger_ambiguous": (ledger or {}).get("ambiguous"),
@@ -1314,7 +1465,8 @@ def get_chart_tsetmc(symbol: str):
             "adjustCapability": _adjust_capability(
                 _applied, adjust_source,
                 {"sharpened": _sharp_n, "ambiguous": _amb_n},
-                chain=_chain, coverage=_cov),
+                chain=_chain, coverage=_cov, symbol=symbol,
+                times=[str(c["time"])[:10] for c in candles]),
             # رویدادهایِ شرکتیِ مبدأ هم از همان بانکِ canonical می‌آیند (نه از
             # CSV): مسیرِ CDN اگر این کلید را نداشت، چارت هیچ‌وقت نشانگرِ
             # TSETMC نمی‌کشید — سنجشِ زندهٔ همین دور (۲۱:۲x) همان را نشان داد.
@@ -1925,7 +2077,10 @@ def get_chart_db(symbol: str):
         _applied, _rejected, _fac, _chain, _cov = _canonical_adjustment(
             symbol, [str(c["time"])[:10] for c in candles], _evs if _known else [])
         _rejected.extend(_false_rejected)
-        _cap = _adjust_capability(_applied, _src, chain=_chain, coverage=_cov)
+        _cap = _adjust_capability(
+            _applied, _src, chain=_chain, coverage=_cov, symbol=symbol,
+            times=[str(c["time"])[:10] for c in candles],
+            stale=(not live_injected and _candles_stale(candles)))
         facts = [{"time": c["time"], "factor": f} for c, f in zip(candles, _fac)]
 
         # ---- v10 FTS: همان سریِ کاننیکالِ تعدیل‌شده که چارت می‌بیند ----

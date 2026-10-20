@@ -68,7 +68,7 @@ ck("سرور functional_available را با True سخت‌کد نمی‌کند (
    '"functional_available": True' not in SRC)
 ck("مقدار از قاعدۀ محاسبه‌شده می‌آید، نه از ثابتِ بولین",
    '"functional_available": available' in SRC and "def _functional_state(" in SRC
-   and "_functional_state(chain, coverage)" in SRC, SRC.count("_functional_state"))
+   and "chain, coverage, kind=kind" in SRC, SRC.count("_functional_state"))
 ck("دفترِ رسمی درِ همان مسیر خوانده می‌شود (پوشش/اعتبار از داده، نه از متن)",
    "corporate_ledger.build_typed_events" in SRC or "CL.build_typed_events" in SRC)
 ck("بلوکِ توانایی درِ پاسخ می‌آید، نه فقط درِ متنِ خطا",
