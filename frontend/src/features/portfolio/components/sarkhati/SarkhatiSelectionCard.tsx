@@ -58,6 +58,11 @@ function clock(iso: string | null | undefined): string {
   return Number.isFinite(d.getTime())
     ? d.toLocaleTimeString('fa-IR', { hour12: false }) : '—';
 }
+function queryError(q: { isError: boolean; error: unknown }): string {
+  if (!q.isError) return '';
+  return q.error instanceof Error && q.error.message
+    ? q.error.message : 'پاسخی نیامد';
+}
 function sumAmounts(items: SelectedSymbol[]): number | null {
   let total = 0;
   let any = false;
@@ -85,8 +90,9 @@ export function SarkhatiSelectionCard() {
   const port = portQ.data;
   const bp = bpQ.data;
   const feedRows = feed.data ?? [];
-  const watchRows = (watch?.rows ?? []) as Record<string, unknown>[];
-  const portRows = (port?.positions ?? port?.rows ?? []) as Record<string, unknown>[];
+  const watchRows = (watchQ.isError ? [] : (watch?.rows ?? [])) as Record<string, unknown>[];
+  const portRows = (portQ.isError ? []
+    : (port?.positions ?? port?.rows ?? [])) as Record<string, unknown>[];
   const watchUnique = new Set(watchRows
     .filter((r) => r.resolved === true && str(r.symbol))
     .map((r) => normalizeFa(str(r.symbol)))).size;
@@ -211,24 +217,27 @@ export function SarkhatiSelectionCard() {
     void qc.invalidateQueries({ queryKey: ['execution-buying-power'] });
   };
 
-  const watchOk = watch?.state === 'WATCHLIST_VERIFIED';
-  const portOk = port?.status === 'success';
-  const bpOk = bp?.state === 'BUYING_POWER_VERIFIED';
+  const watchOk = !watchQ.isError && watch?.state === 'WATCHLIST_VERIFIED';
+  const portOk = !portQ.isError && port?.status === 'success';
+  const bpOk = !bpQ.isError && bp?.state === 'BUYING_POWER_VERIFIED';
+  const watchError = queryError(watchQ) || watch?.error || 'پاسخی نیامد';
+  const portError = queryError(portQ) || port?.error || 'پاسخی نیامد';
+  const bpError = queryError(bpQ) || bp?.error || 'پاسخی نیامد';
   const watchTone = watchQ.isPending ? 'idle' : watchOk ? 'ok' : 'bad';
   const portTone = portQ.isPending ? 'idle' : !portOk ? 'bad'
     : port?.state === 'PORTFOLIO_PARTIALLY_VERIFIED' ? 'warn' : 'ok';
   const bpTone = bpQ.isPending ? 'idle' : bpOk ? 'ok' : 'bad';
-  const bpValue = num(bp?.value);
-  const missing = (port?.missing_fields ?? []) as string[];
+  const bpValue = bpOk ? num(bp?.value) : null;
+  const missing = (portOk ? port?.missing_fields ?? [] : []) as string[];
   const goals = sel.items.reduce((m, it) => {
     m[it.goal] = (m[it.goal] ?? 0) + 1;
     return m;
   }, {} as Partial<Record<SelectionGoal, number>>);
   const amountTotal = sumAmounts(sel.items);
   const times = {
-    watchlist: watch?.fetched_at ?? null,
-    portfolio: port?.fetched_at ?? null,
-    buyingPower: bp?.fetched_at ?? null,
+    watchlist: watchQ.isError ? null : watch?.fetched_at ?? null,
+    portfolio: portQ.isError ? null : port?.fetched_at ?? null,
+    buyingPower: bpQ.isError ? null : bp?.fetched_at ?? null,
   };
 
   return (
@@ -267,17 +276,17 @@ export function SarkhatiSelectionCard() {
 
       {!watchOk && !watchQ.isPending ? (
         <Line kind="warn" testId="sources-watchlist-error">
-          دیده‌بان خوانده نشد: {watch?.error || 'پاسخی نیامد'} — فهرستِ خالی جعل نمی‌شود.
+          دیده‌بان خوانده نشد: {watchError} — فهرستِ خالی جعل نمی‌شود.
         </Line>
       ) : null}
       {!portOk && !portQ.isPending ? (
         <Line kind="warn" testId="sources-portfolio-error">
-          پرتفوی خوانده نشد: {port?.error || 'پاسخی نیامد'} — مقدار ساختگی نمایش داده نمی‌شود.
+          پرتفوی خوانده نشد: {portError} — مقدار ساختگی نمایش داده نمی‌شود.
         </Line>
       ) : null}
       {!bpOk && !bpQ.isPending ? (
         <Line kind="warn" testId="sources-buying-power-error">
-          قدرت خرید نامعلوم است: {bp?.error || 'پاسخی نیامد'} — پیش‌بررسیِ خرید مسدود می‌ماند.
+          قدرت خرید نامعلوم است: {bpError} — پیش‌بررسیِ خرید مسدود می‌ماند.
         </Line>
       ) : null}
       {watchOk && (watch?.duplicate_count ?? 0) > 0 ? (

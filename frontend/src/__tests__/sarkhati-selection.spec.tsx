@@ -8,6 +8,7 @@ import { useSarkhatiSelectionStore } from '@features/portfolio/stores/sarkhatiSe
 import { useSymbolStore } from '@shared/stores/symbolStore';
 
 const F = vi.hoisted(() => ({
+  failWatch: false,
   feed: [
     { symbol: 'فولاد', name: 'فولاد مبارکه', p_last: 1000, percent_change: 1.2, is_live: true },
     { symbol: 'شپنا', name: 'پالایش نفت اصفهان', p_last: 2000, percent_change: -0.5, is_live: true },
@@ -49,7 +50,10 @@ vi.mock('@shared/api/marketFeed', () => ({
   useMarketFeedShared: () => ({ data: F.feed, isError: false }),
 }));
 vi.mock('@features/portfolio/lib/orderClient', () => ({
-  useEasyTraderWatchlist: () => ({ data: F.watch, isPending: false, isError: false }),
+  useEasyTraderWatchlist: () => ({
+    data: F.watch, isPending: false, isError: F.failWatch,
+    error: F.failWatch ? new Error('fixture failure') : null,
+  }),
   useExecutionPortfolio: () => ({ data: F.port, isPending: false, isError: false }),
   useBuyingPower: () => ({ data: F.bp, isPending: false, isError: false }),
 }));
@@ -60,6 +64,7 @@ function renderCard() {
 }
 
 beforeEach(() => {
+  F.failWatch = false;
   localStorage.clear();
   useSarkhatiSelectionStore.setState({
     items: [], savedAt: null, sourceTimes: {}, dirty: false,
@@ -124,6 +129,19 @@ describe('انتخابِ سرخطی از دیده‌بان و پرتفوی', () 
       expect(screen.getByTestId('sarkhati-source-row-isin:I4')).toBeTruthy();
     } finally {
       F.watch.rows.pop();
+    }
+  });
+
+  it('خطای دیده‌بان دادهٔ قبلی را سبز نگه نمی‌دارد', () => {
+    F.failWatch = true;
+    try {
+      renderCard();
+      expect(screen.getByTestId('sources-watchlist').textContent).toContain('در دسترس نیست');
+      expect(screen.getByTestId('sources-watchlist-error').textContent)
+        .toContain('fixture failure');
+      expect(screen.queryByTestId('sarkhati-source-row-isin:I1')).toBeNull();
+    } finally {
+      F.failWatch = false;
     }
   });
 

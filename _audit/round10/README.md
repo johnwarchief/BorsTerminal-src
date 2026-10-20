@@ -74,7 +74,7 @@
 | آزمون | نتیجه |
 | --- | --- |
 | `dev/run_all_tests.py` | ۱۴۲ سوئیتِ شمرده، ۲۷ فقط-exit-code، ۲ SKIPِ fixture، ۰ FAIL |
-| `npx vitest run` | ۲۰۸۸ passed، ۵ skipped، ۰ failed (۲۰۹۳) |
+| `npx vitest run` | ۲۰۸۹ passed، ۵ skipped، ۰ failed (۲۰۹۴؛ ۲۰۰ فایل) |
 | `npx tsc -b` | صفر خطا |
 | `npm run build` | موفق |
 | `dev/execution_account_sources_v1146.py` | ۲۴/۲۴ |
@@ -85,4 +85,26 @@
 
 ## شواهدِ دیداری
 
-پس از ورودِ مالک به پنجرهٔ محلیِ برنامه ثبت می‌شود. وضعیت: در انتظارِ ورود.
+تصویرها از خودِ برنامهٔ منجمد (WebView2، پروفایلِ محلی) گرفته شده‌اند. مقدارِ
+قدرت خرید و عددهایِ سفارشِ واقعی با ماسکِ تصویری پوشانده شده‌اند؛ ردیف‌هایِ
+شخصیِ دیده‌بان در تصویرِ تمام‌صفحه ماسک شده‌اند. تصویرهایِ fixture با نوارِ
+«دادهٔ آزمایشی — فقط برای تصویر» برچسب خورده‌اند.
+
+| فایل | چیست |
+| --- | --- |
+| `visual/01-sources-live-summary.png` | خلاصهٔ زنده: ۲۸ نمادِ دیده‌بان، ۱۱ دارایی، قدرت خریدِ ماسک‌شده |
+| `visual/01b-sarkhati-live-page.png` | همان صفحه با ردیف‌هایِ دیده‌بانِ ماسک‌شده |
+| `visual/02-watchlist-fixture.png` | دیده‌بانِ آزمایشی، دو نماد و تکراری/نگاشت‌نشده |
+| `visual/03-portfolio-fixture.png` | پرتفویِ آزمایشی، نمادِ مشترک با دیده‌بان |
+| `visual/04-multiselect-fixture.png` | انتخابِ سه‌نمادی از دو منبع |
+| `visual/05-goals-priority-fixture.png` | هدفِ خرید/فروش/نامشخص و جابه‌جاییِ اولویت |
+| `visual/06-buying-power-fixture.png` | جزئیاتِ خامِ قدرت خرید (آزمایشی) |
+| `visual/07-review-saved-fixture.png` | ذخیرهٔ فهرست و زمانِ ذخیره |
+| `visual/08-source-error-simulated.png` | شکستِ مستقلِ دیده‌بان: پیامِ خطا، بدونِ دادهٔ کهنه |
+| `visual/08b-empty-fixture.png` | دیده‌بان/پرتفویِ خالی با شمارشِ صفرِ صادق |
+| `visual/09-preflight-real-values-masked.png` | پیش‌فرودِ واقعی: ۷ سبز، ۱ رد، ۲ نامعلوم — «مسدود» |
+
+پیش‌فرودِ فروش در همان مسیر با `sellable=UNKNOWN` مسدود می‌شود (سنجهٔ
+`dev/execution_account_sources_v1146.py`)؛ چون منبعِ تعدادِ آزاد وجود ندارد،
+تصویرِ جداگانه‌ای از «فروشِ آماده» ساخته نشد.
+
