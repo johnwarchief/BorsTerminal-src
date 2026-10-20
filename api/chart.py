@@ -1061,11 +1061,46 @@ def _merge_session_backfill(candles, volumes, all_rows, rows, descending):
     return candles, volumes, all_rows
 
 
+def _closing_prices_for(symbol, dates):
+    """{date: close(پایانی)} از `price_history` برای همان نماد (و نام‌های معادل)."""
+    dates = [str(d)[:10] for d in (dates or []) if d]
+    if not dates:
+        return {}
+    out = {}
+    try:
+        conn = sqlite3.connect(DB_PATH, timeout=10)
+        try:
+            conn.execute("PRAGMA query_only=ON")
+            _pred, _params = sym_pred(conn, "l_val18", symbol, "board")
+            row = conn.execute(
+                f"SELECT l_val18, l_val30 FROM instruments WHERE {_pred}"
+                " ORDER BY updated_at DESC LIMIT 1", _params).fetchone()
+            names = [n for n in (row or []) if n] or [symbol]
+            qn = ",".join("?" * len(names))
+            qd = ",".join("?" * len(dates))
+            for _nm, dt, cl in conn.execute(
+                    f"SELECT symbol, date, close FROM price_history"
+                    f" WHERE symbol IN ({qn}) AND date IN ({qd})",
+                    tuple(names) + tuple(dates)):
+                if cl:
+                    out[str(dt)[:10]] = float(cl)
+        finally:
+            conn.close()
+    except Exception:
+        return {}
+    return out
+
+
 def _official_price_adjust_events(symbol, times=None):
     """ردیف‌های رسمیِ priceAdjust که کشفِ گسستِ CSV ممکن است ندیده باشد.
 
     تاریخِ ردیفِ مبدأ ممکن است روزِ بی‌معامله باشد؛ رویداد روی اولین کندلِ
     هم‌روز یا پس از آن می‌نشیند، وگرنه گامِ مثبتِ جعلی ساخته می‌شود.
+
+    نسبتِ یک ردیفِ سود نقدی از عددِ خودِ جدول (`closing/not_adjusted`) گرفته
+    نمی‌شود: مرجع از `close_ex / (close_ex + dps)` استفاده می‌کند که `close_ex`
+    قیمت پایانیِ روزِ مؤثر و `dps = not_adjusted - closing` است
+    (سنجش: `.worktrees/ra365-100pct/docs/RAHAVARD-DPS-CC-FORMULA-2026-10-21.md`).
     """
     try:
         conn = sqlite3.connect(DB_PATH, timeout=15)
@@ -1078,15 +1113,16 @@ def _official_price_adjust_events(symbol, times=None):
             if not row:
                 return []
             rows = conn.execute(
-                "SELECT d_even, ratio, source FROM price_adjust_events"
-                " WHERE ins_code=? ORDER BY d_even", (str(row[0]),)).fetchall()
+                "SELECT d_even, ratio, source, p_closing, p_closing_not_adjusted"
+                " FROM price_adjust_events WHERE ins_code=? ORDER BY d_even",
+                (str(row[0]),)).fetchall()
         finally:
             conn.close()
     except Exception:
         return []
     candle_dates = sorted(str(t)[:10] for t in (times or []))
-    out = []
-    for d, ratio, src in rows:
+    staged = []
+    for d, ratio, src, pcl, pna in rows:
         dt = _d_even_to_date(d)
         try:
             r = float(ratio)
@@ -1100,8 +1136,27 @@ def _official_price_adjust_events(symbol, times=None):
             if not nxt:
                 continue
             dt = nxt
-        out.append({"date": dt, "ratio": r, "source": src or "priceAdjust",
-                    "_ledger_key": (orig, "priceAdjust")})
+        dps = None
+        try:
+            if pcl is not None and pna is not None and float(pna) > float(pcl) > 0:
+                dps = float(pna) - float(pcl)
+        except Exception:
+            dps = None
+        staged.append({"date": dt, "ratio": r, "source": src or "priceAdjust",
+                       "orig": orig, "dps": dps})
+    closes = _closing_prices_for(symbol, [e["date"] for e in staged])
+    out = []
+    for e in staged:
+        r = e["ratio"]
+        dps = e["dps"]
+        cl = closes.get(e["date"])
+        if dps and cl and cl > 0:
+            r = round(cl / (cl + dps), 10)
+        rec = {"date": e["date"], "ratio": r, "source": e["source"],
+               "_ledger_key": (e["orig"], "priceAdjust")}
+        if dps:
+            rec["_dps"] = True
+        out.append(rec)
     return out
 
 
@@ -1118,6 +1173,15 @@ def _merge_official_price_adjust(events, official, rejected=None):
     """
     kept = [dict(e) for e in (events or [])]
     claimed = {e.get("_ledger_key") for e in kept if e.get("_ledger_key")}
+    # یک ردیفِ سود نقدیِ رسمی جایِ گسستِ پایهٔ همان اقدام را می‌گیرد: عددِ آن از
+    # فرمولِ مرجع می‌آید و ماندنِ گسستِ CSV ضریب را دوبار می‌کند (نمونه: سهرمز
+    # 2026-02-22 و غانيزان 2026-07-22).
+    dps_dates = [str(o.get("date"))[:10] for o in official if o.get("_dps")]
+    if dps_dates:
+        kept = [e for e in kept if not (
+            e.get("source") == "base-price-discontinuity"
+            and any((_day_diff(dd, str(e.get("date"))[:10]) or 999) <= 5
+                    for dd in dps_dates))]
     for o in official:
         if o.get("_ledger_key") and o["_ledger_key"] in claimed:
             if rejected is not None:
