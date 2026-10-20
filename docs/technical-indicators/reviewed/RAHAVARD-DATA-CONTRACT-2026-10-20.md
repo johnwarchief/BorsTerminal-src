@@ -115,7 +115,22 @@
 
 **ناهنجاری بازار-گسترده:** جدول `session_anomalies` از اسکن cross-sectional پر می‌شود (`official_symbols=0`، `product_only_steps≥10`، `median_abs_ratio_deviation≤2%`). گسست پایه در این تاریخ‌ها با `session-wide-base-gap` رد می‌شود؛ تاریخ در کد hard-code نیست.
 
-## ۱۲. بازتولید
+## ۱۲. تعریف دقیق سنجه‌ها و وضعیت‌ها (Round 4)
+
+این تعریف‌ها در دور ۲، ۳ و ۴ یکسان‌اند؛ تغییر دور ۴ فقط **تزریق ردیف رسمیِ priceAdjust** است، نه تغییر تعریف.
+
+- **`functional_available`:** فقط برای `AVAILABLE` و `AVAILABLE_NO_EVENTS` صادق است و از `chain` + `coverage` + `kind` + `source` + `times` + `stale` محاسبه می‌شود. `window_available` جداگانه پوشش بازهٔ درخواستی را می‌گوید.
+- **`STALE`:** منبع `local-db-fallback`/`local-cache`/`local-db-unseen` و آخرین کندل بیش از ۷ روز قدیمی؛ نه «نبود داده» و نه «داده معتبر».
+- **دارایی زنده بر مبنای `last`:** پاسخ `success`، `priceBasis=last` و `adjustSource` نه با `local-` شروع شود. fallback در این شمارش نیست.
+- **تاریخ روزانهٔ مشترک:** اشتراک تاریخ‌های کندل محصول و تاریخ‌های `type0` مرجع؛ هر دو طرف باید همان تاریخ را داشته باشند.
+- **raw parity:** تطبیق فیلد‌به‌فیلد OHLCV روی تاریخ مشترک؛ `MATCH ≤ max(0.5 ریال, 1e-6×ref)`، `ROUNDING_ONLY ≤ 1 ریال` یا `≤0.05٪`. مخرج = فیلدهای واقعاً مقایسه‌شده.
+- **factor exact:** `|prod_factor−ref_factor|/ref_factor ≤ 0.05٪` روی تاریخ‌های مشترک.
+- **normalized factor:** همان نسبت پس از تقسیم دو طرف بر factorِ **نخستین تاریخ مشترک**؛ اثر تاریخچهٔ پیش از پوشش را جدا می‌کند.
+- **functional OHLC:** `raw OHLC × factor` همان روز در برابر `type7`؛ فیلدبه‌فیلد و با همان تلورانس raw.
+- **مرحلهٔ فقط‌مرجع:** تغییر factor مرجع بیش از `0.05٪` که در محصول، در پنجرهٔ ±۵ روز، تغییر متناظر ندارد. این سنجهٔ «پوشش رویداد» است، نه raw یا factor parity؛ ردیف کوچک‌تر از آستانهٔ ۰٫۰۵٪ در هیچ‌کدام از دو طرف مرحله شمرده نمی‌شود.
+- **تزریق priceAdjust:** ردیف رسمی `price_adjust_events` که کاشفِ گسستِ CSV ندیده، در `_canonical_adjustment` اضافه می‌شود؛ اگر تاریخ ردیف روز بی‌معامله باشد، روی اولین کندل هم‌روز/بعد می‌نشیند. اگر رویدادی با نسبت مشابه در ±۵ روز وجود داشته باشد، دوباره اضافه نمی‌شود.
+
+## ۱۳. بازتولید
 
 ```bash
 python tools/ra365_contract_probe.py --ref _audit/ref_bars.jsonl --out _audit/contract_probe.json

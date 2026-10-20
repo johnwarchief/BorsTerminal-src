@@ -101,6 +101,8 @@ SUITES = [
      'Rahavard data contract fixture: type0/type7 factor, OHLC, weekly sum, LAST basis'),
     ('dev/test_fund_profit_and_backfill_v1.py',
      'official fund distributions + single-session backfill enter the canonical chain'),
+    ('dev/test_session_anomaly_v1.py',
+     'cross-sectional session anomaly: synthetic positives, official-row negatives, typed-event survival'),
     # مرحلۀِ ۲ (Phase 2): ریشۀِ تعدیل/منبعِ قیمت — ادغامِ بلوکِ VOL=0، ثباتِ لنگرِ تعدیل
     # نسبت به مبنایِ نمایش، هم‌سنجیِ MA با زنجیرۀِ تعدیلِ چارت، و مرزهایِ هندسۀِ کندل.
     ('dev/test_fts_zero_volume_collapse_v1.py',

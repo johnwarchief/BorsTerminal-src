@@ -1060,6 +1060,72 @@ def _merge_session_backfill(candles, volumes, all_rows, rows, descending):
     return candles, volumes, all_rows
 
 
+def _official_price_adjust_events(symbol, times=None):
+    """ردیف‌های رسمیِ priceAdjust که کشفِ گسستِ CSV ممکن است ندیده باشد.
+
+    تاریخِ ردیفِ مبدأ ممکن است روزِ بی‌معامله باشد؛ رویداد روی اولین کندلِ
+    هم‌روز یا پس از آن می‌نشیند، وگرنه گامِ مثبتِ جعلی ساخته می‌شود.
+    """
+    try:
+        conn = sqlite3.connect(DB_PATH, timeout=15)
+        try:
+            conn.execute("PRAGMA query_only=ON")
+            _pred, _params = sym_pred(conn, "l_val18", symbol, "board")
+            row = conn.execute(
+                f"SELECT ins_code FROM instruments WHERE {_pred}"
+                " ORDER BY updated_at DESC LIMIT 1", _params).fetchone()
+            if not row:
+                return []
+            rows = conn.execute(
+                "SELECT d_even, ratio, source FROM price_adjust_events"
+                " WHERE ins_code=? ORDER BY d_even", (str(row[0]),)).fetchall()
+        finally:
+            conn.close()
+    except Exception:
+        return []
+    candle_dates = sorted(str(t)[:10] for t in (times or []))
+    out = []
+    for d, ratio, src in rows:
+        dt = _d_even_to_date(d)
+        try:
+            r = float(ratio)
+        except Exception:
+            continue
+        if not dt or not (AE._RATIO_MIN <= r <= AE._RATIO_MAX) or abs(r - 1.0) < 1e-7:
+            continue
+        if candle_dates:
+            nxt = next((t for t in candle_dates if t >= dt), None)
+            if not nxt:
+                continue
+            dt = nxt
+        out.append({"date": dt, "ratio": r, "source": src or "priceAdjust"})
+    return out
+
+
+def _merge_official_price_adjust(events, official):
+    """رویداد رسمی را فقط وقتی اضافه می‌کند که کاشفِ CSV همان را ندیده باشد."""
+    kept = [dict(e) for e in (events or [])]
+    for o in official:
+        d = str(o["date"])[:10]
+        dup = False
+        for e in kept:
+            ed = str(e.get("date") or "")[:10]
+            if not ed:
+                continue
+            dd = _day_diff(d, ed)
+            if dd is not None and dd <= 5:
+                try:
+                    er = float(e.get("ratio") or 0)
+                    if er and abs(er / float(o["ratio"]) - 1.0) <= _LEDGER_AGREE_TOL:
+                        dup = True
+                        break
+                except Exception:
+                    pass
+        if not dup:
+            kept.append(o)
+    return sorted(kept, key=lambda e: str(e.get("date"))[:10])
+
+
 def _fund_profit_events(symbol):
     """توزیع‌هایِ رسمیِ صندوق از `fund_profit_events`؛ بی‌جدول/بی‌ردیف → [].
 
@@ -1134,6 +1200,9 @@ def _canonical_adjustment(symbol, times, events):
     official = _fund_profit_events(symbol)
     if official:
         events = _merge_official_fund_events(events, official)
+    official_pa = _official_price_adjust_events(symbol, t10)
+    if official_pa:
+        events = _merge_official_price_adjust(events, official_pa)
     applied, rejected, wrapped = _engine_events(events)
     factors, chain = AE.chain_factors(t10, wrapped)
     return applied, rejected, factors, chain, _ledger_coverage(symbol, t10, wrapped)

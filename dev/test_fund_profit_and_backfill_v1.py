@@ -119,5 +119,18 @@ ck("base gap rejected with its reason",
    len(kept) == 1 and kept[0]["source"].startswith("fund-portal")
    and rej and rej[0]["factor_status"] == "session-wide-base-gap", (kept, rej))
 
+print("[6] an official priceAdjust row is injected when the CSV gap missed it")
+_s = sqlite3.connect(DB)
+_s.execute("INSERT OR REPLACE INTO price_adjust_events VALUES "
+           "('F1',20200108,'پارند',10001.0,10006.0,NULL,0.9995003,'test','2026-10-20')")
+_s.commit(); _s.close()
+times2 = times + ["2020-01-08"]
+ap2, rj2, fac2, _c2, _cv2 = CH._canonical_adjustment("پارند", times2, [])
+ck("priceAdjust row applied", any(e.get("source") == "test" for e in ap2), ap2)
+ck("no duplicate with a matching detected event",
+   len(CH._merge_official_price_adjust(
+       [{"date": "2020-01-08", "ratio": 0.9995003}],
+       [{"date": "2020-01-08", "ratio": 0.9995003, "source": "test"}])) == 1)
+
 print(f"\n{checks - fails}/{checks} checks passed")
 sys.exit(0 if fails == 0 else 1)

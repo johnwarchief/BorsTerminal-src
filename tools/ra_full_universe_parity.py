@@ -198,6 +198,7 @@ def compare_series(prod_daily, prod_fac, ref0, ref7, basis, prod_func=None):
     r7 = {b["date"]: b for b in ref7}
     common = sorted(set(prod_daily) & set(r0))
     field_counts = Counter(); field_samples = []
+    factor_samples = []; func_samples = []
     close_diffs = []; factor_diffs = []
     func_counts = Counter(); func_diffs = []
     factor_by_date = {}
@@ -231,6 +232,9 @@ def compare_series(prod_daily, prod_fac, ref0, ref7, basis, prod_func=None):
             factor_by_date[d] = (rf, pf)
             fst = factor_status(fd)
             field_counts[("factor", fst)] += 1
+            if fst not in ("MATCH", "ROUNDING_ONLY") and len(factor_samples) < 200:
+                factor_samples.append({"date": d, "field": "factor", "status": fst,
+                                       "ref": rf, "prod": pf, "basis": basis})
             if pf is not None:
                 fsrc = prod_func.get(d) if prod_func else None
                 for fld in ("open", "high", "low", "close"):
@@ -239,6 +243,9 @@ def compare_series(prod_daily, prod_fac, ref0, ref7, basis, prod_func=None):
                     st = price_field_status(b, a, fld, "adjusted", True)
                     func_counts[(fld, st)] += 1
                     func_diffs.append(rel(a, b))
+                    if st not in ("MATCH", "ROUNDING_ONLY") and len(func_samples) < 200:
+                        func_samples.append({"date": d, "field": "func_" + fld, "status": st,
+                                             "ref": b, "prod": a, "basis": basis})
     # missing dates on each side (outside the other's range)
     prod_dates = set(prod_daily); ref_dates = set(r0)
     if prod_dates and ref_dates:
@@ -268,6 +275,7 @@ def compare_series(prod_daily, prod_fac, ref0, ref7, basis, prod_func=None):
                 if rf is not None and pf is not None:
                     norm_diffs.append(rel(pf / pf0, rf / rf0))
     return {"common": len(common), "field_counts": field_counts, "samples": field_samples,
+            "factor_samples": factor_samples, "func_samples": func_samples,
             "close_diffs": [x for x in close_diffs if x is not None],
             "factor_diffs": [x for x in factor_diffs if x is not None],
             "factor_norm_diffs": [x for x in norm_diffs if x is not None],
@@ -532,7 +540,12 @@ def main():
         by_class[rows[0]["ra_class"]]["norm_ok"] += fnorm_ok
         by_class[rows[0]["ra_class"]]["norm_compared"] += len(fnorm)
         by_class[rows[0]["ra_class"]]["norm_near"] += fnorm_near
-        samples.extend(cmp["samples"][:20])
+        for s in cmp["samples"][:20]:
+            samples.append(dict(s, symbol=products[0][0]["symbol"], asset_id=str(rows[0].get("ra_asset_id", ""))))
+        for s in cmp.get("factor_samples", [])[:20]:
+            samples.append(dict(s, symbol=products[0][0]["symbol"], asset_id=str(rows[0].get("ra_asset_id", ""))))
+        for s in cmp.get("func_samples", [])[:20]:
+            samples.append(dict(s, symbol=products[0][0]["symbol"], asset_id=str(rows[0].get("ra_asset_id", ""))))
         done_assets += 1
         if done_assets % 100 == 0:
             print(f"  {done_assets}/{len(by_asset)} assets", flush=True)

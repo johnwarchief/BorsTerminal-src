@@ -21,7 +21,18 @@ import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
-sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8")
+sys.stdout.reconfigure(encoding="utf-8")
+
+
+def qualifies(official_symbols, product_only_steps, median_abs_deviation,
+              min_steps=10, max_mad=0.02):
+    """قاعدهٔ cross-sectional؛ هیچ تاریخی در آن نیست."""
+    try:
+        return (int(official_symbols) == 0
+                and int(product_only_steps) >= int(min_steps)
+                and float(median_abs_deviation) <= float(max_mad))
+    except (TypeError, ValueError):
+        return False
 
 
 def main():
@@ -44,7 +55,7 @@ def main():
             mad = float(r.get("median_abs_ratio_deviation") or 1)
         except Exception:
             continue
-        rec = dict(r, qualifies=(off == 0 and steps >= 10 and mad <= 0.02))
+        rec = dict(r, qualifies=qualifies(off, steps, mad))
         rows.append(rec)
         if not rec["qualifies"]:
             continue
