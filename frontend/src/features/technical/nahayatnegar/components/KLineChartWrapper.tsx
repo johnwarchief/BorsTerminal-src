@@ -27,7 +27,7 @@ import { nahayatNegarDarkTheme, nahayatNegarLightTheme } from '../lib/chartTheme
 import { useUiStore } from '@shared/stores/uiStore';
 import {
   AdjustmentCapability, AdjustmentMode, AdjustFactor, CorporateAction,
-  applyAdjustmentToCandles, DEFAULT_ADJUSTMENT_MODE, functionalGapNote, getAdjustmentFactor,
+  applyAdjustmentToCandles, DEFAULT_ADJUSTMENT_MODE, functionalStatusNote, getAdjustmentFactor,
   mapBackendAdjustEvents, migrateAdjustmentMode, readAdjustmentCapability
 } from '../lib/adjustments';
 import { aggregateCandles, timeframePeriod, resolveTimeframe, INTRADAY_CAPABILITY, rangeVisibleBars, VIEW_RANGES, type Timeframe } from '../lib/timeframe';
@@ -499,7 +499,7 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
   // با دادهٔ همین نماد اثبات شده یا نه. اگر نه، چیزی که رسم می‌شود «تعدیلِ ترکیبی»
   // است و کاربر باید همان را بخواند — نه یک برچسبِ کلیِ «تعدیل‌شده». تا این دور
   // متنِ سرور خوانده می‌شد ولی هیچ‌جا نمایش داده نمی‌شد.
-  const functionalNote = capability ? functionalGapNote(capability) : null;
+  const functionalNote = capability ? functionalStatusNote(capability) : null;
   // رویدادهایِ شرکتیِ مبدأ (TSETMC) — برایِ نشانگر، بی‌هیچ ضریبِ تازه
   const [corpEvents, setCorpEvents] = useState<RawCorporateEvent[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -2706,14 +2706,22 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
             </div>
           ) : null}
 
-          {/* مبنایِ اعدادِ محور — همان دلیلی که سرور برایِ همین نماد شمارده است */}
+          {/* مبنای اعداد محور — هشدار کوتاه با عددهای همین نماد، جزئیات بازشونده */}
           {functionalNote ? (
-            <div
-              className="nn-feed-note"
-              data-testid="chart-functional-note"
-              title={capability?.functionalReason ?? functionalNote}
-            >
-              <span>{functionalNote}</span>
+            <div className="nn-feed-note nn-functional-note" data-testid="chart-functional-note">
+              <span>{functionalNote.summary}</span>
+              <details className="nn-functional-details">
+                <summary>جزئیات</summary>
+                <ul>
+                  {functionalNote.details.map((line, i) => <li key={i}>{line}</li>)}
+                </ul>
+                {capability?.functionalReason ? (
+                  <details className="nn-functional-method">
+                    <summary>توضیح روش</summary>
+                    <p>{capability.functionalReason}</p>
+                  </details>
+                ) : null}
+              </details>
             </div>
           ) : null}
 

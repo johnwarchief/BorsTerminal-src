@@ -11,6 +11,7 @@ import path from 'node:path';
 import { useFtsConfigStore } from '@features/technical/stores/ftsConfigStore';
 import { FtsEngineChart } from '@features/technical/components/FtsEngineChart';
 import { FFC_ADJUSTMENT_BASIS_LABEL, FFC_ADJUSTMENT_MODE } from '@features/technical/nahayatnegar/lib/adjustments';
+import { toFaDigits } from '@shared/lib/fmt';
 
 let lastChartInstance: ReturnType<typeof chartStub> | null = null;
 
@@ -243,7 +244,12 @@ describe('کنترل‌هایِ تنظیمات باید به موتورِ چار
     await flush();
     const note = container.querySelector('[data-testid="chart-functional-note"]');
     expect(note).toBeTruthy();
-    expect(note?.textContent).toContain('event-type-unresolved:2');
+    // خلاصه فقط فارسی و با عددهای همان پاسخ است؛ کد خام انگلیسی فقط در جزئیات.
+    expect(note?.textContent).toContain(`${toFaDigits(2)} رویداد حل‌نشده`);
+    expect(note?.textContent).not.toContain('event-type-unresolved');
+    const details = note?.querySelector('details');
+    expect(details).toBeTruthy();
+    expect(details?.textContent).toContain(`${toFaDigits(2)} رویداد با نوعِ حل‌نشده`);
   });
 });
 

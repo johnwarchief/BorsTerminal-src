@@ -583,6 +583,85 @@ def _sharpen_events_with_ledger(symbol, events):
 # اینکه آیا آن‌ها گامِ واقعیِ دیگري هستند درِ قدمِ ۶ با مرجعِ رهاورد سنجیده می‌شود.
 
 
+def _filter_unproven_base_events(symbol, events):
+    """(kept, rejected) — گسستِ پایهٔ بی‌شاهدِ دفتر را از زنجیره بیرون می‌گذارد.
+
+    سه الگویِ اندازه‌گیری‌شده در ممیزیِ سراسریِ ۲۰۲۶-۱۰-۲۰ (دادهٔ زندهٔ TSETMC + مرجع
+    رهاورد) نشان می‌دهد گسستِ پایه همیشه اقدامِ شرکتی نیست:
+
+    ۱) **اختیار و اوراق**: مرجع رهاورد در ۱٬۰۲۷ ابزارِ اختیار و ۵۲۸ ابزارِ اوراقِ
+       سنجیده‌شده **صفر** گامِ تعدیل دارد. گسستِ پایه در این ابزارها قیمتِ پایهٔ اداری
+       است، نه اقدامِ شرکتی. نشانهٔ نام با تطبیقِ ۱۰۰٪ رویِ همان ۱٬۵۵۵ ابزار سنجیده
+       شد: «اختيار/اختیار» → اختیار، و نامِ اوراقِ رسمی (مرابحه/اسناد/مشارکت/اوراق/
+       اجاره/صکوک/سلف موازی/اخزا/گام.../گواهی اعتبار) → اوراق. نمونه: اراد۲۰۱
+       ۲۰۲۶-۰۴-۰۵ با ratio=0.984222 و صفر گام در مرجع.
+    ۲) **گسستِ مثبت (ratio > ۱) در بقیهٔ ابزارها**: قیمتِ پایه بالاتر از پایانیِ روزِ
+       پیش نشسته است. تجزیه/تجمیعِ واقعی ردیفِ `share_change_events` دارد و منبعش
+       `shareChange` می‌شود. گسستِ مثبتِ بی‌ردیف (نمونه: شپارس ۲۰۲۰-۰۵-۲۶ با
+       ratio=1.01761 و اعتماد ۲۰۲۴-۰۴-۲۴ با 1.001051) در مرجع هیچ گامی ندارد.
+    ۳) توزیعِ واقعیِ صندوق (ratio<۱) حذف **نمی‌شود**: ۶۲ گامِ تداوم و ۶۴۴ گامِ ۲۶
+       صندوقِ دیگر در مرجع همه کاهشی‌اند؛ فیلترِ مثبت‌محور آن‌ها را نگه می‌دارد.
+
+    ردشدن **خاموش نیست**: هر ردیف با `factor_status` در `adjustRejected` برمی‌گردد.
+    ردیف‌هایِ دفتر (`priceAdjust`/`shareChange`) هرگز فیلتر نمی‌شوند.
+    """
+    ev = [dict(e) for e in (events or [])]
+    if not ev:
+        return ev, []
+    name, paper_type = "", None
+    try:
+        conn = sqlite3.connect(DB_PATH, timeout=15)
+        try:
+            _pred, _params = sym_pred(conn, "l_val18", symbol, "board")
+            row = conn.execute(
+                f"SELECT l_val30, paper_type FROM instruments WHERE {_pred}"
+                " ORDER BY updated_at DESC LIMIT 1", _params).fetchone()
+            if row:
+                name = str(row[0] or "").replace("\u200c", " ")
+                paper_type = row[1]
+        finally:
+            conn.close()
+    except Exception:
+        pass
+    is_option = "اختيار" in name or "اختیار" in name
+    is_right = (paper_type == 4 or name.startswith("ح ") or name.startswith("ح.")
+                or "حق تقدم" in name)
+    is_bond = False
+    if name and "صندوق" not in name and "بورس اوراق بهادار" not in name:
+        is_bond = any(k in name for k in (
+            "مرابحه", "اسناد", "مشاركت", "مشارکت", "اجاره", "صكوک", "صکوک",
+            "سلف موازي", "سلف موازی", "اخزا", "اوراق"))
+        if not is_bond:
+            is_bond = (name.startswith("گام") or name.startswith("گواهي اعتبار")
+                       or name.startswith("گواهی اعتبار"))
+    kept, rejected = [], []
+    for e in ev:
+        try:
+            r = float(e.get("ratio") or 0)
+        except Exception:
+            kept.append(e)
+            continue
+        # هر دو مسیرِ فراخوان پیش از این تابع sharpening را اجرا می‌کنند؛ منبعِ تهی
+        # یعنی «ردیفِ دفتر این رویداد را تأیید نکرد» = همان گسستِ پایه.
+        src = e.get("source") or "base-price-discontinuity"
+        status = None
+        if src == "base-price-discontinuity":
+            if is_option:
+                status = "option-base-gap"
+            elif is_bond:
+                status = "bond-base-gap"
+            elif is_right:
+                status = "right-base-gap"
+            elif r > 1.0:
+                status = "unproven-positive-base-gap"
+        if status:
+            rejected.append({"date": e.get("date"), "ratio": e.get("ratio"),
+                             "factor_status": status})
+        else:
+            kept.append(e)
+    return kept, rejected
+
+
 def _day_diff(a, b):
     """|تاریخ a − تاریخ b| به روز؛ بی‌اعتبار → None (بی‌حدسِ فاصله)."""
     try:
@@ -1192,6 +1271,7 @@ def get_chart_tsetmc(symbol: str):
         # _LEDGER_AGREE_TOL (۰٫۱٪) را دارد و درِ سنجش، میانۀِ اثرش روی کلِ پیکره
         # ۰٫۰۰۶ واحدِ درصدی بود (`_audit/ra365_ledger_ab.py`).
         adj_events, _sharp_n, _amb_n = _sharpen_events_with_ledger(symbol, adj_events)
+        adj_events, _false_rejected = _filter_unproven_base_events(symbol, adj_events)
         _led_n = sum(1 for e in adj_events
                      if e.get("source") in ("priceAdjust", "shareChange"))
         # برچسبِ منبع «کجا عدد آمده» است، نه «کجا رویداد پیدا شده»: کشف همیشه از
@@ -1211,6 +1291,7 @@ def get_chart_tsetmc(symbol: str):
         _times = [str(c["time"])[:10] for c in candles]
         _applied, _rejected, _fac, _chain, _cov = _canonical_adjustment(
             symbol, _times, adj_events)
+        _rejected.extend(_false_rejected)
         factors = [{"time": c["time"], "factor": f} for c, f in zip(candles, _fac)]
 
         # صفر کندل ≠ موفق. اوراق/نمادهای منقضی CSV خالی می‌دهند؛ قبلاً
@@ -1837,11 +1918,13 @@ def get_chart_db(symbol: str):
         # مسیرِ CDN می‌زند — یک قاعده، یک اعتبار، دو منبعِ سری. داوریِ منبع («رویدادی
         # نیست» / «هنوز ندیده‌ایم») مشخص می‌کند اصلاً حقِ ضرب دارد یا نه.
         _evs = _stored_adjust_events(symbol)
+        _evs, _false_rejected = _filter_unproven_base_events(symbol, _evs)
         _src = ("local-cache" if _evs
                 else _stored_adjust_source(symbol) or "local-db-unseen")
         _known = _src in _ADJ_KNOWN_SOURCES
         _applied, _rejected, _fac, _chain, _cov = _canonical_adjustment(
             symbol, [str(c["time"])[:10] for c in candles], _evs if _known else [])
+        _rejected.extend(_false_rejected)
         _cap = _adjust_capability(_applied, _src, chain=_chain, coverage=_cov)
         facts = [{"time": c["time"], "factor": f} for c, f in zip(candles, _fac)]
 

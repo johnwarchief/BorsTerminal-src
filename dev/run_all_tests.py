@@ -93,6 +93,8 @@ SUITES = [
      'weekly gate + weekly hourglass stay frozen (measured on real bank rows)'),
     ('dev/test_adjustment_phasea.py',
      'canonical adjustment: mode semantics split, single scaled series, honest fallback'),
+    ('dev/test_unproven_base_events_v1.py',
+     'unproven base-price gaps (positive, fund micro) never enter the adjustment chain'),
     # مرحلۀِ ۲ (Phase 2): ریشۀِ تعدیل/منبعِ قیمت — ادغامِ بلوکِ VOL=0، ثباتِ لنگرِ تعدیل
     # نسبت به مبنایِ نمایش، هم‌سنجیِ MA با زنجیرۀِ تعدیلِ چارت، و مرزهایِ هندسۀِ کندل.
     ('dev/test_fts_zero_volume_collapse_v1.py',

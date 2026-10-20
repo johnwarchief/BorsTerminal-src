@@ -6,7 +6,7 @@
 // و رویِ کوچکتِ تنظیمِ کهنه قفل می‌کند — نه اینکه ادعایِ قبلی را بی‌جایگزین پاک کند.
 import { describe, expect, it } from 'vitest';
 import {
-  applyAdjustmentToCandles, DEFAULT_ADJUSTMENT_MODE, functionalGapNote,
+  applyAdjustmentToCandles, DEFAULT_ADJUSTMENT_MODE, functionalGapNote, functionalStatusNote,
   getAdjustmentFactor,
   mapBackendAdjustEvents,
   migrateAdjustmentMode,
@@ -15,6 +15,7 @@ import {
   type AdjustFactor,
 } from '@features/technical/nahayatnegar/lib/adjustments';
 import type { KLineData } from 'klinecharts';
+import { toFaDigits } from '@shared/lib/fmt';
 
 const t = (s: string) => Date.parse(`${s}T00:00:00Z`);
 
@@ -235,10 +236,26 @@ describe("PHASE A — جداسازیِ معناییِ تعدیل", () => {
     expect(note).toContain("event-type-unresolved:9");
     expect(note).toContain("ledger-rows-unmatched-by-price-series:12");
     expect(note).toContain("ترکیبی");
+    // هشدار دیدنی: خلاصه کوتاه فارسی با عددهای همان پاسخ؛ کدها فقط در جزئیات.
+    const ui = functionalStatusNote(blocked);
+    expect(ui).not.toBeNull();
+    expect(ui?.summary).toContain(`${toFaDigits(9)} رویداد حل‌نشده`);
+    expect(ui?.summary).not.toContain("event-type-unresolved");
+    expect(ui?.details).toHaveLength(2);
+    expect(ui?.details.join(" ")).toContain(`${toFaDigits(9)} رویداد با نوعِ حل‌نشده`);
+    expect(ui?.details.join(" ")).toContain(`${toFaDigits(12)} ردیف دفتر بی‌تطبیق با سری قیمت`);
     const proven = readAdjustmentCapability({ adjustCapability: {
       source: "x", combined_available: true, functional_available: true,
       functional_blockers: [] } });
     expect(functionalGapNote(proven)).toBeNull();
+    expect(functionalStatusNote(proven)).toBeNull();
+    const noRows = readAdjustmentCapability({ adjustCapability: {
+      source: "no-adjustment-event", combined_available: true,
+      functional_available: false, functional_reason: "r",
+      functional_blockers: ["no-official-rows-for-instrument:هیچ ردیفی نیست"] } });
+    const noRowsNote = functionalStatusNote(noRows);
+    expect(noRowsNote?.summary).toContain("هیچ ردیف رسمیِ تعدیل در بانک نیست");
+    expect(noRowsNote?.summary).not.toContain("no-official-rows");
   });
 
   it("هندسهٔ OHLC پس از هر دو حالت حفظ می‌شود", () => {

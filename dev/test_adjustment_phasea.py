@@ -243,21 +243,33 @@ if HAS_BANK:
        n_ev >= 0 and n_ver >= 0, (n_ev, n_ver))
 
     sym = None
+    stored, expected_rejected = [], []
     try:
         conn = sqlite3.connect(CH.DB_PATH, timeout=30)
-        r = conn.execute("SELECT symbol, COUNT(*) c FROM adjust_events GROUP BY symbol "
-                         "ORDER BY c DESC LIMIT 1").fetchone()
+        rows = conn.execute("SELECT symbol, COUNT(*) c FROM adjust_events GROUP BY symbol "
+                            "ORDER BY c DESC LIMIT 40").fetchall()
         conn.close()
-        sym = r[0] if r else None
+        for cand, _n in rows:
+            kept, rejected = CH._filter_unproven_base_events(
+                cand, CH._stored_adjust_events(cand))
+            if kept:
+                sym, stored, expected_rejected = cand, kept, rejected
+                break
     except Exception:
         sym = None
     if sym:
-        stored = CH._stored_adjust_events(sym)
         d = CH.get_chart_db(sym)
         ck("مسیرِ محلی همان مجموعهٔ رویدادِ کاننیکال را می‌دهد (نه [])",
            d.get("adjustEvents") == stored and len(stored) > 0, len(stored))
         ck("منبعِ مسیرِ محلی «local-cache» اعلام می‌شود",
            d.get("adjustSource") == "local-cache", d.get("adjustSource"))
+        if expected_rejected:
+            _rej = d.get("adjustRejected") or []
+            ck("رویدادهایِ فیلترشدهٔ گسستِ پایه با علت در adjustRejected اعلام می‌شوند",
+               all(any(str(x.get("date")) == str(e["date"]) and
+                       x.get("factor_status") == e["factor_status"] for x in _rej)
+                   for e in expected_rejected),
+               (expected_rejected[:2], _rej[:3]))
         ck("ضرایبِ مسیرِ محلی از همان رویدادها می‌آیند و بی‌ضریبِ یک نیستند",
            any(abs(f["factor"] - 1.0) > 1e-9 for f in d.get("factors") or []),
            len(d.get("factors") or []))

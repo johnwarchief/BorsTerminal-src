@@ -1,5 +1,6 @@
 import type { KLineData } from 'klinecharts';
 import { parseCandleTimestamp } from '../../lib/jalaliDate';
+import { toFaDigits } from '@shared/lib/fmt';
 
 /**
  * رویداد تعدیل. سرور (api/chart.py) برای هر رویداد فقط یک عدد می‌دهد:
@@ -165,6 +166,71 @@ export function functionalGapNote(cap: AdjustmentCapability): string | null {
   const first = (cap.functionalBlockers ?? []).slice(0, 2).join('، ');
   return `تعدیلِ عملکردیِ واقعی با دادهٔ همین نماد اثبات نشده‌است${first ? ` (${first})` : ''} — `
     + 'محور، سریِ تعدیلِ ترکیبی است.';
+}
+
+export interface FunctionalStatusNote {
+  summary: string;
+  details: string[];
+}
+
+/** متنِ کوتاهِ فارسی برای هشدارِ عملکردی + جزئیاتِ بازشونده.
+ *
+ * همهٔ عددها از `functionalBlockers` همان پاسخ می‌آیند؛ هیچ عددی در این فایل
+ * hard-code نیست. اگر وضعیت کامل باشد (functionalAvailable) هشدار برمی‌گردد null.
+ * کدهایِ خامِ انگلیسی فقط در جزئیات می‌مانند تا کاربر متنِ فارسی کوتاه ببیند.
+ */
+export function functionalStatusNote(cap: AdjustmentCapability): FunctionalStatusNote | null {
+  if (cap.functionalAvailable) return null;
+  const parse = (raw: string): { key: string; n: number | null } => {
+    const i = raw.indexOf(':');
+    if (i <= 0) return { key: raw, n: null };
+    const tail = raw.slice(i + 1);
+    return /^\d+$/.test(tail)
+      ? { key: raw.slice(0, i), n: Number(tail) }
+      : { key: raw.slice(0, i), n: null };
+  };
+  const blockers = (cap.functionalBlockers ?? []).map(parse);
+  const count = (key: string): number | null => {
+    const hit = blockers.find(b => b.key === key);
+    return hit ? hit.n : null;
+  };
+  const nEvent = count('event-type-unresolved');
+  const nPre = count('candles-before-ledger-coverage');
+  const nUnmatched = count('ledger-rows-unmatched-by-price-series');
+  const short: string[] = [];
+  if (nEvent) short.push(`${toFaDigits(nEvent)} رویداد حل‌نشده`);
+  if (nPre) short.push(`${toFaDigits(nPre)} کندل پیش از پوشش مرجع`);
+  if (!short.length && nUnmatched) short.push(`${toFaDigits(nUnmatched)} ردیف دفتر بی‌تطبیق`);
+  if (!short.length) {
+    const has = (key: string) => blockers.some(b => b.key === key);
+    if (has('no-official-rows-for-instrument')) short.push('هیچ ردیف رسمیِ تعدیل در بانک نیست');
+    else if (has('ledger-unavailable')) short.push('دفتر تعدیل در دسترس نیست');
+    else if (has('unmeasured')) short.push('وضعیت تعدیل سنجیده نشده است');
+    else if (has('unreported')) short.push('سرور وضعیت تعدیل را نفرستاد');
+    else short.push('دلیلِ دقیق در جزئیات آمده است');
+  }
+  const summary = `تعدیل عملکردی این نماد کامل تأیید نشده است؛ ${short.join(' و ')}.`;
+
+  const label = (b: { key: string; n: number | null }): string => {
+    const n = b.n;
+    switch (b.key) {
+      case 'event-type-unresolved': return `${toFaDigits(n ?? 0)} رویداد با نوعِ حل‌نشده`;
+      case 'candles-before-ledger-coverage': return `${toFaDigits(n ?? 0)} کندل پیش از پوشش دفتر رسمی`;
+      case 'ledger-rows-unmatched-by-price-series': return `${toFaDigits(n ?? 0)} ردیف دفتر بی‌تطبیق با سری قیمت`;
+      case 'offer-price-missing': return `${toFaDigits(n ?? 0)} رویداد بدون قیمت پذیره`;
+      case 'ledger-rows-rejected': return `${toFaDigits(n ?? 0)} ردیف دفتر ردشده`;
+      case 'chain-incomplete': return `${toFaDigits(n ?? 0)} رویداد با زنجیرهٔ ناقص`;
+      case 'ledger-flow-truncated-at-cap': return `دفتر تعدیل در سقف ${toFaDigits(n ?? 0)} ردیف بریده شده است`;
+      case 'no-official-rows-for-instrument': return 'هیچ ردیف رسمیِ تعدیل در بانک نیست';
+      case 'ledger-unavailable': return 'دفتر تعدیل در دسترس نیست';
+      case 'unmeasured': return 'وضعیت تعدیل سنجیده نشده است';
+      case 'unreported': return 'سرور وضعیت تعدیل را نفرستاد';
+      default: return b.key;
+    }
+  };
+  const details = blockers.map(label);
+  if (!details.length) details.push('سرور دلیلی برای تأییدنشدن اعلام نکرده است.');
+  return { summary, details };
 }
 
 /**

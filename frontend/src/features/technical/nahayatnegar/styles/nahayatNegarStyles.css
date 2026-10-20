@@ -424,6 +424,57 @@
   z-index: 10;
 }
 
+/* هشدارِ عملکردی: یک خطِ کوتاه با عددهای همین نماد؛ جزئیات فقط با بازکردن. */
+.nn-functional-note {
+  max-width: min(520px, calc(100% - 20px));
+  line-height: 1.7;
+}
+
+.nn-functional-note > span {
+  display: block;
+}
+
+.nn-functional-details {
+  margin-top: 2px;
+  font-weight: 500;
+}
+
+.nn-functional-details summary {
+  cursor: pointer;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--nn-color-warning);
+}
+
+.nn-functional-details ul {
+  margin: 4px 0 0;
+  padding-inline-start: 14px;
+  max-height: 120px;
+  overflow: auto;
+}
+
+.nn-functional-details li {
+  margin: 1px 0;
+}
+
+.nn-functional-method {
+  margin-top: 4px;
+  font-size: 9px;
+}
+
+.nn-functional-method summary {
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.nn-functional-method p {
+  margin: 3px 0 0;
+  max-height: 80px;
+  overflow: auto;
+  line-height: 1.6;
+  opacity: 0.85;
+}
+
 /* واترمارکِ چارت — لایۀ واقعاً رسم‌شده (پیش‌تر فقط دو پرچم درِ استور ذخیره می‌شد).
    opacity از استور می‌آید (۵٪…۵۰٪)؛ pointer-events:none تا کلیکِ کندل، مگنت و
    درگِ محور را بلوکه نکند. */
