@@ -118,6 +118,7 @@ class ScheduleState(str, Enum):
     UNKNOWN = "UNKNOWN"
     CANCELLED = "CANCELLED"
     EXPIRED = "EXPIRED"
+    SKIPPED = "SKIPPED"
     MISSED_TARGET = "MISSED_TARGET"
     NEEDS_REVIEW = "NEEDS_REVIEW"
 
@@ -128,6 +129,7 @@ ACTIVE_STATES = (ScheduleState.PREPARED.value, ScheduleState.ARMED.value,
 TERMINAL_STATES = (ScheduleState.DRY_RUN.value, ScheduleState.ACKNOWLEDGED.value,
                    ScheduleState.REJECTED.value, ScheduleState.UNKNOWN.value,
                    ScheduleState.CANCELLED.value, ScheduleState.EXPIRED.value,
+                   ScheduleState.SKIPPED.value,
                    ScheduleState.MISSED_TARGET.value)
 
 
@@ -641,6 +643,33 @@ class ScheduleStore:
             raise ScheduleError("NOT_FOUND", "زمان‌بندی پیدا نشد")
         return got
 
+    def skip(self, sid: str, reason: str, at_ms: int | None = None) -> ScheduleRecord:
+        """روزِ غیرمعاملاتی/نمادِ متوقف: SKIPPED با علت، بدون ارسال."""
+        at = (now_ms() if at_ms is None else int(at_ms)) / 1000.0
+        con = self._conn()
+        try:
+            con.execute("BEGIN IMMEDIATE")
+            cur = con.execute(
+                "UPDATE schedules SET state=?, last_error=?, updated_at=? "
+                "WHERE id=? AND state IN (?,?)",
+                (ScheduleState.SKIPPED.value, reason[:500], at, sid,
+                 ScheduleState.ARMED.value, ScheduleState.RUNNING.value))
+            if cur.rowcount != 1:
+                con.execute("ROLLBACK")
+                raise ScheduleError("INVALID_TRANSITION", "این وضعیت قابل SKIPPED نیست")
+            self._event(con, sid, "skipped", reason, ScheduleState.SKIPPED.value, at)
+            con.execute("COMMIT")
+        except Exception:
+            if con.in_transaction:
+                con.execute("ROLLBACK")
+            raise
+        finally:
+            con.close()
+        got = self.get(sid)
+        if got is None:                          # pragma: no cover
+            raise ScheduleError("NOT_FOUND", "زمان‌بندی پیدا نشد")
+        return got
+
     def reset_to_prepared(self, sid: str, at_ms: int | None = None) -> ScheduleRecord:
         at = (now_ms() if at_ms is None else int(at_ms))
         con = self._conn()
@@ -1072,8 +1101,8 @@ class ScheduleRunner:
                         day = datetime.fromtimestamp(rec.target_ms / 1000.0, TEHRAN).date()
                         cst, cwhy = self.calendar.status(day)
                         if cst is CalendarStatus.CLOSED:
-                            self.store.expire(rec.id, "calendar: %s (%s)" % (cst.value, cwhy), at)
-                            out["processed"].append({"id": rec.id, "state": ScheduleState.EXPIRED.value})
+                            self.store.skip(rec.id, "calendar: %s (%s)" % (cst.value, cwhy), at)
+                            out["processed"].append({"id": rec.id, "state": ScheduleState.SKIPPED.value})
                             continue
                         if cst is CalendarStatus.UNKNOWN:
                             blockers.append("calendar: %s (%s)" % (cst.value, cwhy))

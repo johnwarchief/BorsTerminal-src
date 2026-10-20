@@ -19,6 +19,7 @@ const STATE: Record<string, { label: string; tone: 'ok' | 'warn' | 'bad' | 'idle
   UNKNOWN: { label: 'نامعلوم — بازبینی', tone: 'bad' },
   CANCELLED: { label: 'لغو شد', tone: 'idle' },
   EXPIRED: { label: 'منقضی', tone: 'idle' },
+  SKIPPED: { label: 'رد شد (روز/نماد)', tone: 'idle' },
   MISSED_TARGET: { label: 'هدف از دست رفت', tone: 'bad' },
   NEEDS_REVIEW: { label: 'نیازمند بازبینی', tone: 'bad' },
 };

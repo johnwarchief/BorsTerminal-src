@@ -51,9 +51,9 @@
 
 | اجرا | نتیجهٔ نهایی |
 | --- | --- |
-| `dev/execution_schedule_v1130.py` | **50/50** |
+| `dev/execution_schedule_v1130.py` | **55/55** |
 | `dev/strategy_guard_v1123.py` | **55/55** |
-| `dev/run_all_tests.py` | **167 suite** (138 شمارش‌دار + 27 silent + 2 skip)؛ **4972/4972** check؛ exit 0 |
+| `dev/run_all_tests.py` | **167 suite** (138 شمارش‌دار + 27 silent + 2 skip)؛ **4977/4977** check؛ exit 0 |
 | Vitest | 197/199 فایل؛ 2065/2070 تست؛ 5 skip؛ exit 0 |
 | `npx tsc -b` | صفر خطا |
 | Frozen | 230.3MB؛ build exit 0؛ `onedir_contract` PASS |
@@ -104,3 +104,6 @@ increment دوباره اندازه‌گیری نشدند؛ برای ادعای 
 4. selector پایدار هدر/فرم و پیکربندی در تنظیمات Strategy.
 5. تست‌های باقی‌مانده: restart در آستانهٔ ارسالِ واقعی، 429، صف، و
    قطع شبکه حین POST — فقط با Mock/ترافیک بدل تا مجوز زنده.
+
+
+Blocker burn-down: `docs/research/SARKHATI-BLOCKERS-2026-10-20.md`.

@@ -77,9 +77,9 @@
 
 | مورد | نتیجه |
 | --- | --- |
-| `dev/execution_schedule_v1130.py` | **50/50** |
+| `dev/execution_schedule_v1130.py` | **55/55** |
 | `dev/strategy_guard_v1123.py` | **55/55** (فرم/هدر + ۳ تستِ async + preflight موازی) |
-| `dev/run_all_tests.py` | **138 شمارش‌دار + 27 silent + 2 skip = 167**؛ 4972/4972 check؛ `ALL SUITES PASSED`؛ exit 0 |
+| `dev/run_all_tests.py` | **138 شمارش‌دار + 27 silent + 2 skip = 167**؛ 4977/4977 check؛ `ALL SUITES PASSED`؛ exit 0 |
 | Vitest | 197/199 فایل، 2065/2070 تست، 5 skip؛ exit 0 |
 | `npx tsc -b` | صفر خطا |
 | Frozen build | exit 0؛ **230.3 MB**؛ `onedir_contract --dist` **PASS** |
@@ -124,3 +124,6 @@ cd frontend && npx --no-install vitest run --maxWorkers=2 && npx --no-install ts
 python execution_daemon.py --once --db <temp>/schedule.db
 BorsTerminal_Ultimate.exe --schedule-daemon --once --db <temp>/schedule.db
 ```
+
+
+Blocker burn-down: `docs/research/SARKHATI-BLOCKERS-2026-10-20.md`.

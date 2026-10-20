@@ -148,6 +148,20 @@ def main() -> int:
         setattr(f, field, value)
         bad = S.validate_darvand(r, f, check_target_future=True)
         ck(not bad.static_ok, "validator ردِ %s" % label, bad.blockers[:2])
+    for label, mutate, key in (
+            ("خارج از دامنه", lambda f: (setattr(f, "price_min", 12000.0),
+                                        setattr(f, "price_max", 13000.0)), "price_band"),
+            ("گام نامعتبر", lambda f: setattr(f, "price_min", 10371.0), "price_tick"),
+            ("دادهٔ کهنه", lambda f: setattr(f, "price_as_of_ms",
+                                             S.now_ms() - 900_000), "data_fresh"),
+            ("بودجهٔ ناکافی", lambda f: setattr(f, "buying_power_ok", False),
+             "buying_power"),
+            ("نشست نامعتبر", lambda f: setattr(f, "session_ok", False), "session")):
+        f = good_facts()
+        mutate(f)
+        bad = S.validate_darvand(r, f, check_target_future=True)
+        ck(not bad.live_ready and bad.checks.get(key, {}).get("state") != "PASS",
+           "validator live را برای %s می‌بندد" % label, bad.checks.get(key))
     r = arm_dry(st, r)[0]
     ck(r.state == "ARMED", "مسلح‌شدن dry-run با validation سبز")
     try:
@@ -309,8 +323,8 @@ def main() -> int:
                               clock_ok=lambda: (True, "fake"),
                               live_enabled=True, contract_verified=True)
     runner.tick()
-    ck(st.get(r.id).state == "EXPIRED" and not ex.calls,
-       "calendar بسته → EXPIRED، صفر ارسال")
+    ck(st.get(r.id).state == "SKIPPED" and not ex.calls,
+       "calendar بسته → SKIPPED، صفر ارسال")
     st, _ = new_store(); r = make(st, mode="live")
     st.arm(r.id, rep.to_dict(), ok_for_arm=True)
     ex = FakeExec("ACKNOWLEDGED")
