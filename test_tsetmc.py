@@ -1252,6 +1252,49 @@ def num(v):
         return None
 
 
+def _source_last_price(r):
+    """آخرینِ خامِ تابلو؛ ۰/نبود یعنی «آخرینی نیست»، نه pcl و نه py+pc.
+
+    `pdv` ستونِ LASTِ خودِ TSETMC است (سنجشِ ۶/۶ نماد در
+    `_audit/mw_key_to_csv_column.json`). ساختنِ LAST از `py+pc` رویِ ردیفِ
+    بی‌معامله، یک عددِ «آخرین» جعلی می‌سازد؛ صفر/غایب باید null بماند.
+    """
+    v = num(r.get("pdv"))
+    return v if v and v > 0 else None
+
+
+def _last_trade_price(r, prev=None, closed=False, vol=0, val=0, trd=0, pcl=None):
+    """مقدارِ p_last برایِ نوشتن؛ منبعِ خام همیشه بر مقدارِ ذخیره‌شده مقدم است.
+
+    فقط وقتی منبع هیچ LASTِ معتبری ندارد و بازار بسته است و ردیف هیچ معامله‌ای
+    ندارد، مقدارِ LASTِ نشستِ پیشین (در بازهٔ معقولِ قیمتِ پایانی) نگه داشته
+    می‌شود — همان حفاظتی که صف‌هایِ بستهٔ بازار را حفظ می‌کند. برعکسِ نسخهٔ
+    پیشین، LASTِ معتبرِ منبع هرگز با عددِ کهنهٔ بانک بازنویسی نمی‌شود.
+    """
+    last = _source_last_price(r)
+    if last is not None:
+        return last
+    if closed and not (vol or val or trd) and prev:
+        old = num(prev.get("p_last"))
+        if old and pcl and 0.5 <= old / pcl <= 2.0:
+            return old
+    return None
+
+
+def _closed_values(vol, val, trd, chg, prev):
+    """فقط نبودِ کاملِ مقادیرِ منبع را از نشستِ پیشین پر کن؛ صفر دادهٔ معتبر است.
+
+    بلوکِ قدیمی با `not (vol or val or trd)` صفرِ «امروز معامله‌ای نشد» را با
+    حجم/ارزش/شمارش/تغییرِ نشستِ قبل عوض می‌کرد؛ نمونهٔ زندهٔ 2026-10-20:
+    «آپ3» در منبع 0/0/0/0 بود ولی برنامه 5000 سهم و 170 ریال تغییر نشان
+    می‌داد. فقط None (نبودِ واقعی) جایگزین می‌شود.
+    """
+    if prev is not None and vol is None and val is None and trd is None:
+        return (prev["q_tot_tran"], prev["q_tot_cap"],
+                prev["z_tot_tran"], prev["price_change"])
+    return vol, val, trd, chg
+
+
 def make_session(min_interval=0.05, cooldown_fn=None):
     """Polite TSETMC session — for users WITHOUT ADB/IP rotation.
 
@@ -2632,10 +2675,9 @@ def _mw_row(r, last_d_even, today, now, sectors=None, ptypes=None):
     chg = num(r.get("pc"))
     # «آخرین» کلیدِ خامِ خودش را درِ تابلو دارد: `pdv`. سنجشِ لحظه‌ای رویِ شش نماد
     # (_audit/mw_key_to_csv_column.json → mw_last_key_probe.py): pdv == ستونِ LASTِ
-    # فایلِ رسمیِ خودِ TSETMC درِ ۶/۶، و pcl == CLOSE درِ ۶/۶. پیش از این `p_last` از
-    # `py + pc` ساخته می‌شد (که رویِ همان نمونه‌ها باز هم LAST داد، ولی مشتق است و درِ
-    # ردیفِ بی‌معامله/کدهایِ شکسته می‌شکند)؛ حالا عددِ خام و fallbackِ مشتق.
-    p_last = pdv or ((py + chg) if (pcl and py) else None)
+    # فایلِ رسمیِ خودِ TSETMC درِ ۶/۶، و pcl == CLOSE درِ ۶/۶. رویِ ردیفِ
+    # بی‌معامله هیچ LASTِ جعلی از `py + pc` ساخته نمی‌شود؛ غایب ⇒ null.
+    p_last = _last_trade_price(r, pcl=pcl, vol=vol, val=val, trd=trd)
     it = None
     if sectors is not None and ptypes is not None:
         it = (ins, r.get("lva"), r.get("lvc"), sec, sectors.get(sec, ""),
@@ -3098,21 +3140,16 @@ def main():
         vol, val, trd = num(r.get("qtj")), num(r.get("qtc")), num(r.get("ztt"))
         chg = num(r.get("pc"))
         # «آخرین» کلیدِ خامِ خودش را دارد (`pdv` — سنجشِ ۶/۶ نماد درِ
-        # _audit/mw_key_to_csv_column.json؛ `pcl` هم == CLOSE). قاعدهٔ قدیمی
-        # «pLast حذف شده، پس py+pc» رویِ همان نمونه‌ها عددِ درست می‌داد ولی مشتق
-        # بود؛ اینجا عددِ خام و fallbackِ مشتق، تا ردیفِ پیش از بازگشایی.
-        p_last = pdv or ((py + chg) if (pcl and py) else None)
-        # حفاظت صف: وقتی بازار بسته است و ارقام جدید صفرند، دادهٔ آخرین روز
-        # معاملاتی (صفهای بستهشدن) را نگه دار — صفرها جایگزین نشوند
-        if closed and not (vol or val or trd) and ins in prev:
-            _p = prev[ins]
-            vol, val, trd, chg = (_p["q_tot_tran"], _p["q_tot_cap"],
-                                  _p["z_tot_tran"], _p["price_change"])
-            # کورکورانه برگرداندنِ p_lastِ کهنه، خرابیِ نسخهٔ پیشین را جاودانه
-            # می‌کرد؛ فقط اگر معقول بود (هم‌مرتبهٔ پایانی) نگه داشته می‌شود.
-            _pl = _p["p_last"]
-            if _pl and pcl and 0.5 <= num(_pl) / pcl <= 2.0:
-                p_last = _pl
+        # _audit/mw_key_to_csv_column.json؛ `pcl` هم == CLOSE). LASTِ معتبرِ
+        # منبع هرگز با عددِ کهنهٔ بانک بازنویسی نمی‌شود؛ رویِ ردیفِ
+        # بی‌معامله هیچ LASTِ جعلی از py+pc ساخته نمی‌شود.
+        p_last = _last_trade_price(
+            r, prev=prev.get(ins), closed=closed,
+            vol=vol, val=val, trd=trd, pcl=pcl)
+        # بازار بسته: فقط مقادیرِ واقعاً غایبِ منبع از نشستِ پیشین پر می‌شوند؛
+        # صفرِ «امروز معامله‌ای نشد» دادهٔ معتبر است و با عددِ دیروز عوض نمی‌شود.
+        vol, val, trd, chg = _closed_values(
+            vol, val, trd, chg, prev.get(ins) if closed else None)
         q = queue_agg(r)
         if q is None:
             q = (None,) * len(_QUEUE_COLS)
