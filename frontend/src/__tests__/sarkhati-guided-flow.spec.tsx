@@ -208,18 +208,19 @@ describe('قدمِ پیشنهادی — همان چیزی که صفحه نشان
     await waitFor(() => expect(screen.getByTestId('sarkhati-risk-card')).toBeInTheDocument());
   });
 
-  it('ردیفِ اتصال یک‌جا است، نه هم درِ فرم و هم درِ قدمِ ۱', async () => {
+  it('پنلِ اتصال یک مسیرِ اصلی دارد و ردیفِ قدیمی را تکرار نمی‌کند', async () => {
     route(statusOf());
     renderPage();
     await waitFor(() => expect(screen.getByTestId('sarkhati-order-section')).toBeInTheDocument());
     // قدمِ ۳ هیچ کنترلِ اتصالِ دومی نمی‌سازد؛ نشست را فقط به‌صورتِ نشان می‌خواند
     expect(screen.queryAllByTestId('connect-broker-row')).toHaveLength(0);
     expect(screen.getByTestId('watch-order-panel').getAttribute('data-session')).toBe('connected');
-    // قدمِ ۱ دقیقاً یک ردیف دارد (پیشِ این اصلاح، کارتِ اتصال همان ردیف را دوباره
-    // می‌راند و دو «بررسی اتصال» رویِ صفحه می‌شد)
+    // پنلِ جدید یک دکمهٔ اصلیِ host دارد؛ مسیرِ قدیمی در جزئیاتِ فنی است، نه
+    // کنارِ مسیرِ اصلی (پیش از این دو «بررسی اتصال» رویِ صفحه می‌شد).
     fireEvent.click(screen.getByTestId('sarkhati-tab-connect'));
     await waitFor(() => expect(screen.getByTestId('sarkhati-connect-section')).toBeInTheDocument());
-    expect(screen.getAllByTestId('connect-broker-row')).toHaveLength(1);
+    expect(screen.getAllByTestId('connection-open-host')).toHaveLength(1);
+    expect(screen.getByTestId('sarkhati-connection-technical')).toBeInTheDocument();
   });
 
   it('هیچ‌چیز ازِ صفحه بیرون نرفته: چهار قدم و سه ابزارِ حرفه‌ای همه tabند', async () => {
