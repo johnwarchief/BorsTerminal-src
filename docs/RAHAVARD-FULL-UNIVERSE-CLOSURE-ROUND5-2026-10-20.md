@@ -3,7 +3,7 @@
 - **تاریخ:** ۲۰۲۶-۱۰-۲۰
 - **شاخه:** `mission/rahavard-full-universe-parity-2026-10-20`
 - **HEAD مبنا:** `55fa7a72` (پس از `04698eaa`)
-- **کامیت این دور:** `ROUND5_SHA_PLACEHOLDER`
+- **کامیت این دور:** `c97dbfe973501c33d27d72cb1c654ee0af41e630`
 
 **حکم: `PARTIAL — ANALYSIS COMPLETE, EXTERNAL SOURCE GAPS REMAIN`.** هیچ ادعای ۱۰۰٪ نیست؛ افت پوشش/فاکتور با مدرک بررسی شد و فقط اصلاحات دارای شاهد اعمال شدند.
 
@@ -157,5 +157,5 @@
 
 ## ۱۱. SHA
 
-- **SHA این دور:** `ROUND5_SHA_PLACEHOLDER`
+- **SHA این دور:** `c97dbfe973501c33d27d72cb1c654ee0af41e630`
 - **`market.db`:** `fff358a78be74e8d21961251a727116e102df84cea70f87b4dcb7da198667004`؛ integrity `ok`؛ سه جدول جدید ۰ ردیف.
