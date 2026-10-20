@@ -615,6 +615,8 @@ SUITES = [
      'multi-offering: provenance/method, atomic capital reservations, priority SKIPPED_BUDGET, quota/price/qty/fee preflight, UNKNOWN hold, timing confidence without acceptance claims'),
     ('dev/execution_cockpit_v1141.py',
      'cockpit: read-only system gates, in-app mock scenarios, stop/restart recovery, UNKNOWN no retry, redacted report, no order POST'),
+    ('dev/execution_connection_v1142.py',
+     'connection: ten-stage host/CDP/page/login/session/API diagnosis, no false CONNECTED, mock/HTML/timeout states, redacted report'),
     # مأموریتِ 2026-10-18 (عیب‌یابیِ اتصالِ مفید): انتخابِ آداپتور ازِ خودِ برنامه
     # با مقدم‌بودنِ env، گیتِ نوشتن که هیچ تنظیمِ دیسکی بازش نمی‌کند، حالتِ
     # فقط‌خواندنی (خواندن بله / POST نه)، و «متصل» فقط باِ شاهدِ مسیرِ واقعی.

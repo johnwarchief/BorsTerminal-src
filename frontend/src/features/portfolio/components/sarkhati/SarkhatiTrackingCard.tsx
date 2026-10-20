@@ -93,10 +93,23 @@ export function SarkhatiTrackingCard({ ledger, caps, status, endpointPresent = t
   const canCancel = caps?.cancel === true;
   const canQueue = caps?.queue_position === true;
   const total = (ledger?.records ?? []).length;
+  const unknownN = (ledger?.records ?? []).filter((r) => phaseOf(r) === 'unknown').length;
+  const acceptedN = (ledger?.records ?? []).filter((r) =>
+    ['accepted', 'filled', 'partial'].includes(phaseOf(r))).length;
+  const holdRows = (ledger?.records ?? []).filter((r) =>
+    String(r.status ?? '').toLowerCase().includes('unknown_hold')).length;
 
   return (
     <section className="rounded-xl border border-border-c/70 bg-bg-card/25 px-3 py-2.5"
       data-testid="sarkhati-tracking-card">
+      <div className="mb-1 flex flex-wrap items-center gap-1" data-testid="sarkhati-track-summary">
+        <Chip tone={unknownN ? 'warn' : 'idle'}>نامعلوم: {toFaDigits(String(unknownN))}</Chip>
+        <Chip tone={acceptedN ? 'ok' : 'idle'}>تأییدشده: {toFaDigits(String(acceptedN))}</Chip>
+        {holdRows ? <Chip tone="bad">UNKNOWN_HOLD: {toFaDigits(String(holdRows))}</Chip> : null}
+        <span className="text-2xs text-text-muted">
+          نتیجهٔ HTTP ۲۰۰ پذیرش نیست؛ هر ردیف باید شاهدِ کارگزاری داشته باشد.
+        </span>
+      </div>
       <header className="mb-2 flex flex-wrap items-baseline gap-x-2 gap-y-1.5">
         <h4 className="text-xs font-black leading-4 text-text-primary">نتیجۀِ درخواست‌ها</h4>
         <input value={fSym} onChange={(e) => setFSym(e.target.value)}

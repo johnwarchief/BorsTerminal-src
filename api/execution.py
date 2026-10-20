@@ -53,6 +53,7 @@ from execution_easytrader import (
     easytrader_payload,
 )
 import execution_connect as EXC                            # noqa: E402
+import execution_connection as ECONN                       # noqa: E402
 import execution_browser_host as BH                        # noqa: E402
 import execution_cockpit as CK                             # noqa: E402
 import execution_offerings as OF                           # noqa: E402
@@ -1911,6 +1912,32 @@ def delete_connect_browser() -> dict[str, Any]:
     _ok, note = EXC.close_login_window()
     return {"status": "success", "note": note,
             "connect": EXC.status_dict(_ACTIVE_ADAPTER, _CONNECT_LAST)}
+
+
+@router.get("/api/execution/connection/diagnose")
+def get_connection_diagnose() -> dict[str, Any]:
+    """تشخیصِ مرحله‌به‌مرحله؛ فقط host/CDP/status محلی را می‌خواند."""
+    try:
+        got = ECONN.diagnose(
+            app_version=str(APP_VERSION), host=BH.read_status(check=True),
+            execution=get_status(), portfolio=get_portfolio())
+    except Exception as e:                       # noqa: BLE001
+        return {"status": "error", "code": "CONNECTION_DIAGNOSE_FAILED",
+                "detail": "%s: %s" % (type(e).__name__, str(e)[:200])}
+    return {"status": "success", **got}
+
+
+@router.post("/api/execution/connection/verify")
+def post_connection_verify() -> dict[str, Any]:
+    return get_connection_diagnose()
+
+
+@router.get("/api/execution/connection/report")
+def get_connection_report() -> dict[str, Any]:
+    got = get_connection_diagnose()
+    if got.get("status") != "success":
+        return got
+    return ECONN.report(diagnosis=got)
 
 
 @router.post("/api/execution/connect/verify")

@@ -99,6 +99,11 @@ export function SarkhatiRiskCard({ status }: { status: ExecutionStatus | null })
         </div>
       </Section>
 
+      <details className="rounded-xl border border-border-c/50 bg-bg-card/20 px-2 py-1"
+        data-testid="sarkhati-risk-details">
+        <summary className="cursor-pointer text-2xs font-bold text-accent-blue">
+          سقف‌های ریسک و شواهد فنی (بازکردن)
+        </summary>
       <Section title="سقف‌هایِ تنظیم‌شده" testId="sarkhati-limits"
         sub="از /api/execution/limits، بی‌عددِ ساختگی">
         <div className="grid gap-x-4 gap-y-0.5 sm:grid-cols-2 lg:grid-cols-3">
@@ -160,6 +165,7 @@ export function SarkhatiRiskCard({ status }: { status: ExecutionStatus | null })
           زمانِ سرورِ کارگزاری: NOT_PROVEN · رتبۀِ صفِ رسمی: NOT_PROVEN
         </Line>
       </Section>
+      </details>
     </div>
   );
 }

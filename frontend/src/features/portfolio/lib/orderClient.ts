@@ -1091,3 +1091,30 @@ export function useCockpitRunDetail(runId: string) {
     retry: false,
   });
 }
+
+// ── تشخیصِ اتصال: ده مرحلهٔ مستقل از Mock ────────────────────────────────
+export type ConnectionStep = {
+  key: string; title: string; status: string; evidence: string; reason: string;
+  action: string; observed_at: string; duration_ms?: number | null;
+};
+export type ConnectionDiagnosis = {
+  status: string; app_version?: string; adapter?: string;
+  state: string; state_label: string; steps: ConnectionStep[];
+  next_action?: string; secrets_stored?: boolean; observed_at?: string;
+  diagnose_ms?: number;
+};
+export const connectionApi = {
+  diagnose: () => http<ConnectionDiagnosis>('/api/execution/connection/diagnose'),
+  verify: () => http<ConnectionDiagnosis>('/api/execution/connection/verify',
+    { method: 'POST', ...NO_RETRY }),
+  report: () => http<Record<string, unknown>>('/api/execution/connection/report'),
+};
+export function useConnectionDiagnosis() {
+  return useQuery({
+    queryKey: ['execution-connection-diagnosis'],
+    queryFn: () => connectionApi.diagnose(),
+    staleTime: 5_000,
+    refetchInterval: 20_000,
+    retry: false,
+  });
+}

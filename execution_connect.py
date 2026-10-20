@@ -388,12 +388,14 @@ def verify(adapter: Any) -> dict[str, Any]:
     """حالت را ازِ پرسیدنیِ واقعی می‌گیرد — نه ازِ حضورِ یکِ رشته، نه ازِ HTML."""
     checked_at = time.strftime("%Y-%m-%dT%H:%M:%S")
     live = bool(getattr(adapter, "live", False))
+    traffic_live = bool(getattr(adapter, "live", False)
+                        or getattr(getattr(adapter, "transport", None), "is_live", False))
     has_token = bool(adapter.has_token()) if hasattr(adapter, "has_token") else False
     out: dict[str, Any] = {"state": STATE_UNKNOWN, "reason": "", "blocked_reason": "",
                            "checked_at": checked_at, "live": live,
                            "token_present": has_token,
                            "adapter": type(adapter).__name__}
-    if not live:
+    if not traffic_live:
         out["blocked_reason"] = ("ترافیکِ زنده خاموش است (BORS_EXECUTION_LIVE=1 لازم "
                                  "است) — بی‌پرسش ازِ کارگزاری هیچ حالتی تأیید نمی‌شود")
         out["reason"] = "ناشناخته؛ پرسش انجام نشد"

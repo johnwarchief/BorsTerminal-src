@@ -1,4 +1,7 @@
 *.png
+# شواهدِ بصریِ تحویل‌شدنیِ Round 7/8 عمداً در گیت می‌مانند تا GitHub قابلِ بازبینی باشد.
+!round7/visual/*.png
+!round8/visual/*.png
 _visual.json
 _visual_detail.json
 board_now.json
