@@ -278,6 +278,27 @@ def fetch_market_total(s):
 
 
 MARKET_INDEX_TABLE = "market_index"
+# «شاخص قیمت (وزنی-ارزشی)» — همان عددی که ره‌آورد زیر عنوانِ «قیمت وزنی ارزشی»
+# نشان می‌دهد و پیش از این کارتِ ما به‌جایش میانگینِ ارزشیِ معاملات را می‌گذاشت.
+# از GetMarketOverview نمی‌آید؛ از فهرستِ رسمیِ Index/GetIndexB1LastAll.
+PRICE_INDEX_CODE = "5798407779416661"
+
+
+def fetch_price_index(s):
+    """شاخصِ رسمیِ قیمت (وزنی-ارزشی) یا None — بی‌ساختِ عدد.
+
+    فیلدِ مقدار در این endpoint `xDrNivJIdx004` است (`last` همیشه false است).
+    """
+    rows = polite_get(s, f"{BASE}/Index/GetIndexB1LastAll/SelectedIndexes/1", "indexB1")
+    for r in rows or []:
+        if str(r.get("insCode")) == PRICE_INDEX_CODE:
+            last = num(r.get("xDrNivJIdx004"))
+            if not last or last <= 0:
+                return None
+            return {"last": last, "change": num(r.get("indexChange")),
+                    "pct": num(r.get("xVarIdxJRfV")),
+                    "h_even": num(r.get("hEven"))}
+    return None
 
 
 def ensure_market_index_schema(conn):
@@ -301,7 +322,8 @@ def ensure_market_index_schema(conn):
     # (پایگاهِ بسته‌بندی‌شدۀ کهنه ستون ندارد) و نوشتار از این پس نامی است.
     cols = {r[1] for r in conn.execute(f"PRAGMA table_info({MARKET_INDEX_TABLE})")}
     for name, typ in (("market_state", "TEXT"), ("market_state_title", "TEXT"),
-                      ("activity_h_even", "INTEGER")):
+                      ("activity_h_even", "INTEGER"), ("pi_last", "REAL"),
+                      ("pi_change", "REAL"), ("pi_pct", "REAL")):
         if name not in cols:
             conn.execute(f"ALTER TABLE {MARKET_INDEX_TABLE} ADD COLUMN {name} {typ}")
 
@@ -316,26 +338,38 @@ def _idx_pct(last, change):
     return round(float(change) / base * 100.0, 2)
 
 
-def save_market_index(conn, ov, d_even, now=None):
-    """شاخصِ کل و هموزنِ همان نشست را از پاسخِ رسمیِ بورس ذخیره می‌کند.
+def save_market_index(conn, ov, d_even, now=None, price=None):
+    """شاخصِ کل، هموزن و قیمتِ (وزنی-ارزشی) همان نشست را ذخیره می‌کند.
 
     ov None یا بی‌شاخص باشد هیچ نمی‌نویسد — صفرِ جعلی بهتر است هیچ نباشد.
+    `price` پاسخِ `fetch_price_index` است؛ اگر نرسد مقدارِ همان روز دست‌نخورده
+    می‌ماند (بی‌عدد ≠ صفر).
     """
     if not isinstance(ov, dict) or not d_even:
         return False
     last = num(ov.get("indexLastValue")) or 0.0
     ew_last = num(ov.get("indexEqualWeightedLastValue")) or 0.0
-    if last <= 0 and ew_last <= 0:
+    if last <= 0 and ew_last <= 0 and not price:
         return False
     ensure_market_index_schema(conn)
+    pi_last = num((price or {}).get("last"))
+    pi_change = num((price or {}).get("change"))
+    pi_pct = num((price or {}).get("pct"))
+    if pi_last is None:
+        old = conn.execute(
+            f"SELECT pi_last, pi_change, pi_pct FROM {MARKET_INDEX_TABLE} WHERE d_even=?",
+            (int(d_even),)).fetchone()
+        if old:
+            pi_last, pi_change, pi_pct = old
     # نوشتارِ **نامی**: سه ستونِ تازه به انتهای جدول می‌چسبند و INSERTِ جایگاهی
     # با ۱۱ علامتِ سؤال، `market_state` را درِ `updated_at` می‌نشاند (همان
     # اشتباهی که درِ client_type_value دیدیم).
     conn.execute(
         f"INSERT OR REPLACE INTO {MARKET_INDEX_TABLE} (d_even, idx_last, idx_change,"
         " idx_pct, ew_last, ew_change, ew_pct, z_tot_tran, q_tot_cap, q_tot_tran,"
-        " updated_at, market_state, market_state_title, activity_h_even)"
-        " VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+        " updated_at, market_state, market_state_title, activity_h_even,"
+        " pi_last, pi_change, pi_pct)"
+        " VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
         (int(d_even),
          last or None, num(ov.get("indexChange")) or None,
          _idx_pct(last, num(ov.get("indexChange"))),
@@ -346,7 +380,8 @@ def save_market_index(conn, ov, d_even, now=None):
          now or datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
          (str(ov.get("marketState")).strip() or None) if ov.get("marketState") else None,
          (str(ov.get("marketStateTitle")).strip() or None) if ov.get("marketStateTitle") else None,
-         int(num(ov.get("marketActivityHEven")) or 0) or None))
+         int(num(ov.get("marketActivityHEven")) or 0) or None,
+         pi_last, pi_change, pi_pct))
     conn.commit()
     return True
 
@@ -2761,9 +2796,11 @@ def _save_market_snapshot(s, conn):
         print(f"  [market-total] {total_value / 1e13:,.1f} همت (TSETMC GetMarketOverview, d_even {total_deven or d_even})")
     else:
         print("  [market-total] TSETMC عددی نفرستاد — مصرف‌کننده روی جمعِ تابلو می‌نشیند")
-    if save_market_index(conn, bourse_ov, total_deven or d_even, now):
+    price_idx = fetch_price_index(s)
+    if save_market_index(conn, bourse_ov, total_deven or d_even, now, price=price_idx):
         print(f"  [market-index] {bourse_ov.get('indexLastValue')} / هموزن "
-              f"{bourse_ov.get('indexEqualWeightedLastValue')} (d_even {total_deven or d_even})")
+              f"{bourse_ov.get('indexEqualWeightedLastValue')} / قیمتِ وزنی "
+              f"{(price_idx or {}).get('last')} (d_even {total_deven or d_even})")
     if save_market_liquidity(conn, total_deven or d_even, now):
         print("  [market-liquidity] همتِ همین نشست در market_liquidity ثبت شد")
     conn.commit()
@@ -3214,9 +3251,11 @@ def main():
         print(f"  [market-total] {total_value / 1e13:,.1f} همت (TSETMC GetMarketOverview)")
     else:
         print("  [market-total] TSETMC عددی نفرستاد — مصرف‌کننده روی جمعِ تابلو می‌نشیند")
-    if save_market_index(conn, bourse_ov, total_deven or d_even_today, now):
+    price_idx = fetch_price_index(s)
+    if save_market_index(conn, bourse_ov, total_deven or d_even_today, now, price=price_idx):
         print(f"  [market-index] {bourse_ov.get('indexLastValue')} / هموزن "
-              f"{bourse_ov.get('indexEqualWeightedLastValue')}")
+              f"{bourse_ov.get('indexEqualWeightedLastValue')} / قیمتِ وزنی "
+              f"{(price_idx or {}).get('last')}")
     if save_market_liquidity(conn, total_deven or d_even_today, now):
         print("  [market-liquidity] همتِ همین نشست در market_liquidity ثبت شد")
     # v9.8.1 — گارد پنجرهٔ بازار (۰۹:۰۰–۱۲:۳۵): بعد از بسته شدن بازار نقطهٔ

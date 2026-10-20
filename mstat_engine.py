@@ -1151,8 +1151,13 @@ def market_index(conn) -> dict | None:
     جدولِ تازه (پایگاهِ بسته‌بندی‌شده) None برمی‌گرداند، نه صفر.
     """
     try:
+        cols = {x[1] for x in conn.execute("PRAGMA table_info(market_index)")}
+        # پایگاهِ بسته‌بندی‌شدهٔ کهنه ستون‌های pi_* را ندارد؛ NULL می‌خوانیم تا
+        # کارتِ رسمی «در دسترس نیست» بماند، نه اینکه کلِ شاخص‌ها None شود.
+        extra = (", pi_last, pi_change, pi_pct" if {"pi_last", "pi_change", "pi_pct"} <= cols
+                 else ", NULL, NULL, NULL")
         r = conn.execute("SELECT d_even, idx_last, idx_change, idx_pct,"
-                         " ew_last, ew_change, ew_pct FROM market_index"
+                         " ew_last, ew_change, ew_pct" + extra + " FROM market_index"
                          " ORDER BY d_even DESC LIMIT 1").fetchone()
     except sqlite3.Error:
         return None                          # جدول هنوز ساخته نشده
@@ -1163,7 +1168,8 @@ def market_index(conn) -> dict | None:
         return x if x else None
     return {"d_even": int(r[0]),
             "last": _opt(r[1]), "change": _opt(r[2]), "pct": _opt(r[3]),
-            "ew_last": _opt(r[4]), "ew_change": _opt(r[5]), "ew_pct": _opt(r[6])}
+            "ew_last": _opt(r[4]), "ew_change": _opt(r[5]), "ew_pct": _opt(r[6]),
+            "pi_last": _opt(r[7]), "pi_change": _opt(r[8]), "pi_pct": _opt(r[9])}
 
 
 def market_total_rials(conn) -> tuple:

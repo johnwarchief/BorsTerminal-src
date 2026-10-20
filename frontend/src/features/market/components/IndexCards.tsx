@@ -42,7 +42,7 @@ export function IndexCards({
     <StatusSection
       testId="ms-index-cards"
       title="کارت‌های شاخص"
-      hint="شاخص کل و هم‌وزن رسمی؛ کارت سوم میانگین ارزشی معاملات است، نه شاخص رسمی قیمت وزنی"
+      hint="شاخص کل، هم‌وزن و قیمت وزنی ارزشی رسمی؛ کارت چهارم میانگین ارزشی معاملات است"
       asof={dayStamp == null ? null : { d_even: dayStamp }}
       badge={data?.source ? `منبع: ${data.source}` : undefined}
     >

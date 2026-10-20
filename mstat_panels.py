@@ -592,13 +592,14 @@ def _index_history(conn, days: int = 30) -> list:
 
 
 def index_cards(conn, days: int = 30) -> dict:
-    """سه کارتِ صفحۀ ۶: کل بورس، کل هم‌وزن، میانگینِ ارزشیِ قیمتِ معاملات.
+    """چهار کارتِ صفحۀ ۶: کل بورس، کل هم‌وزن، قیمتِ وزنیِ ارزشی، میانگینِ ارزشی.
 
-    کارتِ سوم ارزشِ کل ÷ حجمِ کل است (q_tot_cap/q_tot_tran)؛ این **میانگینِ
-    ارزشیِ قیمتِ معاملات** است، نه شاخصِ رسمیِ «قیمتِ وزنیِ ارزشی» رهآورد.
-    تعریفِ آن شاخص در بانک/منبعِ در دسترس اثبات نشد؛ پس عنوان/formula همان
-    محاسبۀ واقعی را می‌گویند و تطبیق با عددِ رهآورد ادعا نمی‌شود. نبودِ هر
-    خانه ⇒ آن کارت `available:false` می‌گیرد و sparkline نمی‌کشد.
+    کارتِ سوم **شاخصِ رسمیِ «قیمت (وزنی-ارزشی)»** است (insCode
+    5798407779416661) — همان عددی که ره‌آورد زیر همین عنوان نشان می‌دهد؛
+    پیش از این به‌جایش q_tot_cap/q_tot_tran می‌نشست و با «تغییرِ» همان شاخص
+    در ره‌آورد مقایسه می‌شد. کارتِ چهارم همان میانگینِ ارزشیِ معاملات است و
+    عمداً جدا مانده تا قابلیتِ قبلی حذف نشود. نبودِ هر خانه ⇒ `available:false`،
+    نه صفر.
     """
     hist = _index_history(conn, days)          # صعودی: قدیمی‌ترین ← تازه‌ترین
     mi = E.market_index(conn)
@@ -632,7 +633,13 @@ def index_cards(conn, days: int = 30) -> dict:
                       mi.get("ew_pct") if mi else None,
                       "واحدِ شاخص", spark("ew_last"),
                       "indexEqualWeightedLastValueِ رسمی"))
-    cards.append(card("value_weighted_price", "میانگین ارزشی قیمت معاملات", last,
+    pi_last = mi.get("pi_last") if mi else None
+    pi_change = mi.get("pi_change") if mi else None
+    pi_pct = mi.get("pi_pct") if mi else None
+    cards.append(card("value_weighted_price", "قیمت وزنی ارزشی", pi_last,
+                      pi_change, pi_pct, "واحدِ شاخص", None,
+                      "indexLastValueِ رسمی — شاخص قیمت (وزنی-ارزشی)"))
+    cards.append(card("avg_traded_price", "میانگین ارزشی قیمت معاملات", last,
                       None if (last is None or prev is None) else last - prev,
                       None if (last is None or not prev) else 100.0 * (last - prev) / prev,
                       "ریال", wavg, "q_tot_cap ÷ q_tot_tran — میانگین ارزشی معاملات، نه شاخص رسمی"))

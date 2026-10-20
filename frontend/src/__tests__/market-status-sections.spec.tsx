@@ -403,6 +403,25 @@ describe('کارت‌های شاخص (صفحۀ ۶/۷)', () => {
     expect(screen.getByTestId('index-card-vwprice').textContent).not.toMatch(/[۰-۹0-9]{4}/);
   });
 
+  it('قیمت وزنی ارزشیِ رسمی و میانگین ارزشی معاملات دو کارت جدا هستند', () => {
+    const four = {
+      ...CARDS,
+      cards: [
+        ...(CARDS.cards ?? []),
+        { key: 'avg_traded_price', label: 'میانگین ارزشی قیمت معاملات', available: true, value: 8022.88, change: 50, pct: 0.6, unit: 'ریال', tone: 'pos', spark: [], formula: 'q_tot_cap ÷ q_tot_tran', asof_d_even: 20261012 },
+        { key: 'value_weighted_price', label: 'قیمت وزنی ارزشی', available: true, value: 1367563.83, change: 3078.59, pct: 0.23, unit: 'واحدِ شاخص', tone: 'pos', spark: null, formula: 'indexLastValueِ رسمی — شاخص قیمت (وزنی-ارزشی)', asof_d_even: 20261012 },
+      ],
+    } as unknown as IndexCardsFeed;
+    wrap(<IndexCards data={four} isLoading={false} isError={false} onRetry={() => {}} />);
+    const official = screen.getByTestId('index-card-value_weighted_price');
+    const average = screen.getByTestId('index-card-avg_traded_price');
+    expect(official.textContent).toContain('واحدِ شاخص');
+    expect(average.textContent).toContain('ریال');
+    expect(screen.getByTestId('index-card-value_weighted_price').textContent).not.toBe(
+      screen.getByTestId('index-card-avg_traded_price').textContent,
+    );
+  });
+
   it('تاریخچۀ کوتاه درِ همان کارت اعلام می‌شود، نه به‌عنوان سریِ کامل', () => {
     wrap(<IndexCards data={{ ...CARDS, history_points: 2 }} isLoading={false} isError={false} onRetry={() => {}} />);
     expect(screen.getByTestId('ms-index-cards-span').textContent).toContain('۲ روزِ شاخصِ رسمی');

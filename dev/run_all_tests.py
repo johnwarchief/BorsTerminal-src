@@ -39,6 +39,9 @@ SUITES = [
     # نبودِ عمقِ صنعت باید null بماند، نه صفرِ قابل‌نمایش.
     ('dev/mstat_industry_depth_semantics_v1.py',
      'industry queue depth: missing stays null, available depth is summed'),
+    # کارتِ «قیمت وزنی ارزشی» = شاخصِ رسمیِ TSETMC، نه میانگینِ ارزشیِ معاملات.
+    ('dev/market_price_index_card_v1.py',
+     'official price-weighted index card; missing index stays unavailable, not zero'),
     # رأیِ مالک (۱۴۰۵-۰۷-۲۲): «نمادهای زیرِ نظر» هم پرچم‌هایِ تابلو را می‌بیند —
     # انتقال از فید، بی‌محاسبۀِ دوم، و «بی‌منبع» هرگز «پرچمی ندارد» نمی‌شود.
     ('dev/test_mainwatch_flags_v1.py', 'mainwatch rows carry the tape flags, never a fabricated one'),
