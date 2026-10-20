@@ -191,7 +191,7 @@ Snapshotها:
 | Vitest هدفمند (market status) | ۳۷/۳۷ PASS |
 | `npx tsc -b` | rc=۰ |
 | `npm run build` | rc=۰ (۱۹٫۸۲s) |
-| Vitest کامل | **ناتمام/کند** — ۱۱۲ از ۱۹۸ فایلِ spec تا زمانِ توقف دیده شد، **۰ شکست**؛ خلاصهٔ نهایی تولید نشد (محیطِ کند). تست‌های هدفمندِ تب ۳۷/۳۷ |
+| Vitest کامل | **ناتمام/کند** — ۱۲۰ از ۱۹۸ فایلِ spec تا زمانِ توقف دیده شد، **۰ شکست**؛ خلاصهٔ نهایی تولید نشد (محیطِ کند). تست‌های هدفمندِ تب ۳۷/۳۷ |
 | `python dev/run_all_tests.py` (بدون DB عملیاتی) | **GATE_RC=1** — ۱۲۶ سوئیت شمارش شد، ۱۹ FAIL؛ ریشه: نبودِ جدول‌های `market.db` (`price_history`, `codal_notices`, `market_watch`, `price_adjust_events`) و نبودِ `node` |
 | همان ۳ سوئیتِ وابسته به DB روی کپیِ ایزوله | **PASS** — candle integrity rc=0، incremental sync ۳۱/۳۱، codal publish ۲۴/۲۴ |
 | ۷ سوئیتِ دیگرِ FAIL به‌صورت جداگانه | **PASS** — proc_probe ۱۳/۱۳، qa_routes ۴/۴، sarkhati ۴۷/۴۷، p0_gates ۳۳/۳۳ |

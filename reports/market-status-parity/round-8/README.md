@@ -11,7 +11,7 @@
 | `isolated-db/sarkhati_protocol_v1119.txt` | جداگانه | ۴۷/۴۷ |
 | `isolated-db/p0_gates_v1118.txt` | جداگانه | ۳۳/۳۳ |
 | `isolated-db/tsetmc_p0_v1076.txt` | جداگانه | ۱۶۴/۱۶۵؛ تنها شکست: سقفِ زمانِ مرحلهٔ شبکه (`aborted=None`)، timingِ محیط |
-| `vitest-partial.txt` | `vitest run` کامل | ناتمام: ۱۱۴ از ۱۹۸ فایلِ spec دیده شد، ۰ شکست در همان بخش؛ **سبزِ کامل ادعا نمی‌شود** |
+| `vitest-partial.txt` | `vitest run` کامل | ناتمام: ۱۲۰ از ۱۹۸ فایلِ spec دیده شد، ۰ شکست در همان بخش؛ **سبزِ کامل ادعا نمی‌شود** |
 
 تست‌های هدفمندِ تب بازار: ۳۷/۳۷. `tsc -b` و `npm run build` سبز.
 `market.db` عملیاتی در این worktree وجود ندارد؛ کپیِ ایزوله پس از اجرا حذف می‌شود.
