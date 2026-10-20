@@ -908,10 +908,10 @@ def money(row, base_est) -> dict:
          "has_ct": bool(ct)}
 
     # ── ارزشِ هر گروه: مبدأ اولویت دارد، بازسازی فقط جای خانۀ خالی ─────────
-    # `client_type_value` تنها از GetClientTypeHistory پر می‌شود و آن مسیر برایِ
-    # *نشستِ جاری* HTTP 500 می‌دهد (سنجشِ زنده ۱۴۰۵-۰۷-۱۳؛ نشست‌هایِ بسته تا
-    # 20260701 برمی‌گردند). پس «ردیف نیست» قاعدۀ روز است و جای آن حجم×VWAPِ
-    # پیشین می‌نشیند — هرگز صفرِ جعلی نه.
+    # `client_type_value` تنها از GetClientTypeHistory پر می‌شود. این مسیر
+    # می‌تواند موقتاً 500 بدهد؛ سنجشِ ۲۰۲۶-۱۰-۲۰ برای نشستِ بسته 200 داد و
+    # backfillِ پنج‌نمادی ۵/۵ ردیفِ native نوشت. پس «ردیف نیست» یعنی هنوز
+    # backfill نشده، و جای آن حجم×VWAPِ پیشین می‌نشیند — هرگز صفرِ جعلی نه.
     # `value_source` فقط درِ قراردادِ audit/details می‌رود، نه درِ ستونِ تابلو.
     #
     # یک نتیجۀ جانبی که ارزشِ دانستن دارد: نسبت‌ها از این انتخاب مستقل‌اند.
@@ -2246,6 +2246,22 @@ def _select(conn_rows, cat):
     return [r for r in conn_rows if in_category(r, cat, None)]
 
 
+def _value_source_of(srcs) -> str | None:
+    """منبعِ تجمیعیِ ارزش از مجموعهٔ provenanceِ ردیف‌ها.
+
+    خالی ⇒ None (هیچ ردیفِ کلاینتی نیست)؛ فقط native ⇒ native؛ هر ترکیب یا
+    mixed ⇒ mixed؛ فقط reconstructed ⇒ reconstructed. هیچ fallbackِ پنهانی
+    انجام نمی‌شود.
+    """
+    if not srcs:
+        return None
+    if srcs == {"native"}:
+        return "native"
+    if "native" in srcs or "mixed" in srcs:
+        return "mixed"
+    return "reconstructed"
+
+
 def client_split(conn, tab: str = "all") -> dict:
     """تعداد/ارزش/درصدِ خرید و فروشِ حقیقی در برابر حقوقی، به تفکیک تب."""
     rows, meta = enrich(conn)
@@ -2254,14 +2270,7 @@ def client_split(conn, tab: str = "all") -> dict:
     # منبعِ ارزشِ تجمیعی را از ردیف‌ها بگیر؛ «محاسبه‌شده» با «بومی» یکی نیست.
     srcs = {r["_m"].get("value_source") for r in sel
             if r["_m"].get("has_ct") and r["_m"].get("value_source")}
-    if not srcs:
-        value_source = None
-    elif srcs == {"native"}:
-        value_source = "native"
-    elif "native" in srcs or "mixed" in srcs:
-        value_source = "mixed"
-    else:
-        value_source = "reconstructed"
+    value_source = _value_source_of(srcs)
     # همان کسرِ تک‌تعریف (`client_split.py`) — بی‌درصدِ دومِ خودیِ این لایه. دو
     # سمت مستقل‌اند و سهمِ حقوقی مکملِ همان سمت است؛ مخرجِ صفر ⇒ None، نه «۰٪».
     # (جمعِ ارزش از `money()` می‌آید: اگر مبدأ نبود این لایه با حجم×VWAP
