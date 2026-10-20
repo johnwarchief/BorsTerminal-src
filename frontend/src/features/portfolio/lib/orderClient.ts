@@ -961,7 +961,7 @@ export function useBrowserHost() {
 export type OfferingView = {
   id: string; symbol: string; isin: string; market: string; method: string;
   start_ms?: number | null; end_ms?: number | null;
-  price_min?: number | null; price_max?: number | null;
+  price_min?: number | null; price_max?: number | null; price_step?: number | null;
   min_qty?: number | null; max_qty?: number | null;
   per_code_quota?: number | null; fee_rate?: number | null;
   source?: string; source_url?: string; verified_at_ms?: number | null;
@@ -1001,6 +1001,93 @@ export function useOfferings() {
     queryFn: () => offeringsApi.list(),
     staleTime: 10_000,
     refetchInterval: 20_000,
+    retry: false,
+  });
+}
+
+// ── cockpit: وضعیت، Preflight، Mock و گزارش ─────────────────────────────────
+export type CockpitGate = {
+  id: string; label: string; status: string; evidence: string; reason: string;
+  action: string; source: string; observed_at?: number | null; age_s?: number | null;
+};
+export type CockpitStatusView = {
+  status: string; live_ready: boolean; live_send: boolean; mode: string;
+  app_version?: string; observed_at?: number; observed_iso?: string;
+  gates: CockpitGate[]; next_action?: string; failing_count?: number;
+  components?: Record<string, unknown>;
+  readiness?: { live_ready?: boolean; blockers?: { code: string; detail: string }[] };
+};
+export type CockpitEvent = {
+  seq: number; at: number; phase: string; status: string; detail: string;
+  duration_ms?: number | null;
+};
+export type CockpitRun = {
+  id: string; scenario: string; mode: string; status: string;
+  started_at: number; finished_at?: number | null; event_count?: number;
+  summary?: Record<string, unknown>; events?: CockpitEvent[];
+};
+export type CockpitRunsView = {
+  status: string; mode: string; runs: CockpitRun[]; selected_run: string;
+  events: CockpitEvent[]; scenarios: { id: string; label: string; detail: string }[];
+};
+export type CockpitPreflightView = {
+  status: string; preflight?: {
+    ok?: boolean; state?: string; checks?: { name: string; state: string;
+      detail: string; source?: string; observed_at?: number | null }[];
+    blockers?: string[]; amount?: number | null; fee?: number | null;
+    reason?: string; action?: string; source?: string; observed_at?: number | null;
+  };
+};
+export const cockpitApi = {
+  status: () => http<CockpitStatusView>('/api/execution/cockpit/status'),
+  runs: (limit = 30, runId = '') => http<CockpitRunsView>(
+    `/api/execution/cockpit/runs?limit=${limit}`
+    + (runId ? `&run_id=${encodeURIComponent(runId)}` : '')),
+  run: (body: Record<string, unknown>) => http<Record<string, unknown>>(
+    '/api/execution/cockpit/runs', { method: 'POST', body, ...NO_RETRY }),
+  detail: (runId: string) => http<{ status: string; run: CockpitRun }>(
+    `/api/execution/cockpit/runs/${encodeURIComponent(runId)}`),
+  stop: (runId: string) => http<Record<string, unknown>>(
+    `/api/execution/cockpit/runs/${encodeURIComponent(runId)}/stop`,
+    { method: 'POST', ...NO_RETRY }),
+  preflight: (body: Record<string, unknown>) => http<CockpitPreflightView>(
+    '/api/execution/cockpit/preflight', { method: 'POST', body, ...NO_RETRY }),
+  report: (runId = '') => http<Record<string, unknown>>(
+    `/api/execution/cockpit/report`
+    + (runId ? `?run_id=${encodeURIComponent(runId)}` : '')),
+};
+export function useCockpitStatus() {
+  return useQuery({
+    queryKey: ['execution-cockpit-status'],
+    queryFn: () => cockpitApi.status(),
+    staleTime: 5_000,
+    refetchInterval: 15_000,
+    retry: false,
+  });
+}
+export function useCockpitRuns(enabled = true) {
+  return useQuery({
+    queryKey: ['execution-cockpit-runs'],
+    queryFn: () => cockpitApi.runs(),
+    enabled,
+    staleTime: 2_000,
+    refetchInterval: (query) => {
+      const data = query.state.data as CockpitRunsView | undefined;
+      return data?.runs?.some((r) => r.status === 'RUNNING') ? 1_500 : false;
+    },
+    retry: false,
+  });
+}
+export function useCockpitRunDetail(runId: string) {
+  return useQuery({
+    queryKey: ['execution-cockpit-run', runId],
+    queryFn: () => cockpitApi.detail(runId),
+    enabled: !!runId,
+    staleTime: 1_000,
+    refetchInterval: (query) => {
+      const data = query.state.data as { run?: CockpitRun } | undefined;
+      return data?.run?.status === 'RUNNING' ? 1_200 : false;
+    },
     retry: false,
   });
 }

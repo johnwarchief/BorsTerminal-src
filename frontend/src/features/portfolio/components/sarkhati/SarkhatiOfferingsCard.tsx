@@ -71,7 +71,7 @@ export function SarkhatiOfferingsCard() {
   const [tone, setTone] = useState<'ok' | 'warn' | 'bad' | 'idle'>('idle');
   const [form, setForm] = useState({
     symbol: '', isin: '', method: 'UNKNOWN', start: '', end: '',
-    price_min: '', price_max: '', min_qty: '', max_qty: '', quota: '',
+    price_min: '', price_max: '', price_step: '', min_qty: '', max_qty: '', quota: '',
     fee_rate: '', source: '', source_url: '', data_as_of: '', verified: false,
   });
 
@@ -111,6 +111,7 @@ export function SarkhatiOfferingsCard() {
         symbol: form.symbol.trim(), isin: form.isin.trim(), method: form.method,
         start_local: form.start, end_local: form.end,
         price_min: numOrNull(form.price_min), price_max: numOrNull(form.price_max),
+        price_step: numOrNull(form.price_step),
         min_qty: numOrNull(form.min_qty), max_qty: numOrNull(form.max_qty),
         per_code_quota: numOrNull(form.quota), fee_rate: numOrNull(form.fee_rate),
         price_source: form.source, fee_source: form.source,
@@ -227,13 +228,13 @@ export function SarkhatiOfferingsCard() {
           : <Line testId="offer-empty">هیچ عرضه‌ای ثبت نشده است.</Line>
       ) : (
         <Table testId="offer-rows" minWidth={920}
-          head={['نماد', 'روش', 'پنجره', 'قیمت', 'تعداد/سهمیه', 'اولویت', 'عمر داده', 'وضعیت', 'منبع']}>
+          head={['نماد', 'روش', 'پنجره', 'قیمت/گام', 'تعداد/سهمیه', 'اولویت', 'عمر داده', 'وضعیت', 'منبع']}>
           {rows.map((r) => (
             <Tr key={r.id} testId={`offer-row-${r.id}`}>
               <Td strong>{r.symbol}<span className="text-text-muted"> · {r.isin}</span></Td>
               <Td>{METHOD_LABEL[r.method] ?? r.method}</Td>
               <Td num>{clock(r.start_ms)} — {clock(r.end_ms)}</Td>
-              <Td num>{r.price_min ?? '—'}..{r.price_max ?? '—'}</Td>
+              <Td num>{r.price_min ?? '—'}..{r.price_max ?? '—'} / {r.price_step ?? '—'}</Td>
               <Td num>{r.min_qty ?? '—'}..{r.max_qty ?? '—'} / {r.per_code_quota ?? '—'}</Td>
               <Td num>{priorityOf(r, capital.priorities)}</Td>
               <Td num><span title={clock(r.data_as_of_ms)}>{evidenceAge(r.data_as_of_ms)}</span></Td>
@@ -358,7 +359,8 @@ export function SarkhatiOfferingsCard() {
         </summary>
         <div className="mt-1 grid grid-cols-2 gap-1.5 sm:grid-cols-4">
           {([['symbol', 'نماد'], ['isin', 'ISIN'], ['start', 'شروع'], ['end', 'پایان'],
-             ['price_min', 'کف قیمت'], ['price_max', 'سقف قیمت'], ['min_qty', 'حداقل تعداد'],
+             ['price_min', 'کف قیمت'], ['price_max', 'سقف قیمت'], ['price_step', 'گام قیمت'],
+             ['min_qty', 'حداقل تعداد'],
              ['max_qty', 'حداکثر تعداد'], ['quota', 'سهمیهٔ هر کد'], ['fee_rate', 'نرخ کارمزد'],
              ['source', 'منبع'], ['source_url', 'نشانی منبع'],
              ['data_as_of', 'زمان دادهٔ منبع']] as const).map(([key, label]) => (

@@ -33,7 +33,7 @@ export const STEP_LABEL: Record<SarkhatiStep, string> = {
 };
 
 export const PRO_LABEL: Record<'schedule' | 'risk' | 'monitor', string> = {
-  schedule: 'زمان‌بندی',
+  schedule: 'آمادگی و پایش',
   risk: 'ریسک و ایمنی',
   monitor: 'پایش و سابقه',
 };

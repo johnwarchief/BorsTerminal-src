@@ -51,7 +51,7 @@ def make(store, sym="TESTA", isin="IRO1TEST0001", *, method="BOOK_BUILDING",
          start=None, end=None, pmin=100.0, pmax=110.0, qmin=1.0, qmax=1000.0,
          quota=500.0, fee=0.0012, source="unit-test", verified=None,
          data_as_of=None, price_source="unit-test", fee_source="unit-test",
-         source_url="https://example.test/offering", unverified=False):
+         price_step=1.0, source_url="https://example.test/offering", unverified=False):
     at = O.now_ms()
     vts = None if unverified else (at if verified is None else verified)
     dts = None if unverified else (at if data_as_of is None else data_as_of)
@@ -60,6 +60,7 @@ def make(store, sym="TESTA", isin="IRO1TEST0001", *, method="BOOK_BUILDING",
         start_ms=start if start is not None else at - 3600_000,
         end_ms=end if end is not None else at + 3600_000,
         price_min=pmin, price_max=pmax, price_source=price_source,
+        price_step=price_step,
         min_qty=qmin, max_qty=qmax, per_code_quota=quota,
         fee_rate=fee, fee_source=fee_source, source=source, source_url=source_url,
         verified_at_ms=vts, data_as_of_ms=dts)
@@ -85,6 +86,7 @@ def api_checks() -> None:
             "symbol": "APIT", "isin": "IRO1APIT0001", "method": "BOOK_BUILDING",
             "start_ms": now - 3_600_000, "end_ms": now + 3_600_000,
             "price_min": 100, "price_max": 110, "price_source": "official",
+            "price_step": 1,
             "min_qty": 1, "max_qty": 1000, "per_code_quota": 500,
             "fee_rate": 0.0012, "fee_source": "official", "source": "official",
             "source_url": "https://example.test/api-offering",
@@ -263,6 +265,14 @@ def main() -> int:
     rps = O.preflight(no_price_src, at=at, price=105, quantity=10, max_age_s=3600)
     ck(not rps["ok"] and rps["checks"]["price_source"]["state"] == "FAIL",
        "نبودِ منبع قیمت Preflight را می‌بندد")
+    no_step = replace(a, price_step=None)
+    rst = O.preflight(no_step, at=at, price=105, quantity=10, max_age_s=3600)
+    ck(not rst["ok"] and rst["checks"]["price_step"]["state"] == "UNKNOWN",
+       "نبودِ گام قیمت Preflight را می‌بندد")
+    bad_step = replace(a, price_step=2.0)
+    rbs = O.preflight(bad_step, at=at, price=105, quantity=10, max_age_s=3600)
+    ck(not rbs["ok"] and rbs["checks"]["price_step"]["state"] == "FAIL",
+       "قیمتِ ناهم‌تراز با گام رد می‌شود")
     nofee = make(st, "TESTFEE", "IRO1TEST0006", fee=None, fee_source="")
     rf = O.preflight(nofee, at=at, price=105, quantity=10, max_age_s=3600)
     ck(not rf["ok"] and rf["checks"]["fee"]["state"] == "FAIL",

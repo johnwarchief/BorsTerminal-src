@@ -41,7 +41,7 @@ from typing import Any
 
 from fastapi import APIRouter, Body, HTTPException, Query, Request
 
-from bors_config import DB_PATH, WORK_DIR
+from bors_config import APP_VERSION, DB_PATH, WORK_DIR
 from execution_contract import (
     BrokerAdapter, BrokerError, Capabilities, ErrorCode, ExecutionRecord,
     ExecutionStatus, InstrumentRef, OrderDraft, OrderMode, OrderState, Resolution, Side,
@@ -54,6 +54,7 @@ from execution_easytrader import (
 )
 import execution_connect as EXC                            # noqa: E402
 import execution_browser_host as BH                        # noqa: E402
+import execution_cockpit as CK                             # noqa: E402
 import execution_offerings as OF                           # noqa: E402
 import execution_schedule as SCH                           # noqa: E402
 import execution_session_store as SESS                     # noqa: E402
@@ -192,6 +193,9 @@ SCHEDULE_RUNNER_ENV = "BORS_SCHEDULE_RUNNER"
 OFFERINGS_DB_ENV = "BORS_OFFERINGS_DB"
 _OFFERING_STORE: OF.OfferingStore | None = None
 _OFFERING_LOCK = threading.Lock()
+COCKPIT_DB_ENV = "BORS_COCKPIT_DB"
+_COCKPIT_STORE: CK.CockpitStore | None = None
+_COCKPIT_LOCK = threading.Lock()
 
 
 def _offering_store() -> OF.OfferingStore:
@@ -202,6 +206,16 @@ def _offering_store() -> OF.OfferingStore:
                 or os.path.join(WORK_DIR, "execution_offerings.db")
             _OFFERING_STORE = OF.OfferingStore(path)
         return _OFFERING_STORE
+
+
+def _cockpit_store() -> CK.CockpitStore:
+    global _COCKPIT_STORE
+    with _COCKPIT_LOCK:
+        if _COCKPIT_STORE is None:
+            path = (os.environ.get(COCKPIT_DB_ENV) or "").strip() \
+                or os.path.join(WORK_DIR, "execution_cockpit.db")
+            _COCKPIT_STORE = CK.CockpitStore(path)
+        return _COCKPIT_STORE
 
 
 def _schedule_store() -> SCH.ScheduleStore:
@@ -1361,6 +1375,8 @@ def post_offering(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
             price_min=(float(body["price_min"]) if body.get("price_min") is not None else None),
             price_max=(float(body["price_max"]) if body.get("price_max") is not None else None),
             price_source=str(body.get("price_source") or ""),
+            price_step=(float(body["price_step"])
+                        if body.get("price_step") is not None else None),
             min_qty=(float(body["min_qty"]) if body.get("min_qty") is not None else None),
             max_qty=(float(body["max_qty"]) if body.get("max_qty") is not None else None),
             per_code_quota=(float(body["per_code_quota"])
@@ -1517,7 +1533,162 @@ def post_reservation_state(oid: str, intent_id: str,
     return {"status": "success", **got}
 
 
-# ── ۲.۴.۵) browser session host (نشستِ پایدارِ مالک؛ CDPِ محلی) ───────────────
+# ── ۲.۴.۵) cockpit: وضعیت، Preflight و Mock درونِ برنامه ─────────────────────
+def _db_meta(path: str) -> dict[str, Any]:
+    meta: dict[str, Any] = {"path": path, "readable": False, "mtime_ms": None,
+                            "mtime_iso": None}
+    try:
+        meta["mtime_ms"] = int(os.path.getmtime(path) * 1000)
+        meta["mtime_iso"] = time.strftime("%Y-%m-%dT%H:%M:%S",
+                                          time.localtime(meta["mtime_ms"] / 1000.0))
+    except OSError:
+        pass
+    try:
+        con = sqlite3.connect("file:%s?mode=ro" % path.replace("\\", "/"),
+                              uri=True, timeout=2)
+        try:
+            con.execute("SELECT 1").fetchone()
+            meta["readable"] = True
+        finally:
+            con.close()
+    except Exception:                            # noqa: BLE001
+        pass
+    return meta
+
+
+def _cockpit_context() -> dict[str, Any]:
+    store = _offering_store()
+    sched = _schedule_store()
+    offers = [r.public() for r in store.list(200)]
+    capital = store.capital()
+    reservations = store.reservations()
+    execution = get_status()
+    host = BH.read_status(check=True)
+    db = {"market": _db_meta(DB_PATH), "offerings": _db_meta(store.path),
+          "schedules": _db_meta(sched.path),
+          "cockpit": _db_meta(_cockpit_store().path)}
+    reserved = store.active_reserved()
+    status = CK.build_status(
+        app_version=str(APP_VERSION), offerings=offers, capital=capital,
+        reserved=reserved, reservations=reservations,
+        readiness=SCH.readiness(), host=host, execution=execution, db=db)
+    return {"offers": offers, "capital": capital, "reserved": reserved,
+            "reservations": reservations, "execution": execution, "host": host,
+            "db": db, "status": status}
+
+
+@router.get("/api/execution/cockpit/status")
+def get_cockpit_status() -> dict[str, Any]:
+    try:
+        got = _cockpit_context()
+        return {"status": "success", **got["status"], "live_send": False}
+    except Exception as e:                       # noqa: BLE001
+        return {"status": "error", "code": "COCKPIT_STATUS_UNAVAILABLE",
+                "detail": "%s: %s" % (type(e).__name__, str(e)[:200])}
+
+
+@router.get("/api/execution/cockpit/runs")
+def get_cockpit_runs(limit: int = 30, run_id: str = "") -> dict[str, Any]:
+    try:
+        store = _cockpit_store()
+        runs = store.runs(limit)
+        selected = run_id or (runs[0]["id"] if runs else "")
+        events = store.events(selected) if selected else []
+        return {"status": "success", "mode": "MOCK", "runs": runs,
+                "selected_run": selected, "events": events,
+                "scenarios": list(CK.SCENARIO_INFO), "live_send": False}
+    except CK.CockpitError as e:
+        return {"status": "error", "code": e.code, "detail": e.detail}
+    except Exception as e:                       # noqa: BLE001
+        return {"status": "error", "code": "COCKPIT_STORE_UNAVAILABLE",
+                "detail": "%s: %s" % (type(e).__name__, str(e)[:200])}
+
+
+@router.get("/api/execution/cockpit/runs/{run_id}")
+def get_cockpit_run(run_id: str) -> dict[str, Any]:
+    try:
+        got = _cockpit_store().run(run_id)
+    except Exception as e:                       # noqa: BLE001
+        return {"status": "error", "code": "COCKPIT_STORE_UNAVAILABLE",
+                "detail": "%s: %s" % (type(e).__name__, str(e)[:200])}
+    if got is None:
+        return {"status": "error", "code": "RUN_NOT_FOUND"}
+    return {"status": "success", "run": got, "live_send": False}
+
+
+@router.post("/api/execution/cockpit/runs")
+def post_cockpit_run(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
+    scenario = str(body.get("scenario") or "")
+    try:
+        context = _cockpit_context()
+    except Exception as e:                       # noqa: BLE001
+        return {"status": "error", "code": "COCKPIT_CONTEXT_UNAVAILABLE",
+                "detail": "%s: %s" % (type(e).__name__, str(e)[:200])}
+    offers = context["offers"]
+    offering = None
+    oid = str(body.get("offering_id") or "")
+    if oid:
+        offering = next((o for o in offers if str(o.get("id")) == oid), None)
+    if scenario == "unverified_offering":
+        offering = next((o for o in offers if str(o.get("status")) != "VERIFIED"), offering)
+    try:
+        got = CK.start_scenario(_cockpit_store(), scenario, offering=offering,
+                                price=body.get("price"), quantity=body.get("quantity"))
+    except CK.CockpitError as e:
+        return {"status": "error", "code": e.code, "detail": e.detail}
+    except Exception as e:                       # noqa: BLE001
+        return {"status": "error", "code": "COCKPIT_RUN_FAILED",
+                "detail": "%s: %s" % (type(e).__name__, str(e)[:200])}
+    return {"status": "success", "mode": "MOCK", "run": got,
+            "live_send": False, "acceptance_time_observed": False}
+
+
+@router.post("/api/execution/cockpit/runs/{run_id}/stop")
+def stop_cockpit_run(run_id: str) -> dict[str, Any]:
+    try:
+        got = _cockpit_store().stop(run_id)
+    except CK.CockpitError as e:
+        return {"status": "error", "code": e.code, "detail": e.detail}
+    return {"status": "success", "run_id": run_id, "run_status": got.get("status"),
+            "unchanged": bool(got.get("unchanged")), "live_send": False}
+
+
+@router.post("/api/execution/cockpit/preflight")
+def post_cockpit_preflight(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
+    try:
+        context = _cockpit_context()
+    except Exception as e:                       # noqa: BLE001
+        return {"status": "error", "code": "COCKPIT_CONTEXT_UNAVAILABLE",
+                "detail": "%s: %s" % (type(e).__name__, str(e)[:200])}
+    oid = str(body.get("offering_id") or "")
+    offering = next((o for o in context["offers"] if str(o.get("id")) == oid), None)
+    try:
+        price = float(body["price"]) if body.get("price") not in (None, "") else None
+        qty = float(body["quantity"]) if body.get("quantity") not in (None, "") else None
+        max_age = float(body.get("max_age_s") or 3600.0)
+    except (TypeError, ValueError):
+        return {"status": "error", "code": "INVALID_ORDER",
+                "detail": "قیمت/تعداد/پنجرهٔ تازگی نامعتبر است"}
+    return CK.preflight_snapshot(offering=offering, price=price, quantity=qty,
+                                 status=context["status"], max_age_s=max_age,
+                                 capital=context["capital"], reserved=context["reserved"])
+
+
+@router.get("/api/execution/cockpit/report")
+def get_cockpit_report(run_id: str = "") -> dict[str, Any]:
+    try:
+        context = _cockpit_context()
+        store = _cockpit_store()
+        runs = store.runs(30)
+        selected = run_id or (runs[0]["id"] if runs else "")
+        events = store.events(selected) if selected else []
+        return CK.build_report(status=context["status"], runs=runs, events=events)
+    except Exception as e:                       # noqa: BLE001
+        return {"status": "error", "code": "COCKPIT_REPORT_UNAVAILABLE",
+                "detail": "%s: %s" % (type(e).__name__, str(e)[:200])}
+
+
+# ── ۲.۴.۶) browser session host (نشستِ پایدارِ مالک؛ CDPِ محلی) ───────────────
 def _host_status() -> dict[str, Any]:
     return BH.read_status(check=True)
 

@@ -26,7 +26,7 @@ from urllib.parse import urlparse
 
 from execution_timing import percentile
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 PASS = "PASS"
 FAIL = "FAIL"
 UNKNOWN = "UNKNOWN"
@@ -136,6 +136,7 @@ class OfferingRecord:
     price_min: float | None
     price_max: float | None
     price_source: str
+    price_step: float | None
     min_qty: float | None
     max_qty: float | None
     per_code_quota: float | None
@@ -155,7 +156,8 @@ class OfferingRecord:
     def public(self) -> dict[str, Any]:
         return {k: getattr(self, k) for k in (
             "id", "symbol", "isin", "market", "method", "start_ms", "end_ms",
-            "price_min", "price_max", "price_source", "min_qty", "max_qty",
+            "price_min", "price_max", "price_source", "price_step",
+            "min_qty", "max_qty",
             "per_code_quota", "fee_rate", "fee_source", "source", "source_url",
             "verified_at_ms", "data_as_of_ms", "status", "timing_relevance",
             "timing_note", "note", "created_at", "updated_at")}
@@ -166,7 +168,8 @@ def _row(r: sqlite3.Row) -> OfferingRecord:
         id=r["id"], symbol=r["symbol"], isin=r["isin"], market=r["market"],
         method=r["method"], start_ms=r["start_ms"], end_ms=r["end_ms"],
         price_min=r["price_min"], price_max=r["price_max"],
-        price_source=r["price_source"] or "", min_qty=r["min_qty"],
+        price_source=r["price_source"] or "", price_step=r["price_step"],
+        min_qty=r["min_qty"],
         max_qty=r["max_qty"], per_code_quota=r["per_code_quota"],
         fee_rate=r["fee_rate"], fee_source=r["fee_source"] or "",
         source=r["source"] or "", source_url=r["source_url"] or "",
@@ -181,7 +184,7 @@ CREATE TABLE IF NOT EXISTS offerings (
   id TEXT PRIMARY KEY, symbol TEXT NOT NULL, isin TEXT NOT NULL,
   market TEXT NOT NULL DEFAULT 'UNKNOWN', method TEXT NOT NULL DEFAULT 'UNKNOWN',
   start_ms INTEGER, end_ms INTEGER, price_min REAL, price_max REAL,
-  price_source TEXT DEFAULT '', min_qty REAL, max_qty REAL, per_code_quota REAL,
+  price_source TEXT DEFAULT '', price_step REAL, min_qty REAL, max_qty REAL, per_code_quota REAL,
   fee_rate REAL, fee_source TEXT DEFAULT '', source TEXT NOT NULL DEFAULT '',
   source_url TEXT DEFAULT '', verified_at_ms INTEGER, data_as_of_ms INTEGER,
   status TEXT NOT NULL DEFAULT 'UNKNOWN', timing_relevance TEXT NOT NULL DEFAULT 'UNKNOWN',
@@ -232,7 +235,10 @@ class OfferingStore:
             con.execute("PRAGMA journal_mode=WAL")
             con.execute("PRAGMA synchronous=FULL")
             con.executescript(_SCHEMA)
-            con.execute("INSERT OR IGNORE INTO offering_meta(key,value) "
+            cols = {str(r[1]) for r in con.execute("PRAGMA table_info(offerings)")}
+            if "price_step" not in cols:
+                con.execute("ALTER TABLE offerings ADD COLUMN price_step REAL")
+            con.execute("INSERT OR REPLACE INTO offering_meta(key,value) "
                         "VALUES('schema_version',?)", (str(SCHEMA_VERSION),))
         finally:
             con.close()
@@ -247,6 +253,7 @@ class OfferingStore:
                market: str = "UNKNOWN", start_ms: int | None = None,
                end_ms: int | None = None, price_min: float | None = None,
                price_max: float | None = None, price_source: str = "",
+               price_step: float | None = None,
                min_qty: float | None = None, max_qty: float | None = None,
                per_code_quota: float | None = None, fee_rate: float | None = None,
                fee_source: str = "", source: str = "", source_url: str = "",
@@ -294,6 +301,9 @@ class OfferingStore:
             raise OfferingsError("INVALID_RANGE", "سقف قیمت باید مثبت باشد")
         if price_min is not None and price_max is not None and price_min > price_max:
             raise OfferingsError("INVALID_RANGE", "کف قیمت از سقف بیشتر است")
+        price_step = _opt_finite(price_step, code="INVALID_RANGE", label="گام قیمت")
+        if price_step is not None and price_step <= 0:
+            raise OfferingsError("INVALID_RANGE", "گام قیمت باید مثبت باشد")
         min_qty = _opt_finite(min_qty, code="INVALID_RANGE", label="حداقل تعداد")
         max_qty = _opt_finite(max_qty, code="INVALID_RANGE", label="حداکثر تعداد")
         if min_qty is not None and min_qty < 0:
@@ -326,14 +336,15 @@ class OfferingStore:
             con.execute("BEGIN IMMEDIATE")
             con.execute(
                 "INSERT INTO offerings(id,symbol,isin,market,method,start_ms,end_ms,"
-                "price_min,price_max,price_source,min_qty,max_qty,per_code_quota,"
+                "price_min,price_max,price_source,price_step,min_qty,max_qty,per_code_quota,"
                 "fee_rate,fee_source,source,source_url,verified_at_ms,data_as_of_ms,"
                 "status,timing_relevance,timing_note,note,created_at,updated_at) "
-                "VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?) "
+                "VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?) "
                 "ON CONFLICT(symbol,isin) DO UPDATE SET market=excluded.market,"
                 "method=excluded.method,start_ms=excluded.start_ms,end_ms=excluded.end_ms,"
                 "price_min=excluded.price_min,price_max=excluded.price_max,"
-                "price_source=excluded.price_source,min_qty=excluded.min_qty,"
+                "price_source=excluded.price_source,price_step=excluded.price_step,"
+                "min_qty=excluded.min_qty,"
                 "max_qty=excluded.max_qty,per_code_quota=excluded.per_code_quota,"
                 "fee_rate=excluded.fee_rate,fee_source=excluded.fee_source,"
                 "source=excluded.source,source_url=excluded.source_url,"
@@ -341,7 +352,8 @@ class OfferingStore:
                 "status=excluded.status,timing_relevance=excluded.timing_relevance,"
                 "timing_note=excluded.timing_note,note=excluded.note,updated_at=excluded.updated_at",
                 (oid, sym, ident, str(market or "UNKNOWN"), method, start_ms, end_ms,
-                 price_min, price_max, str(price_source or ""), min_qty, max_qty,
+                 price_min, price_max, str(price_source or ""), price_step,
+                 min_qty, max_qty,
                  per_code_quota, fee_rate, str(fee_source or ""), src, src_url,
                  verified_at_ms, data_as_of_ms, status, relevance, timing_note,
                  note or "", at, at))
@@ -815,6 +827,15 @@ def preflight(offer: OfferingRecord, *, at: int, price: float, quantity: float,
         "range=%r..%r price=%r" % (offer.price_min, offer.price_max, price))
     add("price_source", bool(str(offer.price_source or "").strip()),
         "price_source خالی است")
+    step = num(offer.price_step)
+    if step is None:
+        step_ok = None
+    elif px is None or px <= 0 or step <= 0:
+        step_ok = False
+    else:
+        q = px / step
+        step_ok = abs(q - round(q)) <= 1e-6
+    add("price_step", step_ok, "price_step=%r price=%r" % (offer.price_step, price))
 
     qmin, qmax = num(offer.min_qty), num(offer.max_qty)
     if qmin is None or qmax is None:
