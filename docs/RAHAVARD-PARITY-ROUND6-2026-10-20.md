@@ -202,7 +202,9 @@ CSV کامل: `docs/RAHAVARD-PARITY-CORPUS-2026-10-20.csv`.
 - گیت با `BORS_WORK_DIR`/`BORS_DB` موقت و `BORS_NO_FETCH_LOOPS=1` اجرا می‌شود.
 - اثرانگشت DB عملیاتی قبل/بعد مقایسه می‌شود؛ تغییر منطقی ⇒ `PROTECTED_DB_CHANGED` و شکست گیت.
 - در اجرای اول، `dev/chart_api_check_v95.py` در worktree تازه 10/18 شد چون `frontend/node_modules` وجود نداشت. با اتصال (junction) به نصب موجود `klinecharts 10.0.3`، همین گارد مستقل **18/18** سبز شد؛ این یک رفع محیطی است، نه تغییر کد.
-- نتیجهٔ اجرای کامل این دور: **در حال اجرا** (سوئیت سنگین `confidence_engine_v973`). پس از پایان، همین بخش با نتیجهٔ واقعی (`ALL SUITES PASSED` یا فهرست شکست‌ها) به‌روزرسانی می‌شود. هیچ سبزی محیطی ادعا نمی‌شود.
+- اجرای تمیز (با junction): `chart_api_check` 18/18، `confidence_engine` 107/107، `mstat` 207/207، `screener<->card` 1/1؛ تنها شکست تا این لحظه `test_rule_map_citations` بود. علت: جابه‌جایی خطوط `api/chart.py` در اصلاح ledger، ارجاع‌های `NAME:LINE` را کهنه کرد. سند به `_fts_analyze_candles:4281`, `_fts_jet_setup:3259`, `_fts_analyze_symbol:4689` به‌روز شد و تست مستقل **11/11** سبز است.
+- اجرای کامل تمیز همچنان در جریان است. نتیجهٔ نهایی (ALL SUITES PASSED یا فهرست شکست‌ها) در پایان همین بخش ثبت می‌شود؛ تا آن زمان هیچ سبزی کامل ادعا نمی‌شود.
+- اثرانگشت DB عملیاتی در طول اجرا **بدون تغییر** ماند: `cdb73c40a14f3fefbf6053bb65716e3cbc50f2af464b4dd2a1934ace2b73fcd4`.
 
 ## 8. فایل‌ها و شواهد
 
