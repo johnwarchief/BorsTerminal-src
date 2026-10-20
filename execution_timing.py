@@ -26,6 +26,7 @@
 """
 from __future__ import annotations
 
+import math
 import os
 import socket
 import struct
@@ -218,10 +219,16 @@ class NtpProber:
 
 # ── ۳) برآوردِ یک‌طرفه ────────────────────────────────────────────────────────
 def percentile(values: Sequence[float], p: float) -> float:
+    """صدکِ nearest-rank: کوچک‌ترین مقدارِ مرتب که سهمش به p می‌رسد.
+
+    `ceil(p/100*n)-1` استانداردِ nearest-rank است؛ نسخهٔ قبلی با
+    `round(p/100*(n-1))` برای نمونهٔ زوج، p50 را به مقدارِ بالاتر می‌برد و
+    برچسبِ nearest-rank را دقیق نمی‌کرد.
+    """
     if not values:
         raise ValueError("percentile of empty sequence")
     xs = sorted(values)
-    k = max(0, min(len(xs) - 1, int(round(p / 100.0 * (len(xs) - 1)))))
+    k = max(0, min(len(xs) - 1, math.ceil(float(p) / 100.0 * len(xs)) - 1))
     return xs[k]
 
 

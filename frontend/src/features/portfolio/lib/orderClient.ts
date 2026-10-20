@@ -973,7 +973,8 @@ export type OfferingsView = {
   capital: { total_cap?: number | null; cash_reserve?: number | null;
     max_per_offering?: number | null; priorities?: Record<string, unknown>;
     version?: number };
-  reserved_total: number; reservations: Record<string, unknown>[];
+  reserved_total: number; available?: number | null;
+  reservations: Record<string, unknown>[];
 };
 export const offeringsApi = {
   list: () => http<OfferingsView>('/api/execution/offerings'),

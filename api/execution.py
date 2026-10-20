@@ -1324,9 +1324,16 @@ def _offering_error(e: OF.OfferingsError) -> dict[str, Any]:
 def get_offerings(limit: int = 100) -> dict[str, Any]:
     try:
         store = _offering_store()
+        capital = store.capital()
+        reserved = round(store.active_reserved(), 2)
+        available = None
+        if capital.get("total_cap") is not None:
+            available = round(max(0.0, float(capital["total_cap"])
+                                  - float(capital.get("cash_reserve") or 0.0)
+                                  - reserved), 2)
         return {"status": "success", "offerings": [r.public() for r in store.list(limit)],
-                "capital": store.capital(),
-                "reserved_total": round(store.active_reserved(), 2),
+                "capital": capital, "reserved_total": reserved,
+                "available": available,
                 "reservations": store.reservations(), "live_send": False}
     except Exception as e:                       # noqa: BLE001
         return {"status": "error", "code": "OFFERINGS_STORE_UNAVAILABLE",
@@ -1362,10 +1369,8 @@ def post_offering(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
             fee_source=str(body.get("fee_source") or ""),
             source=str(body.get("source") or ""),
             source_url=str(body.get("source_url") or ""),
-            verified_at_ms=(int(body["verified_at_ms"])
-                            if body.get("verified_at_ms") is not None else None),
-            data_as_of_ms=(int(body["data_as_of_ms"])
-                           if body.get("data_as_of_ms") is not None else None),
+            verified_at_ms=_ms("verified_at_ms", "verified_at_local"),
+            data_as_of_ms=_ms("data_as_of_ms", "data_as_of_local"),
             note=str(body.get("note") or ""),
             offering_id=str(body.get("offering_id") or ""))
     except OF.OfferingsError as e:
@@ -1447,10 +1452,14 @@ def post_timing_sample(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
 def get_timing(adapter: str, method: str, network: str = "",
                phase: str = "http_rtt", target_ms: int = 0,
                margin_ms: float = 0.0) -> dict[str, Any]:
-    stats = _offering_store().timing_stats(adapter=adapter, method=method,
-                                           network=network or None, phase=phase)
-    suggestion = OF.timing_suggestion(stats, target_ms=int(target_ms or 0),
-                                      method=method, margin_ms=float(margin_ms or 0.0))
+    try:
+        stats = _offering_store().timing_stats(adapter=adapter, method=method,
+                                               network=network or None, phase=phase)
+        suggestion = OF.timing_suggestion(stats, target_ms=int(target_ms or 0),
+                                          method=method,
+                                          margin_ms=float(margin_ms or 0.0))
+    except OF.OfferingsError as e:
+        return _offering_error(e)
     return {"status": "success", "stats": stats, "suggestion": suggestion,
             "live_send": False}
 

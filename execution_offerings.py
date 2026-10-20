@@ -14,6 +14,7 @@
 from __future__ import annotations
 
 import json
+import math
 import os
 import sqlite3
 import threading
@@ -21,6 +22,7 @@ import time
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any, Iterable, Mapping
+from urllib.parse import urlparse
 
 from execution_timing import percentile
 
@@ -43,6 +45,7 @@ class OfferingMethod(str, Enum):
 
 
 METHODS = tuple(m.value for m in OfferingMethod)
+TIMING_PHASES = ("http_rtt", "trigger", "preparation", "end_to_end")
 METHOD_TIMING = {
     "BOOK_BUILDING": ("NOT_PROVEN", "تخصیص بر قاعدهٔ دورهٔ عرضه است؛ مزیتِ چند میلی‌ثانیه اثبات نشده"),
     "TWO_STAGE": ("NOT_PROVEN", "تخصیص دومرحله‌ای است؛ مزیتِ ارسالِ زودتر اثبات نشده"),
@@ -64,12 +67,56 @@ ACTIVE_RESERVATION_STATES = (
     ReservationState.RESERVED.value, ReservationState.COMMITTED.value,
     ReservationState.UNKNOWN_HOLD.value)
 
+#: UNKNOWN_HOLD فقط با شاهد به COMMITTED یا RELEASED می‌رود؛ هرگز به RESERVED
+#: برنمی‌گردد، چون برگشتِ بی‌شاهد یعنی «نامعلوم» دوباره قابلِ اقدام می‌شود.
+RESERVATION_TRANSITIONS = {
+    ReservationState.RESERVED.value: {
+        ReservationState.COMMITTED.value, ReservationState.UNKNOWN_HOLD.value,
+        ReservationState.RELEASED.value},
+    ReservationState.COMMITTED.value: {
+        ReservationState.UNKNOWN_HOLD.value, ReservationState.RELEASED.value},
+    ReservationState.UNKNOWN_HOLD.value: {
+        ReservationState.COMMITTED.value, ReservationState.RELEASED.value},
+    ReservationState.RELEASED.value: set(),
+}
+
 
 class OfferingsError(Exception):
     def __init__(self, code: str, detail: str = "") -> None:
         super().__init__("%s: %s" % (code, detail) if detail else code)
         self.code = code
         self.detail = detail
+
+
+#: اختلافِ کوچکِ ساعتِ کلاینت/سرور هنگامِ ثبت، نه مجوزِ دادهٔ آینده.
+FUTURE_TOLERANCE_MS = 120_000
+#: فاصلهٔ چندمیلی‌ثانیه‌ایِ ساخت/خواندن در همان فرایند، دادهٔ آینده نیست.
+DATA_SKEW_TOLERANCE_MS = 1_000
+#: نرخِ کارمزد باید کسریِ معقول باشد؛ ۱۰۰٪ یا بیشتر قطعاً دادهٔ معیوب است.
+MAX_FEE_RATE = 1.0
+
+
+def _finite(value: Any, *, code: str = "INVALID_NUMBER",
+            label: str = "عدد") -> float:
+    try:
+        out = float(value)
+    except (TypeError, ValueError):
+        raise OfferingsError(code, "%s نامعتبر است" % label) from None
+    if not math.isfinite(out):
+        raise OfferingsError(code, "%s بی‌کران/NaN است" % label)
+    return out
+
+
+def _opt_finite(value: Any, *, code: str, label: str) -> float | None:
+    return None if value is None else _finite(value, code=code, label=label)
+
+
+def _valid_source_url(value: str) -> bool:
+    try:
+        p = urlparse(str(value or "").strip())
+    except ValueError:
+        return False
+    return p.scheme in ("http", "https") and bool(p.netloc)
 
 
 def _norm_text(value: Any) -> str:
@@ -211,10 +258,68 @@ class OfferingStore:
         method = str(method or "UNKNOWN").upper()
         if method not in METHODS:
             raise OfferingsError("INVALID_METHOD", "روش عرضه نامعتبر است")
+        src = str(source or "").strip()
+        src_url = str(source_url or "").strip()
+        if src_url and not _valid_source_url(src_url):
+            raise OfferingsError("INVALID_SOURCE_URL",
+                                 "نشانی منبع باید http(s) باشد")
+        has_verify_ts = verified_at_ms is not None or data_as_of_ms is not None
+        if has_verify_ts and (verified_at_ms is None or data_as_of_ms is None):
+            raise OfferingsError("INVALID_PROVENANCE",
+                                 "verified_at و data_as_of هر دو لازم‌اند")
+        now = now_ms()
+        if verified_at_ms is not None:
+            verified_at_ms = int(verified_at_ms)
+        if data_as_of_ms is not None:
+            data_as_of_ms = int(data_as_of_ms)
+        if verified_at_ms is not None:
+            if verified_at_ms <= 0 or verified_at_ms > now + FUTURE_TOLERANCE_MS:
+                raise OfferingsError("INVALID_TIME",
+                                     "verified_at در آینده یا نامعتبر است")
+            if data_as_of_ms is not None and data_as_of_ms > verified_at_ms:
+                raise OfferingsError("INVALID_PROVENANCE",
+                                     "data_as_of از verified_at جدیدتر است")
+        if data_as_of_ms is not None and (
+                data_as_of_ms <= 0 or data_as_of_ms > now + FUTURE_TOLERANCE_MS):
+            raise OfferingsError("INVALID_TIME",
+                                 "data_as_of در آینده یا نامعتبر است")
+        if has_verify_ts and not (src and src_url):
+            raise OfferingsError("INVALID_PROVENANCE",
+                                 "برای تأیید، منبع و نشانی منبع لازم است")
+        price_min = _opt_finite(price_min, code="INVALID_RANGE", label="کف قیمت")
+        price_max = _opt_finite(price_max, code="INVALID_RANGE", label="سقف قیمت")
+        if price_min is not None and price_min <= 0:
+            raise OfferingsError("INVALID_RANGE", "کف قیمت باید مثبت باشد")
+        if price_max is not None and price_max <= 0:
+            raise OfferingsError("INVALID_RANGE", "سقف قیمت باید مثبت باشد")
+        if price_min is not None and price_max is not None and price_min > price_max:
+            raise OfferingsError("INVALID_RANGE", "کف قیمت از سقف بیشتر است")
+        min_qty = _opt_finite(min_qty, code="INVALID_RANGE", label="حداقل تعداد")
+        max_qty = _opt_finite(max_qty, code="INVALID_RANGE", label="حداکثر تعداد")
+        if min_qty is not None and min_qty < 0:
+            raise OfferingsError("INVALID_RANGE", "حداقل تعداد منفی است")
+        if max_qty is not None and max_qty <= 0:
+            raise OfferingsError("INVALID_RANGE", "حداکثر تعداد باید مثبت باشد")
+        if min_qty is not None and max_qty is not None and min_qty > max_qty:
+            raise OfferingsError("INVALID_RANGE", "حداقل تعداد از حداکثر بیشتر است")
+        per_code_quota = _opt_finite(per_code_quota, code="INVALID_RANGE",
+                                     label="سهمیهٔ هر کد")
+        if per_code_quota is not None and per_code_quota < 0:
+            raise OfferingsError("INVALID_RANGE", "سهمیهٔ هر کد منفی است")
+        fee_rate = _opt_finite(fee_rate, code="INVALID_FEE", label="نرخ کارمزد")
+        if fee_rate is not None and not (0.0 <= fee_rate < MAX_FEE_RATE):
+            raise OfferingsError("INVALID_FEE",
+                                 "نرخ کارمزد باید بین صفر و یک باشد")
+        if start_ms is not None:
+            start_ms = int(start_ms)
+        if end_ms is not None:
+            end_ms = int(end_ms)
+        if start_ms is not None and end_ms is not None and start_ms >= end_ms:
+            raise OfferingsError("INVALID_WINDOW", "پنجرهٔ عرضه نامعتبر است")
         relevance, timing_note = METHOD_TIMING[method]
-        status = ("VERIFIED" if (source and verified_at_ms and data_as_of_ms)
+        status = ("VERIFIED" if (src and src_url and verified_at_ms and data_as_of_ms)
                   else "UNVERIFIED")
-        at = now_ms() / 1000.0
+        at = now / 1000.0
         oid = (offering_id or "").strip() or "off-%s-%s" % (sym, ident[-4:].lower())
         con = self._conn()
         try:
@@ -236,8 +341,8 @@ class OfferingStore:
                 "status=excluded.status,timing_relevance=excluded.timing_relevance,"
                 "timing_note=excluded.timing_note,note=excluded.note,updated_at=excluded.updated_at",
                 (oid, sym, ident, str(market or "UNKNOWN"), method, start_ms, end_ms,
-                 price_min, price_max, price_source or "", min_qty, max_qty,
-                 per_code_quota, fee_rate, fee_source or "", source or "", source_url or "",
+                 price_min, price_max, str(price_source or ""), min_qty, max_qty,
+                 per_code_quota, fee_rate, str(fee_source or ""), src, src_url,
                  verified_at_ms, data_as_of_ms, status, relevance, timing_note,
                  note or "", at, at))
             con.execute("COMMIT")
@@ -295,10 +400,9 @@ class OfferingStore:
     def set_capital(self, *, total_cap: float, cash_reserve: float,
                     max_per_offering: float, priorities: Mapping[str, Any] | None = None,
                     at_ms: int | None = None) -> dict[str, Any]:
-        try:
-            cap, reserve, per = float(total_cap), float(cash_reserve), float(max_per_offering)
-        except (TypeError, ValueError):
-            raise OfferingsError("INVALID_BUDGET", "اعداد بودجه نامعتبرند") from None
+        cap = _finite(total_cap, code="INVALID_BUDGET", label="سقف کل")
+        reserve = _finite(cash_reserve, code="INVALID_BUDGET", label="ذخیرهٔ نقدی")
+        per = _finite(max_per_offering, code="INVALID_BUDGET", label="سقف هر عرضه")
         if cap <= 0 or reserve < 0 or reserve >= cap or per <= 0:
             raise OfferingsError("INVALID_BUDGET", "سقف/ذخیره/سقفِ هر عرضه نامعتبر است")
         if per > cap:
@@ -313,6 +417,20 @@ class OfferingStore:
         con = self._conn()
         try:
             con.execute("BEGIN IMMEDIATE")
+            active = float(con.execute(
+                "SELECT COALESCE(SUM(amount),0) FROM reservations "
+                "WHERE state IN (?,?,?)", ACTIVE_RESERVATION_STATES).fetchone()[0] or 0.0)
+            if cap - reserve < active - 1e-9:
+                raise OfferingsError(
+                    "BUDGET_BELOW_RESERVED",
+                    "سقفِ جدید از رزروهایِ فعال (%.2f) کمتر است" % active)
+            biggest = float(con.execute(
+                "SELECT COALESCE(MAX(amount),0) FROM reservations "
+                "WHERE state IN (?,?,?)", ACTIVE_RESERVATION_STATES).fetchone()[0] or 0.0)
+            if per < biggest - 1e-9:
+                raise OfferingsError(
+                    "BUDGET_BELOW_RESERVED",
+                    "سقفِ هر عرضه از بزرگ‌ترین رزروِ فعال (%.2f) کمتر است" % biggest)
             con.execute(
                 "INSERT INTO capital_settings(id,total_cap,cash_reserve,max_per_offering,"
                 "priorities_json,version,updated_at) VALUES(1,?,?,?,?,1,?) "
@@ -370,45 +488,81 @@ class OfferingStore:
 
     def plan(self, plans: Iterable[Mapping[str, Any]], *, now: int | None = None,
              max_age_s: float = 3600.0) -> dict[str, Any]:
-        """رزروِ چند عرضه در یک تراکنش؛ اولویت‌ها از capital_settings."""
+        """رزروِ چند عرضه در یک تراکنش؛ اولویت‌ها از capital_settings.
+
+        تنظیماتِ سرمایه و موجودیِ رزروها داخلِ همان تراکنشِ BEGIN IMMEDIATE
+        خوانده می‌شوند تا تغییرِ هم‌زمانِ سقف نتواند بینِ خواندن و رزرو جا شود.
+        """
         at = now_ms() if now is None else int(now)
-        cap = self.capital()
-        if cap.get("total_cap") is None:
-            raise OfferingsError("BUDGET_UNSET", "سقف بودجه تنظیم نشده است")
         items = [dict(p) for p in plans]
-        pri = cap.get("priorities") or {}
-        def pkey(p):
-            try:
-                return int(pri.get(str(p.get("offering_id") or ""))
-                           or pri.get(str(p.get("symbol") or "")) or 100)
-            except (TypeError, ValueError):
-                return 100
-        items.sort(key=pkey)
+        if not items:
+            raise OfferingsError("INVALID_PLAN", "فهرستِ رزرو خالی است")
         decisions: list[dict[str, Any]] = []
         con = self._conn()
         try:
             con.execute("BEGIN IMMEDIATE")
+            crow = con.execute("SELECT * FROM capital_settings WHERE id=1").fetchone()
+            if crow is None:
+                raise OfferingsError("BUDGET_UNSET", "سقف بودجه تنظیم نشده است")
+            cap = {"total_cap": float(crow["total_cap"]),
+                   "cash_reserve": float(crow["cash_reserve"]),
+                   "max_per_offering": float(crow["max_per_offering"]),
+                   "priorities": json.loads(crow["priorities_json"] or "{}"),
+                   "version": int(crow["version"]),
+                   "updated_at": crow["updated_at"]}
+            pri = cap.get("priorities") or {}
+
+            def pkey(p: Mapping[str, Any]) -> int:
+                for key in (str(p.get("offering_id") or ""),
+                            str(p.get("symbol") or "")):
+                    raw = pri.get(key)
+                    if raw is None:
+                        continue
+                    try:
+                        return int(raw)
+                    except (TypeError, ValueError):
+                        continue
+                return 100
+
+            items.sort(key=pkey)
             used = float(con.execute(
                 "SELECT COALESCE(SUM(amount),0) FROM reservations "
                 "WHERE state IN (?,?,?)", ACTIVE_RESERVATION_STATES).fetchone()[0] or 0.0)
-            available = max(0.0, float(cap["total_cap"]) - float(cap["cash_reserve"]) - used)
+            available = max(0.0, cap["total_cap"] - cap["cash_reserve"] - used)
             for p in items:
                 oid = str(p.get("offering_id") or "")
                 intent = str(p.get("intent_id") or "")
-                offer = None
+                if not intent:
+                    decisions.append(self._decision_in_tx(
+                        con, oid, intent, "BLOCKED", None, "INTENT_REQUIRED", at))
+                    continue
                 r = con.execute("SELECT * FROM offerings WHERE id=?", (oid,)).fetchone()
-                if r:
-                    offer = _row(r)
+                offer = _row(r) if r else None
                 if offer is None:
                     decisions.append(self._decision_in_tx(con, oid, intent, "BLOCKED",
                                                           None, "OFFERING_NOT_FOUND", at))
                     continue
                 try:
-                    price = float(p.get("price"))
-                    qty = float(p.get("quantity"))
-                except (TypeError, ValueError):
+                    price = _finite(p.get("price"), code="INVALID_ORDER",
+                                    label="قیمت")
+                    qty = _finite(p.get("quantity"), code="INVALID_ORDER",
+                                  label="تعداد")
+                except OfferingsError:
                     decisions.append(self._decision_in_tx(con, oid, intent, "BLOCKED",
                                                           None, "INVALID_ORDER", at))
+                    continue
+                prior = con.execute(
+                    "SELECT state, amount FROM reservations "
+                    "WHERE offering_id=? AND intent_id=?", (oid, intent)).fetchone()
+                if prior is not None:
+                    if prior["state"] in ACTIVE_RESERVATION_STATES:
+                        decisions.append(self._decision_in_tx(
+                            con, oid, intent, "RESERVED", float(prior["amount"]),
+                            "IDEMPOTENT", at))
+                    else:
+                        decisions.append(self._decision_in_tx(
+                            con, oid, intent, "BLOCKED", float(prior["amount"]),
+                            "INTENT_ALREADY_USED", at))
                     continue
                 rep = preflight(offer, at=at, price=price, quantity=qty,
                                 max_age_s=max_age_s, capital=None, reserved=0.0)
@@ -417,8 +571,14 @@ class OfferingStore:
                         con, oid, intent, "BLOCKED", rep.get("amount"),
                         "; ".join(rep["blockers"][:4]), at))
                     continue
-                amount = float(rep["amount"])
-                if amount > float(cap["max_per_offering"]):
+                amount = rep.get("amount")
+                if amount is None or float(amount) <= 0:
+                    decisions.append(self._decision_in_tx(
+                        con, oid, intent, "BLOCKED", amount,
+                        "INVALID_AMOUNT", at))
+                    continue
+                amount = float(amount)
+                if amount > cap["max_per_offering"] + 1e-9:
                     decisions.append(self._decision_in_tx(
                         con, oid, intent, "SKIPPED_BUDGET", amount,
                         "MAX_PER_OFFERING", at))
@@ -446,6 +606,11 @@ class OfferingStore:
                     con, oid, intent, "RESERVED", amount, "", at))
                 used += amount
                 available = max(0.0, available - amount)
+            reserved_total = round(float(con.execute(
+                "SELECT COALESCE(SUM(amount),0) FROM reservations "
+                "WHERE state IN (?,?,?)", ACTIVE_RESERVATION_STATES).fetchone()[0] or 0.0), 2)
+            final_available = round(max(0.0, cap["total_cap"] - cap["cash_reserve"]
+                                        - reserved_total), 2)
             con.execute("COMMIT")
         except Exception:
             if con.in_transaction:
@@ -453,10 +618,8 @@ class OfferingStore:
             raise
         finally:
             con.close()
-        return {"decisions": decisions, "reserved_total": round(self.active_reserved(), 2),
-                "available": round(max(0.0, float(cap["total_cap"]) - float(cap["cash_reserve"])
-                                       - self.active_reserved()), 2),
-                "capital": cap}
+        return {"decisions": decisions, "reserved_total": reserved_total,
+                "available": final_available, "capital": cap}
 
     @staticmethod
     def _decision_in_tx(con: sqlite3.Connection, oid: str, intent: str,
@@ -471,19 +634,45 @@ class OfferingStore:
 
     def set_reservation(self, offering_id: str, intent_id: str, state: str,
                         note: str = "", at_ms: int | None = None) -> dict[str, Any]:
-        if state not in tuple(s.value for s in ReservationState):
+        allowed = tuple(s.value for s in ReservationState if s is not ReservationState.SKIPPED_BUDGET)
+        if state not in allowed:
             raise OfferingsError("INVALID_STATE", "وضعیت رزرو نامعتبر است")
+        clean_note = str(note or "").strip()
+        if state in (ReservationState.UNKNOWN_HOLD.value, ReservationState.RELEASED.value) \
+                and not clean_note:
+            raise OfferingsError("NOTE_REQUIRED",
+                                 "برای UNKNOWN_HOLD/RELEASED شاهد یا دلیل لازم است")
         at = (now_ms() if at_ms is None else int(at_ms)) / 1000.0
         con = self._conn()
         try:
             con.execute("BEGIN IMMEDIATE")
+            row = con.execute(
+                "SELECT id, state, note FROM reservations "
+                "WHERE offering_id=? AND intent_id=?",
+                (offering_id, intent_id)).fetchone()
+            if row is None:
+                raise OfferingsError("INVALID_TRANSITION", "رزرو پیدا نشد")
+            current = str(row["state"])
+            if current == state:                     # retry همان درخواست، بی‌تغییر
+                if (current in ACTIVE_RESERVATION_STATES and clean_note
+                        and clean_note != str(row["note"] or "")):
+                    con.execute("UPDATE reservations SET note=?, updated_at=? "
+                                "WHERE id=?", (clean_note[:400], at, int(row["id"])))
+                con.execute("COMMIT")
+                return {"offering_id": offering_id, "intent_id": intent_id,
+                        "state": state, "note": clean_note, "unchanged": True}
+            if current not in ACTIVE_RESERVATION_STATES:
+                raise OfferingsError("INVALID_TRANSITION",
+                                     "رزروِ بسته‌شده دوباره فعال نمی‌شود")
+            if state not in RESERVATION_TRANSITIONS.get(current, set()):
+                raise OfferingsError("INVALID_TRANSITION",
+                                     "گذارِ %s → %s مجاز نیست" % (current, state))
             cur = con.execute(
                 "UPDATE reservations SET state=?, note=?, updated_at=? "
-                "WHERE offering_id=? AND intent_id=? AND state IN (?,?,?)",
-                (state, note[:400], at, offering_id, intent_id) + ACTIVE_RESERVATION_STATES)
+                "WHERE id=? AND state=?",
+                (state, clean_note[:400], at, int(row["id"]), current))
             if cur.rowcount != 1:
-                con.execute("ROLLBACK")
-                raise OfferingsError("INVALID_TRANSITION", "رزروِ فعال پیدا نشد")
+                raise OfferingsError("INVALID_TRANSITION", "رزرو هم‌زمان تغییر کرد")
             con.execute("COMMIT")
         except Exception:
             if con.in_transaction:
@@ -492,7 +681,7 @@ class OfferingStore:
         finally:
             con.close()
         return {"offering_id": offering_id, "intent_id": intent_id,
-                "state": state, "note": note}
+                "state": state, "note": clean_note}
 
     def record_timing(self, *, adapter: str, method: str, value_ms: float,
                       network: str = "unknown", phase: str = "http_rtt",
@@ -501,23 +690,28 @@ class OfferingStore:
         method = str(method or "UNKNOWN").upper()
         if method not in METHODS:
             raise OfferingsError("INVALID_METHOD", "روش عرضه نامعتبر است")
-        if phase not in ("http_rtt", "trigger", "preparation", "end_to_end"):
+        adapter = str(adapter or "").strip()
+        if not adapter:
+            raise OfferingsError("INVALID_ADAPTER", "نام آداپتور لازم است")
+        if phase not in TIMING_PHASES:
             raise OfferingsError("INVALID_PHASE", "فاز زمان‌سنجی نامعتبر است")
         if not str(source or "").strip():
             raise OfferingsError("SOURCE_REQUIRED", "منبعِ نمونهٔ زمان لازم است")
-        try:
-            value = float(value_ms)
-        except (TypeError, ValueError):
-            raise OfferingsError("INVALID_SAMPLE", "مقدار زمان نامعتبر است") from None
+        value = _finite(value_ms, code="INVALID_SAMPLE", label="مقدار زمان")
         if value < 0:
             raise OfferingsError("INVALID_SAMPLE", "زمان نمی‌تواند منفی باشد")
-        at = time.time() if observed_at is None else float(observed_at)
+        now_s = time.time()
+        at = now_s if observed_at is None else _finite(
+            observed_at, code="INVALID_SAMPLE", label="observed_at")
+        if at <= 0 or at > now_s + 60.0:
+            raise OfferingsError("INVALID_SAMPLE",
+                                 "observed_at در آینده یا نامعتبر است")
         con = self._conn()
         try:
             con.execute("BEGIN IMMEDIATE")
             con.execute("INSERT INTO timing_samples(adapter,method,network,phase,"
                         "value_ms,source,observed_at,note) VALUES(?,?,?,?,?,?,?,?)",
-                        (str(adapter), method, str(network), phase, value,
+                        (adapter, method, str(network), phase, value,
                          str(source), at, note[:300]))
             con.execute("COMMIT")
         except Exception:
@@ -529,10 +723,12 @@ class OfferingStore:
 
     def timing_stats(self, *, adapter: str, method: str, network: str | None = None,
                      phase: str = "http_rtt") -> dict[str, Any]:
+        if phase not in TIMING_PHASES:
+            raise OfferingsError("INVALID_PHASE", "فاز زمان‌سنجی نامعتبر است")
         con = self._conn()
         try:
             q = ("SELECT value_ms FROM timing_samples WHERE adapter=? AND method=? AND phase=?")
-            args: list[Any] = [adapter, method.upper(), phase]
+            args: list[Any] = [str(adapter), method.upper(), phase]
             if network:
                 q += " AND network=?"
                 args.append(network)
@@ -541,24 +737,29 @@ class OfferingStore:
             con.close()
         vals.sort()
         n = len(vals)
+        base = {"adapter": str(adapter), "method": method.upper(),
+                "network": network or "all", "phase": phase,
+                "source": phase, "percentile_method": "nearest_rank",
+                "acceptance_time_observed": False}
         if not vals:
-            return {"n": 0, "p50": None, "p95": None, "p99": None,
-                    "confidence": "INSUFFICIENT", "source": "http_rtt",
-                    "acceptance_time_observed": False, "thin": True}
+            return {**base, "n": 0, "p50": None, "p95": None, "p99": None,
+                    "confidence": "INSUFFICIENT", "thin": True,
+                    "note": "نمونهٔ کافی نیست؛ هیچ زمانِ بهینه‌ای پیشنهاد نمی‌شود"}
         med = percentile(vals, 50.0)
         mad = percentile(sorted(abs(v - med) for v in vals), 50.0) if n >= 2 else None
         p25 = percentile(vals, 25.0) if n >= 2 else None
         p75 = percentile(vals, 75.0) if n >= 2 else None
         conf = ("INSUFFICIENT" if n < 5 else "LOW" if n < 20
                 else "MEDIUM" if n < 100 else "HIGH")
-        return {"n": n, "p50": round(med, 3),
+        note = ("HTTP RTT؛ زمانِ پذیرشِ کارگزاری مشاهده نشده"
+                if phase == "http_rtt" else
+                "فازِ %s؛ این عدد زمانِ پذیرشِ کارگزاری نیست" % phase)
+        return {**base, "n": n, "p50": round(med, 3),
                 "p95": round(percentile(vals, 95.0), 3) if n >= 20 else None,
                 "p99": round(percentile(vals, 99.0), 3) if n >= 100 else None,
                 "mad": None if mad is None else round(mad, 3),
                 "iqr": None if p75 is None else round(p75 - p25, 3),
-                "confidence": conf, "thin": n < 20,
-                "source": "http_rtt", "acceptance_time_observed": False,
-                "note": "HTTP RTT؛ زمانِ پذیرشِ کارگزاری مشاهده نشده"}
+                "confidence": conf, "thin": n < 20, "note": note}
 
 
 def preflight(offer: OfferingRecord, *, at: int, price: float, quantity: float,
@@ -573,56 +774,97 @@ def preflight(offer: OfferingRecord, *, at: int, price: float, quantity: float,
         if state != PASS:
             blockers.append("%s: %s" % (name, detail or state))
 
+    def num(value: Any) -> float | None:
+        try:
+            out = float(value)
+        except (TypeError, ValueError):
+            return None
+        return out if math.isfinite(out) else None
+
     add("identity", bool(offer.symbol and offer.isin), "symbol/ISIN")
     add("source_verified", offer.status == "VERIFIED",
         "status=%s" % offer.status)
-    add("method", offer.method != "UNKNOWN",
-        "method=%s؛ روشِ UNKNOWN قابل تخصیص نیست" % offer.method)
+    method_ok = offer.method != "UNKNOWN"
+    add("method", method_ok, "method=%s%s" % (
+        offer.method, "" if method_ok else "؛ روشِ UNKNOWN قابل تخصیص نیست"))
     in_window = None
     if offer.start_ms is not None and offer.end_ms is not None:
-        in_window = offer.start_ms <= at <= offer.end_ms
+        in_window = int(offer.start_ms) < int(offer.end_ms) \
+            and int(offer.start_ms) <= at <= int(offer.end_ms)
     add("window", in_window, "start/end نسبت به زمان اجرا")
     fresh = None
     if offer.data_as_of_ms is not None and max_age_s > 0:
-        age = max(0.0, (at - int(offer.data_as_of_ms)) / 1000.0)
-        fresh = age <= float(max_age_s)
-        add("data_fresh", fresh, "age=%.0fs max=%.0fs" % (age, max_age_s))
+        skew_ms = int(at) - int(offer.data_as_of_ms)
+        age = max(0.0, skew_ms / 1000.0)
+        fresh = (-skew_ms) <= DATA_SKEW_TOLERANCE_MS and age <= float(max_age_s)
+        add("data_fresh", fresh,
+            "age=%.0fs max=%.0fs skew=%dms" % (age, max_age_s, -skew_ms))
     else:
         add("data_fresh", None, "data_as_of نامعلوم است")
-    band = None
-    if offer.price_min is not None and offer.price_max is not None:
-        band = float(offer.price_min) <= float(price) <= float(offer.price_max)
-    add("price", band, "range=%r..%r price=%r" % (offer.price_min, offer.price_max, price))
-    qty_ok = None
-    if offer.min_qty is not None and offer.max_qty is not None:
-        qty_ok = (float(quantity) == int(quantity)
-                  and float(offer.min_qty) <= float(quantity) <= float(offer.max_qty))
-    add("quantity", qty_ok, "min/max/integer")
-    quota_ok = None
-    if offer.per_code_quota is not None:
-        quota_ok = float(quantity) <= float(offer.per_code_quota)
+
+    px = num(price)
+    qty = num(quantity)
+    pmin, pmax = num(offer.price_min), num(offer.price_max)
+    if pmin is None or pmax is None:
+        price_band = None
+    elif px is None or px <= 0:
+        price_band = False
+    else:
+        price_band = pmin <= px <= pmax
+    add("price", price_band,
+        "range=%r..%r price=%r" % (offer.price_min, offer.price_max, price))
+    add("price_source", bool(str(offer.price_source or "").strip()),
+        "price_source خالی است")
+
+    qmin, qmax = num(offer.min_qty), num(offer.max_qty)
+    if qmin is None or qmax is None:
+        qty_ok = None
+    elif qty is None or qty <= 0:
+        qty_ok = False
+    else:
+        qty_ok = qty.is_integer() and qmin <= qty <= qmax
+    add("quantity", qty_ok, "min/max/integer/positive")
+
+    quota = num(offer.per_code_quota)
+    if quota is None:
+        quota_ok = None
+    elif qty is None or qty <= 0:
+        quota_ok = False
+    else:
+        quota_ok = qty <= quota
     add("quota", quota_ok, "per-code=%r" % (offer.per_code_quota,))
-    fee_ok = offer.fee_rate is not None and bool(offer.fee_source)
+
+    fee_rate = num(offer.fee_rate)
+    fee_ok = (fee_rate is not None and 0.0 <= fee_rate < MAX_FEE_RATE
+              and bool(str(offer.fee_source or "").strip()))
     add("fee", fee_ok, "fee_rate/source")
+
     amount = None
-    if fee_ok and band is not None:
-        gross = float(price) * float(quantity)
-        fee = gross * float(offer.fee_rate)
-        amount = round(gross + fee, 2)
+    fee_value = None
+    if fee_ok and price_band and qty_ok is not None and qty_ok:
+        gross = float(px) * float(qty)
+        fee_value = round(gross * float(fee_rate), 2)
+        amount = round(gross + fee_value, 2)
+
     if capital is not None:
+        total = num(capital.get("total_cap"))
+        reserve = num(capital.get("cash_reserve") or 0.0)
+        held = num(reserved)
+        max_per = num(capital.get("max_per_offering"))
         cap_ok = None
-        if capital.get("total_cap") is not None:
-            avail = (float(capital["total_cap"]) - float(capital.get("cash_reserve") or 0.0)
-                     - float(reserved))
-            cap_ok = amount is not None and amount <= avail + 1e-9
-            add("capital", cap_ok, "amount=%r available=%r" % (amount, round(avail, 2)))
-            if amount is not None and amount > float(capital.get("max_per_offering") or 0):
-                add("per_offering", False, "amount=%r max=%r" % (
-                    amount, capital.get("max_per_offering")))
-            elif amount is not None:
-                add("per_offering", True, "")
+        avail = None
+        if total is not None and reserve is not None and held is not None:
+            avail = total - reserve - held
+            cap_ok = (amount is not None and amount <= avail + 1e-9)
+        add("capital", cap_ok,
+            "amount=%r available=%r" % (amount, None if avail is None else round(avail, 2)))
+        per_ok = None
+        if max_per is not None and max_per > 0:
+            per_ok = amount is not None and amount <= max_per + 1e-9
+        add("per_offering", per_ok,
+            "amount=%r max=%r" % (amount, capital.get("max_per_offering")))
     return {"ok": not blockers, "checks": checks, "blockers": blockers,
-            "amount": amount, "fee": None if amount is None else round(amount - price * quantity, 2),
+            "amount": amount, "fee": fee_value,
             "timing_relevance": offer.timing_relevance,
             "timing_note": offer.timing_note}
 
@@ -633,13 +875,15 @@ def timing_suggestion(stats: Mapping[str, Any], *, target_ms: int,
     lead = None if p95 is None else round(float(p95) + max(0.0, float(margin_ms)), 3)
     relevance, note = METHOD_TIMING.get(str(method or "UNKNOWN").upper(),
                                         METHOD_TIMING["UNKNOWN"])
+    src = str(stats.get("source") or "http_rtt")
+    suggestion = None if lead is None or int(target_ms) <= 0 else int(target_ms - lead)
     return {"target_wall_ms": int(target_ms),
-            "suggested_send_wall_ms": None if lead is None else int(target_ms - lead),
+            "suggested_send_wall_ms": suggestion,
             "lead_ms": lead, "stats": dict(stats),
             "timing_relevance": relevance, "timing_note": note,
             "acceptance_time_observed": False,
-            "note": "زمانِ پیشنهادی از HTTP RTT است، نه زمانِ پذیرشِ کارگزاری؛ "
-                    "برایِ روش‌هایِ قاعده‌محور مزیتِ زمانی ادعا نمی‌شود"}
+            "note": "زمانِ پیشنهادی از فازِ %s است، نه زمانِ پذیرشِ کارگزاری؛ "
+                    "برایِ روش‌هایِ قاعده‌محور مزیتِ زمانی ادعا نمی‌شود" % src}
 
 
 __all__ = ["OfferingMethod", "OfferingRecord", "OfferingStore", "OfferingsError",

@@ -24,6 +24,22 @@ const RESULT_LABEL: Record<string, string> = {
 };
 const clock = (ms?: number | null) =>
   ms ? new Date(ms).toLocaleString('fa-IR', { hour12: false }) : '—';
+const evidenceAge = (ms?: number | null): string => {
+  if (!ms) return '—';
+  const sec = Math.max(0, Math.round((Date.now() - ms) / 1000));
+  return `${toFaDigits(String(sec))} ثانیه`;
+};
+const dataAgeMs = (ms?: number | null) => ms ? Math.max(0, Date.now() - ms) : null;
+const money = (v: unknown): string => {
+  const n = Number(v);
+  return Number.isFinite(n)
+    ? new Intl.NumberFormat('fa-IR', { maximumFractionDigits: 2 }).format(n)
+    : '—';
+};
+const priorityOf = (row: OfferingView, priorities?: Record<string, unknown>) => {
+  const raw = priorities?.[row.id] ?? priorities?.[row.symbol];
+  return raw == null ? '—' : toFaDigits(String(raw));
+};
 
 type Dict = Record<string, unknown>;
 const asDict = (v: unknown): Dict => (v && typeof v === 'object' ? v as Dict : {});
@@ -56,7 +72,7 @@ export function SarkhatiOfferingsCard() {
   const [form, setForm] = useState({
     symbol: '', isin: '', method: 'UNKNOWN', start: '', end: '',
     price_min: '', price_max: '', min_qty: '', max_qty: '', quota: '',
-    fee_rate: '', source: '', source_url: '', verified: false,
+    fee_rate: '', source: '', source_url: '', data_as_of: '', verified: false,
   });
 
   const refresh = () => { void qc.invalidateQueries({ queryKey: ['execution-offerings'] }); };
@@ -64,13 +80,17 @@ export function SarkhatiOfferingsCard() {
     setTone('bad'); setAnswer(e instanceof Error ? e.message : String(e));
   };
   const chosen = rows.find((r) => r.id === sel);
+  const staleRows = rows.filter((r) => {
+    const age = dataAgeMs(r.data_as_of_ms);
+    return r.status === 'VERIFIED' && age != null && age > 3_600_000;
+  });
 
   const saveBudget = async () => {
     setBusy('budget'); setAnswer('');
     try {
       const res = await offeringsApi.setBudget({
         total_cap: Number(cap), cash_reserve: Number(reserve || 0),
-        max_per_offering: Number(per), priorities: {},
+        max_per_offering: Number(per), priorities: capital.priorities ?? {},
       });
       if (res.status === 'success') {
         setTone('ok'); setAnswer('سقف/ذخیره/سقف هر عرضه ذخیره شد');
@@ -80,9 +100,13 @@ export function SarkhatiOfferingsCard() {
   };
 
   const addOffering = async () => {
+    if (form.verified && !form.data_as_of) {
+      setTone('warn');
+      setAnswer('برای تأیید، زمان دادهٔ منبع را وارد کنید؛ زمان کلیک، معادل زمان داده نیست.');
+      return;
+    }
     setBusy('add'); setAnswer('');
     try {
-      const now = Date.now();
       const res = await offeringsApi.create({
         symbol: form.symbol.trim(), isin: form.isin.trim(), method: form.method,
         start_local: form.start, end_local: form.end,
@@ -91,8 +115,8 @@ export function SarkhatiOfferingsCard() {
         per_code_quota: numOrNull(form.quota), fee_rate: numOrNull(form.fee_rate),
         price_source: form.source, fee_source: form.source,
         source: form.source, source_url: form.source_url,
-        verified_at_ms: form.verified ? now : null,
-        data_as_of_ms: form.verified ? now : null,
+        verified_at_ms: form.verified ? Date.now() : null,
+        data_as_of_local: form.verified ? form.data_as_of : null,
       });
       if (res.status === 'success') {
         setTone('ok'); setAnswer('عرضه ثبت شد؛ وضعیت تأیید از پاسخ سرویس خوانده می‌شود');
@@ -164,10 +188,15 @@ export function SarkhatiOfferingsCard() {
           {toFaDigits(String(rows.length))} عرضه
         </Chip>
         <Chip tone="warn">
-          رزرو: {toFaDigits(String(Math.round(Number(q.data?.reserved_total ?? 0))))} ریال
+          رزرو: {money(q.data?.reserved_total ?? 0)} ریال
+        </Chip>
+        <Chip tone="idle">
+          باقی‌مانده: {money(q.data?.available)} ریال
         </Chip>
         <Chip tone="idle">live: خاموش</Chip>
       </>}>
+      {q.isPending ? <Line kind="muted" testId="offer-loading">در حال خواندن عرضه‌ها…</Line> : null}
+      {q.isError ? <Line kind="muted" testId="offer-error">خواندن عرضه‌ها ناموفق بود؛ مقدار صفر یا موفقیت نمایش داده نمی‌شود.</Line> : null}
       <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-4">
         <label className="flex flex-col gap-0.5 text-3xs text-text-muted">سقف کل (ریال)
           <input className={INPUT} value={cap} onChange={(e) => setCap(e.target.value)}
@@ -187,17 +216,18 @@ export function SarkhatiOfferingsCard() {
         </div>
       </div>
       <Line kind="muted" testId="offer-budget-current">
-        سقف فعلی: {capital.total_cap != null ? toFaDigits(String(capital.total_cap)) : '—'}
-        {' · '}ذخیره: {capital.cash_reserve != null ? toFaDigits(String(capital.cash_reserve)) : '—'}
-        {' · '}سقف هر عرضه: {capital.max_per_offering != null ? toFaDigits(String(capital.max_per_offering)) : '—'}
+        سقف فعلی: {money(capital.total_cap)}
+        {' · '}ذخیره: {money(capital.cash_reserve)}
+        {' · '}سقف هر عرضه: {money(capital.max_per_offering)}
         {' · '}نسخه: {toFaDigits(String(capital.version ?? 0))}
       </Line>
 
       {rows.length === 0 ? (
-        <Line testId="offer-empty">هیچ عرضه‌ای ثبت نشده است.</Line>
+        q.isPending || q.isError ? null
+          : <Line testId="offer-empty">هیچ عرضه‌ای ثبت نشده است.</Line>
       ) : (
-        <Table testId="offer-rows" minWidth={760}
-          head={['نماد', 'روش', 'پنجره', 'قیمت', 'تعداد/سهمیه', 'وضعیت', 'منبع']}>
+        <Table testId="offer-rows" minWidth={920}
+          head={['نماد', 'روش', 'پنجره', 'قیمت', 'تعداد/سهمیه', 'اولویت', 'عمر داده', 'وضعیت', 'منبع']}>
           {rows.map((r) => (
             <Tr key={r.id} testId={`offer-row-${r.id}`}>
               <Td strong>{r.symbol}<span className="text-text-muted"> · {r.isin}</span></Td>
@@ -205,12 +235,28 @@ export function SarkhatiOfferingsCard() {
               <Td num>{clock(r.start_ms)} — {clock(r.end_ms)}</Td>
               <Td num>{r.price_min ?? '—'}..{r.price_max ?? '—'}</Td>
               <Td num>{r.min_qty ?? '—'}..{r.max_qty ?? '—'} / {r.per_code_quota ?? '—'}</Td>
+              <Td num>{priorityOf(r, capital.priorities)}</Td>
+              <Td num><span title={clock(r.data_as_of_ms)}>{evidenceAge(r.data_as_of_ms)}</span></Td>
               <Td><Chip tone={r.status === 'VERIFIED' ? 'ok' : 'warn'}>{r.status}</Chip></Td>
               <Td>{r.source || '—'}</Td>
             </Tr>
           ))}
         </Table>
       )}
+      {staleRows.length ? (
+        <Line kind="muted" testId="offer-stale">
+          هشدارِ دادهٔ کهنه (بیش از ۳۶۰۰ ثانیه): {staleRows.map((r) => r.symbol).join('، ')}
+          {' '}— Preflight آن را می‌بندد تا داده تازه ثبت شود.
+        </Line>
+      ) : null}
+      {chosen ? (
+        <Line kind="muted" testId="offer-evidence">
+          {chosen.status === 'VERIFIED'
+            ? `تأیید: ${clock(chosen.verified_at_ms)} · داده: ${clock(chosen.data_as_of_ms)} · عمر: ${evidenceAge(chosen.data_as_of_ms)}`
+            : 'UNVERIFIED: منبع، نشانی و زمان دادهٔ تأییدشده لازم است؛ Preflight/رزرو مسدود می‌ماند.'}
+          {chosen.source_url ? ` · ${chosen.source_url}` : ''}
+        </Line>
+      ) : null}
 
       <div className="mt-1.5 grid grid-cols-2 gap-1.5 sm:grid-cols-4">
         <label className="col-span-2 flex flex-col gap-0.5 text-3xs text-text-muted">عرضه
@@ -277,24 +323,33 @@ export function SarkhatiOfferingsCard() {
           {((plan.decisions ?? []) as Dict[]).map((d) => (
             <span key={str(d.offering_id)}>
               {str(d.offering_id)}: {RESULT_LABEL[str(d.state)] ?? str(d.state)}
-              {str(d.reason) ? ` (${str(d.reason)})` : ''}{' '}
+              {d.amount != null ? ` (${money(d.amount)} ریال)` : ''}
+              {str(d.reason) ? ` — ${str(d.reason)}` : ''}{' '}
             </span>
           ))}
-          {' · '}رزرو کل: {toFaDigits(String(plan.reserved_total ?? 0))}
+          {' · '}رزرو کل: {money(plan.reserved_total)}
         </Line>
       ) : null}
       {reservations.length ? (
-        <Table testId="offer-reservations" minWidth={520} head={['عرضه', 'intent', 'مبلغ', 'وضعیت']}>
-          {reservations.map((r) => (
-            <Tr key={`${str(r.offering_id)}-${str(r.intent_id)}`}>
-              <Td strong>{str(r.offering_id)}</Td>
-              <Td num>{str(r.intent_id)}</Td>
-              <Td num>{toFaDigits(String(r.amount ?? 0))}</Td>
-              <Td><Chip tone={str(r.state) === 'UNKNOWN_HOLD' ? 'bad' : 'idle'}>
-                {RESULT_LABEL[str(r.state)] ?? str(r.state)}</Chip></Td>
-            </Tr>
-          ))}
-        </Table>
+        <>
+          {reservations.some((r) => str(r.state) === 'UNKNOWN_HOLD') ? (
+            <Line kind="muted" testId="offer-unknown-hold">
+              رزروِ UNKNOWN_HOLD دارد: بودجه نگه داشته می‌شود و تا تعیین تکلیف با شاهد،
+              رزرو/ارسال تازه برای این عرضه مجاز نیست.
+            </Line>
+          ) : null}
+          <Table testId="offer-reservations" minWidth={520} head={['عرضه', 'intent', 'مبلغ', 'وضعیت']}>
+            {reservations.map((r) => (
+              <Tr key={`${str(r.offering_id)}-${str(r.intent_id)}`}>
+                <Td strong>{str(r.offering_id)}</Td>
+                <Td num>{str(r.intent_id)}</Td>
+                <Td num>{money(r.amount)}</Td>
+                <Td><Chip tone={str(r.state) === 'UNKNOWN_HOLD' ? 'bad' : 'idle'}>
+                  {RESULT_LABEL[str(r.state)] ?? str(r.state)}</Chip></Td>
+              </Tr>
+            ))}
+          </Table>
+        </>
       ) : null}
 
       <details className="mt-1.5" data-testid="offer-add">
@@ -305,10 +360,12 @@ export function SarkhatiOfferingsCard() {
           {([['symbol', 'نماد'], ['isin', 'ISIN'], ['start', 'شروع'], ['end', 'پایان'],
              ['price_min', 'کف قیمت'], ['price_max', 'سقف قیمت'], ['min_qty', 'حداقل تعداد'],
              ['max_qty', 'حداکثر تعداد'], ['quota', 'سهمیهٔ هر کد'], ['fee_rate', 'نرخ کارمزد'],
-             ['source', 'منبع'], ['source_url', 'نشانی منبع']] as const).map(([key, label]) => (
+             ['source', 'منبع'], ['source_url', 'نشانی منبع'],
+             ['data_as_of', 'زمان دادهٔ منبع']] as const).map(([key, label]) => (
             <label key={key} className="flex flex-col gap-0.5 text-3xs text-text-muted">{label}
               <input className={INPUT}
-                type={key === 'start' || key === 'end' ? 'datetime-local' : 'text'}
+                type={key === 'start' || key === 'end' || key === 'data_as_of'
+                  ? 'datetime-local' : 'text'}
                 value={form[key]} data-testid={`offer-add-${key}`}
                 onChange={(e) => setForm({ ...form, [key]: e.target.value })} />
             </label>
@@ -331,8 +388,9 @@ export function SarkhatiOfferingsCard() {
           </div>
         </div>
         <Note label="قاعدهٔ تأیید" testId="offer-add-rule">
-          فقط با منبع و تأییدِ صریح، وضعیت VERIFIED می‌شود؛ بدون آن UNVERIFIED می‌ماند و
-          Preflight/رزرو آن مسدود است. قیمت/تعداد/سهمیه را از اطلاعیه یا منبع رسمی وارد کنید.
+          فقط با منبع، نشانی http(s) و زمانِ دادهٔ منبع، وضعیت VERIFIED می‌شود؛ بدون آن
+          UNVERIFIED می‌ماند و Preflight/رزرو مسدود است. زمان کلیک، زمان دادهٔ منبع نیست.
+          قیمت/تعداد/سهمیه را از اطلاعیه یا منبع رسمی وارد کنید.
         </Note>
       </details>
 
