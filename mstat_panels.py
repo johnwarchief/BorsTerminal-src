@@ -592,11 +592,13 @@ def _index_history(conn, days: int = 30) -> list:
 
 
 def index_cards(conn, days: int = 30) -> dict:
-    """سه کارتِ صفحۀ ۶: کل بورس، کل هم‌وزن، قیمتِ وزنیِ ارزشی — با sparkline.
+    """سه کارتِ صفحۀ ۶: کل بورس، کل هم‌وزن، میانگینِ ارزشیِ قیمتِ معاملات.
 
-    «قیمتِ وزنیِ ارزشی» از خودِ همان ردیفِ رسمی می‌آید: ارزشِ کل ÷ حجمِ کل
-    (q_tot_cap/q_tot_tran) — نه میانگینِ سادهٔ درصدها. نبودِ هر خانه ⇒ آن
-    کارت `available:false` می‌گیرد و sparkline نمی‌کشد.
+    کارتِ سوم ارزشِ کل ÷ حجمِ کل است (q_tot_cap/q_tot_tran)؛ این **میانگینِ
+    ارزشیِ قیمتِ معاملات** است، نه شاخصِ رسمیِ «قیمتِ وزنیِ ارزشی» رهآورد.
+    تعریفِ آن شاخص در بانک/منبعِ در دسترس اثبات نشد؛ پس عنوان/formula همان
+    محاسبۀ واقعی را می‌گویند و تطبیق با عددِ رهآورد ادعا نمی‌شود. نبودِ هر
+    خانه ⇒ آن کارت `available:false` می‌گیرد و sparkline نمی‌کشد.
     """
     hist = _index_history(conn, days)          # صعودی: قدیمی‌ترین ← تازه‌ترین
     mi = E.market_index(conn)
@@ -616,8 +618,8 @@ def index_cards(conn, days: int = 30) -> dict:
                 "unit": unit, "tone": _pct_class(pct), "spark": series,
                 "formula": note, "asof_d_even": hist[-1]["d_even"] if hist else None}
 
-    # قیمتِ وزنیِ ارزشی: ارزشِ کل ÷ حجمِ کل درِ همان ردیفِ رسمی — میانگینِ
-    # سادهٔ درصدها نیست و جایگزینِ شاخصِ کل هم نمی‌نشیند.
+    # ارزشِ کل ÷ حجمِ کل درِ همان ردیفِ رسمی — میانگینِ ارزشیِ قیمتِ معاملات؛
+    # نه شاخصِ رسمیِ «قیمت وزنی ارزشی» و نه جایگزینِ شاخصِ کل.
     wavg = [None if not r.get("q_tot_tran") else
             r["q_tot_cap"] / r["q_tot_tran"] for r in hist]
     prev = wavg[-2] if len(wavg) > 1 else None
@@ -630,10 +632,10 @@ def index_cards(conn, days: int = 30) -> dict:
                       mi.get("ew_pct") if mi else None,
                       "واحدِ شاخص", spark("ew_last"),
                       "indexEqualWeightedLastValueِ رسمی"))
-    cards.append(card("value_weighted_price", "قیمتِ وزنیِ ارزشی", last,
+    cards.append(card("value_weighted_price", "میانگین ارزشی قیمت معاملات", last,
                       None if (last is None or prev is None) else last - prev,
                       None if (last is None or not prev) else 100.0 * (last - prev) / prev,
-                      "ریال", wavg, "q_tot_cap ÷ q_tot_tran"))
+                      "ریال", wavg, "q_tot_cap ÷ q_tot_tran — میانگین ارزشی معاملات، نه شاخص رسمی"))
     total_rials, total_src = E.market_total_rials(conn)
     return {
         "status": "ok", "computed_at": _stamp(), "cards": cards, "source": src,

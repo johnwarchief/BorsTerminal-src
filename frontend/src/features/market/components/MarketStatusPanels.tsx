@@ -201,7 +201,7 @@ export function ClientSplitPanel({
             const buy = s?.buy_b_toman;
             const sell = s?.sell_b_toman;
             const have = typeof buy === 'number' && typeof sell === 'number' && buy + sell > 0;
-            const buyPct = have ? (buy! / (buy! + sell!)) * 100 : 0;
+            const mixPct = have ? (buy! / (buy! + sell!)) * 100 : 0;
             return (
               <div key={key} data-testid={`clientsplit-${key}`} className="flex flex-col gap-0.5">
                 <div className="flex items-baseline justify-between gap-2 text-2xs">
@@ -209,24 +209,39 @@ export function ClientSplitPanel({
                   {have ? (
                     <span className="num-text text-text-secondary">
                       خرید <span className="num">{fmtInt(buy)}</span> · فروش{' '}
-                      <span className="num">{fmtInt(sell)}</span> میلیارد تومان · قدرت{' '}
-                      <span className="num">{fmtPct(s?.buy_pct ?? null)}</span>
+                      <span className="num">{fmtInt(sell)}</span> م.ت · سهم خرید{' '}
+                      <span className="num">{fmtPct(s?.buy_pct ?? null)}</span> · سهم فروش{' '}
+                      <span className="num">{fmtPct(s?.sell_pct ?? null)}</span>
                     </span>
                   ) : (
                     <span className="text-text-muted">بی‌داده</span>
                   )}
                 </div>
-                <div dir="ltr" className="flex h-1.5 w-full overflow-hidden rounded-full bg-bg-secondary">
-                  <span className="block bg-accent-green" style={{ width: `${have ? buyPct : 0}%` }} />
+                <div
+                  dir="ltr"
+                  className="flex h-1.5 w-full overflow-hidden rounded-full bg-bg-secondary"
+                  title="ترکیب خرید و فروش همین گروه (نه سهم حقیقی/حقوقی)"
+                >
+                  <span className="block bg-accent-green" style={{ width: `${have ? mixPct : 0}%` }} />
                   <span className="block flex-1 bg-accent-red/80" />
                 </div>
               </div>
             );
           })}
           <p className="num-text text-3xs text-text-secondary">
-            خالصِ خریدِ حقیقی: <span className="num">{fmtInt(data?.pc_buy_m_toman)}</span> · فروش:{' '}
-            <span className="num">{fmtInt(data?.pc_sell_m_toman)}</span> م.ت · جریانِ کل:{' '}
-            <span className="num">{fmtInt(data?.money_flow_b_toman)}</span> میلیارد تومان
+            سرانهٔ خرید حقیقی: <span className="num">{fmtInt(data?.pc_buy_m_toman)}</span> م.ت · سرانهٔ فروش:{' '}
+            <span className="num">{fmtInt(data?.pc_sell_m_toman)}</span> م.ت · قدرت خریدار:{' '}
+            <span className="num">{data?.power == null ? '—' : toFaDigits(data.power.toFixed(2)) + '×'}</span> ·
+            جریان خالص حقیقی: <span className="num">{fmtInt(data?.money_flow_b_toman)}</span> میلیارد تومان
+          </p>
+          <p data-testid="clientsplit-value-source" className="num-text text-3xs text-text-muted">
+            {data?.value_source === 'native'
+              ? 'ارزش: بومی منبع (ClientTypeHistory)'
+              : data?.value_source === 'mixed'
+                ? 'ارزش: ترکیبی از بومی و محاسبه‌شده'
+                : data?.value_source === 'reconstructed'
+                  ? 'ارزش: محاسبه‌شده از حجم × VWAP — نه مقدار بومی منبع'
+                  : 'ارزش: منبع نامعلوم'}
           </p>
         </div>
       )}

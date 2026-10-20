@@ -33,6 +33,12 @@ SUITES = [
     # پنلی رویِ ردیف‌هایش نمی‌نویسد، نوشتنِ تازه کش را باطل می‌کند، و دوِ فایلِ
     # بانکِ مختلف هرگز یکی نشمرده می‌شوند.
     ('dev/mstat_snapshot_cache_v1.py', 'shared mstat snapshot cache: read-only rows, real invalidation, per-file isolation'),
+    # مأموریتِ تطبیقِ 2026-10-20: صفرِ معتبر و LASTِ منبع جدا از مقدارِ کهنه.
+    ('dev/market_last_trade_semantics_v1.py',
+     'market LAST: source LAST wins, zero is not missing, no stale/derived price'),
+    # نبودِ عمقِ صنعت باید null بماند، نه صفرِ قابل‌نمایش.
+    ('dev/mstat_industry_depth_semantics_v1.py',
+     'industry queue depth: missing stays null, available depth is summed'),
     # رأیِ مالک (۱۴۰۵-۰۷-۲۲): «نمادهای زیرِ نظر» هم پرچم‌هایِ تابلو را می‌بیند —
     # انتقال از فید، بی‌محاسبۀِ دوم، و «بی‌منبع» هرگز «پرچمی ندارد» نمی‌شود.
     ('dev/test_mainwatch_flags_v1.py', 'mainwatch rows carry the tape flags, never a fabricated one'),

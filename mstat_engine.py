@@ -2243,7 +2243,19 @@ def _select(conn_rows, cat):
 def client_split(conn, tab: str = "all") -> dict:
     """تعداد/ارزش/درصدِ خرید و فروشِ حقیقی در برابر حقوقی، به تفکیک تب."""
     rows, meta = enrich(conn)
-    a = _agg(_select(rows, _TAB_CAT.get(tab, "all")))
+    sel = _select(rows, _TAB_CAT.get(tab, "all"))
+    a = _agg(sel)
+    # منبعِ ارزشِ تجمیعی را از ردیف‌ها بگیر؛ «محاسبه‌شده» با «بومی» یکی نیست.
+    srcs = {r["_m"].get("value_source") for r in sel
+            if r["_m"].get("has_ct") and r["_m"].get("value_source")}
+    if not srcs:
+        value_source = None
+    elif srcs == {"native"}:
+        value_source = "native"
+    elif "native" in srcs or "mixed" in srcs:
+        value_source = "mixed"
+    else:
+        value_source = "reconstructed"
     # همان کسرِ تک‌تعریف (`client_split.py`) — بی‌درصدِ دومِ خودیِ این لایه. دو
     # سمت مستقل‌اند و سهمِ حقوقی مکملِ همان سمت است؛ مخرجِ صفر ⇒ None، نه «۰٪».
     # (جمعِ ارزش از `money()` می‌آید: اگر مبدأ نبود این لایه با حجم×VWAP
@@ -2264,7 +2276,8 @@ def client_split(conn, tab: str = "all") -> dict:
             "pc_buy_m_toman": None if a["pc_buy_mt"] is None else round(a["pc_buy_mt"], 1),
             "pc_sell_m_toman": None if a["pc_sell_mt"] is None else round(a["pc_sell_mt"], 1),
             "power": None if a["power"] is None else round(a["power"], 2),
-            "money_flow_b_toman": round(a["flow_bt"], 1)}
+            "money_flow_b_toman": round(a["flow_bt"], 1),
+            "value_source": value_source}
 
 
 # ==================================================== گام ۵.۲: تابلوی نمادها
@@ -2381,7 +2394,7 @@ def industries(conn) -> dict:
             continue
         b = by.setdefault(nm, {"industry": nm, "n": 0, "pos": 0, "neg": 0,
                                "val": 0.0, "flow": 0.0, "bq": 0.0, "sq": 0.0,
-                               "pct_sum": 0.0, "n_pct": 0})
+                               "pct_sum": 0.0, "n_pct": 0, "n_depth": 0})
         b["n"] += 1
         p = r.get("pct")
         if p is not None and p > 0:
@@ -2395,8 +2408,12 @@ def industries(conn) -> dict:
             b["n_pct"] += 1
         b["val"] += r["_m"]["val"]
         b["flow"] += r["_m"]["flow"]
-        b["bq"] += r["_m"]["bq_val"] or 0.0
-        b["sq"] += r["_m"]["sq_val"] or 0.0
+        # عمقِ یک سمت فقط وقتی جمع می‌شود که منبع واقعاً عمق داده باشد.
+        # `or 0` نبودِ عمق را به صفرِ قابل‌نمایش تبدیل می‌کرد.
+        if r["_m"]["bq_val"] is not None:
+            b["n_depth"] += 1
+            b["bq"] += r["_m"]["bq_val"]
+            b["sq"] += r["_m"]["sq_val"] or 0.0
     out = []
     for b in by.values():
         traded = b["val"] > 0
@@ -2414,8 +2431,12 @@ def industries(conn) -> dict:
                     "value_b_toman": val_bt,
                     "flow_b_toman": flow_bt,
                     "flow_pct_of_value": round(100.0 * b["flow"] / b["val"], 2) if traded else None,
-                    "buy_queue_b_toman": round(b["bq"] / B_TUMAN_FROM_RIAL, 1),
-                    "sell_queue_b_toman": round(b["sq"] / B_TUMAN_FROM_RIAL, 1)})
+                    # نبودِ عمق در همهٔ نمادهای صنعت ⇒ None، نه صفرِ قابل‌نمایش.
+                    "buy_queue_b_toman": (round(b["bq"] / B_TUMAN_FROM_RIAL, 1)
+                                          if b["n_depth"] else None),
+                    "sell_queue_b_toman": (round(b["sq"] / B_TUMAN_FROM_RIAL, 1)
+                                           if b["n_depth"] else None),
+                    "depth_symbols": b["n_depth"]})
     # ---- رتبه‌بندی FTS: ارزش معاملات (وزن اصلی) + ورود پول خرد (تاییدیه) ----
     # rank_val: ۱ = بیشترین ارزش؛ rank_flow: ۱ = بیشترین ورود پول (فقط وردهای
     # مثبت رتبه می‌گیرند — صنعتِ با خروج پول هرگز لیدر نمی‌شود).

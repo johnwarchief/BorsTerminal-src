@@ -90,6 +90,10 @@ for path, keys in [
     if data:
         for k in keys:
             ck(k in data, "%s کلیدِ `%s` را دارد" % (path, k))
+        if path.startswith("/api/mstat/clientsplit"):
+            ck(data.get("value_source") in (None, "native", "mixed", "reconstructed"),
+               "clientsplit منبعِ ارزش را بومی/ترکیبی/محاسبه‌شده اعلام می‌کند",
+               str(data.get("value_source")))
         src = data.get("source") or ""
         ck(src.startswith("local:"), "%s منبعش محلی است" % path, src)
         a = data.get("asof") or {}

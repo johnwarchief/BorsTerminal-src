@@ -389,7 +389,7 @@ describe('کارت‌های شاخص (صفحۀ ۶/۷)', () => {
     cards: [
       { key: 'tedpix', label: 'شاخص کل', available: true, value: 2145000, change: -34771, pct: -1.6, unit: 'واحد', tone: 'neg', spark: [2150000, 2145000], formula: 'وزنیِ ارزشی', asof_d_even: 20261012 },
       { key: 'ewindex', label: 'شاخص هم‌وزن', available: true, value: 19000, change: 12, pct: 0.6, unit: 'واحد', tone: 'pos', spark: [], formula: 'هم‌وزن', asof_d_even: 20261012 },
-      { key: 'vwprice', label: 'قیمتِ وزنیِ ارزشی', available: false, value: null, change: null, pct: null, unit: 'ریال', tone: 'nodata', spark: null, formula: 'q_tot_cap ÷ q_tot_tran', asof_d_even: null },
+      { key: 'vwprice', label: 'میانگین ارزشی قیمت معاملات', available: false, value: null, change: null, pct: null, unit: 'ریال', tone: 'nodata', spark: null, formula: 'q_tot_cap ÷ q_tot_tran — میانگین ارزشی معاملات، نه شاخص رسمی', asof_d_even: null },
     ],
     source: 'local:market.db', history_points: 20, history_days: [20261001, 20261012], trades: 1200,
     market_total_b_toman: 2485700, market_total_source: 'tsetmc official', note: 'x', blockers: [],
