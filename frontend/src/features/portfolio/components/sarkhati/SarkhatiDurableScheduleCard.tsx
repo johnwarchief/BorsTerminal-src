@@ -4,7 +4,7 @@
 import { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { toFaDigits } from '@shared/lib/fmt';
-import { scheduleApi, useDurableSchedules, type DurableSchedule }
+import { orderApi, scheduleApi, useDurableSchedules, type DurableSchedule }
   from '../../lib/orderClient';
 import { Chip, GhostBtn, Line, Note, Section, Table, Td, Tr } from './parts';
 
@@ -26,10 +26,25 @@ const STATE: Record<string, { label: string; tone: 'ok' | 'warn' | 'bad' | 'idle
 const clock = (ms?: number | null) =>
   ms ? new Date(ms).toLocaleString('fa-IR', { hour12: false }) : '—';
 
+const RESULT: Record<string, { label: string; tone: 'ok' | 'warn' | 'bad' | 'idle' }> = {
+  NOT_SENT: { label: 'ارسال نشده', tone: 'idle' },
+  REJECTED: { label: 'رد شد', tone: 'bad' },
+  ACCEPTED: { label: 'پذیرفته', tone: 'ok' },
+  UNKNOWN: { label: 'نامعلوم', tone: 'bad' },
+  FILLED: { label: 'پر شد', tone: 'ok' },
+  CANCELLED: { label: 'لغو', tone: 'idle' },
+};
 const toneOf = (s: string) => STATE[s]?.tone ?? 'idle';
 const labelOf = (s: string) => STATE[s]?.label ?? s;
 const INPUT = 'min-w-0 rounded-lg border border-border-c bg-bg-secondary px-2 py-1 '
   + 'text-xs text-text-primary outline-none focus:border-border-accent';
+const STRATEGY_LABEL: Record<string, string> = {
+  direct_api: 'Direct API', autoclicker: 'AutoClicker', playwright_dom: 'Playwright/DOM',
+  javascript: 'JavaScript', keyboard: 'Keyboard', selenium: 'Selenium',
+};
+type PfRow = Record<string, unknown>;
+type PfView = { strategies?: PfRow[]; ready?: string[]; recommended_dry_run?: string | null;
+  live_send?: boolean };
 
 function canArm(s: string) { return s === 'PREPARED'; }
 function canCancel(s: string) { return s === 'PREPARED' || s === 'ARMED'; }
@@ -48,6 +63,8 @@ export function SarkhatiDurableScheduleCard() {
   const [busy, setBusy] = useState('');
   const [answer, setAnswer] = useState('');
   const [tone, setTone] = useState<'ok' | 'warn' | 'bad' | 'idle'>('idle');
+  const [pf, setPf] = useState<PfView | null>(null);
+  const [pfBusy, setPfBusy] = useState(false);
 
   const rows = q.data?.schedules ?? [];
   const readiness = q.data?.readiness;
@@ -133,6 +150,21 @@ export function SarkhatiDurableScheduleCard() {
     } catch (e) { fail(e); } finally { setBusy(''); }
   };
 
+  const runPreflight = async () => {
+    setPfBusy(true); setAnswer('');
+    try {
+      const res = await orderApi.strategyPreflightAll();
+      const pre = (res.preflight ?? {}) as PfView;
+      setPf(pre);
+      if (res.status === 'success') {
+        setTone('ok');
+        setAnswer(`پیش‌فرود موازی: ${toFaDigits(String(pre.ready?.length ?? 0))} روشِ آماده (فقط‌خواندنی؛ هیچ ارسالی نشد)`);
+      } else {
+        setTone('bad'); setAnswer(String(res.detail ?? res.code ?? 'پیش‌فرود ناموفق'));
+      }
+    } catch (e) { fail(e); } finally { setPfBusy(false); }
+  };
+
   return (
     <Section title="زمان‌بندیِ ماندگار (dry-run)"
       sub="ذخیرهٔ اتمیک؛ پس از restart هیچ سفارشی خودکار اجرا نمی‌شود"
@@ -186,6 +218,11 @@ export function SarkhatiDurableScheduleCard() {
           <GhostBtn testId="sched-create" disabled={busy !== ''} onClick={() => void create()}>
             ذخیره
           </GhostBtn>
+          <GhostBtn testId="sched-parallel-preflight" disabled={busy !== '' || pfBusy}
+            title="Probeِ موازیِ همهٔ روش‌ها؛ فقط‌خواندنی، بدون prepare/trigger"
+            onClick={() => void runPreflight()}>
+            پیش‌فرود موازی
+          </GhostBtn>
         </div>
       </div>
       {fullName ? <Line kind="muted">هویت محلی: {fullName}</Line> : null}
@@ -197,6 +234,34 @@ export function SarkhatiDurableScheduleCard() {
         </Line>
       ) : null}
 
+      {pf?.strategies?.length ? (
+        <details open className="mt-1.5" data-testid="sched-preflight-details">
+          <summary className="cursor-pointer text-2xs font-bold text-accent-blue">
+            نتیجهٔ پیش‌فرودِ موازی — {toFaDigits(String(pf.ready?.length ?? 0))} آماده
+            {pf.recommended_dry_run ? ` · پیشنهادِ dry-run: ${STRATEGY_LABEL[pf.recommended_dry_run] ?? pf.recommended_dry_run}` : ''}
+          </summary>
+          <Table testId="sched-preflight-rows" minWidth={420} head={['روش', 'وضعیت', 'زمان (ms)']}>
+            {(pf.strategies ?? []).map((x) => {
+              const sid = String(x.strategy ?? '');
+              const ok = x.status === 'success' && x.available !== false;
+              return (
+                <Tr key={sid} testId={`sched-pf-${sid}`}>
+                  <Td strong>{STRATEGY_LABEL[sid] ?? sid}</Td>
+                  <Td>
+                    <Chip tone={ok ? 'ok' : x.status === 'timeout' ? 'warn' : 'bad'}
+                      title={String(x.detail ?? x.code ?? '')}>
+                      {ok ? 'آماده' : String(x.status ?? '—')}
+                    </Chip>
+                  </Td>
+                  <Td num>{x.elapsed_ms != null ? toFaDigits(String(x.elapsed_ms)) : '—'}</Td>
+                </Tr>
+              );
+            })}
+          </Table>
+          <Line kind="muted">فقط Probe؛ هیچ سفارشی آماده یا ارسال نشد.</Line>
+        </details>
+      ) : null}
+
       {q.isError ? (
         <Line kind="warn" testId="sched-load-error">
           خواندنِ زمان‌بندی‌ها ناموفق بود؛ هیچ عددی ساخته نمی‌شود.
@@ -205,7 +270,7 @@ export function SarkhatiDurableScheduleCard() {
         <Line testId="sched-empty">هیچ زمان‌بندیِ ماندگاری ثبت نشده است.</Line>
       ) : (
         <Table testId="sched-rows" minWidth={720}
-          head={['شناسه', 'نماد', 'سمت', 'قیمت×تعداد', 'هدف', 'وضعیت', 'کنش']}>
+          head={['شناسه', 'نماد', 'سمت', 'قیمت×تعداد', 'هدف', 'وضعیت', 'نتیجه', 'کنش']}>
           {rows.map((r) => (
             <Tr key={r.id} testId={`sched-row-${r.id}`}>
               <Td num strong>{r.execution_id}</Td>
@@ -217,6 +282,13 @@ export function SarkhatiDurableScheduleCard() {
                 <Chip tone={toneOf(r.state)} title={r.last_error ?? undefined}>
                   {labelOf(r.state)}
                 </Chip>
+              </Td>
+              <Td>
+                {r.result_state ? (
+                  <Chip tone={RESULT[r.result_state]?.tone ?? 'idle'}>
+                    {RESULT[r.result_state]?.label ?? r.result_state}
+                  </Chip>
+                ) : '—'}
               </Td>
               <Td>
                 <div className="flex flex-wrap items-center gap-1">

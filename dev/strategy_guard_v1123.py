@@ -219,6 +219,13 @@ def main() -> int:
                 ck(False, "%s: dry-run" % sid, "%s: %s" % (type(e).__name__, e))
         ck(ad.submit_calls == 0, "الف) submit_order هرگز صدا زده نشد", ad.submit_calls)
         ck(not trip.hits, "پ) هیچ سوکتِ واقعی باز نشد", trip.hits)
+        current["draft"] = draft("G-PARALLEL-PF")
+        pf = eng.parallel_probe([SC.DIRECT_API, SC.PLAYWRIGHT_DOM, SC.AUTOCLICKER])
+        ck(len(pf["strategies"]) == 3
+           and all(x.get("elapsed_ms") is not None for x in pf["strategies"]),
+           "ت) پیش‌فرودِ موازی هر سه روش را با زمان برمی‌گرداند", pf)
+        ck(pf.get("live_send") is False and ad.submit_calls == 0,
+           "ث) پیش‌فرودِ موازی هیچ ارسال/ترابریِ سفارشی نساخت", ad.submit_calls)
 
     print("\n── ۶) تطبیق و توقفِ سخت ──")
     eng = make_engine()
@@ -520,6 +527,23 @@ def main() -> int:
     ck(mismatch, "ت) هدرِ ناهماهنگ ⇒ SYMBOL_MISMATCH و توقف")
     store.save(SC.PLAYWRIGHT_DOM, options={"open_form_selector": "",
                                            "form_symbol_selector": ""})
+
+    print("\n── ۱۴) بازخوانیِ پیش از ارسال در برابرِ تغییرِ async ──")
+    for label, key, value, want in (
+            ("قیمت", "price", "9999", "PRICE_MISMATCH"),
+            ("تعداد", "quantity", "7", "QUANTITY_MISMATCH"),
+            ("نماد", "symbol", "OTHER", "SYMBOL_MISMATCH")):
+        current["draft"] = draft("G-ASYNC-%s" % key.upper())
+        current["form"] = {"symbol": "TEST", "price": "1000", "quantity": "10"}
+        o_async = eng.prepare(current["draft"], SC.PLAYWRIGHT_DOM)
+        drv_async = current.get("last_driver")
+        drv_async.form[key] = value
+        r_async = eng.trigger(o_async.prepared_id, live=False)
+        ck(r_async.status == "blocked" and r_async.error_code == want
+           and drv_async.click_count == 0 and drv_async.last_request is None,
+           "تغییرِ asyncِ %s پیش از ارسال گرفته می‌شود" % label,
+           {"status": r_async.status, "code": r_async.error_code,
+            "clicks": drv_async.click_count})
 
     current["draft"] = draft("G-STOP")
     current["form"] = None

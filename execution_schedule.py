@@ -66,6 +66,40 @@ def parse_local(text: str) -> int:
     return int(got.timestamp() * 1000)
 
 
+class ResultState(str, Enum):
+    """نتیجهٔ canonical از دیدِ سفارش؛ جدا از وضعیتِ اجرای زمان‌بند."""
+    NOT_SENT = "NOT_SENT"
+    REJECTED = "REJECTED"
+    ACCEPTED = "ACCEPTED"
+    UNKNOWN = "UNKNOWN"
+    FILLED = "FILLED"
+    CANCELLED = "CANCELLED"
+
+
+def canonical_result(rec: "ScheduleRecord") -> str:
+    """نگاشت‌ِ صریح؛ FILLED فقط با شاهدِ صریحِ filled، نه از ACK."""
+    state = rec.state
+    if state == ScheduleState.CANCELLED.value:
+        return ResultState.CANCELLED.value
+    if state == ScheduleState.REJECTED.value:
+        return ResultState.REJECTED.value
+    if state == ScheduleState.UNKNOWN.value:
+        return ResultState.UNKNOWN.value
+    if state == ScheduleState.SUBMITTING.value:
+        return ResultState.UNKNOWN.value
+    if state == ScheduleState.ACKNOWLEDGED.value:
+        result = rec.result or {}
+        os_ = str(result.get("order_state") or "").lower()
+        try:
+            filled = float(result.get("filled_quantity") or 0.0)
+        except (TypeError, ValueError):
+            filled = 0.0
+        if os_ == "filled" or filled > 0:
+            return ResultState.FILLED.value
+        return ResultState.ACCEPTED.value
+    return ResultState.NOT_SENT.value
+
+
 class ScheduleError(Exception):
     def __init__(self, code: str, detail: str = "") -> None:
         super().__init__("%s: %s" % (code, detail) if detail else code)
@@ -144,7 +178,8 @@ class ScheduleRecord:
             "armed_at": self.armed_at, "claimed_at": self.claimed_at,
             "validation_ok": self.validation_ok,
             "last_validation": self.last_validation,
-            "result": self.result, "last_error": self.last_error,
+            "result": self.result, "result_state": canonical_result(self),
+            "last_error": self.last_error,
         }
 
 
@@ -1108,4 +1143,5 @@ __all__ = [
     "ValidationReport", "validate_darvand", "local_identity_facts",
     "LocalFactsProvider", "DryRunExecutor", "ScheduleRunner", "ExecutionOutcome",
     "default_store_path", "readiness", "parse_local", "to_local", "now_ms",
+    "ResultState", "canonical_result",
 ]

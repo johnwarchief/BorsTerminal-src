@@ -59,6 +59,12 @@
   navigation، فرم برای نماد فعال دوباره باز می‌شود و هدرش با قصد مقایسه می‌شود.
 - Mock `open_form` کلیکِ بازکردن را از کلیکِ ارسال جدا می‌کند؛ تست‌ها:
   یک بار بازشدن، تطبیق هدر، و `SYMBOL_MISMATCH` در هدر ناهماهنگ.
+- پیش از trigger، نماد/قیمت/تعداد دوباره خوانده می‌شوند؛ تغییر async →
+  `SYMBOL/PRICE/QUANTITY_MISMATCH` و توقف، بدون کلیک.
+- `parallel_probe` + `/api/execution/strategies/preflight` Probeِ موازیِ
+  فقط‌خواندنی؛ هیچ prepare/trigger/dispatch. کارت UI دکمه و جدول نتیجه دارد.
+- وضعیت canonical: `NOT_SENT/REJECTED/ACCEPTED/UNKNOWN/FILLED/CANCELLED`؛
+  ACK بدون شاهد fill = ACCEPTED، نه FILLED.
 
 ### API و رابط
 - `/api/execution/schedules` (GET/POST)، `/{id}/arm`، `/{id}/cancel`، `/{id}/reset`،
@@ -71,9 +77,9 @@
 
 | مورد | نتیجه |
 | --- | --- |
-| `dev/execution_schedule_v1130.py` | **45/45** |
-| `dev/strategy_guard_v1123.py` | **50/50** (شاملِ ۳ تستِ بازکردن فرم/هدر) |
-| `dev/run_all_tests.py` | **138 شمارش‌دار + 27 silent + 2 skip = 167**؛ 4967/4967 check؛ `ALL SUITES PASSED`؛ exit 0 |
+| `dev/execution_schedule_v1130.py` | **50/50** |
+| `dev/strategy_guard_v1123.py` | **55/55** (فرم/هدر + ۳ تستِ async + preflight موازی) |
+| `dev/run_all_tests.py` | **138 شمارش‌دار + 27 silent + 2 skip = 167**؛ 4972/4972 check؛ `ALL SUITES PASSED`؛ exit 0 |
 | Vitest | 197/199 فایل، 2065/2070 تست، 5 skip؛ exit 0 |
 | `npx tsc -b` | صفر خطا |
 | Frozen build | exit 0؛ **230.3 MB**؛ `onedir_contract --dist` **PASS** |

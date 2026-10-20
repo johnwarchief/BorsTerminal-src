@@ -74,6 +74,16 @@ class FakeExec:
         return S.ExecutionOutcome(self.state, "fake", {"fake": True})
 
 
+class FilledExec:
+    def __init__(self):
+        self.calls = 0
+
+    def __call__(self, rec, report):
+        self.calls += 1
+        return S.ExecutionOutcome("ACKNOWLEDGED", "filled with evidence",
+                                  {"order_state": "filled", "filled_quantity": rec.quantity})
+
+
 class BadProvider:
     def __init__(self, facts):
         self.facts = facts
@@ -169,6 +179,8 @@ def main() -> int:
     ck(st.begin_submit(r.id, "good", r.target_ms + 1), "submit فقط با claimِ همان اجرا")
     fin = st.finish(r.id, "good", "DRY_RUN", {"dry_run": True}, at_ms=r.target_ms + 2)
     ck(fin.state == "DRY_RUN", "نتیجهٔ dry-run ثبت شد")
+    ck(fin.public().get("result_state") == "NOT_SENT",
+       "وضعیتِ canonical برای dry-run = NOT_SENT", fin.public().get("result_state"))
     try:
         st.finish(r.id, "good", "DRY_RUN", {}, at_ms=S.now_ms())
         ck(False, "finish دوم باید رد شود")
@@ -232,6 +244,8 @@ def main() -> int:
     st, _ = new_store(); r = make(st); arm_dry(st, r)
     c = st.cancel(r.id)
     ck(c.state == "CANCELLED", "لغوِ ARMED → CANCELLED")
+    ck(c.public().get("result_state") == "CANCELLED",
+       "وضعیتِ canonical برای لغو = CANCELLED", c.public().get("result_state"))
     ck(not st.claim(r.id, "late", r.target_ms + 1000), "بعد از لغو claim ممکن نیست")
     st, _ = new_store(); r = make(st); arm_dry(st, r)
     st.claim(r.id, "x", r.target_ms)
@@ -264,6 +278,8 @@ def main() -> int:
     runner.tick()
     ck(st.get(r.id).state == "UNKNOWN" and len(ex.calls) == 1,
        "live با همهٔ flagها → یک ارسال و UNKNOWN", st.get(r.id).state)
+    ck(st.get(r.id).public().get("result_state") == "UNKNOWN",
+       "وضعیتِ canonical برای UNKNOWN = UNKNOWN")
     try:
         make(st, mode="live", target_ms=r.target_ms)
         ck(False, "پس از UNKNOWN نباید سفارشِ هم‌کلید ساخت")
@@ -317,7 +333,14 @@ def main() -> int:
     runner.tick()
     ck(st.get(r.id).state == "ACKNOWLEDGED" and len(ex.calls) == 1,
        "live با همهٔ flagها → ACKNOWLEDGED (executor بدل، هیچ شبکه)", st.get(r.id).state)
+    ck(st.get(r.id).public().get("result_state") == "ACCEPTED",
+       "ACK بدون شاهدِ fill = ACCEPTED، نه FILLED", st.get(r.id).public().get("result_state"))
 
+    rec_probe = st.get(r.id)
+    rec_probe.state = "ACKNOWLEDGED"
+    rec_probe.result = {"order_state": "filled", "filled_quantity": 1}
+    ck(S.canonical_result(rec_probe) == "FILLED",
+       "FILLED فقط با شاهدِ صریحِ fill")
     print("\n── ۸) readiness و timezone ──")
     rd = S.readiness()
     ck(rd["live_ready"] is False and rd["dry_run_scheduling"] is True,

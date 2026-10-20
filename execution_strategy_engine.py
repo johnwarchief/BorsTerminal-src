@@ -26,6 +26,7 @@ import os
 import re
 import threading
 import time
+from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeout, as_completed
 from collections import Counter
 from dataclasses import dataclass, field
 from typing import Any, Callable, Mapping, Optional
@@ -538,6 +539,17 @@ class BrowserStrategyBase:
                 raise StrategyError("CLOCK_MISMATCH",
                                     "اختلافِ ساعتِ ذخیره‌شده %.0fms از سقف بیشتر است"
                                     % delta, {"delta_ms": delta})
+        if self.spec.id != SC.JAVASCRIPT:
+            # مقادیر async فرم می‌توانند بین prepare و trigger عوض شوند؛ پیش از
+            # هر کلیک/ارسال یک بازخوانیِ تازه، همان قصد را دوباره می‌سنجد.
+            try:
+                self._verify_form(driver, sel, order.draft, ctx, {})
+            except Exception:
+                try:
+                    driver.close()
+                except Exception:
+                    pass
+                raise
         try:
             driver.intercept(sel["intercept_pattern"], abort=ctx.dry_run)
         except Exception as e:                       # noqa: BLE001
@@ -887,6 +899,69 @@ class StrategyEngine:
             result.setdefault("read_only", True)
             result.setdefault("elapsed_ms", round(now_ms() - t0, 1))
         return result
+
+    def parallel_probe(self, strategy_ids=None, *, max_workers: int = 4,
+                       timeout_s: float = 25.0) -> dict[str, Any]:
+        """پیش‌فرودِ موازیِ فقط‌خواندنی روی چند Strategy.
+
+        این متد هیچ prepare/trigger/dispatch صدا نمی‌زند؛ فقط Probe. انتخابِ
+        «dry-run» بر اساسِ موفقیت و زمانِ Probe است، نه مجوزِ ارسالِ زنده.
+        """
+        ids = [s for s in (strategy_ids or list(SC.ALL_STRATEGIES))
+               if s in self.strategies]
+        if not ids:
+            return {"strategies": [], "ready": [], "ranked_dry_run": [],
+                    "recommended_dry_run": None, "live_send": False}
+
+        def one(sid: str) -> dict[str, Any]:
+            t0 = now_ms()
+            try:
+                got = self.probe(sid)
+                return {"strategy": sid, "status": "success",
+                        "elapsed_ms": round(now_ms() - t0, 1),
+                        "available": bool(got.get("available", True)),
+                        "probe": got}
+            except StrategyError as e:
+                return {"strategy": sid, "status": "unavailable",
+                        "code": e.code, "detail": str(e.detail)[:200],
+                        "elapsed_ms": round(now_ms() - t0, 1)}
+            except Exception as e:               # noqa: BLE001
+                return {"strategy": sid, "status": "error",
+                        "code": "PREFLIGHT_FAILED",
+                        "detail": "%s: %s" % (type(e).__name__, str(e)[:160]),
+                        "elapsed_ms": round(now_ms() - t0, 1)}
+
+        rows: list[dict[str, Any]] = []
+        ex = ThreadPoolExecutor(max_workers=max(1, min(int(max_workers), len(ids))))
+        futs = {ex.submit(one, sid): sid for sid in ids}
+        try:
+            for fut in as_completed(futs, timeout=timeout_s):
+                try:
+                    rows.append(fut.result())
+                except Exception as e:           # noqa: BLE001
+                    rows.append({"strategy": futs[fut], "status": "error",
+                                 "code": "PREFLIGHT_FAILED",
+                                 "detail": type(e).__name__, "elapsed_ms": None})
+        except FuturesTimeout:
+            done = {r["strategy"] for r in rows}
+            for sid in ids:
+                if sid not in done:
+                    rows.append({"strategy": sid, "status": "timeout",
+                                 "code": "PREFLIGHT_TIMEOUT",
+                                 "detail": "probe exceeded timeout", "elapsed_ms": None})
+        finally:
+            ex.shutdown(wait=False, cancel_futures=True)
+        order = {sid: i for i, sid in enumerate(ids)}
+        rows.sort(key=lambda r: order.get(r["strategy"], 999))
+        ready = [r["strategy"] for r in rows
+                 if r["status"] == "success" and r.get("available")]
+        ranked = sorted((r for r in rows if r["strategy"] in ready),
+                        key=lambda r: (r.get("elapsed_ms") is None,
+                                       r.get("elapsed_ms") or 1e18))
+        return {"strategies": rows, "ready": ready,
+                "ranked_dry_run": [r["strategy"] for r in ranked],
+                "recommended_dry_run": ranked[0]["strategy"] if ranked else None,
+                "live_send": False}
 
     def _settings(self, strategy_id: str) -> SC.StrategySettings:
         return self.settings_store.load()[strategy_id]

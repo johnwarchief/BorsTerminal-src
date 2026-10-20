@@ -949,6 +949,23 @@ def get_strategies() -> dict[str, Any]:
     return st
 
 
+@router.post("/api/execution/strategies/preflight")
+def post_strategy_preflight_all(body: dict[str, Any] | None = Body(default=None)) -> dict[str, Any]:
+    """Probeِ موازیِ فقط‌خواندنی؛ هیچ prepare/trigger/dispatch ایجاد نمی‌شود."""
+    got = (body or {}).get("strategies")
+    if got is not None and not isinstance(got, list):
+        return {"status": "error", "code": "BAD_REQUEST",
+                "detail": "strategies باید فهرست باشد"}
+    ids = [str(x) for x in got] if isinstance(got, list) else None
+    try:
+        result = _STRATEGY_ENGINE.parallel_probe(ids)
+    except Exception as e:                       # noqa: BLE001
+        return {"status": "error", "code": "PREFLIGHT_FAILED",
+                "detail": "%s: %s" % (type(e).__name__, str(e)[:180])}
+    return {"status": "success", "preflight": result,
+            "dry_run": True, "live": False, "live_send": False}
+
+
 @router.post("/api/execution/strategies/{strategy_id}/settings")
 def post_strategy_settings(strategy_id: str,
                            body: dict[str, Any] = Body(...)) -> dict[str, Any]:

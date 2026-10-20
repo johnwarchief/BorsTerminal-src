@@ -479,6 +479,9 @@ export const orderApi = {
     http<Record<string, unknown>>(
       `/api/execution/strategies/${encodeURIComponent(id)}/probe`,
       { method: 'POST', ...NO_RETRY }),
+  strategyPreflightAll: (strategies?: string[]) =>
+    http<Record<string, unknown>>('/api/execution/strategies/preflight',
+      { method: 'POST', body: strategies ? { strategies } : {}, ...NO_RETRY }),
   preflight: (body: unknown) => http<Record<string, unknown>>('/api/execution/preflight',
     { method: 'POST', body, ...NO_RETRY }),
   prepare: (body: unknown) => http<Record<string, unknown>>('/api/execution/prepare',
@@ -891,7 +894,7 @@ export type DurableSchedule = {
   order_type: string; validity: string; mode: string; state: string;
   target_ms: number; target_local: string; tz: string; attempts: number;
   validation_ok?: boolean | null; last_validation?: Record<string, unknown> | null;
-  result?: Record<string, unknown> | null; last_error?: string | null;
+  result?: Record<string, unknown> | null; result_state?: string | null; last_error?: string | null;
 };
 export type ScheduleBlocker = { code: string; detail: string };
 export type ScheduleReadiness = {
