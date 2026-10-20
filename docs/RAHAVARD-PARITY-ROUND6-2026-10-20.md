@@ -127,6 +127,37 @@ copy_row == operational_row  → True
 
 CSV کامل: `docs/RAHAVARD-PARITY-CORPUS-2026-10-20.csv`.
 
+## 4.1. شکاف‌های منبع (572 ردیف)
+
+رجیستر ردیف‌به‌ردیف: `docs/RAHAVARD-SOURCE-GAP-RECOVERY-ROUND5-2026-10-20.csv` (572 ردیف، ستون‌های asset_id/symbol/ref_date/ref_ratio/taxonomy/status_round5/next_action).
+
+| taxonomy | تعداد |
+|---|---:|
+| NO_OFFICIAL_EVENT | 510 |
+| BASE_GAP_NOT_DETECTED | 54 |
+| LOCAL_FALLBACK_TRUNCATED | 6 |
+| FUND_EVENT_NOT_MATCHED | 2 |
+
+| status_round5 | تعداد |
+|---|---:|
+| SOURCE_GAP_CONFIRMED | 511 |
+| UNVERIFIED:PARSER_OR_THRESHOLD | 54 |
+| FIXED_BY_ROUND4_REFRESH | 5 |
+| UNVERIFIED:FUND_EVENT_DATE | 2 |
+
+`final_status` همهٔ 572 ردیف `SOURCE_GAP_CONFIRMED` است؛ این یعنی «نبودِ منبع تأیید شد»، نه «مشکل حل شد». 54 ردیف `BASE_GAP_NOT_DETECTED` هنوز در سطح parser/threshold بازند و نمونه‌های آن‌ها (`اطلس`, `حشكوه`, `حپرتو`, `دانيك`, `درازي`, `زگلدشت`, `سشمال`) در نمونهٔ شش‌تایی ما با `timescale_marks` هم‌پوشانی DPS/capital دارند.
+
+### فبيرا (تنها LOCAL_FALLBACK_TRUNCATED باقی‌مانده)
+
+- asset 158، ref step 2025-08-31، `ref_ratio=0.93243414`.
+- `timescale_marks` زنده: یک capital_change در 2025-08-18 با `previous_capital=3.6T`, `new_capital=5.0T`, `contribution_percent=100` (و بدون DPS نزدیک).
+- نتیجه: رویداد منبع پیدا شد، اما نسبت 0.93243414 با نسبت سهام 0.72 یکی نیست؛ نسبت دقیق نیازمند قیمت پذیره‌نویسی/ردیف رسمی CODAL است. این مورد دیگر «بدون رویداد» نیست؛ «نسبت رسمی نامعلوم» است.
+
+### دو ردیف صندوق (هامرز)
+
+- 2025-02-04 و 2025-07-07، `FUND_EVENT_NOT_MATCHED`, `fund_events=0`, `product_source=fund-portal`.
+- نتیجه: صفر رسمی/ماه غایب باید از «عدم توزیع» جدا بماند؛ تطبیق تاریخ/مبلغ منبع رسمی صندوق باقی است.
+
 ## 5. کشف DPS و مسیر 100%
 
 دادهٔ زندهٔ `type0/type7` داسوه (5001 کندل، 2001-03-18 تا 2026-10-20) همان 9 گام 2018-2026 را با نسبت‌های یکسان با snapshot ثابت برگرداند؛ پس snapshot برای مقایسه معتبر است. آخرین کندل زنده 2026-10-20 است و در snapshot نیست.
