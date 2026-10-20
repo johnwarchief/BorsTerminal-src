@@ -61,12 +61,15 @@ class StrategySpec:
 _COMMON_BROWSER = {
     "order_url": "https://d.easytrader.ir/",
     "origin_allowlist": ["https://d.easytrader.ir"],
-    "submit_selector": "",
+    #: selectorهای خریدِ عادیِ EasyTrader؛ قیمت/تعداد و دکمهٔ بازکردن در UI
+    #: زنده دیده شدند و هدرِ فرم در باندلِ خودِ EasyTrader (`data-cy`) هست.
+    #: برایِ فروش یا نسخهٔ دیگرِ UI باید override شوند.
+    "submit_selector": "button[aria-label='ارسال خرید']",
     "symbol_selector": "",
-    "form_symbol_selector": "",
-    "open_form_selector": "",
-    "price_selector": "",
-    "quantity_selector": "",
+    "form_symbol_selector": "[data-cy='order-form-header-symbol-name']",
+    "open_form_selector": "button.order-buy-btn",
+    "price_selector": "#price",
+    "quantity_selector": "#quantity",
     "login_selector": "",
     "clock_selector": "",
     "intercept_pattern": "**/core/api/v2/order*",
@@ -75,6 +78,8 @@ _COMMON_BROWSER = {
     "headless": False,
     "browser_path": "",
     "profile_dir": "",
+    #: CDPِ hostِ مالک؛ در Production برایِ نشستِ پایدار استفاده می‌شود.
+    "cdp_url": "",
     "autofill": True,
     "require_prefilled": False,
     #: بازرسیِ ارزانِ «دکمه همان‌جا و آماده است» پیش از کلیک. خاموش‌کردنش

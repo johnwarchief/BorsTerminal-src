@@ -9,7 +9,7 @@
 | Blocker | اقدام انجام‌شده | مدرک | وضعیت | اقدام بعدی |
 | --- | --- | --- | --- | --- |
 | قرارداد واقعی POST سفارش | Adapter، payload و مفسر پاسخ موجود؛ هیچ POST واقعی | `WIRE_HYPOTHESIS=True`؛ smoke فقط Mock؛ هیچ پاسخ کارگزاری دیده نشد | **BLOCKED_EXTERNALLY** (`PENDING_ORDER_APPROVAL`) | مقادیر نهایی + تأیید صریح مالک + یک تست زندهٔ تحت نظارت |
-| احراز هویت پایدار | lifecycle و sessionStorage مستند؛ هیچ token/HAR/جعل | نشست با بستن تب از بین رفت؛ daemon به پنجرهٔ زنده دسترسی ندارد؛ `readiness` صریح | **BLOCKED_EXTERNALLY** (`AUTH_REQUIRED`) | ورود دستی مالک در یک host پایدار یا provider مجاز؛ بدون دورزدن auth |
+| احراز هویت پایدار | host/CDP محلی + ورود دستی + driver reuse؛ live بی host مسدود | `tools/browser_host_smoke.py`؛ sessionStorage بعد از reconnect باقی ماند | **PARTIAL** (host PASS؛ restart بدونِ ورود BLOCKED_EXTERNALLY) | ورود دستی مالک پس از restart یا provider مجاز |
 | دادهٔ روز جاری (قیمت/گام/دامنه) | validator شکست‌بسته؛ `LocalFactsProvider` فقط هویت | تقویم/دامنه/گام live در محصول UNKNOWN؛ `price_history` محلی کافی نیست | **BLOCKED_EXTERNALLY** (`MARKET_DATA_UNVERIFIED`) | منبع read-only همان روز از کارگزاری/UI با تاریخ و تازگی |
 | قدرت خرید/موجودی | `balances=False` در capabilities؛ هیچ عددی ساخته نمی‌شود | `execution_easytrader.py`؛ preflight UNKNOWN | **BLOCKED_EXTERNALLY** | endpoint read-only معتبر یا خواندن کنترل‌شده از UI با ثبت sufficiency نه مقدار |
 | هویت/هدر فرم | هویت محلی + بازکردن مجدد فرم + بازخوانی پیش از ارسال | `strategy_guard` 55/55؛ هدر فرم AutomationId پایدار ندارد | **PARTIAL** | selector پایدار هدر از DOM زنده + پیکربندی در Strategy |
@@ -38,9 +38,9 @@
 
 | اجرا | نتیجه |
 | --- | --- |
-| `dev/execution_schedule_v1130.py` | **55/55** |
-| `dev/strategy_guard_v1123.py` | **55/55** |
-| `dev/run_all_tests.py` | **167 suite** (138 شمارش‌دار + 27 silent + 2 skip)؛ **4977/4977** check؛ exit 0 |
+| `dev/execution_schedule_v1130.py` | **58/58** |
+| `dev/strategy_guard_v1123.py` | **57/57** |
+| `dev/run_all_tests.py` | **167 suite** (138 شمارش‌دار + 27 silent + 2 skip)؛ **4980/4980** check؛ exit 0 |
 | Vitest | 197/199 فایل؛ 2065/2070 تست؛ 5 skip؛ exit 0 |
 | `tsc -b` | صفر خطا |
 | Frozen | 230.3MB؛ build exit 0؛ contract PASS؛ smoke DRY_RUN؛ daemon exit 0 |

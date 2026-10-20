@@ -216,3 +216,7 @@ market.db.meta.json
 # لاگِ خروجیِ فرمان‌هایِ تست/بیلد که ریشه می‌نشیند (بازتولیدشدنی)
 /tests_output.txt
 /build_log.txt
+
+# browser session host (runtime, no secrets)
+bors_browser_host.json
+browser_host_profile/

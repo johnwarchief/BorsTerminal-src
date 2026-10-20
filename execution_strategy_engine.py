@@ -480,9 +480,12 @@ class BrowserStrategyBase:
             }
             if self.spec.id != SC.JAVASCRIPT:
                 if self._autofill(ctx):
-                    driver.fill(sel["symbol_selector"], draft.instrument.symbol)
-                    if sel.get("symbol_confirm_selector"):
-                        driver.click(sel["symbol_confirm_selector"], timeout_ms=600)
+                    if sel.get("symbol_selector"):
+                        driver.fill(sel["symbol_selector"], draft.instrument.symbol)
+                        if sel.get("symbol_confirm_selector"):
+                            driver.click(sel["symbol_confirm_selector"], timeout_ms=600)
+                    # فرمِ EasyTrader فیلدِ نماد ندارد؛ هویت با هدرِ فرم و
+                    # انتخابِ صفحه تأیید می‌شود، نه با پرکردنِ فیلد.
                     driver.fill(sel["price_selector"], _fmt(draft.price))
                     driver.fill(sel["quantity_selector"], _fmt(draft.quantity))
                 self._verify_form(driver, sel, draft, ctx, evidence)
@@ -976,9 +979,9 @@ class StrategyEngine:
             # selector، «تنظیم‌شده» نیست — حتی اگر URLِ پیش‌فرض باشد.
             return bool(settings.options.get("order_url")) and bool(
                 settings.options.get("login_selector") or settings.options.get("profile_dir"))
-        required = ("submit_selector", "symbol_selector",
-                    "price_selector", "quantity_selector")
-        return all(bool(settings.options.get(k)) for k in required)
+        sym = settings.options.get("form_symbol_selector") or settings.options.get("symbol_selector")
+        required = ("submit_selector", "price_selector", "quantity_selector")
+        return bool(sym) and all(bool(settings.options.get(k)) for k in required)
 
     def list(self) -> list[dict[str, Any]]:
         settings = self.settings_store.load()
@@ -1091,6 +1094,13 @@ class StrategyEngine:
         if live_wanted and not live_ok:
             raise StrategyError("LIVE_GATED",
                                 "live submission is gated (env/setting/writes_allowed)")
+        strategy = self.strategies[order.strategy_id]
+        if (live_ok and isinstance(strategy, BrowserStrategyBase)
+                and not self.mock_browser
+                and not (settings.options.get("cdp_url") or EB.active_cdp_url())):
+            raise StrategyError(
+                "AUTH_REQUIRED",
+                "برایِ اجرایِ زندهٔ مرورگری، پنجرهٔ پایدارِ مالک (browser host) لازم است")
         stopped, why = self.halted()
         if stopped and live_ok:
             raise StrategyError("HALTED", why or "kill switch is on")

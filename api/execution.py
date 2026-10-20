@@ -31,6 +31,8 @@ import datetime as dt
 import json
 import os
 import sqlite3
+import subprocess
+import sys
 import threading
 import time
 import uuid
@@ -51,6 +53,7 @@ from execution_easytrader import (
     easytrader_payload,
 )
 import execution_connect as EXC                            # noqa: E402
+import execution_browser_host as BH                        # noqa: E402
 import execution_schedule as SCH                           # noqa: E402
 import execution_session_store as SESS                     # noqa: E402
 import execution_strategy_core as SC                       # noqa: E402
@@ -1172,6 +1175,7 @@ def get_schedule_readiness() -> dict[str, Any]:
     runner = _schedule_runner()
     return {"status": "success", "readiness": SCH.readiness(),
             "counts": counts,
+            "browser_host": BH.read_status(check=True),
             "runner": {"live_enabled": runner.live_enabled,
                        "contract_verified": runner.contract_verified,
                        "last_error": runner.last_error,
@@ -1295,6 +1299,64 @@ def get_schedule(sid: str) -> dict[str, Any]:
         return {"status": "error", "code": "NOT_FOUND"}
     return {"status": "success", "schedule": rec.public(),
             "events": store.events(sid), "readiness": SCH.readiness()}
+
+
+# ── ۲.۴.۵) browser session host (نشستِ پایدارِ مالک؛ CDPِ محلی) ───────────────
+def _host_status() -> dict[str, Any]:
+    return BH.read_status(check=True)
+
+
+@router.get("/api/execution/browser-host")
+def get_browser_host() -> dict[str, Any]:
+    got = _host_status()
+    return {"status": "success", "host": got,
+            "live_requires_host": True,
+            "note": "ورود دستی در پنجرهٔ host؛ هیچ token/cookie ذخیره نمی‌شود"}
+
+
+@router.post("/api/execution/browser-host")
+def post_browser_host() -> dict[str, Any]:
+    got = BH.read_status(check=True)
+    if got.get("healthy"):
+        os.environ["BORS_EXECUTION_CDP_URL"] = str(got.get("cdp_url") or "")
+        return {"status": "success", "host": got, "started": False}
+    if bool(getattr(sys, "frozen", False)):
+        cmd = [sys.executable, "--browser-host"]
+        cwd = os.path.dirname(sys.executable)
+    else:
+        root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        cmd = [sys.executable, os.path.join(root, "execution_browser_host.py")]
+        cwd = root
+    flags = 0
+    if os.name == "nt":
+        flags = (getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0)
+                 | getattr(subprocess, "DETACHED_PROCESS", 0))
+    try:
+        subprocess.Popen(cmd, cwd=cwd, env=dict(os.environ),
+                         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                         creationflags=flags)
+    except Exception as e:                       # noqa: BLE001
+        return {"status": "error", "code": "HOST_START_FAILED",
+                "detail": "%s: %s" % (type(e).__name__, str(e)[:160])}
+    deadline = time.monotonic() + 30.0
+    while time.monotonic() < deadline:
+        got = BH.read_status(check=True)
+        if got.get("healthy"):
+            os.environ["BORS_EXECUTION_CDP_URL"] = str(got.get("cdp_url") or "")
+            return {"status": "success", "host": got, "started": True}
+        time.sleep(0.25)
+    got = BH.read_status(check=True)
+    return {"status": "error", "code": "HOST_NOT_READY", "host": got,
+            "detail": "پنجرهٔ host در ۳۰ ثانیه آماده نشد؛ مرورگر/پروفایل را بررسی کنید"}
+
+
+@router.delete("/api/execution/browser-host")
+def delete_browser_host() -> dict[str, Any]:
+    got = BH.stop_host()
+    if got.get("status") == "closed":
+        os.environ.pop("BORS_EXECUTION_CDP_URL", None)
+    return {"status": "success" if got.get("status") == "closed" else "error",
+            "host": got}
 
 
 # ── ۲.۵) تنظیمِ اتصال و پرتفویِ فقط‌خواندنی ─────────────────────────────────

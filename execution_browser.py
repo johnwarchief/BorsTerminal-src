@@ -88,6 +88,28 @@ def browser_runtime_available(settings: Optional[StrategySettings] = None) -> tu
                    "install Edge/Chrome/Brave")
 
 
+def active_cdp_url() -> str:
+    """CDPِ hostِ پایدارِ مالک، فقط اگر همین حالا سالم باشد."""
+    env = (os.environ.get("BORS_EXECUTION_CDP_URL") or "").strip()
+    if env:
+        return env
+    try:
+        import json as _json
+        import urllib.request as _ur
+        import bors_config
+        path = (os.environ.get("BORS_BROWSER_HOST_STATUS") or
+                os.path.join(bors_config.WORK_DIR, "bors_browser_host.json"))
+        with open(path, encoding="utf-8") as f:
+            data = _json.load(f)
+        url = str((data or {}).get("cdp_url") or "").strip()
+        if not url:
+            return ""
+        with _ur.urlopen(url.rstrip("/") + "/json/version", timeout=0.6) as r:
+            return url if int(getattr(r, "status", 0) or 0) == 200 else ""
+    except Exception:
+        return ""
+
+
 def default_profile_dir(strategy_id: str) -> str:
     base = os.path.join(os.environ.get("LOCALAPPDATA") or tempfile.gettempdir(),
                         "BorsTerminal_Ultimate", "browser_profiles", strategy_id)
@@ -276,6 +298,8 @@ class PlaywrightBrowserDriver:
         self.profile_dir = (profile_dir or str(settings.options.get("profile_dir") or "")
                             or default_profile_dir(strategy_id))
         self.headless = bool(settings.options.get("headless", False))
+        self.cdp_url = str(settings.options.get("cdp_url") or active_cdp_url() or "").strip()
+        self._cdp = bool(self.cdp_url)
         self.action_timeout_ms = int(settings.options.get("action_timeout_ms") or 1200)
         self.navigation_timeout_ms = int(settings.options.get("navigation_timeout_ms") or 20000)
         self._q: queue.Queue[_Cmd] = queue.Queue()
@@ -284,6 +308,7 @@ class PlaywrightBrowserDriver:
         self._thread: Optional[threading.Thread] = None
         self._start_error: Optional[str] = None
         self._pw = None
+        self._browser = None
         self._context = None
         self._page = None
         self._intercept_pattern = str(settings.options.get("intercept_pattern") or "")
@@ -316,6 +341,30 @@ class PlaywrightBrowserDriver:
             return
         try:
             self._pw = sync_playwright().start()
+            if self._cdp:
+                # اتصال به hostِ مالک؛ همان context/صفحه را استفاده می‌کنیم و
+                # هرگز مرورگر را نمی‌بندیم (فقط اتصال را قطع می‌کنیم).
+                self._browser = self._pw.chromium.connect_over_cdp(self.cdp_url)
+                contexts = self._browser.contexts
+                self._context = contexts[0] if contexts else self._browser.new_context()
+                wanted = urlparse(str(self.settings.options.get("order_url") or "")).netloc.lower()
+                pages = [p for p in self._context.pages
+                         if not str(p.url).startswith("about:")]
+                matched = [p for p in pages
+                           if wanted and urlparse(p.url).netloc.lower() == wanted]
+                # صفحهٔ همان دامنه را برمی‌گزینیم؛ دیالوگ‌هایِ اولیهٔ مرورگر
+                # (مثلِ sync-confirmation) نباید به‌جایِ تبِ مالک انتخاب شوند.
+                self._page = (matched[0] if matched else
+                              (pages[0] if pages else
+                               (self._context.pages[0] if self._context.pages
+                                else self._context.new_page())))
+                self._page.set_default_timeout(self.action_timeout_ms)
+                self._page.set_default_navigation_timeout(self.navigation_timeout_ms)
+                self._page.on("request", self._request_handler)
+                self._attach_response_listener()
+                self._ready.set()
+                self._serve_loop()
+                return
             exe = ""
             for cand in _browser_candidates(self.settings):
                 if cand and os.path.isfile(cand):
@@ -356,30 +405,34 @@ class PlaywrightBrowserDriver:
             self._page.on("request", self._request_handler)
             self._attach_response_listener()
             self._ready.set()
-            while not self._stop.is_set():
-                try:
-                    cmd = self._q.get(timeout=0.2)
-                except queue.Empty:
-                    continue
-                try:
-                    fn = getattr(self, "_do_" + cmd.name)
-                    cmd.reply.put(("ok", fn(**cmd.kwargs)))
-                except Exception as e:               # noqa: BLE001
-                    cmd.reply.put(("err", "%s: %s" % (type(e).__name__, str(e)[:180])))
+            self._serve_loop()
         except Exception as e:                       # noqa: BLE001
             self._start_error = "%s: %s" % (type(e).__name__, str(e)[:180])
             self._ready.set()
         finally:
-            try:
-                if self._context is not None:
-                    self._context.close()
-            except Exception:
-                pass
+            if not self._cdp:
+                try:
+                    if self._context is not None:
+                        self._context.close()
+                except Exception:
+                    pass
             try:
                 if self._pw is not None:
                     self._pw.stop()
             except Exception:
                 pass
+
+    def _serve_loop(self) -> None:
+        while not self._stop.is_set():
+            try:
+                cmd = self._q.get(timeout=0.2)
+            except queue.Empty:
+                continue
+            try:
+                fn = getattr(self, "_do_" + cmd.name)
+                cmd.reply.put(("ok", fn(**cmd.kwargs)))
+            except Exception as e:                   # noqa: BLE001
+                cmd.reply.put(("err", "%s: %s" % (type(e).__name__, str(e)[:180])))
 
     def _call(self, name: str, **kwargs: Any) -> Any:
         if self._thread is None:
@@ -453,6 +506,12 @@ class PlaywrightBrowserDriver:
 
     # ---- commands (executed on the browser thread) ----
     def _do_goto(self, url: str, timeout_ms: int = 0) -> dict[str, Any]:
+        if self._cdp:
+            try:
+                if urlparse(self._page.url).netloc.lower() == urlparse(url).netloc.lower():
+                    return {"url": self._page.url, "title": self._page.title()}
+            except Exception:
+                pass
         self._page.goto(url, wait_until="domcontentloaded",
                         timeout=timeout_ms or self.navigation_timeout_ms)
         return {"url": self._page.url, "title": self._page.title()}

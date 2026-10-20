@@ -933,3 +933,26 @@ export function useDurableSchedules(enabled = true) {
     retry: false,
   });
 }
+
+
+// ── browser session host (CDP محلی؛ ورود دستی مالک) ─────────────────────────
+export type BrowserHostView = {
+  status?: string; healthy?: boolean; cdp_url?: string; port?: number;
+  pid?: number; profile?: string; url?: string; started_at?: number;
+};
+export const browserHostApi = {
+  get: () => http<Record<string, unknown>>('/api/execution/browser-host'),
+  start: () => http<Record<string, unknown>>('/api/execution/browser-host',
+    { method: 'POST', ...NO_RETRY }),
+  stop: () => http<Record<string, unknown>>('/api/execution/browser-host',
+    { method: 'DELETE', ...NO_RETRY }),
+};
+export function useBrowserHost() {
+  return useQuery({
+    queryKey: ['execution-browser-host'],
+    queryFn: () => browserHostApi.get(),
+    staleTime: 5_000,
+    refetchInterval: 10_000,
+    retry: false,
+  });
+}

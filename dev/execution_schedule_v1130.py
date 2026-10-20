@@ -18,6 +18,8 @@ from datetime import datetime, timedelta
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
 
+import execution_browser as EB                     # noqa: E402
+import execution_browser_host as BH                # noqa: E402
 import execution_schedule as S                     # noqa: E402
 
 PASS = 0
@@ -355,6 +357,42 @@ def main() -> int:
     rec_probe.result = {"order_state": "filled", "filled_quantity": 1}
     ck(S.canonical_result(rec_probe) == "FILLED",
        "FILLED فقط با شاهدِ صریحِ fill")
+    print("\n── ۷.۵) browser host status/health ──")
+    import http.server as _hs
+    import json as _json
+    import threading as _th
+    class _H(_hs.BaseHTTPRequestHandler):
+        def do_GET(self):
+            self.send_response(200); self.send_header("Content-Type", "application/json")
+            self.end_headers(); self.wfile.write(b'{"Browser":"test"}')
+        def log_message(self, *a):
+            pass
+    srv = _hs.ThreadingHTTPServer(("127.0.0.1", 0), _H)
+    _th.Thread(target=srv.serve_forever, daemon=True).start()
+    cdp = "http://127.0.0.1:%d" % srv.server_address[1]
+    old_status = os.environ.get("BORS_BROWSER_HOST_STATUS")
+    old_cdp = os.environ.get("BORS_EXECUTION_CDP_URL")
+    os.environ.pop("BORS_EXECUTION_CDP_URL", None)
+    os.environ["BORS_BROWSER_HOST_STATUS"] = os.path.join(
+        tempfile.mkdtemp(prefix="host_status_"), "host.json")
+    with open(os.environ["BORS_BROWSER_HOST_STATUS"], "w", encoding="utf-8") as f:
+        _json.dump({"status": "ready", "cdp_url": cdp, "pid": os.getpid(),
+                    "port": srv.server_address[1], "profile": "test"}, f)
+    ck(BH.read_status(check=True).get("healthy") is True,
+       "host status سالم از health خوانده می‌شود")
+    ck(EB.active_cdp_url() == cdp,
+       "runtime فقط با host سالم CDP را برمی‌دارد", EB.active_cdp_url())
+    srv.shutdown()
+    ck(BH.read_status(check=True).get("healthy") is False
+       and EB.active_cdp_url() == "",
+       "host مُرده/بسته ⇒ healthy false و CDP خالی")
+    if old_status is None:
+        os.environ.pop("BORS_BROWSER_HOST_STATUS", None)
+    else:
+        os.environ["BORS_BROWSER_HOST_STATUS"] = old_status
+    if old_cdp:
+        os.environ["BORS_EXECUTION_CDP_URL"] = old_cdp
+
     print("\n── ۸) readiness و timezone ──")
     rd = S.readiness()
     ck(rd["live_ready"] is False and rd["dry_run_scheduling"] is True,

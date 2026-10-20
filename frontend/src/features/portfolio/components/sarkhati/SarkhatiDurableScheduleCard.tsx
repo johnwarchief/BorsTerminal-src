@@ -4,8 +4,8 @@
 import { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { toFaDigits } from '@shared/lib/fmt';
-import { orderApi, scheduleApi, useDurableSchedules, type DurableSchedule }
-  from '../../lib/orderClient';
+import { browserHostApi, orderApi, scheduleApi, useBrowserHost, useDurableSchedules,
+  type DurableSchedule, type BrowserHostView } from '../../lib/orderClient';
 import { Chip, GhostBtn, Line, Note, Section, Table, Td, Tr } from './parts';
 
 const STATE: Record<string, { label: string; tone: 'ok' | 'warn' | 'bad' | 'idle' | 'live' }> = {
@@ -66,6 +66,9 @@ export function SarkhatiDurableScheduleCard() {
   const [tone, setTone] = useState<'ok' | 'warn' | 'bad' | 'idle'>('idle');
   const [pf, setPf] = useState<PfView | null>(null);
   const [pfBusy, setPfBusy] = useState(false);
+  const hostQ = useBrowserHost();
+  const host = (hostQ.data?.host ?? {}) as BrowserHostView;
+  const [hostBusy, setHostBusy] = useState(false);
 
   const rows = q.data?.schedules ?? [];
   const readiness = q.data?.readiness;
@@ -151,6 +154,27 @@ export function SarkhatiDurableScheduleCard() {
     } catch (e) { fail(e); } finally { setBusy(''); }
   };
 
+  const startHost = async () => {
+    setHostBusy(true); setAnswer('');
+    try {
+      const res = await browserHostApi.start();
+      if (res.status === 'success') {
+        setTone('ok'); setAnswer('پنجرهٔ host باز شد؛ لطفاً خودتان در EasyTrader وارد شوید');
+      } else { setTone('bad'); setAnswer(String(res.detail ?? res.code ?? 'host باز نشد')); }
+      void hostQ.refetch();
+    } catch (e) { fail(e); } finally { setHostBusy(false); }
+  };
+
+  const stopHost = async () => {
+    setHostBusy(true); setAnswer('');
+    try {
+      const res = await browserHostApi.stop();
+      if (res.status === 'success') { setTone('ok'); setAnswer('پنجرهٔ host بسته شد'); }
+      else { setTone('bad'); setAnswer(String(res.code ?? 'بسته نشد')); }
+      void hostQ.refetch();
+    } catch (e) { fail(e); } finally { setHostBusy(false); }
+  };
+
   const runPreflight = async () => {
     setPfBusy(true); setAnswer('');
     try {
@@ -176,6 +200,19 @@ export function SarkhatiDurableScheduleCard() {
         </Chip>
         <Chip tone="live">dry-run</Chip>
       </>}>
+      <div className="mb-1.5 flex flex-wrap items-center gap-2" data-testid="sched-browser-host">
+        <span className="text-2xs font-bold text-text-secondary">نشستِ پایدارِ مرورگر</span>
+        <Chip tone={host.healthy ? 'ok' : 'idle'} testId="sched-host-state">
+          {host.healthy ? `host آماده · پورت ${toFaDigits(String(host.port ?? '—'))}` : 'host بسته'}
+        </Chip>
+        <GhostBtn testId="sched-host-start" disabled={hostBusy || host.healthy === true}
+          title="پنجرهٔ واقعی EasyTrader؛ ورود دستی، بدون ذخیرهٔ token"
+          onClick={() => void startHost()}>بازکردن پنجرهٔ ورود</GhostBtn>
+        <GhostBtn testId="sched-host-stop" disabled={hostBusy || !host.healthy}
+          onClick={() => void stopHost()}>بستن</GhostBtn>
+        <span className="text-3xs text-text-muted">ورود دستی؛ هیچ token/cookie ذخیره نمی‌شود</span>
+      </div>
+
       <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-4">
         <label className="flex min-w-0 flex-col gap-0.5 text-3xs text-text-muted">
           نماد

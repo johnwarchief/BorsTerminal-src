@@ -36,6 +36,14 @@
 - `halt` زمان‌بندی‌های ARMED را `NEEDS_REVIEW` می‌کند و runner پیش/پس از claim
   توقف را می‌سنجد.
 
+### نشستِ پایدار مرورگر
+- `execution_browser_host.py`: پنجرهٔ مالک با پروفایلِ اختصاصی و CDPِ محلی
+  (127.0.0.1، بندرِ تصادفی)؛ ورود دستی، بدونِ token/cookie روی‌دیسک.
+- `execution_browser.py`: اتصال به host و عدمِ بستنِ مرورگرِ مالک؛
+  `active_cdp_url()` فقط hostِ سالم را می‌دهد.
+- `execution_strategy_engine.py`: live مرورگری بی host ⇒ `AUTH_REQUIRED`.
+- تست: `tools/browser_host_smoke.py` — sessionStorage بعد از reconnect باقی ماند.
+
 ### زمان‌بند
 - `ScheduleRunner` برای dry-run: بدون شبکه/مرورگر؛ فقط زمان‌بندی، claim،
   اعتبارسنجی و ثبت نتیجه.
@@ -77,9 +85,9 @@
 
 | مورد | نتیجه |
 | --- | --- |
-| `dev/execution_schedule_v1130.py` | **55/55** |
-| `dev/strategy_guard_v1123.py` | **55/55** (فرم/هدر + ۳ تستِ async + preflight موازی) |
-| `dev/run_all_tests.py` | **138 شمارش‌دار + 27 silent + 2 skip = 167**؛ 4977/4977 check؛ `ALL SUITES PASSED`؛ exit 0 |
+| `dev/execution_schedule_v1130.py` | **58/58** |
+| `dev/strategy_guard_v1123.py` | **57/57** (فرم/هدر + async + preflight + host gate) |
+| `dev/run_all_tests.py` | **138 شمارش‌دار + 27 silent + 2 skip = 167**؛ 4980/4980 check؛ `ALL SUITES PASSED`؛ exit 0 |
 | Vitest | 197/199 فایل، 2065/2070 تست، 5 skip؛ exit 0 |
 | `npx tsc -b` | صفر خطا |
 | Frozen build | exit 0؛ **230.3 MB**؛ `onedir_contract --dist` **PASS** |

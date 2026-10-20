@@ -74,6 +74,8 @@ def main() -> int:
         "order_url": "http://mock.local/order",
         "origin_allowlist": ["http://mock.local"],
         "symbol_selector": "[data-testid=symbol]",
+        "form_symbol_selector": "",
+        "open_form_selector": "",
         "price_selector": "[data-testid=price]",
         "quantity_selector": "[data-testid=quantity]",
         "submit_selector": "[data-testid=submit]",
@@ -395,6 +397,10 @@ def main() -> int:
         driver_factory=factory, server_clock=clock_ok,
         live_allowed=False, halted=lambda: (False, ""))
     current["draft"] = draft("G-DEFAULT")
+    store_defaults.save(SC.PLAYWRIGHT_DOM, options={
+        "symbol_selector": "", "form_symbol_selector": "",
+        "open_form_selector": "", "price_selector": "",
+        "quantity_selector": "", "submit_selector": ""})
     try:
         eng_defaults.prepare(current["draft"], SC.PLAYWRIGHT_DOM)
         cfg_missing = False
@@ -544,6 +550,46 @@ def main() -> int:
            "تغییرِ asyncِ %s پیش از ارسال گرفته می‌شود" % label,
            {"status": r_async.status, "code": r_async.error_code,
             "clicks": drv_async.click_count})
+
+    ds_default = SC.default_settings(SC.PLAYWRIGHT_DOM).options
+    ck(ds_default.get("submit_selector") == "button[aria-label='ارسال خرید']"
+       and ds_default.get("form_symbol_selector") == "[data-cy='order-form-header-symbol-name']"
+       and ds_default.get("open_form_selector") == "button.order-buy-btn"
+       and ds_default.get("price_selector") == "#price"
+       and ds_default.get("quantity_selector") == "#quantity"
+       and SE.StrategyEngine._configured(SC.PLAYWRIGHT_DOM,
+                                         SC.spec(SC.PLAYWRIGHT_DOM),
+                                         SC.default_settings(SC.PLAYWRIGHT_DOM)),
+       "پیش‌فرض‌های EasyTrader از شواهد bundle/UI پیکربندی‌شده‌اند", ds_default)
+    print("\n── ۱۵) live مرورگری بدون host مسدود است ──")
+    store.save(SC.PLAYWRIGHT_DOM, mode=SC.MODE_LIVE)
+    eng_host = SE.StrategyEngine(
+        FakeAdapter(writes_allowed=True), settings_store=store,
+        mock_browser=True, driver_factory=factory, server_clock=clock_ok,
+        live_allowed=True, halted=lambda: (False, ""))
+    current["draft"] = draft("G-HOST-GATE")
+    current["form"] = None
+    o_host = eng_host.prepare(current["draft"], SC.PLAYWRIGHT_DOM)
+    eng_host.mock_browser = False
+    _old_status = os.environ.get("BORS_BROWSER_HOST_STATUS")
+    _old_cdp = os.environ.get("BORS_EXECUTION_CDP_URL")
+    os.environ.pop("BORS_EXECUTION_CDP_URL", None)
+    os.environ["BORS_BROWSER_HOST_STATUS"] = os.path.join(tmp, "no_host.json")
+    try:
+        try:
+            eng_host.trigger(o_host.prepared_id, live=True, live_allowed=True)
+            host_gate = False
+        except Exception as e:                   # noqa: BLE001
+            host_gate = "AUTH_REQUIRED" in str(e)
+    finally:
+        if _old_status is None:
+            os.environ.pop("BORS_BROWSER_HOST_STATUS", None)
+        else:
+            os.environ["BORS_BROWSER_HOST_STATUS"] = _old_status
+        if _old_cdp:
+            os.environ["BORS_EXECUTION_CDP_URL"] = _old_cdp
+        store.save(SC.PLAYWRIGHT_DOM, mode=SC.MODE_SHADOW)
+    ck(host_gate, "live مرورگری بی host ⇒ AUTH_REQUIRED، نه ارسال")
 
     current["draft"] = draft("G-STOP")
     current["form"] = None

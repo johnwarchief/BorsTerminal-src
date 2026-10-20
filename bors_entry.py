@@ -858,6 +858,10 @@ def _serve_with_boot(port, boot_port):
 
 
 def main():
+    if "--browser-host" in sys.argv:
+        import execution_browser_host
+        raise SystemExit(execution_browser_host.main(
+            [a for a in sys.argv[1:] if a != "--browser-host"]))
     if "--schedule-daemon" in sys.argv:
         import execution_daemon
         raise SystemExit(execution_daemon.main(
