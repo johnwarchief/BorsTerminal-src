@@ -202,6 +202,8 @@ SUITES = [
     ('dev/test_db_isolation_v1.py',   'DB isolation: temp copy, logical fingerprint, fetch-loop gate'),
     ('dev/test_official_ledger_dedupe_v1.py',
                                       'one official ledger row is applied once, even across a long suspension'),
+    ('dev/test_history_repair_writer_v1.py',
+                                      'history repair writes src=published on a temp DB; closed gate writes nothing'),
     ('dev/version_anchor_guard.py',   'all six version anchors state the same release'),
     ('dev/fts_defaults_parity_guard.py', 'FTS guide defaults: FE drawer mirrors the server'),
     ('dev/test_hourglass_settings_v1.py', 'hourglass RSI period, oversold threshold and MA52 mode are configurable'),
