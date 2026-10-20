@@ -122,6 +122,8 @@ CSV کامل: `docs/RAHAVARD-PARITY-CORPUS-2026-10-20.csv`.
 
 ## 5. کشف DPS و مسیر 100%
 
+دادهٔ زندهٔ `type0/type7` داسوه (5001 کندل، 2001-03-18 تا 2026-10-20) همان 9 گام 2018-2026 را با نسبت‌های یکسان با snapshot ثابت برگرداند؛ پس snapshot برای مقایسه معتبر است. آخرین کندل زنده 2026-10-20 است و در snapshot نیست.
+
 از API مرجع (`/api/v2/chart/timescale_marks`) برای سه نماد، DPS واقعی دریافت شد:
 
 - داسوه: 2024-03-13 `dps=1300`، 2026-04-18 `dps=1800`
@@ -151,7 +153,8 @@ CSV کامل: `docs/RAHAVARD-PARITY-CORPUS-2026-10-20.csv`.
 - دستور گیت: `python dev/run_all_tests.py` (خودکار به `dev/gate_db_guard.py` واگذار می‌شود).
 - گیت با `BORS_WORK_DIR`/`BORS_DB` موقت و `BORS_NO_FETCH_LOOPS=1` اجرا می‌شود.
 - اثرانگشت DB عملیاتی قبل/بعد مقایسه می‌شود؛ تغییر منطقی ⇒ `PROTECTED_DB_CHANGED` و شکست گیت.
-- نتیجهٔ اجرای کامل این دور: **«در حال اجرا / در گزارش نهایی تکمیل شود»**. (پس از پایان، همین بخش با `ALL SUITES PASSED` یا شکست‌های واقعی به‌روزرسانی می‌شود.)
+- در اجرای اول، `dev/chart_api_check_v95.py` در worktree تازه 10/18 شد چون `frontend/node_modules` وجود نداشت. با اتصال (junction) به نصب موجود `klinecharts 10.0.3`، همین گارد مستقل **18/18** سبز شد؛ این یک رفع محیطی است، نه تغییر کد.
+- نتیجهٔ اجرای کامل این دور: **در حال اجرا** (سوئیت سنگین `confidence_engine_v973`). پس از پایان، همین بخش با نتیجهٔ واقعی (`ALL SUITES PASSED` یا فهرست شکست‌ها) به‌روزرسانی می‌شود. هیچ سبزی محیطی ادعا نمی‌شود.
 
 ## 8. فایل‌ها و شواهد
 
@@ -162,7 +165,8 @@ CSV کامل: `docs/RAHAVARD-PARITY-CORPUS-2026-10-20.csv`.
 | بازتولید baseline | `_scratch/ra365_100pct/baseline_v4_repro/` (محلی، gitignored) |
 | لاگ بازتولید | `_scratch/ra365_100pct/baseline_v4_repro.log` |
 | نمونه‌های هفت نماد | `_scratch/ra365_100pct/cases/` |
-| DPS marks | `_scratch/ra365_100pct/live/ra365_dps_marks.json` |
+| DPS marks (سه نماد) | `_scratch/ra365_100pct/live/ra365_dps_marks.json` |
+| REF_ONLY marks (شش نماد) | `_scratch/ra365_100pct/live/refonly_marks.json` |
 | گام‌ها/منبع اختلاف | `_scratch/ra365_100pct/step_source_audit.csv` |
 | گیت | `_scratch/ra365_100pct/gate_full.log` |
 
