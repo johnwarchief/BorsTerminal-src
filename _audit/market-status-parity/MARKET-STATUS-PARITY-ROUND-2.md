@@ -2,7 +2,7 @@
 
 **تاریخ:** ۲۰۲۶-۱۰-۲۰/۲۱ · **شاخه:** `mission/market-status-data-parity-qoder3-2026-10-20`
 **شروع دور:** `3ad61a29` · **backup:** `backup/market-status-source-parity-pre-2026-10-20`
-**`origin/main` شروع:** `a14375c1` · **push/merge:** در انتهای سند ثبت می‌شود.
+**`origin/main` شروع و پایان:** `a14375c1` · **push:** `BLOCKED_PUSH_AUTH` (بدون اعتبارنامهٔ GitHub در نشست غیرتعاملی) · **force/tag/release:** انجام نشد.
 
 ---
 
@@ -127,7 +127,21 @@
 
 ## ۸) وضعیت نهایی این دور
 
-**PARTIAL / BLOCKED_EXTERNALLY — نه ۱۰۰٪.**
+**PARTIAL / BLOCKED_EXTERNALLY + BLOCKED_PUSH_AUTH — نه ۱۰۰٪.**
+
 سه شکاف واقعی (قیمت وزنی، اثر شاخص، native sample) بسته شد و شواهد مستقل دارند؛
-اما پوشش کامل فیلدها، native universe و دو سطح اشتراکی/ورودی مرجع هنوز باز است.
-هیچ ادعای ۱۰۰٪ و هیچ نتیجهٔ merge/push پیش از اجرای واقعی در این سند ثبت نمی‌شود.
+اما پوشش کامل فیلدها، native universe، انتخاب منبع و دو سطح اشتراکی/ورودی مرجع
+هنوز باز است.
+
+### نتیجهٔ واقعی push
+
+- `git fetch origin main` → `origin/main = a14375c1`.
+- `git merge-base --is-ancestor origin/main HEAD` → **FAST_FORWARD_OK**.
+- `git push origin HEAD:main` در Git Credential Manager منتظرِ ورود ماند؛
+  تلاش غیرتعاملی (`GIT_TERMINAL_PROMPT=0`) با
+  `fatal: could not read Username for 'https://github.com'` و `rc=128` شکست خورد.
+- `origin/main` پس از تلاش همچنان `a14375c1` است. هیچ force/tag/release انجام نشد.
+- **وضعیت: `BLOCKED_PUSH_AUTH`**. برای تکمیل، مالک باید در همین محیط به GitHub
+  احراز هویت کند (مثلاً `gh auth login` یا credential manager) و سپس
+  `git push origin HEAD:main` را اجرا کند؛ هیچ اعتبارنامه‌ای توسط ایجنت خوانده
+  یا ذخیره نشد.
