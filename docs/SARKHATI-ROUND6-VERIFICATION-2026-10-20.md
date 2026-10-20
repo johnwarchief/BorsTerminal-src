@@ -69,7 +69,8 @@ Mock/ایزوله یا محاسبهٔ محلی‌اند، نه دادهٔ کار
 | `python dev/run_all_tests.py` | **139 suite شمارش‌شده + 27 خاموش + 2 skip؛ 5078/5078 check؛ `ALL SUITES PASSED`**، exit 0 |
 | `npx tsc -b` | **0 خطا** |
 | `npx vitest run --maxWorkers=2` | **197 passed / 2 skipped files؛ 2065 passed / 5 skipped tests**، exit 0 |
-| Frozen build (`scripts/build_all.py`) | **223.8 MB**، exit 0؛ PyInstaller onedir ساخته شد |
+| Frozen build (`.venv/Scripts/python.exe scripts/build_all.py`) | **230.4 MB**، exit 0؛ PyInstaller onedir با Python 3.12 |
+| `dev/onedir_contract_v11.py --dist dist` | **PASS**؛ `webview/pythonnet/clr_loader` بسته‌بندی شدند |
 | Frozen API smoke | عرضه `VERIFIED`، بودجه v1، تصمیم `RESERVED` با `10512.6`، `available=99989487.4`، `live_send=false`، exit 0 |
 | Frozen daemon `--once` | exit 0؛ `execution_schedules.db` ساخته شد؛ صفر schedule (بدون سفارش) |
 
@@ -85,8 +86,11 @@ Mock/ایزوله یا محاسبهٔ محلی‌اند، نه دادهٔ کار
 - `build_all.py` هشدارهای اختیاری `webview/clr/jinja2` را چاپ کرد؛ این‌ها
   مسیر اجرای تست‌شده نیستند و build/API smoke با آن‌ها سبز شد.
 - برای Frozen API smoke یک نسخهٔ ۲۶۰MB از `market.db` فقط داخل `data/` بستهٔ
-  تست کپی شد؛ اندازهٔ خروجیِ build پیش از این کپی **223.8 MB** است. این کپی
+  تست کپی شد؛ اندازهٔ خروجیِ build پیش از این کپی **230.4 MB** است. این کپی
   دادهٔ عملیاتی را تغییر نداد و پس از smoke از بستهٔ تست حذف شد.
+- بیلدِ اول با مفسر سیستم (Python 3.14) با نبود `webview/pythonnet/clr_loader`
+  در قرارداد onedir رد شد؛ همان بیلد با `.venv` رسمی پروژه (Python 3.12)
+  بازتولید و قراردادش PASS شد. این یک انتخاب محیطِ بیلد است، نه تغییر کد.
 
 ## ۵) QA بصری 1366×768
 

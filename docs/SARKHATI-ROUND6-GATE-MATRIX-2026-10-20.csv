@@ -25,5 +25,5 @@ Live readiness,BLOCKED_EXTERNALLY,"live_ready=false; all live gates not met","ex
 Real allocation/profit/queue/speed claims,UNVERIFIED,"no real allocation/fill/queue data; no claims made","report","none"
 Full backend suite,PASS,"139 counted + 27 silent + 2 skipped; 5078/5078 checks; ALL SUITES PASSED; exit 0","dev/run_all_tests.py","none"
 Vitest and TypeScript,PASS,"197 passed / 2 skipped files; 2065 passed / 5 skipped tests; tsc 0 errors","npx vitest run --maxWorkers=2; npx tsc -b","none"
-Frozen build/contract,PASS,"build exit 0; 223.8 MB; API smoke RESERVED 10512.6; live_send=false","scripts/build_all.py; frozen smoke","none"
+Frozen build/contract,PASS,"build exit 0; 230.4 MB; onedir contract PASS; API smoke RESERVED 10512.6; live_send=false","scripts/build_all.py; dev/onedir_contract_v11.py --dist dist; frozen smoke","none"
 DRY_RUN smoke,PASS,"frozen daemon --once exit 0; schedule DB created; zero schedules; no order","dist/...exe --schedule-daemon --once","none"
