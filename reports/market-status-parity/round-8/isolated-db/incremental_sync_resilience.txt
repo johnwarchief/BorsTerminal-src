@@ -1,0 +1,44 @@
+
+== سناریو ۱: نمادِ جدید (عرضهٔ اولیه) ==
+  PASS نمادِ جدید هنوز وجود ندارد
+  PASS نمادِ جدید در instruments نشست
+  PASS کندل‌های نمادِ جدید درج شد
+  PASS نمادِ جدید به financial_statements دست نزد (تا وقتی گزارشی ندهد)
+  PASS price_history فقط ۲ ردیفِ جدید گرفت (نه بیشتر)
+  PASS symbol_index/resolve نمادِ جدید را پیدا می‌کند
+  PASS bulk_scan نمادِ بدونِ گزارش را به‌حق برنمی‌گرداند (nodata، نه fail)
+  PASS scan_symbol نمادِ جدید crash نمی‌کند (نتیجه می‌دهد)
+  PASS scan_symbol برای نمادِ جدید detail می‌دهد (حتی اگر همه‌اش None باشد)
+  PASS تکرارِ INSERT با ON CONFLICT ردیفی دوبل نمی‌سازد (یدم‌پذیر)
+
+== سناریو ۲: گزارش ماهانهٔ جدید ==
+  PASS نمادِ دارایِ تاریخچه پیدا شد: همراه (100 ردیف)
+  PASS آخرین ماهِ موجود: 1405/12
+  PASS ردیفِ جدید اضافه شد (کل: 100 → 101)
+  PASS tracing_no قدیمی سرجایش ماند (حذف نشد)
+  PASS مقدارِ ردیفِ جدید درست نشست
+  PASS MS_UPSERT روی tracing_no یکسان ردیف دوبل نمی‌سازد (جایگزین می‌کند)
+  PASS به‌روزرسانی مقدار را بازنویسی کرد (اصلاحیه برنده شد)
+  PASS _dedupe_ym هیچ (سال,ماه)‌ای را گم نمی‌کند
+  PASS _dedupe_ym خروجی‌اش بدونِ تکرارِ (سال,ماه) است
+
+== سناریو ۲ب: invalidation کش fts_results ==
+  PASS خواننده ردیفِ مادی‌شده را برمی‌گرداند
+  PASS invalidate_fts_results ردیف‌ها را پاک کرد (rowcount=1)
+  PASS بعد از invalidate جدول خالی است (سینکِ تازه = جدول کثیف)
+  PASS خواننده بعد از invalidate → None → fallback زنده
+
+== سناریو ۲ج: ستون‌های مشتق روی صورتِ مالیِ جدید ==
+  PASS صورتِ مالیِ جدید: is_audited=1 (در زمانِ درج)
+  PASS صورتِ مالیِ جدید: is_consolidated=1 (تلفیقی)
+  PASS صورتِ مالیِ جدید: fiscal_year=1405
+  PASS صورتِ مالیِ جدید: unit_norm=mrl
+  PASS backfill_derived برای ردیفِ جدید کاری ندارد (fs_filled == unit_norm NULL هایِ از قبل موجود)
+  PASS ردیفِ تازه خودش در شمارهِ ردیف‌هایِ بی-unit_norm نیست
+
+== سناریو ۲د: نمادِ جدید بعد از اولین گزارش ==
+  PASS حالا که صورتِ مالی داده، bulk_scan او را برمی‌گرداند (یک ردیف)
+  PASS ردیفِ نمادِ جدید excluded flag دارد (نه خام)
+
+31 checks, 0 failed
+INCREMENTAL SYNC PASSED
