@@ -1,0 +1,56 @@
+{
+ "fetched_at": "2026-10-20T22:18:39",
+ "markets": {
+  "0": {
+   "lastDataDEven": 0,
+   "lastDataHEven": 0,
+   "indexLastValue": 8272444.35,
+   "indexChange": 18622.5,
+   "indexEqualWeightedLastValue": 2251347.23,
+   "indexEqualWeightedChange": 28573.71,
+   "marketActivityDEven": 20261020,
+   "marketActivityHEven": 184412,
+   "marketActivityZTotTran": 1090154,
+   "marketActivityQTotCap": 523572593357779.0,
+   "marketActivityQTotTran": 61434107032.0,
+   "marketState": "F",
+   "marketValue": 2.3964794981751658e+17,
+   "marketValueBase": 0.0,
+   "marketStateTitle": "بسته"
+  },
+  "1": {
+   "lastDataDEven": 0,
+   "lastDataHEven": 0,
+   "indexLastValue": 8272444.35,
+   "indexChange": 18622.5,
+   "indexEqualWeightedLastValue": 2251347.23,
+   "indexEqualWeightedChange": 28573.71,
+   "marketActivityDEven": 20261020,
+   "marketActivityHEven": 184412,
+   "marketActivityZTotTran": 1090154,
+   "marketActivityQTotCap": 523572593357779.0,
+   "marketActivityQTotTran": 61434107032.0,
+   "marketState": "F",
+   "marketValue": 2.3964794981751658e+17,
+   "marketValueBase": 0.0,
+   "marketStateTitle": "بسته"
+  },
+  "2": {
+   "lastDataDEven": 0,
+   "lastDataHEven": 0,
+   "indexLastValue": 67190.1,
+   "indexChange": 932.36,
+   "indexEqualWeightedLastValue": 0.0,
+   "indexEqualWeightedChange": 0.0,
+   "marketActivityDEven": 20261020,
+   "marketActivityHEven": 191602,
+   "marketActivityZTotTran": 701177,
+   "marketActivityQTotCap": 1577767691725897.0,
+   "marketActivityQTotTran": 27167979605.0,
+   "marketState": "F",
+   "marketValue": 3.675240985536199e+16,
+   "marketValueBase": 8756884851666143.0,
+   "marketStateTitle": "بسته"
+  }
+ }
+}
