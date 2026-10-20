@@ -215,8 +215,7 @@ Snapshot نهایی: `2026-10-20 15:20:56` · Bors sync `15:19:51` · TSETMC `15
 |---|---|
 | branch | `mission/market-status-data-parity-qoder3-2026-10-20` |
 | base | `a14375c14cfb8fc616fb3312c685f8a5b0f79ab3` |
-| commit اصلی کد/تست/مستندات | `PENDING_COMMIT_SHA` |
-| commit به‌روزرسانی SHA در گزارش | `PENDING_REPORT_COMMIT_SHA` |
+| commit اصلی کد/تست/مستندات | `dc9896a447e161c659fd09a13b6d8be07c8d6688` |
 | push/merge/tag | انجام نشد |
 | شاخه‌های Qoder 1/2 | لمس نشدند |
 | `main` | دست‌نخورده |
