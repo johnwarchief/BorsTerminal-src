@@ -3,7 +3,7 @@
 - **تاریخ:** ۲۰۲۶-۱۰-۲۰
 - **شاخه:** `mission/rahavard-full-universe-parity-2026-10-20`
 - **HEAD مبنا:** `8aedb480` (پس از `a65fa87b`)
-- **کامیت این دور:** `ROUND4_SHA_PLACEHOLDER`
+- **کامیت این دور:** `04698eaac8835801fb7a790964dfd8b7d61fca79`
 - **گزارش‌ها:** `RAHAVARD-FULL-UNIVERSE-CLOSURE-ROUND3-2026-10-20.md`، `RAHAVARD-DATA-CONTRACT-2026-10-20.md`
 
 **حکم: `COMPLETE WITH EXPLICIT BLOCKERS` — بهبود واقعی در ۳۳ نماد و ۱۷ مرحله، بدون ادعای ۱۰۰٪.**
@@ -164,6 +164,6 @@ mapping هر ۷۸ مورد با `ins_code` معتبر تأیید شد؛ endpoint
 
 ## ۱۲. SHA و تأییدها
 
-- **SHA کامیت این دور:** `ROUND4_SHA_PLACEHOLDER`
+- **SHA کامیت این دور:** `04698eaac8835801fb7a790964dfd8b7d61fca79`
 - **push/merge/tag/release:** انجام نشد.
 - **`market.db`:** sha256 شروع `1601238326c196086ae25f246ac3be25b6b685d967c3b02e333ce32db4a13498`؛ sha256 پایان `ce74f80cf8ebb721239ff5114f8baa8db573fdc2b3f6c38a4adccb910ef22237`؛ سه جدول جدید ۰ ردیف.
