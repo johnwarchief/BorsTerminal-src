@@ -9,7 +9,6 @@ import {
   useConnectionDiagnosis, useExecutionPortfolio,
   type ConnectionStep, type PortfolioState, type TrafficMode,
 } from '../../lib/orderClient';
-import { ConnectBrokerRow } from '../ConnectBrokerRow';
 import { SarkhatiConnectionSettings } from './SarkhatiConnectionSettings';
 import { SarkhatiSessionForm } from './SarkhatiSessionForm';
 import { Chip, Field, GhostBtn, Line, Note, Section } from './parts';
@@ -240,7 +239,6 @@ export function SarkhatiConnectionCard() {
           جزئیات فنی، تنظیم آداپتور و ورود دستیِ پیشرفته
         </summary>
         <div className="mt-1.5 flex flex-col gap-2">
-          <ConnectBrokerRow />
           <SarkhatiConnectionSettings />
           <SarkhatiSessionForm />
           <Note label="چرا ورود دستی؟" testId="connection-manual-rule">
