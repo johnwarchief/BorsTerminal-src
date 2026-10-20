@@ -721,16 +721,21 @@ REQUIRES = {
 
 
 env = dict(os.environ, PYTHONIOENCODING='utf-8')
+# This suite explicitly tests the dev/portable path-resolution contract; the
+# global test workdir override is exactly what it must not see. It creates its
+# own temp dirs and never touches the operational DB.
+NO_DB_ISOLATION = {'dev/test_portable_v1.py'}
 bad = []
 #: سوئیت‌هایی که هیچ شمارشِ واقعی چاپ نکردند — «OK» اند ولی «چند بررسی» نامعلوم.
 #: پیش از این همین‌ها «0 pass / 0 fail» می‌شدند و سکوت را می‌شد با سبزی اشتباه گرفت.
 uncounted = []
 
 
-def run(argv, label):
+def run(argv, label, env_override=None):
     try:
         r = subprocess.run(argv, capture_output=True, text=True, encoding='utf-8',
-                           errors='replace', timeout=600, env=env, shell=False)
+                           errors='replace', timeout=600, env=env_override or env,
+                           shell=False)
     except FileNotFoundError:
         print('  SKIP %-40s (%s not found)' % (label, argv[0]))
         return
@@ -765,7 +770,12 @@ for script, label in SUITES:
         skipped.append((label, need))
         print('  SKIP %-40s (fixture missing: %s)' % (label, need))
         continue
-    run([sys.executable] + [a.replace('/', os.sep) for a in script.split()], label)
+    suite_env = env
+    if script in NO_DB_ISOLATION:
+        suite_env = {k: v for k, v in env.items()
+                     if k not in ('BORS_WORK_DIR', 'BORS_DB')}
+    run([sys.executable] + [a.replace('/', os.sep) for a in script.split()], label,
+        env_override=suite_env)
 if os.path.exists(FIXTURE_GEN):
     run([sys.executable, FIXTURE_GEN.replace('/', os.sep)], 'fixture: fts_v10 payloads')
 for script, label in JS_SUITES:

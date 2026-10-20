@@ -1105,21 +1105,24 @@ def _official_price_adjust_events(symbol, times=None):
     return out
 
 
-def _merge_official_price_adjust(events, official):
+def _merge_official_price_adjust(events, official, rejected=None):
     """رویداد رسمی را فقط وقتی اضافه می‌کند که کاشفِ CSV همان را ندیده باشد.
 
     هویتِ ردیف دفتری (`_ledger_key`) مهم است: یک ردیف می‌تواند در CSV به‌صورت
     گسستِ پایه دیده شود و هم در `_official_price_adjust_events` به اولین کندلِ
     بعدی نگاشت شود. اگر تاریخِ مؤثرِ این دو یکی نباشد (تعطیلی/توقفِ طولانی)،
     مقایسهٔ تاریخِ خام آن‌ها را «دو رویداد» می‌بیند و ضریب دوبار اعمال می‌شود.
+
+    اگر `rejected` داده شود، ردیف‌های تکراری برایِ گزارش به همان لیست اضافه
+    می‌شوند؛ امضای بازگشتی برایِ مصرف‌کننده‌هایِ قبلی همان لیستِ مرتب است.
     """
     kept = [dict(e) for e in (events or [])]
     claimed = {e.get("_ledger_key") for e in kept if e.get("_ledger_key")}
-    rejected = []
     for o in official:
         if o.get("_ledger_key") and o["_ledger_key"] in claimed:
-            rejected.append({"date": o.get("date"), "ratio": o.get("ratio"),
-                             "factor_status": "duplicate-ledger-row"})
+            if rejected is not None:
+                rejected.append({"date": o.get("date"), "ratio": o.get("ratio"),
+                                 "factor_status": "duplicate-ledger-row"})
             continue
         d = str(o["date"])[:10]
         dup = False
@@ -1140,7 +1143,7 @@ def _merge_official_price_adjust(events, official):
             kept.append(o)
             if o.get("_ledger_key"):
                 claimed.add(o["_ledger_key"])
-    return sorted(kept, key=lambda e: str(e.get("date"))[:10]), rejected
+    return sorted(kept, key=lambda e: str(e.get("date"))[:10])
 
 
 def _fund_profit_events(symbol):
@@ -1220,7 +1223,8 @@ def _canonical_adjustment(symbol, times, events):
     official_pa = _official_price_adjust_events(symbol, t10)
     dup_rejected = []
     if official_pa:
-        events, dup_rejected = _merge_official_price_adjust(events, official_pa)
+        events = _merge_official_price_adjust(events, official_pa,
+                                               rejected=dup_rejected)
     # کلیدِ هویتِ دفتری فقط برای همین تصمیم است؛ نه در payload و نه در موتور.
     events = [{k: v for k, v in e.items() if not str(k).startswith("_")}
               for e in events]

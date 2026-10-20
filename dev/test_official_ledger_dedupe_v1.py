@@ -37,43 +37,48 @@ def ev(date, ratio, source, key=None):
 
 
 # داسوه: discovered 2026-04-21 + official mapped to 2026-05-24, same ledger row.
-merged, rejected = C._merge_official_price_adjust(
+rejected = []
+merged = C._merge_official_price_adjust(
     [ev("2026-04-21", 0.92797119, "priceAdjust", ("2026-04-20", "priceAdjust"))],
     [ev("2026-05-24", 0.92797119, "tsetmc_price_adjust_by_flow",
-        ("2026-04-20", "priceAdjust"))])
+        ("2026-04-20", "priceAdjust"))], rejected=rejected)
 ck(len(merged) == 1 and merged[0]["date"] == "2026-04-21",
    "داسوه: same ledger row is applied once", merged)
 ck(len(rejected) == 1 and rejected[0]["factor_status"] == "duplicate-ledger-row",
    "داسوه: duplicate is reported, not silently dropped", rejected)
 
 # فولاژ: 6-day gap, old 5-day window missed it.
-merged, rejected = C._merge_official_price_adjust(
+rejected = []
+merged = C._merge_official_price_adjust(
     [ev("2025-08-12", 0.91368036, "priceAdjust", ("2025-08-05", "priceAdjust"))],
     [ev("2025-08-06", 0.91368036, "tsetmc_price_adjust_by_flow",
-        ("2025-08-05", "priceAdjust"))])
+        ("2025-08-05", "priceAdjust"))], rejected=rejected)
 ck(len(merged) == 1 and len(rejected) == 1,
    "فولاژ: same ledger row across a 6-day gap is applied once", (merged, rejected))
 
 # غويتا: same pattern.
-merged, rejected = C._merge_official_price_adjust(
+rejected = []
+merged = C._merge_official_price_adjust(
     [ev("2026-04-26", 0.96258993, "priceAdjust", ("2026-04-25", "priceAdjust"))],
     [ev("2026-05-24", 0.96258993, "tsetmc_price_adjust_by_flow",
-        ("2026-04-25", "priceAdjust"))])
+        ("2026-04-25", "priceAdjust"))], rejected=rejected)
 ck(len(merged) == 1 and len(rejected) == 1,
    "غويتا: same ledger row is applied once", (merged, rejected))
 
 # A genuinely distinct official row must survive.
-merged, rejected = C._merge_official_price_adjust(
+rejected = []
+merged = C._merge_official_price_adjust(
     [ev("2025-01-10", 0.95, "shareChange", ("2025-01-09", "shareChange"))],
     [ev("2025-03-10", 0.90, "tsetmc_price_adjust_by_flow",
-        ("2025-03-09", "priceAdjust"))])
+        ("2025-03-09", "priceAdjust"))], rejected=rejected)
 ck(len(merged) == 2 and not rejected,
    "distinct ledger rows are both kept", (merged, rejected))
 
 # Existing 5-day/0.1% dedupe still applies when the key is absent.
-merged, rejected = C._merge_official_price_adjust(
+rejected = []
+merged = C._merge_official_price_adjust(
     [ev("2025-01-10", 0.95, "base-price-discontinuity")],
-    [ev("2025-01-12", 0.95, "priceAdjust")])
+    [ev("2025-01-12", 0.95, "priceAdjust")], rejected=rejected)
 ck(len(merged) == 1 and not rejected,
    "near-date + equal-ratio dedupe remains intact", merged)
 
