@@ -259,8 +259,11 @@ if HAS_BANK:
         sym = None
     if sym:
         d = CH.get_chart_db(sym)
+        _times = [str(c["time"])[:10] for c in (d.get("candles") or [])]
+        _evs_f, _rej_f = CH._filter_unproven_base_events(sym, CH._stored_adjust_events(sym))
+        _applied, _rj, _fc, _ch, _cv = CH._canonical_adjustment(sym, _times, _evs_f)
         ck("مسیرِ محلی همان مجموعهٔ رویدادِ کاننیکال را می‌دهد (نه [])",
-           d.get("adjustEvents") == stored and len(stored) > 0, len(stored))
+           d.get("adjustEvents") == _applied and len(_applied) > 0, len(_applied))
         ck("منبعِ مسیرِ محلی «local-cache» اعلام می‌شود",
            d.get("adjustSource") == "local-cache", d.get("adjustSource"))
         if expected_rejected:
@@ -276,7 +279,7 @@ if HAS_BANK:
         ck("ضرایبِ مسیرِ محلی = حاصلِ ضربِ مستقلِ رویدادهایِ بعداز آن روز",
            [round(f["factor"], 8) for f in d["factors"]]
            == [round(x, 8) for x in CH._factors_from_events(
-               [str(c["time"])[:10] for c in d["candles"]], stored)],
+               [str(c["time"])[:10] for c in d["candles"]], _applied)],
            (d["factors"][:2], stored[:2]))
         f1 = CH._fts_scaled(d["candles"], d["factors"], d["volumes"])
         _raw_by_date = {str(c["time"])[:10]: c for c in d["candles"]}

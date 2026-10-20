@@ -1,0 +1,8 @@
+{
+ "symbols": 3344,
+ "fresh_kept": 15,
+ "base_kept": 3329,
+ "reasons": {
+  "fresh_fallback": 18
+ }
+}
