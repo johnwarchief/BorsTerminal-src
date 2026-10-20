@@ -19,7 +19,7 @@ import type { TradingGate } from '../../lib/orderClient';
 import { Chip } from './parts';
 
 const MODE_LABEL: Record<string, string> = {
-  mock: 'بدلِ سرویس (mock)',
+  mock: 'حالت آزمایشی (mock)',
   // `dry_run` یعنی «سفارش ارسال نمی‌شود» — نه «هیچ درخواستی بیرون نمی‌رود»؛
   // درِ حالتِ فقط‌خواندنی یک GET به کارگزاری می‌رود و برچسب نباید آن را انکار کند.
   dry_run: DRY_RUN_LABEL,
@@ -56,10 +56,10 @@ export function SarkhatiStatusStrip({ gate }: { gate: TradingGate }) {
             ? `سرویسِ اجرا: ${st?.adapter ?? '—'}${gate.dryRun ? ' · بدل' : ''}`
             : 'سرویسِ اجرا نیست'}
         </Badge>
-        <Chip tone={sessionBadges} title="وضعیتِ نشست از پاسخِ خودِ سرویس">
+        <Chip tone={sessionBadges} title="وضعیت دسترسی از پاسخ خودِ سرویس">
           {st?.session?.account_label
-            ? `${String(st.session.account_label)} · نشستِ ${gate.sessionState === 'connected' && st.live_enabled !== true ? 'بدل' : 'زنده'}`
-            : 'نشست'}
+            ? `${String(st.session.account_label)} · دسترسیِ ${gate.sessionState === 'connected' && st.live_enabled !== true ? 'آزمایشی' : 'زنده'}`
+            : 'دسترسی'}
         </Chip>
         <Chip tone={gate.halted ? 'bad' : 'idle'}>
           {gate.halted ? `توقفِ اضطراری${st?.kill_reason ? `: ${st.kill_reason}` : ''}` : 'مسیر باز است'}

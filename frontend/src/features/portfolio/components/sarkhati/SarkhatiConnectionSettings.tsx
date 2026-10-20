@@ -139,7 +139,7 @@ export function SarkhatiConnectionSettings() {
 
       <Note label="دو گیتِ جدا" testId="sarkhati-config-gates">
         <ul className="flex flex-col gap-0.5">
-          <li>فقط‌خواندنی یعنی GETِ وضعیتِ نشست و فهرست‌ها؛ «ارسالِ سفارش» باِ این
+          <li>فقط‌خواندنی یعنی GETِ وضعیت دسترسی و فهرست‌ها؛ «ارسال سفارش» با این
               روشن نمی‌شود.</li>
           <li>گیتِ نوشتن فقط باِ متغیرِ محیطی <span className="num" dir="ltr">BORS_EXECUTION_LIVE=1</span> است —
               تصمیمِ جدا و آگاهانۀ خودِ کاربر، نه یکِ دکمه درِ این صفحه.</li>

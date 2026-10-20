@@ -195,13 +195,13 @@ export function SarkhatiDurableScheduleCard() {
       sub="ذخیرهٔ اتمیک؛ پس از restart هیچ سفارشی خودکار اجرا نمی‌شود"
       testId="sarkhati-durable-schedule"
       right={<>
-        <Chip tone={liveReady ? 'ok' : 'bad'} title="ارسال زنده تا تأیید قرارداد/نشست قفل است">
+        <Chip tone={liveReady ? 'ok' : 'bad'} title="ارسال زنده تا تأیید قرارداد/دسترسی قفل است">
           {liveReady ? 'زنده: باز' : 'زنده: قفل'}
         </Chip>
         <Chip tone="live">dry-run</Chip>
       </>}>
       <div className="mb-1.5 flex flex-wrap items-center gap-2" data-testid="sched-browser-host">
-        <span className="text-2xs font-bold text-text-secondary">نشستِ پایدارِ مرورگر</span>
+        <span className="text-2xs font-bold text-text-secondary">پنجرهٔ پایدار مرورگر</span>
         <Chip tone={host.healthy ? 'ok' : 'idle'} testId="sched-host-state">
           {host.healthy ? `host آماده · پورت ${toFaDigits(String(host.port ?? '—'))}` : 'host بسته'}
         </Chip>

@@ -20,9 +20,11 @@
 می‌شود، نه صفر؛ و `live_enabled` ازِ وضعیتِ واقعیِ آداپتور خوانده می‌شود، نه
 ازِ یکِ ثابت.
 
-token درِ همین پروسه و درِ حافظه می‌ماند (`POST /api/execution/session`) و پس از
-restart، فقط اگر ترافیک مجاز باشد، از مخزنِ امنِ ویندوز بازیابی می‌شود؛ هیچ
-مسیری آن را درِ فایل، دیتابیس، لاگ یا پاسخِ HTTP نمی‌نویسد.
+token درِ همین پروسه و درِ حافظه می‌ماند (`POST /api/execution/session`، یا
+`POST /api/execution/connection/capture-session` که فقط با کلیکِ صریحِ مالک
+نشست را از مرورگرِ مدیریت‌شده می‌خواند) و پس از restart، فقط اگر ترافیک مجاز
+باشد، از مخزنِ امنِ ویندوز بازیابی می‌شود؛ هیچ مسیری آن را درِ فایل، دیتابیس،
+لاگ یا پاسخِ HTTP نمی‌نویسد.
 """
 from __future__ import annotations
 
@@ -38,6 +40,7 @@ import time
 import uuid
 from collections import deque
 from typing import Any
+from urllib.parse import urlparse
 
 from fastapi import APIRouter, Body, HTTPException, Query, Request
 
@@ -1930,6 +1933,67 @@ def get_connection_diagnose() -> dict[str, Any]:
 @router.post("/api/execution/connection/verify")
 def post_connection_verify() -> dict[str, Any]:
     return get_connection_diagnose()
+
+
+def _same_origin(origin: str, host_header: str) -> bool:
+    try:
+        o = urlparse(origin)
+        h = urlparse("//" + str(host_header or ""))
+    except ValueError:
+        return False
+    loopback = ("127.0.0.1", "localhost", "::1")
+    return (o.hostname in loopback and h.hostname in loopback
+            and (o.port or 80) == (h.port or 80))
+
+
+@router.post("/api/execution/connection/capture-session")
+def post_connection_capture_session(request: Request) -> dict[str, Any]:
+    """نشستِ OIDC را از مرورگرِ مدیریت‌شده فقط در حافظه می‌گذارد.
+
+    این در هیچ سفارشی نمی‌فرستد و مقدارِ نشست را نه برمی‌گرداند، نه ذخیره
+    می‌کند و نه لاگ. فقط از همان originِ محلیِ خودِ برنامه پذیرفته می‌شود.
+    """
+    origin = request.headers.get("origin") or ""
+    if origin and not _same_origin(origin, request.headers.get("host") or ""):
+        return {"status": "error", "code": "CROSS_ORIGIN_BLOCKED",
+                "detail": "این در فقط از خودِ رابطِ محلی پذیرفته می‌شود",
+                "secrets_returned": False, "secrets_stored": False}
+    if ADAPTER_KIND != "easytrader":
+        return {"status": "error", "code": "ADAPTER_NOT_EASYTRADER",
+                "detail": "آداپتورِ واقعی فعال نیست؛ ابتدا EasyTrader + فقط‌خواندنی را ذخیره و restart کنید",
+                "secrets_returned": False, "secrets_stored": False}
+    if not TRAFFIC_ALLOWED:
+        return {"status": "error", "code": "TRAFFIC_OFF",
+                "detail": "هیچ ترافیکی مجاز نیست؛ نشست در حافظه نگه داشته نمی‌شود",
+                "secrets_returned": False, "secrets_stored": False}
+    got = BH.read_status(check=True)
+    if not got.get("healthy"):
+        return {"status": "error", "code": "HOST_DOWN",
+                "detail": "پنجرهٔ host باز/سالم نیست",
+                "secrets_returned": False, "secrets_stored": False}
+    try:
+        import execution_session_capture as ESC
+        token, meta = ESC.capture_from_host(str(got.get("cdp_url") or ""))
+    except Exception as e:                       # noqa: BLE001
+        return {"status": "error", "code": str(getattr(e, "code", "CAPTURE_FAILED")),
+                "detail": str(getattr(e, "detail", "") or
+                              "خواندنِ نشست از مرورگر ممکن نشد")[:200],
+                "secrets_returned": False, "secrets_stored": False}
+    try:
+        _ACTIVE_ADAPTER.set_token(token)
+    except Exception as e:                       # noqa: BLE001
+        return {"status": "error", "code": "TOKEN_SET_FAILED",
+                "detail": "آداپتور توکن را نپذیرفت (%s)" % type(e).__name__,
+                "secrets_returned": False, "secrets_stored": False}
+    finally:
+        token = ""
+    return {"status": "success", "code": "CAPTURED", "token_present": True,
+            "page_host": meta.get("page_host"), "token_type": meta.get("token_type"),
+            "expires_at": meta.get("expires_at"), "scope": meta.get("scope"),
+            "has_refresh_token": bool(meta.get("has_refresh_token")),
+            "secrets_returned": False, "secrets_stored": False,
+            "detail": "نشست از مرورگر خوانده و فقط در حافظهٔ پروسه گذاشته شد؛ "
+                      "حالا «بررسی وضعیت» را بزنید."}
 
 
 @router.get("/api/execution/connection/report")

@@ -96,7 +96,7 @@ describe('درِ رابط فقط با پشتیبانِ واقعی باز می‌
     renderPanel();
     await waitFor(() => expect(screen.getByTestId('watch-order-panel')
       .getAttribute('data-session')).toBe('expired'));
-    expect(document.body.textContent).toContain('نشست منقضی شده');
+    expect(document.body.textContent).toContain('دسترسی به حساب منقضی شده');
     expect(document.body.textContent).not.toContain('Connected');
   });
 
@@ -299,7 +299,7 @@ describe('پاسخِ کارگزاری درِ رابط تعبیر نمی‌شود
       .getAttribute('data-can-trade')).toBe('false'));
     // خطِ علت، نه عنوانِ tooltip: کاربر باید بداند چه کاری لازم است.
     expect(screen.getByTestId('watch-order-reason').textContent)
-      .toContain('بررسی اتصال');
+      .toContain('بررسی وضعیت');
   });
 
   it('همان وضعیت با نشستِ منقضی ⇒ علتِ «منقضی» گفته می‌شود، نه «خطایِ نامعلوم»', async () => {

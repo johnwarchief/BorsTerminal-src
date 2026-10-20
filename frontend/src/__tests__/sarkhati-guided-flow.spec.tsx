@@ -82,11 +82,11 @@ describe('قدمِ پیشنهادی — تابعِ خالص', () => {
   });
 
   it('بی‌نشستِ قابلِ ارسال، واژۀ مأموریت نوشته می‌شود نه حدس', () => {
-    expect(statusLine(gateOf({ session: { state: 'disconnected' } }))).toContain('متصل نیست');
+    expect(statusLine(gateOf({ session: { state: 'disconnected' } }))).toContain('دسترسی نداریم');
     expect(statusLine(gateOf({ adapter: 'easytrader', dry_run: false, live_enabled: true,
-      session: { state: 'expired', account_label: 'acct' } }))).toContain('نشست منقضی شده');
+      session: { state: 'expired', account_label: 'acct' } }))).toContain('دسترسی منقضی شده');
     expect(statusLine(gateOf({ adapter: 'easytrader', dry_run: false, live_enabled: true,
-      session: { state: 'error', account_label: 'acct' } }))).toContain('خطای اتصال');
+      session: { state: 'error', account_label: 'acct' } }))).toContain('خطای ارتباط');
   });
 
   it('ترتیبِ پرسش‌ها: نماد ← سفارش ← نتیجه', () => {
@@ -104,7 +104,7 @@ describe('قدمِ پیشنهادی — تابعِ خالص', () => {
     expect(g.canTrade).toBe(false); // mock: هیچ چیزی بیرون نمی‌رود
     const r = deriveStep({ gate: g, symbol: 'فولاد', draft: DRAFT_FULL });
     expect(r.why).toContain('حالتِ تمرین');
-    expect(statusLine(g)).toContain('بدلِ سرویس (mock)');
+    expect(statusLine(g)).toContain('حالت آزمایشی');
   });
 
   it('اتصالِ زندهٔ راستی‌آزمایی‌شده: قدم سفارش است و «تمرین» دیگر نوشته نمی‌شود', () => {
@@ -172,11 +172,11 @@ describe('قدمِ پیشنهادی — همان چیزی که صفحه نشان
     // نوشته می‌شود. بی‌این سنجش بی‌معنی است، چون نگاهِ اولِ صفحه — پیشِ هر
     // پاسخی — رویِ «اتصال» است و «connect» را ازِ حالتِ بارگذاری هم می‌دهد.
     await waitFor(() => expect(screen.getByTestId('sarkhati-status-line').textContent)
-      .toContain('اتصالِ زنده'));
+      .toContain('ارتباط زنده'));
     expect(screen.getByTestId('sarkhati-page').getAttribute('data-suggested-step'))
       .toBe('connect');
     expect(screen.getByTestId('sarkhati-connect-section')).toBeInTheDocument();
-    expect(screen.getByTestId('sarkhati-status-line').textContent).toContain('متصل نیست');
+    expect(screen.getByTestId('sarkhati-status-line').textContent).toContain('دسترسی نداریم');
     expect(screen.queryByTestId('watch-order-price')).toBeNull();
     // ولی «قفل» نیست: کاربر می‌تواند خودش برود سراغِ فرم — راهنما راه را بند نمی‌کند
     fireEvent.click(screen.getByTestId('sarkhati-tab-order'));

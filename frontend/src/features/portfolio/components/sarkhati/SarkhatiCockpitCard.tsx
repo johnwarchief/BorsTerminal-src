@@ -227,7 +227,7 @@ export function SarkhatiCockpitCard({ ledger }: { ledger: LedgerView | null | un
           host: {String(status?.components?.browser_host ?? '—')}
         </Chip>
         <Chip tone={status?.components?.session === 'proven' ? 'ok' : 'warn'}>
-          نشست: {String(status?.components?.session ?? '—')}
+          دسترسی: {String(status?.components?.session ?? '—')}
         </Chip>
         <Chip tone="idle">عرضه: {fa(offers.length)} / تأییدشده {fa(verified.length)}</Chip>
         <Chip tone={(status?.components?.unknown_holds as number || 0) > 0 ? 'bad' : 'idle'}>

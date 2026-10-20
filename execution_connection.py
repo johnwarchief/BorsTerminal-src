@@ -32,6 +32,7 @@ UNVERIFIED = "UNVERIFIED"
 NOT_RUN = "NOT_RUN"
 
 STATE_CONNECTED = "CONNECTED"
+STATE_READ_ONLY_VERIFIED = "READ_ONLY_VERIFIED"
 STATE_LOGIN_REQUIRED = "LOGIN_REQUIRED"
 STATE_HOST_DOWN = "HOST_DOWN"
 STATE_CDP_DOWN = "CDP_DOWN"
@@ -40,26 +41,27 @@ STATE_API_UNVERIFIED = "BROWSER_READY_API_UNVERIFIED"
 STATE_BACKEND_DOWN = "BACKEND_DOWN"
 
 STATE_LABEL = {
-    STATE_CONNECTED: "اتصال API تأیید شده است",
-    STATE_LOGIN_REQUIRED: "مرورگر باز است؛ ورود دستی مالک لازم است",
-    STATE_HOST_DOWN: "Browser host در دسترس نیست",
-    STATE_CDP_DOWN: "CDP پاسخ نمی‌دهد",
-    STATE_PAGE_MISSING: "صفحهٔ EasyTrader در host پیدا نشد",
-    STATE_API_UNVERIFIED: "مرورگر آماده است؛ اتصال API کارگزاری هنوز تأیید نشده است",
-    STATE_BACKEND_DOWN: "Backend در دسترس نیست",
+    STATE_CONNECTED: "ارتباط کامل با کارگزاری تأیید شد",
+    STATE_READ_ONLY_VERIFIED: "خواندن اطلاعات حساب تأیید شد؛ ارسال سفارش هنوز فعال نیست",
+    STATE_LOGIN_REQUIRED: "مرورگر باز است؛ لطفاً خودتان وارد کارگزاری شوید",
+    STATE_HOST_DOWN: "پنجرهٔ مرورگر کارگزاری باز نیست",
+    STATE_CDP_DOWN: "ارتباط فنی با مرورگر برقرار نیست",
+    STATE_PAGE_MISSING: "صفحهٔ کارگزاری در پنجرهٔ مرورگر پیدا نشد",
+    STATE_API_UNVERIFIED: "مرورگر آماده است؛ هنوز دسترسی به حساب تأیید نشده است",
+    STATE_BACKEND_DOWN: "برنامهٔ اصلی پاسخ نمی‌دهد",
 }
 
 STEP_TITLES = {
-    "backend": "Backend و نسخه",
-    "host": "Browser host",
-    "cdp": "CDP محلی",
-    "page": "صفحهٔ EasyTrader",
-    "login": "وضعیت ورود",
-    "session": "نشست API",
-    "contract": "قرارداد API",
-    "read_only": "پرسشِ read-only",
-    "account": "منبع حساب/پرتفوی",
-    "capabilities": "قابلیت‌های آداپتور",
+    "backend": "برنامهٔ اصلی",
+    "host": "پنجرهٔ مرورگر",
+    "cdp": "ارتباط فنی مرورگر",
+    "page": "صفحهٔ کارگزاری",
+    "login": "ورود شما در مرورگر",
+    "session": "دسترسی به حساب",
+    "contract": "ارسال سفارش",
+    "read_only": "خواندن اطلاعات از کارگزاری",
+    "account": "اطلاعات حساب",
+    "capabilities": "امکانات اتصال",
 }
 
 
@@ -125,8 +127,8 @@ def diagnose(*, app_version: str, host: Mapping[str, Any],
         "backend", PASS if backend_ok else FAIL,
         "app_version=%s adapter=%s traffic=%s" % (
             app_version, adapter, "allowed" if execution.get("traffic_allowed") else "blocked"),
-        "Backend پاسخ داد" if backend_ok else "وضعیتِ اجرا از Backend نیامد",
-        "" if backend_ok else "Backend را اجرا/بررسی کنید", t0))
+        "برنامه پاسخ داد" if backend_ok else "وضعیت اجرا از برنامه نیامد",
+        "" if backend_ok else "برنامه را اجرا/بررسی کنید", t0))
 
     t0 = time.monotonic()
     host_ok = bool(host.get("healthy"))
@@ -134,8 +136,8 @@ def diagnose(*, app_version: str, host: Mapping[str, Any],
         "host", PASS if host_ok else FAIL,
         "healthy=%s status=%s port=%s" % (host_ok, host.get("status"),
                                            host.get("port")),
-        "host سالم است" if host_ok else
-        "host اجرا نشده یا پنجره/فرایندش در دسترس نیست",
+        "پنجرهٔ مرورگر آماده است" if host_ok else
+        "پنجرهٔ مرورگر باز نشده یا در دسترس نیست",
         "" if host_ok else "«باز کردن پنجرهٔ اتصال» را بزنید", t0))
 
     t0 = time.monotonic()
@@ -147,9 +149,9 @@ def diagnose(*, app_version: str, host: Mapping[str, Any],
     steps.append(_step(
         "cdp", PASS if cdp_ok else (NOT_RUN if not host_ok else FAIL),
         "pages=%d%s" % (len(pages), "" if not cdp_err else " error=" + cdp_err),
-        "CDP پاسخ داد (%d صفحه)" % len(pages) if cdp_ok else
-        (cdp_err or "بدونِ host، CDP بررسی نشد"),
-        "" if cdp_ok else "host را دوباره باز کنید", t0))
+        "ارتباط فنی با مرورگر پاسخ داد (%d صفحه)" % len(pages) if cdp_ok else
+        (cdp_err or "بدون پنجرهٔ مرورگر، ارتباط فنی بررسی نشد"),
+        "" if cdp_ok else "پنجرهٔ مرورگر را دوباره باز کنید", t0))
 
     allowed = login_hosts | ui_hosts
     chosen = next((p for p in pages if p.get("host") in ui_hosts), None) \
@@ -167,27 +169,27 @@ def diagnose(*, app_version: str, host: Mapping[str, Any],
         "page", page_status,
         "" if chosen is None else "host=%s title=%s" % (
             chosen.get("host"), chosen.get("title")),
-        "صفحهٔ مجاز پیدا شد" if page_status == PASS else
-        ("صفحه‌ای در host نیست" if chosen is None else "صفحهٔ فعلی در دامنهٔ مجاز نیست"),
-        "" if page_status == PASS else "در همان پنجره EasyTrader را باز کنید"))
+        "صفحهٔ کارگزاری پیدا شد" if page_status == PASS else
+        ("صفحه‌ای در پنجرهٔ مرورگر نیست" if chosen is None else "صفحهٔ فعلی صفحهٔ کارگزاری نیست"),
+        "" if page_status == PASS else "در همان پنجره کارگزاری را باز کنید"))
 
     title = str((chosen or {}).get("title") or "")
     page_host = str((chosen or {}).get("host") or "")
     login_markers = ("ورود", "login", "sign in", "signin")
     if not chosen:
-        login_status, login_reason, login_action = NOT_RUN, "صفحه‌ای برایِ بررسی نیست", ""
+        login_status, login_reason, login_action = NOT_RUN, "صفحه‌ای برای بررسی نیست", ""
     elif page_host in set(EXC.auth_hosts()) or any(m in title.lower() for m in login_markers):
         login_status = BLOCKED
-        login_reason = "صفحهٔ ورود دیده می‌شود؛ هنوز وارد نشده‌اید"
-        login_action = "در همان پنجره دستی وارد EasyTrader شوید"
+        login_reason = "صفحهٔ ورود کارگزاری باز است؛ هنوز وارد نشده‌اید"
+        login_action = "در همان پنجره وارد کارگزاری شوید"
     elif page_host in ui_hosts:
         login_status = UNVERIFIED
-        login_reason = "صفحهٔ UI باز است، اما ورود فقط از همین ظاهر اثبات نمی‌شود"
-        login_action = "پس از ورود، «بررسی وضعیت» را دوباره بزنید"
+        login_reason = "صفحهٔ کارگزاری باز است، اما ورود از ظاهر صفحه ثابت نمی‌شود"
+        login_action = "پس از ورود، «بررسی وضعیت» را بزنید"
     else:
         login_status = UNVERIFIED
-        login_reason = "دامنهٔ صفحه برایِ تشخیص ورود شناخته‌شده نیست"
-        login_action = "صفحهٔ EasyTrader را در host باز کنید"
+        login_reason = "این صفحه برای تشخیص ورود شناخته‌شده نیست"
+        login_action = "صفحهٔ کارگزاری را در همان پنجره باز کنید"
     steps.append(_step("login", login_status,
                        "page_host=%s title=%s" % (page_host, title),
                        login_reason, login_action))
@@ -195,24 +197,41 @@ def diagnose(*, app_version: str, host: Mapping[str, Any],
     session = execution.get("session") or {}
     session_state = str(session.get("state") or "unknown").lower()
     proven = bool(session.get("proven"))
-    session_live = bool(execution.get("live_enabled"))
+    # `live_enabled` دروازهٔ *نوشتن* است؛ ترافیکِ فقط‌خواندنی با آن سنجیده
+    # نمی‌شود. این اشتباه پس از دریافتِ نشست با read_only=true، مرحله را BLOCKED
+    # نگه می‌داشت و دریافت خودکار را بی‌پایان می‌کرد.
+    traffic_live = bool(execution.get("traffic_allowed"))
+    token_present = session_state != "disconnected"
     if adapter == "mock":
-        session_status, session_reason = BLOCKED, "آداپتور mock است؛ نشستِ کارگزاری معنایی ندارد"
-        session_action = "آداپتور easytrader را انتخاب و restart کنید"
-    elif proven and session_live:
-        session_status, session_reason = PASS, "نشست با پرسشِ واقعی تأیید شده"
+        session_status, session_reason = BLOCKED, "این حالت آزمایشی است و به حساب واقعی وصل نیست"
+        session_action = "روش اتصال را روی EasyTrader بگذارید و برنامه را دوباره باز کنید"
+    elif proven and traffic_live:
+        session_status, session_reason = PASS, "دسترسی به حساب با پاسخ واقعی کارگزاری تأیید شد"
         session_action = ""
-    elif not session_live:
+    elif not traffic_live:
         session_status = BLOCKED
-        session_reason = "ترافیک/نشستِ API در backend زنده نیست"
-        session_action = "پس از ورود، بررسیِ read-only را اجرا کنید"
+        session_reason = "ارتباط با کارگزاری خاموش است (نوشتن و خواندن هر دو)"
+        session_action = "روش اتصال را روی EasyTrader + فقط‌خواندنی بگذارید و برنامه را دوباره باز کنید"
+    elif session_state == "expired":
+        session_status = BLOCKED
+        session_reason = "دسترسی به حساب منقضی شده است"
+        session_action = "در پنجرهٔ مرورگر دوباره وارد شوید"
+    elif session_state == "auth_failed":
+        session_status = BLOCKED
+        session_reason = "کارگزاری اجازهٔ دسترسی نداد"
+        session_action = "ورود و حساب را بررسی کنید و دوباره تلاش کنید"
+    elif not token_present:
+        session_status = BLOCKED
+        session_reason = "هنوز دسترسی به حساب دریافت نشده است"
+        session_action = "دسترسی را از مرورگر دریافت کنید (خودکار یا دستی)"
     else:
         session_status = UNVERIFIED
-        session_reason = "نشست API هنوز با شاهد تأیید نشده"
-        session_action = "بررسیِ read-only را اجرا کنید"
+        session_reason = "دسترسی به حساب دریافت شد، اما هنوز امتحان نشده است"
+        session_action = "«بررسی وضعیت» را بزنید"
     steps.append(_step("session", session_status,
-                       "adapter=%s state=%s proven=%s live=%s" % (
-                           adapter, session_state, proven, session_live),
+                       "adapter=%s state=%s proven=%s traffic=%s session_present=%s" % (
+                           adapter, session_state, proven, traffic_live,
+                           token_present),
                        session_reason, session_action))
 
     contract_raw = execution.get("wire_hypothesis")
@@ -224,10 +243,10 @@ def diagnose(*, app_version: str, host: Mapping[str, Any],
         "wire_hypothesis=%s source=%s" % (
             contract_raw,
             (execution.get("wire_provenance") or {}).get("order_create", {}).get("kind", "?")),
-        "وضعیتِ قرارداد از سرویس نیامده" if not contract_known else
-        ("قرارداد write هنوز فرضیهٔ مهندسی معکوس است" if contract_hypothesis
-         else "قرارداد با شاهد مستقل تأیید شده"),
-        "بدونِ شاهدِ واقعی، همیشه UNVERIFIED می‌ماند"))
+        "وضعیت ارسال سفارش از سرویس نیامده" if not contract_known else
+        ("مسیر ارسال سفارش هنوز تأیید نشده است" if contract_hypothesis
+         else "مسیر ارسال سفارش تأیید شده است"),
+        "بدون شاهد واقعی، تأییدنشده می‌ماند"))
 
     proof = session.get("verified_by") or {}
     read_status = PASS if proven and proof.get("path") else BLOCKED
@@ -235,22 +254,22 @@ def diagnose(*, app_version: str, host: Mapping[str, Any],
         "read_only", read_status,
         "path=%s status=%s kind=%s" % (
             proof.get("path"), proof.get("status"), proof.get("kind")),
-        "پرسشِ read-only با شاهد ثبت شده" if read_status == PASS
-        else "هیچ پرسشِ read-only تأییدشده‌ای در backend نیست",
-        "" if read_status == PASS else "پس از ورود، بررسیِ read-only را اجرا کنید"))
+        "خواندن اطلاعات از کارگزاری با شاهد ثبت شده" if read_status == PASS
+        else "هنوز خواندن اطلاعات تأیید نشده است",
+        "" if read_status == PASS else "پس از ورود، «بررسی وضعیت» را بزنید"))
 
     pf = str(portfolio.get("status") or "unknown")
     if pf == "success" and portfolio.get("rows") is not None:
-        account_status, account_reason = PASS, "منبعِ پرتفوی پاسخ داد"
+        account_status, account_reason = PASS, "اطلاعات حساب خوانده شد"
     elif pf in ("no_source", "blocked", "unverified_session"):
         account_status = BLOCKED
-        account_reason = "منبعِ معتبرِ حساب/پرتفوی در دسترس نیست"
+        account_reason = "اطلاعات حساب در دسترس نیست"
     else:
-        account_status, account_reason = UNVERIFIED, "وضعیتِ منبعِ حساب معلوم نیست"
+        account_status, account_reason = UNVERIFIED, "وضعیت اطلاعات حساب معلوم نیست"
     steps.append(_step("account", account_status,
                        "portfolio_status=%s rows=%s" % (pf, portfolio.get("rows")),
                        account_reason,
-                       "" if account_status == PASS else "منبعِ read-only حساب را تأیید/وصل کنید"))
+                       "" if account_status == PASS else "اطلاعات خواندنی حساب را وصل کنید"))
 
     caps = execution.get("capabilities") or {}
     caps_ok = bool(isinstance(caps, Mapping) and caps)
@@ -258,8 +277,8 @@ def diagnose(*, app_version: str, host: Mapping[str, Any],
                           ("place", "list_orders", "order_state", "balances", "cancel"))
     steps.append(_step("capabilities", PASS if caps_ok else UNVERIFIED,
                        "caps: " + (caps_bits or "—"),
-                       "قابلیت‌های آداپتور خوانده شد" if caps_ok else "قابلیت‌ها نیامده",
-                       "" if caps_ok else "وضعیتِ آداپتور را بررسی کنید"))
+                       "امکانات اتصال خوانده شد" if caps_ok else "امکانات اتصال نیامده",
+                       "" if caps_ok else "وضعیت اتصال را بررسی کنید"))
 
     statuses = {s["key"]: s["status"] for s in steps}
     if statuses["host"] != PASS:
@@ -273,6 +292,8 @@ def diagnose(*, app_version: str, host: Mapping[str, Any],
     elif statuses["session"] == PASS and statuses["read_only"] == PASS \
             and statuses["contract"] == PASS:
         state = STATE_CONNECTED
+    elif statuses["session"] == PASS and statuses["read_only"] == PASS:
+        state = STATE_READ_ONLY_VERIFIED
     elif statuses["backend"] != PASS:
         state = STATE_BACKEND_DOWN
     else:
@@ -280,6 +301,12 @@ def diagnose(*, app_version: str, host: Mapping[str, Any],
 
     first_action = next((s["action"] for s in steps
                          if s["status"] != PASS and s["action"]), "")
+    if state == STATE_READ_ONLY_VERIFIED:
+        account_action = next((s["action"] for s in steps
+                               if s["key"] == "account" and s["status"] != PASS
+                               and s["action"]), "")
+        first_action = (account_action or
+                        "نشست خواندنی تأیید شد؛ نوشتن سفارش همچنان بسته است")
     return {
         "status": "success", "backend_instance": "local",
         "app_version": app_version, "adapter": adapter,

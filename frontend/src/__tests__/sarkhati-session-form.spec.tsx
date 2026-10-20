@@ -264,10 +264,10 @@ describe('چهار وضعیت ازِ هم جدا می‌مانند', () => {
   it('پسِ «ثبتِ نشست»: وارد شد بله، تأیید نه، ارسال نه', async () => {
     const r = route();
     renderForm();
-    await settled('sarkhati-gate-entered', 'نشانی وارد نشده');
+    await settled('sarkhati-gate-entered', 'دسترسی نداریم');
     fireEvent.change(screen.getByTestId('sarkhati-token-input'), { target: { value: SECRET } });
     fireEvent.click(screen.getByTestId('sarkhati-token-save'));
-    await settled('sarkhati-gate-entered', 'نشانی وارد شد');
+    await settled('sarkhati-gate-entered', 'دسترسی دریافت شد');
     expect(gateText('proven')).toBe('تأیید نشده');
     expect(gateText('writes')).toBe('خاموش');
     const post = r.calls.find((c) => c.method === 'POST' && c.url.includes('/session'));
@@ -275,17 +275,17 @@ describe('چهار وضعیت ازِ هم جدا می‌مانند', () => {
     await settled('sarkhati-session-note', '۲ تأییدِ پیشین بی‌اعتبار شد');
   });
 
-  it('پسِ «پاک کردنِ نشست» رابط برمی‌گردد به «نشانی وارد نشده»', async () => {
+  it('پسِ «پاک کردنِ نشست» رابط برمی‌گردد به «دسترسی نداریم»', async () => {
     route();
     renderForm();
-    await settled('sarkhati-gate-entered', 'نشانی وارد نشده');
+    await settled('sarkhati-gate-entered', 'دسترسی نداریم');
     fireEvent.change(screen.getByTestId('sarkhati-token-input'), { target: { value: SECRET } });
     fireEvent.click(screen.getByTestId('sarkhati-token-save'));
-    await settled('sarkhati-gate-entered', 'نشانی وارد شد');
+    await settled('sarkhati-gate-entered', 'دسترسی دریافت شد');
     fireEvent.click(screen.getByTestId('sarkhati-token-clear'));
     await waitFor(() => expect(fetchMock.mock.calls.some((c) =>
       String(c[0]).includes('/api/execution/session') && String(c[1]?.method) === 'DELETE')).toBe(true));
-    await settled('sarkhati-gate-entered', 'نشانی وارد نشده');
+    await settled('sarkhati-gate-entered', 'دسترسی نداریم');
     expect(gateText('proven')).toBe('تأیید نشده');
   });
 
@@ -294,9 +294,9 @@ describe('چهار وضعیت ازِ هم جدا می‌مانند', () => {
       session: { state: 'connected', origin: 'mock', proven: true,
         verified_by: { path: '/x', kind: 'observed-read-only' } } }) });
     renderForm();
-    await settled('sarkhati-gate-proven', 'بدل');
+    await settled('sarkhati-gate-proven', 'آزمایشی');
     expect(gateText('proven')).not.toContain('تأیید شد');
-    expect(gateText('entered')).toContain('بدل');
+    expect(gateText('entered')).toContain('حالت آزمایشی');
   });
 
   it('تنظیمِ ذخیره‌شدۀ «فقط‌خواندنی» گیتِ نوشتن را باز نمی‌کند', async () => {
@@ -341,13 +341,13 @@ describe('چهار وضعیت ازِ هم جدا می‌مانند', () => {
       .not.toContain('بی‌اعتبار');
   });
 
-  it('نشستِ درِ حافظه باِ restart برنمی‌گردد: بارگذاریِ تازه «نشانی وارد نشده» است', async () => {
+  it('نشستِ درِ حافظه باِ restart برنمی‌گردد: بارگذاریِ تازه «دسترسی نداریم» است', async () => {
     route();
     const first = renderForm();
     await settled('sarkhati-gate-config', 'ذخیره');
     fireEvent.change(screen.getByTestId('sarkhati-token-input'), { target: { value: SECRET } });
     fireEvent.click(screen.getByTestId('sarkhati-token-save'));
-    await settled('sarkhati-gate-entered', 'نشانی وارد شد');
+    await settled('sarkhati-gate-entered', 'دسترسی دریافت شد');
     first.unmount();
     // پروسۀ تازه: بک‌اند دیگر نشانی ندارد (token فقط درِ حافظه بود)
     fetchMock.mockImplementation((url: unknown) => {
@@ -357,7 +357,7 @@ describe('چهار وضعیت ازِ هم جدا می‌مانند', () => {
       return Promise.resolve(json({ status: 'success' }));
     });
     renderForm();
-    await settled('sarkhati-gate-entered', 'نشانی وارد نشده');
+    await settled('sarkhati-gate-entered', 'دسترسی نداریم');
     expect(gateText('proven')).toBe('تأیید نشده');
     expect(gateText('writes')).toBe('خاموش');
   });
@@ -389,12 +389,12 @@ describe('هیچ ترافیکِ سفارشی ازِ این فرم نمی‌رو�
   it('هیچ درِ سفارشی (preflight/prepare/dispatch/cancel) صدا نمی‌کند، نه باِ ثبتِ نشانی و نه باِ پاککردنش', async () => {
     route();
     renderForm();
-    await settled('sarkhati-gate-entered', 'نشانی وارد نشده');
+    await settled('sarkhati-gate-entered', 'دسترسی نداریم');
     fireEvent.change(screen.getByTestId('sarkhati-token-input'), { target: { value: SECRET } });
     fireEvent.click(screen.getByTestId('sarkhati-token-save'));
-    await settled('sarkhati-gate-entered', 'نشانی وارد شد');
+    await settled('sarkhati-gate-entered', 'دسترسی دریافت شد');
     fireEvent.click(screen.getByTestId('sarkhati-token-clear'));
-    await settled('sarkhati-gate-entered', 'نشانی وارد نشده');
+    await settled('sarkhati-gate-entered', 'دسترسی نداریم');
     const orderish = fetchMock.mock.calls.filter((c) =>
       /preflight|prepare|dispatch|cancel|\/order|hold|submit/i.test(String(c[0])));
     expect(orderish).toEqual([]);

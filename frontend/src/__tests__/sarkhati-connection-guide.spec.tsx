@@ -20,7 +20,7 @@ const BASE_STEPS = [
   step('cdp', 'CDP محلی', 'PASS'),
   step('page', 'صفحهٔ EasyTrader', 'PASS'),
   step('login', 'وضعیت ورود', 'UNVERIFIED'),
-  step('session', 'نشست API', 'BLOCKED', 'بررسی read-only'),
+  step('session', 'دسترسی به حساب', 'BLOCKED', 'بررسی read-only'),
   step('contract', 'قرارداد API', 'UNVERIFIED'),
   step('read_only', 'پرسشِ read-only', 'BLOCKED'),
   step('account', 'منبع حساب/پرتفوی', 'BLOCKED'),
@@ -29,7 +29,7 @@ const BASE_STEPS = [
 const DIAG = {
   status: 'success', app_version: '1.0.95', adapter: 'easytrader',
   state: 'BROWSER_READY_API_UNVERIFIED',
-  state_label: 'مرورگر آماده است؛ اتصال API کارگزاری هنوز تأیید نشده است',
+  state_label: 'مرورگر آماده است؛ هنوز دسترسی به حساب تأیید نشده است',
   steps: BASE_STEPS, next_action: 'بررسی read-only', secrets_stored: false,
 };
 
@@ -40,7 +40,17 @@ function routes(diag: unknown = DIAG, host: unknown = { host: { healthy: true } 
     if (u.includes('/connection/diagnose') || u.includes('/connection/verify')) {
       return Promise.resolve(json(diag));
     }
+    if (u.includes('/connection/capture-session')) {
+      return Promise.resolve(json({ status: 'success', code: 'CAPTURED',
+        token_present: true, page_host: 'd.easytrader.ir', token: 'SECRET-TOKEN',
+        secrets_returned: false, secrets_stored: false }));
+    }
     if (u.includes('/browser-host')) return Promise.resolve(json(host));
+    if (u.includes('/connect/verify')) return Promise.resolve(json({ status: 'success',
+      verify: { state: 'CONNECTED', reason: 'از پرسشِ صریحِ کارگزاری',
+        token_present: true,
+        proof: { path: '/core/api/order', status: 200, kind: 'third-party-code-only' } },
+      connect: {} }));
     if (u.includes('/connect')) return Promise.resolve(json({ status: 'success',
       last_verify: {}, browser: { open: false }, login_hosts_configured: [] }));
     if (u.includes('/config')) return Promise.resolve(json({ status: 'success',
@@ -56,7 +66,10 @@ function renderCard() {
   return render(<QueryClientProvider client={qc}><SarkhatiConnectionCard /></QueryClientProvider>);
 }
 
-beforeEach(() => fetchMock.mockReset());
+beforeEach(() => {
+  fetchMock.mockReset();
+  localStorage.setItem('sarkhati-auto-capture', '0');
+});
 
 describe('راهنمای اتصال', () => {
   it('شش قدم اصلی را نشان می‌دهد و بازبودن صفحه را اتصال نمی‌خواند', async () => {
@@ -68,7 +81,7 @@ describe('راهنمای اتصال', () => {
     expect(screen.getByTestId('connection-step-session')).toHaveTextContent('BLOCKED');
     expect(screen.queryByText(/^CONNECTED$/)).toBeNull();
     expect(screen.getByTestId('connection-browser-ready-api-unverified'))
-      .toHaveTextContent('هنوز تأیید نشده');
+      .toHaveTextContent('هنوز مطمئن نیستیم');
   });
 
   it('صفحهٔ ورود، اقدام ورود دستی می‌دهد', async () => {
@@ -78,7 +91,7 @@ describe('راهنمای اتصال', () => {
       steps: BASE_STEPS.map((s) => s.key === 'login'
         ? { ...s, status: 'BLOCKED', action: 'در پنجره وارد شوید' } : s) });
     renderCard();
-    expect(await screen.findByTestId('connection-login-needed')).toHaveTextContent('وارد EasyTrader');
+    expect(await screen.findByTestId('connection-login-needed')).toHaveTextContent('وارد کارگزاری');
   });
 
   it('host خاموش، علت و دکمهٔ بازکردن را نشان می‌دهد', async () => {
@@ -90,6 +103,7 @@ describe('راهنمای اتصال', () => {
     renderCard();
     await screen.findByTestId('connection-step-host');
     expect(screen.getByTestId('connection-open-host')).toBeTruthy();
+    expect(screen.queryByTestId('connection-capture-session')).toBeNull();
     expect(screen.getByTestId('sarkhati-connection-next')).toHaveTextContent('باز کردن');
   });
 
@@ -107,11 +121,56 @@ describe('راهنمای اتصال', () => {
     expect(form.closest('details')).not.toBeNull();
   });
 
-  it('بررسی وضعیت فقط endpoint تشخیص را صدا می‌زند', async () => {
+  it('بررسی وضعیت endpoint واقعی verify را صدا می‌زند', async () => {
     const calls = routes(); renderCard();
     await screen.findByTestId('connection-check');
     fireEvent.click(screen.getByTestId('connection-check'));
-    await waitFor(() => expect(calls.some((c) => c === 'POST /api/execution/connection/verify')).toBe(true));
+    await waitFor(() => expect(calls.some((c) => c === 'POST /api/execution/connect/verify')).toBe(true));
     expect(calls.some((c) => /\/order|\/dispatch/.test(c))).toBe(false);
+    expect(await screen.findByTestId('connection-note')).toHaveTextContent('ارتباط با کارگزاری');
+  });
+
+  it('حالت read-only تأییدشده را از قرارداد نوشتنِ تأییدنشده جدا نشان می‌دهد', async () => {
+    routes({ ...DIAG, state: 'READ_ONLY_VERIFIED',
+      state_label: 'خواندن اطلاعات حساب تأیید شد؛ ارسال سفارش هنوز فعال نیست',
+      steps: BASE_STEPS.map((s) => s.key === 'session' ? { ...s, status: 'PASS' }
+        : s.key === 'read_only' ? { ...s, status: 'PASS' } : s) });
+    renderCard();
+    await waitFor(() => expect(screen.getByTestId('sarkhati-connection-state'))
+      .toHaveTextContent('خواندن'));
+    const chip = screen.getByTestId('sarkhati-connection-state');
+    expect(chip).toHaveTextContent('ارسال');
+    expect(screen.queryByTestId('connection-capture-session')).toBeNull();
+  });
+
+  it('دریافت خودکار نشست پیش‌فرض روشن است و بدون کلیک اجرا می‌شود', async () => {
+    localStorage.removeItem('sarkhati-auto-capture');
+    const calls = routes(); renderCard();
+    const toggle = await screen.findByTestId('connection-auto-capture');
+    expect(toggle).toHaveTextContent('روشن');
+    await waitFor(() => expect(calls.some(
+      (c) => c === 'POST /api/execution/connection/capture-session')).toBe(true));
+    expect(await screen.findByTestId('connection-note')).toHaveTextContent('خودکار');
+    expect(screen.queryByText(/SECRET-TOKEN/)).toBeNull();
+  });
+
+  it('دریافت نشست از مرورگر فقط متادیتا را می‌گیرد و هیچ توکنی نمایش نمی‌دهد', async () => {
+    const calls = routes(); renderCard();
+    const btn = await screen.findByTestId('connection-capture-session');
+    fireEvent.click(btn);
+    await waitFor(() => expect(calls.some(
+      (c) => c === 'POST /api/execution/connection/capture-session')).toBe(true));
+    expect(await screen.findByTestId('connection-note')).toHaveTextContent('فقط در حافظه');
+    expect(screen.queryByText(/SECRET-TOKEN/)).toBeNull();
+  });
+
+  it('سطح اصلی شش‌قدمِ ساده است؛ شاهدِ خام فقط داخل جزئیات فنی می‌آید', async () => {
+    routes(); renderCard();
+    await screen.findByTestId('connection-summary');
+    expect(screen.getAllByTestId(/^connection-summary-/)).toHaveLength(6);
+    expect(screen.getByTestId('connection-summary-backend')).not.toHaveTextContent('PASS');
+    const detail = screen.getByTestId('sarkhati-connection-technical');
+    expect(detail).toContainElement(screen.getByTestId('connection-steps'));
+    expect(screen.getByTestId('connection-step-backend')).toHaveTextContent('PASS');
   });
 });

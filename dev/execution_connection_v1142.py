@@ -16,6 +16,7 @@ sys.path.insert(0, ROOT)
 
 import execution_connection as C  # noqa: E402
 import execution_connect as EXC  # noqa: E402
+import execution_session_capture as ESC  # noqa: E402
 
 PASS = 0
 FAIL = 0
@@ -69,9 +70,28 @@ def main() -> int:
     print("── ۱) ده مرحله و پیام‌های صادقانه ──")
     d = diag()
     ck(len(d["steps"]) == 10 and d["step_count"] == 10, "ده مرحله ساخته می‌شود")
-    ck(d["state"] == C.STATE_API_UNVERIFIED
-       and "مرورگر آماده است" in d["state_label"],
-       "صفحهٔ UI بدون قرارداد، CONNECTED نمی‌شود", d["state_label"])
+    ck(d["state"] == C.STATE_READ_ONLY_VERIFIED
+       and d["state"] != C.STATE_CONNECTED
+       and "خواندن" in d["state_label"],
+       "نشست read-only تأییدشده، CONNECTED نوشتن نمی‌شود", d["state_label"])
+    ready = diag(e=ex(live_enabled=False,
+                      session={"state": "unknown", "proven": False}))
+    ck(ready["steps"][5]["status"] == C.UNVERIFIED
+       and ready["state"] == C.STATE_API_UNVERIFIED,
+       "توکن در حافظه و بی‌تأیید ⇒ UNVERIFIED، نه BLOCKED", ready["steps"][5])
+    expired = diag(e=ex(session={"state": "expired", "proven": False}))
+    ck(expired["steps"][5]["status"] == C.BLOCKED
+       and "منقضی" in expired["steps"][5]["reason"],
+       "نشست منقضی ⇒ BLOCKED با علتِ انقضا", expired["steps"][5])
+    traffic_off = diag(e=ex(traffic_allowed=False,
+                            session={"state": "unknown", "proven": False}))
+    ck(traffic_off["steps"][5]["status"] == C.BLOCKED
+       and "ارتباط" in traffic_off["steps"][5]["reason"],
+       "ترافیک خاموش ⇒ BLOCKED با علتِ ترافیک", traffic_off["steps"][5])
+    connected = diag(e=ex(wire_hypothesis=False))
+    ck(connected["state"] == C.STATE_CONNECTED
+       and connected["state_label"] == C.STATE_LABEL[C.STATE_CONNECTED],
+       "قراردادِ تأییدشده + نشست + read-only ⇒ CONNECTED", connected["state"])
     ck(any(s["key"] == "login" and s["status"] == C.UNVERIFIED for s in d["steps"]),
        "بازبودن صفحهٔ UI = ورود تأییدشده نیست")
     ck(any(s["key"] == "contract" and s["status"] == C.UNVERIFIED for s in d["steps"]),
@@ -130,10 +150,10 @@ def main() -> int:
         def has_token(self):
             return False
     v1 = EXC.verify(NoToken())
-    ck(v1["state"] == EXC.STATE_DISCONNECTED and "نشست" in v1["reason"],
+    ck(v1["state"] == EXC.STATE_DISCONNECTED and "دسترسی" in v1["reason"],
        "ترافیک روشن + token غایب ⇒ DISCONNECTED، نه «ترافیک خاموش»", v1)
     v2 = EXC.verify(NoTraffic())
-    ck(v2["state"] == EXC.STATE_UNKNOWN and "ترافیک" in v2["blocked_reason"],
+    ck(v2["state"] == EXC.STATE_UNKNOWN and "ارتباط" in v2["blocked_reason"],
        "ترافیک خاموش ⇒ UNKNOWN با علتِ ترافیک", v2)
 
     print("\n── ۴) CDP واقعی روی loopback ──")
@@ -168,6 +188,29 @@ def main() -> int:
        and "secret-value" not in str(rep) and rep["secrets_stored"] is False,
        "گزارش تشخیصی راز را ماسک می‌کند")
 
+    print("\n── ۵.۵) خواندنِ نشستِ OIDC (بدونِ چاپِ راز) ──")
+    secret = "SECRET-TOKEN-XYZ"
+    future = int(time.time()) + 3600
+    raw_ok = json.dumps({"access_token": secret, "token_type": "Bearer",
+                         "scope": "easy2_api mts_api openid", "expires_at": future})
+    tok, meta = ESC.parse_oidc_user(raw_ok)
+    ck(tok == secret and meta["expires_at"] == future and meta["has_access_token"],
+       "نشستِ معتبر خوانده می‌شود", meta)
+    for label, raw in (
+        ("بدونِ access_token", json.dumps({"token_type": "Bearer",
+                                           "scope": "easy2_api", "expires_at": future})),
+        ("JSONِ خراب", "not-json"),
+        ("منقضی", json.dumps({"access_token": secret, "token_type": "Bearer",
+                              "scope": "easy2_api", "expires_at": 1})),
+        ("بدونِ اسکوپِ API", json.dumps({"access_token": secret, "token_type": "Bearer",
+                                        "scope": "openid", "expires_at": future})),
+    ):
+        try:
+            ESC.parse_oidc_user(raw)
+            ck(False, "نشستِ نامعتبر باید رد شود: " + label)
+        except ESC.CaptureError as e:
+            ck(secret not in str(e), "خطایِ %s راز را در متن نمی‌گذارد" % label, e.code)
+
     import api.execution as EX
     from fastapi import FastAPI
     from fastapi.testclient import TestClient
@@ -192,6 +235,58 @@ def main() -> int:
         rp = c.get("/api/execution/connection/report").json()
         ck(rp.get("status") == "success" and rp.get("secrets_stored") is False,
            "API report بدونِ راز", rp.get("code"))
+
+        print("\n── ۶) capture-session: تحویلِ فقط-حافظه ──")
+        class FakeAdapter:
+            def __init__(self):
+                self.tokens = []
+            def set_token(self, value):
+                self.tokens.append(value)
+        fake = FakeAdapter()
+        old_adapter, old_kind = EX._ACTIVE_ADAPTER, EX.ADAPTER_KIND
+        old_host, old_capture = EX.BH.read_status, ESC.capture_from_host
+        old_traffic = EX.TRAFFIC_ALLOWED
+        try:
+            EX._ACTIVE_ADAPTER = fake
+            EX.ADAPTER_KIND = "easytrader"
+            EX.TRAFFIC_ALLOWED = True
+            EX.BH.read_status = lambda check=True: {
+                "healthy": True, "cdp_url": "http://127.0.0.1:9333"}
+            ESC.capture_from_host = lambda url, timeout_s=20.0: (
+                "DUMMY-SECRET-TOKEN",
+                {"page_host": "d.easytrader.ir", "token_type": "Bearer",
+                 "expires_at": future, "scope": "easy2_api mts_api",
+                 "has_refresh_token": False})
+            cap = c.post("/api/execution/connection/capture-session")
+            body = cap.json()
+            ck(body.get("status") == "success" and body.get("token_present") is True
+               and body.get("secrets_returned") is False
+               and body.get("secrets_stored") is False,
+               "capture موفق فقط متادیتا برمی‌گرداند", body)
+            ck("DUMMY-SECRET-TOKEN" not in cap.text,
+               "پاسخِ capture هیچ توکنی ندارد")
+            ck(fake.tokens == ["DUMMY-SECRET-TOKEN"],
+               "توکن فقط به set_tokenِ حافظه داده شد", len(fake.tokens))
+            bad = c.post("/api/execution/connection/capture-session",
+                         headers={"Origin": "http://evil.example"})
+            ck(bad.json().get("code") == "CROSS_ORIGIN_BLOCKED"
+               and len(fake.tokens) == 1,
+               "originِ بیگانه capture را اجرا نمی‌کند", bad.json())
+            EX.ADAPTER_KIND = "mock"
+            mockcap = c.post("/api/execution/connection/capture-session")
+            ck(mockcap.json().get("code") == "ADAPTER_NOT_EASYTRADER"
+               and len(fake.tokens) == 1,
+               "آداپتور mock اجازهٔ خواندنِ نشست را نمی‌دهد", mockcap.json())
+            EX.ADAPTER_KIND = "easytrader"
+            EX.TRAFFIC_ALLOWED = False
+            offcap = c.post("/api/execution/connection/capture-session")
+            ck(offcap.json().get("code") == "TRAFFIC_OFF"
+               and len(fake.tokens) == 1,
+               "ترافیکِ خاموش ⇒ capture نشست را در حافظه نمی‌گذارد", offcap.json())
+        finally:
+            EX._ACTIVE_ADAPTER, EX.ADAPTER_KIND = old_adapter, old_kind
+            EX.BH.read_status, ESC.capture_from_host = old_host, old_capture
+            EX.TRAFFIC_ALLOWED = old_traffic
     finally:
         c.close()
         for k, v in old.items():

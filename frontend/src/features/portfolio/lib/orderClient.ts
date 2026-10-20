@@ -54,12 +54,12 @@ export const SESSION_STATES = [
 export type SessionStateValue = (typeof SESSION_STATES)[number];
 
 export const SESSION_LABEL: Record<SessionStateValue, string> = {
-  disconnected: 'نشست بسته است',
-  connected: 'نشست باز است',
-  expired: 'نشست منقضی شده',
+  disconnected: 'دسترسی به حساب بسته است',
+  connected: 'دسترسی به حساب تأیید شده است',
+  expired: 'دسترسی به حساب منقضی شده است',
   auth_failed: 'اجازۀ دسترسی داده نشد',
   error: 'پاسخِ کارگزاری نامفهوم بود',
-  unknown: 'وضعیتِ نشست روشن نیست',
+  unknown: 'وضعیت دسترسی روشن نیست',
 };
 
 /** `traffic_mode` ازِ `execution_connect.status_dict` — سه راهِ جدا، نه یکِ بُولین */
@@ -115,7 +115,7 @@ export const PORTFOLIO_LABEL: Record<PortfolioState, string> = {
   success: 'ازِ کارگزاری خوانده شد',
   cached: 'نسخۀِ انبارِ همین نشست',
   no_source: 'منبعِ مستندِ خواندنی برایِ پرتفوی نداریم',
-  unverified_session: 'نشست تأیید نشده — پرسشی زده نشد',
+  unverified_session: 'دسترسی تأیید نشده — پرسشی زده نشد',
   blocked: 'ترافیک مجاز نیست',
   error: 'پرسش انجام شد و پاسخِ معنادار نداد',
 };
@@ -342,7 +342,7 @@ export function deriveGate(status: ExecutionStatus | null | undefined, source: G
     // ثابت‌شده باشد؛ چیزی که بسته است درِ *ارسال* است. متنِ «فعال نیست» کاربر را
     // به سراغِ تنظیمِ اتصال می‌فرستد وقتی تنظیم درست بوده.
     if (status.read_only === true && status.traffic_allowed === true) {
-      const proof = status.session?.proven === true ? 'نشست تأیید شده' : 'نشست تأیید نشده';
+      const proof = status.session?.proven === true ? 'دسترسی تأیید شده' : 'دسترسی تأیید نشده';
       return {
         ...base, canTrade: false, dryRun: true,
         reason: `حالتِ فقط‌خواندنی: خواندن بله، ارسال نه — ${proof}. `
@@ -372,7 +372,7 @@ export function deriveGate(status: ExecutionStatus | null | undefined, source: G
   if (sessionState !== 'connected') {
     return { ...base, canTrade: false, dryRun: false,
       reason: SESSION_LABEL[sessionState]
-        + ' — «بررسی اتصال» لازم است؛ حضورِ توکن به‌تنهایی نشانهٔ نشست نیست' };
+        + ' — «بررسی وضعیت» لازم است؛ حضور دسترسی به‌تنهایی نشانهٔ تأیید نیست' };
   }
   return { ...base, canTrade: true, dryRun: false, reason: '' };
 }
@@ -702,7 +702,7 @@ export function messageOf(res: Record<string, unknown> | null | undefined): stri
 /** کدِ خطایِ سرویس ← پیامِ خوانا، بدونِ حذفِ کدِ خام (درِ tooltip می‌ماند) */
 export const CODE_LABEL: Record<string, string> = {
   AUTH_FAILED: 'اجازۀ دسترسی رد شد',
-  SESSION_EXPIRED: 'نشست منقضی شد',
+  SESSION_EXPIRED: 'دسترسی منقضی شد',
   NETWORK_ERROR: 'خطای شبکه — نتیجه نامعلوم',
   TIMEOUT: 'پاسخی نیامد — نتیجه نامعلوم',
   BROKER_REJECTED: 'کارگزاری سفارش را رد کرد',
@@ -1103,9 +1103,17 @@ export type ConnectionDiagnosis = {
   next_action?: string; secrets_stored?: boolean; observed_at?: string;
   diagnose_ms?: number;
 };
+export type SessionCapture = {
+  status?: string; code?: string; detail?: string; token_present?: boolean;
+  page_host?: string; token_type?: string; expires_at?: number | null;
+  scope?: string; has_refresh_token?: boolean; secrets_returned?: boolean;
+  secrets_stored?: boolean;
+};
 export const connectionApi = {
   diagnose: () => http<ConnectionDiagnosis>('/api/execution/connection/diagnose'),
   verify: () => http<ConnectionDiagnosis>('/api/execution/connection/verify',
+    { method: 'POST', ...NO_RETRY }),
+  captureSession: () => http<SessionCapture>('/api/execution/connection/capture-session',
     { method: 'POST', ...NO_RETRY }),
   report: () => http<Record<string, unknown>>('/api/execution/connection/report'),
 };

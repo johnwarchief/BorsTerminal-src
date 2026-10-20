@@ -71,7 +71,7 @@ export function SarkhatiRiskCard({ status }: { status: ExecutionStatus | null })
         <dl className="grid gap-x-4 gap-y-1 sm:grid-cols-2">
           <Gate name="پیش‌فرود" body="پیش ازِ هر عملِ حساس؛ نتیجه‌اش درِ بخشِ سفارش است. نبودِ پاسخ = عبور نیست." />
           <Gate name="عبارتِ تأیید" body={cgate.required === true
-            ? `الزامی است و درِ بک‌اند سنجیده می‌شود («${String(cgate.phrase ?? '')}») — با هر نشست/tokenِ تازه، تأییدهایِ قبلی بی‌اعتبار می‌شوند.`
+            ? `الزامی است و درِ بک‌اند سنجیده می‌شود («${String(cgate.phrase ?? '')}») — با هر ورود/دسترسی تازه، تأییدهای قبلی بی‌اعتبار می‌شوند.`
             : 'فعلاً لازم نیست، چون اجرایِ زنده خاموش است.'}
             extra={`دورۀِ تأیید: ${toFaDigits(String(status?.confirm_epoch ?? 0))}`} />
           <Gate name="شناسۀِ اجرا" body="هر تلاشِ تازه شناسۀِ تازه می‌گیرد؛ ردِّپایِ dispatch رویِ دیسک «دو بار فرستادنِ همان سفارش» را می‌گیرد (DUPLICATE_GUARD)." />
@@ -134,7 +134,7 @@ export function SarkhatiRiskCard({ status }: { status: ExecutionStatus | null })
         tone="quiet">
         {provenance.length ? (
           <Table testId="sarkhati-prov-rows" minWidth={560}
-            head={['ماده', 'منشأ', 'سندِ رسمی', 'ثبتِ نشست', 'معنایِ بدنۀ پاسخ', 'مشاهده']}>
+            head={['ماده', 'منشأ', 'سندِ رسمی', 'ثبتِ دسترسی', 'معنایِ بدنۀ پاسخ', 'مشاهده']}>
             {provenance.map(([key, p]) => (
               <Tr key={key} testId={`sarkhati-prov-${key}`}>
                 <Td num strong>{key}</Td>

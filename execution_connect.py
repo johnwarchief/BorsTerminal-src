@@ -396,13 +396,13 @@ def verify(adapter: Any) -> dict[str, Any]:
                            "token_present": has_token,
                            "adapter": type(adapter).__name__}
     if not traffic_live:
-        out["blocked_reason"] = ("ترافیکِ زنده خاموش است (BORS_EXECUTION_LIVE=1 لازم "
-                                 "است) — بی‌پرسش ازِ کارگزاری هیچ حالتی تأیید نمی‌شود")
+        out["blocked_reason"] = ("ارتباط زندهٔ کارگزاری خاموش است — بدون این ارتباط "
+                                 "هیچ وضعیتی تأیید نمی‌شود")
         out["reason"] = "ناشناخته؛ پرسش انجام نشد"
         return out
     if not has_token:
         out["state"] = STATE_DISCONNECTED
-        out["reason"] = "نشستی درِ حافظه نیست — اول درِ پنجرۀ مرورگر وارد شوید"
+        out["reason"] = "دسترسی به حساب در حافظه نیست — اول در پنجرهٔ مرورگر وارد شوید"
         return out
     try:
         st = adapter.authenticate()
