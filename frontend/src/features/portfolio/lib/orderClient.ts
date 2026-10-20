@@ -956,3 +956,50 @@ export function useBrowserHost() {
     retry: false,
   });
 }
+
+// ── چند عرضهٔ اولیه: داده، بودجه، Preflight و Timing ───────────────────────
+export type OfferingView = {
+  id: string; symbol: string; isin: string; market: string; method: string;
+  start_ms?: number | null; end_ms?: number | null;
+  price_min?: number | null; price_max?: number | null;
+  min_qty?: number | null; max_qty?: number | null;
+  per_code_quota?: number | null; fee_rate?: number | null;
+  source?: string; source_url?: string; verified_at_ms?: number | null;
+  data_as_of_ms?: number | null; status: string;
+  timing_relevance: string; timing_note: string;
+};
+export type OfferingsView = {
+  status: string; offerings: OfferingView[];
+  capital: { total_cap?: number | null; cash_reserve?: number | null;
+    max_per_offering?: number | null; priorities?: Record<string, unknown>;
+    version?: number };
+  reserved_total: number; reservations: Record<string, unknown>[];
+};
+export const offeringsApi = {
+  list: () => http<OfferingsView>('/api/execution/offerings'),
+  create: (body: Record<string, unknown>) => http<Record<string, unknown>>(
+    '/api/execution/offerings', { method: 'POST', body, ...NO_RETRY }),
+  budget: () => http<Record<string, unknown>>('/api/execution/offerings/budget'),
+  setBudget: (body: Record<string, unknown>) => http<Record<string, unknown>>(
+    '/api/execution/offerings/budget', { method: 'POST', body, ...NO_RETRY }),
+  plan: (body: Record<string, unknown>) => http<Record<string, unknown>>(
+    '/api/execution/offerings/plan', { method: 'POST', body, ...NO_RETRY }),
+  preflight: (id: string, body: Record<string, unknown>) =>
+    http<Record<string, unknown>>(
+      `/api/execution/offerings/${encodeURIComponent(id)}/preflight`,
+      { method: 'POST', body, ...NO_RETRY }),
+  timing: (adapter: string, method: string, target_ms: number, network = '',
+           margin_ms = 0) => http<Record<string, unknown>>(
+    `/api/execution/offerings/timing?adapter=${encodeURIComponent(adapter)}`
+    + `&method=${encodeURIComponent(method)}&target_ms=${target_ms}`
+    + `&network=${encodeURIComponent(network)}&margin_ms=${margin_ms}`),
+};
+export function useOfferings() {
+  return useQuery({
+    queryKey: ['execution-offerings'],
+    queryFn: () => offeringsApi.list(),
+    staleTime: 10_000,
+    refetchInterval: 20_000,
+    retry: false,
+  });
+}

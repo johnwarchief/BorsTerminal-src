@@ -54,6 +54,7 @@ from execution_easytrader import (
 )
 import execution_connect as EXC                            # noqa: E402
 import execution_browser_host as BH                        # noqa: E402
+import execution_offerings as OF                           # noqa: E402
 import execution_schedule as SCH                           # noqa: E402
 import execution_session_store as SESS                     # noqa: E402
 import execution_strategy_core as SC                       # noqa: E402
@@ -188,6 +189,19 @@ _SCHEDULE_STORE_LOCK = threading.Lock()
 _SCHEDULE_RUNNER_LOCK = threading.Lock()
 SCHEDULE_DB_ENV = "BORS_SCHEDULE_DB"
 SCHEDULE_RUNNER_ENV = "BORS_SCHEDULE_RUNNER"
+OFFERINGS_DB_ENV = "BORS_OFFERINGS_DB"
+_OFFERING_STORE: OF.OfferingStore | None = None
+_OFFERING_LOCK = threading.Lock()
+
+
+def _offering_store() -> OF.OfferingStore:
+    global _OFFERING_STORE
+    with _OFFERING_LOCK:
+        if _OFFERING_STORE is None:
+            path = (os.environ.get(OFFERINGS_DB_ENV) or "").strip() \
+                or os.path.join(WORK_DIR, "execution_offerings.db")
+            _OFFERING_STORE = OF.OfferingStore(path)
+        return _OFFERING_STORE
 
 
 def _schedule_store() -> SCH.ScheduleStore:
@@ -1299,6 +1313,199 @@ def get_schedule(sid: str) -> dict[str, Any]:
         return {"status": "error", "code": "NOT_FOUND"}
     return {"status": "success", "schedule": rec.public(),
             "events": store.events(sid), "readiness": SCH.readiness()}
+
+
+# ── ۲.۴.۴) عرضه‌های اولیه: داده، بودجه، Preflight، Timing ──────────────────
+def _offering_error(e: OF.OfferingsError) -> dict[str, Any]:
+    return {"status": "error", "code": e.code, "detail": e.detail or e.code}
+
+
+@router.get("/api/execution/offerings")
+def get_offerings(limit: int = 100) -> dict[str, Any]:
+    try:
+        store = _offering_store()
+        return {"status": "success", "offerings": [r.public() for r in store.list(limit)],
+                "capital": store.capital(),
+                "reserved_total": round(store.active_reserved(), 2),
+                "reservations": store.reservations(), "live_send": False}
+    except Exception as e:                       # noqa: BLE001
+        return {"status": "error", "code": "OFFERINGS_STORE_UNAVAILABLE",
+                "detail": "%s: %s" % (type(e).__name__, str(e)[:160])}
+
+
+@router.post("/api/execution/offerings")
+def post_offering(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
+    def _ms(key: str, local_key: str) -> int | None:
+        if body.get(key) is not None:
+            return int(body[key])
+        if body.get(local_key):
+            try:
+                return SCH.parse_local(str(body[local_key]))
+            except SCH.ScheduleError as e:
+                raise OF.OfferingsError("INVALID_TIME", e.detail) from None
+        return None
+    try:
+        rec = _offering_store().upsert(
+            symbol=str(body.get("symbol") or ""), isin=str(body.get("isin") or ""),
+            method=str(body.get("method") or "UNKNOWN"),
+            market=str(body.get("market") or "UNKNOWN"),
+            start_ms=_ms("start_ms", "start_local"),
+            end_ms=_ms("end_ms", "end_local"),
+            price_min=(float(body["price_min"]) if body.get("price_min") is not None else None),
+            price_max=(float(body["price_max"]) if body.get("price_max") is not None else None),
+            price_source=str(body.get("price_source") or ""),
+            min_qty=(float(body["min_qty"]) if body.get("min_qty") is not None else None),
+            max_qty=(float(body["max_qty"]) if body.get("max_qty") is not None else None),
+            per_code_quota=(float(body["per_code_quota"])
+                            if body.get("per_code_quota") is not None else None),
+            fee_rate=(float(body["fee_rate"]) if body.get("fee_rate") is not None else None),
+            fee_source=str(body.get("fee_source") or ""),
+            source=str(body.get("source") or ""),
+            source_url=str(body.get("source_url") or ""),
+            verified_at_ms=(int(body["verified_at_ms"])
+                            if body.get("verified_at_ms") is not None else None),
+            data_as_of_ms=(int(body["data_as_of_ms"])
+                           if body.get("data_as_of_ms") is not None else None),
+            note=str(body.get("note") or ""),
+            offering_id=str(body.get("offering_id") or ""))
+    except OF.OfferingsError as e:
+        return _offering_error(e)
+    except (TypeError, ValueError) as e:
+        return {"status": "error", "code": "BAD_REQUEST",
+                "detail": "%s: %s" % (type(e).__name__, str(e)[:160])}
+    return {"status": "success", "offering": rec.public()}
+
+
+@router.get("/api/execution/offerings/budget")
+def get_offering_budget() -> dict[str, Any]:
+    store = _offering_store()
+    return {"status": "success", "capital": store.capital(),
+            "reserved_total": round(store.active_reserved(), 2)}
+
+
+@router.post("/api/execution/offerings/budget")
+def post_offering_budget(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
+    try:
+        got = _offering_store().set_capital(
+            total_cap=float(body.get("total_cap")),
+            cash_reserve=float(body.get("cash_reserve") or 0.0),
+            max_per_offering=float(body.get("max_per_offering")),
+            priorities=(body.get("priorities") or {}))
+    except OF.OfferingsError as e:
+        return _offering_error(e)
+    except (TypeError, ValueError) as e:
+        return {"status": "error", "code": "INVALID_BUDGET",
+                "detail": "%s: %s" % (type(e).__name__, str(e)[:160])}
+    return {"status": "success", "capital": got,
+            "reserved_total": round(_offering_store().active_reserved(), 2)}
+
+
+@router.get("/api/execution/offerings/reservations")
+def get_offering_reservations(offering_id: str = "") -> dict[str, Any]:
+    store = _offering_store()
+    return {"status": "success", "reservations": store.reservations(offering_id or None),
+            "reserved_total": round(store.active_reserved(), 2)}
+
+
+@router.post("/api/execution/offerings/plan")
+def post_offering_plan(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
+    plans = body.get("plans")
+    if not isinstance(plans, list) or not plans:
+        return {"status": "error", "code": "BAD_REQUEST",
+                "detail": "plans باید فهرستِ غیرخالی باشد"}
+    try:
+        got = _offering_store().plan(plans, max_age_s=float(body.get("max_age_s") or 3600.0))
+    except OF.OfferingsError as e:
+        return _offering_error(e)
+    except (TypeError, ValueError) as e:
+        return {"status": "error", "code": "BAD_REQUEST",
+                "detail": "%s: %s" % (type(e).__name__, str(e)[:160])}
+    return {"status": "success", **got, "live_send": False}
+
+
+@router.post("/api/execution/offerings/timing/sample")
+def post_timing_sample(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
+    try:
+        _offering_store().record_timing(
+            adapter=str(body.get("adapter") or ""),
+            method=str(body.get("method") or "UNKNOWN"),
+            value_ms=float(body.get("value_ms")),
+            network=str(body.get("network") or "unknown"),
+            phase=str(body.get("phase") or "http_rtt"),
+            source=str(body.get("source") or ""),
+            observed_at=(float(body["observed_at"]) if body.get("observed_at") is not None else None),
+            note=str(body.get("note") or ""))
+    except OF.OfferingsError as e:
+        return _offering_error(e)
+    except (TypeError, ValueError) as e:
+        return {"status": "error", "code": "BAD_REQUEST",
+                "detail": "%s: %s" % (type(e).__name__, str(e)[:160])}
+    return {"status": "success"}
+
+
+@router.get("/api/execution/offerings/timing")
+def get_timing(adapter: str, method: str, network: str = "",
+               phase: str = "http_rtt", target_ms: int = 0,
+               margin_ms: float = 0.0) -> dict[str, Any]:
+    stats = _offering_store().timing_stats(adapter=adapter, method=method,
+                                           network=network or None, phase=phase)
+    suggestion = OF.timing_suggestion(stats, target_ms=int(target_ms or 0),
+                                      method=method, margin_ms=float(margin_ms or 0.0))
+    return {"status": "success", "stats": stats, "suggestion": suggestion,
+            "live_send": False}
+
+
+@router.get("/api/execution/offerings/discover")
+def discover_offerings(limit: int = 20) -> dict[str, Any]:
+    try:
+        rows = OF.discover_codal(DB_PATH, limit=limit)
+    except OF.OfferingsError as e:
+        return _offering_error(e)
+    return {"status": "success", "candidates": rows, "structured": False,
+            "note": "متنِ CODAL تفسیر نشده؛ method/price/qty ساختگی ساخته نمی‌شود"}
+
+
+@router.get("/api/execution/offerings/{oid}")
+def get_offering(oid: str) -> dict[str, Any]:
+    store = _offering_store()
+    rec = store.get(oid)
+    if rec is None:
+        return {"status": "error", "code": "NOT_FOUND"}
+    return {"status": "success", "offering": rec.public(),
+            "capital": store.capital(),
+            "reserved_total": round(store.active_reserved(), 2),
+            "reservations": store.reservations(oid)}
+
+
+@router.post("/api/execution/offerings/{oid}/preflight")
+def post_offering_preflight(oid: str, body: dict[str, Any] = Body(...)) -> dict[str, Any]:
+    store = _offering_store()
+    rec = store.get(oid)
+    if rec is None:
+        return {"status": "error", "code": "NOT_FOUND"}
+    try:
+        rep = OF.preflight(rec, at=SCH.now_ms(),
+                           price=float(body.get("price")),
+                           quantity=float(body.get("quantity")),
+                           max_age_s=float(body.get("max_age_s") or 3600.0),
+                           capital=store.capital(),
+                           reserved=store.active_reserved())
+    except (TypeError, ValueError) as e:
+        return {"status": "error", "code": "INVALID_ORDER",
+                "detail": "%s: %s" % (type(e).__name__, str(e)[:160])}
+    return {"status": "success", "preflight": rep, "live_send": False}
+
+
+@router.post("/api/execution/offerings/{oid}/reservation/{intent_id}/state")
+def post_reservation_state(oid: str, intent_id: str,
+                           body: dict[str, Any] = Body(...)) -> dict[str, Any]:
+    try:
+        got = _offering_store().set_reservation(
+            oid, intent_id, str(body.get("state") or ""),
+            note=str(body.get("note") or ""))
+    except OF.OfferingsError as e:
+        return _offering_error(e)
+    return {"status": "success", **got}
 
 
 # ── ۲.۴.۵) browser session host (نشستِ پایدارِ مالک؛ CDPِ محلی) ───────────────
