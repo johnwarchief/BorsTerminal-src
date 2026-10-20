@@ -617,6 +617,8 @@ SUITES = [
      'cockpit: read-only system gates, in-app mock scenarios, stop/restart recovery, UNKNOWN no retry, redacted report, no order POST'),
     ('dev/execution_connection_v1142.py',
      'connection: ten-stage host/CDP/page/login/session/API diagnosis, no false CONNECTED, mock/HTML/timeout states, redacted report'),
+    ('dev/execution_account_sources_v1146.py',
+     'account sources: read-only watchlist/portfolio/buying power, ISIN mapping, independent states, no body logging, buying-power preflight'),
     # مأموریتِ 2026-10-18 (عیب‌یابیِ اتصالِ مفید): انتخابِ آداپتور ازِ خودِ برنامه
     # با مقدم‌بودنِ env، گیتِ نوشتن که هیچ تنظیمِ دیسکی بازش نمی‌کند، حالتِ
     # فقط‌خواندنی (خواندن بله / POST نه)، و «متصل» فقط باِ شاهدِ مسیرِ واقعی.

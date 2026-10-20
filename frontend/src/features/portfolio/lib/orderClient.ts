@@ -630,15 +630,56 @@ export const PortfolioSchema = z.object({
   adapter: z.string().nullish(),
   live: z.boolean().nullish(),
   session_proven: z.boolean().nullish(),
+  state: z.string().nullish(),
   as_of: z.string().nullish(),
   source: z.string().nullish(),
   rows: z.array(z.record(z.string(), z.unknown())).nullish(),
+  positions: z.array(z.record(z.string(), z.unknown())).nullish(),
+  fetched_at: z.string().nullish(),
+  raw_count: z.number().nullish(),
+  resolved_count: z.number().nullish(),
+  unresolved_count: z.number().nullish(),
+  duplicate_count: z.number().nullish(),
+  missing_fields: z.array(z.string()).nullish(),
+  unresolved: z.array(z.record(z.string(), z.unknown())).nullish(),
+  buying_power: z.record(z.string(), z.unknown()).nullish(),
   cached_at: z.string().nullish(),
   error: z.string().nullish(),
   detail: z.string().nullish(),
   code: z.string().nullish(),
 }).catchall(z.unknown());
 export type PortfolioView = z.infer<typeof PortfolioSchema>;
+
+export const WatchlistSchema = z.object({
+  status: z.string(),
+  state: z.string().nullish(),
+  source: z.string().nullish(),
+  fetched_at: z.string().nullish(),
+  categories: z.array(z.record(z.string(), z.unknown())).nullish(),
+  rows: z.array(z.record(z.string(), z.unknown())).nullish(),
+  raw_count: z.number().nullish(),
+  resolved_count: z.number().nullish(),
+  unresolved_count: z.number().nullish(),
+  duplicate_count: z.number().nullish(),
+  unresolved: z.array(z.record(z.string(), z.unknown())).nullish(),
+  empty: z.boolean().nullish(),
+  error: z.string().nullish(),
+}).catchall(z.unknown());
+export type WatchlistView = z.infer<typeof WatchlistSchema>;
+
+export const BuyingPowerSchema = z.object({
+  status: z.string(),
+  state: z.string().nullish(),
+  source: z.string().nullish(),
+  unit: z.string().nullish(),
+  value: z.number().nullish(),
+  raw: z.record(z.string(), z.unknown()).nullish(),
+  formula: z.string().nullish(),
+  fetched_at: z.string().nullish(),
+  order_write_state: z.string().nullish(),
+  error: z.string().nullish(),
+}).catchall(z.unknown());
+export type BuyingPowerView = z.infer<typeof BuyingPowerSchema>;
 
 export const configApi = {
   get: (signal?: AbortSignal) =>
@@ -651,6 +692,15 @@ export const configApi = {
 export const portfolioApi = {
   get: (signal?: AbortSignal) =>
     http<PortfolioView>('/api/execution/portfolio', { schema: PortfolioSchema, signal }),
+};
+
+export const accountSourcesApi = {
+  watchlist: (signal?: AbortSignal) =>
+    http<WatchlistView>('/api/execution/watchlist',
+      { schema: WatchlistSchema, signal }),
+  buyingPower: (signal?: AbortSignal) =>
+    http<BuyingPowerView>('/api/execution/buying-power',
+      { schema: BuyingPowerSchema, signal }),
 };
 
 /** یک‌بار در هر نشست کافی است؛ تنظیمِ دیسک بی‌restart عوض نمی‌شود. */
@@ -673,6 +723,30 @@ export function useExecutionPortfolio(enabled = true) {
     staleTime: 30_000,
     refetchOnWindowFocus: false,
     retry: (count, error) => count < 2 && !(error instanceof HttpError && error.status === 404),
+  });
+}
+
+/** دیده‌بانِ شخصی EasyTrader — منبعی جدا از دیده‌بانِ محلی و پرتفوی. */
+export function useEasyTraderWatchlist(enabled = true) {
+  return useQuery({
+    queryKey: ['execution-watchlist'],
+    queryFn: ({ signal }) => accountSourcesApi.watchlist(signal),
+    enabled,
+    staleTime: 30_000,
+    refetchOnWindowFocus: false,
+    retry: false,
+  });
+}
+
+/** قدرت خریدِ خواندنی — منبعی جدا از نقدینگی و ارزش پرتفوی. */
+export function useBuyingPower(enabled = true) {
+  return useQuery({
+    queryKey: ['execution-buying-power'],
+    queryFn: ({ signal }) => accountSourcesApi.buyingPower(signal),
+    enabled,
+    staleTime: 30_000,
+    refetchOnWindowFocus: false,
+    retry: false,
   });
 }
 

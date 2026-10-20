@@ -216,6 +216,13 @@ class PaperBroker(BrokerAdapter):
                 "realized_today": float(self.account.realized_today),
                 "realized_total": float(self.account.realized_total)}
 
+    def get_sellable_quantity(self, isin: str | None = None) -> float | None:
+        """این حسابِ شبیه‌سازی همهٔ دارایی را آزاد می‌داند؛ منبعِ همان حساب است."""
+        key = str(isin or "")
+        if not key.startswith("PAPER-"):
+            return None
+        return float(self.account.held(key[len("PAPER-"):]))
+
 
 @dataclass
 class PaperDecision:

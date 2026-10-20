@@ -73,6 +73,12 @@ WIRE_PATH_QUEUE = "/ms/api/MarketSheet/order-place"
 #: آزموده‌نشده باقی می‌ماند تا درِ نشستِ مجاز دیده شود؛ بی‌پاسخ یعنی «ساعتِ
 #: کارگزاری در دسترس نیست»، نه «ساعتِ ما درست است».
 WIRE_PATH_SERVER_TIME = "/easy/api/account/server-time"
+#: منابعِ حساب — همان مسیرهایی که وب‌اپِ رسمیِ کارگزاری در نشستِ مشاهده‌شده صدا
+#: زد (۲۰۲۶-۱۰-۲۱). schema هر کدام جدا سنجیده می‌شود؛ هیچ‌کدام مجوزِ نوشتن نیست.
+WIRE_PATH_MARKET_WATCH = "/easy/api/MarketWatch"
+WIRE_PATH_ASSET_PERFORMANCE = "/assetmodule/api/performance"
+WIRE_PATH_MONEY = "/easy/api/money"
+WIRE_SOURCE_FIRST_PARTY_WEB = "first-party-web-app (observed 2026-10-21)"
 
 #: منشأِ هر مسیر درِ یکِ جمله، تا «فرضیه» و «دیده‌شده» از هم جدا بمانند (§۳-۲).
 #: • `WIRE_BASE_URL`  : حالا دو شاهد دارد — کدِ شخصِ ثالث، و پیکربندیِ
@@ -570,9 +576,11 @@ def _code_from_reason(reason: str) -> ErrorCode:
 #: تواناییِ اعلامیِ این پروتکل از رویِ پنج مخزن. `cancel` درِ هیچ مرجعی پیاده نشده
 #: بود و `balances` هیچ‌جا دیده نشد ⇒ صریح False، تا «بی‌داده» از «صفر» جدا بماند
 #: (§۱۶ و §۱۸ دستورِ کار).
+#: مسیرهای money/assetmodule در وب‌اپِ رسمی دیده شدند (۲۰۲۶-۱۰-۲۱)؛ پس
+#: `balances` خواندنی است — این هرگز مجوزِ نوشتن یا تأییدِ قرارداد سفارش نیست.
 PROTOCOL_CAPS = Capabilities(place=True, list_orders=True, order_state=True,
                              queue_position=True, cancel=False, best_bid_ask=False,
-                             balances=False)
+                             balances=True)
 NO_CAPS = Capabilities(place=False, list_orders=False, order_state=False,
                        queue_position=False, cancel=False, best_bid_ask=False,
                        balances=False)
@@ -581,7 +589,7 @@ NO_CAPS = Capabilities(place=False, list_orders=False, order_state=False,
 #: ارسالِ سفارش آزاد نیست.
 _READ_ONLY_CAPS = Capabilities(place=False, list_orders=True, order_state=True,
                                queue_position=True, cancel=False, best_bid_ask=False,
-                               balances=False)
+                               balances=True)
 
 
 @dataclass(frozen=True)
@@ -853,7 +861,8 @@ class EasyTraderAdapter(BrokerAdapter):
             del self.redacted_log[:-200]
 
     def _call(self, method: str, path: str, *, tag: str, timeout_s: float,
-              payload: Any = None, headers: Mapping[str, str] | None = None) -> WireResponse:
+              payload: Any = None, headers: Mapping[str, str] | None = None,
+              log_body: bool = True) -> WireResponse:
         self.wire_calls.append("%s:%s" % (tag, method))
         if not self.live:
             raise BrokerError(ErrorCode.UNSUPPORTED,
@@ -880,12 +889,35 @@ class EasyTraderAdapter(BrokerAdapter):
         except TransportNetwork as e:
             raise BrokerError(ErrorCode.NETWORK_ERROR,
                               "%s: خطایِ شبکه/اتصال — نتیجه نامعلوم" % tag) from None
-        self._log_exchange({"tag": tag, "method": method, "url": url,
-                            "status": resp.status,
-                            "elapsed_ms": round((time.monotonic() - t0) * 1000, 1),
-                            "authorization": hdrs.get("Authorization"),
-                            "body_head": (resp.body or "")[:120]})
+        entry = {"tag": tag, "method": method, "url": url,
+                 "status": resp.status,
+                 "elapsed_ms": round((time.monotonic() - t0) * 1000, 1),
+                 "authorization": hdrs.get("Authorization")}
+        if log_body:
+            entry["body_head"] = (resp.body or "")[:120]
+        self._log_exchange(entry)
         return resp
+
+    def _read_json(self, path: str, tag: str,
+                   timeout_s: float | None = None) -> Any:
+        """GETِ فقط‌خواندنیِ یک منبعِ حساب؛ بدنه هرگز در log نمی‌نشیند."""
+        resp = self._call("GET", path, tag=tag,
+                          timeout_s=timeout_s or self.timeouts.read_s,
+                          log_body=False)
+        if resp.status in (401, 403):
+            v = interpret_easytrader_response(resp.status, resp.body, where=tag,
+                                              headers=resp.headers)
+            self._apply_session_verdict(v)
+            raise BrokerError(v.error or ErrorCode.UNKNOWN_RESULT, v.detail,
+                              broker_message=v.message)
+        if not (200 <= resp.status < 300):
+            raise BrokerError(ErrorCode.UNKNOWN_RESULT,
+                              "%s: HTTP %d — بدنه ثبت نشد" % (tag, resp.status))
+        try:
+            return json.loads(resp.body or "")
+        except (ValueError, TypeError):
+            raise BrokerError(ErrorCode.UNKNOWN_RESULT,
+                              "%s: پاسخ JSON نبود" % tag) from None
 
     # ---- ۶) نشست -----------------------------------------------------------
     def session_probe(self) -> dict[str, Any]:
@@ -1302,8 +1334,87 @@ class EasyTraderAdapter(BrokerAdapter):
                           "easytrader: مسیرِ لغو درِ هیچ منبعِ بازبینی‌شده‌ای مستند "
                           "نشده — هیچ درخواستی ساخته نشد")
 
-    def get_balances(self):
-        return None            # «نمی‌دانیم» ≠ «صفر»
+    # ---- ۱۱.۵) منابعِ فقط‌خواندنیِ حساب (وب‌اپِ رسمی، مشاهده‌شده) ---------------
+    def get_watchlist(self) -> list[dict[str, Any]]:
+        """دیده‌بانِ شخصی: دسته‌ها و ISINها؛ نه نامِ ورود، نه customerIsin."""
+        raw = self._read_json(WIRE_PATH_MARKET_WATCH, "watchlist")
+        if not isinstance(raw, list):
+            raise BrokerError(ErrorCode.UNKNOWN_RESULT,
+                              "watchlist: پاسخ فهرست نبود")
+        out: list[dict[str, Any]] = []
+        for cat in raw:
+            if not isinstance(cat, Mapping):
+                continue
+            isins = []
+            for item in (cat.get("watchCategorySymbols") or []):
+                if isinstance(item, Mapping):
+                    isin = _text(item.get("symbolIsin"))
+                    if isin:
+                        isins.append(isin)
+            out.append({"id": _text(cat.get("id")),
+                        "name": _text(cat.get("name")),
+                        "order": _num(cat.get("order")),
+                        "is_default": cat.get("isDefault") is True,
+                        "created_at": _text(cat.get("createDateTime")),
+                        "isins": isins})
+        return out
+
+    def get_portfolio_performance(self) -> list[dict[str, Any]]:
+        """دارایی‌هایِ پرتفوی از گزارشِ عملکرد؛ تعداد/آزاد/قابل‌فروش در آن نیست."""
+        raw = self._read_json(WIRE_PATH_ASSET_PERFORMANCE, "portfolio")
+        items = raw.get("items") if isinstance(raw, Mapping) else None
+        if not isinstance(items, list):
+            raise BrokerError(ErrorCode.UNKNOWN_RESULT,
+                              "portfolio: items در پاسخ نبود")
+        keys = ("symbolIsin", "symbolName", "date", "persianDate", "asset",
+                "totalBuyAveragePrice", "periodicBuyAveragePrice",
+                "totalRealizedProfitAndLoss",
+                "totalRealizedProfitAndLossWithoutDps",
+                "totalBoughtVolume", "totalSoldVolume", "calculationVersion")
+        return [{k: it.get(k) for k in keys if k in it}
+                for it in items if isinstance(it, Mapping)]
+
+    def get_money(self) -> dict[str, Any]:
+        """مانده/قدرتِ خریدِ خواندنی؛ واحد و فرمول از همان وب‌اپِ رسمی سنجیده شد."""
+        raw = self._read_json(WIRE_PATH_MONEY, "money")
+        if not isinstance(raw, Mapping):
+            raise BrokerError(ErrorCode.UNKNOWN_RESULT, "money: پاسخ شیء نبود")
+        keys = ("t0", "t1", "t2", "buyPowerT0", "buyPowerT1", "buyPowerT2",
+                "block", "withdrawBlockT2", "marginBlock", "credit",
+                "avandCredit", "walletWithdrawBalanceT0", "warrantValueCredit",
+                "hamiBalance")
+        nums = {k: _num(raw.get(k)) for k in keys if raw.get(k) is not None}
+        if nums.get("buyPowerT2") is None:
+            raise BrokerError(ErrorCode.UNKNOWN_RESULT,
+                              "money: buyPowerT2 نیامد — عددی ساخته نشد")
+        buying = ((nums.get("buyPowerT2") or 0.0)
+                  - (nums.get("credit") or 0.0)
+                  - (nums.get("avandCredit") or 0.0))
+        return {"raw": nums, "buying_power": buying, "unit": "IRR",
+                "formula": "buyPowerT2 - credit - avandCredit",
+                "source": "easytrader:/easy/api/money (" + WIRE_SOURCE_FIRST_PARTY_WEB + ")",
+                "fetched_at": self._iso()}
+
+    def get_balances(self) -> Mapping[str, Any] | None:
+        """پیش‌فرضِ ایمن را با منبعِ واقعیِ money جایگزین می‌کند؛ بی‌عدد جعلی."""
+        money = self.get_money()
+        raw = money["raw"]
+        return {"cash": raw.get("t0"),
+                "settled_cash_t2": raw.get("t2"),
+                "buying_power": money["buying_power"],
+                "buying_power_t0": raw.get("buyPowerT0"),
+                "buying_power_t1": raw.get("buyPowerT1"),
+                "buying_power_t2": raw.get("buyPowerT2"),
+                "block": raw.get("block"),
+                "credit": raw.get("credit"),
+                "avand_credit": raw.get("avandCredit"),
+                "unit": money["unit"], "source": money["source"],
+                "formula": money["formula"], "verified": True,
+                "fetched_at": money["fetched_at"]}
+
+    def get_sellable_quantity(self, isin: str | None = None) -> float | None:
+        """گزارشِ عملکرد تعدادِ آزاد/قابل‌فروش نمی‌دهد؛ حدس ممنوع."""
+        return None
 
     # ---- ۱۲) سنجشِ فقط‌خواندنی و ساعت --------------------------------------
     def probe(self) -> dict[str, Any]:

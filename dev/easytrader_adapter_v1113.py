@@ -44,7 +44,7 @@ from execution_contract import (  # noqa: E402
 )
 from execution_easytrader import (  # noqa: E402
     ADAPTER_NAME, WIRE_BASE_URL, WIRE_HYPOTHESIS, WIRE_PATH_ORDER_CREATE,
-    WIRE_PATH_ORDER_LIST, WIRE_PATH_QUEUE, EasyTraderAdapter,
+    WIRE_PATH_ORDER_LIST, WIRE_PATH_MONEY, WIRE_PATH_QUEUE, EasyTraderAdapter,
     RequestsTransport, TransportNetwork, TransportTimeout, WireResponse,
     easytrader_payload, interpret_easytrader_response, map_order_state,
 )
@@ -208,6 +208,12 @@ class ScriptedTransport:
             oid = (headers or {}).get("order-id", "")
             return WireResponse(200, {}, _js({"orderPlaces":
                                              self.broker.queue_rows.get(oid, [])}))
+        if path == WIRE_PATH_MONEY:
+            return WireResponse(200, {}, _js({
+                "t0": 1000000000000, "t1": 1000000000000,
+                "t2": 1000000000000, "buyPowerT0": 1000000000000,
+                "buyPowerT1": 1000000000000, "buyPowerT2": 1000000000000,
+                "credit": 0, "avandCredit": 0}))
         return WireResponse(404, {}, _js({"isSuccessful": False, "message": "no path"}))
 
 
@@ -527,9 +533,12 @@ def part_queue():
     except BrokerError as e2:
         ck(e2.code is ErrorCode.UNSUPPORTED,
            "لغو: مسیرِ مستندنشده ادعا نمی‌شود", e2.code.value)
-    ck(EasyTraderAdapter(transport=ScriptedTransport(ScriptedBroker()),
-                         token=SECRET).get_balances() is None,
-       "موجودی ⇒ None، نه صفر")
+    try:
+        EasyTraderAdapter(token=SECRET).get_balances()
+        ck(False, "بی‌ترافیک نباید موجودی بسازد")
+    except BrokerError as e3:
+        ck(e3.code is ErrorCode.UNSUPPORTED,
+           "بی‌ترافیک ⇒ خطا، نه صفر/Noneِ ساختگی", e3.code.value)
 
 
 # ── ۷) درِ HTTP: وضعیتِ صادق، haltِ پاسخ‌گو، بازیابی پسِ restart ─────────────

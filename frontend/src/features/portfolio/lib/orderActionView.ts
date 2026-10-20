@@ -59,13 +59,15 @@ export function summarize(kind: ExecAction, res: Record<string, unknown>, wireHy
       const vals = Object.values(checks);
       const fail = vals.filter((v) => v === 'FAIL').length;
       const unk = vals.filter((v) => v === 'UNKNOWN').length;
+      const blocked = res.ok === false;
       const reasons = (res.reasons ?? {}) as Record<string, string>;
       const why = Object.entries(checks).filter(([, v]) => v === 'FAIL')
         .map(([k]) => `${k}${reasons[k] ? ` (${reasons[k]})` : ''}`).join('، ');
-      return { state: fail ? 'warn' : 'ok', phase: 'preflight',
+      return { state: fail || blocked ? 'warn' : 'ok', phase: 'preflight',
         text: `پیش‌فرود: ${fa(vals.length - fail - unk)} سبز`
           + (fail ? `، ${fa(fail)} رد${why ? ` — ${why}` : ''}` : '')
-          + (unk ? `، ${fa(unk)} نامعلوم` : '') };
+          + (unk ? `، ${fa(unk)} نامعلوم` : '')
+          + (blocked ? ' — مسدود؛ تا دادهٔ تأییدشده نیاید هیچ ارسالی نیست' : '') };
     }
     case 'preview':
       return { state: 'ok', phase: 'preflight',

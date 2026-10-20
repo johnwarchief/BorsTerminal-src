@@ -39,7 +39,7 @@ import threading
 import time
 import uuid
 from collections import deque
-from typing import Any
+from typing import Any, Mapping
 from urllib.parse import urlparse
 
 from fastapi import APIRouter, Body, HTTPException, Query, Request
@@ -70,6 +70,17 @@ from execution_service import ExecutionError, ExecutionService, Limits
 from execution_timing import Scheduler, TimeSource, percentile
 
 router = APIRouter()
+
+#: وضعیت‌هایِ مستقلِ منابع (Round 10). هر کدام فقط از شاهدِ خودش ساخته می‌شود.
+WATCHLIST_VERIFIED = "WATCHLIST_VERIFIED"
+WATCHLIST_UNAVAILABLE = "WATCHLIST_UNAVAILABLE"
+PORTFOLIO_VERIFIED = "PORTFOLIO_VERIFIED"
+PORTFOLIO_PARTIALLY_VERIFIED = "PORTFOLIO_PARTIALLY_VERIFIED"
+PORTFOLIO_UNAVAILABLE = "PORTFOLIO_UNAVAILABLE"
+BUYING_POWER_VERIFIED = "BUYING_POWER_VERIFIED"
+BUYING_POWER_UNAVAILABLE = "BUYING_POWER_UNAVAILABLE"
+ACCOUNT_SOURCE_BLOCKED = "ACCOUNT_SOURCE_BLOCKED"
+ORDER_WRITE_UNVERIFIED = "ORDER_WRITE_UNVERIFIED"
 
 _LOCK = threading.Lock()
 ADAPTER_ENV = "BORS_EXECUTION_ADAPTER"
@@ -420,6 +431,60 @@ def _draft_from(body: dict[str, Any]) -> OrderDraft:
         price_source=str(body.get("price_source") or "unspecified"),
         price_as_of=body.get("price_as_of"),
     )
+
+
+def _instrument_by_isin(isin: str) -> dict[str, Any]:
+    """ISIN ← نماد/ins_code از همان `instruments`؛ مبهم و بی‌نگاشت جدا می‌مانند."""
+    want = str(isin or "").strip().upper()
+    if not want:
+        return {"resolved": False, "isin": isin, "symbol": None, "ins_code": None,
+                "ambiguous": False, "reason": "EMPTY_ISIN"}
+    try:
+        conn = sqlite3.connect(f"file:{DB_PATH}?mode=ro", uri=True, timeout=15)
+    except sqlite3.Error:
+        return {"resolved": False, "isin": isin, "symbol": None, "ins_code": None,
+                "ambiguous": False, "reason": "LOCAL_DB_UNAVAILABLE"}
+    try:
+        conn.row_factory = sqlite3.Row
+        rows = conn.execute(
+            "SELECT ins_code, isin, l_val18 FROM instruments "
+            "WHERE UPPER(TRIM(isin)) = ? ORDER BY updated_at DESC LIMIT 2",
+            (want,)).fetchall()
+    except sqlite3.OperationalError:
+        return {"resolved": False, "isin": isin, "symbol": None, "ins_code": None,
+                "ambiguous": False, "reason": "LOCAL_DB_UNAVAILABLE"}
+    finally:
+        conn.close()
+    if not rows:
+        return {"resolved": False, "isin": isin, "symbol": None, "ins_code": None,
+                "ambiguous": False, "reason": "ISIN_NOT_MAPPED"}
+    if len(rows) > 1:
+        return {"resolved": False, "isin": isin, "symbol": None, "ins_code": None,
+                "ambiguous": True, "reason": "ISIN_AMBIGUOUS"}
+    r = rows[0]
+    sym = str(r["l_val18"] or "").strip() or None
+    if not sym:
+        return {"resolved": False, "isin": isin, "symbol": None, "ins_code": None,
+                "ambiguous": False, "reason": "ISIN_NO_SYMBOL"}
+    return {"resolved": True, "isin": isin, "symbol": sym,
+            "ins_code": (str(r["ins_code"] or "").strip() or None),
+            "ambiguous": False, "reason": ""}
+
+
+def _source_block() -> tuple[str, str] | None:
+    if not TRAFFIC_ALLOWED:
+        return (ACCOUNT_SOURCE_BLOCKED,
+                "ارتباط با کارگزاری خاموش است — هیچ منبعی خوانده نمی‌شود")
+    if not bool(getattr(_ACTIVE_ADAPTER, "has_token", lambda: False)()):
+        return (ACCOUNT_SOURCE_BLOCKED,
+                "دسترسی به حساب در حافظه نیست — اول در پنجرهٔ مرورگر وارد شوید")
+    if not bool(getattr(_ACTIVE_ADAPTER, "session_proven", lambda: False)()):
+        return (ACCOUNT_SOURCE_BLOCKED,
+                "دسترسی هنوز با پرسش فقط‌خواندنی تأیید نشده است")
+    if not isinstance(_ACTIVE_ADAPTER, EasyTraderAdapter):
+        return (ACCOUNT_SOURCE_BLOCKED,
+                "روش اتصال واقعی فعال نیست؛ منبع حساب در دسترس نیست")
+    return None
 
 
 def _resolve_instrument(symbol: str) -> InstrumentRef:
@@ -1821,57 +1886,206 @@ async def post_config(request: Request) -> dict[str, Any]:
 
 @router.get("/api/execution/portfolio")
 def get_portfolio() -> dict[str, Any]:
-    """موجودی و دارایی — فقط‌خواندنی، و فقط آنچه سرویس **واقعاً** برمی‌گرداند.
+    """دارایی‌هایِ پرتفوی از گزارشِ عملکردِ وب‌اپِ رسمی؛ فقط‌خواندنی.
 
-    امروز هیچ مسیرِ «دارایی‌ها» نه درِ سندِ رسمی (swagger/openapi = 403) و نه درِ
-    شواهدِ مشاهده‌شده وجود دارد؛ `get_balances()` عمداً None است و
-    `capabilities.balances` false. پس پاسخِ این در «صفر» یا «لیستِ خالی» نیست —
-    «بی‌منبع» است با دلیلِ خودش. بی‌نشستِ تأییدشده هیچ درخواستی هم نمی‌زند.
+    تعداد/آزاد/قابل‌فروش در این منبع نیست: آن سه فیلد صریحاً غایب گزارش
+    می‌شوند و با صفر یا برآورد پر نمی‌شوند. قدرتِ خرید منبعِ جدا دارد.
     """
-    live = bool(_live_now())
-    proven = bool(getattr(_ACTIVE_ADAPTER, "session_proven", lambda: False)())
-    has_token = bool(getattr(_ACTIVE_ADAPTER, "has_token", lambda: False)())
-    caps = _ACTIVE_ADAPTER.capabilities()
-    base = {"status": "success", "adapter": ADAPTER_KIND, "live": live,
-            "session_proven": proven, "as_of": None, "source": "none",
-            "rows": None, "cached_at": None, "error": None}
-    # سنجشِ زندهٔ 2026-10-18: «بی‌نشانی» با «ترافیک بسته» یکی بود و پیامِ restart
-    # می‌داد در حالی که کاربر restart کرده بود. چهار حالتِ جدا: ترافیک، نشانی،
-    # تأیید، منبع.
-    if not TRAFFIC_ALLOWED:
-        base["status"] = "blocked"
-        base["error"] = ("هیچ ترافیکی مجاز نیست — «تنظیمِ اتصال» را رویِ easytrader + "
-                         "فقط‌خواندنی (یا BORS_EXECUTION_LIVE=1) بگذارید و restart کنید")
+    fetched_at = time.strftime("%Y-%m-%dT%H:%M:%S")
+    base: dict[str, Any] = {
+        "status": "blocked", "adapter": ADAPTER_KIND, "live": bool(_live_now()),
+        "session_proven": bool(getattr(_ACTIVE_ADAPTER, "session_proven", lambda: False)()),
+        "state": ACCOUNT_SOURCE_BLOCKED, "as_of": None, "source": "none",
+        "rows": None, "positions": [], "cached_at": None, "fetched_at": None,
+        "raw_count": 0, "resolved_count": 0, "unresolved_count": 0,
+        "duplicate_count": 0, "unresolved": [], "missing_fields": [],
+        "buying_power": None, "error": None,
+    }
+    block = _source_block()
+    if block:
+        base["state"], base["error"] = block
         return base
-    if not has_token:
-        base["status"] = "unverified_session"
-        base["error"] = ("نشستِ کارگزاری درِ حافظه نیست: خودِ شما درِ پنجره وارد شوید، "
-                         "سپس نشانی را باِ POST /api/execution/session بدهید. "
-                         "بی‌نشانی هیچ پرسشی به کارگزاری نمی‌رود")
-        return base
-    if not proven:
-        base["status"] = "unverified_session"
-        base["error"] = ("نشست هنوز باِ یکِ پرسشِ فقط‌خواندنی تأیید نشده — "
-                         "POST /api/execution/connect/verify")
-        return base
-    if not bool(getattr(caps, "balances", False)):
-        base["status"] = "no_source"
-        base["error"] = ("کارگزاری مسیرِ دارایی‌ها را درِ هیچ شاهدِ مستندِ بازشده‌ای "
-                         "نمی‌دهد؛ عددی ساخته نمی‌شود. مسیرهایِ آزمودنیِ فقط‌خواندنی: "
-                         + ", ".join(WIRE_SESSION_PROBE_CANDIDATES))
+    if not hasattr(_ACTIVE_ADAPTER, "get_portfolio_performance"):
+        base.update({"status": "no_source", "state": PORTFOLIO_UNAVAILABLE,
+                     "error": "این روش اتصال منبع پرتفوی ندارد"})
         return base
     try:
-        rows = _ACTIVE_ADAPTER.get_balances()
-    except Exception as e:                        # noqa: BLE001 - BrokerError و غیره
-        base["status"] = "error"
-        base["error"] = "%s: %s" % (type(e).__name__, str(e)[:160])
+        raw_rows = _ACTIVE_ADAPTER.get_portfolio_performance()
+    except Exception as e:                        # noqa: BLE001
+        base.update({"status": "error", "state": PORTFOLIO_UNAVAILABLE,
+                     "error": "%s: %s" % (type(e).__name__, str(e)[:160])})
         return base
-    if rows is None:
-        base["status"] = "no_source"
-        base["error"] = "آداپتور None داد — «نمی‌دانیم»، نه «صفر»"
+    if not isinstance(raw_rows, list):
+        base.update({"status": "error", "state": PORTFOLIO_UNAVAILABLE,
+                     "error": "پاسخ پرتفوی فهرست نبود"})
         return base
-    base.update({"status": "success", "source": "live", "rows": rows,
-                 "as_of": time.strftime("%Y-%m-%dT%H:%M:%S")})
+    missing = ["quantity", "free_quantity", "sellable_quantity"]
+    rows: list[dict[str, Any]] = []
+    unresolved: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    duplicate_count = 0
+    for it in raw_rows:
+        if not isinstance(it, Mapping):
+            continue
+        isin = str(it.get("symbolIsin") or "").strip()
+        if isin in seen:
+            duplicate_count += 1
+        seen.add(isin)
+        mapped = _instrument_by_isin(isin)
+        row = {
+            "isin": isin, "symbol": mapped.get("symbol"),
+            "ins_code": mapped.get("ins_code"), "resolved": mapped.get("resolved"),
+            "ambiguous": mapped.get("ambiguous"), "mapping_error": mapped.get("reason"),
+            "broker_name": it.get("symbolName"),
+            "asset": it.get("asset"),
+            "avg_buy": it.get("totalBuyAveragePrice"),
+            "periodic_avg_buy": it.get("periodicBuyAveragePrice"),
+            "realized_pnl": it.get("totalRealizedProfitAndLoss"),
+            "realized_pnl_without_dps": it.get("totalRealizedProfitAndLossWithoutDps"),
+            "date": it.get("date"), "persian_date": it.get("persianDate"),
+            "source": "portfolio", "missing_fields": missing,
+        }
+        rows.append(row)
+        if not mapped.get("resolved"):
+            unresolved.append({"isin": isin, "reason": mapped.get("reason"),
+                               "ambiguous": mapped.get("ambiguous")})
+    state = PORTFOLIO_PARTIALLY_VERIFIED if rows else PORTFOLIO_VERIFIED
+    bp: dict[str, Any] = {"state": BUYING_POWER_UNAVAILABLE, "error": ""}
+    if hasattr(_ACTIVE_ADAPTER, "get_money"):
+        try:
+            m = _ACTIVE_ADAPTER.get_money()
+            bp = {"state": BUYING_POWER_VERIFIED, "value": m.get("buying_power"),
+                  "raw": m.get("raw"), "unit": m.get("unit"),
+                  "formula": m.get("formula"), "source": m.get("source"),
+                  "fetched_at": m.get("fetched_at")}
+        except Exception as e:                    # noqa: BLE001
+            bp = {"state": BUYING_POWER_UNAVAILABLE,
+                  "error": "%s: %s" % (type(e).__name__, str(e)[:120])}
+    resolved_count = sum(1 for r in rows if r.get("resolved"))
+    base.update({
+        "status": "success", "state": state,
+        "source": "easytrader:/assetmodule/api/performance (first-party web app)",
+        "rows": rows, "positions": rows, "as_of": fetched_at,
+        "fetched_at": fetched_at, "raw_count": len(raw_rows),
+        "resolved_count": resolved_count,
+        "unresolved_count": len(unresolved), "duplicate_count": duplicate_count,
+        "unresolved": unresolved, "missing_fields": missing,
+        "buying_power": bp, "error": None,
+    })
+    return base
+
+
+@router.get("/api/execution/watchlist")
+def get_easytrader_watchlist() -> dict[str, Any]:
+    """دیده‌بانِ شخصیِ EasyTrader؛ هرگز با دیده‌بانِ محلیِ بازار یکی نمی‌شود."""
+    fetched_at = time.strftime("%Y-%m-%dT%H:%M:%S")
+    base: dict[str, Any] = {
+        "status": "blocked", "adapter": ADAPTER_KIND, "live": bool(_live_now()),
+        "session_proven": bool(getattr(_ACTIVE_ADAPTER, "session_proven", lambda: False)()),
+        "state": ACCOUNT_SOURCE_BLOCKED, "source": "none", "fetched_at": None,
+        "categories": [], "rows": [], "raw_count": 0, "resolved_count": 0,
+        "unresolved_count": 0, "duplicate_count": 0, "unresolved": [], "error": None,
+    }
+    block = _source_block()
+    if block:
+        base["state"], base["error"] = block
+        return base
+    if not hasattr(_ACTIVE_ADAPTER, "get_watchlist"):
+        base.update({"status": "no_source", "state": WATCHLIST_UNAVAILABLE,
+                     "error": "این روش اتصال دیده‌بان ندارد"})
+        return base
+    try:
+        raw_categories = _ACTIVE_ADAPTER.get_watchlist()
+    except Exception as e:                        # noqa: BLE001
+        base.update({"status": "error", "state": WATCHLIST_UNAVAILABLE,
+                     "error": "%s: %s" % (type(e).__name__, str(e)[:160])})
+        return base
+    if not isinstance(raw_categories, list):
+        base.update({"status": "error", "state": WATCHLIST_UNAVAILABLE,
+                     "error": "پاسخ دیده‌بان فهرست نبود"})
+        return base
+    categories: list[dict[str, Any]] = []
+    flat: list[dict[str, Any]] = []
+    unresolved: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    duplicate_count = 0
+    raw_count = 0
+    for cat in raw_categories:
+        if not isinstance(cat, Mapping):
+            continue
+        cat_id = str(cat.get("id") or "")
+        cat_name = str(cat.get("name") or "")
+        cat_rows: list[dict[str, Any]] = []
+        for isin in (cat.get("isins") or []):
+            isin = str(isin or "").strip()
+            if not isin:
+                continue
+            raw_count += 1
+            if isin in seen:
+                duplicate_count += 1
+            seen.add(isin)
+            mapped = _instrument_by_isin(isin)
+            row = {"isin": isin, "symbol": mapped.get("symbol"),
+                   "ins_code": mapped.get("ins_code"),
+                   "resolved": mapped.get("resolved"),
+                   "ambiguous": mapped.get("ambiguous"),
+                   "mapping_error": mapped.get("reason"),
+                   "category_id": cat_id, "category_name": cat_name,
+                   "source": "watchlist"}
+            cat_rows.append(row)
+            flat.append(row)
+            if not mapped.get("resolved"):
+                unresolved.append({"isin": isin, "reason": mapped.get("reason"),
+                                   "ambiguous": mapped.get("ambiguous"),
+                                   "category_id": cat_id})
+        categories.append({"id": cat_id, "name": cat_name,
+                           "order": cat.get("order"),
+                           "is_default": bool(cat.get("is_default")),
+                           "created_at": cat.get("created_at"),
+                           "count": len(cat_rows), "symbols": cat_rows})
+    resolved_count = sum(1 for r in flat if r.get("resolved"))
+    base.update({
+        "status": "success", "state": WATCHLIST_VERIFIED,
+        "source": "easytrader:/easy/api/MarketWatch (first-party web app)",
+        "fetched_at": fetched_at, "categories": categories, "rows": flat,
+        "raw_count": raw_count, "resolved_count": resolved_count,
+        "unresolved_count": len(unresolved), "duplicate_count": duplicate_count,
+        "unresolved": unresolved, "empty": not bool(flat), "error": None,
+    })
+    return base
+
+
+@router.get("/api/execution/buying-power")
+def get_buying_power() -> dict[str, Any]:
+    """قدرتِ خریدِ خواندنی؛ واحد ریال و فرمول از خودِ وب‌اپِ رسمی سنجیده شد."""
+    base: dict[str, Any] = {
+        "status": "blocked", "adapter": ADAPTER_KIND, "live": bool(_live_now()),
+        "session_proven": bool(getattr(_ACTIVE_ADAPTER, "session_proven", lambda: False)()),
+        "state": ACCOUNT_SOURCE_BLOCKED, "source": "none", "unit": "IRR",
+        "value": None, "raw": None, "formula": None, "fetched_at": None,
+        "order_write_state": ORDER_WRITE_UNVERIFIED, "error": None,
+    }
+    block = _source_block()
+    if block:
+        base["state"], base["error"] = block
+        return base
+    if not hasattr(_ACTIVE_ADAPTER, "get_money"):
+        base.update({"status": "no_source", "state": BUYING_POWER_UNAVAILABLE,
+                     "error": "این روش اتصال قدرت خرید ندارد"})
+        return base
+    try:
+        money = _ACTIVE_ADAPTER.get_money()
+    except Exception as e:                        # noqa: BLE001
+        base.update({"status": "error", "state": BUYING_POWER_UNAVAILABLE,
+                     "error": "%s: %s" % (type(e).__name__, str(e)[:160])})
+        return base
+    base.update({
+        "status": "success", "state": BUYING_POWER_VERIFIED,
+        "source": money.get("source"), "unit": money.get("unit"),
+        "value": money.get("buying_power"), "raw": money.get("raw"),
+        "formula": money.get("formula"), "fetched_at": money.get("fetched_at"),
+        "error": None,
+    })
     return base
 
 

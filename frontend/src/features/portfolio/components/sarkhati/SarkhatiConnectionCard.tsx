@@ -110,6 +110,11 @@ export function SarkhatiConnectionCard() {
     void qc.invalidateQueries({ queryKey: ['execution-connection-diagnosis'] });
     void qc.invalidateQueries({ queryKey: ['execution-browser-host'] });
     void qc.invalidateQueries({ queryKey: ['execution-connect'] });
+    // منابعِ حساب بعد از تأییدِ نشست باید تازه خوانده شوند؛ دادهٔ blockedِ
+    // پیش از تأیید نباید تا پایانِ staleTime بماند.
+    void qc.invalidateQueries({ queryKey: ['execution-portfolio'] });
+    void qc.invalidateQueries({ queryKey: ['execution-watchlist'] });
+    void qc.invalidateQueries({ queryKey: ['execution-buying-power'] });
   };
 
   const startHost = async () => {

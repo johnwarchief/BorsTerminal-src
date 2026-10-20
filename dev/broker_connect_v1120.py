@@ -287,10 +287,10 @@ try:
     ck("نشست" in why and "BORS_EXECUTION_LIVE=1 لازم است" not in why,
        "۹) کمبودِ اصلی «نشستِ شما» گزارش می‌شود، نه روشن‌کردنِ درِ ارسال", why[:170])
     p9 = EX.get_portfolio()
-    ck(p9["status"] == "unverified_session" and "/api/execution/session" in str(p9["error"])
-       and "restart" not in str(p9["error"]),
+    ck(p9["status"] == "blocked" and p9["state"] == "ACCOUNT_SOURCE_BLOCKED"
+       and "وارد شوید" in str(p9["error"]) and "restart" not in str(p9["error"]),
        "۹) پرتفوی بی‌نشست «restart لازم است» نمی‌گوید؛ می‌گوید وارد شوید",
-       "%s: %s" % (p9["status"], str(p9["error"])[:110]))
+       "%s: %s" % (p9["state"], str(p9["error"])[:110]))
     ck(p9["rows"] is None, "۹) بی‌پرسشِ موفق هیچ ردیفی ساخته نمی‌شود", str(p9["rows"]))
     # `/connect` باید همان راستِ `/status` را بگوید. گره‌زدنِ `traffic_mode` به
     # `adapter.live` (که توکن می‌خواهد) درِ سنجشِ زنده با «ترافیک مجاز»ِ `/status`
@@ -305,9 +305,10 @@ try:
        "۹) ترانسپورتِ ردکننده ⇒ blocked (کنترلِ منفیِ همان برچسب)")
     EX.TRAFFIC_ALLOWED = False
     p10 = EX.get_portfolio()
-    ck(p10["status"] == "blocked" and "تنظیمِ اتصال" in str(p10["error"]),
+    ck(p10["status"] == "blocked" and p10["state"] == "ACCOUNT_SOURCE_BLOCKED"
+       and "خاموش" in str(p10["error"]) and "وارد شوید" not in str(p10["error"]),
        "۹) کنترلِ منفی: باِ ترافیکِ بسته پیامِ همان حالت می‌آید، نه پیامِ نشست",
-       p10["status"])
+       "%s: %s" % (p10["state"], str(p10["error"])[:110]))
 finally:
     (EX.ADAPTER_KIND, EX.LIVE_REQUESTED, EX.READ_ONLY_REQUESTED, EX.TRAFFIC_ALLOWED,
      EX.DRY_RUN, EX._ACTIVE_ADAPTER, EX._CFG) = _saved

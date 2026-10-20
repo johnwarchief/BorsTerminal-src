@@ -194,6 +194,24 @@ describe('درِ رابط فقط با پشتیبانِ واقعی باز می‌
     expect(screen.getByTestId('watch-order-phase').textContent).toContain('پیش‌فرود');
   });
 
+  it('پیش‌فرود با ok=false مسدود خوانده می‌شود، نه سبز', async () => {
+    route(statusEasy(), {
+      '/api/execution/preflight': { status: 'success', adapter: 'easytrader',
+        checks: { execution_id: 'PASS', instrument: 'PASS', side: 'PASS', price: 'PASS',
+          quantity: 'PASS', session: 'PASS', balance: 'UNKNOWN', duplicate: 'PASS',
+          place: 'PASS', kill_switch: 'PASS' },
+        reasons: { balance: 'buying power در پاسخ نبود' }, ok: false,
+        unknown: ['balance'] },
+    });
+    renderPanel();
+    await waitFor(() => expect(screen.getByTestId('exec-preflight')).toBeEnabled());
+    fireEvent.click(screen.getByTestId('exec-preflight'));
+    await waitFor(() => expect(screen.getByTestId('watch-order-reason').textContent)
+      .toContain('مسدود'));
+    expect(screen.getByTestId('watch-order-reason').textContent).toContain('۱ نامعلوم');
+    expect(screen.getByTestId('watch-order-reason').textContent).not.toContain('ارسال‌شده');
+  });
+
   it('توقف وضعیتِ سفارش را عوض نمی‌کند، فقط خطِ پاسخ را', async () => {
     route(statusEasy(), {
       '/api/execution/halt': { status: 'success', halted: true, kill_switch: 'HALTED',

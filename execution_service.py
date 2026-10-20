@@ -154,17 +154,26 @@ class QueueView:
 class Preflight:
     checks: dict[str, str] = field(default_factory=dict)
     reasons: dict[str, str] = field(default_factory=dict)
+    #: چک‌هایی که «نامعلوم»شان باید ارسال را ببندد (Round 10: buying power/آزاد).
+    #: UNKNOWN در بقیهٔ چک‌ها همان قراردادِ پیشین را دارد.
+    blocking: set[str] = field(default_factory=set)
 
     @property
     def ok(self) -> bool:
-        return not any(v == FAIL_ for v in self.checks.values())
+        return (not any(v == FAIL_ for v in self.checks.values())
+                and not any(self.checks.get(k) != PASS for k in self.blocking))
 
     @property
     def unknown(self) -> tuple[str, ...]:
         return tuple(k for k, v in self.checks.items() if v == UNKNOWN)
 
-    def add(self, name: str, state: str, reason: str = "") -> None:
+    def add(self, name: str, state: str, reason: str = "", *,
+            blocking: bool = False) -> None:
         self.checks[name] = state
+        if blocking:
+            self.blocking.add(name)
+        else:
+            self.blocking.discard(name)
         if reason:
             self.reasons[name] = reason
 
@@ -297,19 +306,64 @@ class ExecutionService:
             p.add("session", PASS if state == "open" else
                   (UNKNOWN if state == "unknown" else FAIL_), str(state))
 
-        # نقدینگی/موقعیت: اگر کارگزاری نمی‌دهد UNKNOWN، نه صفر
+        # نقدینگی/موقعیت: اگر کارگزاری نمی‌دهد UNKNOWN، نه صفر. خرید با
+        # «قدرت خرید» سنجیده می‌شود؛ فروش با «تعداد آزاد» — نه با نقدینگی.
+        # فقط برای آداپتوری که واقعاً balances می‌دهد، نبودِ پاسخ «مسدودکننده» است.
         caps: Capabilities = self.adapter.capabilities()
         if not caps.balances:
             p.add("balance", UNKNOWN, "broker exposes no balances")
-        else:
+        elif draft.side is Side.BUY:
             try:
                 b = self.adapter.get_balances() or {}
                 need = (draft.price or 0.0) * (draft.quantity or 0.0)
-                cash = float(b.get("cash", 0.0) or 0.0)
-                p.add("balance", PASS if (draft.side is not Side.BUY or cash >= need)
-                      else FAIL_, f"cash={cash} need={need:.0f}")
+                available = b.get("buying_power")
+                if available is None:
+                    available = b.get("cash")
+                if available is None:
+                    p.add("balance", UNKNOWN,
+                          "buying power/cash در پاسخ نبود", blocking=True)
+                else:
+                    try:
+                        avail = float(available)
+                    except (TypeError, ValueError):
+                        p.add("balance", UNKNOWN,
+                              "مقدار buying power غیرعددی — مسدود", blocking=True)
+                    else:
+                        source = str(b.get("source") or "")
+                        unit = str(b.get("unit") or "")
+                        p.add("balance", PASS if avail >= need else FAIL_,
+                              f"buying_power={avail:.0f} need={need:.0f} "
+                              f"unit={unit} source={source}", blocking=True)
             except BrokerError as e:
-                p.add("balance", UNKNOWN, e.code.value)
+                p.add("balance", UNKNOWN, e.code.value, blocking=True)
+            except Exception as e:                    # noqa: BLE001 - مرزِ adapter
+                p.add("balance", UNKNOWN,
+                      "%s: پاسخِ money خوانده نشد" % type(e).__name__, blocking=True)
+        else:
+            fn = getattr(self.adapter, "get_sellable_quantity", None)
+            try:
+                free = fn(draft.instrument.isin) if callable(fn) else None
+            except BrokerError as e:
+                p.add("sellable", UNKNOWN, e.code.value, blocking=True)
+                free = None
+            except Exception as e:                    # noqa: BLE001 - مرزِ adapter
+                p.add("sellable", UNKNOWN,
+                      "%s: تعدادِ آزاد خوانده نشد" % type(e).__name__, blocking=True)
+                free = None
+            if free is None:
+                if "sellable" not in p.checks:
+                    p.add("sellable", UNKNOWN,
+                          "منبع پرتفوی تعداد آزاد/قابل‌فروش نمی‌دهد", blocking=True)
+            else:
+                try:
+                    freev = float(free)
+                except (TypeError, ValueError):
+                    p.add("sellable", UNKNOWN,
+                          "تعدادِ آزاد غیرعددی — مسدود", blocking=True)
+                else:
+                    p.add("sellable", PASS if freev >= (draft.quantity or 0)
+                          else FAIL_, f"free={freev} need={draft.quantity}",
+                          blocking=True)
 
         # تکراری‌بودن (بندِ ۱۹) — هم ردِّپا، هم هر چیزی که *این* پروسه قبلاً
         # دربارهٔ همان شناسه تصمیم گرفته است. سه منبع، به ترتیبِ زودخجازد:
