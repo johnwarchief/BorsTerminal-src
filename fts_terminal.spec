@@ -193,6 +193,7 @@ a = Analysis(
                    # Strategyهای چندروشی (۲۰۲۶-۱۰-۲۰): سطح-بالِ api/execution.py.
                    'execution_strategy_core',
                    'execution_strategy_engine',
+                   'execution_intent_store',
                    'execution_browser',
                    # زمان‌بندیِ ماندگار (۲۰۲۶-۱۰-۲۰): سطح-بالِ api/execution.py.
                    'execution_schedule', 'execution_daemon', 'execution_browser_host', 'execution_offerings', 'execution_cockpit', 'execution_connection', 'execution_session_capture',

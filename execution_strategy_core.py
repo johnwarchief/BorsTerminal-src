@@ -65,14 +65,25 @@ _COMMON_BROWSER = {
     #: زنده دیده شدند و هدرِ فرم در باندلِ خودِ EasyTrader (`data-cy`) هست.
     #: برایِ فروش یا نسخهٔ دیگرِ UI باید override شوند.
     "submit_selector": "button[aria-label='ارسال خرید']",
+    #: Round 14: انتخابگرهایِ همان سمت. دکمهٔ فروش در UI زنده دیده نشده؛
+    #: عمداً خالی می‌ماند تا فروش به‌جای کلیکِ اشتباه، CONFIG_MISSING بگیرد.
+    "submit_selector_buy": "button[aria-label='ارسال خرید']",
+    "submit_selector_sell": "",
     "symbol_selector": "",
     "form_symbol_selector": "[data-cy='order-form-header-symbol-name']",
     "open_form_selector": "button.order-buy-btn",
+    "open_form_selector_buy": "button.order-buy-btn",
+    "open_form_selector_sell": "",
+    "form_selector": "",
+    "side_selector": "",
+    "isin_selector": "",
     "price_selector": "#price",
     "quantity_selector": "#quantity",
     "login_selector": "",
     "clock_selector": "",
     "intercept_pattern": "**/core/api/v2/order*",
+    "order_paths": ["/core/api/v2/order"],
+    "order_method": "POST",
     "action_timeout_ms": 1200,
     "navigation_timeout_ms": 20000,
     "headless": False,
@@ -523,6 +534,7 @@ class StrategyOrder:
     strategy_id: str
     draft: Any
     target_wall_ms: Optional[int]
+    intent_key: str = ""
     prepared_id: str = ""
     prepared: Any = None
     state: str = "prepared"

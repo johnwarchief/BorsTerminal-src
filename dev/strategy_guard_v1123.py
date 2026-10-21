@@ -60,6 +60,7 @@ class _Tripwire:
 
 def main() -> int:
     import execution_browser as EB
+    import execution_intent_store as IS
     import execution_strategy_core as SC
     import execution_strategy_engine as SE
     from execution_contract import (
@@ -70,6 +71,7 @@ def main() -> int:
     tmp = tempfile.mkdtemp(prefix="strategy_guard_")
     db = os.path.join(tmp, "user.db")
     store = SC.StrategySettingsStore(db)
+    intent_store = IS.IntentStore(os.path.join(tmp, "intents.db"))
     common = {
         "order_url": "http://mock.local/order",
         "origin_allowlist": ["http://mock.local"],
@@ -81,6 +83,8 @@ def main() -> int:
         "submit_selector": "[data-testid=submit]",
         "focus_selector": "[data-testid=submit]",
         "intercept_pattern": "**/mock/order*",
+        "order_paths": ["/order", "/mock/order"],
+        "order_method": "POST",
         "action_timeout_ms": 300,
         "headless": True,
         "api_path": "/mock/order",
@@ -191,7 +195,8 @@ def main() -> int:
         return SE.StrategyEngine(
             adapter or FakeAdapter(), settings_store=store, mock_browser=True,
             driver_factory=factory, server_clock=clock_ok,
-            live_allowed=live, halted=lambda: (False, ""))
+            live_allowed=live, halted=lambda: (False, ""),
+            intent_store=intent_store, recover_intents=False)
 
     def draft(eid, price=1000.0, qty=10.0):
         return OrderDraft(execution_id=eid, instrument=instr, side=Side.BUY,
@@ -282,7 +287,8 @@ def main() -> int:
         driver_factory=factory,
         server_clock=lambda: {"verified": True, "delta_ms": 5000.0,
                               "rtt_ms": 1.0},
-        live_allowed=True, halted=lambda: (False, ""))
+        live_allowed=True, halted=lambda: (False, ""),
+        intent_store=intent_store, recover_intents=False)
     d4 = draft("G-CLOCK")
     current["draft"] = d4
     current["form"] = None
@@ -395,7 +401,8 @@ def main() -> int:
     eng_defaults = SE.StrategyEngine(
         FakeAdapter(), settings_store=store_defaults, mock_browser=True,
         driver_factory=factory, server_clock=clock_ok,
-        live_allowed=False, halted=lambda: (False, ""))
+        live_allowed=False, halted=lambda: (False, ""),
+        intent_store=intent_store, recover_intents=False)
     current["draft"] = draft("G-DEFAULT")
     store_defaults.save(SC.PLAYWRIGHT_DOM, options={
         "symbol_selector": "", "form_symbol_selector": "",
@@ -432,7 +439,8 @@ def main() -> int:
     eng_live401 = SE.StrategyEngine(
         FakeAdapter(writes_allowed=True), settings_store=store,
         mock_browser=True, driver_factory=factory, server_clock=clock_ok,
-        live_allowed=True, halted=lambda: (False, ""))
+        live_allowed=True, halted=lambda: (False, ""),
+        intent_store=intent_store, recover_intents=False)
     current["draft"] = draft("G-401")
     current["form"] = None
     current["response_override"] = {
@@ -494,7 +502,8 @@ def main() -> int:
     eng_live_html = SE.StrategyEngine(
         FakeAdapter(writes_allowed=True), settings_store=store,
         mock_browser=True, driver_factory=factory, server_clock=clock_ok,
-        live_allowed=True, halted=lambda: (False, ""))
+        live_allowed=True, halted=lambda: (False, ""),
+        intent_store=intent_store, recover_intents=False)
     current["draft"] = draft("G-200HTML")
     current["form"] = None
     current["response_override"] = {
@@ -566,7 +575,8 @@ def main() -> int:
     eng_host = SE.StrategyEngine(
         FakeAdapter(writes_allowed=True), settings_store=store,
         mock_browser=True, driver_factory=factory, server_clock=clock_ok,
-        live_allowed=True, halted=lambda: (False, ""))
+        live_allowed=True, halted=lambda: (False, ""),
+        intent_store=intent_store, recover_intents=False)
     current["draft"] = draft("G-HOST-GATE")
     current["form"] = None
     o_host = eng_host.prepare(current["draft"], SC.PLAYWRIGHT_DOM)

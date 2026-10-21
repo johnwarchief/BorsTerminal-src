@@ -11,8 +11,13 @@ import {
   browserHostApi, orderApi, useBrowserHost, useExecutionStatus, useStrategies,
   type StrategyRowView,
 } from '../lib/orderClient';
-import { targetWallMs } from '../stores/sarkhatiFormStore';
 import { Chip, Field, GhostBtn, Line, Note, Section } from '../components/sarkhati/parts';
+
+function newIntentKey(): string {
+  const c = globalThis.crypto as Crypto | undefined;
+  if (c && typeof c.randomUUID === 'function') return c.randomUUID();
+  return `ac-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
 
 const DEFAULTS = {
   form_symbol_selector: "[data-cy='order-form-header-symbol-name']",
@@ -54,6 +59,7 @@ export default function AutoClickerPage() {
   const [price, setPrice] = useState('');
   const [qty, setQty] = useState('');
   const [target, setTarget] = useState('');
+  const [intentKey, setIntentKey] = useState(() => newIntentKey());
   const [dryAck, setDryAck] = useState(false);
   const [preparedId, setPreparedId] = useState('');
   const [busy, setBusy] = useState('');
@@ -84,7 +90,7 @@ export default function AutoClickerPage() {
   const liveAllowed = strategies.data?.live_allowed === true;
   const selectorsOk = Object.values(opts).every((v, i) =>
     i >= Object.keys(DEFAULTS).length - 2 ? true : v.trim().length > 0);
-  const targetMs = targetWallMs(target);
+  const targetSet = target.trim().length > 0;
   const readiness = [
     ['host', 'browser host', hostOk, hostOk ? 'سالم' : 'بسته/ناسالم'],
     ['session', 'نشست', sessionOk, sessionOk ? 'تأییدشده' : 'تأییدنشده'],
@@ -92,7 +98,7 @@ export default function AutoClickerPage() {
     ['selectors', 'شناسه‌های فرم', configured && selectorsOk, configured ? 'تنظیم‌شده' : 'ناقص'],
     ['prefill', 'فرم ازپیش‌پر', !optBool(row, 'autofill', true) && optBool(row, 'require_prefilled', true),
       'autofill=false · require_prefilled=true'],
-    ['target', 'زمان هدف', targetMs != null, targetMs == null ? 'تعیین نشده' : 'تعیین شده'],
+    ['target', 'زمان هدف', targetSet, targetSet ? 'تعیین شده' : 'تعیین نشده'],
     ['live', 'Live', !liveAllowed, liveAllowed ? 'فعال — ممنوع' : 'بسته'],
   ] as const;
 
@@ -138,7 +144,8 @@ export default function AutoClickerPage() {
       const res = await orderApi.strategyPrepare({
         symbol: symbol.trim(), side, price: Number(price), quantity: Number(qty),
         strategy: 'autoclicker',
-        target_wall_ms: targetMs ?? undefined,
+        target_tehran: target.trim() || undefined,
+        intent_key: intentKey,
         execution_id: `ac-${Date.now()}`,
       });
       if (res.status === 'success') {
@@ -158,10 +165,17 @@ export default function AutoClickerPage() {
     setBusy('dry'); setAnswer('');
     try {
       const res = await orderApi.strategyTrigger({ prepared_id: preparedId });
-      setTone(res.status === 'success' ? 'warn' : 'bad');
-      setAnswer(res.status === 'success'
-        ? 'dry-run: کلیک با intercept اجرا شد؛ درخواست پیش از dispatch aborted شد.'
-        : String(res.detail ?? res.code ?? 'dry-run ناموفق'));
+      const st = String(res.status ?? '');
+      if (st === 'scheduled') {
+        setTone('ok');
+        setAnswer('زمان‌بندی شد؛ dry-run در زمان هدف (تهران) اجرا می‌شود و پیش از dispatch متوقف می‌شود.');
+      } else if (st === 'success') {
+        setTone('warn');
+        setAnswer('dry-run: کلیک با intercept اجرا شد؛ درخواست پیش از dispatch aborted شد.');
+      } else {
+        setTone('bad');
+        setAnswer(String(res.detail ?? res.code ?? 'dry-run ناموفق'));
+      }
     } catch (e) {
       setTone('bad'); setAnswer(e instanceof Error ? e.message : String(e));
     } finally { setBusy(''); }
@@ -267,7 +281,7 @@ export default function AutoClickerPage() {
               <input value={qty} onChange={(e) => setQty(e.target.value)} inputMode="decimal"
                 data-testid="autoclicker-qty" className={INPUT} />
             </label>
-            <label className="flex flex-col gap-0.5 text-3xs text-text-muted">زمان هدف
+            <label className="flex flex-col gap-0.5 text-3xs text-text-muted">زمان هدف (به وقت تهران)
               <input type="datetime-local" value={target} onChange={(e) => setTarget(e.target.value)}
                 data-testid="autoclicker-target" className={INPUT} />
             </label>
@@ -276,6 +290,13 @@ export default function AutoClickerPage() {
             <GhostBtn testId="autoclicker-prepare" onClick={() => void prepare()}
               disabled={busy !== '' || !symbol.trim() || !price || !qty}>آماده‌سازی (بدون ارسال)</GhostBtn>
             <GhostBtn testId="autoclicker-abort" onClick={() => void abort()} disabled={!preparedId || busy !== ''}>توقف</GhostBtn>
+            <GhostBtn testId="autoclicker-new-intent" onClick={() => {
+              setIntentKey(newIntentKey());
+              setPreparedId('');
+              setDryAck(false);
+              setTone('idle');
+              setAnswer('قصد تازه ساخته شد؛ هیچ کلیک/سفارشی ساخته نشد.');
+            }} disabled={busy !== ''}>قصد تازه</GhostBtn>
           </div>
           {preparedId ? (
             <div className="mt-1 rounded-lg border border-border-c/40 bg-bg-primary/30 px-2 py-1">
@@ -298,7 +319,12 @@ export default function AutoClickerPage() {
           <summary className="cursor-pointer text-3xs font-bold text-text-secondary">نتیجهٔ Probe (بدونِ مقدار فرم)</summary>
           <pre className="mt-1 max-h-48 overflow-auto text-3xs text-text-muted" dir="ltr">
             {JSON.stringify({ login: probe.login, origin_ok: probe.origin_ok,
-              selectors: probe.selectors, browser: probe.browser,
+              selectors: probe.selectors,
+              structure: {
+                buttons: ((probe.structure as { buttons?: unknown[] } | undefined)?.buttons ?? []).slice(0, 10),
+                inputs: ((probe.structure as { inputs?: unknown[] } | undefined)?.inputs ?? []).slice(0, 10),
+              },
+              browser: probe.browser,
               network: probe.network }, null, 1)}
           </pre>
         </details>

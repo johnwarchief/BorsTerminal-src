@@ -92,4 +92,40 @@ describe('AutoClicker — تنظیمات و آمادگی', () => {
     fireEvent.click(screen.getByTestId('autoclicker-dry-run'));
     await waitFor(() => expect(api.trigger).toHaveBeenCalledWith({ prepared_id: 'prep-1' }));
   });
+
+  it('هدف را به تهران می‌فرستد و intent_key پایدار می‌ماند تا «قصد تازه»', async () => {
+    renderPage();
+    fireEvent.change(screen.getByTestId('autoclicker-symbol'), { target: { value: 'فولاد' } });
+    fireEvent.change(screen.getByTestId('autoclicker-price'), { target: { value: '1000' } });
+    fireEvent.change(screen.getByTestId('autoclicker-qty'), { target: { value: '10' } });
+    fireEvent.change(screen.getByTestId('autoclicker-target'),
+      { target: { value: '2026-10-22T08:45' } });
+    fireEvent.click(screen.getByTestId('autoclicker-prepare'));
+    await waitFor(() => expect(api.prepare).toHaveBeenCalled());
+    const first = api.prepare.mock.calls[0][0] as Record<string, unknown>;
+    expect(first.target_tehran).toBe('2026-10-22T08:45');
+    expect(typeof first.intent_key).toBe('string');
+    expect(first.intent_key).toBeTruthy();
+    fireEvent.click(screen.getByTestId('autoclicker-new-intent'));
+    fireEvent.click(screen.getByTestId('autoclicker-prepare'));
+    await waitFor(() => expect(api.prepare).toHaveBeenCalledTimes(2));
+    const second = api.prepare.mock.calls[1][0] as Record<string, unknown>;
+    expect(second.intent_key).not.toBe(first.intent_key);
+  });
+
+  it('پاسخ scheduled را انتظار می‌خواند، نه شکست', async () => {
+    api.trigger.mockResolvedValueOnce({ status: 'scheduled' });
+    renderPage();
+    fireEvent.change(screen.getByTestId('autoclicker-symbol'), { target: { value: 'فولاد' } });
+    fireEvent.change(screen.getByTestId('autoclicker-price'), { target: { value: '1000' } });
+    fireEvent.change(screen.getByTestId('autoclicker-qty'), { target: { value: '10' } });
+    fireEvent.change(screen.getByTestId('autoclicker-target'),
+      { target: { value: '2026-10-22T08:45' } });
+    fireEvent.click(screen.getByTestId('autoclicker-prepare'));
+    await waitFor(() => expect(screen.getByTestId('autoclicker-dry-run')).toBeTruthy());
+    fireEvent.click(screen.getByTestId('autoclicker-dry-ack'));
+    fireEvent.click(screen.getByTestId('autoclicker-dry-run'));
+    await waitFor(() => expect(screen.getByTestId('autoclicker-answer').textContent)
+      .toContain('زمان‌بندی'));
+  });
 });

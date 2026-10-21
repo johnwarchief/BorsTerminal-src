@@ -405,6 +405,23 @@ class ExecutionService:
                       "age=%.0fs limit=%.0fs" % (age, self.limits.max_data_age_s))
         return p
 
+    def dispatch_preflight(self, draft: OrderDraft) -> Preflight:
+        """پیش‌فرودِ مسیرِ مرورگری: همان preflight + سقف‌هایِ ریسکِ مسیرِ عادی.
+
+        مسیرِ `/strategies/dispatch` قبلاً فقط وجودِ یک cap را می‌سنجید و از
+        `_check_limits`/preflight عبور نمی‌کرد. این متد همان منبعِ حقیقت را
+        برایِ کلیکِ AutoClicker هم اعمال می‌کند.
+        """
+        p = self.preflight(draft)
+        try:
+            self._check_limits([draft], ctx=self._risk_for(draft))
+        except ExecutionError as e:
+            p.add("limits", FAIL_, str(e.detail)[:200], blocking=True)
+        except Exception as e:                       # noqa: BLE001 - مرزِ ریسک
+            p.add("limits", UNKNOWN, "%s: %s" % (type(e).__name__, str(e)[:160]),
+                  blocking=True)
+        return p
+
     # ---- ۲) آماده‌سازی (پیش از مهلت) --------------------------------------
     def prepare(self, draft: OrderDraft, *, target_wall_ms: int | None = None,
                 one_way_ms: float = 0.0, margin_ms: float = 0.0,

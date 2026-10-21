@@ -33,6 +33,7 @@ from typing import Any, Callable, Mapping, Optional
 from urllib.parse import urlparse
 
 import execution_browser as EB
+import execution_intent_store as IS
 import execution_strategy_core as SC
 from execution_contract import (
     BrokerError, ErrorCode, ExecutionRecord, ExecutionStatus, OrderDraft, Side,
@@ -112,6 +113,8 @@ class StrategyContext:
     server_clock: Optional[Callable[[], Optional[dict[str, Any]]]] = None
     direct_submit: Optional[Callable[[OrderDraft], ExecutionRecord]] = None
     event: Optional[Callable[[str], None]] = None
+    #: Round 14: claimِ اتمیکِ intent دقیقاً پیش از عملِ ارسال/کلیک.
+    before_action: Optional[Callable[[], None]] = None
 
 
 @dataclass
@@ -176,6 +179,8 @@ class DirectApiStrategy:
         if not callable(submit):
             raise StrategyError("UNSUPPORTED", "no submit_order")
         try:
+            if ctx.before_action is not None:
+                ctx.before_action()
             rec = submit(h.draft)
         except BrokerError as e:
             unknown = bool(e.is_unknown_result)
@@ -254,15 +259,80 @@ class BrowserStrategyBase:
     def _sel(self, ctx: StrategyContext) -> dict[str, str]:
         o = ctx.settings.options
         keys = ("order_url", "symbol_selector", "form_symbol_selector",
-                "open_form_selector", "price_selector", "quantity_selector",
-                "submit_selector", "login_selector", "clock_selector",
+                "open_form_selector", "open_form_selector_buy",
+                "open_form_selector_sell", "price_selector", "quantity_selector",
+                "submit_selector", "submit_selector_buy", "submit_selector_sell",
+                "form_selector", "side_selector", "isin_selector",
+                "login_selector", "clock_selector",
                 "symbol_confirm_selector", "focus_selector", "intercept_pattern",
                 "api_path")
         out = {k: str(o.get(k) or "") for k in keys}
         out["order_url"] = out["order_url"] or "https://d.easytrader.ir/"
         out["intercept_pattern"] = out["intercept_pattern"] or "**/core/api/v2/order*"
-        out["api_path"] = out["api_path"] or "/core/api/v2/order"
+        out["api_path"] = out["api_path"] or WIRE_PATH_ORDER_CREATE
         return out
+
+    @staticmethod
+    def _side_value(draft: OrderDraft) -> str:
+        side = getattr(draft, "side", "")
+        return str(getattr(side, "value", side) or "").lower()
+
+    def _side_sel(self, ctx: StrategyContext, draft: OrderDraft) -> dict[str, str]:
+        """انتخابگرهایِ همان سمت؛ فروش هرگز به دکمهٔ خرید برنمی‌گردد."""
+        base = self._sel(ctx)
+        side = self._side_value(draft)
+        specific_submit = base.get("submit_selector_%s" % side) or ""
+        generic_submit = base.get("submit_selector") or ""
+        if side == "sell":
+            if not specific_submit:
+                raise StrategyError(
+                    "CONFIG_MISSING",
+                    "submit_selector_sell لازم است؛ انتخابگرِ خرید برایِ فروش استفاده نمی‌شود")
+            submit = specific_submit
+        else:
+            # انتخابگرِ عمومیِ کاربر بر پیش‌فرضِ buy مقدم است.
+            submit = generic_submit or specific_submit
+        specific_open = base.get("open_form_selector_%s" % side) or ""
+        generic_open = base.get("open_form_selector") or ""
+        if side == "sell":
+            if not specific_open and generic_open:
+                raise StrategyError(
+                    "CONFIG_MISSING",
+                    "open_form_selector_sell لازم است؛ دکمهٔ خرید برایِ فرمِ فروش باز نمی‌شود")
+            opener = specific_open
+        else:
+            opener = generic_open or specific_open
+        scope = base.get("form_selector") or ""
+
+        def scoped(value: str) -> str:
+            if scope and value and value != opener:
+                return "%s %s" % (scope, value)
+            return value
+
+        out = dict(base)
+        out["submit_selector"] = scoped(submit)
+        out["open_form_selector"] = opener
+        out["symbol_selector"] = scoped(base["symbol_selector"])
+        out["form_symbol_selector"] = scoped(base["form_symbol_selector"])
+        out["price_selector"] = scoped(base["price_selector"])
+        out["quantity_selector"] = scoped(base["quantity_selector"])
+        out["side_selector"] = scoped(base["side_selector"])
+        out["isin_selector"] = scoped(base["isin_selector"])
+        out["_side"] = side
+        return out
+
+    def _order_paths(self, ctx: StrategyContext) -> list[str]:
+        raw = ctx.settings.options.get("order_paths")
+        if isinstance(raw, str):
+            got = [x.strip() for x in raw.split(",") if x.strip()]
+        elif isinstance(raw, (list, tuple)):
+            got = [str(x).strip() for x in raw if str(x).strip()]
+        else:
+            got = []
+        return got or [WIRE_PATH_ORDER_CREATE]
+
+    def _order_method(self, ctx: StrategyContext) -> str:
+        return str(ctx.settings.options.get("order_method") or "POST").upper()
 
     def _check_origin(self, driver: Any, ctx: StrategyContext) -> None:
         allow = ctx.settings.options.get("origin_allowlist") or []
@@ -283,10 +353,13 @@ class BrowserStrategyBase:
 
     def _selector_map(self, ctx: StrategyContext) -> dict[str, str]:
         o = ctx.settings.options
-        keys = ("symbol_selector", "price_selector", "quantity_selector",
-                "submit_selector", "login_selector", "clock_selector",
-                "focus_selector", "symbol_confirm_selector")
-        return {k: str(o.get(k) or "") for k in keys}
+        keys = ("symbol_selector", "form_symbol_selector", "open_form_selector",
+                "open_form_selector_buy", "open_form_selector_sell",
+                "price_selector", "quantity_selector", "submit_selector",
+                "submit_selector_buy", "submit_selector_sell", "form_selector",
+                "side_selector", "isin_selector", "login_selector",
+                "clock_selector", "focus_selector", "symbol_confirm_selector")
+        return {k: str(o.get(k) or "") for k in keys if str(o.get(k) or "")}
 
     def probe(self, ctx: StrategyContext) -> dict[str, Any]:
         """Probe فقط‌خواندنی: ساختار، login/selector/visibility و profile.
@@ -403,6 +476,22 @@ class BrowserStrategyBase:
         if not (sym_sel and price_sel and qty_sel and submit_sel):
             raise StrategyError("CONFIG_MISSING",
                                 "symbol/price/quantity/submit selector لازم است")
+
+        def unique(selector: str, label: str) -> int:
+            try:
+                n = int(driver.count(selector))
+            except Exception:
+                n = -1
+            if n != 1:
+                raise StrategyError(
+                    "FORM_NOT_UNIQUE",
+                    "%s باید دقیقاً یک تطبیق داشته باشد (count=%s)" % (label, n),
+                    {"selector": selector[:120], "count": n})
+            return n
+
+        for label, selector in (("symbol", sym_sel), ("price", price_sel),
+                                ("quantity", qty_sel), ("submit", submit_sel)):
+            unique(selector, label)
         sym_raw = driver.read_value(sym_sel) or driver.read_text(sym_sel)
         sym = norm_text(sym_raw)
         targets = [draft.instrument.symbol, draft.instrument.isin,
@@ -410,6 +499,19 @@ class BrowserStrategyBase:
         if not sym or not any(t and norm_text(t) in sym for t in targets):
             raise StrategyError("SYMBOL_MISMATCH",
                                 "نمادِ فرم با قصد یکی نیست", {"form_symbol": sym[:80]})
+        want_isin = norm_text(draft.instrument.isin).upper()
+        isin_sel = sel.get("isin_selector") or ""
+        isin_checked = False
+        if isin_sel:
+            unique(isin_sel, "isin")
+            form_isin = norm_text(
+                driver.read_value(isin_sel) or driver.read_text(isin_sel)).upper()
+            isin_checked = True
+            if not want_isin or form_isin != want_isin:
+                raise StrategyError("ISIN_MISMATCH",
+                                    "ISINِ فرم با قصد یکی نیست",
+                                    {"form_isin": form_isin[:40],
+                                     "want": want_isin[:40]})
         price = parse_number(driver.read_value(price_sel) or driver.read_text(price_sel))
         qty = parse_number(driver.read_value(qty_sel) or driver.read_text(qty_sel))
         want_price = float(draft.price or 0.0)
@@ -422,17 +524,41 @@ class BrowserStrategyBase:
             raise StrategyError("QUANTITY_MISMATCH",
                                 "حجمِ فرم با قصد یکی نیست",
                                 {"form_quantity": qty, "want": want_qty})
+        side = self._side_value(draft)
+        side_sel = sel.get("side_selector") or ""
+        side_text = ""
+        if side_sel:
+            unique(side_sel, "side")
+            side_text = (driver.read_text(side_sel)
+                         or driver.read_value(side_sel) or "")
+        if not side_text:
+            reader = getattr(driver, "read_attr", None)
+            if callable(reader):
+                side_text = reader(submit_sel, "aria-label") or ""
+        if not side_text:
+            side_text = driver.read_text(submit_sel) or ""
+        side_norm = norm_text(side_text).lower()
+        tokens = (("خرید", "buy") if side == "buy" else
+                  ("فروش", "sell", "فروش") if side == "sell" else ())
+        if not tokens or not any(t in side_norm for t in tokens):
+            raise StrategyError(
+                "SIDE_UNVERIFIED",
+                "سمتِ فرم از متن/aria قابلِ اثبات نیست؛ side_selector را تنظیم کنید",
+                {"side": side, "evidence": side_norm[:80]})
         if not driver.is_enabled(submit_sel):
             raise StrategyError("SUBMIT_DISABLED", "دکمهٔ ارسال فعال نیست")
         evidence.update({
             "symbol": sym[:80], "price": price, "quantity": qty,
+            "side": side, "side_text": side_norm[:80],
+            "isin_checked": isin_checked,
             "submit_enabled": True,
             "submit_text": (driver.read_text(submit_sel) or "")[:60],
         })
 
     def prepare(self, ctx: StrategyContext, draft: OrderDraft,
                 target_wall_ms: Optional[int] = None) -> PreparedHandle:
-        sel = self._sel(ctx)
+        sel = (self._sel(ctx) if self.spec.id == SC.JAVASCRIPT
+               else self._side_sel(ctx, draft))
         if self.spec.id != SC.JAVASCRIPT and not sel["submit_selector"]:
             raise StrategyError("CONFIG_MISSING", "submit_selector لازم است")
         if self.spec.id == SC.JAVASCRIPT:
@@ -472,10 +598,13 @@ class BrowserStrategyBase:
                 "autofill": self._autofill(ctx),
                 "requires_prefilled": self._require_prefilled(ctx),
                 "selectors_configured": {
-                    "symbol": bool(sel["symbol_selector"]),
+                    "symbol": bool(sel["form_symbol_selector"] or sel["symbol_selector"]),
                     "price": bool(sel["price_selector"]),
                     "quantity": bool(sel["quantity_selector"]),
                     "submit": bool(sel["submit_selector"]),
+                    "open_form": bool(sel.get("open_form_selector") or ""),
+                    "side_selector": bool(sel.get("side_selector") or ""),
+                    "isin": bool(sel.get("isin_selector") or ""),
                 },
             }
             if self.spec.id != SC.JAVASCRIPT:
@@ -517,7 +646,8 @@ class BrowserStrategyBase:
                 pass
             return SC.StrategyResult(order.execution_id, self.spec.id, "aborted",
                                      detail="Stopped before trigger", timings={})
-        sel = self._sel(ctx)
+        sel = (self._sel(ctx) if self.spec.id == SC.JAVASCRIPT
+               else self._side_sel(ctx, order.draft))
         if not driver.is_alive():
             raise StrategyError("BROWSER_NOT_READY", "browser is not alive")
         if not ctx.dry_run:
@@ -554,7 +684,12 @@ class BrowserStrategyBase:
                     pass
                 raise
         try:
-            driver.intercept(sel["intercept_pattern"], abort=ctx.dry_run)
+            if ctx.dry_run:
+                # گاردِ catch-all: حتی الگویِ غلط/بیش‌ازحد محدود هم POST را رد نمی‌کند.
+                driver.dry_run_guard(order_paths=self._order_paths(ctx),
+                                     order_method=self._order_method(ctx))
+            else:
+                driver.intercept(sel["intercept_pattern"], abort=False)
         except Exception as e:                       # noqa: BLE001
             try:
                 driver.close()
@@ -568,6 +703,8 @@ class BrowserStrategyBase:
         action_code = ""
         action_evidence: dict[str, Any] = {}
         try:
+            if ctx.before_action is not None:
+                ctx.before_action()
             action = self._action(ctx, order, driver, sel) or {}
         except StrategyError as e:
             action_error = str(e.detail or e.code)[:160]
@@ -590,6 +727,12 @@ class BrowserStrategyBase:
                     ctx.settings.options.get("response_timeout_ms") or 3000))
             except Exception:
                 resp = None
+        net: dict[str, Any] = {}
+        if ctx.dry_run:
+            try:
+                net = dict(driver.network() or {})
+            except Exception:
+                net = {}
 
         a_start = float(action.get("start_ms") or t_send)
         a_end = float(action.get("end_ms") or t_end)
@@ -597,13 +740,22 @@ class BrowserStrategyBase:
                   else None)
         resp_ms = (float(resp["mono_ms"]) if resp and resp.get("mono_ms") is not None
                    else None)
+        click_to_request = (round(max(0.0, req_ms - a_start), 3)
+                            if req_ms is not None else None)
+        response_wait = (round(max(0.0, resp_ms - req_ms), 3)
+                         if resp_ms is not None and req_ms is not None else None)
         timings = {
             "prepare": order.preparation_ms,
             "trigger": round(max(0.0, a_start - t_send), 3),
             "action": round(max(0.0, a_end - a_start), 3),
-            "send": round(max(0.0, req_ms - a_start), 3) if req_ms is not None else None,
-            "response": (round(max(0.0, resp_ms - req_ms), 3)
-                         if resp_ms is not None and req_ms is not None else None),
+            # نامِ صریح: این عدد latency یک‌طرفهٔ شبکه نیست؛ فقط کلیک→شروع request.
+            "send": click_to_request,
+            "click_to_request_ms": click_to_request,
+            "response": response_wait,
+            "response_wait_ms": response_wait,
+            "one_way_ms": None,
+            "rtt_ms": None,
+            "target_wall_ms": order.target_wall_ms,
             "total": round(max(0.0, t_end - t_send), 3),
             "action_start_mono_ms": round(a_start, 3),
             "request_mono_ms": round(req_ms, 3) if req_ms is not None else None,
@@ -616,6 +768,7 @@ class BrowserStrategyBase:
             hosts = []
         evidence = {
             "action_method": action.get("method") or self.spec.id,
+            "click_attempted": bool(action.get("clicked")),
             "request_seen": req is not None,
             "request_path": _path_only(str(req.get("url") or "")) if req else None,
             "request_method": (req or {}).get("method"),
@@ -624,6 +777,14 @@ class BrowserStrategyBase:
             "http_status": (resp or {}).get("status"),
             "action_error": action_error,
             "hosts": hosts,
+            "dry_run_guard": bool(ctx.dry_run),
+            "writes": net.get("writes"),
+            "blocked_writes": net.get("blocked_writes"),
+            "escaped_writes": net.get("escaped_writes"),
+            "order_writes": net.get("order_writes"),
+            "other_writes": net.get("other_writes"),
+            "order_method_mismatch": net.get("order_method_mismatch"),
+            "order_paths": self._order_paths(ctx) if ctx.dry_run else None,
         }
         if not bool(ctx.settings.options.get("keep_driver_alive")):
             try:
@@ -639,25 +800,75 @@ class BrowserStrategyBase:
         if order.abort_event.is_set() and req is not None:
             evidence["stop_after_request"] = True
 
+        if ctx.dry_run:
+            writes = int(net.get("writes") or 0)
+            blocked = int(net.get("blocked_writes") or 0)
+            escaped = int(net.get("escaped_writes") or 0)
+            order_writes = int(net.get("order_writes") or 0)
+            other_writes = int(net.get("other_writes") or 0)
+            mismatch = int(net.get("order_method_mismatch") or 0)
+            if order.abort_event.is_set():
+                return SC.StrategyResult(
+                    order.execution_id, self.spec.id, "aborted",
+                    detail="Stop در حینِ dry-run رسید؛ هیچ درخواستی ادامه نیافت",
+                    request_aborted=bool(blocked), live=False, timings=timings,
+                    evidence=evidence)
+            if escaped or (writes > 0 and blocked < writes):
+                # نوشتنِ رهاشده ممکن است به کارگزاری رسیده باشد؛ ادعای «dry» ممنوع.
+                return SC.StrategyResult(
+                    order.execution_id, self.spec.id, "unknown",
+                    detail="نوشتن از گاردِ dry-run عبور کرد؛ نتیجه نامعلوم و نیازمندِ بررسی",
+                    error_code="DRY_RUN_ESCAPE", unknown=True, live=False,
+                    timings=timings, evidence=evidence)
+            if writes == 0:
+                if action_code:
+                    return SC.StrategyResult(
+                        order.execution_id, self.spec.id, "blocked",
+                        detail=action_error, error_code=action_code,
+                        live=False, timings=timings,
+                        evidence={**evidence, **action_evidence})
+                return SC.StrategyResult(
+                    order.execution_id, self.spec.id, "failed",
+                    detail=("کلیک انجام شد ولی هیچ درخواستِ نوشتنی دیده نشد"
+                            if not action_error else action_error),
+                    error_code="NO_ORDER_REQUEST", live=False,
+                    timings=timings, evidence=evidence)
+            if mismatch:
+                return SC.StrategyResult(
+                    order.execution_id, self.spec.id, "blocked",
+                    detail="متدِ درخواست با قراردادِ سفارش یکی نیست (dry-run)",
+                    error_code="ORDER_METHOD_MISMATCH", live=False,
+                    timings=timings, evidence=evidence)
+            if other_writes:
+                return SC.StrategyResult(
+                    order.execution_id, self.spec.id, "blocked",
+                    detail="نوشتنِ غیرِسفارش در dry-run مسدود شد",
+                    error_code="NON_ORDER_WRITE_BLOCKED", live=False,
+                    timings=timings, evidence=evidence)
+            if order_writes:
+                return SC.StrategyResult(
+                    order.execution_id, self.spec.id, "dry_run",
+                    detail="درخواستِ سفارش در مرورگر دیده و abort شد؛ هیچ POSTی نرفت",
+                    request_aborted=True, live=False, timings=timings,
+                    evidence=evidence)
+            return SC.StrategyResult(
+                order.execution_id, self.spec.id, "blocked",
+                detail="نوشتنِ طبقه‌بندی‌نشده در dry-run مسدود شد",
+                error_code="DRY_RUN_UNCLASSIFIED_WRITE", live=False,
+                timings=timings, evidence=evidence)
         if req is None:
             if action_code:
                 return SC.StrategyResult(
                     order.execution_id, self.spec.id, "blocked",
                     detail=action_error, error_code=action_code,
-                    live=False, timings=timings,
+                    live=True, timings=timings,
                     evidence={**evidence, **action_evidence})
             return SC.StrategyResult(
                 order.execution_id, self.spec.id, "failed",
                 detail=("کلیک انجام شد ولی هیچ درخواستِ سفارشی دیده نشد"
                         if not action_error else action_error),
-                error_code="NO_ORDER_REQUEST", live=not ctx.dry_run,
+                error_code="NO_ORDER_REQUEST", live=True,
                 timings=timings, evidence=evidence)
-        if ctx.dry_run:
-            return SC.StrategyResult(
-                order.execution_id, self.spec.id, "dry_run",
-                detail="درخواستِ سفارش در مرورگر دیده و abort شد؛ هیچ POSTی نرفت",
-                request_aborted=True, live=False, timings=timings,
-                evidence=evidence)
         # Live: همان مفسرِ سیمِ Direct API داور است؛ HTTP 2xx به‌تنهایی پذیرش نیست.
         accepted = False
         unknown = True
@@ -714,8 +925,11 @@ class AutoClickerStrategy(BrowserStrategyBase):
         if bool(ctx.settings.options.get("preclick_check", True)):
             if not driver.wait_for(sel["submit_selector"], 400):
                 raise StrategyError("SUBMIT_NOT_READY", "دکمهٔ ارسال دیده نشد")
+        # بازخوانیِ نهایی پس از انتظارِ preclick: فرم می‌تواند در همین فاصله عوض شود.
+        self._verify_form(driver, sel, order.draft, ctx, {})
         got = driver.click(sel["submit_selector"], timeout_ms=int(
-            ctx.settings.options.get("action_timeout_ms") or 1200), force=True)
+            ctx.settings.options.get("action_timeout_ms") or 1200), force=False)
+        got["clicked"] = True
         got["method"] = "single-click"
         return got
 
@@ -726,7 +940,8 @@ class DomStrategy(BrowserStrategyBase):
 
     def _action(self, ctx, order, driver, sel):
         got = driver.click(sel["submit_selector"], timeout_ms=int(
-            ctx.settings.options.get("action_timeout_ms") or 1200), force=True)
+            ctx.settings.options.get("action_timeout_ms") or 1200), force=False)
+        got["clicked"] = True
         got["method"] = "dom-click"
         return got
 
@@ -748,7 +963,8 @@ class KeyboardStrategy(BrowserStrategyBase):
         start = now_ms()
         for key in keys:
             driver.press(str(key), selector=focus)
-        return {"start_ms": start, "end_ms": now_ms(), "method": "keyboard"}
+        return {"start_ms": start, "end_ms": now_ms(), "method": "keyboard",
+                "clicked": bool(submits)}
 
 
 class JavaScriptStrategy(BrowserStrategyBase):
@@ -777,7 +993,7 @@ class JavaScriptStrategy(BrowserStrategyBase):
         except Exception:
             pass
         return {"start_ms": start, "end_ms": end, "method": "js-fetch",
-                "response": got}
+                "response": got, "clicked": True}
 
     def trigger(self, ctx, order):
         result = super().trigger(ctx, order)
@@ -845,7 +1061,10 @@ class StrategyEngine:
                  mock_driver_kwargs: Optional[dict[str, Any]] = None,
                  direct_submit: Optional[Callable[[OrderDraft], ExecutionRecord]] = None,
                  live_allowed: bool = False,
-                 halted: Optional[Callable[[], tuple[bool, str]]] = None) -> None:
+                 halted: Optional[Callable[[], tuple[bool, str]]] = None,
+                 intent_store: Optional[IS.IntentStore] = None,
+                 preflight_gate: Optional[Callable[[OrderDraft], Any]] = None,
+                 recover_intents: bool = True) -> None:
         self.adapter = adapter
         self.settings_store = settings_store or SC.StrategySettingsStore()
         self.metrics = metrics or SC.StrategyMetrics()
@@ -862,6 +1081,10 @@ class StrategyEngine:
         self.direct_submit = direct_submit
         self.live_allowed = bool(live_allowed)
         self.halted = halted or (lambda: (False, "no halt source"))
+        self.intent_store = intent_store or IS.IntentStore()
+        self.preflight_gate = preflight_gate
+        self.recovered_intents = (self.intent_store.recover_stale()
+                                  if recover_intents else {"unknown": 0, "aborted": 0})
         self.strategies = build_strategies()
         self._orders: dict[str, SC.StrategyOrder] = {}
         self._outcomes: dict[str, Counter] = {}
@@ -1026,9 +1249,31 @@ class StrategyEngine:
 
     def prepare(self, draft: OrderDraft, strategy_id: str,
                 target_wall_ms: Optional[int] = None, *,
-                live_intent: Optional[bool] = None) -> SC.StrategyOrder:
+                live_intent: Optional[bool] = None,
+                intent_key: Optional[str] = None) -> SC.StrategyOrder:
+        if target_wall_ms is not None and int(target_wall_ms) <= self.time_source.wall_ms():
+            raise StrategyError("TARGET_IN_PAST",
+                                "زمانِ هدف گذشته یا منقضی است؛ هدفِ آینده لازم است")
+        key = IS.derive_key(draft, target_wall_ms, intent_key or "")
+        try:
+            self.intent_store.begin(
+                intent_key=key, execution_id=draft.execution_id,
+                strategy_id=strategy_id, draft=draft,
+                target_wall_ms=target_wall_ms)
+        except IS.IntentBlocked as e:
+            raise StrategyError(
+                "DUPLICATE_GUARD",
+                "این قصد قبلاً ثبت شده است (state=%s)؛ برایِ قصدِ تازه کلیدِ تازه لازم است"
+                % e.state) from None
+        pre_row = self.intent_store.get(key) or {}
+        if (pre_row.get("state") == "failed_pre_click"
+                and not int(pre_row.get("clicked") or 0)):
+            # خطایِ پیش از کلیک، claimِ قبلیِ arbiter را مصرف نکرده است.
+            self.arbiter.release(draft.execution_id)
         settings = self._settings(strategy_id)
         if not settings.enabled or settings.mode == SC.MODE_OFF:
+            self.intent_store.mark_prepare_failed(key, strategy_id,
+                                                  "strategy disabled or off")
             raise StrategyError("STRATEGY_OFF", "strategy disabled or off")
         strategy = self.strategies[strategy_id]
         reuse = None
@@ -1041,26 +1286,47 @@ class StrategyEngine:
                         reuse_driver=reuse)
         available, why = strategy.available(ctx)
         if not available:
+            self.intent_store.mark_prepare_failed(key, strategy_id, why)
             raise StrategyError("UNAVAILABLE", why)
         if isinstance(strategy, BrowserStrategyBase) and not self._configured(
                 strategy_id, strategy.spec, settings):
+            self.intent_store.mark_prepare_failed(
+                key, strategy_id, "selectors/profile incomplete")
             raise StrategyError(
                 "CONFIG_MISSING",
                 "این Strategy تا پیکربندیِ selector/پروفایلِ ورود prepare نمی‌شود")
         ok, why = self.arbiter.reserve(draft.execution_id, strategy_id)
         if not ok:
+            self.intent_store.mark_prepare_failed(key, strategy_id, why)
             raise StrategyError("DUPLICATE_GUARD", why)
         order = SC.StrategyOrder(draft.execution_id, strategy_id, draft,
-                                 target_wall_ms)
+                                 target_wall_ms, intent_key=key)
         with self._lock:
-            if order.prepared_id in self._orders:
+            existing = self._orders.get(order.prepared_id)
+        if existing is not None:
+            row = self.intent_store.get(key) or {}
+            if not (row.get("state") == "failed_pre_click"
+                    and not int(row.get("clicked") or 0)):
                 raise StrategyError("DUPLICATE_GUARD",
                                     "this intent+strategy is already prepared")
+            old_driver = getattr(existing.prepared, "driver", None)
+            if old_driver is not None:
+                try:
+                    old_driver.close()
+                except Exception:
+                    pass
+            with self._lock:
+                self._orders.pop(order.prepared_id, None)
+            self.arbiter.release(draft.execution_id)
+            ok2, why2 = self.arbiter.reserve(draft.execution_id, strategy_id)
+            if not ok2:
+                raise StrategyError("DUPLICATE_GUARD", why2)
         try:
             handle = strategy.prepare(ctx, draft, target_wall_ms)
-        except Exception:
+        except Exception as e:
             self._browser_drivers.pop(strategy_id, None)
             self.arbiter.abort(draft.execution_id)
+            self.intent_store.mark_prepare_failed(key, strategy_id, str(e)[:180])
             raise
         order.prepared = handle
         order.preparation_ms = getattr(handle, "prepared_ms", None)
@@ -1069,6 +1335,7 @@ class StrategyEngine:
             self._browser_drivers[strategy_id] = handle.driver
         self.metrics.record(strategy_id, "prepare", order.preparation_ms,
                             ok=True)
+        self.intent_store.bind_prepared(key, order.prepared_id)
         with self._lock:
             self._orders[order.prepared_id] = order
         return order
@@ -1094,6 +1361,25 @@ class StrategyEngine:
         if live_wanted and not live_ok:
             raise StrategyError("LIVE_GATED",
                                 "live submission is gated (env/setting/writes_allowed)")
+        if live_ok and self.preflight_gate is not None:
+            try:
+                gate = self.preflight_gate(order.draft)
+            except Exception as e:                   # noqa: BLE001
+                raise StrategyError(
+                    "PREFLIGHT_BLOCKED",
+                    "پیش‌فرودِ ریسک اجرا نشد: %s: %s"
+                    % (type(e).__name__, str(e)[:140])) from None
+            if isinstance(gate, Mapping):
+                gate_ok = bool(gate.get("ok"))
+                checks = dict(gate.get("checks") or {})
+            else:
+                gate_ok = bool(getattr(gate, "ok", False))
+                checks = dict(getattr(gate, "checks", {}) or {})
+            if not gate_ok:
+                raise StrategyError(
+                    "PREFLIGHT_BLOCKED",
+                    "پیش‌فرود/سقفِ ریسک اجازهٔ کلیک نمی‌دهد",
+                    {"checks": checks})
         strategy = self.strategies[order.strategy_id]
         if (live_ok and isinstance(strategy, BrowserStrategyBase)
                 and not self.mock_browser
@@ -1107,6 +1393,16 @@ class StrategyEngine:
         ok, why = self.arbiter.claim(eid, order.strategy_id)
         if not ok:
             raise StrategyError("DUPLICATE_GUARD", why)
+        try:
+            if order.target_wall_ms is not None:
+                self.intent_store.mark_scheduled(order.intent_key)
+        except IS.IntentBlocked as e:
+            self.arbiter.complete(eid, order.strategy_id, "blocked", str(e))
+            order.state = "blocked"
+            return SC.StrategyResult(
+                eid, order.strategy_id, "blocked",
+                detail="قصد قبلاً در وضعیتِ %s است" % e.state,
+                error_code="DUPLICATE_GUARD")
         if live_ok:
             can, retry = self.limiter.try_acquire("easytrader")
             if not can:
@@ -1118,6 +1414,15 @@ class StrategyEngine:
                     detail="rate limit: retry in %.1fs" % retry,
                     error_code="RATE_LIMITED")
         ctx = self._ctx(settings, dry_run=not live_ok, live_intent=live_ok)
+
+        def _claim_click() -> None:
+            try:
+                self.intent_store.claim_click(order.intent_key)
+            except IS.IntentBlocked as e:
+                raise StrategyError("DUPLICATE_GUARD", str(e)) from None
+
+        # claimِ اتمیک دقیقاً پیش از action؛ اگر کلیک انجام شد، دیگر تکرار ممنوع.
+        ctx.before_action = _claim_click
         try:
             if order.target_wall_ms is not None and self.scheduler is not None:
                 plan = self.scheduler.plan(order.target_wall_ms)
@@ -1127,9 +1432,15 @@ class StrategyEngine:
                     holder["result"] = self._trigger_now(order, ctx)
                     return holder["result"].broker_order_id or ""
 
-                tel = self.scheduler.dispatch(plan, send=_send)
+                tel = self.scheduler.dispatch(plan, send=_send,
+                                              abort_event=order.abort_event)
                 result = holder.get("result")
-                if result is None:
+                if tel.aborted:
+                    result = SC.StrategyResult(
+                        eid, order.strategy_id, "aborted",
+                        detail="زمان‌بندی پیش از ارسال لغو شد",
+                        timings={})
+                elif result is None:
                     result = SC.StrategyResult(
                         eid, order.strategy_id, "failed",
                         detail="scheduler returned without a result")
@@ -1165,7 +1476,36 @@ class StrategyEngine:
             self.arbiter.mark_unknown(eid, order.strategy_id, result.detail)
         else:
             self.arbiter.complete(eid, order.strategy_id, state, result.detail)
+        self._finish_intent(order, result)
         return result
+
+    def _finish_intent(self, order: SC.StrategyOrder,
+                       result: SC.StrategyResult) -> None:
+        key = order.intent_key
+        if not key:
+            return
+        clicked = bool(result.evidence.get("click_attempted"))
+        if result.status == "dry_run":
+            state = "dry_run"
+        elif result.status == "aborted":
+            state = "aborted"
+        elif result.status in ("accepted", "submitted", "reconciled"):
+            state = "submitted"
+        elif result.status == "unknown" or result.unknown:
+            state = "unknown"
+        elif result.status == "failed":
+            state = ("rejected" if result.evidence.get("response_seen")
+                     else ("unknown" if clicked else "failed_pre_click"))
+        elif result.status == "blocked":
+            if result.error_code == "DUPLICATE_GUARD":
+                return
+            state = "unknown" if clicked else "failed_pre_click"
+        else:
+            state = "unknown" if clicked else "failed_pre_click"
+        if state == "failed_pre_click":
+            self.intent_store.fail_pre_click(key, result.detail)
+        else:
+            self.intent_store.finish(key, state, result.detail, result=result.public())
 
     def _trigger_now(self, order: SC.StrategyOrder,
                      ctx: StrategyContext) -> SC.StrategyResult:
@@ -1188,6 +1528,7 @@ class StrategyEngine:
         except Exception:
             pass
         self.arbiter.abort(order.execution_id)
+        self.intent_store.abort(order.intent_key)
         order.state = "aborted"
         return order.public()
 
@@ -1239,6 +1580,8 @@ class StrategyEngine:
             result.evidence["order_state"] = hit.order_state.value
             self.arbiter.complete(eid, order.strategy_id, "submitted",
                                   result.detail)
+            self.intent_store.finish(order.intent_key, "confirmed",
+                                     result.detail, result=result.public())
         elif not cands:
             result.detail = ("هیچ ردیفِ منطبقی در فهرست نیست؛ غیبت اثباتِ شکست نیست — "
                              "نتیجه نامعلوم می‌ماند")

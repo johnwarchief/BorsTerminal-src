@@ -764,7 +764,8 @@ def _extract_market_db(src_lzma, verbose=False, scratch_name=None, progress=None
 # محل ذخیره: WORK_DIR (کنار EXE در حالت پرتابیل، وگرنه %LOCALAPPDATA%) یا
 # ریشه ریپو (در حالت dev). این فایل در .gitignore است تا داده شخصی
 # توسعه‌دهنده push نشود.
-USER_DB_PATH = os.path.join(WORK_DIR, "user.db")
+#: تست/ابزارهایِ ایزوله می‌توانند مسیرِ user.db را جدا کنند؛ پیش‌فرض همانِ WORK_DIR.
+USER_DB_PATH = (os.environ.get("BORS_USER_DB") or "").strip() or os.path.join(WORK_DIR, "user.db")
 
 # فایل‌های چندنویسنده در WORK_DIR می‌مانند (نوشتنی؛ نه داخل _internal)
 STATUS_PATH = os.path.join(WORK_DIR, "sync_status.json")

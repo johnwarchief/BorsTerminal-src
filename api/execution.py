@@ -309,6 +309,8 @@ def _strategy_server_clock() -> dict[str, Any] | None:
 _STRATEGY_ENGINE = SE.StrategyEngine(
     _ACTIVE_ADAPTER, scheduler=_SCHEDULER, server_clock=_strategy_server_clock,
     live_allowed=False, halted=lambda: _SERVICE.halted())
+# Round 14: مسیرِ کلیکِ زنده هم از همان preflight/سقف‌هایِ مسیرِ عادی عبور کند.
+_STRATEGY_ENGINE.preflight_gate = _SERVICE.dispatch_preflight
 
 
 #: عبارتِ تأییدِ انسانی برایِ اجرایِ زنده. مقدارِ پیش‌فرض *اختراع نشده*: همان
@@ -1086,18 +1088,35 @@ def post_strategy_settings(strategy_id: str,
     return {"status": "success", "settings": saved.public()}
 
 
+def _strategy_target(body: dict[str, Any]) -> tuple[int | None, str]:
+    """هدفِ زمانی: رشتهٔ تهران بر epoch مقدم است؛ ورودیِ کهنه فقط سازگاری."""
+    raw = body.get("target_tehran")
+    if raw is not None and str(raw).strip():
+        try:
+            return int(_SCHEDULER.clock.from_tehran_local(str(raw))), "asia/tehran"
+        except (TypeError, ValueError) as e:
+            raise HTTPException(400, "زمانِ هدفِ تهران نامعتبر است: %s" % str(e)[:80])
+    target = body.get("target_wall_ms")
+    if target is None or str(target).strip() == "":
+        return None, "none"
+    try:
+        return int(target), "epoch_legacy"
+    except (TypeError, ValueError):
+        raise HTTPException(400, "target_wall_ms نامعتبر است") from None
+
+
 @router.post("/api/execution/strategies/prepare")
 def post_strategy_prepare(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
     try:
         draft = _draft_from(body)
+        target, target_source = _strategy_target(body)
     except HTTPException as e:
         return {"status": "error", "code": "BAD_DRAFT", "detail": str(e.detail)}
     sid = str(body.get("strategy") or SC.DIRECT_API)
-    target = body.get("target_wall_ms")
     try:
         order = _STRATEGY_ENGINE.prepare(
-            draft, sid, target_wall_ms=int(target) if target is not None else None,
-            live_intent=False)
+            draft, sid, target_wall_ms=target, live_intent=False,
+            intent_key=str(body.get("intent_key") or "") or None)
     except SE.StrategyError as e:
         return {"status": "error", "code": e.code, "detail": e.detail,
                 "strategy": sid, "evidence": dict(e.evidence)}
@@ -1107,6 +1126,7 @@ def post_strategy_prepare(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
     _note_timing("strategy_prepare_ms", float(order.preparation_ms or 0.0))
     return {"status": "success", "strategy": sid, "prepared_id": order.prepared_id,
             "order": order.public(), "dry_run": DRY_RUN,
+            "target_source": target_source,
             "live": _live_now(),
             "wire_preview": _wire_preview(draft),
             "wire_hypothesis": WIRE_HYPOTHESIS}

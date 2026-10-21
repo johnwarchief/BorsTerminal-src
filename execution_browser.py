@@ -143,6 +143,27 @@ class MockBrowserDriver:
         self.last_response: Optional[dict] = None
         self.click_count = 0
         self.form_open_count = 0
+        # ── Round 14: dry-run guard و ردگیری نوشتن‌ها ──────────────────────
+        self.dry_run_armed = False
+        self.order_paths = ["/core/api/v2/order"]
+        self.order_method = "POST"
+        self.request_method = "POST"
+        self.request_url = ""
+        self.selector_counts: dict[str, int] = {}
+        self.before_click: Optional[Callable[[], None]] = None
+        self.before_wait: Optional[Callable[[], None]] = None
+        self.observed_requests: list[dict[str, Any]] = []
+        self.observed_writes: list[dict[str, Any]] = []
+        self.blocked_writes: list[dict[str, Any]] = []
+        self.escaped_writes: list[dict[str, Any]] = []
+        self.order_endpoint_hits = 0
+        self.suppress_response = False
+        self.submit_visible = True
+        self.submit_enabled = True
+        self.submit_text = "ارسال خرید"
+        self.side_text = "خرید"
+        self.isin_text = ""
+        self.closed_at: Optional[float] = None
 
     def start(self) -> None:
         self.started = True
@@ -158,6 +179,10 @@ class MockBrowserDriver:
         return "mock-order"
 
     def wait_for(self, selector: str, timeout_ms: int = 2000) -> bool:
+        if self.before_wait is not None:
+            self.before_wait()
+        if "submit" in str(selector):
+            return bool(self.submit_visible)
         return True
 
     def fill(self, selector: str, value: Any, timeout_ms: int = 2000) -> dict[str, Any]:
@@ -169,42 +194,117 @@ class MockBrowserDriver:
 
     def read_value(self, selector: str) -> str:
         key = str(selector).split("=")[-1].strip("[]'\"")
+        if "isin" in str(selector):
+            return str(self.isin_text or self.form.get("isin", ""))
         return str(self.form.get(key, ""))
 
     def read_text(self, selector: str) -> str:
+        if "submit" in str(selector):
+            return str(self.submit_text)
+        if "side" in str(selector):
+            return str(self.side_text)
         key = str(selector).split("=")[-1].strip("[]'\"")
         return str(self.form.get(key, ""))
 
+    def read_attr(self, selector: str, attr: str) -> str:
+        if "submit" in str(selector) and str(attr).lower() == "aria-label":
+            # در Mock، side_text همان شاهدِ سمت است؛ submit_text برچسبِ دکمه.
+            return str(self.side_text or self.submit_text)
+        if "side" in str(selector) and str(attr).lower() == "aria-label":
+            return str(self.side_text)
+        return ""
+
+    def count(self, selector: str) -> int:
+        return int(self.selector_counts.get(str(selector), 1))
+
     def is_enabled(self, selector: str) -> bool:
+        if "submit" in str(selector):
+            return bool(self.submit_enabled)
         return True
 
     def intercept(self, pattern: str, *, abort: bool = True) -> dict[str, Any]:
+        self.dry_run_armed = False
         self.intercept_pattern = pattern
         self.abort_request = bool(abort)
         self.last_request = None
         self.last_response = None
         return {"pattern": pattern, "abort": bool(abort)}
 
+    def dry_run_guard(self, order_paths: Optional[list[str]] = None,
+                      order_method: str = "POST") -> dict[str, Any]:
+        """گاردِ پیش‌فرضِ dry-run: همهٔ نوشتن‌ها abort می‌شوند، نه فقط الگویِ کاربر."""
+        self.dry_run_armed = True
+        self.abort_request = True
+        self.order_paths = [str(p or "") for p in (order_paths or []) if str(p or "")]
+        if not self.order_paths:
+            self.order_paths = ["/core/api/v2/order"]
+        self.order_method = str(order_method or "POST").upper()
+        self.last_request = None
+        self.last_response = None
+        self.observed_requests = []
+        self.observed_writes = []
+        self.blocked_writes = []
+        self.escaped_writes = []
+        return {"dry_run_guard": True, "order_paths": list(self.order_paths),
+                "order_method": self.order_method}
+
     def request_hosts(self) -> list[str]:
         return [urlparse(self.order_url).netloc]
 
-    def _request(self, payload: Optional[dict] = None) -> dict[str, Any]:
-        self.last_request = {"mono_ms": _now_ms(), "payload": dict(payload or self.form),
-                             "url": self.order_url, "method": "POST"}
-        self.events.append({"kind": "request", "mono_ms": self.last_request["mono_ms"]})
+    def _classify_write(self, method: str, path: str) -> str:
+        norm = (path or "/").rstrip("/") or "/"
+        known = {(str(p or "/").rstrip("/") or "/") for p in self.order_paths}
+        if norm not in known:
+            return "other_write"
+        return ("order" if str(method).upper() == self.order_method
+                else "order_method_mismatch")
+
+    def _request(self, payload: Optional[dict] = None) -> Optional[dict[str, Any]]:
+        method = str(self.request_method or "POST").upper()
+        url = str(self.request_url or self.order_url)
+        path = urlparse(url).path or "/"
+        is_write = method not in ("GET", "HEAD", "OPTIONS", "TRACE")
+        entry = {"mono_ms": _now_ms(), "payload": dict(payload or self.form),
+                 "url": url, "method": method, "path": path}
+        self.observed_requests.append(entry)
+        if not is_write:
+            # Mockِ خواندن: هیچ درخواستِ سفارشی ساخته نمی‌شود.
+            self.last_request = None
+            return None
+        self.observed_writes.append(entry)
+        if self.dry_run_armed:
+            classification = self._classify_write(method, path)
+            blocked = {**entry, "classification": classification, "blocked": True}
+            self.blocked_writes.append(blocked)
+            self.last_request = blocked
+            self.last_response = {"aborted": True, "mono_ms": _now_ms(),
+                                  "status": None, "body": None,
+                                  "url": url, "method": method,
+                                  "classification": classification}
+            self.events.append({"kind": "request_blocked",
+                                "classification": classification})
+            return self.last_response
+        self.last_request = entry
+        self.events.append({"kind": "request", "mono_ms": entry["mono_ms"]})
         if self.abort_request:
             self.last_response = {"aborted": True, "mono_ms": _now_ms(),
                                   "status": None, "body": None,
-                                  "url": self.order_url, "method": "POST"}
+                                  "url": url, "method": method}
             self.events.append({"kind": "request_aborted"})
             return self.last_response
-        response = self.on_submit(dict(self.last_request["payload"])) if self.on_submit else {
+        if self._classify_write(method, path) == "order":
+            self.order_endpoint_hits += 1
+        if self.suppress_response:
+            self.last_response = None
+            self.events.append({"kind": "request_no_response"})
+            return None
+        response = self.on_submit(dict(entry["payload"])) if self.on_submit else {
             "status": 200, "body": {"isSuccessful": True, "id": "MOCK-1"}}
         self.last_response = {
             "mono_ms": _now_ms(),
             "status": response.get("status") if isinstance(response, dict) else None,
             "body": response.get("body") if isinstance(response, dict) else None,
-            "url": self.order_url, "method": "POST",
+            "url": url, "method": method,
         }
         self.events.append({"kind": "response", "status": self.last_response["status"]})
         return self.last_response
@@ -217,13 +317,16 @@ class MockBrowserDriver:
         return {"ok": True, "opened": True}
 
     def click(self, selector: str, timeout_ms: int = 1200,
-              force: bool = True) -> dict[str, Any]:
+              force: bool = False) -> dict[str, Any]:
         start = _now_ms()
         self.click_count += 1
         self.events.append({"kind": "click", "selector": selector,
                             "start_ms": start, "count": self.click_count})
+        if self.before_click is not None:
+            self.before_click()
         response = self._request()
-        return {"start_ms": start, "end_ms": _now_ms(), "response": response}
+        return {"start_ms": start, "end_ms": _now_ms(), "response": response,
+                "clicked": True}
 
     def press(self, key: str, selector: str = "", timeout_ms: int = 1200) -> dict[str, Any]:
         start = _now_ms()
@@ -264,8 +367,32 @@ class MockBrowserDriver:
         }
 
     def network(self) -> dict[str, Any]:
-        return {"requests": 0, "by_host": {}, "order_posts": 0,
-                "truncated": False, "source": "mock-no-network"}
+        by_host: dict[str, dict[str, int]] = {}
+        for r in self.observed_requests:
+            host = str(r.get("url") or "").split("/")[2] if "//" in str(r.get("url") or "") else ""
+            bucket = by_host.setdefault(host or "(none)", {})
+            m = str(r.get("method") or "").upper()
+            bucket[m] = bucket.get(m, 0) + 1
+        order_writes = sum(1 for r in self.blocked_writes
+                           if r.get("classification") == "order")
+        other_writes = sum(1 for r in self.blocked_writes
+                           if r.get("classification") == "other_write")
+        mismatch = sum(1 for r in self.blocked_writes
+                       if r.get("classification") == "order_method_mismatch")
+        return {
+            "requests": len(self.observed_requests),
+            "writes": len(self.observed_writes),
+            "blocked_writes": len(self.blocked_writes),
+            "escaped_writes": len(self.escaped_writes),
+            "order_writes": order_writes,
+            "other_writes": other_writes,
+            "order_method_mismatch": mismatch,
+            "order_endpoint_hits": self.order_endpoint_hits,
+            "by_host": by_host,
+            "order_posts": order_writes,
+            "truncated": False,
+            "source": "mock-dry-run-guard" if self.dry_run_armed else "mock-no-network",
+        }
 
     def screenshot(self, path: str) -> str:
         return path
@@ -319,6 +446,13 @@ class PlaywrightBrowserDriver:
         self._last_request: Optional[dict[str, Any]] = None
         self._last_response: Optional[dict[str, Any]] = None
         self._lock = threading.Lock()
+        # ── Round 14: گاردِ dry-run مستقل از الگویِ کاربر ─────────────────
+        self._dry_run_guard = False
+        self._order_paths = ["/core/api/v2/order"]
+        self._order_method = "POST"
+        self._observed_writes: list[dict[str, Any]] = []
+        self._blocked_writes: list[dict[str, Any]] = []
+        self._escaped_writes: list[dict[str, Any]] = []
 
     # ---- lifecycle ----
     def start(self) -> None:
@@ -487,11 +621,59 @@ class PlaywrightBrowserDriver:
 
         page.on("response", on_response)
 
+    @staticmethod
+    def _classify_guard_write(method: str, path: str,
+                              order_paths: list[str],
+                              order_method: str) -> str:
+        norm = (path or "/").rstrip("/") or "/"
+        known = {(str(p or "/").rstrip("/") or "/") for p in order_paths}
+        if norm not in known:
+            return "other_write"
+        return ("order" if str(method).upper() == order_method
+                else "order_method_mismatch")
+
     def _route_handler(self, route) -> None:
+        req = route.request
+        method = str(getattr(req, "method", "") or "").upper()
+        url = str(req.url or "")
+        path = urlparse(url).path or "/"
+        is_write = method not in ("GET", "HEAD", "OPTIONS", "TRACE")
+        entry = {"mono_ms": _now_ms(), "url": url, "method": method,
+                 "path": path}
         with self._lock:
-            self._last_request = {"mono_ms": _now_ms(), "url": route.request.url,
-                                  "method": route.request.method}
-            self._events.append({"kind": "request", **self._last_request})
+            # `_request_handler` قبلاً همین request را در `_all_requests` ثبت
+            # می‌کند؛ ثبتِ دوباره اینجا writes را دوبرابر و dry-run را کاذب
+            # escape می‌کرد.
+            if is_write:
+                self._observed_writes.append(entry)
+        if self._dry_run_guard:
+            if not is_write:
+                # خواندن‌ها می‌توانند ادامه پیدا کنند؛ گارد فقط نوشتن را می‌بندد.
+                try:
+                    route.continue_()
+                except Exception:
+                    pass
+                return
+            classification = self._classify_guard_write(
+                method, path, list(self._order_paths), self._order_method)
+            blocked = {**entry, "classification": classification,
+                       "blocked": True}
+            with self._lock:
+                self._last_request = blocked
+                self._blocked_writes.append(blocked)
+                self._events.append({"kind": "request_blocked",
+                                     "classification": classification})
+            try:
+                route.abort()
+            except Exception:
+                with self._lock:
+                    self._escaped_writes.append(blocked)
+                    self._events.append({"kind": "request_escape",
+                                         "classification": classification})
+            return
+        with self._lock:
+            self._last_request = entry
+            self._events.append({"kind": "request", **entry})
         try:
             if self._abort_request:
                 self._events.append({"kind": "request_aborted", "mono_ms": _now_ms()})
@@ -547,6 +729,19 @@ class PlaywrightBrowserDriver:
         except Exception:
             return ""
 
+    def _do_read_attr(self, selector: str, attr: str) -> str:
+        try:
+            return _safe_text(self._page.locator(selector).first.get_attribute(
+                str(attr), timeout=self.action_timeout_ms))
+        except Exception:
+            return ""
+
+    def _do_count(self, selector: str) -> int:
+        try:
+            return int(self._page.locator(selector).count())
+        except Exception:
+            return 0
+
     def _do_is_enabled(self, selector: str) -> bool:
         try:
             return bool(self._page.locator(selector).first.is_enabled())
@@ -566,21 +761,57 @@ class PlaywrightBrowserDriver:
                 self._page.unroute(self._current_route_pattern)
             except Exception:
                 pass
+        self._dry_run_guard = False
         self._intercept_pattern = str(pattern)
         self._current_route_pattern = str(pattern)
         self._abort_request = bool(abort)
+        with self._lock:
+            self._observed_writes = []
+            self._blocked_writes = []
+            self._escaped_writes = []
         try:
             self._page.route(pattern, self._route_handler)
         except Exception as e:
             raise BrowserCommandError("route failed: %s" % str(e)[:120]) from None
         return {"pattern": pattern, "abort": bool(abort)}
 
+    def _do_dry_run_guard(self, order_paths: list[str] | None = None,
+                          order_method: str = "POST") -> dict[str, Any]:
+        """گاردِ catch-all: هر نوشتن abort می‌شود، بی‌توجه به الگویِ کاربر."""
+        if self._page is None:
+            return {"ok": False}
+        with self._lock:
+            self._last_request = None
+            self._last_response = None
+            self._observed_writes = []
+            self._blocked_writes = []
+            self._escaped_writes = []
+        if self._current_route_pattern:
+            try:
+                self._page.unroute(self._current_route_pattern)
+            except Exception:
+                pass
+        paths = [str(p or "") for p in (order_paths or []) if str(p or "")]
+        self._order_paths = paths or ["/core/api/v2/order"]
+        self._order_method = str(order_method or "POST").upper()
+        self._dry_run_guard = True
+        self._abort_request = True
+        self._current_route_pattern = "**/*"
+        self._intercept_pattern = "**/*"
+        try:
+            self._page.route("**/*", self._route_handler)
+        except Exception as e:
+            raise BrowserCommandError("dry-run guard route failed: %s" % str(e)[:120]) from None
+        return {"dry_run_guard": True, "order_paths": list(self._order_paths),
+                "order_method": self._order_method}
+
     def _do_click(self, selector: str, timeout_ms: int = 0,
-                  force: bool = True) -> dict[str, Any]:
+                  force: bool = False) -> dict[str, Any]:
         start = _now_ms()
-        loc = self._page.locator(selector).first
+        # بدونِ .first: تطبیقِ چندگانه باید strict-mode خطا بدهد، نه کلیکِ کور.
+        loc = self._page.locator(selector)
         loc.click(force=bool(force), timeout=timeout_ms or self.action_timeout_ms)
-        return {"start_ms": start, "end_ms": _now_ms()}
+        return {"start_ms": start, "end_ms": _now_ms(), "clicked": True}
 
     def _do_press(self, key: str, selector: str = "",
                   timeout_ms: int = 0) -> dict[str, Any]:
@@ -642,20 +873,37 @@ class PlaywrightBrowserDriver:
         with self._lock:
             reqs = list(self._all_requests)
             truncated = len(self._all_requests) >= 500
+            blocked = list(self._blocked_writes)
+            escaped = list(self._escaped_writes)
         by_host: dict[str, dict[str, int]] = {}
         for r in reqs:
-            host = str(r.get("host") or "(none)")
+            host = str(r.get("host") or urlparse(str(r.get("url") or "")).netloc or "(none)")
             method = (str(r.get("method") or "").upper() or "(none)")
             bucket = by_host.setdefault(host, {})
             bucket[method] = bucket.get(method, 0) + 1
         needle = (self._intercept_pattern or "").replace("**/", "").rstrip("*")
-        order_posts = sum(
+        writes = [r for r in reqs
+                  if str(r.get("method") or "").upper() not in
+                  ("GET", "HEAD", "OPTIONS", "TRACE")]
+        order_writes = sum(1 for r in blocked
+                           if r.get("classification") == "order")
+        other_writes = sum(1 for r in blocked
+                           if r.get("classification") == "other_write")
+        mismatch = sum(1 for r in blocked
+                       if r.get("classification") == "order_method_mismatch")
+        order_posts = order_writes if self._dry_run_guard else sum(
             1 for r in reqs
             if (str(r.get("method") or "").upper() == "POST"
                 and needle and needle in str(r.get("path") or "")))
         return {"requests": len(reqs), "by_host": by_host,
+                "writes": len(writes), "blocked_writes": len(blocked),
+                "escaped_writes": len(escaped),
+                "order_writes": order_writes, "other_writes": other_writes,
+                "order_method_mismatch": mismatch,
                 "order_posts": order_posts, "truncated": truncated,
-                "source": "browser-events", "order_path_matched": bool(needle)}
+                "source": ("browser-dry-run-guard" if self._dry_run_guard
+                           else "browser-events"),
+                "order_path_matched": bool(needle)}
 
     def _do_probe(self, selectors: Optional[Mapping[str, Any]] = None) -> dict[str, Any]:
         """فقط‌خواندنی؛ SPAهایی که پس از load به صفحهٔ ورود می‌روند را هم می‌پذیرد.
@@ -766,14 +1014,25 @@ class PlaywrightBrowserDriver:
     def read_text(self, selector: str) -> str:
         return str(self._call("read_text", selector=selector))
 
+    def read_attr(self, selector: str, attr: str) -> str:
+        return str(self._call("read_attr", selector=selector, attr=attr))
+
+    def count(self, selector: str) -> int:
+        return int(self._call("count", selector=selector))
+
     def is_enabled(self, selector: str) -> bool:
         return bool(self._call("is_enabled", selector=selector))
 
     def intercept(self, pattern: str, *, abort: bool = True) -> dict[str, Any]:
         return self._call("intercept", pattern=pattern, abort=abort)
 
+    def dry_run_guard(self, order_paths: Optional[list[str]] = None,
+                      order_method: str = "POST") -> dict[str, Any]:
+        return self._call("dry_run_guard", order_paths=list(order_paths or []),
+                          order_method=order_method)
+
     def click(self, selector: str, timeout_ms: int = 0,
-              force: bool = True) -> dict[str, Any]:
+              force: bool = False) -> dict[str, Any]:
         return self._call("click", selector=selector, timeout_ms=timeout_ms,
                           force=force)
 

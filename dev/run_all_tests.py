@@ -606,6 +606,10 @@ SUITES = [
      'sarkhati WAF header: GET without Content-Type, POST with Content-Type, WAF simulator green only without the header, dead server-time candidate removed, read-only gate never reaches the transport, session vault rejects expired/no-exp tokens and leaks none'),
     ('dev/strategy_guard_v1123.py',
      'sarkhati strategies: settings reject secrets, metrics p50/p95/p99 only from real samples, one-submit arbiter, direct/browser dry-run sends no POST, mismatch hard stop, clock gate, reconcile uniqueness'),
+    ('dev/autoclicker_round14_v1148.py',
+     'sarkhati AutoClicker Round 14: catch-all dry-run guard, durable idempotency/UNKNOWN/restart, side-aware form, real preflight, scheduled/abort/Tehran'),
+    ('dev/autoclicker_browser_round14_v1149.py',
+     'sarkhati AutoClicker Round 14 browser-level: Playwright mock EasyTrader, zero order posts in dry-run, one click, UNKNOWN, abort'),
     # مأموریتِ ۲۰۲۶-۱۰-۲۰ (Darvand P0): ذخیرهٔ ماندگارِ سفارش/زمان‌بندی، claim
     # اتمیک، NEEDS_REVIEW پس از restart، MISSED_TARGET بدون جبران، و مسدودماندنِ
     # مسیر زنده تا تأیید قرارداد/نشست. هیچ شبکه/سفارشی صدا زده نمی‌شود.
