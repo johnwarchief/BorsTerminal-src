@@ -1,6 +1,6 @@
 # Round 15.5 — Reference-to-Product Implementation
 
-> تاریخ: ۲۰۲۶-۱۰-۲۱ | شاخه: `mission/sarkhati-round15-5-reference-implementation-2026-10-21` | مبنا: `6e58be07` (Round 15)
+> تاریخ: ۲۰۲۶-۱۰-۲۱ | شاخه: `mission/sarkhati-round15-5-reference-implementation-2026-10-21` | مبنا: `6e58be07` (Round 15) | commit: `0afcc234`
 > وضعیت: `live_enabled=false` · `live_ready=false` · هیچ سفارش/کلیکِ واقعی روی کارگزاری انجام نشد.
 
 ## ۱) وضعیت واقعی Git و دامنه
@@ -56,7 +56,9 @@ Round 15 روی `6e58be07` با گزارشِ closeout و suiteِ کاملِ ای
 | frontend مرتبط (`autoclicker-page`) | **۶/۶** (شاملِ مسیر API و intent مشترک) |
 | کلِ frontend | **۲۰۲ فایل سبز + ۲ skip؛ ۲۰۹۷ تست سبز + ۵ skip** |
 | `tsc -b` / `npm run build` | ۰ خطا / موفق |
-| کلِ backend (`run_all_tests.py`) | در حال اجرا روی clone ایزوله؛ نتیجه در commit تکمیلی |
+| کلِ backend (`run_all_tests.py`) | **۱۴۴ counted / ۳۱ silent / ۲ skip / ۰ FAIL؛ `ALL SUITES PASSED`؛ rc=0** |
+| skipها | Phase4 (`_audit/ra365_ref_bars.json`)، R1/R2 (`market.db.lzma`) — fixture در clone نبود |
+| hash دیتابیس عملیاتی | بدونِ تغییر: `fd688edb…790b73dc` و `fbffd6ef…3fe4ff8` |
 
 skip/خطاهایِ fixture و timeout به‌صورتِ جداگانه در لاگِ suite ثبت می‌شوند و پنهان نمی‌شوند.
 
@@ -84,3 +86,9 @@ skip/خطاهایِ fixture و timeout به‌صورتِ جداگانه در ل�
 - **زمان‌بندیِ liveِ پایدار:** عمداً پیاده نشده؛ شاهد/مجوزِ روشن برای اجرای خودکار پس از restart لازم است.
 
 **تفکیک:** mock/مسیرِ محصول اکنون قابلِ‌تست است؛ رابطِ واقعی و مجوزِ ارسال هنوز تأیید نشده‌اند. این سه یکی نیستند.
+
+## ۷) commit و artifacts
+
+- commit اصلی: `0afcc234` — `feat(autoclicker): Round 15.5 — Mofid adapter و مسیر API/مرورگر`.
+- لاگِ suite نهایی: `C:/Users/PCMOD/AppData/Local/Temp/bors_suite_round15_39008.log` (۱۴۴ counted / ۳۱ silent / ۲ skip / ۰ FAIL).
+- `live_enabled=false` و `live_ready=false` در طولِ راند حفظ شدند؛ هیچ سفارش/کلیکِ واقعی انجام نشد.
