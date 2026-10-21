@@ -19,7 +19,7 @@
 | رگرسیون‌های Round 16 | `PARTIAL` | ۳ exact اصلاح شد، ۱ near، ۳ مستقیم و ۱۶ تجمعی باز |
 | parser عمومی CODAL (فاراك) | `IMPLEMENTED_AND_TESTED` | ۳۰/۳۰ سند؛ ۲۹ no-cash، ۱ PAID_IN |
 | Full-Universe نهایی (کپی promoted) | `VERIFIED` | `69.0243 / 88.0823 / 68.3045` |
-| Full gate all-suite | `IMPLEMENTED_AND_TESTED` | ۱۴۲ سوئیت اجرا شد؛ ۳ failure اصلاح و مستقل تأیید شد؛ rerun کامل در جریان |
+| Full gate all-suite | `VERIFIED` | **ALL SUITES PASSED**: ۱۴۳ سوئیت، ۴۴ silent، ۱ skip (fixture)، ۰ failure؛ `PROTECTED_DB_UNCHANGED` |
 | build فرانت | `VERIFIED` | `✓ built in 30.63s` |
 | دیتابیس عملیاتی | `VERIFIED` بدون تغییر | SHA پیش/پس یکسان |
 
@@ -266,10 +266,11 @@ probe زنده و تطبیق با مرجع، «official-high» برچسب گرف
   3. **ledger dedupe**: mock قدیمی تست، امضای `_official_price_adjust_events` را
      بدون `closings` می‌ساخت؛ به امضای R16 به‌روز شد و سوئیت **7/7** شد.
 - هر سه سوئیت پس از اصلاح، مستقل سبز شدند (11/11، 7/7، 7/7).
-- اجرای دوبارهٔ all-suite با همین snapshot و dependencyها آغاز شد؛
+- اجرای دوبارهٔ all-suite با همین snapshot و dependencyها **کامل و سبز** شد:
+  `143 suite counted, 44 silent, 1 skipped, ALL SUITES PASSED`؛
+  `PROTECTED_DB_UNCHANGED`.
   log: `D:/BorsTerminal-tmp/ra365_round17/full_gate_r17_final.log`.
-  تا لحظهٔ تنظیم این به‌روزرسانی، وضعیت «یک اجرای کاملاً سبز» `NOT_MEASURED` است.
-- skip تنها سوئیتِ `market.db.lzma` است (فایل در snapshot نیست).
+- skip تنها سوئیتِ `market.db.lzma` است (fixture در snapshot نیست)؛ failure صفر.
 
 ### تست‌ها
 
@@ -304,7 +305,8 @@ probe زنده و تطبیق با مرجع، «official-high» برچسب گرف
 - `e1131541` — precedence + parser + migration + تست‌ها + artifactها
 - `18055a78` — گزارش Round 17
 - `e521b2ad` — اصلاح gate (نقشهٔ FTS، sidecar، mock تست)
-- به‌روزرسانی شاهد gate — همین commit
+- `e8f73906` — تأیید مستقل سه اصلاح gate
+- نتیجهٔ نهایی gate (ALL SUITES PASSED) — همین commit
 
 ### 12.2 artifactها
 
