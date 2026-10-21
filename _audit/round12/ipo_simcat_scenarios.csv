@@ -1,0 +1,15 @@
+symbol,isin,scenario,stage,status,evidence,note
+سیمکات,IRO3SIMC0001,NATIVE_BROWSER_DOM,offering_discovery,PASS,GET /ipo/api/ipo -> 200; 1 item,public offering feed; no account fields retained
+سیمکات,IRO3SIMC0001,NATIVE_BROWSER_DOM,symbol_isin,BLOCKED,market.db instruments -> no row for IRO3SIMC0001,broker feed has symbol/ISIN; local BorsTerminal mapping missing
+سیمکات,IRO3SIMC0001,NATIVE_BROWSER_DOM,session,PASS,authorized OIDC session present,no token/cookie recorded
+سیمکات,IRO3SIMC0001,NATIVE_BROWSER_DOM,market_window,BLOCKED,offering window 2026-10-21 12:15-14:15; test outside window,outside window; do not treat as order
+سیمکات,IRO3SIMC0001,NATIVE_BROWSER_DOM,form_open,PASS,real EasyTrader buy form opened; #price and #quantity found,no submit
+سیمکات,IRO3SIMC0001,NATIVE_BROWSER_DOM,valid_values_fill,PASS,price 45840 and quantity 10 accepted by inputs; submit enabled,no submit
+سیمکات,IRO3SIMC0001,NATIVE_BROWSER_DOM,invalid_values,NOT_RUN,quantity 0 and 131 left submit enabled; final validation not probed,no final click
+سیمکات,IRO3SIMC0001,NATIVE_BROWSER_DOM,preflight,BLOCKED_CONFIGURATION,no explicit IPO budget/order authorization and local ISIN mapping missing,do not fabricate price/qty/budget
+سیمکات,IRO3SIMC0001,NATIVE_BROWSER_DOM,final_submit,NOT_RUN,no proven pre-dispatch abort was established,intentionally not clicked
+سیمکات,IRO3SIMC0001,NATIVE_BROWSER_DOM,broker_order_id,N/A,no request dispatched, —
+سیمکات,IRO3SIMC0001,NATIVE_BROWSER_DOM,order_list_reconcile,NOT_RUN,no order id, —
+سیمکات,IRO3SIMC0001,NATIVE_BROWSER_DOM,queue_position,UNVERIFIED,no broker order id; queue path not exercised,—
+سیمکات,IRO3SIMC0001,NATIVE_BROWSER_DOM,live_readiness,BLOCKED,write contract operational verification and explicit IPO authorization missing,no live order
+سیمکات,IRO3SIMC0001,NATIVE_BROWSER_DOM,saturday_2026-10-24,BLOCKED,no offering with date 2026-10-24 observed in the first-party IPO feed,rehearsal only; no order
