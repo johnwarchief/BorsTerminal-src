@@ -1,0 +1,7 @@
+﻿symbol,asset_id,status,method,chart_opened,modes_seen,tooltip_points,screenshot,evidence,note
+آکو,48315,SESSION_NOT_ACCESSIBLE,managed-browser + owner Firefox UI,false,,,none,chart page shows login modal (input[type=password]); Firefox authenticated but synthetic navigation/keystrokes did not change the page,no credentials/cookies read or stored
+حخزر,595,SESSION_NOT_ACCESSIBLE,managed-browser + owner Firefox UI,false,,,none,same session boundary as آکو,no visual claim
+شپاكسا,11,SESSION_NOT_ACCESSIBLE,managed-browser + owner Firefox UI,false,,,none,same session boundary as آکو,no visual claim
+وبشهر,59,SESSION_NOT_ACCESSIBLE,managed-browser + owner Firefox UI,false,,,none,same session boundary as آکو,no visual claim
+سپاها,247,SESSION_NOT_ACCESSIBLE,managed-browser + owner Firefox UI,false,,,none,same session boundary as آکو,no visual claim
+ومعادن,291,SESSION_NOT_ACCESSIBLE,managed-browser + owner Firefox UI,false,,,none,same session boundary as آکو,no visual claim

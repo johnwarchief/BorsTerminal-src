@@ -1209,34 +1209,65 @@ def _official_price_adjust_events(symbol, times=None, share_changes=None):
     return out
 
 
+def _share_counts_close(a, b) -> bool:
+    """آیا دو شمارِ سهام همان سرمایه‌اند؟ (اختلافِ گردکردن، نه رویدادِ تازه)"""
+    if a is None or b is None:
+        return False
+    try:
+        a, b = float(a), float(b)
+    except Exception:
+        return False
+    return abs(a - b) <= max(1.0, 1e-6 * abs(b))
+
+
 def _filter_share_changes(rows):
     """Filter official share-change noise.
 
     The TSETMC flow exposes both sides of some changes (ratio > 1) and can
-    repeat the same ratio months later (وبشهر: 0.41666667 on 2026-04-12 and
-    2026-07-12, with a reverse 2.4 in between).  A reverse row is not a
-    capital event; a repeated identical ratio within 180 days is the same
-    restated event.  Keep the earliest real (<1) occurrence.
+    repeat the same ratio months later.  A reverse row is not a capital event.
+    For ratio < 1, **share counts decide identity**, not the ratio alone:
+      · same starting and ending capital ⇒ the same restated event (drop later);
+      · the later row starts where the earlier ended (old == earlier.new) ⇒ a
+        real sequential capital increase (keep), even with an identical ratio;
+      · different starting capital ⇒ a distinct event (keep).
+    This preserves آسال/بلد/شمیم/پاكشو/فاخر chains that the old ratio-only
+    dedupe silently dropped.  Legacy two-tuple callers keep the old behaviour.
     """
     clean = []
-    for d, r in rows:
+    for row in rows:
+        if len(row) < 2:
+            continue
+        d, r = str(row[0])[:10], row[1]
+        old = row[2] if len(row) > 2 else None
+        new = row[3] if len(row) > 3 else None
         try:
             r = float(r)
         except Exception:
             continue
         if not (0 < r < 1):
             continue
-        d = str(d)[:10]
         dup = False
-        for kd, kr in clean:
-            if abs(kr / r - 1.0) <= 1e-6:
-                dd = _day_diff(d, kd)
-                if dd is not None and dd <= 180:
+        for kd, kr, kold, knew in clean:
+            if abs(kr / r - 1.0) > 1e-6:
+                continue
+            dd = _day_diff(d, kd)
+            if dd is None or dd > 180:
+                continue
+            if (old is not None and new is not None
+                    and kold is not None and knew is not None):
+                # A sequential chain is a new event, never a restatement.
+                if _share_counts_close(old, knew):
+                    continue
+                if _share_counts_close(old, kold) and _share_counts_close(new, knew):
                     dup = True
                     break
+                continue
+            # Legacy (date, ratio) callers: no share identity available.
+            dup = True
+            break
         if not dup:
-            clean.append((d, r))
-    return sorted(clean)
+            clean.append((d, r, old, new))
+    return sorted((d, r) for d, r, _old, _new in clean)
 
 
 def _share_change_events(symbol):
@@ -1256,21 +1287,21 @@ def _share_change_events(symbol):
             if not row:
                 return []
             rows = conn.execute(
-                "SELECT d_even, ratio FROM share_change_events WHERE ins_code=?"
-                " ORDER BY d_even", (str(row[0]),)).fetchall()
+                "SELECT d_even, ratio, shares_old, shares_new FROM share_change_events"
+                " WHERE ins_code=? ORDER BY d_even", (str(row[0]),)).fetchall()
         finally:
             conn.close()
     except Exception:
         return []
     out = []
-    for d, r in rows:
+    for d, r, so, sn in rows:
         dt = _d_even_to_date(d)
         try:
             f = float(r)
         except Exception:
             continue
         if dt and abs(f - 1.0) > 1e-9:
-            out.append((dt, f))
+            out.append((dt, f, so, sn))
     return _filter_share_changes(out)
 
 

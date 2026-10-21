@@ -265,6 +265,31 @@ out = C._filter_share_changes([("2025-01-01", 0.5),
                                ("2026-08-01", 0.5)])
 ck(len(out) == 2, "identical ratio far apart is a distinct event", out)
 
+# Share identity, not ratio alone: a real second doubling (آسال 500M→1B→2B)
+# must survive; an exact/near restatement must not.
+out = C._filter_share_changes([
+    ("2026-06-22", 0.5, 500_000_000.0, 1_000_000_000.0),
+    ("2026-09-02", 0.5, 1_000_000_000.0, 2_000_000_000.0),
+])
+ck(len(out) == 2, "sequential same-ratio doubling is a real new event", out)
+out = C._filter_share_changes([
+    ("2019-12-14", 0.83333333, 1_075_071_231.0, 1_290_085_477.0),
+    ("2020-05-13", 0.83333364, 1_075_071_231.0, 1_290_085_000.0),
+])
+ck(len(out) == 1, "near-identical restatement is still one event", out)
+out = C._filter_share_changes([
+    ("2024-08-07", 0.75, 1_500_000_000.0, 2_000_000_000.0),
+    ("2025-01-18", 0.75, 3_000_000_000.0, 4_000_000_000.0),
+])
+ck(len(out) == 2, "same ratio on a different capital base is a distinct event", out)
+out = C._filter_share_changes([
+    ("2026-04-12", 0.41666667, 100.0, 240.0),
+    ("2026-07-08", 2.4, 240.0, 100.0),
+    ("2026-07-12", 0.41666667, 100.0, 240.0),
+])
+ck([d for d, _r in out] == ["2026-04-12"],
+   "reverse side and exact restatement stay filtered", out)
+
 print()
 print("result: %d pass, %d fail" % (P, F))
 print("%d/%d" % (P, P + F))
