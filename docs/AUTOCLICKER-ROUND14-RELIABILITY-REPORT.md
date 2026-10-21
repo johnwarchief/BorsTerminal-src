@@ -1,6 +1,6 @@
 # Round 14 — AutoClicker Reliability & Execution Correctness
 
-> تاریخ: ۲۰۲۶-۱۰-۲۱ | شاخه: `mission/sarkhati-round14-reliability-2026-10-21` | مبنا: `865ef8d9` (راند ۱۳ + گزارشِ تحقیق) | commit: `3f59be54`
+> تاریخ: ۲۰۲۶-۱۰-۲۱ | شاخه: `mission/sarkhati-round14-reliability-2026-10-21` | مبنا: `865ef8d9` (راند ۱۳ + گزارشِ تحقیق) | commitها: `3f59be54` + `2c758468`
 > وضعیتِ ارسالِ زنده: `live_enabled=false` · `live_ready=false` · هیچ سفارشِ واقعی ارسال نشد.
 >
 > **هشدارِ داده (باید به مالک اعلام شود):** در جریانِ suiteِ کاملِ backend، `market.db` عملیاتی تغییر کرد (fingerprint از `5a9117aa…135bea3` به `fd688edb…790b73dc`، mtime 21:44). suite پس از ۵۶ سوئیت متوقف شد؛ هیچ بازنویسی/بازیابیِ خودکار انجام نشد. جزئیات در بند ۷.
@@ -128,7 +128,7 @@
 ## ۸. commit و فایل‌هایِ تغییرکرده
 
 - commit اصلی: `3f59be54` — `feat(autoclicker): راند ۱۴ — گاردِ dry-run، idempotency پایدار و preflight مسیرِ کلیک`
-- commitِ تکمیلیِ گزارش/اعدادِ نهایی، پس از پایانِ suiteِ کامل (در صورتِ نیاز) ثبت می‌شود.
+- commit تکمیلی: `2c758468` — `fix(autoclicker): آخرین بازرسی Abort پیش از ارسال و ثبتِ حادثهٔ market.db در گزارش`
 
 - `execution_intent_store.py` (جدید)
 - `execution_browser.py`
