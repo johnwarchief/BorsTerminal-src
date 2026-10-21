@@ -254,6 +254,17 @@ r, is_dps, et = C._classify_pa_event(0.9995, 5.0, None, "2020-01-08", [])
 ck(r == 0.9995 and is_dps and et == "dps-unverified",
    "DPS without closing keeps its type and amount", (r, is_dps, et))
 
+# Share-change noise: reverse rows (>1) and a repeated identical ratio
+# within 180 days must not become a second capital event.
+out = C._filter_share_changes([("2026-04-12", 0.41666667),
+                               ("2026-07-08", 2.4),
+                               ("2026-07-12", 0.41666667)])
+ck([d for d, _r in out] == ["2026-04-12"],
+   "reverse/repeated share rows are filtered", out)
+out = C._filter_share_changes([("2025-01-01", 0.5),
+                               ("2026-08-01", 0.5)])
+ck(len(out) == 2, "identical ratio far apart is a distinct event", out)
+
 print()
 print("result: %d pass, %d fail" % (P, F))
 print("%d/%d" % (P, P + F))

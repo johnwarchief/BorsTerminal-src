@@ -1209,6 +1209,36 @@ def _official_price_adjust_events(symbol, times=None, share_changes=None):
     return out
 
 
+def _filter_share_changes(rows):
+    """Filter official share-change noise.
+
+    The TSETMC flow exposes both sides of some changes (ratio > 1) and can
+    repeat the same ratio months later (وبشهر: 0.41666667 on 2026-04-12 and
+    2026-07-12, with a reverse 2.4 in between).  A reverse row is not a
+    capital event; a repeated identical ratio within 180 days is the same
+    restated event.  Keep the earliest real (<1) occurrence.
+    """
+    clean = []
+    for d, r in rows:
+        try:
+            r = float(r)
+        except Exception:
+            continue
+        if not (0 < r < 1):
+            continue
+        d = str(d)[:10]
+        dup = False
+        for kd, kr in clean:
+            if abs(kr / r - 1.0) <= 1e-6:
+                dd = _day_diff(d, kd)
+                if dd is not None and dd <= 180:
+                    dup = True
+                    break
+        if not dup:
+            clean.append((d, r))
+    return sorted(clean)
+
+
 def _share_change_events(symbol):
     """(date, ratio) از دفترِ رسمیِ تغییرِ تعدادِ سهام؛ فقط برایِ تفکیکِ رویداد.
 
@@ -1241,7 +1271,7 @@ def _share_change_events(symbol):
             continue
         if dt and abs(f - 1.0) > 1e-9:
             out.append((dt, f))
-    return out
+    return _filter_share_changes(out)
 
 
 def _merge_official_price_adjust(events, official, rejected=None, share_changes=None):
