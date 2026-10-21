@@ -19,7 +19,7 @@
 | رگرسیون‌های Round 16 | `PARTIAL` | ۳ exact اصلاح شد، ۱ near، ۳ مستقیم و ۱۶ تجمعی باز |
 | parser عمومی CODAL (فاراك) | `IMPLEMENTED_AND_TESTED` | ۳۰/۳۰ سند؛ ۲۹ no-cash، ۱ PAID_IN |
 | Full-Universe نهایی (کپی promoted) | `VERIFIED` | `69.0243 / 88.0823 / 68.3045` |
-| Full gate all-suite | `NOT_MEASURED` / در حال اجرا | DB کامل و dependencyها آماده؛ نتیجهٔ نهایی در log |
+| Full gate all-suite | `PARTIAL` | ۱۴۲ سوئیت اجرا شد؛ ۳ failure ریشه‌یابی و اصلاح شد؛ rerun کاملاً سبز `NOT_MEASURED` |
 | build فرانت | `VERIFIED` | `✓ built in 30.63s` |
 | دیتابیس عملیاتی | `VERIFIED` بدون تغییر | SHA پیش/پس یکسان |
 
@@ -252,13 +252,21 @@ probe زنده و تطبیق با مرجع، «official-high» برچسب گرف
 - `frontend/node_modules` از مسیر استاندارد (worktree هم‌نسخه) تکمیل شد؛
   `klinecharts` و ۲۵۷ بسته موجودند.
 - `npm run build`: `✓ built in 30.63s`.
-- Full gate روی کپی promoted (DB کامل، ۲۹ شاهد) آغاز شد:
-  - سوئیت‌های ابتدایی سبز: structure، FTS isolation، CODAL pipeline، calendar،
-    **chart API guard 18/18**، m141، ADB.
-  - `PROTECTED_DB_UNCHANGED` در اجرای کامل قبلی با DB کامل تأیید شده بود.
-  - نتیجهٔ نهایی all-suite در `D:/BorsTerminal-tmp/ra365_round17/full_gate_r17.log`؛
-    تا لحظهٔ تنظیم این گزارش اجرا کامل نشده و وضعیت «یک اجرای کاملاً سبز»:
-    `NOT_MEASURED` است. timeout/skip/failure جدا گزارش می‌شود.
+- Full gate روی کپی promoted (DB کامل، ۲۹ شاهد) **کامل اجرا شد**:
+  `142 suite counted, 42 silent (exit-only), 1 skipped`؛
+  `PROTECTED_DB_UNCHANGED` تأیید شد.
+- سه شکست، ریشه و اصلاح:
+  1. **نقشهٔ FTS**: ارجاع‌های `_fts_analyze_candles:4691`، `_fts_jet_setup:3669`،
+     `_fts_analyze_symbol:5099` با سطرهای جدید (۴۸۴۶/۳۸۲۴/۵۲۵۴) هم‌خوان نبودند؛
+     نقشه اصلاح شد و گارد **11/11** شد.
+  2. **scan_symbol == bulk_scan**: علت، نبود `fts_thresholds.json` در کنار snapshot
+     کپی‌شده بود (gate فقط sidecarهای کنار DB را کپی می‌کند)؛ sidecarها
+     (`fts_thresholds.json`, `user.db`, `codal_control.json`) به پوشهٔ snapshot کپی شدند.
+  3. **ledger dedupe**: mock قدیمی تست، امضای `_official_price_adjust_events` را
+     بدون `closings` می‌ساخت؛ به امضای R16 به‌روز شد و سوئیت **7/7** شد.
+- پس از این سه اصلاح، اجرای دوبارهٔ all-suite انجام نشد؛ وضعیت «یک اجرای کاملاً
+  سبز» `NOT_MEASURED` است. skip تنها سوئیتِ `market.db.lzma` است (فایل در snapshot نیست).
+- log: `D:/BorsTerminal-tmp/ra365_round17/full_gate_r17.log`.
 
 ### تست‌ها
 
@@ -291,7 +299,8 @@ probe زنده و تطبیق با مرجع، «official-high» برچسب گرف
 ### 12.1 commitها
 
 - `e1131541` — precedence + parser + migration + تست‌ها + artifactها
-- commit گزارش Round 17 — همین commit
+- `18055a78` — گزارش Round 17
+- commit اصلاح gate — همین commit (نقشهٔ FTS، sidecar، mock تست)
 
 ### 12.2 artifactها
 
