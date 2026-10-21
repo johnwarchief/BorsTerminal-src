@@ -48,3 +48,6 @@ _ghost_probe_v3.py
 _lakhazar_csv_probe.py
 _live_probe.py
 RA365-ADJUST-RULERULE-2026-10-12.csv
+# شواهدِ دیداریِ Round 10/11 با force-add کامیت شده‌اند؛ استثنا صریح است
+!round10/visual/*.png
+!round11_visual/*.png
