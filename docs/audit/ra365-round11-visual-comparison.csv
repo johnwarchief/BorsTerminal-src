@@ -1,0 +1,7 @@
+﻿symbol,asset_id,date_range,timeframe,rahavard_access,rahavard_mode,bors_mode,compared_points,ohlc_result,screenshot_id,difference,likely_cause,status
+آکو,48315,2025-08-01..2026-10-20,D,BLOCKED_NO_AUTHORIZED_SESSION,UNKNOWN (login modal; no session),combined / linear,none,NOT_COMPARED,,,no authorized Rahavard session in the connector tab,BLOCKED_NO_AUTHORIZED_SESSION
+حخزر,595,2023-01-01..2026-10-20,D,BLOCKED_NO_AUTHORIZED_SESSION,UNKNOWN (login modal; no session),combined / linear,none,NOT_COMPARED,,,no authorized Rahavard session in the connector tab,BLOCKED_NO_AUTHORIZED_SESSION
+شپاكسا,,2026-01-01..2026-10-20,D,BLOCKED_NO_AUTHORIZED_SESSION,UNKNOWN (login modal; no session),combined / linear,none,NOT_COMPARED,,,no authorized Rahavard session in the connector tab,BLOCKED_NO_AUTHORIZED_SESSION
+وبشهر,59,2026-01-01..2026-10-20,D,BLOCKED_NO_AUTHORIZED_SESSION,UNKNOWN (login modal; no session),combined / linear,none,NOT_COMPARED,,,no authorized Rahavard session in the connector tab,BLOCKED_NO_AUTHORIZED_SESSION
+سپاها,247,2021-01-01..2026-10-20,D,BLOCKED_NO_AUTHORIZED_SESSION,UNKNOWN (login modal; no session),combined / linear,none,NOT_COMPARED,,,no authorized Rahavard session in the connector tab,BLOCKED_NO_AUTHORIZED_SESSION
+ومعادن,,2026-01-01..2026-10-20,D,BLOCKED_NO_AUTHORIZED_SESSION,UNKNOWN (login modal; no session),combined / linear,none,NOT_COMPARED,,,no authorized Rahavard session in the connector tab,BLOCKED_NO_AUTHORIZED_SESSION

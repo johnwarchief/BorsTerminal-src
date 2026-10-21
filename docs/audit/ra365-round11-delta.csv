@@ -1,0 +1,39 @@
+﻿key,symbol,asset_id,date,kind,metric,before,after,delta,status,cause,evidence
+AGGREGATE|factor_exact_pct,,,,AGGREGATE,factor_exact_pct,48.3147,48.3147,0.0,UNCHANGED,,"full-universe, 2,595 assets"
+AGGREGATE|factor_near_pct,,,,AGGREGATE,factor_near_pct,81.5694,81.5943,0.024900000000002365,IMPROVED,share-noise filter,"full-universe, 2,595 assets"
+AGGREGATE|functional_pct,,,,AGGREGATE,functional_pct,48.7637,48.7637,0.0,UNCHANGED,,"full-universe, 2,595 assets"
+AGGREGATE|factor_norm_exact_pct,,,,AGGREGATE,factor_norm_exact_pct,41.2898,41.2898,0.0,UNCHANGED,,"full-universe, 2,595 assets"
+AGGREGATE|factor_norm_near_pct,,,,AGGREGATE,factor_norm_near_pct,82.032,82.032,0.0,UNCHANGED,,"full-universe, 2,595 assets"
+AGGREGATE|ref_only_steps,,,,AGGREGATE,ref_only_steps,155,154,-1,CHANGED,share-noise filter,"full-universe, 2,595 assets"
+AGGREGATE|prod_only_steps,,,,AGGREGATE,prod_only_steps,158,157,-1,CHANGED,share-noise filter,"full-universe, 2,595 assets"
+AGGREGATE|step_pairs,,,,AGGREGATE,step_pairs,6361,6362,1,IMPROVED,share-noise filter,"full-universe, 2,595 assets"
+AGGREGATE|step_mismatch,,,,AGGREGATE,step_mismatch,262,263,1,IMPROVED,share-noise filter,"full-universe, 2,595 assets"
+اعتلا|474|2025-04-19|PAIR,اعتلا,474,2025-04-19,STEP,step_ratio,0.73740151,0.719464,0.02131772,OPEN_WORSENED,DPS_ONLY,share= pa=2025-04-16
+الكتروماد|34312|2026-07-26|PAIR,الكتروماد,34312,2026-07-26,STEP,step_ratio,0.87920489,0.88230036,0.00364536,OPEN_WORSENED,DPS_ONLY,share= pa=2026-07-25
+بورس|541|2026-07-26|PAIR,بورس,541,2026-07-26,STEP,step_ratio,0.74337948,0.74156835,0.00133743,OPEN_WORSENED,COMBINED_EVENT,share=2026-07-26 pa=2026-07-22
+درازك|16|2020-06-07|PAIR,درازك,16,2020-06-07,STEP,step_ratio,0.80141663,0.80141662,1e-08,OPEN_WORSENED,MISSING_PA_ROW,share=2020-06-07 pa=
+سپيدار|16033|2025-06-03|PAIR,سپيدار,16033,2025-06-03,STEP,step_ratio,0.98398739,0.98640175,0.00256112,OPEN_WORSENED,DPS_ONLY,share= pa=2025-06-02
+شتوكا|603|2025-05-07|PAIR,شتوكا,603,2025-05-07,STEP,step_ratio,0.89169585,0.8938205,0.00248896,OPEN_WORSENED,DPS_ONLY,share= pa=2025-05-06
+شتوكا|603|2026-05-25|PAIR,شتوكا,603,2026-05-25,STEP,step_ratio,0.87812138,0.88107149,0.00349042,OPEN_WORSENED,DPS_ONLY,share= pa=2026-05-24
+شجم|700|2025-12-31|PAIR,شجم,700,2025-12-31,STEP,step_ratio,0.97243639,0.97259486,0.00016472,OPEN_WORSENED,DPS_ONLY,share= pa=2025-12-30
+غدشت|6|2026-10-14|PAIR,غدشت,6,2026-10-14,STEP,step_ratio,0.94769874,0.94646681,0.00013325,OPEN_WORSENED,DPS_ONLY,share= pa=2026-10-13
+فولاژ|569|2025-08-12|PAIR,فولاژ,569,2025-08-12,STEP,step_ratio,0.8348118,0.83462569,0.00020374,OPEN_WORSENED,DPS_ONLY,share= pa=2025-08-05
+مالك آتيه|28409|2025-05-24|PAIR,مالك آتيه,28409,2025-05-24,STEP,step_ratio,0.90647368,0.91035902,0.00429642,OPEN_WORSENED,DPS_ONLY,share= pa=2025-05-21
+مهرمام|34044|2026-07-26|PAIR,مهرمام,34044,2026-07-26,STEP,step_ratio,0.98816757,0.98839034,0.00022631,OPEN_WORSENED,DPS_ONLY,share= pa=2026-07-25
+وبشهر|59|2026-07-13|PAIR,وبشهر,59,2026-07-13,STEP,step_ratio,0.88280515,0.86948525,0.01469782,OPEN_WORSENED,COMBINED_EVENT,share=2026-07-12 pa=2026-07-08
+ومعادن|291|2026-07-18|PAIR,ومعادن,291,2026-07-18,STEP,step_ratio,0.90265636,0.8909606,0.01236282,OPEN_WORSENED,COMBINED_EVENT,share=2026-07-15 pa=2026-07-13
+وهامون|16971|2026-06-07|PAIR,وهامون,16971,2026-06-07,STEP,step_ratio,0.91614124,0.91835482,0.00250951,OPEN_WORSENED,DPS_ONLY,share= pa=2026-06-06
+شپاكسا|11|factor_near,شپاكسا,11,,SYMBOL,factor_near_dates,86,86,0,OPEN_NEAR_LOSS,Round 10 replacement / mixed CC / compensation,Round 10 near loss
+شپنا|484|factor_near,شپنا,484,,SYMBOL,factor_near_dates,459,459,0,OPEN_NEAR_LOSS,Round 10 replacement / mixed CC / compensation,Round 10 near loss
+پخش|319|factor_near,پخش,319,,SYMBOL,factor_near_dates,725,725,0,OPEN_NEAR_LOSS,Round 10 replacement / mixed CC / compensation,Round 10 near loss
+سفانو|517|factor_near,سفانو,517,,SYMBOL,factor_near_dates,1042,1042,0,OPEN_NEAR_LOSS,Round 10 replacement / mixed CC / compensation,Round 10 near loss
+سپاها|247|factor_near,سپاها,247,,SYMBOL,factor_near_dates,850,850,0,OPEN_NEAR_LOSS,Round 10 replacement / mixed CC / compensation,Round 10 near loss
+وبشهر|59|factor_near,وبشهر,59,,SYMBOL,factor_near_dates,68,68,0,OPEN_NEAR_LOSS,Round 10 replacement / mixed CC / compensation,Round 10 near loss
+سمازن|116|factor_near,سمازن,116,,SYMBOL,factor_near_dates,1245,1245,0,OPEN_NEAR_LOSS,Round 10 replacement / mixed CC / compensation,Round 10 near loss
+ومعادن|291|factor_near,ومعادن,291,,SYMBOL,factor_near_dates,64,64,0,OPEN_NEAR_LOSS,Round 10 replacement / mixed CC / compensation,Round 10 near loss
+كلوند|106|factor_near,كلوند,106,,SYMBOL,factor_near_dates,1406,1406,0,OPEN_NEAR_LOSS,Round 10 replacement / mixed CC / compensation,Round 10 near loss
+ولشرق|2671|factor_near,ولشرق,2671,,SYMBOL,factor_near_dates,1403,1403,0,OPEN_NEAR_LOSS,Round 10 replacement / mixed CC / compensation,Round 10 near loss
+وصنا|401|factor_near,وصنا,401,,SYMBOL,factor_near_dates,897,897,0,OPEN_NEAR_LOSS,Round 10 replacement / mixed CC / compensation,Round 10 near loss
+كگل|419|factor_near,كگل,419,,SYMBOL,factor_near_dates,451,747,296,IMPROVED,share-noise filter,reverse/duplicate share rows
+SHARE_ONLY|284,,,,CLUSTER,rows,284,284,0,BLOCKED_TYPE_EVIDENCE,reserve vs contribution not proven; CODAL rate limit,30 exact ratios
+DPS_ONLY|522,,,,CLUSTER,rows,522,522,0,OPEN,remaining amount/date/formula,Round 10 reconciliation
