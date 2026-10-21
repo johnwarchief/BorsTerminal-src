@@ -15,6 +15,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import socket
 import subprocess
 import sys
@@ -29,9 +30,18 @@ DEFAULT_URL = "https://d.easytrader.ir/"
 PROFILE_NAME = "browser_host_profile"
 
 
-def status_path() -> str:
-    return os.environ.get("BORS_BROWSER_HOST_STATUS") or os.path.join(
-        bors_config.WORK_DIR, STATUS_NAME)
+def _host_suffix(name: str = "") -> str:
+    """نامِ امن برایِ میزبانِ نام‌دار؛ پیش‌فرض بی‌نام همان hostِ EasyTrader است."""
+    clean = re.sub(r"[^a-z0-9_-]", "", str(name or "").lower())
+    return ("_" + clean) if clean else ""
+
+
+def status_path(name: str = "") -> str:
+    env = os.environ.get("BORS_BROWSER_HOST_STATUS") if not name else ""
+    if env:
+        return env
+    base, ext = os.path.splitext(STATUS_NAME)
+    return os.path.join(bors_config.WORK_DIR, base + _host_suffix(name) + ext)
 
 
 def _health(cdp_url: str, timeout: float = 0.6) -> bool:
@@ -45,23 +55,24 @@ def _health(cdp_url: str, timeout: float = 0.6) -> bool:
         return False
 
 
-def read_status(check: bool = True) -> dict[str, Any]:
+def read_status(check: bool = True, name: str = "") -> dict[str, Any]:
     try:
-        with open(status_path(), encoding="utf-8") as f:
+        with open(status_path(name), encoding="utf-8") as f:
             got = json.load(f)
     except Exception:
-        return {"status": "closed", "healthy": False, "cdp_url": ""}
+        return {"status": "closed", "healthy": False, "cdp_url": "", "name": name}
     if not isinstance(got, dict):
-        return {"status": "closed", "healthy": False, "cdp_url": ""}
+        return {"status": "closed", "healthy": False, "cdp_url": "", "name": name}
     out = dict(got)
+    out["name"] = str(out.get("name") or name)
     out["healthy"] = _health(str(out.get("cdp_url") or "")) if check else False
     if check and not out["healthy"]:
         out["status"] = "closed"
     return out
 
 
-def _write_status(data: dict[str, Any]) -> None:
-    path = status_path()
+def _write_status(data: dict[str, Any], name: str = "") -> None:
+    path = status_path(name)
     os.makedirs(os.path.dirname(os.path.abspath(path)) or ".", exist_ok=True)
     tmp = path + ".tmp"
     with open(tmp, "w", encoding="utf-8") as f:
@@ -105,9 +116,11 @@ def _browser_candidates() -> list[str]:
     return out
 
 
-def _profile() -> str:
-    raw = (os.environ.get("BORS_BROWSER_HOST_PROFILE") or "").strip()
-    return raw or os.path.join(bors_config.WORK_DIR, PROFILE_NAME)
+def _profile(name: str = "") -> str:
+    raw = ((os.environ.get("BORS_BROWSER_HOST_PROFILE") or "").strip()
+           if not name else "")
+    base, ext = os.path.splitext(PROFILE_NAME)
+    return raw or os.path.join(bors_config.WORK_DIR, base + _host_suffix(name) + ext)
 
 
 def _pid_matches(pid: int, port: int, profile: str) -> bool:
@@ -124,19 +137,28 @@ def _pid_matches(pid: int, port: int, profile: str) -> bool:
 
 
 def start_host(*, url: str = "", port: int = 0, wait_s: float = 30.0,
-               hold: bool = False) -> dict[str, Any]:
-    existing = read_status(check=True)
+               hold: bool = False, name: str = "") -> dict[str, Any]:
+    existing = read_status(check=True, name=name)
     if existing.get("healthy"):
         return existing
     exe = next((p for p in _browser_candidates() if p and os.path.isfile(p)), "")
     if not exe:
-        return {"status": "error", "code": "NO_BROWSER", "healthy": False}
-    port = int(port or os.environ.get("BORS_BROWSER_HOST_PORT") or 0)
+        return {"status": "error", "code": "NO_BROWSER", "healthy": False,
+                "name": name}
+    port = int(port or (os.environ.get("BORS_BROWSER_HOST_PORT")
+                       if not name else 0) or 0)
     if port <= 0:
         port = _free_port()
-    profile = _profile()
+    profile = _profile(name)
     os.makedirs(profile, exist_ok=True)
-    target = (url or os.environ.get("BORS_BROWSER_HOST_URL") or DEFAULT_URL).strip()
+    if name and not url:
+        # hostِ نام‌دار نباید بی‌نشانی، صفحهٔ پیش‌فرضِ EasyTrader را در پروفایلِ
+        # خودش باز کند؛ نشانی باید صریح باشد.
+        url = (os.environ.get("BORS_BROWSER_HOST_URL") or "").strip()
+        if not url:
+            return {"status": "error", "code": "URL_REQUIRED",
+                    "healthy": False, "name": name}
+    target = (url or DEFAULT_URL).strip()
     args = [
         exe,
         "--remote-debugging-address=127.0.0.1",
@@ -150,18 +172,18 @@ def start_host(*, url: str = "", port: int = 0, wait_s: float = 30.0,
                             stderr=subprocess.DEVNULL)
     cdp = "http://127.0.0.1:%d" % port
     data = {"status": "starting", "pid": proc.pid, "port": port,
-            "cdp_url": cdp, "profile": profile, "url": target,
+            "cdp_url": cdp, "profile": profile, "url": target, "name": name,
             "started_at": time.time(), "healthy": False}
-    _write_status(data)
+    _write_status(data, name)
     deadline = time.monotonic() + max(3.0, float(wait_s))
     while time.monotonic() < deadline:
         if proc.poll() is not None:
             data["status"] = "closed"
-            _write_status(data)
+            _write_status(data, name)
             return {**data, "code": "BROWSER_EXITED"}
         if _health(cdp):
             data.update({"status": "ready", "healthy": True})
-            _write_status(data)
+            _write_status(data, name)
             if hold:
                 try:
                     proc.wait()
@@ -170,34 +192,34 @@ def start_host(*, url: str = "", port: int = 0, wait_s: float = 30.0,
                 finally:
                     data["status"] = "closed"
                     data["healthy"] = False
-                    _write_status(data)
+                    _write_status(data, name)
             return data
         time.sleep(0.25)
     data["status"] = "timeout"
-    _write_status(data)
+    _write_status(data, name)
     return data
 
 
-def stop_host() -> dict[str, Any]:
-    got = read_status(check=False)
+def stop_host(name: str = "") -> dict[str, Any]:
+    got = read_status(check=False, name=name)
     pid = int(got.get("pid") or 0)
     port = int(got.get("port") or 0)
     profile = str(got.get("profile") or "")
     if not pid:
-        return {"status": "closed", "detail": "no host pid"}
+        return {"status": "closed", "detail": "no host pid", "name": name}
     if not _pid_matches(pid, port, profile):
-        return {"status": "error", "code": "PID_NOT_OUR_HOST"}
+        return {"status": "error", "code": "PID_NOT_OUR_HOST", "name": name}
     try:
         subprocess.run(["taskkill", "/PID", str(pid), "/T", "/F"],
                        capture_output=True, timeout=15)
     except Exception as e:                       # noqa: BLE001
-        return {"status": "error", "code": type(e).__name__}
+        return {"status": "error", "code": type(e).__name__, "name": name}
     for _ in range(40):
-        if not read_status(check=True).get("healthy"):
+        if not read_status(check=True, name=name).get("healthy"):
             break
         time.sleep(0.1)
-    got.update({"status": "closed", "healthy": False})
-    _write_status(got)
+    got.update({"status": "closed", "healthy": False, "name": name})
+    _write_status(got, name)
     return got
 
 
@@ -206,10 +228,11 @@ def main(argv=None) -> int:
     ap.add_argument("--url", default="")
     ap.add_argument("--port", type=int, default=0)
     ap.add_argument("--wait", type=float, default=30.0)
+    ap.add_argument("--name", default="")
     ap.add_argument("--print-only", action="store_true")
     args = ap.parse_args(argv if argv is not None else sys.argv[1:])
     got = start_host(url=args.url, port=args.port, wait_s=args.wait,
-                     hold=not args.print_only)
+                     hold=not args.print_only, name=args.name)
     print(json.dumps(got, ensure_ascii=False))
     return 0 if got.get("status") == "ready" else 1
 

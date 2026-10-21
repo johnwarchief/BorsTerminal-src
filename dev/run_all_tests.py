@@ -735,6 +735,8 @@ SUITES = [
      'Mofid/Titan adapter: flat payload, 2xx is UNKNOWN not acceptance, no retry, token never logged, first-party read-only session/money/positions/orders, sellable labelled derived, fail-closed preflight'),
     ('dev/mofid_readiness_v1164.py',
      'Mofid API/readiness: first-party endpoints parsed, session proved by GET customer/status, sellable labelled CLIENT_DERIVED_UNVERIFIED, write stays closed, zero POSTs, 401/offline build no fake values'),
+    ('dev/mofid_session_v1165.py',
+     'Mofid manual-login bridge: Playwright CDP captures token from allowlisted host, no secret in meta; read_only GET allowlist, order-id provenance, 401 invalidates cache, verify states, login window targets named host, zero order POST'),
     ('dev/autoclicker_browser_round14_v1149.py',
      'sarkhati AutoClicker Round 14 browser-level: Playwright mock EasyTrader, zero order posts in dry-run, one click, UNKNOWN, abort'),
     # مأموریتِ ۲۰۲۶-۱۰-۲۰ (Darvand P0): ذخیرهٔ ماندگارِ سفارش/زمان‌بندی، claim

@@ -8,8 +8,9 @@ import { useEffect, useMemo, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router';
 import {
-  browserHostApi, orderApi, useBrowserHost, useBuyingPower, useExecutionPortfolio,
-  useExecutionReadiness, useExecutionStatus, useStrategies, type StrategyRowView,
+  browserHostApi, mofidApi, orderApi, useBrowserHost, useExecutionReadiness,
+  useExecutionStatus, useMofidSession, useStrategies,
+  type MofidProbeView, type StrategyRowView,
 } from '../lib/orderClient';
 import { Chip, Field, GhostBtn, Line, Note, Section } from '../components/sarkhati/parts';
 import { toFaDigits } from '@shared/lib/fmt';
@@ -55,6 +56,15 @@ const DEFAULTS = {
 type OptKey = keyof typeof DEFAULTS;
 const INPUT = 'min-w-0 rounded-lg border border-border-c bg-bg-primary px-2 py-1 '
   + 'text-2xs text-text-primary outline-none focus:border-border-accent';
+
+const MOFID_STATE_LABEL: Record<string, string> = {
+  NEEDS_LOGIN: 'نیازمند ورود',
+  AUTHENTICATING: 'در حال بررسی',
+  AUTHENTICATED_UNVERIFIED: 'نشست تأیید نشده',
+  READ_ONLY_PROBE_OK: 'خواندن تأیید شد',
+  SESSION_EXPIRED: 'نشست منقضی',
+  READ_ONLY_PROBE_FAILED: 'بررسی ناموفق',
+};
 
 function optionText(row: StrategyRowView | undefined, key: string, fallback: string): string {
   const v = row?.settings?.options?.[key];
@@ -111,18 +121,25 @@ export default function AutoClickerPage() {
   const serverReady = readinessQ.data;
   const adapterKind = String(statusQ.data?.adapter ?? '');
   const isMofidApi = execPath === 'api' && adapterKind === 'mofid';
-  const portfolioQ = useExecutionPortfolio(isMofidApi);
-  const bpQ = useBuyingPower(isMofidApi);
-  const portfolio = portfolioQ.data;
-  const positions = portfolio?.positions ?? portfolio?.rows ?? [];
-  const selectedPosition = positions.find((r) => {
+  const mofidSessionQ = useMofidSession(isMofidApi);
+  const mofidSession = mofidSessionQ.data;
+  const [mofidProbe, setMofidProbe] = useState<MofidProbeView | null>(null);
+  const [mofidBusy, setMofidBusy] = useState('');
+  const mofidState = mofidBusy === 'verify' ? 'AUTHENTICATING'
+    : String(mofidProbe?.state ?? mofidSession?.state ?? 'NEEDS_LOGIN');
+  const mofidProbeFailed = mofidProbe != null && mofidProbe.status !== 'success';
+  const probeAccount = (mofidProbe?.account ?? null) as Record<string, unknown> | null;
+  const probePositions = (probeAccount?.positions as Array<Record<string, unknown>> | undefined) ?? [];
+  const probeOrders = (probeAccount?.orders as Array<Record<string, unknown>> | undefined) ?? [];
+  const probePosition = probePositions.find((r) => {
     const rowIsin = String(r.isin ?? '').toUpperCase();
     const rowSymbol = String(r.symbol ?? '');
     return (isin.trim() && rowIsin === isin.trim().toUpperCase())
       || (!isin.trim() && symbol.trim() && rowSymbol === symbol.trim());
   });
-  const accountOk = portfolio?.status === 'success';
-  const bpOk = bpQ.data?.status === 'success' && bpQ.data?.value != null;
+  const probeVisible = mofidState === 'READ_ONLY_PROBE_OK' && probeAccount != null;
+  const sellableState = probePosition?.sellable_state
+    ?? probePositions[0]?.sellable_state ?? '—';
 
   useEffect(() => {
     if (!browserRow || loaded) return;
@@ -145,7 +162,9 @@ export default function AutoClickerPage() {
   }, [browserRow, execPath]);
   const hostOk = execPath === 'api' || host.healthy === true;
   const sessionOk = statusQ.data?.session?.proven === true
-    || portfolio?.session_proven === true;
+    || mofidSession?.session_proven === true
+    || mofidState === 'READ_ONLY_PROBE_OK';
+  const accountGateOk = mofidState === 'READ_ONLY_PROBE_OK';
   const liveAllowed = strategies.data?.live_allowed === true;
   const selectorsOk = execPath === 'api' || Object.values(opts).every((v, i) =>
     i >= Object.keys(DEFAULTS).length - 2 ? true : v.trim().length > 0);
@@ -285,6 +304,55 @@ export default function AutoClickerPage() {
     finally { setBusy(''); }
   };
 
+  const openMofidLogin = async () => {
+    setMofidBusy('open'); setAnswer(''); setMofidProbe(null);
+    try {
+      const res = await mofidApi.loginWindow();
+      const ok = res.status === 'success';
+      setTone(ok ? 'ok' : 'bad');
+      setAnswer(ok
+        ? 'پنجرهٔ رسمی مفید باز شد؛ خودتان وارد شوید. برنامه رمز/OTP/CAPTCHA نمی‌پرسد.'
+        : String(res.detail ?? res.code ?? 'پنجرهٔ ورود باز نشد'));
+      void mofidSessionQ.refetch();
+    } catch (e) { setTone('bad'); setAnswer(e instanceof Error ? e.message : String(e)); }
+    finally { setMofidBusy(''); }
+  };
+
+  const verifyMofidSession = async () => {
+    setMofidBusy('verify'); setAnswer('');
+    // دادهٔ قبلی فوراً پاک می‌شود تا پاسخِ کهنه به‌عنوانِ نتیجهٔ فعلی نماند.
+    setMofidProbe(null);
+    try {
+      const res = await mofidApi.verifySession();
+      setMofidProbe(res);
+      const ok = res.status === 'success' && res.state === 'READ_ONLY_PROBE_OK';
+      setTone(ok ? 'ok' : 'bad');
+      setAnswer(ok
+        ? 'نشست تأیید شد و حساب فقط‌خواندنی خوانده شد؛ ارسالِ سفارش بسته است.'
+        : String(res.detail ?? res.code ?? 'بررسیِ نشست ناموفق بود'));
+      if (ok) {
+        void qc.invalidateQueries({ queryKey: ['execution-portfolio'] });
+        void qc.invalidateQueries({ queryKey: ['execution-buying-power'] });
+      }
+      void mofidSessionQ.refetch();
+    } catch (e) {
+      setTone('bad'); setAnswer(e instanceof Error ? e.message : String(e));
+    } finally { setMofidBusy(''); }
+  };
+
+  const closeMofidLogin = async () => {
+    setMofidBusy('close');
+    try {
+      const res = await mofidApi.stopWindow();
+      setTone(res.status === 'success' ? 'warn' : 'bad');
+      setAnswer(res.status === 'success'
+        ? 'پنجرهٔ ورود بسته شد؛ نشستِ حافظه دست‌نخورده است.'
+        : String(res.detail ?? res.code ?? 'پنجره بسته نشد'));
+      void mofidSessionQ.refetch();
+    } catch (e) { setTone('bad'); setAnswer(e instanceof Error ? e.message : String(e)); }
+    finally { setMofidBusy(''); }
+  };
+
   return (
     <div className="flex flex-col gap-2 p-3" data-testid="autoclicker-page">
       <header className="flex flex-wrap items-baseline gap-2">
@@ -306,9 +374,9 @@ export default function AutoClickerPage() {
             </Chip>
           ))}
           {isMofidApi ? (
-            <Chip tone={accountOk ? 'ok' : 'warn'} testId="autoclicker-gate-account"
-              title={String(portfolio?.error ?? portfolio?.state ?? 'خوانده نشده')}>
-              حساب مفید: {accountOk ? 'خوانده شد' : 'باز'}
+            <Chip tone={accountGateOk ? 'ok' : 'warn'} testId="autoclicker-gate-account"
+              title={String(mofidProbe?.detail ?? mofidState)}>
+              حساب مفید: {accountGateOk ? 'خوانده شد' : (MOFID_STATE_LABEL[mofidState] ?? 'باز')}
             </Chip>
           ) : null}
           <span className="text-3xs text-text-muted num" data-testid="autoclicker-strategy-state">
@@ -322,6 +390,12 @@ export default function AutoClickerPage() {
               ? 'host و نشست آماده‌اند؛ Probe را بزنید تا شناسه‌ها/فرم دیده شوند.'
               : 'برای Probe، host را باز و در EasyTrader وارد شوید.')}
         </Line>
+        {execPath === 'api' && adapterKind !== 'mofid' ? (
+          <Line kind="warn" testId="autoclicker-mofid-not-active">
+            آداپتورِ فعال مفید نیست (adapter={adapterKind || '—'})؛ در «تنظیم اتصال»
+            مفید آنلاین + فقط‌خواندنی را انتخاب و برنامه را restart کنید.
+          </Line>
+        ) : null}
         {serverReady ? (
           <Line kind={serverReady.live_ready ? 'ok' : 'warn'}
             testId="autoclicker-server-readiness">
@@ -340,48 +414,97 @@ export default function AutoClickerPage() {
         ) : null}
       </Section>
 
-      {isMofidApi ? (
-        <Section title="حساب مفید (فقط‌خواندنی)"
-          sub="قدرت خرید و دارایی از پاسخ کارگزاری؛ «قابل‌فروش» کرانِ محافظه‌کارانه است، نه عددِ اعلامیِ کارگزار"
+      {execPath === 'api' ? (
+        <Section title="حساب مفید (ورود دستی، فقط‌خواندنی)"
+          sub="ورود را خودتان در پنجرهٔ رسمی انجام دهید؛ سپس نشست و حساب فقط خوانده می‌شوند"
           testId="autoclicker-mofid-account">
-          <div className="flex flex-wrap gap-1">
-            <Line kind={bpOk ? 'ok' : 'warn'} testId="autoclicker-mofid-bp">
-              قدرت خرید: {bpOk
-                ? `${numText(bpQ.data?.value)} ${String(bpQ.data?.unit ?? '')}`
-                : String(bpQ.data?.state ?? bpQ.error?.message ?? 'خوانده نشده')}
-            </Line>
-            <Line kind={accountOk ? 'ok' : 'warn'} testId="autoclicker-mofid-portfolio">
-              پرتفوی: {accountOk ? `${numText(positions.length)} ردیف` :
-                String(portfolio?.state ?? portfolioQ.error?.message ?? 'خوانده نشده')}
-              {' '}· قابل‌فروش: {String(portfolio?.sellable_state ?? '—')}
-            </Line>
+          <div className="flex flex-wrap items-center gap-1">
+            <Chip tone={mofidState === 'READ_ONLY_PROBE_OK' ? 'ok' : 'warn'}
+              testId="autoclicker-mofid-state">
+              {MOFID_STATE_LABEL[mofidState] ?? mofidState}
+            </Chip>
+            <GhostBtn testId="autoclicker-mofid-login" onClick={() => void openMofidLogin()}
+              disabled={busy !== '' || mofidBusy !== ''}>ورود به حساب مفید</GhostBtn>
+            <GhostBtn testId="autoclicker-mofid-verify" onClick={() => void verifyMofidSession()}
+              disabled={busy !== '' || mofidBusy !== ''}>ورود انجام شد؛ بررسی اتصال</GhostBtn>
+            <GhostBtn testId="autoclicker-mofid-close" onClick={() => void closeMofidLogin()}
+              disabled={busy !== '' || mofidBusy !== ''}>بستن پنجرهٔ ورود</GhostBtn>
           </div>
-          {selectedPosition ? (
-            <Line kind="muted" testId="autoclicker-mofid-row">
-              {String(selectedPosition.symbol ?? selectedPosition.isin ?? '—')} ·
-              دارایی: {numText(selectedPosition.quantity ?? selectedPosition.current_asset)} ·
-              قابل‌فروش (برآورد): {numText(selectedPosition.sellable_quantity ?? selectedPosition.free_quantity)} ·
-              سفارشِ باز فروش: {numText(selectedPosition.open_sell)}
+          <Line kind="muted" testId="autoclicker-mofid-login-note">
+            رمز/OTP/CAPTCHA را خودتان در پنجرهٔ رسمی وارد کنید؛ برنامه آن را نمی‌پرسد و ذخیره نمی‌کند.
+          </Line>
+          {!isMofidApi || mofidSession?.adapter_ready === false ? (
+            <Line kind="warn" testId="autoclicker-mofid-prereq">
+              آداپتورِ فعال Mofid + فقط‌خواندنی نیست
+              ({String(mofidSession?.adapter_reason ?? (isMofidApi ? '—' : 'ADAPTER_NOT_MOFID'))})؛
+              در «تنظیم اتصال» انتخاب و برنامه را restart کنید.
             </Line>
           ) : null}
-          <div className="mt-1 flex flex-wrap items-center gap-1">
-            <GhostBtn testId="autoclicker-mofid-refresh"
-              onClick={() => {
-                void portfolioQ.refetch();
-                void bpQ.refetch();
-                void statusQ.refetch();
-              }}
-              disabled={portfolioQ.isFetching || bpQ.isFetching}>خواندن دوبارهٔ حساب</GhostBtn>
-            <span className="text-3xs text-text-muted">{String(portfolio?.source ?? '')}</span>
-          </div>
-          {positions.length > 0 ? (
-            <details className="mt-1">
-              <summary className="cursor-pointer text-3xs text-text-muted">ردیف‌های حساب</summary>
-              <pre className="mt-1 max-h-40 overflow-auto text-3xs text-text-muted" dir="ltr">
-                {JSON.stringify(positions.slice(0, 20), null, 1)}
-              </pre>
-            </details>
+          {mofidState === 'AUTHENTICATING' ? (
+            <Line kind="warn" testId="autoclicker-mofid-progress">
+              در حال خواندن و تأییدِ فقط‌خواندنی…
+            </Line>
           ) : null}
+          {mofidState === 'AUTHENTICATED_UNVERIFIED' ? (
+            <Line kind="warn" testId="autoclicker-mofid-unverified">
+              نشست در حافظه است ولی خواندن هنوز تأیید نشده؛ «بررسی اتصال» را بزنید.
+            </Line>
+          ) : null}
+          {mofidProbeFailed ? (
+            <Line kind="error" testId="autoclicker-mofid-error">
+              {String(mofidProbe?.detail ?? mofidProbe?.code ?? 'بررسی ناموفق')}
+            </Line>
+          ) : null}
+          {probeVisible ? (
+            <>
+              <div className="flex flex-wrap gap-1">
+                <Line kind="ok" testId="autoclicker-mofid-bp">
+                  قدرت خرید: {numText(probeAccount?.buying_power)}
+                  {' '}{String(probeAccount?.unit ?? '')}
+                </Line>
+                <Line kind="ok" testId="autoclicker-mofid-portfolio">
+                  دارایی: {numText(probePositions.length)} ردیف ·
+                  سفارش باز: {numText(probeOrders.length)} ·
+                  جزئیات: {numText(mofidProbe?.counts?.order_details)}
+                </Line>
+              </div>
+              {probePosition ? (
+                <Line kind="muted" testId="autoclicker-mofid-row">
+                  {String(probePosition.symbol ?? probePosition.isin ?? '—')} ·
+                  دارایی: {numText(probePosition.current_asset)} ·
+                  قابل‌فروش (برآورد): {numText(probePosition.sellable)} ·
+                  سفارشِ باز فروش: {numText(probePosition.open_sell)}
+                </Line>
+              ) : null}
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                <span className="text-3xs text-text-muted" data-testid="autoclicker-mofid-sellable-state">
+                  sellable: {String(sellableState)}
+                </span>
+                <span className="text-3xs text-text-muted">
+                  {String(probeAccount?.source ?? '')}
+                </span>
+              </div>
+              <div className="text-3xs text-text-muted" data-testid="autoclicker-mofid-steps">
+                گام‌ها: {Object.entries(mofidProbe?.steps ?? {})
+                  .map(([k, v]) => `${k}:${v}`).join(' · ') || '—'}
+              </div>
+              <details className="mt-1">
+                <summary className="cursor-pointer text-3xs text-text-muted">
+                  ردیف‌های حساب و سفارش‌ها
+                </summary>
+                <pre className="mt-1 max-h-40 overflow-auto text-3xs text-text-muted" dir="ltr">
+                  {JSON.stringify({
+                    positions: probePositions.slice(0, 20),
+                    orders: probeOrders.slice(0, 20),
+                    details: mofidProbe?.account?.order_details ?? [],
+                  }, null, 1)}
+                </pre>
+              </details>
+            </>
+          ) : null}
+          <Line kind="muted" testId="autoclicker-mofid-live-closed">
+            ارسال سفارش بسته است: live_enabled=false · live_ready=false
+          </Line>
         </Section>
       ) : null}
 
@@ -515,6 +638,7 @@ export default function AutoClickerPage() {
           <li>مسیر مرورگر فرمِ کارگزاری را پر نمی‌کند؛ قیمت/تعداد را خودتان در EasyTrader وارد می‌کنید.</li>
           <li>مسیر API از آداپتورِ فعالِ سرور پیروی می‌کند: EasyTrader (Orbis) یا Mofid (Titan)؛ انتخابِ آداپتور در «تنظیم اتصال» است.</li>
           <li>حساب مفید فقط خوانده می‌شود؛ «قابل‌فروش» برآوردِ محافظه‌کارانه از پرتفوی است و نوشتن/پاسخِ ثبت تأیید نشده.</li>
+          <li>پنجرهٔ ورود مفید فقط برای ورود دستیِ خودتان است؛ برنامه رمز/OTP/CAPTCHA نمی‌پرسد و نشست را فقط در حافظه نگه می‌دارد.</li>
           <li>هیچ ارسالِ Live از این صفحه انجام نمی‌شود؛ `live_allowed` باید false بماند.</li>
           <li>dry-run مرورگر یک کلیک با intercept است و dry-run API هیچ ترابری صدا نمی‌زند؛ هیچ‌کدام پذیرش سفارش نیست.</li>
         </ul>

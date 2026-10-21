@@ -15,12 +15,23 @@ const api = vi.hoisted(() => ({
   refetchPortfolio: vi.fn(async () => ({})),
   refetchBp: vi.fn(async () => ({})),
   refetchStatus: vi.fn(async () => ({})),
+  refetchMofid: vi.fn(async () => ({})),
+  mofidLogin: vi.fn(async () => ({ status: 'success', code: 'LOGIN_WINDOW_OPEN' })),
+  mofidStop: vi.fn(async () => ({ status: 'success' })),
+  mofidVerify: vi.fn(async (): Promise<Record<string, unknown>> => ({
+    status: 'success', code: 'READ_ONLY_PROBE_OK', state: 'READ_ONLY_PROBE_OK',
+    detail: '', account: null, steps: {}, counts: {},
+  })),
 }));
 
 const ui = vi.hoisted(() => ({
   adapter: 'easytrader' as string,
   portfolio: null as Record<string, unknown> | null,
   bp: null as Record<string, unknown> | null,
+  mofidSession: {
+    status: 'success', state: 'NEEDS_LOGIN', reason: 'LOGIN_REQUIRED',
+    adapter_ready: true, session_proven: false, host_open: false,
+  } as Record<string, unknown>,
 }));
 
 vi.mock('@features/portfolio/lib/orderClient', () => ({
@@ -34,6 +45,16 @@ vi.mock('@features/portfolio/lib/orderClient', () => ({
     strategyOrder: api.order,
   },
   browserHostApi: { start: vi.fn(async () => ({ status: 'success' })) },
+  mofidApi: {
+    loginWindow: api.mofidLogin,
+    stopWindow: api.mofidStop,
+    verifySession: api.mofidVerify,
+    session: vi.fn(async () => ui.mofidSession),
+  },
+  useMofidSession: () => ({
+    data: ui.mofidSession, isPending: false, isFetching: false, error: null,
+    refetch: api.refetchMofid,
+  }),
   useStrategies: () => ({
     data: {
       status: 'success', live_allowed: false,
@@ -95,6 +116,10 @@ beforeEach(() => {
   ui.adapter = 'easytrader';
   ui.portfolio = null;
   ui.bp = null;
+  ui.mofidSession = {
+    status: 'success', state: 'NEEDS_LOGIN', reason: 'LOGIN_REQUIRED',
+    adapter_ready: true, session_proven: false, host_open: false,
+  };
   localStorage.clear();
 });
 
@@ -200,32 +225,61 @@ describe('AutoClicker — تنظیمات و آمادگی', () => {
       .toContain('زمان‌بندی'));
   });
 
-  it('مسیر API مفید حسابِ خوانده‌شده و برچسبِ sellable را نشان می‌دهد', async () => {
+  it('ورود دستی، بررسی اتصال و نمایشِ حسابِ probe را دنبال می‌کند', async () => {
     ui.adapter = 'mofid';
-    ui.portfolio = {
-      status: 'success', state: 'PORTFOLIO_READ_ONLY_UNVERIFIED',
-      sellable_state: 'CLIENT_DERIVED_UNVERIFIED',
-      source: 'mofid:/Portfolio/Daily + /Order/customer/status (first-party Titan client)',
-      positions: [{ isin: 'IRO1TEST0001', symbol: 'TEST', quantity: 1000,
-        sellable_quantity: 850, open_sell: 50 }],
-      error: null,
-    };
-    ui.bp = { status: 'success', state: 'BUYING_POWER_VERIFIED',
-      value: 500000000, unit: 'IRR' };
+    api.mofidVerify.mockResolvedValueOnce({
+      status: 'success', code: 'READ_ONLY_PROBE_OK', state: 'READ_ONLY_PROBE_OK',
+      detail: '', account: {
+        buying_power: 500000000, unit: 'IRR', source: 'mofid:/Order/customer/status',
+        positions: [{ isin: 'IRO1TEST0001', symbol: 'TEST', current_asset: 1000,
+          sellable: 850, open_sell: 50,
+          sellable_state: 'CLIENT_DERIVED_UNVERIFIED' }],
+        orders: [], today_orders: [], order_details: [],
+      },
+      counts: { positions: 1, open_orders: 0, today_orders: 0, order_details: 0 },
+      steps: { session: 'PASS', money: 'PASS', positions: 'PASS' },
+    });
     renderPage();
     fireEvent.click(screen.getByTestId('autoclicker-path-api'));
     await waitFor(() => expect(screen.getByTestId('autoclicker-mofid-account')).toBeTruthy());
+    expect(screen.getByTestId('autoclicker-mofid-state').textContent).toContain('نیازمند ورود');
+    fireEvent.click(screen.getByTestId('autoclicker-mofid-login'));
+    await waitFor(() => expect(api.mofidLogin).toHaveBeenCalled());
+    expect(screen.getByTestId('autoclicker-mofid-login-note').textContent)
+      .toContain('رمز');
+    fireEvent.click(screen.getByTestId('autoclicker-mofid-verify'));
+    await waitFor(() => expect(api.mofidVerify).toHaveBeenCalled());
+    await waitFor(() => expect(screen.getByTestId('autoclicker-mofid-state').textContent)
+      .toContain('خواندن تأیید شد'));
     expect(screen.getByTestId('autoclicker-mofid-bp').textContent).toContain('IRR');
     expect(screen.getByTestId('autoclicker-mofid-bp').textContent).toContain('۵۰۰');
-    expect(screen.getByTestId('autoclicker-mofid-portfolio').textContent)
+    expect(screen.getByTestId('autoclicker-mofid-sellable-state').textContent)
       .toContain('CLIENT_DERIVED_UNVERIFIED');
     fireEvent.change(screen.getByTestId('autoclicker-symbol'), { target: { value: 'TEST' } });
     await waitFor(() => expect(screen.getByTestId('autoclicker-mofid-row').textContent)
       .toContain('۸۵۰'));
-    fireEvent.click(screen.getByTestId('autoclicker-mofid-refresh'));
-    await waitFor(() => expect(api.refetchPortfolio).toHaveBeenCalled());
-    expect(api.refetchBp).toHaveBeenCalled();
-    expect(api.refetchStatus).toHaveBeenCalled();
-    expect(screen.getByTestId('autoclicker-gate-account').textContent).toContain('خوانده شد');
+    expect(screen.getByTestId('autoclicker-mofid-live-closed').textContent)
+      .toContain('live_ready=false');
+    expect(screen.getByTestId('autoclicker-gate-account').textContent)
+      .toContain('خوانده شد');
+    fireEvent.click(screen.getByTestId('autoclicker-mofid-close'));
+    await waitFor(() => expect(api.mofidStop).toHaveBeenCalled());
+  });
+
+  it('بررسیِ ناموفق، دادهٔ قبلی را پاک می‌کند و خطا را نشان می‌دهد', async () => {
+    ui.adapter = 'mofid';
+    api.mofidVerify.mockResolvedValueOnce({
+      status: 'error', code: 'TIMEOUT', state: 'READ_ONLY_PROBE_FAILED',
+      detail: 'پاسخ نیامد؛ retry ممنوع', account: null, steps: { session: 'PASS' },
+    });
+    renderPage();
+    fireEvent.click(screen.getByTestId('autoclicker-path-api'));
+    await waitFor(() => expect(screen.getByTestId('autoclicker-mofid-verify')).toBeTruthy());
+    fireEvent.click(screen.getByTestId('autoclicker-mofid-verify'));
+    await waitFor(() => expect(screen.getByTestId('autoclicker-mofid-error').textContent)
+      .toContain('retry'));
+    expect(screen.queryByTestId('autoclicker-mofid-bp')).toBeNull();
+    expect(screen.getByTestId('autoclicker-mofid-state').textContent)
+      .toContain('بررسی ناموفق');
   });
 });

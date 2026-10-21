@@ -218,8 +218,17 @@ def main() -> int:
     detail = ad_ro.get_order("O-1")
     ck(detail is not None and detail.order_state is OrderState.FILLED,
        "detail/state وضعیت را می‌دهد", detail)
-    ck(ad_ro.get_order("missing") is None,
-       "detail/state 404 ⇒ None (فهرست دیده شد و نبود)")
+    try:
+        ad_ro.get_order("missing")
+        ro_unknown = None
+    except Exception as e:                       # noqa: BLE001
+        ro_unknown = getattr(e, "code", None)
+    ck(ro_unknown is ErrorCode.UNSUPPORTED,
+       "read_only: شناسهٔ خارج از فهرست پیش از هر درخواست مسدود می‌شود", ro_unknown)
+    ad_live = MofidAdapter(transport=rt, token=long_tok, writes_allowed=True,
+                          read_only=False)
+    ck(ad_live.get_order("missing") is None,
+       "detail/state 404 ⇒ None در حالتِ غیرِ read_only")
     ck(map_order_state("Open") is OrderState.OPEN
        and map_order_state("Done") is OrderState.FILLED
        and map_order_state("Cancel") is OrderState.CANCELLED

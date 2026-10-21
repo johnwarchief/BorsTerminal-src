@@ -59,7 +59,10 @@ from execution_easytrader import (
     WIRE_HYPOTHESIS, WIRE_PROBE_HOST_HEALTH, WIRE_SESSION_PROBE_CANDIDATES,
     easytrader_payload,
 )
-from execution_mofid import MofidAdapter, SELLABLE_FORMULA, SELLABLE_STATE
+from execution_mofid import (
+    MOFID_LOGIN_URL, MofidAdapter, SELLABLE_FORMULA, SELLABLE_STATE,
+)
+import execution_mofid_capture as EMC                        # noqa: E402
 import execution_connect as EXC                            # noqa: E402
 import execution_connection as ECONN                       # noqa: E402
 import execution_browser_host as BH                        # noqa: E402
@@ -88,6 +91,13 @@ PORTFOLIO_UNAVAILABLE = "PORTFOLIO_UNAVAILABLE"
 #: مسیرِ Mofid از بستهٔ خودِ کارگزاری خوانده شده، ولی پاسخِ واقعیِ حساب در این
 #: ماشین دیده نشده؛ «verified» نامیدنش ادعایِ بی‌شاهد است.
 PORTFOLIO_READ_ONLY_UNVERIFIED = "PORTFOLIO_READ_ONLY_UNVERIFIED"
+#: وضعیت‌هایِ گردشِ ورودِ دستیِ Mofid؛ فقط از پاسخِ واقعیِ درخواست‌ها ساخته می‌شوند.
+MOFID_NEEDS_LOGIN = "NEEDS_LOGIN"
+MOFID_AUTHENTICATING = "AUTHENTICATING"
+MOFID_AUTHENTICATED_UNVERIFIED = "AUTHENTICATED_UNVERIFIED"
+MOFID_READ_ONLY_PROBE_OK = "READ_ONLY_PROBE_OK"
+MOFID_SESSION_EXPIRED = "SESSION_EXPIRED"
+MOFID_READ_ONLY_PROBE_FAILED = "READ_ONLY_PROBE_FAILED"
 BUYING_POWER_VERIFIED = "BUYING_POWER_VERIFIED"
 BUYING_POWER_UNAVAILABLE = "BUYING_POWER_UNAVAILABLE"
 ACCOUNT_SOURCE_BLOCKED = "ACCOUNT_SOURCE_BLOCKED"
@@ -174,7 +184,8 @@ def _adapter() -> BrokerAdapter:
             transport=RequestsTransport() if TRAFFIC_ALLOWED else RefusingTransport(),
             token=(os.environ.get("BORS_MOFID_TOKEN") or ""),
             cookie=(os.environ.get("BORS_MOFID_COOKIE") or ""),
-            writes_allowed=bool(LIVE_REQUESTED))
+            writes_allowed=bool(LIVE_REQUESTED),
+            read_only=not LIVE_REQUESTED)
         return _MOFID
     # صف/وضعیت/لیست را بدل «می‌دهد» تا مسیرِ reconcile و پایشِ صف قابلِ دیدن
     # باشد؛ `balances` عمداً False است تا پیش‌فرود «بی‌داده» را از «صفر» جدا
@@ -1914,6 +1925,311 @@ def delete_browser_host() -> dict[str, Any]:
         os.environ.pop("BORS_EXECUTION_CDP_URL", None)
     return {"status": "success" if got.get("status") == "closed" else "error",
             "host": got}
+
+
+# ── ۲.۴.۷) ورودِ دستیِ Mofid: پنجرهٔ اختصاصی + پلِ فقط‌خواندنی ───────────────
+_MOFID_SESSION: dict[str, Any] = {
+    "state": MOFID_NEEDS_LOGIN, "reason": "LOGIN_REQUIRED",
+    "checked_at": None, "steps": {}, "counts": {},
+}
+_MOFID_SESSION_LOCK = threading.Lock()
+
+
+def _mofid_adapter_ready() -> tuple[bool, str]:
+    if ADAPTER_KIND != "mofid":
+        return False, "ADAPTER_NOT_MOFID"
+    if not TRAFFIC_ALLOWED:
+        return False, "TRAFFIC_OFF"
+    if not isinstance(_ACTIVE_ADAPTER, MofidAdapter):
+        return False, "ADAPTER_NOT_MOFID"
+    if not bool(getattr(_ACTIVE_ADAPTER, "read_only", False)):
+        return False, "NOT_READ_ONLY"
+    return True, ""
+
+
+def _mofid_host() -> dict[str, Any]:
+    return BH.read_status(check=True, name="mofid")
+
+
+def _mofid_set_state(state: str, *, reason: str = "",
+                     steps: Mapping[str, str] | None = None,
+                     counts: Mapping[str, Any] | None = None) -> None:
+    with _MOFID_SESSION_LOCK:
+        _MOFID_SESSION.update({
+            "state": str(state),
+            "reason": str(reason or "")[:160],
+            "checked_at": time.strftime("%Y-%m-%dT%H:%M:%S"),
+            "steps": {str(k): str(v) for k, v in (steps or {}).items()},
+            "counts": {str(k): v for k, v in (counts or {}).items()},
+        })
+
+
+def _mofid_state_dict() -> dict[str, Any]:
+    ready, ready_reason = _mofid_adapter_ready()
+    host = _mofid_host()
+    with _MOFID_SESSION_LOCK:
+        snap = dict(_MOFID_SESSION)
+        steps = dict(snap.get("steps") or {})
+        counts = dict(snap.get("counts") or {})
+    state = str(snap.get("state") or MOFID_NEEDS_LOGIN)
+    reason = str(snap.get("reason") or "")
+    proven = bool(getattr(_ACTIVE_ADAPTER, "session_proven", lambda: False)())
+    if not ready:
+        state, reason = MOFID_NEEDS_LOGIN, ready_reason
+    elif state == MOFID_AUTHENTICATING:
+        pass
+    elif state in (MOFID_SESSION_EXPIRED, MOFID_READ_ONLY_PROBE_FAILED):
+        pass
+    elif proven and state == MOFID_READ_ONLY_PROBE_OK:
+        pass
+    elif proven:
+        state, reason = MOFID_AUTHENTICATED_UNVERIFIED, "PROBE_NOT_RUN"
+    else:
+        state = MOFID_NEEDS_LOGIN
+        reason = reason or ("HOST_OPEN_WAITING_LOGIN" if host.get("healthy")
+                            else "HOST_DOWN")
+    return {
+        "status": "success", "adapter": ADAPTER_KIND,
+        "state": state, "reason": reason,
+        "adapter_ready": ready, "adapter_reason": ready_reason,
+        "host_open": bool(host.get("healthy")),
+        "host_status": str(host.get("status") or "closed"),
+        "host_name": "mofid",
+        "token_present": bool(getattr(_ACTIVE_ADAPTER, "has_token",
+                                      lambda: False)()),
+        "session_proven": proven,
+        "checked_at": snap.get("checked_at"),
+        "steps": steps, "counts": counts,
+        "login_url": MOFID_LOGIN_URL,
+        "read_only": bool(getattr(_ACTIVE_ADAPTER, "read_only", False)),
+        "live_enabled": False,
+        "live_ready": False,
+        "secrets_returned": False,
+        "secrets_stored": False,
+    }
+
+
+def _mofid_failure(code: str, state: str, detail: str,
+                   steps: Mapping[str, str] | None = None) -> dict[str, Any]:
+    return {
+        "status": "error", "code": str(code)[:80], "state": state,
+        "detail": str(redact(detail))[:200], "steps": dict(steps or {}),
+        "account": None, "read_only": True,
+        "live_enabled": False, "live_ready": False,
+        "secrets_returned": False, "secrets_stored": False,
+        "checked_at": time.strftime("%Y-%m-%dT%H:%M:%S"),
+    }
+
+
+def _mofid_record_summary(rec: ExecutionRecord) -> dict[str, Any]:
+    return {
+        "broker_order_id": rec.broker_order_id,
+        "symbol": rec.symbol, "isin": rec.isin,
+        "side": rec.side.value, "price": rec.price, "quantity": rec.quantity,
+        "filled_quantity": rec.filled_quantity,
+        "order_state": rec.order_state.value,
+        "events": list(rec.events),
+    }
+
+
+def _mofid_verify_session() -> dict[str, Any]:
+    ready, reason = _mofid_adapter_ready()
+    if not ready:
+        _mofid_set_state(MOFID_NEEDS_LOGIN, reason=reason)
+        return _mofid_failure("ADAPTER_NOT_READY", MOFID_NEEDS_LOGIN,
+                              "آداپتورِ فعال Mofid + فقط‌خواندنی نیست (%s)" % reason)
+    host = _mofid_host()
+    if not host.get("healthy"):
+        _mofid_set_state(MOFID_NEEDS_LOGIN, reason="HOST_DOWN")
+        return _mofid_failure("HOST_DOWN", MOFID_NEEDS_LOGIN,
+                              "پنجرهٔ ورودِ Mofid باز/سالم نیست")
+    cdp = str(host.get("cdp_url") or "")
+    _mofid_set_state(MOFID_AUTHENTICATING, reason="CAPTURING_SESSION")
+    try:
+        token, meta = EMC.capture_from_host(cdp)
+    except EMC.CaptureError as e:
+        state = (MOFID_SESSION_EXPIRED if e.code == "EXPIRED"
+                 else MOFID_NEEDS_LOGIN if e.code in ("NO_SESSION", "LOGIN_REQUIRED")
+                 else MOFID_READ_ONLY_PROBE_FAILED)
+        _mofid_set_state(state, reason=e.code)
+        return _mofid_failure(e.code, state, e.detail)
+    except Exception as e:                       # noqa: BLE001 - مرزِ مرورگر
+        _mofid_set_state(MOFID_READ_ONLY_PROBE_FAILED, reason="CAPTURE_FAILED")
+        return _mofid_failure("CAPTURE_FAILED", MOFID_READ_ONLY_PROBE_FAILED,
+                              "%s: %s" % (type(e).__name__, str(e)[:120]))
+    try:
+        _ACTIVE_ADAPTER.set_token(token)
+    except Exception as e:                       # noqa: BLE001
+        return _mofid_failure("TOKEN_SET_FAILED", MOFID_READ_ONLY_PROBE_FAILED,
+                              "آداپتور توکن را نپذیرفت (%s)" % type(e).__name__)
+    finally:
+        token = ""
+    _void_confirmations("mofid token replaced")
+    steps: dict[str, str] = {"session": "PASS"}
+    try:
+        st = _ACTIVE_ADAPTER.authenticate()
+    except BrokerError as e:
+        state = (MOFID_SESSION_EXPIRED
+                 if e.code in (ErrorCode.SESSION_EXPIRED, ErrorCode.AUTH_FAILED)
+                 else MOFID_READ_ONLY_PROBE_FAILED)
+        steps["session"] = "FAIL"
+        _mofid_set_state(state, reason=e.code.value, steps=steps)
+        return _mofid_failure(e.code.value, state, e.detail, steps)
+    try:
+        money = _ACTIVE_ADAPTER.get_money()
+        steps["money"] = "PASS"
+        positions = _ACTIVE_ADAPTER.get_positions()
+        steps["positions"] = "PASS"
+        orders = _ACTIVE_ADAPTER.get_orders()
+        steps["open_orders"] = "PASS"
+        today = _ACTIVE_ADAPTER.get_today_orders()
+        steps["today_orders"] = "PASS"
+    except BrokerError as e:
+        state = (MOFID_SESSION_EXPIRED
+                 if e.code in (ErrorCode.SESSION_EXPIRED, ErrorCode.AUTH_FAILED)
+                 else MOFID_READ_ONLY_PROBE_FAILED)
+        _mofid_set_state(state, reason=e.code.value, steps=steps)
+        return _mofid_failure(e.code.value, state, e.detail, steps)
+    except Exception as e:                       # noqa: BLE001 - مرزِ adapter
+        _mofid_set_state(MOFID_READ_ONLY_PROBE_FAILED,
+                         reason=type(e).__name__, steps=steps)
+        return _mofid_failure(type(e).__name__, MOFID_READ_ONLY_PROBE_FAILED,
+                              str(e)[:160], steps)
+    order_ids: list[str] = []
+    for rec in list(orders) + list(today):
+        oid = str(rec.broker_order_id or "").strip()
+        if oid and oid not in order_ids:
+            order_ids.append(oid)
+    details: list[dict[str, Any]] = []
+    if not order_ids:
+        steps["order_detail"] = "SKIPPED_NO_ORDERS"
+    else:
+        try:
+            for oid in order_ids[:3]:
+                rec = _ACTIVE_ADAPTER.get_order(oid)
+                if rec is not None:
+                    details.append(_mofid_record_summary(rec))
+            steps["order_detail"] = "PASS"
+        except BrokerError as e:
+            state = (MOFID_SESSION_EXPIRED
+                     if e.code in (ErrorCode.SESSION_EXPIRED, ErrorCode.AUTH_FAILED)
+                     else MOFID_READ_ONLY_PROBE_FAILED)
+            steps["order_detail"] = "FAIL"
+            _mofid_set_state(state, reason=e.code.value, steps=steps)
+            return _mofid_failure(e.code.value, state, e.detail, steps)
+    account = {
+        "buying_power": money.get("buying_power"),
+        "cash": money.get("cash"), "blocked": money.get("blocked"),
+        "credit": money.get("credit"), "margin_block": money.get("margin_block"),
+        "unit": money.get("unit"), "unit_evidence": money.get("unit_evidence"),
+        "formula": money.get("formula"), "source": money.get("source"),
+        "fetched_at": money.get("fetched_at"),
+        "positions": positions,
+        "orders": [_mofid_record_summary(r) for r in orders],
+        "today_orders": [_mofid_record_summary(r) for r in today],
+        "order_details": details,
+    }
+    counts = {"positions": len(positions), "open_orders": len(orders),
+              "today_orders": len(today), "order_details": len(details)}
+    _mofid_set_state(MOFID_READ_ONLY_PROBE_OK, steps=steps, counts=counts)
+    return {
+        "status": "success", "code": "READ_ONLY_PROBE_OK",
+        "state": MOFID_READ_ONLY_PROBE_OK,
+        "session": {"state": st.state.value, "account_label": st.account_label,
+                    "checked_at": st.checked_at, "proven": True,
+                    "verified_by": dict(getattr(_ACTIVE_ADAPTER, "session_proof", {}) or {}),
+                    "page_host": meta.get("page_host"),
+                    "token_type": meta.get("token_type"),
+                    "token_length": meta.get("token_length"),
+                    "expires_at": meta.get("expires_at")},
+        "account": account, "steps": steps, "counts": counts,
+        "read_only": True, "live_enabled": False, "live_ready": False,
+        "secrets_returned": False, "secrets_stored": False,
+        "checked_at": time.strftime("%Y-%m-%dT%H:%M:%S"),
+    }
+
+
+@router.get("/api/execution/mofid/session")
+def get_mofid_session() -> dict[str, Any]:
+    return _mofid_state_dict()
+
+
+@router.post("/api/execution/mofid/login-window")
+def post_mofid_login_window(request: Request) -> dict[str, Any]:
+    origin = request.headers.get("origin") or ""
+    if origin and not _same_origin(origin, request.headers.get("host") or ""):
+        return {"status": "error", "code": "CROSS_ORIGIN_BLOCKED",
+                "detail": "این در فقط از خودِ رابطِ محلی پذیرفته می‌شود",
+                "secrets_returned": False, "secrets_stored": False}
+    ready, reason = _mofid_adapter_ready()
+    existing = _mofid_host()
+    if not existing.get("healthy"):
+        if bool(getattr(sys, "frozen", False)):
+            cmd = [sys.executable, "--browser-host", "--name", "mofid",
+                   "--url", MOFID_LOGIN_URL]
+            cwd = os.path.dirname(sys.executable)
+        else:
+            root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            cmd = [sys.executable, os.path.join(root, "execution_browser_host.py"),
+                   "--name", "mofid", "--url", MOFID_LOGIN_URL]
+            cwd = root
+        flags = 0
+        if os.name == "nt":
+            flags = (getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0)
+                     | getattr(subprocess, "DETACHED_PROCESS", 0))
+        try:
+            subprocess.Popen(cmd, cwd=cwd, env=dict(os.environ),
+                             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                             creationflags=flags)
+        except Exception as e:                   # noqa: BLE001
+            return {"status": "error", "code": "LOGIN_WINDOW_FAILED",
+                    "detail": "%s: %s" % (type(e).__name__, str(e)[:120]),
+                    "adapter_ready": ready, "reason": reason,
+                    "login_url": MOFID_LOGIN_URL}
+        deadline = time.monotonic() + 30.0
+        while time.monotonic() < deadline:
+            existing = _mofid_host()
+            if existing.get("healthy"):
+                break
+            time.sleep(0.25)
+    healthy = bool(existing.get("healthy"))
+    if not healthy:
+        return {"status": "error", "code": "LOGIN_WINDOW_NOT_READY",
+                "host": {"name": "mofid", "status": str(existing.get("status") or "closed"),
+                         "healthy": False},
+                "adapter_ready": ready, "reason": reason,
+                "login_url": MOFID_LOGIN_URL,
+                "detail": "پنجرهٔ ورود در ۳۰ ثانیه آماده نشد"}
+    if not bool(getattr(_ACTIVE_ADAPTER, "session_proven", lambda: False)()):
+        _mofid_set_state(MOFID_NEEDS_LOGIN,
+                         reason=("WAITING_FOR_MANUAL_LOGIN" if ready
+                                 else reason or "ADAPTER_NOT_READY"))
+    return {"status": "success", "code": "LOGIN_WINDOW_OPEN",
+            "host": {"name": "mofid", "status": "ready", "healthy": True},
+            "login_url": MOFID_LOGIN_URL,
+            "adapter_ready": ready, "reason": reason,
+            "session": _mofid_state_dict(),
+            "note": "ورود را خودتان در همین پنجره انجام دهید؛ هیچ رمز/OTP/CAPTCHA "
+                    "از طرفِ برنامه پرسیده یا دور زده نمی‌شود."}
+
+
+@router.delete("/api/execution/mofid/login-window")
+def delete_mofid_login_window() -> dict[str, Any]:
+    got = BH.stop_host(name="mofid")
+    return {"status": "success" if got.get("status") == "closed" else "error",
+            "host": {k: got.get(k) for k in ("status", "healthy", "name", "code")}}
+
+
+@router.post("/api/execution/mofid/verify-session")
+def post_mofid_verify_session(request: Request) -> dict[str, Any]:
+    origin = request.headers.get("origin") or ""
+    if origin and not _same_origin(origin, request.headers.get("host") or ""):
+        return {"status": "error", "code": "CROSS_ORIGIN_BLOCKED",
+                "detail": "این در فقط از خودِ رابطِ محلی پذیرفته می‌شود",
+                "secrets_returned": False, "secrets_stored": False}
+    out = _mofid_verify_session()
+    out["session_state"] = _mofid_state_dict()
+    return out
 
 
 # ── ۲.۵) تنظیمِ اتصال و پرتفویِ فقط‌خواندنی ─────────────────────────────────

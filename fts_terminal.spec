@@ -199,6 +199,7 @@ a = Analysis(
                    'execution_browser',
                    # زمان‌بندیِ ماندگار (۲۰۲۶-۱۰-۲۰): سطح-بالِ api/execution.py.
                    'execution_schedule', 'execution_daemon', 'execution_browser_host', 'execution_offerings', 'execution_cockpit', 'execution_connection', 'execution_session_capture',
+                   'execution_mofid_capture',
                    # Playwright برایِ Strategyهای مرورگری؛ باینریِ مرورگر از
                    # سیستم (Edge/Chrome) یا نصبِ محلی می‌آید، نه از بسته.
                    'playwright', 'playwright.sync_api',

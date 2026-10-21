@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import json
 import math
+import re
 import time
 from typing import Any, Mapping, Optional
 
@@ -41,6 +42,9 @@ WIRE_WEB_V4 = "https://api.mofidonline.com/Web/V4"
 WIRE_PATH_ORDER_CREATE = "/apigateway/api/v1/Order/send"
 WIRE_URL = WIRE_BASE_URL + WIRE_PATH_ORDER_CREATE
 WIRE_ORIGIN = "https://tg.mofidonline.com"
+#: ورودیِ رسمیِ اپِ Titan؛ مسیرِ /login هم در buildManifest همان بسته هست، ولی
+#: ریشهٔ همان origin را باز می‌کنیم تا خودِ کلاینت مسیرِ ورود را انتخاب کند.
+MOFID_LOGIN_URL = WIRE_ORIGIN + "/"
 WIRE_APP_NAME = "titan"
 WIRE_ORDER_FROM = "Titan"
 WIRE_VALIDITY_DAY = 0
@@ -70,6 +74,7 @@ SELLABLE_FORMULA = ("max(0, min(currentAsset, currentAsset + todaySoldAsset - "
                     "todayBoughtAsset) - openSellOrders)")
 SELLABLE_STATE = "CLIENT_DERIVED_UNVERIFIED"
 WRITE_STATE = "UNVERIFIED"
+_ORDER_ID_RE = re.compile(r"[A-Za-z0-9._-]{1,64}")
 UNIT = "IRR"
 UNIT_EVIDENCE = ("Titan error catalog states minimum order values in ریال; "
                  "order price/volume fields use the same unit")
@@ -210,18 +215,23 @@ class MofidAdapter(BrokerAdapter):
     def __init__(self, *, transport: Optional[Transport] = None,
                  token: Any = None, cookie: Any = None,
                  order_url: str = WIRE_URL, writes_allowed: bool = True,
-                 timeout_s: float = 7.0) -> None:
+                 read_only: bool | None = None, timeout_s: float = 7.0) -> None:
         self._transport = transport or RefusingTransport()
         self._token = _Secret(token)
         self._cookie = _Secret(cookie)
         self.order_url = str(order_url or WIRE_URL)
         self._writes_allowed = bool(writes_allowed)
+        # حالتِ تستِ این راند: هر درخواست باید GET و درِ allowlist باشد. این
+        # قفل درِ خودِ `_call` است، نه فقط درِ UI.
+        self._read_only = (bool(read_only) if read_only is not None
+                           else not self._writes_allowed)
         self.timeout_s = float(timeout_s)
         self.wire_calls: list[str] = []
         self.redacted_log: list[dict[str, Any]] = []
         self.session_proof: dict[str, Any] = {}
         self._verified_token: Optional[_Secret] = None
         self._status_cache: tuple[float, Any] | None = None
+        self._known_order_ids: set[str] = set()
         self._session = SessionStatus(
             SessionState.UNKNOWN if (self._token or self._cookie)
             else SessionState.DISCONNECTED)
@@ -237,13 +247,18 @@ class MofidAdapter(BrokerAdapter):
 
     @property
     def writes_allowed(self) -> bool:
-        return bool(self._writes_allowed and self.live)
+        return bool(self._writes_allowed and self.live and not self._read_only)
+
+    @property
+    def read_only(self) -> bool:
+        return bool(self._read_only)
 
     def set_token(self, value: Any) -> None:
         self._token = _Secret(value)
         self._verified_token = None
         self.session_proof = {}
         self._status_cache = None
+        self._known_order_ids.clear()
         self._session = SessionStatus(SessionState.UNKNOWN if self._token
                                       else SessionState.DISCONNECTED)
 
@@ -256,13 +271,14 @@ class MofidAdapter(BrokerAdapter):
         self._verified_token = None
         self.session_proof = {}
         self._status_cache = None
+        self._known_order_ids.clear()
         self._session = SessionStatus(SessionState.DISCONNECTED)
 
     def capabilities(self) -> Capabilities:
         if not self.live:
             return Capabilities(place=False, balances=False)
-        return Capabilities(place=bool(self._writes_allowed), list_orders=True,
-                            order_state=True, balances=True)
+        return Capabilities(place=bool(self._writes_allowed and not self._read_only),
+                            list_orders=True, order_state=True, balances=True)
 
     # ---- ترافیک -----------------------------------------------------------
     def _headers(self, extra: Optional[Mapping[str, str]] = None) -> dict[str, str]:
@@ -277,9 +293,26 @@ class MofidAdapter(BrokerAdapter):
             h.update({str(k): str(v) for k, v in extra.items()})
         return h
 
+    @staticmethod
+    def _read_url_allowed(method: str, url: str) -> bool:
+        if str(method).upper() != "GET":
+            return False
+        if url in (URL_CUSTOMER_STATUS, URL_PORTFOLIO_DAILY,
+                   URL_OPEN_ORDERS, URL_TODAY_ORDER):
+            return True
+        for prefix in (WIRE_GATEWAY_V1 + WIRE_PATH_ORDER_DETAIL,
+                       WIRE_GATEWAY_V1 + WIRE_PATH_ORDER_STATE):
+            if url.startswith(prefix):
+                return bool(_ORDER_ID_RE.fullmatch(url[len(prefix):]))
+        return False
+
     def _call(self, method: str, url: str, *, tag: str, timeout_s: float | None = None,
               payload: Any = None, extra_headers: Optional[Mapping[str, str]] = None,
               log_body: bool = False) -> WireResponse:
+        if self._read_only and not self._read_url_allowed(method, url):
+            raise BrokerError(ErrorCode.UNSUPPORTED,
+                              "Mofid read_only: فقط GETِ allowlist مجاز است — "
+                              "هیچ درخواستی ساخته نشد")
         if not self.live:
             raise BrokerError(ErrorCode.UNSUPPORTED,
                               "Mofid: ترافیک/نشست وصل نیست — هیچ درخواستی ساخته نشد")
@@ -522,20 +555,35 @@ class MofidAdapter(BrokerAdapter):
                               "Mofid %s: پاسخ فهرست نبود" % tag)
         return [r for r in data if isinstance(r, Mapping)]
 
+    def _remember_ids(self, records: list[ExecutionRecord]) -> list[ExecutionRecord]:
+        for rec in records:
+            if rec.broker_order_id:
+                self._known_order_ids.add(str(rec.broker_order_id))
+        return records
+
     def get_orders(self) -> list[ExecutionRecord]:
         """سفارش‌هایِ باز؛ ردیفِ بی‌قصد با UNKNOWN می‌آید، نه «مالِ ما»."""
-        return [self._record_from_row(r)
-                for r in self._read_order_rows(URL_OPEN_ORDERS, tag="open_orders")]
+        return self._remember_ids([self._record_from_row(r)
+                                   for r in self._read_order_rows(
+                                       URL_OPEN_ORDERS, tag="open_orders")])
 
     def get_today_orders(self) -> list[ExecutionRecord]:
-        return [self._record_from_row(r)
-                for r in self._read_order_rows(URL_TODAY_ORDER, tag="today_orders")]
+        return self._remember_ids([self._record_from_row(r)
+                                   for r in self._read_order_rows(
+                                       URL_TODAY_ORDER, tag="today_orders")])
 
     def get_order(self, broker_order_id: str) -> Optional[ExecutionRecord]:
         """state/detail فقط با شناسهٔ صریح؛ 404 یعنی «دیده شد و نبود»، 5xx یعنی نامعلوم."""
         oid = str(broker_order_id or "").strip()
         if not oid:
             return None
+        if not _ORDER_ID_RE.fullmatch(oid):
+            raise BrokerError(ErrorCode.UNSUPPORTED,
+                              "Mofid: شناسهٔ سفارش نامعتبر است — درخواستی ساخته نشد")
+        if self._read_only and oid not in self._known_order_ids:
+            raise BrokerError(ErrorCode.UNSUPPORTED,
+                              "Mofid read_only: شناسه از فهرستِ واقعیِ باز/امروز نیامده "
+                              "— درخواستِ حدسی ممنوع")
         status, payload = self._read(
             WIRE_GATEWAY_V1 + WIRE_PATH_ORDER_DETAIL + oid, tag="order_detail")
         if status == 404:
@@ -580,6 +628,10 @@ class MofidAdapter(BrokerAdapter):
         return rec
 
     def submit_order(self, draft: OrderDraft) -> ExecutionRecord:
+        if self._read_only:
+            self.wire_calls.append("submit:REFUSED_READ_ONLY")
+            raise BrokerError(ErrorCode.UNSUPPORTED,
+                              "Mofid read_only: ارسالِ سفارش در این حالت ممنوع است")
         if not self.writes_allowed:
             self.wire_calls.append("submit:REFUSED")
             raise BrokerError(ErrorCode.UNSUPPORTED,
@@ -622,6 +674,13 @@ class MofidAdapter(BrokerAdapter):
                                     WIRE_PATH_OPEN_ORDERS,
                                     WIRE_PATH_ORDER_STATE + "{orderId}",
                                     WIRE_PATH_ORDER_DETAIL + "{orderId}"]},
+            "read_only": {"status": "ENFORCED" if self._read_only else "OFF",
+                          "allowlist": [WIRE_PATH_CUSTOMER_STATUS,
+                                        WIRE_PATH_PORTFOLIO_DAILY,
+                                        WIRE_PATH_OPEN_ORDERS,
+                                        WIRE_PATH_TODAY_ORDER,
+                                        WIRE_PATH_ORDER_STATE + "{orderId}",
+                                        WIRE_PATH_ORDER_DETAIL + "{orderId}"]},
             "write": {"status": WRITE_STATE,
                       "detail": "پاسخِ واقعیِ ثبت/read-back در این ماشین دیده نشده"},
             "sellable": self.sellable_provenance(),
@@ -634,8 +693,8 @@ class MofidAdapter(BrokerAdapter):
 
 
 __all__ = [
-    "ADAPTER_NAME", "WIRE_URL", "WIRE_BASE_URL", "WIRE_GATEWAY_V1",
-    "WIRE_GATEWAY_V2", "WIRE_WEB_V4", "WIRE_PATH_ORDER_CREATE",
+    "ADAPTER_NAME", "WIRE_URL", "WIRE_BASE_URL", "WIRE_ORIGIN", "MOFID_LOGIN_URL",
+    "WIRE_GATEWAY_V1", "WIRE_GATEWAY_V2", "WIRE_WEB_V4", "WIRE_PATH_ORDER_CREATE",
     "WIRE_PATH_CUSTOMER_STATUS", "WIRE_PATH_PORTFOLIO_DAILY",
     "WIRE_PATH_OPEN_ORDERS", "WIRE_PATH_TODAY_ORDER", "WIRE_PATH_ORDER_STATE",
     "WIRE_PATH_ORDER_DETAIL", "WIRE_PATH_ACCOUNTING_REMAIN",

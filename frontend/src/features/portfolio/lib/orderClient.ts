@@ -1103,6 +1103,75 @@ export function useBrowserHost() {
   });
 }
 
+// ── ورودِ دستیِ Mofid و Probeِ فقط‌خواندنی ──────────────────────────────────
+export const MOFID_SESSION_STATES = ['NEEDS_LOGIN', 'AUTHENTICATING',
+  'AUTHENTICATED_UNVERIFIED', 'READ_ONLY_PROBE_OK', 'SESSION_EXPIRED',
+  'READ_ONLY_PROBE_FAILED'] as const;
+export type MofidSessionState = (typeof MOFID_SESSION_STATES)[number];
+
+export const MofidSessionSchema = z.object({
+  status: z.string(),
+  state: z.string().nullish(),
+  reason: txt,
+  adapter_ready: z.boolean().nullish(),
+  adapter_reason: txt,
+  host_open: z.boolean().nullish(),
+  host_status: txt,
+  token_present: z.boolean().nullish(),
+  session_proven: z.boolean().nullish(),
+  checked_at: txt,
+  steps: z.record(z.string(), z.string()).nullish(),
+  counts: z.record(z.string(), z.unknown()).nullish(),
+  login_url: txt,
+  read_only: z.boolean().nullish(),
+  live_enabled: z.boolean().nullish(),
+  live_ready: z.boolean().nullish(),
+}).catchall(z.unknown());
+export type MofidSessionView = z.infer<typeof MofidSessionSchema>;
+
+export const MofidProbeSchema = z.object({
+  status: z.string(),
+  code: txt,
+  state: z.string().nullish(),
+  detail: txt,
+  account: z.record(z.string(), z.unknown()).nullish(),
+  steps: z.record(z.string(), z.string()).nullish(),
+  counts: z.record(z.string(), z.unknown()).nullish(),
+  session: z.record(z.string(), z.unknown()).nullish(),
+  session_state: z.record(z.string(), z.unknown()).nullish(),
+  checked_at: txt,
+  read_only: z.boolean().nullish(),
+  live_enabled: z.boolean().nullish(),
+  live_ready: z.boolean().nullish(),
+}).catchall(z.unknown());
+export type MofidProbeView = z.infer<typeof MofidProbeSchema>;
+
+export const mofidApi = {
+  session: (signal?: AbortSignal) =>
+    http<MofidSessionView>('/api/execution/mofid/session',
+      { schema: MofidSessionSchema, signal }),
+  loginWindow: () =>
+    http<Record<string, unknown>>('/api/execution/mofid/login-window',
+      { method: 'POST', ...NO_RETRY }),
+  stopWindow: () =>
+    http<Record<string, unknown>>('/api/execution/mofid/login-window',
+      { method: 'DELETE', ...NO_RETRY }),
+  verifySession: () =>
+    http<MofidProbeView>('/api/execution/mofid/verify-session',
+      { method: 'POST', schema: MofidProbeSchema, ...NO_RETRY }),
+};
+
+export function useMofidSession(enabled = true) {
+  return useQuery({
+    queryKey: ['mofid-session'],
+    queryFn: ({ signal }) => mofidApi.session(signal),
+    enabled,
+    staleTime: 5_000,
+    refetchInterval: 10_000,
+    retry: false,
+  });
+}
+
 // ── چند عرضهٔ اولیه: داده، بودجه، Preflight و Timing ───────────────────────
 export type OfferingView = {
   id: string; symbol: string; isin: string; market: string; method: string;
