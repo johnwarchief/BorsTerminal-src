@@ -76,11 +76,71 @@ SELLABLE_FORMULA = ("max(0, min(currentAsset, currentAsset + todaySoldAsset - "
 SELLABLE_STATE = "CLIENT_DERIVED_UNVERIFIED"
 WRITE_STATE = "UNVERIFIED"
 _ORDER_ID_RE = re.compile(r"[A-Za-z0-9._-]{1,64}")
+
+#: Round 18: دو شاهدِ مستقل برایِ واحد/معنا/دقت. مقدارِ حساب در کد نیست.
 UNIT = "IRR"
-UNIT_EVIDENCE = ("Titan error catalog states minimum order values in ریال; "
-                 "order price/volume fields use the same unit")
+UNIT_VERIFICATION = {
+    "state": "VERIFIED",
+    "unit": UNIT,
+    "precision": 0,
+    "server_unit_field": False,
+    "evidence": (
+        "official Mofid UI displayed «قدرت خرید» equal to /Accounting/Remain "
+        "purchasingPower exactly (amount masked here) and «بلوکه شده» equal to "
+        "blockedBalance=0; the same page labels monetary amounts as ریال (the "
+        "power widget itself has no unit suffix); the deployed Titan client "
+        "formats purchasingPower with the shared digit formatter (also used for "
+        "price/volume, no /10) and toFixed(0)"
+    ),
+    "observed_at": "2026-10-22",
+}
+UNIT_EVIDENCE = UNIT_VERIFICATION["evidence"]
+POSITION_FIELD_MAP = {
+    "current_asset": "currentAsset",
+    "today_bought": "todayBoughtAsset",
+    "today_sold": "todaySoldAsset",
+    "open_sell": "openSellOrders",
+    "settled": "currentAsset + todaySoldAsset - todayBoughtAsset",
+    "sellable": "max(0, min(currentAsset, settled) - openSellOrders)",
+}
+ORDER_CONTRACT = {
+    "open_orders": {"path": WIRE_PATH_OPEN_ORDERS, "method": "GET",
+                    "id_field": "orderId", "state_field": "orderState",
+                    "fields": ["orderId", "symbol", "symbolIsin", "orderPrice",
+                               "quantity", "executedQuantity", "orderSide",
+                               "validityType", "validityDateTime", "orderState"]},
+    "today_order": {"path": WIRE_PATH_TODAY_ORDER, "method": "GET",
+                    "id_field": "orderId", "state_field": "orderState",
+                    "fields": ["orderId", "symbol", "symbolIsin", "orderPrice",
+                               "quantity", "executedQuantity", "orderSide",
+                               "validityType", "validityDateTime", "orderState"]},
+    "state": {"path": WIRE_PATH_ORDER_STATE + "{orderId}", "method": "GET",
+              "state_field": "orderState|state", "id_source": "real list only"},
+    "detail": {"path": WIRE_PATH_ORDER_DETAIL + "{orderId}", "method": "GET",
+               "id_source": "real list only"},
+    "semantics": {
+        "send_2xx": "REQUEST_RECORDED_NOT_ACCEPTED",
+        "acceptance": "not proven",
+        "read_back": "only for an orderId obtained from a real open/today list",
+    },
+}
+_TS_KEYS = ("serverTime", "server_time", "serverTimestamp", "lastUpdate",
+            "lastUpdateTime", "updateTime", "updatedAt", "timestamp",
+            "dateTime", "datetime")
 
 
+def _find_timestamp(data: Any) -> dict[str, Any] | None:
+    """اگر پاسخ خودش یک فیلدِ زمانِ نام‌دار داشت، همان را خام گزارش می‌دهد.
+
+    هیچ حدسی دربارهٔ منطقهٔ زمانی/معنا نمی‌زنیم؛ صرفِ وجودِ فیلد کافی نیست.
+    """
+    if not isinstance(data, Mapping):
+        return None
+    for key in _TS_KEYS:
+        if key in data and data.get(key) not in (None, ""):
+            return {"key": key, "raw": str(data.get(key))[:80],
+                    "interpretation": "UNVERIFIED"}
+    return None
 class _Secret:
     __slots__ = ("_v",)
 
@@ -451,14 +511,22 @@ class MofidAdapter(BrokerAdapter):
                 ErrorCode.UNKNOWN_RESULT,
                 "Mofid: purchasingPower در customer/status و Accounting/Remain "
                 "نبود — کلیدها: %s" % (keys or "—"))
+        server_ts = _find_timestamp(data)
         return {"raw": raw, "buying_power": buying,
                 "cash": raw.get("accountBalanceT2"),
                 "blocked": raw.get("blockedBalance"),
                 "credit": raw.get("credit"),
                 "margin_block": raw.get("marginBlock"),
                 "unit": UNIT, "unit_evidence": UNIT_EVIDENCE,
+                "unit_state": UNIT_VERIFICATION["state"],
+                "precision": UNIT_VERIFICATION["precision"],
+                "unit_server_field": UNIT_VERIFICATION["server_unit_field"],
                 "formula": "purchasingPower",
                 "source": "mofid:%s (first-party Titan client)" % source_path,
+                "response_keys": sorted(str(k) for k in data.keys()),
+                "server_timestamp": server_ts,
+                "freshness": ("SERVER_FIELD_RAW_UNVERIFIED" if server_ts
+                              else "LOCAL_FETCH_ONLY"),
                 "contract": CONTRACT_STATE, "fetched_at": self._iso()}
 
     def get_balances(self) -> Mapping[str, Any]:
@@ -512,6 +580,7 @@ class MofidAdapter(BrokerAdapter):
                 "break_even": _num(it.get("breakEvenPrice")),
                 "today_buy_average": _num(it.get("todayBuyAveragePrice")),
                 "today_sell_average": _num(it.get("todaySellAveragePrice")),
+                "server_timestamp": _find_timestamp(it),
                 "source": "mofid:%s" % WIRE_PATH_PORTFOLIO_DAILY,
             })
         return rows
@@ -711,7 +780,14 @@ class MofidAdapter(BrokerAdapter):
             "write": {"status": WRITE_STATE,
                       "detail": "پاسخِ واقعیِ ثبت/read-back در این ماشین دیده نشده"},
             "sellable": self.sellable_provenance(),
-            "unit": {"value": UNIT, "evidence": UNIT_EVIDENCE},
+            "unit": {"value": UNIT, "state": UNIT_VERIFICATION["state"],
+                     "precision": UNIT_VERIFICATION["precision"],
+                     "server_unit_field": UNIT_VERIFICATION["server_unit_field"],
+                     "evidence": UNIT_EVIDENCE},
+            "position_fields": dict(POSITION_FIELD_MAP),
+            "order_contract": dict(ORDER_CONTRACT),
+            "freshness_policy": "only a named server timestamp is reported; "
+                                "fetched_at is local and never becomes server time",
             "live_verified": False,
         }
 
@@ -726,6 +802,6 @@ __all__ = [
     "WIRE_PATH_OPEN_ORDERS", "WIRE_PATH_TODAY_ORDER", "WIRE_PATH_ORDER_STATE",
     "WIRE_PATH_ORDER_DETAIL", "WIRE_PATH_ACCOUNTING_REMAIN",
     "CONTRACT_STATE", "CONTRACT_PROVENANCE", "SELLABLE_FORMULA", "SELLABLE_STATE",
-    "UNIT", "MofidAdapter", "build_payload", "authorization_value",
-    "map_order_state",
+    "UNIT", "UNIT_VERIFICATION", "POSITION_FIELD_MAP", "ORDER_CONTRACT",
+    "MofidAdapter", "build_payload", "authorization_value", "map_order_state",
 ]

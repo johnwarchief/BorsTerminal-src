@@ -231,13 +231,24 @@ describe('AutoClicker — تنظیمات و آمادگی', () => {
       status: 'success', code: 'READ_ONLY_PROBE_OK', state: 'READ_ONLY_PROBE_OK',
       detail: '', account: {
         buying_power: 500000000, unit: 'IRR', source: 'mofid:/Order/customer/status',
+        unit_state: 'VERIFIED', precision: 0, freshness: 'LOCAL_FETCH_ONLY',
+        fetched_at: '2026-10-22T02:00:00',
         positions: [{ isin: 'IRO1TEST0001', symbol: 'TEST', current_asset: 1000,
           sellable: 850, open_sell: 50,
           sellable_state: 'CLIENT_DERIVED_UNVERIFIED' }],
         orders: [], today_orders: [], order_details: [],
       },
       counts: { positions: 1, open_orders: 0, today_orders: 0, order_details: 0 },
-      steps: { session: 'PASS', money: 'PASS', positions: 'PASS' },
+      steps: { session: 'PASS', money: 'PASS', positions: 'PASS',
+        order_detail: 'SKIPPED_NO_ORDERS' },
+      account_readiness: {
+        probe_ok: true, read_only_account_ready: false,
+        gates: [{ id: 'session', status: 'PASS' }, { id: 'unit', status: 'PASS' },
+          { id: 'sellable', status: 'UNVERIFIED' },
+          { id: 'freshness', status: 'UNVERIFIED' }],
+        warnings: [{ id: 'sellable', status: 'UNVERIFIED' },
+          { id: 'freshness', status: 'UNVERIFIED' }],
+      },
     });
     renderPage();
     fireEvent.click(screen.getByTestId('autoclicker-path-api'));
@@ -260,6 +271,14 @@ describe('AutoClicker — تنظیمات و آمادگی', () => {
       .toContain('۸۵۰'));
     expect(screen.getByTestId('autoclicker-mofid-live-closed').textContent)
       .toContain('live_ready=false');
+    expect(screen.getByTestId('autoclicker-mofid-account-readiness').textContent)
+      .toContain('ناقص');
+    expect(screen.getByTestId('autoclicker-mofid-account-readiness').textContent)
+      .toContain('sellable:UNVERIFIED');
+    expect(screen.getByTestId('autoclicker-mofid-freshness').textContent)
+      .toContain('LOCAL_FETCH_ONLY');
+    expect(screen.getByTestId('autoclicker-mofid-freshness').textContent)
+      .toContain('اندازه‌گیری‌نشده');
     expect(screen.getByTestId('autoclicker-gate-account').textContent)
       .toContain('خوانده شد');
     fireEvent.click(screen.getByTestId('autoclicker-mofid-close'));

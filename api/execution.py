@@ -60,7 +60,8 @@ from execution_easytrader import (
     easytrader_payload,
 )
 from execution_mofid import (
-    MOFID_LOGIN_URL, MofidAdapter, SELLABLE_FORMULA, SELLABLE_STATE,
+    MOFID_LOGIN_URL, MofidAdapter, ORDER_CONTRACT, POSITION_FIELD_MAP,
+    SELLABLE_FORMULA, SELLABLE_STATE, UNIT_VERIFICATION,
 )
 import execution_mofid_capture as EMC                        # noqa: E402
 import execution_connect as EXC                            # noqa: E402
@@ -1930,7 +1931,7 @@ def delete_browser_host() -> dict[str, Any]:
 # ── ۲.۴.۷) ورودِ دستیِ Mofid: پنجرهٔ اختصاصی + پلِ فقط‌خواندنی ───────────────
 _MOFID_SESSION: dict[str, Any] = {
     "state": MOFID_NEEDS_LOGIN, "reason": "LOGIN_REQUIRED",
-    "checked_at": None, "steps": {}, "counts": {},
+    "checked_at": None, "steps": {}, "counts": {}, "readiness": {},
 }
 _MOFID_SESSION_LOCK = threading.Lock()
 
@@ -1953,7 +1954,8 @@ def _mofid_host() -> dict[str, Any]:
 
 def _mofid_set_state(state: str, *, reason: str = "",
                      steps: Mapping[str, str] | None = None,
-                     counts: Mapping[str, Any] | None = None) -> None:
+                     counts: Mapping[str, Any] | None = None,
+                     readiness: Mapping[str, Any] | None = None) -> None:
     with _MOFID_SESSION_LOCK:
         _MOFID_SESSION.update({
             "state": str(state),
@@ -1961,6 +1963,7 @@ def _mofid_set_state(state: str, *, reason: str = "",
             "checked_at": time.strftime("%Y-%m-%dT%H:%M:%S"),
             "steps": {str(k): str(v) for k, v in (steps or {}).items()},
             "counts": {str(k): v for k, v in (counts or {}).items()},
+            "readiness": dict(readiness or {}),
         })
 
 
@@ -1971,6 +1974,7 @@ def _mofid_state_dict() -> dict[str, Any]:
         snap = dict(_MOFID_SESSION)
         steps = dict(snap.get("steps") or {})
         counts = dict(snap.get("counts") or {})
+        readiness = dict(snap.get("readiness") or {})
     state = str(snap.get("state") or MOFID_NEEDS_LOGIN)
     reason = str(snap.get("reason") or "")
     proven = bool(getattr(_ACTIVE_ADAPTER, "session_proven", lambda: False)())
@@ -2000,6 +2004,7 @@ def _mofid_state_dict() -> dict[str, Any]:
         "session_proven": proven,
         "checked_at": snap.get("checked_at"),
         "steps": steps, "counts": counts,
+        "account_readiness": readiness,
         "login_url": MOFID_LOGIN_URL,
         "read_only": bool(getattr(_ACTIVE_ADAPTER, "read_only", False)),
         "live_enabled": False,
@@ -2029,6 +2034,78 @@ def _mofid_record_summary(rec: ExecutionRecord) -> dict[str, Any]:
         "filled_quantity": rec.filled_quantity,
         "order_state": rec.order_state.value,
         "events": list(rec.events),
+    }
+
+
+def _mofid_account_readiness(*, money: Mapping[str, Any],
+                             positions: list[dict[str, Any]],
+                             orders: list[ExecutionRecord],
+                             today: list[ExecutionRecord],
+                             details: list[dict[str, Any]],
+                             steps: Mapping[str, str]) -> dict[str, Any]:
+    """گیت‌هایِ حسابِ فقط‌خواندنی؛ از پاسخِ واقعیِ همین Probe، بی‌فلگِ تنظیماتی."""
+    unit_state = str(money.get("unit_state") or "UNVERIFIED")
+    server_ts = money.get("server_timestamp")
+    unit_ok = unit_state == UNIT_VERIFICATION["state"]
+    buy_ok = money.get("buying_power") is not None and unit_ok
+    sellable_states = sorted({str(p.get("sellable_state") or "")
+                              for p in positions if p.get("sellable_state")})
+    gates = [
+        {"id": "session", "label": "نشست",
+         "status": "PASS" if steps.get("session") == "PASS" else "BLOCKED",
+         "detail": "customer/status 200" if steps.get("session") == "PASS"
+         else "نشست تأیید نشد",
+         "source": "mofid:/Order/customer/status"},
+        {"id": "account_data", "label": "دادهٔ حساب",
+         "status": "PASS" if positions or money else "BLOCKED",
+         "detail": "%d دارایی · %d سفارش باز · %d سفارش امروز"
+                   % (len(positions), len(orders), len(today)),
+         "source": "mofid:/Portfolio/Daily + /Order/open-orders + /Order/today-order"},
+        {"id": "unit", "label": "واحد و دقتِ قدرت خرید",
+         "status": "PASS" if unit_ok else "UNVERIFIED",
+         "detail": "IRR · precision=0 · UI رسمی + بستهٔ Titan؛ server_unit_field=false",
+         "source": "mofid:/Accounting/Remain + official UI"},
+        {"id": "sellable", "label": "قابل‌فروش",
+         "status": "UNVERIFIED",
+         "detail": "CLIENT_DERIVED_UNVERIFIED؛ UI رسمی ستونِ sellable ندارد "
+                   "(runTimeShareCount/csdPortfolioCount) · formula 12/12",
+         "source": "mofid:/Portfolio/Daily"},
+        {"id": "freshness", "label": "تازگی داده",
+         "status": "UNVERIFIED",
+         "detail": ("فیلدِ زمانِ سرور %s (خام؛ تفسیر تأییدنشده)" %
+                    (server_ts or {}).get("key") if server_ts
+                    else "فقط fetched_at محلی؛ فیلدِ زمانِ سرور دیده نشد"),
+         "source": "money/positions"},
+        {"id": "preflight_buy", "label": "دادهٔ پیش‌فرودِ خرید",
+         "status": "PASS" if buy_ok else "BLOCKED",
+         "detail": "purchasingPower عددی + واحد تأییدشده" if buy_ok
+         else "قدرت خرید/واحد تأیید نشده",
+         "source": "mofid:/Accounting/Remain"},
+        {"id": "preflight_sell", "label": "دادهٔ پیش‌فرودِ فروش",
+         "status": "UNVERIFIED",
+         "detail": "sellable با تعریفِ رسمی تأیید نشده",
+         "source": "mofid:/Portfolio/Daily"},
+        {"id": "read_back", "label": "read-backِ سفارش",
+         "status": "NOT_MEASURED" if not (orders or today) else "UNVERIFIED",
+         "detail": "سفارشِ باز/امروز نیست؛ شناسهٔ واقعی برایِ read-back وجود ندارد"
+                   if not (orders or today) else "سفارش هست؛ read-back اجرا نشده",
+         "source": "open-orders/today-order/state/detail"},
+    ]
+    warnings = [g for g in gates if g["status"] != "PASS"]
+    return {
+        "probe_ok": True,
+        "read_only_account_ready": all(g["status"] == "PASS"
+                                       for g in gates if g["id"] != "read_back"),
+        "live_enabled": False,
+        "live_ready": False,
+        "sellable_states": sellable_states,
+        "counts": {"positions": len(positions), "open_orders": len(orders),
+                   "today_orders": len(today), "order_details": len(details)},
+        "freshness": money.get("freshness"),
+        "server_timestamp": server_ts,
+        "gates": gates,
+        "warnings": [{"id": g["id"], "status": g["status"], "detail": g["detail"]}
+                     for g in warnings],
     }
 
 
@@ -2122,7 +2199,15 @@ def _mofid_verify_session() -> dict[str, Any]:
         "cash": money.get("cash"), "blocked": money.get("blocked"),
         "credit": money.get("credit"), "margin_block": money.get("margin_block"),
         "unit": money.get("unit"), "unit_evidence": money.get("unit_evidence"),
+        "unit_state": money.get("unit_state"),
+        "precision": money.get("precision"),
+        "unit_server_field": money.get("unit_server_field"),
         "formula": money.get("formula"), "source": money.get("source"),
+        "response_keys": money.get("response_keys"),
+        "server_timestamp": money.get("server_timestamp"),
+        "freshness": money.get("freshness"),
+        "position_fields": dict(POSITION_FIELD_MAP),
+        "order_contract": dict(ORDER_CONTRACT),
         "fetched_at": money.get("fetched_at"),
         "positions": positions,
         "orders": [_mofid_record_summary(r) for r in orders],
@@ -2131,7 +2216,11 @@ def _mofid_verify_session() -> dict[str, Any]:
     }
     counts = {"positions": len(positions), "open_orders": len(orders),
               "today_orders": len(today), "order_details": len(details)}
-    _mofid_set_state(MOFID_READ_ONLY_PROBE_OK, steps=steps, counts=counts)
+    readiness = _mofid_account_readiness(
+        money=money, positions=positions, orders=orders, today=today,
+        details=details, steps=steps)
+    _mofid_set_state(MOFID_READ_ONLY_PROBE_OK, steps=steps, counts=counts,
+                     readiness=readiness)
     return {
         "status": "success", "code": "READ_ONLY_PROBE_OK",
         "state": MOFID_READ_ONLY_PROBE_OK,
@@ -2143,6 +2232,9 @@ def _mofid_verify_session() -> dict[str, Any]:
                     "token_length": meta.get("token_length"),
                     "expires_at": meta.get("expires_at")},
         "account": account, "steps": steps, "counts": counts,
+        "account_readiness": readiness,
+        "position_fields": dict(POSITION_FIELD_MAP),
+        "order_contract": dict(ORDER_CONTRACT),
         "read_only": True, "live_enabled": False, "live_ready": False,
         "secrets_returned": False, "secrets_stored": False,
         "checked_at": time.strftime("%Y-%m-%dT%H:%M:%S"),

@@ -140,6 +140,12 @@ export default function AutoClickerPage() {
   const probeVisible = mofidState === 'READ_ONLY_PROBE_OK' && probeAccount != null;
   const sellableState = probePosition?.sellable_state
     ?? probePositions[0]?.sellable_state ?? '—';
+  const accountReadiness = (mofidProbe?.account_readiness
+    ?? mofidSession?.account_readiness ?? null) as Record<string, unknown> | null;
+  const readinessGates = (accountReadiness?.gates as Array<Record<string, unknown>> | undefined) ?? [];
+  const readinessWarnings = (accountReadiness?.warnings as Array<Record<string, unknown>> | undefined) ?? [];
+  const readOnlyAccountReady = accountReadiness?.read_only_account_ready === true;
+  const probeOrderDetail = String(mofidProbe?.steps?.order_detail ?? '—');
 
   useEffect(() => {
     if (!browserRow || loaded) return;
@@ -460,11 +466,14 @@ export default function AutoClickerPage() {
               <div className="flex flex-wrap gap-1">
                 <Line kind="ok" testId="autoclicker-mofid-bp">
                   قدرت خرید: {numText(probeAccount?.buying_power)}
-                  {' '}{String(probeAccount?.unit ?? '')}
+                  {' '}{String(probeAccount?.unit ?? '')} ·
+                  واحد: {String(probeAccount?.unit_state ?? '—')} ·
+                  دقت: {numText(probeAccount?.precision)}
                 </Line>
                 <Line kind="ok" testId="autoclicker-mofid-portfolio">
                   دارایی: {numText(probePositions.length)} ردیف ·
                   سفارش باز: {numText(probeOrders.length)} ·
+                  سفارش امروز: {numText(mofidProbe?.counts?.today_orders)} ·
                   جزئیات: {numText(mofidProbe?.counts?.order_details)}
                 </Line>
               </div>
@@ -488,6 +497,21 @@ export default function AutoClickerPage() {
                 گام‌ها: {Object.entries(mofidProbe?.steps ?? {})
                   .map(([k, v]) => `${k}:${v}`).join(' · ') || '—'}
               </div>
+              {accountReadiness ? (
+                <Line kind={readOnlyAccountReady ? 'ok' : 'warn'}
+                  testId="autoclicker-mofid-account-readiness">
+                  آمادگی حساب: {readOnlyAccountReady ? 'کامل' : 'ناقص'} ·
+                  گیت‌های باز: {readinessWarnings
+                    .map((w) => `${String(w.id)}:${String(w.status)}`)
+                    .join(' · ') || '—'}
+                </Line>
+              ) : null}
+              <Line kind="muted" testId="autoclicker-mofid-freshness">
+                تازگی: {String(probeAccount?.freshness ?? '—')} ·
+                دریافت: {String(probeAccount?.fetched_at ?? '—')} ·
+                read-back: {probeOrderDetail === 'SKIPPED_NO_ORDERS'
+                  ? 'اندازه‌گیری‌نشده (سفارشی نیست)' : probeOrderDetail}
+              </Line>
               <details className="mt-1">
                 <summary className="cursor-pointer text-3xs text-text-muted">
                   ردیف‌های حساب و سفارش‌ها
@@ -497,6 +521,9 @@ export default function AutoClickerPage() {
                     positions: probePositions.slice(0, 20),
                     orders: probeOrders.slice(0, 20),
                     details: mofidProbe?.account?.order_details ?? [],
+                    readiness_gates: readinessGates,
+                    position_fields: probeAccount?.position_fields,
+                    order_contract: mofidProbe?.order_contract,
                   }, null, 1)}
                 </pre>
               </details>
