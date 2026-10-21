@@ -272,8 +272,7 @@ CSV مقایسهٔ قبل/بعد: `docs/audit/ra365-round12-parity-delta.csv`.
 - merge main: `e7a4911f` (والد دوم `784d9d8a`)
 - فیلتر Round 12: `be6ac96e`
 - کد/داده/ممیزی Round 12: `88ffd488`
-- commit گزارش (همین فایل): commit بعدی روی همین شاخه؛ SHA آن در
-  `git log -1` و پیام پایانی ثبت می‌شود.
+- commit گزارش (همین فایل): `64df064a`
 - فقط همین شاخه push می‌شود؛ `main`، tag و release تغییر نکردند.
 - دیتابیس عملیاتی: fingerprint باینری/منطقی بدون تغییر (بخش 2).
 - تمام آزمایش‌ها روی کپی‌های ایزولهٔ `_scratch/ra365_round9/market_r9_base.db`
