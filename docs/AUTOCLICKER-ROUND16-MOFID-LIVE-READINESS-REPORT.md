@@ -290,4 +290,7 @@ envِ فرایند می‌خواند و اگر نباشد، همهٔ خواند�
 | `dev/run_all_tests.py` | ثبتِ گاردِ تازه + `encoding=utf-8` برایِ gitِ ایزوله |
 | `bors_setup.spec` | حضورِ `execution_mofid` درِ بستۀ نصاب (هم‌ردهٔ `fts_terminal.spec`) |
 
-SHA کامیت و نتیجهٔ suite پس از پایانِ اجرا در همین فایل به‌روزرسانی می‌شود.
+- کامیتِ پیاده‌سازی: `31eb6460` روی شاخهٔ `mission/sarkhati-round16-mofid-live-readiness-2026-10-21`.
+- نتیجهٔ نهاییِ suite: 145 counted / 31 silent / 2 skipped / 0 FAIL؛
+  `operational_changed=none`؛ `_audit/round16_run_all_final2.txt`.
+- گاردِ گلیفِ فارسی: 4/4.
