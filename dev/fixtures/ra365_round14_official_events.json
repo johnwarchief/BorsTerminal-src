@@ -1,0 +1,85 @@
+{
+  "meta": {
+    "created": "2026-10-21",
+    "round": 14,
+    "note": "Official/observed values only; hypotheses are labelled in the test, not stored as facts.",
+    "sources": [
+      "CODAL 1479572 (فروي: capital increase documents, 1405/04/01)",
+      "CODAL 1585362 (فروي: rights subscription deadline, 1405/05/26)",
+      "CODAL 1570556 (حخزر: annual assembly decisions, 1405/04/28)",
+      "Rahavard live type7/type1/type2/type3/type4/type7 bars observed 2026-10-21",
+      "BorsTerminal parity_steps.csv (Round 12 typed run)"
+    ]
+  },
+  "events": [
+    {
+      "symbol": "آكو",
+      "asset_id": 48315,
+      "event_date": "2026-09-06",
+      "pa_date": "2026-09-02",
+      "pa_closing": 36050.0,
+      "pa_pre": 39294.0,
+      "pa_ratio": 0.91744287,
+      "dps": 3244.0,
+      "effective_close": 44190.0,
+      "live_type7": 0.931610237382468,
+      "production": 0.93161024,
+      "source": "price_history.close 2026-09-06; Rahavard type7/type0"
+    },
+    {
+      "symbol": "حخزر",
+      "asset_id": 595,
+      "event_date": "2026-07-26",
+      "capital_before": 12600000000000.0,
+      "capital_after": 15000000000000.0,
+      "capital_ratio": 0.84,
+      "shares_before": 12600000000.0,
+      "shares_after": 15000000000.0,
+      "share_ratio": 0.84,
+      "nominal_value": 1000.0,
+      "dps": 101.0,
+      "pa_closing": 6680.0,
+      "pa_pre": 6781.0,
+      "pa_ratio": 0.98510544,
+      "effective_close": 5920.0,
+      "last_close_before": 6780.0,
+      "live_type1": 0.84,
+      "live_type2": 0.84,
+      "live_type3": 0.8275601173020528,
+      "live_type7": 0.828131973541343,
+      "production": 0.827433,
+      "net_dps_hypothesis": {
+        "status": "UNVERIFIED",
+        "gross_dps": 101.0,
+        "withholding_tax": 0.0375,
+        "net_dps": 97.2125,
+        "close_numerator": 6780.0,
+        "ratio": 0.985863690082042,
+        "note": "fits type7 within ~8e-6; no official net-DPS document found"
+      },
+      "sources": ["CODAL 1570556", "Rahavard type1/type2/type3/type7", "price_history.close"]
+    },
+    {
+      "symbol": "فروي",
+      "asset_id": 7129,
+      "event_date": "2026-08-01",
+      "capital_before": 4500000000000.0,
+      "capital_after": 9000000000000.0,
+      "capital_ratio": 0.5,
+      "shares_before": 4500000000.0,
+      "shares_after": 9000000000.0,
+      "share_ratio": 0.5,
+      "nominal_value": 1000.0,
+      "funding": {"paid_cash": 0.0, "claims": 4500000000000.0, "retained": 0.0},
+      "paid_ratio_c": 1.0,
+      "last_price_before": 2525.0,
+      "live_type1": 0.5,
+      "live_type2": 0.698019801980198,
+      "live_type4": 0.698019801980198,
+      "live_type7": 0.690839694656488,
+      "production": 0.699006,
+      "implied_p_type7": 2620.0,
+      "sources": ["CODAL 1479572", "CODAL 1585362", "Rahavard type1/type2/type4/type7"]
+    }
+  ]
+}

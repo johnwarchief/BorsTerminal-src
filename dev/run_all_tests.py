@@ -218,6 +218,8 @@ SUITES = [
     ('dev/test_dps_formula_v1.py',    'DPS factor = close_ex/(close_ex+dps); reserve capital change = pv/nw'),
     ('dev/test_share_type_evidence_v1.py',
                                       'official no-cash share evidence: deterministic ingest, idempotent, paid-in rejected'),
+    ('dev/test_round14_official_events_v1.py',
+                                      'Round 14: capital vs share ratio, official DPS, type7 P and no silent fallback'),
     ('dev/test_fund_events_v1.py',    'official fund distributions drive (P-D)/P factor; same-date typed event survives'),
     ('dev/test_fund_ingest_v1.py',    'fund importer: Persian digits, corrupt rows, duplicate dedupe, newest instrument'),
     ('dev/test_history_repair_writer_v1.py',

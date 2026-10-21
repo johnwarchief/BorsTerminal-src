@@ -1,0 +1,26 @@
+﻿key,symbol,asset_id,date,kind,metric,before,after,delta_abs,delta_rel,status,cause,evidence
+CORRECTION|round13|delta,,,,CORRECTION,delta semantics,0.000844 / 0.011821 (unlabeled),abs 0.00069897/0.00816631; rel 0.00084403/0.01182085,,,CORRECTED,earlier values were relative differences,parity_steps.csv + arithmetic
+CORRECTION|round13|foroy_ratio,فروي,7129,2026-08-01,CORRECTION,share ratio,0.49283002,0.5 (4.5B->9B),,,CORRECTED,0.49283002 belongs to كفرا 2026-01-12,share_change_events ins 29974853866926823
+ISOLATED|18ev|factor_exact_pct,,,,ISOLATED_FULL_UNIVERSE,factor_exact_pct,48.4009,48.4596,0.0587,,IMPROVED,6 new official no-cash evidence rows (isolated DB only),"2,595 assets; denominators 1,187,945 / 4,751,780; production not changed"
+ISOLATED|18ev|factor_near_pct,,,,ISOLATED_FULL_UNIVERSE,factor_near_pct,82.0838,82.1036,0.0198,,IMPROVED,6 new official no-cash evidence rows (isolated DB only),"2,595 assets; denominators 1,187,945 / 4,751,780; production not changed"
+ISOLATED|18ev|func_ok_pct,,,,ISOLATED_FULL_UNIVERSE,func_ok_pct,48.8942,48.9452,0.051,,IMPROVED,6 new official no-cash evidence rows (isolated DB only),"2,595 assets; denominators 1,187,945 / 4,751,780; production not changed"
+ISOLATED|18ev|factor_norm_exact_pct,,,,ISOLATED_FULL_UNIVERSE,factor_norm_exact_pct,41.3725,41.4102,0.0377,,IMPROVED,6 new official no-cash evidence rows (isolated DB only),"2,595 assets; denominators 1,187,945 / 4,751,780; production not changed"
+ISOLATED|18ev|factor_norm_near_pct,,,,ISOLATED_FULL_UNIVERSE,factor_norm_near_pct,82.0526,82.0526,0.0,,UNCHANGED,6 new official no-cash evidence rows (isolated DB only),"2,595 assets; denominators 1,187,945 / 4,751,780; production not changed"
+ISOLATED|18ev|ref_only_steps,,,,ISOLATED_FULL_UNIVERSE,ref_only_steps,151,151,0,,UNCHANGED,6 new official no-cash evidence rows (isolated DB only),"2,595 assets; denominators 1,187,945 / 4,751,780; production not changed"
+ISOLATED|18ev|prod_only_steps,,,,ISOLATED_FULL_UNIVERSE,prod_only_steps,153,153,0,,UNCHANGED,6 new official no-cash evidence rows (isolated DB only),"2,595 assets; denominators 1,187,945 / 4,751,780; production not changed"
+ISOLATED|18ev|step_pairs,,,,ISOLATED_FULL_UNIVERSE,step_pairs,6365,6365,0,,UNCHANGED,6 new official no-cash evidence rows (isolated DB only),"2,595 assets; denominators 1,187,945 / 4,751,780; production not changed"
+ISOLATED|18ev|step_ratio_mismatch,,,,ISOLATED_FULL_UNIVERSE,step_ratio_mismatch,261,261,0,,UNCHANGED,6 new official no-cash evidence rows (isolated DB only),"2,595 assets; denominators 1,187,945 / 4,751,780; production not changed"
+VISUAL|آکو|2026-09-06,آکو,48315,2026-09-06,VISUAL,factor,0.93161024,0.93161024,0,0,VERIFIED,"close/(close+DPS) with close=44190, DPS=3244",price_history + Rahavard type7/type0 + event screenshot
+VISUAL|حخزر|2026-07-26,حخزر,595,2026-07-26,VISUAL,factor,0.82813197,0.827433,0.00069897,0.00084403,NEAR,type3=0.82756012 (gross PA x capital); type7 matches net-DPS 3.75% within 7.7e-6 (UNVERIFIED),CODAL 1570556 DPS=101; type1/type2=0.84; price_history close=6780
+VISUAL|فروي|2026-08-01,فروي,7129,2026-08-01,VISUAL,factor,0.69083969,0.699006,0.00816631,0.01182085,NEAR,S=1000/c=1 verified; type2=0.69801980 with P=2525; type7 implies P=2620 (not official),CODAL 1479572/1585362; type1=0.5; type2/type4=0.69801980
+BLOCKER|فروي|P,فروي,7129,2026-08-01,BLOCKER,official P,UNVERIFIED,BLOCKED_P_DEFINITION,,,BLOCKED,"no subscription/base price in CODAL 1479572, 1585362, registration statement",P=2620 only implied by type7
+HYPOTHESIS|حخزر|net_dps,حخزر,595,2026-07-26,HYPOTHESIS,DPS leg,gross 101 ratio 0.98532189 (close 6780),net 3.75% ratio 0.98586369 vs type7 0.98587140,7.7e-06,,UNVERIFIED,no official net-DPS/withholding document,CODAL 1570556 + arithmetic
+CODAL|17rows|status,,,,CODAL,17 blocked rows,17 blocked (Round 12),"6 EVIDENCE_OK, 1 RATE_LIMITED, 10 RATE_LIMITED_NOT_RETRIED",,,PARTIAL,"HTTP 429 after 6 bodies; collector stopped, no bypass",codal_type_evidence_round14.jsonl; 25/40 requests
+FULL_UNIVERSE|production,,,,FULL_UNIVERSE,production baseline,48.4009 / 82.0838 / 48.8942,UNCHANGED,,,NOT_MEASURED,no production code change; evidence table absent from operational DB,Round 12 Full-Universe
+ISOLATED|كاوه|factor_exact_pct,كاوه,,,ISOLATED_SYMBOL,factor_exact_pct,20.06667,61.13333,41.06666,,IMPROVED,12→18 official evidence rows,parity_symbols.csv (isolated)
+ISOLATED|غزر|factor_exact_pct,غزر,,,ISOLATED_SYMBOL,factor_exact_pct,60.52239,66.56716,6.04477,,IMPROVED,12→18 official evidence rows,parity_symbols.csv (isolated)
+ISOLATED|فروس|factor_near_pct,فروس,,,ISOLATED_SYMBOL,factor_near_pct,83.92371,100.0,16.07629,,IMPROVED,12→18 official evidence rows,parity_symbols.csv (isolated)
+ISOLATED|غزر|func_ok_pct,غزر,,,ISOLATED_SYMBOL,func_ok_pct,71.64179,71.82836,0.18657,,IMPROVED,12→18 official evidence rows,parity_symbols.csv (isolated)
+ISOLATED|كاوه|func_ok_pct,كاوه,,,ISOLATED_SYMBOL,func_ok_pct,19.66667,59.83333,40.16666,,IMPROVED,12→18 official evidence rows,parity_symbols.csv (isolated)
+ISOLATED|غويتا|factor_norm_exact_pct,غويتا,,,ISOLATED_SYMBOL,factor_norm_exact_pct,19.34184,59.16723,39.82539,,IMPROVED,12→18 official evidence rows,parity_symbols.csv (isolated)
+ISOLATED|غزر|factor_norm_exact_pct,غزر,,,ISOLATED_SYMBOL,factor_norm_exact_pct,44.25373,33.43284,-10.82089,,WORSENED,12→18 official evidence rows,parity_symbols.csv (isolated)
