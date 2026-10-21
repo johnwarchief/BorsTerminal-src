@@ -3,8 +3,12 @@
 چیزی که این در **نیست**: تصمیم‌گیرندهٔ «کجا وصل شویم». انتخابِ آداپتور فقط از
 دو متغیرِ محیطیِ صریح خوانده می‌شود و از هیچ بدنهٔ درخواستی نه:
 
-  BORS_EXECUTION_ADAPTER = mock | easytrader     (پیش‌فرض: mock)
-  BORS_EXECUTION_LIVE    = 1                     (پیش‌فرض: خاموش)
+  BORS_EXECUTION_ADAPTER = mock | easytrader | mofid   (پیش‌فرض: mock)
+  BORS_EXECUTION_LIVE    = 1                          (پیش‌فرض: خاموش)
+
+Mofid/Titan یک آداپتورِ جدا با مسیرهایِ فقط‌خواندنیِ برگرفته از بستهٔ خودِ
+کارگزاری است (Round 16)؛ انتخابِ سکویِ هدف درِ ماتریسِ D8 را عوض نمی‌کند و
+نوشتن/read-backِ آن همچنان تأییدنشده است.
 
 تا «mock» یا تا LIVE نخورده باشد، `DRY_RUN` ثابتِ True می‌ماند و هیچ درخواستِ
 برون‌سازمانی ساخته نمی‌شود. رأیِ مالک در ۱۴۰۵-۰۷-۲۴ سکوی هدف را تعیین کرد
@@ -55,7 +59,7 @@ from execution_easytrader import (
     WIRE_HYPOTHESIS, WIRE_PROBE_HOST_HEALTH, WIRE_SESSION_PROBE_CANDIDATES,
     easytrader_payload,
 )
-from execution_mofid import MofidAdapter
+from execution_mofid import MofidAdapter, SELLABLE_FORMULA, SELLABLE_STATE
 import execution_connect as EXC                            # noqa: E402
 import execution_connection as ECONN                       # noqa: E402
 import execution_browser_host as BH                        # noqa: E402
@@ -81,6 +85,9 @@ WATCHLIST_UNAVAILABLE = "WATCHLIST_UNAVAILABLE"
 PORTFOLIO_VERIFIED = "PORTFOLIO_VERIFIED"
 PORTFOLIO_PARTIALLY_VERIFIED = "PORTFOLIO_PARTIALLY_VERIFIED"
 PORTFOLIO_UNAVAILABLE = "PORTFOLIO_UNAVAILABLE"
+#: مسیرِ Mofid از بستهٔ خودِ کارگزاری خوانده شده، ولی پاسخِ واقعیِ حساب در این
+#: ماشین دیده نشده؛ «verified» نامیدنش ادعایِ بی‌شاهد است.
+PORTFOLIO_READ_ONLY_UNVERIFIED = "PORTFOLIO_READ_ONLY_UNVERIFIED"
 BUYING_POWER_VERIFIED = "BUYING_POWER_VERIFIED"
 BUYING_POWER_UNAVAILABLE = "BUYING_POWER_UNAVAILABLE"
 ACCOUNT_SOURCE_BLOCKED = "ACCOUNT_SOURCE_BLOCKED"
@@ -131,7 +138,8 @@ ADAPTER_KIND = _configured_adapter(_CFG)
 LIVE_REQUESTED = ADAPTER_KIND in ("easytrader", "mofid") and _env_flag(LIVE_ENV)
 # حالتِ فقط‌خواندنی: GETها مجازند تا نشست *واقعاً* تأیید شود و فهرست‌ها خوانده
 # شوند. ارسالِ سفارش همچنان فقط با `BORS_EXECUTION_LIVE=1` — دو گیتِ جدا.
-READ_ONLY_REQUESTED = (ADAPTER_KIND == "easytrader" and bool(_CFG.get("read_only"))
+READ_ONLY_REQUESTED = (ADAPTER_KIND in ("easytrader", "mofid")
+                       and bool(_CFG.get("read_only"))
                        and not LIVE_REQUESTED)
 TRAFFIC_ALLOWED = bool(LIVE_REQUESTED or READ_ONLY_REQUESTED)
 DRY_RUN = not LIVE_REQUESTED
@@ -511,12 +519,25 @@ def _source_block() -> tuple[str, str] | None:
     if not bool(getattr(_ACTIVE_ADAPTER, "has_token", lambda: False)()):
         return (ACCOUNT_SOURCE_BLOCKED,
                 "دسترسی به حساب در حافظه نیست — اول در پنجرهٔ مرورگر وارد شوید")
-    if not bool(getattr(_ACTIVE_ADAPTER, "session_proven", lambda: False)()):
-        return (ACCOUNT_SOURCE_BLOCKED,
-                "دسترسی هنوز با پرسش فقط‌خواندنی تأیید نشده است")
-    if not isinstance(_ACTIVE_ADAPTER, EasyTraderAdapter):
+    if not isinstance(_ACTIVE_ADAPTER, (EasyTraderAdapter, MofidAdapter)):
         return (ACCOUNT_SOURCE_BLOCKED,
                 "روش اتصال واقعی فعال نیست؛ منبع حساب در دسترس نیست")
+    if not bool(getattr(_ACTIVE_ADAPTER, "session_proven", lambda: False)()):
+        if isinstance(_ACTIVE_ADAPTER, MofidAdapter):
+            # یک GETِ فقط‌خواندنی به customer/status هم نشست را تأیید می‌کند و
+            # هم همان منبعِ نقدینگی است؛ هیچ سفارشی برایِ ping ساخته نمی‌شود.
+            try:
+                _ACTIVE_ADAPTER.authenticate()
+            except BrokerError as e:
+                return (ACCOUNT_SOURCE_BLOCKED,
+                        "نشست مفید تأیید نشد (%s): %s"
+                        % (e.code.value, str(redact(e.detail))[:120]))
+            except Exception as e:                    # noqa: BLE001 - مرزِ adapter
+                return (ACCOUNT_SOURCE_BLOCKED,
+                        "خواندنِ نشست مفید ممکن نشد (%s)" % type(e).__name__)
+        if not bool(getattr(_ACTIVE_ADAPTER, "session_proven", lambda: False)()):
+            return (ACCOUNT_SOURCE_BLOCKED,
+                    "دسترسی هنوز با پرسش فقط‌خواندنی تأیید نشده است")
     return None
 
 
@@ -895,8 +916,16 @@ def get_status() -> dict[str, Any]:
     if ADAPTER_KIND == "easytrader" and LIVE_REQUESTED and not live:
         blocked.append("D1: نشستِ مالک درِ حافظه نیست — ورودِ تعاملی با خودِ مالک")
     if ADAPTER_KIND == "mofid":
-        blocked.append("Mofid: قراردادِ شخصِ ثالث؛ balance/read-back تأیید نشده — "
-                       "preflight زنده را می‌بندد")
+        if not TRAFFIC_ALLOWED:
+            blocked.append("Mofid: ترافیک خاموش است — خواندن و نوشتن هر دو بسته‌اند")
+        elif not bool(getattr(_ACTIVE_ADAPTER, "has_token", lambda: False)()):
+            blocked.append("Mofid: دسترسی در حافظهٔ فرایند نیست — مسیرِ "
+                           "درون‌برنامه‌ایِ نشست هنوز پیاده نشده")
+        elif not bool(getattr(_ACTIVE_ADAPTER, "session_proven", lambda: False)()):
+            blocked.append("Mofid: نشست هنوز با GETِ فقط‌خواندنی تأیید نشده")
+        else:
+            blocked.append("Mofid: خواندنِ حساب/سفارش مجاز است؛ نوشتن و "
+                           "read-backِ پاسخِ ثبت تأیید نشده")
     # گیتِ عبارتِ تأیید (§۲-۲): فقط وقتی که اجرایِ زنده واقعاً روشن است ازِ UI
     # چیزی می‌خواهد؛ درِ dry-run تمرین و پیش‌نمایش نباید بشکند. «required»
     # را UI می‌خواند تا بداند چه چیزی تایپ شود، نه اینکه حدس بزند.
@@ -937,25 +966,27 @@ def get_status() -> dict[str, Any]:
         # منشأِ هر مسیرِ سیم (§۳-۲): «فقط درِ کدِ شخصِ ثالث» از «پیکربندیِ
         # انتشاریافتۀِ خودِ کارگزاری» و «رفتارِ دیده‌شده» جداست. بی‌این تفکیک،
         # نامِ یکِ میدان درِ مرجع، مدرکِ قراردادِ زنده شمرده می‌شود.
-        "wire_provenance": {
-            "host": {"value": WIRE_BASE_URL, "kind": "first-party-config",
-                     "evidence": "d.easytrader.ir/app-version.json gives apiPath"},
-            "order_create": {"value": "/core/api/v2/order",
-                             "kind": "third-party-code-only",
-                             "official_docs": "absent (swagger/openapi = 403)",
-                             "hypothesis": WIRE_HYPOTHESIS},
-            "order_list": {"value": "/core/api/order",
-                           "kind": "third-party-code-only",
-                           "hypothesis": WIRE_HYPOTHESIS},
-            "host_health": {"value": WIRE_PROBE_HOST_HEALTH,
-                            "kind": "first-party-config",
-                            "proves_session": False},
-            "session_probe_candidates": {
-                "value": list(WIRE_SESSION_PROBE_CANDIDATES),
-                "kind": "observed-read-only",
-                "observed": "401 + www-authenticate: Bearer",
-                "body_semantics": "unverified"},
-        },
+        "wire_provenance": (
+            dict(getattr(_ACTIVE_ADAPTER, "readiness_evidence", lambda: {})())
+            if ADAPTER_KIND == "mofid" else {
+                "host": {"value": WIRE_BASE_URL, "kind": "first-party-config",
+                         "evidence": "d.easytrader.ir/app-version.json gives apiPath"},
+                "order_create": {"value": "/core/api/v2/order",
+                                 "kind": "third-party-code-only",
+                                 "official_docs": "absent (swagger/openapi = 403)",
+                                 "hypothesis": WIRE_HYPOTHESIS},
+                "order_list": {"value": "/core/api/order",
+                               "kind": "third-party-code-only",
+                               "hypothesis": WIRE_HYPOTHESIS},
+                "host_health": {"value": WIRE_PROBE_HOST_HEALTH,
+                                "kind": "first-party-config",
+                                "proves_session": False},
+                "session_probe_candidates": {
+                    "value": list(WIRE_SESSION_PROBE_CANDIDATES),
+                    "kind": "observed-read-only",
+                    "observed": "401 + www-authenticate: Bearer",
+                    "body_semantics": "unverified"},
+            }),
         "session": _session_dict(),
         "blocked_on": blocked,
         "confirm_gate": {"required": confirm_required, "phrase": _confirm_phrase()},
@@ -1952,6 +1983,99 @@ async def post_config(request: Request) -> dict[str, Any]:
     return out
 
 
+def _mofid_portfolio(base: dict[str, Any]) -> dict[str, Any]:
+    """پرتفویِ Mofid: تعداد از پاسخ، sellable از فرمولِ برچسب‌دارِ محافظه‌کارانه."""
+    fetched_at = time.strftime("%Y-%m-%dT%H:%M:%S")
+    try:
+        raw_rows = _ACTIVE_ADAPTER.get_positions()
+    except BrokerError as e:
+        base.update({"status": "error", "state": PORTFOLIO_UNAVAILABLE,
+                     "error": "%s: %s" % (e.code.value, str(redact(e.detail))[:160]),
+                     "fetched_at": fetched_at})
+        return base
+    except Exception as e:                        # noqa: BLE001 - مرزِ adapter
+        base.update({"status": "error", "state": PORTFOLIO_UNAVAILABLE,
+                     "error": "%s: %s" % (type(e).__name__, str(e)[:160]),
+                     "fetched_at": fetched_at})
+        return base
+    if not isinstance(raw_rows, list):
+        base.update({"status": "error", "state": PORTFOLIO_UNAVAILABLE,
+                     "error": "پاسخ پرتفوی فهرست نبود", "fetched_at": fetched_at})
+        return base
+    rows: list[dict[str, Any]] = []
+    unresolved: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    duplicate_count = 0
+    missing_sellable = False
+    for it in raw_rows:
+        if not isinstance(it, Mapping):
+            continue
+        isin = str(it.get("isin") or "").strip()
+        if isin in seen:
+            duplicate_count += 1
+        seen.add(isin)
+        mapped = _instrument_by_isin(isin)
+        if it.get("sellable") is None:
+            missing_sellable = True
+        row = {
+            "isin": isin,
+            "symbol": mapped.get("symbol") or it.get("symbol"),
+            "ins_code": mapped.get("ins_code"),
+            "resolved": mapped.get("resolved"),
+            "ambiguous": mapped.get("ambiguous"),
+            "mapping_error": mapped.get("reason"),
+            "broker_name": it.get("symbol"),
+            "asset": it.get("current_asset"),
+            "quantity": it.get("current_asset"),
+            "free_quantity": it.get("sellable"),
+            "sellable_quantity": it.get("sellable"),
+            "sellable_state": it.get("sellable_state"),
+            "settled_quantity": it.get("settled"),
+            "open_buy": it.get("open_buy"),
+            "open_sell": it.get("open_sell"),
+            "avg_buy": it.get("average_buy"),
+            "avg_sell": it.get("average_sell"),
+            "break_even": it.get("break_even"),
+            "source": it.get("source") or "portfolio",
+        }
+        rows.append(row)
+        if not mapped.get("resolved"):
+            unresolved.append({"isin": isin, "reason": mapped.get("reason"),
+                               "ambiguous": mapped.get("ambiguous")})
+    prov = {}
+    fn = getattr(_ACTIVE_ADAPTER, "sellable_provenance", None)
+    if callable(fn):
+        try:
+            prov = dict(fn() or {})
+        except Exception:                         # noqa: BLE001 - فقط شاهد
+            prov = {}
+    bp: dict[str, Any] = {"state": BUYING_POWER_UNAVAILABLE, "error": ""}
+    try:
+        money = _ACTIVE_ADAPTER.get_money()
+        bp = {"state": BUYING_POWER_VERIFIED, "value": money.get("buying_power"),
+              "raw": money.get("raw"), "unit": money.get("unit"),
+              "formula": money.get("formula"), "source": money.get("source"),
+              "fetched_at": money.get("fetched_at")}
+    except Exception as e:                        # noqa: BLE001 - منبعِ جدا
+        bp = {"state": BUYING_POWER_UNAVAILABLE,
+              "error": "%s: %s" % (type(e).__name__, str(e)[:120])}
+    resolved_count = sum(1 for r in rows if r.get("resolved"))
+    base.update({
+        "status": "success", "state": PORTFOLIO_READ_ONLY_UNVERIFIED,
+        "source": "mofid:/Portfolio/Daily + /Order/customer/status (first-party Titan client)",
+        "rows": rows, "positions": rows, "as_of": fetched_at,
+        "fetched_at": fetched_at, "raw_count": len(raw_rows),
+        "resolved_count": resolved_count,
+        "unresolved_count": len(unresolved), "duplicate_count": duplicate_count,
+        "unresolved": unresolved,
+        "missing_fields": ["sellable_quantity"] if missing_sellable else [],
+        "sellable_state": prov.get("state") or SELLABLE_STATE,
+        "sellable_formula": prov.get("formula") or SELLABLE_FORMULA,
+        "buying_power": bp, "error": None,
+    })
+    return base
+
+
 @router.get("/api/execution/portfolio")
 def get_portfolio() -> dict[str, Any]:
     """دارایی‌هایِ پرتفوی از گزارشِ عملکردِ وب‌اپِ رسمی؛ فقط‌خواندنی.
@@ -1970,9 +2094,13 @@ def get_portfolio() -> dict[str, Any]:
         "buying_power": None, "error": None,
     }
     block = _source_block()
+    base["session_proven"] = bool(getattr(_ACTIVE_ADAPTER, "session_proven",
+                                          lambda: False)())
     if block:
         base["state"], base["error"] = block
         return base
+    if ADAPTER_KIND == "mofid" and hasattr(_ACTIVE_ADAPTER, "get_positions"):
+        return _mofid_portfolio(base)
     if not hasattr(_ACTIVE_ADAPTER, "get_portfolio_performance"):
         base.update({"status": "no_source", "state": PORTFOLIO_UNAVAILABLE,
                      "error": "این روش اتصال منبع پرتفوی ندارد"})
@@ -2217,6 +2345,8 @@ def get_buying_power() -> dict[str, Any]:
         "order_write_state": ORDER_WRITE_UNVERIFIED, "error": None,
     }
     block = _source_block()
+    base["session_proven"] = bool(getattr(_ACTIVE_ADAPTER, "session_proven",
+                                          lambda: False)())
     if block:
         base["state"], base["error"] = block
         return base

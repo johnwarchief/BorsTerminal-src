@@ -1,0 +1,35 @@
+ISOLATED SUITE clone=C:\Users\PCMOD\AppData\Local\Temp\bors_suite_iso_tevefbdr
+ISOLATED SUITE log=C:\Users\PCMOD\AppData\Local\Temp\bors_suite_round15_30544.log
+ISOLATED SUITE operational fingerprints before: {'market.db': 'fd688edbfe07e125', 'user.db': 'fbffd6eff0a9bd2f'}
+ISOLATED SUITE rc=1 operational_changed=none
+  |   OK   connection: ten-stage host/CDP/page/login/session/API diagnosis, no false CONNECTED, mock/HTML/timeout states, redacted report rc=0 | 39/39
+  |   OK   account sources: read-only watchlist/portfolio/buying power, ISIN mapping, independent states, no body logging, buying-power preflight rc=0 | 25/25
+  |   OK   write contract: reconstructed {order} payload, request-registered semantics, no blind retry, read-only refusal, readiness separation rc=0 | 36/36
+  |   OK   broker connection: disk adapter selection with env precedence, write gate env-only, read-only mode refuses POST, session proof names the route that verified it, 401 never connected, config/portfolio leak nothing rc=0 | 38/38
+  |   OK   sarkhati tab: cancel semantics (explicit confirm, per-row lock, read-back proof) + events filters rc=0 | 41/41
+  |   OK   bot API contract: paper by default, manual run only, three live gates, halt honored, no fabricated zero, no leaked session rc=0 | 70/70
+  |   OK   trading bot: paper lifecycle, lookahead-free backtest, risk, kill switch, recovery rc=0 | 54/54
+  |   OK   harness: guard outputs are actually counted, silence is reported as silence rc=0 | 33/33
+  |   OK   persian text: no stray CJK, no eaten section digit rc=0 | 4/4
+  |   OK   QA route table is derived from routes.tsx, never hand-listed rc=0 | 4/4
+  |   OK   sarkhati: order state + queue position, never a fabricated zero rc=0 | 24/24
+  |   OK   board history windows: materialized == inline rc=0 | 24 pass / 0 fail
+  |   OK   hot state: field-aware diff, RAM==SQL board, honest delta rc=0 | 51/51
+  |   OK   sidebar Stage-2: p_first/p_max/p_min from real cols, lazy order-book binding rc=0 | 14/14
+  |   OK   board freshness: session day + abstaining market pulse rc=0 | 24/24
+  |   OK   portfolio weights: value-based + no fake zero rc=0 | 77/77
+  |   OK   boot page: real download/extract progress, RTL page, handoff + error rc=0 | 0/0
+  |   OK   engine3 vs engine1: provably different pivot sets, both anti-repaint rc=0 | بی‌شمارش (فقط exit code)  [بی‌شمارش]
+  |   OK   anti-repaint: two-time pivots, prefix-stability, no future-look in payload rc=0 | بی‌شمارش (فقط exit code)  [بی‌شمارش]
+  |   OK   wave direction: extremes rule kept, provisional flag moves no fib zone rc=0 | 17/17
+  |   OK   fixture: fts_v10 payloads                rc=0 | بی‌شمارش (فقط exit code)  [بی‌شمارش]
+  |   OK   FTS v10 fundamental table UI render (headless) rc=0 | 17 pass / 0 fail
+  |   OK   FTS CODAL settings panel: validate + storage + apply rc=0 | 45 pass / 0 fail
+  | 
+  | 146 suite counted, 30 silent (exit-code only), 2 skipped (fixture missing)
+  |   silent: structure / undefined-names, mainwatch rows carry the tape flags, never a fabricated one, make_patch --from arg parsing, delta patch select/apply + fallback, fund sheet: سود سهام هرگز «فروش» نمی‌شود, API فقط از حلقهٔ محلی / نشانیِ نصاب از مانیفست, صندوق هیچ‌جا مردود نمی‌شود (کارت/اسکرینر/تابلو/مستر), هیچ کلاس اندازهٔ مرده‌ای در فرانت نماند (نردبان 3xs/2xs), قفلِ npm درِ CI هم نصب می‌شود (npm ci، نه فقط node_modules محلی), هیچ نامِ تعریف‌نشده‌ای در کدِ منتشرشده (NameError درِ شرطِ نایاب), blank published total refuses a component line for فروش, board cache is stale-while-revalidate, single-flight, honest on failure, server FTS reads the full adjusted series the chart draws, not the starved raw table, chart fib belts and setup markers come from the one server engine, over the current wave, weekly trend verdict from live pivots or the recent window, never a stale pivot, derived columns at insert (backfill selftest), live board audit: zero-volume / no-CT edge cases, single writer: one backend per market.db, funnel registry: every txt filter pinned to its source, user watchlist CRUD: get() on a missing row, upsert identity, cap layering, trend point-in-time: Saturday week bucket, closed-week immutability, no cache-key lookahead, sarkhati protocol: provenance-marked wire fixtures, 2xx is never acceptance, no blind re-send after ambiguous, confirmation voided by session change, three distinct origins, honest mode/queue claims, monotonic percentiles, log redaction controls, sarkhati WAF header: GET without Content-Type, POST with Content-Type, WAF simulator green only without the header, dead server-time candidate removed, read-only gate never reaches the transport, session vault rejects expired/no-exp tokens and leaks none, sarkhati strategies: settings reject secrets, metrics p50/p95/p99 only from real samples, one-submit arbiter, direct/browser dry-run sends no POST, mismatch hard stop, clock gate, reconcile uniqueness, sarkhati AutoClicker Round 14: catch-all dry-run guard, durable idempotency/UNKNOWN/restart, side-aware form, real preflight, scheduled/abort/Tehran, test DB isolation: resolver paths under BORS_DATA_DIR, operational worktree refused, subprocess inheritance, clone write leaves operational hash unchanged, Mofid API/readiness: first-party endpoints parsed, session proved by GET customer/status, sellable labelled CLIENT_DERIVED_UNVERIFIED, write stays closed, zero POSTs, 401/offline build no fake values, engine3 vs engine1: provably different pivot sets, both anti-repaint, anti-repaint: two-time pivots, prefix-stability, no future-look in payload, fixture: fts_v10 payloads
+  |   skip: Phase4 engine: per-type factor formulas (hand-checkable), missing/invalid -> incomplete (never fabricated/never silent ratio=1), deterministic anchored chain, idempotent, real type7 cross-check (_audit/ra365_ref_bars.json)
+  |   skip: R1/R2 housekeeping: dedupe + prev-year backfill (market.db.lzma)
+  | 
+  | FAILED: sarkhati AutoClicker Round 14 browser-level: Playwright mock EasyTrader, zero order posts in dry-run, one click, UNKNOWN, abort
+EXIT=1

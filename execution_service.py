@@ -361,8 +361,15 @@ class ExecutionService:
                     p.add("sellable", UNKNOWN,
                           "تعدادِ آزاد غیرعددی — مسدود", blocking=True)
                 else:
+                    source = ""
+                    prov = getattr(self.adapter, "sellable_provenance", None)
+                    if callable(prov):
+                        try:
+                            source = " source=%s" % str((prov() or {}).get("state") or "")
+                        except Exception:                 # noqa: BLE001 - فقط برچسب
+                            source = ""
                     p.add("sellable", PASS if freev >= (draft.quantity or 0)
-                          else FAIL_, f"free={freev} need={draft.quantity}",
+                          else FAIL_, f"free={freev} need={draft.quantity}{source}",
                           blocking=True)
 
         # تکراری‌بودن (بندِ ۱۹) — هم ردِّپا، هم هر چیزی که *این* پروسه قبلاً

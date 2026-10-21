@@ -8,10 +8,11 @@ import { useEffect, useMemo, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router';
 import {
-  browserHostApi, orderApi, useBrowserHost, useExecutionReadiness,
-  useExecutionStatus, useStrategies, type StrategyRowView,
+  browserHostApi, orderApi, useBrowserHost, useBuyingPower, useExecutionPortfolio,
+  useExecutionReadiness, useExecutionStatus, useStrategies, type StrategyRowView,
 } from '../lib/orderClient';
 import { Chip, Field, GhostBtn, Line, Note, Section } from '../components/sarkhati/parts';
+import { toFaDigits } from '@shared/lib/fmt';
 
 function newIntentKey(): string {
   const c = globalThis.crypto as Crypto | undefined;
@@ -65,6 +66,12 @@ function optBool(row: StrategyRowView | undefined, key: string, fallback: boolea
   return typeof v === 'boolean' ? v : fallback;
 }
 
+function numText(v: unknown): string {
+  if (v == null || v === '') return '—';
+  const n = Number(v);
+  return Number.isFinite(n) ? toFaDigits(n.toLocaleString('en-US')) : '—';
+}
+
 export default function AutoClickerPage() {
   const navigate = useNavigate();
   const qc = useQueryClient();
@@ -102,6 +109,20 @@ export default function AutoClickerPage() {
     quantity: Number(qty) > 0 ? Number(qty) : undefined,
   }, symbol.trim().length > 0);
   const serverReady = readinessQ.data;
+  const adapterKind = String(statusQ.data?.adapter ?? '');
+  const isMofidApi = execPath === 'api' && adapterKind === 'mofid';
+  const portfolioQ = useExecutionPortfolio(isMofidApi);
+  const bpQ = useBuyingPower(isMofidApi);
+  const portfolio = portfolioQ.data;
+  const positions = portfolio?.positions ?? portfolio?.rows ?? [];
+  const selectedPosition = positions.find((r) => {
+    const rowIsin = String(r.isin ?? '').toUpperCase();
+    const rowSymbol = String(r.symbol ?? '');
+    return (isin.trim() && rowIsin === isin.trim().toUpperCase())
+      || (!isin.trim() && symbol.trim() && rowSymbol === symbol.trim());
+  });
+  const accountOk = portfolio?.status === 'success';
+  const bpOk = bpQ.data?.status === 'success' && bpQ.data?.value != null;
 
   useEffect(() => {
     if (!browserRow || loaded) return;
@@ -123,7 +144,8 @@ export default function AutoClickerPage() {
       && !!sel.price_selector && !!sel.quantity_selector && !!sel.submit_selector;
   }, [browserRow, execPath]);
   const hostOk = execPath === 'api' || host.healthy === true;
-  const sessionOk = statusQ.data?.session?.proven === true;
+  const sessionOk = statusQ.data?.session?.proven === true
+    || portfolio?.session_proven === true;
   const liveAllowed = strategies.data?.live_allowed === true;
   const selectorsOk = execPath === 'api' || Object.values(opts).every((v, i) =>
     i >= Object.keys(DEFAULTS).length - 2 ? true : v.trim().length > 0);
@@ -283,6 +305,12 @@ export default function AutoClickerPage() {
               {label}: {ok ? 'سبز' : 'باز'}
             </Chip>
           ))}
+          {isMofidApi ? (
+            <Chip tone={accountOk ? 'ok' : 'warn'} testId="autoclicker-gate-account"
+              title={String(portfolio?.error ?? portfolio?.state ?? 'خوانده نشده')}>
+              حساب مفید: {accountOk ? 'خوانده شد' : 'باز'}
+            </Chip>
+          ) : null}
           <span className="text-3xs text-text-muted num" data-testid="autoclicker-strategy-state">
             {row?.settings?.mode ?? '—'} · {row?.configured ? 'configured' : 'default'}
           </span>
@@ -311,6 +339,51 @@ export default function AutoClickerPage() {
           </Line>
         ) : null}
       </Section>
+
+      {isMofidApi ? (
+        <Section title="حساب مفید (فقط‌خواندنی)"
+          sub="قدرت خرید و دارایی از پاسخ کارگزاری؛ «قابل‌فروش» کرانِ محافظه‌کارانه است، نه عددِ اعلامیِ کارگزار"
+          testId="autoclicker-mofid-account">
+          <div className="flex flex-wrap gap-1">
+            <Line kind={bpOk ? 'ok' : 'warn'} testId="autoclicker-mofid-bp">
+              قدرت خرید: {bpOk
+                ? `${numText(bpQ.data?.value)} ${String(bpQ.data?.unit ?? '')}`
+                : String(bpQ.data?.state ?? bpQ.error?.message ?? 'خوانده نشده')}
+            </Line>
+            <Line kind={accountOk ? 'ok' : 'warn'} testId="autoclicker-mofid-portfolio">
+              پرتفوی: {accountOk ? `${numText(positions.length)} ردیف` :
+                String(portfolio?.state ?? portfolioQ.error?.message ?? 'خوانده نشده')}
+              {' '}· قابل‌فروش: {String(portfolio?.sellable_state ?? '—')}
+            </Line>
+          </div>
+          {selectedPosition ? (
+            <Line kind="muted" testId="autoclicker-mofid-row">
+              {String(selectedPosition.symbol ?? selectedPosition.isin ?? '—')} ·
+              دارایی: {numText(selectedPosition.quantity ?? selectedPosition.current_asset)} ·
+              قابل‌فروش (برآورد): {numText(selectedPosition.sellable_quantity ?? selectedPosition.free_quantity)} ·
+              سفارشِ باز فروش: {numText(selectedPosition.open_sell)}
+            </Line>
+          ) : null}
+          <div className="mt-1 flex flex-wrap items-center gap-1">
+            <GhostBtn testId="autoclicker-mofid-refresh"
+              onClick={() => {
+                void portfolioQ.refetch();
+                void bpQ.refetch();
+                void statusQ.refetch();
+              }}
+              disabled={portfolioQ.isFetching || bpQ.isFetching}>خواندن دوبارهٔ حساب</GhostBtn>
+            <span className="text-3xs text-text-muted">{String(portfolio?.source ?? '')}</span>
+          </div>
+          {positions.length > 0 ? (
+            <details className="mt-1">
+              <summary className="cursor-pointer text-3xs text-text-muted">ردیف‌های حساب</summary>
+              <pre className="mt-1 max-h-40 overflow-auto text-3xs text-text-muted" dir="ltr">
+                {JSON.stringify(positions.slice(0, 20), null, 1)}
+              </pre>
+            </details>
+          ) : null}
+        </Section>
+      ) : null}
 
       <div className="grid gap-2 lg:grid-cols-2">
         <Section title="تنظیمات مسیر مرورگر" sub="در مسیر API این شناسه‌ها استفاده نمی‌شوند؛ تغییر فقط در همین دستگاه" testId="autoclicker-settings">
@@ -440,7 +513,8 @@ export default function AutoClickerPage() {
       <Note label="این صفحه چه چیزی نیست" testId="autoclicker-nots">
         <ul className="flex flex-col gap-0.5">
           <li>مسیر مرورگر فرمِ کارگزاری را پر نمی‌کند؛ قیمت/تعداد را خودتان در EasyTrader وارد می‌کنید.</li>
-          <li>مسیر API قراردادِ EasyTrader را می‌سازد؛ مسیر Mofid آداپتور جدا و خارج از این انتخاب است.</li>
+          <li>مسیر API از آداپتورِ فعالِ سرور پیروی می‌کند: EasyTrader (Orbis) یا Mofid (Titan)؛ انتخابِ آداپتور در «تنظیم اتصال» است.</li>
+          <li>حساب مفید فقط خوانده می‌شود؛ «قابل‌فروش» برآوردِ محافظه‌کارانه از پرتفوی است و نوشتن/پاسخِ ثبت تأیید نشده.</li>
           <li>هیچ ارسالِ Live از این صفحه انجام نمی‌شود؛ `live_allowed` باید false بماند.</li>
           <li>dry-run مرورگر یک کلیک با intercept است و dry-run API هیچ ترابری صدا نمی‌زند؛ هیچ‌کدام پذیرش سفارش نیست.</li>
         </ul>

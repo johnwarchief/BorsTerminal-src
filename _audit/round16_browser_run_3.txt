@@ -1,0 +1,20 @@
+ok   browser dry-run استاندارد: کلیک ۱، سفارش ۰
+ok   browser dry-run با الگویِ غلط: سفارش ۰
+ok   browser path جایگزین: هر دو endpoint صفر
+ok   browser host جایگزین: سفارش ۰
+ok   browser method جایگزین: سفارش ۰
+ok   browser query: سفارش ۰
+ok   browser redirect: سفارش/ریدایرکت ۰
+ok   browser چند دکمه: صفر کلیکِ تازه
+ok   browser دکمهٔ غیرفعال: صفر کلیکِ تازه
+ok   browser تغییرِ قیمت پیش از کلیک: صفر کلیکِ تازه
+ok   browser فروش با دکمهٔ فروش: سفارش ۰
+ok   browser live محلی: پذیرشِ صریح و سفارشِ محلی ۱
+ok   browser live محلی: timeout پس از کلیک ⇒ UNKNOWN
+ok   browser دو تب/دو engine با یک intent: یک کلیک، صفر سفارش
+ok   browser Abort زمان‌بند: سفارشِ تازه ۰
+
+COUNTERS order=2 other=0 redirect=0 clicks=11 buy=10 sell=1
+
+15 checks, 0 failed, 0 skipped
+AUTOCLICKER BROWSER ROUND14 OK

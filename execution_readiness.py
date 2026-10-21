@@ -55,7 +55,7 @@ def build_readiness(*, session_proven: bool, read_only: bool,
         PASS if (session_proven and read_only) else BLOCKED,
         "نشست با پرسشِ فقط‌خواندنی تأیید شده" if (session_proven and read_only)
         else "نشستِ تأییدشده یا حالتِ فقط‌خواندنی موجود نیست",
-        action="" if (session_proven and read_only) else "در پنجرهٔ کارگزاری وارد شوید و «بررسی وضعیت» را بزنید",
+        action="" if (session_proven and read_only) else "نشستِ معتبر بسازید و «بررسی وضعیت» را بزنید",
         source="execution status/session"))
     gates.append(_gate(
         "symbol_identity", "نماد و ISIN",
@@ -72,7 +72,7 @@ def build_readiness(*, session_proven: bool, read_only: bool,
         PASS if bp_ok else BLOCKED,
         ("مقدار %s %s" % (bp_val, (buying_power or {}).get("unit") or "")) if bp_ok
         else "منبعِ قدرت خرید تأییدشده/عددی نیست",
-        action="" if bp_ok else "منبعِ /easy/api/money را با نشستِ معتبر بخوانید",
+        action="" if bp_ok else "منبعِ قدرت خرید را با نشستِ معتبر بخوانید",
         source=str((buying_power or {}).get("source") or "none")))
     checks = preflight_checks or None
     price_ok = bool(checks and checks.get("price") == PASS and checks.get("quantity") == PASS)

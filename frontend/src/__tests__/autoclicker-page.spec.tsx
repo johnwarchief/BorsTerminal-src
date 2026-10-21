@@ -12,6 +12,15 @@ const api = vi.hoisted(() => ({
   trigger: vi.fn(async (_body: Record<string, unknown>) => ({ status: 'success' })),
   abort: vi.fn(async () => ({ status: 'success' })),
   order: vi.fn(async (_id: string) => ({ status: 'success', order: { status: 'dry_run' } })),
+  refetchPortfolio: vi.fn(async () => ({})),
+  refetchBp: vi.fn(async () => ({})),
+  refetchStatus: vi.fn(async () => ({})),
+}));
+
+const ui = vi.hoisted(() => ({
+  adapter: 'easytrader' as string,
+  portfolio: null as Record<string, unknown> | null,
+  bp: null as Record<string, unknown> | null,
 }));
 
 vi.mock('@features/portfolio/lib/orderClient', () => ({
@@ -57,13 +66,22 @@ vi.mock('@features/portfolio/lib/orderClient', () => ({
     isPending: false, refetch: vi.fn(),
   }),
   useExecutionStatus: () => ({
-    data: { session: { proven: true, state: 'connected' }, live_enabled: false },
-    isPending: false, isError: false,
+    data: { adapter: ui.adapter, session: { proven: true, state: 'connected' },
+      live_enabled: false },
+    isPending: false, isError: false, refetch: api.refetchStatus,
   }),
   useExecutionReadiness: () => ({
     data: { live_ready: false, blocking_count: 3,
       next_action: 'مجوزِ مالک و قراردادِ عملیاتی' },
     isPending: false, isError: false,
+  }),
+  useExecutionPortfolio: () => ({
+    data: ui.portfolio, isPending: false, isFetching: false, error: null,
+    refetch: api.refetchPortfolio,
+  }),
+  useBuyingPower: () => ({
+    data: ui.bp, isPending: false, isFetching: false, error: null,
+    refetch: api.refetchBp,
   }),
 }));
 
@@ -74,6 +92,9 @@ function renderPage() {
 
 beforeEach(() => {
   Object.values(api).forEach((fn) => fn.mockClear());
+  ui.adapter = 'easytrader';
+  ui.portfolio = null;
+  ui.bp = null;
   localStorage.clear();
 });
 
@@ -177,5 +198,34 @@ describe('AutoClicker — تنظیمات و آمادگی', () => {
     fireEvent.click(screen.getByTestId('autoclicker-dry-run'));
     await waitFor(() => expect(screen.getByTestId('autoclicker-answer').textContent)
       .toContain('زمان‌بندی'));
+  });
+
+  it('مسیر API مفید حسابِ خوانده‌شده و برچسبِ sellable را نشان می‌دهد', async () => {
+    ui.adapter = 'mofid';
+    ui.portfolio = {
+      status: 'success', state: 'PORTFOLIO_READ_ONLY_UNVERIFIED',
+      sellable_state: 'CLIENT_DERIVED_UNVERIFIED',
+      source: 'mofid:/Portfolio/Daily + /Order/customer/status (first-party Titan client)',
+      positions: [{ isin: 'IRO1TEST0001', symbol: 'TEST', quantity: 1000,
+        sellable_quantity: 850, open_sell: 50 }],
+      error: null,
+    };
+    ui.bp = { status: 'success', state: 'BUYING_POWER_VERIFIED',
+      value: 500000000, unit: 'IRR' };
+    renderPage();
+    fireEvent.click(screen.getByTestId('autoclicker-path-api'));
+    await waitFor(() => expect(screen.getByTestId('autoclicker-mofid-account')).toBeTruthy());
+    expect(screen.getByTestId('autoclicker-mofid-bp').textContent).toContain('IRR');
+    expect(screen.getByTestId('autoclicker-mofid-bp').textContent).toContain('۵۰۰');
+    expect(screen.getByTestId('autoclicker-mofid-portfolio').textContent)
+      .toContain('CLIENT_DERIVED_UNVERIFIED');
+    fireEvent.change(screen.getByTestId('autoclicker-symbol'), { target: { value: 'TEST' } });
+    await waitFor(() => expect(screen.getByTestId('autoclicker-mofid-row').textContent)
+      .toContain('۸۵۰'));
+    fireEvent.click(screen.getByTestId('autoclicker-mofid-refresh'));
+    await waitFor(() => expect(api.refetchPortfolio).toHaveBeenCalled());
+    expect(api.refetchBp).toHaveBeenCalled();
+    expect(api.refetchStatus).toHaveBeenCalled();
+    expect(screen.getByTestId('autoclicker-gate-account').textContent).toContain('خوانده شد');
   });
 });

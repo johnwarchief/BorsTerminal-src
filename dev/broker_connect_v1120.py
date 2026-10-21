@@ -96,9 +96,9 @@ def draft_for(eid):
 print("dev/broker_connect_v1120 — تنظیمِ اتصال، فقط‌خواندنی، شاهدِ نشست")
 
 # ── ۱) تنظیم: انتخابِ آداپتور از خودِ برنامه، با مقدم بودنِ env ──────────────
-ck(ES._normalise("adapter", "mofid") == "easytrader"
+ck(ES._normalise("adapter", "mofid") == "mofid"
    and ES._normalise("adapter", "EASYTRADER") == "easytrader",
-   "۱) نامِ کارگزاری و بزرگ/کوچکی به یک آداپتور می‌رسند")
+   "۱) Mofid آداپتورِ مستقل است (نه alias) و بزرگ/کوچکی نرمال می‌شود")
 for bad_key, bad_val in (("token", "x"), ("secret", "x"), ("adapter", "binance"),
                          ("read_only", "maybe")):
     try:

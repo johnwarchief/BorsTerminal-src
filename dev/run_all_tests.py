@@ -71,13 +71,16 @@ def _run_isolated_parent():
     # بساز تا مسیرِ git هرگز به worktreeِ عملیاتی اشاره نکند.
     try:
         subprocess.run(['git', 'init', '-q'], cwd=clone, timeout=30,
-                       capture_output=True, text=True)
+                       capture_output=True, text=True, encoding='utf-8',
+                       errors='replace')
         subprocess.run(['git', 'add', '-A'], cwd=clone, timeout=180,
-                       capture_output=True, text=True)
+                       capture_output=True, text=True, encoding='utf-8',
+                       errors='replace')
         subprocess.run(['git', '-c', 'user.name=isolated-suite',
                         '-c', 'user.email=isolated@example.invalid',
                         'commit', '-qm', 'isolated suite snapshot'],
-                       cwd=clone, timeout=120, capture_output=True, text=True)
+                       cwd=clone, timeout=120, capture_output=True, text=True,
+                       encoding='utf-8', errors='replace')
     except Exception as e:                           # noqa: BLE001
         print('WARN isolated git init failed:', type(e).__name__)
     node_src = os.path.join(root, 'frontend', 'node_modules')
@@ -85,7 +88,8 @@ def _run_isolated_parent():
     if os.path.isdir(node_src):
         try:
             subprocess.run(['cmd', '/c', 'mklink', '/J', node_dst, node_src],
-                           capture_output=True, text=True, timeout=30)
+                           capture_output=True, text=True, timeout=30,
+                           encoding='utf-8', errors='replace')
         except Exception as e:                       # noqa: BLE001
             print('WARN node_modules junction failed:', type(e).__name__)
     log_path = os.path.join(tempfile.gettempdir(),
@@ -728,7 +732,9 @@ SUITES = [
     ('dev/readiness_round15_v1162.py',
      'readiness gates: owner approval store default/approve/revoke, contract UNVERIFIED keeps live_ready false, a real gate change flips the verdict'),
     ('dev/mofid_adapter_v1163.py',
-     'Mofid/Titan adapter: flat third-party payload, 2xx is UNKNOWN not acceptance, no retry, token never logged, fail-closed preflight'),
+     'Mofid/Titan adapter: flat payload, 2xx is UNKNOWN not acceptance, no retry, token never logged, first-party read-only session/money/positions/orders, sellable labelled derived, fail-closed preflight'),
+    ('dev/mofid_readiness_v1164.py',
+     'Mofid API/readiness: first-party endpoints parsed, session proved by GET customer/status, sellable labelled CLIENT_DERIVED_UNVERIFIED, write stays closed, zero POSTs, 401/offline build no fake values'),
     ('dev/autoclicker_browser_round14_v1149.py',
      'sarkhati AutoClicker Round 14 browser-level: Playwright mock EasyTrader, zero order posts in dry-run, one click, UNKNOWN, abort'),
     # مأموریتِ ۲۰۲۶-۱۰-۲۰ (Darvand P0): ذخیرهٔ ماندگارِ سفارش/زمان‌بندی، claim

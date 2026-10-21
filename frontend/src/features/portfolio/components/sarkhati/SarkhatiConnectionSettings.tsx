@@ -22,6 +22,7 @@ import { Chip, Field, Line, Note } from './parts';
 const ADAPTERS: ReadonlyArray<{ value: string; label: string; title: string }> = [
   { value: 'mock', label: 'بدل', title: 'هیچ ترافیکی به کارگزاری نمی‌رود — مسیرِ آزمایشیِ خودِ برنامه' },
   { value: 'easytrader', label: 'مفید (EasyTrader)', title: 'سیمِ read-only به api-mts.orbis.easytrader.ir' },
+  { value: 'mofid', label: 'مفید آنلاین (Titan)', title: 'خواندنِ حساب/سفارش از مسیرهایِ خودِ کارگزاری؛ نوشتن و پاسخِ ثبت هنوز تأیید نشده' },
 ];
 
 const SOURCE_LABEL: Record<string, string> = {
@@ -143,8 +144,9 @@ export function SarkhatiConnectionSettings() {
               روشن نمی‌شود.</li>
           <li>گیتِ نوشتن فقط باِ متغیرِ محیطی <span className="num" dir="ltr">BORS_EXECUTION_LIVE=1</span> است —
               تصمیمِ جدا و آگاهانۀ خودِ کاربر، نه یکِ دکمه درِ این صفحه.</li>
-          <li>مسیرِ سیمِ کارگزاری هنوز سندِ رسمیِ منتشرشده ندارد (۴۰۳)؛ «متصل» فقط باِ
-              پاسخِ واقعیِ کارگزاری گفته می‌شود.</li>
+          <li>برایِ EasyTrader سندِ رسمی منتشر نشده؛ برایِ Mofid مسیرها از بستهٔ خودِ
+              کارگزاری خوانده شده، ولی پاسخِ واقعیِ حساب هنوز دیده نشده. «متصل» فقط باِ
+              پاسخِ واقعی گفته می‌شود.</li>
         </ul>
       </Note>
 
