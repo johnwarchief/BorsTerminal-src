@@ -1,0 +1,18 @@
+﻿key,symbol,asset_id,date,kind,metric,before,after,delta,status,cause,evidence
+AGGREGATE|factor_exact_pct,,,,AGGREGATE,factor_exact_pct,48.4009,48.4009,0,UNCHANGED,no production code change in Round 13,"Round 12 Full-Universe; denominators 1,187,945 / 4,751,780"
+AGGREGATE|factor_near_pct,,,,AGGREGATE,factor_near_pct,82.0838,82.0838,0,UNCHANGED,no production code change in Round 13,"Round 12 Full-Universe; denominators 1,187,945 / 4,751,780"
+AGGREGATE|func_ok_pct,,,,AGGREGATE,func_ok_pct,48.8942,48.8942,0,UNCHANGED,no production code change in Round 13,"Round 12 Full-Universe; denominators 1,187,945 / 4,751,780"
+AGGREGATE|factor_norm_exact_pct,,,,AGGREGATE,factor_norm_exact_pct,41.3725,41.3725,0,UNCHANGED,no production code change in Round 13,"Round 12 Full-Universe; denominators 1,187,945 / 4,751,780"
+AGGREGATE|factor_norm_near_pct,,,,AGGREGATE,factor_norm_near_pct,82.0526,82.0526,0,UNCHANGED,no production code change in Round 13,"Round 12 Full-Universe; denominators 1,187,945 / 4,751,780"
+AGGREGATE|ref_only_steps,,,,AGGREGATE,ref_only_steps,151,151,0,UNCHANGED,no production code change in Round 13,"Round 12 Full-Universe; denominators 1,187,945 / 4,751,780"
+AGGREGATE|prod_only_steps,,,,AGGREGATE,prod_only_steps,153,153,0,UNCHANGED,no production code change in Round 13,"Round 12 Full-Universe; denominators 1,187,945 / 4,751,780"
+AGGREGATE|step_pairs,,,,AGGREGATE,step_pairs,6365,6365,0,UNCHANGED,no production code change in Round 13,"Round 12 Full-Universe; denominators 1,187,945 / 4,751,780"
+AGGREGATE|step_ratio_mismatch,,,,AGGREGATE,step_ratio_mismatch,261,261,0,UNCHANGED,no production code change in Round 13,"Round 12 Full-Universe; denominators 1,187,945 / 4,751,780"
+VISUAL|آکو|2026-09-06|factor,آکو,48315,2026-09-06,VISUAL,factor,0.93161024,0.93161024,0,EXACT,live type7/type0 equals production and reference,Rahavard widget bars type7/type0; screenshot docs/audit/ra365-round13/ako_type7_chart.png
+VISUAL|حخزر|2026-07-26|factor,حخزر,595,2026-07-26,VISUAL,factor,0.82813197,0.827433,0.000844,NEAR,type7 DPS/P model differs from official PA x share (type3=0.82756012),type1=type2=0.84; type3=0.82756012; type7=0.82813197; prod=0.827433
+VISUAL|فروي|2026-08-01|factor,فروي,7129,2026-08-01,VISUAL,factor,0.69083969,0.699006,0.011821,NEAR,"official c=1, s(capital)=0.5, S=1000; type7 implies P=2620 but last close is 2525","CODAL TracingNo 1585362 (4.5T->9T rials, all claims/paid-in); type2=0.69801980; type7=0.69083969"
+MODE|حخزر|modes,حخزر,595,2026-07-26,MODE,type1/type2/type3/type7,0.84 / 0.84 / 0.82756012,0.82813197,,OBSERVED,capital without paid-in; type7 != type3,live mode selector and widget bars
+MODE|فروي|modes,فروي,7129,2026-08-01,MODE,type1/type2/type4/type7,0.5 / 0.69801980 / 0.69801980,0.69083969,,OBSERVED,"S=1000, P=2525 reproduces type2 exactly; type7 needs P=2620",live mode selector; official capital 4.5T->9T rials
+CLUSTER|S/P|194,,,,CLUSTER,S/P rows resolved,194 UNVERIFIED,1 official composition (فروي); P blocked,,BLOCKED_P_DEFINITION,official P (subscription base price) not in local data,CODAL letter 1585362; type2/type7 comparison
+DATE|آکو|2026-09-02,آکو,48315,2026-09-06,DATE,event effective date,notice/event 2026-09-02,first candle 2026-09-06,,CONFIRMED,first-candle snapping matches live chart,live type7 factor switch at 2026-09-06
+FULL_UNIVERSE|round13,,,,FULL_UNIVERSE,Full-Universe,48.4009 / 82.0838 / 48.8942,NOT_MEASURED,,NOT_MEASURED,no production code change,Round 12 final metrics unchanged
