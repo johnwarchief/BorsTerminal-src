@@ -159,7 +159,10 @@ def main():
             et = C.classify(comp)
         except Exception:
             continue
-        if et in ("RESERVE_ONLY", "COMBINED_CLAIMS") and float(comp.get("paid_cash") or 0) <= 0:
+        if et:
+            # Collection status is about the document, not eligibility: a
+            # PAID_IN or UNPARSED body is COMPLETE evidence with a different
+            # type; the no-cash gate is applied by the ingest/use site.
             html_hits[(r["symbol"], r["step_date"])] = (et, comp, fn)
     state = {}
     for r in rows:
@@ -326,9 +329,9 @@ def main():
             rec["retained"] = comp.get("retained")
             rec["revaluation"] = comp.get("revaluation")
             rec["body_file"] = fn
-            rec["status"] = ("COMPLETE" if rec["event_type"] != "UNPARSED"
-                             else "RETRY_PENDING")
-            rec["note"] = "body parsed" if rec["status"] == "COMPLETE" else "body unparsed"
+            rec["status"] = "COMPLETE"
+            rec["note"] = ("body parsed" if rec["event_type"] != "UNPARSED"
+                           else "body fetched but composition unparsed")
             print(rec["symbol"], rec["step_date"], rec["event_type"],
                   comp, rec["status"], flush=True)
             save()

@@ -1107,6 +1107,11 @@ def _classify_pa_event(pa_ratio, dps, closing, orig, share_changes):
     combined DPS+capital) event; its official PA ratio is the total price
     adjustment and must NOT be turned into a cash-dividend ratio.  A row
     without a share change keeps the proven DPS formula.
+
+    The DPS base is the **effective candle's closing** (پایانی).  The DB
+    price_history close is only a fallback: for many pre-2024 symbols the
+    local history is shorter than the chart payload, and the missing close
+    used to turn the official source ratio into a `dps-unverified` event.
     """
     best = None
     for sd, sr in (share_changes or []):
@@ -1136,7 +1141,7 @@ def _classify_pa_event(pa_ratio, dps, closing, orig, share_changes):
     return float(pa_ratio), False, "unverified"
 
 
-def _official_price_adjust_events(symbol, times=None, share_changes=None):
+def _official_price_adjust_events(symbol, times=None, share_changes=None, closings=None):
     """ردیف‌های رسمیِ priceAdjust که کشفِ گسستِ CSV ممکن است ندیده باشد.
 
     تاریخِ ردیفِ مبدأ ممکن است روزِ بی‌معامله باشد؛ رویداد روی اولین کندلِ
@@ -1192,10 +1197,13 @@ def _official_price_adjust_events(symbol, times=None, share_changes=None):
         staged.append({"date": dt, "ratio": r, "source": src or "priceAdjust",
                        "orig": orig, "dps": dps, "source_ratio": r})
     closes = _closing_prices_for(symbol, [e["date"] for e in staged])
+    candle_closes = closings or {}
     out = []
     for e in staged:
         dps = e["dps"]
-        cl = closes.get(e["date"])
+        cl = candle_closes.get(e["date"])
+        if cl is None:
+            cl = closes.get(e["date"])
         r, is_dps, etype = _classify_pa_event(
             e["ratio"], dps, cl, e["orig"], share_changes)
         rec = {"date": e["date"], "ratio": r, "source": e["source"],
@@ -1688,11 +1696,12 @@ def _effective_event_dates(events, times):
     return out
 
 
-def _canonical_adjustment(symbol, times, events):
+def _canonical_adjustment(symbol, times, events, closings=None):
     """(applied, rejected, factors, chain, coverage) — تنها محاسبۀِ تعدیلِ هر دو مسیر.
 
     ترتیبِ `times` آزاد است (CSV نزولی، `price_history` صعودی) و `factors` دقیقاً
-    هم‌ردیفِ همان `times` برمی‌گردد.
+    هم‌ردیفِ همان `times` برمی‌گردد. `closings` نقشهٔ تاریخ→پایانیِ همان کندل است؛
+    پایهٔ DPS از همین کندل خوانده می‌شود و DB فقط fallback است.
     """
     t10 = [str(t)[:10] for t in (times or [])]
     events = _effective_event_dates(events, t10)
@@ -1700,7 +1709,8 @@ def _canonical_adjustment(symbol, times, events):
     if official:
         events = _merge_official_fund_events(events, official)
     share_changes = _share_change_events(symbol)
-    official_pa = _official_price_adjust_events(symbol, t10, share_changes)
+    official_pa = _official_price_adjust_events(symbol, t10, share_changes,
+                                                closings=closings)
     dup_rejected = []
     if official_pa:
         events = _merge_official_price_adjust(events, official_pa,
@@ -2180,8 +2190,9 @@ def get_chart_tsetmc(symbol: str):
         #    اعتبارِ موتور روی هر ضریب اعمال شود، و پیمایشِ O(n+m) (به‌جای n×mِ
         #    ۵۲۸۸×۲۰) و roundِ ۱۰ رقمی همان‌جا حفظ بماند.
         _times = [str(c["time"])[:10] for c in candles]
+        _closings = {str(c["time"])[:10]: c.get("closing") for c in candles}
         _applied, _rejected, _fac, _chain, _cov = _canonical_adjustment(
-            symbol, _times, adj_events)
+            symbol, _times, adj_events, closings=_closings)
         _rejected.extend(_false_rejected)
         _fund_n = sum(1 for e in _applied
                       if str(e.get("source") or "").startswith("fund-portal"))
@@ -2826,7 +2837,8 @@ def get_chart_db(symbol: str):
                 else _stored_adjust_source(symbol) or "local-db-unseen")
         _known = _src in _ADJ_KNOWN_SOURCES
         _applied, _rejected, _fac, _chain, _cov = _canonical_adjustment(
-            symbol, [str(c["time"])[:10] for c in candles], _evs if _known else [])
+            symbol, [str(c["time"])[:10] for c in candles], _evs if _known else [],
+            closings={str(c["time"])[:10]: c.get("closing") for c in candles})
         _rejected.extend(_false_rejected)
         _fund_n = sum(1 for e in _applied
                       if str(e.get("source") or "").startswith("fund-portal"))

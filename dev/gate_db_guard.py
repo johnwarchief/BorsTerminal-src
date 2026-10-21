@@ -60,6 +60,23 @@ def main():
     if not os.path.isfile(src):
         print("GATE_REFUSED: protected DB not found: %s" % src)
         return 2
+    try:
+        conn = sqlite3.connect("file:%s?mode=ro" % src.replace("\\", "/"),
+                               uri=True, timeout=30)
+        try:
+            present = {r[0] for r in conn.execute(
+                "SELECT name FROM sqlite_master WHERE type='table'")}
+        finally:
+            conn.close()
+    except Exception as e:
+        print("GATE_REFUSED_UNREADABLE_DB: %s (%s)" % (src, e))
+        return 2
+    required = {"instruments", "price_history", "financial_statements"}
+    missing = sorted(required - present)
+    if missing:
+        print("GATE_REFUSED_INCOMPLETE_DB: %s missing %s"
+              % (src, ", ".join(missing)))
+        return 2
 
     work = a.workdir or tempfile.mkdtemp(prefix="bors_gate_")
     os.makedirs(work, exist_ok=True)

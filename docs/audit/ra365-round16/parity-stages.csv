@@ -1,0 +1,8 @@
+﻿stage,assets,factor_cmp,factor_ok,factor_ok_pct,factor_near,factor_near_pct,func_cmp,func_ok,func_ok_pct,norm_cmp,norm_ok,norm_ok_pct,norm_near,norm_near_pct,step_pairs,step_ratio_mismatch,ref_only_steps,prod_only_steps,description
+r15_baseline18,2595,1187945,575673,48.4596,975346,82.1036,4751780,2325767,48.9452,1187945,491930,41.4102,974740,82.0526,6365,261,151,153,"R15 baseline, 18 evidence rows, pre-R15 code"
+r15_final27,2595,1187945,589141,49.5933,1015475,85.4817,4751780,2387778,50.2502,1187945,494165,41.5983,979253,82.4325,6369,227,147,149,"R15 final, 27 evidence rows, R15 code"
+r16_codeonly27_candleclosing,2595,1187945,611392,51.4664,1019252,85.7996,4751780,2482907,52.2521,1187945,495338,41.697,978395,82.3603,6366,216,150,152,"R16 code only: candle closing DPS base, 27 evidence rows"
+r16_dataonly_fullcorp_dbclose,2595,1187945,617792,52.0051,1001756,84.3268,4751780,2497803,52.5656,1187945,502678,42.3149,931965,78.4519,6388,271,128,169,"R16 data only: full PA/SH history, old DB-close DPS base"
+r16_fullcorp_candleclosing,2595,1187945,817673,68.8309,1036233,87.229,4751780,3231330,68.0025,1187945,713850,60.0912,992737,83.5676,6370,167,146,184,R16 final: full PA/SH history + candle closing DPS base
+r16_codeonly27_rejected_last,2595,1187945,555582,46.7683,1017685,85.6677,4751780,2264567,47.6572,1187945,491541,41.3774,978944,82.4065,6366,216,150,152,"REJECTED hypothesis: last-price DPS base, 27 evidence rows"
+r16_fullcorp_rejected_last,2595,1187945,592756,49.8976,1033740,87.0192,4751780,2418015,50.8865,1187945,557562,46.935,988618,83.2209,6370,168,146,185,"REJECTED hypothesis: last-price DPS base, full history"
