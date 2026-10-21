@@ -1,0 +1,281 @@
+﻿symbol,class,step_date,ref_ratio,status,source,best_err,note
+آ س پ,stocks,2020-02-15,0.921978022,BLOCKED,share_effective,0.0238379,share found; ratio far
+آسيا,stocks,2021-01-23,0.0953099072,BLOCKED,share_effective,3e-08,"share-only, no-cash evidence missing"
+اتكام,stocks,2021-09-08,0.8213493976,BLOCKED,share_effective,0.05034325,share found; ratio far
+اتكام,stocks,2022-08-16,0.692908883,BLOCKED,share_effective,0.0980055,share found; ratio far
+اتكام,stocks,2023-11-20,0.6958451582,BLOCKED,share_effective,0.07283785,share found; ratio far
+اخابر,stocks,2020-08-10,0.9915682968,FOUND_AND_VALIDATED,PA+DPS_candle_closing,0.0,DPS formula exact
+ارفع,stocks,2020-08-09,0.7601957586,BLOCKED,share_effective,0.01341202,share found; ratio far
+اعتلا,stocks,2020-04-25,0.9390108672,MISSING_AT_SOURCE,,,no PA/SH row maps to the step
+اعتلا,stocks,2021-10-30,0.64114616,BLOCKED,share_effective,0.12504255,share found; ratio far
+اعتلا,stocks,2023-02-13,0.7382067704,BLOCKED,share_effective,0.08950828,share found; ratio far
+افق,stocks,2020-07-07,0.3364591148,BLOCKED,share_effective,0.00929024,"share-only, no-cash evidence missing"
+البرز,stocks,2020-12-05,0.2743641,BLOCKED,PA+DPS_candle_closing,2.50904529,PA found; DPS/source formula far
+البرز,stocks,2023-12-31,0.7924987699,BLOCKED,share_effective,0.03991072,share found; ratio far
+اميد,stocks,2022-01-25,0.667115903,BLOCKED,share_effective,0.06313131,share found; ratio far
+امين,stocks,2021-03-31,0.6709204453,BLOCKED,share_effective,0.05150656,share found; ratio far
+بسويچ,stocks,2022-10-08,0.2456070522,BLOCKED,PA+DPS_candle_closing,2.61417022,PA found; DPS/source formula far
+بفجر,stocks,2021-11-06,0.3528550512,BLOCKED,share_effective,0.05532504,share found; ratio far
+بفجر,stocks,2022-10-02,0.7890397672,FOUND_AND_VALIDATED,PA+DPS_candle_closing,0.0,DPS formula exact
+بكام,stocks,2021-11-06,0.8984363711,BLOCKED,share_effective,0.10867492,share found; ratio far
+بكام,stocks,2023-07-23,0.8030792362,BLOCKED,share_effective,0.08603214,share found; ratio far
+بموتو,stocks,2022-05-28,0.0476190476,BLOCKED,share_effective,5e-08,"share-only, no-cash evidence missing"
+بنيرو,stocks,2020-06-22,0.9883839117,MISSING_AT_SOURCE,,,no PA/SH row maps to the step
+بنيرو,stocks,2021-07-07,0.154225071,BLOCKED,PA+DPS_candle_closing,4.38167883,PA found; DPS/source formula far
+بورس,stocks,2020-10-06,0.4985481998,BLOCKED,PA+DPS_candle_closing,0.99420961,PA found; DPS/source formula far
+بورس,stocks,2021-11-15,0.2833668066,BLOCKED,PA+DPS_candle_closing,2.42955542,PA found; DPS/source formula far
+تاصيكو,stocks,2020-07-20,0.6561924122,BLOCKED,share_effective,0.0168108,share found; ratio far
+تاصيكو,stocks,2023-05-07,0.4747688801,BLOCKED,share_effective,0.03266773,share found; ratio far
+تاصيكو,stocks,2023-09-10,0.7663551402,FOUND_AND_VALIDATED,PA+DPS_candle_closing,0.0,DPS formula exact
+تاپكيش,stocks,2020-09-29,0.3483876795,BLOCKED,share_effective,0.04321149,share found; ratio far
+تاپيكو,stocks,2020-09-15,0.9703808181,FOUND_AND_VALIDATED,PA+DPS_candle_closing,0.0,DPS formula exact
+تكنو,stocks,2023-03-06,0.345495582,BLOCKED,share_effective,0.15391034,share found; ratio far
+تماوند,stocks,2023-08-19,0.5362231345,BLOCKED,share_effective,0.06755235,share found; ratio far
+تملت,stocks,2020-05-19,0.9567773167,MISSING_AT_SOURCE,,,no PA/SH row maps to the step
+تنوين,stocks,2020-05-10,0.9447391689,MISSING_AT_SOURCE,,,no PA/SH row maps to the step
+تنوين,stocks,2020-11-14,0.64743083,BLOCKED,share_effective,0.07326007,share found; ratio far
+ثاخت,stocks,2020-07-15,0.6933546837,BLOCKED,share_effective,0.03849114,share found; ratio far
+ثغرب,stocks,2020-03-16,0.7845813353,BLOCKED,share_effective,0.04407616,share found; ratio far
+ثمسكن,stocks,2022-03-29,0.984959893,FOUND_AND_VALIDATED,PA+DPS_candle_closing,0.0,DPS formula exact
+جم,stocks,2020-07-15,0.9527559055,FOUND_AND_VALIDATED,PA+DPS_candle_closing,0.0,DPS formula exact
+حآسا,stocks,2022-12-13,0.471669219,BLOCKED,share_effective,0.05772007,share found; ratio far
+حتايد,stocks,2020-08-03,0.9701492537,FOUND_AND_VALIDATED,PA+DPS_candle_closing,0.0,DPS formula exact
+حتوكا,stocks,2020-05-12,0.9952059063,MISSING_AT_SOURCE,,,no PA/SH row maps to the step
+حتوكا,stocks,2023-03-15,0.3706644411,BLOCKED,share_effective,0.2455143,share found; ratio far
+حخزر,stocks,2023-07-08,0.8955223881,FOUND_AND_VALIDATED,PA+DPS_candle_closing,0.0,DPS formula exact
+حسير,stocks,2023-03-11,0.5,FOUND_AND_VALIDATED,share_effective,0.0,share + no-cash evidence
+حفارس,stocks,2023-07-11,0.1277968847,BLOCKED,share_effective,4e-08,"share-only, no-cash evidence missing"
+حكشتي,stocks,2020-06-02,0.7670515852,BLOCKED,share_effective,0.00874564,"share-only, no-cash evidence missing"
+حكشتي,stocks,2023-10-24,0.8221374046,FOUND_AND_VALIDATED,PA+DPS_candle_closing,0.0,DPS formula exact
+خبهمن,stocks,2021-04-26,0.0742732546,BLOCKED,share_effective,6e-08,"share-only, no-cash evidence missing"
+ختراك,stocks,2020-10-31,0.638502977,BLOCKED,share_effective,0.03422782,share found; ratio far
+ختور,stocks,2022-09-03,0.3038958978,BLOCKED,PA+DPS_candle_closing,1.76381579,PA found; DPS/source formula far
+خديزل,stocks,2022-03-07,0.125,BLOCKED,share_effective,0.0,"share-only, no-cash evidence missing"
+خراسان,stocks,2020-06-08,0.9324606825,MISSING_AT_SOURCE,,,no PA/SH row maps to the step
+خريخت,stocks,2021-12-27,0.8016813749,BLOCKED,share_effective,0.10906704,share found; ratio far
+خمحور,stocks,2021-09-01,0.0661795589,BLOCKED,PA+DPS_candle_closing,13.03779506,PA found; DPS/source formula far
+خمهر,stocks,2021-10-25,0.8568321811,BLOCKED,share_effective,0.1639637,share found; ratio far
+خموتور,stocks,2021-11-03,0.5016647195,BLOCKED,share_effective,0.05060097,share found; ratio far
+خنصير,stocks,2021-07-28,0.1681809561,BLOCKED,PA+DPS_candle_closing,4.90945979,PA found; DPS/source formula far
+خپويش,stocks,2020-10-11,0.3017098937,BLOCKED,PA+DPS_candle_closing,2.08825187,PA found; DPS/source formula far
+دابور,stocks,2020-05-23,0.6229163196,BLOCKED,share_effective,0.03812767,share found; ratio far
+دابور,stocks,2021-08-03,0.6755996248,BLOCKED,share_effective,0.01322226,share found; ratio far
+دابور,stocks,2022-10-22,0.5218531469,BLOCKED,share_effective,0.04187605,share found; ratio far
+دارو,stocks,2020-05-17,0.9552116623,MISSING_AT_SOURCE,,,no PA/SH row maps to the step
+دارو,stocks,2020-12-21,0.5083808247,BLOCKED,share_effective,0.01648533,share found; ratio far
+داسوه,stocks,2020-06-15,0.9717982747,MISSING_AT_SOURCE,,,no PA/SH row maps to the step
+دالبر,stocks,2022-02-02,0.6991453985,BLOCKED,share_effective,0.038127,share found; ratio far
+دامين,stocks,2020-06-16,0.9896049896,MISSING_AT_SOURCE,,,no PA/SH row maps to the step
+دانا,stocks,2020-03-18,0.4309902054,BLOCKED,share_effective,0.12991062,share found; ratio far
+دبالك,stocks,2022-08-09,0.7161150036,BLOCKED,share_effective,0.05696058,share found; ratio far
+دتماد,stocks,2020-06-15,0.9600580973,MISSING_AT_SOURCE,,,no PA/SH row maps to the step
+دتوزيع,stocks,2020-05-23,0.9732699246,MISSING_AT_SOURCE,,,no PA/SH row maps to the step
+دتوزيع,stocks,2020-12-09,0.5090028449,BLOCKED,share_effective,0.01768722,share found; ratio far
+دتوزيع,stocks,2022-10-10,0.6800804829,BLOCKED,share_effective,0.01972386,share found; ratio far
+دتوليد,stocks,2020-06-15,0.9891681799,MISSING_AT_SOURCE,,,no PA/SH row maps to the step
+درازك,stocks,2022-01-05,0.4400091368,BLOCKED,share_effective,0.03735765,share found; ratio far
+درهآور,stocks,2021-05-11,0.8041775447,BLOCKED,share_effective,0.0051948,"share-only, no-cash evidence missing"
+دزهراوي,stocks,2021-01-06,0.7974633826,BLOCKED,share_effective,0.01998873,share found; ratio far
+دسانكو,stocks,2021-06-30,0.7548572502,BLOCKED,share_effective,0.02891809,share found; ratio far
+دسانكو,stocks,2022-11-27,0.8426246243,BLOCKED,share_effective,0.03423157,share found; ratio far
+دسبحان,stocks,2020-04-27,0.78230285,BLOCKED,share_effective,0.0100559,share found; ratio far
+دسبحان,stocks,2022-01-11,0.6562513213,BLOCKED,share_effective,0.04056631,share found; ratio far
+دشيمي,stocks,2021-02-09,0.5685643457,BLOCKED,share_effective,0.01429,share found; ratio far
+دفارا,stocks,2020-06-08,0.9362129426,MISSING_AT_SOURCE,,,no PA/SH row maps to the step
+دفارا,stocks,2021-08-03,0.389589169,BLOCKED,share_effective,0.03744757,share found; ratio far
+دكپسول,stocks,2020-05-03,0.9675181249,MISSING_AT_SOURCE,,,no PA/SH row maps to the step
+دكپسول,stocks,2021-02-13,0.6734230582,BLOCKED,share_effective,0.0100329,share found; ratio far
+دلر,stocks,2020-05-23,0.9499944769,MISSING_AT_SOURCE,,,no PA/SH row maps to the step
+دلقما,stocks,2022-01-18,0.1002204851,BLOCKED,share_effective,5e-08,"share-only, no-cash evidence missing"
+ديران,stocks,2020-04-26,0.9826651258,BLOCKED,share_effective,0.07008697,share found; ratio far
+ديران,stocks,2023-08-09,0.689184566,BLOCKED,share_effective,0.03994638,share found; ratio far
+دپارس,stocks,2021-05-08,0.558180744,BLOCKED,share_effective,0.00994152,"share-only, no-cash evidence missing"
+رافزا,stocks,2023-09-18,0.3636800962,BLOCKED,share_effective,0.03761574,share found; ratio far
+رانفور,stocks,2020-06-09,0.9648373401,MISSING_AT_SOURCE,,,no PA/SH row maps to the step
+رتاپ,stocks,2020-05-27,0.9822561933,MISSING_AT_SOURCE,,,no PA/SH row maps to the step
+رتاپ,stocks,2020-09-27,0.6256800467,BLOCKED,share_effective,0.02948053,share found; ratio far
+ركيش,stocks,2021-07-10,0.4308992154,BLOCKED,share_effective,0.04223912,share found; ratio far
+ريشمك,stocks,2023-10-07,0.3,BLOCKED,share_effective,0.0,"share-only, no-cash evidence missing"
+زاگرس,stocks,2020-06-21,0.9381932192,MISSING_AT_SOURCE,,,no PA/SH row maps to the step
+زاگرس,stocks,2023-08-01,0.9206921413,FOUND_AND_VALIDATED,PA+DPS_candle_closing,0.0,DPS formula exact
+زقيام,stocks,2020-03-17,0.512476295,BLOCKED,share_effective,0.02434512,share found; ratio far
+زملارد,stocks,2022-01-01,0.4068401032,BLOCKED,share_effective,0.07826196,share found; ratio far
+زگلدشت,stocks,2021-04-03,0.3003428164,BLOCKED,share_effective,0.0487061,share found; ratio far
+ساروم,stocks,2020-05-04,0.9450384543,MISSING_AT_SOURCE,,,no PA/SH row maps to the step
+ساوه,stocks,2020-05-16,0.9489422159,MISSING_AT_SOURCE,,,no PA/SH row maps to the step
+سبجنو,stocks,2020-05-06,0.9626268019,MISSING_AT_SOURCE,,,no PA/SH row maps to the step
+سبهان,stocks,2020-06-15,0.9471516815,MISSING_AT_SOURCE,,,no PA/SH row maps to the step
+ستران,stocks,2021-08-22,0.970608339,FOUND_AND_VALIDATED,PA+DPS_candle_closing,0.0,DPS formula exact
+سخاش,stocks,2020-05-02,0.9432740129,MISSING_AT_SOURCE,,,no PA/SH row maps to the step
+سخوز,stocks,2020-06-20,0.9648506151,MISSING_AT_SOURCE,,,no PA/SH row maps to the step
+سرود,stocks,2020-05-17,0.9655135252,MISSING_AT_SOURCE,,,no PA/SH row maps to the step
+سرچشمه,stocks,2020-02-03,0.7045454545,BLOCKED,share_effective,0.05376344,share found; ratio far
+سرچشمه,stocks,2023-08-09,0.9785223368,FOUND_AND_VALIDATED,PA+DPS_candle_closing,0.0,DPS formula exact
+سشمال,stocks,2020-05-16,0.9661324175,BLOCKED,share_effective,0.13745401,share found; ratio far
+سصوفي,stocks,2020-05-04,0.9768709731,MISSING_AT_SOURCE,,,no PA/SH row maps to the step
+سغرب,stocks,2020-05-05,0.944642947,MISSING_AT_SOURCE,,,no PA/SH row maps to the step
+سفانو,stocks,2020-05-04,0.9118269457,MISSING_AT_SOURCE,,,no PA/SH row maps to the step
+سكرما,stocks,2022-03-30,0.586009371,BLOCKED,PA+DPS_candle_closing,0.42978472,PA found; DPS/source formula far
+سمازن,stocks,2020-04-27,0.9839070809,MISSING_AT_SOURCE,,,no PA/SH row maps to the step
+سمازن,stocks,2022-03-30,0.5833072835,BLOCKED,PA+DPS_candle_closing,0.41173875,PA found; DPS/source formula far
+سمگا,stocks,2020-05-05,0.681829554,BLOCKED,share_effective,0.02223853,share found; ratio far
+سنير,stocks,2020-05-02,0.9686756675,MISSING_AT_SOURCE,,,no PA/SH row maps to the step
+سهرمز,stocks,2023-02-20,0.5489843003,BLOCKED,PA+DPS_candle_closing,0.59940599,PA found; DPS/source formula far
+سيستم,stocks,2020-06-15,0.9571367338,MISSING_AT_SOURCE,,,no PA/SH row maps to the step
+شاملا,stocks,2020-05-16,0.9517967752,MISSING_AT_SOURCE,,,no PA/SH row maps to the step
+شاملا,stocks,2021-12-08,0.3331580752,BLOCKED,share_effective,0.06617569,share found; ratio far
+شبندر,stocks,2021-08-30,0.1866428613,BLOCKED,PA+DPS_candle_closing,2.19876913,PA found; DPS/source formula far
+شتوكا,stocks,2021-11-20,0.4162629172,BLOCKED,share_effective,0.03906886,share found; ratio far
+شدوص,stocks,2020-05-27,0.971948955,MISSING_AT_SOURCE,,,no PA/SH row maps to the step
+شدوص,stocks,2021-11-24,0.521524228,BLOCKED,share_effective,0.04223656,share found; ratio far
+شستا,stocks,2020-11-17,0.9609375,FOUND_AND_VALIDATED,PA+DPS_candle_closing,0.0,DPS formula exact
+شستا,stocks,2021-11-06,0.9034334764,FOUND_AND_VALIDATED,PA+DPS_candle_closing,0.0,DPS formula exact
+شستا,stocks,2022-03-02,0.0867963521,BLOCKED,share_effective,2e-08,"share-only, no-cash evidence missing"
+شسينا,stocks,2021-12-27,0.0426884857,BLOCKED,share_effective,1e-07,"share-only, no-cash evidence missing"
+شسپا,stocks,2021-08-28,0.1589826697,BLOCKED,PA+DPS_candle_closing,3.50812584,PA found; DPS/source formula far
+شفارس,stocks,2021-07-05,0.0527333159,BLOCKED,share_effective,8e-08,"share-only, no-cash evidence missing"
+شفن,stocks,2021-11-10,0.0331718366,BLOCKED,share_effective,0.0746768,share found; ratio far
+شكام,stocks,2022-11-29,0.225,FOUND_AND_VALIDATED,share_effective,0.0,share + no-cash evidence
+شكربن,stocks,2020-06-09,0.9659419879,MISSING_AT_SOURCE,,,no PA/SH row maps to the step
+شكلر,stocks,2020-11-10,0.9620573356,FOUND_AND_VALIDATED,PA+DPS_candle_closing,0.0,DPS formula exact
+شلعاب,stocks,2020-09-20,0.2885981308,BLOCKED,share_effective,0.07599308,share found; ratio far
+شپارس,stocks,2020-08-15,0.6757462099,BLOCKED,share_effective,0.01725281,share found; ratio far
+شپاكسا,stocks,2022-05-02,0.1125378597,BLOCKED,PA+DPS_candle_closing,5.5940308,PA found; DPS/source formula far
+شگويا,stocks,2020-06-10,0.9672941927,MISSING_AT_SOURCE,,,no PA/SH row maps to the step
+غبشهر,stocks,2020-04-27,0.988306373,MISSING_AT_SOURCE,,,no PA/SH row maps to the step
+غبشهر,stocks,2021-12-25,0.1363636364,BLOCKED,share_effective,3e-08,"share-only, no-cash evidence missing"
+غدانه,stocks,2023-09-17,0.27,BLOCKED,share_effective,0.0,"share-only, no-cash evidence missing"
+غشصفا,stocks,2020-05-30,0.9905084398,MISSING_AT_SOURCE,,,no PA/SH row maps to the step
+غشهداب,stocks,2020-09-01,0.2829994207,BLOCKED,PA+DPS_candle_closing,2.31632385,PA found; DPS/source formula far
+غمينو,stocks,2020-11-24,0.5785090603,BLOCKED,share_effective,0.0259653,share found; ratio far
+غويتا,stocks,2021-01-19,0.3856184285,BLOCKED,share_effective,0.02492954,share found; ratio far
+غپآذر,stocks,2020-05-27,0.9940126134,MISSING_AT_SOURCE,,,no PA/SH row maps to the step
+غگرجي,stocks,2020-01-13,0.8227352564,MISSING_AT_SOURCE,,,no PA/SH row maps to the step
+غگرجي,stocks,2021-08-30,0.2216390057,BLOCKED,PA+DPS_candle_closing,3.3156742,PA found; DPS/source formula far
+غگز,stocks,2022-09-10,0.2455802653,MISSING_AT_SOURCE,,,no PA/SH row maps to the step
+فاراك,stocks,2021-03-31,0.4380509568,BLOCKED,share_effective,1e-08,"share-only, no-cash evidence missing"
+فاراك,stocks,2021-07-05,0.8345254588,BLOCKED,share_effective,0.16672926,share found; ratio far
+فاراك,stocks,2023-02-06,0.9868852459,FOUND_AND_VALIDATED,PA+DPS_candle_closing,0.0,DPS formula exact
+فارس,stocks,2021-11-06,0.9549887472,FOUND_AND_VALIDATED,PA+DPS_candle_closing,0.0,DPS formula exact
+فباهنر,stocks,2021-03-16,0.4396434799,BLOCKED,share_effective,0.02518416,share found; ratio far
+فجر,stocks,2020-06-07,0.963828729,MISSING_AT_SOURCE,,,no PA/SH row maps to the step
+فجهان,stocks,2022-04-24,0.6556347701,BLOCKED,share_effective,0.29058721,share found; ratio far
+فجهان,stocks,2023-10-10,0.7493001159,BLOCKED,share_effective,0.09005996,share found; ratio far
+فخاس,stocks,2022-12-05,0.5450512932,BLOCKED,share_effective,0.0507475,share found; ratio far
+فروي,stocks,2020-05-17,0.9593760156,MISSING_AT_SOURCE,,,no PA/SH row maps to the step
+فسازان,stocks,2021-12-18,0.2227385072,BLOCKED,share_effective,0.10208611,share found; ratio far
+فصبا,stocks,2023-11-19,0.1347910864,BLOCKED,share_effective,0.1839223,share found; ratio far
+فغدير,stocks,2023-02-15,0.3611962071,BLOCKED,share_effective,0.05077314,share found; ratio far
+فلوله,stocks,2021-10-13,0.0746140258,BLOCKED,PA+DPS_candle_closing,12.37147239,PA found; DPS/source formula far
+فولاژ,stocks,2020-01-18,0.9248843547,BLOCKED,share_effective,0.00888509,"share-only, no-cash evidence missing"
+فگستر,stocks,2022-03-14,0.5553097345,BLOCKED,share_effective,0.09960159,share found; ratio far
+قرن,stocks,2021-05-31,0.5080906149,BLOCKED,share_effective,0.01592357,share found; ratio far
+قزوين,stocks,2022-01-11,0.1595581367,BLOCKED,share_effective,1e-07,"share-only, no-cash evidence missing"
+قنيشا,stocks,2022-07-04,0.0701298701,BLOCKED,share_effective,0.0,"share-only, no-cash evidence missing"
+كاسپين,stocks,2020-06-02,0.9568210993,MISSING_AT_SOURCE,,,no PA/SH row maps to the step
+كاسپين,stocks,2022-08-22,0.522810219,BLOCKED,share_effective,0.04363002,share found; ratio far
+كترام,stocks,2020-09-28,0.9960981048,FOUND_AND_VALIDATED,PA+DPS_candle_closing,0.0,DPS formula exact
+كتوكا,stocks,2020-05-11,0.9903255454,MISSING_AT_SOURCE,,,no PA/SH row maps to the step
+كتوكا,stocks,2022-01-03,0.7140342153,BLOCKED,share_effective,0.04568168,share found; ratio far
+كحافظ,stocks,2021-08-30,0.3525668024,BLOCKED,share_effective,0.18961658,share found; ratio far
+كخاك,stocks,2020-09-19,0.3370165746,BLOCKED,share_effective,0.01092897,share found; ratio far
+كخاك,stocks,2021-12-15,0.448291729,BLOCKED,share_effective,0.04398988,share found; ratio far
+كرازي,stocks,2021-08-24,0.069521077,BLOCKED,PA+DPS_candle_closing,9.91807229,PA found; DPS/source formula far
+كرازي,stocks,2023-04-25,0.8755186722,BLOCKED,share_effective,0.17182131,share found; ratio far
+كرماشا,stocks,2020-05-16,0.9771210677,MISSING_AT_SOURCE,,,no PA/SH row maps to the step
+كرماشا,stocks,2023-07-30,0.2905123046,BLOCKED,PA+DPS_candle_closing,1.38677503,PA found; DPS/source formula far
+كزغال,stocks,2022-01-26,0.5871156662,BLOCKED,share_effective,0.02671892,share found; ratio far
+كساپا,stocks,2023-09-20,0.2542417733,BLOCKED,share_effective,0.05996892,share found; ratio far
+كسعدي,stocks,2020-12-29,0.5144927536,BLOCKED,share_effective,0.02816901,share found; ratio far
+كفرا,stocks,2020-06-10,0.4594707313,BLOCKED,share_effective,0.0144437,share found; ratio far
+كفرا,stocks,2021-12-20,0.4391517129,BLOCKED,share_effective,0.08915305,share found; ratio far
+كلر,stocks,2020-06-13,0.9707156298,MISSING_AT_SOURCE,,,no PA/SH row maps to the step
+كلوند,stocks,2020-05-23,0.9723230653,MISSING_AT_SOURCE,,,no PA/SH row maps to the step
+كمرجان,stocks,2023-09-02,0.6453188184,BLOCKED,share_effective,0.05107238,share found; ratio far
+كمنگنز,stocks,2020-06-22,0.9886070933,MISSING_AT_SOURCE,,,no PA/SH row maps to the step
+كمنگنز,stocks,2022-01-15,0.1460497023,BLOCKED,share_effective,0.06362863,share found; ratio far
+كنور,stocks,2021-08-14,0.2419083595,BLOCKED,share_effective,0.04952226,share found; ratio far
+كوثر,stocks,2023-03-11,0.7391316923,BLOCKED,share_effective,0.08622341,share found; ratio far
+كوير,stocks,2020-08-02,0.3385262502,BLOCKED,PA+DPS_candle_closing,1.82402112,PA found; DPS/source formula far
+كيا,stocks,2023-10-02,0.3976759837,MISSING_AT_SOURCE,,,no PA/SH row maps to the step
+كپرور,stocks,2022-04-12,0.3157894737,FOUND_AND_VALIDATED,share_effective,1e-08,share + no-cash evidence
+كپشير,stocks,2020-06-07,0.9790863848,MISSING_AT_SOURCE,,,no PA/SH row maps to the step
+كپشير,stocks,2020-10-06,0.3125148987,BLOCKED,share_effective,0.04004577,share found; ratio far
+كپشير,stocks,2021-08-23,0.9726864674,FOUND_AND_VALIDATED,PA+DPS_candle_closing,0.0,DPS formula exact
+كپشير,stocks,2023-12-24,0.6291262136,BLOCKED,share_effective,0.0462963,share found; ratio far
+كچاد,stocks,2020-02-24,0.8173228007,BLOCKED,share_effective,0.03001263,share found; ratio far
+كچاد,stocks,2023-05-03,0.7345603169,BLOCKED,share_effective,0.03476417,share found; ratio far
+كگل,stocks,2020-05-04,0.6647258612,BLOCKED,share_effective,0.02943254,share found; ratio far
+كگل,stocks,2023-04-09,0.8715404232,BLOCKED,share_effective,0.0212384,share found; ratio far
+كگهر,stocks,2023-04-29,0.9337748344,FOUND_AND_VALIDATED,PA+DPS_candle_closing,0.0,DPS formula exact
+لوتوس,stocks,2020-04-26,0.9434358179,MISSING_AT_SOURCE,,,no PA/SH row maps to the step
+لوتوس,stocks,2021-10-02,0.6441176471,BLOCKED,share_effective,0.06849315,share found; ratio far
+لوتوس,stocks,2022-10-04,0.6785714286,BLOCKED,share_effective,0.07894737,share found; ratio far
+لوتوس,stocks,2023-05-17,0.7372506149,BLOCKED,share_effective,0.0699034,share found; ratio far
+لپارس,stocks,2023-12-26,0.306748072,BLOCKED,share_effective,0.02199874,share found; ratio far
+ما,stocks,2020-06-06,0.9713596623,MISSING_AT_SOURCE,,,no PA/SH row maps to the step
+ماديرا,stocks,2022-04-20,0.6760318165,BLOCKED,share_effective,0.14580235,share found; ratio far
+مبين,stocks,2023-08-05,0.8663134933,FOUND_AND_VALIDATED,PA+DPS_candle_closing,0.0,DPS formula exact
+مبين,stocks,2023-12-04,0.360455655,BLOCKED,share_effective,0.07524455,share found; ratio far
+مداران,stocks,2020-06-10,0.9879419283,MISSING_AT_SOURCE,,,no PA/SH row maps to the step
+مفاخر,stocks,2022-11-26,0.202646081,BLOCKED,share_effective,5.4e-07,"share-only, no-cash evidence missing"
+هاي وب,stocks,2022-08-01,0.2935858333,BLOCKED,PA+DPS_candle_closing,2.13201096,PA found; DPS/source formula far
+هجرت,stocks,2020-12-16,0.4579025512,BLOCKED,share_effective,0.01725815,share found; ratio far
+هجرت,stocks,2022-06-11,0.5601854753,BLOCKED,PA+DPS_candle_closing,0.46480037,PA found; DPS/source formula far
+هرمز,stocks,2020-06-15,0.9861188229,MISSING_AT_SOURCE,,,no PA/SH row maps to the step
+هرمز,stocks,2023-12-23,0.5833333333,FOUND_AND_VALIDATED,share_effective,1e-08,share + no-cash evidence
+همراه,stocks,2020-06-21,0.9602135503,MISSING_AT_SOURCE,,,no PA/SH row maps to the step
+واعتبار,stocks,2021-12-28,0.4444444444,FOUND_AND_VALIDATED,share_effective,1e-08,share + no-cash evidence
+والبر,stocks,2021-06-26,0.5474275347,BLOCKED,PA+DPS_candle_closing,0.65304381,PA found; DPS/source formula far
+واميد,stocks,2021-03-16,0.3241692203,BLOCKED,share_effective,0.04573618,share found; ratio far
+وايران,stocks,2020-06-02,0.9735600972,MISSING_AT_SOURCE,,,no PA/SH row maps to the step
+وبيمه,stocks,2020-09-16,0.4693641618,BLOCKED,share_effective,0.14778325,share found; ratio far
+وبيمه,stocks,2022-02-02,0.9515738499,FOUND_AND_VALIDATED,PA+DPS_candle_closing,0.0,DPS formula exact
+وتوس,stocks,2021-01-13,0.9828793774,FOUND_AND_VALIDATED,PA+DPS_candle_closing,0.0,DPS formula exact
+وتوصا,stocks,2023-08-30,0.1142857143,BLOCKED,share_effective,4e-08,"share-only, no-cash evidence missing"
+وتوكا,stocks,2020-06-16,0.9830734967,MISSING_AT_SOURCE,,,no PA/SH row maps to the step
+وتوكا,stocks,2023-06-25,0.3482839719,BLOCKED,PA+DPS_candle_closing,1.64055385,PA found; DPS/source formula far
+وخارزم,stocks,2023-12-04,0.3039686523,BLOCKED,PA+DPS_candle_closing,2.04258249,PA found; DPS/source formula far
+وساخت,stocks,2022-07-13,0.0353501823,BLOCKED,share_effective,7e-08,"share-only, no-cash evidence missing"
+وسپه,stocks,2021-01-24,0.5788663183,BLOCKED,share_effective,0.03676667,share found; ratio far
+وسپه,stocks,2023-08-12,0.8097411822,BLOCKED,share_effective,0.04940386,share found; ratio far
+وسپهر,stocks,2023-02-19,0.4738916256,BLOCKED,share_effective,0.15592516,share found; ratio far
+وصنا,stocks,2022-08-02,0.9043909348,FOUND_AND_VALIDATED,PA+DPS_candle_closing,0.0,DPS formula exact
+وصنعت,stocks,2022-04-24,0.3333333333,FOUND_AND_VALIDATED,share_effective,1e-08,share + no-cash evidence
+وغدير,stocks,2020-04-28,0.9486910995,MISSING_AT_SOURCE,,,no PA/SH row maps to the step
+وكار,stocks,2020-12-28,0.7505091687,BLOCKED,share_effective,0.09452236,share found; ratio far
+وكبهمن,stocks,2022-04-16,0.5,FOUND_AND_VALIDATED,share_effective,0.0,share + no-cash evidence
+ولشرق,stocks,2020-05-17,0.9732034105,MISSING_AT_SOURCE,,,no PA/SH row maps to the step
+ولشرق,stocks,2021-11-23,0.54433115,BLOCKED,share_effective,0.21266415,share found; ratio far
+ولملت,stocks,2020-05-20,0.9801875578,MISSING_AT_SOURCE,,,no PA/SH row maps to the step
+ولملت,stocks,2021-11-21,0.5989455185,BLOCKED,share_effective,0.10954617,share found; ratio far
+ومعادن,stocks,2020-03-15,0.7633024779,BLOCKED,share_effective,0.03830794,share found; ratio far
+ومعادن,stocks,2021-04-26,0.6791605946,BLOCKED,share_effective,0.03767763,share found; ratio far
+ومعادن,stocks,2022-05-28,0.4631240633,BLOCKED,share_effective,0.05742987,share found; ratio far
+ومعلم,stocks,2023-11-14,0.8617860589,BLOCKED,share_effective,0.10109167,share found; ratio far
+ونفت,stocks,2023-07-23,0.9636363636,FOUND_AND_VALIDATED,PA+DPS_candle_closing,0.0,DPS formula exact
+ونيرو,stocks,2020-04-08,0.912292288,BLOCKED,share_effective,0.0239135,share found; ratio far
+وهامون,stocks,2022-01-31,0.7387283237,BLOCKED,share_effective,0.18779343,share found; ratio far
+وپاسار,stocks,2023-03-19,0.4800545117,BLOCKED,share_effective,0.0,"share-only, no-cash evidence missing"
+وپاسار,stocks,2023-06-13,0.8894482588,BLOCKED,share_effective,0.0497633,share found; ratio far
+وپويا,stocks,2022-02-19,0.7054409006,BLOCKED,share_effective,0.18996961,share found; ratio far
+وگردش,stocks,2023-12-16,0.5224779716,BLOCKED,share_effective,0.04302186,share found; ratio far
+وگستر,stocks,2022-06-13,0.5793650794,BLOCKED,share_effective,0.1369863,share found; ratio far
+پارس,stocks,2022-05-17,0.0126037425,BLOCKED,share_effective,2e-07,"share-only, no-cash evidence missing"
+پاسا,stocks,2020-01-19,0.7019027484,MISSING_AT_SOURCE,,,no PA/SH row maps to the step
+پاكشو,stocks,2020-03-17,0.5064143682,BLOCKED,share_effective,0.01266624,share found; ratio far
+پترول,stocks,2020-07-19,0.8088467615,BLOCKED,share_effective,0.0109375,share found; ratio far
+پترول,stocks,2020-09-16,0.975088968,MISSING_AT_SOURCE,,,no PA/SH row maps to the step
+پرداخت,stocks,2020-05-13,0.9653767335,MISSING_AT_SOURCE,,,no PA/SH row maps to the step
+پرديس,stocks,2021-11-13,0.6324230805,BLOCKED,share_effective,0.14064133,share found; ratio far
+پكوير,stocks,2021-11-06,0.5354609929,BLOCKED,share_effective,0.06622517,share found; ratio far
+پكوير,stocks,2023-02-06,0.7302010864,BLOCKED,share_effective,0.08700948,share found; ratio far
+پيزد,stocks,2022-03-15,0.25,BLOCKED,share_effective,0.0,"share-only, no-cash evidence missing"
+پيزد,stocks,2023-12-04,0.258391387,BLOCKED,share_effective,1e-08,"share-only, no-cash evidence missing"
+چافست,stocks,2022-01-30,0.4929941713,BLOCKED,PA+DPS_candle_closing,0.88003665,PA found; DPS/source formula far
+چكاوه,stocks,2020-12-26,0.3788492707,BLOCKED,share_effective,0.05729564,share found; ratio far
+چكاپا,stocks,2021-03-28,0.9781576448,FOUND_AND_VALIDATED,PA+DPS_candle_closing,0.0,DPS formula exact
+گدنا,stocks,2022-09-11,0.2741770978,BLOCKED,share_effective,0.27054447,share found; ratio far
+گوهران,stocks,2021-07-05,0.6405615022,BLOCKED,share_effective,0.03633929,share found; ratio far
+گوهران,stocks,2022-12-04,0.6520546682,BLOCKED,share_effective,0.08266304,share found; ratio far
+گوهران,stocks,2023-10-28,0.707050907,BLOCKED,share_effective,0.08068854,share found; ratio far

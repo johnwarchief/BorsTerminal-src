@@ -1,0 +1,14 @@
+﻿source,endpoint_or_field,meaning,date_coverage,duplicate_semantics,evidence,confidence,production_usage
+TSETMC CDN,ClosingPrice/GetPriceAdjustByFlow/{flow}/{size},official adjusted/raw closing per corporate action,2008-11-26..2026-10-21 with size=20000,"PK (ins_code,d_even); amendments replace","live HTTP 200 + parsed 10,831 rows",official-high,ingest -> price_adjust_events
+TSETMC CDN,Instrument/GetInstrumentShareChangeByFlow/{flow}/{days},official old/new share counts,2008-12-06..2026-10-24,"PK (ins_code,d_even); reverse/restatement rows filtered","live HTTP 200 + parsed 3,493 rows",official-high,ingest -> share_change_events
+TSETMC CDN,ClosingPrice/GetPriceAdjustList/{insCode},per-instrument PA list,2009..2026 on probed symbols (18-19 rows each),full list per instrument; event rows,live HTTP 200 probe,official-high,cross-check/probe only; not batch-ingested
+TSETMC CDN,Instrument/GetInstrumentShareChange/{insCode},per-instrument share list,2009..2026 on probed symbols,full list per instrument,live HTTP 200 probe,official-high,cross-check/probe only
+TSETMC CDN,ClosingPrice/GetInstrumentCalendar/{insCode},daily adjusted closing + volume,"2009..2026 (3,048-4,057 rows)",one row per session,live HTTP 200 probe,official-high,"not used for ratios (adjusted, not raw)"
+TSETMC CDN,ClosingPrice/GetClosingPriceDailyList/{insCode}/{top},latest daily price rows,latest N sessions,one row per session,live HTTP 200 probe,official-high,live chart price path
+CODAL,Decision.aspx (Letters),funding composition / event type,per letter,one letter per action,official HTML bodies + cache,official-high,share_type_evidence (29 no-cash rows)
+Rahavard,widget type0/type7 bars,parity reference factors/prices,2008..2026 snapshot,asset/date key,ref_bars_v2.jsonl,reference-high,measurement only; never production input
+GitHub: m-ahmadi/exref,tse/urls.txt,endpoint catalog,n/a,n/a,raw file read,community-medium,discovery pointer only
+GitHub: mazaheriMahdi/fis-agent,docs/domain/tsetmc-api.md,endpoint/base catalog,n/a,n/a,raw file read,community-medium,discovery pointer only
+GitHub: amirziveh/tsetmc-skill,README/endpoint catalog,TSETMC surfaces for AI agents,n/a,n/a,repo page (master),community-medium,discovery pointer only
+GitHub: BabakEslami/tse-market-data,README,unofficial endpoint docs; claims no official PA path,n/a,n/a,raw README,community-low,negative cross-check only
+codal.ir,official letters,event identity/composition,per letter,one letter per action,official bodies,official-high,evidence only

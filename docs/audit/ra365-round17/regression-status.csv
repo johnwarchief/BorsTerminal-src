@@ -1,0 +1,24 @@
+﻿symbol,metric,r15,r16,r17,delta_r17,status,note
+آردينه,factor_exact,530,514,514,0,CUMULATIVE_UNRESOLVED,no direct exact->bad step; cumulative ratio change from full-history events
+آسيا,factor_exact,380,59,59,0,CUMULATIVE_UNRESOLVED,no direct exact->bad step; cumulative ratio change from full-history events
+بترانس,factor_exact,500,156,156,0,CUMULATIVE_UNRESOLVED,no direct exact->bad step; cumulative ratio change from full-history events
+بشهاب,factor_exact,506,65,65,0,CUMULATIVE_UNRESOLVED,no direct exact->bad step; cumulative ratio change from full-history events
+حآفرين,factor_exact,298,94,94,0,CUMULATIVE_UNRESOLVED,no direct exact->bad step; cumulative ratio change from full-history events
+خديزل,factor_exact,758,710,988,278,FIXED_BY_PRECEDENCE,gap+share price chain; recomputed DPS suppressed
+خگستر,factor_exact,346,107,107,0,CUMULATIVE_UNRESOLVED,no direct exact->bad step; cumulative ratio change from full-history events
+زدشت,factor_exact,326,98,98,0,CUMULATIVE_UNRESOLVED,no direct exact->bad step; cumulative ratio change from full-history events
+ساينا,factor_exact,599,377,377,0,CUMULATIVE_UNRESOLVED,no direct exact->bad step; cumulative ratio change from full-history events
+شگامرن,factor_exact,410,322,322,0,CUMULATIVE_UNRESOLVED,no direct exact->bad step; cumulative ratio change from full-history events
+كاما,factor_exact,452,245,245,0,CUMULATIVE_UNRESOLVED,no direct exact->bad step; cumulative ratio change from full-history events
+كماسه,factor_exact,1415,1091,1091,0,DIRECT_STEP_UNRESOLVED,direct step 2021-09-15 remains bad
+كمرجان,factor_exact,297,65,65,0,CUMULATIVE_UNRESOLVED,no direct exact->bad step; cumulative ratio change from full-history events
+لپارس,factor_exact,682,582,582,0,CUMULATIVE_UNRESOLVED,no direct exact->bad step; cumulative ratio change from full-history events
+ميدكو,factor_exact,928,478,478,0,DIRECT_STEP_UNRESOLVED,direct step 2022-06-12 remains bad
+نمرينو,factor_exact,615,315,315,0,DIRECT_STEP_UNRESOLVED,step 2025-02-23 missing
+والبر,factor_exact,596,260,260,0,NEAR_IMPROVED_BY_PRECEDENCE,direct exact unchanged; near restored
+وخاور,factor_exact,465,239,465,226,FIXED_BY_PRECEDENCE,gap+share price chain; recomputed DPS suppressed
+ولبهمن,factor_exact,1068,718,1505,787,FIXED_BY_PRECEDENCE,observed gap wins over separate DPS
+ولشرق,factor_exact,373,277,277,0,CUMULATIVE_UNRESOLVED,no direct exact->bad step; cumulative ratio change from full-history events
+ومعلم,factor_exact,967,616,616,0,CUMULATIVE_UNRESOLVED,no direct exact->bad step; cumulative ratio change from full-history events
+وهور,factor_exact,553,492,492,0,CUMULATIVE_UNRESOLVED,no direct exact->bad step; cumulative ratio change from full-history events
+چكاپا,factor_exact,480,261,261,0,CUMULATIVE_UNRESOLVED,no direct exact->bad step; cumulative ratio change from full-history events

@@ -1,0 +1,53 @@
+{
+ "version": "ra365-r17-v1",
+ "source_db": "D:\\BorsTerminal-tmp\\ra365_round16\\market_r16_fullcorp.db",
+ "source_sha256": "87d726e46c8f3cb63f4d797bde8ed0edea46ae49dbb699517d0ac51be68ebfda",
+ "target_db": "D:\\BorsTerminal-tmp\\ra365_round17\\market_r17_migrated.db",
+ "before": {
+  "target_sha256": "c6046481a1119ddbd655caf602952f31630cff49ea3d8ab989e9326d9c9fa315",
+  "baseline": "D:\\BorsTerminal-tmp\\ra365_round17\\market_r17_migrated.db.ra365-r17-v1.baseline",
+  "pre_apply_backup": "D:\\BorsTerminal-tmp\\ra365_round17\\market_r17_migrated.db.ra365-r17-v1.pre-20261022-005404",
+  "at": "2026-10-22T00:54:09"
+ },
+ "applied_rows": {
+  "price_adjust_events": 10831,
+  "share_change_events": 3493,
+  "fund_profit_events": 2222
+ },
+ "evidence_extra": 2,
+ "after": {
+  "price_adjust_events": {
+   "rows": 10831,
+   "sha256": "490786e5b8623ee4c16508e0a7f8b9ca7e541519d9bc19449e0effe0fa316859"
+  },
+  "share_change_events": {
+   "rows": 3493,
+   "sha256": "bd9eab7169bca002002ae03c79407974130f8a36615695cc99adebc92f51adc9"
+  },
+  "fund_profit_events": {
+   "rows": 2222,
+   "sha256": "36270a607aa264bc10bea493e8d4b7429c5868d08d8e325b3513fbe45d08f6c0"
+  },
+  "share_type_evidence": {
+   "rows": 29,
+   "sha256": "1f3270ef80242b5788ec87837f430864bcb29dfda648d5fb9f5932805f36583b"
+  }
+ },
+ "integrity_check": "ok",
+ "keys": {
+  "price_adjust_events": [
+   "ins_code",
+   "d_even"
+  ],
+  "share_change_events": [
+   "ins_code",
+   "d_even"
+  ],
+  "fund_profit_events": [
+   "ins_code",
+   "d_even"
+  ]
+ },
+ "idempotent": "INSERT OR REPLACE by the source unique key",
+ "finished_at": "2026-10-22T00:54:24"
+}

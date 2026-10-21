@@ -1446,6 +1446,65 @@ def _merge_official_price_adjust(events, official, rejected=None, share_changes=
     dps_ratios = [(i, str(o.get("date"))[:10], float(o["ratio"]), _source_ratio(o))
                   for i, o in enumerate(official) if o.get("_dps") and o.get("ratio")]
     share_changes = list(share_changes or [])
+    # An observed base gap on the same effective date as an official DPS row,
+    # with a share change nearby, is the price leg of that action.  The
+    # separately recomputed DPS must not be applied again; the gap keeps the
+    # pre-share leg.  Share-only gaps (بورس: gap≈share) keep the separate DPS.
+    observed_gap_skip = set()
+    for i, o in enumerate(official):
+        if not (o.get("_dps") and o.get("ratio")):
+            continue
+        od = str(o.get("date"))[:10]
+        for e in kept:
+            if e.get("source") != "base-price-discontinuity":
+                continue
+            if str(e.get("date"))[:10] != od:
+                continue
+            try:
+                gr = float(e.get("ratio") or 0)
+            except (TypeError, ValueError):
+                continue
+            if gr <= 0:
+                continue
+            cc = None
+            for sd, sr in share_changes:
+                dd = _day_diff(sd, od)
+                if dd is not None and dd <= 5 and (cc is None or dd < cc[0]):
+                    cc = (dd, float(sr))
+            if not cc or cc[1] <= 0:
+                continue
+            sr = cc[1]
+            if abs(sr / gr - 1.0) <= _SAME_ACTION_TOL:
+                continue  # share-only gap: the DPS is a separate action
+            # Is the share change actually present in the applied chain?
+            share_applied = False
+            for k in kept:
+                try:
+                    kr = float(k.get("ratio") or 0)
+                except (TypeError, ValueError):
+                    continue
+                if kr <= 0:
+                    continue
+                if (k.get("source") == "shareChange" or
+                        k.get("source") == "base-price-discontinuity") and \
+                        abs(kr / sr - 1.0) <= 0.05:
+                    share_applied = True
+                    break
+            if share_applied:
+                observed_gap_skip.add(i)
+                break
+            source = _source_ratio(o)
+            if source and abs(gr / source - 1.0) <= _LEDGER_AGREE_TOL:
+                # The gap is the official pre-event ratio; the existing
+                # source-ratio dedupe keeps the recomputed DPS (ديران).
+                continue
+            # The gap is not the share and not the official source: it is the
+            # observed total, so the separate DPS must not be applied again
+            # (ولبهمن).
+            observed_gap_skip.add(i)
+            break
+    if observed_gap_skip:
+        dps_ratios = [x for x in dps_ratios if x[0] not in observed_gap_skip]
     combined_skip = set()  # official DPS rows already contained in a base gap
     if dps_ratios:
         def _nearest_share(ed):
@@ -1510,6 +1569,8 @@ def _merge_official_price_adjust(events, official, rejected=None, share_changes=
     # ambiguous and are both kept (same neutrality as ledger sharpening).
     combined_base_claims = {}
     for idx, o in enumerate(official):
+        if idx in observed_gap_skip:
+            continue
         sr = _source_ratio(o)
         if not sr:
             continue
@@ -1538,6 +1599,11 @@ def _merge_official_price_adjust(events, official, rejected=None, share_changes=
     combined_base_skip = {v[0] for v in combined_base_claims.values()
                           if len(v) == 1}
     for idx, o in enumerate(official):
+        if idx in observed_gap_skip:
+            if rejected is not None:
+                rejected.append({"date": o.get("date"), "ratio": o.get("ratio"),
+                                 "factor_status": "included-in-observed-base-gap"})
+            continue
         if idx in combined_base_skip:
             if rejected is not None:
                 rejected.append({"date": o.get("date"), "ratio": o.get("ratio"),

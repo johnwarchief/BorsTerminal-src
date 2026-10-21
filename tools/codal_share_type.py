@@ -92,7 +92,7 @@ def amount_before(text, label):
     idx = text.find(label)
     if idx < 0:
         return None
-    chunk = text[max(0, idx - 120):idx]
+    chunk = text[max(0, idx - 50):idx]
     m = re.findall(NUM, chunk)
     if not m:
         return None
@@ -102,26 +102,110 @@ def amount_before(text, label):
         return None
 
 
-def composition(text):
-    cap = None
+def amount_after(text, label, window=220):
+    """عددِ پس از برچسب («... <label> ... مبلغ X میلیون ریال»).
+
+    The registration letters often put the amount after the funding label.
+    Stop at the next component label so a missing amount never borrows the
+    next field's number.
+    """
+    idx = text.find(label)
+    if idx < 0:
+        return None
+    chunk = text[idx + len(label):idx + len(label) + window]
+    stops = [chunk.find(x) for x in ("از محل", "و از ", "، از ", ")") if chunk.find(x) > 0]
+    if stops:
+        chunk = chunk[:min(stops)]
+    m = re.search(r"مبلغ\s*([0-9][0-9,\.]*)", chunk)
+    if not m:
+        m = re.match(r"\s*([0-9][0-9,\.]*)", chunk)
+    if not m:
+        return None
+    try:
+        return float(m.group(1).replace(",", ""))
+    except Exception:
+        return None
+
+
+def _amount(text, label):
+    idx = text.find(label)
+    if idx >= 0 and "مبلغ" in text[idx + len(label):idx + len(label) + 120]:
+        return amount_after(text, label)
+    return amount_before(text, label) or amount_after(text, label)
+
+
+def _total_increase(text):
+    m = re.search(r"افزایش سرمای[^)]{0,500}?از مبلغ\s*" + NUM +
+                  r"\s*میلیون ریال\s*بهمبلغ\s*" + NUM, text)
+    if m:
+        try:
+            return float(m.group(2).replace(",", "")) - float(m.group(1).replace(",", ""))
+        except Exception:
+            return None
     m = re.search(r"مبلغ افزایش سرمایه\s*:?\s*" + NUM, text)
     if m:
-        cap = float(m.group(1).replace(",", ""))
-    return {
-        "capital_increase": cap,
-        "paid_cash": amount_before(text, "از محل آورده نقدی سهامداران"),
-        "claims": amount_before(text, "از محل مطالبات حال شده سهامداران"),
-        "retained": amount_before(text, "از محل سود انباشته"),
-        "reserve_dev": amount_before(text, "از محل اندوخته طرح و توسعه"),
-        "reserve_other": amount_before(text, "از محل سایر اندوخته"),
-        "revaluation": amount_before(text, "از محل مازاد تجدید ارزیابی"),
+        try:
+            return float(m.group(1).replace(",", ""))
+        except Exception:
+            return None
+    return None
+
+
+def _stage_paid_cash(text):
+    """Paid cash stated as a stage: «از مبلغ X ... به مبلغ Y ... آورده نقدی»."""
+    m = re.search(r"مرحله[^)]{0,500}?از مبلغ\s*" + NUM +
+                  r"\s*(?:میلیون\s*)?ریال\s*به مبلغ\s*" + NUM +
+                  r"[^)]{0,250}?آورده نقدی", text)
+    if not m:
+        return None
+    try:
+        return float(m.group(2).replace(",", "")) - float(m.group(1).replace(",", ""))
+    except Exception:
+        return None
+
+
+def composition(text):
+    total = _total_increase(text)
+    vals = {
+        "capital_increase": total,
+        "paid_cash": _amount(text, "آورده نقدی"),
+        "claims": _amount(text, "مطالبات"),
+        "retained": _amount(text, "سود انباشته"),
+        "reserve_dev": _amount(text, "اندوخته طرح و توسعه"),
+        "reserve_other": _amount(text, "سایر اندوخته"),
+        "revaluation": _amount(text, "تجدید ارزیابی"),
     }
+    unit = "million_rial" if "میلیون ریال" in text else "rial"
+    derived = []
+    comps = ("paid_cash", "claims", "retained", "reserve_dev",
+             "reserve_other", "revaluation")
+    known = sum(vals[k] for k in comps if k != "paid_cash" and vals[k])
+    if (vals["paid_cash"] is None and "آورده نقدی" in text and total
+            and abs(known / total - 1.0) <= 0.005):
+        vals["paid_cash"] = 0.0
+        derived.append("paid_cash")
+    total_known = sum(vals[k] for k in comps if vals[k])
+    stage_paid = _stage_paid_cash(text)
+    if stage_paid and stage_paid > 0:
+        vals["paid_cash"] = stage_paid
+        if "paid_cash_stage" not in derived:
+            derived.append("paid_cash_stage")
+    vals["unit"] = unit
+    vals["derived"] = derived
+    vals["complete"] = bool(total and abs(total_known / total - 1.0) <= 0.005)
+    return vals
 
 
 def classify(c):
     vals = {k: (c.get(k) or 0.0) for k in
             ("paid_cash", "claims", "retained", "reserve_dev", "reserve_other", "revaluation")}
     total = sum(vals.values())
+    if c.get("capital_increase") and not c.get("complete"):
+        # A narrative letter with a paid-cash stage but no component split
+        # is still PAID_IN; never promote it to a no-cash type.
+        if (c.get("paid_cash") or 0) > 0:
+            return "PAID_IN"
+        return "UNPARSED"
     if total <= 0:
         return "UNPARSED"
     if vals["paid_cash"] > 0 and (vals["retained"] + vals["reserve_dev"] +
