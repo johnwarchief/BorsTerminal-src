@@ -43,10 +43,11 @@ _INDEX = ("CREATE INDEX IF NOT EXISTS idx_execution_intents_state "
 BLOCKING_STATES = frozenset({
     "prepared", "scheduled", "clicking", "submitted", "confirmed",
     "rejected", "unknown", "aborted", "dry_run", "stale",
+    "needs_review", "missed",
 })
 TERMINAL_STATES = frozenset({
     "submitted", "confirmed", "rejected", "unknown", "aborted", "dry_run",
-    "stale",
+    "stale", "needs_review", "missed",
 })
 
 
@@ -304,23 +305,39 @@ class IntentStore:
         return out
 
     def recover_stale(self) -> dict[str, int]:
-        """پس از restart: clicking⇒unknown، scheduled/prepared⇒aborted.
+        """پس از restart: clicking⇒unknown؛ scheduled/prepared⇒needs_review/missed.
 
         هیچ‌چیز خودکار اجرا نمی‌شود؛ کارِ زمان‌بندی‌شدهٔ درون‌حافظه‌ای با
-        restart از بین رفته و «اجرایِ دوباره» مجاز نیست.
+        restart از بین رفته و «اجرایِ دوباره» مجاز نیست. intentِ آینده برایِ
+        بررسیِ صریح می‌ماند و intentِ منقضی «missed» می‌شود.
         """
-        counts = {"unknown": 0, "aborted": 0}
+        counts: dict[str, int] = {"unknown": 0, "needs_review": 0, "missed": 0,
+                                  "aborted": 0}
+        now_ms = int(time.time() * 1000)
         with self._lock:
             con = self._conn()
             try:
-                for old, new in (("clicking", "unknown"),
-                                 ("scheduled", "aborted"), ("prepared", "aborted")):
-                    cur = con.execute(
+                cur = con.execute(
+                    "UPDATE %s SET state='unknown', detail=?, updated_at=?"
+                    " WHERE state='clicking'" % _TABLE,
+                    ("recovered after restart: click may have happened",
+                     self._now()))
+                counts["unknown"] += int(cur.rowcount or 0)
+                rows = con.execute(
+                    "SELECT intent_key, target_wall_ms FROM %s"
+                    " WHERE state IN ('scheduled','prepared')" % _TABLE).fetchall()
+                for row in rows:
+                    target = row["target_wall_ms"]
+                    if target is not None and int(target) <= now_ms:
+                        new, detail = "missed", "target expired during restart"
+                    else:
+                        new, detail = "needs_review", (
+                            "schedule was in memory; review before any retry")
+                    con.execute(
                         "UPDATE %s SET state=?, detail=?, updated_at=?"
-                        " WHERE state=?" % _TABLE,
-                        (new, "recovered after restart (%s)" % old,
-                         self._now(), old))
-                    counts[new] += int(cur.rowcount or 0)
+                        " WHERE intent_key=?" % _TABLE,
+                        (new, detail, self._now(), row["intent_key"]))
+                    counts[new] += 1
                 con.commit()
             finally:
                 con.close()

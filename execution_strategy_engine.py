@@ -1512,6 +1512,28 @@ class StrategyEngine:
         strategy = self.strategies[order.strategy_id]
         return strategy.trigger(ctx, order)
 
+    def abort_intent(self, intent_key: str) -> dict[str, Any]:
+        """Abort از هر تب/engine با کلیدِ قصد؛ اگر order در حافظه نبود، store."""
+        key = str(intent_key or "").strip()
+        with self._lock:
+            order = next((o for o in self._orders.values()
+                          if key and o.intent_key == key), None)
+        if order is not None:
+            got = self.abort(order.prepared_id)
+            return {"intent_key": key, **got}
+        self.intent_store.abort(key)
+        row = self.intent_store.get(key)
+        return {"intent_key": key, "state": row["state"] if row else "none",
+                "result": None}
+
+    def intent_state(self, intent_key: str) -> dict[str, Any]:
+        row = self.intent_store.get(str(intent_key or "").strip())
+        return {"intent_key": str(intent_key or "").strip(),
+                "state": row["state"] if row else "none",
+                "detail": row["detail"] if row else "",
+                "target_wall_ms": row["target_wall_ms"] if row else None,
+                "clicked": bool(row["clicked"]) if row else False}
+
     def abort(self, prepared_id: str) -> dict[str, Any]:
         with self._lock:
             order = self._orders.get(prepared_id)
@@ -1650,6 +1672,7 @@ class StrategyEngine:
         return {"strategies": strategies,
                 "rate_limiter": self.limiter.status(),
                 "orders": sorted(orders, key=lambda o: -float(o.get("created_at") or 0))[:50],
+                "recovered_intents": dict(self.recovered_intents),
                 "live_allowed": self.live_allowed,
                 "selection": self._selection()}
 

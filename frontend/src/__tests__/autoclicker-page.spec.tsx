@@ -51,6 +51,11 @@ vi.mock('@features/portfolio/lib/orderClient', () => ({
     data: { session: { proven: true, state: 'connected' }, live_enabled: false },
     isPending: false, isError: false,
   }),
+  useExecutionReadiness: () => ({
+    data: { live_ready: false, blocking_count: 3,
+      next_action: 'مجوزِ مالک و قراردادِ عملیاتی' },
+    isPending: false, isError: false,
+  }),
 }));
 
 function renderPage() {
@@ -60,6 +65,7 @@ function renderPage() {
 
 beforeEach(() => {
   Object.values(api).forEach((fn) => fn.mockClear());
+  localStorage.clear();
 });
 
 describe('AutoClicker — تنظیمات و آمادگی', () => {
@@ -111,6 +117,26 @@ describe('AutoClicker — تنظیمات و آمادگی', () => {
     await waitFor(() => expect(api.prepare).toHaveBeenCalledTimes(2));
     const second = api.prepare.mock.calls[1][0] as Record<string, unknown>;
     expect(second.intent_key).not.toBe(first.intent_key);
+  });
+
+  it('دو تب با همان فرم یک intent_key مشترک می‌گیرند', async () => {
+    const fill = () => {
+      fireEvent.change(screen.getByTestId('autoclicker-symbol'), { target: { value: 'فولاد' } });
+      fireEvent.change(screen.getByTestId('autoclicker-price'), { target: { value: '1000' } });
+      fireEvent.change(screen.getByTestId('autoclicker-qty'), { target: { value: '10' } });
+    };
+    const first = renderPage();
+    fill();
+    fireEvent.click(screen.getByTestId('autoclicker-prepare'));
+    await waitFor(() => expect(api.prepare).toHaveBeenCalledTimes(1));
+    const key1 = (api.prepare.mock.calls[0][0] as Record<string, unknown>).intent_key;
+    first.unmount();
+    renderPage();
+    fill();
+    fireEvent.click(screen.getByTestId('autoclicker-prepare'));
+    await waitFor(() => expect(api.prepare).toHaveBeenCalledTimes(2));
+    const key2 = (api.prepare.mock.calls[1][0] as Record<string, unknown>).intent_key;
+    expect(key2).toBe(key1);
   });
 
   it('پاسخ scheduled را انتظار می‌خواند، نه شکست', async () => {

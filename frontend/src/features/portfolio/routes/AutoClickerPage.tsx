@@ -8,8 +8,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router';
 import {
-  browserHostApi, orderApi, useBrowserHost, useExecutionStatus, useStrategies,
-  type StrategyRowView,
+  browserHostApi, orderApi, useBrowserHost, useExecutionReadiness,
+  useExecutionStatus, useStrategies, type StrategyRowView,
 } from '../lib/orderClient';
 import { Chip, Field, GhostBtn, Line, Note, Section } from '../components/sarkhati/parts';
 
@@ -17,6 +17,29 @@ function newIntentKey(): string {
   const c = globalThis.crypto as Crypto | undefined;
   if (c && typeof c.randomUUID === 'function') return c.randomUUID();
   return `ac-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+const INTENT_SLOT = 'bors.autoclicker.intent';
+function intentSig(symbol: string, side: string, price: string, qty: string, target: string): string {
+  return [symbol.trim(), side, price.trim(), qty.trim(), target.trim()].join('|');
+}
+/** کلیدِ قصد در localStorage مشترک است تا دو تب با همان فرم، یک قصد ببینند. */
+function readSharedIntent(sig: string): string {
+  try {
+    const raw = globalThis.localStorage?.getItem(INTENT_SLOT);
+    if (!raw) return '';
+    const got = JSON.parse(raw) as { sig?: string; key?: string };
+    return got?.sig === sig && typeof got.key === 'string' ? got.key : '';
+  } catch {
+    return '';
+  }
+}
+function writeSharedIntent(sig: string, key: string): void {
+  try {
+    globalThis.localStorage?.setItem(INTENT_SLOT, JSON.stringify({ sig, key }));
+  } catch {
+    /* storage در دسترس نیست؛ همین تب با کلیدِ محلی ادامه می‌دهد */
+  }
 }
 
 const DEFAULTS = {
@@ -66,6 +89,15 @@ export default function AutoClickerPage() {
   const [answer, setAnswer] = useState('');
   const [tone, setTone] = useState<'ok' | 'warn' | 'bad' | 'idle'>('idle');
   const [probe, setProbe] = useState<Record<string, unknown> | null>(null);
+  const recovered = strategies.data?.recovered_intents ?? {};
+  const recoveredTotal = Object.values(recovered).reduce((n, v) => n + (Number(v) || 0), 0);
+  const readinessQ = useExecutionReadiness({
+    symbol: symbol.trim() || undefined,
+    side,
+    price: Number(price) > 0 ? Number(price) : undefined,
+    quantity: Number(qty) > 0 ? Number(qty) : undefined,
+  }, symbol.trim().length > 0);
+  const serverReady = readinessQ.data;
 
   useEffect(() => {
     if (!row || loaded) return;
@@ -140,12 +172,17 @@ export default function AutoClickerPage() {
 
   const prepare = async () => {
     setBusy('prepare'); setAnswer(''); setPreparedId('');
+    const sig = intentSig(symbol, side, price, qty, target);
+    const shared = readSharedIntent(sig);
+    const key = shared || newIntentKey();
+    writeSharedIntent(sig, key);
+    setIntentKey(key);
     try {
       const res = await orderApi.strategyPrepare({
         symbol: symbol.trim(), side, price: Number(price), quantity: Number(qty),
         strategy: 'autoclicker',
         target_tehran: target.trim() || undefined,
-        intent_key: intentKey,
+        intent_key: key,
         execution_id: `ac-${Date.now()}`,
       });
       if (res.status === 'success') {
@@ -182,10 +219,12 @@ export default function AutoClickerPage() {
   };
 
   const abort = async () => {
-    if (!preparedId) return;
+    const key = readSharedIntent(intentSig(symbol, side, price, qty, target)) || intentKey;
+    if (!preparedId && !key) return;
     setBusy('abort');
     try {
-      await orderApi.strategyAbort(preparedId);
+      if (preparedId) await orderApi.strategyAbort(preparedId);
+      await orderApi.strategyAbortIntent(key);
       setTone('warn'); setAnswer('توقف ثبت شد؛ هیچ سفارشی لغو یا ارسال نشد.');
     } catch (e) { setTone('bad'); setAnswer(e instanceof Error ? e.message : String(e)); }
     finally { setBusy(''); }
@@ -230,6 +269,22 @@ export default function AutoClickerPage() {
             ? 'host و نشست آماده‌اند؛ Probe را بزنید تا شناسه‌ها/فرم دیده شوند.'
             : 'برای Probe، host را باز و در EasyTrader وارد شوید.'}
         </Line>
+        {serverReady ? (
+          <Line kind={serverReady.live_ready ? 'ok' : 'warn'}
+            testId="autoclicker-server-readiness">
+            آمادگی سرور: live_ready={serverReady.live_ready ? 'بله' : 'خیر'} ·
+            {' '}{serverReady.blocking_count ?? '?'} مانع ·
+            اقدام: {serverReady.next_action || '—'}
+          </Line>
+        ) : null}
+        {recoveredTotal > 0 ? (
+          <Line kind="warn" testId="autoclicker-recovered">
+            پس از restart، {Object.entries(recovered)
+              .filter(([, v]) => Number(v) > 0)
+              .map(([k, v]) => `${k}: ${v}`)
+              .join(' · ')} — پیش از هر تلاش دوباره بررسی کنید.
+          </Line>
+        ) : null}
       </Section>
 
       <div className="grid gap-2 lg:grid-cols-2">
@@ -289,9 +344,11 @@ export default function AutoClickerPage() {
           <div className="mt-1 flex flex-wrap items-center gap-1">
             <GhostBtn testId="autoclicker-prepare" onClick={() => void prepare()}
               disabled={busy !== '' || !symbol.trim() || !price || !qty}>آماده‌سازی (بدون ارسال)</GhostBtn>
-            <GhostBtn testId="autoclicker-abort" onClick={() => void abort()} disabled={!preparedId || busy !== ''}>توقف</GhostBtn>
+            <GhostBtn testId="autoclicker-abort" onClick={() => void abort()} disabled={busy !== ''}>توقف از هر تب</GhostBtn>
             <GhostBtn testId="autoclicker-new-intent" onClick={() => {
-              setIntentKey(newIntentKey());
+              const key = newIntentKey();
+              setIntentKey(key);
+              writeSharedIntent(intentSig(symbol, side, price, qty, target), key);
               setPreparedId('');
               setDryAck(false);
               setTone('idle');

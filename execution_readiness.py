@@ -144,9 +144,9 @@ def build_readiness(*, session_proven: bool, read_only: bool,
         "owner_approval", "مجوزِ مالک",
         PASS if owner_approved else REQUIRED,
         "مالک اجازهٔ آزمونِ واقعیِ مشخص را داده" if owner_approved
-        else "هیچ مجوزِ ارسالِ واقعی داده نشده",
+        else "هیچ ردیفِ تأییدی در execution_owner_approval نیست",
         action="" if owner_approved else "درخواستِ مشخصِ مالک برایِ نخستین سفارش",
-        source="owner"))
+        source="execution_owner_approval"))
 
     hard = [g for g in gates if g["id"] in (
         "read_only_session", "symbol_identity", "buying_power", "price_quantity",

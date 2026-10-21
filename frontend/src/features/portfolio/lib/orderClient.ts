@@ -104,6 +104,7 @@ export type StrategiesView = {
   status: string; strategies: StrategyRowView[]; selection: StrategySelectionRow[];
   rate_limiter: Record<string, unknown>; orders: Record<string, unknown>[];
   live_allowed: boolean; dry_run: boolean; adapter: string;
+  recovered_intents?: Record<string, number>;
 };
 
 /** `status` ازِ `/api/execution/portfolio` — «بی‌منبع» و «خالی» دو چیزند */
@@ -480,6 +481,13 @@ export const orderApi = {
   strategyAbort: (id: string) =>
     http<Record<string, unknown>>('/api/execution/strategies/abort',
       { method: 'POST', body: { prepared_id: id }, ...NO_RETRY }),
+  strategyIntent: (key: string) =>
+    http<Record<string, unknown>>(
+      `/api/execution/strategies/intents/${encodeURIComponent(key)}`),
+  strategyAbortIntent: (key: string) =>
+    http<Record<string, unknown>>(
+      `/api/execution/strategies/intents/${encodeURIComponent(key)}/abort`,
+      { method: 'POST', ...NO_RETRY }),
   strategyReconcile: (id: string) =>
     http<Record<string, unknown>>('/api/execution/strategies/reconcile',
       { method: 'POST', body: { prepared_id: id }, ...NO_RETRY }),

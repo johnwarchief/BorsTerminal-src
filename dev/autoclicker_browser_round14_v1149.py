@@ -266,8 +266,9 @@ def main() -> int:
         base.update(extra)
         return base
 
-    def engine_for(mode, *, live=False, scheduler=None, **extra):
-        settings_store.save(SC.AUTOCLICKER, mode=(
+    def engine_for(mode, *, live=False, scheduler=None,
+                   strategy=SC.AUTOCLICKER, **extra):
+        settings_store.save(strategy, mode=(
             SC.MODE_LIVE if live else SC.MODE_SHADOW), options=opts(mode, **extra))
         return SE.StrategyEngine(
             None, settings_store=settings_store, mock_browser=False,
@@ -442,7 +443,38 @@ def main() -> int:
            "browser live محلی: timeout پس از کلیک ⇒ UNKNOWN",
            {"status": r_unk.status, "unknown": r_unk.unknown})
 
-        # ۱۴) scheduled + abort با مرورگر واقعی
+        # ۱۴) دو engine/تب هم‌زمان با یک intent_key
+        eng_tab1 = engine_for("standard", strategy=SC.AUTOCLICKER,
+                              profile_dir=os.path.join(tmp, "profile-tab1"))
+        eng_tab2 = engine_for("standard", strategy=SC.PLAYWRIGHT_DOM,
+                              profile_dir=os.path.join(tmp, "profile-tab2"))
+        o_tab1 = eng_tab1.prepare(draft("B-TAB-1"), SC.AUTOCLICKER,
+                                  intent_key="K-BROWSER-TABS")
+        o_tab2 = eng_tab2.prepare(draft("B-TAB-2"), SC.PLAYWRIGHT_DOM,
+                                  intent_key="K-BROWSER-TABS")
+        base_clicks_tabs = state.click_hits
+        base_order_tabs = state.order_hits
+        tab_box = {}
+
+        def tab_run(name, engine, order):
+            try:
+                tab_box[name] = engine.trigger(order.prepared_id, live=False)
+            except Exception as e:               # noqa: BLE001
+                tab_box[name] = e
+
+        t1 = threading.Thread(target=tab_run, args=("1", eng_tab1, o_tab1))
+        t2 = threading.Thread(target=tab_run, args=("2", eng_tab2, o_tab2))
+        t1.start(); t2.start(); t1.join(10); t2.join(10)
+        click_delta = state.click_hits - base_clicks_tabs
+        statuses = {getattr(tab_box.get("1"), "status", "ERR"),
+                    getattr(tab_box.get("2"), "status", "ERR")}
+        ck("dry_run" in statuses and "blocked" in statuses
+           and click_delta == 1 and state.order_hits == base_order_tabs,
+           "browser دو تب/دو engine با یک intent: یک کلیک، صفر سفارش",
+           {"statuses": statuses, "click_delta": click_delta,
+            "order_delta": state.order_hits - base_order_tabs})
+
+        # ۱۵) scheduled + abort با مرورگر واقعی
         base_order = state.order_hits
         sched = T.Scheduler(T.TimeSource(), spin_window_ms=5)
         eng_ab = engine_for("standard", scheduler=sched)

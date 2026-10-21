@@ -300,10 +300,45 @@ def main() -> int:
     except Exception as e:                       # noqa: BLE001
         confirmed_reblocked = "DUPLICATE_GUARD" in str(e)
     ck(confirmed_reblocked, "پس از confirmed همان کلید دوباره کلیک نمی‌شود")
-    ck(intent_store.get("K-NEW") is None,
-       "قصدِ تازه هنوز وجود ندارد")
+    d_new = draft("G-NEW")
+    reset_form(d_new)
+    o_new = prep(eng_live, d_new, intent_key="K-NEW")
+    ck(intent_store.get("K-NEW") is not None
+       and intent_store.get("K-NEW")["state"] == "prepared",
+       "پس از confirmed، قصدِ تازه با کلیدِ تازه prepare می‌شود",
+       {"state": intent_store.get("K-NEW") and intent_store.get("K-NEW")["state"]})
     current["suppress_response"] = False
     settings_store.save(SC.AUTOCLICKER, mode=SC.MODE_SHADOW)
+
+    # دو engine/تب مستقل با یک intent_key؛ claimِ SQLite باید یک کلیک بدهد.
+    eng_tab_a = make_engine()
+    eng_tab_b = make_engine()
+    d_tab_a = draft("G-TAB-A")
+    reset_form(d_tab_a)
+    o_tab_a = prep(eng_tab_a, d_tab_a, intent_key="K-2TAB")
+    d_tab_b = draft("G-TAB-B")
+    reset_form(d_tab_b)
+    o_tab_b = eng_tab_b.prepare(d_tab_b, SC.PLAYWRIGHT_DOM,
+                               intent_key="K-2TAB")
+    box_ab: dict[str, object] = {}
+
+    def run_tab(name, engine, order):
+        try:
+            box_ab[name] = engine.trigger(order.prepared_id, live=False)
+        except Exception as e:                   # noqa: BLE001
+            box_ab[name] = e
+
+    th_a = threading.Thread(target=run_tab, args=("a", eng_tab_a, o_tab_a))
+    th_b = threading.Thread(target=run_tab, args=("b", eng_tab_b, o_tab_b))
+    th_a.start(); th_b.start(); th_a.join(4); th_b.join(4)
+    rab, rbb = box_ab.get("a"), box_ab.get("b")
+    clicks_ab = (o_tab_a.prepared.driver.click_count
+                 + o_tab_b.prepared.driver.click_count)
+    statuses = {getattr(rab, "status", type(rab).__name__),
+                getattr(rbb, "status", type(rbb).__name__)}
+    ck("dry_run" in statuses and "blocked" in statuses and clicks_ab == 1,
+       "دو engine/تب هم‌زمان با یک intent: کلیکِ دوم صفر",
+       {"statuses": statuses, "clicks": clicks_ab})
 
     # timeout پیش از کلیک: دکمهٔ ناپیدا ⇒ failed_pre_click و تلاشِ دوباره
     d6 = draft("G-PRECLICK")
@@ -535,6 +570,29 @@ def main() -> int:
        {"result": r_abort and r_abort.status,
         "clicks": current["driver"].click_count})
 
+    d_abort2 = draft("G-ABORT-INTENT")
+    reset_form(d_abort2)
+    o_abort2 = prep(eng_sched, d_abort2,
+                    target_wall_ms=int(time.time() * 1000) + 2500,
+                    intent_key="K-ABORT-INTENT")
+    box2 = {}
+
+    def runner2():
+        box2["r"] = fire(eng_sched, o_abort2)
+
+    th2 = threading.Thread(target=runner2, daemon=True)
+    th2.start()
+    time.sleep(0.25)
+    got_ab2 = eng_sched.abort_intent("K-ABORT-INTENT")
+    th2.join(timeout=3)
+    r_ab2 = box2.get("r")
+    ck(r_ab2 is not None and r_ab2.status == "aborted"
+       and current["driver"].click_count == 0
+       and got_ab2.get("intent_key") == "K-ABORT-INTENT",
+       "Abort با intent_key از engine/تبِ دیگر کار می‌کند",
+       {"result": r_ab2 and r_ab2.status, "abort": got_ab2,
+        "clicks": current["driver"].click_count})
+
     restart_path = os.path.join(tmp, "restart_intents.db")
     rs = IS.IntentStore(restart_path)
     d_rs = draft("G-RESTART")
@@ -544,10 +602,74 @@ def main() -> int:
     clicks_before = current["driver"].click_count
     eng_restart = make_engine(store=IS.IntentStore(restart_path), recover=True)
     row_rs = rs.get("K-RESTART")
-    ck(row_rs is not None and row_rs["state"] == "aborted"
+    ck(row_rs is not None and row_rs["state"] == "needs_review"
        and current["driver"].click_count == clicks_before,
-       "restart کارِ scheduled را خودکار اجرا نمی‌کند (aborted)",
+       "restart کارِ scheduled را خودکار اجرا نمی‌کند (needs_review)",
        row_rs and row_rs["state"])
+
+    clicking_path = os.path.join(tmp, "clicking_intents.db")
+    cs = IS.IntentStore(clicking_path)
+    d_click = draft("G-CLICK-RESTART")
+    cs.begin(intent_key="K-CLICK-RESTART",
+             execution_id=d_click.execution_id,
+             strategy_id=SC.AUTOCLICKER, draft=d_click, target_wall_ms=None)
+    cs.claim_click("K-CLICK-RESTART")
+    make_engine(store=IS.IntentStore(clicking_path), recover=True)
+    row_click = cs.get("K-CLICK-RESTART")
+    ck(row_click is not None and row_click["state"] == "unknown",
+       "restart پس از claimِ کلیک ⇒ UNKNOWN، نه اجرای دوباره",
+       row_click and row_click["state"])
+    try:
+        prep(make_engine(store=IS.IntentStore(clicking_path)), d_click,
+             intent_key="K-CLICK-RESTART")
+        click_restart_blocked = False
+    except Exception as e:                       # noqa: BLE001
+        click_restart_blocked = "DUPLICATE_GUARD" in str(e)
+    ck(click_restart_blocked,
+       "پس از restartِ clicking، همان قصد تا reconcile مسدود است")
+
+    future_path = os.path.join(tmp, "future_intents.db")
+    fs = IS.IntentStore(future_path)
+    d_future_rs = draft("G-FUTURE-RESTART")
+    fs.begin(intent_key="K-FUTURE-RESTART",
+             execution_id=d_future_rs.execution_id,
+             strategy_id=SC.AUTOCLICKER, draft=d_future_rs,
+             target_wall_ms=int(time.time() * 1000) + 60_000)
+    fs.mark_scheduled("K-FUTURE-RESTART")
+    make_engine(store=IS.IntentStore(future_path), recover=True)
+    ck(fs.get("K-FUTURE-RESTART")["state"] == "needs_review",
+       "restart هدفِ آینده ⇒ needs_review (نه اجرای خودکار)")
+
+    past_path = os.path.join(tmp, "past_intents.db")
+    ps = IS.IntentStore(past_path)
+    d_past_rs = draft("G-PAST-RESTART")
+    ps.begin(intent_key="K-PAST-RESTART",
+             execution_id=d_past_rs.execution_id,
+             strategy_id=SC.AUTOCLICKER, draft=d_past_rs,
+             target_wall_ms=int(time.time() * 1000) - 60_000)
+    ps.mark_scheduled("K-PAST-RESTART")
+    make_engine(store=IS.IntentStore(past_path), recover=True)
+    ck(ps.get("K-PAST-RESTART")["state"] == "missed",
+       "restart هدفِ منقضی ⇒ missed")
+
+    # E2E: مسیرِ production (prepare → validate → dry click → result → intent state)
+    settings_store.save(SC.AUTOCLICKER, mode=SC.MODE_SHADOW)
+    eng_e2e = make_engine()
+    d_e2e = draft("G-E2E")
+    reset_form(d_e2e)
+    o_e2e = prep(eng_e2e, d_e2e, intent_key="K-E2E")
+    state_prepared = intent_store.get("K-E2E")["state"]
+    r_e2e = fire(eng_e2e, o_e2e)
+    row_e2e = intent_store.get("K-E2E")
+    ck(state_prepared == "prepared" and r_e2e.status == "dry_run"
+       and row_e2e is not None and row_e2e["state"] == "dry_run"
+       and o_e2e.prepared.driver.click_count == 1
+       and o_e2e.prepared.driver.order_endpoint_hits == 0,
+       "E2E mock: prepare→validate→click→result بدونِ سفارش",
+       {"pre": state_prepared, "status": r_e2e.status,
+        "post": row_e2e and row_e2e["state"],
+        "clicks": o_e2e.prepared.driver.click_count,
+        "orders": o_e2e.prepared.driver.order_endpoint_hits})
 
     shutil.rmtree(tmp, ignore_errors=True)
     print("\n%d checks, %d failed, %d skipped" % (PASS + FAIL, FAIL, SKIP))

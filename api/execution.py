@@ -60,7 +60,9 @@ import execution_connection as ECONN                       # noqa: E402
 import execution_browser_host as BH                        # noqa: E402
 import execution_cockpit as CK                             # noqa: E402
 import execution_offerings as OF                           # noqa: E402
+import execution_owner_approval as OA                      # noqa: E402
 import execution_readiness as RD                           # noqa: E402
+import execution_write_contract as WC                      # noqa: E402
 import execution_schedule as SCH                           # noqa: E402
 import execution_session_store as SESS                     # noqa: E402
 import execution_strategy_core as SC                       # noqa: E402
@@ -311,6 +313,24 @@ _STRATEGY_ENGINE = SE.StrategyEngine(
     live_allowed=False, halted=lambda: _SERVICE.halted())
 # Round 14: مسیرِ کلیکِ زنده هم از همان preflight/سقف‌هایِ مسیرِ عادی عبور کند.
 _STRATEGY_ENGINE.preflight_gate = _SERVICE.dispatch_preflight
+_OWNER_APPROVAL = OA.OwnerApprovalStore()
+
+
+def _readiness_flag(name: str) -> bool | None:
+    """نتیجهٔ ماندگارِ تست/گیت؛ نبودِ فایل ⇒ None، نه trueِ جعلی."""
+    path = os.path.join(WORK_DIR, name)
+    if not os.path.isfile(path):
+        return None
+    try:
+        with open(path, encoding="utf-8") as f:
+            data = json.load(f)
+    except Exception:
+        return None
+    if isinstance(data, bool):
+        return data
+    if isinstance(data, dict) and "ok" in data:
+        return bool(data.get("ok"))
+    return None
 
 
 #: عبارتِ تأییدِ انسانی برایِ اجرایِ زنده. مقدارِ پیش‌فرض *اختراع نشده*: همان
@@ -1236,6 +1256,20 @@ def post_strategy_dispatch(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
             "confirm_epoch": confirm_epoch}
 
 
+@router.get("/api/execution/strategies/intents/{intent_key}")
+def get_strategy_intent(intent_key: str) -> dict[str, Any]:
+    return {"status": "success", **_STRATEGY_ENGINE.intent_state(intent_key)}
+
+
+@router.post("/api/execution/strategies/intents/{intent_key}/abort")
+def post_strategy_intent_abort(intent_key: str) -> dict[str, Any]:
+    try:
+        got = _STRATEGY_ENGINE.abort_intent(intent_key)
+    except SE.StrategyError as e:
+        return {"status": "error", "code": e.code, "detail": e.detail}
+    return {"status": "success", "intent": got}
+
+
 @router.post("/api/execution/strategies/abort")
 def post_strategy_abort(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
     prepared_id = str(body.get("prepared_id") or "").strip()
@@ -2107,6 +2141,9 @@ def get_readiness(symbol: str = "", side: str = "buy",
         bp = get_buying_power()
     except Exception:                             # noqa: BLE001 - منبعِ بیرونی
         bp = None
+    contract = WC.contract_report()
+    contract_operational = bool(contract.get("operationally_verified"))
+    owner = _OWNER_APPROVAL.state("live-order")
     rep = RD.build_readiness(
         session_proven=bool(getattr(_ACTIVE_ADAPTER, "session_proven",
                                     lambda: False)()),
@@ -2114,14 +2151,46 @@ def get_readiness(symbol: str = "", side: str = "buy",
         buying_power=bp,
         symbol_ready=symbol_ready,
         preflight_checks=checks,
-        contract_operational=False,
-        owner_approved=False,
-        lifecycle_tests=None,
-        full_gate=None,
+        contract_operational=contract_operational,
+        owner_approved=bool(owner.get("approved")),
+        lifecycle_tests=_readiness_flag("round15_lifecycle.json"),
+        full_gate=_readiness_flag("round15_full_gate.json"),
     )
     rep.update({"adapter": ADAPTER_KIND, "symbol": sym or None,
-                "side": side, "price": price, "quantity": quantity})
+                "side": side, "price": price, "quantity": quantity,
+                "contract_operational": contract_operational,
+                "contract_state": contract.get("state"),
+                "owner_approval": owner})
     return rep
+
+
+@router.get("/api/execution/owner-approval")
+def get_owner_approval() -> dict[str, Any]:
+    return {"status": "success", "owner_approval": _OWNER_APPROVAL.state("live-order"),
+            "live_enabled": bool(_live_now())}
+
+
+@router.post("/api/execution/owner-approval")
+def post_owner_approval(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
+    try:
+        got = _OWNER_APPROVAL.approve(
+            str(body.get("phrase") or ""),
+            scope=str(body.get("scope") or "live-order"),
+            note=str(body.get("note") or ""))
+    except ValueError as e:
+        return {"status": "error", "code": str(e)[:80],
+                "detail": "عبارتِ تأییدِ مالک لازم است؛ این گیت خودکار باز نمی‌شود"}
+    return {"status": "success", "owner_approval": got,
+            "live_enabled": bool(_live_now()),
+            "note": "readiness فقط این تأیید را می‌بیند؛ live flags جدا و بسته‌اند"}
+
+
+@router.post("/api/execution/owner-approval/revoke")
+def post_owner_approval_revoke(body: dict[str, Any] = Body(default={})) -> dict[str, Any]:
+    return {"status": "success",
+            "owner_approval": _OWNER_APPROVAL.revoke(
+                scope=str((body or {}).get("scope") or "live-order"),
+                note=str((body or {}).get("note") or ""))}
 
 
 @router.get("/api/execution/buying-power")
