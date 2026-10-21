@@ -526,6 +526,14 @@ def part_queue():
     q3 = c.get_queue_position(rc.broker_order_id)
     ck(q3 is not None and q3.position is None and not q3.known,
        "ردیفِ بی‌عدد ⇒ known=False، نه «اولِ صف»", str(q3))
+    d = et_build()
+    rd = d.submit_order(draft())
+    d._broker.queue_rows[rd.broker_order_id] = [
+        {"orderId": "OTHER-ORDER", "orderPlace": 1, "volumeAhead": 0}]
+    q4 = d.get_queue_position(rd.broker_order_id)
+    ck(q4 is None,
+       "ردیفِ سفارشِ دیگر به سفارشِ ما نسبت داده نمی‌شود (بی‌تطبیق ⇒ None)",
+       str(q4))
     try:
         EasyTraderAdapter(transport=ScriptedTransport(ScriptedBroker()),
                           token=SECRET).cancel_order("BR-1")

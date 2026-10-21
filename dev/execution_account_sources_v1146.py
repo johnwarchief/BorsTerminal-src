@@ -77,7 +77,7 @@ PORT = {"items": [
 ]}
 MONEY = {"t0": 10, "t1": 20, "t2": 30, "buyPowerT0": 100,
          "buyPowerT1": 200, "buyPowerT2": 300, "credit": 40,
-         "avandCredit": 5, "block": 7, "marginBlock": 0}
+         "avandCredit": 5, "block": 7, "blockT2": 9, "marginBlock": 0}
 
 
 def make_db():
@@ -128,6 +128,9 @@ def main() -> int:
            "پرتفوی: تعداد/قابل‌فروش ادعا نمی‌شود")
         ck(money["buying_power"] == 255 and money["unit"] == "IRR",
            "قدرت خرید = ۳۰۰ − ۴۰ − ۵، واحد IRR", money["buying_power"])
+        ck(money["raw"].get("blockT2") == 9,
+           "blockT2 (فیلد مشاهده‌شده در live) در raw حفظ می‌شود",
+           money["raw"].get("blockT2"))
         ck("SENTINEL-TOKEN" not in json.dumps(adapter.redacted_log,
                                              ensure_ascii=False),
            "token در log نیست")

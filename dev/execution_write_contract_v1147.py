@@ -108,6 +108,14 @@ def test_payload():
        "گزارشِ قرارداد: بازسازی‌شده، نه عملیاتی")
     ck(any(f["name"] == "side" and "enum" in f["confidence"] for f in rep["fields"]),
        "فیلد side با منبع/قطعیت ثبت شده")
+    # مقایسهٔ متنی با دو مرجعِ اول‌طرفی‌نزدیک (فقط فیلدهایِ الزامی؛ کپیِ کد نشده)
+    mfazel = {"price", "quantity", "side", "validityType", "symbolIsin",
+              "orderModelType", "orderFrom"}
+    reza = mfazel | {"symbolName", "createDateTime"}
+    ck(mfazel <= set(inner), "همهٔ فیلدهایِ الزامیِ m-fazel در بدنۀ ما هست", mfazel - set(inner))
+    ck(reza <= set(inner), "همهٔ فیلدهایِ الزامیِ Reza در بدنۀ ما هست", reza - set(inner))
+    ck("commission" not in inner and "totalValue" not in inner,
+       "اختلافِ آگاهانه: client-summaryها تا شاهدِ سرور حذف‌اند")
 
 
 def test_semantics():

@@ -1314,9 +1314,9 @@ class EasyTraderAdapter(BrokerAdapter):
             if isinstance(p, Mapping) and _text(_pick(p, "orderId")) == str(broker_order_id):
                 hit = p
                 break
-        if hit is None and isinstance(places[0], Mapping):
-            hit = places[0]
         if hit is None:
+            # پاسخِ فهرست ممکن است چند سفارش را برگرداند؛ ردیفِ اول مالِ ما نیست.
+            # تطبیق فقط با orderId؛ نبودش UNKNOWN است، نه «اولِ صف».
             return None
         pos = _num(_pick(hit, "orderPlace"))
         vol = _num(_pick(hit, "volumeAhead"))
@@ -1382,7 +1382,7 @@ class EasyTraderAdapter(BrokerAdapter):
         if not isinstance(raw, Mapping):
             raise BrokerError(ErrorCode.UNKNOWN_RESULT, "money: پاسخ شیء نبود")
         keys = ("t0", "t1", "t2", "buyPowerT0", "buyPowerT1", "buyPowerT2",
-                "block", "withdrawBlockT2", "marginBlock", "credit",
+                "block", "blockT2", "withdrawBlockT2", "marginBlock", "credit",
                 "avandCredit", "walletWithdrawBalanceT0", "warrantValueCredit",
                 "hamiBalance")
         nums = {k: _num(raw.get(k)) for k in keys if raw.get(k) is not None}
@@ -1408,6 +1408,7 @@ class EasyTraderAdapter(BrokerAdapter):
                 "buying_power_t1": raw.get("buyPowerT1"),
                 "buying_power_t2": raw.get("buyPowerT2"),
                 "block": raw.get("block"),
+                "block_t2": raw.get("blockT2"),
                 "credit": raw.get("credit"),
                 "avand_credit": raw.get("avandCredit"),
                 "unit": money["unit"], "source": money["source"],
