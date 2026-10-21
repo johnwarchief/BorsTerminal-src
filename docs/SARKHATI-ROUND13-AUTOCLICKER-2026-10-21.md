@@ -89,6 +89,7 @@
 | Frontend کامل | ۲۰۲ فایل، ۲۰۹۳ passed، ۵ skipped، ۰ failed |
 | گیتِ کاملِ ایزولهٔ Round 11A | ۱۴۳ counted، ۲۷ exit-code-only، ۲ SKIP، ۰ FAIL |
 | fingerprintِ عملیاتی | قبل/بعد یکسان: `5a9117aa…135bea3` / `381736f1…c74500e` |
+| Smoke مرورگر واقعی | صفحه `/autoclicker` باز شد؛ ۷ دروازه، دکمهٔ ذخیره/Probe، و **صفر** دکمهٔ Live/dispatch؛ بدونِ console error |
 
 ## ۷) نتیجه
 
