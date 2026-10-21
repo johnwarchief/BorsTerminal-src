@@ -1,0 +1,303 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>نمونهٔ طراحی — کنترل مبنای قیمت و مقیاس</title>
+<style>
+  :root{
+    --bg:#0b1018; --panel:#111924; --panel2:#0f1620; --line:#223047;
+    --text:#e7eef8; --muted:#8ba0ba; --accent:#2dd4bf; --accent2:#38bdf8;
+    --up:#10b981; --down:#f43f5e; --warn:#f59e0b; --radius:14px;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:radial-gradient(1200px 600px at 80% -10%,#132033 0%,var(--bg) 55%);
+       color:var(--text);font-family:Vazirmatn,IRANSans,"Segoe UI",Tahoma,sans-serif}
+  .wrap{max-width:1180px;margin:0 auto;padding:22px 20px 40px}
+  header{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+  h1{font-size:18px;margin:0;font-weight:800;letter-spacing:.2px}
+  .sub{color:var(--muted);font-size:12px;margin-top:5px}
+  .badge{border:1px solid var(--line);background:var(--panel);color:var(--muted);
+         border-radius:999px;padding:6px 12px;font-size:11px}
+  .grid{display:grid;grid-template-columns:1fr 310px;gap:16px;margin-top:18px}
+  @media(max-width:900px){.grid{grid-template-columns:1fr}}
+  .card{background:linear-gradient(180deg,var(--panel) 0%,var(--panel2) 100%);
+        border:1px solid var(--line);border-radius:var(--radius);overflow:hidden}
+  .card-h{display:flex;align-items:center;justify-content:space-between;gap:10px;
+          padding:12px 14px;border-bottom:1px solid var(--line)}
+  .card-h b{font-size:13px}
+  .status{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 14px;
+          border-bottom:1px solid var(--line);background:#0d141d;font-size:11.5px;color:var(--muted)}
+  .dot{width:7px;height:7px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 4px #2dd4bf22}
+  .status b{color:var(--text);font-weight:700}
+  .chartbox{position:relative;padding:8px 6px 2px}
+  svg{display:block;width:100%;height:auto}
+  .controls{display:grid;gap:14px;padding:14px}
+  .control{background:#0d141d;border:1px solid var(--line);border-radius:12px;padding:12px}
+  .control .lbl{font-size:11px;color:var(--muted);margin-bottom:9px;display:flex;gap:6px;align-items:center}
+  .seg{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+  .seg.three{grid-template-columns:1fr 1fr 1fr}
+  .seg button{appearance:none;border:1px solid var(--line);background:#0a1119;color:var(--muted);
+      border-radius:9px;padding:9px 8px;font:inherit;font-size:11.5px;cursor:pointer;transition:.15s}
+  .seg button:hover{border-color:#31425c;color:var(--text)}
+  .seg button[aria-pressed="true"]{background:linear-gradient(180deg,#123a3a,#0e2b2b);
+      border-color:var(--accent);color:#d9fffb;font-weight:700;box-shadow:0 0 0 1px #2dd4bf33 inset}
+  .hint{font-size:10.5px;line-height:1.75;color:var(--muted);margin-top:8px}
+  .matrix{padding:0 14px 14px}
+  table{width:100%;border-collapse:collapse;font-size:11px}
+  th,td{padding:7px 6px;border-bottom:1px solid #1b2637;text-align:center}
+  th{color:var(--muted);font-weight:600}
+  tr.active td{background:#0f2f2d;color:#c9fff8}
+  tr.active td:first-child{color:#fff;font-weight:700}
+  .note{margin-top:14px;padding:12px 14px;border:1px dashed #3a4a63;border-radius:12px;
+        background:#0d141d;color:var(--muted);font-size:11px;line-height:1.9}
+  .note b{color:var(--text)}
+  .legend{display:flex;gap:14px;flex-wrap:wrap;padding:0 14px 12px;font-size:10.5px;color:var(--muted)}
+  .legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-inline-end:5px;vertical-align:middle}
+  .chip{font-size:10px;border:1px solid var(--line);border-radius:999px;padding:3px 8px;color:var(--muted)}
+  .chip.on{border-color:var(--accent);color:#bff7f1;background:#0d2a28}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>کنترل روشنِ «مبنای قیمت» و «مقیاس» — نمونهٔ طراحی</h1>
+      <div class="sub">بدون تغییر در کد اصلی · همان دو مبنای موجود + همان سه مقیاس موجود · هیچ حالتی پنهان یا حذف نشده است</div>
+    </div>
+    <div class="badge">prototype · research only</div>
+  </header>
+
+  <div class="grid">
+    <div class="card">
+      <div class="card-h">
+        <b>نمودار نمونه — فولاد (شبیه‌سازی رویداد نقدی)</b>
+        <span class="chip on" id="engineChip">KLineCharts</span>
+      </div>
+      <div class="status">
+        <span class="dot"></span>
+        <span>مبنای قیمت: <b id="stBasis">عملکردی (تعدیل‌شده)</b></span>
+        <span>·</span>
+        <span>مقیاس: <b id="stScale">خطی</b></span>
+        <span>·</span>
+        <span>آخرین بستهٔ نمایشی: <b id="stLast">—</b></span>
+        <span>·</span>
+        <span id="stEvent">رویداد: سود نقدی ۲۵۰ ریال</span>
+      </div>
+      <div class="chartbox">
+        <svg id="chart" viewBox="0 0 860 430" role="img" aria-label="نمودار نمونه با محور قیمت و کندل‌ها"></svg>
+      </div>
+      <div class="legend">
+        <span><i style="background:#10b981"></i>کندل افزایشی</span>
+        <span><i style="background:#f43f5e"></i>کندل کاهشی</span>
+        <span><i style="background:#38bdf8"></i>میانگین متحرک ۲۰ (روی سریِ انتخابی)</span>
+        <span><i style="background:#f59e0b"></i>ترسیم کاربر (در فضای قیمتِ نمایش)</span>
+      </div>
+    </div>
+
+    <div class="controls">
+      <div class="control">
+        <div class="lbl">مبنای قیمت <span class="chip">یک بعد مستقل</span></div>
+        <div class="seg" role="group" aria-label="مبنای قیمت">
+          <button id="btnAdj" aria-pressed="true" onclick="setBasis('combined')">عملکردی<br><small>تعدیل‌شده</small></button>
+          <button id="btnRaw" aria-pressed="false" onclick="setBasis('none')">خام<br><small>بدون تعدیل</small></button>
+        </div>
+        <div class="hint">«عملکردی» = خام × ضریب تجمعی سرور. «خام» = قیمت واقعی تابلو. هر دو همیشه در دسترس می‌مانند.</div>
+      </div>
+
+      <div class="control">
+        <div class="lbl">مقیاس محور قیمت <span class="chip">یک بعد مستقل دیگر</span></div>
+        <div class="seg three" role="group" aria-label="مقیاس محور قیمت">
+          <button id="btnLin" aria-pressed="true" onclick="setScale('normal')">خطی</button>
+          <button id="btnLog" aria-pressed="false" onclick="setScale('logarithm')">لگاریتمی</button>
+          <button id="btnPct" aria-pressed="false" onclick="setScale('percentage')">درصدی</button>
+        </div>
+        <div class="hint">مقیاس فقط «نمایش» را عوض می‌کند؛ مقدار کندل، اندیکاتور و ترسیم را نه. لگاریتمی روش تعدیل نیست.</div>
+      </div>
+
+      <div class="control">
+        <div class="lbl">وضعیت ترکیب</div>
+        <div class="matrix">
+          <table>
+            <thead><tr><th>مبنا</th><th>مقیاس</th><th>وضعیت</th></tr></thead>
+            <tbody id="combTable">
+              <tr data-k="combined|normal"><td>عملکردی</td><td>خطی</td><td>فعال</td></tr>
+              <tr data-k="combined|logarithm"><td>عملکردی</td><td>لگاریتمی</td><td>پشتیبانی‌شده</td></tr>
+              <tr data-k="none|normal"><td>خام</td><td>خطی</td><td>پشتیبانی‌شده</td></tr>
+              <tr data-k="none|logarithm"><td>خام</td><td>لگاریتمی</td><td>پشتیبانی‌شده</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="control">
+        <div class="lbl">یادداشت شفافیت</div>
+        <div class="hint" id="honesty">بارگذاری…</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="note">
+    <b>قاعدهٔ حفظ قابلیت:</b> این نمونه هیچ حالتی را حذف نمی‌کند. «عملکردی/خام» مبنای داده است و
+    «خطی/لگاریتمی/درصدی» مقیاس نمایش؛ هر چهار ترکیب مبنا×مقیاس باید در بازطراحی قابل انتخاب بمانند.
+    وضعیت انتخاب‌شده همیشه در نوار وضعیت دیده می‌شود. اگر ترسیم‌های کاربر در فضای قیمتِ نمایش ذخیره
+    شده باشند، تغییر مبنا باید یا آن‌ها را تبدیل کند یا پیش از جابه‌جایی هشدار بدهد — نه اینکه
+    بی‌صدا جابه‌جا شوند.
+  </div>
+</div>
+
+<script>
+const N = 48;
+const DPS = 250;
+const EVENT = 30; // index of ex-date
+const raw = [];
+let p = 4000;
+for (let i = 0; i < N; i++) {
+  if (i === EVENT) {
+    p = 4750;
+  } else {
+    p += Math.sin(i * 0.7) * 14 + (i < EVENT ? 22 : 6);
+    p = Math.max(4200, Math.round(p));
+  }
+  const open = i === 0 ? p - 8 : raw[i - 1].close;
+  const close = p;
+  const hi = Math.max(open, close) + 10 + (i % 5) * 2;
+  const lo = Math.min(open, close) - 10 - (i % 4) * 2;
+  raw.push({ open, high: hi, low: lo, close });
+}
+// Adjusted history: factor before the event = p_ex / (p_ex + DPS)
+const ex = raw[EVENT].close;
+const factor = ex / (ex + DPS);
+const adjusted = raw.map((c, i) => i < EVENT
+  ? { open: c.open * factor, high: c.high * factor, low: c.low * factor, close: c.close * factor }
+  : { ...c });
+
+let basis = 'combined';
+let scale = 'normal';
+
+function series() { return basis === 'combined' ? adjusted : raw; }
+
+function toFa(n) {
+  return String(n).replace(/\d/g, d => '۰۱۲۳۴۵۶۷۸۹'[d]);
+}
+
+function fmt(n) {
+  return toFa(Math.round(n).toLocaleString('en-US'));
+}
+
+function ma(vals, win) {
+  return vals.map((_, i) => {
+    if (i < win - 1) return null;
+    let s = 0;
+    for (let j = i - win + 1; j <= i; j++) s += vals[j];
+    return s / win;
+  });
+}
+
+function draw() {
+  const svg = document.getElementById('chart');
+  const s = series();
+  const W = 860, H = 430, L = 64, R = 16, T = 16, B = 34;
+  const iw = W - L - R, ih = H - T - B;
+  const vals = s.flatMap(c => [c.low, c.high]);
+  const maVals = ma(s.map(c => c.close), 20).filter(v => v != null);
+  vals.push(...maVals);
+  let lo = Math.min(...vals), hi = Math.max(...vals);
+  if (scale === 'percentage') {
+    const base = s[0].close;
+    lo = Math.min(...s.map(c => c.low / base * 100));
+    hi = Math.max(...s.map(c => c.high / base * 100));
+  }
+  const pad = (hi - lo) * 0.08 || 1;
+  lo -= pad; hi += pad;
+
+  const project = v => {
+    let t;
+    if (scale === 'logarithm') {
+      const a = Math.log10(lo), b = Math.log10(hi);
+      t = (Math.log10(v) - a) / (b - a);
+    } else if (scale === 'percentage') {
+      const base = s[0].close;
+      const pv = v / base * 100;
+      t = (pv - lo) / (hi - lo);
+    } else {
+      t = (v - lo) / (hi - lo);
+    }
+    return T + ih - t * ih;
+  };
+
+  const x = i => L + (i + 0.5) * (iw / N);
+  const bw = Math.max(3, (iw / N) * 0.55);
+
+  let out = '';
+  // grid + y labels
+  for (let g = 0; g <= 5; g++) {
+    const v = lo + (hi - lo) * g / 5;
+    const y = T + ih - (g / 5) * ih;
+    out += `<line x1="${L}" y1="${y}" x2="${W - R}" y2="${y}" stroke="#1c2738" stroke-width="1"/>`;
+    const label = scale === 'percentage' ? `${(v).toFixed(0)}٪` : fmt(v);
+    out += `<text x="${L - 10}" y="${y + 4}" fill="#7f93ad" font-size="10.5" text-anchor="end">${label}</text>`;
+  }
+  // event marker
+  out += `<line x1="${x(EVENT)}" y1="${T}" x2="${x(EVENT)}" y2="${T + ih}" stroke="#f59e0b" stroke-dasharray="4 5" opacity="0.55"/>`;
+  out += `<text x="${x(EVENT) + 6}" y="${T + 14}" fill="#f59e0b" font-size="10">رویداد نقدی</text>`;
+
+  // candles
+  s.forEach((c, i) => {
+    const up = c.close >= c.open;
+    const col = up ? '#10b981' : '#f43f5e';
+    const cx = x(i);
+    out += `<line x1="${cx}" y1="${project(c.high)}" x2="${cx}" y2="${project(c.low)}" stroke="${col}" stroke-width="1"/>`;
+    const y1 = project(Math.max(c.open, c.close));
+    const y2 = project(Math.min(c.open, c.close));
+    out += `<rect x="${cx - bw / 2}" y="${y1}" width="${bw}" height="${Math.max(1.4, y2 - y1)}" fill="${col}" opacity="0.92"/>`;
+  });
+
+  // MA20 on the selected series
+  const mv = ma(s.map(c => c.close), 20);
+  let d = '';
+  mv.forEach((v, i) => { if (v != null) d += `${d ? 'L' : 'M'}${x(i).toFixed(2)},${project(v).toFixed(2)} `; });
+  out += `<path d="${d}" fill="none" stroke="#38bdf8" stroke-width="1.6" opacity="0.9"/>`;
+
+  // user drawing stored in display-price space (illustrates the risk)
+  const drawPrice = basis === 'combined' ? 4800 * factor : 4800;
+  const dy = project(drawPrice);
+  out += `<line x1="${L}" y1="${dy}" x2="${W - R}" y2="${dy}" stroke="#f59e0b" stroke-width="1.4" stroke-dasharray="7 5"/>`;
+  out += `<text x="${W - R - 6}" y="${dy - 6}" fill="#f59e0b" font-size="10" text-anchor="end">ترسیم کاربر @ ۴٬۸۰۰</text>`;
+
+  // axes
+  out += `<line x1="${L}" y1="${T + ih}" x2="${W - R}" y2="${T + ih}" stroke="#2a3852"/>`;
+  out += `<line x1="${L}" y1="${T}" x2="${L}" y2="${T + ih}" stroke="#2a3852"/>`;
+  out += `<text x="${L}" y="${H - 10}" fill="#7f93ad" font-size="10">شروع</text>`;
+  out += `<text x="${W - R}" y="${H - 10}" fill="#7f93ad" font-size="10" text-anchor="end">امروز</text>`;
+
+  svg.innerHTML = out;
+
+  const last = s[s.length - 1].close;
+  document.getElementById('stLast').textContent = fmt(last) + ' ریال';
+  document.getElementById('stBasis').textContent = basis === 'combined' ? 'عملکردی (تعدیل‌شده)' : 'خام (بدون تعدیل)';
+  document.getElementById('stScale').textContent = scale === 'normal' ? 'خطی' : scale === 'logarithm' ? 'لگاریتمی' : 'درصدی';
+  document.getElementById('honesty').textContent = basis === 'combined'
+    ? 'این سری با ضریب تجمعی سرور ساخته شده است؛ اندیکاتورهای قیمتی روی همین سری محاسبه می‌شوند. ترسیم نمونه در فضای قیمتِ نمایش ذخیره شده و با تغییر مبنا جابه‌جا می‌شود — تصمیمِ طراحی باید این را حل کند.'
+    : 'این سری خام است. اندیکاتورهای قیمتی روی سری خام محاسبه می‌شوند. ترسیم نمونه با همان مقدار ذخیره‌شده رسم می‌شود و نسبت به حالت عملکردی جابه‌جا می‌شود.';
+  document.getElementById('stEvent').textContent = basis === 'combined'
+    ? 'رویداد: سود نقدی ۲۵۰ ریال · ضریب تاریخی ' + toFa(factor.toFixed(4))
+    : 'رویداد: سود نقدی ۲۵۰ ریال · سری خام';
+
+  document.querySelectorAll('#combTable tr').forEach(tr => {
+    tr.classList.toggle('active', tr.dataset.k === basis + '|' + scale);
+    tr.lastElementChild.textContent = tr.classList.contains('active') ? 'فعال' : 'پشتیبانی‌شده';
+  });
+  document.getElementById('btnAdj').setAttribute('aria-pressed', basis === 'combined');
+  document.getElementById('btnRaw').setAttribute('aria-pressed', basis === 'none');
+  document.getElementById('btnLin').setAttribute('aria-pressed', scale === 'normal');
+  document.getElementById('btnLog').setAttribute('aria-pressed', scale === 'logarithm');
+  document.getElementById('btnPct').setAttribute('aria-pressed', scale === 'percentage');
+}
+
+function setBasis(v) { basis = v; draw(); }
+function setScale(v) { scale = v; draw(); }
+draw();
+</script>
+</body>
+</html>
