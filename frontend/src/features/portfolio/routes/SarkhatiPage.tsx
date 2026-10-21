@@ -40,6 +40,7 @@ import { SarkhatiProTools } from '../components/sarkhati/SarkhatiProTools';
 import { SarkhatiRiskCard } from '../components/sarkhati/SarkhatiRiskCard';
 import { SarkhatiCockpitCard } from '../components/sarkhati/SarkhatiCockpitCard';
 import { SarkhatiStatusStrip } from '../components/sarkhati/SarkhatiStatusStrip';
+import { SarkhatiReadinessCard } from '../components/sarkhati/SarkhatiReadinessCard';
 import { SarkhatiSelectionCard } from '../components/sarkhati/SarkhatiSelectionCard';
 import { SarkhatiSymbolCard, estValue, selectRowFor }
   from '../components/sarkhati/SarkhatiSymbolCard';
@@ -226,6 +227,9 @@ export default function SarkhatiPage() {
         <div className="rounded-xl border border-border-c/70 bg-bg-card/25 px-3 py-2.5"
           data-testid="sarkhati-connect-section">
           <SarkhatiConnectionCard />
+          <div className="mt-2">
+            <SarkhatiReadinessCard />
+          </div>
         </div>
       ) : panel === 'symbol' ? (
         <div className="rounded-xl border border-border-c/70 bg-bg-card/25 px-3 py-2.5"

@@ -39,6 +39,7 @@ from typing import Any, Callable, Iterable, Mapping
 from urllib.parse import urlparse
 
 import execution_timing as TT
+import execution_write_contract as WC
 from execution_contract import (
     BrokerAdapter, BrokerError, Capabilities, ErrorCode, ExecutionRecord,
     ExecutionStatus, InstrumentRef, OrderDraft, OrderMode, OrderState,
@@ -56,8 +57,9 @@ WIRE_HYPOTHESIS = True
 # ── ۱) ثابت‌هایِ سیم — تنها جایِ نگهداریِ شکلِ پروتکل ────────────────────────
 #: میزبان. شاهد: `m-fazel/Sarkhati@c7c9487 src/easy_trader.rs:17`.
 WIRE_BASE_URL = "https://api-mts.orbis.easytrader.ir"
-#: ثبتِ سفارش. شاهد: `RezaMahdaviiDev/mofid@72a2e8c src/brokerages/easy/api/order.ts:119-132`.
-WIRE_PATH_ORDER_CREATE = "/core/api/v2/order"
+#: ثبتِ سفارش. شاهدِ تازه: کدِ خودِ وب‌اپِ اول‌طرفی (main-XW5OZAYT.js،
+#: `createOrder` → POST `core/api/v2/order` با `{order: …}`)، ۲۰۲۶-۱۰-۲۱.
+WIRE_PATH_ORDER_CREATE = WC.ENDPOINT
 #: فهرستِ سفارش‌ها — درِ مرجع hardcode است و از Settings رد نمی‌شود
 #: (`order.ts:222`). این همان یکۀ reconcile است: تنها چیزی که ابهامِ timeout را
 #: تعیین تکلیف می‌کند.
@@ -105,12 +107,11 @@ WIRE_SESSION_PROBE_CANDIDATES = (
 #: (`Sarkhati src/easy_trader.rs:62-80`). بدنۀِ تختِ Online-Plus/Titan عمداً
 #: اینجا نمی‌آید؛ آن پروتکلِ دیگری است.
 WIRE_ENVELOPE_KEY = "order"
-WIRE_SIDE_BUY = 0        #: `order.ts:13-25` — جهت **عددی** است، نه رشته
-WIRE_SIDE_SELL = 1
-WIRE_VALIDITY_TYPE = 0
-WIRE_ORDER_MODEL_TYPE = 1
-WIRE_ORDER_FROM = 34      #: معنایش درِ هیچ مرجعی مستند نیست — ماتریس §۲، UNVERIFIED
-WIRE_COMMISSION = 0.0012  #: دامنه/واحدش تأیید نشده — همان‌جا UNVERIFIED
+WIRE_SIDE_BUY = WC.SIDE_BUY      #: enumِ کلاینتِ اول‌طرفی: 0=Buy
+WIRE_SIDE_SELL = WC.SIDE_SELL    #: 1=Sell
+WIRE_VALIDITY_TYPE = WC.VALIDITY_DAY
+WIRE_ORDER_MODEL_TYPE = WC.ORDER_MODEL_OMS
+WIRE_ORDER_FROM = WC.ORDER_FROM_STOCK_DESKTOP  #: OrbisDesktop=34 (enum اول‌طرفی)
 
 WIRE_KEY_ISIN = "symbolIsin"        #: شناسۀ سفارش ISIN است، نه ins_code
 WIRE_KEY_SYMBOL = "symbolName"
@@ -250,6 +251,8 @@ class WireVerdict:
     ambiguous: bool
     detail: str = ""
     retry_after_ms: int | None = None
+    #: 2xx + isSuccessful + id یعنی «درخواست ثبت شد»، نه «سفارش پذیرفته/اجرا شد».
+    request_registered: bool = False
 
     @property
     def is_unknown_result(self) -> bool:
@@ -468,7 +471,7 @@ def interpret_easytrader_response(status: int, body: Any, *,
       ۴۰۸                → TIMEOUT          — نامعلوم؛ فقط reconcile
       ۵xx                → NETWORK_ERROR    — نامعلوم؛ سرور شاید پذیرفته باشد
       ۳xx                → UNKNOWN_RESULT   — رویِ POST بازارسالِ بدن را نمی‌پذیریم
-      ۲xx و flag=true و بی omsError → پذیرش، و status از متنِ پاسخ
+      ۲xx و flag=true و بی omsError → «درخواست ثبت شد» (نه پذیرش/اجرا)
       ۲xx و flag=false              → رد، **حتی با `id`** (spec مرجع :107-120)
       ۲xx و flag نباشد              → UNKNOWN_RESULT — سکوتِ پاسخ پذیرش نیست
       ۲xx و بدنۀ غیرقابل‌خواندن     → UNKNOWN_RESULT — HTML/صفحۀِ ورودِ مجدد
@@ -539,29 +542,26 @@ def interpret_easytrader_response(status: int, body: Any, *,
                            OrderState.REJECTED, None,
                            head, errs, code, False, "%s: ردِ OMS" % where, after)
     return WireVerdict(True, None, state, oid, head, errs, code, False,
-                       "%s: پذیرفته شد" % where, after)
+                       "%s: درخواست ثبت شد — وضعیت از فهرست خوانده می‌شود" % where,
+                       after, request_registered=True)
 
 
 # ── ۴) بدنۀِ سفارش — یگانه جایِ ساختِ payload ───────────────────────────────
-def easytrader_payload(draft: OrderDraft) -> dict[str, Any]:
-    """مدلِ داخلی ← بدنۀِ `{"order":{…}}`.
+def easytrader_payload(draft: OrderDraft, *,
+                       validity_type: int = WIRE_VALIDITY_TYPE,
+                       validity_date: str | None = None,
+                       commission: float | None = None,
+                       total_value: float | None = None) -> dict[str, Any]:
+    """مدلِ داخلی ← بدنۀِ `{"order":{…}}` از قراردادِ بازسازی‌شدهٔ اول‌طرفی.
 
-    هیچ مقداری اینجا حدس نمی‌شود: ISIN از `InstrumentRef` می‌آید و نبودش یعنی
-    `submit_order` هرگز تا اینجا نمی‌رسد (`orderable()` جلوی‌اش را می‌گیرد).
+    فیلدهایِ client-summary (`commission`/`totalValue`) فقط با مقدارِ قابل‌دفاع
+    می‌آیند؛ نبودشان «صفرِ ساختگی» نیست. ISIN از `InstrumentRef` می‌آید و نبودش
+    یعنی `submit_order` هرگز تا اینجا نمی‌رسد (`orderable()` جلوی‌اش را می‌گیرد).
     """
-    inner = {
-        WIRE_KEY_ISIN: draft.instrument.isin,
-        WIRE_KEY_SYMBOL: draft.instrument.symbol,
-        WIRE_KEY_PRICE: draft.price,
-        WIRE_KEY_QUANTITY: draft.quantity,
-        WIRE_KEY_SIDE: WIRE_SIDE_BUY if draft.side is Side.BUY else WIRE_SIDE_SELL,
-        "validityType": WIRE_VALIDITY_TYPE,
-        "orderModelType": WIRE_ORDER_MODEL_TYPE,
-        "orderFrom": WIRE_ORDER_FROM,
-        "commission": WIRE_COMMISSION,
-        WIRE_KEY_CREATED: client_clock_label(),
-    }
-    return {WIRE_ENVELOPE_KEY: inner}
+    return WC.build_payload(draft, created_at=client_clock_label(),
+                            validity_type=validity_type,
+                            validity_date=validity_date,
+                            commission=commission, total_value=total_value)
 
 
 def _code_from_reason(reason: str) -> ErrorCode:
@@ -1107,6 +1107,8 @@ class EasyTraderAdapter(BrokerAdapter):
         rec.status = ExecutionStatus.ACKNOWLEDGED
         rec.broker_order_id = v.broker_order_id
         rec.order_state = v.state
+        rec.note("request registered (HTTP 2xx + isSuccessful) — "
+                 "acceptance/fill must be read back; not claimed here")
         rec.note(v.detail)
         if v.broker_order_id:
             intent.broker_order_id = v.broker_order_id

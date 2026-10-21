@@ -703,6 +703,59 @@ export const accountSourcesApi = {
       { schema: BuyingPowerSchema, signal }),
 };
 
+const ReadinessGateSchema = z.object({
+  id: z.string(),
+  label: z.string(),
+  status: z.string(),
+  detail: txt,
+  action: txt,
+  source: txt,
+}).catchall(z.unknown());
+export type ReadinessGate = z.infer<typeof ReadinessGateSchema>;
+
+export const ReadinessSchema = z.object({
+  status: z.string(),
+  data_risk_ready: z.boolean().nullish(),
+  live_ready: z.boolean().nullish(),
+  live_enabled: z.boolean().nullish(),
+  contract_state: txt,
+  blocking_count: num,
+  next_action: txt,
+  gates: z.array(ReadinessGateSchema).nullish(),
+  contract: z.record(z.string(), z.unknown()).nullish(),
+  adapter: txt,
+  symbol: txt,
+  side: txt,
+}).catchall(z.unknown());
+export type ReadinessView = z.infer<typeof ReadinessSchema>;
+
+export const readinessApi = {
+  get: (args: { symbol?: string; side?: string; price?: number; quantity?: number } = {},
+       signal?: AbortSignal) => {
+    const q = new URLSearchParams();
+    if (args.symbol) q.set('symbol', args.symbol);
+    if (args.side) q.set('side', args.side);
+    if (args.price != null) q.set('price', String(args.price));
+    if (args.quantity != null) q.set('quantity', String(args.quantity));
+    return http<ReadinessView>(`/api/execution/readiness?${q.toString()}`,
+      { schema: ReadinessSchema, signal });
+  },
+};
+
+export function useExecutionReadiness(args: {
+  symbol?: string; side?: string; price?: number; quantity?: number;
+} = {}, enabled = true) {
+  return useQuery({
+    queryKey: ['execution-readiness', args.symbol ?? '', args.side ?? '',
+      args.price ?? '', args.quantity ?? ''],
+    queryFn: ({ signal }) => readinessApi.get(args, signal),
+    enabled,
+    staleTime: 15_000,
+    refetchOnWindowFocus: false,
+    retry: false,
+  });
+}
+
 /** یک‌بار در هر نشست کافی است؛ تنظیمِ دیسک بی‌restart عوض نمی‌شود. */
 export function useBrokerConfig() {
   return useQuery({

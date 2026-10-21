@@ -60,6 +60,7 @@ import execution_connection as ECONN                       # noqa: E402
 import execution_browser_host as BH                        # noqa: E402
 import execution_cockpit as CK                             # noqa: E402
 import execution_offerings as OF                           # noqa: E402
+import execution_readiness as RD                           # noqa: E402
 import execution_schedule as SCH                           # noqa: E402
 import execution_session_store as SESS                     # noqa: E402
 import execution_strategy_core as SC                       # noqa: E402
@@ -2053,6 +2054,54 @@ def get_easytrader_watchlist() -> dict[str, Any]:
         "unresolved": unresolved, "empty": not bool(flat), "error": None,
     })
     return base
+
+
+@router.get("/api/execution/readiness")
+def get_readiness(symbol: str = "", side: str = "buy",
+                  price: float | None = None,
+                  quantity: float | None = None) -> dict[str, Any]:
+    """دروازهٔ متمرکز: داده/ریسک از نوشتن جدا؛ live_ready فقط با همهٔ شروط.
+
+    این در فقط‌خواندنی است؛ برایِ سنجشِ داده ممکن است یک GET قدرت خرید بزند.
+    هیچ سفارشی نمی‌سازد و «live_ready=true» را از هیچ ورودیِ UI نمی‌پذیرد.
+    """
+    sym = (symbol or "").strip()
+    symbol_ready: bool | None = None
+    checks: dict[str, str] | None = None
+    if sym:
+        try:
+            ref = _draft_from({"symbol": sym}).instrument
+            symbol_ready = ref.orderable()[0]
+        except HTTPException:
+            symbol_ready = False
+        if price is not None and quantity is not None:
+            try:
+                draft = _draft_from({"symbol": sym, "side": side,
+                                     "price": price, "quantity": quantity,
+                                     "execution_id": "readiness-" + uuid.uuid4().hex[:10],
+                                     "price_source": "readiness"})
+                checks = dict(_SERVICE.preflight(draft).checks)
+            except (HTTPException, ExecutionError, ValueError, TypeError):
+                checks = None
+    try:
+        bp = get_buying_power()
+    except Exception:                             # noqa: BLE001 - منبعِ بیرونی
+        bp = None
+    rep = RD.build_readiness(
+        session_proven=bool(getattr(_ACTIVE_ADAPTER, "session_proven",
+                                    lambda: False)()),
+        read_only=bool(READ_ONLY_REQUESTED),
+        buying_power=bp,
+        symbol_ready=symbol_ready,
+        preflight_checks=checks,
+        contract_operational=False,
+        owner_approved=False,
+        lifecycle_tests=None,
+        full_gate=None,
+    )
+    rep.update({"adapter": ADAPTER_KIND, "symbol": sym or None,
+                "side": side, "price": price, "quantity": quantity})
+    return rep
 
 
 @router.get("/api/execution/buying-power")
