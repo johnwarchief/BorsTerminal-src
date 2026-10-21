@@ -1190,7 +1190,7 @@ def _official_price_adjust_events(symbol, times=None, share_changes=None):
         except Exception:
             dps = None
         staged.append({"date": dt, "ratio": r, "source": src or "priceAdjust",
-                       "orig": orig, "dps": dps})
+                       "orig": orig, "dps": dps, "source_ratio": r})
     closes = _closing_prices_for(symbol, [e["date"] for e in staged])
     out = []
     for e in staged:
@@ -1199,7 +1199,8 @@ def _official_price_adjust_events(symbol, times=None, share_changes=None):
         r, is_dps, etype = _classify_pa_event(
             e["ratio"], dps, cl, e["orig"], share_changes)
         rec = {"date": e["date"], "ratio": r, "source": e["source"],
-               "_ledger_key": (e["orig"], "priceAdjust")}
+               "_ledger_key": (e["orig"], "priceAdjust"),
+               "_source_ratio": e["source_ratio"]}
         if is_dps:
             rec["_dps"] = True
             rec["dividend_per_share"] = float(dps)
@@ -1303,6 +1304,11 @@ def _share_change_events(symbol):
 # سنجشِ Round 12: قاعدهٔ بی‌گیت +0.24 واحدِ درصد exact داد ولی رویدادهایِ
 # آورده‌ایِ کوچک (كايزد، دعبيد) را هم تیز کرد و پس‌رفتِ نمادین ساخت.
 _SHARE_GAP_TOL = 0.005
+# The gap is discovered on the first trading candle after the event, so a
+# suspension/weekend can put it 6-9 days after the ledger share date.  The
+# window is widened only for rows that also have official no-cash evidence
+# within 2 days and a ratio within _SHARE_GAP_TOL; both gates stay mandatory.
+_SHARE_GAP_WINDOW_DAYS = 10
 
 
 def _share_type_evidence_dates(symbol):
@@ -1371,7 +1377,7 @@ def _sharpen_share_gaps(events, official, share_changes, evidence_dates=None):
         best = None
         for sd, sr in (share_changes or []):
             dd = _day_diff(sd, ed)
-            if dd is None or dd > 5:
+            if dd is None or dd > _SHARE_GAP_WINDOW_DAYS:
                 continue
             matched_evidence = False
             for evd in evidence_dates:
@@ -1422,7 +1428,14 @@ def _merge_official_price_adjust(events, official, rejected=None, share_changes=
     # همان پنجره افتاده (نمونهٔ سنجش‌شده: بورس 2026-07-22 هم DPS=55 دارد و هم
     # افزایشِ سرمایهٔ اندوخته 24T→32T با نسبت 0.750923). حذفِ بی‌قیدِ گسست، آن
     # افزایشِ سرمایه را می‌بلعد و ضریب را ۲۵٪ خراب می‌کند.
-    dps_ratios = [(i, str(o.get("date"))[:10], float(o["ratio"]))
+    def _source_ratio(o):
+        try:
+            r = float(o.get("_source_ratio") or 0)
+        except (TypeError, ValueError):
+            return None
+        return r if r > 0 else None
+
+    dps_ratios = [(i, str(o.get("date"))[:10], float(o["ratio"]), _source_ratio(o))
                   for i, o in enumerate(official) if o.get("_dps") and o.get("ratio")]
     share_changes = list(share_changes or [])
     combined_skip = set()  # official DPS rows already contained in a base gap
@@ -1444,14 +1457,22 @@ def _merge_official_price_adjust(events, official, rejected=None, share_changes=
                 return False
             ed = str(e.get("date"))[:10]
             near = []
-            for i, dd, dr in dps_ratios:
+            for i, dd, dr, sr in dps_ratios:
                 diff = _day_diff(dd, ed)
                 if diff is not None and diff <= 5:
-                    near.append((i, dr))
+                    near.append((i, dr, sr))
             if not near:
                 return False
             # Same action: the base gap is a rough copy of the DPS.
-            if any(abs(r / dr - 1.0) <= _DPS_DUP_TOL for _i, dr in near):
+            if any(abs(r / dr - 1.0) <= _DPS_DUP_TOL for _i, dr, _sr in near):
+                return True
+            # The gap may carry the official pre-event PA ratio while the DPS
+            # leg is recomputed from the ex-date close; when the stock moved
+            # >2% that day the two ratios differ, but the ledger identity is
+            # the official source ratio (سخاش 2026-05-23: 0.82668187 source
+            # vs 0.85727699 DPS; reference type7 step is the DPS leg).
+            if any(sr and abs(r / sr - 1.0) <= _LEDGER_AGREE_TOL
+                   for _i, _dr, sr in near):
                 return True
             cc = _nearest_share(ed)
             if cc:
@@ -1459,7 +1480,7 @@ def _merge_official_price_adjust(events, official, rejected=None, share_changes=
                 # DPS*CC (keep the gap, suppress the separate DPS).  Choose
                 # the hypothesis closer to the official share ratio.
                 best = None
-                for i, dr in near:
+                for i, dr, _sr in near:
                     sep = abs(r / cc - 1.0)
                     comb = abs(r / (cc * dr) - 1.0)
                     if comb < sep and comb <= 0.02 and (best is None or comb < best[0]):
@@ -1474,7 +1495,46 @@ def _merge_official_price_adjust(events, official, rejected=None, share_changes=
 
         kept = [e for e in kept if not (
             e.get("source") == "base-price-discontinuity" and _drop_base(e))]
+    # A combined action (share × price leg) may already be present as one
+    # observed base gap.  When the gap equals share_ratio × the official
+    # pre-event PA ratio, applying the official row again double-counts it.
+    # Only a unique claim suppresses the row; two rows on one gap stay
+    # ambiguous and are both kept (same neutrality as ledger sharpening).
+    combined_base_claims = {}
     for idx, o in enumerate(official):
+        sr = _source_ratio(o)
+        if not sr:
+            continue
+        for sd, cc in share_changes:
+            dd = _day_diff(sd, str(o.get("date"))[:10])
+            if dd is None or dd > 7:
+                continue
+            try:
+                target = float(cc) * sr
+            except (TypeError, ValueError):
+                continue
+            if target <= 0:
+                continue
+            hits = []
+            for j, e in enumerate(kept):
+                if e.get("source") not in ("base-price-discontinuity", "priceAdjust"):
+                    continue
+                try:
+                    er = float(e.get("ratio") or 0)
+                except (TypeError, ValueError):
+                    continue
+                if er > 0 and abs(er / target - 1.0) <= _SHARE_GAP_TOL:
+                    hits.append(j)
+            if len(hits) == 1:
+                combined_base_claims.setdefault(hits[0], []).append(idx)
+    combined_base_skip = {v[0] for v in combined_base_claims.values()
+                          if len(v) == 1}
+    for idx, o in enumerate(official):
+        if idx in combined_base_skip:
+            if rejected is not None:
+                rejected.append({"date": o.get("date"), "ratio": o.get("ratio"),
+                                 "factor_status": "included-in-combined-base-gap"})
+            continue
         if idx in combined_skip:
             if rejected is not None:
                 rejected.append({"date": o.get("date"), "ratio": o.get("ratio"),
@@ -1502,8 +1562,25 @@ def _merge_official_price_adjust(events, official, rejected=None, share_changes=
                         # amounts are distinct events, even if their price
                         # ratios are within 2% (e.g., DPS 171 vs DPS 5).
                         same_amount = abs(float(ea) / float(oa) - 1.0) <= 0.02
-                    if (er and same_amount and
-                            abs(er / float(o["ratio"]) - 1.0) <= _SAME_ACTION_TOL):
+                    ratio_match = abs(er / float(o["ratio"]) - 1.0) <= _SAME_ACTION_TOL
+                    source_match = False
+                    sr = _source_ratio(o)
+                    if o.get("_dps") and sr and \
+                            abs(er / sr - 1.0) <= _LEDGER_AGREE_TOL:
+                        source_match = True
+                        # A share change on the same effective date that
+                        # explains this ratio is a capital action, not this
+                        # DPS row; never swallow it.
+                        for sd, scr in share_changes:
+                            ds = _day_diff(sd, ed)
+                            if ds is not None and ds <= 5:
+                                try:
+                                    if abs(float(scr) / er - 1.0) <= _SAME_ACTION_TOL:
+                                        source_match = False
+                                        break
+                                except (TypeError, ValueError):
+                                    continue
+                    if er and same_amount and (ratio_match or source_match):
                         dup_idx = j
                         break
                 except Exception:
