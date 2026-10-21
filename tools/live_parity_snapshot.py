@@ -311,8 +311,12 @@ def aggregates(bt_market, ts_rows, ta) -> dict:
     bt_rows = ((bt_market.get("data") or {}).get("data") or []) if bt_market.get("ok") else []
     bt_live = [r for r in bt_rows if r.get("is_live")]
     out = {
-        "tsetmc": {"volume": s(ts_rows, "ztt"), "value": s(ts_rows, "ztd"),
-                   "count": s(ts_rows, "vc"), "mcap": s(ts_rows, "qtc"),
+        # qtj=حجم، qtc=ارزش، ztt=تعدادِ معامله. پیش از این ztt/ztd/vc به‌جایِ این‌ها
+        # خوانده می‌شد و «حجم» در گزارش، تعدادِ معامله بود؛ mcap هم در این اندپوینت
+        # همیشه null است، پس عددِ جایگزین ساخته نمی‌شود.
+        "tsetmc": {"volume": s(ts_rows, "qtj"), "value": s(ts_rows, "qtc"),
+                   "count": s(ts_rows, "ztt"),
+                   "mcap": s(ts_rows, "mcap") if any(r.get("mcap") is not None for r in ts_rows) else None,
                    "rows_with_trade": len(ts_live)},
         "bors": {"volume": s(bt_live, "q_tot_tran"),
                  # ارزشِ معاملات ازِ همان ستونی که واقعاً پر است؛ اگر `tval`

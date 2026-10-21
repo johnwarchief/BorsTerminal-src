@@ -445,10 +445,12 @@ def mstat_ownership(group: str = Query("all"), limit: int = Query(10)):
 
 @router.get("/api/mstat/indexcards")
 def mstat_index_cards(days: int = Query(30)):
-    """صفحۀ ۶ و ۷ — سه کارت (کل بورس، کل هم‌وزن، قیمتِ وزنیِ ارزشی) + sparkline.
+    """صفحۀ ۶ و ۷ — چهار کارت + sparkline.
 
-    «قیمتِ وزنیِ ارزشی» = q_tot_cap ÷ q_tot_tran از همان ردیفِ رسمی، نه
-    میانگینِ درصدها. `history_points` می‌گوید sparkline واقعاً چند روز دارد."""
+    کارت سوم **شاخص رسمی قیمت (وزنی-ارزشی)** از `Index/GetIndexB1LastAll`
+    است (همان مقدار رهآورد)؛ کارت چهارم میانگین ارزشی معاملات
+    (q_tot_cap ÷ q_tot_tran) است و عمداً جدا مانده. `history_points` می‌گوید
+    sparkline واقعاً چند روز دارد."""
     return _mstat_call(_panels.index_cards, days)
 
 

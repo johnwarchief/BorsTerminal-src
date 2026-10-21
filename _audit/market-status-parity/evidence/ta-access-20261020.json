@@ -1,0 +1,29 @@
+{
+  "observed_at": "2026-10-20T22:38:00+03:30",
+  "browser": "managed browser (browser-use)",
+  "public_home": {
+    "url": "https://tradersarena.ir/",
+    "accessible": true,
+    "fields_seen": {
+      "tedpix": 8272444.35,
+      "tedpix_change": 18620.63,
+      "tedpix_pct": 0.23,
+      "equal_weight": 2251347.23,
+      "equal_change": 28573.75,
+      "equal_pct": 1.29
+    },
+    "price_weighted_widget": "not found on the public home"
+  },
+  "historical_key_stats": {
+    "requested_url": "https://tradersarena.ir/homepage/20261019",
+    "result_url": "http://tradersarena.ir/login",
+    "page_title": "ورود به تریدرزآرنا",
+    "status": "BLOCKED_EXTERNALLY_OWNER_LOGIN_REQUIRED"
+  },
+  "rules_followed": {
+    "login_attempted": false,
+    "credentials_or_session_read": false,
+    "captcha_or_mfa_bypassed": false
+  },
+  "next_owner_action": "Log in to TradersArena in the managed browser; then the historical/key-stat pages can be audited without extracting the session."
+}

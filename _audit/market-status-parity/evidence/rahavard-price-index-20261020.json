@@ -1,0 +1,51 @@
+{
+  "finding": "Rahavard's «قیمت وزنی ارزشی» value is the official TSETMC price (value-weighted) index, not a custom formula; 3,055.87 was its change field, not its value.",
+  "observed_at": "2026-10-20T22:21:00+03:30",
+  "access": {
+    "browser": "managed browser (browser-use), Rahavard session already active",
+    "method": "navigate + read rendered text only",
+    "credentials_or_session_copied": false,
+    "account_identity_retained": false
+  },
+  "rahavard_card": {
+    "label": "قیمت وزنی ارزشی",
+    "value": 1367563.83,
+    "change": 3085.54,
+    "pct": 0.23,
+    "unit": "واحد",
+    "data_time": "19:49 | 1405/07/28",
+    "page": "https://rahavard365.com/ (home)"
+  },
+  "tsetmc_official_index": {
+    "endpoint": "https://cdn.tsetmc.com/api/Index/GetIndexB1LastAll/SelectedIndexes/1",
+    "insCode": "5798407779416661",
+    "lVal30": "شاخص قيمت(وزني-ارزشي)",
+    "xDrNivJIdx004": 1367563.83,
+    "xPbNivJIdx004": 1367534.25,
+    "indexChange": 3078.59,
+    "xVarIdxJRfV": 0.2256,
+    "hEven": 194919,
+    "fetched_at": "2026-10-20T22:20:00+03:30"
+  },
+  "bors_before": {
+    "key": "value_weighted_price",
+    "label_before": "میانگین ارزشی قیمت معاملات",
+    "value": 8022.88,
+    "formula": "q_tot_cap / q_tot_tran",
+    "why_wrong": "this is a traded-price average in Rial; it is not the official price index and was compared with Rahavard's change field"
+  },
+  "bors_after": {
+    "value_weighted_price": "official TSETMC price index (xDrNivJIdx004)",
+    "avg_traded_price": "q_tot_cap / q_tot_tran preserved as a separate fourth card",
+    "unit": "index point / Rial"
+  },
+  "tradersarena": {
+    "home_search": "no «قیمت وزنی ارزشی» widget found on the public home",
+    "status": "NOT_AVAILABLE on the audited public surface"
+  },
+  "prior_error": {
+    "report": "docs/MARKET-STATUS-DATA-PARITY-CLOSURE-QODER3-2026-10-20.md",
+    "recorded_reference_value": 3055.87,
+    "explanation": "This matched the card's change field at 14:51, not its value; the value at that time was the official index (around 1.367M)."
+  }
+}

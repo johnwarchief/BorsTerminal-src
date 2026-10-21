@@ -908,10 +908,10 @@ def money(row, base_est) -> dict:
          "has_ct": bool(ct)}
 
     # ── ارزشِ هر گروه: مبدأ اولویت دارد، بازسازی فقط جای خانۀ خالی ─────────
-    # `client_type_value` تنها از GetClientTypeHistory پر می‌شود و آن مسیر برایِ
-    # *نشستِ جاری* HTTP 500 می‌دهد (سنجشِ زنده ۱۴۰۵-۰۷-۱۳؛ نشست‌هایِ بسته تا
-    # 20260701 برمی‌گردند). پس «ردیف نیست» قاعدۀ روز است و جای آن حجم×VWAPِ
-    # پیشین می‌نشیند — هرگز صفرِ جعلی نه.
+    # `client_type_value` تنها از GetClientTypeHistory پر می‌شود. این مسیر
+    # می‌تواند موقتاً 500 بدهد؛ سنجشِ ۲۰۲۶-۱۰-۲۰ برای نشستِ بسته 200 داد و
+    # backfillِ پنج‌نمادی ۵/۵ ردیفِ native نوشت. پس «ردیف نیست» یعنی هنوز
+    # backfill نشده، و جای آن حجم×VWAPِ پیشین می‌نشیند — هرگز صفرِ جعلی نه.
     # `value_source` فقط درِ قراردادِ audit/details می‌رود، نه درِ ستونِ تابلو.
     #
     # یک نتیجۀ جانبی که ارزشِ دانستن دارد: نسبت‌ها از این انتخاب مستقل‌اند.
@@ -1151,8 +1151,13 @@ def market_index(conn) -> dict | None:
     جدولِ تازه (پایگاهِ بسته‌بندی‌شده) None برمی‌گرداند، نه صفر.
     """
     try:
+        cols = {x[1] for x in conn.execute("PRAGMA table_info(market_index)")}
+        # پایگاهِ بسته‌بندی‌شدهٔ کهنه ستون‌های pi_* را ندارد؛ NULL می‌خوانیم تا
+        # کارتِ رسمی «در دسترس نیست» بماند، نه اینکه کلِ شاخص‌ها None شود.
+        extra = (", pi_last, pi_change, pi_pct" if {"pi_last", "pi_change", "pi_pct"} <= cols
+                 else ", NULL, NULL, NULL")
         r = conn.execute("SELECT d_even, idx_last, idx_change, idx_pct,"
-                         " ew_last, ew_change, ew_pct FROM market_index"
+                         " ew_last, ew_change, ew_pct" + extra + " FROM market_index"
                          " ORDER BY d_even DESC LIMIT 1").fetchone()
     except sqlite3.Error:
         return None                          # جدول هنوز ساخته نشده
@@ -1163,7 +1168,30 @@ def market_index(conn) -> dict | None:
         return x if x else None
     return {"d_even": int(r[0]),
             "last": _opt(r[1]), "change": _opt(r[2]), "pct": _opt(r[3]),
-            "ew_last": _opt(r[4]), "ew_change": _opt(r[5]), "ew_pct": _opt(r[6])}
+            "ew_last": _opt(r[4]), "ew_change": _opt(r[5]), "ew_pct": _opt(r[6]),
+            "pi_last": _opt(r[7]), "pi_change": _opt(r[8]), "pi_pct": _opt(r[9])}
+
+
+def market_impact(conn) -> dict | None:
+    """اثرِ رسمیِ هر نماد بر شاخص کل از `market_impact` — یا None.
+
+    فقط تازه‌ترین نشستِ ثبت‌شده؛ جدولِ غایب/خالی = None، نه صفر.
+    """
+    try:
+        d = conn.execute("SELECT MAX(d_even) FROM market_impact").fetchone()[0]
+        if not d:
+            return None
+        rows = conn.execute(
+            "SELECT ins_code, symbol, name, effect, p_closing, rank FROM market_impact"
+            " WHERE d_even=? ORDER BY rank", (int(d),)).fetchall()
+    except sqlite3.Error:
+        return None
+    if not rows:
+        return None
+    return {"d_even": int(d),
+            "by_ins": {str(r[0]): {"symbol": r[1], "name": r[2], "effect": r[3],
+                                   "p_closing": r[4], "rank": r[5]}
+                       for r in rows}}
 
 
 def market_total_rials(conn) -> tuple:
@@ -2240,10 +2268,31 @@ def _select(conn_rows, cat):
     return [r for r in conn_rows if in_category(r, cat, None)]
 
 
+def _value_source_of(srcs) -> str | None:
+    """منبعِ تجمیعیِ ارزش از مجموعهٔ provenanceِ ردیف‌ها.
+
+    خالی ⇒ None (هیچ ردیفِ کلاینتی نیست)؛ فقط native ⇒ native؛ هر ترکیب یا
+    mixed ⇒ mixed؛ فقط reconstructed ⇒ reconstructed. هیچ fallbackِ پنهانی
+    انجام نمی‌شود.
+    """
+    if not srcs:
+        return None
+    if srcs == {"native"}:
+        return "native"
+    if "native" in srcs or "mixed" in srcs:
+        return "mixed"
+    return "reconstructed"
+
+
 def client_split(conn, tab: str = "all") -> dict:
     """تعداد/ارزش/درصدِ خرید و فروشِ حقیقی در برابر حقوقی، به تفکیک تب."""
     rows, meta = enrich(conn)
-    a = _agg(_select(rows, _TAB_CAT.get(tab, "all")))
+    sel = _select(rows, _TAB_CAT.get(tab, "all"))
+    a = _agg(sel)
+    # منبعِ ارزشِ تجمیعی را از ردیف‌ها بگیر؛ «محاسبه‌شده» با «بومی» یکی نیست.
+    srcs = {r["_m"].get("value_source") for r in sel
+            if r["_m"].get("has_ct") and r["_m"].get("value_source")}
+    value_source = _value_source_of(srcs)
     # همان کسرِ تک‌تعریف (`client_split.py`) — بی‌درصدِ دومِ خودیِ این لایه. دو
     # سمت مستقل‌اند و سهمِ حقوقی مکملِ همان سمت است؛ مخرجِ صفر ⇒ None، نه «۰٪».
     # (جمعِ ارزش از `money()` می‌آید: اگر مبدأ نبود این لایه با حجم×VWAP
@@ -2264,7 +2313,8 @@ def client_split(conn, tab: str = "all") -> dict:
             "pc_buy_m_toman": None if a["pc_buy_mt"] is None else round(a["pc_buy_mt"], 1),
             "pc_sell_m_toman": None if a["pc_sell_mt"] is None else round(a["pc_sell_mt"], 1),
             "power": None if a["power"] is None else round(a["power"], 2),
-            "money_flow_b_toman": round(a["flow_bt"], 1)}
+            "money_flow_b_toman": round(a["flow_bt"], 1),
+            "value_source": value_source}
 
 
 # ==================================================== گام ۵.۲: تابلوی نمادها
@@ -2381,7 +2431,7 @@ def industries(conn) -> dict:
             continue
         b = by.setdefault(nm, {"industry": nm, "n": 0, "pos": 0, "neg": 0,
                                "val": 0.0, "flow": 0.0, "bq": 0.0, "sq": 0.0,
-                               "pct_sum": 0.0, "n_pct": 0})
+                               "pct_sum": 0.0, "n_pct": 0, "n_depth": 0})
         b["n"] += 1
         p = r.get("pct")
         if p is not None and p > 0:
@@ -2395,8 +2445,12 @@ def industries(conn) -> dict:
             b["n_pct"] += 1
         b["val"] += r["_m"]["val"]
         b["flow"] += r["_m"]["flow"]
-        b["bq"] += r["_m"]["bq_val"] or 0.0
-        b["sq"] += r["_m"]["sq_val"] or 0.0
+        # عمقِ یک سمت فقط وقتی جمع می‌شود که منبع واقعاً عمق داده باشد.
+        # `or 0` نبودِ عمق را به صفرِ قابل‌نمایش تبدیل می‌کرد.
+        if r["_m"]["bq_val"] is not None:
+            b["n_depth"] += 1
+            b["bq"] += r["_m"]["bq_val"]
+            b["sq"] += r["_m"]["sq_val"] or 0.0
     out = []
     for b in by.values():
         traded = b["val"] > 0
@@ -2414,8 +2468,12 @@ def industries(conn) -> dict:
                     "value_b_toman": val_bt,
                     "flow_b_toman": flow_bt,
                     "flow_pct_of_value": round(100.0 * b["flow"] / b["val"], 2) if traded else None,
-                    "buy_queue_b_toman": round(b["bq"] / B_TUMAN_FROM_RIAL, 1),
-                    "sell_queue_b_toman": round(b["sq"] / B_TUMAN_FROM_RIAL, 1)})
+                    # نبودِ عمق در همهٔ نمادهای صنعت ⇒ None، نه صفرِ قابل‌نمایش.
+                    "buy_queue_b_toman": (round(b["bq"] / B_TUMAN_FROM_RIAL, 1)
+                                          if b["n_depth"] else None),
+                    "sell_queue_b_toman": (round(b["sq"] / B_TUMAN_FROM_RIAL, 1)
+                                           if b["n_depth"] else None),
+                    "depth_symbols": b["n_depth"]})
     # ---- رتبه‌بندی FTS: ارزش معاملات (وزن اصلی) + ورود پول خرد (تاییدیه) ----
     # rank_val: ۱ = بیشترین ارزش؛ rank_flow: ۱ = بیشترین ورود پول (فقط وردهای
     # مثبت رتبه می‌گیرند — صنعتِ با خروج پول هرگز لیدر نمی‌شود).
