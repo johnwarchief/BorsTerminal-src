@@ -454,6 +454,11 @@ _LEDGER_AGREE_TOL = 0.001
 # با نسبتِ رسمیِ DPS در این تلورانس جور باشد؛ رویدادِ مستقل (افزایشِ سرمایه)
 # با اختلافِ بزرگ‌تر حفظ می‌شود. نمونهٔ مرزی: بورس 2026-07-22 (DPS=55 + CC 0.75).
 _DPS_DUP_TOL = 0.01
+# دو ردیفِ رسمی برایِ یک اقدام ممکن است چند دهمِ درصد نسبتشان تفاوت کند
+# (دانيك 2026-08-24: 0.878734 در برابر 0.881844؛ پالايش 2024-12-23/24).
+# در پنجرهٔ ۵ روز، اختلافِ ≤۱٪ «همان اقدام» است؛ رویدادِ سرمایهٔ مستقل
+# (نمونهٔ بورس: ۲۴٪) حفظ می‌شود.
+_SAME_ACTION_TOL = 0.02
 _LEDGER_WINDOW_DAYS = 10
 
 
@@ -1160,6 +1165,7 @@ def _official_price_adjust_events(symbol, times=None):
                "_ledger_key": (e["orig"], "priceAdjust")}
         if dps:
             rec["_dps"] = True
+            rec["dividend_per_share"] = float(dps)
         out.append(rec)
     return out
 
@@ -1218,49 +1224,64 @@ def _merge_official_price_adjust(events, official, rejected=None, share_changes=
     # همان پنجره افتاده (نمونهٔ سنجش‌شده: بورس 2026-07-22 هم DPS=55 دارد و هم
     # افزایشِ سرمایهٔ اندوخته 24T→32T با نسبت 0.750923). حذفِ بی‌قیدِ گسست، آن
     # افزایشِ سرمایه را می‌بلعد و ضریب را ۲۵٪ خراب می‌کند.
-    dps_ratios = [(str(o.get("date"))[:10], float(o["ratio"]))
-                  for o in official if o.get("_dps") and o.get("ratio")]
+    dps_ratios = [(i, str(o.get("date"))[:10], float(o["ratio"]))
+                  for i, o in enumerate(official) if o.get("_dps") and o.get("ratio")]
     share_changes = list(share_changes or [])
+    combined_skip = set()  # official DPS rows already contained in a base gap
     if dps_ratios:
-        def _matches_share(e, dps_ratio):
-            try:
-                r = float(e.get("ratio") or 0)
-            except Exception:
-                return False
-            if not r:
-                return False
+        def _nearest_share(ed):
+            best = None
             for sd, sr in share_changes:
-                _dd = _day_diff(sd, str(e.get("date"))[:10])
-                if _dd is not None and _dd <= 7:
-                    for target in (sr, sr * dps_ratio):
-                        if target > 0 and abs(r / target - 1.0) <= 0.02:
-                            return True
-            return False
+                dd = _day_diff(sd, ed)
+                if dd is not None and dd <= 7 and (best is None or dd < best[0]):
+                    best = (dd, sr)
+            return best[1] if best else None
 
-        def _same_dps_action(e):
+        def _drop_base(e):
             try:
                 r = float(e.get("ratio") or 0)
             except Exception:
                 return False
             if not r:
                 return False
+            ed = str(e.get("date"))[:10]
             near = []
-            for dd, dr in dps_ratios:
-                _dd = _day_diff(dd, str(e.get("date"))[:10])
-                if _dd is not None and _dd <= 5:
-                    near.append((dd, dr))
+            for i, dd, dr in dps_ratios:
+                diff = _day_diff(dd, ed)
+                if diff is not None and diff <= 5:
+                    near.append((i, dr))
             if not near:
                 return False
-            if any(abs(r / dr - 1.0) <= _DPS_DUP_TOL for _dd, dr in near):
+            # Same action: the base gap is a rough copy of the DPS.
+            if any(abs(r / dr - 1.0) <= _DPS_DUP_TOL for _i, dr in near):
                 return True
-            if any(_matches_share(e, dr) for _dd, dr in near):
-                return False
-            # نسبت با DPS نمی‌خواند و به تغییرِ سهامِ رسمی هم قابلِ انتساب نیست:
-            # همان اقدامِ تکراری با تقریبِ بدتر شمرده می‌شود (رفتارِ Round 7).
+            cc = _nearest_share(ed)
+            if cc:
+                # The base gap may be CC-only (keep both) or the combined
+                # DPS*CC (keep the gap, suppress the separate DPS).  Choose
+                # the hypothesis closer to the official share ratio.
+                best = None
+                for i, dr in near:
+                    sep = abs(r / cc - 1.0)
+                    comb = abs(r / (cc * dr) - 1.0)
+                    if comb < sep and comb <= 0.02 and (best is None or comb < best[0]):
+                        best = (comb, i)
+                if best is not None:
+                    combined_skip.add(best[1])
+                    return False
+                return False  # CC-only: keep the gap and the DPS
+            # No share change: an unattributable gap in the DPS window is the
+            # same action with a worse approximation (Round 7 behaviour).
             return True
+
         kept = [e for e in kept if not (
-            e.get("source") == "base-price-discontinuity" and _same_dps_action(e))]
-    for o in official:
+            e.get("source") == "base-price-discontinuity" and _drop_base(e))]
+    for idx, o in enumerate(official):
+        if idx in combined_skip:
+            if rejected is not None:
+                rejected.append({"date": o.get("date"), "ratio": o.get("ratio"),
+                                 "factor_status": "included-in-base-gap"})
+            continue
         if o.get("_ledger_key") and o["_ledger_key"] in claimed:
             if rejected is not None:
                 rejected.append({"date": o.get("date"), "ratio": o.get("ratio"),
@@ -1276,7 +1297,15 @@ def _merge_official_price_adjust(events, official, rejected=None, share_changes=
             if dd is not None and dd <= 5:
                 try:
                     er = float(e.get("ratio") or 0)
-                    if er and abs(er / float(o["ratio"]) - 1.0) <= _LEDGER_AGREE_TOL:
+                    same_amount = True
+                    ea, oa = e.get("dividend_per_share"), o.get("dividend_per_share")
+                    if ea is not None and oa is not None and float(oa) > 0:
+                        # Two valid DPS-like rows with materially different
+                        # amounts are distinct events, even if their price
+                        # ratios are within 2% (e.g., DPS 171 vs DPS 5).
+                        same_amount = abs(float(ea) / float(oa) - 1.0) <= 0.02
+                    if (er and same_amount and
+                            abs(er / float(o["ratio"]) - 1.0) <= _SAME_ACTION_TOL):
                         dup = True
                         break
                 except Exception:
@@ -1352,6 +1381,27 @@ def _merge_official_fund_events(events, official):
     return sorted(by_key.values(), key=lambda e: str(e.get("date"))[:10])
 
 
+def _effective_event_dates(events, times):
+    """تاریخِ هر رویداد را به اولین کندلِ هم‌روز یا پس از آن می‌برد.
+
+    گسستِ پایه ممکن است روی روزِ بی‌معامله/توقف کشف شود و رویدادِ رسمیِ همان
+    اقدام به اولین کندلِ بعدی نگاشت شود؛ بدونِ این نرمال‌سازی، تاریخِ خام آن‌ها
+    فاصلهٔ بلند نشان می‌دهد و یک اقدام دوبار اعمال می‌شود (حخزر: گسست
+    2023-06-24 و DPS رسمیِ نگاشت‌شده به 2023-07-08).
+    """
+    dates = sorted(set(str(t)[:10] for t in (times or []) if t))
+    out = []
+    for e in (events or []):
+        e = dict(e)
+        d = str(e.get("date") or "")[:10]
+        if d and dates:
+            nxt = next((x for x in dates if x >= d), None)
+            if nxt:
+                e["date"] = nxt
+        out.append(e)
+    return out
+
+
 def _canonical_adjustment(symbol, times, events):
     """(applied, rejected, factors, chain, coverage) — تنها محاسبۀِ تعدیلِ هر دو مسیر.
 
@@ -1359,6 +1409,7 @@ def _canonical_adjustment(symbol, times, events):
     هم‌ردیفِ همان `times` برمی‌گردد.
     """
     t10 = [str(t)[:10] for t in (times or [])]
+    events = _effective_event_dates(events, t10)
     official = _fund_profit_events(symbol)
     if official:
         events = _merge_official_fund_events(events, official)

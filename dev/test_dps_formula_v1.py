@@ -102,6 +102,65 @@ merged = C._merge_official_price_adjust(
       "_dps": True, "_ledger_key": ("2026-02-17", "priceAdjust")}])
 ck(len(merged) == 1, "same-day DPS duplicate is dropped", merged)
 
+# Two official rows for the same action (دانيك 2026-08-24) must collapse.
+merged = C._merge_official_price_adjust(
+    [],
+    [{"date": "2026-08-24", "ratio": 0.87873402, "source": "priceAdjust"},
+     {"date": "2026-08-24", "ratio": 0.8818436126,
+      "source": "tsetmc_price_adjust_by_flow"}])
+ck(len(merged) == 1, "two official rows within 1% are one action", merged)
+
+# The same DPS may carry two base-price ratios 1.44% apart (شسپا 2026:
+# 0.873257 from the old row vs 0.886040 from the ex-date closing).
+merged = C._merge_official_price_adjust(
+    [],
+    [{"date": "2026-07-26", "ratio": 0.87325729, "source": "priceAdjust"},
+     {"date": "2026-07-26", "ratio": 0.886039886,
+      "source": "tsetmc_price_adjust_by_flow"}])
+ck(len(merged) == 1, "two official rows 1.44% apart are one action", merged)
+
+# A 24% capital event on the same day is distinct and must survive.
+merged = C._merge_official_price_adjust(
+    [],
+    [{"date": "2026-07-26", "ratio": 0.750923, "source": "base-price-discontinuity"},
+     {"date": "2026-07-26", "ratio": 0.987542, "source": "tsetmc_price_adjust_by_flow"}])
+ck(len(merged) == 2, "same-day rows 24% apart are distinct actions", merged)
+
+# A base gap that equals DPS*CC already contains the DPS: the separate DPS
+# must be suppressed (حخزر 2026-07-26: gap 0.827433, DPS 0.983225, CC 0.84).
+merged = C._merge_official_price_adjust(
+    [{"date": "2026-07-26", "ratio": 0.827433, "source": "base-price-discontinuity"}],
+    [{"date": "2026-07-26", "ratio": 0.9832253778, "source": "tsetmc_price_adjust_by_flow",
+      "_dps": True, "_ledger_key": ("2026-07-18", "priceAdjust")}],
+    share_changes=[("2026-07-26", 0.84)])
+ck(len(merged) == 1 and merged[0]["source"] == "base-price-discontinuity",
+   "combined gap suppresses the DPS it already contains", merged)
+
+# CC-only gap (بورس 2026-07-26) keeps both.
+merged = C._merge_official_price_adjust(
+    [{"date": "2026-07-26", "ratio": 0.750923, "source": "base-price-discontinuity"}],
+    [{"date": "2026-07-26", "ratio": 0.987542, "source": "tsetmc_price_adjust_by_flow",
+      "_dps": True, "_ledger_key": ("2026-07-22", "priceAdjust")}],
+    share_changes=[("2026-07-26", 0.75)])
+ck(len(merged) == 2, "CC-only gap keeps the separate DPS", merged)
+
+# Two valid DPS-like rows with different amounts are distinct, even if their
+# price ratios are within 2% (fund DPS 171 vs priceAdjust DPS 5).
+merged = C._merge_official_price_adjust(
+    [{"date": "2020-01-07", "ratio": 0.9831957547, "source": "fund-portal:test",
+      "dividend_per_share": 171.0}],
+    [{"date": "2020-01-08", "ratio": 0.9995003, "source": "test",
+      "dividend_per_share": 5.0}])
+ck(len(merged) == 2, "different DPS amounts in one window are distinct", merged)
+
+# Matching amounts and a 0.11% ratio gap are the same action.
+merged = C._merge_official_price_adjust(
+    [{"date": "2024-12-23", "ratio": 0.896926, "source": "fund-portal:test",
+      "dividend_per_share": 18540.0}],
+    [{"date": "2024-12-24", "ratio": 0.895907, "source": "test",
+      "dividend_per_share": 18540.0}])
+ck(len(merged) == 1, "same amount and ratio within 2% is one action", merged)
+
 # ...but a base gap with a materially different ratio is a distinct action when
 # an official share change explains it (بورس 2026-07-22: DPS=55 + CC 24T→32T).
 merged = C._merge_official_price_adjust(
@@ -132,6 +191,18 @@ merged = C._merge_official_price_adjust(
     [{"date": "2025-03-10", "ratio": 0.90, "source": "tsetmc_price_adjust_by_flow",
       "_ledger_key": ("2025-03-09", "priceAdjust")}])
 ck(len(merged) == 2, "distinct ledger rows are both kept", merged)
+
+# Event dates snap to the first effective candle (suspension duplicate guard).
+ck(C._effective_event_dates([{"date": "2023-06-24"}],
+   ["2023-06-19", "2023-07-08"])[0]["date"] == "2023-07-08",
+   "event date snaps across a suspension", C._effective_event_dates(
+       [{"date": "2023-06-24"}], ["2023-06-19", "2023-07-08"]))
+ck(C._effective_event_dates([{"date": "2026-07-26"}],
+   ["2026-07-26", "2026-07-27"])[0]["date"] == "2026-07-26",
+   "trading-day event stays on its own date", None)
+ck(C._effective_event_dates([{"date": "2027-01-01"}],
+   ["2026-12-30"])[0]["date"] == "2027-01-01",
+   "event after the last candle is not moved backwards", None)
 
 print()
 print("result: %d pass, %d fail" % (P, F))
