@@ -1,6 +1,6 @@
 # Round 15 — AutoClicker Project Closeout
 
-> تاریخ: ۲۰۲۶-۱۰-۲۱ | شاخه: `mission/sarkhati-round15-closeout-2026-10-21` | مبنا: `7f95c6a4` (Round 14)
+> تاریخ: ۲۰۲۶-۱۰-۲۱ | شاخه: `mission/sarkhati-round15-closeout-2026-10-21` | مبنا: `7f95c6a4` (Round 14) | commit: `e88c0f88`
 > وضعیتِ اجرای زنده: `live_enabled=false` · `live_ready=false` · هیچ سفارش/کلیکِ واقعی روی کارگزاری انجام نشد.
 
 ## ۰) حکمِ نهایی
@@ -110,6 +110,8 @@ Round 15 از `7f95c6a4` شروع شد و فقط blockerهایِ اعلام‌ش
 
 - جدید: `execution_owner_approval.py`، `dev/db_isolation_guard_v1160.py`، `dev/readiness_round15_v1162.py`، `dev/easytrader_selector_probe_v1161.py`
 - تغییر: `bors_config.py`، `dev/run_all_tests.py`، `execution_intent_store.py`، `execution_strategy_engine.py`، `api/execution.py`، `execution_readiness.py`، `fts_terminal.spec`، `frontend/.../AutoClickerPage.tsx`، `orderClient.ts`، `autoclicker-page.spec.tsx`، `autoclicker_round14_v1148.py`، `autoclicker_browser_round14_v1149.py`
-- commitها: در پایانِ همین راند پس از اجرای suite نهایی ثبت می‌شوند.
+- commit: `e88c0f88` — `feat(autoclicker): راند ۱۵ — containment دیتابیس، idempotency چندتب و readiness واقعی`
+- لاگِ suite نهایی: `C:/Users/PCMOD/AppData/Local/Temp/bors_suite_round15_39148.log` (۱۴۴ counted / ۳۰ silent / ۲ skip / ۰ FAIL).
+- `dev/test_portable_v1.py` هم برایِ پاک‌کردنِ overrideهایِ ایزوله در probe اصلاح شد؛ این تغییر فقط محیطِ همان تست را جدا می‌کند.
 
 **تفکیکِ سه چیز:** تستِ mock سبز است؛ رابطِ واقعی EasyTrader برایِ فروش تأیید نشده؛ و اجازهٔ ارسالِ زنده وجود ندارد. این سه یکی نیستند.
