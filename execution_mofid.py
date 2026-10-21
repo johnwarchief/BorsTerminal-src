@@ -62,6 +62,7 @@ URL_CUSTOMER_STATUS = WIRE_GATEWAY_V1 + WIRE_PATH_CUSTOMER_STATUS
 URL_PORTFOLIO_DAILY = WIRE_GATEWAY_V1 + WIRE_PATH_PORTFOLIO_DAILY
 URL_OPEN_ORDERS = WIRE_GATEWAY_V1 + WIRE_PATH_OPEN_ORDERS
 URL_TODAY_ORDER = WIRE_GATEWAY_V1 + WIRE_PATH_TODAY_ORDER
+URL_ACCOUNTING_REMAIN = WIRE_WEB_V4 + WIRE_PATH_ACCOUNTING_REMAIN
 
 CONTRACT_STATE = "FIRST_PARTY_CLIENT_OBSERVED"
 CONTRACT_PROVENANCE = (
@@ -298,7 +299,7 @@ class MofidAdapter(BrokerAdapter):
         if str(method).upper() != "GET":
             return False
         if url in (URL_CUSTOMER_STATUS, URL_PORTFOLIO_DAILY,
-                   URL_OPEN_ORDERS, URL_TODAY_ORDER):
+                   URL_OPEN_ORDERS, URL_TODAY_ORDER, URL_ACCOUNTING_REMAIN):
             return True
         for prefix in (WIRE_GATEWAY_V1 + WIRE_PATH_ORDER_DETAIL,
                        WIRE_GATEWAY_V1 + WIRE_PATH_ORDER_STATE):
@@ -416,15 +417,40 @@ class MofidAdapter(BrokerAdapter):
 
     # ---- حساب -------------------------------------------------------------
     def get_money(self) -> dict[str, Any]:
-        """قدرتِ خرید/مانده؛ فقط فیلدهایِ نام‌دارِ همان پاسخ، بی‌فرمولِ اختراعی."""
+        """قدرتِ خرید/مانده؛ فقط فیلدهایِ نام‌دارِ همان پاسخ، بی‌فرمولِ اختراعی.
+
+        درِ Round 17 واقعی: `customer/status` این حساب `purchasingPower` نداشت.
+        بستهٔ اول‌طرف همان فیلد را در `/Accounting/Remain` (web V4) می‌خواند؛
+        این fallback فقط GET و همان توکن است. اگر هیچ‌کدام فیلد را نداشتند،
+        فقط **نامِ کلیدها** (نه مقدار) برایِ تشخیص گزارش می‌شود.
+        """
         data = self._customer_status(fresh=False)
+        source_path = WIRE_PATH_CUSTOMER_STATUS
         fields = ("purchasingPower", "accountBalanceT2", "accountBalanceT1",
                   "blockedBalance", "credit", "marginBlock")
         raw = {k: _num(data.get(k)) for k in fields if data.get(k) is not None}
         buying = raw.get("purchasingPower")
         if buying is None:
-            raise BrokerError(ErrorCode.UNKNOWN_RESULT,
-                              "Mofid: purchasingPower در پاسخ نبود — عددی ساخته نشد")
+            try:
+                status, payload = self._read(URL_ACCOUNTING_REMAIN,
+                                             tag="accounting_remain")
+            except BrokerError:
+                raise
+            if 200 <= status < 300:
+                alt = _data_envelope(payload)
+                if isinstance(alt, Mapping):
+                    alt_raw = {k: _num(alt.get(k)) for k in fields
+                               if alt.get(k) is not None}
+                    if alt_raw.get("purchasingPower") is not None:
+                        data, raw = alt, alt_raw
+                        buying = raw["purchasingPower"]
+                        source_path = WIRE_PATH_ACCOUNTING_REMAIN
+        if buying is None:
+            keys = ",".join(sorted(str(k) for k in data.keys())[:40])
+            raise BrokerError(
+                ErrorCode.UNKNOWN_RESULT,
+                "Mofid: purchasingPower در customer/status و Accounting/Remain "
+                "نبود — کلیدها: %s" % (keys or "—"))
         return {"raw": raw, "buying_power": buying,
                 "cash": raw.get("accountBalanceT2"),
                 "blocked": raw.get("blockedBalance"),
@@ -432,7 +458,7 @@ class MofidAdapter(BrokerAdapter):
                 "margin_block": raw.get("marginBlock"),
                 "unit": UNIT, "unit_evidence": UNIT_EVIDENCE,
                 "formula": "purchasingPower",
-                "source": "mofid:%s (first-party Titan client)" % WIRE_PATH_CUSTOMER_STATUS,
+                "source": "mofid:%s (first-party Titan client)" % source_path,
                 "contract": CONTRACT_STATE, "fetched_at": self._iso()}
 
     def get_balances(self) -> Mapping[str, Any]:
@@ -670,6 +696,7 @@ class MofidAdapter(BrokerAdapter):
                         "verified_by": dict(self.session_proof)},
             "read_only": {"status": CONTRACT_STATE,
                           "paths": [WIRE_PATH_CUSTOMER_STATUS,
+                                    WIRE_PATH_ACCOUNTING_REMAIN,
                                     WIRE_PATH_PORTFOLIO_DAILY,
                                     WIRE_PATH_OPEN_ORDERS,
                                     WIRE_PATH_ORDER_STATE + "{orderId}",

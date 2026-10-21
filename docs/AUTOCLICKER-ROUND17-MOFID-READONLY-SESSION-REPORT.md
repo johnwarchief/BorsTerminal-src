@@ -20,10 +20,16 @@ hostِ EasyTrader و از پنجره‌هایِ Rahavard/مرورگرِ کارب
 allowlist، ارسالِ سفارش ممنوع، و `detail/{id}` فقط برایِ شناسه‌هایی که از فهرستِ
 واقعیِ سفارش‌هایِ باز/امروز آمده‌اند. 401 شاهدِ نشست و کش را باطل می‌کند.
 
-**ورودِ واقعی در این اجرا انجام نشد.** پنجره به‌صورتِ خودکار باز نشد و هیچ
-credentialای وارد نشد؛ بنابراین هیچ پاسخِ واقعیِ حساب دریافت نشده و وضعیت‌هایِ
-واقعیِ auth/حساب `NOT_MEASURED`/`BLOCKED` هستند. آنچه تأیید شده، مسیرِ کد و
-رفتارِ آن با mock/Playwright است.
+**ورودِ دستیِ واقعی انجام شد** و Probeِ فقط‌خواندنی در 2026-10-22 به
+`READ_ONLY_PROBE_OK` رسید: نشست با `/Order/customer/status` (200) تأیید شد،
+`Accounting/Remain` قدرت خرید را داد، `Portfolio/Daily` دوازده دارایی برگرداند و
+فهرست‌هایِ سفارشِ باز/امروز خالی بودند. مقدارِ قدرت خرید عددیِ صحیح بود؛ در این
+گزارش ماسک شده و فقط در پاسخِ محلی/گفت‌وگویِ مالک دیده می‌شود.
+
+یک divergence واقعی هم پیدا و اصلاح شد: `customer/status` این حساب
+`purchasingPower` نداشت؛ منبعِ مبلغ به `/Accounting/Remain` (web V4) رفت (همان
+مسیری که بستهٔ اول‌طرف برایِ این فیلد دارد). اگر هر دو مسیر فیلد را نداشته باشند،
+آداپتور فقط **نامِ کلیدها** را برایِ تشخیص برمی‌گرداند، نه مقدار.
 
 `live_enabled=false` و `live_ready=false` در همهٔ پاسخ‌ها حفظ شدند و هیچ درخواستِ
 تغییردهندهٔ وضعیت یا سفارش ساخته نشد.
@@ -32,18 +38,35 @@ credentialای وارد نشد؛ بنابراین هیچ پاسخِ واقعیِ
 
 | موضوع | وضعیت | شاهد / دلیل |
 |---|---|---|
-| پنجرهٔ ورودِ اختصاصی Mofid | `IMPLEMENTED_AND_TESTED` | hostِ نام‌دار + API + UI؛ آزمونِ cmd و مسیر/پروفایل |
-| ورودِ دستیِ واقعی | `NOT_PERFORMED` | هیچ credentialای وارد/ذخیره نشد |
-| پلِ token از localStorage | `IMPLEMENTED_AND_TESTED` | Playwright/CDP روی صفحهٔ محلی؛ token در meta/log نیست |
-| نشستِ واقعیِ کارگزاری | `BLOCKED` | نیاز به ورودِ دستیِ مالک |
-| allowlistِ GET و منعِ POST | `IMPLEMENTED_AND_TESTED` | 25/25 گارد؛ هیچ POST در آزمون‌ها |
-| detail فقط با شناسهٔ فهرست | `IMPLEMENTED_AND_TESTED` | شناسهٔ ساختگی پیش از ترافیک رد می‌شود |
-| 401 ⇒ باطل‌شدن token/cache | `IMPLEMENTED_AND_TESTED` | آزمونِ توالیِ 200→401؛ دادهٔ کهنه برنمی‌گردد |
-| حساب/پرتفویِ واقعی | `NOT_MEASURED` | هیچ پاسخِ واقعی دیده نشد |
-| sellable | `CLIENT_DERIVED_UNVERIFIED` (بدون تغییر) | منبعِ رسمیِ قابل‌فروش تأیید نشد |
-| حالت‌هایِ UI | `IMPLEMENTED_AND_TESTED` | Vitest 8/8 + مرورگرِ زنده با APIِ بدل 7/7 |
+| پنجرهٔ ورودِ اختصاصی Mofid | `OPENED_LIVE` | Edgeِ جدا رویِ `login.emofid.com` (client_id=mofidTitan) |
+| ورودِ دستیِ واقعی | `PERFORMED_BY_OWNER` | مالک خودش وارد شد؛ صفحه به `tg.mofidonline.com` رسید |
+| پلِ token از localStorage | `VERIFIED_LIVE` | token به آداپتور رسید؛ meta فقط طول/نوع/exp |
+| نشستِ واقعیِ کارگزاری | `VERIFIED_LIVE` | `/Order/customer/status` 200 و `session_proven=true` |
+| allowlistِ GET و منعِ POST | `ENFORCED_LIVE` | همهٔ گام‌ها GET؛ هیچ POST/سفارش |
+| detail فقط با شناسهٔ فهرست | `IMPLEMENTED_AND_TESTED` | در این نشست سفارشی نبود؛ هیچ ID حدسی فرستاده نشد |
+| 401 ⇒ باطل‌شدن token/cache | `IMPLEMENTED_AND_TESTED` | آزمونِ توالیِ 200→401؛ در نشستِ واقعی 401 رخ نداد |
+| حساب/پرتفویِ واقعی | `VERIFIED_LIVE` | 12 ردیف؛ فهرست‌های سفارش 0/0 |
+| purchasingPower | `VERIFIED_NUMERIC` | عددیِ صحیح؛ منبع `/Accounting/Remain`؛ مقدار ماسک‌شده |
+| sellable | `CLIENT_DERIVED_UNVERIFIED` | فرمول در 12/12 ردیفِ واقعی سازگار؛ برچسب تغییر نکرد |
+| سفارش‌ها/read-back | `LISTS_READ_EMPTY` | open=0، today=0؛ read-back موضوعیت نداشت |
+| حالت‌هایِ UI | `VERIFIED_LIVE` | حالت `خواندن تأیید شد` و حساب واقعی در UI |
 | live_enabled/live_ready | `FALSE` | در verify/session/UI صریح |
-| دیتابیس عملیاتی | `UNCHANGED` | هش‌ها پیش/پس از suite یکسان |
+| دیتابیس عملیاتی | `UNCHANGED` | `market.db=fd688edb...` و `user.db=fbffd6ef...` |
+
+### ۲-۱) جدولِ نتیجهٔ اجرایِ واقعی (2026-10-22)
+
+| مورد | نتیجهٔ واقعی |
+|---|---|
+| نسخهٔ اجراشده | Round 17، شاخهٔ `mission/sarkhati-round17-...`، commit `5bc44540` + اصلاحِ حداقلیِ fallback |
+| پنجرهٔ ورود | باز شد (Edgeِ اختصاصی، صفحهٔ رسمیِ ورود) |
+| ورود دستی | انجام شد (توسطِ مالک) |
+| احراز هویت واقعی | موفق؛ `/Order/customer/status` 200، `READ_ONLY_PROBE_OK` |
+| پاسخ حساب | دریافت شد؛ منبع مبلغ `/Accounting/Remain` |
+| قدرت خرید | عددیِ صحیح تأیید شد؛ مقدار در گزارش ماسک شده · واحد `IRR` |
+| تعداد قابل‌فروش | فرمول ۱۲/۱۲ ردیف سازگار؛ همچنان `CLIENT_DERIVED_UNVERIFIED` |
+| سفارش‌ها و read-back | open=0، today=0؛ هیچ detail/read-backی برایِ شناسهٔ ناموجود فرستاده نشد |
+| درخواست تغییردهندهٔ وضعیت | صفر (همه GET) |
+| وضعیت اجرای زنده | `live_enabled=false` · `live_ready=false` |
 
 ## ۳) پنجرهٔ ورود از کجا باز می‌شود
 
@@ -87,7 +110,8 @@ credentialای وارد نشد؛ بنابراین هیچ پاسخِ واقعیِ
 | قفل | رفتار |
 |---|---|
 | method | فقط `GET`؛ هر `POST/PUT/DELETE` پیش از ترافیک رد می‌شود |
-| URL | فقط `customer/status`، `Portfolio/Daily`، `open-orders`، `today-order`، `state/{id}`، `detail/{id}` |
+| URL | فقط `customer/status`، `Accounting/Remain`، `Portfolio/Daily`، `open-orders`، `today-order`، `state/{id}`، `detail/{id}` |
+| fallbackِ مبلغ | اگر `customer/status` فیلد `purchasingPower` نداشت، `/Accounting/Remain` (web V4) با همان GET خوانده می‌شود؛ اگر هیچ‌کدام نبود، فقط نامِ کلیدها گزارش می‌شود |
 | order detail | فقط اگر شناسه از `open-orders`/`today-order`یِ همان نشست آمده باشد |
 | شناسهٔ نامعتبر/ساختگی | پیش از هر درخواست `UNSUPPORTED`؛ هیچ شناسهٔ حدسی |
 | submit_order | حتی با `writes_allowed`، در `read_only` ممنوع |
@@ -134,13 +158,17 @@ credentialای وارد نشد؛ بنابراین هیچ پاسخِ واقعیِ
 - `sellable` با `CLIENT_DERIVED_UNVERIFIED` باقی می‌ماند.
 - خطِ ثابت: `ارسال سفارش بسته است: live_enabled=false · live_ready=false`.
 - هیچ مسیرِ خودکارِ «متصل شد» یا «آماده برای ارسال» وجود ندارد.
+- در اجرایِ واقعیِ 2026-10-22، UI پس از Probe حسابِ 12 ردیفی را نشان داد و
+  `sellable` را با برچسبِ `CLIENT_DERIVED_UNVERIFIED` نگه داشت؛ اسکرین‌شاتِ
+  حسابِ واقعی عمداً commit نشد.
 
 ## ۶) آزمون‌ها
 
 | آزمون | نتیجه | چه چیزی را ثابت می‌کند |
 |---|---|---|
 | `dev/mofid_session_v1165.py` | 25/25 | parse token، Playwright/CDP capture از صفحهٔ محلی، NO_SESSION/EXPIRED، allowlistِ GET، order-id provenance، 401/cache، verify states، login window/stop، جدایی host |
-| `dev/mofid_adapter_v1163.py` | 38/38 | قراردادِ Round 16 + قفلِ read_only و شناسه |
+| `dev/mofid_adapter_v1163.py` | 39/39 | قراردادِ Round 16 + قفلِ read_only/شناسه + fallbackِ `Accounting/Remain` |
+| اجرایِ واقعی 2026-10-22 | `READ_ONLY_PROBE_OK` | session 200، 12 دارایی، 0 سفارش، مبلغ عددی، همهٔ گام‌ها GET |
 | `dev/mofid_readiness_v1164.py` | 14/14 | API/readiness و صفر POST |
 | `dev/broker_connect_v1120.py` | 38/38 | تنظیمِ اتصال و گاردِ نشست |
 | `dev/execution_connection_v1142.py` | 39/39 | لایهٔ اتصال/نشست |
@@ -149,31 +177,36 @@ credentialای وارد نشد؛ بنابراین هیچ پاسخِ واقعیِ
 | `_audit/round17_ui_check.py` (مرورگرِ زنده با APIِ بدل) | 7/7 | گردشِ واقعیِ UI در 1366x768؛ اسکرین‌شات |
 | `npx tsc -b` | 0 خطا | تایپ‌چک |
 | `npm run build` | exit 0 | بیلدِ Vite |
-| `dev/run_all_tests.py` | `PASS` | 145 counted / 32 silent / 2 skipped / 0 FAIL؛ `operational_changed=none`؛ `ALL SUITES PASSED` |
+| `dev/run_all_tests.py` | `PASS` (پیش از fallback) | 145 counted / 32 silent / 2 skipped / 0 FAIL؛ `operational_changed=none`؛ `ALL SUITES PASSED` |
 
-اجرایِ نخستِ suite فقط به‌خاطر یک «ي» عربی در docstringِ تازهٔ
+اجرایِ نخستِ suite فقط به‌خاطر یک حرفِ عربیِ `U+064A` در docstringِ تازهٔ
 `execution_browser_host.py` گاردِ گلیف را قرمز کرد؛ متن اصلاح و اجرایِ دومِ کامل
-سبز شد. هر سه گاردِ Mofid در همان اجرایِ نخست هم سبز بودند.
+سبز شد. هر سه گاردِ Mofid در همان اجرایِ نخست هم سبز بودند. fallbackِ
+`Accounting/Remain` پس از اجرایِ واقعی اضافه شد و با گاردِ آداپتور (39/39) و
+گاردهایِ API/نشست آزموده شد؛ suite کامل پس از این تغییرِ کوچک دوباره اجرا نشد.
 
 اسکرین‌شاتِ UIِ mockشده: `_audit/round17_ui.png` (با گام‌هایِ Probe). این
 اسکرین‌شات اثباتِ چیدمان/متن با APIِ بدل است، نه ورودِ واقعی. رأیِ بصریِ نهایی با
 مالک است.
 
-## ۷) آنچه هنوز باید با ورودِ واقعی سنجیده شود
+## ۷) آنچه هنوز سنجیده نشده
 
-1. بازکردنِ پنجره از UI و ورودِ دستیِ مالک؛ سپس «بررسی اتصال».
-2. ثبتِ پاسخِ واقعیِ `customer/status`: وجود/نوع/واحد/digitsِ `purchasingPower`.
-3. `Portfolio/Daily`: `currentAsset`، `todayBoughtAsset`، `todaySoldAsset`،
-   `openSellOrders` و مقایسهٔ کرانِ `sellable` با عددِ اعلامیِ کارگزار (اگر هست).
-4. `open-orders`/`today-order`/`detail`/`state`: رشته‌هایِ وضعیت و قالب/منطقهٔ
-   زمانیِ `orderDateTime`؛ 404 واقعی.
-5. رفتارِ 401/403/timeout با نشستِ واقعی و عدمِ نمایشِ دادهٔ کهنه.
-6. هنوز هیچ آزمونِ نوشتن/سفارش در این راند انجام نشده و نباید شود.
+1. **قابل‌فروشِ رسمی:** فرمولِ ما با 12/12 ردیفِ واقعی سازگار است، ولی کارگزار
+   عددِ رسمیِ «قابل‌فروش» نداده؛ برچسب `CLIENT_DERIVED_UNVERIFIED` می‌ماند.
+2. **read-back/وضعیتِ سفارش:** در این نشست هیچ سفارشِ باز/امروزی نبود؛ detail/state
+   واقعی آزموده نشد و هیچ شناسهٔ حدسی ساخته نشد.
+3. **401/403/timeout واقعی:** در این نشست رخ نداد؛ رفتارِ آن فقط با mock آزموده شده.
+4. **واحدِ سرور:** پاسخِ واقعی فیلدِ `unit` نداشت؛ `IRR` برچسبِ شواهد (کاتالوگِ
+   ریالیِ خطاها و فیلدهایِ قیمت) است، نه ادعایِ فیلدِ صریحِ سرور.
+5. **نوشتن/سفارش:** هیچ آزمونِ ثبت/اصلاح/لغو در این راند انجام نشد و نباید شود.
 
 ## ۸) محدودیت‌ها و یادداشت‌ها
 
-- **ورودِ واقعی انجام نشد**؛ عمداً پنجره به‌صورتِ خودکار باز نشد تا پنجره/نشستِ
-  کاربر کنترل نشود. کد و UI آماده‌اند و از مسیرِ بند ۳ باز می‌شوند.
+- **ورودِ دستیِ واقعی انجام شد**؛ پنجرهٔ اختصاصی پس از restartِ backend با همان
+  پروفایل بازگشایی شد و نشست حفظ شد. پس از ورود/بررسی، هیچ صفحه‌ای به
+  `about:blank` نرفت و پنجرهٔ EasyTrader/Rahavard لمس نشد.
+- دادهٔ خامِ حساب فقط در فایلِ موقتِ محلی و برایِ بررسیِ همین اجرا بود؛ در گزارش
+  ماسک شده و اسکرین‌شاتِ حسابِ واقعی commit نشد.
 - این قابلیت در **شاخه** است؛ اپِ نصب‌شدهٔ فعلی (Round 16) دکمه/endpointهایِ تازه
   را ندارد. برای استفاده باید از این شاخه بیلد/نصب شود (یا dev backendِ همین
   شاخه با Vite اجرا شود).
@@ -191,7 +224,7 @@ credentialای وارد نشد؛ بنابراین هیچ پاسخِ واقعیِ
 |---|---|
 | `execution_browser_host.py` | hostِ نام‌دار/پروفایلِ جدا؛ `--name`؛ `URL_REQUIRED` برایِ hostِ نام‌دارِ بی‌نشانی |
 | `execution_mofid_capture.py` | پلِ CDP، allowlist، parse/expiry، بدونِ افشایِ token |
-| `execution_mofid.py` | `read_only`، allowlistِ GET، order-id provenance، پاک‌شدنِ کش در 401 |
+| `execution_mofid.py` | `read_only`، allowlistِ GET، order-id provenance، پاک‌شدنِ کش در 401، fallbackِ `Accounting/Remain` و تشخیصِ کلیدها |
 | `api/execution.py` | endpointهایِ login-window/verify/session، stateها، پاسخِ ماسک‌شده |
 | `frontend/.../AutoClickerPage.tsx` | گردشِ ورود/بررسی/حساب، حالت‌ها، پاک‌شدنِ دادهٔ کهنه |
 | `frontend/.../orderClient.ts` | انواع/متدهایِ Mofid و `useMofidSession` |

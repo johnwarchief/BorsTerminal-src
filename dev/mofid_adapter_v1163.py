@@ -238,6 +238,22 @@ def main() -> int:
     ck(all(c["method"] == "GET" for c in rt.calls),
        "هیچ درخواستِ تغییردهنده‌ای در مسیرِ خواندن ساخته نشد", rt.calls)
 
+    # Round 17 live: customer/status ممکن است purchasingPower نداشته باشد؛
+    # /Accounting/Remain (web V4) همان فیلد را می‌دهد.
+    rt_fallback = RouteTransport({
+        "/Order/customer/status": WireResponse(200, {}, '{"data":{"accountBalanceT2":10}}'),
+        "/Accounting/Remain": WireResponse(200, {}, (
+            '{"data":{"purchasingPower":123456,"blockedBalance":7,'
+            '"accountBalanceT2":11}}')),
+    })
+    ad_fb = MofidAdapter(transport=rt_fallback, token="T" * 48,
+                         writes_allowed=False)
+    money_fb = ad_fb.get_money()
+    ck(money_fb["buying_power"] == 123456.0
+       and "/Accounting/Remain" in money_fb["source"]
+       and all(c["method"] == "GET" for c in rt_fallback.calls),
+       "fallbackِ Accounting/Remain قدرت خرید را GET می‌خواند", money_fb)
+
     # نشستِ منقضی/ردشده دو حالتِ جدا؛ 5xx «نامعلوم» است نه «باطل».
     for code, err, state in ((401, ErrorCode.SESSION_EXPIRED, "expired"),
                              (403, ErrorCode.AUTH_FAILED, "auth_failed")):
