@@ -202,4 +202,7 @@ credentialای وارد نشد؛ بنابراین هیچ پاسخِ واقعیِ
 
 - شاخه: `mission/sarkhati-round17-mofid-manual-session-2026-10-22`
 - پایه: `3a854faf`
-- commitهایِ این راند پس از پایانِ تست‌ها در همین فایل ثبت می‌شوند.
+- کامیتِ پیاده‌سازی: `2b8f2e44`
+- نتیجهٔ نهاییِ suite: 145 counted / 32 silent / 2 skipped / 0 FAIL؛
+  `operational_changed=none`؛ `_audit/round17_run_all_final.txt`.
+- گاردِ گلیفِ فارسی: 4/4.
