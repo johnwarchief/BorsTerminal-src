@@ -1293,6 +1293,116 @@ def _share_change_events(symbol):
     return _filter_share_changes(out)
 
 
+# گسستِ پایهٔ تقریبی و نسبتِ رسمیِ سهام وقتی یک اقدام‌اند: افزایشِ سرمایهٔ
+# بدونِ آوردهٔ نقدی دقیقاً `old_shares/new_shares` تعدیل می‌کند و فاصلهٔ گسست
+# از عددِ رسمی فقط خطایِ کشف است. اگر آوردهٔ نقدی باشد، تعدیل از این نسبت
+# بزرگ‌تر می‌شود (ارزشِ پرداختی)؛ پس فاصلهٔ بیش از نیم‌درصد یعنی «همان اقدام
+# نیست» و گسست دست‌نخورده می‌ماند. **گیتِ نوع:** این تیزکردن فقط برای
+# ردیف‌هایی اجرا می‌شود که شاهدِ رسمیِ «بدونِ آوردهٔ نقدی» دارند
+# (`share_type_evidence`)؛ بی‌جدول/بی‌ردیف هیچ گسستی عوض نمی‌شود.
+# سنجشِ Round 12: قاعدهٔ بی‌گیت +0.24 واحدِ درصد exact داد ولی رویدادهایِ
+# آورده‌ایِ کوچک (كايزد، دعبيد) را هم تیز کرد و پس‌رفتِ نمادین ساخت.
+_SHARE_GAP_TOL = 0.005
+
+
+def _share_type_evidence_dates(symbol):
+    """Dates of share rows with official no-cash evidence; None if no table."""
+    try:
+        conn = sqlite3.connect(DB_PATH, timeout=15)
+    except Exception:
+        return None
+    try:
+        conn.execute("PRAGMA query_only=ON")
+        has = conn.execute("SELECT 1 FROM sqlite_master WHERE type='table'"
+                           " AND name='share_type_evidence'").fetchone()
+        if not has:
+            return None
+        _pred, _params = sym_pred(conn, "l_val18", symbol, "board")
+        row = conn.execute(
+            f"SELECT ins_code FROM instruments WHERE {_pred}"
+            " ORDER BY updated_at DESC LIMIT 1", _params).fetchone()
+        if not row:
+            return set()
+        out = set()
+        for (d,) in conn.execute(
+                "SELECT d_even FROM share_type_evidence WHERE ins_code=?"
+                " AND no_cash=1", (str(row[0]),)):
+            dt = _d_even_to_date(d)
+            if dt:
+                out.add(dt)
+        return out
+    except Exception:
+        return None
+    finally:
+        try:
+            conn.close()
+        except Exception:
+            pass
+
+
+def _sharpen_share_gaps(events, official, share_changes, evidence_dates=None):
+    """Base gap ratio ← official share ratio, only for evidence-gated rows."""
+    out = [dict(e) for e in (events or [])]
+    if not evidence_dates:
+        return out
+    official_dates = [str(o.get("date"))[:10] for o in (official or [])
+                      if o.get("date")]
+    claims = {}
+    for i, e in enumerate(out):
+        if e.get("source") != "base-price-discontinuity":
+            continue
+        try:
+            gr = float(e.get("ratio") or 0)
+        except Exception:
+            continue
+        if gr <= 0:
+            continue
+        ed = str(e.get("date") or "")[:10]
+        if not ed:
+            continue
+        covered = False
+        for od in official_dates:
+            dd = _day_diff(od, ed)
+            if dd is not None and dd <= 10:
+                covered = True
+                break
+        if covered:
+            continue
+        best = None
+        for sd, sr in (share_changes or []):
+            dd = _day_diff(sd, ed)
+            if dd is None or dd > 5:
+                continue
+            matched_evidence = False
+            for evd in evidence_dates:
+                dde = _day_diff(sd, evd)
+                if dde is not None and dde <= 2:
+                    matched_evidence = True
+                    break
+            if not matched_evidence:
+                continue
+            try:
+                sr = float(sr)
+            except Exception:
+                continue
+            if sr <= 0 or abs(sr / gr - 1.0) > _SHARE_GAP_TOL:
+                continue
+            if best is None or dd < best[0]:
+                best = (dd, str(sd)[:10], sr)
+        if best:
+            claims[i] = best
+    owners = {}
+    for i, (_dd, sd, _sr) in claims.items():
+        owners.setdefault(sd, []).append(i)
+    for i, (_dd, sd, sr) in claims.items():
+        if len(owners[sd]) != 1:
+            continue
+        out[i]["ratio"] = round(sr, 10)
+        out[i]["source"] = "shareChange"
+        out[i]["_ledger_key"] = (sd, "shareChange")
+    return out
+
+
 def _merge_official_price_adjust(events, official, rejected=None, share_changes=None):
     """رویداد رسمی را فقط وقتی اضافه می‌کند که کاشفِ CSV همان را ندیده باشد.
 
@@ -1519,6 +1629,8 @@ def _canonical_adjustment(symbol, times, events):
         events = _merge_official_price_adjust(events, official_pa,
                                                rejected=dup_rejected,
                                                share_changes=share_changes)
+    events = _sharpen_share_gaps(events, official_pa, share_changes,
+                                 _share_type_evidence_dates(symbol))
     # کلیدِ هویتِ دفتری فقط برای همین تصمیم است؛ نه در payload و نه در موتور.
     events = [{k: v for k, v in e.items() if not str(k).startswith("_")}
               for e in events]

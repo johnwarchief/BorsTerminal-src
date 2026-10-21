@@ -1,4 +1,7 @@
 *.png
+# شواهدِ دیداریِ مأموریتِ ۲۰۲۶-۱۰-۲۰ عمداً track شده‌اند؛ استثنا تا گیتِ
+# «فایلِ track‌شدهٔ ignore‌شده» سبز بماند و شاهدها حذف نشوند.
+!market-status-parity/visual/*.png
 _visual.json
 _visual_detail.json
 board_now.json

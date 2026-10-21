@@ -273,6 +273,53 @@ out = C._filter_share_changes([("2026-01-01", 0.8), ("2026-02-01", 1.25)])
 ck(len(out) == 1 and out[0][1] == 0.8,
    "reverse pair drops only the >1 side", out)
 
+# Share-only capital increase: an approximate base gap is replaced by the
+# official share ratio only when both describe the same action (<=0.5% apart)
+# and no official priceAdjust row already covers it.
+EV = [{"date": "2021-01-10", "ratio": 0.102885,
+       "source": "base-price-discontinuity"}]
+out = C._sharpen_share_gaps([dict(e) for e in EV], [],
+                            [("2021-01-10", 0.10301418)],
+                            evidence_dates={"2021-01-10"})
+ck(out[0]["ratio"] == 0.10301418 and out[0]["source"] == "shareChange",
+   "reserve share ratio sharpens the same-action gap", out)
+out = C._sharpen_share_gaps([dict(e) for e in EV], [],
+                            [("2021-01-10", 0.10301418)])
+ck(out[0]["ratio"] == 0.102885 and out[0]["source"] == "base-price-discontinuity",
+   "no official no-cash evidence leaves the gap untouched", out)
+out = C._sharpen_share_gaps([dict(e) for e in EV], [],
+                            [("2021-01-10", 0.10301418)],
+                            evidence_dates={"2020-12-01"})
+ck(out[0]["ratio"] == 0.102885,
+   "evidence on another date does not unlock this share row", out)
+out = C._sharpen_share_gaps([dict(e) for e in EV],
+                            [{"date": "2021-01-11", "ratio": 0.10301418}],
+                            [("2021-01-10", 0.10301418)],
+                            evidence_dates={"2021-01-10"})
+ck(out[0]["ratio"] == 0.102885 and out[0]["source"] == "base-price-discontinuity",
+   "official PA row keeps the gap untouched", out)
+PAID = [{"date": "2020-08-09", "ratio": 0.761534,
+         "source": "base-price-discontinuity"}]
+out = C._sharpen_share_gaps([dict(e) for e in PAID], [],
+                            [("2020-08-05", 0.75)],
+                            evidence_dates={"2020-08-05"})
+ck(out[0]["ratio"] == 0.761534,
+   "paid-in gap (value effect above tolerance) is not sharpened", out)
+out = C._sharpen_share_gaps([dict(e) for e in EV], [],
+                            [("2021-01-25", 0.10301418)],
+                            evidence_dates={"2021-01-25"})
+ck(out[0]["ratio"] == 0.102885,
+   "share row outside the 5-day window is not used", out)
+TWO = [{"date": "2021-01-10", "ratio": 0.102885,
+        "source": "base-price-discontinuity"},
+       {"date": "2021-01-11", "ratio": 0.1030,
+        "source": "base-price-discontinuity"}]
+out = C._sharpen_share_gaps([dict(e) for e in TWO], [],
+                            [("2021-01-10", 0.10301418)],
+                            evidence_dates={"2021-01-10"})
+ck(all(e["source"] == "base-price-discontinuity" for e in out),
+   "two gaps claiming one share row stay untouched", out)
+
 print()
 print("result: %d pass, %d fail" % (P, F))
 print("%d/%d" % (P, P + F))
