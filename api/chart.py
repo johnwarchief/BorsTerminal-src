@@ -1100,16 +1100,52 @@ def _closing_prices_for(symbol, dates):
     return out
 
 
-def _official_price_adjust_events(symbol, times=None):
+def _classify_pa_event(pa_ratio, dps, closing, orig, share_changes):
+    """(ratio, is_dps, event_type) for one official priceAdjust row.
+
+    A row with an official share change within 10 days is a capital (or a
+    combined DPS+capital) event; its official PA ratio is the total price
+    adjustment and must NOT be turned into a cash-dividend ratio.  A row
+    without a share change keeps the proven DPS formula.
+    """
+    best = None
+    for sd, sr in (share_changes or []):
+        dd = _day_diff(sd, orig)
+        if dd is not None and dd <= 10 and (best is None or dd < best[0]):
+            best = (dd, sr)
+    dps_ratio = (round(float(closing) / (float(closing) + float(dps)), 10)
+                 if dps and closing and float(closing) > 0 else None)
+    if best:
+        sr = float(best[1])
+        cap_err = abs(float(pa_ratio) / sr - 1.0)
+        comb_err = (abs(float(pa_ratio) / (sr * dps_ratio) - 1.0)
+                    if dps_ratio else 9.0)
+        # Pick the better explanation: share-only or share x DPS.
+        if comb_err < cap_err and comb_err <= 0.02:
+            return float(pa_ratio), False, "combined"
+        if cap_err <= 0.02:
+            return float(pa_ratio), False, "capital"
+        # The share change is a separate event; this PA row is a DPS.
+    if dps:
+        if dps_ratio is not None:
+            return dps_ratio, True, "dps"
+        # No closing available: keep the row typed as a DPS with the official
+        # PA ratio and its amount, so it is deduplicated by identity, not by a
+        # coincidental ratio.
+        return float(pa_ratio), True, "dps-unverified"
+    return float(pa_ratio), False, "unverified"
+
+
+def _official_price_adjust_events(symbol, times=None, share_changes=None):
     """ردیف‌های رسمیِ priceAdjust که کشفِ گسستِ CSV ممکن است ندیده باشد.
 
     تاریخِ ردیفِ مبدأ ممکن است روزِ بی‌معامله باشد؛ رویداد روی اولین کندلِ
     هم‌روز یا پس از آن می‌نشیند، وگرنه گامِ مثبتِ جعلی ساخته می‌شود.
 
-    نسبتِ یک ردیفِ سود نقدی از عددِ خودِ جدول (`closing/not_adjusted`) گرفته
-    نمی‌شود: مرجع از `close_ex / (close_ex + dps)` استفاده می‌کند که `close_ex`
-    قیمت پایانیِ روزِ مؤثر و `dps = not_adjusted - closing` است
-    (سنجش: `.worktrees/ra365-100pct/docs/RAHAVARD-DPS-CC-FORMULA-2026-10-21.md`).
+    ردیفِ دارایِ تغییرِ سهامِ رسمی یک رویدادِ سرمایه است (یا ترکیبی) و نسبتِ
+    رسمیِ خودش (`pClosing/pClosingNotAdjusted`) را نگه می‌دارد؛ ردیفِ بدونِ
+    تغییرِ سهام با فرمولِ اثبات‌شدهٔ DPS محاسبه می‌شود:
+    `close_ex / (close_ex + dps)`.
     """
     try:
         conn = sqlite3.connect(DB_PATH, timeout=15)
@@ -1129,6 +1165,8 @@ def _official_price_adjust_events(symbol, times=None):
             conn.close()
     except Exception:
         return []
+    if share_changes is None:
+        share_changes = _share_change_events(symbol)
     candle_dates = sorted(str(t)[:10] for t in (times or []))
     staged = []
     for d, ratio, src, pcl, pna in rows:
@@ -1156,16 +1194,17 @@ def _official_price_adjust_events(symbol, times=None):
     closes = _closing_prices_for(symbol, [e["date"] for e in staged])
     out = []
     for e in staged:
-        r = e["ratio"]
         dps = e["dps"]
         cl = closes.get(e["date"])
-        if dps and cl and cl > 0:
-            r = round(cl / (cl + dps), 10)
+        r, is_dps, etype = _classify_pa_event(
+            e["ratio"], dps, cl, e["orig"], share_changes)
         rec = {"date": e["date"], "ratio": r, "source": e["source"],
                "_ledger_key": (e["orig"], "priceAdjust")}
-        if dps:
+        if is_dps:
             rec["_dps"] = True
             rec["dividend_per_share"] = float(dps)
+        else:
+            rec["_event_type"] = etype
         out.append(rec)
     return out
 
@@ -1288,8 +1327,8 @@ def _merge_official_price_adjust(events, official, rejected=None, share_changes=
                                  "factor_status": "duplicate-ledger-row"})
             continue
         d = str(o["date"])[:10]
-        dup = False
-        for e in kept:
+        dup_idx = None
+        for j, e in enumerate(kept):
             ed = str(e.get("date") or "")[:10]
             if not ed:
                 continue
@@ -1306,14 +1345,25 @@ def _merge_official_price_adjust(events, official, rejected=None, share_changes=
                         same_amount = abs(float(ea) / float(oa) - 1.0) <= 0.02
                     if (er and same_amount and
                             abs(er / float(o["ratio"]) - 1.0) <= _SAME_ACTION_TOL):
-                        dup = True
+                        dup_idx = j
                         break
                 except Exception:
                     pass
-        if not dup:
-            kept.append(o)
-            if o.get("_ledger_key"):
-                claimed.add(o["_ledger_key"])
+        if dup_idx is not None:
+            e = kept[dup_idx]
+            if e.get("source") in ("base-price-discontinuity", "priceAdjust",
+                                   "tsetmc_price_adjust_by_flow"):
+                # Official data wins over an approximate gap or an old
+                # priceAdjust ratio; the recomputed row is authoritative.
+                kept.pop(dup_idx)
+            else:
+                if rejected is not None:
+                    rejected.append({"date": o.get("date"), "ratio": o.get("ratio"),
+                                     "factor_status": "duplicate-same-action"})
+                continue
+        kept.append(o)
+        if o.get("_ledger_key"):
+            claimed.add(o["_ledger_key"])
     return sorted(kept, key=lambda e: str(e.get("date"))[:10])
 
 
@@ -1413,12 +1463,13 @@ def _canonical_adjustment(symbol, times, events):
     official = _fund_profit_events(symbol)
     if official:
         events = _merge_official_fund_events(events, official)
-    official_pa = _official_price_adjust_events(symbol, t10)
+    share_changes = _share_change_events(symbol)
+    official_pa = _official_price_adjust_events(symbol, t10, share_changes)
     dup_rejected = []
     if official_pa:
         events = _merge_official_price_adjust(events, official_pa,
                                                rejected=dup_rejected,
-                                               share_changes=_share_change_events(symbol))
+                                               share_changes=share_changes)
     # کلیدِ هویتِ دفتری فقط برای همین تصمیم است؛ نه در payload و نه در موتور.
     events = [{k: v for k, v in e.items() if not str(k).startswith("_")}
               for e in events]

@@ -28,7 +28,7 @@ def ck(cond, msg, detail=""):
         print("  ok   %s" % msg)
     else:
         F += 1
-        print("  FAIL %s%s" % (msg, ("   ← %s" % detail) if detail else ""))
+        print("  FAIL %s%s" % (msg, ("   ← %s" % (detail,)) if detail else ""))
 
 
 # (symbol, ex-date, close(پایانی), dps, reference price-ratio)
@@ -161,6 +161,32 @@ merged = C._merge_official_price_adjust(
       "dividend_per_share": 18540.0}])
 ck(len(merged) == 1, "same amount and ratio within 2% is one action", merged)
 
+# An official capital/combined row must replace an approximate base gap,
+# not lose to it (the official ratio is the source of truth).
+merged = C._merge_official_price_adjust(
+    [{"date": "2026-07-26", "ratio": 0.7500, "source": "base-price-discontinuity"}],
+    [{"date": "2026-07-26", "ratio": 0.750923,
+      "source": "tsetmc_price_adjust_by_flow"}])
+ck(len(merged) == 1 and merged[0]["source"] == "tsetmc_price_adjust_by_flow",
+   "official row replaces an approximate base gap", merged)
+
+# A gap more than 2% away is a distinct action.
+merged = C._merge_official_price_adjust(
+    [{"date": "2026-07-26", "ratio": 0.70, "source": "base-price-discontinuity"}],
+    [{"date": "2026-07-26", "ratio": 0.750923,
+      "source": "tsetmc_price_adjust_by_flow"}])
+ck(len(merged) == 2, "base gap more than 2% away stays distinct", merged)
+
+# A newly computed official DPS must replace an old priceAdjust ratio for the
+# same action (آكو 2026-09-06: 0.91744 old vs 0.93161 closing formula).
+merged = C._merge_official_price_adjust(
+    [{"date": "2026-09-06", "ratio": 0.91744287, "source": "priceAdjust"}],
+    [{"date": "2026-09-06", "ratio": 0.93161024,
+      "source": "tsetmc_price_adjust_by_flow",
+      "_dps": True, "dividend_per_share": 3244.0}])
+ck(len(merged) == 1 and merged[0]["ratio"] == 0.93161024,
+   "official DPS replaces the old priceAdjust ratio", merged)
+
 # ...but a base gap with a materially different ratio is a distinct action when
 # an official share change explains it (بورس 2026-07-22: DPS=55 + CC 24T→32T).
 merged = C._merge_official_price_adjust(
@@ -203,6 +229,30 @@ ck(C._effective_event_dates([{"date": "2026-07-26"}],
 ck(C._effective_event_dates([{"date": "2027-01-01"}],
    ["2026-12-30"])[0]["date"] == "2027-01-01",
    "event after the last candle is not moved backwards", None)
+
+# Official PA typing: a share-linked row is capital/combined and keeps the
+# official PA ratio; a DPS-only row uses the proven closing formula.
+r, is_dps, et = C._classify_pa_event(0.7509, 55.0, 4360.0, "2026-07-26",
+                                    [("2026-07-26", 0.75)])
+ck(r == 0.7509 and not is_dps and et == "capital",
+   "share-linked PA row stays capital", (r, is_dps, et))
+r, is_dps, et = C._classify_pa_event(0.7406, 55.0, 4360.0, "2026-07-26",
+                                    [("2026-07-26", 0.75)])
+ck(r == 0.7406 and not is_dps and et == "combined",
+   "share x DPS explains the PA ratio as combined", (r, is_dps, et))
+r, is_dps, et = C._classify_pa_event(0.99, 55.0, 4360.0, "2026-07-26",
+                                    [("2026-07-26", 0.80)])
+ck(is_dps and et == "dps", "separate share change leaves the PA row a DPS",
+   (r, is_dps, et))
+r, is_dps, et = C._classify_pa_event(0.9875, 55.0, 4360.0, "2026-07-26", [])
+ck(abs(r - 4360.0 / (4360.0 + 55.0)) < 1e-9 and is_dps and et == "dps",
+   "PA row without share stays a DPS event", (r, is_dps, et))
+r, is_dps, et = C._classify_pa_event(0.99, None, None, "2026-07-26", [])
+ck(r == 0.99 and not is_dps and et == "unverified",
+   "PA row without DPS/share is unverified", (r, is_dps, et))
+r, is_dps, et = C._classify_pa_event(0.9995, 5.0, None, "2020-01-08", [])
+ck(r == 0.9995 and is_dps and et == "dps-unverified",
+   "DPS without closing keeps its type and amount", (r, is_dps, et))
 
 print()
 print("result: %d pass, %d fail" % (P, F))

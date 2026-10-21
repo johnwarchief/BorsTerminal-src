@@ -86,7 +86,7 @@ ck(len(merged) == 1 and not rejected,
 saved = (C._fund_profit_events, C._official_price_adjust_events, C._ledger_coverage)
 try:
     C._fund_profit_events = lambda symbol: []
-    C._official_price_adjust_events = lambda symbol, times=None: []
+    C._official_price_adjust_events = lambda symbol, times=None, share_changes=None: []
     C._ledger_coverage = lambda *a, **k: {}
     applied, rejected, factors, chain, cov = C._canonical_adjustment(
         "X", ["2025-01-01"], [ev("2025-01-02", 0.95, "shareChange",
