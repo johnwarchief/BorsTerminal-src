@@ -135,5 +135,9 @@
 - `dev/execution_write_contract_v1147.py`: ۳۶/۳۶.
 - `dev/easytrader_adapter_v1113.py`: ۱۶۳/۱۶۳ (شاملِ کنترلِ منفیِ صفِ بیگانه).
 - `dev/execution_account_sources_v1146.py`: ۲۵/۲۵ (شاملِ `blockT2`).
+- گیتِ کامل رویِ **کپیِ ایزوله**: ۱۴۳ counted، ۲۷ فقط-exit-code، ۲ SKIP، ۰ FAIL.
+- Frontend: ۲۰۱ فایل، ۲۰۹۱ passed، ۵ skipped؛ `tsc` و `build` سبز.
+- fingerprintِ دیتابیسِ عملیاتی قبل/بعدِ راند یکسان ماند
+  (`5a9117aa…135bea3` و `381736f1…c74500e`).
 - تست‌هایِ live مراجع اجرا نشدند؛ هیچ سفارشِ واقعی در این audit ارسال نشد.
 - مجوزِ هیچ مرجع روشن نشد؛ استفادهٔ مستقیم از کد ممنوع است.
