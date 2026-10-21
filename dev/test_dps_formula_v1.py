@@ -264,6 +264,14 @@ ck([d for d, _r in out] == ["2026-04-12"],
 out = C._filter_share_changes([("2025-01-01", 0.5),
                                ("2026-08-01", 0.5)])
 ck(len(out) == 2, "identical ratio far apart is a distinct event", out)
+out = C._filter_share_changes([("2026-01-01", 1.2)])
+ck(len(out) == 1 and out[0][1] == 1.2,
+   "single ratio>1 without an inverse is kept", out)
+out = C._filter_share_changes([("2026-01-01", 0.8), ("2026-03-01", 0.8)])
+ck(len(out) == 2, "repeated ratio without a reverse row is independent", out)
+out = C._filter_share_changes([("2026-01-01", 0.8), ("2026-02-01", 1.25)])
+ck(len(out) == 1 and out[0][1] == 0.8,
+   "reverse pair drops only the >1 side", out)
 
 print()
 print("result: %d pass, %d fail" % (P, F))

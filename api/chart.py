@@ -1210,28 +1210,47 @@ def _official_price_adjust_events(symbol, times=None, share_changes=None):
 
 
 def _filter_share_changes(rows):
-    """Filter official share-change noise.
+    """Remove only evidence-backed reverse/restated share rows.
 
-    The TSETMC flow exposes both sides of some changes (ratio > 1) and can
-    repeat the same ratio months later (وبشهر: 0.41666667 on 2026-04-12 and
-    2026-07-12, with a reverse 2.4 in between).  A reverse row is not a
-    capital event; a repeated identical ratio within 180 days is the same
-    restated event.  Keep the earliest real (<1) occurrence.
+    A ratio > 1 is a reverse record only when an inverse ratio (r1*r2 ~= 1)
+    exists within 180 days.  A repeated ratio < 1 is a restatement only when
+    such an inverse row exists around it.  Unproven rows are kept (and can be
+    flagged by the audit), never dropped merely because r > 1 or a ratio
+    repeats.
     """
-    clean = []
+    all_rows = []
     for d, r in rows:
         try:
             r = float(r)
         except Exception:
             continue
-        if not (0 < r < 1):
+        if r > 0:
+            all_rows.append((str(d)[:10], r))
+    all_rows.sort()
+
+    def _has_inverse(d, r, window=180):
+        for d2, r2 in all_rows:
+            if abs(r2 * r - 1.0) <= 1e-4:
+                dd = _day_diff(d, d2)
+                if dd is not None and dd <= window:
+                    return True
+        return False
+
+    clean = []
+    for d, r in all_rows:
+        if r > 1:
+            # Keep the decrease unless an official inverse record proves that
+            # this row is the reverse side of a capital increase.
+            if not _has_inverse(d, r):
+                clean.append((d, r))
             continue
-        d = str(d)[:10]
         dup = False
         for kd, kr in clean:
+            if kr >= 1:
+                continue
             if abs(kr / r - 1.0) <= 1e-6:
                 dd = _day_diff(d, kd)
-                if dd is not None and dd <= 180:
+                if dd is not None and dd <= 180 and _has_inverse(d, r):
                     dup = True
                     break
         if not dup:
