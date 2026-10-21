@@ -450,6 +450,10 @@ def _stored_adjust_events(symbol):
 # عدد است نه مقایسۀِ ظاهری — و قاعدۀِ مأموریت هم همین است: منطقِ داده را برایِ
 # نزدیک‌شدنِ ظاهری تغییر نمی‌دهیم.
 _LEDGER_AGREE_TOL = 0.001
+# گسستِ پایهٔ تقریبی در پنجرهٔ DPS فقط وقتی «همان اقدام» شمرده می‌شود که نسبتش
+# با نسبتِ رسمیِ DPS در این تلورانس جور باشد؛ رویدادِ مستقل (افزایشِ سرمایه)
+# با اختلافِ بزرگ‌تر حفظ می‌شود. نمونهٔ مرزی: بورس 2026-07-22 (DPS=55 + CC 0.75).
+_DPS_DUP_TOL = 0.01
 _LEDGER_WINDOW_DAYS = 10
 
 
@@ -1160,7 +1164,42 @@ def _official_price_adjust_events(symbol, times=None):
     return out
 
 
-def _merge_official_price_adjust(events, official, rejected=None):
+def _share_change_events(symbol):
+    """(date, ratio) از دفترِ رسمیِ تغییرِ تعدادِ سهام؛ فقط برایِ تفکیکِ رویداد.
+
+    گسستِ پایهٔ نزدیک به DPS می‌تواند همان سود باشد (حذف) یا رویدادِ مستقلی که
+    در همان پنجره افتاده (نگه‌داشتن). نسبتِ رسمیِ تغییرِ سهام مرجعِ این تفکیک است.
+    """
+    try:
+        conn = sqlite3.connect(DB_PATH, timeout=15)
+        try:
+            conn.execute("PRAGMA query_only=ON")
+            _pred, _params = sym_pred(conn, "l_val18", symbol, "board")
+            row = conn.execute(
+                f"SELECT ins_code FROM instruments WHERE {_pred}"
+                " ORDER BY updated_at DESC LIMIT 1", _params).fetchone()
+            if not row:
+                return []
+            rows = conn.execute(
+                "SELECT d_even, ratio FROM share_change_events WHERE ins_code=?"
+                " ORDER BY d_even", (str(row[0]),)).fetchall()
+        finally:
+            conn.close()
+    except Exception:
+        return []
+    out = []
+    for d, r in rows:
+        dt = _d_even_to_date(d)
+        try:
+            f = float(r)
+        except Exception:
+            continue
+        if dt and abs(f - 1.0) > 1e-9:
+            out.append((dt, f))
+    return out
+
+
+def _merge_official_price_adjust(events, official, rejected=None, share_changes=None):
     """رویداد رسمی را فقط وقتی اضافه می‌کند که کاشفِ CSV همان را ندیده باشد.
 
     هویتِ ردیف دفتری (`_ledger_key`) مهم است: یک ردیف می‌تواند در CSV به‌صورت
@@ -1173,15 +1212,54 @@ def _merge_official_price_adjust(events, official, rejected=None):
     """
     kept = [dict(e) for e in (events or [])]
     claimed = {e.get("_ledger_key") for e in kept if e.get("_ledger_key")}
-    # یک ردیفِ سود نقدیِ رسمی جایِ گسستِ پایهٔ همان اقدام را می‌گیرد: عددِ آن از
-    # فرمولِ مرجع می‌آید و ماندنِ گسستِ CSV ضریب را دوبار می‌کند (نمونه: سهرمز
-    # 2026-02-22 و غانيزان 2026-07-22).
-    dps_dates = [str(o.get("date"))[:10] for o in official if o.get("_dps")]
-    if dps_dates:
+    # یک ردیفِ سود نقدیِ رسمی جایِ گسستِ پایهٔ همان اقدام را می‌گیرد، **به شرطِ
+    # هم‌خوانیِ نسبت**: گسستِ پایه تقریبی است و ممکن است چند درصد با نسبتِ رسمی
+    # فاصله داشته باشد؛ اما گسستِ پایه می‌تواند رویدادِ مستقلی هم باشد که در
+    # همان پنجره افتاده (نمونهٔ سنجش‌شده: بورس 2026-07-22 هم DPS=55 دارد و هم
+    # افزایشِ سرمایهٔ اندوخته 24T→32T با نسبت 0.750923). حذفِ بی‌قیدِ گسست، آن
+    # افزایشِ سرمایه را می‌بلعد و ضریب را ۲۵٪ خراب می‌کند.
+    dps_ratios = [(str(o.get("date"))[:10], float(o["ratio"]))
+                  for o in official if o.get("_dps") and o.get("ratio")]
+    share_changes = list(share_changes or [])
+    if dps_ratios:
+        def _matches_share(e, dps_ratio):
+            try:
+                r = float(e.get("ratio") or 0)
+            except Exception:
+                return False
+            if not r:
+                return False
+            for sd, sr in share_changes:
+                _dd = _day_diff(sd, str(e.get("date"))[:10])
+                if _dd is not None and _dd <= 7:
+                    for target in (sr, sr * dps_ratio):
+                        if target > 0 and abs(r / target - 1.0) <= 0.02:
+                            return True
+            return False
+
+        def _same_dps_action(e):
+            try:
+                r = float(e.get("ratio") or 0)
+            except Exception:
+                return False
+            if not r:
+                return False
+            near = []
+            for dd, dr in dps_ratios:
+                _dd = _day_diff(dd, str(e.get("date"))[:10])
+                if _dd is not None and _dd <= 5:
+                    near.append((dd, dr))
+            if not near:
+                return False
+            if any(abs(r / dr - 1.0) <= _DPS_DUP_TOL for _dd, dr in near):
+                return True
+            if any(_matches_share(e, dr) for _dd, dr in near):
+                return False
+            # نسبت با DPS نمی‌خواند و به تغییرِ سهامِ رسمی هم قابلِ انتساب نیست:
+            # همان اقدامِ تکراری با تقریبِ بدتر شمرده می‌شود (رفتارِ Round 7).
+            return True
         kept = [e for e in kept if not (
-            e.get("source") == "base-price-discontinuity"
-            and any((_day_diff(dd, str(e.get("date"))[:10]) or 999) <= 5
-                    for dd in dps_dates))]
+            e.get("source") == "base-price-discontinuity" and _same_dps_action(e))]
     for o in official:
         if o.get("_ledger_key") and o["_ledger_key"] in claimed:
             if rejected is not None:
@@ -1288,7 +1366,8 @@ def _canonical_adjustment(symbol, times, events):
     dup_rejected = []
     if official_pa:
         events = _merge_official_price_adjust(events, official_pa,
-                                               rejected=dup_rejected)
+                                               rejected=dup_rejected,
+                                               share_changes=_share_change_events(symbol))
     # کلیدِ هویتِ دفتری فقط برای همین تصمیم است؛ نه در payload و نه در موتور.
     events = [{k: v for k, v in e.items() if not str(k).startswith("_")}
               for e in events]

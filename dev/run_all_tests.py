@@ -203,6 +203,8 @@ SUITES = [
     ('dev/test_official_ledger_dedupe_v1.py',
                                       'one official ledger row is applied once, even across a long suspension'),
     ('dev/test_dps_formula_v1.py',    'DPS factor = close_ex/(close_ex+dps); reserve capital change = pv/nw'),
+    ('dev/test_fund_events_v1.py',    'official fund distributions drive (P-D)/P factor; same-date typed event survives'),
+    ('dev/test_fund_ingest_v1.py',    'fund importer: Persian digits, corrupt rows, duplicate dedupe, newest instrument'),
     ('dev/test_history_repair_writer_v1.py',
                                       'history repair writes src=published on a temp DB; closed gate writes nothing'),
     ('dev/version_anchor_guard.py',   'all six version anchors state the same release'),

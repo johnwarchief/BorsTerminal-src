@@ -47,11 +47,30 @@ DPS_CASES = [
     ("حشكوه", "2023-07-29", 8250.0, 16.0, 0.99806436),
     ("كنور", "2023-06-18", 22240.0, 1800.0, 0.92512479),
     ("ثنام", "2023-07-19", 2246.0, 10.0, 0.99556738),
+    ("شسپا", "2026-07-26", 15550.0, 2000.0, 0.88604),
+    ("كلر", "2026-07-18", 9830.0, 1087.0, 0.900431),
 ]
 for sym, d, cl, dps, ref in DPS_CASES:
     got = cl / (cl + dps)
     ck(abs(got / ref - 1) < 1e-6,
        "DPS %s %s: close=%.0f dps=%.0f -> %.8f == ref %.8f" % (sym, d, cl, dps, got, ref),
+       "diff=%.2e" % (got / ref - 1))
+
+# Round 8 regression fixtures: the five pre-2024 steps in the seven symbols
+# that the product still treats as base-price gaps. DPS amounts are identified
+# by Rahavard timescale_marks (reference evidence, not yet official ingest);
+# they are here to lock the reference formula, not to claim provenance.
+MARKS_DPS_CASES = [
+    ("حخزر", "2023-07-08", 54000.0, 6300.0, 0.8955223880597015),
+    ("سپاها", "2022-11-21", 8780.0, 1770.0, 0.832227),
+    ("كلوند", "2021-07-07", 20350.0, 1870.0, 0.915842),
+    ("پخش", "2023-05-23", 26000.0, 1200.0, 0.955882),
+    ("وبشهر", "2026-07-13", 4640.0, 480.0, 0.90625),
+]
+for sym, d, cl, dps, ref in MARKS_DPS_CASES:
+    got = cl / (cl + dps)
+    ck(abs(got / ref - 1) < 1e-6,
+       "marks-DPS %s %s: close=%.0f dps=%.0f -> %.8f == ref %.8f" % (sym, d, cl, dps, got, ref),
        "diff=%.2e" % (got / ref - 1))
 
 # Reserve-based capital increase: ratio = previous_capital / new_capital.
@@ -68,14 +87,39 @@ for sym, pv, nw, ref in CC_CASES:
 # An official DPS row supersedes a discovered gap at the same action...
 rejected = []
 merged = C._merge_official_price_adjust(
-    [{"date": "2026-02-21", "ratio": 0.907613, "source": "base-price-discontinuity"}],
+    [{"date": "2026-02-21", "ratio": 0.62895, "source": "base-price-discontinuity"}],
     [{"date": "2026-02-22", "ratio": 0.62894249, "source": "tsetmc_price_adjust_by_flow",
       "_dps": True, "_ledger_key": ("2026-02-17", "priceAdjust")}],
     rejected=rejected)
 ck(len(merged) == 1 and merged[0]["source"] == "tsetmc_price_adjust_by_flow",
-   "DPS official row replaces the overlapping base-price gap", merged)
+   "DPS official row replaces the matching overlapping base-price gap", merged)
 
-# ...but a non-DPS official row does NOT drop a distant discovered gap.
+# Same-day duplicate: the distance is 0, which must still count as "near"
+# (regression for `_day_diff(...) or 999` treating 0 as unknown).
+merged = C._merge_official_price_adjust(
+    [{"date": "2026-02-22", "ratio": 0.62895, "source": "base-price-discontinuity"}],
+    [{"date": "2026-02-22", "ratio": 0.62894249, "source": "tsetmc_price_adjust_by_flow",
+      "_dps": True, "_ledger_key": ("2026-02-17", "priceAdjust")}])
+ck(len(merged) == 1, "same-day DPS duplicate is dropped", merged)
+
+# ...but a base gap with a materially different ratio is a distinct action when
+# an official share change explains it (بورس 2026-07-22: DPS=55 + CC 24T→32T).
+merged = C._merge_official_price_adjust(
+    [{"date": "2026-07-26", "ratio": 0.750923, "source": "base-price-discontinuity"}],
+    [{"date": "2026-07-26", "ratio": 0.987542, "source": "tsetmc_price_adjust_by_flow",
+      "_dps": True, "_ledger_key": ("2026-07-22", "priceAdjust")}],
+    share_changes=[("2026-07-26", 0.75)])
+ck(len(merged) == 2, "nearby DPS keeps a share-change-attributed capital event", merged)
+
+# ...and an unattributable gap in the same window stays dropped (Round 7 rule).
+merged = C._merge_official_price_adjust(
+    [{"date": "2026-07-26", "ratio": 0.750923, "source": "base-price-discontinuity"}],
+    [{"date": "2026-07-26", "ratio": 0.987542, "source": "tsetmc_price_adjust_by_flow",
+      "_dps": True, "_ledger_key": ("2026-07-22", "priceAdjust")}],
+    share_changes=[])
+ck(len(merged) == 1, "unattributable same-window base gap is treated as duplicate", merged)
+
+# ...and a non-DPS official row does NOT drop a distant discovered gap.
 merged = C._merge_official_price_adjust(
     [{"date": "2026-02-21", "ratio": 0.907613, "source": "base-price-discontinuity"}],
     [{"date": "2026-02-22", "ratio": 0.62894249, "source": "shareChange"}])
