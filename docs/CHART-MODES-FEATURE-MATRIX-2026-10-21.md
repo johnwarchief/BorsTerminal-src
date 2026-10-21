@@ -154,3 +154,21 @@ Until this plan is executed, the live status of items 1–7 is **BLOCKED** /
   replace it with a generic "adjusted" badge.
 - If a chart surface cannot support a mode, state the limitation on that
   surface rather than removing the mode globally.
+
+## 9. Round 9 isolated evidence (no owner login)
+
+Added `frontend/src/__tests__/technical-basis-scale-matrix.spec.tsx` (Vitest,
+mocked KLineCharts engine). It proves at the data/axis layer:
+
+| Test | Result |
+|---|---|
+| combined × linear: adjusted closes 50/50.5/102, normal axis | PASS |
+| combined × logarithmic: same adjusted closes, log axis | PASS |
+| raw × linear: raw closes 100/101/102, normal axis | PASS |
+| raw × logarithmic: raw closes, log axis | PASS |
+| switching basis leaves volume and timestamps unchanged | PASS |
+
+What it does **not** prove: pixel placement, drawing conversion, indicator
+recomputation in a real engine, reload persistence, or stale-state behavior in
+a real session. Those remain `LIVE_UI_UNVERIFIED`; Round 9 explicitly did not
+wait for or request an owner login. No chart UI/engine code was changed.
