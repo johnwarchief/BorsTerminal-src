@@ -1,0 +1,29 @@
+{
+  "finding": "GetClientTypeHistory returned HTTP 200 for the closed session 20261020; the previous HTTP 500 was transient. A five-symbol backfill on the isolated DB wrote 5/5 native rows with zero errors.",
+  "observed_at": "2026-10-20T22:35:00+03:30",
+  "endpoint": "https://cdn.tsetmc.com/api/ClientType/GetClientTypeHistory/{insCode}/{dEven}",
+  "samples": {
+    "20261020": {"ins_code": "46348559193224090", "status": 200},
+    "20261019": {"ins_code": "46348559193224090", "status": 200}
+  },
+  "backfill": {
+    "database": "../.q3-live-run/market.db (isolated copy, not the operational DB)",
+    "day": 20261020,
+    "limit": 5,
+    "force": true,
+    "written": 5,
+    "total": 5,
+    "errors": 0,
+    "no_payload": 0,
+    "aborted": null,
+    "ran_s": 1.0
+  },
+  "engine_check": {
+    "symbol": "خودرو",
+    "value_source": "native",
+    "aggregate_value_source": "mixed",
+    "aggregate_symbols": 1500,
+    "meaning": "five native rows exist; the rest of the 1500-symbol aggregate is still reconstructed, so mixed is the honest aggregate"
+  },
+  "no_operational_write": true
+}

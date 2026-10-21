@@ -281,6 +281,7 @@ export function TapeTable({
   const footer = (
     <div className="border-t border-border-c bg-bg-secondary/60 px-3 py-1 text-2xs text-text-muted">
       <span className="num font-bold">{toFaDigits(sorted.length)}</span> نماد
+      {' '}· قیمت: ریال · حجم: سهم · ارزش: میلیارد ریال
     </div>
   );
 

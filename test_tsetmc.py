@@ -278,6 +278,75 @@ def fetch_market_total(s):
 
 
 MARKET_INDEX_TABLE = "market_index"
+# «شاخص قیمت (وزنی-ارزشی)» — همان عددی که ره‌آورد زیر عنوانِ «قیمت وزنی ارزشی»
+# نشان می‌دهد و پیش از این کارتِ ما به‌جایش میانگینِ ارزشیِ معاملات را می‌گذاشت.
+# از GetMarketOverview نمی‌آید؛ از فهرستِ رسمیِ Index/GetIndexB1LastAll.
+PRICE_INDEX_CODE = "5798407779416661"
+
+
+def fetch_price_index(s):
+    """شاخصِ رسمیِ قیمت (وزنی-ارزشی) یا None — بی‌ساختِ عدد.
+
+    فیلدِ مقدار در این endpoint `xDrNivJIdx004` است (`last` همیشه false است).
+    """
+    rows = polite_get(s, f"{BASE}/Index/GetIndexB1LastAll/SelectedIndexes/1", "indexB1")
+    for r in rows or []:
+        if str(r.get("insCode")) == PRICE_INDEX_CODE:
+            last = num(r.get("xDrNivJIdx004"))
+            if not last or last <= 0:
+                return None
+            return {"last": last, "change": num(r.get("indexChange")),
+                    "pct": num(r.get("xVarIdxJRfV")),
+                    "h_even": num(r.get("hEven"))}
+    return None
+
+
+MARKET_IMPACT_TABLE = "market_impact"
+
+
+def fetch_inst_effect(s, flow: int = 1, top: int = 500):
+    """اثرِ رسمیِ هر نماد بر شاخصِ کل — `Index/GetInstEffect/0/{flow}/{top}`.
+
+    flow=1 بورس است. برگرداندنِ [] یعنی منبع چیزی نداد؛ هیچ اثرِ ساختگی ساخته
+    نمی‌شود. `instEffectValue` همان واحدی است که TSETMC زیر «اثر بر شاخص»
+    نشان می‌دهد.
+    """
+    rows = polite_get(s, f"{BASE}/Index/GetInstEffect/0/{flow}/{top}", "instEffect")
+    return rows or []
+
+
+def ensure_market_impact_schema(conn):
+    conn.execute(
+        f"CREATE TABLE IF NOT EXISTS {MARKET_IMPACT_TABLE} ("
+        " d_even INTEGER, ins_code TEXT, symbol TEXT, name TEXT, effect REAL,"
+        " p_closing REAL, rank INTEGER, source TEXT, updated_at TEXT,"
+        " PRIMARY KEY (d_even, ins_code))")
+
+
+def save_market_impact(conn, rows, d_even, now=None):
+    """اثرهای رسمیِ همان نشست را می‌نویسد؛ نبودِ پاسخ ردیف‌های قبلی را پاک نمی‌کند."""
+    if not rows or not d_even:
+        return 0
+    ensure_market_impact_schema(conn)
+    now = now or datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    recs = []
+    for i, x in enumerate(rows, start=1):
+        inst = x.get("instrument") or {}
+        ins = str(x.get("insCode") or inst.get("insCode") or "").strip()
+        eff = num(x.get("instEffectValue"))
+        if not ins or eff is None:
+            continue
+        recs.append((int(d_even), ins, (inst.get("lVal18AFC") or "").strip() or None,
+                     (inst.get("lVal30") or "").strip() or None, eff,
+                     num(x.get("pClosing")), i, "tsetmc:Index/GetInstEffect", now))
+    if not recs:
+        return 0
+    conn.executemany(
+        f"INSERT OR REPLACE INTO {MARKET_IMPACT_TABLE}"
+        " (d_even, ins_code, symbol, name, effect, p_closing, rank, source, updated_at)"
+        " VALUES (?,?,?,?,?,?,?,?,?)", recs)
+    conn.commit()
+    return len(recs)
 
 
 def ensure_market_index_schema(conn):
@@ -301,7 +370,8 @@ def ensure_market_index_schema(conn):
     # (پایگاهِ بسته‌بندی‌شدۀ کهنه ستون ندارد) و نوشتار از این پس نامی است.
     cols = {r[1] for r in conn.execute(f"PRAGMA table_info({MARKET_INDEX_TABLE})")}
     for name, typ in (("market_state", "TEXT"), ("market_state_title", "TEXT"),
-                      ("activity_h_even", "INTEGER")):
+                      ("activity_h_even", "INTEGER"), ("pi_last", "REAL"),
+                      ("pi_change", "REAL"), ("pi_pct", "REAL")):
         if name not in cols:
             conn.execute(f"ALTER TABLE {MARKET_INDEX_TABLE} ADD COLUMN {name} {typ}")
 
@@ -316,26 +386,38 @@ def _idx_pct(last, change):
     return round(float(change) / base * 100.0, 2)
 
 
-def save_market_index(conn, ov, d_even, now=None):
-    """شاخصِ کل و هموزنِ همان نشست را از پاسخِ رسمیِ بورس ذخیره می‌کند.
+def save_market_index(conn, ov, d_even, now=None, price=None):
+    """شاخصِ کل، هموزن و قیمتِ (وزنی-ارزشی) همان نشست را ذخیره می‌کند.
 
     ov None یا بی‌شاخص باشد هیچ نمی‌نویسد — صفرِ جعلی بهتر است هیچ نباشد.
+    `price` پاسخِ `fetch_price_index` است؛ اگر نرسد مقدارِ همان روز دست‌نخورده
+    می‌ماند (بی‌عدد ≠ صفر).
     """
     if not isinstance(ov, dict) or not d_even:
         return False
     last = num(ov.get("indexLastValue")) or 0.0
     ew_last = num(ov.get("indexEqualWeightedLastValue")) or 0.0
-    if last <= 0 and ew_last <= 0:
+    if last <= 0 and ew_last <= 0 and not price:
         return False
     ensure_market_index_schema(conn)
+    pi_last = num((price or {}).get("last"))
+    pi_change = num((price or {}).get("change"))
+    pi_pct = num((price or {}).get("pct"))
+    if pi_last is None:
+        old = conn.execute(
+            f"SELECT pi_last, pi_change, pi_pct FROM {MARKET_INDEX_TABLE} WHERE d_even=?",
+            (int(d_even),)).fetchone()
+        if old:
+            pi_last, pi_change, pi_pct = old
     # نوشتارِ **نامی**: سه ستونِ تازه به انتهای جدول می‌چسبند و INSERTِ جایگاهی
     # با ۱۱ علامتِ سؤال، `market_state` را درِ `updated_at` می‌نشاند (همان
     # اشتباهی که درِ client_type_value دیدیم).
     conn.execute(
         f"INSERT OR REPLACE INTO {MARKET_INDEX_TABLE} (d_even, idx_last, idx_change,"
         " idx_pct, ew_last, ew_change, ew_pct, z_tot_tran, q_tot_cap, q_tot_tran,"
-        " updated_at, market_state, market_state_title, activity_h_even)"
-        " VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+        " updated_at, market_state, market_state_title, activity_h_even,"
+        " pi_last, pi_change, pi_pct)"
+        " VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
         (int(d_even),
          last or None, num(ov.get("indexChange")) or None,
          _idx_pct(last, num(ov.get("indexChange"))),
@@ -346,7 +428,8 @@ def save_market_index(conn, ov, d_even, now=None):
          now or datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
          (str(ov.get("marketState")).strip() or None) if ov.get("marketState") else None,
          (str(ov.get("marketStateTitle")).strip() or None) if ov.get("marketStateTitle") else None,
-         int(num(ov.get("marketActivityHEven")) or 0) or None))
+         int(num(ov.get("marketActivityHEven")) or 0) or None,
+         pi_last, pi_change, pi_pct))
     conn.commit()
     return True
 
@@ -1250,6 +1333,49 @@ def num(v):
         return float(str(v).strip())
     except (TypeError, ValueError):
         return None
+
+
+def _source_last_price(r):
+    """آخرینِ خامِ تابلو؛ ۰/نبود یعنی «آخرینی نیست»، نه pcl و نه py+pc.
+
+    `pdv` ستونِ LASTِ خودِ TSETMC است (سنجشِ ۶/۶ نماد در
+    `_audit/mw_key_to_csv_column.json`). ساختنِ LAST از `py+pc` رویِ ردیفِ
+    بی‌معامله، یک عددِ «آخرین» جعلی می‌سازد؛ صفر/غایب باید null بماند.
+    """
+    v = num(r.get("pdv"))
+    return v if v and v > 0 else None
+
+
+def _last_trade_price(r, prev=None, closed=False, vol=0, val=0, trd=0, pcl=None):
+    """مقدارِ p_last برایِ نوشتن؛ منبعِ خام همیشه بر مقدارِ ذخیره‌شده مقدم است.
+
+    فقط وقتی منبع هیچ LASTِ معتبری ندارد و بازار بسته است و ردیف هیچ معامله‌ای
+    ندارد، مقدارِ LASTِ نشستِ پیشین (در بازهٔ معقولِ قیمتِ پایانی) نگه داشته
+    می‌شود — همان حفاظتی که صف‌هایِ بستهٔ بازار را حفظ می‌کند. برعکسِ نسخهٔ
+    پیشین، LASTِ معتبرِ منبع هرگز با عددِ کهنهٔ بانک بازنویسی نمی‌شود.
+    """
+    last = _source_last_price(r)
+    if last is not None:
+        return last
+    if closed and not (vol or val or trd) and prev:
+        old = num(prev.get("p_last"))
+        if old and pcl and 0.5 <= old / pcl <= 2.0:
+            return old
+    return None
+
+
+def _closed_values(vol, val, trd, chg, prev):
+    """فقط نبودِ کاملِ مقادیرِ منبع را از نشستِ پیشین پر کن؛ صفر دادهٔ معتبر است.
+
+    بلوکِ قدیمی با `not (vol or val or trd)` صفرِ «امروز معامله‌ای نشد» را با
+    حجم/ارزش/شمارش/تغییرِ نشستِ قبل عوض می‌کرد؛ نمونهٔ زندهٔ 2026-10-20:
+    «آپ3» در منبع 0/0/0/0 بود ولی برنامه 5000 سهم و 170 ریال تغییر نشان
+    می‌داد. فقط None (نبودِ واقعی) جایگزین می‌شود.
+    """
+    if prev is not None and vol is None and val is None and trd is None:
+        return (prev["q_tot_tran"], prev["q_tot_cap"],
+                prev["z_tot_tran"], prev["price_change"])
+    return vol, val, trd, chg
 
 
 def make_session(min_interval=0.05, cooldown_fn=None):
@@ -2632,10 +2758,9 @@ def _mw_row(r, last_d_even, today, now, sectors=None, ptypes=None):
     chg = num(r.get("pc"))
     # «آخرین» کلیدِ خامِ خودش را درِ تابلو دارد: `pdv`. سنجشِ لحظه‌ای رویِ شش نماد
     # (_audit/mw_key_to_csv_column.json → mw_last_key_probe.py): pdv == ستونِ LASTِ
-    # فایلِ رسمیِ خودِ TSETMC درِ ۶/۶، و pcl == CLOSE درِ ۶/۶. پیش از این `p_last` از
-    # `py + pc` ساخته می‌شد (که رویِ همان نمونه‌ها باز هم LAST داد، ولی مشتق است و درِ
-    # ردیفِ بی‌معامله/کدهایِ شکسته می‌شکند)؛ حالا عددِ خام و fallbackِ مشتق.
-    p_last = pdv or ((py + chg) if (pcl and py) else None)
+    # فایلِ رسمیِ خودِ TSETMC درِ ۶/۶، و pcl == CLOSE درِ ۶/۶. رویِ ردیفِ
+    # بی‌معامله هیچ LASTِ جعلی از `py + pc` ساخته نمی‌شود؛ غایب ⇒ null.
+    p_last = _last_trade_price(r, pcl=pcl, vol=vol, val=val, trd=trd)
     it = None
     if sectors is not None and ptypes is not None:
         it = (ins, r.get("lva"), r.get("lvc"), sec, sectors.get(sec, ""),
@@ -2719,9 +2844,15 @@ def _save_market_snapshot(s, conn):
         print(f"  [market-total] {total_value / 1e13:,.1f} همت (TSETMC GetMarketOverview, d_even {total_deven or d_even})")
     else:
         print("  [market-total] TSETMC عددی نفرستاد — مصرف‌کننده روی جمعِ تابلو می‌نشیند")
-    if save_market_index(conn, bourse_ov, total_deven or d_even, now):
+    price_idx = fetch_price_index(s)
+    if save_market_index(conn, bourse_ov, total_deven or d_even, now, price=price_idx):
         print(f"  [market-index] {bourse_ov.get('indexLastValue')} / هموزن "
-              f"{bourse_ov.get('indexEqualWeightedLastValue')} (d_even {total_deven or d_even})")
+              f"{bourse_ov.get('indexEqualWeightedLastValue')} / قیمتِ وزنی "
+              f"{(price_idx or {}).get('last')} (d_even {total_deven or d_even})")
+    imp = fetch_inst_effect(s)
+    n_imp = save_market_impact(conn, imp, total_deven or d_even, now)
+    if n_imp:
+        print(f"  [market-impact] اثرِ رسمیِ {nfmt(n_imp)} نماد بر شاخص ثبت شد")
     if save_market_liquidity(conn, total_deven or d_even, now):
         print("  [market-liquidity] همتِ همین نشست در market_liquidity ثبت شد")
     conn.commit()
@@ -3098,21 +3229,16 @@ def main():
         vol, val, trd = num(r.get("qtj")), num(r.get("qtc")), num(r.get("ztt"))
         chg = num(r.get("pc"))
         # «آخرین» کلیدِ خامِ خودش را دارد (`pdv` — سنجشِ ۶/۶ نماد درِ
-        # _audit/mw_key_to_csv_column.json؛ `pcl` هم == CLOSE). قاعدهٔ قدیمی
-        # «pLast حذف شده، پس py+pc» رویِ همان نمونه‌ها عددِ درست می‌داد ولی مشتق
-        # بود؛ اینجا عددِ خام و fallbackِ مشتق، تا ردیفِ پیش از بازگشایی.
-        p_last = pdv or ((py + chg) if (pcl and py) else None)
-        # حفاظت صف: وقتی بازار بسته است و ارقام جدید صفرند، دادهٔ آخرین روز
-        # معاملاتی (صفهای بستهشدن) را نگه دار — صفرها جایگزین نشوند
-        if closed and not (vol or val or trd) and ins in prev:
-            _p = prev[ins]
-            vol, val, trd, chg = (_p["q_tot_tran"], _p["q_tot_cap"],
-                                  _p["z_tot_tran"], _p["price_change"])
-            # کورکورانه برگرداندنِ p_lastِ کهنه، خرابیِ نسخهٔ پیشین را جاودانه
-            # می‌کرد؛ فقط اگر معقول بود (هم‌مرتبهٔ پایانی) نگه داشته می‌شود.
-            _pl = _p["p_last"]
-            if _pl and pcl and 0.5 <= num(_pl) / pcl <= 2.0:
-                p_last = _pl
+        # _audit/mw_key_to_csv_column.json؛ `pcl` هم == CLOSE). LASTِ معتبرِ
+        # منبع هرگز با عددِ کهنهٔ بانک بازنویسی نمی‌شود؛ رویِ ردیفِ
+        # بی‌معامله هیچ LASTِ جعلی از py+pc ساخته نمی‌شود.
+        p_last = _last_trade_price(
+            r, prev=prev.get(ins), closed=closed,
+            vol=vol, val=val, trd=trd, pcl=pcl)
+        # بازار بسته: فقط مقادیرِ واقعاً غایبِ منبع از نشستِ پیشین پر می‌شوند؛
+        # صفرِ «امروز معامله‌ای نشد» دادهٔ معتبر است و با عددِ دیروز عوض نمی‌شود.
+        vol, val, trd, chg = _closed_values(
+            vol, val, trd, chg, prev.get(ins) if closed else None)
         q = queue_agg(r)
         if q is None:
             q = (None,) * len(_QUEUE_COLS)
@@ -3177,9 +3303,15 @@ def main():
         print(f"  [market-total] {total_value / 1e13:,.1f} همت (TSETMC GetMarketOverview)")
     else:
         print("  [market-total] TSETMC عددی نفرستاد — مصرف‌کننده روی جمعِ تابلو می‌نشیند")
-    if save_market_index(conn, bourse_ov, total_deven or d_even_today, now):
+    price_idx = fetch_price_index(s)
+    if save_market_index(conn, bourse_ov, total_deven or d_even_today, now, price=price_idx):
         print(f"  [market-index] {bourse_ov.get('indexLastValue')} / هموزن "
-              f"{bourse_ov.get('indexEqualWeightedLastValue')}")
+              f"{bourse_ov.get('indexEqualWeightedLastValue')} / قیمتِ وزنی "
+              f"{(price_idx or {}).get('last')}")
+    imp = fetch_inst_effect(s)
+    n_imp = save_market_impact(conn, imp, total_deven or d_even_today, now)
+    if n_imp:
+        print(f"  [market-impact] اثرِ رسمیِ {nfmt(n_imp)} نماد ثبت شد")
     if save_market_liquidity(conn, total_deven or d_even_today, now):
         print("  [market-liquidity] همتِ همین نشست در market_liquidity ثبت شد")
     # v9.8.1 — گارد پنجرهٔ بازار (۰۹:۰۰–۱۲:۳۵): بعد از بسته شدن بازار نقطهٔ

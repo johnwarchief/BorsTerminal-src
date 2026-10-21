@@ -1,0 +1,32 @@
+{
+ "bors_meta": {
+  "meta": {
+   "d_even": 20261020,
+   "h_even": 151942,
+   "last_sync": "2026-10-20 15:19:51"
+  },
+  "count": 6142,
+  "live_count": 3303,
+  "fossil_count": 2839
+ },
+ "tsetmc_meta": {
+  "fetched_at": "2026-10-20T17:13:36",
+  "count": 3287
+ },
+ "counts": {
+  "LIVE_MATCHED": 3281,
+  "LIVE_ONLY_BORS": 22,
+  "HISTORICAL_FOSSIL": 2833,
+  "STALE_BORS_FOSSIL": 6
+ },
+ "fossil_boards": {
+  "1.0": 1855,
+  "2.0": 871,
+  "0.0": 113
+ },
+ "live_only_by_reason": {
+  "ENERGY_OR_DERIVATIVE outside TSETMC equity watch": 22
+ },
+ "register_rows": 6142,
+ "out_csv": "docs/MARKET-STATUS-UNIVERSE-CLOSURE-QODER3-2026-10-20.csv"
+}

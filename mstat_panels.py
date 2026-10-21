@@ -326,21 +326,51 @@ def tops(conn, group: str = "eq_all", limit: int = 5) -> dict:
     total_rials, total_src = E.market_total_rials(conn)
     blockers = []
 
+    official = E.market_impact(conn)
     impact = None
     if mi and mi.get("last") and total_rials:
         impact = _impact_points(_scope(rows, group), mi["last"], total_rials)
-    if not impact:
-        blockers.append({
-            "key": "index_impact", "label": "اثر بر شاخص",
-            "why": ("شاخصِ رسمیِ نشست (market_index) یا ارزشِ کلِ بازار (market_totals) "
-                    "در این بانک نیست — بدونِ آن هیچ واحدِ شاخصی محاسبه نمی‌شود"),
-        })
-
     panels = []
-    if impact:
+    if official:
+        # اثرِ رسمیِ TSETMC بر شاخص کل — نه برآوردِ (پایانی−دیروز)×سهام.
+        by_local = {str(r["ins_code"]): r for r in rows}
+        off = []
+        for ins, o in official["by_ins"].items():
+            loc = by_local.get(ins) or {}
+            off.append({
+                "symbol": o.get("symbol") or loc.get("symbol") or ins,
+                "ins_code": ins,
+                "name": o.get("name") or loc.get("name") or "",
+                "industry": (loc.get("sector_name") or "").strip() or None,
+                "p_closing": (o.get("p_closing") if o.get("p_closing") is not None
+                              else E._f(loc.get("p_closing"))),
+                "pct": loc.get("pct"),
+                "tone": _pct_class(loc.get("pct")),
+                "impact_points": o["effect"],
+            })
+        pos = sorted((r for r in off if (r["impact_points"] or 0) > 0),
+                     key=lambda r: r["impact_points"], reverse=True)
+        neg = sorted((r for r in off if (r["impact_points"] or 0) < 0),
+                     key=lambda r: r["impact_points"])
+        _FORM = ("instEffectValueِ رسمیِ TSETMC (Index/GetInstEffect) — اثر هر نماد "
+                 "بر شاخص کل")
+        _NOTE = "رتبه‌بندی رسمی؛ جمعِ همهٔ نمادهای فهرست در reconciliation"
+        panels.append(_panel("تأثیر مثبت بر شاخص کل", "impact_pos", pos,
+                             "impact_points", "نقطهٔ شاخص", _FORM, limit, note=_NOTE))
+        panels.append(_panel("تأثیر منفی بر شاخص کل", "impact_neg", neg,
+                             "impact_points", "نقطهٔ شاخص", _FORM, limit, note=_NOTE))
+        ssum = sum(r["impact_points"] for r in off)
+        reconciliation = None
+        if mi and mi.get("change"):
+            reconciliation = {
+                "sum_of_impacts": round(ssum, 1),
+                "official_index_change": round(mi["change"], 1),
+                "rel_diff_pct": round(100.0 * (ssum - mi["change"]) / abs(mi["change"]), 2),
+                "meaning": ("جمعِ اثرِ رسمیِ %d نمادِ فهرست؛ فاصلهٔ باقی‌مانده از پوششِ "
+                            "نمادهای خارج از فهرست است، نه محاسبهٔ محلی" % len(off)),
+            }
+    elif impact:
         ssum = sum(r["impact_points"] for r in impact)
-        # رتبه از یکایِ اندازه‌گیری‌شده می‌آید، نه از برآوردِ «واحدِ شاخص»: مقسوم‌علیهِ
-        # هر دو یکی است، پس ترتیب عوض نمی‌شود ولی عددِ ریالی وابسته به فرضِ وزنی نیست.
         pos = sorted((r for r in impact if r["delta_cap_b_toman"] > 0),
                      key=lambda r: r["delta_cap_b_toman"], reverse=True)
         neg = sorted((r for r in impact if r["delta_cap_b_toman"] < 0),
@@ -349,7 +379,7 @@ def tops(conn, group: str = "eq_all", limit: int = 5) -> dict:
             r["impact_points"] = round(r["impact_points"], 1)
         _IMP_FORMULA = ("(پایانی − دیروز) × سهامِ شرکت — ستونِ واحدِ شاخص برآورد است "
                         "(بدونِ سهامِ شناور)")
-        _IMP_NOTE = ("واحدِ شاخص از تقسیمِ همین عدد بر مقدارِ مشتقِ شاخص می‌آید و "
+        _IMP_NOTE = ("اثر رسمیِ TSETMC در این بانک نیست؛ این عدد برآورد است و "
                      "پسماندش درِ `reconciliation` اعلام شده")
         panels.append(_panel("تأثیر مثبت بر شاخص کل", "impact_pos", pos,
                              "delta_cap_b_toman", "میلیارد تومانِ تغییرِ ارزشِ بازار",
@@ -358,19 +388,18 @@ def tops(conn, group: str = "eq_all", limit: int = 5) -> dict:
                              "delta_cap_b_toman", "میلیارد تومانِ تغییرِ ارزشِ بازار",
                              _IMP_FORMULA, limit, note=_IMP_NOTE))
         reconciliation = None
-        if mi.get("change"):
+        if mi and mi.get("change"):
             reconciliation = {
                 "sum_of_impacts": round(ssum, 1),
                 "official_index_change": round(mi["change"], 1),
                 "rel_diff_pct": round(100.0 * (ssum - mi["change"]) / abs(mi["change"]), 2),
-                "meaning": ("جمعِ اثرها باید با تغییرِ رسمیِ شاخص بخواند؛ فاصله فقط از "
-                            "وزنِ سهامِ کل به‌جایِ سهامِ شناور است، نه از دادهٔ غلط"),
+                "meaning": ("جمعِ برآوردها؛ اثر رسمیِ TSETMC در دسترس نبود — واحدِ "
+                            "شاخص تقریبی است"),
             }
         blockers.append({
-            "key": "free_float", "label": "سهامِ شناور",
-            "why": ("TSETMC شاخص را با سهامِ شناور وزن می‌دهد و شناور در این بانک "
-                    "نیست؛ وزنِ اینجا سهامِ کل است ⇒ واحدِ شاخص تقریبی است (تفکیکِ "
-                    "شرکتِ دوبهره‌شدنی اعمال شده). تفاوت را در `reconciliation` ببینید"),
+            "key": "official_impact", "label": "اثر رسمی بر شاخص",
+            "why": ("Index/GetInstEffect در این نوبت چیزی نداد؛ عددِ نمایشی برآوردِ "
+                    "سهامِ کل است، نه اثرِ رسمی"),
             "official_attribution_available": False,
         })
     else:
@@ -592,11 +621,14 @@ def _index_history(conn, days: int = 30) -> list:
 
 
 def index_cards(conn, days: int = 30) -> dict:
-    """سه کارتِ صفحۀ ۶: کل بورس، کل هم‌وزن، قیمتِ وزنیِ ارزشی — با sparkline.
+    """چهار کارتِ صفحۀ ۶: کل بورس، کل هم‌وزن، قیمتِ وزنیِ ارزشی، میانگینِ ارزشی.
 
-    «قیمتِ وزنیِ ارزشی» از خودِ همان ردیفِ رسمی می‌آید: ارزشِ کل ÷ حجمِ کل
-    (q_tot_cap/q_tot_tran) — نه میانگینِ سادهٔ درصدها. نبودِ هر خانه ⇒ آن
-    کارت `available:false` می‌گیرد و sparkline نمی‌کشد.
+    کارتِ سوم **شاخصِ رسمیِ «قیمت (وزنی-ارزشی)»** است (insCode
+    5798407779416661) — همان عددی که ره‌آورد زیر همین عنوان نشان می‌دهد؛
+    پیش از این به‌جایش q_tot_cap/q_tot_tran می‌نشست و با «تغییرِ» همان شاخص
+    در ره‌آورد مقایسه می‌شد. کارتِ چهارم همان میانگینِ ارزشیِ معاملات است و
+    عمداً جدا مانده تا قابلیتِ قبلی حذف نشود. نبودِ هر خانه ⇒ `available:false`،
+    نه صفر.
     """
     hist = _index_history(conn, days)          # صعودی: قدیمی‌ترین ← تازه‌ترین
     mi = E.market_index(conn)
@@ -616,8 +648,8 @@ def index_cards(conn, days: int = 30) -> dict:
                 "unit": unit, "tone": _pct_class(pct), "spark": series,
                 "formula": note, "asof_d_even": hist[-1]["d_even"] if hist else None}
 
-    # قیمتِ وزنیِ ارزشی: ارزشِ کل ÷ حجمِ کل درِ همان ردیفِ رسمی — میانگینِ
-    # سادهٔ درصدها نیست و جایگزینِ شاخصِ کل هم نمی‌نشیند.
+    # ارزشِ کل ÷ حجمِ کل درِ همان ردیفِ رسمی — میانگینِ ارزشیِ قیمتِ معاملات؛
+    # نه شاخصِ رسمیِ «قیمت وزنی ارزشی» و نه جایگزینِ شاخصِ کل.
     wavg = [None if not r.get("q_tot_tran") else
             r["q_tot_cap"] / r["q_tot_tran"] for r in hist]
     prev = wavg[-2] if len(wavg) > 1 else None
@@ -630,10 +662,16 @@ def index_cards(conn, days: int = 30) -> dict:
                       mi.get("ew_pct") if mi else None,
                       "واحدِ شاخص", spark("ew_last"),
                       "indexEqualWeightedLastValueِ رسمی"))
-    cards.append(card("value_weighted_price", "قیمتِ وزنیِ ارزشی", last,
+    pi_last = mi.get("pi_last") if mi else None
+    pi_change = mi.get("pi_change") if mi else None
+    pi_pct = mi.get("pi_pct") if mi else None
+    cards.append(card("value_weighted_price", "قیمت وزنی ارزشی", pi_last,
+                      pi_change, pi_pct, "واحدِ شاخص", None,
+                      "indexLastValueِ رسمی — شاخص قیمت (وزنی-ارزشی)"))
+    cards.append(card("avg_traded_price", "میانگین ارزشی قیمت معاملات", last,
                       None if (last is None or prev is None) else last - prev,
                       None if (last is None or not prev) else 100.0 * (last - prev) / prev,
-                      "ریال", wavg, "q_tot_cap ÷ q_tot_tran"))
+                      "ریال", wavg, "q_tot_cap ÷ q_tot_tran — میانگین ارزشی معاملات، نه شاخص رسمی"))
     total_rials, total_src = E.market_total_rials(conn)
     return {
         "status": "ok", "computed_at": _stamp(), "cards": cards, "source": src,

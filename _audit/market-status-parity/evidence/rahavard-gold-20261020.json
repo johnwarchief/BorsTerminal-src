@@ -1,0 +1,45 @@
+{
+  "observed_at": "2026-10-20T22:55:00+03:30",
+  "url": "https://rahavard365.com/gold",
+  "title": "قیمت روز طلا و سکه - نقشه بازار، پرتفو، بازدهی و حباب صندوقهای طلا",
+  "public_fields": {
+    "gold_ounce_usd": 4116,
+    "gold_ounce_change": -6,
+    "gold_ounce_pct": -0.15,
+    "ounce_time": "02:59 | 1405/07/29",
+    "fund_pcts": {
+      "عیار": 0.36,
+      "طلا": 0.35,
+      "زرفام": 0.37,
+      "مثقال": 0.38,
+      "کهربا": 0.38,
+      "رز ترنج": 0.29,
+      "ریتون": -0.15,
+      "جام طلا": -0.03,
+      "درخشان": 0.01,
+      "گنج": 0.03,
+      "گوهر": 0.29,
+      "زروان": 0.08,
+      "لیان": 0.16,
+      "تابش": 0.31,
+      "زمرد": -0.04,
+      "آتش": 0.59,
+      "گلدا": -0.1,
+      "امرالد": 0.1,
+      "زرگر": 0.12,
+      "زر": 0.12,
+      "میراث": 0.14,
+      "نفیس": -0.54,
+      "درنا": 0.49
+    }
+  },
+  "bubble_intrinsic": {
+    "status": "BLOCKED_EXTERNALLY",
+    "reason": "The intrinsic-value and bubble calculator is explicitly subscription-gated: «برای استفاده از محاسبهگر اشتراک خود را ارتقا دهید». No values or formula are exposed publicly.",
+    "not_bypassed": true
+  },
+  "rules": {
+    "credentials_or_session_copied": false,
+    "account_identity_retained": false
+  }
+}

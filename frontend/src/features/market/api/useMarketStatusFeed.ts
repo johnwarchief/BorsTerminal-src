@@ -89,6 +89,7 @@ export const ClientSplitSchema = z.object({
   pc_sell_m_toman: num,
   power: num,
   money_flow_b_toman: num,
+  value_source: z.union([z.literal('native'), z.literal('mixed'), z.literal('reconstructed')]).nullish(),
   source: str,
 });
 export type ClientSplitFeed = z.infer<typeof ClientSplitSchema>;

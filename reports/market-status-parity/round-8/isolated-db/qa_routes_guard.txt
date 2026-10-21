@@ -1,0 +1,5 @@
+  ok   Q1 هیچ ابزارِ آزمونِ tools/*.mts جدولِ ROUTES دستی بی‌منبع ندارد
+  ok   Q2-الف routes.tsx خوانده شد و `path:` دارد (13)
+  ok   Q2-پ پارسرِ qa_routes.mts 13 route می‌بیند، router واقعی 13 تا دارد
+  ok   Q3 مقصدِ redirect (/master) از خودِ router خوانده می‌شود، نه از متنِ ابزار
+qa_routes_guard: 4 passed / 0 failed

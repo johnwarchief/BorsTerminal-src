@@ -1,0 +1,72 @@
+{
+  "source": "Rahavard365 asset page 453 (فولاد)",
+  "observed_at": "2026-10-20T16:44:00+03:30",
+  "access": {
+    "browser": "Mozilla Firefox ESR",
+    "process_id": 1892,
+    "active_profile": "4q390n91.default-esr",
+    "method": "existing Firefox window; UI new-tab, copy rendered text; no CDP/Marionette endpoint",
+    "credentials_or_session_copied": false,
+    "account_identity_retained": false
+  },
+  "asset": {
+    "symbol": "فولاد",
+    "name": "فولاد مباركه اصفهان",
+    "last_trade_time": "12:29:59",
+    "p_closing": 4340.0,
+    "price_change_close": -80.0,
+    "percent_change_close": -1.81,
+    "p_max": 4510.0,
+    "p_min": 4290.0,
+    "p_first": 4470.0,
+    "trades": 59685.0,
+    "volume": 5565000000.0,
+    "value_rial": 24140000000000.0,
+    "allowed_high": 4550.0,
+    "allowed_low": 4290.0,
+    "base_volume": 1.0,
+    "market_cap_rial": 8397900000000000.0,
+    "notes": "Rendered page labels; volume/value shown with B/T suffixes; values rounded by the source presentation."
+  },
+  "depth": {
+    "observed_label": "عرضه و تقاضا",
+    "asof": "14:19:33",
+    "buy_q1_count": 1179.0,
+    "buy_q1_volume": 338321962.0,
+    "buy_q1_price": 4290.0,
+    "sell_q1_price": 4310.0,
+    "sell_q1_volume": 7300468.0,
+    "sell_q1_count": 41.0,
+    "source_is_current": false,
+    "notes": "The source page still displays the last-session depth after the close; it does not prove a live current depth."
+  },
+  "clients": {
+    "real": {
+      "buy_count": 9829,
+      "buy_volume": 1670000000,
+      "sell_count": 6880,
+      "sell_volume": 4549000000,
+      "ownership_change": -2879000000
+    },
+    "legal": {
+      "buy_count": 84,
+      "buy_volume": 3895000000,
+      "sell_count": 59,
+      "sell_volume": 1020000000,
+      "ownership_change": 2879000000
+    },
+    "unit": "shares / count; ownership change displayed with B suffix"
+  },
+  "bors_comparison": {
+    "asset_453_ins_code": "46348559193224090",
+    "p_closing": "MATCHED",
+    "price_change_close": "MATCHED",
+    "percent_change_close": "MATCHED",
+    "p_max_p_min_p_first": "MATCHED",
+    "trades_volume_value": "MATCHED (source presentation rounding only)",
+    "market_cap": "MATCHED",
+    "client_volumes_and_counts": "MATCHED",
+    "depth_at_last_session": "MATCHED",
+    "p_last": "Bors 4310 from TSETMC; Rahavard copied text exposed the last-trade time 12:29:59 but not a separate last value"
+  }
+}
