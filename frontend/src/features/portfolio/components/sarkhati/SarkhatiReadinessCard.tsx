@@ -45,6 +45,7 @@ export function SarkhatiReadinessCard() {
             Live: {live ? 'آماده' : 'بسته'}
           </Chip>
           <GhostBtn testId="readiness-refresh" onClick={refresh}>تازه‌سازی</GhostBtn>
+          <GhostBtn testId="open-autoclicker" onClick={() => { window.location.hash = '#/autoclicker'; }}>AutoClicker</GhostBtn>
         </>
       }>
       {q.isPending ? <Line kind="muted" testId="readiness-loading">در حال خواندنِ دروازه‌ها…</Line> : null}

@@ -387,6 +387,17 @@ export function useBrokerConnect() {
 }
 
 
+export function useStrategies(enabled = true) {
+  return useQuery({
+    queryKey: ['execution-strategies'],
+    queryFn: () => orderApi.strategies(),
+    enabled,
+    staleTime: 10_000,
+    refetchOnWindowFocus: false,
+    retry: false,
+  });
+}
+
 export function useExecutionStatus() {
   const q = useQuery({
     queryKey: ['execution-status'],

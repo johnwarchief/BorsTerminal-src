@@ -1,5 +1,6 @@
 // src/__tests__/sarkhati-readiness.spec.tsx — دروازهٔ آمادگی، بی‌ادعایِ Live
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { MemoryRouter } from 'react-router';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { SarkhatiReadinessCard } from '@features/portfolio/components/sarkhati/SarkhatiReadinessCard';
@@ -33,7 +34,7 @@ vi.mock('@features/portfolio/lib/orderClient', () => ({
 
 function renderCard() {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return render(<QueryClientProvider client={qc}><SarkhatiReadinessCard /></QueryClientProvider>);
+  return render(<QueryClientProvider client={qc}><MemoryRouter><SarkhatiReadinessCard /></MemoryRouter></QueryClientProvider>);
 }
 
 beforeEach(() => {
