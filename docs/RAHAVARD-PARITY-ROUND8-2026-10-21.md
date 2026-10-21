@@ -390,7 +390,7 @@ Protected DB logical fingerprint after the gate:
 ## 12. Commits, push and main
 
 - Commit 1 (code/tests/sources): `22850f82532437a2e6b781d17fc62ae2d3e16b9f` — official fund sources, share-aware DPS/base merge, same-day fix, new tests, rule-map citations.
-- Commit 2 (docs): the commit that adds this report, the chart matrix and the prototype; its SHA is visible in `git log` after this file.
+- Commit 2 (docs): `42e047308cf4f471d44c00b5570df3312ce9176e` — this report, the chart matrix and the prototype.
 - Push: only the mission branch `mission/ra365-round8-event-coverage-2026-10-21`.
 - `main`, tags and releases: unchanged. No merge, no force push.
 
