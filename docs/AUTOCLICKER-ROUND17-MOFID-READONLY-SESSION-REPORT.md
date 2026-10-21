@@ -239,6 +239,8 @@ allowlist، ارسالِ سفارش ممنوع، و `detail/{id}` فقط برا�
 - شاخه: `mission/sarkhati-round17-mofid-manual-session-2026-10-22`
 - پایه: `3a854faf`
 - کامیتِ پیاده‌سازی: `2b8f2e44`
-- نتیجهٔ نهاییِ suite: 145 counted / 32 silent / 2 skipped / 0 FAIL؛
+- کامیتِ fallback و ثبتِ Probeِ واقعی: `681a3c7d`
+- نتیجهٔ suite پیش از fallback: 145 counted / 32 silent / 2 skipped / 0 FAIL؛
   `operational_changed=none`؛ `_audit/round17_run_all_final.txt`.
+- پس از fallback: آداپتور 39/39، گاردِ نشست 25/25، API/readiness 14/14.
 - گاردِ گلیفِ فارسی: 4/4.
