@@ -769,6 +769,7 @@ class PlaywrightBrowserDriver:
             self._observed_writes = []
             self._blocked_writes = []
             self._escaped_writes = []
+            self._all_requests = []
         try:
             self._page.route(pattern, self._route_handler)
         except Exception as e:
@@ -786,6 +787,9 @@ class PlaywrightBrowserDriver:
             self._observed_writes = []
             self._blocked_writes = []
             self._escaped_writes = []
+            # شمارشِ شبکه فقط برایِ همین action باشد؛ درایورِ keep-alive
+            # نباید نوشتن‌هایِ اجرایِ قبلی را در dry-runِ تازه بشمارد.
+            self._all_requests = []
         if self._current_route_pattern:
             try:
                 self._page.unroute(self._current_route_pattern)

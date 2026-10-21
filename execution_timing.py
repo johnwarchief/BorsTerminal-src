@@ -382,6 +382,9 @@ class Scheduler:
             if abort_event.is_set():
                 tel.aborted = True
                 return tel
+        if abort_event is not None and abort_event.is_set():
+            tel.aborted = True
+            return tel
         tel.send_mono = self.clock.mono()
         tel.actual_send_wall_ms = self.clock.wall_ms()
         tel.drift_us = round((tel.send_mono - deadline) * 1_000_000, 1)
