@@ -71,7 +71,10 @@ export default function AutoClickerPage() {
   const strategies = useStrategies();
   const hostQ = useBrowserHost();
   const statusQ = useExecutionStatus();
-  const row = (strategies.data?.strategies ?? []).find((s) => s.id === 'autoclicker');
+  const [execPath, setExecPath] = useState<'browser' | 'api'>('browser');
+  const strategyId = execPath === 'api' ? 'direct_api' : 'autoclicker';
+  const row = (strategies.data?.strategies ?? []).find((s) => s.id === strategyId);
+  const browserRow = (strategies.data?.strategies ?? []).find((s) => s.id === 'autoclicker');
   const host = (hostQ.data?.host ?? {}) as { healthy?: boolean; status?: string; cdp_url?: string };
   const [opts, setOpts] = useState<Record<OptKey, string>>(DEFAULTS);
   const [preclick, setPreclick] = useState(true);
@@ -89,6 +92,7 @@ export default function AutoClickerPage() {
   const [answer, setAnswer] = useState('');
   const [tone, setTone] = useState<'ok' | 'warn' | 'bad' | 'idle'>('idle');
   const [probe, setProbe] = useState<Record<string, unknown> | null>(null);
+  const [lastResult, setLastResult] = useState<Record<string, unknown> | null>(null);
   const recovered = strategies.data?.recovered_intents ?? {};
   const recoveredTotal = Object.values(recovered).reduce((n, v) => n + (Number(v) || 0), 0);
   const readinessQ = useExecutionReadiness({
@@ -100,36 +104,37 @@ export default function AutoClickerPage() {
   const serverReady = readinessQ.data;
 
   useEffect(() => {
-    if (!row || loaded) return;
+    if (!browserRow || loaded) return;
     setOpts((old) => {
       const next = { ...old };
       (Object.keys(DEFAULTS) as OptKey[]).forEach((k) => {
-        next[k] = optionText(row, k, DEFAULTS[k]);
+        next[k] = optionText(browserRow, k, DEFAULTS[k]);
       });
       return next;
     });
-    setPreclick(optBool(row, 'preclick_check', true));
+    setPreclick(optBool(browserRow, 'preclick_check', true));
     setLoaded(true);
-  }, [row, loaded]);
+  }, [browserRow, loaded]);
 
   const configured = useMemo(() => {
-    const sel = row?.settings?.options ?? {};
+    if (execPath === 'api') return true;
+    const sel = browserRow?.settings?.options ?? {};
     return !!(sel.form_symbol_selector || sel.symbol_selector)
       && !!sel.price_selector && !!sel.quantity_selector && !!sel.submit_selector;
-  }, [row]);
-  const hostOk = host.healthy === true;
+  }, [browserRow, execPath]);
+  const hostOk = execPath === 'api' || host.healthy === true;
   const sessionOk = statusQ.data?.session?.proven === true;
   const liveAllowed = strategies.data?.live_allowed === true;
-  const selectorsOk = Object.values(opts).every((v, i) =>
+  const selectorsOk = execPath === 'api' || Object.values(opts).every((v, i) =>
     i >= Object.keys(DEFAULTS).length - 2 ? true : v.trim().length > 0);
   const targetSet = target.trim().length > 0;
   const readiness = [
-    ['host', 'browser host', hostOk, hostOk ? 'سالم' : 'بسته/ناسالم'],
+    ['host', 'browser host', hostOk, execPath === 'api' ? 'برای API لازم نیست' : (hostOk ? 'سالم' : 'بسته/ناسالم')],
     ['session', 'نشست', sessionOk, sessionOk ? 'تأییدشده' : 'تأییدنشده'],
     ['strategy', 'Strategy', !!row?.available, row?.unavailable_reason || (row?.available ? 'در دسترس' : 'نامعلوم')],
-    ['selectors', 'شناسه‌های فرم', configured && selectorsOk, configured ? 'تنظیم‌شده' : 'ناقص'],
-    ['prefill', 'فرم ازپیش‌پر', !optBool(row, 'autofill', true) && optBool(row, 'require_prefilled', true),
-      'autofill=false · require_prefilled=true'],
+    ['selectors', 'شناسه‌های فرم', configured && selectorsOk, execPath === 'api' ? 'قرارداد API' : (configured ? 'تنظیم‌شده' : 'ناقص')],
+    ['prefill', 'فرم ازپیش‌پر', execPath === 'api' || (!optBool(browserRow, 'autofill', true) && optBool(browserRow, 'require_prefilled', true)),
+      execPath === 'api' ? 'برای API لازم نیست' : 'autofill=false · require_prefilled=true'],
     ['target', 'زمان هدف', targetSet, targetSet ? 'تعیین شده' : 'تعیین نشده'],
     ['live', 'Live', !liveAllowed, liveAllowed ? 'فعال — ممنوع' : 'بسته'],
   ] as const;
@@ -159,7 +164,7 @@ export default function AutoClickerPage() {
   const probeNow = async () => {
     setBusy('probe'); setAnswer(''); setProbe(null);
     try {
-      const res = await orderApi.strategyProbe('autoclicker');
+      const res = await orderApi.strategyProbe(strategyId);
       setProbe((res.probe ?? res) as Record<string, unknown>);
       setTone(res.status === 'success' ? 'ok' : 'warn');
       setAnswer(res.status === 'success'
@@ -180,7 +185,7 @@ export default function AutoClickerPage() {
     try {
       const res = await orderApi.strategyPrepare({
         symbol: symbol.trim(), side, price: Number(price), quantity: Number(qty),
-        strategy: 'autoclicker',
+        strategy: strategyId,
         target_tehran: target.trim() || undefined,
         intent_key: key,
         execution_id: `ac-${Date.now()}`,
@@ -203,12 +208,15 @@ export default function AutoClickerPage() {
     try {
       const res = await orderApi.strategyTrigger({ prepared_id: preparedId });
       const st = String(res.status ?? '');
+      setLastResult((res.result as Record<string, unknown> | undefined) ?? res);
       if (st === 'scheduled') {
         setTone('ok');
         setAnswer('زمان‌بندی شد؛ dry-run در زمان هدف (تهران) اجرا می‌شود و پیش از dispatch متوقف می‌شود.');
       } else if (st === 'success') {
         setTone('warn');
-        setAnswer('dry-run: کلیک با intercept اجرا شد؛ درخواست پیش از dispatch aborted شد.');
+        setAnswer(execPath === 'api'
+          ? 'dry-run API: payload ساخته شد ولی هیچ درخواستی به کارگزاری نرفت.'
+          : 'dry-run: کلیک با intercept اجرا شد؛ درخواست پیش از dispatch aborted شد.');
       } else {
         setTone('bad');
         setAnswer(String(res.detail ?? res.code ?? 'dry-run ناموفق'));
@@ -230,6 +238,19 @@ export default function AutoClickerPage() {
     finally { setBusy(''); }
   };
 
+  const refreshResult = async () => {
+    if (!preparedId) return;
+    setBusy('result');
+    try {
+      const res = await orderApi.strategyOrder(preparedId);
+      setLastResult(res);
+      setTone(res.status === 'success' ? 'ok' : 'warn');
+      setAnswer('نتیجه به‌روزرسانی شد؛ صف فقط با شناسهٔ معتبرِ کارگزاری خوانده می‌شود.');
+    } catch (e) {
+      setTone('bad'); setAnswer(e instanceof Error ? e.message : String(e));
+    } finally { setBusy(''); }
+  };
+
   const startHost = async () => {
     setBusy('host');
     try {
@@ -245,11 +266,13 @@ export default function AutoClickerPage() {
   return (
     <div className="flex flex-col gap-2 p-3" data-testid="autoclicker-page">
       <header className="flex flex-wrap items-baseline gap-2">
-        <h2 className="text-sm font-black text-text-primary">AutoClicker — تنظیمات و آمادگی</h2>
-        <span className="text-2xs text-text-muted">فقط یک کلیک در زمان هدف؛ فرم را خودتان در کارگزاری پر کنید</span>
+        <h2 className="text-sm font-black text-text-primary">AutoClicker — آمادگی و اجرا</h2>
+        <span className="text-2xs text-text-muted">یک intent مشترک؛ مسیر مرورگر یا API؛ بدون retry و بدون ارسال در این صفحه</span>
         <GhostBtn testId="autoclicker-back" onClick={() => navigate('/sarkhati')}>بازگشت به سرخطی</GhostBtn>
+        <GhostBtn testId="autoclicker-path-browser" onClick={() => setExecPath('browser')}>مرورگر</GhostBtn>
+        <GhostBtn testId="autoclicker-path-api" onClick={() => setExecPath('api')}>API</GhostBtn>
         <GhostBtn testId="autoclicker-open-host" onClick={() => void startHost()} disabled={busy !== '' || hostOk}>
-          {hostOk ? 'host سالم' : 'بازکردن host'}
+          {execPath === 'api' ? 'host لازم نیست' : (hostOk ? 'host سالم' : 'بازکردن host')}
         </GhostBtn>
       </header>
 
@@ -265,9 +288,11 @@ export default function AutoClickerPage() {
           </span>
         </div>
         <Line kind={hostOk && sessionOk ? 'ok' : 'warn'} testId="autoclicker-readiness-line">
-          {hostOk && sessionOk
-            ? 'host و نشست آماده‌اند؛ Probe را بزنید تا شناسه‌ها/فرم دیده شوند.'
-            : 'برای Probe، host را باز و در EasyTrader وارد شوید.'}
+          {execPath === 'api'
+            ? 'مسیر API: قرارداد و preflight مشترک؛ host لازم نیست و ارسال زنده بسته است.'
+            : (hostOk && sessionOk
+              ? 'host و نشست آماده‌اند؛ Probe را بزنید تا شناسه‌ها/فرم دیده شوند.'
+              : 'برای Probe، host را باز و در EasyTrader وارد شوید.')}
         </Line>
         {serverReady ? (
           <Line kind={serverReady.live_ready ? 'ok' : 'warn'}
@@ -288,7 +313,7 @@ export default function AutoClickerPage() {
       </Section>
 
       <div className="grid gap-2 lg:grid-cols-2">
-        <Section title="تنظیمات شناسه‌ها" sub="مقادیر پیش‌فرض از UI دیده‌شده‌اند؛ تغییر فقط در همین دستگاه" testId="autoclicker-settings">
+        <Section title="تنظیمات مسیر مرورگر" sub="در مسیر API این شناسه‌ها استفاده نمی‌شوند؛ تغییر فقط در همین دستگاه" testId="autoclicker-settings">
           <div className="grid gap-1 sm:grid-cols-2">
             {(Object.keys(DEFAULTS) as OptKey[]).map((k) => (
               <label key={k} className="flex flex-col gap-0.5 text-3xs text-text-muted">
@@ -312,7 +337,9 @@ export default function AutoClickerPage() {
           </Line>
         </Section>
 
-        <Section title="سفارشِ ازپیش‌پر و آزمون" sub="قیمت/تعداد را در فرم کارگزاری وارد کنید؛ اینجا فقط انتظار را تأیید می‌کنیم" testId="autoclicker-order">
+        <Section title="قصد سفارش و آزمون" sub={execPath === 'api'
+          ? 'قیمت/تعداد را وارد کنید؛ payload API ساخته می‌شود ولی ارسال زنده بسته است'
+          : 'قیمت/تعداد را در فرم کارگزاری وارد کنید؛ اینجا فقط انتظار را تأیید می‌کنیم'} testId="autoclicker-order">
           <div className="grid gap-1 sm:grid-cols-2">
             <label className="flex flex-col gap-0.5 text-3xs text-text-muted">نماد
               <input value={symbol} onChange={(e) => setSymbol(e.target.value)}
@@ -370,6 +397,30 @@ export default function AutoClickerPage() {
         </Section>
       </div>
 
+      <Section title="نتیجه و پایش سفارش" sub="order-id و صف فقط اگر منبعِ معتبر بدهد؛ مقدارِ ناموجود صفر نشان داده نمی‌شود" testId="autoclicker-monitor">
+        {lastResult ? (
+          <>
+            <Line kind={lastResult.unknown ? 'warn' : 'ok'} testId="autoclicker-result">
+              وضعیت: {String(lastResult.status ?? '—')} ·
+              order-id: {String(lastResult.broker_order_id ?? '—')} ·
+              صف: {lastResult.queue_position == null
+                ? 'در دسترس نیست' : String(lastResult.queue_position)} ·
+              UNKNOWN: {lastResult.unknown ? 'بله' : 'خیر'}
+            </Line>
+            <details className="mt-1">
+              <summary className="cursor-pointer text-3xs text-text-muted">جزئیاتِ نتیجه</summary>
+              <pre className="mt-1 max-h-40 overflow-auto text-3xs text-text-muted" dir="ltr">
+                {JSON.stringify(lastResult, null, 1)}
+              </pre>
+            </details>
+          </>
+        ) : (
+          <Line kind="muted" testId="autoclicker-result-empty">هنوز اجرایی در این نشست ثبت نشده است.</Line>
+        )}
+        <GhostBtn testId="autoclicker-result-refresh" onClick={() => void refreshResult()}
+          disabled={!preparedId || busy !== ''}>به‌روزرسانی نتیجه</GhostBtn>
+      </Section>
+
       {answer ? <Line kind={tone === 'ok' ? 'ok' : tone === 'bad' ? 'error' : 'warn'} testId="autoclicker-answer">{answer}</Line> : null}
       {probe ? (
         <details className="rounded-lg border border-border-c/40 px-2 py-1" data-testid="autoclicker-probe-result">
@@ -388,9 +439,10 @@ export default function AutoClickerPage() {
       ) : null}
       <Note label="این صفحه چه چیزی نیست" testId="autoclicker-nots">
         <ul className="flex flex-col gap-0.5">
-          <li>این صفحه فرمِ کارگزاری را پر نمی‌کند؛ قیمت/تعداد را خودتان در EasyTrader وارد می‌کنید.</li>
+          <li>مسیر مرورگر فرمِ کارگزاری را پر نمی‌کند؛ قیمت/تعداد را خودتان در EasyTrader وارد می‌کنید.</li>
+          <li>مسیر API قراردادِ EasyTrader را می‌سازد؛ مسیر Mofid آداپتور جدا و خارج از این انتخاب است.</li>
           <li>هیچ ارسالِ Live از این صفحه انجام نمی‌شود؛ `live_allowed` باید false بماند.</li>
-          <li>dry-run یعنی یک کلیک با intercept و abort پیش از dispatch؛ نتیجهٔ سفارش ادعا نمی‌شود.</li>
+          <li>dry-run مرورگر یک کلیک با intercept است و dry-run API هیچ ترابری صدا نمی‌زند؛ هیچ‌کدام پذیرش سفارش نیست.</li>
         </ul>
       </Note>
     </div>

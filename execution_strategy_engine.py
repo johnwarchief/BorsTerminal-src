@@ -150,6 +150,16 @@ class DirectApiStrategy:
             raise StrategyError("INVALID_PRICE", "price must be positive")
         if draft.quantity is None or draft.quantity <= 0:
             raise StrategyError("INVALID_QUANTITY", "quantity must be positive")
+        if getattr(ctx.adapter, "name", "") == "mofid":
+            import execution_mofid as MF
+            payload = MF.build_payload(draft)
+            return PreparedHandle(
+                SC.DIRECT_API, draft, payload=payload,
+                evidence={"payload_keys": sorted(payload.keys()),
+                          "envelope_keys": sorted(payload.keys()),
+                          "path": MF.WIRE_PATH_ORDER_CREATE,
+                          "contract": MF.CONTRACT_STATE},
+                prepared_ms=round(now_ms() - t0, 3))
         payload = easytrader_payload(draft)
         return PreparedHandle(
             SC.DIRECT_API, draft, payload=payload,

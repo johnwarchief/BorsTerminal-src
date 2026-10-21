@@ -727,6 +727,8 @@ SUITES = [
      'test DB isolation: resolver paths under BORS_DATA_DIR, operational worktree refused, subprocess inheritance, clone write leaves operational hash unchanged'),
     ('dev/readiness_round15_v1162.py',
      'readiness gates: owner approval store default/approve/revoke, contract UNVERIFIED keeps live_ready false, a real gate change flips the verdict'),
+    ('dev/mofid_adapter_v1163.py',
+     'Mofid/Titan adapter: flat third-party payload, 2xx is UNKNOWN not acceptance, no retry, token never logged, fail-closed preflight'),
     ('dev/autoclicker_browser_round14_v1149.py',
      'sarkhati AutoClicker Round 14 browser-level: Playwright mock EasyTrader, zero order posts in dry-run, one click, UNKNOWN, abort'),
     # مأموریتِ ۲۰۲۶-۱۰-۲۰ (Darvand P0): ذخیرهٔ ماندگارِ سفارش/زمان‌بندی، claim

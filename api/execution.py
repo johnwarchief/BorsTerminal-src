@@ -55,6 +55,7 @@ from execution_easytrader import (
     WIRE_HYPOTHESIS, WIRE_PROBE_HOST_HEALTH, WIRE_SESSION_PROBE_CANDIDATES,
     easytrader_payload,
 )
+from execution_mofid import MofidAdapter
 import execution_connect as EXC                            # noqa: E402
 import execution_connection as ECONN                       # noqa: E402
 import execution_browser_host as BH                        # noqa: E402
@@ -88,7 +89,7 @@ ORDER_WRITE_UNVERIFIED = "ORDER_WRITE_UNVERIFIED"
 _LOCK = threading.Lock()
 ADAPTER_ENV = "BORS_EXECUTION_ADAPTER"
 LIVE_ENV = "BORS_EXECUTION_LIVE"
-ALLOWED_ADAPTERS = ("mock", "easytrader")
+ALLOWED_ADAPTERS = ("mock", "easytrader", "mofid")
 #: آستانهٔ «فوری»: اگر مهلتِ هدف از این نزدیک‌تر باشد، درِ همان درخواست
 #: می‌نشینیم و threadِ تازه‌ای نمی‌سازیم — هزینهٔ یکِ خوابِ کوتاه کمتر از یکِ
 #: اجرایِ هم‌زمان است.
@@ -127,7 +128,7 @@ def _configured_adapter(settings: dict[str, Any]) -> str:
 _CFG = _settings_snapshot()
 # تنها adapterهایِ ممکن. بی‌ترافیک، `RefusingTransport` می‌نشیند.
 ADAPTER_KIND = _configured_adapter(_CFG)
-LIVE_REQUESTED = ADAPTER_KIND == "easytrader" and _env_flag(LIVE_ENV)
+LIVE_REQUESTED = ADAPTER_KIND in ("easytrader", "mofid") and _env_flag(LIVE_ENV)
 # حالتِ فقط‌خواندنی: GETها مجازند تا نشست *واقعاً* تأیید شود و فهرست‌ها خوانده
 # شوند. ارسالِ سفارش همچنان فقط با `BORS_EXECUTION_LIVE=1` — دو گیتِ جدا.
 READ_ONLY_REQUESTED = (ADAPTER_KIND == "easytrader" and bool(_CFG.get("read_only"))
@@ -149,15 +150,24 @@ _CLOCK_LIMIT = ("ساعتِ سیستم بدونِ آفستِ NTP؛ زمان‌ب
 _SCHEDULER = Scheduler(TimeSource())
 
 _EASYTRADER: EasyTraderAdapter | None = None
+_MOFID: Any = None
 
 
 def _adapter() -> BrokerAdapter:
-    global _EASYTRADER
+    global _EASYTRADER, _MOFID
     if ADAPTER_KIND == "easytrader":
         _EASYTRADER = EasyTraderAdapter(
             transport=RequestsTransport() if TRAFFIC_ALLOWED else RefusingTransport(),
             writes_allowed=bool(LIVE_REQUESTED))
         return _EASYTRADER
+    if ADAPTER_KIND == "mofid":
+        # توکن از envِ فرایند خوانده می‌شود و هیچ‌جا نوشته/لاگ نمی‌شود.
+        _MOFID = MofidAdapter(
+            transport=RequestsTransport() if TRAFFIC_ALLOWED else RefusingTransport(),
+            token=(os.environ.get("BORS_MOFID_TOKEN") or ""),
+            cookie=(os.environ.get("BORS_MOFID_COOKIE") or ""),
+            writes_allowed=bool(LIVE_REQUESTED))
+        return _MOFID
     # صف/وضعیت/لیست را بدل «می‌دهد» تا مسیرِ reconcile و پایشِ صف قابلِ دیدن
     # باشد؛ `balances` عمداً False است تا پیش‌فرود «بی‌داده» را از «صفر» جدا
     # نگه دارد (§۱۶ دستورِ کار).
@@ -437,7 +447,7 @@ def _draft_from(body: dict[str, Any]) -> OrderDraft:
             resolution=Resolution.EXACT if ref.isin else ref.resolution)
         if isinstance(_ACTIVE_ADAPTER, MockBrokerAdapter):
             _ACTIVE_ADAPTER.add_instrument(ref)
-    elif ADAPTER_KIND == "easytrader" and ref.isin:
+    elif ADAPTER_KIND in ("easytrader", "mofid") and ref.isin:
         # درِ این سکو شناسۀِ قابلِ سفارش **خودِ ISIN** است (مخزن ۲: `symbolIsin`،
         # نه ins_code). پس نگاشتِ کارگزاری حدس نیست، برداشتنِ همان ISIN است.
         # برایِ mock این شاخه اجرا نمی‌شود تا رفتارِ آزموده‌شده‌یِ پیشین دست‌نخورده
@@ -884,6 +894,9 @@ def get_status() -> dict[str, Any]:
                            "(یا BORS_EXECUTION_LIVE=1 برایِ ارسالِ سفارش) و restart کنید")
     if ADAPTER_KIND == "easytrader" and LIVE_REQUESTED and not live:
         blocked.append("D1: نشستِ مالک درِ حافظه نیست — ورودِ تعاملی با خودِ مالک")
+    if ADAPTER_KIND == "mofid":
+        blocked.append("Mofid: قراردادِ شخصِ ثالث؛ balance/read-back تأیید نشده — "
+                       "preflight زنده را می‌بندد")
     # گیتِ عبارتِ تأیید (§۲-۲): فقط وقتی که اجرایِ زنده واقعاً روشن است ازِ UI
     # چیزی می‌خواهد؛ درِ dry-run تمرین و پیش‌نمایش نباید بشکند. «required»
     # را UI می‌خواند تا بداند چه چیزی تایپ شود، نه اینکه حدس بزند.

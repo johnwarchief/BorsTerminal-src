@@ -195,6 +195,7 @@ a = Analysis(
                    'execution_strategy_engine',
                    'execution_intent_store',
                    'execution_owner_approval',
+                   'execution_mofid',
                    'execution_browser',
                    # زمان‌بندیِ ماندگار (۲۰۲۶-۱۰-۲۰): سطح-بالِ api/execution.py.
                    'execution_schedule', 'execution_daemon', 'execution_browser_host', 'execution_offerings', 'execution_cockpit', 'execution_connection', 'execution_session_capture',

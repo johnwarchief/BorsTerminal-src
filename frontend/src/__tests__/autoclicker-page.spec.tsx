@@ -11,6 +11,7 @@ const api = vi.hoisted(() => ({
   prepare: vi.fn(async (_body: Record<string, unknown>) => ({ status: 'success', prepared_id: 'prep-1' })),
   trigger: vi.fn(async (_body: Record<string, unknown>) => ({ status: 'success' })),
   abort: vi.fn(async () => ({ status: 'success' })),
+  order: vi.fn(async (_id: string) => ({ status: 'success', order: { status: 'dry_run' } })),
 }));
 
 vi.mock('@features/portfolio/lib/orderClient', () => ({
@@ -20,6 +21,8 @@ vi.mock('@features/portfolio/lib/orderClient', () => ({
     strategyPrepare: api.prepare,
     strategyTrigger: api.trigger,
     strategyAbort: api.abort,
+    strategyAbortIntent: api.abort,
+    strategyOrder: api.order,
   },
   browserHostApi: { start: vi.fn(async () => ({ status: 'success' })) },
   useStrategies: () => ({
@@ -38,6 +41,12 @@ vi.mock('@features/portfolio/lib/orderClient', () => ({
             intercept_pattern: '**/core/api/v2/order*', autofill: false,
             require_prefilled: true,
           }, updated_at: 1 },
+        metrics: {}, outcomes: {}, last_result: null,
+      }, {
+        id: 'direct_api', label: 'Direct API', kind: 'http', available: true,
+        configured: true, unavailable_reason: '', live_ready: false,
+        settings: { strategy: 'direct_api', enabled: true, mode: 'live', priority: 0,
+          options: {}, updated_at: 1 },
         metrics: {}, outcomes: {}, last_result: null,
       }],
     },
@@ -137,6 +146,21 @@ describe('AutoClicker — تنظیمات و آمادگی', () => {
     await waitFor(() => expect(api.prepare).toHaveBeenCalledTimes(2));
     const key2 = (api.prepare.mock.calls[1][0] as Record<string, unknown>).intent_key;
     expect(key2).toBe(key1);
+  });
+
+  it('مسیر API را با همان intent و بدونِ کلیک انتخاب می‌کند', async () => {
+    // `direct_api` در پاسخِ strategies است؛ این تست انتخاب مسیر را قفل می‌کند.
+    renderPage();
+    fireEvent.click(screen.getByTestId('autoclicker-path-api'));
+    fireEvent.change(screen.getByTestId('autoclicker-symbol'), { target: { value: 'فولاد' } });
+    fireEvent.change(screen.getByTestId('autoclicker-price'), { target: { value: '1000' } });
+    fireEvent.change(screen.getByTestId('autoclicker-qty'), { target: { value: '10' } });
+    fireEvent.click(screen.getByTestId('autoclicker-prepare'));
+    await waitFor(() => expect(api.prepare).toHaveBeenCalled());
+    const body = api.prepare.mock.calls[0][0] as Record<string, unknown>;
+    expect(body.strategy).toBe('direct_api');
+    expect(body.intent_key).toBeTruthy();
+    expect(screen.getByTestId('autoclicker-result-empty')).toBeTruthy();
   });
 
   it('پاسخ scheduled را انتظار می‌خواند، نه شکست', async () => {
