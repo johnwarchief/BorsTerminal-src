@@ -79,7 +79,7 @@
 
 ابزار `tools/ra365_round15_parity.py` با همان پروتکل preloaded Round 12–14 اجرا شد.
 Baseline ۱۸ ردیفی دقیقاً `48.4596 / 82.1036 / 48.9452` با همان مخرج‌ها بازتولید شد
-(`parity-summary-fix12-18.json` قبل از تغییرات، و `parity-symbols-baseline18.csv`).
+(`parity-summary-baseline18.json` و `parity-symbols-baseline18.csv`؛ `parity-summary-fix12-18.json` خروجیِ پس از اصلاح ۱و۲ است).
 
 ---
 
