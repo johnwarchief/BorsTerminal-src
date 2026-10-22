@@ -17,7 +17,10 @@ def fa(n, dec=0, pct=False):
     if n is None or n == "":
         return "—"
     if isinstance(n, str):
-        return n
+        try:
+            n = float(n)
+        except ValueError:
+            return n
     s = f"{float(n):,.{dec}f}" if dec else f"{int(round(float(n))):,}"
     s = s.replace(",", "٬").replace(".", "٫")
     s = "".join(FA[int(ch)] if ch.isdigit() else ch for ch in s)
@@ -79,7 +82,7 @@ md = f"""# RA365 Round 18 — Rahavard (type0) Raw OHLC Parity
 **Commit ابزار/تست این ممیزی:** `{CODE_COMMIT}`  
 **مرجع Rahavard:** snapshot منجمد `ref_bars_v2.jsonl` (۲۰۲۶-۱۰-۲۰)، type0 و type7 با resolution روزانه
 
-> این گزارش مکمل گزارش اصلی `docs/RA365-ROUND18-RAW-OHLC-PARITY-REPORT.md` است. تمرکز آن فقط Raw OHLC در برابر Rahavard است؛ Track B و موتور الگو دست‌نخورده‌اند.
+> این گزارش مکمل گزارش اصلی `docs/RA365-ROUND18-RAW-OHLC-PARITY-REPORT.md` است. تمرکز آن فقط Raw OHLC در برابر Rahavard است؛ Track B و موتور الگو دست‌نخورده‌اند. اعداد و علت‌شناسی این نسخه با داوری نهایی Round 19 به‌روزرسانی شده‌اند؛ گزارش داوری: `docs/RA365-ROUND19-MISMATCH-CLOSURE-REPORT.md`.
 
 ---
 
@@ -184,10 +187,10 @@ md = f"""# RA365 Round 18 — Rahavard (type0) Raw OHLC Parity
 - `HISTORICAL_REVISION`: type0 و TSETMC با هم می‌خوانند، snapshot محصول قدیمی‌تر/اصلاح‌شده است.
 - `CANDLE_GEOMETRY`: type0 تخت یا H/L بیرون body؛ product با widen آن را ترمیم می‌کند.
 - `FIELD_MAPPING`: فقط `close_display` با basis=closing؛ انتظار می‌رود.
-- `PRECISION_OR_ROUNDING`: اختلاف‌های کوچک مستند.
-- `PARSING_OR_TRANSFORM`: volume صفر product در چند ردیف.
+- `PRECISION_OR_ROUNDING`: اختلاف‌های کوچک مستند؛ exact و tolerance جدا نگه داشته شده‌اند و تلورانس تغییر نکرده است.
+- `PARSING_OR_TRANSFORM`: {fa([r for r in tax if r['cause']=='PARSING_OR_TRANSFORM'][0]['field_mismatches'] if any(r['cause']=='PARSING_OR_TRANSFORM' for r in tax) else 0)} فیلد؛ ۶۰ فیلد open با `TSETMC FIRST=0` که product طبق قرارداد مستند به base clamp‌شده برمی‌گردد و ۳ فیلد volume صفر در snapshot با TSETMC مثبت. هیچ‌کدام نقص اثبات‌شدهٔ کد فعلی نیستند.
 - `PRICE_SCALE_OR_UNIT`: پنج ردیف آپشن/صندوق با مقیاس واحد متفاوت.
-- `UNCLASSIFIED`: {fa([r for r in tax if r['cause']=='UNCLASSIFIED'][0]['field_mismatches'] if any(r['cause']=='UNCLASSIFIED' for r in tax) else 0)} فیلد؛ عمدتاً اختلاف‌های کوچک بدون شاهد کافی برای یک علت واحد.
+- `UNCLASSIFIED`: {fa([r for r in tax if r['cause']=='UNCLASSIFIED'][0]['field_mismatches'] if any(r['cause']=='UNCLASSIFIED' for r in tax) else 0)} فیلد؛ تمام ۱۰۱ فیلد قبلی تعیین تکلیف شدند (۶۰ open → PARSING، ۴۱ فیلد سه‌منبعی → SOURCE).
 - `INSTRUMENT_MAPPING` و `DATE_MAPPING` به‌صورت اثبات‌شده **صفر**؛ type0-only tradable {fa(S['type0_only_tradable'])} تاریخ است که {fa(S['type0_only_rahavard_date'])} مورد آن Rahavard-only و {fa(S['type0_only_product_omission'])} مورد omission محصول است.
 
 ---
@@ -228,7 +231,8 @@ md = f"""# RA365 Round 18 — Rahavard (type0) Raw OHLC Parity
 **محدودیت‌ها:**
 - مرجع، snapshot منجمد Rahavard است؛ دسترسی live در این راند استفاده نشد (`BLOCKED_LIVE_ACCESS` در حد عدم استفاده، نه ادعای نبود دسترسی).
 - type0 فقط ۵۶٪ کندل‌های محصول را پوشش می‌دهد؛ Full-Universe برای ردیف‌های قابل‌دسترسی، نه کل تاریخ محصول.
-- ۸۶ ردیف / ۱۰۱ فیلد `UNCLASSIFIED` باقی مانده‌اند.
+- `UNCLASSIFIED` صفر شد؛ ۱۰۱ فیلد قبلی با شاهد TSETMC/type0 تعیین تکلیف شدند (۶۰ open → PARSING، ۴۱ فیلد سه‌منبعی → SOURCE).
+- از ۶ ردیف PARSING اولیه، ۵ ردیف volume در واقع type0-only بودند و به SOURCE منتقل شدند؛ ۱ ردیف volume صفر snapshot با TSETMC مثبت ماند. در مجموع ۱۲ فیلد volume به SOURCE رفت (۵ ردیف مستقل + ۷ فیلد در ردیف‌هایی که علت دیگری داشتند).
 - ۵ ردیف price-scale آپشن/صندوق و flat bars منبع، بدون اصلاح تولید.
 - `INSTRUMENT_MAPPING` اثبات‌شده‌ای در این pass پیدا نشد؛ اتهام mapping بدون شاهد ثبت نشد.
 
@@ -236,7 +240,7 @@ md = f"""# RA365 Round 18 — Rahavard (type0) Raw OHLC Parity
 
 ## ۹. تست‌ها، دیتابیس و artifactها
 
-- `dev/test_rahavard_raw_parity_v1.py`: **۱۵/۱۵** بررسی (widen با official close، status، taxonomy، semantics واقعی).
+- `dev/test_rahavard_raw_parity_v1.py`: **۱۶/۱۶** بررسی (widen با official close، status، taxonomy، type0-only volume در برابر snapshot volume، semantics واقعی).
 - Full gate این راند دوباره اجرا نشد چون هیچ کد production تغییر نکرد؛ گیت Track A قبلی روی `f6e3c4e0` سبز بود. این محدودیت `NOT_RE-RUN` است، نه ادعای سبز جدید.
 - دیتابیس عملیاتی و promoted read-only؛ SHA پایان در manifest/پاسخ نهایی ثبت می‌شود.
 

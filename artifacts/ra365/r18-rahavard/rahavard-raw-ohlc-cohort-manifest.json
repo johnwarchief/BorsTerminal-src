@@ -1,14 +1,12 @@
 {
  "round": "ra365-r18-rahavard",
- "created_at": "2026-10-22T10:43:40",
+ "created_at": "2026-10-22T22:36:29",
  "sources": {
   "rahavard": {
    "file": "C:\\Users\\Johnkallnaya\\Desktop\\Borsterminal\\_scratch\\ra_fup_2026_10_20\\ref_bars_v2.jsonl",
    "sha256": "4b1ecb4c1effc4d5770c42521d96a2540a9c9f7b471d7cc710cd034712a8c17c",
    "type": "type0 D (raw) and type7 D (adjusted)",
-   "frozen_at": "2026-10-20",
-   "type0_rows": 1233213,
-   "type7_rows": 1233213
+   "frozen_at": "2026-10-20"
   },
   "product": {
    "file": "C:\\Users\\Johnkallnaya\\Desktop\\Borsterminal\\_scratch\\ra_round3\\product_live_final_v4.jsonl",
@@ -50,29 +48,24 @@
   "literal_row_tol_pct": 87.6101,
   "row_taxonomy": {
    "SOURCE_DATA_DIVERGENCE": {
-    "assets": 517,
-    "dates": 1110,
-    "rows": 1110
+    "assets": 538,
+    "dates": 1150,
+    "rows": 1150
    },
    "PRECISION_OR_ROUNDING": {
-    "assets": 220,
-    "dates": 299,
-    "rows": 299
+    "assets": 219,
+    "dates": 298,
+    "rows": 298
    },
    "HISTORICAL_REVISION": {
-    "assets": 369,
-    "dates": 552,
-    "rows": 552
+    "assets": 368,
+    "dates": 549,
+    "rows": 549
    },
    "PARSING_OR_TRANSFORM": {
-    "assets": 6,
-    "dates": 6,
-    "rows": 6
-   },
-   "UNCLASSIFIED": {
-    "assets": 76,
-    "dates": 86,
-    "rows": 86
+    "assets": 48,
+    "dates": 56,
+    "rows": 56
    },
    "CANDLE_GEOMETRY": {
     "assets": 41,
@@ -110,9 +103,9 @@
   },
   "taxonomy": {
    "SOURCE_DATA_DIVERGENCE": {
-    "assets": 524,
-    "dates": 1218,
-    "field_mismatches": 2303
+    "assets": 545,
+    "dates": 1258,
+    "field_mismatches": 2356
    },
    "PRECISION_OR_ROUNDING": {
     "assets": 304,
@@ -130,14 +123,9 @@
     "field_mismatches": 1488
    },
    "PARSING_OR_TRANSFORM": {
-    "assets": 15,
-    "dates": 15,
-    "field_mismatches": 15
-   },
-   "UNCLASSIFIED": {
-    "assets": 88,
-    "dates": 100,
-    "field_mismatches": 101
+    "assets": 55,
+    "dates": 63,
+    "field_mismatches": 63
    },
    "FIELD_MAPPING": {
     "assets": 71,
@@ -161,28 +149,24 @@
    "bytes": 253670
   },
   "rahavard-raw-ohlc-missing.csv": {
-   "sha256": "61608a2dfdc02260c28f1bfeb399489714a5c0c74235c9345764a50a86d9cabd",
+   "sha256": "88ac77b698cefec70884c435afa7917e7dd2f5de9b58fcc7aacd8f444cb5cfdc",
    "bytes": 4199824
   },
   "rahavard-raw-ohlc-field-mismatches.csv": {
-   "sha256": "2090916b855bc57fd6a5037d490ace57c3f27c19dbf5781c4584fc8c437c0a9a",
-   "bytes": 1242018
+   "sha256": "82bed90c6f05f45d9697fca13800bb9f9d55553660672a9d16bb06100638136a",
+   "bytes": 1247327
   },
   "rahavard-raw-ohlc-taxonomy.csv": {
-   "sha256": "10f554cb30a2bc7feb3454d5b22aa6c2873fc50db797c112afacae0740092101",
-   "bytes": 3090
+   "sha256": "280264bbe7cae0521220ffaaabc83cccee45b9ae12956f0ed1041e2a3daa54e0",
+   "bytes": 2825
   },
   "rahavard-raw-ohlc-row-taxonomy.csv": {
-   "sha256": "49d687ee0e287b8d8c142321d436a210b1516ce94ff5340ae5381e0795a27697",
-   "bytes": 211
+   "sha256": "1bd5db2d78985d24c2fe956d6d4eafed35e55c3ca6760420db89d262cb111ea2",
+   "bytes": 191
   },
   "rahavard-raw-ohlc-summary.json": {
-   "sha256": "b723ecee22db6ed502f3579e82c8dd79091411dcb9d05a554a48f40351dae043",
-   "bytes": 2561
-  },
-  "source-field-matrix-rahavard.csv": {
-   "sha256": "56b2270ee5b054c0638fec576195aa5cc7501e2fd207f3b39d75caf62c81e5f5",
-   "bytes": 2990
+   "sha256": "4841aa5af6363805bec0be9e4d135192233663d56e16a656e87ac5ad65eea307",
+   "bytes": 2396
   }
  }
 }

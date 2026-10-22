@@ -82,8 +82,12 @@ def classify(field, ref, prod, t0, tsetmc, product_basis, product_close,
         return "UNCLASSIFIED", "LOW", "non-numeric"
     d = abs(reff - prodf); r = rel(prodf, reff)
     if field == "volume" and prodf == 0 and reff > 0:
+        tv = tsetmc.get("volume") if tsetmc else None
+        if tv is not None and tv == 0:
+            return ("SOURCE_DATA_DIVERGENCE", "HIGH",
+                    "product and TSETMC volume are zero; type0 carries positive volume")
         return ("PARSING_OR_TRANSFORM", "MEDIUM",
-                "product volume is zero while type0 source volume is positive")
+                "product snapshot volume is zero while type0 and TSETMC are positive")
     if reff and any(abs(prodf / reff - k) <= 0.001
                     for k in (10, 100, 1000, 0.1, 0.01, 0.001)):
         return "PRICE_SCALE_OR_UNIT", "HIGH", "ratio=%.6f" % (prodf / reff)
@@ -92,6 +96,10 @@ def classify(field, ref, prod, t0, tsetmc, product_basis, product_close,
     if type0_flat and field in ("open", "high_raw", "low_raw"):
         return ("CANDLE_GEOMETRY", "HIGH",
                 "type0 O=H=L=C flat bar; only close/last is reliable")
+    if field == "open" and tsetmc is not None and tsetmc.get("first") == 0:
+        return ("PARSING_OR_TRANSFORM", "MEDIUM",
+                "TSETMC FIRST=0; documented product fallback uses clamped base, "
+                "type0 carries another open")
     if type0_bad_geom and field in ("high_raw", "low_raw"):
         return ("CANDLE_GEOMETRY", "HIGH",
                 "type0 H/L outside body; product widen() repairs geometry")
@@ -137,6 +145,9 @@ def classify(field, ref, prod, t0, tsetmc, product_basis, product_close,
         if tval is not None and abs(tval - reff) <= ABS and abs(tval - prodf) > ABS:
             return ("HISTORICAL_REVISION", "MEDIUM",
                     "type0/TSETMC agree, product snapshot differs")
+        if tval is not None and abs(tval - reff) > ABS and abs(tval - prodf) > ABS:
+            return ("SOURCE_DATA_DIVERGENCE", "MEDIUM",
+                    "type0, TSETMC and product give three different values")
     return "UNCLASSIFIED", "LOW", "abs=%.4f rel=%s" % (d, r)
 
 

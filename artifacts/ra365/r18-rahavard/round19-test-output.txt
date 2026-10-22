@@ -1,0 +1,26 @@
+
+[1] widen uses official close, not type0 last
+  ok   official close 1912 widens high; low stays 1900
+  ok   normal body leaves H/L untouched
+
+[2] exact/tolerance/rounding
+  ok   equal exact
+  ok   0.4 is tolerance
+  ok   0.04% is rounding-only
+  ok   1 rial is diff
+
+[3] cause attribution
+  ok   flat type0 bar is a reference geometry issue
+  ok   product snapshot zero vs TSETMC positive is a transform/gap
+  ok   type0-only volume is a source divergence, not a product transform
+  ok   closing basis is a field mapping, not raw error
+  ok   product matches TSETMC LAST
+  ok   type0/TSETMC agree, product is revised
+
+[4] real type0 semantics snapshot
+  ok   type0 close is LAST, not official
+  ok   official CLOSE is not type0 close
+  ok   type0 open is FIRST, not base
+  ok   contract-aware raw parity is high
+
+16 passed, 0 failed

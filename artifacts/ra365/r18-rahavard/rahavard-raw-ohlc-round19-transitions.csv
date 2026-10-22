@@ -1,0 +1,17 @@
+﻿level,old,new,old_count,new_count,delta,note
+field,CANDLE_GEOMETRY,CANDLE_GEOMETRY,335,335,0,same key set; cause transition
+field,FIELD_MAPPING,FIELD_MAPPING,2923,2923,0,same key set; cause transition
+field,HISTORICAL_REVISION,HISTORICAL_REVISION,1488,1488,0,same key set; cause transition
+field,PARSING_OR_TRANSFORM,PARSING_OR_TRANSFORM,3,3,0,same key set; cause transition
+field,PARSING_OR_TRANSFORM,SOURCE_DATA_DIVERGENCE,12,12,0,same key set; cause transition
+field,PRECISION_OR_ROUNDING,PRECISION_OR_ROUNDING,641,641,0,same key set; cause transition
+field,PRICE_SCALE_OR_UNIT,PRICE_SCALE_OR_UNIT,5,5,0,same key set; cause transition
+field,SOURCE_DATA_DIVERGENCE,SOURCE_DATA_DIVERGENCE,2303,2303,0,same key set; cause transition
+field,UNCLASSIFIED,PARSING_OR_TRANSFORM,60,60,0,same key set; cause transition
+field,UNCLASSIFIED,SOURCE_DATA_DIVERGENCE,41,41,0,same key set; cause transition
+row,CANDLE_GEOMETRY,CANDLE_GEOMETRY,62,62,0,net row taxonomy
+row,HISTORICAL_REVISION,HISTORICAL_REVISION,552,549,-3,net row taxonomy
+row,PARSING_OR_TRANSFORM,PARSING_OR_TRANSFORM,6,56,50,net row taxonomy
+row,PRECISION_OR_ROUNDING,PRECISION_OR_ROUNDING,299,298,-1,net row taxonomy
+row,SOURCE_DATA_DIVERGENCE,SOURCE_DATA_DIVERGENCE,1110,1150,40,net row taxonomy
+row,UNCLASSIFIED,UNCLASSIFIED,86,0,-86,net row taxonomy

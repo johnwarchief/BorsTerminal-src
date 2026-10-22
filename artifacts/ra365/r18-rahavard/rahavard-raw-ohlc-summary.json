@@ -15,29 +15,24 @@
  "literal_row_tol_pct": 87.6101,
  "row_taxonomy": {
   "SOURCE_DATA_DIVERGENCE": {
-   "assets": 517,
-   "dates": 1110,
-   "rows": 1110
+   "assets": 538,
+   "dates": 1150,
+   "rows": 1150
   },
   "PRECISION_OR_ROUNDING": {
-   "assets": 220,
-   "dates": 299,
-   "rows": 299
+   "assets": 219,
+   "dates": 298,
+   "rows": 298
   },
   "HISTORICAL_REVISION": {
-   "assets": 369,
-   "dates": 552,
-   "rows": 552
+   "assets": 368,
+   "dates": 549,
+   "rows": 549
   },
   "PARSING_OR_TRANSFORM": {
-   "assets": 6,
-   "dates": 6,
-   "rows": 6
-  },
-  "UNCLASSIFIED": {
-   "assets": 76,
-   "dates": 86,
-   "rows": 86
+   "assets": 48,
+   "dates": 56,
+   "rows": 56
   },
   "CANDLE_GEOMETRY": {
    "assets": 41,
@@ -75,9 +70,9 @@
  },
  "taxonomy": {
   "SOURCE_DATA_DIVERGENCE": {
-   "assets": 524,
-   "dates": 1218,
-   "field_mismatches": 2303
+   "assets": 545,
+   "dates": 1258,
+   "field_mismatches": 2356
   },
   "PRECISION_OR_ROUNDING": {
    "assets": 304,
@@ -95,14 +90,9 @@
    "field_mismatches": 1488
   },
   "PARSING_OR_TRANSFORM": {
-   "assets": 15,
-   "dates": 15,
-   "field_mismatches": 15
-  },
-  "UNCLASSIFIED": {
-   "assets": 88,
-   "dates": 100,
-   "field_mismatches": 101
+   "assets": 55,
+   "dates": 63,
+   "field_mismatches": 63
   },
   "FIELD_MAPPING": {
    "assets": 71,

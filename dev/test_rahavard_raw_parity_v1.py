@@ -60,7 +60,12 @@ def test_causes():
                         t, "closing", 2385, [], True, False)
     ck(cause[0] == "CANDLE_GEOMETRY", "flat type0 bar is a reference geometry issue", cause)
     cause = RV.classify("volume", 1000, 0, t0(), t, "last", 108, [], False, False)
-    ck(cause[0] == "PARSING_OR_TRANSFORM", "product zero volume is a transform/gap", cause)
+    ck(cause[0] == "PARSING_OR_TRANSFORM",
+       "product snapshot zero vs TSETMC positive is a transform/gap", cause)
+    tz = tsetmc(volume=0)
+    cause = RV.classify("volume", 1000, 0, t0(), tz, "last", 108, [], False, False)
+    ck(cause[0] == "SOURCE_DATA_DIVERGENCE",
+       "type0-only volume is a source divergence, not a product transform", cause)
     cause = RV.classify("close_display", 108, 105, t0(), t, "closing", 105, [], False, False)
     ck(cause[0] == "FIELD_MAPPING", "closing basis is a field mapping, not raw error", cause)
     cause = RV.classify("last", 100, 108, t0(), t, "last", 108, [], False, False)
