@@ -1,0 +1,24 @@
+{
+ "before": {
+  "label": "before",
+  "assets": 148,
+  "rows": 4497,
+  "row_exact": 4278,
+  "row_tol": 4278,
+  "row_exact_pct": 95.1301,
+  "row_tol_pct": 95.1301,
+  "last_null": 3680,
+  "closing_basis_assets": 78
+ },
+ "after": {
+  "label": "after",
+  "assets": 148,
+  "rows": 4868,
+  "row_exact": 4865,
+  "row_tol": 4865,
+  "row_exact_pct": 99.9384,
+  "row_tol_pct": 99.9384,
+  "last_null": 0,
+  "closing_basis_assets": 50
+ }
+}

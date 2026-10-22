@@ -1,0 +1,19 @@
+{
+ "contract_rows": 2124936,
+ "row_mismatches": 1040,
+ "assets_with_mismatch": 543,
+ "causes": {
+  "SOURCE_DATA_DIVERGENCE": {
+   "assets": 442,
+   "rows": 820,
+   "fields": 1201,
+   "adjusted_still_bad": 571
+  },
+  "FALLBACK_DB_SOURCE": {
+   "assets": 101,
+   "rows": 220,
+   "fields": 1418,
+   "adjusted_still_bad": 219
+  }
+ }
+}

@@ -1,0 +1,40 @@
+{
+ "round": "ra365-r18",
+ "created_at": "2026-10-22T03:53:55+0330",
+ "reference": {
+  "source": "TSETMC CDN ClosingPrice/GetClosingPriceDailyListCSV/{insCode}/19900101",
+  "fields": [
+   "first",
+   "high",
+   "low",
+   "close",
+   "last",
+   "base",
+   "volume",
+   "value"
+  ],
+  "meaning": {
+   "first": "first trade",
+   "high": "daily high",
+   "low": "daily low",
+   "close": "official closing (پایانی)",
+   "last": "last trade",
+   "base": "previous close / base <OPEN>",
+   "volume": "volume",
+   "value": "turnover"
+  },
+  "rows": 2836161,
+  "assets": 2595,
+  "full_csv_gz": "C:\\Users\\Johnkallnaya\\Desktop\\Borsterminal\\.worktrees\\ra365-round18\\artifacts\\ra365\\r18\\raw_ohlc_reference.csv.gz",
+  "full_csv_gz_sha256": "d8b77584c57e2dc81f9d85f403b7b03e3cbe1ba15b91ad400919a4a47dee998f",
+  "full_csv_gz_bytes": 57849071,
+  "registry_csv": "C:\\Users\\Johnkallnaya\\Desktop\\Borsterminal\\.worktrees\\ra365-round18\\artifacts\\ra365\\r18\\raw_ohlc_reference.csv",
+  "registry_csv_sha256": "e0252304ed509474096d8371f5b6b10819c56e39d6a53b80257d4a3364cca70b",
+  "type0": "frozen Rahavard type0 (ref_bars_v2.jsonl), used as an independent check"
+ },
+ "notes": [
+  "This is raw market data; no adjustment factor, event chain or type7 value is applied.",
+  "Missing/no-trade rows are present in the reference; the product contract drops them.",
+  "JSON route cross-checked 10,539/10,539 rows exact; top=N truncates, top=0 returns all."
+ ]
+}

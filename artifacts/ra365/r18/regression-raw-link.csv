@@ -1,0 +1,86 @@
+﻿symbol,metric,r15,r16,r17,delta_r17,r17_status,r17_note,raw_contract_ok_pct,raw_row_exact_pct,raw_row_pairs,raw_status,missing_p_no_trade,missing_p_product,raw_class
+آردينه,factor_exact,530,514,514,0,CUMULATIVE_UNRESOLVED,no direct exact->bad step; cumulative ratio change from full-history events,99.9737,100.0,544,attention,91,0,RAW_HEALTHY
+آسيا,factor_exact,380,59,59,0,CUMULATIVE_UNRESOLVED,no direct exact->bad step; cumulative ratio change from full-history events,100.0,100.0,3451,attention,602,0,RAW_HEALTHY
+بترانس,factor_exact,500,156,156,0,CUMULATIVE_UNRESOLVED,no direct exact->bad step; cumulative ratio change from full-history events,100.0,100.0,4981,attention,299,0,RAW_HEALTHY
+بشهاب,factor_exact,506,65,65,0,CUMULATIVE_UNRESOLVED,no direct exact->bad step; cumulative ratio change from full-history events,99.9962,99.9731,3716,attention,1009,0,RAW_HEALTHY
+حآفرين,factor_exact,298,94,94,0,CUMULATIVE_UNRESOLVED,no direct exact->bad step; cumulative ratio change from full-history events,100.0,100.0,1106,attention,116,0,RAW_HEALTHY
+خديزل,factor_exact,758,710,988,278,FIXED_BY_PRECEDENCE,gap+share price chain; recomputed DPS suppressed,100.0,100.0,2395,attention,224,0,RAW_HEALTHY
+خگستر,factor_exact,346,107,107,0,CUMULATIVE_UNRESOLVED,no direct exact->bad step; cumulative ratio change from full-history events,99.9963,99.9742,3879,attention,529,0,RAW_HEALTHY
+زدشت,factor_exact,326,98,98,0,CUMULATIVE_UNRESOLVED,no direct exact->bad step; cumulative ratio change from full-history events,100.0,100.0,1741,attention,118,0,RAW_HEALTHY
+ساينا,factor_exact,599,377,377,0,CUMULATIVE_UNRESOLVED,no direct exact->bad step; cumulative ratio change from full-history events,100.0,100.0,2389,attention,161,0,RAW_HEALTHY
+شگامرن,factor_exact,410,322,322,0,CUMULATIVE_UNRESOLVED,no direct exact->bad step; cumulative ratio change from full-history events,99.983,99.8807,838,ok,1514,4,RAW_ATTENTION
+كاما,factor_exact,452,245,245,0,CUMULATIVE_UNRESOLVED,no direct exact->bad step; cumulative ratio change from full-history events,99.9937,100.0,4558,attention,427,0,RAW_HEALTHY
+كماسه,factor_exact,1415,1091,1091,0,DIRECT_STEP_UNRESOLVED,direct step 2021-09-15 remains bad,100.0,100.0,3651,attention,1434,0,RAW_HEALTHY
+كمرجان,factor_exact,297,65,65,0,CUMULATIVE_UNRESOLVED,no direct exact->bad step; cumulative ratio change from full-history events,99.9961,100.0,3620,attention,489,0,RAW_HEALTHY
+لپارس,factor_exact,682,582,582,0,CUMULATIVE_UNRESOLVED,no direct exact->bad step; cumulative ratio change from full-history events,99.9964,99.9746,3942,attention,1290,0,RAW_HEALTHY
+ميدكو,factor_exact,928,478,478,0,DIRECT_STEP_UNRESOLVED,direct step 2022-06-12 remains bad,99.9875,100.0,1144,attention,114,1,RAW_HEALTHY
+نمرينو,factor_exact,615,315,315,0,DIRECT_STEP_UNRESOLVED,step 2025-02-23 missing,99.996,99.9722,3602,attention,1517,1,RAW_HEALTHY
+والبر,factor_exact,596,260,260,0,NEAR_IMPROVED_BY_PRECEDENCE,direct exact unchanged; near restored,99.9868,99.9447,5424,attention,372,0,RAW_HEALTHY
+وخاور,factor_exact,465,239,465,226,FIXED_BY_PRECEDENCE,gap+share price chain; recomputed DPS suppressed,99.9782,99.8857,2625,attention,164,0,RAW_ATTENTION
+ولبهمن,factor_exact,1068,718,1505,787,FIXED_BY_PRECEDENCE,observed gap wins over separate DPS,99.9947,99.9626,2674,attention,200,0,RAW_HEALTHY
+ولشرق,factor_exact,373,277,277,0,CUMULATIVE_UNRESOLVED,no direct exact->bad step; cumulative ratio change from full-history events,100.0,100.0,2010,attention,155,0,RAW_HEALTHY
+ومعلم,factor_exact,967,616,616,0,CUMULATIVE_UNRESOLVED,no direct exact->bad step; cumulative ratio change from full-history events,99.9743,100.0,1668,attention,149,0,RAW_HEALTHY
+وهور,factor_exact,553,492,492,0,CUMULATIVE_UNRESOLVED,no direct exact->bad step; cumulative ratio change from full-history events,100.0,100.0,2304,attention,188,0,RAW_HEALTHY
+چكاپا,factor_exact,480,261,261,0,CUMULATIVE_UNRESOLVED,no direct exact->bad step; cumulative ratio change from full-history events,99.9894,99.926,1352,attention,143,1,RAW_HEALTHY
+آباد,func_ok,2037,2003,2003,0,UNCHANGED,functional OHLC follows the same event chain,100.0,100.0,4156,attention,777,0,RAW_HEALTHY
+آردينه,func_ok,2080,2016,2016,0,UNCHANGED,functional OHLC follows the same event chain,99.9737,100.0,544,attention,91,0,RAW_HEALTHY
+آسيا,func_ok,2124,715,715,0,UNCHANGED,functional OHLC follows the same event chain,100.0,100.0,3451,attention,602,0,RAW_HEALTHY
+اعتلا,func_ok,407,400,400,0,UNCHANGED,functional OHLC follows the same event chain,99.9848,100.0,2827,attention,208,0,RAW_HEALTHY
+البرز,func_ok,2306,2303,2305,2,IMPROVED,functional OHLC follows the same event chain,100.0,100.0,3732,attention,374,1,RAW_HEALTHY
+بترانس,func_ok,3411,721,721,0,UNCHANGED,functional OHLC follows the same event chain,100.0,100.0,4981,attention,299,0,RAW_HEALTHY
+بخاور,func_ok,5475,5472,5472,0,UNCHANGED,functional OHLC follows the same event chain,99.9185,99.8573,1402,attention,113,0,RAW_ATTENTION
+بشهاب,func_ok,2015,300,300,0,UNCHANGED,functional OHLC follows the same event chain,99.9962,99.9731,3716,attention,1009,0,RAW_HEALTHY
+بپاس,func_ok,5713,5711,5711,0,UNCHANGED,functional OHLC follows the same event chain,100.0,100.0,3142,attention,349,0,RAW_HEALTHY
+تاپكيش,func_ok,163,161,161,0,UNCHANGED,functional OHLC follows the same event chain,99.9672,99.9425,1740,attention,195,0,RAW_HEALTHY
+ثالوند,func_ok,1393,1373,1373,0,UNCHANGED,functional OHLC follows the same event chain,100.0,100.0,2266,attention,236,0,RAW_HEALTHY
+ثشرق,func_ok,5490,5487,5487,0,UNCHANGED,functional OHLC follows the same event chain,100.0,100.0,2727,attention,241,0,RAW_HEALTHY
+حآفرين,func_ok,1182,376,376,0,UNCHANGED,functional OHLC follows the same event chain,100.0,100.0,1106,attention,116,0,RAW_HEALTHY
+خريخت,func_ok,521,129,129,0,UNCHANGED,functional OHLC follows the same event chain,100.0,100.0,3563,attention,1511,1,RAW_HEALTHY
+خگستر,func_ok,1571,470,470,0,UNCHANGED,functional OHLC follows the same event chain,99.9963,99.9742,3879,attention,529,0,RAW_HEALTHY
+دارو,func_ok,880,864,1191,327,IMPROVED,functional OHLC follows the same event chain,100.0,100.0,4343,attention,725,0,RAW_HEALTHY
+دتوليد,func_ok,1515,1514,1514,0,UNCHANGED,functional OHLC follows the same event chain,99.9901,99.931,2897,attention,254,1,RAW_HEALTHY
+دسبحا,func_ok,727,726,726,0,UNCHANGED,functional OHLC follows the same event chain,100.0,100.0,4945,attention,333,0,RAW_HEALTHY
+زدشت,func_ok,1506,909,909,0,UNCHANGED,functional OHLC follows the same event chain,100.0,100.0,1741,attention,118,0,RAW_HEALTHY
+زنگان,func_ok,1993,1990,1990,0,UNCHANGED,functional OHLC follows the same event chain,99.9909,100.0,3134,attention,213,0,RAW_HEALTHY
+زگلدشت,func_ok,613,612,612,0,UNCHANGED,functional OHLC follows the same event chain,100.0,100.0,2258,attention,164,0,RAW_HEALTHY
+ساينا,func_ok,3408,1815,1815,0,UNCHANGED,functional OHLC follows the same event chain,100.0,100.0,2389,attention,161,0,RAW_HEALTHY
+سشرق,func_ok,605,604,604,0,UNCHANGED,functional OHLC follows the same event chain,99.9944,99.9805,5119,attention,492,1,RAW_HEALTHY
+سشمال,func_ok,508,507,507,0,UNCHANGED,functional OHLC follows the same event chain,100.0,100.0,4617,attention,547,0,RAW_HEALTHY
+شفام,func_ok,1526,1514,1514,0,UNCHANGED,functional OHLC follows the same event chain,100.0,100.0,500,attention,79,0,RAW_HEALTHY
+شلعاب,func_ok,958,947,947,0,UNCHANGED,functional OHLC follows the same event chain,99.9936,99.9777,4488,attention,500,1,RAW_HEALTHY
+شپاكسا,func_ok,177,176,176,0,UNCHANGED,functional OHLC follows the same event chain,99.9973,100.0,5229,attention,459,0,RAW_HEALTHY
+شگامرن,func_ok,1639,1287,1287,0,UNCHANGED,functional OHLC follows the same event chain,99.983,99.8807,838,ok,1514,4,RAW_ATTENTION
+غدشت,func_ok,236,186,186,0,UNCHANGED,functional OHLC follows the same event chain,100.0,100.0,3110,attention,1874,0,RAW_HEALTHY
+غشاذر,func_ok,2062,2051,2051,0,UNCHANGED,functional OHLC follows the same event chain,100.0,100.0,3572,attention,965,0,RAW_HEALTHY
+غويتا,func_ok,393,392,392,0,UNCHANGED,functional OHLC follows the same event chain,100.0,100.0,1609,attention,137,0,RAW_HEALTHY
+فروي,func_ok,221,220,221,1,IMPROVED,functional OHLC follows the same event chain,100.0,100.0,1476,attention,133,0,RAW_HEALTHY
+فلامي,func_ok,473,470,470,0,UNCHANGED,functional OHLC follows the same event chain,100.0,100.0,3867,attention,1271,0,RAW_HEALTHY
+فمراد,func_ok,448,346,346,0,UNCHANGED,functional OHLC follows the same event chain,100.0,100.0,2799,attention,1689,0,RAW_HEALTHY
+فملي,func_ok,221,220,220,0,UNCHANGED,functional OHLC follows the same event chain,100.0,100.0,4311,attention,366,0,RAW_HEALTHY
+قنيشا,func_ok,3678,3676,3676,0,UNCHANGED,functional OHLC follows the same event chain,99.9964,99.9748,3966,attention,667,0,RAW_HEALTHY
+قپيرا,func_ok,2958,2956,2956,0,UNCHANGED,functional OHLC follows the same event chain,99.9762,99.9285,4196,attention,784,1,RAW_HEALTHY
+كرازي,func_ok,373,372,372,0,UNCHANGED,functional OHLC follows the same event chain,99.9958,99.9704,3377,attention,1101,0,RAW_HEALTHY
+كساپا,func_ok,2821,2555,2555,0,UNCHANGED,functional OHLC follows the same event chain,99.992,100.0,3566,attention,1195,0,RAW_HEALTHY
+كفرا,func_ok,514,510,510,0,UNCHANGED,functional OHLC follows the same event chain,100.0,100.0,3902,attention,619,0,RAW_HEALTHY
+كماسه,func_ok,5495,4946,4946,0,UNCHANGED,functional OHLC follows the same event chain,100.0,100.0,3651,attention,1434,0,RAW_HEALTHY
+كمرجان,func_ok,1655,349,349,0,UNCHANGED,functional OHLC follows the same event chain,99.9961,100.0,3620,attention,489,0,RAW_HEALTHY
+كهمدا,func_ok,1,0,0,0,UNCHANGED,functional OHLC follows the same event chain,100.0,100.0,4589,attention,548,0,RAW_HEALTHY
+كي بي سي,func_ok,939,938,938,0,UNCHANGED,functional OHLC follows the same event chain,99.9742,99.9639,2768,attention,267,0,RAW_HEALTHY
+لپارس,func_ok,2671,2273,2273,0,UNCHANGED,functional OHLC follows the same event chain,99.9964,99.9746,3942,attention,1290,0,RAW_HEALTHY
+مداران,func_ok,353,351,351,0,UNCHANGED,functional OHLC follows the same event chain,100.0,100.0,4714,attention,542,0,RAW_HEALTHY
+ميدكو,func_ok,3621,1835,1835,0,UNCHANGED,functional OHLC follows the same event chain,99.9875,100.0,1144,attention,114,1,RAW_HEALTHY
+نمرينو,func_ok,2314,1185,1185,0,UNCHANGED,functional OHLC follows the same event chain,99.996,99.9722,3602,attention,1517,1,RAW_HEALTHY
+هرمز,func_ok,326,325,325,0,UNCHANGED,functional OHLC follows the same event chain,100.0,100.0,2504,attention,275,0,RAW_HEALTHY
+والبر,func_ok,2332,1029,1030,1,IMPROVED,functional OHLC follows the same event chain,99.9868,99.9447,5424,attention,372,0,RAW_HEALTHY
+واميد,func_ok,263,252,252,0,UNCHANGED,functional OHLC follows the same event chain,99.993,99.9508,4064,attention,422,0,RAW_HEALTHY
+وبملت,func_ok,1164,952,971,19,IMPROVED,functional OHLC follows the same event chain,100.0,100.0,3706,attention,555,0,RAW_HEALTHY
+وخارزم,func_ok,1592,1398,1398,0,UNCHANGED,functional OHLC follows the same event chain,100.0,100.0,2988,attention,385,0,RAW_HEALTHY
+وخاور,func_ok,5082,953,5082,4129,IMPROVED,functional OHLC follows the same event chain,99.9782,99.8857,2625,attention,164,0,RAW_ATTENTION
+وسبحان,func_ok,997,784,784,0,UNCHANGED,functional OHLC follows the same event chain,99.9759,99.9578,2372,attention,205,0,RAW_HEALTHY
+ولبهمن,func_ok,5865,2865,5864,2999,IMPROVED,functional OHLC follows the same event chain,99.9947,99.9626,2674,attention,200,0,RAW_HEALTHY
+ولشرق,func_ok,1447,1080,1080,0,UNCHANGED,functional OHLC follows the same event chain,100.0,100.0,2010,attention,155,0,RAW_HEALTHY
+ومعلم,func_ok,3686,2402,2402,0,UNCHANGED,functional OHLC follows the same event chain,99.9743,100.0,1668,attention,149,0,RAW_HEALTHY
+وهامون,func_ok,624,360,360,0,UNCHANGED,functional OHLC follows the same event chain,99.9626,100.0,1145,attention,105,1,RAW_HEALTHY
+وهور,func_ok,4053,3153,3153,0,UNCHANGED,functional OHLC follows the same event chain,100.0,100.0,2304,attention,188,0,RAW_HEALTHY
+پرديس,func_ok,2136,2113,2113,0,UNCHANGED,functional OHLC follows the same event chain,99.9963,99.9744,3901,attention,566,1,RAW_HEALTHY
+چكاپا,func_ok,1877,1040,1040,0,UNCHANGED,functional OHLC follows the same event chain,99.9894,99.926,1352,attention,143,1,RAW_HEALTHY

@@ -1,0 +1,105 @@
+{
+ "product_candles": 2125330,
+ "assets_by_class": {
+  "stocks": 794,
+  "etf_funds": 346,
+  "warrants": 6,
+  "bonds": 373,
+  "futures": 14,
+  "options": 1062
+ },
+ "assets_with_multi_ins": 630,
+ "assets_by_year": {
+  "2001": 144,
+  "2002": 152,
+  "2003": 183,
+  "2004": 209,
+  "2005": 227,
+  "2006": 224,
+  "2007": 235,
+  "2008": 245,
+  "2009": 253,
+  "2010": 261,
+  "2011": 284,
+  "2012": 312,
+  "2013": 357,
+  "2014": 404,
+  "2015": 434,
+  "2016": 473,
+  "2017": 498,
+  "2018": 530,
+  "2019": 572,
+  "2020": 630,
+  "2021": 690,
+  "2022": 774,
+  "2023": 915,
+  "2024": 1060,
+  "2025": 1248,
+  "2026": 2593
+ },
+ "type0": {
+  "type0_rows": 1233213,
+  "common": 1192071,
+  "flat_bars": 190287,
+  "close_last_cmp": 1188921,
+  "close_last_exact": 1188383,
+  "close_closing_cmp": 1192071,
+  "close_closing_exact": 167962,
+  "open_cmp": 1192071,
+  "open_exact": 1190907,
+  "high_cmp": 1192071,
+  "high_exact": 1090292,
+  "low_cmp": 1192071,
+  "low_exact": 1146444,
+  "volume_cmp": 1192071,
+  "volume_exact": 1191067,
+  "row_exact": 167089,
+  "row_tol": 167089
+ },
+ "mismatch_rows_by_year": {
+  "2020": 2,
+  "2021": 41,
+  "2022": 47,
+  "2023": 56,
+  "2024": 254,
+  "2025": 170,
+  "2026": 470
+ },
+ "mismatch_rows_by_cause": {
+  "SOURCE_DATA_DIVERGENCE": 820,
+  "FALLBACK_DB_SOURCE": 220
+ },
+ "parity_status": {
+  "ok": 2420,
+  "attention": 175
+ },
+ "fallback_db": {
+  "before": {
+   "assets": 148,
+   "rows": 4497,
+   "ok": 4277,
+   "last_null": 3680,
+   "open_base": 5
+  },
+  "after": {
+   "assets": 148,
+   "rows": 4868,
+   "ok": 4865,
+   "last_null": 0,
+   "open_base": 2
+  }
+ },
+ "repair_totals": {
+  "csv_in_range": 354874,
+  "upserted": 354874,
+  "added": 0,
+  "replaced": 354874
+ },
+ "reference_assets": 2595,
+ "reference_type0_rows": 1233213,
+ "era_assets": {
+  "pre2020": 578,
+  "2020_2023": 922,
+  "2024_plus": 2595
+ }
+}

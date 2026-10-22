@@ -1,0 +1,21 @@
+{
+ "assets": 2595,
+ "b_compared_fields": 25495342,
+ "b_ok_fields": 25196453,
+ "b_ok_pct_all_fields": 98.8277,
+ "contract_compared": 14870872,
+ "contract_ok": 14868253,
+ "contract_ok_pct": 99.9824,
+ "row_pairs": 2124936,
+ "row_contract_exact": 2124251,
+ "row_contract_tol": 2124251,
+ "row_contract_exact_pct": 99.9678,
+ "row_contract_tol_pct": 99.9678,
+ "common_b": 2125038,
+ "common_c": 1192071,
+ "missing_p_no_trade": 563800,
+ "missing_p_product": 499,
+ "missing_r_ref": 264,
+ "samples": 7671,
+ "missing_rows": 40000
+}

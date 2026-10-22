@@ -59,11 +59,15 @@ def main():
     t0_rows = con.execute("SELECT COUNT(*) FROM type0").fetchone()[0]
     t7_rows = con.execute("SELECT COUNT(*) FROM type7").fetchone()[0]
     con.close()
+    cohort_ins = set()
+    for line in open(os.path.join(CACHE, "cohort.jsonl"), encoding="utf-8"):
+        cohort_ins.add(json.loads(line)["ins_code"])
     manifest.update({
         "phase": "measured",
         "updated_at": time.strftime("%Y-%m-%dT%H:%M:%S%z"),
         "fetch": {
-            "instruments": len(fetch), "status": dict(fstat),
+            "instruments": len(cohort_ins), "status_rows": len(fetch),
+            "smoke_test_repeats": len(fetch) - len(cohort_ins), "status": dict(fstat),
             "cache": os.path.join(CACHE, "cache", "tsetmc_csv"),
             "status_csv": os.path.join(CACHE, "fetch-status.csv"),
             "variant_status_csv": os.path.join(CACHE, "fetch-variants-status.csv"),
@@ -92,24 +96,29 @@ def main():
             "cause": "price_history rows are mostly src=NULL/board; 10,448 base-as-open rows "
                      "across 271 assets; board snapshots can be stale vs published TSETMC",
             "scope": "2,595 measured symbols, existing per-symbol date ranges only",
-            "published_rows_written": repair.get("upserted"),
-            "added_rows": repair.get("added"),
-            "replaced_rows": repair.get("replaced"),
+            "published_rows_written": jload("price-history-repair-manifest-first.json").get("upserted"),
+            "added_rows": jload("price-history-repair-manifest-first.json").get("added"),
+            "replaced_rows": jload("price-history-repair-manifest-first.json").get("replaced"),
             "integrity_check": repair.get("integrity_check"),
-            "idempotent_second_run_sha": repair.get("db_sha256"),
+            "second_run": {"upserted": repair.get("upserted"),
+                           "added": repair.get("added"),
+                           "sha": repair.get("db_sha256")},
             "db_copy": os.path.join(CACHE, "market_r18_repaired.db"),
             "before_after": fallback,
+            "adjusted_simulation": jload("fallback-adjusted-parity-summary.json"),
             "operational_db_touched": False,
         },
         "artifacts": {},
     })
     for name in ("raw-ohlc-parity.csv", "raw-ohlc-row-mismatches.csv",
                  "raw-ohlc-mismatch-taxonomy.csv", "raw-ohlc-coverage.csv",
-                 "raw-ohlc-mismatch-samples.csv", "raw-ohlc-cohort-manifest.json",
+                 "raw-ohlc-field-samples.csv", "raw-ohlc-cohort-manifest.json",
                  "raw-ohlc-summary.json", "source-field-matrix.csv",
                  "layer-decomposition.csv", "regression-layer-link.csv",
                  "fallback-display-parity-before.csv",
                  "fallback-display-parity-after.csv",
+                 "fallback-adjusted-parity-before.csv",
+                 "fallback-adjusted-parity-after.csv",
                  "price-history-repair.csv", "raw_ohlc_reference.csv"):
         p = os.path.join(ART, name)
         if os.path.exists(p):

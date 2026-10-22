@@ -1,0 +1,17 @@
+{
+ "symbols": 2595,
+ "csv_rows_in_range": 354874,
+ "upserted": 354874,
+ "added": 0,
+ "replaced": 354874,
+ "skipped_no_db": 0,
+ "src_counts": {
+  "None": 68364,
+  "board": 27004,
+  "published": 354874
+ },
+ "integrity_check": "ok",
+ "db_sha256": "8644d30bfb3c493c5f6c9fad1b857c9277d9a05306f79a712d576bcedf8f6164",
+ "db_bytes": 255586304,
+ "elapsed_s": 50.6
+}

@@ -1,0 +1,5 @@
+﻿category,assets,dates,note
+NO_TRADE,2248,563800,coverage only; never counted as a numeric mismatch
+PRODUCT_OMISSION,296,499,coverage only; never counted as a numeric mismatch
+REFERENCE_OMISSION,231,264,coverage only; never counted as a numeric mismatch
+PRODUCT_AFTER_REFERENCE_RANGE,2,28,coverage only; never counted as a numeric mismatch

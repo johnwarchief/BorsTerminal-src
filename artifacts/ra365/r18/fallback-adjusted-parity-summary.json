@@ -1,0 +1,16 @@
+{
+ "before": {
+  "label": "before",
+  "assets": 148,
+  "rows": 3920,
+  "row_ok": 751,
+  "row_ok_pct": 19.1582
+ },
+ "after": {
+  "label": "after",
+  "assets": 148,
+  "rows": 3920,
+  "row_ok": 1152,
+  "row_ok_pct": 29.3878
+ }
+}

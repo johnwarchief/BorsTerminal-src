@@ -1,0 +1,68 @@
+{
+ "cohort": "R17 promoted, 2,595 assets",
+ "factor_layer": {
+  "cmp": 1187945,
+  "exact": 819971,
+  "exact_pct": 69.0243
+ },
+ "adjusted_ohlc": {
+  "cmp": 4751780,
+  "ok": 3245678,
+  "ok_pct": 68.3045
+ },
+ "raw": {
+  "pairs": 2124936,
+  "exact": 2124251,
+  "exact_pct": 99.9678
+ },
+ "groups": {
+  "BOTH_HEALTHY": {
+   "assets": 2070,
+   "factor_cmp": 749965,
+   "factor_ok": 684183,
+   "adj_cmp": 2999860,
+   "adj_ok": 2680823,
+   "raw_pairs": 1374293,
+   "raw_exact": 1374142,
+   "factor_exact_pct": 91.2287,
+   "adj_ohlc_ok_pct": 89.3649,
+   "raw_row_exact_pct": 99.989
+  },
+  "RAW_HEALTHY_FACTOR_WEAK": {
+   "assets": 276,
+   "factor_cmp": 343626,
+   "factor_ok": 61183,
+   "adj_cmp": 1374504,
+   "adj_ok": 267658,
+   "raw_pairs": 648450,
+   "raw_exact": 648374,
+   "factor_exact_pct": 17.8051,
+   "adj_ohlc_ok_pct": 19.4731,
+   "raw_row_exact_pct": 99.9883
+  },
+  "RAW_WEAK_FACTOR_HEALTHY": {
+   "assets": 228,
+   "factor_cmp": 73602,
+   "factor_ok": 70692,
+   "adj_cmp": 294408,
+   "adj_ok": 276859,
+   "raw_pairs": 76787,
+   "raw_exact": 76369,
+   "factor_exact_pct": 96.0463,
+   "adj_ohlc_ok_pct": 94.0392,
+   "raw_row_exact_pct": 99.4556
+  },
+  "BOTH_WEAK": {
+   "assets": 21,
+   "factor_cmp": 20752,
+   "factor_ok": 3913,
+   "adj_cmp": 83008,
+   "adj_ok": 20338,
+   "raw_pairs": 25406,
+   "raw_exact": 25366,
+   "factor_exact_pct": 18.856,
+   "adj_ohlc_ok_pct": 24.5013,
+   "raw_row_exact_pct": 99.8426
+  }
+ }
+}

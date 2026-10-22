@@ -1,0 +1,311 @@
+{
+ "round": "ra365-r18",
+ "created_at": "2026-10-22T02:53:34+0330",
+ "layer_a": {
+  "name": "BorsTerminal raw chart candles",
+  "file": "C:\\Users\\Johnkallnaya\\Desktop\\Borsterminal\\_scratch\\ra_round3\\product_live_final_v4.jsonl",
+  "sha256": "893b6d6aa1059d51a83bb7a44fd239d4c381695806562dd3dcdd3ed5d8ad9f27",
+  "records": 3344,
+  "status": {
+   "success": 3344
+  },
+  "note": "candles are pre-factor; `close` is basis-selected, `closing` is official"
+ },
+ "manifest": {
+  "file": "C:\\Users\\Johnkallnaya\\Desktop\\Borsterminal\\.worktrees\\ra365-round18\\_audit\\RAHAVARD-FULL-UNIVERSE-MANIFEST-v2-2026-10-20.csv",
+  "sha256": "6d286bcea2c67b1ada27b710134ab0a4a22c61c3e36c3e47732dbf935e17239c",
+  "rows": 5981,
+  "symbols_with_asset": 3707
+ },
+ "universe": {
+  "assets_in_manifest": 2965,
+  "assets_with_product": 2595,
+  "assets_missing_product": 370,
+  "product_symbols_without_manifest_asset": 7,
+  "duplicate_candle_dates": 0
+ },
+ "cohort_file": "D:/BorsTerminal-tmp/ra365_round18\\cohort.jsonl",
+ "cohort_sha256": "79a3c666c2b49363fd5b7a2684ee776d034a2fc3ef09006f0f16c7af3d5df18f",
+ "layers": {
+  "cohort": "R17 promoted, 2,595 assets",
+  "factor_layer": {
+   "cmp": 1187945,
+   "exact": 819971,
+   "exact_pct": 69.0243
+  },
+  "adjusted_ohlc": {
+   "cmp": 4751780,
+   "ok": 3245678,
+   "ok_pct": 68.3045
+  },
+  "raw": {
+   "pairs": 2124936,
+   "exact": 2124251,
+   "exact_pct": 99.9678
+  },
+  "groups": {
+   "BOTH_HEALTHY": {
+    "assets": 2070,
+    "factor_cmp": 749965,
+    "factor_ok": 684183,
+    "adj_cmp": 2999860,
+    "adj_ok": 2680823,
+    "raw_pairs": 1374293,
+    "raw_exact": 1374142,
+    "factor_exact_pct": 91.2287,
+    "adj_ohlc_ok_pct": 89.3649,
+    "raw_row_exact_pct": 99.989
+   },
+   "RAW_HEALTHY_FACTOR_WEAK": {
+    "assets": 276,
+    "factor_cmp": 343626,
+    "factor_ok": 61183,
+    "adj_cmp": 1374504,
+    "adj_ok": 267658,
+    "raw_pairs": 648450,
+    "raw_exact": 648374,
+    "factor_exact_pct": 17.8051,
+    "adj_ohlc_ok_pct": 19.4731,
+    "raw_row_exact_pct": 99.9883
+   },
+   "RAW_WEAK_FACTOR_HEALTHY": {
+    "assets": 228,
+    "factor_cmp": 73602,
+    "factor_ok": 70692,
+    "adj_cmp": 294408,
+    "adj_ok": 276859,
+    "raw_pairs": 76787,
+    "raw_exact": 76369,
+    "factor_exact_pct": 96.0463,
+    "adj_ohlc_ok_pct": 94.0392,
+    "raw_row_exact_pct": 99.4556
+   },
+   "BOTH_WEAK": {
+    "assets": 21,
+    "factor_cmp": 20752,
+    "factor_ok": 3913,
+    "adj_cmp": 83008,
+    "adj_ok": 20338,
+    "raw_pairs": 25406,
+    "raw_exact": 25366,
+    "factor_exact_pct": 18.856,
+    "adj_ohlc_ok_pct": 24.5013,
+    "raw_row_exact_pct": 99.8426
+   }
+  }
+ },
+ "phase": "measured",
+ "updated_at": "2026-10-22T05:01:36+0330",
+ "fetch": {
+  "instruments": 2595,
+  "status_rows": 2607,
+  "smoke_test_repeats": 12,
+  "status": {
+   "OK": 2607
+  },
+  "cache": "D:/BorsTerminal-tmp/ra365_round18\\cache\\tsetmc_csv",
+  "status_csv": "D:/BorsTerminal-tmp/ra365_round18\\fetch-status.csv",
+  "variant_status_csv": "D:/BorsTerminal-tmp/ra365_round18\\fetch-variants-status.csv",
+  "workers": 6,
+  "failures": 0
+ },
+ "reference": {
+  "db": "D:/BorsTerminal-tmp/ra365_round18\\reference.db",
+  "db_sha256": "0d9898bab7d241c29286e829d17e46d7b3b80d07c38281d3eee9bc21c470b4e0",
+  "tsetmc_rows": 2836161,
+  "instruments": 2595,
+  "type0_rows": 1233213,
+  "type7_rows": 1233213,
+  "raw_full_gz": "C:\\Users\\Johnkallnaya\\Desktop\\Borsterminal\\.worktrees\\ra365-round18\\artifacts\\ra365\\r18\\raw_ohlc_reference.csv.gz",
+  "raw_registry": "C:\\Users\\Johnkallnaya\\Desktop\\Borsterminal\\.worktrees\\ra365-round18\\artifacts\\ra365\\r18\\raw_ohlc_reference.csv",
+  "field_semantics": {
+   "first": "first trade (chart open source)",
+   "high": "daily high",
+   "low": "daily low",
+   "close": "official closing (پایانی; anchor)",
+   "last": "last trade (type0 close)",
+   "base": "previous close/base <OPEN>, never chart open",
+   "volume": "daily volume"
+  }
+ },
+ "raw_measure": {
+  "assets": 2595,
+  "b_compared_fields": 25495342,
+  "b_ok_fields": 25196453,
+  "b_ok_pct_all_fields": 98.8277,
+  "contract_compared": 14870872,
+  "contract_ok": 14868253,
+  "contract_ok_pct": 99.9824,
+  "row_pairs": 2124936,
+  "row_contract_exact": 2124251,
+  "row_contract_tol": 2124251,
+  "row_contract_exact_pct": 99.9678,
+  "row_contract_tol_pct": 99.9678,
+  "common_b": 2125038,
+  "common_c": 1192071,
+  "missing_p_no_trade": 563800,
+  "missing_p_product": 499,
+  "missing_r_ref": 264,
+  "samples": 7671,
+  "missing_rows": 40000
+ },
+ "type0_check": {
+  "type0_rows": 1233213,
+  "common": 1192071,
+  "flat_bars": 190287,
+  "close_last_cmp": 1188921,
+  "close_last_exact": 1188383,
+  "close_closing_cmp": 1192071,
+  "close_closing_exact": 167962,
+  "open_cmp": 1192071,
+  "open_exact": 1190907,
+  "high_cmp": 1192071,
+  "high_exact": 1090292,
+  "low_cmp": 1192071,
+  "low_exact": 1146444,
+  "volume_cmp": 1192071,
+  "volume_exact": 1191067,
+  "row_exact": 167089,
+  "row_tol": 167089
+ },
+ "taxonomy": {
+  "contract_rows": 2124936,
+  "row_mismatches": 1040,
+  "assets_with_mismatch": 543,
+  "causes": {
+   "SOURCE_DATA_DIVERGENCE": {
+    "assets": 442,
+    "rows": 820,
+    "fields": 1201,
+    "adjusted_still_bad": 571
+   },
+   "FALLBACK_DB_SOURCE": {
+    "assets": 101,
+    "rows": 220,
+    "fields": 1418,
+    "adjusted_still_bad": 219
+   }
+  }
+ },
+ "fallback_repair": {
+  "cause": "price_history rows are mostly src=NULL/board; 10,448 base-as-open rows across 271 assets; board snapshots can be stale vs published TSETMC",
+  "scope": "2,595 measured symbols, existing per-symbol date ranges only",
+  "published_rows_written": 354874,
+  "added_rows": 6490,
+  "replaced_rows": 348384,
+  "integrity_check": "ok",
+  "second_run": {
+   "upserted": 354874,
+   "added": 0,
+   "sha": "8644d30bfb3c493c5f6c9fad1b857c9277d9a05306f79a712d576bcedf8f6164"
+  },
+  "db_copy": "D:/BorsTerminal-tmp/ra365_round18\\market_r18_repaired.db",
+  "before_after": {
+   "before": {
+    "label": "before",
+    "assets": 148,
+    "rows": 4497,
+    "row_exact": 4278,
+    "row_tol": 4278,
+    "row_exact_pct": 95.1301,
+    "row_tol_pct": 95.1301,
+    "last_null": 3680,
+    "closing_basis_assets": 78
+   },
+   "after": {
+    "label": "after",
+    "assets": 148,
+    "rows": 4868,
+    "row_exact": 4865,
+    "row_tol": 4865,
+    "row_exact_pct": 99.9384,
+    "row_tol_pct": 99.9384,
+    "last_null": 0,
+    "closing_basis_assets": 50
+   }
+  },
+  "adjusted_simulation": {
+   "before": {
+    "label": "before",
+    "assets": 148,
+    "rows": 3920,
+    "row_ok": 751,
+    "row_ok_pct": 19.1582
+   },
+   "after": {
+    "label": "after",
+    "assets": 148,
+    "rows": 3920,
+    "row_ok": 1152,
+    "row_ok_pct": 29.3878
+   }
+  },
+  "operational_db_touched": false
+ },
+ "artifacts": {
+  "raw-ohlc-parity.csv": {
+   "sha256": "af197d3629a247192ab2822762c6961e548fba282541f885b2d5351fc76a1354",
+   "bytes": 1282925
+  },
+  "raw-ohlc-row-mismatches.csv": {
+   "sha256": "cb349f2cc6edd9db06ed21d2f8710c395abeb80fd2bb324d1ddc5a6a15931212",
+   "bytes": 287933
+  },
+  "raw-ohlc-mismatch-taxonomy.csv": {
+   "sha256": "83def8b94947da91d48123e709cbdd998f6d360be6e7793faf15245d6d55665d",
+   "bytes": 1127
+  },
+  "raw-ohlc-coverage.csv": {
+   "sha256": "b04e0703831eb5111c88ed0f98c9cae91b87714fefe24c2005b14714f887cb32",
+   "bytes": 347
+  },
+  "raw-ohlc-field-samples.csv": {
+   "sha256": "ee4df003231c91efa11a21a0ee64c01004604d80b2f0a2d0411fd8f4bd3c137b",
+   "bytes": 1275821
+  },
+  "raw-ohlc-cohort-manifest.json": {
+   "sha256": "16e8cea0231a1fe3052b771e883a66cb12e2c2ae00d9b3063999df6328a31a8a",
+   "bytes": 9197
+  },
+  "raw-ohlc-summary.json": {
+   "sha256": "2152d41f089fd8e4e807db9a0421c694a75614c1e5db4022094cb5d4c96317ce",
+   "bytes": 539
+  },
+  "source-field-matrix.csv": {
+   "sha256": "66044c62249e81e44fea93a1cb741c10667a35655a07c6b3d0494df288f1e422",
+   "bytes": 11462
+  },
+  "layer-decomposition.csv": {
+   "sha256": "dab81bb036f525ef6590c0e16399da84d8f124182a040bf755c2e1092599bf09",
+   "bytes": 285304
+  },
+  "regression-layer-link.csv": {
+   "sha256": "679fa7ea67763b1d2c98930b838a2afe0f2c9c59f84d44d336232d4f26d12fc7",
+   "bytes": 11616
+  },
+  "fallback-display-parity-before.csv": {
+   "sha256": "25f6780f5d24faad68f6630d2b0fa3f8c72ba8602dd1a534df6e8e0d1784aeb4",
+   "bytes": 10585
+  },
+  "fallback-display-parity-after.csv": {
+   "sha256": "de7e7c23660baa15a4b4e40e151ca7d31264974c63324eb5e27975ae2cb63dc4",
+   "bytes": 9842
+  },
+  "fallback-adjusted-parity-before.csv": {
+   "sha256": "183b16f2465854d5aa58f9b47ffd6af62d92e172293501b5c7a85302adcebd58",
+   "bytes": 4070
+  },
+  "fallback-adjusted-parity-after.csv": {
+   "sha256": "c8e7a524cfe737d0105ab833d54f8c17be60588bb8f128c501120380aa08d63b",
+   "bytes": 4095
+  },
+  "price-history-repair.csv": {
+   "sha256": "77c41510e2361cdff8f8f3078fd2a420ec8b760ec4ca477e3c35cd1c41621607",
+   "bytes": 166798
+  },
+  "raw_ohlc_reference.csv": {
+   "sha256": "e0252304ed509474096d8371f5b6b10819c56e39d6a53b80257d4a3364cca70b",
+   "bytes": 435054
+  }
+ }
+}

@@ -61,6 +61,7 @@ S = load("raw-ohlc-summary.json")
 TX = load("raw-ohlc-taxonomy-summary.json")
 LY = load("layer-joint-summary.json")
 FB = load("fallback-display-parity-summary.json")
+FBA = load("fallback-adjusted-parity-summary.json")
 CM = load("raw-ohlc-cohort-manifest.json")
 REP1 = load("price-history-repair-manifest-first.json")
 REP2 = load("price-history-repair-manifest-second.json")
@@ -243,6 +244,8 @@ md = f"""# RA365 Round 18 — Raw OHLC Parity & Causal Attribution
 | Rahavard type0 (D) | close با product last در {fa(t0_pct['close_last'], 3, True)} روز یکسان است، با closing رسمی فقط {fa(t0_pct['close_closing'], 3, True)}؛ {fa(T0['flat_bars'])} کندل تخت (O=H=L=C) | `HIGH` برای close=last، `MEDIUM` برای OHLC |
 | Instrument versioning | InsCodeهای جدید با پسوند ۲/۳/۴ در تغییر سرمایه ساخته می‌شوند؛ هر دو معتبرند و باید با suffix/dedupe مدیریت شوند | `HIGH` |
 | CODAL | منبع رسمی رویدادهای شرکتی است، نه OHLC روزانه | `HIGH` برای رویداد، `N/A` برای OHLC |
+
+**منابع بررسی‌شده:** [tsetmc-skill](https://github.com/amirziveh/tsetmc-skill) (فرهنگ فیلد، نسخه‌بندی InsCode، ناقص‌بودن GetPriceAdjustList)، [tse-market-data](https://github.com/BabakEslami/tse-market-data) (ENDPOINTS.md و `top=0`/History Archive)، [exref urls](https://github.com/m-ahmadi/exref/blob/master/tse/urls.txt)، [fis-agent tsetmc-api](https://github.com/mazaheriMahdi/fis-agent/blob/main/docs/domain/tsetmc-api.md)، [tsetmc-mcp endpoints](https://github.com/solitraderbusiness/tsetmc-mcp/blob/main/docs/endpoints.md) و [CODAL](https://codal.ir/). تاریخچهٔ مخازن بررسی شد: tsetmc-skill در v1.2.0 workflowهای تعدیل را اضافه کرد و tse-market-data چند بار ENDPOINTS.md را حذف/بازنویسی کرد؛ بنابراین نسخه/تاریخ شاهد در ماتریس ثبت شده است.
 
 **شواهد کلیدی قرارداد:** CSV و JSON در {fa(10539)} ردیف مشترک برای هفت فیلد {fa(100, 0, True)} یکسان بودند؛ `.../0` و `.../19900101` برای یک نماد {fa(3695)} ردیف با ارزش یکسان برگرداندند. webgw در {fa(3276)} ردیف مشترک، first/base را {fa(100, 0, True)} و high/low/close/volume/last را با چند اختلاف لبه‌ای ({fa(1)} تا {fa(7)} ردیف) مطابق داشت. منابع TSETMC غیررسمی و مستندنشده‌اند؛ این محدودیت در ماتریس ثبت شده است.
 
@@ -441,6 +444,8 @@ md = f"""# RA365 Round 18 — Raw OHLC Parity & Causal Attribution
 | `layer-joint-summary.json` | {fa(os.path.getsize(os.path.join(ART, 'layer-joint-summary.json')))} | `{sha(os.path.join(ART, 'layer-joint-summary.json'))}` |
 | `regression-layer-link.csv` | {fa(os.path.getsize(os.path.join(ART, 'regression-layer-link.csv')))} | `{sha(os.path.join(ART, 'regression-layer-link.csv'))}` |
 | `price-history-repair-manifest-first.json` | {fa(os.path.getsize(os.path.join(ART, 'price-history-repair-manifest-first.json')))} | `{sha(os.path.join(ART, 'price-history-repair-manifest-first.json'))}` |
+| `fallback-adjusted-parity-before.csv` | {fa(os.path.getsize(os.path.join(ART, 'fallback-adjusted-parity-before.csv')))} | `{sha(os.path.join(ART, 'fallback-adjusted-parity-before.csv'))}` |
+| `fallback-adjusted-parity-after.csv` | {fa(os.path.getsize(os.path.join(ART, 'fallback-adjusted-parity-after.csv')))} | `{sha(os.path.join(ART, 'fallback-adjusted-parity-after.csv'))}` |
 
 مرجع کامل: {fa(REFMAN['reference']['rows'])} ردیف TSETMC برای {fa(REFMAN['reference']['assets'])} دارایی، gzip {fa(REFMAN['reference']['full_csv_gz_bytes'])} بایت. schema و معنای فیلدها در `raw-ohlc-reference-manifest.json` و `source-field-matrix.csv` است.
 
