@@ -36,6 +36,9 @@ SUITES = [
     # PERF-R1: بی‌تک‌پروازگی، هر درخواستِ سردِ هم‌زمان اسنپ‌شاتِ خودش را می‌ساخت
     # (سنجشِ مرورگر: ۱۰٫۸s تا آمادگیِ تبِ وضعیت بازار).
     ('dev/mstat_snapshot_singleflight_v1.py', 'cold concurrent panel requests share one snapshot build'),
+    # PERF-R2: پنلِ سلامتِ منبع هر درخواست دو اسکنِ کامل می‌زد (۳۴۳ms برایِ
+    # ۳۹۸بایت)؛ کشِ محتوا-کلید باید همان عدد را بدهد و با درجِ تازه باطل شود.
+    ('dev/notifications_sources_cache_v1.py', 'notification source facts cache by DB identity + content key'),
     # مأموریتِ تطبیقِ 2026-10-20: صفرِ معتبر و LASTِ منبع جدا از مقدارِ کهنه.
     ('dev/market_last_trade_semantics_v1.py',
      'market LAST: source LAST wins, zero is not missing, no stale/derived price'),

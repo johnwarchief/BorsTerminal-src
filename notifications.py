@@ -31,6 +31,8 @@
 from __future__ import annotations
 
 import re
+import threading
+import time
 
 import codal_periods as CP
 
@@ -157,14 +159,67 @@ def feed(conn, since=None, levels=None, limit: int = 120) -> dict:
             "since": since, "items": kept}
 
 
+# ── کشِ «تازه‌ترین انتشار / آخرین واکشی» بر پایۀِ محتوایِ بانک ─────────────
+# سنجشِ ۱۴۰۵-۰۷-۳۰ رویِ market.db: پنلِ سلامت ۳۴۳ms p50 داشت با بدنهٔ ۳۹۸
+# بایت. علتش دو اسکنِ کاملِ codal_notices بود: MAX(fetched_at) ~۶۱ms (بی‌ایندکس)
+# و MAX(canonical publish_date) ~۲۹۷ms (چند replace رویِ هر ردیف). درِ عوض
+# COUNT(*) و MAX(publish_date) هر دو ایندکسی‌اند (~۰٫۱ms با هم).
+# کلیدِ کش همین دو + هویتِ فایلِ بانک است: هر درج/جایگزینی معمولِ کدال
+# (INSERT OR REPLACE با fetched_at تازه) count یا max را عوض می‌کند و کش
+# همان لحظه باطل می‌شود. سقفِ ۱۲۰ثانیه‌ای هم برایِ ویرایشِ درجایِ نادر است،
+# تا «تازه» هرگز بیش از دو دقیقه پشتِ یک تغییرِ نامرئی نماند. دو بانکِ متفاوت
+# با محتوای یکسان هرگز یکی نمی‌شوند (هویتِ فایل در کلید است).
+_SOURCES_CACHE = {"key": None, "at": 0.0, "newest": None, "fetched": None}
+_SOURCES_LOCK = threading.Lock()
+_SOURCES_TTL_S = 120.0
+
+
+def _db_identity(conn) -> str:
+    try:
+        row = conn.execute("PRAGMA database_list").fetchone()
+        return str(row[2] or "") if row and len(row) > 2 else ""
+    except Exception:
+        return ""
+
+
+def _sources_facts(conn, now=None):
+    """(rows, newest_publish, last_fetch) با کشِ محتوا-کلید.
+
+    برایِ بانکِ درحافظه/ناشناس کش نمی‌شود (هویتِ پایدار ندارد)؛ همان رفتارِ
+    قبلی. برایِ بانکِ فایل، فقط وقتی کلید عوض شود دو مقدارِ گران دوباره
+    محاسبه می‌شوند.
+    """
+    n, raw_max = conn.execute(
+        "SELECT COUNT(*), MAX(publish_date) FROM codal_notices").fetchone()
+    ident = _db_identity(conn)
+    key = (ident, int(n or 0), str(raw_max or "")) if ident else None
+    now = time.monotonic() if now is None else float(now)
+    if key is not None:
+        with _SOURCES_LOCK:
+            ent = _SOURCES_CACHE
+            if (ent["key"] == key and ent["newest"] is not None
+                    and (now - ent["at"]) < _SOURCES_TTL_S):
+                return int(n or 0), ent["newest"], ent["fetched"]
+    newest = conn.execute(
+        "SELECT MAX(" + CP.pub_canon_sql() + ") FROM codal_notices").fetchone()[0]
+    fetched = conn.execute("SELECT MAX(fetched_at) FROM codal_notices").fetchone()[0]
+    if key is not None:
+        with _SOURCES_LOCK:
+            _SOURCES_CACHE.update(key=key, at=now, newest=newest, fetched=fetched)
+    return int(n or 0), newest, fetched
+
+
+def invalidate_sources_cache() -> None:
+    """برایِ آزمون/نویسندۀ درون‌فرایندی: کشِ پنلِ سلامت را خالی می‌کند."""
+    with _SOURCES_LOCK:
+        _SOURCES_CACHE.update(key=None, at=0.0, newest=None, fetched=None)
+
+
 def sources(conn) -> dict:
     """سلامتِ خودِ منبع — «چیزی نیست» با «نرسیده» یکی نباید بماند."""
     out = []
     try:
-        n, newest, fetched = conn.execute(
-            "SELECT COUNT(*), MAX(" + CP.pub_canon_sql() + "), MAX(fetched_at)"
-                " FROM codal_notices"
-        ).fetchone()
+        n, newest, fetched = _sources_facts(conn)
         out.append({"source": SOURCE, "label": SOURCE_LABEL, "rows": int(n or 0),
                     "newest_publish": newest, "last_fetch": fetched,
                     "state": "ok" if (n or 0) > 0 else "empty"})
