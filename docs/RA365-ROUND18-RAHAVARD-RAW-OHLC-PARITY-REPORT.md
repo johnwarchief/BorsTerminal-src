@@ -3,10 +3,10 @@
 **تاریخ:** 2026-10-22  
 **شاخه:** `mission/ra365-round18-raw-ohlc-parity-2026-10-22`  
 **مبنای Track A:** `f6e3c4e0`  
-**Commit ابزار/تست این ممیزی:** `6b851f9c`  
+**Commit ابزار/تست این ممیزی:** `4305ab58`  
 **مرجع Rahavard:** snapshot منجمد `ref_bars_v2.jsonl` (۲۰۲۶-۱۰-۲۰)، type0 و type7 با resolution روزانه
 
-> این گزارش مکمل گزارش اصلی `docs/RA365-ROUND18-RAW-OHLC-PARITY-REPORT.md` است. تمرکز آن فقط Raw OHLC در برابر Rahavard است؛ Track B و موتور الگو دست‌نخورده‌اند.
+> این گزارش مکمل گزارش اصلی `docs/RA365-ROUND18-RAW-OHLC-PARITY-REPORT.md` است. تمرکز آن فقط Raw OHLC در برابر Rahavard است؛ Track B و موتور الگو دست‌نخورده‌اند. اعداد و علت‌شناسی این نسخه با داوری نهایی Round 19 به‌روزرسانی شده‌اند؛ گزارش داوری: `docs/RA365-ROUND19-MISMATCH-CLOSURE-REPORT.md`.
 
 ---
 
@@ -103,35 +103,33 @@
 
 | علت | دارایی | تاریخ | ردیف | سهم از mismatch |
 |---|---|---|---|---|
-| SOURCE_DATA_DIVERGENCE | 517 | 1110 | 1110 | ۵۲٫۴۸٪ |
-| HISTORICAL_REVISION | 369 | 552 | 552 | ۲۶٫۱۰٪ |
-| PRECISION_OR_ROUNDING | 220 | 299 | 299 | ۱۴٫۱۴٪ |
-| UNCLASSIFIED | 76 | 86 | 86 | ۴٫۰۷٪ |
-| CANDLE_GEOMETRY | 41 | 62 | 62 | ۲٫۹۳٪ |
-| PARSING_OR_TRANSFORM | 6 | 6 | 6 | ۰٫۲۸٪ |
+| SOURCE_DATA_DIVERGENCE | ۵۳۸ | ۱٬۱۵۰ | ۱٬۱۵۰ | ۵۴٫۳۷٪ |
+| HISTORICAL_REVISION | ۳۶۸ | ۵۴۹ | ۵۴۹ | ۲۵٫۹۶٪ |
+| PRECISION_OR_ROUNDING | ۲۱۹ | ۲۹۸ | ۲۹۸ | ۱۴٫۰۹٪ |
+| CANDLE_GEOMETRY | ۴۱ | ۶۲ | ۶۲ | ۲٫۹۳٪ |
+| PARSING_OR_TRANSFORM | ۴۸ | ۵۶ | ۵۶ | ۲٫۶۵٪ |
 
 ### فیلدها
 
 | علت | دارایی | تاریخ | فیلد |
 |---|---|---|---|
-| FIELD_MAPPING | 71 | 2923 | 2923 |
-| SOURCE_DATA_DIVERGENCE | 524 | 1218 | 2303 |
-| HISTORICAL_REVISION | 380 | 636 | 1488 |
-| PRECISION_OR_ROUNDING | 304 | 543 | 641 |
-| CANDLE_GEOMETRY | 98 | 184 | 335 |
-| UNCLASSIFIED | 88 | 100 | 101 |
-| PARSING_OR_TRANSFORM | 15 | 15 | 15 |
-| PRICE_SCALE_OR_UNIT | 5 | 5 | 5 |
+| FIELD_MAPPING | ۷۱ | ۲٬۹۲۳ | ۲٬۹۲۳ |
+| SOURCE_DATA_DIVERGENCE | ۵۴۵ | ۱٬۲۵۸ | ۲٬۳۵۶ |
+| HISTORICAL_REVISION | ۳۸۰ | ۶۳۶ | ۱٬۴۸۸ |
+| PRECISION_OR_ROUNDING | ۳۰۴ | ۵۴۳ | ۶۴۱ |
+| CANDLE_GEOMETRY | ۹۸ | ۱۸۴ | ۳۳۵ |
+| PARSING_OR_TRANSFORM | ۵۵ | ۶۳ | ۶۳ |
+| PRICE_SCALE_OR_UNIT | ۵ | ۵ | ۵ |
 
 **تفسیر:**
 - `SOURCE_DATA_DIVERGENCE`: محصول با TSETMC مطابق است، type0 نیست؛ عمدتاً اراد/آپشن‌ها، flat bars و تاریخ‌های خاص.
 - `HISTORICAL_REVISION`: type0 و TSETMC با هم می‌خوانند، snapshot محصول قدیمی‌تر/اصلاح‌شده است.
 - `CANDLE_GEOMETRY`: type0 تخت یا H/L بیرون body؛ product با widen آن را ترمیم می‌کند.
 - `FIELD_MAPPING`: فقط `close_display` با basis=closing؛ انتظار می‌رود.
-- `PRECISION_OR_ROUNDING`: اختلاف‌های کوچک مستند.
-- `PARSING_OR_TRANSFORM`: volume صفر product در چند ردیف.
+- `PRECISION_OR_ROUNDING`: اختلاف‌های کوچک مستند؛ exact و tolerance جدا نگه داشته شده‌اند و تلورانس تغییر نکرده است.
+- `PARSING_OR_TRANSFORM`: ۶۳ فیلد؛ ۶۰ فیلد open با `TSETMC FIRST=0` که product طبق قرارداد مستند به base clamp‌شده برمی‌گردد و ۳ فیلد volume صفر در snapshot با TSETMC مثبت. هیچ‌کدام نقص اثبات‌شدهٔ کد فعلی نیستند.
 - `PRICE_SCALE_OR_UNIT`: پنج ردیف آپشن/صندوق با مقیاس واحد متفاوت.
-- `UNCLASSIFIED`: 101 فیلد؛ عمدتاً اختلاف‌های کوچک بدون شاهد کافی برای یک علت واحد.
+- `UNCLASSIFIED`: ۰ فیلد؛ تمام ۱۰۱ فیلد قبلی تعیین تکلیف شدند (۶۰ open → PARSING، ۴۱ فیلد سه‌منبعی → SOURCE).
 - `INSTRUMENT_MAPPING` و `DATE_MAPPING` به‌صورت اثبات‌شده **صفر**؛ type0-only tradable ۱٬۸۴۴ تاریخ است که ۱٬۳۴۵ مورد آن Rahavard-only و ۴۹۹ مورد omission محصول است.
 
 ---
@@ -172,7 +170,8 @@
 **محدودیت‌ها:**
 - مرجع، snapshot منجمد Rahavard است؛ دسترسی live در این راند استفاده نشد (`BLOCKED_LIVE_ACCESS` در حد عدم استفاده، نه ادعای نبود دسترسی).
 - type0 فقط ۵۶٪ کندل‌های محصول را پوشش می‌دهد؛ Full-Universe برای ردیف‌های قابل‌دسترسی، نه کل تاریخ محصول.
-- ۸۶ ردیف / ۱۰۱ فیلد `UNCLASSIFIED` باقی مانده‌اند.
+- `UNCLASSIFIED` صفر شد؛ ۱۰۱ فیلد قبلی با شاهد TSETMC/type0 تعیین تکلیف شدند (۶۰ open → PARSING، ۴۱ فیلد سه‌منبعی → SOURCE).
+- از ۶ ردیف PARSING اولیه، ۵ ردیف volume در واقع type0-only بودند و به SOURCE منتقل شدند؛ ۱ ردیف volume صفر snapshot با TSETMC مثبت ماند. در مجموع ۱۲ فیلد volume به SOURCE رفت (۵ ردیف مستقل + ۷ فیلد در ردیف‌هایی که علت دیگری داشتند).
 - ۵ ردیف price-scale آپشن/صندوق و flat bars منبع، بدون اصلاح تولید.
 - `INSTRUMENT_MAPPING` اثبات‌شده‌ای در این pass پیدا نشد؛ اتهام mapping بدون شاهد ثبت نشد.
 
@@ -180,7 +179,7 @@
 
 ## ۹. تست‌ها، دیتابیس و artifactها
 
-- `dev/test_rahavard_raw_parity_v1.py`: **۱۵/۱۵** بررسی (widen با official close، status، taxonomy، semantics واقعی).
+- `dev/test_rahavard_raw_parity_v1.py`: **۱۶/۱۶** بررسی (widen با official close، status، taxonomy، type0-only volume در برابر snapshot volume، semantics واقعی).
 - Full gate این راند دوباره اجرا نشد چون هیچ کد production تغییر نکرد؛ گیت Track A قبلی روی `f6e3c4e0` سبز بود. این محدودیت `NOT_RE-RUN` است، نه ادعای سبز جدید.
 - دیتابیس عملیاتی و promoted read-only؛ SHA پایان در manifest/پاسخ نهایی ثبت می‌شود.
 
@@ -188,12 +187,12 @@
 |---|---|---|
 | `rahavard-raw-ohlc-parity.csv` | ۵۹۰٬۲۷۱ | `b3596cc76003b9d21af5ccb33dd3bc3eaf352b052c421ef8aa81aa6b842a31f0` |
 | `rahavard-type0-vs-tsetmc.csv` | ۲۵۳٬۶۷۰ | `caa9ba0e5c5474d5720026cb7d1efb539e767310e167d77f8903f6c4a7163b87` |
-| `rahavard-raw-ohlc-field-mismatches.csv` | ۱٬۲۴۲٬۰۱۸ | `2090916b855bc57fd6a5037d490ace57c3f27c19dbf5781c4584fc8c437c0a9a` |
-| `rahavard-raw-ohlc-taxonomy.csv` | ۳٬۰۹۰ | `10f554cb30a2bc7feb3454d5b22aa6c2873fc50db797c112afacae0740092101` |
-| `rahavard-raw-ohlc-row-taxonomy.csv` | ۲۱۱ | `49d687ee0e287b8d8c142321d436a210b1516ce94ff5340ae5381e0795a27697` |
-| `rahavard-raw-ohlc-missing.csv` | ۴٬۱۹۹٬۸۲۴ | `61608a2dfdc02260c28f1bfeb399489714a5c0c74235c9345764a50a86d9cabd` |
-| `rahavard-raw-ohlc-summary.json` | ۲٬۵۶۱ | `b723ecee22db6ed502f3579e82c8dd79091411dcb9d05a554a48f40351dae043` |
-| `rahavard-raw-ohlc-cohort-manifest.json` | ۵٬۴۵۴ | `252375822dc2c24bf9ddb1a4a7c501164f5a0b79a40f2f9111ac9db40acba8ae` |
+| `rahavard-raw-ohlc-field-mismatches.csv` | ۱٬۲۴۷٬۳۲۷ | `82bed90c6f05f45d9697fca13800bb9f9d55553660672a9d16bb06100638136a` |
+| `rahavard-raw-ohlc-taxonomy.csv` | ۲٬۸۲۵ | `280264bbe7cae0521220ffaaabc83cccee45b9ae12956f0ed1041e2a3daa54e0` |
+| `rahavard-raw-ohlc-row-taxonomy.csv` | ۱۹۱ | `1bd5db2d78985d24c2fe956d6d4eafed35e55c3ca6760420db89d262cb111ea2` |
+| `rahavard-raw-ohlc-missing.csv` | ۴٬۱۹۹٬۸۲۴ | `88ac77b698cefec70884c435afa7917e7dd2f5de9b58fcc7aacd8f444cb5cfdc` |
+| `rahavard-raw-ohlc-summary.json` | ۲٬۳۹۶ | `4841aa5af6363805bec0be9e4d135192233663d56e16a656e87ac5ad65eea307` |
+| `rahavard-raw-ohlc-cohort-manifest.json` | ۵٬۰۷۸ | `8300fdb22e1149cfa7c0693b7b4d5ffde97622fe442dc31ee6b7a54ba06a782b` |
 | `source-field-matrix-rahavard.csv` | ۲٬۹۹۰ | `56b2270ee5b054c0638fec576195aa5cc7501e2fd207f3b39d75caf62c81e5f5` |
 
 ---

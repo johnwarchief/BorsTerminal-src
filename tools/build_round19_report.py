@@ -62,6 +62,10 @@ def table(headers, rows):
     return "\n".join(out)
 
 
+CURRENT_HEAD = subprocess.check_output(
+    ["git", "rev-parse", "HEAD"], cwd=ROOT).decode().strip()
+CURRENT_BRANCH = subprocess.check_output(
+    ["git", "rev-parse", "--abbrev-ref", "HEAD"], cwd=ROOT).decode().strip()
 S = load("rahavard-raw-ohlc-summary.json")
 R19 = load("rahavard-raw-ohlc-round19-summary.json")
 A = read_csv("rahavard-raw-ohlc-round19-adjudication.csv")
@@ -248,9 +252,9 @@ ARTIFACTS = [
 md = f"""# RA365 Round 19 — Mismatch Closure Report
 
 **تاریخ:** 2026-10-22  
-**شاخه:** `{R19['branch']}`  
+**شاخه:** `{CURRENT_BRANCH}`  
 **مبنای Round 18:** `{OLD_REV}`  
-**HEAD هنگام تولید گزارش:** `{R19['head'][:12]}`  
+**HEAD هنگام تولید گزارش:** `{CURRENT_HEAD[:12]}`  
 **Commit کد/ابزار/تست این راند:** `{CODE_COMMIT}`  
 **مرجع:** snapshot منجمد Rahavard `ref_bars_v2.jsonl` (۲۰۲۶-۱۰-۲۰) و snapshot محصول `product_live_final_v4.jsonl`  
 **وضعیت Track B:** دست‌نخورده، روی شاخه مستقل `02ffba94`؛ هیچ فایل Track B در این راند تغییر نکرد.
@@ -275,7 +279,7 @@ md = f"""# RA365 Round 19 — Mismatch Closure Report
 
 ## ۱. مبنا، دامنه و مرزها
 
-- شروع از `{OLD_REV}` روی شاخه `{R19['branch']}`؛ Track B در `mission/technical-pattern-engine-round18-2026-10-22` و commit `02ffba94` بدون تغییر.
+- شروع از `{OLD_REV}` روی شاخه `{CURRENT_BRANCH}`؛ Track B در `mission/technical-pattern-engine-round18-2026-10-22` و commit `02ffba94` بدون تغییر.
 - منبع مرجع: snapshot منجمد type0/type7، resolution روزانه، {fa(S['assets'])} دارایی دارای type0.
 - منبع محصول: snapshot `product_live_final_v4.jsonl` (همان cohort Round 18)؛ مقایسه روی ردیف‌های مشترک و قابل‌مقایسه.
 - oracle مستقل: TSETMC خام، فقط برای اثبات معنای type0 و داوری منبع؛ جایگزین Rahavard نشد.
@@ -538,7 +542,7 @@ type0 خام است، close آن LAST است و open آن FIRST؛ type7 تعدی
 
 ## ۱۳. Git، commit و artifactها
 
-- شاخه Track A: `{R19['branch']}`؛ مبنا `{OLD_REV}`؛ HEAD گزارش `{R19['head'][:12]}`.
+- شاخه Track A: `{CURRENT_BRANCH}`؛ مبنا `{OLD_REV}`؛ HEAD گزارش `{CURRENT_HEAD[:12]}`.
 - commit کد/ابزار/تست/artifact: `{CODE_COMMIT}`.
 - هیچ push یا merge به `main` انجام نشد؛ Track B روی شاخهٔ مستقل و commit `02ffba94` دست‌نخورده است.
 - تغییرات Track A و Track B در commitهای جداگانه نگه داشته شده‌اند.

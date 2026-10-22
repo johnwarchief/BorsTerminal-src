@@ -320,14 +320,24 @@
 
 ---
 
+
+---
+
+
+---
+
+
+---
+
 ## ۱۳. ضمیمه — ممیزی کامل Rahavard type0
 
-این بخش، سؤال «آیا OHLC خام BorsTerminal با Rahavard یکسان است؟» را در سطح ردیف و فیلد پاسخ می‌دهد. گزارش تفصیلی: `docs/RA365-ROUND18-RAHAVARD-RAW-OHLC-PARITY-REPORT.md`.
+این بخش، سؤال «آیا OHLC خام BorsTerminal با Rahavard یکسان است؟» را در سطح ردیف و فیلد پاسخ می‌دهد. گزارش تفصیلی: `docs/RA365-ROUND18-RAHAVARD-RAW-OHLC-PARITY-REPORT.md`؛ داوری نهایی اختلاف‌ها: `docs/RA365-ROUND19-MISMATCH-CLOSURE-REPORT.md`.
 
 - **تمام ۲٬۵۹۵ دارایی** نوع `type0` در snapshot منجمد بررسی شدند؛ **۱٬۱۸۸٬۹۲۱** ردیف قابل‌مقایسه از **۱٬۱۹۲٬۰۷۱** تاریخ مشترک.
 - **تطبیق قراردادی Raw:** **۹۹٫۸۹۰۷٪** فیلد و **۹۹٫۸۲۲۱٪** ردیف.
 - **تطبیق تحت‌اللفظی OHLC:** high ۹۱٫۷۰۴۳٪، low ۹۶٫۴۲۷۳٪، ردیف کامل ۸۷٫۶۱۰۱٪؛ اختلاف عمدتاً `widen()` مستند است.
 - **معنای type0:** close = LAST (۹۹٫۹۱۰۲٪) نه official CLOSE (۱۴٫۰۷۶۰٪)؛ open = FIRST (۹۹٫۸۶۴۱٪) نه base OPEN (۳٫۴۸۴۶٪).
-- **علت‌های باقی‌مانده:** SOURCE_DATA_DIVERGENCE ۱٬۱۱۰ ردیف؛ HISTORICAL_REVISION ۵۵۲؛ PRECISION ۲۹۹؛ CANDLE_GEOMETRY ۶۲؛ UNCLASSIFIED ۸۶؛ PARSING ۶.
+- **علت‌های نهایی (Round 19):** SOURCE_DATA_DIVERGENCE ۱٬۱۵۰ ردیف؛ HISTORICAL_REVISION ۵۴۹؛ PRECISION ۲۹۸؛ CANDLE_GEOMETRY ۶۲؛ PARSING ۵۶؛ UNCLASSIFIED ۰.
+- **تعیین تکلیف P0:** از ۶ ردیف PARSING اولیه، ۵ ردیف volume در واقع type0-only بودند و به SOURCE منتقل شدند؛ ۱ ردیف volume صفر snapshot با TSETMC مثبت ماند. ۵۵ ردیف UNCLASSIFIED قبلی، open با `FIRST=0` و fallback مستند product بودند و PARSING شدند؛ ۳۱ ردیف دیگر به سه‌منبعی SOURCE رفتند. UNCLASSIFIED صفر شد.
 - **هیچ اصلاح production** موجه اثبات نشد؛ gapهای ۴۹۹تایی snapshot در pipeline زنده وجود دارند و flat/geometry از منبع Rahavard است. تنها قرارداد مقایسه (widen با official CLOSE) اصلاح شد.
 - **پوشش:** type0 فقط حدود **۵۵٫۹۴٪** از کندل‌های محصول را می‌پوشاند؛ Full-Universe برای ردیف‌های Rahavard قابل‌دسترسی است، نه تمام تاریخ محصول.
