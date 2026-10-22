@@ -92,3 +92,42 @@ identical payloads. Verify before claiming.
 - Funnel `GET`/304 and data-signature cache (P2-R2); no FTS rules changed.
 - In-flight raw-response dedupe for identical GETs (P2-R3); chart/FTS bodies
   are still parsed with each caller's own schema, so no schema bleed.
+
+## 7. P2-R4 addendum — first-call tail on `/api/fts/<symbol>`
+
+Measured 2026-10-22 on the same session/dataset, direct HTTP (no browser), after
+the P2-R4 re-profile:
+
+| Symbol | First call | Second call |
+|---|---:|---:|
+| آرامش | 37,857 ms | 842 ms |
+| آرمان | 36,807 ms | — |
+| آس | 40,598 ms | 1,215 ms |
+| آسا | 25,507 ms | — |
+| آبنوس | 637 ms | 753 ms |
+| آتش | 777 ms | 735 ms |
+
+The first call for some symbols is 25–41 s; the same symbol then answers in
+~0.7–1.2 s. That shape points at a cold, per-symbol computation/cache fill in
+the protected path (not at repeated warm reads), and it is far above the
+previous P50 870 ms. It directly affects the FTS funnel: clicking one of these
+rows blocks the dossier for half a minute on first use, and no outer-layer
+prefetch can hide it (P2-R4's deliberate-hover prefetch only moves the start;
+the request still runs).
+
+Please treat this as the top protected-path item:
+
+1. Identify which per-symbol step takes the 25–41 s only on first call
+   (chart/CDN fetch + repair, candle resample, or detector run) and whether the
+   result is cached under a key that survives the call.
+2. If it is cold computation, precompute it during the existing background
+   technical scan (`funnel_tech_scan`) instead of inside the user request, or
+   expose a readiness/progress contract so the UI can say "computing" instead of
+   blocking; Coder3's UI already has a scan-progress slot it can consume.
+3. Keep the same trend/CHoCH/Fib/pattern semantics and no-lookahead slicing.
+
+Reproduction: `node -e "http.get('http://127.0.0.1:8000/api/fts/'+encodeURIComponent('آرامش'),...)"`
+against the session-20261014 database; or open `#/master?preset=tech_first&stage=technical`
+and click the آرامش row in a fresh server process. The P2-R4 browser A/B and
+sweep evidence are in `artifacts/performance/phase2/hover-p2r4.json` and
+`hover-scan.json`.

@@ -1,0 +1,366 @@
+{
+ "base": "http://127.0.0.1:8000",
+ "dwellMs": 650,
+ "runs": [
+  {
+   "run": 1,
+   "symbol": "آبنوس",
+   "order": [
+    "direct",
+    "hover"
+   ],
+   "serverWarmup": {
+    "ftsMs": 848,
+    "keyLevelsMs": 176
+   },
+   "direct": {
+    "mode": "direct",
+    "readyMs": 1330,
+    "hoverMs": null,
+    "clickToFtsEndMs": 1218,
+    "ftsMs": 1168,
+    "prefetchLeadMs": 0,
+    "requests": [
+     {
+      "u": "/api/fts/آبنوس",
+      "enc": 6963,
+      "start": 4721,
+      "end": 5889
+     },
+     {
+      "u": "/api/chart/آبنوس/key-levels",
+      "enc": 598,
+      "start": 4722,
+      "end": 4745
+     }
+    ]
+   },
+   "hover": {
+    "mode": "hover",
+    "readyMs": 352,
+    "hoverMs": 727,
+    "clickToFtsEndMs": -50,
+    "ftsMs": 313,
+    "prefetchLeadMs": 363,
+    "requests": [
+     {
+      "u": "/api/fts/آبنوس",
+      "enc": 6963,
+      "start": 5402,
+      "end": 5715
+     },
+     {
+      "u": "/api/chart/آبنوس/key-levels",
+      "enc": 598,
+      "start": 5402,
+      "end": 5409
+     }
+    ]
+   },
+   "gain": {
+    "clickToFtsEndMs": 1268,
+    "readyMs": 978
+   }
+  },
+  {
+   "run": 1,
+   "symbol": "آتش",
+   "order": [
+    "hover",
+    "direct"
+   ],
+   "serverWarmup": {
+    "ftsMs": 1017,
+    "keyLevelsMs": 178
+   },
+   "hover": {
+    "mode": "hover",
+    "readyMs": 379,
+    "hoverMs": 725,
+    "clickToFtsEndMs": -172,
+    "ftsMs": 194,
+    "prefetchLeadMs": 367,
+    "requests": [
+     {
+      "u": "/api/fts/آتش",
+      "enc": 6740,
+      "start": 4981,
+      "end": 5175
+     },
+     {
+      "u": "/api/chart/آتش/key-levels",
+      "enc": 659,
+      "start": 4982,
+      "end": 4989
+     }
+    ]
+   },
+   "direct": {
+    "mode": "direct",
+    "readyMs": 2234,
+    "hoverMs": null,
+    "clickToFtsEndMs": 2189,
+    "ftsMs": 2133,
+    "prefetchLeadMs": 0,
+    "requests": [
+     {
+      "u": "/api/fts/آتش",
+      "enc": 6740,
+      "start": 5260,
+      "end": 7393
+     },
+     {
+      "u": "/api/chart/آتش/key-levels",
+      "enc": 659,
+      "start": 5262,
+      "end": 5323
+     }
+    ]
+   },
+   "gain": {
+    "clickToFtsEndMs": 2361,
+    "readyMs": 1855
+   }
+  },
+  {
+   "run": 2,
+   "symbol": "آبنوس",
+   "order": [
+    "direct",
+    "hover"
+   ],
+   "serverWarmup": {
+    "ftsMs": 325,
+    "keyLevelsMs": 3
+   },
+   "direct": {
+    "mode": "direct",
+    "readyMs": 1736,
+    "hoverMs": null,
+    "clickToFtsEndMs": 1689,
+    "ftsMs": 1645,
+    "prefetchLeadMs": 0,
+    "requests": [
+     {
+      "u": "/api/fts/آبنوس",
+      "enc": 6963,
+      "start": 4814,
+      "end": 6459
+     },
+     {
+      "u": "/api/chart/آبنوس/key-levels",
+      "enc": 598,
+      "start": 4815,
+      "end": 4845
+     }
+    ]
+   },
+   "hover": {
+    "mode": "hover",
+    "readyMs": 493,
+    "hoverMs": 718,
+    "clickToFtsEndMs": -166,
+    "ftsMs": 196,
+    "prefetchLeadMs": 363,
+    "requests": [
+     {
+      "u": "/api/fts/آبنوس",
+      "enc": 6963,
+      "start": 5027,
+      "end": 5223
+     },
+     {
+      "u": "/api/chart/آبنوس/key-levels",
+      "enc": 598,
+      "start": 5028,
+      "end": 5035
+     }
+    ]
+   },
+   "gain": {
+    "clickToFtsEndMs": 1855,
+    "readyMs": 1243
+   }
+  },
+  {
+   "run": 2,
+   "symbol": "آتش",
+   "order": [
+    "hover",
+    "direct"
+   ],
+   "serverWarmup": {
+    "ftsMs": 549,
+    "keyLevelsMs": 4
+   },
+   "hover": {
+    "mode": "hover",
+    "readyMs": 554,
+    "hoverMs": 724,
+    "clickToFtsEndMs": -110,
+    "ftsMs": 256,
+    "prefetchLeadMs": 366,
+    "requests": [
+     {
+      "u": "/api/fts/آتش",
+      "enc": 6740,
+      "start": 4936,
+      "end": 5192
+     },
+     {
+      "u": "/api/chart/آتش/key-levels",
+      "enc": 659,
+      "start": 4937,
+      "end": 4944
+     }
+    ]
+   },
+   "direct": {
+    "mode": "direct",
+    "readyMs": 2043,
+    "hoverMs": null,
+    "clickToFtsEndMs": 1985,
+    "ftsMs": 1936,
+    "prefetchLeadMs": 0,
+    "requests": [
+     {
+      "u": "/api/fts/آتش",
+      "enc": 6740,
+      "start": 6013,
+      "end": 7949
+     },
+     {
+      "u": "/api/chart/آتش/key-levels",
+      "enc": 659,
+      "start": 6014,
+      "end": 6041
+     }
+    ]
+   },
+   "gain": {
+    "clickToFtsEndMs": 2095,
+    "readyMs": 1489
+   }
+  },
+  {
+   "run": 3,
+   "symbol": "آبنوس",
+   "order": [
+    "direct",
+    "hover"
+   ],
+   "serverWarmup": {
+    "ftsMs": 280,
+    "keyLevelsMs": 4
+   },
+   "direct": {
+    "mode": "direct",
+    "readyMs": 2044,
+    "hoverMs": null,
+    "clickToFtsEndMs": 2000,
+    "ftsMs": 1940,
+    "prefetchLeadMs": 0,
+    "requests": [
+     {
+      "u": "/api/fts/آبنوس",
+      "enc": 6963,
+      "start": 4615,
+      "end": 6555
+     },
+     {
+      "u": "/api/chart/آبنوس/key-levels",
+      "enc": 598,
+      "start": 4615,
+      "end": 4659
+     }
+    ]
+   },
+   "hover": {
+    "mode": "hover",
+    "readyMs": 465,
+    "hoverMs": 748,
+    "clickToFtsEndMs": 22,
+    "ftsMs": 395,
+    "prefetchLeadMs": 373,
+    "requests": [
+     {
+      "u": "/api/fts/آبنوس",
+      "enc": 6963,
+      "start": 5343,
+      "end": 5738
+     },
+     {
+      "u": "/api/chart/آبنوس/key-levels",
+      "enc": 598,
+      "start": 5344,
+      "end": 5352
+     }
+    ]
+   },
+   "gain": {
+    "clickToFtsEndMs": 1978,
+    "readyMs": 1579
+   }
+  },
+  {
+   "run": 3,
+   "symbol": "آتش",
+   "order": [
+    "hover",
+    "direct"
+   ],
+   "serverWarmup": {
+    "ftsMs": 1161,
+    "keyLevelsMs": 4
+   },
+   "hover": {
+    "mode": "hover",
+    "readyMs": 475,
+    "hoverMs": 781,
+    "clickToFtsEndMs": 318,
+    "ftsMs": 699,
+    "prefetchLeadMs": 381,
+    "requests": [
+     {
+      "u": "/api/fts/آتش",
+      "enc": 6740,
+      "start": 5200,
+      "end": 5899
+     },
+     {
+      "u": "/api/chart/آتش/key-levels",
+      "enc": 659,
+      "start": 5201,
+      "end": 5208
+     }
+    ]
+   },
+   "direct": {
+    "mode": "direct",
+    "readyMs": 1053,
+    "hoverMs": null,
+    "clickToFtsEndMs": 985,
+    "ftsMs": 936,
+    "prefetchLeadMs": 0,
+    "requests": [
+     {
+      "u": "/api/fts/آتش",
+      "enc": 6740,
+      "start": 5505,
+      "end": 6441
+     },
+     {
+      "u": "/api/chart/آتش/key-levels",
+      "enc": 659,
+      "start": 5505,
+      "end": 5537
+     }
+    ]
+   },
+   "gain": {
+    "clickToFtsEndMs": 667,
+    "readyMs": 578
+   }
+  }
+ ]
+}

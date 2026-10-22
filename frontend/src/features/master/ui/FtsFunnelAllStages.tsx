@@ -14,6 +14,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { useVirtualizer } from '@tanstack/react-virtual';
+import { useQueryClient } from '@tanstack/react-query';
 import { useSymbolStore } from '@shared/stores/symbolStore';
 import { useScreenFilterStore } from '@shared/stores/screenFilterStore';
 import { QUICK_FILTERS, QUICK_LABELS, type QuickFilter } from '@features/market/stores/tapeStore';
@@ -30,6 +31,8 @@ import { normalizeFa } from '@shared/lib/normalizeFa';
 import { fmtDate } from '@shared/lib/time';
 import { useFlip } from '@shared/lib/useFlip';
 import { useVerdictChanges } from '../lib/funnelChangeTrack';
+import { ftsPlanQueryOptions } from '../api/useFtsPlan';
+import { keyLevelsQueryOptions } from '../api/useKeyLevels';
 import { FunnelErrorBanner } from './FunnelErrorBanner';
 import { FtsFilterPanel } from './FtsFilterPanel';
 import {
@@ -1009,6 +1012,29 @@ export function StageRow({
    *  `SymbolSelectBox` درِ تابلو رعایت می‌کند و افزودنِ ستونِ جدید grid را کج کرد. */
   selectable?: boolean;
 }) {
+  // Prefetch فقط با قصدِ کاربر (hover/focus با تأخیرِ کوتاه): `MasterPage` برایِ
+  // هر نماد دو endpointِ گران می‌زند؛ اگر کاربر رویِ ردیف می‌ماند، همان را پیش
+  // از کلیک گرم می‌کنیم. حرکتِ سریعِ ماوس هیچ درخواستی نمی‌سازد (debounce) —
+  // ۳۰۰ms یعنی عبورِ عادی رویِ ردیف‌ها هنوز بی‌درخواست است و فقط توقفِ واقعی
+  // پیش‌بارگیری می‌کند (P2-R4: سرورِ تک‌کاره با /api/ftsِ گران نباید سیل بگیرد).
+  const qc = useQueryClient();
+  const warmTimer = useRef<number | null>(null);
+  const cancelWarm = () => {
+    if (warmTimer.current != null) {
+      window.clearTimeout(warmTimer.current);
+      warmTimer.current = null;
+    }
+  };
+  const warm = (sym: string) => {
+    cancelWarm();
+    if (!sym) return;
+    warmTimer.current = window.setTimeout(() => {
+      warmTimer.current = null;
+      void qc.prefetchQuery(ftsPlanQueryOptions(sym)).catch(() => {});
+      void qc.prefetchQuery(keyLevelsQueryOptions(sym)).catch(() => {});
+    }, 300);
+  };
+  useEffect(() => cancelWarm, []);
   const key = showMark === 'tech' ? 'technical' : showMark === 'handover' ? 'handover' : 'fundamental';
   const mark = showMark ? entry.status[key] : entry.status[stageKey] || null;
   const why = entry.why[stageKey] || null;
@@ -1023,6 +1049,10 @@ export function StageRow({
       data-changed={changed ? '1' : undefined}
       className={`group border-b border-border-c/40 last:border-0 hover:bg-bg-card/70${changed ? ' fts-row-changed' : ''}`}
       title={rowTitle}
+      onMouseEnter={() => warm(entry.symbol)}
+      onMouseLeave={cancelWarm}
+      onFocus={() => warm(entry.symbol)}
+      onBlur={cancelWarm}
     >
       <td className="px-2 py-1 text-start">
         {/* دو خط: خطِ اول خودِ نماد (همیشه کامل)، خطِ دوم برچسبِ وضعیت.

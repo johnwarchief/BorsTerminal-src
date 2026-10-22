@@ -111,15 +111,19 @@ const FtsPlanSchema = z.object({
 
 export type FtsPlanFeed = z.infer<typeof FtsPlanSchema>;
 
-export function useFtsPlan(symbol: string) {
-  return useQuery({
-    queryKey: ['fts-plan', symbol],
-    queryFn: ({ signal }) =>
+export function ftsPlanQueryOptions(symbol: string) {
+  return {
+    queryKey: ['fts-plan', symbol] as const,
+    queryFn: ({ signal }: { signal?: AbortSignal }) =>
       http<FtsPlanFeed>(`/api/fts/${encodeURIComponent(symbol)}`, { schema: FtsPlanSchema, signal }),
     enabled: symbol.length > 0,
     staleTime: 10 * 60_000,
     gcTime: 30 * 60_000,
     refetchOnWindowFocus: false,
     retry: 1,
-  });
+  };
+}
+
+export function useFtsPlan(symbol: string) {
+  return useQuery(ftsPlanQueryOptions(symbol));
 }

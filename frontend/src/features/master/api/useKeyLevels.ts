@@ -33,10 +33,10 @@ export function keyLevelsNote(feed: KeyLevelsFeed | null | undefined): string | 
   return feed.message ?? null;
 }
 
-export function useKeyLevels(symbol: string) {
-  return useQuery({
-    queryKey: ['key-levels', symbol],
-    queryFn: ({ signal }) =>
+export function keyLevelsQueryOptions(symbol: string) {
+  return {
+    queryKey: ['key-levels', symbol] as const,
+    queryFn: ({ signal }: { signal?: AbortSignal }) =>
       http<KeyLevelsFeed>(`/api/chart/${encodeURIComponent(symbol)}/key-levels`, {
         schema: KeyLevelsSchema,
         signal,
@@ -46,7 +46,11 @@ export function useKeyLevels(symbol: string) {
     gcTime: 30 * 60_000,
     refetchOnWindowFocus: false,
     retry: 1,
-  });
+  };
+}
+
+export function useKeyLevels(symbol: string) {
+  return useQuery(keyLevelsQueryOptions(symbol));
 }
 
 /**

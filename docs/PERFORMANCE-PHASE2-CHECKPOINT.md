@@ -2,7 +2,7 @@
 
 Branch: `mission/coder3-performance-resource-2026-10-22`
 Phase 1 recovered at `a4228cef` (all Phase 1 commits present).
-Phase 2 status: **P2-R1, P2-R2 and P2-R3 complete; P2-R4 … P2-R6 pending.**
+Phase 2 status: **P2-R1 … P2-R4 complete; P2-R5 and P2-R6 pending.**
 Environment/data: identical to Phase 1 (portable CPython 3.12.10, Node 22.22.0,
 Edge, verified market.db session 20261014; market closed; loops disabled).
 
@@ -13,7 +13,7 @@ Edge, verified market.db session 20261014; market closed; loops disabled).
 | P2-R1 | DONE | (this commit) | FTS symbol-switch request storm: single-row market, scoped screener, one FTS plan, gated trace |
 | P2-R2 | DONE | (this commit) | Funnel data-signature cache, GET/304 transport, schema-less conditional cache |
 | P2-R3 | DONE | (this commit) | strategy-tree verified; in-flight GET dedupe for technical/FTS outer layer |
-| P2-R4 | pending | — | end-to-end FTS/technical integration |
+| P2-R4 | DONE | (this commit) | end-to-end re-profile; deliberate-hover prefetch of the two protected per-symbol endpoints |
 | P2-R5 | pending | — | CPU/RAM/long-session |
 | P2-R6 | pending | — | final resource balance/report |
 
@@ -74,6 +74,43 @@ change changes the key immediately.
   `docs/CODER3-PERFORMANCE-HANDOFF-TO-CODER2.md`.
 - Technical open 2.4–3.7 s, switch ~5.3 s; unchanged and protected-bound.
 
+## P2-R4 measured result
+
+Re-profiling the complete FTS journey after R1–R3 left one unowned cost: every
+row click mounts the dossier and immediately asks the protected server for
+`/api/fts/<symbol>` and `/api/chart/<symbol>/key-levels`. The FTS strategy tab
+is a table of 1,017 candidates; a user typically rests on a row before
+clicking. P2-R4 overlaps that dwell with the two requests.
+
+Implementation (`FtsFunnelAllStages.tsx:StageRow`): hover/focus starts a 300 ms
+debounce; when it fires, `queryClient.prefetchQuery` warms `fts-plan` and
+`key-levels` with **the same query keys** the dossier uses, so the click
+subscribes to the in-flight/complete query instead of starting a duplicate.
+Quick pointer passes cancel the timer; no new endpoint or second engine.
+
+Same-symbol A/B (6 pairs: آبنوس ×3 direct-first, آتش ×3 hover-first; each
+measurement in a fresh browser context so the client cache is empty; server
+pre-warmed once per symbol so both modes see the same backend state):
+
+| Metric | Direct click | Deliberate hover + click | Gain |
+|---|---:|---:|---:|
+| click → dossier with `/api/fts` applied | 1.05–2.23 s (median ≈1.69 s) | **0.35–0.55 s** (median ≈0.47 s) | 0.58–1.86 s |
+| click → FTS response end | 0.99–2.19 s | −0.17…+0.32 s (usually already done) | 0.67–2.36 s |
+| requests per switch | 2 (`fts`, `key-levels`) | 2 (started during dwell) | 0 extra on click |
+| prefetch lead at 650 ms dwell | 0 | 363–381 ms | — |
+
+Sweep guard (network events counted at request start): moving the pointer over
+4 rows at 120 ms each produced **0** requests; a 500 ms dwell produced exactly
+the two intended requests (`artifacts/performance/phase2/hover-scan.json`).
+Unit coverage: `fts-hover-prefetch.spec.tsx` 2/2 (deliberate fires, quick pass
+does not); funnel Vitest 36/36; `tsc -b` 0 errors; production build PASS.
+
+The re-profile also found a protected-endpoint tail that the earlier P50 hid:
+the **first** `/api/fts/<symbol>` call is 25.5–40.6 s for some symbols
+(آرامش 37.9 s, آرمان 36.8 s, آس 40.6 s, آسا 25.5 s), while the same warm symbol
+answers in 0.7–1.2 s. Prefetch cannot remove that first-call cost; it is added
+to the Coder2 handoff with the measured symbols.
+
 ## Correctness coverage run
 
 - `dev/market_row_endpoint_v1.py` — 4/4 PASS (same p_closing, ETag/304,
@@ -100,10 +137,10 @@ change changes the key immediately.
   master hook instead of mounting a second protected hook; no protected code
   was edited.
 
-## Next experiment (P2-R4)
+## Next experiment (P2-R5)
 
-Re-profile the full FTS and technical journeys after P2-R1–R3. The remaining
-FTS switch cost is protected plan/key-levels; look for an unowned orchestration
-win (e.g. deferring the optional fundamental card or prefetching on explicit
-hover) and verify no regression. Then measure end-to-end request count/bytes
-and retain only reproducible gains.
+Measure CPU, RAM and long-session behaviour for the FTS and technical journeys:
+idle after init, repeated FTS open/close, repeated symbol switches and chart
+navigation, and repeated overlay toggles. Use warm and cold caches; report
+memory after warm-up and after the repeated workloads, then retain only a
+reproducible resource improvement with functional behaviour intact.
