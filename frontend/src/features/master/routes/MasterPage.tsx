@@ -71,6 +71,11 @@ const AGENT_FA: Record<string, string> = {
 /** popstate درِ سطحِ ماژول ثبت می‌شود: شنوندهٔ داخلِ کامپوننت از رویدادی که
  *  خودِ کامپوننت را mount کرده بی‌خبر می‌ماند (اول event، بعد effect). */
 let lastPopAt = 0;
+/** P2-R5: زمانِ آخرین «بازگشت به قیف» — برایِ پاک‌سازیِ دیرهنگامِ نماد.
+ *  SymbolInspector نمادِ مسیر را درِ store می‌نویسد؛ در گذرِ بازگشت، اثرِ آن
+ *  ممکن است *بعد* از clearSymbol اجرا شود و نماد را برگرداند (سنجشِ مکررِ
+ *  باز/بسته: یک بازگشتِ ناموفق، یک `/api/funnel` و چند درخواستِ اضافه). */
+let lastFunnelBackAt = 0;
 if (typeof window !== 'undefined') {
   window.addEventListener('popstate', () => {
     lastPopAt = Date.now();
@@ -105,10 +110,18 @@ export default function MasterPage() {
   /** §۱۰ Round M: بازگشتِ واقعی — اگر از قیف آمده‌ایم به عقب برمی‌گردیم و
    *  stateِ محلیِ آن (چیپ‌ها، جست‌وجو، اسکرول) می‌ماند؛ بی‌تاریخچه به خودِ قیف. */
   const goBackToFunnel = () => {
+    lastFunnelBackAt = Date.now();
     clearSymbol();
     if (location.key && location.key !== 'default') navigate(-1);
     else navigate('/master');
   };
+  // اگر بازگشت انجام شد ولی نمادی که اثرِ دیگری دوباره نوشته، تا چند لحظه
+  // دوباره پاک می‌شود — فقط وقتی مسیر دیگر :symbol ندارد.
+  useEffect(() => {
+    if (params.symbol || !stored) return;
+    if (Date.now() - lastFunnelBackAt > 3000) return;
+    clearSymbol();
+  }, [params.symbol, stored, clearSymbol]);
   /** صفِ مرور = فهرستِ انتخابِ سراسری (همان که درِ جدول تحویل ساخته شد).
    *  بندِ اول مأموریت: «انتقال دسته‌ای نباید بی‌صدا از دست برود» — پس هر نمادِ
    *  انتخابی از همین‌جا در دسترس است، نه فقط همان یکی که باز شده. */

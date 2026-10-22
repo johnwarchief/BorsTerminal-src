@@ -2,7 +2,7 @@
 
 Branch: `mission/coder3-performance-resource-2026-10-22`
 Phase 1 recovered at `a4228cef` (all Phase 1 commits present).
-Phase 2 status: **P2-R1 … P2-R4 complete; P2-R5 and P2-R6 pending.**
+Phase 2 status: **P2-R1 … P2-R5 complete; P2-R6 pending.**
 Environment/data: identical to Phase 1 (portable CPython 3.12.10, Node 22.22.0,
 Edge, verified market.db session 20261014; market closed; loops disabled).
 
@@ -14,7 +14,7 @@ Edge, verified market.db session 20261014; market closed; loops disabled).
 | P2-R2 | DONE | (this commit) | Funnel data-signature cache, GET/304 transport, schema-less conditional cache |
 | P2-R3 | DONE | (this commit) | strategy-tree verified; in-flight GET dedupe for technical/FTS outer layer |
 | P2-R4 | DONE | (this commit) | end-to-end re-profile; deliberate-hover prefetch of the two protected per-symbol endpoints |
-| P2-R5 | pending | — | CPU/RAM/long-session |
+| P2-R5 | DONE | (this commit) | CPU/RAM/long-session; duplicate funnel key + back-navigation race fixed |
 | P2-R6 | pending | — | final resource balance/report |
 
 ## P2-R1 measured result
@@ -111,6 +111,61 @@ the **first** `/api/fts/<symbol>` call is 25.5–40.6 s for some symbols
 answers in 0.7–1.2 s. Prefetch cannot remove that first-call cost; it is added
 to the Coder2 handoff with the measured symbols.
 
+## P2-R5 measured result
+
+Workloads (one warm session, Edge/CDP `Performance.getMetrics` +
+`Memory.getDOMCounters`, GC forced before every heap reading; market closed):
+10s funnel idle, 6 repeated FTS dossier open/close cycles, 3 technical chart
+opens, pattern-overlay toggles, 60s sustained funnel idle. Raw numbers:
+`artifacts/performance/phase2/resources.json` (before) and
+`resources-after2.json` (after); scripts `phase2_resource_probe.js`.
+
+Idle baseline: 10s on the funnel cost 0.11–0.25s of task CPU, **0 requests**,
+0 DOM/listener delta, flat heap. The 60s idle also made 0 requests; final 5s
+heap delta 0 KB, nodes/listeners unchanged. This is the expected closed-market
+rhythm (`sessionPollMs`), not a disabled poll: the same request path is used
+during market hours.
+
+Two real defects showed up only under repeated open/close:
+
+1. **Duplicate funnel key on the dossier.** Row clicks built the dossier URL as
+   `/master/<sym>?stage=<stage>` and dropped `preset`/`chain`/`tech`. When the
+   URL preset differed from the saved preset (a shared/bookmarked link, or the
+   probe's `?preset=tech_first`), MasterPage's dossier recomputed the whole
+   funnel with a different key: an extra `/api/funnel` (7.5 MB raw), a second
+   parsed model, and **+10 to +25 MB JS heap** that survived GC. Fix: preserve
+   the current query string on pick (only `stage` replaced, `symbol` removed),
+   and the final-view active stage is `handover` instead of the stale snapshot
+   (`FtsFunnelAllStages`). The dossier now shares the funnel model the user was
+   looking at — same four-gate position, no second payload.
+2. **Back-navigation race.** `master-open-funnel`/`master-back` clear the symbol
+   and navigate; `SymbolInspector`'s route→store sync could then run with the
+   stale `routeSymbol` and resurrect it. In the probe this needed a retry in
+   **3 of 6** cycles, each retry producing extra `/api/funnel` and calendar
+   requests. Fix: if the route has no `:symbol` shortly after an explicit
+   back-to-funnel, clear the resurrected symbol (`MasterPage`).
+
+After both fixes (same 6-cycle workload):
+
+| Metric | Before | After |
+|---|---:|---:|
+| cycles needing a back retry | 3 / 6 | **0 / 6** |
+| `/api/funnel` calls per cycle (max) | 5 | 2 (1 background refetch) |
+| heap after warm-up | 49.5 → 61.7 MB (jumps of +10.2 MB) | 40.3–43.3 MB (no jump) |
+| dossier first-open heap delta | +25.3 MB | +17.8 MB (single funnel model) |
+| DOM nodes / listeners per cycle | 1,469–1,471 / 286 | 1,469 / 286 (flat) |
+
+Technical (Coder2-owned, read-only): each open adds ~136 listeners and chart
+DOM (485 listeners / 1,737 nodes on first open); they are released on leaving
+and do not grow across 3 cycles. Technical task CPU 1.6–6.2 s per open
+(chart engine, protected). Pattern-overlay toggles were **NOT_MEASURED** — the
+default technical view exposed no `pattern-toggle-*` control to the probe.
+60s idle task CPU was 1.2 s (before) / 3.4 s (after, single sample) with 0
+requests and a flat final heap; not claimed as an improvement.
+
+Correctness: funnel Vitest 37/37 (incl. new URL-preservation test), hover 2/2,
+master + nav-history + funnel 57/57, `tsc -b` 0 errors, production build PASS.
+
 ## Correctness coverage run
 
 - `dev/market_row_endpoint_v1.py` — 4/4 PASS (same p_closing, ETag/304,
@@ -137,10 +192,10 @@ to the Coder2 handoff with the measured symbols.
   master hook instead of mounting a second protected hook; no protected code
   was edited.
 
-## Next experiment (P2-R5)
+## Next experiment (P2-R6)
 
-Measure CPU, RAM and long-session behaviour for the FTS and technical journeys:
-idle after init, repeated FTS open/close, repeated symbol switches and chart
-navigation, and repeated overlay toggles. Use warm and cold caches; report
-memory after warm-up and after the repeated workloads, then retain only a
-reproducible resource improvement with functional behaviour intact.
+Final balance: rerun the FTS switch, hover A/B, funnel conditional GET and the
+resource cycles on the P2-R5 build; compare against the Phase 1 final and the
+P2 baseline; reject any change without reproducible benefit. Produce
+`docs/PERFORMANCE-PHASE2-REPORT.md`, the machine-readable results file and the
+final validation summary, with every blocked/incomplete suite named.

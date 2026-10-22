@@ -12,7 +12,7 @@
 //   - مرحلۀ «تحویل» پایِ قیف است، نه خریدِ خودکار: نمادها منتظرِ انتخابِ خودِ
 //     مالک می‌مانند تا به سبد و مدیریتِ سرمایه برود (جزوه: selection ← سبدگردانی).
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate } from 'react-router';
+import { useLocation, useNavigate } from 'react-router';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { useQueryClient } from '@tanstack/react-query';
 import { useSymbolStore } from '@shared/stores/symbolStore';
@@ -1447,6 +1447,7 @@ export function FtsFunnelStages({
 }) {
   const setSymbol = useSymbolStore((s) => s.setSymbol);
   const navigate = useNavigate();
+  const location = useLocation();
   const [snap] = useState(readFunnelSnap);
   // «خارج از جامعۀ غربالگری» بسته است تا جدولِ گام‌ها با این ردیف‌ها شلوغ
   // نشود؛ خطِ خلاصه خودش Z را می‌گوید و همین دکمه علتِ تک‌تکشان را باز می‌کند.
@@ -1454,7 +1455,9 @@ export function FtsFunnelStages({
   // منطقِ اشتراک/اجتماع درِ همان `bors.screen.logic.v1` است که چیپ‌هایِ تبِّ تابلو
   // هم می‌خوانند — فقط برایِ نوشتنِ متنِ پنل اینجا خوانده می‌شود.
   const screenLogic = useScreenFilterStore((s) => s.logic);
-  const [activeState] = useState<FunnelStageKey>(() => snap?.stage ?? 'tape');
+  // P2-R5: نمایِ چهارتایی فقط در گامِ «تحویل» رندر می‌شود؛ گامِ فعال همان
+  // تحویل است، نه اسنپ‌شاتِ قبلی — وگرنه کلیکِ ردیف `stage=tape` در URL
+  // می‌نوشت و «بازگشت» کاربر را از تحویل به گامِ اول می‌برد.
   // رأیِ مالک (۱۴۰۵-۰۷-۲۲): سه جدولِ اول بسته‌اند و «نمادهای عبوری» (تحویل) باز —
   // چیزی که کاربر می‌خواهد ببیند همان آخری است، نه اینکه چهار جدول را اسکرول کند.
   // درِ حالتِ مسیریافته (`only`) همان یک کارت باز می‌ماند، چون کاربر صریح
@@ -1468,7 +1471,7 @@ export function FtsFunnelStages({
   // درِ حالتِ مسیریافته (`only`) گامِ واقعی همان `only` است، نه stateِ داخلیِ
   // این کامپوننت (که از snapshotِ قدیم پر شده). بی‌این، کلیکِ سطر درِ گامِ
   // تکنیکال آدرسِ `?stage=tape` می‌ساخت و بازگشت کاربر را یک گام عقب می‌برد.
-  const active = only ?? activeState;
+  const active: FunnelStageKey = only ?? 'handover';
   // کلیکِ سطر یک گذرِ واقعی است، نه فقط یک استور: URL نماد را نگه می‌دارد تا
   // «← بازگشت» و دکمۀ عقبِ مرورگر هر دو به همان قیف برسند (Round M §۱۰).
   const pick = (s: string) => {
@@ -1481,7 +1484,15 @@ export function FtsFunnelStages({
     // گامِ فعال درِ URL می‌ماند: بی‌این «بازگشت» کاربر را از گام چهارم به گام
     // اول می‌انداخت (snapshot تنها برایِ اسکرول نوشته شده بود، و همان هم درِ
     // اسکرولِ صفر پاک می‌شد).
-    navigate(`/master/${encodeURIComponent(s)}?stage=${active}`);
+    // P2-R5: بقیۀِ query هم می‌ماند. بی‌این، `preset`/`chain`/`tech` هنگامِ
+    // ورود به پروندۀ نماد از URL می‌افتادند و MasterPage قیف را با presetِ
+    // ذخیره‌شده/افق می‌گرفت — یعنی یک کلیدِ کشِ دوم، یک `/api/funnel` کاملِ
+    // ۷٫۵MB و ۵–۱۰MB heap اضافه برایِ همان لحظه — و «جای نماد در چهار در»
+    // ممکن بود از جدولی که کاربر دیده بود بخواند.
+    const qs = new URLSearchParams(location.search);
+    qs.set('stage', active);
+    qs.delete('symbol');
+    navigate(`/master/${encodeURIComponent(s)}?${qs.toString()}`);
   };
 
   // یک مدل، چند رندرر: قیف از `useFtsFunnel` می‌آید — همان چیزی که فهرستِ تحویل
