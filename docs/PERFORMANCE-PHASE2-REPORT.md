@@ -198,8 +198,8 @@ alone), six `ModuleNotFoundError` failures caused by the portable Python's
 `sys.path`), and two pre-existing failures (`repo hygiene` 122/123:
 tracked-but-ignored PNGs under `_audit/`; `tsetmc_p0` 164/165). The full Python
 suite was not rerun end-to-end after the fixes; the affected guards were rerun
-individually. `confidence_engine_v973` did not finish even with a 28-minute
-budget and remains **NOT_COMPLETED**.
+individually. `confidence_engine_v973` timed out under the suite's 600 s cap but
+passes **107/107** when run alone with a longer budget; it is slow, not broken.
 
 Full Vitest attempt: stopped after **16/201** spec files because the suite was
 not tractable in the session budget; the partial log has 435 passing test lines

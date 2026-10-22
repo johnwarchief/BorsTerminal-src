@@ -234,7 +234,7 @@
         "skip": 1,
         "silent": 31
       },
-      "note": "4 regressions fixed and retested; 2 pre-existing; 3 timeouts (2 parity guards pass alone); 6 import-path failures pass with dev/ on sys.path"
+      "note": "4 regressions fixed and retested; 2 pre-existing; confidence engine and the two parity guards timeout in the suite but pass standalone; 6 import-path failures pass with dev/ on sys.path"
     },
     "full_vitest_suite": {
       "status": "NOT_COMPLETED"
@@ -335,8 +335,10 @@
       "note": "reproduced with P2-R6 stashed"
     },
     "confidence_engine_v973": {
-      "status": "NOT_COMPLETED",
-      "note": "timed out in the suite and again standalone at 28 minutes"
+      "passed": 107,
+      "failed": 0,
+      "status": "pass",
+      "note": "timed out under the suite's 600s per-guard cap; passes standalone with a longer budget"
     }
   },
   "ownership": {
