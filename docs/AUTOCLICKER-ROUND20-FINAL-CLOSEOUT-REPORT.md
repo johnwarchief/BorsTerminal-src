@@ -214,7 +214,7 @@ Queue Monitor به `/autoclicker` متصل است و هیچ ادعای رتبه�
 
 - پایه: `2c8c269b`
 - commit پیاده‌سازی: `94a99b3e`
-- commit گزارش: commit بعدی رویِ همین شاخه
+- commit گزارش: `ad4efb43`
 - شاخه: `mission/sarkhati-round20-final-closeout-2026-10-22`
 - push فقط رویِ `github` و فقط همین شاخه؛ هیچ push/merge روی `main`.
 
