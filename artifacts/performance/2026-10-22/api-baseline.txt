@@ -1,0 +1,119 @@
+
+== market full (30 samples) ==
+  p50=132.6ms p95=240.5ms min=73.3 max=360.4 raw=6,814,415 gz=1,220,692 cold=150.43ms
+
+== market delta (30 samples) ==
+  p50=3.9ms p95=9.8ms min=2.9 max=67.9 raw=45 gz=45 cold=7.89ms
+
+== market sync-state (30 samples) ==
+  p50=3.6ms p95=13.0ms min=3.3 max=15.2 raw=46 gz=46 cold=2270.13ms
+
+== live-stats (30 samples) ==
+  p50=4.7ms p95=7.6ms min=3.2 max=8.6 raw=972 gz=972 cold=5.29ms
+
+== universe live (30 samples) ==
+  p50=177.6ms p95=239.9ms min=84.9 max=296.7 raw=383,332 gz=27,117 cold=86.56ms
+
+== mstat summary (30 samples) ==
+  p50=14.1ms p95=37.0ms min=12.0 max=91.4 raw=3,725 gz=1,441 cold=1337.84ms
+
+== mstat board (10 samples) ==
+  p50=56.1ms p95=90.8ms min=50.5 max=90.8 raw=247,101 gz=61,398 cold=2655.41ms
+
+== mstat mainwatch (30 samples) ==
+  p50=27.7ms p95=40.1ms min=23.5 max=45.6 raw=77,870 gz=17,376 cold=143.98ms
+
+== mstat treemap (30 samples) ==
+  p50=26.3ms p95=61.4ms min=24.0 max=69.2 raw=93,971 gz=21,238 cold=45.87ms
+
+== mstat tops (30 samples) ==
+  p50=13.4ms p95=19.3ms min=12.9 max=95.2 raw=9,172 gz=2,970 cold=17.19ms
+
+== mstat histogram (30 samples) ==
+  p50=12.4ms p95=15.6ms min=11.7 max=27.8 raw=1,573 gz=582 cold=11.9ms
+
+== mstat timeline (30 samples) ==
+  p50=15.0ms p95=20.3ms min=13.8 max=21.2 raw=12,195 gz=3,167 cold=21.79ms
+
+== mstat phases (30 samples) ==
+  p50=14.4ms p95=21.4ms min=11.1 max=23.6 raw=474 gz=474 cold=11.41ms
+
+== mstat smart-money (30 samples) ==
+  p50=12.8ms p95=39.7ms min=12.2 max=43.6 raw=4,733 gz=2,056 cold=16.56ms
+
+== mstat depth (30 samples) ==
+  p50=11.8ms p95=14.8ms min=11.1 max=17.4 raw=536 gz=536 cold=12.41ms
+
+== mstat thermometer (30 samples) ==
+  p50=12.1ms p95=15.2ms min=11.1 max=29.0 raw=394 gz=394 cold=12.7ms
+
+== mstat gold (30 samples) ==
+  p50=23.6ms p95=34.2ms min=20.8 max=34.8 raw=40,280 gz=10,512 cold=22.86ms
+
+== mstat indexcards (30 samples) ==
+  p50=12.5ms p95=15.1ms min=11.8 max=16.2 raw=2,308 gz=1,197 cold=18.73ms
+
+== mstat industries (30 samples) ==
+  p50=15.2ms p95=63.5ms min=13.7 max=210.2 raw=14,798 gz=3,858 cold=18.54ms
+
+== mstat clientsplit (30 samples) ==
+  p50=12.9ms p95=23.8ms min=11.3 max=34.6 raw=585 gz=585 cold=26.87ms
+
+== mstat orderflows (30 samples) ==
+  p50=14.1ms p95=67.5ms min=12.7 max=148.2 raw=10,122 gz=3,040 cold=17.12ms
+
+== mstat ownership (30 samples) ==
+  p50=17.5ms p95=58.0ms min=13.6 max=107.2 raw=11,319 gz=3,293 cold=70.61ms
+
+== chart one symbol (10 samples) ==
+  p50=2307.5ms p95=3877.7ms min=865.1 max=3877.7 raw=295 gz=295 cold=2922.99ms
+
+== chart second symbol (10 samples) ==
+  p50=517.8ms p95=916.8ms min=421.6 max=916.8 raw=1,121,706 gz=201,831 cold=4357.96ms
+
+== fts one symbol (10 samples) ==
+  p50=2452.4ms p95=3098.7ms min=1721.9 max=3098.7 raw=47 gz=47 cold=1967.37ms
+
+== screener (10 samples) ==
+  p50=194.0ms p95=236.4ms min=180.4 max=236.4 raw=1,203,793 gz=122,609 cold=1488.17ms
+
+== fundamental one (10 samples) ==
+  p50=187.2ms p95=338.7ms min=155.6 max=338.7 raw=29 gz=29 cold=167.24ms
+
+== fundamental quarters (10 samples) ==
+  p50=179.0ms p95=298.9ms min=158.6 max=298.9 raw=62 gz=62 cold=155.28ms
+
+== funnel registry (30 samples) ==
+  p50=6.1ms p95=9.8ms min=5.8 max=10.0 raw=25,293 gz=7,688 cold=6.2ms
+
+== funnel stages (10 samples) ==
+  p50=57.9ms p95=108.3ms min=43.9 max=108.3 raw=7,574,448 gz=388,077 cold=616.86ms
+
+== fts config (30 samples) ==
+  p50=6.5ms p95=99.6ms min=4.3 max=176.2 raw=1,121 gz=620 cold=5.43ms
+
+== index tedpix (30 samples) ==
+  p50=298.5ms p95=733.4ms min=153.1 max=1780.1 raw=744,147 gz=136,060 cold=1905.01ms
+
+== watchlist (30 samples) ==
+  p50=18.0ms p95=46.5ms min=14.0 max=149.5 raw=51 gz=51 cold=18.1ms
+
+== watchlist matrix (10 samples) ==
+  p50=21.7ms p95=73.1ms min=18.0 max=73.1 raw=75 gz=75 cold=22.21ms
+
+== selection symbols (30 samples) ==
+  p50=3.3ms p95=4.6ms min=3.1 max=4.7 raw=40 gz=40 cold=7.24ms
+
+== selection portfolio (30 samples) ==
+  p50=14.8ms p95=21.0ms min=14.2 max=43.1 raw=374 gz=374 cold=21.34ms
+
+== calendar upcoming (30 samples) ==
+  p50=5.1ms p95=8.1ms min=4.8 max=8.2 raw=77 gz=77 cold=9.0ms
+
+== notifications sources (30 samples) ==
+  p50=342.9ms p95=1105.8ms min=308.1 max=1139.9 raw=398 gz=398 cold=491.4ms
+
+== mstat series (10 samples) ==
+  p50=20.1ms p95=147.2ms min=12.8 max=147.2 raw=3,298 gz=973 cold=26.66ms
+
+wrote C:\Users\STU\Documents\Qoder\2026-10-22\32ea1037\repo\artifacts/performance/2026-10-22/api-baseline.json

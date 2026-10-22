@@ -33,6 +33,9 @@ SUITES = [
     # پنلی رویِ ردیف‌هایش نمی‌نویسد، نوشتنِ تازه کش را باطل می‌کند، و دوِ فایلِ
     # بانکِ مختلف هرگز یکی نشمرده می‌شوند.
     ('dev/mstat_snapshot_cache_v1.py', 'shared mstat snapshot cache: read-only rows, real invalidation, per-file isolation'),
+    # PERF-R1: بی‌تک‌پروازگی، هر درخواستِ سردِ هم‌زمان اسنپ‌شاتِ خودش را می‌ساخت
+    # (سنجشِ مرورگر: ۱۰٫۸s تا آمادگیِ تبِ وضعیت بازار).
+    ('dev/mstat_snapshot_singleflight_v1.py', 'cold concurrent panel requests share one snapshot build'),
     # مأموریتِ تطبیقِ 2026-10-20: صفرِ معتبر و LASTِ منبع جدا از مقدارِ کهنه.
     ('dev/market_last_trade_semantics_v1.py',
      'market LAST: source LAST wins, zero is not missing, no stale/derived price'),

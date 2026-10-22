@@ -587,6 +587,50 @@ def mstat_board(group: str = Query("eq_all"), limit: int = Query(60)):
     except Exception as e:
         return {"status": "error", "message": str(e), "source": "local:market.db"}
 
+_WARM_LOCK = threading.Lock()
+
+
+def warm_mstat_cache() -> None:
+    """گرم‌کردنِ کشِ پنل‌ها در پس‌زمینهٔ بوت، با همان کلیدهایی که UI می‌خواند.
+
+    سنجشِ ۱۴۰۵-۰۷-۳۰ (مرورگر واقعی، کشِ سرد): اولین بازِ «وضعیت بازار» ۱۹
+    درخواست می‌فرستد؛ حتی با تک‌پروازگیِ اسنپ‌شات، هر پنل اول بار محاسبه
+    می‌شود و به‌خاطرِ سقفِ ۶ اتصالِ مرورگر چهار موجِ پاسخ می‌سازد — ۷٫۸s تا
+    آمادگی. گرم‌کردنِ همین کلیدها پیش از تعامل، همان CPU را به زمانِ بیکاریِ
+    بوت می‌برد؛ هیچ TTL، فرمول یا کلیدِ کشی عوض نمی‌شود و پنلِ گرم همان
+    چیزی است که نخستین درخواستِ کاربر می‌ساخت. اگر کاربر زودتر برسد،
+    `_mstat_call` همان تک‌پروازگیِ همیشگی را دارد و کار دوباره نمی‌شود.
+    """
+    if not _WARM_LOCK.acquire(blocking=False):
+        return
+    try:
+        st = _mstat_state()
+        if st is None:
+            return
+        try:
+            _board_all("eq_all", 60, state=st)
+        except Exception:
+            pass
+        # آرگومان‌هایِ UI که با board یکی نیستند (limit/گروه/تبِ متفاوت).
+        extra = [
+            (_mstat.histogram, ("all",), {}),
+            (_mainwatch_with_flags, ("eq_all", "", "clock", True, 120), {}),
+            (_mainwatch_with_flags, ("all", "", "clock", True, 120), {}),
+        ]
+        for fn, args, kw in extra:
+            try:
+                _mstat_call(fn, *args, state=st, **kw)
+            except Exception:
+                pass
+        # پنلِ مرحلِ جلسه از `stale_ok=False` می‌خواند؛ کلید و تازگی حفظ می‌شود.
+        try:
+            _mstat_call(_mstat.session_phase, state=st, stale_ok=False)
+        except Exception:
+            pass
+    finally:
+        _WARM_LOCK.release()
+
+
 @router.post("/api/mstat/snapshot")
 def mstat_snapshot_now():
     """یک نقطهٔ تایم‌لاین همین لحظه — دستیارِ تست و «بروزرسانی» دستی."""

@@ -277,6 +277,24 @@ def _startup_sync_market():
     except Exception as _e:
         print(f"[startup] screener warm thread failed: {_e}")
 
+    # PERF-R1: اولین بازِ «وضعیت بازار» ۱۹ پنلِ سرد را در چهار موجِ مرورگر
+    # می‌سازد (سنجش: ۷٫۸s تا آمادگی). گرم‌کردنِ همان کلیدها در پس‌زمینهٔ بوت
+    # همان کار را از مسیرِ تعاملِ کاربر برمی‌دارد؛ TTL و داده عوض نمی‌شود.
+    def _warm_mstat():
+        try:
+            import time as _t
+            _t.sleep(2)
+            from api.market_status import warm_mstat_cache
+            warm_mstat_cache()
+            print("[startup] mstat panel cache warmed")
+        except Exception as _e:
+            print(f"[startup] mstat warm failed: {_e}")
+    try:
+        threading.Thread(target=_warm_mstat, daemon=True).start()
+        print("[startup] mstat warm thread spawned")
+    except Exception as _e:
+        print(f"[startup] mstat warm thread failed: {_e}")
+
     # ── تازۀ‌سازیِ خودکارِ تابلو در ساعتِ بازار ──────────────────────────
     # اندازه‌گیری ۱۴۰۵-۰۷-۰۴: برنامه ۰۷:۲۱ (پیش از بازگشایی) اجرا شده بود و تا
     # ۱۰:۲۱ — وسطِ نشست — هیچ سینکِ دیگری نزد. TSETMC همان لحظه ۵۱ میلیارد سهم

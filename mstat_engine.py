@@ -34,6 +34,7 @@ import json
 import math
 import sqlite3
 import threading
+import time
 import zlib
 from typing import Optional
 
@@ -516,6 +517,15 @@ _CTX = {}   # آخرین اتصال/امضا → ctx — مسیرِ سریعِ �
 _SNAP_CACHE: "dict[tuple, dict]" = {}
 _SNAP_LOCK = threading.Lock()
 _SNAP_KEEP = 2               # اسنپ‌شاتِ جاری + یکیِ پیشین؛ بیشتر از این درِ حافظه بی‌فایده
+# تک‌پروازگیِ ساختِ اسنپ‌شات. سنجشِ ۱۴۰۵-۰۷-۳۰ (مرورگر واقعی، کشِ سرد):
+# تبِ «وضعیت بازار» ۱۹ درخواستِ هم‌زمان می‌فرستد و هر ۱۹ نفر پیش از پر شدنِ
+# کش، `_build_snapshot` را جدا اجرا می‌کردند — هر اجرا ~۶۵۰ms کوئریِ
+# تکراری رویِ daily_prices/client_type. نتیجه: ۱۰٫۸ ثانیه تا آمادگی و
+# مصرفِ چند برابریِ CPU. این نگهبان فقط *ساختنِ دوبارهٔ همان کلید* را
+# متوقف می‌کند؛ داده، کلیدِ «حالتِ بانک» و TTL هیچ تغییری نمی‌کنند.
+_SNAP_WAIT: "dict[tuple, threading.Event]" = {}
+_SNAP_WAIT_LOCK = threading.Lock()
+_SNAP_BUILD_WAIT_S = 30.0
 
 
 def _db_identity(conn) -> str:
@@ -586,7 +596,52 @@ def load_snapshot(conn, force: bool = False) -> dict:
         ident = key[0]
         if not ident:                 # بانکِ ناشناس: کشِ مشترک سازِ اشتباه نیست
             return _build_snapshot(conn, sig, None)
+        return _build_snapshot_singleflight(conn, sig, key)
     return _build_snapshot(conn, sig, key)
+
+
+def _build_snapshot_singleflight(conn, sig, key):
+    """همان `_build_snapshot`، ولی هم‌زمان‌ها پشتِ یک ساخت می‌ایستند.
+
+    بی‌این، هر درخواستِ سردی که پیش از `_snap_put` می‌رسید مستقل می‌ساخت
+    (کش بیرون از قفل خوانده می‌شود). منتظر پس از بیدار شدن دوباره کش را
+    می‌خواند؛ اگر سازنده شکست خورد، یکی از منتظرها سازنده می‌شود. سقفِ
+    انتظار مانعِ بن‌بست است: بعد از آن، همان مسیرِ بی‌کش اجرا می‌شود.
+    """
+    deadline = time.monotonic() + _SNAP_BUILD_WAIT_S
+    while True:
+        with _SNAP_WAIT_LOCK:
+            hit = _SNAP_CACHE.get(key)
+            if hit is not None:
+                _CTX["conn"] = conn
+                _CTX["sig"] = sig
+                _CTX["data"] = hit
+                return hit
+            ev = _SNAP_WAIT.get(key)
+            if ev is None:
+                ev = _SNAP_WAIT[key] = threading.Event()
+                owner = True
+            else:
+                owner = False
+        if owner:
+            break
+        left = deadline - time.monotonic()
+        if left <= 0:
+            return _build_snapshot(conn, sig, key)
+        ev.wait(timeout=left)
+    try:
+        with _SNAP_WAIT_LOCK:
+            hit = _SNAP_CACHE.get(key)
+            if hit is not None:
+                _CTX["conn"] = conn
+                _CTX["sig"] = sig
+                _CTX["data"] = hit
+                return hit
+        return _build_snapshot(conn, sig, key)
+    finally:
+        with _SNAP_WAIT_LOCK:
+            _SNAP_WAIT.pop(key, None)
+        ev.set()
 
 
 def _signature(conn) -> tuple:
