@@ -103,6 +103,40 @@ POSITION_FIELD_MAP = {
     "settled": "currentAsset + todaySoldAsset - todayBoughtAsset",
     "sellable": "max(0, min(currentAsset, settled) - openSellOrders)",
 }
+#: Round 19: قراردادِ جایگاهِ صف در بستهٔ اول‌طرفِ Titan.
+#: API‌اش POST است (OrderPlace/OrderPlaceInfo) و در راندِ GET-only صدا زده نمی‌شود؛
+#: UI دو ستونِ دقیق دارد. `/Rlc/MarketSheet` فقط کتابِ تجمیعی است، نه رتبهٔ کاربر.
+MOFID_QUEUE_CONTRACT = {
+    "api": {
+        "paths": ["/Order/OrderPlace", "/Order/OrderPlaceInfo"],
+        "method": "POST", "base": "gateway",
+        "response": "data.orderPlaces",
+        "fields": ["orderId", "orderPlace", "volumeAhead"],
+        "status": "FIRST_PARTY_CLIENT_OBSERVED",
+        "invoked": False,
+        "reason": "POST outside the GET-only read-only allowlist of this round",
+    },
+    "ui": {
+        "columns": [
+            {"data_column": "COMMON_ORDER-orderPlace", "label": "جایگاه"},
+            {"data_column": "COMMON_ORDER-orderVolume", "label": "جایگاه حجمی"},
+        ],
+        "status": "DOM_HEADERS_OBSERVED",
+        "row_mapping": "UNVERIFIED (no real open order row to bind orderId→row)",
+        "invoked": False,
+    },
+    "market_sheet": {
+        "path": "/Rlc/MarketSheet/{symbolIsin}", "method": "GET",
+        "semantics": "aggregate buy/sell book; not the user's order rank",
+        "usable_as_rank": False,
+    },
+    "rank_semantics": {
+        "orderPlace": "raw order-place value from the broker; 0/first not inferred",
+        "volumeAhead": "raw volume-ahead value; unit UNVERIFIED",
+    },
+}
+
+
 ORDER_CONTRACT = {
     "open_orders": {"path": WIRE_PATH_OPEN_ORDERS, "method": "GET",
                     "id_field": "orderId", "state_field": "orderState",
@@ -754,6 +788,9 @@ class MofidAdapter(BrokerAdapter):
                             detail="Mofid HTTP %d — نتیجه نامعلوم" % resp.status)
 
     # ---- شاهد --------------------------------------------------------------
+    def queue_contract(self) -> dict[str, Any]:
+        return dict(MOFID_QUEUE_CONTRACT)
+
     def readiness_evidence(self) -> dict[str, Any]:
         """آنچه ثابت شده و آنچه نشده — UI بی‌این، mock را واقعی می‌خواند."""
         return {
@@ -803,5 +840,6 @@ __all__ = [
     "WIRE_PATH_ORDER_DETAIL", "WIRE_PATH_ACCOUNTING_REMAIN",
     "CONTRACT_STATE", "CONTRACT_PROVENANCE", "SELLABLE_FORMULA", "SELLABLE_STATE",
     "UNIT", "UNIT_VERIFICATION", "POSITION_FIELD_MAP", "ORDER_CONTRACT",
+    "MOFID_QUEUE_CONTRACT",
     "MofidAdapter", "build_payload", "authorization_value", "map_order_state",
 ]

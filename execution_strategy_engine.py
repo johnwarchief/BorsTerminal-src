@@ -35,6 +35,7 @@ from urllib.parse import urlparse
 import execution_browser as EB
 import execution_intent_store as IS
 import execution_strategy_core as SC
+from execution_telemetry import ExecutionTelemetry
 from execution_contract import (
     BrokerError, ErrorCode, ExecutionRecord, ExecutionStatus, OrderDraft, Side,
 )
@@ -1331,6 +1332,7 @@ class StrategyEngine:
             ok2, why2 = self.arbiter.reserve(draft.execution_id, strategy_id)
             if not ok2:
                 raise StrategyError("DUPLICATE_GUARD", why2)
+        pre_start = now_ms()
         try:
             handle = strategy.prepare(ctx, draft, target_wall_ms)
         except Exception as e:
@@ -1338,6 +1340,11 @@ class StrategyEngine:
             self.arbiter.abort(draft.execution_id)
             self.intent_store.mark_prepare_failed(key, strategy_id, str(e)[:180])
             raise
+        order.telemetry.update({
+            "preflight_started_mono_ms": round(pre_start, 3),
+            "preflight_completed_mono_ms": round(now_ms(), 3),
+        })
+        order.telemetry.setdefault("sources", {})["preflight"] = "monotonic"
         order.prepared = handle
         order.preparation_ms = getattr(handle, "prepared_ms", None)
         if (isinstance(handle, PreparedHandle) and handle.driver is not None
@@ -1433,9 +1440,14 @@ class StrategyEngine:
 
         # claimِ اتمیک دقیقاً پیش از action؛ اگر کلیک انجام شد، دیگر تکرار ممنوع.
         ctx.before_action = _claim_click
+        exec_start_mono = now_ms()
+        exec_start_wall = int(time.time() * 1000)
+        target_mono_ms = None
+        sched_tel = None
         try:
             if order.target_wall_ms is not None and self.scheduler is not None:
                 plan = self.scheduler.plan(order.target_wall_ms)
+                target_mono_ms = round((plan.lead_mono + plan.wait_s) * 1000.0, 3)
                 holder: dict[str, Any] = {}
 
                 def _send() -> str:
@@ -1444,6 +1456,7 @@ class StrategyEngine:
 
                 tel = self.scheduler.dispatch(plan, send=_send,
                                               abort_event=order.abort_event)
+                sched_tel = tel
                 result = holder.get("result")
                 if tel.aborted:
                     result = SC.StrategyResult(
@@ -1472,6 +1485,68 @@ class StrategyEngine:
                 eid, order.strategy_id, "failed",
                 detail="%s: %s" % (type(e).__name__, str(e)[:160]),
                 error_code="UNEXPECTED")
+        # ── Round 19: یک تلمتریِ مشترک از هر دو مسیر؛ فقط شاهدهایِ موجود.
+        timings = result.timings or {}
+        is_dry_api = (result.status == "dry_run"
+                      and result.strategy_id == SC.DIRECT_API)
+        req_mono = None if is_dry_api else (
+            timings.get("request_started_mono_ms")
+            or timings.get("dispatch_mono_ms") or timings.get("request_mono_ms"))
+        resp_mono = None if is_dry_api else timings.get("response_mono_ms")
+        click_mono = timings.get("action_start_mono_ms")
+        resp_wall = int(time.time() * 1000) if resp_mono is not None else None
+        order_id_mono = resp_mono if (result.broker_order_id and result.accepted) else None
+        ack_mono = resp_mono if result.accepted else None
+        send_mono = (round(sched_tel.send_mono * 1000.0, 3)
+                     if sched_tel is not None and not sched_tel.aborted else None)
+        send_wall = (sched_tel.actual_send_wall_ms
+                     if sched_tel is not None and not sched_tel.aborted else None)
+        if send_mono is None and target_mono_ms is None:
+            # بی‌scheduler، «actual send» همان execution_start است (نه صفر).
+            send_mono = round(exec_start_mono, 3)
+            send_wall = exec_start_wall
+        tele = ExecutionTelemetry(
+            intent_created_wall_ms=order.telemetry.get("intent_created_wall_ms"),
+            preflight_started_mono_ms=order.telemetry.get("preflight_started_mono_ms"),
+            preflight_completed_mono_ms=order.telemetry.get("preflight_completed_mono_ms"),
+            scheduled_target_wall_ms=order.target_wall_ms,
+            scheduled_target_mono_ms=target_mono_ms,
+            execution_start_mono_ms=round(exec_start_mono, 3),
+            execution_start_wall_ms=exec_start_wall,
+            send_started_mono_ms=send_mono,
+            send_started_wall_ms=send_wall,
+            browser_click_started_mono_ms=click_mono,
+            request_started_mono_ms=req_mono,
+            response_received_mono_ms=resp_mono,
+            response_received_wall_ms=resp_wall,
+            broker_acknowledged_mono_ms=ack_mono,
+            broker_acknowledged_wall_ms=resp_wall if ack_mono is not None else None,
+            order_id_observed_mono_ms=order_id_mono,
+            order_id_observed_wall_ms=resp_wall if order_id_mono is not None else None,
+            clock_offset_ms=(sched_tel.clock_offset_ms if sched_tel else None),
+            clock_quality=(sched_tel.clock_quality.value if sched_tel
+                           else ClockQuality.UNAVAILABLE.value),
+            sources={
+                "preflight": "monotonic",
+                "execution_start": "monotonic+wall",
+                "browser_click": "browser event (monotonic)",
+                "request": "engine dispatch/request (monotonic)",
+                "response": "engine post-trigger (monotonic)",
+                "wall_response": "engine read after trigger (local wall; not broker time)",
+                "ack/order_id": "only when the result has an explicit broker id/ack",
+                "queue": "not observed in trigger",
+            },
+            notes=["wall timestamps are local; broker timezone/sequence never assumed"]
+            if resp_wall else [],
+        )
+        telemetry = tele.to_dict()
+        # preflight/intent/target از order؛ بقیه از نتیجه.
+        for key in ("intent_created_wall_ms", "preflight_started_mono_ms",
+                    "preflight_completed_mono_ms", "scheduled_target_wall_ms"):
+            if order.telemetry.get(key) is not None:
+                telemetry[key] = order.telemetry[key]
+        result.telemetry = telemetry
+        order.telemetry = telemetry
         with self._lock:
             order.result = result
             order.state = result.status

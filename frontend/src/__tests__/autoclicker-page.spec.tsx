@@ -9,7 +9,7 @@ const api = vi.hoisted(() => ({
   settings: vi.fn(async (_id: string, _body: Record<string, unknown>) => ({ status: 'success' })),
   probe: vi.fn(async (_id: string) => ({ status: 'success', probe: { login: 'NOT_VISIBLE', origin_ok: true } })),
   prepare: vi.fn(async (_body: Record<string, unknown>) => ({ status: 'success', prepared_id: 'prep-1' })),
-  trigger: vi.fn(async (_body: Record<string, unknown>) => ({ status: 'success' })),
+  trigger: vi.fn(async (_body: Record<string, unknown>): Promise<Record<string, unknown>> => ({ status: 'success' })),
   abort: vi.fn(async () => ({ status: 'success' })),
   order: vi.fn(async (_id: string) => ({ status: 'success', order: { status: 'dry_run' } })),
   refetchPortfolio: vi.fn(async () => ({})),
@@ -28,11 +28,19 @@ const ui = vi.hoisted(() => ({
   adapter: 'easytrader' as string,
   portfolio: null as Record<string, unknown> | null,
   bp: null as Record<string, unknown> | null,
+  queue: null as Record<string, unknown> | null,
   mofidSession: {
     status: 'success', state: 'NEEDS_LOGIN', reason: 'LOGIN_REQUIRED',
     adapter_ready: true, session_proven: false, host_open: false,
   } as Record<string, unknown>,
 }));
+
+const emptyQueue = (): Record<string, unknown> => ({
+  status: 'success', supported: false, queue_supported: false, rows: [],
+  reason: 'no real open/today orders visible', contract: null,
+  claims_first_rank: false, observed_at: '2026-10-22T10:00:00',
+  poll_interval_ms: 10000, source: 'adapter:easytrader',
+});
 
 vi.mock('@features/portfolio/lib/orderClient', () => ({
   orderApi: {
@@ -96,6 +104,13 @@ vi.mock('@features/portfolio/lib/orderClient', () => ({
       next_action: 'مجوزِ مالک و قراردادِ عملیاتی' },
     isPending: false, isError: false,
   }),
+  useQueueMonitor: () => ({
+    data: ui.queue, isPending: false, isFetching: false, error: null,
+    refetch: vi.fn(),
+  }),
+  queueRankText: (row: Record<string, unknown>) =>
+    (row.queue_status === 'KNOWN' && row.queue_position != null
+      ? String(row.queue_position) : '—'),
   useExecutionPortfolio: () => ({
     data: ui.portfolio, isPending: false, isFetching: false, error: null,
     refetch: api.refetchPortfolio,
@@ -116,6 +131,7 @@ beforeEach(() => {
   ui.adapter = 'easytrader';
   ui.portfolio = null;
   ui.bp = null;
+  ui.queue = emptyQueue();
   ui.mofidSession = {
     status: 'success', state: 'NEEDS_LOGIN', reason: 'LOGIN_REQUIRED',
     adapter_ready: true, session_proven: false, host_open: false,
@@ -300,5 +316,88 @@ describe('AutoClicker — تنظیمات و آمادگی', () => {
     expect(screen.queryByTestId('autoclicker-mofid-bp')).toBeNull();
     expect(screen.getByTestId('autoclicker-mofid-state').textContent)
       .toContain('بررسی ناموفق');
+  });
+
+  it('در نبودِ قرارداد جایگاه، رتبه صفر جعل نمی‌شود و علت نمایش داده می‌شود', async () => {
+    ui.adapter = 'mofid';
+    ui.queue = {
+      ...emptyQueue(), supported: true, queue_supported: false,
+      source: 'adapter:mofid', rows: [{
+        order_id: 'O-77', symbol: 'TEST', side: 'buy', price: 1000, quantity: 10,
+        execution_status: 'accepted', order_state: 'open',
+        queue_status: 'UNSUPPORTED_READ_ONLY', queue_position: null,
+        volume_ahead: null, queue_source: 'none',
+        queue_reason: 'Mofid queue API is POST /Order/OrderPlace',
+        read_back: 'LIST_ROW',
+        position_semantics: 'RAW_ORDER_PLACE; 0 is not interpreted as first',
+      }],
+    };
+    renderPage();
+    await waitFor(() => expect(screen.getByTestId('autoclicker-queue-row-0')).toBeTruthy());
+    expect(screen.queryByTestId('autoclicker-queue-rank-0')).toBeNull();
+    expect(screen.getByTestId('autoclicker-queue-reason-0').textContent)
+      .toContain('POST');
+    expect(screen.getByTestId('autoclicker-queue-supported').textContent)
+      .toContain('در دسترس نیست');
+  });
+
+  it('جایگاه KNOWN را خام و با منبع/تاریخ نشان می‌دهد و ۰ را «اول» نمی‌خواند', async () => {
+    ui.queue = {
+      ...emptyQueue(), supported: true, queue_supported: true,
+      source: 'adapter:easytrader', rows: [{
+        order_id: 'O-88', symbol: 'TEST', side: 'buy', price: 1000, quantity: 10,
+        execution_status: 'accepted', order_state: 'open',
+        queue_status: 'KNOWN', queue_position: 0, volume_ahead: 500,
+        queue_source: 'easytrader:orderPlace/volumeAhead',
+        queue_as_of: '2026-10-22T10:00:05',
+        queue_freshness: 'ADAPTER_LOCAL_AS_OF',
+        volume_ahead_unit: 'UNVERIFIED', read_back: 'LIST_ROW',
+        queue_series: [
+          { as_of: '2026-10-22T10:00:05', position: 3 },
+          { as_of: '2026-10-22T10:00:15', position: 0 },
+        ],
+      }],
+    };
+    renderPage();
+    await waitFor(() => expect(screen.getByTestId('autoclicker-queue-rank-0')).toBeTruthy());
+    const rank = screen.getByTestId('autoclicker-queue-rank-0').textContent ?? '';
+    expect(rank).toContain('۰');
+    expect(rank).toContain('UNVERIFIED');
+    expect(rank).toContain('easytrader');
+    expect(screen.getByTestId('autoclicker-queue-claim').textContent)
+      .toContain('رتبهٔ اول');
+    const series = screen.getByTestId('autoclicker-queue-series-0').textContent ?? '';
+    expect(series).toContain('۳');
+    expect(series).toContain('۰');
+  });
+
+  it('تلمتریِ آخرین اجرا تأخیرها را جدا نشان می‌دهد و یک‌طرفه نمی‌سازد', async () => {
+    api.trigger.mockResolvedValueOnce({
+      status: 'success',
+      result: {
+        status: 'dry_run',
+        telemetry: {
+          timezone: 'Asia/Tehran (fixed +03:30)', precision: 'ms',
+          latencies: {
+            preflight_ms: 12.5, scheduler_lag_ms: 3, click_to_request_ms: 40,
+            request_rtt_ms: 210, response_to_order_id_ms: 8,
+            order_id_to_queue_ms: null, target_error_ms: 2,
+          },
+        },
+      },
+    });
+    renderPage();
+    fireEvent.change(screen.getByTestId('autoclicker-symbol'), { target: { value: 'فولاد' } });
+    fireEvent.change(screen.getByTestId('autoclicker-price'), { target: { value: '1000' } });
+    fireEvent.change(screen.getByTestId('autoclicker-qty'), { target: { value: '10' } });
+    fireEvent.click(screen.getByTestId('autoclicker-prepare'));
+    await waitFor(() => expect(screen.getByTestId('autoclicker-dry-run')).toBeTruthy());
+    fireEvent.click(screen.getByTestId('autoclicker-dry-ack'));
+    fireEvent.click(screen.getByTestId('autoclicker-dry-run'));
+    await waitFor(() => expect(screen.getByTestId('autoclicker-telemetry')).toBeTruthy());
+    const tel = screen.getByTestId('autoclicker-telemetry').textContent ?? '';
+    expect(tel).toContain('۲۱۰');
+    expect(tel).toContain('۱۲.۵');
+    expect(tel).toContain('RTT/2');
   });
 });

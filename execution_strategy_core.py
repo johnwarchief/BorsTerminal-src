@@ -515,6 +515,8 @@ class StrategyResult:
     live: bool = False
     timings: dict[str, Any] = field(default_factory=dict)
     evidence: dict[str, Any] = field(default_factory=dict)
+    #: Round 19: تلمتریِ مشترکِ API/Browser/Scheduler (timestamp + منبع + latency).
+    telemetry: dict[str, Any] = field(default_factory=dict)
 
     def public(self) -> dict[str, Any]:
         return {
@@ -525,6 +527,7 @@ class StrategyResult:
             "accepted": self.accepted, "unknown": self.unknown,
             "request_aborted": self.request_aborted, "live": self.live,
             "timings": dict(self.timings), "evidence": dict(self.evidence),
+            "telemetry": dict(self.telemetry),
         }
 
 
@@ -542,10 +545,17 @@ class StrategyOrder:
     preparation_ms: Optional[float] = None
     result: Optional[StrategyResult] = None
     abort_event: threading.Event = field(default_factory=threading.Event)
+    #: Round 19: تلمتریِ همین قصد؛ در prepare/trigger تکمیل می‌شود.
+    telemetry: dict[str, Any] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
         if not self.prepared_id:
             self.prepared_id = "%s:%s" % (self.execution_id, self.strategy_id)
+        if not self.telemetry:
+            self.telemetry = {"intent_created_wall_ms": int(self.created_at * 1000)}
+        if self.target_wall_ms is not None:
+            self.telemetry.setdefault("scheduled_target_wall_ms",
+                                      int(self.target_wall_ms))
 
     def public(self) -> dict[str, Any]:
         return {
@@ -554,6 +564,7 @@ class StrategyOrder:
             "state": self.state, "target_wall_ms": self.target_wall_ms,
             "created_at": self.created_at,
             "preparation_ms": self.preparation_ms,
+            "telemetry": dict(self.telemetry),
             "result": self.result.public() if self.result else None,
         }
 

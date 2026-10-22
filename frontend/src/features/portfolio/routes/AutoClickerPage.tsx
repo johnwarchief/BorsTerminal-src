@@ -8,9 +8,9 @@ import { useEffect, useMemo, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router';
 import {
-  browserHostApi, mofidApi, orderApi, useBrowserHost, useExecutionReadiness,
-  useExecutionStatus, useMofidSession, useStrategies,
-  type MofidProbeView, type StrategyRowView,
+  browserHostApi, mofidApi, orderApi, queueRankText, useBrowserHost,
+  useExecutionReadiness, useExecutionStatus, useMofidSession, useQueueMonitor,
+  useStrategies, type MofidProbeView, type StrategyRowView,
 } from '../lib/orderClient';
 import { Chip, Field, GhostBtn, Line, Note, Section } from '../components/sarkhati/parts';
 import { toFaDigits } from '@shared/lib/fmt';
@@ -65,6 +65,22 @@ const MOFID_STATE_LABEL: Record<string, string> = {
   SESSION_EXPIRED: 'نشست منقضی',
   READ_ONLY_PROBE_FAILED: 'بررسی ناموفق',
 };
+
+const QUEUE_STATUS_LABEL: Record<string, string> = {
+  KNOWN: 'جایگاه خوانده شد',
+  UNSUPPORTED_READ_ONLY: 'در مسیر فقط‌خواندنی نیست',
+  UNKNOWN: 'بدون مقدار',
+  NO_ORDER_ID: 'بدون شناسهٔ سفارش',
+  ERROR: 'خطای دریافت',
+};
+
+function msText(v: unknown): string {
+  if (v == null || v === '') return '—';
+  const n = Number(v);
+  return Number.isFinite(n)
+    ? `${toFaDigits(n.toLocaleString('en-US', { maximumFractionDigits: 1 }))} ms`
+    : '—';
+}
 
 function optionText(row: StrategyRowView | undefined, key: string, fallback: string): string {
   const v = row?.settings?.options?.[key];
@@ -146,6 +162,11 @@ export default function AutoClickerPage() {
   const readinessWarnings = (accountReadiness?.warnings as Array<Record<string, unknown>> | undefined) ?? [];
   const readOnlyAccountReady = accountReadiness?.read_only_account_ready === true;
   const probeOrderDetail = String(mofidProbe?.steps?.order_detail ?? '—');
+  const queueQ = useQueueMonitor(true);
+  const queue = queueQ.data;
+  const queueRows = queue?.rows ?? [];
+  const runTelemetry = (lastResult?.telemetry ?? null) as Record<string, unknown> | null;
+  const runLatencies = (runTelemetry?.latencies ?? null) as Record<string, unknown> | null;
 
   useEffect(() => {
     if (!browserRow || loaded) return;
@@ -642,6 +663,120 @@ export default function AutoClickerPage() {
         )}
         <GhostBtn testId="autoclicker-result-refresh" onClick={() => void refreshResult()}
           disabled={!preparedId || busy !== ''}>به‌روزرسانی نتیجه</GhostBtn>
+      </Section>
+
+      <Section title="جایگاه سفارش و عملکرد سرخطی"
+        sub="جایگاه فقط از پاسخِ خودِ کارگزاری؛ نبودِ مقدار با «—» و علتش نمایش داده می‌شود، نه صفر"
+        testId="autoclicker-queue-monitor">
+        {queueQ.isPending ? (
+          <Line kind="muted" testId="autoclicker-queue-pending">در حال خواندنِ سفارش‌ها و جایگاه…</Line>
+        ) : null}
+        {queueQ.error ? (
+          <Line kind="error" testId="autoclicker-queue-error">
+            خطای دریافت: {queueQ.error instanceof Error ? queueQ.error.message : String(queueQ.error)}
+          </Line>
+        ) : null}
+        {queue ? (
+          <>
+            <div className="flex flex-wrap items-center gap-1">
+              <Chip tone={queue.queue_supported ? 'ok' : 'warn'}
+                testId="autoclicker-queue-supported">
+                {queue.queue_supported ? 'قرارداد جایگاه موجود' : 'جایگاه در دسترس نیست'}
+              </Chip>
+              <span className="text-3xs text-text-muted" data-testid="autoclicker-queue-source">
+                منبع: {queue.source || '—'} · مشاهده: {queue.observed_at || '—'} ·
+                به‌روزرسانی هر {numText(Math.round((queue.poll_interval_ms ?? 10000) / 1000))} ثانیه
+              </span>
+            </div>
+            <Line kind="muted" testId="autoclicker-queue-claim">
+              این جایگاه در صفِ همین کارگزاری است، نه رتبه در کل بازار؛
+              ۰ به‌معنای «رتبهٔ اول» تفسیر نمی‌شود و این بخش ادعای رتبهٔ اول ندارد.
+            </Line>
+            {queueRows.length === 0 ? (
+              <Line kind="muted" testId="autoclicker-queue-empty">
+                سفارشِ واقعیِ قابل‌پایشی نیست: {queue.reason || 'فهرست سفارش خالی است'}
+              </Line>
+            ) : queueRows.map((row, i) => (
+              <div key={`${row.order_id ?? 'no-id'}-${i}`}
+                className="rounded-lg border border-border-c/40 px-2 py-1"
+                data-testid={`autoclicker-queue-row-${i}`}>
+                <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-2xs">
+                  <span className="font-bold text-text-primary">{row.symbol || '—'}</span>
+                  <span className="text-text-muted">
+                    {row.side === 'buy' ? 'خرید' : row.side === 'sell' ? 'فروش' : (row.side || '—')}
+                  </span>
+                  <span className="num" dir="ltr">{numText(row.price)} × {numText(row.quantity)}</span>
+                  <Chip tone={row.queue_status === 'KNOWN' ? 'ok' : 'warn'}>
+                    {QUEUE_STATUS_LABEL[row.queue_status] ?? row.queue_status}
+                  </Chip>
+                </div>
+                <div className="text-3xs text-text-muted">
+                  order-id: <span className="num" dir="ltr">{row.order_id || '—'}</span> ·
+                  وضعیت: {row.execution_status || '—'} / {row.order_state || '—'} ·
+                  read-back: {row.read_back || '—'}
+                </div>
+                {row.queue_status === 'KNOWN' ? (
+                  <div className="text-2xs text-text-secondary" data-testid={`autoclicker-queue-rank-${i}`}>
+                    جایگاه (خام): <span className="num" dir="ltr">{numText(queueRankText(row))}</span> ·
+                    حجمِ جلوتر: {row.volume_ahead == null ? 'ثبت نشده' : numText(row.volume_ahead)} ·
+                    واحد: {row.volume_ahead_unit || 'UNVERIFIED'} ·
+                    منبع: {row.queue_source || '—'} · as_of: {row.queue_as_of || '—'} ·
+                    تازگی: {row.queue_freshness || '—'}
+                  </div>
+                ) : (
+                  <div className="text-3xs text-text-muted" data-testid={`autoclicker-queue-reason-${i}`}>
+                    جایگاه خوانده نشد: {row.queue_reason || row.queue_status} —
+                    مقدارِ جایگزین ساخته نمی‌شود.
+                  </div>
+                )}
+                {row.events && row.events.length > 0 ? (
+                  <div className="text-3xs text-text-muted">
+                    رویدادها: {row.events.map((e) => {
+                      const ev = e as Record<string, unknown>;
+                      return `${String(ev.kind ?? '?')}@${String(ev.at ?? '?')}`;
+                    }).join(' · ')}
+                  </div>
+                ) : null}
+                {row.queue_series && row.queue_series.length > 0 ? (
+                  <div className="text-3xs text-text-muted" data-testid={`autoclicker-queue-series-${i}`}>
+                    تغییر جایگاه: {row.queue_series.slice(-6).map((p) =>
+                      `${String(p.as_of ?? '?')}=${numText(p.position)}`).join(' → ')}
+                  </div>
+                ) : null}
+                {row.position_semantics ? (
+                  <div className="text-3xs text-text-muted">{row.position_semantics}</div>
+                ) : null}
+              </div>
+            ))}
+            {runTelemetry ? (
+              <details className="mt-1">
+                <summary className="cursor-pointer text-3xs text-text-muted">تلمتریِ آخرین اجرا</summary>
+                <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-3xs text-text-muted"
+                  data-testid="autoclicker-telemetry">
+                  پیش‌بررسی: {msText(runLatencies?.preflight_ms)} ·
+                  تأخیرِ Scheduler: {msText(runLatencies?.scheduler_lag_ms)} ·
+                  کلیک→درخواست: {msText(runLatencies?.click_to_request_ms)} ·
+                  RTT: {msText(runLatencies?.request_rtt_ms)} ·
+                  پاسخ→order-id: {msText(runLatencies?.response_to_order_id_ms)} ·
+                  order-id→جایگاه: {msText(runLatencies?.order_id_to_queue_ms)} ·
+                  خطای هدف: {msText(runLatencies?.target_error_ms)} ·
+                  یک‌طرفه: محاسبه نمی‌شود (RTT/2 مجاز نیست) ·
+                  {String(runTelemetry.timezone ?? '')} · دقت: {String(runTelemetry.precision ?? '—')}
+                </div>
+              </details>
+            ) : (
+              <Line kind="muted" testId="autoclicker-telemetry-empty">
+                تلمتری فقط برای اجرای ثبت‌شدهٔ همین نشست نمایش داده می‌شود؛ dry-run API ترابری ندارد.
+              </Line>
+            )}
+            <details className="mt-1">
+              <summary className="cursor-pointer text-3xs text-text-muted">قراردادِ جایگاه</summary>
+              <pre className="mt-1 max-h-40 overflow-auto text-3xs text-text-muted" dir="ltr">
+                {JSON.stringify(queue.contract ?? {}, null, 1)}
+              </pre>
+            </details>
+          </>
+        ) : null}
       </Section>
 
       {answer ? <Line kind={tone === 'ok' ? 'ok' : tone === 'bad' ? 'error' : 'warn'} testId="autoclicker-answer">{answer}</Line> : null}

@@ -1176,6 +1176,73 @@ export function useMofidSession(enabled = true) {
   });
 }
 
+// ── پایشِ جایگاهِ سفارش (Round 19) ─────────────────────────────────────────
+// رتبه فقط وقتی KNOWN است که خودِ آداپتور مقدار داده باشد؛ نبودِ مقدار صفر
+// نمی‌شود و ۰ هم «رتبهٔ اول» تفسیر نمی‌شود. Mofid در حالت فقط‌خواندنی
+// UNSUPPORTED_READ_ONLY است چون قراردادش POST است.
+const measure = z.union([z.number(), z.string()]).nullish();
+export const QueueMonitorRowSchema = z.object({
+  order_id: txt,
+  symbol: txt,
+  isin: txt,
+  side: txt,
+  price: measure,
+  quantity: measure,
+  filled_quantity: measure,
+  execution_status: txt,
+  order_state: txt,
+  queue_status: z.string(),
+  queue_position: measure,
+  volume_ahead: measure,
+  queue_source: txt,
+  queue_as_of: txt,
+  queue_freshness: txt,
+  position_semantics: txt,
+  volume_ahead_unit: txt,
+  queue_reason: txt,
+  queue_series: z.array(z.record(z.string(), z.unknown())).nullish(),
+  read_back: txt,
+  events: z.array(z.unknown()).nullish(),
+}).catchall(z.unknown());
+export type QueueMonitorRowView = z.infer<typeof QueueMonitorRowSchema>;
+
+export const QueueMonitorSchema = z.object({
+  status: z.string(),
+  supported: bool,
+  queue_supported: bool,
+  rows: z.array(QueueMonitorRowSchema).default([]),
+  reason: txt,
+  contract: z.record(z.string(), z.unknown()).nullish(),
+  claims_first_rank: bool,
+  observed_at: txt,
+  poll_interval_ms: num,
+  source: txt,
+}).catchall(z.unknown());
+export type QueueMonitorView = z.infer<typeof QueueMonitorSchema>;
+
+/** گاردِ نمایش: رتبه فقط با KNOWN معنا دارد. */
+export function queueRankText(row: QueueMonitorRowView): string {
+  if (row.queue_status !== 'KNOWN' || row.queue_position == null) return '—';
+  return String(row.queue_position);
+}
+
+export const queueMonitorApi = {
+  get: (signal?: AbortSignal) =>
+    http<QueueMonitorView>('/api/execution/queue-monitor',
+      { schema: QueueMonitorSchema, signal }),
+};
+
+export function useQueueMonitor(enabled = true) {
+  return useQuery({
+    queryKey: ['execution-queue-monitor'],
+    queryFn: ({ signal }) => queueMonitorApi.get(signal),
+    enabled,
+    staleTime: 5_000,
+    refetchInterval: 10_000,
+    retry: false,
+  });
+}
+
 // ── چند عرضهٔ اولیه: داده، بودجه، Preflight و Timing ───────────────────────
 export type OfferingView = {
   id: string; symbol: string; isin: string; market: string; method: string;

@@ -3159,6 +3159,142 @@ def post_refresh(execution_id: str) -> dict[str, Any]:
             "observed_ms": round((time.monotonic() - t0) * 1000, 1)}
 
 
+_QUEUE_SERIES: dict[str, list[dict[str, Any]]] = {}
+_QUEUE_SERIES_LOCK = threading.Lock()
+#: نرخِ پایش با نرخِ قابلِ‌تحملِ کارگزاری سازگار است؛ سریع‌تر دقت نمی‌سازد.
+_QUEUE_POLL_MS = 10_000
+
+
+def _queue_contract() -> dict[str, Any]:
+    fn = getattr(_ACTIVE_ADAPTER, "queue_contract", None)
+    if callable(fn):
+        try:
+            return dict(fn())
+        except Exception:                         # noqa: BLE001 - شاهدِ فقط
+            pass
+    if ADAPTER_KIND == "easytrader":
+        return {
+            "api": {"path": "/ms/api/MarketSheet/order-place?actionType=get",
+                    "method": "GET", "header": "order-id",
+                    "response": "orderPlaces",
+                    "fields": ["orderId", "orderPlace", "volumeAhead"],
+                    "status": "IMPLEMENTED_AND_TESTED",
+                    "source": "RezaMahdaviiDev/mofid src/brokerages/easy/api/order.ts:291-301"},
+            "rank_semantics": {
+                "orderPlace": "raw value; 0/first not inferred",
+                "volumeAhead": "raw value; unit UNVERIFIED"},
+        }
+    return {"status": "NO_QUEUE_CONTRACT"}
+
+
+def _remember_queue(order_id: str, snap: Any) -> list[dict[str, Any]]:
+    if snap is None or not getattr(snap, "known", False):
+        return []
+    item = {"as_of": getattr(snap, "as_of", None),
+            "position": getattr(snap, "position", None),
+            "volume_ahead": getattr(snap, "volume_ahead", None),
+            "source": getattr(snap, "source", "")}
+    with _QUEUE_SERIES_LOCK:
+        arr = _QUEUE_SERIES.setdefault(str(order_id), [])
+        if not arr or arr[-1] != item:
+            arr.append(item)
+        del arr[:-50]
+        return [dict(x) for x in arr]
+
+
+def _queue_monitor() -> dict[str, Any]:
+    """فهرستِ سفارش‌هایِ واقعی + جایگاهِ صف، بدونِ ساختِ رتبه/ID.
+
+    Mofid: جایگاه با POST یا UI است و در این راند GET-only صدا زده نمی‌شود؛
+    پس `UNSUPPORTED_READ_ONLY` با علتِ صریح، نه صفر.
+    """
+    now = time.strftime("%Y-%m-%dT%H:%M:%S")
+    contract = _queue_contract()
+    block = _source_block()
+    if block:
+        return {"status": "blocked", "supported": False, "queue_supported": False,
+                "rows": [], "reason": block[1], "contract": contract,
+                "claims_first_rank": False, "observed_at": now,
+                "poll_interval_ms": _QUEUE_POLL_MS}
+    caps = _ACTIVE_ADAPTER.capabilities()
+    if not caps.list_orders:
+        return {"status": "success", "supported": False, "queue_supported": False,
+                "rows": [], "reason": "کارگزاری فهرست سفارش نمی‌دهد",
+                "contract": contract, "claims_first_rank": False,
+                "observed_at": now, "poll_interval_ms": _QUEUE_POLL_MS}
+    try:
+        records = _ACTIVE_ADAPTER.get_orders()
+    except BrokerError as e:
+        return {"status": "error", "supported": True,
+                "queue_supported": bool(caps.queue_position), "rows": [],
+                "reason": "%s: %s" % (e.code.value, str(redact(e.detail))[:160]),
+                "contract": contract, "claims_first_rank": False,
+                "observed_at": now, "poll_interval_ms": _QUEUE_POLL_MS}
+    rows: list[dict[str, Any]] = []
+    for rec in records:
+        oid = str(rec.broker_order_id or "")
+        snap = None
+        queue_status = "UNKNOWN"
+        queue_reason = ""
+        if not caps.queue_position:
+            queue_status = "UNSUPPORTED_READ_ONLY"
+            queue_reason = (
+                "جایگاهِ مفید با POST /Order/OrderPlace خوانده می‌شود؛ در این راند فقط GET مجاز است"
+                if ADAPTER_KIND == "mofid" else "کارگزاری مسیرِ جایگاه نمی‌دهد")
+        elif not oid:
+            queue_status = "NO_ORDER_ID"
+            queue_reason = "این ردیف شناسهٔ سفارشِ کارگزاری ندارد"
+        else:
+            try:
+                snap = _ACTIVE_ADAPTER.get_queue_position(oid)
+            except BrokerError as e:
+                queue_status = "ERROR"
+                queue_reason = "%s: %s" % (e.code.value,
+                                          str(redact(e.detail))[:120])
+            except Exception as e:                # noqa: BLE001 - مرزِ adapter
+                queue_status = "ERROR"
+                queue_reason = type(e).__name__
+            else:
+                if snap is not None and snap.known:
+                    queue_status = "KNOWN"
+                else:
+                    queue_status = "UNKNOWN"
+                    queue_reason = "مسیرِ جایگاه برای این سفارش مقدار نداد"
+        series = _remember_queue(oid, snap) if oid else []
+        rows.append({
+            "order_id": oid or None,
+            "symbol": rec.symbol, "isin": rec.isin,
+            "side": rec.side.value, "price": rec.price,
+            "quantity": rec.quantity, "filled_quantity": rec.filled_quantity,
+            "execution_status": rec.status.value,
+            "order_state": rec.order_state.value,
+            "queue_status": queue_status,
+            "queue_position": (snap.position if snap is not None else None),
+            "volume_ahead": (snap.volume_ahead if snap is not None else None),
+            "queue_source": (snap.source if snap is not None else "none"),
+            "queue_as_of": (snap.as_of if snap is not None else None),
+            "queue_freshness": ("ADAPTER_LOCAL_AS_OF" if snap is not None
+                                else "UNVERIFIED"),
+            "position_semantics": "RAW_ORDER_PLACE; 0 is not interpreted as first",
+            "volume_ahead_unit": "UNVERIFIED",
+            "queue_reason": queue_reason,
+            "queue_series": series,
+            "read_back": ("LIST_ROW" if oid else "NO_ORDER_ID"),
+            "events": list(rec.events)[-5:],
+        })
+    return {"status": "success", "supported": True,
+            "queue_supported": bool(caps.queue_position), "rows": rows,
+            "reason": "" if rows else "هیچ سفارشِ باز یا امروزیِ واقعی برای پایش نیست",
+            "contract": contract, "claims_first_rank": False,
+            "observed_at": now, "poll_interval_ms": _QUEUE_POLL_MS,
+            "source": "adapter:%s" % ADAPTER_KIND}
+
+
+@router.get("/api/execution/queue-monitor")
+def get_queue_monitor() -> dict[str, Any]:
+    return _queue_monitor()
+
+
 @router.get("/api/execution/queue/{execution_id}")
 def get_queue(execution_id: str) -> dict[str, Any]:
     try:

@@ -739,6 +739,8 @@ SUITES = [
      'Mofid manual-login bridge: Playwright CDP captures token from allowlisted host, no secret in meta; read_only GET allowlist, order-id provenance, 401 invalidates cache, verify states, login window targets named host, zero order POST'),
     ('dev/mofid_account_v1166.py',
      'Mofid account reconciliation: unit/precision evidence, 12-row sellable formula and field map, order contract/known-ID guard, 404/5xx/401/timeout, readiness gates, no order POST'),
+    ('dev/sarkhati_queue_round19_v1167.py',
+     'sarkhati queue Round 19: shared telemetry latency arithmetic, deterministic API/browser mock clock, scheduler lag samples, Mofid POST queue contract not invoked, queue monitor KNOWN/UNSUPPORTED/UNKNOWN/ERROR without fake zero, position series movement'),
     ('dev/autoclicker_browser_round14_v1149.py',
      'sarkhati AutoClicker Round 14 browser-level: Playwright mock EasyTrader, zero order posts in dry-run, one click, UNKNOWN, abort'),
     # مأموریتِ ۲۰۲۶-۱۰-۲۰ (Darvand P0): ذخیرهٔ ماندگارِ سفارش/زمان‌بندی، claim
