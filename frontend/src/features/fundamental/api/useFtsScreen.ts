@@ -138,10 +138,18 @@ export type FtsFunnelGate = NonNullable<FtsScreen['funnel_gate']>;
 /** `limit = 0` یعنی کلِ universe. بک‌اند (`api/screener.py`) اصلاً پارامتر
  *  `limit` ندارد، پس برابریِ دسکتاپ/موبایل همان «همه» است؛ برشِ ۶۰تاییِ
  *  پیشین رویِ اندروید ۸۷۳ شرکت را به «۵۹ شرکت از ۶۰» می‌رساند. */
-export function useFtsScreen(limit = 0, opts: { enabled?: boolean } = {}) {
-  const suffix = limit > 0 ? `?limit=${limit}` : '';
+export function useFtsScreen(
+  limit = 0,
+  opts: { enabled?: boolean; symbols?: string } = {},
+) {
+  const symbols = String(opts.symbols ?? '').trim();
+  const params = new URLSearchParams();
+  if (limit > 0) params.set('limit', String(limit));
+  if (symbols) params.set('symbols', symbols);
+  const suffix = params.toString() ? `?${params.toString()}` : '';
   return useQuery({
-    queryKey: ['fts-screen', limit],
+    // یک‌نمادی ⇒ کلیدِ جدا (پاسخ یک ردیف است)؛ پیش‌فرض برایِ جدولِ کامل.
+    queryKey: symbols ? ['fts-screen', limit, symbols] : ['fts-screen', limit],
     // همانِ دلیلی که قیف: بی‌نماد، فهرستِ اسکرینر چیزی برایِ نشان دادن ندارد.
     enabled: opts.enabled ?? true,
     queryFn: ({ signal }) =>

@@ -77,8 +77,10 @@ describe('نصبِ وضعیتِ ناظر درِ Inspector', () => {
   it('با ردیفِ متوقف، همین پنل درِ سایدبار می‌نشیند', () => {
     useSymbolStore.setState({ symbol: 'شپنا' });
     const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-    qc.setQueryData(['market-feed'], {
-      data: [row({ stop_state: 'تعلیق شده', stop_since: '1405-07-11', st_title: 'ممنوع-متوقف' })],
+    qc.setQueryData(['market-row', 'شپنا'], {
+      status: 'success',
+      row: row({ stop_state: 'تعلیق شده', stop_since: '1405-07-11', st_title: 'ممنوع-متوقف' }),
+      rev: 1,
     });
     render(
       <QueryClientProvider client={qc}>

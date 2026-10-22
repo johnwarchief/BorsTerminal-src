@@ -1,0 +1,140 @@
+{
+ "symbol": "سپيدار",
+ "t0": "2026-10-22T18:53:48.792Z",
+ "calls": [
+  {
+   "t": 128,
+   "method": "GET",
+   "url": "/api/selection/portfolio",
+   "body": null
+  },
+  {
+   "t": 132,
+   "method": "GET",
+   "url": "/api/watchlist",
+   "body": null
+  },
+  {
+   "t": 132,
+   "method": "GET",
+   "url": "/api/market",
+   "body": null
+  },
+  {
+   "t": 132,
+   "method": "GET",
+   "url": "/api/fts/سپيدار",
+   "body": null
+  },
+  {
+   "t": 133,
+   "method": "GET",
+   "url": "/api/chart/سپيدار/key-levels",
+   "body": null
+  },
+  {
+   "t": 133,
+   "method": "GET",
+   "url": "/api/fundamental/سپيدار",
+   "body": null
+  },
+  {
+   "t": 133,
+   "method": "GET",
+   "url": "/api/market/row?symbol=سپيدار",
+   "body": null
+  },
+  {
+   "t": 133,
+   "method": "GET",
+   "url": "/api/screener?symbols=سپيدار",
+   "body": null
+  },
+  {
+   "t": 134,
+   "method": "GET",
+   "url": "/api/calendar/upcoming?days=14",
+   "body": null
+  },
+  {
+   "t": 134,
+   "method": "GET",
+   "url": "/api/calendar/سپيدار",
+   "body": null
+  },
+  {
+   "t": 1266,
+   "method": "GET",
+   "url": "/api/tape-history?codes=29590002988360984&days=5",
+   "body": null
+  }
+ ],
+ "responses": [
+  {
+   "t": 522,
+   "status": 200,
+   "url": "/api/market",
+   "reqMs": -1
+  },
+  {
+   "t": 524,
+   "status": 200,
+   "url": "/api/watchlist",
+   "reqMs": -1
+  },
+  {
+   "t": 525,
+   "status": 200,
+   "url": "/api/selection/portfolio",
+   "reqMs": -1
+  },
+  {
+   "t": 869,
+   "status": 200,
+   "url": "/api/market/row?symbol=سپيدار",
+   "reqMs": -1
+  },
+  {
+   "t": 872,
+   "status": 200,
+   "url": "/api/calendar/upcoming?days=14",
+   "reqMs": -1
+  },
+  {
+   "t": 873,
+   "status": 200,
+   "url": "/api/calendar/سپيدار",
+   "reqMs": -1
+  },
+  {
+   "t": 1780,
+   "status": 200,
+   "url": "/api/screener?symbols=سپيدار",
+   "reqMs": -1
+  },
+  {
+   "t": 2026,
+   "status": 200,
+   "url": "/api/tape-history?codes=29590002988360984&days=5",
+   "reqMs": -1
+  },
+  {
+   "t": 2894,
+   "status": 200,
+   "url": "/api/chart/سپيدار/key-levels",
+   "reqMs": -1
+  },
+  {
+   "t": 3202,
+   "status": 200,
+   "url": "/api/fundamental/سپيدار",
+   "reqMs": -1
+  },
+  {
+   "t": 6130,
+   "status": 200,
+   "url": "/api/fts/سپيدار",
+   "reqMs": -1
+  }
+ ]
+}

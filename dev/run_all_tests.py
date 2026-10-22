@@ -51,6 +51,9 @@ SUITES = [
     # PERF-R4: نقشهٔ سبکِ قیمتِ پایانی جایِ فیدِ کاملِ ۶٫۸MB را در master/پرتفوی
     # گرفت؛ همان p_closingِ همان ردیف، با ETag و ۳۰۴ِ بی‌بدنه.
     ('dev/market_closes_v1.py', 'lightweight market closes map: same row values, ETag/304'),
+    # P2-R1: سایدبار یک ردیفِ تابلو می‌خواهد، نه ۶٫۸MB؛ و اسکرینر یک ردیف، نه ۱٫۲MB.
+    ('dev/market_row_endpoint_v1.py', 'single market row: same p_closing, ETag/304, unknown stays null'),
+    ('dev/screener_symbol_scope_v1.py', 'screener symbols= returns exactly the same row as the full payload'),
     # مأموریتِ تطبیقِ 2026-10-20: صفرِ معتبر و LASTِ منبع جدا از مقدارِ کهنه.
     ('dev/market_last_trade_semantics_v1.py',
      'market LAST: source LAST wins, zero is not missing, no stale/derived price'),

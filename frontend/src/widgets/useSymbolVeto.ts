@@ -37,7 +37,7 @@ const NONE: SymbolVeto = {
  *  است که درِ همین نشست هنوز با کلیدِ تازه ساخته نشده‌اند. */
 const SCREEN_KEYS: readonly number[] = [0, 120, 60];
 
-export function useSymbolVeto(symbol: string): SymbolVeto {
+export function useSymbolVeto(symbol: string, screenOverride?: FtsScreenRow | null): SymbolVeto {
   const qc = useQueryClient();
   // بی‌نمادِ انتخابی هیچ درخواستی نمی‌سازیم؛ سایدبار در آن حالت پشتِ صحنه است.
   const upcoming = useCalendarUpcoming(undefined, symbol.length > 0);
@@ -57,8 +57,10 @@ export function useSymbolVeto(symbol: string): SymbolVeto {
         : { veto: false, days: badge?.days ?? null, date: badge?.date ?? null, label: '' };
 
     let weekly: SymbolVeto['weekly'] = { veto: false, desc: null };
-    let screen: FtsScreenRow | null = null;
-    for (const limit of SCREEN_KEYS) {
+    // مصرف‌کنندۀ یک‌نمادی، ردیفِ خودش را می‌دهد (پاسخِ symbols=)؛ بقیه همان
+    // کشِ جدولِ کامل را می‌گردند. undefined = رفتارِ قبلی.
+    let screen: FtsScreenRow | null = screenOverride ?? null;
+    for (const limit of screen ? [] : SCREEN_KEYS) {
       const rows = qc.getQueryData<{ data?: FtsScreenRow[] }>(['fts-screen', limit])?.data;
       if (!rows?.length) continue;
       const row =
@@ -81,5 +83,5 @@ export function useSymbolVeto(symbol: string): SymbolVeto {
       known: screen != null || eventList.length > 0,
       screen,
     };
-  }, [symbol, grouped, qc]);
+  }, [symbol, grouped, qc, screenOverride]);
 }

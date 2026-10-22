@@ -1,0 +1,1150 @@
+{
+ "base": "http://127.0.0.1:8000",
+ "ranAt": "2026-10-22T19:00:07.343Z",
+ "runs": [
+  {
+   "run": 1,
+   "loginGate": true,
+   "symbols": [
+    "سپيدار",
+    "دزهراوي",
+    "البرز"
+   ],
+   "cold": {
+    "requests": [],
+    "requestTotal": 0,
+    "encodedBytes": 0,
+    "longtasks": 0,
+    "tbt": 0,
+    "worst": 0,
+    "frames": {
+     "n": 5072,
+     "med": 18,
+     "p95": 18,
+     "max": 36,
+     "over100": 0
+    },
+    "heapMB": 19,
+    "domNodes": 463,
+    "readyMs": 95765,
+    "label": "cold-funnel",
+    "loginGate": true
+   },
+   "warm": {
+    "requests": [
+     {
+      "url": "/api/funnel",
+      "n": 1,
+      "maxMs": 1926,
+      "sumMs": 1926,
+      "enc": 388040
+     },
+     {
+      "url": "/api/selection/portfolio",
+      "n": 1,
+      "maxMs": 187,
+      "sumMs": 187,
+      "enc": 374
+     },
+     {
+      "url": "/api/market/closes",
+      "n": 1,
+      "maxMs": 179,
+      "sumMs": 179,
+      "enc": 0
+     }
+    ],
+    "requestTotal": 3,
+    "encodedBytes": 388414,
+    "longtasks": 3,
+    "tbt": 81,
+    "worst": 105,
+    "frames": {
+     "n": 127,
+     "med": 18,
+     "p95": 18,
+     "max": 772,
+     "over100": 3
+    },
+    "heapMB": 47,
+    "domNodes": 465,
+    "readyMs": 2674,
+    "label": "warm-funnel"
+   },
+   "switches": [
+    {
+     "requests": [
+      {
+       "url": "/api/fundamental/سپيدار",
+       "n": 1,
+       "maxMs": 1148,
+       "sumMs": 1148,
+       "enc": 7001
+      },
+      {
+       "url": "/api/fts/سپيدار",
+       "n": 1,
+       "maxMs": 1088,
+       "sumMs": 1088,
+       "enc": 7317
+      },
+      {
+       "url": "/api/selection/portfolio",
+       "n": 1,
+       "maxMs": 387,
+       "sumMs": 387,
+       "enc": 374
+      },
+      {
+       "url": "/api/screener",
+       "n": 1,
+       "maxMs": 381,
+       "sumMs": 381,
+       "enc": 2063
+      },
+      {
+       "url": "/api/tape-history",
+       "n": 1,
+       "maxMs": 298,
+       "sumMs": 298,
+       "enc": 440
+      },
+      {
+       "url": "/api/calendar/سپيدار",
+       "n": 1,
+       "maxMs": 285,
+       "sumMs": 285,
+       "enc": 61
+      },
+      {
+       "url": "/api/calendar/upcoming",
+       "n": 1,
+       "maxMs": 276,
+       "sumMs": 276,
+       "enc": 77
+      },
+      {
+       "url": "/api/market/row",
+       "n": 1,
+       "maxMs": 196,
+       "sumMs": 196,
+       "enc": 817
+      },
+      {
+       "url": "/api/chart/سپيدار/key-levels",
+       "n": 1,
+       "maxMs": 194,
+       "sumMs": 194,
+       "enc": 557
+      }
+     ],
+     "requestTotal": 9,
+     "encodedBytes": 18707,
+     "longtasks": 0,
+     "tbt": 0,
+     "worst": 0,
+     "frames": {
+      "n": 90,
+      "med": 18,
+      "p95": 18,
+      "max": 72,
+      "over100": 0
+     },
+     "heapMB": 54,
+     "domNodes": 573,
+     "readyMs": 1662,
+     "label": "switch-سپيدار",
+     "symbol": "سپيدار"
+    },
+    {
+     "requests": [
+      {
+       "url": "/api/fts/دزهراوي",
+       "n": 1,
+       "maxMs": 4693,
+       "sumMs": 4693,
+       "enc": 7642
+      },
+      {
+       "url": "/api/fundamental/دزهراوي",
+       "n": 1,
+       "maxMs": 1349,
+       "sumMs": 1349,
+       "enc": 6784
+      },
+      {
+       "url": "/api/chart/دزهراوي/key-levels",
+       "n": 1,
+       "maxMs": 1283,
+       "sumMs": 1283,
+       "enc": 595
+      },
+      {
+       "url": "/api/screener",
+       "n": 1,
+       "maxMs": 239,
+       "sumMs": 239,
+       "enc": 2326
+      },
+      {
+       "url": "/api/tape-history",
+       "n": 1,
+       "maxMs": 151,
+       "sumMs": 151,
+       "enc": 443
+      },
+      {
+       "url": "/api/calendar/دزهراوي",
+       "n": 1,
+       "maxMs": 56,
+       "sumMs": 56,
+       "enc": 63
+      },
+      {
+       "url": "/api/market/row",
+       "n": 1,
+       "maxMs": 52,
+       "sumMs": 52,
+       "enc": 822
+      }
+     ],
+     "requestTotal": 7,
+     "encodedBytes": 18675,
+     "longtasks": 0,
+     "tbt": 0,
+     "worst": 0,
+     "frames": {
+      "n": 290,
+      "med": 18,
+      "p95": 18,
+      "max": 54,
+      "over100": 0
+     },
+     "heapMB": 29,
+     "domNodes": 575,
+     "readyMs": 5276,
+     "label": "switch-دزهراوي",
+     "symbol": "دزهراوي"
+    }
+   ],
+   "reopen": {
+    "requests": [
+     {
+      "url": "/api/market/row",
+      "n": 1,
+      "maxMs": 24,
+      "sumMs": 24,
+      "enc": 0
+     }
+    ],
+    "requestTotal": 1,
+    "encodedBytes": 0,
+    "longtasks": 0,
+    "tbt": 0,
+    "worst": 0,
+    "frames": {
+     "n": 28,
+     "med": 18,
+     "p95": 36,
+     "max": 37,
+     "over100": 0
+    },
+    "heapMB": 31,
+    "domNodes": 573,
+    "readyMs": 564,
+    "label": "reopen-سپيدار",
+    "symbol": "سپيدار"
+   },
+   "tree": {
+    "requests": [],
+    "requestTotal": 0,
+    "encodedBytes": 0,
+    "longtasks": 1,
+    "tbt": 58,
+    "worst": 108,
+    "frames": {
+     "n": 250,
+     "med": 18,
+     "p95": 18,
+     "max": 220,
+     "over100": 2
+    },
+    "heapMB": 27,
+    "domNodes": 737,
+    "readyMs": 4794,
+    "label": "strategy-tree"
+   },
+   "treePages": {
+    "S": {
+     "ms": 707,
+     "requests": [],
+     "requestTotal": 0,
+     "encodedBytes": 0,
+     "longtasks": 1,
+     "tbt": 21,
+     "worst": 71,
+     "frames": {
+      "n": 36,
+      "med": 18,
+      "p95": 39,
+      "max": 71,
+      "over100": 0
+     },
+     "heapMB": 28,
+     "domNodes": 714
+    },
+    "T": {
+     "ms": 680,
+     "requests": [],
+     "requestTotal": 0,
+     "encodedBytes": 0,
+     "longtasks": 0,
+     "tbt": 0,
+     "worst": 0,
+     "frames": {
+      "n": 38,
+      "med": 18,
+      "p95": 19,
+      "max": 36,
+      "over100": 0
+     },
+     "heapMB": 29,
+     "domNodes": 648
+    },
+    "F": {
+     "ms": 713,
+     "requests": [],
+     "requestTotal": 0,
+     "encodedBytes": 0,
+     "longtasks": 0,
+     "tbt": 0,
+     "worst": 0,
+     "frames": {
+      "n": 39,
+      "med": 17,
+      "p95": 18,
+      "max": 54,
+      "over100": 0
+     },
+     "heapMB": 30,
+     "domNodes": 583
+    },
+    "M": {
+     "ms": 696,
+     "requests": [],
+     "requestTotal": 0,
+     "encodedBytes": 0,
+     "longtasks": 1,
+     "tbt": 62,
+     "worst": 112,
+     "frames": {
+      "n": 35,
+      "med": 17,
+      "p95": 18,
+      "max": 107,
+      "over100": 1
+     },
+     "heapMB": 31,
+     "domNodes": 684
+    },
+    "master": {
+     "ms": 701,
+     "requests": [],
+     "requestTotal": 0,
+     "encodedBytes": 0,
+     "longtasks": 0,
+     "tbt": 0,
+     "worst": 0,
+     "frames": {
+      "n": 39,
+      "med": 18,
+      "p95": 19,
+      "max": 36,
+      "over100": 0
+     },
+     "heapMB": 28,
+     "domNodes": 737
+    }
+   },
+   "tech": {
+    "requests": [
+     {
+      "url": "/api/fts/سپيدار",
+      "n": 1,
+      "maxMs": 4261,
+      "sumMs": 4261,
+      "enc": 7317
+     },
+     {
+      "url": "/api/index/tedpix",
+      "n": 1,
+      "maxMs": 4072,
+      "sumMs": 4072,
+      "enc": 136053
+     },
+     {
+      "url": "/api/chart/سپيدار",
+      "n": 2,
+      "maxMs": 3814,
+      "sumMs": 5858,
+      "enc": 118130
+     },
+     {
+      "url": "/api/fundamental/سپيدار",
+      "n": 1,
+      "maxMs": 3308,
+      "sumMs": 3308,
+      "enc": 7001
+     },
+     {
+      "url": "/api/fts/config",
+      "n": 1,
+      "maxMs": 631,
+      "sumMs": 631,
+      "enc": 620
+     },
+     {
+      "url": "/api/market/delta",
+      "n": 1,
+      "maxMs": 129,
+      "sumMs": 129,
+      "enc": 158
+     }
+    ],
+    "requestTotal": 7,
+    "encodedBytes": 269279,
+    "longtasks": 1,
+    "tbt": 4,
+    "worst": 54,
+    "frames": {
+     "n": 251,
+     "med": 18,
+     "p95": 18,
+     "max": 198,
+     "over100": 2
+    },
+    "heapMB": 50,
+    "domNodes": 1043,
+    "readyMs": 5145,
+    "label": "technical-open"
+   },
+   "techSwitch": {
+    "requests": [
+     {
+      "url": "/api/chart/دزهراوي",
+      "n": 2,
+      "maxMs": 2256,
+      "sumMs": 3802,
+      "enc": 380519
+     },
+     {
+      "url": "/api/fts/دزهراوي",
+      "n": 1,
+      "maxMs": 1781,
+      "sumMs": 1781,
+      "enc": 7642
+     },
+     {
+      "url": "/api/fundamental/دزهراوي",
+      "n": 1,
+      "maxMs": 1250,
+      "sumMs": 1250,
+      "enc": 6784
+     }
+    ],
+    "requestTotal": 4,
+    "encodedBytes": 394945,
+    "longtasks": 0,
+    "tbt": 0,
+    "worst": 0,
+    "frames": {
+     "n": 281,
+     "med": 18,
+     "p95": 18,
+     "max": 147,
+     "over100": 1
+    },
+    "heapMB": 58,
+    "domNodes": 1051,
+    "readyMs": 5258,
+    "label": "technical-switch",
+    "symbol": "دزهراوي"
+   },
+   "cycles": [
+    {
+     "requests": [
+      {
+       "url": "/api/watchlist",
+       "n": 1,
+       "maxMs": 284,
+       "sumMs": 284,
+       "enc": 51
+      }
+     ],
+     "requestTotal": 1,
+     "encodedBytes": 51,
+     "longtasks": 0,
+     "tbt": 0,
+     "worst": 0,
+     "frames": {
+      "n": 17,
+      "med": 18,
+      "p95": 18,
+      "max": 18,
+      "over100": 0
+     },
+     "heapMB": 54,
+     "domNodes": 588,
+     "readyMs": 300,
+     "label": "cycle-0"
+    },
+    {
+     "requests": [],
+     "requestTotal": 0,
+     "encodedBytes": 0,
+     "longtasks": 1,
+     "tbt": 17,
+     "worst": 67,
+     "frames": {
+      "n": 23,
+      "med": 18,
+      "p95": 72,
+      "max": 144,
+      "over100": 1
+     },
+     "heapMB": 72,
+     "domNodes": 588,
+     "readyMs": 315,
+     "label": "cycle-1"
+    },
+    {
+     "requests": [],
+     "requestTotal": 0,
+     "encodedBytes": 0,
+     "longtasks": 0,
+     "tbt": 0,
+     "worst": 0,
+     "frames": {
+      "n": 18,
+      "med": 18,
+      "p95": 18,
+      "max": 18,
+      "over100": 0
+     },
+     "heapMB": 75,
+     "domNodes": 588,
+     "readyMs": 309,
+     "label": "cycle-2"
+    },
+    {
+     "requests": [],
+     "requestTotal": 0,
+     "encodedBytes": 0,
+     "longtasks": 0,
+     "tbt": 0,
+     "worst": 0,
+     "frames": {
+      "n": 17,
+      "med": 18,
+      "p95": 18,
+      "max": 18,
+      "over100": 0
+     },
+     "heapMB": 78,
+     "domNodes": 588,
+     "readyMs": 312,
+     "label": "cycle-3"
+    },
+    {
+     "requests": [],
+     "requestTotal": 0,
+     "encodedBytes": 0,
+     "longtasks": 0,
+     "tbt": 0,
+     "worst": 0,
+     "frames": {
+      "n": 17,
+      "med": 18,
+      "p95": 18,
+      "max": 18,
+      "over100": 0
+     },
+     "heapMB": 81,
+     "domNodes": 588,
+     "readyMs": 301,
+     "label": "cycle-4"
+    }
+   ],
+   "errors": [],
+   "end": {
+    "heapMB": 33.7,
+    "nodes": 981,
+    "listeners": 376
+   }
+  },
+  {
+   "run": 2,
+   "loginGate": true,
+   "symbols": [
+    "سپيدار",
+    "دزهراوي",
+    "البرز"
+   ],
+   "cold": {
+    "requests": [],
+    "requestTotal": 0,
+    "encodedBytes": 0,
+    "longtasks": 0,
+    "tbt": 0,
+    "worst": 0,
+    "frames": {
+     "n": 5070,
+     "med": 18,
+     "p95": 18,
+     "max": 20,
+     "over100": 0
+    },
+    "heapMB": 19,
+    "domNodes": 463,
+    "readyMs": 93616,
+    "label": "cold-funnel",
+    "loginGate": true
+   },
+   "warm": {
+    "requests": [
+     {
+      "url": "/api/funnel",
+      "n": 1,
+      "maxMs": 2247,
+      "sumMs": 2247,
+      "enc": 388042
+     },
+     {
+      "url": "/api/selection/portfolio",
+      "n": 1,
+      "maxMs": 170,
+      "sumMs": 170,
+      "enc": 374
+     },
+     {
+      "url": "/api/market/closes",
+      "n": 1,
+      "maxMs": 154,
+      "sumMs": 154,
+      "enc": 0
+     }
+    ],
+    "requestTotal": 3,
+    "encodedBytes": 388416,
+    "longtasks": 2,
+    "tbt": 86,
+    "worst": 114,
+    "frames": {
+     "n": 154,
+     "med": 18,
+     "p95": 18,
+     "max": 144,
+     "over100": 1
+    },
+    "heapMB": 47,
+    "domNodes": 465,
+    "readyMs": 2981,
+    "label": "warm-funnel"
+   },
+   "switches": [
+    {
+     "requests": [
+      {
+       "url": "/api/fundamental/سپيدار",
+       "n": 1,
+       "maxMs": 903,
+       "sumMs": 903,
+       "enc": 7001
+      },
+      {
+       "url": "/api/fts/سپيدار",
+       "n": 1,
+       "maxMs": 799,
+       "sumMs": 799,
+       "enc": 7317
+      },
+      {
+       "url": "/api/tape-history",
+       "n": 1,
+       "maxMs": 189,
+       "sumMs": 189,
+       "enc": 440
+      },
+      {
+       "url": "/api/selection/portfolio",
+       "n": 1,
+       "maxMs": 174,
+       "sumMs": 174,
+       "enc": 374
+      },
+      {
+       "url": "/api/screener",
+       "n": 1,
+       "maxMs": 156,
+       "sumMs": 156,
+       "enc": 2064
+      },
+      {
+       "url": "/api/calendar/سپيدار",
+       "n": 1,
+       "maxMs": 154,
+       "sumMs": 154,
+       "enc": 61
+      },
+      {
+       "url": "/api/calendar/upcoming",
+       "n": 1,
+       "maxMs": 143,
+       "sumMs": 143,
+       "enc": 77
+      },
+      {
+       "url": "/api/market/row",
+       "n": 1,
+       "maxMs": 52,
+       "sumMs": 52,
+       "enc": 817
+      },
+      {
+       "url": "/api/chart/سپيدار/key-levels",
+       "n": 1,
+       "maxMs": 50,
+       "sumMs": 50,
+       "enc": 557
+      }
+     ],
+     "requestTotal": 9,
+     "encodedBytes": 18708,
+     "longtasks": 0,
+     "tbt": 0,
+     "worst": 0,
+     "frames": {
+      "n": 77,
+      "med": 18,
+      "p95": 18,
+      "max": 72,
+      "over100": 0
+     },
+     "heapMB": 54,
+     "domNodes": 573,
+     "readyMs": 1459,
+     "label": "switch-سپيدار",
+     "symbol": "سپيدار"
+    },
+    {
+     "requests": [
+      {
+       "url": "/api/fundamental/دزهراوي",
+       "n": 1,
+       "maxMs": 902,
+       "sumMs": 902,
+       "enc": 6784
+      },
+      {
+       "url": "/api/fts/دزهراوي",
+       "n": 1,
+       "maxMs": 840,
+       "sumMs": 840,
+       "enc": 7642
+      },
+      {
+       "url": "/api/tape-history",
+       "n": 1,
+       "maxMs": 160,
+       "sumMs": 160,
+       "enc": 443
+      },
+      {
+       "url": "/api/screener",
+       "n": 1,
+       "maxMs": 132,
+       "sumMs": 132,
+       "enc": 2327
+      },
+      {
+       "url": "/api/chart/دزهراوي/key-levels",
+       "n": 1,
+       "maxMs": 35,
+       "sumMs": 35,
+       "enc": 595
+      },
+      {
+       "url": "/api/calendar/دزهراوي",
+       "n": 1,
+       "maxMs": 35,
+       "sumMs": 35,
+       "enc": 63
+      },
+      {
+       "url": "/api/market/row",
+       "n": 1,
+       "maxMs": 30,
+       "sumMs": 30,
+       "enc": 822
+      }
+     ],
+     "requestTotal": 7,
+     "encodedBytes": 18676,
+     "longtasks": 0,
+     "tbt": 0,
+     "worst": 0,
+     "frames": {
+      "n": 78,
+      "med": 18,
+      "p95": 18,
+      "max": 36,
+      "over100": 0
+     },
+     "heapMB": 49,
+     "domNodes": 575,
+     "readyMs": 1413,
+     "label": "switch-دزهراوي",
+     "symbol": "دزهراوي"
+    }
+   ],
+   "reopen": {
+    "requests": [],
+    "requestTotal": 0,
+    "encodedBytes": 0,
+    "longtasks": 0,
+    "tbt": 0,
+    "worst": 0,
+    "frames": {
+     "n": 31,
+     "med": 17,
+     "p95": 18,
+     "max": 18,
+     "over100": 0
+    },
+    "heapMB": 53,
+    "domNodes": 573,
+    "readyMs": 548,
+    "label": "reopen-سپيدار",
+    "symbol": "سپيدار"
+   },
+   "tree": {
+    "requests": [],
+    "requestTotal": 0,
+    "encodedBytes": 0,
+    "longtasks": 1,
+    "tbt": 39,
+    "worst": 89,
+    "frames": {
+     "n": 265,
+     "med": 18,
+     "p95": 18,
+     "max": 88,
+     "over100": 0
+    },
+    "heapMB": 55,
+    "domNodes": 737,
+    "readyMs": 4780,
+    "label": "strategy-tree"
+   },
+   "treePages": {
+    "S": {
+     "ms": 692,
+     "requests": [],
+     "requestTotal": 0,
+     "encodedBytes": 0,
+     "longtasks": 0,
+     "tbt": 0,
+     "worst": 0,
+     "frames": {
+      "n": 36,
+      "med": 17,
+      "p95": 40,
+      "max": 54,
+      "over100": 0
+     },
+     "heapMB": 56,
+     "domNodes": 714
+    },
+    "T": {
+     "ms": 694,
+     "requests": [],
+     "requestTotal": 0,
+     "encodedBytes": 0,
+     "longtasks": 0,
+     "tbt": 0,
+     "worst": 0,
+     "frames": {
+      "n": 39,
+      "med": 18,
+      "p95": 19,
+      "max": 36,
+      "over100": 0
+     },
+     "heapMB": 57,
+     "domNodes": 648
+    },
+    "F": {
+     "ms": 721,
+     "requests": [],
+     "requestTotal": 0,
+     "encodedBytes": 0,
+     "longtasks": 0,
+     "tbt": 0,
+     "worst": 0,
+     "frames": {
+      "n": 40,
+      "med": 17,
+      "p95": 36,
+      "max": 36,
+      "over100": 0
+     },
+     "heapMB": 57,
+     "domNodes": 583
+    },
+    "M": {
+     "ms": 698,
+     "requests": [],
+     "requestTotal": 0,
+     "encodedBytes": 0,
+     "longtasks": 1,
+     "tbt": 70,
+     "worst": 120,
+     "frames": {
+      "n": 34,
+      "med": 18,
+      "p95": 18,
+      "max": 125,
+      "over100": 1
+     },
+     "heapMB": 58,
+     "domNodes": 684
+    },
+    "master": {
+     "ms": 704,
+     "requests": [],
+     "requestTotal": 0,
+     "encodedBytes": 0,
+     "longtasks": 0,
+     "tbt": 0,
+     "worst": 0,
+     "frames": {
+      "n": 40,
+      "med": 17,
+      "p95": 18,
+      "max": 36,
+      "over100": 0
+     },
+     "heapMB": 59,
+     "domNodes": 737
+    }
+   },
+   "tech": {
+    "requests": [
+     {
+      "url": "/api/chart/سپيدار",
+      "n": 2,
+      "maxMs": 1486,
+      "sumMs": 2641,
+      "enc": 118128
+     },
+     {
+      "url": "/api/fts/سپيدار",
+      "n": 1,
+      "maxMs": 1271,
+      "sumMs": 1271,
+      "enc": 7317
+     },
+     {
+      "url": "/api/fundamental/سپيدار",
+      "n": 1,
+      "maxMs": 977,
+      "sumMs": 977,
+      "enc": 7001
+     },
+     {
+      "url": "/api/fts/config",
+      "n": 1,
+      "maxMs": 123,
+      "sumMs": 123,
+      "enc": 620
+     },
+     {
+      "url": "/api/index/tedpix",
+      "n": 1,
+      "maxMs": 103,
+      "sumMs": 103,
+      "enc": 136063
+     },
+     {
+      "url": "/api/market/delta",
+      "n": 1,
+      "maxMs": 24,
+      "sumMs": 24,
+      "enc": 158
+     }
+    ],
+    "requestTotal": 7,
+    "encodedBytes": 269287,
+    "longtasks": 1,
+    "tbt": 84,
+    "worst": 134,
+    "frames": {
+     "n": 123,
+     "med": 18,
+     "p95": 36,
+     "max": 144,
+     "over100": 1
+    },
+    "heapMB": 42,
+    "domNodes": 1043,
+    "readyMs": 2513,
+    "label": "technical-open"
+   },
+   "techSwitch": {
+    "requests": [
+     {
+      "url": "/api/chart/دزهراوي",
+      "n": 2,
+      "maxMs": 2743,
+      "sumMs": 4197,
+      "enc": 380522
+     },
+     {
+      "url": "/api/fts/دزهراوي",
+      "n": 1,
+      "maxMs": 1448,
+      "sumMs": 1448,
+      "enc": 7642
+     },
+     {
+      "url": "/api/fundamental/دزهراوي",
+      "n": 1,
+      "maxMs": 945,
+      "sumMs": 945,
+      "enc": 6784
+     }
+    ],
+    "requestTotal": 4,
+    "encodedBytes": 394948,
+    "longtasks": 0,
+    "tbt": 0,
+    "worst": 0,
+    "frames": {
+     "n": 293,
+     "med": 18,
+     "p95": 18,
+     "max": 54,
+     "over100": 0
+    },
+    "heapMB": 38,
+    "domNodes": 1051,
+    "readyMs": 5331,
+    "label": "technical-switch",
+    "symbol": "دزهراوي"
+   },
+   "cycles": [
+    {
+     "requests": [],
+     "requestTotal": 0,
+     "encodedBytes": 0,
+     "longtasks": 0,
+     "tbt": 0,
+     "worst": 0,
+     "frames": {
+      "n": 22,
+      "med": 18,
+      "p95": 18,
+      "max": 18,
+      "over100": 0
+     },
+     "heapMB": 52,
+     "domNodes": 588,
+     "readyMs": 327,
+     "label": "cycle-0"
+    },
+    {
+     "requests": [],
+     "requestTotal": 0,
+     "encodedBytes": 0,
+     "longtasks": 1,
+     "tbt": 18,
+     "worst": 68,
+     "frames": {
+      "n": 20,
+      "med": 18,
+      "p95": 108,
+      "max": 108,
+      "over100": 1
+     },
+     "heapMB": 63,
+     "domNodes": 588,
+     "readyMs": 338,
+     "label": "cycle-1"
+    },
+    {
+     "requests": [],
+     "requestTotal": 0,
+     "encodedBytes": 0,
+     "longtasks": 0,
+     "tbt": 0,
+     "worst": 0,
+     "frames": {
+      "n": 19,
+      "med": 18,
+      "p95": 18,
+      "max": 18,
+      "over100": 0
+     },
+     "heapMB": 66,
+     "domNodes": 588,
+     "readyMs": 331,
+     "label": "cycle-2"
+    },
+    {
+     "requests": [],
+     "requestTotal": 0,
+     "encodedBytes": 0,
+     "longtasks": 0,
+     "tbt": 0,
+     "worst": 0,
+     "frames": {
+      "n": 18,
+      "med": 18,
+      "p95": 18,
+      "max": 18,
+      "over100": 0
+     },
+     "heapMB": 69,
+     "domNodes": 588,
+     "readyMs": 329,
+     "label": "cycle-3"
+    },
+    {
+     "requests": [],
+     "requestTotal": 0,
+     "encodedBytes": 0,
+     "longtasks": 0,
+     "tbt": 0,
+     "worst": 0,
+     "frames": {
+      "n": 19,
+      "med": 18,
+      "p95": 18,
+      "max": 18,
+      "over100": 0
+     },
+     "heapMB": 72,
+     "domNodes": 588,
+     "readyMs": 317,
+     "label": "cycle-4"
+    }
+   ],
+   "errors": [],
+   "end": {
+    "heapMB": 33.4,
+    "nodes": 981,
+    "listeners": 376
+   }
+  }
+ ]
+}

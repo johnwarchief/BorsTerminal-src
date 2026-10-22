@@ -3,8 +3,7 @@
 // سراسری سبک تا سایدبار در هر صفحه دوباره fetch نزند.
 import { useMemo } from 'react';
 import { useSymbolStore } from '@shared/stores/symbolStore';
-import { useMarketFeed } from '@features/market/api/useMarketFeed';
-import { findBoardRow } from '@features/market/api/useSymbolFlow';
+import { useMarketRow, marketRowOf } from '@features/market/api/useMarketRow';
 import type { MarketRow } from '@shared/types/marketRow';
 
 export type BoardRow = {
@@ -24,8 +23,8 @@ export type BoardRow = {
  *  است (نوشتارِ عربی/فارسی + فاصله)، نه از مقایسهٔ خام. */
 export function useInspectorRawRow(opts: { enabled?: boolean } = {}): MarketRow | null {
   const symbol = useSymbolStore((s) => s.symbol);
-  const { data } = useMarketFeed(opts);
-  return useMemo(() => findBoardRow(data?.data ?? [], symbol), [symbol, data]);
+  const q = useMarketRow(symbol, opts.enabled ?? true);
+  return marketRowOf(q);
 }
 
 export function useInspectorBoard(opts: { enabled?: boolean } = {}): BoardRow | null {

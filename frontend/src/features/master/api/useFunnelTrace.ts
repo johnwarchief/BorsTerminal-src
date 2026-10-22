@@ -52,7 +52,11 @@ export interface TraceRequest {
   dropSuffix?: boolean;
 }
 
-export function useFunnelTrace(symbol: string | null | undefined, req: TraceRequest) {
+export function useFunnelTrace(
+  symbol: string | null | undefined,
+  req: TraceRequest,
+  opts: { enabled?: boolean } = {},
+) {
   const sym = String(symbol ?? '').trim();
   const drop = req.dropSuffix !== false;
   const qs = `preset=${encodeURIComponent(req.preset)}`
@@ -68,7 +72,7 @@ export function useFunnelTrace(symbol: string | null | undefined, req: TraceRequ
         schema: TraceSchema,
         signal,
       }),
-    enabled: sym.length > 0,
+    enabled: sym.length > 0 && (opts.enabled ?? true),
     // ردپا از همان کشِ هشت‌ثانیه‌ایِ موتور می‌آید؛ ده دقیقه برایِ یک پنلِ
     // تفصیلی کافی است و بی‌هزینه نیست (هر miss یک اجرایِ کاملِ ۵٫۸ هزار ردیف).
     staleTime: 10 * 60_000,

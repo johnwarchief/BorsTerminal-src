@@ -200,6 +200,50 @@ def market_closes(request: Request):
         conn.close()
 
 
+@router.get("/api/market/row")
+def market_row(request: Request, symbol: str = ""):
+    """یک ردیفِ تابلوی همان نماد — برایِ سایدبارِ نماد (حد ضرر/مظنه/پرچم).
+
+    سایدبار پیش‌تر برایِ پیدا کردنِ یک ردیف، فیدِ کاملِ `/api/market` (۶٫۸MB
+    خام / ~۱٫۲MB gzip) را می‌کشید. این مسیر همان ردیفِ آینهٔ دلتا را برمی‌گرداند
+    (همان شکل و همان فیلدها، نه یک محاسبهٔ دوم)؛ اگر تابلویِ این پروسه هنوز
+    ساخته نشده باشد، همان مسیرِ رسمیِ ساخت را یک‌بار اجرا می‌کند. ETag از
+    revision ساخته می‌شود، پس پولینگِ بی‌تغییر ۳۰۴ِ صفر‌بایت است.
+    """
+    import hashlib
+    import fts_engine as _fe
+    sym = str(symbol or "").strip()
+    if not sym:
+        return {"status": "success", "row": None}
+
+    def _find():
+        want = _fe.norm_fa(sym)
+        with _DELTA_LOCK:
+            if not _DELTA.get("ready"):
+                return None
+            for row in _DELTA["by_code"].values():
+                rs = str(row.get("symbol") or "")
+                if rs == sym or (want and _fe.norm_fa(rs) == want):
+                    return row
+        return None
+
+    row = _find()
+    if row is None:
+        try:
+            _build_market_response(_MarketInternalRequest())
+        except Exception:
+            pass
+        row = _find()
+    rev = int(market_state.revision() or 0)
+    etag = '"row-%s-%s"' % (rev, hashlib.md5(sym.encode("utf-8")).hexdigest()[:8])
+    inm = request.headers.get("if-none-match") if request is not None else None
+    if inm and _inm_matches(inm, etag):
+        return Response(status_code=304, headers={"ETag": etag})
+    body, _ = _encode_board({"status": "success", "symbol": sym, "row": row, "rev": rev})
+    return Response(content=body, media_type="application/json",
+                    headers={"ETag": etag, "Cache-Control": "no-store"})
+
+
 def _inm_matches(field: str, etag: str) -> bool:
     """مقایسهٔ ضعیفِ If-None-Match (همان قاعدهٔ funnel، محلی تا import حلقه نشود)."""
     tag = etag[2:] if etag.startswith("W/") else etag

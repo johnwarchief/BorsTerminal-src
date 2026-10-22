@@ -34,13 +34,13 @@ import { useCalendarEvents } from '@features/fundamental/api/useCalendarEvents';
 import { jalaliOf } from '@features/fundamental/lib/assemblyEvent';
 import { OrderBookFive } from '@shared/components/OrderBookFive';
 import { FormingCandle } from '@shared/components/FormingCandle';
-import { useMarketFeed } from '@features/market/api/useMarketFeed';
+import { useMarketRow } from '@features/market/api/useMarketRow';
+import { useFtsPlan } from '@features/master/api/useFtsPlan';
 import { INSPECTOR_STAGES, stageHrefOf, stageIndexForPath, stageKeyForPath } from './inspectorStage';
 import { useInspectorBoard, useInspectorRawRow } from './useInspectorBoard';
 import { useSymbolVeto } from './useSymbolVeto';
 import { useFtsFunnel } from '@features/master/api/useFtsFunnel';
 import { useFtsScreen } from '@features/fundamental/api/useFtsScreen';
-import { useFtsAnalysis } from '@features/technical/api/useFtsAnalysis';
 import { normalizeFa } from '@shared/lib/normalizeFa';
 import { useActiveFunnelPreset } from '@features/master/lib/useActiveFunnelPreset';
 import { useFunnelTrace } from '@features/master/api/useFunnelTrace';
@@ -202,7 +202,7 @@ export function SymbolInspector() {
   // قیف (۷ تا ۱۱ مگابایت) وِ اسکرینر پرسیده می‌شد.
   const drawerOpen = symbol.length > 0;
   const row = useInspectorBoard({ enabled: drawerOpen });
-  const feed = useMarketFeed({ enabled: drawerOpen });
+  const rowQ = useMarketRow(symbol, drawerOpen);
   useEffect(() => {
     if (routeSymbol && routeSymbol !== storedSymbol) setSymbol(routeSymbol);
   }, [routeSymbol, storedSymbol, setSymbol]);
@@ -240,7 +240,6 @@ export function SymbolInspector() {
   // سه حالت، نه دو تا: وتویِ واقعی (مجمع/هفتگی) قرمز است؛ «هنوز سنجیده نشده»
   // زردِ درانتظار است و نباید واژۀ «وتو» را قرض بگیرد (رأیِ pilot گزینهٔ a،
   // همان قاعدۀ «بی‌داده وتو نیست» که بک‌اند هم به آن گارد دارد).
-  const veto = useSymbolVeto(symbol);
   const rawRow = useInspectorRawRow({ enabled: drawerOpen });
   /** جایِ خودِ نماد در قیف — از همان پاسخِ /api/funnel که جدول می‌خواند: یکیِ
    *  presetِ فعال (URL > انتخابِ کاربر > افق)، نه `'custom'`ِ ثابت. بی‌این سه سطح
@@ -276,23 +275,29 @@ export function SymbolInspector() {
    *  شاخصِ همین نماد را عوض می‌کرد (رأیِ مالک ۱۴۰۵-۰۷-۱۹: «اصلاً نباید ربطی
    *  داشته باشن»). اسکرینر کلِ جامعۀ غربالگری را یک‌جا می‌سنجد — همان اعداد،
    *  بی‌وابستگی به فیلترِ تابلو. درخواستِ این‌جا تازه نیست: همان کلیدِ کشِ تب. */
-  const screenRes = useFtsScreen(0, { enabled: drawerOpen });
-  const screen = useMemo(() => {
+  // فقط ردیفِ همین نماد از اسکرینر؛ پیش‌تر کلِ جامعۀ ۱٢٠٠ردیفی برایِ یک
+  // `find` کشیده می‌شد (۱٢٢KB gzip + parse). پارامترِ `symbols` همان قراردادِ
+  // موجودِ endpoint است و پاسخ یک ردیف است.
+  const screenRes = useFtsScreen(0, { enabled: drawerOpen, symbols: symbol });
+  const screenRow = useMemo(() => {
     const rows = screenRes.data?.data;
-    if (!rows?.length || !symbol) return veto.screen;
+    if (!rows?.length || !symbol) return null;
     const want = normalizeFa(symbol);
     return rows.find((r) => r.symbol === symbol)
       ?? rows.find((r) => normalizeFa(r.symbol ?? '') === want)
-      ?? veto.screen;
-  }, [screenRes.data, symbol, veto.screen]);
+      ?? null;
+  }, [screenRes.data, symbol]);
+  const veto = useSymbolVeto(symbol, screenRow ?? undefined);
+  const screen = screenRow ?? veto.screen;
   /** روند از داوریِ *تک‌نمادیِ* موتور می‌آید (`/api/fts/{symbol}`): همان چیزی که
    *  تبِ تکنیکال می‌سازد و به هیچ زنجیره‌ای وابسته نیست. پیش‌تر از ردیفِ قیف
    *  خوانده می‌شد و آن ردیف فقط وقتی هست که نماد از درهایِ انتخابی رد شده باشد —
    *  پس کلیدِ «اشتراک/اجتماع» صعودی/نزولیِ یک نماد را عوض می‌کرد. اسکرینر
    *  جانشین است (۹۲۲ نمادِ غربالگری) و نبودنش «—» می‌ماند، نه حدس. */
-  const analysis = useFtsAnalysis(symbol ?? '');
-  const trendD = analysis.data?.fts?.trend?.D?.trend ?? screen?.tech_trend_d ?? null;
-  const trendW = analysis.data?.fts?.trend?.W?.trend ?? screen?.tech_trend_w ?? null;
+  // همان کلیدِ `useFtsPlan`ِ MasterPage: یک درخواستِ /api/fts/{symbol}، نه دو.
+  const plan = useFtsPlan(symbol ?? '');
+  const trendD = plan.data?.fts?.trend?.D?.trend ?? screen?.tech_trend_d ?? null;
+  const trendW = plan.data?.fts?.trend?.W?.trend ?? screen?.tech_trend_w ?? null;
   /** اولین دری که رویِ این نماد بسته است — منفی یعنی هیچ‌جا وتو نشده */
   const stoppedAt = progress.findIndex((p) => p.state === 'blocked');
 
@@ -408,7 +413,8 @@ export function SymbolInspector() {
   // با همان کشِ شش‌ساعته‌اش — نه از یک منبعِ دومِ اختراعیِ درِ فرانت.
   // ردپایِ فیلتر‌به‌فیلتر از همان درخواستِ جدولِ غربالگری — تا سایدبار و جدول
   // یک حکم داشته باشند، نه دو تا.
-  const trace = useFunnelTrace(symbol, funnelRequest);
+  const trace = useFunnelTrace(symbol, funnelRequest,
+    { enabled: drawerOpen && detailSeen && page === 'detail' });
   const calEvents = useCalendarEvents(symbol);
   const events = useMemo(() => (calEvents.data?.events ?? []).slice(0, 3), [calEvents.data]);
 
@@ -488,13 +494,13 @@ export function SymbolInspector() {
 
         {/* خطای خوراک با «ردیف نیست» یکی نیست: بی‌این، بیست '-' بی‌صدا معنای
             «داده نیست» به کاربر می‌فروشد وقتی مشکل، رسیدنِ داده است. */}
-        {!row && feed.isError ? (
+        {!row && rowQ.isError ? (
           <div
             data-testid="inspector-feed-error"
             className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-dashed border-accent-red/40 bg-accent-red/10 px-2 py-1.5 text-3xs text-accent-red"
           >
             <span>تابلو نمی‌رسد — اعداد این نماد تازه نیست</span>
-            <RetryAction onRetry={() => void feed.refetch()} testId="inspector-feed-retry" />
+            <RetryAction onRetry={() => void rowQ.refetch()} testId="inspector-feed-retry" />
           </div>
         ) : null}
 
@@ -696,7 +702,7 @@ export function SymbolInspector() {
 
           {/* وضعیتِ ناظر (TSETMC): کفِ سلسله‌مراتبِ همین پنل — «الان می‌شود-trade کرد
               یا نه» پیش از هر عددی خوانده می‌شود. متنِ کامل درِ بازشو. */}
-          <RegulatoryState row={rawRow} feedFailed={feed.isError} />
+          <RegulatoryState row={rawRow} feedFailed={rowQ.isError} />
 
           <div className="flex flex-col gap-0.5">
               {/* روند از داوریِ بی‌زنجیرۀ اسکرینر خوانده می‌شود؛ سیگنالِ باس فقط

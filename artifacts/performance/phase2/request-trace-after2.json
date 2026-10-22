@@ -1,0 +1,134 @@
+{
+ "symbol": "سپيدار",
+ "t0": "2026-10-22T18:59:38.567Z",
+ "calls": [
+  {
+   "t": 112,
+   "method": "GET",
+   "url": "/api/selection/portfolio",
+   "body": null
+  },
+  {
+   "t": 113,
+   "method": "GET",
+   "url": "/api/watchlist",
+   "body": null
+  },
+  {
+   "t": 114,
+   "method": "GET",
+   "url": "/api/market/row?symbol=سپيدار",
+   "body": null
+  },
+  {
+   "t": 117,
+   "method": "GET",
+   "url": "/api/fts/سپيدار",
+   "body": null
+  },
+  {
+   "t": 117,
+   "method": "GET",
+   "url": "/api/chart/سپيدار/key-levels",
+   "body": null
+  },
+  {
+   "t": 117,
+   "method": "GET",
+   "url": "/api/fundamental/سپيدار",
+   "body": null
+  },
+  {
+   "t": 117,
+   "method": "GET",
+   "url": "/api/screener?symbols=سپيدار",
+   "body": null
+  },
+  {
+   "t": 117,
+   "method": "GET",
+   "url": "/api/calendar/upcoming?days=14",
+   "body": null
+  },
+  {
+   "t": 118,
+   "method": "GET",
+   "url": "/api/calendar/سپيدار",
+   "body": null
+  },
+  {
+   "t": 238,
+   "method": "GET",
+   "url": "/api/tape-history?codes=29590002988360984&days=5",
+   "body": null
+  }
+ ],
+ "responses": [
+  {
+   "t": 237,
+   "status": 200,
+   "url": "/api/market/row?symbol=سپيدار",
+   "reqMs": -1
+  },
+  {
+   "t": 641,
+   "status": 200,
+   "url": "/api/watchlist",
+   "reqMs": -1
+  },
+  {
+   "t": 819,
+   "status": 200,
+   "url": "/api/selection/portfolio",
+   "reqMs": -1
+  },
+  {
+   "t": 915,
+   "status": 200,
+   "url": "/api/calendar/upcoming?days=14",
+   "reqMs": -1
+  },
+  {
+   "t": 1160,
+   "status": 200,
+   "url": "/api/funnel",
+   "reqMs": -1
+  },
+  {
+   "t": 1162,
+   "status": 200,
+   "url": "/api/calendar/سپيدار",
+   "reqMs": -1
+  },
+  {
+   "t": 1572,
+   "status": 200,
+   "url": "/api/screener?symbols=سپيدار",
+   "reqMs": -1
+  },
+  {
+   "t": 1573,
+   "status": 200,
+   "url": "/api/tape-history?codes=29590002988360984&days=5",
+   "reqMs": -1
+  },
+  {
+   "t": 2336,
+   "status": 200,
+   "url": "/api/chart/سپيدار/key-levels",
+   "reqMs": -1
+  },
+  {
+   "t": 2470,
+   "status": 200,
+   "url": "/api/fts/سپيدار",
+   "reqMs": -1
+  },
+  {
+   "t": 2761,
+   "status": 200,
+   "url": "/api/fundamental/سپيدار",
+   "reqMs": -1
+  }
+ ]
+}
