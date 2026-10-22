@@ -36,14 +36,18 @@ workflows were not run 20–30 times.
 The remaining critical path is the Coder2-owned `/api/fts/<symbol>` (1.0–1.6 s
 in these traces). `/api/fundamental/<symbol>` (0.5–1.4 s) and
 `/api/chart/<symbol>/key-levels` (33–1,020 ms) overlap it; the scoped screener
-is now 0.1–1.1 s (137–190 ms in the warm pair). Request count and transfer are
-no longer the problem.
+is now **p50 61 ms / p95 216 ms** over 25 warm samples (per-switch samples
+97–1,114 ms under contention). Request count and transfer are no longer the
+problem.
 
 ### Funnel transport (P2-R2, rechecked after the P2-R6 restart)
 
 `/api/funnel?preset=tech_first…` first 200: **1,396 ms / 13,429,057 B**.
-Conditional GET: **304, 19 ms, 0 B**. After 9 s: **304, 118 ms, 0 B**. A warm
-unconditional GET (body cache): **200, 103 ms, 13.4 MB**. The 13.4 MB raw
+Conditional GET: **304, 19 ms, 0 B**. After 9 s: **304, 118 ms, 0 B**.
+25 conditional samples: **p50 33 ms, p95 153 ms, max 627 ms** (all 304/0 B).
+A warm unconditional GET (body cache): **200, 103 ms, 13.4 MB**. The first full
+fetch after the P2-R6 server restart took **6.15 s** while the body cache was
+empty; that is a post-restart cost, not a steady-state number. The 13.4 MB raw
 payload is the tech-first full stage set; responses after the first are
 conditional or body-cached.
 
@@ -146,6 +150,7 @@ These are warm-server numbers; a cold-server startup was not measured.
 | `artifacts/performance/phase2/resources*.json` | CPU/heap/DOM cycles and idle |
 | `artifacts/performance/phase2/switch-trace-p2r6*.json` | final switch request/size/ready samples |
 | `artifacts/performance/phase2/startup.json` | cold/warm FTS landing startup |
+| `artifacts/performance/phase2/lowcost-samples.json` | 25-sample p50/p95 for conditional funnel GET and scoped screener |
 | `artifacts/performance/phase2-results.csv` | machine-readable summary |
 | `docs/CODER3-PERFORMANCE-HANDOFF-TO-CODER2.md` | protected-path handoff |
 

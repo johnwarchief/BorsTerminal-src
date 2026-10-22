@@ -181,10 +181,10 @@ The hook now sends the active `preset`/`chain` and `gate=0`; the server skips
 
 | Metric | Before P2-R6 | Final |
 |---|---:|---:|
-| scoped screener latency | 0.6–2.6 s | **0.1–1.1 s** (137–190 ms in the warm pair) |
+| scoped screener latency | 0.6–2.6 s | **p50 61 ms / p95 216 ms** (25 warm samples); 97–1,114 ms per switch under contention |
+| funnel conditional GET | 19 ms / 0 B | **p50 33 ms / p95 153 ms, 0 B** (25 samples); after 9 s: 118 ms / 0 B |
 | FTS switch click→dossier | median ≈1.69 s (P2-R4 direct) | **median 1.62 s** (range 1.07–1.79 s, 6 samples) |
 | requests / bytes per switch | 7–10 / 9–16 KiB | 8–10 / 9–16 KiB |
-| funnel conditional GET | 19 ms / 0 B | **19 ms / 0 B** (after 9 s: 118 ms / 0 B) |
 | FTS landing cold data-ready | — | 3.73–4.45 s (median ≈4.08 s; login 1.10–1.82 s) |
 | FTS landing warm reload | — | **0.75–0.85 s** |
 | 60 s funnel idle | — | 805 ms task CPU, 0 requests, heap +71 KiB, DOM/listeners flat |

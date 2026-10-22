@@ -36,6 +36,11 @@
     "hover_dwell_requests": 2,
     "scoped_screener_ms": {"before": [600, 2600], "after": [100, 1100], "warm": [137, 190]},
     "funnel_conditional_get": {"status": 304, "ms": 19, "bytes": 0, "after_9s_ms": 118, "after_9s_bytes": 0},
+    "low_cost_samples": {
+      "funnel_conditional_25": {"min": 24, "p50": 33, "p95": 153, "max": 627, "mean": 70, "bytes": 0},
+      "scoped_screener_gate0_25": {"min": 33, "p50": 61, "p95": 216, "max": 2103, "mean": 156},
+      "note": "one full funnel fetch immediately after the P2-R6 server restart took 6150 ms with an empty body cache; not steady state"
+    },
     "funnel_first_200": {"ms": 1396, "bytes": 13429057},
     "startup_cold_data_ready_ms": {"samples": [4076, 4448, 3733], "median": 4076},
     "startup_warm_reload_ms": {"samples": [820, 849, 747], "median": 820},
