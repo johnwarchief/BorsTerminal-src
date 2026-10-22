@@ -59,7 +59,10 @@ async function clickRoute(page, route) {
   let link = page.locator(`a[aria-label="${labelMap[route] || route}"]`).first();
   if (!(await link.count())) link = page.locator(`a[href$="${route}"]`).first();
   if (await link.count()) {
-    try { await link.click({ timeout: 5000 }); return true; } catch { await link.evaluate((el) => el.click()); return true; }
+    // DOM click: Playwright's actionability wait can add seconds after a chart
+    // tab and would be misread as page latency.
+    await link.evaluate((el) => el.click());
+    return true;
   }
   await page.evaluate((r) => { location.hash = '#' + r; }, route);
   return false;

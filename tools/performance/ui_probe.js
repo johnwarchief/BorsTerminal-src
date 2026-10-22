@@ -220,14 +220,13 @@ async function clickTab(page, route, label) {
   let link = page.locator(`a[aria-label="${label}"]`).first();
   if (!(await link.count())) link = page.locator(`a[href$="${route}"]`).first();
   if (!(await link.count())) return false;
-  try {
-    await link.click({ timeout: 5000 });
-  } catch {
-    // At 1366×768 a sidebar item can sit outside the scroll viewport; the
-    // in-page click still goes through React Router. (Baseline run 2026-10-22
-    // aborted here, losing the whole report — hence the fallback.)
-    await link.evaluate((el) => el.click());
-  }
+  // Direct DOM click, never Playwright actionability: after the chart tab,
+  // `click()` spent ~6s waiting for the sidebar link to become "stable" and
+  // that wait was being charged to the NEXT tab's click→ready time. The app's
+  // router handles this click identically; the measurement must start when
+  // the user's click would actually be dispatched. (At 1366×768 a sidebar
+  // item can also sit outside the scroll viewport; a DOM click still works.)
+  await link.evaluate((el) => el.click());
   return true;
 }
 
