@@ -189,9 +189,17 @@ Functional gates actually run (final state):
   since `ef92c89c`; proven from HEAD, not from this mission).
 - Frontend: `npx tsc -b` 0 errors; `npm run build` PASS; targeted Vitest
   39/39 (pipeline, palette, status page, conditional/LRU).
-- Full `python dev/run_all_tests.py` and full `npx vitest run`: see the
-  appended final-validation note / checkpoint. Any blocked suite is reported
-  by exact command, not relabelled as passing.
+- Full `python dev/run_all_tests.py` (both dev servers closed):
+  **NOT_COMPLETED / BLOCKED_BY_TIME**. The runner has 170 suites; after the
+  session's 10-minute background cap it was at `dev/test_fts_asof_cutoff.py`
+  (~30th suite) with no observed failure, but its stdout is buffered and no
+  pass/fail summary exists. It is not relabelled as passing. Targeted guards
+  for every changed subsystem all passed (above).
+- Full `npx vitest run`: **NOT_COMPLETED** — stopped at 122 of 201 test files
+  after ~20+ minutes; no failure appeared in the emitted output. Targeted
+  Vitest (the files covering changed code) passed 39/39. Exact summary:
+  `artifacts/performance/2026-10-22/final-validation.json`.
+- `dev/version_anchor_guard.py` 6/6 PASS; `dev/struct_check.py` PASS.
 - No data removal: closes map values equal the same `market_watch` row
   (guard); TEDPIX response candles equal `build_tedpix_payload` (guard);
   market feed for the market page is unchanged; notification source values

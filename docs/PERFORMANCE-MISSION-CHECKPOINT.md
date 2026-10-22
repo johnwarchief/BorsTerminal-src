@@ -3,7 +3,7 @@
 Mission: Coder3 performance & resource engineering, 2026-10-22
 Branch: `mission/coder3-performance-resource-2026-10-22`
 Base commit: `784d9d8a` (origin/main at clone time)
-Status: **six rounds implemented and committed; final validation in progress**
+Status: **six rounds implemented and committed; final validation recorded. Two broad suites are explicitly NOT_COMPLETED by the time cap; targeted gates passed.**
 
 ## Current position
 
@@ -60,8 +60,14 @@ from ~1.2 MB to ~43 KiB.
 - `dev/mstat_status_panels_contract_v1.py` — 201/203; the two failures are
   **PRE_EXISTING** on HEAD (`free_float` expected by the guard, engine emits
   `official_impact` since `ef92c89c`; proven by `git show HEAD:...` grep)
-- Full `python dev/run_all_tests.py` — see final report for the recorded
-  outcome; run with both dev servers closed.
+- Full `python dev/run_all_tests.py` — **NOT_COMPLETED / BLOCKED_BY_TIME**:
+  170 suites, 10-minute background cap, reached `dev/test_fts_asof_cutoff.py`
+  with no observed failure; runner stdout was buffered, so this is not
+  claimed as a pass. Targeted guards for all changed modules passed.
+- Full `npx vitest run` — **NOT_COMPLETED**: stopped at 122/201 files after
+  ~20+ min, no failures in emitted output; targeted 39/39 passed.
+  Summary: `artifacts/performance/2026-10-22/final-validation.json`.
+- `dev/version_anchor_guard.py` 6/6 PASS; `dev/struct_check.py` PASS.
 
 ## Kept / reverted / not attempted
 
@@ -84,7 +90,12 @@ No edits to `api/chart.py`, `frontend/src/features/technical/**`,
 or RA365 artifacts. Chart/CDN latency is reported read-only as a remaining
 bottleneck.
 
-## Next action
+## Next action (if resumed)
 
-Finalize `docs/PERFORMANCE-SIX-ROUND-REPORT.md`, commit the evidence matrix and
-reports, confirm the working tree, and do not push or merge into `main`.
+Mission is complete for this session. Do not push or merge into `main`.
+If a future session wants to finish the broad gates, run
+`BORS_NO_FETCH_LOOPS=1 python dev/run_all_tests.py` with a >30-minute budget
+and `npx vitest run` in `frontend/` with a >30-minute budget. The first next
+performance step is documented in the report: wire MarketStatusPage panels to
+the existing `/api/mstat/board` single request, then measure live-session
+funnel polling.
