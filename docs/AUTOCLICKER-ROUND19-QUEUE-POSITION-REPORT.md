@@ -47,6 +47,15 @@ Queue Monitor به بخشِ «جایگاه سفارش و عملکرد سرخطی
 - رتبه در یک کارگزاری با رتبه در کل بازار یکی گرفته نمی‌شود.
 - `/Rlc/MarketSheet` برایِ Mofid و `MarketSheet` برایِ EasyTrader به‌عنوانِ رتبه استفاده نمی‌شوند.
 
+مراجعِ شش‌گانهٔ GitHub از artifactهایِ Round 11A/15.5 بازبینی شدند
+(`docs/SARKHATI-GITHUB-REFERENCE-AUDIT.md` و
+`docs/trading/EASYTRADER-OSS-RESEARCH-MATRIX.md`)؛ در این راند مخزنِ جدیدی
+واکشی نشد. در `RezaMahdaviiDev/mofid` مسیرِ `getQueuePosition` به همان
+`GET /ms/api/MarketSheet/order-place?actionType=get` با هدرِ `order-id` نگاشت
+می‌شود (`src/brokerages/easy/api/order.ts:291-301`) و فقط برایِ EasyTrader است،
+نه Mofid. تفسیرِ `orderPlace <= 1` در آن کد به‌عنوانِ «اولِ صف» یک فرضیهٔ
+شخصِ سوم است و در BorsTerminal پذیرفته نشد.
+
 ## ۴) معنایِ رتبه و دامنهٔ پوشش
 
 | وضعیتِ ردیف | معنا | نمایش |
