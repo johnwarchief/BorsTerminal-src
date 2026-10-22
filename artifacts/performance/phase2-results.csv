@@ -17,7 +17,7 @@ P2-R5,FTS open/close,back retries,3,0,of 6 cycles,6,"artifacts/performance/phase
 P2-R5,FTS open/close,max /api/funnel per cycle,5,2,count,6,"artifacts/performance/phase2/resources.json;resources-after2.json",duplicate preset key removed
 P2-R5,FTS open/close,post-warm heap,"49.5-61.7","40.3-43.3",MB,6,"artifacts/performance/phase2/resources-after2.json",before had +10.2MB jumps
 P2-R5,FTS open/close,DOM/listeners,,1469/286,count,6,"artifacts/performance/phase2/resources-final.json",flat across cycles
-P2-R6,scoped screener,latency,"600-2600","100-500",ms,6,"artifacts/performance/phase2/switch-trace-p2r6*.json",active preset + gate=0; 137-190ms warm
+P2-R6,scoped screener,latency,"600-2600","100-1100",ms,6,"artifacts/performance/phase2/switch-trace-p2r6*.json",active preset + gate=0; 137-190ms in the warm pair
 P2-R6,FTS symbol switch,median click-to-dossier,2300,1624,ms,6,"artifacts/performance/phase2/switch-trace-p2r6-final-*.json",range 1067-1794ms
 P2-R6,FTS symbol switch,requests/bytes per switch,"7-9","8-10 / 9-16",count/KiB,6,"artifacts/performance/phase2/switch-trace-p2r6-final-*.json",triggered by trace
 P2-R6,FTS landing startup,cold data-ready,"3733-4448",4076,ms,3,"artifacts/performance/phase2/startup.json",warm server; login 1.10-1.82s

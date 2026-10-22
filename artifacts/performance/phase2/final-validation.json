@@ -1,0 +1,72 @@
+{
+  "mission": "BorsTerminal Performance Phase 2 (P2-R1..P2-R6)",
+  "branch": "mission/coder3-performance-resource-2026-10-22",
+  "code_head": "e518e91f",
+  "evidence": "this commit adds the validation JSON and report accuracy fixes",
+  "phase1_base": "a4228cef",
+  "date": "2026-10-22",
+  "environment": {
+    "python": "portable CPython 3.12.10",
+    "node": "22.22.0",
+    "browser": "Microsoft Edge via playwright-core",
+    "backend": "uvicorn 127.0.0.1:8000, BORS_NO_FETCH_LOOPS=1, BORS_GZIP_LEVEL=1",
+    "database": "market.db session 20261014 (read-only benchmarks)",
+    "market": "closed",
+    "server_state": "warm; cold-server startup not measured"
+  },
+  "rounds": {
+    "P2-R1": {"status": "done", "commit": "482863a5"},
+    "P2-R2": {"status": "done", "commit": "bd250653"},
+    "P2-R3": {"status": "done", "commit": "568e32e3"},
+    "P2-R4": {"status": "done", "commit": "465cbd11"},
+    "P2-R5": {"status": "done", "commit": "7fd7e611"},
+    "P2-R6": {"status": "done", "commit": "e518e91f"}
+  },
+  "final_measurements": {
+    "fts_switch_click_ready_ms": {"samples": [1674, 1693, 1246, 1067, 1794, 1574], "median": 1624, "min": 1067, "max": 1794},
+    "fts_switch_requests": [8, 10],
+    "fts_switch_bytes_kib": [9, 16],
+    "fts_switch_baseline_pre_r1_ms": 6900,
+    "fts_switch_after_r1_ms": 2300,
+    "hover_ab_final": [
+      {"symbol": "آبنوس", "direct_ready_ms": 1545, "hover_ready_ms": 553, "prefetch_lead_ms": 363},
+      {"symbol": "آتش", "direct_ready_ms": 1458, "hover_ready_ms": 465, "prefetch_lead_ms": 364}
+    ],
+    "hover_sweep_requests": 0,
+    "hover_dwell_requests": 2,
+    "scoped_screener_ms": {"before": [600, 2600], "after": [100, 1100], "warm": [137, 190]},
+    "funnel_conditional_get": {"status": 304, "ms": 19, "bytes": 0, "after_9s_ms": 118, "after_9s_bytes": 0},
+    "funnel_first_200": {"ms": 1396, "bytes": 13429057},
+    "startup_cold_data_ready_ms": {"samples": [4076, 4448, 3733], "median": 4076},
+    "startup_warm_reload_ms": {"samples": [820, 849, 747], "median": 820},
+    "idle_10s_cpu_ms": 150,
+    "idle_60s_cpu_ms": 805,
+    "idle_60s_heap_delta_kib": 71,
+    "idle_60s_requests": 0,
+    "cycles": {"count": 6, "back_retries": 0, "cpu_ms": [672, 1350], "requests_per_cycle": [7, 11], "dom_nodes": 1469, "listeners": 286},
+    "strategy_tree": {"open_ms": 1327, "actions_ms": [24, 35], "dom_nodes": 663, "svg_nodes": 248},
+    "technical": {"chart_requests_per_open": 1, "fts_requests_per_open": 1, "market_feed_bytes": 1220692, "cpu_ms_per_open": [1287, 2757], "note": "protected; market feed handed to Coder2"}
+  },
+  "checks": {
+    "typescript": {"status": "pass", "errors": 0},
+    "production_build": {"status": "pass"},
+    "vitest_touched_combined": {"passed": 73, "failed": 3, "status": "fail_preexisting", "note": "fundamental-codal-poll.spec.tsx DB-status polling; reproduced on 7fd7e611 with P2-R6 stashed"},
+    "vitest_inspector_screener_individual": {"passed": 20, "failed": 0, "status": "pass"},
+    "funnel_get_parity_v1": {"passed": 2, "failed": 0, "status": "pass"},
+    "funnel_signature_v1": {"passed": 4, "failed": 0, "status": "pass"},
+    "market_row_endpoint_v1": {"passed": 4, "failed": 0, "status": "pass"},
+    "screener_symbol_scope_v1": {"passed": 7, "failed": 0, "status": "pass", "note": "incl. new gate=0 parity checks"},
+    "mstat_status_panels_contract_v1": {"passed": 201, "failed": 2, "status": "preexisting", "note": "free_float/official_impact proven pre-existing since ef92c89c"},
+    "full_python_suite": {"status": "NOT_COMPLETED"},
+    "full_vitest_suite": {"status": "NOT_COMPLETED"},
+    "live_session": {"status": "NOT_MEASURED"},
+    "cold_server_startup": {"status": "NOT_MEASURED"},
+    "technical_overlay_toggles": {"status": "NOT_MEASURED", "note": "no pattern-toggle control exposed in the default technical view"}
+  },
+  "ownership": {
+    "protected_files_modified": [],
+    "verified_by": "git diff --name-only a4228cef..HEAD filtered for api/execution.py, api/chart.py, tools/ra365_*, frontend/src/features/technical/**, broker/AutoClicker/Sarkhati",
+    "handoff": "docs/CODER3-PERFORMANCE-HANDOFF-TO-CODER2.md"
+  },
+  "git": {"pushed": false, "merged_to_main": false, "migrations_run": false, "operational_db_mutated": false}
+}
