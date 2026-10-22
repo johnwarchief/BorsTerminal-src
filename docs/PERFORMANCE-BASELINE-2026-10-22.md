@@ -66,14 +66,14 @@ Cold cache misses (first call per process):
 | Cold start first usable (`/master` funnel) | 1,382 / 1,593 / 2,493 ms (3 runs) |
 | Cold API payload | 1.20–1.58 MiB encoded |
 | Market tab first open | 2,621 ms (later passes 907–924 ms) |
-| Fundamental tab every open | 6,017 / 6,041 ms (passes 1–2); 7,693 ms first |
+| Fundamental tab (corrected method) | rows appear ≈1.9 s after a direct click; the earlier 6.0 s figure was Playwright actionability on the sidebar link, fixed in `98bc436a` |
 | Market-status tab first open | **10,795 ms** (20 requests, 227 KiB, TBT 270 ms) |
 | Market-status later passes | 1,265–1,297 ms |
 | Technical tab first open | 2,852 ms (chart symbol switch 3.3–4.8 s, Coder2-owned) |
 | Strategy FTS tab | 902–1,422 ms |
 | Chart zoom / pan | 508 ms / 481 ms; median frame 18 ms; no >100 ms frames |
 | JS heap across tab cycle | 27 → 90 MB, no monotonic leak observed in this window |
-| Console errors | 0 |
+| Console errors | 0 in this run; a chart-only `reading 'bar'` pageerror appeared in later full tab cycles but not in isolated probes (see final report) |
 
 **Dominant confirmed bottleneck (outside protected ownership):** the first
 market-status open fans out to 19–20 panel requests. With a cold process,
@@ -98,6 +98,17 @@ CPU-seconds for the baseline are **NOT_MEASURED** for the full six-round
 workload; Round 5 introduces a dedicated sustained-session sampler. The
 baseline cold-start figure (first launch with no screener disk cache) was
 ≈3 minutes of one-core warm-up; subsequent starts use the disk cache (16 s).
+
+## 4b. Methodology correction (applied during Round 3, commit 98bc436a)
+
+The first browser probe clicked sidebar links with Playwright's actionability
+wait. After the technical/chart tab that wait lasted ~6 s and was charged to
+the *next* tab's click→ready time, so Fundamental appeared to take 6 s on every
+visit. `tools/performance/readiness_diag.js` isolated the cause; a direct DOM
+click shows the route change starting immediately and the screen rows arriving
+in ≈1.9 s. All later browser numbers use the direct-click method. Baseline
+numbers from the old method are kept only where the effect is negligible
+(market-status first open was dominated by its 19 cold requests).
 
 ## 5. Known pre-existing issues captured at baseline
 
