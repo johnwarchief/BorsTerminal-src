@@ -248,9 +248,13 @@ export function phaseOf(rec: ExecutionRecord | null | undefined): OrderPhase {
   if (!rec) return 'idle';
   const st = rec.status ?? '';
   const os = rec.order_state ?? 'unknown';
-  if (st === 'unknown_result' || os === 'unknown') {
-    return st === 'failed' ? 'errored' : 'unknown';
-  }
+  // «نتیجهٔ ارسال نامعلوم» با «سفارش ارسال شد ولی وضعیتش هنوز خوانده نشده» دو
+  // چیز است: اولی فقط reconcile می‌خواهد؛ دومی ack واقعی دارد. یکی‌کردنشان
+  // کاربر را از «ارسال شد» به «نمی‌دانیم» می‌برد و دکمهٔ دوباره می‌سازد.
+  if (st === 'unknown_result') return 'unknown';
+  if (st === 'failed') return os === 'rejected' ? 'rejected' : 'errored';
+  if (st === 'acknowledged' && os === 'unknown') return 'submitted';
+  if (os === 'unknown') return 'unknown';
   if (os === 'rejected') return 'rejected';
   if (os === 'cancelled') return 'cancelled';
   if (os === 'filled') return 'filled';
@@ -461,7 +465,43 @@ export function useExecutionStrategies(enabled: boolean) {
  */
 const NO_RETRY = { retries: 0 } as const;
 
+/** پیش‌نمایشِ سفارش: خلاصه و اعتبارِ توکن؛ هیچ سفارشی در این پاسخ نیست. */
+export type OrderPreviewView = {
+  status: string; adapter?: string; live?: boolean; dry_run?: boolean;
+  send_ready?: boolean; prepared_token?: string; execution_id?: string;
+  expires_in_ms?: number; phase?: string;
+  summary?: Record<string, unknown>;
+  wire_preview?: Record<string, unknown>;
+  checks?: Record<string, string>; reasons?: Record<string, string>;
+  session?: SessionStatusView;
+  risk?: { ok?: boolean; reason?: string };
+  halted?: boolean; halt_reason?: string;
+  timings?: Record<string, number | null>;
+  network_calls?: string[];
+  code?: string; detail?: string; field?: string;
+};
+
+/** پاسخِ تأیید: ack واقعی، یا وضعیتِ نامعلوم/رد. `record` تنها منبعِ شناسه است. */
+export type OrderConfirmView = {
+  status: string; adapter?: string; dry_run?: boolean; live?: boolean;
+  record?: ExecutionRecord; broker_order_id?: string | null;
+  unknown_result?: boolean; retry_forbidden?: boolean;
+  read_back?: string; read_back_next?: string;
+  timings?: Record<string, number | null>;
+  network_calls?: string[]; payload_fields?: string[];
+  code?: string; detail?: string; expected_phrase?: string;
+  record_note?: string; note?: string;
+};
+
 export const orderApi = {
+  /** مسیرِ سریع: همهٔ پرسش‌هایِ کند این‌جا؛ هیچ POSTی. */
+  fastPreview: (body: Record<string, unknown>) =>
+    http<OrderPreviewView>('/api/execution/order/preview',
+      { method: 'POST', body, ...NO_RETRY }),
+  /** مسیرِ سریع: گیت‌هایِ محلی + یک POST. retry عمداً صفر است. */
+  fastConfirm: (body: Record<string, unknown>) =>
+    http<OrderConfirmView>('/api/execution/order/confirm',
+      { method: 'POST', body, ...NO_RETRY }),
   strategies: () => http<StrategiesView>('/api/execution/strategies'),
   strategySettings: (id: string, body: Record<string, unknown>) =>
     http<Record<string, unknown>>(

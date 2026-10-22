@@ -186,6 +186,7 @@ class Prepared:
     payload_preview: dict
     mode: OrderMode
     dry_run: bool
+    created_mono: float = 0.0
 
     @property
     def sendable(self) -> bool:
@@ -461,14 +462,37 @@ class ExecutionService:
         }
         prepared = Prepared(draft=draft, preflight=p, plan=plan,
                             payload_preview=preview, mode=draft.mode,
-                            dry_run=self.dry_run)
+                            dry_run=self.dry_run,
+                            created_mono=time.monotonic())
         self._prepared[draft.execution_id] = prepared
         return prepared
 
+    def prune_prepared(self, ttl_s: float = 120.0) -> int:
+        """پیش‌نمایش‌هایِ بی‌استفادهٔ کهنه را دور می‌ریزد؛ رکوردِ ارسال‌شده نه."""
+        now = time.monotonic()
+        drop = [eid for eid, p in self._prepared.items()
+                if p.created_mono and (now - p.created_mono) > ttl_s
+                and eid not in self._ledger]
+        for eid in drop:
+            self._prepared.pop(eid, None)
+        return len(drop)
+
     # ---- ۳) اجرا ----------------------------------------------------------
+    def recheck_limits(self, prepared: Prepared) -> None:
+        """سقف‌هایِ ریسک را همان لحظهٔ ارسال دوباره می‌سنجد.
+
+        چرا جدا از `prepare`: مسیرِ سریع بینِ پیش‌نمایش و تأیید یک فاصلهٔ
+        کاربری دارد؛ سفارشِ دیگری در همان فاصله می‌تواند نرخ/سقف را پر کند.
+        """
+        self._check_limits([prepared.draft], ctx=self._risk_for(prepared.draft))
+
     def execute(self, prepared: Prepared, *,
                 sleep: Callable[[float], None] = time.sleep,
-                yield_cpu: Callable[[], None] | None = None) -> ExecutionRecord:
+                yield_cpu: Callable[[], None] | None = None,
+                verify: bool | None = None) -> ExecutionRecord:
+        """`verify=False` فقط برایِ مسیرِ سریعِ سرخطی است: ack برمی‌گردد و
+        read-back درِ درخواستِ بعدی (refresh) خوانده می‌شود — نه این‌که وضعیت
+        پذیرش ادعا شود. پیش‌فرض همان سیاستِ حالت است."""
         policy = ModePolicy.of(prepared.mode)
         if policy.requires_prepared and prepared.draft.execution_id not in self._prepared:
             # NOT_ORDERABLE یعنی «این نماد قابلِ سفارش نیست» — اینجا نماد
@@ -504,9 +528,10 @@ class ExecutionService:
             rec.actual_send_wall_ms = tel.actual_send_wall_ms
             rec.clock_offset_ms = tel.clock_offset_ms
             return rec
-        return self._send_once(prepared.draft, policy)
+        return self._send_once(prepared.draft, policy, verify=verify)
 
-    def _send_once(self, draft: OrderDraft, policy: ModePolicy) -> ExecutionRecord:
+    def _send_once(self, draft: OrderDraft, policy: ModePolicy, *,
+                   verify: bool | None = None) -> ExecutionRecord:
         try:
             rec = self.adapter.submit_order(draft)
         except BrokerError as e:
@@ -543,7 +568,8 @@ class ExecutionService:
             raise
         rec.attempts = max(rec.attempts, 1)
         self._ledger[draft.execution_id] = rec
-        if policy.blocking_verify:
+        do_verify = policy.blocking_verify if verify is None else bool(verify)
+        if do_verify:
             self._verify(rec)
         self._audit(draft, "ack", status=rec.status.value,
                     order_state=rec.order_state.value, filled=rec.filled_quantity,

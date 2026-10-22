@@ -200,6 +200,10 @@ a = Analysis(
                    # زمان‌بندیِ ماندگار (۲۰۲۶-۱۰-۲۰): سطح-بالِ api/execution.py.
                    'execution_schedule', 'execution_daemon', 'execution_browser_host', 'execution_offerings', 'execution_cockpit', 'execution_connection', 'execution_session_capture',
                    'execution_mofid_capture',
+                   # مسیرِ سریعِ سرخطی (۲۰۲۶-۱۰-۲۳): سطح-بالِ api/execution.py؛
+                   # پیش‌نمایش/تأییدِ یک‌بارمصرف. بی‌این خط EXE روی اولین
+                   # /api/execution/order/preview می‌شکند.
+                   'execution_fast_order',
                    # Playwright برایِ Strategyهای مرورگری؛ باینریِ مرورگر از
                    # سیستم (Edge/Chrome) یا نصبِ محلی می‌آید، نه از بسته.
                    'playwright', 'playwright.sync_api',

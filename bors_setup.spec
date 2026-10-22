@@ -68,6 +68,8 @@ a = Analysis(
         'execution_strategy_core', 'execution_strategy_engine',
         'execution_browser', 'execution_schedule', 'execution_daemon', 'execution_browser_host', 'execution_offerings', 'execution_cockpit', 'execution_connection', 'execution_session_capture',
         'execution_mofid_capture',
+        # مسیرِ سریعِ سرخطی (۲۰۲۶-۱۰-۲۳) — سطح-بالِ api/execution.py.
+        'execution_fast_order',
         'playwright', 'playwright.sync_api',
         # دروازۀ ربات و سه ماژولِ پشتِ آن (فاز ۳ مأموریتِ ۱۴۰۵-۰۷-۲۴) — مثلِ
         # fts_terminal.spec؛ بی‌این /api/bot/* درِ بستهٔ نصاب 404 می‌ماند.

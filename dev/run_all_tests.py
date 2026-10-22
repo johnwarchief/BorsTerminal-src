@@ -743,6 +743,8 @@ SUITES = [
      'sarkhati queue Round 19: shared telemetry latency arithmetic, deterministic API/browser mock clock, scheduler lag samples, Mofid POST queue contract not invoked, queue monitor KNOWN/UNSUPPORTED/UNKNOWN/ERROR without fake zero, position series movement'),
     ('dev/sarkhati_closeout_v1168.py',
      'sarkhati closeout Round 20: Mofid POST query and LS orderplace stream evidence, mutation endpoints separate, EasyTrader queue 401/404/500/timeout/invalid/empty/concurrent single-flight, queue source_verified independent from result_known, readiness queue gate not folded into read-only'),
+    ('dev/sarkhati_fast_order_v1170.py',
+     'sarkhati fast order Round 21: full preview does session/balance/preflight once, confirm is local guards plus one POST, one-shot token (expiry/epoch/halt/concurrent), explicit phrase, timeout/UNKNOWN never retries, deferred read-back, exact wire body, dry-run never posts'),
     ('dev/autoclicker_browser_round14_v1149.py',
      'sarkhati AutoClicker Round 14 browser-level: Playwright mock EasyTrader, zero order posts in dry-run, one click, UNKNOWN, abort'),
     # مأموریتِ ۲۰۲۶-۱۰-۲۰ (Darvand P0): ذخیرهٔ ماندگارِ سفارش/زمان‌بندی، claim

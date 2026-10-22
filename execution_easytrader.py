@@ -1079,6 +1079,7 @@ class EasyTraderAdapter(BrokerAdapter):
         intent.attempts = 1
 
         try:
+            send_mono = time.monotonic()
             resp = self._call("POST", WIRE_PATH_ORDER_CREATE, payload=payload,
                               tag="submit", timeout_s=self.timeouts.order_post_s)
         except BrokerError as e:
@@ -1091,7 +1092,8 @@ class EasyTraderAdapter(BrokerAdapter):
         v = interpret_easytrader_response(resp.status, resp.body, where="submit",
                                           headers=resp.headers)
         self.last_verdict = v
-        rec.rtt_ms = self._ms_since(rec.actual_send_at)
+        # RTT فقط از ساعتِ یکنوا؛ اختلافِ ساعتِ دیواری می‌تواند منفی/بی‌معنا شود.
+        rec.rtt_ms = round((time.monotonic() - send_mono) * 1000.0, 1)
         rec.response_at = self._clock()
 
         if v.accepted is None:

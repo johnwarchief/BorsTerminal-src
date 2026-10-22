@@ -68,6 +68,7 @@ import execution_connect as EXC                            # noqa: E402
 import execution_connection as ECONN                       # noqa: E402
 import execution_browser_host as BH                        # noqa: E402
 import execution_cockpit as CK                             # noqa: E402
+import execution_fast_order as FAO                         # noqa: E402
 import execution_offerings as OF                           # noqa: E402
 import execution_owner_approval as OA                      # noqa: E402
 import execution_readiness as RD                           # noqa: E402
@@ -170,6 +171,10 @@ _SCHEDULER = Scheduler(TimeSource())
 
 _EASYTRADER: EasyTraderAdapter | None = None
 _MOFID: Any = None
+
+#: پیش‌نمایش‌هایِ مسیرِ سریع. درِ حافظه‌اند و با restart می‌میرند: توکنِ
+#: پیش‌نمایشی که نشستش مرده نباید زنده بماند. یک‌بارمصرف و کوتاه‌عمر.
+_FAST_ORDERS = FAO.FastOrderGateway()
 
 
 def _adapter() -> BrokerAdapter:
@@ -2720,7 +2725,9 @@ def get_readiness(symbol: str = "", side: str = "buy",
     rep = RD.build_readiness(
         session_proven=bool(getattr(_ACTIVE_ADAPTER, "session_proven",
                                     lambda: False)()),
-        read_only=bool(READ_ONLY_REQUESTED),
+        # درِ زنده هم نشست را با همان GETِ فقط‌خواندنی اثبات می‌کند؛ «فقط‌خواندنی»
+        # در این گیت یعنی «شاهدِ خواندنی داریم»، نه «ارسال بسته است».
+        read_only=bool(TRAFFIC_ALLOWED),
         buying_power=bp,
         symbol_ready=symbol_ready,
         preflight_checks=checks,
@@ -2728,6 +2735,8 @@ def get_readiness(symbol: str = "", side: str = "buy",
         owner_approved=bool(owner.get("approved")),
         lifecycle_tests=_readiness_flag("round15_lifecycle.json"),
         full_gate=_readiness_flag("round15_full_gate.json"),
+        live_enabled=bool(_live_now() and getattr(_ACTIVE_ADAPTER,
+                                                  "writes_allowed", False)),
     )
     rep.update({"adapter": ADAPTER_KIND, "symbol": sym or None,
                 "side": side, "price": price, "quantity": quantity,
@@ -2916,6 +2925,9 @@ def post_connection_capture_session(request: Request) -> dict[str, Any]:
                 "secrets_returned": False, "secrets_stored": False}
     finally:
         token = ""
+    # توکنِ تازه = دورهٔ تأییدِ تازه؛ پیش‌نمایش/زمان‌بندیِ پیشین نباید با
+    # نشستِ دیگری آتش بزند (همان قاعدهٔ POST /session).
+    _void_confirmations("captured token replaced")
     return {"status": "success", "code": "CAPTURED", "token_present": True,
             "page_host": meta.get("page_host"), "token_type": meta.get("token_type"),
             "expires_at": meta.get("expires_at"), "scope": meta.get("scope"),
@@ -3123,6 +3135,231 @@ def post_dispatch(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
                         # «مشاهدهٔ سفارش» با «پذیرش» یکی نیست (§۴-ج): تا
                         # reconcile/queue آن را اندازه نگیرد، None است.
                         "observed_ms": None}}
+
+
+# ── مسیرِ سریعِ سرخطی: پیش‌نمایشِ کامل ← تأییدِ یک‌بارمصرف ← یک POST ──────────
+#: هویتِ توکنِ نشست برایِ قفلِ توکنِ پیش‌نمایش. مقایسه با `is` است، نه مقدار:
+#: توکنِ تازه (حتی با همان رشته) یعنی «تأییدِ کهنه».
+def _fast_token_ref() -> Any:
+    return getattr(_ACTIVE_ADAPTER, "_token", None)
+
+
+def _fast_wire_calls() -> list[str]:
+    calls = getattr(_ACTIVE_ADAPTER, "wire_calls", None)
+    return list(calls) if isinstance(calls, list) else []
+
+
+def _fast_error(code: str, detail: str, **extra: Any) -> dict[str, Any]:
+    return {"status": "error", "code": str(code), "detail": str(detail)[:240],
+            **extra}
+
+
+def _session_label() -> dict[str, Any]:
+    return _session_dict()
+
+
+@router.post("/api/execution/order/preview")
+def post_order_preview(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
+    """کارِ کند (نشست، موجودی، preflight) این‌جا انجام می‌شود؛ هیچ ارسالی نه."""
+    t0 = time.monotonic()
+    try:
+        inp = FAO.parse_order_inputs(body)
+    except FAO.FastOrderInputError as e:
+        return _fast_error(e.code, e.detail, field=e.field)
+    live = bool(_live_now())
+    writes_open = bool(getattr(_ACTIVE_ADAPTER, "writes_allowed", False))
+    dry = bool(DRY_RUN or not writes_open)
+    calls_before = _fast_wire_calls()
+    auth_ms = None
+    if live and writes_open and not _session_label().get("proven"):
+        ta = time.monotonic()
+        try:
+            _ACTIVE_ADAPTER.authenticate()
+        except BrokerError as e:
+            return _fast_error(
+                (e.code.value if e.code else "AUTH_FAILED"),
+                e.detail or "نشست با پرسشِ فقط‌خواندنی تأیید نشد",
+                field=None, session=_session_label(),
+                timings={"preview_ms": round((time.monotonic() - t0) * 1000, 1),
+                         "session_ms": round((time.monotonic() - ta) * 1000, 1)})
+        except Exception as e:                   # noqa: BLE001 - مرزِ adapter
+            return _fast_error(
+                "AUTH_FAILED",
+                "پرسشِ نشست شکست خورد (%s)" % type(e).__name__,
+                field=None, session=_session_label(),
+                timings={"preview_ms": round((time.monotonic() - t0) * 1000, 1),
+                         "session_ms": round((time.monotonic() - ta) * 1000, 1)})
+        auth_ms = round((time.monotonic() - ta) * 1000.0, 1)
+    sess = _session_label()
+    try:
+        draft = _draft_from({
+            "symbol": inp["symbol"], "side": inp["side"].value,
+            "price": inp["price"], "quantity": inp["quantity"], "mode": "safe",
+            "execution_id": "fx-%s" % uuid.uuid4().hex[:12],
+            "price_source": inp["price_source"], "price_as_of": inp["price_as_of"],
+        })
+    except HTTPException as e:
+        return _fast_error("INVALID_SYMBOL", str(e.detail), field="symbol")
+    tp = time.monotonic()
+    try:
+        with _LOCK:
+            _SERVICE.prune_prepared(FAO.DEFAULT_TTL_S)
+            prepared = _SERVICE.prepare(draft)
+    except ExecutionError as e:
+        return _fast_error(e.code.value, e.detail or "پیش‌فرود رد شد",
+                           field=None, checks=e.checks,
+                           timings={"preview_ms":
+                                    round((time.monotonic() - t0) * 1000, 1)})
+    prepare_ms = round((time.monotonic() - tp) * 1000.0, 1)
+    tpay = time.monotonic()
+    payload = _wire_preview(draft) or {}
+    payload_ms = round((time.monotonic() - tpay) * 1000.0, 1)
+    risk_ok, risk_reason = _risk_gate()
+    halted, halt_why = _SERVICE.halted()
+    send_ready = bool(live and writes_open and not DRY_RUN
+                      and sess.get("proven") is True
+                      and prepared.sendable and risk_ok and not halted)
+    summary = FAO.summary_of(
+        draft, prepared, live=live, dry_run=dry, session=sess,
+        risk_ok=risk_ok, risk_reason=risk_reason, send_ready=send_ready)
+    summary["halted"] = bool(halted)
+    summary["halt_reason"] = str(halt_why or "")[:160]
+    snap = _FAST_ORDERS.create(prepared=prepared, payload=payload,
+                               epoch=_confirm_epoch(),
+                               token_ref=_fast_token_ref(), summary=summary)
+    calls_after = _fast_wire_calls()
+    total_ms = round((time.monotonic() - t0) * 1000.0, 1)
+    _note_timing("fast_preview_ms", total_ms)
+    out = snap.public()
+    out.update({
+        "status": "success",
+        "adapter": ADAPTER_KIND,
+        "live": live,
+        "dry_run": dry,
+        "send_ready": send_ready,
+        "session": sess,
+        "checks": dict(prepared.preflight.checks),
+        "reasons": dict(prepared.preflight.reasons),
+        "risk": {"ok": risk_ok, "reason": risk_reason},
+        "wire_hypothesis": (ADAPTER_KIND == "easytrader") and WIRE_HYPOTHESIS,
+        "timings": {"preview_ms": total_ms, "session_ms": auth_ms,
+                    "prepare_ms": prepare_ms, "payload_ms": payload_ms},
+        "network_calls": calls_after[len(calls_before):],
+        "next": "پس از بررسیِ خلاصه، تأییدِ صریح؛ ارسال فقط یک POST است",
+    })
+    return out
+
+
+@router.post("/api/execution/order/confirm")
+def post_order_confirm(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
+    """تأییدِ کاربر ← گیت‌هایِ محلی ← یک POST. صف/read-back این‌جا نیستند."""
+    t0 = time.monotonic()
+    token = str(body.get("prepared_token") or "").strip()
+    if not token:
+        return _fast_error("NOT_FOUND", "پیش‌نمایش پیدا نشد؛ سفارش تازه بسازید")
+    ok_cf, want_cf = _confirm_gate(body if isinstance(body, dict) else {})
+    if not ok_cf:
+        return _fast_error(
+            ErrorCode.CONFIRM_PHRASE_REQUIRED.value,
+            "عبارتِ تأیید لازم است؛ همان چیزی که رویِ دکمه می‌بینید را بنویسید",
+            expected_phrase=want_cf, confirm_gate="phrase_required",
+            dry_run=DRY_RUN, live=_live_now())
+    ok_gate, why_gate = _risk_gate()
+    if not ok_gate:
+        return _fast_error(ErrorCode.RISK_LIMIT.value, why_gate,
+                           risk_gate="not_configured", dry_run=DRY_RUN,
+                           live=_live_now())
+    halted, halt_why = _SERVICE.halted()
+    t_claim = time.monotonic()
+    try:
+        snap = _FAST_ORDERS.claim(token, epoch=_confirm_epoch(),
+                                  token_ref=_fast_token_ref(), halted=halted)
+    except FAO.FastOrderError as e:
+        return _fast_error(e.code, e.detail, dry_run=DRY_RUN, live=_live_now())
+    claim_ms = round((time.monotonic() - t_claim) * 1000.0, 1)
+    prepared = snap.prepared
+    if not DRY_RUN and not snap.summary.get("send_ready"):
+        _FAST_ORDERS.finish(token, phase="failed", code="NOT_READY",
+                            detail="پیش‌نمایش ارسال‌پذیر نبود")
+        return _fast_error("NOT_READY",
+                           "این پیش‌نمایش ارسال‌پذیر نبود (نشست/سقف/پیش‌فرود) — "
+                           "دوباره «بررسی و خلاصه» را بزنید",
+                           session=_session_label(), dry_run=False,
+                           live=_live_now())
+    # payload را خودِ adapter هنگامِ POST می‌سازد تا createDateTime لحظهٔ ارسال
+    # باشد؛ ساختنِ دوبارهٔ آن این‌جا فقط کلیدِ مسیرِ بحرانی را کند می‌کرد.
+    calls_before = _fast_wire_calls()
+    t_send = time.monotonic()
+    try:
+        with _LOCK:
+            _SERVICE.recheck_limits(prepared)
+            rec = _SERVICE.execute(prepared, verify=False)
+    except ExecutionError as e:
+        _FAST_ORDERS.finish(token, phase="failed", code=e.code.value,
+                            detail=e.detail)
+        return _fast_error(e.code.value, e.detail, checks=e.checks,
+                           dry_run=DRY_RUN, live=_live_now(),
+                           timings={"pre_send_ms":
+                                    round((t_send - t0) * 1000.0, 1)})
+    except BrokerError as e:
+        phase = "unknown" if e.is_unknown_result else "failed"
+        _FAST_ORDERS.finish(token, phase=phase, code=e.code.value,
+                            detail=e.detail)
+        if e.code in (ErrorCode.SESSION_EXPIRED, ErrorCode.AUTH_FAILED):
+            _void_confirmations("submit: session rejected")
+        stored = _SERVICE.record(prepared.draft.execution_id)
+        return _fast_error(e.code.value, e.detail,
+                           unknown_result=bool(e.is_unknown_result),
+                           retry_forbidden=bool(e.is_unknown_result),
+                           record=(_record_dict(stored) if stored else None),
+                           dry_run=DRY_RUN, live=_live_now())
+    t_done = time.monotonic()
+    calls_after = _fast_wire_calls()
+    timings = {
+        "claim_ms": claim_ms,
+        "pre_send_ms": round((t_send - t0) * 1000.0, 1),
+        "rtt_ms": getattr(rec, "rtt_ms", None),
+        "post_send_ms": round((t_done - t_send) * 1000.0, 1),
+        "total_ms": round((t_done - t0) * 1000.0, 1),
+        "clock": "monotonic",
+        "scope": "server: from request handler entry to response ready",
+    }
+    _note_timing("fast_confirm_pre_send_ms", timings["pre_send_ms"])
+    if timings["rtt_ms"] is not None:
+        _note_timing("fast_confirm_rtt_ms", timings["rtt_ms"])
+    _note_timing("fast_confirm_total_ms", timings["total_ms"])
+    record = _record_dict(rec)
+    unknown = rec.status is ExecutionStatus.UNKNOWN_RESULT
+    _FAST_ORDERS.finish(
+        token,
+        phase=("unknown" if unknown else
+               "sent" if rec.status in (ExecutionStatus.ACKNOWLEDGED,
+                                        ExecutionStatus.RECONCILED) else
+               "failed"),
+        code=(rec.error_code.value if rec.error_code else ""),
+        detail=rec.error_detail or "")
+    return {
+        "status": ("unknown_result" if unknown else
+                   "acknowledged" if rec.status is ExecutionStatus.ACKNOWLEDGED
+                   else rec.status.value),
+        "adapter": ADAPTER_KIND,
+        "dry_run": DRY_RUN,
+        "live": _live_now(),
+        "record": record,
+        "broker_order_id": rec.broker_order_id,
+        "unknown_result": unknown,
+        "retry_forbidden": True,
+        "read_back": "deferred",
+        "read_back_next": "POST /api/execution/refresh/%s" % rec.execution_id,
+        "halt_reason": halt_why if halted else None,
+        "timings": timings,
+        "network_calls": calls_after[len(calls_before):],
+        "payload_fields": sorted((snap.payload.get("order") or {}).keys())
+        if isinstance(snap.payload, Mapping) else [],
+        "note": ("درخواست ثبت شد (نه پذیرش/اجرا)؛ وضعیت را با refresh بخوانید"
+                 if rec.status is ExecutionStatus.ACKNOWLEDGED else
+                 rec.error_detail or ""),
+    }
 
 
 @router.get("/api/execution/schedule/{execution_id}")

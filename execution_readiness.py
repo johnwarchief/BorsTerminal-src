@@ -48,7 +48,8 @@ def build_readiness(*, session_proven: bool, read_only: bool,
                     contract_operational: bool = False,
                     owner_approved: bool = False,
                     lifecycle_tests: bool | None = None,
-                    full_gate: bool | None = None) -> dict[str, Any]:
+                    full_gate: bool | None = None,
+                    live_enabled: bool = False) -> dict[str, Any]:
     gates: list[dict[str, Any]] = []
     gates.append(_gate(
         "read_only_session", "نشستِ فقط‌خواندنی",
@@ -160,7 +161,9 @@ def build_readiness(*, session_proven: bool, read_only: bool,
     return {
         "data_risk_ready": bool(data_risk_ready),
         "live_ready": bool(live_ready),
-        "live_enabled": False,
+        # وضعیتِ *الان*؛ از آداپتور خوانده می‌شود، نه یک ثابتِ همیشه‌false.
+        # `live_ready` همچنان مستقل است و بی‌قراردادِ عملیاتی/مجوزِ مالک سبز نمی‌شود.
+        "live_enabled": bool(live_enabled),
         "contract_state": CONTRACT_STATE,
         "contract": contract_report(),
         "gates": gates,
