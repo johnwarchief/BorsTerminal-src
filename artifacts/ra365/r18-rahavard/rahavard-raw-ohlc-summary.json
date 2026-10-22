@@ -1,0 +1,118 @@
+{
+ "assets": 2595,
+ "type0_assets": 2595,
+ "contract_compared_fields": 7149276,
+ "contract_ok_fields": 7141465,
+ "contract_ok_pct": 99.8907,
+ "row_pairs": 1188921,
+ "row_exact": 1186806,
+ "row_tol": 1186806,
+ "row_exact_pct": 99.8221,
+ "row_tol_pct": 99.8221,
+ "literal_high_exact_pct": 91.7043,
+ "literal_low_exact_pct": 96.4273,
+ "literal_row_exact_pct": 87.6101,
+ "literal_row_tol_pct": 87.6101,
+ "row_taxonomy": {
+  "SOURCE_DATA_DIVERGENCE": {
+   "assets": 517,
+   "dates": 1110,
+   "rows": 1110
+  },
+  "PRECISION_OR_ROUNDING": {
+   "assets": 220,
+   "dates": 299,
+   "rows": 299
+  },
+  "HISTORICAL_REVISION": {
+   "assets": 369,
+   "dates": 552,
+   "rows": 552
+  },
+  "PARSING_OR_TRANSFORM": {
+   "assets": 6,
+   "dates": 6,
+   "rows": 6
+  },
+  "UNCLASSIFIED": {
+   "assets": 76,
+   "dates": 86,
+   "rows": 86
+  },
+  "CANDLE_GEOMETRY": {
+   "assets": 41,
+   "dates": 62,
+   "rows": 62
+  }
+ },
+ "product_only_inside": 2170,
+ "product_only_outside": 931089,
+ "product_only_no_trade": 204,
+ "product_only_tradable": 1966,
+ "product_only_rahavard_omission": 1883,
+ "product_only_unverified": 83,
+ "type0_only_outside": 39296,
+ "type0_only_no_trade": 2,
+ "type0_only_tradable": 1844,
+ "type0_only_rahavard_date": 1345,
+ "type0_only_product_omission": 499,
+ "last_null": 3150,
+ "type0_flat": 191729,
+ "type0_bad_geom": 677,
+ "type7_diff_rows": 880792,
+ "close_official_diff": 948123,
+ "type0_vs_tsetmc": {
+  "common": 1197871,
+  "close_last_exact_pct": 99.9102,
+  "close_official_exact_pct": 14.076,
+  "open_first_exact_pct": 99.8641,
+  "open_base_exact_pct": 3.4846,
+  "high_exact_pct": 99.8754,
+  "low_exact_pct": 99.8986,
+  "vol_exact_pct": 99.8847,
+  "flat": 191729,
+  "bad_geom": 677
+ },
+ "taxonomy": {
+  "SOURCE_DATA_DIVERGENCE": {
+   "assets": 524,
+   "dates": 1218,
+   "field_mismatches": 2303
+  },
+  "PRECISION_OR_ROUNDING": {
+   "assets": 304,
+   "dates": 543,
+   "field_mismatches": 641
+  },
+  "CANDLE_GEOMETRY": {
+   "assets": 98,
+   "dates": 184,
+   "field_mismatches": 335
+  },
+  "HISTORICAL_REVISION": {
+   "assets": 380,
+   "dates": 636,
+   "field_mismatches": 1488
+  },
+  "PARSING_OR_TRANSFORM": {
+   "assets": 15,
+   "dates": 15,
+   "field_mismatches": 15
+  },
+  "UNCLASSIFIED": {
+   "assets": 88,
+   "dates": 100,
+   "field_mismatches": 101
+  },
+  "FIELD_MAPPING": {
+   "assets": 71,
+   "dates": 2923,
+   "field_mismatches": 2923
+  },
+  "PRICE_SCALE_OR_UNIT": {
+   "assets": 5,
+   "dates": 5,
+   "field_mismatches": 5
+  }
+ }
+}

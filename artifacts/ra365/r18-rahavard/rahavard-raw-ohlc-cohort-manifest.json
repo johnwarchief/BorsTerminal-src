@@ -1,0 +1,188 @@
+{
+ "round": "ra365-r18-rahavard",
+ "created_at": "2026-10-22T10:43:40",
+ "sources": {
+  "rahavard": {
+   "file": "C:\\Users\\Johnkallnaya\\Desktop\\Borsterminal\\_scratch\\ra_fup_2026_10_20\\ref_bars_v2.jsonl",
+   "sha256": "4b1ecb4c1effc4d5770c42521d96a2540a9c9f7b471d7cc710cd034712a8c17c",
+   "type": "type0 D (raw) and type7 D (adjusted)",
+   "frozen_at": "2026-10-20",
+   "type0_rows": 1233213,
+   "type7_rows": 1233213
+  },
+  "product": {
+   "file": "C:\\Users\\Johnkallnaya\\Desktop\\Borsterminal\\_scratch\\ra_round3\\product_live_final_v4.jsonl",
+   "sha256": "893b6d6aa1059d51a83bb7a44fd239d4c381695806562dd3dcdd3ed5d8ad9f27",
+   "description": "actual BorsTerminal chart candles snapshot"
+  },
+  "tsetmc_oracle": {
+   "db": "D:/BorsTerminal-tmp/ra365_round18\\reference.db",
+   "sha256": "0d9898bab7d241c29286e829d17e46d7b3b80d07c38281d3eee9bc21c470b4e0",
+   "role": "independent field-semantic oracle, not a Rahavard substitute"
+  },
+  "cohort": {
+   "file": "D:/BorsTerminal-tmp/ra365_round18\\cohort.jsonl",
+   "sha256": "79a3c666c2b49363fd5b7a2684ee776d034a2fc3ef09006f0f16c7af3d5df18f"
+  }
+ },
+ "definitions": {
+  "open": "product open vs type0 open (first trade)",
+  "high_raw": "product parser-stage high vs widen(type0 open,H,L,close)",
+  "low_raw": "product parser-stage low vs widen(type0 open,H,L,close)",
+  "last": "product last vs type0 close; type0 close=LAST proven vs TSETMC",
+  "close_display": "product displayed close vs type0 close (basis-aware)",
+  "volume": "product volume vs type0 volume"
+ },
+ "summary": {
+  "assets": 2595,
+  "type0_assets": 2595,
+  "contract_compared_fields": 7149276,
+  "contract_ok_fields": 7141465,
+  "contract_ok_pct": 99.8907,
+  "row_pairs": 1188921,
+  "row_exact": 1186806,
+  "row_tol": 1186806,
+  "row_exact_pct": 99.8221,
+  "row_tol_pct": 99.8221,
+  "literal_high_exact_pct": 91.7043,
+  "literal_low_exact_pct": 96.4273,
+  "literal_row_exact_pct": 87.6101,
+  "literal_row_tol_pct": 87.6101,
+  "row_taxonomy": {
+   "SOURCE_DATA_DIVERGENCE": {
+    "assets": 517,
+    "dates": 1110,
+    "rows": 1110
+   },
+   "PRECISION_OR_ROUNDING": {
+    "assets": 220,
+    "dates": 299,
+    "rows": 299
+   },
+   "HISTORICAL_REVISION": {
+    "assets": 369,
+    "dates": 552,
+    "rows": 552
+   },
+   "PARSING_OR_TRANSFORM": {
+    "assets": 6,
+    "dates": 6,
+    "rows": 6
+   },
+   "UNCLASSIFIED": {
+    "assets": 76,
+    "dates": 86,
+    "rows": 86
+   },
+   "CANDLE_GEOMETRY": {
+    "assets": 41,
+    "dates": 62,
+    "rows": 62
+   }
+  },
+  "product_only_inside": 2170,
+  "product_only_outside": 931089,
+  "product_only_no_trade": 204,
+  "product_only_tradable": 1966,
+  "product_only_rahavard_omission": 1883,
+  "product_only_unverified": 83,
+  "type0_only_outside": 39296,
+  "type0_only_no_trade": 2,
+  "type0_only_tradable": 1844,
+  "type0_only_rahavard_date": 1345,
+  "type0_only_product_omission": 499,
+  "last_null": 3150,
+  "type0_flat": 191729,
+  "type0_bad_geom": 677,
+  "type7_diff_rows": 880792,
+  "close_official_diff": 948123,
+  "type0_vs_tsetmc": {
+   "common": 1197871,
+   "close_last_exact_pct": 99.9102,
+   "close_official_exact_pct": 14.076,
+   "open_first_exact_pct": 99.8641,
+   "open_base_exact_pct": 3.4846,
+   "high_exact_pct": 99.8754,
+   "low_exact_pct": 99.8986,
+   "vol_exact_pct": 99.8847,
+   "flat": 191729,
+   "bad_geom": 677
+  },
+  "taxonomy": {
+   "SOURCE_DATA_DIVERGENCE": {
+    "assets": 524,
+    "dates": 1218,
+    "field_mismatches": 2303
+   },
+   "PRECISION_OR_ROUNDING": {
+    "assets": 304,
+    "dates": 543,
+    "field_mismatches": 641
+   },
+   "CANDLE_GEOMETRY": {
+    "assets": 98,
+    "dates": 184,
+    "field_mismatches": 335
+   },
+   "HISTORICAL_REVISION": {
+    "assets": 380,
+    "dates": 636,
+    "field_mismatches": 1488
+   },
+   "PARSING_OR_TRANSFORM": {
+    "assets": 15,
+    "dates": 15,
+    "field_mismatches": 15
+   },
+   "UNCLASSIFIED": {
+    "assets": 88,
+    "dates": 100,
+    "field_mismatches": 101
+   },
+   "FIELD_MAPPING": {
+    "assets": 71,
+    "dates": 2923,
+    "field_mismatches": 2923
+   },
+   "PRICE_SCALE_OR_UNIT": {
+    "assets": 5,
+    "dates": 5,
+    "field_mismatches": 5
+   }
+  }
+ },
+ "artifacts": {
+  "rahavard-raw-ohlc-parity.csv": {
+   "sha256": "b3596cc76003b9d21af5ccb33dd3bc3eaf352b052c421ef8aa81aa6b842a31f0",
+   "bytes": 590271
+  },
+  "rahavard-type0-vs-tsetmc.csv": {
+   "sha256": "caa9ba0e5c5474d5720026cb7d1efb539e767310e167d77f8903f6c4a7163b87",
+   "bytes": 253670
+  },
+  "rahavard-raw-ohlc-missing.csv": {
+   "sha256": "61608a2dfdc02260c28f1bfeb399489714a5c0c74235c9345764a50a86d9cabd",
+   "bytes": 4199824
+  },
+  "rahavard-raw-ohlc-field-mismatches.csv": {
+   "sha256": "2090916b855bc57fd6a5037d490ace57c3f27c19dbf5781c4584fc8c437c0a9a",
+   "bytes": 1242018
+  },
+  "rahavard-raw-ohlc-taxonomy.csv": {
+   "sha256": "10f554cb30a2bc7feb3454d5b22aa6c2873fc50db797c112afacae0740092101",
+   "bytes": 3090
+  },
+  "rahavard-raw-ohlc-row-taxonomy.csv": {
+   "sha256": "49d687ee0e287b8d8c142321d436a210b1516ce94ff5340ae5381e0795a27697",
+   "bytes": 211
+  },
+  "rahavard-raw-ohlc-summary.json": {
+   "sha256": "b723ecee22db6ed502f3579e82c8dd79091411dcb9d05a554a48f40351dae043",
+   "bytes": 2561
+  },
+  "source-field-matrix-rahavard.csv": {
+   "sha256": "56b2270ee5b054c0638fec576195aa5cc7501e2fd207f3b39d75caf62c81e5f5",
+   "bytes": 2990
+  }
+ }
+}
