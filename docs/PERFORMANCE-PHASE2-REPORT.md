@@ -23,7 +23,7 @@ workflows were not run 20–30 times.
 | P2-R3 | In-flight raw GET dedupe in `shared/api/http.ts` (each caller still parses with its own Zod schema); strategy-tree probe | Technical open/switch now issues **one** `/api/chart` and **one** `/api/fts` (was two of each); tree open 1.0–1.3 s, actions 24–35 ms, DOM 663/248 |
 | P2-R4 | Deliberate hover/focus (300 ms debounce) prefetches the dossier's `fts-plan` + `key-levels` under the same query keys; quick passes fire nothing | Same-symbol A/B: click→ready **1.05–2.23 s direct → 0.35–0.55 s** after hover (median ≈1.69 → ≈0.47 s); 2 requests either way; sweep 4 rows @120 ms → **0** requests |
 | P2-R5 | Preserve `preset/chain/tech` when a funnel row opens the dossier (no second funnel key); final-view stage is `handover`; clear a resurrected symbol after back-to-funnel | Back retries **3/6 → 0/6**; max `/api/funnel` per cycle **5 → 2**; post-warm heap **49.5–61.7 MB with +10.2 MB jumps → 40.3–43.3 MB flat**; DOM/listeners flat |
-| P2-R6 | Scoped screener asks for the active preset/chain and can skip the funnel gate (`gate=0`) where the consumer never reads it; final re-profile and reports | Scoped screener **0.6–2.6 s → 0.1–1.1 s** (137–190 ms in the warm pair); final switch median **≈1.62 s** (range 1.07–1.79 s) with 8–10 requests / 9–16 KiB |
+| P2-R6 | Scoped screener asks for the active preset/chain and can skip the funnel gate (`gate=0`) where the consumer never reads it; final re-profile and reports | Scoped screener **0.6–2.6 s → 0.1–1.1 s per switch** (25 warm samples: p50 61 ms, p95 216 ms); final switch median **≈1.62 s** (range 1.07–1.79 s) with 8–10 requests / 9–16 KiB |
 
 ### Final FTS switch (6 samples, two symbols, fresh client cache, warm server)
 
