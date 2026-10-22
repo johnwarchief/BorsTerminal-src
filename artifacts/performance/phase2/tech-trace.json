@@ -1,283 +1,157 @@
 [
  {
-  "t": 2250,
+  "t": 2142,
   "ev": "req",
   "method": "GET",
   "url": "/api/update/version",
   "body": null
  },
  {
-  "t": 2250,
+  "t": 2149,
   "ev": "req",
   "method": "GET",
   "url": "/api/notifications/feed?limit=60",
   "body": null
  },
  {
-  "t": 2252,
+  "t": 2149,
   "ev": "req",
   "method": "GET",
   "url": "/api/selection/portfolio",
   "body": null
  },
  {
-  "t": 2431,
+  "t": 3241,
   "ev": "res",
   "status": 200,
   "url": "/api/update/version",
   "len": "73"
  },
  {
-  "t": 2698,
+  "t": 3248,
   "ev": "res",
   "status": 200,
   "url": "/api/selection/portfolio",
   "len": "374"
  },
  {
-  "t": 2908,
-  "ev": "req",
-  "method": "GET",
-  "url": "/api/funnel?preset=trend&chain=&logic=and&fund_mode=standard&tech_chain=&strategy_settings={}&exceptions={}&drop_suffix=true",
-  "body": null
- },
- {
-  "t": 2909,
-  "ev": "req",
-  "method": "GET",
-  "url": "/api/funnel/registry",
-  "body": null
- },
- {
-  "t": 2909,
-  "ev": "req",
-  "method": "GET",
-  "url": "/api/market/closes",
-  "body": null
- },
- {
-  "t": 2909,
-  "ev": "res",
-  "status": 200,
-  "url": "/api/funnel/registry",
-  "len": "7688"
- },
- {
-  "t": 3296,
-  "ev": "res",
-  "status": 200,
-  "url": "/api/market/closes",
-  "len": "31130"
- },
- {
-  "t": 3806,
+  "t": 4470,
   "ev": "res",
   "status": 200,
   "url": "/api/notifications/feed?limit=60",
   "len": "4820"
  },
  {
-  "t": 4341,
-  "ev": "req",
-  "method": "GET",
-  "url": "/api/selection/portfolio",
-  "body": null
- },
- {
-  "t": 4348,
-  "ev": "req",
-  "method": "GET",
-  "url": "/api/watchlist",
-  "body": null
- },
- {
-  "t": 4350,
-  "ev": "req",
-  "method": "GET",
-  "url": "/api/market/row?symbol=فولاد",
-  "body": null
- },
- {
-  "t": 4350,
-  "ev": "req",
-  "method": "GET",
-  "url": "/api/fts/فولاد",
-  "body": null
- },
- {
-  "t": 4350,
-  "ev": "req",
-  "method": "GET",
-  "url": "/api/chart/فولاد/key-levels",
-  "body": null
- },
- {
-  "t": 4352,
-  "ev": "res",
-  "status": 200,
-  "url": "/api/market/row?symbol=فولاد",
-  "len": "799"
- },
- {
-  "t": 4352,
-  "ev": "req",
-  "method": "GET",
-  "url": "/api/tape-history?codes=46348559193224090&days=5",
-  "body": null
- },
- {
-  "t": 4489,
-  "ev": "res",
-  "status": 200,
-  "url": "/api/watchlist",
-  "len": "51"
- },
- {
-  "t": 4720,
-  "ev": "res",
-  "status": 200,
-  "url": "/api/tape-history?codes=46348559193224090&days=5",
-  "len": "265"
- },
- {
-  "t": 4723,
-  "ev": "res",
-  "status": 200,
-  "url": "/api/selection/portfolio",
-  "len": "374"
- },
- {
-  "t": 5103,
+  "t": 4811,
   "ev": "req",
   "method": "GET",
   "url": "/api/market",
   "body": null
  },
  {
-  "t": 5104,
+  "t": 4812,
   "ev": "req",
   "method": "GET",
   "url": "/api/chart/فولاد",
   "body": null
  },
  {
-  "t": 5104,
+  "t": 4815,
   "ev": "req",
   "method": "GET",
   "url": "/api/index/tedpix?limit=0",
   "body": null
  },
  {
-  "t": 5105,
+  "t": 4815,
+  "ev": "req",
+  "method": "GET",
+  "url": "/api/fts/فولاد",
+  "body": null
+ },
+ {
+  "t": 4815,
   "ev": "req",
   "method": "GET",
   "url": "/api/fundamental/فولاد",
   "body": null
  },
  {
-  "t": 5369,
+  "t": 5011,
   "ev": "res",
   "status": 200,
   "url": "/api/index/tedpix?limit=0",
   "len": "136061"
  },
  {
-  "t": 5610,
+  "t": 5301,
   "ev": "req",
   "method": "GET",
   "url": "/api/fts/config",
   "body": null
  },
  {
-  "t": 6208,
+  "t": 5304,
   "ev": "res",
   "status": 200,
   "url": "/api/market",
   "len": "1220692"
  },
  {
-  "t": 6659,
+  "t": 5311,
   "ev": "res",
   "status": 200,
   "url": "/api/fts/config",
   "len": "620"
  },
  {
-  "t": 7938,
+  "t": 8481,
   "ev": "res",
   "status": 200,
   "url": "/api/fts/فولاد",
   "len": "7768"
  },
  {
-  "t": 8064,
+  "t": 8483,
   "ev": "res",
   "status": 200,
-  "url": "/api/chart/فولاد/key-levels",
-  "len": "661"
+  "url": "/api/chart/فولاد",
+  "len": "201579"
  },
  {
-  "t": 8583,
+  "t": 9062,
   "ev": "res",
   "status": 200,
   "url": "/api/fundamental/فولاد",
   "len": "7100"
  },
  {
-  "t": 8701,
-  "ev": "res",
-  "status": 200,
-  "url": "/api/chart/فولاد",
-  "len": "201580"
- },
- {
-  "t": 9991,
-  "ev": "res",
-  "status": 200,
-  "url": "/api/funnel?preset=trend&chain=&logic=and&fund_mode=standard&tech_chain=&strategy_settings={}&exceptions={}&drop_suffix=true",
-  "len": "388041"
- },
- {
-  "t": 10297,
+  "t": 10148,
   "ev": "MARK-switch"
  },
  {
-  "t": 10406,
+  "t": 10217,
   "ev": "req",
   "method": "GET",
   "url": "/api/chart/خودرو",
   "body": null
  },
  {
-  "t": 10406,
+  "t": 10217,
   "ev": "req",
   "method": "GET",
   "url": "/api/fts/خودرو",
   "body": null
  },
  {
-  "t": 10407,
+  "t": 10218,
   "ev": "req",
   "method": "GET",
   "url": "/api/fundamental/خودرو",
   "body": null
  },
  {
-  "t": 13369,
-  "ev": "res",
-  "status": 200,
-  "url": "/api/fts/خودرو",
-  "len": "7503"
- },
- {
-  "t": 14008,
-  "ev": "res",
-  "status": 200,
-  "url": "/api/chart/خودرو",
-  "len": "245295"
- },
- {
-  "t": 14153,
+  "t": 11871,
   "ev": "res",
   "status": 200,
   "url": "/api/fundamental/خودرو",

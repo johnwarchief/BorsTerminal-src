@@ -1,0 +1,124 @@
+{
+ "symbol": "آبنوس",
+ "readyMs": 3328,
+ "totalKB": 10,
+ "requests": [
+  {
+   "url": "/api/market/row",
+   "query": "symbol=آبنوس",
+   "enc": 665,
+   "ms": 182
+  },
+  {
+   "url": "/api/calendar/upcoming",
+   "query": "days=14",
+   "enc": 77,
+   "ms": 643
+  },
+  {
+   "url": "/api/selection/portfolio",
+   "query": "",
+   "enc": 374,
+   "ms": 642
+  },
+  {
+   "url": "/api/watchlist",
+   "query": "",
+   "enc": 51,
+   "ms": 177
+  },
+  {
+   "url": "/api/fts/آبنوس",
+   "query": "",
+   "enc": 6963,
+   "ms": 3054
+  },
+  {
+   "url": "/api/chart/آبنوس/key-levels",
+   "query": "",
+   "enc": 598,
+   "ms": 174
+  },
+  {
+   "url": "/api/screener",
+   "query": "symbols=آبنوس",
+   "enc": 1493,
+   "ms": 2657
+  },
+  {
+   "url": "/api/calendar/آبنوس",
+   "query": "",
+   "enc": 59,
+   "ms": 656
+  },
+  {
+   "url": "/api/tape-history",
+   "query": "codes=40912525017440979&days=5",
+   "enc": 264,
+   "ms": 733
+  }
+ ],
+ "http": [
+  {
+   "status": 200,
+   "url": "/api/update/version"
+  },
+  {
+   "status": 200,
+   "url": "/api/selection/portfolio"
+  },
+  {
+   "status": 200,
+   "url": "/api/notifications/feed?limit=60"
+  },
+  {
+   "status": 200,
+   "url": "/api/funnel/registry"
+  },
+  {
+   "status": 200,
+   "url": "/api/market/closes"
+  },
+  {
+   "status": 200,
+   "url": "/api/funnel?preset=tech_first&chain=&logic=and&fund_mode=standard&tech_chain=&strategy_settings={}&exceptions={}&drop_suffix=true"
+  },
+  {
+   "status": 200,
+   "url": "/api/market/row?symbol=آبنوس"
+  },
+  {
+   "status": 200,
+   "url": "/api/chart/آبنوس/key-levels"
+  },
+  {
+   "status": 200,
+   "url": "/api/watchlist"
+  },
+  {
+   "status": 200,
+   "url": "/api/calendar/upcoming?days=14"
+  },
+  {
+   "status": 200,
+   "url": "/api/selection/portfolio"
+  },
+  {
+   "status": 200,
+   "url": "/api/calendar/آبنوس"
+  },
+  {
+   "status": 200,
+   "url": "/api/tape-history?codes=40912525017440979&days=5"
+  },
+  {
+   "status": 200,
+   "url": "/api/screener?symbols=آبنوس"
+  },
+  {
+   "status": 200,
+   "url": "/api/fts/آبنوس"
+  }
+ ],
+ "started": 10
+}

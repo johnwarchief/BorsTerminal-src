@@ -278,7 +278,15 @@ export function SymbolInspector() {
   // فقط ردیفِ همین نماد از اسکرینر؛ پیش‌تر کلِ جامعۀ ۱٢٠٠ردیفی برایِ یک
   // `find` کشیده می‌شد (۱٢٢KB gzip + parse). پارامترِ `symbols` همان قراردادِ
   // موجودِ endpoint است و پاسخ یک ردیف است.
-  const screenRes = useFtsScreen(0, { enabled: drawerOpen, symbols: symbol });
+  const screenRes = useFtsScreen(0, {
+    enabled: drawerOpen,
+    symbols: symbol,
+    preset: funnelRequest.preset,
+    chain: funnelRequest.chain,
+    // پرچمِ قیف درِ این پنل خوانده نمی‌شود؛ بی‌`gate=0` سرور برایِ یک ردیف،
+    // قیفِ کامل را (۰٫۵–۲٫۶s CPU) دوباره می‌ساخت — هم‌زمان با /api/fts.
+    gate: false,
+  });
   const screenRow = useMemo(() => {
     const rows = screenRes.data?.data;
     if (!rows?.length || !symbol) return null;

@@ -1,0 +1,118 @@
+{
+ "symbol": "آتش",
+ "readyMs": 1693,
+ "totalKB": 9,
+ "requests": [
+  {
+   "url": "/api/market/row",
+   "query": "symbol=آتش",
+   "enc": 849,
+   "ms": 36
+  },
+  {
+   "url": "/api/calendar/upcoming",
+   "query": "days=14",
+   "enc": 77,
+   "ms": 41
+  },
+  {
+   "url": "/api/selection/portfolio",
+   "query": "",
+   "enc": 374,
+   "ms": 1114
+  },
+  {
+   "url": "/api/watchlist",
+   "query": "",
+   "enc": 51,
+   "ms": 598
+  },
+  {
+   "url": "/api/fts/آتش",
+   "query": "",
+   "enc": 6740,
+   "ms": 1518
+  },
+  {
+   "url": "/api/screener",
+   "query": "symbols=آتش&preset=tech_first&gate=0",
+   "enc": 693,
+   "ms": 1020
+  },
+  {
+   "url": "/api/calendar/آتش",
+   "query": "",
+   "enc": 55,
+   "ms": 590
+  },
+  {
+   "url": "/api/tape-history",
+   "query": "codes=56987424987755487&days=5",
+   "enc": 264,
+   "ms": 1110
+  }
+ ],
+ "http": [
+  {
+   "status": 200,
+   "url": "/api/update/version"
+  },
+  {
+   "status": 200,
+   "url": "/api/selection/portfolio"
+  },
+  {
+   "status": 200,
+   "url": "/api/funnel/registry"
+  },
+  {
+   "status": 200,
+   "url": "/api/market/closes"
+  },
+  {
+   "status": 200,
+   "url": "/api/notifications/feed?limit=60"
+  },
+  {
+   "status": 200,
+   "url": "/api/funnel?preset=trend&chain=&logic=and&fund_mode=standard&tech_chain=&strategy_settings={}&exceptions={}&drop_suffix=true"
+  },
+  {
+   "status": 200,
+   "url": "/api/funnel?preset=tech_first&chain=&logic=and&fund_mode=standard&tech_chain=&strategy_settings={}&exceptions={}&drop_suffix=true"
+  },
+  {
+   "status": 200,
+   "url": "/api/market/row?symbol=آتش"
+  },
+  {
+   "status": 200,
+   "url": "/api/calendar/upcoming?days=14"
+  },
+  {
+   "status": 200,
+   "url": "/api/watchlist"
+  },
+  {
+   "status": 200,
+   "url": "/api/calendar/آتش"
+  },
+  {
+   "status": 200,
+   "url": "/api/screener?symbols=آتش&preset=tech_first&gate=0"
+  },
+  {
+   "status": 200,
+   "url": "/api/selection/portfolio"
+  },
+  {
+   "status": 200,
+   "url": "/api/tape-history?codes=56987424987755487&days=5"
+  },
+  {
+   "status": 200,
+   "url": "/api/fts/آتش"
+  }
+ ],
+ "started": 10
+}

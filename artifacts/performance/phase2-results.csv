@@ -1,0 +1,28 @@
+round,workload,metric,before,after,unit,samples,evidence,notes
+P2-R1,FTS symbol switch,median click-to-dossier,6900,2300,ms,4,"artifacts/performance/phase2/workflows-baseline.json;workflows-p2r1.json",baseline pre-R1 5.9/10.0/7.9/3.3s; after-R1 1.3-4.5s
+P2-R1,FTS symbol switch,transfer per switch,"136-515",18,KiB,6,"artifacts/performance/phase2/workflows-p2r1.json",full market + full screener removed
+P2-R1,FTS symbol switch,requests per switch,"6-11","7-9",count,6,"artifacts/performance/phase2/workflows-p2r1.json",oversized requests removed
+P2-R2,funnel POST,P50,146.0,57.9,ms,10,"artifacts/performance/phase2/fts-api-p2r2-final.json",data-signature body cache
+P2-R2,funnel conditional GET,latency,169,19,ms,3,"artifacts/performance/phase2/funnel-reentry-p2r2.txt",304 with 0 bytes
+P2-R2,funnel conditional GET,bytes,,0,B,3,"artifacts/performance/phase2/funnel-reentry-p2r2.txt",re-entry no body
+P2-R3,technical open/switch,duplicate GETs,2,1,count,2,"artifacts/performance/phase2/tech-trace-p2r3.txt",one /api/chart and one /api/fts
+P2-R3,strategy tree,true open,"950-1290",1330,ms,3,"artifacts/performance/phase2/tree-final.json",one final sample; unchanged code
+P2-R3,strategy tree,in-tree action,"48-109","24-35",ms,6,"artifacts/performance/phase2/tree-switch-baseline.json",tree_switch_bench
+P2-R3,strategy tree,DOM nodes,,663,count,3,"artifacts/performance/phase2/tree-final.json",248 SVG nodes
+P2-R4,FTS dossier hover A/B,click-to-ready direct,1690,1545,ms,2,"artifacts/performance/phase2/hover-p2r4.json;hover-p2r6-final.json",same-symbol pairs; final direct sample آبنوس
+P2-R4,FTS dossier hover A/B,click-to-ready after hover,470,553,ms,2,"artifacts/performance/phase2/hover-p2r4.json;hover-p2r6-final.json",final hover sample آبنوس
+P2-R4,FTS dossier hover A/B,prefetch lead at 650ms dwell,,363,ms,2,"artifacts/performance/phase2/hover-p2r6-final.json",300ms debounce
+P2-R4,hover sweep guard,requests after 4 rows at 120ms,,0,count,1,"artifacts/performance/phase2/hover-scan.json",500ms dwell fires exactly 2
+P2-R5,FTS open/close,back retries,3,0,of 6 cycles,6,"artifacts/performance/phase2/resources.json;resources-after2.json",symbol resurrected by route sync
+P2-R5,FTS open/close,max /api/funnel per cycle,5,2,count,6,"artifacts/performance/phase2/resources.json;resources-after2.json",duplicate preset key removed
+P2-R5,FTS open/close,post-warm heap,"49.5-61.7","40.3-43.3",MB,6,"artifacts/performance/phase2/resources-after2.json",before had +10.2MB jumps
+P2-R5,FTS open/close,DOM/listeners,,1469/286,count,6,"artifacts/performance/phase2/resources-final.json",flat across cycles
+P2-R6,scoped screener,latency,"600-2600","100-500",ms,6,"artifacts/performance/phase2/switch-trace-p2r6*.json",active preset + gate=0; 137-190ms warm
+P2-R6,FTS symbol switch,median click-to-dossier,2300,1624,ms,6,"artifacts/performance/phase2/switch-trace-p2r6-final-*.json",range 1067-1794ms
+P2-R6,FTS symbol switch,requests/bytes per switch,"7-9","8-10 / 9-16",count/KiB,6,"artifacts/performance/phase2/switch-trace-p2r6-final-*.json",triggered by trace
+P2-R6,FTS landing startup,cold data-ready,"3733-4448",4076,ms,3,"artifacts/performance/phase2/startup.json",warm server; login 1.10-1.82s
+P2-R6,FTS landing startup,warm reload data-ready,"747-849",820,ms,3,"artifacts/performance/phase2/startup.json",same context
+P2-R6,idle funnel 60s,task CPU,,805,ms,1,"artifacts/performance/phase2/resources-final.json",0 requests; heap +71KiB
+P2-R6,idle funnel 10s,task CPU,,150,ms,1,"artifacts/performance/phase2/resources-final.json",0 requests; heap/DOM flat
+P2-R6,technical open,full /api/market transfer,,1220692,B,1,"artifacts/performance/phase2/tech-trace.json",protected TechnicalPage.tsx:60; handoff
+P2-R6,funnel full body,first 200,1396,1396,ms,1,"artifacts/performance/phase2/funnel-reentry-p2r2.txt",13429057 bytes raw

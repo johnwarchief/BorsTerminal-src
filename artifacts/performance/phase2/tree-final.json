@@ -1,0 +1,684 @@
+{
+ "runs": [
+  {
+   "run": 1,
+   "open": {
+    "requests": [],
+    "requestTotal": 0,
+    "encodedBytes": 0,
+    "longtasks": 1,
+    "tbt": 56,
+    "worst": 106,
+    "frames": {
+     "n": 42,
+     "med": 18,
+     "p95": 144,
+     "max": 216,
+     "over100": 4
+    },
+    "dom": 663,
+    "heapMB": 11,
+    "readyMs": 1327
+   },
+   "pages": [
+    {
+     "zone": "S",
+     "ms": 558,
+     "requests": [],
+     "requestTotal": 0,
+     "encodedBytes": 0,
+     "longtasks": 1,
+     "tbt": 8,
+     "worst": 58,
+     "frames": {
+      "n": 26,
+      "med": 18,
+      "p95": 54,
+      "max": 72,
+      "over100": 0
+     },
+     "dom": 640,
+     "heapMB": 12
+    },
+    {
+     "zone": "T",
+     "ms": 553,
+     "requests": [],
+     "requestTotal": 0,
+     "encodedBytes": 0,
+     "longtasks": 0,
+     "tbt": 0,
+     "worst": 0,
+     "frames": {
+      "n": 30,
+      "med": 18,
+      "p95": 18,
+      "max": 36,
+      "over100": 0
+     },
+     "dom": 574,
+     "heapMB": 13
+    },
+    {
+     "zone": "F",
+     "ms": 521,
+     "requests": [],
+     "requestTotal": 0,
+     "encodedBytes": 0,
+     "longtasks": 0,
+     "tbt": 0,
+     "worst": 0,
+     "frames": {
+      "n": 1,
+      "med": 18,
+      "p95": 18,
+      "max": 18,
+      "over100": 0
+     },
+     "dom": 574,
+     "heapMB": 13
+    },
+    {
+     "zone": "M",
+     "ms": 549,
+     "requests": [],
+     "requestTotal": 0,
+     "encodedBytes": 0,
+     "longtasks": 1,
+     "tbt": 312,
+     "worst": 362,
+     "frames": {
+      "n": 15,
+      "med": 18,
+      "p95": 364,
+      "max": 364,
+      "over100": 1
+     },
+     "dom": 610,
+     "heapMB": 11
+    },
+    {
+     "zone": "master",
+     "ms": 557,
+     "requests": [],
+     "requestTotal": 0,
+     "encodedBytes": 0,
+     "longtasks": 2,
+     "tbt": 81,
+     "worst": 119,
+     "frames": {
+      "n": 23,
+      "med": 18,
+      "p95": 19,
+      "max": 36,
+      "over100": 0
+     },
+     "dom": 663,
+     "heapMB": 26
+    }
+   ],
+   "payloads": [
+    {
+     "action": "chart-zoom-in",
+     "ms": 259,
+     "requests": [
+      {
+       "url": "/api/update/version",
+       "n": 1,
+       "maxMs": 9.399999618530273,
+       "enc": 73
+      },
+      {
+       "url": "/api/notifications/feed",
+       "n": 1,
+       "maxMs": 1584.4000000953674,
+       "enc": 4820
+      },
+      {
+       "url": "/api/selection/portfolio",
+       "n": 1,
+       "maxMs": 153.69999980926514,
+       "enc": 374
+      },
+      {
+       "url": "/api/funnel",
+       "n": 1,
+       "maxMs": 5042.5,
+       "enc": 388040
+      },
+      {
+       "url": "/api/funnel/registry",
+       "n": 1,
+       "maxMs": 28.300000190734863,
+       "enc": 7688
+      },
+      {
+       "url": "/api/market/closes",
+       "n": 1,
+       "maxMs": 409.09999990463257,
+       "enc": 31130
+      }
+     ],
+     "requestTotal": 6,
+     "encodedBytes": 432125,
+     "longtasks": 1,
+     "tbt": 8,
+     "worst": 58,
+     "frames": {
+      "n": 15,
+      "med": 18,
+      "p95": 37,
+      "max": 37,
+      "over100": 0
+     },
+     "dom": 663,
+     "heapMB": 33
+    },
+    {
+     "action": "chart-zoom-in",
+     "ms": 258,
+     "requests": [
+      {
+       "url": "/api/update/version",
+       "n": 1,
+       "maxMs": 9.399999618530273,
+       "enc": 73
+      },
+      {
+       "url": "/api/notifications/feed",
+       "n": 1,
+       "maxMs": 1584.4000000953674,
+       "enc": 4820
+      },
+      {
+       "url": "/api/selection/portfolio",
+       "n": 1,
+       "maxMs": 153.69999980926514,
+       "enc": 374
+      },
+      {
+       "url": "/api/funnel",
+       "n": 1,
+       "maxMs": 5042.5,
+       "enc": 388040
+      },
+      {
+       "url": "/api/funnel/registry",
+       "n": 1,
+       "maxMs": 28.300000190734863,
+       "enc": 7688
+      },
+      {
+       "url": "/api/market/closes",
+       "n": 1,
+       "maxMs": 409.09999990463257,
+       "enc": 31130
+      }
+     ],
+     "requestTotal": 6,
+     "encodedBytes": 432125,
+     "longtasks": 0,
+     "tbt": 0,
+     "worst": 0,
+     "frames": {
+      "n": 15,
+      "med": 18,
+      "p95": 19,
+      "max": 19,
+      "over100": 0
+     },
+     "dom": 663,
+     "heapMB": 33
+    },
+    {
+     "action": "chart-zoom-out",
+     "ms": 256,
+     "requests": [
+      {
+       "url": "/api/update/version",
+       "n": 1,
+       "maxMs": 9.399999618530273,
+       "enc": 73
+      },
+      {
+       "url": "/api/notifications/feed",
+       "n": 1,
+       "maxMs": 1584.4000000953674,
+       "enc": 4820
+      },
+      {
+       "url": "/api/selection/portfolio",
+       "n": 1,
+       "maxMs": 153.69999980926514,
+       "enc": 374
+      },
+      {
+       "url": "/api/funnel",
+       "n": 1,
+       "maxMs": 5042.5,
+       "enc": 388040
+      },
+      {
+       "url": "/api/funnel/registry",
+       "n": 1,
+       "maxMs": 28.300000190734863,
+       "enc": 7688
+      },
+      {
+       "url": "/api/market/closes",
+       "n": 1,
+       "maxMs": 409.09999990463257,
+       "enc": 31130
+      }
+     ],
+     "requestTotal": 6,
+     "encodedBytes": 432125,
+     "longtasks": 0,
+     "tbt": 0,
+     "worst": 0,
+     "frames": {
+      "n": 14,
+      "med": 18,
+      "p95": 18,
+      "max": 18,
+      "over100": 0
+     },
+     "dom": 663,
+     "heapMB": 33
+    },
+    {
+     "action": "chart-fit",
+     "ms": 257,
+     "requests": [
+      {
+       "url": "/api/update/version",
+       "n": 1,
+       "maxMs": 9.399999618530273,
+       "enc": 73
+      },
+      {
+       "url": "/api/notifications/feed",
+       "n": 1,
+       "maxMs": 1584.4000000953674,
+       "enc": 4820
+      },
+      {
+       "url": "/api/selection/portfolio",
+       "n": 1,
+       "maxMs": 153.69999980926514,
+       "enc": 374
+      },
+      {
+       "url": "/api/funnel",
+       "n": 1,
+       "maxMs": 5042.5,
+       "enc": 388040
+      },
+      {
+       "url": "/api/funnel/registry",
+       "n": 1,
+       "maxMs": 28.300000190734863,
+       "enc": 7688
+      },
+      {
+       "url": "/api/market/closes",
+       "n": 1,
+       "maxMs": 409.09999990463257,
+       "enc": 31130
+      }
+     ],
+     "requestTotal": 6,
+     "encodedBytes": 432125,
+     "longtasks": 0,
+     "tbt": 0,
+     "worst": 0,
+     "frames": {
+      "n": 14,
+      "med": 18,
+      "p95": 18,
+      "max": 18,
+      "over100": 0
+     },
+     "dom": 663,
+     "heapMB": 33
+    }
+   ],
+   "cycles": [
+    {
+     "i": 0,
+     "ms": 437,
+     "requests": [
+      {
+       "url": "/api/update/version",
+       "n": 1,
+       "maxMs": 9.399999618530273,
+       "enc": 73
+      },
+      {
+       "url": "/api/notifications/feed",
+       "n": 1,
+       "maxMs": 1584.4000000953674,
+       "enc": 4820
+      },
+      {
+       "url": "/api/selection/portfolio",
+       "n": 1,
+       "maxMs": 153.69999980926514,
+       "enc": 374
+      },
+      {
+       "url": "/api/funnel",
+       "n": 1,
+       "maxMs": 5042.5,
+       "enc": 388040
+      },
+      {
+       "url": "/api/funnel/registry",
+       "n": 1,
+       "maxMs": 28.300000190734863,
+       "enc": 7688
+      },
+      {
+       "url": "/api/market/closes",
+       "n": 1,
+       "maxMs": 409.09999990463257,
+       "enc": 31130
+      }
+     ],
+     "requestTotal": 6,
+     "encodedBytes": 432125,
+     "longtasks": 0,
+     "tbt": 0,
+     "worst": 0,
+     "frames": {
+      "n": 16,
+      "med": 17,
+      "p95": 674,
+      "max": 674,
+      "over100": 1
+     },
+     "dom": 666,
+     "heapMB": 21
+    },
+    {
+     "i": 1,
+     "ms": 843,
+     "requests": [
+      {
+       "url": "/api/update/version",
+       "n": 1,
+       "maxMs": 9.399999618530273,
+       "enc": 73
+      },
+      {
+       "url": "/api/notifications/feed",
+       "n": 1,
+       "maxMs": 1584.4000000953674,
+       "enc": 4820
+      },
+      {
+       "url": "/api/selection/portfolio",
+       "n": 1,
+       "maxMs": 153.69999980926514,
+       "enc": 374
+      },
+      {
+       "url": "/api/funnel",
+       "n": 1,
+       "maxMs": 5042.5,
+       "enc": 388040
+      },
+      {
+       "url": "/api/funnel/registry",
+       "n": 1,
+       "maxMs": 28.300000190734863,
+       "enc": 7688
+      },
+      {
+       "url": "/api/market/closes",
+       "n": 1,
+       "maxMs": 409.09999990463257,
+       "enc": 31130
+      },
+      {
+       "url": "/api/market",
+       "n": 1,
+       "maxMs": 316.5,
+       "enc": 1220692
+      },
+      {
+       "url": "/api/watchlist",
+       "n": 1,
+       "maxMs": 546,
+       "enc": 51
+      }
+     ],
+     "requestTotal": 8,
+     "encodedBytes": 1652868,
+     "longtasks": 2,
+     "tbt": 144,
+     "worst": 158,
+     "frames": {
+      "n": 23,
+      "med": 19,
+      "p95": 234,
+      "max": 433,
+      "over100": 3
+     },
+     "dom": 666,
+     "heapMB": 26
+    },
+    {
+     "i": 2,
+     "ms": 561,
+     "requests": [
+      {
+       "url": "/api/update/version",
+       "n": 1,
+       "maxMs": 9.399999618530273,
+       "enc": 73
+      },
+      {
+       "url": "/api/notifications/feed",
+       "n": 1,
+       "maxMs": 1584.4000000953674,
+       "enc": 4820
+      },
+      {
+       "url": "/api/selection/portfolio",
+       "n": 1,
+       "maxMs": 153.69999980926514,
+       "enc": 374
+      },
+      {
+       "url": "/api/funnel",
+       "n": 1,
+       "maxMs": 5042.5,
+       "enc": 388040
+      },
+      {
+       "url": "/api/funnel/registry",
+       "n": 1,
+       "maxMs": 28.300000190734863,
+       "enc": 7688
+      },
+      {
+       "url": "/api/market/closes",
+       "n": 1,
+       "maxMs": 409.09999990463257,
+       "enc": 31130
+      },
+      {
+       "url": "/api/market",
+       "n": 1,
+       "maxMs": 316.5,
+       "enc": 1220692
+      },
+      {
+       "url": "/api/watchlist",
+       "n": 1,
+       "maxMs": 546,
+       "enc": 51
+      }
+     ],
+     "requestTotal": 8,
+     "encodedBytes": 1652868,
+     "longtasks": 0,
+     "tbt": 0,
+     "worst": 0,
+     "frames": {
+      "n": 24,
+      "med": 18,
+      "p95": 56,
+      "max": 72,
+      "over100": 0
+     },
+     "dom": 666,
+     "heapMB": 36
+    },
+    {
+     "i": 3,
+     "ms": 522,
+     "requests": [
+      {
+       "url": "/api/update/version",
+       "n": 1,
+       "maxMs": 9.399999618530273,
+       "enc": 73
+      },
+      {
+       "url": "/api/notifications/feed",
+       "n": 1,
+       "maxMs": 1584.4000000953674,
+       "enc": 4820
+      },
+      {
+       "url": "/api/selection/portfolio",
+       "n": 1,
+       "maxMs": 153.69999980926514,
+       "enc": 374
+      },
+      {
+       "url": "/api/funnel",
+       "n": 1,
+       "maxMs": 5042.5,
+       "enc": 388040
+      },
+      {
+       "url": "/api/funnel/registry",
+       "n": 1,
+       "maxMs": 28.300000190734863,
+       "enc": 7688
+      },
+      {
+       "url": "/api/market/closes",
+       "n": 1,
+       "maxMs": 409.09999990463257,
+       "enc": 31130
+      },
+      {
+       "url": "/api/market",
+       "n": 1,
+       "maxMs": 316.5,
+       "enc": 1220692
+      },
+      {
+       "url": "/api/watchlist",
+       "n": 1,
+       "maxMs": 546,
+       "enc": 51
+      }
+     ],
+     "requestTotal": 8,
+     "encodedBytes": 1652868,
+     "longtasks": 0,
+     "tbt": 0,
+     "worst": 0,
+     "frames": {
+      "n": 22,
+      "med": 18,
+      "p95": 54,
+      "max": 54,
+      "over100": 0
+     },
+     "dom": 666,
+     "heapMB": 45
+    },
+    {
+     "i": 4,
+     "ms": 596,
+     "requests": [
+      {
+       "url": "/api/update/version",
+       "n": 1,
+       "maxMs": 9.399999618530273,
+       "enc": 73
+      },
+      {
+       "url": "/api/notifications/feed",
+       "n": 1,
+       "maxMs": 1584.4000000953674,
+       "enc": 4820
+      },
+      {
+       "url": "/api/selection/portfolio",
+       "n": 1,
+       "maxMs": 153.69999980926514,
+       "enc": 374
+      },
+      {
+       "url": "/api/funnel",
+       "n": 1,
+       "maxMs": 5042.5,
+       "enc": 388040
+      },
+      {
+       "url": "/api/funnel/registry",
+       "n": 1,
+       "maxMs": 28.300000190734863,
+       "enc": 7688
+      },
+      {
+       "url": "/api/market/closes",
+       "n": 1,
+       "maxMs": 409.09999990463257,
+       "enc": 31130
+      },
+      {
+       "url": "/api/market",
+       "n": 1,
+       "maxMs": 316.5,
+       "enc": 1220692
+      },
+      {
+       "url": "/api/watchlist",
+       "n": 1,
+       "maxMs": 546,
+       "enc": 51
+      }
+     ],
+     "requestTotal": 8,
+     "encodedBytes": 1652868,
+     "longtasks": 0,
+     "tbt": 0,
+     "worst": 0,
+     "frames": {
+      "n": 30,
+      "med": 18,
+      "p95": 36,
+      "max": 54,
+      "over100": 0
+     },
+     "dom": 666,
+     "heapMB": 29
+    }
+   ],
+   "errs": [],
+   "end": {
+    "heapMB": 24.8,
+    "nodes": 1059,
+    "listeners": 284
+   }
+  }
+ ]
+}

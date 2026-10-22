@@ -1,0 +1,126 @@
+{
+ "base": "http://127.0.0.1:8000",
+ "dwellMs": 650,
+ "runs": [
+  {
+   "run": 1,
+   "symbol": "آبنوس",
+   "order": [
+    "direct",
+    "hover"
+   ],
+   "serverWarmup": {
+    "ftsMs": 858,
+    "keyLevelsMs": 376
+   },
+   "direct": {
+    "mode": "direct",
+    "readyMs": 1545,
+    "hoverMs": null,
+    "clickToFtsEndMs": 1478,
+    "ftsMs": 1429,
+    "prefetchLeadMs": 0,
+    "requests": [
+     {
+      "u": "/api/fts/آبنوس",
+      "enc": 6963,
+      "start": 6608,
+      "end": 8037
+     },
+     {
+      "u": "/api/chart/آبنوس/key-levels",
+      "enc": 598,
+      "start": 6609,
+      "end": 6653
+     }
+    ]
+   },
+   "hover": {
+    "mode": "hover",
+    "readyMs": 553,
+    "hoverMs": 720,
+    "clickToFtsEndMs": -174,
+    "ftsMs": 189,
+    "prefetchLeadMs": 363,
+    "requests": [
+     {
+      "u": "/api/fts/آبنوس",
+      "enc": 6963,
+      "start": 5330,
+      "end": 5519
+     },
+     {
+      "u": "/api/chart/آبنوس/key-levels",
+      "enc": 598,
+      "start": 5331,
+      "end": 5338
+     }
+    ]
+   },
+   "gain": {
+    "clickToFtsEndMs": 1652,
+    "readyMs": 992
+   }
+  },
+  {
+   "run": 1,
+   "symbol": "آتش",
+   "order": [
+    "hover",
+    "direct"
+   ],
+   "serverWarmup": {
+    "ftsMs": 480,
+    "keyLevelsMs": 307
+   },
+   "hover": {
+    "mode": "hover",
+    "readyMs": 465,
+    "hoverMs": 720,
+    "clickToFtsEndMs": -107,
+    "ftsMs": 257,
+    "prefetchLeadMs": 364,
+    "requests": [
+     {
+      "u": "/api/fts/آتش",
+      "enc": 6740,
+      "start": 5066,
+      "end": 5323
+     },
+     {
+      "u": "/api/chart/آتش/key-levels",
+      "enc": 659,
+      "start": 5067,
+      "end": 5075
+     }
+    ]
+   },
+   "direct": {
+    "mode": "direct",
+    "readyMs": 1458,
+    "hoverMs": null,
+    "clickToFtsEndMs": 1361,
+    "ftsMs": 1305,
+    "prefetchLeadMs": 0,
+    "requests": [
+     {
+      "u": "/api/fts/آتش",
+      "enc": 6740,
+      "start": 5119,
+      "end": 6424
+     },
+     {
+      "u": "/api/chart/آتش/key-levels",
+      "enc": 659,
+      "start": 5120,
+      "end": 5189
+     }
+    ]
+   },
+   "gain": {
+    "clickToFtsEndMs": 1468,
+    "readyMs": 993
+   }
+  }
+ ]
+}

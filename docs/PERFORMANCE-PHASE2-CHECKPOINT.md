@@ -2,7 +2,9 @@
 
 Branch: `mission/coder3-performance-resource-2026-10-22`
 Phase 1 recovered at `a4228cef` (all Phase 1 commits present).
-Phase 2 status: **P2-R1 … P2-R5 complete; P2-R6 pending.**
+Phase 2 status: **P2-R1 … P2-R6 complete.** Final report:
+`docs/PERFORMANCE-PHASE2-REPORT.md`; machine-readable summary:
+`artifacts/performance/phase2-results.csv`. No push/merge.
 Environment/data: identical to Phase 1 (portable CPython 3.12.10, Node 22.22.0,
 Edge, verified market.db session 20261014; market closed; loops disabled).
 
@@ -15,7 +17,7 @@ Edge, verified market.db session 20261014; market closed; loops disabled).
 | P2-R3 | DONE | (this commit) | strategy-tree verified; in-flight GET dedupe for technical/FTS outer layer |
 | P2-R4 | DONE | (this commit) | end-to-end re-profile; deliberate-hover prefetch of the two protected per-symbol endpoints |
 | P2-R5 | DONE | (this commit) | CPU/RAM/long-session; duplicate funnel key + back-navigation race fixed |
-| P2-R6 | pending | — | final resource balance/report |
+| P2-R6 | DONE | (this commit) | final balance: active-preset/gate-skipped scoped screener; final benchmarks and reports |
 
 ## P2-R1 measured result
 
@@ -166,6 +168,41 @@ requests and a flat final heap; not claimed as an improvement.
 Correctness: funnel Vitest 37/37 (incl. new URL-preservation test), hover 2/2,
 master + nav-history + funnel 57/57, `tsc -b` 0 errors, production build PASS.
 
+## P2-R6 measured result
+
+The final re-profile showed one more server-side waste: the inspector's scoped
+`/api/screener?symbols=<sym>` ran `_funnel_gate` with the default preset for
+every dossier open, recomputing a full funnel (0.6–2.6 s CPU) for one row while
+`/api/fts` was running. The panel never reads the gate fields
+(`tape_status/technical_status/fundamental_status/gate_state/funnel_candidate`).
+The hook now sends the active `preset`/`chain` and `gate=0`; the server skips
+`_funnel_gate` but keeps the assembly veto and all five indicators. Default
+`gate=1` is unchanged for other consumers.
+
+| Metric | Before P2-R6 | Final |
+|---|---:|---:|
+| scoped screener latency | 0.6–2.6 s | **0.1–0.5 s** (137–190 ms warm) |
+| FTS switch click→dossier | median ≈1.69 s (P2-R4 direct) | **median 1.62 s** (range 1.07–1.79 s, 6 samples) |
+| requests / bytes per switch | 7–10 / 9–16 KiB | 8–10 / 9–16 KiB |
+| funnel conditional GET | 19 ms / 0 B | **19 ms / 0 B** (after 9 s: 118 ms / 0 B) |
+| FTS landing cold data-ready | — | 3.73–4.45 s (median ≈4.08 s; login 1.10–1.82 s) |
+| FTS landing warm reload | — | **0.75–0.85 s** |
+| 60 s funnel idle | — | 805 ms task CPU, 0 requests, heap +71 KiB, DOM/listeners flat |
+| 6 open/close cycles | 3/6 back retries (P2-R5 before) | 0 retries, 672–1,350 ms CPU/cycle, 7–11 requests, DOM 1469 / listeners 286 |
+
+Strategy tree final: open 1.33 s, in-tree actions 24–35 ms, DOM 663/248
+(unchanged code). Technical: one `/api/chart` + one `/api/fts` per open/switch
+(dedupe intact); the protected page still requests the full `/api/market`
+(1.22 MB on the wire) — added to the Coder2 handoff. Technical open CPU
+1.3–2.8 s, chart DOM/listeners release on leave. Overlay toggles NOT_MEASURED
+(no control exposed).
+
+Correctness: `dev/screener_symbol_scope_v1.py` 7/7 (new gate=0 parity checks);
+funnel GET/signature 2/2 + 4/4; market-row 4/4; `tsc -b` 0; build PASS; touched
+Vitest 73 passed / 3 pre-existing failures in `fundamental-codal-poll.spec.tsx`
+(reproduced on the previous commit with P2-R6 stashed). Full Python/Vitest
+suites remain NOT_COMPLETED.
+
 ## Correctness coverage run
 
 - `dev/market_row_endpoint_v1.py` — 4/4 PASS (same p_closing, ETag/304,
@@ -192,10 +229,11 @@ master + nav-history + funnel 57/57, `tsc -b` 0 errors, production build PASS.
   master hook instead of mounting a second protected hook; no protected code
   was edited.
 
-## Next experiment (P2-R6)
+## Next steps
 
-Final balance: rerun the FTS switch, hover A/B, funnel conditional GET and the
-resource cycles on the P2-R5 build; compare against the Phase 1 final and the
-P2 baseline; reject any change without reproducible benefit. Produce
-`docs/PERFORMANCE-PHASE2-REPORT.md`, the machine-readable results file and the
-final validation summary, with every blocked/incomplete suite named.
+No Coder3-owned performance work remains. The two largest remaining costs are
+protected/owned elsewhere: the first-call `/api/fts` tail (25–41 s on some
+symbols) and the technical page's full `/api/market` fetch. Both are recorded
+with reproduction steps in `docs/CODER3-PERFORMANCE-HANDOFF-TO-CODER2.md`.
+Live-session behaviour, cold-server startup and technical overlay toggles remain
+NOT_MEASURED.

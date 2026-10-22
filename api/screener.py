@@ -309,7 +309,7 @@ def _only_symbols(rows, wanted):
 
 
 @router.get("/api/screener")
-def get_screener(symbols: str = "", preset: str = "trend", chain: str = ""):
+def get_screener(symbols: str = "", preset: str = "trend", chain: str = "", gate: int = 1):
     """جدول بنیادی کدال — غربالگری ۵ شاخص FTS (v8)، علامت‌خورده با قیف.
 
     در v7.3 این endpoint امتیاز را روی مقیاس ۰..۷ و با معیارهای خارج از ۵ محور
@@ -331,11 +331,20 @@ def get_screener(symbols: str = "", preset: str = "trend", chain: str = ""):
         return payload
     wanted = [s for s in str(symbols or "").split(",") if s.strip()]
     rows, asked = _only_symbols(rows, wanted)
-    gate = _funnel_gate(str(preset or "trend"), [c for c in str(chain or "").split(",") if c])
     fresh = dict(payload)
-    fresh["data"] = _apply_funnel_gate(_apply_assembly_veto(rows), gate)
+    vetoed = _apply_assembly_veto(rows)
+    if gate:
+        g = _funnel_gate(str(preset or "trend"), [c for c in str(chain or "").split(",") if c])
+        fresh["data"] = _apply_funnel_gate(vetoed, g)
+        fresh["funnel_gate"] = g["block"]
+    else:
+        # gate=0 برایِ مصرف‌کننده‌ای که فقط شاخص‌هایِ بنیادی و وتوها را می‌خواهد
+        # (پنلِ کنارِ نماد). پرچمِ قیف را نمی‌خواند، پس یک `_run`ِ کاملِ قیف
+        # برایِ یک ردیف ساخته نمی‌شود؛ `weekly_veto`/`assembly_veto` از همان
+        # payloadِ کش‌شده می‌آیند و دست‌نخورده‌اند.
+        fresh["data"] = vetoed
+        fresh["funnel_gate"] = {"state": "skipped"}
     fresh["count"] = len(fresh["data"])
-    fresh["funnel_gate"] = gate["block"]
     if asked:
         fresh["requested_symbols"] = asked
     return fresh

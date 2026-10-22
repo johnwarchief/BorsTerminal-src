@@ -1,8 +1,8 @@
 # Coder3 → Coder2 — Performance Handoff: protected FTS/chart endpoints
 
-Date: 2026-10-22 · Phase 2, after P2-R3
+Date: 2026-10-22 · Phase 2, after P2-R6
 Repository/branch inspected: `mission/coder3-performance-resource-2026-10-22`
-at `bd975653` + P2-R3 working tree.
+at `7fd7e611` + P2-R6 working tree.
 Coder3 did **not** modify any protected file. This is a measured handoff.
 
 ## 1. Workload and reproduction
@@ -131,3 +131,31 @@ against the session-20261014 database; or open `#/master?preset=tech_first&stage
 and click the آرامش row in a fresh server process. The P2-R4 browser A/B and
 sweep evidence are in `artifacts/performance/phase2/hover-p2r4.json` and
 `hover-scan.json`.
+
+## 8. P2-R6 addendum — the technical page fetches the full market board
+
+Final technical trace (`artifacts/performance/phase2/tech-trace.json`):
+
+```
++4811 req GET /api/market
++5304 res 200 /api/market  1,220,692 bytes
++4812 req GET /api/chart/فولاد
++4815 req GET /api/fts/فولاد
+```
+
+`frontend/src/features/technical/routes/TechnicalPage.tsx:60` calls
+`useMarketFeed()` (no `enabled` gate). That is the full board feed (~1.2 MB
+gzip, ~2 s on this trace) on every technical open, even though the page already
+has a symbol-specific path through `/api/chart`/`/api/fts`. Coder3 did not edit
+the file (Coder2 ownership). The unowned alternative already exists:
+`/api/market/row?symbol=<sym>` (P2-R1) returns the same mirror row in ~1 KB
+with ETag/304, and `useMarketRow` is already used by the inspector.
+
+Suggested narrow change for the owner: replace the full-feed consumer with the
+single-row query if the page only needs prices/volume for the selected symbol;
+if a full-board view genuinely needs the board, gate it to that view. Expected
+effect (hypothesis): remove roughly 1.2 MB and ~2 s from technical open/switch;
+verify against `tech-trace.json` with the same reproduction.
+
+Coder3's in-flight GET dedupe (P2-R3) remains in force after this handoff:
+one `/api/chart` and one `/api/fts` per open/switch.

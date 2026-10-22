@@ -1,0 +1,88 @@
+{
+ "runs": [
+  {
+   "run": 1,
+   "loginMs": 1098,
+   "cold": {
+    "tShell": 3987,
+    "tData": 4076,
+    "requests": 3,
+    "bytesKB": 8,
+    "funnelMs": 20,
+    "funnelKB": 8,
+    "longtasks": 6,
+    "worstLongtask": 554,
+    "dom": 459,
+    "heapMB": 11
+   },
+   "warm": {
+    "tShell": 511,
+    "tData": 820,
+    "requests": 2,
+    "bytesKB": 8,
+    "funnelMs": 238,
+    "funnelKB": 8,
+    "longtasks": 1,
+    "worstLongtask": 66,
+    "dom": 459,
+    "heapMB": 13
+   }
+  },
+  {
+   "run": 2,
+   "loginMs": 1820,
+   "cold": {
+    "tShell": 4311,
+    "tData": 4448,
+    "requests": 4,
+    "bytesKB": 13,
+    "funnelMs": 30,
+    "funnelKB": 8,
+    "longtasks": 3,
+    "worstLongtask": 1115,
+    "dom": 460,
+    "heapMB": 11
+   },
+   "warm": {
+    "tShell": 752,
+    "tData": 849,
+    "requests": 2,
+    "bytesKB": 8,
+    "funnelMs": 19,
+    "funnelKB": 8,
+    "longtasks": 2,
+    "worstLongtask": 66,
+    "dom": 459,
+    "heapMB": 14
+   }
+  },
+  {
+   "run": 3,
+   "loginMs": 1612,
+   "cold": {
+    "tShell": 3428,
+    "tData": 3733,
+    "requests": 4,
+    "bytesKB": 387,
+    "funnelMs": 190,
+    "funnelKB": 379,
+    "longtasks": 5,
+    "worstLongtask": 1086,
+    "dom": 462,
+    "heapMB": 27
+   },
+   "warm": {
+    "tShell": 617,
+    "tData": 747,
+    "requests": 3,
+    "bytesKB": 8,
+    "funnelMs": 140,
+    "funnelKB": 8,
+    "longtasks": 1,
+    "worstLongtask": 53,
+    "dom": 459,
+    "heapMB": 22
+   }
+  }
+ ]
+}
