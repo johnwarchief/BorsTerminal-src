@@ -15,8 +15,11 @@ endpoint answers with an honest error (HTTP 502) plus the reason.
 """
 from fastapi import APIRouter
 from fastapi import Query
-from fastapi.responses import JSONResponse
+from fastapi import Request
+from fastapi.responses import JSONResponse, Response
+from bors_flags import ORJSONResponse
 import datetime
+import hashlib
 import candle_contract
 import price_basis
 import time
@@ -37,6 +40,13 @@ INDEX_SOURCE = "tsetmc:cdn/Index/GetIndexB2History"
 INDEX_CACHE = {}          # {ins_code: (fetched_ts, payload)}
 INDEX_CACHE_TTL = 600.0   # 10 دقیقه
 INDEX_HTTP_TIMEOUT = 25
+# ETag پایدارِ بدنهٔ کش‌شده (بدونِ فیلدهایِ نوسانی). کلید: ins_code.
+# چرا: سریِ شاخص ۴٬۳۱۱ کندل / ۷۴۴KB است و هر ورودِ دوباره به صفحهٔ مقایسه یا
+# چارت، همان بدنه را از نو می‌ساخت و می‌فرستاد (سنجش: p50 ≈۲۹۸ms). با ETag،
+# درخواستِ شرطیِ همان کلاینت ۳۰۴ِ صفر‌بایت می‌گیرد و بدنه/تبدیل دیگر ساخته
+# نمی‌شود؛ خودِ داده، TTL و شکلِ پاسخ دست‌نخورده است.
+INDEX_ETAG = {}           # {ins_code: base_hash}
+_ETAG_VOLATILE = ("cached", "cache_age_sec")
 
 
 def _safe_float(v):
@@ -204,8 +214,51 @@ def build_tedpix_payload(ins_code=TEDPIX_INS_CODE, limit=0, force=False):
     return price_basis.resolve_payload(resp)
 
 
+def _body_bytes(payload) -> bytes:
+    """همان کلاسِ پاسخی که مسیر برمی‌گرداند — تا ETag رویِ همان بایت‌ها باشد."""
+    if ORJSONResponse is not None:
+        return ORJSONResponse(content=payload).body
+    return JSONResponse(content=payload).body
+
+
+def _remember_etag(ins_code) -> None:
+    hit = INDEX_CACHE.get(ins_code)
+    if not hit:
+        return
+    stable = {k: v for k, v in (hit[1] or {}).items() if k not in _ETAG_VOLATILE}
+    INDEX_ETAG[ins_code] = hashlib.md5(_body_bytes(stable)).hexdigest()[:16]
+
+
+def _etag_for(ins_code, limit) -> str | None:
+    base = INDEX_ETAG.get(ins_code)
+    if not base:
+        return None
+    try:
+        # مبنایِ قیمت بخشی از بدنهٔ resolved است؛ تغییرش باید ETag را عوض کند.
+        stamp = hashlib.md5(str(price_basis.current()).encode("utf-8")).hexdigest()[:8]
+    except Exception:
+        stamp = "nobasis"
+    return '"%s-%s-L%d"' % (base, stamp, int(limit or 0))
+
+
+def _inm_matches(field: str, etag: str) -> bool:
+    tag = etag[2:] if etag.startswith("W/") else etag
+    for part in str(field or "").split(","):
+        p = part.strip()
+        if p == "*" or (p[2:] if p.startswith("W/") else p) == tag:
+            return True
+    return False
+
+
+def _cache_fresh(ins_code, now=None) -> bool:
+    hit = INDEX_CACHE.get(ins_code)
+    if not hit:
+        return False
+    return ((time.time() if now is None else now) - hit[0]) < INDEX_CACHE_TTL
+
+
 @router.get("/api/index/tedpix")
-def get_index_tedpix(limit: int = Query(0, ge=0, le=5000),
+def get_index_tedpix(request: Request, limit: int = Query(0, ge=0, le=5000),
                      refresh: bool = Query(False)):
     """سری روزانه OHLC شاخص کل بورس تهران (TEDPIX) از CDN TSETMC.
 
@@ -213,8 +266,22 @@ def get_index_tedpix(limit: int = Query(0, ge=0, le=5000),
     اگر منبع در دسترس نباشد یا پاسخ خالی/نامعتبر باشد، 502 با علت دقیق برمی‌گردد
     (هرگز داده ساختگی یا عدد جعلی).
     """
+    # ۳۰۴ فقط وقتی که کش تازه است: ETagِ کهنه نباید دادهٔ منقضی را تأیید کند.
+    if not refresh and _cache_fresh(TEDPIX_INS_CODE):
+        etag = _etag_for(TEDPIX_INS_CODE, limit)
+        inm = request.headers.get("if-none-match") if request is not None else None
+        if etag and inm and _inm_matches(inm, etag):
+            return Response(status_code=304, headers={"ETag": etag})
     try:
-        return build_tedpix_payload(limit=limit, force=bool(refresh))
+        payload = build_tedpix_payload(limit=limit, force=bool(refresh))
+        # بعد از ساخت (یا hit) یک‌بار هشِ بدنهٔ پایدار را نگه می‌داریم؛ درخواستِ
+        # بعدی پیش از هر ساخت/تبدیلی همان را می‌بیند.
+        _remember_etag(TEDPIX_INS_CODE)
+        etag = _etag_for(TEDPIX_INS_CODE, limit)
+        headers = {"ETag": etag} if etag else None
+        if ORJSONResponse is not None:
+            return ORJSONResponse(content=payload, headers=headers)
+        return JSONResponse(content=payload, headers=headers)
     except RuntimeError as e:
         return JSONResponse(status_code=502, content={
             "status": "error",

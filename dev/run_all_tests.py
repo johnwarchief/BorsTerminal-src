@@ -39,6 +39,9 @@ SUITES = [
     # PERF-R2: پنلِ سلامتِ منبع هر درخواست دو اسکنِ کامل می‌زد (۳۴۳ms برایِ
     # ۳۹۸بایت)؛ کشِ محتوا-کلید باید همان عدد را بدهد و با درجِ تازه باطل شود.
     ('dev/notifications_sources_cache_v1.py', 'notification source facts cache by DB identity + content key'),
+    # PERF-R3: سریِ شاخص ۷۴۴KB بود و هر بازدید از نو ساخته/فرستاده می‌شد؛
+    # ETag باید ۳۰۴ِ صفر‌بایت بدهد و با refresh/limit/انقضا باطل شود.
+    ('dev/market_index_etag_v1.py', 'TEDPIX series: content ETag, fresh-cache 304, refresh/limit invalidation'),
     # مأموریتِ تطبیقِ 2026-10-20: صفرِ معتبر و LASTِ منبع جدا از مقدارِ کهنه.
     ('dev/market_last_trade_semantics_v1.py',
      'market LAST: source LAST wins, zero is not missing, no stale/derived price'),
