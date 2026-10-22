@@ -39,6 +39,9 @@ SUITES = [
     # PERF-R5: بررسیِ idempotentِ اسکیما هر درخواست اجرا می‌شد؛ حالا یک‌بار
     # به‌ازایِ (فایل، schema_version) و با باطل‌شدنِ درست پس از ALTER بیرونی.
     ('dev/get_db_schema_once_v1.py', 'get_db schema checks run once per DB schema_version'),
+    # PERF-R6: TTLِ نشست‌محور (۴۵s باز، ۳۰۰s بسته) + کلیدِ داده؛ نوشتنِ تازه
+    # باید کلید را عوض کند و کشِ کهنه سرو نشود.
+    ('dev/mstat_cache_durability_v1.py', 'mstat panel cache: session-aware TTL and data-key invalidation'),
     # PERF-R2: پنلِ سلامتِ منبع هر درخواست دو اسکنِ کامل می‌زد (۳۴۳ms برایِ
     # ۳۹۸بایت)؛ کشِ محتوا-کلید باید همان عدد را بدهد و با درجِ تازه باطل شود.
     ('dev/notifications_sources_cache_v1.py', 'notification source facts cache by DB identity + content key'),

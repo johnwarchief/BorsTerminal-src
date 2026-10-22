@@ -11,6 +11,7 @@ from ._core import get_db
 from fastapi import APIRouter
 from fastapi import Query
 from fastapi.responses import JSONResponse
+import datetime
 import threading
 import time
 
@@ -61,6 +62,12 @@ def _check_group(param: str, value: str) -> bool:
 # بی‌هیچ محاسبهٔ موازی: همان fn، همان فرمول، همان عدد؛ فقط یک‌بار به‌ازای هر
 # حالت. TTL سقفِ امانت هم نگهبانِ بی‌سر‌و‌صداست.
 _MSTAT_TTL_S = 45.0
+# بیرونِ نشست، سینک هیچ نوشتنی ندارد و کلیدِ کش (revision/static_rev/
+# session_day/mstat_snap) با هر تغییرِ داده عوض می‌شود؛ پس ۴۵ثانیه‌ای‌کردنِ
+# کش فقط همان محاسبهٔ ۲۰ پنل را در هر بازِ دوباره تکرار می‌کرد (سنجش: ۷٫۰s
+# تا آمادگیِ تب پس از ۵۰ثانیه بیکاری). TTLِ پنج‌دقیقه‌ای بیرونِ نشست،
+# تازگی را درِ نشست حفظ می‌کند و بیکاریِ بیرونِ آن را ارزان.
+_MSTAT_TTL_IDLE_S = 300.0
 # سقفِ امانتِ پاسخِ کهنه: «کهنه» تنها تا این اندازه از محاسبهٔ تازه جلو می‌افتد؛
 # بعد از آن درخواست‌کننده خودش می‌سازد. دادهٔ واقعی با جابه‌جاییِ نشانه (`mstat_snap`)
 # کلید را عوض می‌کند، پس این سقف هیچ‌وقت دادهٔ روزِ *پیش* را جای روزِ تازه نمی‌زند —
@@ -70,6 +77,18 @@ _MSTAT_CACHE: dict = {}
 _MSTAT_LOCK = threading.Lock()
 _MSTAT_WAIT: dict = {}          # کلید در حالِ ساختِ درون‌خطی ⇒ رویدادِ منتظرها
 _MSTAT_BG: set = set()          # کلیدهایی که بازسازی‌شان درِ پس‌زمینه جاری است
+
+
+def _mstat_ttl(now=None) -> float:
+    """TTLِ مؤثر: درِ نشست ۴۵s، بیرونِ آن ۳۰۰s (کلیدِ داده همیشه تازگی را می‌سنجد)."""
+    try:
+        n = now or datetime.datetime.now()
+        from mstat_engine import in_trading_session
+        if in_trading_session(n.hour * 10000 + n.minute * 100 + n.second, n):
+            return _MSTAT_TTL_S
+        return _MSTAT_TTL_IDLE_S
+    except Exception:
+        return _MSTAT_TTL_S
 
 
 def _mstat_marker(conn):
@@ -189,7 +208,7 @@ def _mstat_call(fn, *args, ttl_s=None, refresh="bg", state=None, stale_ok=True, 
     پویشِ مشترکِ System 1 هم سرِ جایش است: `state` درِ مسیرِ تب (`_board_all`) یک‌بار
     ساخته می‌شود و ده پنل همان را می‌برند، پس این شاخه برایِ تب اصلاً اجرا نمی‌شود.
     """
-    ttl = _MSTAT_TTL_S if ttl_s is None else float(ttl_s)
+    ttl = _mstat_ttl() if ttl_s is None else float(ttl_s)
     key = (fn.__name__, _mstat_hashkey(args), _mstat_hashkey(kw))
     if ttl <= 0 or refresh == "inline":
         return dict(_mstat_compute(fn, args, kw))
@@ -604,29 +623,43 @@ def warm_mstat_cache() -> None:
     if not _WARM_LOCK.acquire(blocking=False):
         return
     try:
-        st = _mstat_state()
-        if st is None:
-            return
+        # اول وابستگیِ مشترک: `_board_rows` تاریخچهٔ تابلو را می‌سازد و
+        # `static_rev` را جلو می‌برد. اگر حالت را پیش از این بگیریم، همهٔ
+        # پنل‌ها زیرِ کلیدِ کهنه گرم می‌شوند و نخستین درخواستِ UI (با کلیدِ
+        # تازه) دوباره سرد می‌شود — همان چیزی که پس از ۶۰s بیکاری سنجیده شد.
         try:
-            _board_all("eq_all", 60, state=st)
+            from api.funnel import _board_rows
+            _board_rows()
         except Exception:
             pass
-        # آرگومان‌هایِ UI که با board یکی نیستند (limit/گروه/تبِ متفاوت).
-        extra = [
-            (_mstat.histogram, ("all",), {}),
-            (_mainwatch_with_flags, ("eq_all", "", "clock", True, 120), {}),
-            (_mainwatch_with_flags, ("all", "", "clock", True, 120), {}),
-        ]
-        for fn, args, kw in extra:
+        for _pass in range(2):
+            st = _mstat_state()
+            if st is None:
+                return
             try:
-                _mstat_call(fn, *args, state=st, **kw)
+                _board_all("eq_all", 60, state=st)
             except Exception:
                 pass
-        # پنلِ مرحلِ جلسه از `stale_ok=False` می‌خواند؛ کلید و تازگی حفظ می‌شود.
-        try:
-            _mstat_call(_mstat.session_phase, state=st, stale_ok=False)
-        except Exception:
-            pass
+            # آرگومان‌هایِ UI که با board یکی نیستند (limit/گروه/تبِ متفاوت).
+            extra = [
+                (_mstat.histogram, ("all",), {}),
+                (_mainwatch_with_flags, ("eq_all", "", "clock", True, 120), {}),
+                (_mainwatch_with_flags, ("all", "", "clock", True, 120), {}),
+            ]
+            for fn, args, kw in extra:
+                try:
+                    _mstat_call(fn, *args, state=st, **kw)
+                except Exception:
+                    pass
+            # پنلِ مرحلِ جلسه از `stale_ok=False` می‌خواند؛ کلید و تازگی حفظ می‌شود.
+            try:
+                _mstat_call(_mstat.session_phase, state=st, stale_ok=False)
+            except Exception:
+                pass
+            # اگر در همین بازه چیزی (مثلاً اسنپ‌شاتِ تازه) حالت را عوض کرد،
+            # یک‌بار دیگر با کلیدِ تازه گرم کن؛ سقف دو دور مانعِ حلقه است.
+            if _mstat_state() == st:
+                break
     finally:
         _WARM_LOCK.release()
 
