@@ -1,0 +1,12 @@
+funnel registry      first=  142.8ms p50=    7.6ms p95=    9.9ms status=[200] raw=25293 gz=7688 etag=False
+funnel trace فولاد   first=  517.1ms p50=    5.7ms p95=    6.4ms status=[200] raw=2500 gz=1160 etag=False
+fts plan فولاد       first= 2486.3ms p50=  261.2ms p95=  410.9ms status=[200] raw=28455 gz=7768 etag=False
+fts config           first=    6.8ms p50=    4.4ms p95=   40.0ms status=[200] raw=1121 gz=620 etag=False
+key levels فولاد     first=  263.7ms p50=    3.4ms p95=    4.3ms status=[200] raw=661 gz=661 etag=False
+market closes        first=   28.5ms p50=   28.0ms p95=   43.9ms status=[200] raw=78512 gz=31130 etag=True
+screener             first=  546.2ms p50=  205.0ms p95=  332.1ms status=[200] raw=1203781 gz=122599 etag=False
+funnel POST          first=   80.8ms p50=   56.1ms p95=   63.8ms status=[200] raw=7574466 gz=388055 etag=True
+funnel POST cond     status=412 ms=5.6 bytes=0
+funnel GET cond      status=304 ms=3.8 bytes=0
+funnel GET           p50=   46.8ms p95=   74.9ms raw=7574467 gz=388055 etag=True
+wrote C:\Users\STU\Documents\Qoder\2026-10-22\32ea1037\repo\artifacts/performance/phase2/fts-api-p2r2.json

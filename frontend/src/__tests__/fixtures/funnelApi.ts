@@ -280,9 +280,26 @@ export function installFunnelApi(payload: ApiPayload = FUNNEL_FIXTURE) {
     }
     if (url.includes('/api/funnel')) {
       try {
-        if (typeof init?.body === 'string') funnelCalls.push(JSON.parse(init.body) as Record<string, unknown>);
+        if (typeof init?.body === 'string') {
+          funnelCalls.push(JSON.parse(init.body) as Record<string, unknown>);
+        } else if (url.includes('?')) {
+          // مسیرِ GETِ شرطی (P2-R2): همان فیلدهایِ بدنهٔ POST را از query
+          // بازسازی می‌کنیم تا ادعاهایِ موجود بدونِ تغییر بمانند.
+          const u = new URL(url, 'http://local.test');
+          const get = (k: string) => u.searchParams.get(k);
+          const j = (k: string) => {
+            try { return JSON.parse(get(k) || '{}'); } catch { return {}; }
+          };
+          funnelCalls.push({
+            preset: get('preset'), chain: (get('chain') || '').split(',').filter(Boolean),
+            logic: get('logic'), fund_mode: get('fund_mode'),
+            tech_chain: (get('tech_chain') || '').split(',').filter(Boolean),
+            strategy_settings: j('strategy_settings'), exceptions: j('exceptions'),
+            drop_suffix: get('drop_suffix') === 'true',
+          });
+        }
       } catch {
-        /* بدنهٔ غیرِ JSON فقط ثبت نمی‌شود */
+        /* ورودیِ غیرِ قابلِ‌تجزیه فقط ثبت نمی‌شود */
       }
       return new Response(JSON.stringify(payload), {
         status: 200, headers: { 'content-type': 'application/json' },

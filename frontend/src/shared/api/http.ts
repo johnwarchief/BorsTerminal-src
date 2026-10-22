@@ -201,7 +201,14 @@ export async function http<T>(url: string, opts: HttpOptions = {}): Promise<T> {
         throw err;
       }
       const data: unknown = await res.json();
-      if (!schema) return data as T;
+      if (!schema) {
+        // GETِ بی‌اسکیما (مثلاً قیف) هم باید ETag را نگه دارد؛ وگرنه هر ورودِ
+        // دوباره بدنهٔ چندمگابایتی را کامل می‌گیرد. کلید همچنان URL+هویتِ
+        // اسکیماست (اینجا id=0)، پس با مسیرِ اسکیمادارِ همان URL قاطی نمی‌شود.
+        const etag = res.headers?.get?.('etag') ?? null;
+        if (method === 'GET' && etag && !noCache) conditionalSet(cKey, { etag, data });
+        return data as T;
+      }
       const parsed = schema.safeParse(data);
       if (!parsed.success) {
         throw new HttpError(0, url, `پاسخ API با قرارداد نمی خواند: ${parsed.error.message}`);

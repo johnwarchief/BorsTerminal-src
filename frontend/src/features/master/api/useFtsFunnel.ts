@@ -210,17 +210,33 @@ export function useFtsFunnel(
     // (سنجه: __tests__/inspector-closed-no-requests.spec.tsx). بی‌درخواستِ تازه،
     // نه باِ لغوِ بعدِ ارسال.
     enabled: queryOpts.enabled ?? true,
-    queryFn: (ctx) => http<ApiPayload>('/api/funnel', {
-      method: 'POST',
-      // لغوِ درخواستِ کهنه: هر پاسخِ قیف چندِ مگابایت است (سنجشِ زنده: ۷٫۷ تا
-      // ۱۰٫۹ مگابایت درِ هر کلیک). بی‌`signal`، با عوض‌کردنِ سریعِ preset آن
-      // بدنه‌ها تا آخر دانلود می‌مانند و می‌توانند *بعدِ* پاسخِ تازه بنشینند.
-      signal: ctx.signal,
-      body: { preset: request.preset, chain: request.chain, logic: request.logic,
-              fund_mode: request.fundMode, tech_chain: request.techChain,
-              strategy_settings: request.strategySettings ?? {},
-              exceptions: request.exceptions, drop_suffix: request.dropSuffix },
-    }),
+    queryFn: (ctx) => {
+      // GETِ شرطی: همان پارامترهایِ POST در query (با JSON برایِ نقشه‌ها)، تا
+      // http.ts با If-None-Match پاسخِ تازهٔ بدونِ‌تغییر را ۳۰۴ِ صفر‌بایت بگیرد
+      // و بدنهٔ ۷٫۵MB دوباره منتقل/parse نشود. URLِ بلند ⇒ همان POSTِ قبلی.
+      const qs = new URLSearchParams({
+        preset: request.preset,
+        chain: request.chain.join(','),
+        logic: request.logic,
+        fund_mode: request.fundMode,
+        tech_chain: request.techChain.join(','),
+        strategy_settings: JSON.stringify(request.strategySettings ?? {}),
+        exceptions: JSON.stringify(request.exceptions ?? {}),
+        drop_suffix: String(request.dropSuffix),
+      });
+      const url = `/api/funnel?${qs.toString()}`;
+      if (url.length <= 7000) return http<ApiPayload>(url, { signal: ctx.signal });
+      return http<ApiPayload>('/api/funnel', {
+        method: 'POST',
+        // لغوِ درخواستِ کهنه: هر پاسخِ قیف چندِ مگابایت است. بی‌`signal`، با
+        // عوض‌کردنِ سریعِ preset آن بدنه‌ها تا آخر دانلود می‌مانند.
+        signal: ctx.signal,
+        body: { preset: request.preset, chain: request.chain, logic: request.logic,
+                fund_mode: request.fundMode, tech_chain: request.techChain,
+                strategy_settings: request.strategySettings ?? {},
+                exceptions: request.exceptions, drop_suffix: request.dropSuffix },
+      });
+    },
     // کلیدِ تازه = پاسخِ تازه، و بی‌این خط جدولِ مسلطِ قیف برایِ چند صدمیلی‌ثانیه
     // به صفر می‌افتاد («universe: ۰») و کاربر فکر می‌کرد بازار خالی است. پاسخِ
     // قبلی رویِ صفحه می‌ماند تا جدید بنشیند؛ markerِ loading هم همین‌جا دیده

@@ -49,4 +49,22 @@ describe('http conditional cache is LRU-bounded', () => {
     expect(hot.v).toBe(39);
     expect(seen[hotIndex].inm).toBe('"e-39"');
   });
+
+  it('schema-less GET stores the ETag and reuses the parsed body on 304', async () => {
+    const seen: (string | null)[] = [];
+    const fetchMock = vi.fn(async (_url: string | URL | Request, init?: RequestInit) => {
+      const inm = (init?.headers as Record<string, string> | undefined)?.['If-None-Match'] ?? null;
+      seen.push(inm);
+      if (inm) return new Response(null, { status: 304, headers: { etag: inm } });
+      return new Response(JSON.stringify({ rows: [1, 2, 3] }), {
+        status: 200, headers: { 'content-type': 'application/json', etag: '"plain-1"' },
+      });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    const a = await http<{ rows: number[] }>('/api/perf-lru-schemaless');
+    const b = await http<{ rows: number[] }>('/api/perf-lru-schemaless');
+    expect(a).toEqual({ rows: [1, 2, 3] });
+    expect(b).toBe(a);                    // same parsed object, no second body
+    expect(seen[1]).toBe('"plain-1"');
+  });
 });

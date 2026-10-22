@@ -54,6 +54,10 @@ SUITES = [
     # P2-R1: سایدبار یک ردیفِ تابلو می‌خواهد، نه ۶٫۸MB؛ و اسکرینر یک ردیف، نه ۱٫۲MB.
     ('dev/market_row_endpoint_v1.py', 'single market row: same p_closing, ETag/304, unknown stays null'),
     ('dev/screener_symbol_scope_v1.py', 'screener symbols= returns exactly the same row as the full payload'),
+    # P2-R2: GETِ شرطیِ قیف باید همان بدنهٔ POST را بدهد و کلیدِ داده با
+    # revision/screener/tech عوض شود.
+    ('dev/funnel_get_parity_v1.py', 'funnel GET == POST body for same inputs'),
+    ('dev/funnel_signature_v1.py', 'funnel data signature changes with revision/screener/tech'),
     # مأموریتِ تطبیقِ 2026-10-20: صفرِ معتبر و LASTِ منبع جدا از مقدارِ کهنه.
     ('dev/market_last_trade_semantics_v1.py',
      'market LAST: source LAST wins, zero is not missing, no stale/derived price'),

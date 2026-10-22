@@ -205,18 +205,32 @@ def _funnel_http(request: Request, preset: str, chain: list[str], fund_mode: str
         return _shape(err, None, False, full)
     key = _cache_key(preset, chain, fund_mode, params, exceptions, drop_suffix, logic,
                      tc, stg)
+    # پیش از ساختنِ امضا، ورودی‌هایِ ارزانِ کش‌شدنی را گرم می‌کنیم؛ وگرنه
+    # امضایِ اولین درخواست با screener/tech خالی ساخته می‌شود، `_run_entry`
+    # آن‌ها را پر می‌کند و درخواستِ بعدی کلیدِ تازه (بی‌دلیل) می‌گیرد.
+    try:
+        _screen_rows()
+    except Exception:
+        pass
+    try:
+        _tech_context()
+    except Exception:
+        pass
+    data_sig = _data_signature()
+    key += "|sig:" + data_sig
     bkey = ("F" if full else "S") + key
     built_here = False
     with _FUNNEL_BODY_LOCK:
         ent = _FUNNEL_BODIES.get(bkey)
-        if ent and time.time() - ent[2] < TTL_S:
+        if ent and time.time() - ent[2] < BODY_TTL_S:
             _FUNNEL_BODIES.move_to_end(bkey)
         else:
             ent = None
     if ent is None:
         payload, built_ts, built_here = _run_entry(preset, chain, fund_mode, params, exceptions,
                                                    drop_suffix=drop_suffix, logic=logic,
-                                                   tech_chain=tc, settings=stg)
+                                                   tech_chain=tc, settings=stg,
+                                                   data_sig=data_sig)
         if built_ts is None or payload.get("status") in ("error", "no_data"):
             return _shape(payload, built_ts, built_here, full)
         body, etag = _encode_funnel_body(payload if full else _strip(payload))
@@ -242,6 +256,34 @@ def _funnel_http(request: Request, preset: str, chain: list[str], fund_mode: str
 # قیف رویِ همان ریتمِ تابلو تازه می‌شود؛ کشِ کوتاه جلویِ هر-کلیدِ Custom را
 # از دوباره‌خوانیِ ۳۷۰۰ ردیف می‌گیرد، بی‌آنکه حکمی را کهنه کند.
 TTL_S = 8.0
+# بدنهٔ سریال‌شده (۷٫۵MB) با کلیدِ «دادهٔ ورودی» جدا کش می‌شود. تغییرِ داده
+# بلافاصله کلید را عوض می‌کند؛ سقفِ ۳۰ثانیه‌ای فقط برایِ نوشتنِ بیرونی/زمانی
+# است. این سقف با TTLِ موتور یکی نیست: `_run` (مصرفِ اسکرینر) همان ۸s می‌ماند.
+BODY_TTL_S = 30.0
+
+
+def _data_signature() -> str:
+    """اثرِ دادهٔ ورودیِ قیف: تابلو، اسکرینر و زمینهٔ تکنیکال.
+
+    قیف هر ۲۰ثانیه پرسیده می‌شود ولی بدنهٔ ۷٫۵MB و محاسبهٔ ~۰٫۱–۱s را هر بار
+    از نو می‌ساخت، چون TTLِ ۸s پیش از پولینگِ بعدی تمام می‌شد. با این امضا،
+    پاسخ تا وقتی همان داده است دوباره استفاده می‌شود؛ هر sync/تیک/بازسازیِ
+    اسکرینر یا تازه‌شدنِ tech context کلید را عوض می‌کند. زمانِ دیوار داخلِ
+    امضا نیست؛ سقفِ `BODY_TTL_S` و نشانه‌هایِ داده تازگی را نگه می‌دارند.
+    """
+    import market_state as _MS
+    parts = [str(_MS.revision()), str(_MS.static_rev()), str(_MS.session_day())]
+    try:
+        from api.screener import _SCREENER_CACHE
+        parts += [str(_SCREENER_CACHE.get("key") or ""),
+                  str(round(float(_SCREENER_CACHE.get("ts") or 0.0), 3))]
+    except Exception:
+        parts += ["", ""]
+    try:
+        parts.append(str(round(float(_TECH_CTX.get("ts") or 0.0), 3)))
+    except Exception:
+        parts.append("")
+    return "|".join(parts)
 
 
 def _board_snapshot() -> tuple[list[dict], int | None]:
@@ -433,16 +475,43 @@ def get_trace(symbol: str, preset: str = "trend", chain: str = "",
             "as_of": payload.get("as_of")}
 
 
+def _json_dict_arg(raw: str, name: str):
+    """(شیء، خطا) برایِ پارامترهایِ JSONِ GET؛ نبودن/خالی ⇒ {}."""
+    txt = str(raw or "").strip()
+    if not txt:
+        return {}, None
+    try:
+        obj = json.loads(txt)
+    except Exception:
+        return {}, "%s: JSON نامعتبر" % name
+    if not isinstance(obj, dict):
+        return {}, "%s: باید شیءِ JSON باشد" % name
+    return obj, None
+
+
 @router.get("/api/funnel")
 def get_funnel(request: Request, preset: str = "trend", chain: str = "",
                fund_mode: str = "standard",
                drop_suffix: bool = True, logic: str = "and", tech_chain: str = "",
-               weekly_mode: str = "", daily_mode: str = "", clock_delta_pct: str = ""):
+               weekly_mode: str = "", daily_mode: str = "", clock_delta_pct: str = "",
+               exceptions: str = "", strategy_settings: str = "", params: str = ""):
     # تنظیمات هم ازِ GET می‌پذیرد تا لینکِ قابل‌اشتراک بماند؛ خالی یعنی پیش‌فرض.
-    stg = {k: v for k, v in (("weekly_mode", weekly_mode), ("daily_mode", daily_mode),
-                             ("clock_delta_pct", clock_delta_pct)) if v}
+    # `exceptions`/`strategy_settings`/`params` برایِ برابریِ کامل با POST اضافه
+    # شده‌اند: رابط می‌تواند GETِ شرطی بفرستد و پاسخِ بدونِ‌تغییر ۳۰۴ِ صفر‌بایت
+    # بگیرد، به‌جایِ POSTِ ۷٫۵MB در هر ورود/پولینگ.
+    exc, e1 = _json_dict_arg(exceptions, "exceptions")
+    stg_obj, e2 = _json_dict_arg(strategy_settings, "strategy_settings")
+    prm, e3 = _json_dict_arg(params, "params")
+    if e1 or e2 or e3:
+        return _shape({"status": "error", "message": e1 or e2 or e3}, None, False, False)
+    exc = {str(k): [str(x) for x in (v or [])] for k, v in exc.items()}
+    stg = dict(stg_obj)
+    for k, v in (("weekly_mode", weekly_mode), ("daily_mode", daily_mode),
+                 ("clock_delta_pct", clock_delta_pct)):
+        if v:
+            stg[k] = v
     return _funnel_http(request, preset, [c for c in chain.split(",") if c],
-                        fund_mode, {}, {}, drop_suffix=drop_suffix, logic=logic,
+                        fund_mode, prm, exc, drop_suffix=drop_suffix, logic=logic,
                         tech_chain=[c for c in tech_chain.split(",") if c], settings=stg)
 
 
@@ -512,7 +581,8 @@ def _run(preset: str, chain: list[str], fund_mode: str,
          settings: dict[str, Any] | None = None) -> dict:
     payload, ts, built = _run_entry(preset, chain, fund_mode, params, exceptions,
                                     drop_suffix=drop_suffix, logic=logic,
-                                    tech_chain=tech_chain, settings=settings)
+                                    tech_chain=tech_chain, settings=settings,
+                                    data_sig=_data_signature())
     return _shape(payload, ts, built, full)
 
 
@@ -548,6 +618,7 @@ def _run_entry(preset: str, chain: list[str], fund_mode: str,
                drop_suffix: bool = True, logic: str = "and",
                tech_chain: list[str] | None = None,
                settings: dict[str, Any] | None = None,
+               data_sig: str = "",
                ) -> tuple[dict, float | None, bool]:
     """(payloadِ کامل، زمانِ آغازِ ساختش، همین فراخوان ساختش؟) — خطا/`no_data` با زمانِ None."""
     # کلیدِ اشتراک/اجتماع (رأیِ مالک ۱۴۰۵-۰۷-۲۰): بی‌استثنایِ مقداریِ دیگر،
@@ -562,6 +633,8 @@ def _run_entry(preset: str, chain: list[str], fund_mode: str,
         return err, None, False
     key = _cache_key(preset, chain, fund_mode, params, exceptions, drop_suffix, logic,
                      tc, stg)
+    if data_sig:
+        key += "|sig:" + data_sig
     hit = _cache_get(key, time.time())
     if hit:
         return hit["payload"], hit["ts"], False

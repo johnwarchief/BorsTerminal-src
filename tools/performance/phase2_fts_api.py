@@ -176,6 +176,45 @@ def main():
         print("funnel POST cond     status=%s ms=%.1f bytes=%s" % (
             cond["status"], cond["ms"], cond["gz"]))
 
+    # GET path used by the UI after P2-R2 (same options in the query).
+    from urllib.parse import urlencode
+    get_path = "/api/funnel?" + urlencode({
+        "preset": FUNNEL_BODY["preset"], "chain": "",
+        "logic": FUNNEL_BODY["logic"], "fund_mode": FUNNEL_BODY["fund_mode"],
+        "tech_chain": "", "strategy_settings": json.dumps(FUNNEL_BODY["strategy_settings"]),
+        "exceptions": json.dumps(FUNNEL_BODY["exceptions"]),
+        "drop_suffix": "true",
+    })
+    g_first = call(args.base, get_path)
+    g_vals, g_digests, g_statuses = [], set(), set()
+    g_last = g_first
+    for _ in range(10):
+        g_last = call(args.base, get_path)
+        g_vals.append(g_last["ms"])
+        g_statuses.add(g_last["status"])
+        if g_last["digest"]:
+            g_digests.add(g_last["digest"])
+        time.sleep(0.2)
+    out["funnel_get"] = {
+        "path": get_path, "first_ms": round(g_first["ms"], 2),
+        "first_raw": g_first["raw"], "first_gz": g_first["gz"],
+        "first_etag": g_first["etag"],
+        "p50_ms": round(statistics.median(g_vals), 2),
+        "p95_ms": round(_pct(g_vals, 0.95), 2), "n": len(g_vals),
+        "statuses": sorted(g_statuses), "digests": len(g_digests),
+        "raw_bytes": g_last["raw"], "gzip_bytes": g_last["gz"], "etag": g_last["etag"],
+    }
+    if g_last["etag"]:
+        gc = call(args.base, get_path, headers={"If-None-Match": g_last["etag"]})
+        out["funnel_get"]["conditional"] = {
+            "status": gc["status"], "ms": round(gc["ms"], 2),
+            "gz": gc["gz"], "etag": gc["etag"],
+        }
+        print("funnel GET cond      status=%s ms=%.1f bytes=%s" % (
+            gc["status"], gc["ms"], gc["gz"]))
+    print("funnel GET           p50=%7.1fms p95=%7.1fms raw=%s gz=%s etag=%s" % (
+        out["funnel_get"]["p50_ms"], out["funnel_get"]["p95_ms"], g_last["raw"], g_last["gz"], bool(g_last["etag"])))
+
     path = args.out if os.path.isabs(args.out) else os.path.join(ROOT, args.out)
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, "w", encoding="utf-8") as f:
