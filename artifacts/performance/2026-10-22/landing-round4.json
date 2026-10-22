@@ -1,0 +1,133 @@
+{
+ "base": "http://127.0.0.1:8000",
+ "ranAt": "2026-10-22T01:34:31.357Z",
+ "results": [
+  {
+   "fcp": 1408,
+   "ttfb": 226,
+   "api": [
+    {
+     "u": "/api/update/version",
+     "ms": 87,
+     "enc": 73
+    },
+    {
+     "u": "/api/selection/portfolio",
+     "ms": 1198,
+     "enc": 374
+    },
+    {
+     "u": "/api/market",
+     "ms": 476,
+     "enc": 1220692
+    },
+    {
+     "u": "/api/funnel/registry",
+     "ms": 265,
+     "enc": 7688
+    }
+   ],
+   "encodedTotal": 1228827,
+   "longtasks": 7,
+   "tbt": 793,
+   "heapMB": 15,
+   "run": 1,
+   "loginGate": true,
+   "readyMs": 4218,
+   "errors": []
+  },
+  {
+   "fcp": 804,
+   "ttfb": 13,
+   "api": [
+    {
+     "u": "/api/update/version",
+     "ms": 6,
+     "enc": 73
+    },
+    {
+     "u": "/api/notifications/feed",
+     "ms": 2025,
+     "enc": 4820
+    },
+    {
+     "u": "/api/selection/portfolio",
+     "ms": 189,
+     "enc": 374
+    },
+    {
+     "u": "/api/market",
+     "ms": 403,
+     "enc": 1220692
+    },
+    {
+     "u": "/api/funnel",
+     "ms": 218,
+     "enc": 388076
+    },
+    {
+     "u": "/api/funnel/registry",
+     "ms": 52,
+     "enc": 7688
+    },
+    {
+     "u": "/api/market/closes",
+     "ms": 134,
+     "enc": 31130
+    }
+   ],
+   "encodedTotal": 1652853,
+   "longtasks": 9,
+   "tbt": 855,
+   "heapMB": 25,
+   "run": 2,
+   "loginGate": true,
+   "readyMs": 3818,
+   "errors": []
+  },
+  {
+   "fcp": 664,
+   "ttfb": 31,
+   "api": [
+    {
+     "u": "/api/update/version",
+     "ms": 117,
+     "enc": 73
+    },
+    {
+     "u": "/api/notifications/feed",
+     "ms": 1925,
+     "enc": 4820
+    },
+    {
+     "u": "/api/selection/portfolio",
+     "ms": 259,
+     "enc": 374
+    },
+    {
+     "u": "/api/market",
+     "ms": 399,
+     "enc": 1220692
+    },
+    {
+     "u": "/api/funnel/registry",
+     "ms": 164,
+     "enc": 7688
+    },
+    {
+     "u": "/api/market/closes",
+     "ms": 216,
+     "enc": 31130
+    }
+   ],
+   "encodedTotal": 1264777,
+   "longtasks": 6,
+   "tbt": 762,
+   "heapMB": 18,
+   "run": 3,
+   "loginGate": true,
+   "readyMs": 3121,
+   "errors": []
+  }
+ ]
+}

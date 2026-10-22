@@ -154,6 +154,62 @@ def get_market(request: Request, fields: str = ""):
     return _build_market_response(request)
 
 
+@router.get("/api/market/closes")
+def market_closes(request: Request):
+    """نقشهٔ سبکِ «نماد ← قیمتِ پایانی» برایِ نوارهایِ حد ضرر/پرتفوی.
+
+    چرا: `useMarketCloses` پیش‌تر از فیدِ کاملِ `/api/market` (۶٫۸MB خام،
+    ~۱٫۲MB gzip) فقط همین یک عدد را برمی‌داشت. صفحهٔ `master` و پرتفوی هم
+    همان بدنهٔ سنگین را در هر ورود می‌کشیدند. این مسیر فقط دو ستون از همان
+    ردیفِ تابلو می‌خواند؛ ETag از (revision، d_even، h_even، fetched_at) ساخته
+    می‌شود، پس پولینگِ بی‌تغییر ۳۰۴ِ صفر‌بایت می‌گیرد و کشِ کهنه سرو نمی‌شود.
+    داده همان p_closingِ همان نشست است؛ هیچ محاسبهٔ دومی اضافه نشده.
+    """
+    conn = get_db()
+    try:
+        day = conn.execute("SELECT MAX(d_even) FROM market_watch").fetchone()[0]
+        if not day:
+            return _ORJ_JSON({"status": "success", "closes": {}, "count": 0})
+        meta = conn.execute(
+            "SELECT MAX(h_even), COUNT(*), MAX(fetched_at) FROM market_watch WHERE d_even=?",
+            (day,)).fetchone()
+        rev = market_state.revision()
+        import hashlib
+        etag = '"closes-%s-%s-%s-%s"' % (
+            rev, int(day), int(meta[0] or 0),
+            hashlib.md5(str(meta[2] or "").encode("utf-8")).hexdigest()[:8])
+        inm = request.headers.get("if-none-match") if request is not None else None
+        if inm and _inm_matches(inm, etag):
+            return Response(status_code=304, headers={"ETag": etag})
+        rows = conn.execute(
+            "SELECT i.l_val18, m.p_closing FROM market_watch m "
+            "LEFT JOIN instruments i ON i.ins_code=m.ins_code WHERE m.d_even=?",
+            (day,)).fetchall()
+        closes = {}
+        for sym, close in rows:
+            if sym and close is not None:
+                closes[str(sym)] = float(close)
+        body, _ = _encode_board({
+            "status": "success",
+            "asof": {"d_even": int(day), "h_even": int(meta[0] or 0)},
+            "rev": int(rev), "count": len(closes), "closes": closes,
+        })
+        return Response(content=body, media_type="application/json",
+                        headers={"ETag": etag, "Cache-Control": "no-store"})
+    finally:
+        conn.close()
+
+
+def _inm_matches(field: str, etag: str) -> bool:
+    """مقایسهٔ ضعیفِ If-None-Match (همان قاعدهٔ funnel، محلی تا import حلقه نشود)."""
+    tag = etag[2:] if etag.startswith("W/") else etag
+    for part in str(field or "").split(","):
+        p = part.strip()
+        if p == "*" or (p[2:] if p.startswith("W/") else p) == tag:
+            return True
+    return False
+
+
 # ── تازه‌سازیِ پس‌زمینه‌ای (#176) ────────────────────────────────────────
 # اندازه‌گیری ۱۴۰۵‑۰۷‑۰۵: هر بار که TTLِ کش می‌پایاند، یکِ مشتری باید ۱٫۴ ثانیه
 # برایِ ساختنِ دوبارهٔ بدنه صبر کند (در نشستِ پنج‌ثانیه‌یِ پُرمخاطره این یعنی

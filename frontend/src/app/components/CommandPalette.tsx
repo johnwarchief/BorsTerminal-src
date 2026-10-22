@@ -68,7 +68,9 @@ export function CommandPalette() {
   const [cursor, setCursor] = useState(0);
   // جست‌وجو از همان فیدِ مشترکِ تابلو می‌خواند (select فقط) — نه یکِ fetchِ دومِ
   // /api/market که snapshotِ جدا و کهنه نگه می‌داشت (#M2.2). کلیدِ یکی ⇒ درخواستِ یکی.
-  const feed = useMarketFeedShared(selectPaletteRows);
+  // `enabled: open`: پالت در AppShell همیشه سوار است؛ بی‌این دروازه، هر صفحه
+  // (حتی master) فیدِ کاملِ ۶٫۸MB را فقط برایِ جست‌وجویِ بازنشده می‌کشید.
+  const feed = useMarketFeedShared(selectPaletteRows, 5_000, open);
   const rows = feed.data ?? null;
   const loading = feed.isPending;
   const error = !!feed.error && rows === null;

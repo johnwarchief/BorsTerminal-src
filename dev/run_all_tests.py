@@ -42,6 +42,9 @@ SUITES = [
     # PERF-R3: سریِ شاخص ۷۴۴KB بود و هر بازدید از نو ساخته/فرستاده می‌شد؛
     # ETag باید ۳۰۴ِ صفر‌بایت بدهد و با refresh/limit/انقضا باطل شود.
     ('dev/market_index_etag_v1.py', 'TEDPIX series: content ETag, fresh-cache 304, refresh/limit invalidation'),
+    # PERF-R4: نقشهٔ سبکِ قیمتِ پایانی جایِ فیدِ کاملِ ۶٫۸MB را در master/پرتفوی
+    # گرفت؛ همان p_closingِ همان ردیف، با ETag و ۳۰۴ِ بی‌بدنه.
+    ('dev/market_closes_v1.py', 'lightweight market closes map: same row values, ETag/304'),
     # مأموریتِ تطبیقِ 2026-10-20: صفرِ معتبر و LASTِ منبع جدا از مقدارِ کهنه.
     ('dev/market_last_trade_semantics_v1.py',
      'market LAST: source LAST wins, zero is not missing, no stale/derived price'),
