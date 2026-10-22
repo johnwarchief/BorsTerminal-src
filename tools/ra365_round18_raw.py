@@ -672,7 +672,8 @@ def cmd_measure(args):
                      counts["missing_r_ref"], counts["p_before_t"], counts["p_after_t"],
                      p_dates[0] if p_dates else "",
                      p_dates[-1] if p_dates else "", tmin or "", tmax or "", t0flat,
-                     "ok" if b_cmp and b_ok / b_cmp >= 0.999 else "attention"] +
+                     "ok" if contract_cmp and contract_ok / contract_cmp >= 0.999
+                     else "attention"] +
                     [x for f in fields for x in
                      (counts[(f, "cmp")], counts[(f, "exact")], counts[(f, "tol")],
                       counts[(f, "diff")], counts[(f, "null")])] +
