@@ -166,3 +166,59 @@ change changes the signature/key immediately.
 The next highest-value work is not in Coder3's boundary: the first-call
 `/api/fts` tail (25–41 s on some symbols) and the technical page's 1.2 MB
 `/api/market` fetch. Both are specified in the handoff with reproduction steps.
+
+## 6. Final validation and delivery (2026-10-23)
+
+The branch was pushed and fast-forwarded to `main`. A full-suite validation was
+then attempted on the merged code. It found four regressions that the targeted
+P2 work had not caught; they were fixed in `558f8daa` before the final docs
+commit:
+
+| Area | Regression | Fix |
+|---|---|---|
+| notifications | source-health cache key used raw `MAX(publish_date)` | key on `COUNT(*) + MAX(rowid)` (both cheap; no raw date comparison) |
+| funnel | body-cache signature used screener cache key/ts, so the warm race built two 7.5 MB bodies | use the scan payload's own `as_of` |
+| screener | `gate=0` query parameter broke the "only preset/chain/symbols" contract and was a bypass door | restore the gated `/api/screener`; serve the inspector from `/api/screener/row`, which never emits `funnel_candidate` and reports `state=skipped` |
+| mstat | idle/session TTL read `datetime.now()`, bypassing the SWR guard's injected clock and extending the test TTL to 300 s | read the module `time` and fall back to the session TTL |
+
+Post-fix targeted results (all green): screener funnel gate 30/30, scoped
+screener 7/7, funnel warm deadlock 7/7, funnel signature 4/4, funnel GET parity
+2/2, market row 4/4, mstat SWR 16/16, mstat cache durability 4/4, notification
+source cache 6/6, canonical publish date 24/24, screener/card parity PASS,
+engine-path parity 7/7, materialized FTS results 109/109. The HTTP smoke shows
+`/api/screener/row` returning one row with `funnel_gate.state=skipped` and no
+`funnel_candidate`, while `/api/screener` remains `applied` with the flag.
+TypeScript is clean and the production build passes.
+
+Full-suite attempt, before the fixes: **163 OK / 15 FAIL / 1 skipped**. The 15
+were: the four regressions above, three timeouts (confidence engine,
+screener/card parity, engine-path parity — the two parity guards pass when run
+alone), six `ModuleNotFoundError` failures caused by the portable Python's
+`ignore_environment=1`/`safe_path=True` (all pass when `dev/` is placed on
+`sys.path`), and two pre-existing failures (`repo hygiene` 122/123:
+tracked-but-ignored PNGs under `_audit/`; `tsetmc_p0` 164/165). The full Python
+suite was not rerun end-to-end after the fixes; the affected guards were rerun
+individually. `confidence_engine_v973` did not finish even with a 28-minute
+budget and remains **NOT_COMPLETED**.
+
+Full Vitest attempt: stopped after **16/201** spec files because the suite was
+not tractable in the session budget; the partial log has 435 passing test lines
+and four `Test timed out in 5000ms` failures under CPU contention. The five
+touched specs pass 94/94 when run alone. `fundamental-codal-poll` remains the
+known 3-failure pre-existing file.
+
+`mstat_status_panels_contract_v1` remains **201/203** with the same
+`free_float`/`official_impact` failures reproduced against the baseline before
+the P2-R6 changes. `fundamental-codal-poll.spec.tsx` remains 3 failures
+(pre-existing, reproduced with P2-R6 stashed). Live-session behavior,
+cold-server startup and technical overlay toggles remain **NOT_MEASURED**.
+
+Delivery state: pre-merge `main` was `784d9d8a`; the Phase 2 branch
+`mission/coder3-performance-resource-2026-10-22` ended at `2d4db99e` and was
+pushed; `main` was fast-forwarded `784d9d8a..2d4db99e`. The regression-fix
+commit is `558f8daa`; the final docs commit follows it. No history was rewritten
+and no force push was used.
+
+The two out-of-scope costs remain open and are unchanged by this work: the
+first `/api/fts` call tail on some symbols (25–41 s) and the technical page's
+full `/api/market` fetch (1,220,692 B); both are in the Coder2 handoff.

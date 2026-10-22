@@ -1,7 +1,7 @@
 {
   "mission": "BorsTerminal Performance Phase 2 (P2-R1..P2-R6)",
   "branch": "mission/coder3-performance-resource-2026-10-22",
-  "code_head": "e518e91f",
+  "code_head": "558f8daa",
   "evidence": "this commit adds the validation JSON and report accuracy fixes",
   "phase1_base": "a4228cef",
   "date": "2026-10-22",
@@ -15,63 +15,346 @@
     "server_state": "warm; cold-server startup not measured"
   },
   "rounds": {
-    "P2-R1": {"status": "done", "commit": "482863a5"},
-    "P2-R2": {"status": "done", "commit": "bd250653"},
-    "P2-R3": {"status": "done", "commit": "568e32e3"},
-    "P2-R4": {"status": "done", "commit": "465cbd11"},
-    "P2-R5": {"status": "done", "commit": "7fd7e611"},
-    "P2-R6": {"status": "done", "commit": "e518e91f"}
+    "P2-R1": {
+      "status": "done",
+      "commit": "482863a5"
+    },
+    "P2-R2": {
+      "status": "done",
+      "commit": "bd250653"
+    },
+    "P2-R3": {
+      "status": "done",
+      "commit": "568e32e3"
+    },
+    "P2-R4": {
+      "status": "done",
+      "commit": "465cbd11"
+    },
+    "P2-R5": {
+      "status": "done",
+      "commit": "7fd7e611"
+    },
+    "P2-R6": {
+      "status": "done",
+      "commit": "e518e91f"
+    }
   },
   "final_measurements": {
-    "fts_switch_click_ready_ms": {"samples": [1674, 1693, 1246, 1067, 1794, 1574], "median": 1624, "min": 1067, "max": 1794},
-    "fts_switch_requests": [8, 10],
-    "fts_switch_bytes_kib": [9, 16],
+    "fts_switch_click_ready_ms": {
+      "samples": [
+        1674,
+        1693,
+        1246,
+        1067,
+        1794,
+        1574
+      ],
+      "median": 1624,
+      "min": 1067,
+      "max": 1794
+    },
+    "fts_switch_requests": [
+      8,
+      10
+    ],
+    "fts_switch_bytes_kib": [
+      9,
+      16
+    ],
     "fts_switch_baseline_pre_r1_ms": 6900,
     "fts_switch_after_r1_ms": 2300,
     "hover_ab_final": [
-      {"symbol": "آبنوس", "direct_ready_ms": 1545, "hover_ready_ms": 553, "prefetch_lead_ms": 363},
-      {"symbol": "آتش", "direct_ready_ms": 1458, "hover_ready_ms": 465, "prefetch_lead_ms": 364}
+      {
+        "symbol": "آبنوس",
+        "direct_ready_ms": 1545,
+        "hover_ready_ms": 553,
+        "prefetch_lead_ms": 363
+      },
+      {
+        "symbol": "آتش",
+        "direct_ready_ms": 1458,
+        "hover_ready_ms": 465,
+        "prefetch_lead_ms": 364
+      }
     ],
     "hover_sweep_requests": 0,
     "hover_dwell_requests": 2,
-    "scoped_screener_ms": {"before": [600, 2600], "after": [100, 1100], "warm": [137, 190]},
-    "funnel_conditional_get": {"status": 304, "ms": 19, "bytes": 0, "after_9s_ms": 118, "after_9s_bytes": 0},
+    "scoped_screener_ms": {
+      "before": [
+        600,
+        2600
+      ],
+      "after": [
+        100,
+        1100
+      ],
+      "warm": [
+        137,
+        190
+      ]
+    },
+    "funnel_conditional_get": {
+      "status": 304,
+      "ms": 19,
+      "bytes": 0,
+      "after_9s_ms": 118,
+      "after_9s_bytes": 0
+    },
     "low_cost_samples": {
-      "funnel_conditional_25": {"min": 24, "p50": 33, "p95": 153, "max": 627, "mean": 70, "bytes": 0},
-      "scoped_screener_gate0_25": {"min": 33, "p50": 61, "p95": 216, "max": 2103, "mean": 156},
+      "funnel_conditional_25": {
+        "min": 24,
+        "p50": 33,
+        "p95": 153,
+        "max": 627,
+        "mean": 70,
+        "bytes": 0
+      },
+      "scoped_screener_gate0_25": {
+        "min": 33,
+        "p50": 61,
+        "p95": 216,
+        "max": 2103,
+        "mean": 156
+      },
       "note": "one full funnel fetch immediately after the P2-R6 server restart took 6150 ms with an empty body cache; not steady state"
     },
-    "funnel_first_200": {"ms": 1396, "bytes": 13429057},
-    "startup_cold_data_ready_ms": {"samples": [4076, 4448, 3733], "median": 4076},
-    "startup_warm_reload_ms": {"samples": [820, 849, 747], "median": 820},
+    "funnel_first_200": {
+      "ms": 1396,
+      "bytes": 13429057
+    },
+    "startup_cold_data_ready_ms": {
+      "samples": [
+        4076,
+        4448,
+        3733
+      ],
+      "median": 4076
+    },
+    "startup_warm_reload_ms": {
+      "samples": [
+        820,
+        849,
+        747
+      ],
+      "median": 820
+    },
     "idle_10s_cpu_ms": 150,
     "idle_60s_cpu_ms": 805,
     "idle_60s_heap_delta_kib": 71,
     "idle_60s_requests": 0,
-    "cycles": {"count": 6, "back_retries": 0, "cpu_ms": [672, 1350], "requests_per_cycle": [7, 11], "dom_nodes": 1469, "listeners": 286},
-    "strategy_tree": {"open_ms": 1327, "actions_ms": [24, 35], "dom_nodes": 663, "svg_nodes": 248},
-    "technical": {"chart_requests_per_open": 1, "fts_requests_per_open": 1, "market_feed_bytes": 1220692, "cpu_ms_per_open": [1287, 2757], "note": "protected; market feed handed to Coder2"}
+    "cycles": {
+      "count": 6,
+      "back_retries": 0,
+      "cpu_ms": [
+        672,
+        1350
+      ],
+      "requests_per_cycle": [
+        7,
+        11
+      ],
+      "dom_nodes": 1469,
+      "listeners": 286
+    },
+    "strategy_tree": {
+      "open_ms": 1327,
+      "actions_ms": [
+        24,
+        35
+      ],
+      "dom_nodes": 663,
+      "svg_nodes": 248
+    },
+    "technical": {
+      "chart_requests_per_open": 1,
+      "fts_requests_per_open": 1,
+      "market_feed_bytes": 1220692,
+      "cpu_ms_per_open": [
+        1287,
+        2757
+      ],
+      "note": "protected; market feed handed to Coder2"
+    }
   },
   "checks": {
-    "typescript": {"status": "pass", "errors": 0},
-    "production_build": {"status": "pass"},
-    "vitest_touched_combined": {"passed": 73, "failed": 3, "status": "fail_preexisting", "note": "fundamental-codal-poll.spec.tsx DB-status polling; reproduced on 7fd7e611 with P2-R6 stashed"},
-    "vitest_inspector_screener_individual": {"passed": 20, "failed": 0, "status": "pass"},
-    "funnel_get_parity_v1": {"passed": 2, "failed": 0, "status": "pass"},
-    "funnel_signature_v1": {"passed": 4, "failed": 0, "status": "pass"},
-    "market_row_endpoint_v1": {"passed": 4, "failed": 0, "status": "pass"},
-    "screener_symbol_scope_v1": {"passed": 7, "failed": 0, "status": "pass", "note": "incl. new gate=0 parity checks"},
-    "mstat_status_panels_contract_v1": {"passed": 201, "failed": 2, "status": "preexisting", "note": "free_float/official_impact proven pre-existing since ef92c89c"},
-    "full_python_suite": {"status": "NOT_COMPLETED"},
-    "full_vitest_suite": {"status": "NOT_COMPLETED"},
-    "live_session": {"status": "NOT_MEASURED"},
-    "cold_server_startup": {"status": "NOT_MEASURED"},
-    "technical_overlay_toggles": {"status": "NOT_MEASURED", "note": "no pattern-toggle control exposed in the default technical view"}
+    "typescript": {
+      "status": "pass",
+      "errors": 0,
+      "note": "after regression fixes"
+    },
+    "production_build": {
+      "status": "pass",
+      "seconds": 42.23
+    },
+    "vitest_touched_combined": {
+      "passed": 73,
+      "failed": 3,
+      "status": "fail_preexisting",
+      "note": "fundamental-codal-poll.spec.tsx DB-status polling; reproduced on 7fd7e611 with P2-R6 stashed"
+    },
+    "vitest_inspector_screener_individual": {
+      "passed": 20,
+      "failed": 0,
+      "status": "pass"
+    },
+    "funnel_get_parity_v1": {
+      "passed": 2,
+      "failed": 0,
+      "status": "pass"
+    },
+    "funnel_signature_v1": {
+      "passed": 4,
+      "failed": 0,
+      "status": "pass",
+      "note": "signature uses screener scan as_of"
+    },
+    "market_row_endpoint_v1": {
+      "passed": 4,
+      "failed": 0,
+      "status": "pass"
+    },
+    "screener_symbol_scope_v1": {
+      "passed": 7,
+      "failed": 0,
+      "status": "pass",
+      "note": "incl. /api/screener/row gate-free checks"
+    },
+    "mstat_status_panels_contract_v1": {
+      "passed": 201,
+      "failed": 2,
+      "status": "preexisting",
+      "note": "free_float/official_impact proven pre-existing since ef92c89c"
+    },
+    "full_python_suite": {
+      "status": "fail_then_fixed_not_rerun",
+      "first_run": {
+        "ok": 163,
+        "fail": 15,
+        "skip": 1,
+        "silent": 31
+      },
+      "note": "4 regressions fixed and retested; 2 pre-existing; 3 timeouts (2 parity guards pass alone); 6 import-path failures pass with dev/ on sys.path"
+    },
+    "full_vitest_suite": {
+      "status": "NOT_COMPLETED"
+    },
+    "live_session": {
+      "status": "NOT_MEASURED"
+    },
+    "cold_server_startup": {
+      "status": "NOT_MEASURED"
+    },
+    "technical_overlay_toggles": {
+      "status": "NOT_MEASURED",
+      "note": "no pattern-toggle control exposed in the default technical view"
+    },
+    "vitest_touched_post_fix": {
+      "files": 5,
+      "passed": 94,
+      "failed": 0,
+      "status": "pass"
+    },
+    "vitest_full_partial": {
+      "status": "NOT_COMPLETED",
+      "files_seen": 16,
+      "files_total": 201,
+      "pass_lines": 435,
+      "failures": 4,
+      "failure_kind": "Test timed out in 5000ms under load"
+    },
+    "screener_funnel_gate_v1": {
+      "passed": 30,
+      "failed": 0,
+      "status": "pass"
+    },
+    "funnel_warm_deadlock_v1": {
+      "passed": 7,
+      "failed": 0,
+      "status": "pass"
+    },
+    "mstat_swr_v1111": {
+      "passed": 16,
+      "failed": 0,
+      "status": "pass"
+    },
+    "mstat_cache_durability_v1": {
+      "passed": 4,
+      "failed": 0,
+      "status": "pass"
+    },
+    "notifications_sources_cache_v1": {
+      "passed": 6,
+      "failed": 0,
+      "status": "pass"
+    },
+    "codal_publish_date_v1089": {
+      "passed": 24,
+      "failed": 0,
+      "status": "pass"
+    },
+    "fts_screener_card_parity_v10": {
+      "status": "pass"
+    },
+    "fts_engine_paths_parity_v1076": {
+      "passed": 7,
+      "failed": 0,
+      "status": "pass"
+    },
+    "test_fts_results_materialize": {
+      "passed": 109,
+      "failed": 0,
+      "status": "pass"
+    },
+    "fts_import_path_guards": {
+      "status": "pass",
+      "note": "portable Python has ignore_environment=1/safe_path=True; dev/ injected on sys.path",
+      "guards": {
+        "codal_period_canonical_v1075": "51/0",
+        "codal_reference_select_v1088": "50/0",
+        "codal_unit_scale_v1090": "34/0",
+        "price_last_value_v1070": "26/0",
+        "indicator_math_v1074": "28/0"
+      }
+    },
+    "repo_hygiene_v97": {
+      "passed": 122,
+      "failed": 1,
+      "status": "preexisting",
+      "note": "_audit tracked-but-ignored PNGs; reproduces on baseline"
+    },
+    "tsetmc_p0_v1076": {
+      "passed": 164,
+      "failed": 1,
+      "status": "preexisting",
+      "note": "reproduces identically on 784d9d8a"
+    },
+    "fundamental_codal_poll": {
+      "failed": 3,
+      "status": "preexisting",
+      "note": "reproduced with P2-R6 stashed"
+    },
+    "confidence_engine_v973": {
+      "status": "NOT_COMPLETED",
+      "note": "timed out in the suite and again standalone at 28 minutes"
+    }
   },
   "ownership": {
     "protected_files_modified": [],
     "verified_by": "git diff --name-only a4228cef..HEAD filtered for api/execution.py, api/chart.py, tools/ra365_*, frontend/src/features/technical/**, broker/AutoClicker/Sarkhati",
     "handoff": "docs/CODER3-PERFORMANCE-HANDOFF-TO-CODER2.md"
   },
-  "git": {"pushed": false, "merged_to_main": false, "migrations_run": false, "operational_db_mutated": false}
+  "git": {
+    "base_main": "784d9d8a",
+    "phase2_head": "2d4db99e",
+    "fix_head": "558f8daa",
+    "pushed": true,
+    "merged_to_main": true,
+    "final_main": "docs commit after 558f8daa",
+    "force_push": false,
+    "history_rewritten": false,
+    "migrations_run": false,
+    "operational_db_mutated": false
+  },
+  "final_validation_date": "2026-10-23"
 }
