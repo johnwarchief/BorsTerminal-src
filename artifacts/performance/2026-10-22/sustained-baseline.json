@@ -1,0 +1,77 @@
+{
+ "base": "http://127.0.0.1:8000",
+ "cycles": 6,
+ "routes": [
+  "/market",
+  "/market-status",
+  "/fundamental",
+  "/master",
+  "/technical"
+ ],
+ "samples": [
+  {
+   "label": "baseline",
+   "heapMB": 7.3,
+   "nodes": 721,
+   "listeners": 233,
+   "documents": 2,
+   "apiResources": 5,
+   "route": "#/master"
+  },
+  {
+   "label": "cycle-1",
+   "heapMB": 23.9,
+   "nodes": 4278,
+   "listeners": 844,
+   "documents": 2,
+   "apiResources": 47,
+   "route": "#/technical/%D9%88%D8%AA%D8%B9%D8%A7%D9%88%D9%86"
+  },
+  {
+   "label": "cycle-2",
+   "heapMB": 27,
+   "nodes": 4278,
+   "listeners": 844,
+   "documents": 2,
+   "apiResources": 95,
+   "route": "#/technical/%D9%88%D8%AA%D8%B9%D8%A7%D9%88%D9%86"
+  },
+  {
+   "label": "cycle-3",
+   "heapMB": 27.7,
+   "nodes": 4278,
+   "listeners": 844,
+   "documents": 2,
+   "apiResources": 138,
+   "route": "#/technical/%D9%88%D8%AA%D8%B9%D8%A7%D9%88%D9%86"
+  },
+  {
+   "label": "cycle-4",
+   "heapMB": 33.4,
+   "nodes": 4284,
+   "listeners": 844,
+   "documents": 2,
+   "apiResources": 177,
+   "route": "#/technical/%D9%88%D8%AA%D8%B9%D8%A7%D9%88%D9%86"
+  },
+  {
+   "label": "cycle-5",
+   "heapMB": 34.2,
+   "nodes": 4284,
+   "listeners": 844,
+   "documents": 2,
+   "apiResources": 177,
+   "route": "#/technical/%D9%88%D8%AA%D8%B9%D8%A7%D9%88%D9%86"
+  },
+  {
+   "label": "cycle-6",
+   "heapMB": 34.4,
+   "nodes": 4284,
+   "listeners": 844,
+   "documents": 2,
+   "apiResources": 177,
+   "route": "#/technical/%D9%88%D8%AA%D8%B9%D8%A7%D9%88%D9%86"
+  }
+ ],
+ "errors": []
+}

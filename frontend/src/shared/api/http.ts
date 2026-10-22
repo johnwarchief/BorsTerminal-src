@@ -63,6 +63,32 @@ const RETRYABLE = new Set([403, 429, 500, 502, 503, 504]);
  * از `useMarketFeed` کوئری می‌زد و ردیف‌های دوفیلدیِ او به کشِ تابلو نشت می‌کرد.
  */
 const conditional = new Map<string, { etag: string; data: unknown }>();
+/** سقفِ کشِ شرطی. کلید شاملِ URL است و مسیرهایِ نمادمحور (`/api/chart/<sym>`)
+ *  هر کدام یک ورودیِ تازه می‌سازند؛ بی‌سقف، یک نشستِ طولانی با صدها نماد
+ *  صدها بدنهٔ پارس‌شده (چارت ~۱MB) را تا بستنِ تب نگه می‌داشت. ۳۲ ورودیِ
+ *  آخر (LRU) همان سودِ ۳۰۴ را برایِ مسیرهایِ پرتکرار نگه می‌دارد و حافظه را
+ *  کران‌دار می‌کند. اخراج فقط «۳۰۴ِ بعدی» را از دست می‌دهد، نه داده یا درخواست. */
+const CONDITIONAL_MAX = 32;
+
+function conditionalGet(key: string) {
+  const hit = conditional.get(key);
+  if (hit) {
+    // تازه‌سازیِ ترتیب: ورودیِ پرتکرار آخر می‌رود، نه اول.
+    conditional.delete(key);
+    conditional.set(key, hit);
+  }
+  return hit;
+}
+
+function conditionalSet(key: string, value: { etag: string; data: unknown }) {
+  conditional.delete(key);
+  conditional.set(key, value);
+  while (conditional.size > CONDITIONAL_MAX) {
+    const oldest = conditional.keys().next().value as string | undefined;
+    if (oldest === undefined) break;
+    conditional.delete(oldest);
+  }
+}
 
 const schemaIds = new WeakMap<ZodType, number>();
 let schemaSeq = 0;
@@ -148,7 +174,7 @@ export async function http<T>(url: string, opts: HttpOptions = {}): Promise<T> {
 
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
-      const revalidate = method === 'GET' && !noCache ? conditional.get(cKey) : undefined;
+      const revalidate = method === 'GET' && !noCache ? conditionalGet(cKey) : undefined;
       const res = await fetch(url, {
         headers: {
           Accept: 'application/json',
@@ -183,7 +209,7 @@ export async function http<T>(url: string, opts: HttpOptions = {}): Promise<T> {
       // `?.` چون پاسخ‌هایِ ماک‌شدهٔ تست‌ها ممکن است Responseِ کامل نباشند؛
       // نبودِ هدر فقط یعنی «این پاسخ قابلِ اعتبارسنجیِ مجدد نیست».
       const etag = res.headers?.get?.('etag') ?? null;
-      if (method === 'GET' && etag && !noCache) conditional.set(cKey, { etag, data: parsed.data });
+      if (method === 'GET' && etag && !noCache) conditionalSet(cKey, { etag, data: parsed.data });
       return parsed.data as T;
     } catch (e) {
       if (e instanceof HttpError) throw e;

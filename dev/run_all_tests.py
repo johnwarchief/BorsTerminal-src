@@ -36,6 +36,9 @@ SUITES = [
     # PERF-R1: بی‌تک‌پروازگی، هر درخواستِ سردِ هم‌زمان اسنپ‌شاتِ خودش را می‌ساخت
     # (سنجشِ مرورگر: ۱۰٫۸s تا آمادگیِ تبِ وضعیت بازار).
     ('dev/mstat_snapshot_singleflight_v1.py', 'cold concurrent panel requests share one snapshot build'),
+    # PERF-R5: بررسیِ idempotentِ اسکیما هر درخواست اجرا می‌شد؛ حالا یک‌بار
+    # به‌ازایِ (فایل، schema_version) و با باطل‌شدنِ درست پس از ALTER بیرونی.
+    ('dev/get_db_schema_once_v1.py', 'get_db schema checks run once per DB schema_version'),
     # PERF-R2: پنلِ سلامتِ منبع هر درخواست دو اسکنِ کامل می‌زد (۳۴۳ms برایِ
     # ۳۹۸بایت)؛ کشِ محتوا-کلید باید همان عدد را بدهد و با درجِ تازه باطل شود.
     ('dev/notifications_sources_cache_v1.py', 'notification source facts cache by DB identity + content key'),
