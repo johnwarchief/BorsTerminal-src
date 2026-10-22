@@ -2050,6 +2050,12 @@ def _mofid_account_readiness(*, money: Mapping[str, Any],
     buy_ok = money.get("buying_power") is not None and unit_ok
     sellable_states = sorted({str(p.get("sellable_state") or "")
                               for p in positions if p.get("sellable_state")})
+    queue_ids = {str(r.broker_order_id) for r in list(orders) + list(today)
+                 if r.broker_order_id}
+    queue_status = "BLOCKED" if queue_ids else "NOT_MEASURED"
+    queue_detail = ("%d سفارش شناسه‌دار هست، ولی قراردادِ فقط‌خواندنیِ جایگاه "
+                    "در این راند مسدود است" % len(queue_ids) if queue_ids
+                    else "سفارشِ واقعیِ شناسه‌دار نیست؛ جایگاه قابلِ اندازه‌گیری نیست")
     gates = [
         {"id": "session", "label": "نشست",
          "status": "PASS" if steps.get("session") == "PASS" else "BLOCKED",
@@ -2090,17 +2096,35 @@ def _mofid_account_readiness(*, money: Mapping[str, Any],
          "detail": "سفارشِ باز/امروز نیست؛ شناسهٔ واقعی برایِ read-back وجود ندارد"
                    if not (orders or today) else "سفارش هست؛ read-back اجرا نشده",
          "source": "open-orders/today-order/state/detail"},
+        {"id": "queue_position", "label": "جایگاهِ صف",
+         "status": queue_status, "detail": queue_detail,
+         "source": "mofid:/Order/OrderPlaceInfo + ls:orderplace:{orderId}"},
     ]
     warnings = [g for g in gates if g["status"] != "PASS"]
     return {
         "probe_ok": True,
+        # جایگاه/read-back عمداً از این جمع بیرون‌اند: دو مفهومِ مستقل‌اند.
         "read_only_account_ready": all(g["status"] == "PASS"
-                                       for g in gates if g["id"] != "read_back"),
+                                       for g in gates
+                                       if g["id"] not in ("read_back",
+                                                          "queue_position")),
         "live_enabled": False,
         "live_ready": False,
         "sellable_states": sellable_states,
         "counts": {"positions": len(positions), "open_orders": len(orders),
                    "today_orders": len(today), "order_details": len(details)},
+        "queue_position": {
+            "source_status": "FIRST_PARTY_CLIENT_OBSERVED",
+            "source_verified": False,
+            "result_known": False,
+            "ready": False,
+            "status": queue_status,
+            "orders_with_id": len(queue_ids),
+            "active_paths": ["POST /Order/OrderPlaceInfo",
+                             "POST /Order/OrderPlace",
+                             "ls:orderplace:{orderId}"],
+            "reason": queue_detail,
+        },
         "freshness": money.get("freshness"),
         "server_timestamp": server_ts,
         "gates": gates,
@@ -3202,6 +3226,13 @@ def _remember_queue(order_id: str, snap: Any) -> list[dict[str, Any]]:
         return [dict(x) for x in arr]
 
 
+def _queue_source_verified(contract: Mapping[str, Any]) -> bool:
+    """فقط trueِ صریح؛ قراردادِ مشاهده‌شده بدونِ پاسخِ واقعی، تأییدشده نیست."""
+    api = contract.get("api")
+    return (contract.get("source_verified") is True
+            or (isinstance(api, Mapping) and api.get("source_verified") is True))
+
+
 def _queue_monitor() -> dict[str, Any]:
     """فهرستِ سفارش‌هایِ واقعی + جایگاهِ صف، بدونِ ساختِ رتبه/ID.
 
@@ -3210,18 +3241,23 @@ def _queue_monitor() -> dict[str, Any]:
     """
     now = time.strftime("%Y-%m-%dT%H:%M:%S")
     contract = _queue_contract()
+    source_verified = _queue_source_verified(contract)
     block = _source_block()
     if block:
         return {"status": "blocked", "supported": False, "queue_supported": False,
                 "rows": [], "reason": block[1], "contract": contract,
                 "claims_first_rank": False, "observed_at": now,
+                "queue_source_verified": source_verified,
+                "queue_result_known": False,
                 "poll_interval_ms": _QUEUE_POLL_MS}
     caps = _ACTIVE_ADAPTER.capabilities()
     if not caps.list_orders:
         return {"status": "success", "supported": False, "queue_supported": False,
                 "rows": [], "reason": "کارگزاری فهرست سفارش نمی‌دهد",
                 "contract": contract, "claims_first_rank": False,
-                "observed_at": now, "poll_interval_ms": _QUEUE_POLL_MS}
+                "observed_at": now, "queue_source_verified": source_verified,
+                "queue_result_known": False,
+                "poll_interval_ms": _QUEUE_POLL_MS}
     try:
         records = _ACTIVE_ADAPTER.get_orders()
     except BrokerError as e:
@@ -3229,7 +3265,9 @@ def _queue_monitor() -> dict[str, Any]:
                 "queue_supported": bool(caps.queue_position), "rows": [],
                 "reason": "%s: %s" % (e.code.value, str(redact(e.detail))[:160]),
                 "contract": contract, "claims_first_rank": False,
-                "observed_at": now, "poll_interval_ms": _QUEUE_POLL_MS}
+                "observed_at": now, "queue_source_verified": source_verified,
+                "queue_result_known": False,
+                "poll_interval_ms": _QUEUE_POLL_MS}
     rows: list[dict[str, Any]] = []
     for rec in records:
         oid = str(rec.broker_order_id or "")
@@ -3286,7 +3324,9 @@ def _queue_monitor() -> dict[str, Any]:
             "queue_supported": bool(caps.queue_position), "rows": rows,
             "reason": "" if rows else "هیچ سفارشِ باز یا امروزیِ واقعی برای پایش نیست",
             "contract": contract, "claims_first_rank": False,
-            "observed_at": now, "poll_interval_ms": _QUEUE_POLL_MS,
+            "observed_at": now, "queue_source_verified": source_verified,
+            "queue_result_known": any(r["queue_status"] == "KNOWN" for r in rows),
+            "poll_interval_ms": _QUEUE_POLL_MS,
             "source": "adapter:%s" % ADAPTER_KIND}
 
 

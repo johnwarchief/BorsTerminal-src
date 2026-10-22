@@ -103,18 +103,43 @@ POSITION_FIELD_MAP = {
     "settled": "currentAsset + todaySoldAsset - todayBoughtAsset",
     "sellable": "max(0, min(currentAsset, settled) - openSellOrders)",
 }
-#: Round 19: قراردادِ جایگاهِ صف در بستهٔ اول‌طرفِ Titan.
-#: API‌اش POST است (OrderPlace/OrderPlaceInfo) و در راندِ GET-only صدا زده نمی‌شود؛
-#: UI دو ستونِ دقیق دارد. `/Rlc/MarketSheet` فقط کتابِ تجمیعی است، نه رتبهٔ کاربر.
+#: Round 19/20: قراردادِ جایگاهِ صف در بستهٔ اول‌طرفِ Titan.
+#: هر دو مسیرِ POST، *پرسشِ خواندنی* با بدنهٔ orderId هستند (نام‌هایِ
+#: GetOrderPlaceAPI/GetOrderPlacePostAPI و dto=response.orderPlaces)؛
+#: نوشتن‌ها جدا هستند (`/Order/send` POST، `/Order/update` PUT، `/Order/delete`
+#: DELETE). مسیرِ real-time یک WebSocket رویِ ls.mofidonline.com با تاپیک
+#: orderplace:{orderId} و فیلدهایِ placement/volume-ahead است. با این حال هیچ‌کدام
+#: در این راند صدا زده نشده‌اند و «تأییدشده با پاسخِ واقعی» نیستند.
 MOFID_QUEUE_CONTRACT = {
     "api": {
-        "paths": ["/Order/OrderPlace", "/Order/OrderPlaceInfo"],
+        "paths": ["/Order/OrderPlaceInfo", "/Order/OrderPlace"],
         "method": "POST", "base": "gateway",
+        "client_names": ["GetOrderPlaceAPI", "GetOrderPlacePostAPI"],
+        "request_observed": {"orderId": ["<broker order id>"]},
+        "read_only_by_code_evidence": True,
         "response": "data.orderPlaces",
         "fields": ["orderId", "orderPlace", "volumeAhead"],
         "status": "FIRST_PARTY_CLIENT_OBSERVED",
+        "source_verified": False,
         "invoked": False,
-        "reason": "POST outside the GET-only read-only allowlist of this round",
+        "reason": "پرسشِ POST با orderId؛ allowlistِ GET-only این راند آن را صدا نزده است",
+    },
+    "stream": {
+        "transport": "WebSocket (Orbis LS)",
+        "origin": "https://ls.mofidonline.com",
+        "topic": "orderplace:{orderId}",
+        "fields": ["isin", "volume-ahead", "placement"],
+        "snapshot": False,
+        "read_only": True,
+        "status": "FIRST_PARTY_CLIENT_OBSERVED",
+        "source_verified": False,
+        "invoked": False,
+        "reason": "نیازمندِ نشستِ زنده و یک orderId واقعیِ موجود است",
+    },
+    "mutation_endpoints_separate": {
+        "send": {"path": "/Order/send", "method": "POST"},
+        "update": {"path": "/Order/update", "method": "PUT"},
+        "delete": {"path": "/Order/delete", "method": "DELETE"},
     },
     "ui": {
         "columns": [
@@ -123,6 +148,7 @@ MOFID_QUEUE_CONTRACT = {
         ],
         "status": "DOM_HEADERS_OBSERVED",
         "row_mapping": "UNVERIFIED (no real open order row to bind orderId→row)",
+        "zero_rendering": "client maps falsy orderPlace/volumeAhead to '-'",
         "invoked": False,
     },
     "market_sheet": {
@@ -132,8 +158,12 @@ MOFID_QUEUE_CONTRACT = {
     },
     "rank_semantics": {
         "orderPlace": "raw order-place value from the broker; 0/first not inferred",
+        "placement": "wire field of orderplace:{orderId}; raw; 0/first not inferred",
         "volumeAhead": "raw volume-ahead value; unit UNVERIFIED",
+        "scope": "per orderId (one symbol/side); not a market-wide rank",
+        "zero_meaning": "client shows 0 as '-', so 0 is not treated as first",
     },
+    "source_verified": False,
 }
 
 

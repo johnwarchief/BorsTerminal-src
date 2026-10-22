@@ -38,7 +38,8 @@ const ui = vi.hoisted(() => ({
 const emptyQueue = (): Record<string, unknown> => ({
   status: 'success', supported: false, queue_supported: false, rows: [],
   reason: 'no real open/today orders visible', contract: null,
-  claims_first_rank: false, observed_at: '2026-10-22T10:00:00',
+  claims_first_rank: false, queue_source_verified: false,
+  queue_result_known: false, observed_at: '2026-10-22T10:00:00',
   poll_interval_ms: 10000, source: 'adapter:easytrader',
 });
 
@@ -106,7 +107,7 @@ vi.mock('@features/portfolio/lib/orderClient', () => ({
   }),
   useQueueMonitor: () => ({
     data: ui.queue, isPending: false, isFetching: false, error: null,
-    refetch: vi.fn(),
+    dataUpdatedAt: Date.now(), refetch: vi.fn(),
   }),
   queueRankText: (row: Record<string, unknown>) =>
     (row.queue_status === 'KNOWN' && row.queue_position != null
@@ -261,8 +262,10 @@ describe('AutoClicker — تنظیمات و آمادگی', () => {
         probe_ok: true, read_only_account_ready: false,
         gates: [{ id: 'session', status: 'PASS' }, { id: 'unit', status: 'PASS' },
           { id: 'sellable', status: 'UNVERIFIED' },
+          { id: 'queue_position', status: 'NOT_MEASURED' },
           { id: 'freshness', status: 'UNVERIFIED' }],
         warnings: [{ id: 'sellable', status: 'UNVERIFIED' },
+          { id: 'queue_position', status: 'NOT_MEASURED' },
           { id: 'freshness', status: 'UNVERIFIED' }],
       },
     });
@@ -291,6 +294,8 @@ describe('AutoClicker — تنظیمات و آمادگی', () => {
       .toContain('ناقص');
     expect(screen.getByTestId('autoclicker-mofid-account-readiness').textContent)
       .toContain('sellable:UNVERIFIED');
+    expect(screen.getByTestId('autoclicker-mofid-account-readiness').textContent)
+      .toContain('queue_position:NOT_MEASURED');
     expect(screen.getByTestId('autoclicker-mofid-freshness').textContent)
       .toContain('LOCAL_FETCH_ONLY');
     expect(screen.getByTestId('autoclicker-mofid-freshness').textContent)
@@ -344,6 +349,7 @@ describe('AutoClicker — تنظیمات و آمادگی', () => {
   it('جایگاه KNOWN را خام و با منبع/تاریخ نشان می‌دهد و ۰ را «اول» نمی‌خواند', async () => {
     ui.queue = {
       ...emptyQueue(), supported: true, queue_supported: true,
+      queue_source_verified: false, queue_result_known: true,
       source: 'adapter:easytrader', rows: [{
         order_id: 'O-88', symbol: 'TEST', side: 'buy', price: 1000, quantity: 10,
         execution_status: 'accepted', order_state: 'open',
@@ -369,6 +375,12 @@ describe('AutoClicker — تنظیمات و آمادگی', () => {
     const series = screen.getByTestId('autoclicker-queue-series-0').textContent ?? '';
     expect(series).toContain('۳');
     expect(series).toContain('۰');
+    expect(screen.getByTestId('autoclicker-queue-source').textContent)
+      .toContain('دریافت در رابط');
+    expect(screen.getByTestId('autoclicker-queue-source-state').textContent)
+      .toContain('تأییدنشده');
+    expect(screen.getByTestId('autoclicker-queue-result-state').textContent)
+      .toContain('خوانده شد');
   });
 
   it('تلمتریِ آخرین اجرا تأخیرها را جدا نشان می‌دهد و یک‌طرفه نمی‌سازد', async () => {
@@ -399,5 +411,9 @@ describe('AutoClicker — تنظیمات و آمادگی', () => {
     expect(tel).toContain('۲۱۰');
     expect(tel).toContain('۱۲.۵');
     expect(tel).toContain('RTT/2');
+    await waitFor(() => expect(screen.getByTestId('autoclicker-ui-timing')).toBeTruthy());
+    const uiTiming = screen.getByTestId('autoclicker-ui-timing').textContent ?? '';
+    expect(uiTiming).toContain('ثبت در رابط');
+    expect(uiTiming).toContain('ms');
   });
 });

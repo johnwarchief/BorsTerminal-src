@@ -141,6 +141,7 @@ export default function AutoClickerPage() {
   const mofidSession = mofidSessionQ.data;
   const [mofidProbe, setMofidProbe] = useState<MofidProbeView | null>(null);
   const [mofidBusy, setMofidBusy] = useState('');
+  const [uiTiming, setUiTiming] = useState<{ ms: number; at: string } | null>(null);
   const mofidState = mofidBusy === 'verify' ? 'AUTHENTICATING'
     : String(mofidProbe?.state ?? mofidSession?.state ?? 'NEEDS_LOGIN');
   const mofidProbeFailed = mofidProbe != null && mofidProbe.status !== 'success';
@@ -167,6 +168,16 @@ export default function AutoClickerPage() {
   const queueRows = queue?.rows ?? [];
   const runTelemetry = (lastResult?.telemetry ?? null) as Record<string, unknown> | null;
   const runLatencies = (runTelemetry?.latencies ?? null) as Record<string, unknown> | null;
+
+  const markUiResult = (started: number) => {
+    const done = () => setUiTiming({
+      ms: Math.round((performance.now() - started) * 10) / 10,
+      at: new Date().toLocaleTimeString('en-GB'),
+    });
+    const raf = globalThis.requestAnimationFrame;
+    if (typeof raf === 'function') raf(done);
+    else globalThis.setTimeout(done, 0);
+  };
 
   useEffect(() => {
     if (!browserRow || loaded) return;
@@ -273,10 +284,12 @@ export default function AutoClickerPage() {
   const dryRun = async () => {
     if (!preparedId || !dryAck) return;
     setBusy('dry'); setAnswer('');
+    const t0 = performance.now();
     try {
       const res = await orderApi.strategyTrigger({ prepared_id: preparedId });
       const st = String(res.status ?? '');
       setLastResult((res.result as Record<string, unknown> | undefined) ?? res);
+      markUiResult(t0);
       if (st === 'scheduled') {
         setTone('ok');
         setAnswer('زمان‌بندی شد؛ dry-run در زمان هدف (تهران) اجرا می‌شود و پیش از dispatch متوقف می‌شود.');
@@ -309,9 +322,11 @@ export default function AutoClickerPage() {
   const refreshResult = async () => {
     if (!preparedId) return;
     setBusy('result');
+    const t0 = performance.now();
     try {
       const res = await orderApi.strategyOrder(preparedId);
       setLastResult(res);
+      markUiResult(t0);
       setTone(res.status === 'success' ? 'ok' : 'warn');
       setAnswer('نتیجه به‌روزرسانی شد؛ صف فقط با شناسهٔ معتبرِ کارگزاری خوانده می‌شود.');
     } catch (e) {
@@ -683,8 +698,18 @@ export default function AutoClickerPage() {
                 testId="autoclicker-queue-supported">
                 {queue.queue_supported ? 'قرارداد جایگاه موجود' : 'جایگاه در دسترس نیست'}
               </Chip>
+              <Chip tone={queue.queue_source_verified ? 'ok' : 'warn'}
+                testId="autoclicker-queue-source-state">
+                منبع: {queue.queue_source_verified ? 'تأییدشده' : 'تأییدنشده'}
+              </Chip>
+              <Chip tone={queue.queue_result_known ? 'ok' : 'warn'}
+                testId="autoclicker-queue-result-state">
+                نتیجه: {queue.queue_result_known ? 'خوانده شد' : 'نامعلوم'}
+              </Chip>
               <span className="text-3xs text-text-muted" data-testid="autoclicker-queue-source">
                 منبع: {queue.source || '—'} · مشاهده: {queue.observed_at || '—'} ·
+                دریافت در رابط: {queueQ.dataUpdatedAt
+                  ? new Date(queueQ.dataUpdatedAt).toLocaleTimeString('en-GB') : '—'} ·
                 به‌روزرسانی هر {numText(Math.round((queue.poll_interval_ms ?? 10000) / 1000))} ثانیه
               </span>
             </div>
@@ -769,6 +794,12 @@ export default function AutoClickerPage() {
                 تلمتری فقط برای اجرای ثبت‌شدهٔ همین نشست نمایش داده می‌شود؛ dry-run API ترابری ندارد.
               </Line>
             )}
+            {uiTiming ? (
+              <div className="text-3xs text-text-muted" data-testid="autoclicker-ui-timing">
+                ثبت در رابط: <span className="num" dir="ltr">{numText(uiTiming.ms)} ms</span> ·
+                ساعت {uiTiming.at} · منبع: مرورگر (performance.now؛ تا paintِ بعدی)
+              </div>
+            ) : null}
             <details className="mt-1">
               <summary className="cursor-pointer text-3xs text-text-muted">قراردادِ جایگاه</summary>
               <pre className="mt-1 max-h-40 overflow-auto text-3xs text-text-muted" dir="ltr">

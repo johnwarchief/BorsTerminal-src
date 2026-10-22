@@ -1214,6 +1214,8 @@ export const QueueMonitorSchema = z.object({
   reason: txt,
   contract: z.record(z.string(), z.unknown()).nullish(),
   claims_first_rank: bool,
+  queue_source_verified: bool,
+  queue_result_known: bool,
   observed_at: txt,
   poll_interval_ms: num,
   source: txt,

@@ -32,6 +32,7 @@ from __future__ import annotations
 
 import json
 import os
+import threading
 import time
 from dataclasses import dataclass
 from datetime import datetime
@@ -712,6 +713,8 @@ def _validated_base_url(base_url: str | None, *,
 class EasyTraderAdapter(BrokerAdapter):
     """آداپتورِ EasyTrader/Orbis-MTS، با ترافیکِ تزریقی و بی‌هیچ ادعایِ تأیید."""
     name = ADAPTER_NAME
+    #: پایشِ هم‌زمانِ همان سفارش نباید GETِ تکراری بزند؛ as_ofِ اصلی حفظ می‌شود.
+    QUEUE_CACHE_TTL_S = 2.0
 
     def __init__(self, *, transport: Transport | None = None,
                  token: Any = None, base_url: str | None = None,
@@ -752,6 +755,10 @@ class EasyTraderAdapter(BrokerAdapter):
         #: تنها همین‌ها مدرکِ «وجود درِ سمتِ سرور»اند؛ پذیرشِ POST به‌تنهایی نه.
         self._observed_ids: set[str] = set()
         self.queue_by_order: dict[str, QueueSnapshot] = {}
+        #: قفلِ per-order + زمانِ دریافت؛ دو تب هم‌زمان یک GET می‌زنند، نه دو.
+        self._queue_locks: dict[str, threading.Lock] = {}
+        self._queue_locks_guard = threading.Lock()
+        self._queue_fetched_mono: dict[str, float] = {}
         #: فقطِ برچسبِ عملیات، نه بدن و نه سر — برایِ اثباتِ «چیزی بیرون نرفت».
         self.wire_calls: list[str] = []
         #: ردِّپایِ ترافیک، همه از `redact()` گذشته.
@@ -1293,14 +1300,65 @@ class EasyTraderAdapter(BrokerAdapter):
         return self.server_orders.get(rid)
 
     # ---- ۱۰) صف — فقط نمایش، با واحدِ نامعلوم (قفلِ ۸) ─────────────────────
+    def _queue_order_lock(self, key: str) -> threading.Lock:
+        with self._queue_locks_guard:
+            return self._queue_locks.setdefault(key, threading.Lock())
+
     def get_queue_position(self, broker_order_id: str) -> QueueSnapshot | None:
         if not self.capabilities().queue_position:
             return None                    # بی‌داده، نه صفر
-        resp = self._call("GET", WIRE_PATH_QUEUE + "?actionType=get",
-                          headers={WIRE_HEADER_ORDER_ID: str(broker_order_id)},
-                          tag="queue", timeout_s=self.timeouts.read_s)
-        if not (200 <= resp.status < 300):
-            return None
+        key = str(broker_order_id)
+        with self._queue_order_lock(key):
+            cached = self.queue_by_order.get(key)
+            fetched = self._queue_fetched_mono.get(key)
+            if (cached is not None and fetched is not None
+                    and (time.monotonic() - fetched) < self.QUEUE_CACHE_TTL_S):
+                return cached
+            resp = self._call("GET", WIRE_PATH_QUEUE + "?actionType=get",
+                              headers={WIRE_HEADER_ORDER_ID: key},
+                              tag="queue", timeout_s=self.timeouts.read_s)
+            if resp.status in (401, 403):
+                # خواندنِ صف هم نشست را می‌سنجد؛ 401 نباید به «بی‌مقدار» تبدیل شود.
+                v = interpret_easytrader_response(resp.status, resp.body,
+                                                  where="queue",
+                                                  headers=resp.headers)
+                self._apply_session_verdict(v)
+                raise BrokerError(v.error or ErrorCode.UNKNOWN_RESULT, v.detail,
+                                  broker_message=v.message)
+            if resp.status >= 500:
+                raise BrokerError(ErrorCode.NETWORK_ERROR,
+                                  "queue: HTTP %d — مقدار نامعلوم" % resp.status)
+            if not (200 <= resp.status < 300):
+                # 404/سایرِ 4xx: برایِ این شناسه مقداری نیست؛ UNKNOWN، نه صفر.
+                return None
+            env, rows = _envelope(resp.body)
+            places: Any = None
+            if env is not None:
+                places = _pick(env, "orderPlaces")
+            elif isinstance(rows, list):
+                places = rows
+            if not isinstance(places, list) or not places:
+                return None                # پاسخِ خالی = UNKNOWN، نه «اولِ صف»
+            hit: Mapping[str, Any] | None = None
+            for p in places:
+                if isinstance(p, Mapping) and _text(_pick(p, "orderId")) == key:
+                    hit = p
+                    break
+            if hit is None:
+                # پاسخِ فهرست ممکن است چند سفارش را برگرداند؛ ردیفِ اول مالِ ما نیست.
+                # تطبیق فقط با orderId؛ نبودش UNKNOWN است، نه «اولِ صف».
+                return None
+            pos = _num(_pick(hit, "orderPlace"))
+            vol = _num(_pick(hit, "volumeAhead"))
+            snap = QueueSnapshot(
+                position=int(pos) if pos is not None else None, volume_ahead=vol,
+                as_of=self._iso(),
+                #: واحدِ `volumeAhead` درِ هیچ مرجعی تعریف نشده (ماتریس §۲) — پس هرگز
+                #: به «اولِ صف» یا «حجمِ جلوتر» تعبیر نمی‌شود؛ فقط خام نشان داده می‌شود.
+                source="easytrader:orderPlace/volumeAhead (واحد UNVERIFIED)")
+            self.queue_by_order[key] = snap
+            self._queue_fetched_mono[key] = time.monotonic()
+            return snap
         env, rows = _envelope(resp.body)
         places: Any = None
         if env is not None:

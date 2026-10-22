@@ -741,6 +741,8 @@ SUITES = [
      'Mofid account reconciliation: unit/precision evidence, 12-row sellable formula and field map, order contract/known-ID guard, 404/5xx/401/timeout, readiness gates, no order POST'),
     ('dev/sarkhati_queue_round19_v1167.py',
      'sarkhati queue Round 19: shared telemetry latency arithmetic, deterministic API/browser mock clock, scheduler lag samples, Mofid POST queue contract not invoked, queue monitor KNOWN/UNSUPPORTED/UNKNOWN/ERROR without fake zero, position series movement'),
+    ('dev/sarkhati_closeout_v1168.py',
+     'sarkhati closeout Round 20: Mofid POST query and LS orderplace stream evidence, mutation endpoints separate, EasyTrader queue 401/404/500/timeout/invalid/empty/concurrent single-flight, queue source_verified independent from result_known, readiness queue gate not folded into read-only'),
     ('dev/autoclicker_browser_round14_v1149.py',
      'sarkhati AutoClicker Round 14 browser-level: Playwright mock EasyTrader, zero order posts in dry-run, one click, UNKNOWN, abort'),
     # مأموریتِ ۲۰۲۶-۱۰-۲۰ (Darvand P0): ذخیرهٔ ماندگارِ سفارش/زمان‌بندی، claim
