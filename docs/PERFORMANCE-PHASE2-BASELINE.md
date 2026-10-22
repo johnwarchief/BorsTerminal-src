@@ -55,7 +55,7 @@ Corrected cold/warm/browser measurements (2 runs; direct DOM navigation):
 | Warm funnel re-entry | 3.7 / 4.4 s *(includes a 2.5 s harness timeout wait)* |
 | Symbol switch to sparse sample | **5.9 / 10.0 s** (median ≈6.9 s) |
 | Same-symbol reopen (cached plan) | 0.63 / 0.77 s |
-| Strategy tree open | 4.77 / 4.80 s |
+| Strategy tree open (true direct-open) | 0.95 / 1.29 s; page switches 48–109 ms; zoom 19–69 ms |
 | Technical chart open | 2.5 / 7.2 s (external chart/CDN bound) |
 | Technical symbol switch | 5.3 / 5.4 s |
 | Repeated dossier open/close (5×) | 0.30–0.65 s each |
@@ -83,8 +83,10 @@ request from a detail page that was not open.
 
 ## 4. Strategy tree and technical baseline
 
-- Strategy tree is a client-side model/registry + SVG/canvas workspace. Open is
-  4.8 s; page-zone switches were measured separately in P2-R3.
+- Strategy tree is a client-side model/registry + SVG/canvas workspace. A
+  direct-open measurement (no harness wait) is 0.95–1.29 s; page-zone switches
+  are 48–109 ms and zoom controls 19–69 ms. The earlier 4.8 s figure was a
+  harness wait for a registry request that was already cached, not app time.
 - Technical open/switch is dominated by the protected chart endpoint
   (`/api/chart/<sym>`, 0.5–5 s, external/CDN-sensitive) and the protected
   `/api/fts/<sym>` analysis (~0.8–2 s warm). No Coder3 code was changed in

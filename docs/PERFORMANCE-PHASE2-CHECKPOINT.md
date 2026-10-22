@@ -2,7 +2,7 @@
 
 Branch: `mission/coder3-performance-resource-2026-10-22`
 Phase 1 recovered at `a4228cef` (all Phase 1 commits present).
-Phase 2 status: **P2-R1 and P2-R2 complete; P2-R3 … P2-R6 pending.**
+Phase 2 status: **P2-R1, P2-R2 and P2-R3 complete; P2-R4 … P2-R6 pending.**
 Environment/data: identical to Phase 1 (portable CPython 3.12.10, Node 22.22.0,
 Edge, verified market.db session 20261014; market closed; loops disabled).
 
@@ -12,7 +12,7 @@ Edge, verified market.db session 20261014; market closed; loops disabled).
 |---|---|---|---|
 | P2-R1 | DONE | (this commit) | FTS symbol-switch request storm: single-row market, scoped screener, one FTS plan, gated trace |
 | P2-R2 | DONE | (this commit) | Funnel data-signature cache, GET/304 transport, schema-less conditional cache |
-| P2-R3 | pending | — | strategy-tree layout/readiness + technical outer layers |
+| P2-R3 | DONE | (this commit) | strategy-tree verified; in-flight GET dedupe for technical/FTS outer layer |
 | P2-R4 | pending | — | end-to-end FTS/technical integration |
 | P2-R5 | pending | — | CPU/RAM/long-session |
 | P2-R6 | pending | — | final resource balance/report |
@@ -59,6 +59,21 @@ Endpoint P50 (warm): POST 146.0 → **57.9 ms**; GET 59.1 ms; conditional GET
 30 s body ceiling is recorded as a freshness trade-off; any in-process data
 change changes the key immediately.
 
+## P2-R3 measured result
+
+- Strategy-tree true open: 0.95–1.29 s; page-zone switches 48–109 ms; zoom
+  controls 19–69 ms; 663 DOM nodes / 248 SVG nodes; heap stable at 24.8 MB.
+  The earlier 4.8 s number was a harness wait for an already-cached registry.
+  No tree layout change was needed.
+- Technical outer layer: identical concurrent GETs are now merged in
+  `shared/api/http.ts` at the **raw JSON** level, then each caller applies its
+  own Zod schema. A technical open/switch previously made two `/api/chart` and
+  two `/api/fts` calls; the trace now shows one of each
+  (`tech-trace-p2r3.txt`, `http-inflight-dedupe.spec.ts`). The protected
+  endpoint latency remains: handoff written to
+  `docs/CODER3-PERFORMANCE-HANDOFF-TO-CODER2.md`.
+- Technical open 2.4–3.7 s, switch ~5.3 s; unchanged and protected-bound.
+
 ## Correctness coverage run
 
 - `dev/market_row_endpoint_v1.py` — 4/4 PASS (same p_closing, ETag/304,
@@ -71,6 +86,8 @@ change changes the key immediately.
 - `npx tsc -b` 0 errors; production `npm run build` PASS.
 - P2-R2: `funnel_get_parity_v1` 2/2, `funnel_signature_v1` 4/4, funnel
   Vitest 59/59, http conditional tests 7/7.
+- P2-R3: in-flight dedupe Vitest 1/1; strategy-tree probe and technical trace
+  recorded under `artifacts/performance/phase2/`.
 - Persian glyph guard 4/4; `struct_check` PASS.
 
 ## Kept / not touched
@@ -83,10 +100,10 @@ change changes the key immediately.
   master hook instead of mounting a second protected hook; no protected code
   was edited.
 
-## Next experiment (P2-R3)
+## Next experiment (P2-R4)
 
-Strategy tree open is still ~4.8 s and technical outer-layer transport is
-unchanged. Profile the strategy-tree readiness/layout path (client model,
-layout, canvas) and the technical request fan-out read-only. Optimize only
-Coder3-owned layers (strategy-tree UI/layouts, shared request infrastructure);
-produce a handoff if the protected chart/engine owns the bottleneck.
+Re-profile the full FTS and technical journeys after P2-R1–R3. The remaining
+FTS switch cost is protected plan/key-levels; look for an unowned orchestration
+win (e.g. deferring the optional fundamental card or prefetching on explicit
+hover) and verify no regression. Then measure end-to-end request count/bytes
+and retain only reproducible gains.

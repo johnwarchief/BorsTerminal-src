@@ -162,7 +162,7 @@ async function scenario(page, label, action, needles, marker, opts = {}) {
 
     // leave and come back to the funnel
     await page.evaluate(() => { location.hash = '#/market'; });
-    await page.waitForTimeout(1300);
+    await page.waitForTimeout(6000);
     const warm = await scenario(page, 'warm-funnel', async () => {
       await page.evaluate(() => { location.hash = '#/master'; });
     }, [], '[data-testid="fts-funnel-workspace"]', { settle: 500 });
@@ -191,7 +191,7 @@ async function scenario(page, label, action, needles, marker, opts = {}) {
     // strategy tree
     const tree = await scenario(page, 'strategy-tree', async () => {
       await page.evaluate(() => { location.hash = '#/strategy-tree'; });
-    }, ['/api/funnel/registry'], '[data-testid="strategy-tree-workspace"]', { settle: 700, apiTimeout: 4000 });
+    }, [], '[data-testid="strategy-tree-workspace"]', { settle: 700 });
     const treePages = {};
     for (const zone of ['S', 'T', 'F', 'M', 'master']) {
       await resetPerf(page);
