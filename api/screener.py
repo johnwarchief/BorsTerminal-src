@@ -309,7 +309,7 @@ def _only_symbols(rows, wanted):
 
 
 @router.get("/api/screener")
-def get_screener(symbols: str = "", preset: str = "trend", chain: str = "", gate: int = 1):
+def get_screener(symbols: str = "", preset: str = "trend", chain: str = ""):
     """جدول بنیادی کدال — غربالگری ۵ شاخص FTS (v8)، علامت‌خورده با قیف.
 
     در v7.3 این endpoint امتیاز را روی مقیاس ۰..۷ و با معیارهای خارج از ۵ محور
@@ -332,18 +332,34 @@ def get_screener(symbols: str = "", preset: str = "trend", chain: str = "", gate
     wanted = [s for s in str(symbols or "").split(",") if s.strip()]
     rows, asked = _only_symbols(rows, wanted)
     fresh = dict(payload)
-    vetoed = _apply_assembly_veto(rows)
-    if gate:
-        g = _funnel_gate(str(preset or "trend"), [c for c in str(chain or "").split(",") if c])
-        fresh["data"] = _apply_funnel_gate(vetoed, g)
-        fresh["funnel_gate"] = g["block"]
-    else:
-        # gate=0 برایِ مصرف‌کننده‌ای که فقط شاخص‌هایِ بنیادی و وتوها را می‌خواهد
-        # (پنلِ کنارِ نماد). پرچمِ قیف را نمی‌خواند، پس یک `_run`ِ کاملِ قیف
-        # برایِ یک ردیف ساخته نمی‌شود؛ `weekly_veto`/`assembly_veto` از همان
-        # payloadِ کش‌شده می‌آیند و دست‌نخورده‌اند.
-        fresh["data"] = vetoed
-        fresh["funnel_gate"] = {"state": "skipped"}
+    gate = _funnel_gate(str(preset or "trend"), [c for c in str(chain or "").split(",") if c])
+    fresh["data"] = _apply_funnel_gate(_apply_assembly_veto(rows), gate)
+    fresh["funnel_gate"] = gate["block"]
+    fresh["count"] = len(fresh["data"])
+    if asked:
+        fresh["requested_symbols"] = asked
+    return fresh
+
+
+@router.get("/api/screener/row")
+def get_screener_row(symbols: str = ""):
+    """ردیفِ خامِ یک/چند نماد از همان اسکنِ کش‌شده — بی‌پرچمِ قیف.
+
+    مصرف‌کنندهٔ این مسیر پنلِ کنارِ نماد است که فقط شاخص‌هایِ بنیادی و
+    وتوهایِ همان ردیف را می‌خواند. این مسیر `funnel_candidate` نمی‌سازد و
+    `funnel_gate.state="skipped"` را صریح می‌گوید؛ جدولِ کامل همچنان فقط از
+    `get_screener` با گیتِ قیف خوانده می‌شود. هیچ پارامتری گیت را روشن/خاموش
+    نمی‌کند و این مسیر جایِ دروازهٔ جدول نیست.
+    """
+    payload = _screener_cached()
+    rows = (payload or {}).get("data")
+    if not isinstance(rows, list) or not rows:
+        return payload
+    wanted = [s for s in str(symbols or "").split(",") if s.strip()]
+    rows, asked = _only_symbols(rows, wanted)
+    fresh = dict(payload)
+    fresh["data"] = _apply_assembly_veto(rows)
+    fresh["funnel_gate"] = {"state": "skipped"}
     fresh["count"] = len(fresh["data"])
     if asked:
         fresh["requested_symbols"] = asked

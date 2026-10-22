@@ -80,11 +80,22 @@ _MSTAT_BG: set = set()          # کلیدهایی که بازسازی‌شان 
 
 
 def _mstat_ttl(now=None) -> float:
-    """TTLِ مؤثر: درِ نشست ۴۵s، بیرونِ آن ۳۰۰s (کلیدِ داده همیشه تازگی را می‌سنجد)."""
+    """TTLِ مؤثر: درِ نشست ۴۵s، بیرونِ آن ۳۰۰s (کلیدِ داده همیشه تازگی را می‌سنجد).
+
+    ساعت از همان `time`ِ ماژول خوانده می‌شود (نه `datetime.now`) تا گاردِ SWR
+    با ساعتِ جعلیِ خودش همان ۴۵s را ببیند؛ نبودِ `localtime` در آن ساعت ⇒
+    افتادن به TTLِ نشست، نه ۳۰۰sِ بیرونِ نشست. `now`ِ صریح برایِ آزمونِ TTL است.
+    """
     try:
-        n = now or datetime.datetime.now()
+        if now is not None:
+            n = now
+            hm = n.hour * 10000 + n.minute * 100 + n.second
+        else:
+            t = time.localtime()
+            n = datetime.datetime(*t[:6])
+            hm = t.tm_hour * 10000 + t.tm_min * 100 + t.tm_sec
         from mstat_engine import in_trading_session
-        if in_trading_session(n.hour * 10000 + n.minute * 100 + n.second, n):
+        if in_trading_session(hm, n):
             return _MSTAT_TTL_S
         return _MSTAT_TTL_IDLE_S
     except Exception:

@@ -1,8 +1,8 @@
 """FUNNEL-SIGNATURE v1 — گاردِ کلیدِ دادهٔ کشِ قیف (P2-R2).
 
-بدنهٔ قیف با امضایِ داده (revision/static_rev/session_day + screener cache +
-tech context) کش می‌شود. اگر هر یک از این ورودی‌ها عوض شود، کلید باید عوض
-شود؛ وگرنه پاسخِ ۳۰۴/کش‌شده دادهٔ کهنه را تأیید می‌کند.
+بدنهٔ قیف با امضایِ داده (revision/static_rev/session_day + زمانِ اسکنِ
+screener + tech context) کش می‌شود. اگر هر یک از این ورودی‌ها عوض شود، کلید
+باید عوض شود؛ وگرنه پاسخِ ۳۰۴/کش‌شده دادهٔ کهنه را تأیید می‌کند.
 
 usage: python dev/funnel_signature_v1.py
 """
@@ -37,12 +37,12 @@ def main():
     finally:
         MS.revision = orig_rev
 
-    old_ts = SC._SCREENER_CACHE.get("ts")
-    SC._SCREENER_CACHE["ts"] = float(old_ts or 0) + 1.0
+    old_cached = SC._screener_cached
+    SC._screener_cached = lambda: {"data": [], "as_of": 9999999999}
     try:
-        ck("تغییرِ screener cache امضا را عوض می‌کند", F._data_signature() != base)
+        ck("تغییرِ screener scan امضا را عوض می‌کند", F._data_signature() != base)
     finally:
-        SC._SCREENER_CACHE["ts"] = old_ts
+        SC._screener_cached = old_cached
 
     old_tech = F._TECH_CTX.get("ts")
     F._TECH_CTX["ts"] = float(old_tech or 0) + 1.0

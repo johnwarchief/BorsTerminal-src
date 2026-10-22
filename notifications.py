@@ -162,13 +162,13 @@ def feed(conn, since=None, levels=None, limit: int = 120) -> dict:
 # ── کشِ «تازه‌ترین انتشار / آخرین واکشی» بر پایۀِ محتوایِ بانک ─────────────
 # سنجشِ ۱۴۰۵-۰۷-۳۰ رویِ market.db: پنلِ سلامت ۳۴۳ms p50 داشت با بدنهٔ ۳۹۸
 # بایت. علتش دو اسکنِ کاملِ codal_notices بود: MAX(fetched_at) ~۶۱ms (بی‌ایندکس)
-# و MAX(canonical publish_date) ~۲۹۷ms (چند replace رویِ هر ردیف). درِ عوض
-# COUNT(*) و MAX(publish_date) هر دو ایندکسی‌اند (~۰٫۱ms با هم).
-# کلیدِ کش همین دو + هویتِ فایلِ بانک است: هر درج/جایگزینی معمولِ کدال
-# (INSERT OR REPLACE با fetched_at تازه) count یا max را عوض می‌کند و کش
-# همان لحظه باطل می‌شود. سقفِ ۱۲۰ثانیه‌ای هم برایِ ویرایشِ درجایِ نادر است،
-# تا «تازه» هرگز بیش از دو دقیقه پشتِ یک تغییرِ نامرئی نماند. دو بانکِ متفاوت
-# با محتوای یکسان هرگز یکی نمی‌شوند (هویتِ فایل در کلید است).
+# و MAX(canonical publish_date) ~۲۹۷ms (چند replace رویِ هر ردیف).
+# کلیدِ کش «هویتِ فایلِ بانک + COUNT(*) + MAX(rowid)» است؛ هر دو ایندکسی و
+# ارزان‌اند و هیچ‌کدام publish_dateِ خام را مقایسه نمی‌کند (قاعدۀ codal_periods).
+# هر درج/جایگزینی معمولِ کدال count یا rowid را عوض می‌کند و کش همان لحظه
+# باطل می‌شود. سقفِ ۱۲۰ثانیه‌ای برایِ ویرایشِ درجایِ نادر است، تا «تازه» هرگز
+# بیش از دو دقیقه پشتِ یک تغییرِ نامرئی نماند. دو بانکِ متفاوت با محتوای یکسان
+# هرگز یکی نمی‌شوند (هویتِ فایل در کلید است).
 _SOURCES_CACHE = {"key": None, "at": 0.0, "newest": None, "fetched": None}
 _SOURCES_LOCK = threading.Lock()
 _SOURCES_TTL_S = 120.0
@@ -189,10 +189,10 @@ def _sources_facts(conn, now=None):
     قبلی. برایِ بانکِ فایل، فقط وقتی کلید عوض شود دو مقدارِ گران دوباره
     محاسبه می‌شوند.
     """
-    n, raw_max = conn.execute(
-        "SELECT COUNT(*), MAX(publish_date) FROM codal_notices").fetchone()
+    n, max_rowid = conn.execute(
+        "SELECT COUNT(*), MAX(rowid) FROM codal_notices").fetchone()
     ident = _db_identity(conn)
-    key = (ident, int(n or 0), str(raw_max or "")) if ident else None
+    key = (ident, int(n or 0), str(max_rowid or "")) if ident else None
     now = time.monotonic() if now is None else float(now)
     if key is not None:
         with _SOURCES_LOCK:

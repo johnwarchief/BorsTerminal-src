@@ -274,11 +274,14 @@ def _data_signature() -> str:
     import market_state as _MS
     parts = [str(_MS.revision()), str(_MS.static_rev()), str(_MS.session_day())]
     try:
-        from api.screener import _SCREENER_CACHE
-        parts += [str(_SCREENER_CACHE.get("key") or ""),
-                  str(round(float(_SCREENER_CACHE.get("ts") or 0.0), 3))]
+        from api.screener import _screener_cached
+        scan = _screener_cached() or {}
+        # زمانِ خودِ اسکن، نه key/tsِ کش: دو مسیرِ هم‌زمان (گرم‌کردن و درخواست)
+        # پیش از پر شدنِ کش، key/tsِ متفاوت می‌دیدند و دو بدنهٔ ۷٫۵MB می‌ساختند.
+        # `as_of` درِ همان payloadِ اسکن است و با هر بازسازی عوض می‌شود.
+        parts.append(str(scan.get("as_of") or ""))
     except Exception:
-        parts += ["", ""]
+        parts.append("")
     try:
         parts.append(str(round(float(_TECH_CTX.get("ts") or 0.0), 3)))
     except Exception:

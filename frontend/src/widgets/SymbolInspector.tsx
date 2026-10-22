@@ -281,10 +281,9 @@ export function SymbolInspector() {
   const screenRes = useFtsScreen(0, {
     enabled: drawerOpen,
     symbols: symbol,
-    preset: funnelRequest.preset,
-    chain: funnelRequest.chain,
-    // پرچمِ قیف درِ این پنل خوانده نمی‌شود؛ بی‌`gate=0` سرور برایِ یک ردیف،
-    // قیفِ کامل را (۰٫۵–۲٫۶s CPU) دوباره می‌ساخت — هم‌زمان با /api/fts.
+    // پرچمِ قیف درِ این پنل خوانده نمی‌شود؛ مسیرِ `/api/screener/row` همان ردیفِ
+    // اسکنِ کش‌شده را می‌دهد و قیفِ کامل را برایِ یک ردیف نمی‌سازد. جدولِ کامل
+    // همچنان از `/api/screener` با گیتِ قیف می‌آید.
     gate: false,
   });
   const screenRow = useMemo(() => {

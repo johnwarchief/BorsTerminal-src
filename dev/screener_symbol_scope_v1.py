@@ -61,23 +61,24 @@ def main():
     ck("نمادِ ناشناخته ردیفِ خالی می‌دهد", (unknown.get("data") or []) == [],
        "rows=%d" % len(unknown.get("data") or []))
 
-    # P2-R6: `gate=0` برایِ مصرف‌کننده‌ای که پرچمِ قیف را نمی‌خواند. فقط
-    # فیلدهایِ نوشتهٔ گیت حذف می‌شوند؛ شاخص‌ها و وتوها باید یکی بمانند.
+    # P2-R6: پنلِ کنارِ نماد پرچمِ قیف را نمی‌خواند؛ `/api/screener/row` همان
+    # ردیفِ اسکنِ کش‌شده را بی‌ساختِ قیف می‌دهد. جدولِ کامل همچنان از
+    # `get_screener` با گیت می‌آید و پارامترِ خاموش‌کنندهٔ گیت ندارد.
     gate_fields = {"tape_status", "technical_status", "fundamental_status",
                    "gate_state", "funnel_candidate", "technical_reason"}
     full_row = srows[0] if srows else {}
-    skipped = SC.get_screener(symbols=sym, gate=0)
+    skipped = SC.get_screener_row(symbols=sym)
     krows = skipped.get("data") or []
     base = {k: v for k, v in full_row.items() if k not in gate_fields}
     keep = {k: v for k, v in (krows[0] if krows else {}).items() if k not in gate_fields}
-    ck("gate=0 یک ردیف با همان شاخص‌ها/وتوها می‌دهد",
+    ck("row یک ردیف با همان شاخص‌ها/وتوها می‌دهد",
        len(krows) == 1 and base == keep,
        "rows=%d" % len(krows))
-    ck("gate=0 وضعیت را skipped اعلام می‌کند و پرچمِ قیف نمی‌سازد",
+    ck("row وضعیت را skipped اعلام می‌کند و پرچمِ قیف نمی‌سازد",
        (skipped.get("funnel_gate") or {}).get("state") == "skipped"
        and "funnel_candidate" not in (krows[0] if krows else {}),
        "state=%s" % (skipped.get("funnel_gate") or {}).get("state"))
-    ck("gate=1 (پیش‌فرض) پرچمِ قیف را نگه می‌دارد",
+    ck("get_screener (پیش‌فرض) پرچمِ قیف را نگه می‌دارد",
        "funnel_candidate" in full_row and (full.get("funnel_gate") or {}).get("state") != "skipped",
        "state=%s" % (full.get("funnel_gate") or {}).get("state"))
 

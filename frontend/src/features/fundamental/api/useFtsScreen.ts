@@ -143,30 +143,35 @@ export function useFtsScreen(
   opts: { enabled?: boolean; symbols?: string; preset?: string; chain?: string[]; gate?: boolean } = {},
 ) {
   const symbols = String(opts.symbols ?? '').trim();
-  // P2-R6: پرچمِ قیفِ همین ردیف با همان preset/chainِ فعال خوانده شود؛ وگرنه
-  // سرور برایِ یک ردیف، قیفِ presetِ پیش‌فرض را از صفر حساب می‌کند (سنجش:
-  // ۰٫۶–۲٫۶s CPU رویِ هر ورود به پرونده، هم‌زمان با /api/fts).
+  // P2-R6: پنلِ کنارِ نماد فقط شاخص‌هایِ بنیادی و وتوهایِ همان ردیف را می‌خواهد؛
+  // مسیرِ `/api/screener/row` همان ردیفِ اسکنِ کش‌شده را بی‌پرچمِ قیف می‌دهد و
+  // جدولِ کامل همچنان از `/api/screener` با گیتِ قیف می‌آید. `gate:false` فقط
+  // برایِ نمادِ مشخص معنا دارد؛ بی‌نماد به مسیرِ عادی برمی‌گردد.
+  const rowOnly = opts.gate === false && !!symbols;
   const preset = String(opts.preset ?? '').trim();
   const chainKey = (opts.chain ?? []).map((c) => String(c).trim()).filter(Boolean).join(',');
-  const gate = opts.gate === false ? '0' : '';
   const params = new URLSearchParams();
   if (limit > 0) params.set('limit', String(limit));
   if (symbols) params.set('symbols', symbols);
-  if (preset) params.set('preset', preset);
-  if (chainKey) params.set('chain', chainKey);
-  if (gate) params.set('gate', gate);
+  if (!rowOnly) {
+    if (preset) params.set('preset', preset);
+    if (chainKey) params.set('chain', chainKey);
+  }
   const suffix = params.toString() ? `?${params.toString()}` : '';
-  const gateScope = `${preset}|${chainKey}|${gate}`;
+  const gateScope = rowOnly ? 'row' : `${preset}|${chainKey}`;
   return useQuery({
     // یک‌نمادی ⇒ کلیدِ جدا (پاسخ یک ردیف است)؛ پیش‌فرض برایِ جدولِ کامل.
     // کلیدِ جدولِ کامل بی‌scope می‌ماند تا `useSymbolVeto` همان کش را بخواند.
     queryKey: symbols
       ? ['fts-screen', limit, symbols, gateScope]
-      : (preset || chainKey || gate ? ['fts-screen', limit, gateScope] : ['fts-screen', limit]),
+      : (preset || chainKey ? ['fts-screen', limit, gateScope] : ['fts-screen', limit]),
     // همانِ دلیلی که قیف: بی‌نماد، فهرستِ اسکرینر چیزی برایِ نشان دادن ندارد.
     enabled: opts.enabled ?? true,
     queryFn: ({ signal }) =>
-      http<FtsScreen>(`/api/screener${suffix}`, { schema: FtsScreenSchema, signal }),
+      http<FtsScreen>(`/api/screener${rowOnly ? '/row' : ''}${suffix}`, {
+        schema: FtsScreenSchema,
+        signal,
+      }),
     staleTime: 5 * 60_000,
     gcTime: 15 * 60_000,
     refetchOnWindowFocus: false,
