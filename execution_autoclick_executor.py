@@ -62,6 +62,9 @@ class ExecutorContext:
     #: ساعتِ دیواری از همان منبعِ زمان‌بند؛ درِ تست ساختگی است تا شاهدِ زمانیِ
     #: شلیک با زمانِ برنامهٔ ساختگی یکی بماند.
     wall_ms: Callable[[], int] = _now_ms_wall
+    #: انتظار تا لحظۀ هدف (claimِ زودهنگام). فقط مسیرِ زنده/واقعی؛ با ساعتِ
+    #: ساختگی خاموش می‌ماند تا تست‌ها بی‌پایان نشوند.
+    wait_for_target: bool = False
 
 
 @dataclass
@@ -249,14 +252,7 @@ class AutoClickExecutor:
                                stop=True)
         evidence["form_validation_ms"] = round((time.monotonic() - t_val) * 1000.0, 3)
 
-        # ۳) رزروِ شمارنده پیش از کلیک؛ False یعنی کسی پیش‌تر شلیک کرده است
-        fire_at = wall()
-        if not hooks.mark_fired(fire_at):
-            return outcome("BLOCKED",
-                           "اقدام پیش‌تر شلیک شده شمارنده است؛ کلیکِ دوباره ساخته نمی‌شود",
-                           stop=True)
-
-        # ۴) گارد/intercept و بعد کلیکِ واقعی
+        # ۳) گارد/intercept پیش از انتظارِ هدف؛ هزینهٔ setup بیرونِ لحظهٔ شلیک
         try:
             if ctx.dry_run:
                 ctx.driver.dry_run_guard(order_paths=list(ctx.order_paths),
@@ -268,7 +264,26 @@ class AutoClickExecutor:
         except Exception as e:                       # noqa: BLE001
             return outcome("UNKNOWN",
                            "گاردِ مسیرِ نوشتن بسته نشد؛ کلیک نمی‌کنیم (%s)"
-                           % type(e).__name__, fired=True, stop=True)
+                           % type(e).__name__, stop=True)
+
+        # ۴) انتظار تا لحظۀ هدف. scheduler با CLAIM_LEAD_MS زودتر claim می‌کند
+        #    تا اعتبارسنجی همین‌جا تمام شود و کلیک رویِ هدف بیفتد.
+        target = int(tel.scheduled_target_wall_ms or 0)
+        now_ms = wall()
+        if (ctx.wait_for_target and target > now_ms
+                and (target - now_ms) <= 5000):
+            deadline_mono = time.monotonic() + (target - now_ms) / 1000.0 + 0.05
+            while wall() < target and time.monotonic() < deadline_mono:
+                left = target - wall()
+                if left > 25:
+                    time.sleep((left - 15) / 1000.0)
+                else:
+                    time.sleep(0.002)
+
+        # ۵) کلیک رویِ لحظۀ هدف؛ ثبتِ شمارنده بعد از شروعِ کلیک (نه قبل از آن).
+        #    نوشتنِ SQLite رویِ همان دیسک ۴۰–۲۳۰ms طول می‌کشد (سنجش ۲۰۲۶-۱۰-۲۴)
+        #    و اگر قبل از کلیک بیفتد، شلیک را از هدف عقب می‌انداخت.
+        fire_at = wall()
         tel.send_started_mono_ms = round(time.monotonic() * 1000.0, 3)
         tel.send_started_wall_ms = wall()
         try:
@@ -279,8 +294,12 @@ class AutoClickExecutor:
         except Exception as e:                       # noqa: BLE001
             code = str(e).split(":")[0][:30]
             return outcome("BLOCKED",
-                           "کلیک انجام نشد: %s" % str(e)[:180], fired=True,
-                           stop=True, click_error=code)
+                           "کلیک انجام نشد: %s" % str(e)[:180], stop=True,
+                           click_error=code)
+        t_mark = time.monotonic()
+        marked = hooks.mark_fired(fire_at)
+        evidence["mark_fired_ms"] = round((time.monotonic() - t_mark) * 1000.0, 3)
+        evidence["fired_marked"] = bool(marked)
         self.clicks += 1
         tel.browser_click_started_mono_ms = float(got.get("start_ms") or
                                                  tel.send_started_mono_ms)

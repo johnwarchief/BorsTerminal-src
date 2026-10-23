@@ -454,8 +454,14 @@ class AutoClickRunStore:
                            "این اجرا dry-run نیست ولی تأییدِ صریحِ اجرایِ زنده ندارد")
         return self.set_state(run_id, RUNNING, reason="شروعِ دستی")
 
-    def claim_next(self, run_id: str, *, at_ms: int, token: str) -> Optional[ActionRecord]:
-        """یک‌برنده: فقط یک فراخوانی می‌تواند یک ردیف را claim کند."""
+    def claim_next(self, run_id: str, *, at_ms: int, token: str,
+                   lead_ms: int = 0) -> Optional[ActionRecord]:
+        """یک‌برنده: فقط یک فراخوانی می‌تواند یک ردیف را claim کند.
+
+        `lead_ms` اجازهٔ claimِ پیش‌از‌موعد را می‌دهد تا اجراکننده بتواند
+        اعتبارسنجی/گارد را قبل از لحظهٔ هدف انجام دهد و دقیقاً رویِ هدف کلیک
+        کند؛ زمانِ ثبتِ claim همچنان «اکنون» است.
+        """
         with self._lock, self._conn() as con:
             con.execute("BEGIN IMMEDIATE")
             run = con.execute("SELECT state FROM runs WHERE run_id=?",
@@ -465,7 +471,7 @@ class AutoClickRunStore:
             row = con.execute(
                 "SELECT * FROM actions WHERE run_id=? AND state=? AND planned_at_ms<=? "
                 "AND claimed_at_ms IS NULL ORDER BY idx LIMIT 1",
-                (run_id, A_PENDING, int(at_ms))).fetchone()
+                (run_id, A_PENDING, int(at_ms) + max(0, int(lead_ms)))).fetchone()
             if row is None:
                 return None
             got = con.execute(

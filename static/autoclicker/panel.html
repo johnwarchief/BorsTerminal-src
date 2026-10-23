@@ -95,7 +95,7 @@
     <div><label for="f-mode">حالت اجرا</label><select id="f-mode">
       <option value="single">تک‌اقدام</option><option value="repeat">تکرار محدود</option></select></div>
     <div><label for="f-count">تعداد کل اقدام‌ها</label><input id="f-count" class="num" inputmode="numeric" value="1"></div>
-    <div><label for="f-interval">فاصله بین اقدام‌ها (میلی‌ثانیه)</label><input id="f-interval" class="num" inputmode="numeric" value="800"></div>
+    <div><label for="f-interval">فاصله بین اقدام‌ها (میلی‌ثانیه)</label><input id="f-interval" class="num" inputmode="numeric" value="3000"></div>
     <div><label for="f-dry">نوع اجرا</label><select id="f-dry">
       <option value="1">dry-run: کلیک با درخواست مسدودشده</option>
       <option value="0">زنده: سفارش واقعی به کارگزاری</option></select></div>
@@ -103,7 +103,9 @@
   <div class="row" style="margin-top:9px">
     <div style="flex:2 1 320px"><label class="muted" style="color:var(--muted)">
       قیمت و تعداد را خودِ شما در فرم واقعی EasyTrader وارد می‌کنید؛ این دو فقط
-      برای مقایسه‌اند و برنامه چیزی در فرم نمی‌نویسد.</label></div>
+      برای مقایسه‌اند و برنامه چیزی در فرم نمی‌نویسد.
+      کف قانونی فاصله ۳۰۰ms است؛ در سنجش زنده هر اقدام رویِ همین دستگاه تا
+      ~۲.۹s طول کشید، پس فاصلهٔ کمتر از آن هدفِ بعدی را دیر می‌کند.</label></div>
   </div>
   <div class="row" style="margin-top:9px">
     <button id="b-save">ذخیره و پیش‌نمایش</button>
@@ -357,6 +359,15 @@ function refresh(){
   return api(path).then(function(g){
     if(g.status !== "success"){ show(el("lastError"), (g.code || "خطا") + ": " + (g.detail || "")); return; }
     state = g; runId = (g.run && g.run.run_id) || "";
+    //: اگر اجرایِ فعالی از بیرونِ پنل ساخته شده (API/سشنِ دیگر)، پنل باید همان را
+    //: دنبال کند؛ وگرنه دکمهٔ «توقف اضطراری» رویِ اجرایِ قدیمی خاموش می‌ماند.
+    var act = (g.active_run && g.active_run.run_id) || "";
+    if(act && act !== runId && ["ARMED","WARMING","RUNNING"].indexOf(
+        (g.active_run || {}).state || "") >= 0){
+      selectedRun = act;
+      state = g; runId = act;
+      g = Object.assign({}, g, {run: g.active_run});
+    }
     renderFacts(g); renderRun(g.run, g); renderRules(g); renderPreflight(g.preflight);
   });
 }

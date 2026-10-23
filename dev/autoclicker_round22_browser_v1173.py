@@ -93,7 +93,7 @@ ORDERS_PAGE = u"""<!doctype html><html lang="fa" dir="rtl"><meta charset="utf-8"
 
 APP_PAGE = u"""<!doctype html><html lang="fa" dir="rtl"><meta charset="utf-8">
 <title>پنل کارگزاری</title>
-<body><div id="app-mark">پنل کارگزاری</div>
+<body><main-layout><div id="app-mark">پنل کارگزاری</div></main-layout>
 <script>
  sessionStorage.setItem('oidc.user:https://login.emofid.com:client',
                         '{"access_token":"SECRET-SHOULD-NOT-LEAK"}');

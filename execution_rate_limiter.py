@@ -335,9 +335,15 @@ class OrderRateLimiter:
                     self._events[(account, rule.rule_id)].append(now)
             return Decision(True, 0.0, None, "", counts=counts)
 
-    def record(self, account: str = "easytrader") -> None:
-        """ثبتِ دستیِ یک تلاش (مسیرهایی که خودشان acquire نکرده‌اند)."""
-        now = self._clock()
+    def record(self, account: str = "easytrader", *,
+               at_mono_s: Optional[float] = None) -> None:
+        """ثبتِ دستیِ یک تلاش (مسیرهایی که خودشان acquire نکرده‌اند).
+
+        `at_mono_s` لحظۀ واقعیِ شلیک است، نه لحظۀ پایانِ اقدام؛ وگرنه فاصله از
+        «پایانِ اجرایِ قبلی» سنجیده می‌شد و اجراهای کندتر از فاصله، همیشه
+        قفلِ کاذب می‌گرفتند (سنجش ۲۰۲۶-۱۰-۲۴: اقدامِ دوم ۷۷ms بعد شمرده شد).
+        """
+        now = self._clock() if at_mono_s is None else float(at_mono_s)
         with self._lock:
             for rule in self._active():
                 self._events[(account, rule.rule_id)].append(now)
@@ -441,7 +447,9 @@ class OrderRateLimiter:
         for rule in self._active():
             if rule.window_s and rule.max_events == 1:
                 min_step = max(min_step, rule.window_s)
-        if min_step and step_s < min_step:
+        #: فاصلۀ مقرراتی *بینِ دو اقدام* است؛ یک اقدامِ تنها فاصله‌ای ندارد.
+        #: سنجش ۲۰۲۶-۱۰-۲۴: اجرایِ تک‌اقدامی با interval=0 به‌غلط «جا نمی‌شود».
+        if min_step and n > 1 and step_s < min_step:
             reasons.append("کمینۀ فاصلهٔ اجباری %.3fs است (قاعدهٔ %s)" %
                            (min_step, SPACING_RULE_ID))
             if blocking_rule is None:

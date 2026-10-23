@@ -6,12 +6,27 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import AutoClickerPage from '@features/portfolio/routes/AutoClickerPage';
 
 const api = vi.hoisted(() => ({
-  settings: vi.fn(async (_id: string, _body: Record<string, unknown>) => ({ status: 'success' })),
-  probe: vi.fn(async (_id: string) => ({ status: 'success', probe: { login: 'NOT_VISIBLE', origin_ok: true } })),
-  prepare: vi.fn(async (_body: Record<string, unknown>) => ({ status: 'success', prepared_id: 'prep-1' })),
-  trigger: vi.fn(async (_body: Record<string, unknown>): Promise<Record<string, unknown>> => ({ status: 'success' })),
+  settings: vi.fn(async (_id: string, _body: Record<string, unknown>) => {
+    void _id; void _body;
+    return { status: 'success' };
+  }),
+  probe: vi.fn(async (_id: string) => {
+    void _id;
+    return { status: 'success', probe: { login: 'NOT_VISIBLE', origin_ok: true } };
+  }),
+  prepare: vi.fn(async (_body: Record<string, unknown>) => {
+    void _body;
+    return { status: 'success', prepared_id: 'prep-1' };
+  }),
+  trigger: vi.fn(async (_body: Record<string, unknown>): Promise<Record<string, unknown>> => {
+    void _body;
+    return { status: 'success' };
+  }),
   abort: vi.fn(async () => ({ status: 'success' })),
-  order: vi.fn(async (_id: string) => ({ status: 'success', order: { status: 'dry_run' } })),
+  order: vi.fn(async (_id: string) => {
+    void _id;
+    return { status: 'success', order: { status: 'dry_run' } };
+  }),
   refetchPortfolio: vi.fn(async () => ({})),
   refetchBp: vi.fn(async () => ({})),
   refetchStatus: vi.fn(async () => ({})),

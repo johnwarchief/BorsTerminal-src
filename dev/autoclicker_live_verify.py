@@ -131,4 +131,9 @@ def main(argv=None) -> int:
 
 
 if __name__ == "__main__":
+    try:
+        #: کنسولِ ویندوز پیش‌فرض cp1252 است و خروجیِ فارسی همین‌جا می‌شکست.
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
     sys.exit(main())

@@ -794,6 +794,12 @@ SUITES = [
      'sarkhati AutoClicker Round 22: real DOM judgement, backend multi-action run store, one-winner claims, 300ms floor, emergency stop, page-change stop, provenance-tiered trading rules, dry-run never posts'),
     ('dev/autoclicker_round22_browser_v1173.py',
      'sarkhati AutoClicker Round 22 browser-level: real Chromium over CDP, local EasyTrader fixture, hidden/duplicate/off-viewport/disabled/wrong-side refusal, repeat spacing, live-path wire verdict on the fixture, panel tab in the same profile, session proof without reading the token'),
+    # مأموریتِ Round 23 (۲۰۲۶-۱۰-۲۴): سنجشِ زندهٔ EasyTrader سه نقصِ مسیرِ واقعی را
+    # نشان داد که fixture نمی‌دید: عبورِ POSTِ سفارش از service worker (گاردِ
+    # page.route کور بود)، allowlistِ کاملِ URL در مقایسهٔ hostname، و تنظیماتِ
+    # تازه که `dry_run` نداشت و ۵۰۰ می‌داد. این گارد همان‌ها را با SWِ واقعی ثابت می‌کند.
+    ('dev/autoclicker_round23_guard.py',
+     'sarkhati AutoClicker Round 23: service-worker order POST is blocked at the CDP network layer (canary proves SW mediation), no escaped write, guard lift restores flow, fresh settings loader, URL->hostname allowlist, dry-run financial advisories, fire-time rate accounting, UTF-8 live verifier'),
     # مأموریتِ ۲۰۲۶-۱۰-۲۰ (Darvand P0): ذخیرهٔ ماندگارِ سفارش/زمان‌بندی، claim
     # اتمیک، NEEDS_REVIEW پس از restart، MISSED_TARGET بدون جبران، و مسدودماندنِ
     # مسیر زنده تا تأیید قرارداد/نشست. هیچ شبکه/سفارشی صدا زده نمی‌شود.

@@ -288,8 +288,20 @@ class PreflightReport:
         elif chk.status == "UNKNOWN":
             self.unknowns.append("%s: %s" % (chk.label, chk.detail))
 
+    #: در dry-run هیچ سفارشی بیرون نمی‌رود؛ چک‌هایِ مالی/بازار فقط اطلاع‌رسانی‌اند.
+    #: گامِ قیمت، فاصلهٔ مقرراتی و سقفِ اقدام همان‌طور مانعِ تمرین می‌مانند.
+    DRY_RUN_ADVISORY = ("order_size", "buying_power", "trading_window",
+                        "calendar", "algorithmic_timing", "price_band")
+
+    @property
+    def ok_for_dry_run(self) -> bool:
+        return not [c for c in self.checks
+                    if c.id not in self.DRY_RUN_ADVISORY
+                    and c.status in ("FAIL", "BLOCKED")]
+
     def public(self) -> dict[str, Any]:
         return {"ok_for_arm": bool(self.ok_for_arm),
+                "ok_for_dry_run": bool(self.ok_for_dry_run),
                 "checks": [c.public() for c in self.checks],
                 "blockers": list(self.blockers), "warnings": list(self.warnings),
                 "unknowns": list(self.unknowns), "facts": dict(self.facts),

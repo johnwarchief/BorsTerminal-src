@@ -30,7 +30,7 @@ import threading
 import time
 from dataclasses import dataclass
 from typing import Any, Optional
-from urllib.parse import urlparse
+from urllib.parse import parse_qs, urlparse
 
 PANEL_PATH = "/static/autoclicker/panel.html"
 TICKET_HEADER = "X-Bors-Panel"
@@ -183,7 +183,8 @@ def list_tabs(cdp_url: str, *, timeout_s: float = 8.0,
     return {"status": "success", "tabs": out, "count": len(out)}
 
 
-def open_panel_tab(cdp_url: str, panel_url: str, *, timeout_s: float = 20.0) -> dict[str, Any]:
+def open_panel_tab(cdp_url: str, panel_url: str, *, timeout_s: float = 20.0,
+                   ticket_store: Any = None) -> dict[str, Any]:
     """در همان contextِ مالک یک تبِ تازه می‌سازد و به پنلِ محلی می‌برد."""
     if not _loopback(cdp_url):
         return {"status": "error", "code": "CDP_NOT_LOOPBACK"}
@@ -206,7 +207,29 @@ def open_panel_tab(cdp_url: str, panel_url: str, *, timeout_s: float = 20.0) -> 
                         if urlparse(str(getattr(pg, "url", "") or "")).path == PANEL_PATH]
             if existing:
                 # تبِ پنل از قبل باز است؛ دو پنل هم‌زمان دو کنترل‌کننده می‌سازد،
-                # پس همان تب را می‌آوریم و دیگرى نمی‌سازیم.
+                # پس همان تب را می‌آوریم و دیگرى نمی‌سازیم. ولی اگر نشانهٔ تب
+                # برایِ همین بک‌اند معتبر نباشد (ری‌استارت شده)، همان تب به
+                # نشانیِ تازه می‌رود؛ وگرنه پنلِ باز اما قطع‌شده می‌ماند
+                # (سنجش ۲۰۲۶-۱۰-۲۴: panel_connected تا ابد UNKNOWN).
+                cur = parse_qs(urlparse(str(getattr(existing[0], "url", "") or "")).fragment)
+                cur_ticket = (cur.get("ticket") or [""])[0]
+                still_valid = False
+                if ticket_store is not None and cur_ticket:
+                    try:
+                        still_valid = bool(ticket_store.verify(
+                            cur_ticket, cdp_url=cdp_url)[0])
+                    except Exception:
+                        still_valid = False
+                if ticket_store is not None and not still_valid:
+                    #: goto با هشِ تازه ناوبریِ same-document است و JS دوباره
+                    #: اجرا نمی‌شود؛ نشانهٔ قدیمی در حافظهٔ صفحه می‌ماند.
+                    #: reload همان نشانیِ تازه (با هشِ تازه) را از نو می‌خواند.
+                    existing[0].goto(str(panel_url), wait_until="domcontentloaded",
+                                     timeout=max(2.0, timeout_s) * 1000)
+                    existing[0].reload(wait_until="domcontentloaded",
+                                       timeout=max(2.0, timeout_s) * 1000)
+                    return {"status": "success", "opened": False, "rebound": True,
+                            "tabs": len(_pages(browser)), "panel_path": PANEL_PATH}
                 try:
                     existing[0].bring_to_front()
                 except Exception:
@@ -267,6 +290,10 @@ def session_presence(cdp_url: str, *, timeout_s: float = 8.0,
     js_login = ("() => Array.from(document.querySelectorAll('input[type=password]'))"
                 ".some(el => { try { const r = el.getBoundingClientRect();"
                 " return r.width > 0 && r.height > 0; } catch (e) { return false; } })")
+    #: شاهدِ مکمل: پوستهٔ خودِ اپِ کارگزاری. کلیدِ oidc حتی با نشستِ منقضی
+    #: ممکن است بماند؛ «اپ بالا آمده» شاهدِ مستقلِ دیگری است.
+    js_shell = ("() => !!(document.querySelector('main-layout, d-order-list, "
+                "order-form-tabular-container'))")
     try:
         with sync_playwright() as pw:
             browser = pw.chromium.connect_over_cdp(cdp_url.rstrip("/"),
@@ -281,6 +308,7 @@ def session_presence(cdp_url: str, *, timeout_s: float = 8.0,
                                          or "" for pg in pages})[:6]}
             saw_key = False
             saw_password_field = False
+            saw_shell = False
             for pg in broker:
                 try:
                     keys = pg.evaluate(js_keys) or []
@@ -291,8 +319,19 @@ def session_presence(cdp_url: str, *, timeout_s: float = 8.0,
                     saw_password_field = saw_password_field or bool(pg.evaluate(js_login))
                 except Exception:
                     pass
+                try:
+                    saw_shell = saw_shell or bool(pg.evaluate(js_shell))
+                except Exception:
+                    pass
+            if saw_key and not saw_password_field and saw_shell:
+                return {"state": "LOGGED_IN",
+                        "evidence": "oidc-key+app-shell+no-login-form",
+                        "broker_pages": len(broker)}
             if saw_key and not saw_password_field:
-                return {"state": "LOGGED_IN", "evidence": "oidc-key-present-and-no-login-form",
+                #: کلید هست ولی پوستهٔ اپ دیده نشد (مثلاً ریدایرکتِ نیمه‌کاره
+                #: یا صفحهٔ خطا). PASS ندهیم.
+                return {"state": "PARTIAL",
+                        "evidence": "oidc-key-without-app-shell",
                         "broker_pages": len(broker)}
             if saw_key:
                 return {"state": "PARTIAL", "evidence": "oidc-key-present-but-login-visible"}

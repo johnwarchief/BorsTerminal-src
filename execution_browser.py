@@ -546,6 +546,15 @@ class PlaywrightBrowserDriver:
         self._observed_writes: list[dict[str, Any]] = []
         self._blocked_writes: list[dict[str, Any]] = []
         self._escaped_writes: list[dict[str, Any]] = []
+        # ── Round 23: شبکه از CDP، نه فقط از routeِ صفحه ─────────────────
+        #: درخواست‌هایِ داخلِ service worker هرگز به `page.on("request")` و
+        #: `page.route` نمی‌رسند؛ سنجشِ زندهٔ ۲۰۲۶-۱۰-۲۴ نشان داد یک POSTِ
+        #: سفارش از گاردِ page-level عبور کرد. CDP هم آن‌ها را می‌بیند و هم
+        #: `Network.setBlockedURLs` را در لایهٔ شبکه اعمال می‌کند.
+        self._cdp_session: Any = None
+        self._cdp_writes: list[dict[str, Any]] = []
+        self._cdp_by_id: dict[str, dict[str, Any]] = {}
+        self._cdp_blocked_ids: set[str] = set()
 
     # ---- lifecycle ----
     def start(self) -> None:
@@ -587,8 +596,7 @@ class PlaywrightBrowserDriver:
                                 else self._context.new_page())))
                 self._page.set_default_timeout(self.action_timeout_ms)
                 self._page.set_default_navigation_timeout(self.navigation_timeout_ms)
-                self._page.on("request", self._request_handler)
-                self._attach_response_listener()
+                self._attach_cdp_network()
                 self._ready.set()
                 self._serve_loop()
                 return
@@ -629,8 +637,7 @@ class PlaywrightBrowserDriver:
                 self._page = self._context.new_page()
             self._page.set_default_timeout(self.action_timeout_ms)
             self._page.set_default_navigation_timeout(self.navigation_timeout_ms)
-            self._page.on("request", self._request_handler)
-            self._attach_response_listener()
+            self._attach_cdp_network()
             self._ready.set()
             self._serve_loop()
         except Exception as e:                       # noqa: BLE001
@@ -686,6 +693,139 @@ class PlaywrightBrowserDriver:
                     self._all_requests.append(entry)
         except Exception:
             return
+
+    # ── Round 23: CDP network (service-worker proof) ──────────────────────
+    def _attach_cdp_network(self) -> None:
+        """شبکه را از CDP می‌خوانیم؛ page.route/response درخواست‌هایِ داخلِ
+        service worker را نمی‌بیند و در آزمونِ زندهٔ EasyTrader یک POSTِ سفارش
+        از گاردِ صفحه عبور کرد."""
+        try:
+            self._cdp_session = self._context.new_cdp_session(self._page)
+            #: بی‌بافرِ صریح، Chromium بدنهٔ fetch/XHR را پیش از
+            #: `Network.getResponseBody` دور می‌ریزد («No data found for
+            #: resource»)؛ همان مقادیری که خودِ DevTools می‌فرستد.
+            self._cdp_session.send("Network.enable", {
+                "maxTotalBufferSize": 20_000_000,
+                "maxResourceBufferSize": 2_000_000,
+                "maxPostDataSize": 65_536})
+            self._cdp_session.on("Network.requestWillBeSent", self._cdp_on_request)
+            self._cdp_session.on("Network.responseReceived", self._cdp_on_response)
+            self._cdp_session.on("Network.loadingFinished", self._cdp_on_finished)
+            self._cdp_session.on("Network.loadingFailed", self._cdp_on_failed)
+        except Exception:
+            self._cdp_session = None
+
+    def _cdp_on_request(self, ev: Any) -> None:
+        try:
+            req = ev.get("request") or {}
+            rid = str(ev.get("requestId") or "")
+            method = str(req.get("method") or "").upper()
+            url = str(req.get("url") or "")
+            p = urlparse(url)
+            entry = {"mono_ms": _now_ms(), "url": url, "method": method,
+                     "path": (p.path or "/")[:200], "host": p.netloc,
+                     "blocked": False, "responded": False, "request_id": rid}
+            with self._lock:
+                self._cdp_by_id[rid] = entry
+                if len(self._all_requests) < 500:
+                    self._all_requests.append(entry)
+                if method not in ("GET", "HEAD", "OPTIONS", "TRACE"):
+                    self._cdp_writes.append(entry)
+                    self._observed_writes.append(entry)
+                    #: فقط نوشتن‌ها؛ GETِ beacon در گاردِ dry-run قبلاً جایِ
+                    #: POSTِ سفارش را در `_last_request` می‌گرفت (سنجش ۲۰۲۶-۱۰-۲۴).
+                    if self._dry_run_guard:
+                        self._last_request = entry
+        except Exception:
+            return
+
+    def _cdp_on_response(self, ev: Any) -> None:
+        try:
+            rid = str(ev.get("requestId") or "")
+            r = ev.get("response") or {}
+            with self._lock:
+                entry = self._cdp_by_id.get(rid)
+                if entry is None:
+                    return
+                entry["responded"] = True
+                entry["status"] = int(r.get("status") or 0)
+                entry["content_type"] = str(r.get("mimeType") or "")[:60]
+                entry["headers"] = dict(r.get("headers") or {})
+                entry["response_id"] = rid
+        except Exception:
+            return
+
+    def _cdp_on_finished(self, ev: Any) -> None:
+        """بدنهٔ پاسخ فقط بعد از این رویداد در دسترس است (سنجش ۲۰۲۶-۱۰-۲۴:
+        `Network.getResponseBody` در `responseReceived` «No data found» می‌داد
+        و پس از `loadingFinished` همان بدنه خوانده شد)."""
+        try:
+            rid = str(ev.get("requestId") or "")
+            with self._lock:
+                entry = self._cdp_by_id.get(rid)
+                if entry is not None:
+                    entry["finished"] = True
+        except Exception:
+            return
+
+    def _cdp_on_failed(self, ev: Any) -> None:
+        try:
+            rid = str(ev.get("requestId") or "")
+            blocked = str(ev.get("blockedReason") or "")
+            with self._lock:
+                entry = self._cdp_by_id.get(rid)
+                if entry is None:
+                    return
+                entry["failed"] = True
+                entry["blocked_reason"] = blocked
+                entry["error_text"] = str(ev.get("errorText") or "")[:80]
+                if blocked:
+                    self._cdp_blocked_ids.add(rid)
+                    entry["blocked"] = True
+                    self._blocked_writes.append(entry)
+                    self._events.append({"kind": "request_blocked",
+                                         "classification": "cdp"})
+                else:
+                    self._escaped_writes.append(entry)
+        except Exception:
+            return
+
+    def _cdp_arm_block(self, paths: list[str]) -> dict[str, Any]:
+        """بستنِ قطعیِ مسیرهایِ سفارش در لایهٔ شبکه + bypassِ service worker."""
+        if self._cdp_session is None:
+            return {"armed": False, "reason": "no_cdp_session"}
+        known = [str(p or "") for p in paths if str(p or "")] or ["/core/api/v2/order"]
+        urls = ["*%s*" % p for p in known]
+        if not any("delete-order" in u for u in urls):
+            urls.append("*v2/delete-order*")
+        try:
+            self._cdp_session.send("Network.setBlockedURLs", {"urls": urls})
+            self._cdp_session.send("Network.setBypassServiceWorker", {"bypass": True})
+            return {"armed": True, "urls": urls}
+        except Exception as e:                       # noqa: BLE001
+            return {"armed": False, "reason": "%s: %s" % (type(e).__name__,
+                                                          str(e)[:120])}
+
+    def _cdp_clear_block(self) -> None:
+        if self._cdp_session is None:
+            return
+        try:
+            self._cdp_session.send("Network.setBlockedURLs", {"urls": []})
+            self._cdp_session.send("Network.setBypassServiceWorker", {"bypass": False})
+        except Exception:
+            pass
+
+    def _cdp_latest_write(self, *, only_order: bool = False) -> Optional[dict[str, Any]]:
+        with self._lock:
+            rows = list(self._cdp_writes)
+        if only_order:
+            rows = [r for r in rows if self._is_order_path(str(r.get("path") or ""))]
+        return dict(rows[-1]) if rows else None
+
+    def _is_order_path(self, path: str) -> bool:
+        norm = (path or "").rstrip("/")
+        return any(norm.endswith(str(p or "").rstrip("/"))
+                   for p in (self._order_paths or []) if str(p or ""))
 
     def _attach_response_listener(self) -> None:
         """رویدادِ پاسخ را فقط «می‌بیند»؛ متنِ پاسخ درِ مسیرِ فرمان خوانده می‌شود.
@@ -769,8 +909,8 @@ class PlaywrightBrowserDriver:
         with self._lock:
             # `_request_handler` قبلاً همین request را در `_all_requests` ثبت
             # می‌کند؛ ثبتِ دوباره اینجا writes را دوبرابر و dry-run را کاذب
-            # escape می‌کرد.
-            if is_write:
+            # escape می‌کرد. با CDP دیگر page-level مرجعِ شمارش نیست.
+            if is_write and self._cdp_session is None:
                 self._observed_writes.append(entry)
         if self._dry_run_guard:
             if not is_write:
@@ -877,6 +1017,9 @@ class PlaywrightBrowserDriver:
     def _do_intercept(self, pattern: str, abort: bool = True) -> dict[str, Any]:
         if self._page is None:
             return {"ok": False}
+        #: حالتِ گاردِ dry-run باید صریحاً خاموش شود؛ وگرنه پس از یک اجرایِ
+        #: dry-run، مسیرِ زنده هم نوشتن‌ها را می‌بست (سنجش ۲۰۲۶-۱۰-۲۴).
+        self._dry_run_guard = False
         # driverِ keep-alive بینِ سفارش‌ها زنده می‌ماند؛ routeِ قبلی و آخرین
         # request/response باید پاک شوند تا wait_for_request پاسخِ کهنه ندهد.
         with self._lock:
@@ -897,10 +1040,14 @@ class PlaywrightBrowserDriver:
             self._blocked_writes = []
             self._escaped_writes = []
             self._all_requests = []
+            self._cdp_writes = []
+            self._cdp_by_id = {}
+            self._cdp_blocked_ids = set()
         try:
             self._page.route(pattern, self._route_handler)
         except Exception as e:
             raise BrowserCommandError("route failed: %s" % str(e)[:120]) from None
+        self._cdp_clear_block()
         return {"pattern": pattern, "abort": bool(abort)}
 
     def _do_dry_run_guard(self, order_paths: list[str] | None = None,
@@ -918,6 +1065,9 @@ class PlaywrightBrowserDriver:
             # شمارشِ شبکه فقط برایِ همین action باشد؛ درایورِ keep-alive
             # نباید نوشتن‌هایِ اجرایِ قبلی را در dry-runِ تازه بشمارد.
             self._all_requests = []
+            self._cdp_writes = []
+            self._cdp_by_id = {}
+            self._cdp_blocked_ids = set()
         if self._current_route_pattern:
             try:
                 self._page.unroute(self._current_route_pattern)
@@ -934,8 +1084,10 @@ class PlaywrightBrowserDriver:
             self._page.route("**/*", self._route_handler)
         except Exception as e:
             raise BrowserCommandError("dry-run guard route failed: %s" % str(e)[:120]) from None
+        block = self._cdp_arm_block(list(self._order_paths))
+        self._events.append({"kind": "dry_run_block", **block})
         return {"dry_run_guard": True, "order_paths": list(self._order_paths),
-                "order_method": self._order_method}
+                "order_method": self._order_method, "cdp_block": block}
 
     def _do_click(self, selector: str, timeout_ms: int = 0,
                   force: bool = False) -> dict[str, Any]:
@@ -1009,6 +1161,44 @@ class PlaywrightBrowserDriver:
     def _do_evaluate(self, js: str, arg: Any = None) -> Any:
         return self._page.evaluate(js, arg)
 
+    def _do_session_probe(self) -> dict[str, Any]:
+        """شاهدِ ورود از همان صفحهٔ متصل — بی‌اتصالِ دوبارهٔ CDP.
+
+        `execution_panel.session_presence` هر بار یک connect_over_cdp کامل
+        می‌سازد (~۵۰۰ms در سنجشِ ۲۰۲۶-۱۰-۲۴) و در مسیرِ اقدام، پنجرهٔ هدف را
+        عقب می‌انداخت. این‌جا همان سه شاهد، درجا و فقط‌خواندنی خوانده می‌شوند.
+        """
+        js = """() => {
+          const keys = Object.keys(window.sessionStorage || {});
+          const has_key = keys.some(k => k.indexOf('oidc.user:') === 0);
+          const pw = Array.from(document.querySelectorAll('input[type=password]'))
+            .some(el => { try { const r = el.getBoundingClientRect();
+              return r.width > 0 && r.height > 0; } catch (e) { return false; } });
+          const shell = !!document.querySelector(
+            'main-layout, d-order-list, order-form-tabular-container');
+          const host = location.hostname || '';
+          return {has_key, password: pw, shell, host, path: location.pathname};
+        }"""
+        try:
+            got = dict(self._page.evaluate(js) or {})
+        except Exception as e:                       # noqa: BLE001
+            return {"state": "UNKNOWN", "code": "PROBE_FAILED",
+                    "detail": type(e).__name__}
+        host = str(got.get("host") or "").lower()
+        if not (host == "easytrader.ir" or host.endswith(".easytrader.ir")):
+            return {"state": "SESSION_LOST", "code": "OFF_BROKER_HOST",
+                    "host": host}
+        if got.get("has_key") and not got.get("password") and got.get("shell"):
+            return {"state": "LOGGED_IN", "evidence": "oidc-key+app-shell+no-login-form",
+                    "host": host}
+        if got.get("has_key") and not got.get("password"):
+            return {"state": "PARTIAL", "evidence": "oidc-key-without-app-shell",
+                    "host": host}
+        if got.get("has_key"):
+            return {"state": "PARTIAL", "evidence": "oidc-key-present-but-login-visible",
+                    "host": host}
+        return {"state": "LOGIN_REQUIRED", "evidence": "no-oidc-key", "host": host}
+
     def _do_last_request(self) -> Optional[dict[str, Any]]:
         with self._lock:
             return dict(self._last_request) if self._last_request else None
@@ -1022,17 +1212,93 @@ class PlaywrightBrowserDriver:
         `time.sleep` خالص یعنی eventِ response هرگز نمی‌رسد (سنجش 2026-10-20)."""
         self._page.wait_for_timeout(max(1, int(ms)))
 
+    @staticmethod
+    def _is_write_entry(entry: Mapping[str, Any]) -> bool:
+        return str(entry.get("method") or "").upper() not in (
+            "GET", "HEAD", "OPTIONS", "TRACE")
+
+    @classmethod
+    def _is_settled(cls, entry: Mapping[str, Any]) -> bool:
+        """درخواست تا وقتی سرنوشتش روشن نشده شاهدِ «دیده شد» نیست.
+
+        `requestWillBeSent` پیش از `loadingFailed`/`responseReceived` می‌رسد؛
+        برگرداندنِ همان لحظه، «blocked=False» را رویِ نوشتنِ واقعاً بسته ثبت
+        می‌کرد (سنجش ۲۰۲۶-۱۰-۲۴).
+        """
+        return bool(entry.get("blocked") or entry.get("responded")
+                    or entry.get("failed") or entry.get("classification"))
+
+    def _page_block_for(self, path: str) -> Optional[dict[str, Any]]:
+        with self._lock:
+            for row in reversed(self._blocked_writes):
+                if str(row.get("path") or "").rstrip("/") == str(path or "").rstrip("/"):
+                    return dict(row)
+        return None
+
     def _do_wait_request(self, timeout_ms: int = 2000) -> Optional[dict[str, Any]]:
         deadline = time.monotonic() + max(0.0, timeout_ms / 1000.0)
+        fallback: Optional[dict[str, Any]] = None
         while time.monotonic() < deadline:
-            with self._lock:
-                if self._last_request:
-                    return dict(self._last_request)
+            cdp = self._cdp_latest_write(only_order=True) or self._cdp_latest_write()
+            if cdp is not None:
+                with self._lock:
+                    self._last_request = cdp
+                if self._is_settled(cdp):
+                    #: گاردِ صفحه و بستنِ CDP هم‌زمان‌اند؛ اگر route زودتر abort
+                    #: کرده باشد، شاهدِ blocked/classification از همان آورده
+                    #: می‌شود تا نوشتنِ واقعاً بسته «ناشناخته» گزارش نشود.
+                    if not cdp.get("blocked"):
+                        page = self._page_block_for(str(cdp.get("path") or ""))
+                        if page is not None:
+                            cdp = {**cdp, "blocked": True,
+                                   "classification": page.get("classification")}
+                    return dict(cdp)
+                if fallback is None:
+                    fallback = cdp
+            else:
+                with self._lock:
+                    last = dict(self._last_request) if self._last_request else None
+                if last is not None and self._is_write_entry(last):
+                    if self._cdp_session is None or self._is_settled(last):
+                        return last
+                    if fallback is None:
+                        fallback = last
             self._pump()
-        return None
+        return dict(fallback) if fallback is not None else None
+
+    def _cdp_response_entry(self, entry: Mapping[str, Any]) -> dict[str, Any]:
+        """پاسخِ CDP → رکوردِ استاندارد؛ بدنه فقط از همان requestIdِ دیده‌شده."""
+        rid = str(entry.get("request_id") or "")
+        headers = {str(k).lower(): str(v) for k, v in
+                   dict(entry.get("headers") or {}).items()}
+        out: dict[str, Any] = {
+            "mono_ms": entry.get("mono_ms"), "status": int(entry.get("status") or 0),
+            "url": entry.get("url"), "method": entry.get("method"),
+            "content_type": str(entry.get("content_type") or "")[:60],
+            "retry_after": (headers.get("retry-after") or "")[:24] or None}
+        body: Any = None
+        why = ""
+        if self._cdp_session is not None and rid:
+            try:
+                got = self._cdp_session.send("Network.getResponseBody",
+                                             {"requestId": rid})
+                raw = str((got or {}).get("body") or "")
+                if (got or {}).get("base64Encoded"):
+                    import base64
+                    raw = base64.b64decode(raw).decode("utf-8", "replace")
+                body = raw[:4000]
+            except Exception as e:                   # noqa: BLE001
+                why = "cdp-body-unavailable:%s:%s" % (type(e).__name__, str(e)[:80])
+        else:
+            why = "no-cdp-session"
+        out["body"] = body
+        if body is None:
+            out["body_unavailable"] = why or "cdp-body-unavailable"
+        return out
 
     def _do_wait_response(self, timeout_ms: int = 2000) -> Optional[dict[str, Any]]:
         deadline = time.monotonic() + max(0.0, timeout_ms / 1000.0)
+        page_pending: Any = None
         while time.monotonic() < deadline:
             with self._lock:
                 if self._last_response:
@@ -1040,12 +1306,43 @@ class PlaywrightBrowserDriver:
                 pending = self._pending_response
                 self._pending_response = None
             if pending is not None:
-                entry = self._response_entry(pending)
+                page_pending = pending
+            if self._cdp_session is not None:
+                #: CDP مرجعِ پاسخ است؛ پاسخِ داخلِ service worker هم همین‌جا
+                #: دیده می‌شود و بدنه از همان requestId خوانده می‌شود.
+                with self._lock:
+                    cand = None
+                    for e in reversed(self._cdp_writes):
+                        #: بدنه تا `loadingFinished` در دسترس نیست؛ زودتر
+                        #: خواندن «No data found» می‌دهد.
+                        if e.get("responded") and e.get("finished"):
+                            cand = dict(e)
+                            if self._is_order_path(str(e.get("path") or "")):
+                                break
+                if cand is not None:
+                    entry = self._cdp_response_entry(cand)
+                    if entry.get("body") is None and page_pending is not None:
+                        alt = self._response_entry(page_pending)
+                        if alt.get("body") is not None:
+                            entry["body"] = alt["body"]
+                            entry["body_source"] = "playwright"
+                            entry.pop("body_unavailable", None)
+                    with self._lock:
+                        self._last_response = entry
+                        self._events.append({"kind": "response_cdp", **entry})
+                    return dict(entry)
+            elif page_pending is not None:
+                entry = self._response_entry(page_pending)
                 with self._lock:
                     self._last_response = entry
                     self._events.append({"kind": "response", **entry})
                 return dict(entry)
             self._pump()
+        if page_pending is not None and self._cdp_session is None:
+            entry = self._response_entry(page_pending)
+            with self._lock:
+                self._last_response = entry
+            return dict(entry)
         return None
 
     def _do_events(self) -> list[dict[str, Any]]:
@@ -1066,8 +1363,10 @@ class PlaywrightBrowserDriver:
         with self._lock:
             reqs = list(self._all_requests)
             truncated = len(self._all_requests) >= 500
-            blocked = list(self._blocked_writes)
-            escaped = list(self._escaped_writes)
+            page_blocked = list(self._blocked_writes)
+            page_escaped = list(self._escaped_writes)
+            cdp_writes = list(self._cdp_writes)
+            cdp_ok = self._cdp_session is not None
         by_host: dict[str, dict[str, int]] = {}
         for r in reqs:
             host = str(r.get("host") or urlparse(str(r.get("url") or "")).netloc or "(none)")
@@ -1078,24 +1377,46 @@ class PlaywrightBrowserDriver:
         writes = [r for r in reqs
                   if str(r.get("method") or "").upper() not in
                   ("GET", "HEAD", "OPTIONS", "TRACE")]
-        order_writes = sum(1 for r in blocked
-                           if r.get("classification") == "order")
-        other_writes = sum(1 for r in blocked
-                           if r.get("classification") == "other_write")
-        mismatch = sum(1 for r in blocked
-                       if r.get("classification") == "order_method_mismatch")
-        order_posts = order_writes if self._dry_run_guard else sum(
-            1 for r in reqs
-            if (str(r.get("method") or "").upper() == "POST"
-                and needle and needle in str(r.get("path") or "")))
+        if cdp_ok:
+            #: CDP مرجعِ نهایی است: درخواست‌هایِ داخلِ service worker هم دیده
+            #: می‌شوند. «پاسخ گرفت» = عبورِ قطعی؛ «blocked» = بستهٔ لایهٔ شبکه.
+            order_writes = [r for r in cdp_writes
+                            if self._is_order_path(str(r.get("path") or ""))
+                            and r.get("blocked")]
+            other_writes = [r for r in cdp_writes
+                            if not self._is_order_path(str(r.get("path") or ""))
+                            and r.get("blocked")]
+            mismatch = [r for r in cdp_writes
+                        if self._is_order_path(str(r.get("path") or ""))
+                        and str(r.get("method") or "").upper() != self._order_method]
+            blocked = [r for r in cdp_writes if r.get("blocked")]
+            escaped = [r for r in cdp_writes if r.get("responded")]
+            order_posts = sum(
+                1 for r in cdp_writes
+                if str(r.get("method") or "").upper() == self._order_method
+                and self._is_order_path(str(r.get("path") or "")))
+        else:
+            blocked = page_blocked
+            escaped = page_escaped
+            order_writes = [r for r in blocked
+                            if r.get("classification") == "order"]
+            other_writes = [r for r in blocked
+                            if r.get("classification") == "other_write"]
+            mismatch = [r for r in blocked
+                        if r.get("classification") == "order_method_mismatch"]
+            order_posts = (len(order_writes) if self._dry_run_guard else sum(
+                1 for r in reqs
+                if (str(r.get("method") or "").upper() == "POST"
+                    and needle and needle in str(r.get("path") or ""))))
         return {"requests": len(reqs), "by_host": by_host,
                 "writes": len(writes), "blocked_writes": len(blocked),
                 "escaped_writes": len(escaped),
-                "order_writes": order_writes, "other_writes": other_writes,
-                "order_method_mismatch": mismatch,
+                "order_writes": len(order_writes), "other_writes": len(other_writes),
+                "order_method_mismatch": len(mismatch),
                 "order_posts": order_posts, "truncated": truncated,
                 "source": ("browser-dry-run-guard" if self._dry_run_guard
                            else "browser-events"),
+                "network_source": ("cdp" if cdp_ok else "page"),
                 "order_path_matched": bool(needle)}
 
     def _do_probe(self, selectors: Optional[Mapping[str, Any]] = None) -> dict[str, Any]:
@@ -1277,6 +1598,10 @@ class PlaywrightBrowserDriver:
 
     def probe(self, selectors: Optional[Mapping[str, Any]] = None) -> dict[str, Any]:
         return self._call("probe", selectors=dict(selectors or {}))
+
+    def session_probe(self) -> dict[str, Any]:
+        """شاهدِ ورود در همان اتصال (بی‌connect دوباره)."""
+        return dict(self._call("session_probe"))
 
     def screenshot(self, path: str) -> str:
         return str(self._call("screenshot", path=path))

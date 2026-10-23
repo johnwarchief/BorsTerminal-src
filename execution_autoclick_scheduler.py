@@ -29,6 +29,9 @@ from execution_autoclick_run import (
 
 #: فاصلۀ بیشینه بینِ دو بیداریِ حلقه (ثانیه)؛ برایِ واکنشِ سریع‌تر به توقف/تغییرِ وضعیت.
 MAX_SLEEP_S = 0.20
+#: بودجۀ claimِ زودهنگام: اعتبارسنجی/گارد پیش از لحظۀ هدف، کلیک رویِ خودِ هدف.
+#: بی‌این، هر اقدام به‌اندازۀٔ کلِ مسیرِ اعتبارسنجی دیر می‌افتاد (سنجش ۲۰۲۶-۱۰-۲۴).
+CLAIM_LEAD_MS = 900
 #: چکِ تازه‌بودنِ وضعیتِ اجرا در هر دور؛ پیش‌فرضِ محافظه‌کارانه.
 DEFAULT_STOP_POLL_S = 0.05
 
@@ -111,6 +114,8 @@ class AutoClickRunRunner:
         self._status_sink = status_sink
         self._clock = clock
         self._wall_ms = wall_ms or (lambda: int(time.time() * 1000))
+        #: ساعتِ ساختگی (گاردها) هرگز پیش نمی‌رود؛ spinِ انتظار نباید بی‌پایان شود.
+        self._wall_is_real = wall_ms is None
         self.account = str(account)
         self.spin_ms = max(0.0, float(spin_ms))
         self.missed_grace_ms = int(missed_grace_ms)
@@ -206,15 +211,17 @@ class AutoClickRunRunner:
                         return TickReport(transition=BLOCKED,
                                           detail=str(got.get("reason", ""))[:240],
                                           outcome=dict(got))
-        # ۲) خوابِ بلند تا نزدیکِ هدف
+        # ۲) خوابِ بلند تا نزدیکِ هدف (با بودجهٔ claimِ زودهنگام)
         lead = max(0, due - now)
-        if lead > int(self.spin_ms) + 5:
-            self._stop.wait(min(lead / 1000.0, MAX_SLEEP_S))
-            return TickReport(slept_s=min(lead / 1000.0, MAX_SLEEP_S),
+        wake = max(0, lead - CLAIM_LEAD_MS)
+        if wake > int(self.spin_ms) + 5:
+            self._stop.wait(min(wake / 1000.0, MAX_SLEEP_S))
+            return TickReport(slept_s=min(wake / 1000.0, MAX_SLEEP_S),
                               detail="waiting for %s" % (run.run_id))
-        # ۳) spinِ پایانی رویِ monotonic تا رسیدنِ زمانِ هدف
-        spin_deadline = self._clock() + (lead / 1000.0) + 0.05
-        while (not self._stop.is_set()) and self._wall_ms() < due \
+        # ۳) spinِ پایانی رویِ monotonic تا رسیدنِ زمانِ claim
+        claim_at = due - CLAIM_LEAD_MS
+        spin_deadline = self._clock() + (max(0, claim_at - now) / 1000.0) + 0.05
+        while (not self._stop.is_set()) and self._wall_ms() < claim_at \
                 and self._clock() < spin_deadline:
             pass
         return self.tick()
@@ -256,7 +263,32 @@ class AutoClickRunRunner:
                                      reason="از زمانِ هدف گذشته است و هیچ اقدامی اجرا نشده؛ "
                                             "catch-up نمی‌شود")
                 return TickReport(transition=MISSED_TARGET, detail="missed target")
-        action = self.store.claim_next(run.run_id, at_ms=now, token="runner")
+        #: فاصله از «شلیکِ واقعیِ» اقدامِ قبلی، نه از زمانِ برنامه. با تأخیرِ
+        #: warm/کلیک، زمان‌بندیِ مطلق فشرده می‌شد و اقدامِ دوم ۷۷ms بعد از
+        #: ثبتِ اول درِ rate limiter می‌رسید و اجرایِ زندهٔ واقعی را می‌بست
+        #: (سنجش ۲۰۲۶-۱۰-۲۴). کف = max(فاصلهٔ برنامه، مدتِ اجرایِ قبلی + ۳۰۰ms).
+        last = None
+        for a in run.actions:
+            if a.fired_at_ms and (last is None or int(a.fired_at_ms) > int(last.fired_at_ms)):
+                last = a
+        if last is not None and str(run.config.mode) == "repeat":
+            #: فاصلهٔ برنامه خودش با planned_at اعمال می‌شود؛ این‌جا فقط کفِ
+            #: مقرراتیِ ۳۰۰ms از شلیکِ واقعی تضمین می‌شود. سنجشِ دقیق با spin
+            #: کوتاه، نه خوابِ ۲۰۰ms که به هدفِ بعدی overshoot می‌کرد.
+            floor_at = int(last.fired_at_ms) + 300
+            if now < floor_at:
+                left = floor_at - now
+                if left <= 50 and self._wall_is_real:
+                    spin_deadline = self._clock() + left / 1000.0 + 0.01
+                    while (self._wall_ms() < floor_at
+                           and self._clock() < spin_deadline):
+                        pass
+                else:
+                    self._stop.wait(min(left / 1000.0, MAX_SLEEP_S))
+                return TickReport(slept_s=round(min(left / 1000.0, MAX_SLEEP_S), 3),
+                                  detail="spacing after action %s" % last.idx)
+        action = self.store.claim_next(run.run_id, at_ms=now, token="runner",
+                                        lead_ms=CLAIM_LEAD_MS)
         if action is None:
             rec = self.store.get(run.run_id)
             if int(rec.fired_actions) >= int(rec.config.total_actions):
@@ -294,7 +326,16 @@ class AutoClickRunRunner:
                        "exception": True}
         state = str(outcome.get("state") or "UNKNOWN")
         if self.limiter is not None and bool(outcome.get("fired")):
-            self.limiter.record(run.config.account)
+            #: زمانِ ثبت = لحظۀ شلیک (همان monotonicِ تلمتری)، نه پایانِ اقدام.
+            fired_mono = None
+            try:
+                fired_mono = float(((outcome.get("telemetry") or {})
+                                    .get("send_started_mono_ms")) or 0.0) / 1000.0
+            except (TypeError, ValueError):
+                fired_mono = None
+            self.limiter.record(run.config.account,
+                                at_mono_s=fired_mono if fired_mono and fired_mono > 0
+                                else None)
             seen = self.limiter.observe_response(
                 status=outcome.get("http_status"), body=outcome.get("response_body"),
                 headers=outcome.get("response_headers"), account=run.config.account,

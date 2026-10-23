@@ -111,7 +111,7 @@ def strategy_settings() -> SC.StrategySettings:
     opts = dict(base.options)
     opts.update(dict(loaded.options or {}))
     return SC.StrategySettings(strategy_id=SC.AUTOCLICKER, enabled=loaded.enabled,
-                               mode=loaded.mode, dry_run=loaded.dry_run,
+                               mode=loaded.mode,
                                priority=loaded.priority, options=opts)
 
 
@@ -183,32 +183,53 @@ def ctx_provider(run_getter) -> Any:
             order_paths=tuple(o.get("order_paths") or ("/core/api/v2/order",)),
             order_method=str(o.get("order_method") or "POST"),
             intercept_pattern=str(o.get("intercept_pattern") or "**/core/api/v2/order*"),
-            allowed_hosts=tuple(o.get("origin_allowlist") or
-                                ("d.easytrader.ir",)),
+            #: origin_allowlist در تنظیمات، نشانی‌هایِ کامل است؛ مقایسهٔ اجرا با
+            #: hostname انجام می‌شود. پیش‌تر همین اختلاف، اجرایِ زندهٔ واقعی را
+            #: با SESSION_LOSTِ کاذب بست (سنجش ۲۰۲۶-۱۰-۲۴).
+            allowed_hosts=_hostnames(o.get("origin_allowlist")),
             request_timeout_ms=int(o.get("action_timeout_ms") or 1200),
             response_timeout_ms=int(o.get("response_timeout_ms") or 4000),
             clock_probe=lambda: ex().autoclicker_clock(),
-            session_ok=lambda: panel_session_ok(host))
+            wait_for_target=True,
+            session_ok=lambda: _quick_session_ok(drv, host))
     return build
 
 
 def allowed_hosts() -> tuple[str, ...]:
     o = dict(strategy_settings().options or {})
-    allow = o.get("origin_allowlist") or ["https://d.easytrader.ir"]
+    return _hostnames(o.get("origin_allowlist")) or PANEL.EASYTRADER_HOSTS
+
+
+def _hostnames(raw: Any) -> tuple[str, ...]:
+    """هر ورودیِ «نشانیِ کامل یا میزبان» → میزبانِ کوچک‌شده؛ تهی‌ها حذف."""
+    allow = raw or ["https://d.easytrader.ir"]
     if isinstance(allow, str):
         allow = [allow]
-    out = []
+    out: list[str] = []
     for a in allow:
         host = urlparse(str(a)).hostname or str(a)
+        host = host.strip().lower()
         if host:
-            out.append(host.lower())
-    return tuple(out) or PANEL.EASYTRADER_HOSTS
+            out.append(host)
+    return tuple(dict.fromkeys(out))
 
 
 def panel_session_ok(host: Mapping[str, Any]) -> tuple[bool, str]:
     """ورود از شواهدِ قابلِ مشاهده: کلیدِ OIDC در همان host، نه حدس."""
     got = PANEL.session_presence(str(host.get("cdp_url") or ""),
                                  broker_hosts=allowed_hosts())
+    state = str(got.get("state") or "UNKNOWN")
+    if state == "LOGGED_IN":
+        return True, "ok"
+    return False, "%s|%s" % (state, got.get("code") or got.get("evidence") or "")
+
+
+def _quick_session_ok(drv: Any, host: Mapping[str, Any]) -> tuple[bool, str]:
+    """مسیرِ داغِ اقدام: درِ همان اتصال؛ connect دوبارهٔ CDP ممنوع."""
+    try:
+        got = dict(drv.session_probe() or {})
+    except Exception as e:                       # noqa: BLE001
+        return panel_session_ok(host)
     state = str(got.get("state") or "UNKNOWN")
     if state == "LOGGED_IN":
         return True, "ok"
@@ -282,10 +303,16 @@ def build_facts(run: Optional[AR.RunRecord], *, host: Mapping[str, Any],
         "(مقدارِ نشست هرگز خوانده نمی‌شود)")
     panel_tabs = [t for t in (tabs.get("tabs") or []) if t.get("is_panel")]
     fresh = time.time() - float(_PANEL_SEEN.get("at") or 0.0) < PANEL_FRESH_S
+    #: «نشانهٔ درست» یعنی پنل به‌تازگی با نشانهٔ معتبر درخواست داده است؛ نه
+    #: اینکه *همین* درخواستِ گزارش‌گیرنده نشانه داشته باشد. وگرنه هر خواندنِ
+    #: بیرونی (curl) خانه را UNKNOWN نشان می‌داد در حالی که پنل وصل است
+    #: (سنجش ۲۰۲۶-۱۰-۲۴).
+    connected = bool(panel_tabs) and (bool(ticket_ok) or fresh)
     facts["panel_connected"] = _fact(
-        "PASS" if (panel_tabs and ticket_ok and fresh) else "UNKNOWN",
-        ("تبِ پنل باز است و با نشانهٔ درست به این بک‌اند می‌نویسد (%.0fs پیش)" % fresh
-         if (panel_tabs and ticket_ok and fresh) else
+        "PASS" if connected else "UNKNOWN",
+        ("تبِ پنل باز است و با نشانهٔ درست به این بک‌اند می‌نویسد (%.0fs پیش)" %
+         (time.time() - float(_PANEL_SEEN.get("at") or 0.0))
+         if connected else
          "تبِ پنل=%s نشانهٔ درست=%s تازه=%s" % (bool(panel_tabs), ticket_ok, fresh)),
         "execution_panel ticket bound to the host context")
     jud = dict(ui.get("resolution") or {})
@@ -295,7 +322,11 @@ def build_facts(run: Optional[AR.RunRecord], *, host: Mapping[str, Any],
                and checks.get("form_fields_unique") == "PASS")
     facts["form_usable"] = _fact(
         "PASS" if form_ok else ("UNKNOWN" if not jud else "FAIL"),
-        str(jud.get("reason") or "فرم خوانده نشده"), "execution_ui_state.judge")
+        #: دلیلِ judge شاملِ ناسازگاریِ قیمت/تعداد هم هست؛ آن FAILِ خودش را دارد.
+        #: این خانه «فرم باز و فیلدها یکتا/نمایان» را می‌گوید، نه داوریِ کامل را.
+        ("فرمِ سفارش باز است و فیلدهایِ قیمت/تعداد یکتا و نمایان‌اند" if form_ok
+         else str(jud.get("reason") or "فرم خوانده نشده")),
+        "execution_ui_state.judge")
     sym_side = (checks.get("symbol_verified") == "PASS"
                 and checks.get("side_verified") == "PASS")
     facts["symbol_side_detected"] = _fact(
@@ -489,9 +520,16 @@ def get_state(request: Request, run_id: str = Query(default="")) -> dict[str, An
                         preflight=pf, ticket_ok=ticket_ok)
     for key, val in facts.items():
         val["label"] = FACT_LABELS.get(key, key)
+    #: «اجرایِ فعال» مستقل از انتخابِ پنل؛ پنل باید بتواند اجرایی را که از مسیرِ
+    #: دیگری ساخته شده دنبال کند (وگرنه «توقف اضطراری» رویِ اجرایِ قدیمی می‌ماند).
+    try:
+        active = store().active_run("easytrader")
+    except Exception:                                # noqa: BLE001
+        active = None
     return {"status": "success", "app_version": bors_config.APP_VERSION,
             "fact_order": list(FACT_ORDER), "facts": facts,
             "run": run.public() if run else None,
+            "active_run": active.public() if active else None,
             "limits": limiter().public(),
             "preflight": pf, "ui": ui,
             "panel": {"ticket_active": bool(ticket_ok),
@@ -574,8 +612,19 @@ def post_check(body: dict[str, Any] = Body(default={})) -> dict[str, Any]:
     warm = executor().run_warm()
     plan = limiter().check_plan(actions=run.config.total_actions,
                                 interval_ms=run.config.interval_ms).public()
+    #: «بررسی آمادگی» باید وضعیت را جلو ببرد، وگرنه پنل دکمهٔ arm را (که فقط
+    #: در VALIDATED/BLOCKED فعال است) همیشه خاموش نشان می‌داد — سنجش ۲۰۲۶-۱۰-۲۴.
+    rec = store().get(run.run_id)
+    if str(rec.state) == AR.DRAFT:
+        ok = ((bool(pf.get("ok_for_arm"))
+               or (run.config.dry_run and bool(pf.get("ok_for_dry_run"))))
+              and bool(ui.get("ok")) and bool(warm.get("ok")) and bool(plan["fits"]))
+        rec = store().set_state(
+            run.run_id, AR.VALIDATED if ok else AR.BLOCKED,
+            reason="" if ok else "بررسی آمادگی: پیش‌شرط‌ها کامل نیستند",
+            validation={"preflight": pf, "ui": ui, "warm": warm, "plan": plan})
     return {"status": "success", "ui": ui, "warm": warm, "preflight": pf,
-            "plan": plan, "run": store().get(run.run_id).public()}
+            "plan": plan, "run": rec.public()}
 
 
 @router.post("/api/execution/autoclicker/preflight")
@@ -607,8 +656,10 @@ def post_arm(body: dict[str, Any] = Body(default={})) -> dict[str, Any]:
     strict = not bool(run.config.dry_run)
     unknowns = list(pf.get("unknowns") or [])
     planpub = plan.public()
-    ok = (bool(pf.get("ok_for_arm")) and bool(ui.get("ok")) and bool(planpub["fits"])
-          and not (strict and unknowns))
+    rehearsal = bool(run.config.dry_run) and not bool(pf.get("ok_for_arm")) \
+        and bool(pf.get("ok_for_dry_run"))
+    ok = ((bool(pf.get("ok_for_arm")) or rehearsal) and bool(ui.get("ok"))
+          and bool(planpub["fits"]) and not (strict and unknowns))
     if strict and unknowns and not pf.get("blockers"):
         detail = "اجرایِ زنده با %d خانۀ بی‌داده مسدود است: %s" % (
             len(unknowns), "، ".join(u.split(":")[0] for u in unknowns))
@@ -746,7 +797,8 @@ def post_panel_open(request: Request,
     tk = _TICKETS.mint(cdp_url=str(host.get("cdp_url") or ""),
                        host_pid=int(host.get("pid") or 0))
     url = PANEL.panel_url_for(base, tk.value)
-    got = PANEL.open_panel_tab(str(host.get("cdp_url") or ""), url)
+    got = PANEL.open_panel_tab(str(host.get("cdp_url") or ""), url,
+                               ticket_store=_TICKETS)
     if got.get("status") != "success":
         _TICKETS.revoke(tk.value)
         return {"status": "error", "code": got.get("code"),
@@ -758,6 +810,7 @@ def post_panel_open(request: Request,
     return {"status": "success", "host": {k: host.get(k) for k in
                                           ("status", "healthy", "pid", "url")},
             "opened": bool(got.get("opened")), "already_open": bool(got.get("already_open")),
+            "rebound": bool(got.get("rebound")),
             "run_id": run.run_id if run else "",
             "ticket_len": len(tk.value), "expires_in_s": int(_TICKETS.ttl_s)}
 
