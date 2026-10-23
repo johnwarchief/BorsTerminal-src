@@ -89,8 +89,11 @@ UI_STATE_JS = r"""(opts) => {
                        w: Math.round(r.width), h: Math.round(r.height)} : null; })()};
   };
   const scopeOf = (btn) => {
+    //: اسکوپِ صریح قرارداد است، نه سرنخ: دکمه‌ای که بیرون از آن است «بی‌فرم»
+    //: می‌ماند. پایین‌آمدن به body هر دکمهٔ صفحه را «وابسته» می‌کرد، چون body
+    //: هم فیلدِ قیمت را در خود دارد هم فیلدِ تعداد.
     const sel = opts.form_scope_selector || '';
-    if (sel) { try { const sc = btn.closest(sel); if (sc) return sc; } catch (e) {} }
+    if (sel) { try { return btn.closest(sel); } catch (e) { return null; } }
     let cur = btn.parentElement, depth = 0;
     const price = qall(opts.price_selector)[0];
     const qty = qall(opts.quantity_selector)[0];

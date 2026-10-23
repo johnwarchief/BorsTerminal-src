@@ -536,6 +536,8 @@ class PlaywrightBrowserDriver:
         self._all_requests: list[dict[str, Any]] = []
         self._last_request: Optional[dict[str, Any]] = None
         self._last_response: Optional[dict[str, Any]] = None
+        #: ارجاعِ پاسخِ دیده‌شده تا بدنه‌اش بیرون از callbackِ رویداد خوانده شود.
+        self._pending_response: Optional[Any] = None
         self._lock = threading.Lock()
         # ── Round 14: گاردِ dry-run مستقل از الگویِ کاربر ─────────────────
         self._dry_run_guard = False
@@ -686,6 +688,14 @@ class PlaywrightBrowserDriver:
             return
 
     def _attach_response_listener(self) -> None:
+        """رویدادِ پاسخ را فقط «می‌بیند»؛ متنِ پاسخ درِ مسیرِ فرمان خوانده می‌شود.
+
+        چرا: `resp.body()` درِ داخلِ callbackِ رویداد، پاسخِ POST را کاملاً از
+        تحویل حذف می‌کرد (سنجشِ ۲۰۲۶-۱۰-۲۳ با Chromiumِ Playwright: پاسخِ سفارش
+        هرگز نمی‌رسید و اجرایِ زنده UNKNOWN می‌شد، در حالی که GETِ beacon از
+        همان صفحه تحویل می‌شد). ارجاع نگه می‌داریم و در `_do_wait_response` —
+        جایی که فراخوانیِ sync مجاز است — بدنه را می‌خوانیم.
+        """
         page = self._page
 
         def on_response(resp):
@@ -694,27 +704,48 @@ class PlaywrightBrowserDriver:
                 needle = pattern.replace("**/", "").rstrip("*")
                 if needle and needle not in resp.url:
                     return
-                entry = {"mono_ms": _now_ms(), "status": int(resp.status),
-                         "url": resp.url,
-                         "method": str(getattr(resp.request, "method", "") or ""),
-                         "content_type": str(resp.headers.get("content-type") or "")[:60],
-                         # فقط retry-after؛ هیچ هدرِ دیگری (Set-Cookie و…) بیرون
-                         # نمی‌رود تا شاهدِ نشست در لاگ/پاسخ ننشیند.
-                         "retry_after": str(resp.headers.get("retry-after") or "")[:24]
-                         or None}
-                if entry["method"] == "POST":
-                    try:
-                        raw = resp.body()
-                        entry["body"] = raw.decode("utf-8", "replace")[:4000]
-                    except Exception:
-                        entry["body"] = None
+                method = str(getattr(resp.request, "method", "") or "").upper()
+                if method in ("GET", "HEAD", "OPTIONS", "TRACE"):
+                    return
                 with self._lock:
-                    self._last_response = entry
-                    self._events.append({"kind": "response", **entry})
+                    self._pending_response = resp
+                    self._events.append({"kind": "response_seen",
+                                         "status": int(resp.status),
+                                         "url": resp.url, "method": method})
             except Exception:
                 return
 
         page.on("response", on_response)
+
+    def _response_entry(self, resp: Any) -> dict[str, Any]:
+        """پاسخِ نگه‌داشته‌شده → رکوردِ استاندارد؛ بدنه فقط همین‌جا خوانده شود."""
+        method = str(getattr(resp.request, "method", "") or "").upper()
+        headers = resp.headers or {}
+        entry: dict[str, Any] = {
+            "mono_ms": _now_ms(), "status": int(resp.status), "url": resp.url,
+            "method": method,
+            "content_type": str(headers.get("content-type") or "")[:60],
+            # فقط retry-after؛ هیچ هدرِ دیگری (Set-Cookie و…) بیرون نمی‌رود تا
+            # شاهدِ نشست در لاگ/پاسخ ننشیند.
+            "retry_after": str(headers.get("retry-after") or "")[:24] or None}
+        if method != "POST":
+            return entry
+        #: Chrome پاسخِ `no-store` را پیش از `Network.getResponseBody` دور
+        #: می‌ریزد و `resp.body()` تا ابد معلق می‌ماند (سنجش ۲۰۲۶-۱۰-۲۳:
+        #: ۴۱ ثانیه و سپس «Connection closed»). خواندن را رد می‌کنیم و
+        #: «بدنه در دسترس نیست» را صریح می‌گذاریم؛ ۲xx بی‌بدنه UNKNOWN است،
+        #: نه پذیرش.
+        if "no-store" in str(headers.get("cache-control") or "").lower():
+            entry["body"] = None
+            entry["body_unavailable"] = "cache-control:no-store"
+            return entry
+        try:
+            raw = resp.body()
+            entry["body"] = raw.decode("utf-8", "replace")[:4000]
+        except Exception:
+            entry["body"] = None
+            entry["body_unavailable"] = "body-read-failed"
+        return entry
 
     @staticmethod
     def _classify_guard_write(method: str, path: str,
@@ -851,6 +882,7 @@ class PlaywrightBrowserDriver:
         with self._lock:
             self._last_request = None
             self._last_response = None
+            self._pending_response = None
         if self._current_route_pattern:
             try:
                 self._page.unroute(self._current_route_pattern)
@@ -879,6 +911,7 @@ class PlaywrightBrowserDriver:
         with self._lock:
             self._last_request = None
             self._last_response = None
+            self._pending_response = None
             self._observed_writes = []
             self._blocked_writes = []
             self._escaped_writes = []
@@ -1004,6 +1037,14 @@ class PlaywrightBrowserDriver:
             with self._lock:
                 if self._last_response:
                     return dict(self._last_response)
+                pending = self._pending_response
+                self._pending_response = None
+            if pending is not None:
+                entry = self._response_entry(pending)
+                with self._lock:
+                    self._last_response = entry
+                    self._events.append({"kind": "response", **entry})
+                return dict(entry)
             self._pump()
         return None
 
