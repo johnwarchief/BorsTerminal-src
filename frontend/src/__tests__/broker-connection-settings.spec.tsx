@@ -184,7 +184,7 @@ describe('راستِ نشست و ترافیک', () => {
     const s = (statusEasy({ session: { state: 'unknown', origin: 'easytrader',
       proven: false, verified_by: {} } }) as unknown) as ExecutionStatus;
     const rows = connectionLadder({ st: s });
-    expect(gateRow(rows, 'entered').text).toContain('نشانی وارد شد');
+    expect(gateRow(rows, 'entered').text).toContain('دسترسی دریافت شد');
     expect(gateRow(rows, 'proven').text).toBe('تأیید نشده');
     expect(gateRow(rows, 'proven').text).not.toContain('تأیید شد');
   });
@@ -192,7 +192,7 @@ describe('راستِ نشست و ترافیک', () => {
   it('نشستِ منقضی یا ردِ اجازۀ دسترسی، «وارد شده»یِ سالم خوانده نمی‌شود', () => {
     const expired = (statusEasy({ session: { state: 'expired', origin: 'easytrader',
       proven: false } }) as unknown) as ExecutionStatus;
-    expect(gateRow(connectionLadder({ st: expired }), 'entered').text).toBe('نشست منقضی شده');
+    expect(gateRow(connectionLadder({ st: expired }), 'entered').text).toBe('دسترسی منقضی شده');
     const denied = (statusEasy({ session: { state: 'auth_failed', origin: 'easytrader',
       proven: false } }) as unknown) as ExecutionStatus;
     expect(gateRow(connectionLadder({ st: denied }), 'entered').tone).toBe('bad');
@@ -203,7 +203,7 @@ describe('راستِ نشست و ترافیک', () => {
       origin: 'mock', proven: true, verified_by: { path: '/x' } } }) as unknown) as ExecutionStatus;
     const rows = connectionLadder({ st: s });
     expect(gateRow(rows, 'proven').text).not.toContain('تأیید شد');
-    expect(gateRow(rows, 'entered').text).toContain('بدل');
+    expect(gateRow(rows, 'entered').text).toContain('حالت آزمایشی');
   });
 
   it('تنظیمِ ذخیره‌شدۀ «فقط‌خواندنی» سطرِ «ارسالِ سفارش» را باز نمی‌کند', () => {

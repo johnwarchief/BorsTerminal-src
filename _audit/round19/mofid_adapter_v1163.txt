@@ -1,0 +1,42 @@
+ok   payloadِ تختِ Mofid مطابقِ قراردادِ مرجع است
+ok   فروش به Sell نگاشت می‌شود
+ok   با ترافیک و token، live/writes روشن است
+ok   2xx ⇒ UNKNOWN، نه acceptance/order-id
+ok   متد/مسیر/هدر/ISIN درست است
+ok   token در repr/لاگ نیست
+ok   401 ⇒ SESSION_EXPIRED
+ok   5xx ⇒ UNKNOWN
+ok   timeout ⇒ UNKNOWN و بدونِ retry
+ok   بی‌ترافیک ⇒ هیچ capability ادعا نمی‌شود
+ok   بی‌ترافیک ⇒ هیچ درخواستی ساخته نمی‌شود
+ok   preflightِ Mofid بی‌دادهٔ حساب fail-closed است
+ok   هدرِ Authorization مطابقِ قاعدهٔ کلاینتِ Titan است
+ok   GET customer/status نشست را تأیید می‌کند
+ok   قدرت خرید فقط از purchasingPower ساخته می‌شود
+ok   مانده/بلوکه از همان پاسخ و بی‌صفرِ جعلی
+ok   خواندنِ حساب فقط GET و با هدرهایِ Titan است
+ok   توکن در repr/لاگِ خواندن نیست
+ok   sellable = min(دارایی، تسویه‌شده) - سفارشِ بازِ فروش
+ok   کرانِ منفی به صفر بریده می‌شود، نه منفی
+ok   sellable برایِ نمادِ موجود/غایب درست است
+ok   sellable با برچسبِ برآوردِ کلاینت اعلام می‌شود
+ok   فهرستِ سفارشِ باز به رکوردِ خودی نگاشت می‌شود
+ok   detail/state وضعیت را می‌دهد
+ok   read_only: شناسهٔ خارج از فهرست پیش از هر درخواست مسدود می‌شود
+ok   detail/state 404 ⇒ None در حالتِ غیرِ read_only
+ok   نگاشتِ enumِ Titan و UNKNOWNِ محافظه‌کارانه
+ok   هیچ درخواستِ تغییردهنده‌ای در مسیرِ خواندن ساخته نشد
+ok   fallbackِ Accounting/Remain قدرت خرید را GET می‌خواند
+ok   HTTP 401 ⇒ SESSION_EXPIRED
+ok   HTTP 403 ⇒ AUTH_FAILED
+ok   401 پس از نشستِ سالم، شاهدِ قبلی را باطل می‌کند
+ok   پس از 401، money از کشِ کهنه نمی‌آید
+ok   5xx در نشست ⇒ UNKNOWN و state=error
+ok   200 غیرِJSON نشست را تأیید نمی‌کند
+ok   preflightِ خرید با purchasingPower واقعی PASS می‌شود
+ok   فروشِ ۸۰۰ از ۸۵۰ قبول می‌شود
+ok   فروشِ ۹۰۰ رد می‌شود و برچسبِ برآورد را نشان می‌دهد
+ok   شاهدِ آمادگی، نوشتن/برآورد را ادعایِ تأییدشده نمی‌کند
+
+39 checks, 0 failed
+MOFID ADAPTER OK

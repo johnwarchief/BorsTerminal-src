@@ -43,6 +43,26 @@ function statusEasy(patch: Record<string, unknown> = {}) {
 const LEDGER = { status: 'success', adapter: 'easytrader', dry_run: false, live: true,
   kill_switch: 'ARMED', open_ids: [], scheduled: [], records: [] };
 
+const PREVIEW_OK = {
+  status: 'success', adapter: 'easytrader', live: true, dry_run: false,
+  send_ready: true, prepared_token: 'tok-ui-1', execution_id: 'ui-fx-1',
+  expires_in_ms: 120000, phase: 'previewed',
+  summary: { symbol: 'شپنا', isin: 'IRO1SHAP0001', side: 'buy', price: 1025,
+    quantity: 100, value: 102500, warnings: [], live: true, dry_run: false,
+    send_ready: true },
+  timings: { preview_ms: 12 }, network_calls: ['authenticate:GET', 'money:GET'],
+};
+
+const CONFIRM_ACK = {
+  status: 'acknowledged', adapter: 'easytrader', dry_run: false, live: true,
+  record: { execution_id: 'ui-fx-1', broker: 'easytrader', symbol: 'شپنا',
+    side: 'buy', price: 1025, quantity: 100, status: 'acknowledged',
+    order_state: 'unknown', broker_order_id: 'BR-00471', attempts: 1,
+    events: ['ack'] },
+  broker_order_id: 'BR-00471', unknown_result: false, retry_forbidden: true,
+  read_back: 'deferred', timings: { pre_send_ms: 3, rtt_ms: 20, total_ms: 25 },
+};
+
 /** پاسخ‌ها را مسیرِ‌محور می‌کیم تا هر آزمون فقط مسیرِ موردِ خودش را ببیند */
 function route(status: unknown, handlers: Record<string, unknown> = {}) {
   const calls: string[] = [];
@@ -52,6 +72,8 @@ function route(status: unknown, handlers: Record<string, unknown> = {}) {
     for (const [frag, body] of Object.entries(handlers)) {
       if (u.includes(frag)) return Promise.resolve(json(body));
     }
+    if (u.includes('/api/execution/order/preview')) return Promise.resolve(json(PREVIEW_OK));
+    if (u.includes('/api/execution/order/confirm')) return Promise.resolve(json(CONFIRM_ACK));
     if (u.includes('/api/execution/')) {
       if (u.endsWith('/status')) return Promise.resolve(json(status));
       if (u.endsWith('/ledger')) return Promise.resolve(json(LEDGER));
@@ -96,7 +118,7 @@ describe('درِ رابط فقط با پشتیبانِ واقعی باز می‌
     renderPanel();
     await waitFor(() => expect(screen.getByTestId('watch-order-panel')
       .getAttribute('data-session')).toBe('expired'));
-    expect(document.body.textContent).toContain('نشست منقضی شده');
+    expect(document.body.textContent).toContain('دسترسی به حساب منقضی شده');
     expect(document.body.textContent).not.toContain('Connected');
   });
 
@@ -114,16 +136,19 @@ describe('درِ رابط فقط با پشتیبانِ واقعی باز می‌
   it('ارسال بی‌تأییدِ نهایی ممکن نیست و با تأیید روشن می‌شود', async () => {
     const calls = route(statusEasy());
     renderPanel();
-    await waitFor(() => expect(screen.getByTestId('exec-confirm')).toBeInTheDocument());
     fireEvent.change(screen.getByTestId('watch-order-price'), { target: { value: '۱۰۲۵' } });
     fireEvent.change(screen.getByTestId('watch-order-qty'), { target: { value: '۱۰۰' } });
+    await waitFor(() => expect(screen.getByTestId('exec-preview')).not.toBeDisabled());
+    fireEvent.click(screen.getByTestId('exec-preview'));
+    await waitFor(() => expect(screen.getByTestId('exec-fast-summary')).toBeInTheDocument());
     expect(screen.getByTestId('exec-submit')).toBeDisabled();
-    const before = calls.length;
+    const before = calls.filter((u) => u.includes('/order/confirm')).length;
+    expect(before).toBe(0);
     fireEvent.click(screen.getByTestId('exec-confirm'));
     await waitFor(() => expect(screen.getByTestId('exec-submit')).not.toBeDisabled());
-    expect(calls.length).toBe(before);            // تیک خوردن هیچ درخواستی نمی‌زند
+    expect(calls.filter((u) => u.includes('/order/confirm')).length).toBe(before);
     fireEvent.click(screen.getByTestId('exec-submit'));
-    await waitFor(() => expect(calls.some((u) => u.includes('/api/execution/dispatch')))
+    await waitFor(() => expect(calls.some((u) => u.includes('/api/execution/order/confirm')))
       .toBe(true));
   });
 
@@ -133,14 +158,14 @@ describe('درِ رابط فقط با پشتیبانِ واقعی باز می‌
         confirm_gate: { required: true, phrase: 'تأییدِ نهایی' },
       }));
       renderPanel();
-      await waitFor(() => expect(screen.getByTestId('exec-confirm')).toBeInTheDocument());
       fireEvent.change(screen.getByTestId('watch-order-price'), { target: { value: '۱۰۲۵' } });
       fireEvent.change(screen.getByTestId('watch-order-qty'), { target: { value: '۱۰۰' } });
-      fireEvent.click(screen.getByTestId('exec-confirm'));
+      await waitFor(() => expect(screen.getByTestId('exec-preview')).not.toBeDisabled());
+      fireEvent.click(screen.getByTestId('exec-preview'));
       await waitFor(() => expect(screen.getByTestId('exec-confirm-phrase'))
         .toBeInTheDocument());
+      fireEvent.click(screen.getByTestId('exec-confirm'));
       expect(screen.getByTestId('exec-submit')).toBeDisabled();
-      // پیشوند/نزدیک کافی است؟ نه — و این همان چیزی است که بک‌اند هم رد می‌کند
       fireEvent.change(screen.getByTestId('exec-confirm-phrase'),
         { target: { value: 'تأیید' } });
       expect(screen.getByTestId('exec-submit')).toBeDisabled();
@@ -149,7 +174,7 @@ describe('درِ رابط فقط با پشتیبانِ واقعی باز می‌
       await waitFor(() => expect(screen.getByTestId('exec-submit')).not.toBeDisabled());
       const before = calls.length;
       fireEvent.click(screen.getByTestId('exec-submit'));
-      await waitFor(() => expect(calls.some((u) => u.includes('/api/execution/dispatch')))
+      await waitFor(() => expect(calls.some((u) => u.includes('/api/execution/order/confirm')))
         .toBe(true));
       expect(calls.length).toBeGreaterThan(before);
       const sent = fetchMock.mock.calls
@@ -161,9 +186,18 @@ describe('درِ رابط فقط با پشتیبانِ واقعی باز می‌
 
   it('بی‌الزامِ بک‌اند (dry-run/بدل)، فیلدِ عبارت ساخته نمی‌شود', async () => {
     route(statusEasy({ dry_run: true, live: false,
-      confirm_gate: { required: false, phrase: 'تأییدِ نهایی' } }));
+      confirm_gate: { required: false, phrase: 'تأییدِ نهایی' } }), {
+      '/api/execution/order/preview': {
+        ...PREVIEW_OK, dry_run: true, live: false, send_ready: false,
+        summary: { ...PREVIEW_OK.summary, dry_run: true, live: false, send_ready: false },
+      },
+    });
     renderPanel();
-    await waitFor(() => expect(screen.getByTestId('exec-confirm')).toBeInTheDocument());
+    fireEvent.change(screen.getByTestId('watch-order-price'), { target: { value: '۱۰۲۵' } });
+    fireEvent.change(screen.getByTestId('watch-order-qty'), { target: { value: '۱۰۰' } });
+    await waitFor(() => expect(screen.getByTestId('exec-preview')).not.toBeDisabled());
+    fireEvent.click(screen.getByTestId('exec-preview'));
+    await waitFor(() => expect(screen.getByTestId('exec-fast-summary')).toBeInTheDocument());
     expect(screen.queryByTestId('exec-confirm-phrase')).toBeNull();
   });
 
@@ -185,6 +219,9 @@ describe('درِ رابط فقط با پشتیبانِ واقعی باز می‌
         reasons: {}, ok: true, unknown: ['session', 'balance'] },
     });
     renderPanel();
+    fireEvent.change(screen.getByTestId('watch-order-price'), { target: { value: '۱۰۲۵' } });
+    fireEvent.change(screen.getByTestId('watch-order-qty'), { target: { value: '۱۰۰' } });
+    fireEvent.click(screen.getByTestId('exec-detail-toggle'));
     await waitFor(() => expect(screen.getByTestId('exec-preflight')).toBeEnabled());
     fireEvent.click(screen.getByTestId('exec-preflight'));
     await waitFor(() => expect(screen.getByTestId('watch-order-reason').textContent)
@@ -192,6 +229,27 @@ describe('درِ رابط فقط با پشتیبانِ واقعی باز می‌
     expect(screen.getByTestId('watch-order-reason').textContent).toContain('۲ نامعلوم');
     expect(screen.getByTestId('watch-order-reason').textContent).not.toContain('ارسال‌شده');
     expect(screen.getByTestId('watch-order-phase').textContent).toContain('پیش‌فرود');
+  });
+
+  it('پیش‌فرود با ok=false مسدود خوانده می‌شود، نه سبز', async () => {
+    route(statusEasy(), {
+      '/api/execution/preflight': { status: 'success', adapter: 'easytrader',
+        checks: { execution_id: 'PASS', instrument: 'PASS', side: 'PASS', price: 'PASS',
+          quantity: 'PASS', session: 'PASS', balance: 'UNKNOWN', duplicate: 'PASS',
+          place: 'PASS', kill_switch: 'PASS' },
+        reasons: { balance: 'buying power در پاسخ نبود' }, ok: false,
+        unknown: ['balance'] },
+    });
+    renderPanel();
+    fireEvent.change(screen.getByTestId('watch-order-price'), { target: { value: '۱۰۲۵' } });
+    fireEvent.change(screen.getByTestId('watch-order-qty'), { target: { value: '۱۰۰' } });
+    fireEvent.click(screen.getByTestId('exec-detail-toggle'));
+    await waitFor(() => expect(screen.getByTestId('exec-preflight')).toBeEnabled());
+    fireEvent.click(screen.getByTestId('exec-preflight'));
+    await waitFor(() => expect(screen.getByTestId('watch-order-reason').textContent)
+      .toContain('مسدود'));
+    expect(screen.getByTestId('watch-order-reason').textContent).toContain('۱ نامعلوم');
+    expect(screen.getByTestId('watch-order-reason').textContent).not.toContain('ارسال‌شده');
   });
 
   it('توقف وضعیتِ سفارش را عوض نمی‌کند، فقط خطِ پاسخ را', async () => {
@@ -211,40 +269,45 @@ describe('درِ رابط فقط با پشتیبانِ واقعی باز می‌
 describe('پاسخِ کارگزاری درِ رابط تعبیر نمی‌شود', () => {
   it('TIMEOUT ⇒ «نتیجه نامعلوم»، هرگز «ردشده»', async () => {
     route(statusEasy(), {
-      '/api/execution/dispatch': { status: 'error', code: 'TIMEOUT',
-        detail: 'پاسخی نیامد', unknown_result: true, execution_id: 'ui-x' },
+      '/api/execution/order/confirm': { status: 'unknown_result',
+        unknown_result: true, retry_forbidden: true, detail: 'پاسخی نیامد',
+        record: { execution_id: 'ui-fx-1', broker: 'easytrader', symbol: 'شپنا',
+          side: 'buy', price: 1025, quantity: 100, status: 'unknown_result',
+          order_state: 'unknown', broker_order_id: null, attempts: 1,
+          error_code: 'TIMEOUT', error_detail: 'پاسخی نیامد', events: [] } },
     });
     renderPanel();
-    await waitFor(() => expect(screen.getByTestId('exec-confirm')).toBeInTheDocument());
     fireEvent.change(screen.getByTestId('watch-order-price'), { target: { value: '۱۰۲۵' } });
     fireEvent.change(screen.getByTestId('watch-order-qty'), { target: { value: '۱۰۰' } });
+    await waitFor(() => expect(screen.getByTestId('exec-preview')).not.toBeDisabled());
+    fireEvent.click(screen.getByTestId('exec-preview'));
+    await waitFor(() => expect(screen.getByTestId('exec-fast-summary')).toBeInTheDocument());
     fireEvent.click(screen.getByTestId('exec-confirm'));
-    // رندرِ تازه: «ارسال» فقط پس ازِ دیدنِ تأیید روشن می‌شود (بی‌انتظار، آزمون
-    // رویِ دکمهٔStill-disabled کلیک می‌کرد و بی‌صدا سبز/سرخ می‌شد)
-    await waitFor(() => expect(screen.getByTestId('exec-submit')).toBeEnabled());
+    await waitFor(() => expect(screen.getByTestId('exec-submit')).not.toBeDisabled());
     fireEvent.click(screen.getByTestId('exec-submit'));
     await waitFor(() => expect(screen.getByTestId('watch-order-reason').textContent)
       .toContain('نامعلوم'));
     expect(screen.getByTestId('watch-order-phase').textContent).toContain('نتیجه نامعلوم');
     expect(screen.getByTestId('watch-order-reason').textContent).not.toContain('ردشده');
+    expect(screen.getByTestId('exec-reconcile-now')).toBeInTheDocument();
+    expect(screen.getByTestId('exec-preview')).toBeDisabled();
   });
 
   it('پذیرش با شناسۀِ کارگزاری: همان شناسه نمایش داده می‌شود', async () => {
     route(statusEasy(), {
-      '/api/execution/dispatch': { status: 'success', adapter: 'easytrader',
-        record: { execution_id: 'ui-1', broker: 'easytrader', symbol: 'شپنا',
-          side: 'buy', price: 1025, quantity: 100, status: 'acknowledged',
-          order_state: 'pending', broker_order_id: 'BR-00471', attempts: 1,
-          events: ['accepted'] } },
+      '/api/execution/order/confirm': {
+        ...CONFIRM_ACK,
+        record: { ...CONFIRM_ACK.record, order_state: 'pending' },
+      },
     });
     renderPanel();
-    await waitFor(() => expect(screen.getByTestId('exec-confirm')).toBeInTheDocument());
     fireEvent.change(screen.getByTestId('watch-order-price'), { target: { value: '۱۰۲۵' } });
     fireEvent.change(screen.getByTestId('watch-order-qty'), { target: { value: '۱۰۰' } });
+    await waitFor(() => expect(screen.getByTestId('exec-preview')).not.toBeDisabled());
+    fireEvent.click(screen.getByTestId('exec-preview'));
+    await waitFor(() => expect(screen.getByTestId('exec-fast-summary')).toBeInTheDocument());
     fireEvent.click(screen.getByTestId('exec-confirm'));
-    // رندرِ تازه: «ارسال» فقط پس ازِ دیدنِ تأیید روشن می‌شود (بی‌انتظار، آزمون
-    // رویِ دکمهٔStill-disabled کلیک می‌کرد و بی‌صدا سبز/سرخ می‌شد)
-    await waitFor(() => expect(screen.getByTestId('exec-submit')).toBeEnabled());
+    await waitFor(() => expect(screen.getByTestId('exec-submit')).not.toBeDisabled());
     fireEvent.click(screen.getByTestId('exec-submit'));
     await waitFor(() => expect(screen.getByTestId('exec-order-id').textContent)
       .toContain('BR-00471'));
@@ -299,7 +362,7 @@ describe('پاسخِ کارگزاری درِ رابط تعبیر نمی‌شود
       .getAttribute('data-can-trade')).toBe('false'));
     // خطِ علت، نه عنوانِ tooltip: کاربر باید بداند چه کاری لازم است.
     expect(screen.getByTestId('watch-order-reason').textContent)
-      .toContain('بررسی اتصال');
+      .toContain('بررسی وضعیت');
   });
 
   it('همان وضعیت با نشستِ منقضی ⇒ علتِ «منقضی» گفته می‌شود، نه «خطایِ نامعلوم»', async () => {

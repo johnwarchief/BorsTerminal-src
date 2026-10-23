@@ -91,6 +91,10 @@ class Broker:
                 if path.startswith("/easy/api/account/server-time"):
                     ms = int(path.rsplit("/", 1)[1])
                     return ET.WireResponse(200, {}, _js({"diff": 20, "serverTimestamp": ms + 20}))
+                if path == ET.WIRE_PATH_MONEY:
+                    return ET.WireResponse(200, {}, _js({
+                        "t0": 80000000, "t2": 100000000, "buyPowerT2": 100000000,
+                        "credit": 0, "avandCredit": 0}))
                 if method == "POST":
                     if outer.place_body is None:
                         return ET.WireResponse(outer.place_status, {},

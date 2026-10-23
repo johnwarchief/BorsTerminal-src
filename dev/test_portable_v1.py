@@ -48,10 +48,17 @@ def probe(frozen=True, exe_dir=None, env=None):
     بعدِ بازگرداندنِ patch بخوانیم، یا «dev» می‌گیریم یا دو پوشه را یکسان —
     که خودِ همین، دورِ اولِ این گارد را قرمز کرد.
     """
-    saved = {k: os.environ.get(k) for k in ("BORS_PORTABLE", "LOCALAPPDATA")}
+    saved = {k: os.environ.get(k) for k in (
+        "BORS_PORTABLE", "LOCALAPPDATA", "BORS_DATA_DIR", "BORS_USER_DB",
+        "BORS_INTENT_DB", "BORS_TEST_ISOLATION", "BORS_OPERATIONAL_ROOT")}
     old_frozen = getattr(sys, "frozen", None)
     old_exe = sys.executable
     try:
+        # این گارد مسیرهایِ portable/dev را می‌سنجد، نه DB عملیاتی؛ بنابراین
+        # overrideهایِ ایزوله‌سازیِ runner نباید در probe دخالت کنند.
+        for _k in ("BORS_DATA_DIR", "BORS_USER_DB", "BORS_INTENT_DB",
+                   "BORS_TEST_ISOLATION", "BORS_OPERATIONAL_ROOT"):
+            os.environ.pop(_k, None)
         if env:
             os.environ["BORS_PORTABLE"] = env
         else:

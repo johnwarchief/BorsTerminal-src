@@ -100,6 +100,22 @@ function route(handlers: Record<string, unknown> = {}) {
       if (u.includes(frag)) return Promise.resolve(json(body));
     }
     if (u.includes('/api/execution/status')) return Promise.resolve(json(statusBody()));
+    if (u.includes('/api/execution/order/preview')) {
+      return Promise.resolve(json({ status: 'success', adapter: 'mock',
+        live: false, dry_run: true, send_ready: false,
+        prepared_token: 'tok-tab', execution_id: 'ui-tab-fx',
+        expires_in_ms: 120000, phase: 'previewed',
+        summary: { symbol: 'فولاد', side: 'buy', price: 12610, quantity: 1000,
+          value: 12610000, warnings: [], live: false, dry_run: true,
+          send_ready: false },
+        timings: { preview_ms: 8 } }));
+    }
+    if (u.includes('/api/execution/order/confirm')) {
+      return Promise.resolve(json({ status: 'validated', dry_run: true,
+        record: { execution_id: 'ui-tab-fx', broker: 'mock', symbol: 'فولاد',
+          side: 'buy', price: 12610, quantity: 1000, status: 'validated',
+          order_state: 'unknown', broker_order_id: null, attempts: 0, events: [] } }));
+    }
     if (u.includes('/api/execution/ledger')) return Promise.resolve(json(LEDGER));
     if (u.includes('/api/execution/events')) return Promise.resolve(json(EVENTS));
     if (u.includes('/api/execution/timings')) {
@@ -204,13 +220,17 @@ describe('حالَتِ فرم', () => {
   it('تغییرِ قیمت پس ازِ تأیید، تأیید را بی‌اعتبار می‌کند', async () => {
     route();
     renderPage();
-    await waitFor(() => expect(screen.getByTestId('exec-confirm')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByTestId('watch-order-price')).toBeInTheDocument());
     fireEvent.change(screen.getByTestId('watch-order-price'), { target: { value: '12610' } });
     fireEvent.change(screen.getByTestId('watch-order-qty'), { target: { value: '1000' } });
+    await waitFor(() => expect(screen.getByTestId('exec-preview')).not.toBeDisabled());
+    fireEvent.click(screen.getByTestId('exec-preview'));
+    await waitFor(() => expect(screen.getByTestId('exec-confirm')).toBeInTheDocument());
     fireEvent.click(screen.getByTestId('exec-confirm'));
     await waitFor(() => expect(screen.getByTestId('exec-confirm')).toBeChecked());
     fireEvent.change(screen.getByTestId('watch-order-price'), { target: { value: '12700' } });
-    await waitFor(() => expect(screen.getByTestId('exec-confirm')).not.toBeChecked());
+    // پیش‌نمایش با تغییرِ مشخصات باطل می‌شود؛ دکمهٔ ارسال تا بررسیِ تازه خاموش است.
+    await waitFor(() => expect(screen.queryByTestId('exec-confirm')).toBeNull());
     expect(screen.getByTestId('exec-submit')).toBeDisabled();
   });
 });
@@ -237,6 +257,10 @@ describe('هیچ اقدامِ ناخواسته‌ای', () => {
         reasons: { session: 'نشست نیست' }, ok: false, unknown: [] },
     });
     renderPage();
+    await waitFor(() => expect(screen.getByTestId('watch-order-price')).toBeInTheDocument());
+    fireEvent.change(screen.getByTestId('watch-order-price'), { target: { value: '12610' } });
+    fireEvent.change(screen.getByTestId('watch-order-qty'), { target: { value: '1000' } });
+    fireEvent.click(screen.getByTestId('exec-detail-toggle'));
     await waitFor(() => expect(screen.getByTestId('exec-preflight')).toBeEnabled());
     fireEvent.click(screen.getByTestId('exec-preflight'));
     await waitFor(() => expect(calls.some((c) => c.includes('/preflight'))).toBe(true));

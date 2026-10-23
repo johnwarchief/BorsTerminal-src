@@ -2,6 +2,9 @@ fastapi
 uvicorn
 requests
 httpx
+# Strategyهای مرورگری (AutoClicker/DOM/JS/Keyboard): Playwright فقط برایِ کنترلِ
+# مرورگر است؛ باینری از Edge/Chromeِ سیستم یا نصبِ محلی می‌آید و در بیلد دانلود نمی‌شود.
+playwright==1.62.0
 # numpy با pin: نسخهٔ 2.1+ baseline X86_V2 اجباری دارد و روی CPU های قدیمی کرش میکند
 numpy==2.0.2
 pandas==2.2.3

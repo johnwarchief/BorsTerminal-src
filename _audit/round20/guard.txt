@@ -1,0 +1,44 @@
+
+── ۱) قراردادِ Mofid: POSTِ پرسشی، جدا از نوشتن، و streamِ واقعی ──
+ok   الف) هر دو POST پرسشِ خواندنی‌اند، نه نوشتن
+ok   پ) نام‌های کلاینت صریح‌اند
+ok   ت) بدنهٔ مشاهده‌شده orderId است
+ok   ث) نوشتن‌ها مسیرهای جدا دارند
+ok   ج) streamِ واقعی با تاپیک و فیلدهای صریح
+ok   چ) stream بی‌snapshot است و صدا زده نشد
+ok   ح) هیچ مسیری با پاسخِ واقعی تأیید نشده
+ok   خ) دامنهٔ رتبه per-order است و ۰ اول نیست
+ok   د) UI خودش ۰ را با «-» نشان می‌دهد
+ok   ذ) Mofid در فقط‌خواندنی رتبه نمی‌سازد
+
+── ۲) EasyTrader: تفکیکِ KNOWN/UNKNOWN/ERROR و بی‌صفر ──
+ok   الف) مقدارِ خامِ ۰ حفظ می‌شود
+ok   پ) واحدِ حجم UNVERIFIED و as_of محلی ثبت می‌شود
+ok   ت) فهرستِ خالی ⇒ UNKNOWN، نه صفر
+ok   ث) ردیفِ سفارشِ دیگر به سفارشِ ما نسبت داده نمی‌شود
+ok   ج) پاسخِ غیرJSON ⇒ UNKNOWN، نه موفق
+ok   چ) HTTP 401 ⇒ خطایِ نشست، نه UNKNOWNِ خاموش
+ok   خ) 401 حکمِ نشست را هم به‌روز می‌کند
+ok   ح) HTTP 500 ⇒ ERRORِ شبکه
+ok   د) HTTP 404 ⇒ UNKNOWN، نه ERROR/صفر
+ok   ذ) timeout ⇒ TIMEOUT
+ok   ر) خطایِ شبکه ⇒ NETWORK_ERROR
+
+── ۳) هم‌زمانیِ همان سفارش: یک GET، همان as_of ──
+ok   الف) پنج فراخوانیِ هم‌زمان یک GET و همان مقدار
+ok   پ) پس از انقضای TTL یک GET تازه می‌زند
+
+── ۴) Queue Monitor: فلگ‌هایِ منبع/نتیجه جدا از هم ──
+ok   الف) منبع تأییدنشده و نتیجه نامعلوم، بدونِ رتبه
+ok   پ) KNOWN از source_verified جدا است
+ok   ت) خالی ⇒ UNKNOWN و queue_result_known=False
+ok   ث) خطا ⇒ ERROR و queue_result_known=False
+ok   ج) پاسخ JSON-safe است
+
+── ۵) readiness: جایگاه، read-back و حساب سه گیتِ جدا ──
+ok   الف) بی‌سفارش ⇒ جایگاه NOT_MEASURED و ready=False
+ok   پ) جایگاه در warnings هست ولی read-only را سبز نمی‌کند
+ok   ت) سفارش هست ولی مسیر جایگاه مسدود ⇒ BLOCKED
+ok   ث) شناسهٔ گیت‌ها یکتاست
+
+32 pass / 0 fail

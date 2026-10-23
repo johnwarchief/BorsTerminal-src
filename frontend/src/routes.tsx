@@ -51,6 +51,10 @@ export const mainRoutes: RouteObject[] = [
     path: 'sarkhati',
     element: page(() => import('@features/portfolio/routes/SarkhatiPage')),
   },
+  {
+    path: 'autoclicker',
+    element: page(() => import('@features/portfolio/routes/AutoClickerPage')),
+  },
   // رأیِ مالک (1405-07-20): دیده‌بان تبِّ مستقل است، ولی درِ ناوبری زیرِ گروهِ
   // پرتفوی نشان داده می‌شود. خودِ زیرتب درِ /portfolio هم دست‌نخورده می‌ماند تا
   // نشانی‌هایِ پیشین نشکنند.

@@ -1,4 +1,8 @@
 *.png
+# شواهدِ بصریِ تحویل‌شدنیِ Round 7/8 عمداً در گیت می‌مانند تا GitHub قابلِ بازبینی باشد.
+!round7/visual/*.png
+!round8/visual/*.png
+!round17_ui.png
 _visual.json
 _visual_detail.json
 board_now.json
@@ -45,3 +49,11 @@ _ghost_probe_v3.py
 _lakhazar_csv_probe.py
 _live_probe.py
 RA365-ADJUST-RULERULE-2026-10-12.csv
+# شواهدِ دیداریِ Round 10/11 با force-add کامیت شده‌اند؛ استثنا صریح است
+!round10/visual/*.png
+!round11_visual/*.png
+# شواهدِ Round 19/20 با force-add کامیت شده‌اند و در گزارش‌ها ارجاع دارند؛
+# بی‌استثنا، `repo_hygiene_v97` آن‌ها را «فایلِ trackشدهٔ ignoreشده» می‌بیند.
+!round19_queue_blocked.png
+!round19_queue_section.png
+!round20/ui_blocked.png

@@ -154,17 +154,26 @@ class QueueView:
 class Preflight:
     checks: dict[str, str] = field(default_factory=dict)
     reasons: dict[str, str] = field(default_factory=dict)
+    #: چک‌هایی که «نامعلوم»شان باید ارسال را ببندد (Round 10: buying power/آزاد).
+    #: UNKNOWN در بقیهٔ چک‌ها همان قراردادِ پیشین را دارد.
+    blocking: set[str] = field(default_factory=set)
 
     @property
     def ok(self) -> bool:
-        return not any(v == FAIL_ for v in self.checks.values())
+        return (not any(v == FAIL_ for v in self.checks.values())
+                and not any(self.checks.get(k) != PASS for k in self.blocking))
 
     @property
     def unknown(self) -> tuple[str, ...]:
         return tuple(k for k, v in self.checks.items() if v == UNKNOWN)
 
-    def add(self, name: str, state: str, reason: str = "") -> None:
+    def add(self, name: str, state: str, reason: str = "", *,
+            blocking: bool = False) -> None:
         self.checks[name] = state
+        if blocking:
+            self.blocking.add(name)
+        else:
+            self.blocking.discard(name)
         if reason:
             self.reasons[name] = reason
 
@@ -177,6 +186,7 @@ class Prepared:
     payload_preview: dict
     mode: OrderMode
     dry_run: bool
+    created_mono: float = 0.0
 
     @property
     def sendable(self) -> bool:
@@ -297,19 +307,71 @@ class ExecutionService:
             p.add("session", PASS if state == "open" else
                   (UNKNOWN if state == "unknown" else FAIL_), str(state))
 
-        # نقدینگی/موقعیت: اگر کارگزاری نمی‌دهد UNKNOWN، نه صفر
+        # نقدینگی/موقعیت: اگر کارگزاری نمی‌دهد UNKNOWN، نه صفر. خرید با
+        # «قدرت خرید» سنجیده می‌شود؛ فروش با «تعداد آزاد» — نه با نقدینگی.
+        # فقط برای آداپتوری که واقعاً balances می‌دهد، نبودِ پاسخ «مسدودکننده» است.
         caps: Capabilities = self.adapter.capabilities()
         if not caps.balances:
             p.add("balance", UNKNOWN, "broker exposes no balances")
-        else:
+        elif draft.side is Side.BUY:
             try:
                 b = self.adapter.get_balances() or {}
                 need = (draft.price or 0.0) * (draft.quantity or 0.0)
-                cash = float(b.get("cash", 0.0) or 0.0)
-                p.add("balance", PASS if (draft.side is not Side.BUY or cash >= need)
-                      else FAIL_, f"cash={cash} need={need:.0f}")
+                available = b.get("buying_power")
+                if available is None:
+                    available = b.get("cash")
+                if available is None:
+                    p.add("balance", UNKNOWN,
+                          "buying power/cash در پاسخ نبود", blocking=True)
+                else:
+                    try:
+                        avail = float(available)
+                    except (TypeError, ValueError):
+                        p.add("balance", UNKNOWN,
+                              "مقدار buying power غیرعددی — مسدود", blocking=True)
+                    else:
+                        source = str(b.get("source") or "")
+                        unit = str(b.get("unit") or "")
+                        p.add("balance", PASS if avail >= need else FAIL_,
+                              f"buying_power={avail:.0f} need={need:.0f} "
+                              f"unit={unit} source={source}", blocking=True)
             except BrokerError as e:
-                p.add("balance", UNKNOWN, e.code.value)
+                p.add("balance", UNKNOWN, e.code.value, blocking=True)
+            except Exception as e:                    # noqa: BLE001 - مرزِ adapter
+                p.add("balance", UNKNOWN,
+                      "%s: پاسخِ money خوانده نشد" % type(e).__name__, blocking=True)
+        else:
+            fn = getattr(self.adapter, "get_sellable_quantity", None)
+            try:
+                free = fn(draft.instrument.isin) if callable(fn) else None
+            except BrokerError as e:
+                p.add("sellable", UNKNOWN, e.code.value, blocking=True)
+                free = None
+            except Exception as e:                    # noqa: BLE001 - مرزِ adapter
+                p.add("sellable", UNKNOWN,
+                      "%s: تعدادِ آزاد خوانده نشد" % type(e).__name__, blocking=True)
+                free = None
+            if free is None:
+                if "sellable" not in p.checks:
+                    p.add("sellable", UNKNOWN,
+                          "منبع پرتفوی تعداد آزاد/قابل‌فروش نمی‌دهد", blocking=True)
+            else:
+                try:
+                    freev = float(free)
+                except (TypeError, ValueError):
+                    p.add("sellable", UNKNOWN,
+                          "تعدادِ آزاد غیرعددی — مسدود", blocking=True)
+                else:
+                    source = ""
+                    prov = getattr(self.adapter, "sellable_provenance", None)
+                    if callable(prov):
+                        try:
+                            source = " source=%s" % str((prov() or {}).get("state") or "")
+                        except Exception:                 # noqa: BLE001 - فقط برچسب
+                            source = ""
+                    p.add("sellable", PASS if freev >= (draft.quantity or 0)
+                          else FAIL_, f"free={freev} need={draft.quantity}{source}",
+                          blocking=True)
 
         # تکراری‌بودن (بندِ ۱۹) — هم ردِّپا، هم هر چیزی که *این* پروسه قبلاً
         # دربارهٔ همان شناسه تصمیم گرفته است. سه منبع، به ترتیبِ زودخجازد:
@@ -351,6 +413,23 @@ class ExecutionService:
                       "age=%.0fs limit=%.0fs" % (age, self.limits.max_data_age_s))
         return p
 
+    def dispatch_preflight(self, draft: OrderDraft) -> Preflight:
+        """پیش‌فرودِ مسیرِ مرورگری: همان preflight + سقف‌هایِ ریسکِ مسیرِ عادی.
+
+        مسیرِ `/strategies/dispatch` قبلاً فقط وجودِ یک cap را می‌سنجید و از
+        `_check_limits`/preflight عبور نمی‌کرد. این متد همان منبعِ حقیقت را
+        برایِ کلیکِ AutoClicker هم اعمال می‌کند.
+        """
+        p = self.preflight(draft)
+        try:
+            self._check_limits([draft], ctx=self._risk_for(draft))
+        except ExecutionError as e:
+            p.add("limits", FAIL_, str(e.detail)[:200], blocking=True)
+        except Exception as e:                       # noqa: BLE001 - مرزِ ریسک
+            p.add("limits", UNKNOWN, "%s: %s" % (type(e).__name__, str(e)[:160]),
+                  blocking=True)
+        return p
+
     # ---- ۲) آماده‌سازی (پیش از مهلت) --------------------------------------
     def prepare(self, draft: OrderDraft, *, target_wall_ms: int | None = None,
                 one_way_ms: float = 0.0, margin_ms: float = 0.0,
@@ -383,14 +462,37 @@ class ExecutionService:
         }
         prepared = Prepared(draft=draft, preflight=p, plan=plan,
                             payload_preview=preview, mode=draft.mode,
-                            dry_run=self.dry_run)
+                            dry_run=self.dry_run,
+                            created_mono=time.monotonic())
         self._prepared[draft.execution_id] = prepared
         return prepared
 
+    def prune_prepared(self, ttl_s: float = 120.0) -> int:
+        """پیش‌نمایش‌هایِ بی‌استفادهٔ کهنه را دور می‌ریزد؛ رکوردِ ارسال‌شده نه."""
+        now = time.monotonic()
+        drop = [eid for eid, p in self._prepared.items()
+                if p.created_mono and (now - p.created_mono) > ttl_s
+                and eid not in self._ledger]
+        for eid in drop:
+            self._prepared.pop(eid, None)
+        return len(drop)
+
     # ---- ۳) اجرا ----------------------------------------------------------
+    def recheck_limits(self, prepared: Prepared) -> None:
+        """سقف‌هایِ ریسک را همان لحظهٔ ارسال دوباره می‌سنجد.
+
+        چرا جدا از `prepare`: مسیرِ سریع بینِ پیش‌نمایش و تأیید یک فاصلهٔ
+        کاربری دارد؛ سفارشِ دیگری در همان فاصله می‌تواند نرخ/سقف را پر کند.
+        """
+        self._check_limits([prepared.draft], ctx=self._risk_for(prepared.draft))
+
     def execute(self, prepared: Prepared, *,
                 sleep: Callable[[float], None] = time.sleep,
-                yield_cpu: Callable[[], None] | None = None) -> ExecutionRecord:
+                yield_cpu: Callable[[], None] | None = None,
+                verify: bool | None = None) -> ExecutionRecord:
+        """`verify=False` فقط برایِ مسیرِ سریعِ سرخطی است: ack برمی‌گردد و
+        read-back درِ درخواستِ بعدی (refresh) خوانده می‌شود — نه این‌که وضعیت
+        پذیرش ادعا شود. پیش‌فرض همان سیاستِ حالت است."""
         policy = ModePolicy.of(prepared.mode)
         if policy.requires_prepared and prepared.draft.execution_id not in self._prepared:
             # NOT_ORDERABLE یعنی «این نماد قابلِ سفارش نیست» — اینجا نماد
@@ -426,9 +528,10 @@ class ExecutionService:
             rec.actual_send_wall_ms = tel.actual_send_wall_ms
             rec.clock_offset_ms = tel.clock_offset_ms
             return rec
-        return self._send_once(prepared.draft, policy)
+        return self._send_once(prepared.draft, policy, verify=verify)
 
-    def _send_once(self, draft: OrderDraft, policy: ModePolicy) -> ExecutionRecord:
+    def _send_once(self, draft: OrderDraft, policy: ModePolicy, *,
+                   verify: bool | None = None) -> ExecutionRecord:
         try:
             rec = self.adapter.submit_order(draft)
         except BrokerError as e:
@@ -465,7 +568,8 @@ class ExecutionService:
             raise
         rec.attempts = max(rec.attempts, 1)
         self._ledger[draft.execution_id] = rec
-        if policy.blocking_verify:
+        do_verify = policy.blocking_verify if verify is None else bool(verify)
+        if do_verify:
             self._verify(rec)
         self._audit(draft, "ack", status=rec.status.value,
                     order_state=rec.order_state.value, filled=rec.filled_quantity,

@@ -16,12 +16,13 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { Badge } from '@shared/components/Badge';
 import { ConnectBrokerRow } from './ConnectBrokerRow';
+import { SarkhatiStrategyRow } from './sarkhati/SarkhatiStrategyRow';
 import { fmtInt, parseNum, toEnDigits, toFaDigits } from '@shared/lib/fmt';
 import type { MarketRow } from '@shared/types/marketRow';
 import {
   CODE_LABEL, PHASE_LABEL, SESSION_LABEL, invalidateExecution,
   orderApi, phaseOf, useExecutionLedger, useExecutionStatus, useExecutionTimings,
-  type ExecutionRecord, type OrderPhase,
+  type ExecutionRecord, type OrderConfirmView, type OrderPhase, type OrderPreviewView,
 } from '../lib/orderClient';
 import {
   TONE, freshId, safeError, summarize, type ActionState, type ExecAction,
@@ -92,12 +93,44 @@ export function ExecutionPanel({ symbol, row, schedule = false, connect = true }
   const [busy, setBusy] = useState(false);
   const [token, setToken] = useState('');
   const [phrase, setPhrase] = useState('');
+  // مسیر سریع: پیش‌نمایشِ کامل، توکنِ یک‌بارمصرف، و نتیجهٔ واقعیِ تأیید.
+  const [snap, setSnap] = useState<OrderPreviewView | null>(null);
+  const [snapAt, setSnapAt] = useState(0);
+  const [nowMs, setNowMs] = useState(() => Date.now());
+  const [confirmInfo, setConfirmInfo] = useState<OrderConfirmView | null>(null);
+  const [readback, setReadback] = useState<ExecutionRecord | null>(null);
+  const [readbackState, setReadbackState] = useState<'idle' | 'loading' | 'done' | 'error'>('idle');
+  const [unknownSig, setUnknownSig] = useState('');
+  const [clientSendMs, setClientSendMs] = useState<number | null>(null);
+  const [clientPreviewMs, setClientPreviewMs] = useState<number | null>(null);
 
   // هر تغییرِ فرم یکِ شناسۀِ تازه می‌سازد: «یک execution_id = یکِ تلاش» قاعدۀ
   // سرویس است (ردِّپایِ dispatch رویِ دیسک تکرار را می‌گیرد)، پس فرمِ ویرایش‌شده
   // نباید شناسۀِ سفارشِ قبلی را حمل کند.
-  useEffect(() => { setEid(freshId()); setConfirmed(false); setPhrase(''); setPhase('idle'); },
-    [symbol, side, price, qty]);
+  useEffect(() => {
+    setEid(freshId()); setConfirmed(false); setPhrase(''); setPhase('idle');
+    // هر تغییرِ فرم، پیش‌نمایشِ قبلی را باطل می‌کند: تأییدِ کهنه نباید به سفارشِ
+    // تازه بچسبد. قفلِ UNKNOWN هم با تغییرِ مشخصات برداشته می‌شود، ولی وضعیتِ
+    // سفارشِ قبلی در تاریخچه می‌ماند.
+    setSnap(null); setSnapAt(0); setPreview(null); setConfirmInfo(null);
+    setReadback(null); setReadbackState('idle'); setUnknownSig('');
+  }, [symbol, side, price, qty]);
+
+  // شمارشِ اعتبارِ پیش‌نمایش فقط برایِ نمایش است؛ انقضا را خودِ سرویس هم
+  // اتمی می‌سنجد (`FastOrderGateway.claim`).
+  useEffect(() => {
+    if (!snap || snap.phase !== 'previewed') return;
+    const id = globalThis.setInterval(() => setNowMs(Date.now()), 500);
+    return () => globalThis.clearInterval(id);
+  }, [snap]);
+
+  const sig = `${symbol}|${side}|${price}|${qty}`;
+  const snapExpiresAt = snap ? snapAt + Number(snap.expires_in_ms ?? 0) : 0;
+  const snapSecondsLeft = snap ? Math.max(0, Math.ceil((snapExpiresAt - nowMs) / 1000)) : 0;
+  const snapExpired = snap != null && snap.phase === 'previewed' && nowMs >= snapExpiresAt;
+  const snapUsed = snap != null && snap.phase !== 'previewed';
+  const unknownLocked = unknownSig !== '' && unknownSig === sig;
+  const targetSet = schedule && targetWallMs(fields.targetLocal) != null;
 
   const body = useCallback(() => ({
     execution_id: eid, symbol, side, mode: 'safe',
@@ -119,6 +152,15 @@ export function ExecutionPanel({ symbol, row, schedule = false, connect = true }
       : {}),
   }), [eid, symbol, side, price, qty, row?.p_last, row?.row_h,
       confirmed, phrase, schedule, fields.targetLocal, fields.oneWayMs, fields.marginMs]);
+
+  /** بدنۀِ مسیرِ سریع: فقط مشخصاتِ سفارش؛ تأیید و عبارت جداگانه در confirm. */
+  const fastBody = useCallback(() => ({
+    symbol, side,
+    price: parseNum(toEnDigits(price)),
+    quantity: parseNum(toEnDigits(qty)),
+    price_source: row?.p_last != null ? 'board.p_last' : 'unspecified',
+    price_as_of: row?.row_h != null ? String(row.row_h) : null,
+  }), [symbol, side, price, qty, row?.p_last, row?.row_h]);
 
   const ask = useCallback(async (kind: ExecAction,
     fn: () => Promise<Record<string, unknown>>) => {
@@ -146,6 +188,111 @@ export function ExecutionPanel({ symbol, row, schedule = false, connect = true }
     }
   }, [qc]);
 
+  // ── مسیرِ سریع: بررسی (همهٔ پرسش‌هایِ کند) ← تأیید (یک POST) ─────────────
+  const fastPreview = async () => {
+    setBusy(true); setState('busy'); setAnswer(''); setConfirmInfo(null);
+    setReadback(null); setReadbackState('idle');
+    const t0 = performance.now();
+    try {
+      const res = await orderApi.fastPreview(fastBody());
+      setClientPreviewMs(Math.round((performance.now() - t0) * 10) / 10);
+      if (res.status === 'success') {
+        setSnap(res); setSnapAt(Date.now());
+        setPreview(res as unknown as Record<string, unknown>);
+        setPhase('preflight');
+        const ready = res.send_ready === true;
+        setState(ready ? 'ok' : 'warn');
+        setAnswer(ready
+          ? 'خلاصه آماده است؛ هنوز هیچ سفارشی ارسال نشده — تأییدِ نهایی را بزنید.'
+          : (res.risk?.reason
+            || (res.dry_run
+              ? 'حالتِ بی‌ارسال (dry_run) است؛ خلاصه ساخته شد ولی سفارشی نمی‌رود.'
+              : 'خلاصه ساخته شد، ولی ارسال در وضعیتِ فعلی باز نیست.')));
+      } else {
+        setSnap(null); setState('error'); setPhase('errored');
+        setAnswer(String(res.detail || res.code || 'بررسیِ سفارش ناموفق بود'));
+      }
+    } catch (e) {
+      setState('error'); setAnswer(safeError(e));
+    } finally { setBusy(false); }
+  };
+
+  const doReadback = async (executionId: string) => {
+    setReadbackState('loading');
+    try {
+      const res = await orderApi.refresh(executionId);
+      const rec = (res.record as ExecutionRecord | undefined) ?? null;
+      setReadback(rec); setReadbackState('done');
+      if (rec) { setLast(rec); setPhase(phaseOf(rec)); }
+      invalidateExecution(qc);
+    } catch {
+      setReadbackState('error');
+    }
+  };
+
+  const fastConfirm = async () => {
+    if (!snap?.prepared_token) return;
+    setBusy(true); setState('busy'); setPhase('sending'); setAnswer('');
+    const t0 = performance.now();
+    try {
+      const res = await orderApi.fastConfirm({
+        prepared_token: snap.prepared_token, confirmed: true,
+        confirm_phrase: phrase,
+      });
+      setClientSendMs(Math.round((performance.now() - t0) * 10) / 10);
+      setConfirmInfo(res);
+      const rec = res.record ?? null;
+      if (rec) setLast(rec);
+      if (res.unknown_result === true) {
+        setState('unknown'); setPhase('unknown');
+        setUnknownSig(sig);
+        setSnap((old) => old ? { ...old, phase: 'unknown' } : old);
+        setAnswer('نتیجه نامعلوم — ارسالِ دوباره ممنوع است. ابتدا «رفعِ ابهام» را بزنید.');
+      } else if (res.status === 'acknowledged' || res.status === 'success') {
+        setState('ok');
+        setPhase(rec ? phaseOf(rec) : 'submitted');
+        setSnap((old) => old ? { ...old, phase: 'sent' } : old);
+        setAnswer(rec?.broker_order_id
+          ? `درخواست به کارگزاری رسید (${rec.broker_order_id})؛ پذیرش/وضعیت هنوز خوانده نشده.`
+          : 'درخواست ثبت شد ولی شناسهٔ سفارش در پاسخ نبود؛ وضعیت از فهرست خوانده می‌شود.');
+        if (rec?.execution_id) {
+          // read-back پس از paint و بیرونِ مسیرِ ارسال؛ هیچ تأخیری به POST اضافه نمی‌کند
+          globalThis.setTimeout(() => void doReadback(rec.execution_id), 250);
+        }
+      } else if (res.dry_run === true && res.status !== 'error') {
+        setState('warn'); setPhase('preflight');
+        setSnap((old) => old ? { ...old, phase: 'done' } : old);
+        setAnswer('dry-run: اعتبارسنجی شد و هیچ درخواستی به کارگزاری نرفت.');
+      } else {
+        setState('error');
+        setPhase('rejected');
+        setSnap((old) => old ? { ...old, phase: 'failed' } : old);
+        setAnswer(String(res.detail || res.code || 'سفارش رد شد / ارسال نشد'));
+      }
+      invalidateExecution(qc);
+    } catch (e) {
+      setState('error'); setAnswer(safeError(e));
+    } finally { setBusy(false); }
+  };
+
+  const reconcileNow = async (executionId: string) => {
+    setBusy(true);
+    try {
+      const res = await orderApi.reconcile(executionId);
+      const rec = (res.record as ExecutionRecord | undefined) ?? null;
+      setReadback(rec); setReadbackState('done');
+      if (rec) { setLast(rec); setPhase(phaseOf(rec)); }
+      const stillUnknown = rec != null && phaseOf(rec) === 'unknown';
+      if (!stillUnknown) setUnknownSig('');
+      setAnswer(stillUnknown
+        ? 'رفعِ ابهام نتیجهٔ قطعی نداد — ارسالِ دوباره همچنان ممنوع است.'
+        : 'وضعیت از فهرستِ کارگزاری تعیین شد.');
+      invalidateExecution(qc);
+    } catch (e) {
+      setState('error'); setAnswer(safeError(e));
+    } finally { setBusy(false); }
+  };
+
   const records = useMemo(() => (ledger.data?.records ?? []).slice(-6).reverse(),
     [ledger.data]);
   // گیتِ عبارتِ تأیید (§۲-۲): بک‌اند آن را الزامی می‌کند و همین‌جا هم تا
@@ -153,10 +300,17 @@ export function ExecutionPanel({ symbol, row, schedule = false, connect = true }
   const cgate = (gate.status?.confirm_gate ?? {}) as
     { required?: boolean; phrase?: string };
   const phraseOk = !cgate.required || phrase.trim() === String(cgate.phrase ?? '');
-  const canSubmit = gate.canTrade && confirmed && phraseOk
-    && !!parseNum(toEnDigits(qty))
-    && !!parseNum(toEnDigits(price)) && !busy;
-  const canPreview = gate.endpointPresent && !busy;
+  const priceNum = parseNum(toEnDigits(price));
+  const qtyNum = parseNum(toEnDigits(qty));
+  const fieldsValid = !!priceNum && priceNum > 0 && !!qtyNum && qtyNum > 0
+    && Number.isInteger(qtyNum);
+  // ارسال فقط با پیش‌نمایشِ زنده و تأییدِ صریح؛ توکنِ مصرف‌شده/منقضی هرگز
+  // دوباره روشن نمی‌شود — همان قفلِ سمتِ سرویس، این‌جا هم دیده می‌شود.
+  const canSubmit = gate.canTrade && !!snap?.prepared_token
+    && snap.phase === 'previewed' && snap.send_ready === true
+    && !snapExpired && !unknownLocked && !targetSet
+    && confirmed && phraseOk && !busy;
+  const canPreview = gate.endpointPresent && !busy && fieldsValid && !unknownLocked;
 
   // یادآوریِ زمان‌بندی فقط ازِ `/api/execution/timings` می‌آید (خودِ اندازه‌گیریِ
   // همین نشست). بی‌نمونه صریح «اندازه‌گیری نشده» می‌نویسیم تا کاربر پیش‌افتِ
@@ -259,8 +413,12 @@ export function ExecutionPanel({ symbol, row, schedule = false, connect = true }
       </div>
 
       {schedule ? (
-        <div className="mb-1 rounded-lg border border-border-c/60 bg-bg-card/40 p-1.5"
+        <details className="mb-1 rounded-lg border border-border-c/60 bg-bg-card/40 p-1.5"
           data-testid="exec-schedule">
+          <summary className="cursor-pointer text-3xs font-bold text-text-secondary">
+            زمان‌بندی و پیش‌افت — مسیر جدا از ارسالِ فوری
+          </summary>
+          <div className="mt-1">
           <div className="flex flex-wrap items-end gap-1.5">
             <label className="flex min-w-0 flex-1 flex-col gap-0.5 text-3xs text-text-muted">
               زمانِ هدفِ ارسال — خالی یعنی همین حالا
@@ -307,7 +465,18 @@ export function ExecutionPanel({ symbol, row, schedule = false, connect = true }
               {timingNote}
             </p>
           </details>
-        </div>
+          <p className="mt-1 text-3xs leading-4 text-text-muted" data-testid="exec-schedule-note">
+            مسیرِ سریعِ بالا همیشه فوری است؛ برای زمان‌بندی، زمانِ هدف را این‌جا بگذارید،
+            تأییدِ نهایی را بزنید و «ارسالِ زمان‌بندی‌شده» را انتخاب کنید.
+          </p>
+          <Chip testId="exec-schedule-dispatch"
+            disabled={!gate.canTrade || !targetSet || !confirmed || !phraseOk || busy}
+            title="مسیرِ پیشرفته با زمان‌بندی؛ بی‌تأیید و بی‌زمانِ هدف خاموش است"
+            onClick={() => void ask('dispatch', () => orderApi.dispatch(body()))}>
+            ارسالِ زمان‌بندی‌شده (مسیر پیشرفته)
+          </Chip>
+          </div>
+        </details>
       ) : null}
 
       {/* موجودی: هرگز صفرِ جعلی. نبودِ capability یعنی «نمی‌دانیم»، و عددِ
@@ -327,29 +496,33 @@ export function ExecutionPanel({ symbol, row, schedule = false, connect = true }
         </span>
       </div>
 
+      {unknownLocked ? (
+        <p className="mb-1 text-3xs leading-4 text-accent-susp" data-testid="exec-unknown-lock">
+          نتیجهٔ سفارشِ قبلی نامعلوم است — تا «رفعِ ابهام»، سفارشِ تازه با همین مشخصات
+          باز نمی‌شود و ارسالِ دوباره ممنوع است.
+        </p>
+      ) : null}
+
       <div className="flex flex-wrap items-center gap-1.5">
         <div className="flex flex-wrap items-center gap-1" data-testid="watch-order-actions">
-          <Chip testId="exec-preflight" disabled={!canPreview}
-            title="پیش‌فرود: پیشِ هر ارسال، با هیچ سفارشی به کارگزاری نمی‌رود"
-            onClick={() => void ask('preflight', () => orderApi.preflight(body()))}>پیش‌فرود</Chip>
-          <Chip testId="exec-preview" disabled={!canPreview}
-            title="بدنۀ واقعی که اگر اتصال وصل باشد می‌رود را نشان می‌دهد"
-            onClick={() => void ask('preview', async () => {
-              const res = await orderApi.prepare(body());
-              setPreview(res);
-              return res;
-            })}>پیش‌نمایش</Chip>
-          <label className="flex cursor-pointer items-center gap-1 text-3xs text-text-secondary"
-            data-testid="exec-confirm-wrap">
-            <input type="checkbox" checked={confirmed} disabled={!gate.canTrade}
-              onChange={(e) => setConfirmed(e.target.checked)} data-testid="exec-confirm"
-              className="size-3 accent-accent-blue" />
-            تأییدِ نهایی
-          </label>
-          {cgate.required ? (
+          <Chip testId="exec-preview" disabled={!canPreview} tone="primary"
+            title="نشست، موجودی، نماد و مشخصات یک‌بار بررسی می‌شوند؛ هیچ سفارشی نمی‌رود"
+            onClick={() => void fastPreview()}>
+            {snap?.phase === 'previewed' ? 'بررسیِ دوباره' : 'بررسی و خلاصه'}
+          </Chip>
+          {snap?.phase === 'previewed' ? (
+            <label className="flex cursor-pointer items-center gap-1 text-3xs text-text-secondary"
+              data-testid="exec-confirm-wrap">
+              <input type="checkbox" checked={confirmed} disabled={!snap?.prepared_token}
+                onChange={(e) => setConfirmed(e.target.checked)} data-testid="exec-confirm"
+                className="size-3 accent-accent-blue" />
+              تأییدِ نهایی
+            </label>
+          ) : null}
+          {snap?.phase === 'previewed' && cgate.required ? (
             <label className="flex flex-wrap items-center gap-1 text-2xs text-text-secondary"
               data-testid="exec-confirm-phrase-wrap">
-              <span>عبارتِ «{String(cgate.phrase ?? '')}» را بنویسید تا اجرایِ زنده باز شود:</span>
+              <span>عبارتِ «{String(cgate.phrase ?? '')}» را بنویسید:</span>
               <input value={phrase} onChange={(e) => setPhrase(e.target.value)}
                 placeholder={String(cgate.phrase ?? '')} aria-label="عبارتِ تأییدِ اجرایِ زنده"
                 data-testid="exec-confirm-phrase"
@@ -362,18 +535,19 @@ export function ExecutionPanel({ symbol, row, schedule = false, connect = true }
             type="button"
             disabled={!canSubmit}
             aria-disabled={!canSubmit}
-            onClick={() => void ask('dispatch', () => orderApi.dispatch(body()))}
+            onClick={() => void fastConfirm()}
             data-testid="exec-submit"
-            title={canSubmit ? 'ارسالِ همین سفارش' : gate.reason || 'تأییدِ نهایی و مقدارِ معتبر لازم است'}
+            title={canSubmit
+              ? 'یک درخواست به کارگزاری؛ بدون retry'
+              : (unknownLocked ? 'ابتدا وضعیتِ سفارشِ قبلی را رفعِ ابهام کنید'
+                : targetSet ? 'زمان هدف تنظیم شده؛ از مسیر زمان‌بندی استفاده کنید'
+                  : gate.reason || 'پیش‌نمایش، تأییدِ نهایی و مقدارِ معتبر لازم است')}
             className={`inline-flex min-h-[28px] items-center rounded-lg px-2.5 text-2xs font-black ${
               canSubmit ? 'bg-accent-blue/25 text-accent-blue hover:bg-accent-blue/35'
                 : 'cursor-not-allowed bg-accent-blue/10 text-accent-blue/50'}`}
           >
-            ارسال
+            {busy ? 'در حالِ ارسال…' : 'تأیید و ارسال'}
           </button>
-          <Chip testId="exec-probe" disabled={!gate.endpointPresent || busy}
-            title="آزمونِ اتصالِ فقط‌خواندنی — هیچ سفارشی برایِ سنجشِ سرعت نمی‌رود"
-            onClick={() => void ask('probe', () => orderApi.probe())}>آزمونِ اتصال</Chip>
           {gate.halted
             ? (
               <Chip testId="exec-resume" disabled={!gate.endpointPresent || busy} tone="primary"
@@ -392,6 +566,144 @@ export function ExecutionPanel({ symbol, row, schedule = false, connect = true }
           وضعیتِ سفارش: {PHASE_LABEL[phase]}
         </span>
       </div>
+
+      {snap ? (
+        <div className="mt-1 rounded-lg border border-border-c/50 bg-bg-primary/40 px-2 py-1"
+          data-testid="exec-fast-summary">
+          {(() => {
+            const s = (snap.summary ?? {}) as Record<string, unknown>;
+            const warns = (s.warnings as Array<Record<string, unknown>> | undefined) ?? [];
+            const priceN = Number(s.price);
+            const qtyN = Number(s.quantity);
+            const valN = Number(s.value);
+            return (
+              <>
+                <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-2xs">
+                  <span className="font-black text-text-primary">{String(s.symbol ?? symbol)}</span>
+                  <span className={s.side === 'sell' ? 'text-accent-red' : 'text-accent-green'}>
+                    {s.side === 'sell' ? 'فروش' : 'خرید'}
+                  </span>
+                  <span className="num" dir="ltr">
+                    {Number.isFinite(priceN) ? toFaDigits(priceN.toLocaleString('en-US')) : '—'}
+                    {' × '}
+                    {Number.isFinite(qtyN) ? toFaDigits(qtyN.toLocaleString('en-US')) : '—'}
+                  </span>
+                  <span className="text-text-muted">
+                    ارزش: {Number.isFinite(valN) ? toFaDigits(valN.toLocaleString('en-US')) : '—'}
+                  </span>
+                  <span className={`rounded-lg border px-1.5 py-0.5 text-3xs font-bold ${
+                    snap.send_ready === true
+                      ? 'border-accent-green/40 text-accent-green'
+                      : 'border-border-c text-text-muted'}`}>
+                    {snap.send_ready === true ? 'آمادهٔ ارسال'
+                      : snap.dry_run === true ? 'dry-run — ارسالی نیست' : 'ارسال بسته'}
+                  </span>
+                </div>
+                <div className="text-3xs text-text-muted" data-testid="exec-fast-expiry">
+                  اعتبارِ بررسی: {toFaDigits(String(snapSecondsLeft))} ثانیه
+                  {snap.timings?.preview_ms != null
+                    ? ` · بررسیِ سرور ${toFaDigits(String(Math.round(Number(snap.timings.preview_ms))))} ms` : ''}
+                  {clientPreviewMs != null
+                    ? ` · کلیک تا پاسخ ${toFaDigits(String(clientPreviewMs))} ms (مرورگر)` : ''}
+                  {' · '}شناسه: <span className="num" dir="ltr">{snap.execution_id ?? '—'}</span>
+                </div>
+                {warns.length ? (
+                  <div className="text-3xs leading-4 text-accent-yellow" data-testid="exec-fast-warnings">
+                    {warns.map((w) => `${String(w.id)}:${String(w.status)}${w.reason ? ` (${String(w.reason)})` : ''}`).join(' · ')}
+                  </div>
+                ) : null}
+                {targetSet ? (
+                  <div className="text-3xs leading-4 text-accent-yellow" data-testid="exec-target-warning">
+                    زمانِ هدف تنظیم شده؛ این مسیر فوری است. برای زمان‌بندی از «ارسالِ
+                    زمان‌بندی‌شده» در جزئیاتِ زمان‌بندی استفاده کنید.
+                  </div>
+                ) : null}
+                {snapExpired ? (
+                  <div className="text-3xs leading-4 text-accent-yellow" data-testid="exec-snap-expired">
+                    اعتبارِ این بررسی تمام شد؛ دوباره «بررسی و خلاصه» را بزنید.
+                  </div>
+                ) : null}
+                {snapUsed && !snapExpired ? (
+                  <div className="text-3xs text-text-muted" data-testid="exec-snap-used">
+                    این پیش‌نمایش مصرف شد؛ برای سفارشِ تازه، بررسیِ تازه لازم است.
+                  </div>
+                ) : null}
+              </>
+            );
+          })()}
+        </div>
+      ) : null}
+
+      {confirmInfo ? (
+        <div className="mt-1 rounded-lg border border-border-c/50 bg-bg-primary/40 px-2 py-1"
+          data-testid="exec-fast-result">
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-2xs">
+            <span className="font-black text-text-primary">نتیجه: {PHASE_LABEL[phase]}</span>
+            <span className="num text-3xs text-text-secondary" data-testid="exec-result-order-id" dir="ltr">
+              {confirmInfo.record?.broker_order_id || last?.broker_order_id || 'بدون شناسه'}
+            </span>
+            {confirmInfo.unknown_result ? (
+              <span className="rounded-lg border border-accent-red/40 px-1.5 py-0.5 text-3xs font-bold text-accent-red">
+                ارسالِ دوباره ممنوع
+              </span>
+            ) : null}
+          </div>
+          {confirmInfo.timings ? (
+            <div className="text-3xs text-text-muted" data-testid="exec-send-timing">
+              سرور: تا ارسال {toFaDigits(String(confirmInfo.timings.pre_send_ms ?? '—'))} ms · RTT{' '}
+              {toFaDigits(String(confirmInfo.timings.rtt_ms ?? '—'))} ms · کل{' '}
+              {toFaDigits(String(confirmInfo.timings.total_ms ?? '—'))} ms
+              {clientSendMs != null
+                ? ` · کلیک تا پاسخ ${toFaDigits(String(clientSendMs))} ms (مرورگر)` : ''}
+            </div>
+          ) : null}
+          {readbackState === 'loading' ? (
+            <div className="text-3xs text-text-muted" data-testid="exec-readback-loading">
+              در حال خواندنِ وضعیت از کارگزاری…
+            </div>
+          ) : null}
+          {readback ? (
+            <div className="text-3xs text-text-secondary" data-testid="exec-readback">
+              read-back: {readback.status} / {readback.order_state}
+              {readback.broker_order_id ? ` · ${readback.broker_order_id}` : ''}
+            </div>
+          ) : null}
+          {readbackState === 'error' ? (
+            <div className="text-3xs text-accent-yellow" data-testid="exec-readback-error">
+              وضعیت هنوز خوانده نشد؛ ارسالِ دوباره انجام ندهید — «بررسی وضعیت» را بزنید.
+            </div>
+          ) : null}
+          <div className="mt-1 flex flex-wrap items-center gap-1">
+            {confirmInfo.record?.execution_id ? (
+              <Chip testId="exec-readback-now" disabled={busy}
+                title="نظرِ تازهٔ سرور دربارهٔ همین سفارش — هیچ سفارشِ تازه‌ای نمی‌سازد"
+                onClick={() => void doReadback(confirmInfo.record!.execution_id)}>
+                بررسی وضعیت
+              </Chip>
+            ) : null}
+            {confirmInfo.unknown_result && confirmInfo.record?.execution_id ? (
+              <Chip testId="exec-reconcile-now" disabled={busy} tone="danger"
+                title="رفعِ ابهام از فهرستِ سفارش‌ها — نه ارسالِ دوباره"
+                onClick={() => void reconcileNow(confirmInfo.record!.execution_id)}>
+                رفعِ ابهام
+              </Chip>
+            ) : null}
+            {gate.caps?.queue_position === true && (confirmInfo.record?.broker_order_id || last?.broker_order_id) ? (
+              <Chip testId="exec-queue-now" disabled={busy}
+                title="جایگاه فقط از پاسخِ کارگزاری؛ نبودِ مقدار یعنی «نمی‌دانیم»"
+                onClick={() => void ask('queue', () => orderApi.queue(
+                  confirmInfo.record?.execution_id ?? last?.execution_id ?? ''))}>
+                جایگاهِ صف
+              </Chip>
+            ) : null}
+            {confirmInfo.dry_run ? (
+              <span className="text-3xs text-text-muted">dry-run — هیچ درخواستی بیرون نرفت</span>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
+
+      {schedule ? <SarkhatiStrategyRow body={body} enabled={gate.endpointPresent} /> : null}
 
       <p className={`mt-1 text-3xs leading-4 ${TONE[state]}`} data-testid="watch-order-reason">
         {answer || (gate.canTrade
@@ -437,6 +749,15 @@ export function ExecutionPanel({ symbol, row, schedule = false, connect = true }
               </p>
             )
             : null}
+
+          <div className="flex flex-wrap gap-1">
+            <Chip testId="exec-preflight" disabled={!canPreview}
+              title="پیش‌فرودِ تکمیلی؛ هیچ سفارشی به کارگزاری نمی‌رود"
+              onClick={() => void ask('preflight', () => orderApi.preflight(body()))}>پیش‌فرود</Chip>
+            <Chip testId="exec-probe" disabled={!gate.endpointPresent || busy}
+              title="آزمونِ اتصالِ فقط‌خواندنی — هیچ سفارشی برایِ سنجشِ سرعت نمی‌رود"
+              onClick={() => void ask('probe', () => orderApi.probe())}>آزمونِ اتصال</Chip>
+          </div>
 
           {preview
             ? (

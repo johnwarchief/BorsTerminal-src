@@ -1,0 +1,9 @@
+ok   حالتِ بی‌دسترسی صریح است
+ok   علتِ نبودِ داده از سرور است
+ok   نرخِ پایش ۱۰ ثانیه است
+ok   هیچ رتبهٔ ساختگی نیست
+ok   live_ready=false در UI است
+ok   بدونِ خطای runtime
+
+6 checks, 0 failed
+ROUND19 UI BLOCKED OK

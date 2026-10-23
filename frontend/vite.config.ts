@@ -24,7 +24,9 @@ export default defineConfig({
     proxy: {
       '/api': {
         target: 'http://127.0.0.1:8001',
-        changeOrigin: true,
+        // Hostِ اصلی را نگه می‌داریم تا گاردِ same-originِ
+        // /api/execution/mofid/* (Origin و Hostِ 5211) در dev هم بخواند.
+        changeOrigin: false,
       },
     },
   },

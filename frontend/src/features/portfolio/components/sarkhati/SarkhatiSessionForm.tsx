@@ -81,27 +81,27 @@ export function SarkhatiSessionForm() {
       bg-bg-primary/40 px-2 py-1.5" data-testid="sarkhati-session-form">
       <div className="flex flex-wrap items-end gap-1.5">
         <label className="flex min-w-0 flex-1 flex-col gap-0.5 text-3xs text-text-muted">
-          نشانیِ نشستِ کارگزاری — فقط درِ حافظۀِ همین پروسه، با restart می‌میرد
+          دسترسی به حساب کارگزاری — فقط در حافظهٔ همین برنامه می‌ماند و با بستن برنامه پاک می‌شود
           <input
             type="password"
             value={token}
             onChange={(e) => setToken(e.target.value)}
             autoComplete="off"
             spellCheck={false}
-            aria-label="نشانیِ نشستِ کارگزاری"
+            aria-label="دسترسی به حساب کارگزاری"
             data-testid="sarkhati-token-input"
             className="rounded-lg border border-border-c bg-bg-primary px-1.5 py-1 text-2xs text-text-primary"
           />
         </label>
         <GhostBtn testId="sarkhati-token-save" disabled={busy !== '' || blank}
-          title="نوشته نمی‌شود؛ فقط درِ حافظۀِ پروسه می‌نشیند. «ثبتِ نشست» با «تأییدِ نشست» یکی نیست."
+          title="نوشته نمی‌شود؛ فقط در حافظهٔ برنامه می‌ماند. «ثبت دسترسی» با «تأیید دسترسی» یکی نیست."
           onClick={() => void act('set')}>
-          {busy === 'set' ? 'در حالِ ثبت' : 'ثبتِ نشست'}
+          {busy === 'set' ? 'در حالِ ثبت' : 'ثبت دسترسی'}
         </GhostBtn>
         <GhostBtn testId="sarkhati-token-clear" disabled={busy !== ''}
-          title="DELETE /api/execution/session — برمی‌گردد به حالتِ قطعِ نشست و هیچ پرسشی نمی‌زند"
+          title="DELETE /api/execution/session — دسترسی را پاک می‌کند و هیچ پرسشی نمی‌زند"
           onClick={() => void act('clear')}>
-          {busy === 'clear' ? 'در حالِ پاک‌کردن' : 'پاک کردنِ نشست'}
+          {busy === 'clear' ? 'در حالِ پاک‌کردن' : 'پاک کردنِ دسترسی'}
         </GhostBtn>
       </div>
 
@@ -127,16 +127,16 @@ export function SarkhatiSessionForm() {
         ))}
       </div>
 
-      <Note label="نشست ازِ کجا می‌آید" testId="sarkhati-session-how">
+      <Note label="دسترسی به حساب از کجا می‌آید" testId="sarkhati-session-how">
         <ul className="flex flex-col gap-0.5">
-          <li>ابتدا خودتان درِ پنجرۀِ کارگزاری وارد شوید («اتصال به EasyTrader» درِ
-              همین کارت). این برنامه نامِ کاربری و رمزِ شما را نمی‌پرسد و هیچ
-              ورودِ خودکاری ندارد.</li>
-          <li>نشانیِ نشست را ازِ نشستِ خودِ مرورگرتان بردارید و اینجا بگذارید؛
-              فقط درِ حافظۀِ پروسه می‌ماند، درِ هیچ فایلی نوشته نمی‌شود و درِ هیچ
-              لاگی ظاهر نمی‌شود.</li>
-          <li>«بررسی اتصال» تنها چیزی است که «تأیید شد» می‌سازد — آن هم فقط باِ
-              پاسخِ واقعیِ کارگزاری. ثبتِ نشانی به‌تنهایی هیچ‌چیز را تأیید نمی‌کند.</li>
+          <li>ابتدا خودتان در پنجرهٔ کارگزاری وارد شوید («اتصال به EasyTrader» در
+              همین کارت). این برنامه نام کاربری و رمز شما را نمی‌پرسد و هیچ ورود
+              خودکاری ندارد.</li>
+          <li>روش اصلی، دریافت خودکار دسترسی از همان پنجره است. این فیلد فقط برای
+              مسیر فنی/سازگاری است؛ مقدارش فقط در حافظه می‌ماند، در هیچ فایلی
+              نوشته نمی‌شود و در هیچ لاگی ظاهر نمی‌شود.</li>
+          <li>«بررسی وضعیت» تنها چیزی است که تأیید واقعی می‌سازد — آن هم فقط با
+              پاسخ واقعی کارگزاری. ثبت دستی به‌تنهایی هیچ‌چیز را تأیید نمی‌کند.</li>
         </ul>
       </Note>
     </div>

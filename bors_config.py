@@ -149,6 +149,23 @@ def _work_dir():
          گیر می‌کنند.
       ۳) dev: ریشۀ ریپو.
     """
+    # حالتِ پرتابیلِ صریح بر overrideِ تست مقدم است؛ تستِ portable باید
+    # <exe>/data را ببیند، نه BORS_DATA_DIRیِ runner.
+    if IS_PORTABLE:
+        return portable_data_dir()
+    iso = (os.environ.get("BORS_DATA_DIR") or "").strip()
+    if iso:
+        path = os.path.abspath(iso)
+        if (os.environ.get("BORS_TEST_ISOLATION") or "").strip() == "1":
+            marker = os.path.join(path, ".bors_test_isolation")
+            if not os.path.isfile(marker):
+                raise RuntimeError(
+                    "test isolation requested but %s has no isolation marker" % path)
+            op_root = (os.environ.get("BORS_OPERATIONAL_ROOT") or "").strip()
+            if op_root and os.path.realpath(path) == os.path.realpath(op_root):
+                raise RuntimeError(
+                    "test isolation refuses the operational worktree: %s" % path)
+        return path
     if _FROZEN:
         if IS_PORTABLE:
             return portable_data_dir()
@@ -190,6 +207,12 @@ def _resolve_market_db():
     مسیرهای نسبی (dev) می‌شود. کنارِ EXE فقط در صورتی انتخاب می‌شود که
     پوشهٔ نصب نوشتنی باشد؛ در غیر این صورت WAL نمی‌تواند -wal/-shm بسازد.
     """
+    if IS_PORTABLE:
+        return os.path.join(WORK_DIR, "market.db")
+    iso = (os.environ.get("BORS_DATA_DIR") or "").strip()
+    if iso:
+        # در تستِ ایزوله، هیچ مسیرِ نسبی/کنارِ EXE نباید بازارِ عملیاتی را پیدا کند.
+        return os.path.join(os.path.abspath(iso), "market.db")
     exe_dir = os.path.dirname(sys.executable) if getattr(sys, "frozen", False) else _SRC_DIR
     # ۱) market.db از قبل موجود (پرتابیل کنار EXE / دادهٔ کاربر / dev).
     # exe_dir فقط وقتی در نظر گرفته می‌شود که نوشتنی باشد: در نصبِ
@@ -764,7 +787,10 @@ def _extract_market_db(src_lzma, verbose=False, scratch_name=None, progress=None
 # محل ذخیره: WORK_DIR (کنار EXE در حالت پرتابیل، وگرنه %LOCALAPPDATA%) یا
 # ریشه ریپو (در حالت dev). این فایل در .gitignore است تا داده شخصی
 # توسعه‌دهنده push نشود.
-USER_DB_PATH = os.path.join(WORK_DIR, "user.db")
+#: تست/ابزارهایِ ایزوله می‌توانند مسیرِ user.db را جدا کنند؛ پیش‌فرض همانِ WORK_DIR.
+USER_DB_PATH = (os.path.join(WORK_DIR, "user.db") if IS_PORTABLE else
+                ((os.environ.get("BORS_USER_DB") or "").strip()
+                 or os.path.join(WORK_DIR, "user.db")))
 
 # فایل‌های چندنویسنده در WORK_DIR می‌مانند (نوشتنی؛ نه داخل _internal)
 STATUS_PATH = os.path.join(WORK_DIR, "sync_status.json")
@@ -862,4 +888,4 @@ MA_WINDOWS = [5, 20, 50, 120]
 # هر بار که نسخه در installer/bors_setup.iss و tauri.conf.json بالا می‌رود،
 # اینجا هم باید به‌روز شود (scripts/publish_github_release.py هم همین نسخه را
 # در latest.json می‌نویسد).
-APP_VERSION = "1.0.95"
+APP_VERSION = "1.0.96"
