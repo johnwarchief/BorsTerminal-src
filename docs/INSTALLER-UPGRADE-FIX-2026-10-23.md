@@ -154,10 +154,25 @@ v1.0.97 روی اولین صفحهٔ setup متوقف می‌شد. این هما
 | `...exe.sig` | ۴۳۲ | `ef8b09bf9f94339fd3d13f3377483484f775cc39591c01d8113a4108330dd46f` |
 | `BorsTerminal_Ultimate_Portable_v1.0.98.zip` | ۵۷٬۵۷۱٬۰۶۵ | `c5275a7757d7f69df934f0f8f39a5d5d61667d7141444d3a7dbd4a10ec8396d8` |
 | `BorsTerminal_Manifest_v1.0.98.json` | ۱۶۸٬۷۰۷ | `ee1a546d2a85495ccd7518f619fcecf5e23fd21680fe52bfa1ef721edceb815b` |
-| `latest.json` | ۴٬۲۸۵ | `f5b08681b36c74774dd6353051de9ec7bead3a2cca4212e03c592068baa79228` |
+| `latest.json` (نسخهٔ منتشرشده) | ۴٬۲۸۵ | `d87c2e42bf049fb82addf523ba0457e970432c2e39c2e43c03f8cdb251c03afb` |
 
 امضای setup با `updater.key.pub` (همان `UPDATE_PUBKEY`) PASS شد. ZIP پرتابیل
 مثل v1.0.97 بانک را همراه ندارد و اولین اجرا آن را دانلود می‌کند.
+
+انتشار: ریلیز پایدار `v1.0.98` در
+`https://github.com/johnwarchief/BorsTerminal/releases/tag/v1.0.98` (نه draft،
+نه prerelease). اسکریپتِ انتشار پس از آپلود، هر چهار فایل را دوباره از URLِ
+خودِ ریلیز دانلود کرد و هش‌ها یکسان و امضا معتبر بودند؛ `releases/latest`
+همان `latest.json` با `version: 1.0.98` را می‌دهد و امضای داخلش با فایل
+`.sig` یکی است. فایلِ نصابِ دانلودشده از ریلیز بایت‌به‌بایت همان چیزی است که
+آزموده شد (`a3142ada…`، ۴۰٬۶۰۳٬۹۶۹ بایت). `codal.db.lzma` از v1.0.97
+منتقل شد؛ اسنپ‌شاتِ کدال ۲۲٫۶ روز قدمت دارد (سقف ۲۱) و باید با
+`scripts/build_codal_snapshot.py` تازه شود.
+
+رانی که از خودِ پوشِ تگ شروع شده بود پس از انتشار متوقف شد تا نتواند
+artifactهای آزموده‌شده را با بیلدِ دوبارهٔ CI بازنویسی کند؛ رمزِ
+`BORS_SETUP_PASSWORD` در GitHub Actions هم به همان رمزِ هم‌تراز تغییر کرد
+تا بیلدهای آیندهٔ CI همین ناسازگاری را برنگردانند.
 
 ---
 
