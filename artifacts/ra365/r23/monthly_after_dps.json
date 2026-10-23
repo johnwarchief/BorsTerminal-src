@@ -1,0 +1,3881 @@
+{
+ "contract": "Jalali month; open=first, high=max, low=min, close=last, volume=sum",
+ "reference": "D:/BorsTerminal-tmp/r23_live/ra365_r23_ref_50.json",
+ "aggregate": {
+  "raw": {
+   "series": 50,
+   "paired": 7316,
+   "row_tolerance_pct": 96.9245
+  },
+  "adjusted": {
+   "series": 50,
+   "paired": 7316,
+   "row_tolerance_pct": 53.5949
+  }
+ },
+ "series": [
+  {
+   "asset_id": "595",
+   "symbol": "حخزر",
+   "mode": "raw",
+   "paired": 150,
+   "ref_months": 150,
+   "product_months": 150,
+   "ref_only": 0,
+   "product_only": 0,
+   "row_tolerance": 146,
+   "row_tolerance_pct": 97.3333,
+   "close_median": 0.0,
+   "close_p90": 0.0,
+   "close_p95": 0.0,
+   "close_p99": 0.0,
+   "fields": {
+    "o": {
+     "EXACT": 150
+    },
+    "h": {
+     "EXACT": 150
+    },
+    "l": {
+     "EXACT": 150
+    },
+    "c": {
+     "EXACT": 150
+    },
+    "v": {
+     "EXACT": 146,
+     "MISMATCH": 4
+    }
+   }
+  },
+  {
+   "asset_id": "595",
+   "symbol": "حخزر",
+   "mode": "adjusted",
+   "paired": 150,
+   "ref_months": 150,
+   "product_months": 150,
+   "ref_only": 0,
+   "product_only": 0,
+   "row_tolerance": 12,
+   "row_tolerance_pct": 8.0,
+   "close_median": 0.0037618730480778306,
+   "close_p90": 0.025352506503943904,
+   "close_p95": 0.02535268112825416,
+   "close_p99": 0.025419744423869843,
+   "fields": {
+    "o": {
+     "MISMATCH": 115,
+     "ROUNDING": 22,
+     "TOLERANCE": 10,
+     "EXACT": 3
+    },
+    "h": {
+     "MISMATCH": 114,
+     "ROUNDING": 23,
+     "TOLERANCE": 10,
+     "EXACT": 3
+    },
+    "l": {
+     "MISMATCH": 114,
+     "ROUNDING": 19,
+     "TOLERANCE": 14,
+     "EXACT": 3
+    },
+    "c": {
+     "MISMATCH": 114,
+     "ROUNDING": 22,
+     "TOLERANCE": 11,
+     "EXACT": 3
+    },
+    "v": {
+     "EXACT": 146,
+     "MISMATCH": 4
+    }
+   }
+  },
+  {
+   "asset_id": "48315",
+   "symbol": "آکو",
+   "mode": "raw",
+   "paired": 3,
+   "ref_months": 3,
+   "product_months": 3,
+   "ref_only": 0,
+   "product_only": 0,
+   "row_tolerance": 3,
+   "row_tolerance_pct": 100.0,
+   "close_median": 0.0,
+   "close_p90": 0.0,
+   "close_p95": 0.0,
+   "close_p99": 0.0,
+   "fields": {
+    "o": {
+     "EXACT": 3
+    },
+    "h": {
+     "EXACT": 3
+    },
+    "l": {
+     "EXACT": 3
+    },
+    "c": {
+     "EXACT": 3
+    },
+    "v": {
+     "EXACT": 3
+    }
+   }
+  },
+  {
+   "asset_id": "48315",
+   "symbol": "آکو",
+   "mode": "adjusted",
+   "paired": 3,
+   "ref_months": 3,
+   "product_months": 3,
+   "ref_only": 0,
+   "product_only": 0,
+   "row_tolerance": 3,
+   "row_tolerance_pct": 100.0,
+   "close_median": 0.0,
+   "close_p90": 1.2148443987092848e-09,
+   "close_p95": 1.3666999485479453e-09,
+   "close_p99": 1.4881843884188739e-09,
+   "fields": {
+    "o": {
+     "TOLERANCE": 2,
+     "EXACT": 1
+    },
+    "h": {
+     "TOLERANCE": 1,
+     "EXACT": 2
+    },
+    "l": {
+     "TOLERANCE": 2,
+     "EXACT": 1
+    },
+    "c": {
+     "TOLERANCE": 1,
+     "EXACT": 2
+    },
+    "v": {
+     "EXACT": 3
+    }
+   }
+  },
+  {
+   "asset_id": "207",
+   "symbol": "لخزر",
+   "mode": "raw",
+   "paired": 212,
+   "ref_months": 212,
+   "product_months": 278,
+   "ref_only": 0,
+   "product_only": 66,
+   "row_tolerance": 209,
+   "row_tolerance_pct": 98.5849,
+   "close_median": 0.0,
+   "close_p90": 0.0,
+   "close_p95": 0.0,
+   "close_p99": 0.0,
+   "fields": {
+    "o": {
+     "EXACT": 212
+    },
+    "h": {
+     "EXACT": 212
+    },
+    "l": {
+     "EXACT": 212
+    },
+    "c": {
+     "EXACT": 212
+    },
+    "v": {
+     "MISMATCH": 3,
+     "EXACT": 209
+    }
+   }
+  },
+  {
+   "asset_id": "207",
+   "symbol": "لخزر",
+   "mode": "adjusted",
+   "paired": 212,
+   "ref_months": 212,
+   "product_months": 278,
+   "ref_only": 0,
+   "product_only": 66,
+   "row_tolerance": 206,
+   "row_tolerance_pct": 97.1698,
+   "close_median": 1.436146435513671e-07,
+   "close_p90": 4.641138712130032e-06,
+   "close_p95": 7.591400974381344e-06,
+   "close_p99": 0.27255624467964296,
+   "fields": {
+    "o": {
+     "ROUNDING": 4,
+     "TOLERANCE": 205,
+     "EXACT": 3
+    },
+    "h": {
+     "MISMATCH": 4,
+     "TOLERANCE": 205,
+     "EXACT": 3
+    },
+    "l": {
+     "ROUNDING": 4,
+     "TOLERANCE": 204,
+     "EXACT": 4
+    },
+    "c": {
+     "MISMATCH": 4,
+     "TOLERANCE": 205,
+     "EXACT": 3
+    },
+    "v": {
+     "MISMATCH": 3,
+     "EXACT": 209
+    }
+   }
+  },
+  {
+   "asset_id": "325",
+   "symbol": "هجرت",
+   "mode": "raw",
+   "paired": 85,
+   "ref_months": 85,
+   "product_months": 85,
+   "ref_only": 0,
+   "product_only": 0,
+   "row_tolerance": 85,
+   "row_tolerance_pct": 100.0,
+   "close_median": 0.0,
+   "close_p90": 0.0,
+   "close_p95": 0.0,
+   "close_p99": 0.0,
+   "fields": {
+    "o": {
+     "EXACT": 85
+    },
+    "h": {
+     "EXACT": 85
+    },
+    "l": {
+     "EXACT": 85
+    },
+    "c": {
+     "EXACT": 85
+    },
+    "v": {
+     "EXACT": 85
+    }
+   }
+  },
+  {
+   "asset_id": "325",
+   "symbol": "هجرت",
+   "mode": "adjusted",
+   "paired": 85,
+   "ref_months": 85,
+   "product_months": 85,
+   "ref_only": 0,
+   "product_only": 0,
+   "row_tolerance": 51,
+   "row_tolerance_pct": 60.0,
+   "close_median": 0.00015746756260880102,
+   "close_p90": 0.012650796680143732,
+   "close_p95": 0.012650875190155647,
+   "close_p99": 0.012651003456161576,
+   "fields": {
+    "o": {
+     "MISMATCH": 27,
+     "ROUNDING": 5,
+     "TOLERANCE": 50,
+     "EXACT": 3
+    },
+    "h": {
+     "MISMATCH": 28,
+     "ROUNDING": 5,
+     "TOLERANCE": 48,
+     "EXACT": 4
+    },
+    "l": {
+     "MISMATCH": 23,
+     "TOLERANCE": 52,
+     "ROUNDING": 7,
+     "EXACT": 3
+    },
+    "c": {
+     "MISMATCH": 26,
+     "ROUNDING": 5,
+     "TOLERANCE": 50,
+     "EXACT": 4
+    },
+    "v": {
+     "EXACT": 85
+    }
+   }
+  },
+  {
+   "asset_id": "291",
+   "symbol": "ومعادن",
+   "mode": "raw",
+   "paired": 220,
+   "ref_months": 220,
+   "product_months": 297,
+   "ref_only": 0,
+   "product_only": 77,
+   "row_tolerance": 212,
+   "row_tolerance_pct": 96.3636,
+   "close_median": 0.0,
+   "close_p90": 0.0,
+   "close_p95": 0.0,
+   "close_p99": 0.0,
+   "fields": {
+    "o": {
+     "EXACT": 218,
+     "MISMATCH": 2
+    },
+    "h": {
+     "EXACT": 220
+    },
+    "l": {
+     "EXACT": 220
+    },
+    "c": {
+     "EXACT": 220
+    },
+    "v": {
+     "EXACT": 214,
+     "MISMATCH": 6
+    }
+   }
+  },
+  {
+   "asset_id": "291",
+   "symbol": "ومعادن",
+   "mode": "adjusted",
+   "paired": 220,
+   "ref_months": 220,
+   "product_months": 297,
+   "ref_only": 0,
+   "product_only": 77,
+   "row_tolerance": 38,
+   "row_tolerance_pct": 17.2727,
+   "close_median": 0.1120045311508617,
+   "close_p90": 0.2052370621489099,
+   "close_p95": 0.20524295921903873,
+   "close_p99": 0.727410853255035,
+   "fields": {
+    "o": {
+     "MISMATCH": 160,
+     "ROUNDING": 20,
+     "TOLERANCE": 37,
+     "EXACT": 3
+    },
+    "h": {
+     "MISMATCH": 168,
+     "ROUNDING": 13,
+     "TOLERANCE": 36,
+     "EXACT": 3
+    },
+    "l": {
+     "MISMATCH": 157,
+     "ROUNDING": 22,
+     "TOLERANCE": 38,
+     "EXACT": 3
+    },
+    "c": {
+     "MISMATCH": 161,
+     "ROUNDING": 19,
+     "TOLERANCE": 36,
+     "EXACT": 4
+    },
+    "v": {
+     "EXACT": 214,
+     "MISMATCH": 6
+    }
+   }
+  },
+  {
+   "asset_id": "599",
+   "symbol": "ولانا",
+   "mode": "raw",
+   "paired": 116,
+   "ref_months": 116,
+   "product_months": 116,
+   "ref_only": 0,
+   "product_only": 0,
+   "row_tolerance": 114,
+   "row_tolerance_pct": 98.2759,
+   "close_median": 0.0,
+   "close_p90": 0.0,
+   "close_p95": 0.0,
+   "close_p99": 0.0,
+   "fields": {
+    "o": {
+     "EXACT": 116
+    },
+    "h": {
+     "EXACT": 116
+    },
+    "l": {
+     "EXACT": 116
+    },
+    "c": {
+     "EXACT": 116
+    },
+    "v": {
+     "EXACT": 114,
+     "MISMATCH": 2
+    }
+   }
+  },
+  {
+   "asset_id": "599",
+   "symbol": "ولانا",
+   "mode": "adjusted",
+   "paired": 116,
+   "ref_months": 116,
+   "product_months": 116,
+   "ref_only": 0,
+   "product_only": 0,
+   "row_tolerance": 3,
+   "row_tolerance_pct": 2.5862,
+   "close_median": 0.1914686094600479,
+   "close_p90": 0.20005676748220402,
+   "close_p95": 0.2007048299236608,
+   "close_p99": 0.20084123875557297,
+   "fields": {
+    "o": {
+     "MISMATCH": 113,
+     "EXACT": 3
+    },
+    "h": {
+     "MISMATCH": 113,
+     "EXACT": 3
+    },
+    "l": {
+     "MISMATCH": 113,
+     "EXACT": 3
+    },
+    "c": {
+     "MISMATCH": 113,
+     "EXACT": 3
+    },
+    "v": {
+     "EXACT": 114,
+     "MISMATCH": 2
+    }
+   }
+  },
+  {
+   "asset_id": "2672",
+   "symbol": "طلا",
+   "mode": "raw",
+   "paired": 112,
+   "ref_months": 112,
+   "product_months": 112,
+   "ref_only": 0,
+   "product_only": 0,
+   "row_tolerance": 109,
+   "row_tolerance_pct": 97.3214,
+   "close_median": 0.0,
+   "close_p90": 0.0,
+   "close_p95": 0.0,
+   "close_p99": 0.0,
+   "fields": {
+    "o": {
+     "EXACT": 112
+    },
+    "h": {
+     "EXACT": 112
+    },
+    "l": {
+     "EXACT": 112
+    },
+    "c": {
+     "EXACT": 112
+    },
+    "v": {
+     "EXACT": 109,
+     "MISMATCH": 3
+    }
+   }
+  },
+  {
+   "asset_id": "2672",
+   "symbol": "طلا",
+   "mode": "adjusted",
+   "paired": 112,
+   "ref_months": 112,
+   "product_months": 112,
+   "ref_only": 0,
+   "product_only": 0,
+   "row_tolerance": 109,
+   "row_tolerance_pct": 97.3214,
+   "close_median": 0.0,
+   "close_p90": 0.0,
+   "close_p95": 0.0,
+   "close_p99": 0.0,
+   "fields": {
+    "o": {
+     "EXACT": 112
+    },
+    "h": {
+     "EXACT": 112
+    },
+    "l": {
+     "EXACT": 112
+    },
+    "c": {
+     "EXACT": 112
+    },
+    "v": {
+     "EXACT": 109,
+     "MISMATCH": 3
+    }
+   }
+  },
+  {
+   "asset_id": "453",
+   "symbol": "فولاد",
+   "mode": "raw",
+   "paired": 219,
+   "ref_months": 219,
+   "product_months": 229,
+   "ref_only": 0,
+   "product_only": 10,
+   "row_tolerance": 206,
+   "row_tolerance_pct": 94.0639,
+   "close_median": 0.0,
+   "close_p90": 0.0,
+   "close_p95": 0.0,
+   "close_p99": 0.0,
+   "fields": {
+    "o": {
+     "EXACT": 218,
+     "MISMATCH": 1
+    },
+    "h": {
+     "EXACT": 219
+    },
+    "l": {
+     "EXACT": 219
+    },
+    "c": {
+     "EXACT": 219
+    },
+    "v": {
+     "MISMATCH": 12,
+     "EXACT": 207
+    }
+   }
+  },
+  {
+   "asset_id": "453",
+   "symbol": "فولاد",
+   "mode": "adjusted",
+   "paired": 219,
+   "ref_months": 219,
+   "product_months": 229,
+   "ref_only": 0,
+   "product_only": 10,
+   "row_tolerance": 16,
+   "row_tolerance_pct": 7.3059,
+   "close_median": 0.11079946590135807,
+   "close_p90": 0.11876153313830884,
+   "close_p95": 0.11876692846362805,
+   "close_p99": 0.11877274426823857,
+   "fields": {
+    "o": {
+     "TOLERANCE": 19,
+     "MISMATCH": 180,
+     "ROUNDING": 17,
+     "EXACT": 3
+    },
+    "h": {
+     "TOLERANCE": 14,
+     "MISMATCH": 184,
+     "ROUNDING": 18,
+     "EXACT": 3
+    },
+    "l": {
+     "TOLERANCE": 19,
+     "ROUNDING": 18,
+     "MISMATCH": 179,
+     "EXACT": 3
+    },
+    "c": {
+     "TOLERANCE": 16,
+     "MISMATCH": 181,
+     "ROUNDING": 19,
+     "EXACT": 3
+    },
+    "v": {
+     "MISMATCH": 12,
+     "EXACT": 207
+    }
+   }
+  },
+  {
+   "asset_id": "149",
+   "symbol": "فنوال",
+   "mode": "raw",
+   "paired": 218,
+   "ref_months": 218,
+   "product_months": 293,
+   "ref_only": 0,
+   "product_only": 75,
+   "row_tolerance": 208,
+   "row_tolerance_pct": 95.4128,
+   "close_median": 0.0,
+   "close_p90": 0.0,
+   "close_p95": 0.0,
+   "close_p99": 0.0,
+   "fields": {
+    "o": {
+     "MISMATCH": 2,
+     "EXACT": 216
+    },
+    "h": {
+     "MISMATCH": 1,
+     "EXACT": 217
+    },
+    "l": {
+     "EXACT": 218
+    },
+    "c": {
+     "EXACT": 218
+    },
+    "v": {
+     "MISMATCH": 9,
+     "EXACT": 209
+    }
+   }
+  },
+  {
+   "asset_id": "149",
+   "symbol": "فنوال",
+   "mode": "adjusted",
+   "paired": 218,
+   "ref_months": 218,
+   "product_months": 293,
+   "ref_only": 0,
+   "product_only": 75,
+   "row_tolerance": 209,
+   "row_tolerance_pct": 95.8716,
+   "close_median": 3.590384158355124e-07,
+   "close_p90": 0.00033860607264778897,
+   "close_p95": 0.0003409724557480701,
+   "close_p99": 0.0003429504023696681,
+   "fields": {
+    "o": {
+     "TOLERANCE": 215,
+     "EXACT": 3
+    },
+    "h": {
+     "TOLERANCE": 215,
+     "EXACT": 3
+    },
+    "l": {
+     "TOLERANCE": 215,
+     "EXACT": 3
+    },
+    "c": {
+     "TOLERANCE": 215,
+     "EXACT": 3
+    },
+    "v": {
+     "MISMATCH": 9,
+     "EXACT": 209
+    }
+   }
+  },
+  {
+   "asset_id": "167",
+   "symbol": "خودرو",
+   "mode": "raw",
+   "paired": 217,
+   "ref_months": 217,
+   "product_months": 297,
+   "ref_only": 0,
+   "product_only": 80,
+   "row_tolerance": 210,
+   "row_tolerance_pct": 96.7742,
+   "close_median": 0.0,
+   "close_p90": 0.0,
+   "close_p95": 0.0,
+   "close_p99": 0.0,
+   "fields": {
+    "o": {
+     "EXACT": 217
+    },
+    "h": {
+     "EXACT": 217
+    },
+    "l": {
+     "EXACT": 217
+    },
+    "c": {
+     "EXACT": 217
+    },
+    "v": {
+     "EXACT": 210,
+     "MISMATCH": 7
+    }
+   }
+  },
+  {
+   "asset_id": "167",
+   "symbol": "خودرو",
+   "mode": "adjusted",
+   "paired": 217,
+   "ref_months": 217,
+   "product_months": 297,
+   "ref_only": 0,
+   "product_only": 80,
+   "row_tolerance": 203,
+   "row_tolerance_pct": 93.5484,
+   "close_median": 1.3499861556422099e-06,
+   "close_p90": 0.014934298062124925,
+   "close_p95": 0.021374096943202,
+   "close_p99": 0.27475657328647135,
+   "fields": {
+    "o": {
+     "ROUNDING": 7,
+     "TOLERANCE": 194,
+     "EXACT": 16
+    },
+    "h": {
+     "ROUNDING": 7,
+     "TOLERANCE": 194,
+     "EXACT": 16
+    },
+    "l": {
+     "ROUNDING": 6,
+     "TOLERANCE": 195,
+     "EXACT": 16
+    },
+    "c": {
+     "ROUNDING": 7,
+     "TOLERANCE": 194,
+     "EXACT": 16
+    },
+    "v": {
+     "EXACT": 210,
+     "MISMATCH": 7
+    }
+   }
+  },
+  {
+   "asset_id": "182",
+   "symbol": "شنفت",
+   "mode": "raw",
+   "paired": 221,
+   "ref_months": 221,
+   "product_months": 301,
+   "ref_only": 0,
+   "product_only": 80,
+   "row_tolerance": 217,
+   "row_tolerance_pct": 98.19,
+   "close_median": 0.0,
+   "close_p90": 0.0,
+   "close_p95": 0.0,
+   "close_p99": 0.0,
+   "fields": {
+    "o": {
+     "MISMATCH": 1,
+     "EXACT": 220
+    },
+    "h": {
+     "MISMATCH": 1,
+     "EXACT": 220
+    },
+    "l": {
+     "EXACT": 221
+    },
+    "c": {
+     "EXACT": 221
+    },
+    "v": {
+     "MISMATCH": 4,
+     "EXACT": 217
+    }
+   }
+  },
+  {
+   "asset_id": "182",
+   "symbol": "شنفت",
+   "mode": "adjusted",
+   "paired": 221,
+   "ref_months": 221,
+   "product_months": 301,
+   "ref_only": 0,
+   "product_only": 80,
+   "row_tolerance": 153,
+   "row_tolerance_pct": 69.2308,
+   "close_median": 0.002626177156648188,
+   "close_p90": 0.07556553186513268,
+   "close_p95": 0.0756922827295165,
+   "close_p99": 0.12046217418014546,
+   "fields": {
+    "o": {
+     "MISMATCH": 67,
+     "ROUNDING": 1,
+     "TOLERANCE": 151,
+     "EXACT": 2
+    },
+    "h": {
+     "MISMATCH": 66,
+     "TOLERANCE": 152,
+     "EXACT": 3
+    },
+    "l": {
+     "MISMATCH": 66,
+     "ROUNDING": 1,
+     "TOLERANCE": 152,
+     "EXACT": 2
+    },
+    "c": {
+     "MISMATCH": 65,
+     "ROUNDING": 1,
+     "TOLERANCE": 152,
+     "EXACT": 3
+    },
+    "v": {
+     "MISMATCH": 4,
+     "EXACT": 217
+    }
+   }
+  },
+  {
+   "asset_id": "696",
+   "symbol": "شراز",
+   "mode": "raw",
+   "paired": 39,
+   "ref_months": 154,
+   "product_months": 39,
+   "ref_only": 115,
+   "product_only": 0,
+   "row_tolerance": 38,
+   "row_tolerance_pct": 97.4359,
+   "close_median": 0.0,
+   "close_p90": 0.0,
+   "close_p95": 0.0,
+   "close_p99": 0.0,
+   "fields": {
+    "o": {
+     "MISMATCH": 1,
+     "EXACT": 38
+    },
+    "h": {
+     "MISMATCH": 1,
+     "EXACT": 38
+    },
+    "l": {
+     "EXACT": 39
+    },
+    "c": {
+     "EXACT": 39
+    },
+    "v": {
+     "MISMATCH": 1,
+     "EXACT": 38
+    }
+   }
+  },
+  {
+   "asset_id": "696",
+   "symbol": "شراز",
+   "mode": "adjusted",
+   "paired": 39,
+   "ref_months": 154,
+   "product_months": 39,
+   "ref_only": 115,
+   "product_only": 0,
+   "row_tolerance": 38,
+   "row_tolerance_pct": 97.4359,
+   "close_median": 1.5016866731301067e-09,
+   "close_p90": 4.815833451809785e-09,
+   "close_p95": 7.189304228070532e-09,
+   "close_p99": 7.978523310521785e-09,
+   "fields": {
+    "o": {
+     "MISMATCH": 1,
+     "TOLERANCE": 35,
+     "EXACT": 3
+    },
+    "h": {
+     "MISMATCH": 1,
+     "TOLERANCE": 35,
+     "EXACT": 3
+    },
+    "l": {
+     "TOLERANCE": 36,
+     "EXACT": 3
+    },
+    "c": {
+     "TOLERANCE": 35,
+     "EXACT": 4
+    },
+    "v": {
+     "MISMATCH": 1,
+     "EXACT": 38
+    }
+   }
+  },
+  {
+   "asset_id": "183",
+   "symbol": "شبهرن",
+   "mode": "raw",
+   "paired": 220,
+   "ref_months": 220,
+   "product_months": 297,
+   "ref_only": 0,
+   "product_only": 77,
+   "row_tolerance": 212,
+   "row_tolerance_pct": 96.3636,
+   "close_median": 0.0,
+   "close_p90": 0.0,
+   "close_p95": 0.0,
+   "close_p99": 0.0,
+   "fields": {
+    "o": {
+     "MISMATCH": 2,
+     "EXACT": 217,
+     "ROUNDING": 1
+    },
+    "h": {
+     "EXACT": 220
+    },
+    "l": {
+     "EXACT": 219,
+     "MISMATCH": 1
+    },
+    "c": {
+     "EXACT": 220
+    },
+    "v": {
+     "MISMATCH": 5,
+     "EXACT": 215
+    }
+   }
+  },
+  {
+   "asset_id": "183",
+   "symbol": "شبهرن",
+   "mode": "adjusted",
+   "paired": 220,
+   "ref_months": 220,
+   "product_months": 297,
+   "ref_only": 0,
+   "product_only": 77,
+   "row_tolerance": 112,
+   "row_tolerance_pct": 50.9091,
+   "close_median": 0.05702638212022762,
+   "close_p90": 0.06675099058925481,
+   "close_p95": 0.06678605462475683,
+   "close_p99": 0.35199289886150575,
+   "fields": {
+    "o": {
+     "MISMATCH": 92,
+     "TOLERANCE": 114,
+     "ROUNDING": 13,
+     "EXACT": 1
+    },
+    "h": {
+     "MISMATCH": 97,
+     "TOLERANCE": 113,
+     "ROUNDING": 9,
+     "EXACT": 1
+    },
+    "l": {
+     "MISMATCH": 89,
+     "ROUNDING": 17,
+     "TOLERANCE": 113,
+     "EXACT": 1
+    },
+    "c": {
+     "MISMATCH": 91,
+     "ROUNDING": 15,
+     "TOLERANCE": 113,
+     "EXACT": 1
+    },
+    "v": {
+     "MISMATCH": 5,
+     "EXACT": 215
+    }
+   }
+  },
+  {
+   "asset_id": "703",
+   "symbol": "فارس",
+   "mode": "raw",
+   "paired": 161,
+   "ref_months": 161,
+   "product_months": 161,
+   "ref_only": 0,
+   "product_only": 0,
+   "row_tolerance": 154,
+   "row_tolerance_pct": 95.6522,
+   "close_median": 0.0,
+   "close_p90": 0.0,
+   "close_p95": 0.0,
+   "close_p99": 0.0,
+   "fields": {
+    "o": {
+     "EXACT": 161
+    },
+    "h": {
+     "EXACT": 161
+    },
+    "l": {
+     "EXACT": 161
+    },
+    "c": {
+     "EXACT": 161
+    },
+    "v": {
+     "EXACT": 153,
+     "MISMATCH": 6,
+     "TOLERANCE": 1,
+     "ROUNDING": 1
+    }
+   }
+  },
+  {
+   "asset_id": "703",
+   "symbol": "فارس",
+   "mode": "adjusted",
+   "paired": 161,
+   "ref_months": 161,
+   "product_months": 161,
+   "ref_only": 0,
+   "product_only": 0,
+   "row_tolerance": 67,
+   "row_tolerance_pct": 41.6149,
+   "close_median": 0.06987995993877727,
+   "close_p90": 0.1435543922200329,
+   "close_p95": 0.14355454447873117,
+   "close_p99": 0.14355481189792163,
+   "fields": {
+    "o": {
+     "MISMATCH": 91,
+     "TOLERANCE": 69,
+     "EXACT": 1
+    },
+    "h": {
+     "MISMATCH": 91,
+     "TOLERANCE": 68,
+     "EXACT": 2
+    },
+    "l": {
+     "MISMATCH": 91,
+     "TOLERANCE": 69,
+     "EXACT": 1
+    },
+    "c": {
+     "MISMATCH": 91,
+     "TOLERANCE": 68,
+     "EXACT": 2
+    },
+    "v": {
+     "EXACT": 153,
+     "MISMATCH": 6,
+     "TOLERANCE": 1,
+     "ROUNDING": 1
+    }
+   }
+  },
+  {
+   "asset_id": "462",
+   "symbol": "وبملت",
+   "mode": "raw",
+   "paired": 202,
+   "ref_months": 202,
+   "product_months": 202,
+   "ref_only": 0,
+   "product_only": 0,
+   "row_tolerance": 196,
+   "row_tolerance_pct": 97.0297,
+   "close_median": 0.0,
+   "close_p90": 0.0,
+   "close_p95": 0.0,
+   "close_p99": 0.0,
+   "fields": {
+    "o": {
+     "EXACT": 202
+    },
+    "h": {
+     "EXACT": 202
+    },
+    "l": {
+     "EXACT": 202
+    },
+    "c": {
+     "EXACT": 202
+    },
+    "v": {
+     "EXACT": 196,
+     "MISMATCH": 6
+    }
+   }
+  },
+  {
+   "asset_id": "462",
+   "symbol": "وبملت",
+   "mode": "adjusted",
+   "paired": 202,
+   "ref_months": 202,
+   "product_months": 202,
+   "ref_only": 0,
+   "product_only": 0,
+   "row_tolerance": 156,
+   "row_tolerance_pct": 77.2277,
+   "close_median": 0.004646380127233984,
+   "close_p90": 0.005910677758656606,
+   "close_p95": 0.006492739080636585,
+   "close_p99": 0.006505746388375361,
+   "fields": {
+    "o": {
+     "TOLERANCE": 159,
+     "ROUNDING": 2,
+     "MISMATCH": 38,
+     "EXACT": 3
+    },
+    "h": {
+     "TOLERANCE": 158,
+     "ROUNDING": 1,
+     "MISMATCH": 40,
+     "EXACT": 3
+    },
+    "l": {
+     "TOLERANCE": 159,
+     "ROUNDING": 5,
+     "MISMATCH": 35,
+     "EXACT": 3
+    },
+    "c": {
+     "TOLERANCE": 157,
+     "ROUNDING": 2,
+     "MISMATCH": 39,
+     "EXACT": 4
+    },
+    "v": {
+     "EXACT": 196,
+     "MISMATCH": 6
+    }
+   }
+  },
+  {
+   "asset_id": "484",
+   "symbol": "شپنا",
+   "mode": "raw",
+   "paired": 197,
+   "ref_months": 197,
+   "product_months": 197,
+   "ref_only": 0,
+   "product_only": 0,
+   "row_tolerance": 187,
+   "row_tolerance_pct": 94.9239,
+   "close_median": 0.0,
+   "close_p90": 0.0,
+   "close_p95": 0.0,
+   "close_p99": 0.0,
+   "fields": {
+    "o": {
+     "EXACT": 195,
+     "MISMATCH": 2
+    },
+    "h": {
+     "EXACT": 197
+    },
+    "l": {
+     "EXACT": 197
+    },
+    "c": {
+     "EXACT": 197
+    },
+    "v": {
+     "EXACT": 189,
+     "MISMATCH": 7,
+     "ROUNDING": 1
+    }
+   }
+  },
+  {
+   "asset_id": "484",
+   "symbol": "شپنا",
+   "mode": "adjusted",
+   "paired": 197,
+   "ref_months": 197,
+   "product_months": 197,
+   "ref_only": 0,
+   "product_only": 0,
+   "row_tolerance": 127,
+   "row_tolerance_pct": 64.467,
+   "close_median": 2.4285732813996774e-07,
+   "close_p90": 0.2553764123769657,
+   "close_p95": 0.25537871857731775,
+   "close_p99": 0.2553812722403233,
+   "fields": {
+    "o": {
+     "MISMATCH": 63,
+     "TOLERANCE": 131,
+     "EXACT": 3
+    },
+    "h": {
+     "MISMATCH": 63,
+     "TOLERANCE": 131,
+     "EXACT": 3
+    },
+    "l": {
+     "ROUNDING": 2,
+     "MISMATCH": 61,
+     "TOLERANCE": 131,
+     "EXACT": 3
+    },
+    "c": {
+     "MISMATCH": 63,
+     "TOLERANCE": 131,
+     "EXACT": 3
+    },
+    "v": {
+     "EXACT": 189,
+     "MISMATCH": 7,
+     "ROUNDING": 1
+    }
+   }
+  },
+  {
+   "asset_id": "287",
+   "symbol": "قصفها",
+   "mode": "raw",
+   "paired": 217,
+   "ref_months": 217,
+   "product_months": 279,
+   "ref_only": 0,
+   "product_only": 62,
+   "row_tolerance": 214,
+   "row_tolerance_pct": 98.6175,
+   "close_median": 0.0,
+   "close_p90": 0.0,
+   "close_p95": 0.0,
+   "close_p99": 0.0,
+   "fields": {
+    "o": {
+     "EXACT": 217
+    },
+    "h": {
+     "EXACT": 217
+    },
+    "l": {
+     "EXACT": 216,
+     "MISMATCH": 1
+    },
+    "c": {
+     "EXACT": 217
+    },
+    "v": {
+     "EXACT": 213,
+     "MISMATCH": 3,
+     "TOLERANCE": 1
+    }
+   }
+  },
+  {
+   "asset_id": "287",
+   "symbol": "قصفها",
+   "mode": "adjusted",
+   "paired": 217,
+   "ref_months": 217,
+   "product_months": 279,
+   "ref_only": 0,
+   "product_only": 62,
+   "row_tolerance": 214,
+   "row_tolerance_pct": 98.6175,
+   "close_median": 7.543825506403448e-07,
+   "close_p90": 7.689180789537768e-05,
+   "close_p95": 0.00017933391693087796,
+   "close_p99": 0.03939078226922545,
+   "fields": {
+    "o": {
+     "TOLERANCE": 214,
+     "EXACT": 3
+    },
+    "h": {
+     "TOLERANCE": 214,
+     "EXACT": 3
+    },
+    "l": {
+     "TOLERANCE": 214,
+     "EXACT": 3
+    },
+    "c": {
+     "TOLERANCE": 213,
+     "EXACT": 4
+    },
+    "v": {
+     "EXACT": 213,
+     "MISMATCH": 3,
+     "TOLERANCE": 1
+    }
+   }
+  },
+  {
+   "asset_id": "384",
+   "symbol": "سصفها",
+   "mode": "raw",
+   "paired": 216,
+   "ref_months": 216,
+   "product_months": 252,
+   "ref_only": 0,
+   "product_only": 36,
+   "row_tolerance": 212,
+   "row_tolerance_pct": 98.1481,
+   "close_median": 0.0,
+   "close_p90": 0.0,
+   "close_p95": 0.0,
+   "close_p99": 0.0,
+   "fields": {
+    "o": {
+     "EXACT": 215,
+     "MISMATCH": 1
+    },
+    "h": {
+     "EXACT": 215,
+     "MISMATCH": 1
+    },
+    "l": {
+     "EXACT": 216
+    },
+    "c": {
+     "EXACT": 216
+    },
+    "v": {
+     "EXACT": 212,
+     "MISMATCH": 4
+    }
+   }
+  },
+  {
+   "asset_id": "384",
+   "symbol": "سصفها",
+   "mode": "adjusted",
+   "paired": 216,
+   "ref_months": 216,
+   "product_months": 252,
+   "ref_only": 0,
+   "product_only": 36,
+   "row_tolerance": 206,
+   "row_tolerance_pct": 95.3704,
+   "close_median": 6.571688529472201e-07,
+   "close_p90": 0.00035135188320512434,
+   "close_p95": 0.0003579235060599849,
+   "close_p99": 0.11389747443059309,
+   "fields": {
+    "o": {
+     "ROUNDING": 6,
+     "TOLERANCE": 209,
+     "EXACT": 1
+    },
+    "h": {
+     "ROUNDING": 6,
+     "TOLERANCE": 209,
+     "EXACT": 1
+    },
+    "l": {
+     "ROUNDING": 6,
+     "TOLERANCE": 209,
+     "EXACT": 1
+    },
+    "c": {
+     "ROUNDING": 6,
+     "TOLERANCE": 209,
+     "EXACT": 1
+    },
+    "v": {
+     "EXACT": 212,
+     "MISMATCH": 4
+    }
+   }
+  },
+  {
+   "asset_id": "6274",
+   "symbol": "درهآور",
+   "mode": "raw",
+   "paired": 87,
+   "ref_months": 87,
+   "product_months": 87,
+   "ref_only": 0,
+   "product_only": 0,
+   "row_tolerance": 85,
+   "row_tolerance_pct": 97.7011,
+   "close_median": 0.0,
+   "close_p90": 0.0,
+   "close_p95": 0.0,
+   "close_p99": 0.0,
+   "fields": {
+    "o": {
+     "EXACT": 87
+    },
+    "h": {
+     "EXACT": 87
+    },
+    "l": {
+     "EXACT": 87
+    },
+    "c": {
+     "EXACT": 87
+    },
+    "v": {
+     "EXACT": 85,
+     "MISMATCH": 2
+    }
+   }
+  },
+  {
+   "asset_id": "6274",
+   "symbol": "درهآور",
+   "mode": "adjusted",
+   "paired": 87,
+   "ref_months": 87,
+   "product_months": 87,
+   "ref_only": 0,
+   "product_only": 0,
+   "row_tolerance": 4,
+   "row_tolerance_pct": 4.5977,
+   "close_median": 0.0021527264506719023,
+   "close_p90": 0.02041368083849918,
+   "close_p95": 0.020413699906687434,
+   "close_p99": 0.02048632315415462,
+   "fields": {
+    "o": {
+     "MISMATCH": 83,
+     "EXACT": 4
+    },
+    "h": {
+     "MISMATCH": 83,
+     "EXACT": 4
+    },
+    "l": {
+     "MISMATCH": 83,
+     "EXACT": 4
+    },
+    "c": {
+     "MISMATCH": 82,
+     "EXACT": 5
+    },
+    "v": {
+     "EXACT": 85,
+     "MISMATCH": 2
+    }
+   }
+  },
+  {
+   "asset_id": "109",
+   "symbol": "سغرب",
+   "mode": "raw",
+   "paired": 217,
+   "ref_months": 217,
+   "product_months": 285,
+   "ref_only": 0,
+   "product_only": 68,
+   "row_tolerance": 210,
+   "row_tolerance_pct": 96.7742,
+   "close_median": 0.0,
+   "close_p90": 0.0,
+   "close_p95": 0.0,
+   "close_p99": 0.0,
+   "fields": {
+    "o": {
+     "EXACT": 215,
+     "MISMATCH": 2
+    },
+    "h": {
+     "EXACT": 217
+    },
+    "l": {
+     "EXACT": 217
+    },
+    "c": {
+     "EXACT": 217
+    },
+    "v": {
+     "EXACT": 212,
+     "MISMATCH": 5
+    }
+   }
+  },
+  {
+   "asset_id": "109",
+   "symbol": "سغرب",
+   "mode": "adjusted",
+   "paired": 217,
+   "ref_months": 217,
+   "product_months": 285,
+   "ref_only": 0,
+   "product_only": 68,
+   "row_tolerance": 23,
+   "row_tolerance_pct": 10.5991,
+   "close_median": 0.21911459276584633,
+   "close_p90": 0.21911761539265057,
+   "close_p95": 0.21914084685881458,
+   "close_p99": 0.28600590264463294,
+   "fields": {
+    "o": {
+     "MISMATCH": 189,
+     "ROUNDING": 5,
+     "TOLERANCE": 19,
+     "EXACT": 4
+    },
+    "h": {
+     "MISMATCH": 191,
+     "ROUNDING": 3,
+     "TOLERANCE": 18,
+     "EXACT": 5
+    },
+    "l": {
+     "MISMATCH": 186,
+     "ROUNDING": 8,
+     "TOLERANCE": 19,
+     "EXACT": 4
+    },
+    "c": {
+     "MISMATCH": 190,
+     "ROUNDING": 4,
+     "TOLERANCE": 18,
+     "EXACT": 5
+    },
+    "v": {
+     "EXACT": 212,
+     "MISMATCH": 5
+    }
+   }
+  },
+  {
+   "asset_id": "485",
+   "symbol": "مارون",
+   "mode": "raw",
+   "paired": 173,
+   "ref_months": 173,
+   "product_months": 173,
+   "ref_only": 0,
+   "product_only": 0,
+   "row_tolerance": 170,
+   "row_tolerance_pct": 98.2659,
+   "close_median": 0.0,
+   "close_p90": 0.0,
+   "close_p95": 0.0,
+   "close_p99": 0.0,
+   "fields": {
+    "o": {
+     "EXACT": 173
+    },
+    "h": {
+     "EXACT": 173
+    },
+    "l": {
+     "EXACT": 173
+    },
+    "c": {
+     "EXACT": 172,
+     "MISMATCH": 1
+    },
+    "v": {
+     "EXACT": 170,
+     "MISMATCH": 3
+    }
+   }
+  },
+  {
+   "asset_id": "485",
+   "symbol": "مارون",
+   "mode": "adjusted",
+   "paired": 173,
+   "ref_months": 173,
+   "product_months": 173,
+   "ref_only": 0,
+   "product_only": 0,
+   "row_tolerance": 16,
+   "row_tolerance_pct": 9.2486,
+   "close_median": 0.0014247976594622856,
+   "close_p90": 0.0014248833928011055,
+   "close_p95": 0.0020826742138933593,
+   "close_p99": 0.002082676454034289,
+   "fields": {
+    "o": {
+     "TOLERANCE": 18,
+     "ROUNDING": 21,
+     "MISMATCH": 133,
+     "EXACT": 1
+    },
+    "h": {
+     "TOLERANCE": 16,
+     "ROUNDING": 17,
+     "MISMATCH": 138,
+     "EXACT": 2
+    },
+    "l": {
+     "TOLERANCE": 18,
+     "ROUNDING": 25,
+     "MISMATCH": 129,
+     "EXACT": 1
+    },
+    "c": {
+     "TOLERANCE": 16,
+     "MISMATCH": 133,
+     "ROUNDING": 22,
+     "EXACT": 2
+    },
+    "v": {
+     "EXACT": 170,
+     "MISMATCH": 3
+    }
+   }
+  },
+  {
+   "asset_id": "7836",
+   "symbol": "شستا",
+   "mode": "raw",
+   "paired": 76,
+   "ref_months": 76,
+   "product_months": 76,
+   "ref_only": 0,
+   "product_only": 0,
+   "row_tolerance": 72,
+   "row_tolerance_pct": 94.7368,
+   "close_median": 0.0,
+   "close_p90": 0.0,
+   "close_p95": 0.0,
+   "close_p99": 0.0,
+   "fields": {
+    "o": {
+     "EXACT": 76
+    },
+    "h": {
+     "EXACT": 76
+    },
+    "l": {
+     "EXACT": 75,
+     "MISMATCH": 1
+    },
+    "c": {
+     "EXACT": 76
+    },
+    "v": {
+     "EXACT": 72,
+     "ROUNDING": 1,
+     "MISMATCH": 3
+    }
+   }
+  },
+  {
+   "asset_id": "7836",
+   "symbol": "شستا",
+   "mode": "adjusted",
+   "paired": 76,
+   "ref_months": 76,
+   "product_months": 76,
+   "ref_only": 0,
+   "product_only": 0,
+   "row_tolerance": 54,
+   "row_tolerance_pct": 71.0526,
+   "close_median": 3.8599083677503945e-08,
+   "close_p90": 0.004981205622075846,
+   "close_p95": 0.004981236625784313,
+   "close_p99": 0.004981314537823514,
+   "fields": {
+    "o": {
+     "ROUNDING": 1,
+     "MISMATCH": 20,
+     "TOLERANCE": 44,
+     "EXACT": 11
+    },
+    "h": {
+     "MISMATCH": 21,
+     "TOLERANCE": 44,
+     "EXACT": 11
+    },
+    "l": {
+     "ROUNDING": 1,
+     "MISMATCH": 21,
+     "TOLERANCE": 43,
+     "EXACT": 11
+    },
+    "c": {
+     "MISMATCH": 21,
+     "TOLERANCE": 44,
+     "EXACT": 11
+    },
+    "v": {
+     "EXACT": 72,
+     "ROUNDING": 1,
+     "MISMATCH": 3
+    }
+   }
+  },
+  {
+   "asset_id": "16449",
+   "symbol": "فزر",
+   "mode": "raw",
+   "paired": 56,
+   "ref_months": 56,
+   "product_months": 56,
+   "ref_only": 0,
+   "product_only": 0,
+   "row_tolerance": 55,
+   "row_tolerance_pct": 98.2143,
+   "close_median": 0.0,
+   "close_p90": 0.0,
+   "close_p95": 0.0,
+   "close_p99": 0.0,
+   "fields": {
+    "o": {
+     "EXACT": 56
+    },
+    "h": {
+     "EXACT": 56
+    },
+    "l": {
+     "EXACT": 55,
+     "MISMATCH": 1
+    },
+    "c": {
+     "EXACT": 56
+    },
+    "v": {
+     "EXACT": 55,
+     "MISMATCH": 1
+    }
+   }
+  },
+  {
+   "asset_id": "16449",
+   "symbol": "فزر",
+   "mode": "adjusted",
+   "paired": 56,
+   "ref_months": 56,
+   "product_months": 56,
+   "ref_only": 0,
+   "product_only": 0,
+   "row_tolerance": 55,
+   "row_tolerance_pct": 98.2143,
+   "close_median": 5.2168008284725235e-09,
+   "close_p90": 9.749640385421981e-09,
+   "close_p95": 1.072024492581669e-08,
+   "close_p99": 1.2422161709390612e-08,
+   "fields": {
+    "o": {
+     "TOLERANCE": 49,
+     "EXACT": 7
+    },
+    "h": {
+     "TOLERANCE": 49,
+     "EXACT": 7
+    },
+    "l": {
+     "TOLERANCE": 48,
+     "MISMATCH": 1,
+     "EXACT": 7
+    },
+    "c": {
+     "TOLERANCE": 49,
+     "EXACT": 7
+    },
+    "v": {
+     "EXACT": 55,
+     "MISMATCH": 1
+    }
+   }
+  },
+  {
+   "asset_id": "17495",
+   "symbol": "فافق",
+   "mode": "raw",
+   "paired": 61,
+   "ref_months": 61,
+   "product_months": 61,
+   "ref_only": 0,
+   "product_only": 0,
+   "row_tolerance": 59,
+   "row_tolerance_pct": 96.7213,
+   "close_median": 0.0,
+   "close_p90": 0.0,
+   "close_p95": 0.0,
+   "close_p99": 0.011622737376945021,
+   "fields": {
+    "o": {
+     "EXACT": 61
+    },
+    "h": {
+     "MISMATCH": 1,
+     "EXACT": 60
+    },
+    "l": {
+     "EXACT": 60,
+     "MISMATCH": 1
+    },
+    "c": {
+     "MISMATCH": 1,
+     "EXACT": 60
+    },
+    "v": {
+     "MISMATCH": 2,
+     "EXACT": 59
+    }
+   }
+  },
+  {
+   "asset_id": "17495",
+   "symbol": "فافق",
+   "mode": "adjusted",
+   "paired": 61,
+   "ref_months": 61,
+   "product_months": 61,
+   "ref_only": 0,
+   "product_only": 0,
+   "row_tolerance": 3,
+   "row_tolerance_pct": 4.918,
+   "close_median": 0.001556363877221679,
+   "close_p90": 0.005173015387852682,
+   "close_p95": 0.005173054775018034,
+   "close_p99": 0.035122176244167226,
+   "fields": {
+    "o": {
+     "MISMATCH": 58,
+     "EXACT": 3
+    },
+    "h": {
+     "MISMATCH": 57,
+     "EXACT": 4
+    },
+    "l": {
+     "MISMATCH": 58,
+     "EXACT": 3
+    },
+    "c": {
+     "MISMATCH": 57,
+     "EXACT": 4
+    },
+    "v": {
+     "MISMATCH": 2,
+     "EXACT": 59
+    }
+   }
+  },
+  {
+   "asset_id": "569",
+   "symbol": "فولاژ",
+   "mode": "raw",
+   "paired": 186,
+   "ref_months": 186,
+   "product_months": 186,
+   "ref_only": 0,
+   "product_only": 0,
+   "row_tolerance": 180,
+   "row_tolerance_pct": 96.7742,
+   "close_median": 0.0,
+   "close_p90": 0.0,
+   "close_p95": 0.0,
+   "close_p99": 0.0,
+   "fields": {
+    "o": {
+     "EXACT": 186
+    },
+    "h": {
+     "EXACT": 186
+    },
+    "l": {
+     "EXACT": 185,
+     "MISMATCH": 1
+    },
+    "c": {
+     "EXACT": 186
+    },
+    "v": {
+     "EXACT": 180,
+     "MISMATCH": 6
+    }
+   }
+  },
+  {
+   "asset_id": "569",
+   "symbol": "فولاژ",
+   "mode": "adjusted",
+   "paired": 186,
+   "ref_months": 186,
+   "product_months": 186,
+   "ref_only": 0,
+   "product_only": 0,
+   "row_tolerance": 59,
+   "row_tolerance_pct": 31.7204,
+   "close_median": 0.0017878175832116163,
+   "close_p90": 0.5876362061346829,
+   "close_p95": 0.615120374483733,
+   "close_p99": 0.6151227586919187,
+   "fields": {
+    "o": {
+     "MISMATCH": 54,
+     "ROUNDING": 66,
+     "TOLERANCE": 63,
+     "EXACT": 3
+    },
+    "h": {
+     "MISMATCH": 56,
+     "ROUNDING": 69,
+     "TOLERANCE": 58,
+     "EXACT": 3
+    },
+    "l": {
+     "MISMATCH": 53,
+     "TOLERANCE": 71,
+     "ROUNDING": 59,
+     "EXACT": 3
+    },
+    "c": {
+     "MISMATCH": 53,
+     "TOLERANCE": 62,
+     "ROUNDING": 68,
+     "EXACT": 3
+    },
+    "v": {
+     "EXACT": 180,
+     "MISMATCH": 6
+    }
+   }
+  },
+  {
+   "asset_id": "458",
+   "symbol": "فخاس",
+   "mode": "raw",
+   "paired": 222,
+   "ref_months": 222,
+   "product_months": 224,
+   "ref_only": 0,
+   "product_only": 2,
+   "row_tolerance": 211,
+   "row_tolerance_pct": 95.045,
+   "close_median": 0.0,
+   "close_p90": 0.0,
+   "close_p95": 0.0,
+   "close_p99": 0.0,
+   "fields": {
+    "o": {
+     "MISMATCH": 4,
+     "EXACT": 217,
+     "ROUNDING": 1
+    },
+    "h": {
+     "EXACT": 222
+    },
+    "l": {
+     "EXACT": 222
+    },
+    "c": {
+     "EXACT": 222
+    },
+    "v": {
+     "MISMATCH": 7,
+     "EXACT": 215
+    }
+   }
+  },
+  {
+   "asset_id": "458",
+   "symbol": "فخاس",
+   "mode": "adjusted",
+   "paired": 222,
+   "ref_months": 222,
+   "product_months": 224,
+   "ref_only": 0,
+   "product_only": 2,
+   "row_tolerance": 43,
+   "row_tolerance_pct": 19.3694,
+   "close_median": 0.0692821489892186,
+   "close_p90": 0.1491329609196043,
+   "close_p95": 0.1491357807770033,
+   "close_p99": 0.6255580154750281,
+   "fields": {
+    "o": {
+     "MISMATCH": 175,
+     "ROUNDING": 3,
+     "TOLERANCE": 41,
+     "EXACT": 3
+    },
+    "h": {
+     "MISMATCH": 174,
+     "ROUNDING": 3,
+     "TOLERANCE": 41,
+     "EXACT": 4
+    },
+    "l": {
+     "MISMATCH": 175,
+     "ROUNDING": 3,
+     "TOLERANCE": 40,
+     "EXACT": 4
+    },
+    "c": {
+     "MISMATCH": 174,
+     "ROUNDING": 3,
+     "TOLERANCE": 41,
+     "EXACT": 4
+    },
+    "v": {
+     "MISMATCH": 7,
+     "EXACT": 215
+    }
+   }
+  },
+  {
+   "asset_id": "159",
+   "symbol": "فجام",
+   "mode": "raw",
+   "paired": 212,
+   "ref_months": 212,
+   "product_months": 282,
+   "ref_only": 0,
+   "product_only": 70,
+   "row_tolerance": 207,
+   "row_tolerance_pct": 97.6415,
+   "close_median": 0.0,
+   "close_p90": 0.0,
+   "close_p95": 0.0,
+   "close_p99": 0.0,
+   "fields": {
+    "o": {
+     "MISMATCH": 2,
+     "EXACT": 209,
+     "ROUNDING": 1
+    },
+    "h": {
+     "EXACT": 211,
+     "MISMATCH": 1
+    },
+    "l": {
+     "EXACT": 212
+    },
+    "c": {
+     "EXACT": 212
+    },
+    "v": {
+     "MISMATCH": 2,
+     "EXACT": 210
+    }
+   }
+  },
+  {
+   "asset_id": "159",
+   "symbol": "فجام",
+   "mode": "adjusted",
+   "paired": 212,
+   "ref_months": 212,
+   "product_months": 282,
+   "ref_only": 0,
+   "product_only": 70,
+   "row_tolerance": 202,
+   "row_tolerance_pct": 95.283,
+   "close_median": 8.767199123238211e-08,
+   "close_p90": 0.016615757504511868,
+   "close_p95": 0.016619803713396417,
+   "close_p99": 0.12326443974945801,
+   "fields": {
+    "o": {
+     "MISMATCH": 8,
+     "TOLERANCE": 201,
+     "EXACT": 3
+    },
+    "h": {
+     "MISMATCH": 6,
+     "TOLERANCE": 202,
+     "ROUNDING": 1,
+     "EXACT": 3
+    },
+    "l": {
+     "MISMATCH": 7,
+     "TOLERANCE": 202,
+     "EXACT": 3
+    },
+    "c": {
+     "MISMATCH": 6,
+     "TOLERANCE": 203,
+     "EXACT": 3
+    },
+    "v": {
+     "MISMATCH": 2,
+     "EXACT": 210
+    }
+   }
+  },
+  {
+   "asset_id": "252",
+   "symbol": "شاملا",
+   "mode": "raw",
+   "paired": 223,
+   "ref_months": 223,
+   "product_months": 293,
+   "ref_only": 0,
+   "product_only": 70,
+   "row_tolerance": 217,
+   "row_tolerance_pct": 97.3094,
+   "close_median": 0.0,
+   "close_p90": 0.0,
+   "close_p95": 0.0,
+   "close_p99": 0.0,
+   "fields": {
+    "o": {
+     "EXACT": 221,
+     "MISMATCH": 2
+    },
+    "h": {
+     "EXACT": 223
+    },
+    "l": {
+     "EXACT": 222,
+     "MISMATCH": 1
+    },
+    "c": {
+     "EXACT": 223
+    },
+    "v": {
+     "EXACT": 219,
+     "MISMATCH": 4
+    }
+   }
+  },
+  {
+   "asset_id": "252",
+   "symbol": "شاملا",
+   "mode": "adjusted",
+   "paired": 223,
+   "ref_months": 223,
+   "product_months": 293,
+   "ref_only": 0,
+   "product_only": 70,
+   "row_tolerance": 23,
+   "row_tolerance_pct": 10.3139,
+   "close_median": 0.4961804340755114,
+   "close_p90": 0.4961978698167019,
+   "close_p95": 0.49626057270356033,
+   "close_p99": 0.4990172302705858,
+   "fields": {
+    "o": {
+     "MISMATCH": 166,
+     "ROUNDING": 32,
+     "TOLERANCE": 21,
+     "EXACT": 4
+    },
+    "h": {
+     "MISMATCH": 165,
+     "ROUNDING": 35,
+     "TOLERANCE": 19,
+     "EXACT": 4
+    },
+    "l": {
+     "MISMATCH": 167,
+     "TOLERANCE": 24,
+     "ROUNDING": 28,
+     "EXACT": 4
+    },
+    "c": {
+     "MISMATCH": 165,
+     "ROUNDING": 32,
+     "TOLERANCE": 21,
+     "EXACT": 5
+    },
+    "v": {
+     "EXACT": 219,
+     "MISMATCH": 4
+    }
+   }
+  },
+  {
+   "asset_id": "498",
+   "symbol": "وبصادر",
+   "mode": "raw",
+   "paired": 186,
+   "ref_months": 186,
+   "product_months": 186,
+   "ref_only": 0,
+   "product_only": 0,
+   "row_tolerance": 181,
+   "row_tolerance_pct": 97.3118,
+   "close_median": 0.0,
+   "close_p90": 0.0,
+   "close_p95": 0.0,
+   "close_p99": 0.0,
+   "fields": {
+    "o": {
+     "EXACT": 186
+    },
+    "h": {
+     "EXACT": 185,
+     "MISMATCH": 1
+    },
+    "l": {
+     "EXACT": 185,
+     "MISMATCH": 1
+    },
+    "c": {
+     "EXACT": 186
+    },
+    "v": {
+     "EXACT": 182,
+     "MISMATCH": 4
+    }
+   }
+  },
+  {
+   "asset_id": "498",
+   "symbol": "وبصادر",
+   "mode": "adjusted",
+   "paired": 186,
+   "ref_months": 186,
+   "product_months": 186,
+   "ref_only": 0,
+   "product_only": 0,
+   "row_tolerance": 82,
+   "row_tolerance_pct": 44.086,
+   "close_median": 0.024502245531274298,
+   "close_p90": 0.025334896358380828,
+   "close_p95": 0.025335850201022688,
+   "close_p99": 0.02533688315090063,
+   "fields": {
+    "o": {
+     "TOLERANCE": 72,
+     "ROUNDING": 38,
+     "MISMATCH": 62,
+     "EXACT": 14
+    },
+    "h": {
+     "TOLERANCE": 71,
+     "ROUNDING": 38,
+     "MISMATCH": 63,
+     "EXACT": 14
+    },
+    "l": {
+     "TOLERANCE": 73,
+     "ROUNDING": 37,
+     "MISMATCH": 62,
+     "EXACT": 14
+    },
+    "c": {
+     "TOLERANCE": 72,
+     "ROUNDING": 37,
+     "MISMATCH": 63,
+     "EXACT": 14
+    },
+    "v": {
+     "EXACT": 182,
+     "MISMATCH": 4
+    }
+   }
+  },
+  {
+   "asset_id": "661",
+   "symbol": "ولراز",
+   "mode": "raw",
+   "paired": 132,
+   "ref_months": 132,
+   "product_months": 132,
+   "ref_only": 0,
+   "product_only": 0,
+   "row_tolerance": 129,
+   "row_tolerance_pct": 97.7273,
+   "close_median": 0.0,
+   "close_p90": 0.0,
+   "close_p95": 0.0,
+   "close_p99": 0.0,
+   "fields": {
+    "o": {
+     "EXACT": 132
+    },
+    "h": {
+     "EXACT": 132
+    },
+    "l": {
+     "EXACT": 130,
+     "MISMATCH": 2
+    },
+    "c": {
+     "EXACT": 132
+    },
+    "v": {
+     "EXACT": 130,
+     "MISMATCH": 2
+    }
+   }
+  },
+  {
+   "asset_id": "661",
+   "symbol": "ولراز",
+   "mode": "adjusted",
+   "paired": 132,
+   "ref_months": 132,
+   "product_months": 132,
+   "ref_only": 0,
+   "product_only": 0,
+   "row_tolerance": 4,
+   "row_tolerance_pct": 3.0303,
+   "close_median": 0.06574337075676784,
+   "close_p90": 0.08100512492334555,
+   "close_p95": 0.08100517895021087,
+   "close_p99": 0.08100647996479839,
+   "fields": {
+    "o": {
+     "MISMATCH": 128,
+     "EXACT": 4
+    },
+    "h": {
+     "MISMATCH": 127,
+     "EXACT": 5
+    },
+    "l": {
+     "MISMATCH": 128,
+     "EXACT": 4
+    },
+    "c": {
+     "MISMATCH": 127,
+     "EXACT": 5
+    },
+    "v": {
+     "EXACT": 130,
+     "MISMATCH": 2
+    }
+   }
+  },
+  {
+   "asset_id": "302",
+   "symbol": "سرود",
+   "mode": "raw",
+   "paired": 222,
+   "ref_months": 222,
+   "product_months": 276,
+   "ref_only": 0,
+   "product_only": 54,
+   "row_tolerance": 217,
+   "row_tolerance_pct": 97.7477,
+   "close_median": 0.0,
+   "close_p90": 0.0,
+   "close_p95": 0.0,
+   "close_p99": 0.0,
+   "fields": {
+    "o": {
+     "MISMATCH": 1,
+     "EXACT": 221
+    },
+    "h": {
+     "EXACT": 222
+    },
+    "l": {
+     "MISMATCH": 2,
+     "EXACT": 220
+    },
+    "c": {
+     "EXACT": 222
+    },
+    "v": {
+     "MISMATCH": 5,
+     "EXACT": 217
+    }
+   }
+  },
+  {
+   "asset_id": "302",
+   "symbol": "سرود",
+   "mode": "adjusted",
+   "paired": 222,
+   "ref_months": 222,
+   "product_months": 276,
+   "ref_only": 0,
+   "product_only": 54,
+   "row_tolerance": 99,
+   "row_tolerance_pct": 44.5946,
+   "close_median": 0.03086498762732664,
+   "close_p90": 0.4208366410495364,
+   "close_p95": 0.42083830472979017,
+   "close_p99": 0.420840134659644,
+   "fields": {
+    "o": {
+     "MISMATCH": 116,
+     "TOLERANCE": 99,
+     "ROUNDING": 4,
+     "EXACT": 3
+    },
+    "h": {
+     "MISMATCH": 118,
+     "TOLERANCE": 98,
+     "ROUNDING": 3,
+     "EXACT": 3
+    },
+    "l": {
+     "MISMATCH": 117,
+     "TOLERANCE": 98,
+     "ROUNDING": 4,
+     "EXACT": 3
+    },
+    "c": {
+     "MISMATCH": 116,
+     "TOLERANCE": 99,
+     "ROUNDING": 4,
+     "EXACT": 3
+    },
+    "v": {
+     "MISMATCH": 5,
+     "EXACT": 217
+    }
+   }
+  },
+  {
+   "asset_id": "711",
+   "symbol": "چخزر",
+   "mode": "raw",
+   "paired": 70,
+   "ref_months": 70,
+   "product_months": 70,
+   "ref_only": 0,
+   "product_only": 0,
+   "row_tolerance": 69,
+   "row_tolerance_pct": 98.5714,
+   "close_median": 0.0,
+   "close_p90": 0.0,
+   "close_p95": 0.0,
+   "close_p99": 0.0,
+   "fields": {
+    "o": {
+     "EXACT": 70
+    },
+    "h": {
+     "EXACT": 70
+    },
+    "l": {
+     "EXACT": 70
+    },
+    "c": {
+     "EXACT": 70
+    },
+    "v": {
+     "EXACT": 69,
+     "MISMATCH": 1
+    }
+   }
+  },
+  {
+   "asset_id": "711",
+   "symbol": "چخزر",
+   "mode": "adjusted",
+   "paired": 70,
+   "ref_months": 70,
+   "product_months": 70,
+   "ref_only": 0,
+   "product_only": 0,
+   "row_tolerance": 69,
+   "row_tolerance_pct": 98.5714,
+   "close_median": 6.031379475260179e-10,
+   "close_p90": 1.4046093633031322e-09,
+   "close_p95": 1.7698572528138719e-09,
+   "close_p99": 2.2067737693524945e-09,
+   "fields": {
+    "o": {
+     "TOLERANCE": 66,
+     "EXACT": 4
+    },
+    "h": {
+     "TOLERANCE": 65,
+     "EXACT": 5
+    },
+    "l": {
+     "TOLERANCE": 66,
+     "EXACT": 4
+    },
+    "c": {
+     "TOLERANCE": 65,
+     "EXACT": 5
+    },
+    "v": {
+     "EXACT": 69,
+     "MISMATCH": 1
+    }
+   }
+  },
+  {
+   "asset_id": "16272",
+   "symbol": "فگستر",
+   "mode": "raw",
+   "paired": 64,
+   "ref_months": 64,
+   "product_months": 64,
+   "ref_only": 0,
+   "product_only": 0,
+   "row_tolerance": 61,
+   "row_tolerance_pct": 95.3125,
+   "close_median": 0.0,
+   "close_p90": 0.0,
+   "close_p95": 0.0,
+   "close_p99": 0.0,
+   "fields": {
+    "o": {
+     "EXACT": 64
+    },
+    "h": {
+     "EXACT": 64
+    },
+    "l": {
+     "EXACT": 64
+    },
+    "c": {
+     "EXACT": 64
+    },
+    "v": {
+     "MISMATCH": 3,
+     "EXACT": 61
+    }
+   }
+  },
+  {
+   "asset_id": "16272",
+   "symbol": "فگستر",
+   "mode": "adjusted",
+   "paired": 64,
+   "ref_months": 64,
+   "product_months": 64,
+   "ref_only": 0,
+   "product_only": 0,
+   "row_tolerance": 48,
+   "row_tolerance_pct": 75.0,
+   "close_median": 1.2903626141179452e-08,
+   "close_p90": 0.012513323438552756,
+   "close_p95": 0.012513338661406257,
+   "close_p99": 0.012513367019137644,
+   "fields": {
+    "o": {
+     "MISMATCH": 14,
+     "TOLERANCE": 47,
+     "EXACT": 3
+    },
+    "h": {
+     "MISMATCH": 13,
+     "TOLERANCE": 47,
+     "EXACT": 4
+    },
+    "l": {
+     "MISMATCH": 14,
+     "TOLERANCE": 47,
+     "EXACT": 3
+    },
+    "c": {
+     "MISMATCH": 13,
+     "TOLERANCE": 47,
+     "EXACT": 4
+    },
+    "v": {
+     "MISMATCH": 3,
+     "EXACT": 61
+    }
+   }
+  },
+  {
+   "asset_id": "15239",
+   "symbol": "شاروم",
+   "mode": "raw",
+   "paired": 74,
+   "ref_months": 74,
+   "product_months": 74,
+   "ref_only": 0,
+   "product_only": 0,
+   "row_tolerance": 73,
+   "row_tolerance_pct": 98.6486,
+   "close_median": 0.0,
+   "close_p90": 0.0,
+   "close_p95": 0.0,
+   "close_p99": 0.0,
+   "fields": {
+    "o": {
+     "EXACT": 74
+    },
+    "h": {
+     "EXACT": 74
+    },
+    "l": {
+     "EXACT": 74
+    },
+    "c": {
+     "EXACT": 74
+    },
+    "v": {
+     "EXACT": 73,
+     "MISMATCH": 1
+    }
+   }
+  },
+  {
+   "asset_id": "15239",
+   "symbol": "شاروم",
+   "mode": "adjusted",
+   "paired": 74,
+   "ref_months": 74,
+   "product_months": 74,
+   "ref_only": 0,
+   "product_only": 0,
+   "row_tolerance": 73,
+   "row_tolerance_pct": 98.6486,
+   "close_median": 3.664205336458642e-09,
+   "close_p90": 8.550020146193809e-09,
+   "close_p95": 1.0500952148015236e-08,
+   "close_p99": 1.3146016493036503e-08,
+   "fields": {
+    "o": {
+     "TOLERANCE": 71,
+     "EXACT": 3
+    },
+    "h": {
+     "TOLERANCE": 71,
+     "EXACT": 3
+    },
+    "l": {
+     "TOLERANCE": 70,
+     "EXACT": 4
+    },
+    "c": {
+     "TOLERANCE": 69,
+     "EXACT": 5
+    },
+    "v": {
+     "EXACT": 73,
+     "MISMATCH": 1
+    }
+   }
+  },
+  {
+   "asset_id": "637",
+   "symbol": "شتران",
+   "mode": "raw",
+   "paired": 118,
+   "ref_months": 150,
+   "product_months": 118,
+   "ref_only": 32,
+   "product_only": 0,
+   "row_tolerance": 112,
+   "row_tolerance_pct": 94.9153,
+   "close_median": 0.0,
+   "close_p90": 0.0,
+   "close_p95": 0.0,
+   "close_p99": 0.0,
+   "fields": {
+    "o": {
+     "MISMATCH": 1,
+     "EXACT": 117
+    },
+    "h": {
+     "MISMATCH": 1,
+     "EXACT": 117
+    },
+    "l": {
+     "EXACT": 118
+    },
+    "c": {
+     "EXACT": 118
+    },
+    "v": {
+     "MISMATCH": 6,
+     "EXACT": 112
+    }
+   }
+  },
+  {
+   "asset_id": "637",
+   "symbol": "شتران",
+   "mode": "adjusted",
+   "paired": 118,
+   "ref_months": 150,
+   "product_months": 118,
+   "ref_only": 32,
+   "product_only": 0,
+   "row_tolerance": 96,
+   "row_tolerance_pct": 81.3559,
+   "close_median": 3.329554036756818e-08,
+   "close_p90": 0.3349292364041686,
+   "close_p95": 0.3349296807133949,
+   "close_p99": 0.33501077651798655,
+   "fields": {
+    "o": {
+     "MISMATCH": 21,
+     "TOLERANCE": 95,
+     "EXACT": 2
+    },
+    "h": {
+     "MISMATCH": 21,
+     "TOLERANCE": 94,
+     "EXACT": 3
+    },
+    "l": {
+     "MISMATCH": 21,
+     "TOLERANCE": 94,
+     "EXACT": 3
+    },
+    "c": {
+     "MISMATCH": 21,
+     "TOLERANCE": 94,
+     "EXACT": 3
+    },
+    "v": {
+     "MISMATCH": 6,
+     "EXACT": 112
+    }
+   }
+  },
+  {
+   "asset_id": "490",
+   "symbol": "تيپيكو",
+   "mode": "raw",
+   "paired": 153,
+   "ref_months": 153,
+   "product_months": 153,
+   "ref_only": 0,
+   "product_only": 0,
+   "row_tolerance": 152,
+   "row_tolerance_pct": 99.3464,
+   "close_median": 0.0,
+   "close_p90": 0.0,
+   "close_p95": 0.0,
+   "close_p99": 0.0,
+   "fields": {
+    "o": {
+     "EXACT": 153
+    },
+    "h": {
+     "EXACT": 153
+    },
+    "l": {
+     "EXACT": 153
+    },
+    "c": {
+     "EXACT": 153
+    },
+    "v": {
+     "EXACT": 151,
+     "TOLERANCE": 1,
+     "MISMATCH": 1
+    }
+   }
+  },
+  {
+   "asset_id": "490",
+   "symbol": "تيپيكو",
+   "mode": "adjusted",
+   "paired": 153,
+   "ref_months": 153,
+   "product_months": 153,
+   "ref_only": 0,
+   "product_only": 0,
+   "row_tolerance": 126,
+   "row_tolerance_pct": 82.3529,
+   "close_median": 0.0012088702408631447,
+   "close_p90": 0.0012096400589526961,
+   "close_p95": 0.0012097540293802972,
+   "close_p99": 0.0012098315937620172,
+   "fields": {
+    "o": {
+     "TOLERANCE": 128,
+     "ROUNDING": 18,
+     "MISMATCH": 6,
+     "EXACT": 1
+    },
+    "h": {
+     "TOLERANCE": 127,
+     "ROUNDING": 17,
+     "MISMATCH": 8,
+     "EXACT": 1
+    },
+    "l": {
+     "TOLERANCE": 127,
+     "ROUNDING": 19,
+     "MISMATCH": 5,
+     "EXACT": 2
+    },
+    "c": {
+     "TOLERANCE": 127,
+     "ROUNDING": 18,
+     "MISMATCH": 6,
+     "EXACT": 2
+    },
+    "v": {
+     "EXACT": 151,
+     "TOLERANCE": 1,
+     "MISMATCH": 1
+    }
+   }
+  },
+  {
+   "asset_id": "500",
+   "symbol": "مبين",
+   "mode": "raw",
+   "paired": 129,
+   "ref_months": 129,
+   "product_months": 129,
+   "ref_only": 0,
+   "product_only": 0,
+   "row_tolerance": 122,
+   "row_tolerance_pct": 94.5736,
+   "close_median": 0.0,
+   "close_p90": 0.0,
+   "close_p95": 0.0,
+   "close_p99": 0.0,
+   "fields": {
+    "o": {
+     "EXACT": 129
+    },
+    "h": {
+     "EXACT": 129
+    },
+    "l": {
+     "EXACT": 129
+    },
+    "c": {
+     "EXACT": 129
+    },
+    "v": {
+     "EXACT": 122,
+     "MISMATCH": 7
+    }
+   }
+  },
+  {
+   "asset_id": "500",
+   "symbol": "مبين",
+   "mode": "adjusted",
+   "paired": 129,
+   "ref_months": 129,
+   "product_months": 129,
+   "ref_only": 0,
+   "product_only": 0,
+   "row_tolerance": 23,
+   "row_tolerance_pct": 17.8295,
+   "close_median": 0.0036352422850077543,
+   "close_p90": 0.005431057379359177,
+   "close_p95": 0.005431184745897221,
+   "close_p99": 0.005431467490177552,
+   "fields": {
+    "o": {
+     "ROUNDING": 30,
+     "MISMATCH": 74,
+     "TOLERANCE": 23,
+     "EXACT": 2
+    },
+    "h": {
+     "ROUNDING": 26,
+     "MISMATCH": 77,
+     "TOLERANCE": 24,
+     "EXACT": 2
+    },
+    "l": {
+     "ROUNDING": 34,
+     "MISMATCH": 70,
+     "TOLERANCE": 23,
+     "EXACT": 2
+    },
+    "c": {
+     "ROUNDING": 29,
+     "MISMATCH": 74,
+     "TOLERANCE": 24,
+     "EXACT": 2
+    },
+    "v": {
+     "EXACT": 122,
+     "MISMATCH": 7
+    }
+   }
+  },
+  {
+   "asset_id": "24691",
+   "symbol": "معين",
+   "mode": "raw",
+   "paired": 27,
+   "ref_months": 27,
+   "product_months": 27,
+   "ref_only": 0,
+   "product_only": 0,
+   "row_tolerance": 27,
+   "row_tolerance_pct": 100.0,
+   "close_median": 0.0,
+   "close_p90": 0.0,
+   "close_p95": 0.0,
+   "close_p99": 0.0,
+   "fields": {
+    "o": {
+     "EXACT": 27
+    },
+    "h": {
+     "EXACT": 27
+    },
+    "l": {
+     "EXACT": 27
+    },
+    "c": {
+     "EXACT": 27
+    },
+    "v": {
+     "EXACT": 27
+    }
+   }
+  },
+  {
+   "asset_id": "24691",
+   "symbol": "معين",
+   "mode": "adjusted",
+   "paired": 27,
+   "ref_months": 27,
+   "product_months": 27,
+   "ref_only": 0,
+   "product_only": 0,
+   "row_tolerance": 15,
+   "row_tolerance_pct": 55.5556,
+   "close_median": 2.1566062841487716e-08,
+   "close_p90": 0.07836558961179355,
+   "close_p95": 0.07836559868025171,
+   "close_p99": 0.07836560572970347,
+   "fields": {
+    "o": {
+     "MISMATCH": 12,
+     "TOLERANCE": 11,
+     "EXACT": 4
+    },
+    "h": {
+     "MISMATCH": 11,
+     "TOLERANCE": 11,
+     "EXACT": 5
+    },
+    "l": {
+     "MISMATCH": 11,
+     "TOLERANCE": 12,
+     "EXACT": 4
+    },
+    "c": {
+     "MISMATCH": 11,
+     "TOLERANCE": 11,
+     "EXACT": 5
+    },
+    "v": {
+     "EXACT": 27
+    }
+   }
+  },
+  {
+   "asset_id": "1771",
+   "symbol": "حپارسا",
+   "mode": "raw",
+   "paired": 121,
+   "ref_months": 121,
+   "product_months": 121,
+   "ref_only": 0,
+   "product_only": 0,
+   "row_tolerance": 117,
+   "row_tolerance_pct": 96.6942,
+   "close_median": 0.0,
+   "close_p90": 0.0,
+   "close_p95": 0.0,
+   "close_p99": 0.0,
+   "fields": {
+    "o": {
+     "EXACT": 121
+    },
+    "h": {
+     "EXACT": 121
+    },
+    "l": {
+     "EXACT": 121
+    },
+    "c": {
+     "EXACT": 121
+    },
+    "v": {
+     "EXACT": 117,
+     "MISMATCH": 4
+    }
+   }
+  },
+  {
+   "asset_id": "1771",
+   "symbol": "حپارسا",
+   "mode": "adjusted",
+   "paired": 121,
+   "ref_months": 121,
+   "product_months": 121,
+   "ref_only": 0,
+   "product_only": 0,
+   "row_tolerance": 105,
+   "row_tolerance_pct": 86.7769,
+   "close_median": 1.956279434559234e-08,
+   "close_p90": 1.9720789225388852e-07,
+   "close_p95": 0.007550725469813905,
+   "close_p99": 0.007550863764404934,
+   "fields": {
+    "o": {
+     "MISMATCH": 13,
+     "TOLERANCE": 99,
+     "EXACT": 9
+    },
+    "h": {
+     "MISMATCH": 13,
+     "TOLERANCE": 98,
+     "EXACT": 10
+    },
+    "l": {
+     "MISMATCH": 13,
+     "TOLERANCE": 99,
+     "EXACT": 9
+    },
+    "c": {
+     "MISMATCH": 12,
+     "TOLERANCE": 99,
+     "EXACT": 10
+    },
+    "v": {
+     "EXACT": 117,
+     "MISMATCH": 4
+    }
+   }
+  },
+  {
+   "asset_id": "724",
+   "symbol": "كپرور",
+   "mode": "raw",
+   "paired": 135,
+   "ref_months": 135,
+   "product_months": 135,
+   "ref_only": 0,
+   "product_only": 0,
+   "row_tolerance": 133,
+   "row_tolerance_pct": 98.5185,
+   "close_median": 0.0,
+   "close_p90": 0.0,
+   "close_p95": 0.0,
+   "close_p99": 0.0,
+   "fields": {
+    "o": {
+     "EXACT": 135
+    },
+    "h": {
+     "EXACT": 135
+    },
+    "l": {
+     "EXACT": 135
+    },
+    "c": {
+     "EXACT": 135
+    },
+    "v": {
+     "EXACT": 133,
+     "MISMATCH": 2
+    }
+   }
+  },
+  {
+   "asset_id": "724",
+   "symbol": "كپرور",
+   "mode": "adjusted",
+   "paired": 135,
+   "ref_months": 135,
+   "product_months": 135,
+   "ref_only": 0,
+   "product_only": 0,
+   "row_tolerance": 120,
+   "row_tolerance_pct": 88.8889,
+   "close_median": 7.901276422805352e-09,
+   "close_p90": 1.0911477794526399e-07,
+   "close_p95": 0.02950068272166267,
+   "close_p99": 0.029500880858221994,
+   "fields": {
+    "o": {
+     "MISMATCH": 13,
+     "TOLERANCE": 119,
+     "EXACT": 3
+    },
+    "h": {
+     "MISMATCH": 12,
+     "TOLERANCE": 120,
+     "EXACT": 3
+    },
+    "l": {
+     "MISMATCH": 12,
+     "TOLERANCE": 120,
+     "EXACT": 3
+    },
+    "c": {
+     "MISMATCH": 12,
+     "TOLERANCE": 120,
+     "EXACT": 3
+    },
+    "v": {
+     "EXACT": 133,
+     "MISMATCH": 2
+    }
+   }
+  },
+  {
+   "asset_id": "60",
+   "symbol": "وملي",
+   "mode": "raw",
+   "paired": 191,
+   "ref_months": 191,
+   "product_months": 223,
+   "ref_only": 0,
+   "product_only": 32,
+   "row_tolerance": 191,
+   "row_tolerance_pct": 100.0,
+   "close_median": 0.0,
+   "close_p90": 0.0,
+   "close_p95": 0.0,
+   "close_p99": 0.0,
+   "fields": {
+    "o": {
+     "EXACT": 191
+    },
+    "h": {
+     "EXACT": 191
+    },
+    "l": {
+     "EXACT": 191
+    },
+    "c": {
+     "EXACT": 191
+    },
+    "v": {
+     "EXACT": 191
+    }
+   }
+  },
+  {
+   "asset_id": "60",
+   "symbol": "وملي",
+   "mode": "adjusted",
+   "paired": 191,
+   "ref_months": 191,
+   "product_months": 223,
+   "ref_only": 0,
+   "product_only": 32,
+   "row_tolerance": 191,
+   "row_tolerance_pct": 100.0,
+   "close_median": 8.121033234689394e-07,
+   "close_p90": 8.2179864472971e-07,
+   "close_p95": 8.258186130553393e-07,
+   "close_p99": 8.371734509094721e-07,
+   "fields": {
+    "o": {
+     "TOLERANCE": 188,
+     "EXACT": 3
+    },
+    "h": {
+     "TOLERANCE": 188,
+     "EXACT": 3
+    },
+    "l": {
+     "TOLERANCE": 187,
+     "EXACT": 4
+    },
+    "c": {
+     "TOLERANCE": 187,
+     "EXACT": 4
+    },
+    "v": {
+     "EXACT": 191
+    }
+   }
+  },
+  {
+   "asset_id": "32",
+   "symbol": "غشهد",
+   "mode": "raw",
+   "paired": 217,
+   "ref_months": 217,
+   "product_months": 296,
+   "ref_only": 0,
+   "product_only": 79,
+   "row_tolerance": 211,
+   "row_tolerance_pct": 97.235,
+   "close_median": 0.0,
+   "close_p90": 0.0,
+   "close_p95": 0.0,
+   "close_p99": 0.0,
+   "fields": {
+    "o": {
+     "EXACT": 217
+    },
+    "h": {
+     "EXACT": 217
+    },
+    "l": {
+     "EXACT": 217
+    },
+    "c": {
+     "EXACT": 217
+    },
+    "v": {
+     "MISMATCH": 6,
+     "EXACT": 211
+    }
+   }
+  },
+  {
+   "asset_id": "32",
+   "symbol": "غشهد",
+   "mode": "adjusted",
+   "paired": 217,
+   "ref_months": 217,
+   "product_months": 296,
+   "ref_only": 0,
+   "product_only": 79,
+   "row_tolerance": 74,
+   "row_tolerance_pct": 34.1014,
+   "close_median": 0.049950264573057734,
+   "close_p90": 0.11328249059664317,
+   "close_p95": 0.1132827684750891,
+   "close_p99": 0.15569249445632385,
+   "fields": {
+    "o": {
+     "MISMATCH": 142,
+     "TOLERANCE": 72,
+     "EXACT": 3
+    },
+    "h": {
+     "MISMATCH": 142,
+     "TOLERANCE": 72,
+     "EXACT": 3
+    },
+    "l": {
+     "MISMATCH": 141,
+     "TOLERANCE": 73,
+     "EXACT": 3
+    },
+    "c": {
+     "MISMATCH": 141,
+     "TOLERANCE": 73,
+     "EXACT": 3
+    },
+    "v": {
+     "MISMATCH": 6,
+     "EXACT": 211
+    }
+   }
+  },
+  {
+   "asset_id": "2967",
+   "symbol": "زقيام",
+   "mode": "raw",
+   "paired": 99,
+   "ref_months": 99,
+   "product_months": 99,
+   "ref_only": 0,
+   "product_only": 0,
+   "row_tolerance": 97,
+   "row_tolerance_pct": 97.9798,
+   "close_median": 0.0,
+   "close_p90": 0.0,
+   "close_p95": 0.0,
+   "close_p99": 0.0,
+   "fields": {
+    "o": {
+     "EXACT": 99
+    },
+    "h": {
+     "EXACT": 99
+    },
+    "l": {
+     "EXACT": 99
+    },
+    "c": {
+     "EXACT": 99
+    },
+    "v": {
+     "MISMATCH": 2,
+     "EXACT": 97
+    }
+   }
+  },
+  {
+   "asset_id": "2967",
+   "symbol": "زقيام",
+   "mode": "adjusted",
+   "paired": 99,
+   "ref_months": 99,
+   "product_months": 99,
+   "ref_only": 0,
+   "product_only": 0,
+   "row_tolerance": 74,
+   "row_tolerance_pct": 74.7475,
+   "close_median": 1.5940643865566722e-08,
+   "close_p90": 0.01576438683450558,
+   "close_p95": 0.015764460506355837,
+   "close_p99": 0.01576452967920728,
+   "fields": {
+    "o": {
+     "MISMATCH": 25,
+     "TOLERANCE": 71,
+     "EXACT": 3
+    },
+    "h": {
+     "MISMATCH": 25,
+     "TOLERANCE": 71,
+     "EXACT": 3
+    },
+    "l": {
+     "MISMATCH": 24,
+     "TOLERANCE": 70,
+     "EXACT": 5
+    },
+    "c": {
+     "MISMATCH": 24,
+     "TOLERANCE": 71,
+     "EXACT": 4
+    },
+    "v": {
+     "MISMATCH": 2,
+     "EXACT": 97
+    }
+   }
+  },
+  {
+   "asset_id": "1585",
+   "symbol": "ساروج",
+   "mode": "raw",
+   "paired": 58,
+   "ref_months": 117,
+   "product_months": 58,
+   "ref_only": 59,
+   "product_only": 0,
+   "row_tolerance": 56,
+   "row_tolerance_pct": 96.5517,
+   "close_median": 0.0,
+   "close_p90": 0.0,
+   "close_p95": 0.0,
+   "close_p99": 0.0,
+   "fields": {
+    "o": {
+     "MISMATCH": 1,
+     "EXACT": 57
+    },
+    "h": {
+     "MISMATCH": 1,
+     "EXACT": 57
+    },
+    "l": {
+     "MISMATCH": 1,
+     "EXACT": 57
+    },
+    "c": {
+     "EXACT": 58
+    },
+    "v": {
+     "MISMATCH": 2,
+     "EXACT": 56
+    }
+   }
+  },
+  {
+   "asset_id": "1585",
+   "symbol": "ساروج",
+   "mode": "adjusted",
+   "paired": 58,
+   "ref_months": 117,
+   "product_months": 58,
+   "ref_only": 59,
+   "product_only": 0,
+   "row_tolerance": 56,
+   "row_tolerance_pct": 96.5517,
+   "close_median": 8.024633288627727e-10,
+   "close_p90": 2.8078282478149797e-09,
+   "close_p95": 3.0684229277546344e-09,
+   "close_p99": 4.346512984902695e-09,
+   "fields": {
+    "o": {
+     "MISMATCH": 1,
+     "TOLERANCE": 53,
+     "EXACT": 4
+    },
+    "h": {
+     "MISMATCH": 1,
+     "TOLERANCE": 52,
+     "EXACT": 5
+    },
+    "l": {
+     "MISMATCH": 1,
+     "TOLERANCE": 53,
+     "EXACT": 4
+    },
+    "c": {
+     "TOLERANCE": 53,
+     "EXACT": 5
+    },
+    "v": {
+     "MISMATCH": 2,
+     "EXACT": 56
+    }
+   }
+  },
+  {
+   "asset_id": "65",
+   "symbol": "وبانك",
+   "mode": "raw",
+   "paired": 220,
+   "ref_months": 220,
+   "product_months": 290,
+   "ref_only": 0,
+   "product_only": 70,
+   "row_tolerance": 202,
+   "row_tolerance_pct": 91.8182,
+   "close_median": 0.0,
+   "close_p90": 0.0,
+   "close_p95": 0.0,
+   "close_p99": 0.0,
+   "fields": {
+    "o": {
+     "MISMATCH": 5,
+     "EXACT": 214,
+     "ROUNDING": 1
+    },
+    "h": {
+     "EXACT": 219,
+     "MISMATCH": 1
+    },
+    "l": {
+     "EXACT": 220
+    },
+    "c": {
+     "EXACT": 220
+    },
+    "v": {
+     "EXACT": 209,
+     "MISMATCH": 10,
+     "ROUNDING": 1
+    }
+   }
+  },
+  {
+   "asset_id": "65",
+   "symbol": "وبانك",
+   "mode": "adjusted",
+   "paired": 220,
+   "ref_months": 220,
+   "product_months": 290,
+   "ref_only": 0,
+   "product_only": 70,
+   "row_tolerance": 22,
+   "row_tolerance_pct": 10.0,
+   "close_median": 0.5373308715967309,
+   "close_p90": 0.6639226383081007,
+   "close_p95": 0.6639240731537029,
+   "close_p99": 0.6639271104471822,
+   "fields": {
+    "o": {
+     "MISMATCH": 194,
+     "TOLERANCE": 23,
+     "EXACT": 3
+    },
+    "h": {
+     "MISMATCH": 194,
+     "TOLERANCE": 23,
+     "EXACT": 3
+    },
+    "l": {
+     "MISMATCH": 194,
+     "TOLERANCE": 23,
+     "EXACT": 3
+    },
+    "c": {
+     "MISMATCH": 194,
+     "TOLERANCE": 23,
+     "EXACT": 3
+    },
+    "v": {
+     "EXACT": 209,
+     "MISMATCH": 10,
+     "ROUNDING": 1
+    }
+   }
+  },
+  {
+   "asset_id": "273",
+   "symbol": "كبافق",
+   "mode": "raw",
+   "paired": 208,
+   "ref_months": 208,
+   "product_months": 236,
+   "ref_only": 0,
+   "product_only": 28,
+   "row_tolerance": 201,
+   "row_tolerance_pct": 96.6346,
+   "close_median": 0.0,
+   "close_p90": 0.0,
+   "close_p95": 0.0,
+   "close_p99": 0.0,
+   "fields": {
+    "o": {
+     "MISMATCH": 2,
+     "EXACT": 206
+    },
+    "h": {
+     "MISMATCH": 1,
+     "EXACT": 207
+    },
+    "l": {
+     "EXACT": 208
+    },
+    "c": {
+     "EXACT": 208
+    },
+    "v": {
+     "MISMATCH": 6,
+     "EXACT": 202
+    }
+   }
+  },
+  {
+   "asset_id": "273",
+   "symbol": "كبافق",
+   "mode": "adjusted",
+   "paired": 208,
+   "ref_months": 208,
+   "product_months": 236,
+   "ref_only": 0,
+   "product_only": 28,
+   "row_tolerance": 138,
+   "row_tolerance_pct": 66.3462,
+   "close_median": 2.197373092211611e-08,
+   "close_p90": 0.7515031419606222,
+   "close_p95": 0.7515037677241274,
+   "close_p99": 0.7515043054140274,
+   "fields": {
+    "o": {
+     "MISMATCH": 66,
+     "TOLERANCE": 140,
+     "EXACT": 2
+    },
+    "h": {
+     "MISMATCH": 66,
+     "TOLERANCE": 139,
+     "EXACT": 3
+    },
+    "l": {
+     "MISMATCH": 66,
+     "TOLERANCE": 140,
+     "EXACT": 2
+    },
+    "c": {
+     "MISMATCH": 66,
+     "TOLERANCE": 139,
+     "EXACT": 3
+    },
+    "v": {
+     "MISMATCH": 6,
+     "EXACT": 202
+    }
+   }
+  },
+  {
+   "asset_id": "7831",
+   "symbol": "صبا",
+   "mode": "raw",
+   "paired": 34,
+   "ref_months": 78,
+   "product_months": 34,
+   "ref_only": 44,
+   "product_only": 0,
+   "row_tolerance": 34,
+   "row_tolerance_pct": 100.0,
+   "close_median": 0.0,
+   "close_p90": 0.0,
+   "close_p95": 0.0,
+   "close_p99": 0.0,
+   "fields": {
+    "o": {
+     "EXACT": 34
+    },
+    "h": {
+     "EXACT": 34
+    },
+    "l": {
+     "EXACT": 34
+    },
+    "c": {
+     "EXACT": 34
+    },
+    "v": {
+     "EXACT": 34
+    }
+   }
+  },
+  {
+   "asset_id": "7831",
+   "symbol": "صبا",
+   "mode": "adjusted",
+   "paired": 34,
+   "ref_months": 78,
+   "product_months": 34,
+   "ref_only": 44,
+   "product_only": 0,
+   "row_tolerance": 34,
+   "row_tolerance_pct": 100.0,
+   "close_median": 7.292246712832412e-09,
+   "close_p90": 1.388726002448693e-08,
+   "close_p95": 1.6392028921234252e-08,
+   "close_p99": 1.7409413295162196e-08,
+   "fields": {
+    "o": {
+     "TOLERANCE": 33,
+     "EXACT": 1
+    },
+    "h": {
+     "TOLERANCE": 32,
+     "EXACT": 2
+    },
+    "l": {
+     "TOLERANCE": 33,
+     "EXACT": 1
+    },
+    "c": {
+     "TOLERANCE": 33,
+     "EXACT": 1
+    },
+    "v": {
+     "EXACT": 34
+    }
+   }
+  },
+  {
+   "asset_id": "20817",
+   "symbol": "نخريس",
+   "mode": "raw",
+   "paired": 33,
+   "ref_months": 33,
+   "product_months": 33,
+   "ref_only": 0,
+   "product_only": 0,
+   "row_tolerance": 32,
+   "row_tolerance_pct": 96.9697,
+   "close_median": 0.0,
+   "close_p90": 0.0,
+   "close_p95": 0.0,
+   "close_p99": 0.0,
+   "fields": {
+    "o": {
+     "EXACT": 33
+    },
+    "h": {
+     "EXACT": 33
+    },
+    "l": {
+     "EXACT": 33
+    },
+    "c": {
+     "EXACT": 33
+    },
+    "v": {
+     "EXACT": 32,
+     "MISMATCH": 1
+    }
+   }
+  },
+  {
+   "asset_id": "20817",
+   "symbol": "نخريس",
+   "mode": "adjusted",
+   "paired": 33,
+   "ref_months": 33,
+   "product_months": 33,
+   "ref_only": 0,
+   "product_only": 0,
+   "row_tolerance": 3,
+   "row_tolerance_pct": 9.0909,
+   "close_median": 0.02152721777491705,
+   "close_p90": 0.021527221920068406,
+   "close_p95": 0.021527222167948314,
+   "close_p99": 0.021527222356975146,
+   "fields": {
+    "o": {
+     "MISMATCH": 30,
+     "EXACT": 3
+    },
+    "h": {
+     "MISMATCH": 30,
+     "EXACT": 3
+    },
+    "l": {
+     "MISMATCH": 30,
+     "EXACT": 3
+    },
+    "c": {
+     "MISMATCH": 29,
+     "EXACT": 4
+    },
+    "v": {
+     "EXACT": 32,
+     "MISMATCH": 1
+    }
+   }
+  },
+  {
+   "asset_id": "6273",
+   "symbol": "رنيك",
+   "mode": "raw",
+   "paired": 85,
+   "ref_months": 85,
+   "product_months": 85,
+   "ref_only": 0,
+   "product_only": 0,
+   "row_tolerance": 82,
+   "row_tolerance_pct": 96.4706,
+   "close_median": 0.0,
+   "close_p90": 0.0,
+   "close_p95": 0.0,
+   "close_p99": 8.786381109280428e-05,
+   "fields": {
+    "o": {
+     "EXACT": 85
+    },
+    "h": {
+     "EXACT": 85
+    },
+    "l": {
+     "EXACT": 85
+    },
+    "c": {
+     "EXACT": 84,
+     "MISMATCH": 1
+    },
+    "v": {
+     "EXACT": 82,
+     "MISMATCH": 3
+    }
+   }
+  },
+  {
+   "asset_id": "6273",
+   "symbol": "رنيك",
+   "mode": "adjusted",
+   "paired": 85,
+   "ref_months": 85,
+   "product_months": 85,
+   "ref_only": 0,
+   "product_only": 0,
+   "row_tolerance": 59,
+   "row_tolerance_pct": 69.4118,
+   "close_median": 8.37830356048247e-09,
+   "close_p90": 0.020145306767209714,
+   "close_p95": 0.028137850160256966,
+   "close_p99": 0.029764816244294546,
+   "fields": {
+    "o": {
+     "MISMATCH": 23,
+     "TOLERANCE": 59,
+     "EXACT": 3
+    },
+    "h": {
+     "MISMATCH": 23,
+     "TOLERANCE": 59,
+     "EXACT": 3
+    },
+    "l": {
+     "MISMATCH": 23,
+     "TOLERANCE": 58,
+     "EXACT": 4
+    },
+    "c": {
+     "MISMATCH": 24,
+     "TOLERANCE": 57,
+     "EXACT": 4
+    },
+    "v": {
+     "EXACT": 82,
+     "MISMATCH": 3
+    }
+   }
+  },
+  {
+   "asset_id": "540",
+   "symbol": "كمرجان",
+   "mode": "raw",
+   "paired": 202,
+   "ref_months": 202,
+   "product_months": 202,
+   "ref_only": 0,
+   "product_only": 0,
+   "row_tolerance": 194,
+   "row_tolerance_pct": 96.0396,
+   "close_median": 0.0,
+   "close_p90": 0.0,
+   "close_p95": 0.0,
+   "close_p99": 0.0,
+   "fields": {
+    "o": {
+     "EXACT": 201,
+     "MISMATCH": 1
+    },
+    "h": {
+     "EXACT": 202
+    },
+    "l": {
+     "EXACT": 202
+    },
+    "c": {
+     "EXACT": 201,
+     "MISMATCH": 1
+    },
+    "v": {
+     "EXACT": 193,
+     "MISMATCH": 8,
+     "TOLERANCE": 1
+    }
+   }
+  },
+  {
+   "asset_id": "540",
+   "symbol": "كمرجان",
+   "mode": "adjusted",
+   "paired": 202,
+   "ref_months": 202,
+   "product_months": 202,
+   "ref_only": 0,
+   "product_only": 0,
+   "row_tolerance": 5,
+   "row_tolerance_pct": 2.4752,
+   "close_median": 0.02326912613764209,
+   "close_p90": 0.050289486910262006,
+   "close_p95": 0.05028971627352645,
+   "close_p99": 0.05029053034217404,
+   "fields": {
+    "o": {
+     "ROUNDING": 20,
+     "MISMATCH": 176,
+     "TOLERANCE": 3,
+     "EXACT": 3
+    },
+    "h": {
+     "MISMATCH": 183,
+     "ROUNDING": 14,
+     "TOLERANCE": 2,
+     "EXACT": 3
+    },
+    "l": {
+     "ROUNDING": 22,
+     "MISMATCH": 172,
+     "TOLERANCE": 4,
+     "EXACT": 4
+    },
+    "c": {
+     "MISMATCH": 176,
+     "ROUNDING": 20,
+     "TOLERANCE": 2,
+     "EXACT": 4
+    },
+    "v": {
+     "EXACT": 193,
+     "MISMATCH": 8,
+     "TOLERANCE": 1
+    }
+   }
+  }
+ ]
+}
