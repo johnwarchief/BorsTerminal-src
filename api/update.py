@@ -293,6 +293,24 @@ def _app_exe_path():
     return None
 
 
+# CREATE_NO_WINDOW، بدونِ DETACHED_PROCESS — دلیل در _spawn_install.
+WATCHDOG_CREATIONFLAGS = 0x08000000
+
+
+def _wait_for_exit_line(pid):
+    """خطِ انتظارِ پایانِ پروسه در فایلِ دستورِ نگهبان.
+
+    انتظار با ``Wait-Process`` است، نه «tasklist | find». در 2026-10-23 روی
+    یک نصبِ واقعی، حلقهٔ قدیمی با findِ منتظرِ stdin قفل شد: برنامه بسته شد،
+    نصب هرگز شروع نشد و برنامه هم برنگشت. فرمانِ تازه stdin را صریح به nul
+    می‌بندد و به PATH وابسته نیست.
+    """
+    powershell = r"%SystemRoot%\System32\WindowsPowerShell\v1.0\powershell.exe"
+    return ('"%s" -NoProfile -ExecutionPolicy Bypass -Command'
+            ' "Wait-Process -Id %d -Timeout 60 -ErrorAction SilentlyContinue"'
+            ' <nul >nul 2>&1' % (powershell, pid))
+
+
 def _spawn_install(installer, flags):
     """نصب‌کننده را طوری اجرا می‌کند که اول این پروسه تمام شود.
 
@@ -309,11 +327,7 @@ def _spawn_install(installer, flags):
     lines = [
         "@echo off",
         "chcp 65001 >nul",
-        ":wait",
-        'tasklist /fi "PID eq %d" 2>nul | find "%d" >nul' % (pid, pid),
-        "if errorlevel 1 goto run",
-        "ping -n 2 127.0.0.1 >nul",
-        "goto wait",
+        _wait_for_exit_line(pid),
         ":run",
         # /WAIT: تا نصبِ کامل منتظر می‌مانیم تا فایلها جایگزین شوند و بعد
         # نسخهٔ جدید را اجرا کنیم. اگر کاربر UAC را رد کند، نصب نمی‌شود ولی
@@ -330,12 +344,17 @@ def _spawn_install(installer, flags):
         ]
     lines += [":end", 'del "%~f0"']
     # chcp 65001 در خطِ اول (ASCII خالص) خطوطِ بعدی را UTF-8 می‌کند تا مسیرهای
-    # غیرلاتین (مثل پروفایلِ کاربر) درست بمانند.
-    with open(bat_path, "w", encoding="utf-8", newline="\r\n") as f:
+    # غیرلاتین (مثل پروفایلِ کاربر) درست بمانند. newline="" تا CRLFِ خودمان
+    # دوباره ترجمه نشود و هر سطر یک \r\r\n نگیرد (که delِ آخرِ فایل را می‌شکست).
+    with open(bat_path, "w", encoding="utf-8", newline="") as f:
         f.write("\r\n".join(lines) + "\r\n")
-    creationflags = 0x00000008 | 0x08000000        # DETACHED_PROCESS | CREATE_NO_WINDOW
+    # فقط CREATE_NO_WINDOW؛ با DETACHED_PROCESS، فرزندِ بدونِ کنسول،
+    # powershell/find را در حالتِ انتظارِ stdin بی‌پایان نگه می‌دارد (همان
+    # قفلِ 2026-10-23). CREATE_NO_WINDOW یک کنسولِ پنهانِ مستقل می‌دهد که با
+    # مرگِ برنامه زنده می‌ماند؛ آزمونِ dev/installer_watchdog_guard.py همین
+    # پرچم را واقعاً اجرا می‌کند.
     subprocess.Popen(["cmd", "/c", bat_path],
-                     creationflags=creationflags, close_fds=True)
+                     creationflags=WATCHDOG_CREATIONFLAGS, close_fds=True)
     threading.Thread(target=_delayed_exit, args=(2.0,), daemon=True).start()
 
 
