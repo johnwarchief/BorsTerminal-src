@@ -163,6 +163,12 @@ class MockBrowserDriver:
         self.submit_text = "ارسال خرید"
         self.side_text = "خرید"
         self.isin_text = ""
+        # ---- Round 22: اسکریپتِ کاندیداها و حالتِ فرم ----
+        self.submit_in_viewport = True
+        self.submit_form_bound = True
+        self.submit_candidates: list[dict[str, Any]] = []
+        self.ui_fixture: Optional[dict[str, Any]] = None
+        self.label_drift = False
         self.closed_at: Optional[float] = None
 
     def start(self) -> None:
@@ -315,6 +321,91 @@ class MockBrowserDriver:
         self.events.append({"kind": "open_form", "selector": selector,
                             "mono_ms": _now_ms()})
         return {"ok": True, "opened": True}
+
+    # ---- Round 22: حالتِ فرم و کلیکِ رویِ کاندیدایِ مشخص ----
+    def ui_state(self, opts: Mapping[str, Any]) -> dict[str, Any]:
+        """خروجیِ read_ui_state در Mock. `ui_fixture` اولویت دارد (اسکریپتِ تست)."""
+        if self.ui_fixture is not None:
+            return dict(self.ui_fixture)
+        o = dict(opts or {})
+        cands = [dict(c) for c in (self.submit_candidates or [])]
+        if not cands:
+            cands = [{"index": 0, "tag": "button", "text": self.submit_text,
+                      "aria": ("ارسال %s" % self.side_text) if self.side_text else "",
+                      "visible": bool(self.submit_visible),
+                      "enabled": bool(self.submit_enabled),
+                      "in_viewport": bool(self.submit_in_viewport),
+                      "form_bound": bool(self.submit_form_bound),
+                      "side_match": True, "opposite_side": False,
+                      "path": "body/button:nth(1)"}]
+        return {
+            "url_path": "/order", "title": "mock-order", "ready_state": "complete",
+            "viewport": {"w": 1366, "h": 900},
+            "counts": {"submit_matches": len(cands), "buttons_total": len(cands) + 2,
+                       "inputs_total": 3, "forms_total": 1,
+                       "price_matches": 1, "quantity_matches": 1,
+                       "symbol_matches": 1 if o.get("symbol_selector") else 0},
+            "fields": {
+                "price": {"present": True, "count": 1, "value": str(self.form.get("price", "")),
+                          "text": "", "visible": True, "readonly": False,
+                          "disabled": False, "path": "body/input#price"},
+                "quantity": {"present": True, "count": 1,
+                             "value": str(self.form.get("quantity", "")), "text": "",
+                             "visible": True, "readonly": False, "disabled": False,
+                             "path": "body/input#quantity"},
+                "symbol": {"present": True, "count": 1, "value": "",
+                           "text": str(self.form.get("symbol", "")), "visible": True,
+                           "readonly": None, "disabled": False,
+                           "path": "body/header#symbol"},
+                "isin": {"present": bool(self.isin_text), "count": 1 if self.isin_text else 0,
+                         "value": str(self.isin_text or ""), "text": "", "visible": True,
+                         "readonly": None, "disabled": False, "path": "body#isin"},
+                "side": {"present": bool(self.side_text), "count": 1 if self.side_text else 0,
+                         "value": "", "text": str(self.side_text or ""), "visible": True,
+                         "readonly": None, "disabled": False, "path": "body#side"},
+            },
+            "tabs": {"normal": {"present": True, "visible": True, "active": True},
+                     "algo": {"present": True, "visible": True, "active": False},
+                     "day": {"present": True, "visible": True, "active": True},
+                     "draft": {"present": True, "visible": True, "active": False}},
+            "submit_candidates": cands,
+            "dom_signature": {"submit_paths": [c.get("path") for c in cands],
+                              "submit_labels": [(c.get("aria") or c.get("text"))
+                                                for c in cands],
+                              "price_path": "body/input#price",
+                              "quantity_path": "body/input#quantity",
+                              "buttons_total": len(cands) + 2},
+        }
+
+    def click_nth(self, selector: str, index: int, *, expect: Optional[dict] = None,
+                  timeout_ms: int = 1200) -> dict[str, Any]:
+        expect = dict(expect or {})
+        state = self.ui_state({})
+        cands = [dict(c) for c in (state.get("submit_candidates") or [])]
+        if index < 0 or index >= len(cands):
+            raise BrowserCommandError("NTH_MISSING: index %s از %s" % (index, len(cands)))
+        cand = cands[index]
+        if self.label_drift:
+            raise BrowserCommandError("LABEL_DRIFT: mock")
+        if not cand.get("enabled"):
+            raise BrowserCommandError("DISABLED_NOW")
+        if not cand.get("visible"):
+            raise BrowserCommandError("NOT_VISIBLE_NOW")
+        want = str(expect.get("aria") or expect.get("text") or "")
+        got = str(cand.get("aria") or cand.get("text") or "")
+        if want and got.strip() != want.strip():
+            raise BrowserCommandError("LABEL_DRIFT: %r != %r" % (got[:60], want[:60]))
+        start = _now_ms()
+        self.click_count += 1
+        self.events.append({"kind": "click_nth", "selector": selector, "index": index,
+                            "start_ms": start, "count": self.click_count})
+        if self.before_click is not None:
+            self.before_click()
+        response = self._request()
+        return {"start_ms": start, "end_ms": _now_ms(), "clicked": True,
+                "index": int(index),
+                "checks": {"count": len(cands), "enabled": bool(cand.get("enabled")),
+                           "visible": bool(cand.get("visible")), "label": got}}
 
     def click(self, selector: str, timeout_ms: int = 1200,
               force: bool = False) -> dict[str, Any]:
@@ -606,7 +697,11 @@ class PlaywrightBrowserDriver:
                 entry = {"mono_ms": _now_ms(), "status": int(resp.status),
                          "url": resp.url,
                          "method": str(getattr(resp.request, "method", "") or ""),
-                         "content_type": str(resp.headers.get("content-type") or "")[:60]}
+                         "content_type": str(resp.headers.get("content-type") or "")[:60],
+                         # فقط retry-after؛ هیچ هدرِ دیگری (Set-Cookie و…) بیرون
+                         # نمی‌رود تا شاهدِ نشست در لاگ/پاسخ ننشیند.
+                         "retry_after": str(resp.headers.get("retry-after") or "")[:24]
+                         or None}
                 if entry["method"] == "POST":
                     try:
                         raw = resp.body()
@@ -816,6 +911,59 @@ class PlaywrightBrowserDriver:
         loc = self._page.locator(selector)
         loc.click(force=bool(force), timeout=timeout_ms or self.action_timeout_ms)
         return {"start_ms": start, "end_ms": _now_ms(), "clicked": True}
+
+    def _do_click_nth(self, selector: str, index: int, *, expect: Optional[dict] = None,
+                      timeout_ms: int = 0) -> dict[str, Any]:
+        """کلیک رویِ همان کاندیدایِ انتخاب‌شده، با بازبینیِ آخرینِ لحظه.
+
+        بی‌این، «selector یکتا بود» می‌تواند به عنصرِ دیگری اشاره کند که بعد از
+        قضاوت ظاهر شده است. چهار چکِ ارزان (count/enabled/label/visible) و سپس
+        کلیکِ واقعیِ Playwright — نه `el.click()` بی‌اعتمادِ JS.
+        """
+        start = _now_ms()
+        loc = self._page.locator(selector)
+        total = int(loc.count())
+        if index < 0 or index >= total:
+            raise BrowserCommandError("NTH_MISSING: index %s از %s" % (index, total))
+        target = loc.nth(index)
+        checks: dict[str, Any] = {"count": total, "index": int(index)}
+        checks["enabled"] = bool(target.is_enabled())
+        checks["visible"] = bool(target.is_visible())
+        label = ""
+        try:
+            label = str(target.get_attribute("aria-label") or
+                        target.inner_text(timeout=200) or "")[:80]
+        except Exception:
+            label = ""
+        checks["label"] = label
+        expect = dict(expect or {})
+        want_label = str(expect.get("aria") or expect.get("text") or "")
+        if want_label and label.strip() != want_label.strip():
+            raise BrowserCommandError("LABEL_DRIFT: %r != %r" % (label[:60],
+                                                                 want_label[:60]))
+        if not checks["enabled"]:
+            raise BrowserCommandError("DISABLED_NOW")
+        if not checks["visible"]:
+            raise BrowserCommandError("NOT_VISIBLE_NOW")
+        target.click(timeout=timeout_ms or self.action_timeout_ms)
+        return {"start_ms": start, "end_ms": _now_ms(), "clicked": True,
+                "checks": checks, "index": int(index)}
+
+    def _do_ui_state(self, opts: dict) -> dict[str, Any]:
+        """یک خوانشِ فقط-خواندنی از فرم و کاندیداها (Round 22)."""
+        from execution_ui_state import UI_STATE_JS
+        try:
+            got = self._page.evaluate(UI_STATE_JS, dict(opts or {}))
+        except Exception as e:                       # noqa: BLE001
+            msg = str(e)
+            if "Execution context was destroyed" not in msg and "navigating" not in msg:
+                raise
+            try:
+                self._page.wait_for_load_state("domcontentloaded", timeout=4000)
+            except Exception:
+                pass
+            got = self._page.evaluate(UI_STATE_JS, dict(opts or {}))
+        return dict(got or {})
 
     def _do_press(self, key: str, selector: str = "",
                   timeout_ms: int = 0) -> dict[str, Any]:
@@ -1039,6 +1187,14 @@ class PlaywrightBrowserDriver:
               force: bool = False) -> dict[str, Any]:
         return self._call("click", selector=selector, timeout_ms=timeout_ms,
                           force=force)
+
+    def click_nth(self, selector: str, index: int, *, expect: Optional[dict] = None,
+                  timeout_ms: int = 0) -> dict[str, Any]:
+        return self._call("click_nth", selector=selector, index=int(index),
+                          expect=dict(expect or {}), timeout_ms=timeout_ms)
+
+    def ui_state(self, opts: Mapping[str, Any]) -> dict[str, Any]:
+        return dict(self._call("ui_state", opts=dict(opts or {})))
 
     def open_form(self, selector: str, timeout_ms: int = 0) -> dict[str, Any]:
         """کلیکِ «بازکردن فرم»؛ در صفحهٔ واقعی یک کلیک است، نه ارسال."""
