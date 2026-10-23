@@ -13,6 +13,7 @@ import {
   useStrategies, type MofidProbeView, type StrategyRowView,
 } from '../lib/orderClient';
 import { Chip, Field, GhostBtn, Line, Note, Section } from '../components/sarkhati/parts';
+import Round22AutoClickerCard from '../components/sarkhati/Round22AutoClickerCard';
 import { toFaDigits } from '@shared/lib/fmt';
 
 function newIntentKey(): string {
@@ -407,6 +408,8 @@ export default function AutoClickerPage() {
           {execPath === 'api' ? 'host لازم نیست' : (hostOk ? 'host سالم' : 'بازکردن host')}
         </GhostBtn>
       </header>
+
+      <Round22AutoClickerCard />
 
       <Section title="آمادگی" sub="هر شرط از پاسخِ خودِ سرویس؛ خالی PASS نیست" testId="autoclicker-readiness">
         <div className="flex flex-wrap gap-1">

@@ -43,6 +43,26 @@ const emptyQueue = (): Record<string, unknown> => ({
   poll_interval_ms: 10000, source: 'adapter:easytrader',
 });
 
+vi.mock('@features/portfolio/lib/autoclickerClient', () => {
+  const order = ['browser_open', 'page_loaded', 'login_verified', 'panel_connected',
+    'form_usable', 'symbol_side_detected', 'price_quantity_match',
+    'submit_button_ready', 'constraints_checked', 'schedule_state'];
+  const facts: Record<string, { status: string; detail: string }> = {};
+  for (const k of order) facts[k] = { status: 'UNKNOWN', detail: 'guard' };
+  const reply = async () => ({ status: 'success' });
+  return {
+    autoclickerApi: {
+      state: async () => ({
+        status: 'success', app_version: '1.0.99', fact_order: order, facts,
+        run: null, ceiling: { max_actions: 20, min_interval_ms: 300 },
+        timezone: { name: 'Asia/Tehran', now_local: '2026-10-24T09:00:00' },
+      }),
+      createRun: reply, check: reply, arm: reply, start: reply, stop: reply,
+      reset: reply, openPanel: reply,
+    },
+  };
+});
+
 vi.mock('@features/portfolio/lib/orderClient', () => ({
   orderApi: {
     strategySettings: api.settings,
