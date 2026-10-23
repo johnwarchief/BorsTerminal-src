@@ -104,6 +104,11 @@ elif GATE_TEST:
     TEST_TXT = f"{fa(GATE_TEST.group(3))}/{fa(GATE_TEST.group(4))}"
 else:
     TEST_TXT = "—"
+GATE_STATS = re.search(r"(\d+) suite counted, (\d+) silent \(exit-code only\), (\d+) skipped", GATE_TEXT)
+GATE_LINE = (f"{fa(GATE_STATS.group(1))} suite counted، {fa(GATE_STATS.group(2))} silent، "
+             f"{fa(GATE_STATS.group(3))} skipped؛ "
+             + ("PROTECTED_DB_UNCHANGED" if "PROTECTED_DB_UNCHANGED" in GATE_TEXT
+                else "PROTECTED_DB_NOT_CONFIRMED")) if GATE_STATS else "—"
 
 STEP_KINDS = Counter(r["kind"] for r in STEPS)
 STEP_BAD = []
@@ -127,7 +132,7 @@ md = f"""# RA365 Round 20 — Raw & Performance-Adjusted Parity
 **شاخه:** `{git(["rev-parse", "--abbrev-ref", "HEAD"])}`  
 **مبنا:** `a36f4b0b` (Round 19 Track A)  
 **HEAD گزارش:** `{git(["rev-parse", "HEAD"])[:12]}`  
-**Commit ابزار/تست/artifact این راند:** `{CODE_COMMIT}`  
+**Commit ابزار/تست/شواهد این راند:** `{CODE_COMMIT}` + `b3d16861`  
 **Gate:** `{GATE}`
 
 > این گزارش دو حالت را **کاملاً جدا** می‌سنجد: (۱) OHLCV خام در برابر `type0` ره‌آورد، (۲) کندل تعدیل عملکردی در برابر `type7`. موفقیت در یکی، اثبات دیگری نیست. هیچ قیمت، کندل، تاریخ، تلورانس یا مخرجی برای بهترشدن عدد تغییر نکرد. Track B (موتور الگوها/بهینه‌سازی) در شاخهٔ جدا و دست‌نخورده است.
@@ -222,6 +227,8 @@ md = f"""# RA365 Round 20 — Raw & Performance-Adjusted Parity
 | step ratio mismatch (>۱٪) | {fa(len(STEP_BAD))} |
 | ref-only / prod-only steps | {fa(STEP_KINDS['REF_ONLY'])} / {fa(STEP_KINDS['PROD_ONLY'])} |
 
+> طبقه‌بندی: `MATCH` تساوی است؛ `ROUNDING_ONLY` برای قیمت یعنی اختلاف نسبی ≤۰٫۰۵٪ یا مطلق ≤۱ ریال، و برای factor یعنی ≤5e-4. این‌ها همان تلورانس‌های R17/R18 هستند و در این راند تغییر نکردند.
+
 ### ۳-۲. {fa(len(PAIRS))} رویداد اختلافی (R8 event-pair audit)
 
 {table(["علت", "تعداد", "اقدام/وضعیت"], [
@@ -279,7 +286,7 @@ md = f"""# RA365 Round 20 — Raw & Performance-Adjusted Parity
 - `tools/ra365_round20_marks_oracle.py`: {fa(MARKS['symbols'])} نماد / {fa(MARKS['rows'])} ردیف؛ artifact: `marks-oracle.csv/json`.
 - `tools/ra365_round20_live_raw_recheck.py`: نمونهٔ {fa(LIVE['symbols'])} نماد / {fa(LIVE['rows'])} ردیف؛ artifact: `live-raw-recheck.csv` + archive خام `live-raw-cache.tar.gz`.
 - `tools/ra365_round20_reference_invariants.py`: بازتولید مستقل volume روزانه type0/type7 و شمارش snapshot محصول؛ artifact: `reference-volume-parity.json` / `product-snapshot-count.json`.
-- Full gate: `{GATE}` (`artifacts/ra365/r20/full-gate.log`).
+- Full gate: `{GATE}` — {GATE_LINE} (`artifacts/ra365/r20/full-gate.log`). دو skip فیکسچرِ شناخته‌شده (`_audit/ra365_ref_bars.json`, `market.db.lzma`) است، نه شکست تست.
 - دیتابیس عملیاتی SHA `{sha(DB_OP)}` و promoted SHA `{sha(DB_PROM)}`؛ فقط read-only، بدون تغییر.
 - Track B: هیچ فایل/تست/benchmark آن در این راند تغییر نکرد.
 
@@ -340,7 +347,7 @@ check = f"""# Coder2 — Round 20 Parity Checkpoint
 **شاخه:** `{git(["rev-parse", "--abbrev-ref", "HEAD"])}`  
 **HEAD:** `{git(["rev-parse", "HEAD"])[:12]}`  
 **مبنا:** `a36f4b0b`  
-**Commit ابزار/تست/artifact:** `{CODE_COMMIT}`  
+**Commit ابزار/تست/شواهد:** `{CODE_COMMIT}` + `b3d16861`  
 **Gate:** `{GATE}`
 
 ## وضعیت
