@@ -6,6 +6,7 @@ import csv
 import hashlib
 import json
 import os
+import re
 import subprocess
 from collections import Counter
 
@@ -67,9 +68,23 @@ ROW = {r["cause"]: r for r in read_csv(os.path.join(R18, "rahavard-raw-ohlc-row-
 LIVE = load(os.path.join(R20, "live-raw-recheck-summary.json"))
 ADJ = load(os.path.join(R20, "adjusted-baseline-candle", "parity_summary.json"))
 STEPS = read_csv(os.path.join(R20, "adjusted-baseline-candle", "parity_steps.csv"))
+PAR = read_csv(os.path.join(R18, "rahavard-raw-ohlc-parity.csv"))
+T0ROWS = read_csv(os.path.join(R18, "rahavard-type0-vs-tsetmc.csv"))
+PROD_ROWS = sum(int(x["product_count"] or 0) for x in PAR)
+T0_ROWS = sum(int(x["type0_rows"] or 0) for x in T0ROWS)
+T0_COMMON = sum(int(x["common_pc"] or 0) for x in PAR)
+VOL_CMP = sum(int(x["volume_cmp"] or 0) for x in PAR)
+VOL_EXACT = sum(int(x["volume_exact"] or 0) for x in PAR)
+VOL_EXACT_PCT = 100.0 * VOL_EXACT / VOL_CMP if VOL_CMP else None
+R19 = load(os.path.join(R18, "rahavard-raw-ohlc-round19-summary.json"))
+PCOUNT = load(os.path.join(R20, "product-snapshot-count.json"))
+VOL = load(os.path.join(R20, "reference-volume-parity.json"))
 PAIRS = read_csv(os.path.join(ROOT, "_audit", "RAHAVARD-EVENT-PAIRS-ROUND3-2026-10-20.csv"))
 MARKS = load(os.path.join(R20, "marks-oracle.json"))
 COMP = [json.loads(x) for x in open(os.path.join(R20, "share-composition.jsonl"), encoding="utf-8")]
+ADJ19 = read_csv(os.path.join(R18, "rahavard-raw-ohlc-round19-adjudication.csv"))
+P_OPEN_FIELDS = sum(1 for r in ADJ19 if r.get("new_cause") == "PARSING_OR_TRANSFORM" and r.get("field") == "open")
+P_VOL_FIELDS = sum(1 for r in ADJ19 if r.get("new_cause") == "PARSING_OR_TRANSFORM" and r.get("field") == "volume")
 GATE_LOG = os.path.join(R20, "full-gate.log")
 GATE_TEXT = open(GATE_LOG, encoding="utf-8", errors="replace").read() if os.path.exists(GATE_LOG) else ""
 if "ALL SUITES PASSED" in GATE_TEXT:
@@ -80,6 +95,15 @@ elif GATE_TEXT:
     GATE = "IN_PROGRESS"
 else:
     GATE = "NOT_MEASURED"
+GATE_TEST = re.search(
+    r"Round 20: proven Rahavard[^\n]*rc=0 \| (?:(\d+) pass / (\d+) fail|(\d+)/(\d+))",
+    GATE_TEXT)
+if GATE_TEST and GATE_TEST.group(1):
+    TEST_TXT = f"{fa(GATE_TEST.group(1))}/{fa(int(GATE_TEST.group(1)) + int(GATE_TEST.group(2)))}"
+elif GATE_TEST:
+    TEST_TXT = f"{fa(GATE_TEST.group(3))}/{fa(GATE_TEST.group(4))}"
+else:
+    TEST_TXT = "—"
 
 STEP_KINDS = Counter(r["kind"] for r in STEPS)
 STEP_BAD = []
@@ -113,10 +137,10 @@ md = f"""# RA365 Round 20 — Raw & Performance-Adjusted Parity
 ## ۰. پاسخ کوتاه
 
 - **Raw منجمد (همان cohort Round 19):** **{fa(S['contract_ok_pct'], 4, True)}** فیلد و **{fa(S['row_exact_pct'], 4, True)}** ردیف؛ **{fa(S['row_pairs'])}** ردیف قابل‌مقایسه. تطبیق exact ۱۰۰٪ **حاصل نشد**.
-- **Raw زنده (نمونهٔ هدفمند ۵۰ نماد / {fa(LIVE['rows'])} فیلد بد):** **{fa(LIVE['closed'])}** فیلد از {fa(LIVE['rows'])} فیلد قبلاً بد، در دادهٔ زندهٔ فعلی با مرجع **منطبق شد**؛ **{fa(LIVE['regressed'])}** regression. یعنی بخشی از mismatchهای `HISTORICAL` کهنگی snapshot بود، نه باگ فعلی. کل ۴۲۸ نماد زنده به‌علت rate/CDN ناقص ماند (`NOT_MEASURED`).
+- **Raw زنده (نمونهٔ هدفمند {fa(LIVE['symbols'])} نماد / {fa(LIVE['rows'])} فیلد بد):** **{fa(LIVE['closed'])}** فیلد از {fa(LIVE['rows'])} فیلد قبلاً بد، در دادهٔ زندهٔ فعلی با مرجع **منطبق شد**؛ **{fa(LIVE['regressed'])}** regression در همین نمونه. یعنی بخشی از mismatchهای `HISTORICAL` کهنگی snapshot بود، نه باگ فعلی. کل Universe زنده به‌علت rate/CDN ناقص ماند (`NOT_MEASURED`).
 - **Performance-Adjusted (type7):** **{fa(ADJ['live_factor_ok_pct'], 4, True)}** تطبیق exact فاکتور، **{fa(ADJ['live_factor_near_pct'], 4, True)}** ±۱٪، **{fa(ADJ['live_func_ok_pct'], 4, True)}** OHLC عملکردی. این عدد پس از اصلاح runner (candle-closing) **بازتولید دقیق R17** است.
-- **علت اصلی شکاف Adjusted:** event-set/فرمول مرجع، نه محاسبهٔ سادهٔ DPS/سهام. DPS و افزایش سرمایهٔ اندوخته‌ای **اثبات‌شده**اند؛ فرمول آورده/مطالبات به **S (قیمت پذیره)** نیاز دارد که در `timescale_marks` نیست و CODAL فقط بخشی را داد. بدون marks کامل ۲٬۵۹۵ دارایی، ۱۰۰٪ قابل‌اثبات نیست.
-- **Volume در حالت عملکردی:** در **{fa(1233213)}** ردیف مشترک type0/type7، حجم مرجع **دقیقاً برابر** حجم خام است (۱۰۰٪). product هم حجم را با factor مقیاس نمی‌کند؛ سیاست مرجع «حجم بدون تغییر» است.
+- **علت اصلی شکاف Adjusted:** event-set/فرمول مرجع، نه محاسبهٔ سادهٔ DPS/سهام. DPS و افزایش سرمایهٔ اندوخته‌ای **اثبات‌شده**اند؛ فرمول آورده/مطالبات به **S (قیمت پذیره)** نیاز دارد که در `timescale_marks` نیست و CODAL فقط بخشی را داد. بدون marks کامل {fa(S['assets'])} دارایی، ۱۰۰٪ قابل‌اثبات نیست.
+- **Volume در حالت عملکردی:** در **{fa(VOL['type0_type7_common'])}** ردیف مشترک روزانه (D) type0/type7، حجم مرجع **دقیقاً برابر** حجم خام است ({fa(VOL['pct'], 2, True)}). product هم حجم را با factor مقیاس نمی‌کند؛ سیاست مرجع «حجم بدون تغییر» است.
 - **هیچ اصلاح production انجام نشد**، چون هیچ فرمول/دادهٔ اثبات‌شدهٔ جدیدی که اختلاف را کم کند و ریسک داده را توجیه کند پیدا نشد. دیتابیس عملیاتی/promoted تغییر نکردند.
 
 ---
@@ -126,7 +150,7 @@ md = f"""# RA365 Round 20 — Raw & Performance-Adjusted Parity
 - شاخهٔ مستقل: `{git(["rev-parse", "--abbrev-ref", "HEAD"])}`، ساخته‌شده از `a36f4b0b`.
 - Track B در `mission/technical-pattern-engine-round18-2026-10-22` و commit `e066f003` دست‌نخورده.
 - مرجع: snapshot منجمد `ref_bars_v2.jsonl` (type0/type7، ۲۰۲۶-۱۰-۲۰).
-- محصول: snapshot `product_live_final_v4.jsonl` (۳٬۳۴۴ رکورد، ۲٬۵۹۵ دارایی cohort).
+- محصول: snapshot `product_live_final_v4.jsonl` ({fa(PCOUNT['records'])} رکورد، {fa(S['assets'])} دارایی cohort).
 - دیتابیس promoted (فقط‌خواندنی): `market_r17_migrated.db`؛ دیتابیس عملیاتی فقط read-only.
 - SHA دیتابیس‌ها در §۸.
 
@@ -144,7 +168,7 @@ md = f"""# RA365 Round 20 — Raw & Performance-Adjusted Parity
 
 - **قراردادی:** {fa(S['contract_ok_pct'], 4, True)} فیلد؛ **{fa(S['row_exact_pct'], 4, True)}** ردیف ({fa(S['row_exact'])} از {fa(S['row_pairs'])}).
 - **تحت‌اللفظی:** high {fa(S['literal_high_exact_pct'], 4, True)}، low {fa(S['literal_low_exact_pct'], 4, True)}، ردیف {fa(S['literal_row_exact_pct'], 4, True)}.
-- **۲٬۱۱۵ ردیف mismatch** (کاملاً تعیین‌تکلیف‌شده در R19):
+- **{fa(S['row_pairs'] - S['row_exact'])} ردیف mismatch** (کاملاً تعیین‌تکلیف‌شده در R19):
 
 {table(["علت ردیف", "ردیف", "دارایی"], [
     ["SOURCE_DATA_DIVERGENCE", fa(ROW['SOURCE_DATA_DIVERGENCE']['rows']), fa(ROW['SOURCE_DATA_DIVERGENCE']['assets'])],
@@ -157,16 +181,16 @@ md = f"""# RA365 Round 20 — Raw & Performance-Adjusted Parity
 
 ### ۲-۲. پوشش و missing
 
-- type0: {fa(S['assets'])} دارایی، {fa(1233213)} ردیف؛ محصول ۲٬۱۲۵٬۳۳۰ ردیف؛ تاریخ مشترک ۱٬۱۹۲٬۰۷۱.
+- type0: {fa(S['assets'])} دارایی، {fa(T0_ROWS)} ردیف؛ محصول {fa(PROD_ROWS)} ردیف؛ تاریخ مشترک {fa(T0_COMMON)}.
 - {fa(S['product_only_inside'])} ردیف فقط محصول داخل بازهٔ type0؛ {fa(S['product_only_outside'])} ردیف خارج بازه؛ {fa(S['type0_only_tradable'] + S['type0_only_no_trade'])} ردیف فقط type0 داخل بازه؛ {fa(S['type0_only_outside'])} خارج بازه.
 - {fa(S['type0_only_product_omission'])} ردیف omission snapshot محصول؛ {fa(S['product_only_rahavard_omission'])} omission مرجع؛ {fa(S['type0_only_rahavard_date'])} تاریخ Rahavard-only؛ {fa(S['last_null'])} last-null؛ {fa(S['type0_flat'])} flat؛ {fa(S['type0_bad_geom'])} هندسهٔ نامعتبر.
 - هیچ missing با صفر/forward-fill پر نشد.
 
 ### ۲-۳. recheck زندهٔ Raw
 
-- ۵۰ نماد اول cohort mismatch، **{fa(LIVE['rows'])} فیلد** بد در snapshot؛ همان فیلدها از `get_chart_tsetmc` زندهٔ فعلی دوباره خوانده شدند.
-- **{fa(LIVE['live_ok'])} فیلد اکنون منطبق**، **{fa(LIVE['live_bad'])} فیلد هنوز ناهمخوان**، **{fa(LIVE['regressed'])} regression**.
-- نتیجه: بخش قابل‌توجهی از `HISTORICAL` (و بخشی از `PARSING`) کهنگی snapshot محصول است؛ product زنده بهتر از snapshot منجمد است. این یک **بهبود داده‌ای قابل‌اندازه‌گیری** است، اما چون فقط نمونهٔ هدفمند است، درصد کل Universe زنده `NOT_MEASURED` می‌ماند. اجرای همهٔ ۴۲۸ نماد به‌علت CDN/rate ناقص شد و متوقف شد؛ هیچ ادعای ۱۰۰٪ زنده نداریم.
+- {fa(LIVE['symbols'])} نماد اول cohort mismatch، **{fa(LIVE['rows'])} فیلد** بد در snapshot؛ همان فیلدها از `get_chart_tsetmc` زندهٔ فعلی دوباره خوانده شدند.
+- **{fa(LIVE['live_ok'])} فیلد اکنون منطبق**، **{fa(LIVE['live_bad'])} فیلد هنوز ناهمخوان**، **{fa(LIVE['regressed'])} regression**. تطبیق با همان تلورانسِ مطلق ۰٫۵ (و نسبیِ 1e-6) سنجیده شد. چون نمونه فقط از فیلدهای قبلاً بد انتخاب شده، «۰ regression» یعنی هیچکدام از همین ۱۰۱ فیلد بدتر نشد، نه نرخ regression در کل Universe.
+- نتیجه: بخش قابل‌توجهی از `HISTORICAL` (و بخشی از `PARSING`) کهنگی snapshot محصول است؛ product زنده بهتر از snapshot منجمد است. این یک **بهبود داده‌ای قابل‌اندازه‌گیری** است، اما چون فقط نمونهٔ هدفمند است، درصد کل Universe زنده `NOT_MEASURED` می‌ماند. اجرای همهٔ نمادهای زنده به‌علت CDN/rate ناقص شد و متوقف شد؛ هیچ ادعای ۱۰۰٪ زنده نداریم.
 
 ### ۲-۴. چرا Raw ۱۰۰٪ نشد
 
@@ -176,7 +200,7 @@ md = f"""# RA365 Round 20 — Raw & Performance-Adjusted Parity
 | HISTORICAL {fa(ROW['HISTORICAL_REVISION']['rows'])} | snapshot محصول کهنه/اصلاح‌شده؛ نمونهٔ زنده بخشی را بست | `PARTIAL` / `NOT_MEASURED` برای کل |
 | PRECISION {fa(ROW['PRECISION_OR_ROUNDING']['rows'])} | exact نیست، relative ≤ ۰٫۰۵٪؛ تلورانس تغییر نکرد | `VERIFIED_PRECISION_BAND` |
 | CANDLE {fa(ROW['CANDLE_GEOMETRY']['rows'])} | type0 flat یا H/L بیرون body؛ product widen می‌کند | `BLOCKED_REFERENCE_GEOMETRY` |
-| PARSING {fa(ROW['PARSING_OR_TRANSFORM']['rows'])} | ۵۵ open با FIRST=0 (fallback مستند) + ۱ volume snapshot | `BLOCKED_INDEPENDENT_SOURCE` |
+| PARSING {fa(ROW['PARSING_OR_TRANSFORM']['rows'])} | {fa(P_OPEN_FIELDS)} فیلد open با FIRST=0 (fallback مستند) + {fa(P_VOL_FIELDS)} فیلد volume صفر snapshot؛ ردیف‌های دارای فیلد هم‌زمان سه‌سنیبی به SOURCE رفتند | `BLOCKED_INDEPENDENT_SOURCE` |
 
 **نتیجه:** ۱۰۰٪ Raw با داده‌های موجود و بدون تغییر منبع/تعریف مرجع قابل‌اثبات نیست. هیچ ردیف، تلورانس یا مخرجی برای نزدیک‌شدن به ۱۰۰٪ تغییر نکرد.
 
@@ -198,11 +222,11 @@ md = f"""# RA365 Round 20 — Raw & Performance-Adjusted Parity
 | step ratio mismatch (>۱٪) | {fa(len(STEP_BAD))} |
 | ref-only / prod-only steps | {fa(STEP_KINDS['REF_ONLY'])} / {fa(STEP_KINDS['PROD_ONLY'])} |
 
-### ۳-۲. ۱۲۸ رویداد اختلافی (R8 event-pair audit)
+### ۳-۲. {fa(len(PAIRS))} رویداد اختلافی (R8 event-pair audit)
 
 {table(["علت", "تعداد", "اقدام/وضعیت"], [
     ["NO_OFFICIAL_RATIO_ROW", fa(PAIR_CAUSE['NO_OFFICIAL_RATIO_ROW']),
-     "۵۱ پیش از پوشش دفتر + ۱۹ بدون ردیف؛ مرجع marks لازم است"],
+     f"{fa(PAIR_CLASS['SOURCE_GAP_CONFIRMED:PRE_LEDGER_COVERAGE'])} پیش از پوشش دفتر + {fa(PAIR_CLASS['SOURCE_GAP_CONFIRMED:NO_LEDGER_ROW'])} بدون ردیف؛ مرجع marks لازم است"],
     ["PRODUCT_USES_OFFICIAL_RATIO_REFERENCE_DIFFERS", fa(PAIR_CAUSE['PRODUCT_USES_OFFICIAL_RATIO_REFERENCE_DIFFERS']),
      "product به نسبت رسمی وفادار است؛ ورودی رویداد مرجع متفاوت است"],
     ["REFERENCE_RATIO_DIFFERS_FROM_OFFICIAL", fa(PAIR_CAUSE['REFERENCE_RATIO_DIFFERS_FROM_OFFICIAL']),
@@ -213,7 +237,7 @@ md = f"""# RA365 Round 20 — Raw & Performance-Adjusted Parity
 
 ### ۳-۳. فرمول‌های اثبات‌شده و نیمه‌اثبات‌شده
 
-روی ۱۸ نماد دارای `timescale_marks` (۱۰۹ ردیف oracle):
+روی {fa(MARKS['symbols'])} نماد دارای `timescale_marks` ({fa(MARKS['rows'])} ردیف oracle):
 
 {table(["گروه", "تعداد", "exact", "±۱٪", "وضعیت"], [
     ["DPS خالص", fa(MARKS_SUM['dps']['total']), fa(MARKS_SUM['dps']['exact']), "۰", "PROVEN"],
@@ -222,16 +246,16 @@ md = f"""# RA365 Round 20 — Raw & Performance-Adjusted Parity
      fa(MARKS_SUM['contribution']['near']), "UNVERIFIED (S)"],
 ])}
 
-- **DPS:** `price_ratio = close_ex / (close_ex + DPS)`؛ ۴۶ گام خالص exact (<1e-6). یک ردیف combined با capital و یک ردیف بی‌گام.
-- **اندوخته/جایزه:** `price_ratio = previous_capital / new_capital`؛ ۳ گام خالص exact؛ یک combined.
-- **آورده/مطالبات:** ساختار `pv/nw + (1-pv/nw)*(cp/100)*(S/P)` با ۹/۱۱ گام در ±۱٪، **۰ exact**. `S` (قیمت پذیره) در marks نیست و فقط درصدها موجودند. بنابراین تولید نمی‌تواند آن را بدون شاهد اعمال کند.
-- **Volume:** type0/type7 در **{fa(1233213)}** ردیف مشترک volume یکسان دارند (۱۰۰٪)؛ product حجم را مقیاس نمی‌کند. رفتار حجم مرجع مستند است.
+- **DPS:** `price_ratio = close_ex / (close_ex + DPS)`؛ {fa(MARKS_SUM['dps']['exact'])} گام خالص exact (<1e-6) از {fa(MARKS_SUM['dps']['total'])}؛ یک ردیف combined با capital و یک ردیف mismatch که با DPS خالص توضیح داده نمی‌شود.
+- **اندوخته/جایزه:** `price_ratio = previous_capital / new_capital`؛ {fa(MARKS_SUM['reserve']['exact'])} گام خالص exact؛ یک combined.
+- **آورده/مطالبات:** ساختار `pv/nw + (1-pv/nw)*(cp/100)*(S/P)` با {fa(MARKS_SUM['contribution']['near'])}/{fa(MARKS_SUM['contribution']['total'])} گام در ±۱٪، **۰ exact**. `S` (قیمت پذیره) در marks نیست و فقط درصدها موجودند. بنابراین تولید نمی‌تواند آن را بدون شاهد اعمال کند.
+- **Volume:** type0/type7 در **{fa(VOL['type0_type7_common'])}** ردیف مشترک روزانه (D) volume یکسان دارند ({fa(VOL['pct'], 2, True)})؛ product حجم را مقیاس نمی‌کند. رفتار حجم مرجع مستند است.
 
 ### ۳-۴. CODAL و محدودیت دسترسی
 
-- برای ۵۶ رویداد سهامِ نزدیک به mismatch، CODAL عمومی جست‌وجو شد: **{fa(COMP_STATUS['COMPLETE'])}** ترکیب کامل، **{fa(COMP_STATUS['SEARCH_ERROR:HTTPError'])}** خطای HTTP/rate، **{fa(COMP_STATUS['SEARCH_ERROR:URLError'])}** خطای شبکه، **{fa(COMP_STATUS['NO_CAPITAL_LETTER'] + COMP_STATUS['LETTERS_NO_COMPLETE_COMPOSITION'])}** بی‌نامه/ناقص.
+- برای {fa(len(COMP))} رویداد سهامِ نزدیک به mismatch، CODAL عمومی جست‌وجو شد: **{fa(COMP_STATUS['COMPLETE'])}** ترکیب کامل، **{fa(COMP_STATUS['SEARCH_ERROR:HTTPError'])}** خطای HTTP/rate، **{fa(COMP_STATUS['SEARCH_ERROR:URLError'])}** خطای شبکه، **{fa(COMP_STATUS['NO_CAPITAL_LETTER'] + COMP_STATUS['LETTERS_NO_COMPLETE_COMPOSITION'])}** بی‌نامه/ناقص.
 - سه ترکیب کامل (تفارس، خنور، تاپ‌كيش) برای آزمون ساختاری استفاده شد؛ تفارس/خنور به `S` و event-set مرجع نیاز دارند. CODAL نرخ‌محدود شد و درخواست بیشتر بدون backoff ارسال نشد.
-- `timescale_marks` ره‌آورد بدون نشست لاگین‌شده **403** می‌دهد؛ marks کامل ۲٬۵۹۵ دارایی در دسترس نیست. این **BLOCKED_REFERENCE_MARKS** است، نه یک باگ product.
+- `timescale_marks` ره‌آورد بدون نشست لاگین‌شده **403** می‌دهد؛ marks کامل {fa(S['assets'])} دارایی در دسترس نیست. این **BLOCKED_REFERENCE_MARKS** است، نه یک باگ product.
 
 ### ۳-۵. تصمیم مهندسی
 
@@ -243,16 +267,18 @@ md = f"""# RA365 Round 20 — Raw & Performance-Adjusted Parity
 
 - baseline این راند روزانه (`D`) است؛ بازهٔ مشترک و تمام ردیف‌های قابل‌مقایسه پوشش داده شد.
 - `W` در snapshot موجود است اما در این راند بازاندازه‌گیری نشد: `NOT_MEASURED`. تجمیع هفتگی باید با همان مرز جلسه و همان سقف/کف/باز/بسته در راند بعد سنجیده شود.
-- حجم در حالت performance-adjusted توسط مرجع مقیاس **نمی‌شود** (۱۰۰٪ برابری type0/type7)، بنابراین سیاست product (بدون تغییر حجم) درست است. volume raw exact {fa(99.9158, 4, True)} (از R18) و mismatchهای حجم از raw منبع/دقت می‌آید، نه از ضریب.
+- حجم در حالت performance-adjusted توسط مرجع مقیاس **نمی‌شود** ({fa(VOL['pct'], 2, True)} برابری روزانهٔ type0/type7)، بنابراین سیاست product (بدون تغییر حجم) درست است. volume raw exact {fa(VOL_EXACT_PCT, 4, True)} ({fa(VOL_EXACT)} / {fa(VOL_CMP)}، از R18) و mismatchهای حجم از raw منبع/دقت می‌آید، نه از ضریب.
 
 ---
 
 ## ۵. تست‌ها، gate و دیتابیس
 
-- `tools/ra365_round15_parity.py`: اصلاح شد تا **پایانیِ کندل** (نه close دیتابیس) را در پایهٔ DPS استفاده کند؛ با این اصلاح baseline **{fa(ADJ['live_factor_ok_pct'], 4, True)}** دقیقاً بازتولید R17 شد.
-- `dev/test_ra365_round20_formula_oracle_v1.py`: **۸/۸** (DPS، اندوخته، ساختار آورده، رد S نامعلوم).
-- `tools/ra365_round20_marks_oracle.py`: ۱۸ نماد / ۱۰۹ ردیف؛ artifact: `marks-oracle.csv/json`.
-- `tools/ra365_round20_live_raw_recheck.py`: نمونهٔ ۵۰ نماد / {fa(LIVE['rows'])} ردیف؛ artifact: `live-raw-recheck.csv`.
+- `tools/ra365_round15_parity.py`: مسیر DPS اصلاح شد تا `closings` را بپذیرد و **پایانیِ کندل** (نه close دیتابیس) را مبنا بگیرد؛ خطای `TypeError` و اختلافِ ناشی از close محلی برطرف شد.
+- `tools/ra365_round16_parity.py --candle-closing`: baseline authoritative را تولید کرد و **{fa(ADJ['live_factor_ok_pct'], 4, True)}** را دقیقاً بازتولید R17 کرد (`method=candle_closing=True`).
+- `dev/test_ra365_round20_formula_oracle_v1.py`: **{TEST_TXT}** (DPS، اندوخته، ساختار آورده، رد S نامعلوم).
+- `tools/ra365_round20_marks_oracle.py`: {fa(MARKS['symbols'])} نماد / {fa(MARKS['rows'])} ردیف؛ artifact: `marks-oracle.csv/json`.
+- `tools/ra365_round20_live_raw_recheck.py`: نمونهٔ {fa(LIVE['symbols'])} نماد / {fa(LIVE['rows'])} ردیف؛ artifact: `live-raw-recheck.csv` + archive خام `live-raw-cache.tar.gz`.
+- `tools/ra365_round20_reference_invariants.py`: بازتولید مستقل volume روزانه type0/type7 و شمارش snapshot محصول؛ artifact: `reference-volume-parity.json` / `product-snapshot-count.json`.
 - Full gate: `{GATE}` (`artifacts/ra365/r20/full-gate.log`).
 - دیتابیس عملیاتی SHA `{sha(DB_OP)}` و promoted SHA `{sha(DB_PROM)}`؛ فقط read-only، بدون تغییر.
 - Track B: هیچ فایل/تست/benchmark آن در این راند تغییر نکرد.
@@ -265,7 +291,7 @@ md = f"""# RA365 Round 20 — Raw & Performance-Adjusted Parity
 |---|---|
 | Raw ۱۰۰٪ همهٔ فیلدها/ردیف‌ها | **خیر** — {fa(S['contract_ok_pct'], 4, True)} / {fa(S['row_exact_pct'], 4, True)} منجمد؛ live نمونه {fa(100.0*LIVE['live_ok']/LIVE['rows'], 2, True)} |
 | Performance-Adjusted ۱۰۰٪ | **خیر** — {fa(ADJ['live_func_ok_pct'], 4, True)} OHLC؛ factor {fa(ADJ['live_factor_ok_pct'], 4, True)} |
-| Volume مطابق مرجع | **VERIFIED** — type0/type7 volume در ۱٬۲۳۳٬۲۱۳ ردیف برابر |
+| Volume مطابق مرجع | **VERIFIED** — type0/type7 volume روزانه در {fa(VOL['type0_type7_common'])} ردیف برابر ({fa(VOL['pct'], 2, True)}) |
 | موارد بدون شاهد | `BLOCKED_REFERENCE_MARKS` / `BLOCKED_SOURCE_REFERENCE` / `NOT_MEASURED` |
 | mismatch پنهان‌شده | صفر؛ هیچ ردیف/تلورانس/مخرجی تغییر نکرد |
 
@@ -273,9 +299,9 @@ md = f"""# RA365 Round 20 — Raw & Performance-Adjusted Parity
 
 ## ۷. اقدام‌های بعدی با شاهد مشخص
 
-1. **marks کامل ۲٬۵۹۵ دارایی** با نشست مجاز مالک یا export رسمی ره‌آورد؛ بدون آن ۱۰۰٪ Adjusted قابل‌اثبات نیست.
-2. **S پذیره** برای رویدادهای آورده/مطالبات: CODAL صورت‌جلسه/آگهی ثبت با backoff و checkpoint؛ ۵۶ رویداد هدفمند.
-3. **Raw live full**: ۴۲۸ نماد با rate limit و cache؛ نمونهٔ ۵۰ نمادی {fa(100.0*LIVE['live_ok']/LIVE['rows'], 1, True)} بهبود داد؛ کل Universe باید با manifest زمان‌دار ثبت شود.
+1. **marks کامل {fa(S['assets'])} دارایی** با نشست مجاز مالک یا export رسمی ره‌آورد؛ بدون آن ۱۰۰٪ Adjusted قابل‌اثبات نیست.
+2. **S پذیره** برای رویدادهای آورده/مطالبات: CODAL صورت‌جلسه/آگهی ثبت با backoff و checkpoint؛ {fa(len(COMP))} رویداد هدفمند.
+3. **Raw live full**: همهٔ نمادها با rate limit و cache؛ نمونهٔ {fa(LIVE['symbols'])} نمادی {fa(100.0*LIVE['live_ok']/LIVE['rows'], 1, True)} بهبود داد؛ کل Universe باید با manifest زمان‌دار ثبت شود.
 4. **Weekly aggregation** و مرز جلسه؛ `NOT_MEASURED` فعلی.
 5. **Fund/ETF monthly** formula (R8) در صورت ورود به cohort این راند؛ فعلاً از promoted DB جدا است.
 
@@ -294,8 +320,11 @@ md = f"""# RA365 Round 20 — Raw & Performance-Adjusted Parity
                  "adjusted-baseline-candle/parity_steps.csv",
                  "adjusted-baseline-candle/parity_symbols.csv",
                  "live-raw-recheck.csv", "live-raw-recheck-summary.json",
+                 "live-raw-cache.tar.gz",
                  "marks-oracle.csv", "marks-oracle.json",
-                 "share-composition.jsonl", "rahavard-marks-18.json")
+                 "share-composition.jsonl", "share-events.csv",
+                 "rahavard-marks-18.json", "product-snapshot-count.json",
+                 "reference-volume-parity.json", "full-gate.log")
 ])}
 
 **دستور پایانی:** این گزارش ۱۰۰٪ را ادعا نمی‌کند. بخش Raw منجمد تثبیت شد و نمونهٔ زنده بخشی از کهنگی snapshot را بست؛ بخش Adjusted با فرمول‌های اثبات‌شده (DPS/اندوخته) بازتولید شد و شکاف باقی‌مانده به **marks/S مرجع** محدود است. هیچ داده‌ای برای سبزکردن عدد تغییر نکرد.
@@ -316,11 +345,11 @@ check = f"""# Coder2 — Round 20 Parity Checkpoint
 
 ## وضعیت
 
-- Raw منجمد: {fa(S['contract_ok_pct'], 4, True)} فیلد / {fa(S['row_exact_pct'], 4, True)} ردیف؛ ۲٬۱۱۵ mismatch تعیین‌تکلیف؛ UNCLASSIFIED صفر.
-- Raw live نمونه: {fa(LIVE['closed'])} از {fa(LIVE['rows'])} فیلد بد بسته شد؛ {fa(LIVE['regressed'])} regression؛ full live `NOT_MEASURED`.
+- Raw منجمد: {fa(S['contract_ok_pct'], 4, True)} فیلد / {fa(S['row_exact_pct'], 4, True)} ردیف؛ {fa(S['row_pairs'] - S['row_exact'])} mismatch تعیین‌تکلیف؛ UNCLASSIFIED صفر.
+- Raw live نمونه: {fa(LIVE['closed'])} از {fa(LIVE['rows'])} فیلد بد بسته شد؛ {fa(LIVE['regressed'])} regression در همین نمونه؛ full live `NOT_MEASURED`.
 - Adjusted: factor {fa(ADJ['live_factor_ok_pct'], 4, True)}، ±۱٪ {fa(ADJ['live_factor_near_pct'], 4, True)}، OHLC {fa(ADJ['live_func_ok_pct'], 4, True)}؛ runner با candle-closing بازتولید شد.
 - DPS/اندوخته: PROVEN در marks sample؛ آورده/مطالبات: `UNVERIFIED` (S).
-- Volume adjusted: ۱۰۰٪ برابر با خام در ۱٬۲۳۳٬۲۱۳ ردیف.
+- Volume adjusted: {fa(VOL['pct'], 2, True)} برابر با خام در {fa(VOL['type0_type7_common'])} ردیف روزانه.
 - هیچ تغییر production یا دیتابیس محافظت‌شده؛ Track B دست‌نخورده.
 
 ## Blocked
@@ -329,7 +358,7 @@ check = f"""# Coder2 — Round 20 Parity Checkpoint
 - `BLOCKED_REFERENCE_EVENT_INPUT`: S پذیره و event-set مرجع.
 - `BLOCKED_SOURCE_REFERENCE`: type0 در برابر TSETMC.
 - `BLOCKED_REFERENCE_GEOMETRY`: flat/H-L نامعتبر type0.
-- `NOT_MEASURED`: live full 428، weekly aggregation، full marks.
+- `NOT_MEASURED`: live full (کل Universe)، weekly aggregation، full marks.
 
 ## بازتولید
 
@@ -338,6 +367,7 @@ python tools/ra365_round16_parity.py --db D:/BorsTerminal-tmp/ra365_round17/mark
   --out artifacts/ra365/r20/adjusted-baseline-candle --candle-closing
 python tools/ra365_round20_marks_oracle.py
 python tools/ra365_round20_live_raw_recheck.py --limit-symbols 50
+python tools/ra365_round20_reference_invariants.py
 python dev/test_ra365_round20_formula_oracle_v1.py
 ```
 
