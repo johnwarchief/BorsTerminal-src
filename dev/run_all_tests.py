@@ -238,6 +238,8 @@ SUITES = [
                                       'Round 18: raw mismatch attribution is evidence-backed'),
     ('dev/test_round18_history_repair_v1.py',
                                       'Round 18: published price_history repair is keyed, prioritized and idempotent'),
+    ('dev/test_ra365_round20_formula_oracle_v1.py',
+                                      'Round 20: proven Rahavard DPS/reserve formulas; contribution S remains unverified'),
     ('dev/test_fund_events_v1.py',    'official fund distributions drive (P-D)/P factor; same-date typed event survives'),
     ('dev/test_fund_ingest_v1.py',    'fund importer: Persian digits, corrupt rows, duplicate dedupe, newest instrument'),
     ('dev/test_history_repair_writer_v1.py',

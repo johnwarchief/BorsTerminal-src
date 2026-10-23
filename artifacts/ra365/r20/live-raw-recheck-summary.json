@@ -1,0 +1,14 @@
+{
+ "causes": [
+  "HISTORICAL_REVISION",
+  "PARSING_OR_TRANSFORM"
+ ],
+ "symbols": 50,
+ "rows": 101,
+ "old_ok": 0,
+ "old_bad": 101,
+ "live_ok": 70,
+ "live_bad": 31,
+ "closed": 70,
+ "regressed": 0
+}

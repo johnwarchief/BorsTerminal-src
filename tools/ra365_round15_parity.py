@@ -121,7 +121,7 @@ def main():
     print("assets", len(keep), flush=True)
 
     state = {"pa": {}, "fund": {}, "sc": {}}
-    CH._official_price_adjust_events = lambda sym, times=None, share_changes=None: state["pa"].get(sym, [])
+    CH._official_price_adjust_events = lambda sym, times=None, share_changes=None, closings=None: state["pa"].get(sym, [])
     CH._fund_profit_events = lambda sym: state["fund"].get(sym, [])
     CH._share_change_events = lambda sym: state["sc"].get(sym, [])
     if evidence is None:
@@ -162,6 +162,7 @@ def main():
             if v.get("time") in merged:
                 merged[v["time"]]["volume"] = v.get("value", 0.0)
         ins = sym2ins.get(sym)
+        close_map = {c["time"]: c.get("closing") for c in (p.get("candles") or [])}
         tset = sorted(times)
         # PA events, mapped to the first candle >= d_even; ratio from closing.
         pa_events = []
@@ -177,7 +178,7 @@ def main():
                 dps = float(pn) - float(pc)
             except Exception:
                 dps = None
-            cl = hist.get((sym, nxt))
+            cl = close_map.get(nxt) or hist.get((sym, nxt))
             ratio = float(stored) if stored is not None else None
             rec = {"date": nxt, "source": src or "priceAdjust",
                    "_ledger_key": (dt, "priceAdjust")}

@@ -1,0 +1,29 @@
+{
+ "source": "C:\\Users\\Johnkallnaya\\Desktop\\Borsterminal\\.worktrees\\ra365-round18\\artifacts\\ra365\\r20\\rahavard-marks-18.json",
+ "symbols": 18,
+ "rows": 109,
+ "summary": {
+  "dps": {
+   "total": 48,
+   "exact": 46,
+   "near": 0,
+   "unmatched": 100,
+   "combined": 1
+  },
+  "reserve": {
+   "total": 4,
+   "exact": 3,
+   "near": 0,
+   "unmatched": 9,
+   "combined": 1
+  },
+  "contribution": {
+   "total": 11,
+   "exact": 0,
+   "near": 9,
+   "unverified": 2,
+   "unmatched": 37
+  }
+ },
+ "note": "Contribution events need the subscription price S; marks only expose percentages. They are not promoted to a verified formula."
+}
