@@ -1419,6 +1419,68 @@ def _sharpen_share_gaps(events, official, share_changes, evidence_dates=None):
     return out
 
 
+def _apply_long_gap_share_changes(events, share_changes, times, closings):
+    """Add an official share row that a long suspension hid from the gap detector.
+
+    The CSV gap detector only sees consecutive candles; when a capital change
+    falls inside a multi-week no-trade gap, the first post-gap candle is too far
+    from the ledger date for `_sharpen_share_gaps` (10-day window), and no
+    price-adjust row exists for it.  The row is added only when three witnesses
+    agree: the existing step at the first post-gap candle is shallower than the
+    official share ratio, the raw close dropped at least as much as the ratio,
+    and no event for that date already carries the share ratio.
+    """
+    if not closings or not share_changes or not times:
+        return events
+    out = [dict(e) for e in (events or [])]
+    ts = sorted(set(str(t)[:10] for t in times if t))
+    owned = set()
+    for e in out:
+        k = e.get("_ledger_key")
+        if isinstance(k, tuple) and len(k) == 2 and k[1] == "shareChange":
+            owned.add(k[0])
+    for sd, sr in share_changes or []:
+        try:
+            sr = float(sr)
+        except (TypeError, ValueError):
+            continue
+        if not (0 < sr < 1) or sd in owned:
+            continue
+        nxt = next(((i, t) for i, t in enumerate(ts) if t >= sd), None)
+        if not nxt:
+            continue
+        idx, first = nxt
+        if idx == 0:
+            continue
+        prev = ts[idx - 1]
+        gap = _day_diff(prev, sd)
+        if gap is None or gap <= _SHARE_GAP_WINDOW_DAYS:
+            continue
+        same = [e for e in out if str(e.get("date"))[:10] == first]
+        step = 1.0
+        covered = False
+        for e in same:
+            try:
+                er = float(e.get("ratio") or 1.0)
+            except (TypeError, ValueError):
+                er = 1.0
+            if er > 0:
+                step /= er
+            k = e.get("_ledger_key")
+            if (isinstance(k, tuple) and k[0] == sd) or abs(er / sr - 1.0) <= _SHARE_GAP_TOL:
+                covered = True
+        if covered or (step and (1.0 / step) <= sr * (1.0 + _SHARE_GAP_TOL)):
+            continue
+        c0, c1 = closings.get(prev), closings.get(first)
+        if not c0 or not c1:
+            continue
+        if c1 / c0 > sr * (1.0 + _SHARE_GAP_TOL):
+            continue
+        out.append({"date": first, "ratio": round(sr, 10), "source": "shareChange",
+                    "_ledger_key": (sd, "shareChange"), "long_gap": True})
+    return out
+
+
 def _merge_official_price_adjust(events, official, rejected=None, share_changes=None):
     """رویداد رسمی را فقط وقتی اضافه می‌کند که کاشفِ CSV همان را ندیده باشد.
 
@@ -1764,7 +1826,7 @@ def _effective_event_dates(events, times):
     return out
 
 
-def _canonical_adjustment(symbol, times, events, closings=None):
+def _canonical_adjustment(symbol, times, events, closings=None, gap_closings=None):
     """(applied, rejected, factors, chain, coverage) — تنها محاسبۀِ تعدیلِ هر دو مسیر.
 
     ترتیبِ `times` آزاد است (CSV نزولی، `price_history` صعودی) و `factors` دقیقاً
@@ -1786,6 +1848,7 @@ def _canonical_adjustment(symbol, times, events, closings=None):
                                                share_changes=share_changes)
     events = _sharpen_share_gaps(events, official_pa, share_changes,
                                  _share_type_evidence_dates(symbol))
+    events = _apply_long_gap_share_changes(events, share_changes, t10, gap_closings)
     # کلیدِ هویتِ دفتری فقط برای همین تصمیم است؛ نه در payload و نه در موتور.
     events = [{k: v for k, v in e.items() if not str(k).startswith("_")}
               for e in events]
@@ -2261,8 +2324,13 @@ def get_chart_tsetmc(symbol: str):
         #    ۵۲۸۸×۲۰) و roundِ ۱۰ رقمی همان‌جا حفظ بماند.
         _times = [str(c["time"])[:10] for c in candles]
         _closings = {str(c["time"])[:10]: c.get("closing") for c in candles}
+        # The long-gap witness needs a price even when `closing` is not filled yet;
+        # raw close is only used to test that the gap really happened, never as a
+        # DPS anchor (that still comes from `_closings`).
+        _gap_prices = {str(c["time"])[:10]: (c.get("closing") or c.get("close"))
+                       for c in candles}
         _applied, _rejected, _fac, _chain, _cov = _canonical_adjustment(
-            symbol, _times, adj_events, closings=_closings)
+            symbol, _times, adj_events, closings=_closings, gap_closings=_gap_prices)
         _rejected.extend(_false_rejected)
         _fund_n = sum(1 for e in _applied
                       if str(e.get("source") or "").startswith("fund-portal"))
