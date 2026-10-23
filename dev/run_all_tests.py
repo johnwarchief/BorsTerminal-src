@@ -248,6 +248,8 @@ SUITES = [
                                       'Round 22: isolated small unproven base gaps are noise; combined ones survive'),
     ('dev/test_ra365_round22_dps_sharpen_v1.py',
                                       'Round 22: a DPS row keeps the candle-closing formula over the sharpened PA ratio'),
+    ('dev/test_ra365_round23_live_dps_close_v1.py',
+                                      'Round 23: the live DPS base is the parsed official close, not the DB close'),
     ('dev/test_fund_events_v1.py',    'official fund distributions drive (P-D)/P factor; same-date typed event survives'),
     ('dev/test_fund_ingest_v1.py',    'fund importer: Persian digits, corrupt rows, duplicate dedupe, newest instrument'),
     ('dev/test_history_repair_writer_v1.py',

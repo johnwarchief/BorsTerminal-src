@@ -2286,6 +2286,21 @@ def _attach_live_bar(symbol, res, built_at=None):
 
 
 @router.get("/api/chart/{symbol}")
+def _candle_closings(candles):
+    """Effective candle official close: `closing` once price_basis filled it,
+    otherwise the parsed CDN `close`.  The DPS base must never fall back to a
+    possibly stale DB close when the live official close is right here."""
+    out = {}
+    for c in candles or []:
+        d = str(c.get("time") or "")[:10]
+        v = c.get("closing")
+        if v is None:
+            v = c.get("close")
+        if d and v is not None:
+            out[d] = v
+    return out
+
+
 def get_chart_tsetmc(symbol: str):
     """نمودار کامل از CDN TSETMC: OHLCV روزانه + رویدادهای تعدیل عملکردی (ادجاست) با فال‌بک خودکار به دیتابیس محلی."""
     import time as _t
@@ -2442,14 +2457,12 @@ def get_chart_tsetmc(symbol: str):
         #    اعتبارِ موتور روی هر ضریب اعمال شود، و پیمایشِ O(n+m) (به‌جای n×mِ
         #    ۵۲۸۸×۲۰) و roundِ ۱۰ رقمی همان‌جا حفظ بماند.
         _times = [str(c["time"])[:10] for c in candles]
-        _closings = {str(c["time"])[:10]: c.get("closing") for c in candles}
-        # The long-gap witness needs a price even when `closing` is not filled yet;
-        # raw close is only used to test that the gap really happened, never as a
-        # DPS anchor (that still comes from `_closings`).
-        _gap_prices = {str(c["time"])[:10]: (c.get("closing") or c.get("close"))
-                       for c in candles}
+        # `_candle_closings` uses the parsed official close when price_basis has
+        # not filled `closing` yet; using only `closing` left every DPS anchor
+        # None and silently fell back to the possibly stale DB close.
+        _closings = _candle_closings(candles)
         _applied, _rejected, _fac, _chain, _cov = _canonical_adjustment(
-            symbol, _times, adj_events, closings=_closings, gap_closings=_gap_prices)
+            symbol, _times, adj_events, closings=_closings, gap_closings=_closings)
         _rejected.extend(_false_rejected)
         _fund_n = sum(1 for e in _applied
                       if str(e.get("source") or "").startswith("fund-portal"))
