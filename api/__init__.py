@@ -9,13 +9,13 @@ from fastapi import APIRouter
 
 def api_router() -> APIRouter:
     """Aggregate every module router into one APIRouter."""
-    from . import (market, chart, selection, watchlist, fundamental, market_status, screener, funnel, _sync_market, _export, _sync_codal, adb, notify, notifications, update, _pipeline, engine, market_index, diagnostics, execution, bot, structure3)
+    from . import (market, chart, selection, watchlist, fundamental, market_status, screener, funnel, _sync_market, _export, _sync_codal, adb, notify, notifications, update, _pipeline, engine, market_index, diagnostics, execution, execution_autoclicker, bot, structure3)
     import codal_fetcher
 
     agg = APIRouter()
     mods = [market, chart, selection, watchlist, fundamental, market_status, screener, funnel,
             _sync_market, _export, _sync_codal, adb, notify, notifications, update, _pipeline, engine,
-            market_index, diagnostics, execution, bot, structure3]
+            market_index, diagnostics, execution, execution_autoclicker, bot, structure3]
     # /api/bot/* هم مثلِ /api/execution/* در *همهٔ* بیلدها ثبت می‌شود: پیش‌فرضش
     # کاغذی است، با باز شدنِ برنامه هیچ اجرا نمی‌کند (فقط POST /api/bot/run) و
     # مصرف‌کنندۀ رابطی دارد (features/portfolio/lib/botClient.ts). بی‌ثبت‌کردن،

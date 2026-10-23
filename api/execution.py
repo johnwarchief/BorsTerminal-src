@@ -351,6 +351,65 @@ _STRATEGY_ENGINE.preflight_gate = _SERVICE.dispatch_preflight
 _OWNER_APPROVAL = OA.OwnerApprovalStore()
 
 
+# ── ۱.۵) دهانۀ خدماتِ پنلِ AutoClicker (Round 22) ────────────────────────────
+# api/execution_autoclicker.py از این پنج تابع استفاده می‌کند و هیچ‌کدام قضاوتِ
+# تازه نمی‌سازند: فقط همان providerهایی را می‌دهند که مسیرهایِ استراتژی هم
+# همین حالا از آن‌ها می‌خوانند (ساعت، توقف، بانکِ فقط‌خواندنی، حساب، سفارش‌ها).
+def readonly_db() -> sqlite3.Connection:
+    """دسترسیِ فقط‌خواندنیِ market.db؛ نوشتن از این راه ممکن نیست."""
+    return sqlite3.connect(f"file:{DB_PATH}?mode=ro", uri=True, timeout=15)
+
+
+def autoclicker_clock() -> dict[str, Any]:
+    got = _strategy_server_clock()
+    if not got:
+        return {"verified": False, "source": "none", "delta_ms": None, "rtt_ms": None}
+    return dict(got)
+
+
+def autoclicker_halted() -> bool:
+    """قفلِ توقفِ اضطراریِ ماندگار؛ همان منبعِ مسیرِ سفارشِ عادی."""
+    try:
+        return bool(_AUDIT.halted())
+    except Exception:                           # noqa: BLE001
+        #: نبودِ پاسخِ گیتِ توقف به‌معنای «آزاد» نیست؛ fail-closed.
+        return True
+
+
+def autoclicker_open_orders() -> list[dict[str, Any]] | None:
+    """سفارش‌های بازِ کارگزاری برای چکِ self-trade؛ بی‌نشستِ اثبات‌شده None."""
+    if not _live_now() or not isinstance(_ACTIVE_ADAPTER, EasyTraderAdapter):
+        return None
+    if not bool(getattr(_ACTIVE_ADAPTER, "session_proven", lambda: False)()):
+        return None
+    try:
+        rows = _ACTIVE_ADAPTER.get_orders() or []
+    except Exception:                           # noqa: BLE001
+        return None
+    out: list[dict[str, Any]] = []
+    for r in rows:
+        d = dataclasses.asdict(r) if dataclasses.is_dataclass(r) else dict(getattr(r, "__dict__", {}) or {})
+        out.append({
+            "symbol": d.get("symbol") or d.get("symbol_name") or "",
+            "isin": d.get("isin") or d.get("symbol_isin") or "",
+            "side": str(d.get("side") or "").lower(),
+            "price": d.get("price"),
+            "state": str(d.get("order_state") or d.get("state") or ""),
+        })
+    return out
+
+
+def autoclicker_buying_power() -> float | None:
+    """توانِ خریدِ خوانده‌شده (ریال)؛ نبودِ منبع ⇒ None، پس چکِ پنل UNKNOWN می‌ماند."""
+    got = get_buying_power()
+    if str(got.get("state")) != BUYING_POWER_VERIFIED:
+        return None
+    try:
+        return float(got.get("value"))
+    except (TypeError, ValueError):
+        return None
+
+
 def _readiness_flag(name: str) -> bool | None:
     """نتیجهٔ ماندگارِ تست/گیت؛ نبودِ فایل ⇒ None، نه trueِ جعلی."""
     path = os.path.join(WORK_DIR, name)

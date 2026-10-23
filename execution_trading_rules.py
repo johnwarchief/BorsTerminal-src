@@ -30,6 +30,10 @@ BROKER_DOC = "BROKER_DOC"
 CLIENT_CODE = "CLIENT_CODE"
 INTERNAL = "INTERNAL"
 UNKNOWN = "UNKNOWN"
+MEASURED = "MEASURED"
+
+#: سطوحِ گزارشِ قوانین.
+TIERS = (OFFICIAL, BROKER_DOC, CLIENT_CODE, MEASURED, INTERNAL, UNKNOWN)
 
 #: پنجرۀ پذیرش و ساعات معاملۀ بازار اول (منبع: راهنمای مفید + کد OMS 1003/2022/8018).
 ACCEPT_OPEN = "08:45"
@@ -505,4 +509,5 @@ __all__ = ["RULES", "rule_of", "Check", "PreflightReport", "run_preflight",
            "price_tick_for", "size_threshold_shares", "session_window",
            "ALGORITHMIC_CLAUSE", "ACCEPT_OPEN", "CONTINUOUS_OPEN",
            "CONTINUOUS_CLOSE", "MIN_BUY_VALUE_TOMAN",
-           "OFFICIAL", "BROKER_DOC", "CLIENT_CODE", "INTERNAL", "UNKNOWN"]
+           "OFFICIAL", "BROKER_DOC", "CLIENT_CODE", "MEASURED", "INTERNAL", "UNKNOWN",
+           "TIERS"]

@@ -204,6 +204,13 @@ a = Analysis(
                    # پیش‌نمایش/تأییدِ یک‌بارمصرف. بی‌این خط EXE روی اولین
                    # /api/execution/order/preview می‌شکند.
                    'execution_fast_order',
+                   # Round 22: موتورِ اتوکلیکرِ واقعی و پنلِ تب‌شده. اینها سطح-بالِ
+                   # api/execution_autoclicker.py‌اند، اما آن ماژول هم درِ hiddenimports
+                   # لازم است وگرنه EXE درِ اولین /api/execution/autoclicker/* می‌میرد.
+                   'execution_rate_limiter', 'execution_ui_state',
+                   'execution_autoclick_run', 'execution_autoclick_scheduler',
+                   'execution_autoclick_executor', 'execution_trading_rules',
+                   'execution_panel', 'api.execution_autoclicker',
                    # Playwright برایِ Strategyهای مرورگری؛ باینریِ مرورگر از
                    # سیستم (Edge/Chrome) یا نصبِ محلی می‌آید، نه از بسته.
                    'playwright', 'playwright.sync_api',
