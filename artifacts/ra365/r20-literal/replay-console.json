@@ -1,0 +1,118 @@
+{
+ "assets": 2595,
+ "missing_csv": 0,
+ "rows": 1191805,
+ "skipped_not_in_product": 5370,
+ "tolerance": {
+  "abs": 0.5,
+  "rel": 0.0005
+ },
+ "fields": {
+  "open": {
+   "compared": 1191805,
+   "ok": 1190855,
+   "ok_pct": 99.9203,
+   "exact": 1190855,
+   "tol": 0,
+   "rounding": 86,
+   "diff": 864,
+   "null": 0
+  },
+  "high_raw": {
+   "compared": 1191805,
+   "ok": 1190995,
+   "ok_pct": 99.932,
+   "exact": 1190995,
+   "tol": 0,
+   "rounding": 58,
+   "diff": 752,
+   "null": 0
+  },
+  "low_raw": {
+   "compared": 1191805,
+   "ok": 1191258,
+   "ok_pct": 99.9541,
+   "exact": 1191258,
+   "tol": 0,
+   "rounding": 51,
+   "diff": 496,
+   "null": 0
+  },
+  "last": {
+   "compared": 1191805,
+   "ok": 1191303,
+   "ok_pct": 99.9579,
+   "exact": 1191303,
+   "tol": 0,
+   "rounding": 47,
+   "diff": 455,
+   "null": 0
+  },
+  "volume": {
+   "compared": 1191805,
+   "ok": 1190980,
+   "ok_pct": 99.9308,
+   "exact": 1190980,
+   "tol": 0,
+   "rounding": 173,
+   "diff": 652,
+   "null": 0
+  }
+ },
+ "row_exact_ok": 1189545,
+ "row_exact_ok_pct": 99.8104,
+ "before": {
+  "open": {
+   "compared": 1191805,
+   "ok": 1190641,
+   "ok_pct": 99.9023,
+   "exact": 1190641,
+   "tol": 0,
+   "rounding": 89,
+   "diff": 1075,
+   "null": 0
+  },
+  "high_raw": {
+   "compared": 1191805,
+   "ok": 1089985,
+   "ok_pct": 91.4567,
+   "exact": 1089985,
+   "tol": 0,
+   "rounding": 502,
+   "diff": 101318,
+   "null": 0
+  },
+  "low_raw": {
+   "compared": 1191805,
+   "ok": 1146160,
+   "ok_pct": 96.1701,
+   "exact": 1146160,
+   "tol": 0,
+   "rounding": 674,
+   "diff": 44971,
+   "null": 0
+  },
+  "last": {
+   "compared": 1191805,
+   "ok": 1188117,
+   "ok_pct": 99.6906,
+   "exact": 1188117,
+   "tol": 0,
+   "rounding": 53,
+   "diff": 485,
+   "null": 3150
+  },
+  "volume": {
+   "compared": 1191805,
+   "ok": 1190801,
+   "ok_pct": 99.9158,
+   "exact": 1190801,
+   "tol": 0,
+   "rounding": 169,
+   "diff": 835,
+   "null": 0
+  }
+ },
+ "before_row_exact_ok": 1040948,
+ "before_row_exact_ok_pct": 87.3421
+}

@@ -1,0 +1,101 @@
+{
+ "weeks": 3995,
+ "match_within_0_5pct": {
+  "sum": 3970,
+  "first_day": 73,
+  "last_day": 72
+ },
+ "mismatch_sum_examples": [
+  {
+   "symbol": "شبهرن",
+   "week": "2023-11-04",
+   "ref": 6277223,
+   "sum": 4719593,
+   "first": 1224280,
+   "last": 929753,
+   "days": 4
+  },
+  {
+   "symbol": "ولانا",
+   "week": "2023-07-29",
+   "ref": 4140800,
+   "sum": 426823,
+   "first": 426823,
+   "last": 426823,
+   "days": 1
+  },
+  {
+   "symbol": "وبملت",
+   "week": "2023-11-18",
+   "ref": 509158388,
+   "sum": 185182107,
+   "first": 66459047,
+   "last": 118723060,
+   "days": 2
+  },
+  {
+   "symbol": "فولاد",
+   "week": "2023-09-09",
+   "ref": 439090493,
+   "sum": 250101804,
+   "first": 74309985,
+   "last": 103681013,
+   "days": 3
+  },
+  {
+   "symbol": "خودرو",
+   "week": "2023-09-09",
+   "ref": 1077576729,
+   "sum": 363316328,
+   "first": 188806094,
+   "last": 174510234,
+   "days": 2
+  },
+  {
+   "symbol": "شپنا",
+   "week": "2023-11-18",
+   "ref": 167577952,
+   "sum": 24283845,
+   "first": 24283845,
+   "last": 24283845,
+   "days": 1
+  },
+  {
+   "symbol": "فنوال",
+   "week": "2023-11-04",
+   "ref": 7995433,
+   "sum": 3260156,
+   "first": 3260156,
+   "last": 3260156,
+   "days": 1
+  },
+  {
+   "symbol": "قصفها",
+   "week": "2023-11-25",
+   "ref": 465485,
+   "sum": 177262,
+   "first": 177262,
+   "last": 177262,
+   "days": 1
+  },
+  {
+   "symbol": "سصفها",
+   "week": "2023-09-30",
+   "ref": 5187494,
+   "sum": 2159494,
+   "first": 1246746,
+   "last": 912748,
+   "days": 2
+  },
+  {
+   "symbol": "درهآور",
+   "week": "2023-11-18",
+   "ref": 779529,
+   "sum": 463325,
+   "first": 117709,
+   "last": 143211,
+   "days": 3
+  }
+ ],
+ "conclusion": "Rahavard type0 W volume equals the SUM of daily volumes in the bucket; first-day is a different product (tradersarena) and was not applied."
+}

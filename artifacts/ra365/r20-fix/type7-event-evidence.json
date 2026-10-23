@@ -1,0 +1,115 @@
+[
+ {
+  "symbol": "هجرت",
+  "event_date": "2024-05-08",
+  "product_event_date": "2024-05-08",
+  "product_ratio": 0.882353,
+  "product_days_from_case": 0,
+  "ledger_nearest_date": "2025-05-06",
+  "ledger_note": "nearest price_adjust row is outside the 20-day event window",
+  "share_nearest_date": "2025-05-31",
+  "ref_before_date": "2024-05-01",
+  "ref_after_date": "2024-05-11",
+  "ref_factor_before": 0.053884269428153005,
+  "ref_factor_after": 0.061425634449700395,
+  "ref_step": 1.139954853273138,
+  "ref_implied_price_ratio": 0.8772277227722769,
+  "marks_dps_near": [
+   {
+    "date": "2024-05-06",
+    "dps": 3100
+   }
+  ]
+ },
+ {
+  "symbol": "سغرب",
+  "event_date": "2026-05-31",
+  "product_event_date": "2026-05-31",
+  "product_ratio": 0.863448,
+  "product_days_from_case": 0,
+  "ledger_nearest_date": "2026-05-30",
+  "ledger_date": "2026-05-30",
+  "ledger_p_closing": 6260.0,
+  "ledger_p_closing_not_adjusted": 7251.0,
+  "ledger_ratio": 0.8633292,
+  "ledger_source": "tsetmc_price_adjust_by_flow",
+  "share_nearest_date": "2024-10-14",
+  "ref_before_date": "2026-05-25",
+  "ref_after_date": "2026-06-01",
+  "ref_factor_before": 0.887654460945471,
+  "ref_factor_after": 1.0,
+  "ref_step": 1.126564495530013,
+  "ref_implied_price_ratio": 0.887654460945471,
+  "marks_dps_near": [
+   {
+    "date": "2026-05-30",
+    "dps": 991
+   }
+  ]
+ },
+ {
+  "symbol": "لخزر",
+  "event_date": "2026-07-27",
+  "product_event_date": "2026-07-26",
+  "product_ratio": 0.580376,
+  "product_days_from_case": 1,
+  "ledger_nearest_date": "2026-07-22",
+  "ledger_date": "2026-07-22",
+  "ledger_p_closing": 4790.0,
+  "ledger_p_closing_not_adjusted": 5390.0,
+  "ledger_ratio": 0.88868275,
+  "ledger_source": "tsetmc_price_adjust_by_flow",
+  "share_nearest_date": "2026-07-26",
+  "share_date": "2026-07-26",
+  "share_old": 6237000000.0,
+  "share_new": 10000000000.0,
+  "share_ratio": 0.6237,
+  "ref_before_date": "2026-07-18",
+  "ref_after_date": "2026-07-27",
+  "ref_factor_before": 0.8265895953757221,
+  "ref_factor_after": 1.0,
+  "ref_step": 1.2097902097902105,
+  "ref_implied_price_ratio": 0.8265895953757221,
+  "marks_dps_near": [
+   {
+    "date": "2026-07-20",
+    "dps": 600
+   }
+  ]
+ },
+ {
+  "symbol": "ومعادن",
+  "event_date": "2025-02-15",
+  "product_event_date": "2025-02-15",
+  "product_ratio": 0.721151,
+  "product_days_from_case": 0,
+  "ledger_nearest_date": "2025-07-21",
+  "ledger_note": "nearest price_adjust row is outside the 20-day event window",
+  "share_nearest_date": "2025-02-12",
+  "share_date": "2025-02-12",
+  "share_old": 300000000000.0,
+  "share_new": 445000000000.0,
+  "share_ratio": 0.6741573,
+  "ref_before_date": "2025-01-29",
+  "ref_after_date": "2025-02-22",
+  "ref_factor_before": 0.505577236010623,
+  "ref_factor_after": 0.698912393151946,
+  "ref_step": 1.382404790743507,
+  "ref_implied_price_ratio": 0.7233771227472121,
+  "marks_dps_near": []
+ },
+ {
+  "symbol": "ولانا",
+  "event_date": "2026-08-02",
+  "product_event_date": "2026-08-02",
+  "product_ratio": 1.263079,
+  "product_days_from_case": 0,
+  "ref_before_date": "2026-07-21",
+  "ref_after_date": "2026-08-02",
+  "ref_factor_before": 0.37553956834532404,
+  "ref_factor_after": 1.0,
+  "ref_step": 2.6628352490421436,
+  "ref_implied_price_ratio": 0.37553956834532404,
+  "marks_dps_near": []
+ }
+]

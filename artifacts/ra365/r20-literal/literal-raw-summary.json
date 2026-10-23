@@ -1,0 +1,78 @@
+{
+ "assets": 2595,
+ "rows": 1192071,
+ "tolerance": {
+  "abs": 0.5,
+  "rel": 0.0005
+ },
+ "fields": {
+  "open": {
+   "compared": 1192071,
+   "ok": 1190907,
+   "ok_pct": 99.9024,
+   "exact": 1190907,
+   "tol": 0,
+   "rounding": 89,
+   "diff": 1075,
+   "null": 0
+  },
+  "high_raw": {
+   "compared": 1192071,
+   "ok": 1090247,
+   "ok_pct": 91.4582,
+   "exact": 1090247,
+   "tol": 0,
+   "rounding": 502,
+   "diff": 101322,
+   "null": 0
+  },
+  "low_raw": {
+   "compared": 1192071,
+   "ok": 1146422,
+   "ok_pct": 96.1706,
+   "exact": 1146422,
+   "tol": 0,
+   "rounding": 674,
+   "diff": 44975,
+   "null": 0
+  },
+  "last": {
+   "compared": 1192071,
+   "ok": 1188383,
+   "ok_pct": 99.6906,
+   "exact": 1188383,
+   "tol": 0,
+   "rounding": 53,
+   "diff": 485,
+   "null": 3150
+  },
+  "close_display": {
+   "compared": 1192071,
+   "ok": 1188579,
+   "ok_pct": 99.7071,
+   "exact": 1188579,
+   "tol": 0,
+   "rounding": 142,
+   "diff": 3350,
+   "null": 0
+  },
+  "volume": {
+   "compared": 1192071,
+   "ok": 1191067,
+   "ok_pct": 99.9158,
+   "exact": 1191067,
+   "tol": 0,
+   "rounding": 169,
+   "diff": 835,
+   "null": 0
+  }
+ },
+ "row_exact_ok": 1040858,
+ "row_exact_ok_pct": 87.3151,
+ "direction": {
+  "high:equal": 96,
+  "low:ref_above": 98,
+  "high:ref_below": 154,
+  "low:equal": 152
+ }
+}

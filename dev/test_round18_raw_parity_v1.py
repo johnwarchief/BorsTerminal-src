@@ -56,6 +56,8 @@ def test_parser_mapping():
     c0 = candles[0]
     ck(c0["open"] == 100.0, "open is FIRST, not base OPEN (95)", c0)
     ck(c0["high"] == 110.0 and c0["low"] == 90.0, "H/L kept when body fits", c0)
+    ck(c0["high_raw"] == 110.0 and c0["low_raw"] == 90.0,
+       "raw H/L are preserved even when the body fits", c0)
     ck(c0["close"] == 105.0, "close is official CLOSE", c0)
     ck(c0["last"] == 108.0, "last is LAST", c0)
     c1 = candles[1]
@@ -63,6 +65,8 @@ def test_parser_mapping():
     c2 = candles[2]
     ck(c2["open"] == 80.0 and c2["low"] == 80.0 and c2["high"] == 100.0,
        "widen() lowers LOW to contain the body, HIGH untouched", c2)
+    ck(c2["high_raw"] == 100.0 and c2["low_raw"] == 90.0,
+       "raw H/L survive widen(): LOW raw=90 while display LOW=80", c2)
     ck(c2["close"] == 95.0, "widen() never changes close", c2)
     ck(volumes[0]["value"] == 500.0 and len(volumes) == 3, "volume follows candles",
        volumes)

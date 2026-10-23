@@ -1,6 +1,6 @@
 [gate] unisolated invocation — delegating to dev/gate_db_guard.py
 [gate-isolation] protected_db=C:\Users\Johnkallnaya\Desktop\Borsterminal\.worktrees\ra365-round18\market.db
-[gate-isolation] workdir=C:\Users\JOHNKA~1\AppData\Local\Temp\bors_gate_fzvx6q98
+[gate-isolation] workdir=C:\Users\JOHNKA~1\AppData\Local\Temp\bors_gate_kegesj74
 [gate-isolation] logical_before=1d9bc9b4525fcc4490d5b3d9e8e5f03b30887c62f51768199b80626ff17041f9
   OK   structure / undefined-names              rc=0 | بی‌شمارش (فقط exit code)  [بی‌شمارش]
   OK   FTS filter isolation                     rc=0 | 23/23
@@ -53,7 +53,7 @@
   OK   RC2: zero-volume day never becomes a candle; FIRST/LAST/CLOSE never silently substituted; widen grows shadow, never crushes price rc=0 | 9/9
   OK   §B/RC3: event identity (date, kept) is separated from coefficient (exact from source row); disagreeing source never overwrites; shared ledger row -> ambiguous not dropped; no ledger -> unchanged rc=0 | 14/14
   OK   RC4: gap-fill writes only missing dates, idempotent (2nd run = 0), dry_run writes nothing, never fabricates open/last, published row never downgraded by board rc=0 | 14/14
-  SKIP Phase4 engine: per-type factor formulas (hand-checkable), missing/invalid -> incomplete (never fabricated/never silent ratio=1), deterministic anchored chain, idempotent, real type7 cross-check (fixture missing: _audit/ra365_ref_bars.json)
+  OK   Phase4 engine: per-type factor formulas (hand-checkable), missing/invalid -> incomplete (never fabricated/never silent ratio=1), deterministic anchored chain, idempotent, real type7 cross-check rc=0 | 44/44
   OK   Phase5 ledger: official source-ratio (no proxy), same-day dedup w/ priceAdjust precedence, incomplete/invalid never fabricated, idempotent, wrong-instrument empty, CODAL type only when unique, effective!=publish rc=0 | 24/24
   OK   chart fib belts and setup markers come from the one server engine, over the current wave rc=0 | بی‌شمارش (فقط exit code)  [بی‌شمارش]
   OK   repo hygiene / dead-code stays gone      rc=0 | 123/123
@@ -84,7 +84,7 @@
   OK   Round 17: observed gap/share precedence over a separate DPS rc=0 | بی‌شمارش (فقط exit code)  [بی‌شمارش]
   OK   Round 17: general CODAL composition parser (Farak/after-label/stage) rc=0 | بی‌شمارش (فقط exit code)  [بی‌شمارش]
   OK   Round 17: staged migration is keyed, idempotent, reversible rc=0 | بی‌شمارش (فقط exit code)  [بی‌شمارش]
-  OK   Round 18: raw OHLC mapping, basis, tolerance and cause taxonomy rc=0 | 35/35
+  OK   Round 18: raw OHLC mapping, basis, tolerance and cause taxonomy rc=0 | 37/37
   OK   Round 18: raw mismatch attribution is evidence-backed rc=0 | 5/5
   OK   Round 18: published price_history repair is keyed, prioritized and idempotent rc=0 | 14/14
   OK   Round 20: proven Rahavard DPS/reserve formulas; contribution S remains unverified rc=0 | 8/8
@@ -112,7 +112,7 @@
   OK   Windows + GPU/software-render guard      rc=0 | 23 pass / 0 fail
   OK   log has a clock and survives a hard death rc=0 | 12 pass / 0 fail
   OK   candle fidelity: geometry repair + anchored adjustment rc=0 | 23/23
-  OK   live candle: session date, both chart endpoints, cache untouched rc=0 | 47/47
+  OK   live candle: session date, both chart endpoints, cache untouched rc=0 | 48/48
   OK   candles from the board table + geometry repair + no prune-before-fetch rc=0 | 41/41
   OK   last/closing are separate columns; no fabricated last, anchor untouched rc=0 | 26/26
   OK   single price resolver (last|closing) + adjustment anchor invariance rc=0 | 45/45
@@ -195,12 +195,11 @@
   OK   FTS v10 fundamental table UI render (headless) rc=0 | 17 pass / 0 fail
   OK   FTS CODAL settings panel: validate + storage + apply rc=0 | 45 pass / 0 fail
 
-146 suite counted, 44 silent (exit-code only), 2 skipped (fixture missing)
+147 suite counted, 44 silent (exit-code only), 1 skipped (fixture missing)
   silent: structure / undefined-names, mainwatch rows carry the tape flags, never a fabricated one, make_patch --from arg parsing, delta patch select/apply + fallback, fund sheet: سود سهام هرگز «فروش» نمی‌شود, API فقط از حلقهٔ محلی / نشانیِ نصاب از مانیفست, صندوق هیچ‌جا مردود نمی‌شود (کارت/اسکرینر/تابلو/مستر), هیچ کلاس اندازهٔ مرده‌ای در فرانت نماند (نردبان 3xs/2xs), قفلِ npm درِ CI هم نصب می‌شود (npm ci، نه فقط node_modules محلی), هیچ نامِ تعریف‌نشده‌ای در کدِ منتشرشده (NameError درِ شرطِ نایاب), blank published total refuses a component line for فروش, board cache is stale-while-revalidate, single-flight, honest on failure, server FTS reads the full adjusted series the chart draws, not the starved raw table, unproven base-price gaps (positive, fund micro) never enter the adjustment chain, functional availability statuses: complete, partial window, no-event classes, source gap, stale, Rahavard data contract fixture: type0/type7 factor, OHLC, weekly sum, LAST basis, official fund distributions + single-session backfill enter the canonical chain, cross-sectional session anomaly: synthetic positives, official-row negatives, typed-event survival, chart fib belts and setup markers come from the one server engine, over the current wave, DB isolation: temp copy, logical fingerprint, fetch-loop gate, one official ledger row is applied once, even across a long suspension, DPS factor = close_ex/(close_ex+dps); reserve capital change = pv/nw, official no-cash share evidence: deterministic ingest, idempotent, paid-in rejected, Round 14: capital vs share ratio, official DPS, type7 P and no silent fallback, Round 15: DPS source-ratio duplicate, combined gap, evidence-gated 10-day window, Round 16: type7 DPS base is the effective candle closing (holdout), Round 16: an empty/partial gate DB is refused before copying, Round 17: observed gap/share precedence over a separate DPS, Round 17: general CODAL composition parser (Farak/after-label/stage), Round 17: staged migration is keyed, idempotent, reversible, official fund distributions drive (P-D)/P factor; same-date typed event survives, fund importer: Persian digits, corrupt rows, duplicate dedupe, newest instrument, history repair writes src=published on a temp DB; closed gate writes nothing, weekly trend verdict from live pivots or the recent window, never a stale pivot, derived columns at insert (backfill selftest), live board audit: zero-volume / no-CT edge cases, single writer: one backend per market.db, funnel registry: every txt filter pinned to its source, user watchlist CRUD: get() on a missing row, upsert identity, cap layering, trend point-in-time: Saturday week bucket, closed-week immutability, no cache-key lookahead, sarkhati protocol: provenance-marked wire fixtures, 2xx is never acceptance, no blind re-send after ambiguous, confirmation voided by session change, three distinct origins, honest mode/queue claims, monotonic percentiles, log redaction controls, engine3 vs engine1: provably different pivot sets, both anti-repaint, anti-repaint: two-time pivots, prefix-stability, no future-look in payload, fixture: fts_v10 payloads
-  skip: Phase4 engine: per-type factor formulas (hand-checkable), missing/invalid -> incomplete (never fabricated/never silent ratio=1), deterministic anchored chain, idempotent, real type7 cross-check (_audit/ra365_ref_bars.json)
   skip: R1/R2 housekeeping: dedupe + prev-year backfill (market.db.lzma)
 
 ALL SUITES PASSED
 [gate-isolation] logical_after=1d9bc9b4525fcc4490d5b3d9e8e5f03b30887c62f51768199b80626ff17041f9
 PROTECTED_DB_UNCHANGED logical_total=1d9bc9b4525fcc4490d5b3d9e8e5f03b30887c62f51768199b80626ff17041f9
-[gate-isolation] workdir kept for evidence: C:\Users\JOHNKA~1\AppData\Local\Temp\bors_gate_fzvx6q98
+[gate-isolation] workdir kept for evidence: C:\Users\JOHNKA~1\AppData\Local\Temp\bors_gate_kegesj74

@@ -146,6 +146,7 @@ def _parse_tsetmc_csv(text):
         # سایه نقص دارد؛ پس سایه را گِشاد می‌کنیم نه اینکه پایانی را خُرد کنیم.
         # همان قاعده‌ای که مسیرِ کندلِ زندهٔ get_chart_db از قبل رعایت می‌کند.
         # تنها قاعدۀ هندسه (Step 4): سایه گِشاد می‌شود، هیچ قیمتِ منتشرشده خُرد نمی‌شود
+        hi_raw, lo_raw = hi, lo
         hi, lo = candle_contract.widen(o, hi, lo, c)
         # v10.7.0 (کارِ #73 قدمِ ۳): «آخرین» دیگر به پایانی fallback نمی‌کند و دیگر
         # clamp نمی‌شود. دو جعلِ قبلی همان چیزی بود که قرارداد §۱-ث شرطِ ۳ بست:
@@ -155,6 +156,7 @@ def _parse_tsetmc_csv(text):
         #       گِشاد می‌شود (همان قاعدۀ candle_from_row) و تعدادش درِ متادیتا می‌آید.
         last = float(p[i_last]) if (len(p) > i_last and p[i_last]) else None
         candles.append({"time": dt, "open": o, "high": hi, "low": lo,
+                        "high_raw": hi_raw, "low_raw": lo_raw,
                         "close": c, "last": last})
         volumes.append({"time": dt, "value": v, "color": "#10b981" if c >= o else "#f43f5e"})
     return candles, volumes, all_rows
@@ -1966,8 +1968,10 @@ def _watch_live_bar(symbol, after_date):
         return None, None
     # افت‌به‌روی امن: تابلو ممکن است در میانهٔ روز هنوز high/low را پر نکرده باشد
     o_l = p_first if p_first > 0 else p_close
+    hi_raw, lo_raw = p_max, p_min
     h_l, l_l = candle_contract.widen(o_l, p_max, p_min, p_close)
     return ({"time": session_date, "open": o_l, "high": h_l, "low": l_l,
+             "high_raw": hi_raw, "low_raw": lo_raw,
              "close": p_close, "volume": vol,
              # نشانهٔ «کندلِ تکمیل‌نشده»: `_watch_live_bar` کندلِ *همانِ جلسه* را
              # می‌سازد، پس قیمتش تا بستهٔ market شدنِ جلسه عوض می‌شود. موتورِ
