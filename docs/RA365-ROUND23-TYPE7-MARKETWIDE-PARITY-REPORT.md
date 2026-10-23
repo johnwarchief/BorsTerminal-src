@@ -135,9 +135,9 @@
 ## ۹. Git و محصول
 
 - شاخه: `mission/ra365-round23-type7-marketwide-parity-2026-10-24` از `4bea85e7`.
-- توپولوژی: ۷۵ کامیت جلو و ۲۳ عقب از `main` (`ff4c99ea`)؛ main شامل FTS/RA365 نیست؛ merge مستقیم امن نیست؛ شاخه push و وضعیت PR/merge صریح. هیچ merge به main انجام نشد.
+- توپولوژی: ۷۸ کامیت جلو و ۲۳ عقب از `main` (`ff4c99ea`)؛ `git merge-base --is-ancestor` رد شد (fast-forward ممکن نیست)؛ main شامل FTS/RA365 نیست؛ merge مستقیم امن نیست. هیچ merge به main انجام نشد.
 - commitها: `8ad3c749` (long-gap + monthly Jalali)، `01ded7d4` (DPS live-close + تست)، و commit گزارش/شواهد + پاک‌سازی logهای track‌شدهٔ Round 22 روی همین شاخه.
-- **full gate سبز است** (`ALL SUITES PASSED`، ۱۹۶/۰) و DB محافظت‌شده تغییر نکرده؛ با این حال **merge به main انجام نشد** چون شاخهٔ مبنا از main واگرا است (۷۵ جلو/۲۳ عقب) و main نسخهٔ FTS/RA365 را ندارد؛ merge مستقیم می‌تواند کار دیگران را overwrite کند. شاخه push می‌شود و PR پس از یکپارچه‌سازی FTS ساخته می‌شود.
+- **full gate سبز است** (`ALL SUITES PASSED`، ۱۹۶/۰) و DB محافظت‌شده تغییر نکرده؛ با این حال **merge به main انجام نشد** چون شاخهٔ مبنا از main واگرا است (۷۸ جلو/۲۳ عقب) و main نسخهٔ FTS/RA365 را ندارد؛ merge مستقیم می‌تواند کار دیگران را overwrite کند. شاخه push شد (`origin/…`: `cb02778d`) و PR پس از یکپارچه‌سازی FTS ساخته می‌شود.
 
 ---
 
