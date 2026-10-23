@@ -1,0 +1,311 @@
+{
+ "595": {
+  "symbol": "حخزر",
+  "ref_steps": 16,
+  "product_steps": 16,
+  "counts": {
+   "MATCH": 13,
+   "RATIO_DIFF": 1,
+   "CLOSE": 2
+  }
+ },
+ "48315": {
+  "symbol": "آکو",
+  "ref_steps": 1,
+  "product_steps": 1,
+  "counts": {
+   "MATCH": 1
+  }
+ },
+ "207": {
+  "symbol": "لخزر",
+  "ref_steps": 24,
+  "product_steps": 23,
+  "counts": {
+   "REF_ONLY": 1,
+   "CLOSE": 2,
+   "MATCH": 19,
+   "RATIO_DIFF": 2
+  }
+ },
+ "325": {
+  "symbol": "هجرت",
+  "ref_steps": 9,
+  "product_steps": 11,
+  "counts": {
+   "MATCH": 7,
+   "CLOSE": 2,
+   "PRODUCT_ONLY": 2
+  }
+ },
+ "291": {
+  "symbol": "ومعادن",
+  "ref_steps": 31,
+  "product_steps": 30,
+  "counts": {
+   "REF_ONLY": 1,
+   "MATCH": 20,
+   "CLOSE": 7,
+   "RATIO_DIFF": 3
+  }
+ },
+ "599": {
+  "symbol": "ولانا",
+  "ref_steps": 11,
+  "product_steps": 4,
+  "counts": {
+   "RATIO_DIFF": 2,
+   "REF_ONLY": 8,
+   "MATCH": 1,
+   "PRODUCT_ONLY": 1
+  }
+ },
+ "2672": {
+  "symbol": "طلا",
+  "ref_steps": 0,
+  "product_steps": 0,
+  "counts": {}
+ },
+ "453": {
+  "symbol": "فولاد",
+  "ref_steps": 28,
+  "product_steps": 27,
+  "counts": {
+   "REF_ONLY": 1,
+   "RATIO_DIFF": 2,
+   "CLOSE": 6,
+   "MATCH": 19
+  }
+ },
+ "149": {
+  "symbol": "فنوال",
+  "ref_steps": 19,
+  "product_steps": 19,
+  "counts": {
+   "CLOSE": 2,
+   "MATCH": 17
+  }
+ },
+ "167": {
+  "symbol": "خودرو",
+  "ref_steps": 14,
+  "product_steps": 13,
+  "counts": {
+   "REF_ONLY": 1,
+   "MATCH": 10,
+   "CLOSE": 3
+  }
+ },
+ "182": {
+  "symbol": "شنفت",
+  "ref_steps": 28,
+  "product_steps": 27,
+  "counts": {
+   "REF_ONLY": 1,
+   "CLOSE": 3,
+   "MATCH": 22,
+   "RATIO_DIFF": 2
+  }
+ },
+ "696": {
+  "symbol": "شراز",
+  "ref_steps": 16,
+  "product_steps": 4,
+  "counts": {
+   "REF_ONLY": 12,
+   "CLOSE": 1,
+   "MATCH": 3
+  }
+ },
+ "183": {
+  "symbol": "شبهرن",
+  "ref_steps": 27,
+  "product_steps": 26,
+  "counts": {
+   "REF_ONLY": 1,
+   "CLOSE": 6,
+   "MATCH": 19,
+   "RATIO_DIFF": 1
+  }
+ },
+ "703": {
+  "symbol": "فارس",
+  "ref_steps": 19,
+  "product_steps": 20,
+  "counts": {
+   "MATCH": 19,
+   "PRODUCT_ONLY": 1
+  }
+ },
+ "462": {
+  "symbol": "وبملت",
+  "ref_steps": 22,
+  "product_steps": 22,
+  "counts": {
+   "MATCH": 19,
+   "CLOSE": 2,
+   "RATIO_DIFF": 1
+  }
+ },
+ "484": {
+  "symbol": "شپنا",
+  "ref_steps": 27,
+  "product_steps": 26,
+  "counts": {
+   "REF_ONLY": 1,
+   "RATIO_DIFF": 3,
+   "CLOSE": 3,
+   "MATCH": 20
+  }
+ },
+ "287": {
+  "symbol": "قصفها",
+  "ref_steps": 21,
+  "product_steps": 21,
+  "counts": {
+   "REF_ONLY": 1,
+   "CLOSE": 5,
+   "MATCH": 15,
+   "PRODUCT_ONLY": 1
+  }
+ },
+ "384": {
+  "symbol": "سصفها",
+  "ref_steps": 24,
+  "product_steps": 23,
+  "counts": {
+   "REF_ONLY": 2,
+   "MATCH": 21,
+   "RATIO_DIFF": 1,
+   "PRODUCT_ONLY": 1
+  }
+ },
+ "6274": {
+  "symbol": "درهآور",
+  "ref_steps": 9,
+  "product_steps": 9,
+  "counts": {
+   "MATCH": 8,
+   "RATIO_DIFF": 1
+  }
+ },
+ "109": {
+  "symbol": "سغرب",
+  "ref_steps": 22,
+  "product_steps": 21,
+  "counts": {
+   "REF_ONLY": 1,
+   "CLOSE": 4,
+   "MATCH": 14,
+   "RATIO_DIFF": 3
+  }
+ },
+ "485": {
+  "symbol": "مارون",
+  "ref_steps": 16,
+  "product_steps": 16,
+  "counts": {
+   "MATCH": 16
+  }
+ },
+ "7836": {
+  "symbol": "شستا",
+  "ref_steps": 8,
+  "product_steps": 8,
+  "counts": {
+   "CLOSE": 3,
+   "MATCH": 5
+  }
+ },
+ "16449": {
+  "symbol": "فزر",
+  "ref_steps": 6,
+  "product_steps": 6,
+  "counts": {
+   "MATCH": 5,
+   "CLOSE": 1
+  }
+ },
+ "17495": {
+  "symbol": "فافق",
+  "ref_steps": 6,
+  "product_steps": 7,
+  "counts": {
+   "MATCH": 6,
+   "PRODUCT_ONLY": 1
+  }
+ },
+ "569": {
+  "symbol": "فولاژ",
+  "ref_steps": 25,
+  "product_steps": 25,
+  "counts": {
+   "CLOSE": 5,
+   "MATCH": 17,
+   "RATIO_DIFF": 3
+  }
+ },
+ "458": {
+  "symbol": "فخاس",
+  "ref_steps": 27,
+  "product_steps": 25,
+  "counts": {
+   "REF_ONLY": 2,
+   "CLOSE": 3,
+   "RATIO_DIFF": 2,
+   "MATCH": 20
+  }
+ },
+ "159": {
+  "symbol": "فجام",
+  "ref_steps": 28,
+  "product_steps": 27,
+  "counts": {
+   "REF_ONLY": 1,
+   "MATCH": 24,
+   "CLOSE": 3
+  }
+ },
+ "252": {
+  "symbol": "شاملا",
+  "ref_steps": 24,
+  "product_steps": 23,
+  "counts": {
+   "REF_ONLY": 1,
+   "RATIO_DIFF": 3,
+   "MATCH": 18,
+   "CLOSE": 2
+  }
+ },
+ "498": {
+  "symbol": "وبصادر",
+  "ref_steps": 18,
+  "product_steps": 19,
+  "counts": {
+   "MATCH": 18,
+   "PRODUCT_ONLY": 1
+  }
+ },
+ "661": {
+  "symbol": "ولراز",
+  "ref_steps": 7,
+  "product_steps": 4,
+  "counts": {
+   "CLOSE": 2,
+   "REF_ONLY": 3,
+   "RATIO_DIFF": 1,
+   "MATCH": 1
+  }
+ },
+ "302": {
+  "symbol": "سرود",
+  "ref_steps": 21,
+  "product_steps": 20,
+  "counts": {
+   "REF_ONLY": 1,
+   "CLOSE": 7,
+   "RATIO_DIFF": 3,
+   "MATCH": 10
+  }
+ }
+}

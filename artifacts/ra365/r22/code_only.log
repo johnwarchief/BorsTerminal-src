@@ -1,0 +1,99 @@
+{
+ "raw|D|displayed": {
+  "paired": 38476,
+  "row_exact_pct": 99.4802,
+  "row_tol_pct": 99.4854,
+  "fields": {
+   "o": 99.6985,
+   "h": 99.9636,
+   "l": 99.987,
+   "c": 99.961,
+   "v": 99.8519
+  }
+ },
+ "raw|D|literal": {
+  "paired": 38476,
+  "row_exact_pct": 99.4984,
+  "row_tol_pct": 99.5036,
+  "fields": {
+   "o": 99.6985,
+   "h": 99.9714,
+   "l": 99.9974,
+   "c": 99.961,
+   "v": 99.8519
+  }
+ },
+ "raw|W|displayed": {
+  "paired": 8893,
+  "row_exact_pct": 98.9205,
+  "row_tol_pct": 98.943,
+  "fields": {
+   "o": 99.6851,
+   "h": 99.9213,
+   "l": 99.9775,
+   "c": 99.9663,
+   "v": 99.3366
+  }
+ },
+ "raw|W|literal": {
+  "paired": 8893,
+  "row_exact_pct": 98.9655,
+  "row_tol_pct": 98.988,
+  "fields": {
+   "o": 99.6851,
+   "h": 99.955,
+   "l": 100.0,
+   "c": 99.9663,
+   "v": 99.3366
+  }
+ },
+ "adjusted|D|displayed": {
+  "paired": 38476,
+  "row_exact_pct": 7.9608,
+  "row_tol_pct": 40.0301,
+  "fields": {
+   "o": 40.2199,
+   "h": 40.1289,
+   "l": 40.3316,
+   "c": 40.2225,
+   "v": 99.8519
+  }
+ },
+ "adjusted|D|literal": {
+  "paired": 38476,
+  "row_exact_pct": 7.9634,
+  "row_tol_pct": 40.0379,
+  "fields": {
+   "o": 40.2199,
+   "h": 40.1315,
+   "l": 40.3342,
+   "c": 40.2225,
+   "v": 99.8519
+  }
+ },
+ "adjusted|W|displayed": {
+  "paired": 8893,
+  "row_exact_pct": 7.4778,
+  "row_tol_pct": 40.3014,
+  "fields": {
+   "o": 40.8861,
+   "h": 40.6387,
+   "l": 41.1222,
+   "c": 40.7736,
+   "v": 99.3366
+  }
+ },
+ "adjusted|W|literal": {
+  "paired": 8893,
+  "row_exact_pct": 7.489,
+  "row_tol_pct": 40.3239,
+  "fields": {
+   "o": 40.8861,
+   "h": 40.6499,
+   "l": 41.1222,
+   "c": 40.7736,
+   "v": 99.3366
+  }
+ }
+}
+excluded: [{"asset_id": "462", "symbol": "وبملت", "reason": "no product payload"}, {"asset_id": "484", "symbol": "شپنا", "reason": "no product payload"}, {"asset_id": "287", "symbol": "قصفها", "reason": "no product payload"}, {"asset_id": "384", "symbol": "سصفها", "reason": "no product payload"}, {"asset_id": "6274", "symbol": "درهآور", "reason": "no product payload"}, {"asset_id": "109", "symbol": "سغرب", "reason": "no product payload"}, {"asset_id": "485", "symbol": "مارون", "reason": "no product payload"}, {"asset_id": "7836", "symbol": "شستا", "reason": "no product payload"}, {"asset_id": "16449", "symbol": "فزر", "reason": "no product payload"}, {"asset_id": "17495", "symbol": "فافق", "reason": "no product payload"}, {"asset_id": "569", "symbol": "فولاژ", "reason": "no product payload"}, {"asset_id": "458", "symbol": "فخاس", "reason": "no product payload"}, {"asset_id": "159", "symbol": "فجام", "reason": "no product payload"}, {"asset_id": "252", "symbol": "شاملا", "reason": "no product payload"}, {"asset_id": "498", "symbol": "وبصادر", "reason": "no product payload"}, {"asset_id": "661", "symbol": "ولراز", "reason": "no product payload"}, {"asset_id": "302", "symbol": "سرود", "reason": "no product payload"}]

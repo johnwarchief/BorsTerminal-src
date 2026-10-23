@@ -1,0 +1,235 @@
+{
+ "baseline_row_tol": 30.4245,
+ "corrected_row_tol": 39.7229,
+ "paired": 38469,
+ "series": [
+  {
+   "asset_id": "595",
+   "symbol": "حخزر",
+   "paired": 2764,
+   "missing_rows": 0,
+   "events": 0,
+   "row_tol_before": 4.5948,
+   "row_tol_after": 4.5948,
+   "close_tol_before": 5.1737,
+   "close_tol_after": 5.1737,
+   "missing": [],
+   "drops": []
+  },
+  {
+   "asset_id": "48315",
+   "symbol": "آکو",
+   "paired": 38,
+   "missing_rows": 0,
+   "events": 0,
+   "row_tol_before": 81.5789,
+   "row_tol_after": 81.5789,
+   "close_tol_before": 81.5789,
+   "close_tol_after": 81.5789,
+   "missing": [],
+   "drops": []
+  },
+  {
+   "asset_id": "207",
+   "symbol": "لخزر",
+   "paired": 3293,
+   "missing_rows": 0,
+   "events": 0,
+   "row_tol_before": 43.0003,
+   "row_tol_after": 43.0003,
+   "close_tol_before": 43.5166,
+   "close_tol_after": 43.5166,
+   "missing": [],
+   "drops": []
+  },
+  {
+   "asset_id": "325",
+   "symbol": "هجرت",
+   "paired": 1577,
+   "missing_rows": 0,
+   "events": 0,
+   "row_tol_before": 16.0431,
+   "row_tol_after": 4.9461,
+   "close_tol_before": 16.0431,
+   "close_tol_after": 4.9461,
+   "missing": [],
+   "drops": [
+    [
+     "2025-08-17",
+     0.996471
+    ]
+   ]
+  },
+  {
+   "asset_id": "291",
+   "symbol": "ومعادن",
+   "paired": 3938,
+   "missing_rows": 3,
+   "events": 3,
+   "row_tol_before": 8.1006,
+   "row_tol_after": 10.0559,
+   "close_tol_before": 8.126,
+   "close_tol_after": 10.2082,
+   "missing": [
+    [
+     20190710,
+     0.88457736
+    ],
+    [
+     20180715,
+     0.93433396
+    ],
+    [
+     20150801,
+     0.92474674
+    ]
+   ],
+   "drops": []
+  },
+  {
+   "asset_id": "599",
+   "symbol": "ولانا",
+   "paired": 1877,
+   "missing_rows": 0,
+   "events": 0,
+   "row_tol_before": 2.9302,
+   "row_tol_after": 2.9302,
+   "close_tol_before": 2.9302,
+   "close_tol_after": 2.9302,
+   "missing": [],
+   "drops": []
+  },
+  {
+   "asset_id": "2672",
+   "symbol": "طلا",
+   "paired": 2196,
+   "missing_rows": 0,
+   "events": 0,
+   "row_tol_before": 99.8634,
+   "row_tol_after": 99.8634,
+   "close_tol_before": 99.8634,
+   "close_tol_after": 99.8634,
+   "missing": [],
+   "drops": []
+  },
+  {
+   "asset_id": "453",
+   "symbol": "فولاد",
+   "paired": 4069,
+   "missing_rows": 0,
+   "events": 0,
+   "row_tol_before": 38.4861,
+   "row_tol_after": 38.4861,
+   "close_tol_before": 38.5353,
+   "close_tol_after": 38.5353,
+   "missing": [],
+   "drops": []
+  },
+  {
+   "asset_id": "149",
+   "symbol": "فنوال",
+   "paired": 3434,
+   "missing_rows": 0,
+   "events": 0,
+   "row_tol_before": 44.2632,
+   "row_tol_after": 65.1136,
+   "close_tol_before": 46.3308,
+   "close_tol_after": 65.4921,
+   "missing": [],
+   "drops": [
+    [
+     "2023-03-28",
+     0.988962
+    ]
+   ]
+  },
+  {
+   "asset_id": "167",
+   "symbol": "خودرو",
+   "paired": 3878,
+   "missing_rows": 0,
+   "events": 0,
+   "row_tol_before": 97.8597,
+   "row_tol_after": 97.8597,
+   "close_tol_before": 98.0144,
+   "close_tol_after": 98.0144,
+   "missing": [],
+   "drops": []
+  },
+  {
+   "asset_id": "182",
+   "symbol": "شنفت",
+   "paired": 3767,
+   "missing_rows": 3,
+   "events": 3,
+   "row_tol_before": 2.1237,
+   "row_tol_after": 45.819,
+   "close_tol_before": 2.1237,
+   "close_tol_after": 46.5092,
+   "missing": [
+    [
+     20190603,
+     0.65867457
+    ],
+    [
+     20140608,
+     0.89909764
+    ],
+    [
+     20140608,
+     0.34402155
+    ]
+   ],
+   "drops": []
+  },
+  {
+   "asset_id": "696",
+   "symbol": "شراز",
+   "paired": 694,
+   "missing_rows": 0,
+   "events": 0,
+   "row_tol_before": 8.0692,
+   "row_tol_after": 8.0692,
+   "close_tol_before": 8.0692,
+   "close_tol_after": 8.0692,
+   "missing": [],
+   "drops": []
+  },
+  {
+   "asset_id": "183",
+   "symbol": "شبهرن",
+   "paired": 3980,
+   "missing_rows": 1,
+   "events": 1,
+   "row_tol_before": 1.9095,
+   "row_tol_after": 34.8995,
+   "close_tol_before": 1.9095,
+   "close_tol_after": 35.0251,
+   "missing": [
+    [
+     20180721,
+     0.79288424
+    ]
+   ],
+   "drops": [
+    [
+     "2020-05-26",
+     0.990878
+    ]
+   ]
+  },
+  {
+   "asset_id": "703",
+   "symbol": "فارس",
+   "paired": 2964,
+   "missing_rows": 0,
+   "events": 0,
+   "row_tol_before": 7.3212,
+   "row_tol_after": 7.3212,
+   "close_tol_before": 7.6248,
+   "close_tol_after": 7.6248,
+   "missing": [],
+   "drops": []
+  }
+ ]
+}
