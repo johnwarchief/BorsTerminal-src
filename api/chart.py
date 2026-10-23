@@ -146,6 +146,7 @@ def _parse_tsetmc_csv(text):
         # سایه نقص دارد؛ پس سایه را گِشاد می‌کنیم نه اینکه پایانی را خُرد کنیم.
         # همان قاعده‌ای که مسیرِ کندلِ زندهٔ get_chart_db از قبل رعایت می‌کند.
         # تنها قاعدۀ هندسه (Step 4): سایه گِشاد می‌شود، هیچ قیمتِ منتشرشده خُرد نمی‌شود
+        hi_raw, lo_raw = hi, lo
         hi, lo = candle_contract.widen(o, hi, lo, c)
         # v10.7.0 (کارِ #73 قدمِ ۳): «آخرین» دیگر به پایانی fallback نمی‌کند و دیگر
         # clamp نمی‌شود. دو جعلِ قبلی همان چیزی بود که قرارداد §۱-ث شرطِ ۳ بست:
@@ -155,6 +156,7 @@ def _parse_tsetmc_csv(text):
         #       گِشاد می‌شود (همان قاعدۀ candle_from_row) و تعدادش درِ متادیتا می‌آید.
         last = float(p[i_last]) if (len(p) > i_last and p[i_last]) else None
         candles.append({"time": dt, "open": o, "high": hi, "low": lo,
+                        "high_raw": hi_raw, "low_raw": lo_raw,
                         "close": c, "last": last})
         volumes.append({"time": dt, "value": v, "color": "#10b981" if c >= o else "#f43f5e"})
     return candles, volumes, all_rows
@@ -282,7 +284,9 @@ _ADJ_VERDICT_DDL = ("CREATE TABLE IF NOT EXISTS adjust_verdict("
                     "symbol TEXT PRIMARY KEY, source TEXT, checked_at TEXT)")
 _ADJ_KNOWN_SOURCES = ("base-price-discontinuity", "no-adjustment-event", "local-cache",
                       # کشف از گسستِ CSV، عددِ رویداد از دفترِ رویدادِ مبدأِ TSETMC
-                      "ledger+base-price-discontinuity")
+                      "ledger+base-price-discontinuity",
+                      # توزیعِ رسمیِ صندوق از پورتالِ مدیرِ صندوق
+                      "fund-portal")
 # فقط این سه «از CSVِ کاملِ تاریخِ زنده خوانده‌ایم» است، پس فقط همین‌ها حقِّ
 # جانشینیِ کلِ مجموعهٔ کشِ یک نماد را دارند. `local-cache` برچسبِ *خواندن* است، نه
 # کشفِ تازه؛ اگر روزی به نویسندۀِ کش برسد، نباید ردیفِ دیده‌شدۀِ دیگری را پاک کند.
@@ -448,6 +452,15 @@ def _stored_adjust_events(symbol):
 # عدد است نه مقایسۀِ ظاهری — و قاعدۀِ مأموریت هم همین است: منطقِ داده را برایِ
 # نزدیک‌شدنِ ظاهری تغییر نمی‌دهیم.
 _LEDGER_AGREE_TOL = 0.001
+# گسستِ پایهٔ تقریبی در پنجرهٔ DPS فقط وقتی «همان اقدام» شمرده می‌شود که نسبتش
+# با نسبتِ رسمیِ DPS در این تلورانس جور باشد؛ رویدادِ مستقل (افزایشِ سرمایه)
+# با اختلافِ بزرگ‌تر حفظ می‌شود. نمونهٔ مرزی: بورس 2026-07-22 (DPS=55 + CC 0.75).
+_DPS_DUP_TOL = 0.01
+# دو ردیفِ رسمی برایِ یک اقدام ممکن است چند دهمِ درصد نسبتشان تفاوت کند
+# (دانيك 2026-08-24: 0.878734 در برابر 0.881844؛ پالايش 2024-12-23/24).
+# در پنجرهٔ ۵ روز، اختلافِ ≤۱٪ «همان اقدام» است؛ رویدادِ سرمایهٔ مستقل
+# (نمونهٔ بورس: ۲۴٪) حفظ می‌شود.
+_SAME_ACTION_TOL = 0.02
 _LEDGER_WINDOW_DAYS = 10
 
 
@@ -545,6 +558,7 @@ def _sharpen_events_with_ledger(symbol, events):
         if lr and len(owners[lr["date"] + "|" + lr["kind"]]) == 1:
             e["ratio"] = round(lr["ratio"], 8)
             e["source"] = lr["kind"]
+            e["_ledger_key"] = (lr["date"], lr["kind"])
             sharpened += 1
         else:
             if lr:
@@ -583,6 +597,206 @@ def _sharpen_events_with_ledger(symbol, events):
 # اینکه آیا آن‌ها گامِ واقعیِ دیگري هستند درِ قدمِ ۶ با مرجعِ رهاورد سنجیده می‌شود.
 
 
+def _is_option_name(name):
+    return "اختيار" in name or "اختیار" in name
+
+
+def _is_bond_name(name):
+    if not name or "صندوق" in name or "بورس اوراق بهادار" in name:
+        return False
+    if any(k in name for k in (
+            "مرابحه", "اسناد", "مشاركت", "مشارکت", "اجاره", "صكوک", "صکوک",
+            "سلف موازي", "سلف موازی", "اخزا", "اوراق")):
+        return True
+    return (name.startswith("گام") or name.startswith("گواهي اعتبار")
+            or name.startswith("گواهی اعتبار"))
+
+
+def _is_right_name(name, paper_type):
+    return (paper_type == 4 or name.startswith("ح ") or name.startswith("ح.")
+            or "حق تقدم" in name)
+
+
+def _is_future_name(name):
+    if not name:
+        return False
+    if name.startswith(("آتي ", "آتی ", "بار پايه", "بار پایه")):
+        return True
+    return ("ماهه" in name) and any(k in name for k in ("فروش", "خرید", "تحویل"))
+
+
+def _instrument_kind(symbol):
+    """option|bond|right|fund|future|stock|unknown — از نام/نوعِ خودِ ابزار.
+
+    این طبقه‌بندی برایِ **قراردادِ دسترسی** است، نه برایِ نگاشتِ هویت: اختیار/آتی
+    اقدامِ شرکتی ندارند و اوراق/حق‌تقدم در قراردادِ عملکردیِ فعلی گامِ تعدیل ندارند.
+    قواعدِ نام با تطبیقِ ۱۰۰٪ رویِ فهرست‌هایِ خودِ رهاورد سنجیده شده‌اند
+    (۱٬۰۲۷ اختیار، ۵۲۸ اوراق، ۴ warrants).
+    """
+    name, paper_type, sector = "", None, ""
+    try:
+        conn = sqlite3.connect(DB_PATH, timeout=15)
+        try:
+            _pred, _params = sym_pred(conn, "l_val18", symbol, "board")
+            row = conn.execute(
+                f"SELECT l_val30, paper_type, sector_name FROM instruments WHERE {_pred}"
+                " ORDER BY updated_at DESC LIMIT 1", _params).fetchone()
+            if row:
+                name = str(row[0] or "").replace("\u200c", " ")
+                paper_type, sector = row[1], str(row[2] or "")
+        finally:
+            conn.close()
+    except Exception:
+        return "unknown"
+    if _is_option_name(name):
+        return "option"
+    if _is_bond_name(name):
+        return "bond"
+    if _is_right_name(name, paper_type):
+        return "right"
+    if _is_future_name(name):
+        return "future"
+    if paper_type == 8 or "صندوق" in sector or "صندوق" in name:
+        return "fund"
+    return "stock"
+
+
+def _filter_unproven_base_events(symbol, events, times=None):
+    """(kept, rejected) — گسستِ پایهٔ بی‌شاهدِ دفتر را از زنجیره بیرون می‌گذارد.
+
+    سه الگویِ اندازه‌گیری‌شده در ممیزیِ سراسریِ ۲۰۲۶-۱۰-۲۰ (دادهٔ زندهٔ TSETMC + مرجع
+    رهاورد) نشان می‌دهد گسستِ پایه همیشه اقدامِ شرکتی نیست:
+
+    ۱) **اختیار و اوراق**: مرجع رهاورد در ۱٬۰۲۷ ابزارِ اختیار و ۵۲۸ ابزارِ اوراقِ
+       سنجیده‌شده **صفر** گامِ تعدیل دارد. گسستِ پایه در این ابزارها قیمتِ پایهٔ اداری
+       است، نه اقدامِ شرکتی. نشانهٔ نام با تطبیقِ ۱۰۰٪ رویِ همان ۱٬۵۵۵ ابزار سنجیده
+       شد: «اختيار/اختیار» → اختیار، و نامِ اوراقِ رسمی (مرابحه/اسناد/مشارکت/اوراق/
+       اجاره/صکوک/سلف موازی/اخزا/گام.../گواهی اعتبار) → اوراق. نمونه: اراد۲۰۱
+       ۲۰۲۶-۰۴-۰۵ با ratio=0.984222 و صفر گام در مرجع.
+    ۲) **گسستِ مثبت (ratio > ۱) در بقیهٔ ابزارها**: قیمتِ پایه بالاتر از پایانیِ روزِ
+       پیش نشسته است. تجزیه/تجمیعِ واقعی ردیفِ `share_change_events` دارد و منبعش
+       `shareChange` می‌شود. گسستِ مثبتِ بی‌ردیف (نمونه: شپارس ۲۰۲۰-۰۵-۲۶ با
+       ratio=1.01761 و اعتماد ۲۰۲۴-۰۴-۲۴ با 1.001051) در مرجع هیچ گامی ندارد.
+    ۳) توزیعِ واقعیِ صندوق (ratio<۱) حذف **نمی‌شود**: ۶۲ گامِ تداوم و ۶۴۴ گامِ ۲۶
+       صندوقِ دیگر در مرجع همه کاهشی‌اند؛ فیلترِ مثبت‌محور آن‌ها را نگه می‌دارد.
+
+    ردشدن **خاموش نیست**: هر ردیف با `factor_status` در `adjustRejected` برمی‌گردد.
+    ردیف‌هایِ دفتر (`priceAdjust`/`shareChange`) هرگز فیلتر نمی‌شوند.
+    """
+    ev = [dict(e) for e in (events or [])]
+    if not ev:
+        return ev, []
+    name, paper_type = "", None
+    ins_code = None
+    anomaly_dates = set()
+    official_dates = set()
+    try:
+        conn = sqlite3.connect(DB_PATH, timeout=15)
+        try:
+            _pred, _params = sym_pred(conn, "l_val18", symbol, "board")
+            row = conn.execute(
+                f"SELECT ins_code, l_val30, paper_type FROM instruments WHERE {_pred}"
+                " ORDER BY updated_at DESC LIMIT 1", _params).fetchone()
+            if row:
+                ins_code = str(row[0])
+                name = str(row[1] or "").replace("\u200c", " ")
+                paper_type = row[2]
+            if ins_code:
+                try:
+                    for (d,) in conn.execute(
+                            "SELECT d_even FROM price_adjust_events WHERE ins_code=? "
+                            "UNION SELECT d_even FROM share_change_events WHERE ins_code=?",
+                            (ins_code, ins_code)):
+                        iso = _d_even_to_date(d)
+                        if iso:
+                            official_dates.add(iso)
+                except Exception:
+                    pass
+            try:
+                for d, cause in conn.execute(
+                        "SELECT d_even, cause FROM session_anomalies"):
+                    if cause == "MARKET_WIDE_SESSION_DIFFERENCE":
+                        anomaly_dates.add(_d_even_to_date(d))
+            except Exception:
+                pass
+        finally:
+            conn.close()
+    except Exception:
+        pass
+    is_option = _is_option_name(name)
+    is_right = _is_right_name(name, paper_type)
+    is_bond = _is_bond_name(name)
+    is_fund = (paper_type == 8 or "صندوق" in name)
+    date_counts = {}
+    _dates = sorted(set(str(t)[:10] for t in (times or []) if t))
+
+    def _eff(d):
+        if not _dates:
+            return d
+        return next((x for x in _dates if x >= d), d)
+
+    for e in ev:
+        if (e.get("source") or "base-price-discontinuity") != "base-price-discontinuity":
+            continue
+        ed = str(e.get("date"))[:10]
+        key = _eff(ed)
+        date_counts[key] = date_counts.get(key, 0) + 1
+    big_dates = []
+    for e in ev:
+        if (e.get("source") or "base-price-discontinuity") != "base-price-discontinuity":
+            continue
+        try:
+            er = float(e.get("ratio") or 0)
+        except (TypeError, ValueError):
+            continue
+        if 0 < er < 0.985:
+            big_dates.append(str(e.get("date"))[:10])
+    kept, rejected = [], []
+    for e in ev:
+        try:
+            r = float(e.get("ratio") or 0)
+        except Exception:
+            kept.append(e)
+            continue
+        # هر دو مسیرِ فراخوان پیش از این تابع sharpening را اجرا می‌کنند؛ منبعِ تهی
+        # یعنی «ردیفِ دفتر این رویداد را تأیید نکرد» = همان گسستِ پایه.
+        src = e.get("source") or "base-price-discontinuity"
+        ed = str(e.get("date"))[:10]
+        status = None
+        if src == "base-price-discontinuity":
+            if ed in anomaly_dates:
+                # گسستِ بازار-گسترده در همان سشن، نه اقدام شرکتی؛ شاهدش جدولِ
+                # cross-sectional است، نه یک تاریخِ نوشته‌شده در کد.
+                status = "session-wide-base-gap"
+            elif is_option:
+                status = "option-base-gap"
+            elif is_bond:
+                status = "bond-base-gap"
+            elif is_right:
+                status = "right-base-gap"
+            elif r > 1.0:
+                status = "unproven-positive-base-gap"
+            elif (not is_fund and 0.985 < r < 1.0
+                  and date_counts.get(_eff(ed), 0) == 1
+                  and not any(_day_diff(ed, bd) is not None and _day_diff(ed, bd) <= 3
+                              for bd in big_dates)
+                  and not any(_day_diff(ed, od) is not None and _day_diff(ed, od) <= 30
+                              for od in official_dates)):
+                # An isolated <1.5% downward base gap with no official row within
+                # 30 days is quote noise, not a distribution: keeping it scales
+                # the whole history before that date and the live reference has no
+                # step there.  A small gap that belongs to a same-date combined
+                # event (e.g. a 0.996 component next to a 0.077 capital change)
+                # is kept by the date-count gate.
+                status = "unproven-small-base-gap"
+        if status:
+            rejected.append({"date": e.get("date"), "ratio": e.get("ratio"),
+                             "factor_status": status})
+        else:
+            kept.append(e)
+    return kept, rejected
+
+
 def _day_diff(a, b):
     """|تاریخ a − تاریخ b| به روز؛ بی‌اعتبار → None (بی‌حدسِ فاصله)."""
     try:
@@ -613,7 +827,14 @@ def _engine_events(events):
         if not d:
             continue
         ev = dict(e)
-        ev.update({"kind": AE.KIND_SOURCE_RATIO, "date": d})
+        # رویدادِ نوع‌دارِ کامل (مثلِ توزیعِ رسمیِ صندوق با reference_price و
+        # dividend_per_share) همین‌طور به موتور می‌رود تا خودش نسبت را بسازد و
+        # اعتبار بزند. رویدادِ کشف‌شده از گسستِ CSV نسبتش را از قبل دارد و
+        # برچسبِ source_ratio می‌گیرد.
+        if ev.get("kind") not in AE.KNOWN_KINDS or ev.get("kind") == AE.KIND_SOURCE_RATIO:
+            ev.update({"kind": AE.KIND_SOURCE_RATIO, "date": d})
+        else:
+            ev["date"] = d
         ratio, status = AE.event_factor(ev)
         if status == AE.OK and ratio is not None:
             applied.append(e)
@@ -721,16 +942,42 @@ def _ledger_coverage(symbol, times, applied):
             pass
 
 
-def _functional_state(chain, coverage):
-    """(available, blockers) — تعدیلِ عملکردی فقط وقتی همهٔ الزاماتِ واقعی برقرارند.
+_NO_EVENT_KINDS = ("option", "bond", "future", "right")
 
-    هیچ ادعایِ کلی درِ این قاعده نیست: هر مانع با عددِ همان نماد اعلام می‌شود، و اگر
-    روزی دفترِ رسمی کامل شد (نوعِ هر رویدادِ اعمال‌شده از مبدأ، بی‌ردیفِ بی‌همتا، بی‌کرانِ
-    خردشدۀِ flow، و پوششِ تا نخستین کندل) همین‌جا `True` می‌شود. بی‌`chain` یا
-    بی‌`coverage` یعنی سنجش انجام نشده — و «سنجش‌نشده» هرگز «موجود» خوانده نمی‌شود.
+
+def _candles_stale(candles, days=7):
+    """آیا آخرین کندل از امروز قدیمی‌تر از `days` است؟ بی‌تاریخ/خطا → False."""
+    try:
+        last = datetime.date.fromisoformat(
+            max(str(c["time"])[:10] for c in candles))
+        return (datetime.date.today() - last).days > days
+    except Exception:
+        return False
+
+
+def _functional_state(chain, coverage, *, kind=None, source=None, times=None, stale=False):
+    """(available, blockers, status, availability) — تعدیل عملکردی با وضعیت صریح.
+
+    `available` فقط برای `AVAILABLE`/`AVAILABLE_NO_EVENTS` True است. `status` دلیلِ
+    قابل‌ممیزی می‌دهد و `availability` پوششِ بازهٔ درخواستی را از پوشش کل تاریخچه
+    جدا می‌کند (`window_available`).
+
+    قراردادهای نوع‌محور (با شاهدِ ۱۰۰٪ روی فهرست‌های خود رهاورد سنجیده شد):
+      * option/future: اقدام شرکتی ندارند ⇒ raw = functional.
+      * bond: سری عملکردی رهاورد برای ۵۲۸ ابزار صفر گام دارد ⇒ قرارداد price-only.
+      * right: ۴ ابزار warrants صفر گام ⇒ همان قرارداد.
+    برای stock/fund نبودِ ردیف رسمی به‌تنهایی «بی‌رویداد» اثبات نمی‌شود؛ SOURCE_GAP.
     """
+    times10 = sorted(str(t)[:10] for t in (times or []))
+    first = times10[0] if times10 else None
+    last = times10[-1] if times10 else None
     if chain is None or coverage is None:
-        return False, ["unmeasured:زنجیره یا پوششِ این نماد سنجیده نشده است"]
+        av = {"status": "UNMEASURED", "source": source, "requested_start": first,
+              "requested_end": last, "covered_start": None, "covered_end": None,
+              "window_start": first, "window_end": last, "valid_points": 0,
+              "incomplete_points": len(times10), "window_available": False,
+              "stale": bool(stale), "kind": kind}
+        return False, ["unmeasured:زنجیره یا پوششِ این نماد سنجیده نشده است"], "UNMEASURED", av
     reasons = []
     if not coverage.get("available"):
         reasons.append("ledger-unavailable:" + (coverage.get("error") or "no-rows"))
@@ -754,22 +1001,983 @@ def _functional_state(chain, coverage):
     pc = coverage.get("pre_coverage_candles")
     if pc:
         reasons.append(f"candles-before-ledger-coverage:{pc}")
-    return (not reasons), reasons
+
+    no_event = kind in _NO_EVENT_KINDS
+    pre_only = bool(reasons) and all(r.startswith("candles-before-ledger-coverage")
+                                     for r in reasons)
+    # For no-event instruments, absence of official rows is expected: the contract is
+    # price-only. Any other blocker (unresolved/duplicate/truncated/chain) still fails.
+    no_event_ok = no_event and all(
+        r.startswith(("no-official-rows-for-instrument",
+                      "candles-before-ledger-coverage")) for r in reasons)
+    if stale:
+        status = "STALE"
+    elif not coverage.get("available"):
+        status = ("FAILED" if coverage.get("error") in ("db-unopenable", "instrument-unresolved")
+                  else "SOURCE_GAP")
+    elif no_event_ok:
+        status = "AVAILABLE_NO_EVENTS"
+    elif not reasons:
+        status = "AVAILABLE"
+    elif pre_only:
+        status = "PARTIAL"
+    elif any(r.startswith("no-official-rows") for r in reasons):
+        status = "SOURCE_GAP"
+    else:
+        status = "UNVERIFIED"
+    available = status in ("AVAILABLE", "AVAILABLE_NO_EVENTS")
+    cov_start = coverage.get("coverage_start")
+    cov_end = coverage.get("coverage_end")
+    if no_event:
+        win_start, win_avail = first, True
+    elif cov_start and first and cov_start > first:
+        win_start = cov_start
+        win_avail = not any(not r.startswith("candles-before-ledger-coverage")
+                            for r in reasons)
+    else:
+        win_start, win_avail = first, available
+    valid = sum(1 for t in times10 if win_start is None or t >= win_start) if times10 else 0
+    availability = {
+        "status": status,
+        "source": source,
+        "requested_start": first,
+        "requested_end": last,
+        "covered_start": cov_start,
+        "covered_end": cov_end,
+        "window_start": win_start,
+        "window_end": last,
+        "valid_points": valid,
+        "incomplete_points": max(0, len(times10) - valid),
+        "window_available": bool(win_avail and not stale),
+        "stale": bool(stale),
+        "kind": kind,
+    }
+    return available, reasons, status, availability
 
 
-def _canonical_adjustment(symbol, times, events):
+def _session_backfill(symbol):
+    """ردیف‌هایِ رسمیِ تک‌جلسه‌ای که CSV جا انداخته بود؛ بی‌جدول/بی‌ردیف → []."""
+    try:
+        conn = sqlite3.connect(DB_PATH, timeout=15)
+        try:
+            conn.execute("PRAGMA query_only=ON")
+            _pred, _params = sym_pred(conn, "l_val18", symbol, "board")
+            row = conn.execute(
+                f"SELECT ins_code FROM instruments WHERE {_pred}"
+                " ORDER BY updated_at DESC LIMIT 1", _params).fetchone()
+            if not row:
+                return []
+            rows = conn.execute(
+                "SELECT d_even, open, high, low, close, last, base, volume"
+                " FROM session_backfill WHERE ins_code=? ORDER BY d_even",
+                (str(row[0]),)).fetchall()
+        finally:
+            conn.close()
+    except Exception:
+        return []
+    out = []
+    for d, o, h, l, c, last, base, vol in rows:
+        dt = _d_even_to_date(d)
+        if not dt:
+            continue
+        out.append({"time": dt, "open": o, "high": h, "low": l, "close": c,
+                    "last": last, "base": base, "volume": vol})
+    return out
+
+
+def _merge_session_backfill(candles, volumes, all_rows, rows, descending):
+    """ردیفِ رسمیِ گم‌شده را به سری اضافه می‌کند، بی‌ساختنِ کندلِ جعلی.
+
+    روزِ اداریِ بی‌معامله (H=L=0) فقط به `all_rows` می‌رود تا زنجیرهٔ پایه/پایانی
+    درست بماند؛ کندل برایش ساخته نمی‌شود (قراردادِ no-trade).
+    """
+    if not rows:
+        return candles, volumes, all_rows
+    have = {str(c["time"])[:10] for c in candles}
+    lo = min(have) if have else None
+    hi = max(have) if have else None
+    added_c, added_v = [], []
+    for r in rows:
+        t = r["time"]
+        if t in have or (lo and not (lo <= t <= hi)):
+            continue
+        if r.get("base") and r.get("close"):
+            all_rows.append({"time": t, "base": float(r["base"]),
+                             "close": float(r["close"]),
+                             "vol": float(r.get("volume") or 0)})
+        h, l, c = float(r.get("high") or 0), float(r.get("low") or 0), float(r.get("close") or 0)
+        if h <= 0 or l <= 0 or c <= 0:
+            continue
+        o = float(r.get("open") or 0)
+        base = float(r.get("base") or 0)
+        if o <= 0:
+            o = min(max(base, l), h) if base > 0 else c
+        last = float(r.get("last") or 0) or c
+        added_c.append({"time": t, "open": o, "high": h, "low": l, "close": c,
+                        "last": last})
+        added_v.append({"time": t, "value": float(r.get("volume") or 0)})
+    if added_c:
+        candles.extend(added_c)
+        volumes.extend(added_v)
+        key = lambda x: str(x["time"])[:10]
+        candles.sort(key=key, reverse=descending)
+        volumes.sort(key=key, reverse=descending)
+    return candles, volumes, all_rows
+
+
+def _closing_prices_for(symbol, dates):
+    """{date: close(پایانی)} از `price_history` برای همان نماد (و نام‌های معادل)."""
+    dates = [str(d)[:10] for d in (dates or []) if d]
+    if not dates:
+        return {}
+    out = {}
+    try:
+        conn = sqlite3.connect(DB_PATH, timeout=10)
+        try:
+            conn.execute("PRAGMA query_only=ON")
+            _pred, _params = sym_pred(conn, "l_val18", symbol, "board")
+            row = conn.execute(
+                f"SELECT l_val18, l_val30 FROM instruments WHERE {_pred}"
+                " ORDER BY updated_at DESC LIMIT 1", _params).fetchone()
+            names = [n for n in (row or []) if n] or [symbol]
+            qn = ",".join("?" * len(names))
+            qd = ",".join("?" * len(dates))
+            for _nm, dt, cl in conn.execute(
+                    f"SELECT symbol, date, close FROM price_history"
+                    f" WHERE symbol IN ({qn}) AND date IN ({qd})",
+                    tuple(names) + tuple(dates)):
+                if cl:
+                    out[str(dt)[:10]] = float(cl)
+        finally:
+            conn.close()
+    except Exception:
+        return {}
+    return out
+
+
+def _classify_pa_event(pa_ratio, dps, closing, orig, share_changes):
+    """(ratio, is_dps, event_type) for one official priceAdjust row.
+
+    A row with an official share change within 10 days is a capital (or a
+    combined DPS+capital) event; its official PA ratio is the total price
+    adjustment and must NOT be turned into a cash-dividend ratio.  A row
+    without a share change keeps the proven DPS formula.
+
+    The DPS base is the **effective candle's closing** (پایانی).  The DB
+    price_history close is only a fallback: for many pre-2024 symbols the
+    local history is shorter than the chart payload, and the missing close
+    used to turn the official source ratio into a `dps-unverified` event.
+    """
+    best = None
+    for sd, sr in (share_changes or []):
+        dd = _day_diff(sd, orig)
+        if dd is not None and dd <= 10 and (best is None or dd < best[0]):
+            best = (dd, sr)
+    dps_ratio = (round(float(closing) / (float(closing) + float(dps)), 10)
+                 if dps and closing and float(closing) > 0 else None)
+    if best:
+        sr = float(best[1])
+        cap_err = abs(float(pa_ratio) / sr - 1.0)
+        comb_err = (abs(float(pa_ratio) / (sr * dps_ratio) - 1.0)
+                    if dps_ratio else 9.0)
+        # Pick the better explanation: share-only or share x DPS.
+        if comb_err < cap_err and comb_err <= 0.02:
+            return float(pa_ratio), False, "combined"
+        if cap_err <= 0.02:
+            return float(pa_ratio), False, "capital"
+        # The share change is a separate event; this PA row is a DPS.
+    if dps:
+        if dps_ratio is not None:
+            return dps_ratio, True, "dps"
+        # No closing available: keep the row typed as a DPS with the official
+        # PA ratio and its amount, so it is deduplicated by identity, not by a
+        # coincidental ratio.
+        return float(pa_ratio), True, "dps-unverified"
+    return float(pa_ratio), False, "unverified"
+
+
+def _official_price_adjust_events(symbol, times=None, share_changes=None, closings=None):
+    """ردیف‌های رسمیِ priceAdjust که کشفِ گسستِ CSV ممکن است ندیده باشد.
+
+    تاریخِ ردیفِ مبدأ ممکن است روزِ بی‌معامله باشد؛ رویداد روی اولین کندلِ
+    هم‌روز یا پس از آن می‌نشیند، وگرنه گامِ مثبتِ جعلی ساخته می‌شود.
+
+    ردیفِ دارایِ تغییرِ سهامِ رسمی یک رویدادِ سرمایه است (یا ترکیبی) و نسبتِ
+    رسمیِ خودش (`pClosing/pClosingNotAdjusted`) را نگه می‌دارد؛ ردیفِ بدونِ
+    تغییرِ سهام با فرمولِ اثبات‌شدهٔ DPS محاسبه می‌شود:
+    `close_ex / (close_ex + dps)`.
+    """
+    try:
+        conn = sqlite3.connect(DB_PATH, timeout=15)
+        try:
+            conn.execute("PRAGMA query_only=ON")
+            _pred, _params = sym_pred(conn, "l_val18", symbol, "board")
+            row = conn.execute(
+                f"SELECT ins_code FROM instruments WHERE {_pred}"
+                " ORDER BY updated_at DESC LIMIT 1", _params).fetchone()
+            if not row:
+                return []
+            has_rows = conn.execute(
+                "SELECT 1 FROM sqlite_master WHERE type='table' "
+                "AND name='price_adjust_event_rows'").fetchone()
+            if has_rows:
+                raw = conn.execute(
+                    "SELECT d_even, ratio, source, p_closing, p_closing_not_adjusted"
+                    " FROM price_adjust_event_rows WHERE ins_code=?"
+                    " ORDER BY d_even, p_closing", (str(row[0]),)).fetchall()
+                groups = {}
+                for d, ratio, src, pcl, pna in raw:
+                    groups.setdefault(d, []).append((ratio, src, pcl, pna))
+                rows = []
+                for d, g in groups.items():
+                    if len(g) == 1:
+                        ratio, src, pcl, pna = g[0]
+                        rows.append((d, ratio, src, pcl, pna, False))
+                    else:
+                        prod = 1.0
+                        for ratio, src, pcl, pna in g:
+                            try:
+                                prod *= float(ratio)
+                            except (TypeError, ValueError):
+                                pass
+                        last = g[-1]
+                        rows.append((d, round(prod, 10), last[1], last[2], last[3], True))
+            else:
+                raw = conn.execute(
+                    "SELECT d_even, ratio, source, p_closing, p_closing_not_adjusted,"
+                    " corporate_type_code FROM price_adjust_events WHERE ins_code=?"
+                    " ORDER BY d_even", (str(row[0]),)).fetchall()
+                rows = [(d, ratio, src, pcl, pna, ctype == -1)
+                        for d, ratio, src, pcl, pna, ctype in raw]
+        finally:
+            conn.close()
+    except Exception:
+        return []
+    if share_changes is None:
+        share_changes = _share_change_events(symbol)
+    candle_dates = sorted(str(t)[:10] for t in (times or []))
+    staged = []
+    for d, ratio, src, pcl, pna, combined in rows:
+        dt = _d_even_to_date(d)
+        try:
+            r = float(ratio)
+        except Exception:
+            continue
+        if not dt or not (AE._RATIO_MIN <= r <= AE._RATIO_MAX) or abs(r - 1.0) < 1e-7:
+            continue
+        orig = dt
+        if candle_dates:
+            nxt = next((t for t in candle_dates if t >= dt), None)
+            if not nxt:
+                continue
+            dt = nxt
+        dps = None
+        if not combined:
+            try:
+                if pcl is not None and pna is not None and float(pna) > float(pcl) > 0:
+                    dps = float(pna) - float(pcl)
+            except Exception:
+                dps = None
+        staged.append({"date": dt, "ratio": r, "source": src or "priceAdjust",
+                       "orig": orig, "dps": dps, "source_ratio": r,
+                       "combined": bool(combined)})
+    closes = _closing_prices_for(symbol, [e["date"] for e in staged])
+    candle_closes = closings or {}
+    out = []
+    for e in staged:
+        if e.get("combined"):
+            r, is_dps, etype = float(e["ratio"]), False, "combined"
+        else:
+            dps = e["dps"]
+            cl = candle_closes.get(e["date"])
+            if cl is None:
+                cl = closes.get(e["date"])
+            r, is_dps, etype = _classify_pa_event(
+                e["ratio"], dps, cl, e["orig"], share_changes)
+        rec = {"date": e["date"], "ratio": r, "source": e["source"],
+               "_ledger_key": (e["orig"], "priceAdjust"),
+               "_source_ratio": e["source_ratio"]}
+        if is_dps:
+            rec["_dps"] = True
+            rec["dividend_per_share"] = float(dps)
+        else:
+            rec["_event_type"] = etype
+        out.append(rec)
+    return out
+
+
+def _filter_share_changes(rows):
+    """Remove only evidence-backed reverse/restated share rows.
+
+    A ratio > 1 is a reverse record only when an inverse ratio (r1*r2 ~= 1)
+    exists within 180 days.  A repeated ratio < 1 is a restatement only when
+    such an inverse row exists around it.  Unproven rows are kept (and can be
+    flagged by the audit), never dropped merely because r > 1 or a ratio
+    repeats.
+    """
+    all_rows = []
+    for d, r in rows:
+        try:
+            r = float(r)
+        except Exception:
+            continue
+        if r > 0:
+            all_rows.append((str(d)[:10], r))
+    all_rows.sort()
+
+    def _has_inverse(d, r, window=180):
+        for d2, r2 in all_rows:
+            if abs(r2 * r - 1.0) <= 1e-4:
+                dd = _day_diff(d, d2)
+                if dd is not None and dd <= window:
+                    return True
+        return False
+
+    clean = []
+    for d, r in all_rows:
+        if r > 1:
+            # Keep the decrease unless an official inverse record proves that
+            # this row is the reverse side of a capital increase.
+            if not _has_inverse(d, r):
+                clean.append((d, r))
+            continue
+        dup = False
+        for kd, kr in clean:
+            if kr >= 1:
+                continue
+            if abs(kr / r - 1.0) <= 1e-6:
+                dd = _day_diff(d, kd)
+                if dd is not None and dd <= 180 and _has_inverse(d, r):
+                    dup = True
+                    break
+        if not dup:
+            clean.append((d, r))
+    return sorted(clean)
+
+
+def _share_change_events(symbol):
+    """(date, ratio) از دفترِ رسمیِ تغییرِ تعدادِ سهام؛ فقط برایِ تفکیکِ رویداد.
+
+    گسستِ پایهٔ نزدیک به DPS می‌تواند همان سود باشد (حذف) یا رویدادِ مستقلی که
+    در همان پنجره افتاده (نگه‌داشتن). نسبتِ رسمیِ تغییرِ سهام مرجعِ این تفکیک است.
+    """
+    try:
+        conn = sqlite3.connect(DB_PATH, timeout=15)
+        try:
+            conn.execute("PRAGMA query_only=ON")
+            _pred, _params = sym_pred(conn, "l_val18", symbol, "board")
+            row = conn.execute(
+                f"SELECT ins_code FROM instruments WHERE {_pred}"
+                " ORDER BY updated_at DESC LIMIT 1", _params).fetchone()
+            if not row:
+                return []
+            rows = conn.execute(
+                "SELECT d_even, ratio FROM share_change_events WHERE ins_code=?"
+                " ORDER BY d_even", (str(row[0]),)).fetchall()
+        finally:
+            conn.close()
+    except Exception:
+        return []
+    out = []
+    for d, r in rows:
+        dt = _d_even_to_date(d)
+        try:
+            f = float(r)
+        except Exception:
+            continue
+        if dt and abs(f - 1.0) > 1e-9:
+            out.append((dt, f))
+    return _filter_share_changes(out)
+
+
+# گسستِ پایهٔ تقریبی و نسبتِ رسمیِ سهام وقتی یک اقدام‌اند: افزایشِ سرمایهٔ
+# بدونِ آوردهٔ نقدی دقیقاً `old_shares/new_shares` تعدیل می‌کند و فاصلهٔ گسست
+# از عددِ رسمی فقط خطایِ کشف است. اگر آوردهٔ نقدی باشد، تعدیل از این نسبت
+# بزرگ‌تر می‌شود (ارزشِ پرداختی)؛ پس فاصلهٔ بیش از نیم‌درصد یعنی «همان اقدام
+# نیست» و گسست دست‌نخورده می‌ماند. **گیتِ نوع:** این تیزکردن فقط برای
+# ردیف‌هایی اجرا می‌شود که شاهدِ رسمیِ «بدونِ آوردهٔ نقدی» دارند
+# (`share_type_evidence`)؛ بی‌جدول/بی‌ردیف هیچ گسستی عوض نمی‌شود.
+# سنجشِ Round 12: قاعدهٔ بی‌گیت +0.24 واحدِ درصد exact داد ولی رویدادهایِ
+# آورده‌ایِ کوچک (كايزد، دعبيد) را هم تیز کرد و پس‌رفتِ نمادین ساخت.
+_SHARE_GAP_TOL = 0.005
+# A sharpened base gap may carry the official PA ratio while the proven DPS
+# leg is close/(close+DPS).  The DPS formula is authoritative for a DPS row
+# (Round 16); only numerical noise leaves the sharpened ratio untouched.
+_DPS_OVERRIDE_TOL = 1e-6
+# The gap is discovered on the first trading candle after the event, so a
+# suspension/weekend can put it 6-9 days after the ledger share date.  The
+# window is widened only for rows that also have official no-cash evidence
+# within 2 days and a ratio within _SHARE_GAP_TOL; both gates stay mandatory.
+_SHARE_GAP_WINDOW_DAYS = 10
+
+
+def _share_type_evidence_dates(symbol):
+    """Dates of share rows with official no-cash evidence; None if no table."""
+    try:
+        conn = sqlite3.connect(DB_PATH, timeout=15)
+    except Exception:
+        return None
+    try:
+        conn.execute("PRAGMA query_only=ON")
+        has = conn.execute("SELECT 1 FROM sqlite_master WHERE type='table'"
+                           " AND name='share_type_evidence'").fetchone()
+        if not has:
+            return None
+        _pred, _params = sym_pred(conn, "l_val18", symbol, "board")
+        row = conn.execute(
+            f"SELECT ins_code FROM instruments WHERE {_pred}"
+            " ORDER BY updated_at DESC LIMIT 1", _params).fetchone()
+        if not row:
+            return set()
+        out = set()
+        for (d,) in conn.execute(
+                "SELECT d_even FROM share_type_evidence WHERE ins_code=?"
+                " AND no_cash=1", (str(row[0]),)):
+            dt = _d_even_to_date(d)
+            if dt:
+                out.add(dt)
+        return out
+    except Exception:
+        return None
+    finally:
+        try:
+            conn.close()
+        except Exception:
+            pass
+
+
+def _sharpen_share_gaps(events, official, share_changes, evidence_dates=None):
+    """Base gap ratio ← official share ratio, only for evidence-gated rows."""
+    out = [dict(e) for e in (events or [])]
+    if not evidence_dates:
+        return out
+    official_dates = [str(o.get("date"))[:10] for o in (official or [])
+                      if o.get("date")]
+    claims = {}
+    for i, e in enumerate(out):
+        if e.get("source") != "base-price-discontinuity":
+            continue
+        try:
+            gr = float(e.get("ratio") or 0)
+        except Exception:
+            continue
+        if gr <= 0:
+            continue
+        ed = str(e.get("date") or "")[:10]
+        if not ed:
+            continue
+        covered = False
+        for od in official_dates:
+            dd = _day_diff(od, ed)
+            if dd is not None and dd <= 10:
+                covered = True
+                break
+        if covered:
+            continue
+        best = None
+        for sd, sr in (share_changes or []):
+            dd = _day_diff(sd, ed)
+            if dd is None or dd > _SHARE_GAP_WINDOW_DAYS:
+                continue
+            matched_evidence = False
+            for evd in evidence_dates:
+                dde = _day_diff(sd, evd)
+                if dde is not None and dde <= 2:
+                    matched_evidence = True
+                    break
+            if not matched_evidence:
+                continue
+            try:
+                sr = float(sr)
+            except Exception:
+                continue
+            if sr <= 0 or abs(sr / gr - 1.0) > _SHARE_GAP_TOL:
+                continue
+            if best is None or dd < best[0]:
+                best = (dd, str(sd)[:10], sr)
+        if best:
+            claims[i] = best
+    owners = {}
+    for i, (_dd, sd, _sr) in claims.items():
+        owners.setdefault(sd, []).append(i)
+    for i, (_dd, sd, sr) in claims.items():
+        if len(owners[sd]) != 1:
+            continue
+        out[i]["ratio"] = round(sr, 10)
+        out[i]["source"] = "shareChange"
+        out[i]["_ledger_key"] = (sd, "shareChange")
+    return out
+
+
+def _apply_long_gap_share_changes(events, share_changes, times, closings):
+    """Add an official share row that a long suspension hid from the gap detector.
+
+    The CSV gap detector only sees consecutive candles; when a capital change
+    falls inside a multi-week no-trade gap, the first post-gap candle is too far
+    from the ledger date for `_sharpen_share_gaps` (10-day window), and no
+    price-adjust row exists for it.  The row is added only when three witnesses
+    agree: the existing step at the first post-gap candle is shallower than the
+    official share ratio, the raw close dropped at least as much as the ratio,
+    and no event for that date already carries the share ratio.
+    """
+    if not closings or not share_changes or not times:
+        return events
+    out = [dict(e) for e in (events or [])]
+    ts = sorted(set(str(t)[:10] for t in times if t))
+    owned = set()
+    for e in out:
+        k = e.get("_ledger_key")
+        if isinstance(k, tuple) and len(k) == 2 and k[1] == "shareChange":
+            owned.add(k[0])
+    for sd, sr in share_changes or []:
+        try:
+            sr = float(sr)
+        except (TypeError, ValueError):
+            continue
+        if not (0 < sr < 1) or sd in owned:
+            continue
+        nxt = next(((i, t) for i, t in enumerate(ts) if t >= sd), None)
+        if not nxt:
+            continue
+        idx, first = nxt
+        if idx == 0:
+            continue
+        prev = ts[idx - 1]
+        # The detector only sees consecutive candles, so the hidden gap is the
+        # whole no-trade interval prev..first.  The ledger share date may sit
+        # just a few days after prev (e.g. Mellat 2020-07-26, previous candle
+        # 2020-07-19, reopening 2020-09-12); measuring prev..share_date would
+        # miss it even though the suspension is 55 days long.
+        gap = _day_diff(prev, first)
+        if gap is None or gap <= _SHARE_GAP_WINDOW_DAYS:
+            continue
+        same = [e for e in out if str(e.get("date"))[:10] == first]
+        step = 1.0
+        covered = False
+        for e in same:
+            try:
+                er = float(e.get("ratio") or 1.0)
+            except (TypeError, ValueError):
+                er = 1.0
+            if er > 0:
+                step /= er
+            k = e.get("_ledger_key")
+            if (isinstance(k, tuple) and k[0] == sd) or abs(er / sr - 1.0) <= _SHARE_GAP_TOL:
+                covered = True
+        if covered or (step and (1.0 / step) <= sr * (1.0 + _SHARE_GAP_TOL)):
+            continue
+        c0, c1 = closings.get(prev), closings.get(first)
+        if not c0 or not c1:
+            continue
+        if c1 / c0 > sr * (1.0 + _SHARE_GAP_TOL):
+            continue
+        out.append({"date": first, "ratio": round(sr, 10), "source": "shareChange",
+                    "_ledger_key": (sd, "shareChange"), "long_gap": True})
+    return out
+
+
+def _merge_official_price_adjust(events, official, rejected=None, share_changes=None):
+    """رویداد رسمی را فقط وقتی اضافه می‌کند که کاشفِ CSV همان را ندیده باشد.
+
+    هویتِ ردیف دفتری (`_ledger_key`) مهم است: یک ردیف می‌تواند در CSV به‌صورت
+    گسستِ پایه دیده شود و هم در `_official_price_adjust_events` به اولین کندلِ
+    بعدی نگاشت شود. اگر تاریخِ مؤثرِ این دو یکی نباشد (تعطیلی/توقفِ طولانی)،
+    مقایسهٔ تاریخِ خام آن‌ها را «دو رویداد» می‌بیند و ضریب دوبار اعمال می‌شود.
+
+    اگر `rejected` داده شود، ردیف‌های تکراری برایِ گزارش به همان لیست اضافه
+    می‌شوند؛ امضای بازگشتی برایِ مصرف‌کننده‌هایِ قبلی همان لیستِ مرتب است.
+    """
+    kept = [dict(e) for e in (events or [])]
+    claimed = {e.get("_ledger_key") for e in kept if e.get("_ledger_key")}
+    # یک ردیفِ سود نقدیِ رسمی جایِ گسستِ پایهٔ همان اقدام را می‌گیرد، **به شرطِ
+    # هم‌خوانیِ نسبت**: گسستِ پایه تقریبی است و ممکن است چند درصد با نسبتِ رسمی
+    # فاصله داشته باشد؛ اما گسستِ پایه می‌تواند رویدادِ مستقلی هم باشد که در
+    # همان پنجره افتاده (نمونهٔ سنجش‌شده: بورس 2026-07-22 هم DPS=55 دارد و هم
+    # افزایشِ سرمایهٔ اندوخته 24T→32T با نسبت 0.750923). حذفِ بی‌قیدِ گسست، آن
+    # افزایشِ سرمایه را می‌بلعد و ضریب را ۲۵٪ خراب می‌کند.
+    def _source_ratio(o):
+        try:
+            r = float(o.get("_source_ratio") or 0)
+        except (TypeError, ValueError):
+            return None
+        return r if r > 0 else None
+
+    dps_ratios = [(i, str(o.get("date"))[:10], float(o["ratio"]), _source_ratio(o))
+                  for i, o in enumerate(official) if o.get("_dps") and o.get("ratio")]
+    share_changes = list(share_changes or [])
+    # An observed base gap on the same effective date as an official DPS row,
+    # with a share change nearby, is the price leg of that action.  The
+    # separately recomputed DPS must not be applied again; the gap keeps the
+    # pre-share leg.  Share-only gaps (بورس: gap≈share) keep the separate DPS.
+    observed_gap_skip = set()
+    for i, o in enumerate(official):
+        if not (o.get("_dps") and o.get("ratio")):
+            continue
+        od = str(o.get("date"))[:10]
+        for e in kept:
+            if e.get("source") != "base-price-discontinuity":
+                continue
+            if str(e.get("date"))[:10] != od:
+                continue
+            try:
+                gr = float(e.get("ratio") or 0)
+            except (TypeError, ValueError):
+                continue
+            if gr <= 0:
+                continue
+            cc = None
+            for sd, sr in share_changes:
+                dd = _day_diff(sd, od)
+                if dd is not None and dd <= 5 and (cc is None or dd < cc[0]):
+                    cc = (dd, float(sr))
+            if not cc or cc[1] <= 0:
+                continue
+            sr = cc[1]
+            if abs(sr / gr - 1.0) <= _SAME_ACTION_TOL:
+                continue  # share-only gap: the DPS is a separate action
+            # Is the share change actually present in the applied chain?
+            share_applied = False
+            for k in kept:
+                try:
+                    kr = float(k.get("ratio") or 0)
+                except (TypeError, ValueError):
+                    continue
+                if kr <= 0:
+                    continue
+                if (k.get("source") == "shareChange" or
+                        k.get("source") == "base-price-discontinuity") and \
+                        abs(kr / sr - 1.0) <= 0.05:
+                    share_applied = True
+                    break
+            if share_applied:
+                observed_gap_skip.add(i)
+                break
+            source = _source_ratio(o)
+            if source and abs(gr / source - 1.0) <= _LEDGER_AGREE_TOL:
+                # The gap is the official pre-event ratio; the existing
+                # source-ratio dedupe keeps the recomputed DPS (ديران).
+                continue
+            # The gap is not the share and not the official source: it is the
+            # observed total, so the separate DPS must not be applied again
+            # (ولبهمن).
+            observed_gap_skip.add(i)
+            break
+    if observed_gap_skip:
+        dps_ratios = [x for x in dps_ratios if x[0] not in observed_gap_skip]
+    combined_skip = set()  # official DPS rows already contained in a base gap
+    if dps_ratios:
+        def _nearest_share(ed):
+            best = None
+            for sd, sr in share_changes:
+                dd = _day_diff(sd, ed)
+                if dd is not None and dd <= 7 and (best is None or dd < best[0]):
+                    best = (dd, sr)
+            return best[1] if best else None
+
+        def _drop_base(e):
+            try:
+                r = float(e.get("ratio") or 0)
+            except Exception:
+                return False
+            if not r:
+                return False
+            ed = str(e.get("date"))[:10]
+            near = []
+            for i, dd, dr, sr in dps_ratios:
+                diff = _day_diff(dd, ed)
+                if diff is not None and diff <= 5:
+                    near.append((i, dr, sr))
+            if not near:
+                return False
+            # Same action: the base gap is a rough copy of the DPS.
+            if any(abs(r / dr - 1.0) <= _DPS_DUP_TOL for _i, dr, _sr in near):
+                return True
+            # The gap may carry the official pre-event PA ratio while the DPS
+            # leg is recomputed from the ex-date close; when the stock moved
+            # >2% that day the two ratios differ, but the ledger identity is
+            # the official source ratio (سخاش 2026-05-23: 0.82668187 source
+            # vs 0.85727699 DPS; reference type7 step is the DPS leg).
+            if any(sr and abs(r / sr - 1.0) <= _LEDGER_AGREE_TOL
+                   for _i, _dr, sr in near):
+                return True
+            cc = _nearest_share(ed)
+            if cc:
+                # The base gap may be CC-only (keep both) or the combined
+                # DPS*CC (keep the gap, suppress the separate DPS).  Choose
+                # the hypothesis closer to the official share ratio.
+                best = None
+                for i, dr, _sr in near:
+                    sep = abs(r / cc - 1.0)
+                    comb = abs(r / (cc * dr) - 1.0)
+                    if comb < sep and comb <= 0.02 and (best is None or comb < best[0]):
+                        best = (comb, i)
+                if best is not None:
+                    combined_skip.add(best[1])
+                    return False
+                return False  # CC-only: keep the gap and the DPS
+            # No share change: an unattributable gap in the DPS window is the
+            # same action with a worse approximation (Round 7 behaviour).
+            return True
+
+        kept = [e for e in kept if not (
+            e.get("source") == "base-price-discontinuity" and _drop_base(e))]
+    # A combined action (share × price leg) may already be present as one
+    # observed base gap.  When the gap equals share_ratio × the official
+    # pre-event PA ratio, applying the official row again double-counts it.
+    # Only a unique claim suppresses the row; two rows on one gap stay
+    # ambiguous and are both kept (same neutrality as ledger sharpening).
+    combined_base_claims = {}
+    for idx, o in enumerate(official):
+        if idx in observed_gap_skip:
+            continue
+        sr = _source_ratio(o)
+        if not sr:
+            continue
+        for sd, cc in share_changes:
+            dd = _day_diff(sd, str(o.get("date"))[:10])
+            if dd is None or dd > 7:
+                continue
+            try:
+                target = float(cc) * sr
+            except (TypeError, ValueError):
+                continue
+            if target <= 0:
+                continue
+            hits = []
+            for j, e in enumerate(kept):
+                if e.get("source") not in ("base-price-discontinuity", "priceAdjust"):
+                    continue
+                try:
+                    er = float(e.get("ratio") or 0)
+                except (TypeError, ValueError):
+                    continue
+                if er > 0 and abs(er / target - 1.0) <= _SHARE_GAP_TOL:
+                    hits.append(j)
+            if len(hits) == 1:
+                combined_base_claims.setdefault(hits[0], []).append(idx)
+    combined_base_skip = {v[0] for v in combined_base_claims.values()
+                          if len(v) == 1}
+    for idx, o in enumerate(official):
+        if idx in observed_gap_skip:
+            if rejected is not None:
+                rejected.append({"date": o.get("date"), "ratio": o.get("ratio"),
+                                 "factor_status": "included-in-observed-base-gap"})
+            continue
+        if idx in combined_base_skip:
+            if rejected is not None:
+                rejected.append({"date": o.get("date"), "ratio": o.get("ratio"),
+                                 "factor_status": "included-in-combined-base-gap"})
+            continue
+        if idx in combined_skip:
+            if rejected is not None:
+                rejected.append({"date": o.get("date"), "ratio": o.get("ratio"),
+                                 "factor_status": "included-in-base-gap"})
+            continue
+        if o.get("_ledger_key") and o["_ledger_key"] in claimed:
+            # The CSV sharpener may have claimed this ledger key with the
+            # official PA ratio, but a DPS row's authoritative ratio is the
+            # proven candle-closing formula (close/(close+DPS)); the official
+            # pClosing/pNotAdjusted ratio is only the pre-event source leg.
+            # Replace the sharpened ratio instead of rejecting the DPS.
+            if o.get("_dps"):
+                for e in kept:
+                    if e.get("_ledger_key") != o["_ledger_key"]:
+                        continue
+                    if e.get("source") not in ("priceAdjust", "tsetmc_price_adjust_by_flow"):
+                        continue
+                    try:
+                        er = float(e.get("ratio") or 0)
+                        orr = float(o.get("ratio") or 0)
+                    except (TypeError, ValueError):
+                        break
+                    if er and orr and abs(er / orr - 1.0) > _DPS_OVERRIDE_TOL:
+                        e["ratio"] = orr
+                        e["_dps"] = True
+                        e["dividend_per_share"] = o.get("dividend_per_share")
+                        e["_source_ratio"] = o.get("_source_ratio")
+                        e["source"] = o.get("source") or e.get("source")
+                    break
+            if rejected is not None:
+                rejected.append({"date": o.get("date"), "ratio": o.get("ratio"),
+                                 "factor_status": "duplicate-ledger-row"})
+            continue
+        d = str(o["date"])[:10]
+        dup_idx = None
+        for j, e in enumerate(kept):
+            ed = str(e.get("date") or "")[:10]
+            if not ed:
+                continue
+            dd = _day_diff(d, ed)
+            if dd is not None and dd <= 5:
+                try:
+                    er = float(e.get("ratio") or 0)
+                    same_amount = True
+                    ea, oa = e.get("dividend_per_share"), o.get("dividend_per_share")
+                    if ea is not None and oa is not None and float(oa) > 0:
+                        # Two valid DPS-like rows with materially different
+                        # amounts are distinct events, even if their price
+                        # ratios are within 2% (e.g., DPS 171 vs DPS 5).
+                        same_amount = abs(float(ea) / float(oa) - 1.0) <= 0.02
+                    ratio_match = abs(er / float(o["ratio"]) - 1.0) <= _SAME_ACTION_TOL
+                    source_match = False
+                    sr = _source_ratio(o)
+                    if o.get("_dps") and sr and \
+                            abs(er / sr - 1.0) <= _LEDGER_AGREE_TOL:
+                        source_match = True
+                        # A share change on the same effective date that
+                        # explains this ratio is a capital action, not this
+                        # DPS row; never swallow it.
+                        for sd, scr in share_changes:
+                            ds = _day_diff(sd, ed)
+                            if ds is not None and ds <= 5:
+                                try:
+                                    if abs(float(scr) / er - 1.0) <= _SAME_ACTION_TOL:
+                                        source_match = False
+                                        break
+                                except (TypeError, ValueError):
+                                    continue
+                    if er and same_amount and (ratio_match or source_match):
+                        dup_idx = j
+                        break
+                except Exception:
+                    pass
+        if dup_idx is not None:
+            e = kept[dup_idx]
+            if e.get("source") in ("base-price-discontinuity", "priceAdjust",
+                                   "tsetmc_price_adjust_by_flow"):
+                # Official data wins over an approximate gap or an old
+                # priceAdjust ratio; the recomputed row is authoritative.
+                kept.pop(dup_idx)
+            else:
+                if rejected is not None:
+                    rejected.append({"date": o.get("date"), "ratio": o.get("ratio"),
+                                     "factor_status": "duplicate-same-action"})
+                continue
+        kept.append(o)
+        if o.get("_ledger_key"):
+            claimed.add(o["_ledger_key"])
+    return sorted(kept, key=lambda e: str(e.get("date"))[:10])
+
+
+def _fund_profit_events(symbol):
+    """توزیع‌هایِ رسمیِ صندوق از `fund_profit_events`؛ بی‌جدول/بی‌ردیف → [].
+
+    مقدار و تاریخ از پورتالِ رسمیِ مدیرِ صندوق می‌آید. خودِ جدول را ingestِ
+    `tools/fund_profits_ingest.py` می‌سازد و پر می‌کند؛ مسیرِ چارت فقط می‌خواند.
+    """
+    try:
+        conn = sqlite3.connect(DB_PATH, timeout=15)
+        try:
+            conn.execute("PRAGMA query_only=ON")
+            _pred, _params = sym_pred(conn, "l_val18", symbol, "board")
+            row = conn.execute(
+                f"SELECT ins_code FROM instruments WHERE {_pred}"
+                " ORDER BY updated_at DESC LIMIT 1", _params).fetchone()
+            if not row:
+                return []
+            rows = conn.execute(
+                "SELECT d_even, unit_profit, reference_price, ratio, source, profit_date, source_id"
+                " FROM fund_profit_events WHERE ins_code=? ORDER BY d_even",
+                (str(row[0]),)).fetchall()
+        finally:
+            conn.close()
+    except Exception:
+        return []
+    out = []
+    for d, unit, ref, ratio, src, pdate, sid in rows:
+        dt = _d_even_to_date(d)
+        if not dt or unit is None or ref is None:
+            continue
+        out.append({"date": dt, "kind": AE.KIND_CASH_DIVIDEND,
+                    "reference_price": float(ref),
+                    "dividend_per_share": float(unit),
+                    "ratio": float(ratio) if ratio is not None else None,
+                    "source": src or "fund-portal",
+                    "profit_date": pdate, "source_id": sid})
+    return out
+
+
+def _merge_official_fund_events(events, official):
+    """رویدادِ رسمیِ صندوق جایِ رویدادِ کشف‌شدهٔ همان تاریخ را می‌گیرد.
+
+    توزیعِ صندوق در CSV معمولاً گسستِ پایه نمی‌سازد؛ اگر ساخت، عددش گرد و
+    تقریبی است. ردیفِ رسمی همان تاریخ را با ورودی‌هایِ دقیق جایگزین می‌کنیم تا
+    یک توزیع دوبار اعمال نشود. رویدادهایِ نوع‌دارِ دیگر (تجزیه/تجمیع) دست‌نخورده
+    می‌مانند.
+    """
+    by_key = {}
+    official_dates = {str(e.get("date"))[:10] for e in official}
+    typed_keep = (AE.KIND_SPLIT, AE.KIND_MERGE, AE.KIND_CAPITAL_RESERVE,
+                  AE.KIND_CAPITAL_CONTRIBUTION)
+    for e in events or []:
+        d = str(e.get("date") or "")[:10]
+        if not d:
+            continue
+        kind = e.get("kind")
+        if d in official_dates and kind not in typed_keep:
+            continue
+        by_key[(d, kind or "")] = e
+    for e in official:
+        d = str(e["date"])[:10]
+        by_key[(d, AE.KIND_CASH_DIVIDEND)] = e
+    return sorted(by_key.values(), key=lambda e: str(e.get("date"))[:10])
+
+
+def _effective_event_dates(events, times):
+    """تاریخِ هر رویداد را به اولین کندلِ هم‌روز یا پس از آن می‌برد.
+
+    گسستِ پایه ممکن است روی روزِ بی‌معامله/توقف کشف شود و رویدادِ رسمیِ همان
+    اقدام به اولین کندلِ بعدی نگاشت شود؛ بدونِ این نرمال‌سازی، تاریخِ خام آن‌ها
+    فاصلهٔ بلند نشان می‌دهد و یک اقدام دوبار اعمال می‌شود (حخزر: گسست
+    2023-06-24 و DPS رسمیِ نگاشت‌شده به 2023-07-08).
+    """
+    dates = sorted(set(str(t)[:10] for t in (times or []) if t))
+    out = []
+    for e in (events or []):
+        e = dict(e)
+        d = str(e.get("date") or "")[:10]
+        if d and dates:
+            nxt = next((x for x in dates if x >= d), None)
+            if nxt:
+                e["date"] = nxt
+        out.append(e)
+    return out
+
+
+def _canonical_adjustment(symbol, times, events, closings=None, gap_closings=None):
     """(applied, rejected, factors, chain, coverage) — تنها محاسبۀِ تعدیلِ هر دو مسیر.
 
     ترتیبِ `times` آزاد است (CSV نزولی، `price_history` صعودی) و `factors` دقیقاً
-    هم‌ردیفِ همان `times` برمی‌گردد.
+    هم‌ردیفِ همان `times` برمی‌گردد. `closings` نقشهٔ تاریخ→پایانیِ همان کندل است؛
+    پایهٔ DPS از همین کندل خوانده می‌شود و DB فقط fallback است.
     """
     t10 = [str(t)[:10] for t in (times or [])]
+    events = _effective_event_dates(events, t10)
+    official = _fund_profit_events(symbol)
+    if official:
+        events = _merge_official_fund_events(events, official)
+    share_changes = _share_change_events(symbol)
+    official_pa = _official_price_adjust_events(symbol, t10, share_changes,
+                                                closings=closings)
+    dup_rejected = []
+    if official_pa:
+        events = _merge_official_price_adjust(events, official_pa,
+                                               rejected=dup_rejected,
+                                               share_changes=share_changes)
+    events = _sharpen_share_gaps(events, official_pa, share_changes,
+                                 _share_type_evidence_dates(symbol))
+    events = _apply_long_gap_share_changes(events, share_changes, t10, gap_closings)
+    # کلیدِ هویتِ دفتری فقط برای همین تصمیم است؛ نه در payload و نه در موتور.
+    events = [{k: v for k, v in e.items() if not str(k).startswith("_")}
+              for e in events]
     applied, rejected, wrapped = _engine_events(events)
+    rejected.extend(dup_rejected)
     factors, chain = AE.chain_factors(t10, wrapped)
     return applied, rejected, factors, chain, _ledger_coverage(symbol, t10, wrapped)
 
 
-def _adjust_capability(events, source, ledger=None, chain=None, coverage=None):
+def _adjust_capability(events, source, ledger=None, chain=None, coverage=None,
+                       symbol=None, times=None, stale=False):
     """اعلامِ توانایی — «نداریم» با «هست و صفر است» یکی نیست.
 
     `ledger` شمارۀِ تیزکردنِ مبدأ است (چند رویداد از دفترِ مبدأ عدد گرفت، چند رویداد
@@ -787,14 +1995,33 @@ def _adjust_capability(events, source, ledger=None, chain=None, coverage=None):
     مصرف‌کننده‌ای نمی‌خواند و درِ رابط هم دیگر وجود ندارد (نمایِ شاخصِ ۱۰۰). همان
     شکلی از ادعایِ بی‌سنجش که بالا ممنوع شد، فقط با نامِ دیگر.
     """
-    available, blockers = _functional_state(chain, coverage)
+    kind = _instrument_kind(symbol) if symbol else None
+    available, blockers, status, availability = _functional_state(
+        chain, coverage, kind=kind, source=source, times=times, stale=stale)
+    if available and status == "AVAILABLE_NO_EVENTS":
+        reason = ("این ابزار در قراردادِ عملکردیِ فعلی رویدادِ تعدیلِ رسمی ندارد؛ "
+                  "سریِ عملکردی همان خام است.")
+    elif available:
+        reason = "الزاماتِ تعدیلِ عملکردی از دادهٔ همین نماد اثبات شد."
+    elif status == "PARTIAL":
+        reason = ("بخشی از تاریخچه پیش از پوششِ دفتر است؛ بازهٔ پس از پوشش قابل استفاده است.")
+    elif status == "STALE":
+        reason = "دادهٔ این نماد از پایگاه محلی و کهنه است؛ تعدیلِ عملکردی تأیید نشد."
+    elif status == "SOURCE_GAP":
+        reason = "دادهٔ رسمیِ رویداد برای این نماد ناقص است؛ تعدیلِ عملکردی تأیید نشد."
+    elif status == "UNMEASURED":
+        reason = "زنجیره/پوششِ این نماد سنجیده نشده است."
+    else:
+        reason = _ADJ_FUNCTIONAL_REASON
     return {
         "source": source,
-        "combined_available": source in _ADJ_KNOWN_SOURCES,
+        "combined_available": (source in _ADJ_KNOWN_SOURCES
+                               or str(source).startswith("fund-portal")),
         "functional_available": available,
-        "functional_reason": _ADJ_FUNCTIONAL_REASON if blockers else
-                             "الزاماتِ تعدیلِ عملکردی از دادهٔ همین نماد اثبات شد.",
+        "functional_status": status,
+        "functional_reason": reason,
         "functional_blockers": blockers,
+        "availability": availability,
         "event_count": len(events or []),
         "ledger_sharpened": (ledger or {}).get("sharpened"),
         "ledger_ambiguous": (ledger or {}).get("ambiguous"),
@@ -922,8 +2149,10 @@ def _watch_live_bar(symbol, after_date):
         return None, None
     # افت‌به‌روی امن: تابلو ممکن است در میانهٔ روز هنوز high/low را پر نکرده باشد
     o_l = p_first if p_first > 0 else p_close
+    hi_raw, lo_raw = p_max, p_min
     h_l, l_l = candle_contract.widen(o_l, p_max, p_min, p_close)
     return ({"time": session_date, "open": o_l, "high": h_l, "low": l_l,
+             "high_raw": hi_raw, "low_raw": lo_raw,
              "close": p_close, "volume": vol,
              # نشانهٔ «کندلِ تکمیل‌نشده»: `_watch_live_bar` کندلِ *همانِ جلسه* را
              # می‌سازد، پس قیمتش تا بستهٔ market شدنِ جلسه عوض می‌شود. موتورِ
@@ -1057,6 +2286,21 @@ def _attach_live_bar(symbol, res, built_at=None):
 
 
 @router.get("/api/chart/{symbol}")
+def _candle_closings(candles):
+    """Effective candle official close: `closing` once price_basis filled it,
+    otherwise the parsed CDN `close`.  The DPS base must never fall back to a
+    possibly stale DB close when the live official close is right here."""
+    out = {}
+    for c in candles or []:
+        d = str(c.get("time") or "")[:10]
+        v = c.get("closing")
+        if v is None:
+            v = c.get("close")
+        if d and v is not None:
+            out[d] = v
+    return out
+
+
 def get_chart_tsetmc(symbol: str):
     """نمودار کامل از CDN TSETMC: OHLCV روزانه + رویدادهای تعدیل عملکردی (ادجاست) با فال‌بک خودکار به دیتابیس محلی."""
     import time as _t
@@ -1182,6 +2426,8 @@ def get_chart_tsetmc(symbol: str):
                 return fb
             return {"status": "error", "message": f"CSV HTTP {r.status_code}"}
         candles, volumes, all_rows = _parse_tsetmc_csv(r.text)
+        candles, volumes, all_rows = _merge_session_backfill(
+            candles, volumes, all_rows, _session_backfill(symbol), descending=True)
         # رویدادهای تعدیل: گسستِ «قیمت پایه» در همین CSV، به‌علاوهٔ درِ لنگر. منطق و
         # دلیلِ حذفِ APF/gap-detector در _adjust_events_from_rows مستند است.
         adj_events, anchored = _adjust_events_from_rows(all_rows)
@@ -1192,6 +2438,8 @@ def get_chart_tsetmc(symbol: str):
         # _LEDGER_AGREE_TOL (۰٫۱٪) را دارد و درِ سنجش، میانۀِ اثرش روی کلِ پیکره
         # ۰٫۰۰۶ واحدِ درصدی بود (`_audit/ra365_ledger_ab.py`).
         adj_events, _sharp_n, _amb_n = _sharpen_events_with_ledger(symbol, adj_events)
+        adj_events, _false_rejected = _filter_unproven_base_events(
+            symbol, adj_events, times=[str(c["time"])[:10] for c in candles])
         _led_n = sum(1 for e in adj_events
                      if e.get("source") in ("priceAdjust", "shareChange"))
         # برچسبِ منبع «کجا عدد آمده» است، نه «کجا رویداد پیدا شده»: کشف همیشه از
@@ -1209,8 +2457,20 @@ def get_chart_tsetmc(symbol: str):
         #    اعتبارِ موتور روی هر ضریب اعمال شود، و پیمایشِ O(n+m) (به‌جای n×mِ
         #    ۵۲۸۸×۲۰) و roundِ ۱۰ رقمی همان‌جا حفظ بماند.
         _times = [str(c["time"])[:10] for c in candles]
+        # `_candle_closings` uses the parsed official close when price_basis has
+        # not filled `closing` yet; using only `closing` left every DPS anchor
+        # None and silently fell back to the possibly stale DB close.
+        _closings = _candle_closings(candles)
         _applied, _rejected, _fac, _chain, _cov = _canonical_adjustment(
-            symbol, _times, adj_events)
+            symbol, _times, adj_events, closings=_closings, gap_closings=_closings)
+        _rejected.extend(_false_rejected)
+        _fund_n = sum(1 for e in _applied
+                      if str(e.get("source") or "").startswith("fund-portal"))
+        if _fund_n:
+            adjust_source = ("fund-portal" if adjust_source in
+                             ("no-adjustment-event", "base-not-anchored")
+                             else adjust_source if str(adjust_source).startswith("fund-portal")
+                             else "fund-portal+" + adjust_source)
         factors = [{"time": c["time"], "factor": f} for c, f in zip(candles, _fac)]
 
         # صفر کندل ≠ موفق. اوراق/نمادهای منقضی CSV خالی می‌دهند؛ قبلاً
@@ -1233,7 +2493,8 @@ def get_chart_tsetmc(symbol: str):
             "adjustCapability": _adjust_capability(
                 _applied, adjust_source,
                 {"sharpened": _sharp_n, "ambiguous": _amb_n},
-                chain=_chain, coverage=_cov),
+                chain=_chain, coverage=_cov, symbol=symbol,
+                times=[str(c["time"])[:10] for c in candles]),
             # رویدادهایِ شرکتیِ مبدأ هم از همان بانکِ canonical می‌آیند (نه از
             # CSV): مسیرِ CDN اگر این کلید را نداشت، چارت هیچ‌وقت نشانگرِ
             # TSETMC نمی‌کشید — سنجشِ زندهٔ همین دور (۲۱:۲x) همان را نشان داد.
@@ -1820,6 +3081,10 @@ def get_chart_db(symbol: str):
         finally:
             conn.close()
 
+        # ردیفِ رسمیِ جلسه‌ای که CSV/بانک جا انداخته بود (مثلاً 2023-03-27).
+        candles, _ignore_v, _ignore_rows = _merge_session_backfill(
+            candles, [], [], _session_backfill(symbol), descending=False)
+
         # ---- تزریق کندلِ جلسهٔ جاری از market_watch (دادهٔ زندهٔ تابلوخوانی) ----
         # تاریخِ کندل را خودِ جلسه (d_even) می‌دهد، نه ساعتِ سیستم — دلیلش در
         # _watch_live_bar مستند است. سریِ اینجا صعودی است، پس آخرینِ لیست تازه‌ترین.
@@ -1837,12 +3102,26 @@ def get_chart_db(symbol: str):
         # مسیرِ CDN می‌زند — یک قاعده، یک اعتبار، دو منبعِ سری. داوریِ منبع («رویدادی
         # نیست» / «هنوز ندیده‌ایم») مشخص می‌کند اصلاً حقِ ضرب دارد یا نه.
         _evs = _stored_adjust_events(symbol)
+        _evs, _false_rejected = _filter_unproven_base_events(
+            symbol, _evs, times=[str(c["time"])[:10] for c in candles])
         _src = ("local-cache" if _evs
                 else _stored_adjust_source(symbol) or "local-db-unseen")
         _known = _src in _ADJ_KNOWN_SOURCES
         _applied, _rejected, _fac, _chain, _cov = _canonical_adjustment(
-            symbol, [str(c["time"])[:10] for c in candles], _evs if _known else [])
-        _cap = _adjust_capability(_applied, _src, chain=_chain, coverage=_cov)
+            symbol, [str(c["time"])[:10] for c in candles], _evs if _known else [],
+            closings={str(c["time"])[:10]: c.get("closing") for c in candles})
+        _rejected.extend(_false_rejected)
+        _fund_n = sum(1 for e in _applied
+                      if str(e.get("source") or "").startswith("fund-portal"))
+        if _fund_n:
+            _src = ("fund-portal" if _src in
+                    ("local-cache", "local-db-unseen", "no-adjustment-event", "base-not-anchored")
+                    else _src if str(_src).startswith("fund-portal")
+                    else "fund-portal+" + _src)
+        _cap = _adjust_capability(
+            _applied, _src, chain=_chain, coverage=_cov, symbol=symbol,
+            times=[str(c["time"])[:10] for c in candles],
+            stale=(not live_injected and _candles_stale(candles)))
         facts = [{"time": c["time"], "factor": f} for c, f in zip(candles, _fac)]
 
         # ---- v10 FTS: همان سریِ کاننیکالِ تعدیل‌شده که چارت می‌بیند ----
@@ -1979,6 +3258,25 @@ def get_patterns(symbol: str):
 CHART_CACHE = {}   # {_chart_cache_key(symbol): (fetch_time, json_data, ttl)}
 
 
+def _fund_events_rev():
+    """نسخهٔ کشِ رویدادهایِ رسمی/بک‌فیل؛ تغییرِ هر جدول باید کشِ چارت را بشکند."""
+    vals = []
+    try:
+        conn = sqlite3.connect(DB_PATH, timeout=5)
+        try:
+            for table in ("fund_profit_events", "session_backfill"):
+                try:
+                    row = conn.execute(f"SELECT MAX(fetched_at) FROM {table}").fetchone()
+                    vals.append(str(row[0] or "") if row else "")
+                except Exception:
+                    vals.append("")
+        finally:
+            conn.close()
+    except Exception:
+        return ""
+    return "|".join(vals)
+
+
 def _chart_cache_key(symbol):
     """کلیدِ کشِ چارت **مبنا را هم می‌برد** — همان قراردادی که MA_CACHE دارد
     (`api/chart.py::get_ma_events`: `f"{symbol}|{days}|{price_basis.current()}"`).
@@ -1993,7 +3291,7 @@ def _chart_cache_key(symbol):
       ۲) دو مبنایِ متفاوت، یکِ خانه را اشغال می‌کردند و هر تغییرِ مبنا سریِ دیگری
          را از کشِ بیرونیِ خودِ آن مبنای می‌خواند.
     """
-    return f"{symbol}|{price_basis.current()}"
+    return f"{symbol}|{price_basis.current()}|{_fund_events_rev()}"
 
 
 ADJ_TOL = 0.001

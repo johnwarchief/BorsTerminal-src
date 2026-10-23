@@ -107,6 +107,8 @@ def main():
            "the bar carries the session's own date, not the system clock", str(bar))
         ck(bar and (bar["open"], bar["high"], bar["low"], bar["close"]) ==
            (3410.0, 3420.0, 3380.0, 3420.0), "OHLC comes from the session fields", str(bar))
+        ck(bar and (bar.get("high_raw"), bar.get("low_raw")) == (3420.0, 3380.0),
+           "the live session bar preserves raw H/L beside the widened body", str(bar))
         ck(bar and bar["volume"] == 1834250671.0, "volume is the session's traded count", str(bar))
         ck(bar and bar["last"] == 3350.0, "«آخرین معامله» from p_last", str(bar))
 

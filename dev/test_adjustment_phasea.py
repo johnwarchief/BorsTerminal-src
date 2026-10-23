@@ -68,7 +68,7 @@ ck("سرور functional_available را با True سخت‌کد نمی‌کند (
    '"functional_available": True' not in SRC)
 ck("مقدار از قاعدۀ محاسبه‌شده می‌آید، نه از ثابتِ بولین",
    '"functional_available": available' in SRC and "def _functional_state(" in SRC
-   and "_functional_state(chain, coverage)" in SRC, SRC.count("_functional_state"))
+   and "chain, coverage, kind=kind" in SRC, SRC.count("_functional_state"))
 ck("دفترِ رسمی درِ همان مسیر خوانده می‌شود (پوشش/اعتبار از داده، نه از متن)",
    "corporate_ledger.build_typed_events" in SRC or "CL.build_typed_events" in SRC)
 ck("بلوکِ توانایی درِ پاسخ می‌آید، نه فقط درِ متنِ خطا",
@@ -243,28 +243,43 @@ if HAS_BANK:
        n_ev >= 0 and n_ver >= 0, (n_ev, n_ver))
 
     sym = None
+    stored, expected_rejected = [], []
     try:
         conn = sqlite3.connect(CH.DB_PATH, timeout=30)
-        r = conn.execute("SELECT symbol, COUNT(*) c FROM adjust_events GROUP BY symbol "
-                         "ORDER BY c DESC LIMIT 1").fetchone()
+        rows = conn.execute("SELECT symbol, COUNT(*) c FROM adjust_events GROUP BY symbol "
+                            "ORDER BY c DESC LIMIT 40").fetchall()
         conn.close()
-        sym = r[0] if r else None
+        for cand, _n in rows:
+            kept, rejected = CH._filter_unproven_base_events(
+                cand, CH._stored_adjust_events(cand))
+            if kept:
+                sym, stored, expected_rejected = cand, kept, rejected
+                break
     except Exception:
         sym = None
     if sym:
-        stored = CH._stored_adjust_events(sym)
         d = CH.get_chart_db(sym)
+        _times = [str(c["time"])[:10] for c in (d.get("candles") or [])]
+        _evs_f, _rej_f = CH._filter_unproven_base_events(sym, CH._stored_adjust_events(sym))
+        _applied, _rj, _fc, _ch, _cv = CH._canonical_adjustment(sym, _times, _evs_f)
         ck("مسیرِ محلی همان مجموعهٔ رویدادِ کاننیکال را می‌دهد (نه [])",
-           d.get("adjustEvents") == stored and len(stored) > 0, len(stored))
+           d.get("adjustEvents") == _applied and len(_applied) > 0, len(_applied))
         ck("منبعِ مسیرِ محلی «local-cache» اعلام می‌شود",
            d.get("adjustSource") == "local-cache", d.get("adjustSource"))
+        if expected_rejected:
+            _rej = d.get("adjustRejected") or []
+            ck("رویدادهایِ فیلترشدهٔ گسستِ پایه با علت در adjustRejected اعلام می‌شوند",
+               all(any(str(x.get("date")) == str(e["date"]) and
+                       x.get("factor_status") == e["factor_status"] for x in _rej)
+                   for e in expected_rejected),
+               (expected_rejected[:2], _rej[:3]))
         ck("ضرایبِ مسیرِ محلی از همان رویدادها می‌آیند و بی‌ضریبِ یک نیستند",
            any(abs(f["factor"] - 1.0) > 1e-9 for f in d.get("factors") or []),
            len(d.get("factors") or []))
         ck("ضرایبِ مسیرِ محلی = حاصلِ ضربِ مستقلِ رویدادهایِ بعداز آن روز",
            [round(f["factor"], 8) for f in d["factors"]]
            == [round(x, 8) for x in CH._factors_from_events(
-               [str(c["time"])[:10] for c in d["candles"]], stored)],
+               [str(c["time"])[:10] for c in d["candles"]], _applied)],
            (d["factors"][:2], stored[:2]))
         f1 = CH._fts_scaled(d["candles"], d["factors"], d["volumes"])
         _raw_by_date = {str(c["time"])[:10]: c for c in d["candles"]}

@@ -6,7 +6,7 @@
 // و رویِ کوچکتِ تنظیمِ کهنه قفل می‌کند — نه اینکه ادعایِ قبلی را بی‌جایگزین پاک کند.
 import { describe, expect, it } from 'vitest';
 import {
-  applyAdjustmentToCandles, DEFAULT_ADJUSTMENT_MODE, functionalGapNote,
+  applyAdjustmentToCandles, DEFAULT_ADJUSTMENT_MODE, functionalGapNote, functionalStatusNote,
   getAdjustmentFactor,
   mapBackendAdjustEvents,
   migrateAdjustmentMode,
@@ -15,6 +15,7 @@ import {
   type AdjustFactor,
 } from '@features/technical/nahayatnegar/lib/adjustments';
 import type { KLineData } from 'klinecharts';
+import { toFaDigits } from '@shared/lib/fmt';
 
 const t = (s: string) => Date.parse(`${s}T00:00:00Z`);
 
@@ -235,10 +236,55 @@ describe("PHASE A — جداسازیِ معناییِ تعدیل", () => {
     expect(note).toContain("event-type-unresolved:9");
     expect(note).toContain("ledger-rows-unmatched-by-price-series:12");
     expect(note).toContain("ترکیبی");
+    // هشدار دیدنی: خلاصه کوتاه فارسی با عددهای همان پاسخ؛ کدها فقط در جزئیات.
+    const ui = functionalStatusNote(blocked);
+    expect(ui).not.toBeNull();
+    expect(ui?.summary).toContain(`${toFaDigits(9)} رویداد حل‌نشده`);
+    expect(ui?.summary).not.toContain("event-type-unresolved");
+    expect(ui?.details).toHaveLength(2);
+    expect(ui?.details.join(" ")).toContain(`${toFaDigits(9)} رویداد با نوعِ حل‌نشده`);
+    expect(ui?.details.join(" ")).toContain(`${toFaDigits(12)} ردیف دفتر بی‌تطبیق با سری قیمت`);
     const proven = readAdjustmentCapability({ adjustCapability: {
       source: "x", combined_available: true, functional_available: true,
       functional_blockers: [] } });
     expect(functionalGapNote(proven)).toBeNull();
+    expect(functionalStatusNote(proven)).toBeNull();
+    const noRows = readAdjustmentCapability({ adjustCapability: {
+      source: "no-adjustment-event", combined_available: true,
+      functional_available: false, functional_reason: "r",
+      functional_blockers: ["no-official-rows-for-instrument:هیچ ردیفی نیست"] } });
+    const noRowsNote = functionalStatusNote(noRows);
+    expect(noRowsNote?.summary).toContain("هیچ ردیف رسمیِ تعدیل در بانک نیست");
+    expect(noRowsNote?.summary).not.toContain("no-official-rows");
+
+    const partial = readAdjustmentCapability({ adjustCapability: {
+      source: "base-price-discontinuity", combined_available: true,
+      functional_available: false, functional_status: "PARTIAL",
+      functional_reason: "r",
+      functional_blockers: ["candles-before-ledger-coverage:120"],
+      availability: { status: "PARTIAL", requested_start: "2020-01-01",
+        requested_end: "2026-01-01", covered_start: "2023-01-01",
+        covered_end: "2026-01-01", window_start: "2023-01-01",
+        valid_points: 400, incomplete_points: 120,
+        source: "base-price-discontinuity", stale: false } } });
+    expect(partial.functionalStatus).toBe("PARTIAL");
+    expect(partial.availability).not.toBeNull();
+    const partialNote = functionalStatusNote(partial);
+    expect(partialNote?.summary).toContain("بخشی از تاریخچه");
+    expect(partialNote?.details.join(" ")).toContain("نقاط معتبر");
+    expect(partialNote?.details.join(" ")).toContain(`${toFaDigits(120)} کندل پیش از پوشش`);
+
+    const stale = readAdjustmentCapability({ adjustCapability: {
+      source: "local-cache", combined_available: true,
+      functional_available: false, functional_status: "STALE",
+      functional_reason: "r", functional_blockers: [] } });
+    expect(functionalStatusNote(stale)?.summary).toContain("کهنه");
+
+    const noEvent = readAdjustmentCapability({ adjustCapability: {
+      source: "no-adjustment-event", combined_available: true,
+      functional_available: true, functional_status: "AVAILABLE_NO_EVENTS",
+      functional_reason: "r", functional_blockers: [] } });
+    expect(functionalStatusNote(noEvent)).toBeNull();
   });
 
   it("هندسهٔ OHLC پس از هر دو حالت حفظ می‌شود", () => {

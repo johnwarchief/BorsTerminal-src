@@ -148,7 +148,14 @@ def _work_dir():
          می‌رود؛ وگرنه استخراج market.db.lzma و سینک با «Permission denied»
          گیر می‌کنند.
       ۳) dev: ریشۀ ریپو.
+
+    `BORS_WORK_DIR` یک درِ صریحِ آزمون/جداسازی است: وقتی تنظیم شود، همهٔ
+    فایل‌های نوشتنی (db، user.db، کش‌ها، وضعیت) به همان پوشه می‌روند و
+    هیچ نوشتنی به پوشهٔ عملیاتی نمی‌رسد. در اجرای عادی تنظیم نمی‌شود.
     """
+    override = (os.environ.get("BORS_WORK_DIR") or "").strip()
+    if override:
+        return os.path.abspath(override)
     if _FROZEN:
         if IS_PORTABLE:
             return portable_data_dir()
@@ -228,6 +235,13 @@ def _resolve_market_db():
 
 
 DB_PATH = _resolve_market_db()
+
+# `BORS_DB` صریح‌ترین درِ جداسازی است: مسیرِ فایلِ db را مستقل از
+# exe_dir/WORK_DIR تعیین می‌کند. آزمون‌ها با این متغیر روی کپیِ موقت
+# اجرا می‌شوند؛ اجرای عادی آن را تنظیم نمی‌کند.
+_db_override = (os.environ.get("BORS_DB") or "").strip()
+if _db_override:
+    DB_PATH = os.path.abspath(_db_override)
 
 # جدول‌هایی از market.db که نوشتهٔ خودِ کاربرند، نه دادهٔ بازار. هنگامِ
 # جایگزینیِ baseline این‌ها از فایلِ قدیمی به فایلِ تازه منتقل می‌شوند؛ در غیر

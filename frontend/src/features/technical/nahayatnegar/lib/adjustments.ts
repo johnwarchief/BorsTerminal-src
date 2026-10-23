@@ -1,5 +1,6 @@
 import type { KLineData } from 'klinecharts';
 import { parseCandleTimestamp } from '../../lib/jalaliDate';
+import { toFaDigits } from '@shared/lib/fmt';
 
 /**
  * رویداد تعدیل. سرور (api/chart.py) برای هر رویداد فقط یک عدد می‌دهد:
@@ -100,6 +101,10 @@ export interface AdjustmentCapability {
   combinedAvailable: boolean;
   /** تعدیلِ عملکردیِ واقعی (DPSِ سرمایه‌گذاری‌شده) — محاسبه‌شده از الزاماتِ همین نماد */
   functionalAvailable: boolean;
+  /** AVAILABLE | AVAILABLE_NO_EVENTS | PARTIAL | SOURCE_GAP | STALE | UNVERIFIED | UNMEASURED | FAILED */
+  functionalStatus: string;
+  /** پوششِ بازهٔ درخواستی در برابر پوششِ کلِ تاریخچه (api/chart.py::_functional_state) */
+  availability: Record<string, unknown> | null;
   /** دلیلِ human-readableِ نبودِ تعدیلِ عملکردی (متنِ سرور، بی‌بازنویسی) */
   functionalReason: string;
   /** موانعِ شمارشیِ همین نماد، هر کدام با عددِ خودش (بی‌سکوت درِ پاسخ) */
@@ -114,6 +119,8 @@ const UNKNOWN_CAPABILITY: AdjustmentCapability = {
   source: 'unreported',
   combinedAvailable: false,
   functionalAvailable: false,
+  functionalStatus: 'UNREPORTED',
+  availability: null,
   functionalReason: 'پاسخِ سرور بلوکِ تواناییِ تعدیل ندارد؛ تعدیلِ رویداد تأیید نشده است.',
   functionalBlockers: ['unreported:سرور بلوکِ توانایی را نفرستاد'],
   chainComplete: null,
@@ -133,6 +140,9 @@ export function readAdjustmentCapability(raw: unknown): AdjustmentCapability {
     source: String(c.source ?? 'unreported'),
     combinedAvailable: c.combined_available === true,
     functionalAvailable: c.functional_available === true,
+    functionalStatus: String(c.functional_status ?? 'UNREPORTED'),
+    availability: (c.availability && typeof c.availability === 'object')
+      ? (c.availability as Record<string, unknown>) : null,
     functionalReason: String(c.functional_reason ?? UNKNOWN_CAPABILITY.functionalReason),
     functionalBlockers: Array.isArray(c.functional_blockers)
       ? (c.functional_blockers as unknown[]).map(String) : [],
@@ -165,6 +175,122 @@ export function functionalGapNote(cap: AdjustmentCapability): string | null {
   const first = (cap.functionalBlockers ?? []).slice(0, 2).join('، ');
   return `تعدیلِ عملکردیِ واقعی با دادهٔ همین نماد اثبات نشده‌است${first ? ` (${first})` : ''} — `
     + 'محور، سریِ تعدیلِ ترکیبی است.';
+}
+
+export interface FunctionalStatusNote {
+  summary: string;
+  details: string[];
+}
+
+/** متنِ کوتاهِ فارسی برای هشدارِ عملکردی + جزئیاتِ بازشونده.
+ *
+ * همهٔ عددها از `functionalBlockers` همان پاسخ می‌آیند؛ هیچ عددی در این فایل
+ * hard-code نیست. اگر وضعیت کامل باشد (functionalAvailable) هشدار برمی‌گردد null.
+ * کدهایِ خامِ انگلیسی فقط در جزئیات می‌مانند تا کاربر متنِ فارسی کوتاه ببیند.
+ */
+const FUNCTIONAL_STATUS_LABEL: Record<string, string> = {
+  AVAILABLE: 'کامل تأییدشده',
+  AVAILABLE_NO_EVENTS: 'بدون رویداد — خام همان عملکردی است',
+  PARTIAL: 'بخشی از تاریخچه',
+  SOURCE_GAP: 'کمبود دادهٔ منبع',
+  STALE: 'دادهٔ کهنه',
+  UNVERIFIED: 'تأییدنشده',
+  UNMEASURED: 'سنجیده‌نشده',
+  FAILED: 'ناموفق',
+  UNREPORTED: 'گزارش‌نشده',
+};
+
+export function functionalStatusNote(cap: AdjustmentCapability): FunctionalStatusNote | null {
+  if (cap.functionalAvailable) return null;
+  const status = cap.functionalStatus || 'UNREPORTED';
+  const av = cap.availability || {};
+  const parse = (raw: string): { key: string; n: number | null } => {
+    const i = raw.indexOf(':');
+    if (i <= 0) return { key: raw, n: null };
+    const tail = raw.slice(i + 1);
+    return /^\d+$/.test(tail)
+      ? { key: raw.slice(0, i), n: Number(tail) }
+      : { key: raw.slice(0, i), n: null };
+  };
+  const blockers = (cap.functionalBlockers ?? []).map(parse);
+  const count = (key: string): number | null => {
+    const hit = blockers.find(b => b.key === key);
+    return hit ? hit.n : null;
+  };
+  const label = (b: { key: string; n: number | null }): string => {
+    const n = b.n;
+    switch (b.key) {
+      case 'event-type-unresolved': return `${toFaDigits(n ?? 0)} رویداد با نوعِ حل‌نشده`;
+      case 'candles-before-ledger-coverage': return `${toFaDigits(n ?? 0)} کندل پیش از پوشش دفتر رسمی`;
+      case 'ledger-rows-unmatched-by-price-series': return `${toFaDigits(n ?? 0)} ردیف دفتر بی‌تطبیق با سری قیمت`;
+      case 'offer-price-missing': return `${toFaDigits(n ?? 0)} رویداد بدون قیمت پذیره`;
+      case 'ledger-rows-rejected': return `${toFaDigits(n ?? 0)} ردیف دفتر ردشده`;
+      case 'chain-incomplete': return `${toFaDigits(n ?? 0)} رویداد با زنجیرهٔ ناقص`;
+      case 'ledger-flow-truncated-at-cap': return `دفتر تعدیل در سقف ${toFaDigits(n ?? 0)} ردیف بریده شده است`;
+      case 'no-official-rows-for-instrument': return 'هیچ ردیف رسمیِ تعدیل در بانک نیست';
+      case 'ledger-unavailable': return 'دفتر تعدیل در دسترس نیست';
+      case 'unmeasured': return 'وضعیت تعدیل سنجیده نشده است';
+      case 'unreported': return 'سرور وضعیت تعدیل را نفرستاد';
+      default: return b.key;
+    }
+  };
+  const dt = (v: unknown): string => (v ? toFaDigits(String(v).slice(0, 10)) : '');
+  const statusLine = status !== 'UNREPORTED'
+    ? `وضعیت: ${FUNCTIONAL_STATUS_LABEL[status] ?? status}` : null;
+  const avLines: string[] = [];
+  const rs = dt(av.requested_start), re = dt(av.requested_end);
+  if (rs || re) avLines.push(`بازهٔ درخواستی: ${rs || '—'} تا ${re || '—'}`);
+  const cs = dt(av.covered_start), ce = dt(av.covered_end);
+  if (cs || ce) avLines.push(`پوشش دفتر رسمی: ${cs || '—'} تا ${ce || '—'}`);
+  if (av.valid_points !== undefined) {
+    const valid = Number(av.valid_points);
+    const incomplete = Number(av.incomplete_points ?? 0);
+    avLines.push(`نقاط معتبر: ${toFaDigits(valid)} از ${toFaDigits(valid + incomplete)}`);
+  }
+  if (av.source) avLines.push(`منبع: ${String(av.source)}`);
+  if (av.stale === true) avLines.push('داده کهنه است.');
+  const baseDetails = [
+    ...(statusLine ? [statusLine] : []),
+    ...(blockers.length ? blockers.map(label) : ['سرور دلیلی برای تأییدنشدن اعلام نکرده است.']),
+    ...avLines,
+  ];
+
+  if (status === 'PARTIAL') {
+    const win = dt(av.window_start);
+    return {
+      summary: win
+        ? `تعدیل عملکردی برای بخشی از تاریخچه تأیید شده است؛ بازهٔ پوشش‌داده‌شده از ${win} آغاز می‌شود.`
+        : 'تعدیل عملکردی برای بخشی از تاریخچه تأیید شده است.',
+      details: baseDetails,
+    };
+  }
+  if (status === 'STALE') {
+    return {
+      summary: 'دادهٔ تعدیل این نماد از پایگاه محلی و کهنه است؛ تعدیل عملکردی تأیید نشده است.',
+      details: baseDetails,
+    };
+  }
+
+  const nEvent = count('event-type-unresolved');
+  const nPre = count('candles-before-ledger-coverage');
+  const nUnmatched = count('ledger-rows-unmatched-by-price-series');
+  const short: string[] = [];
+  if (nEvent) short.push(`${toFaDigits(nEvent)} رویداد حل‌نشده`);
+  if (nPre) short.push(`${toFaDigits(nPre)} کندل پیش از پوشش مرجع`);
+  if (!short.length && nUnmatched) short.push(`${toFaDigits(nUnmatched)} ردیف دفتر بی‌تطبیق`);
+  if (!short.length) {
+    const has = (key: string) => blockers.some(b => b.key === key);
+    if (has('no-official-rows-for-instrument')) short.push('هیچ ردیف رسمیِ تعدیل در بانک نیست');
+    else if (has('ledger-unavailable')) short.push('دفتر تعدیل در دسترس نیست');
+    else if (has('unmeasured') || status === 'UNMEASURED') short.push('وضعیت تعدیل سنجیده نشده است');
+    else if (status === 'FAILED') short.push('سنجش تعدیل این نماد ناموفق بود');
+    else if (has('unreported')) short.push('سرور وضعیت تعدیل را نفرستاد');
+    else short.push('دلیلِ دقیق در جزئیات آمده است');
+  }
+  return {
+    summary: `تعدیل عملکردی این نماد کامل تأیید نشده است؛ ${short.join(' و ')}.`,
+    details: baseDetails,
+  };
 }
 
 /**

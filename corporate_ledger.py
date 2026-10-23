@@ -86,6 +86,15 @@ def build_typed_events(conn, ins_code):
         sym = sym[0] if sym else None
     except Exception:
         sym = None
+    if not sym:
+        # صندوق‌هایی که در price_adjust_events ردیفی ندارند هم باید نامشان را
+        # برای پیوند CODAL داشته باشند.
+        try:
+            r = conn.execute("SELECT l_val18 FROM instruments WHERE ins_code=? LIMIT 1",
+                             (ins_code,)).fetchone()
+            sym = r[0] if r else None
+        except Exception:
+            sym = None
     if sym:
         try:
             for title, pdate, tr in conn.execute(
@@ -117,6 +126,22 @@ def build_typed_events(conn, ins_code):
             by_date[dt] = {"d_even": d, "kind": AE.KIND_SOURCE_RATIO, "date": dt,
                            "old": old, "new": new, "src": "shareChange", "seen": seen}
 
+    # توزیعِ رسمیِ صندوق (پورتالِ مدیر). جدول ممکن است در بانکِ قدیمی نباشد؛
+    # نبودش «بی‌رویداد» است، نه شکستِ ledger.
+    try:
+        for d, unit, ref, ratio, src, pdate, sid, seen in conn.execute(
+                "SELECT d_even, unit_profit, reference_price, ratio, source, profit_date,"
+                " source_id, fetched_at FROM fund_profit_events WHERE ins_code=?",
+                (ins_code,)):
+            dt = _d_even_to_date(d)
+            if dt and dt not in by_date:
+                by_date[dt] = {"d_even": d, "kind": AE.KIND_CASH_DIVIDEND, "date": dt,
+                               "unit": unit, "ref": ref, "ratio": ratio,
+                               "src": src or "fund-portal", "seen": seen,
+                               "profit_date": pdate, "source_id": sid}
+    except Exception:
+        pass
+
     events, counts = [], {
         "events_total": 0, "typed_ok": 0, "with_official_ref": 0, "complete": 0,
         "needs_offer_price": 0, "unknown_type": 0, "bad_identity_date": 0, "incomplete_or_invalid": 0}
@@ -146,19 +171,36 @@ def build_typed_events(conn, ins_code):
             if ref:
                 prov["reference_price_official"] = ref
                 counts["with_official_ref"] += 1
+        elif str(rec["src"]).startswith("fund-portal"):
+            # توزیعِ نقدیِ صندوق: مقدار و تاریخ از پورتالِ رسمیِ مدیر؛ نسبت را
+            # موتور از (P−D)/P می‌سازد، نه از گسستِ قیمت.
+            ratio = rec.get("ratio")
+            ref = rec.get("ref")
+            prov["reference_price_official"] = ref
+            prov["dividend_per_share_official"] = rec.get("unit")
+            prov["profit_date"] = rec.get("profit_date")
+            prov["source_id"] = rec.get("source_id")
+            counts["with_official_ref"] += 1
         else:
             ratio = _ratio(rec.get("new"), rec.get("old"))          # = shares_old / shares_new (canonical)
             ref = None
         ev = {"kind": rec["kind"], "date": dt, "ratio": ratio, "event_id": f"{ins_code}:{rec['d_even']}"}
         if ref:
             ev["reference_price"] = ref
+        if rec["kind"] == AE.KIND_CASH_DIVIDEND and rec.get("unit") is not None:
+            ev["dividend_per_share"] = rec["unit"]
         ev["provenance"] = prov
 
         # نوع (metadata)؛ برایِ source_ratio موتورِ عدد از نسبتِ رسمی می‌آید، نوع فقطِ برچسب است.
         etype = unique_type
+        if str(rec["src"]).startswith("fund-portal"):
+            # نوع از خودِ منبعِ رسمیِ صندوق می‌آید، نه از حدسِ عنوانِ کدال.
+            etype = AE.KIND_CASH_DIVIDEND
         if etype:
             prov["event_type"] = etype
-            prov["type_confidence"] = "instrument-unique-codal"
+            prov["type_confidence"] = ("fund-portal-official"
+                                       if str(rec["src"]).startswith("fund-portal")
+                                       else "instrument-unique-codal")
             counts["typed_ok"] += 1
         else:
             prov["event_type"] = None

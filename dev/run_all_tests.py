@@ -12,6 +12,14 @@ if _HERE not in sys.path:
     sys.path.insert(0, _HERE)
 from guard_counts import summarize  # noqa: E402
 
+# Gate safety: a bare `python dev/run_all_tests.py` must not run against the
+# operational DB. Delegate to the wrapper that copies the DB, sets
+# BORS_WORK_DIR/BORS_DB and BORS_NO_FETCH_LOOPS=1, and fingerprints the source.
+if __name__ == "__main__" and os.environ.get("BORS_GATE_ISOLATED") != "1":
+    print("[gate] unisolated invocation — delegating to dev/gate_db_guard.py")
+    _args = [sys.executable, os.path.join(_HERE, "gate_db_guard.py")] + sys.argv[1:]
+    raise SystemExit(subprocess.call(_args))
+
 os.chdir(os.path.join(_HERE, '..'))
 
 SUITES = [
@@ -131,6 +139,16 @@ SUITES = [
      'weekly gate + weekly hourglass stay frozen (measured on real bank rows)'),
     ('dev/test_adjustment_phasea.py',
      'canonical adjustment: mode semantics split, single scaled series, honest fallback'),
+    ('dev/test_unproven_base_events_v1.py',
+     'unproven base-price gaps (positive, fund micro) never enter the adjustment chain'),
+    ('dev/test_functional_availability_v1.py',
+     'functional availability statuses: complete, partial window, no-event classes, source gap, stale'),
+    ('dev/test_rahavard_contract_v1.py',
+     'Rahavard data contract fixture: type0/type7 factor, OHLC, weekly sum, LAST basis'),
+    ('dev/test_fund_profit_and_backfill_v1.py',
+     'official fund distributions + single-session backfill enter the canonical chain'),
+    ('dev/test_session_anomaly_v1.py',
+     'cross-sectional session anomaly: synthetic positives, official-row negatives, typed-event survival'),
     # مرحلۀِ ۲ (Phase 2): ریشۀِ تعدیل/منبعِ قیمت — ادغامِ بلوکِ VOL=0، ثباتِ لنگرِ تعدیل
     # نسبت به مبنایِ نمایش، هم‌سنجیِ MA با زنجیرۀِ تعدیلِ چارت، و مرزهایِ هندسۀِ کندل.
     ('dev/test_fts_zero_volume_collapse_v1.py',
@@ -219,6 +237,48 @@ SUITES = [
                                       "indicator-3 no-data is 'not measured', never 'rejected' (both cache paths)"),
     ('dev/codal_logic_guard.py',      'codal logic contract F-01..F-05 (amendment)'),
     ('dev/db_contract_v11.py',        'FTS v2.2 db contract: writer/reader/schema agree'),
+    ('dev/test_db_isolation_v1.py',   'DB isolation: temp copy, logical fingerprint, fetch-loop gate'),
+    ('dev/test_official_ledger_dedupe_v1.py',
+                                      'one official ledger row is applied once, even across a long suspension'),
+    ('dev/test_dps_formula_v1.py',    'DPS factor = close_ex/(close_ex+dps); reserve capital change = pv/nw'),
+    ('dev/test_share_type_evidence_v1.py',
+                                      'official no-cash share evidence: deterministic ingest, idempotent, paid-in rejected'),
+    ('dev/test_round14_official_events_v1.py',
+                                      'Round 14: capital vs share ratio, official DPS, type7 P and no silent fallback'),
+    ('dev/test_round15_dps_source_duplicate_v1.py',
+                                      'Round 15: DPS source-ratio duplicate, combined gap, evidence-gated 10-day window'),
+    ('dev/test_round16_candle_closing_dps_v1.py',
+                                      'Round 16: type7 DPS base is the effective candle closing (holdout)'),
+    ('dev/test_gate_incomplete_db_v1.py',
+                                      'Round 16: an empty/partial gate DB is refused before copying'),
+    ('dev/test_round17_gap_precedence_v1.py',
+                                      'Round 17: observed gap/share precedence over a separate DPS'),
+    ('dev/test_round17_codal_parser_v1.py',
+                                      'Round 17: general CODAL composition parser (Farak/after-label/stage)'),
+    ('dev/test_round17_migration_v1.py',
+                                      'Round 17: staged migration is keyed, idempotent, reversible'),
+    ('dev/test_round18_raw_parity_v1.py',
+                                      'Round 18: raw OHLC mapping, basis, tolerance and cause taxonomy'),
+    ('dev/test_round18_taxonomy_v1.py',
+                                      'Round 18: raw mismatch attribution is evidence-backed'),
+    ('dev/test_round18_history_repair_v1.py',
+                                      'Round 18: published price_history repair is keyed, prioritized and idempotent'),
+    ('dev/test_ra365_round20_formula_oracle_v1.py',
+                                      'Round 20: proven Rahavard DPS/reserve formulas; contribution S remains unverified'),
+    ('dev/test_ra365_round21_long_gap_share_v1.py',
+                                      'Round 21: an official share change inside a long suspension still adjusts'),
+    ('dev/test_ra365_round22_multi_pa_v1.py',
+                                      'Round 22: multiple official PA rows on one date are all applied'),
+    ('dev/test_ra365_round22_isolated_gap_v1.py',
+                                      'Round 22: isolated small unproven base gaps are noise; combined ones survive'),
+    ('dev/test_ra365_round22_dps_sharpen_v1.py',
+                                      'Round 22: a DPS row keeps the candle-closing formula over the sharpened PA ratio'),
+    ('dev/test_ra365_round23_live_dps_close_v1.py',
+                                      'Round 23: the live DPS base is the parsed official close, not the DB close'),
+    ('dev/test_fund_events_v1.py',    'official fund distributions drive (P-D)/P factor; same-date typed event survives'),
+    ('dev/test_fund_ingest_v1.py',    'fund importer: Persian digits, corrupt rows, duplicate dedupe, newest instrument'),
+    ('dev/test_history_repair_writer_v1.py',
+                                      'history repair writes src=published on a temp DB; closed gate writes nothing'),
     ('dev/version_anchor_guard.py',   'all six version anchors state the same release'),
     ('dev/installer_watchdog_guard.py',
                                       'install watchdog waits without blocking and runs the setup'),
@@ -738,16 +798,21 @@ REQUIRES = {
 
 
 env = dict(os.environ, PYTHONIOENCODING='utf-8')
+# This suite explicitly tests the dev/portable path-resolution contract; the
+# global test workdir override is exactly what it must not see. It creates its
+# own temp dirs and never touches the operational DB.
+NO_DB_ISOLATION = {'dev/test_portable_v1.py'}
 bad = []
 #: سوئیت‌هایی که هیچ شمارشِ واقعی چاپ نکردند — «OK» اند ولی «چند بررسی» نامعلوم.
 #: پیش از این همین‌ها «0 pass / 0 fail» می‌شدند و سکوت را می‌شد با سبزی اشتباه گرفت.
 uncounted = []
 
 
-def run(argv, label):
+def run(argv, label, env_override=None):
     try:
         r = subprocess.run(argv, capture_output=True, text=True, encoding='utf-8',
-                           errors='replace', timeout=600, env=env, shell=False)
+                           errors='replace', timeout=600, env=env_override or env,
+                           shell=False)
     except FileNotFoundError:
         print('  SKIP %-40s (%s not found)' % (label, argv[0]))
         return
@@ -782,7 +847,12 @@ for script, label in SUITES:
         skipped.append((label, need))
         print('  SKIP %-40s (fixture missing: %s)' % (label, need))
         continue
-    run([sys.executable] + [a.replace('/', os.sep) for a in script.split()], label)
+    suite_env = env
+    if script in NO_DB_ISOLATION:
+        suite_env = {k: v for k, v in env.items()
+                     if k not in ('BORS_WORK_DIR', 'BORS_DB')}
+    run([sys.executable] + [a.replace('/', os.sep) for a in script.split()], label,
+        env_override=suite_env)
 if os.path.exists(FIXTURE_GEN):
     run([sys.executable, FIXTURE_GEN.replace('/', os.sep)], 'fixture: fts_v10 payloads')
 for script, label in JS_SUITES:

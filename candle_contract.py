@@ -109,9 +109,11 @@ def candle(symbol, date, o, h, l, c, volume=None, last=None, value=None, src=SRC
         # روزِ بی‌معامله کندل نمی‌شود — پیش از بازگشایی تابلو ردیفِ «امروز» را با
         # قیمتِ پایه و حجمِ صفر می‌فرستد (شاهد: کندلِ شبحِ فولاد ۱۴۰۵-۰۷-۰۸).
         return None
+    hi_raw, lo_raw = h, l
     h, l = widen(o, h, l, c, ls)
     return {"symbol": str(symbol), "time": date, "date": date, "open": o, "high": h,
-            "low": l, "close": c, "last": ls, "value": val, "volume": v, "src": src}
+            "low": l, "high_raw": hi_raw, "low_raw": lo_raw, "close": c,
+            "last": ls, "value": val, "volume": v, "src": src}
 
 
 def iso_from_csv(fields):
