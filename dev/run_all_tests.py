@@ -785,6 +785,13 @@ SUITES = [
      'sarkhati fast order Round 21: full preview does session/balance/preflight once, confirm is local guards plus one POST, one-shot token (expiry/epoch/halt/concurrent), explicit phrase, timeout/UNKNOWN never retries, deferred read-back, exact wire body, dry-run never posts'),
     ('dev/autoclicker_browser_round14_v1149.py',
      'sarkhati AutoClicker Round 14 browser-level: Playwright mock EasyTrader, zero order posts in dry-run, one click, UNKNOWN, abort'),
+    # مأموریتِ Round 22 (۱۴۰۵-۰۸-۰۱): AutoClickerِ واقعیِ UIِ EasyTrader — داوریِ
+    # فرم/دکمه رویِ DOM، اجرایِ چنداقدامیِ پایدار، سقفِ نرخِ لایه‌بندی‌شده، تبِ پنلِ
+    # همان پروفایل، و نردبانِ ده‌فکتی. هیچ سفارش/نشستِ واقعی لمس نمی‌شود.
+    ('dev/autoclicker_round22_v1172.py',
+     'sarkhati AutoClicker Round 22: real DOM judgement, backend multi-action run store, one-winner claims, 300ms floor, emergency stop, page-change stop, provenance-tiered trading rules, dry-run never posts'),
+    ('dev/autoclicker_round22_browser_v1173.py',
+     'sarkhati AutoClicker Round 22 browser-level: real Chromium over CDP, local EasyTrader fixture, hidden/duplicate/off-viewport/disabled/wrong-side refusal, repeat spacing, live-path wire verdict on the fixture, panel tab in the same profile, session proof without reading the token'),
     # مأموریتِ ۲۰۲۶-۱۰-۲۰ (Darvand P0): ذخیرهٔ ماندگارِ سفارش/زمان‌بندی، claim
     # اتمیک، NEEDS_REVIEW پس از restart، MISSED_TARGET بدون جبران، و مسدودماندنِ
     # مسیر زنده تا تأیید قرارداد/نشست. هیچ شبکه/سفارشی صدا زده نمی‌شود.

@@ -785,6 +785,7 @@ def main() -> int:
     part_rules()
     part_invariants()
     print("\n%d pass / %d fail" % (PASS, FAIL))
+    print("%d/%d passed" % (PASS, PASS + FAIL))
     return 0 if FAIL == 0 else 1
 
 
