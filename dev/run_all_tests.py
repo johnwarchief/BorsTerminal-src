@@ -222,6 +222,8 @@ SUITES = [
     ('dev/version_anchor_guard.py',   'all six version anchors state the same release'),
     ('dev/setup_password_continuity_guard.py',
                                       'installer password still matches the installed app (silent update)'),
+    ('dev/installer_watchdog_guard.py',
+                                      'install watchdog waits without blocking and runs the setup'),
     ('dev/fts_defaults_parity_guard.py', 'FTS guide defaults: FE drawer mirrors the server'),
     ('dev/test_hourglass_settings_v1.py', 'hourglass RSI period, oversold threshold and MA52 mode are configurable'),
     ('dev/weekly_veto_guard.py',      'weekly downtrend/neutral is a hard veto; no-data is not'),
