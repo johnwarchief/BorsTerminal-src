@@ -34,13 +34,18 @@ ASSETS = {
     "291": "ومعادن", "599": "ولانا", "2672": "طلا", "453": "فولاد",
     "149": "فنوال", "167": "خودرو", "182": "شنفت", "696": "شراز",
     "183": "شبهرن", "703": "فارس",
+    "462": "وبملت", "484": "شپنا", "287": "قصفها", "384": "سصفها",
+    "6274": "درهآور", "109": "سغرب", "485": "مارون", "7836": "شستا",
+    "16449": "فزر", "17495": "فافق", "569": "فولاژ", "458": "فخاس",
+    "159": "فجام", "252": "شاملا", "498": "وبصادر", "661": "ولراز",
+    "302": "سرود",
 }
 FIELDS = ("o", "h", "l", "c", "v")
 EPOCH = dt.date(1970, 1, 1)
 
 
-def load_ref():
-    d = json.load(open(REF, encoding="utf-8"))
+def load_ref(path=None):
+    d = json.load(open(path or REF, encoding="utf-8"))
     items = {}
     for it in d["items"]:
         bars = sorted(it.get("bars") or [], key=lambda b: b["utc"][:10])
@@ -352,7 +357,7 @@ def main():
                     help="exclude product series whose price basis is not last")
     a = ap.parse_args()
     os.makedirs(a.out, exist_ok=True)
-    ref_doc, ref = load_ref()
+    ref_doc, ref = load_ref(a.ref)
     summary = {
         "generated_at": dt.datetime.now().astimezone().isoformat(timespec="seconds"),
         "reference": {

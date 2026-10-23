@@ -52,7 +52,10 @@ CH.DB_PATH = DB
 kept, rej = CH._filter_unproven_base_events("تست", [
     {"date": "1999-01-01", "ratio": 0.99, "source": "base-price-discontinuity"},
     {"date": "1999-01-01", "ratio": 0.99, "source": "priceAdjust"},
-    {"date": "1999-01-02", "ratio": 0.99, "source": "base-price-discontinuity"}])
+    # The next-day gap is deliberately >1.5%: Round 22 rejects only isolated
+    # small unproven gaps; this assertion is about the anomaly filter not
+    # bleeding into the next session, not about that separate rule.
+    {"date": "1999-01-02", "ratio": 0.95, "source": "base-price-discontinuity"}])
 ck("base gap on the synthetic anomaly is rejected",
    len(rej) == 1 and rej[0]["factor_status"] == "session-wide-base-gap", rej)
 ck("typed official event survives", any(e["source"] == "priceAdjust" for e in kept), kept)

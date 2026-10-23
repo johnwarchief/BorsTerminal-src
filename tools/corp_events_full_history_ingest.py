@@ -52,7 +52,18 @@ def load_cache(names, kind):
 
 
 def parse_pa(rows, now):
-    out = {}
+    """Return (individual rows, one row per date for the legacy table).
+
+    The official feed can emit more than one priceAdjust row for the same
+    `dEven` (155 such dates in the Round 16 cache).  The legacy table's
+    PRIMARY KEY is (ins_code, d_even), so it can hold only one; this function
+    keeps every row for `price_adjust_event_rows` and stores the product of
+    the same-date ratios (marked with corporate_type_code=-1) in the legacy
+    table.  A single-row date keeps its original p/pn so DPS classification
+    is unchanged.
+    """
+    all_rows = []
+    grouped = {}
     for r in rows:
         inst = r.get("instrument") or {}
         ins = str(inst.get("insCode") or r.get("insCode") or "")
@@ -64,10 +75,27 @@ def parse_pa(rows, now):
             continue
         if not ins or not pc or not pn:
             continue
-        out[(ins, d)] = (ins, d, inst.get("lVal18AFC") or r.get("lVal18AFC"),
-                         pc, pn, r.get("corporateTypeCode"),
-                         round(pc / pn, 8), "tsetmc_price_adjust_by_flow", now)
-    return list(out.values())
+        sym = inst.get("lVal18AFC") or r.get("lVal18AFC")
+        ratio = round(pc / pn, 8)
+        all_rows.append((ins, d, sym, pc, pn, r.get("corporateTypeCode"),
+                         ratio, "tsetmc_price_adjust_by_flow", now))
+        grouped.setdefault((ins, d), {"sym": sym, "rows": []})["rows"].append(
+            (pc, pn, ratio, r.get("corporateTypeCode")))
+    legacy = []
+    for (ins, d), g in grouped.items():
+        rs = g["rows"]
+        if len(rs) == 1:
+            pc, pn, ratio, ctype = rs[0]
+            legacy.append((ins, d, g["sym"], pc, pn, ctype, ratio,
+                           "tsetmc_price_adjust_by_flow", now))
+            continue
+        prod = 1.0
+        for _pc, _pn, ratio, _ct in rs:
+            prod *= ratio
+        prod = round(prod, 10)
+        legacy.append((ins, d, g["sym"], prod, 1.0, -1, prod,
+                       "tsetmc_price_adjust_by_flow", now))
+    return all_rows, legacy
 
 
 def parse_sh(rows, now):
@@ -106,21 +134,30 @@ def main():
         for flow in (1, 2):
             fetch(SH_FLOW_URL % flow, os.path.join(CACHE, SH_CACHE[flow - 1]))
             time.sleep(a.stay)
-    pa = parse_pa(load_cache(PA_CACHE, "priceAdjust"),
-                  dt.datetime.now().isoformat(timespec="seconds"))
+    pa_all, pa_legacy = parse_pa(load_cache(PA_CACHE, "priceAdjust"),
+                                 dt.datetime.now().isoformat(timespec="seconds"))
     sh = parse_sh(load_cache(SH_CACHE, "instrumentShareChange"),
                   dt.datetime.now().isoformat(timespec="seconds"))
-    print("parsed PA", len(pa), "SH", len(sh))
+    print("parsed PA", len(pa_all), "legacy", len(pa_legacy), "SH", len(sh))
     con = sqlite3.connect(a.db)
     try:
+        con.execute(
+            "CREATE TABLE IF NOT EXISTS price_adjust_event_rows ("
+            " ins_code TEXT, d_even INTEGER, symbol TEXT,"
+            " p_closing REAL, p_closing_not_adjusted REAL,"
+            " corporate_type_code INTEGER, ratio REAL, source TEXT, fetched_at TEXT,"
+            " PRIMARY KEY (ins_code, d_even, p_closing, p_closing_not_adjusted))")
+        con.executemany(
+            "INSERT OR REPLACE INTO price_adjust_event_rows VALUES (?,?,?,?,?,?,?,?,?)",
+            pa_all)
         con.executemany(
             "INSERT OR REPLACE INTO price_adjust_events VALUES (?,?,?,?,?,?,?,?,?)",
-            pa)
+            pa_legacy)
         con.executemany(
             "INSERT OR REPLACE INTO share_change_events VALUES (?,?,?,?,?,?,?,?)",
             sh)
         con.commit()
-        for t in ("price_adjust_events", "share_change_events"):
+        for t in ("price_adjust_events", "price_adjust_event_rows", "share_change_events"):
             n, lo, hi = con.execute(
                 "SELECT COUNT(*), MIN(d_even), MAX(d_even) FROM " + t).fetchone()
             print(t, n, lo, hi)

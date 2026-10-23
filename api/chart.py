@@ -661,7 +661,7 @@ def _instrument_kind(symbol):
     return "stock"
 
 
-def _filter_unproven_base_events(symbol, events):
+def _filter_unproven_base_events(symbol, events, times=None):
     """(kept, rejected) — گسستِ پایهٔ بی‌شاهدِ دفتر را از زنجیره بیرون می‌گذارد.
 
     سه الگویِ اندازه‌گیری‌شده در ممیزیِ سراسریِ ۲۰۲۶-۱۰-۲۰ (دادهٔ زندهٔ TSETMC + مرجع
@@ -687,17 +687,31 @@ def _filter_unproven_base_events(symbol, events):
     if not ev:
         return ev, []
     name, paper_type = "", None
+    ins_code = None
     anomaly_dates = set()
+    official_dates = set()
     try:
         conn = sqlite3.connect(DB_PATH, timeout=15)
         try:
             _pred, _params = sym_pred(conn, "l_val18", symbol, "board")
             row = conn.execute(
-                f"SELECT l_val30, paper_type FROM instruments WHERE {_pred}"
+                f"SELECT ins_code, l_val30, paper_type FROM instruments WHERE {_pred}"
                 " ORDER BY updated_at DESC LIMIT 1", _params).fetchone()
             if row:
-                name = str(row[0] or "").replace("\u200c", " ")
-                paper_type = row[1]
+                ins_code = str(row[0])
+                name = str(row[1] or "").replace("\u200c", " ")
+                paper_type = row[2]
+            if ins_code:
+                try:
+                    for (d,) in conn.execute(
+                            "SELECT d_even FROM price_adjust_events WHERE ins_code=? "
+                            "UNION SELECT d_even FROM share_change_events WHERE ins_code=?",
+                            (ins_code, ins_code)):
+                        iso = _d_even_to_date(d)
+                        if iso:
+                            official_dates.add(iso)
+                except Exception:
+                    pass
             try:
                 for d, cause in conn.execute(
                         "SELECT d_even, cause FROM session_anomalies"):
@@ -712,6 +726,31 @@ def _filter_unproven_base_events(symbol, events):
     is_option = _is_option_name(name)
     is_right = _is_right_name(name, paper_type)
     is_bond = _is_bond_name(name)
+    is_fund = (paper_type == 8 or "صندوق" in name)
+    date_counts = {}
+    _dates = sorted(set(str(t)[:10] for t in (times or []) if t))
+
+    def _eff(d):
+        if not _dates:
+            return d
+        return next((x for x in _dates if x >= d), d)
+
+    for e in ev:
+        if (e.get("source") or "base-price-discontinuity") != "base-price-discontinuity":
+            continue
+        ed = str(e.get("date"))[:10]
+        key = _eff(ed)
+        date_counts[key] = date_counts.get(key, 0) + 1
+    big_dates = []
+    for e in ev:
+        if (e.get("source") or "base-price-discontinuity") != "base-price-discontinuity":
+            continue
+        try:
+            er = float(e.get("ratio") or 0)
+        except (TypeError, ValueError):
+            continue
+        if 0 < er < 0.985:
+            big_dates.append(str(e.get("date"))[:10])
     kept, rejected = [], []
     for e in ev:
         try:
@@ -722,9 +761,10 @@ def _filter_unproven_base_events(symbol, events):
         # هر دو مسیرِ فراخوان پیش از این تابع sharpening را اجرا می‌کنند؛ منبعِ تهی
         # یعنی «ردیفِ دفتر این رویداد را تأیید نکرد» = همان گسستِ پایه.
         src = e.get("source") or "base-price-discontinuity"
+        ed = str(e.get("date"))[:10]
         status = None
         if src == "base-price-discontinuity":
-            if str(e.get("date"))[:10] in anomaly_dates:
+            if ed in anomaly_dates:
                 # گسستِ بازار-گسترده در همان سشن، نه اقدام شرکتی؛ شاهدش جدولِ
                 # cross-sectional است، نه یک تاریخِ نوشته‌شده در کد.
                 status = "session-wide-base-gap"
@@ -736,6 +776,19 @@ def _filter_unproven_base_events(symbol, events):
                 status = "right-base-gap"
             elif r > 1.0:
                 status = "unproven-positive-base-gap"
+            elif (not is_fund and 0.985 < r < 1.0
+                  and date_counts.get(_eff(ed), 0) == 1
+                  and not any(_day_diff(ed, bd) is not None and _day_diff(ed, bd) <= 3
+                              for bd in big_dates)
+                  and not any(_day_diff(ed, od) is not None and _day_diff(ed, od) <= 30
+                              for od in official_dates)):
+                # An isolated <1.5% downward base gap with no official row within
+                # 30 days is quote noise, not a distribution: keeping it scales
+                # the whole history before that date and the live reference has no
+                # step there.  A small gap that belongs to a same-date combined
+                # event (e.g. a 0.996 component next to a 0.077 capital change)
+                # is kept by the date-count gate.
+                status = "unproven-small-base-gap"
         if status:
             rejected.append({"date": e.get("date"), "ratio": e.get("ratio"),
                              "factor_status": status})
@@ -1164,10 +1217,38 @@ def _official_price_adjust_events(symbol, times=None, share_changes=None, closin
                 " ORDER BY updated_at DESC LIMIT 1", _params).fetchone()
             if not row:
                 return []
-            rows = conn.execute(
-                "SELECT d_even, ratio, source, p_closing, p_closing_not_adjusted"
-                " FROM price_adjust_events WHERE ins_code=? ORDER BY d_even",
-                (str(row[0]),)).fetchall()
+            has_rows = conn.execute(
+                "SELECT 1 FROM sqlite_master WHERE type='table' "
+                "AND name='price_adjust_event_rows'").fetchone()
+            if has_rows:
+                raw = conn.execute(
+                    "SELECT d_even, ratio, source, p_closing, p_closing_not_adjusted"
+                    " FROM price_adjust_event_rows WHERE ins_code=?"
+                    " ORDER BY d_even, p_closing", (str(row[0]),)).fetchall()
+                groups = {}
+                for d, ratio, src, pcl, pna in raw:
+                    groups.setdefault(d, []).append((ratio, src, pcl, pna))
+                rows = []
+                for d, g in groups.items():
+                    if len(g) == 1:
+                        ratio, src, pcl, pna = g[0]
+                        rows.append((d, ratio, src, pcl, pna, False))
+                    else:
+                        prod = 1.0
+                        for ratio, src, pcl, pna in g:
+                            try:
+                                prod *= float(ratio)
+                            except (TypeError, ValueError):
+                                pass
+                        last = g[-1]
+                        rows.append((d, round(prod, 10), last[1], last[2], last[3], True))
+            else:
+                raw = conn.execute(
+                    "SELECT d_even, ratio, source, p_closing, p_closing_not_adjusted,"
+                    " corporate_type_code FROM price_adjust_events WHERE ins_code=?"
+                    " ORDER BY d_even", (str(row[0]),)).fetchall()
+                rows = [(d, ratio, src, pcl, pna, ctype == -1)
+                        for d, ratio, src, pcl, pna, ctype in raw]
         finally:
             conn.close()
     except Exception:
@@ -1176,7 +1257,7 @@ def _official_price_adjust_events(symbol, times=None, share_changes=None, closin
         share_changes = _share_change_events(symbol)
     candle_dates = sorted(str(t)[:10] for t in (times or []))
     staged = []
-    for d, ratio, src, pcl, pna in rows:
+    for d, ratio, src, pcl, pna, combined in rows:
         dt = _d_even_to_date(d)
         try:
             r = float(ratio)
@@ -1191,23 +1272,28 @@ def _official_price_adjust_events(symbol, times=None, share_changes=None, closin
                 continue
             dt = nxt
         dps = None
-        try:
-            if pcl is not None and pna is not None and float(pna) > float(pcl) > 0:
-                dps = float(pna) - float(pcl)
-        except Exception:
-            dps = None
+        if not combined:
+            try:
+                if pcl is not None and pna is not None and float(pna) > float(pcl) > 0:
+                    dps = float(pna) - float(pcl)
+            except Exception:
+                dps = None
         staged.append({"date": dt, "ratio": r, "source": src or "priceAdjust",
-                       "orig": orig, "dps": dps, "source_ratio": r})
+                       "orig": orig, "dps": dps, "source_ratio": r,
+                       "combined": bool(combined)})
     closes = _closing_prices_for(symbol, [e["date"] for e in staged])
     candle_closes = closings or {}
     out = []
     for e in staged:
-        dps = e["dps"]
-        cl = candle_closes.get(e["date"])
-        if cl is None:
-            cl = closes.get(e["date"])
-        r, is_dps, etype = _classify_pa_event(
-            e["ratio"], dps, cl, e["orig"], share_changes)
+        if e.get("combined"):
+            r, is_dps, etype = float(e["ratio"]), False, "combined"
+        else:
+            dps = e["dps"]
+            cl = candle_closes.get(e["date"])
+            if cl is None:
+                cl = closes.get(e["date"])
+            r, is_dps, etype = _classify_pa_event(
+                e["ratio"], dps, cl, e["orig"], share_changes)
         rec = {"date": e["date"], "ratio": r, "source": e["source"],
                "_ledger_key": (e["orig"], "priceAdjust"),
                "_source_ratio": e["source_ratio"]}
@@ -1314,6 +1400,10 @@ def _share_change_events(symbol):
 # سنجشِ Round 12: قاعدهٔ بی‌گیت +0.24 واحدِ درصد exact داد ولی رویدادهایِ
 # آورده‌ایِ کوچک (كايزد، دعبيد) را هم تیز کرد و پس‌رفتِ نمادین ساخت.
 _SHARE_GAP_TOL = 0.005
+# A sharpened base gap may carry the official PA ratio while the proven DPS
+# leg is close/(close+DPS).  The DPS formula is authoritative for a DPS row
+# (Round 16); only numerical noise leaves the sharpened ratio untouched.
+_DPS_OVERRIDE_TOL = 1e-6
 # The gap is discovered on the first trading candle after the event, so a
 # suspension/weekend can put it 6-9 days after the ledger share date.  The
 # window is widened only for rows that also have official no-cash evidence
@@ -1679,6 +1769,29 @@ def _merge_official_price_adjust(events, official, rejected=None, share_changes=
                                  "factor_status": "included-in-base-gap"})
             continue
         if o.get("_ledger_key") and o["_ledger_key"] in claimed:
+            # The CSV sharpener may have claimed this ledger key with the
+            # official PA ratio, but a DPS row's authoritative ratio is the
+            # proven candle-closing formula (close/(close+DPS)); the official
+            # pClosing/pNotAdjusted ratio is only the pre-event source leg.
+            # Replace the sharpened ratio instead of rejecting the DPS.
+            if o.get("_dps"):
+                for e in kept:
+                    if e.get("_ledger_key") != o["_ledger_key"]:
+                        continue
+                    if e.get("source") not in ("priceAdjust", "tsetmc_price_adjust_by_flow"):
+                        continue
+                    try:
+                        er = float(e.get("ratio") or 0)
+                        orr = float(o.get("ratio") or 0)
+                    except (TypeError, ValueError):
+                        break
+                    if er and orr and abs(er / orr - 1.0) > _DPS_OVERRIDE_TOL:
+                        e["ratio"] = orr
+                        e["_dps"] = True
+                        e["dividend_per_share"] = o.get("dividend_per_share")
+                        e["_source_ratio"] = o.get("_source_ratio")
+                        e["source"] = o.get("source") or e.get("source")
+                    break
             if rejected is not None:
                 rejected.append({"date": o.get("date"), "ratio": o.get("ratio"),
                                  "factor_status": "duplicate-ledger-row"})
@@ -2305,7 +2418,8 @@ def get_chart_tsetmc(symbol: str):
         # _LEDGER_AGREE_TOL (۰٫۱٪) را دارد و درِ سنجش، میانۀِ اثرش روی کلِ پیکره
         # ۰٫۰۰۶ واحدِ درصدی بود (`_audit/ra365_ledger_ab.py`).
         adj_events, _sharp_n, _amb_n = _sharpen_events_with_ledger(symbol, adj_events)
-        adj_events, _false_rejected = _filter_unproven_base_events(symbol, adj_events)
+        adj_events, _false_rejected = _filter_unproven_base_events(
+            symbol, adj_events, times=[str(c["time"])[:10] for c in candles])
         _led_n = sum(1 for e in adj_events
                      if e.get("source") in ("priceAdjust", "shareChange"))
         # برچسبِ منبع «کجا عدد آمده» است، نه «کجا رویداد پیدا شده»: کشف همیشه از
@@ -2970,7 +3084,8 @@ def get_chart_db(symbol: str):
         # مسیرِ CDN می‌زند — یک قاعده، یک اعتبار، دو منبعِ سری. داوریِ منبع («رویدادی
         # نیست» / «هنوز ندیده‌ایم») مشخص می‌کند اصلاً حقِ ضرب دارد یا نه.
         _evs = _stored_adjust_events(symbol)
-        _evs, _false_rejected = _filter_unproven_base_events(symbol, _evs)
+        _evs, _false_rejected = _filter_unproven_base_events(
+            symbol, _evs, times=[str(c["time"])[:10] for c in candles])
         _src = ("local-cache" if _evs
                 else _stored_adjust_source(symbol) or "local-db-unseen")
         _known = _src in _ADJ_KNOWN_SOURCES
