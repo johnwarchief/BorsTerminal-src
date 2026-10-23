@@ -57,16 +57,20 @@ describe('تجمیع بازهٔ زمانی', () => {
     expect(w.map((c) => c.timestamp)).toEqual([t('2026-09-24'), t('2026-09-26')]);
   });
 
-  it('ماهانه: هر سطل یک ماه؛ مرزِ سال هم درست است', () => {
+  it('ماهانه: هر سطل یک ماهِ جلالی؛ مرزِ سال هم درست است', () => {
+    // 2026-09-19 = 28 Shahrivar 1405, 2026-09-23 = 1 Mehr 1405,
+    // 2026-10-03 = 11 Mehr 1405, 2027-01-04 = 14 Dey 1405.
+    // Rahavard's monthly bars are Jalali months, so Shahrivar and Mehr are
+    // separate bars even though both dates are in Gregorian September.
     const m = aggregateCandles(
       [bar('2026-09-19', 100, 110, 95, 105, 10), bar('2026-09-23', 98, 99, 80, 85, 50),
        bar('2026-10-03', 85, 90, 84, 88, 5), bar('2027-01-04', 88, 92, 87, 90, 7)],
       'M'
     );
     expect(m).toHaveLength(3);
-    expect(m[0]).toMatchObject({ open: 100, close: 85, volume: 60 });
-    expect(m[1]).toMatchObject({ open: 85, close: 88, volume: 5 });
-    expect(m[2]).toMatchObject({ open: 88, close: 90 });
+    expect(m[0]).toMatchObject({ open: 100, high: 110, low: 95, close: 105, volume: 10 });
+    expect(m[1]).toMatchObject({ open: 98, high: 99, low: 80, close: 88, volume: 55 });
+    expect(m[2]).toMatchObject({ open: 88, high: 92, low: 87, close: 90, volume: 7 });
   });
 
   it('سریِ خالی ⇒ خالی؛ تنها یک کندل ⇒ همان کندل', () => {

@@ -44,6 +44,28 @@ ck(added and added[0]["date"] == "2026-08-08",
 ck(added and abs(added[0]["ratio"] - 0.7751938) < 1e-12,
    "event keeps the official share ratio", added)
 
+# Mellat-like: the share date is 7 days after the last pre-suspension candle,
+# but the reopening (first candle) is 55 days later.  Measuring prev..share_date
+# would wrongly call this a short gap.
+out_m = C._apply_long_gap_share_changes(
+    [{"date": "2020-09-12", "ratio": 0.99904257, "source": "tsetmc_price_adjust_by_flow"}],
+    [("2020-07-26", 0.24149589)],
+    ["2020-07-19", "2020-09-12", "2020-09-13"],
+    {"2020-07-19": 27330.0, "2020-09-12": 5880.0})
+added_m = [e for e in out_m if e.get("long_gap")]
+ck(len(added_m) == 1 and added_m[0]["date"] == "2020-09-12"
+   and abs(added_m[0]["ratio"] - 0.24149589) < 1e-12,
+   "a share date near the last candle of a long suspension is still added", out_m)
+
+# Control: a real candle one day after the share date means the gap detector
+# saw it; the long-gap helper must not add a second event.
+out_s = C._apply_long_gap_share_changes(
+    [], [("2020-07-26", 0.24149589)],
+    ["2020-07-19", "2020-07-27", "2020-09-12"],
+    {"2020-07-19": 27330.0, "2020-07-27": 5880.0})
+ck(not [e for e in out_s if e.get("long_gap")],
+   "a short prev..first gap is left to the normal detector", out_s)
+
 # Covered: an existing event at that candle already applies the share ratio.
 covered = [{"date": "2013-07-28", "ratio": 0.646729, "source": "base-price-discontinuity"}]
 same_share = [("2013-07-27", 0.71666667)]

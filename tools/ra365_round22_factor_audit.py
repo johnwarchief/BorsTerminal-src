@@ -17,9 +17,9 @@ spec = importlib.util.spec_from_file_location(
 P = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(P)
 
-REF = "D:/BorsTerminal-tmp/r22_live/ra365_r22_ref_31.json"
-PROD = "D:/BorsTerminal-tmp/r22_live/product_live"
-OUT = os.path.join(ROOT, "artifacts", "ra365", "r22")
+REF = "D:/BorsTerminal-tmp/r23_live/ra365_r23_ref_50.json"
+PROD = "D:/BorsTerminal-tmp/r23_live/product_live"
+OUT = os.path.join(ROOT, "artifacts", "ra365", "r23")
 
 
 def steps(m, thresh=1e-4):
@@ -84,12 +84,12 @@ def main():
                              round(pt["ratio"], 8), "", "", "PRODUCT_ONLY"])
         summary[aid] = {"symbol": sym, "ref_steps": len(rs), "product_steps": len(ps),
                         "counts": dict(counts)}
-    with open(os.path.join(OUT, "factor31.csv"), "w", encoding="utf-8-sig", newline="") as f:
+    with open(os.path.join(OUT, "factor50.csv"), "w", encoding="utf-8-sig", newline="") as f:
         w = csv.writer(f)
         w.writerow(["asset_id", "symbol", "side", "ref_date", "ref_ratio",
                     "product_date", "product_ratio", "date_gap_days", "ratio_rel", "class"])
         w.writerows(rows)
-    json.dump(summary, open(os.path.join(OUT, "factor31-summary.json"), "w", encoding="utf-8"),
+    json.dump(summary, open(os.path.join(OUT, "factor50-summary.json"), "w", encoding="utf-8"),
               ensure_ascii=False, indent=1)
     tot = Counter()
     for v in summary.values():

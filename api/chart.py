@@ -1543,7 +1543,12 @@ def _apply_long_gap_share_changes(events, share_changes, times, closings):
         if idx == 0:
             continue
         prev = ts[idx - 1]
-        gap = _day_diff(prev, sd)
+        # The detector only sees consecutive candles, so the hidden gap is the
+        # whole no-trade interval prev..first.  The ledger share date may sit
+        # just a few days after prev (e.g. Mellat 2020-07-26, previous candle
+        # 2020-07-19, reopening 2020-09-12); measuring prev..share_date would
+        # miss it even though the suspension is 55 days long.
+        gap = _day_diff(prev, first)
         if gap is None or gap <= _SHARE_GAP_WINDOW_DAYS:
             continue
         same = [e for e in out if str(e.get("date"))[:10] == first]
