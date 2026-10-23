@@ -1,0 +1,169 @@
+{
+ "595": {
+  "symbol": "حخزر",
+  "ref_steps": 16,
+  "product_steps": 16,
+  "counts": {
+   "MATCH": 13,
+   "RATIO_DIFF": 1,
+   "CLOSE": 2
+  },
+  "product_source": "ledger+base-price-discontinuity",
+  "product_basis": "last"
+ },
+ "48315": {
+  "symbol": "آکو",
+  "ref_steps": 1,
+  "product_steps": 1,
+  "counts": {
+   "CLOSE": 1
+  },
+  "product_source": "ledger+base-price-discontinuity",
+  "product_basis": "last"
+ },
+ "207": {
+  "symbol": "لخزر",
+  "ref_steps": 24,
+  "product_steps": 23,
+  "counts": {
+   "REF_ONLY": 1,
+   "CLOSE": 2,
+   "MATCH": 19,
+   "RATIO_DIFF": 2
+  },
+  "product_source": "ledger+base-price-discontinuity",
+  "product_basis": "last"
+ },
+ "325": {
+  "symbol": "هجرت",
+  "ref_steps": 9,
+  "product_steps": 10,
+  "counts": {
+   "MATCH": 6,
+   "CLOSE": 3,
+   "PRODUCT_ONLY": 1
+  },
+  "product_source": "ledger+base-price-discontinuity",
+  "product_basis": "last"
+ },
+ "291": {
+  "symbol": "ومعادن",
+  "ref_steps": 31,
+  "product_steps": 30,
+  "counts": {
+   "REF_ONLY": 1,
+   "MATCH": 20,
+   "CLOSE": 5,
+   "RATIO_DIFF": 5
+  },
+  "product_source": "ledger+base-price-discontinuity",
+  "product_basis": "last"
+ },
+ "599": {
+  "symbol": "ولانا",
+  "ref_steps": 11,
+  "product_steps": 10,
+  "counts": {
+   "RATIO_DIFF": 2,
+   "MATCH": 8,
+   "REF_ONLY": 1
+  },
+  "product_source": "base-price-discontinuity",
+  "product_basis": "last"
+ },
+ "2672": {
+  "symbol": "طلا",
+  "ref_steps": 0,
+  "product_steps": 0,
+  "counts": {},
+  "product_source": "no-adjustment-event",
+  "product_basis": "last"
+ },
+ "453": {
+  "symbol": "فولاد",
+  "ref_steps": 28,
+  "product_steps": 27,
+  "counts": {
+   "REF_ONLY": 1,
+   "RATIO_DIFF": 2,
+   "CLOSE": 7,
+   "MATCH": 18
+  },
+  "product_source": "ledger+base-price-discontinuity",
+  "product_basis": "last"
+ },
+ "149": {
+  "symbol": "فنوال",
+  "ref_steps": 19,
+  "product_steps": 20,
+  "counts": {
+   "CLOSE": 2,
+   "MATCH": 17,
+   "PRODUCT_ONLY": 1
+  },
+  "product_source": "ledger+base-price-discontinuity",
+  "product_basis": "last"
+ },
+ "167": {
+  "symbol": "خودرو",
+  "ref_steps": 14,
+  "product_steps": 13,
+  "counts": {
+   "REF_ONLY": 1,
+   "MATCH": 10,
+   "CLOSE": 3
+  },
+  "product_source": "ledger+base-price-discontinuity",
+  "product_basis": "last"
+ },
+ "182": {
+  "symbol": "شنفت",
+  "ref_steps": 28,
+  "product_steps": 26,
+  "counts": {
+   "REF_ONLY": 2,
+   "CLOSE": 3,
+   "MATCH": 21,
+   "RATIO_DIFF": 2
+  },
+  "product_source": "ledger+base-price-discontinuity",
+  "product_basis": "last"
+ },
+ "696": {
+  "symbol": "شراز",
+  "ref_steps": 16,
+  "product_steps": 4,
+  "counts": {
+   "REF_ONLY": 12,
+   "CLOSE": 1,
+   "MATCH": 3
+  },
+  "product_source": "ledger+base-price-discontinuity",
+  "product_basis": "last"
+ },
+ "183": {
+  "symbol": "شبهرن",
+  "ref_steps": 27,
+  "product_steps": 27,
+  "counts": {
+   "REF_ONLY": 1,
+   "CLOSE": 6,
+   "MATCH": 19,
+   "RATIO_DIFF": 1,
+   "PRODUCT_ONLY": 1
+  },
+  "product_source": "ledger+base-price-discontinuity",
+  "product_basis": "last"
+ },
+ "703": {
+  "symbol": "فارس",
+  "ref_steps": 19,
+  "product_steps": 20,
+  "counts": {
+   "MATCH": 19,
+   "PRODUCT_ONLY": 1
+  },
+  "product_source": "ledger+base-price-discontinuity",
+  "product_basis": "last"
+ }
+}

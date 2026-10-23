@@ -1,0 +1,2 @@
+8fb85f381317634430cae429bd9775eba0a364b692e0868b4d9b17dbbcc6c17f */d/BorsTerminal-tmp/ra365_round17/market_r17_migrated.db
+e08d8062be33301551e672683106b87ea930825657ea6956e515bc7ac191a2a4 *market.db
