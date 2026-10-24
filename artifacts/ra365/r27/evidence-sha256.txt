@@ -1,0 +1,20 @@
+# RA365 Round 27 evidence (2026-10-24)
+# frozen corpus (outside Git): D:/BorsTerminal-tmp/r26_bench/frozen
+4b1ecb4c1effc4d5770c42521d96a2540a9c9f7b471d7cc710cd034712a8c17c *D:/BorsTerminal-tmp/r26_bench/frozen/ref_bars_v2.jsonl
+893b6d6aa1059d51a83bb7a44fd239d4c381695806562dd3dcdd3ed5d8ad9f27 *D:/BorsTerminal-tmp/r26_bench/frozen/product_live_final_v4.jsonl
+79a3c666c2b49363fd5b7a2684ee776d034a2fc3ef09006f0f16c7af3d5df18f *D:/BorsTerminal-tmp/ra365_round18/cohort.jsonl
+# fresh current-engine capture (outside Git): D:/BorsTerminal-tmp/r27_live/product_shard0..3
+b0ad49ce742e6f02854acc6bb557627dba82832aaf0d7431c1824e7bb6882fd1 *artifacts/ra365/r27/payload-manifest.sha256
+9c1861fe8b87070c53c39b8b8247fda8159d3af8fd897ced1158ab22ce3c88fc *artifacts/ra365/r27/capture-ledger.csv
+# audit outputs
+8edc3dfe7a56469f4d46147e6b5fcf23e87fbd3054ee09b34b2609313fa60b21 *artifacts/ra365/r27/audit-summary.json
+1ce77c6b80f330156b394cdd43738e38a9e3b93a0ec688f3abf33f0ca28eaa27 *artifacts/ra365/r27/audit-per-asset.csv
+# CODAL evidence ledgers
+97181a07f968241d54d21ad68d2ad17ebe86e0cb199f864af5ace76ec499f836 *artifacts/ra365/r27/trackC/codal-ledger-run1.jsonl
+382d6e1d60e7fc3f9aa7929a490d11f0100b9f0b5a4f41e885e58f2a11f2466d *artifacts/ra365/r27/trackC/codal-ledger-run2.jsonl
+# gate logs
+de33af16a8204c3c29b810323db9845f4d431fedbe76d20ea7d954fa10929644 *artifacts/ra365/r27/full-gate.log
+328e30f13bffffb99614b85ddb32f3bf3bd62ec416d183e41cd069f1075d6809 *artifacts/ra365/r27/full-gate-attempt1.log
+# protected DBs
+e08d8062be33301551e672683106b87ea930825657ea6956e515bc7ac191a2a4 *C:/Users/Johnkallnaya/Desktop/Borsterminal/.worktrees/ra365-round18/market.db
+8fb85f381317634430cae429bd9775eba0a364b692e0868b4d9b17dbbcc6c17f *D:/BorsTerminal-tmp/ra365_round17/market_r17_migrated.db
