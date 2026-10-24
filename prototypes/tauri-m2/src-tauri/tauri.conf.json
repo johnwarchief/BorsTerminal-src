@@ -1,0 +1,31 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "BorsTerminal M2 Shell",
+  "version": "0.2.0",
+  "identifier": "com.borsterminal.m2shell",
+  "build": {
+    "frontendDist": "../web"
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "بورس‌ترمینال — BorsTerminal",
+        "width": 1360,
+        "height": 740,
+        "minWidth": 1024,
+        "minHeight": 640,
+        "resizable": true,
+        "visible": false,
+        "url": "about:blank"
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": false,
+    "icon": ["icons/icon.ico"]
+  }
+}

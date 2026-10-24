@@ -1,0 +1,869 @@
+{
+  "label": "tauri-crash-iso",
+  "mode": "warm",
+  "scenario": "normal",
+  "generated_at": "2026-10-24T23:01:47Z",
+  "host": {
+    "platform": "Windows-10-10.0.19045-SP0",
+    "cpu_logical": 2,
+    "cpu_physical": 1,
+    "ram_gb": 3.88,
+    "python": "3.12.10",
+    "exe": "prototypes\\tauri-m2\\src-tauri\\target\\x86_64-pc-windows-gnu\\release\\bors-m2-shell.exe",
+    "exe_bytes": 21599122,
+    "launcher_bytes": null,
+    "dist_bytes": null,
+    "dist_bytes_note": "TinyJS portable dist only; Tauri target/release is not an install footprint"
+  },
+  "protocol": {
+    "shell": "Tauri 2.12.5 GNU shell + Python sidecar",
+    "window_gate": "shell opens the loopback window only after GET /api/update/version succeeds",
+    "isolation": "fresh WORK_DIR/profile in cold; shared seeded one in warm",
+    "network_loops": "BORS_NO_FETCH_LOOPS=1, BORS_CODAL_AUTO=0",
+    "instrumentation": "external process tree + Win32 PrintWindow + bors-m2-shell.exe WebView2 eval probe (no CDP)",
+    "cold_definition": "fresh work dir and profile per run, DB seeded from the Phase C template",
+    "warm_definition": "one unrecorded warmup, then same work dir/profile reused",
+    "crash": "with --crash the shell root is terminated after the first board paint; orphans are recorded and then killed by the harness"
+  },
+  "timings_ms": {
+    "sidecar_ready_line": {
+      "n": 1,
+      "median": 19766.7,
+      "min": 19766.7,
+      "max": 19766.7,
+      "values": [
+        19766.7
+      ],
+      "p95": null,
+      "p95_note": "not reported: n<20"
+    },
+    "window_visible": {
+      "n": 1,
+      "median": 23804.4,
+      "min": 23804.4,
+      "max": 23804.4,
+      "values": [
+        23804.4
+      ],
+      "p95": null,
+      "p95_note": "not reported: n<20"
+    },
+    "http_verified": {
+      "n": 1,
+      "median": 19999.6,
+      "min": 19999.6,
+      "max": 19999.6,
+      "values": [
+        19999.6
+      ],
+      "p95": null,
+      "p95_note": "not reported: n<20"
+    },
+    "app_document_ready": {
+      "n": 1,
+      "median": 20674.5,
+      "min": 20674.5,
+      "max": 20674.5,
+      "values": [
+        20674.5
+      ],
+      "p95": null,
+      "p95_note": "not reported: n<20"
+    },
+    "login_ready": {
+      "n": 1,
+      "median": 21330.5,
+      "min": 21330.5,
+      "max": 21330.5,
+      "values": [
+        21330.5
+      ],
+      "p95": null,
+      "p95_note": "not reported: n<20"
+    },
+    "master_ready": {
+      "n": 1,
+      "median": 25259.5,
+      "min": 25259.5,
+      "max": 25259.5,
+      "values": [
+        25259.5
+      ],
+      "p95": null,
+      "p95_note": "not reported: n<20"
+    },
+    "market_rows_visible": {
+      "n": 1,
+      "median": 44705.5,
+      "min": 44705.5,
+      "max": 44705.5,
+      "values": [
+        44705.5
+      ],
+      "p95": null,
+      "p95_note": "not reported: n<20"
+    },
+    "technical_ready": {
+      "n": 0,
+      "median": null,
+      "min": null,
+      "max": null,
+      "p95": null,
+      "p95_note": "not reported: n<20"
+    },
+    "fundamental_ready": {
+      "n": 0,
+      "median": null,
+      "min": null,
+      "max": null,
+      "p95": null,
+      "p95_note": "not reported: n<20"
+    },
+    "market_status_ready": {
+      "n": 0,
+      "median": null,
+      "min": null,
+      "max": null,
+      "p95": null,
+      "p95_note": "not reported: n<20"
+    },
+    "window_close_ms": {
+      "n": 0,
+      "median": null,
+      "min": null,
+      "max": null,
+      "p95": null,
+      "p95_note": "not reported: n<20"
+    },
+    "root_exit_ms": {
+      "n": 1,
+      "median": 67028.4,
+      "min": 67028.4,
+      "max": 67028.4,
+      "values": [
+        67028.4
+      ],
+      "p95": null,
+      "p95_note": "not reported: n<20"
+    }
+  },
+  "rss_mb": {
+    "peak": {
+      "n": 1,
+      "median": 913.6,
+      "values": [
+        913.6
+      ]
+    },
+    "idle": {
+      "n": 0,
+      "median": null,
+      "values": []
+    }
+  },
+  "idle_cpu_pct_one_core": {
+    "n": 0,
+    "median": null,
+    "values": []
+  },
+  "runs_ok": 0,
+  "runs_total": 1,
+  "security": [
+    {
+      "local_host": {
+        "status": 200,
+        "expected": 200,
+        "ok": true,
+        "headers": {
+          "Host": "127.0.0.1:59970"
+        }
+      },
+      "foreign_host": {
+        "status": 403,
+        "expected": 403,
+        "ok": true,
+        "headers": {
+          "Host": "evil.example"
+        }
+      },
+      "origin_null": {
+        "status": 403,
+        "expected": 403,
+        "ok": true,
+        "headers": {
+          "Host": "127.0.0.1:59970",
+          "Origin": "null"
+        }
+      },
+      "origin_foreign": {
+        "status": 403,
+        "expected": 403,
+        "ok": true,
+        "headers": {
+          "Host": "127.0.0.1:59970",
+          "Origin": "http://evil.example"
+        }
+      },
+      "origin_local": {
+        "status": 200,
+        "expected": 200,
+        "ok": true,
+        "headers": {
+          "Host": "127.0.0.1:59970",
+          "Origin": "http://127.0.0.1:59970"
+        }
+      }
+    }
+  ],
+  "security_all_ok": true,
+  "exit_codes": [
+    1
+  ],
+  "cleanup": [
+    {
+      "survivors_before": [],
+      "killed": [],
+      "survivors_after": [],
+      "port_open_after_cleanup": false
+    }
+  ],
+  "crash_runs": [
+    1
+  ],
+  "crash_orphans": 8,
+  "runs": [
+    {
+      "label": "tauri-crash-iso",
+      "mode": "warm",
+      "scenario": "normal",
+      "run": 1,
+      "launch_epoch_ms": 1792882827782.5,
+      "exe": "prototypes\\tauri-m2\\src-tauri\\target\\x86_64-pc-windows-gnu\\release\\bors-m2-shell.exe",
+      "work_dir": "C:\\Users\\STU\\AppData\\Local\\Temp\\bors_phased\\tauri-crash-iso\\warm-work",
+      "profile_dir": "C:\\Users\\STU\\AppData\\Local\\Temp\\bors_phased\\tauri-crash-iso\\warm-profile",
+      "screenshots": {},
+      "errors": [
+        "crash_kill: root terminated without window close",
+        "survivors_after_shell_exit=8"
+      ],
+      "probe_instances": [
+        {
+          "run_id": "1792882848352-cost2y",
+          "at_ms": 20990.1,
+          "url": "http://127.0.0.1:59970/"
+        }
+      ],
+      "crash": true,
+      "firewall_prompts": 0,
+      "window": {
+        "hwnd": 719129034,
+        "title": "بورس‌ترمینال — BorsTerminal",
+        "pid": 14032,
+        "visible": true,
+        "rect": [
+          -8,
+          -8,
+          1288,
+          992
+        ],
+        "w": 1296,
+        "h": 1000
+      },
+      "window_visible_ms": 23804.4,
+      "probe_event_ms": {
+        "app_document_ready": 20674.5,
+        "login_ready": 21330.5,
+        "login_submit": 21685.5,
+        "master_ready": 25259.5,
+        "market_nav_begin": 25260.5,
+        "market_rows_visible": 44705.5
+      },
+      "crash_kill": {
+        "epoch_ms": 1792882893264.8337,
+        "root_pid": 14032,
+        "reason": "TerminateProcess on the shell root only"
+      },
+      "security": {
+        "local_host": {
+          "status": 200,
+          "expected": 200,
+          "ok": true,
+          "headers": {
+            "Host": "127.0.0.1:59970"
+          }
+        },
+        "foreign_host": {
+          "status": 403,
+          "expected": 403,
+          "ok": true,
+          "headers": {
+            "Host": "evil.example"
+          }
+        },
+        "origin_null": {
+          "status": 403,
+          "expected": 403,
+          "ok": true,
+          "headers": {
+            "Host": "127.0.0.1:59970",
+            "Origin": "null"
+          }
+        },
+        "origin_foreign": {
+          "status": 403,
+          "expected": 403,
+          "ok": true,
+          "headers": {
+            "Host": "127.0.0.1:59970",
+            "Origin": "http://evil.example"
+          }
+        },
+        "origin_local": {
+          "status": 200,
+          "expected": 200,
+          "ok": true,
+          "headers": {
+            "Host": "127.0.0.1:59970",
+            "Origin": "http://127.0.0.1:59970"
+          }
+        }
+      },
+      "final": null,
+      "final_run_ids": [],
+      "shell_trace": [
+        {
+          "detail": null,
+          "dt": 0.0,
+          "pid": 14032,
+          "port": null,
+          "stage": "backend_init",
+          "t": 1792882832.544298
+        },
+        {
+          "detail": null,
+          "dt": 0.0,
+          "pid": 14032,
+          "port": null,
+          "stage": "sidecar_spawn_begin",
+          "t": 1792882832.554189
+        },
+        {
+          "detail": null,
+          "dt": 0.0,
+          "pid": 14032,
+          "port": null,
+          "stage": "sidecar_spawned",
+          "t": 1792882832.579972
+        },
+        {
+          "detail": null,
+          "dt": 0.0,
+          "pid": 14032,
+          "port": 59970,
+          "stage": "sidecar_ready_line",
+          "t": 1792882847.5492115
+        },
+        {
+          "detail": null,
+          "dt": 0.0,
+          "pid": 14032,
+          "port": 59970,
+          "stage": "http_verified",
+          "t": 1792882847.7821267
+        },
+        {
+          "detail": null,
+          "dt": 0.0,
+          "pid": 14032,
+          "port": 59970,
+          "stage": "window_open_begin",
+          "t": 1792882847.8115685
+        },
+        {
+          "detail": null,
+          "dt": 0.0,
+          "pid": 14032,
+          "port": 59970,
+          "stage": "window_open",
+          "t": 1792882847.8149855
+        },
+        {
+          "detail": null,
+          "dt": 0.0,
+          "pid": 14032,
+          "port": null,
+          "stage": "probe_eval",
+          "t": 1792882847.857948
+        },
+        {
+          "detail": null,
+          "dt": 0.0,
+          "pid": 14032,
+          "port": null,
+          "stage": "probe_stop_file",
+          "t": 1792882882.003601
+        }
+      ],
+      "sidecar_trace": [
+        {
+          "stage": "entry_import",
+          "t": 1792882833.399022,
+          "dt": 6.6e-05,
+          "pid": 14744
+        },
+        {
+          "stage": "streams_ready",
+          "t": 1792882833.412013,
+          "dt": 0.012424,
+          "pid": 14744
+        },
+        {
+          "stage": "preflight_start",
+          "t": 1792882833.584907,
+          "dt": 0.186151,
+          "pid": 14744
+        },
+        {
+          "stage": "db_prepared",
+          "t": 1792882834.791164,
+          "dt": 1.39181,
+          "pid": 14744,
+          "db": "market.db",
+          "exists": true
+        },
+        {
+          "stage": "library_import_begin",
+          "t": 1792882834.865119,
+          "dt": 1.466397,
+          "pid": 14744
+        },
+        {
+          "stage": "library_import_end",
+          "t": 1792882843.697678,
+          "dt": 10.298244,
+          "pid": 14744
+        },
+        {
+          "stage": "preflight_end",
+          "t": 1792882843.699677,
+          "dt": 10.300877,
+          "pid": 14744,
+          "ok": true
+        },
+        {
+          "stage": "uvicorn_spawn",
+          "t": 1792882843.720664,
+          "dt": 10.32173,
+          "pid": 14744,
+          "port": 59970
+        },
+        {
+          "stage": "api_startup_begin",
+          "t": 1792882846.611924,
+          "dt": 13.213036,
+          "pid": 14744
+        },
+        {
+          "stage": "screener_low_priority",
+          "t": 1792882846.644903,
+          "dt": 13.245425,
+          "pid": 14744
+        },
+        {
+          "stage": "screener_wait_board",
+          "t": 1792882846.647902,
+          "dt": 13.249111,
+          "pid": 14744
+        },
+        {
+          "stage": "api_startup_end",
+          "t": 1792882846.675884,
+          "dt": 13.27671,
+          "pid": 14744
+        },
+        {
+          "stage": "http_ready",
+          "t": 1792882847.405435,
+          "dt": 14.006745,
+          "pid": 14744,
+          "port": 59970
+        },
+        {
+          "stage": "candle_projection_done",
+          "t": 1792882854.262233,
+          "dt": 20.863416,
+          "pid": 14744
+        },
+        {
+          "stage": "screener_wait_board_done",
+          "t": 1792882869.751254,
+          "dt": 36.35229,
+          "pid": 14744,
+          "got": true
+        },
+        {
+          "stage": "market_publish",
+          "t": 1792882869.80822,
+          "dt": 36.408937,
+          "pid": 14744,
+          "gen": 0,
+          "rev": 0,
+          "rows": 6018,
+          "ms": 21119.3
+        },
+        {
+          "stage": "market_publish",
+          "t": 1792882870.617745,
+          "dt": 37.218161,
+          "pid": 14744,
+          "gen": 0,
+          "rev": 0,
+          "rows": 6018,
+          "ms": 15948.7
+        }
+      ],
+      "process": {
+        "peak": {
+          "rss_mb": 913.6,
+          "epoch_ms": 1792882887217.5574,
+          "procs": 10
+        },
+        "stages": {
+          "window_visible": {
+            "epoch_ms": 1792882859619.9316,
+            "rss_mb": 751.8,
+            "cpu_s": 16.172,
+            "procs": 10,
+            "rows": [
+              {
+                "pid": 14032,
+                "ppid": 12808,
+                "name": "bors-m2-shell.exe",
+                "rss_mb": 21.4,
+                "cpu_s": 0.25
+              },
+              {
+                "pid": 12888,
+                "ppid": 14032,
+                "name": "msedgewebview2.exe",
+                "rss_mb": 105.0,
+                "cpu_s": 1.594
+              },
+              {
+                "pid": 4424,
+                "ppid": 14032,
+                "name": "python.exe",
+                "rss_mb": 3.3,
+                "cpu_s": 0.031
+              },
+              {
+                "pid": 10796,
+                "ppid": 4424,
+                "name": "conhost.exe",
+                "rss_mb": 10.7,
+                "cpu_s": 0.031
+              },
+              {
+                "pid": 14744,
+                "ppid": 4424,
+                "name": "python.exe",
+                "rss_mb": 357.8,
+                "cpu_s": 10.688
+              },
+              {
+                "pid": 12912,
+                "ppid": 12888,
+                "name": "msedgewebview2.exe",
+                "rss_mb": 10.7,
+                "cpu_s": 0.031
+              },
+              {
+                "pid": 3484,
+                "ppid": 12888,
+                "name": "msedgewebview2.exe",
+                "rss_mb": 35.1,
+                "cpu_s": 0.406
+              },
+              {
+                "pid": 11036,
+                "ppid": 12888,
+                "name": "msedgewebview2.exe",
+                "rss_mb": 77.5,
+                "cpu_s": 1.203
+              },
+              {
+                "pid": 9196,
+                "ppid": 12888,
+                "name": "msedgewebview2.exe",
+                "rss_mb": 19.0,
+                "cpu_s": 0.141
+              },
+              {
+                "pid": 4520,
+                "ppid": 12888,
+                "name": "msedgewebview2.exe",
+                "rss_mb": 111.3,
+                "cpu_s": 1.797
+              }
+            ]
+          }
+        },
+        "samples": 66
+      },
+      "shutdown": {
+        "forced_kill": false,
+        "window_close_ms": null,
+        "root_exit_ms": 67028.4,
+        "exit_code": 1,
+        "port": 59970,
+        "port_open_after_exit": true,
+        "sidecar_shutdown": [],
+        "shell_tail": [
+          {
+            "detail": null,
+            "dt": 0.0,
+            "pid": 14032,
+            "port": null,
+            "stage": "sidecar_spawn_begin",
+            "t": 1792882832.554189
+          },
+          {
+            "detail": null,
+            "dt": 0.0,
+            "pid": 14032,
+            "port": null,
+            "stage": "sidecar_spawned",
+            "t": 1792882832.579972
+          },
+          {
+            "detail": null,
+            "dt": 0.0,
+            "pid": 14032,
+            "port": 59970,
+            "stage": "sidecar_ready_line",
+            "t": 1792882847.5492115
+          },
+          {
+            "detail": null,
+            "dt": 0.0,
+            "pid": 14032,
+            "port": 59970,
+            "stage": "http_verified",
+            "t": 1792882847.7821267
+          },
+          {
+            "detail": null,
+            "dt": 0.0,
+            "pid": 14032,
+            "port": 59970,
+            "stage": "window_open_begin",
+            "t": 1792882847.8115685
+          },
+          {
+            "detail": null,
+            "dt": 0.0,
+            "pid": 14032,
+            "port": 59970,
+            "stage": "window_open",
+            "t": 1792882847.8149855
+          },
+          {
+            "detail": null,
+            "dt": 0.0,
+            "pid": 14032,
+            "port": null,
+            "stage": "probe_eval",
+            "t": 1792882847.857948
+          },
+          {
+            "detail": null,
+            "dt": 0.0,
+            "pid": 14032,
+            "port": null,
+            "stage": "probe_stop_file",
+            "t": 1792882882.003601
+          }
+        ],
+        "crash_kill": {
+          "epoch_ms": 1792882893264.8337,
+          "root_pid": 14032,
+          "reason": "TerminateProcess on the shell root only"
+        },
+        "survivors": [
+          {
+            "pid": 3484,
+            "name": "msedgewebview2.exe",
+            "exe": "c:\\program files (x86)\\microsoft\\edgewebview\\application\\155.0.4283.62\\msedgewebview2.exe",
+            "cmd": "C:\\Program Files (x86)\\Microsoft\\EdgeWebView\\Application\\155.0.4283.62\\msedgewebview2.exe --type=utility --utility-sub-type=network.mojom.NetworkService --lang=en-US --service-sandbox-type=none --noerrdialogs --user-data-dir=C:\\Users\\STU\\AppData\\Local\\com.borsterminal.m2shell\\EBWebView --webview-exe",
+            "env_work": "C:\\Users\\STU\\AppData\\Local\\Temp\\bors_phased\\tauri-crash-iso\\warm-work",
+            "env_localappdata": "C:\\Users\\STU\\AppData\\Local\\Temp\\bors_phased\\tauri-crash-iso\\warm-profile"
+          },
+          {
+            "pid": 4424,
+            "name": "python.exe",
+            "exe": "c:\\users\\stu\\documents\\qoder\\2026-10-23\\95b91389\\borsterminal\\.venv\\scripts\\python.exe",
+            "cmd": "C:\\Users\\STU\\Documents\\Qoder\\2026-10-23\\95b91389\\BorsTerminal\\.venv\\Scripts\\python.exe C:\\Users\\STU\\Documents\\Qoder\\2026-10-23\\95b91389\\BorsTerminal\\tools\\desktop-migration\\phase_d\\headless_server.py",
+            "env_work": "C:\\Users\\STU\\AppData\\Local\\Temp\\bors_phased\\tauri-crash-iso\\warm-work",
+            "env_localappdata": "C:\\Users\\STU\\AppData\\Local\\Temp\\bors_phased\\tauri-crash-iso\\warm-profile"
+          },
+          {
+            "pid": 4520,
+            "name": "msedgewebview2.exe",
+            "exe": "c:\\program files (x86)\\microsoft\\edgewebview\\application\\155.0.4283.62\\msedgewebview2.exe",
+            "cmd": "C:\\Program Files (x86)\\Microsoft\\EdgeWebView\\Application\\155.0.4283.62\\msedgewebview2.exe --type=renderer --noerrdialogs --user-data-dir=C:\\Users\\STU\\AppData\\Local\\com.borsterminal.m2shell\\EBWebView --webview-exe-name=bors-m2-shell.exe --webview-exe-version=0.2.0 --embedded-browser-webview=1 --embed",
+            "env_work": null,
+            "env_localappdata": "C:\\Users\\STU\\AppData\\Local\\Temp\\bors_phased\\tauri-crash-iso\\warm-profile"
+          },
+          {
+            "pid": 9196,
+            "name": "msedgewebview2.exe",
+            "exe": "c:\\program files (x86)\\microsoft\\edgewebview\\application\\155.0.4283.62\\msedgewebview2.exe",
+            "cmd": "C:\\Program Files (x86)\\Microsoft\\EdgeWebView\\Application\\155.0.4283.62\\msedgewebview2.exe --type=utility --utility-sub-type=storage.mojom.StorageService --lang=en-US --service-sandbox-type=service --noerrdialogs --user-data-dir=C:\\Users\\STU\\AppData\\Local\\com.borsterminal.m2shell\\EBWebView --webview-",
+            "env_work": null,
+            "env_localappdata": "C:\\Users\\STU\\AppData\\Local\\Temp\\bors_phased\\tauri-crash-iso\\warm-profile"
+          },
+          {
+            "pid": 11036,
+            "name": "msedgewebview2.exe",
+            "exe": "c:\\program files (x86)\\microsoft\\edgewebview\\application\\155.0.4283.62\\msedgewebview2.exe",
+            "cmd": "C:\\Program Files (x86)\\Microsoft\\EdgeWebView\\Application\\155.0.4283.62\\msedgewebview2.exe --type=gpu-process --gpu-recent-crash-count=0 --noerrdialogs --user-data-dir=C:\\Users\\STU\\AppData\\Local\\com.borsterminal.m2shell\\EBWebView --webview-exe-name=bors-m2-shell.exe --webview-exe-version=0.2.0 --embe",
+            "env_work": "C:\\Users\\STU\\AppData\\Local\\Temp\\bors_phased\\tauri-crash-iso\\warm-work",
+            "env_localappdata": "C:\\Users\\STU\\AppData\\Local\\Temp\\bors_phased\\tauri-crash-iso\\warm-profile"
+          },
+          {
+            "pid": 12888,
+            "name": "msedgewebview2.exe",
+            "exe": "c:\\program files (x86)\\microsoft\\edgewebview\\application\\155.0.4283.62\\msedgewebview2.exe",
+            "cmd": "C:\\Program Files (x86)\\Microsoft\\EdgeWebView\\Application\\155.0.4283.62\\msedgewebview2.exe --embedded-browser-webview=1 --webview-exe-name=bors-m2-shell.exe --webview-exe-version=0.2.0 --user-data-dir=C:\\Users\\STU\\AppData\\Local\\com.borsterminal.m2shell\\EBWebView --noerrdialogs --embedded-browser-webv",
+            "env_work": "C:\\Users\\STU\\AppData\\Local\\Temp\\bors_phased\\tauri-crash-iso\\warm-work",
+            "env_localappdata": "C:\\Users\\STU\\AppData\\Local\\Temp\\bors_phased\\tauri-crash-iso\\warm-profile"
+          },
+          {
+            "pid": 12912,
+            "name": "msedgewebview2.exe",
+            "exe": "c:\\program files (x86)\\microsoft\\edgewebview\\application\\155.0.4283.62\\msedgewebview2.exe",
+            "cmd": "C:\\Program Files (x86)\\Microsoft\\EdgeWebView\\Application\\155.0.4283.62\\msedgewebview2.exe --type=crashpad-handler --user-data-dir=C:\\Users\\STU\\AppData\\Local\\com.borsterminal.m2shell\\EBWebView /prefetch:4 --monitor-self-annotation=ptype=crashpad-handler --database=C:\\Users\\STU\\AppData\\Local\\com.borst",
+            "env_work": "C:\\Users\\STU\\AppData\\Local\\Temp\\bors_phased\\tauri-crash-iso\\warm-work",
+            "env_localappdata": "C:\\Users\\STU\\AppData\\Local\\Temp\\bors_phased\\tauri-crash-iso\\warm-profile"
+          },
+          {
+            "pid": 14744,
+            "name": "python.exe",
+            "exe": "c:\\users\\stu\\documents\\qoder\\2026-10-19\\0af806b0\\.q3-tooling\\py312\\python.exe",
+            "cmd": "C:\\Users\\STU\\Documents\\Qoder\\2026-10-19\\0af806b0\\.q3-tooling\\py312\\python.exe C:\\Users\\STU\\Documents\\Qoder\\2026-10-23\\95b91389\\BorsTerminal\\tools\\desktop-migration\\phase_d\\headless_server.py",
+            "env_work": "C:\\Users\\STU\\AppData\\Local\\Temp\\bors_phased\\tauri-crash-iso\\warm-work",
+            "env_localappdata": "C:\\Users\\STU\\AppData\\Local\\Temp\\bors_phased\\tauri-crash-iso\\warm-profile"
+          }
+        ],
+        "cleanup": {
+          "survivors_before": [
+            {
+              "pid": 3484,
+              "name": "msedgewebview2.exe",
+              "exe": "c:\\program files (x86)\\microsoft\\edgewebview\\application\\155.0.4283.62\\msedgewebview2.exe",
+              "cmd": "C:\\Program Files (x86)\\Microsoft\\EdgeWebView\\Application\\155.0.4283.62\\msedgewebview2.exe --type=utility --utility-sub-type=network.mojom.NetworkService --lang=en-US --service-sandbox-type=none --noerrdialogs --user-data-dir=C:\\Users\\STU\\AppData\\Local\\com.borsterminal.m2shell\\EBWebView --webview-exe",
+              "env_work": "C:\\Users\\STU\\AppData\\Local\\Temp\\bors_phased\\tauri-crash-iso\\warm-work",
+              "env_localappdata": "C:\\Users\\STU\\AppData\\Local\\Temp\\bors_phased\\tauri-crash-iso\\warm-profile"
+            },
+            {
+              "pid": 4424,
+              "name": "python.exe",
+              "exe": "c:\\users\\stu\\documents\\qoder\\2026-10-23\\95b91389\\borsterminal\\.venv\\scripts\\python.exe",
+              "cmd": "C:\\Users\\STU\\Documents\\Qoder\\2026-10-23\\95b91389\\BorsTerminal\\.venv\\Scripts\\python.exe C:\\Users\\STU\\Documents\\Qoder\\2026-10-23\\95b91389\\BorsTerminal\\tools\\desktop-migration\\phase_d\\headless_server.py",
+              "env_work": "C:\\Users\\STU\\AppData\\Local\\Temp\\bors_phased\\tauri-crash-iso\\warm-work",
+              "env_localappdata": "C:\\Users\\STU\\AppData\\Local\\Temp\\bors_phased\\tauri-crash-iso\\warm-profile"
+            },
+            {
+              "pid": 4520,
+              "name": "msedgewebview2.exe",
+              "exe": "c:\\program files (x86)\\microsoft\\edgewebview\\application\\155.0.4283.62\\msedgewebview2.exe",
+              "cmd": "C:\\Program Files (x86)\\Microsoft\\EdgeWebView\\Application\\155.0.4283.62\\msedgewebview2.exe --type=renderer --noerrdialogs --user-data-dir=C:\\Users\\STU\\AppData\\Local\\com.borsterminal.m2shell\\EBWebView --webview-exe-name=bors-m2-shell.exe --webview-exe-version=0.2.0 --embedded-browser-webview=1 --embed",
+              "env_work": null,
+              "env_localappdata": "C:\\Users\\STU\\AppData\\Local\\Temp\\bors_phased\\tauri-crash-iso\\warm-profile"
+            },
+            {
+              "pid": 9196,
+              "name": "msedgewebview2.exe",
+              "exe": "c:\\program files (x86)\\microsoft\\edgewebview\\application\\155.0.4283.62\\msedgewebview2.exe",
+              "cmd": "C:\\Program Files (x86)\\Microsoft\\EdgeWebView\\Application\\155.0.4283.62\\msedgewebview2.exe --type=utility --utility-sub-type=storage.mojom.StorageService --lang=en-US --service-sandbox-type=service --noerrdialogs --user-data-dir=C:\\Users\\STU\\AppData\\Local\\com.borsterminal.m2shell\\EBWebView --webview-",
+              "env_work": null,
+              "env_localappdata": "C:\\Users\\STU\\AppData\\Local\\Temp\\bors_phased\\tauri-crash-iso\\warm-profile"
+            },
+            {
+              "pid": 11036,
+              "name": "msedgewebview2.exe",
+              "exe": "c:\\program files (x86)\\microsoft\\edgewebview\\application\\155.0.4283.62\\msedgewebview2.exe",
+              "cmd": "C:\\Program Files (x86)\\Microsoft\\EdgeWebView\\Application\\155.0.4283.62\\msedgewebview2.exe --type=gpu-process --gpu-recent-crash-count=0 --noerrdialogs --user-data-dir=C:\\Users\\STU\\AppData\\Local\\com.borsterminal.m2shell\\EBWebView --webview-exe-name=bors-m2-shell.exe --webview-exe-version=0.2.0 --embe",
+              "env_work": "C:\\Users\\STU\\AppData\\Local\\Temp\\bors_phased\\tauri-crash-iso\\warm-work",
+              "env_localappdata": "C:\\Users\\STU\\AppData\\Local\\Temp\\bors_phased\\tauri-crash-iso\\warm-profile"
+            },
+            {
+              "pid": 12888,
+              "name": "msedgewebview2.exe",
+              "exe": "c:\\program files (x86)\\microsoft\\edgewebview\\application\\155.0.4283.62\\msedgewebview2.exe",
+              "cmd": "C:\\Program Files (x86)\\Microsoft\\EdgeWebView\\Application\\155.0.4283.62\\msedgewebview2.exe --embedded-browser-webview=1 --webview-exe-name=bors-m2-shell.exe --webview-exe-version=0.2.0 --user-data-dir=C:\\Users\\STU\\AppData\\Local\\com.borsterminal.m2shell\\EBWebView --noerrdialogs --embedded-browser-webv",
+              "env_work": "C:\\Users\\STU\\AppData\\Local\\Temp\\bors_phased\\tauri-crash-iso\\warm-work",
+              "env_localappdata": "C:\\Users\\STU\\AppData\\Local\\Temp\\bors_phased\\tauri-crash-iso\\warm-profile"
+            },
+            {
+              "pid": 12912,
+              "name": "msedgewebview2.exe",
+              "exe": "c:\\program files (x86)\\microsoft\\edgewebview\\application\\155.0.4283.62\\msedgewebview2.exe",
+              "cmd": "C:\\Program Files (x86)\\Microsoft\\EdgeWebView\\Application\\155.0.4283.62\\msedgewebview2.exe --type=crashpad-handler --user-data-dir=C:\\Users\\STU\\AppData\\Local\\com.borsterminal.m2shell\\EBWebView /prefetch:4 --monitor-self-annotation=ptype=crashpad-handler --database=C:\\Users\\STU\\AppData\\Local\\com.borst",
+              "env_work": "C:\\Users\\STU\\AppData\\Local\\Temp\\bors_phased\\tauri-crash-iso\\warm-work",
+              "env_localappdata": "C:\\Users\\STU\\AppData\\Local\\Temp\\bors_phased\\tauri-crash-iso\\warm-profile"
+            },
+            {
+              "pid": 14744,
+              "name": "python.exe",
+              "exe": "c:\\users\\stu\\documents\\qoder\\2026-10-19\\0af806b0\\.q3-tooling\\py312\\python.exe",
+              "cmd": "C:\\Users\\STU\\Documents\\Qoder\\2026-10-19\\0af806b0\\.q3-tooling\\py312\\python.exe C:\\Users\\STU\\Documents\\Qoder\\2026-10-23\\95b91389\\BorsTerminal\\tools\\desktop-migration\\phase_d\\headless_server.py",
+              "env_work": "C:\\Users\\STU\\AppData\\Local\\Temp\\bors_phased\\tauri-crash-iso\\warm-work",
+              "env_localappdata": "C:\\Users\\STU\\AppData\\Local\\Temp\\bors_phased\\tauri-crash-iso\\warm-profile"
+            }
+          ],
+          "killed": [
+            3484,
+            4424,
+            4520,
+            9196,
+            11036,
+            12888,
+            12912,
+            14744
+          ],
+          "survivors_after": [],
+          "port_open_after_cleanup": false
+        },
+        "cleanup_final": {
+          "survivors_before": [],
+          "killed": [],
+          "survivors_after": [],
+          "port_open_after_cleanup": false
+        },
+        "shell_exit_code": 1
+      },
+      "elapsed_ms": 79083.4,
+      "timings_ms": {
+        "sidecar_spawned": 4797.5,
+        "sidecar_ready_line": 19766.7,
+        "http_verified": 19999.6,
+        "window_open_begin": 20029.1,
+        "window_open": 20032.5,
+        "window_visible": 23804.4,
+        "app_document_ready": 20674.5,
+        "login_ready": 21330.5,
+        "login_submit": 21685.5,
+        "master_ready": 25259.5,
+        "market_nav_begin": 25260.5,
+        "market_rows_visible": 44705.5,
+        "sidecar_preflight_start": 5802.4,
+        "sidecar_preflight_end": 15917.2,
+        "sidecar_http_ready": 19622.9,
+        "root_exit_ms": 67028.4
+      },
+      "harness_finished_at": 1792882906866.2
+    }
+  ],
+  "partial": false
+}
