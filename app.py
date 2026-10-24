@@ -37,6 +37,8 @@ from fastapi.staticfiles import StaticFiles
 from urllib.parse import urlsplit
 from fastapi.middleware.gzip import GZipMiddleware
 
+import startup_trace as _ST
+
 from bors_config import (APP_DIR, DB_PATH, FTS_CONFIG_PATH, MARKET_STATUS_PATH,
                          STATUS_PATH)
 from bors_flags import ORJSONResponse, _ORJ
@@ -191,6 +193,7 @@ def _fetch_loops_enabled() -> bool:
 def _startup_sync_market():
     """هوک استارت FastAPI: اجرای uvicorn (باش با bat) → تابلو در هر اجرا آپدیت می‌شود.
     (قبلاً فقط در __main__ بود و start_dashboard.py هرگز فراخوانی‌اش نمی‌کرد.)"""
+    _ST.mark("api_startup_begin")
     # ۱) مهاجرتِ افزودنیِ اسکیما — باید قبل از هر کوئریِ fts_engine/screener
     # اجرا شود. market.db.lzmaیِ فریزشده ستون‌های FTS v2.2 را ندارد و
     # ensure_market_db() فقط وجودِ جداول را بررسی می‌کند، پس بدون این مرحله
@@ -258,7 +261,27 @@ def _startup_sync_market():
     # گرم‌کردنِ بلادرنگ کشِ اسکنر در پس‌زمینه تا اولین بارگذاریِ تبِ بنیادی معطل نماند.
     def _warm_screener():
         try:
+            # Single-core measurement: the screener scan runs for ~100 s and
+            # competed with uvicorn/Edge during first paint. Lowest priority
+            # keeps the work but yields the CPU to the interactive path.
+            try:
+                import ctypes as _ct
+                _ct.windll.kernel32.SetThreadPriority(
+                    _ct.windll.kernel32.GetCurrentThread(), -2)  # THREAD_PRIORITY_LOWEST
+                _ST.mark("screener_low_priority")
+            except Exception:
+                pass
             import time as _t
+            # Wait for the first board snapshot (bounded) before spending the
+            # only core on the screener scan. If no board is opened, the
+            # timeout still warms the cache for the fundamental tab.
+            try:
+                from api.market import wait_first_market_publish
+                _ST.mark("screener_wait_board")
+                _wait = wait_first_market_publish(25.0)
+                _ST.mark("screener_wait_board_done", got=bool(_wait))
+            except Exception:
+                pass
             _t.sleep(1)          # شروع سریع در ترد پس‌زمینه
             # PERF-S6: اگر همگام‌سازیِ بوت در کار است، سینک درِ پایانِ خودش
             # اسکرینر را بازمی‌سازد؛ گرم‌کردنِ هم‌زمان یعنی دوِ بیلدِ کاملِ
@@ -266,9 +289,11 @@ def _startup_sync_market():
             import api._sync_market as _SM
             if _SM.screener_warm_should_skip():
                 print("[startup] screener warm deferred to market sync")
+                _ST.mark("screener_warm_skipped")
                 return
             from api.screener import warm_screener_cache
             warm_screener_cache()
+            _ST.mark("screener_warm_done")
         except Exception as _e:
             print(f"[startup] screener warm failed: {_e}")
     try:
@@ -286,6 +311,7 @@ def _startup_sync_market():
             _t.sleep(2)
             from api.market_status import warm_mstat_cache
             warm_mstat_cache()
+            _ST.mark("mstat_warm_done")
             print("[startup] mstat panel cache warmed")
         except Exception as _e:
             print(f"[startup] mstat warm failed: {_e}")
@@ -427,6 +453,7 @@ def _startup_sync_market():
             # جبران می‌کرد — یعنی تا یک دقیقه عددِ دیروز زیرِ تاریخِ امروز.
             import market_state as _MS
             _MS.note_static_change()
+            _ST.mark("candle_projection_done")
         except Exception as _e:
             print(f"[startup] candle projection at boot: {_e}")
     try:
@@ -434,6 +461,7 @@ def _startup_sync_market():
         print("[startup] candle projection spawned (local-only, one pass)")
     except Exception as _e:
         print(f"[startup] candle projection failed: {_e}")
+    _ST.mark("api_startup_end")
 
 
 @app.get("/", include_in_schema=False)

@@ -2,6 +2,18 @@
 """لاانچر EXE: پیش‌اجرا + uvicorn + باز کردن مرورگر"""
 import os, sys, threading, time, webbrowser, socket, subprocess
 
+import startup_trace as _ST
+_ST.mark("entry_import")
+
+# Importing pandas (preflight worker) concurrently with pywebview/pythonnet
+# (main thread) is not safe in CPython 3.12: a manual launch died with
+# "Fatal Python error: take_gil: PyCOND_WAIT(gil->cond) failed" while the
+# worker was in pandas and the main thread in edgechromium. The same race
+# showed up as multi-tens-of-seconds stalls before the boot page loaded.
+# One lock around the two heavy import sites keeps them sequential; database
+# work and window creation still overlap afterwards.
+_IMPORT_LOCK = threading.Lock()
+
 # ── بدونِ پنجرهٔ کنسول + کدپیجِ خروجی (v1.0.13) ──────────────────────────
 # با console=False در spec، sys.stdout/sys.stderr می‌توانند None باشند
 # (PyInstaller در حالتِ windowless آن‌ها را می‌بندد). هر دست‌زدنی به آن‌ها
@@ -124,6 +136,7 @@ else:
     WORK = os.path.dirname(os.path.abspath(__file__))
 
 _setup_streams()
+_ST.mark("streams_ready")
 
 # ── گاردِ سازگاریِ ویندوز (v1.0.12) ───────────────────────────────────────
 # ویندوزهایِ قدیمی (۷/۸/۸.۱) کرش‌های نامفهوم می‌دهند: TLSِ مدرن، فونت‌های
@@ -408,7 +421,11 @@ def _boot_fail(message):
 
 
 def _boot_ready(url):
+    _ST.mark("boot_ready", url=url)
     _boot_update(ready=True, url=url, pct=100, error=None)
+
+
+_BOOT_TRACE_SEEN = {"page": False, "poll": False, "ready": False}
 
 
 def _start_boot_server():
@@ -442,9 +459,19 @@ def _start_boot_server():
                 with _BOOT_LOCK:
                     payload = dict(_BOOT)
                     payload["text"] = _BOOT_PHASES.get(_BOOT["phase"], "")
+                if not _BOOT_TRACE_SEEN["poll"]:
+                    _BOOT_TRACE_SEEN["poll"] = True
+                    _ST.mark("boot_status_poll", ready=bool(payload.get("ready")),
+                             phase=payload.get("phase"))
+                if payload.get("ready") and not _BOOT_TRACE_SEEN["ready"]:
+                    _BOOT_TRACE_SEEN["ready"] = True
+                    _ST.mark("boot_status_ready_seen")
                 self._send(200, _json.dumps(payload, ensure_ascii=False),
                            "application/json")
             elif path in ("/", "/index.html"):
+                if not _BOOT_TRACE_SEEN["page"]:
+                    _BOOT_TRACE_SEEN["page"] = True
+                    _ST.mark("boot_page_served")
                 self._send(200, _BOOT_HTML, "text/html")
             elif path == "/favicon.ico":
                 # کرومیوم بی‌آیکون این را می‌خواهد؛ ۴۰۴ آن در کنسولِ صفحۀ بوت
@@ -467,6 +494,7 @@ def _start_boot_server():
 
 def _preflight(progress=None):
     """هوشمند: پیش‌اجرا + چک DB ها (مثل run_terminal)"""
+    _ST.mark("preflight_start")
     print("=" * 66)
     print("  BorsTerminal_Ultimate - smart preflight")
     print("=" * 66)
@@ -485,6 +513,7 @@ def _preflight(progress=None):
         db = os.path.join(_data_root(), "market.db")
         ok = False
     root = _data_root()
+    _ST.mark("db_prepared", db=os.path.basename(db), exists=os.path.exists(db))
     print(f"  data root: {root}")
     if not os.path.exists(db):
         print("  [ERR] market.db baseline is unavailable.")
@@ -501,7 +530,10 @@ def _preflight(progress=None):
         except Exception as e:
             print("  [WARN] market.db unreadable:", e)
     try:
-        import pandas, numpy, fastapi, uvicorn, requests  # noqa
+        _ST.mark("library_import_begin")
+        with _IMPORT_LOCK:
+            import pandas, numpy, fastapi, uvicorn, requests  # noqa
+        _ST.mark("library_import_end")
         print("  [OK]  bundled libraries: pandas/numpy/fastapi/uvicorn/requests (self-contained)")
     except ImportError as e:
         print("  [ERR] bundled library missing:", e)
@@ -511,6 +543,7 @@ def _preflight(progress=None):
     else:
         print("  [!!]  fix the missing files, then run this EXE again")
     print("=" * 66)
+    _ST.mark("preflight_end", ok=bool(ok))
     return ok
 
 def port_open(p):
@@ -625,7 +658,10 @@ def open_native_window(url):
     if os.environ.get('BORS_NATIVE_WINDOW', '1') == '0':
         return False
     try:
-        import webview  # pywebview
+        _ST.mark("native_import_begin")
+        with _IMPORT_LOCK:
+            import webview  # pywebview
+        _ST.mark("native_import_end")
     except Exception as e:
         print(f'[native] pywebview unavailable ({e}) -> browser fallback')
         return False
@@ -634,7 +670,8 @@ def open_native_window(url):
     # except هیچ‌وقت فراخوانی نمی‌شود. پس تصمیمِ خودِ کتابخانه را می‌خوانیم و اگر
     # edgechromium نبود عمداً به مسیرِ مرورگر برمی‌گردیم.
     try:
-        from webview.platforms import winforms as _wf
+        with _IMPORT_LOCK:
+            from webview.platforms import winforms as _wf
         _renderer = getattr(_wf, 'renderer', None)
         if _renderer != 'edgechromium':
             print(f'[native] webview backend is {_renderer!r}, not edgechromium '
@@ -646,6 +683,7 @@ def open_native_window(url):
     try:
         # maximized: روی ۱۳۶۶×۷۶۸ هم ۱۴۴۰×۹۰۰ از صفحه بیرون می‌زند، و روی
         # ۲K/۴K نصف مانیتور را بی‌دلیل خالی می‌گذارد.
+        _ST.mark("window_request")
         webview.create_window('بورس‌ترمینال — BorsTerminal', url,
                               width=1440, height=900, min_size=(1024, 640),
                               maximized=True)
@@ -668,7 +706,9 @@ def open_native_window(url):
         else:
             print('[native] webview.start has no private_mode/storage_path -> '
                   'settings will NOT survive a restart (upgrade pywebview)')
+        _ST.mark("window_start")
         webview.start(**kwargs)          # تا بستهٔ شدن پنجره بلاق میکند
+        _ST.mark("window_closed")
         return True
     except Exception as e:
         print(f'[native] window failed ({e}) -> browser fallback')
@@ -692,6 +732,18 @@ def open_app_window(url):
             "--no-default-browser-check",
             "--start-maximized",
         ] + _render_flags()
+        # Benchmark-only: attach CDP to the supported Edge app-window path when
+        # the native WebView2 controller is unavailable or under measurement.
+        _dbg = (os.environ.get('BORS_BROWSER_DEBUG_PORT') or '').strip()
+        if _dbg:
+            cmd += [
+                f"--remote-debugging-port={_dbg}",
+                "--remote-allow-origins=*",
+                "--disable-background-timer-throttling",
+                "--disable-backgrounding-occluded-windows",
+                "--disable-renderer-backgrounding",
+                "--disable-features=CalculateNativeWinOcclusion,IntensiveWakeUpThrottling",
+            ]
         try:
             # cwd = پروفایلِ مرورگر، نه پوشهٔ برنامه. مرورگرِ --app پس از
             # بستنِ سرور هم مدتی زنده می‌ماند و پوشهٔ جاریِ خودش را قفل
@@ -707,6 +759,7 @@ def open_app_window(url):
     return False
 
 def _serve():
+    _ST.mark("serve_start")
     _set_dpi_awareness()
     # v1.0.12: گاردِ ویندوز — قبل از هر چیز، تا روی ویندوزِ قدیمی کرشِ
     # نامفهوم ندهیم. هشدار نمایش می‌دهیم و ادامه می‌دهیم (نه مسدود).
@@ -751,6 +804,8 @@ def _serve():
         port = pick_free_port(port)
         print(f'[OK] port busy -> using free port {port}')
     boot = _start_boot_server()
+    if boot is not None:
+        _ST.mark("boot_server_ready", port=boot[1])
     if boot is None:
         # سرورِ بوت بالا نیامد (مثلاً بستنِ localhost توسطِ امنیتی): همان
         # مسیرِ همیشگی، فقط بی‌صفحۀ پیشرفت.
@@ -761,6 +816,7 @@ def _serve():
         if not wait_http(port):
             print('[ERR] server did not start')
             return 'http-never-came-up'
+        _ST.mark("http_ready", port=port)
         print(f'[OK] http://127.0.0.1:{port}')
         url = f'http://127.0.0.1:{port}'
         if open_native_window(url):
@@ -787,6 +843,7 @@ def _exit_preflight_failure():
 def _start_uvicorn(port):
     """uvicorn را در نخِ daemon بالا می‌آورد؛ ضربانِ زنده‌بودن هم همین‌جا."""
     import uvicorn
+    _ST.mark("uvicorn_spawn", port=port)
 
     def run():
         import logging
@@ -803,6 +860,7 @@ def _bootstrap_worker(port, out):
     """نخِ سنگینِ مسیرِ بوت: اولِ دیتابیس (با گزارشِ پیشرفت)، بعدِ سرور، بعد
     تسلیمِ آدرس به صفحۀ بوت. نتیجه در `out` می‌نشیند تا نخِ اصلی بداند پنجره
     چرا بسته شده است."""
+    _ST.mark("bootstrap_start")
     if not _preflight(progress=_boot_progress):
         _boot_fail('پایگاهِ دادهٔ بازار ساخته نشد. اتصالِ اینترنت را بررسی کنید '
                    'و برنامه را دوباره باز کنید.')
@@ -811,6 +869,7 @@ def _bootstrap_worker(port, out):
     _boot_update(phase='serve')
     _start_uvicorn(port)
     if wait_http(port):
+        _ST.mark("http_ready", port=port)
         print(f'[OK] http://127.0.0.1:{port}')
         _boot_ready(f'http://127.0.0.1:{port}/')
         out['result'] = 'serving'

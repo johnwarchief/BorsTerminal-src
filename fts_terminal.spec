@@ -54,6 +54,7 @@ a = Analysis(
                    # imports them inside the function body, so PyInstaller's
                    # static import scan cannot see them.
                    'bors_config', 'bors_flags', 'api',
+                   'startup_trace',
                    # کارِ #73 قدمِ ۳: `price_basis` تنها نقطۀ انتخابِ ستونِ قیمت است و
                    # api.chart / api.screener / api.market_index / confidence_engine آن را
                    # سطح-بال import می‌کنند. مثل tape_flags صریح فهرست می‌شود: نبودنش

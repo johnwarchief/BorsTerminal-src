@@ -22,6 +22,8 @@ import sqlite3
 import threading
 import time
 
+import startup_trace as _ST
+
 
 router = APIRouter()
 
@@ -316,6 +318,15 @@ _MARKET_SNAP_LOCK = threading.Lock()
 # قدیمی‌تری که دیرتر تمام شده، عکسِ تازه‌تر را عقب ببرد.
 _PUBLISH_LOCK = threading.Lock()
 _PUBLISHED: dict = {"rev": -1, "gen": -1}
+# Signal for startup background work: the first usable board is in cache.
+# The screener warm can then run without competing with the path that makes
+# the app usable (measured on the 1-core host: 66 s -> 44 s board).
+_FIRST_PUBLISH = threading.Event()
+
+
+def wait_first_market_publish(timeout):
+    """True if a board snapshot was published within timeout."""
+    return _FIRST_PUBLISH.wait(timeout)
 
 
 def _market_snapshot():
@@ -1119,6 +1130,7 @@ def _publish(records, meta, counts, rev, gen, frame_key, body, etag, when):
         _market_store(body, etag, when)
         _PUBLISHED["rev"] = rev
         _PUBLISHED["gen"] = gen
+        _FIRST_PUBLISH.set()
         return True
 
 
@@ -1337,6 +1349,7 @@ def _board_sql(conn) -> str:
 def _build_market_response(request: Request, drop_unused=True, store_cache=True):
     """تابلو. قابِ ایستا از RAM، دلتا از حالتِ داغ؛ SQLite فقط درِ بی‌اعتباری."""
     now = time.time()
+    _build_t0 = time.perf_counter()
     # ویرایش **پیش از** ساختن خوانده می‌شود: نوشتن‌هایِ وسطِ این ۳۰۰ میلی‌ثانیه
     # در بدنۀ پیش رو نیستند، پس آینه باید بگوید «این بدنۀ rev است»، نه revِ
     # لحظۀ آخر — وگرنه دلتا همان ردیف‌هایِ تازه را «بی‌تغییری» گزارش می‌کند.
@@ -1587,6 +1600,7 @@ def _build_market_response(request: Request, drop_unused=True, store_cache=True)
                 # بازسازیِ دیررسِ قدیمی‌تر نباید عکسِ تازه‌تر را عقب ببرد.
                 # همان عکسِ منتشرشده را برگردان تا این درخواست هم با آینه
                 # هم‌نسل باشد؛ بدنهٔ محلیِ این ساخت دور ریخته می‌شود.
+                _ST.mark("market_publish_rejected", gen=gen, rev=built_rev)
                 cbody, _ct, cetag = _market_snapshot()
                 if cbody is not None:
                     if request.headers.get("if-none-match") == cetag:
@@ -1598,6 +1612,9 @@ def _build_market_response(request: Request, drop_unused=True, store_cache=True)
                                              "X-Cache": "PUBLISHED", "ETag": cetag})
             else:
                 _observe_universe(records, meta, built_rev, now)
+                _ST.mark("market_publish", gen=gen, rev=built_rev,
+                         rows=len(records),
+                         ms=round((time.perf_counter() - _build_t0) * 1000.0, 1))
         # #175: دوازدهمِ ثانیه یک‌بار TTL می‌پایان و بدنه از نو ساخته می‌شود، ولی
         # سینک هر ~۳۰ ثانیه یک‌بار چیزی عوض می‌کند — یعنی بیشترِ آن بدنه‌ها
         # عیناً همان چیزی‌اند که کلاینت دارد. etagِ تازه را با If-None-Match

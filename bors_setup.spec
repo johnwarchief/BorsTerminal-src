@@ -40,6 +40,7 @@ a = Analysis(
         'codal_pipeline',
         'confidence_engine', 'watchlist_store', 'notifier', 'codal_engine',
         'bors_config', 'bors_flags', 'api',
+        'startup_trace',
         'api._core', 'api.market', 'api.chart', 'api.selection',
         'api.watchlist', 'api.fundamental', 'api.market_status',
         'api.screener', 'api._sync_market', 'api._export',
