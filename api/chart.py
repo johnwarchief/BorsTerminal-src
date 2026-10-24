@@ -560,7 +560,54 @@ _DPS_DUP_TOL = 0.01
 # در پنجرهٔ ۵ روز، اختلافِ ≤۱٪ «همان اقدام» است؛ رویدادِ سرمایهٔ مستقل
 # (نمونهٔ بورس: ۲۴٪) حفظ می‌شود.
 _SAME_ACTION_TOL = 0.02
+# A capital increase with contribution (پذیره‌نویسی) has two observations on
+# the same effective date: the observed base gap (price leg, includes S) and
+# the official share-count leg (p_closing/p_notAdjusted == shares_old/new).
+# When they differ by 2–6% the merge keeps both and the action is applied
+# twice (measured: وبانك 2013-07-31 ×1.40, كبافق 2014-07-28 ×4.02, شتران
+# 2018-07-25 ×1.50, شاملا 2020-09-07 ×2.00 before the step). The frozen
+# reference tracks the base gap in all four (0.002–0.53%), so the share leg
+# is dropped, not the observed price. The band stops at 6% so an independent
+# action on the same day is never swallowed.
+_SHARE_LEG_MIN_GAP = 0.02
+_SHARE_LEG_MAX_GAP = 0.06
+# A DPS row whose official ratio sits close to a nearby share-count ratio is
+# the price leg of the same capital action (DPS + share), not a pure DPS: the
+# candle-close formula ignores the share effect (measured: سغرب 2019-01-29
+# 5.52% → 1.62%, ومعادن 2012-02-21 4.95% → 0.32%, کمرجان 2018-05-09 2.57% →
+# 0.41%). Below 1.5% the correction is base-gap noise and rescaling the whole
+# prior history flips borderline rows without a real gain (شنفت 2016-10-29:
+# 0.45% change, −4.9pp parity), so the rule is materiality-gated.
+_DPS_COMBINED_SHARE_BAND = 0.15
+_DPS_COMBINED_MIN_DELTA = 0.015
 _LEDGER_WINDOW_DAYS = 10
+
+
+def _combined_dps_official_ratio(formula_ratio, official_ratio, date, share_changes):
+    """Official ratio when this DPS row is the price leg of a combined action.
+
+    Returns None for a pure DPS: no nearby share change, official outside the
+    ±15% band of that share ratio, or a difference below the materiality gate.
+    """
+    try:
+        fr = float(formula_ratio)
+        oro = float(official_ratio)
+    except (TypeError, ValueError):
+        return None
+    if fr <= 0 or oro <= 0:
+        return None
+    if abs(oro / fr - 1.0) < _DPS_COMBINED_MIN_DELTA:
+        return None
+    for sd, sr in (share_changes or []):
+        dd = _day_diff(sd, date)
+        try:
+            srv = float(sr)
+        except (TypeError, ValueError):
+            continue
+        if dd is not None and dd <= 10 and srv > 0 \
+                and abs(oro / srv - 1.0) <= _DPS_COMBINED_SHARE_BAND:
+            return oro
+    return None
 
 
 def _ledger_events_for(symbol):
@@ -1393,6 +1440,10 @@ def _official_price_adjust_events(symbol, times=None, share_changes=None, closin
                 cl = closes.get(e["date"])
             r, is_dps, etype = _classify_pa_event(
                 e["ratio"], dps, cl, e["orig"], share_changes)
+            if is_dps:
+                _o = _combined_dps_official_ratio(r, e["ratio"], e["date"], share_changes)
+                if _o is not None:
+                    r = _o
         rec = {"date": e["date"], "ratio": r, "source": e["source"],
                "_ledger_key": (e["orig"], "priceAdjust"),
                "_source_ratio": e["source_ratio"]}
@@ -1958,6 +2009,64 @@ def _merge_official_price_adjust(events, official, rejected=None, share_changes=
     return sorted(kept, key=lambda e: str(e.get("date"))[:10])
 
 
+def _drop_share_leg_of_observed_gap(events, share_changes):
+    """(kept, dropped) — official share leg of an observed base gap.
+
+    A capital increase with contribution is observed twice on the same
+    effective date: the base gap (price leg, carries S) and the official
+    share-count leg. When their ratios differ by 2–6% the merge keeps both
+    and the action is applied twice. The observed base gap stays (the
+    reference tracks it); the share leg is dropped and reported. The 2–6%
+    band and the share-ratio identity keep independent same-day actions
+    and pure DPS rows out of this rule.
+    """
+    gaps = {}
+    for e in events or []:
+        if e.get("source") != "base-price-discontinuity":
+            continue
+        try:
+            g = float(e.get("ratio") or 0)
+        except (TypeError, ValueError):
+            continue
+        d = str(e.get("date") or "")[:10]
+        if d and g > 0:
+            gaps.setdefault(d, []).append(g)
+    sc = list(share_changes or [])
+    kept, dropped = [], []
+    for e in events or []:
+        src = str(e.get("source") or "")
+        if src in ("shareChange", "priceAdjust", "tsetmc_price_adjust_by_flow") \
+                and not e.get("_dps"):
+            d = str(e.get("date") or "")[:10]
+            try:
+                r = float(e.get("ratio") or 0)
+            except (TypeError, ValueError):
+                r = 0.0
+            hit = None
+            if r > 0:
+                for g in gaps.get(d, []):
+                    if not (_SHARE_LEG_MIN_GAP < abs(r / g - 1.0) <= _SHARE_LEG_MAX_GAP):
+                        continue
+                    for sd, sr in sc:
+                        dd = _day_diff(sd, d)
+                        try:
+                            srv = float(sr)
+                        except (TypeError, ValueError):
+                            continue
+                        if dd is not None and dd <= 5 and srv > 0 \
+                                and abs(srv / r - 1.0) <= _LEDGER_AGREE_TOL:
+                            hit = g
+                            break
+                    if hit:
+                        break
+            if hit:
+                dropped.append({"date": e.get("date"), "ratio": e.get("ratio"),
+                                "factor_status": "duplicate:share-leg-of-observed-gap"})
+                continue
+        kept.append(e)
+    return kept, dropped
+
+
 def _fund_profit_events(symbol):
     """توزیع‌هایِ رسمیِ صندوق از `fund_profit_events`؛ بی‌جدول/بی‌ردیف → [].
 
@@ -2066,11 +2175,15 @@ def _canonical_adjustment(symbol, times, events, closings=None, gap_closings=Non
     events = _sharpen_share_gaps(events, official_pa, share_changes,
                                  _share_type_evidence_dates(symbol))
     events = _apply_long_gap_share_changes(events, share_changes, t10, gap_closings)
+    # Two observations of one capital increase (observed base gap + official
+    # share leg) must not be applied twice; keep the observed price leg.
+    events, _leg_rejected = _drop_share_leg_of_observed_gap(events, share_changes)
     # کلیدِ هویتِ دفتری فقط برای همین تصمیم است؛ نه در payload و نه در موتور.
     events = [{k: v for k, v in e.items() if not str(k).startswith("_")}
               for e in events]
     applied, rejected, wrapped = _engine_events(events)
     rejected.extend(dup_rejected)
+    rejected.extend(_leg_rejected)
     factors, chain = AE.chain_factors(t10, wrapped)
     return applied, rejected, factors, chain, _ledger_coverage(symbol, t10, wrapped)
 
