@@ -110,6 +110,13 @@ def active_cdp_url() -> str:
         return ""
 
 
+def _resolve_cdp_url(options: Mapping[str, Any]) -> str:
+    """cdp_urlِ صریح (حتی "") بر کشفِ خودکارِ hostِ زنده مقدم است."""
+    if "cdp_url" in options:
+        return str(options.get("cdp_url") or "").strip()
+    return str(active_cdp_url() or "").strip()
+
+
 def default_profile_dir(strategy_id: str) -> str:
     base = os.path.join(os.environ.get("LOCALAPPDATA") or tempfile.gettempdir(),
                         "BorsTerminal_Ultimate", "browser_profiles", strategy_id)
@@ -516,7 +523,11 @@ class PlaywrightBrowserDriver:
         self.profile_dir = (profile_dir or str(settings.options.get("profile_dir") or "")
                             or default_profile_dir(strategy_id))
         self.headless = bool(settings.options.get("headless", False))
-        self.cdp_url = str(settings.options.get("cdp_url") or active_cdp_url() or "").strip()
+        #: کلیدِ صریحِ cdp_url — حتی خالی — بر انتخابِ خودکار مقدم است.
+        #: گاردها با cdp_url="" عایق می‌مانند؛ وگرنه اگر hostِ زندهٔ مالک باز
+        #: باشد، درایورِ آزمون به مرورگرِ واقعی وصل می‌شد و تبِ fixture در آن
+        #: باز می‌کرد (سنجش ۲۰۲۶-۱۰-۲۴).
+        self.cdp_url = _resolve_cdp_url(settings.options)
         self._cdp = bool(self.cdp_url)
         self.action_timeout_ms = int(settings.options.get("action_timeout_ms") or 1200)
         self.navigation_timeout_ms = int(settings.options.get("navigation_timeout_ms") or 20000)
@@ -1380,17 +1391,42 @@ class PlaywrightBrowserDriver:
         if cdp_ok:
             #: CDP مرجعِ نهایی است: درخواست‌هایِ داخلِ service worker هم دیده
             #: می‌شوند. «پاسخ گرفت» = عبورِ قطعی؛ «blocked» = بستهٔ لایهٔ شبکه.
-            order_writes = [r for r in cdp_writes
-                            if self._is_order_path(str(r.get("path") or ""))
-                            and r.get("blocked")]
-            other_writes = [r for r in cdp_writes
-                            if not self._is_order_path(str(r.get("path") or ""))
-                            and r.get("blocked")]
-            mismatch = [r for r in cdp_writes
-                        if self._is_order_path(str(r.get("path") or ""))
-                        and str(r.get("method") or "").upper() != self._order_method]
-            blocked = [r for r in cdp_writes if r.get("blocked")]
-            escaped = [r for r in cdp_writes if r.get("responded")]
+            #: ولی route.abort() گاهی در CDP فقط failed می‌دهد (بی‌blockedReason)؛
+            #: شاهدِ صفحه (با classification) همان نوشتن را «بسته» می‌داند.
+            #: ادغام با کلیدِ (url,method) از دوباره‌شماری جلوگیری می‌کند.
+            def _key(r: Mapping[str, Any]) -> tuple[str, str]:
+                return (str(r.get("url") or ""), str(r.get("method") or "").upper())
+
+            cdp_keys = {_key(r) for r in cdp_writes}
+            page_by_key = {_key(r): r for r in page_blocked}
+            blocked = []
+            for r in cdp_writes:
+                if r.get("blocked"):
+                    blocked.append(r)
+                elif not r.get("responded") and _key(r) in page_by_key:
+                    #: route.abort در CDP فقط failed بی‌blockedReason می‌دهد؛
+                    #: شاهدِ صفحه همان نوشتن را با classification بسته است.
+                    blocked.append({**r, "blocked": True,
+                                    "classification": page_by_key[_key(r)]
+                                    .get("classification")})
+            blocked += [r for r in page_blocked if _key(r) not in cdp_keys]
+            order_writes = [r for r in blocked
+                            if self._is_order_path(str(r.get("path") or ""))]
+            other_writes = [r for r in blocked
+                            if not self._is_order_path(str(r.get("path") or ""))]
+            mismatch_keys = set()
+            mismatch = []
+            for r in (cdp_writes + blocked):
+                if not self._is_order_path(str(r.get("path") or "")):
+                    continue
+                if str(r.get("method") or "").upper() == self._order_method:
+                    continue
+                if _key(r) in mismatch_keys:
+                    continue
+                mismatch_keys.add(_key(r))
+                mismatch.append(r)
+            escaped = [r for r in cdp_writes if r.get("responded")] + [
+                r for r in page_escaped if _key(r) not in cdp_keys]
             order_posts = sum(
                 1 for r in cdp_writes
                 if str(r.get("method") or "").upper() == self._order_method

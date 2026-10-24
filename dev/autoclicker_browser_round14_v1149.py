@@ -234,6 +234,10 @@ def main() -> int:
     def opts(mode, **extra):
         base = {
             "order_url": "http://127.0.0.1:%d/order?mode=%s" % (port, mode),
+            #: عایق از hostِ زندهٔ مالک: این گارد مرورگرِ خودش را می‌سازد.
+            #: بی‌این، اگر hostِ EasyTrader باز باشد، آزمون به مرورگرِ واقعی
+            #: وصل می‌شد و fixture را در تبِ کاربر باز می‌کرد (سنجش ۲۰۲۶-۱۰-۲۴).
+            "cdp_url": "",
             "origin_allowlist": ["http://127.0.0.1:%d" % port,
                                  "http://localhost:%d" % port],
             "symbol_selector": "",

@@ -124,6 +124,8 @@ def main() -> int:
     settings = SC.default_settings(SC.AUTOCLICKER)
     settings.options.update({
         "order_url": base + "/page",
+        #: عایق از hostِ زندهٔ مالک؛ این گارد مرورگرِ خودش را می‌سازد.
+        "cdp_url": "",
         "headless": True,
         "profile_dir": os.path.join(tempfile.gettempdir(), "bors_r23_sw_profile"),
         "action_timeout_ms": 6000,
@@ -214,6 +216,25 @@ def main() -> int:
            ACC._hostnames(["https://d.easytrader.ir", "easytrader.ir"])
            == ("d.easytrader.ir", "easytrader.ir"),
            repr(ACC._hostnames(["https://d.easytrader.ir", "easytrader.ir"])))
+        #: کلیدِ صریحِ خالی باید گارد را از hostِ زندهٔ مالک عایق کند؛ وگرنه
+        #: درایورِ آزمون به مرورگرِ واقعی وصل می‌شود (سنجش ۲۰۲۶-۱۰-۲۴).
+        ok("cdp_url صریحِ خالی، انتخابِ خودکارِ host را خاموش می‌کند",
+           EB._resolve_cdp_url({"cdp_url": ""}) == "",
+           repr(EB._resolve_cdp_url({"cdp_url": ""})))
+        ok("cdp_url صریح بر انتخابِ خودکار مقدم است",
+           EB._resolve_cdp_url({"cdp_url": "http://127.0.0.1:9"})
+           == "http://127.0.0.1:9")
+        _old_cdp = os.environ.get("BORS_EXECUTION_CDP_URL")
+        os.environ["BORS_EXECUTION_CDP_URL"] = "http://127.0.0.1:7777"
+        try:
+            ok("بدونِ کلیدِ صریح، hostِ اعلام‌شده کشف می‌شود",
+               EB._resolve_cdp_url({}) == "http://127.0.0.1:7777",
+               repr(EB._resolve_cdp_url({})))
+        finally:
+            if _old_cdp is None:
+                os.environ.pop("BORS_EXECUTION_CDP_URL", None)
+            else:
+                os.environ["BORS_EXECUTION_CDP_URL"] = _old_cdp
         #: خانهٔ «پنل وصل است» باید از ضربانِ معتبرِ خودِ پنل بیاید، نه از
         #: نشانهٔ درخواستِ گزارش‌گیرنده؛ وگرنه خواندنِ بیرونی همیشه UNKNOWN است.
         ACC._PANEL_SEEN["at"] = time.time()
