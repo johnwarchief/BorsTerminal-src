@@ -33,7 +33,7 @@ export const STEP_LABEL: Record<SarkhatiStep, string> = {
 };
 
 export const PRO_LABEL: Record<'schedule' | 'risk' | 'monitor', string> = {
-  schedule: 'زمان‌بندی',
+  schedule: 'آمادگی و پایش',
   risk: 'ریسک و ایمنی',
   monitor: 'پایش و سابقه',
 };
@@ -83,7 +83,7 @@ export function deriveStep(input: {
   // /api/execution/status: state=connected، account_label=mock-acct-1).
   if (gate.sessionState !== 'connected') {
     return { step: 'connect', go: 'connect',
-      why: 'نشستِ راستی‌آزمایی‌شده نداریم؛ «بررسی اتصال» لازم است' };
+      why: 'هنوز مطمئن نیستیم به حساب کارگزاری دسترسی داریم؛ «بررسی وضعیت» لازم است' };
   }
   if (!symbol) {
     return { step: 'symbol', go: 'symbol', why: 'نمادی انتخاب نشده — «—» نماد نیست' };
@@ -110,12 +110,12 @@ export function deriveStep(input: {
  *  وضعیتِ سرویس نیست، وضعیتِ میانهٔ خودِ فرمِ اتصال است و درِ `ConnectBrokerRow`
  *  خوانده می‌شود — پس درِ این فهرست نیست و جعل نمی‌شود. */
 const SESSION_SHORT: Record<SessionStateValue, string> = {
-  disconnected: 'متصل نیست',
+  disconnected: 'دسترسی نداریم',
   connected: '',
-  expired: 'نشست منقضی شده',
+  expired: 'دسترسی منقضی شده',
   auth_failed: 'اجازۀ دسترسی داده نشد',
-  error: 'خطای اتصال',
-  unknown: 'وضعیتِ نشست روشن نیست',
+  error: 'خطای ارتباط',
+  unknown: 'وضعیت دسترسی روشن نیست',
 };
 
 /** یک خطِ وضعیتِ اولِ صفحه: چه‌چیزی حاکم است، و قدمِ بعدی کجاست. */
@@ -123,13 +123,13 @@ export function statusLine(gate: TradingGate): string {
   const st = gate.status;
   if (!gate.endpointPresent) return 'سرویسِ اجرا نمی‌رسد';
   if (gate.halted) return 'توقفِ اضطراری فعال است';
-  const mode = st?.adapter === 'mock' ? 'بدلِ سرویس (mock)'
+  const mode = st?.adapter === 'mock' ? 'حالت آزمایشی'
     // درِ فقط‌خواندنی یک GET ازِ ماشین بیرون می‌رود؛ «بی‌ترافیک» گفتنش همان
     // دروغِ وارونه است. `dry_run` فقط می‌گوید «سفارش ارسال نمی‌شود».
     : st?.read_only === true && st?.traffic_allowed === true
       ? 'فقط‌خواندنی: خواندن بله، ارسال نه'
       : st?.dry_run === true ? DRY_RUN_LABEL
-        : st?.live_enabled === true ? 'اتصالِ زنده' : 'نشستِ بی‌ترافیک';
+        : st?.live_enabled === true ? 'ارتباط زنده' : 'ارتباط برقرار نیست';
   return `${mode}${SESSION_SHORT[gate.sessionState] ? ` · ${SESSION_SHORT[gate.sessionState]}` : ''}`;
 }
 
@@ -155,33 +155,33 @@ const NO_REPLY = 'پاسخی نیامده';
 function enteredText(state: string, proven: boolean):
   { text: string; tone: GateTone; title: string } {
   if (state === 'expired') {
-    return { text: 'نشست منقضی شده', tone: 'warn',
-      title: 'کارگزاری گفت منقضی شده؛ نشانیِ تازه لازم است، نه پرسشِ دوباره' };
+    return { text: 'دسترسی منقضی شده', tone: 'warn',
+      title: 'کارگزاری گفت منقضی شده؛ دسترسی تازه لازم است، نه پرسش دوباره' };
   }
   if (state === 'auth_failed') {
     return { text: 'اجازۀ دسترسی داده نشد', tone: 'bad',
-      title: 'اجازۀ دسترسی رد شد — نشانیِ داده‌شده به این نشست تعلق ندارد' };
+      title: 'اجازهٔ دسترسی رد شد — دسترسیِ داده‌شده به این حساب تعلق ندارد' };
   }
   if (state === 'error') {
     return { text: 'پاسخِ کارگزاری نامفهوم بود', tone: 'bad',
       title: 'پاسخ خوانا نبود؛ نتیجه نامعلوم می‌مانَد و هیچ چیز تأیید نمی‌شود' };
   }
   if (state === 'disconnected') {
-    return { text: 'نشانی وارد نشده', tone: 'idle',
-      title: 'هیچ نشانی درِ حافظۀِ همین پروسه نیست — بی‌نشانی هیچ پرسشی به کارگزاری نمی‌رود' };
+    return { text: 'دسترسی نداریم', tone: 'idle',
+      title: 'دسترسی به حساب در حافظهٔ همین برنامه نیست — بدون آن هیچ پرسشی به کارگزاری نمی‌رود' };
   }
   // `set_token` حالت را unknown می‌گذارد (نه connected): نشانی هست، پرسشی زده
   // نشده. «روشن نیست» گفتنش همان پرسش‌نزدن را پنهان می‌کرد.
   if (state === 'unknown' || state === 'connected') {
     return proven
-      ? { text: 'نشانی وارد و تأیید شده', tone: 'ok',
-          title: 'نشانی درِ حافظه است و یک پرسشِ فقط‌خواندنی پاسخ گرفته — با restart می‌میرد' }
-      : { text: 'نشانی وارد شد — بی‌تأیید', tone: 'warn',
-          title: 'نشانی فقط درِ حافظۀِ همین پروسه می‌نشینَد و هیچ‌جا نوشته نمی‌شود؛ '
-            + 'تأیید تنها با «بررسی اتصال» و پاسخِ واقعیِ کارگزاری است' };
+      ? { text: 'دسترسی به حساب تأیید شد', tone: 'ok',
+          title: 'دسترسی در حافظه است و یک پرسش فقط‌خواندنی پاسخ گرفته — با بستن برنامه پاک می‌شود' }
+      : { text: 'دسترسی دریافت شد — بی‌تأیید', tone: 'warn',
+          title: 'دسترسی فقط در حافظهٔ همین برنامه می‌ماند و هیچ‌جا نوشته نمی‌شود؛ '
+            + 'تأیید تنها با «بررسی وضعیت» و پاسخ واقعی کارگزاری است' };
   }
-  return { text: 'وضعیتِ نشست روشن نیست', tone: 'idle',
-    title: 'سرویس حالتِ نشست را نفرستاده — از نبودِ پاسخ نتیجه ساخته نمی‌شود' };
+  return { text: 'وضعیت دسترسی روشن نیست', tone: 'idle',
+    title: 'سرویس حالت دسترسی را نفرستاده — از نبود پاسخ نتیجه ساخته نمی‌شود' };
 }
 
 export function connectionLadder(input: {
@@ -226,22 +226,22 @@ export function connectionLadder(input: {
   }
 
   const entered = isMock
-    ? { text: 'آداپتورِ بدل — نشانی در کار نیست', tone: 'idle' as GateTone,
-        title: 'درِ بدل هیچ ترافیکی به کارگزاری نمی‌رود، پس نشانیِ نشست معنا ندارد' }
+    ? { text: 'حالت آزمایشی — دسترسی به حساب در کار نیست', tone: 'idle' as GateTone,
+        title: 'حالت آزمایشی هیچ ارتباطی با کارگزاری ندارد، پس دسترسی به حساب معنا ندارد' }
     : !st || !sess
-      ? { text: NO_REPLY, tone: 'idle' as GateTone, title: 'پاسخِ نشست ازِ سرویس نیامده' }
+      ? { text: NO_REPLY, tone: 'idle' as GateTone, title: 'پاسخ دسترسی از سرویس نیامده' }
       : enteredText(String(sess.state ?? 'unknown'), proven);
 
   let provenRow: GateRow;
   if (isMock) {
-    provenRow = { key: 'proven', label: 'تأییدِ واقعی', text: 'بدل — تأییدِ کارگزاری ندارد',
+    provenRow = { key: 'proven', label: 'تأییدِ واقعی', text: 'حالت آزمایشی — تأیید کارگزاری ندارد',
       tone: 'idle', title: 'هیچ پرسشی به کارگزاری نرفته، پس هیچ اثباتی هم نیست' };
   } else if (!sess) {
     provenRow = { key: 'proven', label: 'تأییدِ واقعی', text: NO_REPLY, tone: 'idle',
-      title: 'بدونِ پاسخِ نشست، تأیید گفته نمی‌شود' };
+      title: 'بدون پاسخ دسترسی، تأیید گفته نمی‌شود' };
   } else if (!proven) {
     provenRow = { key: 'proven', label: 'تأییدِ واقعی', text: 'تأیید نشده', tone: 'idle',
-      title: '«بررسی اتصال» باید پاسخِ موفقی ازِ کارگزاری بگیرد؛ ثبتِ نشانی به‌تنهایی تأیید نیست' };
+      title: '«بررسی وضعیت» باید پاسخ موفقی از کارگزاری بگیرد؛ ثبت دسترسی به‌تنهایی تأیید نیست' };
   } else if (by?.hypothesis === true) {
     provenRow = { key: 'proven', label: 'تأییدِ واقعی', text: 'تأییدِ مسیرِ فرضی', tone: 'warn',
       title: 'پاسخِ واقعی ازِ مسیری آمد که درِ سندِ رسمیِ کارگزاری نیست' + path };
@@ -269,6 +269,6 @@ export function connectionLadder(input: {
   }
 
   return [config,
-    { key: 'entered', label: 'نشستِ واردشده', ...entered },
+    { key: 'entered', label: 'دسترسی به حساب', ...entered },
     provenRow, writes];
 }

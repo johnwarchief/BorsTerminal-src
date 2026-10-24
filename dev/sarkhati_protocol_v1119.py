@@ -119,6 +119,10 @@ class Broker:
                 import execution_easytrader as ET
                 path = url.replace(ET.WIRE_BASE_URL, "")
                 outer.calls.append("%s %s" % (method, path))
+                if path == ET.WIRE_PATH_MONEY:
+                    return ET.WireResponse(200, {}, _js({
+                        "t0": 80000000, "t2": 100000000, "buyPowerT2": 100000000,
+                        "credit": 0, "avandCredit": 0}))
                 if method == "POST":
                     body = outer.place_body if outer.place_body is not None else \
                         _js({"isSuccessful": True, "id": "V1119ORD"})

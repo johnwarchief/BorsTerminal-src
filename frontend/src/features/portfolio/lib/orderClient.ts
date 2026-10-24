@@ -54,12 +54,12 @@ export const SESSION_STATES = [
 export type SessionStateValue = (typeof SESSION_STATES)[number];
 
 export const SESSION_LABEL: Record<SessionStateValue, string> = {
-  disconnected: 'نشست بسته است',
-  connected: 'نشست باز است',
-  expired: 'نشست منقضی شده',
+  disconnected: 'دسترسی به حساب بسته است',
+  connected: 'دسترسی به حساب تأیید شده است',
+  expired: 'دسترسی به حساب منقضی شده است',
   auth_failed: 'اجازۀ دسترسی داده نشد',
   error: 'پاسخِ کارگزاری نامفهوم بود',
-  unknown: 'وضعیتِ نشست روشن نیست',
+  unknown: 'وضعیت دسترسی روشن نیست',
 };
 
 /** `traffic_mode` ازِ `execution_connect.status_dict` — سه راهِ جدا، نه یکِ بُولین */
@@ -76,6 +76,37 @@ export const TRAFFIC_LABEL: Record<TrafficMode, { text: string; tone: 'ok' | 'wa
   blocked: { text: 'هیچ ترافیکی مجاز نیست', tone: 'idle' },
 };
 
+/** Strategyهای چندروشی: متریک‌ها فقط از نمونهٔ واقعیِ همان پروسه می‌آیند؛
+ *  p95/p99 با نمونهٔ کم null است، نه صفر. */
+export type StrategyPhaseMetrics = {
+  count: number; ok: number; failed: number;
+  p50: number | null; p95: number | null; p99: number | null;
+  last_ms: number | null; last_error: string; last_at: number | null; thin: boolean;
+};
+export type StrategyRowView = {
+  id: string; label: string; kind: string; description: string;
+  requires_browser: boolean; available: boolean; configured: boolean;
+  unavailable_reason: string; live_ready: boolean;
+  settings: { strategy: string; enabled: boolean; mode: string; priority: number;
+    options: Record<string, unknown>; updated_at: number };
+  metrics: Record<string, StrategyPhaseMetrics>;
+  outcomes: Record<string, number>;
+  last_result: Record<string, unknown> | null;
+};
+export type StrategySelectionRow = {
+  strategy: string; count: number;
+  p50: number | null; p95: number | null; p99: number | null;
+  accepted: number; unknown: number;
+  usable_dry: boolean; usable_live: boolean;
+  reason_dry: string; reason_live: string;
+};
+export type StrategiesView = {
+  status: string; strategies: StrategyRowView[]; selection: StrategySelectionRow[];
+  rate_limiter: Record<string, unknown>; orders: Record<string, unknown>[];
+  live_allowed: boolean; dry_run: boolean; adapter: string;
+  recovered_intents?: Record<string, number>;
+};
+
 /** `status` ازِ `/api/execution/portfolio` — «بی‌منبع» و «خالی» دو چیزند */
 export const PORTFOLIO_STATES = ['success', 'cached', 'no_source', 'unverified_session',
   'blocked', 'error'] as const;
@@ -85,7 +116,7 @@ export const PORTFOLIO_LABEL: Record<PortfolioState, string> = {
   success: 'ازِ کارگزاری خوانده شد',
   cached: 'نسخۀِ انبارِ همین نشست',
   no_source: 'منبعِ مستندِ خواندنی برایِ پرتفوی نداریم',
-  unverified_session: 'نشست تأیید نشده — پرسشی زده نشد',
+  unverified_session: 'دسترسی تأیید نشده — پرسشی زده نشد',
   blocked: 'ترافیک مجاز نیست',
   error: 'پرسش انجام شد و پاسخِ معنادار نداد',
 };
@@ -217,9 +248,13 @@ export function phaseOf(rec: ExecutionRecord | null | undefined): OrderPhase {
   if (!rec) return 'idle';
   const st = rec.status ?? '';
   const os = rec.order_state ?? 'unknown';
-  if (st === 'unknown_result' || os === 'unknown') {
-    return st === 'failed' ? 'errored' : 'unknown';
-  }
+  // «نتیجهٔ ارسال نامعلوم» با «سفارش ارسال شد ولی وضعیتش هنوز خوانده نشده» دو
+  // چیز است: اولی فقط reconcile می‌خواهد؛ دومی ack واقعی دارد. یکی‌کردنشان
+  // کاربر را از «ارسال شد» به «نمی‌دانیم» می‌برد و دکمهٔ دوباره می‌سازد.
+  if (st === 'unknown_result') return 'unknown';
+  if (st === 'failed') return os === 'rejected' ? 'rejected' : 'errored';
+  if (st === 'acknowledged' && os === 'unknown') return 'submitted';
+  if (os === 'unknown') return 'unknown';
   if (os === 'rejected') return 'rejected';
   if (os === 'cancelled') return 'cancelled';
   if (os === 'filled') return 'filled';
@@ -312,7 +347,7 @@ export function deriveGate(status: ExecutionStatus | null | undefined, source: G
     // ثابت‌شده باشد؛ چیزی که بسته است درِ *ارسال* است. متنِ «فعال نیست» کاربر را
     // به سراغِ تنظیمِ اتصال می‌فرستد وقتی تنظیم درست بوده.
     if (status.read_only === true && status.traffic_allowed === true) {
-      const proof = status.session?.proven === true ? 'نشست تأیید شده' : 'نشست تأیید نشده';
+      const proof = status.session?.proven === true ? 'دسترسی تأیید شده' : 'دسترسی تأیید نشده';
       return {
         ...base, canTrade: false, dryRun: true,
         reason: `حالتِ فقط‌خواندنی: خواندن بله، ارسال نه — ${proof}. `
@@ -342,7 +377,7 @@ export function deriveGate(status: ExecutionStatus | null | undefined, source: G
   if (sessionState !== 'connected') {
     return { ...base, canTrade: false, dryRun: false,
       reason: SESSION_LABEL[sessionState]
-        + ' — «بررسی اتصال» لازم است؛ حضورِ توکن به‌تنهایی نشانهٔ نشست نیست' };
+        + ' — «بررسی وضعیت» لازم است؛ حضور دسترسی به‌تنهایی نشانهٔ تأیید نیست' };
   }
   return { ...base, canTrade: true, dryRun: false, reason: '' };
 }
@@ -356,6 +391,17 @@ export function useBrokerConnect() {
   });
 }
 
+
+export function useStrategies(enabled = true) {
+  return useQuery({
+    queryKey: ['execution-strategies'],
+    queryFn: () => orderApi.strategies(),
+    enabled,
+    staleTime: 10_000,
+    refetchOnWindowFocus: false,
+    retry: false,
+  });
+}
 
 export function useExecutionStatus() {
   const q = useQuery({
@@ -390,6 +436,21 @@ export function useExecutionLedger(enabled = true) {
 export function invalidateExecution(qc: QueryClient) {
   qc.invalidateQueries({ queryKey: ['execution-status'] });
   qc.invalidateQueries({ queryKey: ['execution-ledger'] });
+  qc.invalidateQueries({ queryKey: ['execution-strategies'] });
+  qc.invalidateQueries({ queryKey: ['execution-durable-schedules'] });
+}
+
+export function useExecutionStrategies(enabled: boolean) {
+  return useQuery({
+    queryKey: ['execution-strategies'],
+    queryFn: ({ signal }) =>
+      http<StrategiesView>('/api/execution/strategies', { signal }),
+    enabled,
+    staleTime: 5_000,
+    refetchInterval: enabled ? sessionPollMs(15_000) : false,
+    refetchOnWindowFocus: false,
+    retry: false,
+  });
 }
 
 /**
@@ -404,7 +465,82 @@ export function invalidateExecution(qc: QueryClient) {
  */
 const NO_RETRY = { retries: 0 } as const;
 
+/** پیش‌نمایشِ سفارش: خلاصه و اعتبارِ توکن؛ هیچ سفارشی در این پاسخ نیست. */
+export type OrderPreviewView = {
+  status: string; adapter?: string; live?: boolean; dry_run?: boolean;
+  send_ready?: boolean; prepared_token?: string; execution_id?: string;
+  expires_in_ms?: number; phase?: string;
+  summary?: Record<string, unknown>;
+  wire_preview?: Record<string, unknown>;
+  checks?: Record<string, string>; reasons?: Record<string, string>;
+  session?: SessionStatusView;
+  risk?: { ok?: boolean; reason?: string };
+  halted?: boolean; halt_reason?: string;
+  timings?: Record<string, number | null>;
+  network_calls?: string[];
+  code?: string; detail?: string; field?: string;
+};
+
+/** پاسخِ تأیید: ack واقعی، یا وضعیتِ نامعلوم/رد. `record` تنها منبعِ شناسه است. */
+export type OrderConfirmView = {
+  status: string; adapter?: string; dry_run?: boolean; live?: boolean;
+  record?: ExecutionRecord; broker_order_id?: string | null;
+  unknown_result?: boolean; retry_forbidden?: boolean;
+  read_back?: string; read_back_next?: string;
+  timings?: Record<string, number | null>;
+  network_calls?: string[]; payload_fields?: string[];
+  code?: string; detail?: string; expected_phrase?: string;
+  record_note?: string; note?: string;
+};
+
 export const orderApi = {
+  /** مسیرِ سریع: همهٔ پرسش‌هایِ کند این‌جا؛ هیچ POSTی. */
+  fastPreview: (body: Record<string, unknown>) =>
+    http<OrderPreviewView>('/api/execution/order/preview',
+      { method: 'POST', body, ...NO_RETRY }),
+  /** مسیرِ سریع: گیت‌هایِ محلی + یک POST. retry عمداً صفر است. */
+  fastConfirm: (body: Record<string, unknown>) =>
+    http<OrderConfirmView>('/api/execution/order/confirm',
+      { method: 'POST', body, ...NO_RETRY }),
+  strategies: () => http<StrategiesView>('/api/execution/strategies'),
+  strategySettings: (id: string, body: Record<string, unknown>) =>
+    http<Record<string, unknown>>(
+      `/api/execution/strategies/${encodeURIComponent(id)}/settings`,
+      { method: 'POST', body, ...NO_RETRY }),
+  strategyPrepare: (body: unknown) =>
+    http<Record<string, unknown>>('/api/execution/strategies/prepare',
+      { method: 'POST', body, ...NO_RETRY }),
+  strategyTrigger: (body: Record<string, unknown>) =>
+    http<Record<string, unknown>>('/api/execution/strategies/trigger',
+      { method: 'POST', body, ...NO_RETRY }),
+  /** مسیرِ زندهٔ Strategy — فقط با env، نشست و عبارتِ تأیید. رابط فعلاً از آن
+   *  استفاده نمی‌کند؛ تا مجوزِ صریح، فقط `/trigger`ِ dry-run صدا زده می‌شود. */
+  strategyDispatch: (body: Record<string, unknown>) =>
+    http<Record<string, unknown>>('/api/execution/strategies/dispatch',
+      { method: 'POST', body, ...NO_RETRY }),
+  strategyAbort: (id: string) =>
+    http<Record<string, unknown>>('/api/execution/strategies/abort',
+      { method: 'POST', body: { prepared_id: id }, ...NO_RETRY }),
+  strategyIntent: (key: string) =>
+    http<Record<string, unknown>>(
+      `/api/execution/strategies/intents/${encodeURIComponent(key)}`),
+  strategyAbortIntent: (key: string) =>
+    http<Record<string, unknown>>(
+      `/api/execution/strategies/intents/${encodeURIComponent(key)}/abort`,
+      { method: 'POST', ...NO_RETRY }),
+  strategyReconcile: (id: string) =>
+    http<Record<string, unknown>>('/api/execution/strategies/reconcile',
+      { method: 'POST', body: { prepared_id: id }, ...NO_RETRY }),
+  strategyOrder: (id: string) =>
+    http<Record<string, unknown>>(
+      `/api/execution/strategies/order/${encodeURIComponent(id)}`),
+  strategyProbe: (id: string) =>
+    http<Record<string, unknown>>(
+      `/api/execution/strategies/${encodeURIComponent(id)}/probe`,
+      { method: 'POST', ...NO_RETRY }),
+  strategyPreflightAll: (strategies?: string[]) =>
+    http<Record<string, unknown>>('/api/execution/strategies/preflight',
+      { method: 'POST', body: strategies ? { strategies } : {}, ...NO_RETRY }),
   preflight: (body: unknown) => http<Record<string, unknown>>('/api/execution/preflight',
     { method: 'POST', body, ...NO_RETRY }),
   prepare: (body: unknown) => http<Record<string, unknown>>('/api/execution/prepare',
@@ -553,15 +689,56 @@ export const PortfolioSchema = z.object({
   adapter: z.string().nullish(),
   live: z.boolean().nullish(),
   session_proven: z.boolean().nullish(),
+  state: z.string().nullish(),
   as_of: z.string().nullish(),
   source: z.string().nullish(),
   rows: z.array(z.record(z.string(), z.unknown())).nullish(),
+  positions: z.array(z.record(z.string(), z.unknown())).nullish(),
+  fetched_at: z.string().nullish(),
+  raw_count: z.number().nullish(),
+  resolved_count: z.number().nullish(),
+  unresolved_count: z.number().nullish(),
+  duplicate_count: z.number().nullish(),
+  missing_fields: z.array(z.string()).nullish(),
+  unresolved: z.array(z.record(z.string(), z.unknown())).nullish(),
+  buying_power: z.record(z.string(), z.unknown()).nullish(),
   cached_at: z.string().nullish(),
   error: z.string().nullish(),
   detail: z.string().nullish(),
   code: z.string().nullish(),
 }).catchall(z.unknown());
 export type PortfolioView = z.infer<typeof PortfolioSchema>;
+
+export const WatchlistSchema = z.object({
+  status: z.string(),
+  state: z.string().nullish(),
+  source: z.string().nullish(),
+  fetched_at: z.string().nullish(),
+  categories: z.array(z.record(z.string(), z.unknown())).nullish(),
+  rows: z.array(z.record(z.string(), z.unknown())).nullish(),
+  raw_count: z.number().nullish(),
+  resolved_count: z.number().nullish(),
+  unresolved_count: z.number().nullish(),
+  duplicate_count: z.number().nullish(),
+  unresolved: z.array(z.record(z.string(), z.unknown())).nullish(),
+  empty: z.boolean().nullish(),
+  error: z.string().nullish(),
+}).catchall(z.unknown());
+export type WatchlistView = z.infer<typeof WatchlistSchema>;
+
+export const BuyingPowerSchema = z.object({
+  status: z.string(),
+  state: z.string().nullish(),
+  source: z.string().nullish(),
+  unit: z.string().nullish(),
+  value: z.number().nullish(),
+  raw: z.record(z.string(), z.unknown()).nullish(),
+  formula: z.string().nullish(),
+  fetched_at: z.string().nullish(),
+  order_write_state: z.string().nullish(),
+  error: z.string().nullish(),
+}).catchall(z.unknown());
+export type BuyingPowerView = z.infer<typeof BuyingPowerSchema>;
 
 export const configApi = {
   get: (signal?: AbortSignal) =>
@@ -575,6 +752,68 @@ export const portfolioApi = {
   get: (signal?: AbortSignal) =>
     http<PortfolioView>('/api/execution/portfolio', { schema: PortfolioSchema, signal }),
 };
+
+export const accountSourcesApi = {
+  watchlist: (signal?: AbortSignal) =>
+    http<WatchlistView>('/api/execution/watchlist',
+      { schema: WatchlistSchema, signal }),
+  buyingPower: (signal?: AbortSignal) =>
+    http<BuyingPowerView>('/api/execution/buying-power',
+      { schema: BuyingPowerSchema, signal }),
+};
+
+const ReadinessGateSchema = z.object({
+  id: z.string(),
+  label: z.string(),
+  status: z.string(),
+  detail: txt,
+  action: txt,
+  source: txt,
+}).catchall(z.unknown());
+export type ReadinessGate = z.infer<typeof ReadinessGateSchema>;
+
+export const ReadinessSchema = z.object({
+  status: z.string(),
+  data_risk_ready: z.boolean().nullish(),
+  live_ready: z.boolean().nullish(),
+  live_enabled: z.boolean().nullish(),
+  contract_state: txt,
+  blocking_count: num,
+  next_action: txt,
+  gates: z.array(ReadinessGateSchema).nullish(),
+  contract: z.record(z.string(), z.unknown()).nullish(),
+  adapter: txt,
+  symbol: txt,
+  side: txt,
+}).catchall(z.unknown());
+export type ReadinessView = z.infer<typeof ReadinessSchema>;
+
+export const readinessApi = {
+  get: (args: { symbol?: string; side?: string; price?: number; quantity?: number } = {},
+       signal?: AbortSignal) => {
+    const q = new URLSearchParams();
+    if (args.symbol) q.set('symbol', args.symbol);
+    if (args.side) q.set('side', args.side);
+    if (args.price != null) q.set('price', String(args.price));
+    if (args.quantity != null) q.set('quantity', String(args.quantity));
+    return http<ReadinessView>(`/api/execution/readiness?${q.toString()}`,
+      { schema: ReadinessSchema, signal });
+  },
+};
+
+export function useExecutionReadiness(args: {
+  symbol?: string; side?: string; price?: number; quantity?: number;
+} = {}, enabled = true) {
+  return useQuery({
+    queryKey: ['execution-readiness', args.symbol ?? '', args.side ?? '',
+      args.price ?? '', args.quantity ?? ''],
+    queryFn: ({ signal }) => readinessApi.get(args, signal),
+    enabled,
+    staleTime: 15_000,
+    refetchOnWindowFocus: false,
+    retry: false,
+  });
+}
 
 /** یک‌بار در هر نشست کافی است؛ تنظیمِ دیسک بی‌restart عوض نمی‌شود. */
 export function useBrokerConfig() {
@@ -596,6 +835,30 @@ export function useExecutionPortfolio(enabled = true) {
     staleTime: 30_000,
     refetchOnWindowFocus: false,
     retry: (count, error) => count < 2 && !(error instanceof HttpError && error.status === 404),
+  });
+}
+
+/** دیده‌بانِ شخصی EasyTrader — منبعی جدا از دیده‌بانِ محلی و پرتفوی. */
+export function useEasyTraderWatchlist(enabled = true) {
+  return useQuery({
+    queryKey: ['execution-watchlist'],
+    queryFn: ({ signal }) => accountSourcesApi.watchlist(signal),
+    enabled,
+    staleTime: 30_000,
+    refetchOnWindowFocus: false,
+    retry: false,
+  });
+}
+
+/** قدرت خریدِ خواندنی — منبعی جدا از نقدینگی و ارزش پرتفوی. */
+export function useBuyingPower(enabled = true) {
+  return useQuery({
+    queryKey: ['execution-buying-power'],
+    queryFn: ({ signal }) => accountSourcesApi.buyingPower(signal),
+    enabled,
+    staleTime: 30_000,
+    refetchOnWindowFocus: false,
+    retry: false,
   });
 }
 
@@ -625,7 +888,7 @@ export function messageOf(res: Record<string, unknown> | null | undefined): stri
 /** کدِ خطایِ سرویس ← پیامِ خوانا، بدونِ حذفِ کدِ خام (درِ tooltip می‌ماند) */
 export const CODE_LABEL: Record<string, string> = {
   AUTH_FAILED: 'اجازۀ دسترسی رد شد',
-  SESSION_EXPIRED: 'نشست منقضی شد',
+  SESSION_EXPIRED: 'دسترسی منقضی شد',
   NETWORK_ERROR: 'خطای شبکه — نتیجه نامعلوم',
   TIMEOUT: 'پاسخی نیامد — نتیجه نامعلوم',
   BROKER_REJECTED: 'کارگزاری سفارش را رد کرد',
@@ -804,6 +1067,390 @@ export function useExecutionEvents(filters: EventFilters, enabled = true) {
     enabled,
     staleTime: 10_000,
     refetchInterval: enabled ? sessionPollMs(60_000) : false,
+    retry: false,
+  });
+}
+
+// ── زمان‌بندیِ ماندگار (execution_schedule.py) ─────────────────────────────
+// این لایه فقط نمایش می‌دهد؛ داوریِ اعتبارسنجی/وضعیت در بک‌اند است. مبلغ/حجم
+// پیش‌فرض ندارد و live درِ پاسخِ readiness باید false باشد تا دکمهٔ زنده نیاید.
+export type DurableSchedule = {
+  id: string; execution_id: string; symbol: string; isin: string;
+  full_name?: string | null; side: string; price: number; quantity: number;
+  order_type: string; validity: string; mode: string; state: string;
+  target_ms: number; target_local: string; tz: string; attempts: number;
+  validation_ok?: boolean | null; last_validation?: Record<string, unknown> | null;
+  result?: Record<string, unknown> | null; result_state?: string | null; last_error?: string | null;
+};
+export type ScheduleBlocker = { code: string; detail: string };
+export type ScheduleReadiness = {
+  live_ready: boolean; dry_run_scheduling: boolean; executor: string;
+  blockers: ScheduleBlocker[];
+};
+export type DurableSchedulesView = {
+  status: string; schedules: DurableSchedule[]; readiness: ScheduleReadiness;
+};
+
+export const scheduleApi = {
+  list: () => http<DurableSchedulesView>('/api/execution/schedules'),
+  readiness: () => http<Record<string, unknown>>('/api/execution/schedules/readiness'),
+  instrument: (symbol: string) => http<Record<string, unknown>>(
+    `/api/execution/schedules/instrument?symbol=${encodeURIComponent(symbol)}`),
+  create: (body: Record<string, unknown>) => http<Record<string, unknown>>(
+    '/api/execution/schedules', { method: 'POST', body, ...NO_RETRY }),
+  arm: (id: string) => http<Record<string, unknown>>(
+    `/api/execution/schedules/${encodeURIComponent(id)}/arm`,
+    { method: 'POST', ...NO_RETRY }),
+  cancel: (id: string) => http<Record<string, unknown>>(
+    `/api/execution/schedules/${encodeURIComponent(id)}/cancel`,
+    { method: 'POST', body: { reason: 'user' }, ...NO_RETRY }),
+  reset: (id: string) => http<Record<string, unknown>>(
+    `/api/execution/schedules/${encodeURIComponent(id)}/reset`,
+    { method: 'POST', ...NO_RETRY }),
+};
+
+export function useDurableSchedules(enabled = true) {
+  return useQuery({
+    queryKey: ['execution-durable-schedules'],
+    queryFn: () => scheduleApi.list(),
+    enabled,
+    staleTime: 5_000,
+    refetchInterval: enabled ? 10_000 : false,
+    retry: false,
+  });
+}
+
+
+// ── browser session host (CDP محلی؛ ورود دستی مالک) ─────────────────────────
+export type BrowserHostView = {
+  status?: string; healthy?: boolean; cdp_url?: string; port?: number;
+  pid?: number; profile?: string; url?: string; started_at?: number;
+};
+export const browserHostApi = {
+  get: () => http<Record<string, unknown>>('/api/execution/browser-host'),
+  start: () => http<Record<string, unknown>>('/api/execution/browser-host',
+    { method: 'POST', ...NO_RETRY }),
+  stop: () => http<Record<string, unknown>>('/api/execution/browser-host',
+    { method: 'DELETE', ...NO_RETRY }),
+};
+export function useBrowserHost() {
+  return useQuery({
+    queryKey: ['execution-browser-host'],
+    queryFn: () => browserHostApi.get(),
+    staleTime: 5_000,
+    refetchInterval: 10_000,
+    retry: false,
+  });
+}
+
+// ── ورودِ دستیِ Mofid و Probeِ فقط‌خواندنی ──────────────────────────────────
+export const MOFID_SESSION_STATES = ['NEEDS_LOGIN', 'AUTHENTICATING',
+  'AUTHENTICATED_UNVERIFIED', 'READ_ONLY_PROBE_OK', 'SESSION_EXPIRED',
+  'READ_ONLY_PROBE_FAILED'] as const;
+export type MofidSessionState = (typeof MOFID_SESSION_STATES)[number];
+
+export const MofidSessionSchema = z.object({
+  status: z.string(),
+  state: z.string().nullish(),
+  reason: txt,
+  adapter_ready: z.boolean().nullish(),
+  adapter_reason: txt,
+  host_open: z.boolean().nullish(),
+  host_status: txt,
+  token_present: z.boolean().nullish(),
+  session_proven: z.boolean().nullish(),
+  checked_at: txt,
+  steps: z.record(z.string(), z.string()).nullish(),
+  counts: z.record(z.string(), z.unknown()).nullish(),
+  account_readiness: z.record(z.string(), z.unknown()).nullish(),
+  login_url: txt,
+  read_only: z.boolean().nullish(),
+  live_enabled: z.boolean().nullish(),
+  live_ready: z.boolean().nullish(),
+}).catchall(z.unknown());
+export type MofidSessionView = z.infer<typeof MofidSessionSchema>;
+
+export const MofidProbeSchema = z.object({
+  status: z.string(),
+  code: txt,
+  state: z.string().nullish(),
+  detail: txt,
+  account: z.record(z.string(), z.unknown()).nullish(),
+  steps: z.record(z.string(), z.string()).nullish(),
+  counts: z.record(z.string(), z.unknown()).nullish(),
+  session: z.record(z.string(), z.unknown()).nullish(),
+  session_state: z.record(z.string(), z.unknown()).nullish(),
+  account_readiness: z.record(z.string(), z.unknown()).nullish(),
+  position_fields: z.record(z.string(), z.string()).nullish(),
+  order_contract: z.record(z.string(), z.unknown()).nullish(),
+  checked_at: txt,
+  read_only: z.boolean().nullish(),
+  live_enabled: z.boolean().nullish(),
+  live_ready: z.boolean().nullish(),
+}).catchall(z.unknown());
+export type MofidProbeView = z.infer<typeof MofidProbeSchema>;
+
+export const mofidApi = {
+  session: (signal?: AbortSignal) =>
+    http<MofidSessionView>('/api/execution/mofid/session',
+      { schema: MofidSessionSchema, signal }),
+  loginWindow: () =>
+    http<Record<string, unknown>>('/api/execution/mofid/login-window',
+      { method: 'POST', ...NO_RETRY }),
+  stopWindow: () =>
+    http<Record<string, unknown>>('/api/execution/mofid/login-window',
+      { method: 'DELETE', ...NO_RETRY }),
+  verifySession: () =>
+    http<MofidProbeView>('/api/execution/mofid/verify-session',
+      { method: 'POST', schema: MofidProbeSchema, ...NO_RETRY }),
+};
+
+export function useMofidSession(enabled = true) {
+  return useQuery({
+    queryKey: ['mofid-session'],
+    queryFn: ({ signal }) => mofidApi.session(signal),
+    enabled,
+    staleTime: 5_000,
+    refetchInterval: 10_000,
+    retry: false,
+  });
+}
+
+// ── پایشِ جایگاهِ سفارش (Round 19) ─────────────────────────────────────────
+// رتبه فقط وقتی KNOWN است که خودِ آداپتور مقدار داده باشد؛ نبودِ مقدار صفر
+// نمی‌شود و ۰ هم «رتبهٔ اول» تفسیر نمی‌شود. Mofid در حالت فقط‌خواندنی
+// UNSUPPORTED_READ_ONLY است چون قراردادش POST است.
+const measure = z.union([z.number(), z.string()]).nullish();
+export const QueueMonitorRowSchema = z.object({
+  order_id: txt,
+  symbol: txt,
+  isin: txt,
+  side: txt,
+  price: measure,
+  quantity: measure,
+  filled_quantity: measure,
+  execution_status: txt,
+  order_state: txt,
+  queue_status: z.string(),
+  queue_position: measure,
+  volume_ahead: measure,
+  queue_source: txt,
+  queue_as_of: txt,
+  queue_freshness: txt,
+  position_semantics: txt,
+  volume_ahead_unit: txt,
+  queue_reason: txt,
+  queue_series: z.array(z.record(z.string(), z.unknown())).nullish(),
+  read_back: txt,
+  events: z.array(z.unknown()).nullish(),
+}).catchall(z.unknown());
+export type QueueMonitorRowView = z.infer<typeof QueueMonitorRowSchema>;
+
+export const QueueMonitorSchema = z.object({
+  status: z.string(),
+  supported: bool,
+  queue_supported: bool,
+  rows: z.array(QueueMonitorRowSchema).default([]),
+  reason: txt,
+  contract: z.record(z.string(), z.unknown()).nullish(),
+  claims_first_rank: bool,
+  queue_source_verified: bool,
+  queue_result_known: bool,
+  observed_at: txt,
+  poll_interval_ms: num,
+  source: txt,
+}).catchall(z.unknown());
+export type QueueMonitorView = z.infer<typeof QueueMonitorSchema>;
+
+/** گاردِ نمایش: رتبه فقط با KNOWN معنا دارد. */
+export function queueRankText(row: QueueMonitorRowView): string {
+  if (row.queue_status !== 'KNOWN' || row.queue_position == null) return '—';
+  return String(row.queue_position);
+}
+
+export const queueMonitorApi = {
+  get: (signal?: AbortSignal) =>
+    http<QueueMonitorView>('/api/execution/queue-monitor',
+      { schema: QueueMonitorSchema, signal }),
+};
+
+export function useQueueMonitor(enabled = true) {
+  return useQuery({
+    queryKey: ['execution-queue-monitor'],
+    queryFn: ({ signal }) => queueMonitorApi.get(signal),
+    enabled,
+    staleTime: 5_000,
+    refetchInterval: 10_000,
+    retry: false,
+  });
+}
+
+// ── چند عرضهٔ اولیه: داده، بودجه، Preflight و Timing ───────────────────────
+export type OfferingView = {
+  id: string; symbol: string; isin: string; market: string; method: string;
+  start_ms?: number | null; end_ms?: number | null;
+  price_min?: number | null; price_max?: number | null; price_step?: number | null;
+  min_qty?: number | null; max_qty?: number | null;
+  per_code_quota?: number | null; fee_rate?: number | null;
+  source?: string; source_url?: string; verified_at_ms?: number | null;
+  data_as_of_ms?: number | null; status: string;
+  timing_relevance: string; timing_note: string;
+};
+export type OfferingsView = {
+  status: string; offerings: OfferingView[];
+  capital: { total_cap?: number | null; cash_reserve?: number | null;
+    max_per_offering?: number | null; priorities?: Record<string, unknown>;
+    version?: number };
+  reserved_total: number; available?: number | null;
+  reservations: Record<string, unknown>[];
+};
+export const offeringsApi = {
+  list: () => http<OfferingsView>('/api/execution/offerings'),
+  create: (body: Record<string, unknown>) => http<Record<string, unknown>>(
+    '/api/execution/offerings', { method: 'POST', body, ...NO_RETRY }),
+  budget: () => http<Record<string, unknown>>('/api/execution/offerings/budget'),
+  setBudget: (body: Record<string, unknown>) => http<Record<string, unknown>>(
+    '/api/execution/offerings/budget', { method: 'POST', body, ...NO_RETRY }),
+  plan: (body: Record<string, unknown>) => http<Record<string, unknown>>(
+    '/api/execution/offerings/plan', { method: 'POST', body, ...NO_RETRY }),
+  preflight: (id: string, body: Record<string, unknown>) =>
+    http<Record<string, unknown>>(
+      `/api/execution/offerings/${encodeURIComponent(id)}/preflight`,
+      { method: 'POST', body, ...NO_RETRY }),
+  timing: (adapter: string, method: string, target_ms: number, network = '',
+           margin_ms = 0) => http<Record<string, unknown>>(
+    `/api/execution/offerings/timing?adapter=${encodeURIComponent(adapter)}`
+    + `&method=${encodeURIComponent(method)}&target_ms=${target_ms}`
+    + `&network=${encodeURIComponent(network)}&margin_ms=${margin_ms}`),
+};
+export function useOfferings() {
+  return useQuery({
+    queryKey: ['execution-offerings'],
+    queryFn: () => offeringsApi.list(),
+    staleTime: 10_000,
+    refetchInterval: 20_000,
+    retry: false,
+  });
+}
+
+// ── cockpit: وضعیت، Preflight، Mock و گزارش ─────────────────────────────────
+export type CockpitGate = {
+  id: string; label: string; status: string; evidence: string; reason: string;
+  action: string; source: string; observed_at?: number | null; age_s?: number | null;
+};
+export type CockpitStatusView = {
+  status: string; live_ready: boolean; live_send: boolean; mode: string;
+  app_version?: string; observed_at?: number; observed_iso?: string;
+  gates: CockpitGate[]; next_action?: string; failing_count?: number;
+  components?: Record<string, unknown>;
+  readiness?: { live_ready?: boolean; blockers?: { code: string; detail: string }[] };
+};
+export type CockpitEvent = {
+  seq: number; at: number; phase: string; status: string; detail: string;
+  duration_ms?: number | null;
+};
+export type CockpitRun = {
+  id: string; scenario: string; mode: string; status: string;
+  started_at: number; finished_at?: number | null; event_count?: number;
+  summary?: Record<string, unknown>; events?: CockpitEvent[];
+};
+export type CockpitRunsView = {
+  status: string; mode: string; runs: CockpitRun[]; selected_run: string;
+  events: CockpitEvent[]; scenarios: { id: string; label: string; detail: string }[];
+};
+export type CockpitPreflightView = {
+  status: string; preflight?: {
+    ok?: boolean; state?: string; checks?: { name: string; state: string;
+      detail: string; source?: string; observed_at?: number | null }[];
+    blockers?: string[]; amount?: number | null; fee?: number | null;
+    reason?: string; action?: string; source?: string; observed_at?: number | null;
+  };
+};
+export const cockpitApi = {
+  status: () => http<CockpitStatusView>('/api/execution/cockpit/status'),
+  runs: (limit = 30, runId = '') => http<CockpitRunsView>(
+    `/api/execution/cockpit/runs?limit=${limit}`
+    + (runId ? `&run_id=${encodeURIComponent(runId)}` : '')),
+  run: (body: Record<string, unknown>) => http<Record<string, unknown>>(
+    '/api/execution/cockpit/runs', { method: 'POST', body, ...NO_RETRY }),
+  detail: (runId: string) => http<{ status: string; run: CockpitRun }>(
+    `/api/execution/cockpit/runs/${encodeURIComponent(runId)}`),
+  stop: (runId: string) => http<Record<string, unknown>>(
+    `/api/execution/cockpit/runs/${encodeURIComponent(runId)}/stop`,
+    { method: 'POST', ...NO_RETRY }),
+  preflight: (body: Record<string, unknown>) => http<CockpitPreflightView>(
+    '/api/execution/cockpit/preflight', { method: 'POST', body, ...NO_RETRY }),
+  report: (runId = '') => http<Record<string, unknown>>(
+    `/api/execution/cockpit/report`
+    + (runId ? `?run_id=${encodeURIComponent(runId)}` : '')),
+};
+export function useCockpitStatus() {
+  return useQuery({
+    queryKey: ['execution-cockpit-status'],
+    queryFn: () => cockpitApi.status(),
+    staleTime: 5_000,
+    refetchInterval: 15_000,
+    retry: false,
+  });
+}
+export function useCockpitRuns(enabled = true) {
+  return useQuery({
+    queryKey: ['execution-cockpit-runs'],
+    queryFn: () => cockpitApi.runs(),
+    enabled,
+    staleTime: 2_000,
+    refetchInterval: (query) => {
+      const data = query.state.data as CockpitRunsView | undefined;
+      return data?.runs?.some((r) => r.status === 'RUNNING') ? 1_500 : false;
+    },
+    retry: false,
+  });
+}
+export function useCockpitRunDetail(runId: string) {
+  return useQuery({
+    queryKey: ['execution-cockpit-run', runId],
+    queryFn: () => cockpitApi.detail(runId),
+    enabled: !!runId,
+    staleTime: 1_000,
+    refetchInterval: (query) => {
+      const data = query.state.data as { run?: CockpitRun } | undefined;
+      return data?.run?.status === 'RUNNING' ? 1_200 : false;
+    },
+    retry: false,
+  });
+}
+
+// ── تشخیصِ اتصال: ده مرحلهٔ مستقل از Mock ────────────────────────────────
+export type ConnectionStep = {
+  key: string; title: string; status: string; evidence: string; reason: string;
+  action: string; observed_at: string; duration_ms?: number | null;
+};
+export type ConnectionDiagnosis = {
+  status: string; app_version?: string; adapter?: string;
+  state: string; state_label: string; steps: ConnectionStep[];
+  next_action?: string; secrets_stored?: boolean; observed_at?: string;
+  diagnose_ms?: number;
+};
+export type SessionCapture = {
+  status?: string; code?: string; detail?: string; token_present?: boolean;
+  page_host?: string; token_type?: string; expires_at?: number | null;
+  scope?: string; has_refresh_token?: boolean; secrets_returned?: boolean;
+  secrets_stored?: boolean;
+};
+export const connectionApi = {
+  diagnose: () => http<ConnectionDiagnosis>('/api/execution/connection/diagnose'),
+  verify: () => http<ConnectionDiagnosis>('/api/execution/connection/verify',
+    { method: 'POST', ...NO_RETRY }),
+  captureSession: () => http<SessionCapture>('/api/execution/connection/capture-session',
+    { method: 'POST', ...NO_RETRY }),
+  report: () => http<Record<string, unknown>>('/api/execution/connection/report'),
+};
+export function useConnectionDiagnosis() {
+  return useQuery({
+    queryKey: ['execution-connection-diagnosis'],
+    queryFn: () => connectionApi.diagnose(),
+    staleTime: 5_000,
+    refetchInterval: 20_000,
     retry: false,
   });
 }

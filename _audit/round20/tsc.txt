@@ -1,0 +1,2 @@
+npm notice run bors-terminal-frontend@1.0.95 npx
+npm notice run tsc -b

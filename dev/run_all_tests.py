@@ -3,7 +3,7 @@ v9.5 — اجرای همهٔ تست‌های آفلاین (بدون نیاز ب�
 اجرا:  python dev/run_all_tests.py
 تست نیازمند سرور جدا است:  python dev/serve_check_v95.py
 """
-import os, re, subprocess, sys
+import hashlib, os, re, shutil, sqlite3, subprocess, sys, tempfile
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
 # ترجمانِ شمارشِ گاردها (مأموریتِ ۱۴۰۵-۰۷-۲۳، بندِ ۷): «۰ pass / ۰ fail» بودنِ
@@ -13,6 +13,125 @@ if _HERE not in sys.path:
 from guard_counts import summarize  # noqa: E402
 
 os.chdir(os.path.join(_HERE, '..'))
+
+
+def _sha256(path):
+    h = hashlib.sha256()
+    with open(path, 'rb') as f:
+        for chunk in iter(lambda: f.read(1024 * 1024), b''):
+            h.update(chunk)
+    return h.hexdigest()
+
+
+def _copy_sqlite(src, dst):
+    if not os.path.isfile(src):
+        return False
+    ro = sqlite3.connect('file:%s?mode=ro' % src.replace(chr(92), '/'),
+                         uri=True, timeout=30)
+    out = sqlite3.connect(dst)
+    try:
+        ro.backup(out)
+        out.commit()
+    finally:
+        out.close()
+        ro.close()
+    return True
+
+
+def _run_isolated_parent():
+    """clone کامل + دیتابیسِ ایزوله؛ هیچ test رویِ worktreeِ عملیاتی اجرا نمی‌شود."""
+    root = os.getcwd()
+    clone = tempfile.mkdtemp(prefix='bors_suite_iso_')
+    ignore = shutil.ignore_patterns(
+        '.git', 'node_modules', 'dist', '_audit', '__pycache__', '.venv',
+        '*.db', '*.db-wal', '*.db-shm', '*.pyc')
+    shutil.copytree(root, clone, dirs_exist_ok=True, ignore=ignore)
+    market = os.path.join(root, 'market.db')
+    if not os.path.isfile(market):
+        print('FAIL isolation: operational market.db not found at %s' % market)
+        return 1
+    if not _copy_sqlite(market, os.path.join(clone, 'market.db')):
+        print('FAIL isolation: market.db clone failed')
+        return 1
+    _copy_sqlite(os.path.join(root, 'codal.db'), os.path.join(clone, 'codal.db'))
+    marker = os.path.join(clone, '.bors_test_isolation')
+    with open(marker, 'w', encoding='utf-8') as f:
+        f.write('round15 isolated suite\n')
+    # تنها fixtureِ اجراییِ suite که از _audit لازم است (بقیه skip می‌شوند).
+    audit_script = os.path.join(root, '_audit', 'candle_integrity_roundj.py')
+    if os.path.isfile(audit_script):
+        os.makedirs(os.path.join(clone, '_audit'), exist_ok=True)
+        shutil.copy2(audit_script, os.path.join(clone, '_audit',
+                                                'candle_integrity_roundj.py'))
+    oracle_dir = os.path.join(root, '_audit', 'indicator_audit')
+    if os.path.isdir(oracle_dir):
+        shutil.copytree(oracle_dir, os.path.join(clone, '_audit', 'indicator_audit'),
+                        dirs_exist_ok=True)
+    # repo_hygiene از git ls-files استفاده می‌کند؛ یک repo مستقل در clone
+    # بساز تا مسیرِ git هرگز به worktreeِ عملیاتی اشاره نکند.
+    try:
+        subprocess.run(['git', 'init', '-q'], cwd=clone, timeout=30,
+                       capture_output=True, text=True, encoding='utf-8',
+                       errors='replace')
+        subprocess.run(['git', 'add', '-A'], cwd=clone, timeout=180,
+                       capture_output=True, text=True, encoding='utf-8',
+                       errors='replace')
+        subprocess.run(['git', '-c', 'user.name=isolated-suite',
+                        '-c', 'user.email=isolated@example.invalid',
+                        'commit', '-qm', 'isolated suite snapshot'],
+                       cwd=clone, timeout=120, capture_output=True, text=True,
+                       encoding='utf-8', errors='replace')
+    except Exception as e:                           # noqa: BLE001
+        print('WARN isolated git init failed:', type(e).__name__)
+    node_src = os.path.join(root, 'frontend', 'node_modules')
+    node_dst = os.path.join(clone, 'frontend', 'node_modules')
+    if os.path.isdir(node_src):
+        try:
+            subprocess.run(['cmd', '/c', 'mklink', '/J', node_dst, node_src],
+                           capture_output=True, text=True, timeout=30,
+                           encoding='utf-8', errors='replace')
+        except Exception as e:                       # noqa: BLE001
+            print('WARN node_modules junction failed:', type(e).__name__)
+    log_path = os.path.join(tempfile.gettempdir(),
+                            'bors_suite_round15_%d.log' % os.getpid())
+    env = dict(os.environ,
+               PYTHONUNBUFFERED='1',
+               BORS_TEST_ISOLATION='1',
+               BORS_SUITE_ISOLATED_CHILD='1',
+               BORS_OPERATIONAL_ROOT=root,
+               BORS_DATA_DIR=clone,
+               BORS_USER_DB=os.path.join(clone, 'user.db'),
+               BORS_INTENT_DB=os.path.join(clone, 'intents.db'),
+               BORS_SUITE_LOG=log_path)
+    watched = [os.path.join(root, n) for n in ('market.db', 'user.db', 'codal.db')]
+    before = {p: _sha256(p) for p in watched if os.path.isfile(p)}
+    print('ISOLATED SUITE clone=%s' % clone)
+    print('ISOLATED SUITE log=%s' % log_path)
+    print('ISOLATED SUITE operational fingerprints before: %s' % {
+        os.path.basename(k): v[:16] for k, v in before.items()})
+    with open(log_path, 'w', encoding='utf-8') as lf:
+        rc = subprocess.call([sys.executable,
+                              os.path.join(clone, 'dev', 'run_all_tests.py')],
+                             cwd=clone, env=env, stdout=lf,
+                             stderr=subprocess.STDOUT)
+    after = {p: _sha256(p) for p in watched if os.path.isfile(p)}
+    changed = [os.path.basename(p) for p in before if before[p] != after.get(p)]
+    print('ISOLATED SUITE rc=%s operational_changed=%s' % (rc, changed or 'none'))
+    try:
+        with open(log_path, encoding='utf-8', errors='replace') as f:
+            lines = f.read().splitlines()
+        for line in lines[-30:]:
+            print('  | ' + line)
+    except Exception:
+        pass
+    if changed:
+        print('FAIL isolation: operational DB changed: %s' % ', '.join(changed))
+        rc = 1
+    if not (os.environ.get('BORS_KEEP_SUITE_CLONE') or '').strip():
+        shutil.rmtree(clone, ignore_errors=True)
+    else:
+        print('ISOLATED SUITE kept clone=%s' % clone)
+    return rc
 
 SUITES = [
     ('dev/struct_check.py',           'structure / undefined-names'),
@@ -640,6 +759,62 @@ SUITES = [
     # زمان‌سنجیِ monotonic با p50/p95/p99، و کنترل‌هایِ منفیِ پاک‌سازیِ لاگ.
     ('dev/sarkhati_protocol_v1119.py',
      'sarkhati protocol: provenance-marked wire fixtures, 2xx is never acceptance, no blind re-send after ambiguous, confirmation voided by session change, three distinct origins, honest mode/queue claims, monotonic percentiles, log redaction controls'),
+    # مأموریتِ 2026-10-20: WAFِ Content-Type روی GET، مسیرِ زمان سرور، و بازیابیِ
+    # نشست از Credential Manager با بررسی exp؛ هیچ POSTِ واقعی در گارد نیست.
+    ('dev/sarkhati_waf_header_v1121.py',
+     'sarkhati WAF header: GET without Content-Type, POST with Content-Type, WAF simulator green only without the header, dead server-time candidate removed, read-only gate never reaches the transport, session vault rejects expired/no-exp tokens and leaks none'),
+    ('dev/strategy_guard_v1123.py',
+     'sarkhati strategies: settings reject secrets, metrics p50/p95/p99 only from real samples, one-submit arbiter, direct/browser dry-run sends no POST, mismatch hard stop, clock gate, reconcile uniqueness'),
+    ('dev/autoclicker_round14_v1148.py',
+     'sarkhati AutoClicker Round 14: catch-all dry-run guard, durable idempotency/UNKNOWN/restart, side-aware form, real preflight, scheduled/abort/Tehran'),
+    ('dev/db_isolation_guard_v1160.py',
+     'test DB isolation: resolver paths under BORS_DATA_DIR, operational worktree refused, subprocess inheritance, clone write leaves operational hash unchanged'),
+    ('dev/readiness_round15_v1162.py',
+     'readiness gates: owner approval store default/approve/revoke, contract UNVERIFIED keeps live_ready false, a real gate change flips the verdict'),
+    ('dev/mofid_adapter_v1163.py',
+     'Mofid/Titan adapter: flat payload, 2xx is UNKNOWN not acceptance, no retry, token never logged, first-party read-only session/money/positions/orders, sellable labelled derived, fail-closed preflight'),
+    ('dev/mofid_readiness_v1164.py',
+     'Mofid API/readiness: first-party endpoints parsed, session proved by GET customer/status, sellable labelled CLIENT_DERIVED_UNVERIFIED, write stays closed, zero POSTs, 401/offline build no fake values'),
+    ('dev/mofid_session_v1165.py',
+     'Mofid manual-login bridge: Playwright CDP captures token from allowlisted host, no secret in meta; read_only GET allowlist, order-id provenance, 401 invalidates cache, verify states, login window targets named host, zero order POST'),
+    ('dev/mofid_account_v1166.py',
+     'Mofid account reconciliation: unit/precision evidence, 12-row sellable formula and field map, order contract/known-ID guard, 404/5xx/401/timeout, readiness gates, no order POST'),
+    ('dev/sarkhati_queue_round19_v1167.py',
+     'sarkhati queue Round 19: shared telemetry latency arithmetic, deterministic API/browser mock clock, scheduler lag samples, Mofid POST queue contract not invoked, queue monitor KNOWN/UNSUPPORTED/UNKNOWN/ERROR without fake zero, position series movement'),
+    ('dev/sarkhati_closeout_v1168.py',
+     'sarkhati closeout Round 20: Mofid POST query and LS orderplace stream evidence, mutation endpoints separate, EasyTrader queue 401/404/500/timeout/invalid/empty/concurrent single-flight, queue source_verified independent from result_known, readiness queue gate not folded into read-only'),
+    ('dev/sarkhati_fast_order_v1170.py',
+     'sarkhati fast order Round 21: full preview does session/balance/preflight once, confirm is local guards plus one POST, one-shot token (expiry/epoch/halt/concurrent), explicit phrase, timeout/UNKNOWN never retries, deferred read-back, exact wire body, dry-run never posts'),
+    ('dev/autoclicker_browser_round14_v1149.py',
+     'sarkhati AutoClicker Round 14 browser-level: Playwright mock EasyTrader, zero order posts in dry-run, one click, UNKNOWN, abort'),
+    # مأموریتِ Round 22 (۱۴۰۵-۰۸-۰۱): AutoClickerِ واقعیِ UIِ EasyTrader — داوریِ
+    # فرم/دکمه رویِ DOM، اجرایِ چنداقدامیِ پایدار، سقفِ نرخِ لایه‌بندی‌شده، تبِ پنلِ
+    # همان پروفایل، و نردبانِ ده‌فکتی. هیچ سفارش/نشستِ واقعی لمس نمی‌شود.
+    ('dev/autoclicker_round22_v1172.py',
+     'sarkhati AutoClicker Round 22: real DOM judgement, backend multi-action run store, one-winner claims, 300ms floor, emergency stop, page-change stop, provenance-tiered trading rules, dry-run never posts'),
+    ('dev/autoclicker_round22_browser_v1173.py',
+     'sarkhati AutoClicker Round 22 browser-level: real Chromium over CDP, local EasyTrader fixture, hidden/duplicate/off-viewport/disabled/wrong-side refusal, repeat spacing, live-path wire verdict on the fixture, panel tab in the same profile, session proof without reading the token'),
+    # مأموریتِ Round 23 (۲۰۲۶-۱۰-۲۴): سنجشِ زندهٔ EasyTrader سه نقصِ مسیرِ واقعی را
+    # نشان داد که fixture نمی‌دید: عبورِ POSTِ سفارش از service worker (گاردِ
+    # page.route کور بود)، allowlistِ کاملِ URL در مقایسهٔ hostname، و تنظیماتِ
+    # تازه که `dry_run` نداشت و ۵۰۰ می‌داد. این گارد همان‌ها را با SWِ واقعی ثابت می‌کند.
+    ('dev/autoclicker_round23_guard.py',
+     'sarkhati AutoClicker Round 23: service-worker order POST is blocked at the CDP network layer (canary proves SW mediation), no escaped write, guard lift restores flow, fresh settings loader, URL->hostname allowlist, dry-run financial advisories, fire-time rate accounting, UTF-8 live verifier'),
+    # مأموریتِ ۲۰۲۶-۱۰-۲۰ (Darvand P0): ذخیرهٔ ماندگارِ سفارش/زمان‌بندی، claim
+    # اتمیک، NEEDS_REVIEW پس از restart، MISSED_TARGET بدون جبران، و مسدودماندنِ
+    # مسیر زنده تا تأیید قرارداد/نشست. هیچ شبکه/سفارشی صدا زده نمی‌شود.
+    ('dev/execution_schedule_v1130.py',
+     'durable schedule: atomic store/claim, restart -> NEEDS_REVIEW, missed-target no catch-up, no retry after UNKNOWN, dedupe, halt/cancel, Darvand validator, live gates closed (dry-run only)'),
+    ('dev/execution_offerings_v1140.py',
+     'multi-offering: provenance/method, atomic capital reservations, priority SKIPPED_BUDGET, quota/price/qty/fee preflight, UNKNOWN hold, timing confidence without acceptance claims'),
+    ('dev/execution_cockpit_v1141.py',
+     'cockpit: read-only system gates, in-app mock scenarios, stop/restart recovery, UNKNOWN no retry, redacted report, no order POST'),
+    ('dev/execution_connection_v1142.py',
+     'connection: ten-stage host/CDP/page/login/session/API diagnosis, no false CONNECTED, mock/HTML/timeout states, redacted report'),
+    ('dev/execution_account_sources_v1146.py',
+     'account sources: read-only watchlist/portfolio/buying power, ISIN mapping, independent states, no body logging, buying-power preflight'),
+    ('dev/execution_write_contract_v1147.py',
+     'write contract: reconstructed {order} payload, request-registered semantics, no blind retry, read-only refusal, readiness separation'),
     # مأموریتِ 2026-10-18 (عیب‌یابیِ اتصالِ مفید): انتخابِ آداپتور ازِ خودِ برنامه
     # با مقدم‌بودنِ env، گیتِ نوشتن که هیچ تنظیمِ دیسکی بازش نمی‌کند، حالتِ
     # فقط‌خواندنی (خواندن بله / POST نه)، و «متصل» فقط باِ شاهدِ مسیرِ واقعی.
@@ -775,8 +950,13 @@ def run(argv, label):
 
 # Data-Lifecycle: برخی سوئیت‌ها آرگومان می‌گیرند (مثلاً --selftest)؛
 # script.split() مسیر و آرگومان‌ها را از هم جدا می‌کند.
+if os.environ.get('BORS_SUITE_ISOLATED_CHILD') != '1':
+    sys.exit(_run_isolated_parent())
 skipped = []
-for script, label in SUITES:
+_limit = int((os.environ.get('BORS_SUITE_LIMIT') or '0').strip() or 0)
+for _idx, (script, label) in enumerate(SUITES):
+    if _limit and _idx >= _limit:
+        break
     need = REQUIRES.get(script)
     if need and not os.path.exists(need.replace('/', os.sep)):
         skipped.append((label, need))

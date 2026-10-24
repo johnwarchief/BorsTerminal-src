@@ -38,8 +38,10 @@ import { SarkhatiMonitorCard } from '../components/sarkhati/SarkhatiMonitorCard'
 import { SarkhatiPipeline } from '../components/sarkhati/SarkhatiPipeline';
 import { SarkhatiProTools } from '../components/sarkhati/SarkhatiProTools';
 import { SarkhatiRiskCard } from '../components/sarkhati/SarkhatiRiskCard';
-import { SarkhatiScheduleCard } from '../components/sarkhati/SarkhatiScheduleCard';
+import { SarkhatiCockpitCard } from '../components/sarkhati/SarkhatiCockpitCard';
 import { SarkhatiStatusStrip } from '../components/sarkhati/SarkhatiStatusStrip';
+import { SarkhatiReadinessCard } from '../components/sarkhati/SarkhatiReadinessCard';
+import { SarkhatiSelectionCard } from '../components/sarkhati/SarkhatiSelectionCard';
 import { SarkhatiSymbolCard, estValue, selectRowFor }
   from '../components/sarkhati/SarkhatiSymbolCard';
 import { SarkhatiTrackingCard } from '../components/sarkhati/SarkhatiTrackingCard';
@@ -225,11 +227,23 @@ export default function SarkhatiPage() {
         <div className="rounded-xl border border-border-c/70 bg-bg-card/25 px-3 py-2.5"
           data-testid="sarkhati-connect-section">
           <SarkhatiConnectionCard />
+          <div className="mt-2">
+            <SarkhatiReadinessCard />
+          </div>
         </div>
       ) : panel === 'symbol' ? (
         <div className="rounded-xl border border-border-c/70 bg-bg-card/25 px-3 py-2.5"
           data-testid="sarkhati-symbol-section">
-          <SarkhatiSymbolCard symbol={symbol} row={row.data ?? null} onSelect={setSymbol} />
+          <SarkhatiSelectionCard />
+          <details className="mt-1.5 rounded-lg border border-border-c/50 px-2 py-1"
+            data-testid="sarkhati-symbol-details">
+            <summary className="cursor-pointer text-2xs font-bold text-accent-blue">
+              جزئیاتِ نمادِ انتخاب‌شده و جست‌وجویِ تکی
+            </summary>
+            <div className="mt-1">
+              <SarkhatiSymbolCard symbol={symbol} row={row.data ?? null} onSelect={setSymbol} />
+            </div>
+          </details>
         </div>
       ) : panel === 'order' ? (
         <div className="rounded-xl border border-border-c/70 bg-bg-card/25 px-3 py-2.5"
@@ -287,7 +301,7 @@ export default function SarkhatiPage() {
         <SarkhatiTrackingCard ledger={ledger.data ?? null} caps={gate.caps}
             status={gate.status} endpointPresent={gate.endpointPresent} />
       ) : panel === 'schedule' ? (
-        <SarkhatiScheduleCard ledger={ledger.data ?? null} />
+        <SarkhatiCockpitCard ledger={ledger.data ?? null} />
       ) : panel === 'risk' ? (
         <SarkhatiRiskCard status={gate.status} />
       ) : (

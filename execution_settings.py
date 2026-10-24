@@ -3,8 +3,8 @@
 
 چرا رویِ دیسک و نه متغیر محیطی: بیلدِ منجمدِ دسکتاپ هیچ env ای از کاربر نمی‌گیرد،
 پس درِ v1.0.93 راهی برای رسیدن به آداپتور واقعی نبود — سنجشِ همین ماشین:
-`adapter="mock"` و تنها کلیدِ خروج `BORS_EXECUTION_ADAPTER=easytrader` که فقط درِ
-اجرایِ منبعی ست می‌شود. این فایل همان کلید را به خودِ برنامه می‌آورد، با سه قفل:
+`adapter="mock"` و تنها کلیدِ خروج `BORS_EXECUTION_ADAPTER=easytrader|mofid` که فقط
+درِ اجرایِ منبعی ست می‌شود. این فایل همان کلید را به خودِ برنامه می‌آورد، با سه قفل:
 
   ۱) اینجا **هیچ** مقدارِ محرمانه‌ای ذخیره نمی‌شود. token/رمز/کوکی/Authorization
      هرگز به این جدول نمی‌آید و هر کلیدِ ناشناخته رد می‌شود (`ALLOWED_KEYS`).
@@ -28,7 +28,10 @@ from typing import Any
 
 ADAPTER_MOCK = "mock"
 ADAPTER_EASYTRADER = "easytrader"
-ADAPTERS = (ADAPTER_MOCK, ADAPTER_EASYTRADER)
+#: پروتکلِ جدا (Titan). تا Round 15.5 عمداً به easytrader alias می‌شد چون آداپتور
+#: واقعی نداشت؛ از Round 16 مسیرهایِ فقط‌خواندنیِ خودش را دارد.
+ADAPTER_MOFID = "mofid"
+ADAPTERS = (ADAPTER_MOCK, ADAPTER_EASYTRADER, ADAPTER_MOFID)
 
 ENV_ADAPTER = "BORS_EXECUTION_ADAPTER"
 ENV_LIVE = "BORS_EXECUTION_LIVE"
@@ -64,7 +67,7 @@ def _normalise(key: str, value: Any) -> str:
         raise ValueError(f"کلیدِ ناشناخته: {key}")
     v = str(value or "").strip().lower()
     if key == "adapter":
-        v = {"mofid": ADAPTER_EASYTRADER, "orbis": ADAPTER_EASYTRADER}.get(v, v)
+        v = {"orbis": ADAPTER_EASYTRADER}.get(v, v)
         if v not in ADAPTERS:
             raise ValueError(f"آداپتورِ ناشناخته: {value}")
         return v
@@ -113,10 +116,9 @@ def read(db_path: str | None = None) -> dict[str, Any]:
         out["read_only"] = stored["read_only"] == "1"
         out["read_only_source"] = "settings"
     # نوشتن فقط با envِ نوشتن؛ تنظیمِ دیسک هرگز این را روشن نمی‌کند (§۲).
-    out["writes_allowed"] = bool(out["live_env"]) and out["adapter"] == ADAPTER_EASYTRADER
-    out["traffic_allowed"] = bool(out["writes_allowed"]
-                                 or (out["adapter"] == ADAPTER_EASYTRADER
-                                     and out["read_only"]))
+    real = out["adapter"] in (ADAPTER_EASYTRADER, ADAPTER_MOFID)
+    out["writes_allowed"] = bool(out["live_env"]) and real
+    out["traffic_allowed"] = bool(out["writes_allowed"] or (real and out["read_only"]))
     return out
 
 
@@ -136,5 +138,5 @@ def set_value(key: str, value: Any, db_path: str | None = None) -> dict[str, Any
     return read(db_path)
 
 
-__all__ = ["ADAPTERS", "ADAPTER_EASYTRADER", "ADAPTER_MOCK", "ALLOWED_KEYS",
-           "ENV_ADAPTER", "ENV_LIVE", "read", "set_value"]
+__all__ = ["ADAPTERS", "ADAPTER_EASYTRADER", "ADAPTER_MOCK", "ADAPTER_MOFID",
+           "ALLOWED_KEYS", "ENV_ADAPTER", "ENV_LIVE", "read", "set_value"]

@@ -49,6 +49,9 @@ export function SarkhatiSymbolCard({ symbol, row, onSelect }: {
       .slice(0, MAX_SUGGEST);
   }, [rows.data, q]);
   const feedErr = rows.isError;
+  const updated = rows.dataUpdatedAt
+    ? new Date(rows.dataUpdatedAt).toLocaleTimeString('fa-IR', { hour12: false })
+    : '—';
 
   return (
     <section className="rounded-xl border border-border-c/70 bg-bg-card/25 px-3 py-2"
@@ -128,6 +131,15 @@ export function SarkhatiSymbolCard({ symbol, row, onSelect }: {
           value={row?.tmin != null && row.tmin > 0 ? fmtInt(row.tmin) : 'بی‌داده'} />
         <Field label="وضعیتِ معاملاتی"
           value={row?.stop_state ? 'متوقف' : (row?.st_title || (row ? 'معمولی' : '—'))} />
+      </div>
+      <div className="mt-1 flex flex-wrap items-baseline gap-x-3 gap-y-0.5 text-3xs text-text-muted"
+        data-testid="sarkhati-symbol-source">
+        <span>منبع: تابلوِ همین نشست</span>
+        <span className="num" dir="ltr">دریافت: {updated}</span>
+        <span data-testid="sarkhati-symbol-data-state">
+          {feedErr || !row ? 'داده UNVERIFIED است — انتخاب/پیش‌فرود مسدود می‌ماند'
+            : row.is_live === false ? 'آخرین دادهٔ تابلو؛ زنده نیست' : 'داده در نشست حاضر است'}
+        </span>
       </div>
 
       <div className="mt-1">

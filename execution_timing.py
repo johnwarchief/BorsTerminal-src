@@ -26,9 +26,11 @@
 """
 from __future__ import annotations
 
+import math
 import os
 import socket
 import struct
+import threading
 import time
 from dataclasses import dataclass, field
 from datetime import date, datetime, timedelta, timezone
@@ -111,6 +113,22 @@ class TimeSource:
         micros = int((frac + "000000")[:6]) if frac else 0
         dt = datetime(day.year, day.month, day.day, hour, minute, second, micros,
                       tzinfo=self._tz)
+        return int(dt.timestamp() * 1000)
+
+    def from_tehran_local(self, text: str) -> int:
+        """ورودیِ «YYYY-MM-DDTHH:MM[:SS]» را *در تهران* تفسیر می‌کند.
+
+        ورودیِ آگاه از offset تبدیل می‌شود؛ ورودیِ بی‌offset به Asia/Tehran
+        نسبت داده می‌شود — نه به timezone مرورگر.
+        """
+        raw = str(text or "").strip()
+        if not raw:
+            raise ValueError("empty target")
+        dt = datetime.fromisoformat(raw)
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=self._tz)
+        else:
+            dt = dt.astimezone(self._tz)
         return int(dt.timestamp() * 1000)
 
     def label(self, wall_ms: int) -> str:
@@ -218,10 +236,16 @@ class NtpProber:
 
 # ── ۳) برآوردِ یک‌طرفه ────────────────────────────────────────────────────────
 def percentile(values: Sequence[float], p: float) -> float:
+    """صدکِ nearest-rank: کوچک‌ترین مقدارِ مرتب که سهمش به p می‌رسد.
+
+    `ceil(p/100*n)-1` استانداردِ nearest-rank است؛ نسخهٔ قبلی با
+    `round(p/100*(n-1))` برای نمونهٔ زوج، p50 را به مقدارِ بالاتر می‌برد و
+    برچسبِ nearest-rank را دقیق نمی‌کرد.
+    """
     if not values:
         raise ValueError("percentile of empty sequence")
     xs = sorted(values)
-    k = max(0, min(len(xs) - 1, int(round(p / 100.0 * (len(xs) - 1)))))
+    k = max(0, min(len(xs) - 1, math.ceil(float(p) / 100.0 * len(xs)) - 1))
     return xs[k]
 
 
@@ -271,6 +295,7 @@ class DispatchTelemetry:
     response_at: float | None = None
     rtt_ms: float | None = None
     broker_order_id: str | None = None
+    aborted: bool = False
     notes: list[str] = field(default_factory=list)
 
     @property
@@ -317,7 +342,8 @@ class Scheduler:
 
     def dispatch(self, plan: DispatchPlan, *, send: Callable[[], str | None],
                  sleep: Callable[[float], None] = time.sleep,
-                 yield_cpu: Callable[[], None] | None = None) -> DispatchTelemetry:
+                 yield_cpu: Callable[[], None] | None = None,
+                 abort_event: threading.Event | None = None) -> DispatchTelemetry:
         """تا مهلت صبر می‌کند (خوابِ درشت + spin) و بعد `send()` را صدا می‌زند.
 
         `send` باید *فقط* ارسالِ ازپیش‌ساخته‌شده را بزند: ساختِ payload، DNS،
@@ -332,11 +358,33 @@ class Scheduler:
 
         deadline = plan.lead_mono + plan.wait_s
         spin_from = deadline - plan.spin_window_ms / 1000.0
-        now = self.clock.mono()
-        if now < spin_from:
-            sleep(spin_from - now)
-        while self.clock.mono() < deadline:
-            step()
+        if abort_event is None:
+            now = self.clock.mono()
+            if now < spin_from:
+                sleep(spin_from - now)
+            while self.clock.mono() < deadline:
+                step()
+        else:
+            # خوابِ درشتِ قابلِ بیدارشدن: Abort نباید ساعت‌ها پشتِ sleep بماند.
+            while True:
+                if abort_event.is_set():
+                    tel.aborted = True
+                    return tel
+                now = self.clock.mono()
+                if now >= spin_from:
+                    break
+                abort_event.wait(min(0.25, max(0.0, spin_from - now)))
+            while self.clock.mono() < deadline:
+                if abort_event.is_set():
+                    tel.aborted = True
+                    return tel
+                step()
+            if abort_event.is_set():
+                tel.aborted = True
+                return tel
+        if abort_event is not None and abort_event.is_set():
+            tel.aborted = True
+            return tel
         tel.send_mono = self.clock.mono()
         tel.actual_send_wall_ms = self.clock.wall_ms()
         tel.drift_us = round((tel.send_mono - deadline) * 1_000_000, 1)

@@ -13,6 +13,9 @@
 # چرا DB داخل EXE نیست: market.db خام ~98MB است؛ در onefile هر اجرا یک بار
 # استخراج کامل می‌شد (کندی چند ده ثانیه‌ای). الگوی lzma-کنار-exe همان
 # قرارداد v10 قبل از فاز 7 است و "پوشه داده‌ها به مسیر اجرایی" را برآورده می‌کند.
+import os
+from PyInstaller.utils.hooks import collect_data_files
+
 a = Analysis(
     ['bors_entry.py'],
     pathex=['.'],
@@ -35,7 +38,9 @@ a = Analysis(
         # می‌شود → اسکنِ ایستایِ PyInstaller آن را نمی‌بیند، پس صریحاً باندل
         # می‌کنیم تا نصبِ سایلنتِ آپدیت در نسخهٔ باندل‌شده کار کند.
         ('bors_minisign.py', '.'),
-    ] + [t for t in (('adb_config.json', '.'), ('codal_control.json', '.'),
+    # Playwright فقط پکیجِ پایتون نیست: driver/node.exe و package/ هم داده‌اند.
+    # بی‌این، Strategyهای مرورگری در EXE با «Driver not found» می‌میرند.
+    ] + collect_data_files('playwright') + [t for t in (('adb_config.json', '.'), ('codal_control.json', '.'),
                     # setup.pw: رمزِ نصب‌کنندهٔ Inno برای /VERYSILENT (gitignored؛
                     # فقط اگر موجود باشد باندل می‌شود — بدون آن آپدیت به /SILENT
                     # تنزل می‌کند و کاربر یک‌بار رمز را وارد می‌کند).
@@ -181,6 +186,34 @@ a = Analysis(
                    # تا انتخابِ آداپتور از خودِ برنامه هم ممکن باشد؛ بی‌این خط
                    # بیلدِ منجمد رویِ اولین /api/execution/status می‌میرد.
                    'execution_settings',
+                   # بازیابیِ نشست از Windows Credential Manager (۲۰۲۶-۱۰-۲۰):
+                   # سطح-بالِ api/execution.py است؛ بی‌این خط EXE درِ startup
+                   # با ModuleNotFoundError می‌میرد.
+                   'execution_session_store',
+                   # Strategyهای چندروشی (۲۰۲۶-۱۰-۲۰): سطح-بالِ api/execution.py.
+                   'execution_strategy_core',
+                   'execution_strategy_engine',
+                   'execution_intent_store',
+                   'execution_owner_approval',
+                   'execution_mofid',
+                   'execution_browser',
+                   # زمان‌بندیِ ماندگار (۲۰۲۶-۱۰-۲۰): سطح-بالِ api/execution.py.
+                   'execution_schedule', 'execution_daemon', 'execution_browser_host', 'execution_offerings', 'execution_cockpit', 'execution_connection', 'execution_session_capture',
+                   'execution_mofid_capture',
+                   # مسیرِ سریعِ سرخطی (۲۰۲۶-۱۰-۲۳): سطح-بالِ api/execution.py؛
+                   # پیش‌نمایش/تأییدِ یک‌بارمصرف. بی‌این خط EXE روی اولین
+                   # /api/execution/order/preview می‌شکند.
+                   'execution_fast_order',
+                   # Round 22: موتورِ اتوکلیکرِ واقعی و پنلِ تب‌شده. اینها سطح-بالِ
+                   # api/execution_autoclicker.py‌اند، اما آن ماژول هم درِ hiddenimports
+                   # لازم است وگرنه EXE درِ اولین /api/execution/autoclicker/* می‌میرد.
+                   'execution_rate_limiter', 'execution_ui_state',
+                   'execution_autoclick_run', 'execution_autoclick_scheduler',
+                   'execution_autoclick_executor', 'execution_trading_rules',
+                   'execution_panel', 'api.execution_autoclicker',
+                   # Playwright برایِ Strategyهای مرورگری؛ باینریِ مرورگر از
+                   # سیستم (Edge/Chrome) یا نصبِ محلی می‌آید، نه از بسته.
+                   'playwright', 'playwright.sync_api',
                    # دروازۀ ربات (مأموریتِ ۱۴۰۵-۰۷-۲۴، فاز ۳): مثلِ بقیۀ api/*
                    # درِ بدنهٔ `api_router()` ایمپورت می‌شود، پس اسکن ایستا
                    # نمی‌بیندش؛ بی‌این خط هر /api/bot/* درِ EXE روی 404 می‌ماند.
@@ -211,7 +244,7 @@ a = Analysis(
     excludes=['tkinter', 'matplotlib', 'pytest', 'scipy', 'sympy', 'selenium',
               'setuptools', 'pip',
               'boto3', 'botocore', 's3transfer',
-              'camoufox', 'playwright',
+              'camoufox',
               'engineio', 'socketio',
               # هوکِ pywebview در PyInstaller همهٔ بک‌ندهایِ گرافیکی را جمع می‌کند،
               # نه فقط همان که رویِ ویندوز استفاده می‌شود: PySide6 به‌تنهایی ۴۴ مگ

@@ -3,8 +3,12 @@
 چیزی که این در **نیست**: تصمیم‌گیرندهٔ «کجا وصل شویم». انتخابِ آداپتور فقط از
 دو متغیرِ محیطیِ صریح خوانده می‌شود و از هیچ بدنهٔ درخواستی نه:
 
-  BORS_EXECUTION_ADAPTER = mock | easytrader     (پیش‌فرض: mock)
-  BORS_EXECUTION_LIVE    = 1                     (پیش‌فرض: خاموش)
+  BORS_EXECUTION_ADAPTER = mock | easytrader | mofid   (پیش‌فرض: mock)
+  BORS_EXECUTION_LIVE    = 1                          (پیش‌فرض: خاموش)
+
+Mofid/Titan یک آداپتورِ جدا با مسیرهایِ فقط‌خواندنیِ برگرفته از بستهٔ خودِ
+کارگزاری است (Round 16)؛ انتخابِ سکویِ هدف درِ ماتریسِ D8 را عوض نمی‌کند و
+نوشتن/read-backِ آن همچنان تأییدنشده است.
 
 تا «mock» یا تا LIVE نخورده باشد، `DRY_RUN` ثابتِ True می‌ماند و هیچ درخواستِ
 برون‌سازمانی ساخته نمی‌شود. رأیِ مالک در ۱۴۰۵-۰۷-۲۴ سکوی هدف را تعیین کرد
@@ -20,8 +24,11 @@
 می‌شود، نه صفر؛ و `live_enabled` ازِ وضعیتِ واقعیِ آداپتور خوانده می‌شود، نه
 ازِ یکِ ثابت.
 
-token درِ همین پروسه و درِ حافظه می‌ماند (`POST /api/execution/session`): هیچ
-مسیری آن را درِ فایل، دیتابیس، لاگ یا پاسخِ HTTP نمی‌نویسد.
+token درِ همین پروسه و درِ حافظه می‌ماند (`POST /api/execution/session`، یا
+`POST /api/execution/connection/capture-session` که فقط با کلیکِ صریحِ مالک
+نشست را از مرورگرِ مدیریت‌شده می‌خواند) و پس از restart، فقط اگر ترافیک مجاز
+باشد، از مخزنِ امنِ ویندوز بازیابی می‌شود؛ هیچ مسیری آن را درِ فایل، دیتابیس،
+لاگ یا پاسخِ HTTP نمی‌نویسد.
 """
 from __future__ import annotations
 
@@ -30,15 +37,18 @@ import datetime as dt
 import json
 import os
 import sqlite3
+import subprocess
+import sys
 import threading
 import time
 import uuid
 from collections import deque
-from typing import Any
+from typing import Any, Mapping
+from urllib.parse import urlparse
 
 from fastapi import APIRouter, Body, HTTPException, Query, Request
 
-from bors_config import DB_PATH
+from bors_config import APP_VERSION, DB_PATH, WORK_DIR
 from execution_contract import (
     BrokerAdapter, BrokerError, Capabilities, ErrorCode, ExecutionRecord,
     ExecutionStatus, InstrumentRef, OrderDraft, OrderMode, OrderState, Resolution, Side,
@@ -49,7 +59,24 @@ from execution_easytrader import (
     WIRE_HYPOTHESIS, WIRE_PROBE_HOST_HEALTH, WIRE_SESSION_PROBE_CANDIDATES,
     easytrader_payload,
 )
+from execution_mofid import (
+    MOFID_LOGIN_URL, MofidAdapter, ORDER_CONTRACT, POSITION_FIELD_MAP,
+    SELLABLE_FORMULA, SELLABLE_STATE, UNIT_VERIFICATION,
+)
+import execution_mofid_capture as EMC                        # noqa: E402
 import execution_connect as EXC                            # noqa: E402
+import execution_connection as ECONN                       # noqa: E402
+import execution_browser_host as BH                        # noqa: E402
+import execution_cockpit as CK                             # noqa: E402
+import execution_fast_order as FAO                         # noqa: E402
+import execution_offerings as OF                           # noqa: E402
+import execution_owner_approval as OA                      # noqa: E402
+import execution_readiness as RD                           # noqa: E402
+import execution_write_contract as WC                      # noqa: E402
+import execution_schedule as SCH                           # noqa: E402
+import execution_session_store as SESS                     # noqa: E402
+import execution_strategy_core as SC                       # noqa: E402
+import execution_strategy_engine as SE                     # noqa: E402
 from execution_ledger import ARMED, HALT, TRIPPED, default_ledger
 from execution_mock import MockBrokerAdapter
 from execution_service import ExecutionError, ExecutionService, Limits
@@ -57,10 +84,31 @@ from execution_timing import Scheduler, TimeSource, percentile
 
 router = APIRouter()
 
+#: وضعیت‌هایِ مستقلِ منابع (Round 10). هر کدام فقط از شاهدِ خودش ساخته می‌شود.
+WATCHLIST_VERIFIED = "WATCHLIST_VERIFIED"
+WATCHLIST_UNAVAILABLE = "WATCHLIST_UNAVAILABLE"
+PORTFOLIO_VERIFIED = "PORTFOLIO_VERIFIED"
+PORTFOLIO_PARTIALLY_VERIFIED = "PORTFOLIO_PARTIALLY_VERIFIED"
+PORTFOLIO_UNAVAILABLE = "PORTFOLIO_UNAVAILABLE"
+#: مسیرِ Mofid از بستهٔ خودِ کارگزاری خوانده شده، ولی پاسخِ واقعیِ حساب در این
+#: ماشین دیده نشده؛ «verified» نامیدنش ادعایِ بی‌شاهد است.
+PORTFOLIO_READ_ONLY_UNVERIFIED = "PORTFOLIO_READ_ONLY_UNVERIFIED"
+#: وضعیت‌هایِ گردشِ ورودِ دستیِ Mofid؛ فقط از پاسخِ واقعیِ درخواست‌ها ساخته می‌شوند.
+MOFID_NEEDS_LOGIN = "NEEDS_LOGIN"
+MOFID_AUTHENTICATING = "AUTHENTICATING"
+MOFID_AUTHENTICATED_UNVERIFIED = "AUTHENTICATED_UNVERIFIED"
+MOFID_READ_ONLY_PROBE_OK = "READ_ONLY_PROBE_OK"
+MOFID_SESSION_EXPIRED = "SESSION_EXPIRED"
+MOFID_READ_ONLY_PROBE_FAILED = "READ_ONLY_PROBE_FAILED"
+BUYING_POWER_VERIFIED = "BUYING_POWER_VERIFIED"
+BUYING_POWER_UNAVAILABLE = "BUYING_POWER_UNAVAILABLE"
+ACCOUNT_SOURCE_BLOCKED = "ACCOUNT_SOURCE_BLOCKED"
+ORDER_WRITE_UNVERIFIED = "ORDER_WRITE_UNVERIFIED"
+
 _LOCK = threading.Lock()
 ADAPTER_ENV = "BORS_EXECUTION_ADAPTER"
 LIVE_ENV = "BORS_EXECUTION_LIVE"
-ALLOWED_ADAPTERS = ("mock", "easytrader")
+ALLOWED_ADAPTERS = ("mock", "easytrader", "mofid")
 #: آستانهٔ «فوری»: اگر مهلتِ هدف از این نزدیک‌تر باشد، درِ همان درخواست
 #: می‌نشینیم و threadِ تازه‌ای نمی‌سازیم — هزینهٔ یکِ خوابِ کوتاه کمتر از یکِ
 #: اجرایِ هم‌زمان است.
@@ -99,10 +147,11 @@ def _configured_adapter(settings: dict[str, Any]) -> str:
 _CFG = _settings_snapshot()
 # تنها adapterهایِ ممکن. بی‌ترافیک، `RefusingTransport` می‌نشیند.
 ADAPTER_KIND = _configured_adapter(_CFG)
-LIVE_REQUESTED = ADAPTER_KIND == "easytrader" and _env_flag(LIVE_ENV)
+LIVE_REQUESTED = ADAPTER_KIND in ("easytrader", "mofid") and _env_flag(LIVE_ENV)
 # حالتِ فقط‌خواندنی: GETها مجازند تا نشست *واقعاً* تأیید شود و فهرست‌ها خوانده
 # شوند. ارسالِ سفارش همچنان فقط با `BORS_EXECUTION_LIVE=1` — دو گیتِ جدا.
-READ_ONLY_REQUESTED = (ADAPTER_KIND == "easytrader" and bool(_CFG.get("read_only"))
+READ_ONLY_REQUESTED = (ADAPTER_KIND in ("easytrader", "mofid")
+                       and bool(_CFG.get("read_only"))
                        and not LIVE_REQUESTED)
 TRAFFIC_ALLOWED = bool(LIVE_REQUESTED or READ_ONLY_REQUESTED)
 DRY_RUN = not LIVE_REQUESTED
@@ -121,15 +170,29 @@ _CLOCK_LIMIT = ("ساعتِ سیستم بدونِ آفستِ NTP؛ زمان‌ب
 _SCHEDULER = Scheduler(TimeSource())
 
 _EASYTRADER: EasyTraderAdapter | None = None
+_MOFID: Any = None
+
+#: پیش‌نمایش‌هایِ مسیرِ سریع. درِ حافظه‌اند و با restart می‌میرند: توکنِ
+#: پیش‌نمایشی که نشستش مرده نباید زنده بماند. یک‌بارمصرف و کوتاه‌عمر.
+_FAST_ORDERS = FAO.FastOrderGateway()
 
 
 def _adapter() -> BrokerAdapter:
-    global _EASYTRADER
+    global _EASYTRADER, _MOFID
     if ADAPTER_KIND == "easytrader":
         _EASYTRADER = EasyTraderAdapter(
             transport=RequestsTransport() if TRAFFIC_ALLOWED else RefusingTransport(),
             writes_allowed=bool(LIVE_REQUESTED))
         return _EASYTRADER
+    if ADAPTER_KIND == "mofid":
+        # توکن از envِ فرایند خوانده می‌شود و هیچ‌جا نوشته/لاگ نمی‌شود.
+        _MOFID = MofidAdapter(
+            transport=RequestsTransport() if TRAFFIC_ALLOWED else RefusingTransport(),
+            token=(os.environ.get("BORS_MOFID_TOKEN") or ""),
+            cookie=(os.environ.get("BORS_MOFID_COOKIE") or ""),
+            writes_allowed=bool(LIVE_REQUESTED),
+            read_only=not LIVE_REQUESTED)
+        return _MOFID
     # صف/وضعیت/لیست را بدل «می‌دهد» تا مسیرِ reconcile و پایشِ صف قابلِ دیدن
     # باشد؛ `balances` عمداً False است تا پیش‌فرود «بی‌داده» را از «صفر» جدا
     # نگه دارد (§۱۶ دستورِ کار).
@@ -171,6 +234,197 @@ _LIMITS = Limits(
 _ACTIVE_ADAPTER = _adapter()
 _SERVICE = ExecutionService(_ACTIVE_ADAPTER, dry_run=DRY_RUN, limits=_LIMITS,
                             audit=_AUDIT, scheduler=_SCHEDULER)
+
+# ── زمان‌بندیِ ماندگار (execution_schedule.py) ─────────────────────────────
+#: store جدا از market.db است؛ live executor این‌جا عمداً وصل نیست.
+_SCHEDULE_STORE: SCH.ScheduleStore | None = None
+_SCHEDULE_RUNNER: SCH.ScheduleRunner | None = None
+_SCHEDULE_STORE_LOCK = threading.Lock()
+_SCHEDULE_RUNNER_LOCK = threading.Lock()
+SCHEDULE_DB_ENV = "BORS_SCHEDULE_DB"
+SCHEDULE_RUNNER_ENV = "BORS_SCHEDULE_RUNNER"
+OFFERINGS_DB_ENV = "BORS_OFFERINGS_DB"
+_OFFERING_STORE: OF.OfferingStore | None = None
+_OFFERING_LOCK = threading.Lock()
+COCKPIT_DB_ENV = "BORS_COCKPIT_DB"
+_COCKPIT_STORE: CK.CockpitStore | None = None
+_COCKPIT_LOCK = threading.Lock()
+
+
+def _offering_store() -> OF.OfferingStore:
+    global _OFFERING_STORE
+    with _OFFERING_LOCK:
+        if _OFFERING_STORE is None:
+            path = (os.environ.get(OFFERINGS_DB_ENV) or "").strip() \
+                or os.path.join(WORK_DIR, "execution_offerings.db")
+            _OFFERING_STORE = OF.OfferingStore(path)
+        return _OFFERING_STORE
+
+
+def _cockpit_store() -> CK.CockpitStore:
+    global _COCKPIT_STORE
+    with _COCKPIT_LOCK:
+        if _COCKPIT_STORE is None:
+            path = (os.environ.get(COCKPIT_DB_ENV) or "").strip() \
+                or os.path.join(WORK_DIR, "execution_cockpit.db")
+            _COCKPIT_STORE = CK.CockpitStore(path)
+        return _COCKPIT_STORE
+
+
+def _schedule_store() -> SCH.ScheduleStore:
+    global _SCHEDULE_STORE
+    with _SCHEDULE_STORE_LOCK:
+        if _SCHEDULE_STORE is None:
+            path = (os.environ.get(SCHEDULE_DB_ENV) or "").strip() \
+                or SCH.default_store_path(WORK_DIR)
+            _SCHEDULE_STORE = SCH.ScheduleStore(path)
+        return _SCHEDULE_STORE
+
+
+def _schedule_calendar() -> SCH.LocalTradingCalendar:
+    return SCH.LocalTradingCalendar(DB_PATH)
+
+
+def _schedule_facts(rec: SCH.ScheduleRecord, at_ms: int | None = None) -> SCH.DarvandFacts:
+    facts = SCH.local_identity_facts(DB_PATH, rec.symbol)
+    facts.now_ms = SCH.now_ms() if at_ms is None else int(at_ms)
+    return facts
+
+
+def _schedule_runner() -> SCH.ScheduleRunner:
+    global _SCHEDULE_RUNNER
+    with _SCHEDULE_RUNNER_LOCK:
+        if _SCHEDULE_RUNNER is None:
+            _SCHEDULE_RUNNER = SCH.ScheduleRunner(
+                _schedule_store(), SCH.LocalFactsProvider(DB_PATH, _schedule_calendar()),
+                calendar=_schedule_calendar(), executor=SCH.DryRunExecutor(),
+                halted=lambda: _SERVICE.halted(),
+                live_enabled=False, contract_verified=False)
+        return _SCHEDULE_RUNNER
+
+
+def start_schedule_runner() -> dict[str, Any]:
+    """هوکِ startup؛ در تست‌ها با BORS_SCHEDULE_RUNNER=0 خاموش می‌شود."""
+    if (os.environ.get(SCHEDULE_RUNNER_ENV) or "1").strip().lower() in ("0", "false", "no", "off"):
+        return {"started": False, "reason": "disabled by env"}
+    runner = _schedule_runner()
+    runner.start()
+    return {"started": True, "recovered": runner.last_tick,
+            "readiness": SCH.readiness()}
+
+
+def _recover_session() -> dict[str, Any]:
+    """بازیابیِ توکنِ ذخیره‌شده پس از restart — فقط وقتی ترافیک مجاز است.
+
+    هیچ درخواستی به کارگزاری نمی‌زند؛ فقط مخزنِ امن را می‌خواند. بی‌ترافیک،
+    خواندن هم انجام نمی‌شود تا رازِ بی‌مصرف درِ حافظه ننشیند. انقضا داخلِ
+    `execution_session_store` بررسی می‌شود و توکنِ منقضی هرگز ست نمی‌شود.
+    """
+    off = {"attempted": False, "loaded": False, "code": "NOT_APPLICABLE",
+           "source": "none", "present": False, "exp": None, "exp_iso": None}
+    if ADAPTER_KIND != "easytrader":
+        return off
+    if not TRAFFIC_ALLOWED or not isinstance(_ACTIVE_ADAPTER, EasyTraderAdapter):
+        return {**off, "code": "TRAFFIC_OFF"}
+    return SESS.restore_session(_ACTIVE_ADAPTER)
+
+
+_SESSION_RECOVERY: dict[str, Any] = _recover_session()
+
+
+def _strategy_server_clock() -> dict[str, Any] | None:
+    if not isinstance(_ACTIVE_ADAPTER, EasyTraderAdapter):
+        return None
+    try:
+        return _ACTIVE_ADAPTER.server_clock()
+    except Exception:
+        return None
+
+
+#: موتورِ Strategyها رویِ همان آداپتور/سرویس می‌نشیند. live_allowed اینجا
+#: ثابت نیست؛ در هر درخواست از گیت‌های env/تأیید/ترافیک گرفته می‌شود.
+_STRATEGY_ENGINE = SE.StrategyEngine(
+    _ACTIVE_ADAPTER, scheduler=_SCHEDULER, server_clock=_strategy_server_clock,
+    live_allowed=False, halted=lambda: _SERVICE.halted())
+# Round 14: مسیرِ کلیکِ زنده هم از همان preflight/سقف‌هایِ مسیرِ عادی عبور کند.
+_STRATEGY_ENGINE.preflight_gate = _SERVICE.dispatch_preflight
+_OWNER_APPROVAL = OA.OwnerApprovalStore()
+
+
+# ── ۱.۵) دهانۀ خدماتِ پنلِ AutoClicker (Round 22) ────────────────────────────
+# api/execution_autoclicker.py از این پنج تابع استفاده می‌کند و هیچ‌کدام قضاوتِ
+# تازه نمی‌سازند: فقط همان providerهایی را می‌دهند که مسیرهایِ استراتژی هم
+# همین حالا از آن‌ها می‌خوانند (ساعت، توقف، بانکِ فقط‌خواندنی، حساب، سفارش‌ها).
+def readonly_db() -> sqlite3.Connection:
+    """دسترسیِ فقط‌خواندنیِ market.db؛ نوشتن از این راه ممکن نیست."""
+    return sqlite3.connect(f"file:{DB_PATH}?mode=ro", uri=True, timeout=15)
+
+
+def autoclicker_clock() -> dict[str, Any]:
+    got = _strategy_server_clock()
+    if not got:
+        return {"verified": False, "source": "none", "delta_ms": None, "rtt_ms": None}
+    return dict(got)
+
+
+def autoclicker_halted() -> bool:
+    """قفلِ توقفِ اضطراریِ ماندگار؛ همان منبعِ مسیرِ سفارشِ عادی."""
+    try:
+        return bool(_AUDIT.halted())
+    except Exception:                           # noqa: BLE001
+        #: نبودِ پاسخِ گیتِ توقف به‌معنای «آزاد» نیست؛ fail-closed.
+        return True
+
+
+def autoclicker_open_orders() -> list[dict[str, Any]] | None:
+    """سفارش‌های بازِ کارگزاری برای چکِ self-trade؛ بی‌نشستِ اثبات‌شده None."""
+    if not _live_now() or not isinstance(_ACTIVE_ADAPTER, EasyTraderAdapter):
+        return None
+    if not bool(getattr(_ACTIVE_ADAPTER, "session_proven", lambda: False)()):
+        return None
+    try:
+        rows = _ACTIVE_ADAPTER.get_orders() or []
+    except Exception:                           # noqa: BLE001
+        return None
+    out: list[dict[str, Any]] = []
+    for r in rows:
+        d = dataclasses.asdict(r) if dataclasses.is_dataclass(r) else dict(getattr(r, "__dict__", {}) or {})
+        out.append({
+            "symbol": d.get("symbol") or d.get("symbol_name") or "",
+            "isin": d.get("isin") or d.get("symbol_isin") or "",
+            "side": str(d.get("side") or "").lower(),
+            "price": d.get("price"),
+            "state": str(d.get("order_state") or d.get("state") or ""),
+        })
+    return out
+
+
+def autoclicker_buying_power() -> float | None:
+    """توانِ خریدِ خوانده‌شده (ریال)؛ نبودِ منبع ⇒ None، پس چکِ پنل UNKNOWN می‌ماند."""
+    got = get_buying_power()
+    if str(got.get("state")) != BUYING_POWER_VERIFIED:
+        return None
+    try:
+        return float(got.get("value"))
+    except (TypeError, ValueError):
+        return None
+
+
+def _readiness_flag(name: str) -> bool | None:
+    """نتیجهٔ ماندگارِ تست/گیت؛ نبودِ فایل ⇒ None، نه trueِ جعلی."""
+    path = os.path.join(WORK_DIR, name)
+    if not os.path.isfile(path):
+        return None
+    try:
+        with open(path, encoding="utf-8") as f:
+            data = json.load(f)
+    except Exception:
+        return None
+    if isinstance(data, bool):
+        return data
+    if isinstance(data, dict) and "ok" in data:
+        return bool(data.get("ok"))
+    return None
 
 
 #: عبارتِ تأییدِ انسانی برایِ اجرایِ زنده. مقدارِ پیش‌فرض *اختراع نشده*: همان
@@ -277,7 +531,7 @@ def _draft_from(body: dict[str, Any]) -> OrderDraft:
             resolution=Resolution.EXACT if ref.isin else ref.resolution)
         if isinstance(_ACTIVE_ADAPTER, MockBrokerAdapter):
             _ACTIVE_ADAPTER.add_instrument(ref)
-    elif ADAPTER_KIND == "easytrader" and ref.isin:
+    elif ADAPTER_KIND in ("easytrader", "mofid") and ref.isin:
         # درِ این سکو شناسۀِ قابلِ سفارش **خودِ ISIN** است (مخزن ۲: `symbolIsin`،
         # نه ins_code). پس نگاشتِ کارگزاری حدس نیست، برداشتنِ همان ISIN است.
         # برایِ mock این شاخه اجرا نمی‌شود تا رفتارِ آزموده‌شده‌یِ پیشین دست‌نخورده
@@ -294,6 +548,73 @@ def _draft_from(body: dict[str, Any]) -> OrderDraft:
         price_source=str(body.get("price_source") or "unspecified"),
         price_as_of=body.get("price_as_of"),
     )
+
+
+def _instrument_by_isin(isin: str) -> dict[str, Any]:
+    """ISIN ← نماد/ins_code از همان `instruments`؛ مبهم و بی‌نگاشت جدا می‌مانند."""
+    want = str(isin or "").strip().upper()
+    if not want:
+        return {"resolved": False, "isin": isin, "symbol": None, "ins_code": None,
+                "ambiguous": False, "reason": "EMPTY_ISIN"}
+    try:
+        conn = sqlite3.connect(f"file:{DB_PATH}?mode=ro", uri=True, timeout=15)
+    except sqlite3.Error:
+        return {"resolved": False, "isin": isin, "symbol": None, "ins_code": None,
+                "ambiguous": False, "reason": "LOCAL_DB_UNAVAILABLE"}
+    try:
+        conn.row_factory = sqlite3.Row
+        rows = conn.execute(
+            "SELECT ins_code, isin, l_val18 FROM instruments "
+            "WHERE UPPER(TRIM(isin)) = ? ORDER BY updated_at DESC LIMIT 2",
+            (want,)).fetchall()
+    except sqlite3.OperationalError:
+        return {"resolved": False, "isin": isin, "symbol": None, "ins_code": None,
+                "ambiguous": False, "reason": "LOCAL_DB_UNAVAILABLE"}
+    finally:
+        conn.close()
+    if not rows:
+        return {"resolved": False, "isin": isin, "symbol": None, "ins_code": None,
+                "ambiguous": False, "reason": "ISIN_NOT_MAPPED"}
+    if len(rows) > 1:
+        return {"resolved": False, "isin": isin, "symbol": None, "ins_code": None,
+                "ambiguous": True, "reason": "ISIN_AMBIGUOUS"}
+    r = rows[0]
+    sym = str(r["l_val18"] or "").strip() or None
+    if not sym:
+        return {"resolved": False, "isin": isin, "symbol": None, "ins_code": None,
+                "ambiguous": False, "reason": "ISIN_NO_SYMBOL"}
+    return {"resolved": True, "isin": isin, "symbol": sym,
+            "ins_code": (str(r["ins_code"] or "").strip() or None),
+            "ambiguous": False, "reason": ""}
+
+
+def _source_block() -> tuple[str, str] | None:
+    if not TRAFFIC_ALLOWED:
+        return (ACCOUNT_SOURCE_BLOCKED,
+                "ارتباط با کارگزاری خاموش است — هیچ منبعی خوانده نمی‌شود")
+    if not bool(getattr(_ACTIVE_ADAPTER, "has_token", lambda: False)()):
+        return (ACCOUNT_SOURCE_BLOCKED,
+                "دسترسی به حساب در حافظه نیست — اول در پنجرهٔ مرورگر وارد شوید")
+    if not isinstance(_ACTIVE_ADAPTER, (EasyTraderAdapter, MofidAdapter)):
+        return (ACCOUNT_SOURCE_BLOCKED,
+                "روش اتصال واقعی فعال نیست؛ منبع حساب در دسترس نیست")
+    if not bool(getattr(_ACTIVE_ADAPTER, "session_proven", lambda: False)()):
+        if isinstance(_ACTIVE_ADAPTER, MofidAdapter):
+            # یک GETِ فقط‌خواندنی به customer/status هم نشست را تأیید می‌کند و
+            # هم همان منبعِ نقدینگی است؛ هیچ سفارشی برایِ ping ساخته نمی‌شود.
+            try:
+                _ACTIVE_ADAPTER.authenticate()
+            except BrokerError as e:
+                return (ACCOUNT_SOURCE_BLOCKED,
+                        "نشست مفید تأیید نشد (%s): %s"
+                        % (e.code.value, str(redact(e.detail))[:120]))
+            except Exception as e:                    # noqa: BLE001 - مرزِ adapter
+                return (ACCOUNT_SOURCE_BLOCKED,
+                        "خواندنِ نشست مفید ممکن نشد (%s)" % type(e).__name__)
+        if not bool(getattr(_ACTIVE_ADAPTER, "session_proven", lambda: False)()):
+            return (ACCOUNT_SOURCE_BLOCKED,
+                    "دسترسی هنوز با پرسش فقط‌خواندنی تأیید نشده است")
+    return None
 
 
 def _resolve_instrument(symbol: str) -> InstrumentRef:
@@ -655,14 +976,32 @@ def get_status() -> dict[str, Any]:
         # `BORS_EXECUTION_LIVE=1` را کمبودِ اصلی می‌گفت — یعنی همان کاری که کاربر
         # نباید بکند. چیزی که واقعاً کم است نشانیِ نشست است.
         if READ_ONLY_REQUESTED:
-            blocked.append("حالتِ فقط‌خواندنی روشن است: ترافیکِ خواندن مجاز، ارسال نه — "
-                           "کمبود، نشستِ شماست (ورود درِ پنجرۀ کارگزاری، سپس نشانی به "
-                           "POST /api/execution/session)")
+            if live:
+                blocked.append("حالتِ فقط‌خواندنی: ترافیکِ خواندن مجاز است، ارسال نه")
+            else:
+                blocked.append("حالتِ فقط‌خواندنی روشن است: ترافیکِ خواندن مجاز، ارسال نه — "
+                               "کمبود، نشستِ شماست (ورود درِ پنجرۀ کارگزاری، سپس نشانی به "
+                               "POST /api/execution/session)")
+                if _SESSION_RECOVERY.get("code") in ("MISSING", "EXPIRED", "NO_EXP",
+                                                     "MALFORMED", "DENIED"):
+                    blocked.append("بازیابیِ خودکارِ نشست از مخزنِ امن: %s — ورود/استخراجِ "
+                                   "تازه لازم است" % _SESSION_RECOVERY.get("code"))
         else:
             blocked.append("ترافیک خاموش است — «تنظیمِ اتصال» را رویِ فقط‌خواندنی بگذارید "
                            "(یا BORS_EXECUTION_LIVE=1 برایِ ارسالِ سفارش) و restart کنید")
     if ADAPTER_KIND == "easytrader" and LIVE_REQUESTED and not live:
         blocked.append("D1: نشستِ مالک درِ حافظه نیست — ورودِ تعاملی با خودِ مالک")
+    if ADAPTER_KIND == "mofid":
+        if not TRAFFIC_ALLOWED:
+            blocked.append("Mofid: ترافیک خاموش است — خواندن و نوشتن هر دو بسته‌اند")
+        elif not bool(getattr(_ACTIVE_ADAPTER, "has_token", lambda: False)()):
+            blocked.append("Mofid: دسترسی در حافظهٔ فرایند نیست — مسیرِ "
+                           "درون‌برنامه‌ایِ نشست هنوز پیاده نشده")
+        elif not bool(getattr(_ACTIVE_ADAPTER, "session_proven", lambda: False)()):
+            blocked.append("Mofid: نشست هنوز با GETِ فقط‌خواندنی تأیید نشده")
+        else:
+            blocked.append("Mofid: خواندنِ حساب/سفارش مجاز است؛ نوشتن و "
+                           "read-backِ پاسخِ ثبت تأیید نشده")
     # گیتِ عبارتِ تأیید (§۲-۲): فقط وقتی که اجرایِ زنده واقعاً روشن است ازِ UI
     # چیزی می‌خواهد؛ درِ dry-run تمرین و پیش‌نمایش نباید بشکند. «required»
     # را UI می‌خواند تا بداند چه چیزی تایپ شود، نه اینکه حدس بزند.
@@ -686,6 +1025,8 @@ def get_status() -> dict[str, Any]:
         # false می‌کرد، و رابط را به پیامِ «ارسال لازم است» می‌انداخت (سنجشِ زنده).
         "read_only": bool(READ_ONLY_REQUESTED),
         "session_live": bool(live),
+        # بازیابیِ پس از restart: فقط metadata؛ توکن هیچ‌جا درِ این پاسخ نیست.
+        "session_recovery": dict(_SESSION_RECOVERY),
         "traffic_allowed": bool(TRAFFIC_ALLOWED),
         # تنظیمِ مؤثر + چه چیزی با restart عوض می‌شود. بی‌این «ذخیره شد» با
         # «اعمال شد» یکی خوانده می‌شود.
@@ -695,29 +1036,33 @@ def get_status() -> dict[str, Any]:
                               "writes_gate": "env:BORS_EXECUTION_LIVE",
                               "applies_on_restart": True,
                               "secrets_stored": False},
-        "wire_hypothesis": (ADAPTER_KIND == "easytrader") and WIRE_HYPOTHESIS,
+        # سیم حتی وقتی آزموده نشده، فرضیه است؛ «آزموده‌نشده» را با «تأییدشده»
+        # یکی نکن. آزمون‌شدن از mode_matrix/live می‌آید، نه از این پرچم.
+        "wire_hypothesis": WIRE_HYPOTHESIS,
         # منشأِ هر مسیرِ سیم (§۳-۲): «فقط درِ کدِ شخصِ ثالث» از «پیکربندیِ
         # انتشاریافتۀِ خودِ کارگزاری» و «رفتارِ دیده‌شده» جداست. بی‌این تفکیک،
         # نامِ یکِ میدان درِ مرجع، مدرکِ قراردادِ زنده شمرده می‌شود.
-        "wire_provenance": {
-            "host": {"value": WIRE_BASE_URL, "kind": "first-party-config",
-                     "evidence": "d.easytrader.ir/app-version.json gives apiPath"},
-            "order_create": {"value": "/core/api/v2/order",
-                             "kind": "third-party-code-only",
-                             "official_docs": "absent (swagger/openapi = 403)",
-                             "hypothesis": WIRE_HYPOTHESIS},
-            "order_list": {"value": "/core/api/order",
-                           "kind": "third-party-code-only",
-                           "hypothesis": WIRE_HYPOTHESIS},
-            "host_health": {"value": WIRE_PROBE_HOST_HEALTH,
-                            "kind": "first-party-config",
-                            "proves_session": False},
-            "session_probe_candidates": {
-                "value": list(WIRE_SESSION_PROBE_CANDIDATES),
-                "kind": "observed-read-only",
-                "observed": "401 + www-authenticate: Bearer",
-                "body_semantics": "unverified"},
-        },
+        "wire_provenance": (
+            dict(getattr(_ACTIVE_ADAPTER, "readiness_evidence", lambda: {})())
+            if ADAPTER_KIND == "mofid" else {
+                "host": {"value": WIRE_BASE_URL, "kind": "first-party-config",
+                         "evidence": "d.easytrader.ir/app-version.json gives apiPath"},
+                "order_create": {"value": "/core/api/v2/order",
+                                 "kind": "third-party-code-only",
+                                 "official_docs": "absent (swagger/openapi = 403)",
+                                 "hypothesis": WIRE_HYPOTHESIS},
+                "order_list": {"value": "/core/api/order",
+                               "kind": "third-party-code-only",
+                               "hypothesis": WIRE_HYPOTHESIS},
+                "host_health": {"value": WIRE_PROBE_HOST_HEALTH,
+                                "kind": "first-party-config",
+                                "proves_session": False},
+                "session_probe_candidates": {
+                    "value": list(WIRE_SESSION_PROBE_CANDIDATES),
+                    "kind": "observed-read-only",
+                    "observed": "401 + www-authenticate: Bearer",
+                    "body_semantics": "unverified"},
+            }),
         "session": _session_dict(),
         "blocked_on": blocked,
         "confirm_gate": {"required": confirm_required, "phrase": _confirm_phrase()},
@@ -771,7 +1116,8 @@ def get_session() -> dict[str, Any]:
     """وضعیتِ نشست — هیچ‌وقت مقدارِ token نه. UI فقط *حالت* می‌بیند."""
     return {"status": "success", "adapter": ADAPTER_KIND, "live": _live_now(),
             "dry_run": DRY_RUN, "session": _session_dict(),
-            "token_present": _has_token()}
+            "token_present": _has_token(),
+            "session_recovery": dict(_SESSION_RECOVERY)}
 
 
 def _has_token() -> bool:
@@ -832,6 +1178,1238 @@ def delete_session() -> dict[str, Any]:
     voided = _void_confirmations("token cleared")
     return {"status": "success", "live": _live_now(), "session": _session_dict(),
             "confirmations_voided": voided}
+
+
+# ── ۲.۵) Strategyهای چندروشی (Direct/AutoClicker/DOM/JS/Keyboard/Selenium) ──
+@router.get("/api/execution/strategies")
+def get_strategies() -> dict[str, Any]:
+    _STRATEGY_ENGINE.live_allowed = bool(LIVE_REQUESTED and _live_now())
+    st = _STRATEGY_ENGINE.status()
+    st.update({"status": "success", "adapter": ADAPTER_KIND, "dry_run": DRY_RUN,
+               "live_requested": LIVE_REQUESTED,
+               "read_only": bool(READ_ONLY_REQUESTED),
+               "traffic_allowed": bool(TRAFFIC_ALLOWED),
+               "session": _session_dict(),
+               "wire_hypothesis": WIRE_HYPOTHESIS})
+    return st
+
+
+@router.post("/api/execution/strategies/preflight")
+def post_strategy_preflight_all(body: dict[str, Any] | None = Body(default=None)) -> dict[str, Any]:
+    """Probeِ موازیِ فقط‌خواندنی؛ هیچ prepare/trigger/dispatch ایجاد نمی‌شود."""
+    got = (body or {}).get("strategies")
+    if got is not None and not isinstance(got, list):
+        return {"status": "error", "code": "BAD_REQUEST",
+                "detail": "strategies باید فهرست باشد"}
+    ids = [str(x) for x in got] if isinstance(got, list) else None
+    try:
+        result = _STRATEGY_ENGINE.parallel_probe(ids)
+    except Exception as e:                       # noqa: BLE001
+        return {"status": "error", "code": "PREFLIGHT_FAILED",
+                "detail": "%s: %s" % (type(e).__name__, str(e)[:180])}
+    return {"status": "success", "preflight": result,
+            "dry_run": True, "live": False, "live_send": False}
+
+
+@router.post("/api/execution/strategies/{strategy_id}/settings")
+def post_strategy_settings(strategy_id: str,
+                           body: dict[str, Any] = Body(...)) -> dict[str, Any]:
+    try:
+        SC.spec(strategy_id)
+        saved = _STRATEGY_ENGINE.settings_store.save(
+            strategy_id,
+            enabled=body.get("enabled") if "enabled" in body else None,
+            mode=body.get("mode") if "mode" in body else None,
+            priority=body.get("priority") if "priority" in body else None,
+            options=body.get("options") if "options" in body else None)
+    except ValueError as e:
+        return {"status": "error", "code": "INVALID_SETTINGS",
+                "detail": str(e)[:200]}
+    return {"status": "success", "settings": saved.public()}
+
+
+def _strategy_target(body: dict[str, Any]) -> tuple[int | None, str]:
+    """هدفِ زمانی: رشتهٔ تهران بر epoch مقدم است؛ ورودیِ کهنه فقط سازگاری."""
+    raw = body.get("target_tehran")
+    if raw is not None and str(raw).strip():
+        try:
+            return int(_SCHEDULER.clock.from_tehran_local(str(raw))), "asia/tehran"
+        except (TypeError, ValueError) as e:
+            raise HTTPException(400, "زمانِ هدفِ تهران نامعتبر است: %s" % str(e)[:80])
+    target = body.get("target_wall_ms")
+    if target is None or str(target).strip() == "":
+        return None, "none"
+    try:
+        return int(target), "epoch_legacy"
+    except (TypeError, ValueError):
+        raise HTTPException(400, "target_wall_ms نامعتبر است") from None
+
+
+@router.post("/api/execution/strategies/prepare")
+def post_strategy_prepare(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
+    try:
+        draft = _draft_from(body)
+        target, target_source = _strategy_target(body)
+    except HTTPException as e:
+        return {"status": "error", "code": "BAD_DRAFT", "detail": str(e.detail)}
+    sid = str(body.get("strategy") or SC.DIRECT_API)
+    try:
+        order = _STRATEGY_ENGINE.prepare(
+            draft, sid, target_wall_ms=target, live_intent=False,
+            intent_key=str(body.get("intent_key") or "") or None)
+    except SE.StrategyError as e:
+        return {"status": "error", "code": e.code, "detail": e.detail,
+                "strategy": sid, "evidence": dict(e.evidence)}
+    except Exception as e:                           # noqa: BLE001
+        return {"status": "error", "code": "PREPARE_FAILED", "strategy": sid,
+                "detail": "%s: %s" % (type(e).__name__, str(e)[:180])}
+    _note_timing("strategy_prepare_ms", float(order.preparation_ms or 0.0))
+    return {"status": "success", "strategy": sid, "prepared_id": order.prepared_id,
+            "order": order.public(), "dry_run": DRY_RUN,
+            "target_source": target_source,
+            "live": _live_now(),
+            "wire_preview": _wire_preview(draft),
+            "wire_hypothesis": WIRE_HYPOTHESIS}
+
+
+@router.post("/api/execution/strategies/trigger")
+def post_strategy_trigger(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
+    """همیشه dry-run: درخواستِ سفارش در مرورگر/ترابری ساخته نمی‌شود.
+
+    مسیرِ زنده عمداً یک درِ جدا دارد (`/strategies/dispatch`) تا یک فیلدِ
+    بدنه نتواند dry-run را به ارسالِ واقعی بدل کند.
+    """
+    prepared_id = str(body.get("prepared_id") or "").strip()
+    if not prepared_id:
+        return {"status": "error", "code": "MISSING_PREPARED_ID"}
+    order = _STRATEGY_ENGINE.get_order(prepared_id)
+    if order is None:
+        return {"status": "error", "code": "INVALID_EXECUTION_ID",
+                "detail": "no such prepared order"}
+    target = order.target_wall_ms
+    wait_ms = (int(target) - int(time.time() * 1000)) if target else None
+    if wait_ms is not None and wait_ms > IMMEDIATE_WINDOW_MS:
+        def _run_dry() -> None:
+            try:
+                _STRATEGY_ENGINE.trigger(prepared_id, live=False)
+            except Exception:
+                return
+        threading.Thread(target=_run_dry,
+                         name="bors-strategy-dry-%s" % prepared_id[:40],
+                         daemon=True).start()
+        return {"status": "scheduled", "prepared_id": prepared_id,
+                "send_at_wall_ms": int(target), "wait_ms": wait_ms,
+                "dry_run": True, "live": False}
+    try:
+        result = _STRATEGY_ENGINE.trigger(prepared_id, live=False)
+    except SE.StrategyError as e:
+        return {"status": "error", "code": e.code, "detail": e.detail}
+    except Exception as e:                           # noqa: BLE001
+        return {"status": "error", "code": "TRIGGER_FAILED",
+                "detail": "%s: %s" % (type(e).__name__, str(e)[:180])}
+    return {"status": "success", "result": result.public(),
+            "dry_run": True, "live": False}
+
+
+@router.post("/api/execution/strategies/dispatch")
+def post_strategy_dispatch(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
+    """مسیرِ زندهٔ Strategyها — فقط با env، نشست، عبارتِ تأیید و دروازهٔ ریسک.
+
+    این در با `/trigger` یکی نیست: `/trigger` حتی وقتی live روشن است هم
+    dry-run می‌ماند. ارسالِ زنده فقط از اینجا و فقط پس از تأییدِ صریح.
+    """
+    prepared_id = str(body.get("prepared_id") or "").strip()
+    if not prepared_id:
+        return {"status": "error", "code": "MISSING_PREPARED_ID"}
+    ok_cf, want_cf = _confirm_gate(body)
+    if not ok_cf:
+        return {"status": "error",
+                "code": ErrorCode.CONFIRM_PHRASE_REQUIRED.value,
+                "detail": "برایِ اجرایِ زنده عبارتِ تأیید لازم است",
+                "expected_phrase": want_cf}
+    ok_gate, why_gate = _risk_gate()
+    if not ok_gate:
+        return {"status": "error", "code": ErrorCode.RISK_LIMIT.value,
+                "detail": why_gate}
+    if not LIVE_REQUESTED or not _live_now():
+        return {"status": "error", "code": "LIVE_GATED",
+                "detail": "ارسالِ زنده خاموش است (env/ترافیک/نشست)"}
+    order = _STRATEGY_ENGINE.get_order(prepared_id)
+    if order is None:
+        return {"status": "error", "code": "INVALID_EXECUTION_ID",
+                "detail": "no such prepared order"}
+    confirm_epoch = _confirm_epoch()
+    target = order.target_wall_ms
+    wait_ms = (int(target) - int(time.time() * 1000)) if target else None
+
+    def _run_live() -> None:
+        if not _confirm_still_valid(confirm_epoch):
+            return
+        if not (LIVE_REQUESTED and _live_now()):
+            return
+        try:
+            _STRATEGY_ENGINE.trigger(prepared_id, live=True, live_allowed=True)
+        except Exception:
+            return
+
+    if wait_ms is not None and wait_ms > IMMEDIATE_WINDOW_MS:
+        threading.Thread(target=_run_live,
+                         name="bors-strategy-live-%s" % prepared_id[:40],
+                         daemon=True).start()
+        return {"status": "scheduled", "prepared_id": prepared_id,
+                "send_at_wall_ms": int(target), "wait_ms": wait_ms,
+                "dry_run": False, "live": True}
+    if not _confirm_still_valid(confirm_epoch):
+        return {"status": "error",
+                "code": ErrorCode.CONFIRM_PHRASE_REQUIRED.value,
+                "detail": "تأیید میانِ درخواست و ارسال کهنه شد — تأییدِ تازه لازم است"}
+    try:
+        result = _STRATEGY_ENGINE.trigger(prepared_id, live=True,
+                                          live_allowed=True)
+    except SE.StrategyError as e:
+        return {"status": "error", "code": e.code, "detail": e.detail}
+    except Exception as e:                           # noqa: BLE001
+        return {"status": "error", "code": "DISPATCH_FAILED",
+                "detail": "%s: %s" % (type(e).__name__, str(e)[:180])}
+    return {"status": "success", "result": result.public(),
+            "dry_run": False, "live": True,
+            "confirm_epoch": confirm_epoch}
+
+
+@router.get("/api/execution/strategies/intents/{intent_key}")
+def get_strategy_intent(intent_key: str) -> dict[str, Any]:
+    return {"status": "success", **_STRATEGY_ENGINE.intent_state(intent_key)}
+
+
+@router.post("/api/execution/strategies/intents/{intent_key}/abort")
+def post_strategy_intent_abort(intent_key: str) -> dict[str, Any]:
+    try:
+        got = _STRATEGY_ENGINE.abort_intent(intent_key)
+    except SE.StrategyError as e:
+        return {"status": "error", "code": e.code, "detail": e.detail}
+    return {"status": "success", "intent": got}
+
+
+@router.post("/api/execution/strategies/abort")
+def post_strategy_abort(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
+    prepared_id = str(body.get("prepared_id") or "").strip()
+    try:
+        return {"status": "success",
+                "order": _STRATEGY_ENGINE.abort(prepared_id)}
+    except SE.StrategyError as e:
+        return {"status": "error", "code": e.code, "detail": e.detail}
+
+
+@router.post("/api/execution/strategies/reconcile")
+def post_strategy_reconcile(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
+    prepared_id = str(body.get("prepared_id") or "").strip()
+    try:
+        return {"status": "success",
+                "result": _STRATEGY_ENGINE.reconcile(prepared_id).public()}
+    except SE.StrategyError as e:
+        return {"status": "error", "code": e.code, "detail": e.detail}
+
+
+@router.get("/api/execution/strategies/order/{prepared_id}")
+def get_strategy_order(prepared_id: str) -> dict[str, Any]:
+    order = _STRATEGY_ENGINE.get_order(prepared_id)
+    if order is None:
+        return {"status": "error", "code": "INVALID_EXECUTION_ID"}
+    return {"status": "success", "order": order.public()}
+
+
+@router.post("/api/execution/strategies/{strategy_id}/probe")
+def post_strategy_probe(strategy_id: str) -> dict[str, Any]:
+    try:
+        return {"status": "success", "probe": _STRATEGY_ENGINE.probe(strategy_id)}
+    except SE.StrategyError as e:
+        return {"status": "error", "code": e.code, "detail": e.detail,
+                "evidence": dict(e.evidence)}
+    except Exception as e:                           # noqa: BLE001
+        return {"status": "error", "code": "PROBE_FAILED",
+                "detail": "%s: %s" % (type(e).__name__, str(e)[:180])}
+
+
+# ── ۲.۴) زمان‌بندیِ ماندگار: ذخیره، اعتبارسنجی، مسلح‌کردن، لغو ───────────────
+def _schedule_error(e: SCH.ScheduleError) -> dict[str, Any]:
+    return {"status": "error", "code": e.code, "detail": e.detail or e.code}
+
+
+@router.get("/api/execution/schedules/readiness")
+def get_schedule_readiness() -> dict[str, Any]:
+    try:
+        rows = _schedule_store().list(500)
+    except Exception as e:                       # noqa: BLE001
+        return {"status": "error", "code": "SCHEDULE_STORE_UNAVAILABLE",
+                "detail": "%s: %s" % (type(e).__name__, str(e)[:160]),
+                "readiness": SCH.readiness()}
+    counts: dict[str, int] = {}
+    for r in rows:
+        counts[r.state] = counts.get(r.state, 0) + 1
+    runner = _schedule_runner()
+    return {"status": "success", "readiness": SCH.readiness(),
+            "counts": counts,
+            "browser_host": BH.read_status(check=True),
+            "runner": {"live_enabled": runner.live_enabled,
+                       "contract_verified": runner.contract_verified,
+                       "last_error": runner.last_error,
+                       "last_tick": runner.last_tick}}
+
+
+@router.get("/api/execution/schedules/instrument")
+def get_schedule_instrument(symbol: str = Query(...)) -> dict[str, Any]:
+    sym = (symbol or "").strip()
+    facts = SCH.local_identity_facts(DB_PATH, sym)
+    if not facts.isin:
+        return {"status": "error", "code": "IDENTITY_UNVERIFIED",
+                "detail": "این نماد در دادهٔ محلی با ISIN پیدا نشد؛ شناسه حدس زده نمی‌شود"}
+    return {"status": "success",
+            "instrument": {"symbol": facts.symbol, "isin": facts.isin,
+                           "full_name": facts.full_name,
+                           "source": facts.identity_source}}
+
+
+@router.get("/api/execution/schedules")
+def get_schedules(limit: int = 100) -> dict[str, Any]:
+    try:
+        rows = [r.public() for r in _schedule_store().list(limit)]
+    except Exception as e:                       # noqa: BLE001
+        return {"status": "error", "code": "SCHEDULE_STORE_UNAVAILABLE",
+                "detail": "%s: %s" % (type(e).__name__, str(e)[:160])}
+    return {"status": "success", "schedules": rows, "readiness": SCH.readiness()}
+
+
+@router.post("/api/execution/schedules")
+def post_schedule(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
+    symbol = str(body.get("symbol") or "").strip()
+    if symbol != SCH.DEFAULT_SYMBOL:
+        return {"status": "error", "code": "SYMBOL_NOT_SUPPORTED",
+                "detail": "این نسخه فقط داروند را اعتبارسنجی می‌کند"}
+    facts = SCH.local_identity_facts(DB_PATH, symbol)
+    if not facts.isin:
+        return {"status": "error", "code": "IDENTITY_UNVERIFIED",
+                "detail": "شناسهٔ مستقل نماد در دادهٔ محلی پیدا نشد"}
+    got_isin = str(body.get("isin") or "").strip().upper()
+    if not got_isin or got_isin != facts.isin.upper():
+        return {"status": "error", "code": "IDENTITY_MISMATCH",
+                "detail": "ISIN با هویتِ محلی نماد یکی نیست",
+                "expected_isin": facts.isin}
+    try:
+        rec = _schedule_store().create(
+            symbol=symbol, isin=facts.isin, full_name=facts.full_name or "",
+            side=str(body.get("side") or "").strip().lower(),
+            price=body.get("price"), quantity=body.get("quantity"),
+            target_ms=(int(body["target_ms"]) if body.get("target_ms") is not None else None),
+            target_local=str(body.get("target_local") or ""),
+            mode=str(body.get("mode") or "dry_run").strip().lower(),
+            order_type=str(body.get("order_type") or "normal").strip().lower(),
+            validity=str(body.get("validity") or "day").strip().lower(),
+            strategy=str(body.get("strategy") or SC.PLAYWRIGHT_DOM),
+            execution_id=str(body.get("execution_id") or ""),
+            settings_version=int(body.get("settings_version") or 1))
+    except SCH.ScheduleError as e:
+        return _schedule_error(e)
+    except (TypeError, ValueError) as e:
+        return {"status": "error", "code": "BAD_REQUEST",
+                "detail": "%s: %s" % (type(e).__name__, str(e)[:160])}
+    report = SCH.validate_darvand(rec, _schedule_facts(rec), check_target_future=True)
+    rec = _schedule_store().set_validation(
+        rec.id, report.to_dict(), report.ok_for_arm(rec.mode),
+        "" if report.ok_for_arm(rec.mode) else "; ".join(report.blockers[:4]))
+    return {"status": "success", "schedule": rec.public(),
+            "validation": report.to_dict(), "readiness": SCH.readiness()}
+
+
+@router.post("/api/execution/schedules/{sid}/arm")
+def post_schedule_arm(sid: str) -> dict[str, Any]:
+    store = _schedule_store()
+    rec = store.get(sid)
+    if rec is None:
+        return {"status": "error", "code": "NOT_FOUND"}
+    report = SCH.validate_darvand(rec, _schedule_facts(rec), check_target_future=True)
+    if rec.mode == "live":
+        store.set_validation(sid, report.to_dict(), False, "live not verified")
+        return {"status": "error", "code": "LIVE_NOT_VERIFIED",
+                "detail": "مسیر زنده تا تأیید قرارداد/نشست/مجوز فعال نمی‌شود",
+                "validation": report.to_dict(), "readiness": SCH.readiness()}
+    if not report.ok_for_arm(rec.mode):
+        store.set_validation(sid, report.to_dict(), False,
+                             "; ".join(report.blockers[:4]))
+        return {"status": "error", "code": "VALIDATION_FAILED",
+                "detail": "کنترل‌های حیاتیِ داروند تأیید نشد",
+                "validation": report.to_dict()}
+    try:
+        rec = store.arm(sid, report.to_dict(), ok_for_arm=True,
+                        at_ms=SCH.now_ms())
+    except SCH.ScheduleError as e:
+        return _schedule_error(e)
+    return {"status": "success", "schedule": rec.public(),
+            "validation": report.to_dict(), "readiness": SCH.readiness()}
+
+
+@router.post("/api/execution/schedules/{sid}/cancel")
+def post_schedule_cancel(sid: str, body: dict[str, Any] | None = Body(default=None)) -> dict[str, Any]:
+    try:
+        rec = _schedule_store().cancel(sid, str((body or {}).get("reason") or "user"))
+    except SCH.ScheduleError as e:
+        return _schedule_error(e)
+    return {"status": "success", "schedule": rec.public()}
+
+
+@router.post("/api/execution/schedules/{sid}/reset")
+def post_schedule_reset(sid: str) -> dict[str, Any]:
+    try:
+        rec = _schedule_store().reset_to_prepared(sid, at_ms=SCH.now_ms())
+    except SCH.ScheduleError as e:
+        return _schedule_error(e)
+    return {"status": "success", "schedule": rec.public()}
+
+
+@router.get("/api/execution/schedules/{sid}")
+def get_schedule(sid: str) -> dict[str, Any]:
+    store = _schedule_store()
+    rec = store.get(sid)
+    if rec is None:
+        return {"status": "error", "code": "NOT_FOUND"}
+    return {"status": "success", "schedule": rec.public(),
+            "events": store.events(sid), "readiness": SCH.readiness()}
+
+
+# ── ۲.۴.۴) عرضه‌های اولیه: داده، بودجه، Preflight، Timing ──────────────────
+def _offering_error(e: OF.OfferingsError) -> dict[str, Any]:
+    return {"status": "error", "code": e.code, "detail": e.detail or e.code}
+
+
+@router.get("/api/execution/offerings")
+def get_offerings(limit: int = 100) -> dict[str, Any]:
+    try:
+        store = _offering_store()
+        capital = store.capital()
+        reserved = round(store.active_reserved(), 2)
+        available = None
+        if capital.get("total_cap") is not None:
+            available = round(max(0.0, float(capital["total_cap"])
+                                  - float(capital.get("cash_reserve") or 0.0)
+                                  - reserved), 2)
+        return {"status": "success", "offerings": [r.public() for r in store.list(limit)],
+                "capital": capital, "reserved_total": reserved,
+                "available": available,
+                "reservations": store.reservations(), "live_send": False}
+    except Exception as e:                       # noqa: BLE001
+        return {"status": "error", "code": "OFFERINGS_STORE_UNAVAILABLE",
+                "detail": "%s: %s" % (type(e).__name__, str(e)[:160])}
+
+
+@router.post("/api/execution/offerings")
+def post_offering(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
+    def _ms(key: str, local_key: str) -> int | None:
+        if body.get(key) is not None:
+            return int(body[key])
+        if body.get(local_key):
+            try:
+                return SCH.parse_local(str(body[local_key]))
+            except SCH.ScheduleError as e:
+                raise OF.OfferingsError("INVALID_TIME", e.detail) from None
+        return None
+    try:
+        rec = _offering_store().upsert(
+            symbol=str(body.get("symbol") or ""), isin=str(body.get("isin") or ""),
+            method=str(body.get("method") or "UNKNOWN"),
+            market=str(body.get("market") or "UNKNOWN"),
+            start_ms=_ms("start_ms", "start_local"),
+            end_ms=_ms("end_ms", "end_local"),
+            price_min=(float(body["price_min"]) if body.get("price_min") is not None else None),
+            price_max=(float(body["price_max"]) if body.get("price_max") is not None else None),
+            price_source=str(body.get("price_source") or ""),
+            price_step=(float(body["price_step"])
+                        if body.get("price_step") is not None else None),
+            min_qty=(float(body["min_qty"]) if body.get("min_qty") is not None else None),
+            max_qty=(float(body["max_qty"]) if body.get("max_qty") is not None else None),
+            per_code_quota=(float(body["per_code_quota"])
+                            if body.get("per_code_quota") is not None else None),
+            fee_rate=(float(body["fee_rate"]) if body.get("fee_rate") is not None else None),
+            fee_source=str(body.get("fee_source") or ""),
+            source=str(body.get("source") or ""),
+            source_url=str(body.get("source_url") or ""),
+            verified_at_ms=_ms("verified_at_ms", "verified_at_local"),
+            data_as_of_ms=_ms("data_as_of_ms", "data_as_of_local"),
+            note=str(body.get("note") or ""),
+            offering_id=str(body.get("offering_id") or ""))
+    except OF.OfferingsError as e:
+        return _offering_error(e)
+    except (TypeError, ValueError) as e:
+        return {"status": "error", "code": "BAD_REQUEST",
+                "detail": "%s: %s" % (type(e).__name__, str(e)[:160])}
+    return {"status": "success", "offering": rec.public()}
+
+
+@router.get("/api/execution/offerings/budget")
+def get_offering_budget() -> dict[str, Any]:
+    store = _offering_store()
+    return {"status": "success", "capital": store.capital(),
+            "reserved_total": round(store.active_reserved(), 2)}
+
+
+@router.post("/api/execution/offerings/budget")
+def post_offering_budget(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
+    try:
+        got = _offering_store().set_capital(
+            total_cap=float(body.get("total_cap")),
+            cash_reserve=float(body.get("cash_reserve") or 0.0),
+            max_per_offering=float(body.get("max_per_offering")),
+            priorities=(body.get("priorities") or {}))
+    except OF.OfferingsError as e:
+        return _offering_error(e)
+    except (TypeError, ValueError) as e:
+        return {"status": "error", "code": "INVALID_BUDGET",
+                "detail": "%s: %s" % (type(e).__name__, str(e)[:160])}
+    return {"status": "success", "capital": got,
+            "reserved_total": round(_offering_store().active_reserved(), 2)}
+
+
+@router.get("/api/execution/offerings/reservations")
+def get_offering_reservations(offering_id: str = "") -> dict[str, Any]:
+    store = _offering_store()
+    return {"status": "success", "reservations": store.reservations(offering_id or None),
+            "reserved_total": round(store.active_reserved(), 2)}
+
+
+@router.post("/api/execution/offerings/plan")
+def post_offering_plan(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
+    plans = body.get("plans")
+    if not isinstance(plans, list) or not plans:
+        return {"status": "error", "code": "BAD_REQUEST",
+                "detail": "plans باید فهرستِ غیرخالی باشد"}
+    try:
+        got = _offering_store().plan(plans, max_age_s=float(body.get("max_age_s") or 3600.0))
+    except OF.OfferingsError as e:
+        return _offering_error(e)
+    except (TypeError, ValueError) as e:
+        return {"status": "error", "code": "BAD_REQUEST",
+                "detail": "%s: %s" % (type(e).__name__, str(e)[:160])}
+    return {"status": "success", **got, "live_send": False}
+
+
+@router.post("/api/execution/offerings/timing/sample")
+def post_timing_sample(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
+    try:
+        _offering_store().record_timing(
+            adapter=str(body.get("adapter") or ""),
+            method=str(body.get("method") or "UNKNOWN"),
+            value_ms=float(body.get("value_ms")),
+            network=str(body.get("network") or "unknown"),
+            phase=str(body.get("phase") or "http_rtt"),
+            source=str(body.get("source") or ""),
+            observed_at=(float(body["observed_at"]) if body.get("observed_at") is not None else None),
+            note=str(body.get("note") or ""))
+    except OF.OfferingsError as e:
+        return _offering_error(e)
+    except (TypeError, ValueError) as e:
+        return {"status": "error", "code": "BAD_REQUEST",
+                "detail": "%s: %s" % (type(e).__name__, str(e)[:160])}
+    return {"status": "success"}
+
+
+@router.get("/api/execution/offerings/timing")
+def get_timing(adapter: str, method: str, network: str = "",
+               phase: str = "http_rtt", target_ms: int = 0,
+               margin_ms: float = 0.0) -> dict[str, Any]:
+    try:
+        stats = _offering_store().timing_stats(adapter=adapter, method=method,
+                                               network=network or None, phase=phase)
+        suggestion = OF.timing_suggestion(stats, target_ms=int(target_ms or 0),
+                                          method=method,
+                                          margin_ms=float(margin_ms or 0.0))
+    except OF.OfferingsError as e:
+        return _offering_error(e)
+    return {"status": "success", "stats": stats, "suggestion": suggestion,
+            "live_send": False}
+
+
+@router.get("/api/execution/offerings/discover")
+def discover_offerings(limit: int = 20) -> dict[str, Any]:
+    try:
+        rows = OF.discover_codal(DB_PATH, limit=limit)
+    except OF.OfferingsError as e:
+        return _offering_error(e)
+    return {"status": "success", "candidates": rows, "structured": False,
+            "note": "متنِ CODAL تفسیر نشده؛ method/price/qty ساختگی ساخته نمی‌شود"}
+
+
+@router.get("/api/execution/offerings/{oid}")
+def get_offering(oid: str) -> dict[str, Any]:
+    store = _offering_store()
+    rec = store.get(oid)
+    if rec is None:
+        return {"status": "error", "code": "NOT_FOUND"}
+    return {"status": "success", "offering": rec.public(),
+            "capital": store.capital(),
+            "reserved_total": round(store.active_reserved(), 2),
+            "reservations": store.reservations(oid)}
+
+
+@router.post("/api/execution/offerings/{oid}/preflight")
+def post_offering_preflight(oid: str, body: dict[str, Any] = Body(...)) -> dict[str, Any]:
+    store = _offering_store()
+    rec = store.get(oid)
+    if rec is None:
+        return {"status": "error", "code": "NOT_FOUND"}
+    try:
+        rep = OF.preflight(rec, at=SCH.now_ms(),
+                           price=float(body.get("price")),
+                           quantity=float(body.get("quantity")),
+                           max_age_s=float(body.get("max_age_s") or 3600.0),
+                           capital=store.capital(),
+                           reserved=store.active_reserved())
+    except (TypeError, ValueError) as e:
+        return {"status": "error", "code": "INVALID_ORDER",
+                "detail": "%s: %s" % (type(e).__name__, str(e)[:160])}
+    return {"status": "success", "preflight": rep, "live_send": False}
+
+
+@router.post("/api/execution/offerings/{oid}/reservation/{intent_id}/state")
+def post_reservation_state(oid: str, intent_id: str,
+                           body: dict[str, Any] = Body(...)) -> dict[str, Any]:
+    try:
+        got = _offering_store().set_reservation(
+            oid, intent_id, str(body.get("state") or ""),
+            note=str(body.get("note") or ""))
+    except OF.OfferingsError as e:
+        return _offering_error(e)
+    return {"status": "success", **got}
+
+
+# ── ۲.۴.۵) cockpit: وضعیت، Preflight و Mock درونِ برنامه ─────────────────────
+def _db_meta(path: str) -> dict[str, Any]:
+    meta: dict[str, Any] = {"path": path, "readable": False, "mtime_ms": None,
+                            "mtime_iso": None}
+    try:
+        meta["mtime_ms"] = int(os.path.getmtime(path) * 1000)
+        meta["mtime_iso"] = time.strftime("%Y-%m-%dT%H:%M:%S",
+                                          time.localtime(meta["mtime_ms"] / 1000.0))
+    except OSError:
+        pass
+    try:
+        con = sqlite3.connect("file:%s?mode=ro" % path.replace("\\", "/"),
+                              uri=True, timeout=2)
+        try:
+            con.execute("SELECT 1").fetchone()
+            meta["readable"] = True
+        finally:
+            con.close()
+    except Exception:                            # noqa: BLE001
+        pass
+    return meta
+
+
+def _cockpit_context() -> dict[str, Any]:
+    store = _offering_store()
+    sched = _schedule_store()
+    offers = [r.public() for r in store.list(200)]
+    capital = store.capital()
+    reservations = store.reservations()
+    execution = get_status()
+    host = BH.read_status(check=True)
+    db = {"market": _db_meta(DB_PATH), "offerings": _db_meta(store.path),
+          "schedules": _db_meta(sched.path),
+          "cockpit": _db_meta(_cockpit_store().path)}
+    reserved = store.active_reserved()
+    status = CK.build_status(
+        app_version=str(APP_VERSION), offerings=offers, capital=capital,
+        reserved=reserved, reservations=reservations,
+        readiness=SCH.readiness(), host=host, execution=execution, db=db)
+    return {"offers": offers, "capital": capital, "reserved": reserved,
+            "reservations": reservations, "execution": execution, "host": host,
+            "db": db, "status": status}
+
+
+@router.get("/api/execution/cockpit/status")
+def get_cockpit_status() -> dict[str, Any]:
+    try:
+        got = _cockpit_context()
+        return {"status": "success", **got["status"], "live_send": False}
+    except Exception as e:                       # noqa: BLE001
+        return {"status": "error", "code": "COCKPIT_STATUS_UNAVAILABLE",
+                "detail": "%s: %s" % (type(e).__name__, str(e)[:200])}
+
+
+@router.get("/api/execution/cockpit/runs")
+def get_cockpit_runs(limit: int = 30, run_id: str = "") -> dict[str, Any]:
+    try:
+        store = _cockpit_store()
+        runs = store.runs(limit)
+        selected = run_id or (runs[0]["id"] if runs else "")
+        events = store.events(selected) if selected else []
+        return {"status": "success", "mode": "MOCK", "runs": runs,
+                "selected_run": selected, "events": events,
+                "scenarios": list(CK.SCENARIO_INFO), "live_send": False}
+    except CK.CockpitError as e:
+        return {"status": "error", "code": e.code, "detail": e.detail}
+    except Exception as e:                       # noqa: BLE001
+        return {"status": "error", "code": "COCKPIT_STORE_UNAVAILABLE",
+                "detail": "%s: %s" % (type(e).__name__, str(e)[:200])}
+
+
+@router.get("/api/execution/cockpit/runs/{run_id}")
+def get_cockpit_run(run_id: str) -> dict[str, Any]:
+    try:
+        got = _cockpit_store().run(run_id)
+    except Exception as e:                       # noqa: BLE001
+        return {"status": "error", "code": "COCKPIT_STORE_UNAVAILABLE",
+                "detail": "%s: %s" % (type(e).__name__, str(e)[:200])}
+    if got is None:
+        return {"status": "error", "code": "RUN_NOT_FOUND"}
+    return {"status": "success", "run": got, "live_send": False}
+
+
+@router.post("/api/execution/cockpit/runs")
+def post_cockpit_run(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
+    scenario = str(body.get("scenario") or "")
+    try:
+        context = _cockpit_context()
+    except Exception as e:                       # noqa: BLE001
+        return {"status": "error", "code": "COCKPIT_CONTEXT_UNAVAILABLE",
+                "detail": "%s: %s" % (type(e).__name__, str(e)[:200])}
+    offers = context["offers"]
+    offering = None
+    oid = str(body.get("offering_id") or "")
+    if oid:
+        offering = next((o for o in offers if str(o.get("id")) == oid), None)
+    if scenario == "unverified_offering":
+        offering = next((o for o in offers if str(o.get("status")) != "VERIFIED"), offering)
+    try:
+        got = CK.start_scenario(_cockpit_store(), scenario, offering=offering,
+                                price=body.get("price"), quantity=body.get("quantity"))
+    except CK.CockpitError as e:
+        return {"status": "error", "code": e.code, "detail": e.detail}
+    except Exception as e:                       # noqa: BLE001
+        return {"status": "error", "code": "COCKPIT_RUN_FAILED",
+                "detail": "%s: %s" % (type(e).__name__, str(e)[:200])}
+    return {"status": "success", "mode": "MOCK", "run": got,
+            "live_send": False, "acceptance_time_observed": False}
+
+
+@router.post("/api/execution/cockpit/runs/{run_id}/stop")
+def stop_cockpit_run(run_id: str) -> dict[str, Any]:
+    try:
+        got = _cockpit_store().stop(run_id)
+    except CK.CockpitError as e:
+        return {"status": "error", "code": e.code, "detail": e.detail}
+    return {"status": "success", "run_id": run_id, "run_status": got.get("status"),
+            "unchanged": bool(got.get("unchanged")), "live_send": False}
+
+
+@router.post("/api/execution/cockpit/preflight")
+def post_cockpit_preflight(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
+    try:
+        context = _cockpit_context()
+    except Exception as e:                       # noqa: BLE001
+        return {"status": "error", "code": "COCKPIT_CONTEXT_UNAVAILABLE",
+                "detail": "%s: %s" % (type(e).__name__, str(e)[:200])}
+    oid = str(body.get("offering_id") or "")
+    offering = next((o for o in context["offers"] if str(o.get("id")) == oid), None)
+    try:
+        price = float(body["price"]) if body.get("price") not in (None, "") else None
+        qty = float(body["quantity"]) if body.get("quantity") not in (None, "") else None
+        max_age = float(body.get("max_age_s") or 3600.0)
+    except (TypeError, ValueError):
+        return {"status": "error", "code": "INVALID_ORDER",
+                "detail": "قیمت/تعداد/پنجرهٔ تازگی نامعتبر است"}
+    return CK.preflight_snapshot(offering=offering, price=price, quantity=qty,
+                                 status=context["status"], max_age_s=max_age,
+                                 capital=context["capital"], reserved=context["reserved"])
+
+
+@router.get("/api/execution/cockpit/report")
+def get_cockpit_report(run_id: str = "") -> dict[str, Any]:
+    try:
+        context = _cockpit_context()
+        store = _cockpit_store()
+        runs = store.runs(30)
+        selected = run_id or (runs[0]["id"] if runs else "")
+        events = store.events(selected) if selected else []
+        return CK.build_report(status=context["status"], runs=runs, events=events)
+    except Exception as e:                       # noqa: BLE001
+        return {"status": "error", "code": "COCKPIT_REPORT_UNAVAILABLE",
+                "detail": "%s: %s" % (type(e).__name__, str(e)[:200])}
+
+
+# ── ۲.۴.۶) browser session host (نشستِ پایدارِ مالک؛ CDPِ محلی) ───────────────
+def _host_status() -> dict[str, Any]:
+    return BH.read_status(check=True)
+
+
+@router.get("/api/execution/browser-host")
+def get_browser_host() -> dict[str, Any]:
+    got = _host_status()
+    return {"status": "success", "host": got,
+            "live_requires_host": True,
+            "note": "ورود دستی در پنجرهٔ host؛ هیچ token/cookie ذخیره نمی‌شود"}
+
+
+@router.post("/api/execution/browser-host")
+def post_browser_host() -> dict[str, Any]:
+    got = BH.read_status(check=True)
+    if got.get("healthy"):
+        os.environ["BORS_EXECUTION_CDP_URL"] = str(got.get("cdp_url") or "")
+        return {"status": "success", "host": got, "started": False}
+    if bool(getattr(sys, "frozen", False)):
+        cmd = [sys.executable, "--browser-host"]
+        cwd = os.path.dirname(sys.executable)
+    else:
+        root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        cmd = [sys.executable, os.path.join(root, "execution_browser_host.py")]
+        cwd = root
+    flags = 0
+    if os.name == "nt":
+        flags = (getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0)
+                 | getattr(subprocess, "DETACHED_PROCESS", 0))
+    try:
+        subprocess.Popen(cmd, cwd=cwd, env=dict(os.environ),
+                         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                         creationflags=flags)
+    except Exception as e:                       # noqa: BLE001
+        return {"status": "error", "code": "HOST_START_FAILED",
+                "detail": "%s: %s" % (type(e).__name__, str(e)[:160])}
+    deadline = time.monotonic() + 30.0
+    while time.monotonic() < deadline:
+        got = BH.read_status(check=True)
+        if got.get("healthy"):
+            os.environ["BORS_EXECUTION_CDP_URL"] = str(got.get("cdp_url") or "")
+            return {"status": "success", "host": got, "started": True}
+        time.sleep(0.25)
+    got = BH.read_status(check=True)
+    return {"status": "error", "code": "HOST_NOT_READY", "host": got,
+            "detail": "پنجرهٔ host در ۳۰ ثانیه آماده نشد؛ مرورگر/پروفایل را بررسی کنید"}
+
+
+@router.delete("/api/execution/browser-host")
+def delete_browser_host() -> dict[str, Any]:
+    got = BH.stop_host()
+    if got.get("status") == "closed":
+        os.environ.pop("BORS_EXECUTION_CDP_URL", None)
+    return {"status": "success" if got.get("status") == "closed" else "error",
+            "host": got}
+
+
+# ── ۲.۴.۷) ورودِ دستیِ Mofid: پنجرهٔ اختصاصی + پلِ فقط‌خواندنی ───────────────
+_MOFID_SESSION: dict[str, Any] = {
+    "state": MOFID_NEEDS_LOGIN, "reason": "LOGIN_REQUIRED",
+    "checked_at": None, "steps": {}, "counts": {}, "readiness": {},
+}
+_MOFID_SESSION_LOCK = threading.Lock()
+
+
+def _mofid_adapter_ready() -> tuple[bool, str]:
+    if ADAPTER_KIND != "mofid":
+        return False, "ADAPTER_NOT_MOFID"
+    if not TRAFFIC_ALLOWED:
+        return False, "TRAFFIC_OFF"
+    if not isinstance(_ACTIVE_ADAPTER, MofidAdapter):
+        return False, "ADAPTER_NOT_MOFID"
+    if not bool(getattr(_ACTIVE_ADAPTER, "read_only", False)):
+        return False, "NOT_READ_ONLY"
+    return True, ""
+
+
+def _mofid_host() -> dict[str, Any]:
+    return BH.read_status(check=True, name="mofid")
+
+
+def _mofid_set_state(state: str, *, reason: str = "",
+                     steps: Mapping[str, str] | None = None,
+                     counts: Mapping[str, Any] | None = None,
+                     readiness: Mapping[str, Any] | None = None) -> None:
+    with _MOFID_SESSION_LOCK:
+        _MOFID_SESSION.update({
+            "state": str(state),
+            "reason": str(reason or "")[:160],
+            "checked_at": time.strftime("%Y-%m-%dT%H:%M:%S"),
+            "steps": {str(k): str(v) for k, v in (steps or {}).items()},
+            "counts": {str(k): v for k, v in (counts or {}).items()},
+            "readiness": dict(readiness or {}),
+        })
+
+
+def _mofid_state_dict() -> dict[str, Any]:
+    ready, ready_reason = _mofid_adapter_ready()
+    host = _mofid_host()
+    with _MOFID_SESSION_LOCK:
+        snap = dict(_MOFID_SESSION)
+        steps = dict(snap.get("steps") or {})
+        counts = dict(snap.get("counts") or {})
+        readiness = dict(snap.get("readiness") or {})
+    state = str(snap.get("state") or MOFID_NEEDS_LOGIN)
+    reason = str(snap.get("reason") or "")
+    proven = bool(getattr(_ACTIVE_ADAPTER, "session_proven", lambda: False)())
+    if not ready:
+        state, reason = MOFID_NEEDS_LOGIN, ready_reason
+    elif state == MOFID_AUTHENTICATING:
+        pass
+    elif state in (MOFID_SESSION_EXPIRED, MOFID_READ_ONLY_PROBE_FAILED):
+        pass
+    elif proven and state == MOFID_READ_ONLY_PROBE_OK:
+        pass
+    elif proven:
+        state, reason = MOFID_AUTHENTICATED_UNVERIFIED, "PROBE_NOT_RUN"
+    else:
+        state = MOFID_NEEDS_LOGIN
+        reason = reason or ("HOST_OPEN_WAITING_LOGIN" if host.get("healthy")
+                            else "HOST_DOWN")
+    return {
+        "status": "success", "adapter": ADAPTER_KIND,
+        "state": state, "reason": reason,
+        "adapter_ready": ready, "adapter_reason": ready_reason,
+        "host_open": bool(host.get("healthy")),
+        "host_status": str(host.get("status") or "closed"),
+        "host_name": "mofid",
+        "token_present": bool(getattr(_ACTIVE_ADAPTER, "has_token",
+                                      lambda: False)()),
+        "session_proven": proven,
+        "checked_at": snap.get("checked_at"),
+        "steps": steps, "counts": counts,
+        "account_readiness": readiness,
+        "login_url": MOFID_LOGIN_URL,
+        "read_only": bool(getattr(_ACTIVE_ADAPTER, "read_only", False)),
+        "live_enabled": False,
+        "live_ready": False,
+        "secrets_returned": False,
+        "secrets_stored": False,
+    }
+
+
+def _mofid_failure(code: str, state: str, detail: str,
+                   steps: Mapping[str, str] | None = None) -> dict[str, Any]:
+    return {
+        "status": "error", "code": str(code)[:80], "state": state,
+        "detail": str(redact(detail))[:200], "steps": dict(steps or {}),
+        "account": None, "read_only": True,
+        "live_enabled": False, "live_ready": False,
+        "secrets_returned": False, "secrets_stored": False,
+        "checked_at": time.strftime("%Y-%m-%dT%H:%M:%S"),
+    }
+
+
+def _mofid_record_summary(rec: ExecutionRecord) -> dict[str, Any]:
+    return {
+        "broker_order_id": rec.broker_order_id,
+        "symbol": rec.symbol, "isin": rec.isin,
+        "side": rec.side.value, "price": rec.price, "quantity": rec.quantity,
+        "filled_quantity": rec.filled_quantity,
+        "order_state": rec.order_state.value,
+        "events": list(rec.events),
+    }
+
+
+def _mofid_account_readiness(*, money: Mapping[str, Any],
+                             positions: list[dict[str, Any]],
+                             orders: list[ExecutionRecord],
+                             today: list[ExecutionRecord],
+                             details: list[dict[str, Any]],
+                             steps: Mapping[str, str]) -> dict[str, Any]:
+    """گیت‌هایِ حسابِ فقط‌خواندنی؛ از پاسخِ واقعیِ همین Probe، بی‌فلگِ تنظیماتی."""
+    unit_state = str(money.get("unit_state") or "UNVERIFIED")
+    server_ts = money.get("server_timestamp")
+    unit_ok = unit_state == UNIT_VERIFICATION["state"]
+    buy_ok = money.get("buying_power") is not None and unit_ok
+    sellable_states = sorted({str(p.get("sellable_state") or "")
+                              for p in positions if p.get("sellable_state")})
+    queue_ids = {str(r.broker_order_id) for r in list(orders) + list(today)
+                 if r.broker_order_id}
+    queue_status = "BLOCKED" if queue_ids else "NOT_MEASURED"
+    queue_detail = ("%d سفارش شناسه‌دار هست، ولی قراردادِ فقط‌خواندنیِ جایگاه "
+                    "در این راند مسدود است" % len(queue_ids) if queue_ids
+                    else "سفارشِ واقعیِ شناسه‌دار نیست؛ جایگاه قابلِ اندازه‌گیری نیست")
+    gates = [
+        {"id": "session", "label": "نشست",
+         "status": "PASS" if steps.get("session") == "PASS" else "BLOCKED",
+         "detail": "customer/status 200" if steps.get("session") == "PASS"
+         else "نشست تأیید نشد",
+         "source": "mofid:/Order/customer/status"},
+        {"id": "account_data", "label": "دادهٔ حساب",
+         "status": "PASS" if positions or money else "BLOCKED",
+         "detail": "%d دارایی · %d سفارش باز · %d سفارش امروز"
+                   % (len(positions), len(orders), len(today)),
+         "source": "mofid:/Portfolio/Daily + /Order/open-orders + /Order/today-order"},
+        {"id": "unit", "label": "واحد و دقتِ قدرت خرید",
+         "status": "PASS" if unit_ok else "UNVERIFIED",
+         "detail": "IRR · precision=0 · UI رسمی + بستهٔ Titan؛ server_unit_field=false",
+         "source": "mofid:/Accounting/Remain + official UI"},
+        {"id": "sellable", "label": "قابل‌فروش",
+         "status": "UNVERIFIED",
+         "detail": "CLIENT_DERIVED_UNVERIFIED؛ UI رسمی ستونِ sellable ندارد "
+                   "(runTimeShareCount/csdPortfolioCount) · formula 12/12",
+         "source": "mofid:/Portfolio/Daily"},
+        {"id": "freshness", "label": "تازگی داده",
+         "status": "UNVERIFIED",
+         "detail": ("فیلدِ زمانِ سرور %s (خام؛ تفسیر تأییدنشده)" %
+                    (server_ts or {}).get("key") if server_ts
+                    else "فقط fetched_at محلی؛ فیلدِ زمانِ سرور دیده نشد"),
+         "source": "money/positions"},
+        {"id": "preflight_buy", "label": "دادهٔ پیش‌فرودِ خرید",
+         "status": "PASS" if buy_ok else "BLOCKED",
+         "detail": "purchasingPower عددی + واحد تأییدشده" if buy_ok
+         else "قدرت خرید/واحد تأیید نشده",
+         "source": "mofid:/Accounting/Remain"},
+        {"id": "preflight_sell", "label": "دادهٔ پیش‌فرودِ فروش",
+         "status": "UNVERIFIED",
+         "detail": "sellable با تعریفِ رسمی تأیید نشده",
+         "source": "mofid:/Portfolio/Daily"},
+        {"id": "read_back", "label": "read-backِ سفارش",
+         "status": "NOT_MEASURED" if not (orders or today) else "UNVERIFIED",
+         "detail": "سفارشِ باز/امروز نیست؛ شناسهٔ واقعی برایِ read-back وجود ندارد"
+                   if not (orders or today) else "سفارش هست؛ read-back اجرا نشده",
+         "source": "open-orders/today-order/state/detail"},
+        {"id": "queue_position", "label": "جایگاهِ صف",
+         "status": queue_status, "detail": queue_detail,
+         "source": "mofid:/Order/OrderPlaceInfo + ls:orderplace:{orderId}"},
+    ]
+    warnings = [g for g in gates if g["status"] != "PASS"]
+    return {
+        "probe_ok": True,
+        # جایگاه/read-back عمداً از این جمع بیرون‌اند: دو مفهومِ مستقل‌اند.
+        "read_only_account_ready": all(g["status"] == "PASS"
+                                       for g in gates
+                                       if g["id"] not in ("read_back",
+                                                          "queue_position")),
+        "live_enabled": False,
+        "live_ready": False,
+        "sellable_states": sellable_states,
+        "counts": {"positions": len(positions), "open_orders": len(orders),
+                   "today_orders": len(today), "order_details": len(details)},
+        "queue_position": {
+            "source_status": "FIRST_PARTY_CLIENT_OBSERVED",
+            "source_verified": False,
+            "result_known": False,
+            "ready": False,
+            "status": queue_status,
+            "orders_with_id": len(queue_ids),
+            "active_paths": ["POST /Order/OrderPlaceInfo",
+                             "POST /Order/OrderPlace",
+                             "ls:orderplace:{orderId}"],
+            "reason": queue_detail,
+        },
+        "freshness": money.get("freshness"),
+        "server_timestamp": server_ts,
+        "gates": gates,
+        "warnings": [{"id": g["id"], "status": g["status"], "detail": g["detail"]}
+                     for g in warnings],
+    }
+
+
+def _mofid_verify_session() -> dict[str, Any]:
+    ready, reason = _mofid_adapter_ready()
+    if not ready:
+        _mofid_set_state(MOFID_NEEDS_LOGIN, reason=reason)
+        return _mofid_failure("ADAPTER_NOT_READY", MOFID_NEEDS_LOGIN,
+                              "آداپتورِ فعال Mofid + فقط‌خواندنی نیست (%s)" % reason)
+    host = _mofid_host()
+    if not host.get("healthy"):
+        _mofid_set_state(MOFID_NEEDS_LOGIN, reason="HOST_DOWN")
+        return _mofid_failure("HOST_DOWN", MOFID_NEEDS_LOGIN,
+                              "پنجرهٔ ورودِ Mofid باز/سالم نیست")
+    cdp = str(host.get("cdp_url") or "")
+    _mofid_set_state(MOFID_AUTHENTICATING, reason="CAPTURING_SESSION")
+    try:
+        token, meta = EMC.capture_from_host(cdp)
+    except EMC.CaptureError as e:
+        state = (MOFID_SESSION_EXPIRED if e.code == "EXPIRED"
+                 else MOFID_NEEDS_LOGIN if e.code in ("NO_SESSION", "LOGIN_REQUIRED")
+                 else MOFID_READ_ONLY_PROBE_FAILED)
+        _mofid_set_state(state, reason=e.code)
+        return _mofid_failure(e.code, state, e.detail)
+    except Exception as e:                       # noqa: BLE001 - مرزِ مرورگر
+        _mofid_set_state(MOFID_READ_ONLY_PROBE_FAILED, reason="CAPTURE_FAILED")
+        return _mofid_failure("CAPTURE_FAILED", MOFID_READ_ONLY_PROBE_FAILED,
+                              "%s: %s" % (type(e).__name__, str(e)[:120]))
+    try:
+        _ACTIVE_ADAPTER.set_token(token)
+    except Exception as e:                       # noqa: BLE001
+        return _mofid_failure("TOKEN_SET_FAILED", MOFID_READ_ONLY_PROBE_FAILED,
+                              "آداپتور توکن را نپذیرفت (%s)" % type(e).__name__)
+    finally:
+        token = ""
+    _void_confirmations("mofid token replaced")
+    steps: dict[str, str] = {"session": "PASS"}
+    try:
+        st = _ACTIVE_ADAPTER.authenticate()
+    except BrokerError as e:
+        state = (MOFID_SESSION_EXPIRED
+                 if e.code in (ErrorCode.SESSION_EXPIRED, ErrorCode.AUTH_FAILED)
+                 else MOFID_READ_ONLY_PROBE_FAILED)
+        steps["session"] = "FAIL"
+        _mofid_set_state(state, reason=e.code.value, steps=steps)
+        return _mofid_failure(e.code.value, state, e.detail, steps)
+    try:
+        money = _ACTIVE_ADAPTER.get_money()
+        steps["money"] = "PASS"
+        positions = _ACTIVE_ADAPTER.get_positions()
+        steps["positions"] = "PASS"
+        orders = _ACTIVE_ADAPTER.get_orders()
+        steps["open_orders"] = "PASS"
+        today = _ACTIVE_ADAPTER.get_today_orders()
+        steps["today_orders"] = "PASS"
+    except BrokerError as e:
+        state = (MOFID_SESSION_EXPIRED
+                 if e.code in (ErrorCode.SESSION_EXPIRED, ErrorCode.AUTH_FAILED)
+                 else MOFID_READ_ONLY_PROBE_FAILED)
+        _mofid_set_state(state, reason=e.code.value, steps=steps)
+        return _mofid_failure(e.code.value, state, e.detail, steps)
+    except Exception as e:                       # noqa: BLE001 - مرزِ adapter
+        _mofid_set_state(MOFID_READ_ONLY_PROBE_FAILED,
+                         reason=type(e).__name__, steps=steps)
+        return _mofid_failure(type(e).__name__, MOFID_READ_ONLY_PROBE_FAILED,
+                              str(e)[:160], steps)
+    order_ids: list[str] = []
+    for rec in list(orders) + list(today):
+        oid = str(rec.broker_order_id or "").strip()
+        if oid and oid not in order_ids:
+            order_ids.append(oid)
+    details: list[dict[str, Any]] = []
+    if not order_ids:
+        steps["order_detail"] = "SKIPPED_NO_ORDERS"
+    else:
+        try:
+            for oid in order_ids[:3]:
+                rec = _ACTIVE_ADAPTER.get_order(oid)
+                if rec is not None:
+                    details.append(_mofid_record_summary(rec))
+            steps["order_detail"] = "PASS"
+        except BrokerError as e:
+            state = (MOFID_SESSION_EXPIRED
+                     if e.code in (ErrorCode.SESSION_EXPIRED, ErrorCode.AUTH_FAILED)
+                     else MOFID_READ_ONLY_PROBE_FAILED)
+            steps["order_detail"] = "FAIL"
+            _mofid_set_state(state, reason=e.code.value, steps=steps)
+            return _mofid_failure(e.code.value, state, e.detail, steps)
+    account = {
+        "buying_power": money.get("buying_power"),
+        "cash": money.get("cash"), "blocked": money.get("blocked"),
+        "credit": money.get("credit"), "margin_block": money.get("margin_block"),
+        "unit": money.get("unit"), "unit_evidence": money.get("unit_evidence"),
+        "unit_state": money.get("unit_state"),
+        "precision": money.get("precision"),
+        "unit_server_field": money.get("unit_server_field"),
+        "formula": money.get("formula"), "source": money.get("source"),
+        "response_keys": money.get("response_keys"),
+        "server_timestamp": money.get("server_timestamp"),
+        "freshness": money.get("freshness"),
+        "position_fields": dict(POSITION_FIELD_MAP),
+        "order_contract": dict(ORDER_CONTRACT),
+        "fetched_at": money.get("fetched_at"),
+        "positions": positions,
+        "orders": [_mofid_record_summary(r) for r in orders],
+        "today_orders": [_mofid_record_summary(r) for r in today],
+        "order_details": details,
+    }
+    counts = {"positions": len(positions), "open_orders": len(orders),
+              "today_orders": len(today), "order_details": len(details)}
+    readiness = _mofid_account_readiness(
+        money=money, positions=positions, orders=orders, today=today,
+        details=details, steps=steps)
+    _mofid_set_state(MOFID_READ_ONLY_PROBE_OK, steps=steps, counts=counts,
+                     readiness=readiness)
+    return {
+        "status": "success", "code": "READ_ONLY_PROBE_OK",
+        "state": MOFID_READ_ONLY_PROBE_OK,
+        "session": {"state": st.state.value, "account_label": st.account_label,
+                    "checked_at": st.checked_at, "proven": True,
+                    "verified_by": dict(getattr(_ACTIVE_ADAPTER, "session_proof", {}) or {}),
+                    "page_host": meta.get("page_host"),
+                    "token_type": meta.get("token_type"),
+                    "token_length": meta.get("token_length"),
+                    "expires_at": meta.get("expires_at")},
+        "account": account, "steps": steps, "counts": counts,
+        "account_readiness": readiness,
+        "position_fields": dict(POSITION_FIELD_MAP),
+        "order_contract": dict(ORDER_CONTRACT),
+        "read_only": True, "live_enabled": False, "live_ready": False,
+        "secrets_returned": False, "secrets_stored": False,
+        "checked_at": time.strftime("%Y-%m-%dT%H:%M:%S"),
+    }
+
+
+@router.get("/api/execution/mofid/session")
+def get_mofid_session() -> dict[str, Any]:
+    return _mofid_state_dict()
+
+
+@router.post("/api/execution/mofid/login-window")
+def post_mofid_login_window(request: Request) -> dict[str, Any]:
+    origin = request.headers.get("origin") or ""
+    if origin and not _same_origin(origin, request.headers.get("host") or ""):
+        return {"status": "error", "code": "CROSS_ORIGIN_BLOCKED",
+                "detail": "این در فقط از خودِ رابطِ محلی پذیرفته می‌شود",
+                "secrets_returned": False, "secrets_stored": False}
+    ready, reason = _mofid_adapter_ready()
+    existing = _mofid_host()
+    if not existing.get("healthy"):
+        if bool(getattr(sys, "frozen", False)):
+            cmd = [sys.executable, "--browser-host", "--name", "mofid",
+                   "--url", MOFID_LOGIN_URL]
+            cwd = os.path.dirname(sys.executable)
+        else:
+            root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            cmd = [sys.executable, os.path.join(root, "execution_browser_host.py"),
+                   "--name", "mofid", "--url", MOFID_LOGIN_URL]
+            cwd = root
+        flags = 0
+        if os.name == "nt":
+            flags = (getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0)
+                     | getattr(subprocess, "DETACHED_PROCESS", 0))
+        try:
+            subprocess.Popen(cmd, cwd=cwd, env=dict(os.environ),
+                             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                             creationflags=flags)
+        except Exception as e:                   # noqa: BLE001
+            return {"status": "error", "code": "LOGIN_WINDOW_FAILED",
+                    "detail": "%s: %s" % (type(e).__name__, str(e)[:120]),
+                    "adapter_ready": ready, "reason": reason,
+                    "login_url": MOFID_LOGIN_URL}
+        deadline = time.monotonic() + 30.0
+        while time.monotonic() < deadline:
+            existing = _mofid_host()
+            if existing.get("healthy"):
+                break
+            time.sleep(0.25)
+    healthy = bool(existing.get("healthy"))
+    if not healthy:
+        return {"status": "error", "code": "LOGIN_WINDOW_NOT_READY",
+                "host": {"name": "mofid", "status": str(existing.get("status") or "closed"),
+                         "healthy": False},
+                "adapter_ready": ready, "reason": reason,
+                "login_url": MOFID_LOGIN_URL,
+                "detail": "پنجرهٔ ورود در ۳۰ ثانیه آماده نشد"}
+    if not bool(getattr(_ACTIVE_ADAPTER, "session_proven", lambda: False)()):
+        _mofid_set_state(MOFID_NEEDS_LOGIN,
+                         reason=("WAITING_FOR_MANUAL_LOGIN" if ready
+                                 else reason or "ADAPTER_NOT_READY"))
+    return {"status": "success", "code": "LOGIN_WINDOW_OPEN",
+            "host": {"name": "mofid", "status": "ready", "healthy": True},
+            "login_url": MOFID_LOGIN_URL,
+            "adapter_ready": ready, "reason": reason,
+            "session": _mofid_state_dict(),
+            "note": "ورود را خودتان در همین پنجره انجام دهید؛ هیچ رمز/OTP/CAPTCHA "
+                    "از طرفِ برنامه پرسیده یا دور زده نمی‌شود."}
+
+
+@router.delete("/api/execution/mofid/login-window")
+def delete_mofid_login_window() -> dict[str, Any]:
+    got = BH.stop_host(name="mofid")
+    return {"status": "success" if got.get("status") == "closed" else "error",
+            "host": {k: got.get(k) for k in ("status", "healthy", "name", "code")}}
+
+
+@router.post("/api/execution/mofid/verify-session")
+def post_mofid_verify_session(request: Request) -> dict[str, Any]:
+    origin = request.headers.get("origin") or ""
+    if origin and not _same_origin(origin, request.headers.get("host") or ""):
+        return {"status": "error", "code": "CROSS_ORIGIN_BLOCKED",
+                "detail": "این در فقط از خودِ رابطِ محلی پذیرفته می‌شود",
+                "secrets_returned": False, "secrets_stored": False}
+    out = _mofid_verify_session()
+    out["session_state"] = _mofid_state_dict()
+    return out
 
 
 # ── ۲.۵) تنظیمِ اتصال و پرتفویِ فقط‌خواندنی ─────────────────────────────────
@@ -901,59 +2479,394 @@ async def post_config(request: Request) -> dict[str, Any]:
     return out
 
 
+def _mofid_portfolio(base: dict[str, Any]) -> dict[str, Any]:
+    """پرتفویِ Mofid: تعداد از پاسخ، sellable از فرمولِ برچسب‌دارِ محافظه‌کارانه."""
+    fetched_at = time.strftime("%Y-%m-%dT%H:%M:%S")
+    try:
+        raw_rows = _ACTIVE_ADAPTER.get_positions()
+    except BrokerError as e:
+        base.update({"status": "error", "state": PORTFOLIO_UNAVAILABLE,
+                     "error": "%s: %s" % (e.code.value, str(redact(e.detail))[:160]),
+                     "fetched_at": fetched_at})
+        return base
+    except Exception as e:                        # noqa: BLE001 - مرزِ adapter
+        base.update({"status": "error", "state": PORTFOLIO_UNAVAILABLE,
+                     "error": "%s: %s" % (type(e).__name__, str(e)[:160]),
+                     "fetched_at": fetched_at})
+        return base
+    if not isinstance(raw_rows, list):
+        base.update({"status": "error", "state": PORTFOLIO_UNAVAILABLE,
+                     "error": "پاسخ پرتفوی فهرست نبود", "fetched_at": fetched_at})
+        return base
+    rows: list[dict[str, Any]] = []
+    unresolved: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    duplicate_count = 0
+    missing_sellable = False
+    for it in raw_rows:
+        if not isinstance(it, Mapping):
+            continue
+        isin = str(it.get("isin") or "").strip()
+        if isin in seen:
+            duplicate_count += 1
+        seen.add(isin)
+        mapped = _instrument_by_isin(isin)
+        if it.get("sellable") is None:
+            missing_sellable = True
+        row = {
+            "isin": isin,
+            "symbol": mapped.get("symbol") or it.get("symbol"),
+            "ins_code": mapped.get("ins_code"),
+            "resolved": mapped.get("resolved"),
+            "ambiguous": mapped.get("ambiguous"),
+            "mapping_error": mapped.get("reason"),
+            "broker_name": it.get("symbol"),
+            "asset": it.get("current_asset"),
+            "quantity": it.get("current_asset"),
+            "free_quantity": it.get("sellable"),
+            "sellable_quantity": it.get("sellable"),
+            "sellable_state": it.get("sellable_state"),
+            "settled_quantity": it.get("settled"),
+            "open_buy": it.get("open_buy"),
+            "open_sell": it.get("open_sell"),
+            "avg_buy": it.get("average_buy"),
+            "avg_sell": it.get("average_sell"),
+            "break_even": it.get("break_even"),
+            "source": it.get("source") or "portfolio",
+        }
+        rows.append(row)
+        if not mapped.get("resolved"):
+            unresolved.append({"isin": isin, "reason": mapped.get("reason"),
+                               "ambiguous": mapped.get("ambiguous")})
+    prov = {}
+    fn = getattr(_ACTIVE_ADAPTER, "sellable_provenance", None)
+    if callable(fn):
+        try:
+            prov = dict(fn() or {})
+        except Exception:                         # noqa: BLE001 - فقط شاهد
+            prov = {}
+    bp: dict[str, Any] = {"state": BUYING_POWER_UNAVAILABLE, "error": ""}
+    try:
+        money = _ACTIVE_ADAPTER.get_money()
+        bp = {"state": BUYING_POWER_VERIFIED, "value": money.get("buying_power"),
+              "raw": money.get("raw"), "unit": money.get("unit"),
+              "formula": money.get("formula"), "source": money.get("source"),
+              "fetched_at": money.get("fetched_at")}
+    except Exception as e:                        # noqa: BLE001 - منبعِ جدا
+        bp = {"state": BUYING_POWER_UNAVAILABLE,
+              "error": "%s: %s" % (type(e).__name__, str(e)[:120])}
+    resolved_count = sum(1 for r in rows if r.get("resolved"))
+    base.update({
+        "status": "success", "state": PORTFOLIO_READ_ONLY_UNVERIFIED,
+        "source": "mofid:/Portfolio/Daily + /Order/customer/status (first-party Titan client)",
+        "rows": rows, "positions": rows, "as_of": fetched_at,
+        "fetched_at": fetched_at, "raw_count": len(raw_rows),
+        "resolved_count": resolved_count,
+        "unresolved_count": len(unresolved), "duplicate_count": duplicate_count,
+        "unresolved": unresolved,
+        "missing_fields": ["sellable_quantity"] if missing_sellable else [],
+        "sellable_state": prov.get("state") or SELLABLE_STATE,
+        "sellable_formula": prov.get("formula") or SELLABLE_FORMULA,
+        "buying_power": bp, "error": None,
+    })
+    return base
+
+
 @router.get("/api/execution/portfolio")
 def get_portfolio() -> dict[str, Any]:
-    """موجودی و دارایی — فقط‌خواندنی، و فقط آنچه سرویس **واقعاً** برمی‌گرداند.
+    """دارایی‌هایِ پرتفوی از گزارشِ عملکردِ وب‌اپِ رسمی؛ فقط‌خواندنی.
 
-    امروز هیچ مسیرِ «دارایی‌ها» نه درِ سندِ رسمی (swagger/openapi = 403) و نه درِ
-    شواهدِ مشاهده‌شده وجود دارد؛ `get_balances()` عمداً None است و
-    `capabilities.balances` false. پس پاسخِ این در «صفر» یا «لیستِ خالی» نیست —
-    «بی‌منبع» است با دلیلِ خودش. بی‌نشستِ تأییدشده هیچ درخواستی هم نمی‌زند.
+    تعداد/آزاد/قابل‌فروش در این منبع نیست: آن سه فیلد صریحاً غایب گزارش
+    می‌شوند و با صفر یا برآورد پر نمی‌شوند. قدرتِ خرید منبعِ جدا دارد.
     """
-    live = bool(_live_now())
-    proven = bool(getattr(_ACTIVE_ADAPTER, "session_proven", lambda: False)())
-    has_token = bool(getattr(_ACTIVE_ADAPTER, "has_token", lambda: False)())
-    caps = _ACTIVE_ADAPTER.capabilities()
-    base = {"status": "success", "adapter": ADAPTER_KIND, "live": live,
-            "session_proven": proven, "as_of": None, "source": "none",
-            "rows": None, "cached_at": None, "error": None}
-    # سنجشِ زندهٔ 2026-10-18: «بی‌نشانی» با «ترافیک بسته» یکی بود و پیامِ restart
-    # می‌داد در حالی که کاربر restart کرده بود. چهار حالتِ جدا: ترافیک، نشانی،
-    # تأیید، منبع.
-    if not TRAFFIC_ALLOWED:
-        base["status"] = "blocked"
-        base["error"] = ("هیچ ترافیکی مجاز نیست — «تنظیمِ اتصال» را رویِ easytrader + "
-                         "فقط‌خواندنی (یا BORS_EXECUTION_LIVE=1) بگذارید و restart کنید")
+    fetched_at = time.strftime("%Y-%m-%dT%H:%M:%S")
+    base: dict[str, Any] = {
+        "status": "blocked", "adapter": ADAPTER_KIND, "live": bool(_live_now()),
+        "session_proven": bool(getattr(_ACTIVE_ADAPTER, "session_proven", lambda: False)()),
+        "state": ACCOUNT_SOURCE_BLOCKED, "as_of": None, "source": "none",
+        "rows": None, "positions": [], "cached_at": None, "fetched_at": None,
+        "raw_count": 0, "resolved_count": 0, "unresolved_count": 0,
+        "duplicate_count": 0, "unresolved": [], "missing_fields": [],
+        "buying_power": None, "error": None,
+    }
+    block = _source_block()
+    base["session_proven"] = bool(getattr(_ACTIVE_ADAPTER, "session_proven",
+                                          lambda: False)())
+    if block:
+        base["state"], base["error"] = block
         return base
-    if not has_token:
-        base["status"] = "unverified_session"
-        base["error"] = ("نشستِ کارگزاری درِ حافظه نیست: خودِ شما درِ پنجره وارد شوید، "
-                         "سپس نشانی را باِ POST /api/execution/session بدهید. "
-                         "بی‌نشانی هیچ پرسشی به کارگزاری نمی‌رود")
-        return base
-    if not proven:
-        base["status"] = "unverified_session"
-        base["error"] = ("نشست هنوز باِ یکِ پرسشِ فقط‌خواندنی تأیید نشده — "
-                         "POST /api/execution/connect/verify")
-        return base
-    if not bool(getattr(caps, "balances", False)):
-        base["status"] = "no_source"
-        base["error"] = ("کارگزاری مسیرِ دارایی‌ها را درِ هیچ شاهدِ مستندِ بازشده‌ای "
-                         "نمی‌دهد؛ عددی ساخته نمی‌شود. مسیرهایِ آزمودنیِ فقط‌خواندنی: "
-                         + ", ".join(WIRE_SESSION_PROBE_CANDIDATES))
+    if ADAPTER_KIND == "mofid" and hasattr(_ACTIVE_ADAPTER, "get_positions"):
+        return _mofid_portfolio(base)
+    if not hasattr(_ACTIVE_ADAPTER, "get_portfolio_performance"):
+        base.update({"status": "no_source", "state": PORTFOLIO_UNAVAILABLE,
+                     "error": "این روش اتصال منبع پرتفوی ندارد"})
         return base
     try:
-        rows = _ACTIVE_ADAPTER.get_balances()
-    except Exception as e:                        # noqa: BLE001 - BrokerError و غیره
-        base["status"] = "error"
-        base["error"] = "%s: %s" % (type(e).__name__, str(e)[:160])
+        raw_rows = _ACTIVE_ADAPTER.get_portfolio_performance()
+    except Exception as e:                        # noqa: BLE001
+        base.update({"status": "error", "state": PORTFOLIO_UNAVAILABLE,
+                     "error": "%s: %s" % (type(e).__name__, str(e)[:160])})
         return base
-    if rows is None:
-        base["status"] = "no_source"
-        base["error"] = "آداپتور None داد — «نمی‌دانیم»، نه «صفر»"
+    if not isinstance(raw_rows, list):
+        base.update({"status": "error", "state": PORTFOLIO_UNAVAILABLE,
+                     "error": "پاسخ پرتفوی فهرست نبود"})
         return base
-    base.update({"status": "success", "source": "live", "rows": rows,
-                 "as_of": time.strftime("%Y-%m-%dT%H:%M:%S")})
+    missing = ["quantity", "free_quantity", "sellable_quantity"]
+    rows: list[dict[str, Any]] = []
+    unresolved: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    duplicate_count = 0
+    for it in raw_rows:
+        if not isinstance(it, Mapping):
+            continue
+        isin = str(it.get("symbolIsin") or "").strip()
+        if isin in seen:
+            duplicate_count += 1
+        seen.add(isin)
+        mapped = _instrument_by_isin(isin)
+        row = {
+            "isin": isin, "symbol": mapped.get("symbol"),
+            "ins_code": mapped.get("ins_code"), "resolved": mapped.get("resolved"),
+            "ambiguous": mapped.get("ambiguous"), "mapping_error": mapped.get("reason"),
+            "broker_name": it.get("symbolName"),
+            "asset": it.get("asset"),
+            "avg_buy": it.get("totalBuyAveragePrice"),
+            "periodic_avg_buy": it.get("periodicBuyAveragePrice"),
+            "realized_pnl": it.get("totalRealizedProfitAndLoss"),
+            "realized_pnl_without_dps": it.get("totalRealizedProfitAndLossWithoutDps"),
+            "date": it.get("date"), "persian_date": it.get("persianDate"),
+            "source": "portfolio", "missing_fields": missing,
+        }
+        rows.append(row)
+        if not mapped.get("resolved"):
+            unresolved.append({"isin": isin, "reason": mapped.get("reason"),
+                               "ambiguous": mapped.get("ambiguous")})
+    state = PORTFOLIO_PARTIALLY_VERIFIED if rows else PORTFOLIO_VERIFIED
+    bp: dict[str, Any] = {"state": BUYING_POWER_UNAVAILABLE, "error": ""}
+    if hasattr(_ACTIVE_ADAPTER, "get_money"):
+        try:
+            m = _ACTIVE_ADAPTER.get_money()
+            bp = {"state": BUYING_POWER_VERIFIED, "value": m.get("buying_power"),
+                  "raw": m.get("raw"), "unit": m.get("unit"),
+                  "formula": m.get("formula"), "source": m.get("source"),
+                  "fetched_at": m.get("fetched_at")}
+        except Exception as e:                    # noqa: BLE001
+            bp = {"state": BUYING_POWER_UNAVAILABLE,
+                  "error": "%s: %s" % (type(e).__name__, str(e)[:120])}
+    resolved_count = sum(1 for r in rows if r.get("resolved"))
+    base.update({
+        "status": "success", "state": state,
+        "source": "easytrader:/assetmodule/api/performance (first-party web app)",
+        "rows": rows, "positions": rows, "as_of": fetched_at,
+        "fetched_at": fetched_at, "raw_count": len(raw_rows),
+        "resolved_count": resolved_count,
+        "unresolved_count": len(unresolved), "duplicate_count": duplicate_count,
+        "unresolved": unresolved, "missing_fields": missing,
+        "buying_power": bp, "error": None,
+    })
+    return base
+
+
+@router.get("/api/execution/watchlist")
+def get_easytrader_watchlist() -> dict[str, Any]:
+    """دیده‌بانِ شخصیِ EasyTrader؛ هرگز با دیده‌بانِ محلیِ بازار یکی نمی‌شود."""
+    fetched_at = time.strftime("%Y-%m-%dT%H:%M:%S")
+    base: dict[str, Any] = {
+        "status": "blocked", "adapter": ADAPTER_KIND, "live": bool(_live_now()),
+        "session_proven": bool(getattr(_ACTIVE_ADAPTER, "session_proven", lambda: False)()),
+        "state": ACCOUNT_SOURCE_BLOCKED, "source": "none", "fetched_at": None,
+        "categories": [], "rows": [], "raw_count": 0, "resolved_count": 0,
+        "unresolved_count": 0, "duplicate_count": 0, "unresolved": [], "error": None,
+    }
+    block = _source_block()
+    if block:
+        base["state"], base["error"] = block
+        return base
+    if not hasattr(_ACTIVE_ADAPTER, "get_watchlist"):
+        base.update({"status": "no_source", "state": WATCHLIST_UNAVAILABLE,
+                     "error": "این روش اتصال دیده‌بان ندارد"})
+        return base
+    try:
+        raw_categories = _ACTIVE_ADAPTER.get_watchlist()
+    except Exception as e:                        # noqa: BLE001
+        base.update({"status": "error", "state": WATCHLIST_UNAVAILABLE,
+                     "error": "%s: %s" % (type(e).__name__, str(e)[:160])})
+        return base
+    if not isinstance(raw_categories, list):
+        base.update({"status": "error", "state": WATCHLIST_UNAVAILABLE,
+                     "error": "پاسخ دیده‌بان فهرست نبود"})
+        return base
+    categories: list[dict[str, Any]] = []
+    flat: list[dict[str, Any]] = []
+    unresolved: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    duplicate_count = 0
+    raw_count = 0
+    for cat in raw_categories:
+        if not isinstance(cat, Mapping):
+            continue
+        cat_id = str(cat.get("id") or "")
+        cat_name = str(cat.get("name") or "")
+        cat_rows: list[dict[str, Any]] = []
+        for isin in (cat.get("isins") or []):
+            isin = str(isin or "").strip()
+            if not isin:
+                continue
+            raw_count += 1
+            if isin in seen:
+                duplicate_count += 1
+            seen.add(isin)
+            mapped = _instrument_by_isin(isin)
+            row = {"isin": isin, "symbol": mapped.get("symbol"),
+                   "ins_code": mapped.get("ins_code"),
+                   "resolved": mapped.get("resolved"),
+                   "ambiguous": mapped.get("ambiguous"),
+                   "mapping_error": mapped.get("reason"),
+                   "category_id": cat_id, "category_name": cat_name,
+                   "source": "watchlist"}
+            cat_rows.append(row)
+            flat.append(row)
+            if not mapped.get("resolved"):
+                unresolved.append({"isin": isin, "reason": mapped.get("reason"),
+                                   "ambiguous": mapped.get("ambiguous"),
+                                   "category_id": cat_id})
+        categories.append({"id": cat_id, "name": cat_name,
+                           "order": cat.get("order"),
+                           "is_default": bool(cat.get("is_default")),
+                           "created_at": cat.get("created_at"),
+                           "count": len(cat_rows), "symbols": cat_rows})
+    resolved_count = sum(1 for r in flat if r.get("resolved"))
+    base.update({
+        "status": "success", "state": WATCHLIST_VERIFIED,
+        "source": "easytrader:/easy/api/MarketWatch (first-party web app)",
+        "fetched_at": fetched_at, "categories": categories, "rows": flat,
+        "raw_count": raw_count, "resolved_count": resolved_count,
+        "unresolved_count": len(unresolved), "duplicate_count": duplicate_count,
+        "unresolved": unresolved, "empty": not bool(flat), "error": None,
+    })
+    return base
+
+
+@router.get("/api/execution/readiness")
+def get_readiness(symbol: str = "", side: str = "buy",
+                  price: float | None = None,
+                  quantity: float | None = None) -> dict[str, Any]:
+    """دروازهٔ متمرکز: داده/ریسک از نوشتن جدا؛ live_ready فقط با همهٔ شروط.
+
+    این در فقط‌خواندنی است؛ برایِ سنجشِ داده ممکن است یک GET قدرت خرید بزند.
+    هیچ سفارشی نمی‌سازد و «live_ready=true» را از هیچ ورودیِ UI نمی‌پذیرد.
+    """
+    sym = (symbol or "").strip()
+    symbol_ready: bool | None = None
+    checks: dict[str, str] | None = None
+    if sym:
+        try:
+            ref = _draft_from({"symbol": sym}).instrument
+            symbol_ready = ref.orderable()[0]
+        except HTTPException:
+            symbol_ready = False
+        if price is not None and quantity is not None:
+            try:
+                draft = _draft_from({"symbol": sym, "side": side,
+                                     "price": price, "quantity": quantity,
+                                     "execution_id": "readiness-" + uuid.uuid4().hex[:10],
+                                     "price_source": "readiness"})
+                checks = dict(_SERVICE.preflight(draft).checks)
+            except (HTTPException, ExecutionError, ValueError, TypeError):
+                checks = None
+    try:
+        bp = get_buying_power()
+    except Exception:                             # noqa: BLE001 - منبعِ بیرونی
+        bp = None
+    contract = WC.contract_report()
+    contract_operational = bool(contract.get("operationally_verified"))
+    owner = _OWNER_APPROVAL.state("live-order")
+    rep = RD.build_readiness(
+        session_proven=bool(getattr(_ACTIVE_ADAPTER, "session_proven",
+                                    lambda: False)()),
+        # درِ زنده هم نشست را با همان GETِ فقط‌خواندنی اثبات می‌کند؛ «فقط‌خواندنی»
+        # در این گیت یعنی «شاهدِ خواندنی داریم»، نه «ارسال بسته است».
+        read_only=bool(TRAFFIC_ALLOWED),
+        buying_power=bp,
+        symbol_ready=symbol_ready,
+        preflight_checks=checks,
+        contract_operational=contract_operational,
+        owner_approved=bool(owner.get("approved")),
+        lifecycle_tests=_readiness_flag("round15_lifecycle.json"),
+        full_gate=_readiness_flag("round15_full_gate.json"),
+        live_enabled=bool(_live_now() and getattr(_ACTIVE_ADAPTER,
+                                                  "writes_allowed", False)),
+    )
+    rep.update({"adapter": ADAPTER_KIND, "symbol": sym or None,
+                "side": side, "price": price, "quantity": quantity,
+                "contract_operational": contract_operational,
+                "contract_state": contract.get("state"),
+                "owner_approval": owner})
+    return rep
+
+
+@router.get("/api/execution/owner-approval")
+def get_owner_approval() -> dict[str, Any]:
+    return {"status": "success", "owner_approval": _OWNER_APPROVAL.state("live-order"),
+            "live_enabled": bool(_live_now())}
+
+
+@router.post("/api/execution/owner-approval")
+def post_owner_approval(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
+    try:
+        got = _OWNER_APPROVAL.approve(
+            str(body.get("phrase") or ""),
+            scope=str(body.get("scope") or "live-order"),
+            note=str(body.get("note") or ""))
+    except ValueError as e:
+        return {"status": "error", "code": str(e)[:80],
+                "detail": "عبارتِ تأییدِ مالک لازم است؛ این گیت خودکار باز نمی‌شود"}
+    return {"status": "success", "owner_approval": got,
+            "live_enabled": bool(_live_now()),
+            "note": "readiness فقط این تأیید را می‌بیند؛ live flags جدا و بسته‌اند"}
+
+
+@router.post("/api/execution/owner-approval/revoke")
+def post_owner_approval_revoke(body: dict[str, Any] = Body(default={})) -> dict[str, Any]:
+    return {"status": "success",
+            "owner_approval": _OWNER_APPROVAL.revoke(
+                scope=str((body or {}).get("scope") or "live-order"),
+                note=str((body or {}).get("note") or ""))}
+
+
+@router.get("/api/execution/buying-power")
+def get_buying_power() -> dict[str, Any]:
+    """قدرتِ خریدِ خواندنی؛ واحد ریال و فرمول از خودِ وب‌اپِ رسمی سنجیده شد."""
+    base: dict[str, Any] = {
+        "status": "blocked", "adapter": ADAPTER_KIND, "live": bool(_live_now()),
+        "session_proven": bool(getattr(_ACTIVE_ADAPTER, "session_proven", lambda: False)()),
+        "state": ACCOUNT_SOURCE_BLOCKED, "source": "none", "unit": "IRR",
+        "value": None, "raw": None, "formula": None, "fetched_at": None,
+        "order_write_state": ORDER_WRITE_UNVERIFIED, "error": None,
+    }
+    block = _source_block()
+    base["session_proven"] = bool(getattr(_ACTIVE_ADAPTER, "session_proven",
+                                          lambda: False)())
+    if block:
+        base["state"], base["error"] = block
+        return base
+    if not hasattr(_ACTIVE_ADAPTER, "get_money"):
+        base.update({"status": "no_source", "state": BUYING_POWER_UNAVAILABLE,
+                     "error": "این روش اتصال قدرت خرید ندارد"})
+        return base
+    try:
+        money = _ACTIVE_ADAPTER.get_money()
+    except Exception as e:                        # noqa: BLE001
+        base.update({"status": "error", "state": BUYING_POWER_UNAVAILABLE,
+                     "error": "%s: %s" % (type(e).__name__, str(e)[:160])})
+        return base
+    base.update({
+        "status": "success", "state": BUYING_POWER_VERIFIED,
+        "source": money.get("source"), "unit": money.get("unit"),
+        "value": money.get("buying_power"), "raw": money.get("raw"),
+        "formula": money.get("formula"), "fetched_at": money.get("fetched_at"),
+        "error": None,
+    })
     return base
 
 
@@ -999,6 +2912,96 @@ def delete_connect_browser() -> dict[str, Any]:
     _ok, note = EXC.close_login_window()
     return {"status": "success", "note": note,
             "connect": EXC.status_dict(_ACTIVE_ADAPTER, _CONNECT_LAST)}
+
+
+@router.get("/api/execution/connection/diagnose")
+def get_connection_diagnose() -> dict[str, Any]:
+    """تشخیصِ مرحله‌به‌مرحله؛ فقط host/CDP/status محلی را می‌خواند."""
+    try:
+        got = ECONN.diagnose(
+            app_version=str(APP_VERSION), host=BH.read_status(check=True),
+            execution=get_status(), portfolio=get_portfolio())
+    except Exception as e:                       # noqa: BLE001
+        return {"status": "error", "code": "CONNECTION_DIAGNOSE_FAILED",
+                "detail": "%s: %s" % (type(e).__name__, str(e)[:200])}
+    return {"status": "success", **got}
+
+
+@router.post("/api/execution/connection/verify")
+def post_connection_verify() -> dict[str, Any]:
+    return get_connection_diagnose()
+
+
+def _same_origin(origin: str, host_header: str) -> bool:
+    try:
+        o = urlparse(origin)
+        h = urlparse("//" + str(host_header or ""))
+    except ValueError:
+        return False
+    loopback = ("127.0.0.1", "localhost", "::1")
+    return (o.hostname in loopback and h.hostname in loopback
+            and (o.port or 80) == (h.port or 80))
+
+
+@router.post("/api/execution/connection/capture-session")
+def post_connection_capture_session(request: Request) -> dict[str, Any]:
+    """نشستِ OIDC را از مرورگرِ مدیریت‌شده فقط در حافظه می‌گذارد.
+
+    این در هیچ سفارشی نمی‌فرستد و مقدارِ نشست را نه برمی‌گرداند، نه ذخیره
+    می‌کند و نه لاگ. فقط از همان originِ محلیِ خودِ برنامه پذیرفته می‌شود.
+    """
+    origin = request.headers.get("origin") or ""
+    if origin and not _same_origin(origin, request.headers.get("host") or ""):
+        return {"status": "error", "code": "CROSS_ORIGIN_BLOCKED",
+                "detail": "این در فقط از خودِ رابطِ محلی پذیرفته می‌شود",
+                "secrets_returned": False, "secrets_stored": False}
+    if ADAPTER_KIND != "easytrader":
+        return {"status": "error", "code": "ADAPTER_NOT_EASYTRADER",
+                "detail": "آداپتورِ واقعی فعال نیست؛ ابتدا EasyTrader + فقط‌خواندنی را ذخیره و restart کنید",
+                "secrets_returned": False, "secrets_stored": False}
+    if not TRAFFIC_ALLOWED:
+        return {"status": "error", "code": "TRAFFIC_OFF",
+                "detail": "هیچ ترافیکی مجاز نیست؛ نشست در حافظه نگه داشته نمی‌شود",
+                "secrets_returned": False, "secrets_stored": False}
+    got = BH.read_status(check=True)
+    if not got.get("healthy"):
+        return {"status": "error", "code": "HOST_DOWN",
+                "detail": "پنجرهٔ host باز/سالم نیست",
+                "secrets_returned": False, "secrets_stored": False}
+    try:
+        import execution_session_capture as ESC
+        token, meta = ESC.capture_from_host(str(got.get("cdp_url") or ""))
+    except Exception as e:                       # noqa: BLE001
+        return {"status": "error", "code": str(getattr(e, "code", "CAPTURE_FAILED")),
+                "detail": str(getattr(e, "detail", "") or
+                              "خواندنِ نشست از مرورگر ممکن نشد")[:200],
+                "secrets_returned": False, "secrets_stored": False}
+    try:
+        _ACTIVE_ADAPTER.set_token(token)
+    except Exception as e:                       # noqa: BLE001
+        return {"status": "error", "code": "TOKEN_SET_FAILED",
+                "detail": "آداپتور توکن را نپذیرفت (%s)" % type(e).__name__,
+                "secrets_returned": False, "secrets_stored": False}
+    finally:
+        token = ""
+    # توکنِ تازه = دورهٔ تأییدِ تازه؛ پیش‌نمایش/زمان‌بندیِ پیشین نباید با
+    # نشستِ دیگری آتش بزند (همان قاعدهٔ POST /session).
+    _void_confirmations("captured token replaced")
+    return {"status": "success", "code": "CAPTURED", "token_present": True,
+            "page_host": meta.get("page_host"), "token_type": meta.get("token_type"),
+            "expires_at": meta.get("expires_at"), "scope": meta.get("scope"),
+            "has_refresh_token": bool(meta.get("has_refresh_token")),
+            "secrets_returned": False, "secrets_stored": False,
+            "detail": "نشست از مرورگر خوانده و فقط در حافظهٔ پروسه گذاشته شد؛ "
+                      "حالا «بررسی وضعیت» را بزنید."}
+
+
+@router.get("/api/execution/connection/report")
+def get_connection_report() -> dict[str, Any]:
+    got = get_connection_diagnose()
+    if got.get("status") != "success":
+        return got
+    return ECONN.report(diagnosis=got)
 
 
 @router.post("/api/execution/connect/verify")
@@ -1193,6 +3196,231 @@ def post_dispatch(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
                         "observed_ms": None}}
 
 
+# ── مسیرِ سریعِ سرخطی: پیش‌نمایشِ کامل ← تأییدِ یک‌بارمصرف ← یک POST ──────────
+#: هویتِ توکنِ نشست برایِ قفلِ توکنِ پیش‌نمایش. مقایسه با `is` است، نه مقدار:
+#: توکنِ تازه (حتی با همان رشته) یعنی «تأییدِ کهنه».
+def _fast_token_ref() -> Any:
+    return getattr(_ACTIVE_ADAPTER, "_token", None)
+
+
+def _fast_wire_calls() -> list[str]:
+    calls = getattr(_ACTIVE_ADAPTER, "wire_calls", None)
+    return list(calls) if isinstance(calls, list) else []
+
+
+def _fast_error(code: str, detail: str, **extra: Any) -> dict[str, Any]:
+    return {"status": "error", "code": str(code), "detail": str(detail)[:240],
+            **extra}
+
+
+def _session_label() -> dict[str, Any]:
+    return _session_dict()
+
+
+@router.post("/api/execution/order/preview")
+def post_order_preview(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
+    """کارِ کند (نشست، موجودی، preflight) این‌جا انجام می‌شود؛ هیچ ارسالی نه."""
+    t0 = time.monotonic()
+    try:
+        inp = FAO.parse_order_inputs(body)
+    except FAO.FastOrderInputError as e:
+        return _fast_error(e.code, e.detail, field=e.field)
+    live = bool(_live_now())
+    writes_open = bool(getattr(_ACTIVE_ADAPTER, "writes_allowed", False))
+    dry = bool(DRY_RUN or not writes_open)
+    calls_before = _fast_wire_calls()
+    auth_ms = None
+    if live and writes_open and not _session_label().get("proven"):
+        ta = time.monotonic()
+        try:
+            _ACTIVE_ADAPTER.authenticate()
+        except BrokerError as e:
+            return _fast_error(
+                (e.code.value if e.code else "AUTH_FAILED"),
+                e.detail or "نشست با پرسشِ فقط‌خواندنی تأیید نشد",
+                field=None, session=_session_label(),
+                timings={"preview_ms": round((time.monotonic() - t0) * 1000, 1),
+                         "session_ms": round((time.monotonic() - ta) * 1000, 1)})
+        except Exception as e:                   # noqa: BLE001 - مرزِ adapter
+            return _fast_error(
+                "AUTH_FAILED",
+                "پرسشِ نشست شکست خورد (%s)" % type(e).__name__,
+                field=None, session=_session_label(),
+                timings={"preview_ms": round((time.monotonic() - t0) * 1000, 1),
+                         "session_ms": round((time.monotonic() - ta) * 1000, 1)})
+        auth_ms = round((time.monotonic() - ta) * 1000.0, 1)
+    sess = _session_label()
+    try:
+        draft = _draft_from({
+            "symbol": inp["symbol"], "side": inp["side"].value,
+            "price": inp["price"], "quantity": inp["quantity"], "mode": "safe",
+            "execution_id": "fx-%s" % uuid.uuid4().hex[:12],
+            "price_source": inp["price_source"], "price_as_of": inp["price_as_of"],
+        })
+    except HTTPException as e:
+        return _fast_error("INVALID_SYMBOL", str(e.detail), field="symbol")
+    tp = time.monotonic()
+    try:
+        with _LOCK:
+            _SERVICE.prune_prepared(FAO.DEFAULT_TTL_S)
+            prepared = _SERVICE.prepare(draft)
+    except ExecutionError as e:
+        return _fast_error(e.code.value, e.detail or "پیش‌فرود رد شد",
+                           field=None, checks=e.checks,
+                           timings={"preview_ms":
+                                    round((time.monotonic() - t0) * 1000, 1)})
+    prepare_ms = round((time.monotonic() - tp) * 1000.0, 1)
+    tpay = time.monotonic()
+    payload = _wire_preview(draft) or {}
+    payload_ms = round((time.monotonic() - tpay) * 1000.0, 1)
+    risk_ok, risk_reason = _risk_gate()
+    halted, halt_why = _SERVICE.halted()
+    send_ready = bool(live and writes_open and not DRY_RUN
+                      and sess.get("proven") is True
+                      and prepared.sendable and risk_ok and not halted)
+    summary = FAO.summary_of(
+        draft, prepared, live=live, dry_run=dry, session=sess,
+        risk_ok=risk_ok, risk_reason=risk_reason, send_ready=send_ready)
+    summary["halted"] = bool(halted)
+    summary["halt_reason"] = str(halt_why or "")[:160]
+    snap = _FAST_ORDERS.create(prepared=prepared, payload=payload,
+                               epoch=_confirm_epoch(),
+                               token_ref=_fast_token_ref(), summary=summary)
+    calls_after = _fast_wire_calls()
+    total_ms = round((time.monotonic() - t0) * 1000.0, 1)
+    _note_timing("fast_preview_ms", total_ms)
+    out = snap.public()
+    out.update({
+        "status": "success",
+        "adapter": ADAPTER_KIND,
+        "live": live,
+        "dry_run": dry,
+        "send_ready": send_ready,
+        "session": sess,
+        "checks": dict(prepared.preflight.checks),
+        "reasons": dict(prepared.preflight.reasons),
+        "risk": {"ok": risk_ok, "reason": risk_reason},
+        "wire_hypothesis": (ADAPTER_KIND == "easytrader") and WIRE_HYPOTHESIS,
+        "timings": {"preview_ms": total_ms, "session_ms": auth_ms,
+                    "prepare_ms": prepare_ms, "payload_ms": payload_ms},
+        "network_calls": calls_after[len(calls_before):],
+        "next": "پس از بررسیِ خلاصه، تأییدِ صریح؛ ارسال فقط یک POST است",
+    })
+    return out
+
+
+@router.post("/api/execution/order/confirm")
+def post_order_confirm(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
+    """تأییدِ کاربر ← گیت‌هایِ محلی ← یک POST. صف/read-back این‌جا نیستند."""
+    t0 = time.monotonic()
+    token = str(body.get("prepared_token") or "").strip()
+    if not token:
+        return _fast_error("NOT_FOUND", "پیش‌نمایش پیدا نشد؛ سفارش تازه بسازید")
+    ok_cf, want_cf = _confirm_gate(body if isinstance(body, dict) else {})
+    if not ok_cf:
+        return _fast_error(
+            ErrorCode.CONFIRM_PHRASE_REQUIRED.value,
+            "عبارتِ تأیید لازم است؛ همان چیزی که رویِ دکمه می‌بینید را بنویسید",
+            expected_phrase=want_cf, confirm_gate="phrase_required",
+            dry_run=DRY_RUN, live=_live_now())
+    ok_gate, why_gate = _risk_gate()
+    if not ok_gate:
+        return _fast_error(ErrorCode.RISK_LIMIT.value, why_gate,
+                           risk_gate="not_configured", dry_run=DRY_RUN,
+                           live=_live_now())
+    halted, halt_why = _SERVICE.halted()
+    t_claim = time.monotonic()
+    try:
+        snap = _FAST_ORDERS.claim(token, epoch=_confirm_epoch(),
+                                  token_ref=_fast_token_ref(), halted=halted)
+    except FAO.FastOrderError as e:
+        return _fast_error(e.code, e.detail, dry_run=DRY_RUN, live=_live_now())
+    claim_ms = round((time.monotonic() - t_claim) * 1000.0, 1)
+    prepared = snap.prepared
+    if not DRY_RUN and not snap.summary.get("send_ready"):
+        _FAST_ORDERS.finish(token, phase="failed", code="NOT_READY",
+                            detail="پیش‌نمایش ارسال‌پذیر نبود")
+        return _fast_error("NOT_READY",
+                           "این پیش‌نمایش ارسال‌پذیر نبود (نشست/سقف/پیش‌فرود) — "
+                           "دوباره «بررسی و خلاصه» را بزنید",
+                           session=_session_label(), dry_run=False,
+                           live=_live_now())
+    # payload را خودِ adapter هنگامِ POST می‌سازد تا createDateTime لحظهٔ ارسال
+    # باشد؛ ساختنِ دوبارهٔ آن این‌جا فقط کلیدِ مسیرِ بحرانی را کند می‌کرد.
+    calls_before = _fast_wire_calls()
+    t_send = time.monotonic()
+    try:
+        with _LOCK:
+            _SERVICE.recheck_limits(prepared)
+            rec = _SERVICE.execute(prepared, verify=False)
+    except ExecutionError as e:
+        _FAST_ORDERS.finish(token, phase="failed", code=e.code.value,
+                            detail=e.detail)
+        return _fast_error(e.code.value, e.detail, checks=e.checks,
+                           dry_run=DRY_RUN, live=_live_now(),
+                           timings={"pre_send_ms":
+                                    round((t_send - t0) * 1000.0, 1)})
+    except BrokerError as e:
+        phase = "unknown" if e.is_unknown_result else "failed"
+        _FAST_ORDERS.finish(token, phase=phase, code=e.code.value,
+                            detail=e.detail)
+        if e.code in (ErrorCode.SESSION_EXPIRED, ErrorCode.AUTH_FAILED):
+            _void_confirmations("submit: session rejected")
+        stored = _SERVICE.record(prepared.draft.execution_id)
+        return _fast_error(e.code.value, e.detail,
+                           unknown_result=bool(e.is_unknown_result),
+                           retry_forbidden=bool(e.is_unknown_result),
+                           record=(_record_dict(stored) if stored else None),
+                           dry_run=DRY_RUN, live=_live_now())
+    t_done = time.monotonic()
+    calls_after = _fast_wire_calls()
+    timings = {
+        "claim_ms": claim_ms,
+        "pre_send_ms": round((t_send - t0) * 1000.0, 1),
+        "rtt_ms": getattr(rec, "rtt_ms", None),
+        "post_send_ms": round((t_done - t_send) * 1000.0, 1),
+        "total_ms": round((t_done - t0) * 1000.0, 1),
+        "clock": "monotonic",
+        "scope": "server: from request handler entry to response ready",
+    }
+    _note_timing("fast_confirm_pre_send_ms", timings["pre_send_ms"])
+    if timings["rtt_ms"] is not None:
+        _note_timing("fast_confirm_rtt_ms", timings["rtt_ms"])
+    _note_timing("fast_confirm_total_ms", timings["total_ms"])
+    record = _record_dict(rec)
+    unknown = rec.status is ExecutionStatus.UNKNOWN_RESULT
+    _FAST_ORDERS.finish(
+        token,
+        phase=("unknown" if unknown else
+               "sent" if rec.status in (ExecutionStatus.ACKNOWLEDGED,
+                                        ExecutionStatus.RECONCILED) else
+               "failed"),
+        code=(rec.error_code.value if rec.error_code else ""),
+        detail=rec.error_detail or "")
+    return {
+        "status": ("unknown_result" if unknown else
+                   "acknowledged" if rec.status is ExecutionStatus.ACKNOWLEDGED
+                   else rec.status.value),
+        "adapter": ADAPTER_KIND,
+        "dry_run": DRY_RUN,
+        "live": _live_now(),
+        "record": record,
+        "broker_order_id": rec.broker_order_id,
+        "unknown_result": unknown,
+        "retry_forbidden": True,
+        "read_back": "deferred",
+        "read_back_next": "POST /api/execution/refresh/%s" % rec.execution_id,
+        "halt_reason": halt_why if halted else None,
+        "timings": timings,
+        "network_calls": calls_after[len(calls_before):],
+        "payload_fields": sorted((snap.payload.get("order") or {}).keys())
+        if isinstance(snap.payload, Mapping) else [],
+        "note": ("درخواست ثبت شد (نه پذیرش/اجرا)؛ وضعیت را با refresh بخوانید"
+                 if rec.status is ExecutionStatus.ACKNOWLEDGED else
+                 rec.error_detail or ""),
+    }
+
+
 @router.get("/api/execution/schedule/{execution_id}")
 def get_schedule(execution_id: str) -> dict[str, Any]:
     return {"status": "success", **_schedule_status(execution_id)}
@@ -1249,6 +3477,158 @@ def post_refresh(execution_id: str) -> dict[str, Any]:
         raise HTTPException(404, f"{e.code.value}: {e.detail}") from None
     return {"status": "success", "record": _record_dict(rec),
             "observed_ms": round((time.monotonic() - t0) * 1000, 1)}
+
+
+_QUEUE_SERIES: dict[str, list[dict[str, Any]]] = {}
+_QUEUE_SERIES_LOCK = threading.Lock()
+#: نرخِ پایش با نرخِ قابلِ‌تحملِ کارگزاری سازگار است؛ سریع‌تر دقت نمی‌سازد.
+_QUEUE_POLL_MS = 10_000
+
+
+def _queue_contract() -> dict[str, Any]:
+    fn = getattr(_ACTIVE_ADAPTER, "queue_contract", None)
+    if callable(fn):
+        try:
+            return dict(fn())
+        except Exception:                         # noqa: BLE001 - شاهدِ فقط
+            pass
+    if ADAPTER_KIND == "easytrader":
+        return {
+            "api": {"path": "/ms/api/MarketSheet/order-place?actionType=get",
+                    "method": "GET", "header": "order-id",
+                    "response": "orderPlaces",
+                    "fields": ["orderId", "orderPlace", "volumeAhead"],
+                    "status": "IMPLEMENTED_AND_TESTED",
+                    "source": "RezaMahdaviiDev/mofid src/brokerages/easy/api/order.ts:291-301"},
+            "rank_semantics": {
+                "orderPlace": "raw value; 0/first not inferred",
+                "volumeAhead": "raw value; unit UNVERIFIED"},
+        }
+    return {"status": "NO_QUEUE_CONTRACT"}
+
+
+def _remember_queue(order_id: str, snap: Any) -> list[dict[str, Any]]:
+    if snap is None or not getattr(snap, "known", False):
+        return []
+    item = {"as_of": getattr(snap, "as_of", None),
+            "position": getattr(snap, "position", None),
+            "volume_ahead": getattr(snap, "volume_ahead", None),
+            "source": getattr(snap, "source", "")}
+    with _QUEUE_SERIES_LOCK:
+        arr = _QUEUE_SERIES.setdefault(str(order_id), [])
+        if not arr or arr[-1] != item:
+            arr.append(item)
+        del arr[:-50]
+        return [dict(x) for x in arr]
+
+
+def _queue_source_verified(contract: Mapping[str, Any]) -> bool:
+    """فقط trueِ صریح؛ قراردادِ مشاهده‌شده بدونِ پاسخِ واقعی، تأییدشده نیست."""
+    api = contract.get("api")
+    return (contract.get("source_verified") is True
+            or (isinstance(api, Mapping) and api.get("source_verified") is True))
+
+
+def _queue_monitor() -> dict[str, Any]:
+    """فهرستِ سفارش‌هایِ واقعی + جایگاهِ صف، بدونِ ساختِ رتبه/ID.
+
+    Mofid: جایگاه با POST یا UI است و در این راند GET-only صدا زده نمی‌شود؛
+    پس `UNSUPPORTED_READ_ONLY` با علتِ صریح، نه صفر.
+    """
+    now = time.strftime("%Y-%m-%dT%H:%M:%S")
+    contract = _queue_contract()
+    source_verified = _queue_source_verified(contract)
+    block = _source_block()
+    if block:
+        return {"status": "blocked", "supported": False, "queue_supported": False,
+                "rows": [], "reason": block[1], "contract": contract,
+                "claims_first_rank": False, "observed_at": now,
+                "queue_source_verified": source_verified,
+                "queue_result_known": False,
+                "poll_interval_ms": _QUEUE_POLL_MS}
+    caps = _ACTIVE_ADAPTER.capabilities()
+    if not caps.list_orders:
+        return {"status": "success", "supported": False, "queue_supported": False,
+                "rows": [], "reason": "کارگزاری فهرست سفارش نمی‌دهد",
+                "contract": contract, "claims_first_rank": False,
+                "observed_at": now, "queue_source_verified": source_verified,
+                "queue_result_known": False,
+                "poll_interval_ms": _QUEUE_POLL_MS}
+    try:
+        records = _ACTIVE_ADAPTER.get_orders()
+    except BrokerError as e:
+        return {"status": "error", "supported": True,
+                "queue_supported": bool(caps.queue_position), "rows": [],
+                "reason": "%s: %s" % (e.code.value, str(redact(e.detail))[:160]),
+                "contract": contract, "claims_first_rank": False,
+                "observed_at": now, "queue_source_verified": source_verified,
+                "queue_result_known": False,
+                "poll_interval_ms": _QUEUE_POLL_MS}
+    rows: list[dict[str, Any]] = []
+    for rec in records:
+        oid = str(rec.broker_order_id or "")
+        snap = None
+        queue_status = "UNKNOWN"
+        queue_reason = ""
+        if not caps.queue_position:
+            queue_status = "UNSUPPORTED_READ_ONLY"
+            queue_reason = (
+                "جایگاهِ مفید با POST /Order/OrderPlace خوانده می‌شود؛ در این راند فقط GET مجاز است"
+                if ADAPTER_KIND == "mofid" else "کارگزاری مسیرِ جایگاه نمی‌دهد")
+        elif not oid:
+            queue_status = "NO_ORDER_ID"
+            queue_reason = "این ردیف شناسهٔ سفارشِ کارگزاری ندارد"
+        else:
+            try:
+                snap = _ACTIVE_ADAPTER.get_queue_position(oid)
+            except BrokerError as e:
+                queue_status = "ERROR"
+                queue_reason = "%s: %s" % (e.code.value,
+                                          str(redact(e.detail))[:120])
+            except Exception as e:                # noqa: BLE001 - مرزِ adapter
+                queue_status = "ERROR"
+                queue_reason = type(e).__name__
+            else:
+                if snap is not None and snap.known:
+                    queue_status = "KNOWN"
+                else:
+                    queue_status = "UNKNOWN"
+                    queue_reason = "مسیرِ جایگاه برای این سفارش مقدار نداد"
+        series = _remember_queue(oid, snap) if oid else []
+        rows.append({
+            "order_id": oid or None,
+            "symbol": rec.symbol, "isin": rec.isin,
+            "side": rec.side.value, "price": rec.price,
+            "quantity": rec.quantity, "filled_quantity": rec.filled_quantity,
+            "execution_status": rec.status.value,
+            "order_state": rec.order_state.value,
+            "queue_status": queue_status,
+            "queue_position": (snap.position if snap is not None else None),
+            "volume_ahead": (snap.volume_ahead if snap is not None else None),
+            "queue_source": (snap.source if snap is not None else "none"),
+            "queue_as_of": (snap.as_of if snap is not None else None),
+            "queue_freshness": ("ADAPTER_LOCAL_AS_OF" if snap is not None
+                                else "UNVERIFIED"),
+            "position_semantics": "RAW_ORDER_PLACE; 0 is not interpreted as first",
+            "volume_ahead_unit": "UNVERIFIED",
+            "queue_reason": queue_reason,
+            "queue_series": series,
+            "read_back": ("LIST_ROW" if oid else "NO_ORDER_ID"),
+            "events": list(rec.events)[-5:],
+        })
+    return {"status": "success", "supported": True,
+            "queue_supported": bool(caps.queue_position), "rows": rows,
+            "reason": "" if rows else "هیچ سفارشِ باز یا امروزیِ واقعی برای پایش نیست",
+            "contract": contract, "claims_first_rank": False,
+            "observed_at": now, "queue_source_verified": source_verified,
+            "queue_result_known": any(r["queue_status"] == "KNOWN" for r in rows),
+            "poll_interval_ms": _QUEUE_POLL_MS,
+            "source": "adapter:%s" % ADAPTER_KIND}
+
+
+@router.get("/api/execution/queue-monitor")
+def get_queue_monitor() -> dict[str, Any]:
+    return _queue_monitor()
 
 
 @router.get("/api/execution/queue/{execution_id}")
@@ -1340,9 +3720,16 @@ def post_halt(body: dict[str, Any] = Body(default={})) -> dict[str, Any]:
     # باشد و «توقف» نباید پشتِ آن بایستد. خودِ ledger قفلِ رشته‌ایِ دارد.
     _AUDIT.set_kill(state, reason, actor=str(body.get("actor") or "user"))
     aborted = _halt_pending(reason)
+    durable_review = 0
+    try:
+        if _SCHEDULE_STORE is not None:
+            durable_review = _SCHEDULE_STORE.set_kill(reason)
+    except Exception:                       # noqa: BLE001 - halt نباید بشکند
+        durable_review = 0
     return {"status": "success", "kill_switch": _AUDIT.kill_state(),
             "halted": _AUDIT.halted(), "reason": reason,
             "aborted_schedules": aborted,
+            "durable_schedules_needs_review": durable_review,
             "dry_run": DRY_RUN, "adapter": ADAPTER_KIND}
 
 

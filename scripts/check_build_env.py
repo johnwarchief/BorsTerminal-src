@@ -29,6 +29,9 @@ PROBES = [
     # پنجره را از دست می‌دهد — و همین باعث شد ماه‌ها ناشناسه بماند.
     ("pywebview", "webview"),
     ("pythonnet", "pythonnet"),
+    # Strategyهای مرورگری: نبودش اپ را نمی‌خواباند، ولی بیلدِ رسمی باید
+    # آن را داشته باشد تا browser strategies در Frozen به‌اشتباه UNAVAILABLE نشوند.
+    ("playwright", "playwright"),
     ("pyinstaller", "PyInstaller"),
     # سه مسیرِ خروجی (`api/_export.py`): هر سه درِ `requirements.txt` و
     # `hiddenimports` هستند، ولی این فهرست دستی است — یعنی نبودنشان تا

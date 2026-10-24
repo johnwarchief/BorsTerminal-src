@@ -32,12 +32,14 @@ from api import execution as EX                                        # noqa: E
 from execution_contract import BrokerError, ErrorCode, SessionState    # noqa: E402
 from execution_easytrader import (EasyTraderAdapter, WireResponse,     # noqa: E402
                                   WIRE_BASE_URL, WIRE_PATH_ORDER_CREATE,
-                                  WIRE_PATH_ORDER_LIST, WIRE_PATH_SERVER_TIME)
+                                  WIRE_PATH_ORDER_LIST)
 
 SECRET = "super-secret-token-value-for-guard-only"
 #: همان «مسیرِ دیدہ‌شدہ» که درِ ماتریس capture عمومی است — از ثابتِ خودِ ماژول برداشته
 #: می‌شود تا گارد به عددِ دستِ‌نویسِ تاریخ‌خورده گره نخورد.
-SERVER_TIME = WIRE_PATH_SERVER_TIME
+#: مسیرِ server-time بدونِ timestamp در 2026-10-20 رویِ نشستِ واقعی 404 بود؛
+#: کاندیدِ مشاهده‌شدهٔ باقی‌مانده همان TradingTime است.
+SESSION_PROBE = "/symbols/api/TradingTime"
 PASS = FAIL = 0
 
 
@@ -94,9 +96,9 @@ def draft_for(eid):
 print("dev/broker_connect_v1120 — تنظیمِ اتصال، فقط‌خواندنی، شاهدِ نشست")
 
 # ── ۱) تنظیم: انتخابِ آداپتور از خودِ برنامه، با مقدم بودنِ env ──────────────
-ck(ES._normalise("adapter", "mofid") == "easytrader"
+ck(ES._normalise("adapter", "mofid") == "mofid"
    and ES._normalise("adapter", "EASYTRADER") == "easytrader",
-   "۱) نامِ کارگزاری و بزرگ/کوچکی به یک آداپتور می‌رسند")
+   "۱) Mofid آداپتورِ مستقل است (نه alias) و بزرگ/کوچکی نرمال می‌شود")
 for bad_key, bad_val in (("token", "x"), ("secret", "x"), ("adapter", "binance"),
                          ("read_only", "maybe")):
     try:
@@ -172,19 +174,19 @@ ck(a.session_proof.get("path") == WIRE_PATH_ORDER_LIST
    str(a.session_proof)[:140])
 
 # ── ۴) مسیرِ حدسی ۴۰۴ ⇒ شاهد ازِ مسیرِ دیدہ‌شدہ ─────────────────────────────
-t2 = PathTransport({SERVER_TIME: (200, {"diff": 45, "serverTimestamp": 1767700032066})})
+t2 = PathTransport({SESSION_PROBE: (200, {"ok": True})})
 b = EasyTraderAdapter(transport=t2, token=SECRET, writes_allowed=False)
 st2 = b.authenticate()
 ck(st2.state is SessionState.CONNECTED,
    "۴) ۴۰۴ رویِ «فهرستِ سفارش» نشست را باطل اعلام نمی‌کند",
    str(t2.calls)[:150])
 ck(b.session_proof.get("kind") == "observed-read-only"
-   and str(b.session_proof.get("path") or "").startswith(SERVER_TIME),
+   and str(b.session_proof.get("path") or "").startswith(SESSION_PROBE),
    "۴) اتصال ازِ مسیرِ مشاهده‌شده ثابت شد، نه ازِ کدِ شخصِ ثالث",
    str(b.session_proof)[:150])
 
 # ── ۵) کنترلِ منفی: ۴۰۱ هیچ‌وقت «متصل» نمی‌شود ─────────────────────────────
-t3 = PathTransport({SERVER_TIME: (401, {"isSuccessful": False, "message": "expired"}),
+t3 = PathTransport({SESSION_PROBE: (401, {"isSuccessful": False, "message": "expired"}),
                     WIRE_PATH_ORDER_LIST: (401, {"isSuccessful": False,
                                                  "message": "expired"})})
 c = EasyTraderAdapter(transport=t3, token=SECRET, writes_allowed=False)
@@ -285,10 +287,10 @@ try:
     ck("نشست" in why and "BORS_EXECUTION_LIVE=1 لازم است" not in why,
        "۹) کمبودِ اصلی «نشستِ شما» گزارش می‌شود، نه روشن‌کردنِ درِ ارسال", why[:170])
     p9 = EX.get_portfolio()
-    ck(p9["status"] == "unverified_session" and "/api/execution/session" in str(p9["error"])
-       and "restart" not in str(p9["error"]),
+    ck(p9["status"] == "blocked" and p9["state"] == "ACCOUNT_SOURCE_BLOCKED"
+       and "وارد شوید" in str(p9["error"]) and "restart" not in str(p9["error"]),
        "۹) پرتفوی بی‌نشست «restart لازم است» نمی‌گوید؛ می‌گوید وارد شوید",
-       "%s: %s" % (p9["status"], str(p9["error"])[:110]))
+       "%s: %s" % (p9["state"], str(p9["error"])[:110]))
     ck(p9["rows"] is None, "۹) بی‌پرسشِ موفق هیچ ردیفی ساخته نمی‌شود", str(p9["rows"]))
     # `/connect` باید همان راستِ `/status` را بگوید. گره‌زدنِ `traffic_mode` به
     # `adapter.live` (که توکن می‌خواهد) درِ سنجشِ زنده با «ترافیک مجاز»ِ `/status`
@@ -303,9 +305,10 @@ try:
        "۹) ترانسپورتِ ردکننده ⇒ blocked (کنترلِ منفیِ همان برچسب)")
     EX.TRAFFIC_ALLOWED = False
     p10 = EX.get_portfolio()
-    ck(p10["status"] == "blocked" and "تنظیمِ اتصال" in str(p10["error"]),
+    ck(p10["status"] == "blocked" and p10["state"] == "ACCOUNT_SOURCE_BLOCKED"
+       and "خاموش" in str(p10["error"]) and "وارد شوید" not in str(p10["error"]),
        "۹) کنترلِ منفی: باِ ترافیکِ بسته پیامِ همان حالت می‌آید، نه پیامِ نشست",
-       p10["status"])
+       "%s: %s" % (p10["state"], str(p10["error"])[:110]))
 finally:
     (EX.ADAPTER_KIND, EX.LIVE_REQUESTED, EX.READ_ONLY_REQUESTED, EX.TRAFFIC_ALLOWED,
      EX.DRY_RUN, EX._ACTIVE_ADAPTER, EX._CFG) = _saved

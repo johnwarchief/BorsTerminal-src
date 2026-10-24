@@ -32,6 +32,7 @@ from __future__ import annotations
 
 import json
 import os
+import threading
 import time
 from dataclasses import dataclass
 from datetime import datetime
@@ -39,6 +40,7 @@ from typing import Any, Callable, Iterable, Mapping
 from urllib.parse import urlparse
 
 import execution_timing as TT
+import execution_write_contract as WC
 from execution_contract import (
     BrokerAdapter, BrokerError, Capabilities, ErrorCode, ExecutionRecord,
     ExecutionStatus, InstrumentRef, OrderDraft, OrderMode, OrderState,
@@ -56,8 +58,9 @@ WIRE_HYPOTHESIS = True
 # ── ۱) ثابت‌هایِ سیم — تنها جایِ نگهداریِ شکلِ پروتکل ────────────────────────
 #: میزبان. شاهد: `m-fazel/Sarkhati@c7c9487 src/easy_trader.rs:17`.
 WIRE_BASE_URL = "https://api-mts.orbis.easytrader.ir"
-#: ثبتِ سفارش. شاهد: `RezaMahdaviiDev/mofid@72a2e8c src/brokerages/easy/api/order.ts:119-132`.
-WIRE_PATH_ORDER_CREATE = "/core/api/v2/order"
+#: ثبتِ سفارش. شاهدِ تازه: کدِ خودِ وب‌اپِ اول‌طرفی (main-XW5OZAYT.js،
+#: `createOrder` → POST `core/api/v2/order` با `{order: …}`)، ۲۰۲۶-۱۰-۲۱.
+WIRE_PATH_ORDER_CREATE = WC.ENDPOINT
 #: فهرستِ سفارش‌ها — درِ مرجع hardcode است و از Settings رد نمی‌شود
 #: (`order.ts:222`). این همان یکۀ reconcile است: تنها چیزی که ابهامِ timeout را
 #: تعیین تکلیف می‌کند.
@@ -73,6 +76,12 @@ WIRE_PATH_QUEUE = "/ms/api/MarketSheet/order-place"
 #: آزموده‌نشده باقی می‌ماند تا درِ نشستِ مجاز دیده شود؛ بی‌پاسخ یعنی «ساعتِ
 #: کارگزاری در دسترس نیست»، نه «ساعتِ ما درست است».
 WIRE_PATH_SERVER_TIME = "/easy/api/account/server-time"
+#: منابعِ حساب — همان مسیرهایی که وب‌اپِ رسمیِ کارگزاری در نشستِ مشاهده‌شده صدا
+#: زد (۲۰۲۶-۱۰-۲۱). schema هر کدام جدا سنجیده می‌شود؛ هیچ‌کدام مجوزِ نوشتن نیست.
+WIRE_PATH_MARKET_WATCH = "/easy/api/MarketWatch"
+WIRE_PATH_ASSET_PERFORMANCE = "/assetmodule/api/performance"
+WIRE_PATH_MONEY = "/easy/api/money"
+WIRE_SOURCE_FIRST_PARTY_WEB = "first-party-web-app (observed 2026-10-21)"
 
 #: منشأِ هر مسیر درِ یکِ جمله، تا «فرضیه» و «دیده‌شده» از هم جدا بمانند (§۳-۲).
 #: • `WIRE_BASE_URL`  : حالا دو شاهد دارد — کدِ شخصِ ثالث، و پیکربندیِ
@@ -80,16 +89,18 @@ WIRE_PATH_SERVER_TIME = "/easy/api/account/server-time"
 #:   ⇒ `"apiPath":"https://api-mts.orbis.easytrader.ir/boot/api/build-number?…"`
 #: • `boot/api/build-number` : فقط‌خواندنی و بی‌نیازِ نشست ⇒ مناسبِ «میزبان سالم
 #:   است» — و هرگز شاهدِ نشست نیست.
-#: • `easy/api/account/server-time`، `symbols/api/TradingTime`،
-#:   `easy/api/clientAppSetting` : درِ نشستِ 2026-10-17 باِ GETِ فقط‌خواندنی
-#:   **۴۰۱ + `www-authenticate: Bearer`** برگرداندند؛ پس «۴۰۱ یا ۲۰۰» داوریِ
-#:   دوضابطهٔ نشست می‌دهد. معنایِ بدنۀِ ۲۰۰ هنوز دیده نشده ⇒ فرضیه.
+#: • `symbols/api/TradingTime` و `easy/api/clientAppSetting`: درِ نشستِ
+#:   2026-10-20 باِ GETِ فقط‌خواندنی ۲۰۰ دادند. مسیرِ
+#:   `easy/api/account/server-time` بدونِ timestamp در همان سنجش 404 بود؛
+#:   فقط شکلِ timestamp‌دارش در `server_clock()` پاسخ داد.
 #: • `/core/api/v2/order` و `/core/api/order`: فقط درِ کدِ شخصِ ثالث. هیچ سندِ
 #:   رسمیِ API نیست (swagger/openapi/docs ⇒ ۴۰۳). `WIRE_HYPOTHESIS` برایِ
 #:   سفارشِ واقعی پس تا دیدنِ پاسخِ واقعی درِ نشستِ مجاز true می‌ماند.
 WIRE_PROBE_HOST_HEALTH = "/boot/api/build-number"
+#: مسیرِ بدونِ timestamp در 2026-10-20 رویِ نشستِ واقعی 404 داد؛ کاندیدهایِ
+#: اینجا هر دو 200 دادند. شکلِ timestamp‌دارِ server-time فقط در `server_clock()`.
 WIRE_SESSION_PROBE_CANDIDATES = (
-    "/easy/api/account/server-time", "/symbols/api/TradingTime",
+    "/symbols/api/TradingTime",
     "/easy/api/clientAppSetting",
 )
 
@@ -97,12 +108,11 @@ WIRE_SESSION_PROBE_CANDIDATES = (
 #: (`Sarkhati src/easy_trader.rs:62-80`). بدنۀِ تختِ Online-Plus/Titan عمداً
 #: اینجا نمی‌آید؛ آن پروتکلِ دیگری است.
 WIRE_ENVELOPE_KEY = "order"
-WIRE_SIDE_BUY = 0        #: `order.ts:13-25` — جهت **عددی** است، نه رشته
-WIRE_SIDE_SELL = 1
-WIRE_VALIDITY_TYPE = 0
-WIRE_ORDER_MODEL_TYPE = 1
-WIRE_ORDER_FROM = 34      #: معنایش درِ هیچ مرجعی مستند نیست — ماتریس §۲، UNVERIFIED
-WIRE_COMMISSION = 0.0012  #: دامنه/واحدش تأیید نشده — همان‌جا UNVERIFIED
+WIRE_SIDE_BUY = WC.SIDE_BUY      #: enumِ کلاینتِ اول‌طرفی: 0=Buy
+WIRE_SIDE_SELL = WC.SIDE_SELL    #: 1=Sell
+WIRE_VALIDITY_TYPE = WC.VALIDITY_DAY
+WIRE_ORDER_MODEL_TYPE = WC.ORDER_MODEL_OMS
+WIRE_ORDER_FROM = WC.ORDER_FROM_STOCK_DESKTOP  #: OrbisDesktop=34 (enum اول‌طرفی)
 
 WIRE_KEY_ISIN = "symbolIsin"        #: شناسۀ سفارش ISIN است، نه ins_code
 WIRE_KEY_SYMBOL = "symbolName"
@@ -242,6 +252,8 @@ class WireVerdict:
     ambiguous: bool
     detail: str = ""
     retry_after_ms: int | None = None
+    #: 2xx + isSuccessful + id یعنی «درخواست ثبت شد»، نه «سفارش پذیرفته/اجرا شد».
+    request_registered: bool = False
 
     @property
     def is_unknown_result(self) -> bool:
@@ -460,7 +472,7 @@ def interpret_easytrader_response(status: int, body: Any, *,
       ۴۰۸                → TIMEOUT          — نامعلوم؛ فقط reconcile
       ۵xx                → NETWORK_ERROR    — نامعلوم؛ سرور شاید پذیرفته باشد
       ۳xx                → UNKNOWN_RESULT   — رویِ POST بازارسالِ بدن را نمی‌پذیریم
-      ۲xx و flag=true و بی omsError → پذیرش، و status از متنِ پاسخ
+      ۲xx و flag=true و بی omsError → «درخواست ثبت شد» (نه پذیرش/اجرا)
       ۲xx و flag=false              → رد، **حتی با `id`** (spec مرجع :107-120)
       ۲xx و flag نباشد              → UNKNOWN_RESULT — سکوتِ پاسخ پذیرش نیست
       ۲xx و بدنۀ غیرقابل‌خواندن     → UNKNOWN_RESULT — HTML/صفحۀِ ورودِ مجدد
@@ -531,29 +543,26 @@ def interpret_easytrader_response(status: int, body: Any, *,
                            OrderState.REJECTED, None,
                            head, errs, code, False, "%s: ردِ OMS" % where, after)
     return WireVerdict(True, None, state, oid, head, errs, code, False,
-                       "%s: پذیرفته شد" % where, after)
+                       "%s: درخواست ثبت شد — وضعیت از فهرست خوانده می‌شود" % where,
+                       after, request_registered=True)
 
 
 # ── ۴) بدنۀِ سفارش — یگانه جایِ ساختِ payload ───────────────────────────────
-def easytrader_payload(draft: OrderDraft) -> dict[str, Any]:
-    """مدلِ داخلی ← بدنۀِ `{"order":{…}}`.
+def easytrader_payload(draft: OrderDraft, *,
+                       validity_type: int = WIRE_VALIDITY_TYPE,
+                       validity_date: str | None = None,
+                       commission: float | None = None,
+                       total_value: float | None = None) -> dict[str, Any]:
+    """مدلِ داخلی ← بدنۀِ `{"order":{…}}` از قراردادِ بازسازی‌شدهٔ اول‌طرفی.
 
-    هیچ مقداری اینجا حدس نمی‌شود: ISIN از `InstrumentRef` می‌آید و نبودش یعنی
-    `submit_order` هرگز تا اینجا نمی‌رسد (`orderable()` جلوی‌اش را می‌گیرد).
+    فیلدهایِ client-summary (`commission`/`totalValue`) فقط با مقدارِ قابل‌دفاع
+    می‌آیند؛ نبودشان «صفرِ ساختگی» نیست. ISIN از `InstrumentRef` می‌آید و نبودش
+    یعنی `submit_order` هرگز تا اینجا نمی‌رسد (`orderable()` جلوی‌اش را می‌گیرد).
     """
-    inner = {
-        WIRE_KEY_ISIN: draft.instrument.isin,
-        WIRE_KEY_SYMBOL: draft.instrument.symbol,
-        WIRE_KEY_PRICE: draft.price,
-        WIRE_KEY_QUANTITY: draft.quantity,
-        WIRE_KEY_SIDE: WIRE_SIDE_BUY if draft.side is Side.BUY else WIRE_SIDE_SELL,
-        "validityType": WIRE_VALIDITY_TYPE,
-        "orderModelType": WIRE_ORDER_MODEL_TYPE,
-        "orderFrom": WIRE_ORDER_FROM,
-        "commission": WIRE_COMMISSION,
-        WIRE_KEY_CREATED: client_clock_label(),
-    }
-    return {WIRE_ENVELOPE_KEY: inner}
+    return WC.build_payload(draft, created_at=client_clock_label(),
+                            validity_type=validity_type,
+                            validity_date=validity_date,
+                            commission=commission, total_value=total_value)
 
 
 def _code_from_reason(reason: str) -> ErrorCode:
@@ -568,9 +577,11 @@ def _code_from_reason(reason: str) -> ErrorCode:
 #: تواناییِ اعلامیِ این پروتکل از رویِ پنج مخزن. `cancel` درِ هیچ مرجعی پیاده نشده
 #: بود و `balances` هیچ‌جا دیده نشد ⇒ صریح False، تا «بی‌داده» از «صفر» جدا بماند
 #: (§۱۶ و §۱۸ دستورِ کار).
+#: مسیرهای money/assetmodule در وب‌اپِ رسمی دیده شدند (۲۰۲۶-۱۰-۲۱)؛ پس
+#: `balances` خواندنی است — این هرگز مجوزِ نوشتن یا تأییدِ قرارداد سفارش نیست.
 PROTOCOL_CAPS = Capabilities(place=True, list_orders=True, order_state=True,
                              queue_position=True, cancel=False, best_bid_ask=False,
-                             balances=False)
+                             balances=True)
 NO_CAPS = Capabilities(place=False, list_orders=False, order_state=False,
                        queue_position=False, cancel=False, best_bid_ask=False,
                        balances=False)
@@ -579,7 +590,7 @@ NO_CAPS = Capabilities(place=False, list_orders=False, order_state=False,
 #: ارسالِ سفارش آزاد نیست.
 _READ_ONLY_CAPS = Capabilities(place=False, list_orders=True, order_state=True,
                                queue_position=True, cancel=False, best_bid_ask=False,
-                               balances=False)
+                               balances=True)
 
 
 @dataclass(frozen=True)
@@ -664,7 +675,8 @@ def wire_hosts() -> tuple[str, ...]:
     return tuple(dict.fromkeys((base.lower(),) + extra if base else extra))
 
 
-def _validated_base_url(base_url: str | None) -> str:
+def _validated_base_url(base_url: str | None, *,
+                        allow_loopback_port: bool = False) -> str:
     """هر پرسشی که ازِ این درِ می‌گذارد `Authorization`ِ کاربر را حمل می‌کند.
 
     بی‌این نگهبان، یکِ `base_url`ِ اشتباه (یا یکِ تنظیمِ تازه درِ آینده) توکنِ
@@ -686,7 +698,11 @@ def _validated_base_url(base_url: str | None) -> str:
     if "@" in (p.netloc or "") or "\\" in raw:
         raise ValueError("wire base url: userinfo یا جداکننده درِ نشانی مجاز نیست")
     if port not in (None, 443):
-        raise ValueError("wire base url: فقط بندرِ ۴۴۳ مجاز است: %r" % (port,))
+        # seamِ صریح و فقط-loopback برایِ Mockِ محلیِ بنچمارک؛ production این
+        # پارامتر را نمی‌فرستد و همان قیدِ ۴۴۳ برجا می‌ماند.
+        loopback = host in ("127.0.0.1", "localhost", "::1")
+        if not (allow_loopback_port and loopback):
+            raise ValueError("wire base url: فقط بندرِ ۴۴۳ مجاز است: %r" % (port,))
     if host not in wire_hosts():
         raise ValueError("wire base url: میزبان درِ فهرستِ مجاز نیست: %s" % host)
     if p.path not in ("", "/"):
@@ -697,6 +713,8 @@ def _validated_base_url(base_url: str | None) -> str:
 class EasyTraderAdapter(BrokerAdapter):
     """آداپتورِ EasyTrader/Orbis-MTS، با ترافیکِ تزریقی و بی‌هیچ ادعایِ تأیید."""
     name = ADAPTER_NAME
+    #: پایشِ هم‌زمانِ همان سفارش نباید GETِ تکراری بزند؛ as_ofِ اصلی حفظ می‌شود.
+    QUEUE_CACHE_TTL_S = 2.0
 
     def __init__(self, *, transport: Transport | None = None,
                  token: Any = None, base_url: str | None = None,
@@ -704,10 +722,12 @@ class EasyTraderAdapter(BrokerAdapter):
                  capabilities: Capabilities | None = None,
                  timeouts: Timeouts | None = None,
                  writes_allowed: bool = True,
+                 allow_loopback_base_url: bool = False,
                  clock: Callable[[], float] = time.time) -> None:
         self._transport = transport or RefusingTransport()
         self._token = token if isinstance(token, _Secret) else _Secret(token)
-        self.base_url = _validated_base_url(base_url)
+        self.base_url = _validated_base_url(
+            base_url, allow_loopback_port=allow_loopback_base_url)
         self._caps_override = capabilities
         #: «ترافیک وصل است» با «ارسالِ سفارش آزاد است» دو چیز است. خواندنِ نشست
         #: نباید منتظرِ کلیدِ نوشتن بماند (درِ v1.0.93 هر دو با هم قفل بودند، پس
@@ -735,6 +755,10 @@ class EasyTraderAdapter(BrokerAdapter):
         #: تنها همین‌ها مدرکِ «وجود درِ سمتِ سرور»اند؛ پذیرشِ POST به‌تنهایی نه.
         self._observed_ids: set[str] = set()
         self.queue_by_order: dict[str, QueueSnapshot] = {}
+        #: قفلِ per-order + زمانِ دریافت؛ دو تب هم‌زمان یک GET می‌زنند، نه دو.
+        self._queue_locks: dict[str, threading.Lock] = {}
+        self._queue_locks_guard = threading.Lock()
+        self._queue_fetched_mono: dict[str, float] = {}
         #: فقطِ برچسبِ عملیات، نه بدن و نه سر — برایِ اثباتِ «چیزی بیرون نرفت».
         self.wire_calls: list[str] = []
         #: ردِّپایِ ترافیک، همه از `redact()` گذشته.
@@ -844,13 +868,18 @@ class EasyTraderAdapter(BrokerAdapter):
             del self.redacted_log[:-200]
 
     def _call(self, method: str, path: str, *, tag: str, timeout_s: float,
-              payload: Any = None, headers: Mapping[str, str] | None = None) -> WireResponse:
+              payload: Any = None, headers: Mapping[str, str] | None = None,
+              log_body: bool = True) -> WireResponse:
         self.wire_calls.append("%s:%s" % (tag, method))
         if not self.live:
             raise BrokerError(ErrorCode.UNSUPPORTED,
                               "اتصالِ زنده وصل نیست — هیچ درخواستی ساخته نشد")
         url = self.base_url + path
         hdrs = self._headers(headers)
+        # WAFِ کارگزاری هر GETِ دارایِ Content-Type را با 200 + HTML پاسخ می‌دهد
+        # (سنجشِ 2026-10-20)؛ بدنه‌دارها Content-Type را نگه می‌دارند.
+        if payload is None:
+            hdrs.pop("Content-Type", None)
         t0 = time.monotonic()
         try:
             resp = self._transport.request(method=method, url=url, headers=hdrs,
@@ -867,12 +896,35 @@ class EasyTraderAdapter(BrokerAdapter):
         except TransportNetwork as e:
             raise BrokerError(ErrorCode.NETWORK_ERROR,
                               "%s: خطایِ شبکه/اتصال — نتیجه نامعلوم" % tag) from None
-        self._log_exchange({"tag": tag, "method": method, "url": url,
-                            "status": resp.status,
-                            "elapsed_ms": round((time.monotonic() - t0) * 1000, 1),
-                            "authorization": hdrs.get("Authorization"),
-                            "body_head": (resp.body or "")[:120]})
+        entry = {"tag": tag, "method": method, "url": url,
+                 "status": resp.status,
+                 "elapsed_ms": round((time.monotonic() - t0) * 1000, 1),
+                 "authorization": hdrs.get("Authorization")}
+        if log_body:
+            entry["body_head"] = (resp.body or "")[:120]
+        self._log_exchange(entry)
         return resp
+
+    def _read_json(self, path: str, tag: str,
+                   timeout_s: float | None = None) -> Any:
+        """GETِ فقط‌خواندنیِ یک منبعِ حساب؛ بدنه هرگز در log نمی‌نشیند."""
+        resp = self._call("GET", path, tag=tag,
+                          timeout_s=timeout_s or self.timeouts.read_s,
+                          log_body=False)
+        if resp.status in (401, 403):
+            v = interpret_easytrader_response(resp.status, resp.body, where=tag,
+                                              headers=resp.headers)
+            self._apply_session_verdict(v)
+            raise BrokerError(v.error or ErrorCode.UNKNOWN_RESULT, v.detail,
+                              broker_message=v.message)
+        if not (200 <= resp.status < 300):
+            raise BrokerError(ErrorCode.UNKNOWN_RESULT,
+                              "%s: HTTP %d — بدنه ثبت نشد" % (tag, resp.status))
+        try:
+            return json.loads(resp.body or "")
+        except (ValueError, TypeError):
+            raise BrokerError(ErrorCode.UNKNOWN_RESULT,
+                              "%s: پاسخ JSON نبود" % tag) from None
 
     # ---- ۶) نشست -----------------------------------------------------------
     def session_probe(self) -> dict[str, Any]:
@@ -1027,6 +1079,7 @@ class EasyTraderAdapter(BrokerAdapter):
         intent.attempts = 1
 
         try:
+            send_mono = time.monotonic()
             resp = self._call("POST", WIRE_PATH_ORDER_CREATE, payload=payload,
                               tag="submit", timeout_s=self.timeouts.order_post_s)
         except BrokerError as e:
@@ -1039,7 +1092,8 @@ class EasyTraderAdapter(BrokerAdapter):
         v = interpret_easytrader_response(resp.status, resp.body, where="submit",
                                           headers=resp.headers)
         self.last_verdict = v
-        rec.rtt_ms = self._ms_since(rec.actual_send_at)
+        # RTT فقط از ساعتِ یکنوا؛ اختلافِ ساعتِ دیواری می‌تواند منفی/بی‌معنا شود.
+        rec.rtt_ms = round((time.monotonic() - send_mono) * 1000.0, 1)
         rec.response_at = self._clock()
 
         if v.accepted is None:
@@ -1062,6 +1116,8 @@ class EasyTraderAdapter(BrokerAdapter):
         rec.status = ExecutionStatus.ACKNOWLEDGED
         rec.broker_order_id = v.broker_order_id
         rec.order_state = v.state
+        rec.note("request registered (HTTP 2xx + isSuccessful) — "
+                 "acceptance/fill must be read back; not claimed here")
         rec.note(v.detail)
         if v.broker_order_id:
             intent.broker_order_id = v.broker_order_id
@@ -1246,14 +1302,65 @@ class EasyTraderAdapter(BrokerAdapter):
         return self.server_orders.get(rid)
 
     # ---- ۱۰) صف — فقط نمایش، با واحدِ نامعلوم (قفلِ ۸) ─────────────────────
+    def _queue_order_lock(self, key: str) -> threading.Lock:
+        with self._queue_locks_guard:
+            return self._queue_locks.setdefault(key, threading.Lock())
+
     def get_queue_position(self, broker_order_id: str) -> QueueSnapshot | None:
         if not self.capabilities().queue_position:
             return None                    # بی‌داده، نه صفر
-        resp = self._call("GET", WIRE_PATH_QUEUE + "?actionType=get",
-                          headers={WIRE_HEADER_ORDER_ID: str(broker_order_id)},
-                          tag="queue", timeout_s=self.timeouts.read_s)
-        if not (200 <= resp.status < 300):
-            return None
+        key = str(broker_order_id)
+        with self._queue_order_lock(key):
+            cached = self.queue_by_order.get(key)
+            fetched = self._queue_fetched_mono.get(key)
+            if (cached is not None and fetched is not None
+                    and (time.monotonic() - fetched) < self.QUEUE_CACHE_TTL_S):
+                return cached
+            resp = self._call("GET", WIRE_PATH_QUEUE + "?actionType=get",
+                              headers={WIRE_HEADER_ORDER_ID: key},
+                              tag="queue", timeout_s=self.timeouts.read_s)
+            if resp.status in (401, 403):
+                # خواندنِ صف هم نشست را می‌سنجد؛ 401 نباید به «بی‌مقدار» تبدیل شود.
+                v = interpret_easytrader_response(resp.status, resp.body,
+                                                  where="queue",
+                                                  headers=resp.headers)
+                self._apply_session_verdict(v)
+                raise BrokerError(v.error or ErrorCode.UNKNOWN_RESULT, v.detail,
+                                  broker_message=v.message)
+            if resp.status >= 500:
+                raise BrokerError(ErrorCode.NETWORK_ERROR,
+                                  "queue: HTTP %d — مقدار نامعلوم" % resp.status)
+            if not (200 <= resp.status < 300):
+                # 404/سایرِ 4xx: برایِ این شناسه مقداری نیست؛ UNKNOWN، نه صفر.
+                return None
+            env, rows = _envelope(resp.body)
+            places: Any = None
+            if env is not None:
+                places = _pick(env, "orderPlaces")
+            elif isinstance(rows, list):
+                places = rows
+            if not isinstance(places, list) or not places:
+                return None                # پاسخِ خالی = UNKNOWN، نه «اولِ صف»
+            hit: Mapping[str, Any] | None = None
+            for p in places:
+                if isinstance(p, Mapping) and _text(_pick(p, "orderId")) == key:
+                    hit = p
+                    break
+            if hit is None:
+                # پاسخِ فهرست ممکن است چند سفارش را برگرداند؛ ردیفِ اول مالِ ما نیست.
+                # تطبیق فقط با orderId؛ نبودش UNKNOWN است، نه «اولِ صف».
+                return None
+            pos = _num(_pick(hit, "orderPlace"))
+            vol = _num(_pick(hit, "volumeAhead"))
+            snap = QueueSnapshot(
+                position=int(pos) if pos is not None else None, volume_ahead=vol,
+                as_of=self._iso(),
+                #: واحدِ `volumeAhead` درِ هیچ مرجعی تعریف نشده (ماتریس §۲) — پس هرگز
+                #: به «اولِ صف» یا «حجمِ جلوتر» تعبیر نمی‌شود؛ فقط خام نشان داده می‌شود.
+                source="easytrader:orderPlace/volumeAhead (واحد UNVERIFIED)")
+            self.queue_by_order[key] = snap
+            self._queue_fetched_mono[key] = time.monotonic()
+            return snap
         env, rows = _envelope(resp.body)
         places: Any = None
         if env is not None:
@@ -1267,9 +1374,9 @@ class EasyTraderAdapter(BrokerAdapter):
             if isinstance(p, Mapping) and _text(_pick(p, "orderId")) == str(broker_order_id):
                 hit = p
                 break
-        if hit is None and isinstance(places[0], Mapping):
-            hit = places[0]
         if hit is None:
+            # پاسخِ فهرست ممکن است چند سفارش را برگرداند؛ ردیفِ اول مالِ ما نیست.
+            # تطبیق فقط با orderId؛ نبودش UNKNOWN است، نه «اولِ صف».
             return None
         pos = _num(_pick(hit, "orderPlace"))
         vol = _num(_pick(hit, "volumeAhead"))
@@ -1289,8 +1396,88 @@ class EasyTraderAdapter(BrokerAdapter):
                           "easytrader: مسیرِ لغو درِ هیچ منبعِ بازبینی‌شده‌ای مستند "
                           "نشده — هیچ درخواستی ساخته نشد")
 
-    def get_balances(self):
-        return None            # «نمی‌دانیم» ≠ «صفر»
+    # ---- ۱۱.۵) منابعِ فقط‌خواندنیِ حساب (وب‌اپِ رسمی، مشاهده‌شده) ---------------
+    def get_watchlist(self) -> list[dict[str, Any]]:
+        """دیده‌بانِ شخصی: دسته‌ها و ISINها؛ نه نامِ ورود، نه customerIsin."""
+        raw = self._read_json(WIRE_PATH_MARKET_WATCH, "watchlist")
+        if not isinstance(raw, list):
+            raise BrokerError(ErrorCode.UNKNOWN_RESULT,
+                              "watchlist: پاسخ فهرست نبود")
+        out: list[dict[str, Any]] = []
+        for cat in raw:
+            if not isinstance(cat, Mapping):
+                continue
+            isins = []
+            for item in (cat.get("watchCategorySymbols") or []):
+                if isinstance(item, Mapping):
+                    isin = _text(item.get("symbolIsin"))
+                    if isin:
+                        isins.append(isin)
+            out.append({"id": _text(cat.get("id")),
+                        "name": _text(cat.get("name")),
+                        "order": _num(cat.get("order")),
+                        "is_default": cat.get("isDefault") is True,
+                        "created_at": _text(cat.get("createDateTime")),
+                        "isins": isins})
+        return out
+
+    def get_portfolio_performance(self) -> list[dict[str, Any]]:
+        """دارایی‌هایِ پرتفوی از گزارشِ عملکرد؛ تعداد/آزاد/قابل‌فروش در آن نیست."""
+        raw = self._read_json(WIRE_PATH_ASSET_PERFORMANCE, "portfolio")
+        items = raw.get("items") if isinstance(raw, Mapping) else None
+        if not isinstance(items, list):
+            raise BrokerError(ErrorCode.UNKNOWN_RESULT,
+                              "portfolio: items در پاسخ نبود")
+        keys = ("symbolIsin", "symbolName", "date", "persianDate", "asset",
+                "totalBuyAveragePrice", "periodicBuyAveragePrice",
+                "totalRealizedProfitAndLoss",
+                "totalRealizedProfitAndLossWithoutDps",
+                "totalBoughtVolume", "totalSoldVolume", "calculationVersion")
+        return [{k: it.get(k) for k in keys if k in it}
+                for it in items if isinstance(it, Mapping)]
+
+    def get_money(self) -> dict[str, Any]:
+        """مانده/قدرتِ خریدِ خواندنی؛ واحد و فرمول از همان وب‌اپِ رسمی سنجیده شد."""
+        raw = self._read_json(WIRE_PATH_MONEY, "money")
+        if not isinstance(raw, Mapping):
+            raise BrokerError(ErrorCode.UNKNOWN_RESULT, "money: پاسخ شیء نبود")
+        keys = ("t0", "t1", "t2", "buyPowerT0", "buyPowerT1", "buyPowerT2",
+                "block", "blockT2", "withdrawBlockT2", "marginBlock", "credit",
+                "avandCredit", "walletWithdrawBalanceT0", "warrantValueCredit",
+                "hamiBalance")
+        nums = {k: _num(raw.get(k)) for k in keys if raw.get(k) is not None}
+        if nums.get("buyPowerT2") is None:
+            raise BrokerError(ErrorCode.UNKNOWN_RESULT,
+                              "money: buyPowerT2 نیامد — عددی ساخته نشد")
+        buying = ((nums.get("buyPowerT2") or 0.0)
+                  - (nums.get("credit") or 0.0)
+                  - (nums.get("avandCredit") or 0.0))
+        return {"raw": nums, "buying_power": buying, "unit": "IRR",
+                "formula": "buyPowerT2 - credit - avandCredit",
+                "source": "easytrader:/easy/api/money (" + WIRE_SOURCE_FIRST_PARTY_WEB + ")",
+                "fetched_at": self._iso()}
+
+    def get_balances(self) -> Mapping[str, Any] | None:
+        """پیش‌فرضِ ایمن را با منبعِ واقعیِ money جایگزین می‌کند؛ بی‌عدد جعلی."""
+        money = self.get_money()
+        raw = money["raw"]
+        return {"cash": raw.get("t0"),
+                "settled_cash_t2": raw.get("t2"),
+                "buying_power": money["buying_power"],
+                "buying_power_t0": raw.get("buyPowerT0"),
+                "buying_power_t1": raw.get("buyPowerT1"),
+                "buying_power_t2": raw.get("buyPowerT2"),
+                "block": raw.get("block"),
+                "block_t2": raw.get("blockT2"),
+                "credit": raw.get("credit"),
+                "avand_credit": raw.get("avandCredit"),
+                "unit": money["unit"], "source": money["source"],
+                "formula": money["formula"], "verified": True,
+                "fetched_at": money["fetched_at"]}
+
+    def get_sellable_quantity(self, isin: str | None = None) -> float | None:
+        """گزارشِ عملکرد تعدادِ آزاد/قابل‌فروش نمی‌دهد؛ حدس ممنوع."""
+        return None
 
     # ---- ۱۲) سنجشِ فقط‌خواندنی و ساعت --------------------------------------
     def probe(self) -> dict[str, Any]:

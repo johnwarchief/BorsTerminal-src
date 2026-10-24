@@ -1,0 +1,29 @@
+dev/mofid_session_v1165 — ورودِ دستی، پلِ CDP و allowlistِ فقط‌خواندنی
+ok   parse: '' ⇒ NO_SESSION
+ok   parse: 'short' ⇒ BAD_TOKEN
+ok   parse: 'eyJhbGciOiAi' ⇒ EXPIRED
+ok   parse: توکن در حافظه می‌ماند و meta فقط طول/نوع دارد
+ok   adapter با writes_allowed=false وارد read_only می‌شود
+ok   detail فقط برایِ شناسه‌هایِ فهرست کار می‌کند
+ok   شناسهٔ ساختگی پیش از هر درخواست مسدود می‌شود
+ok   POST در read_only پیش از ترافیک رد می‌شود
+ok   GETِ بیرون از allowlist رد می‌شود
+ok   submit_order در read_only هیچ POSTی نمی‌سازد
+ok   401 پس از نشستِ سالم، توکن/کش را باطل می‌کند و داده کهنه نمی‌دهد
+ok   پلِ CDP توکنِ صفحهٔ مجاز را می‌خواند و در meta نمی‌گذارد
+ok   صفحهٔ بی‌توکن ⇒ NO_SESSION، نه نشستِ جعلی
+ok   توکنِ منقضی ⇒ EXPIRED
+ok   verify: READ_ONLY_PROBE_OK با حسابِ خوانده‌شده و نوشتنِ بسته
+ok   پرتفوی/سفارش‌های باز/امروز/جزئیاتِ مجاز در پاسخ هست
+ok   پاسخِ verify توکن ندارد و همهٔ درخواست‌ها GET‌اند
+ok   session فقط metadata/شمارش می‌دهد، نه حساب/توکن
+ok   401 در verify ⇒ SESSION_EXPIRED و بی‌حساب
+ok   timeout در verify ⇒ READ_ONLY_PROBE_FAILED و بی‌حساب
+ok   بدونِ سفارش، detail حدسی فرستاده نمی‌شود
+ok   پنجرهٔ ورود با نام/URLِ اول‌طرف باز می‌شود
+ok   بستن فقط hostِ mofid را هدف می‌گیرد
+ok   hostِ نام‌دارِ mofid مسیر/پروفایلِ جدا و نامِ امن دارد
+ok   وضعیتِ mofid با hostِ پیش‌فرضِ EasyTrader قاطی نمی‌شود
+
+25 checks, 0 failed, 0 skipped
+MOFID SESSION OK

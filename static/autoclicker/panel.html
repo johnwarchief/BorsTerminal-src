@@ -1,0 +1,436 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>اتوکلیکر سرخطی — پنل کنترل</title>
+<style>
+  :root{
+    --bg:#101418; --panel:#161c22; --line:#243039; --ink:#e7edf2; --muted:#93a3b1;
+    --ok:#2fbf71; --bad:#e5484d; --warn:#f0a92a; --unknown:#6f8296; --accent:#4c9ff5;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+       font:13px/1.7 Tahoma,"Segoe UI",sans-serif}
+  header{display:flex;align-items:center;gap:10px;padding:9px 14px;
+         border-bottom:1px solid var(--line);background:var(--panel);
+         position:sticky;top:0;z-index:5}
+  h1{font-size:14px;margin:0;font-weight:700}
+  main{padding:12px 14px 26px;max-width:1080px;margin:0 auto}
+  section{border:1px solid var(--line);border-radius:8px;background:var(--panel);
+          margin-bottom:10px}
+  section>h2{font-size:12px;margin:0;padding:7px 12px;border-bottom:1px solid var(--line);
+             color:var(--muted);font-weight:600;letter-spacing:.2px}
+  .body{padding:10px 12px}
+  .pill{display:inline-flex;align-items:center;gap:5px;padding:2px 8px;border-radius:999px;
+        font-size:11px;border:1px solid var(--line);background:#0d1216;white-space:nowrap}
+  .pill b{font-weight:700}
+  .dot{width:7px;height:7px;border-radius:50%;background:var(--unknown);flex:none}
+  .PASS .dot{background:var(--ok)} .FAIL .dot,.BLOCKED .dot{background:var(--bad)}
+  .WARN .dot{background:var(--warn)} .UNKNOWN .dot{background:var(--unknown)}
+  .facts{display:flex;flex-wrap:wrap;gap:6px}
+  .facts .pill{cursor:default}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(148px,1fr));gap:8px}
+  label{display:block;font-size:11px;color:var(--muted);margin-bottom:3px}
+  input,select,button{font:inherit;color:inherit;background:#0d1216;border:1px solid var(--line);
+        border-radius:6px;padding:5px 8px;width:100%}
+  input:focus-visible,select:focus-visible,button:focus-visible{outline:2px solid var(--accent);
+        outline-offset:1px}
+  .row{display:flex;gap:8px;flex-wrap:wrap;align-items:end}
+  .row>div{flex:1 1 150px}
+  button{cursor:pointer;background:#1d262e;font-weight:600}
+  button:hover{background:#25313b}
+  button.primary{background:#12467a;border-color:#1b5c99}
+  button.primary:hover{background:#15507f}
+  button.danger{background:#5c1a1c;border-color:#7d2b2e;color:#ffd9d9}
+  button.danger:hover{background:#6f2124}
+  button:disabled{opacity:.45;cursor:not-allowed}
+  table{width:100%;border-collapse:collapse;font-size:12px}
+  th,td{padding:4px 7px;border-bottom:1px solid var(--line);text-align:right;
+        white-space:nowrap;vertical-align:top}
+  th{color:var(--muted);font-weight:600;font-size:11px}
+  td.wrap{white-space:normal}
+  .num{font-variant-numeric:tabular-nums}
+  .muted{color:var(--muted)}
+  .big{font-size:15px;font-weight:700}
+  details{border-top:1px solid var(--line)}
+  details>summary{cursor:pointer;padding:6px 12px;font-size:11px;color:var(--muted);list-style:none}
+  details>summary::-webkit-details-marker{display:none}
+  details>summary:before{content:"▸ ";display:inline-block}
+  details[open]>summary:before{content:"▾ "}
+  .note{font-size:11px;color:var(--muted);margin-top:6px}
+  .warnline{border:1px solid #6a4a15;background:#2a2010;color:#ffdca8;padding:7px 10px;
+            border-radius:6px;font-size:11.5px}
+  .errline{border:1px solid #7d2b2e;background:#2a1315;color:#ffc9c9;padding:7px 10px;
+           border-radius:6px;font-size:11.5px}
+  .stat{display:flex;gap:14px;flex-wrap:wrap;align-items:baseline}
+  .stat span{font-size:11px;color:var(--muted)}
+  .kv{display:flex;justify-content:space-between;gap:8px;border-bottom:1px dotted var(--line);
+      padding:3px 0;font-size:12px}
+  .kv:last-child{border-bottom:0}
+</style>
+</head>
+<body>
+<header>
+  <h1>اتوکلیکر سرخطی</h1>
+  <div class="pill" id="connPill"><i class="dot"></i><span>در انتظار اتصال…</span></div>
+  <div class="pill" id="clockPill"><span class="muted">ساعت تهران</span> <b class="num" id="clock">—</b></div>
+</header>
+
+<main>
+<section><h2>وضعیت واقعی</h2><div class="body"><div class="facts" id="facts"></div>
+  <div class="note" id="factHint">هر خانة «نامعلوم» علت خودش را در همین ردیف دارد.</div>
+</div></section>
+
+<section><h2>تنظیم اجرا</h2><div class="body">
+  <div class="grid">
+    <div><label for="f-symbol">نماد</label><input id="f-symbol" value="داروند" autocomplete="off"></div>
+    <div><label for="f-side">سمت سفارش</label><select id="f-side">
+      <option value="buy">خرید</option><option value="sell">فروش</option></select></div>
+    <div><label for="f-price">قیمت مورد انتظار (ریال)</label><input id="f-price" class="num" inputmode="numeric" placeholder="11010"></div>
+    <div><label for="f-qty">تعداد در هر سفارش (سهم)</label><input id="f-qty" class="num" inputmode="numeric" placeholder="1000"></div>
+    <div><label for="f-date">تاریخ هدف (تهران)</label><input id="f-date" type="date"></div>
+    <div><label for="f-time">ساعت هدف</label><input id="f-time" type="time" step="1" value="09:00:00"></div>
+    <div><label for="f-mode">حالت اجرا</label><select id="f-mode">
+      <option value="single">تک‌اقدام</option><option value="repeat">تکرار محدود</option></select></div>
+    <div><label for="f-count">تعداد کل اقدام‌ها</label><input id="f-count" class="num" inputmode="numeric" value="1"></div>
+    <div><label for="f-interval">فاصله بین اقدام‌ها (میلی‌ثانیه)</label><input id="f-interval" class="num" inputmode="numeric" value="3000"></div>
+    <div><label for="f-dry">نوع اجرا</label><select id="f-dry">
+      <option value="1">dry-run: کلیک با درخواست مسدودشده</option>
+      <option value="0">زنده: سفارش واقعی به کارگزاری</option></select></div>
+  </div>
+  <div class="row" style="margin-top:9px">
+    <div style="flex:2 1 320px"><label class="muted" style="color:var(--muted)">
+      قیمت و تعداد را خودِ شما در فرم واقعی EasyTrader وارد می‌کنید؛ این دو فقط
+      برای مقایسه‌اند و برنامه چیزی در فرم نمی‌نویسد.
+      کف قانونی فاصله ۳۰۰ms است؛ در سنجش زنده هر اقدام رویِ همین دستگاه تا
+      ~۲.۹s طول کشید، پس فاصلهٔ کمتر از آن هدفِ بعدی را دیر می‌کند.</label></div>
+  </div>
+  <div class="row" style="margin-top:9px">
+    <button id="b-save">ذخیره و پیش‌نمایش</button>
+    <button id="b-check">بررسی آمادگی</button>
+    <button id="b-arm">آماده‌سازی (arm)</button>
+    <button id="b-start" class="primary">شروع زمان‌بندی</button>
+    <button id="b-stop" class="danger">توقف اضطراری</button>
+  </div>
+  <div class="row" style="margin-top:7px">
+    <button id="b-reset">شروع دوبارهٔ کنترل‌شده</button>
+    <button id="b-cancel">لغو زمان‌بندی</button>
+    <button id="b-refresh">تازه‌سازی وضعیت</button>
+  </div>
+  <div class="note">«شروع زمان‌بندی» تنها با اجرای dry-run یا تأییدِ صریحِ زنده کار می‌کند.
+    ذخیرهٔ تنظیمات به‌خودی‌خود هیچ کلیک یا سفارشی نمی‌سازد.</div>
+  <div id="confirmBox" style="display:none;margin-top:9px" class="warnline">
+    اجرای زنده: هر کلیکِ موفق روی «ارسال» می‌تواند یک <b>سفارش مستقل</b> بسازد.
+    برای تأیید، عبارت زیر را دقیق وارد کنید:
+    <div class="row" style="margin-top:6px">
+      <div style="flex:2 1 260px"><input id="f-phrase" placeholder="کلیکِ واقعی را اجرا کن"></div>
+      <div><button id="b-confirm" class="danger">تأیید اجرای زنده</button></div>
+    </div>
+  </div>
+</div></section>
+
+<section><h2>برآورد عملیات</h2><div class="body">
+  <div class="stat" id="preview"><span class="muted">هنوز اجرای انتخاب‌شده‌ای ساخته نشده است.</span></div>
+  <div id="policy" class="note"></div>
+</div></section>
+
+<section><h2>پیش‌نگاشت قواعد</h2><div class="body"><div class="facts" id="preflight"></div>
+  <details><summary>جزئیات پیش‌نگاشت و منشأ اعداد</summary>
+    <div class="body" id="preflightDetail"></div></details>
+</div></section>
+
+<section><h2>برنامه و اقدام‌ها</h2><div class="body">
+  <div class="stat" id="runstat"><span class="muted">اجرای فعالی نیست.</span></div>
+  <details open><summary>جدول اقدام‌ها (زمان برنامه‌ریزی، زمان واقعی، نتیجه)</summary>
+    <div class="body" style="overflow:auto"><table id="actions">
+      <thead><tr><th>#</th><th>برنامه</th><th>واقعی</th><th>خطا (ms)</th><th>وضعیت</th>
+        <th>نتیجه</th><th>شاهد</th></tr></thead><tbody></tbody></table></div></details>
+  <details><summary>تأخیرها و تلمتری</summary><div class="body" id="telemetry"></div></details>
+  <div id="lastError" class="errline" style="display:none;margin-top:8px"></div>
+</div></section>
+
+<section><h2>سقف‌ها و قوانین</h2><div class="body"><div class="facts" id="limitchips"></div>
+  <details><summary>ماتریس قوانین: رسمی / کد کلاینت / اندازه‌گیری‌شده / داخلی / ناشناخته</summary>
+    <div class="body" style="overflow:auto"><table id="rules">
+      <thead><tr><th>قاعده</th><th>سطح</th><th>مقدار</th><th>منبع و تاریخ مشاهده</th>
+      <th>اعمال</th></tr></thead><tbody></tbody></table></div></details>
+</div></section>
+</main>
+
+<script>
+"use strict";
+// ارقام فارسی از کدِ نقطه‌ای ساخته می‌شود؛ رقم دست‌نویس در متن گم می‌شود.
+var FA = String.fromCharCode(0x06F0);
+function fa(v){
+  if(v === null || v === undefined || v === "") return "—";
+  var s = String(v);
+  if(!/^[-0-9.,]+$/.test(s)) return s;
+  return s.replace(/[0-9]/g, function(d){
+    return String.fromCharCode(0x06F0 + Number(d)); });
+}
+function num(n, d){
+  if(n === null || n === undefined || !isFinite(Number(n))) return null;
+  return fa(Number(n).toFixed(d === undefined ? 0 : d).replace(/\.0+$/,""));
+}
+var API = "/api/execution/autoclicker";
+var TICKET = (location.hash || "").replace(/^#/, "").split("&").map(function(p){
+  var kv = p.split("="); return kv[0] === "ticket" ? decodeURIComponent(kv[1] || "") : "";
+}).filter(Boolean)[0] || "";
+var state = null, runId = "", selectedRun = "";
+
+function el(id){ return document.getElementById(id); }
+function show(node, text){ node.textContent = text; node.style.display = text ? "" : "none"; }
+function esc(s){ return String(s === null || s === undefined ? "" : s)
+  .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+function pill(cls, label, value, title){
+  var d = document.createElement("div");
+  d.className = "pill " + cls;
+  d.innerHTML = '<i class="dot"></i><span>' + esc(label) + '</span><b>' + esc(value || "") + "</b>";
+  if(title) d.title = title;
+  return d;
+}
+function api(path, opts){
+  var o = opts || {};
+  o.headers = Object.assign({"Content-Type": "application/json"}, o.headers || {});
+  if(TICKET) o.headers["X-Bors-Panel"] = TICKET;
+  return fetch(API + path, o).then(function(r){
+    return r.json().catch(function(){ return {status:"error", code:"BAD_JSON", http:r.status}; });
+  });
+}
+function post(path, body){
+  return api(path, {method:"POST", body: JSON.stringify(body || {})});
+}
+function fmtLocal(iso){
+  if(!iso) return "—";
+  var m = String(iso).match(/T(\d\d:\d\d:\d\d)/);
+  return m ? fa(m[1]) : fa(iso);
+}
+
+function collect(){
+  return {
+    symbol: el("f-symbol").value.trim(),
+    side: el("f-side").value,
+    expected_price: Number(String(el("f-price").value).replace(/[^\d.]/g,"")) || null,
+    expected_quantity: Number(String(el("f-qty").value).replace(/[^\d]/g,"")) || null,
+    target_at: el("f-date").value && el("f-time").value
+      ? (el("f-date").value + "T" + el("f-time").value) : "",
+    mode: el("f-mode").value,
+    total_actions: Number(String(el("f-count").value).replace(/[^\d]/g,"")) || 1,
+    interval_ms: Number(String(el("f-interval").value).replace(/[^\d]/g,"")) || 0,
+    dry_run: el("f-dry").value === "1",
+    timezone: "Asia/Tehran"
+  };
+}
+
+function renderFacts(st){
+  var box = el("facts"); box.innerHTML = "";
+  var order = st.fact_order || [];
+  order.forEach(function(k){
+    var f = (st.facts || {})[k] || {};
+    box.appendChild(pill(f.status || "UNKNOWN", f.label || k,
+      f.status === "PASS" ? "✓" : (f.status === "WARN" ? "!" : (f.status === "UNKNOWN" ? "?" : "✕")),
+      (f.detail || "") + (f.source ? (" | منبع: " + f.source) : "")));
+  });
+  var run = st.run || {};
+  el("connPill").className = "pill " + ((st.facts && st.facts.browser_open || {}).status === "PASS" ? "PASS" : "UNKNOWN");
+  el("connPill").querySelector("span").textContent =
+    run.mode === "live" ? "کنترل به همان نشست متصل" : "اتصال محلی بررسی نشده";
+  var ok = (st.facts && st.facts.panel_connected || {}).status;
+  el("connPill").className = "pill " + (ok === "PASS" ? "PASS" : "UNKNOWN");
+  el("connPill").querySelector("span").textContent =
+    ok === "PASS" ? "این تب به اجرای برنامه متصل است" : "پنل به اجرای فعال وصل نیست";
+}
+
+function renderRules(st){
+  var chips = el("limitchips"); chips.innerHTML = "";
+  var usage = (st.limits && st.limits.usage && st.limits.usage.rules) || {};
+  Object.keys(usage).forEach(function(id){
+    var r = usage[id];
+    chips.appendChild(pill(r.kind === "INTERNAL" ? "WARN" : "PASS", r.label,
+      fa(r.used) + "/" + fa(r.max_events) + " در " + fa(Math.round(r.window_s * 1000)) + "ms",
+      "منبع: " + (r.source || "—") + " | نسبت به کارگزاری: " +
+      (r.attributed_to_broker ? "بله، قانون اعلامی" : "خیر، سقف داخلی")));
+  });
+  var tb = el("rules").tBodies[0]; tb.innerHTML = "";
+  ((st.limits && st.limits.rules) || []).forEach(function(r){
+    var tr = document.createElement("tr");
+    tr.innerHTML = "<td>" + esc(r.label) + "</td><td>" + esc(r.kind) + "</td><td class='num'>" +
+      esc(r.max_events) + " / " + esc(r.window_s) + "s</td><td class='wrap muted'>" +
+      esc(r.source || "—") + " <span class='muted'>(" + esc(r.observed_at || "") +
+      "، " + esc(r.confidence || "") + ")</span></td><td>" +
+      (r.enforceable ? "اعمال می‌شود" : "فقط اطلاع‌رسانی") + "</td>";
+    tb.appendChild(tr);
+  });
+}
+
+function renderPreflight(rep){
+  var box = el("preflight"); box.innerHTML = "";
+  var detail = el("preflightDetail"); detail.innerHTML = "";
+  if(!rep || !rep.checks){ show(el("policy"), ""); return; }
+  (rep.checks || []).forEach(function(c){
+    box.appendChild(pill(c.status, c.label, c.status === "PASS" ? "✓" :
+      (c.status === "UNKNOWN" ? "?" : (c.status === "WARN" ? "!" : "✕")),
+      c.detail + " | " + (c.source || "")));
+  });
+  var d = document.createElement("div");
+  d.innerHTML = (rep.checks || []).map(function(c){
+    return "<div class='kv'><span>" + esc(c.label) + " <span class='muted'>(" +
+      esc(c.status) + (c.owner_ruling_required ? "، نیازمند نظر مالک" : "") +
+      ")</span></span><span class='wrap muted'>" + esc(c.detail) +
+      "<br><span class='muted'>منبع: " + esc(c.source || "—") + " | اطمینان: " +
+      esc(c.confidence || "—") + "</span></span></div>";
+  }).join("");
+  detail.appendChild(d);
+  var unk = (rep.unknowns || []);
+  var pol = (rep.checks || []).filter(function(c){ return c.status === "BLOCKED"; });
+  var msg = "";
+  if(pol.length) msg = "مسدود: " + pol.map(function(c){ return c.label; }).join("، ") +
+    " — علت و راه اقرار در جدول بالا.";
+  else if(unk.length) msg = unk.length + " خانة بدون داده: " + unk.map(function(u){
+    return u.split(":")[0]; }).join("، ");
+  show(el("policy"), msg);
+}
+
+function renderPreview(run){
+  var pv = run && run.preview;
+  if(!pv){ el("preview").innerHTML = '<span class="muted">هنوز اجرای انتخاب‌شده‌ای ساخته نشده است.</span>'; return; }
+  el("preview").innerHTML =
+    "<div><span>حداکثر سفارشِ ممکن</span><div class='big'>" + num(pv.max_orders_possible) + "</div></div>" +
+    "<div><span>کل سهمِ ممکن</span><div class='big'>" + num(pv.total_shares_possible) + "</div></div>" +
+    "<div><span>حداکثر ارزش ناخالص (ریال)</span><div class='big'>" + num(pv.max_gross_value_rial) + "</div></div>" +
+    "<div><span>شروع برنامه</span><div class='big'>" + esc(fmtLocal(pv.planned_first_at_local)) + "</div></div>" +
+    "<div><span>پایان برنامه</span><div class='big'>" + esc(fmtLocal(pv.planned_last_at_local)) + "</div></div>" +
+    "<div><span>نوع اجرا</span><div class='big'>" + (pv.dry_run ? "dry-run" : "زنده") + "</div></div>";
+}
+
+function renderRun(run, st){
+  var tb = el("actions").tBodies[0]; tb.innerHTML = "";
+  if(!run){ el("runstat").innerHTML = '<span class="muted">اجرای فعالی نیست.</span>'; return; }
+  el("runstat").innerHTML =
+    "<div><span>وضعیت</span><div class='big'>" + esc(run.state) + "</div></div>" +
+    "<div><span>انجام‌شده</span><div class='big'>" + num(run.fired_actions) + " / " +
+      num(run.total_actions) + "</div></div>" +
+    "<div><span>باقی‌مانده</span><div class='big'>" + num(run.remaining_actions) + "</div></div>" +
+    "<div><span>اقدام بعدی</span><div class='big'>" + esc(fmtLocal(run.next_action_at_local)) + "</div></div>" +
+    "<div><span>علت توقف</span><div class='big wrap'>" + esc(run.stop_reason || "—") + "</div></div>";
+  (run.actions || []).forEach(function(a){
+    var r = a.result || {};
+    var tr = document.createElement("tr");
+    tr.innerHTML = "<td class='num'>" + num(a.idx + 1) + "</td>" +
+      "<td>" + esc(fmtLocal(a.planned_at_local)) + "</td>" +
+      "<td>" + esc(fmtLocal(a.fired_at_local)) + "</td>" +
+      "<td class='num'>" + (a.schedule_error_ms === null || a.schedule_error_ms === undefined
+        ? "—" : fa(Math.round(a.schedule_error_ms))) + "</td>" +
+      "<td>" + esc(a.state) + "</td>" +
+      "<td>" + esc(r.state || "—") + "</td>" +
+      "<td class='wrap muted'>" + esc((r.reason || "") + (r.http_status ? (" | HTTP " + r.http_status) : "") +
+        (r.broker_order_id ? (" | کد " + r.broker_order_id) : "")) + "</td>";
+    tr.className = r.state === "UNKNOWN" ? "FAIL" : "";
+    tb.appendChild(tr);
+  });
+  var tel = (run.actions && run.actions.length) ?
+    ((run.actions[run.actions.length - 1].result || {}).telemetry || null) : null;
+  var tbox = el("telemetry");
+  if(!tel){ tbox.innerHTML = '<span class="muted">شاهدِ زمانیِ تازه‌ای نیست.</span>'; }
+  else {
+    var lat = tel.latencies || {};
+    tbox.innerHTML = Object.keys(lat).map(function(k){
+      return "<div class='kv'><span>" + esc(k) + "</span><span class='num'>" +
+        (lat[k] === null || lat[k] === undefined ? "—" : fa(lat[k])) + " ms</span></div>";
+    }).join("") + "<div class='note'>منبعِ هر عدد: " +
+      esc(JSON.stringify(tel.metric_sources || {}).slice(0, 300)) + "</div>" +
+      "<div class='note'>" + esc(tel.one_way_reason || "") + "</div>";
+  }
+  renderPreview(run);
+  el("b-start").disabled = !(run.state === "ARMED" || run.state === "VALIDATED");
+  el("b-arm").disabled = !(run.state === "VALIDATED" || run.state === "BLOCKED");
+  el("b-stop").disabled = !(run.state === "ARMED" || run.state === "WARMING" || run.state === "RUNNING");
+  el("b-cancel").disabled = !(run.state === "ARMED" || run.state === "WARMING" || run.state === "RUNNING");
+  el("b-reset").disabled = !(run.state === "STOPPED" || run.state === "NEEDS_REVIEW" || run.state === "BLOCKED");
+  if(run.state === "DRAFT") el("b-arm").disabled = true;
+  el("confirmBox").style.display = (el("f-dry").value === "0" && !run.live_confirmed) ? "" : "none";
+  show(el("lastError"), st.error || "");
+}
+
+function refresh(){
+  var path = selectedRun ? ("/state?run_id=" + encodeURIComponent(selectedRun)) : "/state";
+  return api(path).then(function(g){
+    if(g.status !== "success"){ show(el("lastError"), (g.code || "خطا") + ": " + (g.detail || "")); return; }
+    state = g; runId = (g.run && g.run.run_id) || "";
+    //: اگر اجرایِ فعالی از بیرونِ پنل ساخته شده (API/سشنِ دیگر)، پنل باید همان را
+    //: دنبال کند؛ وگرنه دکمهٔ «توقف اضطراری» رویِ اجرایِ قدیمی خاموش می‌ماند.
+    var act = (g.active_run && g.active_run.run_id) || "";
+    if(act && act !== runId && ["ARMED","WARMING","RUNNING"].indexOf(
+        (g.active_run || {}).state || "") >= 0){
+      selectedRun = act;
+      state = g; runId = act;
+      g = Object.assign({}, g, {run: g.active_run});
+    }
+    renderFacts(g); renderRun(g.run, g); renderRules(g); renderPreflight(g.preflight);
+  });
+}
+
+function action(path, body, node){
+  if(node) node.disabled = true;
+  return post(path, body || {}).then(function(g){
+    if(node) node.disabled = false;
+    if(g.status !== "success"){
+      show(el("lastError"), (g.code || "خطا") + ": " + (g.detail || ""));
+      return g;
+    }
+    show(el("lastError"), "");
+    if(g.run && g.run.run_id) selectedRun = g.run.run_id;
+    return refresh().then(function(){ return g; });
+  }).catch(function(e){
+    if(node) node.disabled = false;
+    show(el("lastError"), "خطای انتقال: " + e.name);
+  });
+}
+
+el("b-save").onclick = function(){
+  var cfg = collect();
+  action("/run", cfg).then(function(g){
+    if(g && g.status === "success"){
+      selectedRun = g.run.run_id;
+      el("b-check").disabled = false;
+    }
+  });
+};
+el("b-check").onclick = function(){ action("/check", {run_id: selectedRun}); };
+el("b-arm").onclick = function(){ action("/arm", {run_id: selectedRun}); };
+el("b-start").onclick = function(){ action("/start", {run_id: selectedRun}); };
+el("b-stop").onclick = function(){ action("/stop", {run_id: selectedRun, reason: "توقف اضطراری از پنل"}); };
+el("b-cancel").onclick = function(){ action("/cancel", {run_id: selectedRun}); };
+el("b-reset").onclick = function(){ action("/reset", {run_id: selectedRun}); };
+el("b-refresh").onclick = function(){ refresh(); };
+el("b-confirm").onclick = function(){
+  action("/confirm-live", {run_id: selectedRun, phrase: el("f-phrase").value, live: true});
+};
+el("f-dry").onchange = function(){
+  el("confirmBox").style.display = (el("f-dry").value === "0") ? "" : "none";
+};
+el("f-mode").onchange = function(){
+  var rep = el("f-mode").value === "repeat";
+  el("f-count").disabled = !rep; el("f-interval").disabled = !rep;
+  if(rep && Number(el("f-count").value) < 2) el("f-count").value = "3";
+  if(!rep) el("f-count").value = "1";
+};
+
+function tickClock(){
+  var now = new Date();
+  var tehran = new Date(now.getTime() + (now.getTimezoneOffset() * 60000) + 12600000);
+  el("clock").textContent = fa(tehran.toISOString().substr(11, 8));
+}
+(function init(){
+  var d = new Date();
+  el("f-date").value = d.toISOString().slice(0, 10);
+  el("f-time").value = "09:00:00";
+  el("f-mode").onchange();
+  tickClock(); setInterval(tickClock, 1000);
+  refresh(); setInterval(refresh, 1500);
+})();
+</script>
+</body>
+</html>

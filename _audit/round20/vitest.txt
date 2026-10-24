@@ -1,0 +1,12 @@
+npm notice run bors-terminal-frontend@1.0.95 npx
+npm notice run vitest run src/__tests__/autoclicker-page.spec.tsx
+
+[1m[46m RUN [49m[22m [36mv3.2.7 [39m[90mC:/Users/PCMOD/Desktop/_bors-sarkhati-minfix/frontend[39m
+
+ [32m✓[39m src/__tests__/autoclicker-page.spec.tsx [2m([22m[2m11 tests[22m[2m)[22m[33m 435[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[32m11 passed[39m[22m[90m (11)[39m
+[2m   Start at [22m 22:26:57
+[2m   Duration [22m 2.17s[2m (transform 141ms, setup 145ms, collect 214ms, tests 435ms, environment 994ms, prepare 142ms)[22m
+

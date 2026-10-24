@@ -1,0 +1,41 @@
+dev/broker_connect_v1120 — تنظیمِ اتصال، فقط‌خواندنی، شاهدِ نشست
+  ok   ۱) Mofid آداپتورِ مستقل است (نه alias) و بزرگ/کوچکی نرمال می‌شود
+  ok   ۱) ردِ token=x (فقط دو کلیدِ غیرمحرمانه)
+  ok   ۱) ردِ secret=x (فقط دو کلیدِ غیرمحرمانه)
+  ok   ۱) ردِ adapter=binance (فقط دو کلیدِ غیرمحرمانه)
+  ok   ۱) ردِ read_only=maybe (فقط دو کلیدِ غیرمحرمانه)
+  ok   ۱) env نبود ⇒ تنظیمِ ذخیره‌شده؛ هیچ‌کدام نبود ⇒ mock
+  ok   ۱) env بر تنظیمِ دیسک مقدم است
+  ok   ۲) تنظیمِ دیسک: آداپتور و ترافیکِ خواندن روشن، «ارسالِ سفارش» خاموش  | src=settings ro=True writes=False traffic=True
+  ok   ۲) گیتِ نوشتن باِ BORS_EXECUTION_LIVE روشن می‌شود (آداپتور ازِ دیسک)
+  ok   ۲) آداپتورِ mock ⇒ حتی با envِ نوشتن چیزی نوشته نمی‌شود  | src=env writes=False
+  ok   ۳) ترافیک وصل است ولی نوشتن آزاد نیست  | live=True writes=False ro=True
+  ok   ۳) capabilities درِ فقط‌خواندنی «ارسال» را false می‌دهد (UI همین را می‌خواند)  | Capabilities(place=False, list_orders=True, order_state=True, queue_position=True, cancel=False, best_bid_ask=False, bal
+  ok   ۳) ردِ ارسال باِ دلیلِ همان حالت  | UNSUPPORTED
+  ok   ۳) هیچ POST سفارشی ازِ حالتِ فقط‌خواندنی بیرون نرفت  | ['submit:REFUSED-read-only']
+  ok   ۳) نشست درِ فقط‌خواندنی هم *واقعاً* تأیید می‌شود  | connected
+  ok   ۳) شاهد ثبت می‌شود: کدام مسیر، و اینکہ مسیرش درِ سندِ رسمی نیست  | {'path': '/core/api/order', 'status': 200, 'kind': 'third-party-code-only', 'hypothesis': True, 'note': 'فهرستِ سفارش خوانده شد؛ مسیرش درِ س
+  ok   ۴) ۴۰۴ رویِ «فهرستِ سفارش» نشست را باطل اعلام نمی‌کند  | ['GET /core/api/order', 'GET /symbols/api/TradingTime']
+  ok   ۴) اتصال ازِ مسیرِ مشاهده‌شده ثابت شد، نه ازِ کدِ شخصِ ثالث  | {'path': '/symbols/api/TradingTime', 'status': 200, 'kind': 'observed-read-only', 'hypothesis': False, 'note': 'پاسخِ ۲xx ازِ مسیرِ مشاهده\u200cشده'}
+  ok   ۵) ۴۰۱ ⇒ نشستِ باطل؛ نه اتصال، نه ادعایِ شاهد  | SESSION_EXPIRED proven=False
+  ok   ۵) بدونِ پرسشِ موفق هیچ شاهدی ثبت نمی‌شود  | {}
+  ok   ۶) بی‌نشست: نه توکن، نه ادعایِ اتصال
+  ok   ۶) فقط ریختنِ نشانی ⇒ UNKNOWN، هرگز CONNECTED  | SessionStatus(state=<SessionState.UNKNOWN: 'unknown'>, account_label=None, checked_at='2026-10-22T22:17:08+03:
+  ok   ۶) نشانیِ تازه تأییدِ پیشین را می‌اندازد (مقایسه باِ identity، نه مقدار)
+  ok   ۷) نشست ازِ خودِ پاسخ منشأ و «اثبات‌شدن» دارد  | {'state': 'connected', 'account_label': 'mock-acct-1', 'checked_at': None, 'origin': 'mock', 'proven': False, 'verified_by': {}}
+  ok   ۷) config فقط دو کلیدِ غیرمحرمانه را نگه می‌دارد و restart لازم را می‌گوید  | {'adapter': 'mock', 'read_only': True, 'source': 'default', 'updated_at': 1792442564}
+  ok   ۷) status هر سه گیت را جدا اعلام می‌کند  | {'adapter': 'mock', 'live_enabled': False, 'read_only': False, 'traffic_allowed': False}
+  ok   ۷) پرتفوی بی‌منبع «ردیفِ خالی» یا «صفر» نمی‌سازد  | {'status': 'blocked', 'adapter': 'mock', 'live': False, 'session_proven': False, 'state': 'ACCOUNT_SOURCE_BLOCKED', 'as_of': None,
+  ok   ۷) هیچ پاسخِ config/portfolio نشانیِ نشست را بیرون نمی‌دهد
+  ok   ۸) سنسور گارد زنده است: باِ گیتِ نوشتنِ باز، POST می‌رود (پس بندِ ۳ تهی نبود)  | BR-9
+  ok   ۹) سه گیت درِ «فقط‌خواندنی، بی‌نشست» جدا می‌مانند  | ro=True traffic=True writes=False
+  ok   ۹) کمبودِ اصلی «نشستِ شما» گزارش می‌شود، نه روشن‌کردنِ درِ ارسال  | حالتِ فقط‌خواندنی روشن است: ترافیکِ خواندن مجاز، ارسال نه — کمبود، نشستِ شماست (ورود درِ پنجرۀ کارگزاری، سپس نشانی به POST /api/execution/session)
+  ok   ۹) پرتفوی بی‌نشست «restart لازم است» نمی‌گوید؛ می‌گوید وارد شوید  | ACCOUNT_SOURCE_BLOCKED: دسترسی به حساب در حافظه نیست — اول در پنجرهٔ مرورگر وارد شوید
+  ok   ۹) بی‌پرسشِ موفق هیچ ردیفی ساخته نمی‌شود  | None
+  ok   ۹) /connect درِ همین حالت «فقط‌خواندنی» می‌گوید، نه «مسدود»  | read_only
+  ok   ۹) ترانسپورتِ ردکننده ⇒ blocked (کنترلِ منفیِ همان برچسب)
+  ok   ۹) کنترلِ منفی: باِ ترافیکِ بسته پیامِ همان حالت می‌آید، نه پیامِ نشست  | ACCOUNT_SOURCE_BLOCKED: ارتباط با کارگزاری خاموش است — هیچ منبعی خوانده نمی‌شود
+  ok   ۱۰) fts_terminal.spec درِ hiddenimports 'execution_settings' دارد
+  ok   ۱۰) bors_setup.spec درِ hiddenimports 'execution_settings' دارد
+
+broker_connect_v1120: 38 passed / 0 failed
