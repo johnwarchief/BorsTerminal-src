@@ -1,0 +1,123 @@
+{
+  "generatedAt": "2026-10-24T11:21:34.404Z",
+  "cdp": 9810,
+  "checks": [
+    {
+      "label": "00-shell",
+      "file": "artifacts\\desktop-migration\\ui-smoke\\00-shell.png",
+      "url": "#/technical",
+      "canvases": 10,
+      "activeButtons": [
+        "روزانه",
+        "تعدیل‌شده",
+        "کندل"
+      ],
+      "errorBox": null,
+      "rows": 0
+    },
+    {
+      "label": "01-market",
+      "file": "artifacts\\desktop-migration\\ui-smoke\\01-market.png",
+      "url": "#/market",
+      "canvases": 0,
+      "activeButtons": [
+        "همه"
+      ],
+      "errorBox": null,
+      "rows": 34
+    },
+    {
+      "label": "02-technical",
+      "file": "artifacts\\desktop-migration\\ui-smoke\\02-technical.png",
+      "url": "#/technical",
+      "canvases": 10,
+      "activeButtons": [
+        "روزانه",
+        "تعدیل‌شده",
+        "کندل"
+      ],
+      "errorBox": null,
+      "rows": 0
+    },
+    {
+      "label": "03-rsi",
+      "file": "artifacts\\desktop-migration\\ui-smoke\\03-rsi.png",
+      "url": "#/technical",
+      "canvases": 14,
+      "activeButtons": [
+        "روزانه",
+        "تعدیل‌شده",
+        "کندل"
+      ],
+      "errorBox": null,
+      "rows": 0
+    },
+    {
+      "label": "04-raw",
+      "file": "artifacts\\desktop-migration\\ui-smoke\\04-raw.png",
+      "url": "#/technical",
+      "canvases": 14,
+      "activeButtons": [
+        "روزانه",
+        "خام",
+        "کندل"
+      ],
+      "errorBox": null,
+      "rows": 0
+    },
+    {
+      "label": "05-weekly",
+      "file": "artifacts\\desktop-migration\\ui-smoke\\05-weekly.png",
+      "url": "#/technical",
+      "canvases": 10,
+      "activeButtons": [
+        "هفتگی",
+        "خام",
+        "کندل"
+      ],
+      "errorBox": null,
+      "rows": 0
+    },
+    {
+      "label": "06-monthly",
+      "file": "artifacts\\desktop-migration\\ui-smoke\\06-monthly.png",
+      "url": "#/technical",
+      "canvases": 10,
+      "activeButtons": [
+        "ماهانه",
+        "خام",
+        "کندل"
+      ],
+      "errorBox": null,
+      "rows": 0
+    },
+    {
+      "label": "07-combined",
+      "file": "artifacts\\desktop-migration\\ui-smoke\\07-combined.png",
+      "url": "#/technical",
+      "canvases": 10,
+      "activeButtons": [
+        "روزانه",
+        "تعدیل‌شده",
+        "کندل"
+      ],
+      "errorBox": null,
+      "rows": 0
+    },
+    {
+      "label": "08-drawing",
+      "file": "artifacts\\desktop-migration\\ui-smoke\\08-drawing.png",
+      "url": "#/technical",
+      "canvases": 10,
+      "activeButtons": [
+        "روزانه",
+        "تعدیل‌شده",
+        "کندل"
+      ],
+      "errorBox": null,
+      "rows": 0
+    }
+  ],
+  "consoleErrors": [],
+  "ok": true
+}

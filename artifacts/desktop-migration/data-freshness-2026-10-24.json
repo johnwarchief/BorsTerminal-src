@@ -1,0 +1,57 @@
+{
+  "capturedAt": "2026-10-24T11:20:14Z",
+  "market": {
+    "count": 6018,
+    "meta": {
+      "d_even": 20261014,
+      "h_even": 160254,
+      "last_sync": "2026-10-14 16:03:04"
+    },
+    "rev": 0,
+    "live_count": 3614
+  },
+  "chart": {
+    "lastDataTime": "2026-10-21",
+    "payloadAgeS": 1148.7,
+    "priceBasis": "last",
+    "priceBasisRequested": "last",
+    "adjustSource": "ledger+base-price-discontinuity",
+    "count": 4250
+  },
+  "chartLast": {
+    "time": "2026-10-21",
+    "open": 4340.0,
+    "high": 4340.0,
+    "low": 4210.0,
+    "close": 4230.0,
+    "last": 4230.0,
+    "closing": 4220.0,
+    "high_raw": 4340.0,
+    "low_raw": 4210.0,
+    "basis": "last"
+  },
+  "chartPrev": {
+    "time": "2026-10-20",
+    "open": 4470.0,
+    "high": 4510.0,
+    "low": 4290.0,
+    "close": 4310.0,
+    "last": 4310.0,
+    "closing": 4340.0,
+    "high_raw": 4510.0,
+    "low_raw": 4290.0,
+    "basis": "last"
+  },
+  "boardRow": {
+    "symbol": "فولاد",
+    "p_last": 4540.0,
+    "p_closing": 4540.0,
+    "percent_change": 2.95,
+    "q_tot_tran": 1563050927.0,
+    "z_tot_tran": 13401.0,
+    "buyer_power": 1.94,
+    "pct_basis": "value",
+    "pct_is_current": 0.0,
+    "is_live": true
+  }
+}

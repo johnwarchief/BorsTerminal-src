@@ -1,0 +1,26 @@
+{
+  "$schema": "https://tinyjs.app/schema/tinyjs.schema.json",
+  "name": "BorsTerminalM1TinyJS",
+  "title": "BorsTerminalM1TinyJS",
+  "size": "1366x768",
+  "id": "ip-127-0-0-1.wrap",
+  "version": "0.1.0",
+  "url": "http://127.0.0.1:8105/",
+  "api": {
+    "disable": [
+      "*"
+    ],
+    "enable": [
+      "win.close",
+      "win.minimize",
+      "win.zoom",
+      "win.startDrag"
+    ],
+    "origins": {
+      "http://127.0.0.1:8105": "wrapper"
+    }
+  },
+  "popups": "window",
+  "downloads": "ask",
+  "minTinyjsVersion": "0.65.0"
+}

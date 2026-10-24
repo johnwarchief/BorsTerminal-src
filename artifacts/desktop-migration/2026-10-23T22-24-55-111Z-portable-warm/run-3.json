@@ -1,0 +1,112 @@
+{
+  "run": 3,
+  "label": "portable-warm",
+  "shellKind": "exe",
+  "t0": 1792794485806,
+  "t0Iso": "2026-10-23T22:28:05.806Z",
+  "env": {
+    "BORS_PORT": "8101",
+    "BORS_NO_FETCH_LOOPS": "1",
+    "BORS_CODAL_AUTO": "0",
+    "cdpPort": 9603,
+    "freshProfile": false
+  },
+  "backendReadyMs": 18840,
+  "backendWasWarm": false,
+  "cdpMs": 40985,
+  "pageUrl": "http://127.0.0.1:8101/",
+  "pageReadyMs": 42887,
+  "navigation": {
+    "domContentLoadedMs": 574,
+    "loadMs": 576,
+    "responseEndMs": 190,
+    "transferSize": 794,
+    "paint": []
+  },
+  "loginRequired": true,
+  "shellReadyMs": 44469,
+  "jsHeapMB": 7.5,
+  "domNodes": 578,
+  "marketReadyMs": 2254,
+  "marketRows": 30,
+  "marketRequests": [
+    {
+      "path": "/api/market",
+      "ms": 380,
+      "transferKB": 1192,
+      "decodedKB": 6655
+    }
+  ],
+  "scroll": {
+    "frames": 80,
+    "p50ms": 17.7,
+    "p95ms": 49,
+    "maxMs": 83.5,
+    "over33ms": 26
+  },
+  "technicalReadyMs": 10704,
+  "technicalCanvases": 10,
+  "chartRequests": [
+    {
+      "path": "/api/chart/%D9%81%D9%88%D9%84%D8%A7%D8%AF",
+      "ms": 8497,
+      "decodedKB": 1095
+    }
+  ],
+  "jsHeapAfterMB": 25.7,
+  "jsHeapPeakMB": 85.2,
+  "freshness": {
+    "version": {
+      "version": "1.0.97",
+      "tauri": false,
+      "mode": "portable",
+      "instance": "f6f06933d704"
+    },
+    "syncState": {
+      "status": "success",
+      "running": false,
+      "last": {}
+    }
+  },
+  "process": {
+    "rootPid": 2020,
+    "processes": [
+      {
+        "pid": 14580,
+        "name": "msedgewebview2.exe",
+        "rssMB": 126
+      },
+      {
+        "pid": 1404,
+        "name": "msedgewebview2.exe",
+        "rssMB": 15
+      },
+      {
+        "pid": 7532,
+        "name": "msedgewebview2.exe",
+        "rssMB": 121
+      },
+      {
+        "pid": 15892,
+        "name": "msedgewebview2.exe",
+        "rssMB": 35
+      },
+      {
+        "pid": 14972,
+        "name": "msedgewebview2.exe",
+        "rssMB": 19
+      },
+      {
+        "pid": 10828,
+        "name": "msedgewebview2.exe",
+        "rssMB": 343
+      }
+    ],
+    "rssMB": 660,
+    "cpuSeconds": 17,
+    "names": [
+      "msedgewebview2.exe"
+    ]
+  },
+  "idleCpuSeconds3s": 0
+}

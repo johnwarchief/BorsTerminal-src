@@ -1,0 +1,123 @@
+{
+  "run": 1,
+  "label": "proto-pywebview-cold-final",
+  "shellKind": "pywebview",
+  "t0": 1792841386291,
+  "t0Iso": "2026-10-24T11:29:46.291Z",
+  "env": {
+    "BORS_PORT": "8105",
+    "BORS_NO_FETCH_LOOPS": "1",
+    "BORS_CODAL_AUTO": "0",
+    "cdpPort": 9881,
+    "freshProfile": true
+  },
+  "backendWasWarm": true,
+  "cdpMs": 11738,
+  "pageUrl": "http://127.0.0.1:8105/",
+  "pageReadyMs": 12559,
+  "navigation": {
+    "domContentLoadedMs": 0,
+    "loadMs": 0,
+    "responseEndMs": 572,
+    "transferSize": 832,
+    "paint": []
+  },
+  "loginRequired": true,
+  "shellReadyMs": 14193,
+  "jsHeapMB": 2.8,
+  "domNodes": 356,
+  "marketReadyMs": 716,
+  "marketRows": 34,
+  "marketRequests": [
+    {
+      "path": "/api/market",
+      "ms": 328,
+      "transferKB": 1192,
+      "decodedKB": 6655
+    }
+  ],
+  "scroll": {
+    "frames": 89,
+    "p50ms": 17,
+    "p95ms": 34.3,
+    "maxMs": 61.7,
+    "over33ms": 19
+  },
+  "technicalReadyMs": 3413,
+  "technicalCanvases": 10,
+  "chartRequests": [
+    {
+      "path": "/api/chart/%D9%81%D9%88%D9%84%D8%A7%D8%AF",
+      "ms": 1388,
+      "decodedKB": 1095
+    }
+  ],
+  "jsHeapAfterMB": 12.3,
+  "jsHeapPeakMB": 31.5,
+  "freshness": {
+    "version": {
+      "version": "1.0.95",
+      "tauri": false,
+      "mode": "dev",
+      "instance": "c2b6ac80bdbe"
+    },
+    "syncState": {
+      "status": "success",
+      "running": false,
+      "last": {}
+    }
+  },
+  "consoleErrors": [],
+  "process": {
+    "rootPid": 13160,
+    "processes": [
+      {
+        "pid": 13160,
+        "name": "python.exe",
+        "rssMB": 3
+      },
+      {
+        "pid": 13184,
+        "name": "python.exe",
+        "rssMB": 88
+      },
+      {
+        "pid": 14792,
+        "name": "msedgewebview2.exe",
+        "rssMB": 129
+      },
+      {
+        "pid": 15364,
+        "name": "msedgewebview2.exe",
+        "rssMB": 8
+      },
+      {
+        "pid": 13960,
+        "name": "msedgewebview2.exe",
+        "rssMB": 84
+      },
+      {
+        "pid": 10680,
+        "name": "msedgewebview2.exe",
+        "rssMB": 37
+      },
+      {
+        "pid": 13024,
+        "name": "msedgewebview2.exe",
+        "rssMB": 19
+      },
+      {
+        "pid": 13412,
+        "name": "msedgewebview2.exe",
+        "rssMB": 198
+      }
+    ],
+    "rssMB": 565,
+    "cpuSeconds": 13,
+    "names": [
+      "python.exe",
+      "msedgewebview2.exe"
+    ]
+  },
+  "idleCpuSeconds3s": 0
+}

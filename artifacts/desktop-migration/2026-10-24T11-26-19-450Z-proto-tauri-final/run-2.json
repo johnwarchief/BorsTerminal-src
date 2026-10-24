@@ -1,0 +1,118 @@
+{
+  "run": 2,
+  "label": "proto-tauri-final",
+  "shellKind": "exe",
+  "t0": 1792841210587,
+  "t0Iso": "2026-10-24T11:26:50.587Z",
+  "env": {
+    "BORS_PORT": "8105",
+    "BORS_NO_FETCH_LOOPS": "1",
+    "BORS_CODAL_AUTO": "0",
+    "cdpPort": 9862,
+    "freshProfile": false
+  },
+  "backendWasWarm": true,
+  "cdpMs": 1420,
+  "pageUrl": "http://127.0.0.1:8105/",
+  "pageReadyMs": 2138,
+  "navigation": {
+    "domContentLoadedMs": 0,
+    "loadMs": 0,
+    "responseEndMs": 191,
+    "transferSize": 832,
+    "paint": []
+  },
+  "loginRequired": true,
+  "shellReadyMs": 3175,
+  "jsHeapMB": 2.8,
+  "domNodes": 352,
+  "marketReadyMs": 572,
+  "marketRows": 34,
+  "marketRequests": [
+    {
+      "path": "/api/market",
+      "ms": 250,
+      "transferKB": 1192,
+      "decodedKB": 6655
+    }
+  ],
+  "scroll": {
+    "frames": 95,
+    "p50ms": 16.9,
+    "p95ms": 34.1,
+    "maxMs": 49.1,
+    "over33ms": 16
+  },
+  "technicalReadyMs": 3289,
+  "technicalCanvases": 10,
+  "chartRequests": [
+    {
+      "path": "/api/chart/%D9%81%D9%88%D9%84%D8%A7%D8%AF",
+      "ms": 1344,
+      "decodedKB": 1095
+    }
+  ],
+  "jsHeapAfterMB": 12.1,
+  "jsHeapPeakMB": 30.5,
+  "freshness": {
+    "version": {
+      "version": "1.0.95",
+      "tauri": false,
+      "mode": "dev",
+      "instance": "c2b6ac80bdbe"
+    },
+    "syncState": {
+      "status": "success",
+      "running": false,
+      "last": {}
+    }
+  },
+  "consoleErrors": [],
+  "process": {
+    "rootPid": 8020,
+    "processes": [
+      {
+        "pid": 8020,
+        "name": "bors-m1-shell.exe",
+        "rssMB": 21
+      },
+      {
+        "pid": 16576,
+        "name": "msedgewebview2.exe",
+        "rssMB": 116
+      },
+      {
+        "pid": 1328,
+        "name": "msedgewebview2.exe",
+        "rssMB": 8
+      },
+      {
+        "pid": 11548,
+        "name": "msedgewebview2.exe",
+        "rssMB": 82
+      },
+      {
+        "pid": 6964,
+        "name": "msedgewebview2.exe",
+        "rssMB": 34
+      },
+      {
+        "pid": 16032,
+        "name": "msedgewebview2.exe",
+        "rssMB": 19
+      },
+      {
+        "pid": 17224,
+        "name": "msedgewebview2.exe",
+        "rssMB": 180
+      }
+    ],
+    "rssMB": 460,
+    "cpuSeconds": 10,
+    "names": [
+      "bors-m1-shell.exe",
+      "msedgewebview2.exe"
+    ]
+  },
+  "idleCpuSeconds3s": 0
+}

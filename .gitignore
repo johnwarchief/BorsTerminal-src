@@ -216,3 +216,17 @@ market.db.meta.json
 # لاگِ خروجیِ فرمان‌هایِ تست/بیلد که ریشه می‌نشیند (بازتولیدشدنی)
 /tests_output.txt
 /build_log.txt
+
+# ---- desktop migration mission (M0/M1) ----
+_tools/
+_proto-server.log
+_proto-backend.log
+artifacts/desktop-migration/.shell-profile/
+artifacts/desktop-migration/.proto-profile/
+artifacts/desktop-migration/.proto-cold/
+artifacts/desktop-migration/.tauri-profile/
+
+# mission build outputs
+prototypes/tauri-m1/src-tauri/target/
+prototypes/tinyjs-m1/dist/
+prototypes/tauri-m1/src-tauri/gen/

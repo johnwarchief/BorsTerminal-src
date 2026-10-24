@@ -1,0 +1,130 @@
+{
+  "label": "portable-rss",
+  "prewarm": null,
+  "runs": [
+    {
+      "run": 1,
+      "label": "portable-rss",
+      "shellKind": "exe",
+      "t0": 1792794588340,
+      "t0Iso": "2026-10-23T22:29:48.340Z",
+      "env": {
+        "BORS_PORT": "8101",
+        "BORS_NO_FETCH_LOOPS": "1",
+        "BORS_CODAL_AUTO": "0",
+        "cdpPort": 9651,
+        "freshProfile": true
+      },
+      "backendReadyMs": 15353,
+      "backendWasWarm": false,
+      "cdpMs": 34326,
+      "pageUrl": "http://127.0.0.1:8101/",
+      "pageReadyMs": 36938,
+      "navigation": {
+        "domContentLoadedMs": 503,
+        "loadMs": 506,
+        "responseEndMs": 216,
+        "transferSize": 794,
+        "paint": [
+          {
+            "name": "first-paint",
+            "ms": 520
+          }
+        ]
+      },
+      "loginRequired": true,
+      "shellReadyMs": 38095,
+      "jsHeapMB": 8.9,
+      "domNodes": 601,
+      "marketReadyMs": 1943,
+      "marketRows": 30,
+      "marketRequests": [
+        {
+          "path": "/api/market",
+          "ms": 389,
+          "transferKB": 1192,
+          "decodedKB": 6655
+        }
+      ],
+      "scroll": {
+        "frames": 75,
+        "p50ms": 17.7,
+        "p95ms": 49.9,
+        "maxMs": 199.9,
+        "over33ms": 23
+      },
+      "technicalReadyMs": 10638,
+      "technicalCanvases": 10,
+      "chartRequests": [
+        {
+          "path": "/api/chart/%D9%81%D9%88%D9%84%D8%A7%D8%AF",
+          "ms": 8131,
+          "decodedKB": 1095
+        }
+      ],
+      "jsHeapAfterMB": 28.7,
+      "jsHeapPeakMB": 95.2,
+      "freshness": {
+        "version": {
+          "version": "1.0.97",
+          "tauri": false,
+          "mode": "portable",
+          "instance": "f6f06933d704"
+        },
+        "syncState": {
+          "status": "success",
+          "running": false,
+          "last": {}
+        }
+      },
+      "process": {
+        "rootPid": 4780,
+        "processes": [
+          {
+            "pid": 4780,
+            "name": "BorsTerminal_Ultimate.exe",
+            "rssMB": 313
+          },
+          {
+            "pid": 16136,
+            "name": "msedgewebview2.exe",
+            "rssMB": 121
+          },
+          {
+            "pid": 14912,
+            "name": "msedgewebview2.exe",
+            "rssMB": 15
+          },
+          {
+            "pid": 4424,
+            "name": "msedgewebview2.exe",
+            "rssMB": 122
+          },
+          {
+            "pid": 9784,
+            "name": "msedgewebview2.exe",
+            "rssMB": 35
+          },
+          {
+            "pid": 12820,
+            "name": "msedgewebview2.exe",
+            "rssMB": 20
+          },
+          {
+            "pid": 12140,
+            "name": "msedgewebview2.exe",
+            "rssMB": 329
+          }
+        ],
+        "rssMB": 955,
+        "cpuSeconds": 44,
+        "names": [
+          "BorsTerminal_Ultimate.exe",
+          "msedgewebview2.exe"
+        ]
+      },
+      "idleCpuSeconds3s": 0
+    }
+  ],
+  "generatedAt": "2026-10-23T22:31:04.860Z"
+}

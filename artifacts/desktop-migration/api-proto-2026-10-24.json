@@ -1,0 +1,152 @@
+{
+  "base": "http://127.0.0.1:8102",
+  "reps": 10,
+  "rev": 0,
+  "generatedAt": "2026-10-24T11:19:42Z",
+  "paths": [
+    {
+      "name": "version",
+      "path": "/api/update/version",
+      "status": 200,
+      "coldMs": 4.1,
+      "minMs": 4.0,
+      "p50Ms": 4.5,
+      "p95Ms": 7.9,
+      "maxMs": 7.9,
+      "transferKB": 0,
+      "decodedKB": 0,
+      "samplesMs": [
+        7.8,
+        4.3,
+        4.5,
+        7.9,
+        4.0,
+        4.5,
+        7.2,
+        4.0,
+        4.5,
+        7.0
+      ]
+    },
+    {
+      "name": "market full",
+      "path": "/api/market",
+      "status": 200,
+      "coldMs": 164.5,
+      "minMs": 108.2,
+      "p50Ms": 136.0,
+      "p95Ms": 171.7,
+      "maxMs": 171.7,
+      "transferKB": 1192,
+      "decodedKB": 6655,
+      "samplesMs": [
+        171.7,
+        156.4,
+        151.9,
+        124.1,
+        109.8,
+        136.0,
+        165.5,
+        115.2,
+        126.4,
+        108.2
+      ]
+    },
+    {
+      "name": "market delta",
+      "path": "/api/market/delta?since=0",
+      "status": 200,
+      "coldMs": 5.7,
+      "minMs": 2.9,
+      "p50Ms": 3.0,
+      "p95Ms": 10.1,
+      "maxMs": 10.1,
+      "transferKB": 0,
+      "decodedKB": 0,
+      "samplesMs": [
+        3.0,
+        3.0,
+        3.0,
+        3.0,
+        5.5,
+        2.9,
+        2.9,
+        10.1,
+        4.8,
+        4.0
+      ]
+    },
+    {
+      "name": "market row",
+      "path": "/api/market/row?symbol=%D9%81%D9%88%D9%84%D8%A7%D8%AF",
+      "status": 200,
+      "coldMs": 11.1,
+      "minMs": 5.5,
+      "p50Ms": 8.5,
+      "p95Ms": 12.8,
+      "maxMs": 12.8,
+      "transferKB": 1,
+      "decodedKB": 1,
+      "samplesMs": [
+        9.1,
+        12.8,
+        11.4,
+        11.9,
+        6.2,
+        5.5,
+        8.5,
+        5.9,
+        8.1,
+        8.4
+      ]
+    },
+    {
+      "name": "chart",
+      "path": "/api/chart/%D9%81%D9%88%D9%84%D8%A7%D8%AF",
+      "status": 200,
+      "coldMs": 884.1,
+      "minMs": 515.8,
+      "p50Ms": 593.8,
+      "p95Ms": 732.0,
+      "maxMs": 732.0,
+      "transferKB": 197,
+      "decodedKB": 1095,
+      "samplesMs": [
+        515.8,
+        552.8,
+        532.5,
+        537.4,
+        604.9,
+        732.0,
+        603.0,
+        593.8,
+        572.8,
+        677.8
+      ]
+    },
+    {
+      "name": "history fallback",
+      "path": "/api/history/%D9%81%D9%88%D9%84%D8%A7%D8%AF",
+      "status": 200,
+      "coldMs": 395.2,
+      "minMs": 245.9,
+      "p50Ms": 356.4,
+      "p95Ms": 525.5,
+      "maxMs": 525.5,
+      "transferKB": 17,
+      "decodedKB": 90,
+      "samplesMs": [
+        256.9,
+        245.9,
+        264.4,
+        353.7,
+        463.3,
+        349.5,
+        371.7,
+        356.4,
+        369.1,
+        525.5
+      ]
+    }
+  ]
+}

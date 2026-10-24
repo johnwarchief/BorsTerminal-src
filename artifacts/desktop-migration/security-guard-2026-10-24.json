@@ -1,0 +1,117 @@
+{
+  "generatedAt": "2026-10-24T11:31:15Z",
+  "targets": [
+    {
+      "name": "backend",
+      "port": 8102,
+      "cases": [
+        {
+          "case": "no origin, loopback host",
+          "host": "127.0.0.1:8102",
+          "origin": null,
+          "status": 200,
+          "expected": 200,
+          "ok": true
+        },
+        {
+          "case": "localhost host, loopback origin",
+          "host": "localhost:8102",
+          "origin": "http://localhost:8102",
+          "status": 200,
+          "expected": 200,
+          "ok": true
+        },
+        {
+          "case": "external origin",
+          "host": "127.0.0.1:8102",
+          "origin": "http://evil.example",
+          "status": 403,
+          "expected": 403,
+          "ok": true
+        },
+        {
+          "case": "null origin",
+          "host": "127.0.0.1:8102",
+          "origin": "null",
+          "status": 403,
+          "expected": 403,
+          "ok": true
+        },
+        {
+          "case": "tauri.localhost origin",
+          "host": "127.0.0.1:8102",
+          "origin": "http://tauri.localhost",
+          "status": 403,
+          "expected": 403,
+          "ok": true
+        },
+        {
+          "case": "external host",
+          "host": "evil.example",
+          "origin": null,
+          "status": 403,
+          "expected": 403,
+          "ok": true
+        }
+      ],
+      "ok": true
+    },
+    {
+      "name": "prototype proxy",
+      "port": 8105,
+      "cases": [
+        {
+          "case": "no origin, loopback host",
+          "host": "127.0.0.1:8105",
+          "origin": null,
+          "status": 200,
+          "expected": 200,
+          "ok": true
+        },
+        {
+          "case": "localhost host, loopback origin",
+          "host": "localhost:8105",
+          "origin": "http://localhost:8105",
+          "status": 200,
+          "expected": 200,
+          "ok": true
+        },
+        {
+          "case": "external origin",
+          "host": "127.0.0.1:8105",
+          "origin": "http://evil.example",
+          "status": 403,
+          "expected": 403,
+          "ok": true
+        },
+        {
+          "case": "null origin",
+          "host": "127.0.0.1:8105",
+          "origin": "null",
+          "status": 403,
+          "expected": 403,
+          "ok": true
+        },
+        {
+          "case": "tauri.localhost origin",
+          "host": "127.0.0.1:8105",
+          "origin": "http://tauri.localhost",
+          "status": 403,
+          "expected": 403,
+          "ok": true
+        },
+        {
+          "case": "external host",
+          "host": "evil.example",
+          "origin": null,
+          "status": 403,
+          "expected": 403,
+          "ok": true
+        }
+      ],
+      "ok": true
+    }
+  ],
+  "note": "The first proxy version rewrote Host upstream without checking it, so external-Host requests returned 200. serve_prototype.py now enforces the same loopback Host/Origin contract before proxying; this run is the post-fix evidence. The production backend was never changed.",
+  "ok": true
+}

@@ -1,0 +1,84 @@
+{
+  "run": 2,
+  "label": "tinyjs",
+  "windowMs": 2711,
+  "pageMs": 3105,
+  "client": [
+    1284,
+    768
+  ],
+  "loginToMarketMs": 1349,
+  "marketMs": 5304,
+  "marketRequestMs": 207,
+  "technicalMs": 2161,
+  "chartRequestMs": 1914,
+  "rssMB": 423,
+  "idleCpuSeconds3s": 0.296,
+  "processes": [
+    {
+      "pid": 1212,
+      "name": "BorsTerminalM1TinyJS.exe",
+      "rssMB": 15,
+      "cpuSeconds": 0.062
+    },
+    {
+      "pid": 3484,
+      "name": "launcher.exe",
+      "rssMB": 19,
+      "cpuSeconds": 0.094
+    },
+    {
+      "pid": 16032,
+      "name": "msedgewebview2.exe",
+      "rssMB": 107,
+      "cpuSeconds": 1.562
+    },
+    {
+      "pid": 7080,
+      "name": "msedgewebview2.exe",
+      "rssMB": 8,
+      "cpuSeconds": 0.047
+    },
+    {
+      "pid": 10804,
+      "name": "msedgewebview2.exe",
+      "rssMB": 34,
+      "cpuSeconds": 0.281
+    },
+    {
+      "pid": 15628,
+      "name": "msedgewebview2.exe",
+      "rssMB": 88,
+      "cpuSeconds": 2.531
+    },
+    {
+      "pid": 11316,
+      "name": "msedgewebview2.exe",
+      "rssMB": 19,
+      "cpuSeconds": 0.125
+    },
+    {
+      "pid": 8884,
+      "name": "msedgewebview2.exe",
+      "rssMB": 133,
+      "cpuSeconds": 1.828
+    }
+  ],
+  "stdoutTail": [
+    "[nav] policy http://127.0.0.1:8105/",
+    ">> NAVR n1 allow",
+    "<< GOT 1 [{\"id\":0,\"uid\":\"\\\\\\\\?\\\\DISPLAY#GSM4492#4&58ec88a&0&UID16843008#{e6f07b5f-ee97-4a90-b076-33f57bf4eaa7}\",\"name\":\"L1755 \",\"x\":0,\"y\":0,\"width\":1280,\"height\":1…",
+    "<< GOT 2 [{\"id\":0,\"uid\":\"\\\\\\\\?\\\\DISPLAY#GSM4492#4&58ec88a&0&UID16843008#{e6f07b5f-ee97-4a90-b076-33f57bf4eaa7}\",\"name\":\"L1755 \",\"x\":0,\"y\":0,\"width\":1280,\"height\":1…",
+    "<< NAV {\"window\":\"main\",\"kind\":\"start\",\"url\":\"http://127.0.0.1:8105/\"}",
+    "[nav] start http://127.0.0.1:8105/",
+    "<< NAV {\"window\":\"main\",\"kind\":\"commit\",\"url\":\"http://127.0.0.1:8105/\"}",
+    "[nav] commit http://127.0.0.1:8105/",
+    "<< CALL 132ca67b203efab61bf04ecb2eb9ca12 [\"{\\\"method\\\":\\\"client.hello\\\"}\",\"http://127.0.0.1:8105\"]",
+    ">> RET 132ca67b203efab61bf04ecb2eb9ca12 0 true",
+    "<< NAV {\"window\":\"main\",\"kind\":\"finish\",\"url\":\"http://127.0.0.1:8105/\"}",
+    "[nav] finish http://127.0.0.1:8105/"
+  ],
+  "consoleErrors": "NOT_MEASURED (TinyJS does not expose CDP)",
+  "jsHeapMB": "NOT_MEASURED",
+  "scroll": "NOT_MEASURED"
+}
