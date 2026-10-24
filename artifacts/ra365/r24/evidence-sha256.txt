@@ -1,0 +1,13 @@
+# RA365 Round 24 evidence — SHA-256 (2026-10-24)
+# gate workdirs: D:/BorsTerminal-tmp/r24_gate2|gate3|gate4 ; benchmark: D:/BorsTerminal-tmp/r24_bench
+0e023ef9ae027a7b9a843da92668fafa52eafc6b7851046943babe3711da1e51 *artifacts/ra365/r24/full-gate.log
+c6478f966f31e13d79b4f501277bdeb1935af655c14243c25e535e3c8ff9372a *artifacts/ra365/r24/full-gate-attempt1.log
+c0967a55e9f3fa0451df8d9827eed4a338843514da08cb8730fbb8c867ea8c14 *artifacts/ra365/r24/full-gate-attempt3.log
+bc1b8873567d35a50a1922be454968d3b3fd98e2a4169fadd83c3c1fd4bb1e58 *D:/BorsTerminal-tmp/r24_bench/summary50/live-parity-summary.json
+039626ffb98c8e8dd3f578b24d6bf89fe7c3835f250d6b49204768414fcee172 *D:/BorsTerminal-tmp/r24_bench/summary50_v4/live-parity-summary.json
+9ced054a4787848f50fa7dff7a4ee319cdeaba0db06e538ffd5d4aff5187dbde *D:/BorsTerminal-tmp/r24_bench/summary_codeonly_v3/live-parity-summary.json
+a452b0fb6471bf42faae1feb9ee785a913485e7da4a406dec836d867fae96237 *D:/BorsTerminal-tmp/r24_bench/monthly_v4.json
+6d5e90b6551b4f5957f4627e31e81bd4ab5fd34057ae0e4025f1476f71997b08 *D:/BorsTerminal-tmp/r24_bench/table.md
+# protected DBs
+e08d8062be33301551e672683106b87ea930825657ea6956e515bc7ac191a2a4 *C:/Users/Johnkallnaya/Desktop/Borsterminal/.worktrees/ra365-round18/market.db
+8fb85f381317634430cae429bd9775eba0a364b692e0868b4d9b17dbbcc6c17f *D:/BorsTerminal-tmp/ra365_round17/market_r17_migrated.db
