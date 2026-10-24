@@ -282,6 +282,12 @@ _ADJ_TABLE_DDL = ("CREATE TABLE IF NOT EXISTS adjust_events("
 # مسیرِ آفلاین برایِ نمادی که واقعاً تعدیل ندارد هشدارِ جعلی می‌داد.
 _ADJ_VERDICT_DDL = ("CREATE TABLE IF NOT EXISTS adjust_verdict("
                     "symbol TEXT PRIMARY KEY, source TEXT, checked_at TEXT)")
+# آخرین دیدهٔ سالمِ سری: تعداد کندل و اولین تاریخ. فقط برایِ تشخیصِ «فیدِ کوتاه‌شده»
+# است — وقتی یک درخواست تاریخی یک نشست را جا می‌گذارد، گسستِ پایهٔ ساختگی از همان
+# جای خالی ساخته می‌شود و کلِ تاریخِ قبل را جابه‌جا می‌کند (سنجشِ ۱۴۰۵-۰۸-۰۲: هجرت
+# ۲۰۲۳-۰۳-۲۸ با ۱۵۷۷→۱۵۷۶ کندل). این جدول داده نیست، متادیتایِ کش است.
+_ADJ_META_DDL = ("CREATE TABLE IF NOT EXISTS adjust_cache_meta("
+                 "symbol TEXT PRIMARY KEY, bars_count INTEGER, first_date TEXT, updated_at TEXT)")
 _ADJ_KNOWN_SOURCES = ("base-price-discontinuity", "no-adjustment-event", "local-cache",
                       # کشف از گسستِ CSV، عددِ رویداد از دفترِ رویدادِ مبدأِ TSETMC
                       "ledger+base-price-discontinuity",
@@ -331,6 +337,27 @@ def _store_adjust_events(symbol, events, source):
         try:
             conn.execute(_ADJ_TABLE_DDL)
             conn.execute(_ADJ_VERDICT_DDL)
+            # GET نباید وقتی هیچ‌چیز عوض نشده بانک را بازنویسی کند: پیش از این هر
+            # درخواستِ چارت `checked_at` را تازه می‌کرد و checksum بانکِ کاربر با
+            # هر مشاهده تغییر می‌کرد (ناسازگار با idempotency و بازتولیدپذیری).
+            today = datetime.date.today().isoformat()
+            verdict = conn.execute(
+                "SELECT source, checked_at FROM adjust_verdict WHERE symbol=?",
+                (symbol,)).fetchone()
+            events_same = True
+            if known:
+                existing = sorted(
+                    (str(r[0]), float(r[1]), r[2] or "")
+                    for r in conn.execute(
+                        "SELECT date, ratio, source FROM adjust_events WHERE symbol=?",
+                        (symbol,)).fetchall())
+                wanted = sorted(
+                    (str(e["date"])[:10], float(e["ratio"]), e.get("source") or source)
+                    for e in (events or []))
+                events_same = existing == wanted
+            if (events_same and verdict and str(verdict[0] or "") == source
+                    and str(verdict[1] or "") == today):
+                return
             if known:
                 if authoritative:
                     conn.execute("DELETE FROM adjust_events WHERE symbol=?", (symbol,))
@@ -341,7 +368,7 @@ def _store_adjust_events(symbol, events, source):
                         [(symbol, e["date"], float(e["ratio"]), e.get("source") or source)
                          for e in events])
             conn.execute("INSERT OR REPLACE INTO adjust_verdict(symbol, source, checked_at) "
-                         "VALUES (?,?,date('now'))", (symbol, source))
+                         "VALUES (?,?,?)", (symbol, source, today))
             conn.commit()
         finally:
             conn.close()
@@ -396,6 +423,78 @@ def _stored_adjust_events(symbol):
         return []
     sharpened, _, _ = _sharpen_events_with_ledger(symbol, ev)
     return sharpened
+
+
+def _adj_cache_meta(symbol):
+    """(bars_count, first_date) آخرین دیدهٔ سالم، یا (None, None) اگر ندیده‌ایم."""
+    try:
+        conn = sqlite3.connect(DB_PATH, timeout=15)
+        try:
+            conn.execute(_ADJ_META_DDL)
+            row = conn.execute(
+                "SELECT bars_count, first_date FROM adjust_cache_meta WHERE symbol=?",
+                (symbol,)).fetchone()
+        finally:
+            conn.close()
+    except Exception:
+        return None, None
+    if not row:
+        return None, None
+    try:
+        return int(row[0]), str(row[1] or "")
+    except (TypeError, ValueError):
+        return None, None
+
+
+def _set_adj_cache_meta(symbol, bars_count, first_date):
+    try:
+        conn = sqlite3.connect(DB_PATH, timeout=15)
+        try:
+            conn.execute(_ADJ_META_DDL)
+            row = conn.execute(
+                "SELECT bars_count, first_date FROM adjust_cache_meta WHERE symbol=?",
+                (symbol,)).fetchone()
+            if row and int(row[0]) == int(bars_count) and str(row[1] or "") == str(first_date or ""):
+                return
+            conn.execute(
+                "INSERT OR REPLACE INTO adjust_cache_meta(symbol, bars_count, first_date, updated_at)"
+                " VALUES (?,?,?,date('now'))",
+                (symbol, int(bars_count), str(first_date or "")))
+            conn.commit()
+        finally:
+            conn.close()
+    except Exception:
+        pass
+
+
+def _feed_shrank(symbol, bars_count):
+    """True وقتی این پاسخ از آخرین دیدهٔ سالم کندلِ کمتری دارد (نشستِ گم‌شده).
+
+    یک فیدِ کوتاه‌شده می‌تواند گسستِ پایهٔ ساختگی بسازد؛ آن گسست نه رسمی است و نه در
+    کشِ قبلی دیده شده. بدون این گارد، همان رویداد در کش می‌نشیند و تا پاسخِ کاملِ
+    بعدی، کلِ تاریخِ قبل را جابه‌جا می‌کند.
+    """
+    prev, _first = _adj_cache_meta(symbol)
+    return prev is not None and int(bars_count) < prev
+
+
+def _split_provisional_gaps(symbol, events):
+    """(kept, provisional) — گسست‌هایِ پایهٔ تازه در فیدِ کوتاه‌شده provisional می‌شوند.
+
+    رسمی‌ها (priceAdjust/shareChange/fund-portal) دست‌نخورده می‌مانند؛ فقط گسستِ
+    پایه‌ای که در کشِ قبلی نیست و شاهدِ رسمی ندارد، تا پاسخِ کاملِ بعدی اعمال نمی‌شود.
+    """
+    cached = {(str(e.get("date"))[:10], round(float(e.get("ratio") or 0), 8))
+              for e in _stored_adjust_events(symbol)}
+    kept, provisional = [], []
+    for e in (events or []):
+        src = str(e.get("source") or "")
+        pair = (str(e.get("date"))[:10], round(float(e.get("ratio") or 0), 8))
+        if src == "base-price-discontinuity" and pair not in cached:
+            provisional.append(e)
+        else:
+            kept.append(e)
+    return kept, provisional
 
 
 # ═════ تیزکردنِ ضریب با دفترِ رویدادِ مبدأ (RC3) ═════
@@ -2428,6 +2527,9 @@ def get_chart_tsetmc(symbol: str):
         candles, volumes, all_rows = _parse_tsetmc_csv(r.text)
         candles, volumes, all_rows = _merge_session_backfill(
             candles, volumes, all_rows, _session_backfill(symbol), descending=True)
+        # فیدِ کوتاه‌شده (یک نشستِ تاریخی جا افتاده) گسستِ پایهٔ ساختگی می‌سازد؛
+        # آن گسست نباید زنجیره یا کش را جابه‌جا کند. سنجش: هجرت ۲۰۲۳-۰۳-۲۸.
+        _shrunk = _feed_shrank(symbol, len(candles))
         # رویدادهای تعدیل: گسستِ «قیمت پایه» در همین CSV، به‌علاوهٔ درِ لنگر. منطق و
         # دلیلِ حذفِ APF/gap-detector در _adjust_events_from_rows مستند است.
         adj_events, anchored = _adjust_events_from_rows(all_rows)
@@ -2440,6 +2542,9 @@ def get_chart_tsetmc(symbol: str):
         adj_events, _sharp_n, _amb_n = _sharpen_events_with_ledger(symbol, adj_events)
         adj_events, _false_rejected = _filter_unproven_base_events(
             symbol, adj_events, times=[str(c["time"])[:10] for c in candles])
+        _provisional = []
+        if _shrunk:
+            adj_events, _provisional = _split_provisional_gaps(symbol, adj_events)
         _led_n = sum(1 for e in adj_events
                      if e.get("source") in ("priceAdjust", "shareChange"))
         # برچسبِ منبع «کجا عدد آمده» است، نه «کجا رویداد پیدا شده»: کشف همیشه از
@@ -2464,6 +2569,9 @@ def get_chart_tsetmc(symbol: str):
         _applied, _rejected, _fac, _chain, _cov = _canonical_adjustment(
             symbol, _times, adj_events, closings=_closings, gap_closings=_closings)
         _rejected.extend(_false_rejected)
+        if _provisional:
+            _rejected.extend(dict(e, factor_status="provisional:partial-feed")
+                             for e in _provisional)
         _fund_n = sum(1 for e in _applied
                       if str(e.get("source") or "").startswith("fund-portal"))
         if _fund_n:
@@ -2502,7 +2610,13 @@ def get_chart_tsetmc(symbol: str):
             "count": len(candles),
         }
         # یک‌بار کشف، همیشه خوانده: همین مجموعه، منبعِ مسیرِ آفلاین هم می‌شود.
-        _store_adjust_events(symbol, adj_events, adjust_source)
+        # در فیدِ کوتاه‌شده کش را بازنویسی نمی‌کنیم (آخرین دیدهٔ سالم می‌ماند)،
+        # فقط متادیتا را جلو می‌بریم تا گارد به‌طور دائمی قفل نشود.
+        if _shrunk:
+            _set_adj_cache_meta(symbol, len(candles), min(_times) if _times else "")
+        else:
+            _store_adjust_events(symbol, adj_events, adjust_source)
+            _set_adj_cache_meta(symbol, len(candles), min(_times) if _times else "")
         CHART_CACHE[_chart_cache_key(symbol)] = (time.time(), result, CHART_CACHE_TTL)
         return _attach_live_bar(symbol, result)
     except Exception as e:
