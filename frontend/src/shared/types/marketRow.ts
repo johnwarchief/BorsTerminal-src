@@ -195,6 +195,11 @@ export const MarketFeedSchema = z.object({
   status: z.string(),
   /** ویرایشِ حالتِ داغِ این بدنه — پولینگِ بعدی `?since=rev` می‌شود. */
   rev: z.number().nullish(),
+  /** نسلِ محتوایِ ایستا (نه تیکِ زنده). تغییرِ client_type_value/پنجره‌هایِ
+   *  تاریخ revision را تکان نمی‌دهد ولی ستون‌هایِ ردیف را عوض می‌کند؛ کلاینت
+   *  این عدد را همراهِ delta می‌فرستد تا سرور بداند ردیف‌هایِ دلتا برایِ
+   *  بازسازیِ همین بدنۀ او کافی‌اند یا باید بدنۀ کامل بیاید. */
+  gen: z.number().nullish(),
   /** لحظۀِ (epoch ms، ساعتِ خودِ کلاینت) که *داده* عوض شد — نه لحظه‌ای که یکِ
    *  پاسخِ HTTP رسید. تا پیش از این تازگی از `dataUpdatedAt` سنجیده می‌شد و آن
    *  با هر دورِ «unchanged» هم نو می‌شد؛ سنجشِ زنده ۱۴۰۵-۰۷-۱۸: revision ۹۴۵
@@ -227,10 +232,12 @@ const counts = {
 };
 
 export const MarketDeltaSchema = z.discriminatedUnion('status', [
-  z.object({ status: z.literal('unchanged'), rev: z.number(), meta: MarketMetaSchema.nullish(), ...counts }),
-  z.object({ status: z.literal('delta'), rev: z.number(), rows: z.array(MarketRowSchema),
-             meta: MarketMetaSchema.nullish(), ...counts }),
-  z.object({ status: z.literal('full'), rev: z.number().nullish(), reason: z.string().nullish() }),
+  z.object({ status: z.literal('unchanged'), rev: z.number(), gen: z.number().nullish(),
+             meta: MarketMetaSchema.nullish(), rebuilding: z.boolean().nullish(), ...counts }),
+  z.object({ status: z.literal('delta'), rev: z.number(), gen: z.number().nullish(),
+             rows: z.array(MarketRowSchema), meta: MarketMetaSchema.nullish(), ...counts }),
+  z.object({ status: z.literal('full'), rev: z.number().nullish(),
+             gen: z.number().nullish(), reason: z.string().nullish() }),
 ]);
 
 export type MarketDelta = z.infer<typeof MarketDeltaSchema>;

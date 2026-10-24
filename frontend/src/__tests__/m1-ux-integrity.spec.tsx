@@ -7,6 +7,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { computeFeedStatus } from '@shared/lib/feedFreshness';
+import { dEvenToJalali } from '@shared/lib/jalaali';
 import { CLOSED_POLL_MS } from '@shared/lib/marketHours';
 import { useSymbolStore } from '@shared/stores/symbolStore';
 import { SuspiciousPanel } from '@features/market/components/SuspiciousPanel';
@@ -25,11 +26,15 @@ describe('computeFeedStatus — اتصال ≠ تازگی', () => {
   });
 
   it('بازارِ بسته ⇒ closed (نه «آنلاینِ متحرک»، نه کهنه، نه خطا)', () => {
-    const st = computeFeedStatus({ status: 'success', dataUpdatedAt: NOW - 40 * 60_000, liveCount: 0, totalCount: 600, now: NOW, marketOpen: false });
+    const st = computeFeedStatus({ status: 'success', dataUpdatedAt: NOW - 40 * 60_000,
+                                   liveCount: 0, totalCount: 600, boardDay: 20261009,
+                                   now: NOW, marketOpen: false });
     expect(st.freshness).toBe('closed');
     expect(st.connection).toBe('ok');
     expect(st.pulse).toBe(false);
     expect(st.label).toContain('بازار بسته');
+    // تاریخِ واقعیِ تابلو باید در برچسب باشد، نه «آخرین روز»ِ مبهم.
+    expect(st.label).toContain(dEvenToJalali(20261009)!);
   });
 
   it('خطا بر همه‌چیز غالب است و «خالی» نیست', () => {
@@ -90,6 +95,7 @@ describe('computeFeedStatus — اتصال ≠ تازگی', () => {
     expect(st.freshness).toBe('stale');
     expect(st.pulse).toBe(false);
     expect(st.label).toContain('نشستِ جاری');
+    expect(st.label).toContain(dEvenToJalali(20261009)!);
   });
 
   it('تابلویِ همان روز ⇒ live؛ روزِ تابلو نامعلوم ⇒ رفتارِ پیشین', () => {

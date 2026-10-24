@@ -30,10 +30,11 @@ function row(code: string, symbol: string, patch: Partial<MarketRow> = {}): Mark
   return { ins_code: code, symbol, ...patch } as MarketRow;
 }
 
-function feed(rows: MarketRow[], rev: number, count = rows.length): MarketFeed {
+function feed(rows: MarketRow[], rev: number, count = rows.length, gen?: number): MarketFeed {
   return {
     status: 'success',
     rev,
+    gen,
     count,
     live_count: rows.length,
     fossil_count: 0,
@@ -56,7 +57,7 @@ describe('marketFeed — حالتِ داغ در کلاینت', () => {
     const f = await call();
     expect(httpMock.mock.calls[0][0]).toBe('/api/market');
     expect(f.data[0].p_closing).toBe(1000);
-    expect(marketFeedMirrorSize()).toEqual({ rows: 1, rev: 7, revAt: expect.any(Number) });
+    expect(marketFeedMirrorSize()).toEqual({ rows: 1, rev: 7, gen: null, revAt: expect.any(Number) });
   });
 
   it('دومین کوئری دلتاست، همان‌جا از همان rev', async () => {
@@ -173,5 +174,69 @@ describe('marketFeed — حالتِ داغ در کلاینت', () => {
     httpMock.mockResolvedValueOnce(feed([row('A', 'شپنا', { p_closing: 900 })], 2));
     const f = await call();
     expect(f.data[0].p_closing).toBe(900);
+  });
+
+  // STATIC-GEN: تغییرِ client_type_value (درصد حقیقی/حقوقی) یا پنجره‌هایِ تاریخ
+  // revisionِ زنده را تکان نمی‌دهد. کلاینت باید نسلِ ایستا را همراهِ delta
+  // بفرستد؛ سرور با ناهم‌خوانی می‌فهمد ردیف‌هایِ دلتا کافی نیستند و بدنۀ کامل
+  // می‌دهد — وگرنه تابلو تا ابد عددِ قدیمی را با برچسبِ «زنده» نگه می‌داشت.
+  it('gen از بدنۀ کامل می‌آید و با delta می‌رود', async () => {
+    httpMock.mockResolvedValueOnce(feed([row('A', 'شپنا', { p_closing: 1000 })], 7, 1, 3));
+    await call();
+    expect(marketFeedMirrorSize().gen).toBe(3);
+    httpMock.mockResolvedValueOnce({
+      status: 'delta', rev: 8, gen: 3, count: 1,
+      rows: [row('A', 'شپنا', { p_closing: 1010 })],
+    });
+    await call();
+    expect(httpMock.mock.calls[1][0]).toBe('/api/market/delta?since=7&gen=3');
+  });
+
+  it('تغییرِ ایستا با revِ ثابت ⇒ ژنِ نو، بدنۀ کامل و revAtِ تازه', async () => {
+    let t = 3_000_000;
+    const spy = vi.spyOn(Date, 'now').mockImplementation(() => t);
+    try {
+      httpMock.mockResolvedValueOnce(feed([row('A', 'شپنا', { retail_buy_pct: 33.3 })], 10, 1, 4));
+      const first = await call();
+      expect(first.gen).toBe(4);
+      t = 3_030_000;
+      // سرور می‌گوید نسلِ تو کهنه است؛ ردیف‌هایِ دلتا کافی نیستند.
+      httpMock.mockResolvedValueOnce({ status: 'full', rev: 10, gen: 5, reason: 'board-changed' });
+      httpMock.mockResolvedValueOnce(feed([row('A', 'شپنا', { retail_buy_pct: 98.9 })], 10, 1, 5));
+      const second = await call();
+      expect(httpMock.mock.calls[1][0]).toBe('/api/market/delta?since=10&gen=4');
+      expect(httpMock.mock.calls[2][0]).toBe('/api/market');
+      expect(second.data[0].retail_buy_pct).toBe(98.9);
+      expect(second.rev).toBe(10);
+      expect(second.gen).toBe(5);
+      expect(second.rev_at).toBe(3_030_000);
+    } finally {
+      spy.mockRestore();
+    }
+  });
+
+  it('دلتایِ ناگهان‌باژن رد می‌شود؛ mergeِ ناقص جایِ بدنۀ کامل نمی‌نشیند', async () => {
+    httpMock.mockResolvedValueOnce(feed([row('A', 'شپنا', { p_closing: 1000 })], 5, 1, 2));
+    await call();
+    httpMock.mockResolvedValueOnce({
+      status: 'delta', rev: 6, gen: 3, count: 1,
+      rows: [row('A', 'شپنا', { p_closing: 1100 })],
+    });
+    httpMock.mockResolvedValueOnce(feed([row('A', 'شپنا', { p_closing: 1200 })], 6, 1, 3));
+    const f = await call();
+    expect(httpMock.mock.calls[2][0]).toBe('/api/market');
+    expect(f.data[0].p_closing).toBe(1200);
+    expect(f.gen).toBe(3);
+  });
+
+  it('unchangedِ ناگهان‌باژن هم به بدنۀ کامل برمی‌گردد، نه بی‌تفاوتی', async () => {
+    httpMock.mockResolvedValueOnce(feed([row('A', 'شپنا')], 5, 1, 2));
+    await call();
+    httpMock.mockResolvedValueOnce({ status: 'unchanged', rev: 5, gen: 3, count: 1 });
+    httpMock.mockResolvedValueOnce(feed([row('A', 'شپنا', { p_closing: 900 })], 5, 1, 3));
+    const f = await call();
+    expect(httpMock.mock.calls[2][0]).toBe('/api/market');
+    expect(f.data[0].p_closing).toBe(900);
+    expect(f.gen).toBe(3);
   });
 });

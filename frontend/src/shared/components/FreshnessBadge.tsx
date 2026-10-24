@@ -7,6 +7,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { MARKET_FEED_KEY } from '@shared/api/marketFeed';
 import type { MarketFeed } from '@shared/types/marketRow';
 import { computeFeedStatus, type FeedStatus } from '@shared/lib/feedFreshness';
+import { dEvenToJalali } from '@shared/lib/jalaali';
 import { fmtAge } from '@shared/lib/time';
 
 type Snap = { status: string; dataUpdatedAt: number; dataChangedAt: number | null;
@@ -67,6 +68,9 @@ export function FreshnessBadge() {
         ? `${st.label} · آخرین دریافت: ${fmtAge(snap.dataUpdatedAt, now)}`
           + (snap.dataChangedAt
             ? ` · آخرین عوض‌شدنِ داده: ${fmtAge(snap.dataChangedAt, now)}`
+            : '')
+          + (snap.boardDay
+            ? ` · روزِ تابلو: ${dEvenToJalali(snap.boardDay) ?? String(snap.boardDay)}`
             : '')
         : st.label}
     >

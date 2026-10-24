@@ -12,6 +12,7 @@
 // «متوقف» از عددِ موجودِ `CLOSED_POLL_MS` می‌آید (اگر درِ بازارِ باز بیش از ریتمِ
 //ِ بسته از فید خبری نشد، تازه‌سازی خوابیده است).
 import { CLOSED_POLL_MS, isMarketOpen } from './marketHours';
+import { dEvenToJalali } from './jalaali';
 
 export type Connection = 'error' | 'connecting' | 'ok';
 export type Freshness = 'live' | 'closed' | 'stale' | 'unknown';
@@ -97,10 +98,16 @@ export function computeFeedStatus(s: FeedFreshnessInput): FeedStatus {
   }
 
   // بازار بسته: تابلوی آخرینِ نشست نشان داده می‌شود؛ این «زنده» نیست و «خطا» هم نیست.
+  // روزِ تابلو را می‌گوییم، نه یک «آخرین روز»ِ مبهم: ممکن است تابلو چند نشست عقب
+  // باشد و برچسبِ بی‌تاریخ، همان را «دیروز» جا بزند (شاهدِ ۱۴۰۵-۰۷-۲۵).
   if (!open) {
+    const seen = s.boardDay ? dEvenToJalali(s.boardDay) : null;
     return {
       connection: 'ok', freshness: 'closed', pulse: false, ageMs, dataAgeMs,
-      tone: 'bg-accent-blue', label: 'بازار بسته — تابلوی آخرین روز معاملاتی',
+      tone: 'bg-accent-blue',
+      label: seen
+        ? `بازار بسته — تابلوی ${seen}`
+        : 'بازار بسته — تابلوی آخرین روز معاملاتی',
     };
   }
 
@@ -115,9 +122,13 @@ export function computeFeedStatus(s: FeedFreshnessInput): FeedStatus {
     };
   }
   if ((s.liveCount ?? 0) === 0 || boardFromPastDay(s.boardDay, s.now)) {
+    const seen = s.boardDay ? dEvenToJalali(s.boardDay) : null;
     return {
       connection: 'ok', freshness: 'stale', pulse: false, ageMs, dataAgeMs,
-      tone: 'bg-accent-yellow', label: 'کهنه — ردیفی از نشستِ جاری در تابلو نیست',
+      tone: 'bg-accent-yellow',
+      label: seen
+        ? `کهنه — تابلوی ${seen}؛ ردیفی از نشستِ جاری نیست`
+        : 'کهنه — ردیفی از نشستِ جاری در تابلو نیست',
     };
   }
   if (stalled) {

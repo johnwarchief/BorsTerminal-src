@@ -38,6 +38,10 @@ export const MARKET_FEED_KEY = ['market-feed'] as const;
 let rows: MarketRow[] = [];
 let indexBy = new Map<string, number>();
 let rev = -1;
+/** نسلِ محتوایِ ایستا — با revisionِ زنده یکی نیست. تغییرِ client_type_value یا
+ *  پنجره‌هایِ تاریخ، ردیف را عوض می‌کند بی‌آنکه revision تکان بخورد؛ سرور با
+ *  همین عدد می‌فهمد دلتایِ ما هنوز معتبر است یا باید بدنۀ کامل بیاید. */
+let gen: number | null = null;
 /** لحظه‌ای که *داده* عوض شد (epoch msِ کلاینت)، نه لحظه‌ی رسیدنِ پاسخ. هر دورِ
  *  «unchanged» هم `dataUpdatedAt` را نو می‌کند، پس تازگیِ واقعی باید از این
  *  شمارنده خوانده شود — وگرنه نشانگر رویِ دادهٔ منجمد «لحظاتی پیش» می‌گوید. */
@@ -49,9 +53,11 @@ let deltaUnsupported = false;
 
 /** تنها سازندۀ wrapper؛ بعدِ هر adopt/applyDelta/reset صدا زده می‌شود. تا آن
  *  لحظه snapshot() همان مرجع قبلی را می‌دهد و «بی‌تغییری» واقعاً بی‌تغییری است. */
-let snap: MarketFeed = { status: 'success', data: rows, meta, rev: null, rev_at: null, ...counts };
+let snap: MarketFeed = {
+  status: 'success', data: rows, meta, rev: null, gen, rev_at: null, ...counts,
+};
 function rebuildSnapshot(): void {
-  snap = { status: 'success', data: rows, meta, rev, rev_at: revAt, ...counts };
+  snap = { status: 'success', data: rows, meta, rev, gen, rev_at: revAt, ...counts };
 }
 
 function snapshot(): MarketFeed {
@@ -71,13 +77,20 @@ function adopt(f: MarketFeed): MarketFeed {
   // پس پولینگِ بعدی دقیقاً از همین نقطه دلتا می‌خواهد. بی‌rev هر دور یک
   // بدنۀ ۴ مگابایتی می‌شد — یعنی همان وضعیتِ پیش از حالتِ داغ.
   const prevRev = rev;
+  const prevGen = gen;
   rev = typeof f.rev === 'number' ? f.rev : -1;
+  // بدنهٔ کامل مرجعِ نسل است. بدنهٔ کهنه‌تر (سرورِ قدیمی) این خانه را ندارد؛
+  // در آن حالت همان نسلِ قبلی می‌ماند تا مقایسه‌های بعدی بی‌دلیل full نسازند.
+  if (typeof f.gen === 'number') gen = f.gen;
   // بدنۀ کامل = وضعیتِ امروزِ تابلو؛ بی‌این خط، `rev_at`ِ اولین بارگذاری صفر
   // می‌ماند و تازگی «هیچ‌وقت» خوانده می‌شد. اما بدنهٔ کاملِ *بازنشده* (خطای
   // دلتا، سرورِ بی‌/api/market/delta) دلیلِ عوض‌شدنِ داده نیست — سنجشِ زنده
   // ۱۴۰۵-۰۷-۱۸: «عوض‌شدنِ عدد: نامعلوم» دقیقاً از همین‌جا می‌آمد که `rev_at`
   // فقط درِ مسیرِ دلتا پر می‌شد. پس: بارِ اول یا revِ تازه = عوض شد؛ بقیه نه.
-  if (prevRev < 0 || (rev >= 0 && rev !== prevRev)) revAt = Date.now();
+  // `gen`ِ تازه هم تغییرِ داده است، حتی اگر revision همان باشد (تغییرِ ایستا).
+  if (prevRev < 0 || (rev >= 0 && rev !== prevRev) || gen !== prevGen) {
+    revAt = Date.now();
+  }
   rebuildSnapshot();
   // خودِ `f` برگردانده نمی‌شود: بدنهٔ سرور `rev_at` ندارد (سرور هرگز آن را
   // نمی‌فرستد) و پنلِ وضعیت از نبودنش «نامعلوم» می‌گفت.
@@ -87,6 +100,10 @@ function adopt(f: MarketFeed): MarketFeed {
 type Delta = Extract<MarketDelta, { status: 'delta' }>;
 
 function applyDelta(r: Delta): boolean {
+  // دلتا فقط برایِ همان نسلِ ایستا معنا دارد. اگر سرور نسلِ دیگری بفرستد،
+  // ردیف‌هایِ دلتا نمی‌توانند بدنۀ ما را به آن نسل برسانند (تغییرِ ایستا
+  // revision را تکان نمی‌دهد) ⇒ merge ممنوع، بدنۀ کامل.
+  if (typeof r.gen === 'number' && gen != null && r.gen !== gen) return false;
   const next = rows.slice();
   for (const row of r.rows) {
     const code = row.ins_code;
@@ -105,6 +122,7 @@ function applyDelta(r: Delta): boolean {
   rows = next;
   if (r.rev !== rev) revAt = Date.now();   // داده واقعاً عوض شده، نه این‌که پاسخ آمده
   rev = r.rev;
+  if (typeof r.gen === 'number') gen = r.gen;
   if (r.meta) meta = r.meta;
   counts = {
     count: r.count ?? counts.count,
@@ -123,7 +141,13 @@ async function fetchFeed(signal?: AbortSignal): Promise<MarketFeed> {
   if (rev < 0 || deltaUnsupported) return fetchFull(signal);
   let d: MarketDelta;
   try {
-    d = await http<MarketDelta>(`/api/market/delta?since=${rev}`, {
+    // `gen` همراهِ `since` می‌رود: سرور با آن می‌فهمد تغییرِ ایستا رخ داده و
+    // دلتا کافی نیست. بی‌آن، تغییرِ درصدِ حقیقی/حقوقی با revisionِ ثابت
+    // برایِ همیشه از چشمِ تابلو دور می‌ماند.
+    const url = gen == null
+      ? `/api/market/delta?since=${rev}`
+      : `/api/market/delta?since=${rev}&gen=${gen}`;
+    d = await http<MarketDelta>(url, {
       schema: MarketDeltaSchema,
       signal,
       // آدرسِ هر-سیکل-نُو ⇒ کشِ etag بی‌فایده و مَمُ‌نشتِ حافظه (درِ http.ts).
@@ -136,6 +160,11 @@ async function fetchFeed(signal?: AbortSignal): Promise<MarketFeed> {
     return fetchFull(signal);
   }
   if (d.status === 'unchanged') {
+    // سرور نباید با نسلِ متفاوت «unchanged» بدهد؛ اگر نسخهٔ قدیمی/ناسازگار
+    // چنین کرد، عددِ ایستایِ ما کهنه است و باید کامل بیاید.
+    if (typeof d.gen === 'number' && gen != null && d.gen !== gen) {
+      return fetchFull(signal);
+    }
     return snapshot();
   }
   if (d.status === 'delta' && applyDelta(d)) {
@@ -183,6 +212,7 @@ export function resetMarketFeedMirror() {
   rows = [];
   indexBy = new Map();
   rev = -1;
+  gen = null;
   revAt = 0;
   meta = null;
   counts = { count: 0, live_count: 0, fossil_count: 0 };
@@ -191,5 +221,5 @@ export function resetMarketFeedMirror() {
 }
 
 export function marketFeedMirrorSize() {
-  return { rows: rows.length, rev, revAt };
+  return { rows: rows.length, rev, gen, revAt };
 }
