@@ -1,0 +1,60 @@
+{
+ "reference": "D:/BorsTerminal-tmp/r26_bench/frozen/ref_bars_v2.jsonl",
+ "coverage": [
+  {
+   "type": "type0",
+   "res": "D",
+   "series": 2599,
+   "assets": 2595,
+   "bars": 1240809,
+   "empty": 0,
+   "first": "1993-04-25",
+   "last": "2026-10-19",
+   "status": 200
+  },
+  {
+   "type": "type0",
+   "res": "W",
+   "series": 2595,
+   "assets": 2595,
+   "bars": 285797,
+   "empty": 0,
+   "first": "2017-12-30",
+   "last": "2026-10-17",
+   "status": 200
+  },
+  {
+   "type": "type7",
+   "res": "D",
+   "series": 2599,
+   "assets": 2595,
+   "bars": 1240809,
+   "empty": 0,
+   "first": "1993-04-25",
+   "last": "2026-10-19",
+   "status": 200
+  },
+  {
+   "type": "type7",
+   "res": "W",
+   "series": 2595,
+   "assets": 2595,
+   "bars": 285797,
+   "empty": 0,
+   "first": "2017-12-30",
+   "last": "2026-10-17",
+   "status": 200
+  },
+  {
+   "type": "type0/type7",
+   "res": "M",
+   "series": 0,
+   "assets": 0,
+   "bars": 0,
+   "empty": 0,
+   "first": "",
+   "last": "",
+   "status": "NOT_CAPTURED"
+  }
+ ]
+}

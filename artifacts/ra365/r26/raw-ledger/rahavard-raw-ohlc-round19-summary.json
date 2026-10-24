@@ -1,0 +1,101 @@
+{
+ "round": 19,
+ "date": "2026-10-22",
+ "branch": "mission/ra365-round18-raw-ohlc-parity-2026-10-22",
+ "head": "9531b39f0e016e55c0b1f2b4e08ef8176932f68d",
+ "old_rev": "9531b39f",
+ "field_transitions": {
+  "HISTORICAL_REVISION->HISTORICAL_REVISION": 1488,
+  "FIELD_MAPPING->FIELD_MAPPING": 2923,
+  "SOURCE_DATA_DIVERGENCE->SOURCE_DATA_DIVERGENCE": 2303,
+  "PRECISION_OR_ROUNDING->PRECISION_OR_ROUNDING": 641,
+  "UNCLASSIFIED->SOURCE_DATA_DIVERGENCE": 41,
+  "CANDLE_GEOMETRY->CANDLE_GEOMETRY": 335,
+  "UNCLASSIFIED->PARSING_OR_TRANSFORM": 60,
+  "PARSING_OR_TRANSFORM->PARSING_OR_TRANSFORM": 3,
+  "PARSING_OR_TRANSFORM->SOURCE_DATA_DIVERGENCE": 12,
+  "PRICE_SCALE_OR_UNIT->PRICE_SCALE_OR_UNIT": 5
+ },
+ "row_taxonomy_old": {
+  "SOURCE_DATA_DIVERGENCE": 1110,
+  "HISTORICAL_REVISION": 552,
+  "PRECISION_OR_ROUNDING": 299,
+  "UNCLASSIFIED": 86,
+  "CANDLE_GEOMETRY": 62,
+  "PARSING_OR_TRANSFORM": 6
+ },
+ "row_taxonomy_new": {
+  "SOURCE_DATA_DIVERGENCE": 1150,
+  "HISTORICAL_REVISION": 549,
+  "PRECISION_OR_ROUNDING": 298,
+  "CANDLE_GEOMETRY": 62,
+  "PARSING_OR_TRANSFORM": 56
+ },
+ "adjudication_buckets": {
+  "P0_VOLUME_TYPE0_ONLY": 11,
+  "P0_OPEN_FIRST_ZERO_FALLBACK": 60,
+  "P0_THREE_SOURCE_DIVERGENCE": 41,
+  "P0_VOLUME_SNAPSHOT_ZERO": 3,
+  "P0_VOLUME_SNAPSHOT_STALE": 1
+ },
+ "parity": {
+  "contract_ok_pct": 99.8907,
+  "row_exact_pct": 99.8221,
+  "row_pairs": 1188921,
+  "contract_ok_fields": 7141465,
+  "contract_compared_fields": 7149276
+ },
+ "db": {
+  "reference": {
+   "path": "D:/BorsTerminal-tmp/ra365_round18\\reference.db",
+   "sha256": "0d9898bab7d241c29286e829d17e46d7b3b80d07c38281d3eee9bc21c470b4e0"
+  },
+  "operational": {
+   "path": "C:\\Users\\Johnkallnaya\\Desktop\\Borsterminal\\BorsTerminal-src\\market.db",
+   "sha256": "7b933b05d03b8a2f9383f901faf6b2c34f1500e70619d6cc5c8039f171b1848c"
+  },
+  "promoted": {
+   "path": "D:/BorsTerminal-tmp/ra365_round17/market_r17_migrated.db",
+   "sha256": "8fb85f381317634430cae429bd9775eba0a364b692e0868b4d9b17dbbcc6c17f"
+  }
+ },
+ "tests": "dev/test_rahavard_raw_parity_v1.py: 16/16 passed",
+ "artifacts": {
+  "rahavard-raw-ohlc-parity.csv": {
+   "bytes": 590271,
+   "sha256": "b3596cc76003b9d21af5ccb33dd3bc3eaf352b052c421ef8aa81aa6b842a31f0"
+  },
+  "rahavard-type0-vs-tsetmc.csv": {
+   "bytes": 253670,
+   "sha256": "caa9ba0e5c5474d5720026cb7d1efb539e767310e167d77f8903f6c4a7163b87"
+  },
+  "rahavard-raw-ohlc-field-mismatches.csv": {
+   "bytes": 1247327,
+   "sha256": "82bed90c6f05f45d9697fca13800bb9f9d55553660672a9d16bb06100638136a"
+  },
+  "rahavard-raw-ohlc-taxonomy.csv": {
+   "bytes": 2825,
+   "sha256": "280264bbe7cae0521220ffaaabc83cccee45b9ae12956f0ed1041e2a3daa54e0"
+  },
+  "rahavard-raw-ohlc-row-taxonomy.csv": {
+   "bytes": 191,
+   "sha256": "1bd5db2d78985d24c2fe956d6d4eafed35e55c3ca6760420db89d262cb111ea2"
+  },
+  "rahavard-raw-ohlc-missing.csv": {
+   "bytes": 4199824,
+   "sha256": "88ac77b698cefec70884c435afa7917e7dd2f5de9b58fcc7aacd8f444cb5cfdc"
+  },
+  "rahavard-raw-ohlc-summary.json": {
+   "bytes": 2396,
+   "sha256": "4841aa5af6363805bec0be9e4d135192233663d56e16a656e87ac5ad65eea307"
+  },
+  "rahavard-raw-ohlc-cohort-manifest.json": {
+   "bytes": 5078,
+   "sha256": "8300fdb22e1149cfa7c0693b7b4d5ffde97622fe442dc31ee6b7a54ba06a782b"
+  },
+  "source-field-matrix-rahavard.csv": {
+   "bytes": 2990,
+   "sha256": "56b2270ee5b054c0638fec576195aa5cc7501e2fd207f3b39d75caf62c81e5f5"
+  }
+ }
+}

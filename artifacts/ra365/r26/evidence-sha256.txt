@@ -1,0 +1,27 @@
+# RA365 Round 26 evidence (2026-10-24)
+# frozen full-universe corpus (outside Git): D:/BorsTerminal-tmp/r26_bench/frozen
+4b1ecb4c1effc4d5770c42521d96a2540a9c9f7b471d7cc710cd034712a8c17c *D:/BorsTerminal-tmp/r26_bench/frozen/ref_bars_v2.jsonl
+893b6d6aa1059d51a83bb7a44fd239d4c381695806562dd3dcdd3ed5d8ad9f27 *D:/BorsTerminal-tmp/r26_bench/frozen/product_live_final_v4.jsonl
+79a3c666c2b49363fd5b7a2684ee776d034a2fc3ef09006f0f16c7af3d5df18f *D:/BorsTerminal-tmp/ra365_round18/cohort.jsonl
+# R19 committed raw ledger (4305ab58)
+1c1f4971f6ea72a2c292480733442e575a5f94a1d371a734846c32ffa49eb07e *r19/rahavard-raw-ohlc-parity.csv
+6795ab6544020b74a7d054365831e2e9dbc7d67807c4bc480992f07b31a622d3 *r19/rahavard-raw-ohlc-field-mismatches.csv
+18d3f9b8cb8910bf007209936910da1e8e0e37bcb06ac93e72546a09e56f6629 *r19/rahavard-raw-ohlc-round19-summary.json
+7e4f1427cd0322fbe8cacc0882d1689954a443a10cd4b191dfc4998c0ec95159 *r19/rahavard-raw-ohlc-round19-adjudication.csv
+133a550e20f61fc9f3ea5a16e8eedd62abb94b4a2c0d3db12c6e936db4ecf1ab *r19/rahavard-raw-ohlc-taxonomy.csv
+# Round 26 audit outputs
+7e4f1427cd0322fbe8cacc0882d1689954a443a10cd4b191dfc4998c0ec95159 *artifacts/ra365/r26/raw-ledger/rahavard-raw-ohlc-round19-adjudication.csv
+ae7861f04835e030fe6ab5b703483e5049c00dbdf48a0e9501899a3a9fd1e326 *artifacts/ra365/r26/raw-ledger/rahavard-raw-ohlc-row-taxonomy.csv
+133a550e20f61fc9f3ea5a16e8eedd62abb94b4a2c0d3db12c6e936db4ecf1ab *artifacts/ra365/r26/raw-ledger/rahavard-raw-ohlc-taxonomy.csv
+18d3f9b8cb8910bf007209936910da1e8e0e37bcb06ac93e72546a09e56f6629 *artifacts/ra365/r26/raw-ledger/rahavard-raw-ohlc-round19-summary.json
+17d60c5b09adddb8c7c6f568287dbdbdd06ca4b6b4dfa7bd9f7e94dfa3b7466e *artifacts/ra365/r26/adjusted/counterfactual-top40.csv
+be5bbd4e3c4ff9cf08f59297a09afeab4b2948ffcc6ef10954cd7ceb409c1fa8 *artifacts/ra365/r26/adjusted/full-universe-per-asset.csv
+0b1d7e1b47dcdc15af4e7aa3de75e78fb69fb541c47ff7fc2006b5bcd98f1aaf *artifacts/ra365/r26/adjusted/full-universe-summary.json
+273dd1bb51837661d33dba0be41186289ef34f5ce768c2c64238ba6b6611cfa7 *artifacts/ra365/r26/reference-coverage.json
+# protected DBs
+e08d8062be33301551e672683106b87ea930825657ea6956e515bc7ac191a2a4 *C:/Users/Johnkallnaya/Desktop/Borsterminal/.worktrees/ra365-round18/market.db
+8fb85f381317634430cae429bd9775eba0a364b692e0868b4d9b17dbbcc6c17f *D:/BorsTerminal-tmp/ra365_round17/market_r17_migrated.db
+9f8f45a4c7d733f6efae88a3b1ffa161ae555eff8bea26447d8745c3cec90887 *artifacts/ra365/r26/full-gate.log
+# current-rules outputs
+87c9904eb1508f41817b93938843799a71e9b58298c8c23fb5329aad4dbe885e *artifacts/ra365/r26/adjusted/current-rules-summary.json
+9250ad90d8c44d3f322738a2f52f5db4943f2100cb7ca6b0ec0d6f33f78c6062 *artifacts/ra365/r26/adjusted/current-rules-per-asset.csv
