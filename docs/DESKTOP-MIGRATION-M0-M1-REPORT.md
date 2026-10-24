@@ -509,7 +509,9 @@ Final evidence:
 
 Branch: `mission/desktop-migration-m0-m1`, based on `9d50f0a` (`main`). The branch
 contains only migration tooling, the prototype, the shells and this report; `main`
-is untouched. Commits are listed by `git log mission/desktop-migration-m0-m1`.
+is untouched. Mission commit `6957050` carries the tooling, prototypes, final
+evidence and this report; later report-only edits, if any, are listed by
+`git log mission/desktop-migration-m0-m1`.
 
 ## Appendix A — raw per-run summaries
 
