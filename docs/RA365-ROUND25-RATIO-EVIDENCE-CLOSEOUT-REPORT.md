@@ -135,8 +135,10 @@
 
 ## ۱۰. Git، PR و merge
 
-- شاخه از `main` `6020d5ff`؛ commit کد `07413c32`؛ commit گزارش/شواهد پس از gate.
-- PR از کانکتور GitHub در Round 24 با خطای schema ممکن نشد؛ این راند ابتدا همان مسیر بررسی و سپس در صورت سبزی gate و ancestry/۰ عقب، fast-forward به main با ثبت SHA انجام می‌شود (بدون force).
+- شاخه از `main` `6020d5ff`؛ commit کد `07413c32`؛ commit گزارش/شواهد `3cfe2d16`.
+- **PR:** کانکتور GitHub همان خطای Round 24 را داد (`Structured content does not match the tool's output schema`) و `search_pull_requests` نشان داد هیچ PRای ساخته نشده — خطا و وضعیت واقعی ثبت شد.
+- **Merge:** مسیر جایگزینِ مجاز با شرایط مأموریت انجام شد: ancestry تأیید، **۰ commit عقب**، gate نهایی سبز، بدون force و بدون overwrite؛ `git push origin HEAD:main` به‌صورت fast-forward از `6020d5ff` به **`3cfe2d16`**.
+- **Smoke پس از merge روی همان SHA:** import موتور OK؛ combined-DPS 6/6؛ share-leg 9/9؛ feed-shrink 10/10؛ live-DPS 5/5؛ chart API guard 18/18.
 - هیچ تغییر FTS/UI/Android/Sarkhati دست‌نخورده نمانده و overwrite نشده است.
 
 ---
