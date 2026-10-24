@@ -1,0 +1,810 @@
+{
+  "harness": "phase_c_startup/1",
+  "label": "baseline-browser-warm",
+  "mode": "warm",
+  "started_at": "2026-10-24T22:18:56",
+  "host": {
+    "platform": "win32",
+    "python": "3.12.10",
+    "cpu_logical": 2,
+    "cpu_physical": 1,
+    "total_ram_gb": 3.9
+  },
+  "definitions": {
+    "cold": "fresh WORK_DIR copy and fresh WebView2 profile every run",
+    "warm": "one seeded WORK_DIR + profile reused (unrecorded warmup)",
+    "cold_data": "WORK_DIR contains only market.db.lzma; first-run extraction",
+    "os_file_cache": "not purged; cold/warm differ in app/profile state only",
+    "network_loops": "BORS_NO_FETCH_LOOPS=1, BORS_CODAL_AUTO=0; chart still fetched on demand",
+    "window_throttling": "harness sets the native window foreground and disables Chromium occlusion/timer throttling",
+    "browser_fallback": "BORS_NATIVE_WINDOW=0 + BORS_BROWSER_DEBUG_PORT; app opens its supported Edge app window",
+    "time_origin": "process launch (Popen) in the harness",
+    "board_ready": "first [data-testid=tape-row] rendered (virtualized)",
+    "chart_ready": "canvas in chart-area AND FTS freshness line with آخرین کندل",
+    "fundamental_ready": "fts-strategy-summary or holding-pnav-panel visible",
+    "p95": "computed only when n>=20; null otherwise"
+  },
+  "template": "C:\\Users\\STU\\AppData\\Local\\Temp\\bors_phasec\\template",
+  "scratch_root": "C:\\Users\\STU\\AppData\\Local\\Temp\\bors_phasec\\scratch-baseline-browser-warm",
+  "runs": [
+    {
+      "run": 1,
+      "ok": true,
+      "ports": {
+        "app": 59072,
+        "cdp": 59073
+      },
+      "stages_rel_ms": {
+        "entry_import": 747.2,
+        "streams_ready": 749.2,
+        "serve_start": 769.2,
+        "boot_server_ready": 2273.5,
+        "boot_page_served": 14727.1,
+        "boot_status_poll": 14951.6,
+        "boot_status_ready_seen": 25886.8,
+        "preflight_start": 2416.9,
+        "db_prepared": 3529.7,
+        "library_import_begin": 3662.1,
+        "library_import_end": 21668.0,
+        "preflight_end": 21674.0,
+        "uvicorn_spawn": 21676.0,
+        "api_startup_begin": 25280.0,
+        "api_startup_end": 25411.5,
+        "http_ready": 25792.8,
+        "boot_ready": 25797.3,
+        "app_document_ready": 58409.8,
+        "login_ready": 58441.8,
+        "login_submit": 58472.8,
+        "master_ready": 60991.8,
+        "market_rows_visible": 63880.8,
+        "technical_ready": 82797.8,
+        "fundamental_ready": 84452.8,
+        "market_publish": 41801.1,
+        "mstat_warm_done": 48509.7,
+        "candle_projection_done": 33301.5
+      },
+      "rss_mb_at_stage": {
+        "boot_server_ready": 276.5,
+        "boot_status_ready_seen": 466.5,
+        "preflight_start": 276.5,
+        "library_import_end": 476.1,
+        "preflight_end": 476.1,
+        "uvicorn_spawn": 476.1,
+        "api_startup_begin": 466.5,
+        "api_startup_end": 466.5,
+        "http_ready": 466.5,
+        "boot_ready": 466.5,
+        "market_rows_visible": 772.6,
+        "fundamental_ready": 861.7,
+        "market_publish": 704.6,
+        "mstat_warm_done": 653.4
+      },
+      "cpu_s_at_stage": {
+        "boot_server_ready": 8.23,
+        "boot_status_ready_seen": 8.34,
+        "preflight_start": 8.23,
+        "library_import_end": 6.92,
+        "preflight_end": 6.92,
+        "uvicorn_spawn": 6.92,
+        "api_startup_begin": 8.34,
+        "api_startup_end": 8.34,
+        "http_ready": 8.34,
+        "boot_ready": 8.34,
+        "market_rows_visible": 43.94,
+        "fundamental_ready": 67.89,
+        "market_publish": 26.12,
+        "mstat_warm_done": 32.5
+      },
+      "cpu_between_stages": {
+        "library_import_end->preflight_end": {
+          "wall_s": 0.01,
+          "cpu_s": 0.0
+        },
+        "preflight_end->uvicorn_spawn": {
+          "wall_s": 0.0,
+          "cpu_s": 0.0
+        },
+        "uvicorn_spawn->api_startup_begin": {
+          "wall_s": 3.6,
+          "cpu_s": 1.42
+        },
+        "api_startup_begin->api_startup_end": {
+          "wall_s": 0.13,
+          "cpu_s": 0.0
+        },
+        "api_startup_end->http_ready": {
+          "wall_s": 0.38,
+          "cpu_s": 0.0
+        },
+        "http_ready->boot_ready": {
+          "wall_s": 0.0,
+          "cpu_s": 0.0
+        },
+        "market_publish->mstat_warm_done": {
+          "wall_s": 6.71,
+          "cpu_s": 6.38
+        }
+      },
+      "peak_rss_mb": 875.3,
+      "peak_procs": 12,
+      "peak_names": [
+        "conhost.exe",
+        "identity_helper.exe",
+        "msedge.exe",
+        "python.exe"
+      ],
+      "idle": {
+        "rss_mb": 852.1,
+        "cpu_s": 70.11,
+        "cpu_pct_one_core": 70.2
+      },
+      "api": {
+        "market": {
+          "count": 1,
+          "first_duration_ms": 773.6,
+          "first_transfer": 1220997,
+          "first_encoded": 1220697,
+          "status": 200,
+          "first_start_rel_ms": 61937.6
+        },
+        "chart": {
+          "count": 1,
+          "first_duration_ms": 15586.1,
+          "first_transfer": 202037,
+          "first_encoded": 201737,
+          "status": 200,
+          "first_start_rel_ms": 61937.6
+        },
+        "fts": {
+          "count": 2,
+          "first_duration_ms": 16658,
+          "first_transfer": 7159,
+          "first_encoded": 6859,
+          "status": 200,
+          "first_start_rel_ms": 61937.6
+        },
+        "fundamental": {
+          "count": 3,
+          "first_duration_ms": 2784.8,
+          "first_transfer": 7400,
+          "first_encoded": 7100,
+          "status": 200,
+          "first_start_rel_ms": 61937.6
+        }
+      },
+      "probe_states": {
+        "login_values": [
+          {
+            "type": "text",
+            "value": "admin"
+          },
+          {
+            "type": "password",
+            "value": "bors123"
+          }
+        ],
+        "market_rows_after_1s": 30
+      },
+      "probe_metrics": {
+        "app_document_ready": {
+          "JSHeapUsedSize": 3373872,
+          "JSHeapTotalSize": 5242880,
+          "Nodes": 74,
+          "Documents": 1,
+          "LayoutCount": 0
+        },
+        "master_ready": {
+          "JSHeapUsedSize": 6837264,
+          "JSHeapTotalSize": 10223616,
+          "Nodes": 775,
+          "Documents": 1,
+          "LayoutCount": 11
+        },
+        "market_ready": {
+          "JSHeapUsedSize": 15618216,
+          "JSHeapTotalSize": 46731264,
+          "Nodes": 2874,
+          "Documents": 1,
+          "LayoutCount": 26
+        },
+        "technical_ready": {
+          "JSHeapUsedSize": 26867540,
+          "JSHeapTotalSize": 37924864,
+          "Nodes": 3895,
+          "Documents": 1,
+          "LayoutCount": 61
+        },
+        "fundamental_ready": {
+          "JSHeapUsedSize": 27912724,
+          "JSHeapTotalSize": 41070592,
+          "Nodes": 4745,
+          "Documents": 1,
+          "LayoutCount": 71
+        },
+        "idle_2s": {
+          "JSHeapUsedSize": 28464048,
+          "JSHeapTotalSize": 41070592,
+          "Nodes": 4745,
+          "Documents": 1,
+          "LayoutCount": 72
+        }
+      },
+      "probe_errors": [],
+      "probe_fatal": null,
+      "probe_targets": 1,
+      "shutdown": {
+        "mode": "forced",
+        "exit_code": 1,
+        "port_released": true
+      },
+      "log_markers": {
+        "preflight_start_log": 2494.9,
+        "preflight_end_log": 21687.5,
+        "screener_log": 25384.4,
+        "projection_spawn_log": 25417.5,
+        "api_startup_complete_log": 25417.5,
+        "uvicorn_running_log": 25418.5,
+        "mstat_warm_log": 48579.2
+      },
+      "samples": 27,
+      "cdp_ok": true,
+      "app_http_ok": true
+    },
+    {
+      "run": 2,
+      "ok": true,
+      "ports": {
+        "app": 59362,
+        "cdp": 59363
+      },
+      "stages_rel_ms": {
+        "entry_import": 668.2,
+        "streams_ready": 670.2,
+        "serve_start": 685.2,
+        "boot_server_ready": 2125.8,
+        "boot_page_served": 11580.1,
+        "boot_status_poll": 11757.0,
+        "boot_status_ready_seen": 18686.0,
+        "preflight_start": 2150.8,
+        "db_prepared": 3354.2,
+        "library_import_begin": 3410.2,
+        "library_import_end": 14505.3,
+        "preflight_end": 14507.3,
+        "uvicorn_spawn": 14515.2,
+        "api_startup_begin": 17665.2,
+        "api_startup_end": 17690.3,
+        "http_ready": 18428.4,
+        "boot_ready": 18432.4,
+        "app_document_ready": 48739.4,
+        "login_ready": 48763.4,
+        "login_submit": 48784.4,
+        "master_ready": 51213.4,
+        "market_rows_visible": 53846.4,
+        "technical_ready": 83665.4,
+        "fundamental_ready": 86860.4,
+        "market_publish": 30752.5,
+        "mstat_warm_done": 36306.5,
+        "candle_projection_done": 22646.3
+      },
+      "rss_mb_at_stage": {
+        "boot_server_ready": 13.9,
+        "preflight_start": 13.9,
+        "fundamental_ready": 842.2,
+        "market_publish": 600.7
+      },
+      "cpu_s_at_stage": {
+        "boot_server_ready": 0.0,
+        "preflight_start": 0.0,
+        "fundamental_ready": 72.73,
+        "market_publish": 23.83
+      },
+      "cpu_between_stages": {},
+      "peak_rss_mb": 842.2,
+      "peak_procs": 12,
+      "peak_names": [
+        "conhost.exe",
+        "identity_helper.exe",
+        "msedge.exe",
+        "python.exe"
+      ],
+      "idle": {
+        "rss_mb": 842.2,
+        "cpu_s": 72.73,
+        "cpu_pct_one_core": 81.8
+      },
+      "api": {
+        "market": {
+          "count": 1,
+          "first_duration_ms": 766.8,
+          "first_transfer": 1220997,
+          "first_encoded": 1220697,
+          "status": 200,
+          "first_start_rel_ms": 51837.0
+        },
+        "chart": {
+          "count": 1,
+          "first_duration_ms": 23126.1,
+          "first_transfer": 202037,
+          "first_encoded": 201737,
+          "status": 200,
+          "first_start_rel_ms": 51837.0
+        },
+        "fts": {
+          "count": 2,
+          "first_duration_ms": 26879.2,
+          "first_transfer": 7159,
+          "first_encoded": 6859,
+          "status": 200,
+          "first_start_rel_ms": 51837.0
+        },
+        "fundamental": {
+          "count": 3,
+          "first_duration_ms": 5255.4,
+          "first_transfer": 7400,
+          "first_encoded": 7100,
+          "status": 200,
+          "first_start_rel_ms": 51837.0
+        }
+      },
+      "probe_states": {
+        "login_values": [
+          {
+            "type": "text",
+            "value": "admin"
+          },
+          {
+            "type": "password",
+            "value": "bors123"
+          }
+        ],
+        "market_rows_after_1s": 30
+      },
+      "probe_metrics": {
+        "app_document_ready": {
+          "JSHeapUsedSize": 4142872,
+          "JSHeapTotalSize": 6815744,
+          "Nodes": 147,
+          "Documents": 4,
+          "LayoutCount": 0
+        },
+        "master_ready": {
+          "JSHeapUsedSize": 6589560,
+          "JSHeapTotalSize": 10223616,
+          "Nodes": 775,
+          "Documents": 1,
+          "LayoutCount": 11
+        },
+        "market_ready": {
+          "JSHeapUsedSize": 25871792,
+          "JSHeapTotalSize": 37400576,
+          "Nodes": 2874,
+          "Documents": 1,
+          "LayoutCount": 24
+        },
+        "technical_ready": {
+          "JSHeapUsedSize": 26822956,
+          "JSHeapTotalSize": 35827712,
+          "Nodes": 3895,
+          "Documents": 1,
+          "LayoutCount": 59
+        },
+        "fundamental_ready": {
+          "JSHeapUsedSize": 29121868,
+          "JSHeapTotalSize": 38449152,
+          "Nodes": 4745,
+          "Documents": 1,
+          "LayoutCount": 69
+        },
+        "idle_2s": {
+          "JSHeapUsedSize": 29660292,
+          "JSHeapTotalSize": 38449152,
+          "Nodes": 4745,
+          "Documents": 1,
+          "LayoutCount": 70
+        }
+      },
+      "probe_errors": [],
+      "probe_fatal": null,
+      "probe_targets": 1,
+      "shutdown": {
+        "mode": "forced",
+        "exit_code": 1,
+        "port_released": true
+      },
+      "log_markers": {
+        "preflight_start_log": 2272.7,
+        "preflight_end_log": 14632.7,
+        "screener_log": 17715.2,
+        "projection_spawn_log": 17715.2,
+        "api_startup_complete_log": 17739.7,
+        "uvicorn_running_log": 17739.7,
+        "mstat_warm_log": 36319.4
+      },
+      "samples": 22,
+      "cdp_ok": true,
+      "app_http_ok": true
+    },
+    {
+      "run": 3,
+      "ok": true,
+      "ports": {
+        "app": 59552,
+        "cdp": 59553
+      },
+      "stages_rel_ms": {
+        "entry_import": 1808.4,
+        "streams_ready": 1816.4,
+        "serve_start": 1828.4,
+        "boot_server_ready": 3562.2,
+        "boot_page_served": 22148.2,
+        "boot_status_poll": 22228.5,
+        "boot_status_ready_seen": 25539.5,
+        "preflight_start": 3731.1,
+        "db_prepared": 5165.6,
+        "library_import_begin": 6258.1,
+        "library_import_end": 16167.3,
+        "preflight_end": 16172.3,
+        "uvicorn_spawn": 16243.2,
+        "api_startup_begin": 23249.5,
+        "api_startup_end": 23571.1,
+        "http_ready": 24800.5,
+        "boot_ready": 24867.5,
+        "app_document_ready": 60680.5,
+        "login_ready": 60704.5,
+        "login_submit": 60727.5,
+        "master_ready": 63341.5,
+        "market_rows_visible": 66511.5,
+        "technical_ready": 87928.5,
+        "fundamental_ready": 90082.5,
+        "market_publish": 42355.6,
+        "mstat_warm_done": 49654.6,
+        "candle_projection_done": 31203.0
+      },
+      "rss_mb_at_stage": {
+        "boot_server_ready": 167.5,
+        "boot_status_ready_seen": 497.4,
+        "preflight_start": 167.5,
+        "db_prepared": 191.8,
+        "library_import_begin": 191.8,
+        "market_rows_visible": 736.4,
+        "market_publish": 671.9
+      },
+      "cpu_s_at_stage": {
+        "boot_server_ready": 4.45,
+        "boot_status_ready_seen": 9.03,
+        "preflight_start": 4.45,
+        "db_prepared": 5.28,
+        "library_import_begin": 5.28,
+        "market_rows_visible": 42.95,
+        "market_publish": 24.36
+      },
+      "cpu_between_stages": {
+        "preflight_start->db_prepared": {
+          "wall_s": 1.43,
+          "cpu_s": 0.83
+        },
+        "db_prepared->library_import_begin": {
+          "wall_s": 1.09,
+          "cpu_s": 0.0
+        }
+      },
+      "peak_rss_mb": 865.7,
+      "peak_procs": 11,
+      "peak_names": [
+        "conhost.exe",
+        "identity_helper.exe",
+        "msedge.exe",
+        "python.exe"
+      ],
+      "idle": {
+        "rss_mb": 834.8,
+        "cpu_s": 69.19,
+        "cpu_pct_one_core": 94.3
+      },
+      "api": {
+        "market": {
+          "count": 1,
+          "first_duration_ms": 993.9,
+          "first_transfer": 1220997,
+          "first_encoded": 1220697,
+          "status": 200,
+          "first_start_rel_ms": 64425.5
+        },
+        "chart": {
+          "count": 1,
+          "first_duration_ms": 17082.4,
+          "first_transfer": 202037,
+          "first_encoded": 201737,
+          "status": 200,
+          "first_start_rel_ms": 64425.5
+        },
+        "fts": {
+          "count": 2,
+          "first_duration_ms": 19224,
+          "first_transfer": 7159,
+          "first_encoded": 6859,
+          "status": 200,
+          "first_start_rel_ms": 64425.5
+        },
+        "fundamental": {
+          "count": 3,
+          "first_duration_ms": 3643.4,
+          "first_transfer": 7400,
+          "first_encoded": 7100,
+          "status": 200,
+          "first_start_rel_ms": 64425.5
+        }
+      },
+      "probe_states": {
+        "login_values": [
+          {
+            "type": "text",
+            "value": "admin"
+          },
+          {
+            "type": "password",
+            "value": "bors123"
+          }
+        ],
+        "market_rows_after_1s": 30
+      },
+      "probe_metrics": {
+        "app_document_ready": {
+          "JSHeapUsedSize": 3447112,
+          "JSHeapTotalSize": 4194304,
+          "Nodes": 74,
+          "Documents": 1,
+          "LayoutCount": 0
+        },
+        "master_ready": {
+          "JSHeapUsedSize": 6626624,
+          "JSHeapTotalSize": 9437184,
+          "Nodes": 775,
+          "Documents": 1,
+          "LayoutCount": 12
+        },
+        "market_ready": {
+          "JSHeapUsedSize": 13778084,
+          "JSHeapTotalSize": 38187008,
+          "Nodes": 2864,
+          "Documents": 1,
+          "LayoutCount": 28
+        },
+        "technical_ready": {
+          "JSHeapUsedSize": 26872316,
+          "JSHeapTotalSize": 35565568,
+          "Nodes": 3895,
+          "Documents": 1,
+          "LayoutCount": 63
+        },
+        "fundamental_ready": {
+          "JSHeapUsedSize": 27876152,
+          "JSHeapTotalSize": 38711296,
+          "Nodes": 4745,
+          "Documents": 1,
+          "LayoutCount": 73
+        },
+        "idle_2s": {
+          "JSHeapUsedSize": 28416048,
+          "JSHeapTotalSize": 38711296,
+          "Nodes": 4745,
+          "Documents": 1,
+          "LayoutCount": 74
+        }
+      },
+      "probe_errors": [],
+      "probe_fatal": null,
+      "probe_targets": 1,
+      "shutdown": {
+        "mode": "forced",
+        "exit_code": 1,
+        "port_released": true
+      },
+      "log_markers": {
+        "preflight_start_log": 3820.1,
+        "preflight_end_log": 16256.2,
+        "screener_log": 23534.2,
+        "projection_spawn_log": 23599.1,
+        "api_startup_complete_log": 23711.1,
+        "uvicorn_running_log": 23711.1,
+        "mstat_warm_log": 49678.6
+      },
+      "samples": 21,
+      "cdp_ok": true,
+      "app_http_ok": true
+    }
+  ],
+  "aggregate": {
+    "entry_import": {
+      "n": 3,
+      "median_ms": 747.2,
+      "min_ms": 668.2,
+      "max_ms": 1808.4,
+      "p95_ms": null
+    },
+    "streams_ready": {
+      "n": 3,
+      "median_ms": 749.2,
+      "min_ms": 670.2,
+      "max_ms": 1816.4,
+      "p95_ms": null
+    },
+    "serve_start": {
+      "n": 3,
+      "median_ms": 769.2,
+      "min_ms": 685.2,
+      "max_ms": 1828.4,
+      "p95_ms": null
+    },
+    "boot_server_ready": {
+      "n": 3,
+      "median_ms": 2273.5,
+      "min_ms": 2125.8,
+      "max_ms": 3562.2,
+      "p95_ms": null
+    },
+    "boot_page_served": {
+      "n": 3,
+      "median_ms": 14727.1,
+      "min_ms": 11580.1,
+      "max_ms": 22148.2,
+      "p95_ms": null
+    },
+    "boot_status_poll": {
+      "n": 3,
+      "median_ms": 14951.6,
+      "min_ms": 11757.0,
+      "max_ms": 22228.5,
+      "p95_ms": null
+    },
+    "boot_status_ready_seen": {
+      "n": 3,
+      "median_ms": 25539.5,
+      "min_ms": 18686.0,
+      "max_ms": 25886.8,
+      "p95_ms": null
+    },
+    "preflight_start": {
+      "n": 3,
+      "median_ms": 2416.9,
+      "min_ms": 2150.8,
+      "max_ms": 3731.1,
+      "p95_ms": null
+    },
+    "db_prepared": {
+      "n": 3,
+      "median_ms": 3529.7,
+      "min_ms": 3354.2,
+      "max_ms": 5165.6,
+      "p95_ms": null
+    },
+    "library_import_begin": {
+      "n": 3,
+      "median_ms": 3662.1,
+      "min_ms": 3410.2,
+      "max_ms": 6258.1,
+      "p95_ms": null
+    },
+    "library_import_end": {
+      "n": 3,
+      "median_ms": 16167.3,
+      "min_ms": 14505.3,
+      "max_ms": 21668.0,
+      "p95_ms": null
+    },
+    "preflight_end": {
+      "n": 3,
+      "median_ms": 16172.3,
+      "min_ms": 14507.3,
+      "max_ms": 21674.0,
+      "p95_ms": null
+    },
+    "uvicorn_spawn": {
+      "n": 3,
+      "median_ms": 16243.2,
+      "min_ms": 14515.2,
+      "max_ms": 21676.0,
+      "p95_ms": null
+    },
+    "api_startup_begin": {
+      "n": 3,
+      "median_ms": 23249.5,
+      "min_ms": 17665.2,
+      "max_ms": 25280.0,
+      "p95_ms": null
+    },
+    "api_startup_end": {
+      "n": 3,
+      "median_ms": 23571.1,
+      "min_ms": 17690.3,
+      "max_ms": 25411.5,
+      "p95_ms": null
+    },
+    "http_ready": {
+      "n": 3,
+      "median_ms": 24800.5,
+      "min_ms": 18428.4,
+      "max_ms": 25792.8,
+      "p95_ms": null
+    },
+    "boot_ready": {
+      "n": 3,
+      "median_ms": 24867.5,
+      "min_ms": 18432.4,
+      "max_ms": 25797.3,
+      "p95_ms": null
+    },
+    "app_document_ready": {
+      "n": 3,
+      "median_ms": 58409.8,
+      "min_ms": 48739.4,
+      "max_ms": 60680.5,
+      "p95_ms": null
+    },
+    "login_ready": {
+      "n": 3,
+      "median_ms": 58441.8,
+      "min_ms": 48763.4,
+      "max_ms": 60704.5,
+      "p95_ms": null
+    },
+    "login_submit": {
+      "n": 3,
+      "median_ms": 58472.8,
+      "min_ms": 48784.4,
+      "max_ms": 60727.5,
+      "p95_ms": null
+    },
+    "master_ready": {
+      "n": 3,
+      "median_ms": 60991.8,
+      "min_ms": 51213.4,
+      "max_ms": 63341.5,
+      "p95_ms": null
+    },
+    "market_rows_visible": {
+      "n": 3,
+      "median_ms": 63880.8,
+      "min_ms": 53846.4,
+      "max_ms": 66511.5,
+      "p95_ms": null
+    },
+    "technical_ready": {
+      "n": 3,
+      "median_ms": 83665.4,
+      "min_ms": 82797.8,
+      "max_ms": 87928.5,
+      "p95_ms": null
+    },
+    "fundamental_ready": {
+      "n": 3,
+      "median_ms": 86860.4,
+      "min_ms": 84452.8,
+      "max_ms": 90082.5,
+      "p95_ms": null
+    },
+    "market_publish": {
+      "n": 3,
+      "median_ms": 41801.1,
+      "min_ms": 30752.5,
+      "max_ms": 42355.6,
+      "p95_ms": null
+    },
+    "mstat_warm_done": {
+      "n": 3,
+      "median_ms": 48509.7,
+      "min_ms": 36306.5,
+      "max_ms": 49654.6,
+      "p95_ms": null
+    },
+    "candle_projection_done": {
+      "n": 3,
+      "median_ms": 31203.0,
+      "min_ms": 22646.3,
+      "max_ms": 33301.5,
+      "p95_ms": null
+    }
+  },
+  "browser_fallback": true,
+  "failures": []
+}
