@@ -67,6 +67,11 @@ describe('scanPatterns event contract', () => {
     expect(event?.anchors.map((a) => a.index)).toEqual([0, 1]);
   });
 
+  it('does not evaluate chart structure before the source 41-bar minimum', () => {
+    const result = scanPatterns(adjusted.slice(0, 41));
+    expect(result.events.every((e) => e.family === 'candlestick')).toBe(true);
+  });
+
   it('returns provisional tail extrema separately from confirmed swings', () => {
     const series = [
       candle(0, 10, 11, 9, 10),

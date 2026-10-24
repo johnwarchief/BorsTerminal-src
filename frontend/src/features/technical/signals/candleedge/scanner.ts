@@ -112,10 +112,14 @@ export function scanPatterns(
   const peakAt = groupByConfirmation(peaks);
   const troughAt = groupByConfirmation(troughs);
 
-  const confirmedHighs: SwingPoint[] = [];
-  const confirmedLows: SwingPoint[] = [];
-  const confirmedPeaks: SwingPoint[] = [];
-  const confirmedTroughs: SwingPoint[] = [];
+  const windowHighs: SwingPoint[] = [];
+  const windowLows: SwingPoint[] = [];
+  const windowPeaks: SwingPoint[] = [];
+  const windowTroughs: SwingPoint[] = [];
+
+  const trimWindow = (points: SwingPoint[], windowStart: number) => {
+    while (points.length > 0 && points[0].index < windowStart) points.shift();
+  };
 
   for (let i = 0; i < candles.length; i += 1) {
     const candle = candles[i];
@@ -163,13 +167,22 @@ export function scanPatterns(
     const addedPeaks = peakAt.get(i) ?? [];
     const addedTroughs = troughAt.get(i) ?? [];
 
-    confirmedHighs.push(...addedHighs);
-    confirmedLows.push(...addedLows);
-    confirmedPeaks.push(...addedPeaks);
-    confirmedTroughs.push(...addedTroughs);
+    windowHighs.push(...addedHighs);
+    windowLows.push(...addedLows);
+    windowPeaks.push(...addedPeaks);
+    windowTroughs.push(...addedTroughs);
+
+    // CandleEdge only evaluates chart/market structure at idx > 40 and only
+    // against swings found in the last 200 bars (src/script.js:1075-1078).
+    if (i <= 40) continue;
+
+    trimWindow(windowHighs, i - 200);
+    trimWindow(windowLows, i - 200);
+    trimWindow(windowPeaks, i - 200);
+    trimWindow(windowTroughs, i - 200);
 
     if (addedHighs.length > 0) {
-      const swings = { highs: confirmedHighs, lows: confirmedLows };
+      const swings = { highs: windowHighs, lows: windowLows };
       const higherHigh = detectHigherHigh(swings);
       if (higherHigh && higherHigh.point2.confirmedAtIndex === i) {
         push(
@@ -200,7 +213,7 @@ export function scanPatterns(
     }
 
     if (addedLows.length > 0) {
-      const swings = { highs: confirmedHighs, lows: confirmedLows };
+      const swings = { highs: windowHighs, lows: windowLows };
       const lowerLow = detectLowerLow(swings);
       if (lowerLow && lowerLow.point2.confirmedAtIndex === i) {
         push(
@@ -232,15 +245,15 @@ export function scanPatterns(
 
     if (
       (addedHighs.length > 0 || addedLows.length > 0) &&
-      confirmedHighs.length >= 2 &&
-      confirmedLows.length >= 2
+      windowHighs.length >= 2 &&
+      windowLows.length >= 2
     ) {
       const linePatterns = [
-        detectAscendingTriangle(confirmedHighs, confirmedLows),
-        detectDescendingTriangle(confirmedHighs, confirmedLows),
-        detectSymmetricalTriangle(confirmedHighs, confirmedLows),
-        detectRisingWedge(confirmedHighs, confirmedLows),
-        detectFallingWedge(confirmedHighs, confirmedLows),
+        detectAscendingTriangle(windowHighs, windowLows),
+        detectDescendingTriangle(windowHighs, windowLows),
+        detectSymmetricalTriangle(windowHighs, windowLows),
+        detectRisingWedge(windowHighs, windowLows),
+        detectFallingWedge(windowHighs, windowLows),
       ];
       for (const pattern of linePatterns) {
         if (!pattern) continue;
@@ -256,8 +269,7 @@ export function scanPatterns(
     }
 
     if (addedPeaks.length > 0) {
-      const pool = confirmedPeaks.filter((peak) => peak.index >= i - 200);
-      const match = detectDoubleTop(candles, pool, i, 15);
+      const match = detectDoubleTop(candles, windowPeaks, i, 15);
       if (match && addedPeaks.some((peak) => peak.index === match.second.index)) {
         push(
           makeEvent(candles, 'double_top', 'chart_structure', 'bearish', i, [
@@ -269,8 +281,7 @@ export function scanPatterns(
     }
 
     if (addedTroughs.length > 0) {
-      const pool = confirmedTroughs.filter((trough) => trough.index >= i - 200);
-      const match = detectDoubleBottom(candles, pool, i, 15);
+      const match = detectDoubleBottom(candles, windowTroughs, i, 15);
       if (match && addedTroughs.some((trough) => trough.index === match.second.index)) {
         push(
           makeEvent(candles, 'double_bottom', 'chart_structure', 'bullish', i, [
@@ -281,7 +292,7 @@ export function scanPatterns(
       }
     }
 
-    const swingsNow = { highs: confirmedHighs, lows: confirmedLows };
+    const swingsNow = { highs: windowHighs, lows: windowLows };
     const sweepHigh = detectLiquiditySweepHigh(candles, i, swingsNow);
     if (sweepHigh) {
       push(

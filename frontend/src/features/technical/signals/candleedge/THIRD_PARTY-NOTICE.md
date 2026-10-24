@@ -28,6 +28,7 @@ This directory contains TypeScript ports of analytical functions from:
 4. Liquidity sweeps use the latest confirmed swing level. Upstream used the second-to-last (`swings.highs[length-2]`, lines 951/960), skipping the freshest level.
 5. A provisional tail scan was added for swings whose right window is not complete; it is reported separately and is never an event.
 6. Double top/bottom are emitted once per confirmed pair instead of repeating on each bar inside the 20-bar recency window.
+7. Structure evaluation preserves the source's `idx > 40` minimum and 200-bar swing/extrema window (lines 1075-1078). Swings are precomputed on the full series and then filtered to that window; a pivot within one swing window of the 200-bar boundary can differ from a fresh 200-bar slice.
 
 ## Not copied
 
