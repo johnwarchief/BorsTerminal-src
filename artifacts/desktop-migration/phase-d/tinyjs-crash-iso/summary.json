@@ -1,0 +1,362 @@
+{
+  "label": "tinyjs-crash-iso",
+  "mode": "warm",
+  "scenario": "normal",
+  "generated_at": "2026-10-24T23:02:54Z",
+  "host": {
+    "platform": "Windows-10-10.0.19045-SP0",
+    "cpu_logical": 2,
+    "cpu_physical": 1,
+    "ram_gb": 3.88,
+    "python": "3.12.10",
+    "exe": "prototypes\\tinyjs-m2\\dist\\BorsTerminalM2TinyJS.exe",
+    "exe_bytes": 5686049,
+    "launcher_bytes": 2164824,
+    "dist_bytes": 7850873,
+    "dist_bytes_note": "TinyJS portable dist only; Tauri target/release is not an install footprint"
+  },
+  "protocol": {
+    "shell": "TinyJS 0.65 built shell + app.spawnHidden sidecar",
+    "window_gate": "shell opens the loopback window only after GET /api/update/version succeeds",
+    "isolation": "fresh WORK_DIR/profile in cold; shared seeded one in warm",
+    "network_loops": "BORS_NO_FETCH_LOOPS=1, BORS_CODAL_AUTO=0",
+    "instrumentation": "external process tree + Win32 PrintWindow + BorsTerminalM2TinyJS.exe WebView2 eval probe (no CDP)",
+    "cold_definition": "fresh work dir and profile per run, DB seeded from the Phase C template",
+    "warm_definition": "one unrecorded warmup, then same work dir/profile reused",
+    "crash": "with --crash the shell root is terminated after the first board paint; orphans are recorded and then killed by the harness"
+  },
+  "timings_ms": {
+    "sidecar_ready_line": {
+      "n": 1,
+      "median": 14829.6,
+      "min": 14829.6,
+      "max": 14829.6,
+      "values": [
+        14829.6
+      ],
+      "p95": null,
+      "p95_note": "not reported: n<20"
+    },
+    "window_visible": {
+      "n": 1,
+      "median": 18578.9,
+      "min": 18578.9,
+      "max": 18578.9,
+      "values": [
+        18578.9
+      ],
+      "p95": null,
+      "p95_note": "not reported: n<20"
+    },
+    "http_verified": {
+      "n": 1,
+      "median": 15693.6,
+      "min": 15693.6,
+      "max": 15693.6,
+      "values": [
+        15693.6
+      ],
+      "p95": null,
+      "p95_note": "not reported: n<20"
+    },
+    "app_document_ready": {
+      "n": 1,
+      "median": 20447.6,
+      "min": 20447.6,
+      "max": 20447.6,
+      "values": [
+        20447.6
+      ],
+      "p95": null,
+      "p95_note": "not reported: n<20"
+    },
+    "login_ready": {
+      "n": 1,
+      "median": 21692.6,
+      "min": 21692.6,
+      "max": 21692.6,
+      "values": [
+        21692.6
+      ],
+      "p95": null,
+      "p95_note": "not reported: n<20"
+    },
+    "master_ready": {
+      "n": 1,
+      "median": 24206.6,
+      "min": 24206.6,
+      "max": 24206.6,
+      "values": [
+        24206.6
+      ],
+      "p95": null,
+      "p95_note": "not reported: n<20"
+    },
+    "market_rows_visible": {
+      "n": 1,
+      "median": 34428.6,
+      "min": 34428.6,
+      "max": 34428.6,
+      "values": [
+        34428.6
+      ],
+      "p95": null,
+      "p95_note": "not reported: n<20"
+    },
+    "technical_ready": {
+      "n": 0,
+      "median": null,
+      "min": null,
+      "max": null,
+      "p95": null,
+      "p95_note": "not reported: n<20"
+    },
+    "fundamental_ready": {
+      "n": 0,
+      "median": null,
+      "min": null,
+      "max": null,
+      "p95": null,
+      "p95_note": "not reported: n<20"
+    },
+    "market_status_ready": {
+      "n": 0,
+      "median": null,
+      "min": null,
+      "max": null,
+      "p95": null,
+      "p95_note": "not reported: n<20"
+    },
+    "window_close_ms": {
+      "n": 0,
+      "median": null,
+      "min": null,
+      "max": null,
+      "p95": null,
+      "p95_note": "not reported: n<20"
+    },
+    "root_exit_ms": {
+      "n": 1,
+      "median": 49198.0,
+      "min": 49198.0,
+      "max": 49198.0,
+      "values": [
+        49198.0
+      ],
+      "p95": null,
+      "p95_note": "not reported: n<20"
+    }
+  },
+  "rss_mb": {
+    "peak": {
+      "n": 1,
+      "median": 967.2,
+      "values": [
+        967.2
+      ]
+    },
+    "idle": {
+      "n": 0,
+      "median": null,
+      "values": []
+    }
+  },
+  "idle_cpu_pct_one_core": {
+    "n": 0,
+    "median": null,
+    "values": []
+  },
+  "security": [],
+  "security_all_ok": null,
+  "exit_codes": [
+    1
+  ],
+  "cleanup": [
+    {
+      "survivors_before": [],
+      "killed": [],
+      "survivors_after": [],
+      "port_open_after_cleanup": false
+    }
+  ],
+  "crash_runs": [
+    1
+  ],
+  "crash_orphans": 0,
+  "partial": false,
+  "runs_ok": 0,
+  "runs_total": 1,
+  "runs": [
+    {
+      "run": 1,
+      "mode": "warm",
+      "timings_ms": {
+        "sidecar_spawned": 668.6,
+        "sidecar_ready_line": 14829.6,
+        "http_verified": 15693.6,
+        "window_open_begin": 15693.6,
+        "window_open": 15694.6,
+        "window_visible": 18578.9,
+        "app_document_ready": 20447.6,
+        "login_ready": 21692.6,
+        "login_submit": 21736.6,
+        "market_nav_begin": 24209.6,
+        "master_ready": 24206.6,
+        "market_rows_visible": 34428.6,
+        "sidecar_preflight_start": 1495.4,
+        "sidecar_preflight_end": 11105.9,
+        "sidecar_http_ready": 14811.7,
+        "root_exit_ms": 49198.0
+      },
+      "window": {
+        "hwnd": 231279416,
+        "title": "بورس‌ترمینال — BorsTerminal",
+        "pid": 14208,
+        "visible": true,
+        "rect": [
+          -8,
+          -8,
+          1288,
+          992
+        ],
+        "w": 1296,
+        "h": 1000
+      },
+      "process": {
+        "peak": {
+          "rss_mb": 967.2,
+          "epoch_ms": 1792882963371.768,
+          "procs": 12
+        },
+        "stages": {
+          "window_visible": {
+            "rss_mb": 485.6,
+            "cpu_s": 10.125,
+            "procs": 11,
+            "names": [
+              "BorsTerminalM2TinyJS.exe",
+              "conhost.exe",
+              "launcher.exe",
+              "msedgewebview2.exe",
+              "python.exe"
+            ]
+          }
+        }
+      },
+      "idle": null,
+      "shutdown": {
+        "forced_kill": false,
+        "window_close_ms": null,
+        "root_exit_ms": 49198.0,
+        "exit_code": 1,
+        "port": 60067,
+        "port_open_after_exit": false,
+        "sidecar_shutdown": [],
+        "shell_tail": [
+          {
+            "stage": "probe_eval",
+            "t": 1792882950.92,
+            "dt": 34.108,
+            "pid": 3796,
+            "attempt": 21
+          },
+          {
+            "stage": "probe_eval",
+            "t": 1792882952.307,
+            "dt": 35.495,
+            "pid": 3796,
+            "attempt": 22
+          },
+          {
+            "stage": "probe_eval",
+            "t": 1792882953.31,
+            "dt": 36.498,
+            "pid": 3796,
+            "attempt": 23
+          },
+          {
+            "stage": "probe_eval",
+            "t": 1792882954.341,
+            "dt": 37.529,
+            "pid": 3796,
+            "attempt": 24
+          },
+          {
+            "stage": "probe_eval",
+            "t": 1792882955.457,
+            "dt": 38.645,
+            "pid": 3796,
+            "attempt": 25
+          },
+          {
+            "stage": "probe_eval",
+            "t": 1792882956.602,
+            "dt": 39.79,
+            "pid": 3796,
+            "attempt": 26
+          },
+          {
+            "stage": "probe_eval",
+            "t": 1792882957.539,
+            "dt": 40.727,
+            "pid": 3796,
+            "attempt": 27
+          },
+          {
+            "stage": "probe_stop_file",
+            "t": 1792882958.535,
+            "dt": 41.723,
+            "pid": 3796,
+            "attempt": 28
+          }
+        ],
+        "crash_kill": {
+          "epoch_ms": 1792882963082.9463,
+          "root_pid": 3796,
+          "reason": "TerminateProcess on the shell root only"
+        },
+        "survivors": [],
+        "cleanup": {
+          "survivors_before": [],
+          "killed": [],
+          "survivors_after": [],
+          "port_open_after_cleanup": false
+        },
+        "cleanup_final": {
+          "survivors_before": [],
+          "killed": [],
+          "survivors_after": [],
+          "port_open_after_cleanup": false
+        },
+        "shell_exit_code": 1
+      },
+      "probe_instances": [
+        {
+          "run_id": "1792882936593-3i3s56",
+          "at_ms": 20466.7,
+          "url": "about:blank"
+        },
+        {
+          "run_id": "1792882936683-18cho6",
+          "at_ms": 20846.5,
+          "url": "http://127.0.0.1:60067/"
+        }
+      ],
+      "screenshots": {},
+      "final": {
+        "ok": null,
+        "states": null,
+        "events": {},
+        "technical_ready": null,
+        "resources": null,
+        "errors": null
+      },
+      "errors": [
+        "crash_kill: root terminated without window close"
+      ],
+      "firewall_prompts": 0,
+      "error_window": null,
+      "final_run_ids": []
+    }
+  ]
+}

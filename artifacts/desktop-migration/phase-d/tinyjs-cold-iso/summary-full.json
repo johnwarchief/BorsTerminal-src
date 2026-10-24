@@ -1,0 +1,4558 @@
+{
+  "label": "tinyjs-cold-iso",
+  "mode": "cold",
+  "scenario": "normal",
+  "generated_at": "2026-10-24T22:50:33Z",
+  "host": {
+    "platform": "Windows-10-10.0.19045-SP0",
+    "cpu_logical": 2,
+    "cpu_physical": 1,
+    "ram_gb": 3.88,
+    "python": "3.12.10",
+    "exe": "prototypes\\tinyjs-m2\\dist\\BorsTerminalM2TinyJS.exe",
+    "exe_bytes": 5686049,
+    "launcher_bytes": 2164824,
+    "dist_bytes": 7850873,
+    "dist_bytes_note": "TinyJS portable dist only; Tauri target/release is not an install footprint"
+  },
+  "protocol": {
+    "shell": "TinyJS 0.65 built shell + app.spawnHidden sidecar",
+    "window_gate": "shell opens the loopback window only after GET /api/update/version succeeds",
+    "isolation": "fresh WORK_DIR/profile in cold; shared seeded one in warm",
+    "network_loops": "BORS_NO_FETCH_LOOPS=1, BORS_CODAL_AUTO=0",
+    "instrumentation": "external process tree + Win32 PrintWindow + BorsTerminalM2TinyJS.exe WebView2 eval probe (no CDP)",
+    "cold_definition": "fresh work dir and profile per run, DB seeded from the Phase C template",
+    "warm_definition": "one unrecorded warmup, then same work dir/profile reused",
+    "crash": "with --crash the shell root is terminated after the first board paint; orphans are recorded and then killed by the harness"
+  },
+  "timings_ms": {
+    "sidecar_ready_line": {
+      "n": 3,
+      "median": 17036.4,
+      "min": 16927.7,
+      "max": 17967.3,
+      "values": [
+        17967.3,
+        17036.4,
+        16927.7
+      ],
+      "p95": null,
+      "p95_note": "not reported: n<20"
+    },
+    "window_visible": {
+      "n": 3,
+      "median": 21967.0,
+      "min": 21599.5,
+      "max": 23291.7,
+      "values": [
+        21599.5,
+        21967.0,
+        23291.7
+      ],
+      "p95": null,
+      "p95_note": "not reported: n<20"
+    },
+    "http_verified": {
+      "n": 3,
+      "median": 19409.4,
+      "min": 18809.3,
+      "max": 19626.7,
+      "values": [
+        18809.3,
+        19409.4,
+        19626.7
+      ],
+      "p95": null,
+      "p95_note": "not reported: n<20"
+    },
+    "app_document_ready": {
+      "n": 3,
+      "median": 30116.4,
+      "min": 24901.3,
+      "max": 30559.7,
+      "values": [
+        24901.3,
+        30116.4,
+        30559.7
+      ],
+      "p95": null,
+      "p95_note": "not reported: n<20"
+    },
+    "login_ready": {
+      "n": 3,
+      "median": 31352.4,
+      "min": 24903.3,
+      "max": 31707.7,
+      "values": [
+        24903.3,
+        31352.4,
+        31707.7
+      ],
+      "p95": null,
+      "p95_note": "not reported: n<20"
+    },
+    "master_ready": {
+      "n": 3,
+      "median": 36198.7,
+      "min": 27822.3,
+      "max": 36328.4,
+      "values": [
+        27822.3,
+        36328.4,
+        36198.7
+      ],
+      "p95": null,
+      "p95_note": "not reported: n<20"
+    },
+    "market_rows_visible": {
+      "n": 3,
+      "median": 39106.7,
+      "min": 36812.3,
+      "max": 39703.4,
+      "values": [
+        36812.3,
+        39703.4,
+        39106.7
+      ],
+      "p95": null,
+      "p95_note": "not reported: n<20"
+    },
+    "technical_ready": {
+      "n": 3,
+      "median": 77303.3,
+      "min": 74844.7,
+      "max": 83913.4,
+      "values": [
+        77303.3,
+        83913.4,
+        74844.7
+      ],
+      "p95": null,
+      "p95_note": "not reported: n<20"
+    },
+    "fundamental_ready": {
+      "n": 3,
+      "median": 83826.3,
+      "min": 80426.7,
+      "max": 89235.4,
+      "values": [
+        83826.3,
+        89235.4,
+        80426.7
+      ],
+      "p95": null,
+      "p95_note": "not reported: n<20"
+    },
+    "market_status_ready": {
+      "n": 0,
+      "median": null,
+      "min": null,
+      "max": null,
+      "p95": null,
+      "p95_note": "not reported: n<20"
+    },
+    "window_close_ms": {
+      "n": 3,
+      "median": 108236.1,
+      "min": 104079.5,
+      "max": 110154.7,
+      "values": [
+        108236.1,
+        110154.7,
+        104079.5
+      ],
+      "p95": null,
+      "p95_note": "not reported: n<20"
+    },
+    "root_exit_ms": {
+      "n": 3,
+      "median": 116959.8,
+      "min": 112259.0,
+      "max": 117023.5,
+      "values": [
+        116959.8,
+        117023.5,
+        112259.0
+      ],
+      "p95": null,
+      "p95_note": "not reported: n<20"
+    }
+  },
+  "rss_mb": {
+    "peak": {
+      "n": 3,
+      "median": 887.9,
+      "values": [
+        904.6,
+        844.9,
+        887.9
+      ]
+    },
+    "idle": {
+      "n": 3,
+      "median": 761.8,
+      "values": [
+        790.8,
+        750.6,
+        761.8
+      ]
+    }
+  },
+  "idle_cpu_pct_one_core": {
+    "n": 3,
+    "median": 65.0,
+    "values": [
+      134.8,
+      65.0,
+      64.3
+    ]
+  },
+  "runs_ok": 3,
+  "runs_total": 3,
+  "security": [
+    {
+      "local_host": {
+        "status": 200,
+        "expected": 200,
+        "ok": true,
+        "headers": {
+          "Host": "127.0.0.1:58816"
+        }
+      },
+      "foreign_host": {
+        "status": 403,
+        "expected": 403,
+        "ok": true,
+        "headers": {
+          "Host": "evil.example"
+        }
+      },
+      "origin_null": {
+        "status": 403,
+        "expected": 403,
+        "ok": true,
+        "headers": {
+          "Host": "127.0.0.1:58816",
+          "Origin": "null"
+        }
+      },
+      "origin_foreign": {
+        "status": 403,
+        "expected": 403,
+        "ok": true,
+        "headers": {
+          "Host": "127.0.0.1:58816",
+          "Origin": "http://evil.example"
+        }
+      },
+      "origin_local": {
+        "status": 200,
+        "expected": 200,
+        "ok": true,
+        "headers": {
+          "Host": "127.0.0.1:58816",
+          "Origin": "http://127.0.0.1:58816"
+        }
+      }
+    },
+    {
+      "local_host": {
+        "status": 200,
+        "expected": 200,
+        "ok": true,
+        "headers": {
+          "Host": "127.0.0.1:59080"
+        }
+      },
+      "foreign_host": {
+        "status": 403,
+        "expected": 403,
+        "ok": true,
+        "headers": {
+          "Host": "evil.example"
+        }
+      },
+      "origin_null": {
+        "status": 403,
+        "expected": 403,
+        "ok": true,
+        "headers": {
+          "Host": "127.0.0.1:59080",
+          "Origin": "null"
+        }
+      },
+      "origin_foreign": {
+        "status": 403,
+        "expected": 403,
+        "ok": true,
+        "headers": {
+          "Host": "127.0.0.1:59080",
+          "Origin": "http://evil.example"
+        }
+      },
+      "origin_local": {
+        "status": 200,
+        "expected": 200,
+        "ok": true,
+        "headers": {
+          "Host": "127.0.0.1:59080",
+          "Origin": "http://127.0.0.1:59080"
+        }
+      }
+    },
+    {
+      "local_host": {
+        "status": 200,
+        "expected": 200,
+        "ok": true,
+        "headers": {
+          "Host": "127.0.0.1:59253"
+        }
+      },
+      "foreign_host": {
+        "status": 403,
+        "expected": 403,
+        "ok": true,
+        "headers": {
+          "Host": "evil.example"
+        }
+      },
+      "origin_null": {
+        "status": 403,
+        "expected": 403,
+        "ok": true,
+        "headers": {
+          "Host": "127.0.0.1:59253",
+          "Origin": "null"
+        }
+      },
+      "origin_foreign": {
+        "status": 403,
+        "expected": 403,
+        "ok": true,
+        "headers": {
+          "Host": "127.0.0.1:59253",
+          "Origin": "http://evil.example"
+        }
+      },
+      "origin_local": {
+        "status": 200,
+        "expected": 200,
+        "ok": true,
+        "headers": {
+          "Host": "127.0.0.1:59253",
+          "Origin": "http://127.0.0.1:59253"
+        }
+      }
+    }
+  ],
+  "security_all_ok": true,
+  "exit_codes": [
+    0,
+    0,
+    0
+  ],
+  "cleanup": [
+    {
+      "survivors_before": [],
+      "killed": [],
+      "survivors_after": [],
+      "port_open_after_cleanup": false
+    },
+    {
+      "survivors_before": [],
+      "killed": [],
+      "survivors_after": [],
+      "port_open_after_cleanup": false
+    },
+    {
+      "survivors_before": [],
+      "killed": [],
+      "survivors_after": [],
+      "port_open_after_cleanup": false
+    }
+  ],
+  "crash_runs": [],
+  "crash_orphans": 0,
+  "runs": [
+    {
+      "label": "tinyjs-cold-iso",
+      "mode": "cold",
+      "scenario": "normal",
+      "run": 1,
+      "launch_epoch_ms": 1792881855931.7,
+      "exe": "prototypes\\tinyjs-m2\\dist\\BorsTerminalM2TinyJS.exe",
+      "work_dir": "C:\\Users\\STU\\AppData\\Local\\Temp\\bors_phased\\tinyjs-cold-iso\\runs\\run-1\\work",
+      "profile_dir": "C:\\Users\\STU\\AppData\\Local\\Temp\\bors_phased\\tinyjs-cold-iso\\runs\\run-1\\profile",
+      "screenshots": {},
+      "errors": [],
+      "probe_instances": [
+        {
+          "run_id": "1792881880832-dxnsvm",
+          "at_ms": 25914.8,
+          "url": "http://127.0.0.1:58816/"
+        }
+      ],
+      "crash": false,
+      "firewall_prompts": 0,
+      "window": {
+        "hwnd": 736690982,
+        "title": "بورس‌ترمینال — BorsTerminal",
+        "pid": 16112,
+        "visible": true,
+        "rect": [
+          -8,
+          -8,
+          1288,
+          992
+        ],
+        "w": 1296,
+        "h": 1000
+      },
+      "window_visible_ms": 21599.5,
+      "probe_event_ms": {
+        "login_ready": 24903.3,
+        "app_document_ready": 24901.3,
+        "login_submit": 24953.3,
+        "market_nav_begin": 27827.3,
+        "master_ready": 27822.3,
+        "market_rows_visible": 36812.3,
+        "technical_nav_begin": 44390.3,
+        "technical_ready": 77303.3,
+        "fundamental_nav_begin": 79808.3,
+        "fundamental_ready": 83826.3
+      },
+      "security": {
+        "local_host": {
+          "status": 200,
+          "expected": 200,
+          "ok": true,
+          "headers": {
+            "Host": "127.0.0.1:58816"
+          }
+        },
+        "foreign_host": {
+          "status": 403,
+          "expected": 403,
+          "ok": true,
+          "headers": {
+            "Host": "evil.example"
+          }
+        },
+        "origin_null": {
+          "status": 403,
+          "expected": 403,
+          "ok": true,
+          "headers": {
+            "Host": "127.0.0.1:58816",
+            "Origin": "null"
+          }
+        },
+        "origin_foreign": {
+          "status": 403,
+          "expected": 403,
+          "ok": true,
+          "headers": {
+            "Host": "127.0.0.1:58816",
+            "Origin": "http://evil.example"
+          }
+        },
+        "origin_local": {
+          "status": 200,
+          "expected": 200,
+          "ok": true,
+          "headers": {
+            "Host": "127.0.0.1:58816",
+            "Origin": "http://127.0.0.1:58816"
+          }
+        }
+      },
+      "idle": {
+        "rss_mb": 790.8,
+        "cpu": {
+          "seconds": 8.625,
+          "wall_s": 6.396,
+          "pct_one_core": 134.8
+        },
+        "procs": 12,
+        "rows": [
+          {
+            "pid": 15340,
+            "ppid": 11968,
+            "name": "BorsTerminalM2TinyJS.exe",
+            "rss_mb": 23.9,
+            "cpu_s": 0.391
+          },
+          {
+            "pid": 16112,
+            "ppid": 15340,
+            "name": "launcher.exe",
+            "rss_mb": 18.6,
+            "cpu_s": 0.172
+          },
+          {
+            "pid": 6932,
+            "ppid": 15340,
+            "name": "launcher.exe",
+            "rss_mb": 6.0,
+            "cpu_s": 0.031
+          },
+          {
+            "pid": 13152,
+            "ppid": 6932,
+            "name": "python.exe",
+            "rss_mb": 3.2,
+            "cpu_s": 0.0
+          },
+          {
+            "pid": 14652,
+            "ppid": 13152,
+            "name": "conhost.exe",
+            "rss_mb": 10.6,
+            "cpu_s": 0.031
+          },
+          {
+            "pid": 10884,
+            "ppid": 13152,
+            "name": "python.exe",
+            "rss_mb": 297.9,
+            "cpu_s": 79.016
+          },
+          {
+            "pid": 9416,
+            "ppid": 16112,
+            "name": "msedgewebview2.exe",
+            "rss_mb": 107.7,
+            "cpu_s": 1.859
+          },
+          {
+            "pid": 3752,
+            "ppid": 9416,
+            "name": "msedgewebview2.exe",
+            "rss_mb": 10.3,
+            "cpu_s": 0.094
+          },
+          {
+            "pid": 1892,
+            "ppid": 9416,
+            "name": "msedgewebview2.exe",
+            "rss_mb": 84.2,
+            "cpu_s": 3.172
+          },
+          {
+            "pid": 9524,
+            "ppid": 9416,
+            "name": "msedgewebview2.exe",
+            "rss_mb": 37.0,
+            "cpu_s": 0.594
+          },
+          {
+            "pid": 1884,
+            "ppid": 9416,
+            "name": "msedgewebview2.exe",
+            "rss_mb": 19.0,
+            "cpu_s": 0.141
+          },
+          {
+            "pid": 16000,
+            "ppid": 9416,
+            "name": "msedgewebview2.exe",
+            "rss_mb": 172.3,
+            "cpu_s": 10.766
+          }
+        ]
+      },
+      "final": {
+        "probe": "phase_d_tinyjs/1",
+        "run_id": "1792881880832-dxnsvm",
+        "started_at": 1792881880832,
+        "url_at_attach": "http://127.0.0.1:58816/",
+        "events": {
+          "app_document_ready": {
+            "epoch_ms": 1792881880833,
+            "perf_ms": 1208.4,
+            "time_origin": 1792881879625.5,
+            "url": "http://127.0.0.1:58816/",
+            "nav_start_ms": 0,
+            "dom_content_loaded_ms": 762.6,
+            "load_event_ms": 0
+          },
+          "login_ready": {
+            "epoch_ms": 1792881880835,
+            "perf_ms": 1209.7,
+            "time_origin": 1792881879625.5,
+            "url": "http://127.0.0.1:58816/"
+          },
+          "login_submit": {
+            "epoch_ms": 1792881880885,
+            "perf_ms": 1259.8,
+            "time_origin": 1792881879625.5,
+            "url": "http://127.0.0.1:58816/"
+          },
+          "master_ready": {
+            "epoch_ms": 1792881883754,
+            "perf_ms": 4129.2,
+            "time_origin": 1792881879625.5,
+            "url": "http://127.0.0.1:58816/#/master"
+          },
+          "market_nav_begin": {
+            "epoch_ms": 1792881883759,
+            "perf_ms": 4133.7,
+            "time_origin": 1792881879625.5,
+            "url": "http://127.0.0.1:58816/#/master"
+          },
+          "market_rows_visible": {
+            "epoch_ms": 1792881892744,
+            "perf_ms": 13119.4,
+            "time_origin": 1792881879625.5,
+            "url": "http://127.0.0.1:58816/#/market",
+            "rows": 30
+          },
+          "technical_nav_begin": {
+            "epoch_ms": 1792881900322,
+            "perf_ms": 20697.4,
+            "time_origin": 1792881879625.5,
+            "url": "http://127.0.0.1:58816/#/market"
+          },
+          "technical_ready": {
+            "epoch_ms": 1792881933235,
+            "perf_ms": 53609.6,
+            "time_origin": 1792881879625.5,
+            "url": "http://127.0.0.1:58816/#/technical/%D9%81%D9%88%D9%84%D8%A7%D8%AF",
+            "chart_host": "nn",
+            "freshness": "مبنا: tsetmc-adjusted · ۴۲۵۱ کندلِ تحلیل · آخرین کندل: 1405/08/02 · دریافت: ۰۲:۱۵",
+            "bars": "۴۲۵۱",
+            "last_bar": "1405/08/02",
+            "canvas": {
+              "w": 858,
+              "h": 595
+            },
+            "chart_api": [
+              {
+                "name": "/api/chart/%D9%81%D9%88%D9%84%D8%A7%D8%AF",
+                "duration_ms": 27938.7,
+                "status": 200,
+                "transfer": 202103,
+                "encoded": 201803,
+                "decoded": 1123256
+              }
+            ]
+          },
+          "fundamental_nav_begin": {
+            "epoch_ms": 1792881935740,
+            "perf_ms": 56114.9,
+            "time_origin": 1792881879625.5,
+            "url": "http://127.0.0.1:58816/#/technical/%D9%81%D9%88%D9%84%D8%A7%D8%AF"
+          },
+          "fundamental_ready": {
+            "epoch_ms": 1792881939758,
+            "perf_ms": 60133,
+            "time_origin": 1792881879625.5,
+            "url": "http://127.0.0.1:58816/#/fundamental/%D9%81%D9%88%D9%84%D8%A7%D8%AF"
+          }
+        },
+        "states": {
+          "login_values": [
+            {
+              "type": "text",
+              "value": "admin"
+            },
+            {
+              "type": "password",
+              "value": "bors123"
+            }
+          ],
+          "market_pause_ack": "skipped",
+          "market_rows_after_1s": 30,
+          "board_freshness": "بازار بسته — تابلوی ۱۴۰۵/۰۷/۲۲",
+          "market_scroll": {
+            "available": true,
+            "frames": 45,
+            "range_px": 43994,
+            "p50_ms": 100,
+            "p95_ms": 133.7,
+            "max_ms": 166.6,
+            "note": "programmatic scroll on the largest scrollable element; rAF deltas only"
+          },
+          "technical_pause_ack": "skipped",
+          "fundamental": {
+            "summary": {
+              "text": "⏳تصمیم استراتژیک FTS:مناسب برای زیر نظر گرفتن (واچ‌لیست)پتانسیل دارد اما در یک یا دو شاخص ضعف دارد؛ گزارش‌های بعدی رصد شود.واچ‌لیست رصد FTSسن صورت مالی: ۱۲۵ روز",
+              "rect": {
+                "x": 15,
+                "y": 182,
+                "w": 1097,
+                "h": 119
+              },
+              "visible": true
+            },
+            "holding": null,
+            "scroll_y": 0,
+            "page_text": "وضعیتِ خطِ کدال خوانده می‌شود…در صف—بی‌نتیجه—استخراجِ ناقص—بی‌صورتِ مالی—نیازمندِ بازشماری—آخرین تازگی: —worker خاموشجزئیاتچرخۀ موفقی ثبت نشده؛ `catchup.never_synced` همین را می‌گویدزمانِ چرخۀ بعدی از پاسخ نرسیدحجمِ صف: — ردیف، از آنِ — کهنهامضایِ تازگی: —فولادفلزات اساسيبنیاد روبه‌رشدامتیاز ۷۱داده کهنه⚙تنظیمات⏳تصمیم استراتژیک FTS:مناسب برای زیر نظر گرفتن (واچ‌لیست)پتانسیل دارد اما در یک یا دو شاخص ضعف دارد؛ گزارش‌های بعدی رصد شود.واچ‌لیست رصد FTSسن صورت مالی: ۱۲۵ روزFTSکارت ارزیابی ۵ شاخص FTSامتیاز ۳ از ۵۱. رشد فروش کدال۶ ماههدرآمد ریالیقبول+۵۶.۰٪۶ ماهۀ امسال۲۵۰٬۹۴۲سال قبل۱۶۰٬۸۷۳میلیارد تومان · سرجمعِ دوره۰٪کف ۴۰٪ · هدف ۶۰٪فروش امسالفروش سال قبل− 1≥ هدفِ پوشش تورم (۶۰٪)مبنای مقایسه: ستون «مقایسهٔ دورهٔ مشابه سال قبل» در همان گزارشرشد تولیدیرد−۲.۵٪۱ + رشد ریالی۱ + مبنای تورم− ۱≥ ۰٪مبنای تورم ۶۰٪ — از پنلِ تنظیمات · ۱ از ۱ ماه بهتر۲. سودآوری ۳ سالهنظر نمی‌دهدکاربرد ندارد (مبنایِ تلفیقی)کاربرد نداردEPSt>EPSt-1>EPSt-2>01403: ۶۶۴1404: ۵۱۸1405: ۲۴۸رشد سال‌به‌سال:—-۲۲.۰٪-۵۲.۱٪افت سود در 1404 (افت 22.0٪) (برآورد میاندوره) صورتهای مالی تلفیقی مدنظر نیست — سال‌های 1403، 1404 فقط تلفیقی منتشر شده‌اند و سابقۀ سه‌سالۀ غیرتلفیقی کامل نیست.۳. حاشیه سود ناخالصقبول۲۹.۱٪سود ناخالصدرآمد عملیاتی× ۱۰۰≥ ۲۰٪کف ۲۰٪س ۱ 04: ۲۷.۷٪س ۲ 04: ۴۴.۳٪س ۳ 04: -۲۸.۷٪س ۴ 04: ۲۸.۳٪س ۱ 05: ۲۷.۹٪کفِ پنل: ۲۰٪ · مطلوبِ جزوه: ۳۰٪۴. پتانسیل سود تا آخر سالقبول۱۶.۶٪تخمین فروش ۱۲ ماهه × حاشیهٔ سود ناخالصارزش بازار× ۱۰۰≥ ۴۰٪نسبت فروش ÷ ارزش بازار ۵۷.۰٪ · کف ۳۳.۰٪حداقل معیار پتانسیل سود: ۴۰٪ از ارزش بازار۵. رژیم صنعتقبولصنعت آزادقیمت دستوری نباشد — آزاد / بورس کالارژیم قیمت‌گذاری صنعتضریب اطمینان بنیادی:متوسطدادهٔ کدال برای ۱ شاخص کامل نیستشاخص ۲: افت سود در ۱۴۰۴ (افت ۲۲.۰٪) (برآورد میاندوره) صورتهای مالی تلفیقی مدنظر نیست — سال‌های ۱۴۰۳، ۱۴۰۴ فقط تلفیقی منتشر شده‌اند و سابقۀ سه‌سالۀ غیرتلفیقی کامل نیست. راه‌حل: این شکاف با گرفتنِ دیتابیسِ تازهٔ کدال بسته نمی‌شود: صورتِ سود و زیانِ غیرتلفیقیِ آن سال‌ها منتشر نشده است. ⓘروند فصلی درآمد و سود ناخالص«۶ فصل، میلیارد تومان»نمودار فصلی"
+          },
+          "fundamental_pause_ack": "skipped"
+        },
+        "resources": [
+          {
+            "name": "/api/update/version",
+            "start_ms": 1470.3,
+            "duration_ms": 360.8,
+            "status": 200,
+            "transfer": 373,
+            "encoded": 73,
+            "decoded": 73,
+            "initiator": "fetch"
+          },
+          {
+            "name": "/api/notifications/feed?limit=60",
+            "start_ms": 1473.8,
+            "duration_ms": 1975.6,
+            "status": 200,
+            "transfer": 5120,
+            "encoded": 4820,
+            "decoded": 37238,
+            "initiator": "fetch"
+          },
+          {
+            "name": "/api/selection/portfolio",
+            "start_ms": 1485.8,
+            "duration_ms": 1004.2,
+            "status": 200,
+            "transfer": 674,
+            "encoded": 374,
+            "decoded": 374,
+            "initiator": "fetch"
+          },
+          {
+            "name": "/api/funnel/registry",
+            "start_ms": 4087.4,
+            "duration_ms": 366.7,
+            "status": 200,
+            "transfer": 7988,
+            "encoded": 7688,
+            "decoded": 25293,
+            "initiator": "fetch"
+          },
+          {
+            "name": "/api/market/closes",
+            "start_ms": 4088.3,
+            "duration_ms": 567.6,
+            "status": 200,
+            "transfer": 31430,
+            "encoded": 31130,
+            "decoded": 78512,
+            "initiator": "fetch"
+          },
+          {
+            "name": "/api/market",
+            "start_ms": 4814.1,
+            "duration_ms": 7300.7,
+            "status": 200,
+            "transfer": 1220997,
+            "encoded": 1220697,
+            "decoded": 6814423,
+            "initiator": "fetch"
+          },
+          {
+            "name": "/api/watchlist",
+            "start_ms": 12835.9,
+            "duration_ms": 845,
+            "status": 200,
+            "transfer": 351,
+            "encoded": 51,
+            "decoded": 51,
+            "initiator": "fetch"
+          },
+          {
+            "name": "/api/market/delta?since=0&gen=0",
+            "start_ms": 22435.3,
+            "duration_ms": 1519.5,
+            "status": 200,
+            "transfer": 466,
+            "encoded": 166,
+            "decoded": 166,
+            "initiator": "fetch"
+          },
+          {
+            "name": "/api/chart/%D9%81%D9%88%D9%84%D8%A7%D8%AF",
+            "start_ms": 22435.9,
+            "duration_ms": 27938.7,
+            "status": 200,
+            "transfer": 202103,
+            "encoded": 201803,
+            "decoded": 1123256,
+            "initiator": "fetch"
+          },
+          {
+            "name": "/api/index/tedpix?limit=0",
+            "start_ms": 22436.3,
+            "duration_ms": 5257.8,
+            "status": 200,
+            "transfer": 136382,
+            "encoded": 136082,
+            "decoded": 744309,
+            "initiator": "fetch"
+          },
+          {
+            "name": "/api/fts/%D9%81%D9%88%D9%84%D8%A7%D8%AF",
+            "start_ms": 22436.6,
+            "duration_ms": 31094.8,
+            "status": 200,
+            "transfer": 7170,
+            "encoded": 6870,
+            "decoded": 27043,
+            "initiator": "fetch"
+          },
+          {
+            "name": "/api/fundamental/%D9%81%D9%88%D9%84%D8%A7%D8%AF",
+            "start_ms": 22436.9,
+            "duration_ms": 5254.8,
+            "status": 200,
+            "transfer": 7400,
+            "encoded": 7100,
+            "decoded": 20212,
+            "initiator": "fetch"
+          },
+          {
+            "name": "/api/fts/config",
+            "start_ms": 23310.8,
+            "duration_ms": 885.8,
+            "status": 200,
+            "transfer": 920,
+            "encoded": 620,
+            "decoded": 1121,
+            "initiator": "fetch"
+          },
+          {
+            "name": "/api/update/version",
+            "start_ms": 56138,
+            "duration_ms": 816.1,
+            "status": 200,
+            "transfer": 373,
+            "encoded": 73,
+            "decoded": 73,
+            "initiator": "fetch"
+          },
+          {
+            "name": "/api/calendar/upcoming?days=14",
+            "start_ms": 57351,
+            "duration_ms": 377.8,
+            "status": 200,
+            "transfer": 377,
+            "encoded": 77,
+            "decoded": 77,
+            "initiator": "fetch"
+          },
+          {
+            "name": "/api/sync/codal/db-status",
+            "start_ms": 57351.3,
+            "duration_ms": 379.7,
+            "status": 200,
+            "transfer": 403,
+            "encoded": 103,
+            "decoded": 103,
+            "initiator": "fetch"
+          },
+          {
+            "name": "/api/fundamental/%D9%81%D9%88%D9%84%D8%A7%D8%AF",
+            "start_ms": 57351.5,
+            "duration_ms": 2167.4,
+            "status": 200,
+            "transfer": 7400,
+            "encoded": 7100,
+            "decoded": 20212,
+            "initiator": "fetch"
+          },
+          {
+            "name": "/api/fundamental/%D9%81%D9%88%D9%84%D8%A7%D8%AF/quarters",
+            "start_ms": 57351.9,
+            "duration_ms": 2041.1,
+            "status": 200,
+            "transfer": 848,
+            "encoded": 548,
+            "decoded": 1346,
+            "initiator": "fetch"
+          },
+          {
+            "name": "/api/market/delta?since=0&gen=0",
+            "start_ms": 57352.9,
+            "duration_ms": 384.3,
+            "status": 200,
+            "transfer": 466,
+            "encoded": 166,
+            "decoded": 166,
+            "initiator": "fetch"
+          },
+          {
+            "name": "/api/sync/codal/pipeline",
+            "start_ms": 59571.5,
+            "duration_ms": 792.4,
+            "status": 200,
+            "transfer": 792,
+            "encoded": 492,
+            "decoded": 1046,
+            "initiator": "fetch"
+          }
+        ],
+        "errors": [],
+        "metrics": {
+          "app_document_ready": {
+            "rss_note": "process tree sampled by Python",
+            "browser_reported_heap": {
+              "used": 5112213,
+              "total": 8023157,
+              "limit": 2183135232,
+              "note": "performance.memory; not a CDP heap snapshot"
+            }
+          },
+          "master_ready": {
+            "rss_note": "process tree sampled by Python",
+            "browser_reported_heap": {
+              "used": 9897220,
+              "total": 13809220,
+              "limit": 2183135232,
+              "note": "performance.memory; not a CDP heap snapshot"
+            }
+          },
+          "market_ready": {
+            "rss_note": "process tree sampled by Python",
+            "browser_reported_heap": {
+              "used": 22636389,
+              "total": 48136481,
+              "limit": 2183135232,
+              "note": "performance.memory; not a CDP heap snapshot"
+            }
+          },
+          "technical_ready": {
+            "rss_note": "process tree sampled by Python",
+            "browser_reported_heap": {
+              "used": 31544577,
+              "total": 38519801,
+              "limit": 2183135232,
+              "note": "performance.memory; not a CDP heap snapshot"
+            }
+          },
+          "fundamental_ready": {
+            "rss_note": "process tree sampled by Python",
+            "browser_reported_heap": {
+              "used": 32786198,
+              "total": 41266882,
+              "limit": 2183135232,
+              "note": "performance.memory; not a CDP heap snapshot"
+            }
+          }
+        },
+        "finished_at": 1792881941773,
+        "ok": true
+      },
+      "final_run_ids": [
+        "1792881880832-dxnsvm"
+      ],
+      "shell_trace": [
+        {
+          "stage": "backend_init",
+          "t": 1792881858.072,
+          "dt": 0.865,
+          "pid": 15340,
+          "work": "C:\\Users\\STU\\AppData\\Local\\Temp\\bors_phased\\tinyjs-cold-iso\\runs\\run-1\\work",
+          "main": true
+        },
+        {
+          "stage": "sidecar_spawn_begin",
+          "t": 1792881858.092,
+          "dt": 0.885,
+          "pid": 15340,
+          "exe": "C:\\Users\\STU\\Documents\\Qoder\\2026-10-23\\95b91389\\BorsTerminal\\.venv\\Scripts\\python.exe",
+          "entry": "C:\\Users\\STU\\Documents\\Qoder\\2026-10-23\\95b91389\\BorsTerminal\\tools\\desktop-migration\\phase_d\\headless_server.py",
+          "port": "0"
+        },
+        {
+          "stage": "sidecar_spawned",
+          "t": 1792881858.144,
+          "dt": 0.937,
+          "pid": 6932
+        },
+        {
+          "stage": "sidecar_ready_line",
+          "t": 1792881873.899,
+          "dt": 16.692,
+          "pid": 10884,
+          "port": 58816
+        },
+        {
+          "stage": "http_verified",
+          "t": 1792881874.741,
+          "dt": 17.534,
+          "pid": 15340,
+          "url": "http://127.0.0.1:58816/"
+        },
+        {
+          "stage": "window_open_begin",
+          "t": 1792881874.741,
+          "dt": 17.534,
+          "pid": 15340,
+          "url": "http://127.0.0.1:58816/"
+        },
+        {
+          "stage": "window_open",
+          "t": 1792881874.742,
+          "dt": 17.535,
+          "pid": 15340
+        },
+        {
+          "stage": "probe_eval",
+          "t": 1792881874.905,
+          "dt": 17.698,
+          "pid": 15340,
+          "attempt": 1
+        },
+        {
+          "stage": "probe_eval",
+          "t": 1792881875.811,
+          "dt": 18.604,
+          "pid": 15340,
+          "attempt": 2
+        },
+        {
+          "stage": "probe_eval",
+          "t": 1792881876.759,
+          "dt": 19.552,
+          "pid": 15340,
+          "attempt": 3
+        },
+        {
+          "stage": "probe_eval",
+          "t": 1792881877.723,
+          "dt": 20.516,
+          "pid": 15340,
+          "attempt": 4
+        },
+        {
+          "stage": "probe_eval",
+          "t": 1792881878.635,
+          "dt": 21.428,
+          "pid": 15340,
+          "attempt": 5
+        },
+        {
+          "stage": "probe_eval",
+          "t": 1792881879.617,
+          "dt": 22.41,
+          "pid": 15340,
+          "attempt": 6
+        },
+        {
+          "stage": "probe_eval",
+          "t": 1792881880.52,
+          "dt": 23.313,
+          "pid": 15340,
+          "attempt": 7
+        },
+        {
+          "stage": "probe_eval",
+          "t": 1792881881.466,
+          "dt": 24.259,
+          "pid": 15340,
+          "attempt": 8
+        },
+        {
+          "stage": "probe_eval",
+          "t": 1792881882.5,
+          "dt": 25.293,
+          "pid": 15340,
+          "attempt": 9
+        },
+        {
+          "stage": "probe_eval",
+          "t": 1792881883.365,
+          "dt": 26.158,
+          "pid": 15340,
+          "attempt": 10
+        },
+        {
+          "stage": "probe_eval",
+          "t": 1792881884.271,
+          "dt": 27.064,
+          "pid": 15340,
+          "attempt": 11
+        },
+        {
+          "stage": "probe_eval",
+          "t": 1792881885.22,
+          "dt": 28.013,
+          "pid": 15340,
+          "attempt": 12
+        },
+        {
+          "stage": "probe_eval",
+          "t": 1792881886.234,
+          "dt": 29.027,
+          "pid": 15340,
+          "attempt": 13
+        },
+        {
+          "stage": "probe_eval",
+          "t": 1792881887.145,
+          "dt": 29.938,
+          "pid": 15340,
+          "attempt": 14
+        },
+        {
+          "stage": "probe_eval",
+          "t": 1792881888.131,
+          "dt": 30.924,
+          "pid": 15340,
+          "attempt": 15
+        },
+        {
+          "stage": "probe_eval",
+          "t": 1792881889.099,
+          "dt": 31.892,
+          "pid": 15340,
+          "attempt": 16
+        },
+        {
+          "stage": "probe_eval",
+          "t": 1792881890.036,
+          "dt": 32.829,
+          "pid": 15340,
+          "attempt": 17
+        },
+        {
+          "stage": "probe_eval",
+          "t": 1792881891.029,
+          "dt": 33.822,
+          "pid": 15340,
+          "attempt": 18
+        },
+        {
+          "stage": "probe_eval",
+          "t": 1792881892.193,
+          "dt": 34.986,
+          "pid": 15340,
+          "attempt": 19
+        },
+        {
+          "stage": "probe_eval",
+          "t": 1792881893.142,
+          "dt": 35.935,
+          "pid": 15340,
+          "attempt": 20
+        },
+        {
+          "stage": "probe_stop_file",
+          "t": 1792881894.159,
+          "dt": 36.952,
+          "pid": 15340,
+          "attempt": 21
+        },
+        {
+          "stage": "window_closed",
+          "t": 1792881964.192,
+          "dt": 106.985,
+          "pid": 15340,
+          "id": "app"
+        },
+        {
+          "stage": "shutdown_wait_begin",
+          "t": 1792881964.192,
+          "dt": 106.985,
+          "pid": 15340,
+          "id": "app"
+        },
+        {
+          "stage": "sidecar_exit",
+          "t": 1792881972.681,
+          "dt": 115.474,
+          "pid": 15340,
+          "code": 0,
+          "signal": null
+        },
+        {
+          "stage": "shutdown_wait_done",
+          "t": 1792881972.682,
+          "dt": 115.475,
+          "pid": 15340,
+          "graceful": true,
+          "code": 0
+        },
+        {
+          "stage": "quit_requested",
+          "t": 1792881972.682,
+          "dt": 115.475,
+          "pid": 15340,
+          "id": "app",
+          "graceful": true
+        }
+      ],
+      "sidecar_trace": [
+        {
+          "stage": "entry_import",
+          "t": 1792881860.11279,
+          "dt": 5.9e-05,
+          "pid": 10884
+        },
+        {
+          "stage": "streams_ready",
+          "t": 1792881860.143771,
+          "dt": 0.031311,
+          "pid": 10884
+        },
+        {
+          "stage": "preflight_start",
+          "t": 1792881860.388621,
+          "dt": 0.276474,
+          "pid": 10884
+        },
+        {
+          "stage": "db_prepared",
+          "t": 1792881861.42798,
+          "dt": 1.316103,
+          "pid": 10884,
+          "db": "market.db",
+          "exists": true
+        },
+        {
+          "stage": "library_import_begin",
+          "t": 1792881861.46096,
+          "dt": 1.349041,
+          "pid": 10884
+        },
+        {
+          "stage": "library_import_end",
+          "t": 1792881870.176103,
+          "dt": 10.063223,
+          "pid": 10884
+        },
+        {
+          "stage": "preflight_end",
+          "t": 1792881870.182099,
+          "dt": 10.07,
+          "pid": 10884,
+          "ok": true
+        },
+        {
+          "stage": "uvicorn_spawn",
+          "t": 1792881870.218077,
+          "dt": 10.106034,
+          "pid": 10884,
+          "port": 58816
+        },
+        {
+          "stage": "api_startup_begin",
+          "t": 1792881873.072862,
+          "dt": 12.960772,
+          "pid": 10884
+        },
+        {
+          "stage": "screener_low_priority",
+          "t": 1792881873.136822,
+          "dt": 13.024618,
+          "pid": 10884
+        },
+        {
+          "stage": "screener_wait_board",
+          "t": 1792881873.150813,
+          "dt": 13.03881,
+          "pid": 10884
+        },
+        {
+          "stage": "api_startup_end",
+          "t": 1792881873.154811,
+          "dt": 13.042003,
+          "pid": 10884
+        },
+        {
+          "stage": "http_ready",
+          "t": 1792881873.858396,
+          "dt": 13.746369,
+          "pid": 10884,
+          "port": 58816
+        },
+        {
+          "stage": "candle_projection_done",
+          "t": 1792881877.201337,
+          "dt": 17.089081,
+          "pid": 10884
+        },
+        {
+          "stage": "screener_wait_board_done",
+          "t": 1792881890.609084,
+          "dt": 30.496279,
+          "pid": 10884,
+          "got": true
+        },
+        {
+          "stage": "market_publish",
+          "t": 1792881890.614081,
+          "dt": 30.501807,
+          "pid": 10884,
+          "gen": 0,
+          "rev": 0,
+          "rows": 6018,
+          "ms": 15445.0
+        },
+        {
+          "stage": "market_publish",
+          "t": 1792881891.298658,
+          "dt": 31.186003,
+          "pid": 10884,
+          "gen": 0,
+          "rev": 0,
+          "rows": 6018,
+          "ms": 6415.6
+        },
+        {
+          "stage": "mstat_warm_done",
+          "t": 1792881912.92934,
+          "dt": 52.816609,
+          "pid": 10884
+        },
+        {
+          "stage": "shutdown_begin",
+          "t": 1792881964.288734,
+          "dt": 104.175896,
+          "pid": 10884
+        },
+        {
+          "stage": "shutdown_end",
+          "t": 1792881971.586274,
+          "dt": 111.474215,
+          "pid": 10884,
+          "alive": false
+        }
+      ],
+      "process": {
+        "peak": {
+          "rss_mb": 904.6,
+          "epoch_ms": 1792881911195.4072,
+          "procs": 12
+        },
+        "stages": {
+          "window_visible": {
+            "epoch_ms": 1792881880549.2754,
+            "rss_mb": 463.3,
+            "cpu_s": 10.5,
+            "procs": 10,
+            "rows": [
+              {
+                "pid": 15340,
+                "ppid": 11968,
+                "name": "BorsTerminalM2TinyJS.exe",
+                "rss_mb": 23.9,
+                "cpu_s": 0.281
+              },
+              {
+                "pid": 16112,
+                "ppid": 15340,
+                "name": "launcher.exe",
+                "rss_mb": 18.7,
+                "cpu_s": 0.141
+              },
+              {
+                "pid": 6932,
+                "ppid": 15340,
+                "name": "launcher.exe",
+                "rss_mb": 6.1,
+                "cpu_s": 0.031
+              },
+              {
+                "pid": 13152,
+                "ppid": 6932,
+                "name": "python.exe",
+                "rss_mb": 3.3,
+                "cpu_s": 0.0
+              },
+              {
+                "pid": 14652,
+                "ppid": 13152,
+                "name": "conhost.exe",
+                "rss_mb": 10.7,
+                "cpu_s": 0.031
+              },
+              {
+                "pid": 10884,
+                "ppid": 13152,
+                "name": "python.exe",
+                "rss_mb": 234.9,
+                "cpu_s": 8.516
+              },
+              {
+                "pid": 9416,
+                "ppid": 16112,
+                "name": "msedgewebview2.exe",
+                "rss_mb": 86.7,
+                "cpu_s": 0.984
+              },
+              {
+                "pid": 3752,
+                "ppid": 9416,
+                "name": "msedgewebview2.exe",
+                "rss_mb": 7.8,
+                "cpu_s": 0.047
+              },
+              {
+                "pid": 1892,
+                "ppid": 9416,
+                "name": "msedgewebview2.exe",
+                "rss_mb": 37.1,
+                "cpu_s": 0.234
+              },
+              {
+                "pid": 9524,
+                "ppid": 9416,
+                "name": "msedgewebview2.exe",
+                "rss_mb": 34.2,
+                "cpu_s": 0.234
+              }
+            ]
+          },
+          "probe_final": {
+            "epoch_ms": 1792881948490.4614,
+            "rss_mb": 790.4,
+            "cpu_s": 79.234,
+            "procs": 12,
+            "rows": [
+              {
+                "pid": 15340,
+                "ppid": 11968,
+                "name": "BorsTerminalM2TinyJS.exe",
+                "rss_mb": 23.9,
+                "cpu_s": 0.391
+              },
+              {
+                "pid": 16112,
+                "ppid": 15340,
+                "name": "launcher.exe",
+                "rss_mb": 18.6,
+                "cpu_s": 0.172
+              },
+              {
+                "pid": 6932,
+                "ppid": 15340,
+                "name": "launcher.exe",
+                "rss_mb": 6.0,
+                "cpu_s": 0.031
+              },
+              {
+                "pid": 13152,
+                "ppid": 6932,
+                "name": "python.exe",
+                "rss_mb": 3.2,
+                "cpu_s": 0.0
+              },
+              {
+                "pid": 14652,
+                "ppid": 13152,
+                "name": "conhost.exe",
+                "rss_mb": 10.6,
+                "cpu_s": 0.031
+              },
+              {
+                "pid": 10884,
+                "ppid": 13152,
+                "name": "python.exe",
+                "rss_mb": 295.0,
+                "cpu_s": 62.016
+              },
+              {
+                "pid": 9416,
+                "ppid": 16112,
+                "name": "msedgewebview2.exe",
+                "rss_mb": 107.9,
+                "cpu_s": 1.844
+              },
+              {
+                "pid": 3752,
+                "ppid": 9416,
+                "name": "msedgewebview2.exe",
+                "rss_mb": 10.3,
+                "cpu_s": 0.094
+              },
+              {
+                "pid": 1892,
+                "ppid": 9416,
+                "name": "msedgewebview2.exe",
+                "rss_mb": 84.2,
+                "cpu_s": 3.172
+              },
+              {
+                "pid": 9524,
+                "ppid": 9416,
+                "name": "msedgewebview2.exe",
+                "rss_mb": 37.0,
+                "cpu_s": 0.594
+              },
+              {
+                "pid": 1884,
+                "ppid": 9416,
+                "name": "msedgewebview2.exe",
+                "rss_mb": 19.0,
+                "cpu_s": 0.141
+              },
+              {
+                "pid": 16000,
+                "ppid": 9416,
+                "name": "msedgewebview2.exe",
+                "rss_mb": 174.5,
+                "cpu_s": 10.75
+              }
+            ]
+          },
+          "idle": {
+            "epoch_ms": 1792881964167.8086,
+            "rss_mb": 791.2,
+            "cpu_s": 100.172,
+            "procs": 12,
+            "rows": [
+              {
+                "pid": 15340,
+                "ppid": 11968,
+                "name": "BorsTerminalM2TinyJS.exe",
+                "rss_mb": 23.9,
+                "cpu_s": 0.391
+              },
+              {
+                "pid": 16112,
+                "ppid": 15340,
+                "name": "launcher.exe",
+                "rss_mb": 18.6,
+                "cpu_s": 0.172
+              },
+              {
+                "pid": 6932,
+                "ppid": 15340,
+                "name": "launcher.exe",
+                "rss_mb": 6.0,
+                "cpu_s": 0.031
+              },
+              {
+                "pid": 13152,
+                "ppid": 6932,
+                "name": "python.exe",
+                "rss_mb": 3.2,
+                "cpu_s": 0.0
+              },
+              {
+                "pid": 14652,
+                "ppid": 13152,
+                "name": "conhost.exe",
+                "rss_mb": 10.6,
+                "cpu_s": 0.031
+              },
+              {
+                "pid": 10884,
+                "ppid": 13152,
+                "name": "python.exe",
+                "rss_mb": 298.3,
+                "cpu_s": 82.922
+              },
+              {
+                "pid": 9416,
+                "ppid": 16112,
+                "name": "msedgewebview2.exe",
+                "rss_mb": 107.7,
+                "cpu_s": 1.859
+              },
+              {
+                "pid": 3752,
+                "ppid": 9416,
+                "name": "msedgewebview2.exe",
+                "rss_mb": 10.3,
+                "cpu_s": 0.094
+              },
+              {
+                "pid": 1892,
+                "ppid": 9416,
+                "name": "msedgewebview2.exe",
+                "rss_mb": 84.2,
+                "cpu_s": 3.172
+              },
+              {
+                "pid": 9524,
+                "ppid": 9416,
+                "name": "msedgewebview2.exe",
+                "rss_mb": 37.0,
+                "cpu_s": 0.594
+              },
+              {
+                "pid": 1884,
+                "ppid": 9416,
+                "name": "msedgewebview2.exe",
+                "rss_mb": 19.0,
+                "cpu_s": 0.141
+              },
+              {
+                "pid": 16000,
+                "ppid": 9416,
+                "name": "msedgewebview2.exe",
+                "rss_mb": 172.4,
+                "cpu_s": 10.766
+              }
+            ]
+          }
+        },
+        "samples": 76
+      },
+      "shutdown": {
+        "forced_kill": false,
+        "window_close_ms": 108236.1,
+        "root_exit_ms": 116959.8,
+        "exit_code": 0,
+        "port": 58816,
+        "port_open_after_exit": false,
+        "sidecar_shutdown": [
+          {
+            "stage": "shutdown_begin",
+            "t": 1792881964.288734,
+            "dt": 104.175896,
+            "pid": 10884
+          },
+          {
+            "stage": "shutdown_end",
+            "t": 1792881971.586274,
+            "dt": 111.474215,
+            "pid": 10884,
+            "alive": false
+          }
+        ],
+        "shell_tail": [
+          {
+            "stage": "probe_eval",
+            "t": 1792881892.193,
+            "dt": 34.986,
+            "pid": 15340,
+            "attempt": 19
+          },
+          {
+            "stage": "probe_eval",
+            "t": 1792881893.142,
+            "dt": 35.935,
+            "pid": 15340,
+            "attempt": 20
+          },
+          {
+            "stage": "probe_stop_file",
+            "t": 1792881894.159,
+            "dt": 36.952,
+            "pid": 15340,
+            "attempt": 21
+          },
+          {
+            "stage": "window_closed",
+            "t": 1792881964.192,
+            "dt": 106.985,
+            "pid": 15340,
+            "id": "app"
+          },
+          {
+            "stage": "shutdown_wait_begin",
+            "t": 1792881964.192,
+            "dt": 106.985,
+            "pid": 15340,
+            "id": "app"
+          },
+          {
+            "stage": "sidecar_exit",
+            "t": 1792881972.681,
+            "dt": 115.474,
+            "pid": 15340,
+            "code": 0,
+            "signal": null
+          },
+          {
+            "stage": "shutdown_wait_done",
+            "t": 1792881972.682,
+            "dt": 115.475,
+            "pid": 15340,
+            "graceful": true,
+            "code": 0
+          },
+          {
+            "stage": "quit_requested",
+            "t": 1792881972.682,
+            "dt": 115.475,
+            "pid": 15340,
+            "id": "app",
+            "graceful": true
+          }
+        ],
+        "crash_kill": null,
+        "survivors": [],
+        "cleanup": {
+          "survivors_before": [],
+          "killed": [],
+          "survivors_after": [],
+          "port_open_after_cleanup": false
+        },
+        "cleanup_final": {
+          "survivors_before": [],
+          "killed": [],
+          "survivors_after": [],
+          "port_open_after_cleanup": false
+        },
+        "shell_exit_code": 0
+      },
+      "elapsed_ms": 126523.8,
+      "timings_ms": {
+        "sidecar_spawned": 2212.3,
+        "sidecar_ready_line": 17967.3,
+        "http_verified": 18809.3,
+        "window_open_begin": 18809.3,
+        "window_open": 18810.3,
+        "window_closed": 108260.3,
+        "quit_requested": 116750.3,
+        "window_visible": 21599.5,
+        "login_ready": 24903.3,
+        "app_document_ready": 24901.3,
+        "login_submit": 24953.3,
+        "market_nav_begin": 27827.3,
+        "master_ready": 27822.3,
+        "market_rows_visible": 36812.3,
+        "technical_nav_begin": 44390.3,
+        "technical_ready": 77303.3,
+        "fundamental_nav_begin": 79808.3,
+        "fundamental_ready": 83826.3,
+        "sidecar_preflight_start": 4456.9,
+        "sidecar_preflight_end": 14250.4,
+        "sidecar_http_ready": 17926.7,
+        "sidecar_shutdown_begin": 108357.0,
+        "sidecar_shutdown_end": 115654.6,
+        "window_close_ms": 108236.1,
+        "root_exit_ms": 116959.8
+      },
+      "harness_finished_at": 1792881982455.8
+    },
+    {
+      "label": "tinyjs-cold-iso",
+      "mode": "cold",
+      "scenario": "normal",
+      "run": 2,
+      "launch_epoch_ms": 1792881983904.6,
+      "exe": "prototypes\\tinyjs-m2\\dist\\BorsTerminalM2TinyJS.exe",
+      "work_dir": "C:\\Users\\STU\\AppData\\Local\\Temp\\bors_phased\\tinyjs-cold-iso\\runs\\run-2\\work",
+      "profile_dir": "C:\\Users\\STU\\AppData\\Local\\Temp\\bors_phased\\tinyjs-cold-iso\\runs\\run-2\\profile",
+      "screenshots": {},
+      "errors": [],
+      "probe_instances": [
+        {
+          "run_id": "1792882013303-i5mwuk",
+          "at_ms": 30096.0,
+          "url": "about:blank"
+        },
+        {
+          "run_id": "1792882013917-ikp9ug",
+          "at_ms": 30554.7,
+          "url": "http://127.0.0.1:59080/"
+        }
+      ],
+      "crash": false,
+      "firewall_prompts": 0,
+      "window": {
+        "hwnd": 127468262,
+        "title": "بورس‌ترمینال — BorsTerminal",
+        "pid": 13976,
+        "visible": true,
+        "rect": [
+          -8,
+          -8,
+          1288,
+          992
+        ],
+        "w": 1296,
+        "h": 1000
+      },
+      "window_visible_ms": 21967.0,
+      "probe_event_ms": {
+        "app_document_ready": 30116.4,
+        "login_ready": 31352.4,
+        "login_submit": 32920.4,
+        "market_nav_begin": 36331.4,
+        "master_ready": 36328.4,
+        "market_rows_visible": 39703.4,
+        "technical_nav_begin": 48207.4,
+        "technical_ready": 83913.4,
+        "fundamental_nav_begin": 86426.4,
+        "fundamental_ready": 89235.4
+      },
+      "security": {
+        "local_host": {
+          "status": 200,
+          "expected": 200,
+          "ok": true,
+          "headers": {
+            "Host": "127.0.0.1:59080"
+          }
+        },
+        "foreign_host": {
+          "status": 403,
+          "expected": 403,
+          "ok": true,
+          "headers": {
+            "Host": "evil.example"
+          }
+        },
+        "origin_null": {
+          "status": 403,
+          "expected": 403,
+          "ok": true,
+          "headers": {
+            "Host": "127.0.0.1:59080",
+            "Origin": "null"
+          }
+        },
+        "origin_foreign": {
+          "status": 403,
+          "expected": 403,
+          "ok": true,
+          "headers": {
+            "Host": "127.0.0.1:59080",
+            "Origin": "http://evil.example"
+          }
+        },
+        "origin_local": {
+          "status": 200,
+          "expected": 200,
+          "ok": true,
+          "headers": {
+            "Host": "127.0.0.1:59080",
+            "Origin": "http://127.0.0.1:59080"
+          }
+        }
+      },
+      "idle": {
+        "rss_mb": 750.6,
+        "cpu": {
+          "seconds": 3.703,
+          "wall_s": 5.697,
+          "pct_one_core": 65.0
+        },
+        "procs": 12,
+        "rows": [
+          {
+            "pid": 9196,
+            "ppid": 11968,
+            "name": "BorsTerminalM2TinyJS.exe",
+            "rss_mb": 23.9,
+            "cpu_s": 0.891
+          },
+          {
+            "pid": 13976,
+            "ppid": 9196,
+            "name": "launcher.exe",
+            "rss_mb": 17.4,
+            "cpu_s": 0.094
+          },
+          {
+            "pid": 2604,
+            "ppid": 9196,
+            "name": "launcher.exe",
+            "rss_mb": 6.0,
+            "cpu_s": 0.031
+          },
+          {
+            "pid": 5632,
+            "ppid": 2604,
+            "name": "python.exe",
+            "rss_mb": 3.2,
+            "cpu_s": 0.016
+          },
+          {
+            "pid": 5436,
+            "ppid": 5632,
+            "name": "conhost.exe",
+            "rss_mb": 10.7,
+            "cpu_s": 0.016
+          },
+          {
+            "pid": 4520,
+            "ppid": 5632,
+            "name": "python.exe",
+            "rss_mb": 256.9,
+            "cpu_s": 52.0
+          },
+          {
+            "pid": 11408,
+            "ppid": 13976,
+            "name": "msedgewebview2.exe",
+            "rss_mb": 106.8,
+            "cpu_s": 2.047
+          },
+          {
+            "pid": 15336,
+            "ppid": 11408,
+            "name": "msedgewebview2.exe",
+            "rss_mb": 10.3,
+            "cpu_s": 0.078
+          },
+          {
+            "pid": 11928,
+            "ppid": 11408,
+            "name": "msedgewebview2.exe",
+            "rss_mb": 82.9,
+            "cpu_s": 2.812
+          },
+          {
+            "pid": 17272,
+            "ppid": 11408,
+            "name": "msedgewebview2.exe",
+            "rss_mb": 37.1,
+            "cpu_s": 0.672
+          },
+          {
+            "pid": 15172,
+            "ppid": 11408,
+            "name": "msedgewebview2.exe",
+            "rss_mb": 18.9,
+            "cpu_s": 0.125
+          },
+          {
+            "pid": 7408,
+            "ppid": 11408,
+            "name": "msedgewebview2.exe",
+            "rss_mb": 176.3,
+            "cpu_s": 10.297
+          }
+        ]
+      },
+      "final": {
+        "probe": "phase_d_tinyjs/1",
+        "run_id": "1792882013917-ikp9ug",
+        "started_at": 1792882013917,
+        "url_at_attach": "http://127.0.0.1:59080/",
+        "events": {
+          "app_document_ready": {
+            "epoch_ms": 1792882014021,
+            "perf_ms": 1033.5,
+            "time_origin": 1792882012987.5,
+            "url": "http://127.0.0.1:59080/",
+            "nav_start_ms": 0,
+            "dom_content_loaded_ms": 0,
+            "load_event_ms": 0
+          },
+          "login_ready": {
+            "epoch_ms": 1792882015257,
+            "perf_ms": 2270.1,
+            "time_origin": 1792882012987.5,
+            "url": "http://127.0.0.1:59080/"
+          },
+          "login_submit": {
+            "epoch_ms": 1792882016825,
+            "perf_ms": 3838.4,
+            "time_origin": 1792882012987.5,
+            "url": "http://127.0.0.1:59080/"
+          },
+          "master_ready": {
+            "epoch_ms": 1792882020233,
+            "perf_ms": 7246.4,
+            "time_origin": 1792882012987.5,
+            "url": "http://127.0.0.1:59080/#/master"
+          },
+          "market_nav_begin": {
+            "epoch_ms": 1792882020236,
+            "perf_ms": 7248.9,
+            "time_origin": 1792882012987.5,
+            "url": "http://127.0.0.1:59080/#/master"
+          },
+          "market_rows_visible": {
+            "epoch_ms": 1792882023608,
+            "perf_ms": 10621.1,
+            "time_origin": 1792882012987.5,
+            "url": "http://127.0.0.1:59080/#/market",
+            "rows": 30
+          },
+          "technical_nav_begin": {
+            "epoch_ms": 1792882032112,
+            "perf_ms": 19125.1,
+            "time_origin": 1792882012987.5,
+            "url": "http://127.0.0.1:59080/#/market"
+          },
+          "technical_ready": {
+            "epoch_ms": 1792882067818,
+            "perf_ms": 54831,
+            "time_origin": 1792882012987.5,
+            "url": "http://127.0.0.1:59080/#/technical/%D9%81%D9%88%D9%84%D8%A7%D8%AF",
+            "chart_host": "nn",
+            "freshness": "مبنا: tsetmc-adjusted · ۴۲۵۱ کندلِ تحلیل · آخرین کندل: 1405/08/02 · دریافت: ۰۲:۱۷",
+            "bars": "۴۲۵۱",
+            "last_bar": "1405/08/02",
+            "canvas": {
+              "w": 858,
+              "h": 595
+            },
+            "chart_api": [
+              {
+                "name": "/api/chart/%D9%81%D9%88%D9%84%D8%A7%D8%AF",
+                "duration_ms": 29248.3,
+                "status": 200,
+                "transfer": 202103,
+                "encoded": 201803,
+                "decoded": 1123256
+              }
+            ]
+          },
+          "fundamental_nav_begin": {
+            "epoch_ms": 1792882070331,
+            "perf_ms": 57343.7,
+            "time_origin": 1792882012987.5,
+            "url": "http://127.0.0.1:59080/#/technical/%D9%81%D9%88%D9%84%D8%A7%D8%AF"
+          },
+          "fundamental_ready": {
+            "epoch_ms": 1792882073140,
+            "perf_ms": 60152.8,
+            "time_origin": 1792882012987.5,
+            "url": "http://127.0.0.1:59080/#/fundamental/%D9%81%D9%88%D9%84%D8%A7%D8%AF"
+          }
+        },
+        "states": {
+          "login_values": [
+            {
+              "type": "text",
+              "value": "admin"
+            },
+            {
+              "type": "password",
+              "value": "bors123"
+            }
+          ],
+          "market_pause_ack": "skipped",
+          "market_rows_after_1s": 30,
+          "board_freshness": "بازار بسته — تابلوی ۱۴۰۵/۰۷/۲۲",
+          "market_scroll": {
+            "available": true,
+            "frames": 45,
+            "range_px": 43994,
+            "p50_ms": 116.7,
+            "p95_ms": 166.7,
+            "max_ms": 183.7,
+            "note": "programmatic scroll on the largest scrollable element; rAF deltas only"
+          },
+          "technical_pause_ack": "skipped",
+          "fundamental": {
+            "summary": {
+              "text": "⏳تصمیم استراتژیک FTS:مناسب برای زیر نظر گرفتن (واچ‌لیست)پتانسیل دارد اما در یک یا دو شاخص ضعف دارد؛ گزارش‌های بعدی رصد شود.واچ‌لیست رصد FTSسن صورت مالی: ۱۲۵ روز",
+              "rect": {
+                "x": 15,
+                "y": 182,
+                "w": 1097,
+                "h": 119
+              },
+              "visible": true
+            },
+            "holding": null,
+            "scroll_y": 0,
+            "page_text": "وضعیتِ خطِ کدال خوانده می‌شود…در صف—بی‌نتیجه—استخراجِ ناقص—بی‌صورتِ مالی—نیازمندِ بازشماری—آخرین تازگی: —worker خاموشجزئیاتچرخۀ موفقی ثبت نشده؛ `catchup.never_synced` همین را می‌گویدزمانِ چرخۀ بعدی از پاسخ نرسیدحجمِ صف: — ردیف، از آنِ — کهنهامضایِ تازگی: —فولادفلزات اساسيبنیاد روبه‌رشدامتیاز ۷۱داده کهنه⚙تنظیمات⏳تصمیم استراتژیک FTS:مناسب برای زیر نظر گرفتن (واچ‌لیست)پتانسیل دارد اما در یک یا دو شاخص ضعف دارد؛ گزارش‌های بعدی رصد شود.واچ‌لیست رصد FTSسن صورت مالی: ۱۲۵ روزFTSکارت ارزیابی ۵ شاخص FTSامتیاز ۳ از ۵۱. رشد فروش کدال۶ ماههدرآمد ریالیقبول+۵۶.۰٪۶ ماهۀ امسال۲۵۰٬۹۴۲سال قبل۱۶۰٬۸۷۳میلیارد تومان · سرجمعِ دوره۰٪کف ۴۰٪ · هدف ۶۰٪فروش امسالفروش سال قبل− 1≥ هدفِ پوشش تورم (۶۰٪)مبنای مقایسه: ستون «مقایسهٔ دورهٔ مشابه سال قبل» در همان گزارشرشد تولیدیرد−۲.۵٪۱ + رشد ریالی۱ + مبنای تورم− ۱≥ ۰٪مبنای تورم ۶۰٪ — از پنلِ تنظیمات · ۱ از ۱ ماه بهتر۲. سودآوری ۳ سالهنظر نمی‌دهدکاربرد ندارد (مبنایِ تلفیقی)کاربرد نداردEPSt>EPSt-1>EPSt-2>01403: ۶۶۴1404: ۵۱۸1405: ۲۴۸رشد سال‌به‌سال:—-۲۲.۰٪-۵۲.۱٪افت سود در 1404 (افت 22.0٪) (برآورد میاندوره) صورتهای مالی تلفیقی مدنظر نیست — سال‌های 1403، 1404 فقط تلفیقی منتشر شده‌اند و سابقۀ سه‌سالۀ غیرتلفیقی کامل نیست.۳. حاشیه سود ناخالصقبول۲۹.۱٪سود ناخالصدرآمد عملیاتی× ۱۰۰≥ ۲۰٪کف ۲۰٪س ۱ 04: ۲۷.۷٪س ۲ 04: ۴۴.۳٪س ۳ 04: -۲۸.۷٪س ۴ 04: ۲۸.۳٪س ۱ 05: ۲۷.۹٪کفِ پنل: ۲۰٪ · مطلوبِ جزوه: ۳۰٪۴. پتانسیل سود تا آخر سالقبول۱۶.۶٪تخمین فروش ۱۲ ماهه × حاشیهٔ سود ناخالصارزش بازار× ۱۰۰≥ ۴۰٪نسبت فروش ÷ ارزش بازار ۵۷.۰٪ · کف ۳۳.۰٪حداقل معیار پتانسیل سود: ۴۰٪ از ارزش بازار۵. رژیم صنعتقبولصنعت آزادقیمت دستوری نباشد — آزاد / بورس کالارژیم قیمت‌گذاری صنعتضریب اطمینان بنیادی:متوسطدادهٔ کدال برای ۱ شاخص کامل نیستشاخص ۲: افت سود در ۱۴۰۴ (افت ۲۲.۰٪) (برآورد میاندوره) صورتهای مالی تلفیقی مدنظر نیست — سال‌های ۱۴۰۳، ۱۴۰۴ فقط تلفیقی منتشر شده‌اند و سابقۀ سه‌سالۀ غیرتلفیقی کامل نیست. راه‌حل: این شکاف با گرفتنِ دیتابیسِ تازهٔ کدال بسته نمی‌شود: صورتِ سود و زیانِ غیرتلفیقیِ آن سال‌ها منتشر نشده است. ⓘروند فصلی درآمد و سود ناخالص«۶ فصل، میلیارد تومان»نمودار فصلی"
+          },
+          "fundamental_pause_ack": "skipped"
+        },
+        "resources": [
+          {
+            "name": "/api/update/version",
+            "start_ms": 4071.7,
+            "duration_ms": 430.4,
+            "status": 200,
+            "transfer": 373,
+            "encoded": 73,
+            "decoded": 73,
+            "initiator": "fetch"
+          },
+          {
+            "name": "/api/notifications/feed?limit=60",
+            "start_ms": 4074.9,
+            "duration_ms": 2893.5,
+            "status": 200,
+            "transfer": 5120,
+            "encoded": 4820,
+            "decoded": 37238,
+            "initiator": "fetch"
+          },
+          {
+            "name": "/api/selection/portfolio",
+            "start_ms": 4086.9,
+            "duration_ms": 947.1,
+            "status": 200,
+            "transfer": 674,
+            "encoded": 374,
+            "decoded": 374,
+            "initiator": "fetch"
+          },
+          {
+            "name": "/api/funnel/registry",
+            "start_ms": 7244.6,
+            "duration_ms": 719.1,
+            "status": 200,
+            "transfer": 7988,
+            "encoded": 7688,
+            "decoded": 25293,
+            "initiator": "fetch"
+          },
+          {
+            "name": "/api/market/closes",
+            "start_ms": 7245.5,
+            "duration_ms": 943.9,
+            "status": 200,
+            "transfer": 31430,
+            "encoded": 31130,
+            "decoded": 78512,
+            "initiator": "fetch"
+          },
+          {
+            "name": "/api/market",
+            "start_ms": 8121.8,
+            "duration_ms": 807.7,
+            "status": 200,
+            "transfer": 1220997,
+            "encoded": 1220697,
+            "decoded": 6814423,
+            "initiator": "fetch"
+          },
+          {
+            "name": "/api/watchlist",
+            "start_ms": 9962.1,
+            "duration_ms": 1025.3,
+            "status": 200,
+            "transfer": 351,
+            "encoded": 51,
+            "decoded": 51,
+            "initiator": "fetch"
+          },
+          {
+            "name": "/api/market/delta?since=0&gen=0",
+            "start_ms": 21630.9,
+            "duration_ms": 371,
+            "status": 200,
+            "transfer": 466,
+            "encoded": 166,
+            "decoded": 166,
+            "initiator": "fetch"
+          },
+          {
+            "name": "/api/chart/%D9%81%D9%88%D9%84%D8%A7%D8%AF",
+            "start_ms": 21631.6,
+            "duration_ms": 29248.3,
+            "status": 200,
+            "transfer": 202103,
+            "encoded": 201803,
+            "decoded": 1123256,
+            "initiator": "fetch"
+          },
+          {
+            "name": "/api/index/tedpix?limit=0",
+            "start_ms": 21632.8,
+            "duration_ms": 5808.2,
+            "status": 200,
+            "transfer": 136381,
+            "encoded": 136081,
+            "decoded": 744309,
+            "initiator": "fetch"
+          },
+          {
+            "name": "/api/fts/%D9%81%D9%88%D9%84%D8%A7%D8%AF",
+            "start_ms": 21633.3,
+            "duration_ms": 33061.3,
+            "status": 200,
+            "transfer": 7170,
+            "encoded": 6870,
+            "decoded": 27043,
+            "initiator": "fetch"
+          },
+          {
+            "name": "/api/fundamental/%D9%81%D9%88%D9%84%D8%A7%D8%AF",
+            "start_ms": 21633.7,
+            "duration_ms": 7804.4,
+            "status": 200,
+            "transfer": 7400,
+            "encoded": 7100,
+            "decoded": 20212,
+            "initiator": "fetch"
+          },
+          {
+            "name": "/api/fts/config",
+            "start_ms": 23529.6,
+            "duration_ms": 896.9,
+            "status": 200,
+            "transfer": 920,
+            "encoded": 620,
+            "decoded": 1121,
+            "initiator": "fetch"
+          },
+          {
+            "name": "/api/update/version",
+            "start_ms": 57370.6,
+            "duration_ms": 368,
+            "status": 200,
+            "transfer": 373,
+            "encoded": 73,
+            "decoded": 73,
+            "initiator": "fetch"
+          },
+          {
+            "name": "/api/calendar/upcoming?days=14",
+            "start_ms": 58115.1,
+            "duration_ms": 272.2,
+            "status": 200,
+            "transfer": 377,
+            "encoded": 77,
+            "decoded": 77,
+            "initiator": "fetch"
+          },
+          {
+            "name": "/api/sync/codal/db-status",
+            "start_ms": 58115.4,
+            "duration_ms": 86.8,
+            "status": 200,
+            "transfer": 403,
+            "encoded": 103,
+            "decoded": 103,
+            "initiator": "fetch"
+          },
+          {
+            "name": "/api/fundamental/%D9%81%D9%88%D9%84%D8%A7%D8%AF",
+            "start_ms": 58115.7,
+            "duration_ms": 1581.9,
+            "status": 200,
+            "transfer": 7400,
+            "encoded": 7100,
+            "decoded": 20212,
+            "initiator": "fetch"
+          },
+          {
+            "name": "/api/fundamental/%D9%81%D9%88%D9%84%D8%A7%D8%AF/quarters",
+            "start_ms": 58116,
+            "duration_ms": 1500.8,
+            "status": 200,
+            "transfer": 848,
+            "encoded": 548,
+            "decoded": 1346,
+            "initiator": "fetch"
+          },
+          {
+            "name": "/api/market/delta?since=0&gen=0",
+            "start_ms": 58116.7,
+            "duration_ms": 96.1,
+            "status": 200,
+            "transfer": 466,
+            "encoded": 166,
+            "decoded": 166,
+            "initiator": "fetch"
+          },
+          {
+            "name": "/api/sync/codal/pipeline",
+            "start_ms": 59756,
+            "duration_ms": 392.9,
+            "status": 200,
+            "transfer": 792,
+            "encoded": 492,
+            "decoded": 1046,
+            "initiator": "fetch"
+          }
+        ],
+        "errors": [],
+        "metrics": {
+          "app_document_ready": {
+            "rss_note": "process tree sampled by Python",
+            "browser_reported_heap": {
+              "used": 1805745,
+              "total": 2359793,
+              "limit": 2183135232,
+              "note": "performance.memory; not a CDP heap snapshot"
+            }
+          },
+          "master_ready": {
+            "rss_note": "process tree sampled by Python",
+            "browser_reported_heap": {
+              "used": 9452974,
+              "total": 13284170,
+              "limit": 2183135232,
+              "note": "performance.memory; not a CDP heap snapshot"
+            }
+          },
+          "market_ready": {
+            "rss_note": "process tree sampled by Python",
+            "browser_reported_heap": {
+              "used": 22379359,
+              "total": 53642123,
+              "limit": 2183135232,
+              "note": "performance.memory; not a CDP heap snapshot"
+            }
+          },
+          "technical_ready": {
+            "rss_note": "process tree sampled by Python",
+            "browser_reported_heap": {
+              "used": 28889777,
+              "total": 39306181,
+              "limit": 2183135232,
+              "note": "performance.memory; not a CDP heap snapshot"
+            }
+          },
+          "fundamental_ready": {
+            "rss_note": "process tree sampled by Python",
+            "browser_reported_heap": {
+              "used": 30339106,
+              "total": 42577550,
+              "limit": 2183135232,
+              "note": "performance.memory; not a CDP heap snapshot"
+            }
+          }
+        },
+        "finished_at": 1792882075157,
+        "ok": true
+      },
+      "final_run_ids": [
+        "1792882013917-ikp9ug"
+      ],
+      "shell_trace": [
+        {
+          "stage": "backend_init",
+          "t": 1792881984.68,
+          "dt": 0.267,
+          "pid": 9196,
+          "work": "C:\\Users\\STU\\AppData\\Local\\Temp\\bors_phased\\tinyjs-cold-iso\\runs\\run-2\\work",
+          "main": true
+        },
+        {
+          "stage": "sidecar_spawn_begin",
+          "t": 1792881984.686,
+          "dt": 0.273,
+          "pid": 9196,
+          "exe": "C:\\Users\\STU\\Documents\\Qoder\\2026-10-23\\95b91389\\BorsTerminal\\.venv\\Scripts\\python.exe",
+          "entry": "C:\\Users\\STU\\Documents\\Qoder\\2026-10-23\\95b91389\\BorsTerminal\\tools\\desktop-migration\\phase_d\\headless_server.py",
+          "port": "0"
+        },
+        {
+          "stage": "sidecar_spawned",
+          "t": 1792881984.753,
+          "dt": 0.34,
+          "pid": 2604
+        },
+        {
+          "stage": "sidecar_ready_line",
+          "t": 1792882000.941,
+          "dt": 16.528,
+          "pid": 4520,
+          "port": 59080
+        },
+        {
+          "stage": "http_verified",
+          "t": 1792882003.314,
+          "dt": 18.901,
+          "pid": 9196,
+          "url": "http://127.0.0.1:59080/"
+        },
+        {
+          "stage": "window_open_begin",
+          "t": 1792882003.314,
+          "dt": 18.901,
+          "pid": 9196,
+          "url": "http://127.0.0.1:59080/"
+        },
+        {
+          "stage": "window_open",
+          "t": 1792882003.314,
+          "dt": 18.901,
+          "pid": 9196
+        },
+        {
+          "stage": "probe_eval",
+          "t": 1792882003.395,
+          "dt": 18.982,
+          "pid": 9196,
+          "attempt": 1
+        },
+        {
+          "stage": "probe_eval",
+          "t": 1792882004.295,
+          "dt": 19.882,
+          "pid": 9196,
+          "attempt": 2
+        },
+        {
+          "stage": "probe_eval",
+          "t": 1792882005.393,
+          "dt": 20.98,
+          "pid": 9196,
+          "attempt": 3
+        },
+        {
+          "stage": "probe_eval",
+          "t": 1792882006.329,
+          "dt": 21.916,
+          "pid": 9196,
+          "attempt": 4
+        },
+        {
+          "stage": "probe_eval",
+          "t": 1792882007.273,
+          "dt": 22.86,
+          "pid": 9196,
+          "attempt": 5
+        },
+        {
+          "stage": "probe_eval",
+          "t": 1792882008.202,
+          "dt": 23.789,
+          "pid": 9196,
+          "attempt": 6
+        },
+        {
+          "stage": "probe_eval",
+          "t": 1792882009.213,
+          "dt": 24.8,
+          "pid": 9196,
+          "attempt": 7
+        },
+        {
+          "stage": "probe_eval",
+          "t": 1792882010.175,
+          "dt": 25.762,
+          "pid": 9196,
+          "attempt": 8
+        },
+        {
+          "stage": "probe_eval",
+          "t": 1792882011.086,
+          "dt": 26.673,
+          "pid": 9196,
+          "attempt": 9
+        },
+        {
+          "stage": "probe_eval",
+          "t": 1792882012.071,
+          "dt": 27.658,
+          "pid": 9196,
+          "attempt": 10
+        },
+        {
+          "stage": "probe_eval",
+          "t": 1792882013.02,
+          "dt": 28.607,
+          "pid": 9196,
+          "attempt": 11
+        },
+        {
+          "stage": "probe_eval",
+          "t": 1792882013.948,
+          "dt": 29.535,
+          "pid": 9196,
+          "attempt": 12
+        },
+        {
+          "stage": "probe_eval",
+          "t": 1792882015,
+          "dt": 30.587,
+          "pid": 9196,
+          "attempt": 13
+        },
+        {
+          "stage": "probe_eval",
+          "t": 1792882015.928,
+          "dt": 31.515,
+          "pid": 9196,
+          "attempt": 14
+        },
+        {
+          "stage": "probe_eval",
+          "t": 1792882017.037,
+          "dt": 32.624,
+          "pid": 9196,
+          "attempt": 15
+        },
+        {
+          "stage": "probe_eval",
+          "t": 1792882018.008,
+          "dt": 33.595,
+          "pid": 9196,
+          "attempt": 16
+        },
+        {
+          "stage": "probe_eval",
+          "t": 1792882018.999,
+          "dt": 34.586,
+          "pid": 9196,
+          "attempt": 17
+        },
+        {
+          "stage": "probe_eval",
+          "t": 1792882019.892,
+          "dt": 35.479,
+          "pid": 9196,
+          "attempt": 18
+        },
+        {
+          "stage": "probe_eval",
+          "t": 1792882020.792,
+          "dt": 36.379,
+          "pid": 9196,
+          "attempt": 19
+        },
+        {
+          "stage": "probe_eval",
+          "t": 1792882021.748,
+          "dt": 37.335,
+          "pid": 9196,
+          "attempt": 20
+        },
+        {
+          "stage": "probe_eval",
+          "t": 1792882023.004,
+          "dt": 38.591,
+          "pid": 9196,
+          "attempt": 21
+        },
+        {
+          "stage": "probe_eval",
+          "t": 1792882023.807,
+          "dt": 39.394,
+          "pid": 9196,
+          "attempt": 22
+        },
+        {
+          "stage": "probe_eval",
+          "t": 1792882024.819,
+          "dt": 40.406,
+          "pid": 9196,
+          "attempt": 23
+        },
+        {
+          "stage": "probe_eval",
+          "t": 1792882025.954,
+          "dt": 41.541,
+          "pid": 9196,
+          "attempt": 24
+        },
+        {
+          "stage": "probe_eval",
+          "t": 1792882026.999,
+          "dt": 42.586,
+          "pid": 9196,
+          "attempt": 25
+        },
+        {
+          "stage": "probe_eval",
+          "t": 1792882028.124,
+          "dt": 43.711,
+          "pid": 9196,
+          "attempt": 26
+        },
+        {
+          "stage": "probe_eval",
+          "t": 1792882029.121,
+          "dt": 44.708,
+          "pid": 9196,
+          "attempt": 27
+        },
+        {
+          "stage": "probe_eval",
+          "t": 1792882030.146,
+          "dt": 45.733,
+          "pid": 9196,
+          "attempt": 28
+        },
+        {
+          "stage": "probe_eval",
+          "t": 1792882031.104,
+          "dt": 46.691,
+          "pid": 9196,
+          "attempt": 29
+        },
+        {
+          "stage": "probe_eval",
+          "t": 1792882032.039,
+          "dt": 47.626,
+          "pid": 9196,
+          "attempt": 30
+        },
+        {
+          "stage": "probe_eval",
+          "t": 1792882033.014,
+          "dt": 48.601,
+          "pid": 9196,
+          "attempt": 31
+        },
+        {
+          "stage": "probe_eval",
+          "t": 1792882033.962,
+          "dt": 49.549,
+          "pid": 9196,
+          "attempt": 32
+        },
+        {
+          "stage": "probe_eval",
+          "t": 1792882034.917,
+          "dt": 50.504,
+          "pid": 9196,
+          "attempt": 33
+        },
+        {
+          "stage": "probe_eval",
+          "t": 1792882036.363,
+          "dt": 51.95,
+          "pid": 9196,
+          "attempt": 34
+        },
+        {
+          "stage": "probe_eval",
+          "t": 1792882037.309,
+          "dt": 52.896,
+          "pid": 9196,
+          "attempt": 35
+        },
+        {
+          "stage": "probe_eval",
+          "t": 1792882038.31,
+          "dt": 53.897,
+          "pid": 9196,
+          "attempt": 36
+        },
+        {
+          "stage": "probe_eval",
+          "t": 1792882039.262,
+          "dt": 54.849,
+          "pid": 9196,
+          "attempt": 37
+        },
+        {
+          "stage": "probe_eval",
+          "t": 1792882040.183,
+          "dt": 55.77,
+          "pid": 9196,
+          "attempt": 38
+        },
+        {
+          "stage": "probe_stop_file",
+          "t": 1792882041.169,
+          "dt": 56.756,
+          "pid": 9196,
+          "attempt": 39
+        },
+        {
+          "stage": "window_closed",
+          "t": 1792882094.062,
+          "dt": 109.649,
+          "pid": 9196,
+          "id": "app"
+        },
+        {
+          "stage": "shutdown_wait_begin",
+          "t": 1792882094.062,
+          "dt": 109.649,
+          "pid": 9196,
+          "id": "app"
+        },
+        {
+          "stage": "sidecar_exit",
+          "t": 1792882100.522,
+          "dt": 116.109,
+          "pid": 9196,
+          "code": 0,
+          "signal": null
+        },
+        {
+          "stage": "shutdown_wait_done",
+          "t": 1792882100.522,
+          "dt": 116.109,
+          "pid": 9196,
+          "graceful": true,
+          "code": 0
+        }
+      ],
+      "sidecar_trace": [
+        {
+          "stage": "entry_import",
+          "t": 1792881986.015263,
+          "dt": 6.8e-05,
+          "pid": 4520
+        },
+        {
+          "stage": "streams_ready",
+          "t": 1792881986.028255,
+          "dt": 0.013015,
+          "pid": 4520
+        },
+        {
+          "stage": "preflight_start",
+          "t": 1792881986.18116,
+          "dt": 0.165993,
+          "pid": 4520
+        },
+        {
+          "stage": "db_prepared",
+          "t": 1792881987.034635,
+          "dt": 1.019654,
+          "pid": 4520,
+          "db": "market.db",
+          "exists": true
+        },
+        {
+          "stage": "library_import_begin",
+          "t": 1792881987.065616,
+          "dt": 1.050832,
+          "pid": 4520
+        },
+        {
+          "stage": "library_import_end",
+          "t": 1792881997.007494,
+          "dt": 10.992188,
+          "pid": 4520
+        },
+        {
+          "stage": "preflight_end",
+          "t": 1792881997.023485,
+          "dt": 11.008662,
+          "pid": 4520,
+          "ok": true
+        },
+        {
+          "stage": "uvicorn_spawn",
+          "t": 1792881997.04647,
+          "dt": 11.0316,
+          "pid": 4520,
+          "port": 59080
+        },
+        {
+          "stage": "api_startup_begin",
+          "t": 1792881999.991165,
+          "dt": 13.976586,
+          "pid": 4520
+        },
+        {
+          "stage": "screener_low_priority",
+          "t": 1792882000.027143,
+          "dt": 14.01183,
+          "pid": 4520
+        },
+        {
+          "stage": "screener_wait_board",
+          "t": 1792882000.042135,
+          "dt": 14.027027,
+          "pid": 4520
+        },
+        {
+          "stage": "api_startup_end",
+          "t": 1792882000.04713,
+          "dt": 14.032555,
+          "pid": 4520
+        },
+        {
+          "stage": "http_ready",
+          "t": 1792882000.931586,
+          "dt": 14.916275,
+          "pid": 4520,
+          "port": 59080
+        },
+        {
+          "stage": "candle_projection_done",
+          "t": 1792882002.916363,
+          "dt": 16.901301,
+          "pid": 4520
+        },
+        {
+          "stage": "screener_wait_board_done",
+          "t": 1792882017.370483,
+          "dt": 31.355387,
+          "pid": 4520,
+          "got": true
+        },
+        {
+          "stage": "market_publish",
+          "t": 1792882017.437442,
+          "dt": 31.422947,
+          "pid": 4520,
+          "gen": 0,
+          "rev": 0,
+          "rows": 6018,
+          "ms": 15359.2
+        },
+        {
+          "stage": "mstat_warm_done",
+          "t": 1792882040.026567,
+          "dt": 54.011568,
+          "pid": 4520
+        },
+        {
+          "stage": "shutdown_begin",
+          "t": 1792882094.063293,
+          "dt": 108.048649,
+          "pid": 4520
+        },
+        {
+          "stage": "shutdown_end",
+          "t": 1792882099.482971,
+          "dt": 113.468329,
+          "pid": 4520,
+          "alive": false
+        }
+      ],
+      "process": {
+        "peak": {
+          "rss_mb": 844.9,
+          "epoch_ms": 1792882040068.5413,
+          "procs": 12
+        },
+        "stages": {
+          "window_visible": {
+            "epoch_ms": 1792882008792.7446,
+            "rss_mb": 346.7,
+            "cpu_s": 9.328,
+            "procs": 8,
+            "rows": [
+              {
+                "pid": 9196,
+                "ppid": 11968,
+                "name": "BorsTerminalM2TinyJS.exe",
+                "rss_mb": 23.9,
+                "cpu_s": 0.281
+              },
+              {
+                "pid": 13976,
+                "ppid": 9196,
+                "name": "launcher.exe",
+                "rss_mb": 15.2,
+                "cpu_s": 0.062
+              },
+              {
+                "pid": 2604,
+                "ppid": 9196,
+                "name": "launcher.exe",
+                "rss_mb": 6.1,
+                "cpu_s": 0.031
+              },
+              {
+                "pid": 5632,
+                "ppid": 2604,
+                "name": "python.exe",
+                "rss_mb": 3.3,
+                "cpu_s": 0.016
+              },
+              {
+                "pid": 5436,
+                "ppid": 5632,
+                "name": "conhost.exe",
+                "rss_mb": 10.7,
+                "cpu_s": 0.016
+              },
+              {
+                "pid": 4520,
+                "ppid": 5632,
+                "name": "python.exe",
+                "rss_mb": 234.8,
+                "cpu_s": 8.594
+              },
+              {
+                "pid": 11408,
+                "ppid": 13976,
+                "name": "msedgewebview2.exe",
+                "rss_mb": 45.0,
+                "cpu_s": 0.297
+              },
+              {
+                "pid": 15336,
+                "ppid": 11408,
+                "name": "msedgewebview2.exe",
+                "rss_mb": 7.8,
+                "cpu_s": 0.031
+              }
+            ]
+          },
+          "probe_final": {
+            "epoch_ms": 1792882079804.0742,
+            "rss_mb": 753.9,
+            "cpu_s": 61.969,
+            "procs": 12,
+            "rows": [
+              {
+                "pid": 9196,
+                "ppid": 11968,
+                "name": "BorsTerminalM2TinyJS.exe",
+                "rss_mb": 23.9,
+                "cpu_s": 0.891
+              },
+              {
+                "pid": 13976,
+                "ppid": 9196,
+                "name": "launcher.exe",
+                "rss_mb": 17.4,
+                "cpu_s": 0.094
+              },
+              {
+                "pid": 2604,
+                "ppid": 9196,
+                "name": "launcher.exe",
+                "rss_mb": 6.0,
+                "cpu_s": 0.031
+              },
+              {
+                "pid": 5632,
+                "ppid": 2604,
+                "name": "python.exe",
+                "rss_mb": 3.2,
+                "cpu_s": 0.016
+              },
+              {
+                "pid": 5436,
+                "ppid": 5632,
+                "name": "conhost.exe",
+                "rss_mb": 10.7,
+                "cpu_s": 0.016
+              },
+              {
+                "pid": 4520,
+                "ppid": 5632,
+                "name": "python.exe",
+                "rss_mb": 255.1,
+                "cpu_s": 44.953
+              },
+              {
+                "pid": 11408,
+                "ppid": 13976,
+                "name": "msedgewebview2.exe",
+                "rss_mb": 106.7,
+                "cpu_s": 1.984
+              },
+              {
+                "pid": 15336,
+                "ppid": 11408,
+                "name": "msedgewebview2.exe",
+                "rss_mb": 10.3,
+                "cpu_s": 0.078
+              },
+              {
+                "pid": 11928,
+                "ppid": 11408,
+                "name": "msedgewebview2.exe",
+                "rss_mb": 83.9,
+                "cpu_s": 2.812
+              },
+              {
+                "pid": 17272,
+                "ppid": 11408,
+                "name": "msedgewebview2.exe",
+                "rss_mb": 37.1,
+                "cpu_s": 0.672
+              },
+              {
+                "pid": 15172,
+                "ppid": 11408,
+                "name": "msedgewebview2.exe",
+                "rss_mb": 19.0,
+                "cpu_s": 0.125
+              },
+              {
+                "pid": 7408,
+                "ppid": 11408,
+                "name": "msedgewebview2.exe",
+                "rss_mb": 180.4,
+                "cpu_s": 10.297
+              }
+            ]
+          },
+          "idle": {
+            "epoch_ms": 1792882094059.296,
+            "rss_mb": 748.2,
+            "cpu_s": 70.734,
+            "procs": 12,
+            "rows": [
+              {
+                "pid": 9196,
+                "ppid": 11968,
+                "name": "BorsTerminalM2TinyJS.exe",
+                "rss_mb": 23.9,
+                "cpu_s": 0.891
+              },
+              {
+                "pid": 13976,
+                "ppid": 9196,
+                "name": "launcher.exe",
+                "rss_mb": 17.4,
+                "cpu_s": 0.094
+              },
+              {
+                "pid": 2604,
+                "ppid": 9196,
+                "name": "launcher.exe",
+                "rss_mb": 6.0,
+                "cpu_s": 0.031
+              },
+              {
+                "pid": 5632,
+                "ppid": 2604,
+                "name": "python.exe",
+                "rss_mb": 3.2,
+                "cpu_s": 0.016
+              },
+              {
+                "pid": 5436,
+                "ppid": 5632,
+                "name": "conhost.exe",
+                "rss_mb": 10.7,
+                "cpu_s": 0.016
+              },
+              {
+                "pid": 4520,
+                "ppid": 5632,
+                "name": "python.exe",
+                "rss_mb": 257.1,
+                "cpu_s": 53.625
+              },
+              {
+                "pid": 11408,
+                "ppid": 13976,
+                "name": "msedgewebview2.exe",
+                "rss_mb": 107.7,
+                "cpu_s": 2.062
+              },
+              {
+                "pid": 15336,
+                "ppid": 11408,
+                "name": "msedgewebview2.exe",
+                "rss_mb": 10.3,
+                "cpu_s": 0.078
+              },
+              {
+                "pid": 11928,
+                "ppid": 11408,
+                "name": "msedgewebview2.exe",
+                "rss_mb": 82.9,
+                "cpu_s": 2.812
+              },
+              {
+                "pid": 17272,
+                "ppid": 11408,
+                "name": "msedgewebview2.exe",
+                "rss_mb": 37.1,
+                "cpu_s": 0.672
+              },
+              {
+                "pid": 15172,
+                "ppid": 11408,
+                "name": "msedgewebview2.exe",
+                "rss_mb": 18.9,
+                "cpu_s": 0.125
+              },
+              {
+                "pid": 7408,
+                "ppid": 11408,
+                "name": "msedgewebview2.exe",
+                "rss_mb": 172.9,
+                "cpu_s": 10.312
+              }
+            ]
+          }
+        },
+        "samples": 64
+      },
+      "shutdown": {
+        "forced_kill": false,
+        "window_close_ms": 110154.7,
+        "root_exit_ms": 117023.5,
+        "exit_code": 0,
+        "port": 59080,
+        "port_open_after_exit": false,
+        "sidecar_shutdown": [
+          {
+            "stage": "shutdown_begin",
+            "t": 1792882094.063293,
+            "dt": 108.048649,
+            "pid": 4520
+          },
+          {
+            "stage": "shutdown_end",
+            "t": 1792882099.482971,
+            "dt": 113.468329,
+            "pid": 4520,
+            "alive": false
+          }
+        ],
+        "shell_tail": [
+          {
+            "stage": "probe_eval",
+            "t": 1792882038.31,
+            "dt": 53.897,
+            "pid": 9196,
+            "attempt": 36
+          },
+          {
+            "stage": "probe_eval",
+            "t": 1792882039.262,
+            "dt": 54.849,
+            "pid": 9196,
+            "attempt": 37
+          },
+          {
+            "stage": "probe_eval",
+            "t": 1792882040.183,
+            "dt": 55.77,
+            "pid": 9196,
+            "attempt": 38
+          },
+          {
+            "stage": "probe_stop_file",
+            "t": 1792882041.169,
+            "dt": 56.756,
+            "pid": 9196,
+            "attempt": 39
+          },
+          {
+            "stage": "window_closed",
+            "t": 1792882094.062,
+            "dt": 109.649,
+            "pid": 9196,
+            "id": "app"
+          },
+          {
+            "stage": "shutdown_wait_begin",
+            "t": 1792882094.062,
+            "dt": 109.649,
+            "pid": 9196,
+            "id": "app"
+          },
+          {
+            "stage": "sidecar_exit",
+            "t": 1792882100.522,
+            "dt": 116.109,
+            "pid": 9196,
+            "code": 0,
+            "signal": null
+          },
+          {
+            "stage": "shutdown_wait_done",
+            "t": 1792882100.522,
+            "dt": 116.109,
+            "pid": 9196,
+            "graceful": true,
+            "code": 0
+          }
+        ],
+        "crash_kill": null,
+        "survivors": [],
+        "cleanup": {
+          "survivors_before": [],
+          "killed": [],
+          "survivors_after": [],
+          "port_open_after_cleanup": false
+        },
+        "cleanup_final": {
+          "survivors_before": [],
+          "killed": [],
+          "survivors_after": [],
+          "port_open_after_cleanup": false
+        },
+        "shell_exit_code": 0
+      },
+      "elapsed_ms": 125913.4,
+      "timings_ms": {
+        "sidecar_spawned": 848.4,
+        "sidecar_ready_line": 17036.4,
+        "http_verified": 19409.4,
+        "window_open_begin": 19409.4,
+        "window_open": 19409.4,
+        "window_closed": 110157.4,
+        "window_visible": 21967.0,
+        "app_document_ready": 30116.4,
+        "login_ready": 31352.4,
+        "login_submit": 32920.4,
+        "market_nav_begin": 36331.4,
+        "master_ready": 36328.4,
+        "market_rows_visible": 39703.4,
+        "technical_nav_begin": 48207.4,
+        "technical_ready": 83913.4,
+        "fundamental_nav_begin": 86426.4,
+        "fundamental_ready": 89235.4,
+        "sidecar_preflight_start": 2276.6,
+        "sidecar_preflight_end": 13118.9,
+        "sidecar_http_ready": 17027.0,
+        "sidecar_shutdown_begin": 110158.7,
+        "sidecar_shutdown_end": 115578.4,
+        "window_close_ms": 110154.7,
+        "root_exit_ms": 117023.5
+      },
+      "harness_finished_at": 1792882109818.5
+    },
+    {
+      "label": "tinyjs-cold-iso",
+      "mode": "cold",
+      "scenario": "normal",
+      "run": 3,
+      "launch_epoch_ms": 1792882111059.3,
+      "exe": "prototypes\\tinyjs-m2\\dist\\BorsTerminalM2TinyJS.exe",
+      "work_dir": "C:\\Users\\STU\\AppData\\Local\\Temp\\bors_phased\\tinyjs-cold-iso\\runs\\run-3\\work",
+      "profile_dir": "C:\\Users\\STU\\AppData\\Local\\Temp\\bors_phased\\tinyjs-cold-iso\\runs\\run-3\\profile",
+      "screenshots": {},
+      "errors": [],
+      "probe_instances": [
+        {
+          "run_id": "1792882140109-ff4vxl",
+          "at_ms": 30286.4,
+          "url": "about:blank"
+        },
+        {
+          "run_id": "1792882141513-y4fvuq",
+          "at_ms": 30860.0,
+          "url": "http://127.0.0.1:59253/"
+        }
+      ],
+      "crash": false,
+      "firewall_prompts": 0,
+      "window": {
+        "hwnd": 254542416,
+        "title": "بورس‌ترمینال — BorsTerminal",
+        "pid": 8060,
+        "visible": true,
+        "rect": [
+          -8,
+          -8,
+          1288,
+          992
+        ],
+        "w": 1296,
+        "h": 1000
+      },
+      "window_visible_ms": 23291.7,
+      "probe_event_ms": {
+        "app_document_ready": 30559.7,
+        "login_ready": 31707.7,
+        "login_submit": 32822.7,
+        "market_nav_begin": 36199.7,
+        "master_ready": 36198.7,
+        "market_rows_visible": 39106.7,
+        "technical_nav_begin": 47708.7,
+        "technical_ready": 74844.7,
+        "fundamental_nav_begin": 77364.7,
+        "fundamental_ready": 80426.7
+      },
+      "security": {
+        "local_host": {
+          "status": 200,
+          "expected": 200,
+          "ok": true,
+          "headers": {
+            "Host": "127.0.0.1:59253"
+          }
+        },
+        "foreign_host": {
+          "status": 403,
+          "expected": 403,
+          "ok": true,
+          "headers": {
+            "Host": "evil.example"
+          }
+        },
+        "origin_null": {
+          "status": 403,
+          "expected": 403,
+          "ok": true,
+          "headers": {
+            "Host": "127.0.0.1:59253",
+            "Origin": "null"
+          }
+        },
+        "origin_foreign": {
+          "status": 403,
+          "expected": 403,
+          "ok": true,
+          "headers": {
+            "Host": "127.0.0.1:59253",
+            "Origin": "http://evil.example"
+          }
+        },
+        "origin_local": {
+          "status": 200,
+          "expected": 200,
+          "ok": true,
+          "headers": {
+            "Host": "127.0.0.1:59253",
+            "Origin": "http://127.0.0.1:59253"
+          }
+        }
+      },
+      "idle": {
+        "rss_mb": 761.8,
+        "cpu": {
+          "seconds": 3.515,
+          "wall_s": 5.467,
+          "pct_one_core": 64.3
+        },
+        "procs": 12,
+        "rows": [
+          {
+            "pid": 14212,
+            "ppid": 11968,
+            "name": "BorsTerminalM2TinyJS.exe",
+            "rss_mb": 23.9,
+            "cpu_s": 0.641
+          },
+          {
+            "pid": 8060,
+            "ppid": 14212,
+            "name": "launcher.exe",
+            "rss_mb": 17.5,
+            "cpu_s": 0.156
+          },
+          {
+            "pid": 14728,
+            "ppid": 14212,
+            "name": "launcher.exe",
+            "rss_mb": 6.0,
+            "cpu_s": 0.047
+          },
+          {
+            "pid": 14520,
+            "ppid": 14728,
+            "name": "python.exe",
+            "rss_mb": 3.2,
+            "cpu_s": 0.0
+          },
+          {
+            "pid": 13352,
+            "ppid": 14520,
+            "name": "conhost.exe",
+            "rss_mb": 10.7,
+            "cpu_s": 0.016
+          },
+          {
+            "pid": 11560,
+            "ppid": 14520,
+            "name": "python.exe",
+            "rss_mb": 256.4,
+            "cpu_s": 51.438
+          },
+          {
+            "pid": 12452,
+            "ppid": 8060,
+            "name": "msedgewebview2.exe",
+            "rss_mb": 106.7,
+            "cpu_s": 1.984
+          },
+          {
+            "pid": 13796,
+            "ppid": 12452,
+            "name": "msedgewebview2.exe",
+            "rss_mb": 10.3,
+            "cpu_s": 0.078
+          },
+          {
+            "pid": 15448,
+            "ppid": 12452,
+            "name": "msedgewebview2.exe",
+            "rss_mb": 85.6,
+            "cpu_s": 3.156
+          },
+          {
+            "pid": 14132,
+            "ppid": 12452,
+            "name": "msedgewebview2.exe",
+            "rss_mb": 37.1,
+            "cpu_s": 0.594
+          },
+          {
+            "pid": 14172,
+            "ppid": 12452,
+            "name": "msedgewebview2.exe",
+            "rss_mb": 19.0,
+            "cpu_s": 0.125
+          },
+          {
+            "pid": 2280,
+            "ppid": 12452,
+            "name": "msedgewebview2.exe",
+            "rss_mb": 185.4,
+            "cpu_s": 10.672
+          }
+        ]
+      },
+      "final": {
+        "probe": "phase_d_tinyjs/1",
+        "run_id": "1792882141513-y4fvuq",
+        "started_at": 1792882141513,
+        "url_at_attach": "http://127.0.0.1:59253/",
+        "events": {
+          "app_document_ready": {
+            "epoch_ms": 1792882141619,
+            "perf_ms": 1744.6,
+            "time_origin": 1792882139875,
+            "url": "http://127.0.0.1:59253/",
+            "nav_start_ms": 0,
+            "dom_content_loaded_ms": 0,
+            "load_event_ms": 0
+          },
+          "login_ready": {
+            "epoch_ms": 1792882142767,
+            "perf_ms": 2892.4,
+            "time_origin": 1792882139875,
+            "url": "http://127.0.0.1:59253/"
+          },
+          "login_submit": {
+            "epoch_ms": 1792882143882,
+            "perf_ms": 4007.3,
+            "time_origin": 1792882139875,
+            "url": "http://127.0.0.1:59253/"
+          },
+          "master_ready": {
+            "epoch_ms": 1792882147258,
+            "perf_ms": 7383.2,
+            "time_origin": 1792882139875,
+            "url": "http://127.0.0.1:59253/#/master"
+          },
+          "market_nav_begin": {
+            "epoch_ms": 1792882147259,
+            "perf_ms": 7384.2,
+            "time_origin": 1792882139875,
+            "url": "http://127.0.0.1:59253/#/master"
+          },
+          "market_rows_visible": {
+            "epoch_ms": 1792882150166,
+            "perf_ms": 10291.1,
+            "time_origin": 1792882139875,
+            "url": "http://127.0.0.1:59253/#/market",
+            "rows": 30
+          },
+          "technical_nav_begin": {
+            "epoch_ms": 1792882158768,
+            "perf_ms": 18893.4,
+            "time_origin": 1792882139875,
+            "url": "http://127.0.0.1:59253/#/market"
+          },
+          "technical_ready": {
+            "epoch_ms": 1792882185904,
+            "perf_ms": 46029.4,
+            "time_origin": 1792882139875,
+            "url": "http://127.0.0.1:59253/#/technical/%D9%81%D9%88%D9%84%D8%A7%D8%AF",
+            "chart_host": "nn",
+            "freshness": "مبنا: tsetmc-adjusted · ۴۲۵۱ کندلِ تحلیل · آخرین کندل: 1405/08/02 · دریافت: ۰۲:۱۹",
+            "bars": "۴۲۵۱",
+            "last_bar": "1405/08/02",
+            "canvas": {
+              "w": 858,
+              "h": 595
+            },
+            "chart_api": [
+              {
+                "name": "/api/chart/%D9%81%D9%88%D9%84%D8%A7%D8%AF",
+                "duration_ms": 23354.9,
+                "status": 200,
+                "transfer": 202103,
+                "encoded": 201803,
+                "decoded": 1123256
+              }
+            ]
+          },
+          "fundamental_nav_begin": {
+            "epoch_ms": 1792882188424,
+            "perf_ms": 48549.6,
+            "time_origin": 1792882139875,
+            "url": "http://127.0.0.1:59253/#/technical/%D9%81%D9%88%D9%84%D8%A7%D8%AF"
+          },
+          "fundamental_ready": {
+            "epoch_ms": 1792882191486,
+            "perf_ms": 51611.9,
+            "time_origin": 1792882139875,
+            "url": "http://127.0.0.1:59253/#/fundamental/%D9%81%D9%88%D9%84%D8%A7%D8%AF"
+          }
+        },
+        "states": {
+          "login_values": [
+            {
+              "type": "text",
+              "value": "admin"
+            },
+            {
+              "type": "password",
+              "value": "bors123"
+            }
+          ],
+          "market_pause_ack": "skipped",
+          "market_rows_after_1s": 30,
+          "board_freshness": "بازار بسته — تابلوی ۱۴۰۵/۰۷/۲۲",
+          "market_scroll": {
+            "available": true,
+            "frames": 45,
+            "range_px": 43994,
+            "p50_ms": 116.6,
+            "p95_ms": 151.2,
+            "max_ms": 302.3,
+            "note": "programmatic scroll on the largest scrollable element; rAF deltas only"
+          },
+          "technical_pause_ack": "skipped",
+          "fundamental": {
+            "summary": {
+              "text": "⏳تصمیم استراتژیک FTS:مناسب برای زیر نظر گرفتن (واچ‌لیست)پتانسیل دارد اما در یک یا دو شاخص ضعف دارد؛ گزارش‌های بعدی رصد شود.واچ‌لیست رصد FTSسن صورت مالی: ۱۲۵ روز",
+              "rect": {
+                "x": 15,
+                "y": 182,
+                "w": 1097,
+                "h": 119
+              },
+              "visible": true
+            },
+            "holding": null,
+            "scroll_y": 0,
+            "page_text": "وضعیتِ خطِ کدال خوانده می‌شود…در صف—بی‌نتیجه—استخراجِ ناقص—بی‌صورتِ مالی—نیازمندِ بازشماری—آخرین تازگی: —worker خاموشجزئیاتچرخۀ موفقی ثبت نشده؛ `catchup.never_synced` همین را می‌گویدزمانِ چرخۀ بعدی از پاسخ نرسیدحجمِ صف: — ردیف، از آنِ — کهنهامضایِ تازگی: —فولادفلزات اساسيبنیاد روبه‌رشدامتیاز ۷۱داده کهنه⚙تنظیمات⏳تصمیم استراتژیک FTS:مناسب برای زیر نظر گرفتن (واچ‌لیست)پتانسیل دارد اما در یک یا دو شاخص ضعف دارد؛ گزارش‌های بعدی رصد شود.واچ‌لیست رصد FTSسن صورت مالی: ۱۲۵ روزFTSکارت ارزیابی ۵ شاخص FTSامتیاز ۳ از ۵۱. رشد فروش کدال۶ ماههدرآمد ریالیقبول+۵۶.۰٪۶ ماهۀ امسال۲۵۰٬۹۴۲سال قبل۱۶۰٬۸۷۳میلیارد تومان · سرجمعِ دوره۰٪کف ۴۰٪ · هدف ۶۰٪فروش امسالفروش سال قبل− 1≥ هدفِ پوشش تورم (۶۰٪)مبنای مقایسه: ستون «مقایسهٔ دورهٔ مشابه سال قبل» در همان گزارشرشد تولیدیرد−۲.۵٪۱ + رشد ریالی۱ + مبنای تورم− ۱≥ ۰٪مبنای تورم ۶۰٪ — از پنلِ تنظیمات · ۱ از ۱ ماه بهتر۲. سودآوری ۳ سالهنظر نمی‌دهدکاربرد ندارد (مبنایِ تلفیقی)کاربرد نداردEPSt>EPSt-1>EPSt-2>01403: ۶۶۴1404: ۵۱۸1405: ۲۴۸رشد سال‌به‌سال:—-۲۲.۰٪-۵۲.۱٪افت سود در 1404 (افت 22.0٪) (برآورد میاندوره) صورتهای مالی تلفیقی مدنظر نیست — سال‌های 1403، 1404 فقط تلفیقی منتشر شده‌اند و سابقۀ سه‌سالۀ غیرتلفیقی کامل نیست.۳. حاشیه سود ناخالصقبول۲۹.۱٪سود ناخالصدرآمد عملیاتی× ۱۰۰≥ ۲۰٪کف ۲۰٪س ۱ 04: ۲۷.۷٪س ۲ 04: ۴۴.۳٪س ۳ 04: -۲۸.۷٪س ۴ 04: ۲۸.۳٪س ۱ 05: ۲۷.۹٪کفِ پنل: ۲۰٪ · مطلوبِ جزوه: ۳۰٪۴. پتانسیل سود تا آخر سالقبول۱۶.۶٪تخمین فروش ۱۲ ماهه × حاشیهٔ سود ناخالصارزش بازار× ۱۰۰≥ ۴۰٪نسبت فروش ÷ ارزش بازار ۵۷.۰٪ · کف ۳۳.۰٪حداقل معیار پتانسیل سود: ۴۰٪ از ارزش بازار۵. رژیم صنعتقبولصنعت آزادقیمت دستوری نباشد — آزاد / بورس کالارژیم قیمت‌گذاری صنعتضریب اطمینان بنیادی:متوسطدادهٔ کدال برای ۱ شاخص کامل نیستشاخص ۲: افت سود در ۱۴۰۴ (افت ۲۲.۰٪) (برآورد میاندوره) صورتهای مالی تلفیقی مدنظر نیست — سال‌های ۱۴۰۳، ۱۴۰۴ فقط تلفیقی منتشر شده‌اند و سابقۀ سه‌سالۀ غیرتلفیقی کامل نیست. راه‌حل: این شکاف با گرفتنِ دیتابیسِ تازهٔ کدال بسته نمی‌شود: صورتِ سود و زیانِ غیرتلفیقیِ آن سال‌ها منتشر نشده است. ⓘروند فصلی درآمد و سود ناخالص«۶ فصل، میلیارد تومان»نمودار فصلی"
+          },
+          "fundamental_pause_ack": "skipped"
+        },
+        "resources": [
+          {
+            "name": "/api/update/version",
+            "start_ms": 4292.2,
+            "duration_ms": 144.7,
+            "status": 200,
+            "transfer": 373,
+            "encoded": 73,
+            "decoded": 73,
+            "initiator": "fetch"
+          },
+          {
+            "name": "/api/notifications/feed?limit=60",
+            "start_ms": 4299.5,
+            "duration_ms": 2354.8,
+            "status": 200,
+            "transfer": 5120,
+            "encoded": 4820,
+            "decoded": 37238,
+            "initiator": "fetch"
+          },
+          {
+            "name": "/api/selection/portfolio",
+            "start_ms": 4308.3,
+            "duration_ms": 592.4,
+            "status": 200,
+            "transfer": 674,
+            "encoded": 374,
+            "decoded": 374,
+            "initiator": "fetch"
+          },
+          {
+            "name": "/api/funnel/registry",
+            "start_ms": 7380.9,
+            "duration_ms": 621.8,
+            "status": 200,
+            "transfer": 7988,
+            "encoded": 7688,
+            "decoded": 25293,
+            "initiator": "fetch"
+          },
+          {
+            "name": "/api/market/closes",
+            "start_ms": 7382.3,
+            "duration_ms": 1137.9,
+            "status": 200,
+            "transfer": 31430,
+            "encoded": 31130,
+            "decoded": 78512,
+            "initiator": "fetch"
+          },
+          {
+            "name": "/api/market",
+            "start_ms": 8282.9,
+            "duration_ms": 765.6,
+            "status": 200,
+            "transfer": 1220997,
+            "encoded": 1220697,
+            "decoded": 6814423,
+            "initiator": "fetch"
+          },
+          {
+            "name": "/api/watchlist",
+            "start_ms": 9956.4,
+            "duration_ms": 882.5,
+            "status": 200,
+            "transfer": 351,
+            "encoded": 51,
+            "decoded": 51,
+            "initiator": "fetch"
+          },
+          {
+            "name": "/api/market/delta?since=0&gen=0",
+            "start_ms": 21679.9,
+            "duration_ms": 604.8,
+            "status": 200,
+            "transfer": 466,
+            "encoded": 166,
+            "decoded": 166,
+            "initiator": "fetch"
+          },
+          {
+            "name": "/api/chart/%D9%81%D9%88%D9%84%D8%A7%D8%AF",
+            "start_ms": 21681.3,
+            "duration_ms": 23354.9,
+            "status": 200,
+            "transfer": 202103,
+            "encoded": 201803,
+            "decoded": 1123256,
+            "initiator": "fetch"
+          },
+          {
+            "name": "/api/index/tedpix?limit=0",
+            "start_ms": 21681.9,
+            "duration_ms": 4677.3,
+            "status": 200,
+            "transfer": 136382,
+            "encoded": 136082,
+            "decoded": 744309,
+            "initiator": "fetch"
+          },
+          {
+            "name": "/api/fts/%D9%81%D9%88%D9%84%D8%A7%D8%AF",
+            "start_ms": 21682.3,
+            "duration_ms": 24235.6,
+            "status": 200,
+            "transfer": 7170,
+            "encoded": 6870,
+            "decoded": 27043,
+            "initiator": "fetch"
+          },
+          {
+            "name": "/api/fundamental/%D9%81%D9%88%D9%84%D8%A7%D8%AF",
+            "start_ms": 21682.6,
+            "duration_ms": 3968.5,
+            "status": 200,
+            "transfer": 7400,
+            "encoded": 7100,
+            "decoded": 20212,
+            "initiator": "fetch"
+          },
+          {
+            "name": "/api/fts/config",
+            "start_ms": 23482.2,
+            "duration_ms": 260.7,
+            "status": 200,
+            "transfer": 920,
+            "encoded": 620,
+            "decoded": 1121,
+            "initiator": "fetch"
+          },
+          {
+            "name": "/api/update/version",
+            "start_ms": 48576.4,
+            "duration_ms": 247.9,
+            "status": 200,
+            "transfer": 373,
+            "encoded": 73,
+            "decoded": 73,
+            "initiator": "fetch"
+          },
+          {
+            "name": "/api/calendar/upcoming?days=14",
+            "start_ms": 49549.1,
+            "duration_ms": 241.3,
+            "status": 200,
+            "transfer": 377,
+            "encoded": 77,
+            "decoded": 77,
+            "initiator": "fetch"
+          },
+          {
+            "name": "/api/sync/codal/db-status",
+            "start_ms": 49549.5,
+            "duration_ms": 240.7,
+            "status": 200,
+            "transfer": 403,
+            "encoded": 103,
+            "decoded": 103,
+            "initiator": "fetch"
+          },
+          {
+            "name": "/api/fundamental/%D9%81%D9%88%D9%84%D8%A7%D8%AF",
+            "start_ms": 49549.8,
+            "duration_ms": 1544.9,
+            "status": 200,
+            "transfer": 7400,
+            "encoded": 7100,
+            "decoded": 20212,
+            "initiator": "fetch"
+          },
+          {
+            "name": "/api/fundamental/%D9%81%D9%88%D9%84%D8%A7%D8%AF/quarters",
+            "start_ms": 49550.1,
+            "duration_ms": 1184.5,
+            "status": 200,
+            "transfer": 848,
+            "encoded": 548,
+            "decoded": 1346,
+            "initiator": "fetch"
+          },
+          {
+            "name": "/api/market/delta?since=0&gen=0",
+            "start_ms": 49550.4,
+            "duration_ms": 244.6,
+            "status": 200,
+            "transfer": 466,
+            "encoded": 166,
+            "decoded": 166,
+            "initiator": "fetch"
+          },
+          {
+            "name": "/api/sync/codal/pipeline",
+            "start_ms": 51157.7,
+            "duration_ms": 512.9,
+            "status": 200,
+            "transfer": 792,
+            "encoded": 492,
+            "decoded": 1046,
+            "initiator": "fetch"
+          }
+        ],
+        "errors": [],
+        "metrics": {
+          "app_document_ready": {
+            "rss_note": "process tree sampled by Python",
+            "browser_reported_heap": {
+              "used": 1813847,
+              "total": 3146219,
+              "limit": 2183135232,
+              "note": "performance.memory; not a CDP heap snapshot"
+            }
+          },
+          "master_ready": {
+            "rss_note": "process tree sampled by Python",
+            "browser_reported_heap": {
+              "used": 9533665,
+              "total": 12759873,
+              "limit": 2183135232,
+              "note": "performance.memory; not a CDP heap snapshot"
+            }
+          },
+          "market_ready": {
+            "rss_note": "process tree sampled by Python",
+            "browser_reported_heap": {
+              "used": 21255493,
+              "total": 51282189,
+              "limit": 2183135232,
+              "note": "performance.memory; not a CDP heap snapshot"
+            }
+          },
+          "technical_ready": {
+            "rss_note": "process tree sampled by Python",
+            "browser_reported_heap": {
+              "used": 28963421,
+              "total": 39043957,
+              "limit": 2183135232,
+              "note": "performance.memory; not a CDP heap snapshot"
+            }
+          },
+          "fundamental_ready": {
+            "rss_note": "process tree sampled by Python",
+            "browser_reported_heap": {
+              "used": 29315946,
+              "total": 41528894,
+              "limit": 2183135232,
+              "note": "performance.memory; not a CDP heap snapshot"
+            }
+          }
+        },
+        "finished_at": 1792882193506,
+        "ok": true
+      },
+      "final_run_ids": [
+        "1792882141513-y4fvuq"
+      ],
+      "shell_trace": [
+        {
+          "stage": "backend_init",
+          "t": 1792882112.185,
+          "dt": 0.127,
+          "pid": 14212,
+          "work": "C:\\Users\\STU\\AppData\\Local\\Temp\\bors_phased\\tinyjs-cold-iso\\runs\\run-3\\work",
+          "main": true
+        },
+        {
+          "stage": "sidecar_spawn_begin",
+          "t": 1792882112.192,
+          "dt": 0.134,
+          "pid": 14212,
+          "exe": "C:\\Users\\STU\\Documents\\Qoder\\2026-10-23\\95b91389\\BorsTerminal\\.venv\\Scripts\\python.exe",
+          "entry": "C:\\Users\\STU\\Documents\\Qoder\\2026-10-23\\95b91389\\BorsTerminal\\tools\\desktop-migration\\phase_d\\headless_server.py",
+          "port": "0"
+        },
+        {
+          "stage": "sidecar_spawned",
+          "t": 1792882112.27,
+          "dt": 0.212,
+          "pid": 14728
+        },
+        {
+          "stage": "sidecar_ready_line",
+          "t": 1792882127.987,
+          "dt": 15.929,
+          "pid": 11560,
+          "port": 59253
+        },
+        {
+          "stage": "http_verified",
+          "t": 1792882130.686,
+          "dt": 18.628,
+          "pid": 14212,
+          "url": "http://127.0.0.1:59253/"
+        },
+        {
+          "stage": "window_open_begin",
+          "t": 1792882130.686,
+          "dt": 18.628,
+          "pid": 14212,
+          "url": "http://127.0.0.1:59253/"
+        },
+        {
+          "stage": "window_open",
+          "t": 1792882130.686,
+          "dt": 18.628,
+          "pid": 14212
+        },
+        {
+          "stage": "probe_eval",
+          "t": 1792882130.871,
+          "dt": 18.813,
+          "pid": 14212,
+          "attempt": 1
+        },
+        {
+          "stage": "probe_eval",
+          "t": 1792882131.782,
+          "dt": 19.724,
+          "pid": 14212,
+          "attempt": 2
+        },
+        {
+          "stage": "probe_eval",
+          "t": 1792882132.697,
+          "dt": 20.639,
+          "pid": 14212,
+          "attempt": 3
+        },
+        {
+          "stage": "probe_eval",
+          "t": 1792882133.628,
+          "dt": 21.57,
+          "pid": 14212,
+          "attempt": 4
+        },
+        {
+          "stage": "probe_eval",
+          "t": 1792882134.554,
+          "dt": 22.496,
+          "pid": 14212,
+          "attempt": 5
+        },
+        {
+          "stage": "probe_eval",
+          "t": 1792882135.561,
+          "dt": 23.503,
+          "pid": 14212,
+          "attempt": 6
+        },
+        {
+          "stage": "probe_eval",
+          "t": 1792882136.635,
+          "dt": 24.577,
+          "pid": 14212,
+          "attempt": 7
+        },
+        {
+          "stage": "probe_eval",
+          "t": 1792882137.477,
+          "dt": 25.419,
+          "pid": 14212,
+          "attempt": 8
+        },
+        {
+          "stage": "probe_eval",
+          "t": 1792882138.368,
+          "dt": 26.31,
+          "pid": 14212,
+          "attempt": 9
+        },
+        {
+          "stage": "probe_eval",
+          "t": 1792882139.336,
+          "dt": 27.278,
+          "pid": 14212,
+          "attempt": 10
+        },
+        {
+          "stage": "probe_eval",
+          "t": 1792882140.247,
+          "dt": 28.189,
+          "pid": 14212,
+          "attempt": 11
+        },
+        {
+          "stage": "probe_eval",
+          "t": 1792882141.2,
+          "dt": 29.142,
+          "pid": 14212,
+          "attempt": 12
+        },
+        {
+          "stage": "probe_eval",
+          "t": 1792882142.106,
+          "dt": 30.048,
+          "pid": 14212,
+          "attempt": 13
+        },
+        {
+          "stage": "probe_eval",
+          "t": 1792882143.102,
+          "dt": 31.044,
+          "pid": 14212,
+          "attempt": 14
+        },
+        {
+          "stage": "probe_eval",
+          "t": 1792882144.25,
+          "dt": 32.192,
+          "pid": 14212,
+          "attempt": 15
+        },
+        {
+          "stage": "probe_eval",
+          "t": 1792882145.191,
+          "dt": 33.133,
+          "pid": 14212,
+          "attempt": 16
+        },
+        {
+          "stage": "probe_eval",
+          "t": 1792882146.092,
+          "dt": 34.034,
+          "pid": 14212,
+          "attempt": 17
+        },
+        {
+          "stage": "probe_eval",
+          "t": 1792882147.014,
+          "dt": 34.956,
+          "pid": 14212,
+          "attempt": 18
+        },
+        {
+          "stage": "probe_eval",
+          "t": 1792882147.956,
+          "dt": 35.898,
+          "pid": 14212,
+          "attempt": 19
+        },
+        {
+          "stage": "probe_eval",
+          "t": 1792882148.865,
+          "dt": 36.807,
+          "pid": 14212,
+          "attempt": 20
+        },
+        {
+          "stage": "probe_eval",
+          "t": 1792882149.91,
+          "dt": 37.852,
+          "pid": 14212,
+          "attempt": 21
+        },
+        {
+          "stage": "probe_eval",
+          "t": 1792882150.824,
+          "dt": 38.766,
+          "pid": 14212,
+          "attempt": 22
+        },
+        {
+          "stage": "probe_eval",
+          "t": 1792882151.843,
+          "dt": 39.785,
+          "pid": 14212,
+          "attempt": 23
+        },
+        {
+          "stage": "probe_eval",
+          "t": 1792882153.047,
+          "dt": 40.989,
+          "pid": 14212,
+          "attempt": 24
+        },
+        {
+          "stage": "probe_eval",
+          "t": 1792882153.981,
+          "dt": 41.923,
+          "pid": 14212,
+          "attempt": 25
+        },
+        {
+          "stage": "probe_eval",
+          "t": 1792882154.991,
+          "dt": 42.933,
+          "pid": 14212,
+          "attempt": 26
+        },
+        {
+          "stage": "probe_eval",
+          "t": 1792882155.97,
+          "dt": 43.912,
+          "pid": 14212,
+          "attempt": 27
+        },
+        {
+          "stage": "probe_eval",
+          "t": 1792882156.98,
+          "dt": 44.922,
+          "pid": 14212,
+          "attempt": 28
+        },
+        {
+          "stage": "probe_stop_file",
+          "t": 1792882157.903,
+          "dt": 45.845,
+          "pid": 14212,
+          "attempt": 29
+        },
+        {
+          "stage": "window_closed",
+          "t": 1792882215.142,
+          "dt": 103.084,
+          "pid": 14212,
+          "id": "app"
+        },
+        {
+          "stage": "shutdown_wait_begin",
+          "t": 1792882215.142,
+          "dt": 103.084,
+          "pid": 14212,
+          "id": "app"
+        },
+        {
+          "stage": "sidecar_exit",
+          "t": 1792882223.163,
+          "dt": 111.105,
+          "pid": 14212,
+          "code": 0,
+          "signal": null
+        },
+        {
+          "stage": "shutdown_wait_done",
+          "t": 1792882223.163,
+          "dt": 111.105,
+          "pid": 14212,
+          "graceful": true,
+          "code": 0
+        },
+        {
+          "stage": "quit_requested",
+          "t": 1792882223.163,
+          "dt": 111.105,
+          "pid": 14212,
+          "id": "app",
+          "graceful": true
+        }
+      ],
+      "sidecar_trace": [
+        {
+          "stage": "entry_import",
+          "t": 1792882113.255955,
+          "dt": 7.2e-05,
+          "pid": 11560
+        },
+        {
+          "stage": "streams_ready",
+          "t": 1792882113.269945,
+          "dt": 0.014203,
+          "pid": 11560
+        },
+        {
+          "stage": "preflight_start",
+          "t": 1792882113.405861,
+          "dt": 0.149405,
+          "pid": 11560
+        },
+        {
+          "stage": "db_prepared",
+          "t": 1792882114.267331,
+          "dt": 1.011759,
+          "pid": 11560,
+          "db": "market.db",
+          "exists": true
+        },
+        {
+          "stage": "library_import_begin",
+          "t": 1792882114.30131,
+          "dt": 1.045645,
+          "pid": 11560
+        },
+        {
+          "stage": "library_import_end",
+          "t": 1792882123.255796,
+          "dt": 10.000074,
+          "pid": 11560
+        },
+        {
+          "stage": "preflight_end",
+          "t": 1792882123.270787,
+          "dt": 10.014474,
+          "pid": 11560,
+          "ok": true
+        },
+        {
+          "stage": "uvicorn_spawn",
+          "t": 1792882123.317758,
+          "dt": 10.062035,
+          "pid": 11560,
+          "port": 59253
+        },
+        {
+          "stage": "api_startup_begin",
+          "t": 1792882126.470852,
+          "dt": 13.215368,
+          "pid": 11560
+        },
+        {
+          "stage": "screener_low_priority",
+          "t": 1792882126.503832,
+          "dt": 13.247707,
+          "pid": 11560
+        },
+        {
+          "stage": "screener_wait_board",
+          "t": 1792882126.50683,
+          "dt": 13.251163,
+          "pid": 11560
+        },
+        {
+          "stage": "api_startup_end",
+          "t": 1792882126.524819,
+          "dt": 13.268372,
+          "pid": 11560
+        },
+        {
+          "stage": "http_ready",
+          "t": 1792882127.960936,
+          "dt": 14.704713,
+          "pid": 11560,
+          "port": 59253
+        },
+        {
+          "stage": "candle_projection_done",
+          "t": 1792882130.688255,
+          "dt": 17.431916,
+          "pid": 11560
+        },
+        {
+          "stage": "screener_wait_board_done",
+          "t": 1792882143.409423,
+          "dt": 30.153092,
+          "pid": 11560,
+          "got": true
+        },
+        {
+          "stage": "market_publish",
+          "t": 1792882143.450397,
+          "dt": 30.19457,
+          "pid": 11560,
+          "gen": 0,
+          "rev": 0,
+          "rows": 6018,
+          "ms": 14867.2
+        },
+        {
+          "stage": "mstat_warm_done",
+          "t": 1792882161.430326,
+          "dt": 48.173952,
+          "pid": 11560
+        },
+        {
+          "stage": "shutdown_begin",
+          "t": 1792882215.143775,
+          "dt": 101.88777,
+          "pid": 11560
+        },
+        {
+          "stage": "shutdown_end",
+          "t": 1792882221.215559,
+          "dt": 107.959163,
+          "pid": 11560,
+          "alive": false
+        }
+      ],
+      "process": {
+        "peak": {
+          "rss_mb": 887.9,
+          "epoch_ms": 1792882165283.9526,
+          "procs": 12
+        },
+        "stages": {
+          "window_visible": {
+            "epoch_ms": 1792882138331.548,
+            "rss_mb": 385.9,
+            "cpu_s": 10.938,
+            "procs": 8,
+            "rows": [
+              {
+                "pid": 14212,
+                "ppid": 11968,
+                "name": "BorsTerminalM2TinyJS.exe",
+                "rss_mb": 23.9,
+                "cpu_s": 0.375
+              },
+              {
+                "pid": 8060,
+                "ppid": 14212,
+                "name": "launcher.exe",
+                "rss_mb": 17.4,
+                "cpu_s": 0.141
+              },
+              {
+                "pid": 14728,
+                "ppid": 14212,
+                "name": "launcher.exe",
+                "rss_mb": 6.1,
+                "cpu_s": 0.047
+              },
+              {
+                "pid": 14520,
+                "ppid": 14728,
+                "name": "python.exe",
+                "rss_mb": 3.3,
+                "cpu_s": 0.0
+              },
+              {
+                "pid": 13352,
+                "ppid": 14520,
+                "name": "conhost.exe",
+                "rss_mb": 10.7,
+                "cpu_s": 0.016
+              },
+              {
+                "pid": 11560,
+                "ppid": 14520,
+                "name": "python.exe",
+                "rss_mb": 235.0,
+                "cpu_s": 9.625
+              },
+              {
+                "pid": 12452,
+                "ppid": 8060,
+                "name": "msedgewebview2.exe",
+                "rss_mb": 81.8,
+                "cpu_s": 0.703
+              },
+              {
+                "pid": 13796,
+                "ppid": 12452,
+                "name": "msedgewebview2.exe",
+                "rss_mb": 7.8,
+                "cpu_s": 0.031
+              }
+            ]
+          },
+          "probe_final": {
+            "epoch_ms": 1792882199341.5068,
+            "rss_mb": 762.5,
+            "cpu_s": 61.438,
+            "procs": 12,
+            "rows": [
+              {
+                "pid": 14212,
+                "ppid": 11968,
+                "name": "BorsTerminalM2TinyJS.exe",
+                "rss_mb": 23.9,
+                "cpu_s": 0.641
+              },
+              {
+                "pid": 8060,
+                "ppid": 14212,
+                "name": "launcher.exe",
+                "rss_mb": 17.5,
+                "cpu_s": 0.156
+              },
+              {
+                "pid": 14728,
+                "ppid": 14212,
+                "name": "launcher.exe",
+                "rss_mb": 6.0,
+                "cpu_s": 0.047
+              },
+              {
+                "pid": 14520,
+                "ppid": 14728,
+                "name": "python.exe",
+                "rss_mb": 3.2,
+                "cpu_s": 0.0
+              },
+              {
+                "pid": 13352,
+                "ppid": 14520,
+                "name": "conhost.exe",
+                "rss_mb": 10.7,
+                "cpu_s": 0.016
+              },
+              {
+                "pid": 11560,
+                "ppid": 14520,
+                "name": "python.exe",
+                "rss_mb": 254.7,
+                "cpu_s": 44.062
+              },
+              {
+                "pid": 12452,
+                "ppid": 8060,
+                "name": "msedgewebview2.exe",
+                "rss_mb": 106.5,
+                "cpu_s": 1.891
+              },
+              {
+                "pid": 13796,
+                "ppid": 12452,
+                "name": "msedgewebview2.exe",
+                "rss_mb": 10.3,
+                "cpu_s": 0.078
+              },
+              {
+                "pid": 15448,
+                "ppid": 12452,
+                "name": "msedgewebview2.exe",
+                "rss_mb": 88.3,
+                "cpu_s": 3.156
+              },
+              {
+                "pid": 14132,
+                "ppid": 12452,
+                "name": "msedgewebview2.exe",
+                "rss_mb": 37.2,
+                "cpu_s": 0.594
+              },
+              {
+                "pid": 14172,
+                "ppid": 12452,
+                "name": "msedgewebview2.exe",
+                "rss_mb": 18.9,
+                "cpu_s": 0.125
+              },
+              {
+                "pid": 2280,
+                "ppid": 12452,
+                "name": "msedgewebview2.exe",
+                "rss_mb": 185.4,
+                "cpu_s": 10.672
+              }
+            ]
+          },
+          "idle": {
+            "epoch_ms": 1792882215138.7783,
+            "rss_mb": 762.2,
+            "cpu_s": 70.625,
+            "procs": 12,
+            "rows": [
+              {
+                "pid": 14212,
+                "ppid": 11968,
+                "name": "BorsTerminalM2TinyJS.exe",
+                "rss_mb": 23.9,
+                "cpu_s": 0.641
+              },
+              {
+                "pid": 8060,
+                "ppid": 14212,
+                "name": "launcher.exe",
+                "rss_mb": 17.5,
+                "cpu_s": 0.156
+              },
+              {
+                "pid": 14728,
+                "ppid": 14212,
+                "name": "launcher.exe",
+                "rss_mb": 6.0,
+                "cpu_s": 0.047
+              },
+              {
+                "pid": 14520,
+                "ppid": 14728,
+                "name": "python.exe",
+                "rss_mb": 3.2,
+                "cpu_s": 0.0
+              },
+              {
+                "pid": 13352,
+                "ppid": 14520,
+                "name": "conhost.exe",
+                "rss_mb": 10.7,
+                "cpu_s": 0.016
+              },
+              {
+                "pid": 11560,
+                "ppid": 14520,
+                "name": "python.exe",
+                "rss_mb": 256.5,
+                "cpu_s": 53.141
+              },
+              {
+                "pid": 12452,
+                "ppid": 8060,
+                "name": "msedgewebview2.exe",
+                "rss_mb": 107.0,
+                "cpu_s": 2.0
+              },
+              {
+                "pid": 13796,
+                "ppid": 12452,
+                "name": "msedgewebview2.exe",
+                "rss_mb": 10.3,
+                "cpu_s": 0.078
+              },
+              {
+                "pid": 15448,
+                "ppid": 12452,
+                "name": "msedgewebview2.exe",
+                "rss_mb": 85.6,
+                "cpu_s": 3.156
+              },
+              {
+                "pid": 14132,
+                "ppid": 12452,
+                "name": "msedgewebview2.exe",
+                "rss_mb": 37.1,
+                "cpu_s": 0.594
+              },
+              {
+                "pid": 14172,
+                "ppid": 12452,
+                "name": "msedgewebview2.exe",
+                "rss_mb": 19.0,
+                "cpu_s": 0.125
+              },
+              {
+                "pid": 2280,
+                "ppid": 12452,
+                "name": "msedgewebview2.exe",
+                "rss_mb": 185.4,
+                "cpu_s": 10.672
+              }
+            ]
+          }
+        },
+        "samples": 71
+      },
+      "shutdown": {
+        "forced_kill": false,
+        "window_close_ms": 104079.5,
+        "root_exit_ms": 112259.0,
+        "exit_code": 0,
+        "port": 59253,
+        "port_open_after_exit": false,
+        "sidecar_shutdown": [
+          {
+            "stage": "shutdown_begin",
+            "t": 1792882215.143775,
+            "dt": 101.88777,
+            "pid": 11560
+          },
+          {
+            "stage": "shutdown_end",
+            "t": 1792882221.215559,
+            "dt": 107.959163,
+            "pid": 11560,
+            "alive": false
+          }
+        ],
+        "shell_tail": [
+          {
+            "stage": "probe_eval",
+            "t": 1792882155.97,
+            "dt": 43.912,
+            "pid": 14212,
+            "attempt": 27
+          },
+          {
+            "stage": "probe_eval",
+            "t": 1792882156.98,
+            "dt": 44.922,
+            "pid": 14212,
+            "attempt": 28
+          },
+          {
+            "stage": "probe_stop_file",
+            "t": 1792882157.903,
+            "dt": 45.845,
+            "pid": 14212,
+            "attempt": 29
+          },
+          {
+            "stage": "window_closed",
+            "t": 1792882215.142,
+            "dt": 103.084,
+            "pid": 14212,
+            "id": "app"
+          },
+          {
+            "stage": "shutdown_wait_begin",
+            "t": 1792882215.142,
+            "dt": 103.084,
+            "pid": 14212,
+            "id": "app"
+          },
+          {
+            "stage": "sidecar_exit",
+            "t": 1792882223.163,
+            "dt": 111.105,
+            "pid": 14212,
+            "code": 0,
+            "signal": null
+          },
+          {
+            "stage": "shutdown_wait_done",
+            "t": 1792882223.163,
+            "dt": 111.105,
+            "pid": 14212,
+            "graceful": true,
+            "code": 0
+          },
+          {
+            "stage": "quit_requested",
+            "t": 1792882223.163,
+            "dt": 111.105,
+            "pid": 14212,
+            "id": "app",
+            "graceful": true
+          }
+        ],
+        "crash_kill": null,
+        "survivors": [],
+        "cleanup": {
+          "survivors_before": [],
+          "killed": [],
+          "survivors_after": [],
+          "port_open_after_cleanup": false
+        },
+        "cleanup_final": {
+          "survivors_before": [],
+          "killed": [],
+          "survivors_after": [],
+          "port_open_after_cleanup": false
+        },
+        "shell_exit_code": 0
+      },
+      "elapsed_ms": 122267.4,
+      "timings_ms": {
+        "sidecar_spawned": 1210.7,
+        "sidecar_ready_line": 16927.7,
+        "http_verified": 19626.7,
+        "window_open_begin": 19626.7,
+        "window_open": 19626.7,
+        "window_closed": 104082.7,
+        "quit_requested": 112103.7,
+        "window_visible": 23291.7,
+        "app_document_ready": 30559.7,
+        "login_ready": 31707.7,
+        "login_submit": 32822.7,
+        "market_nav_begin": 36199.7,
+        "master_ready": 36198.7,
+        "market_rows_visible": 39106.7,
+        "technical_nav_begin": 47708.7,
+        "technical_ready": 74844.7,
+        "fundamental_nav_begin": 77364.7,
+        "fundamental_ready": 80426.7,
+        "sidecar_preflight_start": 2346.6,
+        "sidecar_preflight_end": 12211.5,
+        "sidecar_http_ready": 16901.6,
+        "sidecar_shutdown_begin": 104084.5,
+        "sidecar_shutdown_end": 110156.3,
+        "window_close_ms": 104079.5,
+        "root_exit_ms": 112259.0
+      },
+      "harness_finished_at": 1792882233326.9
+    }
+  ],
+  "partial": false
+}

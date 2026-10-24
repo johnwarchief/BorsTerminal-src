@@ -1,0 +1,13 @@
+{
+  "$schema": "https://tinyjs.app/schema/tinyjs.schema.json",
+  "name": "BorsTerminalM2TinyJS",
+  "title": "BorsTerminal — TinyJS M2",
+  "size": "1360x760",
+  "id": "com.borsterminal.m2tinyjs",
+  "version": "0.2.0",
+  "mainWindow": false,
+  "activation": "accessory",
+  "popups": "window",
+  "downloads": "ask",
+  "minTinyjsVersion": "0.65.0"
+}

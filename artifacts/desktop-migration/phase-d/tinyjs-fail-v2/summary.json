@@ -1,0 +1,393 @@
+{
+  "label": "tinyjs-fail-v2",
+  "mode": "cold",
+  "scenario": "fail",
+  "generated_at": "2026-10-24T22:19:38Z",
+  "host": {
+    "platform": "Windows-10-10.0.19045-SP0",
+    "cpu_logical": 2,
+    "cpu_physical": 1,
+    "ram_gb": 3.88,
+    "python": "3.12.10",
+    "exe": "prototypes\\tinyjs-m2\\dist\\BorsTerminalM2TinyJS.exe",
+    "exe_bytes": 5686049,
+    "launcher_bytes": 2164824,
+    "dist_bytes": 7850873,
+    "dist_bytes_note": "TinyJS portable dist only; Tauri target/release is not an install footprint"
+  },
+  "protocol": {
+    "shell": "TinyJS 0.65 built shell + app.spawnHidden sidecar",
+    "window_gate": "shell opens the loopback window only after GET /api/update/version succeeds",
+    "isolation": "fresh WORK_DIR/profile in cold; shared seeded one in warm",
+    "network_loops": "BORS_NO_FETCH_LOOPS=1, BORS_CODAL_AUTO=0",
+    "instrumentation": "external process tree + Win32 PrintWindow + BorsTerminalM2TinyJS.exe WebView2 eval probe (no CDP)",
+    "cold_definition": "fresh work dir and profile per run, DB seeded from the Phase C template",
+    "warm_definition": "one unrecorded warmup, then same work dir/profile reused",
+    "crash": "with --crash the shell root is terminated after the first board paint; orphans are recorded and then killed by the harness"
+  },
+  "timings_ms": {
+    "sidecar_ready_line": {
+      "n": 0,
+      "median": null,
+      "min": null,
+      "max": null,
+      "p95": null,
+      "p95_note": "not reported: n<20"
+    },
+    "window_visible": {
+      "n": 0,
+      "median": null,
+      "min": null,
+      "max": null,
+      "p95": null,
+      "p95_note": "not reported: n<20"
+    },
+    "http_verified": {
+      "n": 0,
+      "median": null,
+      "min": null,
+      "max": null,
+      "p95": null,
+      "p95_note": "not reported: n<20"
+    },
+    "app_document_ready": {
+      "n": 0,
+      "median": null,
+      "min": null,
+      "max": null,
+      "p95": null,
+      "p95_note": "not reported: n<20"
+    },
+    "login_ready": {
+      "n": 0,
+      "median": null,
+      "min": null,
+      "max": null,
+      "p95": null,
+      "p95_note": "not reported: n<20"
+    },
+    "master_ready": {
+      "n": 0,
+      "median": null,
+      "min": null,
+      "max": null,
+      "p95": null,
+      "p95_note": "not reported: n<20"
+    },
+    "market_rows_visible": {
+      "n": 0,
+      "median": null,
+      "min": null,
+      "max": null,
+      "p95": null,
+      "p95_note": "not reported: n<20"
+    },
+    "technical_ready": {
+      "n": 0,
+      "median": null,
+      "min": null,
+      "max": null,
+      "p95": null,
+      "p95_note": "not reported: n<20"
+    },
+    "fundamental_ready": {
+      "n": 0,
+      "median": null,
+      "min": null,
+      "max": null,
+      "p95": null,
+      "p95_note": "not reported: n<20"
+    },
+    "market_status_ready": {
+      "n": 0,
+      "median": null,
+      "min": null,
+      "max": null,
+      "p95": null,
+      "p95_note": "not reported: n<20"
+    },
+    "window_close_ms": {
+      "n": 1,
+      "median": 12977.3,
+      "min": 12977.3,
+      "max": 12977.3,
+      "values": [
+        12977.3
+      ],
+      "p95": null,
+      "p95_note": "not reported: n<20"
+    },
+    "root_exit_ms": {
+      "n": 1,
+      "median": 13754.7,
+      "min": 13754.7,
+      "max": 13754.7,
+      "values": [
+        13754.7
+      ],
+      "p95": null,
+      "p95_note": "not reported: n<20"
+    }
+  },
+  "rss_mb": {
+    "peak": {
+      "n": 1,
+      "median": 288.6,
+      "values": [
+        288.6
+      ]
+    },
+    "idle": {
+      "n": 1,
+      "median": 288.4,
+      "values": [
+        288.4
+      ]
+    }
+  },
+  "idle_cpu_pct_one_core": {
+    "n": 1,
+    "median": 0.0,
+    "values": [
+      0.0
+    ]
+  },
+  "security": [],
+  "security_all_ok": false,
+  "exit_codes": [
+    0
+  ],
+  "cleanup": [
+    {
+      "survivors_before": [],
+      "killed": [],
+      "survivors_after": [],
+      "port_open_after_cleanup": null
+    }
+  ],
+  "crash_runs": [],
+  "partial": false,
+  "runs_ok": 0,
+  "runs_total": 1,
+  "runs": [
+    {
+      "run": 1,
+      "mode": "cold",
+      "timings_ms": {
+        "sidecar_spawned": 247.3,
+        "error_window": 901.3,
+        "ready_timeout": 931.3,
+        "window_closed": 12995.3,
+        "window_close_ms": 12977.3,
+        "root_exit_ms": 13754.7
+      },
+      "window": null,
+      "process": {
+        "peak": {
+          "rss_mb": 288.6,
+          "epoch_ms": 1792880371744.006,
+          "procs": 8
+        },
+        "stages": {
+          "idle": {
+            "rss_mb": 288.6,
+            "cpu_s": 2.328,
+            "procs": 8,
+            "names": [
+              "BorsTerminalM2TinyJS.exe",
+              "launcher.exe",
+              "msedgewebview2.exe"
+            ]
+          }
+        }
+      },
+      "idle": {
+        "rss_mb": 288.4,
+        "cpu": {
+          "seconds": 0.0,
+          "wall_s": 3.95,
+          "pct_one_core": 0.0
+        },
+        "procs": 8,
+        "rows": [
+          {
+            "pid": 11020,
+            "ppid": 11976,
+            "name": "BorsTerminalM2TinyJS.exe",
+            "rss_mb": 14.5,
+            "cpu_s": 0.141
+          },
+          {
+            "pid": 14104,
+            "ppid": 11020,
+            "name": "launcher.exe",
+            "rss_mb": 18.5,
+            "cpu_s": 0.141
+          },
+          {
+            "pid": 15144,
+            "ppid": 14104,
+            "name": "msedgewebview2.exe",
+            "rss_mb": 102.4,
+            "cpu_s": 1.25
+          },
+          {
+            "pid": 12396,
+            "ppid": 15144,
+            "name": "msedgewebview2.exe",
+            "rss_mb": 7.8,
+            "cpu_s": 0.031
+          },
+          {
+            "pid": 5632,
+            "ppid": 15144,
+            "name": "msedgewebview2.exe",
+            "rss_mb": 43.1,
+            "cpu_s": 0.266
+          },
+          {
+            "pid": 12852,
+            "ppid": 15144,
+            "name": "msedgewebview2.exe",
+            "rss_mb": 34.3,
+            "cpu_s": 0.188
+          },
+          {
+            "pid": 11876,
+            "ppid": 15144,
+            "name": "msedgewebview2.exe",
+            "rss_mb": 18.3,
+            "cpu_s": 0.125
+          },
+          {
+            "pid": 6520,
+            "ppid": 15144,
+            "name": "msedgewebview2.exe",
+            "rss_mb": 49.5,
+            "cpu_s": 0.172
+          }
+        ]
+      },
+      "shutdown": {
+        "forced_kill": false,
+        "window_close_ms": 12977.3,
+        "root_exit_ms": 13754.7,
+        "exit_code": 0,
+        "port": null,
+        "port_open_after_exit": null,
+        "sidecar_shutdown": [],
+        "shell_tail": [
+          {
+            "stage": "sidecar_spawn_begin",
+            "t": 1792880358.994,
+            "dt": 0.075,
+            "pid": 11020,
+            "exe": "C:\\Users\\STU\\Documents\\Qoder\\2026-10-23\\95b91389\\BorsTerminal\\.venv\\Scripts\\python.exe",
+            "entry": "C:\\Users\\STU\\Documents\\Qoder\\2026-10-23\\95b91389\\BorsTerminal\\tools\\desktop-migration\\phase_d\\headless_server.py",
+            "port": "0"
+          },
+          {
+            "stage": "sidecar_spawned",
+            "t": 1792880359.014,
+            "dt": 0.095,
+            "pid": 14868
+          },
+          {
+            "stage": "sidecar_exit",
+            "t": 1792880359.668,
+            "dt": 0.749,
+            "pid": 11020,
+            "code": 42,
+            "signal": null
+          },
+          {
+            "stage": "error_window",
+            "t": 1792880359.668,
+            "dt": 0.749,
+            "pid": 11020,
+            "title": "Backend exited before it was ready",
+            "detail": "exit=42\n\nPHASE_D_ERROR {\"stage\": \"fail-test\", \"pid\": 16720}\n[ERR] deliberate Phase D failure fixture"
+          },
+          {
+            "stage": "ready_timeout",
+            "t": 1792880359.698,
+            "dt": 0.779,
+            "pid": 11020,
+            "exited": true,
+            "code": 42
+          },
+          {
+            "stage": "window_closed",
+            "t": 1792880371.762,
+            "dt": 12.843,
+            "pid": 11020,
+            "id": "error"
+          },
+          {
+            "stage": "shutdown_wait_begin",
+            "t": 1792880371.762,
+            "dt": 12.843,
+            "pid": 11020,
+            "id": "error"
+          },
+          {
+            "stage": "shutdown_wait_done",
+            "t": 1792880371.762,
+            "dt": 12.843,
+            "pid": 11020,
+            "graceful": true,
+            "code": 42
+          }
+        ],
+        "crash_kill": null,
+        "survivors": [],
+        "cleanup": {
+          "survivors_before": [],
+          "killed": [],
+          "survivors_after": [],
+          "port_open_after_cleanup": null
+        },
+        "cleanup_final": {
+          "survivors_before": [],
+          "killed": [],
+          "survivors_after": [],
+          "port_open_after_cleanup": null
+        },
+        "shell_exit_code": 0
+      },
+      "probe_instances": [],
+      "screenshots": {
+        "error": {
+          "ok": true,
+          "w": 1296,
+          "h": 1000
+        }
+      },
+      "final": {
+        "ok": null,
+        "states": null,
+        "events": {},
+        "technical_ready": null,
+        "resources": null,
+        "errors": null
+      },
+      "errors": [],
+      "firewall_prompts": 0,
+      "error_window": {
+        "hwnd": 1164640946,
+        "title": "BorsTerminal — startup failed",
+        "pid": 14104,
+        "visible": true,
+        "rect": [
+          -8,
+          -8,
+          1288,
+          992
+        ],
+        "w": 1296,
+        "h": 1000
+      },
+      "final_run_ids": []
+    }
+  ]
+}
