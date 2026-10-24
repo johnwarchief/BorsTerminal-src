@@ -1,0 +1,33 @@
+{
+  "finding": "Before the harness fix, Phase D/Tauri/TinyJS dev runs resolved DB_PATH to the repo market.db because bors_config._resolve_market_db() prefers exe_dir over WORK_DIR. BORS_DB now pins every run to its isolated work/market.db, and headless_server refuses a DB outside BORS_DB.",
+  "operational": {
+    "market_db_sha256": "7cfefddd1b6009babf3bdd727c61d865db1fb6f9dde05e1abb20a59d0259e78b",
+    "market_db_size": 281276416,
+    "market_db_mtime": "2026-10-25T01:57:26+03:30",
+    "market_db_wal_sha256": "9e9e9f0f7c7fada08ff6ea3952096e663336ee3d9b0d26ee8b71683e6833212c",
+    "market_db_wal_size": 725152,
+    "market_db_wal_mtime": "2026-10-25T01:58:37+03:30"
+  },
+  "template": {
+    "market_db_sha256": "07dc34ab9b332695869642a5eb7bd1fd86eefb960bca06ec2003dffd447a4b56",
+    "market_db_size": 281276416,
+    "market_db_wal_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "market_db_wal_size": 0
+  },
+  "row_count_deltas_operational_vs_template": {
+    "adjust_cache_meta": {"operational": 50, "template": 48},
+    "adjust_events": {"operational": 12716, "template": 12719}
+  },
+  "unchanged_tables": "46 of 48 table row counts are identical (instruments 6018, market_watch 6022, price_history 445681, tape_history 203653, financial_statements 8723, max price_history date 2026-10-14).",
+  "after_isolation": {
+    "market_db_sha256": "7cfefddd1b6009babf3bdd727c61d865db1fb6f9dde05e1abb20a59d0259e78b",
+    "market_db_wal_sha256": "9e9e9f0f7c7fada08ff6ea3952096e663336ee3d9b0d26ee8b71683e6833212c",
+    "hashes_unchanged_between_02_02_and_02_37": true,
+    "note": "The operational main DB and WAL were not modified by the isolated reruns. The operational DB was not restored or rewritten; the two cache-table deltas predate the fix and are left for owner review."
+  },
+  "user_db": {
+    "operational_sha256": "7dc3fcad7686c57854e13f47a07f7cd77077f1dacff12dd233cdbd5cdf8291b0",
+    "template_sha256": "c2b629fefa9419dd5c7015cd625d2e2d4e404f20024cd9c611bd4ea98921c6b2",
+    "note": "Sizes/hashes were recorded before the isolated reruns; no further hash comparison was needed because the sidecar writes USER_DB_PATH in BORS_WORK_DIR."
+  }
+}

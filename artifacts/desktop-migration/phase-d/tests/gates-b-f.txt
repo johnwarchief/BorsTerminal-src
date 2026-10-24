@@ -1,0 +1,19 @@
+
+[1m[46m RUN [49m[22m [36mv3.2.7 [39m[90mC:/Users/STU/Documents/Qoder/2026-10-23/95b91389/BorsTerminal/frontend[39m
+
+ [32m✓[39m src/__tests__/fts-screen.spec.tsx [2m([22m[2m40 tests[22m[2m)[22m[33m 4245[2mms[22m[39m
+   [33m[2m✓[22m[39m دیده‌بان کلان بنیادی (ماتریس FTS)[2m > [22mستون امتیاز: هدر و مقدار هم‌راستاوند (نه عنوانِ راست و عددِ وسطِ ستون) [33m 468[2mms[22m[39m
+   [33m[2m✓[22m[39m دیده‌بان کلان بنیادی (ماتریس FTS)[2m > [22mregression: سورت پیش‌فرض امتیاز نزولی است (۵ → ۰) بدون تعامل کاربر [33m 646[2mms[22m[39m
+   [33m[2m✓[22m[39m دروازه‌های سخت (Hard Gates) در دیده‌بان[2m > [22mدکمهٔ «نمایش ردیف‌های حذف‌شده» حذف شده و ردیف‌های مشمول دروازه همواره پنهان هستند [33m 343[2mms[22m[39m
+ [32m✓[39m src/__tests__/fts-card-contract.spec.tsx [2m([22m[2m12 tests[22m[2m)[22m[33m 2355[2mms[22m[39m
+   [33m[2m✓[22m[39m صفحهٔ بنیادی — کارت خالی با دادهٔ رشته‌ای پر می‌شود[2m > [22mامتیاز، verdict و شش سلول شاخص را نشان می‌دهد (نه حالت بدون داده) [33m 785[2mms[22m[39m
+ [32m✓[39m src/__tests__/fundamental-page.spec.tsx [2m([22m[2m2 tests[22m[2m)[22m[33m 763[2mms[22m[39m
+   [33m[2m✓[22m[39m صفحه تحلیل بنیادی — هلدینگ‌ها[2m > [22mهلدینگ: پنل «نیازمند ارزیابی پرتفوی هلدینگ (N/A)» جای SectorPePanel می‌نشیند — بدون P/NAV ساختگی [33m 496[2mms[22m[39m
+ [32m✓[39m src/__tests__/fts-drilldown.spec.tsx [2m([22m[2m32 tests[22m[2m)[22m[33m 1182[2mms[22m[39m
+ [32m✓[39m src/__tests__/market-feed-delta.spec.ts [2m([22m[2m12 tests[22m[2m)[22m[32m 19[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m5 passed[39m[22m[90m (5)[39m
+[2m      Tests [22m [1m[32m98 passed[39m[22m[90m (98)[39m
+[2m   Start at [22m 02:39:25
+[2m   Duration [22m 61.70s[2m (transform 2.33s, setup 5.42s, collect 9.63s, tests 8.56s, environment 31.91s, prepare 2.86s)[22m
+

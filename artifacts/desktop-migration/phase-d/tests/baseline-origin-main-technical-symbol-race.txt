@@ -1,0 +1,38 @@
+
+[1m[46m RUN [49m[22m [36mv3.2.7 [39m[90mC:/Users/STU/AppData/Local/Temp/bors-baseline-b5f5f6c/frontend[39m
+
+ [31m❯[39m src/__tests__/technical-symbol-race.spec.tsx [2m([22m[2m5 tests[22m[2m | [22m[31m1 failed[39m[2m)[22m[33m 1866[2mms[22m[39m
+   [33m[2m✓[22m[39m واکشی کندل با عوض‌شدنِ نماد[2m > [22mپاسخِ کُندِ نمادِ قبلی رویِ چارتِ نمادِ تازه نمی‌نشیند [33m 625[2mms[22m[39m
+[31m   [31m×[31m واکشی کندل با عوض‌شدنِ نماد[2m > [22mدرخواستِ بی‌مصرفِ نمادِ قبلی abort می‌شود (پس نه پاسخ می‌دهد نه write)[39m[33m 488[2mms[22m[39m
+[31m     → expected undefined to be truthy[39m
+   [32m✓[39m واکشی کندل با عوض‌شدنِ نماد[2m > [22mیکِ نماد، یکِ درخواستِ کامل ⇒ سریِ همان نماد رویِ چارت است (کنترلِ مثبت)[32m 243[2mms[22m[39m
+   [33m[2m✓[22m[39m واکشی کندل با عوض‌شدنِ نماد[2m > [22mبازپخشِ روشنِ نمادِ قبلی با نمادِ تازه خاموش می‌شود (نه برشِ کهنه) [33m 305[2mms[22m[39m
+   [32m✓[39m واکشی کندل با عوض‌شدنِ نماد[2m > [22mبی‌بازپخش، عوض‌شدنِ نماد هیچ وضعیتی را نمی‌سازد (کنترلِ منفیِ همان گیت)[32m 199[2mms[22m[39m
+
+[31m⎯⎯⎯⎯⎯⎯⎯[39m[1m[41m Failed Tests 1 [49m[22m[31m⎯⎯⎯⎯⎯⎯⎯[39m
+
+[41m[1m FAIL [22m[49m src/__tests__/technical-symbol-race.spec.tsx[2m > [22mواکشی کندل با عوض‌شدنِ نماد[2m > [22mدرخواستِ بی‌مصرفِ نمادِ قبلی abort می‌شود (پس نه پاسخ می‌دهد نه write)
+[31m[1mAssertionError[22m: expected undefined to be truthy[39m
+
+[32m- Expected:[39m 
+true
+
+[31m+ Received:[39m 
+undefined
+
+[36m [2m❯[22m src/__tests__/technical-symbol-race.spec.tsx:[2m110:17[22m[39m
+    [90m108| [39m    [35mawait[39m [34msettle[39m()[33m;[39m
+    [90m109| [39m    [35mconst[39m sig [33m=[39m signals[[32m'/api/chart/فولاد'[39m][33m;[39m
+    [90m110| [39m    [34mexpect[39m(sig)[33m.[39m[34mtoBeTruthy[39m()[33m;[39m
+    [90m   | [39m                [31m^[39m
+    [90m111| [39m    [34mexpect[39m(sig[33m.[39maborted)[33m.[39m[34mtoBe[39m([35mtrue[39m)[33m;[39m
+    [90m112| [39m    [34mexpect[39m(signals[[32m'/api/chart/خودرو'[39m][33m?.[39maborted)[33m.[39m[34mtoBe[39m([35mfalse[39m)[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯[22m[39m
+
+
+[2m Test Files [22m [1m[31m1 failed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[31m1 failed[39m[22m[2m | [22m[1m[32m4 passed[39m[22m[90m (5)[39m
+[2m   Start at [22m 02:38:37
+[2m   Duration [22m 19.27s[2m (transform 2.95s, setup 1.65s, collect 4.71s, tests 1.87s, environment 9.87s, prepare 544ms)[22m
+
