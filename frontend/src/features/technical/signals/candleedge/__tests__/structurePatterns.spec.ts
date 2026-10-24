@@ -195,6 +195,11 @@ describe('ported market-structure detectors', () => {
     expect(event?.newSwing.index).toBe(20);
   });
 
+  it('rejects bullish BOS exactly at the 0.5% threshold', () => {
+    const swings = { highs: [swing(10, 100, 13), swing(20, 100.5, 23)], lows: [] };
+    expect(detectBosBullish(swings, 23)).toBeNull();
+  });
+
   it('rejects bearish BOS exactly at the 0.5% threshold', () => {
     const swings = { highs: [], lows: [swing(10, 100, 13), swing(20, 99.5, 23)] };
     expect(detectBosBearish(swings, 23)).toBeNull();
@@ -221,6 +226,13 @@ describe('ported market-structure detectors', () => {
   it('requires a close back inside the level for a high sweep', () => {
     const candles = flatCandles(40);
     candles[30] = candle(30, 108, 111, 107, 110.5);
+    const swings = { highs: [swing(10, 100, 13), swing(20, 110, 23)], lows: [] };
+    expect(detectLiquiditySweepHigh(candles, 30, swings)).toBeNull();
+  });
+
+  it('requires the high to pierce the level, not touch it', () => {
+    const candles = flatCandles(40);
+    candles[30] = candle(30, 108, 110, 107, 109);
     const swings = { highs: [swing(10, 100, 13), swing(20, 110, 23)], lows: [] };
     expect(detectLiquiditySweepHigh(candles, 30, swings)).toBeNull();
   });

@@ -7,6 +7,8 @@
 // 1. TypeScript types and detector ids replace the presentation names/icons.
 // 2. BOS is evaluated at the confirmation bar of the new swing: the source
 //    required `recentHigh.index === idx`, which its own slice makes impossible.
+//    The 0.5% threshold is compared as a relative change: the source's
+//    `price * 1.005` form makes the exact boundary pass on one side only.
 // 3. Liquidity sweeps use the latest confirmed swing level instead of the
 //    second-to-last; the original's off-by-one skipped the freshest level.
 import type { Candle, PatternBias, SwingPoint } from './types';
@@ -342,7 +344,8 @@ export function detectBosBullish(
   if (!h) return null;
   const [previousSwing, newSwing] = h;
   if (newSwing.confirmedAtIndex !== confirmationIndex) return null;
-  if (!(newSwing.price > previousSwing.price * (1 + thresholdPct))) return null;
+  const change = (newSwing.price - previousSwing.price) / previousSwing.price;
+  if (!(change > thresholdPct)) return null;
   return {
     detector: 'bos_bullish',
     bias: 'bullish',
@@ -362,7 +365,8 @@ export function detectBosBearish(
   if (!l) return null;
   const [previousSwing, newSwing] = l;
   if (newSwing.confirmedAtIndex !== confirmationIndex) return null;
-  if (!(newSwing.price < previousSwing.price * (1 - thresholdPct))) return null;
+  const change = (previousSwing.price - newSwing.price) / previousSwing.price;
+  if (!(change > thresholdPct)) return null;
   return {
     detector: 'bos_bearish',
     bias: 'bearish',

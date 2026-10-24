@@ -24,7 +24,7 @@ This directory contains TypeScript ports of analytical functions from:
 
 1. JavaScript converted to strict TypeScript; presentation fields (`name`, `icon`, `status` strings) removed and replaced with detector ids, families, and biases.
 2. Every swing carries `confirmedAtIndex`; the scanner emits each structure event once, at the bar where its evidence completes.
-3. Bullish/bearish BOS is evaluated at the confirmation bar of the new swing. The upstream condition `recentHigh.index === idx` (lines 933/943) can never be true with its own slice (line 1077-1078), so the upstream detector never fires.
+3. Bullish/bearish BOS is evaluated at the confirmation bar of the new swing. The upstream condition `recentHigh.index === idx` (lines 933/943) can never be true with its own slice (line 1077-1078), so the upstream detector never fires. The 0.5% threshold is compared as a relative change; the upstream multiply form made the exact boundary pass on one side and fail on the other because `100 * 1.005 = 100.49999999999999`.
 4. Liquidity sweeps use the latest confirmed swing level. Upstream used the second-to-last (`swings.highs[length-2]`, lines 951/960), skipping the freshest level.
 5. A provisional tail scan was added for swings whose right window is not complete; it is reported separately and is never an event.
 6. Double top/bottom are emitted once per confirmed pair instead of repeating on each bar inside the 20-bar recency window.
