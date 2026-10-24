@@ -235,11 +235,23 @@ def market_row(request: Request, symbol: str = ""):
             pass
         row = _find()
     rev = int(market_state.revision() or 0)
-    etag = '"row-%s-%s"' % (rev, hashlib.md5(sym.encode("utf-8")).hexdigest()[:8])
+    # `gen` هم بخشی از هویتِ ردیف است: تغییرِ client_type_value/پنجره‌هایِ تاریخ
+    # همان revision را نگه می‌دارد ولی مقدارِ همین ردیف را عوض می‌کند. ETagِ
+    # فقط-rev به سایدبار ۳۰۴ می‌داد و عددِ قدیمی را «تازه» نگه می‌داشت.
+    _mir = _mirror_snapshot()
+    row_gen = int(_mir[5])
+    # سایدبار هم مثلِ delta باید قابِ کهنه را تحریک کند؛ وگرنه کلاینتی که
+    # فقط /api/market/row می‌زند، تغییرِ ایستا را تا TTL/تیکِ بعدی نمی‌بیند.
+    if (_mir[6] != _static_key() + (_HIST_CACHE_KEY,)
+            or (time.time() - float(_mir[7] or 0.0)) >= _HIST_CHECK_S):
+        _kick_market_rebuild()
+    etag = '"row-%s-%s-%s"' % (rev, row_gen,
+                               hashlib.md5(sym.encode("utf-8")).hexdigest()[:8])
     inm = request.headers.get("if-none-match") if request is not None else None
     if inm and _inm_matches(inm, etag):
         return Response(status_code=304, headers={"ETag": etag})
-    body, _ = _encode_board({"status": "success", "symbol": sym, "row": row, "rev": rev})
+    body, _ = _encode_board({"status": "success", "symbol": sym, "row": row,
+                             "rev": rev, "gen": row_gen})
     return Response(content=body, media_type="application/json",
                     headers={"ETag": etag, "Cache-Control": "no-store"})
 
@@ -297,6 +309,13 @@ def _kick_market_rebuild():
 
 
 _MARKET_SNAP_LOCK = threading.Lock()
+# انتشارِ کش و آینه با هم. دو بازسازیِ هم‌زمان می‌توانند بدنه‌هایِ متفاوت
+# بسازند؛ بی‌قفل، `_mirror` از یکی و `_market_store` از دیگری می‌ماند و
+# کلاینت تا TTLِ کش بدنهٔ قدیمی را «تازه» می‌بیند (اثبات‌شده در گاردِ
+# dev/market_snapshot_gen_v1.py). `_PUBLISHED` هم نمی‌گذارد بازسازیِ
+# قدیمی‌تری که دیرتر تمام شده، عکسِ تازه‌تر را عقب ببرد.
+_PUBLISH_LOCK = threading.Lock()
+_PUBLISHED: dict = {"rev": -1, "gen": -1}
 
 
 def _market_snapshot():
@@ -319,14 +338,22 @@ def _market_store(body, etag, when):
 
 
 def _market_clear():
-    with _MARKET_SNAP_LOCK:
-        MARKET_CACHE.clear()
-    # آینهٔ دلتا هم باید بسوزد: بدنه‌ای که نبودنِ آن را به کلاینت می‌گوییم
-    # نمی‌تواند منبعِ «ردیف‌هایِ تغییریافته» بماند.
-    try:
-        _delta_clear()
-    except NameError:
-        pass
+    # ترتیبِ قفل مثلِ _publish است (publish → snap/delta)؛ اگر کش را پیش از
+    # گرفتنِ قفل پاک کنیم، یک انتشارِ در جریان می‌تواند بعد از پاک‌شدن بنشیند
+    # و کش را با آینهٔ خالی‌شده تنها بگذارد.
+    with _PUBLISH_LOCK:
+        with _MARKET_SNAP_LOCK:
+            MARKET_CACHE.clear()
+        # پس از پاک‌شدنِ کش، گاردِ «عقب نرو» باید از نو شروع کند؛ وگرنه بازسازیِ
+        # تازه با rev/gen کوچک‌تر (مثلاً پس از تعویضِ بانک) تا ابد رد می‌شد.
+        _PUBLISHED["rev"] = -1
+        _PUBLISHED["gen"] = -1
+        # آینهٔ دلتا هم باید بسوزد: بدنه‌ای که نبودنِ آن را به کلاینت می‌گوییم
+        # نمی‌تواند منبعِ «ردیف‌هایِ تغییریافته» بماند.
+        try:
+            _delta_clear()
+        except NameError:
+            pass
 
 
 def warm_market_cache():
@@ -730,8 +757,13 @@ _HIST_CACHE_KEY = (None,)
 # مسیرِ SQLite دست‌نخورده می‌ماند و گاردِ `dev/market_hot_state_v1077.py`
 # بدنۀ هر دو مسیر را ستون‌به‌ستون می‌سنجد.
 _STATIC_LOCK = threading.Lock()
-# {"key": (sync_count, session_day, static_rev, hist_key), "df": قابِ ایستا}
-_STATIC_FRAME: dict = {"key": None, "df": None}
+# {"key": (sync_count, session_day, static_rev, hist_key), "df": قابِ ایستا,
+#  "sig": اثرِ محتوایِ ایستا, "gen": نسلِ محتوایِ ایستا}
+# `gen` فقط وقتی بالا می‌رود که *ورودیِ ایستا* عوض شود، نه با هر تیکِ زنده.
+# کلاینت آن را همراهِ delta می‌فرستد؛ ناهم‌خوانی یعنی «ردیف‌هایِ دلتا برایِ
+# بازسازیِ همین بدنۀ تو کافی نیست» ⇒ بدنۀ کامل. بی‌این، تغییرِ client_type_value
+# (درصد حقیقی/حقوقی) با revisionِ ثابت می‌ماند و delta دروغِ «unchanged» می‌گفت.
+_STATIC_FRAME: dict = {"key": None, "df": None, "sig": None, "gen": 0}
 # کوئریِ امضا ~۹۹ms است؛ بی‌از‌نو‌سازیِ پنجره‌ها این هزینه در هر بازسازیِ
 # پنج‌ثانیه‌ای صرفِ هیچ می‌شود. سقفِ زمانیِ اطمینان (ثانیه): اگر نویسنده‌ای
 # شمارنده را بالا نبرد، حداکثر یک‌دقیقه بعد خودمان بانک را می‌بینیم.
@@ -781,12 +813,34 @@ def _reset_board_cache() -> None:
     _FRAME_REV = market_state.revision()
 
 
+def _static_frame_sig(df):
+    """اثرِ محتوایِ ایستا — ستون‌هایِ زنده بیرون می‌مانند.
+
+    `gen` باید فقط با عوض‌شدنِ ورودیِ ایستا (پنجره‌هایِ تاریخ،
+    client_type_value، وضعیت/نظارت و ...) بالا برود. اگر ستون‌هایِ تیکِ زنده
+    هم در اثر بیایند، هر ۵ ثانیه یک «نسلِ تازه» می‌ساختیم و دلتا بی‌فایده
+    می‌شد؛ اگر هیچ اثری نگیریم، همان باگِ «دلتا پس از تغییرِ ایستا unchanged»
+    برمی‌گردد. پس اثر فقط رویِ ستون‌هایی است که تیک نمی‌نویسد.
+    """
+    try:
+        import hashlib
+        cols = [c for c in df.columns if c not in _LIVE_FROM_WATCH]
+        h = hashlib.blake2b(digest_size=16)
+        h.update("\x1f".join(cols).encode("utf-8"))
+        h.update(pd.util.hash_pandas_object(df[cols], index=True).to_numpy().tobytes())
+        return h.hexdigest()
+    except Exception as _e:                          # noqa: BLE001
+        print(f"[market] static frame signature failed: {_e}")
+        return None
+
+
 def _board_query_frame(conn):
     """قابِ ایستایِ تابلو از SQLite، ایندکس‌شده بر `ins_code`.
 
     ستون‌هایِ زنده هم همین‌جا از بانک می‌آیند (تازۀ آخرین نوشتن) و بعد رویِ
     همان‌ها overlay می‌نشیند؛ پس «قابِ ایستا» دقیقاً همان چیزی است که کوئریِ
-    تک‌پیسّهٔ پیش می‌داد.
+    تک‌پیسّهٔ پیش می‌داد. `gen` همین‌جا و فقط با تغییرِ اثرِ ایستا بالا می‌رود؛
+    یک بازخوانیِ بی‌تغییر (سقفِ ۶۰ ثانیه) نسل نمی‌سازد.
     """
     global _HIST_CHECKED_AT
     ensure_board_history(conn)
@@ -795,10 +849,18 @@ def _board_query_frame(conn):
     df = df.drop_duplicates(subset="ins_code", keep="first").set_index("ins_code")
     last_deven = df["d_even"].max() if len(df) else None
     df["is_live"] = (df["d_even"] == last_deven) if last_deven is not None else True
+    sig = _static_frame_sig(df)
     with _STATIC_LOCK:
+        old = _STATIC_FRAME.get("sig")
+        if sig is not None and old is not None and sig != old:
+            _STATIC_FRAME["gen"] = int(_STATIC_FRAME.get("gen") or 0) + 1
+        if sig is not None:
+            _STATIC_FRAME["sig"] = sig
+        gen = int(_STATIC_FRAME.get("gen") or 0)
         _STATIC_FRAME["df"] = df
         _STATIC_FRAME["key"] = _static_key() + (_HIST_CACHE_KEY,)
-    return df
+        frame_key = _STATIC_FRAME["key"]
+    return df, gen, frame_key
 
 
 def _live_overlay(df, codes):
@@ -854,13 +916,16 @@ def _board_frame(conn, frame_rev):
     with _STATIC_LOCK:
         cached = _STATIC_FRAME["df"]
         same = _STATIC_FRAME["key"] == key and cached is not None
+        cached_gen = int(_STATIC_FRAME.get("gen") or 0)
     if same and (time.time() - _HIST_CHECKED_AT) < _HIST_CHECK_S:
         df = cached.copy()
+        gen = cached_gen
+        frame_key = key
     else:
-        df = _board_query_frame(conn)
+        df, gen, frame_key = _board_query_frame(conn)
         frame_rev = _FRAME_REV = market_state.revision()
     df = _live_overlay(df, market_state.overlay_codes(frame_rev))
-    return df, frame_rev
+    return df, frame_rev, gen, frame_key
 
 
 
@@ -989,16 +1054,25 @@ def _encode_board(payload):
 # آینهٔ دلتا: ردیف‌هایِ سریال‌سازی‌شدهٔ آخرینِ بازسازی، keyed بر ins_code، به‌همراه
 # ویرایشی که *پیش از* ساختن خوانده شده بود. بی‌آن «rev = بعد از ساخت» می‌شد و
 # نوشتن‌هایِ وسطِ ساخت از چشمِ کلاینت پنهان می‌ماند.
+# `gen` نسلِ محتوایِ ایستاست، نه revision زنده: دلتا فقط وقتی مجاز است که
+# کلاینت همان نسل را داشته باشد؛ وگرنه ردیف‌هایِ تغییریافته کافی نیستند و
+# باید بدنۀ کامل بیاید. `frame_key` به delta می‌گوید قابِ ایستا کهنه شده
+# (مثلاً client_type_value تازه) و بازسازیِ پس‌زمینه لازم است، حتی اگر
+# revision تکان نخورده باشد.
 _DELTA_LOCK = threading.Lock()
-_DELTA: dict = {"by_code": {}, "meta": {}, "counts": {}, "rev": -1, "ready": False}
+_DELTA: dict = {"by_code": {}, "meta": {}, "counts": {}, "rev": -1,
+                "gen": -1, "frame_key": None, "built_at": 0.0, "ready": False}
 
 
-def _mirror(records, meta, counts, rev):
+def _mirror(records, meta, counts, rev, gen, frame_key):
     with _DELTA_LOCK:
         _DELTA["by_code"] = {r["ins_code"]: r for r in records if r.get("ins_code")}
         _DELTA["meta"] = meta
         _DELTA["counts"] = counts
         _DELTA["rev"] = rev
+        _DELTA["gen"] = int(gen)
+        _DELTA["frame_key"] = frame_key
+        _DELTA["built_at"] = time.time()
         _DELTA["ready"] = True
 
 
@@ -1013,7 +1087,8 @@ def _mirror_snapshot():
     """
     with _DELTA_LOCK:
         return (_DELTA["by_code"], _DELTA["meta"], _DELTA["counts"],
-                _DELTA["rev"], _DELTA["ready"])
+                _DELTA["rev"], _DELTA["ready"], _DELTA["gen"],
+                _DELTA["frame_key"], _DELTA["built_at"])
 
 
 def _delta_clear():
@@ -1021,6 +1096,30 @@ def _delta_clear():
         _DELTA["by_code"] = {}
         _DELTA["ready"] = False
         _DELTA["rev"] = -1
+        _DELTA["gen"] = -1
+        _DELTA["frame_key"] = None
+        _DELTA["built_at"] = 0.0
+
+
+def _publish(records, meta, counts, rev, gen, frame_key, body, etag, when):
+    """کش و آینه را با هم منتشر می‌کند؛ عکسِ عقب‌تر عکسِ جلوتر را نمی‌بَرد.
+
+    دو بازسازیِ هم‌زمان (درخواستِ همگام + rebuildِ پس‌زمینه) می‌توانند هر دو
+    معتبر باشند ولی یکی محتوایِ قدیمی‌تری داشته باشد. اگر هر کدام مستقل
+    `_mirror` و `_market_store` را بزند، ممکن است آینه از بدنهٔ تازه و کش از
+    بدنهٔ کهنه بماند؛ بعد delta با genِ کهنه `full` می‌گوید و همان full هم
+    بدنهٔ کهنه را از کش برمی‌گرداند — یعنی حلقهٔ «تازه‌سازی» که هرگز تازه
+    نمی‌شود. قفل، جفت را اتمی می‌کند و `(gen, rev)` نمی‌گذارد انتشار عقب برود.
+    """
+    with _PUBLISH_LOCK:
+        if (_PUBLISHED["gen"] > gen
+                or (_PUBLISHED["gen"] == gen and _PUBLISHED["rev"] > rev)):
+            return False
+        _mirror(records, meta, counts, rev, gen, frame_key)
+        _market_store(body, etag, when)
+        _PUBLISHED["rev"] = rev
+        _PUBLISHED["gen"] = gen
+        return True
 
 
 # کوئریِ تابلو — دو پنجره، دو مصرف — و این تفکیک قبلاً یکی از منبع‌هایِ اختلاف بود:
@@ -1244,7 +1343,7 @@ def _build_market_response(request: Request, drop_unused=True, store_cache=True)
     built_rev = market_state.revision()
     conn = get_db()
     try:
-        df, frame_rev = _board_frame(conn, _FRAME_REV)
+        df, frame_rev, gen, frame_key = _board_frame(conn, _FRAME_REV)
 
         # ---------- cast حجم به float؛ NULL/NaN → 0 ----------
         df["tvol"] = pd.to_numeric(df["q_tot_tran"], errors="coerce").astype(float).fillna(0.0)
@@ -1471,19 +1570,34 @@ def _build_market_response(request: Request, drop_unused=True, store_cache=True)
         counts = {"count": len(df), "live_count": _live,
                   "fossil_count": len(df) - _live}
         meta = _board_meta(conn)
-        payload = dict(status="success", rev=built_rev, data=records,
+        payload = dict(status="success", rev=built_rev, gen=gen, data=records,
                    meta=meta, **counts)
         body, etag = _encode_board(payload)
         # آینهٔ دلتا: همان ردیف‌هایِ سریال‌سازی‌شده، keyed بر ins_code، به‌همراه
         # ویرایشی که برایِ آن ساخته شده‌اند. `/api/market/delta` از همین آینه
         # می‌فهمد «از ویرایشِ N تا چه نمادهایی تکان خورده» و همان ردیف‌ها را
-        # می‌فرستد — بی‌JSONِ ۴ مگابایتیِ هر پنج ثانیه.
+        # می‌فرستد — بی‌JSONِ ۴ مگابایتیِ هر پنج ثانیه. `gen` و `frame_key`
+        # می‌گویند این بدنۀ کامل با کدام محتوایِ ایستا و کدام قاب ساخته شده؛
+        # delta با آن‌ها می‌تواند «دلتایِ کافی» را از «باید کامل بیاید» جدا کند.
         if store_cache:
             # `?fields=all` آینه و کش را نمی‌سوزاند: ابزارِ ممیزی حق ندارد
             # بدنۀ تابلویِ کاربر را عوض کند.
-            _mirror(records, meta, counts, built_rev)
-            _market_store(body, etag, now)
-            _observe_universe(records, meta, built_rev, now)
+            if not _publish(records, meta, counts, built_rev, gen, frame_key,
+                            body, etag, now):
+                # بازسازیِ دیررسِ قدیمی‌تر نباید عکسِ تازه‌تر را عقب ببرد.
+                # همان عکسِ منتشرشده را برگردان تا این درخواست هم با آینه
+                # هم‌نسل باشد؛ بدنهٔ محلیِ این ساخت دور ریخته می‌شود.
+                cbody, _ct, cetag = _market_snapshot()
+                if cbody is not None:
+                    if request.headers.get("if-none-match") == cetag:
+                        return Response(status_code=304,
+                                        headers={"ETag": cetag,
+                                                 "X-Cache": "MISS-304"})
+                    return Response(content=cbody, media_type="application/json",
+                                    headers={"Cache-Control": "max-age=15",
+                                             "X-Cache": "PUBLISHED", "ETag": cetag})
+            else:
+                _observe_universe(records, meta, built_rev, now)
         # #175: دوازدهمِ ثانیه یک‌بار TTL می‌پایان و بدنه از نو ساخته می‌شود، ولی
         # سینک هر ~۳۰ ثانیه یک‌بار چیزی عوض می‌کند — یعنی بیشترِ آن بدنه‌ها
         # عیناً همان چیزی‌اند که کلاینت دارد. etagِ تازه را با If-None-Match
@@ -1499,7 +1613,7 @@ def _build_market_response(request: Request, drop_unused=True, store_cache=True)
         conn.close()
 
 @router.get("/api/market/delta")
-def get_market_delta(since: int = -1):
+def get_market_delta(since: int = -1, gen: int = -1):
     """فقط ردیف‌هایی که از ویرایشِ `since` تکان خورده‌اند.
 
     پولینگِ پنج‌ثانیه‌ایِ تابلو رویِ localhost هم هزینه دارد: بدنهٔ کامل
@@ -1508,42 +1622,77 @@ def get_market_delta(since: int = -1):
     صد نماد عوض می‌شود، نه پنج‌هزار.
 
     سه پاسخ ممکن است و هیچ‌کدام «حدسِ ناقص» نیست:
-      • `unchanged` — آینه همان ویرایشِ کلاینت است ⇒ صفر ردیف، صفر parse.
+      • `unchanged` — آینه همان ویرایش و همان نسلِ ایستایِ کلاینت است ⇒ صفر
+                      ردیف، صفر parse؛ اگر بازسازیِ ایستا در جریان باشد
+                      `rebuilding: true` هم می‌آید (بدنۀ فعلی هنوز همان است).
       • `delta`     — ردیف‌هایِ تغییریافته در (since, mirror_rev].
       • `full`      — ژورنال به `since` نمی‌رسد، یا آینه از کلاینت عقب‌تر است،
-                      یا ردیفی در آینه نیست ⇒ کلاینت `/api/market` کامل را
-                      می‌گیرد. هیچ‌وقت دلتایِ نصفه از نبودِ داده ساخته نمی‌شود.
+                      یا ردیفی در آینه نیست، یا **نسلِ ایستا** عوض شده و
+                      ردیف‌هایِ دلتا برایِ بازسازیِ بدنۀ کلاینت کافی نیستند ⇒
+                      کلاینت `/api/market` کامل را می‌گیرد. هیچ‌وقت دلتایِ
+                      نصفه از نبودِ داده ساخته نمی‌شود.
 
     آینه فقط تا `mirror_rev` را دیده است؛ نوشتن‌هایِ بعد از آن در بدنۀ فعلی
     نیستند، پس بازهٔ پاسخ `since < r <= mirror_rev` است و اگر revision جلو
     افتاده باشد، rebuildِ پس‌زمینه را خودمان محرک می‌کنیم.
+
+    `gen` نسلِ محتوایِ ایستا است. revision فقط نوشتن‌هایِ زندهٔ `market_watch`
+    را می‌شمارد؛ نویسنده‌هایِ ایستا (client_type_value، پنجره‌هایِ تاریخ،
+    وضعیت/نظارت) با `note_static_change()` قاب را می‌سوزانند بی‌آنکه revision
+    تکان بخورد. بی‌`gen`، کلاینتِ دلتایی پس از چنین تغییری تا ابد عددِ قدیمی
+    را نگه می‌داشت و پاسخِ «unchanged» هم می‌گرفت — همان دروغِ بی‌صدایی که
+    بندِ ۴ سندِ تصمیم ممنوع کرده است.
     """
-    by_code, meta, counts, mirror_rev, ready = _mirror_snapshot()
+    by_code, meta, counts, mirror_rev, ready, mirror_gen, frame_key, built_at = \
+        _mirror_snapshot()
     cur = market_state.revision()
     if not ready or mirror_rev < 0:
         _kick_market_rebuild()
-        return _ORJ_JSON({"status": "full", "rev": cur, "reason": "no-cache"})
+        return _ORJ_JSON({"status": "full", "rev": cur, "gen": mirror_gen,
+                          "reason": "no-cache"})
+    # قابِ ایستا کهنه است (مثلاً client_type_value تازه نوشته شد) ولی هنوز
+    # بازسازی نشده؛ بی‌این، کلاینتی که فقط delta می‌زند هیچ‌وقت rebuild را
+    # تحریک نمی‌کرد و تا اولین تیکِ زنده رویِ عددِ قدیمی می‌ماند.
+    current_frame_key = _static_key() + (_HIST_CACHE_KEY,)
+    static_stale = frame_key != current_frame_key
+    # نویسندۀ ناشناخته‌ای که note_static_change صدا نمی‌زند هم پس از سقفِ
+    # اطمینان دیده می‌شود؛ همان قاعدهٔ ۶۰ ثانیه‌ایِ قابِ ایستا، این‌بار از
+    # مسیرِ delta که تنها مصرف‌کنندهٔ فعالِ تابلو است.
+    due_refresh = (time.time() - float(built_at or 0.0)) >= _HIST_CHECK_S
+    if static_stale or (due_refresh and since == mirror_rev):
+        _kick_market_rebuild()
+    if gen >= 0 and gen != mirror_gen:
+        return _ORJ_JSON({"status": "full", "rev": mirror_rev, "gen": mirror_gen,
+                          "reason": "board-changed"})
     if since == mirror_rev and since == cur:
-        return _ORJ_JSON({"status": "unchanged", "rev": mirror_rev, "meta": meta, **counts})
+        out = {"status": "unchanged", "rev": mirror_rev, "gen": mirror_gen,
+               "meta": meta, **counts}
+        if static_stale or due_refresh:
+            out["rebuilding"] = True
+        return _ORJ_JSON(out)
     if since < 0:
         # «کلاینت هنوز هیچ ویرایشی ندارد» با «کلاینت جلوتر است» یکی نیست؛ هر دو
         # full می‌گیرند ولی علتِ دوم درِ لاگِ میدان چیزِ دیگری را معنا می‌کند.
-        return _ORJ_JSON({"status": "full", "rev": mirror_rev, "reason": "no-cache"})
+        return _ORJ_JSON({"status": "full", "rev": mirror_rev, "gen": mirror_gen,
+                          "reason": "no-cache"})
     if since > mirror_rev or since > cur:
-        return _ORJ_JSON({"status": "full", "rev": mirror_rev, "reason": "stale-client"})
+        return _ORJ_JSON({"status": "full", "rev": mirror_rev, "gen": mirror_gen,
+                          "reason": "stale-client"})
     codes = market_state.codes_between(since, mirror_rev)
     if codes is None:
         if cur > mirror_rev:
             _kick_market_rebuild()
-        return _ORJ_JSON({"status": "full", "rev": mirror_rev, "reason": "journal-gap"})
+        return _ORJ_JSON({"status": "full", "rev": mirror_rev, "gen": mirror_gen,
+                          "reason": "journal-gap"})
     rows = [by_code[c] for c in codes if c in by_code]
     if len(rows) != len(codes):
         # نمادی که در آینه نیست (از تابلو رفته یا تازه آمده): دلتا صادق نیست.
-        return _ORJ_JSON({"status": "full", "rev": mirror_rev, "reason": "missing-rows"})
+        return _ORJ_JSON({"status": "full", "rev": mirror_rev, "gen": mirror_gen,
+                          "reason": "missing-rows"})
     if cur > mirror_rev:
         _kick_market_rebuild()
-    return _ORJ_JSON({"status": "delta", "rev": mirror_rev, "rows": rows,
-                      "meta": meta, **counts})
+    return _ORJ_JSON({"status": "delta", "rev": mirror_rev, "gen": mirror_gen,
+                      "rows": rows, "meta": meta, **counts})
 
 
 @router.get("/api/tape-history")

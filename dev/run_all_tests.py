@@ -749,6 +749,10 @@ SUITES = [
     # می‌بیند، بدنۀ RAM-overlay سطر‌به‌سطر همان بدنۀ SQLite است، و
     # /api/market/delta یا exact است یا صریح `full` — هیچ‌وقت نصفه.
     ('dev/market_hot_state_v1077.py', 'hot state: field-aware diff, RAM==SQL board, honest delta'),
+    # M1.5 Gate A: revisionِ زنده تغییرِ ایستا را نمی‌شمارد؛ `gen`/frame_key آن را
+    # می‌شمارند، delta با نسلِ کهنه صریح `full` می‌دهد، و انتشارِ هم‌زمانِ کش/آینه
+    # اتمی و یکنواست (اثبات با دو بازسازیِ عمداً درهم‌آمیخته).
+    ('dev/market_snapshot_gen_v1.py', 'board snapshot identity: static gen, no false unchanged, paired publish'),
     # Stage-2 «در یک نگاه»: سه قیمتِ روزانه از ستونِ واقعی، بی‌نشتِ عمق درِ تابلو،
     # و تطابقِ نماد درِ /api/order-book (نبودِ مقدار ⇒ حذفِ کلید، نه صفر/جایگزین).
     ('dev/sidebar_market_fields_v1082.py', 'sidebar Stage-2: p_first/p_max/p_min from real cols, lazy order-book binding'),
