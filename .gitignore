@@ -216,3 +216,9 @@ market.db.meta.json
 # لاگِ خروجیِ فرمان‌هایِ تست/بیلد که ریشه می‌نشیند (بازتولیدشدنی)
 /tests_output.txt
 /build_log.txt
+
+# M1.5: locally downloaded toolchains and generated prototype builds (not source)
+_tools/
+prototypes/**/src-tauri/target/
+prototypes/**/dist/
+prototypes/**/node_modules/
