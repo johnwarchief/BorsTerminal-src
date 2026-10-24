@@ -340,7 +340,7 @@ def _store_adjust_events(symbol, events, source):
             # GET نباید وقتی هیچ‌چیز عوض نشده بانک را بازنویسی کند: پیش از این هر
             # درخواستِ چارت `checked_at` را تازه می‌کرد و checksum بانکِ کاربر با
             # هر مشاهده تغییر می‌کرد (ناسازگار با idempotency و بازتولیدپذیری).
-            today = datetime.date.today().isoformat()
+            verdict_day = datetime.date.today().isoformat()
             verdict = conn.execute(
                 "SELECT source, checked_at FROM adjust_verdict WHERE symbol=?",
                 (symbol,)).fetchone()
@@ -356,7 +356,7 @@ def _store_adjust_events(symbol, events, source):
                     for e in (events or []))
                 events_same = existing == wanted
             if (events_same and verdict and str(verdict[0] or "") == source
-                    and str(verdict[1] or "") == today):
+                    and str(verdict[1] or "") == verdict_day):
                 return
             if known:
                 if authoritative:
@@ -368,7 +368,7 @@ def _store_adjust_events(symbol, events, source):
                         [(symbol, e["date"], float(e["ratio"]), e.get("source") or source)
                          for e in events])
             conn.execute("INSERT OR REPLACE INTO adjust_verdict(symbol, source, checked_at) "
-                         "VALUES (?,?,?)", (symbol, source, today))
+                         "VALUES (?,?,?)", (symbol, source, verdict_day))
             conn.commit()
         finally:
             conn.close()
