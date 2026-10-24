@@ -18,7 +18,7 @@ three window shells:
 | Prototype under TinyJS 0.65 | **4.7–5.7 s** (median 5.3 s) | 408–423 MB | NOT_MEASURED (no CDP) | 6.9 MB (exe+launcher, no backend) |
 
 The shell delta is real and large: the same UI starts roughly **3–4× faster** under
-Tauri than under pywebview and uses ~90–100 MB less shell RAM. TinyJS is in the same
+Tauri than under pywebview and uses ~80–100 MB less shell RAM. TinyJS is in the same
 class as Tauri for startup and RAM, at one third of the artifact size.
 
 That is **not sufficient to justify a migration now**:
