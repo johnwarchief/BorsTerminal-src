@@ -1,0 +1,11 @@
+C:\Users\STU\AppData\Local\Temp\bors-main-before\api\market.py:1420: FutureWarning: Downcasting object dtype arrays on .fillna, .ffill, .bfill is deprecated and will change in a future version. Call result.infer_objects(copy=False) instead. To opt-in to the future behavior, set `pd.set_option('future.no_silent_downcasting', True)`
+  df[_c] = _s.replace([np.inf, -np.inf], 0).fillna(0)
+C:\Users\STU\AppData\Local\Temp\bors-main-before\api\market.py:1420: FutureWarning: Downcasting object dtype arrays on .fillna, .ffill, .bfill is deprecated and will change in a future version. Call result.infer_objects(copy=False) instead. To opt-in to the future behavior, set `pd.set_option('future.no_silent_downcasting', True)`
+  df[_c] = _s.replace([np.inf, -np.inf], 0).fillna(0)
+2026-10-24 20:17:18 [market] پنجرۀ اسلات‌محورِ [ih] در دسترس نیست (rows=0) — پنج فیلتر رویِ پنجرۀ ردیف‌محورِ کهنه حساب می‌شوند
+2026-10-24 20:17:18 [market] history windows rebuilt in 0.01s (sig=(20261014, 0, 0, 0, None, 0, None, 0, 0, 0, 0, 20261014))
+BEFORE build1 rev= 0 K1 retail_buy_pct= 33.3 etag= "5560740571bc9669" gen field: <absent>
+2026-10-24 20:17:18 [market] history windows rebuilt in 0.01s (sig=(20261014, 0, 0, 0, None, 0, None, 0, 0, 0, 0, 20261014))
+BEFORE build2 rev= 0 K1 retail_buy_pct= 98.9 etag= "f6cea6ea44a45bca" gen field: <absent>
+BEFORE rev stable: True | row changed: True
+BEFORE delta since old rev: unchanged  rows= 0

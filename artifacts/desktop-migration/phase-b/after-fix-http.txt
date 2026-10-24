@@ -1,0 +1,23 @@
+Phase B HTTP check — isolated DB copy, isolated work dir, port 8011, BORS_NO_FETCH_LOOPS=1
+Date: 2026-10-24
+Base commit under test: b5f5f6c + Phase B working-tree changes
+DB: C:\Users\STU\AppData\Local\Temp\bors_phaseb_db\market.db (copy of operational market.db)
+
+Request / result:
+GET /api/market
+  200 | elapsed 0.42 s (cache HIT after startup warm) | rev=0 gen=0 count=6018
+  ETag="e45e558e35ff8274" | X-Cache=HIT
+GET /api/market/delta?since=0&gen=0
+  200 | status=unchanged | gen=0
+GET /api/market/delta?since=0&gen=1
+  200 | status=full | reason=board-changed | mirror_gen=0
+GET /api/market/row?symbol=خودرو
+  200 | rev=0 gen=0 | ETag="row-0-0-8f0d3b9e"
+GET /api/market with If-None-Match="e45e558e35ff8274"
+  304 | 0 bytes
+
+Interpretation:
+- `gen` is bound and returned by FastAPI, and a stale generation forces `full`; a matching generation can return `unchanged`.
+- The row endpoint's ETag carries both revision and generation, so a static-only change invalidates it.
+- Content-based full-body ETag still produces a zero-byte 304 when the body is unchanged.
+- Server was stopped after the check; no live fetchers were enabled.

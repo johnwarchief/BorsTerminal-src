@@ -1,0 +1,57 @@
+C:\Users\STU\Documents\Qoder\2026-10-23\95b91389\BorsTerminal\api\market.py:1510: FutureWarning: Downcasting object dtype arrays on .fillna, .ffill, .bfill is deprecated and will change in a future version. Call result.infer_objects(copy=False) instead. To opt-in to the future behavior, set `pd.set_option('future.no_silent_downcasting', True)`
+  df[_c] = _s.replace([np.inf, -np.inf], 0).fillna(0)
+C:\Users\STU\Documents\Qoder\2026-10-23\95b91389\BorsTerminal\api\market.py:1510: FutureWarning: Downcasting object dtype arrays on .fillna, .ffill, .bfill is deprecated and will change in a future version. Call result.infer_objects(copy=False) instead. To opt-in to the future behavior, set `pd.set_option('future.no_silent_downcasting', True)`
+  df[_c] = _s.replace([np.inf, -np.inf], 0).fillna(0)
+C:\Users\STU\Documents\Qoder\2026-10-23\95b91389\BorsTerminal\api\market.py:1510: FutureWarning: Downcasting object dtype arrays on .fillna, .ffill, .bfill is deprecated and will change in a future version. Call result.infer_objects(copy=False) instead. To opt-in to the future behavior, set `pd.set_option('future.no_silent_downcasting', True)`
+  df[_c] = _s.replace([np.inf, -np.inf], 0).fillna(0)
+C:\Users\STU\Documents\Qoder\2026-10-23\95b91389\BorsTerminal\api\market.py:1510: FutureWarning: Downcasting object dtype arrays on .fillna, .ffill, .bfill is deprecated and will change in a future version. Call result.infer_objects(copy=False) instead. To opt-in to the future behavior, set `pd.set_option('future.no_silent_downcasting', True)`
+  df[_c] = _s.replace([np.inf, -np.inf], 0).fillna(0)
+C:\Users\STU\Documents\Qoder\2026-10-23\95b91389\BorsTerminal\api\market.py:1510: FutureWarning: Downcasting object dtype arrays on .fillna, .ffill, .bfill is deprecated and will change in a future version. Call result.infer_objects(copy=False) instead. To opt-in to the future behavior, set `pd.set_option('future.no_silent_downcasting', True)`
+  df[_c] = _s.replace([np.inf, -np.inf], 0).fillna(0)
+C:\Users\STU\Documents\Qoder\2026-10-23\95b91389\BorsTerminal\api\market.py:1510: FutureWarning: Downcasting object dtype arrays on .fillna, .ffill, .bfill is deprecated and will change in a future version. Call result.infer_objects(copy=False) instead. To opt-in to the future behavior, set `pd.set_option('future.no_silent_downcasting', True)`
+  df[_c] = _s.replace([np.inf, -np.inf], 0).fillna(0)
+C:\Users\STU\Documents\Qoder\2026-10-23\95b91389\BorsTerminal\api\market.py:1510: FutureWarning: Downcasting object dtype arrays on .fillna, .ffill, .bfill is deprecated and will change in a future version. Call result.infer_objects(copy=False) instead. To opt-in to the future behavior, set `pd.set_option('future.no_silent_downcasting', True)`
+  df[_c] = _s.replace([np.inf, -np.inf], 0).fillna(0)
+2026-10-24 20:17:09 [market] پنجرۀ اسلات‌محورِ [ih] در دسترس نیست (rows=0) — پنج فیلتر رویِ پنجرۀ ردیف‌محورِ کهنه حساب می‌شوند
+2026-10-24 20:17:09 [market] history windows rebuilt in 0.01s (sig=(20261014, 0, 0, 0, None, 0, None, 0, 0, 0, 0, 20261014))
+  ok   بدنۀ کامل gen دارد
+  ok   آینه با همان rev/gen/etag ساخته شد
+  ok   delta با نسلِ جاری ⇒ unchanged
+2026-10-24 20:17:09 [market] history windows rebuilt in 0.01s (sig=(20261014, 0, 0, 0, None, 0, None, 0, 0, 0, 0, 20261014))
+  ok   اعلامِ ایستایِ بی‌تغییر ⇒ gen ثابت می‌ماند (بی‌full churn)
+  ok   commitِ زنده یک ردیف نوشت
+2026-10-24 20:17:10 [market] history windows rebuilt in 0.01s (sig=(20261014, 0, 0, 0, None, 0, None, 0, 0, 0, 0, 20261014))
+  ok   تیکِ زنده gen را تکان نمی‌دهد
+  ok   revِ تیک بالا رفت
+  ok   deltaِ نسلِ جاری ردیفِ زنده را می‌دهد (نه full)
+  ok   بدنۀ کامل همان عددِ تیک را دارد
+2026-10-24 20:17:10 [market] history windows rebuilt in 0.01s (sig=(20261014, 0, 0, 0, None, 0, None, 0, 0, 0, 0, 20261014))
+  ok   تغییرِ CTV در بدنۀ کامل دیده شد
+  ok   revision همان ماند (تغییر ایستا بود)
+  ok   gen بالا رفت
+  ok   ETagِ بدنۀ کامل عوض شد
+  ok   delta با genِ کهنه ⇒ full/board-changed، نه unchanged
+  ok   delta با genِ تازه ⇒ unchanged
+  ok   row با ETagِ هم‌خوان ⇒ ۳۰۴
+  ok   row عددِ ایستایِ تازه را دارد
+  ok   ETagِ row بعدِ تغییرِ ایستا عوض شد
+  ok   delta قابِ کهنه را rebuilding علامت می‌زند
+  ok   delta بازسازیِ پس‌زمینه را تحریک کرد
+  ok   آینۀ کهنه‌تر از سقف ⇒ rebuilding و rebuild
+2026-10-24 20:17:11 [market] history windows rebuilt in 0.01s (sig=(20261014, 0, 0, 0, None, 0, None, 0, 0, 0, 0, 20261014))
+  ok   A داخلِ انتشارِ عکسِ قدیمی ماند
+2026-10-24 20:17:11 [market] history windows rebuilt in 0.01s (sig=(20261014, 0, 0, 0, None, 0, None, 0, 0, 0, 0, 20261014))
+  ok   B پشتِ قفلِ انتشار منتظر است (جفت نمی‌شکند)
+  ok   پس از دو انتشارِ هم‌زمان، کش و آینه یک نسل‌اند
+  ok   ردیفِ کش و آینه یکی است
+  ok   عکسِ تازه‌تر (B) برنده شد
+  ok   هیچ نخِ ساخت خطا نداد
+  ok   A پیش از انتشارِ عکسِ قدیمی ایستاد
+2026-10-24 20:17:12 [market] history windows rebuilt in 0.01s (sig=(20261014, 0, 0, 0, None, 0, None, 0, 0, 0, 0, 20261014))
+  ok   B مستقل از A منتشر شد
+  ok   انتشارِ کهنه عکسِ تازه را عقب نبرد
+  ok   درخواستِ A هم همان عکسِ منتشرشده را گرفت (نه بدنهٔ کهنه)
+  ok   ردیفِ تازه در کش و آینه ماند
+  ok   نخ‌هایِ مسابقه بی‌خطا
+
+MARKET SNAPSHOT GEN GUARD OK (33 checks)

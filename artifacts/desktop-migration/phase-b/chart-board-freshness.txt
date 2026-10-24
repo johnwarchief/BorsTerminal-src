@@ -1,0 +1,10 @@
+environment: 3.12.10 | DB copy: C:\Users\STU\AppData\Local\Temp\bors_phaseb_db\market.db
+board market_watch: max_d_even=20261014 max_h_even=175952 max_fetched=2026-10-14 16:03:04 rows=6022
+chart local price_history: max_date=2026-10-14 rows=445681
+daily_prices: max_d_even=20261014 rows=129577
+tape_history: max_d_even=20261013 rows=203653
+chart /api/chart payload: status=success count=5307 lastDataTime=2026-10-24 payloadAgeS=None elapsed_s=4.95
+chart first/last candle time: 2026-10-24 2001-03-25
+chart source fields: adjustSource=ledger+base-price-discontinuity priceBasis=last priceBasisRequested=last degraded=None liveInjected=None liveError=None
+divergence: chart last candle is newer than board by source date; both are labelled with their own day.
+frontend: board day is now shown in FreshnessBadge/label; chart last bar date is shown in FtsIndicatorPanel.
