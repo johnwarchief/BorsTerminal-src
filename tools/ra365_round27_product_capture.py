@@ -49,6 +49,7 @@ def main():
     ap.add_argument("--limit", type=int, default=0)
     ap.add_argument("--resume", action="store_true")
     ap.add_argument("--shard", default="0/1", help="i/n — process every n-th asset starting at i")
+    ap.add_argument("--asset-id", default="", help="comma-separated asset ids to capture")
     a = ap.parse_args()
     os.environ["BORS_DB"] = a.db
     os.environ.setdefault("BORS_NO_FETCH_LOOPS", "1")
@@ -79,6 +80,7 @@ def main():
     if mode == "w":
         lw.writerow(["ra_asset_id", "symbol", "ins_code", "state", "candles",
                      "events", "source", "csv_sha256", "error"])
+    only = {x.strip() for x in a.asset_id.split(",") if x.strip()}
     shard_i, shard_n = (int(x) for x in a.shard.split("/"))
     n = 0
     idx = -1
@@ -88,6 +90,8 @@ def main():
         aid = str(d.get("ra_asset_id"))
         sym = d.get("symbol") or ""
         ins = str(d.get("ins_code") or "")
+        if only and aid not in only:
+            continue
         idx += 1
         if shard_n > 1 and idx % shard_n != shard_i:
             continue

@@ -1,0 +1,3 @@
+﻿date,class,prod_ratio,ref_ratio,err,prod_factor,ref_factor,offset,product_close,ref_close,implied_ref_dps,events
+2022-05-02,RATIO_DIFF,0.7420781137,0.1125378597,-0.84834769,0.3105444747,0.3070772283,0.98883494,2014.0,2014.0,15882.1996,"[('tsetmc_price_adjust_by_flow', 0.7420781135, 700.0)]"
+2026-08-18,RATIO_DIFF,0.646131,0.6389169112,-0.01116506,1.0,1.0,1.0,2327.0,2299.0,1299.277,"[('base-price-discontinuity', 0.646131, None)]"
