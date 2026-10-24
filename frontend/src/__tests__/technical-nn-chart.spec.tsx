@@ -88,6 +88,19 @@ describe('چارت پورت‌شدهٔ NahayatNegar روی klinecharts v10', () 
     expect(document.querySelector('.nahayat-negar-container')).toBeTruthy();
   });
 
+  it('نام شرکت با تغییرِ بیرونیِ نماد (URL/سایدبار) هم عوض می‌شود، نه فقط خودِ نماد', () => {
+    const { rerender } = render(
+      <KLineChartWrapper initialSymbol="فولاد" initialName="فولاد مبارکه" />,
+    );
+    expect(screen.getByText(/فولاد مبارکه/)).toBeInTheDocument();
+
+    rerender(
+      <KLineChartWrapper initialSymbol="آباد" initialName="توریستی ورفاهی آبادگران ایران" />,
+    );
+    expect(screen.queryByText(/فولاد مبارکه/)).not.toBeInTheDocument();
+    expect(screen.getByText(/توریستی ورفاهی آبادگران ایران/)).toBeInTheDocument();
+  });
+
   it('بدون پراپ هم بدون خطا رندر می‌شود', () => {
     render(<KLineChartWrapper />);
     expect(document.querySelector('.nahayat-negar-container')).toBeTruthy();

@@ -399,6 +399,9 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
     };
   }, []);
   const [currentName, setCurrentName] = useState<string>(initialName);
+  useEffect(() => {
+    if (initialName) setCurrentName(initialName);
+  }, [initialName]);
   const [isSymbolSearchOpen, setIsSymbolSearchOpen] = useState<boolean>(false);
 
   // استیت‌های نوار بالا
