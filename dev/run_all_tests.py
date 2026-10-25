@@ -287,6 +287,8 @@ SUITES = [
                                       'Round 27: shadow source modes never mix sources in one series and mark UNAVAILABLE'),
     ('dev/test_ra365_round28_chain_debug_v1.py',
                                       'Round 28: aligned factor-chain debugger classifies RATIO_DIFF/EXTRA/REF_ONLY'),
+    ('dev/test_ra365_round29_combined_gap_merge_v1.py',
+                                      'Round 29: a combined base gap absorbs its share and DPS legs exactly once'),
     ('dev/test_fund_events_v1.py',    'official fund distributions drive (P-D)/P factor; same-date typed event survives'),
     ('dev/test_fund_ingest_v1.py',    'fund importer: Persian digits, corrupt rows, duplicate dedupe, newest instrument'),
     ('dev/test_history_repair_writer_v1.py',

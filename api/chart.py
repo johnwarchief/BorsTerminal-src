@@ -1815,6 +1815,72 @@ def _merge_official_price_adjust(events, official, rejected=None, share_changes=
     if observed_gap_skip:
         dps_ratios = [x for x in dps_ratios if x[0] not in observed_gap_skip]
     combined_skip = set()  # official DPS rows already contained in a base gap
+    # A combined action (share × price leg) may already be present as one
+    # observed base gap.  When the gap equals share_ratio × the official
+    # pre-event PA ratio, applying the official rows again double-counts it.
+    # The share may sit anywhere between the official original date and the
+    # mapped reopening candle (a halt), not only within ±7 days of the
+    # reopening (شپاکسا 2022: share 2022-03-16, official 2022-03-13, mapped
+    # 2022-05-02).  Multiple official rows on the same gap are accepted as
+    # one action only when they map to the same candle and their source
+    # ratios agree within 1%; otherwise the claim stays ambiguous and the
+    # rows are kept.
+    combined_base_claims = {}
+    _claim_info = {}
+    for idx, o in enumerate(official):
+        if idx in observed_gap_skip:
+            continue
+        sr = _source_ratio(o)
+        if not sr:
+            continue
+        mapped = str(o.get("date"))[:10]
+        orig = (o.get("_ledger_key") or (None,))[0]
+        for sd, cc in share_changes:
+            try:
+                sdd = str(sd)[:10]
+                ccv = float(cc)
+            except (TypeError, ValueError):
+                continue
+            inside = bool(orig) and str(orig)[:10] < sdd <= mapped
+            dd = _day_diff(sdd, mapped)
+            if not inside and (dd is None or dd > 7):
+                continue
+            target = ccv * sr
+            if target <= 0:
+                continue
+            hits = []
+            for j, e in enumerate(kept):
+                if e.get("source") not in ("base-price-discontinuity", "priceAdjust"):
+                    continue
+                try:
+                    er = float(e.get("ratio") or 0)
+                except (TypeError, ValueError):
+                    continue
+                if er > 0 and abs(er / target - 1.0) <= _SHARE_GAP_TOL:
+                    hits.append(j)
+            if len(hits) == 1:
+                combined_base_claims.setdefault(hits[0], []).append(idx)
+                _claim_info[idx] = (mapped, sr, sdd, inside)
+    combined_base_skip = set()
+    for _hit, idxs in combined_base_claims.items():
+        if len(idxs) == 1:
+            combined_base_skip.add(idxs[0])
+            continue
+        metas = [_claim_info[i] for i in idxs]
+        same_day = len({m[0] for m in metas}) == 1
+        vals = [m[1] for m in metas]
+        inside_all = all(m[3] for m in metas)
+        origs = [((official[i].get("_ledger_key") or (None,))[0]) for i in idxs]
+        distinct_orig = all(origs) and len(set(origs)) == len(origs)
+        # Same-date duplicate rows (e.g. flow + priceAdjust of one ledger row)
+        # keep the Round 15 neutrality: the gap plus one official row survive.
+        # Distinct official installments whose dates sit inside the halt
+        # before the share (شپاکسا) are all part of the observed gap.
+        if (same_day and inside_all and distinct_orig
+                and min(vals) > 0 and max(vals) / min(vals) - 1.0 <= 0.01):
+            combined_base_skip.update(idxs)
+    if combined_base_skip:
+        dps_ratios = [x for x in dps_ratios if x[0] not in combined_base_skip]
     if dps_ratios:
         def _nearest_share(ed):
             best = None
@@ -1871,42 +1937,6 @@ def _merge_official_price_adjust(events, official, rejected=None, share_changes=
 
         kept = [e for e in kept if not (
             e.get("source") == "base-price-discontinuity" and _drop_base(e))]
-    # A combined action (share × price leg) may already be present as one
-    # observed base gap.  When the gap equals share_ratio × the official
-    # pre-event PA ratio, applying the official row again double-counts it.
-    # Only a unique claim suppresses the row; two rows on one gap stay
-    # ambiguous and are both kept (same neutrality as ledger sharpening).
-    combined_base_claims = {}
-    for idx, o in enumerate(official):
-        if idx in observed_gap_skip:
-            continue
-        sr = _source_ratio(o)
-        if not sr:
-            continue
-        for sd, cc in share_changes:
-            dd = _day_diff(sd, str(o.get("date"))[:10])
-            if dd is None or dd > 7:
-                continue
-            try:
-                target = float(cc) * sr
-            except (TypeError, ValueError):
-                continue
-            if target <= 0:
-                continue
-            hits = []
-            for j, e in enumerate(kept):
-                if e.get("source") not in ("base-price-discontinuity", "priceAdjust"):
-                    continue
-                try:
-                    er = float(e.get("ratio") or 0)
-                except (TypeError, ValueError):
-                    continue
-                if er > 0 and abs(er / target - 1.0) <= _SHARE_GAP_TOL:
-                    hits.append(j)
-            if len(hits) == 1:
-                combined_base_claims.setdefault(hits[0], []).append(idx)
-    combined_base_skip = {v[0] for v in combined_base_claims.values()
-                          if len(v) == 1}
     for idx, o in enumerate(official):
         if idx in observed_gap_skip:
             if rejected is not None:
