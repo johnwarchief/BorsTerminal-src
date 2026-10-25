@@ -3,7 +3,7 @@
 - **Date:** 2026-10-25
 - **Branch:** `mission/tinyjs-m2-packaging-acceptance-2026-10-25` (local; not pushed)
 - **Base:** `7caae40` (verified M1.5 report commit)
-- **Commits:** `d48dad3` (packaging + harness), `2f168bf` (DB audit), `e0e60c6` (updater harness fix), `810c001` (acceptance evidence)
+- **Commits:** `d48dad3` (packaging + harness), `2f168bf` (DB audit), `e0e60c6` (updater harness fix), `810c001` (acceptance evidence), `265a041` (report), `487630e` (test-scope note + evidence hashes)
 - **Verdict:** **`PARTIAL — EXPLICIT BLOCKERS`**
 - **`M2_ACCEPTANCE_PASS` is not declared.** No real Windows installer was built, no binary is signed, and the in-app update could not replace the running package. Portable-package acceptance is strong; install/update/uninstall acceptance is not.
 
@@ -52,6 +52,20 @@ The remote/base state was audited read-only before any M2 build or code change:
 | M2 branch base | `7caae40` |
 
 The M2 branch was created from the verified M1.5 report, not from the five newer `origin/main` commits. No rebase, merge, force-push or branch rewrite was performed. The report and evidence remain a local mission branch; no push destination is assumed.
+
+**Source/evidence files changed in M2** (`git diff --name-only 7caae40..HEAD`; working tree clean):
+
+- `.gitignore` (ignore generated sidecar/resources/build output)
+- `prototypes/tinyjs-m2/src/backend/main.js` (installed sidecar resolution, isolated work/DB env)
+- `prototypes/tinyjs-m2/tinyjs.json` (prototype version 0.3.0)
+- `prototypes/tinyjs-m2/packaging/m2_sidecar.py`, `m2_sidecar.spec` (packaged sidecar)
+- `tools/desktop-migration/phase_d_tinyjs.py` (installed mode, safe window discovery, grace, crash/backend-death modes)
+- `tools/desktop-migration/phase_d/m2_update_probe.js` (real update API probe)
+- `tools/desktop-migration/m2_close_test.py`, `m2_update_test.py`, `m2_prepare_update.py`
+- `docs/DESKTOP-MIGRATION-M2-TINYJS-PACKAGING-ACCEPTANCE-REPORT.md`
+- `artifacts/desktop-migration/m2/**` (summaries, screenshots, logs, manifests, hashes)
+
+No production SPA, `app.py`, `api/`, `bors_config.py`, CandleEdge technical, FTS or adjustment module was changed.
 
 ## 4. What was built
 
