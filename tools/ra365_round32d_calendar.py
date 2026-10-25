@@ -67,6 +67,9 @@ def load_captures(directory):
         path = os.path.join(directory, fn)
         with open(path, encoding="utf-8") as fh:
             doc = json.load(fh)
+        # The driver writes `input_sha256` only on some paths; the file hash is
+        # always available and identifies the exact capture used for the pack.
+        hashes.add(sha256_file(path))
         if doc.get("input_sha256"):
             hashes.add(doc["input_sha256"])
         for s in doc.get("series") or []:

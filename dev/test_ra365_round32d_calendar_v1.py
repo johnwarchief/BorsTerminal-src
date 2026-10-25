@@ -91,7 +91,8 @@ def main():
         ])
 
         daily, hashes = D.load_captures(cap)
-        ck(hashes == {"test-capture-sha"}, "capture hash is carried", hashes)
+        ck("test-capture-sha" in hashes and len(hashes) == 2,
+           "capture hash is carried (file hash + input_sha256)", hashes)
         rows, misses = D.build_rows(D.load_noncomp(csvp), daily,
                                     "test-capture-sha", "2026-10-25T00:00:00+00:00")
         ck(len(rows) == 3, "one row per non-comparable key", len(rows))
