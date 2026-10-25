@@ -1,0 +1,61 @@
+# RA365 Round 29 evidence hashes
+# generated_utc: 2026-10-25T00:47:18Z
+# branch: mission/ra365-round29-safe-share-dps-merge  code_head: aa1dd307fba0b719fe1f4b2f67f0b0e9462e436f
+
+## code / tests / docs
+2a1cc3d05efe6ac5345c2a86788f3b3f1bb50aafd02153e2d9a4c3992b9b8fc7 *api/chart.py
+9dafa854a5808f2ca18e0f0db3b16668980ecc806e435398805be43b42dd3eee *dev/test_ra365_round29_combined_gap_merge_v1.py
+f707a621b90ac52e9f5ee2f1caabf44b452d5326a14c26184a8c32e50c43cae2 *dev/run_all_tests.py
+29878bd1cfb504f241949ab377a3ed043b2a8a8e8a4446e5937ee540767b5400 *dev/mstat_snapshot_singleflight_v1.py
+a13f8fb434875588a8cc233fab51c53e6c47776ba86de371de85f850e4ebcb2b *docs/FTS-RULE-ALGORITHM-MAP.md
+5cdb8f481a0e6e5bfd087ac1064f5be39b50b881f0498cf7a6fee14e68183703 *docs/RA365-ROUND29-SAFE-SHARE-DPS-MERGE-REPORT.md
+
+## artifacts/ra365/r29
+e334d38c804ab96391bd4271bd0626f57d297e786bc29d46bcf7b585c986d81c *artifacts/ra365/r29/capture_shard0.log
+c3f367e686cf6b1dfad371cad2b394f68614fab85db7ef559d95ef8c8604a119 *artifacts/ra365/r29/capture_shard1.log
+d3a33a0af7610c6e93b029eec627740283066e3539a2f52d7935b04b9b704748 *artifacts/ra365/r29/capture_shard2.log
+359ed6cbdf8f8055be52a441eef127bdea51fd80122e6f8e8002e75913e399ee *artifacts/ra365/r29/capture_shard3.log
+8b7f4cdf7f606ca7b68f3330f27a77be423a406994b46bbdf10791ba28043498 *artifacts/ra365/r29/capture_shard4.log
+79a0342f7f0210a5e011f61eebc470cdf54f13eeae73e5bfafdacd0237205508 *artifacts/ra365/r29/capture_shard5.log
+f520d72266382cc93515ace26734264dbbecbabde4932982c3c1f3859f007bfc *artifacts/ra365/r29/changed-symbols.csv
+1fa35c079358bd1a74a8aee7f2ef60adc4475583cc1100642259210da9289618 *artifacts/ra365/r29/class20-after-per-asset.csv
+c2e4036bc5570056b08e756cb4b61c8cef72bcda70a743c529525cc079ba89b6 *artifacts/ra365/r29/class20-after-summary.json
+a4c89c905c7c9be31836309038aa04d2672d742819897f3e44a698b4170b68ec *artifacts/ra365/r29/class20-audit-b.log
+a4c89c905c7c9be31836309038aa04d2672d742819897f3e44a698b4170b68ec *artifacts/ra365/r29/class20-audit.log
+1fa35c079358bd1a74a8aee7f2ef60adc4475583cc1100642259210da9289618 *artifacts/ra365/r29/class20-before-per-asset.csv
+ad00fe471b85bfa906d6bdddb277fe74e22f64e4347e34497a409a4c8368504a *artifacts/ra365/r29/class20b-audit.log
+3aae6aabd9a0f4cafce4f3306072ea9ff934e2cd4cc787fdc631050157b31e52 *artifacts/ra365/r29/controls-after-per-asset.csv
+b41e30b34029ea2f0a6ddb9a0e14100f0807e02a272f7211092232466d86c9eb *artifacts/ra365/r29/controls-audit.log
+a0659e6b63af116002b09e43d0778294252028f4ec88b467311f8fb3671297a1 *artifacts/ra365/r29/controls2-audit.log
+4c205b1bee3b85da3a546006c5b54f392c8b6a74587f152112f0395243844e39 *artifacts/ra365/r29/full-after-per-asset.csv
+bf8ce3f3f3cc4d456301823e488c85cfeb46c0c55b833389ef12c5e377f77ad8 *artifacts/ra365/r29/full-after-summary.json
+858ab079bff9c6c846979b4b35883158c2a53a42153cad3a0c5e72eece3376f4 *artifacts/ra365/r29/full-audit.log
+a44b057d0bc289c9ce5f2830ffd1aa245e648c458f5529fa7f9668c8e21b9ba9 *artifacts/ra365/r29/full-gate-attempt1-citations.log
+ee0a0620d4f0e9a226419a8077f42f55d6a639b88e58a94e9dc1c8ffe9af37c7 *artifacts/ra365/r29/full-gate-attempt2-mstat-flake.log
+72027f268a3ba4a2bc4d72c9fd172b519ef2e7a4a16994f15306c92e27dcf034 *artifacts/ra365/r29/full-gate-attempt3-mstat-partial.log
+d510f1ed71da8ba68bdeab332b1e2928a5c57a2deae93645c93277213cfc9aa1 *artifacts/ra365/r29/full-gate.log
+58d000d806576594524a6c41599102a44630b935d451038c4e89ef6cddaee6dd *artifacts/ra365/r29/merge-fix-examples.csv
+09d302b17484e459fa8592c8b9d5fb598ea58a5619a3bee61347d1b6325ec848 *artifacts/ra365/r29/mstat-standalone-20.log
+390fbec495f1fe0857f616fe04f8aa50ddc490f24fff3d19f1692a21258ea00f *artifacts/ra365/r29/single-audit.log
+
+## frozen reference corpus
+4b1ecb4c1effc4d5770c42521d96a2540a9c9f7b471d7cc710cd034712a8c17c *D:/BorsTerminal-tmp/r26_bench/frozen/ref_bars_v2.jsonl
+
+## product capture (aggregate sha256 over sorted file bytes)
+8d8954b02ed9c6d928b15220ce3d648bd018d11bec1c04da66174736a65186dd  D:/BorsTerminal-tmp/r29_bench/full_shard0  files=434 bytes=86172624
+d4380d8e7221f01caa2b5236ef4f02040142bb88158ca57849e5d132a1bef854  D:/BorsTerminal-tmp/r29_bench/full_shard1  files=433 bytes=91834916
+d5356824690ea846e389703a21b5342b22723c3ed45d53884a9d300ffba80ab1  D:/BorsTerminal-tmp/r29_bench/full_shard2  files=434 bytes=93430272
+01f99b5d26f8be3d3748956cc7cce45b86ef4bb4de11c557b9ea34718da68088  D:/BorsTerminal-tmp/r29_bench/full_shard3  files=433 bytes=92440686
+c8c7b24127af5df570d012fef6531f09a1b51eedb5284d5945eb44419a88ddfe  D:/BorsTerminal-tmp/r29_bench/full_shard4  files=433 bytes=93219381
+83c01e900c724e23120243176e2ca0975786a9d61cd2f4d3ff6880dc9c251f5d  D:/BorsTerminal-tmp/r29_bench/full_shard5  files=433 bytes=93626058
+c760e263114c0acd9201ac3fa75ff731554fcd373f35993f7561959c4d4415f9  D:/BorsTerminal-tmp/r29_bench/product_class20b  files=21 bytes=19319009
+cf8c71cd3f7faf0333d75f799ea18d6a60df7cf556b1439c1174fd0fb75d738c  D:/BorsTerminal-tmp/r29_bench/product_controls2  files=31 bytes=20032969
+
+## protected databases
+e08d8062be33301551e672683106b87ea930825657ea6956e515bc7ac191a2a4 *market.db
+8fb85f381317634430cae429bd9775eba0a364b692e0868b4d9b17dbbcc6c17f *D:/BorsTerminal-tmp/ra365_round17/market_r17_migrated.db
+
+ALL SUITES PASSED
+[gate-isolation] logical_before=1d9bc9b4525fcc4490d5b3d9e8e5f03b30887c62f51768199b80626ff17041f9
+[gate-isolation] logical_after=1d9bc9b4525fcc4490d5b3d9e8e5f03b30887c62f51768199b80626ff17041f9
+PROTECTED_DB_UNCHANGED logical_total=1d9bc9b4525fcc4490d5b3d9e8e5f03b30887c62f51768199b80626ff17041f9

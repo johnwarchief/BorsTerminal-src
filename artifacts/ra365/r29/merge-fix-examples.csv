@@ -1,0 +1,4 @@
+﻿symbol,asset_id,adjusted_before_pct,adjusted_after_pct,p90_err_before_pct,p90_err_after_pct,median_before_pct,median_after_pct,events_before,events_after
+شپاكسا,11,3.0096,3.0096,566.848,1.129,1.129,1.129,official DPS 0.742078 (post-share close),observed base gap 0.112426
+ساراب,304,2.3240,2.3240,17.536,0.197,17.536,0.197,official DPS replaced the gap,observed combined gap
+بورس,541,4.1520,4.1520,550.604,0.640,0.189,0.189,official DPS replaced the gap,observed combined gap
