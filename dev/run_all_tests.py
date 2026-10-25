@@ -309,6 +309,8 @@ SUITES = [
                                       'Round 32E: the FTS weekly/monthly resampler uses the reference calendar bars when covered'),
     ('dev/test_ra365_round32f_formula_audit_v1.py',
                                       'Round 32F: the formula audit buckets steps and official coverage; the formula already matches official fund ratios'),
+    ('dev/test_ra365_round32g_reference_formula_v1.py',
+                                      'Round 32G: Rahavard performance formula — close_ex/(close_ex+dps), par/(par+dps), rights at the effective close'),
     ('dev/test_fund_events_v1.py',    'official fund distributions drive (P-D)/P factor; same-date typed event survives'),
     ('dev/test_fund_ingest_v1.py',    'fund importer: Persian digits, corrupt rows, duplicate dedupe, newest instrument'),
     ('dev/test_history_repair_writer_v1.py',

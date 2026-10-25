@@ -189,6 +189,9 @@ def build_typed_events(conn, ins_code):
             ev["reference_price"] = ref
         if rec["kind"] == AE.KIND_CASH_DIVIDEND and rec.get("unit") is not None:
             ev["dividend_per_share"] = rec["unit"]
+        if rec["kind"] == AE.KIND_CASH_DIVIDEND and str(rec["src"]).startswith("fund-portal"):
+            # Fund distributions are quoted on the nominal value (10,000 rial).
+            ev["par_value"] = 10000.0
         ev["provenance"] = prov
 
         # نوع (metadata)؛ برایِ source_ratio موتورِ عدد از نسبتِ رسمی می‌آید، نوع فقطِ برچسب است.

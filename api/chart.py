@@ -2169,6 +2169,9 @@ def _fund_profit_events(symbol):
         out.append({"date": dt, "kind": AE.KIND_CASH_DIVIDEND,
                     "reference_price": float(ref),
                     "dividend_per_share": float(unit),
+                    # Rahavard prices fund distributions on the nominal value,
+                    # not on the market close (measured: 1/(1+D/10000)).
+                    "par_value": 10000.0,
                     "ratio": float(ratio) if ratio is not None else None,
                     "source": src or "fund-portal",
                     "profit_date": pdate, "source_id": sid})

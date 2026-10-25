@@ -8,7 +8,8 @@
     این فایل تنها «منبعِ ریاضیِ ضریبِ هر رویداد» را از «کشفِ رویداد از CSV» جدا می‌کند.
 
 فرمول‌هایِ اثبات‌شده بر پایۀِ نوعِ رویداد (هر رویداد یک `ratio ≤ 1` برایِ زنجیرۀِ پس‌رو):
-    • cash_dividend (سودِ نقدی):        ratio = (P − D) / P        P = قیمتِ مرجعِ رسمیِ پیش از رویداد
+    • cash_dividend (سودِ نقدی):        ratio = P / (P + D)        P = پایانیِ روزِ رویداد (بازسرمایه‌گذاریِ سود)
+      صندوق‌ها (توزیع بر مبنایِ ارزشِ اسمی): ratio = par / (par + D)، par = ۱۰٬۰۰۰ ریال
     • capital_increase_reserve (از اندوخته/سودِ انباشته، آورده=۰):
                                          ratio = previous_capital / new_capital
     • capital_increase_contribution (آورده/حق‌تقدم):
@@ -65,6 +66,7 @@ def event_factor(ev):
 
     if kind == KIND_CASH_DIVIDEND:
         P, D = _num(ev.get("reference_price")), _num(ev.get("dividend_per_share"))
+        par = _num(ev.get("par_value"))
         if P is None:
             return None, "incomplete:reference_price"
         if D is None:
@@ -77,7 +79,16 @@ def event_factor(ev):
             return None, "invalid:dividend>=reference_price"
         if D == 0:
             return 1.0, OK            # سودِ صفرِ معتبر = بی‌اثر (نه جعل)
-        return (P - D) / P, OK
+        # Rahavard's performance series reinvests the cash dividend at the
+        # event price: close_ex / (close_ex + dps).  The exchange's price
+        # adjustment ((P-D)/P) is a different series and does not match type7.
+        # Fund distributions are quoted as a percentage of the nominal value,
+        # so their reference price is par (10,000 rial) rather than the close.
+        if par is not None:
+            if par <= 0:
+                return None, "invalid:par_value<=0"
+            return par / (par + D), OK
+        return P / (P + D), OK
 
     if kind == KIND_CAPITAL_RESERVE:
         pc, nc = _num(ev.get("previous_capital")), _num(ev.get("new_capital"))

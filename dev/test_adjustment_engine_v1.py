@@ -50,8 +50,11 @@ SP = AE.KIND_SPLIT
 MG = AE.KIND_MERGE
 
 # ── (الف) فرمول‌هایِ دستیِ قابل‌بررسی ────────────────────────────────────────────
-close("الف۱ سودِ نقدی: (P−D)/P = (1000−200)/1000 = 0.8", AE.event_factor({"kind": CD, "reference_price": 1000, "dividend_per_share": 200})[0], 0.8)
+close("الف۱ سودِ نقدی: P/(P+D) = 1000/1200 (بازسرمایه‌گذاریِ سود)", AE.event_factor({"kind": CD, "reference_price": 1000, "dividend_per_share": 200})[0], 1000 / 1200)
 check("الف۱-ب وضعیتِ ok", AE.event_factor({"kind": CD, "reference_price": 1000, "dividend_per_share": 200})[1], AE.OK)
+close("الف۱-ج توزیعِ صندوق: par/(par+D) = 10000/10200",
+      AE.event_factor({"kind": CD, "reference_price": 1000, "dividend_per_share": 200, "par_value": 10000})[0],
+      10000 / 10200)
 close("الف۲ سودِ صفرِ معتبر = ۱ (بی‌اثر، نه جعل)", AE.event_factor({"kind": CD, "reference_price": 1000, "dividend_per_share": 0})[0], 1.0)
 check("الف۲-ب وضعیتِ ok برایِ صفر", AE.event_factor({"kind": CD, "reference_price": 1000, "dividend_per_share": 0})[1], AE.OK)
 r, s = AE.event_factor({"kind": CD, "reference_price": 1000, "dividend_per_share": 1200})
@@ -93,13 +96,14 @@ check("الف۱۸ نوعِ ناشناخته → unknown_type، ratio=None (بی�
 # ── (ب) زنجیره ──────────────────────────────────────────────────────────────────
 d3 = ["2024-01-01", "2024-06-01", "2024-12-01"]
 # رویدادها **داخلِ** پنجره (قدیمی‌تر از آخرین کندل) — همان واقعیتِ back-adjust: کندلِ تازه پس از
-# همهٔ رویدادهاست و لنگرش ۱ می‌ماند. پلکانِ فاکتور: Jan×(0.8×0.5)، Jun×(0.5)، Dec=۱.
+# همهٔ رویدادهاست و لنگرش ۱ می‌ماند. پلکانِ فاکتور: Jan×(TR×0.5)، Jun×(0.5)، Dec=۱؛
+# TR = P/(P+D) = 1000/1200 (قراردادِ مرجع؛ نه (P−D)/P).
 ev2 = [{"kind": CD, "date": "2024-04-01", "reference_price": 1000, "dividend_per_share": 200},
        {"kind": CR, "date": "2024-09-01", "previous_capital": 1, "new_capital": 2}]
 f, meta = AE.chain_factors(d3, ev2)
 close("ب۰ لنگرِ آخرین = ۱ (بی‌تغییرِ مصنوعی)", f[2], 1.0)
 close("ب۱ میانه فقط × رویدادِ بعدِ خود (0.5)", f[1], 0.5)
-close("ب۲ قدیمی‌ترین ×(۰٫۸×۰٫۵)=۰٫۴", f[0], 0.4)
+close("ب۲ قدیمی‌ترین ×(TR×۰٫۵) = ۱۰۰۰/۱۲۰۰×۰٫۵", f[0], (1000 / 1200) * 0.5)
 check("ب۳ زنجیرۀِ کامل (بی‌ناقص)", meta["complete"], True)
 check("ب۴ provenance دو رویداد دارد", len(meta["provenance"]), 2)
 check("ب۵ anchored_last True", meta["anchored_last"], True)
@@ -117,7 +121,7 @@ check("ب۸ لنگر = بزرگ‌ترینِ تاریخ (نه آخرینِ عن�
 # هم‌تاریخ: رویدادِ دقیقاً رویِ تاریخِ langer نباید فاکتورِ آن روز را تکان دهد
 f_same, _ = AE.chain_factors(d3, [{"kind": CD, "date": "2024-12-01", "reference_price": 1000, "dividend_per_share": 200}])
 close("ب۹ رویداد رویِ langer → فاکتورِ langer هنوز ۱", f_same[2], 1.0)
-close("ب۹-ب رویداد رویِ langer، روزِ قبل ×0.8 شد", f_same[1], 0.8)
+close("ب۹-ب رویداد رویِ langer، روزِ قبل ×TR شد", f_same[1], 1000 / 1200)
 
 # رویدادِ ناقص: نه اثرِ عددی، نه سکوت — درِ incomplete علامت می‌خورد
 f_inc, m_inc = AE.chain_factors(d3, [{"kind": CC, "date": "2024-06-02", "previous_capital": 1000, "new_capital": 1500, "reference_price": 1000}])

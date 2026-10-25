@@ -4,7 +4,8 @@
 The fund row is keyed by ins_code and carries (reference_price, unit_profit,
 ratio) from the official manager portal importer.  The chart path must:
   * read the rows without touching the network,
-  * apply factor(t) = product(ratio) for event dates > t,
+  * apply the reference rule par/(par+D) for event dates > t (the stored
+    market-price ratio is provenance, not the factor),
   * replace a same-date discovered/base event instead of double counting.
 """
 import os
@@ -82,12 +83,16 @@ def main():
             ck(len(applied) == 2 and not rejected,
                "canonical path applies the two fund rows", (applied, rejected))
             by_t = dict(zip(times, factors))
-            want = 0.9 * 0.950495
-            ck(abs(by_t["2026-01-04"] - want) < 1e-6,
+            # Rahavard prices fund distributions on the nominal value:
+            # par/(par+D), not the stored market-price ratio (P-D)/P.
+            first = 10000 / (10000 + 100)
+            second = 10000 / (10000 + 50)
+            want = first * second
+            ck(abs(by_t["2026-01-04"] - want) < 1e-9,
                "factor before both events is the product", (by_t, want))
-            ck(abs(by_t["2026-01-05"] - 0.950495) < 1e-6,
+            ck(abs(by_t["2026-01-05"] - second) < 1e-9,
                "first event drops out on its own date", by_t)
-            ck(abs(by_t["2026-02-04"] - 0.950495) < 1e-6,
+            ck(abs(by_t["2026-02-04"] - second) < 1e-9,
                "factor holds until the next event", by_t)
             ck(by_t["2026-02-05"] == 1.0,
                "factor is 1 on the last event date", by_t)
