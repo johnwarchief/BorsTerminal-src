@@ -1,6 +1,7 @@
 # RA365 Round 29 evidence hashes
 # generated_utc: 2026-10-25T00:47:18Z
 # branch: mission/ra365-round29-safe-share-dps-merge  code_head: aa1dd307fba0b719fe1f4b2f67f0b0e9462e436f
+# note: *.log files are gitignored by repo policy; their hashes are from the local gate outputs kept for this round (paths in the report).
 
 ## code / tests / docs
 2a1cc3d05efe6ac5345c2a86788f3b3f1bb50aafd02153e2d9a4c3992b9b8fc7 *api/chart.py
