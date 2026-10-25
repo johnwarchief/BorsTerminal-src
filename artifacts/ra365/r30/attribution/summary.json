@@ -1,0 +1,570 @@
+{
+ "assets": 1989,
+ "paired": 1194446,
+ "failing": 491438,
+ "steps": 6770,
+ "recovered": 74483,
+ "families": [
+  {
+   "class": "RATIO_DIFF",
+   "event_sig": "base_gap",
+   "err_bucket": "0.1-1%",
+   "steps": 297,
+   "assets": 223,
+   "affected": 179452,
+   "attributed": 37619,
+   "recovered": 18302
+  },
+  {
+   "class": "RATIO_DIFF",
+   "event_sig": "unproven_gap",
+   "err_bucket": "0.1-1%",
+   "steps": 135,
+   "assets": 77,
+   "affected": 92867,
+   "attributed": 26644,
+   "recovered": 7680
+  },
+  {
+   "class": "REF_ONLY",
+   "event_sig": "no_event",
+   "err_bucket": "0.1-1%",
+   "steps": 231,
+   "assets": 118,
+   "affected": 130375,
+   "attributed": 45527,
+   "recovered": 7106
+  },
+  {
+   "class": "RATIO_DIFF",
+   "event_sig": "base_gap",
+   "err_bucket": "0.01-0.1%",
+   "steps": 171,
+   "assets": 132,
+   "affected": 98993,
+   "attributed": 18402,
+   "recovered": 7015
+  },
+  {
+   "class": "EXTRA",
+   "event_sig": "unproven_gap",
+   "err_bucket": "0.1-1%",
+   "steps": 14,
+   "assets": 13,
+   "affected": 5685,
+   "attributed": 4912,
+   "recovered": 4797
+  },
+  {
+   "class": "RATIO_DIFF",
+   "event_sig": "unproven_gap",
+   "err_bucket": "0.01-0.1%",
+   "steps": 149,
+   "assets": 85,
+   "affected": 100513,
+   "attributed": 25838,
+   "recovered": 4745
+  },
+  {
+   "class": "EXTRA",
+   "event_sig": "unproven_gap",
+   "err_bucket": "1-10%",
+   "steps": 39,
+   "assets": 31,
+   "affected": 9758,
+   "attributed": 5081,
+   "recovered": 2529
+  },
+  {
+   "class": "RATIO_DIFF",
+   "event_sig": "unproven_gap",
+   "err_bucket": "1-10%",
+   "steps": 30,
+   "assets": 26,
+   "affected": 17945,
+   "attributed": 7170,
+   "recovered": 2145
+  },
+  {
+   "class": "RATIO_DIFF",
+   "event_sig": "dps+share",
+   "err_bucket": "1-10%",
+   "steps": 13,
+   "assets": 13,
+   "affected": 9385,
+   "attributed": 2259,
+   "recovered": 1767
+  },
+  {
+   "class": "RATIO_DIFF",
+   "event_sig": "base_gap",
+   "err_bucket": "1-10%",
+   "steps": 32,
+   "assets": 29,
+   "affected": 21806,
+   "attributed": 3591,
+   "recovered": 1655
+  },
+  {
+   "class": "EXTRA",
+   "event_sig": "unproven_gap",
+   "err_bucket": ">=10%",
+   "steps": 7,
+   "assets": 7,
+   "affected": 3361,
+   "attributed": 2155,
+   "recovered": 1602
+  },
+  {
+   "class": "REF_ONLY",
+   "event_sig": "no_event",
+   "err_bucket": "0.01-0.1%",
+   "steps": 53,
+   "assets": 38,
+   "affected": 28921,
+   "attributed": 8455,
+   "recovered": 1442
+  },
+  {
+   "class": "REF_ONLY",
+   "event_sig": "no_event",
+   "err_bucket": "1-10%",
+   "steps": 78,
+   "assets": 56,
+   "affected": 45715,
+   "attributed": 9107,
+   "recovered": 1332
+  },
+  {
+   "class": "RATIO_DIFF",
+   "event_sig": "dps",
+   "err_bucket": ">=10%",
+   "steps": 18,
+   "assets": 16,
+   "affected": 12239,
+   "attributed": 2059,
+   "recovered": 1080
+  },
+  {
+   "class": "RATIO_DIFF",
+   "event_sig": "dps+share",
+   "err_bucket": "0.1-1%",
+   "steps": 12,
+   "assets": 11,
+   "affected": 9068,
+   "attributed": 1939,
+   "recovered": 1058
+  },
+  {
+   "class": "EXTRA",
+   "event_sig": "base_gap",
+   "err_bucket": "1-10%",
+   "steps": 40,
+   "assets": 38,
+   "affected": 10565,
+   "attributed": 2732,
+   "recovered": 938
+  },
+  {
+   "class": "RATIO_DIFF",
+   "event_sig": "dps",
+   "err_bucket": "0.01-0.1%",
+   "steps": 9,
+   "assets": 9,
+   "affected": 8806,
+   "attributed": 1487,
+   "recovered": 861
+  },
+  {
+   "class": "RATIO_DIFF",
+   "event_sig": "dps",
+   "err_bucket": "1-10%",
+   "steps": 37,
+   "assets": 33,
+   "affected": 21347,
+   "attributed": 2016,
+   "recovered": 857
+  },
+  {
+   "class": "RATIO_DIFF",
+   "event_sig": "base_gap+dps",
+   "err_bucket": "1-10%",
+   "steps": 9,
+   "assets": 9,
+   "affected": 4514,
+   "attributed": 1416,
+   "recovered": 791
+  },
+  {
+   "class": "RATIO_DIFF",
+   "event_sig": "base_gap+dps",
+   "err_bucket": ">=10%",
+   "steps": 6,
+   "assets": 6,
+   "affected": 3182,
+   "attributed": 887,
+   "recovered": 523
+  },
+  {
+   "class": "RATIO_DIFF",
+   "event_sig": "dps",
+   "err_bucket": "0.1-1%",
+   "steps": 21,
+   "assets": 18,
+   "affected": 14664,
+   "attributed": 1995,
+   "recovered": 510
+  },
+  {
+   "class": "REF_ONLY",
+   "event_sig": "no_event",
+   "err_bucket": ">=10%",
+   "steps": 13,
+   "assets": 11,
+   "affected": 7907,
+   "attributed": 1327,
+   "recovered": 450
+  },
+  {
+   "class": "RATIO_DIFF",
+   "event_sig": "dps+share",
+   "err_bucket": ">=10%",
+   "steps": 4,
+   "assets": 4,
+   "affected": 4196,
+   "attributed": 924,
+   "recovered": 421
+  },
+  {
+   "class": "RATIO_DIFF",
+   "event_sig": "fund_dps",
+   "err_bucket": "0.01-0.1%",
+   "steps": 179,
+   "assets": 25,
+   "affected": 91663,
+   "attributed": 3430,
+   "recovered": 391
+  },
+  {
+   "class": "EXTRA",
+   "event_sig": "dps",
+   "err_bucket": "1-10%",
+   "steps": 10,
+   "assets": 10,
+   "affected": 5299,
+   "attributed": 589,
+   "recovered": 390
+  },
+  {
+   "class": "RATIO_DIFF",
+   "event_sig": "dps",
+   "err_bucket": "<0.01%",
+   "steps": 2958,
+   "assets": 593,
+   "affected": 2228839,
+   "attributed": 171225,
+   "recovered": 356
+  },
+  {
+   "class": "RATIO_DIFF",
+   "event_sig": "base_gap",
+   "err_bucket": "<0.01%",
+   "steps": 48,
+   "assets": 47,
+   "affected": 25413,
+   "attributed": 3408,
+   "recovered": 354
+  },
+  {
+   "class": "RATIO_DIFF",
+   "event_sig": "unproven_gap",
+   "err_bucket": "<0.01%",
+   "steps": 122,
+   "assets": 74,
+   "affected": 64495,
+   "attributed": 15296,
+   "recovered": 353
+  },
+  {
+   "class": "EXTRA",
+   "event_sig": "dps",
+   "err_bucket": "0.1-1%",
+   "steps": 3,
+   "assets": 3,
+   "affected": 1832,
+   "attributed": 600,
+   "recovered": 290
+  },
+  {
+   "class": "EXTRA",
+   "event_sig": "base_gap",
+   "err_bucket": "0.1-1%",
+   "steps": 15,
+   "assets": 15,
+   "affected": 2155,
+   "attributed": 652,
+   "recovered": 267
+  },
+  {
+   "class": "RATIO_DIFF",
+   "event_sig": "base_gap+dps",
+   "err_bucket": "0.1-1%",
+   "steps": 3,
+   "assets": 3,
+   "affected": 1588,
+   "attributed": 416,
+   "recovered": 267
+  },
+  {
+   "class": "RATIO_DIFF",
+   "event_sig": "fund_dps",
+   "err_bucket": "1-10%",
+   "steps": 5,
+   "assets": 3,
+   "affected": 2429,
+   "attributed": 1324,
+   "recovered": 247
+  },
+  {
+   "class": "REF_ONLY",
+   "event_sig": "no_event",
+   "err_bucket": "<0.01%",
+   "steps": 4,
+   "assets": 4,
+   "affected": 1513,
+   "attributed": 897,
+   "recovered": 234
+  },
+  {
+   "class": "RATIO_DIFF",
+   "event_sig": "pa",
+   "err_bucket": "0.1-1%",
+   "steps": 6,
+   "assets": 6,
+   "affected": 2548,
+   "attributed": 543,
+   "recovered": 233
+  },
+  {
+   "class": "RATIO_DIFF",
+   "event_sig": "base_gap+share",
+   "err_bucket": ">=10%",
+   "steps": 4,
+   "assets": 4,
+   "affected": 3885,
+   "attributed": 341,
+   "recovered": 225
+  },
+  {
+   "class": "EXTRA",
+   "event_sig": "dps",
+   "err_bucket": ">=10%",
+   "steps": 3,
+   "assets": 3,
+   "affected": 1823,
+   "attributed": 417,
+   "recovered": 220
+  },
+  {
+   "class": "RATIO_DIFF",
+   "event_sig": "dps+share",
+   "err_bucket": "0.01-0.1%",
+   "steps": 6,
+   "assets": 6,
+   "affected": 1873,
+   "attributed": 646,
+   "recovered": 182
+  },
+  {
+   "class": "RATIO_DIFF",
+   "event_sig": "unproven_gap",
+   "err_bucket": ">=10%",
+   "steps": 8,
+   "assets": 8,
+   "affected": 4396,
+   "attributed": 637,
+   "recovered": 180
+  },
+  {
+   "class": "RATIO_DIFF",
+   "event_sig": "fund_dps",
+   "err_bucket": "<0.01%",
+   "steps": 912,
+   "assets": 28,
+   "affected": 521916,
+   "attributed": 16638,
+   "recovered": 162
+  },
+  {
+   "class": "RATIO_DIFF",
+   "event_sig": "share",
+   "err_bucket": "1-10%",
+   "steps": 5,
+   "assets": 5,
+   "affected": 1742,
+   "attributed": 273,
+   "recovered": 158
+  },
+  {
+   "class": "RATIO_DIFF",
+   "event_sig": "base_gap",
+   "err_bucket": ">=10%",
+   "steps": 1,
+   "assets": 1,
+   "affected": 1443,
+   "attributed": 83,
+   "recovered": 83
+  },
+  {
+   "class": "RATIO_DIFF",
+   "event_sig": "base_gap+share",
+   "err_bucket": "1-10%",
+   "steps": 1,
+   "assets": 1,
+   "affected": 478,
+   "attributed": 96,
+   "recovered": 80
+  },
+  {
+   "class": "RATIO_DIFF",
+   "event_sig": "base_gap+share",
+   "err_bucket": "0.1-1%",
+   "steps": 2,
+   "assets": 2,
+   "affected": 1531,
+   "attributed": 79,
+   "recovered": 77
+  },
+  {
+   "class": "RATIO_DIFF",
+   "event_sig": "fund_dps",
+   "err_bucket": "0.1-1%",
+   "steps": 24,
+   "assets": 11,
+   "affected": 9940,
+   "attributed": 1222,
+   "recovered": 50
+  },
+  {
+   "class": "RATIO_DIFF",
+   "event_sig": "pa",
+   "err_bucket": "<0.01%",
+   "steps": 93,
+   "assets": 90,
+   "affected": 62617,
+   "attributed": 7339,
+   "recovered": 29
+  },
+  {
+   "class": "EXTRA",
+   "event_sig": "base_gap",
+   "err_bucket": ">=10%",
+   "steps": 3,
+   "assets": 3,
+   "affected": 507,
+   "attributed": 153,
+   "recovered": 27
+  },
+  {
+   "class": "RATIO_DIFF",
+   "event_sig": "pa",
+   "err_bucket": "1-10%",
+   "steps": 2,
+   "assets": 2,
+   "affected": 252,
+   "attributed": 131,
+   "recovered": 11
+  },
+  {
+   "class": "EXTRA",
+   "event_sig": "fund_dps",
+   "err_bucket": "1-10%",
+   "steps": 5,
+   "assets": 5,
+   "affected": 3582,
+   "attributed": 96,
+   "recovered": 10
+  },
+  {
+   "class": "RATIO_DIFF",
+   "event_sig": "pa",
+   "err_bucket": "0.01-0.1%",
+   "steps": 6,
+   "assets": 6,
+   "affected": 881,
+   "attributed": 180,
+   "recovered": 1
+  },
+  {
+   "class": "RATIO_DIFF",
+   "event_sig": "share",
+   "err_bucket": "<0.01%",
+   "steps": 916,
+   "assets": 401,
+   "affected": 711668,
+   "attributed": 35260,
+   "recovered": 0
+  },
+  {
+   "class": "RATIO_DIFF",
+   "event_sig": "base_gap+pa",
+   "err_bucket": "0.01-0.1%",
+   "steps": 2,
+   "assets": 2,
+   "affected": 986,
+   "attributed": 395,
+   "recovered": 0
+  },
+  {
+   "class": "REF_ONLY",
+   "event_sig": "unproven_gap",
+   "err_bucket": ">=10%",
+   "steps": 1,
+   "assets": 1,
+   "affected": 260,
+   "attributed": 240,
+   "recovered": 0
+  },
+  {
+   "class": "RATIO_DIFF",
+   "event_sig": "pa+share",
+   "err_bucket": "<0.01%",
+   "steps": 1,
+   "assets": 1,
+   "affected": 363,
+   "attributed": 223,
+   "recovered": 0
+  },
+  {
+   "class": "RATIO_DIFF",
+   "event_sig": "dps+share",
+   "err_bucket": "<0.01%",
+   "steps": 2,
+   "assets": 2,
+   "affected": 1694,
+   "attributed": 85,
+   "recovered": 0
+  },
+  {
+   "class": "RATIO_DIFF",
+   "event_sig": "pa",
+   "err_bucket": ">=10%",
+   "steps": 1,
+   "assets": 1,
+   "affected": 100,
+   "attributed": 73,
+   "recovered": 0
+  },
+  {
+   "class": "RATIO_DIFF",
+   "event_sig": "dps+pa",
+   "err_bucket": "<0.01%",
+   "steps": 1,
+   "assets": 1,
+   "affected": 790,
+   "attributed": 45,
+   "recovered": 0
+  }
+ ],
+ "cohort_symbols": 2595
+}

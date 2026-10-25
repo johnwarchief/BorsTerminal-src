@@ -1,0 +1,11 @@
+{
+ "assets": 1989,
+ "dates": 1194446,
+ "factor_exact": 546406,
+ "factor_tolerance": 749049,
+ "factor_exact_pct": 45.7456,
+ "factor_tolerance_pct": 62.711,
+ "steps": 1192457,
+ "step_exact_pct": 99.7088,
+ "step_tolerance_pct": 99.7814
+}

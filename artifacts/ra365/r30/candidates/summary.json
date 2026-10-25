@@ -1,0 +1,124 @@
+{
+ "assets": 2594,
+ "candidates": 246,
+ "recovered": 20833,
+ "families": [
+  {
+   "rule": "R5_extra_remove_no_ledger",
+   "event_sig": "unproven_gap",
+   "ref_agree": "<=0.1%",
+   "steps": 60,
+   "assets": 49,
+   "affected": 17598,
+   "recovered": 10193
+  },
+  {
+   "rule": "R1_share_sharpen",
+   "event_sig": "base_gap",
+   "ref_agree": "<=0.1%",
+   "steps": 12,
+   "assets": 12,
+   "affected": 8284,
+   "recovered": 3756
+  },
+  {
+   "rule": "R5_extra_remove_no_ledger",
+   "event_sig": "base_gap",
+   "ref_agree": "<=0.1%",
+   "steps": 53,
+   "assets": 52,
+   "affected": 12301,
+   "recovered": 3657
+  },
+  {
+   "rule": "R2_pa_sharpen",
+   "event_sig": "dps",
+   "ref_agree": "<=0.1%",
+   "steps": 7,
+   "assets": 7,
+   "affected": 6413,
+   "recovered": 1415
+  },
+  {
+   "rule": "R5_extra_remove_no_ledger",
+   "event_sig": "dps",
+   "ref_agree": "<=0.1%",
+   "steps": 1,
+   "assets": 1,
+   "affected": 1452,
+   "recovered": 1206
+  },
+  {
+   "rule": "R1_share_sharpen",
+   "event_sig": "base_gap",
+   "ref_agree": ">1%",
+   "steps": 39,
+   "assets": 36,
+   "affected": 11863,
+   "recovered": 417
+  },
+  {
+   "rule": "R5_extra_remove_no_ledger",
+   "event_sig": "fund_dps",
+   "ref_agree": "<=0.1%",
+   "steps": 5,
+   "assets": 5,
+   "affected": 3582,
+   "recovered": 173
+  },
+  {
+   "rule": "R2_pa_sharpen",
+   "event_sig": "dps",
+   "ref_agree": "<=1%",
+   "steps": 12,
+   "assets": 11,
+   "affected": 5940,
+   "recovered": 16
+  },
+  {
+   "rule": "R2_pa_sharpen",
+   "event_sig": "dps",
+   "ref_agree": ">1%",
+   "steps": 31,
+   "assets": 27,
+   "affected": 18089,
+   "recovered": 0
+  },
+  {
+   "rule": "R1_share_sharpen",
+   "event_sig": "base_gap",
+   "ref_agree": "<=1%",
+   "steps": 21,
+   "assets": 21,
+   "affected": 3984,
+   "recovered": 0
+  },
+  {
+   "rule": "R3_share_add",
+   "event_sig": "no_event",
+   "ref_agree": ">1%",
+   "steps": 2,
+   "assets": 2,
+   "affected": 2173,
+   "recovered": 0
+  },
+  {
+   "rule": "R4_pa_add",
+   "event_sig": "no_event",
+   "ref_agree": "<=1%",
+   "steps": 2,
+   "assets": 2,
+   "affected": 1843,
+   "recovered": 0
+  },
+  {
+   "rule": "R4_pa_add",
+   "event_sig": "no_event",
+   "ref_agree": ">1%",
+   "steps": 1,
+   "assets": 1,
+   "affected": 1376,
+   "recovered": 0
+  }
+ ]
+}

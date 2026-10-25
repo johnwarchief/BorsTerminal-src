@@ -1,0 +1,14 @@
+{
+ "assets_compared": 2594,
+ "changed_rows": 31,
+ "factor_changed": 31,
+ "improved": 18,
+ "worsened": 2,
+ "unchanged": 11,
+ "controls_touched": 2,
+ "controls_moved": 2,
+ "worsened_symbols": [
+  "هجرت",
+  "هرمز"
+ ]
+}

@@ -1,0 +1,220 @@
+{
+ "assets": 20,
+ "paired": 25355,
+ "failing": 13587,
+ "steps": 193,
+ "recovered": 2873,
+ "families": [
+  {
+   "class": "EXTRA",
+   "event_sig": "unknown",
+   "err_bucket": "0.1-1%",
+   "steps": 5,
+   "assets": 4,
+   "affected": 1838,
+   "attributed": 1302,
+   "recovered": 1243
+  },
+  {
+   "class": "RATIO_DIFF",
+   "event_sig": "unknown",
+   "err_bucket": "0.1-1%",
+   "steps": 7,
+   "assets": 3,
+   "affected": 6481,
+   "attributed": 1203,
+   "recovered": 434
+  },
+  {
+   "class": "RATIO_DIFF",
+   "event_sig": "base_gap",
+   "err_bucket": "0.1-1%",
+   "steps": 8,
+   "assets": 6,
+   "affected": 3367,
+   "attributed": 1029,
+   "recovered": 400
+  },
+  {
+   "class": "RATIO_DIFF",
+   "event_sig": "dps",
+   "err_bucket": "0.01-0.1%",
+   "steps": 1,
+   "assets": 1,
+   "affected": 808,
+   "attributed": 381,
+   "recovered": 346
+  },
+  {
+   "class": "RATIO_DIFF",
+   "event_sig": "base_gap+dps",
+   "err_bucket": "1-10%",
+   "steps": 1,
+   "assets": 1,
+   "affected": 752,
+   "attributed": 234,
+   "recovered": 230
+  },
+  {
+   "class": "RATIO_DIFF",
+   "event_sig": "base_gap",
+   "err_bucket": "0.01-0.1%",
+   "steps": 3,
+   "assets": 3,
+   "affected": 2146,
+   "attributed": 470,
+   "recovered": 144
+  },
+  {
+   "class": "RATIO_DIFF",
+   "event_sig": "dps",
+   "err_bucket": "0.1-1%",
+   "steps": 1,
+   "assets": 1,
+   "affected": 1009,
+   "attributed": 65,
+   "recovered": 53
+  },
+  {
+   "class": "RATIO_DIFF",
+   "event_sig": "fund_dps",
+   "err_bucket": "0.01-0.1%",
+   "steps": 10,
+   "assets": 1,
+   "affected": 7943,
+   "attributed": 187,
+   "recovered": 23
+  },
+  {
+   "class": "RATIO_DIFF",
+   "event_sig": "dps",
+   "err_bucket": "<0.01%",
+   "steps": 55,
+   "assets": 11,
+   "affected": 40231,
+   "attributed": 3636,
+   "recovered": 0
+  },
+  {
+   "class": "RATIO_DIFF",
+   "event_sig": "fund_dps",
+   "err_bucket": "<0.01%",
+   "steps": 70,
+   "assets": 1,
+   "affected": 57212,
+   "attributed": 1363,
+   "recovered": 0
+  },
+  {
+   "class": "RATIO_DIFF",
+   "event_sig": "unknown",
+   "err_bucket": "<0.01%",
+   "steps": 10,
+   "assets": 4,
+   "affected": 5234,
+   "attributed": 1301,
+   "recovered": 0
+  },
+  {
+   "class": "REF_ONLY",
+   "event_sig": "no_event",
+   "err_bucket": "1-10%",
+   "steps": 4,
+   "assets": 2,
+   "affected": 2634,
+   "attributed": 1130,
+   "recovered": 0
+  },
+  {
+   "class": "RATIO_DIFF",
+   "event_sig": "share",
+   "err_bucket": "<0.01%",
+   "steps": 7,
+   "assets": 4,
+   "affected": 5778,
+   "attributed": 460,
+   "recovered": 0
+  },
+  {
+   "class": "RATIO_DIFF",
+   "event_sig": "unknown",
+   "err_bucket": "0.01-0.1%",
+   "steps": 3,
+   "assets": 2,
+   "affected": 2208,
+   "attributed": 410,
+   "recovered": 0
+  },
+  {
+   "class": "REF_ONLY",
+   "event_sig": "no_event",
+   "err_bucket": "0.1-1%",
+   "steps": 1,
+   "assets": 1,
+   "affected": 361,
+   "attributed": 169,
+   "recovered": 0
+  },
+  {
+   "class": "RATIO_DIFF",
+   "event_sig": "dps",
+   "err_bucket": "1-10%",
+   "steps": 2,
+   "assets": 2,
+   "affected": 906,
+   "attributed": 127,
+   "recovered": 0
+  },
+  {
+   "class": "RATIO_DIFF",
+   "event_sig": "unknown",
+   "err_bucket": "1-10%",
+   "steps": 1,
+   "assets": 1,
+   "affected": 672,
+   "attributed": 45,
+   "recovered": 0
+  },
+  {
+   "class": "RATIO_DIFF",
+   "event_sig": "fund_dps",
+   "err_bucket": "0.1-1%",
+   "steps": 1,
+   "assets": 1,
+   "affected": 78,
+   "attributed": 23,
+   "recovered": 0
+  },
+  {
+   "class": "EXTRA",
+   "event_sig": "fund_dps",
+   "err_bucket": "1-10%",
+   "steps": 1,
+   "assets": 1,
+   "affected": 941,
+   "attributed": 22,
+   "recovered": 0
+  },
+  {
+   "class": "EXTRA",
+   "event_sig": "unknown",
+   "err_bucket": "1-10%",
+   "steps": 1,
+   "assets": 1,
+   "affected": 15,
+   "attributed": 15,
+   "recovered": 0
+  },
+  {
+   "class": "RATIO_DIFF",
+   "event_sig": "pa",
+   "err_bucket": "<0.01%",
+   "steps": 1,
+   "assets": 1,
+   "affected": 986,
+   "attributed": 5,
+   "recovered": 0
+  }
+ ],
+ "cohort_symbols": 0
+}
