@@ -55,6 +55,7 @@ function parseArgs(argv) {
     else if (a === '--probe-auth') out.probeAuth = true;
     else if (a === '--marks') out.marks = true;
     else if (a === '--browser') out.browser = take();
+    else if (a === '--profile') out.profile = take();
     else if (a === '--help' || a === '-h') out.help = true;
     else throw new Error('unknown argument: ' + a);
   }
@@ -62,7 +63,8 @@ function parseArgs(argv) {
 }
 
 const HELP = `capture_rahavard.mjs --symbols <file> --out <file> [--port 9333] [--launch]
-  [--probe-auth] [--types type0,type7] [--res D,W] [--countback N] [--from D] [--to D] [--marks]`;
+  [--probe-auth] [--browser <exe>] [--profile <dir>]
+  [--types type0,type7] [--res D,W] [--countback N] [--from D] [--to D] [--marks]`;
 
 function log(...a) { process.stdout.write(a.join(' ') + '\n'); }
 
@@ -75,11 +77,9 @@ async function tryJson(url, timeoutMs = 4000) {
   } finally { clearTimeout(t); }
 }
 
-async function launchBrowser(port, startUrl) {
-  const exe = process.env.RA_BROWSER
-    || 'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe';
+async function launchBrowser(port, startUrl, exe, profileDir) {
   if (!fs.existsSync(exe)) throw new Error('browser not found: ' + exe);
-  const profile = path.join(os.tmpdir(), 'bors-ra365-probe-profile');
+  const profile = profileDir;
   const args = [
     `--remote-debugging-port=${port}`, `--user-data-dir=${profile}`,
     '--no-first-run', '--no-default-browser-check', '--disable-features=Translate',
@@ -87,7 +87,7 @@ async function launchBrowser(port, startUrl) {
   ];
   const child = cp.spawn(exe, args, { detached: true, stdio: 'ignore' });
   child.unref();
-  log('spawned browser pid=' + child.pid + ' profile=' + profile);
+  log('spawned ' + path.basename(exe) + ' pid=' + child.pid + ' profile=' + profile);
   const t0 = Date.now();
   while (Date.now() - t0 < 90000) {
     try {
@@ -96,7 +96,33 @@ async function launchBrowser(port, startUrl) {
     } catch { /* not up yet */ }
     await new Promise((r) => setTimeout(r, 1500));
   }
-  throw new Error('CDP port ' + port + ' never came up');
+  throw new Error('CDP port ' + port + ' never came up — if a browser with this '
+    + 'profile is already running, close that window and retry');
+}
+
+//: A debugging port is refused on Chromium's default profile, so the probe
+//: always runs on its own data directory; the owner logs in there once and the
+//: session stays inside the browser.
+function pickBrowser(explicit) {
+  const want = explicit || process.env.RA_BROWSER;
+  if (want) return want;
+  const local = process.env.LOCALAPPDATA || '';
+  const candidates = [
+    'C:\\Program Files\\BraveSoftware\\Brave-Browser\\Application\\brave.exe',
+    'C:\\Program Files (x86)\\BraveSoftware\\Brave-Browser\\Application\\brave.exe',
+    local ? path.join(local, 'BraveSoftware', 'Brave-Browser', 'Application', 'brave.exe') : '',
+    'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
+    'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe',
+  ].filter(Boolean);
+  for (const c of candidates) {
+    if (fs.existsSync(c)) return c;
+  }
+  throw new Error('no Chromium browser found; pass --browser <exe>');
+}
+
+function pickProfile(explicit) {
+  return explicit || process.env.RA_PROFILE
+    || path.join(os.tmpdir(), 'bors-ra365-probe-profile');
 }
 
 async function pickTarget(port) {
@@ -148,16 +174,42 @@ class Cdp {
   close() { try { this.ws.close(); } catch { /* already gone */ } }
 }
 
+// The chart API answers only with a bearer token.  The token is minted by the
+// site itself at /api/v2/accounts/access-token and is fetched and used INSIDE
+// the page: it is cached on the page's own window, never returned to Node,
+// never printed and never written anywhere.  Only the response body comes back.
 const IN_PAGE_FETCH = `async (u) => {
-  try {
-    const res = await fetch(u, { credentials: 'include' });
-    const text = await res.text();
-    let json = null;
-    try { json = JSON.parse(text); } catch (e) { /* not json */ }
-    return { status: res.status, ok: res.ok, json, head: text.slice(0, 300) };
-  } catch (e) {
-    return { status: -1, ok: false, json: null, head: 'ERR ' + String(e).slice(0, 200) };
-  }
+  const HEADERS = {
+    'Application-Name': 'rahavard',
+    'platform': 'web',
+    'Page-Id': '44',
+    'Content-Type': 'application/json',
+  };
+  const call = async (retry) => {
+    try {
+      if (!window.__r32_token) {
+        const tr = await fetch('/api/v2/accounts/access-token', { credentials: 'include' });
+        if (!tr.ok) return { status: tr.status, ok: false, json: null, head: 'token-endpoint ' + tr.status };
+        const tj = await tr.json();
+        window.__r32_token = (tj && tj.data && tj.data.token) || null;
+        if (!window.__r32_token) return { status: -1, ok: false, json: null, head: 'no token field in response' };
+      }
+      const res = await fetch(u, {
+        credentials: 'include',
+        headers: Object.assign({ Authorization: 'Bearer ' + window.__r32_token }, HEADERS),
+      });
+      if ((res.status === 401 || res.status === 403) && !retry) {
+        window.__r32_token = null;          // expired: mint once more, retry once
+        return call(true);
+      }
+      const text = await res.text();
+      let json = null; try { json = JSON.parse(text); } catch (e) { /* not json */ }
+      return { status: res.status, ok: res.ok, json, head: text.slice(0, 300) };
+    } catch (e) {
+      return { status: -1, ok: false, json: null, head: 'ERR ' + String(e).slice(0, 200) };
+    }
+  };
+  return call(false);
 }`;
 
 function sha256OfBuffer(buf) { return crypto.createHash('sha256').update(buf).digest('hex'); }
@@ -174,7 +226,7 @@ async function main() {
       log('Run again with --launch, log in to Rahavard365 in the window that opens, then re-run without --launch.');
       process.exit(4);
     }
-    version = await launchBrowser(a.port);
+    version = await launchBrowser(a.port, BASE, pickBrowser(a.browser), pickProfile(a.profile));
   }
   log('attached: ' + (version.Browser || 'unknown') + ' @ ' + a.port);
 
@@ -185,10 +237,12 @@ async function main() {
   const cdp = await Cdp.attach(target.webSocketDebuggerUrl);
   try {
     const auth = await cdp.evaluate(IN_PAGE_FETCH,
-      '/api/v2/chart/default-settings?entity_id=453&entity_type=exchange.asset');
+      '/api/v2/chart/bars?countback=2&symbol=' + encodeURIComponent('exchange.asset:453:real_close:type7')
+      + '&resolution=D&from=2026-01-01T00:00:00Z&to=2026-12-31T00:00:00Z');
     log('auth probe: status=' + auth.status);
-    if (auth.status === 401 || auth.status === 403) {
-      log('SESSION_NOT_AUTHENTICATED: log in to Rahavard365 in the attached window, then re-run.');
+    if (auth.status === 401 || auth.status === 403 || auth.status === -1) {
+      log('SESSION_NOT_AUTHENTICATED: ' + (auth.head || 'status ' + auth.status));
+      log('Log in to Rahavard365 in the attached window, then re-run.');
       process.exit(3);
     }
     if (a.probeAuth) {
@@ -201,6 +255,9 @@ async function main() {
     const types = a.types.split(',').map((s) => s.trim()).filter(Boolean);
     const resolutions = a.res.split(',').map((s) => s.trim().toUpperCase()).filter(Boolean);
     const capturedAt = new Date().toISOString().replace(/\.\d+Z$/, 'Z');
+    // the bars endpoint rejects a request without a window
+    const from = a.from || '1990-01-01T00:00:00Z';
+    const to = a.to || (new Date(Date.now() + 86400000).toISOString().replace(/\.\d+Z$/, 'Z'));
 
     const series = [];
     const ledger = [];
@@ -212,8 +269,8 @@ async function main() {
         const ticker = `exchange.asset:${assetId}:${basis}:${type}`;
         for (const res of resolutions) {
           const parts = [`countback=${a.countback}`, `symbol=${encodeURIComponent(ticker)}`, `resolution=${res}`];
-          if (a.from) parts.push('from=' + encodeURIComponent(a.from));
-          if (a.to) parts.push('to=' + encodeURIComponent(a.to));
+          parts.push('from=' + encodeURIComponent(from));
+          parts.push('to=' + encodeURIComponent(to));
           const url = '/api/v2/chart/bars?' + parts.join('&');
           const r = await cdp.evaluate(IN_PAGE_FETCH, url);
           const bars = r.json && Array.isArray(r.json.data) ? r.json.data : [];
@@ -250,7 +307,8 @@ async function main() {
         session: 'owner-browser-cdp',
         captured_at: capturedAt,
         browser: version.Browser || null,
-        types, resolutions, countback: a.countback,
+        types, resolutions, countback: a.countback, from, to,
+        auth: 'bearer token minted in-page at /api/v2/accounts/access-token; never leaves the page',
         license: 'owner subscription; not redistributable',
       },
       ledger,

@@ -106,4 +106,34 @@ H.ck((pp[0]["transport"], pp[0]["basis"], pp[0]["adjust"]) == ("db", "closing", 
 H.ck(pp[0]["prod_raw"]["c"] == 11730.0, "parity ledger: the raw column is preserved")
 H.ck(pp[0]["proven_rel_err"] == 0.01263, "parity ledger: the ledger's own error is carried")
 
+# --- a capture: type0 raw beside type7 adjusted --------------------------
+import json as _json
+import os as _os
+import tempfile as _tmp
+cap = _os.path.join(_tmp.gettempdir(), "r32-reference-tests", "capture.json")
+_os.makedirs(_os.path.dirname(cap), exist_ok=True)
+with open(cap, "w", encoding="utf-8") as fh:
+    _json.dump({"source": {"kind": "rahavard365-web-api", "captured_at": "2026-10-25T18:28:15Z"},
+                "series": [
+                    {"asset_id": 453, "symbol": "\u0641\u0648\u0644\u0627\u062f", "adjust": "raw",
+                     "resolution": "D", "basis": "real_close",
+                     "bars": [{"utc": "2026-10-20T12:29:59Z", "open": 100.0, "high": 110.0,
+                               "low": 90.0, "close": 105.0, "volume": 5}]},
+                    {"asset_id": 453, "symbol": "\u0641\u0648\u0644\u0627\u062f", "adjust": "adjusted",
+                     "resolution": "D", "basis": "real_close",
+                     "bars": [{"utc": "2026-10-20T12:29:59Z", "open": 50.0, "high": 55.0,
+                               "low": 45.0, "close": 52.5, "volume": 5},
+                              {"utc": "2026-10-21T12:29:59Z", "open": 1.0, "high": 1.0,
+                               "low": 1.0, "close": 1.0, "volume": 1}]}]}, fh)
+cp = EV.pairs_from_rahavard_capture(cap)
+H.ck(len(cp) == 1, "capture: only dates present on both sides pair", len(cp))
+H.ck(cp[0]["prod"]["c"] == 105.0 and cp[0]["ref"]["c"] == 52.5,
+     "capture: type0 is prod (raw) and type7 is ref (adjusted)")
+H.ck(cp[0]["date"] == "2026-10-20" and cp[0]["timeframe"] == "D",
+     "capture: the ISO stamp keeps its day and the resolution is the timeframe")
+H.ck(cp[0]["source_prod"].endswith("#type0") and cp[0]["source_ref"].endswith("#type7"),
+     "capture: each side names which series it came from")
+H.ck(abs(cp[0]["ref"]["o"] / cp[0]["prod"]["o"] - 0.5) < 1e-12,
+     "capture: the ratio is the reference's own factor")
+
 H.report()

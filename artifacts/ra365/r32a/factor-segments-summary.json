@@ -1,6 +1,6 @@
 {
  "schema": "ra365-factor-segment/1",
- "generated_at": "2026-10-25T00:00:00Z",
+ "generated_at": "2026-10-25T18:28:15Z",
  "inputs": {
   "paired_rows": 1487,
   "source": "pairs_candle.ndjson.gz",

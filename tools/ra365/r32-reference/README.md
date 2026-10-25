@@ -52,20 +52,39 @@ wall-clock timestamp is recorded beside it and never folded into it.
 ## Capture from Rahavard365 (authorized, owner session)
 
 ```bash
-# 1. open an Edge window with a real CDP port, then log in THERE
+# 1. open a Chromium window with a real CDP port, then log in THERE
 node tools/ra365/r32-reference/capture_rahavard.mjs --launch --probe-auth
 #    exit 3 = the session is not authenticated; log in and re-run
+#    (--browser <exe> picks Brave/Chrome/Edge; --profile <dir> picks the data dir)
 
 # 2. capture
 node capture_rahavard.mjs --symbols symbols.json --out D:/.../rahavard-export.json \
-     --types type0,type7 --res D,W,M --countback 400 --marks
+     --types type0,type7 --res D,W,M --countback 700 \
+     --from 2023-01-01T00:00:00Z --to 2026-10-26T00:00:00Z --marks
 ```
 
-`symbols.json` is `[{"asset_id": 453, "symbol": "..."}, ...]`. The driver
-issues the same same-origin `fetch` the product's own chart page issues
-(`/api/v2/chart/bars`, ticker
-`exchange.asset:{id}:real_close:type0|type7`). It never reads, prints or stores
-a cookie, token, password or account id.
+`symbols.json` is `[{"asset_id": 453, "symbol": "..."}, ...]`.
+
+**How the auth actually works** (measured 2026-10-25, Chromium 156):
+
+| | |
+| --- | --- |
+| token | `GET /api/v2/accounts/access-token` with `credentials: include` → `{data:{token,…}}` |
+| headers | `Authorization: Bearer …`, `Application-Name: rahavard`, `platform: web`, `Page-Id: 44` |
+| required params | `from` and `to`; the bars endpoint answers **422** without `from` |
+| retired | `/api/v2/chart/default-settings`, `/symbols`, `/timescale_marks` return **401** to a plain cookie fetch |
+
+The token is fetched and used **inside the page** and cached on the page's own
+`window`; it is never returned to Node, never printed and never written. A
+401/403 mints a fresh token and retries once. A cookie is never read.
+
+The debug port is refused on Chromium's default profile, so `--launch` uses its
+own data directory; log in there once and the session stays inside the browser.
+
+**Data-quality note:** the monthly endpoint repeats each bar about three times
+with identical values. The importer collapses them and reports
+`duplicate_rows_dropped` (identical repeats) apart from
+`conflicting_duplicates` (same key, different values — the number to alarm on).
 
 **If the browser route is unavailable**, export any CSV with the columns
 `date, symbol, open, high, low, close, volume, adjust, basis, timeframe` and
@@ -86,6 +105,8 @@ python infer_factor_segments.py --in <ledger> --kind candle-diverge --out <dir>
 python build_mismatch_ledger.py --mode ledger --in <ledger> --kind parity-diverge --out <dir>
 python build_mismatch_ledger.py --mode disposition \
     --families artifacts/ra365/r30/attribution/families.csv --out <dir>
+python compare_capture.py --capture <export>.json \
+    --frozen _audit/RA365-CANDLE-DIVERGE-2026-10-12.csv --out <dir>
 python pack.py --dir <dir> --require bars.ndjson.gz,coverage.json
 python verify_pack.py --dir <dir>
 ```
@@ -93,7 +114,12 @@ python verify_pack.py --dir <dir>
 `import_reference.py --kind auto` sniffs the export shape. The frozen ledgers it
 understands: `candle-diverge` (product raw beside reference adjusted),
 `parity-diverge` (the four named arms), `steps` (the R30 factor-chain
-boundaries).
+boundaries). `infer_factor_segments.py --name <basename>` keeps a capture run
+from overwriting the ledger run.
+
+`compare_capture.py` measures **reference revision**: the same adjusted series
+in two snapshots, on their common dates. Anything that moved is a revision of
+the reference — neither a product defect nor a factor change.
 
 ## Factor inference
 
@@ -130,7 +156,8 @@ for t in dev/ra365/r32-reference/test_r32_*.py; do python "$t"; done
 ```
 
 164 checks across the schema, the gzip determinism, both export parsers, the
-frozen-ledger adapters, the estimator, the ledger and the end-to-end importer.
+frozen-ledger adapters, the capture adapter, the estimator, the ledger and the
+end-to-end importer.
 
 These are not yet in `dev/run_all_tests.py`'s `SUITES` list — that file is
 outside this round's ownership. Registering one line there is a follow-up for

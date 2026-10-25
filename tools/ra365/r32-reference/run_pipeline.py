@@ -54,6 +54,35 @@ def tool(name):
     return os.path.join(HERE, name)
 
 
+def merge_capture_coverage(pack, capture_cov_path):
+    """Fold the capture's coverage into the pack's coverage.json.
+
+    The two bar files answer different questions - the frozen ledger is the
+    product-raw/reference-adjusted pair, the capture is the reference's own
+    type0/type7 pair - so they are reported side by side rather than summed,
+    and the capture is what the shortfall against the declared universe is
+    measured on (it is the wider one).
+    """
+    import json
+    main_path = os.path.join(pack, "coverage.json")
+    if not (os.path.exists(main_path) and os.path.exists(capture_cov_path)):
+        return
+    main = json.load(open(main_path, encoding="utf-8"))
+    cap = json.load(open(capture_cov_path, encoding="utf-8"))
+    main["capture"] = {
+        "totals": cap.get("totals"),
+        "series": cap.get("series"),
+        "shortfall": cap.get("shortfall"),
+        "note": "reference type0/type7 pair from one live snapshot; kept apart from the "
+                "frozen-ledger bars so the two are never summed",
+    }
+    if cap.get("shortfall"):
+        main["shortfall"] = cap["shortfall"]
+    with open(main_path, "w", encoding="utf-8", newline="\n") as fh:
+        json.dump(main, fh, ensure_ascii=False, indent=1)
+        fh.write("\n")
+
+
 def export_artifacts(pack, dest, inputs):
     """Copy the shareable subset into git: contract, stats, hashes - no raw bars.
 
@@ -65,6 +94,7 @@ def export_artifacts(pack, dest, inputs):
     import json
     os.makedirs(dest, exist_ok=True)
     share = ["manifest.json", "coverage.json", "factor-segments-summary.json",
+             "factor-segments-capture-summary.json", "capture-vs-frozen-summary.json",
              "mismatch-summary.json", "mismatch-disposition.json"]
     for name in share:
         src = os.path.join(pack, name)
@@ -136,10 +166,18 @@ def main():
 
     # 4) a real capture, when one is available
     if a.capture:
+        pairs_capture = os.path.join(tmp, "pairs_capture.ndjson.gz")
         run([tool("import_reference.py"), "--in", a.capture, "--kind", "rahavard-json",
-             "--out", os.path.join(tmp, "capture")] + stamp)
+             "--out", os.path.join(tmp, "capture"),
+             "--declared-coverage", DECLARED,
+             "--also-pairs", pairs_capture] + stamp)
         shutil.copyfile(os.path.join(tmp, "capture", "bars.ndjson.gz"),
                         os.path.join(pack, "bars_capture.ndjson.gz"))
+        run([tool("infer_factor_segments.py"), "--pairs", pairs_capture,
+             "--out", pack, "--name", "factor_segments_capture"] + stamp)
+        run([tool("compare_capture.py"), "--capture", a.capture,
+             "--frozen", CANDLE_LEDGER, "--out", pack] + stamp)
+        merge_capture_coverage(pack, os.path.join(tmp, "capture", "coverage.json"))
 
     # 5) infer the effective factors from the raw-vs-adjusted pairs
     run([tool("infer_factor_segments.py"), "--pairs", pairs_candle, "--out", pack] + stamp)

@@ -411,6 +411,8 @@ def main():
     ap.add_argument("--kind", default="candle-diverge",
                     choices=("candle-diverge", "parity-diverge"))
     ap.add_argument("--out", required=True)
+    ap.add_argument("--name", default="factor_segments",
+                    help="output basename, so a capture run does not overwrite the ledger run")
     ap.add_argument("--fields", default="o,h,l,c",
                     help="fields that vote on the factor (default o,h,l,c)")
     ap.add_argument("--min-fields", type=int, default=DEFAULTS["min_fields"])
@@ -439,7 +441,7 @@ def main():
         return 2
 
     segments, per_group = infer_all(pairs, opts)
-    out_path = os.path.join(a.out, "factor_segments.ndjson.gz")
+    out_path = os.path.join(a.out, a.name + ".ndjson.gz")
     n = IO.write_ndjson_gz(out_path, segments)
 
     sweep = {}
@@ -475,9 +477,9 @@ def main():
         },
         "sensitivity": sweep,
         "per_group": per_group,
-        "file": IO.file_entry(out_path, S.SCHEMA_SEGMENT, rows=n, rel="factor_segments.ndjson.gz"),
+        "file": IO.file_entry(out_path, S.SCHEMA_SEGMENT, rows=n, rel=a.name + ".ndjson.gz"),
     }
-    IO.write_json(os.path.join(a.out, "factor-segments-summary.json"), summary)
+    IO.write_json(os.path.join(a.out, a.name.replace("_", "-") + "-summary.json"), summary)
     print("segments: %d (%d with a factor)  breaks: %d  -> %s"
           % (len(segments), len(with_factor), summary["totals"]["breaks"], out_path))
     print("causes: %r" % (summary["totals"]["causes"],))

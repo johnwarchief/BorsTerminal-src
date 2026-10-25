@@ -63,7 +63,7 @@ def load(path, kind, url=None):
 
     if kind == "rahavard-json":
         sources, bars = API.parse_rahavard_json(path)
-        return [sources], bars, [], []
+        return [sources], bars, EV.pairs_from_rahavard_capture(path), []
     if kind == "rahavard-csv":
         sources, bars = API.parse_rahavard_csv(path)
         return [sources], bars, [], []
@@ -171,16 +171,19 @@ def main():
                             "bytes": os.path.getsize(path),
                             "kind": a.kind})
 
-    seen = set()
+    seen = {}
     unique_bars = []
     dupes = 0
+    conflicting = 0
     for b in sorted(bars, key=lambda r: (str(r["symbol_id"]), r["timeframe"], r["adjust"],
                                          r["basis"], r["date"], r["source_id"])):
         k = (b["symbol_id"], b["timeframe"], b["adjust"], b["basis"], b["date"], b["source_id"])
         if k in seen:
             dupes += 1
+            if seen[k] != b["row_hash"]:
+                conflicting += 1
             continue
-        seen.add(k)
+        seen[k] = b["row_hash"]
         unique_bars.append(b)
 
     violations = []
@@ -204,12 +207,17 @@ def main():
                            for s in build_coverage(unique_bars)}),
             "symbols": len({b["symbol"] for b in unique_bars}),
             "duplicate_rows_dropped": dupes,
+            "conflicting_duplicates": conflicting,
             "schema_violations": len(violations),
         },
         "not_captured": [],
         "notes": [
             "A series that the source answered with zero bars is recorded as EMPTY, not removed.",
             "Rows are unique on (symbol_id, timeframe, adjust, basis, date, source_id).",
+            "duplicate_rows_dropped counts rows that repeat a key with identical values (the "
+            "monthly endpoint of Rahavard365 sends each bar about three times); "
+            "conflicting_duplicates counts keys that repeat with DIFFERENT values and is the "
+            "number to alarm on",
         ],
     }
     if a.declared_coverage and os.path.exists(a.declared_coverage):

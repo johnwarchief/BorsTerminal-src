@@ -1,7 +1,7 @@
 {
  "schema": "ra365-reference-pack/1",
- "pack_id": "61e5f10cab70fd37edaaa38daa7c8693fed080d720d78cf1943f40410085480c",
- "generated_at": "2026-10-25T00:00:00Z",
+ "pack_id": "911461d05e3af1f8303ec45a4084e12773e9b07ea3b9386df50f4971dd5bcb2a",
+ "generated_at": "2026-10-25T18:28:15Z",
  "tool": {
   "name": "tools/ra365/r32-reference",
   "version": "1"
@@ -41,9 +41,9 @@
   {
    "path": "coverage.json",
    "schema": "ra365-reference-coverage/1",
-   "bytes": 6254,
-   "rows": 282,
-   "sha256": "5f6bc92703861272af17721ac7448f3c84d9d11b2131fdab84008d65ddbceb97"
+   "bytes": 18533,
+   "rows": 785,
+   "sha256": "ce8e4edb37db684a9575900e12b157f3cfdbb25f171284881f705a76e54d78ba"
   },
   {
    "path": "factor_segments_frozen.ndjson.gz",
@@ -53,31 +53,59 @@
    "sha256": "f687636993a7081ba7f0532963e356c2e056dc461d21bf6778a0ca9d06185e95"
   },
   {
+   "path": "factor_segments_capture.ndjson.gz",
+   "schema": "ra365-factor-segment/1",
+   "bytes": 21231,
+   "rows": 321,
+   "sha256": "6850657e9b3bb697f531eed6429267505d006139ee411e27d9c8b19283e5852c"
+  },
+  {
+   "path": "bars_capture.ndjson.gz",
+   "schema": "ra365-reference-bar/1",
+   "bytes": 1588565,
+   "rows": 19802,
+   "sha256": "e5a959bf4255c623ccf08c5d8c297a558fd7a3f2a5c20169707b7d7043b8d239"
+  },
+  {
+   "path": "capture-vs-frozen-summary.json",
+   "schema": "ra365-summary/1",
+   "bytes": 3287,
+   "rows": 138,
+   "sha256": "85952de41036bc52bbc5799903293ce6bd8be199b5c069914196acdb73a44702"
+  },
+  {
+   "path": "factor-segments-capture-summary.json",
+   "schema": "ra365-summary/1",
+   "bytes": 5152,
+   "rows": 275,
+   "sha256": "c4b129e5e1c7b6a5f9a4a335f5e4dcf7dfd24f2815aad3520f48674854fc97de"
+  },
+  {
    "path": "factor-segments-summary.json",
    "schema": "ra365-summary/1",
    "bytes": 2605,
    "rows": 140,
-   "sha256": "d95953d5785102b30c85cc4a6e298572a0960a49651eaf1d22e855cd9e8eb2e0"
+   "sha256": "5b63f174571d4c8c71872199ad5de9486e7e0772b1890b0e097df3cc37f73551"
   },
   {
    "path": "mismatch-summary.json",
    "schema": "ra365-summary/1",
    "bytes": 1685,
    "rows": 62,
-   "sha256": "83b698eb6c1674d007176c51c7d6d4269e432de87d44d2fbc1c95bd91b5539f3"
+   "sha256": "783a767aba011a173bc130311c52e2f1ccaf561b604f5d12b34f8d3c277a52e6"
   },
   {
    "path": "mismatch-disposition.json",
    "schema": "ra365-summary/1",
    "bytes": 6184,
    "rows": 229,
-   "sha256": "07b0fcfc349058b091477be22b82e6fa1b03a2d25cb0756f8867ccb1b8d95668"
+   "sha256": "462c0dcb3e3e7e7fbafcb650e7aa59028b289e739230178f02a26d35f4db75fc"
   }
  ],
  "unavailable": [],
  "totals": {
-  "ra365-reference-bar/1": 2974,
-  "ra365-factor-segment/1": 6770,
+  "ra365-reference-bar/1": 19802,
+  "ra365-factor-segment/1": 321,
   "ra365-mismatch/1": 30912
  },
  "license": "reference data is the owner's Rahavard365 subscription; local-only, never published to the public repository",

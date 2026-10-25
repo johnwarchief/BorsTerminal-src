@@ -1,0 +1,138 @@
+{
+ "generated_at": "2026-10-25T18:28:15Z",
+ "kind": "reference-revision",
+ "resolution": "D",
+ "adjust": "adjusted",
+ "capture": {
+  "path_basename": "rahavard-2026-10-25.json",
+  "captured_at": "2026-10-25T18:28:15Z",
+  "input_sha256": "e7ade970a59733339fa05010dba349c2f08261f8e8fbf10b8833852dcd8821f4"
+ },
+ "frozen": {
+  "path_basename": "RA365-CANDLE-DIVERGE-2026-10-12.csv",
+  "input_sha256": "98e2949c9dae5edeb5e91a590d0fece12d6551b9e0f86b84be56e8d9d2d0c623"
+ },
+ "totals": {
+  "symbols": 6,
+  "common_dates": 1487,
+  "outside_tolerance": 0,
+  "outside_pct": 0.0
+ },
+ "per_symbol": [
+  {
+   "symbol": "خودرو",
+   "common_dates": 55,
+   "exact": 55,
+   "within_contract_tolerance": 55,
+   "outside_tolerance": 0,
+   "outside_pct": 0.0,
+   "first_common": "2026-06-16",
+   "last_common": "2026-10-11",
+   "median_rel_diff": 0.0,
+   "max_rel_diff": 0.0,
+   "worst_case": {
+    "date": "2026-06-16",
+    "rel": 0.0,
+    "field": "o",
+    "capture": 584.0,
+    "frozen": 584.0
+   }
+  },
+  {
+   "symbol": "شپنا",
+   "common_dates": 288,
+   "exact": 288,
+   "within_contract_tolerance": 288,
+   "outside_tolerance": 0,
+   "outside_pct": 0.0,
+   "first_common": "2025-03-25",
+   "last_common": "2026-10-03",
+   "median_rel_diff": 0.0,
+   "max_rel_diff": 0.0,
+   "worst_case": {
+    "date": "2025-03-25",
+    "rel": 0.0,
+    "field": "o",
+    "capture": 2547.412432354464,
+    "frozen": 2547.412432354464
+   }
+  },
+  {
+   "symbol": "فنوال",
+   "common_dates": 282,
+   "exact": 282,
+   "within_contract_tolerance": 282,
+   "outside_tolerance": 0,
+   "outside_pct": 0.0,
+   "first_common": "2025-03-26",
+   "last_common": "2026-10-11",
+   "median_rel_diff": 0.0,
+   "max_rel_diff": 0.0,
+   "worst_case": {
+    "date": "2025-03-26",
+    "rel": 0.0,
+    "field": "o",
+    "capture": 3789.7607677480905,
+    "frozen": 3789.7607677480905
+   }
+  },
+  {
+   "symbol": "فولاد",
+   "common_dates": 289,
+   "exact": 289,
+   "within_contract_tolerance": 289,
+   "outside_tolerance": 0,
+   "outside_pct": 0.0,
+   "first_common": "2024-12-31",
+   "last_common": "2026-10-11",
+   "median_rel_diff": 0.0,
+   "max_rel_diff": 0.0,
+   "worst_case": {
+    "date": "2024-12-31",
+    "rel": 0.0,
+    "field": "o",
+    "capture": 2791.6416264995764,
+    "frozen": 2791.6416264995764
+   }
+  },
+  {
+   "symbol": "وبملت",
+   "common_dates": 293,
+   "exact": 293,
+   "within_contract_tolerance": 293,
+   "outside_tolerance": 0,
+   "outside_pct": 0.0,
+   "first_common": "2025-03-18",
+   "last_common": "2026-10-11",
+   "median_rel_diff": 0.0,
+   "max_rel_diff": 0.0,
+   "worst_case": {
+    "date": "2025-03-18",
+    "rel": 0.0,
+    "field": "o",
+    "capture": 691.4720928301083,
+    "frozen": 691.4720928301083
+   }
+  },
+  {
+   "symbol": "ولانا",
+   "common_dates": 280,
+   "exact": 280,
+   "within_contract_tolerance": 280,
+   "outside_tolerance": 0,
+   "outside_pct": 0.0,
+   "first_common": "2024-12-28",
+   "last_common": "2026-10-05",
+   "median_rel_diff": 0.0,
+   "max_rel_diff": 0.0,
+   "worst_case": {
+    "date": "2024-12-28",
+    "rel": 0.0,
+    "field": "o",
+    "capture": 2863.721258199067,
+    "frozen": 2863.721258199067
+   }
+  }
+ ],
+ "note": "a difference here is a revision of the reference between the two snapshots; it is neither a product defect nor a factor change"
+}

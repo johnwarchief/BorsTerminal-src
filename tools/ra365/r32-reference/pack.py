@@ -44,6 +44,7 @@ EXPECTED = {
 
 KNOWN_EXTRA = {
     "factor_segments_frozen.ndjson.gz": S.SCHEMA_SEGMENT,
+    "factor_segments_capture.ndjson.gz": S.SCHEMA_SEGMENT,
     "bars_capture.ndjson.gz": S.SCHEMA_BAR,
 }
 

@@ -229,6 +229,57 @@ def pairs_from_parity_diverge(path, url=None):
     return out
 
 
+def pairs_from_rahavard_capture(path):
+    """type0 (raw) beside type7 (adjusted) from one capture, session by session.
+
+    Both sides come from the same source and the same snapshot, so the ratio
+    they produce is the reference's own factor chain with no cross-source noise:
+    it is the cleanest evidence the round can get for `infer_factor_segments`.
+    """
+    import json as _json
+    with open(path, encoding="utf-8-sig") as fh:
+        doc = _json.load(fh)
+    src = doc.get("source") or {}
+    sid = "rahavard365-capture@%s" % (src.get("captured_at") or os.path.basename(path))
+    groups = {}
+    for series in doc.get("series") or []:
+        key = (str(series.get("asset_id")), series.get("resolution") or series.get("timeframe"))
+        groups.setdefault(key, {})[series.get("adjust")] = series
+    out = []
+    for (asset_id, resolution), sides in sorted(groups.items()):
+        raw, adjusted = sides.get("raw"), sides.get("adjusted")
+        if not raw or not adjusted:
+            continue
+        symbol = S.normalize_symbol(raw.get("symbol") or adjusted.get("symbol"))
+        basis = raw.get("basis") or adjusted.get("basis") or "real_close"
+        rmap = {str(b.get("utc"))[:10]: b for b in raw.get("bars") or [] if b.get("utc")}
+        amap = {str(b.get("utc"))[:10]: b for b in adjusted.get("bars") or [] if b.get("utc")}
+        for date in sorted(set(rmap) & set(amap)):
+            r, a = rmap[date], amap[date]
+            out.append({
+                "symbol_id": asset_id, "symbol": symbol,
+                "timeframe": S.normalize_timeframe(resolution),
+                "timeframe_source": "declared",
+                "date": date, "basis": basis, "adjust": "adjusted",
+                "prod": {"o": S.normalize_number(r.get("open")),
+                         "h": S.normalize_number(r.get("high")),
+                         "l": S.normalize_number(r.get("low")),
+                         "c": S.normalize_number(r.get("close")),
+                         "v": S.normalize_number(r.get("volume"))},
+                "prod_raw": {"c": S.normalize_number(r.get("close"))},
+                "ref": {"o": S.normalize_number(a.get("open")),
+                        "h": S.normalize_number(a.get("high")),
+                        "l": S.normalize_number(a.get("low")),
+                        "c": S.normalize_number(a.get("close")),
+                        "v": S.normalize_number(a.get("volume"))},
+                "event": (adjusted.get("marks") or {}).get("data") if isinstance(
+                    adjusted.get("marks"), dict) else None,
+                "source_ref": sid + "#type7",
+                "source_prod": sid + "#type0",
+            })
+    return out
+
+
 def segments_from_steps(path):
     """Frozen factor-chain boundaries -> step-boundary segments.
 

@@ -1,0 +1,275 @@
+{
+ "schema": "ra365-factor-segment/1",
+ "generated_at": "2026-10-25T18:28:15Z",
+ "inputs": {
+  "paired_rows": 9901,
+  "source": "pairs_capture.ndjson.gz",
+  "source_sha256": "e6291042d5d4e0a1a8f2e4b2dc5fb1e3dcc600754af454ec2b37512aa56460cd"
+ },
+ "thresholds": {
+  "break_tol": 0.0005,
+  "tick": 1.0,
+  "min_run": 3,
+  "min_fields": 2,
+  "max_candidates": 400,
+  "max_score_rows": 6000,
+  "merge_gap": 2
+ },
+ "thresholds_note": "tool parameters, printed for reproducibility; not a methodology ruling",
+ "fields_used": [
+  "o",
+  "h",
+  "l",
+  "c"
+ ],
+ "totals": {
+  "segments": 321,
+  "segments_with_factor": 299,
+  "breaks": 281,
+  "causes": {
+   "single_scalar_with_rounding": 256,
+   "exact_single_scalar": 23,
+   "no_single_scalar": 22,
+   "single_scalar": 20
+  },
+  "attribution": {
+   "unattributed": 321
+  },
+  "confidence_bins": {
+   "0.0-0.3": 22,
+   "0.3-0.6": 9,
+   "0.6-0.8": 106,
+   "0.8-1.0": 184
+  },
+  "sessions_covered": 9901,
+  "sessions_explained_by_a_scalar": 9864
+ },
+ "sensitivity": {
+  "1e-05": {
+   "segments": 324,
+   "breaks": 283
+  },
+  "1e-04": {
+   "segments": 324,
+   "breaks": 283
+  },
+  "5e-04": {
+   "segments": 321,
+   "breaks": 281
+  },
+  "1e-03": {
+   "segments": 314,
+   "breaks": 274
+  },
+  "5e-03": {
+   "segments": 297,
+   "breaks": 259
+  }
+ },
+ "per_group": {
+  "149|D": {
+   "sessions": 805,
+   "skipped": 0,
+   "segments": 8,
+   "breaks": 7,
+   "causes": {
+    "single_scalar_with_rounding": 7,
+    "exact_single_scalar": 1
+   }
+  },
+  "149|M": {
+   "sessions": 340,
+   "skipped": 0,
+   "segments": 41,
+   "breaks": 37,
+   "causes": {
+    "single_scalar_with_rounding": 32,
+    "exact_single_scalar": 4,
+    "no_single_scalar": 3,
+    "single_scalar": 2
+   }
+  },
+  "149|W": {
+   "sessions": 682,
+   "skipped": 0,
+   "segments": 18,
+   "breaks": 17,
+   "causes": {
+    "single_scalar_with_rounding": 16,
+    "single_scalar": 1,
+    "exact_single_scalar": 1
+   }
+  },
+  "167|D": {
+   "sessions": 754,
+   "skipped": 0,
+   "segments": 2,
+   "breaks": 1,
+   "causes": {
+    "single_scalar_with_rounding": 1,
+    "exact_single_scalar": 1
+   }
+  },
+  "167|M": {
+   "sessions": 390,
+   "skipped": 0,
+   "segments": 39,
+   "breaks": 37,
+   "causes": {
+    "single_scalar_with_rounding": 35,
+    "exact_single_scalar": 2,
+    "no_single_scalar": 1,
+    "single_scalar": 1
+   }
+  },
+  "167|W": {
+   "sessions": 665,
+   "skipped": 0,
+   "segments": 10,
+   "breaks": 9,
+   "causes": {
+    "single_scalar_with_rounding": 9,
+    "exact_single_scalar": 1
+   }
+  },
+  "453|D": {
+   "sessions": 766,
+   "skipped": 0,
+   "segments": 8,
+   "breaks": 7,
+   "causes": {
+    "single_scalar_with_rounding": 7,
+    "exact_single_scalar": 1
+   }
+  },
+  "453|M": {
+   "sessions": 230,
+   "skipped": 0,
+   "segments": 33,
+   "breaks": 26,
+   "causes": {
+    "single_scalar_with_rounding": 19,
+    "single_scalar": 7,
+    "no_single_scalar": 6,
+    "exact_single_scalar": 1
+   }
+  },
+  "453|W": {
+   "sessions": 688,
+   "skipped": 0,
+   "segments": 23,
+   "breaks": 21,
+   "causes": {
+    "single_scalar_with_rounding": 19,
+    "exact_single_scalar": 2,
+    "no_single_scalar": 1,
+    "single_scalar": 1
+   }
+  },
+  "462|D": {
+   "sessions": 810,
+   "skipped": 0,
+   "segments": 9,
+   "breaks": 8,
+   "causes": {
+    "single_scalar_with_rounding": 8,
+    "exact_single_scalar": 1
+   }
+  },
+  "462|M": {
+   "sessions": 203,
+   "skipped": 0,
+   "segments": 24,
+   "breaks": 21,
+   "causes": {
+    "single_scalar_with_rounding": 21,
+    "no_single_scalar": 2,
+    "exact_single_scalar": 1
+   }
+  },
+  "462|W": {
+   "sessions": 637,
+   "skipped": 0,
+   "segments": 17,
+   "breaks": 16,
+   "causes": {
+    "single_scalar_with_rounding": 16,
+    "exact_single_scalar": 1
+   }
+  },
+  "484|D": {
+   "sessions": 804,
+   "skipped": 0,
+   "segments": 9,
+   "breaks": 8,
+   "causes": {
+    "single_scalar_with_rounding": 8,
+    "exact_single_scalar": 1
+   }
+  },
+  "484|M": {
+   "sessions": 198,
+   "skipped": 0,
+   "segments": 29,
+   "breaks": 24,
+   "causes": {
+    "single_scalar_with_rounding": 20,
+    "no_single_scalar": 4,
+    "single_scalar": 4,
+    "exact_single_scalar": 1
+   }
+  },
+  "484|W": {
+   "sessions": 628,
+   "skipped": 0,
+   "segments": 24,
+   "breaks": 22,
+   "causes": {
+    "single_scalar_with_rounding": 22,
+    "no_single_scalar": 1,
+    "exact_single_scalar": 1
+   }
+  },
+  "599|D": {
+   "sessions": 740,
+   "skipped": 0,
+   "segments": 6,
+   "breaks": 4,
+   "causes": {
+    "single_scalar_with_rounding": 4,
+    "no_single_scalar": 1,
+    "exact_single_scalar": 1
+   }
+  },
+  "599|M": {
+   "sessions": 117,
+   "skipped": 0,
+   "segments": 10,
+   "breaks": 8,
+   "causes": {
+    "single_scalar": 4,
+    "single_scalar_with_rounding": 4,
+    "no_single_scalar": 1,
+    "exact_single_scalar": 1
+   }
+  },
+  "599|W": {
+   "sessions": 444,
+   "skipped": 0,
+   "segments": 11,
+   "breaks": 8,
+   "causes": {
+    "single_scalar_with_rounding": 8,
+    "no_single_scalar": 2,
+    "exact_single_scalar": 1
+   }
+  }
+ },
+ "file": {
+  "path": "factor_segments_capture.ndjson.gz",
+  "schema": "ra365-factor-segment/1",
+  "bytes": 21231,
+  "rows": 321,
+  "sha256": "6850657e9b3bb697f531eed6429267505d006139ee411e27d9c8b19283e5852c"
+ }
+}
