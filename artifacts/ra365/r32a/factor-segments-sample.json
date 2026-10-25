@@ -1,0 +1,543 @@
+{
+ "note": "derived factors only; the raw series stays in the local pack",
+ "records": [
+  {
+   "breakpoint": null,
+   "cause": "single_scalar",
+   "cause_basis": "fields agree on one scalar but leave up to 0.0351 relative residual",
+   "confidence": 0.7,
+   "confidence_basis": "51 session(s); relative residual 0.035 exceeds the tolerance; absolute residual 21 exceeds one price unit",
+   "consensus_fields": [
+    "c",
+    "h",
+    "l",
+    "o"
+   ],
+   "date_from": "2026-06-16",
+   "date_to": "2026-10-11",
+   "dissent_fields": {},
+   "effective_tolerance": 0.001502629602,
+   "event_attribution": "unattributed",
+   "event_evidence": [],
+   "evidence": {
+    "date_gap_max_days": 8,
+    "evidence_kind": "series",
+    "n_boundaries": 0,
+    "n_field_samples": 204,
+    "n_sessions": 55,
+    "n_support_sessions": 51,
+    "sessions_skipped_in_group": 0
+   },
+   "factor": 1.0,
+   "factor_convention": "reference_adjusted / product_raw",
+   "factor_inverse": 1.0,
+   "fields_used": [
+    "o",
+    "h",
+    "l",
+    "c"
+   ],
+   "gaps_absorbed": 4,
+   "max_abs_residual": 21.0,
+   "max_rel_residual": 0.035087719298,
+   "median_rel_residual": 0.0,
+   "n_sessions": 55,
+   "rounding_limited": true,
+   "schema": "ra365-factor-segment/1",
+   "segment_index": 0,
+   "source_prod": "product-raw@RA365-CANDLE-DIVERGE-2026-10-12.csv",
+   "source_ref": "rahavard-adjusted@RA365-CANDLE-DIVERGE-2026-10-12.csv",
+   "symbol": "خودرو",
+   "symbol_id": "خودرو",
+   "thresholds": {
+    "break_tol": 0.0005,
+    "max_candidates": 400,
+    "max_score_rows": 6000,
+    "merge_gap": 2,
+    "min_fields": 2,
+    "min_run": 3,
+    "tick": 1.0
+   },
+   "timeframe": "D",
+   "timeframe_source": "derived",
+   "unavailable": [
+    "independent_event_evidence"
+   ]
+  },
+  {
+   "breakpoint": null,
+   "cause": "no_single_scalar",
+   "cause_basis": "no scalar covered these sessions: the difference is not a factor, so it belongs to the data/model ledger",
+   "confidence": 0.1,
+   "confidence_basis": "no single scalar fits; the confidence is in the classification, not a factor",
+   "consensus_fields": [],
+   "date_from": "2025-03-25",
+   "date_to": "2025-03-25",
+   "dissent_fields": {},
+   "effective_tolerance": 0.0005,
+   "event_attribution": "unattributed",
+   "event_evidence": [],
+   "evidence": {
+    "date_gap_max_days": null,
+    "evidence_kind": "series",
+    "n_boundaries": 0,
+    "n_field_samples": 4,
+    "n_sessions": 1,
+    "n_support_sessions": 1,
+    "sessions_skipped_in_group": 0
+   },
+   "factor": null,
+   "factor_convention": "reference_adjusted / product_raw",
+   "factor_inverse": null,
+   "fields_used": [
+    "o",
+    "h",
+    "l",
+    "c"
+   ],
+   "gaps_absorbed": 0,
+   "max_abs_residual": null,
+   "max_rel_residual": null,
+   "median_rel_residual": null,
+   "n_sessions": 1,
+   "rounding_limited": false,
+   "schema": "ra365-factor-segment/1",
+   "segment_index": 0,
+   "source_prod": "product-raw@RA365-CANDLE-DIVERGE-2026-10-12.csv",
+   "source_ref": "rahavard-adjusted@RA365-CANDLE-DIVERGE-2026-10-12.csv",
+   "symbol": "شپنا",
+   "symbol_id": "شپنا",
+   "thresholds": {
+    "break_tol": 0.0005,
+    "max_candidates": 400,
+    "max_score_rows": 6000,
+    "merge_gap": 2,
+    "min_fields": 2,
+    "min_run": 3,
+    "tick": 1.0
+   },
+   "timeframe": "D",
+   "timeframe_source": "derived",
+   "unavailable": [
+    "independent_event_evidence",
+    "factor"
+   ]
+  },
+  {
+   "breakpoint": null,
+   "cause": "single_scalar_with_dissent",
+   "cause_basis": "h,l agree on one scalar (0.710185); c,o does not (0.709158). The two sides use a different c,o definition, or a different session's c,o; which is authoritative is the owner's ruling, not this tool's",
+   "confidence": 0.3,
+   "confidence_basis": "9 session(s); a field dissents; relative residual 0.029 exceeds the tolerance; absolute residual 73.1 exceeds one price unit",
+   "consensus_fields": [
+    "h",
+    "l"
+   ],
+   "date_from": "2025-03-26",
+   "date_to": "2025-04-16",
+   "dissent_fields": {
+    "c": 0.70915795958,
+    "o": 0.723703120457
+   },
+   "effective_tolerance": 0.0005,
+   "event_attribution": "unattributed",
+   "event_evidence": [],
+   "evidence": {
+    "date_gap_max_days": 6,
+    "evidence_kind": "series",
+    "n_boundaries": 0,
+    "n_field_samples": 36,
+    "n_sessions": 13,
+    "n_support_sessions": 9,
+    "sessions_skipped_in_group": 0
+   },
+   "factor": 0.710184680346,
+   "factor_convention": "reference_adjusted / product_raw",
+   "factor_inverse": 1.408084442927,
+   "fields_used": [
+    "o",
+    "h",
+    "l",
+    "c"
+   ],
+   "gaps_absorbed": 4,
+   "max_abs_residual": 73.118613,
+   "max_rel_residual": 0.029322885189,
+   "median_rel_residual": 0.000270929287,
+   "n_sessions": 13,
+   "rounding_limited": false,
+   "schema": "ra365-factor-segment/1",
+   "segment_index": 1,
+   "source_prod": "product-raw@RA365-CANDLE-DIVERGE-2026-10-12.csv",
+   "source_ref": "rahavard-adjusted@RA365-CANDLE-DIVERGE-2026-10-12.csv",
+   "symbol": "شپنا",
+   "symbol_id": "شپنا",
+   "thresholds": {
+    "break_tol": 0.0005,
+    "max_candidates": 400,
+    "max_score_rows": 6000,
+    "merge_gap": 2,
+    "min_fields": 2,
+    "min_run": 3,
+    "tick": 1.0
+   },
+   "timeframe": "D",
+   "timeframe_source": "derived",
+   "unavailable": [
+    "o",
+    "c",
+    "independent_event_evidence"
+   ]
+  },
+  {
+   "breakpoint": {
+    "date": "2025-04-19",
+    "delta_rel": 0.000754225417,
+    "prev_factor": 0.710184680346
+   },
+   "cause": "insufficient_evidence",
+   "cause_basis": "only 1 session(s) support this scalar",
+   "confidence": 0.2,
+   "confidence_basis": "fewer than 3 sessions",
+   "consensus_fields": [
+    "c",
+    "h"
+   ],
+   "date_from": "2025-04-19",
+   "date_to": "2025-04-19",
+   "dissent_fields": {
+    "l": 0.716457403166,
+    "o": 0.725577794437
+   },
+   "effective_tolerance": 0.0005,
+   "event_attribution": "unattributed",
+   "event_evidence": [],
+   "evidence": {
+    "date_gap_max_days": null,
+    "evidence_kind": "series",
+    "n_boundaries": 1,
+    "n_field_samples": 4,
+    "n_sessions": 1,
+    "n_support_sessions": 1,
+    "sessions_skipped_in_group": 0
+   },
+   "factor": 0.710720319682,
+   "factor_convention": "reference_adjusted / product_raw",
+   "factor_inverse": 1.407023230245,
+   "fields_used": [
+    "o",
+    "h",
+    "l",
+    "c"
+   ],
+   "gaps_absorbed": 0,
+   "max_abs_residual": 1.23887,
+   "max_rel_residual": 0.000483091787,
+   "median_rel_residual": 0.000277142131,
+   "n_sessions": 1,
+   "rounding_limited": false,
+   "schema": "ra365-factor-segment/1",
+   "segment_index": 2,
+   "source_prod": "product-raw@RA365-CANDLE-DIVERGE-2026-10-12.csv",
+   "source_ref": "rahavard-adjusted@RA365-CANDLE-DIVERGE-2026-10-12.csv",
+   "symbol": "شپنا",
+   "symbol_id": "شپنا",
+   "thresholds": {
+    "break_tol": 0.0005,
+    "max_candidates": 400,
+    "max_score_rows": 6000,
+    "merge_gap": 2,
+    "min_fields": 2,
+    "min_run": 3,
+    "tick": 1.0
+   },
+   "timeframe": "D",
+   "timeframe_source": "derived",
+   "unavailable": [
+    "o",
+    "l",
+    "independent_event_evidence"
+   ]
+  },
+  {
+   "breakpoint": {
+    "date": "2025-04-20",
+    "delta_rel": -0.000753656989,
+    "prev_factor": 0.710720319682
+   },
+   "cause": "single_scalar_with_dissent",
+   "cause_basis": "h,l agree on one scalar (0.710185); c,o does not (0.708045). The two sides use a different c,o definition, or a different session's c,o; which is authoritative is the owner's ruling, not this tool's",
+   "confidence": 0.3,
+   "confidence_basis": "8 session(s); a field dissents; relative residual 0.031 exceeds the tolerance; absolute residual 87.3 exceeds one price unit",
+   "consensus_fields": [
+    "h",
+    "l"
+   ],
+   "date_from": "2025-04-20",
+   "date_to": "2025-05-06",
+   "dissent_fields": {
+    "c": 0.712930487631,
+    "o": 0.708044870677
+   },
+   "effective_tolerance": 0.0005,
+   "event_attribution": "unattributed",
+   "event_evidence": [],
+   "evidence": {
+    "date_gap_max_days": 3,
+    "evidence_kind": "series",
+    "n_boundaries": 1,
+    "n_field_samples": 32,
+    "n_sessions": 13,
+    "n_support_sessions": 8,
+    "sessions_skipped_in_group": 0
+   },
+   "factor": 0.710184680346,
+   "factor_convention": "reference_adjusted / product_raw",
+   "factor_inverse": 1.408084442927,
+   "fields_used": [
+    "o",
+    "h",
+    "l",
+    "c"
+   ],
+   "gaps_absorbed": 5,
+   "max_abs_residual": 87.287856,
+   "max_rel_residual": 0.030512881184,
+   "median_rel_residual": 0.000270929287,
+   "n_sessions": 13,
+   "rounding_limited": false,
+   "schema": "ra365-factor-segment/1",
+   "segment_index": 3,
+   "source_prod": "product-raw@RA365-CANDLE-DIVERGE-2026-10-12.csv",
+   "source_ref": "rahavard-adjusted@RA365-CANDLE-DIVERGE-2026-10-12.csv",
+   "symbol": "شپنا",
+   "symbol_id": "شپنا",
+   "thresholds": {
+    "break_tol": 0.0005,
+    "max_candidates": 400,
+    "max_score_rows": 6000,
+    "merge_gap": 2,
+    "min_fields": 2,
+    "min_run": 3,
+    "tick": 1.0
+   },
+   "timeframe": "D",
+   "timeframe_source": "derived",
+   "unavailable": [
+    "o",
+    "c",
+    "independent_event_evidence"
+   ]
+  },
+  {
+   "breakpoint": {
+    "date": "2025-05-07",
+    "delta_rel": 0.000754225417,
+    "prev_factor": 0.710184680346
+   },
+   "cause": "insufficient_evidence",
+   "cause_basis": "only 1 session(s) support this scalar",
+   "confidence": 0.2,
+   "confidence_basis": "fewer than 3 sessions",
+   "consensus_fields": [
+    "c",
+    "h"
+   ],
+   "date_from": "2025-05-07",
+   "date_to": "2025-05-07",
+   "dissent_fields": {
+    "l": 0.725954812023,
+    "o": 0.731619419188
+   },
+   "effective_tolerance": 0.0005,
+   "event_attribution": "unattributed",
+   "event_evidence": [],
+   "evidence": {
+    "date_gap_max_days": null,
+    "evidence_kind": "series",
+    "n_boundaries": 1,
+    "n_field_samples": 4,
+    "n_sessions": 1,
+    "n_support_sessions": 1,
+    "sessions_skipped_in_group": 0
+   },
+   "factor": 0.710720319682,
+   "factor_convention": "reference_adjusted / product_raw",
+   "factor_inverse": 1.407023230245,
+   "fields_used": [
+    "o",
+    "h",
+    "l",
+    "c"
+   ],
+   "gaps_absorbed": 0,
+   "max_abs_residual": 1.418352,
+   "max_rel_residual": 0.000483091787,
+   "median_rel_residual": 0.000242071883,
+   "n_sessions": 1,
+   "rounding_limited": false,
+   "schema": "ra365-factor-segment/1",
+   "segment_index": 4,
+   "source_prod": "product-raw@RA365-CANDLE-DIVERGE-2026-10-12.csv",
+   "source_ref": "rahavard-adjusted@RA365-CANDLE-DIVERGE-2026-10-12.csv",
+   "symbol": "شپنا",
+   "symbol_id": "شپنا",
+   "thresholds": {
+    "break_tol": 0.0005,
+    "max_candidates": 400,
+    "max_score_rows": 6000,
+    "merge_gap": 2,
+    "min_fields": 2,
+    "min_run": 3,
+    "tick": 1.0
+   },
+   "timeframe": "D",
+   "timeframe_source": "derived",
+   "unavailable": [
+    "o",
+    "l",
+    "independent_event_evidence"
+   ]
+  },
+  {
+   "breakpoint": {
+    "date": "2025-05-10",
+    "delta_rel": -0.000753656989,
+    "prev_factor": 0.710720319682
+   },
+   "cause": "insufficient_evidence",
+   "cause_basis": "only 1 session(s) support this scalar",
+   "confidence": 0.2,
+   "confidence_basis": "fewer than 3 sessions",
+   "consensus_fields": [
+    "c",
+    "l"
+   ],
+   "date_from": "2025-05-10",
+   "date_to": "2025-05-10",
+   "dissent_fields": {
+    "h": 0.705390229434,
+    "o": 0.689225753186
+   },
+   "effective_tolerance": 0.0005,
+   "event_attribution": "unattributed",
+   "event_evidence": [],
+   "evidence": {
+    "date_gap_max_days": null,
+    "evidence_kind": "series",
+    "n_boundaries": 1,
+    "n_field_samples": 4,
+    "n_sessions": 1,
+    "n_support_sessions": 1,
+    "sessions_skipped_in_group": 0
+   },
+   "factor": 0.710184680346,
+   "factor_convention": "reference_adjusted / product_raw",
+   "factor_inverse": 1.408084442927,
+   "fields_used": [
+    "o",
+    "h",
+    "l",
+    "c"
+   ],
+   "gaps_absorbed": 0,
+   "max_abs_residual": 0.771388,
+   "max_rel_residual": 0.000270929287,
+   "median_rel_residual": 0.000248688824,
+   "n_sessions": 1,
+   "rounding_limited": false,
+   "schema": "ra365-factor-segment/1",
+   "segment_index": 5,
+   "source_prod": "product-raw@RA365-CANDLE-DIVERGE-2026-10-12.csv",
+   "source_ref": "rahavard-adjusted@RA365-CANDLE-DIVERGE-2026-10-12.csv",
+   "symbol": "شپنا",
+   "symbol_id": "شپنا",
+   "thresholds": {
+    "break_tol": 0.0005,
+    "max_candidates": 400,
+    "max_score_rows": 6000,
+    "merge_gap": 2,
+    "min_fields": 2,
+    "min_run": 3,
+    "tick": 1.0
+   },
+   "timeframe": "D",
+   "timeframe_source": "derived",
+   "unavailable": [
+    "o",
+    "h",
+    "independent_event_evidence"
+   ]
+  },
+  {
+   "breakpoint": {
+    "date": "2025-05-11",
+    "delta_rel": 0.000754225417,
+    "prev_factor": 0.710184680346
+   },
+   "cause": "insufficient_evidence",
+   "cause_basis": "only 1 session(s) support this scalar",
+   "confidence": 0.2,
+   "confidence_basis": "fewer than 3 sessions",
+   "consensus_fields": [
+    "c",
+    "h"
+   ],
+   "date_from": "2025-05-11",
+   "date_to": "2025-05-11",
+   "dissent_fields": {
+    "l": 0.718855039591,
+    "o": 0.718855039591
+   },
+   "effective_tolerance": 0.0005,
+   "event_attribution": "unattributed",
+   "event_evidence": [],
+   "evidence": {
+    "date_gap_max_days": null,
+    "evidence_kind": "series",
+    "n_boundaries": 1,
+    "n_field_samples": 4,
+    "n_sessions": 1,
+    "n_support_sessions": 1,
+    "sessions_skipped_in_group": 0
+   },
+   "factor": 0.710720319682,
+   "factor_convention": "reference_adjusted / product_raw",
+   "factor_inverse": 1.407023230245,
+   "fields_used": [
+    "o",
+    "h",
+    "l",
+    "c"
+   ],
+   "gaps_absorbed": 0,
+   "max_abs_residual": 1.421441,
+   "max_rel_residual": 0.000483091787,
+   "median_rel_residual": 0.000241545894,
+   "n_sessions": 1,
+   "rounding_limited": false,
+   "schema": "ra365-factor-segment/1",
+   "segment_index": 6,
+   "source_prod": "product-raw@RA365-CANDLE-DIVERGE-2026-10-12.csv",
+   "source_ref": "rahavard-adjusted@RA365-CANDLE-DIVERGE-2026-10-12.csv",
+   "symbol": "شپنا",
+   "symbol_id": "شپنا",
+   "thresholds": {
+    "break_tol": 0.0005,
+    "max_candidates": 400,
+    "max_score_rows": 6000,
+    "merge_gap": 2,
+    "min_fields": 2,
+    "min_run": 3,
+    "tick": 1.0
+   },
+   "timeframe": "D",
+   "timeframe_source": "derived",
+   "unavailable": [
+    "o",
+    "l",
+    "independent_event_evidence"
+   ]
+  }
+ ]
+}

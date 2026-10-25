@@ -1,0 +1,229 @@
+{
+ "generated_at": "2026-10-25T00:00:00Z",
+ "frozen": {
+  "r31_D_tolerance_mismatch": 413365,
+  "r31_D_paired": 1194446,
+  "r31_D_pass": 781081,
+  "r30_failing": 491438,
+  "r30_recovered": 74483,
+  "r31_ref_only_D": 35826,
+  "r31_product_only_D": 939725
+ },
+ "r30_families": {
+  "families": 56,
+  "affected_rows_sum": 4601765,
+  "attributed_rows_sum": 476574,
+  "recovered_rows_sum": 74483,
+  "note": "affected is counted per step, so one failing row appears under every step above it; these sums are an upper bound and must not be added to the 413,365 denominator"
+ },
+ "by_class": {
+  "EXTRA": {
+   "steps": 139,
+   "affected": 44567,
+   "attributed": 17387,
+   "recovered": 11070
+  },
+  "RATIO_DIFF": {
+   "steps": 6251,
+   "affected": 4342507,
+   "attributed": 393634,
+   "recovered": 52849
+  },
+  "REF_ONLY": {
+   "steps": 380,
+   "affected": 214691,
+   "attributed": 65553,
+   "recovered": 10564
+  }
+ },
+ "recovered_by_event_signature": {
+  "base_gap": 28641,
+  "unproven_gap": 24031,
+  "no_event": 10564,
+  "dps": 4564,
+  "dps+share": 3428,
+  "base_gap+dps": 1581,
+  "fund_dps": 860,
+  "base_gap+share": 382,
+  "pa": 274,
+  "share": 158,
+  "base_gap+pa": 0,
+  "pa+share": 0,
+  "dps+pa": 0
+ },
+ "category_overlap": [
+  {
+   "category": "base-gap",
+   "lives_in_class": "RATIO_DIFF",
+   "meaning": "a base-price discontinuity the product records as a step"
+  },
+  {
+   "category": "unproven-gap",
+   "lives_in_class": "RATIO_DIFF",
+   "meaning": "a step with no official row behind it"
+  },
+  {
+   "category": "reference-only",
+   "lives_in_class": "REF_ONLY",
+   "meaning": "a step the reference has and the product does not; also a coverage bucket, so the two uses must not be summed"
+  },
+  {
+   "category": "product-only",
+   "lives_in_class": "EXTRA",
+   "meaning": "a step the product has and the reference does not"
+  },
+  {
+   "category": "dps-fund-precision",
+   "lives_in_class": "RATIO_DIFF",
+   "meaning": "same event, different amount; sub-tolerance-scale"
+  },
+  {
+   "category": "combined",
+   "lives_in_class": "RATIO_DIFF",
+   "meaning": "share + DPS or base + DPS at one boundary; overlaps the legs"
+  },
+  {
+   "category": "raw-revision",
+   "lives_in_class": "raw",
+   "meaning": "product TSETMC vs reference Rahavard raw history; not a factor"
+  }
+ ],
+ "overlaps_found": [
+  {
+   "class": "EXTRA",
+   "event_signatures": [
+    "base_gap",
+    "dps",
+    "fund_dps",
+    "unproven_gap"
+   ],
+   "finding": "one class spans 4 signatures; a row can satisfy several, so the signatures are views of the same rows, not a partition"
+  },
+  {
+   "class": "RATIO_DIFF",
+   "event_signatures": [
+    "base_gap",
+    "base_gap+dps",
+    "base_gap+pa",
+    "base_gap+share",
+    "dps",
+    "dps+pa",
+    "dps+share",
+    "fund_dps",
+    "pa",
+    "pa+share",
+    "share",
+    "unproven_gap"
+   ],
+   "finding": "one class spans 12 signatures; a row can satisfy several, so the signatures are views of the same rows, not a partition"
+  },
+  {
+   "class": "REF_ONLY",
+   "event_signatures": [
+    "no_event",
+    "unproven_gap"
+   ],
+   "finding": "one class spans 2 signatures; a row can satisfy several, so the signatures are views of the same rows, not a partition"
+  },
+  {
+   "class": "REF_ONLY vs reference-only coverage",
+   "event_signatures": [
+    "no_event"
+   ],
+   "finding": "R31 uses 'reference-only' both for a step class and for a coverage bucket (35,826 D bars); the two counts describe different objects and must not be added"
+  },
+  {
+   "class": "raw-revision vs dps-fund-precision",
+   "event_signatures": [
+    "-"
+   ],
+   "finding": "both land in the <0.01% bucket once the amount difference is small, so the error bucket alone cannot separate them; the cause field in the ledger is what separates them"
+  }
+ ],
+ "disposition": [
+  {
+   "event_sig": "base_gap",
+   "steps": 607,
+   "recovered": 28641,
+   "disposition": "needs an official ratio/S row or the owner's ruling; the ledger marks it unattributed"
+  },
+  {
+   "event_sig": "unproven_gap",
+   "steps": 505,
+   "recovered": 24031,
+   "disposition": "needs an official ratio/S row or the owner's ruling; the ledger marks it unattributed"
+  },
+  {
+   "event_sig": "no_event",
+   "steps": 379,
+   "recovered": 10564,
+   "disposition": "needs an official ratio/S row or the owner's ruling; the ledger marks it unattributed"
+  },
+  {
+   "event_sig": "dps",
+   "steps": 3059,
+   "recovered": 4564,
+   "disposition": "product has the event; the amount or the base candle differs"
+  },
+  {
+   "event_sig": "dps+share",
+   "steps": 37,
+   "recovered": 3428,
+   "disposition": "combined legs; needs the official components"
+  },
+  {
+   "event_sig": "base_gap+dps",
+   "steps": 18,
+   "recovered": 1581,
+   "disposition": "combined legs; needs the official components"
+  },
+  {
+   "event_sig": "fund_dps",
+   "steps": 1125,
+   "recovered": 860,
+   "disposition": "needs the fund's declared DPS; the amount differs by 0.5-2.6%"
+  },
+  {
+   "event_sig": "base_gap+share",
+   "steps": 7,
+   "recovered": 382,
+   "disposition": "combined legs; needs the official components"
+  },
+  {
+   "event_sig": "pa",
+   "steps": 108,
+   "recovered": 274,
+   "disposition": "product has the event; the amount or the base candle differs"
+  },
+  {
+   "event_sig": "share",
+   "steps": 921,
+   "recovered": 158,
+   "disposition": "product has the event; the amount or the base candle differs"
+  },
+  {
+   "event_sig": "base_gap+pa",
+   "steps": 2,
+   "recovered": 0,
+   "disposition": "combined legs; needs the official components"
+  },
+  {
+   "event_sig": "pa+share",
+   "steps": 1,
+   "recovered": 0,
+   "disposition": "combined legs; needs the official components"
+  },
+  {
+   "event_sig": "dps+pa",
+   "steps": 1,
+   "recovered": 0,
+   "disposition": "combined legs; needs the official components"
+  }
+ ],
+ "reconciliation": {
+  "r31_mismatch": 413365,
+  "explained_by_r30_attribution_recovered": 74483,
+  "remaining_after_r30_recovery": 338882,
+  "note": "R30's recovered count is the one-step counterfactual on the earlier baseline (491,438 failing); R31 moved the baseline to 413,365 by fixing the visible high/low. The two are not the same denominator, so the difference is reported, not reconciled away."
+ }
+}

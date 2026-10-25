@@ -1,0 +1,282 @@
+{
+ "schema": "ra365-reference-coverage/1",
+ "generated_at": "2026-10-25T00:00:00Z",
+ "series": [
+  {
+   "symbol_id": "خودرو",
+   "symbol": "خودرو",
+   "timeframe": "D",
+   "adjust": "adjusted",
+   "basis": "real_close",
+   "source_id": "rahavard-adjusted@RA365-CANDLE-DIVERGE-2026-10-12.csv",
+   "rows": 55,
+   "first": "2026-06-16",
+   "last": "2026-10-11",
+   "status": "OK",
+   "unavailable_counts": {
+    "ins_code": 55,
+    "retrieved_at": 55
+   }
+  },
+  {
+   "symbol_id": "خودرو",
+   "symbol": "خودرو",
+   "timeframe": "D",
+   "adjust": "raw",
+   "basis": "unknown",
+   "source_id": "product-raw@RA365-CANDLE-DIVERGE-2026-10-12.csv",
+   "rows": 55,
+   "first": "2026-06-16",
+   "last": "2026-10-11",
+   "status": "OK",
+   "unavailable_counts": {
+    "ins_code": 55,
+    "retrieved_at": 55
+   }
+  },
+  {
+   "symbol_id": "شپنا",
+   "symbol": "شپنا",
+   "timeframe": "D",
+   "adjust": "adjusted",
+   "basis": "real_close",
+   "source_id": "rahavard-adjusted@RA365-CANDLE-DIVERGE-2026-10-12.csv",
+   "rows": 288,
+   "first": "2025-03-25",
+   "last": "2026-10-03",
+   "status": "OK",
+   "unavailable_counts": {
+    "ins_code": 288,
+    "retrieved_at": 288
+   }
+  },
+  {
+   "symbol_id": "شپنا",
+   "symbol": "شپنا",
+   "timeframe": "D",
+   "adjust": "raw",
+   "basis": "unknown",
+   "source_id": "product-raw@RA365-CANDLE-DIVERGE-2026-10-12.csv",
+   "rows": 288,
+   "first": "2025-03-25",
+   "last": "2026-10-03",
+   "status": "OK",
+   "unavailable_counts": {
+    "ins_code": 288,
+    "retrieved_at": 288
+   }
+  },
+  {
+   "symbol_id": "فنوال",
+   "symbol": "فنوال",
+   "timeframe": "D",
+   "adjust": "adjusted",
+   "basis": "real_close",
+   "source_id": "rahavard-adjusted@RA365-CANDLE-DIVERGE-2026-10-12.csv",
+   "rows": 282,
+   "first": "2025-03-26",
+   "last": "2026-10-11",
+   "status": "OK",
+   "unavailable_counts": {
+    "ins_code": 282,
+    "retrieved_at": 282
+   }
+  },
+  {
+   "symbol_id": "فنوال",
+   "symbol": "فنوال",
+   "timeframe": "D",
+   "adjust": "raw",
+   "basis": "unknown",
+   "source_id": "product-raw@RA365-CANDLE-DIVERGE-2026-10-12.csv",
+   "rows": 282,
+   "first": "2025-03-26",
+   "last": "2026-10-11",
+   "status": "OK",
+   "unavailable_counts": {
+    "ins_code": 282,
+    "retrieved_at": 282
+   }
+  },
+  {
+   "symbol_id": "فولاد",
+   "symbol": "فولاد",
+   "timeframe": "D",
+   "adjust": "adjusted",
+   "basis": "real_close",
+   "source_id": "rahavard-adjusted@RA365-CANDLE-DIVERGE-2026-10-12.csv",
+   "rows": 289,
+   "first": "2024-12-31",
+   "last": "2026-10-11",
+   "status": "OK",
+   "unavailable_counts": {
+    "ins_code": 289,
+    "retrieved_at": 289
+   }
+  },
+  {
+   "symbol_id": "فولاد",
+   "symbol": "فولاد",
+   "timeframe": "D",
+   "adjust": "raw",
+   "basis": "unknown",
+   "source_id": "product-raw@RA365-CANDLE-DIVERGE-2026-10-12.csv",
+   "rows": 289,
+   "first": "2024-12-31",
+   "last": "2026-10-11",
+   "status": "OK",
+   "unavailable_counts": {
+    "ins_code": 289,
+    "retrieved_at": 289
+   }
+  },
+  {
+   "symbol_id": "وبملت",
+   "symbol": "وبملت",
+   "timeframe": "D",
+   "adjust": "adjusted",
+   "basis": "real_close",
+   "source_id": "rahavard-adjusted@RA365-CANDLE-DIVERGE-2026-10-12.csv",
+   "rows": 293,
+   "first": "2025-03-18",
+   "last": "2026-10-11",
+   "status": "OK",
+   "unavailable_counts": {
+    "ins_code": 293,
+    "retrieved_at": 293
+   }
+  },
+  {
+   "symbol_id": "وبملت",
+   "symbol": "وبملت",
+   "timeframe": "D",
+   "adjust": "raw",
+   "basis": "unknown",
+   "source_id": "product-raw@RA365-CANDLE-DIVERGE-2026-10-12.csv",
+   "rows": 293,
+   "first": "2025-03-18",
+   "last": "2026-10-11",
+   "status": "OK",
+   "unavailable_counts": {
+    "ins_code": 293,
+    "retrieved_at": 293
+   }
+  },
+  {
+   "symbol_id": "ولانا",
+   "symbol": "ولانا",
+   "timeframe": "D",
+   "adjust": "adjusted",
+   "basis": "real_close",
+   "source_id": "rahavard-adjusted@RA365-CANDLE-DIVERGE-2026-10-12.csv",
+   "rows": 280,
+   "first": "2024-12-28",
+   "last": "2026-10-05",
+   "status": "OK",
+   "unavailable_counts": {
+    "ins_code": 280,
+    "retrieved_at": 280
+   }
+  },
+  {
+   "symbol_id": "ولانا",
+   "symbol": "ولانا",
+   "timeframe": "D",
+   "adjust": "raw",
+   "basis": "unknown",
+   "source_id": "product-raw@RA365-CANDLE-DIVERGE-2026-10-12.csv",
+   "rows": 280,
+   "first": "2024-12-28",
+   "last": "2026-10-05",
+   "status": "OK",
+   "unavailable_counts": {
+    "ins_code": 280,
+    "retrieved_at": 280
+   }
+  }
+ ],
+ "totals": {
+  "bars": 2974,
+  "series": 12,
+  "symbols": 6,
+  "duplicate_rows_dropped": 0,
+  "schema_violations": 0
+ },
+ "not_captured": [],
+ "notes": [
+  "A series that the source answered with zero bars is recorded as EMPTY, not removed.",
+  "Rows are unique on (symbol_id, timeframe, adjust, basis, date, source_id)."
+ ],
+ "declared_universe": {
+  "source": "D:/BorsTerminal-tmp/r26_bench/frozen/ref_bars_v2.jsonl",
+  "series": [
+   {
+    "type": "type0",
+    "res": "D",
+    "series": 2599,
+    "assets": 2595,
+    "bars": 1240809,
+    "empty": 0,
+    "first": "1993-04-25",
+    "last": "2026-10-19",
+    "status": 200
+   },
+   {
+    "type": "type0",
+    "res": "W",
+    "series": 2595,
+    "assets": 2595,
+    "bars": 285797,
+    "empty": 0,
+    "first": "2017-12-30",
+    "last": "2026-10-17",
+    "status": 200
+   },
+   {
+    "type": "type7",
+    "res": "D",
+    "series": 2599,
+    "assets": 2595,
+    "bars": 1240809,
+    "empty": 0,
+    "first": "1993-04-25",
+    "last": "2026-10-19",
+    "status": 200
+   },
+   {
+    "type": "type7",
+    "res": "W",
+    "series": 2595,
+    "assets": 2595,
+    "bars": 285797,
+    "empty": 0,
+    "first": "2017-12-30",
+    "last": "2026-10-17",
+    "status": 200
+   },
+   {
+    "type": "type0/type7",
+    "res": "M",
+    "series": 0,
+    "assets": 0,
+    "bars": 0,
+    "empty": 0,
+    "first": "",
+    "last": "",
+    "status": "NOT_CAPTURED"
+   }
+  ]
+ },
+ "shortfall": {
+  "declared_series": 4,
+  "declared_assets": 2595,
+  "present_series": 12,
+  "present_assets": 6,
+  "assets_missing": 2589,
+  "present_by_timeframe": {
+   "D|adjusted|real_close": 6,
+   "D|raw|unknown": 6
+  },
+  "unit_note": "series = asset x adjust x resolution; a declared bar count is not compared row by row against a partial capture"
+ }
+}

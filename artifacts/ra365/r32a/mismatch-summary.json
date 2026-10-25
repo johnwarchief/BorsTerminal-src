@@ -1,0 +1,62 @@
+{
+ "schema": "ra365-mismatch/1",
+ "generated_at": "2026-10-25T00:00:00Z",
+ "key": "symbol_id|timeframe|date|price_basis",
+ "input_prefiltered": true,
+ "denominator": {
+  "paired_compared": 30912,
+  "pass": 0,
+  "fail": 30912,
+  "pass_pct": 0.0,
+  "coverage_one_side": 0,
+  "removed_from_denominator": 0
+ },
+ "causes": {
+  "adjust_ratio": 5224,
+  "close_definition": 14204,
+  "raw_or_revision": 1777,
+  "unattributed": 9707
+ },
+ "class_r31_hint": {
+  "field-definition": 14204,
+  "unattributed": 9707,
+  "ratio-gap": 5224,
+  "raw-revision": 1777
+ },
+ "by_basis": {
+  "adjusted|last": {
+   "adjust_ratio": 4712,
+   "unattributed": 553,
+   "raw_or_revision": 12
+  },
+  "raw|closing": {
+   "close_definition": 13239,
+   "unattributed": 2369,
+   "raw_or_revision": 1752,
+   "adjust_ratio": 6
+  },
+  "adjusted|closing": {
+   "unattributed": 6785,
+   "close_definition": 965,
+   "adjust_ratio": 506,
+   "raw_or_revision": 13
+  }
+ },
+ "contract": {
+  "price_abs": 0.5,
+  "price_rel": 1e-06,
+  "tick": 1.0
+ },
+ "file": {
+  "path": "mismatch_map.ndjson.gz",
+  "schema": "ra365-mismatch/1",
+  "bytes": 2877141,
+  "rows": 30912,
+  "sha256": "11e9ce0c202e46e7353e167f4cc2ecdc54a09b1803c401c20532036bca7a0c2e"
+ },
+ "notes": [
+  "No row is removed from the denominator; passing rows are counted, not dropped.",
+  "The input is a divergence ledger that already contains only the rows that failed, so pass=0 is a property of the input, not a parity measurement. Feed a full paired export to get a real pass rate.",
+  "class_r31_hint is the nearest R31 bucket, not a ruling: splitting a ratio gap into base-gap / unproven-gap / dps / combined needs event evidence the frozen ledgers do not carry."
+ ]
+}

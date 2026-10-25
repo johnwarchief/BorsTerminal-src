@@ -1,0 +1,89 @@
+{
+ "schema": "ra365-reference-pack/1",
+ "pack_id": "61e5f10cab70fd37edaaa38daa7c8693fed080d720d78cf1943f40410085480c",
+ "generated_at": "2026-10-25T00:00:00Z",
+ "tool": {
+  "name": "tools/ra365/r32-reference",
+  "version": "1"
+ },
+ "contract": {
+  "key": "symbol_id|timeframe|date|price_basis",
+  "factor_convention": "reference_adjusted / product_raw",
+  "schemas": [
+   "ra365-reference-bar/1",
+   "ra365-factor-segment/1",
+   "ra365-mismatch/1",
+   "ra365-reference-coverage/1"
+  ]
+ },
+ "files": [
+  {
+   "path": "bars.ndjson.gz",
+   "schema": "ra365-reference-bar/1",
+   "bytes": 230089,
+   "rows": 2974,
+   "sha256": "64913fdcd876169c339945a7bbf1491e7dabf7afa2401685f5a11e24b8b47b97"
+  },
+  {
+   "path": "factor_segments.ndjson.gz",
+   "schema": "ra365-factor-segment/1",
+   "bytes": 5289,
+   "rows": 51,
+   "sha256": "46d50f6f60decbe8b89a2b92b5f617b7592540400a33358f10b3ee0787e3a8ae"
+  },
+  {
+   "path": "mismatch_map.ndjson.gz",
+   "schema": "ra365-mismatch/1",
+   "bytes": 2877141,
+   "rows": 30912,
+   "sha256": "11e9ce0c202e46e7353e167f4cc2ecdc54a09b1803c401c20532036bca7a0c2e"
+  },
+  {
+   "path": "coverage.json",
+   "schema": "ra365-reference-coverage/1",
+   "bytes": 6254,
+   "rows": 282,
+   "sha256": "5f6bc92703861272af17721ac7448f3c84d9d11b2131fdab84008d65ddbceb97"
+  },
+  {
+   "path": "factor_segments_frozen.ndjson.gz",
+   "schema": "ra365-factor-segment/1",
+   "bytes": 361278,
+   "rows": 6770,
+   "sha256": "f687636993a7081ba7f0532963e356c2e056dc461d21bf6778a0ca9d06185e95"
+  },
+  {
+   "path": "factor-segments-summary.json",
+   "schema": "ra365-summary/1",
+   "bytes": 2605,
+   "rows": 140,
+   "sha256": "d95953d5785102b30c85cc4a6e298572a0960a49651eaf1d22e855cd9e8eb2e0"
+  },
+  {
+   "path": "mismatch-summary.json",
+   "schema": "ra365-summary/1",
+   "bytes": 1685,
+   "rows": 62,
+   "sha256": "83b698eb6c1674d007176c51c7d6d4269e432de87d44d2fbc1c95bd91b5539f3"
+  },
+  {
+   "path": "mismatch-disposition.json",
+   "schema": "ra365-summary/1",
+   "bytes": 6184,
+   "rows": 229,
+   "sha256": "07b0fcfc349058b091477be22b82e6fa1b03a2d25cb0756f8867ccb1b8d95668"
+  }
+ ],
+ "unavailable": [],
+ "totals": {
+  "ra365-reference-bar/1": 2974,
+  "ra365-factor-segment/1": 6770,
+  "ra365-mismatch/1": 30912
+ },
+ "license": "reference data is the owner's Rahavard365 subscription; local-only, never published to the public repository",
+ "consumer_notes": [
+  "Every row names its source and its price basis.",
+  "Fields the source did not supply are listed in the row's `unavailable` array; they are never estimated.",
+  "A row is one of: paired and passing, paired and failing (mismatch_map), or present on one side only (coverage)."
+ ]
+}

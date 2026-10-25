@@ -1,0 +1,140 @@
+{
+ "schema": "ra365-factor-segment/1",
+ "generated_at": "2026-10-25T00:00:00Z",
+ "inputs": {
+  "paired_rows": 1487,
+  "source": "pairs_candle.ndjson.gz",
+  "source_sha256": "a14a74c49eaba13fe7f195eed54628f4acf9621d88525e8314f8fe377b25565e"
+ },
+ "thresholds": {
+  "break_tol": 0.0005,
+  "tick": 1.0,
+  "min_run": 3,
+  "min_fields": 2,
+  "max_candidates": 400,
+  "max_score_rows": 6000,
+  "merge_gap": 2
+ },
+ "thresholds_note": "tool parameters, printed for reproducibility; not a methodology ruling",
+ "fields_used": [
+  "o",
+  "h",
+  "l",
+  "c"
+ ],
+ "totals": {
+  "segments": 51,
+  "segments_with_factor": 40,
+  "breaks": 34,
+  "causes": {
+   "single_scalar_with_dissent": 20,
+   "insufficient_evidence": 12,
+   "no_single_scalar": 11,
+   "single_scalar": 8
+  },
+  "attribution": {
+   "unattributed": 51
+  },
+  "confidence_bins": {
+   "0.0-0.3": 23,
+   "0.3-0.6": 17,
+   "0.6-0.8": 11,
+   "0.8-1.0": 0
+  },
+  "sessions_covered": 1487,
+  "sessions_explained_by_a_scalar": 1466
+ },
+ "sensitivity": {
+  "1e-05": {
+   "segments": 48,
+   "breaks": 28
+  },
+  "1e-04": {
+   "segments": 48,
+   "breaks": 28
+  },
+  "5e-04": {
+   "segments": 51,
+   "breaks": 34
+  },
+  "1e-03": {
+   "segments": 52,
+   "breaks": 36
+  },
+  "5e-03": {
+   "segments": 30,
+   "breaks": 21
+  }
+ },
+ "per_group": {
+  "خودرو|D": {
+   "sessions": 55,
+   "skipped": 0,
+   "segments": 1,
+   "breaks": 0,
+   "causes": {
+    "single_scalar": 1
+   }
+  },
+  "شپنا|D": {
+   "sessions": 288,
+   "skipped": 0,
+   "segments": 26,
+   "breaks": 19,
+   "causes": {
+    "insufficient_evidence": 11,
+    "single_scalar_with_dissent": 9,
+    "no_single_scalar": 6
+   }
+  },
+  "فنوال|D": {
+   "sessions": 282,
+   "skipped": 0,
+   "segments": 12,
+   "breaks": 7,
+   "causes": {
+    "single_scalar_with_dissent": 7,
+    "no_single_scalar": 4,
+    "insufficient_evidence": 1
+   }
+  },
+  "فولاد|D": {
+   "sessions": 289,
+   "skipped": 0,
+   "segments": 4,
+   "breaks": 3,
+   "causes": {
+    "single_scalar": 3,
+    "single_scalar_with_dissent": 1
+   }
+  },
+  "وبملت|D": {
+   "sessions": 293,
+   "skipped": 0,
+   "segments": 4,
+   "breaks": 3,
+   "causes": {
+    "single_scalar": 3,
+    "single_scalar_with_dissent": 1
+   }
+  },
+  "ولانا|D": {
+   "sessions": 280,
+   "skipped": 0,
+   "segments": 4,
+   "breaks": 2,
+   "causes": {
+    "single_scalar_with_dissent": 2,
+    "single_scalar": 1,
+    "no_single_scalar": 1
+   }
+  }
+ },
+ "file": {
+  "path": "factor_segments.ndjson.gz",
+  "schema": "ra365-factor-segment/1",
+  "bytes": 5289,
+  "rows": 51,
+  "sha256": "46d50f6f60decbe8b89a2b92b5f617b7592540400a33358f10b3ee0787e3a8ae"
+ }
+}
