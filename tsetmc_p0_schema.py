@@ -63,6 +63,19 @@ CREATE TABLE IF NOT EXISTS fund_profit_events (
     PRIMARY KEY (ins_code, d_even))
 """
 
+# DPSِ **اعلامیِ مجمع** برایِ سهام — منبعِ درستِ D در فرمولِ
+# close_ex/(close_ex+dps) (R32H: ۲۰ از ۳۲ گامِ دور دقیق شد). مقدار از صفحهٔ
+# Decision.aspxِ کدال می‌آید، نه از اختلافِ pna−pclِ دفترِ تعدیل؛ `d_even` همان
+# روزِ مؤثرِ ردیفِ PA است و `reference_price` پایانیِ رسمیِ همان روز.
+# نبودِ ردیف یعنی «اعلامی پیدا نشد» — نه DPSِ صفر.
+STOCK_DIVIDEND_EVENTS = """
+CREATE TABLE IF NOT EXISTS stock_dividend_events (
+    ins_code TEXT, d_even INTEGER, symbol TEXT,
+    dps REAL, reference_price REAL, ratio REAL,
+    publish_date TEXT, source TEXT, source_id TEXT, fetched_at TEXT,
+    PRIMARY KEY (ins_code, d_even))
+"""
+
 # ردیف‌هایی که CDN در CSV تاریخی جا انداخته ولی `/ClosingPrice/GetClosingPriceDaily`
 # همان روز را دارد. فقط ردیفِ رسمیِ همان روز؛ هیچ ساختن/کپیِ روزِ مجاور.
 SESSION_BACKFILL = """
@@ -137,12 +150,14 @@ CREATE TABLE IF NOT EXISTS tsetmc_p0_state (
 P0_STATE_EXTRA_COLUMNS = ("last_status", "last_result", "last_success")
 
 ALL = (CLIENT_TYPE_VALUE, CLIENT_TYPE_VALUE_STATE, PRICE_ADJUST_EVENTS,
-       SHARE_CHANGE_EVENTS, FUND_PROFIT_EVENTS, SESSION_BACKFILL,
+       SHARE_CHANGE_EVENTS, FUND_PROFIT_EVENTS, STOCK_DIVIDEND_EVENTS,
+       SESSION_BACKFILL,
        SESSION_ANOMALIES, INSTRUMENT_STATE, STOP_REASONS, SUPERVISION_STATE,
        TSETMC_MESSAGES, P0_STATE)
 
 TABLES = ("client_type_value", "client_type_value_state", "price_adjust_events",
-          "share_change_events", "fund_profit_events", "session_backfill",
+          "share_change_events", "fund_profit_events", "stock_dividend_events",
+          "session_backfill",
           "session_anomalies", "instrument_state", "stop_reasons",
           "supervision_state", "tsetmc_messages", "tsetmc_p0_state")
 

@@ -1341,6 +1341,56 @@ def _closing_prices_for(symbol, dates):
     return out
 
 
+def _codal_dps_enabled():
+    """DPSِ اعلامیِ مجمع (جدولِ stock_dividend_events) بر Dِ دفترِ تعدیل مقدم است.
+
+    داده فقط وقتی اثر دارد که جدول پر باشد؛ `BORS_CODAL_DPS=0` مسیرِ قبلیِ
+    `pna−pcl` را برمی‌گرداند — برگشتِ بی‌ریسک و مقایسهٔ A/B.
+    """
+    return (os.environ.get("BORS_CODAL_DPS") or "1").strip().lower() \
+        not in ("0", "false", "off", "no")
+
+
+def _codal_dps_rows(conn, ins_code):
+    """[(d_even:int, dps:float)] از DPSِ اعلامی؛ نبودِ جدول → [] (نه خطا)."""
+    try:
+        rows = conn.execute(
+            "SELECT d_even, dps FROM stock_dividend_events WHERE ins_code=?",
+            (str(ins_code),)).fetchall()
+    except Exception:
+        return []
+    out = []
+    for d, dps in rows:
+        try:
+            d = int(d)
+            dps = float(dps)
+        except (TypeError, ValueError):
+            continue
+        if dps > 0:
+            out.append((d, dps))
+    return out
+
+
+def _nearest_codal_dps(rows, d_even, window=7):
+    """DPSِ نزدیک‌ترین رویدادِ اعلامی در پنجرهٔ ±window روز؛ بی‌ردیف → None.
+
+    روزِ مؤثرِ ردیفِ PA و روزِ ثبت‌شده برایِ همان اعلام ممکن است چند روز
+    جابه‌جا شوند؛ دو مجمعِ سود در ۷ روز عملاً ناممکن است، پس نزدیک‌ترین
+    ردیف همان رویداد است و DPS به رویدادِ سالِ دیگر نسبت داده نمی‌شود.
+    """
+    target = _d_even_to_date(d_even)
+    if not target:
+        return None
+    best = None
+    for d, dps in rows or []:
+        dd = _day_diff(_d_even_to_date(d), target)
+        if dd is None or dd > window:
+            continue
+        if best is None or dd < best[0]:
+            best = (dd, dps)
+    return best[1] if best else None
+
+
 def _classify_pa_event(pa_ratio, dps, closing, orig, share_changes):
     """(ratio, is_dps, event_type) for one official priceAdjust row.
 
@@ -1392,7 +1442,11 @@ def _official_price_adjust_events(symbol, times=None, share_changes=None, closin
     رسمیِ خودش (`pClosing/pClosingNotAdjusted`) را نگه می‌دارد؛ ردیفِ بدونِ
     تغییرِ سهام با فرمولِ اثبات‌شدهٔ DPS محاسبه می‌شود:
     `close_ex / (close_ex + dps)`.
+
+    D از جدولِ `stock_dividend_events` (DPSِ اعلامیِ مجمع، R32H) خوانده می‌شود
+    وقتی ردیفی در پنجرهٔ همان رویداد باشد؛ وگرنه همان `pna−pcl`ِ قبلی می‌ماند.
     """
+    codal_dps = []
     try:
         conn = sqlite3.connect(DB_PATH, timeout=15)
         try:
@@ -1403,6 +1457,8 @@ def _official_price_adjust_events(symbol, times=None, share_changes=None, closin
                 " ORDER BY updated_at DESC LIMIT 1", _params).fetchone()
             if not row:
                 return []
+            if _codal_dps_enabled():
+                codal_dps = _codal_dps_rows(conn, row[0])
             has_rows = conn.execute(
                 "SELECT 1 FROM sqlite_master WHERE type='table' "
                 "AND name='price_adjust_event_rows'").fetchone()
@@ -1458,15 +1514,21 @@ def _official_price_adjust_events(symbol, times=None, share_changes=None, closin
                 continue
             dt = nxt
         dps = None
+        dps_source = None
         if not combined:
             try:
                 if pcl is not None and pna is not None and float(pna) > float(pcl) > 0:
                     dps = float(pna) - float(pcl)
+                    dps_source = "priceAdjust"
             except Exception:
                 dps = None
+        cdps = _nearest_codal_dps(codal_dps, d)
+        if cdps is not None:
+            dps = cdps
+            dps_source = "codal"
         staged.append({"date": dt, "ratio": r, "source": src or "priceAdjust",
-                       "orig": orig, "dps": dps, "source_ratio": r,
-                       "combined": bool(combined)})
+                       "orig": orig, "dps": dps, "dps_source": dps_source,
+                       "source_ratio": r, "combined": bool(combined)})
     closes = _closing_prices_for(symbol, [e["date"] for e in staged])
     candle_closes = closings or {}
     out = []
@@ -1490,6 +1552,7 @@ def _official_price_adjust_events(symbol, times=None, share_changes=None, closin
         if is_dps:
             rec["_dps"] = True
             rec["dividend_per_share"] = float(dps)
+            rec["_dps_source"] = e.get("dps_source")
         else:
             rec["_event_type"] = etype
         out.append(rec)

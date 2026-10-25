@@ -131,8 +131,14 @@ try:
 
     print(f"\nنمونۀِ read-only ازِ market.dbِ عملیاتی (بدونِ نوشتن):")
     ro = sqlite3.connect("file:market.db?mode=ro", uri=True, timeout=5)
-    row = ro.execute("SELECT ins_code, COUNT(*) c FROM price_adjust_events "
-                     "GROUP BY ins_code ORDER BY c DESC LIMIT 1").fetchone()
+    try:
+        row = ro.execute("SELECT ins_code, COUNT(*) c FROM price_adjust_events "
+                         "GROUP BY ins_code ORDER BY c DESC LIMIT 1").fetchone()
+    except sqlite3.OperationalError:
+        # worktreeِ بدونِ بازارِ کامل (یا بانکِ اسکرچ): نمونهٔ زنده ممکن نیست؛
+        # تست‌هایِ fixture بالا کامل اجرا شدند. «نبودِ داده» ≠ خطای کد.
+        row = None
+        print("   ↳ market.dbِ محلی جدولِ P0 ندارد — نمونهٔ عملیاتی رد شد (نه خطا)")
     if row:
         ins = str(row[0])
         pa = ro.execute("SELECT d_even, p_closing_not_adjusted, p_closing FROM price_adjust_events "
