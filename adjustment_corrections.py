@@ -213,6 +213,11 @@ class Pack:
             self._index_raw(sym, rows)
         self.covered_ins = set(self.factor_by_ins)
         self.covered_symbols = set(self.factor_by_symbol)
+        # آخرین تاریخِ پوششِ بسته.  بستهٔ authoritative فقط تا همین تاریخ
+        # معتبر است؛ رویدادِ شرکتیِ بعد از آن نباید حذف شود (بستهٔ منجمد
+        # نمی‌تواند رویدادِ آینده را بداند).
+        dates = [r["effective_date"] for r in self.factors]
+        self.as_of = max(dates) if dates else ""
 
     def _index_factor(self, key, rows):
         rep = {}
@@ -263,6 +268,7 @@ class Pack:
             "directory": self.directory,
             "reference_sha256": self.ref_sha,
             "covered": key is not None,
+            "as_of": self.as_of,
             "replace_steps": len(rep),
             "suppress_steps": len(sup),
             "raw_fields": len(raw),
@@ -343,10 +349,18 @@ def apply_factor_events(symbol, events, ins_code=None):
         return list(events or []), [], {"enabled": True, "covered": False,
                                         "version": pack.version, "mode": pack.mode}
     kept, suppressed = [], []
-    authoritative = pack.mode == "authoritative"
+    authoritative = pack.mode == "authoritative" and bool(rep or sup)
     allowed = set(rep)
+    cutoff = pack.as_of if authoritative else ""
+    future_kept = 0
     for e in events or []:
         d = str(e.get("date") or "")[:10]
+        if authoritative and cutoff and d > cutoff:
+            # رویدادِ بعد از آخرین تاریخِ بسته: بسته از آن بی‌خبر است، پس
+            # نباید حذف شود؛ زنجیره باید آن را روی گام‌های بسته سوار کند.
+            kept.append(dict(e))
+            future_kept += 1
+            continue
         if d in rep or d in sup or (authoritative and d not in allowed):
             suppressed.append(dict(e))
             continue
@@ -376,6 +390,7 @@ def apply_factor_events(symbol, events, ins_code=None):
     kept.sort(key=lambda e: str(e.get("date"))[:10])
     return kept, suppressed, {"enabled": True, "covered": True,
                               "version": pack.version, "mode": pack.mode,
+                              "as_of": pack.as_of, "future_events_kept": future_kept,
                               "replace_steps": len(rep), "suppress_steps": len(sup)}
 
 
@@ -396,6 +411,13 @@ def apply_raw_candles(symbol, candles, ins_code=None):
                 continue
             c[field] = r["value"]
             applied += 1
+        # سایهٔ دیدنی از extremeِ literal ساخته می‌شود؛ اگر فقط خودِ literal
+        # اصلاح شده باشد، کپیِ `high`/`low` باید دنبالش بیاید. اصلاحِ صریحِ
+        # `high`/`low` (وقتی در بسته هست) بر این کپی اولویت دارد.
+        if (d, "high_raw") in raw and (d, "high") not in raw and c.get("high_raw") is not None:
+            c["high"] = c["high_raw"]
+        if (d, "low_raw") in raw and (d, "low") not in raw and c.get("low_raw") is not None:
+            c["low"] = c["low_raw"]
     return applied, {"enabled": True, "covered": True, "version": pack.version,
                      "raw_fields": len(raw)}
 
