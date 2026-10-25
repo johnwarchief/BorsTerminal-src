@@ -33,6 +33,9 @@ a = Analysis(
         # بستهٔ تصحیحِ نسخه‌دارِ RA365 (factors + raw_ohlc).  بدونِ این entry،
         # نسخهٔ نصب‌شده بسته را نمی‌بیند و تعدیل به زنجیرهٔ قدیم برمی‌گردد.
         ('data/ra365_corrections', 'data/ra365_corrections'),
+        # پلِ تاریخیِ W/M (Round 32D): فقط کندل‌های هفتگی/ماهانهٔ کلیدهای
+        # غیرقابل‌مقایسه؛ سریِ خام روزانه در آن نیست.
+        ('data/ra365_calendar', 'data/ra365_calendar'),
         # آپدیتِ درون‌برنامه‌ای: bors_minisign در ریشهٔ ریپو است و فقط از داخلِ
         # api.update استفاده می‌شود که خود درونِ تابعِ api_router ایمپورت
         # می‌شود → اسکنِ ایستایِ PyInstaller آن را نمی‌بیند، پس صریحاً باندل
@@ -50,7 +53,7 @@ a = Analysis(
     hiddenimports=['uvicorn.logging', 'uvicorn.loops.auto', 'uvicorn.protocols.http.auto',
                    'uvicorn.protocols.websockets.auto', 'uvicorn.lifespan.on',
                    'codal_fetcher', 'app', 'test_tsetmc', 'fts_engine', 'orjson',
-                   'adjustment_corrections',
+                   'adjustment_corrections', 'wm_calendar',
                    'pandas', 'numpy', 'sqlite3',
                    # v9.8.1: app.py was split verbatim into the api/ package; the
                    # frozen build MUST bundle these or the EXE dies with

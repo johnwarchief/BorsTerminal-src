@@ -10,6 +10,7 @@ from bors_config import (DB_PATH, FTS_CONFIG_PATH, FTS_DEFAULTS, MA_WINDOWS,
 from tape_flags import JET_LADDER
 import adjustment_engine as AE
 import adjustment_corrections as AC
+import wm_calendar as WMC
 import bors_flags
 import candle_contract
 import corporate_ledger as CL
@@ -3747,12 +3748,12 @@ _FTS_POINT_TOUCH_TOL = 0.005
 # جزوه (JET_LADDER از tape_flags) مرجع است، تا چارت و تابلو یک جواب بدهند.
 
 
-def _fts_resample(candles, bucket="W"):
+def _fts_resample(candles, bucket="W", symbol=None):
     """تجمیع کندل روزانه به هفتگی/ماهانه — ورودی روند چند-تایم‌فریمی FTS.
 
     candles: لیست دیکشنری با کلیدهای time ('YYYY-MM-DD'), open, high, low, close, volume
              (همان ساختار candles در get_chart_db؛ مرتب صعودی).
-    bucket:  'W' → هفتهٔ شنبه‌محور (کلید = تاریخ شنبۀ همان هفته)  |  'M' → ماه میلادی.
+    bucket:  'W' → هفتهٔ شنبه‌محور (کلید = تاریخ شنبۀ همان هفته)  |  'M' → ماه جلالی.
     هفتهٔ ISO دوشنبه‌محور است؛ نشستِ ایران شنبه تا چهارشنبه است، پس در ISO سه
     روزِ اولِ هفتهٔ معاملاتی به هفتهٔ قبلی می‌افتادند و کندلِ هفتگیِ موتور با
     کندلِ هفتگیِ چارت (که شنبه‌محور است یکی از همان‌ها را می‌شمارد) یکی نمی‌شد —
@@ -3760,6 +3761,10 @@ def _fts_resample(candles, bucket="W"):
     کندل تجمیعی: open = اولین روز سبد، close = آخرین روز، high/low = max/min سبد،
     حجم = جمع. تاریخ کندل تجمیعی = تاریخ آخرین روز سبد (کندلِ هفته در آخرین روز
     معاملاتی‌اش می‌بندد) — هم‌قرارداد rvAggregate سمت فرانت.
+
+    برای کلیدهایی که تقویمِ روزانهٔ محصول با مرجع یکی نیست (Round 32D)، نوارِ
+    مرجعِ ذخیره‌شده از `wm_calendar` جای تجمیعِ ناقص می‌نشیند؛ کلیدهای دیگر
+    دست‌نخورده‌اند و در نبودِ بسته، رفتارِ قبلی برمی‌گردد.
     """
     if not candles:
         return []
@@ -3775,7 +3780,7 @@ def _fts_resample(candles, bucket="W"):
         if bucket == "W":
             key = (d - datetime.timedelta(days=(d.weekday() + 2) % 7)).isoformat()
         else:
-            key = t[:7]          # 'YYYY-MM'
+            key = WMC.month_key(t[:10])   # ماه جلالی، همان تقویمِ مرجع
         prev = out.get(key)
         if prev is None:
             out[key] = {"time": t[:10], "open": c["open"], "high": c["high"],
@@ -3787,6 +3792,12 @@ def _fts_resample(candles, bucket="W"):
             prev["close"] = c["close"]
             prev["time"] = t[:10]
             prev["volume"] += float(c.get("volume") or 0)
+    if symbol:
+        for k, row in out.items():
+            pkey = WMC.week_key(k) if bucket == "W" else k
+            ref = WMC.bar(symbol, bucket, pkey)
+            if ref:
+                row.update(ref)
     return [out[k] for k in sorted(out.keys())]
 
 def _fts_swings(series, k=3):
@@ -5453,13 +5464,13 @@ def _fts_analyze_candles(symbol, candles, entry_hint=None):
     # نوسانِ تکمیل‌نشده بازنویسی شود. (سنجش: تکانِ ±۲٪ آخرینِ بسته درِ ۳ نماد از
     # ۱۲۹ رأیِ D را عوض می‌کرد، هر سه up→down — `_audit/major_swing_evidence.py`.)
     struct_d = major_swings.closed_only(candles)
-    w_struct = _fts_resample(struct_d, "W")
-    m_struct = _fts_resample(struct_d, "M")
+    w_struct = _fts_resample(struct_d, "W", symbol=symbol)
+    m_struct = _fts_resample(struct_d, "M", symbol=symbol)
     # بقیۀ لایه‌ها (ساعت‌شنی، خروج، MA52 هفتگی) همان سریِ امروز را می‌بینند:
     # حذفِ کندلِ جاری از آنها هم رأیِ «خروج/تازه» را عقب می‌انداخت و خارجِ خواستِ
     # این دور است — اینجا فقط «جهتِ ساختاری» نباید با تیکِ درون‌جلسه بازنویسی شود.
-    w = _fts_resample(candles, "W")
-    m = _fts_resample(candles, "M")
+    w = _fts_resample(candles, "W", symbol=symbol)
+    m = _fts_resample(candles, "M", symbol=symbol)
     # dispatchِ موتورِ روند (flag). legacy = دقیقاً رفتارِ امروز؛ hybrid = طبقه‌بندِ
     # ترکیبیِ قابل‌توضیح. jet (بالا) و باقیِ مصرف‌کننده‌ها از همین trend می‌خوانند؛
     # classify_trend خروجیِ سازگارِ legacy می‌دهد (neutral→range، کم‌داده→na).

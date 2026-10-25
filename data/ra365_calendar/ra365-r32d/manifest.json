@@ -1,0 +1,18 @@
+{
+ "schema": "ra365-wm-calendar-pack-v1",
+ "version": "ra365-r32d",
+ "created_at": "2026-10-25T20:20:00+00:00",
+ "files": {
+  "bars": "wm_calendar_bars.ndjson.gz"
+ },
+ "file_sha256": {
+  "bars": "ef3029d5c063035c7f6708619e3ef73317357f417dc6ec0312aaca48cf1aa829"
+ },
+ "counts": {
+  "W": 2858,
+  "M": 2777,
+  "total": 5635
+ },
+ "source": "rahavard_reference_live_2026-10-25 (derived W/M bars from daily type7)",
+ "note": "Historical bridge for the non-comparable W/M keys; raw daily capture is not included and no network call is made at runtime."
+}

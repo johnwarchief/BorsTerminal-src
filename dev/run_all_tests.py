@@ -305,6 +305,8 @@ SUITES = [
                                       'Round 32C: future events survive the pack horizon; corrected high_raw moves the visible high/low'),
     ('dev/test_ra365_round32d_calendar_v1.py',
                                       'Round 32D: non-comparable W/M keys get the reference calendar bar, or an explicit unavailable'),
+    ('dev/test_ra365_round32e_fts_calendar_v1.py',
+                                      'Round 32E: the FTS weekly/monthly resampler uses the reference calendar bars when covered'),
     ('dev/test_fund_events_v1.py',    'official fund distributions drive (P-D)/P factor; same-date typed event survives'),
     ('dev/test_fund_ingest_v1.py',    'fund importer: Persian digits, corrupt rows, duplicate dedupe, newest instrument'),
     ('dev/test_history_repair_writer_v1.py',
