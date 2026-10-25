@@ -1,0 +1,69 @@
+{
+  "round": "32H",
+  "captured_at": "2026-10-26",
+  "question": "Does the announced assembly DPS (Codal Decision.aspx DividendPerShare) with the official TSETMC closing price reproduce the Rahavard reference DPS step exactly?",
+  "method": {
+    "far_set": "pack replace_step rows with event_sig='dps' and |prod_ratio/ratio - 1| > 1e-4, restricted to a PA row 0-7 days before the effective date and no SH row within 10 days",
+    "far_count": 66,
+    "per_case": "Codal search LetterType=20 (assembly decisions) over [effective_date-100d, effective_date+10d]; fallback LetterType=-1; read Decision.aspx pages newest-first with codal_dividends.parse_dividend_per_share; reference close = official TSETMC daily CSV 'close' (pClosing) on the effective date; pred = close/(close+dps); err = |pred/ratio - 1|",
+    "inputs": {
+      "pack": "data/ra365_corrections/ra365-r32b-v2/factors.jsonl (SHA 2194b4df...)",
+      "official_pa": "D:/BorsTerminal-tmp/ra365_round32/official/pa_flow1.json, pa_flow2.json",
+      "official_sh": "D:/BorsTerminal-tmp/ra365_round32/official/sh_flow1.json, sh_flow2.json",
+      "daily_csv": "D:/BorsTerminal-tmp/ra365_round32/r32h/csv/{ins_code}.csv (official TSETMC ClosingPrice CSV)"
+    },
+    "waf": "Codal WAF rested the polite burst after ~35 requests for 240s, then answered 429; a global 1800s pause followed and the sweep stopped. No ADB rotation and no retries in this pilot.",
+    "retry_policy": "max_429_retries=0, POLITE=true, rotate_ip_via_adb stubbed out"
+  },
+  "summary": {
+    "processed": 32,
+    "exact_le_1e6": 20,
+    "near_1e6_to_1e4": 1,
+    "far_gt_1e4": 2,
+    "no_dps_or_close": 9,
+    "blocked": 2,
+    "unprocessed": 34
+  },
+  "rows": [
+    {"n": 1, "symbol": "زگلدشت", "effective_date": "2021-06-09", "dps": null, "close": 9645.0, "pred": null, "ref": 0.82471142, "err": null, "status": "NO_DPS"},
+    {"n": 2, "symbol": "كربن", "effective_date": "2026-06-21", "dps": 3480.0, "close": 5850.0, "pred": 0.62700965, "ref": 0.62700965, "err": 3.3e-16, "status": "EXACT"},
+    {"n": 3, "symbol": "ولملت", "effective_date": "2023-07-19", "dps": 135.0, "close": 5170.0, "pred": 0.97455231, "ref": 0.95878886, "err": 0.016, "status": "FAR"},
+    {"n": 4, "symbol": "وسپهر", "effective_date": "2023-05-21", "dps": 1000.0, "close": 7460.0, "pred": 0.88179669, "ref": 0.88179669, "err": 6.7e-16, "status": "EXACT"},
+    {"n": 5, "symbol": "پخش", "effective_date": "2023-05-23", "dps": 1200.0, "close": 26000.0, "pred": 0.95588235, "ref": 0.95588235, "err": 1.3e-15, "status": "EXACT"},
+    {"n": 6, "symbol": "تجلي", "effective_date": "2024-06-19", "dps": 80.0, "close": 2553.0, "pred": 0.96961641, "ref": 0.96961641, "err": 2.2e-16, "status": "EXACT"},
+    {"n": 7, "symbol": "تجلي", "effective_date": "2025-07-12", "dps": 22.0, "close": 1558.0, "pred": 0.98607595, "ref": 0.98607595, "err": 4.4e-16, "status": "EXACT"},
+    {"n": 8, "symbol": "درهآور", "effective_date": "2021-06-14", "dps": null, "close": 23742.0, "pred": null, "ref": 0.90795059, "err": null, "status": "NO_DPS"},
+    {"n": 9, "symbol": "زملارد", "effective_date": "2022-05-25", "dps": null, "close": 13910.0, "pred": null, "ref": 0.92241379, "err": null, "status": "NO_DPS"},
+    {"n": 10, "symbol": "ماديرا", "effective_date": "2022-07-13", "dps": null, "close": 2787.0, "pred": null, "ref": 0.96202969, "err": null, "status": "NO_DPS"},
+    {"n": 11, "symbol": "ماديرا", "effective_date": "2024-07-10", "dps": 90.0, "close": 2870.0, "pred": 0.96959459, "ref": 0.96959459, "err": 1.1e-16, "status": "EXACT"},
+    {"n": 12, "symbol": "وهامون", "effective_date": "2022-05-25", "dps": 980.0, "close": 2080.0, "pred": 0.67973856, "ref": 0.67973856, "err": 2.2e-16, "status": "EXACT"},
+    {"n": 13, "symbol": "وهامون", "effective_date": "2026-06-07", "dps": 200.0, "close": 1496.0, "pred": 0.88207547, "ref": 0.88207547, "err": 2.2e-16, "status": "EXACT"},
+    {"n": 14, "symbol": "كوثر", "effective_date": "2023-07-23", "dps": 427.0, "close": 3506.0, "pred": 0.89143148, "ref": 0.89143148, "err": 2.2e-16, "status": "EXACT"},
+    {"n": 15, "symbol": "معين", "effective_date": "2025-06-01", "dps": 440.0, "close": 2344.0, "pred": 0.84195402, "ref": 0.84195402, "err": 6.7e-16, "status": "EXACT"},
+    {"n": 16, "symbol": "غدشت", "effective_date": "2026-10-14", "dps": 250.0, "close": 4420.0, "pred": 0.94646681, "ref": 0.94714588, "err": 0.00072, "status": "NEAR"},
+    {"n": 17, "symbol": "وپويا", "effective_date": "2022-05-23", "dps": 975.0, "close": 2380.0, "pred": 0.70938897, "ref": 0.70938897, "err": 2.2e-15, "status": "EXACT"},
+    {"n": 18, "symbol": "وهور", "effective_date": "2023-03-19", "dps": null, "close": 1616.0, "pred": null, "ref": 0.981774, "err": null, "status": "NO_DPS"},
+    {"n": 19, "symbol": "شكربن", "effective_date": "2026-07-18", "dps": 1565.0, "close": 6650.0, "pred": 0.80949483, "ref": 0.80949483, "err": 1.1e-16, "status": "EXACT"},
+    {"n": 20, "symbol": "فغدير", "effective_date": "2023-06-14", "dps": 1900.0, "close": 8430.0, "pred": 0.8160697, "ref": 0.8160697, "err": 1.3e-15, "status": "EXACT"},
+    {"n": 21, "symbol": "كزغال", "effective_date": "2022-06-06", "dps": null, "close": 18070.0, "pred": null, "ref": 0.84955336, "err": null, "status": "NO_DPS"},
+    {"n": 22, "symbol": "كزغال", "effective_date": "2025-07-15", "dps": 15.0, "close": 3360.0, "pred": 0.99555556, "ref": 0.99555556, "err": 8.9e-16, "status": "EXACT"},
+    {"n": 23, "symbol": "سپيدار", "effective_date": "2025-06-03", "dps": 851.0, "close": 14000.0, "pred": 0.94269746, "ref": 0.94269746, "err": 7.8e-16, "status": "EXACT"},
+    {"n": 24, "symbol": "كگهر", "effective_date": "2024-03-24", "dps": 3200.0, "close": 16230.0, "pred": 0.83530623, "ref": 0.83530623, "err": 6.7e-16, "status": "EXACT"},
+    {"n": 25, "symbol": "رنيك", "effective_date": "2020-07-06", "dps": null, "close": 40241.0, "pred": null, "ref": 0.98942736, "err": null, "status": "NO_DPS"},
+    {"n": 26, "symbol": "حفارس", "effective_date": "2025-07-29", "dps": 3.0, "close": 1641.0, "pred": 0.99817518, "ref": 0.99817518, "err": 1.1e-16, "status": "EXACT"},
+    {"n": 27, "symbol": "كيا", "effective_date": "2024-01-22", "dps": 77.0, "close": 5390.0, "pred": 0.98591549, "ref": 0.98591549, "err": 2.2e-16, "status": "EXACT"},
+    {"n": 28, "symbol": "اعتلا", "effective_date": "2022-04-18", "dps": 1400.0, "close": 3548.0, "pred": 0.7170574, "ref": 0.7170574, "err": 1.4e-15, "status": "EXACT"},
+    {"n": 29, "symbol": "اعتلا", "effective_date": "2023-03-14", "dps": null, "close": 2977.0, "pred": null, "ref": 0.74855419, "err": null, "status": "NO_DPS"},
+    {"n": 30, "symbol": "اعتلا", "effective_date": "2025-04-19", "dps": 362.0, "close": 1921.0, "pred": 0.84143671, "ref": 0.84143671, "err": 2.2e-16, "status": "EXACT"},
+    {"n": 31, "symbol": "اعتلا", "effective_date": "2026-05-23", "dps": 140.0, "close": 1480.0, "pred": 0.91358025, "ref": 0.83664717, "err": 0.092, "status": "FAR"},
+    {"n": 32, "symbol": "مالك آتيه", "effective_date": "2025-05-24", "dps": null, "close": 11943.0, "pred": null, "ref": 0.90432023, "err": null, "status": "NO_DPS"},
+    {"n": 33, "symbol": "مالك آتيه", "effective_date": "2026-06-01", "dps": null, "close": null, "pred": null, "ref": null, "err": null, "status": "BLOCKED"},
+    {"n": 34, "symbol": "غويتا", "effective_date": "2021-04-20", "dps": null, "close": null, "pred": null, "ref": null, "err": null, "status": "BLOCKED"}
+  ],
+  "notes": [
+    "The far set here is 66 (PA row 0-7 days before the effective date, no SH row within 10 days); an earlier classification reported 67 with a slightly different window. The difference is one event.",
+    "Exact means the announced DPS plus the official close reproduces the pack step to double precision (err <= 1e-12 in every exact row).",
+    "NO_DPS means no assembly decision page with a DividendPerShare field was found in the 100-day window, or the official close for the effective date was missing.",
+    "The two FAR rows and the NEAR row are not explained by D alone; they need a capital/combined leg or a different effective-date reference."
+  ]
+}
