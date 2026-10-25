@@ -19,7 +19,13 @@ export const CANDLEEDGE_STRUCTURE = {
   doubleTopMaxPriceDiff: 0.04,
   doubleMinSeparation: 5,
   pullback: 0.01,
-  bosThreshold: 0.005,
+  /**
+   * Round 2: BOS is a close through the confirmed level, not a higher-high
+   * distance. The source's 0.5% HH filter is retired as the default and kept
+   * below only for sensitivity runs.
+   */
+  bosThreshold: 0,
+  bosSourceThreshold: 0.005,
 } as const;
 
 export interface LinePattern {
@@ -54,9 +60,10 @@ export interface BosPattern {
   detector: 'bos_bullish' | 'bos_bearish';
   bias: PatternBias;
   brokenLevel: number;
+  /** The bar whose close crosses the level; not the level pivot's confirmation. */
   confirmedAtIndex: number;
-  previousSwing: SwingPoint;
-  newSwing: SwingPoint;
+  barIndex: number;
+  levelSwing: SwingPoint;
 }
 
 export interface SweepPattern {
@@ -78,13 +85,51 @@ export function isRecentlyConfirmed(
   currentIdx: number,
   maxBarsAgo = 15,
 ): boolean {
-  if (point.index === undefined) return false;
-  return point.index <= currentIdx && currentIdx - point.index <= maxBarsAgo;
+  if (point.confirmedAtIndex === undefined) return false;
+  return (
+    point.confirmedAtIndex <= currentIdx &&
+    currentIdx - point.confirmedAtIndex <= maxBarsAgo
+  );
 }
 
 function lastTwo<T>(items: readonly T[]): [T, T] | null {
   if (items.length < 2) return null;
   return [items[items.length - 2], items[items.length - 1]];
+}
+
+function lineAt(point1: SwingPoint, point2: SwingPoint, index: number): number {
+  return (
+    point1.price +
+    ((point2.price - point1.price) * (index - point1.index)) /
+      (point2.index - point1.index)
+  );
+}
+
+/**
+ * A triangle/wedge needs both boundary lines to exist over one shared bar
+ * range, with resistance above support there. Without this, the source paired
+ * last-two highs from one era with last-two lows from another, and accepted
+ * lines that crossed inside the pattern.
+ */
+function hasOverlappingOrderedLines(
+  high1: SwingPoint,
+  high2: SwingPoint,
+  low1: SwingPoint,
+  low2: SwingPoint,
+): boolean {
+  if (
+    high2.index <= high1.index ||
+    low2.index <= low1.index
+  ) {
+    return false;
+  }
+  const start = Math.max(high1.index, low1.index);
+  const end = Math.min(high2.index, low2.index);
+  if (!(end > start)) return false;
+  return (
+    lineAt(high1, high2, start) > lineAt(low1, low2, start) &&
+    lineAt(high1, high2, end) > lineAt(low1, low2, end)
+  );
 }
 
 function linePattern(
@@ -109,6 +154,7 @@ export function detectAscendingTriangle(
   const [l1, l2] = l;
   const hSlopePct = percentSlope(h1.price, h2.price, h2.index - h1.index);
   const lSlopePct = percentSlope(l1.price, l2.price, l2.index - l1.index);
+  if (!hasOverlappingOrderedLines(h1, h2, l1, l2)) return null;
   if (
     Math.abs(hSlopePct) < CANDLEEDGE_STRUCTURE.flatThreshold &&
     lSlopePct > CANDLEEDGE_STRUCTURE.trendThreshold &&
@@ -130,6 +176,7 @@ export function detectDescendingTriangle(
   const [l1, l2] = l;
   const hSlopePct = percentSlope(h1.price, h2.price, h2.index - h1.index);
   const lSlopePct = percentSlope(l1.price, l2.price, l2.index - l1.index);
+  if (!hasOverlappingOrderedLines(h1, h2, l1, l2)) return null;
   if (
     hSlopePct < -CANDLEEDGE_STRUCTURE.trendThreshold &&
     Math.abs(lSlopePct) < CANDLEEDGE_STRUCTURE.flatThreshold &&
@@ -151,6 +198,7 @@ export function detectSymmetricalTriangle(
   const [l1, l2] = l;
   const hSlopePct = percentSlope(h1.price, h2.price, h2.index - h1.index);
   const lSlopePct = percentSlope(l1.price, l2.price, l2.index - l1.index);
+  if (!hasOverlappingOrderedLines(h1, h2, l1, l2)) return null;
   if (
     hSlopePct < -CANDLEEDGE_STRUCTURE.trendThreshold &&
     lSlopePct > CANDLEEDGE_STRUCTURE.trendThreshold &&
@@ -172,6 +220,7 @@ export function detectRisingWedge(
   const [l1, l2] = l;
   const hSlopePct = percentSlope(h1.price, h2.price, h2.index - h1.index);
   const lSlopePct = percentSlope(l1.price, l2.price, l2.index - l1.index);
+  if (!hasOverlappingOrderedLines(h1, h2, l1, l2)) return null;
   if (hSlopePct > 0 && lSlopePct > 0 && hSlopePct < lSlopePct) {
     return linePattern('rising_wedge', 'bearish', h1, h2, l1, l2);
   }
@@ -189,6 +238,7 @@ export function detectFallingWedge(
   const [l1, l2] = l;
   const hSlopePct = percentSlope(h1.price, h2.price, h2.index - h1.index);
   const lSlopePct = percentSlope(l1.price, l2.price, l2.index - l1.index);
+  if (!hasOverlappingOrderedLines(h1, h2, l1, l2)) return null;
   if (hSlopePct < 0 && lSlopePct < 0 && hSlopePct < lSlopePct) {
     return linePattern('falling_wedge', 'bullish', h1, h2, l1, l2);
   }
@@ -241,6 +291,14 @@ export function detectDoubleTop(
 
       const priceDiff = Math.abs(first.price - second.price) / first.price;
       if (priceDiff > CANDLEEDGE_STRUCTURE.doubleTopMaxPriceDiff) continue;
+      let shadowed = false;
+      for (let k = i + 1; k < j; k += 1) {
+        if (peaks[k].price > Math.max(first.price, second.price)) {
+          shadowed = true;
+          break;
+        }
+      }
+      if (shadowed) continue;
       if (!hasValidPullbackBetweenPeaks(candles, first.index, second.index)) continue;
       if (!isRecentlyConfirmed(second, currentIdx, confirmationWindow)) continue;
 
@@ -270,6 +328,14 @@ export function detectDoubleBottom(
 
       const priceDiff = Math.abs(first.price - second.price) / first.price;
       if (priceDiff > CANDLEEDGE_STRUCTURE.doubleTopMaxPriceDiff) continue;
+      let shadowed = false;
+      for (let k = i + 1; k < j; k += 1) {
+        if (troughs[k].price < Math.min(first.price, second.price)) {
+          shadowed = true;
+          break;
+        }
+      }
+      if (shadowed) continue;
       if (!hasValidBounceBetweenTroughs(candles, first.index, second.index)) continue;
       if (!isRecentlyConfirmed(second, currentIdx, confirmationWindow)) continue;
 
@@ -335,55 +401,77 @@ export function detectLowerHigh(swings: {
   return null;
 }
 
+function assertThreshold(thresholdPct: number): void {
+  if (!Number.isFinite(thresholdPct) || thresholdPct < 0) {
+    throw new RangeError('bosThreshold must be a finite number >= 0');
+  }
+}
+
+/**
+ * Bullish BOS: the current bar closes above the latest swing high that was
+ * already confirmed before this bar. The previous close must be at/below the
+ * level, so the event marks the crossing bar, not a later pivot confirmation.
+ */
 export function detectBosBullish(
+  candles: readonly Candle[],
+  idx: number,
   swings: { highs: readonly SwingPoint[]; lows: readonly SwingPoint[] },
-  confirmationIndex: number,
-  thresholdPct = CANDLEEDGE_STRUCTURE.bosThreshold,
+  thresholdPct: number = CANDLEEDGE_STRUCTURE.bosThreshold,
 ): BosPattern | null {
-  const h = lastTwo(swings.highs);
-  if (!h) return null;
-  const [previousSwing, newSwing] = h;
-  if (newSwing.confirmedAtIndex !== confirmationIndex) return null;
-  const change = (newSwing.price - previousSwing.price) / previousSwing.price;
-  if (!(change > thresholdPct)) return null;
+  assertThreshold(thresholdPct);
+  if (idx < 1 || idx >= candles.length) return null;
+  const level = latestConfirmedLevel(swings.highs, idx);
+  if (!level) return null;
+  const previousClose = candles[idx - 1].close;
+  const close = candles[idx].close;
+  if (!(previousClose <= level.price)) return null;
+  if (!((close - level.price) / level.price > thresholdPct)) return null;
   return {
     detector: 'bos_bullish',
     bias: 'bullish',
-    brokenLevel: previousSwing.price,
-    confirmedAtIndex: confirmationIndex,
-    previousSwing,
-    newSwing,
+    brokenLevel: level.price,
+    confirmedAtIndex: idx,
+    barIndex: idx,
+    levelSwing: level,
   };
 }
 
+/** Bearish mirror: close below the latest swing low known before this bar. */
 export function detectBosBearish(
+  candles: readonly Candle[],
+  idx: number,
   swings: { highs: readonly SwingPoint[]; lows: readonly SwingPoint[] },
-  confirmationIndex: number,
-  thresholdPct = CANDLEEDGE_STRUCTURE.bosThreshold,
+  thresholdPct: number = CANDLEEDGE_STRUCTURE.bosThreshold,
 ): BosPattern | null {
-  const l = lastTwo(swings.lows);
-  if (!l) return null;
-  const [previousSwing, newSwing] = l;
-  if (newSwing.confirmedAtIndex !== confirmationIndex) return null;
-  const change = (previousSwing.price - newSwing.price) / previousSwing.price;
-  if (!(change > thresholdPct)) return null;
+  assertThreshold(thresholdPct);
+  if (idx < 1 || idx >= candles.length) return null;
+  const level = latestConfirmedLevel(swings.lows, idx);
+  if (!level) return null;
+  const previousClose = candles[idx - 1].close;
+  const close = candles[idx].close;
+  if (!(previousClose >= level.price)) return null;
+  if (!((level.price - close) / level.price > thresholdPct)) return null;
   return {
     detector: 'bos_bearish',
     bias: 'bearish',
-    brokenLevel: previousSwing.price,
-    confirmedAtIndex: confirmationIndex,
-    previousSwing,
-    newSwing,
+    brokenLevel: level.price,
+    confirmedAtIndex: idx,
+    barIndex: idx,
+    levelSwing: level,
   };
 }
 
+/**
+ * The latest pivot whose confirmation bar is strictly before `idx`: at the
+ * open of bar `idx`, a level confirmed on `idx` is not knowable yet.
+ */
 function latestConfirmedLevel(
   swings: readonly SwingPoint[],
   idx: number,
 ): SwingPoint | null {
   for (let i = swings.length - 1; i >= 0; i -= 1) {
     const point = swings[i];
-    if (point.index < idx && point.confirmedAtIndex <= idx) return point;
+    if (point.index < idx && point.confirmedAtIndex < idx) return point;
   }
   return null;
 }
@@ -394,8 +482,12 @@ export function detectLiquiditySweepHigh(
   swings: { highs: readonly SwingPoint[]; lows: readonly SwingPoint[] },
 ): SweepPattern | null {
   const candle = candles[idx];
+  const previous = candles[idx - 1];
   const level = latestConfirmedLevel(swings.highs, idx);
-  if (!candle || !level) return null;
+  if (!candle || !previous || !level) return null;
+  // A sweep is a wick through a level price was below; a bar crossing down
+  // through the level from above is a breakdown, not a sweep.
+  if (!(previous.close <= level.price)) return null;
   if (candle.high > level.price && candle.close < level.price) {
     return {
       detector: 'liquidity_sweep_high',
@@ -414,8 +506,10 @@ export function detectLiquiditySweepLow(
   swings: { highs: readonly SwingPoint[]; lows: readonly SwingPoint[] },
 ): SweepPattern | null {
   const candle = candles[idx];
+  const previous = candles[idx - 1];
   const level = latestConfirmedLevel(swings.lows, idx);
-  if (!candle || !level) return null;
+  if (!candle || !previous || !level) return null;
+  if (!(previous.close >= level.price)) return null;
   if (candle.low < level.price && candle.close > level.price) {
     return {
       detector: 'liquidity_sweep_low',

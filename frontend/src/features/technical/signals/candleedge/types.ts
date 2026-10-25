@@ -56,6 +56,8 @@ export interface PatternAnchor {
   time: CandleTime;
   price: number;
   role: 'candle' | 'high' | 'low' | 'peak' | 'trough';
+  /** Bar at which this anchor became knowable (a pivot needs its right window). */
+  confirmedAtIndex?: number;
 }
 
 export interface PatternEvent {
@@ -75,6 +77,11 @@ export interface ScanOptions {
   swingWindow?: number;
   extremumLookback?: number;
   trendPeriod?: number;
+  /**
+   * Minimum close penetration beyond the broken level for BOS, as a fraction
+   * (0 = the source's 0.5% HH-distance filter retired; strict close through).
+   */
+  bosThreshold?: number;
 }
 
 export interface ScanResult {

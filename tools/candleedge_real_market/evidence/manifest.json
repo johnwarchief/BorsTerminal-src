@@ -1,0 +1,201 @@
+{
+  "generatedAt": "2026-10-25T07:07:14.371Z",
+  "branch": "mission/technical-candleedge-real-market-validation-2026-10-25",
+  "baseSha": "4a597278f4bf74c29430d2faa2f4ea01de7e37cc",
+  "status": "VALIDATION_COMPLETE — RESEARCH CANDIDATES DELIVERED",
+  "source": {
+    "repository": "https://github.com/michaelsboost/CandleEdge",
+    "commit": "75761e26b23ccaf59b31365e1ec817374673d77b",
+    "license": "MIT",
+    "copyright": "Copyright (c) 2026 Michael Schwartz",
+    "reviewedAt": "2026-10-25"
+  },
+  "input": {
+    "file": "real_market.ndjson",
+    "bytes": 51592921,
+    "sha256": "90901ef87914c87be7213090f7ffc94622e941ea5fe101718793ed928d63c433"
+  },
+  "records": 772,
+  "series": 2316,
+  "events": {
+    "adjusted": 208615,
+    "raw": 208701
+  },
+  "files": [
+    {
+      "path": "docs/technical-indicators/reviewed/CANDLEEDGE-MODULE-CONTRACT-2026-10-25.md",
+      "bytes": 11969,
+      "sha256": "e91c35e0e607bfbcf2dd31d56354ed52c4c81ed0c79e49db0d34358bc32ede79"
+    },
+    {
+      "path": "docs/technical-indicators/reviewed/CANDLEEDGE-REAL-MARKET-VALIDATION-2026-10-25.md",
+      "bytes": 48089,
+      "sha256": "1ab217bf9cf3919a17007242fef3ce110042ee4609123325a7f0618b087408d8"
+    },
+    {
+      "path": "frontend/src/features/technical/signals/candleedge/candleMath.ts",
+      "bytes": 1193,
+      "sha256": "bbaf18438fab71dec412c10ab2a2cfbef7daa00270f67f40896c71ec99fa8225"
+    },
+    {
+      "path": "frontend/src/features/technical/signals/candleedge/candlePatterns.ts",
+      "bytes": 2473,
+      "sha256": "81de4c7f3256a18ae574bea7c866b7f273d818215879a4a2af67b18726dd1f58"
+    },
+    {
+      "path": "frontend/src/features/technical/signals/candleedge/index.ts",
+      "bytes": 892,
+      "sha256": "5ba9f9b983bd9411d12842cd12f53aa19f898c3c88c316d33b0925ad01900bc7"
+    },
+    {
+      "path": "frontend/src/features/technical/signals/candleedge/research/__tests__/forwardEval.spec.ts",
+      "bytes": 5439,
+      "sha256": "6eff347c475541712d22bf4a150d84306aa52d0370f6dd7ae61ca2199587c576"
+    },
+    {
+      "path": "frontend/src/features/technical/signals/candleedge/research/__tests__/runRealMarket.spec.ts",
+      "bytes": 21815,
+      "sha256": "679fc6b21c2dc42cda2e78fefb69f96fcea32b85487113271255ec7fccba1b0d"
+    },
+    {
+      "path": "frontend/src/features/technical/signals/candleedge/research/__tests__/salience.spec.ts",
+      "bytes": 5826,
+      "sha256": "cca5291c3f4bea44bfa06ce2400bb473340a4a1b051ddfa7c666a89a88f86b43"
+    },
+    {
+      "path": "frontend/src/features/technical/signals/candleedge/research/forwardEval.ts",
+      "bytes": 10673,
+      "sha256": "726a360b6b590a5742c11b84344f1ee2a731134e96aa0b313a3dca63f8e31eb7"
+    },
+    {
+      "path": "frontend/src/features/technical/signals/candleedge/research/hash.ts",
+      "bytes": 1177,
+      "sha256": "a3941d3c55b66061c4b4a3a9849dd202531132bf0331e65f8e3e4f7be3c1686a"
+    },
+    {
+      "path": "frontend/src/features/technical/signals/candleedge/research/realMarketTypes.ts",
+      "bytes": 3103,
+      "sha256": "2c5cc18ea1e4ccaef65f0243e04a57bff08a04697ce4d63e77ea29751b431d6c"
+    },
+    {
+      "path": "frontend/src/features/technical/signals/candleedge/research/salience.ts",
+      "bytes": 7130,
+      "sha256": "aa7426e01fa3dafd3cf24aae64dacbb0b3d53e1de3fa5a5fa9676d22e94d35bd"
+    },
+    {
+      "path": "frontend/src/features/technical/signals/candleedge/research/series.ts",
+      "bytes": 7551,
+      "sha256": "9f12a543d4f79db381b1f5c378abe614d01394f3547211a6dc650ec85dc4dcea"
+    },
+    {
+      "path": "frontend/src/features/technical/signals/candleedge/research/stats.ts",
+      "bytes": 23059,
+      "sha256": "10e98413277aa6fe1ce5a9676fcf472182319f53070a8b2ecd63a5ae817acae2"
+    },
+    {
+      "path": "frontend/src/features/technical/signals/candleedge/research/types.ts",
+      "bytes": 2396,
+      "sha256": "e9a303adb835283d7d6a7a21d11fa234974622c8a75d2098fdd667932d3188a7"
+    },
+    {
+      "path": "frontend/src/features/technical/signals/candleedge/scanner.ts",
+      "bytes": 14591,
+      "sha256": "59d1c189aa752e7db0d2e9889fd6f99a12a168d1c61d885944a022b6a25e1344"
+    },
+    {
+      "path": "frontend/src/features/technical/signals/candleedge/structurePatterns.ts",
+      "bytes": 16901,
+      "sha256": "5ed53aa952a5cf3c3171b7ea549137c53a9c8f4614113bef46dab90fbd07f971"
+    },
+    {
+      "path": "frontend/src/features/technical/signals/candleedge/swings.ts",
+      "bytes": 3976,
+      "sha256": "50abb4fc693f639b14cab8eb702d7a71768dfc772f2998a313e0230bfae04c29"
+    },
+    {
+      "path": "frontend/src/features/technical/signals/candleedge/types.ts",
+      "bytes": 2034,
+      "sha256": "e6a7fa8a251b3862335b1cd7779d0c03daa1fcedf1a9f786c1261181bbe62a65"
+    },
+    {
+      "path": "tools/candleedge_real_market/evidence/README.md",
+      "bytes": 2636,
+      "sha256": "afe72750f9a03cb19e64db44fd0f1d78d11ba05a5f07b79bb3993b2d7e6a3320"
+    },
+    {
+      "path": "tools/candleedge_real_market/evidence/captures/01-overview.png",
+      "bytes": 152472,
+      "sha256": "ed04778181122d86d4dd16508e7b533646320b071e03e6b02ba28de6c613e816"
+    },
+    {
+      "path": "tools/candleedge_real_market/evidence/captures/02-bos-evidence.png",
+      "bytes": 157351,
+      "sha256": "8e9bf9f6fcf0279a62561c0a8ee8e6f1565a8fe820d9bd538d43de11b4661922"
+    },
+    {
+      "path": "tools/candleedge_real_market/evidence/captures/03-group.png",
+      "bytes": 137609,
+      "sha256": "f31f9f5eded35fc584df33a5f88220f63679038e932b8b29edf24c4421a0cd7b"
+    },
+    {
+      "path": "tools/candleedge_real_market/evidence/captures/04-symbol-switch.png",
+      "bytes": 150978,
+      "sha256": "71b7eff9e06f7e570c897ad7dc8dd699875ac94f074c319253ee5f0c76ba9fbd"
+    },
+    {
+      "path": "tools/candleedge_real_market/evidence/captures/05-raw-mode.png",
+      "bytes": 86721,
+      "sha256": "aed1d5edadfc14de7b9d9e6ac79ba642189e0bcedf01586f70a4e31d321a33b8"
+    },
+    {
+      "path": "tools/candleedge_real_market/evidence/captures/06-sweep-evidence.png",
+      "bytes": 167751,
+      "sha256": "3a631378d853a93db63a7f7a6ef26022f0a426b156de4b3dfa84266df7c1d10f"
+    },
+    {
+      "path": "tools/candleedge_real_market/evidence/captures/07-empty-series.png",
+      "bytes": 49375,
+      "sha256": "c1cb9e16b0acf4fe9ac1bb8fef2006b77b4f66e526e1a332b38bc45901481de0"
+    },
+    {
+      "path": "tools/candleedge_real_market/evidence/captures/result.json",
+      "bytes": 6951,
+      "sha256": "157716080afcdfab48f1654751aa3d29f141e68985afa78f391f546ffb086a59"
+    },
+    {
+      "path": "tools/candleedge_real_market/evidence/ledger-validation.json",
+      "bytes": 1308,
+      "sha256": "7aafe5a201587a33929781d1dd5fd673aa2e12a29f9096a72fbf85cfdadfa868"
+    },
+    {
+      "path": "tools/candleedge_real_market/evidence/ledger.ndjson.gz",
+      "bytes": 3796918,
+      "sha256": "dd91530eae9119f898eb6c8db0508adfccd7d481259519dd60e24c776b9e0ede"
+    },
+    {
+      "path": "tools/candleedge_real_market/evidence/margins.json",
+      "bytes": 1690,
+      "sha256": "11c1ed2a08cf1e687d210afdb5baa4573c648883caea5deccd6563bda2d2ddbb"
+    },
+    {
+      "path": "tools/candleedge_real_market/evidence/record-manifest.ndjson.gz",
+      "bytes": 45757,
+      "sha256": "e1bbac680f6312b13bed7cecab454ea5257ccdfd62aa19c0628ee72f22cf8333"
+    },
+    {
+      "path": "tools/candleedge_real_market/evidence/series.ndjson.gz",
+      "bytes": 92418,
+      "sha256": "75509bf9bdfe68e019976531338b68b006478bed664e0b4cbd7a51a25a5ecc3b"
+    },
+    {
+      "path": "tools/candleedge_real_market/evidence/stats.json",
+      "bytes": 3048097,
+      "sha256": "ee989fbf3be5160ca9e542c1a2a85c203cc2e8a712a6a6586e9b39194daae5b1"
+    },
+    {
+      "path": "tools/candleedge_real_market/viewer/viewer-data.json",
+      "bytes": 2307719,
+      "sha256": "fd37e1dcf4d722e764b920ee344bf069103789f99eebc2c2d8791fee2913170b"
+    }
+  ]
+}

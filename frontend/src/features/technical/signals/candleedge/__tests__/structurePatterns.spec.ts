@@ -127,12 +127,12 @@ describe('ported double top/bottom matching', () => {
     expect(detectDoubleTop(candles, peaks, 25, 15)).toBeNull();
   });
 
-  it('applies the recency window inclusively', () => {
-    const candles = flatCandles(40);
+  it('applies the recency window from the pivot confirmation, inclusively', () => {
+    const candles = flatCandles(45);
     candles[15] = candle(15, 96, 100, 95, 96);
     const peaks = [swing(10, 100, 15), swing(20, 100, 25)];
-    expect(detectDoubleTop(candles, peaks, 35, 15)?.detector).toBe('double_top');
-    expect(detectDoubleTop(candles, peaks, 36, 15)).toBeNull();
+    expect(detectDoubleTop(candles, peaks, 40, 15)?.detector).toBe('double_top');
+    expect(detectDoubleTop(candles, peaks, 41, 15)).toBeNull();
   });
 
   it('accepts a double bottom only with a bounce above 1%', () => {
@@ -184,35 +184,60 @@ describe('ported market-structure detectors', () => {
     expect(detectLowerLow(structure([], [90, 90]))).toBeNull();
   });
 
-  it('emits bullish BOS at the confirmation bar of the new swing', () => {
-    const swings = { highs: [swing(10, 100, 13), swing(20, 101, 23)], lows: [] };
-    const event = detectBosBullish(swings, 23);
+  it('emits bullish BOS at the close-through bar, not the pivot confirmation', () => {
+    const candles = flatCandles(30);
+    candles[20] = candle(20, 100, 101.5, 99.5, 101);
+    const swings = { highs: [swing(10, 100, 13)], lows: [] };
+    const event = detectBosBullish(candles, 20, swings);
     expect(event).toMatchObject({
       detector: 'bos_bullish',
       brokenLevel: 100,
-      confirmedAtIndex: 23,
+      confirmedAtIndex: 20,
+      barIndex: 20,
     });
-    expect(event?.newSwing.index).toBe(20);
+    expect(event?.levelSwing.index).toBe(10);
   });
 
-  it('rejects bullish BOS exactly at the 0.5% threshold', () => {
-    const swings = { highs: [swing(10, 100, 13), swing(20, 100.5, 23)], lows: [] };
-    expect(detectBosBullish(swings, 23)).toBeNull();
+  it('applies an explicit 0.5% close-penetration threshold', () => {
+    const candles = flatCandles(30);
+    candles[20] = candle(20, 100, 100.6, 99.5, 100.5);
+    const swings = { highs: [swing(10, 100, 13)], lows: [] };
+    expect(detectBosBullish(candles, 20, swings, 0.005)).toBeNull();
+
+    candles[20] = candle(20, 100, 100.7, 99.5, 100.6);
+    expect(detectBosBullish(candles, 20, swings, 0.005)?.detector).toBe('bos_bullish');
   });
 
-  it('rejects bearish BOS exactly at the 0.5% threshold', () => {
-    const swings = { highs: [], lows: [swing(10, 100, 13), swing(20, 99.5, 23)] };
-    expect(detectBosBearish(swings, 23)).toBeNull();
+  it('mirrors the bearish threshold and close-through bar', () => {
+    const candles = flatCandles(30);
+    candles[20] = candle(20, 100, 100.5, 99.5, 99.5);
+    const swings = { highs: [], lows: [swing(10, 100, 13)] };
+    expect(detectBosBearish(candles, 20, swings, 0.005)).toBeNull();
+
+    candles[20] = candle(20, 100, 100.5, 99.3, 99.4);
+    expect(detectBosBearish(candles, 20, swings, 0.005)).toMatchObject({
+      detector: 'bos_bearish',
+      confirmedAtIndex: 20,
+      brokenLevel: 100,
+    });
   });
 
-  it('emits bearish BOS below the 0.5% threshold', () => {
-    const swings = { highs: [], lows: [swing(10, 100, 13), swing(20, 99.4, 23)] };
-    expect(detectBosBearish(swings, 23)?.detector).toBe('bos_bearish');
+  it('does not use a level confirmed on the break bar itself', () => {
+    const candles = flatCandles(30);
+    candles[20] = candle(20, 100, 101.5, 99.5, 101);
+    const sameBar = { highs: [swing(10, 100, 20)], lows: [] };
+    expect(detectBosBullish(candles, 20, sameBar)).toBeNull();
+
+    const knownBefore = { highs: [swing(10, 100, 19)], lows: [] };
+    expect(detectBosBullish(candles, 20, knownBefore)?.detector).toBe('bos_bullish');
   });
 
-  it('does not evaluate BOS before the new swing is confirmed', () => {
-    const swings = { highs: [swing(10, 100, 13), swing(20, 101, 23)], lows: [] };
-    expect(detectBosBullish(swings, 22)).toBeNull();
+  it('requires the previous close to be at or below the broken high', () => {
+    const candles = flatCandles(30);
+    candles[19] = candle(19, 101, 101.5, 100.5, 101);
+    candles[20] = candle(20, 101, 102.5, 100.5, 102);
+    const swings = { highs: [swing(10, 100, 13)], lows: [] };
+    expect(detectBosBullish(candles, 20, swings)).toBeNull();
   });
 
   it('sweeps the latest confirmed swing high, not the one before it', () => {

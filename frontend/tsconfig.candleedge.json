@@ -1,0 +1,15 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "composite": false,
+    "incremental": false,
+    "types": ["node", "vitest/globals"]
+  },
+  "include": [
+    "src/features/technical/signals/candleedge/**/*.ts",
+    "src/features/technical/nahayatnegar/lib/adjustments.ts",
+    "src/features/technical/nahayatnegar/lib/timeframe.ts",
+    "src/features/technical/nahayatnegar/lib/jalaliDate.ts",
+    "src/shared/lib/fmt.ts"
+  ]
+}

@@ -1,0 +1,58 @@
+{
+  "lines": 210494,
+  "adjusted": 208615,
+  "raw": 1879,
+  "byMode": {
+    "adj": 208615,
+    "raw": 1879
+  },
+  "byDetector": {
+    "doji": 79054,
+    "bullish_engulfing": 9110,
+    "bearish_engulfing": 10453,
+    "hammer": 1171,
+    "higher_high": 12147,
+    "shooting_star": 1697,
+    "higher_low": 12841,
+    "bos_bullish": 12572,
+    "liquidity_sweep_high": 9312,
+    "rising_wedge": 7080,
+    "double_top": 4502,
+    "lower_low": 8762,
+    "lower_high": 9249,
+    "symmetrical_triangle": 4960,
+    "double_bottom": 4704,
+    "liquidity_sweep_low": 9310,
+    "falling_wedge": 4999,
+    "bos_bearish": 7473,
+    "ascending_triangle": 544,
+    "descending_triangle": 554
+  },
+  "unknownDetector": 0,
+  "badShape": 0,
+  "emptyAnchors": 0,
+  "anchorIndexAfterEvent": 0,
+  "anchorConfirmedAfterEvent": 0,
+  "anchorConfirmedBeforeIndex": 0,
+  "nonFinitePrice": 0,
+  "levelMissing": 0,
+  "levelMismatch": 0,
+  "levelAnchorNotPreconfirmed": 0,
+  "confirmedOutsideSeries": 0,
+  "duplicateKey": 0,
+  "engulfingWithoutPrevious": 0,
+  "structureBefore41": 0,
+  "breakCandleNotAtEvent": 0,
+  "firstExamples": [],
+  "ledgerByMode": {
+    "adj": 208615,
+    "raw": 1879
+  },
+  "statsEvents": {
+    "adjusted": 208615,
+    "raw": 208701
+  },
+  "ledgerDetectors": 20,
+  "statsDetectorCount": 20,
+  "seriesCount": 2316
+}

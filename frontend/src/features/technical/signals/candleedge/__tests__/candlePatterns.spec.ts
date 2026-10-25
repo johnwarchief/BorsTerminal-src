@@ -18,9 +18,9 @@ describe('ported candlestick detectors (CandleEdge formulas)', () => {
       expect(isDoji(bodyCandle(12.5, 100))).toBe(false);
     });
 
-    it('keeps the source fallback range=1 when high equals low', () => {
+    it('rejects a zero-range bar instead of treating the fallback range as indecision', () => {
       const flat = candle(0, 100, 100, 100, 100);
-      expect(isDoji(flat)).toBe(true);
+      expect(isDoji(flat)).toBe(false);
     });
   });
 
@@ -62,24 +62,24 @@ describe('ported candlestick detectors (CandleEdge formulas)', () => {
   });
 
   describe('hammer', () => {
-    const downtrend = Array.from({ length: 20 }, (_, i) =>
+    const downtrend = Array.from({ length: 21 }, (_, i) =>
       candle(i, 120 - i, 121 - i, 119 - i, 120 - i),
     );
 
     it('accepts a hammer after a 20-bar downtrend', () => {
-      const last = candle(20, 100, 102.9, 95.9, 102);
-      expect(isHammer([...downtrend, last], 20)).toBe(true);
+      const last = candle(21, 100, 102.9, 95.9, 102);
+      expect(isHammer([...downtrend, last], 21)).toBe(true);
     });
 
     it('rejects lower wick equal to twice the body (strict inequality)', () => {
-      const last = candle(20, 100, 102.9, 96, 102);
-      expect(isHammer([...downtrend, last], 20)).toBe(false);
+      const last = candle(21, 100, 102.9, 96, 102);
+      expect(isHammer([...downtrend, last], 21)).toBe(false);
     });
 
     it('rejects the shape without a downtrend', () => {
-      const flat = Array.from({ length: 20 }, (_, i) => candle(i, 95, 96, 94, 95));
-      const last = candle(20, 100, 102.9, 95.9, 102);
-      expect(isHammer([...flat, last], 20)).toBe(false);
+      const flat = Array.from({ length: 21 }, (_, i) => candle(i, 95, 96, 94, 95));
+      const last = candle(21, 100, 102.9, 95.9, 102);
+      expect(isHammer([...flat, last], 21)).toBe(false);
     });
 
     it('needs 20 bars of trend context', () => {
@@ -89,24 +89,24 @@ describe('ported candlestick detectors (CandleEdge formulas)', () => {
   });
 
   describe('shooting star', () => {
-    const uptrend = Array.from({ length: 20 }, (_, i) =>
+    const uptrend = Array.from({ length: 21 }, (_, i) =>
       candle(i, 80 + i, 81 + i, 79 + i, 80 + i),
     );
 
     it('accepts a shooting star after a 20-bar uptrend', () => {
-      const last = candle(20, 102, 106.1, 99.9, 100);
-      expect(isShootingStar([...uptrend, last], 20)).toBe(true);
+      const last = candle(21, 102, 106.1, 99.9, 100);
+      expect(isShootingStar([...uptrend, last], 21)).toBe(true);
     });
 
     it('rejects upper wick equal to twice the body (strict inequality)', () => {
-      const last = candle(20, 102, 106, 99.9, 100);
-      expect(isShootingStar([...uptrend, last], 20)).toBe(false);
+      const last = candle(21, 102, 106, 99.9, 100);
+      expect(isShootingStar([...uptrend, last], 21)).toBe(false);
     });
 
     it('rejects the shape without an uptrend', () => {
-      const down = Array.from({ length: 20 }, (_, i) => candle(i, 120, 121, 119, 120));
-      const last = candle(20, 102, 106.1, 99.9, 100);
-      expect(isShootingStar([...down, last], 20)).toBe(false);
+      const down = Array.from({ length: 21 }, (_, i) => candle(i, 120, 121, 119, 120));
+      const last = candle(21, 102, 106.1, 99.9, 100);
+      expect(isShootingStar([...down, last], 21)).toBe(false);
     });
   });
 });

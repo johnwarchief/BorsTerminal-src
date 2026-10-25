@@ -1,0 +1,206 @@
+{
+  "checks": [
+    {
+      "name": "initial series",
+      "ok": true,
+      "detail": {
+        "seriesKey": "آتيمس|D|adjusted",
+        "symbol": "آتيمس",
+        "timeframe": "D",
+        "mode": "adjusted",
+        "barCount": 457,
+        "eventCount": 253,
+        "groupCount": 145,
+        "selectedEvent": null,
+        "selectedGroup": null,
+        "provisionalCount": 1
+      }
+    },
+    {
+      "name": "initial event count",
+      "ok": true,
+      "detail": {
+        "got": 253,
+        "want": 253
+      }
+    },
+    {
+      "name": "provisional separated",
+      "ok": true,
+      "detail": 1
+    },
+    {
+      "name": "canvas draws candles/markers",
+      "ok": true,
+      "detail": {
+        "width": 1006,
+        "height": 520,
+        "nonBg": 23091,
+        "colored": 8246
+      }
+    },
+    {
+      "name": "BOS selected in list",
+      "ok": true,
+      "detail": "bos_bullish@51"
+    },
+    {
+      "name": "BOS detail shows level",
+      "ok": true,
+      "detail": "شکست ساختار صعودی\nصعودی\nساختار بازار\nکندل تأیید: #۵۱ · ۱۴۰۳/۰۸/۲۰\nکندل شروع ساختار: #۴۴\nسطح/مرز رویداد: ۳۰۹٬۴۴۷\nسقف #۴۴ · قیمت ۳۰۹٬۴۴۷ · تأیید ۱۴۰۳/۰۸/۰۹ · ایندکس تأیید ۴۷\nکندل #۵۱ · قیمت ۳۱۱٬۶۴۷ · تأیید ۱۴۰۳/۰۸/۲۰ · ایندکس تأیید ۵۱\nهمهٔ لنگرها در زمان رویداد یا پیش از آن قابل‌دانستن بوده‌اند.\nاین رویداد پژوهشی است؛ نه سیگنال رسمی و نه احتمال موفقیت."
+    },
+    {
+      "name": "BOS detail shows pivot confirmation",
+      "ok": true,
+      "detail": "شکست ساختار صعودی\nصعودی\nساختار بازار\nکندل تأیید: #۵۱ · ۱۴۰۳/۰۸/۲۰\nکندل شروع ساختار: #۴۴\nسطح/مرز رویداد: ۳۰۹٬۴۴۷\nسقف #۴۴ · قیمت ۳۰۹٬۴۴۷ · تأیید ۱۴۰۳/۰۸/۰۹ · ایندکس تأیید ۴۷\nکندل #۵۱ · قیمت ۳۱۱٬۶۴۷ · تأیید ۱۴۰۳/۰۸/۲۰ · ایندکس تأیید ۵۱\nهمهٔ لنگرها در زمان رویداد یا پیش از آن قابل‌دانستن بوده‌اند.\nاین رویداد پژوهشی است؛ نه سیگنال رسمی و نه احتمال موفقیت."
+    },
+    {
+      "name": "BOS anchors knowable before event",
+      "ok": true,
+      "detail": "شکست ساختار صعودی\nصعودی\nساختار بازار\nکندل تأیید: #۵۱ · ۱۴۰۳/۰۸/۲۰\nکندل شروع ساختار: #۴۴\nسطح/مرز رویداد: ۳۰۹٬۴۴۷\nسقف #۴۴ · قیمت ۳۰۹٬۴۴۷ · تأیید ۱۴۰۳/۰۸/۰۹ · ایندکس تأیید ۴۷\nکندل #۵۱ · قیمت ۳۱۱٬۶۴۷ · تأیید ۱۴۰۳/۰۸/۲۰ · ایندکس تأیید ۵۱\nهمهٔ لنگرها در زمان رویداد یا پیش از آن قابل‌دانستن بوده‌اند.\nاین رویداد پژوهشی است؛ نه سیگنال رسمی و نه احتمال موفقیت."
+    },
+    {
+      "name": "salience group selected",
+      "ok": true,
+      "detail": {
+        "id": "آتيمس|D#g6",
+        "count": 1
+      }
+    },
+    {
+      "name": "event list filtered to group",
+      "ok": true,
+      "detail": {
+        "selectionNote": "گروه انتخاب‌شده: ۲ رویداد",
+        "expectedEvents": 2
+      }
+    },
+    {
+      "name": "symbol switch key",
+      "ok": true,
+      "detail": {
+        "seriesKey": "آواك|D|adjusted",
+        "symbol": "آواك",
+        "timeframe": "D",
+        "mode": "adjusted",
+        "barCount": 359,
+        "eventCount": 287,
+        "groupCount": 128,
+        "selectedEvent": null,
+        "selectedGroup": null,
+        "provisionalCount": 1
+      }
+    },
+    {
+      "name": "symbol switch events",
+      "ok": true,
+      "detail": {
+        "got": 287,
+        "want": 287
+      }
+    },
+    {
+      "name": "symbol switch bars",
+      "ok": true,
+      "detail": {
+        "got": 359,
+        "want": 359
+      }
+    },
+    {
+      "name": "timeframe switch key",
+      "ok": true,
+      "detail": {
+        "seriesKey": "آواك|W|adjusted",
+        "symbol": "آواك",
+        "timeframe": "W",
+        "mode": "adjusted",
+        "barCount": 82,
+        "eventCount": 35,
+        "groupCount": 19,
+        "selectedEvent": null,
+        "selectedGroup": null,
+        "provisionalCount": 1
+      }
+    },
+    {
+      "name": "timeframe switch events",
+      "ok": true,
+      "detail": {
+        "got": 35,
+        "want": 35
+      }
+    },
+    {
+      "name": "timeframe switch bars",
+      "ok": true,
+      "detail": {
+        "got": 82,
+        "want": 82
+      }
+    },
+    {
+      "name": "raw mode key",
+      "ok": true,
+      "detail": {
+        "seriesKey": "آواك|W|raw",
+        "symbol": "آواك",
+        "timeframe": "W",
+        "mode": "raw",
+        "barCount": 82,
+        "eventCount": 35,
+        "groupCount": 0,
+        "selectedEvent": null,
+        "selectedGroup": null,
+        "provisionalCount": 0
+      }
+    },
+    {
+      "name": "raw mode events",
+      "ok": true,
+      "detail": {
+        "got": 35,
+        "want": 35
+      }
+    },
+    {
+      "name": "raw mode disables salience",
+      "ok": true,
+      "detail": "سالینس فقط برای سری تعدیل‌شده محاسبه شده است."
+    },
+    {
+      "name": "sweep detail shows level",
+      "ok": true,
+      "detail": "شکار نقدینگی پایین\nصعودی\nساختار بازار\nکندل تأیید: #۴۷ · ۱۴۰۳/۱۲/۲۰\nکندل شروع ساختار: #۴۱\nسطح/مرز رویداد: ۶٬۹۲۶٫۷۶\nکندل #۴۷ · قیمت ۶٬۹۹۳٫۴۶ · تأیید ۱۴۰۳/۱۲/۲۰ · ایندکس تأیید ۴۷\nکف #۴۱ · قیمت ۶٬۹۲۶٫۷۶ · تأیید ۱۴۰۳/۱۲/۱۲ · ایندکس تأیید ۴۴\nهمهٔ لنگرها در زمان رویداد یا پیش از آن قابل‌دانستن بوده‌اند.\nاین رویداد پژوهشی است؛ نه سیگنال رسمی و نه احتمال موفقیت."
+    },
+    {
+      "name": "empty series",
+      "ok": true,
+      "detail": {
+        "state": {
+          "seriesKey": "آكام2|D|adjusted",
+          "symbol": "آكام2",
+          "timeframe": "D",
+          "mode": "adjusted",
+          "barCount": 285,
+          "eventCount": 0,
+          "groupCount": 0,
+          "selectedEvent": null,
+          "selectedGroup": null,
+          "provisionalCount": 0
+        },
+        "emptyText": "رویدادی با این فیلتر نیست."
+      }
+    }
+  ],
+  "consoleErrors": [],
+  "screenshots": [
+    "01-overview.png",
+    "02-bos-evidence.png",
+    "03-group.png",
+    "04-symbol-switch.png",
+    "05-raw-mode.png",
+    "06-sweep-evidence.png",
+    "07-empty-series.png"
+  ]
+}

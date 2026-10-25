@@ -6,8 +6,11 @@ import type { Candle } from './types';
 import { candleParts, isDowntrend, isUptrend } from './candleMath';
 
 export function isDoji(candle: Candle): boolean {
+  // A locked/limit bar with no range has no indecision to measure; the source's
+  // range=1 fallback would otherwise turn every zero-range bar into a doji.
+  if (!(candle.high > candle.low)) return false;
   const { body, range } = candleParts(candle);
-  return body <= range * 0.12;
+  return body / range <= 0.12 + 1e-12;
 }
 
 export function isBullishEngulfing(candles: readonly Candle[], i: number): boolean {
@@ -44,7 +47,9 @@ export function isHammer(
   const { body, upper, lower } = candleParts(candle);
   const shape =
     body > 0 && lower > body * 2 && upper < body * 0.5 && candle.close > candle.open;
-  return shape && isDowntrend(candles, idx, trendPeriod);
+  // Prior trend must exclude the pattern bar; otherwise the hammer's own
+  // bullish close can erase the decline it is reversing.
+  return shape && isDowntrend(candles, idx - 1, trendPeriod);
 }
 
 export function isShootingStar(
@@ -57,5 +62,5 @@ export function isShootingStar(
   const { body, upper, lower } = candleParts(candle);
   const shape =
     body > 0 && upper > body * 2 && lower < body * 0.5 && candle.close < candle.open;
-  return shape && isUptrend(candles, idx, trendPeriod);
+  return shape && isUptrend(candles, idx - 1, trendPeriod);
 }

@@ -30,7 +30,7 @@ import type {
 } from './types';
 import { assertValidCandles } from './validation';
 
-const DEFAULTS = { swingWindow: 3, extremumLookback: 5, trendPeriod: 20 };
+const DEFAULTS = { swingWindow: 3, extremumLookback: 5, trendPeriod: 20, bosThreshold: 0 };
 
 function positiveInt(value: number | undefined, fallback: number, name: string): number {
   if (value === undefined) return fallback;
@@ -40,10 +40,19 @@ function positiveInt(value: number | undefined, fallback: number, name: string):
   return value;
 }
 
+function nonNegative(value: number | undefined, fallback: number, name: string): number {
+  if (value === undefined) return fallback;
+  if (!Number.isFinite(value) || value < 0) {
+    throw new RangeError(`${name} must be a finite number >= 0`);
+  }
+  return value;
+}
+
 interface AnchorSpec {
   index: number;
   price: number;
   role: PatternAnchor['role'];
+  confirmedAtIndex?: number;
 }
 
 function makeEvent(
@@ -60,6 +69,7 @@ function makeEvent(
     time: candles[spec.index].time,
     price: spec.price,
     role: spec.role,
+    confirmedAtIndex: spec.confirmedAtIndex ?? spec.index,
   }));
   const startIndex = Math.min(...anchors.map((anchor) => anchor.index));
   const event: PatternEvent = {
@@ -99,6 +109,7 @@ export function scanPatterns(
     'extremumLookback',
   );
   const trendPeriod = positiveInt(options.trendPeriod, DEFAULTS.trendPeriod, 'trendPeriod');
+  const bosThreshold = nonNegative(options.bosThreshold, DEFAULTS.bosThreshold, 'bosThreshold');
 
   const events = new Map<string, PatternEvent>();
   const push = (event: PatternEvent) => {
@@ -181,14 +192,56 @@ export function scanPatterns(
     trimWindow(windowPeaks, i - 200);
     trimWindow(windowTroughs, i - 200);
 
+    // BOS is a price crossing, so it is checked on every bar, not only when a
+    // new pivot confirms. The level must have been confirmed before this bar.
+    const swingsNow = { highs: windowHighs, lows: windowLows };
+    const bosBullish = detectBosBullish(candles, i, swingsNow, bosThreshold);
+    if (bosBullish) {
+      push(
+        makeEvent(candles, bosBullish.detector, 'market_structure', bosBullish.bias, i, [
+          {
+            index: bosBullish.levelSwing.index,
+            price: bosBullish.levelSwing.price,
+            role: 'high',
+            confirmedAtIndex: bosBullish.levelSwing.confirmedAtIndex,
+          },
+          { index: i, price: candle.close, role: 'candle', confirmedAtIndex: i },
+        ], bosBullish.brokenLevel),
+      );
+    }
+    const bosBearish = detectBosBearish(candles, i, swingsNow, bosThreshold);
+    if (bosBearish) {
+      push(
+        makeEvent(candles, bosBearish.detector, 'market_structure', bosBearish.bias, i, [
+          {
+            index: bosBearish.levelSwing.index,
+            price: bosBearish.levelSwing.price,
+            role: 'low',
+            confirmedAtIndex: bosBearish.levelSwing.confirmedAtIndex,
+          },
+          { index: i, price: candle.close, role: 'candle', confirmedAtIndex: i },
+        ], bosBearish.brokenLevel),
+      );
+    }
+
     if (addedHighs.length > 0) {
       const swings = { highs: windowHighs, lows: windowLows };
       const higherHigh = detectHigherHigh(swings);
       if (higherHigh && higherHigh.point2.confirmedAtIndex === i) {
         push(
           makeEvent(candles, higherHigh.detector, 'market_structure', higherHigh.bias, i, [
-            { index: higherHigh.point1.index, price: higherHigh.point1.price, role: 'high' },
-            { index: higherHigh.point2.index, price: higherHigh.point2.price, role: 'high' },
+            {
+              index: higherHigh.point1.index,
+              price: higherHigh.point1.price,
+              role: 'high',
+              confirmedAtIndex: higherHigh.point1.confirmedAtIndex,
+            },
+            {
+              index: higherHigh.point2.index,
+              price: higherHigh.point2.price,
+              role: 'high',
+              confirmedAtIndex: higherHigh.point2.confirmedAtIndex,
+            },
           ]),
         );
       }
@@ -196,18 +249,19 @@ export function scanPatterns(
       if (lowerHigh && lowerHigh.point2.confirmedAtIndex === i) {
         push(
           makeEvent(candles, lowerHigh.detector, 'market_structure', lowerHigh.bias, i, [
-            { index: lowerHigh.point1.index, price: lowerHigh.point1.price, role: 'high' },
-            { index: lowerHigh.point2.index, price: lowerHigh.point2.price, role: 'high' },
+            {
+              index: lowerHigh.point1.index,
+              price: lowerHigh.point1.price,
+              role: 'high',
+              confirmedAtIndex: lowerHigh.point1.confirmedAtIndex,
+            },
+            {
+              index: lowerHigh.point2.index,
+              price: lowerHigh.point2.price,
+              role: 'high',
+              confirmedAtIndex: lowerHigh.point2.confirmedAtIndex,
+            },
           ]),
-        );
-      }
-      const bos = detectBosBullish(swings, i);
-      if (bos) {
-        push(
-          makeEvent(candles, bos.detector, 'market_structure', bos.bias, i, [
-            { index: bos.previousSwing.index, price: bos.previousSwing.price, role: 'high' },
-            { index: bos.newSwing.index, price: bos.newSwing.price, role: 'high' },
-          ], bos.brokenLevel),
         );
       }
     }
@@ -218,8 +272,18 @@ export function scanPatterns(
       if (lowerLow && lowerLow.point2.confirmedAtIndex === i) {
         push(
           makeEvent(candles, lowerLow.detector, 'market_structure', lowerLow.bias, i, [
-            { index: lowerLow.point1.index, price: lowerLow.point1.price, role: 'low' },
-            { index: lowerLow.point2.index, price: lowerLow.point2.price, role: 'low' },
+            {
+              index: lowerLow.point1.index,
+              price: lowerLow.point1.price,
+              role: 'low',
+              confirmedAtIndex: lowerLow.point1.confirmedAtIndex,
+            },
+            {
+              index: lowerLow.point2.index,
+              price: lowerLow.point2.price,
+              role: 'low',
+              confirmedAtIndex: lowerLow.point2.confirmedAtIndex,
+            },
           ]),
         );
       }
@@ -227,18 +291,19 @@ export function scanPatterns(
       if (higherLow && higherLow.point2.confirmedAtIndex === i) {
         push(
           makeEvent(candles, higherLow.detector, 'market_structure', higherLow.bias, i, [
-            { index: higherLow.point1.index, price: higherLow.point1.price, role: 'low' },
-            { index: higherLow.point2.index, price: higherLow.point2.price, role: 'low' },
+            {
+              index: higherLow.point1.index,
+              price: higherLow.point1.price,
+              role: 'low',
+              confirmedAtIndex: higherLow.point1.confirmedAtIndex,
+            },
+            {
+              index: higherLow.point2.index,
+              price: higherLow.point2.price,
+              role: 'low',
+              confirmedAtIndex: higherLow.point2.confirmedAtIndex,
+            },
           ]),
-        );
-      }
-      const bos = detectBosBearish(swings, i);
-      if (bos) {
-        push(
-          makeEvent(candles, bos.detector, 'market_structure', bos.bias, i, [
-            { index: bos.previousSwing.index, price: bos.previousSwing.price, role: 'low' },
-            { index: bos.newSwing.index, price: bos.newSwing.price, role: 'low' },
-          ], bos.brokenLevel),
         );
       }
     }
@@ -259,10 +324,30 @@ export function scanPatterns(
         if (!pattern) continue;
         push(
           makeEvent(candles, pattern.detector, 'chart_structure', pattern.bias, i, [
-            { index: pattern.high1.index, price: pattern.high1.price, role: 'high' },
-            { index: pattern.high2.index, price: pattern.high2.price, role: 'high' },
-            { index: pattern.low1.index, price: pattern.low1.price, role: 'low' },
-            { index: pattern.low2.index, price: pattern.low2.price, role: 'low' },
+            {
+              index: pattern.high1.index,
+              price: pattern.high1.price,
+              role: 'high',
+              confirmedAtIndex: pattern.high1.confirmedAtIndex,
+            },
+            {
+              index: pattern.high2.index,
+              price: pattern.high2.price,
+              role: 'high',
+              confirmedAtIndex: pattern.high2.confirmedAtIndex,
+            },
+            {
+              index: pattern.low1.index,
+              price: pattern.low1.price,
+              role: 'low',
+              confirmedAtIndex: pattern.low1.confirmedAtIndex,
+            },
+            {
+              index: pattern.low2.index,
+              price: pattern.low2.price,
+              role: 'low',
+              confirmedAtIndex: pattern.low2.confirmedAtIndex,
+            },
           ]),
         );
       }
@@ -273,8 +358,18 @@ export function scanPatterns(
       if (match && addedPeaks.some((peak) => peak.index === match.second.index)) {
         push(
           makeEvent(candles, 'double_top', 'chart_structure', 'bearish', i, [
-            { index: match.first.index, price: match.first.price, role: 'peak' },
-            { index: match.second.index, price: match.second.price, role: 'peak' },
+            {
+              index: match.first.index,
+              price: match.first.price,
+              role: 'peak',
+              confirmedAtIndex: match.first.confirmedAtIndex,
+            },
+            {
+              index: match.second.index,
+              price: match.second.price,
+              role: 'peak',
+              confirmedAtIndex: match.second.confirmedAtIndex,
+            },
           ]),
         );
       }
@@ -285,20 +380,34 @@ export function scanPatterns(
       if (match && addedTroughs.some((trough) => trough.index === match.second.index)) {
         push(
           makeEvent(candles, 'double_bottom', 'chart_structure', 'bullish', i, [
-            { index: match.first.index, price: match.first.price, role: 'trough' },
-            { index: match.second.index, price: match.second.price, role: 'trough' },
+            {
+              index: match.first.index,
+              price: match.first.price,
+              role: 'trough',
+              confirmedAtIndex: match.first.confirmedAtIndex,
+            },
+            {
+              index: match.second.index,
+              price: match.second.price,
+              role: 'trough',
+              confirmedAtIndex: match.second.confirmedAtIndex,
+            },
           ]),
         );
       }
     }
 
-    const swingsNow = { highs: windowHighs, lows: windowLows };
     const sweepHigh = detectLiquiditySweepHigh(candles, i, swingsNow);
     if (sweepHigh) {
       push(
         makeEvent(candles, sweepHigh.detector, 'market_structure', sweepHigh.bias, i, [
-          { index: i, price: candle.close, role: 'candle' },
-          { index: sweepHigh.levelSwing.index, price: sweepHigh.levelSwing.price, role: 'high' },
+          { index: i, price: candle.close, role: 'candle', confirmedAtIndex: i },
+          {
+            index: sweepHigh.levelSwing.index,
+            price: sweepHigh.levelSwing.price,
+            role: 'high',
+            confirmedAtIndex: sweepHigh.levelSwing.confirmedAtIndex,
+          },
         ], sweepHigh.sweptLevel),
       );
     }
@@ -306,8 +415,13 @@ export function scanPatterns(
     if (sweepLow) {
       push(
         makeEvent(candles, sweepLow.detector, 'market_structure', sweepLow.bias, i, [
-          { index: i, price: candle.close, role: 'candle' },
-          { index: sweepLow.levelSwing.index, price: sweepLow.levelSwing.price, role: 'low' },
+          { index: i, price: candle.close, role: 'candle', confirmedAtIndex: i },
+          {
+            index: sweepLow.levelSwing.index,
+            price: sweepLow.levelSwing.price,
+            role: 'low',
+            confirmedAtIndex: sweepLow.levelSwing.confirmedAtIndex,
+          },
         ], sweepLow.sweptLevel),
       );
     }
