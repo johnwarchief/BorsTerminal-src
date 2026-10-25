@@ -1,0 +1,222 @@
+{
+ "symbols": 30,
+ "common_rows": 4845,
+ "raw_hl_rows": 4845,
+ "raw_hl_exact": 4183,
+ "raw_hl_tol_rows": 4471,
+ "live_adjusted_ok": 375,
+ "live_adjusted_pct": 7.7399,
+ "all_visible_high_eq_raw": false,
+ "per_symbol": [
+  {
+   "symbol": "آسيا",
+   "common": 76,
+   "raw_hl_exact": 0,
+   "visible_high_eq_raw": true,
+   "live_adj_ok": 28
+  },
+  {
+   "symbol": null,
+   "common": 0,
+   "raw_hl_exact": 0,
+   "visible_high_eq_raw": false,
+   "live_adj_ok": 0
+  },
+  {
+   "symbol": null,
+   "common": 0,
+   "raw_hl_exact": 0,
+   "visible_high_eq_raw": false,
+   "live_adj_ok": 0
+  },
+  {
+   "symbol": null,
+   "common": 0,
+   "raw_hl_exact": 0,
+   "visible_high_eq_raw": false,
+   "live_adj_ok": 0
+  },
+  {
+   "symbol": null,
+   "common": 0,
+   "raw_hl_exact": 0,
+   "visible_high_eq_raw": false,
+   "live_adj_ok": 0
+  },
+  {
+   "symbol": null,
+   "common": 0,
+   "raw_hl_exact": 0,
+   "visible_high_eq_raw": false,
+   "live_adj_ok": 0
+  },
+  {
+   "symbol": "حخزر",
+   "common": 431,
+   "raw_hl_exact": 0,
+   "visible_high_eq_raw": true,
+   "live_adj_ok": 28
+  },
+  {
+   "symbol": null,
+   "common": 0,
+   "raw_hl_exact": 0,
+   "visible_high_eq_raw": false,
+   "live_adj_ok": 0
+  },
+  {
+   "symbol": "درهآور",
+   "common": 425,
+   "raw_hl_exact": 0,
+   "visible_high_eq_raw": true,
+   "live_adj_ok": 21
+  },
+  {
+   "symbol": "زگلدشت",
+   "common": 424,
+   "raw_hl_exact": 0,
+   "visible_high_eq_raw": true,
+   "live_adj_ok": 14
+  },
+  {
+   "symbol": null,
+   "common": 0,
+   "raw_hl_exact": 0,
+   "visible_high_eq_raw": false,
+   "live_adj_ok": 0
+  },
+  {
+   "symbol": "شكربن",
+   "common": 449,
+   "raw_hl_exact": 0,
+   "visible_high_eq_raw": true,
+   "live_adj_ok": 116
+  },
+  {
+   "symbol": null,
+   "common": 0,
+   "raw_hl_exact": 0,
+   "visible_high_eq_raw": false,
+   "live_adj_ok": 0
+  },
+  {
+   "symbol": null,
+   "common": 0,
+   "raw_hl_exact": 0,
+   "visible_high_eq_raw": false,
+   "live_adj_ok": 0
+  },
+  {
+   "symbol": "شگل",
+   "common": 433,
+   "raw_hl_exact": 0,
+   "visible_high_eq_raw": true,
+   "live_adj_ok": 23
+  },
+  {
+   "symbol": null,
+   "common": 0,
+   "raw_hl_exact": 0,
+   "visible_high_eq_raw": false,
+   "live_adj_ok": 0
+  },
+  {
+   "symbol": null,
+   "common": 0,
+   "raw_hl_exact": 0,
+   "visible_high_eq_raw": false,
+   "live_adj_ok": 0
+  },
+  {
+   "symbol": "فروي",
+   "common": 435,
+   "raw_hl_exact": 0,
+   "visible_high_eq_raw": true,
+   "live_adj_ok": 32
+  },
+  {
+   "symbol": null,
+   "common": 0,
+   "raw_hl_exact": 0,
+   "visible_high_eq_raw": false,
+   "live_adj_ok": 0
+  },
+  {
+   "symbol": null,
+   "common": 0,
+   "raw_hl_exact": 0,
+   "visible_high_eq_raw": false,
+   "live_adj_ok": 0
+  },
+  {
+   "symbol": null,
+   "common": 0,
+   "raw_hl_exact": 0,
+   "visible_high_eq_raw": false,
+   "live_adj_ok": 0
+  },
+  {
+   "symbol": null,
+   "common": 0,
+   "raw_hl_exact": 0,
+   "visible_high_eq_raw": false,
+   "live_adj_ok": 0
+  },
+  {
+   "symbol": "ميهن",
+   "common": 437,
+   "raw_hl_exact": 0,
+   "visible_high_eq_raw": true,
+   "live_adj_ok": 39
+  },
+  {
+   "symbol": "واميد",
+   "common": 436,
+   "raw_hl_exact": 0,
+   "visible_high_eq_raw": true,
+   "live_adj_ok": 48
+  },
+  {
+   "symbol": "وتوسم",
+   "common": 438,
+   "raw_hl_exact": 0,
+   "visible_high_eq_raw": true,
+   "live_adj_ok": 9
+  },
+  {
+   "symbol": "وسبحان",
+   "common": 437,
+   "raw_hl_exact": 0,
+   "visible_high_eq_raw": true,
+   "live_adj_ok": 3
+  },
+  {
+   "symbol": null,
+   "common": 0,
+   "raw_hl_exact": 0,
+   "visible_high_eq_raw": false,
+   "live_adj_ok": 0
+  },
+  {
+   "symbol": null,
+   "common": 0,
+   "raw_hl_exact": 0,
+   "visible_high_eq_raw": false,
+   "live_adj_ok": 0
+  },
+  {
+   "symbol": null,
+   "common": 0,
+   "raw_hl_exact": 0,
+   "visible_high_eq_raw": false,
+   "live_adj_ok": 0
+  },
+  {
+   "symbol": "پكوير",
+   "common": 424,
+   "raw_hl_exact": 0,
+   "visible_high_eq_raw": true,
+   "live_adj_ok": 14
+  }
+ ]
+}

@@ -1,0 +1,52 @@
+# RA365 Round 31 evidence hashes
+# generated_utc: 2026-10-25T16:33:15Z
+# branch: mission/ra365-round31-rahavard-parity-closure-2026-10-25  code_head: 1d5e8a56d5d29fc884401183687e5df5799fe52b
+# note: *.log files are gitignored; hashes are from local evidence kept for this round.
+
+## code / tests / docs
+339213299240da9f018e7630615c4c01a0b2bdc74880ae07896e2a4322e1b2ab *api/chart.py
+083c43ae4d5e15d7731c597292fc7589fa69e454eab45569ddf5ebe462887b77 *dev/test_ra365_round31_visible_hl_v1.py
+45474a9064c04d9a41f220c49943d417ae5e55ff8d8b73dde69d2d3e15abe07f *dev/test_ra365_round30_chart_route_v1.py
+ba8a80c29bb8bc2c7b38e865d37d7e65664c4142f62885599ba10da2f28bd8db *dev/run_all_tests.py
+1f6d148efc7372e731279e52ffdb8178f64a9ff9c82fb75401a71ec3735a3041 *tools/ra365_round27_product_capture.py
+9452f7d85a08e5b2eba01943c690e7048952fa6cfc1c32bd553d98fcc2e2c490 *tools/ra365_round30_live_capture.py
+52363ecdfe5012036cebe272c265528c797cb179a56c6f61e814192d1b6224b7 *docs/FTS-RULE-ALGORITHM-MAP.md
+459345b75acbd5d7126cee051d878986e308e87bd66960d5873139ea52914dd9 *docs/RA365-ROUND31-RAHAVARD-PARITY-CLOSURE-REPORT.md
+
+## artifacts/ra365/r31
+f07b2423671d5eabf1d4ca53af9af665162f96df63a88844185a72459b4a7294 *artifacts/ra365/r31/exact-visible.json
+cdd6153877cfc7015b256e5273055edb122c640ec6356d33194d8c5931ed990c *artifacts/ra365/r31/full-gate-attempt1-diskfull.log
+a311652fbb4d2097a1c52da74445e25ad7f6edd4180ef59e25ac8afce9bf3084 *artifacts/ra365/r31/full-gate-attempt2-citation.log
+86ad54183de523f5091ec5d797b974e6ad8a1c4677861f2ace33f8a6329734ac *artifacts/ra365/r31/full-gate.log
+f48c05fe6282300d938ebbfac9a7575a7c864a130281a639fd3ed3783063239d *artifacts/ra365/r31/live-capture.log
+895c5cee7636c06b2b38625870028d94262f5d623f665973f1f8bb3fb4167e33 *artifacts/ra365/r31/live-visible-check.json
+6feca913e33ab9fee2432787e07084f928885b5b138caad73fdf31fd78030e47 *artifacts/ra365/r31/visible-data-audit.log
+a5400a0b779e3d8fda98cf587423de830f0c5517d401484e468b587f5811deb6 *artifacts/ra365/r31/visible-metrics.txt
+
+## frozen reference
+4b1ecb4c1effc4d5770c42521d96a2540a9c9f7b471d7cc710cd034712a8c17c *D:/BorsTerminal-tmp/r26_bench/frozen/ref_bars_v2.jsonl
+
+## R29 capture aggregate
+8d8954b02ed9c6d928b15220ce3d648bd018d11bec1c04da66174736a65186dd  D:/BorsTerminal-tmp/r29_bench/full_shard0 files=434
+d4380d8e7221f01caa2b5236ef4f02040142bb88158ca57849e5d132a1bef854  D:/BorsTerminal-tmp/r29_bench/full_shard1 files=433
+d5356824690ea846e389703a21b5342b22723c3ed45d53884a9d300ffba80ab1  D:/BorsTerminal-tmp/r29_bench/full_shard2 files=434
+01f99b5d26f8be3d3748956cc7cce45b86ef4bb4de11c557b9ea34718da68088  D:/BorsTerminal-tmp/r29_bench/full_shard3 files=433
+c8c7b24127af5df570d012fef6531f09a1b51eedb5284d5945eb44419a88ddfe  D:/BorsTerminal-tmp/r29_bench/full_shard4 files=433
+83c01e900c724e23120243176e2ca0975786a9d61cd2f4d3ff6880dc9c251f5d  D:/BorsTerminal-tmp/r29_bench/full_shard5 files=433
+
+## live visible payloads aggregate
+35d468a3f1c0e5b879d2e9e785987f1a80acf6e020c14509c3c7288159e4ca47  D:/BorsTerminal-tmp/r31_live/payloads files=30
+
+## isolated data/gate DBs
+d9da8671284581e560921eaa2f98add406f4973259bd8def0708f469773c607d *D:/BorsTerminal-tmp/r30_data/market.db
+ab73a210bd4fe917172fb361b45db9bb2328963d497264b9feffe66c152e5ada *D:/BorsTerminal-tmp/r31_live/market.db
+
+## protected databases
+e08d8062be33301551e672683106b87ea930825657ea6956e515bc7ac191a2a4 *market.db
+8fb85f381317634430cae429bd9775eba0a364b692e0868b4d9b17dbbcc6c17f *D:/BorsTerminal-tmp/ra365_round17/market_r17_migrated.db
+
+157 suite counted, 58 silent (exit-code only), 2 skipped (fixture missing)
+ALL SUITES PASSED
+[gate-isolation] logical_before=1d9bc9b4525fcc4490d5b3d9e8e5f03b30887c62f51768199b80626ff17041f9
+[gate-isolation] logical_after=1d9bc9b4525fcc4490d5b3d9e8e5f03b30887c62f51768199b80626ff17041f9
+PROTECTED_DB_UNCHANGED logical_total=1d9bc9b4525fcc4490d5b3d9e8e5f03b30887c62f51768199b80626ff17041f9

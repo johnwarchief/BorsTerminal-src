@@ -1,0 +1,7 @@
+D rows 1194446 visible_adj 65.3927 base_visible 64.5905 raw_lit 99.8482 raw_con 87.603
+ fields {'o_cmp': 1194446, 'o_exact': 312402, 'h_cmp': 1194446, 'h_exact': 312460, 'l_cmp': 1194446, 'l_exact': 312509, 'c_cmp': 1194446, 'c_exact': 312514, 'v_cmp': 1194446, 'v_exact': 1193670}
+W rows 275776 visible_adj 64.6503 base_visible 63.8787 raw_lit 98.9789 raw_con 89.6967
+ fields {'o_cmp': 275776, 'o_exact': 74189, 'h_cmp': 275776, 'h_exact': 73327, 'l_cmp': 275776, 'l_exact': 73776, 'c_cmp': 275776, 'c_exact': 72815, 'v_cmp': 275776, 'v_exact': 272558}
+M rows 69268 visible_adj 62.8039 base_visible 62.0936 raw_lit 96.3259 raw_con 88.582
+ fields {'o_cmp': 69268, 'o_exact': 19669, 'h_cmp': 69268, 'h_exact': 19417, 'l_cmp': 69268, 'l_exact': 19576, 'c_cmp': 69268, 'c_exact': 18536, 'v_cmp': 69268, 'v_exact': 66123}
+coverage {'D': {'paired': 1194446, 'ref_only': 35826, 'product_only': 939725}, 'W': {'paired': 275776, 'ref_only': 8174, 'product_only': 240337}, 'M': {'paired': 69268, 'ref_only': 2068, 'product_only': 62573}}
