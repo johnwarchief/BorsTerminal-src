@@ -64,13 +64,19 @@ def build_tiny_db(path):
         con.execute("INSERT INTO %s SELECT %s FROM ro.%s %s" %
                     (t, ", ".join('"%s"' % c for c in cols), t, where), codes if where else [])
     con.commit()
+    # WAL is a persistent property of the DB file.  Setting it once on this
+    # single build connection avoids the upgrade deadlock when eight fresh
+    # connections run `PRAGMA journal_mode=WAL` simultaneously on a
+    # rollback-journal DB (SQLite returns "database is locked" immediately;
+    # the R24/R27/R29 gate flake).  This guard measures snapshot single-flight,
+    # not journal-mode negotiation.
+    con.execute("PRAGMA journal_mode=WAL")
     con.close()
 
 
 def new_conn(path):
     c = sqlite3.connect(path, timeout=30)
     c.row_factory = sqlite3.Row
-    c.execute("PRAGMA journal_mode=WAL")
     return c
 
 
