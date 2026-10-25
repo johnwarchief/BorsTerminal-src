@@ -1,0 +1,13 @@
+{
+ "path": "D:/BorsTerminal-tmp/ra365_round32b_v3/reference/ref_bars_v2.jsonl",
+ "sha256": "4b1ecb4c1effc4d5770c42521d96a2540a9c9f7b471d7cc710cd034712a8c17c",
+ "size": 231604461,
+ "expected_sha256": "4b1ecb4c1effc4d5770c42521d96a2540a9c9f7b471d7cc710cd034712a8c17c",
+ "verified": true,
+ "source_paths_checked": [
+  "D:/BorsTerminal-tmp/r26_bench/frozen/ref_bars_v2.jsonl",
+  "C:/Users/Johnkallnaya/Desktop/Borsterminal/_scratch/ra_fup_2026_10_20/ref_bars_v2.jsonl"
+ ],
+ "verified_at": "2026-10-25T19:57:10+00:00",
+ "note": "raw reference stays outside Git; this copy is the canonical build input"
+}

@@ -1,0 +1,24 @@
+{
+ "attempted_at": "2026-10-25T20:06:03+00:00",
+ "week": [
+  "2017-12-30",
+  "2018-01-03"
+ ],
+ "connector": {
+  "token_status": 401,
+  "login_panel": true,
+  "has_token": false
+ },
+ "brave": {
+  "login_modal": true,
+  "credentials_entered": false,
+  "new_tab_closed": true
+ },
+ "edge_cdp": {
+  "port_9333": false,
+  "probe_profile_present": false
+ },
+ "decision": "NOT_RUN_LOGIN_REQUIRED",
+ "no_credentials_or_tokens_used": true,
+ "note": "The live path needs the owner's authenticated Rahavard session; both drivable targets were logged out and no credentials were touched. The reference W/D contradiction is still measured offline; live rows are explicit NOT_RUN."
+}

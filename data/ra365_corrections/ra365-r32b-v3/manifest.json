@@ -1,0 +1,77 @@
+{
+ "schema": "ra365-correction-pack-v1",
+ "correction_version": "ra365-r32b-v3",
+ "created_at": "2026-10-25T20:00:00+00:00",
+ "mode": "authoritative",
+ "tool": "tools/ra365_round32b_pack.py",
+ "reference_sha256": "4b1ecb4c1effc4d5770c42521d96a2540a9c9f7b471d7cc710cd034712a8c17c",
+ "files": {
+  "factors": "factors.jsonl",
+  "raw_ohlc": "raw_ohlc.jsonl",
+  "basis_summary": "basis-summary.json",
+  "basis_split": {
+   "factors.same_basis": "factors.same_basis.jsonl",
+   "factors.reference_close_matches_other_price_basis": "factors.reference_close_matches_other_price_basis.jsonl",
+   "factors.unknown_basis": "factors.unknown_basis.jsonl",
+   "raw_ohlc.same_basis": "raw_ohlc.same_basis.jsonl",
+   "raw_ohlc.reference_close_matches_other_price_basis": "raw_ohlc.reference_close_matches_other_price_basis.jsonl",
+   "raw_ohlc.unknown_basis": "raw_ohlc.unknown_basis.jsonl"
+  }
+ },
+ "file_sha256": {
+  "factors": "811b7e4e6c2ba569cdaa4c5e495e9d6b716adc5fe4a45df067e8b2c433768c8f",
+  "raw_ohlc": "600b00b8f656c7129b9e8edb562532248374adf6f402e6b8ce13c67d4d7f704a",
+  "basis_summary": "8194dc257c31f411f88e6def848572403b4c539d9f060ff0a228bfdd052cd09e",
+  "factors.same_basis": "971b3e2422f5b883a380c1257517482258cb13799af846b9a6b9f4d8badf6ca4",
+  "factors.reference_close_matches_other_price_basis": "5a354df2fb4682066791924838ed1a2e47b4b598ee96ba3e805ba0740bf5df9f",
+  "factors.unknown_basis": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "raw_ohlc.same_basis": "43b3b62459c82d1efe80fc4c46d8716706072925c86a2ec90ff59ba9fb3b1000",
+  "raw_ohlc.reference_close_matches_other_price_basis": "31aa173ccfef539100bd78dff4443e62baddb91a29a4a8d4de60c019e20b8e8e",
+  "raw_ohlc.unknown_basis": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+ },
+ "counts": {
+  "factor_replace_step": 6631,
+  "factor_suppress_step": 139,
+  "raw_fields": {
+   "close": 1587,
+   "high": 751,
+   "high_raw": 770,
+   "last": 457,
+   "open": 904,
+   "low": 511,
+   "low_raw": 503
+  },
+  "factor_assets": 827,
+  "factor_symbols": 827,
+  "ambiguous_symbols": 0,
+  "rows": {
+   "factors": 6770,
+   "raw_ohlc": 5483
+  },
+  "by_basis": {
+   "factors": {
+    "same_basis": 1626,
+    "reference_close_matches_other_price_basis": 5144,
+    "unknown_basis": 0
+   },
+   "raw_ohlc": {
+    "same_basis": 4327,
+    "reference_close_matches_other_price_basis": 1156,
+    "unknown_basis": 0
+   }
+  }
+ },
+ "ambiguous_symbols": {},
+ "dedupe": {
+  "factor_merged": {},
+  "raw_conflicts": {}
+ },
+ "semantics": {
+  "mode": "authoritative: for a covered symbol every product event is suppressed and the chain is built from the pack's replace_step rows",
+  "replace_step": "suppress every product event on effective_date and insert one step with ratio; ratio is the reference-implied step",
+  "suppress_step": "suppress every product event on effective_date",
+  "raw_ohlc": "per-field historical display value from the frozen reference type0 bar; never rewrites corporate events"
+ },
+ "source": "rahavard_reference_frozen_v2 (owner-authenticated snapshot)",
+ "usage": "Derived factor segments and sparse per-field values only; no bulk raw series redistribution."
+}

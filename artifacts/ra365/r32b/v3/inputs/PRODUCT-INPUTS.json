@@ -1,0 +1,34 @@
+{
+ "manifest": "D:/BorsTerminal-tmp/ra365_round32b_v3/inputs/product-payloads.sha256",
+ "manifest_sha256": "95875648306ae418a3fbff371bb34fb8a1e3c0eb2323ea0e18c9782505a8d28e",
+ "files": 2594,
+ "bytes": 550362081,
+ "roots": [
+  "D:/BorsTerminal-tmp/r29_bench/full_shard0",
+  "D:/BorsTerminal-tmp/r29_bench/full_shard1",
+  "D:/BorsTerminal-tmp/r29_bench/full_shard2",
+  "D:/BorsTerminal-tmp/r29_bench/full_shard3",
+  "D:/BorsTerminal-tmp/r29_bench/full_shard4",
+  "D:/BorsTerminal-tmp/r29_bench/full_shard5"
+ ],
+ "note": "R29 frozen product payloads used by the audit; not in Git",
+ "cohort": {
+  "path": "D:/BorsTerminal-tmp/ra365_round18/cohort.jsonl",
+  "sha256": "79a3c666c2b49363fd5b7a2684ee776d034a2fc3ef09006f0f16c7af3d5df18f",
+  "size": 277500847,
+  "lines": 2595
+ },
+ "reference": {
+  "path": "D:/BorsTerminal-tmp/ra365_round32b_v3/reference/ref_bars_v2.jsonl",
+  "sha256": "4b1ecb4c1effc4d5770c42521d96a2540a9c9f7b471d7cc710cd034712a8c17c",
+  "size": 231604461,
+  "expected_sha256": "4b1ecb4c1effc4d5770c42521d96a2540a9c9f7b471d7cc710cd034712a8c17c",
+  "verified": true,
+  "source_paths_checked": [
+   "D:/BorsTerminal-tmp/r26_bench/frozen/ref_bars_v2.jsonl",
+   "C:/Users/Johnkallnaya/Desktop/Borsterminal/_scratch/ra_fup_2026_10_20/ref_bars_v2.jsonl"
+  ],
+  "verified_at": "2026-10-25T19:57:10+00:00",
+  "note": "raw reference stays outside Git; this copy is the canonical build input"
+ }
+}

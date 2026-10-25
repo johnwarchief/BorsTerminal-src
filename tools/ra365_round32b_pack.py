@@ -45,6 +45,15 @@ def _int(x):
         return None
 
 
+def basis_from(reason, explicit=None):
+    pb = str(explicit or "").strip()
+    if pb:
+        return pb
+    if "reference_close_matches_other_price_basis" in str(reason or ""):
+        return "reference_close_matches_other_price_basis"
+    return "same_basis"
+
+
 def sha256(path):
     h = hashlib.sha256()
     with open(path, "rb") as fh:
@@ -83,6 +92,8 @@ def read_factor_rows(path):
                 "samples": _int(r.get("samples")),
                 "max_field_dev": _float(r.get("max_field_dev")),
                 "confidence": r.get("confidence") or "",
+                "price_basis": basis_from(r.get("reason"), r.get("price_basis")),
+                "basis_detail": r.get("basis_detail") or "",
                 "source": r.get("source") or "",
                 "method": r.get("method") or "",
                 "ref_bars_sha256": r.get("ref_bars_sha256") or "",
@@ -115,6 +126,8 @@ def read_raw_rows(path):
                 "source": r.get("source") or "",
                 "method": r.get("method") or "",
                 "confidence": r.get("confidence") or "",
+                "price_basis": basis_from(r.get("reason"), r.get("price_basis")),
+                "basis_detail": r.get("basis_detail") or "",
                 "ref_bars_sha256": r.get("ref_bars_sha256") or "",
                 "correction_version": r.get("correction_version") or "",
                 "created_at": r.get("created_at") or "",
@@ -147,6 +160,14 @@ def dedupe_factors(rows):
             cur["reason"] = cur.get("reason") or r.get("reason")
             cur["prod_ratio"] = cur.get("prod_ratio")
             cur["ref_ratio"] = cur.get("ref_ratio")
+        bases = {cur.get("price_basis"), r.get("price_basis")}
+        if "reference_close_matches_other_price_basis" in bases:
+            cur["price_basis"] = "reference_close_matches_other_price_basis"
+        elif "unknown_basis" in bases:
+            cur["price_basis"] = "unknown_basis"
+        details = [x for x in (cur.get("basis_detail"), r.get("basis_detail")) if x]
+        if details:
+            cur["basis_detail"] = ";".join(sorted(set(details)))
     replace_dates = {(r["ins_code"], r["effective_date"])
                      for r in out.values() if r["action"] == "replace_step"}
     for key in list(out):
@@ -164,6 +185,15 @@ def dedupe_raw(rows):
         key = (r["ins_code"], r["date"], r["field"])
         if key in out and out[key]["value"] != r["value"]:
             conflicts[r["field"]] += 1
+        if key in out:
+            bases = {out[key].get("price_basis"), r.get("price_basis")}
+            if "reference_close_matches_other_price_basis" in bases:
+                r["price_basis"] = "reference_close_matches_other_price_basis"
+            elif "unknown_basis" in bases:
+                r["price_basis"] = "unknown_basis"
+            details = [x for x in (out[key].get("basis_detail"), r.get("basis_detail")) if x]
+            if details:
+                r["basis_detail"] = ";".join(sorted(set(details)))
         out[key] = r
     return sorted(out.values(), key=lambda r: (r["ins_code"], r["date"], r["field"])), conflicts
 
@@ -220,6 +250,41 @@ def main():
     write_jsonl(factors_path, factors)
     write_jsonl(raws_path, raws)
 
+    BASES = ("same_basis", "reference_close_matches_other_price_basis", "unknown_basis")
+    basis_files = {}
+    basis_counts = {"factors": {}, "raw_ohlc": {}}
+    for kind, data, prefix in (("factors", factors, "factors"),
+                               ("raw_ohlc", raws, "raw_ohlc")):
+        for basis in BASES:
+            subset = [r for r in data if r.get("price_basis") == basis]
+            basis_counts[kind][basis] = len(subset)
+            name = prefix + "." + basis + ".jsonl"
+            path = os.path.join(a.out, name)
+            write_jsonl(path, subset)
+            basis_files[prefix + "." + basis] = name
+    basis_summary = {
+        "correction_version": a.version,
+        "created_at": created_at,
+        "reference_sha256": ref_sha,
+        "definitions": {
+            "same_basis": ("product close and last agree at the effective date; "
+                           "the reference close ratio uses the same displayed basis"),
+            "reference_close_matches_other_price_basis": ("product close and last differ at the "
+                                                           "effective date; the reference close "
+                                                           "ratio matches the other product basis"),
+            "unknown_basis": ("no product candle at the effective date, or close/last is missing"),
+        },
+        "counts": {
+            "factors": dict(basis_counts["factors"]),
+            "raw_ohlc": dict(basis_counts["raw_ohlc"]),
+        },
+        "rows": {"factors": len(factors), "raw_ohlc": len(raws)},
+        "files": basis_files,
+    }
+    basis_path = os.path.join(a.out, "basis-summary.json")
+    json.dump(basis_summary, open(basis_path, "w", encoding="utf-8"),
+              ensure_ascii=False, indent=1)
+
     counts = Counter()
     for r in factors:
         counts[r["action"]] += 1
@@ -244,10 +309,14 @@ def main():
         "files": {
             "factors": "factors.jsonl",
             "raw_ohlc": "raw_ohlc.jsonl",
+            "basis_summary": "basis-summary.json",
+            "basis_split": basis_files,
         },
         "file_sha256": {
             "factors": sha256(factors_path),
             "raw_ohlc": sha256(raws_path),
+            "basis_summary": sha256(basis_path),
+            **{k: sha256(os.path.join(a.out, v)) for k, v in basis_files.items()},
         },
         "counts": {
             "factor_replace_step": counts["replace_step"],
@@ -256,6 +325,8 @@ def main():
             "factor_assets": len(by_asset),
             "factor_symbols": len(by_symbol),
             "ambiguous_symbols": len(ambiguous_symbols),
+            "rows": {"factors": len(factors), "raw_ohlc": len(raws)},
+            "by_basis": basis_counts,
         },
         "ambiguous_symbols": ambiguous_symbols,
         "dedupe": {"factor_merged": dict(merged), "raw_conflicts": dict(conflicts)},

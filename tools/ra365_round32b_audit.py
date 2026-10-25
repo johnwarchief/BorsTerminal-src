@@ -384,6 +384,8 @@ def main():
     ap.add_argument("--created-at", default="")
     ap.add_argument("--full-overlay", action="store_true",
                     help="emit a replace_step for every reference step (not only mismatched)")
+    ap.add_argument("--pack-only", action="store_true",
+                    help="skip the large mismatch/exact-gap row files; keep correction CSVs")
     a = ap.parse_args()
     os.makedirs(a.out, exist_ok=True)
     created_at = a.created_at or dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat()
@@ -417,14 +419,16 @@ def main():
     n_factor_corr = Counter()
     n_raw_corr = Counter()
 
-    mf = open(os.path.join(a.out, "mismatch_rows.csv"), "w", encoding="utf-8-sig", newline="")
+    mf = (open(os.path.join(a.out, "mismatch_rows.csv"), "w", encoding="utf-8-sig", newline="")
+          if not a.pack_only else open(os.devnull, "w", encoding="utf-8", newline=""))
     mw = csv.writer(mf)
     mw.writerow(["asset_id", "symbol", "date", "raw_bad_fields", "raw_exact_bad_fields",
                  "factor_rel_err", "nearest_corr_date", "nearest_step_class",
                  "event_sig", "err_bucket", "steps_above", "corr_for_row",
                  "one_step_recoverable", "all_step_recoverable",
                  "raw_fix_recoverable", "both_fix_recoverable", "field_bad"])
-    ef = open(os.path.join(a.out, "exact_gap_rows.csv"), "w", encoding="utf-8-sig", newline="")
+    ef = (open(os.path.join(a.out, "exact_gap_rows.csv"), "w", encoding="utf-8-sig", newline="")
+          if not a.pack_only else open(os.devnull, "w", encoding="utf-8", newline=""))
     ew = csv.writer(ef)
     ew.writerow(["asset_id", "symbol", "date", "kind", "factor_rel_err",
                  "raw_exact_bad_fields", "all_fix_exact", "base_field_bad"])
@@ -434,12 +438,13 @@ def main():
                   "ins_code", "asset_id", "symbol", "action", "effective_date",
                   "target_ratio", "class", "prod_date", "ref_date", "prod_ratio", "ref_ratio",
                   "event_sig", "err_bucket", "fields_used", "samples", "max_field_dev",
-                  "confidence", "reason"])
+                  "confidence", "price_basis", "basis_detail", "reason"])
     rc = open(os.path.join(a.out, "raw_corrections.csv"), "w", encoding="utf-8-sig", newline="")
     rcw = csv.writer(rc)
     rcw.writerow(["correction_version", "created_at", "source", "method", "ref_bars_sha256",
                   "ins_code", "asset_id", "symbol", "date", "field", "product_value",
-                  "reference_value", "abs_diff", "confidence", "reason"])
+                  "reference_value", "abs_diff", "confidence", "price_basis", "basis_detail",
+                  "reason"])
 
     for path in files:
         if a.limit and len(per_asset) >= a.limit:
@@ -584,11 +589,14 @@ def main():
                                   else "source_revision_close")
                     else:
                         reason = "source_revision_open"
+                    pb = ("reference_close_matches_other_price_basis"
+                          if reason == "reference_close_matches_other_price_basis" else "same_basis")
+                    bd = "field=%s;reason=%s" % (fname, reason)
                     rcw.writerow([a.correction_version, created_at,
                                   "rahavard_reference_frozen_v2",
                                   "per_field_daily_reference_value", ref_sha,
                                   ins_code, aid, symbol, d, fname, repr(pv), repr(rv),
-                                  repr(abs(pv - rv)), "reference_snapshot_exact", reason])
+                                  repr(abs(pv - rv)), "reference_snapshot_exact", pb, bd, reason])
                     n_raw_corr[fname] += 1
             fadj = [(x * r if x is not None else None) for x in raw]
             radj = [(a0[i + 1] * f if a0[i + 1] is not None else None) for i in range(4)]
@@ -709,8 +717,22 @@ def main():
         corr_events = correction_events(matches, extra, ref_only)
         corr_dates = [e["date"] for e in corr_events]
 
+        def _basis_for(date):
+            c = candles.get(str(date)[:10]) if date else None
+            if not c:
+                return "unknown_basis", "no_product_candle"
+            close_ = fnum(c.get("close"))
+            last_ = fnum(c.get("last"))
+            if close_ is None or last_ is None:
+                return "unknown_basis", "close_or_last_missing"
+            if abs(close_ - last_) > EXACT:
+                return ("reference_close_matches_other_price_basis",
+                        "close=%r;last=%r" % (close_, last_))
+            return "same_basis", "close=last=%r" % (close_,)
+
         def _emit_factor(action, eff_date, target, rs=None, ps=None, cls="",
                          fam=("", "-", "0"), reason=""):
+            pb, bd = _basis_for(eff_date)
             fcw.writerow([a.correction_version, created_at,
                           "rahavard_reference_frozen_v2",
                           ("multi_field_step_inference" if rs and rs.get("fields_used") != "close"
@@ -726,7 +748,7 @@ def main():
                           rs.get("samples", "") if rs else "",
                           repr(rs.get("max_field_dev")) if rs and rs.get("max_field_dev") is not None else "",
                           rs.get("confidence", "") if rs else "",
-                          reason])
+                          pb, bd, reason])
             n_factor_corr[action] += 1
 
         for m in matches:

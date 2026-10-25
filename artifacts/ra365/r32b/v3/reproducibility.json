@@ -1,0 +1,31 @@
+{
+ "identical": true,
+ "run_a": {
+  "basis-summary.json": "8194dc257c31f411f88e6def848572403b4c539d9f060ff0a228bfdd052cd09e",
+  "factors.jsonl": "811b7e4e6c2ba569cdaa4c5e495e9d6b716adc5fe4a45df067e8b2c433768c8f",
+  "factors.reference_close_matches_other_price_basis.jsonl": "5a354df2fb4682066791924838ed1a2e47b4b598ee96ba3e805ba0740bf5df9f",
+  "factors.same_basis.jsonl": "971b3e2422f5b883a380c1257517482258cb13799af846b9a6b9f4d8badf6ca4",
+  "factors.unknown_basis.jsonl": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "manifest.json": "5d34a15d2966e5c3dd7b3cfdc1027b8b82f2f657631c6ccf1dc5c8398f9ed769",
+  "raw_ohlc.jsonl": "600b00b8f656c7129b9e8edb562532248374adf6f402e6b8ce13c67d4d7f704a",
+  "raw_ohlc.reference_close_matches_other_price_basis.jsonl": "31aa173ccfef539100bd78dff4443e62baddb91a29a4a8d4de60c019e20b8e8e",
+  "raw_ohlc.same_basis.jsonl": "43b3b62459c82d1efe80fc4c46d8716706072925c86a2ec90ff59ba9fb3b1000",
+  "raw_ohlc.unknown_basis.jsonl": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+ },
+ "run_b": {
+  "basis-summary.json": "8194dc257c31f411f88e6def848572403b4c539d9f060ff0a228bfdd052cd09e",
+  "factors.jsonl": "811b7e4e6c2ba569cdaa4c5e495e9d6b716adc5fe4a45df067e8b2c433768c8f",
+  "factors.reference_close_matches_other_price_basis.jsonl": "5a354df2fb4682066791924838ed1a2e47b4b598ee96ba3e805ba0740bf5df9f",
+  "factors.same_basis.jsonl": "971b3e2422f5b883a380c1257517482258cb13799af846b9a6b9f4d8badf6ca4",
+  "factors.unknown_basis.jsonl": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "manifest.json": "5d34a15d2966e5c3dd7b3cfdc1027b8b82f2f657631c6ccf1dc5c8398f9ed769",
+  "raw_ohlc.jsonl": "600b00b8f656c7129b9e8edb562532248374adf6f402e6b8ce13c67d4d7f704a",
+  "raw_ohlc.reference_close_matches_other_price_basis.jsonl": "31aa173ccfef539100bd78dff4443e62baddb91a29a4a8d4de60c019e20b8e8e",
+  "raw_ohlc.same_basis.jsonl": "43b3b62459c82d1efe80fc4c46d8716706072925c86a2ec90ff59ba9fb3b1000",
+  "raw_ohlc.unknown_basis.jsonl": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+ },
+ "version": "ra365-r32b-v3",
+ "reference_sha256": "4b1ecb4c1effc4d5770c42521d96a2540a9c9f7b471d7cc710cd034712a8c17c",
+ "product_manifest_sha256": "95875648306ae418a3fbff371bb34fb8a1e3c0eb2323ea0e18c9782505a8d28e",
+ "cohort_sha256": "79a3c666c2b49363fd5b7a2684ee776d034a2fc3ef09006f0f16c7af3d5df18f"
+}

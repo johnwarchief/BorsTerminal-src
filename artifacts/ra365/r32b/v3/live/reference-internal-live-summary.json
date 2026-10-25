@@ -1,0 +1,99 @@
+{
+ "reference": "D:/BorsTerminal-tmp/ra365_round32b_v3/reference/ref_bars_v2.jsonl",
+ "reference_sha256": "4b1ecb4c1effc4d5770c42521d96a2540a9c9f7b471d7cc710cd034712a8c17c",
+ "week": [
+  "2017-12-30",
+  "2018-01-03"
+ ],
+ "assets": [
+  {
+   "asset_id": "8",
+   "symbol": "شپارس",
+   "ref_w": {
+    "date": "2017-12-30",
+    "open": 69.41948029929775,
+    "high": 69.41948029929775,
+    "low": 63.595957229745544,
+    "close": 64.1358865209623,
+    "volume": 3085493
+   },
+   "ref_d_agg": {
+    "date_start": "2017-12-30",
+    "date_end": "2018-01-03",
+    "open": 72.04199399949343,
+    "high": 72.04199399949343,
+    "low": 63.595957229745544,
+    "close": 64.1358865209623,
+    "volume": 4305637,
+    "n": 5
+   },
+   "live_status": "NOT_RUN_LOGIN_REQUIRED",
+   "live_w": null,
+   "live_d_agg": null,
+   "reference_internal_contradiction": true,
+   "reference_internal_diff_fields": [
+    "open",
+    "high"
+   ]
+  },
+  {
+   "asset_id": "803",
+   "symbol": "تداوم",
+   "ref_w": {
+    "date": "2017-12-30",
+    "open": 3259.5712330599836,
+    "high": 3259.5712330599836,
+    "low": 3259.5712330599836,
+    "close": 3259.5712330599836,
+    "volume": 100
+   },
+   "ref_d_agg": {
+    "date_start": "2017-12-30",
+    "date_end": "2017-12-31",
+    "open": 3257.9713649766127,
+    "high": 3259.5712330599836,
+    "low": 3257.9713649766127,
+    "close": 3259.5712330599836,
+    "volume": 29100,
+    "n": 2
+   },
+   "live_status": "NOT_RUN_LOGIN_REQUIRED",
+   "live_w": null,
+   "live_d_agg": null,
+   "reference_internal_contradiction": true,
+   "reference_internal_diff_fields": [
+    "open",
+    "low"
+   ]
+  },
+  {
+   "asset_id": "804",
+   "symbol": "اعتماد",
+   "ref_w": {
+    "date": "2017-12-30",
+    "open": 18640,
+    "high": 18717,
+    "low": 18638,
+    "close": 18707,
+    "volume": 13662110
+   },
+   "ref_d_agg": {
+    "date_start": "2017-12-30",
+    "date_end": "2018-01-03",
+    "open": 18640,
+    "high": 18717,
+    "low": 18629,
+    "close": 18707,
+    "volume": 23809890,
+    "n": 5
+   },
+   "live_status": "NOT_RUN_LOGIN_REQUIRED",
+   "live_w": null,
+   "live_d_agg": null,
+   "reference_internal_contradiction": true,
+   "reference_internal_diff_fields": [
+    "low"
+   ]
+  }
+ ]
+}
