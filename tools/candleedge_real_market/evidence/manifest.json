@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-25T07:07:14.371Z",
+  "generatedAt": "2026-10-25T09:36:15.992Z",
   "branch": "mission/technical-candleedge-real-market-validation-2026-10-25",
   "baseSha": "4a597278f4bf74c29430d2faa2f4ea01de7e37cc",
   "status": "VALIDATION_COMPLETE — RESEARCH CANDIDATES DELIVERED",
@@ -24,13 +24,23 @@
   "files": [
     {
       "path": "docs/technical-indicators/reviewed/CANDLEEDGE-MODULE-CONTRACT-2026-10-25.md",
-      "bytes": 11969,
-      "sha256": "e91c35e0e607bfbcf2dd31d56354ed52c4c81ed0c79e49db0d34358bc32ede79"
+      "bytes": 12088,
+      "sha256": "870f76584f928282d70b350589cf3f33d1b56be628f97a6330f4907f932286b6"
     },
     {
       "path": "docs/technical-indicators/reviewed/CANDLEEDGE-REAL-MARKET-VALIDATION-2026-10-25.md",
-      "bytes": 48089,
-      "sha256": "1ab217bf9cf3919a17007242fef3ce110042ee4609123325a7f0618b087408d8"
+      "bytes": 51237,
+      "sha256": "12b83c6b099a87aba7ef46cfa5cc720e5b5938a34d27599ded2ed87876bb1447"
+    },
+    {
+      "path": "frontend/src/features/technical/signals/candleedge/__tests__/fixtures/apal-d-adjusted.json",
+      "bytes": 27689,
+      "sha256": "3b1c591f04f91f2382f101b1a518d6e2f6af66f804e18d847511b433c5b96c56"
+    },
+    {
+      "path": "frontend/src/features/technical/signals/candleedge/__tests__/realDataPrefix.spec.ts",
+      "bytes": 3123,
+      "sha256": "a1dd016a7f6e63e72f9006c1ff78b90515b5c6019ff6acea9465717d307e6bcf"
     },
     {
       "path": "frontend/src/features/technical/signals/candleedge/candleMath.ts",
@@ -118,9 +128,19 @@
       "sha256": "e6a7fa8a251b3862335b1cd7779d0c03daa1fcedf1a9f786c1261181bbe62a65"
     },
     {
+      "path": "tools/candleedge_real_market/build_salience_table.ts",
+      "bytes": 5185,
+      "sha256": "d86e944041004fb04c6a0c766f8b29d34ed7780f6cc5d3295b305812565804cc"
+    },
+    {
+      "path": "tools/candleedge_real_market/collect_real_market.py",
+      "bytes": 11017,
+      "sha256": "ca5d522a8be8670e2758c9fef4cc7b553eb3da992577b888787003e447008a4f"
+    },
+    {
       "path": "tools/candleedge_real_market/evidence/README.md",
-      "bytes": 2636,
-      "sha256": "afe72750f9a03cb19e64db44fd0f1d78d11ba05a5f07b79bb3993b2d7e6a3320"
+      "bytes": 3047,
+      "sha256": "006a14654dea476750e84f5d1cb25eabe25c5ec03097d6987c89b49fbb7e50b8"
     },
     {
       "path": "tools/candleedge_real_market/evidence/captures/01-overview.png",
@@ -183,6 +203,16 @@
       "sha256": "e1bbac680f6312b13bed7cecab454ea5257ccdfd62aa19c0628ee72f22cf8333"
     },
     {
+      "path": "tools/candleedge_real_market/evidence/salience-groups.ndjson.gz",
+      "bytes": 6413124,
+      "sha256": "a341fefe3db8e235dc877a04215c0f409e7edbadac63c78a31f10748262301fd"
+    },
+    {
+      "path": "tools/candleedge_real_market/evidence/salience-validation.json",
+      "bytes": 228,
+      "sha256": "47596ea3bf44e5c953b9c1f2e02e4f6379bd9acad8157718ed96f0eedbc5f56e"
+    },
+    {
       "path": "tools/candleedge_real_market/evidence/series.ndjson.gz",
       "bytes": 92418,
       "sha256": "75509bf9bdfe68e019976531338b68b006478bed664e0b4cbd7a51a25a5ecc3b"
@@ -193,9 +223,29 @@
       "sha256": "ee989fbf3be5160ca9e542c1a2a85c203cc2e8a712a6a6586e9b39194daae5b1"
     },
     {
+      "path": "tools/candleedge_real_market/validate_ledger.cjs",
+      "bytes": 6264,
+      "sha256": "b908fb76ff5e2ae32cda2d5065dca2ad5d3882159690b1f7bd591662847afd88"
+    },
+    {
+      "path": "tools/candleedge_real_market/validate_margins.ts",
+      "bytes": 4203,
+      "sha256": "2cceb74c2c6e3b0bd123190c2b44ad042715fc0087188c71b74bf7a340145410"
+    },
+    {
+      "path": "tools/candleedge_real_market/viewer/index.html",
+      "bytes": 8212,
+      "sha256": "d41cb0e4085b3fe78bcd7a0e924c2f981ad8986866c3cb071637ac7f58e5d5fe"
+    },
+    {
       "path": "tools/candleedge_real_market/viewer/viewer-data.json",
       "bytes": 2307719,
       "sha256": "fd37e1dcf4d722e764b920ee344bf069103789f99eebc2c2d8791fee2913170b"
+    },
+    {
+      "path": "tools/candleedge_real_market/viewer/viewer.js",
+      "bytes": 30235,
+      "sha256": "a4b399ed5d96f64b18a97a679b2e3fafee7e73420977d7b13d768cdb96500fbf"
     }
   ]
 }

@@ -249,6 +249,8 @@
 
 مجموع رویدادهای تعدیل‌شدهٔ دفتر (۲۰۸٬۶۱۵) دقیقاً با `stats.json` برابر است.
 
+**پایداری پیشوند روی داده واقعی (همه ۲۰ آشکارساز):** یک سری واقعی تعدیل‌شدهٔ روزانهٔ «اپال» (۴۵۵ کندل) که هر ۲۰ آشکارساز را فعال می‌کند، در فایل `__tests__/fixtures/apal-d-adjusted.json` قفل شده است. تست `realDataPrefix.spec.ts` برای ۹ طول پیشوند (۶۰ تا ۴۵۵) نشان می‌دهد رویدادهای تأییدشدهٔ هر آشکارساز، پیوت‌های تأییدشده و لنگرها دقیقاً با اجرای کامل برابرند؛ افزودن ۱۲۰ کندل آینده نیز هیچ رویداد تأییدشده‌ای را بازنویسی نمی‌کند.
+
 ### ۷.۲ رویدادهای مرزی (مشکوک، نه نامعتبر)
 
 هیچ رویداد نامعتبری یافت نشد، اما آستانهٔ صفر BOS و تعریف Sweep رویدادهای بسیار کوچک را می‌پذیرند:
@@ -300,7 +302,15 @@
 | چهار+ | ۱۳٬۲۶۰ |
 | سری با گروه | ۲٬۱۶۵ از ۲٬۳۱۶ |
 | سری با بیش از یک گروه | ۲٬۰۶۳ |
+| بزرگ‌ترین گروه در جدول کامل | ۱۳ رویداد |
 | بزرگ‌ترین گروه در دادهٔ نمایشگر | ۱۰ رویداد |
+
+جدول کامل گروه‌ها (هر ۱۱۹٬۹۳۷ گروه، با رتبهٔ هر سه روش) در
+`tools/candleedge_real_market/evidence/salience-groups.ndjson.gz` است و با
+`tools/candleedge_real_market/build_salience_table.ts` از دفتر رویداد بازتولید می‌شود.
+شمار گروه‌ها/چندرویدادی/تکراری با `stats.json` دقیقاً برابر است. اعتبارسنجی جدول:
+مجموع رویدادهای گروه‌ها ۲۰۸٬۶۱۵ (برابر دفتر)، هیچ گروهی فاصلهٔ تأیید بیش از ۵ کندل ندارد،
+همهٔ رتبه‌ها موجودند؛ نتیجه در `evidence/salience-validation.json` ثبت شده است.
 
 **روش‌های ترتیب نمایش:** `latest` (آخرین تأیید)، `structure_first` (ساختار بازار/نمودار پیش از کندلی)، `evidence_count` (تعداد لنگر/شاهد). این‌ها فقط ترتیب نمایش‌اند و امتیاز احتمال یا اهمیت نیستند.
 
@@ -474,11 +484,28 @@ CANDLEEDGE_NDJSON=<path>/real_market.ndjson \
   ./node_modules/.bin/vite-node ../tools/candleedge_real_market/validate_margins.ts
 ```
 
+**بازسازی جدول سالینس (از `frontend/`):**
+
+```bash
+./node_modules/.bin/vite-node ../tools/candleedge_real_market/build_salience_table.ts
+```
+
+**پوشش تست هر آشکارساز:**
+
+| گروه | آشکارسازها | مثبت/منفی/مرزی | زمان/آینده | ورودی نامعتبر |
+|---|---|---|---|---|
+| کندلی | Doji، Engulfing صعودی/نزولی، Hammer، Shooting Star | `candlePatterns.spec.ts` | `noLookAhead.spec.ts` + `realDataPrefix.spec.ts` | `validation.spec.ts` |
+| خطی | پنج مثلث/گوه | `structurePatterns.spec.ts` + `round2Semantics.spec.ts` | `realDataPrefix.spec.ts` | `validation.spec.ts` |
+| دوقلو | Double Top/Bottom | `structurePatterns.spec.ts` (۴٪، ۱٪، ۵ کندل، پیوت میانی) | `scanner.spec.ts` + `realDataPrefix.spec.ts` | `validation.spec.ts` |
+| رابطهٔ پیوت | HH/HL/LH/LL | `structurePatterns.spec.ts` (شامل تساوی) | `realDataPrefix.spec.ts` | `validation.spec.ts` |
+| شکست/سطح | BOS صعودی/نزولی | `structurePatterns.spec.ts` + `round2Semantics.spec.ts` | `round2Semantics.spec.ts` + `realDataPrefix.spec.ts` | `validation.spec.ts` |
+| سایه/بازگشت | Sweep بالا/پایین | `structurePatterns.spec.ts` + `round2Semantics.spec.ts` | `round2Semantics.spec.ts` + `realDataPrefix.spec.ts` | `validation.spec.ts` |
+
 **نتایج راستی‌آزمایی نهایی:**
 
 | بررسی | نتیجه |
 |---|---|
-| تست ماژول | ۹ فایل، ۹۱ تست، همه سبز |
+| تست ماژول | ۱۰ فایل، ۹۴ تست، همه سبز |
 | تست لایهٔ پژوهش | ۲ فایل سبز، ۱۹ تست؛ ۱ تست هارنس سنگین به‌دلیل نبود متغیر محیطی skip شد |
 | تایپ‌چک محدود ماژول | `tsc -p tsconfig.candleedge.json --noEmit` → صفر خطا |
 | تایپ‌چک کامل مخزن | خطاهای پیش‌موجود و نامرتبط `jev-ui` در فایل‌های portfolio/sarkhati؛ هیچ خطایی در فایل‌های این دور نبود |
@@ -493,9 +520,11 @@ CANDLEEDGE_NDJSON=<path>/real_market.ndjson \
 |---|---|---:|
 | `stats.json` | همهٔ آمار آشکارساز/تایم‌فریم/نقدشوندگی/سال/سالینس/آینده‌نگر | ۳٫۰ مگابایت |
 | `ledger.ndjson.gz` | دفتر کامل ۲۱۰٬۴۹۴ رویداد | ۳٫۸ مگابایت |
+| `salience-groups.ndjson.gz` | جدول ۱۱۹٬۹۳۷ گروه سالینس با رتبهٔ سه روش | ۶٫۴ مگابایت |
 | `series.ndjson.gz` | خلاصهٔ هر ۲٬۳۱۶ سری | ۹۱ کیلوبایت |
 | `record-manifest.ndjson.gz` | هش و وضعیت هر ۷۷۲ رکورد | ۴۵ کیلوبایت |
 | `ledger-validation.json` | نتیجهٔ اعتبارسنجی مستقل | ۱٫۳ کیلوبایت |
+| `salience-validation.json` | تطابق جدول سالینس با دفتر و پنجره | ۰٫۳ کیلوبایت |
 | `margins.json` | توزیع عبور BOS/Sweep | ۱٫۷ کیلوبایت |
 | `captures/` | ۷ تصویر + نتیجهٔ ۲۱ بررسی | ۹۰۴ کیلوبایت |
 | `viewer/viewer-data.json` | دادهٔ ۸ نماد برای نمایشگر | ۲٫۳ مگابایت |

@@ -1,0 +1,11 @@
+{
+  "groups": 119937,
+  "eventsInGroups": 208615,
+  "ledgerAdjustedEvents": 208615,
+  "maxGroupSize": 13,
+  "groupsSpanOver5": 0,
+  "missingRanks": 0,
+  "seriesWithGroups": 2165,
+  "statsGroups": 119937,
+  "matchesStats": true
+}

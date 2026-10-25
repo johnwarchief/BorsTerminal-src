@@ -13,9 +13,11 @@
 |---|---|
 | `stats.json` | آمار کامل آشکارساز/تایم‌فریم/نقدشوندگی/سال/سالینس/ارزیابی آینده‌نگر |
 | `ledger.ndjson.gz` | دفتر کامل رویدادها؛ هر خط: نماد، تایم‌فریم، حالت، آشکارساز، جهت، ایندکس تأیید، سطح، لنگرها |
+| `salience-groups.ndjson.gz` | جدول ۱۱۹٬۹۳۷ گروه سالینس با رتبهٔ سه روش نمایش |
 | `series.ndjson.gz` | خلاصهٔ هر سری: تعداد کندل، تعداد رویداد، خطا، وضعیت هش |
 | `record-manifest.ndjson.gz` | هش ورودی و وضعیت هر رکورد گردآوری |
 | `ledger-validation.json` | نتیجهٔ اعتبارسنجی مستقل زمان/لنگر/سطح |
+| `salience-validation.json` | تطابق مجموع گروه‌ها/رویدادها با دفتر و نبود گروه بیش از پنجره |
 | `margins.json` | توزیع عبور BOS و نفوذ Sweep |
 | `captures/` | تصاویر و نتیجهٔ ۲۱ بررسی خودکار نمایشگر |
 
@@ -33,7 +35,10 @@ node tools/candleedge_real_market/validate_ledger.cjs --dir=tools/candleedge_rea
 CANDLEEDGE_NDJSON=<path>/real_market.ndjson \
   ./node_modules/.bin/vite-node ../tools/candleedge_real_market/validate_margins.ts
 
-# 3) نمایشگر
+# 3) بازسازی جدول سالینس (از frontend/)
+./node_modules/.bin/vite-node ../tools/candleedge_real_market/build_salience_table.ts
+
+# 4) نمایشگر
 cd tools/candleedge_real_market/viewer
 python -m http.server 8137
 # http://127.0.0.1:8137/

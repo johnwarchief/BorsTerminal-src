@@ -10,6 +10,8 @@
     "src/features/technical/nahayatnegar/lib/adjustments.ts",
     "src/features/technical/nahayatnegar/lib/timeframe.ts",
     "src/features/technical/nahayatnegar/lib/jalaliDate.ts",
-    "src/shared/lib/fmt.ts"
+    "src/shared/lib/fmt.ts",
+    "../tools/candleedge_real_market/validate_margins.ts",
+    "../tools/candleedge_real_market/build_salience_table.ts"
   ]
 }
