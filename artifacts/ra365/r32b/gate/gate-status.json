@@ -3,8 +3,8 @@
  "ok": 200,
  "fail": 1,
  "skip": 0,
- "protected": "SOURCE_DB_MTIME_UNCHANGED (2026-10-25T20:00:42+03:30); gate guard before-fingerprint captured; manual after-fingerprint not completed before stop",
- "logical_total": "",
+ "protected": "PROTECTED_DB_UNCHANGED (manual fingerprint; logical c4db155c39463852b7284b04f83c9501470300e2194dde59d0815a7528f49ca9)",
+ "logical_total": "c4db155c39463852b7284b04f83c9501470300e2194dde59d0815a7528f49ca9",
  "failures": [
   "hourglass RSI period, oversold threshold and MA52 mode are configurable rc=1 | 17 pass / 0 fail"
  ],

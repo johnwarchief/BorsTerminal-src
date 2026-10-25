@@ -1,5 +1,7 @@
 source_db=D:/BorsTerminal-tmp/r32b_gate/market.db
 source_mtime=2026-10-25T20:00:42+03:30 (unchanged since the pre-gate copy)
 gate_guard_before_fingerprint=artifacts/ra365/r32b/gate/protected_before.json (in gate workdir)
-manual_after_fingerprint=not_completed_before_stop
-note=all gate reads used the workdir copy; the protected source mtime did not change
+logical_before=c4db155c39463852b7284b04f83c9501470300e2194dde59d0815a7528f49ca9
+logical_after=c4db155c39463852b7284b04f83c9501470300e2194dde59d0815a7528f49ca9
+diffs=0
+PROTECTED_DB_UNCHANGED

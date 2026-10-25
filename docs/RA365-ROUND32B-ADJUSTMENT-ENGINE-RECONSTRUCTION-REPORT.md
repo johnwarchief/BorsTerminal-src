@@ -3,7 +3,7 @@
 **تاریخ:** 2026-10-25  
 **شاخه:** `mission/ra365-round32b-engine-reconstruction-2026-10-25`  
 **مبنا:** R31 با SHA `f515b6dc685e9a37c7e338faf6b91d002cc93e7f` (تأیید شد)  
-**HEAD گزارش:** `a45e48842bdb270b8750441b4b759184bbe98cdb`  
+**HEAD گزارش:** `db8d788ba62e89ddc18ab57f8d0034c836c13ade`  
 **وضعیت:** **PARTIAL — EXPLICIT REMAINING MISMATCHES (candle-comparable set 100%)**
 
 ## ۱. حکم
@@ -125,7 +125,7 @@
 
 - `dev/test_ra365_round32b_correction_pack_v1.py`: ۱۴/۱۴ (replace/suppress/date-shift/raw/authoritative/provenance/tamper-refusal/R31 literal).
 - `dev/test_ra365_round31_visible_hl_v1.py`: ۷/۷؛ `dev/test_adjustment_engine_v1.py`: ۴۴/۰؛ `dev/test_adjustment_phasea.py`: ۵۸/۰/۰؛ `dev/test_corporate_ledger_v1.py`: ۲۴/۰؛ `dev/test_rule_map_citations.py`: ۱۱/۱۱.
-- Full gate روی DB ایزوله: **STOPPED AFTER 200 OK SUITES — 1 HARNESS-ONLY FAIL (standalone 18/0)** (OK=۲۰۰، FAIL=۱، skip=۰)؛ log: `artifacts/ra365/r32b/gate/full-gate.txt`. دیتابیس محافظت‌شده: **SOURCE_DB_MTIME_UNCHANGED (2026-10-25T20:00:42+03:30); gate guard before-fingerprint captured; manual after-fingerprint not completed before stop**.
+- Full gate روی DB ایزوله: **STOPPED AFTER 200 OK SUITES — 1 HARNESS-ONLY FAIL (standalone 18/0)** (OK=۲۰۰، FAIL=۱، skip=۰)؛ log: `artifacts/ra365/r32b/gate/full-gate.txt`. دیتابیس محافظت‌شده: **PROTECTED_DB_UNCHANGED (manual fingerprint; logical c4db155c39463852b7284b04f83c9501470300e2194dde59d0815a7528f49ca9)**.
 - تست hourglass فقط mock دو‌آرگومانی داشت؛ با `**_kwargs` اصلاح شد و standalone ۱۸/۰ سبز است. همهٔ سوئیت‌های اجراشده به‌جز همان mock سبزند؛ سوئیت‌های باقی‌مانده خارج از سطح تغییر و به‌دلیل محدودیت زمان مالک اجرا نشدند.
 - تست‌های gate عمداً با `BORS_CORRECTIONS_DISABLE=1` اجرا می‌شوند تا fixtureها به بستهٔ production وابسته نشوند؛ تست اختصاصی Round32B بستهٔ موقت خودش را می‌سازد.
 
@@ -133,6 +133,7 @@
 
 | commit |
 |---|
+| db8d788b docs(parity): record Round32B gate evidence, reference-internal W keys, and final verdict |
 | a45e4884 test(gate): accept the symbol keyword in the hourglass capability mock |
 | e0e79c1f feat(parity): reconstruct Round 32B adjustment chain and reach 100% comparable OHLC |
 | 7f5cbcfa feat(parity): add Round32B attribution, correction-pack builder, and versioned overlay loader |
