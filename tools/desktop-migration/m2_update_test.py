@@ -330,8 +330,16 @@ def run(args) -> dict:
                                      "m2_update_install_error", "m2_update_no_update",
                                      "m2_update_probe_error"):
                     result.setdefault("update_events", []).append(m)
-            if args.mode != "install" and result.get("update_events"):
-                time.sleep(2.0)
+            terminal = {"m2_update_install_error", "m2_update_install_returned",
+                        "m2_update_no_update", "m2_update_probe_error"}
+            if args.mode != "install" and any(
+                    m.get("kind") in terminal for m in result.get("update_events") or []):
+                time.sleep(1.0)
+                result["original_exit_code"] = p.poll()
+                break
+            if args.mode == "install" and any(
+                    m.get("kind") == "m2_update_install_error" for m in got):
+                result["install_failed"] = True
                 result["original_exit_code"] = p.poll()
                 break
             if original_exit is None:
@@ -350,7 +358,7 @@ def run(args) -> dict:
                     break
             time.sleep(0.2)
 
-        if args.mode == "install":
+        if args.mode == "install" and not result.get("install_failed"):
             if original_exit is None:
                 raise TimeoutError("original instance did not exit")
             if new_pid is None:
@@ -400,6 +408,17 @@ def run(args) -> dict:
             if new_window:
                 close_info = close_window(new_window["hwnd"], new_pid)
                 result["close"] = close_info
+        elif args.mode == "install":
+            # The updater refused/failed and rolled back; the current instance
+            # is still alive. Close it and keep the byte-level evidence.
+            wins = H.app_windows(tree_pids(p.pid))
+            if wins:
+                result["close"] = close_window(wins[0]["hwnd"], p.pid)
+            try:
+                p.wait(timeout=30)
+            except subprocess.TimeoutExpired:
+                pass
+            result["original_exit_code"] = p.poll()
         else:
             if not result.get("update_events"):
                 raise TimeoutError("no updater result")
