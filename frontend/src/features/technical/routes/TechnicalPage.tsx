@@ -26,6 +26,9 @@ import { FtsStatusCard } from '../components/FtsStatusCard';
 import { FtsDock } from '../components/FtsDock';
 import { FtsLayerLegend } from '../components/FtsLayerLegend';
 import { PatternToggles } from '../components/PatternToggles';
+import { CandleEdgePatternPanel } from '../components/CandleEdgePatternPanel';
+import type { CandleEdgeChartData } from '../lib/candleEdgeMvp';
+import { toFaDigits } from '@shared/lib/fmt';
 import { epochToJalali } from '../lib/jalaliDate';
 import { TechnicalSidebar } from '../components/TechnicalSidebar';
 import { ReplayBar } from '../components/ReplayBar';
@@ -70,6 +73,9 @@ export default function TechnicalPage() {
   const enforceRiskGates = useFtsConfigStore((s) => s.enforceRiskGates);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [ftsSettingsOpen, setFtsSettingsOpen] = useState(false);
+  const [showCandleEdge, setShowCandleEdge] = useState(false);
+  const [candleEdgeData, setCandleEdgeData] = useState<CandleEdgeChartData | null>(null);
+  const [candleEdgeSelectedKey, setCandleEdgeSelectedKey] = useState<string | null>(null);
 
   const replayActive = useReplayStore((s) => s.active);
   const replayCursor = useReplayStore((s) => s.cursor);
@@ -125,6 +131,39 @@ export default function TechnicalPage() {
   // fts.chart.settings.v1 ذخیره می‌شود.
   const chartEngine = useFtsConfigStore((s) => s.chartEngine);
   const setChartEngine = useFtsConfigStore((s) => s.setChartEngine);
+
+  // لایهٔ آزمایشیِ CandleEdge: پیش‌فرض خاموش. داده و انتخاب با هر تغییر نماد،
+  // تایم‌فریم یا موتور فوراً پاک می‌شوند تا هیچ رویدادی از سری قبلی نماند.
+  useEffect(() => {
+    setCandleEdgeData(null);
+    setCandleEdgeSelectedKey(null);
+  }, [viewSymbol]);
+
+  useEffect(() => {
+    if (chartEngine !== 'ffc') return;
+    setCandleEdgeData(null);
+    setCandleEdgeSelectedKey(null);
+  }, [chartEngine]);
+
+  const handleCandleEdgeToggle = useCallback((next: boolean) => {
+    setShowCandleEdge(next);
+    setCandleEdgeSelectedKey(null);
+    if (!next) setCandleEdgeData(null);
+  }, []);
+
+  const handleCandleEdgeData = useCallback((next: CandleEdgeChartData | null) => {
+    setCandleEdgeData(next);
+    setCandleEdgeSelectedKey((current) => {
+      if (current == null) return null;
+      if (!next) return null;
+      return next.events.some((event) => event.key === current) ? current : null;
+    });
+  }, []);
+
+  const handleChartTimeframeChange = useCallback(() => {
+    setCandleEdgeData(null);
+    setCandleEdgeSelectedKey(null);
+  }, []);
   const storeTimeframe = useFtsConfigStore((s) => s.timeframe);
   const storeChartType = useFtsConfigStore((s) => s.chartType);
   const storePriceScale = useFtsConfigStore((s) => s.priceScale);
@@ -327,6 +366,10 @@ export default function TechnicalPage() {
                   onOpenSettings={() => setSettingsOpen(true)}
                   settingsSlot={<FtsSettingsTrigger open={ftsSettingsOpen} onToggle={() => setFtsSettingsOpen((open) => !open)} />}
                   onSymbolChange={(s) => selectSymbol(s.symbol)}
+                  onTimeframeChange={handleChartTimeframeChange}
+                  showCandleEdge={showCandleEdge}
+                  candleEdgeSelectedKey={candleEdgeSelectedKey}
+                  onCandleEdgeData={handleCandleEdgeData}
                 />
               </Suspense>
             </div>
@@ -374,6 +417,23 @@ export default function TechnicalPage() {
               ),
             },
             { id: 'trend', label: 'تحلیل ساختاری', node: <FtsTrendPanel data={analysis.data?.fts ?? null} /> },
+            {
+              id: 'candleedge',
+              label: `الگوهای تکنیکال${
+                showCandleEdge && chartEngine !== 'ffc' && candleEdgeData
+                  ? ` (${toFaDigits(String(candleEdgeData.events.length))})`
+                  : ''
+              }`,
+              node: (
+                <CandleEdgePatternPanel
+                  enabled={showCandleEdge}
+                  onEnabledChange={handleCandleEdgeToggle}
+                  data={chartEngine === 'ffc' ? null : candleEdgeData}
+                  onSelect={setCandleEdgeSelectedKey}
+                  engineId={chartEngine === 'ffc' ? 'ffc' : 'klinecharts'}
+                />
+              ),
+            },
             { id: 'replay', label: 'بازپخش', node: <ReplayBar total={nn.data.length} /> },
             { id: 'patterns', label: 'الگوهای FTS', node: <PatternToggles /> },
 

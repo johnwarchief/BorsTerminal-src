@@ -92,6 +92,16 @@ import '../styles/nahayatNegarStyles.css';
 import type { FtsAnalysisData } from '../../api/useFtsAnalysis';
 import type { Structure3Data } from '../../api/useStructure3';
 import { e3KlinechartsOverlay, structure3Layers } from '../../lib/structure3Layers';
+import { scanPatterns } from '../../signals/candleedge';
+import type { PatternEvent } from '../../signals/candleedge';
+import {
+  CANDLEEDGE_OVERLAY_GROUP,
+  buildCandleEdgeGroups,
+  buildCandleEdgeOverlays,
+  filterCandleEdgeEvents,
+  selectCandleEdgeChartEvents,
+} from '../../lib/candleEdgeMvp';
+import type { CandleEdgeChartData } from '../../lib/candleEdgeMvp';
 
 export interface ChartProps {
   initialSymbol?: string;
@@ -111,6 +121,11 @@ export interface ChartProps {
   /** موتورِ رندر + عوض‌کردنش — از بالا می‌آید، این‌جا فقط به نوارِ ابزار می‌رسد */
   chartEngine?: ChartEngineId;
   onEngineChange?: (id: ChartEngineId) => void;
+  /** لایهٔ آزمایشیِ هشت الگوریتم CandleEdge؛ پیش‌فرض خاموش. */
+  showCandleEdge?: boolean;
+  candleEdgeSelectedKey?: string | null;
+  /** همان سریِ نمایشیِ چارت را به پنل می‌دهد؛ اسکن در پنل دوباره انجام نمی‌شود. */
+  onCandleEdgeData?: (data: CandleEdgeChartData | null) => void;
 }
 
 /** فهرستِ مجازِ نوعِ کندل — همان‌ها که منو می‌سازد؛ نامِ ناشناخته اعمال نمی‌شود */
@@ -324,6 +339,9 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
   onSymbolChange,
   onTimeframeChange,
   onAdjustmentChange,
+  showCandleEdge = false,
+  candleEdgeSelectedKey = null,
+  onCandleEdgeData,
 }) => {
   const chartContainerRef = useRef<HTMLDivElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -579,6 +597,73 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
   );
   const renderCandlesRef = useRef<KLineData[]>(renderCandles);
   renderCandlesRef.current = renderCandles;
+
+  // لایهٔ آزمایشیِ CandleEdge: اسکن فقط روی سریِ نمایشیِ همین چارت (تعدیل‌شده و
+  // تجمیع‌شده) انجام می‌شود، نه روی سریِ صفحه با تایم‌فریمِ جدا. خروجی فقط هشت
+  // آشکارسازِ تأییدشده است؛ provisional هرگز وارد فهرست یا اورلی نمی‌شود.
+  const candleEdgeEnabled = showCandleEdge === true;
+  const candleEdgeScan = useMemo(() => {
+    if (!candleEdgeEnabled) return { events: [] as PatternEvent[], error: null as string | null };
+    try {
+      const result = scanPatterns(
+        displayCandles.map((bar) => ({
+          time: bar.timestamp,
+          open: bar.open,
+          high: bar.high,
+          low: bar.low,
+          close: bar.close,
+          volume: bar.volume,
+        })),
+      );
+      return { events: filterCandleEdgeEvents(result.events), error: null as string | null };
+    } catch (error) {
+      return {
+        events: [] as PatternEvent[],
+        error: error instanceof Error ? error.message : 'اسکن الگوهای تکنیکال شکست خورد',
+      };
+    }
+  }, [candleEdgeEnabled, displayCandles]);
+
+  // کنترلِ شلوغی: همان گروه‌بندی/ترتیبِ پنل، فقط یک نماینده از هر گروهِ پیشرو
+  // روی چارت می‌آید. رویدادِ انتخاب‌شده همیشه رسم می‌شود، حتی اگر گروهش در صدر نباشد.
+  const candleEdgeGroups = useMemo(
+    () =>
+      candleEdgeEnabled && candleEdgeScan.events.length > 0
+        ? buildCandleEdgeGroups(`${currentSymbol}|${activeTimeframe}`, candleEdgeScan.events)
+        : null,
+    [candleEdgeEnabled, candleEdgeScan, currentSymbol, activeTimeframe],
+  );
+  const candleEdgeChartEvents = useMemo(
+    () =>
+      candleEdgeGroups
+        ? selectCandleEdgeChartEvents(candleEdgeGroups.groups, candleEdgeSelectedKey)
+        : ([] as PatternEvent[]),
+    [candleEdgeGroups, candleEdgeSelectedKey],
+  );
+
+  const onCandleEdgeDataRef = useRef(onCandleEdgeData);
+  onCandleEdgeDataRef.current = onCandleEdgeData;
+  useEffect(() => {
+    const emit = onCandleEdgeDataRef.current;
+    if (!emit) return;
+    emit(
+      candleEdgeEnabled
+        ? {
+            symbol: currentSymbol,
+            timeframe: activeTimeframe,
+            bars: displayCandles.map((bar) => ({
+              timestamp: bar.timestamp,
+              open: bar.open,
+              high: bar.high,
+              low: bar.low,
+              close: bar.close,
+            })),
+            events: candleEdgeScan.events,
+            error: candleEdgeScan.error,
+          }
+        : null,
+    );
+  }, [candleEdgeEnabled, currentSymbol, activeTimeframe, displayCandles, candleEdgeScan]);
 
   /** دکمه‌های «بازه زمانی»: فاصلۀ میله را روی پهنایِ واقعیِ پنل تنظیم می‌کند تا
    *  تعدادِ کندلِ خواستۀ `rangeVisibleBars` در دید بماند. تا پیش از این کلیک فقط
@@ -1946,6 +2031,72 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
     }
     return clearE3;
   }, [e3, showStructure3, renderCandles]);
+
+  // لایهٔ آزمایشیِ CandleEdge: گروهِ مستقل تا با لایه‌های FTS/موتور سوم قاطی نشود.
+  // نشانگرها بی‌برچسب‌اند و برچسب/خط سطح فقط برای رویدادِ انتخاب‌شده رسم می‌شود،
+  // تا چارت با ده‌ها متن روی کندل‌ها پوشیده نشود. انتخاب، دید را به کندلِ تأیید می‌برد.
+  const candleEdgeScrolledRef = useRef<string | null>(null);
+  useEffect(() => {
+    const chart = chartRef.current;
+    if (!chart) return;
+    const clear = () => {
+      try {
+        chart.removeOverlay({ groupId: CANDLEEDGE_OVERLAY_GROUP } as never);
+      } catch {
+        // safe
+      }
+    };
+    if (!candleEdgeEnabled || candleEdgeChartEvents.length === 0) {
+      candleEdgeScrolledRef.current = null;
+      clear();
+      return;
+    }
+    // فضای رسم ≠ فضای اسکن فقط در Heikin-Ashi؛ سطح‌ها با همان نسبتِ لایه‌های FTS
+    // به محور می‌آیند و خودِ نشانگرها از high/low سریِ نمایشی ساخته می‌شوند.
+    const lastDisplay = displayCandles[displayCandles.length - 1]?.close ?? 0;
+    const lastRender = renderCandles[renderCandles.length - 1]?.close ?? 0;
+    const priceScale = lastDisplay > 0 && lastRender > 0 ? lastRender / lastDisplay : 1;
+    const specs = buildCandleEdgeOverlays(
+      candleEdgeChartEvents,
+      renderCandles.map((bar) => ({
+        timestamp: bar.timestamp,
+        open: bar.open,
+        high: bar.high,
+        low: bar.low,
+        close: bar.close,
+      })),
+      candleEdgeSelectedKey,
+      priceScale,
+    );
+    clear();
+    for (const spec of specs) {
+      const { meta, ...overlay } = spec;
+      void meta;
+      try {
+        chart.createOverlay(overlay as never);
+      } catch {
+        // یک اورلیِ ناموفق نباید بقیهٔ لایه را متوقف کند
+      }
+    }
+    if (candleEdgeSelectedKey == null) {
+      candleEdgeScrolledRef.current = null;
+      return clear;
+    }
+    if (candleEdgeScrolledRef.current !== candleEdgeSelectedKey) {
+      const selected = candleEdgeChartEvents.find((event) => event.key === candleEdgeSelectedKey);
+      const ts = selected ? parseCandleTimestamp(selected.confirmedAt) : Number.NaN;
+      if (Number.isFinite(ts) && ts > 0) chart.scrollToTimestamp(ts, 300);
+      candleEdgeScrolledRef.current = candleEdgeSelectedKey;
+    }
+    return clear;
+  }, [
+    candleEdgeEnabled,
+    candleEdgeChartEvents,
+    renderCandles,
+    displayCandles,
+    candleEdgeSelectedKey,
+    isChartReady,
+  ]);
 
   // هندلرهای رویداد ماوس برای ابزار خط‌کش / اندازه‌گیری (Measure / Ruler Tool)
   const handleCanvasMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
