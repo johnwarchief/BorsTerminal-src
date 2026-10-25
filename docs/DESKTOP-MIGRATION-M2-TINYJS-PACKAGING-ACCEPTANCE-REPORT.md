@@ -1,9 +1,9 @@
 # BorsTerminal — TinyJS M2 Packaging, Installer & Installed-Product Acceptance
 
 - **Date:** 2026-10-25
-- **Branch:** `mission/tinyjs-m2-packaging-acceptance-2026-10-25` (local; not pushed)
+- **Branch:** `mission/tinyjs-m2-packaging-acceptance-2026-10-25` (published on `origin`; no PR or merge)
 - **Base:** `7caae40` (verified M1.5 report commit)
-- **Commits:** `d48dad3` (packaging + harness), `2f168bf` (DB audit), `e0e60c6` (updater harness fix), `810c001` (acceptance evidence), `265a041` (report), `487630e` (test-scope note + evidence hashes)
+- **Commits:** `d48dad3` (packaging + harness), `2f168bf` (DB audit), `e0e60c6` (updater harness fix), `810c001` (acceptance evidence), `265a041` (report), `487630e` (test-scope note + evidence hashes), `b3a90e0` (changed-file index); mission branch pushed to `origin`
 - **Verdict:** **`PARTIAL — EXPLICIT BLOCKERS`**
 - **`M2_ACCEPTANCE_PASS` is not declared.** No real Windows installer was built, no binary is signed, and the in-app update could not replace the running package. Portable-package acceptance is strong; install/update/uninstall acceptance is not.
 
@@ -21,7 +21,7 @@ It did **not** pass the product gates that require distribution machinery:
 - **Updater:** `tiny.app.update.check()` worked (0.3.0 → 0.3.1 over loopback), but `install()` failed because the running PyInstaller sidecar holds `resources/sidecar/_internal/base_library.zip` (`EBUSY`). TinyJS rolled the swap back byte-for-byte (`changed_count: 0`), but no successful update was achieved. Update install is **FAIL**; rollback and checksum refusal are **PASS**.
 - **Stability/temp cleanup:** one of three cold runs hit a WebView2 lazy-chunk import failure despite an HTTP 200; first-run extraction leaves `market.db.part-shm` / `.part-wal` residue. Both are **FAIL** for a clean acceptance.
 
-The production application was not migrated, `main` was not changed, and no merge, tag, release, force-push or push was performed. pywebview remains the operational fallback.
+The production application was not migrated and `main` was not changed. No merge, tag, release or force-push was performed; the M2 mission branch was pushed to `origin` without a PR/merge. pywebview remains the operational fallback.
 
 ## 2. Scope, controls and non-claims
 
@@ -46,12 +46,13 @@ The remote/base state was audited read-only before any M2 build or code change:
 | `origin/main` after fetch | `036cdfa917555d58530e8c79c52d7ae07e0a750f` |
 | `origin/main` vs M1 baseline | 5 commits ahead; delta is `docs`, `artifacts/ra365/r26`, `tools/ra365_round26_*`; no SPA/backend source |
 | M1.5 branch on remote | **No** |
+| M2 branch on remote | **Yes** — `mission/tinyjs-m2-packaging-acceptance-2026-10-25` (pushed; no PR/merge) |
 | Merge base | `b5f5f6c` |
 | Is `7caae40` an ancestor of `origin/main`? | **No** |
 | Local `main` | `d580306` (pre-existing clone, behind origin/main; untouched) |
 | M2 branch base | `7caae40` |
 
-The M2 branch was created from the verified M1.5 report, not from the five newer `origin/main` commits. No rebase, merge, force-push or branch rewrite was performed. The report and evidence remain a local mission branch; no push destination is assumed.
+The M2 branch was created from the verified M1.5 report, not from the five newer `origin/main` commits. No rebase, merge, force-push or branch rewrite was performed. The mission branch and its commits were published on `origin`; `origin/main` remains `036cdfa` and no push destination beyond `origin` is assumed.
 
 **Source/evidence files changed in M2** (`git diff --name-only 7caae40..HEAD`; working tree clean):
 
