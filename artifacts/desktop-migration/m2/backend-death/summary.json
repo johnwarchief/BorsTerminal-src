@@ -1,0 +1,138 @@
+{
+ "label": "m2-backend-death",
+ "exe": "C:\\Users\\STU\\AppData\\Local\\Temp\\bors_m2_accept\\BorsTerminal\\BorsTerminalM2TinyJS.exe",
+ "runs": [
+  {
+   "run": 1,
+   "root_pid": 7744,
+   "work": "C:\\Users\\STU\\AppData\\Local\\Temp\\bors_m2_close\\m2-backend-death\\runs\\run-1\\work",
+   "profile": "C:\\Users\\STU\\AppData\\Local\\Temp\\bors_m2_close\\m2-backend-death\\runs\\run-1\\profile",
+   "launch_ms": 1792925548833.6226,
+   "errors": [],
+   "window": {
+    "hwnd": 298453470,
+    "title": "بورس‌ترمینال — BorsTerminal",
+    "pid": 5216,
+    "visible": true,
+    "rect": [
+     -8,
+     -8,
+     1288,
+     992
+    ],
+    "w": 1296,
+    "h": 1000
+   },
+   "sidecar_port": 54037,
+   "window_found_s": 15.8,
+   "ready_s": 14065.4,
+   "security": {
+    "local_host": {
+     "status": 200,
+     "expected": 200,
+     "ok": true,
+     "headers": {
+      "Host": "127.0.0.1:54037"
+     }
+    },
+    "foreign_host": {
+     "status": 403,
+     "expected": 403,
+     "ok": true,
+     "headers": {
+      "Host": "evil.example"
+     }
+    },
+    "origin_null": {
+     "status": 403,
+     "expected": 403,
+     "ok": true,
+     "headers": {
+      "Host": "127.0.0.1:54037",
+      "Origin": "null"
+     }
+    },
+    "origin_foreign": {
+     "status": 403,
+     "expected": 403,
+     "ok": true,
+     "headers": {
+      "Host": "127.0.0.1:54037",
+      "Origin": "http://evil.example"
+     }
+    },
+    "origin_local": {
+     "status": 200,
+     "expected": 200,
+     "ok": true,
+     "headers": {
+      "Host": "127.0.0.1:54037",
+      "Origin": "http://127.0.0.1:54037"
+     }
+    }
+   },
+   "security_all_ok": true,
+   "sidecar_kill": {
+    "pid": 9196
+   },
+   "error_window": {
+    "hwnd": 5507794,
+    "title": "BorsTerminal — startup failed",
+    "pid": 5216,
+    "visible": true,
+    "rect": [
+     -8,
+     -8,
+     1288,
+     992
+    ],
+    "w": 1296,
+    "h": 1000
+   },
+   "error_screenshot": {
+    "ok": true,
+    "method": "PrintWindow",
+    "w": 1296,
+    "h": 1000,
+    "path": "C:\\Users\\STU\\AppData\\Local\\Temp\\bors_m2_close\\m2-backend-death\\runs\\run-1\\error.png",
+    "duration_ms": 1830.0,
+    "screen": {
+     "ok": true,
+     "method": "ImageGrab",
+     "foreground": true,
+     "path": "C:\\Users\\STU\\AppData\\Local\\Temp\\bors_m2_close\\m2-backend-death\\runs\\run-1\\error.screen.png",
+     "duration_ms": 1682.7
+    }
+   },
+   "shell_exit_code": 0,
+   "shell_exit_s": 0.5,
+   "port_open_after_exit": false,
+   "survivors_observed": [
+    {
+     "pid": 6664,
+     "name": "msedgewebview2.exe",
+     "exe": "c:\\program files (x86)\\microsoft\\edgewebview\\application\\155.0.4283.62\\msedgewebview2.exe",
+     "cmd": "C:\\Program Files (x86)\\Microsoft\\EdgeWebView\\Application\\155.0.4283.62\\msedgewebview2.exe --embedded-browser-webview=1 --webview-exe-name=launcher.exe --user-data-dir=C:\\Users\\STU\\AppData\\Roaming\\com.borsterminal.m2tinyjs\\WebView2\\EBWebView --noerrdialogs --embedded-browser-webview-dpi-awareness=2 -",
+     "env_work": "C:\\Users\\STU\\AppData\\Local\\Temp\\bors_m2_close\\m2-backend-death\\runs\\run-1\\work",
+     "env_localappdata": "C:\\Users\\STU\\AppData\\Local\\Temp\\bors_m2_close\\m2-backend-death\\runs\\run-1\\profile"
+    },
+    {
+     "pid": 12928,
+     "name": "msedgewebview2.exe",
+     "exe": "c:\\program files (x86)\\microsoft\\edgewebview\\application\\155.0.4283.62\\msedgewebview2.exe",
+     "cmd": "C:\\Program Files (x86)\\Microsoft\\EdgeWebView\\Application\\155.0.4283.62\\msedgewebview2.exe --type=crashpad-handler --user-data-dir=C:\\Users\\STU\\AppData\\Roaming\\com.borsterminal.m2tinyjs\\WebView2\\EBWebView /prefetch:4 --monitor-self-annotation=ptype=crashpad-handler --database=C:\\Users\\STU\\AppData\\Roa",
+     "env_work": "C:\\Users\\STU\\AppData\\Local\\Temp\\bors_m2_close\\m2-backend-death\\runs\\run-1\\work",
+     "env_localappdata": "C:\\Users\\STU\\AppData\\Local\\Temp\\bors_m2_close\\m2-backend-death\\runs\\run-1\\profile"
+    }
+   ],
+   "survivor_natural_exit_s": 1.1,
+   "survivors_after_grace": [],
+   "killed": [],
+   "left_after_kill": [],
+   "port_open_final": false,
+   "finished_s": 24.4
+  }
+ ],
+ "runs_total": 1,
+ "all_ok": true
+}

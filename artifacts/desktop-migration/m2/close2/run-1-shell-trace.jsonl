@@ -1,0 +1,12 @@
+{"stage":"backend_init","t":1792924501.362,"dt":0.046,"pid":464,"work":"C:\\Users\\STU\\AppData\\Local\\Temp\\bors_m2_close\\m2-close2\\runs\\run-1\\work","main":true,"installed":true,"resources":"C:\\Users\\STU\\AppData\\Local\\Temp\\bors_m2_accept\\BorsTerminal/resources"}
+{"stage":"sidecar_spawn_begin","t":1792924501.362,"dt":0.046,"pid":464,"exe":"C:\\Users\\STU\\AppData\\Local\\Temp\\bors_m2_accept\\BorsTerminal/resources\\sidecar\\BorsTerminalSidecar.exe","argv":[],"installed":true,"port":"0","work":"C:\\Users\\STU\\AppData\\Local\\Temp\\bors_m2_close\\m2-close2\\runs\\run-1\\work"}
+{"stage":"sidecar_spawned","t":1792924501.378,"dt":0.062,"pid":11868}
+{"stage":"sidecar_ready_line","t":1792924516.962,"dt":15.646,"pid":7864,"port":53196}
+{"stage":"http_verified","t":1792924517.21,"dt":15.894,"pid":464,"url":"http://127.0.0.1:53196/"}
+{"stage":"window_open_begin","t":1792924517.21,"dt":15.894,"pid":464,"url":"http://127.0.0.1:53196/"}
+{"stage":"window_open","t":1792924517.21,"dt":15.894,"pid":464}
+{"stage":"window_closed","t":1792924532.602,"dt":31.286,"pid":464,"id":"app"}
+{"stage":"shutdown_wait_begin","t":1792924532.602,"dt":31.286,"pid":464,"id":"app"}
+{"stage":"sidecar_exit","t":1792924533.342,"dt":32.026,"pid":464,"code":0,"signal":null}
+{"stage":"shutdown_wait_done","t":1792924533.342,"dt":32.026,"pid":464,"graceful":true,"code":0}
+{"stage":"quit_requested","t":1792924533.342,"dt":32.026,"pid":464,"id":"app","graceful":true}

@@ -1,0 +1,13 @@
+{"stage":"backend_init","t":1792925548.989,"dt":0.047,"pid":7744,"work":"C:\\Users\\STU\\AppData\\Local\\Temp\\bors_m2_close\\m2-backend-death\\runs\\run-1\\work","main":true,"installed":true,"resources":"C:\\Users\\STU\\AppData\\Local\\Temp\\bors_m2_accept\\BorsTerminal/resources"}
+{"stage":"sidecar_spawn_begin","t":1792925548.989,"dt":0.047,"pid":7744,"exe":"C:\\Users\\STU\\AppData\\Local\\Temp\\bors_m2_accept\\BorsTerminal/resources\\sidecar\\BorsTerminalSidecar.exe","argv":[],"installed":true,"port":"0","work":"C:\\Users\\STU\\AppData\\Local\\Temp\\bors_m2_close\\m2-backend-death\\runs\\run-1\\work"}
+{"stage":"sidecar_spawned","t":1792925548.989,"dt":0.047,"pid":9196}
+{"stage":"sidecar_ready_line","t":1792925562.899,"dt":13.957,"pid":17260,"port":54037}
+{"stage":"http_verified","t":1792925564.076,"dt":15.134,"pid":7744,"url":"http://127.0.0.1:54037/"}
+{"stage":"window_open_begin","t":1792925564.076,"dt":15.134,"pid":7744,"url":"http://127.0.0.1:54037/"}
+{"stage":"window_open","t":1792925564.076,"dt":15.134,"pid":7744}
+{"stage":"sidecar_exit","t":1792925564.894,"dt":15.952,"pid":7744,"code":15,"signal":null}
+{"stage":"error_window","t":1792925564.894,"dt":15.952,"pid":7744,"title":"Backend stopped unexpectedly","detail":"exit=15\n\n2026-10-25 14:22:42 INFO:     Started server process [17260]\n2026-10-25 14:22:42 INFO:     Waiting for application startup.\n2026-10-25 14:22:42 INFO:     Application startup complete.\n2026-10-25 14:22:42 INFO:     Uvicorn running on http://127.0.0.1:54037 (Press CTRL+C to quit)\n[startup] codal schema migrated (additive, idempotent)\n[startup] codal auto-pipeline خاموش (همان دربِ BORS_NO_FE"}
+{"stage":"window_closed","t":1792925567.361,"dt":18.419,"pid":7744,"id":"error"}
+{"stage":"shutdown_wait_begin","t":1792925567.361,"dt":18.419,"pid":7744,"id":"error"}
+{"stage":"shutdown_wait_done","t":1792925567.361,"dt":18.419,"pid":7744,"graceful":true,"code":15}
+{"stage":"quit_requested","t":1792925567.361,"dt":18.419,"pid":7744,"id":"error","graceful":true}

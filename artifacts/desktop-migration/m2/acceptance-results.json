@@ -1,0 +1,140 @@
+{
+ "mission": "TinyJS M2 packaging, installer and installed-product acceptance",
+ "branch": "mission/tinyjs-m2-packaging-acceptance-2026-10-25",
+ "base_commit": "7caae40",
+ "commits": [
+  "d48dad3",
+  "2f168bf",
+  "e0e60c6"
+ ],
+ "verdict": "PARTIAL — EXPLICIT BLOCKERS",
+ "gates": [
+  {
+   "id": "packaging_python_fastapi",
+   "status": "PASS",
+   "evidence": "build/package-manifest.json, installed-smoke/summary.json, installed-cold/summary.json",
+   "note": "PyInstaller 6.22.3 onedir sidecar; shell resolves resources/sidecar; no repo .venv or BORS_PYTHON in installed runs."
+  },
+  {
+   "id": "installed_functional_slice",
+   "status": "PASS",
+   "evidence": "installed-smoke/, installed-cold/, installed-warm/",
+   "note": "Real cached market board, chart switch W/raw/آباد, FTS/fundamental card, market status, company name. Cold 2/3 and warm 3/3 reached all stages; one cold run failed a lazy chunk import."
+  },
+  {
+   "id": "security_loopback_origin",
+   "status": "PASS",
+   "evidence": "build/security-matrix-summary.json",
+   "note": "13 live executions x 5 cases = 65/65 pass; Origin: null always 403; no guard change."
+  },
+  {
+   "id": "lifecycle_normal_close",
+   "status": "PASS",
+   "evidence": "close2/, close-load/, installed-smoke/",
+   "note": "Shell exit 0, port closed, 0 survivors after a 30s grace in close tests. Earlier 1s checks saw 1-3 WebView2 processes in 3/9 full runs; those were force-killed, natural exit not measured."
+  },
+  {
+   "id": "crash_recovery",
+   "status": "PASS",
+   "evidence": "crash/, recover/",
+   "note": "Root killed after full load: exit 1, no survivors, port closed; restart on the same work dir passed all stages."
+  },
+  {
+   "id": "backend_death",
+   "status": "PASS",
+   "evidence": "backend-death/",
+   "note": "Sidecar killed while live: visible startup-failed window captured; shell exit 0, port closed; two WebView2 processes exited naturally in 1.1s."
+  },
+  {
+   "id": "installer",
+   "status": "BLOCKED",
+   "evidence": "build/tooling-check.txt",
+   "note": "No makensis/ISCC/candle/light; only iexpress and makecab. NSIS/WiX/system-wide install was not authorized; no installer was built or run."
+  },
+  {
+   "id": "install_uninstall_reinstall",
+   "status": "BLOCKED",
+   "evidence": "build/tooling-check.txt",
+   "note": "No real installer, so install/uninstall/reinstall gates are blocked. Portable relocation and clean removal of the folder are the only tested deployment."
+  },
+  {
+   "id": "code_signing",
+   "status": "BLOCKED",
+   "evidence": "build/signing-status.txt",
+   "note": "Get-AuthenticodeSignature: NotSigned for shell, launcher and sidecar. No signtool/osslsigncode; no certificate or private key was read."
+  },
+  {
+   "id": "webview2_bootstrap",
+   "status": "BLOCKED",
+   "evidence": "build/package-manifest.json",
+   "note": "No WebView2 bootstrapper is shipped; host runtime 155.0.4283.62 is required."
+  },
+  {
+   "id": "webview2_missing_runtime",
+   "status": "NOT_MEASURED",
+   "evidence": "host runtime present",
+   "note": "Removing the system WebView2 runtime is a destructive system-wide change and was not authorized; behavior on a runtime-less machine is unmeasured."
+  },
+  {
+   "id": "updater_check",
+   "status": "PASS",
+   "evidence": "update-install/summary.json, update-checksum/summary.json",
+   "note": "Real tiny.app.update.check over loopback: 0.3.0 -> 0.3.1 available; notes delivered."
+  },
+  {
+   "id": "updater_install",
+   "status": "FAIL",
+   "evidence": "update-install/summary.json, update-install/collector.jsonl",
+   "note": "The Windows swap failed: resources/sidecar/_internal/base_library.zip is held by the running PyInstaller sidecar (EBUSY). The app remained at 0.3.0."
+  },
+  {
+   "id": "updater_rollback",
+   "status": "PASS",
+   "evidence": "update-install/summary.json",
+   "note": "After the failed swap TinyJS rolled back: changed_count 0, no .update-old files, version_after 0.3.0."
+  },
+  {
+   "id": "updater_checksum",
+   "status": "PASS",
+   "evidence": "update-checksum/summary.json",
+   "note": "A 0.3.2 manifest with a wrong sha256 was refused with 'checksum mismatch'; changed_count 0."
+  },
+  {
+   "id": "update_feed_signing",
+   "status": "BLOCKED",
+   "evidence": "build/update-manifests/, signing-status.txt",
+   "note": "Only an unsigned loopback manifest was tested; no HTTPS release feed and no Ed25519 signed manifest/public key."
+  },
+  {
+   "id": "performance_footprint",
+   "status": "PASS",
+   "evidence": "performance.json, build/package-manifest.json",
+   "note": "Cold n=3 and warm n=3; p95 not reported for n<20. Package 201.2 MiB; first-run data 269.1 MiB; total 470.3 MiB; update zip 130.9 MiB."
+  },
+  {
+   "id": "temp_cleanup",
+   "status": "FAIL",
+   "evidence": "installed-smoke/ summary and work-dir listing",
+   "note": "First-run extraction leaves market.db.part-shm (32 KB) and market.db.part-wal (0 B) in the data dir; no process/port leaks."
+  },
+  {
+   "id": "stability",
+   "status": "FAIL",
+   "evidence": "installed-cold/summary.json",
+   "note": "1/3 cold runs failed a TechnicalPage dynamic import in WebView2 even though the server logged 200; warm and close runs did not reproduce it."
+  },
+  {
+   "id": "operational_db_isolation",
+   "status": "PASS",
+   "evidence": "db-incident-analysis.json, build/operational-db-recheck.txt",
+   "note": "All M2 runs used isolated BORS_WORK_DIR/BORS_DB. Operational market.db, WAL and user.db hashes are unchanged."
+  }
+ ],
+ "blockers": [
+  "No authorized Windows installer toolchain (NSIS/WiX/ISCC absent).",
+  "No code-signing tool or authorized certificate; all binaries are unsigned.",
+  "No WebView2 bootstrapper; missing-runtime behavior unmeasured.",
+  "In-app update cannot replace a running PyInstaller sidecar tree (base_library.zip lock).",
+  "No signed HTTPS update feed."
+ ]
+}

@@ -1,0 +1,236 @@
+{
+ "host": {
+  "platform": "Windows-10-10.0.19045-SP0",
+  "cpu_logical": 2,
+  "cpu_physical": 1,
+  "ram_gb": 3.88,
+  "python": "3.12.10",
+  "exe": "C:\\Users\\STU\\AppData\\Local\\Temp\\bors_m2_accept\\BorsTerminal\\BorsTerminalM2TinyJS.exe",
+  "exe_bytes": 5686711,
+  "launcher_bytes": 2164824,
+  "dist_bytes": 7851535,
+  "dist_bytes_note": "TinyJS portable dist only; Tauri target/release is not an install footprint"
+ },
+ "protocol": {
+  "shell": "BorsTerminalM2TinyJS.exe + Python sidecar",
+  "window_gate": "shell opens the loopback window only after GET /api/update/version succeeds",
+  "isolation": "fresh WORK_DIR/profile in cold; shared seeded one in warm",
+  "network_loops": "BORS_NO_FETCH_LOOPS=1, BORS_CODAL_AUTO=0",
+  "instrumentation": "external process tree + Win32 PrintWindow + BorsTerminalM2TinyJS.exe WebView2 eval probe (no CDP)",
+  "package": "installed TinyJS dist with bundled PyInstaller sidecar; no repo .venv, no BORS_PYTHON/BORS_HEADLESS_ENTRY, DB extracted from bundled market.db.lzma",
+  "cold_definition": "fresh work dir and profile per run, DB extracted from the sidecar's bundled seed",
+  "warm_definition": "one unrecorded warmup, then same work dir/profile reused",
+  "crash": "with --crash the shell root is terminated after the first board paint; orphans are recorded and then killed by the harness"
+ },
+ "package": {
+  "installed_bytes": 210990261,
+  "installed_mib": 201.2,
+  "update_zip_bytes": 137297084,
+  "update_zip_mib": 130.9,
+  "first_run_data_bytes": 282217847,
+  "first_run_data_mib": 269.1,
+  "total_after_first_run_mib": 470.4
+ },
+ "cold": {
+  "runs": 3,
+  "ok": 2,
+  "timings": {
+   "sidecar_ready_line": {
+    "n": 3,
+    "median": 35181.1,
+    "min": 24582.0,
+    "max": 36542.1,
+    "values": [
+     35181.1,
+     24582.0,
+     36542.1
+    ],
+    "p95": null,
+    "p95_note": "not reported: n<20"
+   },
+   "window_visible": {
+    "n": 3,
+    "median": 38094.4,
+    "min": 29180.1,
+    "max": 49670.6,
+    "values": [
+     38094.4,
+     29180.1,
+     49670.6
+    ],
+    "p95": null,
+    "p95_note": "not reported: n<20"
+   },
+   "market_rows_visible": {
+    "n": 3,
+    "median": 64989.1,
+    "min": 45232.0,
+    "max": 72497.1,
+    "values": [
+     64989.1,
+     45232.0,
+     72497.1
+    ],
+    "p95": null,
+    "p95_note": "not reported: n<20"
+   },
+   "technical_ready": {
+    "n": 2,
+    "median": 100035.6,
+    "min": 85438.0,
+    "max": 114633.1,
+    "values": [
+     85438.0,
+     114633.1
+    ],
+    "p95": null,
+    "p95_note": "not reported: n<20"
+   },
+   "fundamental_ready": {
+    "n": 2,
+    "median": 105606.6,
+    "min": 91281.0,
+    "max": 119932.1,
+    "values": [
+     91281.0,
+     119932.1
+    ],
+    "p95": null,
+    "p95_note": "not reported: n<20"
+   }
+  },
+  "rss": {
+   "peak_mb": [
+    774.8,
+    912.4,
+    875.0
+   ],
+   "peak_median": 875.0,
+   "idle_mb": [
+    656.7,
+    732.8,
+    702.7
+   ],
+   "idle_median": 702.7,
+   "idle_cpu_pct_one_core": [
+    94.8,
+    115.1,
+    47.4
+   ],
+   "idle_cpu_median": 94.8
+  },
+  "failure": "run 1: TechnicalPage dynamic import failed in WebView2 after the server logged 200; chart/fund not reached; 3 WebView2 processes survived 1s and were killed by the old harness"
+ },
+ "warm": {
+  "runs": 3,
+  "ok": 1,
+  "timings": {
+   "sidecar_ready_line": {
+    "n": 3,
+    "median": 20895.3,
+    "min": 14590.0,
+    "max": 27131.9,
+    "values": [
+     20895.3,
+     14590.0,
+     27131.9
+    ],
+    "p95": null,
+    "p95_note": "not reported: n<20"
+   },
+   "window_visible": {
+    "n": 3,
+    "median": 24306.9,
+    "min": 17573.0,
+    "max": 32376.3,
+    "values": [
+     24306.9,
+     17573.0,
+     32376.3
+    ],
+    "p95": null,
+    "p95_note": "not reported: n<20"
+   },
+   "market_rows_visible": {
+    "n": 3,
+    "median": 36941.3,
+    "min": 36156.0,
+    "max": 43208.9,
+    "values": [
+     36941.3,
+     36156.0,
+     43208.9
+    ],
+    "p95": null,
+    "p95_note": "not reported: n<20"
+   },
+   "technical_ready": {
+    "n": 3,
+    "median": 72982.3,
+    "min": 67250.0,
+    "max": 78271.9,
+    "values": [
+     72982.3,
+     67250.0,
+     78271.9
+    ],
+    "p95": null,
+    "p95_note": "not reported: n<20"
+   },
+   "fundamental_ready": {
+    "n": 3,
+    "median": 78851.3,
+    "min": 72640.0,
+    "max": 84691.9,
+    "values": [
+     78851.3,
+     72640.0,
+     84691.9
+    ],
+    "p95": null,
+    "p95_note": "not reported: n<20"
+   }
+  },
+  "rss": {
+   "peak_mb": [
+    967.8,
+    875.1,
+    940.3
+   ],
+   "peak_median": 940.3,
+   "idle_mb": [
+    799.9,
+    741.1,
+    798.2
+   ],
+   "idle_median": 798.2,
+   "idle_cpu_pct_one_core": [
+    124.4,
+    88.7,
+    124.1
+   ],
+   "idle_cpu_median": 124.1
+  },
+  "note": "warm runs 1-2 had 1-3 WebView2 processes at the 1s check; the harness killed them. Later close tests with a 30s grace measured zero survivors."
+ },
+ "first_run_extraction": {
+  "cold_preflight_s": [
+   27.47,
+   20.61,
+   25.45
+  ],
+  "warm_preflight_s": [
+   12.1,
+   8.06,
+   10.76
+  ],
+  "note": "cold preflight includes the one-time market.db.lzma extraction; warmup run-0 (first extraction) took 38.78s"
+ },
+ "caveats": [
+  "single-core host; timings are descriptive, no improvement percentage claimed",
+  "WebView2 cache under %APPDATA% is shared across runs and was not purged",
+  "idle CPU is a 3s sample while the SPA may still poll; not steady state",
+  "cold run 1 failed a lazy chunk import; cold chart/fund n=2",
+  "no p95 for n<20"
+ ]
+}

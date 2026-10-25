@@ -1,0 +1,19 @@
+{"stage": "entry_import", "t": 1792924537.423636, "dt": 3.9e-05, "pid": 11336}
+{"stage": "streams_ready", "t": 1792924537.423636, "dt": 0.00313, "pid": 11336}
+{"stage": "preflight_start", "t": 1792924537.453775, "dt": 0.033726, "pid": 11336}
+{"stage": "db_prepared", "t": 1792924544.411321, "dt": 6.992374, "pid": 11336, "db": "market.db", "exists": true}
+{"stage": "library_import_begin", "t": 1792924544.442571, "dt": 7.017719, "pid": 11336}
+{"stage": "library_import_end", "t": 1792924546.079484, "dt": 8.647736, "pid": 11336}
+{"stage": "preflight_end", "t": 1792924546.079484, "dt": 8.649671, "pid": 11336, "ok": true}
+{"stage": "uvicorn_spawn", "t": 1792924546.079484, "dt": 8.655315, "pid": 11336, "port": 53219}
+{"stage": "api_startup_begin", "t": 1792924546.862736, "dt": 9.437813, "pid": 11336}
+{"stage": "screener_low_priority", "t": 1792924546.878357, "dt": 9.447637, "pid": 11336}
+{"stage": "api_startup_end", "t": 1792924546.878357, "dt": 9.449086, "pid": 11336}
+{"stage": "screener_wait_board", "t": 1792924546.878357, "dt": 9.450316, "pid": 11336}
+{"stage": "http_ready", "t": 1792924547.174505, "dt": 9.746743, "pid": 11336, "port": 53219}
+{"stage": "candle_projection_done", "t": 1792924548.625863, "dt": 11.197032, "pid": 11336}
+{"stage": "screener_wait_board_done", "t": 1792924555.3239, "dt": 17.89259, "pid": 11336, "got": true}
+{"stage": "market_publish", "t": 1792924555.339524, "dt": 17.921797, "pid": 11336, "gen": 0, "rev": 0, "rows": 6018, "ms": 6397.9}
+{"stage": "mstat_warm_done", "t": 1792924559.183665, "dt": 21.762735, "pid": 11336}
+{"stage": "shutdown_begin", "t": 1792924562.685136, "dt": 25.26766, "pid": 11336}
+{"stage": "shutdown_end", "t": 1792924562.909396, "dt": 25.48198, "pid": 11336, "alive": false}

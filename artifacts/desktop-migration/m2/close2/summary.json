@@ -1,0 +1,170 @@
+{
+ "label": "m2-close2",
+ "exe": "C:\\Users\\STU\\AppData\\Local\\Temp\\bors_m2_accept\\BorsTerminal\\BorsTerminalM2TinyJS.exe",
+ "runs": [
+  {
+   "run": 1,
+   "root_pid": 464,
+   "work": "C:\\Users\\STU\\AppData\\Local\\Temp\\bors_m2_close\\m2-close2\\runs\\run-1\\work",
+   "profile": "C:\\Users\\STU\\AppData\\Local\\Temp\\bors_m2_close\\m2-close2\\runs\\run-1\\profile",
+   "launch_ms": 1792924501206.6555,
+   "errors": [],
+   "window": {
+    "hwnd": 400623932,
+    "title": "بورس‌ترمینال — BorsTerminal",
+    "pid": 15488,
+    "visible": true,
+    "rect": [
+     -8,
+     -8,
+     1288,
+     992
+    ],
+    "w": 1296,
+    "h": 1000
+   },
+   "sidecar_port": 53196,
+   "window_found_s": 16.3,
+   "ready_s": 15755.3,
+   "security": {
+    "local_host": {
+     "status": 200,
+     "expected": 200,
+     "ok": true,
+     "headers": {
+      "Host": "127.0.0.1:53196"
+     }
+    },
+    "foreign_host": {
+     "status": 403,
+     "expected": 403,
+     "ok": true,
+     "headers": {
+      "Host": "evil.example"
+     }
+    },
+    "origin_null": {
+     "status": 403,
+     "expected": 403,
+     "ok": true,
+     "headers": {
+      "Host": "127.0.0.1:53196",
+      "Origin": "null"
+     }
+    },
+    "origin_foreign": {
+     "status": 403,
+     "expected": 403,
+     "ok": true,
+     "headers": {
+      "Host": "127.0.0.1:53196",
+      "Origin": "http://evil.example"
+     }
+    },
+    "origin_local": {
+     "status": 200,
+     "expected": 200,
+     "ok": true,
+     "headers": {
+      "Host": "127.0.0.1:53196",
+      "Origin": "http://127.0.0.1:53196"
+     }
+    }
+   },
+   "security_all_ok": true,
+   "shell_exit_code": 0,
+   "shell_exit_s": 0.8,
+   "port_open_after_exit": false,
+   "survivors_observed": [],
+   "survivor_natural_exit_s": null,
+   "survivors_after_grace": [],
+   "killed": [],
+   "left_after_kill": [],
+   "port_open_final": false,
+   "finished_s": 35.7
+  },
+  {
+   "run": 2,
+   "root_pid": 15544,
+   "work": "C:\\Users\\STU\\AppData\\Local\\Temp\\bors_m2_close\\m2-close2\\runs\\run-2\\work",
+   "profile": "C:\\Users\\STU\\AppData\\Local\\Temp\\bors_m2_close\\m2-close2\\runs\\run-2\\profile",
+   "launch_ms": 1792924536955.51,
+   "errors": [],
+   "window": {
+    "hwnd": 12323072,
+    "title": "بورس‌ترمینال — BorsTerminal",
+    "pid": 11036,
+    "visible": true,
+    "rect": [
+     0,
+     0,
+     1300,
+     779
+    ],
+    "w": 1300,
+    "h": 779
+   },
+   "sidecar_port": 53219,
+   "window_found_s": 10.7,
+   "ready_s": 10234.5,
+   "security": {
+    "local_host": {
+     "status": 200,
+     "expected": 200,
+     "ok": true,
+     "headers": {
+      "Host": "127.0.0.1:53219"
+     }
+    },
+    "foreign_host": {
+     "status": 403,
+     "expected": 403,
+     "ok": true,
+     "headers": {
+      "Host": "evil.example"
+     }
+    },
+    "origin_null": {
+     "status": 403,
+     "expected": 403,
+     "ok": true,
+     "headers": {
+      "Host": "127.0.0.1:53219",
+      "Origin": "null"
+     }
+    },
+    "origin_foreign": {
+     "status": 403,
+     "expected": 403,
+     "ok": true,
+     "headers": {
+      "Host": "127.0.0.1:53219",
+      "Origin": "http://evil.example"
+     }
+    },
+    "origin_local": {
+     "status": 200,
+     "expected": 200,
+     "ok": true,
+     "headers": {
+      "Host": "127.0.0.1:53219",
+      "Origin": "http://127.0.0.1:53219"
+     }
+    }
+   },
+   "security_all_ok": true,
+   "shell_exit_code": 0,
+   "shell_exit_s": 1.0,
+   "port_open_after_exit": false,
+   "survivors_observed": [],
+   "survivor_natural_exit_s": null,
+   "survivors_after_grace": [],
+   "killed": [],
+   "left_after_kill": [],
+   "port_open_final": false,
+   "finished_s": 30.2
+  }
+ ],
+ "runs_total": 2,
+ "all_ok": true
+}

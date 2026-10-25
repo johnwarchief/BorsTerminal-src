@@ -1,0 +1,14 @@
+{"stage": "entry_import", "t": 1792925549.472506, "dt": 7.1e-05, "pid": 17260}
+{"stage": "streams_ready", "t": 1792925549.472506, "dt": 0.001929, "pid": 17260}
+{"stage": "preflight_start", "t": 1792925549.472506, "dt": 0.012816, "pid": 17260}
+{"stage": "db_prepared", "t": 1792925559.405716, "dt": 9.939047, "pid": 17260, "db": "market.db", "exists": true}
+{"stage": "library_import_begin", "t": 1792925559.436964, "dt": 9.974264, "pid": 17260}
+{"stage": "library_import_end", "t": 1792925561.438021, "dt": 11.976848, "pid": 17260}
+{"stage": "preflight_end", "t": 1792925561.453644, "dt": 11.978937, "pid": 17260, "ok": true}
+{"stage": "uvicorn_spawn", "t": 1792925561.453644, "dt": 11.984595, "pid": 17260, "port": 54037}
+{"stage": "api_startup_begin", "t": 1792925562.282403, "dt": 12.816588, "pid": 17260}
+{"stage": "screener_low_priority", "t": 1792925562.298025, "dt": 12.825513, "pid": 17260}
+{"stage": "screener_wait_board", "t": 1792925562.298025, "dt": 12.827627, "pid": 17260}
+{"stage": "api_startup_end", "t": 1792925562.298025, "dt": 12.825915, "pid": 17260}
+{"stage": "http_ready", "t": 1792925562.868426, "dt": 13.398438, "pid": 17260, "port": 54037}
+{"stage": "candle_projection_done", "t": 1792925564.092432, "dt": 14.628736, "pid": 17260}

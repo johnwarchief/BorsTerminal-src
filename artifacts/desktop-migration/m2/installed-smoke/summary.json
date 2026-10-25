@@ -1,0 +1,1410 @@
+{
+  "label": "m2-installed-smoke",
+  "mode": "cold",
+  "scenario": "normal",
+  "generated_at": "2026-10-25T10:08:34Z",
+  "host": {
+    "platform": "Windows-10-10.0.19045-SP0",
+    "cpu_logical": 2,
+    "cpu_physical": 1,
+    "ram_gb": 3.88,
+    "python": "3.12.10",
+    "exe": "C:\\Users\\STU\\AppData\\Local\\Temp\\bors_m2_accept\\BorsTerminal\\BorsTerminalM2TinyJS.exe",
+    "exe_bytes": 5686711,
+    "launcher_bytes": 2164824,
+    "dist_bytes": 7851535,
+    "dist_bytes_note": "TinyJS portable dist only; Tauri target/release is not an install footprint"
+  },
+  "protocol": {
+    "shell": "BorsTerminalM2TinyJS.exe + Python sidecar",
+    "window_gate": "shell opens the loopback window only after GET /api/update/version succeeds",
+    "isolation": "fresh WORK_DIR/profile in cold; shared seeded one in warm",
+    "network_loops": "BORS_NO_FETCH_LOOPS=1, BORS_CODAL_AUTO=0",
+    "instrumentation": "external process tree + Win32 PrintWindow + BorsTerminalM2TinyJS.exe WebView2 eval probe (no CDP)",
+    "package": "installed TinyJS dist with bundled PyInstaller sidecar; no repo .venv, no BORS_PYTHON/BORS_HEADLESS_ENTRY, DB extracted from bundled market.db.lzma",
+    "cold_definition": "fresh work dir and profile per run, DB extracted from the sidecar's bundled seed",
+    "warm_definition": "one unrecorded warmup, then same work dir/profile reused",
+    "crash": "with --crash the shell root is terminated after the first board paint; orphans are recorded and then killed by the harness"
+  },
+  "timings_ms": {
+    "sidecar_ready_line": {
+      "n": 1,
+      "median": 25157.1,
+      "min": 25157.1,
+      "max": 25157.1,
+      "values": [
+        25157.1
+      ],
+      "p95": null,
+      "p95_note": "not reported: n<20"
+    },
+    "window_visible": {
+      "n": 1,
+      "median": 26321.8,
+      "min": 26321.8,
+      "max": 26321.8,
+      "values": [
+        26321.8
+      ],
+      "p95": null,
+      "p95_note": "not reported: n<20"
+    },
+    "http_verified": {
+      "n": 1,
+      "median": 25696.1,
+      "min": 25696.1,
+      "max": 25696.1,
+      "values": [
+        25696.1
+      ],
+      "p95": null,
+      "p95_note": "not reported: n<20"
+    },
+    "app_document_ready": {
+      "n": 1,
+      "median": 34343.1,
+      "min": 34343.1,
+      "max": 34343.1,
+      "values": [
+        34343.1
+      ],
+      "p95": null,
+      "p95_note": "not reported: n<20"
+    },
+    "login_ready": {
+      "n": 1,
+      "median": 34606.1,
+      "min": 34606.1,
+      "max": 34606.1,
+      "values": [
+        34606.1
+      ],
+      "p95": null,
+      "p95_note": "not reported: n<20"
+    },
+    "master_ready": {
+      "n": 1,
+      "median": 37961.1,
+      "min": 37961.1,
+      "max": 37961.1,
+      "values": [
+        37961.1
+      ],
+      "p95": null,
+      "p95_note": "not reported: n<20"
+    },
+    "market_rows_visible": {
+      "n": 1,
+      "median": 50253.1,
+      "min": 50253.1,
+      "max": 50253.1,
+      "values": [
+        50253.1
+      ],
+      "p95": null,
+      "p95_note": "not reported: n<20"
+    },
+    "technical_ready": {
+      "n": 1,
+      "median": 103680.1,
+      "min": 103680.1,
+      "max": 103680.1,
+      "values": [
+        103680.1
+      ],
+      "p95": null,
+      "p95_note": "not reported: n<20"
+    },
+    "fundamental_ready": {
+      "n": 1,
+      "median": 180025.1,
+      "min": 180025.1,
+      "max": 180025.1,
+      "values": [
+        180025.1
+      ],
+      "p95": null,
+      "p95_note": "not reported: n<20"
+    },
+    "market_status_ready": {
+      "n": 1,
+      "median": 200540.1,
+      "min": 200540.1,
+      "max": 200540.1,
+      "values": [
+        200540.1
+      ],
+      "p95": null,
+      "p95_note": "not reported: n<20"
+    },
+    "window_close_ms": {
+      "n": 1,
+      "median": 246685.3,
+      "min": 246685.3,
+      "max": 246685.3,
+      "values": [
+        246685.3
+      ],
+      "p95": null,
+      "p95_note": "not reported: n<20"
+    },
+    "root_exit_ms": {
+      "n": 1,
+      "median": 255366.0,
+      "min": 255366.0,
+      "max": 255366.0,
+      "values": [
+        255366.0
+      ],
+      "p95": null,
+      "p95_note": "not reported: n<20"
+    }
+  },
+  "rss_mb": {
+    "peak": {
+      "n": 1,
+      "median": 834.5,
+      "values": [
+        834.5
+      ]
+    },
+    "idle": {
+      "n": 1,
+      "median": 773.6,
+      "values": [
+        773.6
+      ]
+    }
+  },
+  "idle_cpu_pct_one_core": {
+    "n": 1,
+    "median": 94.2,
+    "values": [
+      94.2
+    ]
+  },
+  "security": [
+    {
+      "local_host": {
+        "status": 200,
+        "expected": 200,
+        "ok": true,
+        "headers": {
+          "Host": "127.0.0.1:49228"
+        }
+      },
+      "foreign_host": {
+        "status": 403,
+        "expected": 403,
+        "ok": true,
+        "headers": {
+          "Host": "evil.example"
+        }
+      },
+      "origin_null": {
+        "status": 403,
+        "expected": 403,
+        "ok": true,
+        "headers": {
+          "Host": "127.0.0.1:49228",
+          "Origin": "null"
+        }
+      },
+      "origin_foreign": {
+        "status": 403,
+        "expected": 403,
+        "ok": true,
+        "headers": {
+          "Host": "127.0.0.1:49228",
+          "Origin": "http://evil.example"
+        }
+      },
+      "origin_local": {
+        "status": 200,
+        "expected": 200,
+        "ok": true,
+        "headers": {
+          "Host": "127.0.0.1:49228",
+          "Origin": "http://127.0.0.1:49228"
+        }
+      }
+    }
+  ],
+  "security_all_ok": true,
+  "exit_codes": [
+    0
+  ],
+  "cleanup": [
+    {
+      "survivors_before": [],
+      "killed": [],
+      "survivors_after": [],
+      "port_open_after_cleanup": false
+    }
+  ],
+  "crash_runs": [],
+  "crash_orphans": 0,
+  "partial": false,
+  "runs_ok": 1,
+  "runs_total": 1,
+  "runs": [
+    {
+      "run": 1,
+      "mode": "cold",
+      "timings_ms": {
+        "sidecar_spawned": 411.1,
+        "sidecar_ready_line": 25157.1,
+        "http_verified": 25696.1,
+        "window_open_begin": 25696.1,
+        "window_open": 25697.1,
+        "window_closed": 246700.1,
+        "quit_requested": 255188.1,
+        "window_visible": 26321.8,
+        "app_document_ready": 34343.1,
+        "login_ready": 34606.1,
+        "login_submit": 35271.1,
+        "market_nav_begin": 37964.1,
+        "master_ready": 37961.1,
+        "market_rows_visible": 50253.1,
+        "technical_nav_begin": 74107.1,
+        "technical_ready": 103680.1,
+        "d3_raw_mode": 117690.1,
+        "d3_symbol2_ready": 153493.1,
+        "d3_checks_done": 167419.1,
+        "fundamental_nav_begin": 169934.1,
+        "fundamental_ready": 180025.1,
+        "market_status_nav_begin": 196986.1,
+        "market_status_ready": 200540.1,
+        "sidecar_preflight_start": 2851.3,
+        "sidecar_preflight_end": 23034.9,
+        "sidecar_http_ready": 25130.6,
+        "sidecar_shutdown_begin": 246717.3,
+        "sidecar_shutdown_end": 253835.0,
+        "window_close_ms": 246685.3,
+        "root_exit_ms": 255366.0
+      },
+      "window": {
+        "hwnd": 625607836,
+        "title": "بورس‌ترمینال — BorsTerminal",
+        "pid": 13504,
+        "visible": true,
+        "rect": [
+          -8,
+          -8,
+          1288,
+          992
+        ],
+        "w": 1296,
+        "h": 1000
+      },
+      "process": {
+        "peak": {
+          "rss_mb": 834.5,
+          "epoch_ms": 1792922741953.422,
+          "procs": 11
+        },
+        "stages": {
+          "window_visible": {
+            "rss_mb": 298.6,
+            "cpu_s": 15.969,
+            "procs": 7,
+            "names": [
+              "BorsTerminalM2TinyJS.exe",
+              "BorsTerminalSidecar.exe",
+              "conhost.exe",
+              "launcher.exe",
+              "msedgewebview2.exe"
+            ]
+          },
+          "login_ready": {
+            "rss_mb": 681.7,
+            "cpu_s": 34.016,
+            "procs": 11,
+            "names": [
+              "BorsTerminalM2TinyJS.exe",
+              "BorsTerminalSidecar.exe",
+              "conhost.exe",
+              "launcher.exe",
+              "msedgewebview2.exe"
+            ]
+          },
+          "market_rows_visible": {
+            "rss_mb": 690.9,
+            "cpu_s": 47.172,
+            "procs": 11,
+            "names": [
+              "BorsTerminalM2TinyJS.exe",
+              "BorsTerminalSidecar.exe",
+              "conhost.exe",
+              "launcher.exe",
+              "msedgewebview2.exe"
+            ]
+          },
+          "technical_ready": {
+            "rss_mb": 681.3,
+            "cpu_s": 100.969,
+            "procs": 11,
+            "names": [
+              "BorsTerminalM2TinyJS.exe",
+              "BorsTerminalSidecar.exe",
+              "conhost.exe",
+              "launcher.exe",
+              "msedgewebview2.exe"
+            ]
+          },
+          "d3_raw_mode": {
+            "rss_mb": 687.8,
+            "cpu_s": 117.109,
+            "procs": 11,
+            "names": [
+              "BorsTerminalM2TinyJS.exe",
+              "BorsTerminalSidecar.exe",
+              "conhost.exe",
+              "launcher.exe",
+              "msedgewebview2.exe"
+            ]
+          },
+          "d3_symbol2_ready": {
+            "rss_mb": 625.1,
+            "cpu_s": 145.391,
+            "procs": 11,
+            "names": [
+              "BorsTerminalM2TinyJS.exe",
+              "BorsTerminalSidecar.exe",
+              "conhost.exe",
+              "launcher.exe",
+              "msedgewebview2.exe"
+            ]
+          },
+          "d3_checks_done": {
+            "rss_mb": 707.5,
+            "cpu_s": 156.672,
+            "procs": 11,
+            "names": [
+              "BorsTerminalM2TinyJS.exe",
+              "BorsTerminalSidecar.exe",
+              "conhost.exe",
+              "launcher.exe",
+              "msedgewebview2.exe"
+            ]
+          },
+          "fundamental_ready": {
+            "rss_mb": 579.6,
+            "cpu_s": 166.047,
+            "procs": 11,
+            "names": [
+              "BorsTerminalM2TinyJS.exe",
+              "BorsTerminalSidecar.exe",
+              "conhost.exe",
+              "launcher.exe",
+              "msedgewebview2.exe"
+            ]
+          },
+          "market_status_ready": {
+            "rss_mb": 695.0,
+            "cpu_s": 184.266,
+            "procs": 11,
+            "names": [
+              "BorsTerminalM2TinyJS.exe",
+              "BorsTerminalSidecar.exe",
+              "conhost.exe",
+              "launcher.exe",
+              "msedgewebview2.exe"
+            ]
+          },
+          "probe_final": {
+            "rss_mb": 728.3,
+            "cpu_s": 191.828,
+            "procs": 11,
+            "names": [
+              "BorsTerminalM2TinyJS.exe",
+              "BorsTerminalSidecar.exe",
+              "conhost.exe",
+              "launcher.exe",
+              "msedgewebview2.exe"
+            ]
+          },
+          "idle": {
+            "rss_mb": 775.1,
+            "cpu_s": 212.453,
+            "procs": 11,
+            "names": [
+              "BorsTerminalM2TinyJS.exe",
+              "BorsTerminalSidecar.exe",
+              "conhost.exe",
+              "launcher.exe",
+              "msedgewebview2.exe"
+            ]
+          }
+        }
+      },
+      "idle": {
+        "rss_mb": 773.6,
+        "cpu": {
+          "seconds": 6.344,
+          "wall_s": 6.733,
+          "pct_one_core": 94.2
+        },
+        "procs": 11,
+        "rows": [
+          {
+            "pid": 15300,
+            "ppid": 12576,
+            "name": "BorsTerminalM2TinyJS.exe",
+            "rss_mb": 12.3,
+            "cpu_s": 0.75
+          },
+          {
+            "pid": 13504,
+            "ppid": 15300,
+            "name": "launcher.exe",
+            "rss_mb": 18.7,
+            "cpu_s": 0.281
+          },
+          {
+            "pid": 16088,
+            "ppid": 15300,
+            "name": "launcher.exe",
+            "rss_mb": 2.8,
+            "cpu_s": 0.047
+          },
+          {
+            "pid": 15472,
+            "ppid": 16088,
+            "name": "BorsTerminalSidecar.exe",
+            "rss_mb": 221.6,
+            "cpu_s": 161.984
+          },
+          {
+            "pid": 13740,
+            "ppid": 15472,
+            "name": "conhost.exe",
+            "rss_mb": 10.1,
+            "cpu_s": 0.031
+          },
+          {
+            "pid": 5604,
+            "ppid": 13504,
+            "name": "msedgewebview2.exe",
+            "rss_mb": 58.8,
+            "cpu_s": 3.672
+          },
+          {
+            "pid": 7208,
+            "ppid": 5604,
+            "name": "msedgewebview2.exe",
+            "rss_mb": 9.7,
+            "cpu_s": 0.062
+          },
+          {
+            "pid": 16208,
+            "ppid": 5604,
+            "name": "msedgewebview2.exe",
+            "rss_mb": 86.3,
+            "cpu_s": 11.359
+          },
+          {
+            "pid": 14216,
+            "ppid": 5604,
+            "name": "msedgewebview2.exe",
+            "rss_mb": 22.5,
+            "cpu_s": 1.125
+          },
+          {
+            "pid": 17248,
+            "ppid": 5604,
+            "name": "msedgewebview2.exe",
+            "rss_mb": 13.2,
+            "cpu_s": 0.109
+          },
+          {
+            "pid": 9748,
+            "ppid": 5604,
+            "name": "msedgewebview2.exe",
+            "rss_mb": 317.6,
+            "cpu_s": 29.172
+          }
+        ]
+      },
+      "shutdown": {
+        "forced_kill": false,
+        "window_close_ms": 246685.3,
+        "root_exit_ms": 255366.0,
+        "exit_code": 0,
+        "port": 49228,
+        "port_open_after_exit": false,
+        "sidecar_shutdown": [
+          {
+            "stage": "shutdown_begin",
+            "t": 1792922895.736176,
+            "dt": 243.974985,
+            "pid": 15472
+          },
+          {
+            "stage": "shutdown_end",
+            "t": 1792922902.853866,
+            "dt": 251.093507,
+            "pid": 15472,
+            "alive": false
+          }
+        ],
+        "shell_tail": [
+          {
+            "stage": "probe_eval",
+            "t": 1792922708.747,
+            "dt": 59.484,
+            "pid": 15300,
+            "attempt": 35
+          },
+          {
+            "stage": "probe_eval",
+            "t": 1792922709.695,
+            "dt": 60.432,
+            "pid": 15300,
+            "attempt": 36
+          },
+          {
+            "stage": "probe_stop_file",
+            "t": 1792922710.702,
+            "dt": 61.439,
+            "pid": 15300,
+            "attempt": 37
+          },
+          {
+            "stage": "window_closed",
+            "t": 1792922895.719,
+            "dt": 246.456,
+            "pid": 15300,
+            "id": "app"
+          },
+          {
+            "stage": "shutdown_wait_begin",
+            "t": 1792922895.719,
+            "dt": 246.456,
+            "pid": 15300,
+            "id": "app"
+          },
+          {
+            "stage": "sidecar_exit",
+            "t": 1792922904.206,
+            "dt": 254.943,
+            "pid": 15300,
+            "code": 0,
+            "signal": null
+          },
+          {
+            "stage": "shutdown_wait_done",
+            "t": 1792922904.207,
+            "dt": 254.944,
+            "pid": 15300,
+            "graceful": true,
+            "code": 0
+          },
+          {
+            "stage": "quit_requested",
+            "t": 1792922904.207,
+            "dt": 254.944,
+            "pid": 15300,
+            "id": "app",
+            "graceful": true
+          }
+        ],
+        "crash_kill": null,
+        "survivors": [],
+        "cleanup": {
+          "survivors_before": [],
+          "killed": [],
+          "survivors_after": [],
+          "port_open_after_cleanup": false
+        },
+        "cleanup_final": {
+          "survivors_before": [],
+          "killed": [],
+          "survivors_after": [],
+          "port_open_after_cleanup": false
+        },
+        "shell_exit_code": 0
+      },
+      "probe_instances": [
+        {
+          "run_id": "1792922682460-tyzytt",
+          "at_ms": 33667.9,
+          "url": "about:blank"
+        },
+        {
+          "run_id": "1792922683360-em3fp9",
+          "at_ms": 34905.1,
+          "url": "http://127.0.0.1:49228/"
+        }
+      ],
+      "screenshots": {
+        "window_first": {
+          "ok": true,
+          "w": 1296,
+          "h": 1000
+        },
+        "login_ready": {
+          "ok": true,
+          "w": 1296,
+          "h": 1000
+        },
+        "market_rows_visible": {
+          "ok": true,
+          "w": 1296,
+          "h": 1000
+        },
+        "technical_ready": {
+          "ok": true,
+          "w": 1296,
+          "h": 1000
+        },
+        "d3_raw_mode": {
+          "ok": true,
+          "w": 1296,
+          "h": 1000
+        },
+        "d3_symbol2_ready": {
+          "ok": true,
+          "w": 1296,
+          "h": 1000
+        },
+        "d3_checks_done": {
+          "ok": true,
+          "w": 1296,
+          "h": 1000
+        },
+        "fundamental_ready": {
+          "ok": true,
+          "w": 1296,
+          "h": 1000
+        },
+        "market_status_ready": {
+          "ok": true,
+          "w": 1296,
+          "h": 1000
+        }
+      },
+      "final": {
+        "ok": true,
+        "states": {
+          "login_values": [
+            {
+              "type": "text",
+              "value": "admin"
+            },
+            {
+              "type": "password",
+              "value": "bors123"
+            }
+          ],
+          "market_pause_ack": true,
+          "market_rows_after_1s": 30,
+          "board_freshness": "بازار بسته — تابلوی ۱۴۰۵/۰۷/۲۲",
+          "market_scroll": {
+            "available": true,
+            "frames": 45,
+            "range_px": 43994,
+            "p50_ms": 100,
+            "p95_ms": 150,
+            "max_ms": 183.7,
+            "note": "programmatic scroll on the largest scrollable element; rAF deltas only"
+          },
+          "technical_pause_ack": true,
+          "d3": {
+            "timeframe": {
+              "switched_to": "W",
+              "active": true,
+              "canvas": {
+                "w": 864,
+                "h": 595
+              }
+            },
+            "adjustment": {
+              "before": "عملکردی (افزایش سرمایه و سود نقدی)",
+              "after": "خام (بدون تعدیل)",
+              "canvas": {
+                "w": 857,
+                "h": 595
+              }
+            },
+            "symbol_switch": {
+              "symbol": "آباد",
+              "toolbar": "آباد(توريستي ورفاهي آبادگران ايران)۱,۳۹۲+۲.۹۶%",
+              "freshness": "مبنا: local-db-adjusted · ۷۴ کندلِ تحلیل · آخرین کندل: 1405/07/22 · دریافت: ۱۳:۳۶",
+              "last_chart_api": {
+                "name": "/api/chart/%D8%A2%D8%A8%D8%A7%D8%AF",
+                "duration_ms": 19849.9,
+                "status": 200,
+                "transfer": 10051,
+                "encoded": 9751,
+                "decoded": 43141
+              }
+            }
+          },
+          "fundamental": {
+            "summary": {
+              "text": "⏳تصمیم استراتژیک FTS:مناسب برای زیر نظر گرفتن (واچ‌لیست)پتانسیل دارد اما در یک یا دو شاخص ضعف دارد؛ گزارش‌های بعدی رصد شود.واچ‌لیست رصد FTSسن صورت مالی: ۱۲۶ روز",
+              "rect": {
+                "x": 15,
+                "y": 176,
+                "w": 1097,
+                "h": 119
+              },
+              "visible": true
+            },
+            "holding": null,
+            "scroll_y": 0,
+            "page_text": "وضعیتِ خطِ کدال خوانده می‌شود…در صف—بی‌نتیجه—استخراجِ ناقص—بی‌صورتِ مالی—نیازمندِ بازشماری—آخرین تازگی: —worker خاموشجزئیاتچرخۀ موفقی ثبت نشده؛ `catchup.never_synced` همین را می‌گویدزمانِ چرخۀ بعدی از پاسخ نرسیدحجمِ صف: — ردیف، از آنِ — کهنهامضایِ تازگی: —فولادفلزات اساسيبنیاد روبه‌رشدامتیاز ۷۱داده کهنه⚙تنظیمات⏳تصمیم استراتژیک FTS:مناسب برای زیر نظر گرفتن (واچ‌لیست)پتانسیل دارد اما در یک یا دو شاخص ضعف دارد؛ گزارش‌های بعدی رصد شود.واچ‌لیست رصد FTSسن صورت مالی: ۱۲۶ روزFTSکارت ارزیابی ۵ شاخص FTSامتیاز ۳ از ۵۱. رشد فروش کدال۶ ماههدرآمد ریالیقبول+۵۶.۰٪۶ ماهۀ امسال۲۵۰٬۹۴۲سال قبل۱۶۰٬۸۷۳میلیارد تومان · سرجمعِ دوره۰٪کف ۴۰٪ · هدف ۶۰٪فروش امسالفروش سال قبل− 1≥ هدفِ پوشش تورم (۶۰٪)مبنای مقایسه: ستون «مقایسهٔ دورهٔ مشابه سال قبل» در همان گزارشرشد تولیدیرد−۲.۵٪۱ + رشد ریالی۱ + مبنای تورم− ۱≥ ۰٪مبنای تورم ۶۰٪ — از پنلِ تنظیمات · ۱ از ۱ ماه بهتر۲. سودآوری ۳ سالهنظر نمی‌دهدکاربرد ندارد (مبنایِ تلفیقی)کاربرد نداردEPSt>EPSt-1>EPSt-2>01403: ۶۶۴1404: ۵۱۸1405: ۲۴۸رشد سال‌به‌سال:—-۲۲.۰٪-۵۲.۱٪افت سود در 1404 (افت 22.0٪) (برآورد میاندوره) صورتهای مالی تلفیقی مدنظر نیست — سال‌های 1403، 1404 فقط تلفیقی منتشر شده‌اند و سابقۀ سه‌سالۀ غیرتلفیقی کامل نیست.۳. حاشیه سود ناخالصقبول۲۹.۱٪سود ناخالصدرآمد عملیاتی× ۱۰۰≥ ۲۰٪کف ۲۰٪س ۱ 04: ۲۷.۷٪س ۲ 04: ۴۴.۳٪س ۳ 04: -۲۸.۷٪س ۴ 04: ۲۸.۳٪س ۱ 05: ۲۷.۹٪کفِ پنل: ۲۰٪ · مطلوبِ جزوه: ۳۰٪۴. پتانسیل سود تا آخر سالقبول۱۶.۶٪تخمین فروش ۱۲ ماهه × حاشیهٔ سود ناخالصارزش بازار× ۱۰۰≥ ۴۰٪نسبت فروش ÷ ارزش بازار ۵۷.۰٪ · کف ۳۳.۰٪حداقل معیار پتانسیل سود: ۴۰٪ از ارزش بازار۵. رژیم صنعتقبولصنعت آزادقیمت دستوری نباشد — آزاد / بورس کالارژیم قیمت‌گذاری صنعتضریب اطمینان بنیادی:متوسطدادهٔ کدال برای ۱ شاخص کامل نیستشاخص ۲: افت سود در ۱۴۰۴ (افت ۲۲.۰٪) (برآورد میاندوره) صورتهای مالی تلفیقی مدنظر نیست — سال‌های ۱۴۰۳، ۱۴۰۴ فقط تلفیقی منتشر شده‌اند و سابقۀ سه‌سالۀ غیرتلفیقی کامل نیست. راه‌حل: این شکاف با گرفتنِ دیتابیسِ تازهٔ کدال بسته نمی‌شود: صورتِ سود و زیانِ غیرتلفیقیِ آن سال‌ها منتشر نشده است. ⓘروند فصلی درآمد و سود ناخالص«۶ فصل، میلیارد تومان»نمودار فصلی"
+          },
+          "fundamental_pause_ack": true,
+          "market_status": {
+            "text": "وضعیت بازاربازاربستهاتصالمتصلآخرین دادهٔ بازارگزارش نشدهآخرین تغییر داده۲ دقیقهشمارۀ به‌روزرسانی۰",
+            "panels": 2,
+            "resources": [
+              {
+                "name": "/api/market/closes",
+                "start_ms": 4516.2,
+                "duration_ms": 410.2,
+                "status": 200,
+                "transfer": 31430,
+                "encoded": 31130,
+                "decoded": 78512,
+                "initiator": "fetch"
+              },
+              {
+                "name": "/api/market/delta?since=0&gen=0",
+                "start_ms": 42693.8,
+                "duration_ms": 257.5,
+                "status": 200,
+                "transfer": 466,
+                "encoded": 166,
+                "decoded": 166,
+                "initiator": "fetch"
+              },
+              {
+                "name": "/api/index/tedpix?limit=0",
+                "start_ms": 42694.8,
+                "duration_ms": 66519,
+                "status": 502,
+                "transfer": 782,
+                "encoded": 482,
+                "decoded": 482,
+                "initiator": "fetch"
+              },
+              {
+                "name": "/api/sync/codal/db-status",
+                "start_ms": 141397.8,
+                "duration_ms": 948.8,
+                "status": 200,
+                "transfer": 403,
+                "encoded": 103,
+                "decoded": 103,
+                "initiator": "fetch"
+              },
+              {
+                "name": "/api/market/delta?since=0&gen=0",
+                "start_ms": 141400.4,
+                "duration_ms": 4086.4,
+                "status": 200,
+                "transfer": 484,
+                "encoded": 184,
+                "decoded": 184,
+                "initiator": "fetch"
+              }
+            ]
+          }
+        },
+        "events": {
+          "app_document_ready": {
+            "epoch_ms": 1792922683362,
+            "perf_ms": 899.8,
+            "url": "http://127.0.0.1:49228/"
+          },
+          "login_ready": {
+            "epoch_ms": 1792922683625,
+            "perf_ms": 1163.6,
+            "url": "http://127.0.0.1:49228/"
+          },
+          "login_submit": {
+            "epoch_ms": 1792922684290,
+            "perf_ms": 1828.6,
+            "url": "http://127.0.0.1:49228/"
+          },
+          "master_ready": {
+            "epoch_ms": 1792922686980,
+            "perf_ms": 4517.9,
+            "url": "http://127.0.0.1:49228/#/master"
+          },
+          "market_nav_begin": {
+            "epoch_ms": 1792922686983,
+            "perf_ms": 4520.7,
+            "url": "http://127.0.0.1:49228/#/master"
+          },
+          "market_rows_visible": {
+            "epoch_ms": 1792922699272,
+            "perf_ms": 16810.5,
+            "url": "http://127.0.0.1:49228/#/market"
+          },
+          "technical_nav_begin": {
+            "epoch_ms": 1792922723126,
+            "perf_ms": 40663.7,
+            "url": "http://127.0.0.1:49228/#/market"
+          },
+          "technical_ready": {
+            "epoch_ms": 1792922752699,
+            "perf_ms": 70237.4,
+            "url": "http://127.0.0.1:49228/#/technical/%D9%81%D9%88%D9%84%D8%A7%D8%AF"
+          },
+          "d3_raw_mode": {
+            "epoch_ms": 1792922766709,
+            "perf_ms": 84247.4,
+            "url": "http://127.0.0.1:49228/#/technical/%D9%81%D9%88%D9%84%D8%A7%D8%AF"
+          },
+          "d3_symbol2_ready": {
+            "epoch_ms": 1792922802512,
+            "perf_ms": 120050.1,
+            "url": "http://127.0.0.1:49228/#/technical/%D8%A2%D8%A8%D8%A7%D8%AF"
+          },
+          "d3_checks_done": {
+            "epoch_ms": 1792922816438,
+            "perf_ms": 133976.2,
+            "url": "http://127.0.0.1:49228/#/technical/%D9%81%D9%88%D9%84%D8%A7%D8%AF"
+          },
+          "fundamental_nav_begin": {
+            "epoch_ms": 1792922818953,
+            "perf_ms": 136490.7,
+            "url": "http://127.0.0.1:49228/#/technical/%D9%81%D9%88%D9%84%D8%A7%D8%AF"
+          },
+          "fundamental_ready": {
+            "epoch_ms": 1792922829044,
+            "perf_ms": 146581.6,
+            "url": "http://127.0.0.1:49228/#/fundamental/%D9%81%D9%88%D9%84%D8%A7%D8%AF"
+          },
+          "market_status_nav_begin": {
+            "epoch_ms": 1792922846005,
+            "perf_ms": 163542.5,
+            "url": "http://127.0.0.1:49228/#/fundamental/%D9%81%D9%88%D9%84%D8%A7%D8%AF"
+          },
+          "market_status_ready": {
+            "epoch_ms": 1792922849559,
+            "perf_ms": 167097.2,
+            "url": "http://127.0.0.1:49228/#/market-status"
+          }
+        },
+        "technical_ready": {
+          "epoch_ms": 1792922752699,
+          "perf_ms": 70237.4,
+          "time_origin": 1792922682462.4,
+          "url": "http://127.0.0.1:49228/#/technical/%D9%81%D9%88%D9%84%D8%A7%D8%AF",
+          "chart_host": "nn",
+          "freshness": "مبنا: local-db-adjusted · ۳۹۳ کندلِ تحلیل · آخرین کندل: 1405/07/22 · دریافت: ۱۳:۳۵",
+          "bars": "۳۹۳",
+          "last_bar": "1405/07/22",
+          "canvas": {
+            "w": 857,
+            "h": 595
+          },
+          "chart_api": [
+            {
+              "name": "/api/chart/%D9%81%D9%88%D9%84%D8%A7%D8%AF",
+              "duration_ms": 24606.9,
+              "status": 200,
+              "transfer": 32370,
+              "encoded": 32070,
+              "decoded": 168054
+            }
+          ]
+        },
+        "resources": [
+          {
+            "name": "/api/update/version",
+            "start_ms": 2115.7,
+            "duration_ms": 165.7,
+            "status": 200,
+            "transfer": 379,
+            "encoded": 79,
+            "decoded": 79,
+            "initiator": "fetch"
+          },
+          {
+            "name": "/api/notifications/feed?limit=60",
+            "start_ms": 2120.6,
+            "duration_ms": 2136.2,
+            "status": 200,
+            "transfer": 5120,
+            "encoded": 4820,
+            "decoded": 37238,
+            "initiator": "fetch"
+          },
+          {
+            "name": "/api/selection/portfolio",
+            "start_ms": 2130.5,
+            "duration_ms": 1418.4,
+            "status": 200,
+            "transfer": 674,
+            "encoded": 374,
+            "decoded": 374,
+            "initiator": "fetch"
+          },
+          {
+            "name": "/api/funnel/registry",
+            "start_ms": 4515.1,
+            "duration_ms": 411,
+            "status": 200,
+            "transfer": 7988,
+            "encoded": 7688,
+            "decoded": 25293,
+            "initiator": "fetch"
+          },
+          {
+            "name": "/api/market/closes",
+            "start_ms": 4516.2,
+            "duration_ms": 410.2,
+            "status": 200,
+            "transfer": 31430,
+            "encoded": 31130,
+            "decoded": 78512,
+            "initiator": "fetch"
+          },
+          {
+            "name": "/api/market",
+            "start_ms": 5113.7,
+            "duration_ms": 10218.4,
+            "status": 200,
+            "transfer": 1220997,
+            "encoded": 1220697,
+            "decoded": 6814423,
+            "initiator": "fetch"
+          },
+          {
+            "name": "/api/watchlist",
+            "start_ms": 16403.6,
+            "duration_ms": 1716.9,
+            "status": 200,
+            "transfer": 351,
+            "encoded": 51,
+            "decoded": 51,
+            "initiator": "fetch"
+          },
+          {
+            "name": "/api/market/delta?since=0&gen=0",
+            "start_ms": 42693.8,
+            "duration_ms": 257.5,
+            "status": 200,
+            "transfer": 466,
+            "encoded": 166,
+            "decoded": 166,
+            "initiator": "fetch"
+          },
+          {
+            "name": "/api/chart/%D9%81%D9%88%D9%84%D8%A7%D8%AF",
+            "start_ms": 42694.4,
+            "duration_ms": 24606.9,
+            "status": 200,
+            "transfer": 32370,
+            "encoded": 32070,
+            "decoded": 168054,
+            "initiator": "fetch"
+          },
+          {
+            "name": "/api/index/tedpix?limit=0",
+            "start_ms": 42694.8,
+            "duration_ms": 66519,
+            "status": 502,
+            "transfer": 782,
+            "encoded": 482,
+            "decoded": 482,
+            "initiator": "fetch"
+          },
+          {
+            "name": "/api/fts/%D9%81%D9%88%D9%84%D8%A7%D8%AF",
+            "start_ms": 42695.1,
+            "duration_ms": 27443.7,
+            "status": 200,
+            "transfer": 6523,
+            "encoded": 6223,
+            "decoded": 22601,
+            "initiator": "fetch"
+          },
+          {
+            "name": "/api/fundamental/%D9%81%D9%88%D9%84%D8%A7%D8%AF",
+            "start_ms": 42695.4,
+            "duration_ms": 4918.8,
+            "status": 200,
+            "transfer": 7400,
+            "encoded": 7100,
+            "decoded": 20212,
+            "initiator": "fetch"
+          },
+          {
+            "name": "/api/fts/config",
+            "start_ms": 46575.7,
+            "duration_ms": 1038.3,
+            "status": 200,
+            "transfer": 920,
+            "encoded": 620,
+            "decoded": 1121,
+            "initiator": "fetch"
+          },
+          {
+            "name": "/api/chart/%D8%A2%D8%A8%D8%A7%D8%AF",
+            "start_ms": 95663.3,
+            "duration_ms": 19849.9,
+            "status": 200,
+            "transfer": 10051,
+            "encoded": 9751,
+            "decoded": 43141,
+            "initiator": "fetch"
+          },
+          {
+            "name": "/api/fts/%D8%A2%D8%A8%D8%A7%D8%AF",
+            "start_ms": 95663.6,
+            "duration_ms": 24302.2,
+            "status": 200,
+            "transfer": 4647,
+            "encoded": 4347,
+            "decoded": 14568,
+            "initiator": "fetch"
+          },
+          {
+            "name": "/api/fundamental/%D8%A2%D8%A8%D8%A7%D8%AF",
+            "start_ms": 95664,
+            "duration_ms": 1941.3,
+            "status": 200,
+            "transfer": 7160,
+            "encoded": 6860,
+            "decoded": 19200,
+            "initiator": "fetch"
+          },
+          {
+            "name": "/api/index/tedpix?limit=0",
+            "start_ms": 110030.2,
+            "duration_ms": 64345.9,
+            "status": 502,
+            "transfer": 782,
+            "encoded": 482,
+            "decoded": 482,
+            "initiator": "fetch"
+          },
+          {
+            "name": "/api/chart/%D9%81%D9%88%D9%84%D8%A7%D8%AF",
+            "start_ms": 132825.2,
+            "duration_ms": 25447.3,
+            "status": 200,
+            "transfer": 32370,
+            "encoded": 32070,
+            "decoded": 168054,
+            "initiator": "fetch"
+          },
+          {
+            "name": "/api/update/version",
+            "start_ms": 136521.7,
+            "duration_ms": 2756.7,
+            "status": 200,
+            "transfer": 379,
+            "encoded": 79,
+            "decoded": 79,
+            "initiator": "fetch"
+          },
+          {
+            "name": "/api/calendar/upcoming?days=14",
+            "start_ms": 141397.4,
+            "duration_ms": 1317.9,
+            "status": 200,
+            "transfer": 377,
+            "encoded": 77,
+            "decoded": 77,
+            "initiator": "fetch"
+          },
+          {
+            "name": "/api/sync/codal/db-status",
+            "start_ms": 141397.8,
+            "duration_ms": 948.8,
+            "status": 200,
+            "transfer": 403,
+            "encoded": 103,
+            "decoded": 103,
+            "initiator": "fetch"
+          },
+          {
+            "name": "/api/fundamental/%D9%81%D9%88%D9%84%D8%A7%D8%AF",
+            "start_ms": 141399.6,
+            "duration_ms": 4463.4,
+            "status": 200,
+            "transfer": 7400,
+            "encoded": 7100,
+            "decoded": 20212,
+            "initiator": "fetch"
+          },
+          {
+            "name": "/api/fundamental/%D9%81%D9%88%D9%84%D8%A7%D8%AF/quarters",
+            "start_ms": 141400,
+            "duration_ms": 3712.7,
+            "status": 200,
+            "transfer": 848,
+            "encoded": 548,
+            "decoded": 1346,
+            "initiator": "fetch"
+          },
+          {
+            "name": "/api/market/delta?since=0&gen=0",
+            "start_ms": 141400.4,
+            "duration_ms": 4086.4,
+            "status": 200,
+            "transfer": 484,
+            "encoded": 184,
+            "decoded": 184,
+            "initiator": "fetch"
+          },
+          {
+            "name": "/api/sync/codal/pipeline",
+            "start_ms": 145932.8,
+            "duration_ms": 636.4,
+            "status": 200,
+            "transfer": 793,
+            "encoded": 493,
+            "decoded": 1046,
+            "initiator": "fetch"
+          },
+          {
+            "name": "/api/fts/config",
+            "start_ms": 145933.2,
+            "duration_ms": 163.8,
+            "status": 200,
+            "transfer": 920,
+            "encoded": 620,
+            "decoded": 1121,
+            "initiator": "fetch"
+          },
+          {
+            "name": "/api/mstat/histogram?group=all",
+            "start_ms": 163565.2,
+            "duration_ms": 444.1,
+            "status": 200,
+            "transfer": 879,
+            "encoded": 579,
+            "decoded": 1570,
+            "initiator": "fetch"
+          },
+          {
+            "name": "/api/live-stats",
+            "start_ms": 164375.1,
+            "duration_ms": 590,
+            "status": 200,
+            "transfer": 1270,
+            "encoded": 970,
+            "decoded": 970,
+            "initiator": "fetch"
+          },
+          {
+            "name": "/api/mstat/timeline?mode=cum",
+            "start_ms": 164381.1,
+            "duration_ms": 664.4,
+            "status": 200,
+            "transfer": 3467,
+            "encoded": 3167,
+            "decoded": 12195,
+            "initiator": "fetch"
+          },
+          {
+            "name": "/api/mstat/treemap?group=eq_all&industry=&metric=value",
+            "start_ms": 164382,
+            "duration_ms": 1027.9,
+            "status": 200,
+            "transfer": 21343,
+            "encoded": 21043,
+            "decoded": 95375,
+            "initiator": "fetch"
+          },
+          {
+            "name": "/api/mstat/gold?history_days=60",
+            "start_ms": 164382.6,
+            "duration_ms": 811.1,
+            "status": 200,
+            "transfer": 10815,
+            "encoded": 10515,
+            "decoded": 40280,
+            "initiator": "fetch"
+          },
+          {
+            "name": "/api/mstat/series?symbols=%D8%B9%D9%8A%D8%A7%D8%B1%2C%D9%81%D9%88%D9%84%D8%A7%D8%AF&days=365",
+            "start_ms": 164388.9,
+            "duration_ms": 1437.6,
+            "status": 200,
+            "transfer": 5944,
+            "encoded": 5644,
+            "decoded": 23132,
+            "initiator": "fetch"
+          },
+          {
+            "name": "/api/watchlist",
+            "start_ms": 164389.5,
+            "duration_ms": 1633.8,
+            "status": 200,
+            "transfer": 351,
+            "encoded": 51,
+            "decoded": 51,
+            "initiator": "fetch"
+          },
+          {
+            "name": "/api/mstat/mainwatch?group=all&industry=",
+            "start_ms": 164390.6,
+            "duration_ms": 1632.5,
+            "status": 200,
+            "transfer": 17763,
+            "encoded": 17463,
+            "decoded": 77972,
+            "initiator": "fetch"
+          },
+          {
+            "name": "/api/mstat/industries",
+            "start_ms": 164391,
+            "duration_ms": 1632.5,
+            "status": 200,
+            "transfer": 4158,
+            "encoded": 3858,
+            "decoded": 14798,
+            "initiator": "fetch"
+          },
+          {
+            "name": "/api/mstat/mainwatch?group=eq_all&industry=",
+            "start_ms": 164391.4,
+            "duration_ms": 2385.5,
+            "status": 200,
+            "transfer": 17676,
+            "encoded": 17376,
+            "decoded": 77870,
+            "initiator": "fetch"
+          },
+          {
+            "name": "/api/mstat/smart-money",
+            "start_ms": 164391.8,
+            "duration_ms": 2384.9,
+            "status": 200,
+            "transfer": 2356,
+            "encoded": 2056,
+            "decoded": 4733,
+            "initiator": "fetch"
+          },
+          {
+            "name": "/api/mstat/summary",
+            "start_ms": 164392,
+            "duration_ms": 2384.5,
+            "status": 200,
+            "transfer": 1743,
+            "encoded": 1443,
+            "decoded": 3725,
+            "initiator": "fetch"
+          },
+          {
+            "name": "/api/mstat/depth?group=eq_all",
+            "start_ms": 164392.2,
+            "duration_ms": 3621.4,
+            "status": 200,
+            "transfer": 836,
+            "encoded": 536,
+            "decoded": 536,
+            "initiator": "fetch"
+          },
+          {
+            "name": "/api/mstat/thermometer?group=eq_all",
+            "start_ms": 164392.4,
+            "duration_ms": 3802.3,
+            "status": 200,
+            "transfer": 694,
+            "encoded": 394,
+            "decoded": 394,
+            "initiator": "fetch"
+          },
+          {
+            "name": "/api/mstat/clientsplit?tab=all",
+            "start_ms": 164392.8,
+            "duration_ms": 3115.5,
+            "status": 200,
+            "transfer": 885,
+            "encoded": 585,
+            "decoded": 585,
+            "initiator": "fetch"
+          },
+          {
+            "name": "/api/mstat/phases",
+            "start_ms": 164393.2,
+            "duration_ms": 4025.9,
+            "status": 200,
+            "transfer": 774,
+            "encoded": 474,
+            "decoded": 474,
+            "initiator": "fetch"
+          },
+          {
+            "name": "/api/mstat/indexcards?days=30",
+            "start_ms": 164393.6,
+            "duration_ms": 4615.4,
+            "status": 200,
+            "transfer": 1497,
+            "encoded": 1197,
+            "decoded": 2308,
+            "initiator": "fetch"
+          },
+          {
+            "name": "/api/mstat/tops?group=eq_all",
+            "start_ms": 164394.5,
+            "duration_ms": 4614.7,
+            "status": 200,
+            "transfer": 3269,
+            "encoded": 2969,
+            "decoded": 9172,
+            "initiator": "fetch"
+          },
+          {
+            "name": "/api/mstat/orderflows?group=all",
+            "start_ms": 164395.2,
+            "duration_ms": 5248.1,
+            "status": 200,
+            "transfer": 3343,
+            "encoded": 3043,
+            "decoded": 10122,
+            "initiator": "fetch"
+          },
+          {
+            "name": "/api/mstat/ownership?group=all",
+            "start_ms": 164395.8,
+            "duration_ms": 5979.3,
+            "status": 200,
+            "transfer": 3593,
+            "encoded": 3293,
+            "decoded": 11319,
+            "initiator": "fetch"
+          },
+          {
+            "name": "/api/chart/%D9%81%D9%88%D9%84%D8%A7%D8%AF",
+            "start_ms": 164419.1,
+            "duration_ms": 7989.2,
+            "status": 200,
+            "transfer": 32388,
+            "encoded": 32088,
+            "decoded": 168073,
+            "initiator": "fetch"
+          },
+          {
+            "name": "/api/live-stats",
+            "start_ms": 179987.8,
+            "duration_ms": 183.5,
+            "status": 200,
+            "transfer": 1270,
+            "encoded": 970,
+            "decoded": 970,
+            "initiator": "fetch"
+          }
+        ],
+        "errors": []
+      },
+      "errors": [],
+      "firewall_prompts": 0,
+      "error_window": null,
+      "final_run_ids": [
+        "1792922683360-em3fp9"
+      ]
+    }
+  ]
+}

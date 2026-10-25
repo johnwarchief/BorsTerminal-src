@@ -1,0 +1,333 @@
+{
+ "generated_at": "2026-10-25",
+ "files": [
+  {
+   "path": "acceptance-results.json",
+   "bytes": 5952,
+   "sha256": "50499f082dc79d08c940911281d7fae135a7e5b3f188e8ecbeeb13f92be338a1"
+  },
+  {
+   "path": "backend-death/run-1-error.png",
+   "bytes": 7466,
+   "sha256": "b282d4a97fcde0deded07b4388f835371aa1479568b89d4f1e31b375886106fd"
+  },
+  {
+   "path": "backend-death/run-1-error.screen.png",
+   "bytes": 11496,
+   "sha256": "319a8830efb81b1ce527f59d5dfb1503612edcb654a18a5cfd53264539df8fb2"
+  },
+  {
+   "path": "backend-death/run-1-shell-stdout.log",
+   "bytes": 5596,
+   "sha256": "ac57128ce9b624b8b76b087efb66b83f5f2677bd3a8b45da7a8b6aa6ec869356"
+  },
+  {
+   "path": "backend-death/run-1-shell-trace.jsonl",
+   "bytes": 2032,
+   "sha256": "850a34fddcc7c4385c9dca585970498e90e0c6fd6cca7accaa5a9ff2770dc779"
+  },
+  {
+   "path": "backend-death/run-1-sidecar-trace.jsonl",
+   "bytes": 1270,
+   "sha256": "ac7ca8a0087befb9fd89f292cc918a23fd5ff0a6a2104cdc41eb07644a507d4f"
+  },
+  {
+   "path": "backend-death/summary.json",
+   "bytes": 4303,
+   "sha256": "4b16e0b90fbdf6bd008680c66302e20d0aff5d1b96ab65fd290340e5239e8d40"
+  },
+  {
+   "path": "build/build-030.log",
+   "bytes": 235,
+   "sha256": "8706aa086c6e73de0f8536739aa66925cff726393d75c956473b579fa678f07a"
+  },
+  {
+   "path": "build/build-provenance.json",
+   "bytes": 1664,
+   "sha256": "2ae597731406368b55d3a6e3d27fe5489076568a488c826fa191e88dbdf39557"
+  },
+  {
+   "path": "build/operational-db-recheck.txt",
+   "bytes": 230,
+   "sha256": "e72d56b1f6a5e59289e529de2d304ef8695e9be991f2af29992268ff9f584749"
+  },
+  {
+   "path": "build/package-manifest.json",
+   "bytes": 1406,
+   "sha256": "cf92edd64c63f9d4b0f9bb53ddd7cd6d35fd7ade88dad4b64de8cef37c24e90d"
+  },
+  {
+   "path": "build/publish-031.log",
+   "bytes": 499,
+   "sha256": "3fd62faba4311b559a9ce233360438ca03683c58f9cd41495c104cc4ed822084"
+  },
+  {
+   "path": "build/publish-hashes.txt",
+   "bytes": 366,
+   "sha256": "a6cabf7775600213d8d85b25f566ff5999fb858c866fe23e34d5755caff90028"
+  },
+  {
+   "path": "build/security-matrix-summary.json",
+   "bytes": 561,
+   "sha256": "0f68016ed3088cea7f6a6a77c9c7117f2e0ec03803d853f6ec3087c96776ea41"
+  },
+  {
+   "path": "build/signing-status.txt",
+   "bytes": 1681,
+   "sha256": "3c7c27df98cdefc90de851a776b03fecddaf6152dbe2959233f2f3e92110589a"
+  },
+  {
+   "path": "build/tooling-check.txt",
+   "bytes": 525,
+   "sha256": "2601b8c4de61faeda394645dd4f59bf87aa30601598f191da5c3b66a2ad3d231"
+  },
+  {
+   "path": "build/update-manifests/checksum.json",
+   "bytes": 483,
+   "sha256": "97c4f927525b3ed09034c71a687dcd6153aed54cd2ceadb1bdb1b41a6e7f6d0e"
+  },
+  {
+   "path": "build/update-manifests/install.json",
+   "bytes": 431,
+   "sha256": "b6014337b5b4eb72322a8bb6e2daa84fdd63c9f3ae1f396a4d275a9f0d8257ed"
+  },
+  {
+   "path": "build/update-manifests/published-0.3.1.json",
+   "bytes": 419,
+   "sha256": "083b2f100601098975c90f28a67a0d0fbd9c64c58c25c0e741a4f7896964f196"
+  },
+  {
+   "path": "build/update-manifests/rollback.json",
+   "bytes": 483,
+   "sha256": "2759647ae30d8f0b64ded04f3c4d80142d2b2eb2001bd3e8f62e86faa49756b4"
+  },
+  {
+   "path": "close-load/summary-full.json",
+   "bytes": 97533,
+   "sha256": "a0847c90a79666ffbe9cef363709444449fed39ad44639bde61ee09c08b1ec73"
+  },
+  {
+   "path": "close-load/summary.json",
+   "bytes": 51654,
+   "sha256": "83542cc7c0c5523e03230a3f40828e44e5addc737adaf473e63040a19b94c34c"
+  },
+  {
+   "path": "close2/run-1-shell-stdout.log",
+   "bytes": 2775,
+   "sha256": "e6c8bc7d489cb2bfe3cdfd4bf62217641dcfed48e54033adf5d77ba21ffeae22"
+  },
+  {
+   "path": "close2/run-1-shell-trace.jsonl",
+   "bytes": 1459,
+   "sha256": "d344d629636e6630ff01234db2c027ed02f37afd089a6c503cf97c360d31055a"
+  },
+  {
+   "path": "close2/run-1-sidecar-trace.jsonl",
+   "bytes": 1754,
+   "sha256": "0f340fda72179f1c9f5465b25a0cac1dd98b63b07b403a7639fc9db598b2091d"
+  },
+  {
+   "path": "close2/run-2-shell-stdout.log",
+   "bytes": 2775,
+   "sha256": "3ab07955375efeb94fafd12d1cf2f2d19a32b9f313470e138e81de3607dfa55b"
+  },
+  {
+   "path": "close2/run-2-shell-trace.jsonl",
+   "bytes": 1479,
+   "sha256": "17d47e84c65820deec781d1be484395cb1253b725a5571a5b5c606e2b5dc8d44"
+  },
+  {
+   "path": "close2/run-2-sidecar-trace.jsonl",
+   "bytes": 1762,
+   "sha256": "496283be232fc07e5b63b602a1ba308c603e0e98fd5b39e2369866b434ebdb75"
+  },
+  {
+   "path": "close2/summary.json",
+   "bytes": 3841,
+   "sha256": "9d297452dd926203be459a737a53fcf646327cc603d2c5faedbf957aa33b3006"
+  },
+  {
+   "path": "crash/summary-full.json",
+   "bytes": 42798,
+   "sha256": "b0459b0eac9261d7a96e1904f9b39620d4b2379acb33a5b6e5cd26c7bd1f9f37"
+  },
+  {
+   "path": "crash/summary.json",
+   "bytes": 23779,
+   "sha256": "d2e01f1ffa9b8a6743dd8b6f0d8ea08f3710ed7cbba2c41b4700f206412076a9"
+  },
+  {
+   "path": "db-incident-analysis.json",
+   "bytes": 5833,
+   "sha256": "9ef4462bb3790c216f1ec1de91efa281306ce380095f45add624c65febb74998"
+  },
+  {
+   "path": "installed-cold/summary-full.json",
+   "bytes": 137110,
+   "sha256": "0b4fa2f89fb731356eafd1e997b4d2ee355e456da6d27bf356e49aec9170e255"
+  },
+  {
+   "path": "installed-cold/summary.json",
+   "bytes": 72392,
+   "sha256": "06e2086ccf0e1abaa8d3c5a734e25d08a92b46d3a541966245d8f3b3abb82fce"
+  },
+  {
+   "path": "installed-smoke/d3_raw_mode.png",
+   "bytes": 201588,
+   "sha256": "9e2211c56d26374c2824e73939eb715542f4d215dab25472e7428c61fddd2153"
+  },
+  {
+   "path": "installed-smoke/d3_symbol2_ready.png",
+   "bytes": 200557,
+   "sha256": "de12750d35f15166137160d920f1067ab59e1beaa4855dd897180462cdb9ac97"
+  },
+  {
+   "path": "installed-smoke/d3_symbol2_ready.screen.png",
+   "bytes": 205026,
+   "sha256": "ceca32f086beb23f122782de6097e5737d499c84619a3872a2f8de47726eeff7"
+  },
+  {
+   "path": "installed-smoke/fundamental_ready.png",
+   "bytes": 191231,
+   "sha256": "b00c2c8bfdfe8ecb06b8b79dadf761a76d18613593c7bb906183f6702d6595e0"
+  },
+  {
+   "path": "installed-smoke/fundamental_ready.screen.png",
+   "bytes": 139088,
+   "sha256": "05452fe44cc234b9b616b1fbf9e77c5773aeb6acc12715a62ce32920a96ae4a8"
+  },
+  {
+   "path": "installed-smoke/market_rows_visible.png",
+   "bytes": 271404,
+   "sha256": "659669391859dc2d89ec28799fa52e362998872e14de487e665cc98721c6c016"
+  },
+  {
+   "path": "installed-smoke/market_rows_visible.screen.png",
+   "bytes": 275997,
+   "sha256": "d3b2c4e6e1a8cf614707aaba894107e53d420f4b2c4dad756677fd37be77c0fc"
+  },
+  {
+   "path": "installed-smoke/market_status_ready.png",
+   "bytes": 296308,
+   "sha256": "ac7083965578795025e20cf79c2fb9649805d67ebd42f1bb5000649e5c74bacd"
+  },
+  {
+   "path": "installed-smoke/market_status_ready.screen.png",
+   "bytes": 164134,
+   "sha256": "bae91f8edaa4097d5c254f684c2dd9b59775eb273720e39765483dfe97fce1a6"
+  },
+  {
+   "path": "installed-smoke/summary-full.json",
+   "bytes": 89399,
+   "sha256": "b5028b98525da311e6575511181a4e41b8198220f30fb7ad9c687fdf0a305075"
+  },
+  {
+   "path": "installed-smoke/summary.json",
+   "bytes": 44586,
+   "sha256": "f2e746906e193ead15f9192de30f26d0878df90fd57d46288bae8fb40a492143"
+  },
+  {
+   "path": "installed-smoke/technical_ready.png",
+   "bytes": 201286,
+   "sha256": "92ca41ded1f5b6a24cbff04788408aa372e03583c756e2c94a4ee30d29798290"
+  },
+  {
+   "path": "installed-smoke/technical_ready.screen.png",
+   "bytes": 205971,
+   "sha256": "388270a45484d8772b47f28f4d7c1cf658fc84fb4b88657447439ca3ec1417a5"
+  },
+  {
+   "path": "installed-smoke/window_first.png",
+   "bytes": 181641,
+   "sha256": "83b841e934834746dd4238dcf6ecd67954cfa5260021c1396a51d2f990185053"
+  },
+  {
+   "path": "installed-warm/summary-full.json",
+   "bytes": 143322,
+   "sha256": "44bc00867a512ad362d04ec5837139c20e5cff26b4558a4703fce9066ff92613"
+  },
+  {
+   "path": "installed-warm/summary.json",
+   "bytes": 81871,
+   "sha256": "22befded6338ff78389931937596b7ef58832891e2d11eefba78739e02b5c061"
+  },
+  {
+   "path": "performance.json",
+   "bytes": 5642,
+   "sha256": "e38455c394dd0a07503387257a5a7af6102e3817f1a64629c64588e6ed3bf457"
+  },
+  {
+   "path": "recover/summary-full.json",
+   "bytes": 50067,
+   "sha256": "2c41996a1bbf0acd0068ef7b0ad6d5af86a7d4a1a7ff467d12e63b35674a0f5f"
+  },
+  {
+   "path": "recover/summary.json",
+   "bytes": 28091,
+   "sha256": "3738d257bee175e8f028ee1bd70ac232c3c6076e8dfd306b0cb9702c838b91b7"
+  },
+  {
+   "path": "update-checksum/collector.jsonl",
+   "bytes": 1383,
+   "sha256": "2e3d4a9781dcf34fd662ce73466e449826e887632b5d59c84aa8a8fd8a319f20"
+  },
+  {
+   "path": "update-checksum/http.log",
+   "bytes": 189,
+   "sha256": "fb54c4f4df72206d9bb461bb5936a932fd198418ad464c946e6f676cb4223048"
+  },
+  {
+   "path": "update-checksum/shell-stdout.log",
+   "bytes": 5750,
+   "sha256": "b85bdeab876eaafedce23fcf24482b859e94e1f93d20e4fd61c8a82a59aa9171"
+  },
+  {
+   "path": "update-checksum/shell-trace.jsonl",
+   "bytes": 2603,
+   "sha256": "8d37ae11027165771a596663df71c16c633b621d9bfa480aaa85add07b7a925a"
+  },
+  {
+   "path": "update-checksum/sidecar-trace.jsonl",
+   "bytes": 1678,
+   "sha256": "59c6c8dc23b0cae6faee2a60e3b2d8e8204e33c9a1f4729ba39a8d1cf193153b"
+  },
+  {
+   "path": "update-checksum/summary.json",
+   "bytes": 389343,
+   "sha256": "5c042f62b22e5c5c10bed71d189c7a0a549bddbc636f93d870be116ed0e58842"
+  },
+  {
+   "path": "update-install/collector.jsonl",
+   "bytes": 1755,
+   "sha256": "0302a0cda55215a05aa1c17ccba16645c70757c7696846262d0b75095415a8d8"
+  },
+  {
+   "path": "update-install/http.log",
+   "bytes": 189,
+   "sha256": "4e35f2992c727f7929be804aa103a424ba65e77634a6db7d10c4a346c488aac4"
+  },
+  {
+   "path": "update-install/shell-stdout.log",
+   "bytes": 10035,
+   "sha256": "80bec03e2f0b97e48323d0a9fb59984926813a37ca7aca5df2b83c72fdc70f50"
+  },
+  {
+   "path": "update-install/shell-trace.jsonl",
+   "bytes": 4588,
+   "sha256": "76c0ec4ffde51ca739d192e17898600b7d32690bacfdb1d16da5509a3f0d6b96"
+  },
+  {
+   "path": "update-install/sidecar-trace.jsonl",
+   "bytes": 1753,
+   "sha256": "6c8c69853a2d797c523c5f92e4d720d6248ed29e358a61f2aa862f40274b852d"
+  },
+  {
+   "path": "update-install/summary.json",
+   "bytes": 389719,
+   "sha256": "d7e3f9077c30ea5b57e94dd31a0f8662fdef0ad8f1a614aa6db233fa1056705a"
+  }
+ ],
+ "total_files": 65,
+ "total_bytes": 4280236,
+ "note": "Generated builds, dist/resources and the 137 MB update zip are not committed; their hashes are in build/publish-hashes.txt and build/package-manifest.json."
+}

@@ -1,0 +1,6 @@
+{"kind": "m2_update_started", "run_id": "1792926992648-mrn4a4", "url": "about:blank", "at_ms": 1792926992649, "origin": "null", "_recv_epoch_ms": 1792926992731.7275}
+{"kind": "m2_update_started", "run_id": "1792926993142-xpz5sc", "url": "http://127.0.0.1:55180/", "at_ms": 1792926993142, "origin": "http://127.0.0.1:55180", "_recv_epoch_ms": 1792926993205.1467}
+{"kind": "m2_update_info", "run_id": "1792926993142-xpz5sc", "url": "http://127.0.0.1:55180/", "at_ms": 1792926993359, "info": {"version": "0.3.0", "tinyjs": "v0.65.0", "runtime": "txiki.js 26.6.0"}, "_recv_epoch_ms": 1792926993523.1858}
+{"kind": "m2_update_check", "run_id": "1792926993142-xpz5sc", "url": "http://127.0.0.1:55180/", "at_ms": 1792926993650, "result": {"available": true, "current": "0.3.0", "latest": "0.3.2", "notes": "M2 updater acceptance (loopback)"}, "_recv_epoch_ms": 1792926993658.453}
+{"kind": "m2_update_install_begin", "run_id": "1792926993142-xpz5sc", "url": "http://127.0.0.1:55180/", "at_ms": 1792926993651, "latest": "0.3.2", "notes": "M2 updater acceptance (loopback)", "_recv_epoch_ms": 1792926993687.651}
+{"kind": "m2_update_install_error", "run_id": "1792926993142-xpz5sc", "url": "http://127.0.0.1:55180/", "at_ms": 1792927001238, "error": "checksum mismatch — refusing to install", "message": "checksum mismatch — refusing to install", "_recv_epoch_ms": 1792927001338.7756}
