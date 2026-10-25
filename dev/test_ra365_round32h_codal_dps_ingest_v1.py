@@ -43,6 +43,7 @@ def make_db():
         ("2", "BBB", "شرکت ب", 8),          # fund: never a stock-dividend candidate
         ("3", "CCCH", "حق تقدم ج", 2),      # right: excluded by name
         ("4", "DDD", "شرکت د", 1),
+        ("5", "EEE", "شرکت ه", 1),          # PA day has no candle; next candle does
     ]
     for r in rows:
         con.execute("INSERT INTO instruments VALUES (?,?,?,?, 'board','2026-01-01')", r)
@@ -57,7 +58,10 @@ def make_db():
                 " ('3',20230605,0.95,'tsetmc',950.0,1000.0)")
     con.execute("INSERT INTO price_adjust_event_rows VALUES"
                 " ('4',20230606,0.95,'tsetmc',950.0,1000.0)")
+    con.execute("INSERT INTO price_adjust_event_rows VALUES"
+                " ('5',20230610,0.98399,'tsetmc',11860.0,12053.0)")
     con.execute("INSERT INTO price_history VALUES ('AAA','2023-06-05',1000.0)")
+    con.execute("INSERT INTO price_history VALUES ('EEE','2023-06-12',14000.0)")
     con.commit()
     return con, path
 
@@ -66,7 +70,7 @@ con, path = make_db()
 try:
     cand = ING.select_candidates(con)
     syms = [(s, d) for _i, s, d, _p in cand]
-    ck(syms == [("DDD", 20230606), ("AAA", 20230605)],
+    ck(syms == [("EEE", 20230610), ("DDD", 20230606), ("AAA", 20230605)],
        "۱ فقط سهامِ بی‌ردیف، جدید به قدیم", syms)
 
     calls = []
@@ -77,24 +81,32 @@ try:
                 "publish_date": "1402/03/10", "requests": 2}
 
     res = ING.ingest(con, cand, ok_finder, budget=20)
-    ck(res["ok"] == 2 and res["requests"] == 4, "۲ دو ردیف نوشته شد", res)
+    ck(res["ok"] == 3 and res["requests"] == 6, "۲ سه ردیف نوشته شد", res)
     row = con.execute("SELECT dps, reference_price, ratio, source_id"
                       " FROM stock_dividend_events WHERE ins_code='1'").fetchone()
     ck(row is not None and row[0] == 150.0, "۳ DPSِ اعلامی ذخیره شد", row)
     ck(row and abs(row[2] - 1000.0 / 1150.0) <= 1e-12,
        "۴ نسبت = close/(close+dps)", row)
     ck(row and row[3] == "N-1", "۵ شناسهٔ اطلاعیه ثبت شد", row)
-    # DDD has no price_history row -> p_closing fallback (950), not skipped.
+    # EEE: the PA day has no candle; the reference close is the next candle's
+    # (14000), not the PA row's p_closing (11860) — same mapping as the chart.
+    row5 = con.execute("SELECT reference_price, ratio FROM stock_dividend_events"
+                       " WHERE ins_code='5'").fetchone()
+    ck(row5 is not None and row5[0] == 14000.0,
+       "۶ روزِ بی‌کندل: پایانیِ اولین کندلِ بعد مبنا است", row5)
+    ck(row5 and abs(row5[1] - 14000.0 / 14150.0) <= 1e-12,
+       "۷ نسبتِ نگاشت‌شده هم از فرمول است", row5)
+    # DDD has no price_history row at all -> p_closing fallback (950).
     row4 = con.execute("SELECT reference_price, ratio FROM stock_dividend_events"
                        " WHERE ins_code='4'").fetchone()
-    ck(row4 is not None and row4[0] == 950.0, "۶ بی price_history: p_closingِ PA مبنا", row4)
+    ck(row4 is not None and row4[0] == 950.0, "۸ بی price_history: p_closingِ PA مبنا", row4)
     ck(row4 and abs(row4[1] - 950.0 / 1100.0) <= 1e-12,
-       "۷ نسبتِ fallback هم از فرمول است", row4)
+       "۹ نسبتِ fallback هم از فرمول است", row4)
 
-    ck(ING.select_candidates(con) == [], "۸ اجرایِ دوم: resume، هیچ کاندیدِ تکراری")
+    ck(ING.select_candidates(con) == [], "۱۰ اجرایِ دوم: resume، هیچ کاندیدِ تکراری")
     calls.clear()
     ING.ingest(con, [], ok_finder, budget=20)
-    ck(not calls, "۹ برایِ ردیفِ موجود هیچ درخواستی زده نمی‌شود")
+    ck(not calls, "۱۱ برایِ ردیفِ موجود هیچ درخواستی زده نمی‌شود")
 
     # NO_DPS rows are not written and do not block later rows.
     con.execute("DELETE FROM stock_dividend_events")
@@ -109,9 +121,9 @@ try:
         return {"status": "OK", "dps": 100.0, "notice_id": "N-2", "requests": 2}
 
     res = ING.ingest(con, cand, mixed_finder, budget=20)
-    ck(res["ok"] == 1 and res["no_dps"] == 1, "۱۰ بی‌DPS نوشته نمی‌شود، ادامه می‌دهد", res)
-    ck(con.execute("SELECT COUNT(*) FROM stock_dividend_events").fetchone()[0] == 1,
-       "۱۱ فقط ردیفِ اثبات‌شده در جدول است")
+    ck(res["ok"] == 2 and res["no_dps"] == 1, "۱۲ بی‌DPS نوشته نمی‌شود، ادامه می‌دهد", res)
+    ck(con.execute("SELECT COUNT(*) FROM stock_dividend_events").fetchone()[0] == 2,
+       "۱۳ فقط ردیف‌هایِ اثبات‌شده در جدول است")
 
     # BLOCKED stops immediately and leaves later candidates untouched.
     con.execute("DELETE FROM stock_dividend_events")
@@ -124,20 +136,20 @@ try:
         return {"status": "BLOCKED", "requests": 1}
 
     res = ING.ingest(con, cand, blocked_finder, budget=20)
-    ck(res["blocked"] == 1 and len(seen) == 1, "۱۲ ۴۲۹: توقفِ فوری", (res, seen))
+    ck(res["blocked"] == 1 and len(seen) == 1, "۱۴ ۴۲۹: توقفِ فوری", (res, seen))
     ck(con.execute("SELECT COUNT(*) FROM stock_dividend_events").fetchone()[0] == 0,
-       "۱۳ ۴۲۹: هیچ ردیفِ نیمه‌کاره")
+       "۱۵ ۴۲۹: هیچ ردیفِ نیمه‌کاره")
 
     # Budget is hard: zero network calls, nothing written.
     res = ING.ingest(con, cand, ok_finder, budget=0)
-    ck(res["requests"] == 0 and res["skipped"] == len(cand), "۱۴ بودجهٔ صفر: هیچ درخواست", res)
+    ck(res["requests"] == 0 and res["skipped"] == len(cand), "۱۶ بودجهٔ صفر: هیچ درخواست", res)
 
     # Explicit pairs target the exact event even without p_closing.
     con.execute("DELETE FROM stock_dividend_events")
     con.commit()
     pc = ING.select_candidates(con, pairs=[["AAA", 20230605]])
     ck([(s, d) for _i, s, d, _p in pc] == [("AAA", 20230605)],
-       "۱۵ pairs اجرایِ هدف‌دار", pc)
+       "۱۷ pairs اجرایِ هدف‌دار", pc)
 finally:
     con.close()
     os.unlink(path)

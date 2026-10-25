@@ -125,12 +125,19 @@ def select_candidates(con, symbols=None, date_from=None, date_to=None,
 
 
 def reference_close(con, symbol, d_even, p_closing=None):
-    """پایانیِ رسمیِ روزِ مؤثر: price_history، بعد p_closingِ ردیفِ PA."""
+    """پایانیِ رسمیِ **اولین کندلِ هم‌روز یا پس از** روزِ مؤثرِ PA.
+
+    همان نگاشتِ چارت (`next(t for t in candle_dates if t >= dt)`). روزِ PA
+    می‌تواند بی‌معامله باشد؛ پایانیِ همان روزِ بی‌کندل نزدیک‌ترین عددِ اشتباه
+    است (سپيدار ۲۰۲۵-۰۶-۰۲: p_closing=۱۱۸۶۰ ولی کندلِ ۰۶-۰۳ پایانیِ ۱۴۰۰۰
+    دارد و مرجع با ۱۴۰۰۰ ساخته شده). p_closing فقط وقتی می‌ماند که هیچ
+    کندلی پس از روزِ PA نباشد.
+    """
     iso = _iso(d_even)
     if iso:
         row = con.execute(
-            "SELECT close FROM price_history WHERE symbol=? AND date=?"
-            " ORDER BY close DESC LIMIT 1", (symbol, iso)).fetchone()
+            "SELECT close FROM price_history WHERE symbol=? AND date>=?"
+            " ORDER BY date ASC LIMIT 1", (symbol, iso)).fetchone()
         if row and row[0]:
             return float(row[0])
     try:
