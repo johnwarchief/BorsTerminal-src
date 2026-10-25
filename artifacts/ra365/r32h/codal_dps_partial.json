@@ -22,7 +22,7 @@
     "far_gt_1e4": 2,
     "no_dps_or_close": 9,
     "blocked": 2,
-    "unprocessed": 34
+    "unprocessed": 32
   },
   "rows": [
     {"n": 1, "symbol": "زگلدشت", "effective_date": "2021-06-09", "dps": null, "close": 9645.0, "pred": null, "ref": 0.82471142, "err": null, "status": "NO_DPS"},
@@ -65,5 +65,13 @@
     "Exact means the announced DPS plus the official close reproduces the pack step to double precision (err <= 1e-12 in every exact row).",
     "NO_DPS means no assembly decision page with a DividendPerShare field was found in the 100-day window, or the official close for the effective date was missing.",
     "The two FAR rows and the NEAR row are not explained by D alone; they need a capital/combined leg or a different effective-date reference."
-  ]
+  ],
+  "resume": {
+    "attempted_at": "2026-10-26T02:50+03:30",
+    "remaining": 32,
+    "budget": 24,
+    "result": "BLOCKED — the first search returned 429, about 4.3 hours after the earlier 1800s pause",
+    "policy": "POLITE=true, no ADB rotation, no retries; the sweep stops instead of resting the pool",
+    "next": "rerun dev-side once the IP cools, or rotate the IP with the owner's existing ADB tooling first"
+  }
 }
