@@ -53,6 +53,10 @@ WNDENUMPROC = ctypes.WINFUNCTYPE(wintypes.BOOL, wintypes.HWND, wintypes.LPARAM)
 # Full 64-bit HWNDs overflow the default c_int marshalling; pin every signature.
 USER32.GetWindowTextLengthW.argtypes = [wintypes.HWND]
 USER32.GetWindowTextLengthW.restype = ctypes.c_int
+USER32.SendMessageTimeoutW.argtypes = [wintypes.HWND, wintypes.UINT, wintypes.WPARAM,
+                                       wintypes.LPARAM, wintypes.UINT, wintypes.UINT,
+                                       ctypes.POINTER(ctypes.c_size_t)]
+USER32.SendMessageTimeoutW.restype = wintypes.LPARAM
 USER32.GetWindowTextW.argtypes = [wintypes.HWND, wintypes.LPWSTR, ctypes.c_int]
 USER32.GetWindowThreadProcessId.argtypes = [wintypes.HWND, ctypes.POINTER(wintypes.DWORD)]
 USER32.GetWindowRect.argtypes = [wintypes.HWND, ctypes.POINTER(wintypes.RECT)]
@@ -177,9 +181,16 @@ def snapshot_result(run_dir: Path, result: dict) -> None:
 
 def cleanup_survivors(args, work: Path, profile: Path, root_pid: int,
                       port: int | None) -> dict:
-    before = find_survivors(args, work, profile, root_pid)
+    observed = find_survivors(args, work, profile, root_pid)
+    grace = max(0.0, float(getattr(args, "survivor_grace", 10.0)))
+    t0 = time.time()
+    remaining = observed
+    while remaining and time.time() - t0 < grace:
+        time.sleep(0.5)
+        remaining = find_survivors(args, work, profile, root_pid)
+    natural_exit_s = round(time.time() - t0, 1) if observed and not remaining else None
     killed = []
-    for s in before:
+    for s in remaining:
         try:
             proc = psutil.Process(s["pid"])
             proc.kill()
@@ -193,7 +204,10 @@ def cleanup_survivors(args, work: Path, profile: Path, root_pid: int,
         time.sleep(0.25)
     after = find_survivors(args, work, profile, root_pid)
     return {
-        "survivors_before": before,
+        "survivors_observed": observed,
+        "survivor_grace_s": grace,
+        "natural_exit_s": natural_exit_s,
+        "survivors_before": remaining,
         "killed": killed,
         "survivors_after": after,
         "port_open_after_cleanup": port_open(port) if port else None,
@@ -203,20 +217,30 @@ def cleanup_survivors(args, work: Path, profile: Path, root_pid: int,
 # ── Win32 windows / screenshots ──────────────────────────────────────────────
 
 
+def window_title(hwnd: int, timeout_ms: int = 80) -> str:
+    """GetWindowTextW sends WM_GETTEXT and blocks on a busy UI thread; a
+    300s acceptance run cannot afford that. SMTO_ABORTIFHUNG + a short
+    timeout keeps enumeration bounded."""
+    buf = ctypes.create_unicode_buffer(512)
+    result = ctypes.c_size_t()
+    ok = USER32.SendMessageTimeoutW(hwnd, 0x000D, 512,
+                                    wintypes.LPARAM(ctypes.addressof(buf)),
+                                    0x0002, timeout_ms, ctypes.byref(result))
+    return buf.value if ok else ""
+
+
 def enum_windows() -> list[dict]:
     out: list[dict] = []
 
     def cb(hwnd, _):
-        n = USER32.GetWindowTextLengthW(hwnd)
-        buf = ctypes.create_unicode_buffer(n + 1)
-        USER32.GetWindowTextW(hwnd, buf, n + 1)
+        title = window_title(hwnd)
         pid = wintypes.DWORD()
         USER32.GetWindowThreadProcessId(hwnd, ctypes.byref(pid))
         r = wintypes.RECT()
         USER32.GetWindowRect(hwnd, ctypes.byref(r))
         out.append({
             "hwnd": hwnd,
-            "title": buf.value,
+            "title": title,
             "pid": pid.value,
             "visible": bool(USER32.IsWindowVisible(hwnd)),
             "rect": [r.left, r.top, r.right, r.bottom],
@@ -531,8 +555,6 @@ def build_env(args, work: Path, profile: Path, run_dir: Path, collector_port: in
               stop_file: Path) -> dict:
     env = {
         **os.environ,
-        "BORS_PYTHON": str(PY),
-        "BORS_HEADLESS_ENTRY": str(HEADLESS),
         "BORS_WORK_DIR": str(work),
         # _resolve_market_db() prefers the dev repo market.db over WORK_DIR;
         # BORS_DB is the explicit isolation door, so the benchmark never opens
@@ -555,12 +577,25 @@ def build_env(args, work: Path, profile: Path, run_dir: Path, collector_port: in
         "TINYJS_DEBUG": "1",
         "PYTHONIOENCODING": "utf-8",
     }
+    if getattr(args, "installed", False):
+        # The installed package must use its bundled sidecar; never inherit
+        # a dev interpreter/entry from the invoking shell.
+        for key in ("BORS_PYTHON", "BORS_HEADLESS_ENTRY", "BORS_SIDECAR_EXE"):
+            env.pop(key, None)
+    else:
+        env["BORS_PYTHON"] = str(PY)
+        env["BORS_HEADLESS_ENTRY"] = str(HEADLESS)
     if args.d3:
         env["BORS_D3_CHECKS"] = "1"
     if args.visual:
         env["BORS_VISUAL"] = "1"
     if args.scenario == "fail":
-        env["BORS_FAIL_TEST"] = "1"
+        if getattr(args, "installed", False):
+            # A clean install with the sidecar missing is a real package
+            # failure, not a test flag inside the product.
+            env["BORS_SIDECAR_EXE"] = str(args.exe.parent / "BorsTerminalSidecar.missing.exe")
+        else:
+            env["BORS_FAIL_TEST"] = "1"
     return env
 
 
@@ -579,8 +614,9 @@ def tail(path: Path, n: int = 30) -> list[str]:
 
 
 def run_once(args, mode: str, run_i: int, template: Path) -> dict:
+    seed = (not getattr(args, "installed", False)) and args.scenario != "fail"
     work, profile, run_dir = prepare_work(args.label, mode, run_i, template,
-                                          seed=args.scenario != "fail")
+                                          seed=seed)
     stop_file = run_dir / "probe-stop.flag"
     if stop_file.exists():
         stop_file.unlink()
@@ -592,8 +628,9 @@ def run_once(args, mode: str, run_i: int, template: Path) -> dict:
     log = open(log_path, "wb")
     t0 = time.perf_counter()
     t_launch = now_ms()
+    launch_cwd = args.exe.parent if getattr(args, "installed", False) else ROOT
     p = subprocess.Popen(
-        [str(args.exe)], cwd=str(ROOT), env=env, stdin=subprocess.DEVNULL,
+        [str(args.exe)], cwd=str(launch_cwd), env=env, stdin=subprocess.DEVNULL,
         stdout=log, stderr=subprocess.STDOUT,
         creationflags=0x08000000,
     )
@@ -642,6 +679,7 @@ def run_once(args, mode: str, run_i: int, template: Path) -> dict:
     firewall_hwnds: set[int] = set()
     closed_at_ms = None
     shutdown = {}
+    close_after_board_at = None
 
     try:
         deadline = t0 + args.timeout
@@ -665,6 +703,8 @@ def run_once(args, mode: str, run_i: int, template: Path) -> dict:
                             stop_file.write_text("stop", encoding="utf-8")
                         except OSError:
                             pass
+                        if args.close_after_board and close_after_board_at is None:
+                            close_after_board_at = time.time() + 2.0
                     if name not in logged_events:
                         logged_events.add(name)
                         progress(run_dir, f"probe_event {name} rel_ms={rel} url={ev.get('url')}")
@@ -704,13 +744,15 @@ def run_once(args, mode: str, run_i: int, template: Path) -> dict:
                         app_hwnd, run_dir / "window_first.png")
 
             err_wins = [w for w in enum_windows()
-                        if w["visible"] and "startup failed" in w["title"]
-                        and w["pid"] in sampler_tree_pids(sampler)]
+                        if w["visible"] and w["pid"] in sampler_tree_pids(sampler)
+                        and any(k in w["title"].lower() for k in (
+                            "startup failed", "backend stopped", "backend exited",
+                            "backend is running", "backend could not", "backend did not"))]
             if err_wins and error_hwnd is None:
                 error_hwnd = err_wins[0]["hwnd"]
                 result["error_window"] = err_wins[0]
                 time.sleep(0.3)
-                if args.visual or args.scenario == "fail":
+                if args.visual or args.scenario == "fail" or args.kill_sidecar:
                     result["screenshots"]["error"] = screenshot(error_hwnd, run_dir / "error.png")
 
             for fw in firewall_windows():
@@ -734,11 +776,38 @@ def run_once(args, mode: str, run_i: int, template: Path) -> dict:
                 snapshot_result(run_dir, result)
                 break
 
+            if args.kill_sidecar and board_seen and "sidecar_kill" not in result:
+                victim = None
+                for q in psutil.process_iter(["pid", "name", "exe"]):
+                    try:
+                        ename = os.path.basename(q.info.get("exe") or "").lower()
+                        if ename != "borsterminalsidecar.exe":
+                            continue
+                        if (q.environ().get("BORS_WORK_DIR") or "") != str(work):
+                            continue
+                        victim = q
+                        break
+                    except psutil.Error:
+                        pass
+                if victim is not None:
+                    result["sidecar_kill"] = {"epoch_ms": now_ms(), "pid": victim.pid,
+                                              "reason": "TerminateProcess on the sidecar while the app is live"}
+                    progress(run_dir, f"kill_sidecar pid={victim.pid}")
+                    try:
+                        victim.kill()
+                    except psutil.Error:
+                        pass
+                    snapshot_result(run_dir, result)
+
             if final_payload is not None and time.perf_counter() - last_ss > 2.0:
                 last_ss = time.perf_counter()
                 if args.scenario != "fail":
                     break
             if args.scenario == "fail" and error_hwnd:
+                break
+            if args.kill_sidecar and error_hwnd:
+                break
+            if close_after_board_at is not None and time.time() >= close_after_board_at:
                 break
             if p.poll() is not None:
                 break
@@ -804,6 +873,8 @@ def run_once(args, mode: str, run_i: int, template: Path) -> dict:
 
         cleanup = cleanup_survivors(args, work, profile, p.pid, port)
         shutdown["survivors"] = cleanup["survivors_before"]
+        shutdown["survivors_observed"] = cleanup["survivors_observed"]
+        shutdown["survivor_natural_exit_s"] = cleanup["natural_exit_s"]
         shutdown["cleanup"] = cleanup
         if cleanup["survivors_before"]:
             result["errors"].append(
@@ -886,8 +957,9 @@ def find_survivors(args, work: Path, profile: Path, root_pid: int) -> list[dict]
             argv = [str(a) for a in (p.info.get("cmdline") or [])]
             exe_path = os.path.normcase(p.info.get("exe") or "")
             is_shell = bool(exe_path) and (exe_path == exe or exe_path == launcher)
-            is_sidecar = any(os.path.basename(a).lower() == "headless_server.py"
-                             for a in argv)
+            is_sidecar = any(os.path.basename(a).lower() in ("headless_server.py",
+                                                             "borsterminalsidecar.exe")
+                             for a in argv) or exe_path.endswith("borsterminalsidecar.exe")
             is_webview = name == "msedgewebview2.exe"
             if not (is_shell or is_sidecar or is_webview):
                 continue
@@ -995,7 +1067,12 @@ def summarize(runs: list[dict], args) -> dict:
             "isolation": "fresh WORK_DIR/profile in cold; shared seeded one in warm",
             "network_loops": "BORS_NO_FETCH_LOOPS=1, BORS_CODAL_AUTO=0",
             "instrumentation": f"external process tree + Win32 PrintWindow + {args.exe.name} WebView2 eval probe (no CDP)",
-            "cold_definition": "fresh work dir and profile per run, DB seeded from the Phase C template",
+            "package": ("installed TinyJS dist with bundled PyInstaller sidecar; no repo .venv, "
+                        "no BORS_PYTHON/BORS_HEADLESS_ENTRY, DB extracted from bundled market.db.lzma"
+                        if getattr(args, "installed", False) else "dev prototypes via repo .venv sidecar"),
+            "cold_definition": ("fresh work dir and profile per run, DB extracted from the sidecar's "
+                                "bundled seed" if getattr(args, "installed", False)
+                                else "fresh work dir and profile per run, DB seeded from the Phase C template"),
             "warm_definition": "one unrecorded warmup, then same work dir/profile reused",
             "crash": "with --crash the shell root is terminated after the first board paint; "
                      "orphans are recorded and then killed by the harness",
@@ -1092,13 +1169,21 @@ def main() -> int:
                     help="pause the page at each milestone for PrintWindow captures")
     ap.add_argument("--crash", action="store_true",
                     help="kill the shell root after the first board paint and record orphans")
+    ap.add_argument("--kill-sidecar", action="store_true",
+                    help="kill the bundled sidecar after the first board paint; expect a visible backend error")
+    ap.add_argument("--close-after-board", action="store_true",
+                    help="close the window 2s after the first board paint (teardown under load)")
+    ap.add_argument("--installed", action="store_true",
+                    help="run the packaged dist; use its bundled sidecar and seed, no template/env interpreter")
+    ap.add_argument("--survivor-grace", type=float, default=10.0,
+                    help="wait this long after shell exit for WebView2/sidecar teardown before killing survivors")
     ap.add_argument("--keep-work", action="store_true")
     args = ap.parse_args()
     args.exe = Path(args.exe)
     template = Path(args.template)
     if not args.exe.exists():
         raise SystemExit(f"missing shell exe: {args.exe}")
-    if not template.exists():
+    if not getattr(args, "installed", False) and not template.exists():
         raise SystemExit(f"missing template dir: {template}")
     out_dir = Path(args.out_dir) if args.out_dir else ROOT / "artifacts/desktop-migration/phase-d" / args.label
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -1197,6 +1282,13 @@ def main() -> int:
         return 1
     if args.crash:
         return 0 if runs and all(r.get("crash_kill") for r in runs) else 1
+    if args.kill_sidecar:
+        return 0 if runs and all(r.get("error_window") for r in runs) else 1
+    if args.close_after_board:
+        ok = all((r.get("shutdown") or {}).get("exit_code") == 0
+                 and not ((r.get("shutdown") or {}).get("survivors") or [])
+                 for r in runs)
+        return 0 if runs and ok else 1
     return 0 if runs and summary["runs_ok"] == len(runs) else 1
 
 

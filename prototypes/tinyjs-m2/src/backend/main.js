@@ -16,9 +16,9 @@ const env = tjs.env;
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 const t0 = Date.now();
-const tracePath = env.BORS_SHELL_TRACE || '';
-const workDir = env.BORS_WORK_DIR || '';
-const logsDir = workDir ? workDir.replace(/[\\/]+$/, '') + '\\logs' : '';
+let tracePath = env.BORS_SHELL_TRACE || '';
+let workDir = env.BORS_WORK_DIR || '';
+let logsDir = workDir ? workDir.replace(/[\\/]+$/, '') + '\\logs' : '';
 
 let child = null;
 let childExit = null;
@@ -91,8 +91,11 @@ async function existingServer(port) {
 }
 
 function parseReady(line) {
-  if (!line.startsWith('PHASE_D_READY ')) return null;
-  try { return JSON.parse(line.slice('PHASE_D_READY '.length)); } catch { return null; }
+  const p = line.startsWith('M2_READY ')
+    ? 'M2_READY '
+    : (line.startsWith('PHASE_D_READY ') ? 'PHASE_D_READY ' : '');
+  if (!p) return null;
+  try { return JSON.parse(line.slice(p.length)); } catch { return null; }
 }
 
 async function pump(stream, label, logPath, onLine) {
@@ -156,12 +159,54 @@ async function injectProbe(app) {
   }
 }
 
+function joinPath(base, child) {
+  return String(base || '').replace(/[\\/]+$/, '') + '\\' + child;
+}
+
+async function fileExists(path) {
+  try { await tjs.stat(path); return true; } catch { return false; }
+}
+
+// The installed package ships the PyInstaller sidecar inside resources/.
+// Dev/benchmark runs keep the explicit BORS_PYTHON + BORS_HEADLESS_ENTRY path.
+async function resolveSidecar(app, pathsInfo) {
+  if (env.BORS_SIDECAR_EXE) {
+    return { exe: env.BORS_SIDECAR_EXE, argv: [], installed: true };
+  }
+  const candidates = [];
+  if (pathsInfo && pathsInfo.resources) {
+    candidates.push(joinPath(pathsInfo.resources, 'sidecar\\BorsTerminalSidecar.exe'));
+  }
+  if (pathsInfo && pathsInfo.executables) {
+    candidates.push(joinPath(pathsInfo.executables, 'BorsTerminalSidecar.exe'));
+  }
+  for (const c of candidates) {
+    if (await fileExists(c)) return { exe: c, argv: [], installed: true };
+  }
+  const py = env.BORS_PYTHON || '';
+  const entry = env.BORS_HEADLESS_ENTRY || '';
+  if (py && entry) return { exe: py, argv: [entry], installed: false };
+  return null;
+}
+
 async function start(app) {
   appRef = app;
-  if (logsDir) {
-    try { await tjs.makeDir(logsDir, { recursive: true }); } catch { }
+  let pathsInfo = null;
+  try { pathsInfo = await app.paths(); } catch (e) {
+    trace('paths_failed', { error: String(e).slice(0, 300) });
   }
-  trace('backend_init', { work: workDir, main: true });
+  if (!workDir && pathsInfo && pathsInfo.data) workDir = pathsInfo.data;
+  if (!workDir) {
+    await showError(app, 'Application data path is unavailable',
+      'TinyJS did not return a writable data directory; refusing to start.');
+    return;
+  }
+  logsDir = joinPath(workDir, 'logs');
+  if (!tracePath) tracePath = joinPath(logsDir, 'shell-trace.jsonl');
+  try { await tjs.makeDir(logsDir, { recursive: true }); } catch { }
+  trace('backend_init', { work: workDir, main: true,
+    installed: !!(pathsInfo && pathsInfo.resources),
+    resources: (pathsInfo && pathsInfo.resources) || null });
 
   const preferred = env.BORS_PORT || '8105';
   const reused = env.BORS_REUSE_SERVER === '1' ? await existingServer(preferred) : '';
@@ -172,26 +217,29 @@ async function start(app) {
     return;
   }
 
-  const py = env.BORS_PYTHON || '';
-  const entry = env.BORS_HEADLESS_ENTRY || '';
-  if (!py || !entry) {
+  const sidecar = await resolveSidecar(app, pathsInfo);
+  if (!sidecar) {
     await showError(app, 'Backend path is not configured',
-      'BORS_PYTHON and BORS_HEADLESS_ENTRY must point at the sidecar.');
+      'No bundled BorsTerminalSidecar.exe was found, and BORS_PYTHON/BORS_HEADLESS_ENTRY are not set.');
     return;
   }
-
+  const dbPath = env.BORS_DB || joinPath(workDir, 'market.db');
   const childEnv = {
     ...env,
     BORS_PORT: env.BORS_PORT || '0',
+    BORS_WORK_DIR: workDir,
+    BORS_DB: dbPath,
     BORS_SHOW_CONSOLE: '1',
     BORS_STARTUP_TRACE: '1',
   };
   if (env.BORS_FAIL_TEST === '1') childEnv.BORS_FAIL_TEST = '1';
 
-  trace('sidecar_spawn_begin', { exe: py, entry, port: childEnv.BORS_PORT });
+  trace('sidecar_spawn_begin', { exe: sidecar.exe, argv: sidecar.argv,
+    installed: sidecar.installed, port: childEnv.BORS_PORT, work: workDir });
   try {
+    const exeDir = String(sidecar.exe).replace(/[\\/][^\\/]+$/, '');
     const opts = {
-      cwd: workDir || tjs.cwd,
+      cwd: sidecar.installed ? exeDir : (workDir || tjs.cwd),
       env: childEnv,
       stdin: 'pipe',
       stdout: 'pipe',
@@ -199,9 +247,10 @@ async function start(app) {
     };
     // tjs.spawn opens a console window for a GUI app's child on Windows;
     // spawnHidden is the shell's supported wrapper around the same spawn.
+    const argv = [sidecar.exe, ...sidecar.argv];
     child = typeof app.spawnHidden === 'function'
-      ? app.spawnHidden([py, entry], opts)
-      : tjs.spawn([py, entry], opts);
+      ? app.spawnHidden(argv, opts)
+      : tjs.spawn(argv, opts);
   } catch (e) {
     trace('sidecar_spawn_failed', { error: String(e).slice(0, 300) });
     await showError(app, 'Backend could not start', String(e));
