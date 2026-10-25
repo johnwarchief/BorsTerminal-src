@@ -5,8 +5,10 @@ import type { Candle, DetectorId, PatternEvent } from '../../signals/candleedge'
 import { toFaDigits } from '@shared/lib/fmt';
 import { parseCandleTimestamp, epochToJalali } from '../jalaliDate';
 import {
+  CANDLEEDGE_MARK_OVERLAY,
   CANDLEEDGE_MVP_DETECTORS,
   CANDLEEDGE_MVP_METHOD,
+  CANDLEEDGE_TAG_OVERLAY,
   buildCandleEdgeAnalysis,
   buildCandleEdgeGroups,
   buildCandleEdgeOverlays,
@@ -15,7 +17,12 @@ import {
   filterCandleEdgeEvents,
   selectCandleEdgeChartEvents,
 } from '../candleEdgeMvp';
-import type { CandleEdgeBar, CandleEdgeChartData } from '../candleEdgeMvp';
+import type {
+  CandleEdgeBar,
+  CandleEdgeChartData,
+  CandleEdgeMarkData,
+  CandleEdgeTagData,
+} from '../candleEdgeMvp';
 
 type Row = [string, number, number, number, number, number];
 
@@ -164,67 +171,129 @@ describe('CandleEdge MVP event analysis', () => {
 });
 
 describe('CandleEdge MVP chart overlays', () => {
-  it('draws one glyph per event, with no text labels until an event is selected', () => {
+  it('draws family geometry for every event and no permanent text', () => {
     const overlays = buildCandleEdgeOverlays(events, bars, null);
-    const markers = overlays.filter((overlay) => overlay.name === 'simpleAnnotation');
-    expect(markers).toHaveLength(events.length);
-    expect(overlays.filter((overlay) => overlay.name === 'segment')).toHaveLength(0);
-    for (const marker of markers) {
-      expect(['▲', '▼']).toContain(marker.extendData);
+    expect(overlays.filter((overlay) => overlay.name === CANDLEEDGE_TAG_OVERLAY)).toHaveLength(0);
+    expect(overlays.some((overlay) => (overlay.name as string) === 'simpleAnnotation')).toBe(false);
+    const marks = overlays.filter((overlay) => overlay.name === CANDLEEDGE_MARK_OVERLAY);
+    expect(marks.length).toBeGreaterThan(0);
+    for (const mark of marks) {
+      expect(mark.meta.kind).toBe('break');
+      expect(['up', 'down']).toContain((mark.extendData as CandleEdgeMarkData).dir);
     }
+    for (const detector of CANDLEEDGE_MVP_DETECTORS) {
+      const event = firstOf(detector);
+      expect(overlays.some((overlay) => overlay.meta.eventKey === event.key)).toBe(true);
+    }
+    const engulfing = events.filter((event) => event.detector.endsWith('engulfing'));
+    const rects = overlays.filter((overlay) => overlay.name === 'rect');
+    expect(rects).toHaveLength(engulfing.length);
+    for (const rect of rects) expect(rect.meta.kind).toBe('pattern');
   });
 
-  it('places bullish markers below the bar and bearish markers above it', () => {
-    const overlays = buildCandleEdgeOverlays(events, bars, null);
-    for (const event of events) {
-      const bar = bars[event.confirmedAtIndex];
-      const marker = overlays.find((overlay) => overlay.meta?.eventKey === event.key)!;
-      const value = marker.points[0].value;
-      if (event.bias === 'bullish') expect(value).toBeLessThan(bar.low);
-      else expect(value).toBeGreaterThan(bar.high);
-    }
-  });
-
-  it('adds the broken-level segment only for the selected BOS event', () => {
+  it('keeps the BOS pivot time separate from the break time and scales the level', () => {
     const selected = firstOf('bos_bullish');
     const overlays = buildCandleEdgeOverlays(events, bars, selected.key);
-    const segments = overlays.filter((overlay) => overlay.name === 'segment');
-    expect(segments).toHaveLength(1);
-    const [segment] = segments;
-    expect(segment.points).toHaveLength(2);
-    expect(segment.points[0].value).toBe(selected.level);
-    expect(segment.points[1].value).toBe(selected.level);
-    const levelAnchor = selected.anchors.find((anchor) => anchor.role === 'high')!;
-    expect(segment.points[0].timestamp).toBe(parseCandleTimestamp(levelAnchor.time));
-    expect(segment.points[1].timestamp).toBe(parseCandleTimestamp(selected.confirmedAt));
-    expect(segment.styles?.line).toMatchObject({ color: '#f0b90b', size: 2 });
-    const levelLabel = overlays.find(
-      (overlay) => overlay.meta?.kind === 'level' && overlay.name === 'simpleAnnotation',
-    );
-    expect(levelLabel?.extendData).toContain('سطح');
+    const mine = overlays.filter((overlay) => overlay.meta.eventKey === selected.key);
+    const pivot = selected.anchors.find((anchor) => anchor.role === 'high' || anchor.role === 'low')!;
 
-    const selectedMarker = overlays.find((overlay) => overlay.meta?.eventKey === selected.key)!;
-    expect(selectedMarker.extendData).toContain('BOS');
-    const otherMarkers = overlays.filter(
-      (overlay) =>
-        overlay.name === 'simpleAnnotation' && overlay.meta?.eventKey !== selected.key,
-    );
-    for (const marker of otherMarkers) expect(['▲', '▼']).toContain(marker.extendData);
+    const level = mine.find((overlay) => overlay.meta.kind === 'level')!;
+    expect(level.points.map((point) => point.value)).toEqual([selected.level, selected.level]);
+    expect(level.points[0].timestamp).toBe(parseCandleTimestamp(pivot.time));
+    expect(level.points[1].timestamp).toBe(parseCandleTimestamp(selected.confirmedAt));
+    expect(level.styles?.line).toMatchObject({ color: 'rgba(124, 196, 255, 0.95)', size: 1.8 });
+
+    const tick = mine.find((overlay) => overlay.meta.kind === 'pivot')!;
+    expect(tick.points[0].timestamp).toBe(tick.points[1].timestamp);
+    expect(tick.points[0].timestamp).toBe(parseCandleTimestamp(pivot.time));
+
+    const arrow = mine.find((overlay) => overlay.meta.kind === 'break')!;
+    expect(arrow.name).toBe(CANDLEEDGE_MARK_OVERLAY);
+    expect((arrow.extendData as CandleEdgeMarkData).dir).toBe('up');
+    expect(arrow.points[0].timestamp).toBe(parseCandleTimestamp(selected.confirmedAt));
+    const bar = bars[selected.confirmedAtIndex];
+    expect(arrow.points[0].value).toBeGreaterThan(bar.high);
+
+    const tag = mine.find((overlay) => overlay.meta.kind === 'tag')!;
+    expect(tag.name).toBe(CANDLEEDGE_TAG_OVERLAY);
+    expect((tag.extendData as CandleEdgeTagData).text).toBe('BOS ↗');
+    expect((tag.extendData as CandleEdgeTagData).place).toBe('below');
+
+    const bearish = firstOf('bos_bearish');
+    const scaled = buildCandleEdgeOverlays([bearish], bars, bearish.key, 2);
+    const scaledLevel = scaled.find((overlay) => overlay.meta.kind === 'level')!;
+    expect(scaledLevel.points.map((point) => point.value)).toEqual([
+      bearish.level! * 2,
+      bearish.level! * 2,
+    ]);
   });
 
-  it('connects the two pivots of a selected double pattern and scales levels for display', () => {
-    const selected = firstOf('double_bottom');
-    const overlays = buildCandleEdgeOverlays(events, bars, selected.key);
-    const segments = overlays.filter((overlay) => overlay.name === 'segment');
-    expect(segments).toHaveLength(1);
-    expect(segments[0].points[0].timestamp).toBe(parseCandleTimestamp(selected.anchors[0].time));
-    expect(segments[0].points[1].timestamp).toBe(parseCandleTimestamp(selected.anchors[1].time));
+  it('shows the sweep level and the crossing wick without inventing a level', () => {
+    const selected = firstOf('liquidity_sweep_high');
+    const overlays = buildCandleEdgeOverlays([selected], bars, selected.key);
+    const bar = bars[selected.confirmedAtIndex];
 
-    const bos = firstOf('bos_bearish');
-    const scaled = buildCandleEdgeOverlays(events, bars, bos.key, 2);
-    const level = scaled
-      .filter((overlay) => overlay.name === 'segment')
-      .flatMap((overlay) => overlay.points.map((point) => point.value));
-    expect(level).toEqual([bos.level! * 2, bos.level! * 2]);
+    const level = overlays.find((overlay) => overlay.meta.kind === 'level')!;
+    expect(level.points.every((point) => point.value === selected.level)).toBe(true);
+
+    const wick = overlays.find((overlay) => overlay.meta.kind === 'pattern')!;
+    expect(wick.points[0].timestamp).toBe(wick.points[1].timestamp);
+    expect(wick.points[0].timestamp).toBe(parseCandleTimestamp(bar.timestamp));
+    expect(wick.points[0].value).toBe(bar.high);
+    expect(wick.points[1].value).toBe(bar.close);
+    expect(wick.styles?.line).toMatchObject({ size: 3 });
+
+    expect(
+      (overlays.find((overlay) => overlay.meta.kind === 'tag')?.extendData as CandleEdgeTagData).text,
+    ).toBe(selected.bias === 'bearish' ? 'جارو ↓' : 'جارو ↑');
+  });
+
+  it('marks both double pivots and connects them, without a neckline the output lacks', () => {
+    const selected = firstOf('double_bottom');
+    const overlays = buildCandleEdgeOverlays([selected], bars, selected.key);
+    const pivots = overlays.filter((overlay) => overlay.meta.kind === 'pivot');
+    expect(pivots).toHaveLength(2);
+    expect(pivots.map((overlay) => overlay.points[0].timestamp).sort()).toEqual(
+      selected.anchors.map((anchor) => parseCandleTimestamp(anchor.time)).sort(),
+    );
+
+    const connector = overlays.find((overlay) => overlay.meta.kind === 'pattern')!;
+    expect(connector.points[0].timestamp).toBe(parseCandleTimestamp(selected.anchors[0].time));
+    expect(connector.points[1].timestamp).toBe(parseCandleTimestamp(selected.anchors[1].time));
+    expect(connector.points[0].value).toBe(selected.anchors[0].price);
+    expect(connector.points[1].value).toBe(selected.anchors[1].price);
+    expect(overlays.some((overlay) => overlay.meta.kind === 'level')).toBe(false);
+
+    const scaled = buildCandleEdgeOverlays([selected], bars, selected.key, 2);
+    const scaledConnector = scaled.find((overlay) => overlay.meta.kind === 'pattern')!;
+    expect(scaledConnector.points.map((point) => point.value)).toEqual([
+      selected.anchors[0].price * 2,
+      selected.anchors[1].price * 2,
+    ]);
+  });
+
+  it('labels only the selected or hovered event and dims the rest', () => {
+    const selected = firstOf('bos_bullish');
+    const other = firstOf('double_top');
+
+    const tags = buildCandleEdgeOverlays([selected, other], bars, selected.key).filter(
+      (overlay) => overlay.name === CANDLEEDGE_TAG_OVERLAY,
+    );
+    expect(tags).toHaveLength(1);
+    expect(tags[0].meta.eventKey).toBe(selected.key);
+
+    const hovered = buildCandleEdgeOverlays([other], bars, null, 1, other.key);
+    const hoverTags = hovered.filter((overlay) => overlay.name === CANDLEEDGE_TAG_OVERLAY);
+    expect(hoverTags).toHaveLength(1);
+    expect(hoverTags[0].meta.eventKey).toBe(other.key);
+    expect((hoverTags[0].extendData as CandleEdgeTagData).text).toContain('دوقلو');
+
+    const neutral = buildCandleEdgeOverlays([other], bars, null).find(
+      (overlay) => overlay.meta.kind === 'pattern',
+    )!;
+    const dimmed = buildCandleEdgeOverlays([selected, other], bars, selected.key).find(
+      (overlay) => overlay.meta.eventKey === other.key && overlay.meta.kind === 'pattern',
+    )!;
+    expect(dimmed.styles?.line).not.toEqual(neutral.styles?.line);
   });
 });

@@ -95,13 +95,20 @@ import { e3KlinechartsOverlay, structure3Layers } from '../../lib/structure3Laye
 import { scanPatterns } from '../../signals/candleedge';
 import type { PatternEvent } from '../../signals/candleedge';
 import {
+  CANDLEEDGE_ALL_FAMILIES,
   CANDLEEDGE_OVERLAY_GROUP,
   buildCandleEdgeGroups,
   buildCandleEdgeOverlays,
+  filterCandleEdgeByFamily,
   filterCandleEdgeEvents,
-  selectCandleEdgeChartEvents,
+  registerCandleEdgeOverlays,
+  selectCandleEdgeViewportEvents,
 } from '../../lib/candleEdgeMvp';
-import type { CandleEdgeChartData } from '../../lib/candleEdgeMvp';
+import type {
+  CandleEdgeChartData,
+  CandleEdgeFamilyFilter,
+  CandleEdgeViewport,
+} from '../../lib/candleEdgeMvp';
 
 export interface ChartProps {
   initialSymbol?: string;
@@ -124,8 +131,12 @@ export interface ChartProps {
   /** لایهٔ آزمایشیِ هشت الگوریتم CandleEdge؛ پیش‌فرض خاموش. */
   showCandleEdge?: boolean;
   candleEdgeSelectedKey?: string | null;
+  candleEdgeHoveredKey?: string | null;
+  candleEdgeFamilies?: CandleEdgeFamilyFilter;
   /** همان سریِ نمایشیِ چارت را به پنل می‌دهد؛ اسکن در پنل دوباره انجام نمی‌شود. */
   onCandleEdgeData?: (data: CandleEdgeChartData | null) => void;
+  /** بازهٔ کندلیِ دید برای اولویت‌بندی نشانه‌ها و نشانِ «در دید» در پنل. */
+  onCandleEdgeViewport?: (viewport: CandleEdgeViewport | null) => void;
 }
 
 /** فهرستِ مجازِ نوعِ کندل — همان‌ها که منو می‌سازد؛ نامِ ناشناخته اعمال نمی‌شود */
@@ -341,7 +352,10 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
   onAdjustmentChange,
   showCandleEdge = false,
   candleEdgeSelectedKey = null,
+  candleEdgeHoveredKey = null,
+  candleEdgeFamilies = CANDLEEDGE_ALL_FAMILIES,
   onCandleEdgeData,
+  onCandleEdgeViewport,
 }) => {
   const chartContainerRef = useRef<HTMLDivElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -624,22 +638,92 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
     }
   }, [candleEdgeEnabled, displayCandles]);
 
-  // کنترلِ شلوغی: همان گروه‌بندی/ترتیبِ پنل، فقط یک نماینده از هر گروهِ پیشرو
-  // روی چارت می‌آید. رویدادِ انتخاب‌شده همیشه رسم می‌شود، حتی اگر گروهش در صدر نباشد.
+  // کنترلِ شلوغی: خانواده‌های فعال، بعد یک نماینده از هر گروهِ دیده‌شده.
+  const candleEdgeFilteredEvents = useMemo(
+    () => filterCandleEdgeByFamily(candleEdgeScan.events, candleEdgeFamilies),
+    [candleEdgeScan.events, candleEdgeFamilies],
+  );
   const candleEdgeGroups = useMemo(
     () =>
-      candleEdgeEnabled && candleEdgeScan.events.length > 0
-        ? buildCandleEdgeGroups(`${currentSymbol}|${activeTimeframe}`, candleEdgeScan.events)
+      candleEdgeEnabled && candleEdgeFilteredEvents.length > 0
+        ? buildCandleEdgeGroups(`${currentSymbol}|${activeTimeframe}`, candleEdgeFilteredEvents)
         : null,
-    [candleEdgeEnabled, candleEdgeScan, currentSymbol, activeTimeframe],
+    [candleEdgeEnabled, candleEdgeFilteredEvents, currentSymbol, activeTimeframe],
   );
-  const candleEdgeChartEvents = useMemo(
-    () =>
-      candleEdgeGroups
-        ? selectCandleEdgeChartEvents(candleEdgeGroups.groups, candleEdgeSelectedKey)
-        : ([] as PatternEvent[]),
-    [candleEdgeGroups, candleEdgeSelectedKey],
-  );
+
+  // دیدِ چارت: نشانه‌ها فقط برای محدودهٔ واقعیِ دید ساخته می‌شوند و با Pan/Zoom
+  // بازآرایی می‌شوند؛ خودِ اورلی‌ها با timestamp/value لنگر دارند و جدا نمی‌شوند.
+  const [candleEdgeViewport, setCandleEdgeViewport] = useState<CandleEdgeViewport | null>(null);
+  const candleEdgeViewportRef = useRef<CandleEdgeViewport | null>(null);
+  const candleEdgeViewportTimer = useRef<number | null>(null);
+  useEffect(() => {
+    if (!candleEdgeEnabled || !isChartReady) {
+      candleEdgeViewportRef.current = null;
+      setCandleEdgeViewport(null);
+      return;
+    }
+    const chart = chartRef.current;
+    if (!chart) return;
+    const read = () => {
+      const range = chart.getVisibleRange();
+      if (
+        !Number.isFinite(range.from) ||
+        !Number.isFinite(range.to) ||
+        range.from < 0 ||
+        range.to < range.from
+      ) {
+        return;
+      }
+      const next = { from: range.from, to: range.to };
+      const prev = candleEdgeViewportRef.current;
+      if (prev && prev.from === next.from && prev.to === next.to) return;
+      candleEdgeViewportRef.current = next;
+      setCandleEdgeViewport(next);
+    };
+    const schedule = () => {
+      if (candleEdgeViewportTimer.current != null) {
+        window.clearTimeout(candleEdgeViewportTimer.current);
+      }
+      candleEdgeViewportTimer.current = window.setTimeout(read, 120);
+    };
+    read();
+    chart.subscribeAction('onVisibleRangeChange', schedule);
+    return () => {
+      chart.unsubscribeAction('onVisibleRangeChange', schedule);
+      if (candleEdgeViewportTimer.current != null) {
+        window.clearTimeout(candleEdgeViewportTimer.current);
+      }
+      candleEdgeViewportTimer.current = null;
+    };
+  }, [candleEdgeEnabled, isChartReady, displayCandles, activeTimeframe]);
+
+  const candleEdgeChartEvents = useMemo(() => {
+    if (!candleEdgeGroups) return [] as PatternEvent[];
+    const viewport = candleEdgeViewport ?? {
+      from: Math.max(0, displayCandles.length - 120),
+      to: displayCandles.length - 1,
+    };
+    return selectCandleEdgeViewportEvents(
+      candleEdgeGroups.groups,
+      viewport,
+      candleEdgeSelectedKey,
+      candleEdgeHoveredKey,
+    );
+  }, [
+    candleEdgeGroups,
+    candleEdgeViewport,
+    displayCandles.length,
+    candleEdgeSelectedKey,
+    candleEdgeHoveredKey,
+  ]);
+
+  const onCandleEdgeViewportRef = useRef(onCandleEdgeViewport);
+  onCandleEdgeViewportRef.current = onCandleEdgeViewport;
+  useEffect(() => {
+    const emit = onCandleEdgeViewportRef.current;
+    if (!emit) return;
+    emit(candleEdgeEnabled ? candleEdgeViewport : null);
+  }, [candleEdgeEnabled, candleEdgeViewport]);
 
   const onCandleEdgeDataRef = useRef(onCandleEdgeData);
   onCandleEdgeDataRef.current = onCandleEdgeData;
@@ -1087,6 +1171,7 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
       if (typeof regFn === 'function') {
         registerOverlayFn = regFn;
         registerFtsOverlays({ registerOverlay: regFn });
+        registerCandleEdgeOverlays({ registerOverlay: regFn });
       }
     } catch {
       // safe idempotent
@@ -2067,6 +2152,7 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
       })),
       candleEdgeSelectedKey,
       priceScale,
+      candleEdgeHoveredKey,
     );
     clear();
     for (const spec of specs) {
@@ -2095,6 +2181,7 @@ export const KLineChartWrapper: React.FC<ChartProps> = ({
     renderCandles,
     displayCandles,
     candleEdgeSelectedKey,
+    candleEdgeHoveredKey,
     isChartReady,
   ]);
 

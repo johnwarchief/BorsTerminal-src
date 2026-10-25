@@ -81,8 +81,13 @@ describe('CandleEdgePatternPanel', () => {
     expect(counts.textContent).toContain('۲');
     expect(counts.textContent).toContain('۱ صعودی');
     expect(counts.textContent).toContain('۱ نزولی');
-    expect(screen.getByTestId('ce-legend').textContent).toContain('▲');
-    expect(screen.getByTestId('ce-legend').textContent).toContain('▼');
+    const legend = screen.getByTestId('ce-legend').textContent ?? '';
+    expect(legend).toContain('صعودی');
+    expect(legend).toContain('نزولی');
+    expect(legend).toContain('پوشا');
+    expect(legend).toContain('BOS');
+    expect(legend).toContain('جارو');
+    expect(legend).toContain('دوقلو');
     expect(screen.getByTestId('ce-event-bos_bullish@50')).toBeInTheDocument();
     expect(screen.getByTestId('ce-event-liquidity_sweep_high@80')).toBeInTheDocument();
   });

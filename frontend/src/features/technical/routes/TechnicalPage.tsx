@@ -27,7 +27,15 @@ import { FtsDock } from '../components/FtsDock';
 import { FtsLayerLegend } from '../components/FtsLayerLegend';
 import { PatternToggles } from '../components/PatternToggles';
 import { CandleEdgePatternPanel } from '../components/CandleEdgePatternPanel';
-import type { CandleEdgeChartData } from '../lib/candleEdgeMvp';
+import {
+  CANDLEEDGE_ALL_FAMILIES,
+  candleEdgeFamilyOf,
+} from '../lib/candleEdgeMvp';
+import type {
+  CandleEdgeChartData,
+  CandleEdgeFamilyFilter,
+  CandleEdgeViewport,
+} from '../lib/candleEdgeMvp';
 import { toFaDigits } from '@shared/lib/fmt';
 import { epochToJalali } from '../lib/jalaliDate';
 import { TechnicalSidebar } from '../components/TechnicalSidebar';
@@ -76,6 +84,10 @@ export default function TechnicalPage() {
   const [showCandleEdge, setShowCandleEdge] = useState(false);
   const [candleEdgeData, setCandleEdgeData] = useState<CandleEdgeChartData | null>(null);
   const [candleEdgeSelectedKey, setCandleEdgeSelectedKey] = useState<string | null>(null);
+  const [candleEdgeHoveredKey, setCandleEdgeHoveredKey] = useState<string | null>(null);
+  const [candleEdgeFamilies, setCandleEdgeFamilies] =
+    useState<CandleEdgeFamilyFilter>(CANDLEEDGE_ALL_FAMILIES);
+  const [candleEdgeViewport, setCandleEdgeViewport] = useState<CandleEdgeViewport | null>(null);
 
   const replayActive = useReplayStore((s) => s.active);
   const replayCursor = useReplayStore((s) => s.cursor);
@@ -137,17 +149,23 @@ export default function TechnicalPage() {
   useEffect(() => {
     setCandleEdgeData(null);
     setCandleEdgeSelectedKey(null);
+    setCandleEdgeHoveredKey(null);
+    setCandleEdgeViewport(null);
   }, [viewSymbol]);
 
   useEffect(() => {
     if (chartEngine !== 'ffc') return;
     setCandleEdgeData(null);
     setCandleEdgeSelectedKey(null);
+    setCandleEdgeHoveredKey(null);
+    setCandleEdgeViewport(null);
   }, [chartEngine]);
 
   const handleCandleEdgeToggle = useCallback((next: boolean) => {
     setShowCandleEdge(next);
     setCandleEdgeSelectedKey(null);
+    setCandleEdgeHoveredKey(null);
+    setCandleEdgeViewport(null);
     if (!next) setCandleEdgeData(null);
   }, []);
 
@@ -158,11 +176,31 @@ export default function TechnicalPage() {
       if (!next) return null;
       return next.events.some((event) => event.key === current) ? current : null;
     });
+    setCandleEdgeHoveredKey((current) => {
+      if (current == null) return null;
+      if (!next) return null;
+      return next.events.some((event) => event.key === current) ? current : null;
+    });
   }, []);
+
+  const handleCandleEdgeFamilies = useCallback(
+    (next: CandleEdgeFamilyFilter) => {
+      setCandleEdgeFamilies(next);
+      setCandleEdgeHoveredKey(null);
+      setCandleEdgeSelectedKey((current) => {
+        if (current == null) return null;
+        const event = candleEdgeData?.events.find((candidate) => candidate.key === current);
+        return event && next[candleEdgeFamilyOf(event.detector)] ? current : null;
+      });
+    },
+    [candleEdgeData],
+  );
 
   const handleChartTimeframeChange = useCallback(() => {
     setCandleEdgeData(null);
     setCandleEdgeSelectedKey(null);
+    setCandleEdgeHoveredKey(null);
+    setCandleEdgeViewport(null);
   }, []);
   const storeTimeframe = useFtsConfigStore((s) => s.timeframe);
   const storeChartType = useFtsConfigStore((s) => s.chartType);
@@ -369,7 +407,10 @@ export default function TechnicalPage() {
                   onTimeframeChange={handleChartTimeframeChange}
                   showCandleEdge={showCandleEdge}
                   candleEdgeSelectedKey={candleEdgeSelectedKey}
+                  candleEdgeHoveredKey={candleEdgeHoveredKey}
+                  candleEdgeFamilies={candleEdgeFamilies}
                   onCandleEdgeData={handleCandleEdgeData}
+                  onCandleEdgeViewport={setCandleEdgeViewport}
                 />
               </Suspense>
             </div>
@@ -431,6 +472,11 @@ export default function TechnicalPage() {
                   data={chartEngine === 'ffc' ? null : candleEdgeData}
                   onSelect={setCandleEdgeSelectedKey}
                   engineId={chartEngine === 'ffc' ? 'ffc' : 'klinecharts'}
+                  families={candleEdgeFamilies}
+                  onFamiliesChange={handleCandleEdgeFamilies}
+                  hoveredKey={candleEdgeHoveredKey}
+                  onHover={setCandleEdgeHoveredKey}
+                  visibleRange={candleEdgeViewport}
                 />
               ),
             },

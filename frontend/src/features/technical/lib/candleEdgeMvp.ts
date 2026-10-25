@@ -11,6 +11,7 @@ import type {
 import { buildSalience } from '../signals/candleedge/research/salience';
 import type { SalienceBias, SalienceInputEvent, SalienceMethod } from '../signals/candleedge/research/types';
 import { TIMEFRAME_LABELS, type Timeframe } from '../nahayatnegar/lib/timeframe';
+import type { RegisterOverlayDef } from '../../../vendor/klinecharts';
 import { epochToJalali, parseCandleTimestamp } from './jalaliDate';
 
 export const CANDLEEDGE_MVP_DETECTORS = [
@@ -114,6 +115,80 @@ export function candleEdgeCounts(events: readonly PatternEvent[]): CandleEdgeCou
   return counts;
 }
 
+export type CandleEdgeFamily = 'engulfing' | 'bos' | 'sweep' | 'double';
+
+export const CANDLEEDGE_FAMILIES = ['engulfing', 'bos', 'sweep', 'double'] as const;
+
+export const CANDLEEDGE_FAMILY_LABELS: Record<CandleEdgeFamily, string> = {
+  engulfing: 'پوشا',
+  bos: 'BOS',
+  sweep: 'جارو',
+  double: 'دوقلو',
+};
+
+export const CANDLEEDGE_FAMILY_TITLES: Record<CandleEdgeFamily, string> = {
+  engulfing: 'الگوهای کندلی',
+  bos: 'شکست ساختار',
+  sweep: 'جاروی نقدینگی',
+  double: 'سقف و کف دوقلو',
+};
+
+/** خانوادهٔ نمایشی از روی detector؛ تعریف الگوریتم دست‌نخورده است. */
+export function candleEdgeFamilyOf(detector: DetectorId | string): CandleEdgeFamily {
+  if (detector === 'bullish_engulfing' || detector === 'bearish_engulfing') return 'engulfing';
+  if (detector === 'bos_bullish' || detector === 'bos_bearish') return 'bos';
+  if (detector === 'double_top' || detector === 'double_bottom') return 'double';
+  return 'sweep';
+}
+
+export type CandleEdgeFamilyFilter = Record<CandleEdgeFamily, boolean>;
+
+export const CANDLEEDGE_ALL_FAMILIES: CandleEdgeFamilyFilter = {
+  engulfing: true,
+  bos: true,
+  sweep: true,
+  double: true,
+};
+
+export function filterCandleEdgeByFamily(
+  events: readonly PatternEvent[],
+  families: CandleEdgeFamilyFilter,
+): PatternEvent[] {
+  return events.filter((event) => families[candleEdgeFamilyOf(event.detector)]);
+}
+
+export function candleEdgeFamilyCounts(
+  events: readonly PatternEvent[],
+): Record<CandleEdgeFamily, number> {
+  const counts: Record<CandleEdgeFamily, number> = {
+    engulfing: 0,
+    bos: 0,
+    sweep: 0,
+    double: 0,
+  };
+  for (const event of events) counts[candleEdgeFamilyOf(event.detector)] += 1;
+  return counts;
+}
+
+/** بازهٔ کندلیِ دیدِ چارت؛ همان اندیس‌های getVisibleRange. */
+export interface CandleEdgeViewport {
+  from: number;
+  to: number;
+}
+
+/** هندسهٔ رویداد با دید تلاقی دارد؟ لنگرِ دورِ چپ هم حساب می‌شود تا خط سطحِ BOS قطع نشود. */
+export function eventIntersectsViewport(
+  event: PatternEvent,
+  viewport: CandleEdgeViewport,
+  padding = 2,
+): boolean {
+  if (!Number.isFinite(viewport.from) || !Number.isFinite(viewport.to)) return false;
+  const indices = [event.confirmedAtIndex, ...event.anchors.map((anchor) => anchor.index)];
+  const start = Math.min(...indices);
+  const end = Math.max(...indices);
+  return end >= viewport.from - padding && start <= viewport.to + padding;
+}
+
 export interface CandleEdgeGroupView {
   id: string;
   events: PatternEvent[];
@@ -175,13 +250,15 @@ export function buildCandleEdgeGroups(
   return { groups, method: CANDLEEDGE_MVP_METHOD, note: CANDLEEDGE_MVP_METHOD_NOTE };
 }
 
-/** سقفِ نشانگرهای چارت: یک نماینده از هر گروهِ پیشرو، نه هر ۱۰۰۰ رویداد. */
-export const CANDLEEDGE_CHART_GROUP_LIMIT = 30;
+/** سقفِ نشانگرهای چارت در هر نمای دید؛ نه سقفِ فهرست. */
+export const CANDLEEDGE_VISIBLE_MARK_LIMIT = 10;
 export const CANDLEEDGE_CHART_NOTE =
-  `روی چارت فقط ${toFaDigits(String(CANDLEEDGE_CHART_GROUP_LIMIT))} گروهِ نخست به ترتیب بالا رسم می‌شود؛ ` +
-  'انتخاب هر رویداد آن را جدا روی چارت نشان می‌دهد.';
+  `روی چارت فقط رویدادهای محدودهٔ دید (حداکثر ${toFaDigits(String(CANDLEEDGE_VISIBLE_MARK_LIMIT))}) ` +
+  'به ترتیب ساختار رسم می‌شوند؛ فهرست کامل در همین پنل است.';
 
-/** یک نمایندهٔ تازه‌ترین‌تأیید از هر گروهِ پیشرو + همیشه رویدادِ انتخاب‌شده. */
+/** فالبکِ بدون‌دید: یک نماینده از هر گروهِ پیشرو (برای آماده‌نبودن viewport). */
+export const CANDLEEDGE_CHART_GROUP_LIMIT = 30;
+
 export function selectCandleEdgeChartEvents(
   groups: readonly CandleEdgeGroupView[],
   selectedKey: string | null,
@@ -200,6 +277,39 @@ export function selectCandleEdgeChartEvents(
       .flatMap((group) => group.events)
       .find((event) => event.key === selectedKey);
     if (selected) chosen.set(selected.key, selected);
+  }
+  return [...chosen.values()].sort(
+    (a, b) => a.confirmedAtIndex - b.confirmedAtIndex || a.key.localeCompare(b.key),
+  );
+}
+
+/**
+ * رویدادهای قابل‌رسم در دید: از هر گروهِ دیده‌شده یک نمایندهٔ تازه، به ترتیب
+ * سالینس، تا سقفِ خوانایی. رویداد انتخاب/هاور همیشه می‌ماند تا هایلایت گم نشود.
+ */
+export function selectCandleEdgeViewportEvents(
+  groups: readonly CandleEdgeGroupView[],
+  viewport: CandleEdgeViewport,
+  selectedKey: string | null,
+  hoveredKey: string | null = null,
+  limit = CANDLEEDGE_VISIBLE_MARK_LIMIT,
+): PatternEvent[] {
+  const chosen = new Map<string, PatternEvent>();
+  if (viewport.to < viewport.from) return [];
+  for (const group of groups) {
+    const visible = group.events.filter((event) => eventIntersectsViewport(event, viewport));
+    if (visible.length === 0) continue;
+    const newest = [...visible].sort(
+      (a, b) => b.confirmedAtIndex - a.confirmedAtIndex || a.key.localeCompare(b.key),
+    )[0];
+    chosen.set(newest.key, newest);
+    if (chosen.size >= Math.max(1, limit)) break;
+  }
+  const all = groups.flatMap((group) => group.events);
+  for (const key of [selectedKey, hoveredKey]) {
+    if (key == null) continue;
+    const event = all.find((candidate) => candidate.key === key);
+    if (event) chosen.set(event.key, event);
   }
   return [...chosen.values()].sort(
     (a, b) => a.confirmedAtIndex - b.confirmedAtIndex || a.key.localeCompare(b.key),
@@ -385,133 +495,517 @@ export interface CandleEdgeOverlayPoint {
   value: number;
 }
 
+export type CandleEdgeOverlayKind = 'pattern' | 'level' | 'pivot' | 'break' | 'tag';
+
+export const CANDLEEDGE_OVERLAY_GROUP = 'candleedge_mvp';
+
+/**
+ * تگ و نشانهٔ شکست را خودمان ثبت می‌کنیم: `simpleAnnotation` داخلیِ klinecharts
+ * متن را ۵۰px بالاتر با خط راهنما می‌کشد و استایلِ چیپ را نمی‌پذیرد. این دو
+ * تمپلیت با همان registerOverlay موجود ثبت می‌شوند؛ وابستگی تازه‌ای نیست.
+ */
+export const CANDLEEDGE_TAG_OVERLAY = 'candleEdgeTag';
+export const CANDLEEDGE_MARK_OVERLAY = 'candleEdgeMark';
+
+export interface CandleEdgeTagData {
+  text: string;
+  color: string;
+  background: string;
+  place: 'above' | 'below';
+}
+
+export interface CandleEdgeMarkData {
+  color: string;
+  dir: 'up' | 'down';
+}
+
 export interface CandleEdgeOverlaySpec {
-  name: 'simpleAnnotation' | 'segment';
+  name: 'segment' | 'rect' | typeof CANDLEEDGE_TAG_OVERLAY | typeof CANDLEEDGE_MARK_OVERLAY;
   groupId: string;
   lock: boolean;
   points: CandleEdgeOverlayPoint[];
-  extendData?: string;
+  extendData?: CandleEdgeTagData | CandleEdgeMarkData;
   styles?: Record<string, unknown>;
+  zLevel?: number;
   /** فرادادهٔ داخلیِ پنل/چارت؛ پیش از createOverlay حذف می‌شود. */
-  meta: { eventKey: string; kind: 'marker' | 'level' | 'pivot-link' };
+  meta: { eventKey: string; kind: CandleEdgeOverlayKind; family: CandleEdgeFamily };
 }
 
-export const CANDLEEDGE_OVERLAY_GROUP = 'candleedge_mvp';
-export const CANDLEEDGE_GLYPHS: Record<'bullish' | 'bearish', string> = {
-  bullish: '▲',
-  bearish: '▼',
-};
-const OVERLAY_COLORS: Record<'bullish' | 'bearish', string> = {
-  bullish: '#26a69a',
-  bearish: '#ef5350',
-};
+/** ثبت idempotent؛ دوباره‌فراخوانی خطا نمی‌دهد و با تمپلیتِ FTS قاطی نمی‌شود. */
+export function registerCandleEdgeOverlays(api: {
+  registerOverlay: (overlay: RegisterOverlayDef) => void;
+}): void {
+  api.registerOverlay({
+    name: CANDLEEDGE_MARK_OVERLAY,
+    totalStep: 2,
+    needDefaultPointFigure: false,
+    needDefaultXAxisFigure: false,
+    needDefaultYAxisFigure: false,
+    ignoreEvent: true,
+    createPointFigures: ({ coordinates, overlay }) => {
+      const data = (overlay.extendData ?? {}) as Partial<CandleEdgeMarkData>;
+      const point = coordinates[0];
+      if (!point) return [];
+      const up = data.dir !== 'down';
+      const r = 4.5;
+      const baseY = up ? point.y + r : point.y - r;
+      const tipY = up ? point.y - r : point.y + r;
+      return [
+        {
+          type: 'polygon',
+          attrs: {
+            coordinates: [
+              { x: point.x - r, y: baseY },
+              { x: point.x + r, y: baseY },
+              { x: point.x, y: tipY },
+            ],
+          },
+          styles: { style: 'fill', color: data.color, borderColor: data.color, borderSize: 1 },
+          ignoreEvent: true,
+        },
+      ];
+    },
+  });
+
+  api.registerOverlay({
+    name: CANDLEEDGE_TAG_OVERLAY,
+    totalStep: 2,
+    needDefaultPointFigure: false,
+    needDefaultXAxisFigure: false,
+    needDefaultYAxisFigure: false,
+    ignoreEvent: true,
+    createPointFigures: ({ coordinates, overlay, bounding }) => {
+      const data = (overlay.extendData ?? {}) as Partial<CandleEdgeTagData>;
+      const point = coordinates[0];
+      if (!point || !data.text) return [];
+      const size = 10;
+      const height = 17;
+      const width = Math.ceil(data.text.length * 6.1) + 12;
+      const x = Math.max(2, Math.min(bounding.width - width - 2, point.x - width / 2));
+      const y = data.place === 'above' ? point.y - height - 4 : point.y + 4;
+      return [
+        {
+          type: 'rect',
+          attrs: { x, y, width, height },
+          styles: {
+            style: 'fill',
+            color: data.background ?? CANDLEEDGE_COLORS.tagBg,
+            borderColor: data.color,
+            borderSize: 1,
+            borderRadius: 3,
+          },
+          ignoreEvent: true,
+        },
+        {
+          type: 'text',
+          attrs: {
+            x: x + width / 2,
+            y: y + height / 2,
+            text: data.text,
+            align: 'center',
+            baseline: 'middle',
+          },
+          styles: {
+            color: CANDLEEDGE_COLORS.tagText,
+            size,
+            family: CHART_FONT,
+            weight: '600',
+            // تمِ چارت برای متنِ اورلی پس‌زمینهٔ آبی دارد؛ چیپِ خودمان تنها پس‌زمینه باشد.
+            backgroundColor: 'transparent',
+            borderColor: 'transparent',
+            borderSize: 0,
+            paddingLeft: 0,
+            paddingRight: 0,
+            paddingTop: 0,
+            paddingBottom: 0,
+          },
+          ignoreEvent: true,
+        },
+      ];
+    },
+  });
+}
+
+/**
+ * زبانِ بصریِ واحد: رنگ = جهت، شکل = خانواده، آبی = انتخاب.
+ * سطح‌ها خنثی و خط‌چین‌اند تا با لایه‌های FTS قاطی نشوند؛ متن فقط برای
+ * رویدادِ انتخاب/هاور می‌آید.
+ */
+export const CANDLEEDGE_COLORS = {
+  bullish: '#2fd1a3',
+  bearish: '#ff6b7a',
+  structure: '#c4d0e2',
+  selection: '#7cc4ff',
+  tagText: '#e9f0f9',
+  tagBg: 'rgba(8, 13, 22, 0.92)',
+} as const;
+
+const CHART_FONT = 'Vazirmatn, Tahoma, sans-serif';
+const TICK_RATIO = 0.22;
+const GEOMETRY_Z = 7;
+const TAG_Z = 8;
+
+function withAlpha(hex: string, alpha: number): string {
+  const value = hex.replace('#', '');
+  const n = Number.parseInt(value, 16);
+  const r = (n >> 16) & 255;
+  const g = (n >> 8) & 255;
+  const b = n & 255;
+  return `rgba(${r}, ${g}, ${b}, ${Math.max(0, Math.min(1, alpha))})`;
+}
+
+function directionColor(event: PatternEvent): string {
+  return event.bias === 'bearish' ? CANDLEEDGE_COLORS.bearish : CANDLEEDGE_COLORS.bullish;
+}
+
+function barSpan(bar: CandleEdgeBar): number {
+  return Math.max(bar.high - bar.low, Math.abs(bar.close) * 0.001, 1);
+}
 
 function overlayTimestamp(time: CandleTime): number {
   const ts = parseCandleTimestamp(time);
   return Number.isFinite(ts) && ts > 0 ? ts : Number.NaN;
 }
 
+function lineStyles(color: string, size: number, style: 'solid' | 'dashed' = 'solid') {
+  return { line: { color, size, style } };
+}
+
+function tagText(event: PatternEvent): string {
+  const up = event.bias === 'bullish';
+  switch (candleEdgeFamilyOf(event.detector)) {
+    case 'engulfing':
+      return up ? 'پوشای ↑' : 'پوشای ↓';
+    case 'bos':
+      return up ? 'BOS ↗' : 'BOS ↘';
+    case 'sweep':
+      return up ? 'جارو ↑' : 'جارو ↓';
+    case 'double':
+      return event.detector === 'double_top' ? 'سقف دوقلو' : 'کف دوقلو';
+  }
+}
+
+interface OverlayBuildContext {
+  specs: CandleEdgeOverlaySpec[];
+  event: PatternEvent;
+  family: CandleEdgeFamily;
+  selected: boolean;
+  hovered: boolean;
+  dimmed: boolean;
+  priceScale: number;
+  bars: readonly CandleEdgeBar[];
+}
+
+function pushOverlay(
+  ctx: OverlayBuildContext,
+  overlay: Omit<CandleEdgeOverlaySpec, 'groupId' | 'lock' | 'zLevel' | 'meta'>,
+  kind: CandleEdgeOverlayKind,
+  zLevel = GEOMETRY_Z,
+): void {
+  ctx.specs.push({
+    ...overlay,
+    groupId: CANDLEEDGE_OVERLAY_GROUP,
+    lock: true,
+    zLevel,
+    meta: { eventKey: ctx.event.key, kind, family: ctx.family },
+  });
+}
+
+function pushTag(
+  ctx: OverlayBuildContext,
+  timestamp: number,
+  value: number,
+  borderColor: string,
+  place: 'above' | 'below',
+): void {
+  if (!Number.isFinite(timestamp) || !Number.isFinite(value) || value <= 0) return;
+  pushOverlay(
+    ctx,
+    {
+      name: CANDLEEDGE_TAG_OVERLAY,
+      points: [{ timestamp, value }],
+      extendData: {
+        text: tagText(ctx.event),
+        color: borderColor,
+        background: CANDLEEDGE_COLORS.tagBg,
+        place,
+      },
+    },
+    'tag',
+    TAG_Z,
+  );
+}
+
+function buildEngulfing(ctx: OverlayBuildContext, bar: CandleEdgeBar): void {
+  const { event, bars, dimmed, selected, hovered } = ctx;
+  const prevAnchor = [...event.anchors]
+    .filter((anchor) => anchor.index < event.confirmedAtIndex)
+    .sort((a, b) => b.index - a.index)[0];
+  const prevBar = prevAnchor ? bars[prevAnchor.index] : null;
+  const first = prevBar ?? bar;
+  const firstTs = overlayTimestamp(first.timestamp);
+  const lastTs = overlayTimestamp(bar.timestamp);
+  if (!Number.isFinite(firstTs) || !Number.isFinite(lastTs)) return;
+  const color = directionColor(event);
+  const alpha = dimmed ? 0.3 : 1;
+  pushOverlay(
+    ctx,
+    {
+      name: 'rect',
+      points: [
+        { timestamp: Math.min(firstTs, lastTs), value: Math.max(first.high, bar.high) },
+        { timestamp: Math.max(firstTs, lastTs), value: Math.min(first.low, bar.low) },
+      ],
+      styles: {
+        line: {
+          color: withAlpha(color, (selected ? 0.95 : hovered ? 0.85 : 0.55) * alpha),
+          size: selected ? 1.6 : 1,
+          style: 'solid',
+        },
+        polygon: { color: withAlpha(color, (selected ? 0.1 : 0.05) * alpha) },
+      },
+    },
+    'pattern',
+  );
+
+  if (!selected && !hovered) return;
+  pushTag(
+    ctx,
+    overlayTimestamp(bar.timestamp),
+    event.bias === 'bearish' ? bar.high : bar.low,
+    selected ? CANDLEEDGE_COLORS.selection : color,
+    event.bias === 'bearish' ? 'above' : 'below',
+  );
+}
+
+function buildBos(ctx: OverlayBuildContext, bar: CandleEdgeBar): void {
+  const { event, bars, priceScale, dimmed, selected, hovered } = ctx;
+  const level = event.level;
+  const pivot = event.anchors.find((anchor) => anchor.role === 'high' || anchor.role === 'low');
+  const breakTs = overlayTimestamp(event.confirmedAt);
+  if (level == null || !Number.isFinite(level) || level <= 0 || !pivot) return;
+  const pivotTs = overlayTimestamp(pivot.time);
+  if (!Number.isFinite(pivotTs) || !Number.isFinite(breakTs)) return;
+  const color = directionColor(event);
+  const alpha = dimmed ? 0.28 : 1;
+  const levelColor = selected
+    ? withAlpha(CANDLEEDGE_COLORS.selection, 0.95)
+    : hovered
+      ? withAlpha(color, 0.85)
+      : withAlpha(CANDLEEDGE_COLORS.structure, 0.55 * alpha);
+  const levelValue = level * priceScale;
+  pushOverlay(
+    ctx,
+    {
+      name: 'segment',
+      points: [
+        { timestamp: Math.min(pivotTs, breakTs), value: levelValue },
+        { timestamp: Math.max(pivotTs, breakTs), value: levelValue },
+      ],
+      styles: lineStyles(levelColor, selected ? 1.8 : 1, 'dashed'),
+    },
+    'level',
+  );
+
+  const pivotBar = bars[pivot.index];
+  const tick = Math.max((pivotBar ? barSpan(pivotBar) : Math.abs(level) * 0.004) * TICK_RATIO, 1);
+  pushOverlay(
+    ctx,
+    {
+      name: 'segment',
+      points: [
+        { timestamp: pivotTs, value: levelValue - tick },
+        { timestamp: pivotTs, value: levelValue + tick },
+      ],
+      styles: lineStyles(withAlpha(color, (selected ? 0.95 : 0.8) * alpha), selected ? 2 : 1.4),
+    },
+    'pivot',
+  );
+
+  const span = barSpan(bar);
+  const markY = event.bias === 'bullish' ? bar.high + span * 0.12 : bar.low - span * 0.12;
+  const arrowTs = overlayTimestamp(bar.timestamp);
+  if (!Number.isFinite(arrowTs) || !Number.isFinite(markY) || markY <= 0) return;
+  pushOverlay(
+    ctx,
+    {
+      name: CANDLEEDGE_MARK_OVERLAY,
+      points: [{ timestamp: arrowTs, value: markY }],
+      extendData: {
+        color: withAlpha(color, (selected ? 1 : 0.9) * alpha),
+        dir: event.bias === 'bullish' ? 'up' : 'down',
+      },
+    },
+    'break',
+  );
+
+  if (!selected && !hovered) return;
+  pushTag(
+    ctx,
+    overlayTimestamp(bar.timestamp),
+    event.bias === 'bearish' ? bar.high : bar.low,
+    selected ? CANDLEEDGE_COLORS.selection : color,
+    event.bias === 'bearish' ? 'above' : 'below',
+  );
+}
+
+function buildSweep(ctx: OverlayBuildContext, bar: CandleEdgeBar): void {
+  const { event, priceScale, dimmed, selected, hovered } = ctx;
+  const level = event.level;
+  const pivot = event.anchors.find((anchor) => anchor.role === 'high' || anchor.role === 'low');
+  const eventTs = overlayTimestamp(bar.timestamp);
+  if (level == null || !Number.isFinite(level) || level <= 0 || !pivot) return;
+  const pivotTs = overlayTimestamp(pivot.time);
+  if (!Number.isFinite(pivotTs) || !Number.isFinite(eventTs)) return;
+  const color = directionColor(event);
+  const alpha = dimmed ? 0.28 : 1;
+  const levelColor = selected
+    ? withAlpha(CANDLEEDGE_COLORS.selection, 0.95)
+    : hovered
+      ? withAlpha(color, 0.85)
+      : withAlpha(CANDLEEDGE_COLORS.structure, 0.55 * alpha);
+  const levelValue = level * priceScale;
+  pushOverlay(
+    ctx,
+    {
+      name: 'segment',
+      points: [
+        { timestamp: Math.min(pivotTs, eventTs), value: levelValue },
+        { timestamp: Math.max(pivotTs, eventTs), value: levelValue },
+      ],
+      styles: lineStyles(levelColor, selected ? 1.8 : 1, 'dashed'),
+    },
+    'level',
+  );
+
+  // سایهٔ عبور و برگشت روی همان کندلِ جارو؛ صرفاً یک آیکون عمومی نه.
+  pushOverlay(
+    ctx,
+    {
+      name: 'segment',
+      points: [
+        { timestamp: eventTs, value: event.detector === 'liquidity_sweep_high' ? bar.high : bar.low },
+        { timestamp: eventTs, value: bar.close },
+      ],
+      styles: lineStyles(
+        withAlpha(color, (selected ? 0.98 : 0.85) * alpha),
+        selected ? 3 : 2.2,
+      ),
+    },
+    'pattern',
+  );
+
+  if (!selected && !hovered) return;
+  pushTag(
+    ctx,
+    eventTs,
+    event.bias === 'bearish' ? bar.high : bar.low,
+    selected ? CANDLEEDGE_COLORS.selection : color,
+    event.bias === 'bearish' ? 'above' : 'below',
+  );
+}
+
+function buildDouble(ctx: OverlayBuildContext, bar: CandleEdgeBar): void {
+  const { event, bars, priceScale, dimmed, selected, hovered } = ctx;
+  const [first, second] = event.anchors;
+  if (!first || !second) return;
+  const firstTs = overlayTimestamp(first.time);
+  const secondTs = overlayTimestamp(second.time);
+  if (!Number.isFinite(firstTs) || !Number.isFinite(secondTs)) return;
+  const color = directionColor(event);
+  const alpha = dimmed ? 0.28 : 1;
+  const firstBar = bars[first.index];
+  const secondBar = bars[second.index];
+  const firstTick = Math.max((firstBar ? barSpan(firstBar) : first.price * 0.004) * TICK_RATIO, 1);
+  const secondTick = Math.max((secondBar ? barSpan(secondBar) : second.price * 0.004) * TICK_RATIO, 1);
+
+  for (const [anchor, ts, tick] of [
+    [first, firstTs, firstTick],
+    [second, secondTs, secondTick],
+  ] as const) {
+    pushOverlay(
+      ctx,
+      {
+        name: 'segment',
+        points: [
+          { timestamp: ts, value: anchor.price * priceScale - tick },
+          { timestamp: ts, value: anchor.price * priceScale + tick },
+        ],
+        styles: lineStyles(
+          withAlpha(color, (selected ? 0.95 : 0.8) * alpha),
+          selected ? 2 : 1.4,
+        ),
+      },
+      'pivot',
+    );
+  }
+
+  const connectorColor = selected
+    ? withAlpha(CANDLEEDGE_COLORS.selection, 0.9)
+    : hovered
+      ? withAlpha(color, 0.8)
+      : withAlpha(CANDLEEDGE_COLORS.structure, 0.45 * alpha);
+  pushOverlay(
+    ctx,
+    {
+      name: 'segment',
+      points: [
+        { timestamp: firstTs, value: first.price * priceScale },
+        { timestamp: secondTs, value: second.price * priceScale },
+      ],
+      styles: lineStyles(connectorColor, selected ? 1.6 : 1, 'dashed'),
+    },
+    'pattern',
+  );
+
+  if (!selected && !hovered) return;
+  const tagBar = secondBar ?? bar;
+  pushTag(
+    ctx,
+    secondTs,
+    event.bias === 'bearish' ? Math.max(tagBar.high, second.price) : Math.min(tagBar.low, second.price),
+    selected ? CANDLEEDGE_COLORS.selection : color,
+    event.bias === 'bearish' ? 'above' : 'below',
+  );
+}
+
 /**
- * یک نشانگرِ بی‌برچسب برای هر رویداد؛ خط سطح/اتصال پیوت فقط برای رویدادِ
- * انتخاب‌شده. `priceScale` نسبتِ آخرین کندلِ نمایشی به کندلِ اسکن است
- * (برای Heikin-Ashi)؛ خودِ نشانگرها از high/low سریِ نمایشی می‌آیند.
+ * هندسهٔ هر خانواده از دادهٔ واقعی: کادر دو کندلِ پوشا، سطح+تیغهٔ پیوت+فلشِ شکست
+ * برای BOS، سطح+سایهٔ برگشت برای جارو، دو پیوت+اتصال برای دوقلو. متن فقط برای
+ * رویدادِ انتخاب/هاور؛ بقیه با رنگ و شکل خوانده می‌شوند.
+ * `priceScale` نسبتِ آخرین کندلِ نمایشی به کندلِ اسکن است (Heikin-Ashi)؛
+ * نشانگرها از high/low سریِ نمایشی می‌آیند.
  */
 export function buildCandleEdgeOverlays(
   events: readonly PatternEvent[],
   bars: readonly CandleEdgeBar[],
   selectedKey: string | null,
   priceScale = 1,
+  hoveredKey: string | null = null,
 ): CandleEdgeOverlaySpec[] {
   const specs: CandleEdgeOverlaySpec[] = [];
   for (const event of events) {
     if (event.status !== 'confirmed') continue;
     const bar = bars[event.confirmedAtIndex];
     if (!bar) continue;
-    const bullish = event.bias !== 'bearish';
-    const glyph = bullish ? CANDLEEDGE_GLYPHS.bullish : CANDLEEDGE_GLYPHS.bearish;
-    const span = Math.max(bar.high - bar.low, Math.abs(bar.close) * 0.001, 1);
-    const value = bullish ? bar.low - span * 0.35 : bar.high + span * 0.35;
-    const timestamp = overlayTimestamp(bar.timestamp);
-    if (!Number.isFinite(timestamp) || !Number.isFinite(value) || value <= 0) continue;
-
+    const family = candleEdgeFamilyOf(event.detector);
     const selected = selectedKey != null && event.key === selectedKey;
-    specs.push({
-      name: 'simpleAnnotation',
-      groupId: CANDLEEDGE_OVERLAY_GROUP,
-      lock: true,
-      points: [{ timestamp, value }],
-      extendData: selected ? `${glyph} ${candleEdgeLabel(event.detector)}` : glyph,
-      styles: {
-        text: {
-          color: bullish ? OVERLAY_COLORS.bullish : OVERLAY_COLORS.bearish,
-          size: selected ? 10 : 9,
-        },
-      },
-      meta: { eventKey: event.key, kind: 'marker' },
-    });
-
-    if (!selected) continue;
-
-    if (event.level != null && Number.isFinite(event.level) && event.level > 0) {
-      const levelAnchor = event.anchors.find((anchor) => anchor.role === 'high' || anchor.role === 'low');
-      const levelTs = levelAnchor ? overlayTimestamp(levelAnchor.time) : Number.NaN;
-      const breakTs = overlayTimestamp(event.confirmedAt);
-      if (Number.isFinite(levelTs) && Number.isFinite(breakTs)) {
-        const start = Math.min(levelTs, breakTs);
-        const end = Math.max(levelTs, breakTs);
-        specs.push({
-          name: 'segment',
-          groupId: CANDLEEDGE_OVERLAY_GROUP,
-          lock: true,
-          points: [
-            { timestamp: start, value: event.level * priceScale },
-            { timestamp: end, value: event.level * priceScale },
-          ],
-          // رنگِ متمایز از لایه‌های FTS تا سطحِ انتخاب‌شده گم نشود.
-          styles: { line: { color: '#f0b90b', size: 2, style: 'dashed' } },
-          meta: { eventKey: event.key, kind: 'level' },
-        });
-        specs.push({
-          name: 'simpleAnnotation',
-          groupId: CANDLEEDGE_OVERLAY_GROUP,
-          lock: true,
-          points: [{ timestamp: breakTs, value: event.level * priceScale }],
-          extendData: `سطح ${fmtInt(event.level)}`,
-          styles: { text: { color: '#f0b90b', size: 10 } },
-          meta: { eventKey: event.key, kind: 'level' },
-        });
-      }
-    }
-
-    if (event.detector === 'double_top' || event.detector === 'double_bottom') {
-      const [first, second] = event.anchors;
-      const firstTs = first ? overlayTimestamp(first.time) : Number.NaN;
-      const secondTs = second ? overlayTimestamp(second.time) : Number.NaN;
-      if (
-        Number.isFinite(firstTs) &&
-        Number.isFinite(secondTs) &&
-        Number.isFinite(first.price * priceScale) &&
-        Number.isFinite(second.price * priceScale)
-      ) {
-        specs.push({
-          name: 'segment',
-          groupId: CANDLEEDGE_OVERLAY_GROUP,
-          lock: true,
-          points: [
-            { timestamp: firstTs, value: first.price * priceScale },
-            { timestamp: secondTs, value: second.price * priceScale },
-          ],
-          styles: {
-            line: {
-              color: bullish ? OVERLAY_COLORS.bullish : OVERLAY_COLORS.bearish,
-              size: 2,
-              style: 'solid',
-            },
-          },
-          meta: { eventKey: event.key, kind: 'pivot-link' },
-        });
-      }
-    }
+    const hovered = !selected && hoveredKey != null && event.key === hoveredKey;
+    const dimmed = selectedKey != null && !selected;
+    const ctx: OverlayBuildContext = {
+      specs,
+      event,
+      family,
+      selected,
+      hovered,
+      dimmed,
+      priceScale,
+      bars,
+    };
+    if (family === 'engulfing') buildEngulfing(ctx, bar);
+    else if (family === 'bos') buildBos(ctx, bar);
+    else if (family === 'sweep') buildSweep(ctx, bar);
+    else buildDouble(ctx, bar);
   }
   return specs;
 }
