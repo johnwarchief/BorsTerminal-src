@@ -2527,7 +2527,6 @@ def _attach_live_bar(symbol, res, built_at=None):
     return _stamp_data_time(price_basis.resolve_payload(out), built_at)
 
 
-@router.get("/api/chart/{symbol}")
 def _candle_closings(candles):
     """Effective candle official close: `closing` once price_basis filled it,
     otherwise the parsed CDN `close`.  The DPS base must never fall back to a
@@ -2543,6 +2542,7 @@ def _candle_closings(candles):
     return out
 
 
+@router.get("/api/chart/{symbol}")
 def get_chart_tsetmc(symbol: str):
     """نمودار کامل از CDN TSETMC: OHLCV روزانه + رویدادهای تعدیل عملکردی (ادجاست) با فال‌بک خودکار به دیتابیس محلی."""
     import time as _t
