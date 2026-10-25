@@ -1,0 +1,59 @@
+{
+ "reference": "D:/BorsTerminal-tmp/r26_bench/frozen/ref_bars_v2.jsonl",
+ "product": "D:/BorsTerminal-tmp/r32b/live_sample2",
+ "pack": "",
+ "assets_paired": 3,
+ "daily": {
+  "rows": 6063,
+  "base_exact": 6063,
+  "base_tol": 6063,
+  "base_exact_pct": 100.0,
+  "base_tol_pct": 100.0,
+  "corrected_exact": 6063,
+  "corrected_tol": 6063,
+  "corrected_exact_pct": 100.0,
+  "corrected_tol_pct": 100.0,
+  "raw_bad_after": 0,
+  "raw_applied": 0,
+  "factor_residual": 0,
+  "daily_residual": 0
+ },
+ "W": {
+  "rows": 1053,
+  "comp_rows": 1045,
+  "comp_pass": 1045,
+  "comp_exact": 1045,
+  "noncomp_rows": 8,
+  "noncomp_pass": 1
+ },
+ "M": {
+  "rows": 431,
+  "comp_rows": 422,
+  "comp_pass": 422,
+  "comp_exact": 422,
+  "noncomp_rows": 9,
+  "noncomp_pass": 4
+ },
+ "W_baseline": {
+  "rows": 1053,
+  "comp_rows": 1045,
+  "comp_pass": 1045
+ },
+ "M_baseline": {
+  "rows": 431,
+  "comp_rows": 422,
+  "comp_pass": 422
+ },
+ "noncomparable": {
+  "W": {
+   "rows": 8,
+   "missing": 1,
+   "extra": 7
+  },
+  "M": {
+   "rows": 9,
+   "missing": 2,
+   "extra": 7
+  }
+ }
+}

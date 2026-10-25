@@ -1,0 +1,132 @@
+{
+ "reference": "D:/BorsTerminal-tmp/r26_bench/frozen/ref_bars_v2.jsonl",
+ "product": "D:/BorsTerminal-tmp/r29_bench/full_shard0,D:/BorsTerminal-tmp/r29_bench/full_shard1,D:/BorsTerminal-tmp/r29_bench/full_shard2,D:/BorsTerminal-tmp/r29_bench/full_shard3,D:/BorsTerminal-tmp/r29_bench/full_shard4,D:/BorsTerminal-tmp/r29_bench/full_shard5",
+ "assets_paired": 1989,
+ "assets_ref": 2595,
+ "daily": {
+  "rows": 1194446,
+  "exact": 306955,
+  "tol": 771499,
+  "mismatch": 422947,
+  "raw_bad": 1813,
+  "raw_exact_bad": 1813,
+  "factor_fix_tol": 1192686,
+  "factor_fix_exact": 1192633,
+  "raw_fix_tol": 772696,
+  "raw_fix_exact": 307619,
+  "both_fix_tol": 1194446,
+  "both_fix_exact": 1194446,
+  "primary_raw_source": 1197,
+  "primary_factor_chain": 421141,
+  "primary_raw_plus_factor": 609,
+  "primary_factor_irrecoverable": 0,
+  "primary_unexplained": 0,
+  "raw_primary_overlap": 1806,
+  "factor_primary_overlap": 421187,
+  "factor_irrecoverable": 1760,
+  "raw_irrecoverable": 421750,
+  "both_irrecoverable": 0,
+  "one_step_recovered": 90497,
+  "all_step_recovered": 421187,
+  "corr_residual_bad": 0,
+  "exact_gap_factor_precision": 464537,
+  "exact_gap_raw_precision": 7,
+  "exact_gap_rounding": 0
+ },
+ "coverage": {
+  "D": {
+   "paired": 1194446,
+   "ref_only": 35826,
+   "product_only": 939725
+  },
+  "W": {
+   "paired": 275776,
+   "ref_only": 8174,
+   "product_only": 240337
+  },
+  "M": {
+   "paired": 69268,
+   "ref_only": 2068,
+   "product_only": 62573
+  }
+ },
+ "assets_unmatched": 1,
+ "W": {
+  "rows": 275776,
+  "row_exact": 71431,
+  "row_tol": 176162
+ },
+ "M": {
+  "rows": 69268,
+  "row_exact": 17826,
+  "row_tol": 43011
+ },
+ "W_counterfactual": {
+  "factor_tol": 272931,
+  "both_tol": 273175,
+  "factor_exact": 272910,
+  "both_exact": 273160
+ },
+ "M_counterfactual": {
+  "factor_tol": 66721,
+  "both_tol": 66820,
+  "factor_exact": 66715,
+  "both_exact": 66817
+ },
+ "W_comparable": {
+  "base": {
+   "rows": 275134,
+   "row_tol": 177688,
+   "row_exact": 72947
+  },
+  "both": {
+   "rows": 275134,
+   "row_tol": 274892,
+   "row_exact": 274891
+  },
+  "ref_d_agg": {
+   "rows": 283368,
+   "row_tol": 283356,
+   "row_exact": 283355
+  }
+ },
+ "M_comparable": {
+  "base": {
+   "rows": 69218,
+   "row_tol": 44724,
+   "row_exact": 19356
+  },
+  "both": {
+   "rows": 69218,
+   "row_tol": 69002,
+   "row_exact": 69002
+  },
+  "ref_d_agg": {
+   "rows": 71336,
+   "row_tol": 71336,
+   "row_exact": 71336
+  }
+ },
+ "rf_anchor_values": {
+  "1.0": 1989
+ },
+ "field_ratio_deviation": {},
+ "correction_version": "ra365-r32b-v1",
+ "created_at": "2026-10-25T17:22:36+00:00",
+ "ref_bars_sha256": "4b1ecb4c1effc4d5770c42521d96a2540a9c9f7b471d7cc710cd034712a8c17c",
+ "corrections": {
+  "factor": {
+   "replace_step": 6529,
+   "suppress_step": 139
+  },
+  "raw_fields": {
+   "close": 1587,
+   "last": 457,
+   "low_raw": 503,
+   "low": 511,
+   "open": 904,
+   "high_raw": 770,
+   "high": 751
+  }
+ }
+}

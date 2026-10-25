@@ -5,6 +5,12 @@ v9.5 — اجرای همهٔ تست‌های آفلاین (بدون نیاز ب�
 """
 import os, re, subprocess, sys
 
+# Gate suites must not inherit the production reference-correction pack: a test
+# fixture can reuse a real symbol, and the pack is keyed by ins_code/name.  The
+# dedicated Round 32B suite creates its own temporary packs and explicitly
+# re-enables the loader.  This keeps legacy expectations deterministic.
+os.environ["BORS_CORRECTIONS_DISABLE"] = "1"
+
 _HERE = os.path.dirname(os.path.abspath(__file__))
 # ترجمانِ شمارشِ گاردها (مأموریتِ ۱۴۰۵-۰۷-۲۳، بندِ ۷): «۰ pass / ۰ fail» بودنِ
 # یکِ suite یعنی گزارشگر خروجی‌اش را نفهمیده، نه اینکه صفرِ بررسی سبز شده باشد.
@@ -293,6 +299,8 @@ SUITES = [
                                       'Round 30: /api/chart/{symbol} is wired to the live handler, not a candles helper'),
     ('dev/test_ra365_round31_visible_hl_v1.py',
                                       'Round 31: /api/chart exposes the literal high/low the Rahavard type7 shows'),
+    ('dev/test_ra365_round32b_correction_pack_v1.py',
+                                      'Round 32B: versioned factor/raw corrections replace or suppress by effective date'),
     ('dev/test_fund_events_v1.py',    'official fund distributions drive (P-D)/P factor; same-date typed event survives'),
     ('dev/test_fund_ingest_v1.py',    'fund importer: Persian digits, corrupt rows, duplicate dedupe, newest instrument'),
     ('dev/test_history_repair_writer_v1.py',

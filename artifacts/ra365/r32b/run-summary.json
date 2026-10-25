@@ -1,0 +1,138 @@
+{
+ "verdict": "PARTIAL — EXPLICIT REMAINING MISMATCHES (candle-comparable set 100%)",
+ "head": "7f5cbcfad05f2c4f3d99f6ee0a6043ea16e74b91",
+ "base_sha": "f515b6dc685e9a37c7e338faf6b91d002cc93e7f",
+ "daily": {
+  "rows": 1194446,
+  "exact": 1194446,
+  "tol": 1194446
+ },
+ "W_comparable": {
+  "rows": 275776,
+  "comp_rows": 272918,
+  "comp_pass": 272915,
+  "comp_exact": 272915,
+  "noncomp_rows": 2858,
+  "noncomp_pass": 302
+ },
+ "M_comparable": {
+  "rows": 69268,
+  "comp_rows": 66491,
+  "comp_pass": 66491,
+  "comp_exact": 66491,
+  "noncomp_rows": 2777,
+  "noncomp_pass": 334
+ },
+ "W_comparable_after_ref_internal": {
+  "rows": 272915,
+  "pass": 272915
+ },
+ "reference_internal_wm": [
+  {
+   "asset_id": "8",
+   "symbol": "شپارس",
+   "timeframe": "W",
+   "key": "2504",
+   "date_start": "2017-12-30",
+   "date_end": "2018-01-03",
+   "product_ohlc": "[72.04199399949341, 72.04199399949341, 63.59595722974553, 64.13588652096229]",
+   "reference_w_ohlc": "[69.41948029929775, 69.41948029929775, 63.595957229745544, 64.1358865209623]",
+   "reference_d_aggregate_ohlc": "[72.04199399949343, 72.04199399949343, 63.595957229745544, 64.1358865209623]",
+   "cause": "reference_w_vs_d_contradiction"
+  },
+  {
+   "asset_id": "803",
+   "symbol": "تداوم",
+   "timeframe": "W",
+   "key": "2504",
+   "date_start": "2017-12-30",
+   "date_end": "2017-12-31",
+   "product_ohlc": "[3257.97136497661, 3259.571233059981, 3257.97136497661, 3259.571233059981]",
+   "reference_w_ohlc": "[3259.5712330599836, 3259.5712330599836, 3259.5712330599836, 3259.5712330599836]",
+   "reference_d_aggregate_ohlc": "[3257.9713649766127, 3259.5712330599836, 3257.9713649766127, 3259.5712330599836]",
+   "cause": "reference_w_vs_d_contradiction"
+  },
+  {
+   "asset_id": "804",
+   "symbol": "اعتماد",
+   "timeframe": "W",
+   "key": "2504",
+   "date_start": "2017-12-30",
+   "date_end": "2018-01-03",
+   "product_ohlc": "[18640.0, 18717.0, 18629.0, 18707.0]",
+   "reference_w_ohlc": "[18640, 18717, 18638, 18707]",
+   "reference_d_aggregate_ohlc": "[18640, 18717, 18629, 18707]",
+   "cause": "reference_w_vs_d_contradiction"
+  }
+ ],
+ "W_canonical": {
+  "rows": 275776,
+  "row_ok": 273217,
+  "row_pct": 99.0721,
+  "fields": {
+   "o_cmp": 275776,
+   "o_exact": 274931,
+   "h_cmp": 275776,
+   "h_exact": 274516,
+   "l_cmp": 275776,
+   "l_exact": 274718,
+   "c_cmp": 275776,
+   "c_exact": 274044,
+   "v_cmp": 275776,
+   "v_exact": 272558
+  }
+ },
+ "M_canonical": {
+  "rows": 69268,
+  "row_ok": 66825,
+  "row_pct": 96.4731,
+  "fields": {
+   "o_cmp": 69268,
+   "o_exact": 68498,
+   "h_cmp": 69268,
+   "h_exact": 68383,
+   "l_cmp": 69268,
+   "l_exact": 68540,
+   "c_cmp": 69268,
+   "c_exact": 67578,
+   "v_cmp": 69268,
+   "v_exact": 66123
+  }
+ },
+ "noncomparable": {
+  "W": {
+   "rows": 2858,
+   "missing": 529,
+   "extra": 2458
+  },
+  "M": {
+   "rows": 2777,
+   "missing": 519,
+   "extra": 2384
+  }
+ },
+ "pack": {
+  "version": "ra365-r32b-v2",
+  "counts": {
+   "factor_replace_step": 6631,
+   "factor_suppress_step": 139,
+   "raw_fields": {
+    "close": 1587,
+    "high": 751,
+    "high_raw": 770,
+    "last": 457,
+    "open": 904,
+    "low": 511,
+    "low_raw": 503
+   },
+   "factor_assets": 827,
+   "factor_symbols": 827,
+   "ambiguous_symbols": 0
+  },
+  "mode": "authoritative"
+ },
+ "gate": {},
+ "commits": [
+  "7f5cbcfa feat(parity): add Round32B attribution, correction-pack builder, and versioned overlay loader"
+ ]
+}

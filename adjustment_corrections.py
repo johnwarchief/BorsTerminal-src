@@ -31,7 +31,7 @@ import os
 import threading
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
-DEFAULT_VERSION = "ra365-r32b-v1"
+DEFAULT_VERSION = "ra365-r32b-v2"
 DEFAULT_DIR = os.path.join(ROOT, "data", "ra365_corrections", DEFAULT_VERSION)
 KNOWN_SCHEMAS = ("ra365-correction-pack-v1", "ra365-reference-pack-v1")
 FACTOR_ACTIONS = ("replace_step", "suppress_step")
@@ -230,13 +230,13 @@ class Pack:
 
     def key(self, symbol=None, ins_code=None):
         ins = str(ins_code or "").strip()
-        if ins and ins in self.factor_by_ins:
-            return ins
+        if ins:
+            # A known instrument identity is authoritative.  Never fall back
+            # to the display name: a test fixture may reuse a real symbol.
+            return ins if (ins in self.factor_by_ins or ins in self.raw_by_ins) else None
         sym = str(symbol or "").strip()
         if sym and sym in self.factor_by_symbol:
             return sym
-        if ins and ins in self.raw_by_ins:
-            return ins
         if sym and sym in self.raw_by_symbol:
             return sym
         return None

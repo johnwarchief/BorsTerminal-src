@@ -382,6 +382,8 @@ def main():
     ap.add_argument("--limit", type=int, default=0)
     ap.add_argument("--correction-version", default="ra365-r32b-v1")
     ap.add_argument("--created-at", default="")
+    ap.add_argument("--full-overlay", action="store_true",
+                    help="emit a replace_step for every reference step (not only mismatched)")
     a = ap.parse_args()
     os.makedirs(a.out, exist_ok=True)
     created_at = a.created_at or dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat()
@@ -677,7 +679,13 @@ def main():
         step_stats = defaultdict(lambda: Counter())
         for m in matches:
             if m["class"] is None:
-                m["family"] = ("ALIGNED", "-", "0")
+                if a.full_overlay:
+                    rs, ps = m["ref"], m["prod"]
+                    m["family"] = ("ALIGNED",
+                                   _sig(ps["prev"], ps["date"]) or _sig(rs["prev"], rs["date"]),
+                                   "0")
+                else:
+                    m["family"] = ("ALIGNED", "-", "0")
                 continue
             rs, ps = m["ref"], m["prod"]
             key = (m["class"], _sig(ps["prev"], ps["date"]) or _sig(rs["prev"], rs["date"]),
@@ -723,6 +731,12 @@ def main():
 
         for m in matches:
             if m["class"] is None:
+                if not a.full_overlay:
+                    continue
+                rs, ps = m["ref"], m["prod"]
+                _emit_factor("replace_step", rs["date"], rs["ratio"], rs=rs, ps=ps,
+                             cls="ALIGNED", fam=m["family"],
+                             reason="aligned step target ratio for exact parity")
                 continue
             rs, ps = m["ref"], m["prod"]
             if m["class"] == "DATE_DIFF":
@@ -870,7 +884,7 @@ def main():
             fam[key]["prod_ratio"] += c["prod_ratio"]
             fam[key]["ref_ratio"] += c["ref_ratio"]
         for m in matches:
-            if m["class"] is None:
+            if m["class"] is None and not a.full_overlay:
                 continue
             fsig, fbucket = m["family"][1], m["family"][2]
             step_rows.append({"asset_id": aid, "symbol": symbols.get(aid) or p.get("symbol"),

@@ -155,6 +155,12 @@ def chain_factors(dates, events):
     # صعودی، پس با پایین‌آمدنِ `t` اشاره‌گرِ رویداد فقط جلو می‌رود و هر `ratio` با
     # `date > t` دقیقاً یک‌بار درِ `f` می‌نشیند. دو کندلِ هم‌تاریخ همان `f` را می‌گیرند
     # (حلقۀِ `while` درِ دیدِ دوم چیزی مصرف نمی‌کند) و بی‌رویداد همه ۱ می‌مانند.
+    #
+    # Round 32B: no lossy 10-decimal rounding of the cumulative factor.  The
+    # previous `round(f, 10)` changed the visible adjusted price of high-priced
+    # candles by up to ~5e-7 rial (within tolerance, never exact) and made the
+    # exact-parity target unreachable by construction.  The chain is a product
+    # of double ratios; keeping the double is the reproducible value.
     order = sorted(range(len(ds)), key=lambda i: ds[i])
     f, j = 1.0, len(valid) - 1
     for i in reversed(order):
@@ -162,7 +168,7 @@ def chain_factors(dates, events):
         while j >= 0 and valid[j][0] > t:
             f *= valid[j][1]
             j -= 1
-        factors[i] = round(f, 10)
+        factors[i] = f
     anchor_i = ds.index(max(ds)) if ds else -1
     anchored = (factors[anchor_i] == 1.0) if ds else True
     incomplete = [p for p in prov if p["status"] != OK]

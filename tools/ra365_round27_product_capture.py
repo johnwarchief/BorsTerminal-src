@@ -80,6 +80,9 @@ def main():
     if mode == "w":
         lw.writerow(["ra_asset_id", "symbol", "ins_code", "state", "candles",
                      "events", "source", "csv_sha256", "error"])
+    # The DB is read-only and identical for every asset; hash it once instead of
+    # reading 246 MB per payload (2,594 x).
+    db_sha = sha(a.db) if os.path.exists(a.db) else ""
     only = {x.strip() for x in a.asset_id.split(",") if x.strip()}
     shard_i, shard_n = (int(x) for x in a.shard.split("/"))
     n = 0
@@ -108,6 +111,8 @@ def main():
         try:
             text = open(csv_path, encoding="utf-8", errors="replace").read()
             candles, volumes, all_rows = C._parse_tsetmc_csv(text)
+            # Factor/DPS computation uses the uncorrected close; the versioned
+            # raw corrections are applied to the *display* copy after the chain.
             candles = C._literal_display_candles(candles)
             if not candles:
                 lw.writerow([aid, sym, ins, "EMPTY_PRODUCT", 0, 0, "", sha(csv_path), ""])
@@ -118,12 +123,22 @@ def main():
             adj, false_rej = C._filter_unproven_base_events(sym, adj, times=times)
             closings = C._candle_closings(candles)
             applied, rejected, factors, chain, cov = C._canonical_adjustment(
-                sym, times, adj, closings=closings, gap_closings=closings)
+                sym, times, adj, closings=closings, gap_closings=closings,
+                ins_code=ins)
             rejected = list(rejected) + list(false_rej)
+            candles = C._literal_display_candles(candles, symbol=sym, ins_code=ins)
+            _has_corr = any(e.get("source") == "rahavard-reference-correction"
+                            for e in applied)
             payload = {
                 "asset_id": aid, "symbol": sym, "ins_code": ins,
                 "priceBasis": "last", "priceBasisRequested": "last",
-                "adjustSource": ("ledger+base-price-discontinuity"
+                "adjustSource": ("rahavard-reference-correction+"
+                                 + ("ledger+base-price-discontinuity"
+                                    if any(e.get("source") in ("priceAdjust", "shareChange")
+                                           for e in applied)
+                                    else "base-price-discontinuity")
+                                 if _has_corr else
+                                 "ledger+base-price-discontinuity"
                                  if any(e.get("source") in ("priceAdjust", "shareChange")
                                         for e in applied)
                                  else "base-price-discontinuity" if applied
@@ -132,11 +147,12 @@ def main():
                 "factors": [{"time": t, "factor": f} for t, f in zip(times, factors)],
                 "adjustEvents": applied, "adjustRejected": rejected,
                 "adjustCapability": {"sharpened": sharp_n, "ambiguous": amb_n,
-                                     "coverage": cov},
+                                     "coverage": cov,
+                                     "corrections": C.AC.capability(sym, ins)},
                 "provenance": {
                     "engine": "current-main",
                     "csv_sha256": sha(csv_path),
-                    "db_sha256": sha(a.db),
+                    "db_sha256": db_sha,
                     "captured_at": time.strftime("%Y-%m-%dT%H:%M:%S%z"),
                     "path": "tsetmc_csv replay; no live bar; no network",
                 },

@@ -180,6 +180,8 @@ def main():
     ap.add_argument("--out", required=True)
     ap.add_argument("--version", default="ra365-r32b-v1")
     ap.add_argument("--created-at", default="")
+    ap.add_argument("--mode", default="authoritative", choices=("overlay", "authoritative"),
+                    help="authoritative: for covered symbols the pack chain is the factor source")
     a = ap.parse_args()
     os.makedirs(a.out, exist_ok=True)
     created_at = a.created_at or dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat()
@@ -224,15 +226,19 @@ def main():
     raw_counts = Counter(r["field"] for r in raws)
     by_symbol = Counter()
     by_asset = Counter()
+    symbol_ins = defaultdict(set)
     for r in factors:
         by_symbol[r["symbol"]] += 1
         by_asset[r["ins_code"]] += 1
-    dup_symbols = {s: c for s, c in by_symbol.items() if c and sum(
-        1 for x in factors if x["symbol"] == s and x["action"] == "replace_step") > 0}
+        if r["symbol"]:
+            symbol_ins[r["symbol"]].add(r["ins_code"])
+    ambiguous_symbols = {s: sorted(v) for s, v in symbol_ins.items()
+                         if len([x for x in v if x]) > 1}
     manifest = {
         "schema": "ra365-correction-pack-v1",
         "correction_version": a.version,
         "created_at": created_at,
+        "mode": a.mode,
         "tool": "tools/ra365_round32b_pack.py",
         "reference_sha256": ref_sha,
         "files": {
@@ -249,9 +255,15 @@ def main():
             "raw_fields": dict(raw_counts),
             "factor_assets": len(by_asset),
             "factor_symbols": len(by_symbol),
+            "ambiguous_symbols": len(ambiguous_symbols),
         },
+        "ambiguous_symbols": ambiguous_symbols,
         "dedupe": {"factor_merged": dict(merged), "raw_conflicts": dict(conflicts)},
         "semantics": {
+            "mode": ("authoritative: for a covered symbol every product event is suppressed "
+                     "and the chain is built from the pack's replace_step rows"
+                     if a.mode == "authoritative" else
+                     "overlay: only the listed replace/suppress dates change the product chain"),
             "replace_step": ("suppress every product event on effective_date and insert one "
                              "step with ratio; ratio is the reference-implied step"),
             "suppress_step": "suppress every product event on effective_date",

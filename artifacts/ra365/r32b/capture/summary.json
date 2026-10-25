@@ -1,0 +1,8 @@
+{
+ "assets": 2595,
+ "states": {
+  "SUCCESS": 2594,
+  "EMPTY_PRODUCT": 1
+ },
+ "shards": 6
+}

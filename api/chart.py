@@ -9,6 +9,7 @@ from bors_config import (DB_PATH, FTS_CONFIG_PATH, FTS_DEFAULTS, MA_WINDOWS,
                          _CAL_CACHE_PATH, _cal_cache, APP_VERSION)
 from tape_flags import JET_LADDER
 import adjustment_engine as AE
+import adjustment_corrections as AC
 import bors_flags
 import candle_contract
 import corporate_ledger as CL
@@ -608,6 +609,44 @@ def _combined_dps_official_ratio(formula_ratio, official_ratio, date, share_chan
                 and abs(oro / srv - 1.0) <= _DPS_COMBINED_SHARE_BAND:
             return oro
     return None
+
+
+_INS_CODE_CACHE = {}
+_INS_CODE_LOCK = threading.Lock()
+
+
+def _ins_code_for(symbol):
+    """Stable instrument identity for a symbol (cached, read-only).
+
+    The correction pack is keyed by `ins_code`, not by the mutable display
+    name.  Passing the resolved code avoids a name collision between a test
+    fixture and a real symbol.  `None` means the DB did not provide one; only
+    then may the pack fall back to the symbol.
+    """
+    if not symbol:
+        return None
+    key = (str(DB_PATH), str(symbol))
+    with _INS_CODE_LOCK:
+        if key in _INS_CODE_CACHE:
+            return _INS_CODE_CACHE[key]
+    out = None
+    try:
+        conn = sqlite3.connect(DB_PATH, timeout=10)
+        try:
+            conn.execute("PRAGMA query_only=ON")
+            _pred, _params = sym_pred(conn, "l_val18", symbol, "board")
+            row = conn.execute(
+                f"SELECT ins_code FROM instruments WHERE {_pred}"
+                " ORDER BY updated_at DESC LIMIT 1", _params).fetchone()
+            if row:
+                out = str(row[0])
+        finally:
+            conn.close()
+    except Exception:
+        out = None
+    with _INS_CODE_LOCK:
+        _INS_CODE_CACHE[key] = out
+    return out
 
 
 def _ledger_events_for(symbol):
@@ -2182,14 +2221,22 @@ def _effective_event_dates(events, times):
     return out
 
 
-def _canonical_adjustment(symbol, times, events, closings=None, gap_closings=None):
+def _canonical_adjustment(symbol, times, events, closings=None, gap_closings=None,
+                          ins_code=None):
     """(applied, rejected, factors, chain, coverage) — تنها محاسبۀِ تعدیلِ هر دو مسیر.
 
     ترتیبِ `times` آزاد است (CSV نزولی، `price_history` صعودی) و `factors` دقیقاً
     هم‌ردیفِ همان `times` برمی‌گردد. `closings` نقشهٔ تاریخ→پایانیِ همان کندل است؛
     پایهٔ DPS از همین کندل خوانده می‌شود و DB فقط fallback است.
+
+    پس از کشف/ادغام/تیزکردن، بستهٔ تصحیحِ نسخه‌دار (در صورت وجود) گام‌های
+    ناهمخوان/گم‌شده را با `effective_date` جایگزین یا حذف می‌کند. رویدادهای
+    حذف‌شده در `rejected` با وضعیتِ `suppressed-by-rahavard-reference-correction`
+    می‌مانند؛ هیچ رویدادی خاموش حذف نمی‌شود.
     """
     t10 = [str(t)[:10] for t in (times or [])]
+    if ins_code is None:
+        ins_code = _ins_code_for(symbol)
     events = _effective_event_dates(events, t10)
     official = _fund_profit_events(symbol)
     if official:
@@ -2208,12 +2255,20 @@ def _canonical_adjustment(symbol, times, events, closings=None, gap_closings=Non
     # Two observations of one capital increase (observed base gap + official
     # share leg) must not be applied twice; keep the observed price leg.
     events, _leg_rejected = _drop_share_leg_of_observed_gap(events, share_changes)
+    events, _corr_suppressed, _corr_meta = AC.apply_factor_events(
+        symbol, events, ins_code)
+    _corr_rejected = [
+        {"date": str(e.get("date"))[:10], "ratio": e.get("ratio"),
+         "factor_status": "suppressed-by-rahavard-reference-correction",
+         "correction_version": _corr_meta.get("version")}
+        for e in _corr_suppressed]
     # کلیدِ هویتِ دفتری فقط برای همین تصمیم است؛ نه در payload و نه در موتور.
     events = [{k: v for k, v in e.items() if not str(k).startswith("_")}
               for e in events]
     applied, rejected, wrapped = _engine_events(events)
     rejected.extend(dup_rejected)
     rejected.extend(_leg_rejected)
+    rejected.extend(_corr_rejected)
     factors, chain = AE.chain_factors(t10, wrapped)
     return applied, rejected, factors, chain, _ledger_coverage(symbol, t10, wrapped)
 
@@ -2255,10 +2310,12 @@ def _adjust_capability(events, source, ledger=None, chain=None, coverage=None,
         reason = "زنجیره/پوششِ این نماد سنجیده نشده است."
     else:
         reason = _ADJ_FUNCTIONAL_REASON
-    return {
+    corr = AC.capability(symbol)
+    result = {
         "source": source,
         "combined_available": (source in _ADJ_KNOWN_SOURCES
-                               or str(source).startswith("fund-portal")),
+                               or str(source).startswith("fund-portal")
+                               or str(source).startswith("rahavard-reference-correction")),
         "functional_available": available,
         "functional_status": status,
         "functional_reason": reason,
@@ -2270,16 +2327,31 @@ def _adjust_capability(events, source, ledger=None, chain=None, coverage=None,
         "chain_complete": (chain or {}).get("complete"),
         "chain_incomplete_events": len((chain or {}).get("incomplete") or []),
         "coverage": coverage,
+        "corrections": corr,
     }
+    if (corr.get("covered") and corr.get("mode") == "authoritative"
+            and (chain or {}).get("complete")):
+        result["combined_available"] = True
+        result["functional_available"] = True
+        result["functional_status"] = "AVAILABLE_REFERENCE_CORRECTION"
+        result["functional_reason"] = (
+            "زنجیرهٔ تعدیل از بستهٔ تصحیحِ نسخه‌دارِ مرجع ساخته شده است؛ "
+            "گام‌های رسمیِ کنارگذاشته‌شده در adjustRejected با وضعیت ثبت شده‌اند.")
+        result["functional_blockers"] = []
+    return result
 
 
-def _factors_from_events(times, events):
+def _factors_from_events(times, events, symbol=None, ins_code=None):
     """factor(t) = ∏ ratio برای رویدادهایِ date > t — همان `AE.chain_factors`، بی‌حلقۀِ دوم.
 
     رویدادِ بی‌اعتبارِ موتوری ( خارج از کران، صفر، منفی) درِ زنجیره نمی‌نشیند؛
     `AE.chain_factors` خودش آن را درِ `provenance.incomplete` علامت می‌زند تا هیچ
     ضریبی خاموش با مقدارِ ۱ جای عددِ درست نگیرد.
     """
+    if symbol or ins_code:
+        if ins_code is None and symbol:
+            ins_code = _ins_code_for(symbol)
+        events, _sup, _meta = AC.apply_factor_events(symbol, events, ins_code)
     _payload, _rejected, wrapped = _engine_events(events)
     factors, _chain = AE.chain_factors([str(t)[:10] for t in (times or [])], wrapped)
     return factors
@@ -2542,13 +2614,16 @@ def _candle_closings(candles):
     return out
 
 
-def _literal_display_candles(candles):
+def _literal_display_candles(candles, symbol=None, ins_code=None):
     """Visible H/L = the literal published extremes, matching Rahavard type7.
 
     The internal builders keep `widen()` for diagnostics and DB geometry, but
     the user-visible candle must not widen the shadow: the reference type7
     carries the literal extremes even when they sit inside the body (asset 6,
     1996-09-16: high 4020 < open 4022 in type0; type7 preserves that).
+
+    Per-field raw corrections (versioned pack) are applied to this display copy
+    only; the internal candles used for factor/DPS computation stay untouched.
     """
     out = []
     for c in candles or []:
@@ -2558,6 +2633,9 @@ def _literal_display_candles(candles):
         if d.get("low_raw") is not None:
             d["low"] = d["low_raw"]
         out.append(d)
+    if ins_code is None and symbol:
+        ins_code = _ins_code_for(symbol)
+    AC.apply_raw_candles(symbol, out, ins_code)
     return out
 
 
@@ -2567,7 +2645,7 @@ def get_chart_visible(symbol: str):
     res = get_chart_tsetmc(symbol)
     if isinstance(res, dict) and res.get("candles"):
         res = dict(res)
-        res["candles"] = _literal_display_candles(res["candles"])
+        res["candles"] = _literal_display_candles(res["candles"], symbol=symbol)
     return res
 
 
@@ -2750,6 +2828,10 @@ def get_chart_tsetmc(symbol: str):
                              ("no-adjustment-event", "base-not-anchored")
                              else adjust_source if str(adjust_source).startswith("fund-portal")
                              else "fund-portal+" + adjust_source)
+        _corr_n = sum(1 for e in _applied
+                      if e.get("source") == "rahavard-reference-correction")
+        if _corr_n:
+            adjust_source = "rahavard-reference-correction+" + adjust_source
         factors = [{"time": c["time"], "factor": f} for c, f in zip(candles, _fac)]
 
         # صفر کندل ≠ موفق. اوراق/نمادهای منقضی CSV خالی می‌دهند؛ قبلاً
@@ -3284,9 +3366,10 @@ def get_ma_events(symbol: str, days: int = Query(730)):
         _evs = _stored_adjust_events(symbol)
         _src = ("local-cache" if _evs
                 else _stored_adjust_source(symbol) or "local-db-unseen")
-        _cap = _adjust_capability(_evs, _src)
+        _cap = _adjust_capability(_evs, _src, symbol=symbol)
         _adjusted = bool(_cap.get("combined_available"))
-        _fct = (_factors_from_events([str(c["time"])[:10] for c in _ma_rows], _evs)
+        _fct = (_factors_from_events([str(c["time"])[:10] for c in _ma_rows], _evs,
+                                     symbol=symbol)
                 if _adjusted else [1.0] * len(_ma_rows))
         closes = [(c["time"], round(float(c["close"]) * f, 6))
                   for c, f in zip(_ma_rows, _fct) if c["close"] is not None]
@@ -3317,7 +3400,7 @@ def get_chart_db_visible(symbol: str):
     res = get_chart_db(symbol)
     if isinstance(res, dict) and res.get("candles"):
         res = dict(res)
-        res["candles"] = _literal_display_candles(res["candles"])
+        res["candles"] = _literal_display_candles(res["candles"], symbol=symbol)
     return res
 
 
@@ -3499,7 +3582,8 @@ def get_patterns(symbol: str):
         # قدمِ ۵: حلقۀِ n×mِ محلیِ سوم (اینجا) هم حذف شد — سطح‌ها از همان
         # `_factors_from_events` می‌آیند که کندل‌ها و FTS می‌گیرند، پس «سطحِ
         # تعدیل‌شده» و «شمعیِ تعدیل‌شده» یک ضریب دارند و دو محاسبه نه.
-        for r, f in zip(rows, _factors_from_events([r["date"] for r in rows], evs)):
+        for r, f in zip(rows, _factors_from_events([r["date"] for r in rows], evs,
+                                                   symbol=symbol)):
             for _k in ("high", "low", "close", "closing", "last", "high_raw", "low_raw"):
                 if r.get(_k) is not None:
                     r[_k] = r[_k] * f
@@ -5697,7 +5781,7 @@ def _fts_analysis_series(symbol):
         if len(series) >= 2:
             src = str(payload.get("adjustSource") or "")
             cap = payload.get("adjustCapability") or _adjust_capability(
-                payload.get("adjustEvents") or [], src)
+                payload.get("adjustEvents") or [], src, symbol=symbol)
             # «raw» یعنی داوریِ تعدیل درِ دسترس نیست (لنگر پذیرفته نشد یا نماد هنوز
             # دیده نشده) — نه اینکه تعدیل صفر است؛ آن حالت درِ `-adjusted` می‌ماند.
             if cap.get("combined_available"):
@@ -5812,7 +5896,7 @@ def _fts_analyze_symbol(symbol, entry_hint=None, as_of=None):
               # (قاعدۀ لایۀ ۴); بی‌این، FFC در مبنای raw لایه را جابه‌جا می‌زد.
               "ref_close": last_close,
               "trend_engine": TREND_ENGINE,
-              "adjustCapability": _adjust_capability(_evs, _src)}
+              "adjustCapability": _adjust_capability(_evs, _src, symbol=symbol)}
     if as_of:
         result["as_of"] = as_of
     if len(FTS_ANALYSIS_CACHE) > FTS_ANALYSIS_CACHE_MAX:

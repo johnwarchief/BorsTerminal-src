@@ -1,0 +1,45 @@
+{
+ "schema": "ra365-correction-pack-v1",
+ "correction_version": "ra365-r32b-v2",
+ "created_at": "2026-10-25T17:44:41+00:00",
+ "mode": "authoritative",
+ "tool": "tools/ra365_round32b_pack.py",
+ "reference_sha256": "4b1ecb4c1effc4d5770c42521d96a2540a9c9f7b471d7cc710cd034712a8c17c",
+ "files": {
+  "factors": "factors.jsonl",
+  "raw_ohlc": "raw_ohlc.jsonl"
+ },
+ "file_sha256": {
+  "factors": "2194b4dfaaaf851f1256c8227963e089ee1503accc134a22057515fb346dc716",
+  "raw_ohlc": "1acc53b26d578e5f4452a17a1d62d391d0d3f600a310759059477862f6143dbe"
+ },
+ "counts": {
+  "factor_replace_step": 6631,
+  "factor_suppress_step": 139,
+  "raw_fields": {
+   "close": 1587,
+   "high": 751,
+   "high_raw": 770,
+   "last": 457,
+   "open": 904,
+   "low": 511,
+   "low_raw": 503
+  },
+  "factor_assets": 827,
+  "factor_symbols": 827,
+  "ambiguous_symbols": 0
+ },
+ "ambiguous_symbols": {},
+ "dedupe": {
+  "factor_merged": {},
+  "raw_conflicts": {}
+ },
+ "semantics": {
+  "mode": "authoritative: for a covered symbol every product event is suppressed and the chain is built from the pack's replace_step rows",
+  "replace_step": "suppress every product event on effective_date and insert one step with ratio; ratio is the reference-implied step",
+  "suppress_step": "suppress every product event on effective_date",
+  "raw_ohlc": "per-field historical display value from the frozen reference type0 bar; never rewrites corporate events"
+ },
+ "source": "rahavard_reference_frozen_v2 (owner-authenticated snapshot)",
+ "usage": "Derived factor segments and sparse per-field values only; no bulk raw series redistribution."
+}
