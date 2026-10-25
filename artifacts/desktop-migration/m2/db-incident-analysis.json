@@ -1,0 +1,186 @@
+{
+  "mission": "M2 TinyJS packaging acceptance",
+  "generated_at": "2026-10-25",
+  "remote_and_base": {
+    "remote": [
+      "origin https://github.com/johnwarchief/BorsTerminal-src.git"
+    ],
+    "report_commit": "7caae4007f7997fddc8ea5eaf48797e14cb3e144",
+    "m1_baseline": "b5f5f6c4f4dab11b3a5547feba5a7a124d79304c",
+    "origin_main_at_report": "b5f5f6c4f4dab11b3a5547feba5a7a124d79304c",
+    "origin_main_after_fetch": "036cdfa917555d58530e8c79c52d7ae07e0a750f",
+    "origin_main_ahead_of_m1_baseline_by": 5,
+    "origin_main_delta_paths": "docs, artifacts/ra365/r26, tools/ra365_round26_*; no SPA/backend source in the 5-commit delta",
+    "m1_branch_on_remote": false,
+    "merge_base": "b5f5f6c4f4dab11b3a5547feba5a7a124d79304c",
+    "report_is_ancestor_of_origin_main": false,
+    "local_main": "d580306b72a7e0ae077cd2973643b6b0b136e5b0 (pre-existing clone; behind origin/main, not touched)",
+    "m2_branch": "mission/tinyjs-m2-packaging-acceptance-2026-10-25",
+    "m2_base": "7caae4007f7997fddc8ea5eaf48797e14cb3e144",
+    "note": "No rebase/merge/force-push performed. origin/main advanced after the M1.5 baseline; M2 continues from the verified M1.5 branch, not from the 5 newer main commits."
+  },
+  "operational_db": {
+    "path": "repo market.db (legacy operational)",
+    "sha256": "7cfefddd1b6009babf3bdd727c61d865db1fb6f9dde05e1abb20a59d0259e78b",
+    "size": 281276416,
+    "mtime": "2026-10-25T01:57:26+03:30",
+    "wal_sha256": "9e9e9f0f7c7fada08ff6ea3952096e663336ee3d9b0d26ee8b71683e6833212c",
+    "wal_size": 725152,
+    "wal_mtime": "2026-10-25T01:58:37+03:30",
+    "integrity_check": "ok",
+    "caveat": "Checked on an isolated copy after checkpointing the copy; the source files were only read/copied."
+  },
+  "template_snapshot": {
+    "sha256": "07dc34ab9b332695869642a5eb7bd1fd86eefb960bca06ec2003dffd447a4b56",
+    "mtime": "2026-10-24T20:40:40+03:30",
+    "integrity_check": "ok",
+    "work_db_hashes_identical": "tauri-crash and tinyjs-crash warm-work market.db both 07dc34ab...; pre-fix app writes therefore did not land in the isolated work DBs"
+  },
+  "user_db": {
+    "sha256": "7dc3fcad7686c57854e13f47a07f7cd77077f1dacff12dd233cdbd5cdf8291b0",
+    "mtime": "2026-10-24T22:44:56+03:30",
+    "note": "Unchanged from the M1.5 audit hash; not written by this analysis."
+  },
+  "table_count_diffs": {
+    "adjust_cache_meta": {
+      "operational": 50,
+      "template": 48,
+      "delta": 2
+    },
+    "adjust_events": {
+      "operational": 12716,
+      "template": 12719,
+      "delta": -3
+    }
+  },
+  "table_count_diff_count": 2,
+  "adjust_cache_meta": {
+    "operational_only": [
+      "آباد",
+      "فولاد"
+    ],
+    "template_only": [],
+    "operational_rows_added": {
+      "آباد": {
+        "bars_count": 4159,
+        "first_date": "2005-01-15",
+        "updated_at": "2026-10-24"
+      },
+      "فولاد": {
+        "bars_count": 4252,
+        "first_date": "2007-03-11",
+        "updated_at": "2026-10-24"
+      }
+    }
+  },
+  "adjust_events": {
+    "operational_only_count": 8,
+    "template_only_count": 11,
+    "net_delta": -3,
+    "operational_only_sample": [
+      [
+        "تاصيكو",
+        "2020-08-16"
+      ],
+      [
+        "تاصيكو",
+        "2020-08-22"
+      ],
+      [
+        "تاصيكو",
+        "2020-08-23"
+      ],
+      [
+        "تاصيكو",
+        "2023-08-29"
+      ],
+      [
+        "تاصيكو",
+        "2023-08-30"
+      ],
+      [
+        "تاصيكو",
+        "2023-09-02"
+      ],
+      [
+        "تاصيكو",
+        "2026-09-14"
+      ],
+      [
+        "کگل",
+        "2023-04-05"
+      ]
+    ],
+    "template_only_sample": [
+      [
+        "آباد",
+        "2016-07-16"
+      ],
+      [
+        "آباد",
+        "2016-07-17"
+      ],
+      [
+        "آباد",
+        "2018-07-08"
+      ],
+      [
+        "آباد",
+        "2019-07-14"
+      ],
+      [
+        "آباد",
+        "2021-05-18"
+      ],
+      [
+        "آباد",
+        "2023-03-28"
+      ],
+      [
+        "سنیر",
+        "2023-03-28"
+      ],
+      [
+        "فولاد",
+        "2020-08-09"
+      ],
+      [
+        "فولاد",
+        "2023-03-28"
+      ],
+      [
+        "لطیف",
+        "2023-03-28"
+      ],
+      [
+        "کگل",
+        "2023-04-08"
+      ]
+    ],
+    "source_counts_operational": {
+      "base-price-discontinuity": 12555,
+      "priceAdjust": 69,
+      "shareChange": 92
+    },
+    "source_counts_template": {
+      "base-price-discontinuity": 12560,
+      "priceAdjust": 68,
+      "shareChange": 91
+    }
+  },
+  "timeline": {
+    "template_snapshot": "2026-10-24T20:40:40+03:30",
+    "pre_fix_run_logs": "2026-10-24T23:00 to 2026-10-25T01:58 (data root logged as repo BorsTerminal; work DB mtimes stayed 20:40)",
+    "operational_db_mtime": "2026-10-25T01:57:26+03:30",
+    "wal_mtime": "2026-10-25T01:58:37+03:30",
+    "after_BORS_DB": "main DB/WAL hashes unchanged from 02:02/02:37 through the final check; no write in this analysis",
+    "exact_row_attribution": "NOT_MEASURED: old sidecar logs do not record DB_PATH, and adjust_events has no timestamp; adjust_cache_meta.updated_at is date-only."
+  },
+  "residual_effects": {
+    "present": true,
+    "restored_or_rewritten": false,
+    "owner_action_required": true,
+    "affected_scope": "Two adjustment-cache tables only in row-count terms; event rows differ 8/11 and source counts differ (priceAdjust +1, shareChange +1). No other table count differs; integrity is ok."
+  },
+  "isolation_for_m2": "All M2 builds/tests must set BORS_DB to an isolated copy; the operational repo market.db/user.db must not be opened by the app."
+}
