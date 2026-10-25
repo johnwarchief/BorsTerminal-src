@@ -307,6 +307,8 @@ SUITES = [
                                       'Round 32D: non-comparable W/M keys get the reference calendar bar, or an explicit unavailable'),
     ('dev/test_ra365_round32e_fts_calendar_v1.py',
                                       'Round 32E: the FTS weekly/monthly resampler uses the reference calendar bars when covered'),
+    ('dev/test_ra365_round32f_formula_audit_v1.py',
+                                      'Round 32F: the formula audit buckets steps and official coverage; the formula already matches official fund ratios'),
     ('dev/test_fund_events_v1.py',    'official fund distributions drive (P-D)/P factor; same-date typed event survives'),
     ('dev/test_fund_ingest_v1.py',    'fund importer: Persian digits, corrupt rows, duplicate dedupe, newest instrument'),
     ('dev/test_history_repair_writer_v1.py',
