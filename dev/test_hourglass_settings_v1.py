@@ -135,7 +135,7 @@ def main():
             CH._fts_analysis_series = lambda _symbol: (cache_series, "test-basis")
             CH._stored_adjust_events = lambda _symbol: []
             CH._stored_adjust_source = lambda _symbol: "test-source"
-            CH._adjust_capability = lambda _events, _source: {}
+            CH._adjust_capability = lambda _events, _source, **_kwargs: {}
             CH.FTS_ANALYSIS_CACHE.clear()
 
             first_save = M.set_fts_config({

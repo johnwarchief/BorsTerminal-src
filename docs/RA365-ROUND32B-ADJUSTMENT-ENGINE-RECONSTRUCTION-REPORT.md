@@ -3,7 +3,7 @@
 **تاریخ:** 2026-10-25  
 **شاخه:** `mission/ra365-round32b-engine-reconstruction-2026-10-25`  
 **مبنا:** R31 با SHA `f515b6dc685e9a37c7e338faf6b91d002cc93e7f` (تأیید شد)  
-**HEAD گزارش:** `7f5cbcfad05f2c4f3d99f6ee0a6043ea16e74b91`  
+**HEAD گزارش:** `e0e79c1f7b7ad91bfd34f92def5b5ec01e06eaab`  
 **وضعیت:** **PARTIAL — EXPLICIT REMAINING MISMATCHES (candle-comparable set 100%)**
 
 ## ۱. حکم
@@ -88,6 +88,7 @@
 - SHA فایل‌های بسته: `factors.jsonl` = `2194b4dfaaaf851f1256c8227963e089ee1503accc134a22057515fb346dc716`، `raw_ohlc.jsonl` = `1acc53b26d578e5f4452a17a1d62d391d0d3f600a310759059477862f6143dbe`.
 - هر گام `fields_used`، `samples`، `max_field_dev`، `confidence` و `ref_bars_sha256` دارد؛ نمونهٔ غالب `multi_field_exact` با `max_field_dev` در حد چند ulp است. هر فیلد خام `reason` (revision/widen/basis) دارد.
 - بسته فقط از مسیر مجاز مرجع برای استخراج **قواعد/segmentهای factor و مقادیر پراکندهٔ خام** استفاده می‌کند؛ سری خام مرجع توزیع نمی‌شود.
+- بستهٔ مشترک `D:/BorsTerminal-tmp/ra365_round32/reference-pack/` در زمان اجرا موجود نبود؛ موتور با schema `ra365-correction-pack-v1` و پذیرش manifestهای `ra365-reference-pack-v1` (با `files` mapping) طراحی شده است. هیچ فایل یا schema اختصاصی Round32A تغییر نکرد و وابستگی مسدودکننده‌ای ایجاد نشد.
 
 ## ۶. نتیجهٔ before/after روی محصول recapture‌شده
 
@@ -101,7 +102,7 @@
 | M معیار قابل‌مقایسه | — | ۱۰۰٪ |
 | D raw literal | ۹۹٫۸۴۸۲٪ | ۱۰۰٪ |
 
-- daily residual: **۰**؛ factor residual: **۰**؛ raw_bad پس از تصحیح: **۰**؛ raw_applied: ۰.
+- daily residual: **۰**؛ factor residual: **۰**؛ raw_bad پس از تصحیح: **۰**؛ raw_applied در سنجش as-is: ۰ (فیلدهای خام در capture اعمال شده‌اند: ۵٬۴۸۳).
 - نمونهٔ مسیر واقعی (۳ نماد از DB ایزوله، بدون اعمال دوبارهٔ بسته در سنجش): daily exact = **۶٬۰۶۳ / ۶٬۰۶۳**؛ W/M قابل‌مقایسه = **۱٬۰۴۵ / ۱٬۰۴۵** و **۴۲۲ / ۴۲۲**.
 - حجم (volume) جدا گزارش می‌شود و در هدف OHLC وارد نشده است؛ تغییر High/Low نمایشی R31 حفظ شده است.
 
@@ -131,6 +132,7 @@
 
 | commit |
 |---|
+| e0e79c1f feat(parity): reconstruct Round 32B adjustment chain and reach 100% comparable OHLC |
 | 7f5cbcfa feat(parity): add Round32B attribution, correction-pack builder, and versioned overlay loader |
 
 ## ۱۰. محدودیت‌ها و اعلام صریح
@@ -139,7 +141,7 @@
 - کلیدهای W/M غیرقابل‌مقایسه در §۷ اعلام شده‌اند؛ عدد canonical W/M بدون آن‌ها معنا ندارد.
 - حجم (volume) و raw contractual (widen) معیار هدف OHLC نیستند و جدا گزارش شده‌اند؛ تغییر نمایشی literal H/L دور R31 حفظ شد.
 - منبع مرجع فقط برای استخراج قواعد/segmentهای factor و تصحیح‌های پراکندهٔ خام استفاده شد؛ هیچ سری خام مرجع به محصول توزیع نشد. تفکیک raw از corporate event در بسته و در `adjustRejected` قابل ممیزی است.
-- دیتابیس عملیاتی و WAL تغییر نکرد؛ همهٔ تست‌ها و captureها روی کپی‌های ایزولهٔ `D:` اجرا شدند.
+- هیچ فرایند این مأموریت روی دیتابیس عملیاتی/WAL ننوشت؛ همهٔ captureها و تست‌ها از کپی‌های ایزولهٔ `D:` (`r22_test` و `r32b_gate`) خواندند. gate، دیتابیس محافظت‌شدهٔ `r32b_gate` را قبل/بعد fingerprint کرد؛ byte-identity دیتابیس عملیاتی به R31 ادعا نمی‌شود چون یک فرایند زندهٔ دیگر می‌تواند روی آن بنویسد.
 
 ## ۱۱. بازتولید
 

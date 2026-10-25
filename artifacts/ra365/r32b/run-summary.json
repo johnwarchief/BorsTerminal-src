@@ -1,6 +1,6 @@
 {
  "verdict": "PARTIAL — EXPLICIT REMAINING MISMATCHES (candle-comparable set 100%)",
- "head": "7f5cbcfad05f2c4f3d99f6ee0a6043ea16e74b91",
+ "head": "e0e79c1f7b7ad91bfd34f92def5b5ec01e06eaab",
  "base_sha": "f515b6dc685e9a37c7e338faf6b91d002cc93e7f",
  "daily": {
   "rows": 1194446,
@@ -133,6 +133,7 @@
  },
  "gate": {},
  "commits": [
+  "e0e79c1f feat(parity): reconstruct Round 32B adjustment chain and reach 100% comparable OHLC",
   "7f5cbcfa feat(parity): add Round32B attribution, correction-pack builder, and versioned overlay loader"
  ]
 }

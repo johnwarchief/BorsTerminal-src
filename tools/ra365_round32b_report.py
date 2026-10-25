@@ -222,6 +222,7 @@ def main():
 - SHA فایل‌های بسته: `factors.jsonl` = `{pack.get('file_sha256', {}).get('factors', '')}`، `raw_ohlc.jsonl` = `{pack.get('file_sha256', {}).get('raw_ohlc', '')}`.
 - هر گام `fields_used`، `samples`، `max_field_dev`، `confidence` و `ref_bars_sha256` دارد؛ نمونهٔ غالب `multi_field_exact` با `max_field_dev` در حد چند ulp است. هر فیلد خام `reason` (revision/widen/basis) دارد.
 - بسته فقط از مسیر مجاز مرجع برای استخراج **قواعد/segmentهای factor و مقادیر پراکندهٔ خام** استفاده می‌کند؛ سری خام مرجع توزیع نمی‌شود.
+- بستهٔ مشترک `D:/BorsTerminal-tmp/ra365_round32/reference-pack/` در زمان اجرا موجود نبود؛ موتور با schema `ra365-correction-pack-v1` و پذیرش manifestهای `ra365-reference-pack-v1` (با `files` mapping) طراحی شده است. هیچ فایل یا schema اختصاصی Round32A تغییر نکرد و وابستگی مسدودکننده‌ای ایجاد نشد.
 
 ## ۶. نتیجهٔ before/after روی محصول recapture‌شده
 
@@ -235,7 +236,7 @@ def main():
 | M معیار قابل‌مقایسه | — | {fa(pct(mm.get('comp_pass', 0), mm.get('comp_rows', 0)))}٪ |
 | D raw literal | {fa(bc.get('raw_literal_pct', 0))}٪ | {fa(raw_lit.get('row_pct', 0))}٪ |
 
-- daily residual: **{fa(md.get('daily_residual', 0))}**؛ factor residual: **{fa(md.get('factor_residual', 0))}**؛ raw_bad پس از تصحیح: **{fa(md.get('raw_bad_after', 0))}**؛ raw_applied: {fa(md.get('raw_applied', 0))}.
+- daily residual: **{fa(md.get('daily_residual', 0))}**؛ factor residual: **{fa(md.get('factor_residual', 0))}**؛ raw_bad پس از تصحیح: **{fa(md.get('raw_bad_after', 0))}**؛ raw_applied در سنجش as-is: {fa(md.get('raw_applied', 0))} (فیلدهای خام در capture اعمال شده‌اند: {fa(sum((pc.get('raw_fields') or {}).values()))}).
 - نمونهٔ مسیر واقعی (۳ نماد از DB ایزوله، بدون اعمال دوبارهٔ بسته در سنجش): daily exact = **{fa(sample.get('daily', {}).get('base_exact', 0))} / {fa(sample.get('daily', {}).get('rows', 0))}**؛ W/M قابل‌مقایسه = **{fa(sample.get('W', {}).get('comp_pass', 0))} / {fa(sample.get('W', {}).get('comp_rows', 0))}** و **{fa(sample.get('M', {}).get('comp_pass', 0))} / {fa(sample.get('M', {}).get('comp_rows', 0))}**.
 - حجم (volume) جدا گزارش می‌شود و در هدف OHLC وارد نشده است؛ تغییر High/Low نمایشی R31 حفظ شده است.
 
@@ -273,7 +274,7 @@ def main():
 - کلیدهای W/M غیرقابل‌مقایسه در §۷ اعلام شده‌اند؛ عدد canonical W/M بدون آن‌ها معنا ندارد.
 - حجم (volume) و raw contractual (widen) معیار هدف OHLC نیستند و جدا گزارش شده‌اند؛ تغییر نمایشی literal H/L دور R31 حفظ شد.
 - منبع مرجع فقط برای استخراج قواعد/segmentهای factor و تصحیح‌های پراکندهٔ خام استفاده شد؛ هیچ سری خام مرجع به محصول توزیع نشد. تفکیک raw از corporate event در بسته و در `adjustRejected` قابل ممیزی است.
-- دیتابیس عملیاتی و WAL تغییر نکرد؛ همهٔ تست‌ها و captureها روی کپی‌های ایزولهٔ `D:` اجرا شدند.
+- هیچ فرایند این مأموریت روی دیتابیس عملیاتی/WAL ننوشت؛ همهٔ captureها و تست‌ها از کپی‌های ایزولهٔ `D:` (`r22_test` و `r32b_gate`) خواندند. gate، دیتابیس محافظت‌شدهٔ `r32b_gate` را قبل/بعد fingerprint کرد؛ byte-identity دیتابیس عملیاتی به R31 ادعا نمی‌شود چون یک فرایند زندهٔ دیگر می‌تواند روی آن بنویسد.
 
 ## ۱۱. بازتولید
 
