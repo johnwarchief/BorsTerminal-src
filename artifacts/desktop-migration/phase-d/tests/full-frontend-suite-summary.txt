@@ -1,0 +1,37 @@
+BorsTerminal M1.5 — full frontend suite (final source state)
+Date: 2026-10-25; branch: mission/desktop-tinyjs-first-2026-10-24; HEAD before report: a85b076
+Command: CI=1 node node_modules/vitest/vitest.mjs run (cwd frontend)
+
+RESULT: 204 test files — 197 passed / 5 failed / 2 skipped
+        2090 tests — 2074 passed / 11 failed / 5 skipped
+        Duration 1913.07 s (31.9 min), single-core host
+        Exit code 1 (expected because of the pre-existing failures below)
+
+FAILING FILES / TESTS:
+  FAIL  src/__tests__/fundamental-codal-poll.spec.tsx > پولینگِ وضعیتِ دیتابیس کدال > پاسخِ کهنه جایِ پاسخِ تازه را نمی‌گیرد (سنجشِ race)
+  FAIL  src/__tests__/fundamental-codal-poll.spec.tsx > پولینگِ وضعیتِ دیتابیس کدال > جریانِ معمولی: progress ⇒ busy و پایان ⇒ غربالگری دوباره خوانده می‌شود
+  FAIL  src/__tests__/fundamental-codal-poll.spec.tsx > پولینگِ وضعیتِ دیتابیس کدال > با رفتنِ صفحه حلقه بسته می‌شود و پاسخِ درِ راه بی‌خطا می‌افتد
+  FAIL  src/__tests__/funnel-request-dedup.spec.tsx > یک درخواستِ canonical، چند مصرف‌کننده (P0-4) > `?chain=` درِ URL به بدنهٔ درخواست می‌رسد (و بی‌آن، زنجیرۀِ builder)
+  FAIL  src/__tests__/funnel-row-symbol-visible.spec.tsx > ردیفِ قیف با برچسبِ بلند > نامِ کاملِ نماد درِ DOM است و کلاسِ بریدگی ندارد
+  FAIL  src/__tests__/funnel-row-symbol-visible.spec.tsx > ردیفِ قیف با برچسبِ بلند > برچسب‌ها بیرونِ دکمۀ نام و رویِ خطِ دوم می‌نشینند (نه هم‌خطِ نام)
+  FAIL  src/__tests__/funnel-row-symbol-visible.spec.tsx > ردیفِ قیف با برچسبِ بلند > بی‌برچسب، خطِ دوم ساخته نمی‌شود (فضای بی‌داده درِ ردیف نمی‌ماند)
+  FAIL  src/__tests__/funnel-row-symbol-visible.spec.tsx > ردیفِ قیف با برچسبِ بلند > کلیک رویِ نام همان onPickِ پیشین را می‌دهد (رفتارِ انتخابِ نماد نمرده)
+  FAIL  src/__tests__/technical-symbol-race.spec.tsx > واکشی کندل با عوض‌شدنِ نماد > درخواستِ بی‌مصرفِ نمادِ قبلی abort می‌شود (پس نه پاسخ می‌دهد نه write)
+  FAIL  src/__tests__/watch-dossier.spec.tsx > پروندۀ نماد درِ دیدهبان > سابقۀ چندروزه: ✓، «—» و نبودِ ستون — سه حالتِ جدا
+  FAIL  src/__tests__/watch-dossier.spec.tsx > پروندۀ نماد درِ دیدهبان > با انتخابِ نمادِ دیگر، پرونده عوض می‌شود — اطلاعاتِ شپنا رویِ فولاد نمی‌ماند
+
+BASELINE COMPARISON (same five files, isolated run):
+  Current branch:  5 failed files, 9 passed / 11 failed (20 tests), 45.57 s
+  origin/main b5f5f6c: 5 failed files, 9 passed / 11 failed (20 tests), 43.95 s
+  Command (current):  CI=1 node node_modules/vitest/vitest.mjs run <five files> (cwd frontend)
+  Command (baseline): same, cwd %TEMP%/bors-main-before/frontend (node_modules junction)
+  Failing-test set identical: True (no current-only or baseline-only failure)
+  Conclusion: the 11 failures are pre-existing on the clean baseline,
+  not introduced by Phase B/C/D/E/F changes. Changed-area gate tests are 98/98.
+
+Earlier Phase C full-suite baseline: 2070 passed / 8 failed / 5 skipped in ~99 min;
+full-suite counts are order/environment-sensitive, and the exact same 11 failures
+reproduce on the clean baseline, so there is no changed-area regression.
+
+Raw full-suite and isolated logs are not committed (the full log is 1.28 MB); this summary
+records the exact counts, failing test names, comparison and command.

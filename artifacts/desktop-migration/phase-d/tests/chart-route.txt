@@ -1,0 +1,8 @@
+OK   exactly one chart route  ⟨n=1⟩
+OK   chart endpoint is get_chart_tsetmc  ⟨get_chart_tsetmc⟩
+OK   chart route is GET
+OK   chart endpoint takes symbol
+OK   _candle_closings is not exposed as a route
+OK   key-levels route still present
+
+chart route guard: 6 passed / 0 failed

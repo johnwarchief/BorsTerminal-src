@@ -1,0 +1,16 @@
+
+[1m[46m RUN [49m[22m [36mv3.2.7 [39m[90mC:/Users/STU/Documents/Qoder/2026-10-23/95b91389/BorsTerminal/frontend[39m
+
+ [32m✓[39m src/__tests__/technical-nn-chart.spec.tsx [2m([22m[2m12 tests[22m[2m)[22m[33m 3908[2mms[22m[39m
+   [33m[2m✓[22m[39m چارت پورت‌شدهٔ NahayatNegar روی klinecharts v10[2m > [22mmount می‌شود و init صدا زده می‌شود [33m 352[2mms[22m[39m
+   [33m[2m✓[22m[39m چارت پورت‌شدهٔ NahayatNegar روی klinecharts v10[2m > [22mنام شرکت با تغییرِ بیرونیِ نماد (URL/سایدبار) هم عوض می‌شود، نه فقط خودِ نماد [33m 368[2mms[22m[39m
+   [33m[2m✓[22m[39m چارت پورت‌شدهٔ NahayatNegar روی klinecharts v10[2m > [22mنوار پایینی شامل بازه‌های زمانی و بج تایم‌زون تهران است و دکمه تکراری ندارد [33m 478[2mms[22m[39m
+   [33m[2m✓[22m[39m چارت پورت‌شدهٔ NahayatNegar روی klinecharts v10[2m > [22mانتخاب ابزار خط‌کش (ruler) اورلی ftsMeasure را در گروه fts-draw ایجاد کرده و کنترل اسکرول را متصل می‌کند [33m 481[2mms[22m[39m
+   [33m[2m✓[22m[39m چارت پورت‌شدهٔ NahayatNegar روی klinecharts v10[2m > [22mتغییر تایم‌فریم متد flushDrawings را فراخوانی کرده و ترسیم‌های جاری را در localStorage ذخیره می‌کند [33m 842[2mms[22m[39m
+   [33m[2m✓[22m[39m چارت پورت‌شدهٔ NahayatNegar روی klinecharts v10[2m > [22mمقیاسِ محور از نوعِ سری مستقل است (خطی/لگاریتمی/درصدی با خام↔عملکردی عوض نمی‌شود) [33m 302[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[32m12 passed[39m[22m[90m (12)[39m
+[2m   Start at [22m 02:50:24
+[2m   Duration [22m 22.92s[2m (transform 2.73s, setup 3.22s, collect 4.78s, tests 3.91s, environment 9.11s, prepare 784ms)[22m
+
