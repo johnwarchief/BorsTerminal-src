@@ -259,7 +259,8 @@ def main():
 
 - `dev/test_ra365_round32b_correction_pack_v1.py`: ۱۴/۱۴ (replace/suppress/date-shift/raw/authoritative/provenance/tamper-refusal/R31 literal).
 - `dev/test_ra365_round31_visible_hl_v1.py`: ۷/۷؛ `dev/test_adjustment_engine_v1.py`: ۴۴/۰؛ `dev/test_adjustment_phasea.py`: ۵۸/۰/۰؛ `dev/test_corporate_ledger_v1.py`: ۲۴/۰؛ `dev/test_rule_map_citations.py`: ۱۱/۱۱.
-- Full gate نهایی روی DB ایزوله: **{gate.get('verdict', 'NOT_RUN')}** (OK={fa(gate.get('ok', 0))}، FAIL={fa(gate.get('fail', 0))}، skip={fa(gate.get('skip', 0))})؛ log: `{gate.get('log', '')}`. دیتابیس محافظت‌شده: **{gate.get('protected', 'NOT_MEASURED')}**.
+- Full gate روی DB ایزوله: **{gate.get('display', gate.get('verdict', 'NOT_RUN'))}** (OK={fa(gate.get('ok', 0))}، FAIL={fa(gate.get('fail', 0))}، skip={fa(gate.get('skip', 0))})؛ log: `{gate.get('log', '')}`. دیتابیس محافظت‌شده: **{gate.get('protected', 'NOT_MEASURED')}**.
+- {gate.get('remediation_text', '')}
 - تست‌های gate عمداً با `BORS_CORRECTIONS_DISABLE=1` اجرا می‌شوند تا fixtureها به بستهٔ production وابسته نشوند؛ تست اختصاصی Round32B بستهٔ موقت خودش را می‌سازد.
 
 ## ۹. Commitها

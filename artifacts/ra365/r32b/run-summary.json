@@ -1,6 +1,6 @@
 {
  "verdict": "PARTIAL — EXPLICIT REMAINING MISMATCHES (candle-comparable set 100%)",
- "head": "e0e79c1f7b7ad91bfd34f92def5b5ec01e06eaab",
+ "head": "a45e48842bdb270b8750441b4b759184bbe98cdb",
  "base_sha": "f515b6dc685e9a37c7e338faf6b91d002cc93e7f",
  "daily": {
   "rows": 1194446,
@@ -131,8 +131,31 @@
   },
   "mode": "authoritative"
  },
- "gate": {},
+ "gate": {
+  "verdict": "STOPPED",
+  "ok": 200,
+  "fail": 1,
+  "skip": 0,
+  "protected": "SOURCE_DB_MTIME_UNCHANGED (2026-10-25T20:00:42+03:30); gate guard before-fingerprint captured; manual after-fingerprint not completed before stop",
+  "logical_total": "",
+  "failures": [
+   "hourglass RSI period, oversold threshold and MA52 mode are configurable rc=1 | 17 pass / 0 fail"
+  ],
+  "log": "artifacts/ra365/r32b/gate/full-gate.txt",
+  "display": "STOPPED AFTER 200 OK SUITES — 1 HARNESS-ONLY FAIL (standalone 18/0)",
+  "remediation": {
+   "suite": "dev/test_hourglass_settings_v1.py",
+   "standalone": "18 checks, 0 failures",
+   "cause": "test monkeypatch accepted only (events, source); product passes symbol=... now",
+   "fixed_in": "a45e4884",
+   "log": "artifacts/ra365/r32b/gate/hourglass-standalone.txt"
+  },
+  "remediation_text": "تست hourglass فقط mock دو‌آرگومانی داشت؛ با `**_kwargs` اصلاح شد و standalone ۱۸/۰ سبز است. همهٔ سوئیت‌های اجراشده به‌جز همان mock سبزند؛ سوئیت‌های باقی‌مانده خارج از سطح تغییر و به‌دلیل محدودیت زمان مالک اجرا نشدند.",
+  "stopped": true,
+  "stop_reason": "owner requested no further full-gate runtime; remaining suites are outside the changed surface"
+ },
  "commits": [
+  "a45e4884 test(gate): accept the symbol keyword in the hourglass capability mock",
   "e0e79c1f feat(parity): reconstruct Round 32B adjustment chain and reach 100% comparable OHLC",
   "7f5cbcfa feat(parity): add Round32B attribution, correction-pack builder, and versioned overlay loader"
  ]
