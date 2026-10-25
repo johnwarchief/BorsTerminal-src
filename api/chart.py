@@ -2542,7 +2542,35 @@ def _candle_closings(candles):
     return out
 
 
+def _literal_display_candles(candles):
+    """Visible H/L = the literal published extremes, matching Rahavard type7.
+
+    The internal builders keep `widen()` for diagnostics and DB geometry, but
+    the user-visible candle must not widen the shadow: the reference type7
+    carries the literal extremes even when they sit inside the body (asset 6,
+    1996-09-16: high 4020 < open 4022 in type0; type7 preserves that).
+    """
+    out = []
+    for c in candles or []:
+        d = dict(c)
+        if d.get("high_raw") is not None:
+            d["high"] = d["high_raw"]
+        if d.get("low_raw") is not None:
+            d["low"] = d["low_raw"]
+        out.append(d)
+    return out
+
+
 @router.get("/api/chart/{symbol}")
+def get_chart_visible(symbol: str):
+    """The live chart route: expose the literal OHLC the reference displays."""
+    res = get_chart_tsetmc(symbol)
+    if isinstance(res, dict) and res.get("candles"):
+        res = dict(res)
+        res["candles"] = _literal_display_candles(res["candles"])
+    return res
+
+
 def get_chart_tsetmc(symbol: str):
     """نمودار کامل از CDN TSETMC: OHLCV روزانه + رویدادهای تعدیل عملکردی (ادجاست) با فال‌بک خودکار به دیتابیس محلی."""
     import time as _t
@@ -3284,6 +3312,15 @@ def _adjust_events_for(symbol, rows=None):
         return []
 
 @router.get("/api/chart-db/{symbol}")
+def get_chart_db_visible(symbol: str):
+    """The technical chart route: same literal visible OHLC as /api/chart."""
+    res = get_chart_db(symbol)
+    if isinstance(res, dict) and res.get("candles"):
+        res = dict(res)
+        res["candles"] = _literal_display_candles(res["candles"])
+    return res
+
+
 def get_chart_db(symbol: str):
     """(v7.3.2 — Hybrid Data Fusion) تمام تاریخچه از price_history + تزریق کندل امروز از تابلوخوانی.
 

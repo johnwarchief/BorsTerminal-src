@@ -108,6 +108,7 @@ def main():
         try:
             text = open(csv_path, encoding="utf-8", errors="replace").read()
             candles, volumes, all_rows = C._parse_tsetmc_csv(text)
+            candles = C._literal_display_candles(candles)
             if not candles:
                 lw.writerow([aid, sym, ins, "EMPTY_PRODUCT", 0, 0, "", sha(csv_path), ""])
                 continue

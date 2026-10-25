@@ -291,6 +291,8 @@ SUITES = [
                                       'Round 29: a combined base gap absorbs its share and DPS legs exactly once'),
     ('dev/test_ra365_round30_chart_route_v1.py',
                                       'Round 30: /api/chart/{symbol} is wired to the live handler, not a candles helper'),
+    ('dev/test_ra365_round31_visible_hl_v1.py',
+                                      'Round 31: /api/chart exposes the literal high/low the Rahavard type7 shows'),
     ('dev/test_fund_events_v1.py',    'official fund distributions drive (P-D)/P factor; same-date typed event survives'),
     ('dev/test_fund_ingest_v1.py',    'fund importer: Persian digits, corrupt rows, duplicate dedupe, newest instrument'),
     ('dev/test_history_repair_writer_v1.py',

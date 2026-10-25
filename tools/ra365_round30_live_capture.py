@@ -33,7 +33,7 @@ def main():
     for sym in [s.strip() for s in a.symbols.split(",") if s.strip()]:
         t = time.time()
         try:
-            res = C.get_chart_tsetmc(sym)
+            res = C.get_chart_visible(sym)
             state = res.get("status") or "UNKNOWN"
             path = os.path.join(a.out, sym + ".json")
             json.dump(res, open(path, "w", encoding="utf-8"), ensure_ascii=False)
