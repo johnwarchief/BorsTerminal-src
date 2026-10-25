@@ -3,8 +3,8 @@
  "files": [
   {
    "path": "acceptance-results.json",
-   "bytes": 5952,
-   "sha256": "50499f082dc79d08c940911281d7fae135a7e5b3f188e8ecbeeb13f92be338a1"
+   "bytes": 6264,
+   "sha256": "51426d066a76390af132f6381686f1819be57309799465e29f24613b7c1534d3"
   },
   {
    "path": "backend-death/run-1-error.png",
@@ -328,6 +328,6 @@
   }
  ],
  "total_files": 65,
- "total_bytes": 4280236,
+ "total_bytes": 4280548,
  "note": "Generated builds, dist/resources and the 137 MB update zip are not committed; their hashes are in build/publish-hashes.txt and build/package-manifest.json."
 }

@@ -124,6 +124,12 @@
    "note": "1/3 cold runs failed a TechnicalPage dynamic import in WebView2 even though the server logged 200; warm and close runs did not reproduce it."
   },
   {
+   "id": "full_frontend_suite_m2",
+   "status": "NOT_MEASURED",
+   "evidence": "M1.5 full-suite summary; git diff --name-only 7caae40..HEAD",
+   "note": "No production module changed; the full suite was not rerun in M2. M1.5 baseline: 2,090 tests, 2,074 pass / 11 pre-existing failures / 5 skip."
+  },
+  {
    "id": "operational_db_isolation",
    "status": "PASS",
    "evidence": "db-incident-analysis.json, build/operational-db-recheck.txt",

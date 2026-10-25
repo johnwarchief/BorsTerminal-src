@@ -101,6 +101,8 @@ Every status below is limited to the tested scope.
 | Stability | **FAIL** | 1/3 cold runs failed a `TechnicalPage` lazy dynamic import in WebView2 even though the server logged `200`; not reproduced in warm/close runs |
 | Operational DB isolation | **PASS** | All runs isolated; `market.db`/WAL/`user.db` hashes unchanged before and after M2 |
 
+**Tests:** no production SPA/backend/technical/FTS/adjustment file changed in M2 (`git diff --name-only 7caae40..HEAD` contains only `.gitignore`, this evidence, `prototypes/tinyjs-m2/`, and `tools/desktop-migration/`). The M1.5 full-suite baseline — 204 files, 2,090 tests, 2,074 passed / 11 failed / 5 skipped, with all 11 failures reproducing identically on clean `origin/main b5f5f6c` — therefore remains the applicable suite baseline. The full suite was **not rerun in M2** (`NOT_MEASURED` for this mission) because no tested production module changed and a full run takes ~32 minutes on this single-core host; the M2 harness was exercised by the live runs above instead. If the owner requires a fresh full-suite run before any packaging decision, it is an outstanding test, not a pass.
+
 ## 6. Functional acceptance
 
 The installed-style smoke run (`--visual --d3`) reached:
