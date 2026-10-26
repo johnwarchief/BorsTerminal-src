@@ -150,6 +150,77 @@ try:
     pc = ING.select_candidates(con, pairs=[["AAA", 20230605]])
     ck([(s, d) for _i, s, d, _p in pc] == [("AAA", 20230605)],
        "۱۷ pairs اجرایِ هدف‌دار", pc)
+
+    # Local Codal notices: only a Decision.aspx with an assembly/dividend title
+    # and an assembly date inside [eff-150d, eff] is a candidate.
+    con.execute("CREATE TABLE codal_notices(tracing_no TEXT, symbol TEXT,"
+                " title TEXT, publish_date TEXT, url TEXT)")
+    con.executemany("INSERT INTO codal_notices VALUES (?,?,?,?,?)", [
+        ("N1", "AAA", "تصمیمات مجمع عمومی عادی سالیانه", "1402/03/10 10:00:00",
+         "https://codal.ir/Reports/Decision.aspx?LetterSerial=A"),
+        ("N2", "AAA", "تصمیمات مجمع عمومی عادی سالیانه", "1402/03/12 10:00:00",
+         "https://codal.ir/Reports/Attachment.aspx?LetterSerial=B"),
+        ("N3", "AAA", "تصمیمات مجمع", "1401/01/01 10:00:00",
+         "https://codal.ir/Reports/Decision.aspx?LetterSerial=C"),
+        ("N4", "AAA", "اطلاعیه دیگر", "1402/03/11 10:00:00",
+         "https://codal.ir/Reports/Decision.aspx?LetterSerial=D"),
+    ])
+    con.commit()
+    loc = ING.local_decision_urls(con, "AAA", "2023-06-05")
+    ck([x[0] for x in loc] == ["N1"], "۱۸ فقط اطلاعیهٔ مجمعِ در پنجره", loc)
+    ck(ING.local_decision_urls(con, "NOPE", "2023-06-05") == [],
+       "۱۹ نمادِ بی‌اطلاعیه → لیستِ تهی")
+
+    # The finder tries the local notice first and never calls the search API.
+    PAGE = ("<td>DividendPerShare</td><td>سود نقدی هر سهم (ریال)</td><td>۸۵۱</td>")
+
+    class Resp:
+        text = PAGE
+
+    class Sess:
+        def __init__(self):
+            self.calls = []
+
+        def get(self, url, **kw):
+            self.calls.append(url)
+            return Resp()
+
+    search_calls = []
+
+    def fake_fetch(*a, **k):
+        search_calls.append(1)
+        return []
+
+    saved_fetch = ING.CF.fetch_page
+    try:
+        ING.CF.fetch_page = fake_fetch
+        sess = Sess()
+        f = ING.make_live_finder(
+            sess, page_pause=0,
+            local_lookup=lambda s, e: [("N1", "http://x", "1402/03/10")])
+        r = f("AAA", "2023-06-05")
+        ck(r.get("status") == "OK" and r.get("dps") == 851.0
+           and r.get("via") == "local-notices",
+           "۲۰ local-first: DPS از اطلاعیهٔ محلی", r)
+        ck(not search_calls, "۲۱ local-first: جستجویِ API صدا زده نشد", search_calls)
+        # No local notice -> the search path is used.
+        search_calls.clear()
+        ING.CF.fetch_page = lambda *a, **k: (
+            search_calls.append(1) or
+            [{"Url": "/Reports/Decision.aspx?LetterSerial=Z",
+              "Title": "تصمیمات مجمع عمومی عادی سالیانه",
+              "PublishDateTime": "1402/03/10 10:00:00", "TracingNo": "S1"}])
+        f2 = ING.make_live_finder(sess, page_pause=0, local_lookup=lambda s, e: [])
+        r2 = f2("AAA", "2023-06-05")
+        ck(r2.get("status") == "OK" and r2.get("via") == "search" and search_calls,
+           "۲۲ بی‌اطلاعیهٔ محلی: مسیرِ جستجو", r2)
+        # Search blocked -> BLOCKED, no fake success.
+        ING.CF.fetch_page = lambda *a, **k: None
+        f3 = ING.make_live_finder(sess, page_pause=0)
+        r3 = f3("AAA", "2023-06-05")
+        ck(r3.get("status") == "BLOCKED", "۲۳ ۴۲۹ در جستجو: BLOCKED", r3)
+    finally:
+        ING.CF.fetch_page = saved_fetch
 finally:
     con.close()
     os.unlink(path)

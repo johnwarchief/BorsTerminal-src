@@ -91,7 +91,7 @@
 
 1. ✅ **جدولِ `stock_dividend_events`** در `tsetmc_p0_schema` (تک‌منبعِ DDL) — ساخته شد.
 2. ✅ **سیم‌کشیِ چارت**: DPSِ کدال با `close`ِ رسمی مقدم است، پشتِ فلگِ `BORS_CODAL_DPS` (پیش‌فرض روشن، `0` = برگشت)؛ تست ۱۳/۱۳ + A/Bِ زنده (بندِ ۴.۱).
-3. ✅ **ingestِ resumable و rate-limited** (`dev/codal_dividend_ingest.py`): پارسر، بودجهٔ سختِ درخواست، توقفِ فوری رویِ ۴۲۹، بی‌ADB، تست ۱۷/۱۷. **زمان‌بندیِ روزانه هنوز وصل نشده**؛ فرمانِ روزانه: `python dev/codal_dividend_ingest.py --db <copy> --from <30 روز قبل> --budget 10`.
+3. ✅ **ingestِ resumable و rate-limited** (`dev/codal_dividend_ingest.py`): پارسر، بودجهٔ سختِ درخواست، توقفِ فوری رویِ ۴۲۹، بی‌ADB، تست ۲۳/۲۳. **اول اطلاعیه‌هایِ محلیِ `codal_notices` را می‌خواند** (کاهشِ تماس با WAF) و فقط در نبودشان سراغِ جستجو می‌رود. **زمان‌بندیِ روزانه هنوز وصل نشده**؛ فرمانِ روزانه: `python dev/codal_dividend_ingest.py --db <copy> --from <30 روز قبل> --budget 10`.
 4. ⏳ **صندوق**: منبعِ جزءِ سودِ رسمی (گزارشِ توزیع) — واکشی نشده.
 5. ⏳ **تکمیلِ سنجش**: ۲۳ موردِ باقی‌مانده + ۱۱ بی‌DPS + ۳ دور/نزدیک؛ در انتظارِ خنک‌شدنِ WAF یا چرخشِ IPِ مالک.
 
@@ -112,7 +112,7 @@
 # قفلِ پارسر و فرمول + سیم‌کشی و ingest
 python dev/test_ra365_round32h_codal_dps_v1.py          # ۱۶/۱۶
 python dev/test_ra365_round32h_codal_dps_wiring_v1.py   # ۱۳/۱۳
-python dev/test_ra365_round32h_codal_dps_ingest_v1.py   # ۱۷/۱۷
+python dev/test_ra365_round32h_codal_dps_ingest_v1.py   # ۲۳/۲۳
 
 # ingestِ روزانه (رویِ کپی؛ بودجهٔ کوچک، بی‌ADB)
 python dev/codal_dividend_ingest.py --db <market_copy.db> --from <YYYY-MM-DD> --budget 10

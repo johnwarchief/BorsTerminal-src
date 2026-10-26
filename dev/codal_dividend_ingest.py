@@ -208,17 +208,69 @@ def _log(path, obj):
         pass
 
 
-def make_live_finder(session, page_pause=1.5):
-    """finderِ زنده: جستجویِ LetterType=20 → صفحهٔ Decision.aspx → پارسر."""
+def local_decision_urls(con, symbol, eff_date, window_days=150):
+    """[(tracing_no, url, publish_date)] از `codal_notices`ِ محلی، جدید به قدیم.
+
+    مجمع باید **پیش از** روزِ مؤثر بوده باشد (پنجرهٔ `window_days`). این مسیر
+    جستجویِ WAF‌دار را حذف می‌کند؛ نبودِ جدول/ردیف → [].
+    """
+    try:
+        rows = con.execute(
+            "SELECT tracing_no, title, publish_date, url FROM codal_notices"
+            " WHERE symbol=? AND url LIKE '%Decision.aspx%'", (symbol,)).fetchall()
+    except sqlite3.OperationalError:
+        return []
+    try:
+        eff = datetime.date.fromisoformat(str(eff_date)[:10])
+    except ValueError:
+        return []
+    out, seen = [], set()
+    for tr, title, pdate, url in rows:
+        t = str(title or "")
+        if "مجمع" not in t and "سود" not in t:
+            continue
+        try:
+            y, m, d = [int(x) for x in str(pdate).split()[0].split("/")[:3]]
+            g = jdatetime.date(y, m, d).togregorian()
+        except (ValueError, TypeError):
+            continue
+        if not (eff - datetime.timedelta(days=window_days) <= g <= eff):
+            continue
+        if url in seen:
+            continue
+        seen.add(url)
+        out.append((tr, url, pdate))
+    out.sort(key=lambda x: str(x[2]), reverse=True)
+    return out
+
+
+def make_live_finder(session, page_pause=1.5, local_lookup=None):
+    """finder: اول اطلاعیه‌هایِ محلی، بعد جستجویِ LetterType=20 → Decision.aspx."""
     state = {"requests": 0}
+
+    def _page_dps(url):
+        time.sleep(page_pause)
+        state["requests"] += 1
+        page = session.get(url, headers=CF._headers(), timeout=60)
+        return CD.parse_dividend_per_share(page.text)
 
     def finder(symbol, eff_date):
         state["requests"] = 0
+        local = local_lookup(symbol, eff_date) if local_lookup else []
+        for tr, url, pdate in local:
+            try:
+                dps = _page_dps(url)
+            except Exception:
+                continue
+            if dps is not None:
+                return {"status": "OK", "dps": dps, "notice_id": tr,
+                        "publish_date": CF._norm_date(pdate), "url": url,
+                        "requests": state["requests"], "via": "local-notices"}
         try:
             gd = datetime.date.fromisoformat(eff_date)
             jd = jdatetime.date.fromgregorian(date=gd)
         except Exception:
-            return {"status": "NO_LETTER", "requests": 0}
+            return {"status": "NO_LETTER", "requests": state["requests"]}
         frm = (jd - jdatetime.timedelta(days=100)).strftime("%Y/%m/%d")
         to = (jd + jdatetime.timedelta(days=10)).strftime("%Y/%m/%d")
         q = dict(CF.QUERY, Symbol=symbol, Category="-1", LetterType="20",
@@ -239,17 +291,14 @@ def make_live_finder(session, page_pause=1.5):
         for x in reversed(dec):
             try:
                 u = CF._abs_codal_url(x.get("Url"))
-                time.sleep(page_pause)
-                state["requests"] += 1
-                page = session.get(u, headers=CF._headers(), timeout=60)
-                dps = CD.parse_dividend_per_share(page.text)
+                dps = _page_dps(u)
             except Exception:
                 continue
             if dps is not None:
                 return {"status": "OK", "dps": dps,
                         "notice_id": x.get("TracingNo") or x.get("LetterSerial"),
                         "publish_date": CF._norm_date(x.get("PublishDateTime")),
-                        "url": u, "requests": state["requests"]}
+                        "url": u, "requests": state["requests"], "via": "search"}
         return {"status": "NO_DPS", "requests": state["requests"]}
 
     return finder
@@ -288,7 +337,8 @@ def main(argv=None):
     CF._trigger_backoff = lambda seconds=60: None
     CF._control_sleep = lambda total, slice_=5.0: (time.sleep(min(total, 15)), "")[1]
     session = CF.make_session()
-    finder = make_live_finder(session)
+    finder = make_live_finder(
+        session, local_lookup=lambda sym, eff: local_decision_urls(con, sym, eff))
     res = ingest(con, cand, finder, budget=a.budget,
                  dry_run=a.dry_run, log=a.log or None)
     con.close()
