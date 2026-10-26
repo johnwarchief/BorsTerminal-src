@@ -1,0 +1,37 @@
+Get-AuthenticodeSignature (read-only; no certificate or key material read)
+--- /tmp/bors_m2_accept/BorsTerminal/BorsTerminalM2TinyJS.exe
+
+
+Status            : NotSigned
+StatusMessage     : The file C:\Users\STU\AppData\Local\Temp\bors_m2_accept\BorsTerminal\BorsTerminalM2TinyJS.exe is 
+                    not digitally signed. You cannot run this script on the current system. For more information about 
+                    running scripts and setting execution policy, see about_Execution_Policies at 
+                    https:/go.microsoft.com/fwlink/?LinkID=135170
+SignerCertificate : 
+
+
+
+--- /tmp/bors_m2_accept/BorsTerminal/launcher.exe
+
+
+Status            : NotSigned
+StatusMessage     : The file C:\Users\STU\AppData\Local\Temp\bors_m2_accept\BorsTerminal\launcher.exe is not digitally 
+                    signed. You cannot run this script on the current system. For more information about running 
+                    scripts and setting execution policy, see about_Execution_Policies at 
+                    https:/go.microsoft.com/fwlink/?LinkID=135170
+SignerCertificate : 
+
+
+
+--- /tmp/bors_m2_accept/BorsTerminal/resources/sidecar/BorsTerminalSidecar.exe
+
+
+Status            : NotSigned
+StatusMessage     : The file C:\Users\STU\AppData\Local\Temp\bors_m2_accept\BorsTerminal\resources\sidecar\BorsTerminal
+                    Sidecar.exe is not digitally signed. You cannot run this script on the current system. For more 
+                    information about running scripts and setting execution policy, see about_Execution_Policies at 
+                    https:/go.microsoft.com/fwlink/?LinkID=135170
+SignerCertificate : 
+
+
+

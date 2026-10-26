@@ -1,0 +1,107 @@
+{
+  "root_cause": "bors_config._market_db_tables(tmp) opened the freshly extracted market.db.part with sqlite3 mode=ro. For a WAL-mode database SQLite creates market.db.part-shm/-wal beside it; _extract_market_db renamed only the main file, leaving the .part sidecars orphaned.",
+  "owner": "the sidecar process during first-run extraction; no active connection remains after the sidecar exits",
+  "fix": "The private .part probe now uses mode=ro&immutable=1 (the file is immutable until os.replace). No sidecars are created; live DB probes still use normal mode=ro.",
+  "synthetic_probe": [
+    "old_probe_tables ['daily_prices', 'financial_statements', 'instruments']",
+    "old_probe_files ['market.db.part', 'market.db.part-shm', 'market.db.part-wal']",
+    "immutable_probe_tables ['daily_prices', 'financial_statements', 'instruments']",
+    "immutable_probe_files ['market.db.part']",
+    "probe_dir C:\\Users\\STU\\AppData\\Local\\Temp\\bors_part_probe_evidence_s4rozc4u"
+  ],
+  "prior_residue_examples": [
+    {
+      "path": "C:\\Users\\STU\\AppData\\Local\\Temp\\bors_phased\\m2-installed-cold\\runs\\run-1\\work",
+      "name": "market.db.part-shm",
+      "bytes": 32768
+    },
+    {
+      "path": "C:\\Users\\STU\\AppData\\Local\\Temp\\bors_phased\\m2-installed-cold\\runs\\run-1\\work",
+      "name": "market.db.part-wal",
+      "bytes": 0
+    },
+    {
+      "path": "C:\\Users\\STU\\AppData\\Local\\Temp\\bors_m2_close\\m2-close2\\runs\\run-1\\work",
+      "name": "market.db.part-shm",
+      "bytes": 32768
+    },
+    {
+      "path": "C:\\Users\\STU\\AppData\\Local\\Temp\\bors_m2_close\\m2-close2\\runs\\run-1\\work",
+      "name": "market.db.part-wal",
+      "bytes": 0
+    }
+  ],
+  "cold_run": {
+    "work": "C:\\Users\\STU\\AppData\\Local\\Temp\\bors_phased\\m21-installed-cold\\runs\\run-1\\work",
+    "part_files": [],
+    "files": [
+      {
+        "name": "market.db",
+        "bytes": 280875008
+      },
+      {
+        "name": "market.db-shm",
+        "bytes": 32768
+      },
+      {
+        "name": "market.db-wal",
+        "bytes": 1268992
+      },
+      {
+        "name": "market.db.baseline",
+        "bytes": 64
+      },
+      {
+        "name": "user.db",
+        "bytes": 208896
+      }
+    ],
+    "db": {
+      "quick_check": "ok",
+      "required_tables_present": true,
+      "counts": {
+        "daily_prices": 129577,
+        "financial_statements": 8723,
+        "instruments": 6018
+      }
+    },
+    "active_sidecar_or_shell_after_close": false
+  },
+  "warm_run": {
+    "work": "C:\\Users\\STU\\AppData\\Local\\Temp\\bors_phased\\m21-installed-warm\\warm-work",
+    "part_files": [],
+    "files": [
+      {
+        "name": "market.db",
+        "bytes": 281284608
+      },
+      {
+        "name": "market.db-shm",
+        "bytes": 32768
+      },
+      {
+        "name": "market.db-wal",
+        "bytes": 745752
+      },
+      {
+        "name": "market.db.baseline",
+        "bytes": 64
+      },
+      {
+        "name": "user.db",
+        "bytes": 212992
+      }
+    ],
+    "db": {
+      "quick_check": "ok",
+      "required_tables_present": true,
+      "counts": {
+        "daily_prices": 129577,
+        "financial_statements": 8723,
+        "instruments": 6018
+      }
+    },
+    "active_sidecar_or_shell_after_close": false
+  },
+  "interpretation": "market.db-wal/-shm are normal live-database sidecars, not extraction residue; copying the DB with WAL/SHM and running quick_check reproduces all required tables (cold: 129,577 daily_prices; warm: checked ok)."
+}

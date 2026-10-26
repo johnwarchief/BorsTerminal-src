@@ -1,0 +1,47 @@
+{
+ "package_root": "C:\\Users\\STU\\AppData\\Local\\Temp\\bors_m2_accept\\BorsTerminal",
+ "version": "0.3.0",
+ "total_bytes": 210990261,
+ "file_count": 1448,
+ "top_level": {
+  "BorsTerminalM2TinyJS.exe": {
+   "bytes": 5686711,
+   "sha256": "a51c1dfb276750a5d40b427b5edaabca6cf1df2f2fe817d29fcc95275f29b22c"
+  },
+  "launcher.exe": {
+   "bytes": 2164824,
+   "sha256": "fd3c7ddf19dcb02c4c34a9551b538d4fb66243ce9ec9fe00aa46608dc2dde420"
+  }
+ },
+ "sidecar_exe": {
+  "bytes": 14923415,
+  "sha256": "89c3f90abd1a03028f6045e8ee23a85091e1167ea57eaf393c7a91fa1b557e20"
+ },
+ "seed": {
+  "bytes": 78667800,
+  "sha256": "e7df91dc0af257715494fbf31d64047ab4043d4b9d165e2467ca73b52d308157"
+ },
+ "baseline": {
+  "bytes": 64,
+  "sha256": "3ff6dfe7204644fa1224315790a6afaf5c3deccc2eb281b978e3da8bbebf1d49"
+ },
+ "sidecar_internal": {
+  "bytes": 109547447,
+  "file_count": 1443
+ },
+ "first_run_data": {
+  "work_dir_bytes": 282217847,
+  "market_db_bytes": 280875008,
+  "user_db_bytes": 208896,
+  "note": "measured on an isolated smoke work dir; exact work dir byte total recorded separately",
+  "work_dir_files": 8
+ },
+ "residue": {
+  "files": [
+   "market.db.part-shm (32 KB)",
+   "market.db.part-wal (0 B)"
+  ],
+  "note": "left by _extract_market_db after os.replace of the .part file"
+ },
+ "built_from_commit": "d48dad3 (packaging source); generated dist/resources not tracked"
+}

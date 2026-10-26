@@ -1,0 +1,33 @@
+>> GET 1 screens
+>> GET 2 screens
+>> PIPELOCK \\.\pipe\tinyjs-app-com.borsterminal.m2tinyjs-STU
+<< SYS theme dark
+>> EVAL@* window.__emit&&window.__emit({"event":"theme","data":{"dark":true}})
+<< GOT 1 [{"id":0,"uid":"\\\\?\\DISPLAY#GSM4492#4&58ec88a&0&UID16843008#{e6f07b5f-ee97-4a90-b076-33f57bf4eaa7}","name":"L1755 ","x":0,"y":0,"width":1280,"height":1…
+<< GOT 2 [{"id":0,"uid":"\\\\?\\DISPLAY#GSM4492#4&58ec88a&0&UID16843008#{e6f07b5f-ee97-4a90-b076-33f57bf4eaa7}","name":"L1755 ","x":0,"y":0,"width":1280,"height":1…
+>> WINOPEN app	http://127.0.0.1:53196/	بورس‌ترمینال — BorsTerminal	1360x740							0	0				
+>> WINOP@app show
+>> WINOP@app zoom
+<< WINSTATE app {"fullscreen":false,"maximized":false,"minimized":false,"focused":true,"screenId":0}
+>> EVAL@* window.__emit&&window.__emit({"event":"window-state","data":{"win":"app","fullscreen":false,"maximized":false,"minimized":false,"focused":true,"screenId"…
+<< WINSTATE app {"fullscreen":false,"maximized":false,"minimized":false,"focused":false,"screenId":0}
+>> EVAL@* window.__emit&&window.__emit({"event":"window-state","data":{"win":"app","fullscreen":false,"maximized":false,"minimized":false,"focused":false,"screenId…
+<< WINSTATE app {"fullscreen":false,"maximized":true,"minimized":false,"focused":false,"screenId":0}
+>> EVAL@* window.__emit&&window.__emit({"event":"window-state","data":{"win":"app","fullscreen":false,"maximized":true,"minimized":false,"focused":false,"screenId"…
+<< NAVQ n1 app	http://127.0.0.1:53196/	main
+>> NAVR n1 allow
+<< NAV {"window":"app","kind":"start","url":"http://127.0.0.1:53196/"}
+>> EVAL@* window.__emit&&window.__emit({"event":"navigate","data":{"window":"app","kind":"start","url":"http://127.0.0.1:53196/"}})
+<< NAV {"window":"app","kind":"commit","url":"http://127.0.0.1:53196/"}
+>> EVAL@* window.__emit&&window.__emit({"event":"navigate","data":{"window":"app","kind":"commit","url":"http://127.0.0.1:53196/"}})
+<< CALL app:1 ["{\"method\":\"client.hello\"}","http://127.0.0.1:53196"]
+>> RET app:1 0 true
+<< CALL app:2 ["{\"method\":\"win.getState\"}","http://127.0.0.1:53196"]
+>> GET 3 win:app
+<< GOT 3 {"x":-8,"y":-8,"width":1280,"height":961,"outer":{"width":1296,"height":1000},"fullscreen":false,"minimized":false,"visible":true,"focused":false,"alwaysO…
+>> RET app:2 0 {"x":-8,"y":-8,"width":1280,"height":961,"outer":{"width":1296,"height":1000},"fullscreen":false,"minimized":false,"visible":true,"focused":false,"a…
+<< NAV {"window":"app","kind":"finish","url":"http://127.0.0.1:53196/"}
+>> EVAL@* window.__emit&&window.__emit({"event":"navigate","data":{"window":"app","kind":"finish","url":"http://127.0.0.1:53196/"}})
+<< WINCLOSED app
+>> EVAL@* window.__emit&&window.__emit({"event":"window-closed","data":{"id":"app"}})
+>> QUIT

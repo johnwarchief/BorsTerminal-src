@@ -1,0 +1,23 @@
+{
+ "security_matrix_executions": 13,
+ "cases": 65,
+ "passed": 65,
+ "all_ok": true,
+ "executions_detail": [
+  "installed-smoke x1",
+  "installed-cold x3",
+  "installed-warm x3",
+  "close-load x2",
+  "close2 x2",
+  "recover x1",
+  "backend-death x1"
+ ],
+ "cases_per_execution": [
+  "local_host 200",
+  "foreign_host 403",
+  "origin_null 403",
+  "origin_foreign 403",
+  "origin_local 200"
+ ],
+ "note": "Every execution hit the live sidecar launched by the packaged shell. Origin: null was rejected 403 in every case; no guard was weakened."
+}

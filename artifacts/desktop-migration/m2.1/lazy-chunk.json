@@ -1,0 +1,122 @@
+{
+  "root_cause": "A cold Technical navigation produced 'TypeError: Failed to fetch dynamically imported module: .../TechnicalPage-CfX_WJzv.js' even though the packaged server returned 200 for that asset. The route is a Vite lazy chunk; Lazy.tsx had no error/retry path, so the route stayed on its skeleton and the probe timed out.",
+  "prior_evidence": "artifacts/desktop-migration/m2/installed-cold/summary-full.json (run 1 error, 2026-10-25)",
+  "fix": "Lazy.tsx retries the same dynamic import with 300/1200/3000 ms backoff; if the route still fails, it reloads once per route per 60 s (Chromium caches failed module fetches) and shows a Persian error with a manual retry instead of looping. Lazy loading and route code-splitting remain enabled.",
+  "post_fix": {
+    "cold": {
+      "runs_ok": 1,
+      "errors": [],
+      "technical_ready_ms": 86823.3,
+      "market_rows_visible_ms": 50187.3,
+      "fundamental_ready_ms": 93441.3,
+      "exit_code": 0
+    },
+    "warm": {
+      "runs_ok": 1,
+      "errors": [],
+      "technical_ready_ms": 75594.5,
+      "market_rows_visible_ms": 36245.5,
+      "fundamental_ready_ms": 81066.5,
+      "exit_code": 0
+    },
+    "security_cases": {
+      "cold": [
+        {
+          "local_host": {
+            "status": 200,
+            "expected": 200,
+            "ok": true,
+            "headers": {
+              "Host": "127.0.0.1:63775"
+            }
+          },
+          "foreign_host": {
+            "status": 403,
+            "expected": 403,
+            "ok": true,
+            "headers": {
+              "Host": "evil.example"
+            }
+          },
+          "origin_null": {
+            "status": 403,
+            "expected": 403,
+            "ok": true,
+            "headers": {
+              "Host": "127.0.0.1:63775",
+              "Origin": "null"
+            }
+          },
+          "origin_foreign": {
+            "status": 403,
+            "expected": 403,
+            "ok": true,
+            "headers": {
+              "Host": "127.0.0.1:63775",
+              "Origin": "http://evil.example"
+            }
+          },
+          "origin_local": {
+            "status": 200,
+            "expected": 200,
+            "ok": true,
+            "headers": {
+              "Host": "127.0.0.1:63775",
+              "Origin": "http://127.0.0.1:63775"
+            }
+          }
+        }
+      ],
+      "warm": [
+        {
+          "local_host": {
+            "status": 200,
+            "expected": 200,
+            "ok": true,
+            "headers": {
+              "Host": "127.0.0.1:63898"
+            }
+          },
+          "foreign_host": {
+            "status": 403,
+            "expected": 403,
+            "ok": true,
+            "headers": {
+              "Host": "evil.example"
+            }
+          },
+          "origin_null": {
+            "status": 403,
+            "expected": 403,
+            "ok": true,
+            "headers": {
+              "Host": "127.0.0.1:63898",
+              "Origin": "null"
+            }
+          },
+          "origin_foreign": {
+            "status": 403,
+            "expected": 403,
+            "ok": true,
+            "headers": {
+              "Host": "127.0.0.1:63898",
+              "Origin": "http://evil.example"
+            }
+          },
+          "origin_local": {
+            "status": 200,
+            "expected": 200,
+            "ok": true,
+            "headers": {
+              "Host": "127.0.0.1:63898",
+              "Origin": "http://127.0.0.1:63898"
+            }
+          }
+        }
+      ]
+    }
+  },
+  "limitations": [
+    "The prior cold failure was intermittent; the post-fix cold/warm runs did not reproduce it. The retry/reload guard is exercised by code review, not by a forced 404 in the installed package."
+  ]
+}

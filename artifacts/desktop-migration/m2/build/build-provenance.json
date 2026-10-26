@@ -1,0 +1,41 @@
+{
+ "source_commit": "d48dad3",
+ "baseline_commit": "7caae40 (M1.5 report); branch mission/tinyjs-m2-packaging-acceptance-2026-10-25",
+ "temporary_update_config": {
+  "url": "http://127.0.0.1:8123/manifest.json",
+  "note": "test-only; not committed to tinyjs.json"
+ },
+ "builds": [
+  {
+   "version": "0.3.0",
+   "purpose": "installed acceptance + updater base",
+   "command": "_tools/tinyjs/tinyjs.cmd build",
+   "exe_sha256": "84c5304b0d00d294cd9d58a1e193f4bb5d2726c1763795ae83300020d36a5b98"
+  },
+  {
+   "version": "0.3.1",
+   "purpose": "update payload",
+   "command": "_tools/tinyjs/tinyjs.cmd publish --notes ...",
+   "exe_sha256": "a18d30ca41d921a6bd23049d7e7e5ff24286c2af2d9bdcd086e4d0ade4686752",
+   "zip": "BorsTerminalM2TinyJS-0.3.1-win.zip",
+   "zip_bytes": 137297084,
+   "zip_sha256": "9377c5d3d59248de9220e9fa1ebd006ce53a09caaeb5399863b734bf3c018b29"
+  }
+ ],
+ "tools": {
+  "tinyjs": "0.65.0 (txiki.js 26.6.0)",
+  "python": "3.12.10",
+  "pyinstaller": "6.22.3"
+ },
+ "acceptance_package": {
+  "version": "0.3.0",
+  "exe_sha256": "a51c1dfb276750a5d40b427b5edaabca6cf1df2f2fe817d29fcc95275f29b22c",
+  "sidecar_sha256": "89c3f90abd1a03028f6045e8ee23a85091e1167ea57eaf393c7a91fa1b557e20",
+  "seed_sha256": "e7df91dc0af257715494fbf31d64047ab4043d4b9d165e2467ca73b52d308157"
+ },
+ "notes": [
+  "The acceptance package in %TEMP%/bors_m2_accept was copied before the 0.3.1 build and keeps the 0.3.0 no-update-config binary.",
+  "The updater test package (install-030) was built from the same commit with a loopback update URL; its exe hash is 84c5304b....",
+  "No generated build output or seed database is committed."
+ ]
+}

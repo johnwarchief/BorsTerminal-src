@@ -1,0 +1,5 @@
+old_probe_tables ['daily_prices', 'financial_statements', 'instruments']
+old_probe_files ['market.db.part', 'market.db.part-shm', 'market.db.part-wal']
+immutable_probe_tables ['daily_prices', 'financial_statements', 'instruments']
+immutable_probe_files ['market.db.part']
+probe_dir C:\Users\STU\AppData\Local\Temp\bors_part_probe_evidence_s4rozc4u

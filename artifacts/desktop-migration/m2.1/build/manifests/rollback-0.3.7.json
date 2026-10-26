@@ -1,0 +1,14 @@
+{
+  "version": "0.3.7",
+  "win": {
+    "x86_64": {
+      "url": "http://127.0.0.1:8123/BorsTerminalM2TinyJS-0.3.6-win.zip",
+      "sha256": "3c7b4720fba8b597312d2e9e52f5de61aa3d7985ad581c3d5635ae6c69ab6264",
+      "version": "0.3.7"
+    },
+    "url": "http://127.0.0.1:8123/BorsTerminalM2TinyJS-0.3.6-win.zip",
+    "sha256": "3c7b4720fba8b597312d2e9e52f5de61aa3d7985ad581c3d5635ae6c69ab6264",
+    "version": "0.3.7"
+  },
+  "notes": "M2.1 updater acceptance (loopback)"
+}

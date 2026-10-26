@@ -1,0 +1,3 @@
+7cfefddd1b6009babf3bdd727c61d865db1fb6f9dde05e1abb20a59d0259e78b *market.db
+9e9e9f0f7c7fada08ff6ea3952096e663336ee3d9b0d26ee8b71683e6833212c *market.db-wal
+7dc3fcad7686c57854e13f47a07f7cd77077f1dacff12dd233cdbd5cdf8291b0 *user.db

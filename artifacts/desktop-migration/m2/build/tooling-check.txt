@@ -1,0 +1,22 @@
+makensis=NOT_FOUND
+ISCC=NOT_FOUND
+candle.exe=NOT_FOUND
+light.exe=NOT_FOUND
+signtool.exe=NOT_FOUND
+osslsigncode=NOT_FOUND
+7z=NOT_FOUND
+iexpress=/c/Windows/System32/iexpress
+makecab=/c/Windows/System32/makecab
+--- common paths ---
+MISSING /c/Program Files (x86)/NSIS/makensis.exe
+MISSING /c/Program Files/NSIS/makensis.exe
+MISSING /c/Program Files (x86)/WiX Toolset v3.14/bin/candle.exe
+MISSING /c/Program Files (x86)/Windows Kits/10/bin
+--- webview2 ---
+
+
+pv   : 155.0.4283.62
+name : Microsoft Edge WebView2 Runtime
+
+
+

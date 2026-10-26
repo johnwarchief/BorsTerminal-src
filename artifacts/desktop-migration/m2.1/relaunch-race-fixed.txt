@@ -1,0 +1,10 @@
+fixed-package relaunch race (0.3.6)
+A pid 15416 window opened; B shell 804 spawned with --tinyjs-relaunched
+B still alive at 9s while A alive
+A exited after 1.4s; B started and opened a window
+--- B shell trace ---
+{"stage":"relaunch_wait_begin","t":1793026857.272,"dt":0.004,"pid":804,"pipe":"\\\\.\\pipe\\tinyjs-app-com.borsterminal.m2tinyjs-STU"}
+{"stage":"relaunch_wait_done","t":1793026868.709,"dt":11.441,"pid":804,"waited_ms":11437}
+{"stage":"backend_init","t":1793026868.962,"dt":11.694,"pid":804,"work":"C:\\Users\\STU\\AppData\\Local\\Temp\\bors_m21_handoff_race_fixed\\workB","main":true,"installed":true,"resources":"C:\\Users\\STU\\AppData\\Local\\Temp\\bors_m21_update\\install-035/resources"}
+{"stage":"window_open_begin","t":1793026890.903,"dt":33.635,"pid":804,"url":"http://127.0.0.1:64339/"}
+{"stage":"window_open","t":1793026890.904,"dt":33.636,"pid":804}

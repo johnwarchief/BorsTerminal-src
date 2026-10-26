@@ -1,0 +1,9 @@
+==> compiling backend
+Compiled C:\Users\STU\Documents\Qoder\2026-10-23\95b91389\BorsTerminal\prototypes\tinyjs-m2/dist/BorsTerminalM2TinyJS.exe (build 9b93812f654545cd9e6d9989075651ff)
+==> done
+run it:  .\dist\BorsTerminalM2TinyJS.exe
+==> packing BorsTerminalM2TinyJS-0.3.1-win.zip
+==> dist/publish/ ready:
+    BorsTerminalM2TinyJS-0.3.1-win.zip
+    manifest.json (version 0.3.1, url http://127.0.0.1:8123/BorsTerminalM2TinyJS-0.3.1-win.zip)
+upload both files to the directory update.url points at.

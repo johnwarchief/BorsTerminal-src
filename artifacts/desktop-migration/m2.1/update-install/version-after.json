@@ -1,0 +1,13 @@
+{
+  "installed_exe_sha256": "b2a62ca628651acadda33015973be3868e152aef623d33cbf0e28eceed550fc5",
+  "expected_payload_exe_sha256": "b2a62ca628651acadda33015973be3868e152aef623d33cbf0e28eceed550fc5",
+  "published_version": "0.3.6",
+  "post_update_app_info_version": "0.3.6",
+  "post_update_check": {
+    "available": false,
+    "current": "0.3.6",
+    "latest": "0.3.6",
+    "notes": "M2.1 updater acceptance (loopback)"
+  },
+  "source": "exe sha256 + post-update-identity app.info"
+}

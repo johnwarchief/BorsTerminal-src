@@ -1,10 +1,10 @@
 {
- "generated_at": "2026-10-25",
+ "generated_at": "2026-10-26 (M2.1 gate refresh)",
  "files": [
   {
    "path": "acceptance-results.json",
-   "bytes": 6264,
-   "sha256": "51426d066a76390af132f6381686f1819be57309799465e29f24613b7c1534d3"
+   "bytes": 7663,
+   "sha256": "263eb58c4b44ac3d630603ac73a6bbbf4a5b4250eb2d189e6b5968aae484c367"
   },
   {
    "path": "backend-death/run-1-error.png",

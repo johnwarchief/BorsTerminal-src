@@ -1,0 +1,6 @@
+{"kind": "m2_update_started", "run_id": "1793024483354-a06vpe", "url": "about:blank", "at_ms": 1793024483354, "origin": "null", "_recv_epoch_ms": 1793024483403.2063}
+{"kind": "m2_update_started", "run_id": "1793024484281-1ohj3r", "url": "http://127.0.0.1:60558/", "at_ms": 1793024484281, "origin": "http://127.0.0.1:60558", "_recv_epoch_ms": 1793024484486.539}
+{"kind": "m2_update_info", "run_id": "1793024484281-1ohj3r", "url": "http://127.0.0.1:60558/", "at_ms": 1793024484325, "info": {"version": "0.3.5", "tinyjs": "v0.65.0", "runtime": "txiki.js 26.6.0"}, "_recv_epoch_ms": 1793024484576.483}
+{"kind": "m2_update_check", "run_id": "1793024484281-1ohj3r", "url": "http://127.0.0.1:60558/", "at_ms": 1793024484983, "result": {"available": true, "current": "0.3.5", "latest": "0.3.6", "notes": "M2.1 updater acceptance (loopback)"}, "_recv_epoch_ms": 1793024485054.1887}
+{"kind": "m2_update_install_begin", "run_id": "1793024484281-1ohj3r", "url": "http://127.0.0.1:60558/", "at_ms": 1793024484984, "latest": "0.3.6", "notes": "M2.1 updater acceptance (loopback)", "_recv_epoch_ms": 1793024485111.1538}
+{"kind": "m2_update_install_returned", "run_id": "1793024484281-1ohj3r", "url": "http://127.0.0.1:60558/", "at_ms": 1793024581538, "result": true, "_recv_epoch_ms": 1793024581569.2852}

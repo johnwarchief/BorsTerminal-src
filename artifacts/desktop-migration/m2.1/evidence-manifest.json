@@ -1,0 +1,227 @@
+{
+  "mission": "M2.1 TinyJS packaging fixes",
+  "generated_at": "2026-10-26T15:07:03Z",
+  "branch": "mission/tinyjs-m2-packaging-fixes-2026-10-25",
+  "base_commit": "c64a0e0a838986a60f73136425364e248d7f4503",
+  "code_commit": "f42c263925a0ecda0d033c37014b679171ce22ae",
+  "status": "PARTIAL — EXPLICIT BLOCKERS",
+  "summary": "test-summary.json",
+  "hash_note": "sha256 and bytes are of the acceptance working tree at generation time; .gitattributes stores the corresponding blobs with LF line endings.",
+  "files": [
+    {
+      "path": "build\\build-provenance.json",
+      "bytes": 3405,
+      "sha256": "0368c5da39b7629ffd86c5d4a6afe5de0fe97da00d2e698c3eb9f027026e4059"
+    },
+    {
+      "path": "build\\manifests\\checksum-0.3.7.json",
+      "bytes": 485,
+      "sha256": "4d74228fe92d3e2de4fe52ff5d21ab423052d148a0ede7e90f6dbaec952596a4"
+    },
+    {
+      "path": "build\\manifests\\install-0.3.6.json",
+      "bytes": 433,
+      "sha256": "11c02fc6196e8cc6c571033310ea0048f0d539ea399964497c46a6eedb39ff23"
+    },
+    {
+      "path": "build\\manifests\\published-0.3.6.json",
+      "bytes": 421,
+      "sha256": "c312ea248fd59a7dbd6b3412331f871d8b540b7b259615411104da7a1d68dc98"
+    },
+    {
+      "path": "build\\manifests\\rollback-0.3.7.json",
+      "bytes": 485,
+      "sha256": "b39e422eca77c0cab61ba6e37f10c767666488c56c10ada9bfdd0fb0ca7f785a"
+    },
+    {
+      "path": "installed-cold\\summary-full.json",
+      "bytes": 51566,
+      "sha256": "84001b9ee9253b261a5c8dbf038f04a0d484cb9315f723290c8cafdad9c3025e"
+    },
+    {
+      "path": "installed-cold\\summary.json",
+      "bytes": 28113,
+      "sha256": "0f52c8a708667aa99787edfa76af531ba6a37dcd199fcaedddc998af3a95e410"
+    },
+    {
+      "path": "installed-warm\\summary-full.json",
+      "bytes": 51298,
+      "sha256": "608b4a282138d60b580bf6f4f6cba5d8152b2e0e7fa6a10e63158eb73da1b777"
+    },
+    {
+      "path": "installed-warm\\summary.json",
+      "bytes": 27903,
+      "sha256": "3f5ec2c6b9f458862129312fc4add52e6b01af9dba62f1c1632867f7c342f2e2"
+    },
+    {
+      "path": "lazy-chunk.json",
+      "bytes": 3880,
+      "sha256": "0e2387b79b47a4f6b9206aa10dc8b2704de8e3b4cb6bd0fc75427a8cbfbd64aa"
+    },
+    {
+      "path": "operational-db-recheck.txt",
+      "bytes": 331,
+      "sha256": "2b53b96ffb14b8e500e6c1e90bd18acc078320922a8dcaf658bfe8cb19d90e76"
+    },
+    {
+      "path": "part-probe.txt",
+      "bytes": 353,
+      "sha256": "27e59a7d6cf17e8ee4508251c56c9b17e73803b524b42af8720a13521a585ea1"
+    },
+    {
+      "path": "part-residue.json",
+      "bytes": 3610,
+      "sha256": "e658974a916e55e918b3174ddd9c1dab15f1a4dcc157c5600db631ada375f6e6"
+    },
+    {
+      "path": "post-update-identity\\collector.jsonl",
+      "bytes": 1161,
+      "sha256": "1ca8d9e36c8257f849851ae9f4cc54c9eb63967287249ece25b294aa72142320"
+    },
+    {
+      "path": "post-update-identity\\http.log",
+      "bytes": 56,
+      "sha256": "bb104bc920a63279fcd3ac0a47b65d6052a359dddee9da48fe8a9fd71b6481b4"
+    },
+    {
+      "path": "post-update-identity\\shell-stdout.log",
+      "bytes": 4281,
+      "sha256": "8310a68e8e034f588a9b60c68c7ea8b6c7458ecdf912dd63768d3e11fd34d029"
+    },
+    {
+      "path": "post-update-identity\\shell-trace.jsonl",
+      "bytes": 2002,
+      "sha256": "ce52246c2b74669ab533df7d249e72bfcf3db4fdb43d2b97d6ac3fb87460a4a4"
+    },
+    {
+      "path": "post-update-identity\\sidecar-trace.jsonl",
+      "bytes": 1445,
+      "sha256": "1fc7eb7f19253ec8b460fa7726fddfdec58c301890e5ed27f37a2102fd8b3c08"
+    },
+    {
+      "path": "post-update-identity\\summary.json",
+      "bytes": 389810,
+      "sha256": "cb2a03cc4949d251793e86bedb8190dfef567ed1691c4c6c89e11f1bbe135e87"
+    },
+    {
+      "path": "relaunch-race-fixed.txt",
+      "bytes": 876,
+      "sha256": "bdd6f4dbc27d182dabe3be7d676f9ba1db8b644e0b12c007f306401937e80f99"
+    },
+    {
+      "path": "relaunch-race.json",
+      "bytes": 2680,
+      "sha256": "7901ce433b138faa4064890aa8c8957dfcf2f7432b559168021e0b01c8ca1595"
+    },
+    {
+      "path": "test-summary.json",
+      "bytes": 23225,
+      "sha256": "c04e860002502ab7ac48c21dddee7182c4d31d9b6328c8cc251dcec7a752f302"
+    },
+    {
+      "path": "update-checksum\\collector.jsonl",
+      "bytes": 1220,
+      "sha256": "32a7436ab0a03977701e8dfe7ce049aba4c69cacd6f1dd530a426af0607b8a8a"
+    },
+    {
+      "path": "update-checksum\\http.log",
+      "bytes": 189,
+      "sha256": "34b1b4bc7401f43ac576e66a9a2e27dc33c5f7485df38b69a9e3a66dda16200a"
+    },
+    {
+      "path": "update-checksum\\shell-stdout.log",
+      "bytes": 9927,
+      "sha256": "73ad6dfe1bf6f3ef3c3ff963c194be2b328e3c9cebae8ab06802140bb62ecb32"
+    },
+    {
+      "path": "update-checksum\\shell-trace.jsonl",
+      "bytes": 5955,
+      "sha256": "96be7bb7a1491f1790624e0694a155f0768f851d0f9119eefd3cb7f2464d7058"
+    },
+    {
+      "path": "update-checksum\\sidecar-trace.jsonl",
+      "bytes": 2805,
+      "sha256": "ae8f91b4e6fdf11ba07b649c65cf69e17345e40aa67bdf22feac5d9d23f706ca"
+    },
+    {
+      "path": "update-checksum\\summary.json",
+      "bytes": 389605,
+      "sha256": "7cbe07f7e2ae20742db36fa6fc53315d7b8ca787852568d94ed615ae7386b638"
+    },
+    {
+      "path": "update-install\\collector.jsonl",
+      "bytes": 1296,
+      "sha256": "bcb446d35c0b8a8065092dfb1ced2bd427020f55c391d98870aa2d8efe40429a"
+    },
+    {
+      "path": "update-install\\http.log",
+      "bytes": 189,
+      "sha256": "e9526599265bf5d2296821fcb60a1c3e9af0ff3f2d4b38c22ec355e3b1014b71"
+    },
+    {
+      "path": "update-install\\relaunched.png",
+      "bytes": 7126,
+      "sha256": "36fc3f55d27151934315bdbb444466f91ce35039b49361339f7c6e4cac474d99"
+    },
+    {
+      "path": "update-install\\relaunched.screen.png",
+      "bytes": 111600,
+      "sha256": "b3ac813cb5598f98131e0ab8eace1c18da30686b0f8bc6a19ba131f71eb28d68"
+    },
+    {
+      "path": "update-install\\shell-stdout.log",
+      "bytes": 9630,
+      "sha256": "814672ad3cddf6959202426c035bef27b3aa8f7d635c5e0c2ba0c63915f879d3"
+    },
+    {
+      "path": "update-install\\shell-trace.jsonl",
+      "bytes": 6687,
+      "sha256": "1c7740dd2d90e014f8c98fa4de5d1abd12c58d88fd710f69658f9705935357ce"
+    },
+    {
+      "path": "update-install\\sidecar-trace.jsonl",
+      "bytes": 2804,
+      "sha256": "32e336fd656101bf2fb8ffd81b27b552b769041694062c752f05d351852f0c7c"
+    },
+    {
+      "path": "update-install\\summary.json",
+      "bytes": 391149,
+      "sha256": "6c6e619977eb303999620ebac4639c79d474c9406ba8c658282f130dff0380e8"
+    },
+    {
+      "path": "update-install\\version-after.json",
+      "bytes": 495,
+      "sha256": "df3d73499d3d4e47eb3493056fd5a10c44fc780f514315fcda8a74dec2754734"
+    },
+    {
+      "path": "update-rollback\\collector.jsonl",
+      "bytes": 1752,
+      "sha256": "d42c4f7392fc7dd9d8716b2d7f93b41217e20a893c2d2a1ae736eac983a5d1b8"
+    },
+    {
+      "path": "update-rollback\\http.log",
+      "bytes": 189,
+      "sha256": "18411ba63819775215a3b18dd2434d454be75a8eebe356674305470638a07236"
+    },
+    {
+      "path": "update-rollback\\shell-stdout.log",
+      "bytes": 10035,
+      "sha256": "4961820ed32d6c2838d2dbdf5332e391836b94cbbfe483dc10ba6f7fc0031509"
+    },
+    {
+      "path": "update-rollback\\shell-trace.jsonl",
+      "bytes": 6198,
+      "sha256": "56018ca8be9cf586c77050a07b9db06a8ebc3fd8522053e25b41796e0d35127f"
+    },
+    {
+      "path": "update-rollback\\sidecar-trace.jsonl",
+      "bytes": 2796,
+      "sha256": "9bdcb40c531dea74dc8699b0cbf8e9f09e9d0f2d14f16469fe79206f570bb348"
+    },
+    {
+      "path": "update-rollback\\summary.json",
+      "bytes": 390135,
+      "sha256": "02720ceef69bfa501928d74c190181cd8e037fc26f65f768c5018586451ff2e1"
+    }
+  ]
+}

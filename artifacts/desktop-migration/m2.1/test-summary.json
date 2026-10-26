@@ -1,0 +1,601 @@
+{
+  "mission": "M2.1 TinyJS packaging fixes",
+  "branch": "mission/tinyjs-m2-packaging-fixes-2026-10-25",
+  "base_commit": "c64a0e0a838986a60f73136425364e248d7f4503",
+  "status": {
+    "overall": "PARTIAL — EXPLICIT BLOCKERS",
+    "m2_1_fixes": {
+      "updater_in_use_file_lock": "FIXED / VERIFIED (loopback unsigned test feed)",
+      "updater_relaunch_race": "FIXED / VERIFIED (bounded pipe wait; successful relaunch)",
+      "cold_lazy_chunk": "FIXED / VERIFIED (cold + warm technical path; prior intermittent failure not reproduced)",
+      ".part_shm_wal_residue": "FIXED / VERIFIED (synthetic probe + cold/warm extraction; DB integrity ok)"
+    },
+    "remaining_release_blockers": [
+      "NSIS/WiX installer: not available; BLOCKED.",
+      "Authenticode code signing / signtool: no authorized certificate/tool; BLOCKED.",
+      "Real system install, uninstall and reinstall acceptance: not performed; BLOCKED.",
+      "WebView2 bootstrapper and missing-runtime behavior: not built/measured; BLOCKED.",
+      "Production update feed authenticity (signed manifest/TLS): the acceptance feed was loopback HTTP with an unsigned manifest; signing remains BLOCKED."
+    ],
+    "not_retested": [
+      "Full M2 security matrix (65 cases), full frontend/back-end test suite and the complete M2 lifecycle matrix were not rerun; only the affected paths above were re-executed."
+    ]
+  },
+  "build_provenance": {
+    "mission": "M2.1 TinyJS packaging fixes (updater in-use files, cold lazy chunk, .part residue)",
+    "branch": "mission/tinyjs-m2-packaging-fixes-2026-10-25",
+    "base_commit": "c64a0e0a838986a60f73136425364e248d7f4503",
+    "source_config": "prototypes/tinyjs-m2/tinyjs.json remains version 0.3.0 without an update URL; test builds used temporary loopback update config.",
+    "tools": {
+      "tinyjs": "0.65.0 (txiki.js 26.6.0)",
+      "node": "22.22.0",
+      "vite": "5.4.x",
+      "python": "3.12.10",
+      "pyinstaller": "6.22.3"
+    },
+    "builds": {
+      "frontend": {
+        "command": "frontend/node_modules/vite/bin/vite.js build (from frontend/)",
+        "index_asset": "frontend\\dist\\assets\\index-CFSpBvi8.js",
+        "index_sha256": "a9175e316bc84f4cbd168c28cf854bc78ff23c22551061272a6f9b88e4fdb5bb",
+        "technical_asset": "frontend\\dist\\assets\\TechnicalPage-q4yTjhh0.js",
+        "technical_sha256": "eb79a511292619f81eaec962128e3e77fb64bad4b43b12f1607616e2d347481c",
+        "kline_asset": "frontend\\dist\\assets\\KLineChartWrapper-D68e5sjO.js",
+        "kline_sha256": "a0529dd9b786eb9f3f3cbbad2b72f5f7d76144f7c787c7e23cef2c9435d4c262"
+      },
+      "sidecar": {
+        "command": "PyInstaller --noconfirm --clean m2_sidecar.spec",
+        "exe": "prototypes\\tinyjs-m2\\resources\\sidecar\\BorsTerminalSidecar.exe",
+        "exe_sha256": "34372859d16b96b8416d301a244f5c486ccc89a0ca4a33eacf22575221fe861b",
+        "seed_sha256": "e7df91dc0af257715494fbf31d64047ab4043d4b9d165e2467ca73b52d308157",
+        "seed_bytes": 78667800
+      },
+      "base_035": {
+        "purpose": "updater base",
+        "exe_sha256": "1f82dbbac77c5861d271f0e41a8805c037914ecee98284ace0e567a6ae1932a4"
+      },
+      "payload_036": {
+        "purpose": "update payload",
+        "exe_sha256": "b2a62ca628651acadda33015973be3868e152aef623d33cbf0e28eceed550fc5",
+        "zip": "BorsTerminalM2TinyJS-0.3.6-win.zip",
+        "zip_sha256": "3c7b4720fba8b597312d2e9e52f5de61aa3d7985ad581c3d5635ae6c69ab6264",
+        "zip_bytes": 137298275
+      },
+      "manifests": {
+        "checksum-0.3.7.json": {
+          "sha256": "4d74228fe92d3e2de4fe52ff5d21ab423052d148a0ede7e90f6dbaec952596a4",
+          "bytes": 485
+        },
+        "install-0.3.6.json": {
+          "sha256": "11c02fc6196e8cc6c571033310ea0048f0d539ea399964497c46a6eedb39ff23",
+          "bytes": 433
+        },
+        "published-0.3.6.json": {
+          "sha256": "c312ea248fd59a7dbd6b3412331f871d8b540b7b259615411104da7a1d68dc98",
+          "bytes": 421
+        },
+        "rollback-0.3.7.json": {
+          "sha256": "b39e422eca77c0cab61ba6e37f10c767666488c56c10ada9bfdd0fb0ca7f785a",
+          "bytes": 485
+        }
+      }
+    },
+    "notes": [
+      "All updater tests used an isolated install copy and BORS_WORK_DIR/BORS_DB under %TEMP%; no operational DB was opened.",
+      "The update feed was a loopback HTTP server with an unsigned local manifest; this is not a production update channel.",
+      "The test versions 0.3.5/0.3.6 are temporary build versions; committed tinyjs.json was restored to 0.3.0.",
+      "The first successful updater run was on a pre-relaunch-wait build; the final 0.3.5/0.3.6 pair includes both the sidecar stop and the bounded relaunch wait."
+    ]
+  },
+  "updater": {
+    "root_cause": "The running PyInstaller sidecar holds resources/sidecar/_internal/base_library.zip open. TinyJS performs an in-place Windows file shuffle; the locked file made rename fail (EBUSY), and TinyJS correctly rolled back.",
+    "fix": "main.js wraps app.update.install: it stops the sidecar, waits for the process to exit (15 s graceful, then kill + wait), runs the stock TinyJS installer (download, manifest sha256, swap, rollback), and on failure restarts the sidecar on the same port. On success the stock relaunch runs.",
+    "install": {
+      "summary": "artifacts\\desktop-migration\\m2.1\\update-install\\summary.json",
+      "check": {
+        "available": true,
+        "current": "0.3.5",
+        "latest": "0.3.6",
+        "notes": "M2.1 updater acceptance (loopback)"
+      },
+      "install_returned": true,
+      "original_exit_code": 0,
+      "new_exe_sha256": "b2a62ca628651acadda33015973be3868e152aef623d33cbf0e28eceed550fc5",
+      "exe_matches_expected": true,
+      "changed_count": 3,
+      "changed_files": [
+        "BorsTerminalM2TinyJS.exe",
+        "BorsTerminalM2TinyJS.exe.update-old",
+        "launcher.exe.update-old"
+      ],
+      "update_old_files": [
+        "BorsTerminalM2TinyJS.exe.update-old",
+        "launcher.exe.update-old"
+      ],
+      "security_all_ok": true,
+      "close": {
+        "closed": true,
+        "alive_after_close": false,
+        "close_ms": 1314.2
+      },
+      "cleanup": {
+        "survivors_observed": [],
+        "natural_exit_s": null,
+        "survivors_before": [],
+        "killed": [],
+        "left": [],
+        "port_open": false
+      },
+      "relaunch_wait": [
+        {
+          "stage": "relaunch_wait_begin",
+          "t": 1793024583.235,
+          "dt": 0.009,
+          "pid": 14896,
+          "pipe": "\\\\.\\pipe\\tinyjs-app-com.borsterminal.m2tinyjs-STU"
+        },
+        {
+          "stage": "relaunch_wait_done",
+          "t": 1793024583.364,
+          "dt": 0.138,
+          "pid": 14896,
+          "waited_ms": 129
+        }
+      ],
+      "version_after_from_original_app_info": "0.3.5",
+      "post_update_identity": {
+        "summary": "artifacts\\desktop-migration\\m2.1\\post-update-identity\\summary.json",
+        "app_info_version": "0.3.6",
+        "check": {
+          "available": false,
+          "current": "0.3.6",
+          "latest": "0.3.6",
+          "notes": "M2.1 updater acceptance (loopback)"
+        }
+      }
+    },
+    "checksum": {
+      "summary": "artifacts\\desktop-migration\\m2.1\\update-checksum\\summary.json",
+      "check": {
+        "available": true,
+        "current": "0.3.5",
+        "latest": "0.3.7",
+        "notes": "M2.1 updater acceptance (loopback)"
+      },
+      "event": {
+        "kind": "m2_update_install_error",
+        "run_id": "1793025609539-1k73y2",
+        "url": "http://127.0.0.1:63467/",
+        "at_ms": 1793025644824,
+        "error": "checksum mismatch — refusing to install",
+        "message": "checksum mismatch — refusing to install",
+        "_recv_epoch_ms": 1793025644925.4097
+      },
+      "changed_count": 0,
+      "update_old_files": [],
+      "app_alive_after_refusal": true,
+      "version_after": "0.3.5",
+      "sidecar_restart": [
+        {
+          "stage": "update_sidecar_stop_done",
+          "t": 1793025613.949,
+          "dt": 68.526,
+          "pid": 6696,
+          "graceful": true
+        },
+        {
+          "stage": "update_install_failed",
+          "t": 1793025632.429,
+          "dt": 87.006,
+          "pid": 6696,
+          "error": "checksum mismatch — refusing to install",
+          "sidecar_stopped": true
+        },
+        {
+          "stage": "update_sidecar_restart_ok",
+          "t": 1793025644.813,
+          "dt": 99.39,
+          "pid": 6696,
+          "url": "http://127.0.0.1:63467/"
+        }
+      ],
+      "close": {
+        "closed": true,
+        "alive_after_close": false,
+        "close_ms": 2601.4
+      },
+      "cleanup": {
+        "survivors_observed": [],
+        "natural_exit_s": null,
+        "survivors_before": [],
+        "killed": [],
+        "left": [],
+        "port_open": null
+      }
+    },
+    "rollback": {
+      "summary": "artifacts\\desktop-migration\\m2.1\\update-rollback\\summary.json",
+      "check": {
+        "available": true,
+        "current": "0.3.5",
+        "latest": "0.3.7",
+        "notes": "M2.1 updater acceptance (loopback)"
+      },
+      "event": {
+        "kind": "m2_update_install_error",
+        "run_id": "1793025814603-ufb5ky",
+        "url": "http://127.0.0.1:63649/",
+        "at_ms": 1793025862149,
+        "error": "update swap failed — the current version is intact (cannot replace C:\\Users\\STU\\AppData\\Local\\Temp\\bors_m21_update\\rollback-final/resources/sidecar/market.db.baseline (file locked?): EBUSY: resource busy or locked)",
+        "message": "update swap failed — the current version is intact (cannot replace C:\\Users\\STU\\AppData\\Local\\Temp\\bors_m21_update\\rollback-final/resources/sidecar/market.db.baseline (file locked?): EBUSY: resource busy or locked)",
+        "_recv_epoch_ms": 1793025862166.0686
+      },
+      "lock": {
+        "path": "C:\\Users\\STU\\AppData\\Local\\Temp\\bors_m21_update\\rollback-final\\resources\\sidecar\\market.db.baseline",
+        "exclusive_open_blocks_rename": true
+      },
+      "changed_count": 0,
+      "update_old_files": [],
+      "app_alive_after_refusal": true,
+      "version_after": "0.3.5",
+      "sidecar_restart": [
+        {
+          "stage": "update_sidecar_stop_done",
+          "t": 1793025816.139,
+          "dt": 39.689,
+          "pid": 12700,
+          "graceful": true
+        },
+        {
+          "stage": "update_install_failed",
+          "t": 1793025854.419,
+          "dt": 77.969,
+          "pid": 12700,
+          "error": "update swap failed — the current version is intact (cannot replace C:\\Users\\STU\\AppData\\Local\\Temp\\bors_m21_update\\rollback-final/resources/sidecar/market.db.baseline (file locked?): EBUSY: resource busy or locked)",
+          "sidecar_stopped": true
+        },
+        {
+          "stage": "update_sidecar_restart_ok",
+          "t": 1793025862.146,
+          "dt": 85.696,
+          "pid": 12700,
+          "url": "http://127.0.0.1:63649/"
+        }
+      ],
+      "close": {
+        "closed": true,
+        "alive_after_close": false,
+        "close_ms": 1545.0
+      },
+      "cleanup": {
+        "survivors_observed": [],
+        "natural_exit_s": null,
+        "survivors_before": [],
+        "killed": [],
+        "left": [],
+        "port_open": null
+      }
+    },
+    "note": "The app.info of the original 0.3.5 instance is recorded in summary.version_after; the installed 0.3.6 binary is proven by exe sha256 and by the post-update identity launch (app.info 0.3.6)."
+  },
+  "lazy_chunk": {
+    "root_cause": "A cold Technical navigation produced 'TypeError: Failed to fetch dynamically imported module: .../TechnicalPage-CfX_WJzv.js' even though the packaged server returned 200 for that asset. The route is a Vite lazy chunk; Lazy.tsx had no error/retry path, so the route stayed on its skeleton and the probe timed out.",
+    "prior_evidence": "artifacts/desktop-migration/m2/installed-cold/summary-full.json (run 1 error, 2026-10-25)",
+    "fix": "Lazy.tsx retries the same dynamic import with 300/1200/3000 ms backoff; if the route still fails, it reloads once per route per 60 s (Chromium caches failed module fetches) and shows a Persian error with a manual retry instead of looping. Lazy loading and route code-splitting remain enabled.",
+    "post_fix": {
+      "cold": {
+        "runs_ok": 1,
+        "errors": [],
+        "technical_ready_ms": 86823.3,
+        "market_rows_visible_ms": 50187.3,
+        "fundamental_ready_ms": 93441.3,
+        "exit_code": 0
+      },
+      "warm": {
+        "runs_ok": 1,
+        "errors": [],
+        "technical_ready_ms": 75594.5,
+        "market_rows_visible_ms": 36245.5,
+        "fundamental_ready_ms": 81066.5,
+        "exit_code": 0
+      },
+      "security_cases": {
+        "cold": [
+          {
+            "local_host": {
+              "status": 200,
+              "expected": 200,
+              "ok": true,
+              "headers": {
+                "Host": "127.0.0.1:63775"
+              }
+            },
+            "foreign_host": {
+              "status": 403,
+              "expected": 403,
+              "ok": true,
+              "headers": {
+                "Host": "evil.example"
+              }
+            },
+            "origin_null": {
+              "status": 403,
+              "expected": 403,
+              "ok": true,
+              "headers": {
+                "Host": "127.0.0.1:63775",
+                "Origin": "null"
+              }
+            },
+            "origin_foreign": {
+              "status": 403,
+              "expected": 403,
+              "ok": true,
+              "headers": {
+                "Host": "127.0.0.1:63775",
+                "Origin": "http://evil.example"
+              }
+            },
+            "origin_local": {
+              "status": 200,
+              "expected": 200,
+              "ok": true,
+              "headers": {
+                "Host": "127.0.0.1:63775",
+                "Origin": "http://127.0.0.1:63775"
+              }
+            }
+          }
+        ],
+        "warm": [
+          {
+            "local_host": {
+              "status": 200,
+              "expected": 200,
+              "ok": true,
+              "headers": {
+                "Host": "127.0.0.1:63898"
+              }
+            },
+            "foreign_host": {
+              "status": 403,
+              "expected": 403,
+              "ok": true,
+              "headers": {
+                "Host": "evil.example"
+              }
+            },
+            "origin_null": {
+              "status": 403,
+              "expected": 403,
+              "ok": true,
+              "headers": {
+                "Host": "127.0.0.1:63898",
+                "Origin": "null"
+              }
+            },
+            "origin_foreign": {
+              "status": 403,
+              "expected": 403,
+              "ok": true,
+              "headers": {
+                "Host": "127.0.0.1:63898",
+                "Origin": "http://evil.example"
+              }
+            },
+            "origin_local": {
+              "status": 200,
+              "expected": 200,
+              "ok": true,
+              "headers": {
+                "Host": "127.0.0.1:63898",
+                "Origin": "http://127.0.0.1:63898"
+              }
+            }
+          }
+        ]
+      }
+    },
+    "limitations": [
+      "The prior cold failure was intermittent; the post-fix cold/warm runs did not reproduce it. The retry/reload guard is exercised by code review, not by a forced 404 in the installed package."
+    ]
+  },
+  "part_residue": {
+    "root_cause": "bors_config._market_db_tables(tmp) opened the freshly extracted market.db.part with sqlite3 mode=ro. For a WAL-mode database SQLite creates market.db.part-shm/-wal beside it; _extract_market_db renamed only the main file, leaving the .part sidecars orphaned.",
+    "owner": "the sidecar process during first-run extraction; no active connection remains after the sidecar exits",
+    "fix": "The private .part probe now uses mode=ro&immutable=1 (the file is immutable until os.replace). No sidecars are created; live DB probes still use normal mode=ro.",
+    "synthetic_probe": [
+      "old_probe_tables ['daily_prices', 'financial_statements', 'instruments']",
+      "old_probe_files ['market.db.part', 'market.db.part-shm', 'market.db.part-wal']",
+      "immutable_probe_tables ['daily_prices', 'financial_statements', 'instruments']",
+      "immutable_probe_files ['market.db.part']",
+      "probe_dir C:\\Users\\STU\\AppData\\Local\\Temp\\bors_part_probe_evidence_s4rozc4u"
+    ],
+    "prior_residue_examples": [
+      {
+        "path": "C:\\Users\\STU\\AppData\\Local\\Temp\\bors_phased\\m2-installed-cold\\runs\\run-1\\work",
+        "name": "market.db.part-shm",
+        "bytes": 32768
+      },
+      {
+        "path": "C:\\Users\\STU\\AppData\\Local\\Temp\\bors_phased\\m2-installed-cold\\runs\\run-1\\work",
+        "name": "market.db.part-wal",
+        "bytes": 0
+      },
+      {
+        "path": "C:\\Users\\STU\\AppData\\Local\\Temp\\bors_m2_close\\m2-close2\\runs\\run-1\\work",
+        "name": "market.db.part-shm",
+        "bytes": 32768
+      },
+      {
+        "path": "C:\\Users\\STU\\AppData\\Local\\Temp\\bors_m2_close\\m2-close2\\runs\\run-1\\work",
+        "name": "market.db.part-wal",
+        "bytes": 0
+      }
+    ],
+    "cold_run": {
+      "work": "C:\\Users\\STU\\AppData\\Local\\Temp\\bors_phased\\m21-installed-cold\\runs\\run-1\\work",
+      "part_files": [],
+      "files": [
+        {
+          "name": "market.db",
+          "bytes": 280875008
+        },
+        {
+          "name": "market.db-shm",
+          "bytes": 32768
+        },
+        {
+          "name": "market.db-wal",
+          "bytes": 1268992
+        },
+        {
+          "name": "market.db.baseline",
+          "bytes": 64
+        },
+        {
+          "name": "user.db",
+          "bytes": 208896
+        }
+      ],
+      "db": {
+        "quick_check": "ok",
+        "required_tables_present": true,
+        "counts": {
+          "daily_prices": 129577,
+          "financial_statements": 8723,
+          "instruments": 6018
+        }
+      },
+      "active_sidecar_or_shell_after_close": false
+    },
+    "warm_run": {
+      "work": "C:\\Users\\STU\\AppData\\Local\\Temp\\bors_phased\\m21-installed-warm\\warm-work",
+      "part_files": [],
+      "files": [
+        {
+          "name": "market.db",
+          "bytes": 281284608
+        },
+        {
+          "name": "market.db-shm",
+          "bytes": 32768
+        },
+        {
+          "name": "market.db-wal",
+          "bytes": 745752
+        },
+        {
+          "name": "market.db.baseline",
+          "bytes": 64
+        },
+        {
+          "name": "user.db",
+          "bytes": 212992
+        }
+      ],
+      "db": {
+        "quick_check": "ok",
+        "required_tables_present": true,
+        "counts": {
+          "daily_prices": 129577,
+          "financial_statements": 8723,
+          "instruments": 6018
+        }
+      },
+      "active_sidecar_or_shell_after_close": false
+    },
+    "interpretation": "market.db-wal/-shm are normal live-database sidecars, not extraction residue; copying the DB with WAL/SHM and running quick_check reproduces all required tables (cold: 129,577 daily_prices; warm: checked ok)."
+  },
+  "relaunch_race": {
+    "root_cause": "TinyJS bridge.js lets a relaunched instance poll the previous single-instance pipe for only 5 s; the new instance then hands off to the old app and exits. If the old app's WebView2 shutdown takes longer, no app remains.",
+    "pre_fix_symptom": {
+      "observed": "first isolated updater install: install returned true and the new exe was in place, but 'relaunched instance did not appear' after 120 s",
+      "note": "The swap itself had succeeded; this was a relaunch handoff failure, not an EBUSY."
+    },
+    "isolated_race_probe": {
+      "method": "start app A, spawn launcher --spawn <exe> --tinyjs-relaunched, leave A alive for 9 s, then close A",
+      "observed": "B shell pid 16276 present at 1 s; absent at 9 s; A still alive; after closing A no B instance remained",
+      "conclusion": "5 s pipe wait expires and B hands off/exits while A is still shutting down"
+    },
+    "fix": "In main.js, before createApp's single-instance check, a --tinyjs-relaunched instance polls the same user-scoped app pipe for up to 30 s. It starts as soon as the pipe is free; stock handoff behavior and security are unchanged.",
+    "post_fix_evidence": {
+      "install_run_relaunch_wait": [
+        {
+          "stage": "relaunch_wait_begin",
+          "t": 1793024583.235,
+          "dt": 0.009,
+          "pid": 14896,
+          "pipe": "\\\\.\\pipe\\tinyjs-app-com.borsterminal.m2tinyjs-STU"
+        },
+        {
+          "stage": "relaunch_wait_done",
+          "t": 1793024583.364,
+          "dt": 0.138,
+          "pid": 14896,
+          "waited_ms": 129
+        }
+      ],
+      "install_run_sidecar_and_swap": [
+        {
+          "stage": "update_sidecar_stop_begin",
+          "t": 1793024484.985,
+          "dt": 26.544,
+          "pid": 1000
+        },
+        {
+          "stage": "update_sidecar_stop_done",
+          "t": 1793024485.959,
+          "dt": 27.518,
+          "pid": 13916,
+          "graceful": true
+        },
+        {
+          "stage": "update_install_swap_begin",
+          "t": 1793024485.959,
+          "dt": 27.518,
+          "pid": 13916,
+          "sidecar_stopped": true,
+          "graceful": true
+        },
+        {
+          "stage": "update_install_swap_ok",
+          "t": 1793024581.536,
+          "dt": 123.095,
+          "pid": 13916
+        }
+      ]
+    },
+    "fixed_package_race": {
+      "build": "0.3.6 (includes bounded relaunch wait)",
+      "scenario": "old instance kept alive 9s; new instance spawned with --tinyjs-relaunched",
+      "new_shell_alive_at_9s": true,
+      "waited_ms": 11437,
+      "old_exit_after_close_s": 1.4,
+      "new_window_opened": true,
+      "stock_5s_wait_would_have_handed_off": true,
+      "evidence": "relaunch-race-fixed.txt"
+    }
+  },
+  "operational_db": {
+    "hashes": {
+      "market.db": {
+        "sha256": "7cfefddd1b6009babf3bdd727c61d865db1fb6f9dde05e1abb20a59d0259e78b",
+        "bytes": 281276416
+      },
+      "market.db-wal": {
+        "sha256": "9e9e9f0f7c7fada08ff6ea3952096e663336ee3d9b0d26ee8b71683e6833212c",
+        "bytes": 725152
+      },
+      "user.db": {
+        "sha256": "7dc3fcad7686c57854e13f47a07f7cd77077f1dacff12dd233cdbd5cdf8291b0",
+        "bytes": 212992
+      }
+    },
+    "unchanged_vs_m2_baseline": {
+      "market.db": true,
+      "market.db-wal": true,
+      "user.db": true
+    }
+  }
+}

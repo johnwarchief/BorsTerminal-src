@@ -1,0 +1,68 @@
+{
+  "mission": "M2.1 TinyJS packaging fixes (updater in-use files, cold lazy chunk, .part residue)",
+  "branch": "mission/tinyjs-m2-packaging-fixes-2026-10-25",
+  "base_commit": "c64a0e0a838986a60f73136425364e248d7f4503",
+  "source_config": "prototypes/tinyjs-m2/tinyjs.json remains version 0.3.0 without an update URL; test builds used temporary loopback update config.",
+  "tools": {
+    "tinyjs": "0.65.0 (txiki.js 26.6.0)",
+    "node": "22.22.0",
+    "vite": "5.4.x",
+    "python": "3.12.10",
+    "pyinstaller": "6.22.3"
+  },
+  "builds": {
+    "frontend": {
+      "command": "frontend/node_modules/vite/bin/vite.js build (from frontend/)",
+      "index_asset": "frontend\\dist\\assets\\index-CFSpBvi8.js",
+      "index_sha256": "a9175e316bc84f4cbd168c28cf854bc78ff23c22551061272a6f9b88e4fdb5bb",
+      "technical_asset": "frontend\\dist\\assets\\TechnicalPage-q4yTjhh0.js",
+      "technical_sha256": "eb79a511292619f81eaec962128e3e77fb64bad4b43b12f1607616e2d347481c",
+      "kline_asset": "frontend\\dist\\assets\\KLineChartWrapper-D68e5sjO.js",
+      "kline_sha256": "a0529dd9b786eb9f3f3cbbad2b72f5f7d76144f7c787c7e23cef2c9435d4c262"
+    },
+    "sidecar": {
+      "command": "PyInstaller --noconfirm --clean m2_sidecar.spec",
+      "exe": "prototypes\\tinyjs-m2\\resources\\sidecar\\BorsTerminalSidecar.exe",
+      "exe_sha256": "34372859d16b96b8416d301a244f5c486ccc89a0ca4a33eacf22575221fe861b",
+      "seed_sha256": "e7df91dc0af257715494fbf31d64047ab4043d4b9d165e2467ca73b52d308157",
+      "seed_bytes": 78667800
+    },
+    "base_035": {
+      "purpose": "updater base",
+      "exe_sha256": "1f82dbbac77c5861d271f0e41a8805c037914ecee98284ace0e567a6ae1932a4"
+    },
+    "payload_036": {
+      "purpose": "update payload",
+      "exe_sha256": "b2a62ca628651acadda33015973be3868e152aef623d33cbf0e28eceed550fc5",
+      "zip": "BorsTerminalM2TinyJS-0.3.6-win.zip",
+      "zip_sha256": "3c7b4720fba8b597312d2e9e52f5de61aa3d7985ad581c3d5635ae6c69ab6264",
+      "zip_bytes": 137298275
+    },
+    "manifests": {
+      "checksum-0.3.7.json": {
+        "sha256": "4d74228fe92d3e2de4fe52ff5d21ab423052d148a0ede7e90f6dbaec952596a4",
+        "bytes": 485
+      },
+      "install-0.3.6.json": {
+        "sha256": "11c02fc6196e8cc6c571033310ea0048f0d539ea399964497c46a6eedb39ff23",
+        "bytes": 433
+      },
+      "published-0.3.6.json": {
+        "sha256": "c312ea248fd59a7dbd6b3412331f871d8b540b7b259615411104da7a1d68dc98",
+        "bytes": 421
+      },
+      "rollback-0.3.7.json": {
+        "sha256": "b39e422eca77c0cab61ba6e37f10c767666488c56c10ada9bfdd0fb0ca7f785a",
+        "bytes": 485
+      }
+    }
+  },
+  "notes": [
+    "All updater tests used an isolated install copy and BORS_WORK_DIR/BORS_DB under %TEMP%; no operational DB was opened.",
+    "The update feed was a loopback HTTP server with an unsigned local manifest; this is not a production update channel.",
+    "The test versions 0.3.5/0.3.6 are temporary build versions; committed tinyjs.json was restored to 0.3.0.",
+    "The first successful updater run was on a pre-relaunch-wait build; the final 0.3.5/0.3.6 pair includes both the sidecar stop and the bounded relaunch wait."
+  ],
+  "source_commit": "f42c263925a0ecda0d033c37014b679171ce22ae",
+  "source_commit_note": "Commit containing the M2.1 shell, Lazy.tsx, bors_config and harness fixes used for these builds."
+}

@@ -18,7 +18,7 @@
   {
    "id": "installed_functional_slice",
    "status": "PASS",
-   "evidence": "installed-smoke/, installed-cold/, installed-warm/",
+   "evidence": "installed-smoke/, installed-cold/, installed-warm/, ../m2.1/installed-cold/, ../m2.1/installed-warm/",
    "note": "Real cached market board, chart switch W/raw/آباد, FTS/fundamental card, market status, company name. Cold 2/3 and warm 3/3 reached all stages; one cold run failed a lazy chunk import."
   },
   {
@@ -78,26 +78,26 @@
   {
    "id": "updater_check",
    "status": "PASS",
-   "evidence": "update-install/summary.json, update-checksum/summary.json",
+   "evidence": "update-install/summary.json, update-checksum/summary.json, ../m2.1/post-update-identity/summary.json",
    "note": "Real tiny.app.update.check over loopback: 0.3.0 -> 0.3.1 available; notes delivered."
   },
   {
    "id": "updater_install",
-   "status": "FAIL",
-   "evidence": "update-install/summary.json, update-install/collector.jsonl",
-   "note": "The Windows swap failed: resources/sidecar/_internal/base_library.zip is held by the running PyInstaller sidecar (EBUSY). The app remained at 0.3.0."
+   "status": "PASS",
+   "evidence": "../m2.1/update-install/summary.json, ../m2.1/post-update-identity/summary.json, ../m2.1/test-summary.json",
+   "note": "M2.1: sidecar stopped/waited before the stock swap; 0.3.5->0.3.6 over an unsigned loopback feed; new exe sha256 b2a62ca6...; post-update app.info 0.3.6; relaunch wait verified; loopback/unsigned only."
   },
   {
    "id": "updater_rollback",
    "status": "PASS",
-   "evidence": "update-install/summary.json",
-   "note": "After the failed swap TinyJS rolled back: changed_count 0, no .update-old files, version_after 0.3.0."
+   "evidence": "update-install/summary.json, ../m2.1/update-rollback/summary.json",
+   "note": "M2.1 locked market.db.baseline: update swap failed, current version intact; changed_count 0, no .update-old, sidecar restarted same port, app alive."
   },
   {
    "id": "updater_checksum",
    "status": "PASS",
-   "evidence": "update-checksum/summary.json",
-   "note": "A 0.3.2 manifest with a wrong sha256 was refused with 'checksum mismatch'; changed_count 0."
+   "evidence": "update-checksum/summary.json, ../m2.1/update-checksum/summary.json",
+   "note": "M2.1 checksum refusal: checksum mismatch; changed_count 0; sidecar restarted same port; app alive."
   },
   {
    "id": "update_feed_signing",
@@ -113,15 +113,15 @@
   },
   {
    "id": "temp_cleanup",
-   "status": "FAIL",
-   "evidence": "installed-smoke/ summary and work-dir listing",
-   "note": "First-run extraction leaves market.db.part-shm (32 KB) and market.db.part-wal (0 B) in the data dir; no process/port leaks."
+   "status": "PASS",
+   "evidence": "../m2.1/part-residue.json, ../m2.1/installed-cold/summary.json, ../m2.1/installed-warm/summary.json",
+   "note": "M2.1 targeted: private .part probe uses immutable=1; cold/warm work dirs have no .part files; normal market.db-wal/-shm remain; quick_check ok. Full M2 temp matrix not rerun."
   },
   {
    "id": "stability",
-   "status": "FAIL",
-   "evidence": "installed-cold/summary.json",
-   "note": "1/3 cold runs failed a TechnicalPage dynamic import in WebView2 even though the server logged 200; warm and close runs did not reproduce it."
+   "status": "PASS",
+   "evidence": "../m2.1/lazy-chunk.json, ../m2.1/installed-cold/summary.json, ../m2.1/installed-warm/summary.json",
+   "note": "M2.1 targeted: Lazy retry + one-time reload; cold/warm Market->Technical->Fundamental 0 errors. Prior intermittent failure not reproduced; no forced-fault run. Full stability matrix not rerun."
   },
   {
    "id": "full_frontend_suite_m2",
@@ -140,7 +140,25 @@
   "No authorized Windows installer toolchain (NSIS/WiX/ISCC absent).",
   "No code-signing tool or authorized certificate; all binaries are unsigned.",
   "No WebView2 bootstrapper; missing-runtime behavior unmeasured.",
-  "In-app update cannot replace a running PyInstaller sidecar tree (base_library.zip lock).",
-  "No signed HTTPS update feed."
- ]
+  "No signed HTTPS production update feed; M2.1 update mechanics were tested only over an unsigned loopback feed."
+ ],
+ "m2_1": {
+  "date": "2026-10-26",
+  "branch": "mission/tinyjs-m2-packaging-fixes-2026-10-25",
+  "base_commit": "c64a0e0a838986a60f73136425364e248d7f4503",
+  "status": "PARTIAL — EXPLICIT BLOCKERS",
+  "fixes": {
+   "updater_in_use_file_lock": "FIXED / VERIFIED (loopback unsigned feed)",
+   "updater_relaunch_race": "FIXED / VERIFIED (bounded 30 s pipe wait; 11,437 ms race recovery)",
+   "cold_lazy_chunk": "FIXED / VERIFIED (targeted cold+warm; prior intermittent failure not reproduced)",
+   ".part_shm_wal_residue": "FIXED / VERIFIED (immutable .part probe; no residue; DB quick_check ok)"
+  },
+  "evidence_manifest": "artifacts/desktop-migration/m2.1/evidence-manifest.json",
+  "not_rerun": [
+   "full 65-case security matrix",
+   "full frontend/back-end suite",
+   "complete M2 lifecycle matrix"
+  ]
+ },
+ "last_updated": "2026-10-26"
 }

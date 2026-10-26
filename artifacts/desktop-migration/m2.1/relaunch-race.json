@@ -1,0 +1,70 @@
+{
+  "root_cause": "TinyJS bridge.js lets a relaunched instance poll the previous single-instance pipe for only 5 s; the new instance then hands off to the old app and exits. If the old app's WebView2 shutdown takes longer, no app remains.",
+  "pre_fix_symptom": {
+    "observed": "first isolated updater install: install returned true and the new exe was in place, but 'relaunched instance did not appear' after 120 s",
+    "note": "The swap itself had succeeded; this was a relaunch handoff failure, not an EBUSY."
+  },
+  "isolated_race_probe": {
+    "method": "start app A, spawn launcher --spawn <exe> --tinyjs-relaunched, leave A alive for 9 s, then close A",
+    "observed": "B shell pid 16276 present at 1 s; absent at 9 s; A still alive; after closing A no B instance remained",
+    "conclusion": "5 s pipe wait expires and B hands off/exits while A is still shutting down"
+  },
+  "fix": "In main.js, before createApp's single-instance check, a --tinyjs-relaunched instance polls the same user-scoped app pipe for up to 30 s. It starts as soon as the pipe is free; stock handoff behavior and security are unchanged.",
+  "post_fix_evidence": {
+    "install_run_relaunch_wait": [
+      {
+        "stage": "relaunch_wait_begin",
+        "t": 1793024583.235,
+        "dt": 0.009,
+        "pid": 14896,
+        "pipe": "\\\\.\\pipe\\tinyjs-app-com.borsterminal.m2tinyjs-STU"
+      },
+      {
+        "stage": "relaunch_wait_done",
+        "t": 1793024583.364,
+        "dt": 0.138,
+        "pid": 14896,
+        "waited_ms": 129
+      }
+    ],
+    "install_run_sidecar_and_swap": [
+      {
+        "stage": "update_sidecar_stop_begin",
+        "t": 1793024484.985,
+        "dt": 26.544,
+        "pid": 1000
+      },
+      {
+        "stage": "update_sidecar_stop_done",
+        "t": 1793024485.959,
+        "dt": 27.518,
+        "pid": 13916,
+        "graceful": true
+      },
+      {
+        "stage": "update_install_swap_begin",
+        "t": 1793024485.959,
+        "dt": 27.518,
+        "pid": 13916,
+        "sidecar_stopped": true,
+        "graceful": true
+      },
+      {
+        "stage": "update_install_swap_ok",
+        "t": 1793024581.536,
+        "dt": 123.095,
+        "pid": 13916
+      }
+    ]
+  },
+  "fixed_package_race": {
+    "build": "0.3.6 (includes bounded relaunch wait)",
+    "scenario": "old instance kept alive 9s; new instance spawned with --tinyjs-relaunched",
+    "new_shell_alive_at_9s": true,
+    "waited_ms": 11437,
+    "old_exit_after_close_s": 1.4,
+    "new_window_opened": true,
+    "stock_5s_wait_would_have_handed_off": true,
+    "evidence": "relaunch-race-fixed.txt"
+  }
+}
