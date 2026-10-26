@@ -4,12 +4,15 @@
 سه لایه را می‌سنجد:
   ۱) تابعِ خالص `api.fundamental.ind1a_fs_growth` روی یک DB در حافظه:
      میاندورهٔ غیرتلفیقی ÷ همان دورهٔ سالِ قبل (۵۰٪)، و در نبودِ دورهٔ قبل
-     fallback سالانه / data_gap با دلیل.
+     fallback سالانه / data_gap با دلیل — از جمله سالانه‌ای که پایانِ سالش
+     یک روز جابه‌جا شده (۱۴۰۴/۱۲/۲۹ در برابر ۱۴۰۳/۱۲/۳۰).
   ۲) `bulk_scan` روی DB موقت با اسکیمای کامل: نمادِ مالیِ بی‌گزارشِ ماهانه
      باید `i1_basis="fs_interim"` و همان درصدِ رشد را بگیرد — از نقشهٔ
-     تک‌گذرِ صورت‌های مالی، نه فراخوانیِ N+1.
+     تک‌گذرِ صورت‌های مالی، نه فراخوانیِ N+1 — و در نبودِ میاندوره
+     `i1_basis="fs_annual"` با همان جفتِ یک‌روزه‌جابه‌جا.
   ۳) کارتِ `evaluate_v10`: `indicators["1"]["monetary"]["basis"]` باید دقیقاً
-     همان `i1_basis` ردیفِ غربالگری باشد.
+     همان `i1_basis` ردیفِ غربالگری باشد؛ مسیرِ ماهانه هم کلیدِ `basis=None`
+     را در تابع/کارت/ردیف دارد (قراردادِ parity).
 
 اجرا:  python dev/test_ind1_fs_path_v11.py
 (بدونِ سرور، بدونِ شبکه؛ DB موقت، هیچ نوشتنی رویِ market.db نیست.)
@@ -77,6 +80,35 @@ print("OK ind1 fs path")
 
 
 # ═══════════════════════════════════════════════════════════════════════════
+#  ۱ب) سالانه با جابه‌جاییِ یک‌روزهٔ پایانِ سال (۱۴۰۴/۱۲/۲۹ در برابر ۱۴۰۳/۱۲/۳۰)
+#  سالانه بر (سال−۱، همان ماه، همان تعدادِ ماه) تطبیق می‌خورد، نه بر روز؛
+#  میاندوره همچنان روزِ دقیق می‌خواهد (۱۴۰۵/۰۶/۳۰ در برابر ۱۴۰۴/۰۶/۳۱ جفت
+#  نیست) — پس نتیجه باید از fallback سالانه بیاید، نه N/A و نه میاندوره.
+# ═══════════════════════════════════════════════════════════════════════════
+c2 = sqlite3.connect(":memory:")
+c2.execute("""CREATE TABLE financial_statements (
+  symbol TEXT, title TEXT, period_end TEXT, period_months INTEGER,
+  revenue REAL, is_consolidated INTEGER, is_audited INTEGER)""")
+c2.executemany("INSERT INTO financial_statements VALUES (?,?,?,?,?,?,?)", [
+  ("وبملت", "صورت مالی ۶ ماهه حسابرسی نشده", "1405/06/30", 6, 1500.0, 0, 0),
+  ("وبملت", "صورت مالی ۶ ماهه حسابرسی نشده", "1404/06/31", 6, 1000.0, 0, 0),
+  ("وبملت", "صورت مالی سالانه", "1404/12/29", 12, 2200.0, 0, 1),
+  ("وبملت", "صورت مالی سالانه", "1403/12/30", 12, 2000.0, 0, 1),
+])
+r_ann = ind1a_fs_growth(c2, "وبملت", prof)
+c2.close()
+chk(r_ann.get("basis") == "fs_annual",
+    "annual day-shift matches the prior fiscal year", r_ann.get("basis"))
+chk(r_ann.get("data_gap") is False and r_ann.get("monetary_pct") is not None,
+    "annual day-shift returns growth, not N/A", r_ann)
+chk(r_ann.get("monetary_pct") is not None
+    and abs(r_ann["monetary_pct"] - 10.0) < 0.01,
+    "annual day-shift growth is +10%", r_ann)
+chk(r_ann.get("months") == 12 and r_ann.get("period") == "1404/12/29",
+    "annual day-shift reports the annual period", r_ann)
+
+
+# ═══════════════════════════════════════════════════════════════════════════
 #  ۲/۳) DB موقت — کارت و غربالگری رویِ یک نمادِ مالیِ بی‌گزارشِ ماهانه
 # ═══════════════════════════════════════════════════════════════════════════
 BANK = "وبملت"
@@ -104,7 +136,8 @@ def _seed_bank(con):
         ("1405/06/31", 6, 1500.0, "صورت مالی ۶ ماهه حسابرسی نشده غیرتلفیقی", 0),
         ("1404/06/31", 6, 1000.0, "صورت مالی ۶ ماهه حسابرسی نشده غیرتلفیقی", 0),
         ("1404/12/29", 12, 2200.0, "صورت مالی ۱۲ ماهه حسابرسی شده غیرتلفیقی", 1),
-        ("1403/12/29", 12, 2000.0, "صورت مالی ۱۲ ماهه حسابرسی شده غیرتلفیقی", 1),
+        # پایانِ سالِ قبل یک روز جلوتر (سالِ کبیسه): جفتِ سالانه باید معتبر بماند.
+        ("1403/12/30", 12, 2000.0, "صورت مالی ۱۲ ماهه حسابرسی شده غیرتلفیقی", 1),
     ]
     for i, (pe, months, rev, title, audited) in enumerate(fs):
         con.execute(
@@ -169,6 +202,60 @@ def _temp_db_case():
             and abs(r_annual["monetary_pct"] - 10.0) < 0.01,
             "annual fallback computes +10%", r_annual)
         chk(r_annual.get("pass") is False, "annual +10% is below the 40% floor")
+
+        # همان جفتِ سالانه از مسیرِ غربالگری و کارت — parity برایِ fs_annual
+        # هم ثابت می‌شود، نه فقط fs_interim (جفتِ سالانه یک روز اختلاف دارد).
+        rows_a = fts_engine.bulk_scan(con, cfg=cfg)
+        row_a = {r["symbol_norm"]: r for r in rows_a}.get(BANK)
+        chk(row_a is not None and row_a.get("i1_basis") == "fs_annual",
+            "bulk_scan exposes i1_basis=fs_annual",
+            row_a and row_a.get("i1_basis"))
+        if row_a is not None:
+            chk(row_a.get("rev_growth") is not None
+                and abs(row_a["rev_growth"] - 10.0) < 0.05,
+                "bulk_scan annual growth comes from the day-shifted pair",
+                row_a.get("rev_growth"))
+            chk(row_a.get("i1_pass") is False,
+                "bulk_scan annual +10% is below the 40% floor",
+                row_a.get("i1_pass"))
+        card_a = FD.evaluate_v10(con, BANK, cfg=cfg, sector=BANK_SECTOR,
+                                 company_name="بانك ملت", has_instrument=True)
+        mon_a = card_a["indicators"]["1"]["monetary"]
+        chk(mon_a.get("basis") == "fs_annual",
+            "card exposes fs_annual on the annual fallback", mon_a.get("basis"))
+        if row_a is not None:
+            chk(mon_a.get("basis") == row_a.get("i1_basis"),
+                "card annual basis == bulk i1_basis",
+                (mon_a.get("basis"), row_a.get("i1_basis")))
+            chk(mon_a.get("monetary_pct") is not None
+                and abs(mon_a["monetary_pct"] - row_a["rev_growth"]) < 0.05,
+                "card annual growth == bulk rev_growth",
+                (mon_a.get("monetary_pct"), row_a.get("rev_growth")))
+
+        # مسیرِ ماهانه (بدونِ صورتِ مالی مسیرِ Task 2): کلیدِ `basis` باید در
+        # تابع، کارت و ردیفِ غربالگری حاضر باشد و None بدهد — قراردادِ کامل.
+        mon_fn = FD.ind1a_monetary_growth(con, "آبین")
+        chk("basis" in mon_fn and mon_fn.get("basis") is None,
+            "monthly ind1a_monetary_growth exposes basis=None",
+            mon_fn.get("basis", "<missing>"))
+        mon_gap = FD.ind1a_monetary_growth(con, "آبین", series=[])
+        chk("basis" in mon_gap and mon_gap.get("basis") is None,
+            "monthly data-gap return exposes basis=None",
+            mon_gap.get("basis", "<missing>"))
+        m_row = by_key.get("آبین")
+        chk(m_row is not None and m_row.get("i1_basis") is None,
+            "bulk_scan monthly row has i1_basis=None",
+            m_row and m_row.get("i1_basis"))
+        card_m = FD.evaluate_v10(con, "آبین", cfg=cfg, sector="",
+                                 company_name="كشت و صنعت آبشيرين",
+                                 has_instrument=True)
+        mon_m = card_m["indicators"]["1"]["monetary"]
+        chk("basis" in mon_m and mon_m.get("basis") is None,
+            "card monthly monetary exposes basis=None",
+            mon_m.get("basis", "<missing>"))
+        chk(mon_m.get("basis") == (m_row or {}).get("i1_basis"),
+            "card monthly basis == bulk i1_basis",
+            (mon_m.get("basis"), (m_row or {}).get("i1_basis")))
     finally:
         con.close()
         shutil.rmtree(os.path.dirname(path), ignore_errors=True)

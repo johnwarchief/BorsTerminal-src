@@ -524,7 +524,9 @@ def ind1a_monetary_growth(conn, symbol, series=None, th=None, profile=None) -> d
     prof = profile or company_profile()
 
     def _nodata(reason, **extra):
-        gap = {"monetary_pct": None, "pass": False, "data_gap": True,
+        # `basis` همیشه هست تا قراردادِ کارت/غربالگری یکی باشد: None = مسیرِ
+        # ماهانهٔ YTD؛ "fs_interim"/"fs_annual" = مسیرِ صورتِ مالی (Task 2).
+        gap = {"monetary_pct": None, "basis": None, "pass": False, "data_gap": True,
                "threshold": th["monetary_growth_min"],
                "revenue_basis": prof["revenue_basis"], "reason": reason,
                "remediation": _MS_GAP_HINT}
@@ -550,7 +552,7 @@ def ind1a_monetary_growth(conn, symbol, series=None, th=None, profile=None) -> d
                        denominator_basis=basis)
     ytd_prev = d["ytd_prev"]
     growth = _pct(ytd_now, ytd_prev)
-    return {"monetary_pct": growth,
+    return {"monetary_pct": growth, "basis": None,
             "ytd_now_bt": _bt(ytd_now), "ytd_prev_bt": _bt(ytd_prev),
             "ytd_now_mrl": ytd_now, "ytd_prev_mrl": ytd_prev,
             "period": "%02d/%d" % (month, year), "months": month, "year": year,

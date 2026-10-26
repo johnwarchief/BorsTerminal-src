@@ -867,6 +867,9 @@ def fs_growth_from_rows(rows, th=None, revenue_basis: str = "") -> dict:
     rows: (period_end, period_months, revenue, title) — تازه‌ترین اول.
     برایِ هر (دورهٔ canonical, ماه) یک مقدار نگه داشته می‌شود (اولی = تازه‌ترین).
     تازه‌ترین میاندوره مقدم است؛ در نبودِ جفتِ سالانه، سالانهٔ با جفتِ سال قبل.
+    میاندوره بر همان ماه و **همان روز** تطبیق می‌خورد؛ سالانه بر (سال−۱، همان
+    ماه، همان تعدادِ ماه) و روز را نادیده می‌گیرد — پایانِ سالِ مالیِ ایرانی
+    بین ۱۲/۲۹ و ۱۲/۳۰ جابه‌جا می‌شود و اختلافِ یک‌روزه نباید جفتِ معتبر را N/A کند.
     """
     floor = _fs_growth_floor(th)
     by_key = {}
@@ -887,11 +890,19 @@ def fs_growth_from_rows(rows, th=None, revenue_basis: str = "") -> dict:
                       key=lambda kv: kv[0][0], reverse=True)
     annuals = sorted([(k, v) for k, v in by_key.items() if k[1] >= 12],
                      key=lambda kv: kv[0][0], reverse=True)
+    # سالانه روز را نادیده می‌گیرد: ۱۴۰۴/۱۲/۲۹ و ۱۴۰۳/۱۲/۳۰ یک دورهٔ مالی‌اند
+    # (سالِ کبیسه پایانِ سال را یک روز جابه‌جا می‌کند). میاندوره دقیق می‌ماند.
+    annual_prior = {}
+    for (pe, months), val in annuals:
+        y, mm, _dd = pe.split("/")[:3]
+        annual_prior.setdefault((int(y), mm, months), val)
     for basis, candidates in (("fs_interim", interims), ("fs_annual", annuals)):
         for (pe, months), now in candidates:
             y, mm, dd = pe.split("/")[:3]
-            prev = "%d/%s/%s" % (int(y) - 1, mm, dd)
-            prev_val = by_key.get((prev, months))
+            if basis == "fs_interim":
+                prev_val = by_key.get(("%d/%s/%s" % (int(y) - 1, mm, dd), months))
+            else:
+                prev_val = annual_prior.get((int(y) - 1, mm, months))
             if not prev_val:
                 continue
             growth = (now / prev_val - 1.0) * 100.0
