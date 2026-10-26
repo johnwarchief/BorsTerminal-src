@@ -14,6 +14,7 @@ const dec = new TextDecoder();
 const enc = new TextEncoder();
 const env = tjs.env;
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const INSTANCE_ID = 'com.borsterminal.m2tinyjs';
 
 const t0 = Date.now();
 let tracePath = env.BORS_SHELL_TRACE || '';
@@ -26,6 +27,8 @@ let traceChain = Promise.resolve();
 let stopping = false;
 let readyUrl = '';
 let appRef = null;
+let sidecarPlan = null;
+let updateRunning = false;
 
 function trace(stage, extra = {}) {
   if (!tracePath) return;
@@ -44,6 +47,27 @@ async function appendLine(path, line) {
     await f.write(enc.encode(line + '\n'));
     await f.close();
   } catch { /* logging must never kill the shell */ }
+}
+
+// bridge.js lets a relaunched instance wait only 5s for the old app's
+// single-instance pipe. WebView2 shutdown can take longer on a loaded host;
+// the new instance then hands off to the dying app and exits, leaving none.
+// This runs before createApp's single-instance check, so waiting for the pipe
+// here extends that window without changing the stock handoff behavior.
+if (tjs.args.includes('--tinyjs-relaunched')) {
+  const user = String(tjs.system?.userInfo?.userName ?? '').replace(/[^\w.-]/g, '_');
+  const pipe = '\\\\.\\pipe\\tinyjs-app-' + INSTANCE_ID + '-' + user;
+  const started = Date.now();
+  const deadline = started + 30000;
+  trace('relaunch_wait_begin', { pipe });
+  while (Date.now() < deadline) {
+    const probe = tjs.connect('pipe', pipe)
+      .then(async (c) => { await c.opened; c.close(); return true; }, () => false);
+    const owned = await Promise.race([probe, sleep(500).then(() => true)]);
+    if (!owned) break;
+    await sleep(100);
+  }
+  trace('relaunch_wait_done', { waited_ms: Date.now() - started });
 }
 
 function esc(s) {
@@ -189,6 +213,176 @@ async function resolveSidecar(app, pathsInfo) {
   return null;
 }
 
+// The installed sidecar keeps _internal/base_library.zip open for its whole
+// lifetime. TinyJS swaps the bundle in place, so the update must run with no
+// sidecar alive; stop it first and wait for the process to exit (its file
+// handles are released only then). A failed install restarts the sidecar on
+// the same port so the old version stays usable until the next attempt.
+async function launchSidecar(app, plan) {
+  const { sidecar, childEnv, exeDir, logPath } = plan;
+  trace('sidecar_spawn_begin', { exe: sidecar.exe, argv: sidecar.argv,
+    installed: sidecar.installed, port: childEnv.BORS_PORT, work: workDir });
+  let proc;
+  try {
+    const opts = {
+      cwd: sidecar.installed ? exeDir : (workDir || tjs.cwd),
+      env: childEnv,
+      stdin: 'pipe',
+      stdout: 'pipe',
+      stderr: 'pipe',
+    };
+    // tjs.spawn opens a console window for a GUI app's child on Windows;
+    // spawnHidden is the shell's supported wrapper around the same spawn.
+    const argv = [sidecar.exe, ...sidecar.argv];
+    proc = typeof app.spawnHidden === 'function'
+      ? app.spawnHidden(argv, opts)
+      : tjs.spawn(argv, opts);
+  } catch (e) {
+    trace('sidecar_spawn_failed', { error: String(e).slice(0, 300) });
+    await showError(app, 'Backend could not start', String(e));
+    return { ready: null, tail: [] };
+  }
+  child = proc;
+  trace('sidecar_spawned', { pid: proc.pid });
+
+  let ready = null;
+  let exited = null;
+  const tail = [];
+  const onLine = (line) => {
+    tail.push(line);
+    if (tail.length > 40) tail.shift();
+    if (!ready) {
+      const r = parseReady(line);
+      if (r) { ready = r; trace('sidecar_ready_line', { port: r.port, pid: r.pid }); }
+    }
+  };
+  const thisProc = proc;
+  const pOut = pump(proc.stdout, 'out', logPath, onLine);
+  const pErr = pump(proc.stderr, 'err', logPath, (line) => tail.push(line));
+  const exitP = proc.wait().then((st) => {
+    exited = st;
+    trace('sidecar_exit', { code: st.exit_status, signal: st.term_signal });
+    if (thisProc !== child) return st;
+    if (!stopping && !updateRunning) {
+      if (!ready) {
+        showError(app, 'Backend exited before it was ready',
+          'exit=' + st.exit_status + '\n\n' + tail.slice(-20).join('\n'));
+      } else {
+        showError(app, 'Backend stopped unexpectedly',
+          'exit=' + st.exit_status + '\n\n' + tail.slice(-20).join('\n'));
+      }
+    }
+    return st;
+  }).catch(() => null);
+  childExit = exitP;
+
+  const deadline = Date.now() + 240000;
+  while (!ready && !exited && Date.now() < deadline && !stopping) {
+    await sleep(100);
+  }
+  if (!ready) {
+    await pOut; await pErr;
+    trace('ready_timeout', { exited: !!exited, code: exited && exited.exit_status });
+    if (!exited && !updateRunning) {
+      await showError(app, 'Backend did not become ready',
+        'No READY line within 240s.\n\n' + tail.slice(-20).join('\n'));
+    }
+    return { ready: null, tail };
+  }
+  plan.port = ready.port;
+  return { ready, tail };
+}
+
+async function stopSidecarForUpdate() {
+  const proc = child;
+  if (!proc) return { running: false, graceful: true };
+  trace('update_sidecar_stop_begin', { pid: proc.pid });
+  const dying = childExit;
+  let graceful = false;
+  try { proc.stdin.close(); } catch { }
+  if (dying) {
+    const won = await Promise.race([
+      dying.then(() => 'exit'),
+      sleep(15000).then(() => 'timeout'),
+    ]);
+    graceful = won === 'exit';
+  }
+  if (!graceful) {
+    try { proc.kill(); } catch { }
+  }
+  if (dying) await Promise.race([dying, sleep(5000)]);
+  if (child === proc) { child = null; childExit = null; }
+  trace('update_sidecar_stop_done', { graceful });
+  return { running: true, graceful };
+}
+
+async function restartSidecarAfterUpdate(app) {
+  const plan = sidecarPlan;
+  const port = plan && plan.port;
+  if (!plan || !port) { updateRunning = false; return false; }
+  trace('update_sidecar_restart_begin', { port });
+  try {
+    const childEnv = { ...plan.childEnv, BORS_PORT: String(port) };
+    const launched = await launchSidecar(app, { ...plan, childEnv });
+    if (!launched.ready) {
+      trace('update_sidecar_restart_failed', { port });
+      return false;
+    }
+    const url = 'http://127.0.0.1:' + launched.ready.port + '/';
+    let verified = false;
+    for (let i = 0; i < 80 && !stopping; i++) {
+      try {
+        const r = await fetch(url + 'api/update/version', { cache: 'no-store' });
+        if (r.ok) {
+          const j = await r.json();
+          if (j && j.version) { verified = true; break; }
+        }
+      } catch { }
+      await sleep(250);
+    }
+    trace(verified ? 'update_sidecar_restart_ok' : 'update_sidecar_restart_unverified',
+      { url });
+    return verified;
+  } catch (e) {
+    trace('update_sidecar_restart_error', { error: String(e).slice(0, 300) });
+    return false;
+  } finally {
+    updateRunning = false;
+  }
+}
+
+function installUpdaterGuard(app) {
+  const update = app && app.update;
+  if (!update || typeof update.install !== 'function') return;
+  const original = update.install.bind(update);
+  update.install = async function () {
+    if (updateRunning) throw new Error('an update is already in progress');
+    updateRunning = true;
+    trace('update_install_begin', { sidecar: !!child, pid: tjs.pid });
+    let stopped = { running: false, graceful: true };
+    try {
+      stopped = await stopSidecarForUpdate();
+      trace('update_install_swap_begin',
+        { sidecar_stopped: stopped.running, graceful: stopped.graceful });
+      const out = await original();
+      trace('update_install_swap_ok');
+      return out;
+    } catch (e) {
+      trace('update_install_failed', {
+        error: String(e && e.message || e).slice(0, 300),
+        sidecar_stopped: stopped.running,
+      });
+      if (stopped.running) {
+        const ok = await restartSidecarAfterUpdate(app);
+        trace('update_install_restart_done', { ok });
+      } else {
+        updateRunning = false;
+      }
+      throw e;
+    }
+  };
+}
+
 async function start(app) {
   appRef = app;
   let pathsInfo = null;
@@ -233,71 +427,16 @@ async function start(app) {
     BORS_STARTUP_TRACE: '1',
   };
   if (env.BORS_FAIL_TEST === '1') childEnv.BORS_FAIL_TEST = '1';
-
-  trace('sidecar_spawn_begin', { exe: sidecar.exe, argv: sidecar.argv,
-    installed: sidecar.installed, port: childEnv.BORS_PORT, work: workDir });
-  try {
-    const exeDir = String(sidecar.exe).replace(/[\\/][^\\/]+$/, '');
-    const opts = {
-      cwd: sidecar.installed ? exeDir : (workDir || tjs.cwd),
-      env: childEnv,
-      stdin: 'pipe',
-      stdout: 'pipe',
-      stderr: 'pipe',
-    };
-    // tjs.spawn opens a console window for a GUI app's child on Windows;
-    // spawnHidden is the shell's supported wrapper around the same spawn.
-    const argv = [sidecar.exe, ...sidecar.argv];
-    child = typeof app.spawnHidden === 'function'
-      ? app.spawnHidden(argv, opts)
-      : tjs.spawn(argv, opts);
-  } catch (e) {
-    trace('sidecar_spawn_failed', { error: String(e).slice(0, 300) });
-    await showError(app, 'Backend could not start', String(e));
-    return;
-  }
-  trace('sidecar_spawned', { pid: child.pid });
-
-  let ready = null;
-  let exited = null;
-  let tail = [];
-  const logPath = logsDir + '\\sidecar.log';
-  const onLine = (line) => {
-    tail.push(line);
-    if (tail.length > 40) tail.shift();
-    if (!ready) {
-      const r = parseReady(line);
-      if (r) { ready = r; trace('sidecar_ready_line', { port: r.port, pid: r.pid }); }
-    }
+  sidecarPlan = {
+    sidecar,
+    childEnv,
+    exeDir: String(sidecar.exe).replace(/[\\/][^\\/]+$/, ''),
+    logPath: logsDir + '\\sidecar.log',
+    port: null,
   };
-  const pOut = pump(child.stdout, 'out', logPath, onLine);
-  const pErr = pump(child.stderr, 'err', logPath, (line) => tail.push(line));
-  childExit = child.wait().then((st) => {
-    exited = st;
-    trace('sidecar_exit', { code: st.exit_status, signal: st.term_signal });
-    if (!ready && !stopping) {
-      showError(app, 'Backend exited before it was ready',
-        'exit=' + st.exit_status + '\n\n' + tail.slice(-20).join('\n'));
-    } else if (ready && !stopping) {
-      showError(app, 'Backend stopped unexpectedly',
-        'exit=' + st.exit_status + '\n\n' + tail.slice(-20).join('\n'));
-    }
-    return st;
-  }).catch(() => null);
-
-  const deadline = Date.now() + 240000;
-  while (!ready && !exited && Date.now() < deadline && !stopping) {
-    await sleep(100);
-  }
-  if (!ready) {
-    await pOut; await pErr;
-    trace('ready_timeout', { exited: !!exited, code: exited && exited.exit_status });
-    if (!exited) {
-      await showError(app, 'Backend did not become ready',
-        'No READY line within 240s.\n\n' + tail.slice(-20).join('\n'));
-    }
-    return;
-  }
+  const launched = await launchSidecar(app, sidecarPlan);
+  if (!launched.ready) return;
+  const ready = launched.ready;
 
   const url = 'http://127.0.0.1:' + ready.port + '/';
   let verified = false;
@@ -343,6 +482,7 @@ async function openAppWindow(app, url) {
 }
 
 export function init(app) {
+  installUpdaterGuard(app);
   start(app).catch(async (e) => {
     trace('fatal', { error: String(e && e.stack || e).slice(0, 600) });
     await showError(app, 'Shell failed to start', String(e));

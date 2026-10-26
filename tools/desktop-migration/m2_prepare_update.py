@@ -3,8 +3,8 @@
 
 Input is the manifest emitted by `tinyjs publish` (Windows x86_64 block).
 Outputs install/checksum/rollback variants next to a copy of the zip. The
-checksum variant advertises 0.3.2 with a wrong sha256; the rollback variant
-advertises 0.3.2 with the real 0.3.1 payload so the swap is reached and then
+checksum variant advertises a newer version with a wrong sha256; the rollback
+variant advertises a newer version with the real payload so the swap is reached and then
 blocked by a deliberately locked file.
 """
 from __future__ import annotations
@@ -31,6 +31,9 @@ def main() -> int:
     ap.add_argument("--published-dir", required=True)
     ap.add_argument("--out-dir", required=True)
     ap.add_argument("--wrong-sha", default="0" * 64)
+    ap.add_argument("--advertised-version", default="0.3.7",
+                    help="version advertised by the checksum/rollback variants; "
+                         "must be newer than the installed base")
     args = ap.parse_args()
 
     src = Path(args.published_manifest)
@@ -53,9 +56,9 @@ def main() -> int:
     shutil.copy2(zip_path, out / "install" / zip_name)
 
     checksum = copy.deepcopy(base)
-    checksum["version"] = "0.3.2"
-    checksum["win"]["version"] = "0.3.2"
-    checksum["win"]["x86_64"]["version"] = "0.3.2"
+    checksum["version"] = args.advertised_version
+    checksum["win"]["version"] = args.advertised_version
+    checksum["win"]["x86_64"]["version"] = args.advertised_version
     checksum["win"]["x86_64"]["sha256"] = args.wrong_sha
     checksum["win"]["sha256"] = args.wrong_sha
     (out / "checksum").mkdir(exist_ok=True)
@@ -64,9 +67,9 @@ def main() -> int:
     shutil.copy2(zip_path, out / "checksum" / zip_name)
 
     rollback = copy.deepcopy(base)
-    rollback["version"] = "0.3.2"
-    rollback["win"]["version"] = "0.3.2"
-    rollback["win"]["x86_64"]["version"] = "0.3.2"
+    rollback["version"] = args.advertised_version
+    rollback["win"]["version"] = args.advertised_version
+    rollback["win"]["x86_64"]["version"] = args.advertised_version
     (out / "rollback").mkdir(exist_ok=True)
     (out / "rollback" / "manifest.json").write_text(
         json.dumps(rollback, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")

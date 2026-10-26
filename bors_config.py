@@ -258,11 +258,20 @@ _MARKET_REF_TABLES = ("instruments", "boards", "symbol_sectors")
 _REQUIRED_MARKET_TABLES = {"instruments", "daily_prices", "financial_statements"}
 
 
-def _market_db_tables(path):
-    """مجموعهٔ جدول‌های یک فایل DB (بدون نوشتن). خطا ⇒ مجموعهٔ خالی."""
+def _market_db_tables(path, immutable=False):
+    """مجموعهٔ جدول‌های یک فایل DB (بدون نوشتن). خطا ⇒ مجموعهٔ خالی.
+
+    immutable فقط برای فایلِ تازه‌استخراج‌شدهٔ .part است: آن فایل تا لحظهٔ
+    replace دست‌نخورده و بدون WAL است، و بازکردنِ عادیِ ro برایِ یک DB با
+    journal_mode=WAL کنارِ آن -shm/-wal می‌سازد؛ آن sidecarها بعد از rename
+    با نامِ .part یتیم می‌مانند.
+    """
     try:
         import sqlite3 as _sq
-        probe = _sq.connect("file:%s?mode=ro" % path, uri=True)
+        uri = "file:%s?mode=ro" % path
+        if immutable:
+            uri += "&immutable=1"
+        probe = _sq.connect(uri, uri=True)
         try:
             return {r[0] for r in probe.execute(
                 "SELECT name FROM sqlite_master WHERE type='table'")}
@@ -759,7 +768,7 @@ def _extract_market_db(src_lzma, verbose=False, scratch_name=None, progress=None
                     break
                 fo.write(block)
                 _report(progress, "extract", raw.tell(), comp_total)
-        if not _REQUIRED_MARKET_TABLES <= _market_db_tables(tmp):
+        if not _REQUIRED_MARKET_TABLES <= _market_db_tables(tmp, immutable=True):
             if verbose:
                 print("  [ERR] extracted market.db is missing required tables")
             os.remove(tmp)

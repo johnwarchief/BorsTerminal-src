@@ -185,6 +185,9 @@ def collect(run_dir: Path, collector: H.Collector, seen: int, result: dict,
         log.append(m)
         with open(run_dir / "collector.jsonl", "a", encoding="utf-8") as f:
             f.write(json.dumps(m, ensure_ascii=False) + "\n")
+        if m.get("kind") == "m2_update_info":
+            result.setdefault("version_events", []).append(
+                {"at_ms": m.get("at_ms"), "url": m.get("url"), "info": m.get("info")})
         print(f"[collector] {m.get('kind')} run={m.get('run_id')} "
               f"url={m.get('url')} {json.dumps({k: v for k, v in m.items() if k not in ('kind', 'run_id', 'url', 'at_ms')}, ensure_ascii=False)[:500]}",
               flush=True)
@@ -405,6 +408,17 @@ def run(args) -> dict:
                 security = H.security_checks(int(sidecar_port))
                 result["security"] = security
                 result["security_all_ok"] = all(v.get("ok") for v in security.values())
+            # The relaunched instance runs the same probe. Give it a moment to
+            # report its app.info before closing, so version_after is not just
+            # the instance that was replaced.
+            if new_window:
+                info_end = time.time() + 4.0
+                while time.time() < info_end:
+                    seen, got = collect(run_dir, collector, seen, result, msgs)
+                    if any((m.get("info") or {}).get("version") == manifest.get("version")
+                           for m in got if m.get("kind") == "m2_update_info"):
+                        break
+                    time.sleep(0.2)
             if new_window:
                 close_info = close_window(new_window["hwnd"], new_pid)
                 result["close"] = close_info
@@ -462,8 +476,24 @@ def run(args) -> dict:
     result["exe_matches_expected"] = (after.get(args.exe.name) == args.expected_new_exe_sha256
                                       if args.expected_new_exe_sha256 else None)
     result["versions"] = result.get("versions") or []
-    result["version_after"] = next((v.get("version") for v in result["versions"]
-                                    if v.get("version")), None)
+    version_events = result.get("version_events") or []
+    relaunched_version = next(
+        (e["info"]["version"] for e in reversed(version_events)
+         if (e.get("info") or {}).get("version") == manifest.get("version")), None)
+    if relaunched_version:
+        result["version_after"] = relaunched_version
+        result["version_after_source"] = "relaunched app.info"
+    elif args.mode == "install" and result.get("exe_matches_expected"):
+        # Proves the installed binary came from the tested manifest build even
+        # when the relaunched probe did not post its info in time.
+        result["version_after"] = manifest.get("version")
+        result["version_after_source"] = "exe sha256 matches manifest build"
+    elif version_events:
+        result["version_after"] = version_events[-1].get("info", {}).get("version")
+        result["version_after_source"] = "app.info"
+    else:
+        result["version_after"] = None
+        result["version_after_source"] = None
     result["elapsed_s"] = round(time.time() - t0, 1)
     result["finished_at"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
 
@@ -487,7 +517,8 @@ def run(args) -> dict:
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--mode", choices=["install", "checksum", "rollback"], required=True)
+    ap.add_argument("--mode", choices=["install", "checksum", "rollback", "no-update"],
+                    required=True)
     ap.add_argument("--install-dir", required=True)
     ap.add_argument("--exe", default="")
     ap.add_argument("--manifest", required=True)
