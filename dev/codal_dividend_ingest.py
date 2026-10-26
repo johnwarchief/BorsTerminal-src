@@ -30,6 +30,7 @@ import argparse
 import datetime
 import json
 import os
+import re
 import sqlite3
 import sys
 import time
@@ -222,12 +223,16 @@ def local_decision_urls(con, symbol, eff_date, window_days=150):
         return []
     try:
         eff = datetime.date.fromisoformat(str(eff_date)[:10])
+        ex_j = jdatetime.date.fromgregorian(date=eff).strftime("%Y/%m/%d")
     except ValueError:
         return []
     out, seen = [], set()
     for tr, title, pdate, url in rows:
         t = str(title or "")
         if "مجمع" not in t and "سود" not in t:
+            continue
+        period = notice_period_end(t)
+        if period and period > ex_j:
             continue
         try:
             y, m, d = [int(x) for x in str(pdate).split()[0].split("/")[:3]]
@@ -239,9 +244,31 @@ def local_decision_urls(con, symbol, eff_date, window_days=150):
         if url in seen:
             continue
         seen.add(url)
-        out.append((tr, url, pdate))
-    out.sort(key=lambda x: str(x[2]), reverse=True)
-    return out
+        out.append((tr, url, pdate, period or "0000/00/00"))
+    out.sort(key=lambda x: (x[3], str(x[2])), reverse=True)
+    return [(tr, url, pdate) for tr, url, pdate, _p in out]
+
+
+_FA_DIGITS = str.maketrans("۰۱۲۳۴۵۶۷۸۹٠١٢٣٤٥٦٧٨٩", "01234567890123456789")
+
+
+def notice_period_end(title):
+    """"... دوره ۱۲ ماهه منتهی به ۱۴۰۳/۱۲/۲۹" → '1403/12/29' (بی‌دوره → None).
+
+    انتخابِ DPS باید دوره‌محور باشد: سودِ سالِ مالیِ **آخرِ پیش از** روزِ مؤثر
+    مرجع است؛ «جدیدترین انتشار» می‌تواند اصلاحیهٔ سالِ قدیم باشد و D اشتباه.
+    """
+    t = str(title or "").translate(_FA_DIGITS)
+    m = re.search(r"منتهی\s*به\s*(\d{4}[/-]\d{1,2}[/-]\d{1,2})", t)
+    if not m:
+        return None
+    y, mo, d = re.split(r"[/-]", m.group(1))
+    return "%s/%02d/%02d" % (y, int(mo), int(d))
+
+
+def _notice_key(x):
+    return (notice_period_end(x.get("Title")) or "0000/00/00",
+            CF._norm_date(x.get("PublishDateTime")))
 
 
 def make_live_finder(session, page_pause=1.5, local_lookup=None):
@@ -271,6 +298,7 @@ def make_live_finder(session, page_pause=1.5, local_lookup=None):
             jd = jdatetime.date.fromgregorian(date=gd)
         except Exception:
             return {"status": "NO_LETTER", "requests": state["requests"]}
+        ex_j = jd.strftime("%Y/%m/%d")
         frm = (jd - jdatetime.timedelta(days=100)).strftime("%Y/%m/%d")
         to = (jd + jdatetime.timedelta(days=10)).strftime("%Y/%m/%d")
         q = dict(CF.QUERY, Symbol=symbol, Category="-1", LetterType="20",
@@ -287,7 +315,10 @@ def make_live_finder(session, page_pause=1.5, local_lookup=None):
                if "Decision.aspx" in (x.get("Url") or "")
                and ("تصمیمات" in (x.get("Title") or "")
                     or "خلاصه" in (x.get("Title") or ""))]
-        dec.sort(key=lambda x: CF._norm_date(x.get("PublishDateTime")))
+        # دورهٔ پس از روزِ مؤثر (سالِ آینده/اصلاحیهٔ بعدی) نامزد نیست.
+        dec = [x for x in dec
+               if (notice_period_end(x.get("Title")) or "0000/00/00") <= ex_j]
+        dec.sort(key=_notice_key)
         for x in reversed(dec):
             try:
                 u = CF._abs_codal_url(x.get("Url"))

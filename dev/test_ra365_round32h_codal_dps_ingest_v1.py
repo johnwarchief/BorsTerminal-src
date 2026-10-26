@@ -219,6 +219,40 @@ try:
         f3 = ING.make_live_finder(sess, page_pause=0)
         r3 = f3("AAA", "2023-06-05")
         ck(r3.get("status") == "BLOCKED", "۲۳ ۴۲۹ در جستجو: BLOCKED", r3)
+
+        # Period-aware selection: the latest fiscal year ended before the
+        # ex-date wins; a future period and an older year never do.
+        ck(ING.notice_period_end("دوره ۱۲ ماهه منتهی به ۱۴۰۳/۱۲/۲۹") == "1403/12/29",
+           "۲۴ دورهٔ اطلاعیه از رقمِ فارسی خوانده می‌شود")
+
+        class PeriodSess:
+            def get(self, url, **kw):
+                num = "۳۰۰" if "LetterSerial=F" in url else (
+                    "۱۰۰" if "LetterSerial=O" in url else "۵۰")
+                return type("R", (), {
+                    "text": "<td>DividendPerShare</td><td>سود نقدی هر سهم (ریال)</td><td>%s</td>" % num})()
+
+        def letters(*a, **k):
+            return [
+                {"Url": "/Reports/Decision.aspx?LetterSerial=F", "TracingNo": "F",
+                 "Title": "تصمیمات مجمع عمومی عادی سالیانه دوره ۱۲ ماهه منتهی به ۱۴۰۳/۱۲/۲۹",
+                 "PublishDateTime": "1403/12/29 10:00:00"},
+                {"Url": "/Reports/Decision.aspx?LetterSerial=O", "TracingNo": "O",
+                 "Title": "تصمیمات مجمع عمومی عادی سالیانه دوره ۱۲ ماهه منتهی به ۱۴۰۰/۱۲/۲۹",
+                 "PublishDateTime": "1401/03/10 10:00:00"},
+                {"Url": "/Reports/Decision.aspx?LetterSerial=N", "TracingNo": "N",
+                 "Title": "تصمیمات مجمع عمومی عادی سالیانه دوره ۱۲ ماهه منتهی به ۱۳۹۹/۱۲/۲۹",
+                 "PublishDateTime": "1400/03/10 10:00:00"},
+            ]
+
+        ING.CF.fetch_page = letters
+        # ex-date 2024-06-05 = 1403/03/16: the 1403/12/29 period is still in
+        # the future and must be excluded; 1400/12/29 is the latest valid one.
+        f4 = ING.make_live_finder(PeriodSess(), page_pause=0)
+        r4 = f4("AAA", "2024-06-05")
+        ck(r4.get("status") == "OK" and r4.get("dps") == 100.0
+           and r4.get("notice_id") == "O",
+           "۲۵ انتخابِ دوره‌محور: سالِ مالیِ معتبرِ آخر، نه جدیدترین انتشار", r4)
     finally:
         ING.CF.fetch_page = saved_fetch
 finally:

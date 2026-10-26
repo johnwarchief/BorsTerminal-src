@@ -77,7 +77,7 @@
 | `dev/test_ra365_round32g_reference_formula_v1.py` | ۱۳/۱۳ |
 | `dev/test_ra365_round32h_codal_dps_v1.py` | ۱۶/۱۶ (پارسرِ DPSِ مجمع + ۵ قفلِ زنده) |
 | `dev/test_ra365_round32h_codal_dps_wiring_v1.py` | ۱۴/۱۴ (چارت DPSِ کدال و پایانیِ رسمیِ ذخیره‌شده را مقدم می‌کند؛ fallback و فلگ) |
-| `dev/test_ra365_round32h_codal_dps_ingest_v1.py` | ۲۳/۲۳ (نوشتنِ فقط ردیفِ اثبات‌شده، resume، بودجهٔ درخواست، اطلاعیهٔ محلی مقدم) |
+| `dev/test_ra365_round32h_codal_dps_ingest_v1.py` | ۲۵/۲۵ (نوشتنِ فقط ردیفِ اثبات‌شده، resume، بودجهٔ درخواست، اطلاعیهٔ محلی و انتخابِ دوره‌محور) |
 | `dev/test_adjustment_engine_v1.py` | ۳۹ سبز / ۱ قرمز (شاهدِ مرجع در این worktree موجود نیست — از قبل) |
 | `dev/test_fund_events_v1.py` | ۱۰/۱۰ |
 | `dev/test_dps_formula_v1.py` | ۶۱/۶۱ |
