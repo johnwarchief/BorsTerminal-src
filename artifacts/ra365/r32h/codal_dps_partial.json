@@ -67,10 +67,10 @@
     "The two FAR rows and the NEAR row are not explained by D alone; they need a capital/combined leg or a different effective-date reference."
   ],
   "resume": {
-    "attempted_at": "2026-10-26T02:50+03:30",
-    "remaining": 32,
-    "budget": 24,
-    "result": "BLOCKED — the first search returned 429, about 4.3 hours after the earlier 1800s pause",
+    "attempted_at": "2026-10-26T03:55+03:30",
+    "remaining": 23,
+    "batch": "18 requests / 9 cases answered: 6 EXACT, 1 FAR, 2 NO_DPS (codal_dps_resume_batch1.json)",
+    "result": "429 again on the first request of the next batch after a 4-minute cooldown; probing stopped",
     "policy": "POLITE=true, no ADB rotation, no retries; the sweep stops instead of resting the pool",
     "next": "rerun dev-side once the IP cools, or rotate the IP with the owner's existing ADB tooling first"
   }

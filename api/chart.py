@@ -1352,27 +1352,31 @@ def _codal_dps_enabled():
 
 
 def _codal_dps_rows(conn, ins_code):
-    """[(d_even:int, dps:float)] از DPSِ اعلامی؛ نبودِ جدول → [] (نه خطا)."""
+    """[(d_even:int, dps:float, reference_price:float|None)] از DPSِ اعلامی."""
     try:
         rows = conn.execute(
-            "SELECT d_even, dps FROM stock_dividend_events WHERE ins_code=?",
-            (str(ins_code),)).fetchall()
+            "SELECT d_even, dps, reference_price FROM stock_dividend_events"
+            " WHERE ins_code=?", (str(ins_code),)).fetchall()
     except Exception:
         return []
     out = []
-    for d, dps in rows:
+    for d, dps, ref in rows:
         try:
             d = int(d)
             dps = float(dps)
         except (TypeError, ValueError):
             continue
         if dps > 0:
-            out.append((d, dps))
+            try:
+                ref = float(ref) if ref and float(ref) > 0 else None
+            except (TypeError, ValueError):
+                ref = None
+            out.append((d, dps, ref))
     return out
 
 
 def _nearest_codal_dps(rows, d_even, window=7):
-    """DPSِ نزدیک‌ترین رویدادِ اعلامی در پنجرهٔ ±window روز؛ بی‌ردیف → None.
+    """(dps, reference_price) نزدیک‌ترین رویدادِ اعلامی در ±window؛ بی‌ردیف → None.
 
     روزِ مؤثرِ ردیفِ PA و روزِ ثبت‌شده برایِ همان اعلام ممکن است چند روز
     جابه‌جا شوند؛ دو مجمعِ سود در ۷ روز عملاً ناممکن است، پس نزدیک‌ترین
@@ -1382,13 +1386,13 @@ def _nearest_codal_dps(rows, d_even, window=7):
     if not target:
         return None
     best = None
-    for d, dps in rows or []:
+    for d, dps, ref in rows or []:
         dd = _day_diff(_d_even_to_date(d), target)
         if dd is None or dd > window:
             continue
         if best is None or dd < best[0]:
-            best = (dd, dps)
-    return best[1] if best else None
+            best = (dd, dps, ref)
+    return (best[1], best[2]) if best else None
 
 
 def _classify_pa_event(pa_ratio, dps, closing, orig, share_changes):
@@ -1523,11 +1527,13 @@ def _official_price_adjust_events(symbol, times=None, share_changes=None, closin
             except Exception:
                 dps = None
         cdps = _nearest_codal_dps(codal_dps, d)
+        codal_ref = None
         if cdps is not None:
-            dps = cdps
+            dps, codal_ref = cdps
             dps_source = "codal"
         staged.append({"date": dt, "ratio": r, "source": src or "priceAdjust",
                        "orig": orig, "dps": dps, "dps_source": dps_source,
+                       "codal_ref": codal_ref,
                        "source_ratio": r, "combined": bool(combined)})
     closes = _closing_prices_for(symbol, [e["date"] for e in staged])
     candle_closes = closings or {}
@@ -1540,6 +1546,11 @@ def _official_price_adjust_events(symbol, times=None, share_changes=None, closin
             cl = candle_closes.get(e["date"])
             if cl is None:
                 cl = closes.get(e["date"])
+            # The Codal row carries the official close that was proven to
+            # reproduce the reference; the chart candle can be on another
+            # basis (or mapped to a later session), so it must not override it.
+            if e.get("dps_source") == "codal" and e.get("codal_ref"):
+                cl = float(e["codal_ref"])
             r, is_dps, etype = _classify_pa_event(
                 e["ratio"], dps, cl, e["orig"], share_changes)
             if is_dps:

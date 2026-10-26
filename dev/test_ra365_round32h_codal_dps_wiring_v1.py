@@ -31,7 +31,8 @@ def ck(cond, msg, detail=""):
         print("  FAIL %s%s" % (msg, ("   ← %s" % (detail,)) if detail else ""))
 
 
-def make_db(with_table=True, codal_rows=((20230605, 150.0),), pa_dps=60.0):
+def make_db(with_table=True, codal_rows=((20230605, 150.0),), pa_dps=60.0,
+            codal_ref=1000.0):
     """Isolated DB: one stock instrument, one PA row, one official close."""
     fd, path = tempfile.mkstemp(suffix=".db")
     os.close(fd)
@@ -52,8 +53,8 @@ def make_db(with_table=True, codal_rows=((20230605, 150.0),), pa_dps=60.0):
                     " publish_date TEXT, source TEXT, source_id TEXT, fetched_at TEXT)")
         for d, dps in codal_rows:
             con.execute("INSERT INTO stock_dividend_events VALUES"
-                        " ('1',?,'TEST',?,1000.0,?,NULL,'codal-assembly','x',NULL)",
-                        (d, dps, 1000.0 / (1000.0 + dps)))
+                        " ('1',?,'TEST',?,?,?,NULL,'codal-assembly','x',NULL)",
+                        (d, dps, codal_ref, codal_ref / (codal_ref + dps)))
     con.commit()
     con.close()
     return path
@@ -63,12 +64,12 @@ TIMES = ["2023-06-05", "2023-06-06"]
 CLOSINGS = {"2023-06-05": 1000.0, "2023-06-06": 1010.0}
 
 
-def run(path):
+def run(path, closings=None):
     saved = C.DB_PATH
     C.DB_PATH = path
     try:
         return C._official_price_adjust_events(
-            "TEST", TIMES, share_changes=[], closings=CLOSINGS)
+            "TEST", TIMES, share_changes=[], closings=closings or CLOSINGS)
     finally:
         C.DB_PATH = saved
 
@@ -88,6 +89,17 @@ try:
         ck(e.get("dividend_per_share") == 150.0,
            "۳ dividend_per_share همان DPSِ اعلامی است", e.get("dividend_per_share"))
         ck(e.get("_dps_source") == "codal", "۴ منبعِ D ثبت شده", e.get("_dps_source"))
+finally:
+    os.unlink(p)
+
+# 1b) The stored official close wins over the chart candle's close.
+# Measured on real data (معين 2025-06-01): candle 2655 vs official 2344.
+p = make_db(codal_ref=1000.0)
+try:
+    e = only(run(p, closings={"2023-06-05": 1200.0, "2023-06-06": 1210.0}))
+    if e:
+        ck(abs(e["ratio"] - 1000.0 / 1150.0) <= 1e-9,
+           "۱ب پایانیِ رسمیِ ذخیره‌شده بر پایانیِ کندل مقدم است", e["ratio"])
 finally:
     os.unlink(p)
 
