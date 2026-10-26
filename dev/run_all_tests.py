@@ -135,6 +135,11 @@ SUITES = [
     # دلیلِ یکسانِ کارت/جدول، تفکیکِ شکافِ ماهانه از صورتِ مالی، و «جدیدترین
     # دوره» به‌جای fallbackِ بی‌صدای دورهٔ قدیمی. سه‌گانهٔ ۱بِ اسکرینر هم این‌جاست.
     ('dev/test_fts_na_v11.py',        'honest N/A: row fields, reasons, newest-period only'),
+    # Task 5 (Phase 1): برچسبِ شاهدِ EPS — «سالانهٔ حسابرسی‌شده» مقدم، تنزل‌های
+    # حسابرسی‌نشده/میاندوره صریح، تلفیقی «نمایشی» و N/A (نه رد)، و کمتر از سه
+    # سال «دادهٔ ناکافی». همان برچسب در کارت، ردیفِ bulk و scan_symbol؛ سریِ
+    # EPS در همهٔ حالت‌ها (از جمله تلفیقی) دیده می‌شود.
+    ('dev/test_fts_evidence_v11.py',  'EPS evidence labels: one tier label on card, row and scan_symbol'),
     ('dev/test_fts_technical_tristate.py',
      'technical setups stay three-state (null != false) and each rule matches the notebook'),
     ('dev/test_fts_roundj.py',

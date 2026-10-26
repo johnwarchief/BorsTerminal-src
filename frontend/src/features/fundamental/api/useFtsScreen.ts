@@ -53,6 +53,9 @@ export const FtsScreenRowSchema = z.object({
    *  جدول «N/A» را با «داده نیست» اشتباه نگیرد (رأیِ ۱۳ + جزوۀ ص ۴). */
   i2_na: z.boolean().nullish(),
   eps_consolidated: z.boolean().nullish(),
+  /** برچسبِ شاهدِ EPS (Task 5) از خودِ موتور: «سالانهٔ حسابرسی‌شده» … «دادهٔ
+   *  ناکافی». جدول آن را زیرِ سلولِ EPS می‌نویسد؛ سری دست‌نخورده می‌ماند. */
+  eps_evidence_label: z.string().nullish(),
   i3_pass: z.boolean().nullish(),
   i4_pass: z.boolean().nullish(),
   /** علتِ خالی‌بودنِ حکم: «معاف/بی‌کاربرد» (na) یا «داده نیست». از خودِ کارت

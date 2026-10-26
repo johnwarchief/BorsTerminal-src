@@ -1056,6 +1056,23 @@ def eps_trend_reason(series, years=None) -> str:
 _EPS_QUALITY = {0: "audited_year_end", 1: "unaudited_year_end",
                 2: "consolidated_audited", 3: "consolidated_unaudited"}
 
+# برچسبِ شاهدِ EPS (Task 5) — همان پنج مقدارِ قرارداد، کلید = tier داوری.
+# «تلفیقی — نمایشی» عمداً واژهٔ «نمایشی» دارد: آن سری دیده می‌شود ولی حکم
+# نمی‌گیرد (N/A). کمبودِ کمتر از سه سال همیشه «دادهٔ ناکافی» است، حتی اگر
+# بهترین شاهدِ موجود تلفیقی یا میاندوره باشد (قاعدهٔ مالک).
+_EVIDENCE_LABEL = {
+    "audited_year_end": "سالانهٔ حسابرسی‌شده",
+    "year_end_unaudited": "سالانهٔ حسابرسی‌نشده",
+    "year_end_plus_interim": "برآورد میان‌دوره",
+    "consolidated_year_end": "تلفیقی — نمایشی",
+    "insufficient": "دادهٔ ناکافی",
+}
+
+
+def eps_evidence_label(tier: str) -> str:
+    """tier داوری → برچسبِ فارسیِ شاهد — تک‌مرجعِ کارت/اسکرینر/دریل‌دان."""
+    return _EVIDENCE_LABEL.get(str(tier or ""), _EVIDENCE_LABEL["insufficient"])
+
 
 def eps_ladder(conn: sqlite3.Connection, symbol: str, years: int = 3) -> dict:
     """سابقهٔ سودسازی با نردبانِ شفافِ شاهد — **تک‌پیاده‌سازیِ هر دو مسیر**.
@@ -1214,6 +1231,7 @@ def eps_assessment(conn: sqlite3.Connection, symbol: str, years: int = 3,
                 "evidence_tier": "insurance", "strict_evidence": False,
                 "relaxed_evidence": False, "consolidated_used": False,
                 "low_quality_track": False, "soft_gap": False,
+                "evidence_label": eps_evidence_label("insurance"),
                 "reason": "صنعت بیمه — لایهٔ EPS اجرا نمیشود."}
     track = eps_ladder(conn, symbol, years=need)
     ev = [str(e or "") for e in (track.get("evidence") or [])]
@@ -1223,6 +1241,7 @@ def eps_assessment(conn: sqlite3.Connection, symbol: str, years: int = 3,
                 "evidence_tier": "insufficient", "strict_evidence": False,
                 "relaxed_evidence": False, "consolidated_used": False,
                 "low_quality_track": False, "soft_gap": False,
+                "evidence_label": eps_evidence_label("insufficient"),
                 "reason": (track or {}).get("reason")
                 or "هیچ صورت مالیِ معتبری با EPS ثبت نشده."}
     # سه پرچم از خودِ برچسبِ اسلات‌ها ساخته می‌شوند، نه از شاخۀ خاصِ نردبان:
@@ -1249,6 +1268,13 @@ def eps_assessment(conn: sqlite3.Connection, symbol: str, years: int = 3,
         tier = "insufficient"
     track["evidence_tier"] = tier
     track["strict_evidence"] = (tier == "audited_year_end")
+    # برچسبِ شاهد: کمبودِ کمتر از سه سال بر نوعِ شاهد مقدم است — سابقهٔ ناقص
+    # (حتی اگر بهترین شاهدش تلفیقی یا میاندوره باشد) «دادهٔ ناکافی» است، نه
+    # برچسبِ کامل. این فقط برچسب را عوض می‌کند؛ `evidence_tier`، حکم و قاعدهٔ
+    # تلفیقی دست‌نخورده‌اند.
+    _short = bool(track.get("partial")) or (
+        int(track.get("available_periods") or 0) < need)
+    track["evidence_label"] = eps_evidence_label("insufficient" if _short else tier)
     if tier == "consolidated_year_end":
         # حکمِ مالک ۱۴۰۵-۰۷ + جزوۀ ص ۴: «اطلاعات و صورت‌های مالی تلفیقی مدنظر
         # ما نیست». باقی‌ماندۀ مستقلِ سه‌ساله هرچه باشد (دو سال مستقل + یک سال
@@ -2126,6 +2152,11 @@ def scan_symbol(conn: sqlite3.Connection, symbol: str, market_cap_rials: float =
         "applicable": not fund_class_match(sector, cname),
         "i1_reason": axis1_reason,
         "i1_na": bool(axis1 is None),
+        # برچسبِ شاهدِ EPS (Task 5) — صنعتِ بیمه `eps_trend_3y=None` می‌دهد،
+        # ولی سطحِ جدول/کارت برایِ آن هم «دادهٔ ناکافی» می‌نویسد؛ این‌جا همان
+        # مقدارِ قرارداد را نگه می‌داریم تا سه مسیر یک برچسب بدهند.
+        "eps_evidence_label": ((e or {}).get("evidence_label")
+                               or eps_evidence_label("insufficient")),
         "m141": bool(m141_hit),
         "avg_trade_val_hmt": None if avg_trade_val is None else round(avg_trade_val, 3),
         "detail": {"growth": g, "eps_trend": e, "gross_margin": gm,
@@ -2587,6 +2618,10 @@ def bulk_scan(conn: sqlite3.Connection, cfg: dict = None) -> list[dict]:
             # مبنایِ داوری نمی‌داند — نه مردود و نه مطلوب.
             "eps_consolidated": bool(_eps.get("consolidated_used")),
             "i2_na": bool(_eps.get("na")),
+            # برچسبِ شاهدِ EPS (Task 5) — همان مقدارِ `indicators["2"]`ِ کارت؛
+            # جدول آن را زیرِ سلولِ EPS می‌نویسد و سری را هم نگه می‌دارد.
+            "eps_evidence_label": (_eps.get("evidence_label")
+                                   or eps_evidence_label("insufficient")),
             "eps_years_available": min(eps_avail, eps_years),
             "eps_years_required": eps_years,
             "gross_margin": None if margin is None else round(margin, 1),

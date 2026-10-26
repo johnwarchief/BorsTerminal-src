@@ -383,9 +383,14 @@ function Panel2({ card }: { card: FtsCard }) {
           </Badge>
           </span>
         )}
-        {ind?.evidence_tier ? (
+        {ind?.evidence_label || ind?.evidence_tier ? (
           <span className="text-2xs text-text-muted" data-testid="drilldown-evidence-tier">
-            مدرک: {EVIDENCE_TIER_FA[ind.evidence_tier] ?? ind.evidence_tier}
+            {/* برچسبِ شاهد (Task 5) از خودِ موتور مقدم است؛ نقشهٔ قدیمی فقط
+                fallbackِ پاسخ‌هایِ بی‌برچسب است. */}
+            مدرک: {ind?.evidence_label
+              ?? (ind?.evidence_tier
+                ? (EVIDENCE_TIER_FA[ind.evidence_tier] ?? ind.evidence_tier)
+                : '')}
           </span>
         ) : null}
         {ind?.interim?.eps_interim != null ? (

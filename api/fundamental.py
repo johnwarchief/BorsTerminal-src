@@ -907,6 +907,10 @@ def ind2_eps_track(conn, symbol, th=None, sector="", last_fy_eps=None) -> dict:
     base = fts_engine.eps_assessment(conn, symbol, years=need, sector=sector)
     tier = str(base.get("evidence_tier") or "insufficient")
     insurance = (tier == "insurance")
+    # برچسبِ شاهد (Task 5) از خودِ داوری می‌آید؛ `setdefault` فقط برایِ سازگاریِ
+    # مسیرِ قدیمی است — کارت/اسکرینر/دریل‌دان نباید سه برچسبِ متفاوت بدهند.
+    base["evidence_label"] = str(base.get("evidence_label")
+                                 or fts_engine.eps_evidence_label(tier))
     # حالتِ «ناقص»: دوره‌های موجود نشان داده میشوند و جایِ غایب «-»
     _ser = base.get("eps_series") or []
     _real = [v for v in _ser if v is not None]

@@ -132,6 +132,9 @@ const Indicator2Schema = z
     /** برچسبِ هر اسلات (audited_year_end / consolidated_unaudited / …) */
     evidence: z.array(z.string()).nullish(),
     evidence_tier: z.string().nullish(),
+    /** برچسبِ شاهدِ EPS (Task 5) — همان پنج مقدارِ قرارداد؛ کارت و دریل‌دان
+     *  آن را زیرِ سلولِ EPS می‌نویسند و سری نمایشی را نگه می‌دارند. */
+    evidence_label: z.string().nullish(),
     reason: z.string().nullish(),
     interim: z
       .object({

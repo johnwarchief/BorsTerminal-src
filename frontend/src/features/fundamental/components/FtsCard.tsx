@@ -595,45 +595,59 @@ export function FtsCard({
               const growths = epsChanges(i2?.eps_series ?? [], i2?.eps_yoy_pct);
               const interimPct = i2?.interim?.interim_yoy_pct ?? null;
               extraNode = (
-                <div
-                  className="mt-1 flex flex-wrap items-center justify-center gap-x-1.5 gap-y-0.5 text-3xs"
-                  data-testid="fts-card-eps-growth"
-                  title="درصد رشد سال‌به‌سالِ EPS (قدیم ← جدید) — نمایشی است، حکمِ شاخص ۲ را عوض نمی‌کند"
-                >
-                  <span className="text-text-muted">رشد سال‌به‌سال:</span>
-                  {growths.some((p) => p != null) ? (
-                    growths.map((p, gi) =>
-                      p == null ? (
-                        <span key={gi} className="num font-mono font-bold text-text-muted">
-                          —
-                        </span>
-                      ) : (
-                        <span
-                          key={gi}
-                          className={`num font-mono font-black ${
-                            p > 0 ? 'text-accent-green' : p < 0 ? 'text-accent-red' : 'text-text-secondary'
-                          }`}
-                        >
-                          {epsChangeText(p)}
-                        </span>
-                      ),
-                    )
-                  ) : (
-                    /* «داده نداریم» هیچ‌وقت ۰٪ و هیچ‌وقت فلش سبز/سرخ نمی‌شود */
-                    <span className="font-bold text-text-muted" data-testid="fts-card-eps-growth-nodata">
-                      {epsGrowthReason(i2?.eps_series ?? [])}
-                    </span>
-                  )}
-                  {interimPct != null ? (
+                <div className="mt-1 flex flex-col items-center gap-0.5">
+                  {/* برچسبِ شاهدِ EPS (Task 5) — زیرِ نتیجهٔ EPS؛ برایِ
+                      «N/A (تلفیقی)» هم همین برچسب می‌ماند و سری نمایشی
+                      (SparkBars بالا) دست‌نخورده است. */}
+                  {i2?.evidence_label ? (
                     <span
-                      className={`num font-mono font-black ${
-                        interimPct > 0 ? 'text-accent-green' : interimPct < 0 ? 'text-accent-red' : 'text-text-secondary'
-                      }`}
-                      title="رشد EPS میاندوره نسبت به همان دورهٔ سال قبل (محاسبهٔ بک‌اند)"
+                      className="text-3xs font-semibold text-text-muted"
+                      data-testid="fts-card-eps-evidence-label"
+                      title="برچسبِ شاهدِ EPS — از خودِ موتور، نه محاسبهٔ دوباره در UI"
                     >
-                      میاندوره {epsChangeText(interimPct)}
+                      {i2.evidence_label}
                     </span>
                   ) : null}
+                  <div
+                    className="flex flex-wrap items-center justify-center gap-x-1.5 gap-y-0.5 text-3xs"
+                    data-testid="fts-card-eps-growth"
+                    title="درصد رشد سال‌به‌سالِ EPS (قدیم ← جدید) — نمایشی است، حکمِ شاخص ۲ را عوض نمی‌کند"
+                  >
+                    <span className="text-text-muted">رشد سال‌به‌سال:</span>
+                    {growths.some((p) => p != null) ? (
+                      growths.map((p, gi) =>
+                        p == null ? (
+                          <span key={gi} className="num font-mono font-bold text-text-muted">
+                            —
+                          </span>
+                        ) : (
+                          <span
+                            key={gi}
+                            className={`num font-mono font-black ${
+                              p > 0 ? 'text-accent-green' : p < 0 ? 'text-accent-red' : 'text-text-secondary'
+                            }`}
+                          >
+                            {epsChangeText(p)}
+                          </span>
+                        ),
+                      )
+                    ) : (
+                      /* «داده نداریم» هیچ‌وقت ۰٪ و هیچ‌وقت فلش سبز/سرخ نمی‌شود */
+                      <span className="font-bold text-text-muted" data-testid="fts-card-eps-growth-nodata">
+                        {epsGrowthReason(i2?.eps_series ?? [])}
+                      </span>
+                    )}
+                    {interimPct != null ? (
+                      <span
+                        className={`num font-mono font-black ${
+                          interimPct > 0 ? 'text-accent-green' : interimPct < 0 ? 'text-accent-red' : 'text-text-secondary'
+                        }`}
+                        title="رشد EPS میاندوره نسبت به همان دورهٔ سال قبل (محاسبهٔ بک‌اند)"
+                      >
+                        میاندوره {epsChangeText(interimPct)}
+                      </span>
+                    ) : null}
+                  </div>
                 </div>
               );
 

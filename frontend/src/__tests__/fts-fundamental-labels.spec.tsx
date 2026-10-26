@@ -116,7 +116,10 @@ describe('N/A شاخص‌های ۳ و ۴ — ماهیت مالی، نه رد', (
 // ── کارت و دریل‌دان ────────────────────────────────────────────────────────
 const GAP_REASON = 'دورهٔ مشابهٔ سال قبل برای جدیدترین صورت مالی موجود نیست؛ از دورهٔ قدیمی‌تر استفاده نمی‌شود.';
 
-function cardIndicators(patch: Partial<NonNullable<FtsCardIndicators['1']>> = {}): FtsCardIndicators {
+function cardIndicators(
+  patch: Partial<NonNullable<FtsCardIndicators['1']>> = {},
+  ind2: Partial<NonNullable<FtsCardIndicators['2']>> = {},
+): FtsCardIndicators {
   return {
     '1': {
       monetary: {
@@ -131,7 +134,7 @@ function cardIndicators(patch: Partial<NonNullable<FtsCardIndicators['1']>> = {}
       reason: GAP_REASON,
       ...patch,
     },
-    '2': { eps_series: [], na: true, pass: false, reason: '' },
+    '2': { eps_series: [], na: true, pass: false, reason: '', ...ind2 },
     '3': { margin_pct: null, na: true, pass: false, reason: '' },
     '4': { na: true, exempt: true, pass: false, reason: '' },
     '5': { pass: true },
@@ -197,5 +200,135 @@ describe('دریل‌دانِ شاخص ۱ — همان دلیل و همان مب
     );
     expect(screen.getByTestId('gap-hint').getAttribute('title')).toBe(GAP_REASON);
     expect(screen.getByTestId('drilldown-growth-basis').textContent).toContain('صورت مالی — ناموجود');
+  });
+});
+
+// ── Task 5 — برچسبِ شاهدِ EPS رویِ جدول/کارت/دریل‌دان ───────────────────────
+describe('برچسبِ شاهدِ EPS — ردیفِ غربالگری', () => {
+  it('سالانهٔ حسابرسی‌شده: برچسب زیرِ سلول و هر سه مقدار سرِ جایشان', () => {
+    const r = row({ eps_evidence_label: 'سالانهٔ حسابرسی‌شده' });
+    renderRows([r]);
+    const label = screen.getByTestId('fts-eps-evidence-label');
+    expect(label.textContent).toBe('سالانهٔ حسابرسی‌شده');
+    const tr = screen.getByTestId('fts-screen-row');
+    expect(tr.textContent).toContain('۱۰۰');
+    expect(tr.textContent).toContain('۱۲۰');
+    expect(tr.textContent).toContain('۱۵۰');
+    // فایلِ دانلودی هم همان برچسب را در سلولِ ۲ می‌نویسد.
+    expect(screenRowCells(r)[2]).toContain('سالانهٔ حسابرسی‌شده');
+  });
+
+  it('فقط تلفیقی: «N/A (تلفیقی)» + «تلفیقی — نمایشی» و سریِ نمایشی می‌ماند', () => {
+    renderRows([row({
+      i2_na: true,
+      i2_pass: false,
+      eps_consolidated: true,
+      eps_data_gap: true,
+      eps_evidence_label: 'تلفیقی — نمایشی',
+      eps_series: [100, 120, 150],
+    })]);
+    expect(screen.getByTestId('fts-na-2_eps_trend').textContent).toContain('N/A (تلفیقی)');
+    expect(screen.getByTestId('fts-eps-evidence-label').textContent).toBe('تلفیقی — نمایشی');
+    const tr = screen.getByTestId('fts-screen-row');
+    expect(tr.textContent).toContain('۱۵۰');
+    expect(within(tr).queryByText('✗')).toBeNull();
+  });
+
+  it('کمتر از سه سال: «دادهٔ ناکافی» زیرِ همان سلول', () => {
+    renderRows([row({
+      eps_series: [null, 120, 150],
+      eps_years_available: 2,
+      eps_data_gap: true,
+      i2_pass: false,
+      eps_evidence_label: 'دادهٔ ناکافی',
+    })]);
+    expect(screen.getByTestId('fts-eps-evidence-label').textContent).toBe('دادهٔ ناکافی');
+  });
+});
+
+describe('برچسبِ شاهدِ EPS — کارتِ شاخص ۲', () => {
+  const renderCard = (ind2: Partial<NonNullable<FtsCardIndicators['2']>>, pass2: boolean | null) =>
+    render(
+      <FtsCard
+        score={0}
+        passes={{ '1_growth': true, '2_eps_trend': pass2 }}
+        physicalApplicable
+        indicators={cardIndicators({}, ind2)}
+        thresholds={{}}
+      />,
+    );
+
+  it('سالانهٔ حسابرسی‌شده زیرِ نتیجه می‌نشیند و سری/نمودارک می‌مانند', () => {
+    renderCard({
+      eps_series: [100, 120, 150], na: false, pass: true, strictly_rising: true,
+      years_required: 3, years_available: 3,
+      evidence_label: 'سالانهٔ حسابرسی‌شده',
+    }, true);
+    expect(screen.getByTestId('fts-result-2_eps_trend').textContent).toContain('۳ سالِ رشد');
+    expect(screen.getByTestId('fts-card-eps-evidence-label').textContent)
+      .toBe('سالانهٔ حسابرسی‌شده');
+    expect(screen.getByTestId('fts-spark-eps')).toBeTruthy();
+  });
+
+  it('فقط تلفیقی: «N/A (تلفیقی)» + برچسب، بدونِ ✗ سرخ', () => {
+    renderCard({
+      eps_series: [100, 120, 150], na: true, pass: false,
+      consolidated_used: true, years_required: 3, years_available: 3,
+      evidence_label: 'تلفیقی — نمایشی',
+      reason: 'صورت‌های مالی تلفیقی مدنظر نیست.',
+    }, null);
+    expect(screen.getByTestId('fts-result-2_eps_trend').textContent).toContain('N/A (تلفیقی)');
+    expect(screen.getByTestId('fts-card-eps-evidence-label').textContent).toBe('تلفیقی — نمایشی');
+    expect(screen.getByTestId('fts-verdict-2_eps_trend').textContent).not.toContain('✗');
+  });
+});
+
+describe('برچسبِ شاهدِ EPS — دریل‌دانِ شاخص ۲', () => {
+  it('برچسبِ موتور (نه نقشهٔ قدیمی) کنارِ N/A و سریِ نمایشی دیده می‌شود', () => {
+    const ind = cardIndicators({}, {
+      eps_series: [100, 120, 150], na: true, pass: false,
+      consolidated_used: true, years_required: 3, years_available: 3,
+      evidence_label: 'تلفیقی — نمایشی',
+      reason: 'صورت‌های مالی تلفیقی مدنظر نیست.',
+    });
+    render(
+      <FtsDrillDown
+        card={{
+          status: 'success',
+          symbol: 'وبملت',
+          passes: { '1_growth': null, '2_eps_trend': null },
+          indicators: ind,
+        } as never}
+        active="2"
+        quarters={[]}
+        physicalApplicable
+      />,
+    );
+    expect(screen.getByTestId('drilldown-eps-na').textContent).toContain('N/A');
+    expect(screen.getByTestId('drilldown-evidence-tier').textContent).toContain('تلفیقی — نمایشی');
+    expect(screen.getByTestId('drilldown-eps-chart')).toBeTruthy();
+  });
+
+  it('برچسبِ «برآورد میان‌دوره» هم از خودِ موتور خوانده می‌شود', () => {
+    const ind = cardIndicators({}, {
+      eps_series: [300, 500, 800], na: false, pass: true, strictly_rising: true,
+      years_required: 3, years_available: 3,
+      evidence_label: 'برآورد میان‌دوره',
+    });
+    render(
+      <FtsDrillDown
+        card={{
+          status: 'success',
+          symbol: 'وبملت',
+          passes: { '1_growth': null, '2_eps_trend': true },
+          indicators: ind,
+        } as never}
+        active="2"
+        quarters={[]}
+        physicalApplicable
+      />,
+    );
+    expect(screen.getByTestId('drilldown-evidence-tier').textContent)
+      .toContain('برآورد میان‌دوره');
   });
 });
