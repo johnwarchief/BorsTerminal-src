@@ -12,7 +12,7 @@ import type { FiscalQuarter } from '../lib/fundMath';
 import { EPS_PARTIAL_TESTID, epsChangeText, epsChanges, epsFailReason, epsGapLabel, epsHistory, epsRealYears } from '../lib/epsHistory';
 import { industryGateTone } from '../lib/industryGate';
 import { MathFraction } from './MathFormula';
-import { FTS_PANEL_TITLE, FTS_FX_TITLE } from '@shared/lib/ftsLabels';
+import { FTS_PANEL_TITLE, FTS_FX_TITLE, MARGIN_TIER_HINT, MARGIN_TIER_LABEL } from '@shared/lib/ftsLabels';
 import {
   NO_ANNUAL_SALES,
   NO_GROSS_MARGIN,
@@ -493,9 +493,22 @@ function Panel3({ card, quarters }: { card: FtsCard; quarters: FiscalQuarter[] }
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center gap-2">
-        <Badge tone={band === 'ideal' ? 'green' : band === 'conditional' ? 'yellow' : band === 'rejected' ? 'red' : 'gray'}>
-          {margin == null ? 'N/A' : `${fmtPct(margin)} · ${BAND_LABEL[band]}`}
-        </Badge>
+        <span data-testid="drilldown-margin-band">
+          <Badge tone={band === 'ideal' ? 'green' : band === 'conditional' ? 'yellow' : band === 'rejected' ? 'red' : 'gray'}>
+            {margin == null ? 'N/A' : `${fmtPct(margin)} · ${BAND_LABEL[band]}`}
+          </Badge>
+        </span>
+        {/* طبقهٔ نمایشی (Task 6) کنارِ همان درصد؛ برچسبِ باند/حکم دست‌نخورده
+            است — ۵۰٪ فقط نامِ «خوب» است، نه دروازه. */}
+        {ind?.margin_tier ? (
+          <span
+            data-testid="drilldown-margin-tier"
+            className="text-2xs font-bold text-text-muted"
+            title={MARGIN_TIER_HINT}
+          >
+            طبقه: {MARGIN_TIER_LABEL[ind.margin_tier] ?? ind.margin_tier}
+          </span>
+        ) : null}
         {ind?.basis ? (
           <span className="text-2xs text-text-muted" data-testid="drilldown-margin-basis">
             مبنای محاسبه: {toFaDigits(ind.basis)}

@@ -394,7 +394,7 @@ def _fts_row_to_result(r) -> dict:
         "indicators": {
             "1": {"monetary": {"monetary_pct": r[1]}, "volume": {}},
             "2": {"eps_series": eps_series},
-            "3": {"margin_pct": r[5]},
+            "3": {"margin_pct": r[5], "margin_tier": margin_tier(r[5])},
             "4": {"sales_to_mcap": r[7], "potential_pct": r[22],
                   "annual": {"annual_sales_bt": r[23], "months_used": r[24]}},
             "5": {"verdict": r[9]},
@@ -1308,6 +1308,25 @@ def eps_trend_3y(conn: sqlite3.Connection, symbol: str, years: int = 3,
 
 
 # ==================================== شاخص ۳: حاشیه سود ناخالص (Gross Margin)
+def margin_tier(pct) -> Optional[str]:
+    """برچسبِ نمایشیِ طبقهٔ حاشیهٔ ناخالص (Task 6) — **نه** دروازهٔ تازه.
+
+    حکم همچنان با کفِ ۲۰٪ (`margin_min`) و استانداردِ ۳۰٪ (`margin_ideal`)
+    سنجیده می‌شود؛ ۵۰٪ فقط نامِ نمایشیِ «خوب» است و هیچ pass/optimalی نمی‌سازد.
+    `None` یعنی حاشیه ساخته نشده (N/A مالی/هلدینگ/صندوق/بی‌سطر)، نه صفر.
+    """
+    x = _fn(pct)
+    if x is None:
+        return None
+    if x < 20:
+        return "below_floor"
+    if x < 30:
+        return "floor"
+    if x < 50:
+        return "standard"
+    return "good"
+
+
 def gross_margin(conn: sqlite3.Connection, symbol: str, min_margin: float = 20.0,
                  optimal: float = 30.0, ref: Optional[dict] = None) -> Optional[dict]:
     """حاشیه = (سود ناخالص ÷ درآمدهای عملیاتی) × ۱۰۰.
@@ -1335,8 +1354,9 @@ def gross_margin(conn: sqlite3.Connection, symbol: str, min_margin: float = 20.0
     fy = str(row.get("fiscal_year") or "").strip()
     if fy:
         src += " — سال مالی " + fy
+    margin_pct = round(margin, 1)
     return {
-        "margin_pct": round(margin, 1),
+        "margin_pct": margin_pct,
         "gross_profit_bt": round(normalize_mrl_to_btom(gp), 1),
         "revenue_bt": round(normalize_mrl_to_btom(rev), 1),
         "period_end": str(row.get("period_end"))[:10],
@@ -1345,6 +1365,10 @@ def gross_margin(conn: sqlite3.Connection, symbol: str, min_margin: float = 20.0
         "optimal": margin >= optimal,
         "threshold": min_margin,
         "optimal_threshold": optimal,
+        # برچسبِ نمایشی از همان عددِ خامِ حکم ساخته می‌شود (نه گردشدۀ نمایش):
+        # ۱۹٫۹۶٪ که «۲۰٫۰» دیده می‌شود هنوز زیرِ کف است و برچسبش نباید
+        # «کف» بشود؛ ۵۰٪ هم دروازه نیست (Task 6).
+        "margin_tier": margin_tier(margin),
         "formula": "(سود ناخالص ÷ درآمدهای عملیاتی) × ۱۰۰",
     }
 
@@ -2157,6 +2181,9 @@ def scan_symbol(conn: sqlite3.Connection, symbol: str, market_cap_rials: float =
         # مقدارِ قرارداد را نگه می‌داریم تا سه مسیر یک برچسب بدهند.
         "eps_evidence_label": ((e or {}).get("evidence_label")
                                or eps_evidence_label("insufficient")),
+        # برچسبِ نمایشیِ طبقهٔ حاشیه (Task 6) — همان مقداری که
+        # `detail.gross_margin` و ردیفِ bulk_scan می‌دهند؛ None یعنی N/A.
+        "margin_tier": (gm or {}).get("margin_tier"),
         "m141": bool(m141_hit),
         "avg_trade_val_hmt": None if avg_trade_val is None else round(avg_trade_val, 3),
         "detail": {"growth": g, "eps_trend": e, "gross_margin": gm,
@@ -2625,6 +2652,9 @@ def bulk_scan(conn: sqlite3.Connection, cfg: dict = None) -> list[dict]:
             "eps_years_available": min(eps_avail, eps_years),
             "eps_years_required": eps_years,
             "gross_margin": None if margin is None else round(margin, 1),
+            # برچسبِ نمایشیِ طبقهٔ حاشیه (Task 6) — از عددِ خامِ حکم (نه
+            # گردشدۀ نمایش)؛ None برایِ نمادی که حاشیه‌اش ساخته نشده (N/A).
+            "margin_tier": margin_tier(margin_raw),
             "sales_to_mcap": None if s2m is None else round(s2m, 2),
             "profit_potential_pct": None if pot is None else round(pot, 1),
             "annual_sales_bt": round(normalize_mrl_to_btom(annual_sales), 1),

@@ -590,6 +590,9 @@ def _screener_cached():
                 _an4 = _v4.get("annual") or {}
                 r["rev_growth"] = _g1.get("monetary_pct")
                 r["gross_margin"] = _g3.get("margin_pct")
+                # برچسبِ طبقهٔ حاشیه (Task 6) از همان کارت؛ مسیرِ مادی‌شده
+                # هم آن را از ستونِ f03_margin_pct بازمی‌سازد. None = N/A.
+                r["margin_tier"] = _g3.get("margin_tier", r.get("margin_tier"))
                 r["sales_to_mcap"] = _v4.get("sales_to_mcap")
                 r["profit_potential_pct"] = _v4.get("potential_pct")
                 r["annual_sales_bt"] = (_v4.get("annual_sales_bt")

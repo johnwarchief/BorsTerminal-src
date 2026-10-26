@@ -140,6 +140,10 @@ SUITES = [
     # سال «دادهٔ ناکافی». همان برچسب در کارت، ردیفِ bulk و scan_symbol؛ سریِ
     # EPS در همهٔ حالت‌ها (از جمله تلفیقی) دیده می‌شود.
     ('dev/test_fts_evidence_v11.py',  'EPS evidence labels: one tier label on card, row and scan_symbol'),
+    # Task 6 (Phase 1): طبقهٔ نمایشیِ حاشیه — below_floor/floor/standard/good رویِ
+    # کارت، ردیفِ bulk و scan_symbol؛ ۵۰٪ فقط برچسب است و کف ۲۰/استاندارد ۳۰
+    # دست‌نخورده می‌ماند؛ مالی/هلدینگ/صندوق N/A با دلیل و بی‌برچسب (نه صفر).
+    ('dev/test_fts_margin_v11.py',    'margin tiers: 20/30 gate unchanged, 50 label-only, N/A stays None'),
     ('dev/test_fts_technical_tristate.py',
      'technical setups stay three-state (null != false) and each rule matches the notebook'),
     ('dev/test_fts_roundj.py',

@@ -25,6 +25,9 @@ export const FtsScreenRowSchema = z.object({
   eps_years_required: z.number().nullish(),
   /** شاخص ۳: حاشیه سود ناخالص (٪) */
   gross_margin: z.number().nullable().nullish(),
+  /** طبقهٔ نمایشیِ حاشیه (Task 6) از همان موتور: below_floor | floor |
+   *  standard | good؛ null یعنی حاشیه ساخته نشده (N/A). برچسب است، نه حکم. */
+  margin_tier: z.string().nullish(),
   /** شاخص ۴: فروش سالانه ÷ ارزش بازار و پتانسیل سود ناخالص (٪) */
   sales_to_mcap: z.number().nullable().nullish(),
   profit_potential_pct: z.number().nullable().nullish(),

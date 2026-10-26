@@ -1008,6 +1008,9 @@ def ind3_gross_margin(conn, symbol, th=None, ref=None, profile=None) -> dict:
         return {"margin_pct": None, "pass": False, "ideal": False, "na": True,
                 "band": "not_applicable", "threshold": th["margin_min"],
                 "ideal_threshold": th["margin_ideal"], "optimal": False,
+                # برچسبِ طبقه هنگامِ N/A تهی است، نه «below_floor»: حاشیه‌ای
+                # که ساخته نشد صفر نیست و برچسبِ نمایشی هم نمی‌گیرد (Task 6).
+                "margin_tier": None,
                 "data_gap": data_gap, "reason": reason, "remediation": fix}
     # حاشیۀ منفیِ واقعی (ثتران −۱۸۴٫۶، دامین −۱۴۲٫۵، وملل −۱۱۲٫۵) «N/A» نیست:
     # عدد است و طبیعی به «زیرِ باند» می‌رسد. `_sane(-99, 200)` همین را None می‌کرد
@@ -1019,6 +1022,9 @@ def ind3_gross_margin(conn, symbol, th=None, ref=None, profile=None) -> dict:
                   "acceptable" if margin is not None and margin >= th["margin_min"] else "below")
     gm["ideal"] = bool(gm.get("optimal"))
     gm["ideal_threshold"] = th["margin_ideal"]
+    # برچسبِ طبقه از خودِ `gross_margin` می‌آید و بر مبنایِ عددِ خامِ همان
+    # حکم است؛ این‌جا بازمحاسبه نمی‌شود تا ۵۰٪ هیچ دروازه‌ای نسازد (Task 6).
+    gm.setdefault("margin_tier", None)
     gm["na"] = False
     gm.setdefault("reason", "")
     return gm

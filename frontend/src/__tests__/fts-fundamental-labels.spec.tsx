@@ -119,6 +119,7 @@ const GAP_REASON = 'دورهٔ مشابهٔ سال قبل برای جدیدتر�
 function cardIndicators(
   patch: Partial<NonNullable<FtsCardIndicators['1']>> = {},
   ind2: Partial<NonNullable<FtsCardIndicators['2']>> = {},
+  ind3: Partial<NonNullable<FtsCardIndicators['3']>> = {},
 ): FtsCardIndicators {
   return {
     '1': {
@@ -135,7 +136,7 @@ function cardIndicators(
       ...patch,
     },
     '2': { eps_series: [], na: true, pass: false, reason: '', ...ind2 },
-    '3': { margin_pct: null, na: true, pass: false, reason: '' },
+    '3': { margin_pct: null, na: true, pass: false, reason: '', ...ind3 },
     '4': { na: true, exempt: true, pass: false, reason: '' },
     '5': { pass: true },
   } as FtsCardIndicators;
@@ -330,5 +331,106 @@ describe('برچسبِ شاهدِ EPS — دریل‌دانِ شاخص ۲', () =
     );
     expect(screen.getByTestId('drilldown-evidence-tier').textContent)
       .toContain('برآورد میان‌دوره');
+  });
+});
+
+// ── Task 6 — طبقهٔ نمایشیِ حاشیه: below_floor/floor/standard/good ────────────
+describe('طبقهٔ نمایشیِ حاشیه — ردیفِ غربالگری', () => {
+  it('۵۸٪: «خوب» کنارِ درصد، حکمِ ✓ و همان برچسب در فایلِ دانلودی', () => {
+    const r = row({ gross_margin: 58, margin_tier: 'good', i3_pass: true });
+    renderRows([r]);
+    const tier = screen.getByTestId('fts-margin-tier');
+    expect(tier.textContent).toBe('خوب');
+    expect(tier.className).not.toContain('text-accent-red');
+    expect(tier.getAttribute('title')).toContain('۵۰٪ فقط برچسب');
+    expect(screen.getByTestId('fts-mark-3_gross_margin').textContent).toContain('✓');
+    expect(screenRowCells(r)[3]).toContain('۵۸');
+    expect(screenRowCells(r)[3]).toContain('خوب');
+  });
+
+  it('۲۵٪: «کف» — بدونِ برچسبِ «خوب» و بدونِ تغییرِ حکم', () => {
+    renderRows([row({ gross_margin: 25, margin_tier: 'floor', i3_pass: true })]);
+    expect(screen.getByTestId('fts-margin-tier').textContent).toBe('کف');
+    expect(screen.getByTestId('fts-mark-3_gross_margin').textContent).toContain('✓');
+  });
+
+  it('N/A: هیچ برچسبی ساخته نمی‌شود و همان N/A خاکستری می‌ماند', () => {
+    renderRows([row({
+      gross_margin: null, margin_tier: null, i3_pass: null, i3_na: true,
+    })]);
+    expect(screen.queryByTestId('fts-margin-tier')).toBeNull();
+    expect(screen.getByTestId('fts-na-3_gross_margin').textContent).toContain('N/A');
+  });
+});
+
+describe('طبقهٔ نمایشیِ حاشیه — کارتِ شاخص ۳', () => {
+  const renderMarginCard = (ind3: Partial<NonNullable<FtsCardIndicators['3']>>) =>
+    render(
+      <FtsCard
+        score={3}
+        passes={{ '1_growth': true, '2_eps_trend': true, '3_gross_margin': true }}
+        physicalApplicable
+        indicators={cardIndicators({}, {}, ind3)}
+        thresholds={{}}
+      />,
+    );
+
+  it('۵۸٪: «خوب» کنارِ درصد و حکمِ ایده‌آل دست‌نخورده', () => {
+    renderMarginCard({
+      margin_pct: 58, margin_tier: 'good', pass: true, optimal: true,
+      band: 'ideal', threshold: 20, ideal_threshold: 30, na: false,
+    });
+    expect(screen.getByTestId('fts-card-margin-tier').textContent).toBe('خوب');
+    expect(screen.getByTestId('fts-result-3_gross_margin').textContent).toContain('۵۸');
+    expect(screen.getByTestId('fts-verdict-3_gross_margin').textContent).toBe('ایده‌آل');
+  });
+
+  it('۴۹٫۹٪: «استاندارد» — ۵۰٪ دروازه نیست و حکم هنوز قبول/ایده‌آل است', () => {
+    renderMarginCard({
+      margin_pct: 49.9, margin_tier: 'standard', pass: true, optimal: true,
+      band: 'ideal', threshold: 20, ideal_threshold: 30, na: false,
+    });
+    expect(screen.getByTestId('fts-card-margin-tier').textContent).toBe('استاندارد');
+    expect(screen.getByTestId('fts-verdict-3_gross_margin').textContent).not.toBe('رد');
+  });
+
+  it('N/A: بی‌برچسب و برچسبِ حکم «نظر نمی‌دهد»', () => {
+    renderMarginCard({ margin_pct: null, margin_tier: null, na: true, pass: false });
+    expect(screen.queryByTestId('fts-card-margin-tier')).toBeNull();
+    expect(screen.getByTestId('fts-cell-gap-3_gross_margin').textContent).toContain('N/A');
+  });
+});
+
+describe('طبقهٔ نمایشیِ حاشیه — دریل‌دانِ شاخص ۳', () => {
+  const renderPanel3 = (ind3: Partial<NonNullable<FtsCardIndicators['3']>>) =>
+    render(
+      <FtsDrillDown
+        card={{
+          status: 'success',
+          symbol: 'وبملت',
+          passes: { '3_gross_margin': true },
+          indicators: cardIndicators({}, {}, ind3),
+        } as never}
+        active="3"
+        quarters={[]}
+        physicalApplicable
+      />,
+    );
+
+  it('۵۸٪: «خوب» کنارِ بجِ درصد؛ برچسبِ باند «مطلوب» هم می‌ماند', () => {
+    renderPanel3({
+      margin_pct: 58, margin_tier: 'good', pass: true, optimal: true,
+      band: 'ideal', threshold: 20, ideal_threshold: 30, na: false,
+    });
+    expect(screen.getByTestId('drilldown-margin-tier').textContent).toContain('خوب');
+    expect(screen.getByTestId('drilldown-margin-tier').getAttribute('title'))
+      .toContain('۵۰٪ فقط برچسب');
+    expect(screen.getByTestId('drilldown-margin-band').textContent).toContain('مطلوب');
+  });
+
+  it('N/A: بی‌برچسب و بجِ همان N/A', () => {
+    renderPanel3({ margin_pct: null, margin_tier: null, na: true, pass: false });
+    expect(screen.queryByTestId('drilldown-margin-tier')).toBeNull();
+    expect(screen.getByText('N/A')).toBeTruthy();
   });
 });

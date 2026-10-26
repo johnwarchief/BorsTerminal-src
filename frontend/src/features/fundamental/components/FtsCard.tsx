@@ -5,7 +5,7 @@
 // «حکم نداریم» (بی‌داده / N/A) می‌ماند، چون هیچ‌جای دیگرِ کارت آن را نمی‌گوید.
 import type { ReactNode } from 'react';
 import { fmtInt, toFaDigits } from '@shared/lib/fmt';
-import { FTS_LABEL } from '@shared/lib/ftsLabels';
+import { FTS_LABEL, MARGIN_TIER_HINT, MARGIN_TIER_LABEL } from '@shared/lib/ftsLabels';
 import { ConfidenceDial } from '@shared/components/ConfidenceDial';
 import { gapLabel, growthBasisLabel, type GapAxis } from '../lib/gapReason';
 import { type AuditEvidence } from './AuditBadge';
@@ -689,8 +689,21 @@ export function FtsCard({
                   : null);
 
               resultNumberNode = (
-                <span className={QUALITY_TEXT[cardQuality]}>
-                  {marginPct != null ? `${toFaDigits(marginPct.toFixed(1))}٪` : '—'}
+                <span className="inline-flex items-baseline gap-1.5">
+                  <span className={QUALITY_TEXT[cardQuality]}>
+                    {marginPct != null ? `${toFaDigits(marginPct.toFixed(1))}٪` : '—'}
+                  </span>
+                  {/* طبقهٔ نمایشی (Task 6) کنارِ همان درصد؛ فقط وقتی حاشیه
+                      ساخته شده باشد. ۵۰٪ دروازه نیست، برچسب است. */}
+                  {marginPct != null && i3?.margin_tier ? (
+                    <span
+                      data-testid="fts-card-margin-tier"
+                      className="text-2xs font-bold text-text-muted"
+                      title={MARGIN_TIER_HINT}
+                    >
+                      {MARGIN_TIER_LABEL[i3.margin_tier] ?? i3.margin_tier}
+                    </span>
+                  ) : null}
                 </span>
               );
 

@@ -170,6 +170,9 @@ const Indicator3Schema = z
     band: z.string().nullish(),
     na: z.boolean().nullish(),
     reason: z.string().nullish(),
+    /** طبقهٔ نمایشیِ حاشیه (Task 6): below_floor | floor | standard | good؛
+     *  null یعنی حاشیه ساخته نشده (N/A). ۵۰٪ فقط برچسب است، نه دروازه. */
+    margin_tier: z.string().nullish(),
   })
   .nullish();
 

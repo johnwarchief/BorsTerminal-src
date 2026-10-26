@@ -9,7 +9,7 @@
 // اوراق و مشتقه‌ها به‌صورت پیش‌فرض حذف می‌شوند (فیلتر نوع نماد).
 import { memo, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { FTS_COLUMN_LABEL } from '@shared/lib/ftsLabels';
+import { FTS_COLUMN_LABEL, MARGIN_TIER_HINT, MARGIN_TIER_LABEL } from '@shared/lib/ftsLabels';
 import { jalaliOf, pickAssemblyBadge, pickCapitalBadge, type AssemblyBadgeInfo, type CalEvent, type CapitalIncreaseBadge } from '../lib/assemblyEvent';
 import { toFaDigits } from '@shared/lib/fmt';
 import { DownloadRowsButton } from '@shared/components/DownloadRowsButton';
@@ -85,7 +85,11 @@ export function screenRowCells(r: FtsScreenRow): ExportCell[] {
           r.i1b_applicable === false ? 'N/A' : mark(r.i1b_pass)})`,
     `${eps}${r.eps_last != null ? ` | ${toFaDigits(r.eps_last)}` : ''}${r.eps_data_gap ? ' | بی‌داده' : ''}${
       r.eps_evidence_label ? ` | ${r.eps_evidence_label}` : ''}`,
-    pct(r.gross_margin),
+    // برچسبِ طبقه (Task 6) کنارِ همان عدد؛ «۵۰٪ خوب» فقط نام است و ستونِ
+    // حکم را عوض نمی‌کند.
+    `${pct(r.gross_margin)}${
+      r.margin_tier ? ` | ${MARGIN_TIER_LABEL[r.margin_tier] ?? r.margin_tier}` : ''
+    }`,
     r.profit_potential_pct == null ? '—' : pct(r.profit_potential_pct),
     `${r.sector_name ?? '—'} (${
       r.pricing_mode === 'mandatory' ? 'دستوری'
@@ -618,6 +622,17 @@ const ScreenerRow = memo(function ScreenerRow({
                       >
                         {r.gross_margin == null ? '—' : fmtPctGrouped(r.gross_margin)}
                         {isAbsurdPct(r.gross_margin) ? ' ⚠' : ''}
+                        {/* طبقهٔ نمایشی (Task 6) کنارِ همان عدد؛ نبودش یعنی
+                            حاشیه ساخته نشده (N/A) — همان‌جا «—» می‌ماند. */}
+                        {r.margin_tier ? (
+                          <span
+                            data-testid="fts-margin-tier"
+                            className="ms-1 text-3xs font-medium text-text-muted"
+                            title={MARGIN_TIER_HINT}
+                          >
+                            {MARGIN_TIER_LABEL[r.margin_tier] ?? r.margin_tier}
+                          </span>
+                        ) : null}
                       </span>
                     </div>
                   </td>
