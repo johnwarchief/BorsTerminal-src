@@ -35,7 +35,8 @@ import fts_engine                                          # noqa: E402
 from api import fundamental as FD                          # noqa: E402
 from api.fundamental import axis1_state, axis1_pass, ind1b_volume_growth  # noqa: E402
 
-with contextlib.redirect_stdout(io.StringIO()):
+_u11_log = io.StringIO()
+with contextlib.redirect_stdout(_u11_log):
     # اسکیمای کاملِ DB موقت از گاردِ Task 1 می‌آید؛ آزمون‌های ماژولیِ آن
     # هنگامِ import اجرا می‌شوند و چاپشان این‌جا فقط نویز است، پس ساکت می‌شود.
     import test_fts_universe_v11 as U11                    # noqa: E402
@@ -50,6 +51,14 @@ def chk(cond, label, extra=""):
     else:
         FAIL += 1
         print("  FAIL  %s %s" % (label, extra))
+
+
+# آزمون‌هایِ ماژولیِ Task 1 هنگامِ import اجرا می‌شوند؛ ساکت‌کردنِ چاپشان
+# نباید شکستشان را هم پنهان کند. شمارندۀ واقعیِ آن ماژول `FAIL` است.
+if U11.FAIL:
+    print(_u11_log.getvalue())
+chk(U11.FAIL == 0, "imported Task 1 classifier (test_fts_universe_v11) is green",
+    "%d failing check(s)" % U11.FAIL)
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -291,6 +300,10 @@ def _temp_db_case():
             "gap 1b is applicable but unavailable",
             (b.get("i1b_applicable"), b.get("i1b_basis")))
         chk(bool(b.get("i1_reason")), "gap row carries a reason", b.get("i1_reason"))
+        chk(c["passes"]["1_growth"] is None,
+            "card gap axis 1 is None, not False", c["passes"]["1_growth"])
+        chk(c["indicators"]["1"]["pass"] is None,
+            "card gap indicator 1 is None", c["indicators"]["1"].get("pass"))
         chk(bool(c["passes"]["1_growth"]) is bool(b.get("i1_pass")),
             "card and bulk agree on the gap verdict",
             (c["passes"]["1_growth"], b.get("i1_pass")))
