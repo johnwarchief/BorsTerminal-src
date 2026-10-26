@@ -114,16 +114,13 @@ def main():
                     conn, key, r.get("mcap") or 0.0, total_mcap,
                     r.get("sector_name", ""), company_name=name_of.get(key, ""),
                     has_instrument=True, m141_map=m141m, liq_map=liqm)
-            except ZeroDivisionError:
-                # باگِ پیش‌ازاینِ ind1b_volume_growth (مالکِ آن Task 3 است)؛ نه
-                # این‌جا رفع می‌شود و نه پنهان: برای همین ردیف فقط بخشِ هویت
-                # (همان ورودیِ کارت) سنجیده می‌شود و نماد گزارش می‌گردد.
-                card_errors.append(r["symbol"])
-                ident = fts_engine.classify_identity(
-                    key, r.get("sector_name", ""), name_of.get(key, ""), True)
-                if bool(r.get("applicable", True)) != bool(ident["applicable"]):
-                    bad.append((r["symbol"], r.get("applicable"),
-                                ident["applicable"], "identity-only"))
+            except Exception as exc:
+                # هیچ استثنایی پنهان نمی‌شود: کارت باید هر ردیفِ جدول را داوری
+                # کند. پیش از Task 3 این‌جا یک استثنای ZeroDivision رویِ «لبن»
+                # با میان‌برِ identity-only پوشانده می‌شد؛ حالا خودِ ۱ب کمیتِ
+                # −۱۰۰٪ را تعریف‌شده (وتو با دلیل) می‌داند و این شاخه فقط
+                # نگهبانِ رگرسیون است، نه مجوزِ ردکردنِ داوری.
+                card_errors.append((r["symbol"], type(exc).__name__))
                 continue
             if (bool(r.get("applicable", True)) != bool(res.get("applicable"))
                     or res.get("verdict") == "FTS ندارد"):
@@ -131,9 +128,8 @@ def main():
                             res.get("applicable"), res.get("verdict")))
         chk(not bad, "bulk_scan ⇄ card agree on every symbol (applicable/verdict)",
             bad[:4])
-        chk(len(card_errors) <= 1,
-            "the card evaluates every bulk row except the known Task-3 division row",
-            card_errors[:4])
+        chk(not card_errors,
+            "the card evaluates every bulk row without a crash", card_errors[:4])
 
         # جهانِ مالک (Task 1، تصمیمِ مالک): صندوق‌ها از جدول *حذف* می‌شوند، نه
         # اینکه با «FTS ندارد» در آن بمانند. guard پیش از این حضورِ >۵۰ صندوق

@@ -183,6 +183,19 @@ def _real_growth(nominal_pct, price_pct) -> float:
     return round(((1.0 + nominal_pct / 100.0) / (1.0 + _f(price_pct) / 100.0) - 1.0) * 100.0, 1)
 
 
+def _implied_price_pct(nominal_pct, volume_pct) -> float:
+    """رشدِ قیمتِ ضمنی از رشد اسمی و رشد کمیت — با محافظِ تقسیم بر صفر.
+
+    کمیتِ −۱۰۰٪ یعنی «حجم به صفر رسیده»؛ مخرجِ فیشر صفر می‌شود و قیمتِ ضمنی
+    تعریف‌ناپذیر است (نه بی‌نهایت و نه استثنا). این حالت رویِ بانکِ واقعی رخ
+    می‌دهد: «لبن» با ۶۵٬۰۴۵ در برابر ۲۵۰٬۰۶۳٬۷۵۰ به −۱۰۰٫۰٪ گرد می‌شد و
+    `ind1b_volume_growth` را با ZeroDivisionError می‌شکست.
+    """
+    if nominal_pct is None or volume_pct is None or volume_pct <= -100.0:
+        return None
+    return round(((1.0 + nominal_pct / 100.0) / (1.0 + volume_pct / 100.0) - 1.0) * 100.0, 1)
+
+
 def _num_or_none(v):
     """عدد یا None — «داده نیست» هیچ‌وقت ۰.۰ نمی‌شود (برخلاف _f)."""
     try:
@@ -446,6 +459,62 @@ _VOL_PREV_KEYS = ("ytd_volume_prev", "ytd_quantity_prev", "ytd_tonnage_prev",
                   "ytd_qty_prev")
 
 
+def physical_volume_lookup(table, year, month, col_prev=None) -> tuple:
+    """(کمیت تجمیعی دوره, کمیت تجمیعی همان دورهٔ سال قبل) از نقشهٔ ازپیش‌خوانده.
+
+    همان قاعدهٔ `_physical_pair` — مخرج اولویتِ ردیفِ (سال−۱، همان ماه) را دارد
+    و تنها در نبودش ستونِ `*_prev` همان ردیف. `table` کلیدِ (سال، ماه) دارد و
+    مقدارش (کمیتِ جاری, کمیتِ ستونِ prev یا None) است.
+    """
+    try:
+        y, m = int(year), int(month)
+    except (TypeError, ValueError):
+        return None, None
+    hit = table.get((y, m))
+    prev = table.get((y - 1, m))
+    now = _f(hit[0]) if hit and hit[0] is not None else None
+    back = None
+    if prev and prev[0] is not None:
+        back = _f(prev[0])
+    elif hit and col_prev and len(hit) > 1 and hit[1] is not None:
+        back = _f(hit[1])
+    return now, back
+
+
+def physical_volume_map(conn) -> tuple:
+    """(نقشهٔ کمیت, نامِ ستونِ جاری, نامِ ستونِ prev) با یک کوئری برایِ کلِ بازار.
+
+    `bulk_scan` این را یک‌بار می‌سازد و در حلقه فقط `physical_volume_lookup`
+    می‌زند — همان قاعدهٔ `_physical_pair` بدونِ N+1. کلید = norm_fa(نماد).
+    """
+    try:
+        present = {r[1] for r in conn.execute("PRAGMA table_info(monthly_sales)")}
+    except Exception:
+        return {}, None, None
+    col_now = next((c for c in _VOL_NOW_KEYS if c in present), None)
+    if not col_now:
+        return {}, None, None
+    col_prev = next((c for c in _VOL_PREV_KEYS if c in present), None)
+    sel = "symbol, year, month, MAX(%s)" % col_now + (
+        ", MAX(%s)" % col_prev if col_prev else "")
+    table = {}
+    try:
+        rows = conn.execute("SELECT %s FROM monthly_sales "
+                            "GROUP BY symbol, year, month" % sel).fetchall()
+    except Exception:
+        return {}, col_now, col_prev
+    for r in rows:
+        key = fts_engine.norm_fa(r[0])
+        if not key:
+            continue
+        try:
+            table.setdefault(key, {})[(int(_f(r[1])), int(_f(r[2])))] = (
+                r[3], r[4] if len(r) > 4 else None)
+        except (TypeError, ValueError, IndexError):
+            continue
+    return table, col_now, col_prev
+
+
 def _physical_pair(conn, symbol: str, year: int, month: int) -> tuple:
     """(کمیت تجمیعی دوره, کمیت تجمیعی همان دورهٔ سال قبل, نام ستون).
 
@@ -476,13 +545,7 @@ def _physical_pair(conn, symbol: str, year: int, month: int) -> tuple:
             table[(int(_f(r[0])), int(_f(r[1])))] = (r[2], r[3] if len(r) > 3 else None)
         except (TypeError, ValueError, IndexError):
             continue
-    hit, prev = table.get((int(year), int(month))), table.get((int(year) - 1, int(month)))
-    now = _f(hit[0]) if hit and hit[0] is not None else None
-    back = None
-    if prev and prev[0] is not None:
-        back = _f(prev[0])
-    elif hit and col_prev and len(hit) > 1 and hit[1] is not None:
-        back = _f(hit[1])
+    now, back = physical_volume_lookup(table, year, month, col_prev)
     return now, back, col_now
 
 
@@ -594,26 +657,19 @@ def _is_consolidated_title(title) -> bool:
     return "تلفیقی" in t and "غیرتلفیقی" not in t
 
 
-def ind1b_volume_growth(conn, symbol, monetary=None, series=None, th=None,
-                        profile=None) -> dict:
-    """چک دومِ لایهٔ ۱: آیا «مقدار» واقعاً زیاد شده یا فقط «نرخ» بالا رفته؟
+def ind1b_from_parts(monetary, series=None, qty_now=None, qty_prev=None,
+                     quantity_column=None, th=None, profile=None) -> dict:
+    """حکمِ ۱ب رویِ قطعاتِ ازپیش‌خوانده — تک‌منبعِ کارت، `scan_symbol` و `bulk_scan`.
 
-    سه سطح، به ترتیب قدرتِ شواهد:
-      A) `reported_quantity` — ستون فیزیکیِ تناژ/تعداد در گزارش ماهانه موجود باشد
-         → رشد واقعیِ کمیت سنجیده میشود (قوی‌ترین حالت؛ ستون‌های `ytd_volume` و
-            `volume_unit` در DB هست و برای نمادهای پرشده همین سطح فعال است).
-      B) `price_effect_decomposition` — رشد اسمی با شاخص افزایش نرخ تعدیل میشود
-         تا «رشد واقعی» بیرون بیاید؛ به‌علاوه پهنای رشد (چند ماه از م ماه بهتر
-         بوده) که فروشِ یک‌بارهِ انبار/قراردادِ تکی را از رشدِ فراگیرِ حجم جدا
-         میکند.
-      C) `unavailable` — نه مخرج هست نه شاخص مرجع → چک «رد» محاسبه میشود، نه پاس.
-    برای شرکت‌های مالی/خدماتی «تن محصول» معنا ندارد و سطح B دقیقاً همان چیزی
-    است که جزوه می‌خواهد: درآمدِ واقعیِ پس از تورم.
+    همان سه سطحِ `ind1b_volume_growth` (A کمیت گزارش‌شده، B تعدیل تورمی،
+    C نبودِ داده) بدونِ هیچ کوئری؛ فراخوانندهٔ دسته‌ای (bulk) نقشهٔ کمیت را
+    یک‌بار می‌سازد و این‌جا فقط قطعات را می‌دهد — نه N+1.
+
+    `monetary` باید کلیدهای `year`/`months` را داشته باشد (خروجیِ ۱الف).
     """
     th = th or v10_thresholds()
     prof = profile or company_profile()
-    g = monetary if monetary is not None else ind1a_monetary_growth(
-        conn, symbol, series=series, th=th, profile=prof)
+    g = monetary or {}
     out = {"quantity_verified": False, "basis": "unavailable", "confidence": "none",
            "volume_pct": None, "real_pct": None, "implied_price_pct": None,
            "price_benchmark_pct": th["inflation_benchmark"], "breadth": None,
@@ -623,20 +679,22 @@ def ind1b_volume_growth(conn, symbol, monetary=None, series=None, th=None,
     if g.get("data_gap") or g.get("monetary_pct") is None:
         out["reason"] = "رشد ریالی محاسبه نشد؛ رشد تولیدی هم قابل بررسی نیست."
         return out
-    year, month, monetary_pct = g["year"], g["months"], g["monetary_pct"]
-    series = series if series is not None else monthly_series(conn, symbol)
+    year = int(_f(g.get("year")))
+    month = int(_f(g.get("months")))
+    monetary_pct = g["monetary_pct"]
 
     # ── سطح A: کمیت گزارش‌شده (تناژ/تعداد) ────────────────────────────────
-    qty_now, qty_prev, col = _physical_pair(conn, symbol, year, month)
-    if col and qty_now and qty_prev and qty_prev > 0:
+    if quantity_column and qty_now and qty_prev and qty_prev > 0:
         vol = _pct(qty_now, qty_prev)
-        implied = (round(((1.0 + monetary_pct / 100.0) / (1.0 + vol / 100.0) - 1.0) * 100.0, 1)
-                   if vol is not None else None)
+        # کمیتِ −۱۰۰٪ مخرجِ فیشر را صفر می‌کند؛ حکمِ ۱ب تعریف‌شده است (وتو)،
+        # ولی «قیمتِ ضمنی» تعریف‌ناپذیر ⇒ None. (رگرسیونِ «لبن».)
+        implied = _implied_price_pct(monetary_pct, vol)
         out.update({"basis": "reported_quantity", "quantity_verified": True,
                     "confidence": "high", "volume_pct": vol, "real_pct": vol,
                     "implied_price_pct": implied, "data_gap": False,
-                    "quantity_column": col,
-                    "source_detail": "ستون %s در گزارش فعالیت ماهانهٔ کدال" % col})
+                    "quantity_column": quantity_column,
+                    "source_detail": "ستون %s در گزارش فعالیت ماهانهٔ کدال"
+                                     % quantity_column})
         out["pass"] = vol is not None and vol >= th["volume_growth_min"]
         out["reason"] = ("" if out["pass"] else
                          "فروش تولیدی کم شده یا ثابت مانده؛ رشد ریالی فقط از افزایش نرخ آمده است.")
@@ -644,7 +702,7 @@ def ind1b_volume_growth(conn, symbol, monetary=None, series=None, th=None,
 
     # ── سطح B: تجزیهٔ اثر قیمت + پهنای رشد ────────────────────────────────
     real = _real_growth(monetary_pct, th["inflation_benchmark"])
-    improved, compared = _growth_breadth(series, year, month)
+    improved, compared = _growth_breadth(series or [], year, month)
     breadth = round(improved / compared, 3) if compared else None
     out.update({"basis": "price_effect_decomposition",
                 "confidence": "medium" if breadth is not None else "low",
@@ -674,24 +732,76 @@ def ind1b_volume_growth(conn, symbol, monetary=None, series=None, th=None,
     return out
 
 
+def ind1b_volume_growth(conn, symbol, monetary=None, series=None, th=None,
+                        profile=None) -> dict:
+    """چک دومِ لایهٔ ۱: آیا «مقدار» واقعاً زیاد شده یا فقط «نرخ» بالا رفته؟
+
+    سه سطح، به ترتیب قدرتِ شواهد:
+      A) `reported_quantity` — ستون فیزیکیِ تناژ/تعداد در گزارش ماهانه موجود باشد
+         → رشد واقعیِ کمیت سنجیده میشود (قوی‌ترین حالت؛ ستون‌های `ytd_volume` و
+            `volume_unit` در DB هست و برای نمادهای پرشده همین سطح فعال است).
+      B) `price_effect_decomposition` — رشد اسمی با شاخص افزایش نرخ تعدیل میشود
+         تا «رشد واقعی» بیرون بیاید؛ به‌علاوه پهنای رشد (چند ماه از م ماه بهتر
+         بوده) که فروشِ یک‌بارهِ انبار/قراردادِ تکی را از رشدِ فراگیرِ حجم جدا
+         میکند.
+      C) `unavailable` — نه مخرج هست نه شاخص مرجع → چک «رد» محاسبه میشود، نه پاس.
+    برای شرکت‌های مالی/خدماتی «تن محصول» معنا ندارد و سطح B دقیقاً همان چیزی
+    است که جزوه می‌خواهد: درآمدِ واقعیِ پس از تورم.
+
+    این تابع فقط خواندنِ DB را انجام می‌دهد و حکم را به `ind1b_from_parts`
+    می‌سپارد — همان تابعی که `bulk_scan` با نقشهٔ تک‌گذر و `scan_symbol` با
+    همین ورودی صدا می‌زنند، تا یکِ نماد یک حکم بگیرد.
+    """
+    th = th or v10_thresholds()
+    prof = profile or company_profile()
+    g = monetary if monetary is not None else ind1a_monetary_growth(
+        conn, symbol, series=series, th=th, profile=prof)
+    ser = series
+    qty_now = qty_prev = col = None
+    if not (g.get("data_gap") or g.get("monetary_pct") is None):
+        if ser is None:
+            ser = monthly_series(conn, symbol)
+        if g.get("year") and g.get("months"):
+            qty_now, qty_prev, col = _physical_pair(
+                conn, symbol, g["year"], g["months"])
+    return ind1b_from_parts(g, ser, qty_now, qty_prev, col, th=th, profile=prof)
+
+
 # ═══════════════════════════════════════════════════════════════════════════
 #  لایهٔ ۱ — رأیِ مجموعِ «الف» و «ب»
 # ═══════════════════════════════════════════════════════════════════════════
-def axis1_pass(monetary: dict, volume: dict) -> bool:
-    """رأیِ لایۀ ۱ = رشد ریالی، و «تأیید حجم» فقط آن‌جا که برایِ ماهیتِ شرکت
-    **قابل‌اعمال** است.
+def axis1_state(monetary: dict, volume: dict) -> tuple:
+    """رأیِ لایۀ ۱ به‌صورتِ سه‌حال + دلیل — تک‌مرجعِ کارت، `scan_symbol` و `bulk_scan`.
+
+    (True, "") پاس؛ (False, دلیل) رد؛ (None, دلیل) «قابل محاسبه نبود» (شکافِ داده).
 
     جزوه (ص ۳) «فروش و درآمد» را با درصدِ رشد نسبت به دورۀ مشابه سال قبل می‌سنجد؛
     محور «ب» (کمیت/تناژ) افزودۀ پیادۀسازی است و خودِ کشوی تنظیمات هم می‌گوید
     بانک، بیمه، خدمات و هلدینگ این محور را ندارند (N/A). `and`ِ پیشین همان N/A
-    را وتو می‌شمارد — یعنی «قابل اعمال نیست ⇒ مردود»، همان چیزی که در شاخص ۳ و ۴
+    را وتو می‌شمرد — یعنی «قابل اعمال نیست ⇒ مردود»، همان چیزی که در شاخص ۳ و ۴
     با رأیِ ۱۶ ممنوع شده است. (`card1Pass` در FtsCard.tsx از ابتدا همین را می‌گفت
     و با موتور نمی‌خواند.)
+
+    شکافِ داده در ۱الف بر همه‌چیز مقدم است: اگر رشد ریالی ساخته نشود، ۱ب هم
+    داوری نمی‌شود و رأی None است (نه False — «رد» و «نسنجیده» یکی نیستند).
     """
-    if not (monetary or {}).get("pass"):
-        return False
+    m = monetary or {}
+    if m.get("data_gap") or m.get("monetary_pct") is None:
+        return None, (m.get("reason") or "رشد ریالی قابل محاسبه نیست.")
+    if not m.get("pass"):
+        return False, "رشد ریالی زیر کف است."
     v = volume or {}
-    return True if v.get("applicable") is False else bool(v.get("pass"))
+    if v.get("applicable") is False:
+        return True, ""
+    if v.get("pass"):
+        return True, ""
+    return False, (v.get("reason") or "رشد تولیدی/تناژ تأیید نشد.")
+
+
+def axis1_pass(monetary: dict, volume: dict) -> bool:
+    """رأیِ دودوییِ لایۀ ۱ — پوششِ مصرف‌کننده‌هایِ قدیمی رویِ همان `axis1_state`."""
+    state, _ = axis1_state(monetary, volume)
+    return bool(state)
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -1228,7 +1338,7 @@ def evaluate_v10(conn, symbol, market_cap_rials=0.0, total_market_cap_rials=0.0,
         gm["rule_ref"] = "F-03"
     except Exception:
         pass
-    axis1 = axis1_pass(growth, volume)
+    axis1, axis1_reason = axis1_state(growth, volume)
     axis2 = bool(eps.get("pass"))
     axis3 = bool(gm.get("pass"))
     axis4 = bool(val.get("pass"))
@@ -1276,7 +1386,8 @@ def evaluate_v10(conn, symbol, market_cap_rials=0.0, total_market_cap_rials=0.0,
                             "annualization": "sales_ytd * (12 / elapsed_months)",
                             "thresholds": th},
             "profile": prof, "series_months": len(series), "ref": ref,
-            "indicators": {"1": {"monetary": growth, "volume": volume, "pass": axis1},
+            "indicators": {"1": {"monetary": growth, "volume": volume,
+                                 "pass": axis1, "reason": axis1_reason},
                            "2": eps, "3": gm,
                            "4": dict(val, annual=annual), "5": sec}}
 

@@ -931,7 +931,8 @@ def fs_growth_map(conn: sqlite3.Connection, th=None) -> dict:
 
 
 def revenue_growth_yoy(conn: sqlite3.Connection, symbol: str, min_growth: float = 40.0,
-                       growth_target: float = 60.0, sector: str = "") -> Optional[dict]:
+                       growth_target: float = 60.0, sector: str = "",
+                       series=None) -> Optional[dict]:
     """رشد فروش/درآمد تجمیعیِ «از ابتدای سال مالی تا ماه آخر» نسبت به همان دورهٔ سال قبل.
 
     قاعدهٔ جزوه (تأیید ممیزی): مخرج کسر **فروش تجمیعی دورهٔ متناظر سال قبل** است،
@@ -944,7 +945,7 @@ def revenue_growth_yoy(conn: sqlite3.Connection, symbol: str, min_growth: float 
     هر دو در `ytd_revenue` (تجمیعی) و `monthly_revenue` (تک‌ماهه) ذخیره میشوند؛
     این تابع **صرفاً ytd_revenue** را میخواند → مخرج هرگز ماه قبل نمیشود.
     """
-    series = monthly_series(conn, symbol)
+    series = series if series is not None else monthly_series(conn, symbol)
     d = ytd_denominator(series)
     if not d:
         return None
@@ -954,6 +955,7 @@ def revenue_growth_yoy(conn: sqlite3.Connection, symbol: str, min_growth: float 
         return {"growth_pct": None, "pass": False, "threshold": min_growth,
                 "ytd_now_bt": round(normalize_mrl_to_btom(ytd_now), 1),
                 "ytd_prev_bt": None, "period": f"{month:02d}/{year}",
+                "year": year, "months": month,
                 "denominator_basis": basis, "revenue_basis": _revenue_basis(sector),
                 "data_gap": True}
     growth = (ytd_now / ytd_prev - 1.0) * 100.0
@@ -962,6 +964,7 @@ def revenue_growth_yoy(conn: sqlite3.Connection, symbol: str, min_growth: float 
         "ytd_now_bt": round(normalize_mrl_to_btom(ytd_now), 1),
         "ytd_prev_bt": round(normalize_mrl_to_btom(ytd_prev), 1),
         "period": f"{month:02d}/{year}",
+        "year": year, "months": month,
         "denominator_basis": basis,
         "revenue_basis": _revenue_basis(sector),
         "pass": growth >= min_growth,
@@ -1963,9 +1966,41 @@ def scan_symbol(conn: sqlite3.Connection, symbol: str, market_cap_rials: float =
     _exempt = ind4_exempt(conn, symbol, sector, holdings_na=_hold_na,
                           _precomputed=_no_sales)
 
+    # قاعدهٔ ۱الف/۱ب مشترک با کارت (Task 2/3) — import محلی تا چرخهٔ
+    # api.fundamental → fts_engine هنگامِ بارگذاری نشکند.
+    from api.fundamental import (axis1_state, ind1a_fs_growth,
+                                 ind1b_volume_growth, v10_thresholds)
+    th1b = v10_thresholds(cfg)
+    series = monthly_series(conn, symbol)
     g = revenue_growth_yoy(conn, symbol, min_growth=_th(cfg, "growth_min"),
                            growth_target=_th(cfg, "v10_monetary_growth_min"),
-                           sector=sector)
+                           sector=sector, series=series)
+    monetary = {"pass": bool(g and g.get("pass")),
+                "monetary_pct": (g or {}).get("growth_pct"),
+                "data_gap": bool(g is None or g.get("data_gap")),
+                "reason": "", "year": (g or {}).get("year"),
+                "months": (g or {}).get("months") or 0}
+    if prof["kind"] in FS_GROWTH_KINDS and not series:
+        # خدماتی/مالی/هلدینگِ بی‌گزارشِ ماهانه: رشد از صورتِ مالی — همان
+        # قاعده‌ای که کارت و `bulk_scan` دارند (Task 2). بی‌این، /api/fts/{symbol}
+        # برایِ ۳۴ نمادِ بی‌گزارشِ ماهانه حکمِ دیگری از اسکرینر می‌داد.
+        fg = ind1a_fs_growth(conn, symbol, prof, th=th1b)
+        monetary = {"pass": bool(fg.get("pass")),
+                    "monetary_pct": fg.get("monetary_pct"),
+                    "data_gap": bool(fg.get("data_gap"))
+                    or fg.get("monetary_pct") is None,
+                    "reason": fg.get("reason") or "",
+                    "year": fg.get("year"), "months": fg.get("months") or 0}
+        g = {"growth_pct": (None if fg.get("monetary_pct") is None
+                            else round(fg["monetary_pct"], 1)),
+             "pass": bool(fg.get("pass")),
+             "threshold": _th(cfg, "growth_min"),
+             "data_gap": bool(fg.get("data_gap")),
+             "denominator_basis": fg.get("basis") or "",
+             "revenue_basis": (prof or {}).get("revenue_basis", "")}
+    volume = ind1b_volume_growth(conn, symbol, monetary=monetary, series=series,
+                                 th=th1b, profile=prof)
+    axis1, axis1_reason = axis1_state(monetary, volume)
     e = eps_trend_3y(conn, symbol, years=int(cfg.get("eps_years", 3) or 3), sector=sector)
     gm = gross_margin(conn, symbol, min_margin=_f(cfg.get("margin_min", 20.0)) or 20.0,
                       optimal=_f(cfg.get("margin_optimal", 30.0)) or 30.0, ref=ref)
@@ -1997,7 +2032,7 @@ def scan_symbol(conn: sqlite3.Connection, symbol: str, market_cap_rials: float =
     else:
         passes_s2m = bool((s2m and s2m.get("pass")) or (pot and pot.get("pass")))
 
-    passes = {"1_growth": bool(g and g["pass"]),
+    passes = {"1_growth": axis1,
               "2_eps_trend": bool(e and e["pass"]),
               # رأی ۱۶ برایِ شاخص ۳ هم: حاشیه‌ای که هرگز ساخته نشد «سنجیده نشده»
               # است نه «رد». شاخص ۴ درِ همین دیکشنری از قبل سه‌حالۀ None داشت؛
@@ -2049,6 +2084,7 @@ def scan_symbol(conn: sqlite3.Connection, symbol: str, market_cap_rials: float =
         # «مردود» داوری می‌کردند در حالی که bulk_scan همان نماد را applicable=False
         # می‌داد — دو جواب برایِ یک نماد، درست همان چیزی که رأی ممنوعش کرد.
         "applicable": not fund_class_match(sector, cname),
+        "i1_reason": axis1_reason,
         "m141": bool(m141_hit),
         "avg_trade_val_hmt": None if avg_trade_val is None else round(avg_trade_val, 3),
         "detail": {"growth": g, "eps_trend": e, "gross_margin": gm,
@@ -2213,6 +2249,15 @@ def bulk_scan(conn: sqlite3.Connection, cfg: dict = None) -> list[dict]:
     جدول بنیادی کدال است: پنج محور + score (۰..۵) + excluded.
     """
     cfg = cfg or {}
+    # قاعدهٔ ۱الف/۱ب مشترک با کارت در `api.fundamental` است (axis1_state و
+    # ind1b_from_parts). import محلی است تا جهتِ وابستگی (api → engine) هنگامِ
+    # بارگذاریِ ماژول نشکند؛ engine فقط در زمانِ فراخوانی از کارت می‌خواند.
+    from api.fundamental import (axis1_state, ind1b_from_parts,
+                                 physical_volume_lookup, physical_volume_map,
+                                 v10_thresholds)
+    th1b = v10_thresholds(cfg)
+    # کمیتِ فیزیکی یک‌بار برایِ کلِ بازار — در حلقه فقط lookup، نه کوئریِ N+1.
+    phys_vol, vol_col, vol_col_prev = physical_volume_map(conn)
     g_min = _th(cfg, "growth_min")
     g_target = _th(cfg, "v10_monetary_growth_min")
     eps_years = max(1, int(_th(cfg, "eps_years")))
@@ -2347,16 +2392,37 @@ def bulk_scan(conn: sqlite3.Connection, cfg: dict = None) -> list[dict]:
         recs = ms.get(key) or []
         i1_basis = None
         growth = None
+        monetary = {"pass": False, "monetary_pct": None, "data_gap": True,
+                    "reason": "", "year": None, "months": 0}
         if prof["kind"] in FS_GROWTH_KINDS and not recs:
             # خدماتی/مالی/هلدینگِ بی‌گزارشِ ماهانه: رشد از نقشهٔ صورتِ مالی.
             fg = fs_growth.get(key) or {}
             growth = fg.get("monetary_pct")
             i1_basis = fg.get("basis")
+            monetary = {"pass": bool(fg.get("pass")), "monetary_pct": growth,
+                        "data_gap": bool(fg.get("data_gap")) or growth is None,
+                        "reason": fg.get("reason") or "",
+                        "year": fg.get("year"), "months": fg.get("months") or 0}
         else:
             d = ytd_denominator(recs)
             if d and d["ytd_prev"]:
                 growth = (d["ytd_now"] / d["ytd_prev"] - 1.0) * 100.0
-        i1 = growth is not None and growth >= g_min
+                monetary = {"pass": growth >= g_min, "monetary_pct": growth,
+                            "data_gap": False, "reason": "",
+                            "year": d["year"], "months": d["month"]}
+        # ۱ب: حکمِ کمیت/تناژ فقط برایِ تولیدی‌ها (همان `company_profile` که کارت
+        # می‌خواند). مالی/خدماتی/هلدینگ N/A است، نه False — `axis1_state` همین
+        # را می‌فهمد. شکافِ داده در ۱الف هم به None می‌رسد، نه «رد».
+        if prof["volume_applicable"]:
+            qty_now, qty_prev = physical_volume_lookup(
+                phys_vol.get(key) or {}, monetary.get("year"),
+                monetary.get("months") or 0, vol_col_prev)
+            volume = ind1b_from_parts(monetary, recs, qty_now, qty_prev, vol_col,
+                                      th=th1b, profile=prof)
+        else:
+            volume = {"applicable": False, "pass": False,
+                      "basis": "not_applicable", "reason": ""}
+        i1, i1_reason = axis1_state(monetary, volume)
 
         # ۲) روند EPS — همان نردبانی که کارت می‌خواند: `eps_assessment`.
         # پیش از این bulk سلسلۀ‌مراتبِ دومِ خودش را داشت («۲ ردیفِ همگن یا بیشتر»
@@ -2482,6 +2548,14 @@ def bulk_scan(conn: sqlite3.Connection, cfg: dict = None) -> list[dict]:
             # همان قاعدهٔ ص ۶ جزوه در مسیرِ bulk (پاریتیِ scan_symbol ⇄ bulk_scan)
             "primary_score": int(sum(1 for _p in (i1, i2, i3) if _p)),
             "i1_pass": i1, "i2_pass": i2, "i3_pass": i3, "i4_pass": i4, "i5_pass": i5,
+            # تفکیکِ ۱الف/۱ب و دلیلِ حکم — همان چیزی که کارت در
+            # `indicators["1"]` می‌دهد؛ بی‌این، جدول مجبور بود «ب» را از
+            # نام/صنعت حدس بزند و دلیلِ وتو را نداشت.
+            "i1a_pass": bool(monetary.get("pass")),
+            "i1b_pass": bool(volume.get("pass")),
+            "i1b_applicable": bool(volume.get("applicable")),
+            "i1b_basis": volume.get("basis"),
+            "i1_reason": i1_reason,
             "excluded": bool(reasons), "exclusion_reasons": " · ".join(reasons),
             "identity_kind": identity["kind"],
             "identity_reason": identity["reason"],
