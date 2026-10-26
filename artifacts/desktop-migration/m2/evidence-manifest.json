@@ -1,10 +1,10 @@
 {
- "generated_at": "2026-10-26T15:08:55Z",
+ "generated_at": "2026-10-26T15:11:10Z",
  "files": [
   {
    "path": "acceptance-results.json",
-   "bytes": 7907,
-   "sha256": "2e26331b219b4d6583b2e55ccf908804a0b3f452681aacdbab7cdc7bc0b66574"
+   "bytes": 7944,
+   "sha256": "d45d2cf2a2b0445e70fb40881feeb08666d718d33ac18d5493ce5a683183aa84"
   },
   {
    "path": "backend-death/run-1-error.png",

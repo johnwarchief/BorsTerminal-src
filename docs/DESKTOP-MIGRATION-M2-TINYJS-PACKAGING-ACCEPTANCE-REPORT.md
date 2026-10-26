@@ -4,7 +4,7 @@
 - **Branch:** `mission/tinyjs-m2-packaging-acceptance-2026-10-25` (published on `origin`; no PR or merge)
 - **M2.1 fixes branch:** `mission/tinyjs-m2-packaging-fixes-2026-10-25`, based on M2 HEAD `c64a0e0`; fixes commit `f42c263`, evidence commit `7a8767c`; root causes, fixes, targeted test outputs and the M2.1 evidence index are in §12A and `artifacts/desktop-migration/m2.1/`
 - **Base:** `7caae40` (verified M1.5 report commit)
-- **Commits:** `d48dad3` (packaging + harness), `2f168bf` (DB audit), `e0e60c6` (updater harness fix), `810c001` (acceptance evidence), `265a041` (report), `487630e` (test-scope note + evidence hashes), `b3a90e0` (changed-file index); M2.1 on the fixes branch: `f42c263` (fixes), `7a8767c` (evidence); this report/acceptance update is the branch HEAD
+- **Commits:** `d48dad3` (packaging + harness), `2f168bf` (DB audit), `e0e60c6` (updater harness fix), `810c001` (acceptance evidence), `265a041` (report), `487630e` (test-scope note + evidence hashes), `b3a90e0` (changed-file index); M2.1 on the fixes branch: `f42c263` (fixes), `7a8767c` (evidence), `48e3f91` (report/acceptance); a final docs addendum records the external `main` movement and is the branch HEAD
 - **Verdict:** **`PARTIAL — EXPLICIT BLOCKERS`**
 - **`M2_ACCEPTANCE_PASS` is not declared.** No real Windows installer was built, no binary is signed, WebView2 bootstrap/missing-runtime remains blocked, and the in-app update was fixed only against an unsigned loopback feed. Portable-package acceptance is strong; install/sign/update-production acceptance is not complete.
 
@@ -53,7 +53,9 @@ The remote/base state was audited read-only before any M2 build or code change:
 | Local `main` | `d580306` (pre-existing clone, behind origin/main; untouched) |
 | M2 branch base | `7caae40` |
 
-The M2 branch was created from the verified M1.5 report, not from the five newer `origin/main` commits. No rebase, merge, force-push or branch rewrite was performed. The mission branch and its commits were published on `origin`; `origin/main` remains `036cdfa` and no push destination beyond `origin` is assumed.
+The M2 branch was created from the verified M1.5 report, not from the five newer `origin/main` commits. No rebase, merge, force-push or branch rewrite was performed. The mission branch and its commits were published on `origin`; `origin/main` was `036cdfa` throughout M2 and no push destination beyond `origin` is assumed.
+
+**External remote movement during M2.1 (2026-10-26):** `origin/main` was advanced externally from `036cdfa` to `fef898a7af2180c7c6a3a4db45b2743d7c7efe76` by a `BorsTerminal Release Bot` merge dated 2026-10-26 18:01 +0330 (it merges the RA365 work branch plus the four earlier docs commits). This mission did not push, merge, rebase or otherwise change `main`; the M2.1 branch is still based on `c64a0e0` → `7caae40` and was not rebased onto the new main. The new main contains RA365 technical/adjustment work that this mission did not touch or validate.
 
 **Source/evidence files changed in M2** (`git diff --name-only 7caae40..HEAD`; working tree clean):
 
@@ -231,7 +233,7 @@ Cold = fresh work dir/profile per run and first-run DB extraction. Warm = one sh
 
 ## 12A. M2.1 acceptance record (2026-10-26)
 
-**Branch/base:** `mission/tinyjs-m2-packaging-fixes-2026-10-25`, created from M2 HEAD `c64a0e0a838986a60f73136425364e248d7f4503`; the five newer `origin/main` commits were not imported. No rebase, force-push, reset, merge or main change. `main` remains `036cdfa…`; the M2 branch and evidence are preserved. Other checkouts, the operational DB/WAL/user file and unrelated scratch data were not modified.
+**Branch/base:** `mission/tinyjs-m2-packaging-fixes-2026-10-25`, created from M2 HEAD `c64a0e0a838986a60f73136425364e248d7f4503`; the five newer `origin/main` commits were not imported. No rebase, force-push, reset, merge or main change. `origin/main` was `036cdfa…` at branch cut and was advanced externally to `fef898a…` on 2026-10-26 (see §3); this branch was not rebased or merged. The M2 branch and evidence are preserved. Other checkouts, the operational DB/WAL/user file and unrelated scratch data were not modified.
 
 **Scope:** fix the M2 defects and re-run only affected paths. No installer/signing/WebView2 work and no production migration.
 
@@ -312,7 +314,7 @@ The M1.5 report understated the operational DB differences. A read-only audit on
 2. **Code signing:** provide an authorized code-signing certificate/tool, or accept an internal unsigned build. No signature means no authenticity claim.
 3. **WebView2 distribution:** choose evergreen prerequisite (current), ship a bootstrapper, or fix a runtime. Missing-runtime behavior remains unmeasured.
 4. **Update feed:** host a signed HTTPS manifest (Ed25519 publicKey) or define the internal distribution trust model. M2.1 proved the local update mechanics only against an unsigned loopback feed.
-5. **Base decision:** the M2 branch is based on `7caae40`, while `origin/main` is `036cdfa` (5 docs/tooling commits ahead). Rebase/merge policy belongs to the owner; no rebase was done.
+5. **Base decision:** the M2/M2.1 branch is based on `7caae40`; `origin/main` was `036cdfa` at branch cut and is now `fef898a` (external release-bot merge on 2026-10-26, 38 commits ahead of `036cdfa` with RA365 technical/adjustment work). Rebase/merge policy belongs to the owner; no rebase was done, and this mission did not validate the new main.
 
 M2.1 resolved the update architecture (sidecar stop/restart + bounded relaunch wait) and the `.part`/lazy-chunk defects; those are no longer open blockers. The full 65-case security matrix, the full frontend/back-end suite and the complete M2 lifecycle matrix were not rerun in M2.1 and remain outstanding if the owner requires a fresh full-matrix run.
 
