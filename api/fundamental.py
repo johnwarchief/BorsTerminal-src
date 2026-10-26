@@ -564,6 +564,25 @@ def ind1a_monetary_growth(conn, symbol, series=None, th=None, profile=None) -> d
             "data_gap": False, "reason": ""}
 
 
+def ind1a_fs_growth(conn, symbol, profile, th=None) -> dict:
+    """رشد درآمد از صورتِ مالی برایِ خدماتی/مالی/هلدینگ (نبودِ گزارشِ ماهانه).
+
+    همان قاعدهٔ شاخص ۱: صورتِ مالی غیرتلفیقیِ میاندوره ÷ همان دورهٔ سالِ قبل؛
+    اگر جفتِ میاندوره نبود، سالانه ÷ سالانه. منطق رویِ ردیف‌ها در
+    `fts_engine.fs_growth_from_rows` است تا `bulk_scan` هم با نقشهٔ تک‌گذر
+    دقیقاً همان حکم را بدهد (بدونِ N+1).
+    """
+    prof = profile or company_profile()
+    pred, params = fts_engine.sym_in("symbol", symbol)
+    rows = conn.execute(
+        "SELECT period_end, period_months, revenue, title FROM financial_statements "
+        "WHERE " + pred + " AND revenue>0 AND period_months>0 AND is_consolidated=0 "
+        "ORDER BY period_end DESC", params).fetchall()
+    return fts_engine.fs_growth_from_rows(
+        [tuple(r) for r in rows], th=th,
+        revenue_basis=(prof or {}).get("revenue_basis", ""))
+
+
 # ═══════════════════════════════════════════════════════════════════════════
 #  لایهٔ ۱ب — رشد تولیدی/تناژ (ردِ سودِ صرفاً تورمی)
 # ═══════════════════════════════════════════════════════════════════════════
@@ -1158,7 +1177,13 @@ def evaluate_v10(conn, symbol, market_cap_rials=0.0, total_market_cap_rials=0.0,
     series = monthly_series(conn, symbol)
     ref = fts_engine.reference_annual(conn, symbol)
 
-    growth = ind1a_monetary_growth(conn, symbol, series=series, th=th, profile=prof)
+    # شاخص ۱ برایِ خدماتی/مالی/هلدینگ که سریِ ماهانه ندارند از صورتِ مالی
+    # می‌آید (میاندوره ÷ همان دورهٔ سالِ قبل). تولیدی و هر نمادی که گزارشِ
+    # ماهانه دارد همان مسیرِ YTD را می‌رود.
+    if prof["kind"] in fts_engine.FS_GROWTH_KINDS and not series:
+        growth = ind1a_fs_growth(conn, symbol, prof, th=th)
+    else:
+        growth = ind1a_monetary_growth(conn, symbol, series=series, th=th, profile=prof)
     volume = ind1b_volume_growth(conn, symbol, monetary=growth, series=series,
                                  th=th, profile=prof)
     eps = ind2_eps_track(conn, symbol, th=th, sector=sector)

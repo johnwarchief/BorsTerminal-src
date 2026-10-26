@@ -831,6 +831,94 @@ def ytd_denominator(rows):
                                  % (month, year - 1)}
 
 
+# ═══════════════════════════════════════════════════════════════════════════
+#  شاخص ۱ برای مالی/خدماتی/هلدینگ — رشد درآمد از صورتِ مالی غیرتلفیقی
+# ═══════════════════════════════════════════════════════════════════════════
+# این طبقه‌ها «فروش کالا» ندارند و گزارشِ ماهانه‌شان یا نیست یا مبنای درآمد
+# را پوشش نمی‌دهد. پس رشد از خودِ صورتِ مالی سنجیده می‌شود: میاندوره ÷ همان
+# دورهٔ سالِ قبل، و در نبودِ آن سالانه ÷ سالانه. مخرج هرگز «دورهٔ قبل» نیست.
+FS_GROWTH_KINDS = ("service", "financial", "holding")
+FS_GROWTH_NO_ROWS = "هیچ صورت مالی غیرتلفیقی با درآمد ثبت نشده است."
+FS_GROWTH_NO_PRIOR = "دورهٔ مشابهٔ سال قبل برای صورت مالی موجود نیست."
+
+
+def _fs_growth_gap(reason: str, revenue_basis: str = "",
+                   threshold: float = None) -> dict:
+    """نتیجهٔ «قابل محاسبه نبود» — عدد ساخته نمی‌شود، دلیل می‌آید."""
+    return {"monetary_pct": None, "basis": None, "period": "", "months": 0,
+            "year": None, "pass": False, "data_gap": True, "reason": reason,
+            "revenue_basis": revenue_basis, "threshold": threshold}
+
+
+def _fs_growth_floor(th) -> float:
+    """کفِ قبولیِ شاخص ۱ — از dict کارت (`monetary_growth_min`) یا cfg موتور
+    (`growth_min`). نبودِ هر دو = پیش‌فرضِ همان کف."""
+    if isinstance(th, dict) and th.get("monetary_growth_min") is not None:
+        try:
+            return float(th["monetary_growth_min"])
+        except (TypeError, ValueError):
+            pass
+    return _th(th, "growth_min")
+
+
+def fs_growth_from_rows(rows, th=None, revenue_basis: str = "") -> dict:
+    """رشد درآمد از ردیف‌هایِ ازپیش‌خوانده‌شدهٔ صورتِ مالی (بدونِ کوئری).
+
+    rows: (period_end, period_months, revenue, title) — تازه‌ترین اول.
+    برایِ هر (دورهٔ canonical, ماه) یک مقدار نگه داشته می‌شود (اولی = تازه‌ترین).
+    میاندورهٔ بلندتر مقدم است؛ در نبودِ جفتِ سالانه، سالانهٔ با جفتِ سال قبل.
+    """
+    floor = _fs_growth_floor(th)
+    by_key = {}
+    for pe, months, rev, title in rows:
+        if _is_consolidated(title or ""):
+            continue
+        pe_c = CP.canonicalize(pe) or ""
+        try:
+            m = int(months or 0)
+        except (TypeError, ValueError):
+            m = 0
+        if not pe_c or m <= 0 or _f(rev) <= 0:
+            continue
+        by_key.setdefault((pe_c, m), _f(rev))
+    if not by_key:
+        return _fs_growth_gap(FS_GROWTH_NO_ROWS, revenue_basis, floor)
+    interims = sorted([(k, v) for k, v in by_key.items() if 0 < k[1] < 12],
+                      key=lambda kv: kv[0][0], reverse=True)
+    annuals = sorted([(k, v) for k, v in by_key.items() if k[1] >= 12],
+                     key=lambda kv: kv[0][0], reverse=True)
+    for basis, candidates in (("fs_interim", interims), ("fs_annual", annuals)):
+        for (pe, months), now in candidates:
+            y, m, d = pe.split("/")[:3]
+            prev = "%d/%s/%s" % (int(y) - 1, m, d)
+            prev_val = by_key.get((prev, months))
+            if not prev_val:
+                continue
+            growth = (now / prev_val - 1.0) * 100.0
+            return {"monetary_pct": growth, "basis": basis, "period": pe,
+                    "months": months, "year": int(y),
+                    "pass": growth >= floor, "data_gap": False, "reason": "",
+                    "revenue_basis": revenue_basis, "threshold": floor}
+    return _fs_growth_gap(FS_GROWTH_NO_PRIOR, revenue_basis, floor)
+
+
+def fs_growth_map(conn: sqlite3.Connection, th=None) -> dict:
+    """نقشهٔ تک‌گذرِ رشدِ صورتِ مالی برایِ کلِ بازار (کلید = norm_fa).
+
+    `bulk_scan` این را یک بار می‌سازد و در حلقه فقط می‌خواند — نه N+1.
+    """
+    rows_by = {}
+    for sym, pe, months, rev, title in conn.execute(
+            "SELECT symbol, period_end, period_months, revenue, title "
+            "FROM financial_statements "
+            "WHERE revenue>0 AND period_months>0 AND is_consolidated=0 "
+            "ORDER BY symbol, period_end DESC"):
+        key = norm_fa(sym)
+        if key:
+            rows_by.setdefault(key, []).append((pe, months, rev, title))
+    return {k: fs_growth_from_rows(v, th=th) for k, v in rows_by.items()}
+
+
 def revenue_growth_yoy(conn: sqlite3.Connection, symbol: str, min_growth: float = 40.0,
                        growth_target: float = 60.0, sector: str = "") -> Optional[dict]:
     """رشد فروش/درآمد تجمیعیِ «از ابتدای سال مالی تا ماه آخر» نسبت به همان دورهٔ سال قبل.
@@ -2219,6 +2307,9 @@ def bulk_scan(conn: sqlite3.Connection, cfg: dict = None) -> list[dict]:
     do_m141 = bool(cfg.get("filter_m141"))
     min_liq = _f(cfg.get("min_trade_val", 0.0)) or 0.0
     _hold_na = bool(cfg.get("holdings_sales_na", True))
+    # نقشهٔ تک‌گذرِ رشدِ صورتِ مالی (Task 2). یک کوئری برایِ کلِ بازار؛ در حلقه
+    # فقط خوانده می‌شود — هیچ فراخوانیِ per-symbol این‌جا نیست.
+    fs_growth = fs_growth_map(conn, th={"monetary_growth_min": g_min})
 
     out = []
     for key in sorted(annual.keys()):
@@ -2233,6 +2324,7 @@ def bulk_scan(conn: sqlite3.Connection, cfg: dict = None) -> list[dict]:
         # می‌شود. بیمه شرکت است و می‌ماند (وتوی‌اش در risk_gates).
         if identity["kind"] in ("non_company", "fund"):
             continue
+        prof = company_profile(sector, cname)
         mcap = mcap_of.get(key, 0.0)
         ref = _ref(key)
 
@@ -2242,10 +2334,17 @@ def bulk_scan(conn: sqlite3.Connection, cfg: dict = None) -> list[dict]:
         # `next(...)` دستی؛ نتیجه: نمادی که مخرجش در ردیفِ ماهانۀ سالِ قبل بود،
         # در اسکرین data_gap و در کارت «رشد» می‌گرفت.
         recs = ms.get(key) or []
-        d = ytd_denominator(recs)
+        i1_basis = None
         growth = None
-        if d and d["ytd_prev"]:
-            growth = (d["ytd_now"] / d["ytd_prev"] - 1.0) * 100.0
+        if prof["kind"] in FS_GROWTH_KINDS and not recs:
+            # خدماتی/مالی/هلدینگِ بی‌گزارشِ ماهانه: رشد از نقشهٔ صورتِ مالی.
+            fg = fs_growth.get(key) or {}
+            growth = fg.get("monetary_pct")
+            i1_basis = fg.get("basis")
+        else:
+            d = ytd_denominator(recs)
+            if d and d["ytd_prev"]:
+                growth = (d["ytd_now"] / d["ytd_prev"] - 1.0) * 100.0
         i1 = growth is not None and growth >= g_min
 
         # ۲) روند EPS — همان نردبانی که کارت می‌خواند: `eps_assessment`.
@@ -2283,7 +2382,6 @@ def bulk_scan(conn: sqlite3.Connection, cfg: dict = None) -> list[dict]:
         # «درآمد صورت مالی سالانه» می‌گرفت و در اسکرینر «YTD×۱۲÷م» — ۵۰ نماد
         # واگرا در سنجشِ این دور (docs/fts-notes/FUND_LIVE_AUDIT.md).
         fs_rev = _f(ref["revenue"]) if ref else 0.0
-        prof = company_profile(sector, cname)
         core = annualize_rows(recs or [], fs_rev,
                               op_basis=(prof.get("kind") in _OP_BASIS_KINDS)
                               and fs_rev > 0)
@@ -2351,6 +2449,8 @@ def bulk_scan(conn: sqlite3.Connection, cfg: dict = None) -> list[dict]:
             "symbol": sym_out, "symbol_norm": key, "sector_name": sector,
             "pricing_mode": sec["verdict"],
             "rev_growth": None if growth is None else round(growth, 1),
+            # مبنایِ شاخص ۱: None = YTD ماهانه؛ "fs_interim"/"fs_annual" = صورتِ مالی.
+            "i1_basis": i1_basis,
             "eps_series": eps_series,
             "eps_last": (eps_series[-1] if eps_series else None),
             "eps_data_gap": bool(data_gap2),

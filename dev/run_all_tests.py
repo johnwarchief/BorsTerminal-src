@@ -123,6 +123,10 @@ SUITES = [
     # شرکت می‌ماند، و شرکتِ واقعیِ بی‌صنعت (۲۶ نماد) در جدول و کارت یکسان
     # «شرکت» است. رویِ DB موقت با اسکیمای کامل؛ market.db فقط خواندنی.
     ('dev/test_fts_universe_v11.py',  'FTS universe: classifier + bulk_scan/card agree on a temp DB'),
+    # Task 2 (Phase 1): شاخص ۱ برای خدماتی/مالی/هلدینگ از صورتِ مالی (میاندوره
+    # ÷ همان دورهٔ سالِ قبل، fallback سالانه، N/A با دلیل). نقشهٔ تک‌گذرِ bulk و
+    # `i1_basis` باید با `indicators["1"]["monetary"]["basis"]` کارت یکی باشد.
+    ('dev/test_ind1_fs_path_v11.py',  'FTS indicator 1 FS path: helper + bulk_scan/card basis parity on a temp DB'),
     ('dev/test_fts_technical_tristate.py',
      'technical setups stay three-state (null != false) and each rule matches the notebook'),
     ('dev/test_fts_roundj.py',
