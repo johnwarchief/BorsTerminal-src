@@ -119,6 +119,10 @@ SUITES = [
     ('dev/fts_chart_engine_v1037.py', 'chart fib belts and setup markers come from the one server engine, over the current wave'),
     ('dev/repo_hygiene_v97.py',       'repo hygiene / dead-code stays gone'),
     ('dev/test_fts_v10_ladder.py',    'FTS v10 EPS evidence ladder + partial table row'),
+    # Task 1 (Phase 1): دروازهٔ جهانِ FTS — صندوق/غیرشرکت از جدول بیرون، بیمه
+    # شرکت می‌ماند، و شرکتِ واقعیِ بی‌صنعت (۲۶ نماد) در جدول و کارت یکسان
+    # «شرکت» است. رویِ DB موقت با اسکیمای کامل؛ market.db فقط خواندنی.
+    ('dev/test_fts_universe_v11.py',  'FTS universe: classifier + bulk_scan/card agree on a temp DB'),
     ('dev/test_fts_technical_tristate.py',
      'technical setups stay three-state (null != false) and each rule matches the notebook'),
     ('dev/test_fts_roundj.py',

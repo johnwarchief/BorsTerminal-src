@@ -99,13 +99,41 @@ def main():
             if k and k not in sector_of:
                 sector_of[k] = sec or ""
         bad = []
+        # مقایسه با خودِ کارت (`evaluate_v10`)، نه با predicateِ پیش از Task 1:
+        # باگی که ۲۶ شرکتِ بی‌صنعت را در جدول «شرکت» و در کارت «FTS ندارد»
+        # می‌دید فقط از همین مسیر دیده می‌شود. نقشه‌های کل‌بازاری یک‌بار ساخته
+        # می‌شوند تا این حلقه به ازای هر ردیف کوئریِ تازه نزند.
+        m141m = fts_engine.m141_map(conn)
+        liqm = fts_engine.avg_trade_value_hmt(conn)
+        total_mcap = fts_engine.mstat_engine.market_total_rials(conn)[0]
+        card_errors = []
         for r in rows:
             key = r["symbol_norm"]
-            want = fundamental.company_profile(r.get("sector_name", ""),
-                                               name_of.get(key, ""))["kind"] != "fund"
-            if bool(r.get("applicable", True)) != want:
-                bad.append((r["symbol"], want, r.get("applicable")))
-        chk(not bad, "bulk_scan ⇄ card agree on every symbol", bad[:4])
+            try:
+                res = fundamental.evaluate_v10(
+                    conn, key, r.get("mcap") or 0.0, total_mcap,
+                    r.get("sector_name", ""), company_name=name_of.get(key, ""),
+                    has_instrument=True, m141_map=m141m, liq_map=liqm)
+            except ZeroDivisionError:
+                # باگِ پیش‌ازاینِ ind1b_volume_growth (مالکِ آن Task 3 است)؛ نه
+                # این‌جا رفع می‌شود و نه پنهان: برای همین ردیف فقط بخشِ هویت
+                # (همان ورودیِ کارت) سنجیده می‌شود و نماد گزارش می‌گردد.
+                card_errors.append(r["symbol"])
+                ident = fts_engine.classify_identity(
+                    key, r.get("sector_name", ""), name_of.get(key, ""), True)
+                if bool(r.get("applicable", True)) != bool(ident["applicable"]):
+                    bad.append((r["symbol"], r.get("applicable"),
+                                ident["applicable"], "identity-only"))
+                continue
+            if (bool(r.get("applicable", True)) != bool(res.get("applicable"))
+                    or res.get("verdict") == "FTS ندارد"):
+                bad.append((r["symbol"], r.get("applicable"),
+                            res.get("applicable"), res.get("verdict")))
+        chk(not bad, "bulk_scan ⇄ card agree on every symbol (applicable/verdict)",
+            bad[:4])
+        chk(len(card_errors) <= 1,
+            "the card evaluates every bulk row except the known Task-3 division row",
+            card_errors[:4])
 
         # جهانِ مالک (Task 1، تصمیمِ مالک): صندوق‌ها از جدول *حذف* می‌شوند، نه
         # اینکه با «FTS ندارد» در آن بمانند. guard پیش از این حضورِ >۵۰ صندوق

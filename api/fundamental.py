@@ -1132,7 +1132,7 @@ def risk_gates(conn, symbol, sector, mcap_rials, cfg=None, th=None,
 
 def evaluate_v10(conn, symbol, market_cap_rials=0.0, total_market_cap_rials=0.0,
                  sector="", cfg=None, company_name="", m141_map=None,
-                 liq_map=None) -> dict:
+                 liq_map=None, has_instrument=None) -> dict:
     """خروجیِ یکپارچهٔ v10: پنج لایه + پاس‌ها + امتیاز + دلایل حذف.
 
     `m141_map` / `liq_map` برای مسیرهای دسته‌ای (واچ‌لیست) تزریق میشوند تا
@@ -1146,8 +1146,15 @@ def evaluate_v10(conn, symbol, market_cap_rials=0.0, total_market_cap_rials=0.0,
     cfg = cfg or {}
     th = v10_thresholds(cfg)
     prof = company_profile(sector, company_name)
+    # حضورِ ابزار را از صنعت استنتاج نکن: ۲۶ شرکتِ واقعی در `instruments` هستند
+    # ولی `sector_name` خالی دارند. فراخواننده‌ای که نماد را resolve کرده
+    # (مسیرِ جزئیات با inst، اسکرینر با ردیف‌های bulk_scan) آن را صریح می‌دهد؛
+    # وگرنه نشانهٔ هویت (صنعت یا نامِ شرکت) جای آن می‌نشیند تا صندوق/غیرشرکتِ
+    # بی‌هویت همچنان «FTS ندارد» بگیرد.
+    if has_instrument is None:
+        has_instrument = bool(sector) or bool(company_name)
     identity = fts_engine.classify_identity(symbol, sector, company_name,
-                                            bool(sector))
+                                            bool(has_instrument))
     series = monthly_series(conn, symbol)
     ref = fts_engine.reference_annual(conn, symbol)
 
@@ -1931,7 +1938,8 @@ def get_fundamental(symbol: str, months: int = 0):
 
         cfg = load_fts_config()
         res = evaluate_v10(conn, norm_symbol, mcap or 0.0, total_mcap, sector,
-                           cfg=cfg, company_name=company_name)
+                           cfg=cfg, company_name=company_name,
+                           has_instrument=bool(inst))
         # لایهٔ ۴ باید بگوید «چرا نشد»: نبودِ ارزش بازار از تابلو با نبودِ فروش
         # ماهانه دو چیز مختلف‌اند و دو کارِ مختلف کاربر را می‌طلبند.
         _val4 = res["indicators"]["4"]

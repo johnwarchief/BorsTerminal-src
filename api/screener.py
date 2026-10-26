@@ -477,10 +477,15 @@ def _screener_cached():
                     # نوشته. نمادی که در جدول نیست → None → fallback به زنده.
                     res = _mat.get(key)
                 if res is None:
+                    # هر ردیفِ این حلقه از bulk_scan آمده و bulk_scan فقط
+                    # شرکت‌ها (غیرصندوق/غیرغیرشرکت) را برمی‌گرداند؛ پس حضورِ
+                    # ابزار صریحاً True است — استنتاجِ آن از خالی‌بودنِ
+                    # sector_name همان باگِ ۲۶ شرکتِ بی‌صنعت را برمی‌گرداند.
                     res = evaluate_v10(conn, key, mcap_official.get(key, 0.0),
                                        total_mcap, r.get("sector_name", ""),
                                        cfg=cfg, company_name=cname_of.get(key, ""),
-                                       m141_map=_m141m, liq_map=_liqm)
+                                       m141_map=_m141m, liq_map=_liqm,
+                                       has_instrument=True)
                 p = res["passes"]
                 _ind = res.get("indicators") or {}
                 _g3 = _ind.get("3") or {}
