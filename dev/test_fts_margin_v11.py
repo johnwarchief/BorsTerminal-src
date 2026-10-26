@@ -125,6 +125,16 @@ chk(rr.get("margin_pct") == 20.0 and rr.get("pass") is False
     "۱۹٫۹۶٪: نمایش ۲۰٫۰ ولی حکم و برچسب بر مبنایِ عددِ خام (زیرِ کف)",
     (rr.get("margin_pct"), rr.get("pass"), rr.get("margin_tier")))
 
+# ۲۹٫۹۶٪: نمایش ۳۰٫۰ ولی حکم/باند از عددِ خام — «ایده‌آل» نیست (Task 6 fix).
+rr = ind3_gross_margin(c, "گرد۳۰", ref=ref(2996, rev=10000))
+chk(rr.get("margin_pct") == 30.0 and rr.get("pass") is True
+    and rr.get("optimal") is False and rr.get("ideal") is False,
+    "۲۹٫۹۶٪: نمایش ۳۰٫۰ ولی pass از ۲۰ و optimal/ideal از عددِ خام False",
+    (rr.get("margin_pct"), rr.get("pass"), rr.get("optimal"), rr.get("ideal")))
+chk(rr.get("band") == "acceptable" and rr.get("margin_tier") == "floor",
+    "۲۹٫۹۶٪: band=acceptable و tier=floor (نه ایده‌آل/standard)",
+    (rr.get("band"), rr.get("margin_tier")))
+
 # صفرِ واقعی هم عدد است، نه N/A.
 rr = ind3_gross_margin(c, "صفر", ref=ref(0))
 chk(rr.get("na") is False and rr.get("margin_tier") == "below_floor",
@@ -134,15 +144,28 @@ chk(rr.get("na") is False and rr.get("margin_tier") == "below_floor",
 # ═══════════════════════════════════════════════════════════════════════════
 #  ۳) مالی/هلدینگ/صندوق و درآمدِ صفر — N/A با دلیلِ قاعده، بی‌برچسب
 # ═══════════════════════════════════════════════════════════════════════════
+# گیتِ طبقه حتی با سود ناخالصِ عدددار: مالی/بانکی/هلدینگ/صندوق «حاشیه» نمی‌سازند
+# (سند فاز ۱، بند ۴٫۴) — نه صفرِ کاذب، نه برچسب، نه شکافِ داده.
 for prof in (fts_engine.company_profile("لیزینگ", "شرکت لیزینگ الف"),
              fts_engine.company_profile("سرمایه گذاری", "شرکت سرمایه گذاری ب"),
              {"kind": "fund"}):
-    rn = ind3_gross_margin(c, "مالی", ref=ref(None), profile=prof)
-    chk(rn.get("na") is True and rn.get("margin_tier") is None,
-        "طبقهٔ %s ⇒ N/A و بی‌برچسب" % prof.get("kind"),
-        (rn.get("na"), rn.get("margin_tier")))
-    chk(bool(rn.get("reason")),
-        "طبقهٔ %s دلیلِ قاعده را می‌گوید" % prof.get("kind"), rn.get("reason"))
+    for label, rref in (("بی‌سود ناخالص", ref(None)),
+                        ("با سود ناخالصِ ۵۸٪", ref(580))):
+        rn = ind3_gross_margin(c, "مالی", ref=rref, profile=prof)
+        chk(rn.get("na") is True and rn.get("margin_tier") is None,
+            "طبقهٔ %s (%s) ⇒ N/A و بی‌برچسب" % (prof.get("kind"), label),
+            (rn.get("na"), rn.get("margin_tier")))
+        chk(rn.get("margin_pct") is None and rn.get("pass") is False
+            and rn.get("optimal") is False,
+            "طبقهٔ %s (%s) ⇒ بی‌عدد و pass=False" % (prof.get("kind"), label),
+            (rn.get("margin_pct"), rn.get("pass"), rn.get("optimal")))
+        chk(rn.get("band") == "not_applicable" and rn.get("data_gap") is False,
+            "طبقهٔ %s (%s) ⇒ band=not_applicable و بی‌پرچمِ شکاف"
+            % (prof.get("kind"), label),
+            (rn.get("band"), rn.get("data_gap")))
+        chk(bool(rn.get("reason")),
+            "طبقهٔ %s (%s) دلیلِ طبقه را می‌گوید" % (prof.get("kind"), label),
+            rn.get("reason"))
 
 rz = ind3_gross_margin(c, "بی‌درآمد", ref=ref(100, rev=0))
 chk(rz.get("na") is True and rz.get("margin_tier") is None,
@@ -169,9 +192,13 @@ CASES = [
     ("شکف", "شرکت شکف", SEC, 25.0, "floor"),
     ("شزیر", "شرکت شزیر", SEC, 12.0, "below_floor"),
     ("شگرد", "شرکت شگرد", SEC, 19.96, "below_floor"),
+    # ۲۹٫۹۶٪: نمایش ۳۰٫۰ ولی optimal/band از عددِ خامِ حکم — نه ایده‌آل.
+    ("شبیستونه", "شرکت شبیستونه", SEC, 29.96, "floor"),
     ("شپنجاه", "شرکت شپنجاه", SEC, 50.0, "good"),
     ("شنال", "شرکت شنال", "سرمایه گذاری", None, None),
 ]
+# هلدینگ با سود ناخالصِ عدددار: گیتِ طبقه باید N/A بدهد، نه ۵۸٪ «خوب».
+HOLDING = ("شهلد", "شرکت سرمایه گذاری شهلد", "سرمایه گذاری", 58.0)
 
 
 def _seed_instrument(con, code, symbol, name, sector):
@@ -209,6 +236,9 @@ def _temp_db_case():
         for i, (sym, name, sec, _margin, _tier) in enumerate(CASES):
             _seed_instrument(con, "M6%d" % (i + 1), sym, name, sec)
             _seed_fs(con, 6100 + i * 10, sym, name, _margin)
+        hsym, hname, hsec, hmargin = HOLDING
+        _seed_instrument(con, "M6H", hsym, hname, hsec)
+        _seed_fs(con, 6900, hsym, hname, hmargin)
         con.commit()
 
         cfg = fts_engine.load_fts_config(os.path.join(ROOT, "fts_thresholds.json"))
@@ -246,6 +276,9 @@ def _temp_db_case():
                     b.get("i3_pass"))
                 chk(bool(b.get("margin_optimal")) is (margin >= 30.0),
                     "bulk %s optimal از ۳۰٪ می‌آید" % sym, b.get("margin_optimal"))
+                chk(b.get("i3_na") is False,
+                    "bulk %s (تولیدی/خدماتی) پرچمِ N/Aِ طبقه ندارد" % sym,
+                    b.get("i3_na"))
 
             c3 = card(sym, name, sec)["indicators"]["3"]
             chk(c3.get("margin_tier") == want_tier,
@@ -260,6 +293,17 @@ def _temp_db_case():
                     (c3.get("na"), c3.get("margin_tier")))
                 chk(bool(c3.get("reason")), "card N/A %s دلیل دارد" % sym,
                     c3.get("reason"))
+            else:
+                # باند از حکمِ خام (۲۰/۳۰) است، نه از `margin_pct`ِ گردشده؛
+                # برایِ ۲۹٫۹۶٪ «۳۰٫۰» دیده می‌شود ولی باند acceptable است.
+                want_band = ("ideal" if margin >= 30.0 else
+                             "acceptable" if margin >= 20.0 else "below")
+                chk(c3.get("band") == want_band,
+                    "card %s ⇒ band=%r از حکمِ خام" % (sym, want_band),
+                    c3.get("band"))
+                chk(bool(c3.get("ideal")) is (margin >= 30.0),
+                    "card %s ⇒ ideal از استانداردِ ۳۰٪ (نه نمایشِ گردشده)" % sym,
+                    c3.get("ideal"))
 
             s = scan(sym, sec)
             chk(s.get("margin_tier") == want_tier,
@@ -269,6 +313,71 @@ def _temp_db_case():
             chk(d3.get("margin_tier") == want_tier,
                 "scan_symbol.detail.gross_margin %s ⇒ margin_tier=%r"
                 % (sym, want_tier), d3.get("margin_tier"))
+
+        # ── هلدینگ با revenue>0 و gross_profit: گیتِ طبقه باید N/A بدهد ──
+        # پیش‌فرضِ آزمون: عددِ حاشیه واقعاً قابلِ محاسبه است (۵۸٪)؛ پس N/A از
+        # «نبودِ داده» نمی‌آید، از خودِ طبقه می‌آید.
+        hk = fts_engine.norm_fa(hsym)
+        raw = con.execute(
+            "SELECT revenue, gross_profit FROM financial_statements "
+            "WHERE symbol=? ORDER BY period_end DESC LIMIT 1", (hsym,)).fetchone()
+        chk(raw is not None and (raw[0] or 0) > 0 and raw[1] is not None,
+            "پیش‌فرضِ آزمون: هلدینگ revenue>0 و gross_profit دارد", raw)
+        hb = by_key.get(hk)
+        chk(hb is not None, "%s (هلدینگ) در bulk_scan هست" % hsym, sorted(by_key))
+        if hb is not None:
+            chk(hb.get("gross_margin") is None and hb.get("margin_tier") is None,
+                "bulk هلدینگ: بی‌عدد و بی‌برچسب (نه ۵۸٪ «خوب»)",
+                (hb.get("gross_margin"), hb.get("margin_tier")))
+            chk(hb.get("i3_pass") is None and hb.get("i3_na") is True,
+                "bulk هلدینگ: حکمِ ۳ «سنجیده نشد» و پرچمِ N/A",
+                (hb.get("i3_pass"), hb.get("i3_na")))
+            chk(hb.get("i3_band") == "not_applicable"
+                and bool(hb.get("i3_reason")),
+                "bulk هلدینگ: band=not_applicable با دلیلِ طبقه",
+                (hb.get("i3_band"), hb.get("i3_reason")))
+            chk(hb.get("margin_optimal") is False,
+                "bulk هلدینگ: optimalِ کاذب نه", hb.get("margin_optimal"))
+
+        hres = card(hsym, hname, hsec)
+        hc3 = hres["indicators"]["3"]
+        chk(hc3.get("na") is True and hc3.get("margin_pct") is None
+            and hc3.get("margin_tier") is None,
+            "card هلدینگ: N/A، بی‌عدد و بی‌برچسب",
+            (hc3.get("na"), hc3.get("margin_pct"), hc3.get("margin_tier")))
+        chk(hc3.get("band") == "not_applicable" and hc3.get("pass") is False
+            and hc3.get("optimal") is False and hc3.get("ideal") is False,
+            "card هلدینگ: band=not_applicable و pass/optimal/ideal=False",
+            (hc3.get("band"), hc3.get("pass"), hc3.get("optimal"),
+             hc3.get("ideal")))
+        chk(hc3.get("data_gap") is False and bool(hc3.get("reason")),
+            "card هلدینگ: بدونِ پرچمِ شکاف، با دلیلِ طبقه",
+            (hc3.get("data_gap"), bool(hc3.get("reason"))))
+        chk(hres["passes"].get("3_gross_margin") is False,
+            "card هلدینگ: passِ ۳ شمارش نمی‌شود",
+            hres["passes"].get("3_gross_margin"))
+        chk(hres["primary_score"] == sum(
+                1 for k in ("1_growth", "2_eps_trend", "3_gross_margin")
+                if hres["passes"].get(k) is True),
+            "card هلدینگ: primary_score همان سه بیتِ واقعی است (۳ حساب نشد)",
+            hres["primary_score"])
+
+        hs = scan(hsym, hsec)
+        chk(hs.get("margin_tier") is None and hs.get("i3_na") is True,
+            "scan_symbol هلدینگ: margin_tier=None و i3_na",
+            (hs.get("margin_tier"), hs.get("i3_na")))
+        chk(hs["passes"].get("3_gross_margin") is None,
+            "scan_symbol هلدینگ: حکمِ ۳ سنجیده‌نشده (None) و شمارش‌نشده",
+            hs["passes"].get("3_gross_margin"))
+        hd3 = ((hs.get("detail") or {}).get("gross_margin") or {})
+        chk(hd3.get("na") is True and hd3.get("band") == "not_applicable"
+            and hd3.get("margin_tier") is None and hd3.get("pass") is False,
+            "scan_symbol.detail هلدینگ: N/A با band و بی‌برچسب",
+            (hd3.get("na"), hd3.get("band"), hd3.get("margin_tier"),
+             hd3.get("pass")))
+        chk(hs["score"] == sum(1 for v in hs["passes"].values() if v),
+            "scan_symbol هلدینگ: score فقط پاس‌هایِ واقعی",
+            hs["score"])
 
         # نمادِ بی‌صورتِ مالی: کارت N/A و بی‌برچسب، نه استثنا.
         empty = FD.evaluate_v10(con, "بی‌صورت", cfg=cfg, sector=SEC,

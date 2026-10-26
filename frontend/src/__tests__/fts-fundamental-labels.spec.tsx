@@ -391,7 +391,17 @@ describe('طبقهٔ نمایشیِ حاشیه — کارتِ شاخص ۳', () =
       band: 'ideal', threshold: 20, ideal_threshold: 30, na: false,
     });
     expect(screen.getByTestId('fts-card-margin-tier').textContent).toBe('استاندارد');
-    expect(screen.getByTestId('fts-verdict-3_gross_margin').textContent).not.toBe('رد');
+    expect(screen.getByTestId('fts-verdict-3_gross_margin').textContent).toBe('ایده‌آل');
+  });
+
+  it('۲۹٫۹۶٪: نمایش ۳۰٫۰ ولی حکم «قبول» است، نه «ایده‌آل» (باند از عددِ خام)', () => {
+    renderMarginCard({
+      margin_pct: 30, margin_tier: 'floor', pass: true, optimal: false,
+      band: 'acceptable', threshold: 20, ideal_threshold: 30, na: false,
+    });
+    expect(screen.getByTestId('fts-card-margin-tier').textContent).toBe('کف');
+    expect(screen.getByTestId('fts-result-3_gross_margin').textContent).toContain('۳۰');
+    expect(screen.getByTestId('fts-verdict-3_gross_margin').textContent).toBe('قبول');
   });
 
   it('N/A: بی‌برچسب و برچسبِ حکم «نظر نمی‌دهد»', () => {

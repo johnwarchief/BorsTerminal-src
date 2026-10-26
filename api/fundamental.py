@@ -966,10 +966,19 @@ def ind3_gross_margin(conn, symbol, th=None, ref=None, profile=None) -> dict:
     """حاشیه = سود ناخالص ÷ درآمدهای عملیاتی × ۱۰۰ — ایده‌آل ≥۳۰٪، قابل‌قبول ≥۲۰٪.
 
     منبع و فرمول از fts_engine.gross_margin می‌آید (سالانهٔ حسابرسی‌شدهٔ
-    غیرتلفیقی)؛ v10 فقط «باند» را شفاف میکند و برای طبقاتی که بهای تمام‌شده
-    ندارند (بانک/صندوق) حالتِ not_applicable برمی‌گرداند به‌جای صفرِ کاذب.
+    غیرتلفیقی)؛ v10 فقط «باند» را شفاف می‌کند. طبقه‌های مالی/بانکی،
+    هلدینگ/سرمایه‌گذاری و صندوق «سود ناخالص» ندارند و N/A با دلیلِ طبقه
+    می‌گیرند — حتی اگر صورت مالی سود ناخالص ثبت کرده باشد (سند فاز ۱، بند ۴٫۴).
+    «N/Aِ طبقه» با «شکافِ داده» یکی نیست: `data_gap=False` و `margin_tier=None`.
     """
     th = th or v10_thresholds()
+    prof = profile or company_profile()
+    # گیتِ طبقه پیش از هر محاسبه/استنتاج از `ref`: مالی/بانکی/هلدینگ/صندوق
+    # شاخص ۳ برایشان سنجیده نمی‌شود؛ عددِ سود ناخالصِ ثبت‌شده هم حکم نمی‌سازد.
+    class_na = fts_engine.margin_class_na(prof, min_margin=th["margin_min"],
+                                          optimal=th["margin_ideal"])
+    if class_na is not None:
+        return class_na
     gm = fts_engine.gross_margin(conn, symbol, min_margin=th["margin_min"],
                                  optimal=th["margin_ideal"], ref=ref)
     if not gm:
@@ -977,19 +986,12 @@ def ind3_gross_margin(conn, symbol, th=None, ref=None, profile=None) -> dict:
         # حالتِ متفاوت None می‌دهد و کاربر باید تفاوت را بفهمد، وگرنه برای نمادی
         # که فقط همگام‌سازی نشده، «بهای تمام‌شده ندارد» می‌خواند و هرگز دکمهٔ
         # «دیتابیس کدال» را نمی‌زند. `ref` از قبل در دست است؛ کوئریِ تازه لازم نیست.
-        prof = profile or company_profile()
         if ref is None:
             reason = ("صورت مالی سالانهٔ این نماد در پایگاه کدال ما نیست؛ "
                       "تا آن نیاید، سود ناخالص و در نتیجه حاشیه محاسبه نمی‌شود.")
             fix = ("با دکمهٔ «دیتابیس کدال» صورت‌های مالی این نماد را تازه کنید؛ "
                    "این شکاف با انتشار گزارش بعدی هم خودبه‌خود بسته می‌شود.")
             data_gap = True
-        elif prof.get("kind") == "fund":
-            # رأیِ ۱۵: صندوق «رد شده» نمی‌گیرد. علت را هم باید همان‌طور گفت.
-            reason = ("این نماد صندوق است؛ صندوق «فروش» و «بهای تمام‌شده» ندارد که "
-                      "حاشیهٔ ناخالص از آن‌ها ساخته شود. نبودِ این عدد نقص نیست.")
-            fix = "برای صندوق‌ها شاخص ۳ سنجیده نمی‌شود؛ کارتِ بنیادیِ صندوق را ببینید."
-            data_gap = False
         elif _f(ref.get("revenue")) <= 0:
             reason = ("درآمد عملیاتیِ سالِ مرجع (%s) در کدال خالی یا صفر ثبت شده، "
                       "پس تقسیمِ سود ناخالص بر آن ممکن نیست."
@@ -1016,10 +1018,10 @@ def ind3_gross_margin(conn, symbol, th=None, ref=None, profile=None) -> dict:
     # عدد است و طبیعی به «زیرِ باند» می‌رسد. `_sane(-99, 200)` همین را None می‌کرد
     # و باند را هم اشتباه می‌براند (و حاشیۀ ۱٬۸۸۵٪ را هم)؛ اینجا فقط NaN/inf دور
     # ریخته می‌شود — همان کاری که `_f` می‌کند. آستانۀ تازه‌ای اضافه نشده است.
-    margin = _f(gm.get("margin_pct"))
-    # حاشیه غایب یا نامعتبر: زیر باند (بدون داده) و نه کرش مقایسه با None
-    gm["band"] = ("ideal" if margin is not None and margin >= th["margin_ideal"] else
-                  "acceptable" if margin is not None and margin >= th["margin_min"] else "below")
+    # باند از **حکمِ خام** می‌آید، نه از `margin_pct`ِ گردشده: ۲۹٫۹۶٪ که «۳۰٫۰»
+    # دیده می‌شود `optimal=False` است و نباید «ایده‌آل» خوانده شود (Task 6 fix).
+    gm["band"] = ("ideal" if gm.get("optimal") else
+                  "acceptable" if gm.get("pass") else "below")
     gm["ideal"] = bool(gm.get("optimal"))
     gm["ideal_threshold"] = th["margin_ideal"]
     # برچسبِ طبقه از خودِ `gross_margin` می‌آید و بر مبنایِ عددِ خامِ همان

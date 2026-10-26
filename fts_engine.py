@@ -1327,6 +1327,48 @@ def margin_tier(pct) -> Optional[str]:
     return "good"
 
 
+# طبقه‌هایی که «سود ناخالص» برایشان تعریف نشده است (سند فاز ۱، بند ۴٫۴:
+# «مالی/بانکی/هلدینگ/صندوق: N/A با دلیلِ سود ناخالص تعریف نشده؛ نه False»).
+# این گیت «قابلِ‌اعمال بودن» شاخص ۳ است، نه دروازهٔ تازه: ۲۰/۳۰ برای
+# تولیدی/خدماتی دست‌نخورده می‌ماند.
+MARGIN_NA_KINDS = ("financial", "holding", "fund")
+
+_MARGIN_NA_REASONS = {
+    "financial": ("این نماد مالی/بانکی است؛ «سود ناخالص» برای این طبقه تعریف "
+                  "نشده است (درآمد از تسهیلات، سپرده و کارمزد است، نه فروش "
+                  "کالا). شاخص ۳ برای این طبقه سنجیده نمی‌شود."),
+    "holding": ("این نماد هلدینگ/سرمایه‌گذاری است؛ «سود ناخالص» برای این طبقه "
+                "تعریف نشده است (درآمد از پرتفوی است، نه فروش عملیاتی). "
+                "شاخص ۳ برای این طبقه سنجیده نمی‌شود."),
+    "fund": ("این نماد صندوق است؛ صندوق «فروش» و «بهای تمام‌شده» ندارد که "
+             "حاشیهٔ ناخالص از آن‌ها ساخته شود. شاخص ۳ برای صندوق سنجیده "
+             "نمی‌شود."),
+}
+
+
+def margin_class_na(profile, min_margin: float = 20.0,
+                    optimal: float = 30.0) -> Optional[dict]:
+    """N/Aِ طبقهٔ شاخص ۳ — مالی/بانکی/هلدینگ/صندوق، حتی با سود ناخالصِ ثبت‌شده.
+
+    «سود ناخالص» برای این طبقه‌ها تعریف نشده است؛ عددِ قابلِ محاسبه هم نباید به
+    حکم/برچسبِ حاشیه تبدیل شود. `data_gap=False` است (شکافِ داده نیست) و
+    `margin_tier=None` (حاشیه ساخته نشد، نه `below_floor`). خروجی برایِ طبقهٔ
+    دیگر `None` است تا گیت روی ۲۰/۳۰ِ تولیدی/خدماتی اثری نگذارد.
+    """
+    kind = str((profile or {}).get("kind") or "")
+    if kind not in MARGIN_NA_KINDS:
+        return None
+    return {
+        "margin_pct": None, "pass": False, "optimal": False, "ideal": False,
+        "na": True, "band": "not_applicable",
+        "threshold": min_margin, "ideal_threshold": optimal,
+        "margin_tier": None, "data_gap": False,
+        "reason": _MARGIN_NA_REASONS[kind],
+        "remediation": ("این N/A به ماهیتِ طبقه برمی‌گردد، نه شکافِ داده؛ "
+                        "شاخص ۳ برای طبقه‌های مالی/هلدینگ/صندوق سنجیده نمی‌شود."),
+    }
+
+
 def gross_margin(conn: sqlite3.Connection, symbol: str, min_margin: float = 20.0,
                  optimal: float = 30.0, ref: Optional[dict] = None) -> Optional[dict]:
     """حاشیه = (سود ناخالص ÷ درآمدهای عملیاتی) × ۱۰۰.
@@ -1841,6 +1883,9 @@ def gross_profit_potential(conn: sqlite3.Connection, symbol: str, market_cap_ria
     a = annual or annualized_sales(conn, symbol)
     if not g or not a:
         return None
+    # حاشیهٔ N/A (مالی/هلدینگ/صندوق) «صفر» نیست؛ پتانسیل هم ساخته نمی‌شود.
+    if g.get("na") or g.get("margin_pct") is None:
+        return None
     # رأی ۱۶: ردیفِ N/A (هلدینگ/سرمایه‌گذاری) «عددِ صفر» نیست، «نظرِ نداده» است —
     # وگرنه این‌جا ۰٫۰ ساخته می‌شد در جایی که کارت هیچ عددی نمی‌داد.
     if a.get("na") or _f(a.get("annual_sales_mrl")) <= 0:
@@ -2092,8 +2137,13 @@ def scan_symbol(conn: sqlite3.Connection, symbol: str, market_cap_rials: float =
                                  th=th1b, profile=prof)
     axis1, axis1_reason = axis1_state(monetary, volume)
     e = eps_trend_3y(conn, symbol, years=int(cfg.get("eps_years", 3) or 3), sector=sector)
-    gm = gross_margin(conn, symbol, min_margin=_f(cfg.get("margin_min", 20.0)) or 20.0,
-                      optimal=_f(cfg.get("margin_optimal", 30.0)) or 30.0, ref=ref)
+    # گیتِ طبقهٔ شاخص ۳ (سند فاز ۱، بند ۴٫۴): مالی/بانکی/هلدینگ/صندوق N/A است،
+    # حتی اگر صورت مالی سود ناخالص داشته باشد؛ ۲۰/۳۰ِ تولیدی/خدماتی دست‌نخورده.
+    m_min = _f(cfg.get("margin_min", 20.0)) or 20.0
+    m_opt = _f(cfg.get("margin_optimal", 30.0)) or 30.0
+    gm = margin_class_na(prof, min_margin=m_min, optimal=m_opt)
+    if gm is None:
+        gm = gross_margin(conn, symbol, min_margin=m_min, optimal=m_opt, ref=ref)
     annual = annualized_sales(conn, symbol, ref=ref, profile=prof, exempt=_exempt)
     s2m = sales_to_marketcap(conn, symbol, mcap,
                              min_ratio=_th(cfg, "sales_to_mcap_min"),
@@ -2128,7 +2178,9 @@ def scan_symbol(conn: sqlite3.Connection, symbol: str, market_cap_rials: float =
               # است نه «رد». شاخص ۴ درِ همین دیکشنری از قبل سه‌حالۀ None داشت؛
               # این ستون bool بود ⇒ `bulk_scan` (None) با `/api/fts` (False) دو
               # شکلِ متفاوت برایِ یکِ نمادِ بدونِ سطرِ سود ناخالص می‌داد.
-              "3_gross_margin": (None if gm is None else bool(gm["pass"])),
+              # N/Aِ طبقه (مالی/هلدینگ/صندوق) هم None است تا همین پاریتی حفظ شود.
+              "3_gross_margin": (None if gm is None or gm.get("na")
+                                 else bool(gm["pass"])),
               "4_sales_to_mcap": passes_s2m,
               "5_industry": bool(sec["pass"])}
     # شمارش فقط پاس‌های *واقعی* است؛ None (معاف/بی‌داده) امتیاز نمی‌گیرد.
@@ -2184,6 +2236,9 @@ def scan_symbol(conn: sqlite3.Connection, symbol: str, market_cap_rials: float =
         # برچسبِ نمایشیِ طبقهٔ حاشیه (Task 6) — همان مقداری که
         # `detail.gross_margin` و ردیفِ bulk_scan می‌دهند؛ None یعنی N/A.
         "margin_tier": (gm or {}).get("margin_tier"),
+        # «چرا حکمِ ۳ خالی است»: N/Aِ طبقه (مالی/هلدینگ/صندوق) از خودِ موتور،
+        # نه شکافِ داده؛ جدول با همین پرچم N/A خاکستری می‌نشاند (Task 6 fix).
+        "i3_na": bool((gm or {}).get("na")),
         "m141": bool(m141_hit),
         "avg_trade_val_hmt": None if avg_trade_val is None else round(avg_trade_val, 3),
         "detail": {"growth": g, "eps_trend": e, "gross_margin": gm,
@@ -2551,8 +2606,13 @@ def bulk_scan(conn: sqlite3.Connection, cfg: dict = None) -> list[dict]:
         # پتانسیل سود و فیلتر صنعت** (چیزی که کارتpublish می‌کند). اگر داوری هم
         # با عددِ گرد شده می‌شد، حاشیۀ ۱۹٫۹۶٪ «≥ ۲۰» می‌شد — واگراییِ واقعیِ
         # این دور درِ لخزر/كمينا/شرنگي/سجام، که بندِ تازهٔ گاردِ پاریتی گرفتش.
+        # گیتِ طبقه (سند فاز ۱، بند ۴٫۴): مالی/بانکی/هلدینگ/صندوق N/A است،
+        # حتی اگر سود ناخالص در صورت مالی ثبت شده باشد — «حاشیهٔ عدددارِ
+        # بی‌مفهوم» ساخته نمی‌شود و حکم/برچسب هم نمی‌گیرد.
+        class_na = margin_class_na(prof, min_margin=m_min, optimal=m_opt)
         margin_raw = margin = None
-        if ref and _f(ref["revenue"]) > 0 and ref["gross_profit"] is not None:
+        if class_na is None and ref and _f(ref["revenue"]) > 0 \
+                and ref["gross_profit"] is not None:
             margin_raw = (ref["gross_profit"] / _f(ref["revenue"])) * 100.0
             margin = round(margin_raw, 1)
         # رأی ۱۶ روی شاخص ۳: حاشیه‌ای که هرگز ساخته نشد سنجیده نشده، نه رد —
@@ -2655,6 +2715,11 @@ def bulk_scan(conn: sqlite3.Connection, cfg: dict = None) -> list[dict]:
             # برچسبِ نمایشیِ طبقهٔ حاشیه (Task 6) — از عددِ خامِ حکم (نه
             # گردشدۀ نمایش)؛ None برایِ نمادی که حاشیه‌اش ساخته نشده (N/A).
             "margin_tier": margin_tier(margin_raw),
+            # N/Aِ طبقه (مالی/بانکی/هلدینگ/صندوق): علت و باند از خودِ موتور
+            # می‌آید؛ شکافِ داده نیست و ستونِ حکم هم شمارش نمی‌شود.
+            "i3_na": bool(class_na),
+            "i3_band": (class_na or {}).get("band"),
+            "i3_reason": (class_na or {}).get("reason") or "",
             "sales_to_mcap": None if s2m is None else round(s2m, 2),
             "profit_potential_pct": None if pot is None else round(pot, 1),
             "annual_sales_bt": round(normalize_mrl_to_btom(annual_sales), 1),
@@ -2683,7 +2748,9 @@ def bulk_scan(conn: sqlite3.Connection, cfg: dict = None) -> list[dict]:
             "applicable": identity["applicable"],
             "m141": hit141,
             "avg_trade_val_hmt": None if liq_hmt is None else round(liq_hmt, 3),
-            "margin_optimal": margin is not None and margin >= m_opt,
+            # optimal هم از عددِ خام است، نه گردشدۀ نمایش: ۲۹٫۹۶٪ که «۳۰٫۰»
+            # دیده می‌شود هنوز ایده‌آل نیست (همان قاعدهٔ band/tier).
+            "margin_optimal": margin_raw is not None and margin_raw >= m_opt,
             "growth_excellent": growth is not None and growth >= g_target,
         })
     out.sort(key=lambda r: (r["excluded"], -r.get("primary_score", 0), -r["score"],
