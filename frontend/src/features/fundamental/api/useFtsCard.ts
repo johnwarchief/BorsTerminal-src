@@ -44,6 +44,11 @@ const Indicator1MonetarySchema = z
     data_gap: z.boolean().nullish(),
     reason: z.string().nullish(),
     denominator_basis: z.string().nullish(),
+    /** مبنایِ رشد (Task 2/4): None = مسیرِ ماهانهٔ YTD؛ `fs_interim`/
+     *  `fs_annual` = صورتِ مالی؛ `fs_unavailable` = شکافِ صورتِ مالی.
+     *  بی‌این کلید، zod آن را بی‌صدا دور می‌ریخت و کارت نمی‌توانست بگوید
+     *  رشد از کدام مسیر آمده (و شکافِ ماهانه/صورتِ مالی را تفکیک کند). */
+    basis: z.string().nullish(),
   })
   .nullish();
 
@@ -83,6 +88,9 @@ const Indicator1Schema = z
     monetary: Indicator1MonetarySchema,
     volume: Indicator1VolumeSchema,
     pass: z.boolean().nullish(),
+    /** دلیلِ حکمِ محور ۱ از `axis1_state` — همان متنی که جدول در `i1_reason`
+     *  می‌گیرد. شکاف = None + همین دلیل، نه False. */
+    reason: z.string().nullish(),
   })
   .nullish();
 

@@ -72,6 +72,20 @@ export const NO_GROSS_MARGIN = 'حاشیهٔ ناخالص ثبت نشده';
 export const NO_MCAP = 'ارزش بازار در دسترس نیست';
 export const NOT_COMPUTABLE = 'خروجی قابل محاسبه نیست';
 
+/** مبنایِ رشدِ شاخص ۱ — همان قراردادِ `basis` کارت/ردیف (Task 2/4).
+ *  `null` مسیرِ ماهانهٔ YTD است (کلید در پاسخ هست، مقدارش None)؛
+ *  `fs_unavailable` یعنی صورتِ مالی هست ولی جدیدترین دوره جفتِ سال قبل ندارد. */
+export const GROWTH_BASIS_LABELS: Record<string, string> = {
+  fs_interim: 'صورت مالی میاندوره‌ای',
+  fs_annual: 'صورت مالی سالانه',
+  fs_unavailable: 'صورت مالی — ناموجود',
+};
+
+export function growthBasisLabel(basis?: string | null): string | null {
+  if (basis == null) return 'گزارش فعالیت ماهانه (YTD)';
+  return GROWTH_BASIS_LABELS[basis] ?? basis;
+}
+
 /** نگاشت محور به کلید — هم کلید محور (4_sales_to_mcap) هم عدد فارسی («۴») */
 export const AXIS_TO_KEY: Record<string, GapAxis> = {
   '1a_monetary_growth': '1a_monetary_growth',

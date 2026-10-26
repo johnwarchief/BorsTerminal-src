@@ -78,8 +78,11 @@ export function screenRowCells(r: FtsScreenRow): ExportCell[] {
     // (محورِ EPS!) می‌آمد، «الف» از `i1_pass` (رأیِ مجموع) می‌آمد، و رژیم
     // صنعت با کلیدِ `'regulated'` سنجیده می‌شد در حالی که بک‌اند `'mandatory'`
     // می‌فرستد — یعنی هر شرکتِ دستوری در فایل «آزاد» نوشته می‌شد.
-    `${pct(r.rev_growth)} (الف: ${mark(r.i1a_pass)} / ب: ${
-      r.i1b_applicable === false ? 'N/A' : mark(r.i1b_pass)})`,
+    // ردیفِ «سنجیده نشد» هم مثلِ صفحه `N/A` می‌نویسد، نه «؟» دوپهلو (Task 4).
+    r.i1_na === true
+      ? 'N/A'
+      : `${pct(r.rev_growth)} (الف: ${mark(r.i1a_pass)} / ب: ${
+          r.i1b_applicable === false ? 'N/A' : mark(r.i1b_pass)})`,
     `${eps}${r.eps_last != null ? ` | ${toFaDigits(r.eps_last)}` : ''}${r.eps_data_gap ? ' | بی‌داده' : ''}`,
     pct(r.gross_margin),
     r.profit_potential_pct == null ? '—' : pct(r.profit_potential_pct),
@@ -219,6 +222,33 @@ function GapMark({
     <AuditBadge
       state="na"
       label={<span className="whitespace-nowrap leading-none text-accent-yellow font-semibold">{label}</span>}
+      hintTitle={tooltip}
+      evidence={evidence}
+      compact
+      testId={testId}
+    />
+  );
+}
+
+/** سلولِ N/A با دلیلِ خودِ موتور — خاکستری، نه ✗ و نه زردِ شکافِ داده.
+ *  `AuditBadge state="na"` رنگِ خاکستریِ ثابت دارد؛ برچسبِ پیش‌فرضش همان
+ *  «N/A» است. برایِ i3/i4/i1b متنِ ماهیت هم می‌آید، ولی tone خاکستری می‌ماند
+ *  (Task 4: N/A هرگز شبیه به «رد» دیده نشود). */
+function NaMark({
+  label = 'N/A',
+  tooltip,
+  evidence,
+  testId,
+}: {
+  label?: ReactNode;
+  tooltip: string;
+  evidence?: AuditEvidenceInput;
+  testId?: string;
+}) {
+  return (
+    <AuditBadge
+      state="na"
+      label={label}
       hintTitle={tooltip}
       evidence={evidence}
       compact
@@ -425,38 +455,55 @@ const ScreenerRow = memo(function ScreenerRow({
                   <td className="px-3 py-1.5 align-middle">
                     <div className="flex items-center justify-start gap-2 min-w-0">
                       <div className="shrink-0 flex items-center gap-1.5">
-                        <span className="inline-flex items-center gap-0.5" title="۱-الف: رشد ریالی">
-                          <span className="text-[10px] text-text-muted font-bold">الف</span>
-                          {i1a === 'gap' ? (
-                            <AxisGapMark axis="1a_monetary_growth" evidence={ev.i1a} />
-                          ) : (
-                            <PassMark
-                              state={i1a}
-                              evidence={ev.i1a}
-                              testId="fts-mark-1a_monetary_growth"
-                            />
-                          )}
-                        </span>
-                        <span className="inline-flex items-center gap-0.5" title="۱-ب: رشد تولیدی (تناژ)">
-                          <span className="text-[10px] text-text-muted font-bold">ب</span>
-                          {r.i1b_applicable === false ? (
-                            /* «قابل اعمال نیست» را خودِ موتور می‌گوید
-                               (`company_profile.volume_applicable`) — نه از
-                               regexِ نام/صنعت؛ پیش از این درِ ۲۵۱ ردیف حکمِ
-                               واقعیِ ✓/✗ پشتِ N/A پنهان می‌شد و درِ ۱۰۲ ردیف
-                               N/Aِ اشتباه می‌خورد. */
-                            <GapMark
-                              label="N/A (قابل اعمال نیست)"
-                              tooltip="رشد تولیدی/تناژ برایِ این ماهیت (مالی، هلدینگ، صندوق، خدماتِ بی‌کالای فیزیکی) معنا ندارد — اعلامِ خودِ موتور FTS، نه شکاف داده."
-                              evidence={ev.i1b}
-                              testId="fts-na-1b_volume_growth"
-                            />
-                          ) : i1b === 'gap' ? (
-                            <AxisGapMark axis="1b_volume_growth" evidence={ev.i1b} />
-                          ) : (
-                            <PassMark state={i1b} testId="fts-mark-1b_volume_growth" />
-                          )}
-                        </span>
+                        {r.i1_na === true ? (
+                          /* شکافِ داده در محور ۱: «سنجیده نشد»، نه «رد».
+                             پیش از این دو نشانِ «الف»/«ب» هر کدام یک برچسبِ
+                             عمومیِ شکاف می‌گرفتند و دلیلِ خودِ موتور
+                             (`i1_reason`) هیچ‌جا دیده نمی‌شد؛ حالا همان
+                             دلیل رویِ N/A خاکستری می‌نشیند و هیچ ✗ سرخی
+                             برایِ ردیفِ بی‌داده کشیده نمی‌شود (Task 4). */
+                          <NaMark
+                            label="N/A"
+                            tooltip={r.i1_reason || 'شاخص ۱ سنجیده نشد؛ دلیلِ دقیق در کارتِ نماد است.'}
+                            evidence={ev.i1a}
+                            testId="fts-na-1_growth"
+                          />
+                        ) : (
+                          <>
+                            <span className="inline-flex items-center gap-0.5" title="۱-الف: رشد ریالی">
+                              <span className="text-[10px] text-text-muted font-bold">الف</span>
+                              {i1a === 'gap' ? (
+                                <AxisGapMark axis="1a_monetary_growth" evidence={ev.i1a} />
+                              ) : (
+                                <PassMark
+                                  state={i1a}
+                                  evidence={ev.i1a}
+                                  testId="fts-mark-1a_monetary_growth"
+                                />
+                              )}
+                            </span>
+                            <span className="inline-flex items-center gap-0.5" title="۱-ب: رشد تولیدی (تناژ)">
+                              <span className="text-[10px] text-text-muted font-bold">ب</span>
+                              {r.i1b_applicable === false ? (
+                                /* «قابل اعمال نیست» را خودِ موتور می‌گوید
+                                   (`company_profile.volume_applicable`) — نه از
+                                   regexِ نام/صنعت؛ پیش از این درِ ۲۵۱ ردیف حکمِ
+                                   واقعیِ ✓/✗ پشتِ N/A پنهان می‌شد و درِ ۱۰۲ ردیف
+                                   N/Aِ اشتباه می‌خورد. */
+                                <NaMark
+                                  label="N/A (قابل اعمال نیست)"
+                                  tooltip="رشد تولیدی/تناژ برایِ این ماهیت (مالی، هلدینگ، صندوق، خدماتِ بی‌کالای فیزیکی) معنا ندارد — اعلامِ خودِ موتور FTS، نه شکاف داده."
+                                  evidence={ev.i1b}
+                                  testId="fts-na-1b_volume_growth"
+                                />
+                              ) : i1b === 'gap' ? (
+                                <AxisGapMark axis="1b_volume_growth" evidence={ev.i1b} />
+                              ) : (
+                                <PassMark state={i1b} testId="fts-mark-1b_volume_growth" />
+                              )}
+                            </span>
+                          </>
+                        )}
                       </div>
                       <span
                         className={`num block min-w-0 text-end text-sm font-bold whitespace-nowrap ${
@@ -466,7 +513,11 @@ const ScreenerRow = memo(function ScreenerRow({
                               ? 'text-accent-green'
                               : 'text-accent-red'
                         }`}
-                        title={r.rev_growth == null ? VALUE_MISSING_WITH_VERDICT : (absurdHint(r.rev_growth) ?? undefined)}
+                        title={r.rev_growth == null
+                          ? (r.i1_na === true
+                            ? (r.i1_reason || 'شاخص ۱ سنجیده نشد؛ دلیلِ دقیق در کارتِ نماد است.')
+                            : VALUE_MISSING_WITH_VERDICT)
+                          : (absurdHint(r.rev_growth) ?? undefined)}
                       >
                         {r.rev_growth == null ? '—' : fmtPctGrouped(r.rev_growth)}
                         {isAbsurdPct(r.rev_growth) ? ' ⚠' : ''}
@@ -530,7 +581,7 @@ const ScreenerRow = memo(function ScreenerRow({
                             /* «سود ناخالص ندارد» را خودِ موتور اعلام می‌کند
                                (`ind3_na`) — نه regexِ نام/صنعت. بی‌این، ۱۱۲
                                ردیف از ۲۹۶ ردیفِ نادرست «N/A» می‌گرفت. */
-                            <GapMark
+                            <NaMark
                               label="N/A (ماهیت مالی)"
                               tooltip="موتور FTS برای همین نماد «سود ناخالص» را بی‌کاربرد اعلام کرده است (بانک/بیمه/هلدینگ/صندوق)؛ شکاف داده نیست."
                               evidence={ev.i3}
@@ -561,7 +612,7 @@ const ScreenerRow = memo(function ScreenerRow({
                       <span className="shrink-0">
                         {i4 === 'gap' ? (
                           r.i4_na === true ? (
-                            <GapMark
+                            <NaMark
                               label="N/A (ماهیت مالی)"
                               tooltip="موتور FTS همین نماد را از شرط «فروش ÷ ارزش بازار» معاف دانسته است (`ind4_na`)؛ شکاف داده نیست."
                               evidence={ev.i4}

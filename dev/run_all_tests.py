@@ -131,6 +131,10 @@ SUITES = [
     # ZeroDivisionِ «لبن» (کمیتِ گردشده به −۱۰۰٪) فقط این‌جاست؛ بی‌ثبت در
     # SUITES هرگز درِ گیت اجرا نمی‌شد و شکستش بی‌صدا می‌ماند.
     ('dev/test_ind1b_parity_v11.py',  '1b parity + vol=-100 regression'),
+    # Task 4 (Phase 1): N/A صادقانه — `i1_na`/`i1_reason`/`i1_basis` رویِ ردیف،
+    # دلیلِ یکسانِ کارت/جدول، تفکیکِ شکافِ ماهانه از صورتِ مالی، و «جدیدترین
+    # دوره» به‌جای fallbackِ بی‌صدای دورهٔ قدیمی. سه‌گانهٔ ۱بِ اسکرینر هم این‌جاست.
+    ('dev/test_fts_na_v11.py',        'honest N/A: row fields, reasons, newest-period only'),
     ('dev/test_fts_technical_tristate.py',
      'technical setups stay three-state (null != false) and each rule matches the notebook'),
     ('dev/test_fts_roundj.py',

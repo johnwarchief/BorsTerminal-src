@@ -37,6 +37,16 @@ export const FtsScreenRowSchema = z.object({
   /** «ب» رشد فیزیکی برایِ این ماهیت قابل‌اعمال است؟ از همان
    *  `company_profile.volume_applicable` که کارت می‌خواند — نه حدسِ نام/صنعت. */
   i1b_applicable: z.boolean().nullish(),
+  /** مبنا/دلیلِ محور ۱ (Task 4): `i1_basis=None` مسیرِ ماهانهٔ YTD،
+   *  `fs_interim`/`fs_annual` صورتِ مالی، `fs_unavailable` شکافِ صورتِ مالی.
+   *  `i1_na` یعنی حکمِ محور ۱ «سنجیده نشد» است (None)، نه «رد»؛ `i1_reason`
+   *  همان دلیلِ کارت است و جدول باید با آن N/A خاکستری بنشاند. */
+  i1_basis: z.string().nullish(),
+  i1_na: z.boolean().nullish(),
+  i1_reason: z.string().nullish(),
+  /** مبنایِ ۱ب: `reported_quantity`/`price_effect_decomposition`/`unavailable`/
+   *  `not_applicable` — از خودِ موتور، نه بازسازیِ فرانت. */
+  i1b_basis: z.string().nullish(),
   i2_pass: z.boolean().nullish(),
   /** شاخص ۲: «سنجیده نشد» از خودِ موتور (`ind2_na`) — سابقه‌ای که اسلاتی از
    *  صورتهایِ تلفیقی دارد یا صنعت بیمه. `eps_consolidated` علتش را می‌گوید تا

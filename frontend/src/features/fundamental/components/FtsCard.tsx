@@ -7,7 +7,7 @@ import type { ReactNode } from 'react';
 import { fmtInt, toFaDigits } from '@shared/lib/fmt';
 import { FTS_LABEL } from '@shared/lib/ftsLabels';
 import { ConfidenceDial } from '@shared/components/ConfidenceDial';
-import { gapLabel, type GapAxis } from '../lib/gapReason';
+import { gapLabel, growthBasisLabel, type GapAxis } from '../lib/gapReason';
 import { type AuditEvidence } from './AuditBadge';
 import { industryGateLabel, industryGateTone } from '../lib/industryGate';
 import { MathFraction } from './MathFormula';
@@ -361,7 +361,15 @@ export function FtsCard({
                *  را بک‌اند در `monetary.data_gap` می‌فرستد. منطق «ب فقط آن‌جا که
                *  قابل‌اعمال است» دیگر اینجا تکرار نمی‌شود — در `axis1_pass`
                *  (api/fundamental.py) نشسته و کارت و موتور همان را می‌خوانند. */
-              const card1Pass = mon?.data_gap ? null : passes['1_growth'] === true;
+              const card1Pass = mon?.data_gap ? null : (passes['1_growth'] ?? null);
+              /** «رد» فقط وقتی است که حکمِ سنجیده‌شده False باشد؛ شکافِ داده
+               *  (`data_gap`) و ردیفِ بی‌حکم چیپِ «نظر نمی‌دهد» می‌گیرند،
+               *  نه قرمزِ «رد» (Task 4). برچسبِ ۱الف در `passes` به bool
+               *  تبدیل شده است، پس گیت را از خودِ `data_gap` می‌گیریم. */
+              const chip1a = mon?.data_gap ? null : v1a;
+              const chip1b = (!physicalApplicable || mon?.data_gap
+                || vol?.data_gap) ? null : v1b;
+              const growthBasis = mon ? growthBasisLabel(mon.basis) : null;
 
               return (
                 <button
@@ -401,22 +409,23 @@ export function FtsCard({
                     >
                       <div className="flex items-center justify-between gap-1">
                         <span className="text-2xs font-bold text-text-secondary">درآمد ریالی</span>
-                        <VerdictChip pass={v1a} testId="fts-verdict-1a_monetary_growth" />
+                        <VerdictChip pass={chip1a} testId="fts-verdict-1a_monetary_growth" />
                       </div>
 
                       {/* نتیجۀ درشت (#149). بجِ ممیزی از روی کارت برداشته شد
                           (#204) — «نظر نمی‌دهد» را VerdictChip می‌گوید و تنها
                           علتِ بی‌داده رویِ کارت می‌ماند. */}
                       <div className="mb-1.5 flex items-end justify-between gap-1.5">
-                        <BigResult testId="fts-result-1a" className={v1a === false ? 'text-accent-red' : v1a == null ? 'text-text-primary' : 'text-accent-green'}>
+                        <BigResult testId="fts-result-1a" className={chip1a === false ? 'text-accent-red' : chip1a == null ? 'text-text-primary' : 'text-accent-green'}>
                           {monPct == null ? '—' : `${monPct >= 0 ? '+' : '−'}${toFaDigits(Math.abs(monPct).toFixed(1))}٪`}
                         </BigResult>
-                        {v1a == null ? (
+                        {chip1a == null ? (
                           <span
                             data-testid="fts-cell-gap-1a_monetary_growth"
-                            className="shrink-0 text-3xs leading-snug text-text-muted"
+                            className="shrink-0 text-3xs leading-snug text-text-muted text-start line-clamp-2"
+                            title={mon?.reason || undefined}
                           >
-                            {gapLabel('1a_monetary_growth')}
+                            {mon?.reason || gapLabel('1a_monetary_growth')}
                           </span>
                         ) : null}
                       </div>
@@ -437,7 +446,7 @@ export function FtsCard({
                             denominator={<span className="text-3xs px-0.5 whitespace-nowrap">فروش سال قبل</span>}
                           />
                           <span>− 1</span>
-                          <span className={`font-bold whitespace-nowrap ${tone(v1a)}`}>
+                          <span className={`font-bold whitespace-nowrap ${tone(chip1a)}`}>
                             ≥ هدفِ پوشش تورم{growthTarget == null ? '' : ` (${toFaDigits(growthTarget)}٪)`}
                           </span>
                         </div>
@@ -445,6 +454,15 @@ export function FtsCard({
                       {mon?.denominator_basis ? (
                         <span className="mt-0.5 block text-3xs leading-snug text-text-muted line-clamp-2" title={mon.denominator_basis}>
                           مبنای مقایسه: {mon.denominator_basis}
+                        </span>
+                      ) : null}
+                      {growthBasis ? (
+                        <span
+                          data-testid="fts-card-growth-basis"
+                          className="mt-0.5 block text-3xs leading-snug text-text-muted"
+                          title={mon?.period ? `دورهٔ مبنا: ${mon.period}` : undefined}
+                        >
+                          مبنای رشد: {growthBasis}
                         </span>
                       ) : null}
                     </div>
@@ -456,19 +474,20 @@ export function FtsCard({
                     >
                       <div className="flex items-center justify-between gap-1">
                         <span className="text-2xs font-bold text-text-secondary">رشد تولیدی</span>
-                        <VerdictChip pass={!physicalApplicable ? null : v1b} testId="fts-verdict-1b_volume_growth" />
+                        <VerdictChip pass={chip1b} testId="fts-verdict-1b_volume_growth" />
                       </div>
 
                       <div className="mb-1.5 flex items-end justify-between gap-1.5">
-                        <BigResult testId="fts-result-1b" className={!physicalApplicable || v1b == null ? 'text-text-primary' : v1b ? 'text-accent-green' : 'text-accent-red'}>
+                        <BigResult testId="fts-result-1b" className={chip1b === false ? 'text-accent-red' : chip1b == null ? 'text-text-primary' : 'text-accent-green'}>
                           {!physicalApplicable || volPct == null ? '—' : `${volPct >= 0 ? '+' : '−'}${toFaDigits(Math.abs(volPct).toFixed(1))}٪`}
                         </BigResult>
-                        {physicalApplicable && v1b == null ? (
+                        {physicalApplicable && chip1b == null ? (
                           <span
                             data-testid="fts-cell-gap-1b_volume_growth"
-                            className="shrink-0 text-3xs leading-snug text-text-muted"
+                            className="shrink-0 text-3xs leading-snug text-text-muted text-start line-clamp-2"
+                            title={vol?.reason || undefined}
                           >
-                            {gapLabel('1b_volume_growth')}
+                            {vol?.reason || gapLabel('1b_volume_growth')}
                           </span>
                         ) : null}
                       </div>
@@ -484,7 +503,7 @@ export function FtsCard({
                                 denominator={<span className="text-3xs px-0.5 whitespace-nowrap">۱ + مبنای تورم</span>}
                               />
                               <span>− ۱</span>
-                              <span className={`font-bold whitespace-nowrap ${tone(v1b)}`}>
+                              <span className={`font-bold whitespace-nowrap ${tone(chip1b)}`}>
                                 {/* دروازۀ ۱ب فقط کفِ رشدِ واقعیِ خودِ موتور است؛
                                     «پهنا» دادهٔ نمایشی است (توضیحِ ind1b در
                                     api/fundamental.py) و پیش‌تر همین‌جا با «≥

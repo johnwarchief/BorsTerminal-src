@@ -18,6 +18,7 @@ import {
   NO_GROSS_MARGIN,
   NO_MCAP,
   NOT_COMPUTABLE,
+  growthBasisLabel,
   gapReason as axisGapReason,
   gapTooltip as axisGapTooltip,
 } from '../lib/gapReason';
@@ -75,6 +76,10 @@ function Panel1({ card, physicalApplicable }: { card: FtsCard; physicalApplicabl
   // جدا در UI یعنی دو جواب برای یک نماد، پس نشانه از حکمِ شاخص ۱ می‌آید.
   const aboveFloor = passes1a ?? beatsFloor;
   const passes1b = card.passes?.['1b_volume_growth'];
+  /** مبنایِ رشد از خودِ موتور (Task 2/4): None = ماهانهٔ YTD؛ fs_* = صورتِ مالی.
+   *  شکافِ داده هم دلیلِ خودش را دارد (`mon.reason`) و نباید با متنِ عمومیِ
+   *  «گزارش ماهانه نیست» یکی شود. */
+  const growthBasis = mon ? growthBasisLabel(mon.basis) : null;
 
   return (
     <div className="flex flex-col gap-3.5">
@@ -82,9 +87,11 @@ function Panel1({ card, physicalApplicable }: { card: FtsCard; physicalApplicabl
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border-c/40 pb-3">
         <div className="flex flex-wrap items-center gap-2">
           {growth == null ? (
-            <GapHint reason={axisGapTooltip('1a_monetary_growth')}>
+            <GapHint reason={mon?.reason || axisGapTooltip('1a_monetary_growth')}>
               <span className="rounded-full border border-accent-yellow/40 bg-bg-card/60 px-2.5 py-0.5 text-xs font-semibold text-accent-yellow">
-                {axisGapReason('1a_monetary_growth').label}
+                {mon?.basis === 'fs_unavailable'
+                  ? 'صورت مالی — شکاف داده'
+                  : axisGapReason('1a_monetary_growth').label}
               </span>
             </GapHint>
           ) : (
@@ -107,6 +114,15 @@ function Panel1({ card, physicalApplicable }: { card: FtsCard; physicalApplicabl
             <Badge tone="blue">
               <span className="num">{toFaDigits(mon.months)}</span> ماهه · <span className="num">{toFaDigits(mon.period ?? '')}</span>
             </Badge>
+          ) : null}
+          {growthBasis ? (
+            <span
+              data-testid="drilldown-growth-basis"
+              className="rounded-full border border-border-c/60 bg-bg-card/60 px-2.5 py-0.5 text-2xs text-text-secondary"
+              title={mon?.period ? `دورهٔ مبنا: ${mon.period}` : undefined}
+            >
+              مبنای رشد: {growthBasis}
+            </span>
           ) : null}
         </div>
 
@@ -195,11 +211,13 @@ function Panel1({ card, physicalApplicable }: { card: FtsCard; physicalApplicabl
               </span>
             </div>
             <span className="text-3xs text-text-muted mt-1">
-              {floor == null
-                ? 'کفِ رشدِ FTS در پاسخِ این نماد نیامده — عددی ساخته نمی‌شود.'
-                : aboveFloor
-                  ? `بالای کفِ ${toFaDigits(floor)}٪ FTS ✓`
-                  : `زیر کفِ ${toFaDigits(floor)}٪ FTS`}
+              {growth == null
+                ? 'سنجیده نشد — دلیلِ شکاف بالای همین پنل آمده است.'
+                : floor == null
+                  ? 'کفِ رشدِ FTS در پاسخِ این نماد نیامده — عددی ساخته نمی‌شود.'
+                  : aboveFloor
+                    ? `بالای کفِ ${toFaDigits(floor)}٪ FTS ✓`
+                    : `زیر کفِ ${toFaDigits(floor)}٪ FTS`}
             </span>
           </div>
         </div>
@@ -253,7 +271,9 @@ function Panel1({ card, physicalApplicable }: { card: FtsCard; physicalApplicabl
 
         <p className="mt-1 text-3xs leading-relaxed text-text-muted">
           فرمول FTS: رشد = (فروش تجمیعی دورهٔ جاری ÷ فروش تجمیعی همان دورهٔ سال قبل × ۱۰۰) − ۱۰۰
-          {mon?.denominator_basis ? ` · مبنا: ${toFaDigits(mon.denominator_basis)}` : ''}
+          {mon?.denominator_basis
+            ? ` · مبنا: ${toFaDigits(mon.denominator_basis)}`
+            : growthBasis ? ` · مبنا: ${growthBasis}` : ''}
         </p>
       </div>
 
@@ -281,7 +301,7 @@ function Panel1({ card, physicalApplicable }: { card: FtsCard; physicalApplicabl
                   ? ` (اثر تقریبی نرخ ${toFaDigits(Math.round(vol.implied_price_pct))}٪)`
                   : '')
               : vol?.data_gap
-                ? `${axisGapReason('1b_volume_growth').why} رشد تولیدی از این گزارش حساب نمی‌شود.`
+                ? `${vol?.reason || axisGapReason('1b_volume_growth').why} رشد تولیدی از این گزارش حساب نمی‌شود.`
                 : 'رشد تولیدی قابل محاسبه نیست — گزارش ماهانهٔ تولیدی کدال ناقص است.'}
           </p>
         </div>

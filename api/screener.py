@@ -41,6 +41,25 @@ _SCAN_LOCK = threading.Lock()
 _WARM_EVENT = threading.Event()
 _WARM_THREAD = None
 
+
+def _merge_1b_fields(applicable, card_pass, card_basis, row_basis):
+    """سه‌گانهٔ ۱بِ ردیف — یک قاعده برایِ کارت و جدول (Task 4).
+
+    `applicable=False` یعنی «این محور برایِ این ماهیت معنا ندارد»؛ در این حالت
+    `pass` هرگز True نمی‌ماند و `basis` همیشه `not_applicable` است — حتی اگر
+    کارت سطح B را برایِ همان ماهیت سنجیده و `pass=True` ساخته باشد. پیش از
+    این اسکرینر `i1b_pass` را با boolِ کارت بازنویسی می‌کرد و ردیفِ مالی با
+    `applicable=False, pass=True` می‌ماند؛ حکمِ محور ۱ (که N/A را وتو نمی‌کند)
+    دست‌نخورده بود، ولی خودِ ردیف سه‌گانهٔ متناقض داشت.
+
+    برایِ `applicable=True` حکمِ کارت مقدم است و در نبودِ basisِ کارت، basisِ
+    ردیفِ bulk می‌ماند.
+    """
+    if applicable is False:
+        return False, "not_applicable"
+    return bool(card_pass), (card_basis or row_basis)
+
+
 def invalidate_screener_cache(drop_materialized: bool = True):
     """باطل‌کردن دستی کش اسکرینر (مثلاً هنگام سینک و رفرش کدال).
 
@@ -492,6 +511,16 @@ def _screener_cached():
                 r["score"] = res["score"]
                 r["primary_score"] = res.get("primary_score", 0)
                 r["i1_pass"] = p["1_growth"]
+                # سه‌حالِ محور ۱: null = «سنجیده نشد» (N/A)، نه «رد». جدول
+                # فقط با همین پرچم N/A خاکستری می‌نشاند؛ ✗ سرخ برایِ ردیفِ
+                # بی‌داده ممنوع است (Task 4).
+                r["i1_na"] = r["i1_pass"] is None
+                # دلیلِ محور ۱ از کارت (متنِ خاصِ همان نماد) اگر آمده باشد؛
+                # وگرنه دلیلِ خودِ ردیفِ bulk می‌ماند. قرارداد: دلیلِ جدول و
+                # کارت یکی است — نه متنِ عمومی در یک مسیر و خاص در مسیرِ دیگر.
+                _i1_reason = ((_ind.get("1") or {}).get("reason") or "").strip()
+                if _i1_reason:
+                    r["i1_reason"] = _i1_reason
                 # رأیِ مالک ۱۴۰۵-۰۷-۰۳: معافیت = «نظر نمی‌دهد» — همان چیزی که
                 # bulk_scan می‌دهد؛ بدونِ این تبدیلِ یک‌خطی جدول با کشِ سرد
                 # «مردود» و با کشِ گرم «N/A» می‌شد.
@@ -519,7 +548,6 @@ def _screener_cached():
                 r["i3_na"], r["i4_na"] = bool(_na3), bool(_na4)
                 r["i5_pass"] = p["5_industry"]
                 r["i1a_pass"] = p.get("1a_monetary_growth")
-                r["i1b_pass"] = p.get("1b_volume_growth")
                 # «ب» رشد فیزیکی: کارت می‌گوید این محور برایِ این ماهیت «قابل
                 # اعمال» است یا نه (`company_profile.volume_applicable`). بی‌این
                 # پرچم جدول چاره‌ای نداشت جز حدس‌زدن از regexِ نام/صنعت؛ سنجشِ
@@ -536,6 +564,13 @@ def _screener_cached():
                     r["i1b_applicable"] = bool(fts_engine.company_profile(
                         r.get("sector_name") or "", cname_of.get(key, "")
                     ).get("volume_applicable"))
+                # سه‌گانهٔ ۱ب: وقتی محور قابلِ‌اعمال نیست، pass=False و
+                # basis="not_applicable" — حتی اگر کارت برایِ همان ماهیت
+                # سطح B را سنجیده باشد. حکمِ محور ۱ از این پرچم‌ها وتو
+                # نمی‌گیرد؛ فقط خودِ ردیف متناقض نمی‌ماند (Task 4).
+                r["i1b_pass"], r["i1b_basis"] = _merge_1b_fields(
+                    r.get("i1b_applicable"), p.get("1b_volume_growth"),
+                    _v1b.get("basis"), r.get("i1b_basis"))
                 r["i4a_pass"] = p.get("4a_sales_to_mcap")
                 r["i4b_pass"] = p.get("4b_profit_potential")
                 # r["applicable"] از خودِ bulk_scan می‌آید (تک‌مرجعِ

@@ -839,15 +839,26 @@ def ytd_denominator(rows):
 # دورهٔ سالِ قبل، و در نبودِ آن سالانه ÷ سالانه. مخرج هرگز «دورهٔ قبل» نیست.
 FS_GROWTH_KINDS = ("service", "financial", "holding")
 FS_GROWTH_NO_ROWS = "هیچ صورت مالی غیرتلفیقی با درآمد ثبت نشده است."
-FS_GROWTH_NO_PRIOR = "دورهٔ مشابهٔ سال قبل برای صورت مالی موجود نیست."
+# «دورهٔ مشابه» فقط برایِ جدیدترین دوره معنا دارد: اگر جدیدترین صورتِ مالی
+# جفتِ سالِ قبل ندارد، دورهٔ قدیمی‌ترِ دارای جفت جای آن نمی‌نشیند (Task 4) —
+# عددِ دورهٔ قدیمی رشدِ «امسال» خوانده می‌شد و همین، N/A را به یک عددِ
+# گمراه‌کننده تبدیل می‌کرد.
+FS_GROWTH_NO_PRIOR = ("دورهٔ مشابهٔ سال قبل برای جدیدترین صورت مالی موجود نیست؛ "
+                      "از دورهٔ قدیمی‌تر استفاده نمی‌شود.")
 
 
 def _fs_growth_gap(reason: str, revenue_basis: str = "",
                    threshold: float = None) -> dict:
-    """نتیجهٔ «قابل محاسبه نبود» — عدد ساخته نمی‌شود، دلیل می‌آید."""
-    return {"monetary_pct": None, "basis": None, "period": "", "months": 0,
-            "year": None, "pass": False, "data_gap": True, "reason": reason,
-            "revenue_basis": revenue_basis, "threshold": threshold}
+    """نتیجهٔ «قابل محاسبه نبود» — عدد ساخته نمی‌شود، دلیل می‌آید.
+
+    `basis="fs_unavailable"` عمداً از `None` (مسیرِ ماهانهٔ YTD) جدا است تا
+    مصرف‌کننده بفهمد شکاف از کدام مسیر آمده؛ پیش از این هر دو حالت `None`
+    بودند و N/A ماهانه با N/A صورتِ مالی قابلِ تفکیک نبود (Task 4).
+    """
+    return {"monetary_pct": None, "basis": "fs_unavailable", "period": "",
+            "months": 0, "year": None, "pass": False, "data_gap": True,
+            "reason": reason, "revenue_basis": revenue_basis,
+            "threshold": threshold}
 
 
 def _fs_growth_floor(th) -> float:
@@ -866,7 +877,15 @@ def fs_growth_from_rows(rows, th=None, revenue_basis: str = "") -> dict:
 
     rows: (period_end, period_months, revenue, title) — تازه‌ترین اول.
     برایِ هر (دورهٔ canonical, ماه) یک مقدار نگه داشته می‌شود (اولی = تازه‌ترین).
-    تازه‌ترین میاندوره مقدم است؛ در نبودِ جفتِ سالانه، سالانهٔ با جفتِ سال قبل.
+    تازه‌ترین میاندوره مقدم است؛ در نبودِ جفتِ میاندوره، تازه‌ترین سالانه.
+
+    **قاعدهٔ صادقانه (Task 4):** فقط جدیدترین دورهٔ هر مبنا داوری می‌شود.
+    اگر جدیدترین میاندوره جفتِ همان دورهٔ سالِ قبل را ندارد، میاندورهٔ
+    قدیمی‌ترِ دارای جفت جای آن نمی‌نشیند؛ مسیر به سالانه می‌رود و اگر آن هم
+    جفت ندارد، نتیجه `data_gap` با دلیل است — نه عددِ یک دورهٔ قدیمی که
+    «رشدِ امسال» خوانده شود. شکاف با `basis="fs_unavailable"` از شکافِ
+    مسیرِ ماهانه (`basis=None`) جدا می‌شود.
+
     میاندوره بر همان ماه و **همان روز** تطبیق می‌خورد؛ سالانه بر (سال−۱، همان
     ماه، همان تعدادِ ماه) و روز را نادیده می‌گیرد — پایانِ سالِ مالیِ ایرانی
     بین ۱۲/۲۹ و ۱۲/۳۰ جابه‌جا می‌شود و اختلافِ یک‌روزه نباید جفتِ معتبر را N/A کند.
@@ -896,17 +915,25 @@ def fs_growth_from_rows(rows, th=None, revenue_basis: str = "") -> dict:
     for (pe, months), val in annuals:
         y, mm, _dd = pe.split("/")[:3]
         annual_prior.setdefault((int(y), mm, months), val)
-    for basis, candidates in (("fs_interim", interims), ("fs_annual", annuals)):
-        for (pe, months), now in candidates:
-            y, mm, dd = pe.split("/")[:3]
-            if basis == "fs_interim":
-                prev_val = by_key.get(("%d/%s/%s" % (int(y) - 1, mm, dd), months))
-            else:
-                prev_val = annual_prior.get((int(y) - 1, mm, months))
-            if not prev_val:
-                continue
+
+    # فقط جدیدترین دورهٔ هر مبنا — نه اولین دوره‌ای که اتفاقاً جفت دارد.
+    if interims:
+        (pe, months), now = interims[0]
+        y, mm, dd = pe.split("/")[:3]
+        prev_val = by_key.get(("%d/%s/%s" % (int(y) - 1, mm, dd), months))
+        if prev_val:
             growth = (now / prev_val - 1.0) * 100.0
-            return {"monetary_pct": growth, "basis": basis, "period": pe,
+            return {"monetary_pct": growth, "basis": "fs_interim", "period": pe,
+                    "months": months, "year": int(y),
+                    "pass": growth >= floor, "data_gap": False, "reason": "",
+                    "revenue_basis": revenue_basis, "threshold": floor}
+    if annuals:
+        (pe, months), now = annuals[0]
+        y, mm, _dd = pe.split("/")[:3]
+        prev_val = annual_prior.get((int(y) - 1, mm, months))
+        if prev_val:
+            growth = (now / prev_val - 1.0) * 100.0
+            return {"monetary_pct": growth, "basis": "fs_annual", "period": pe,
                     "months": months, "year": int(y),
                     "pass": growth >= floor, "data_gap": False, "reason": "",
                     "revenue_basis": revenue_basis, "threshold": floor}
@@ -1969,16 +1996,29 @@ def scan_symbol(conn: sqlite3.Connection, symbol: str, market_cap_rials: float =
     # قاعدهٔ ۱الف/۱ب مشترک با کارت (Task 2/3) — import محلی تا چرخهٔ
     # api.fundamental → fts_engine هنگامِ بارگذاری نشکند.
     from api.fundamental import (axis1_state, ind1a_fs_growth,
-                                 ind1b_volume_growth, v10_thresholds)
+                                 ind1b_volume_growth, v10_thresholds,
+                                 MONTHLY_BAD_YTD_REASON,
+                                 MONTHLY_NO_PRIOR_REASON,
+                                 MONTHLY_NO_SERIES_REASON)
     th1b = v10_thresholds(cfg)
     series = monthly_series(conn, symbol)
     g = revenue_growth_yoy(conn, symbol, min_growth=_th(cfg, "growth_min"),
                            growth_target=_th(cfg, "v10_monetary_growth_min"),
                            sector=sector, series=series)
+    # دلیلِ شکاف را همان متنِ کارت می‌گوییم (Task 4) — پیش از این رشتهٔ خالی
+    # بود و `axis1_state` به متنِ عمومی می‌افتاد، پس i1_reason دو مسیر یکی نبود.
+    if not series:
+        reason1a = MONTHLY_NO_SERIES_REASON
+    elif g is None:
+        reason1a = MONTHLY_BAD_YTD_REASON
+    elif g.get("data_gap"):
+        reason1a = MONTHLY_NO_PRIOR_REASON
+    else:
+        reason1a = ""
     monetary = {"pass": bool(g and g.get("pass")),
                 "monetary_pct": (g or {}).get("growth_pct"),
                 "data_gap": bool(g is None or g.get("data_gap")),
-                "reason": "", "year": (g or {}).get("year"),
+                "reason": reason1a, "year": (g or {}).get("year"),
                 "months": (g or {}).get("months") or 0}
     if prof["kind"] in FS_GROWTH_KINDS and not series:
         # خدماتی/مالی/هلدینگِ بی‌گزارشِ ماهانه: رشد از صورتِ مالی — همان
@@ -2085,6 +2125,7 @@ def scan_symbol(conn: sqlite3.Connection, symbol: str, market_cap_rials: float =
         # می‌داد — دو جواب برایِ یک نماد، درست همان چیزی که رأی ممنوعش کرد.
         "applicable": not fund_class_match(sector, cname),
         "i1_reason": axis1_reason,
+        "i1_na": bool(axis1 is None),
         "m141": bool(m141_hit),
         "avg_trade_val_hmt": None if avg_trade_val is None else round(avg_trade_val, 3),
         "detail": {"growth": g, "eps_trend": e, "gross_margin": gm,
@@ -2254,7 +2295,10 @@ def bulk_scan(conn: sqlite3.Connection, cfg: dict = None) -> list[dict]:
     # بارگذاریِ ماژول نشکند؛ engine فقط در زمانِ فراخوانی از کارت می‌خواند.
     from api.fundamental import (axis1_state, ind1b_from_parts,
                                  physical_volume_lookup, physical_volume_map,
-                                 v10_thresholds)
+                                 v10_thresholds,
+                                 MONTHLY_BAD_YTD_REASON,
+                                 MONTHLY_NO_PRIOR_REASON,
+                                 MONTHLY_NO_SERIES_REASON)
     th1b = v10_thresholds(cfg)
     # کمیتِ فیزیکی یک‌بار برایِ کلِ بازار — در حلقه فقط lookup، نه کوئریِ N+1.
     phys_vol, vol_col, vol_col_prev = physical_volume_map(conn)
@@ -2410,6 +2454,12 @@ def bulk_scan(conn: sqlite3.Connection, cfg: dict = None) -> list[dict]:
                 monetary = {"pass": growth >= g_min, "monetary_pct": growth,
                             "data_gap": False, "reason": "",
                             "year": d["year"], "months": d["month"]}
+            else:
+                # دلیلِ همان شکاف را می‌گوییم که کارت می‌گوید — نه رشتهٔ خالی
+                # که `axis1_state` را به متنِ عمومی می‌انداخت (Task 4).
+                monetary["reason"] = (MONTHLY_NO_PRIOR_REASON if d
+                                      else (MONTHLY_BAD_YTD_REASON
+                                            if recs else MONTHLY_NO_SERIES_REASON))
         # ۱ب: حکمِ کمیت/تناژ فقط برایِ تولیدی‌ها (همان `company_profile` که کارت
         # می‌خواند). مالی/خدماتی/هلدینگ N/A است، نه False — `axis1_state` همین
         # را می‌فهمد. شکافِ داده در ۱الف هم به None می‌رسد، نه «رد».
@@ -2556,6 +2606,9 @@ def bulk_scan(conn: sqlite3.Connection, cfg: dict = None) -> list[dict]:
             "i1b_applicable": bool(volume.get("applicable")),
             "i1b_basis": volume.get("basis"),
             "i1_reason": i1_reason,
+            # «سنجیده نشد» یک حالتِ سوم است، نه «رد». جدول با همین پرچم N/A
+            # خاکستری می‌نشاند و هرگز ✗ سرخ برایِ ردیفِ بی‌داده نمی‌کشد.
+            "i1_na": bool(i1 is None),
             "excluded": bool(reasons), "exclusion_reasons": " · ".join(reasons),
             "identity_kind": identity["kind"],
             "identity_reason": identity["reason"],

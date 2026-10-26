@@ -573,6 +573,15 @@ def _growth_breadth(series, year: int, month: int) -> tuple:
 _MS_GAP_HINT = ("با گرفتنِ دیتابیس تازهٔ کدال (دکمهٔ «دیتابیس کدال» در جدول غربالگری) "
                 "گزارش‌های ماهانهٔ جاافتاده اضافه می‌شود.")
 
+# دلیل‌هایِ شکافِ مسیرِ ماهانه — یک متن، سه مصرف‌کننده (کارت، bulk_scan،
+# scan_symbol). پیش از این bulk/scan_symbol رشتهٔ خالی می‌فرستادند و
+# `axis1_state` به متنِ عمومیِ «رشد ریالی قابل محاسبه نیست» می‌افتاد؛ یعنی
+# `i1_reason`ِ جدول با دلیلِ کارت یکی نبود (Task 4).
+MONTHLY_NO_SERIES_REASON = "هیچ گزارش فعالیت ماهانه‌ای با فروش تجمیعی ثبت نشده است."
+MONTHLY_BAD_YTD_REASON = "تجمیعیِ آخرین گزارش ماهانه صفر یا نامعتبر است."
+MONTHLY_NO_PRIOR_REASON = ("فروش تجمیعیِ همان دورۀ سال قبل در کدال ثبت نشده؛ "
+                           "مقایسهٔ سال‌به‌سال ممکن نیست.")
+
 
 def ind1a_monetary_growth(conn, symbol, series=None, th=None, profile=None) -> dict:
     """فروش/درآمد تجمیعی از ابتدای سال مالی تا ماه آخر ÷ همان دورهٔ سال قبل.
@@ -597,19 +606,18 @@ def ind1a_monetary_growth(conn, symbol, series=None, th=None, profile=None) -> d
         return gap
 
     if not series:
-        return _nodata("هیچ گزارش فعالیت ماهانه‌ای با فروش تجمیعی ثبت نشده است.")
+        return _nodata(MONTHLY_NO_SERIES_REASON)
     # مخرج از تک‌قاعدهٔ `fts_engine.ytd_denominator` می‌آید (ستونِ «مقایسه با
     # دورۀ مشابه سال قبل» ← ردیفِ سال−۱/همان ماه) — کارت نسخهٔ دومِ این
     # سلسلۀ‌مراتب را نداشت، فقط ترتیبِ کوئری‌اش فرق می‌کرد (LIMIT ۶۰ در برابر ۳۰).
     d = fts_engine.ytd_denominator(series)
     if not d:
-        return _nodata("تجمیعیِ آخرین گزارش ماهانه صفر یا نامعتبر است.",
+        return _nodata(MONTHLY_BAD_YTD_REASON,
                        months=int(_f(series[0][1])), year=int(_f(series[0][0])))
     year, month, ytd_now = d["year"], d["month"], d["ytd_now"]
     basis = d["denominator_basis"]
     if d["ytd_prev"] is None:
-        return _nodata("فروش تجمیعیِ همان دورۀ سال قبل در کدال ثبت نشده؛ "
-                       "مقایسۀ سال‌به‌سال ممکن نیست.",
+        return _nodata(MONTHLY_NO_PRIOR_REASON,
                        months=month, year=year, ytd_now_bt=_bt(ytd_now),
                        ytd_prev_bt=None, period="%02d/%d" % (month, year),
                        denominator_basis=basis)
