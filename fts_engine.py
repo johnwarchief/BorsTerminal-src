@@ -1234,6 +1234,13 @@ def classify_identity(symbol, sector, company_name, has_instrument):
     if not has_instrument:
         return {"kind": "non_company", "applicable": False,
                 "reason": "no_instrument"}
+    # بیمه پیش از هر دروازهٔ توکنی: صنعتِ «بيمه وصندوق بازنشستگي به جزتامين
+    # اجتماعي» کلمهٔ «صندوق» را در نامش دارد ولی شرکتِ عملیاتی است. وتویِ بیمه
+    # جای دیگری است (risk_gates، Task 8)، نه در جهانِ نمادها.
+    if is_insurance_sector(sec):
+        return {"kind": "company", "applicable": True, "reason": ""}
+    if fund_class_match(sec, name):
+        return {"kind": "fund", "applicable": False, "reason": "fund"}
     text = norm_fa(sec) + " " + norm_fa(name)
     if any(norm_fa(t) in text for t in NON_COMPANY_TOKENS):
         return {"kind": "non_company", "applicable": False,
@@ -1241,8 +1248,6 @@ def classify_identity(symbol, sector, company_name, has_instrument):
     if not sec and not name:
         return {"kind": "non_company", "applicable": False,
                 "reason": "no_identity"}
-    if fund_class_match(sec, name):
-        return {"kind": "fund", "applicable": False, "reason": "fund"}
     return {"kind": "company", "applicable": True, "reason": ""}
 
 
@@ -2223,7 +2228,10 @@ def bulk_scan(conn: sqlite3.Connection, cfg: dict = None) -> list[dict]:
         cname = cname_of.get(key, "")
         identity = classify_identity(key, sector, cname,
                                      key in board_of or bool(sector))
-        if identity["kind"] == "non_company":
+        # جهانِ مالک: صندوق‌ها (و نمادهای بی‌ابزار) در جدول نمی‌آیند. کارتِ
+        # جزئیات همچنان برای صندوق «FTS ندارد» می‌دهد؛ این‌جا فقط ردیف حذف
+        # می‌شود. بیمه شرکت است و می‌ماند (وتوی‌اش در risk_gates).
+        if identity["kind"] in ("non_company", "fund"):
             continue
         mcap = mcap_of.get(key, 0.0)
         ref = _ref(key)
@@ -2366,9 +2374,10 @@ def bulk_scan(conn: sqlite3.Connection, cfg: dict = None) -> list[dict]:
             "excluded": bool(reasons), "exclusion_reasons": " · ".join(reasons),
             "identity_kind": identity["kind"],
             "identity_reason": identity["reason"],
-            # رأی ۱۵: صندوق داوری FTS ندارد (نه رد). امتیازِ عددی دست‌نخورده
-            # می‌ماند چون sortِ پایین و ستونِ «امتیاز» عدد می‌خواهند.
-            "applicable": not fund_class_match(sector, cname_of.get(key, "")),
+            # رأی ۱۵: صندوق داوری FTS ندارد (نه رد) — و در جهانِ مالک اصلاً به
+            # این جدول نمی‌آید. امتیازِ عددی دست‌نخورده می‌ماند چون sortِ پایین
+            # و ستونِ «امتیاز» عدد می‌خواهند.
+            "applicable": identity["applicable"],
             "m141": hit141,
             "avg_trade_val_hmt": None if liq_hmt is None else round(liq_hmt, 3),
             "margin_optimal": margin is not None and margin >= m_opt,
