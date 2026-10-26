@@ -1220,6 +1220,32 @@ _PROFILE_LABEL = {"production": "تولیدی / صادراتی", "financial": "�
                   "holding": "هلدینگ / سرمایه‌گذاری"}
 
 
+NON_COMPANY_TOKENS = (
+    "صندوق", "اوراق", "اختيار", "اختیار", "حق تقدم", "حق‌تقدم",
+    "خیریه", "شهرداری", "فدراسیون", "موسسه", "پرورشگاه", "وقف", "بنیاد",
+)
+
+
+def classify_identity(symbol, sector, company_name, has_instrument):
+    """Universe gate: only real operating companies enter the FTS table."""
+    sym = str(symbol or "").strip()
+    sec = str(sector or "").strip()
+    name = str(company_name or "").strip()
+    if not has_instrument:
+        return {"kind": "non_company", "applicable": False,
+                "reason": "no_instrument"}
+    text = norm_fa(sec) + " " + norm_fa(name)
+    if any(norm_fa(t) in text for t in NON_COMPANY_TOKENS):
+        return {"kind": "non_company", "applicable": False,
+                "reason": "fund_or_non_operating"}
+    if not sec and not name:
+        return {"kind": "non_company", "applicable": False,
+                "reason": "no_identity"}
+    if fund_class_match(sec, name):
+        return {"kind": "fund", "applicable": False, "reason": "fund"}
+    return {"kind": "company", "applicable": True, "reason": ""}
+
+
 def company_profile(sector: str = "", company_name: str = "") -> dict:
     """طبقۀ شرکت + مبنای درآمد + اینکه چکِ فیزیکی (تناژ) برایش معنا دارد یا نه."""
     both = norm_fa(sector) + " " + norm_fa(company_name)
@@ -2194,6 +2220,11 @@ def bulk_scan(conn: sqlite3.Connection, cfg: dict = None) -> list[dict]:
         sym = key                                   # کلید = نوشتار نرمال (فارسی)
         sym_out = board_of.get(key) or disp_of.get(key) or key
         sector = sector_of.get(key, "")
+        cname = cname_of.get(key, "")
+        identity = classify_identity(key, sector, cname,
+                                     key in board_of or bool(sector))
+        if identity["kind"] == "non_company":
+            continue
         mcap = mcap_of.get(key, 0.0)
         ref = _ref(key)
 
@@ -2244,7 +2275,7 @@ def bulk_scan(conn: sqlite3.Connection, cfg: dict = None) -> list[dict]:
         # «درآمد صورت مالی سالانه» می‌گرفت و در اسکرینر «YTD×۱۲÷م» — ۵۰ نماد
         # واگرا در سنجشِ این دور (docs/fts-notes/FUND_LIVE_AUDIT.md).
         fs_rev = _f(ref["revenue"]) if ref else 0.0
-        prof = company_profile(sector, cname_of.get(key, ""))
+        prof = company_profile(sector, cname)
         core = annualize_rows(recs or [], fs_rev,
                               op_basis=(prof.get("kind") in _OP_BASIS_KINDS)
                               and fs_rev > 0)
@@ -2333,6 +2364,8 @@ def bulk_scan(conn: sqlite3.Connection, cfg: dict = None) -> list[dict]:
             "primary_score": int(sum(1 for _p in (i1, i2, i3) if _p)),
             "i1_pass": i1, "i2_pass": i2, "i3_pass": i3, "i4_pass": i4, "i5_pass": i5,
             "excluded": bool(reasons), "exclusion_reasons": " · ".join(reasons),
+            "identity_kind": identity["kind"],
+            "identity_reason": identity["reason"],
             # رأی ۱۵: صندوق داوری FTS ندارد (نه رد). امتیازِ عددی دست‌نخورده
             # می‌ماند چون sortِ پایین و ستونِ «امتیاز» عدد می‌خواهند.
             "applicable": not fund_class_match(sector, cname_of.get(key, "")),

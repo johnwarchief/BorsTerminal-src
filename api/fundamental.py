@@ -1146,6 +1146,8 @@ def evaluate_v10(conn, symbol, market_cap_rials=0.0, total_market_cap_rials=0.0,
     cfg = cfg or {}
     th = v10_thresholds(cfg)
     prof = company_profile(sector, company_name)
+    identity = fts_engine.classify_identity(symbol, sector, company_name,
+                                            bool(sector))
     series = monthly_series(conn, symbol)
     ref = fts_engine.reference_annual(conn, symbol)
 
@@ -1222,7 +1224,7 @@ def evaluate_v10(conn, symbol, market_cap_rials=0.0, total_market_cap_rials=0.0,
     # «FTS ندارد» بگیرد نه REJECT با جدولِ خالی. عددِ امتیاز همین‌جا دست‌نخورده
     # می‌ماند (اسکرینر روی آن sort می‌کند و None آن را می‌شکند) — فقط مسیرِ
     # پاسخِ جزئیات آن را خالی نشان می‌دهد.
-    applicable = (prof or {}).get("kind") != "fund"
+    applicable = identity["applicable"]
     verdict = ("FTS ندارد" if not applicable else
                ("EXCLUDED" if reasons else
                 "STRONG" if score >= 4 and primary_score == 3 else
@@ -1232,6 +1234,7 @@ def evaluate_v10(conn, symbol, market_cap_rials=0.0, total_market_cap_rials=0.0,
             "market_cap_rials": _f(market_cap_rials), "score": score,
             "primary_score": primary_score,
             "applicable": applicable,
+            "identity_kind": identity["kind"],
             "passes": passes, "excluded": bool(reasons), "exclusion_reasons": reasons,
             "verdict": verdict,
             "methodology": {"version": "FTS-v10", "axes": 5,
