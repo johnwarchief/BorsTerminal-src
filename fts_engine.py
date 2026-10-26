@@ -866,7 +866,7 @@ def fs_growth_from_rows(rows, th=None, revenue_basis: str = "") -> dict:
 
     rows: (period_end, period_months, revenue, title) — تازه‌ترین اول.
     برایِ هر (دورهٔ canonical, ماه) یک مقدار نگه داشته می‌شود (اولی = تازه‌ترین).
-    میاندورهٔ بلندتر مقدم است؛ در نبودِ جفتِ سالانه، سالانهٔ با جفتِ سال قبل.
+    تازه‌ترین میاندوره مقدم است؛ در نبودِ جفتِ سالانه، سالانهٔ با جفتِ سال قبل.
     """
     floor = _fs_growth_floor(th)
     by_key = {}
@@ -889,8 +889,8 @@ def fs_growth_from_rows(rows, th=None, revenue_basis: str = "") -> dict:
                      key=lambda kv: kv[0][0], reverse=True)
     for basis, candidates in (("fs_interim", interims), ("fs_annual", annuals)):
         for (pe, months), now in candidates:
-            y, m, d = pe.split("/")[:3]
-            prev = "%d/%s/%s" % (int(y) - 1, m, d)
+            y, mm, dd = pe.split("/")[:3]
+            prev = "%d/%s/%s" % (int(y) - 1, mm, dd)
             prev_val = by_key.get((prev, months))
             if not prev_val:
                 continue
