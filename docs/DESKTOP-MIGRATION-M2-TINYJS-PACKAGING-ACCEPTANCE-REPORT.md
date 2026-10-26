@@ -1,11 +1,12 @@
 # BorsTerminal — TinyJS M2 Packaging, Installer & Installed-Product Acceptance
 
-- **Date:** 2026-10-25
+- **Date:** 2026-10-25 (M2); M2.1 fixes re-validated 2026-10-26
 - **Branch:** `mission/tinyjs-m2-packaging-acceptance-2026-10-25` (published on `origin`; no PR or merge)
+- **M2.1 fixes branch:** `mission/tinyjs-m2-packaging-fixes-2026-10-25`, based on M2 HEAD `c64a0e0`; fixes commit `f42c263`, evidence commit `7a8767c`; root causes, fixes, targeted test outputs and the M2.1 evidence index are in §12A and `artifacts/desktop-migration/m2.1/`
 - **Base:** `7caae40` (verified M1.5 report commit)
-- **Commits:** `d48dad3` (packaging + harness), `2f168bf` (DB audit), `e0e60c6` (updater harness fix), `810c001` (acceptance evidence), `265a041` (report), `487630e` (test-scope note + evidence hashes), `b3a90e0` (changed-file index); mission branch pushed to `origin`
+- **Commits:** `d48dad3` (packaging + harness), `2f168bf` (DB audit), `e0e60c6` (updater harness fix), `810c001` (acceptance evidence), `265a041` (report), `487630e` (test-scope note + evidence hashes), `b3a90e0` (changed-file index); M2.1 on the fixes branch: `f42c263` (fixes), `7a8767c` (evidence); this report/acceptance update is the branch HEAD
 - **Verdict:** **`PARTIAL — EXPLICIT BLOCKERS`**
-- **`M2_ACCEPTANCE_PASS` is not declared.** No real Windows installer was built, no binary is signed, and the in-app update could not replace the running package. Portable-package acceptance is strong; install/update/uninstall acceptance is not.
+- **`M2_ACCEPTANCE_PASS` is not declared.** No real Windows installer was built, no binary is signed, WebView2 bootstrap/missing-runtime remains blocked, and the in-app update was fixed only against an unsigned loopback feed. Portable-package acceptance is strong; install/sign/update-production acceptance is not complete.
 
 ## 1. Executive summary
 
@@ -13,13 +14,13 @@ A relocatable TinyJS package was built with a self-contained Python/FastAPI side
 
 The package passed the live loopback guard matrix (13 executions × 5 cases = 65/65, including `Origin: null` → 403), normal window close under load, a shell-root crash with zero orphans and recovery on the same database, and a backend-death test with a visible error window and natural WebView2 teardown.
 
-It did **not** pass the product gates that require distribution machinery:
+Distribution gates remain open; the M2 defects were fixed in M2.1:
 
 - **Installer:** no NSIS, WiX, ISCC, signtool, osslsigncode or 7-Zip is installed; only `iexpress.exe` and `makecab.exe` exist. No installer was built or run. Install/uninstall/reinstall are **BLOCKED**.
 - **Signing:** all binaries report `NotSigned`; no certificate or private key was read. Authenticity is **BLOCKED**.
 - **WebView2:** no bootstrapper is shipped; the host runtime 155.0.4283.62 is required. Missing-runtime behavior is **NOT_MEASURED** (removing the system runtime would be a destructive system-wide change and was not authorized).
-- **Updater:** `tiny.app.update.check()` worked (0.3.0 → 0.3.1 over loopback), but `install()` failed because the running PyInstaller sidecar holds `resources/sidecar/_internal/base_library.zip` (`EBUSY`). TinyJS rolled the swap back byte-for-byte (`changed_count: 0`), but no successful update was achieved. Update install is **FAIL**; rollback and checksum refusal are **PASS**.
-- **Stability/temp cleanup:** one of three cold runs hit a WebView2 lazy-chunk import failure despite an HTTP 200; first-run extraction leaves `market.db.part-shm` / `.part-wal` residue. Both are **FAIL** for a clean acceptance.
+- **Updater (fixed in M2.1):** the M2 run failed because the running PyInstaller sidecar holds `resources/sidecar/_internal/base_library.zip` (`EBUSY`). M2.1 stops the sidecar and waits for its process to exit before the stock installer, restarts it on the same port after a refusal/rollback, and waits up to 30 s for the previous instance's single-instance pipe on relaunch. A real 0.3.5 → 0.3.6 install over loopback succeeded (new exe sha256 `b2a62ca6…`, `app.info` 0.3.6, 5/5 targeted security cases, clean close); checksum refusal and locked-file rollback both kept the tree byte-identical and restarted the sidecar. The feed is unsigned/loopback; production authenticity remains **BLOCKED**.
+- **Stability/temp cleanup (fixed in M2.1):** the cold lazy-chunk failure was a WebView2 dynamic-import fetch failure despite a server `200`; `Lazy.tsx` now retries and (for a cached module failure) reloads once per route. The post-fix cold and warm runs both reached Market, Technical and Fundamental with 0 errors. First-run extraction no longer leaves `market.db.part-shm`/`.part-wal`: the private `.part` probe uses SQLite `immutable=1`; cold and warm checks found no `.part` files and `quick_check` was `ok`. Normal `market.db-wal`/`-shm` remain live-database sidecars and are not residue.
 
 The production application was not migrated and `main` was not changed. No merge, tag, release or force-push was performed; the M2 mission branch was pushed to `origin` without a PR/merge. pywebview remains the operational fallback.
 
@@ -32,7 +33,7 @@ The production application was not migrated and `main` was not changed. No merge
 - The update test used a **separate** package build with a loopback update URL and an unsigned local manifest. It is not a production update feed.
 - Timings come from a single-core Windows 10 host (2 logical / 1 physical CPU, 3.88 GB RAM). They are descriptive; no improvement percentage is claimed and p95 is not reported for n < 20.
 - The WebView2 user-data cache lives under `%APPDATA%\com.borsterminal.m2tinyjs\WebView2` and is shared across runs; it was not purged. These are not fully cold OS/WebView2 runs.
-- No successful in-app update, no uninstall, no signed installer and no missing-WebView2 run exist. Those are not claimed as passes.
+- No uninstall, no signed installer and no missing-WebView2 run exist. M2.1 did achieve a successful loopback update and targeted cold/warm runs; those are not production-distribution passes.
 
 ## 3. Provenance, remote and base audit
 
@@ -106,17 +107,19 @@ Every status below is limited to the tested scope.
 | Code signing / authenticity | **BLOCKED** | `Get-AuthenticodeSignature`: **NotSigned** for shell, launcher and sidecar; no signing tool or authorized certificate |
 | WebView2 bootstrapper | **BLOCKED** | No bootstrapper is shipped; host runtime 155.0.4283.62 is required |
 | WebView2 missing-runtime behavior | **NOT_MEASURED** | Removing the host runtime is destructive/system-wide and was not authorized |
-| Update check | **PASS** | Real `tiny.app.update.check()`: 0.3.0 → 0.3.1, notes delivered, over loopback |
-| Update install | **FAIL** | Swap blocked by a running-sidecar lock on `_internal/base_library.zip` (`EBUSY`); app remained 0.3.0 |
-| Update rollback after failed swap | **PASS** | `changed_count: 0`, no `.update-old`, version still 0.3.0 |
-| Update checksum refusal | **PASS** | Wrong sha256 → `checksum mismatch — refusing to install`; `changed_count: 0` |
+| Update check | **PASS** | M2: real `tiny.app.update.check()` 0.3.0 → 0.3.1 over loopback. M2.1: 0.3.5 → 0.3.6 (`latest: 0.3.6`, notes delivered) |
+| Update install | **PASS (M2.1; loopback unsigned feed)** | M2 failed with `EBUSY` on `_internal/base_library.zip`. M2.1 stops the sidecar, waits for process exit, then runs the stock installer: install returned true, new exe sha256 `b2a62ca6…` matches the 0.3.6 payload, relaunched app reports 0.3.6, 5/5 targeted security cases, clean close, 0 survivors |
+| Update rollback after failed swap | **PASS (M2.1)** | M2: byte-identical rollback after the sidecar lock. M2.1: deliberately locked `market.db.baseline` → `update swap failed — the current version is intact`; `changed_count: 0`, no `.update-old`, sidecar restarted on the same port, app alive |
+| Update checksum refusal | **PASS (M2.1)** | Wrong sha256 → `checksum mismatch — refusing to install`; `changed_count: 0`, sidecar restarted, app alive; version stayed 0.3.5 |
 | Signed HTTPS update feed | **BLOCKED** | Only an unsigned loopback manifest was tested; no Ed25519 public key or HTTPS feed |
 | Performance / footprint sampling | **PASS** | Cold n=3, warm n=3; medians/ranges below; p95 omitted for n<20 |
-| Temp/data-dir cleanup | **FAIL** | First-run extraction leaves `market.db.part-shm` (32 KB) and `market.db.part-wal` (0 B); no process/port leaks |
-| Stability | **FAIL** | 1/3 cold runs failed a `TechnicalPage` lazy dynamic import in WebView2 even though the server logged `200`; not reproduced in warm/close runs |
-| Operational DB isolation | **PASS** | All runs isolated; `market.db`/WAL/`user.db` hashes unchanged before and after M2 |
+| Temp/data-dir cleanup | **PASS (M2.1 targeted)** | The M2 residue was reproduced (`market.db.part-shm` 32 KB, `.part-wal` 0 B). M2.1 uses `immutable=1` for the private `.part` probe; cold + warm work dirs have no `.part` files. Normal `market.db-wal`/`-shm` are live-DB sidecars; DB `quick_check` is `ok` |
+| Stability | **PASS (M2.1 targeted)** | The M2 cold failure was `Failed to fetch dynamically imported module … TechnicalPage…js` despite a server 200. M2.1 adds retry + one-time reload in `Lazy.tsx`; targeted cold and warm runs both passed Market → Technical → Fundamental with 0 errors. The prior intermittent failure was not reproduced; no forced-chunk fault injection was run |
+| Operational DB isolation | **PASS** | All M2/M2.1 runs isolated; `market.db`/WAL/`user.db` hashes unchanged before and after |
 
 **Tests:** no production SPA/backend/technical/FTS/adjustment file changed in M2 (`git diff --name-only 7caae40..HEAD` contains only `.gitignore`, this evidence, `prototypes/tinyjs-m2/`, and `tools/desktop-migration/`). The M1.5 full-suite baseline — 204 files, 2,090 tests, 2,074 passed / 11 failed / 5 skipped, with all 11 failures reproducing identically on clean `origin/main b5f5f6c` — therefore remains the applicable suite baseline. The full suite was **not rerun in M2** (`NOT_MEASURED` for this mission) because no tested production module changed and a full run takes ~32 minutes on this single-core host; the M2 harness was exercised by the live runs above instead. If the owner requires a fresh full-suite run before any packaging decision, it is an outstanding test, not a pass.
+
+**M2.1 test scope:** only the affected paths were re-executed — updater install/checksum/rollback, the installed cold+warm Market→Technical→Fundamental path, and first-run extraction/temp-DB checks. The 65-case security matrix, the full frontend/back-end suite and the complete M2 lifecycle matrix were **not rerun**. The `PASS` labels in M2.1 rows are limited to the targeted runs and evidence in `artifacts/desktop-migration/m2.1/`.
 
 ## 6. Functional acceptance
 
@@ -132,6 +135,8 @@ Representative screenshots (committed): `installed-smoke/market_rows_visible.png
 Cold acceptance reached all stages in 2/3 runs; warm reached all stages in 3/3. One cold run failed before the chart:
 
 > `TypeError: Failed to fetch dynamically imported module: http://127.0.0.1:49739/assets/TechnicalPage-CfX_WJzv.js`, followed by `timeout: chart-area`. The sidecar access log shows that the same asset returned `200 OK` at 13:40:21. Three WebView2 processes were still present 1 s after the shell exited and were killed by the harness; natural exit was not measured. This is recorded as a stability failure, not silently retried.
+
+**M2.1 update:** `Lazy.tsx` now retries the dynamic import (300/1200/3000 ms) and, because Chromium caches a failed module fetch, reloads once per route per 60 s before showing a Persian error/retry action. The post-fix installed cold and warm runs both reached `technical_ready` and `fundamental_ready` with 0 errors (cold 86.8 s / 93.4 s; warm 75.6 s / 81.1 s) and closed with exit 0. The original intermittent failure was not reproduced in these runs; a forced-404 fault-injection run was not performed. Lazy loading remains enabled.
 
 ## 7. Security
 
@@ -171,17 +176,33 @@ makecab=C:\Windows\System32\makecab.exe
 
 ## 10. Updater and rollback
 
-A separate 0.3.0u build was produced from commit `d48dad3` with a test-only `"update": { "url": "http://127.0.0.1:8123/manifest.json" }` (not committed to `tinyjs.json`). `tinyjs publish` built 0.3.1 and a 130.9 MiB payload zip; three manifests were served locally:
+A separate 0.3.0u build was produced from commit `d48dad3` with a test-only `"update": { "url": "http://127.0.0.1:8123/manifest.json" }` (not committed to `tinyjs.json`). `tinyjs publish` built 0.3.1 and a 130.9 MiB payload zip; three manifests were served locally.
 
-- **check:** real `tiny.app.update.check()` in the page returned `{available: true, current: "0.3.0", latest: "0.3.1", notes: "M2 updater acceptance (loopback)"}`.
-- **install:** the updater downloaded the zip (HTTP 200), extracted it, and began the Windows file shuffle. It failed at:
+**M2 baseline failure (retained as history):** `tiny.app.update.check()` worked (0.3.0 → 0.3.1), but `install()` failed at:
 
-  > `update swap failed — the current version is intact (cannot replace ...\resources\sidecar\_internal\base_library.zip (file locked?): EBUSY: resource busy or locked)`
+> `update swap failed — the current version is intact (cannot replace ...\resources\sidecar\_internal\base_library.zip (file locked?): EBUSY: resource busy or locked)`
 
-  The running PyInstaller sidecar keeps `_internal/base_library.zip` open. After the failure: `version_after: 0.3.0`, `changed_count: 0`, `update_old_files: []`, clean close, 0 survivors. **Rollback PASS; update install FAIL.**
-- **checksum:** a 0.3.2 manifest with a wrong sha256 produced `checksum mismatch — refusing to install`; `changed_count: 0`, version 0.3.0. **PASS.**
+The running PyInstaller sidecar keeps `_internal/base_library.zip` open. TinyJS rolled back byte-for-byte (`changed_count: 0`, no `.update-old`, app remained 0.3.0). A wrong-sha256 manifest was refused with `checksum mismatch — refusing to install` and `changed_count: 0`.
 
-The updater needs an orchestration change before it can work on this package: stop the sidecar and wait for it to exit before `update.install()`, ship a one-file sidecar (no `_internal` tree to lock), or use a separate updater helper that swaps after the app exits. None of those fixes was applied in M2. The feed was unsigned and loopback-only; a signed HTTPS feed is **BLOCKED**.
+**M2.1 fix and re-validation (2026-10-26):** the shell now wraps `app.update.install`:
+
+1. stop the sidecar via stdin EOF; wait up to 15 s for the process, kill it if needed, and wait for it to exit (file handles are released only then);
+2. run the stock TinyJS installer unchanged — download, manifest sha256, Windows file shuffle, journal/rollback;
+3. on failure, restart the sidecar on the same port and verify `/api/update/version`; on success, let the stock relaunch run.
+
+The relaunch handshake also had a timing defect: the new instance waits only 5 s for the old single-instance pipe, then hands off to the dying app and exits. On this host the first 0.3.3→0.3.4/0.3.6 attempts hit that race (`relaunched instance did not appear`), while the swap itself succeeded. `main.js` now waits up to 30 s for the previous user-scoped pipe before `createApp`; it starts as soon as the pipe is free. The stock handoff and security guard are unchanged.
+
+Final targeted runs used a fresh 0.3.5 base and a 0.3.6 payload over the loopback feed:
+
+| Test | Result |
+|---|---|
+| install 0.3.5 → 0.3.6 | `install_returned: true`; new exe sha256 `b2a62ca6…` = published 0.3.6 build; `changed_count: 3` (new exe + two `.update-old` asides); relaunched app opened a window, `app.info` **0.3.6** (post-update identity run), targeted security **5/5**, close 1.3 s, 0 survivors; relaunch pipe wait **129 ms** |
+| checksum refusal (0.3.7, wrong sha) | `checksum mismatch — refusing to install`; `changed_count: 0`; sidecar stopped 3.2 s and restarted on the same port; app alive; clean close |
+| locked-file rollback (0.3.7 payload, baseline locked) | `update swap failed — the current version is intact (… market.db.baseline … EBUSY)`; `changed_count: 0`, `update_old_files: []`; sidecar restarted on the same port; app alive; clean close |
+
+The 0.3.6 payload and its three manifests are test-only and unsigned; the loopback feed is not a production update channel. A signed HTTPS feed, certificate and production rollback policy remain **BLOCKED** (§9, §14). The full 65-case security matrix was not rerun; the five live guard cases on the relaunched instance were.
+
+Evidence: `artifacts/desktop-migration/m2.1/update-install/`, `update-checksum/`, `update-rollback/`, `post-update-identity/`, `relaunch-race.json`, and `test-summary.json` (with the M2.1 evidence manifest).
 
 ## 11. Performance and footprint
 
@@ -205,8 +226,75 @@ Cold = fresh work dir/profile per run and first-run DB extraction. Warm = one sh
 ## 12. Cleanup and residual defects
 
 - Normal close, crash and backend-death leave **no shell/sidecar process** and **close the port**. WebView2 teardown can take ~1 s; with a 30 s grace it exited naturally in the dedicated tests.
-- **Defect:** `_extract_market_db()` renames `market.db.part` to `market.db` but leaves `market.db.part-shm` (32 KB) and `market.db.part-wal` (0 B) in the data directory. Reproduced on every first run and in the recovery copy. No data corruption; it is file residue and should be cleaned in `bors_config` (not changed in M2).
-- **Defect:** one cold run failed to load `TechnicalPage-CfX_WJzv.js` in WebView2 while the sidecar returned 200; a user-visible route error with no retry. Warm and close runs did not reproduce it. The probe navigated to the technical route immediately after the first board paint, so this may be load/race-sensitive; it is not proven to be TinyJS-specific.
+- **Fixed in M2.1 — `.part` residue:** `_extract_market_db()` probed the freshly written `market.db.part` with a SQLite `mode=ro` connection. For a WAL-mode file that creates `market.db.part-shm` (32 KB) and `market.db.part-wal` (0 B) beside it; the subsequent `os.replace(tmp, target)` renamed only the main file, orphaning both sidecars. No active connection remained after the sidecar exited; the zero-byte WAL carried no data. The private `.part` probe now uses `mode=ro&immutable=1` (the file is immutable until publication), so no sidecars are created. Cold and warm installed runs have no `.part` files; a copy of the final DB plus WAL/SHM passes `PRAGMA quick_check` and contains `instruments`, `daily_prices` and `financial_statements`. The normal `market.db-wal`/`-shm` are live-database sidecars, not extraction residue.
+- **Fixed in M2.1 — cold lazy chunk:** the M2 error was `Failed to fetch dynamically imported module …/TechnicalPage-CfX_WJzv.js` in WebView2 while the sidecar returned 200. `Lazy.tsx` had no catch/retry, leaving the route on its skeleton. It now retries the dynamic import and, because Chromium caches failed module fetches, reloads once per route per 60 s, then shows a Persian error with a manual retry. Lazy loading remains enabled. Targeted cold and warm installed runs reached Market, Technical and Fundamental with 0 errors. The original failure was intermittent and was not reproduced; no forced-fault run is claimed.
+
+## 12A. M2.1 acceptance record (2026-10-26)
+
+**Branch/base:** `mission/tinyjs-m2-packaging-fixes-2026-10-25`, created from M2 HEAD `c64a0e0a838986a60f73136425364e248d7f4503`; the five newer `origin/main` commits were not imported. No rebase, force-push, reset, merge or main change. `main` remains `036cdfa…`; the M2 branch and evidence are preserved. Other checkouts, the operational DB/WAL/user file and unrelated scratch data were not modified.
+
+**Scope:** fix the M2 defects and re-run only affected paths. No installer/signing/WebView2 work and no production migration.
+
+### 12A.1 Root causes and fixes
+
+| Defect | Root cause | Fix |
+|---|---|---|
+| Updater `EBUSY` on `_internal/base_library.zip` | The running PyInstaller onedir sidecar holds the archive open; TinyJS swaps the live install in place, so renaming that file fails and the swap rolls back | `main.js` wraps `app.update.install`: stdin-EOF stop, wait up to 15 s, kill + wait, then the stock installer; on failure restart the sidecar on the same port and verify HTTP |
+| Relaunch loses the app | TinyJS `bridge.js` waits only 5 s for the old instance's single-instance pipe; if WebView2 shutdown is slower, the new instance hands off to the dying app and exits | `main.js` waits up to 30 s for the same user-scoped pipe before `createApp`; it proceeds as soon as the pipe is free. Stock handoff/security unchanged |
+| Cold lazy-chunk failure | WebView2 rejected a dynamic import of `TechnicalPage-CfX_WJzv.js` although the sidecar returned 200; `Lazy.tsx` had no catch/retry, so the route stayed on its skeleton | Retry the same import at 300/1200/3000 ms; on a persistent failure (Chromium caches failed module fetches) reload once per route per 60 s, then show a Persian error/retry action. Lazy loading remains enabled |
+| `.part-shm`/`.part-wal` residue | `_market_db_tables(tmp)` opened the freshly written `market.db.part` with `mode=ro`; WAL mode created sidecars, and `os.replace` renamed only the main file. The remaining sidecars were orphaned; the `.part-wal` was 0 B and no process held it after exit | Probe the private `.part` with `mode=ro&immutable=1`; the file is immutable until publication, so no sidecars are created |
+
+### 12A.2 Targeted tests and real results
+
+| Test | Result |
+|---|---|
+| Installed updater 0.3.5 → 0.3.6 (loopback, unsigned) | `check` available, install returned true; new exe sha256 `b2a62ca628651acadda33015973be3868e152aef623d33cbf0e28eceed550fc5`; `changed_count: 3`; 2 `.update-old` asides; relaunched window; post-update `app.info` **0.3.6**; targeted security **5/5**; close 1.3 s; cleanup 0 survivors; relaunch wait 129 ms on an uncontended pipe |
+| Relaunch race, old instance kept alive 9 s | 0.3.6 new shell remains alive at 9 s, waits **11,437 ms**, then starts after the old instance exits (1.4 s later) and opens a window. The pre-fix build exited by 9 s in the same scenario |
+| Checksum refusal (0.3.7 manifest, wrong sha) | `checksum mismatch — refusing to install`; `changed_count: 0`; `update_old_files: []`; sidecar stopped gracefully (3.2 s), restarted on port 63467, `/api/update/version` 200; app alive; close 2.6 s; 0 survivors |
+| Locked-file rollback (0.3.7 manifest, `market.db.baseline` locked) | `update swap failed — the current version is intact (…EBUSY)`; `changed_count: 0`; `update_old_files: []`; sidecar restarted on port 63649; app alive; close 1.5 s; 0 survivors |
+| Post-update identity (no-update manifest) | `app.info` 0.3.6; check `{available:false, current:"0.3.6", latest:"0.3.6"}`; clean close |
+| Installed cold, fresh work dir | 1 run, 0 errors; Market rows, `technical_ready` 86.8 s, `fundamental_ready` 93.4 s; security 5/5; exit 0; 0 survivors; no `.part` files; DB `quick_check` **ok** (daily_prices 129,577; financial_statements 8,723; instruments 6,018) |
+| Installed warm, same DB copied forward | 1 run, 0 errors; `technical_ready` 75.6 s, `fundamental_ready` 81.1 s; security 5/5; exit 0; 0 survivors; no `.part` files; `quick_check` **ok** |
+
+The cold and warm runs are the requested end-to-end pass (open installed app, real Market and Technical, normal close). The prior cold failure was intermittent and did not recur; the retry/reload guard is not claimed to have been forced by a 404 in the installed package.
+
+**Reproduction commands (test-only loopback feed; values are examples from this run):**
+
+```text
+# builds: 0.3.5 base + 0.3.6 payload from the fixed source
+# frontend: cd frontend && <node> node_modules/vite/bin/vite.js build
+# sidecar:  .venv\Scripts\python.exe -m PyInstaller --noconfirm --clean ^
+#           --distpath prototypes\tinyjs-m2\packaging\build\dist ^
+#           --workpath prototypes\tinyjs-m2\packaging\build\work ^
+#           prototypes\tinyjs-m2\packaging\m2_sidecar.spec
+# copy the sidecar + market.db.lzma/baseline to prototypes\tinyjs-m2\resources\sidecar
+# set tinyjs.json version 0.3.5 + update.url http://127.0.0.1:8123/manifest.json
+# cd prototypes\tinyjs-m2 && _tools\tinyjs\tinyjs.cmd build
+# set version 0.3.6 and: _tools\tinyjs\tinyjs.cmd publish --notes "M2.1 updater acceptance (loopback)"
+# revert tinyjs.json to 0.3.0/no update.url
+
+.venv\Scripts\python.exe tools\desktop-migration\m2_prepare_update.py ^
+  --published-manifest %TEMP%\bors_m21_update\published-036\manifest.json ^
+  --published-dir %TEMP%\bors_m21_update\published-036 ^
+  --out-dir %TEMP%\bors_m21_update\manifests-036 --advertised-version 0.3.7
+
+.venv\Scripts\python.exe tools\desktop-migration\m2_update_test.py --mode install ^
+  --install-dir %TEMP%\bors_m21_update\install-035 ^
+  --manifest %TEMP%\bors_m21_update\manifests-036\install\manifest.json ^
+  --out-dir artifacts\desktop-migration\m2.1\update-install --port 8123 --timeout 300
+.venv\Scripts\python.exe tools\desktop-migration\m2_update_test.py --mode checksum ...
+.venv\Scripts\python.exe tools\desktop-migration\m2_update_test.py --mode rollback ...
+.venv\Scripts\python.exe tools\desktop-migration\m2_update_test.py --mode no-update ...
+
+.venv\Scripts\python.exe tools\desktop-migration\phase_d_tinyjs.py --installed ^
+  --label m21-installed-cold --mode cold --runs 1 --exe <install-root>\BorsTerminalM2TinyJS.exe ^
+  --out-dir artifacts\desktop-migration\m2.1\installed-cold --timeout 300 --survivor-grace 30
+# warm uses the same command with --mode warm --warmup 0 --keep-work and a pre-seeded warm-work
+```
+
+**Status:** the M2 defects are **fixed and verified in targeted scope**. The overall M2 status remains **`PARTIAL — EXPLICIT BLOCKERS`**: installer, signing, real install/uninstall/reinstall, WebView2 bootstrap/missing runtime, and a signed production update feed are still not available. No `M2_ACCEPTANCE_PASS` is declared.
+
+**Evidence:** `artifacts/desktop-migration/m2.1/` (43 evidence files; `evidence-manifest.json` lists each hash, plus `test-summary.json`, `part-residue.json`, `lazy-chunk.json`, `relaunch-race.json`, `relaunch-race-fixed.txt`, `update-install/version-after.json`, `build/build-provenance.json`, `build/manifests/`). The operational DB/WAL/user hashes are unchanged (`operational-db-recheck.txt`).
 
 ## 13. Operational DB incident audit (read-only)
 
@@ -223,10 +311,10 @@ The M1.5 report understated the operational DB differences. A read-only audit on
 1. **Installer toolchain:** authorize NSIS or WiX (and a system-wide/per-user install policy) or explicitly accept a portable-folder distribution. Without it, install/uninstall/reinstall and the M2 gate cannot pass.
 2. **Code signing:** provide an authorized code-signing certificate/tool, or accept an internal unsigned build. No signature means no authenticity claim.
 3. **WebView2 distribution:** choose evergreen prerequisite (current), ship a bootstrapper, or fix a runtime. Missing-runtime behavior remains unmeasured.
-4. **Update architecture:** stop the sidecar before the swap, use a one-file sidecar, or use an external updater helper. The current in-app update cannot replace `_internal` while the sidecar runs.
-5. **Update feed:** host a signed HTTPS manifest (Ed25519 publicKey) or define the internal distribution trust model.
-6. **Defects:** fix the `.part-shm`/`.part-wal` residue; investigate/retry the cold lazy-chunk import failure. Neither was fixed in M2.
-7. **Base decision:** the M2 branch is based on `7caae40`, while `origin/main` is `036cdfa` (5 docs/tooling commits ahead). Rebase/merge policy belongs to the owner; no rebase was done.
+4. **Update feed:** host a signed HTTPS manifest (Ed25519 publicKey) or define the internal distribution trust model. M2.1 proved the local update mechanics only against an unsigned loopback feed.
+5. **Base decision:** the M2 branch is based on `7caae40`, while `origin/main` is `036cdfa` (5 docs/tooling commits ahead). Rebase/merge policy belongs to the owner; no rebase was done.
+
+M2.1 resolved the update architecture (sidecar stop/restart + bounded relaunch wait) and the `.part`/lazy-chunk defects; those are no longer open blockers. The full 65-case security matrix, the full frontend/back-end suite and the complete M2 lifecycle matrix were not rerun in M2.1 and remain outstanding if the owner requires a fresh full-matrix run.
 
 ## 15. Reproduction
 
@@ -250,14 +338,16 @@ python tools\desktop-migration\phase_d_tinyjs.py --installed --label <label> --m
 # add "update": {"url": "http://127.0.0.1:8123/manifest.json"} to tinyjs.json temporarily
 _tools\tinyjs\tinyjs.cmd publish --notes "M2 updater acceptance (loopback)"
 python tools\desktop-migration\m2_prepare_update.py --published-manifest dist\publish\manifest.json ...
-python tools\desktop-migration\m2_update_test.py --mode install|checksum|rollback ...
+python tools\desktop-migration\m2_update_test.py --mode install|checksum|rollback|no-update ...
 ```
+
+M2.1's exact fixed-build commands, including `--advertised-version 0.3.7` for the checksum/rollback variants, are in §12A.2. The temporary loopback update URL was reverted in `tinyjs.json`; committed source remains version 0.3.0 with no update feed.
 
 The package never received `BORS_PYTHON`, `BORS_HEADLESS_ENTRY` or a dev interpreter. The loopback update URL was test-only and was reverted in `tinyjs.json` after the builds; it is not part of the committed source.
 
 ## 16. Evidence index
 
-Committed under `artifacts/desktop-migration/m2/` (65 files, 4.3 MB; the acceptance evidence commit `810c001` added 45 files; hashes in `evidence-manifest.json`):
+Committed under `artifacts/desktop-migration/m2/` (65 files, 4.3 MB; the acceptance evidence commit `810c001` added 45 files; hashes in `evidence-manifest.json`). All 65 manifest entries are now tracked: `build/` and shell logs that `.gitignore` had excluded were force-added in `7a8767c` so the index is reproducible.
 
 | Path | Content |
 |---|---|
@@ -276,10 +366,26 @@ Committed under `artifacts/desktop-migration/m2/` (65 files, 4.3 MB; the accepta
 | `update-install/`, `update-checksum/` | Real updater check/install failure/rollback/checksum |
 | `db-incident-analysis.json` | Read-only operational DB incident audit |
 
+**M2.1 evidence** is committed under `artifacts/desktop-migration/m2.1/` (43 evidence files; hashes in `evidence-manifest.json`):
+
+| Path | Content |
+|---|---|
+| `test-summary.json` | Consolidated M2.1 root causes, builds, test results, statuses and blockers |
+| `update-install/` | Successful 0.3.5 → 0.3.6 swap/relaunch summary, logs, screenshot, `version-after.json` |
+| `update-checksum/`, `update-rollback/` | Refusal and locked-file rollback summaries, logs, restart traces |
+| `post-update-identity/` | Post-update `app.info` 0.3.6 / no-update check |
+| `relaunch-race.json`, `relaunch-race-fixed.txt` | 5 s stock handoff race and the 11.4 s bounded-wait recovery on the fixed package |
+| `lazy-chunk.json`, `installed-cold/`, `installed-warm/` | Prior failure, fix, and targeted cold/warm Market→Technical→Fundamental results |
+| `part-residue.json`, `part-probe.txt` | Root-cause probe, prior residue sizes, cold/warm no-`.part` evidence and DB checks |
+| `build/build-provenance.json`, `build/manifests/` | Fixed 0.3.5/0.3.6 builds and test manifests (no zip) |
+| `operational-db-recheck.txt` | Unchanged operational DB/WAL/user hashes after M2.1 |
+
 Raw 200 MB builds, `dist/`, `resources/sidecar/` and the 137 MB update zip are **not committed**; their hashes are in the build evidence.
 
 ## 17. Final status
 
 **`PARTIAL — EXPLICIT BLOCKERS`**
 
-The TinyJS package is a credible portable application candidate: it starts a real bundled Python backend without the development venv, preserves the security guard, renders the real cached product slice, closes and crashes cleanly, and recovers on the same data. It is **not** yet an installable, signed, updatable Windows product. Installer, signing, WebView2 bootstrap, a signed update feed and a successful in-app update remain blocked or failed, so `M2_ACCEPTANCE_PASS` is not declared and no production migration is authorized.
+The TinyJS package is a credible portable application candidate: it starts a real bundled Python backend without the development venv, preserves the security guard, renders the real cached product slice, closes and crashes cleanly, recovers on the same data, and (M2.1) supports a real in-place update with preserved checksum refusal and locked-file rollback. The M2 defects — updater in-use-file lock, relaunch handoff timing, cold lazy chunk and `.part` residue — are fixed and verified in targeted scope.
+
+It is **not** yet an installable, signed, distributable Windows product. Installer/NSIS/WiX, Authenticode signing/signtool, real install/uninstall/reinstall, WebView2 bootstrap/missing-runtime, and a signed production update feed remain **BLOCKED**. The M2.1 fixes were re-validated only on affected paths; the full 65-case security matrix and full test suite were not rerun. `M2_ACCEPTANCE_PASS` is not declared, and no production migration is authorized. pywebview remains the operational fallback.

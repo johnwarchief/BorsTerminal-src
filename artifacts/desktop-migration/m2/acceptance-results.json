@@ -158,7 +158,10 @@
    "full 65-case security matrix",
    "full frontend/back-end suite",
    "complete M2 lifecycle matrix"
-  ]
+  ],
+  "code_commit": "f42c263925a0ecda0d033c37014b679171ce22ae",
+  "evidence_commit": "7a8767ce676f4d69aa8250fd535c18b2be37eee4",
+  "report_update": "final commit on mission/tinyjs-m2-packaging-fixes-2026-10-25 (this acceptance/report update)"
  },
  "last_updated": "2026-10-26"
 }
