@@ -1596,15 +1596,56 @@ git ls-remote github refs/heads/mission/4-axes-2026-10-10
 
 ## ۱۰) چک‌لیستِ پایانی
 
-- [ ] `cargo test --locked` سبز
-- [ ] `cargo build --release --locked` و وجودِ EXE
-- [ ] `python dev/shell_launcher_v103.py --dist dist/BorsTerminal_Ultimate` سبز
-- [ ] `python dev/version_anchor_guard.py` سبز (هفت لنگر)
-- [ ] `python dev/test_compat_guard_v1012.py` سبز (fallback حفظ شده)
-- [ ] `python dev/loopback_guard_v1029.py` سبز
-- [ ] `python dev/onedir_contract_v11.py --dist dist` سبز
-- [ ] `python dev/persian_glyph_guard.py` سبز
-- [ ] `python dev/run_all_tests.py` سبز
-- [ ] پذیرشِ §۱۲.۲۸ با اعداد ثبت شده
-- [ ] fallback و نگهبانِ والد آزموده
-- [ ] گزارش بدونِ PASS خوداعلام؛ Push فقط شاخهٔ مأموریت
+- [x] `cargo test --locked` سبز (۳ تستِ واحدِ args/settings/close)
+- [x] `cargo build --release --locked` و وجودِ EXE (12.74 MB)
+- [x] `python dev/shell_launcher_v103.py --dist dist/BorsTerminal_Ultimate` سبز
+- [x] `python dev/version_anchor_guard.py` سبز (هفت لنگر)
+- [x] `python dev/test_compat_guard_v1012.py` سبز (fallback حفظ شده)
+- [x] `python dev/loopback_guard_v1029.py` سبز
+- [x] `python dev/onedir_contract_v11.py --dist dist` سبز
+- [x] `python dev/persian_glyph_guard.py` سبز
+- [x] `python dev/run_all_tests.py` اجرا شد — 104 سوئیت شمرده + 29 خاموش؛ 2 سرخِ محیطی/داده (توضیح در §۱۱)
+- [x] پذیرشِ §۱۲.۲۸ با اعداد ثبت شده
+- [x] fallback و نگهبانِ والد آزموده
+- [x] `npx tsc -b` صفر خطا؛ `npx vitest run` 165 فایل / 1669 تست سبز (5 skipِ بی‌کورپس)
+- [x] گزارش بدونِ PASS خوداعلام؛ Push فقط شاخهٔ مأموریت
+
+---
+
+## ۱۱) رکوردِ اجرا (2026-10-27)
+
+شاخهٔ `mission/4-axes-2026-10-10`. کامیت‌های کد: `ec9a2cb5` (شل + Cargo/tauri.conf)، `d3239526` (لانچر + bors_shell)، `b78a4649` (آپدیتر/نصاب)، `f1167946` (بیلد/CI)، `e0206eb1` (گارد). باندل: `dist/BorsTerminal_Ultimate` = 139.3 MB، `BorsTerminal_Shell.exe` = 12.74 MB (sha256 کوتاه `630ca42e`)، ساخته‌شده با Python 3.12.14 + PyInstaller 6.22.3 و `cargo build --release --locked`. `FileVersion`/`ProductVersion` شل = `1.0.88`.
+
+محیطِ آزمون: اسلایسِ Portable جدا (`%TEMP%\bors_d1_final`) با `bors_portable.flag`، کپیِ `market.db`، `BORS_NO_FETCH_LOOPS=1`، پروکسیِ مردهٔ `127.0.0.1:9` و CDP روی 9334. هیچ حلقهٔ زندهٔ TSETMC اجرا نشد.
+
+| موردِ پذیرش §12.28 | نتیجه | شاهد |
+|---|---|---|
+| پنجرهٔ Tauri بالا می‌آید | PASS | `shell_ready.json` در 1,435 ms از exec؛ پنجره visible |
+| بک‌اند و API | PASS | HTTP 200 روی 8101 در 5,010 ms از exec |
+| تابلوی بازار | PASS | 33 ردیف `tape-row` در 1920×1080 (مجازی‌سازی)؛ برچسب «بازار بسته — تابلوی آخرین روز معاملاتی» |
+| نمودارِ تعدیل‌شده | PASS | `/api/chart/فولاد` = 395 کندل؛ `nn-chart-host` با 10 canvas، بدونِ `nn-no-data`، بدونِ خطای صفحه |
+| سه وضوح | PASS | 1366/1920/2560 با نمودار رندر شد (`_audit/perf/D1_technical_*.png`) |
+| قطعِ شبکه | PASS | `fetch('/api/market')` با «Failed to fetch»؛ UI بدونِ کرش |
+| وصلِ دوباره | PASS | همان fetch پس از reconnect: 200 با 6,018 ردیف |
+| بستن/خروج (close_action=exit) | PASS | WM_CLOSE → شل و لانچر هر دو خارج |
+| Tray (close_action=tray) | PASS | پنجره پنهان شد (`IsWindowVisible=false`)، شل و لانچر زنده |
+| نگهبانِ مرگِ والد | PASS | kill فقط PIDِ پایتون → شل و WebView2 در <6 s خارج |
+| fallback: EXEِ شل غایب | PASS | `[shell] shell exe not found -> pywebview`؛ پنجرهٔ pywebview باز و تمیز بسته شد |
+| fallback: `BORS_SHELL=pywebview` | PASS | بدونِ اجرای شل، پنجرهٔ pywebview |
+| حافظهٔ بیکار | ثبت شد | python 242.9 + shell 24.8 + webview2 454.7 = 722.4 MB (6 فرآیند) |
+
+نکته‌های حینِ آزمون:
+- مسیرِ تکنیکال پارامترِ مسیر است: `#/technical/:symbol` (نه querystring). با نبودِ نماد، `noData` به خوراکِ شاخصِ کل (TEDPIX) نگاه می‌کند که در دروازهٔ آفلاین 502 می‌دهد — این رفتارِ محصول است، نه خطای پوسته.
+- دروازهٔ ورودِ محلیِ کلاینت در پنجرهٔ جدید ظاهر می‌شود؛ برای آزمون فقط پرچمِ `sessionStorage` ست شد، هیچ رمزی خوانده/نوشته نشد.
+- شل آدرسِ صفحه را از یک سرورِ داخلیِ با پورتِ تصادفی می‌گیرد (8322/2152 در دو اجرا)؛ API همچنان 8101 است.
+
+راستی‌آزمایی‌نشده (صریح): کلیکِ دستی روی منوی Tray (نمایش/خروج) — نیاز به تعاملِ کاربر؛ آپدیتِ درون‌برنامه‌ای وقتی شل باز است — نیاز به ریلیزِ واقعی؛ چرخهٔ شبکهٔ زندهٔ TSETMC (دروازهٔ آفلاین فعال بود)؛ اجرای واقعیِ نصب‌کنندهٔ Inno و CIِ `release-inno` با toolchainِ Rust — فقط محلی بیلد شد.
+
+### نتیجهٔ گیت‌ها در همین اجرا
+
+`python dev/run_all_tests.py`: 104 سوئیت شمرده + 29 خاموش؛ **دو سرخ**، هر دو با انتساب:
+
+1. `dev/npm_lock_v1040.py` — `npm error code EALLOWSCRIPTS`. علت، متغیرِ تزریقیِ محیطِ ابزار (`npm_config_allow_scripts`) است، نه قفل یا `.npmrc`؛ با `env -u npm_config_allow_scripts` همان گارد «4 checks, 0 failed — NPM LOCK GUARD OK» می‌دهد.
+2. `_audit/candle_integrity_roundj.py` — تنها بندِ «آخرین کندل به آخرین نشستِ تابلو رسیده»: board=20261014، candles=20261027. بقیهٔ بندها (447,870 ردیف، بی‌تکرار، صعودی، بی‌کندلِ آینده، پاریتیِ 3,975 ردیف با ناشر) سبز. کامیت‌های D1 هیچ نویسندهٔ کندل/تابلو را دست نزده‌اند (`git diff --stat d93cba91..HEAD`)؛ این واگرایی در بانکِ مشترکِ `market.db` است که بک‌اندهایی خارج از این اسلایس روی آن کار می‌کنند (اسلایسِ D1 کپیِ خودش را دارد). برایِ رفع، بازسازیِ snapshotِ تابلو لازم است — خارج از دامنهٔ D1.
+
+`npx tsc -b`: صفر خطا. `npx vitest run`: 165 فایل / 1,669 تست سبز، 5 skip (کورپسِ fuzz موجود نیست).
