@@ -672,11 +672,17 @@ const ScreenerRow = memo(function ScreenerRow({
                         <span
                           className="num block min-w-0 text-end text-sm font-bold whitespace-nowrap text-text-primary"
                           title={
-                            [i4NumberHint, i4Annualize].filter(Boolean).join(' · ') || undefined
+                            [i4NumberHint, i4Annualize && toFaDigits(i4Annualize)].filter(Boolean).join(' · ') || undefined
                           }
                         >
                           {r.profit_potential_pct == null ? '—' : fmtPctGrouped(r.profit_potential_pct)}
                           {isAbsurdPct(r.profit_potential_pct) ? ' ⚠' : ''}
+                          {/* M3: با وجودِ مسیر، برچسبِ سالانه‌سازی فقط در
+                              tooltip می‌ماند؛ نسخهٔ sr-only برایِ صفحه‌خوان و
+                              کاربرِ کیبورد (ارتفاعِ ۵۲px دست‌نخورده). */}
+                          {i4Path && i4Annualize ? (
+                            <span className="sr-only"> · {toFaDigits(i4Annualize)}</span>
+                          ) : null}
                         </span>
                         {/* چرا شاخص ۴ پاس شد (Task 7): نامِ مسیر از خودِ موتور،
                             نه بازمحاسبهٔ آستانه در جدول. مسیر دوم متنِ جزوه را
@@ -701,9 +707,9 @@ const ScreenerRow = memo(function ScreenerRow({
                           <span
                             data-testid="fts-i4-annualize"
                             className="max-w-full truncate text-3xs text-text-muted"
-                            title={i4Annualize}
+                            title={toFaDigits(i4Annualize)}
                           >
-                            {i4Annualize}
+                            {toFaDigits(i4Annualize)}
                           </span>
                         ) : null}
                       </div>

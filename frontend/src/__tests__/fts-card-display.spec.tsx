@@ -66,6 +66,35 @@ describe('#149 — نتیجهٔ هر کاشی: برچسبِ حکم + عددِ د
   });
 });
 
+describe('#Task 7 — برچسبِ سالانه‌سازیِ شاخص ۴', () => {
+  it('برچسبِ موتور با ارقامِ فارسی رندر می‌شود (۶ نه 6)', () => {
+    const c = realCard();
+    const i4 = {
+      ...c.indicators['4'],
+      annualize_months: 6,
+      annualize_label: 'سالانه‌شده از دورهٔ 6 ماهه',
+      acceptance_path: 'sales_to_mcap' as const,
+    };
+    renderCard({ indicators: { ...c.indicators, 4: i4 } });
+    const el = screen.getByTestId('fts-card-4-annualize');
+    expect(el.textContent).toContain('۶');
+    expect(el.textContent).not.toContain('6');
+    expect(el.getAttribute('title')).toContain('۶');
+  });
+
+  it('کارتِ N/A هیچ برچسب یا مسیرِ سالانه‌سازی نمی‌سازد', () => {
+    const c = realCard();
+    renderCard({
+      indicators: {
+        ...c.indicators,
+        4: { available: false, na: true, annualize_months: 0, annualize_label: '' },
+      },
+    });
+    expect(screen.queryByTestId('fts-card-4-annualize')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('fts-card-4-acceptance')).not.toBeInTheDocument();
+  });
+});
+
 describe('#151 — مقایسۀ دیداریِ دو دورهٔ شاخص ۱', () => {
   it('هر دو دوره با نوارِ جدا و سرجمعِ ریالی نمایش می‌یابد', () => {
     renderCard();

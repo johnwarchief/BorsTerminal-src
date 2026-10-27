@@ -2271,10 +2271,12 @@ def scan_symbol(conn: sqlite3.Connection, symbol: str, market_cap_rials: float =
         # نه شکافِ داده؛ جدول با همین پرچم N/A خاکستری می‌نشاند (Task 6 fix).
         "i3_na": bool((gm or {}).get("na")),
         # نامِ مسیرِ پذیرش و برچسبِ سالانه‌سازی (Task 7) — همان قراردادِ ردیفِ
-        # bulk_scan؛ معاف/بی‌داده بی‌مسیر و بی‌برچسب است.
+        # bulk_scan؛ معاف/بی‌داده بی‌مسیر و بی‌برچسب است. `mcap <= 0` هم مثلِ
+        # کارت «بی‌داده» است: نه دوره‌ای برایِ سالانه‌سازی، نه برچسبی.
         "i4_acceptance_path": path4,
-        "annualize_months": int((annual or {}).get("months_used") or 0),
-        "annualize_label": ("" if is_holding
+        "annualize_months": (0 if (is_holding or mcap <= 0)
+                             else int((annual or {}).get("months_used") or 0)),
+        "annualize_label": ("" if (is_holding or mcap <= 0)
                             else annualize_label((annual or {}).get("months_used"))),
         "m141": bool(m141_hit),
         "avg_trade_val_hmt": None if avg_trade_val is None else round(avg_trade_val, 3),
@@ -2764,10 +2766,14 @@ def bulk_scan(conn: sqlite3.Connection, cfg: dict = None) -> list[dict]:
             "sales_to_mcap": None if s2m is None else round(s2m, 2),
             "profit_potential_pct": None if pot is None else round(pot, 1),
             "annual_sales_bt": round(normalize_mrl_to_btom(annual_sales), 1),
-            "annualize_months": months_used,
+            # معاف یا بی‌ارزش‌بازار (mcap<=0) سالانه‌سازی ندارد — همان ۰/""ی
+            # که کارت در شاخهٔ insufficient-data می‌دهد؛ ردیف نباید بگوید
+            # «۱۲ ماه» و هم‌زمان برچسبش خالی باشد.
+            "annualize_months": 0 if (is_holding or mcap <= 0) else months_used,
             # برچسبِ سالانه‌سازی و نامِ مسیرِ پذیرش (Task 7) — همان چیزی که
             # کارت می‌دهد؛ برایِ معاف/بی‌داده رشتهٔ خالی و None (نه متنِ گمراه).
-            "annualize_label": "" if is_holding else annualize_label(months_used),
+            "annualize_label": ("" if (is_holding or mcap <= 0)
+                                else annualize_label(months_used)),
             "i4_acceptance_path": path4,
             "mcap": mcap, "score": int(sum(1 for _p in (i1, i2, i3, i4, i5) if _p)),
             # همان قاعدهٔ ص ۶ جزوه در مسیرِ bulk (پاریتیِ scan_symbol ⇄ bulk_scan)

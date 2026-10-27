@@ -598,7 +598,16 @@ def _screener_cached():
                 r["annual_sales_bt"] = (_v4.get("annual_sales_bt")
                                          if _v4.get("annual_sales_bt") is not None
                                          else _an4.get("annual_sales_bt"))
-                r["annualize_months"] = _an4.get("months_used")
+                # مسیر/برچسب/ماهِ سالانه‌سازی (Task 7) هم از کارت می‌آید —
+                # کارت مرجعِ شاخهٔ «دادهٔ ناکافی» است (۰ و ""). پیش از این
+                # فقط `annual_months` بازنویسی می‌شد و برچسبِ bulk رویِ ردیفِ
+                # اسکرینر می‌ماند؛ نمادِ نشار (سالانه + mcap=0) نمونهٔ واقعی بود.
+                r["i4_acceptance_path"] = _v4.get("acceptance_path",
+                                                  r.get("i4_acceptance_path"))
+                r["annualize_label"] = _v4.get("annualize_label",
+                                               r.get("annualize_label"))
+                r["annualize_months"] = _v4.get("annualize_months",
+                                                _an4.get("months_used"))
             # رتبه‌بندی: اول سه محورِ بلاکر (جزوه ص ۶)، بعد امتیازِ پنج‌تایی
             rows.sort(key=lambda r: (r["excluded"], -int(r.get("primary_score") or 0),
                                      -r["score"],

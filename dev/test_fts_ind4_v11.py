@@ -234,12 +234,16 @@ CASES = [
     ("شههلد", "شرکت سرمایه گذاری شههلد", "سرمایه گذاری", 58.0, 1.0e14, True, "holding"),
     # تولیدیِ بی‌فروش (نه ماهانه، نه صورتِ مالیِ عدددار): بی‌داده، نه مسیرِ ساختگی.
     ("شوبی", "شرکت شوبی", SEC, 0.0, 1.0e14, False, "nodata"),
+    # تولیدی با صورتِ مالیِ سالانه و ماهانه، ولی ارزش بازارِ صفر: کارت این را
+    # «دادهٔ ناکافی» می‌خواند (available=False) ⇒ هر سه سطح باید ۰/"" بدهند.
+    ("شصفر", "شرکت شصفر", SEC, 50.0, 0.0, True, "zeromcap"),
 ]
 WANT_PATH = {"sales": "sales_to_mcap", "potential": "profit_potential",
              "both": "sales_to_mcap", "none": None, "holding": None,
-             "nodata": None}
+             "nodata": None, "zeromcap": None}
 NO_DATA = "شوبی"
 HOLDING = "شههلد"
+ZERO_MCAP = "شصفر"
 
 
 def _seed_instrument(con, code, symbol, name, sector, mcap):
@@ -357,15 +361,52 @@ def _temp_db_case():
                 chk(b.get("annualize_label") == "",
                     "bulk معاف %s: بی‌برچسبِ سالانه‌سازی" % sym,
                     b.get("annualize_label"))
+                chk(b.get("annualize_months") == 0,
+                    "bulk معاف %s: ماه=۰ (نه ۱۲)" % sym,
+                    b.get("annualize_months"))
                 chk(c4.get("na") is True or c4.get("exempt") is True,
                     "card معاف %s: N/A" % sym, (c4.get("na"), c4.get("exempt")))
                 chk(c4.get("annualize_label") == "",
                     "card معاف %s: بی‌برچسب" % sym, c4.get("annualize_label"))
+                chk(c4.get("annualize_months") == 0,
+                    "card معاف %s: ماه=۰" % sym, c4.get("annualize_months"))
                 chk(s.get("passes", {}).get("4_sales_to_mcap") is None,
                     "scan معاف %s: شاخص ۴ None" % sym,
                     s.get("passes", {}).get("4_sales_to_mcap"))
                 chk(s.get("annualize_label") == "",
                     "scan معاف %s: بی‌برچسب" % sym, s.get("annualize_label"))
+                chk(s.get("annualize_months") == 0,
+                    "scan معاف %s: ماه=۰ (نه ۱۲)" % sym,
+                    s.get("annualize_months"))
+            elif kind == "zeromcap":
+                # سالانه + ماهانه ولی mcap=0: کارت مرجع است (شاخهٔ دادهٔ ناکافی)
+                # و هر سه سطح باید مسیرِ None، ماه=۰ و برچسبِ خالی بدهند.
+                chk("i4_acceptance_path" in b and b.get("i4_acceptance_path") is None,
+                    "bulk mcap=0 %s: مسیر None (کلید حاضر)" % sym,
+                    b.get("i4_acceptance_path"))
+                chk("annualize_months" in b and b.get("annualize_months") == 0,
+                    "bulk mcap=0 %s: ماه=۰" % sym, b.get("annualize_months"))
+                chk("annualize_label" in b and b.get("annualize_label") == "",
+                    "bulk mcap=0 %s: بی‌برچسب" % sym, b.get("annualize_label"))
+                chk(b.get("i4_pass") is False,
+                    "bulk mcap=0 %s: i4_pass=False" % sym, b.get("i4_pass"))
+                chk("acceptance_path" in c4 and c4.get("acceptance_path") is None,
+                    "card mcap=0 %s: مسیر None (کلید حاضر)" % sym,
+                    c4.get("acceptance_path"))
+                chk("annualize_months" in c4 and c4.get("annualize_months") == 0,
+                    "card mcap=0 %s: ماه=۰" % sym, c4.get("annualize_months"))
+                chk("annualize_label" in c4 and c4.get("annualize_label") == "",
+                    "card mcap=0 %s: بی‌برچسب" % sym, c4.get("annualize_label"))
+                chk(c4.get("available") is False,
+                    "card mcap=0 %s: available=False (دادهٔ ناکافی)" % sym,
+                    c4.get("available"))
+                chk("i4_acceptance_path" in s and s.get("i4_acceptance_path") is None,
+                    "scan mcap=0 %s: مسیر None (کلید حاضر)" % sym,
+                    s.get("i4_acceptance_path"))
+                chk("annualize_months" in s and s.get("annualize_months") == 0,
+                    "scan mcap=0 %s: ماه=۰" % sym, s.get("annualize_months"))
+                chk("annualize_label" in s and s.get("annualize_label") == "",
+                    "scan mcap=0 %s: بی‌برچسب" % sym, s.get("annualize_label"))
             elif want is None:
                 # تولیدیِ سنجیده‌شده با هیچ مسیرِ پاس: حکم «رد» (False) است،
                 # نه N/A؛ مسیر None می‌ماند ولی برچسبِ سالانه‌سازی هست، چون
@@ -373,15 +414,36 @@ def _temp_db_case():
                 chk(b.get("i4_pass") is False,
                     "bulk بدونِ‌مسیر %s: i4_pass=False (نه None)" % sym,
                     b.get("i4_pass"))
-                chk(b.get("i4_acceptance_path") is None,
-                    "bulk بدونِ‌مسیر %s: مسیر None" % sym,
+                chk("i4_acceptance_path" in b and b.get("i4_acceptance_path") is None,
+                    "bulk بدونِ‌مسیر %s: مسیر None (کلید حاضر)" % sym,
                     b.get("i4_acceptance_path"))
+                chk("annualize_months" in b and b.get("annualize_months") == 6,
+                    "bulk بدونِ‌مسیر %s: م=۶" % sym, b.get("annualize_months"))
+                chk("annualize_label" in b and b.get("annualize_label") == LABEL % 6,
+                    "bulk بدونِ‌مسیر %s: برچسبِ ۶ ماه" % sym,
+                    b.get("annualize_label"))
                 chk(c4.get("available") is True and c4.get("pass") is False,
                     "card بدونِ‌مسیر %s: available=True و pass=False" % sym,
                     (c4.get("available"), c4.get("pass")))
+                chk("acceptance_path" in c4 and c4.get("acceptance_path") is None,
+                    "card بدونِ‌مسیر %s: مسیر None (کلید حاضر)" % sym,
+                    c4.get("acceptance_path"))
+                chk("annualize_months" in c4 and c4.get("annualize_months") == 6,
+                    "card بدونِ‌مسیر %s: م=۶" % sym, c4.get("annualize_months"))
+                chk("annualize_label" in c4 and c4.get("annualize_label") == LABEL % 6,
+                    "card بدونِ‌مسیر %s: برچسبِ ۶ ماه" % sym,
+                    c4.get("annualize_label"))
                 chk(s.get("passes", {}).get("4_sales_to_mcap") is False,
                     "scan بدونِ‌مسیر %s: شاخص ۴ False" % sym,
                     s.get("passes", {}).get("4_sales_to_mcap"))
+                chk("i4_acceptance_path" in s and s.get("i4_acceptance_path") is None,
+                    "scan بدونِ‌مسیر %s: مسیر None (کلید حاضر)" % sym,
+                    s.get("i4_acceptance_path"))
+                chk("annualize_months" in s and s.get("annualize_months") == 6,
+                    "scan بدونِ‌مسیر %s: م=۶" % sym, s.get("annualize_months"))
+                chk("annualize_label" in s and s.get("annualize_label") == LABEL % 6,
+                    "scan بدونِ‌مسیر %s: برچسبِ ۶ ماه" % sym,
+                    s.get("annualize_label"))
             else:
                 chk(b.get("annualize_months") == 6,
                     "bulk %s: م=۶" % sym, b.get("annualize_months"))

@@ -384,6 +384,55 @@ describe('پنل شاخص ۴ — سالانه‌سازی داینامیک N ما
   });
 
 
+  it('کارتِ بی‌دوره (available=false): فقط «بدون سالانه‌سازی — N/A»، بدون فرمول و ضریب', () => {
+    const card = baseCard();
+    card.indicators!['4'] = {
+      available: false,
+      na: true,
+      annualize_months: 0,
+      annualize_label: '',
+    };
+    render(<FtsDrillDown card={card} active="4" quarters={FISCAL} physicalApplicable />);
+    expect(screen.getByTestId('annualize-basis').textContent).toContain('بدون سالانه‌سازی — N/A');
+    // فرمول/جدولِ ضریب و «دورهٔ ۱ ماهه»ِ ساختگی نباید ساخته شود.
+    expect(screen.queryByTestId('annualize-formula')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('drilldown-i4-annualize')).not.toBeInTheDocument();
+    expect(screen.queryByText(/سالانه‌شده از دورهٔ ۱ ماهه/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/فروش تجمعی ÷/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/ ماه ×/)).not.toBeInTheDocument();
+  });
+
+  it('برچسبِ موتور با ارقامِ فارسی رندر می‌شود (۶ نه 6)', () => {
+    const card = baseCard();
+    card.indicators!['4'] = {
+      ...card.indicators!['4']!,
+      available: true,
+      annualize_months: 6,
+      annualize_label: 'سالانه‌شده از دورهٔ 6 ماهه',
+    };
+    render(<FtsDrillDown card={card} active="4" quarters={FISCAL} physicalApplicable />);
+    const basis = screen.getByTestId('annualize-basis').textContent || '';
+    expect(basis).toContain('سالانه‌شده از دورهٔ ۶ ماهه');
+    expect(screen.getByTestId('annualize-formula').textContent).toContain('÷ ۶ ماه');
+    expect(document.body.textContent).not.toContain('دورهٔ 6 ماهه');
+  });
+
+  it('۱۲ ماه: برچسبِ ثانویهٔ موتور تکرار نمی‌شود (بدونِ تناقضِ «۱۲ ماهه»)', () => {
+    const card = baseCard();
+    card.indicators!['4'] = {
+      ...card.indicators!['4']!,
+      available: true,
+      months_used: 12,
+      annualize_months: 12,
+      annualize_label: 'سالانه‌شده از دورهٔ 12 ماهه',
+      scale_factor: 1,
+    };
+    render(<FtsDrillDown card={card} active="4" quarters={FISCAL} physicalApplicable />);
+    expect(screen.getByTestId('annualize-basis').textContent).toContain('۱۲ ماه کاملِ سال مالی');
+    expect(screen.queryByTestId('drilldown-i4-annualize')).not.toBeInTheDocument();
+    expect(document.body.textContent).not.toContain('دورهٔ 12 ماهه');
+  });
+
   it('نسبت فروش/ارزش بازار با کف و پتانسیل سود هم‌زمان نمایش می‌یابد', () => {
     render(<FtsDrillDown card={baseCard()} active="4" quarters={FISCAL} physicalApplicable />);
     expect(document.body.textContent).toMatch(/نسبت فروش ÷ ارزش بازار ۱\.۳۵×/);

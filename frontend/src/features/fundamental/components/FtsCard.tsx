@@ -804,9 +804,9 @@ export function FtsCard({
                     <span
                       data-testid="fts-card-4-annualize"
                       className="mt-0.5 block truncate text-3xs text-text-muted"
-                      title={annualizeLabel}
+                      title={toFaDigits(annualizeLabel)}
                     >
-                      {annualizeLabel}
+                      {toFaDigits(annualizeLabel)}
                     </span>
                   ) : null}
                 </span>

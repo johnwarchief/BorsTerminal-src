@@ -595,7 +595,13 @@ function Panel3({ card, quarters }: { card: FtsCard; quarters: FiscalQuarter[] }
 /** شاخص ۴: سالانه‌سازی داینامیک ×۱۲÷م + نسبت فروش ÷ ارزش بازار + پتانسیل سود */
 function Panel4({ card }: { card: FtsCard }) {
   const ind = card.indicators?.['4'];
-  const m = Math.max(1, Math.round(ind?.months_used ?? card.metrics?.months_used ?? 12));
+  /** دوره و سالانه‌سازی از قراردادِ موتور: `annualize_months` مرجع است و
+   *  `months_used` فقط fallbackِ کارت‌هایِ قدیمی. `available === false`
+   *  (معاف/بی‌داده) هیچ سالانه‌سازی‌ای ندارد — پیش از این `Math.max(1, 0)`
+   *  «دورهٔ ۱ ماهه» و ضریبِ ساختگی می‌ساخت. */
+  const engineMonths = ind?.annualize_months ?? ind?.months_used;
+  const hasAnnualization = ind?.available !== false && (engineMonths ?? 0) > 0;
+  const m = hasAnnualization ? Math.max(1, Math.round(engineMonths!)) : 0;
   const scale = ind?.scale_factor ?? card.metrics?.scale_factor ?? 1;
   const ytd = ind?.annual?.ytd_sales_bt ?? null;
   const annualSales = ind?.annual_sales_bt ?? card.metrics?.annual_sales_bt ?? null;
@@ -612,15 +618,21 @@ function Panel4({ card }: { card: FtsCard }) {
    *  نامِ مسیرِ پاس‌شده، نه آستانهٔ تازه؛ معاف/بی‌داده هیچ‌کدام را ندارد. */
   const acceptPath = ind?.acceptance_path ?? null;
   const annualizeLabel = (ind?.annualize_label ?? '').trim();
-  // برایِ دورهٔ ۱۲ ماهه پیامِ «سال کامل» می‌ماند و برچسبِ موتور جدا زیرش
-  // می‌آید؛ برایِ N<۱۲ خودِ برچسبِ موتور جای متنِ بازساخته را می‌گیرد.
-  const basisLabel = m >= 12
-    ? '۱۲ ماه کاملِ سال مالی (بدون سالانه‌سازی)'
-    : (annualizeLabel || `سالانه‌شده از دورهٔ ${toFaDigits(m)} ماهه`);
+  /** برچسبِ موتور با ارقامِ فارسی رندر می‌شود؛ مقدارِ خام فقط برایِ منطق. */
+  const annualizeLabelFa = toFaDigits(annualizeLabel);
+  // ۱۲ ماه کامل «سالانه‌سازی» نیست، پس همان پیامِ سال کامل می‌ماند و برچسبِ
+  // ثانویهٔ موتور (که برایِ ۱۲ هم پر است) تکرار نمی‌شود.
+  const basisLabel = !hasAnnualization
+    ? 'بدون سالانه‌سازی — N/A'
+    : m >= 12
+      ? '۱۲ ماه کاملِ سال مالی (بدون سالانه‌سازی)'
+      : (annualizeLabelFa || `سالانه‌شده از دورهٔ ${toFaDigits(m)} ماهه`);
   return (
     <div className="flex flex-col gap-3" data-testid="drilldown-panel-4">
       <div className="flex flex-wrap items-center gap-2">
-        <Badge tone="blue">م = <span className="num">{toFaDigits(m)}</span> ماه · ضریب ×<span className="num">{toFaDigits(scale.toFixed(2))}</span></Badge>
+        {hasAnnualization ? (
+          <Badge tone="blue">م = <span className="num">{toFaDigits(m)}</span> ماه · ضریب ×<span className="num">{toFaDigits(scale.toFixed(2))}</span></Badge>
+        ) : null}
         {s2m != null ? (
           <Badge tone={salesThresh == null ? 'gray' : s2m >= salesThresh ? 'green' : 'yellow'}>
             نسبت فروش ÷ ارزش بازار <span className="num">{toFaDigits(s2m.toFixed(2))}</span>×
@@ -653,42 +665,52 @@ function Panel4({ card }: { card: FtsCard }) {
         ) : null}
       </div>
       <div className="rounded-xl border border-[var(--hairline)] bg-bg-card/40 p-3">
-        <div className="mb-1.5 text-2xs font-bold text-text-primary">فرمول سالانه‌سازی داینامیک</div>
-        <div className="num rounded-lg bg-bg-primary px-3 py-2 text-center text-xs font-bold text-accent-blue" data-testid="annualize-formula">
-          فروش سالانه‌شده = (فروش تجمعی ÷ {toFaDigits(m)} ماه) × {toFaDigits(12)}
-        </div>
-        <div className="mt-2 flex items-center justify-center gap-2 rounded-lg border border-border-c/50 bg-bg-primary/50 py-1.5 px-3 font-mono text-xs" dir="ltr">
-          <span className="font-bold text-accent-blue">فروش ÷ ارزش بازار = </span>
-          <MathFraction
-            numerator={<span className="text-2xs text-text-primary px-1">فروش سالانه‌شده</span>}
-            denominator={<span className="text-2xs text-text-primary px-1">ارزش روز بازار</span>}
-          />
-          <span className="text-accent-green font-bold ms-2">{salesFloorLabel}</span>
-        </div>
-        <p className="mt-1.5 text-2xs leading-relaxed text-text-muted">
-          N همان ماه‌های سپری‌شدهٔ سال مالی است — نه همیشه ۳ ماه ×۴. تقسیم بر صفر ممکن نیست: م = ۰ سالانه‌سازی ندارد و به فروش سالانهٔ کدال جانشین می‌شود.
-        </p>
-        {ytd != null ? (
-          <p className="num mt-1.5 text-2xs text-text-secondary">
-            فروش تجمیعی {fmtInt(ytd)} میلیارد تومان × {toFaDigits(scale.toFixed(2))} = {fmtInt(annualSales ?? 0)} میلیارد تومان سالانه
+        {hasAnnualization ? (
+          <>
+            <div className="mb-1.5 text-2xs font-bold text-text-primary">فرمول سالانه‌سازی داینامیک</div>
+            <div className="num rounded-lg bg-bg-primary px-3 py-2 text-center text-xs font-bold text-accent-blue" data-testid="annualize-formula">
+              فروش سالانه‌شده = (فروش تجمعی ÷ {toFaDigits(m)} ماه) × {toFaDigits(12)}
+            </div>
+            <div className="mt-2 flex items-center justify-center gap-2 rounded-lg border border-border-c/50 bg-bg-primary/50 py-1.5 px-3 font-mono text-xs" dir="ltr">
+              <span className="font-bold text-accent-blue">فروش ÷ ارزش بازار = </span>
+              <MathFraction
+                numerator={<span className="text-2xs text-text-primary px-1">فروش سالانه‌شده</span>}
+                denominator={<span className="text-2xs text-text-primary px-1">ارزش روز بازار</span>}
+              />
+              <span className="text-accent-green font-bold ms-2">{salesFloorLabel}</span>
+            </div>
+            <p className="mt-1.5 text-2xs leading-relaxed text-text-muted">
+              N همان ماه‌های سپری‌شدهٔ سال مالی است — نه همیشه ۳ ماه ×۴. تقسیم بر صفر ممکن نیست: م = ۰ سالانه‌سازی ندارد و به فروش سالانهٔ کدال جانشین می‌شود.
+            </p>
+            {ytd != null ? (
+              <p className="num mt-1.5 text-2xs text-text-secondary">
+                فروش تجمیعی {fmtInt(ytd)} میلیارد تومان × {toFaDigits(scale.toFixed(2))} = {fmtInt(annualSales ?? 0)} میلیارد تومان سالانه
+              </p>
+            ) : null}
+            <p className="mt-1 text-2xs leading-relaxed text-text-muted" data-testid="annualize-basis">
+              مبنا: {basisLabel}
+              {ind?.annualize_basis ? ` · ${toFaDigits(ind.annualize_basis)}` : ''}
+            </p>
+            {m < 12 && annualizeLabelFa && annualizeLabelFa !== basisLabel ? (
+              <p className="mt-0.5 text-2xs text-text-muted" data-testid="drilldown-i4-annualize">
+                {annualizeLabelFa}
+              </p>
+            ) : null}
+            {ind?.annual?.reconciled === false ? (
+              <p className="mt-1 text-2xs font-bold text-accent-yellow" data-testid="annualize-unreconciled">
+                برآوردِ ماهانه با فروش صورت مالی سالانه هم‌خوان نبود؛ مبنا به فروش سالانهٔ کدال برگشت.
+              </p>
+            ) : null}
+          </>
+        ) : (
+          /* معاف/بی‌داده: هیچ دوره‌ای برایِ سالانه‌سازی نیست — یک سطرِ صریح
+             N/A به‌جایِ «÷ ۱ ماه × ۱۲» و جدولِ ضریبِ ساختگی. */
+          <p className="text-2xs leading-relaxed text-text-muted" data-testid="annualize-basis">
+            مبنا: {basisLabel}
           </p>
-        ) : null}
-        <p className="mt-1 text-2xs leading-relaxed text-text-muted" data-testid="annualize-basis">
-          مبنا: {basisLabel}
-          {ind?.annualize_basis ? ` · ${toFaDigits(ind.annualize_basis)}` : ''}
-        </p>
-        {annualizeLabel && annualizeLabel !== basisLabel ? (
-          <p className="mt-0.5 text-2xs text-text-muted" data-testid="drilldown-i4-annualize">
-            {annualizeLabel}
-          </p>
-        ) : null}
-        {ind?.annual?.reconciled === false ? (
-          <p className="mt-1 text-2xs font-bold text-accent-yellow" data-testid="annualize-unreconciled">
-            برآوردِ ماهانه با فروش صورت مالی سالانه هم‌خوان نبود؛ مبنا به فروش سالانهٔ کدال برگشت.
-          </p>
-        ) : null}
+        )}
       </div>
-      {scaleTable.length > 0 ? (
+      {hasAnnualization && scaleTable.length > 0 ? (
         <div className="flex flex-wrap gap-1.5">
           {scaleTable.map((s) => (
             <span

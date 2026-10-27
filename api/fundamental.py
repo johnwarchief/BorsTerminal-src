@@ -1102,13 +1102,16 @@ def ind4_valuation(annual, gm, market_cap_rials, th=None, exempt=False) -> dict:
     # مقایسه با عددِ **خام** (همان قاعدۀ `fts_engine.gross_profit_potential`)؛
     # با عددِ گرد شده، پتانسیلِ ۳۹٫۹۶٪ «≥ ۴۰٪» می‌شد و کارت با موتور نمی‌خواند.
     pot_pass = pot_raw is not None and pot_raw >= pot_min
-    months_used = int(annual.get("months_used") or 0)
+    # قراردادِ `annualized_sales` همیشه `months_used` دارد؛ خواندنِ مستقیم
+    # (نه `.get`) یعنی شکستنِ آن قرارداد در تولید بلند شکست می‌خورد، نه با
+    # «ماه=۰ و برچسبِ خالی»ِ بی‌صدا. کلیدهایِ تزئینیِ پایین `.get` می‌مانند.
+    months_used = int(annual["months_used"] or 0)
     return {"available": True, "mcap_ht": round(mcap / 1e13, 2),
             # کلیدهایِ نمایشی با `.get` خوانده می‌شوند: آزمونِ قرارداد (و هر
             # فراخواننده‌ای که فقط فروش/دوره می‌دهد) نباید با KeyErrorِ یک
             # فیلدِ تزئینی بشکند؛ `annual_sales_mrl` بالا نگهبانِ اصلی است.
             "annual_sales_bt": annual.get("annual_sales_bt"),
-            "months_used": annual.get("months_used"), "scale_factor": annual.get("scale_factor"),
+            "months_used": annual["months_used"], "scale_factor": annual.get("scale_factor"),
             "annualize_basis": annual.get("basis"), "reconciled": annual.get("reconciled"),
             "sales_to_mcap": (round(sales_ratio, 2)
                            if _sane(sales_ratio, -1000.0, 1000.0) is not None else None),
