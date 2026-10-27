@@ -1,0 +1,113 @@
+@import 'tailwindcss';
+
+@theme {
+  --color-bg: var(--bg);
+  --color-panel: var(--panel);
+  --color-panel-2: var(--panel-2);
+  --color-panel-3: var(--panel-3);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-text: var(--text);
+  --color-text-2: var(--text-2);
+  --color-text-3: var(--text-3);
+  --color-accent: var(--accent);
+  --color-accent-2: var(--accent-2);
+  --color-up: var(--up);
+  --color-down: var(--down);
+  --color-flat: var(--flat);
+  --color-warn: var(--warn);
+  --font-sans: 'Vazirmatn', Tahoma, sans-serif;
+}
+
+/* توکن‌های طرح v2 (میز تصمیم) — منبع: Desktop\BorsTerminal_migration_v2/v2/styles.css */
+:root {
+  --bg: #101215;
+  --panel: #15181c;
+  --panel-2: #1a1e23;
+  --panel-3: #20252b;
+  --line: #2a2f36;
+  --line-strong: #363d46;
+  --text: #e2ddd2;
+  --text-2: #a9a396;
+  --text-3: #908a7e;
+  --accent: #c9a45c;
+  --accent-2: #55bda8;
+  --up: #4fbd8c;
+  --down: #e07480;
+  --flat: #8f8a80;
+  --warn: #d3a04a;
+  --up-soft: rgba(79, 189, 140, 0.11);
+  --down-soft: rgba(224, 116, 128, 0.11);
+  --accent-soft: rgba(201, 164, 92, 0.12);
+  --row-h: 30px;
+  --radius: 4px;
+  color-scheme: dark;
+}
+
+html[data-theme='light'] {
+  --bg: #efece4;
+  --panel: #fbf9f5;
+  --panel-2: #f4f1e9;
+  --panel-3: #eae5da;
+  --line: #ddd6c8;
+  --line-strong: #c7bead;
+  --text: #1c1a16;
+  --text-2: #57524a;
+  --text-3: #6f695d;
+  --accent: #94651a;
+  --accent-2: #0f7a68;
+  --up: #0d7a45;
+  --down: #b02c37;
+  --flat: #6d675c;
+  --warn: #8a5a10;
+  --up-soft: rgba(13, 122, 69, 0.1);
+  --down-soft: rgba(176, 44, 55, 0.1);
+  --accent-soft: rgba(148, 101, 26, 0.1);
+  color-scheme: light;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Vazirmatn', Tahoma, sans-serif;
+  font-size: 12px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+.num {
+  font-variant-numeric: tabular-nums;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-strong) transparent;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--line-strong);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
