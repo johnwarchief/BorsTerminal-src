@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """لاانچر EXE: پیش‌اجرا + uvicorn + باز کردن مرورگر"""
 import os, sys, threading, time, webbrowser, socket, subprocess
+import bors_shell
 
 # ── بدونِ پنجرهٔ کنسول + کدپیجِ خروجی (v1.0.13) ──────────────────────────
 # با console=False در spec، sys.stdout/sys.stderr می‌توانند None باشند
@@ -618,12 +619,76 @@ def _webview_storage_dir():
         return ''
 
 
+# ── پوستهٔ Tauri (D1) ─────────────────────────────────────────────────────
+# میزبان هنوز همین لانچر است؛ پوسته فقط پنجره می‌سازد. شکستِ پوسته باید بی‌صدا
+# به pywebview برنگردد: دلیل در لاگ می‌ماند و انتخاب با BORS_SHELL قابلِ بازگشت است.
+def _open_shell_window(url):
+    exe = bors_shell.shell_exe_path(WORK, _data_root())
+    if not exe:
+        print('[shell] shell exe not found -> pywebview')
+        _note('shell exe missing')
+        return False
+    try:
+        import bors_config
+        data_dir = bors_config.WORK_DIR
+    except Exception:
+        data_dir = WORK
+    settings = bors_shell.settings_path(data_dir)
+    action = bors_shell.ask_close_action(
+        settings, ask=os.environ.get('BORS_SHELL_ASK_CLOSE', '1') != '0')
+    profile = _webview_storage_dir()
+    ready = os.path.join(data_dir, 'shell_ready.json')
+    try:
+        if os.path.isfile(ready):
+            os.remove(ready)
+    except OSError:
+        pass
+    args = [exe, '--url', url, '--settings', settings,
+            '--ready', ready, '--parent-pid', str(os.getpid())]
+    if profile:
+        args += ['--profile', profile]
+    _note(f'shell launch close={action} url={url}')
+    try:
+        proc = subprocess.Popen(args, cwd=WORK)
+    except Exception as e:
+        print(f'[shell] launch failed ({e}) -> pywebview')
+        _note(f'shell launch failed: {e}')
+        return False
+    deadline = time.time() + bors_shell.SHELL_READY_TIMEOUT
+    while time.time() < deadline:
+        if os.path.isfile(ready):
+            _note(f'shell ready pid={proc.pid}')
+            try:
+                code = proc.wait()
+            except KeyboardInterrupt:
+                code = -1
+            _note(f'shell closed code={code}')
+            return True
+        if proc.poll() is not None:
+            print(f'[shell] died before ready (code={proc.returncode}) -> pywebview')
+            _note(f'shell died before ready code={proc.returncode}')
+            return False
+        time.sleep(0.2)
+    print(f'[shell] not ready in {bors_shell.SHELL_READY_TIMEOUT:.0f}s -> pywebview')
+    _note('shell ready timeout')
+    try:
+        proc.terminate()
+        proc.wait(timeout=5)
+    except Exception:
+        pass
+    return False
+
+
 def open_native_window(url):
     """پنجرهٔ مستقلِ بومی با WebView2 (pywebview): بدون مرورگر/تب/نوار آدرس و
     بدون نامِ Edge در تسک‌بار — شبیهِ یک اپ دسکتاپ واقعی. اگر pywebview یا
     WebView2 نبود، False برمی‌گرداند تا مسیر مرورگرِ فعلی fallback شود."""
     if os.environ.get('BORS_NATIVE_WINDOW', '1') == '0':
         return False
+    if os.environ.get('BORS_SHELL', 'tauri').strip().lower() not in ('0', 'off', 'pywebview'):
+        if _open_shell_window(url):
+            return True
+        # ادامه: مسیرِ pywebview به‌عنوانِ fallback
     try:
         import webview  # pywebview
     except Exception as e:
