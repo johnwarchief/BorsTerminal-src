@@ -1261,7 +1261,10 @@ def risk_gates(conn, symbol, sector, mcap_rials, cfg=None, th=None,
     """دلیلِ حذف‌های خودکار (خارج از پنج محور) — فهرستِ رشته‌های فارسی."""
     cfg = cfg or {}
     reasons = []
-    if fts_engine.is_insurance_sector(sector):
+    # وتویِ مستقلِ بیمه (Task 8): کلیدِ خودش را دارد و به فهرستِ صنایعِ دستوری
+    # وابسته نیست. پیش‌فرضِ True یعنی رفتارِ تاریخی؛ False فقط همین وتو را
+    # خاموش می‌کند و گیت‌های تعلیق/۱۴۱/ارزش بازار/نقدشوندگی را دست نمی‌زند.
+    if bool(cfg.get("reject_insurance", True)) and fts_engine.is_insurance_sector(sector):
         reasons.append("صنعت بیمه — حذف خودکار")
     try:
         if fts_engine.is_suspended(conn, symbol, int(cfg.get("suspended_max_stale_sessions", 3) or 3)):

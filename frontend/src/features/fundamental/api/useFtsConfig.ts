@@ -21,6 +21,8 @@ export const FtsConfigPayloadSchema = z.object({
   min_trade_val: z.number(),
   mandatory_sectors: z.array(z.string()),
   free_sectors: z.array(z.string()),
+  /** وتویِ مستقلِ صنعت بیمه — نه عضوی از فهرستِ صنایعِ دستوری */
+  reject_insurance: z.boolean().nullish(),
   include_industries: z.array(z.string()).nullish(),
   exclude_industries: z.array(z.string()).nullish(),
   v10_monetary_growth_min: z.number().nullish(),
@@ -59,9 +61,14 @@ export const FTS_GUIDE_DEFAULTS = {
   suspended_max_stale_sessions: 3,
   filter_m141: false,
   min_trade_val: 0.0,
-  /** فهرستِ **سخت‌گیرانه**: کلید «همهٔ صنایعِ دستوری» همین را POST می‌کند و «صنایع مجاز با جهش نرخ» دارو/غذا را از آن کم می‌کند. به همین دلیل با پیش‌فرضِ سرور (که دارو/غذا را ندارد) برابر نیست — گاردِ parity همین یک کلید را به‌جای برابری، زیرمجموعه‌بودنِ سرور بررسی می‌کند. */
-  mandatory_sectors: ['خودرو', 'دارو', 'نیروگاه', 'قند و شکر', 'غذا', 'لاستیک', 'شوینده', 'بیمه'],
+  /** حکمِ مالک (Task 8): الزامیِ جزوه فقط سه صنعت — خودرو/قطعات، نیروگاه
+   *  (عرضه/تولید/توزیع برق) و لاستیک. قند و شکر، شوینده و بیمه الزامی نیستند؛
+   *  دارو و غذا مجازند (نه الزامی). بیمه وتویِ مستقلِ `reject_insurance` است
+   *  و هرگز به این فهرست اضافه نمی‌شود. */
+  mandatory_sectors: ['خودرو', 'نیروگاه', 'لاستیک'],
   free_sectors: ['سیمان', 'پتروشیمی', 'شیمیایی', 'فلزات', 'کانی', 'کاشی', 'سرامیک', 'شیشه', 'کانه', 'معادن', 'نفت', 'محصولات فلزی'],
+  /** پیش‌فرضِ جزوه: بیمه جدا از صنایعِ دستوری وتو می‌شود */
+  reject_insurance: true,
   include_industries: [] as string[],
   exclude_industries: [] as string[],
   v10_monetary_growth_min: 60,

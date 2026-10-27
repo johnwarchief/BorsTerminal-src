@@ -476,17 +476,16 @@ def fts_results_bulk(conn, cfg_hash: str = "") -> Optional[dict]:
 # همهٔ توکن‌ها به نوشتار نرمال (ی/ک فارسی) ذخیره میشوند و با norm_fa(sector) سنجیده‌اند.
 # فهرست با ۵۵ sector_name واقعیِ جدول instruments راستی‌آزمایی شده است.
 
-# قیمت‌گذاری دستوری / کنترل‌شده (حذف از سبد FTS) — همان چیزی که در tuple پایین
-# هست، نه بیشتر:  خودرو و قطعات · نقلیهٔ موتوری · قند و شکر · لاستیک · شوینده ·
-# نیروگاه و عرضه/تولید/توزیع برق · بیمه.
-# «شوینده» تگ مستقل در TSETMC ندارد؛ برای پوشش نام‌های شرکتی نگه داشته شده است.
+# قیمت‌گذاری دستوری / کنترل‌شده (حذف از سبد FTS) — حکمِ مالک (Task 8): فقط
+# سه صنعتِ الزامیِ جزوه: خودرو/قطعات · نیروگاه (عرضه/تولید/توزیع برق) · لاستیک.
+# قند و شکر و شوینده الزامی نیستند؛ «شوینده» هم تگِ مستقل در TSETMC ندارد.
+# بیمه هم این‌جا نیست — وتویِ سختِ جداگانه است (`reject_insurance`) و در
+# risk_gates/bulk_scan/scan_symbol اعمال می‌شود.
 # سند v2.1 + جدولِ ص ۶ جزوه: «دارو» و «غذای عمومی» یک‌جا رد نمی‌شوند (در جزوه
 # هر دو ✓‌اند، غذا با برچسب «کنترل قیمت»؛ ✗ فقط خودرو، نیروگاهی و لاستیک‌اند).
-# دارو فقط با حاشیهٔ ناخالصِ بالای ۵۰٪ مجاز است که در گیتِ GPM سنجیده می‌شود، و
-# غذا تنها در مصداقِ کنترل‌شده‌اش — که «قند و شکر» نمایندهٔ آن است.
 MANDATORY_PRICING_TOKENS = (
-    "خودرو", "نقلیه موتور", "قند و شکر", "لاستیک",
-    "شوینده", "نیروگاه", "عرضه برق", "تولید برق", "توزیع برق", "بیمه",
+    "خودرو", "نقلیه موتور", "لاستیک",
+    "نیروگاه", "عرضه برق", "تولید برق", "توزیع برق",
 )
 
 # قیمت‌گذاری آزاد / بورس کالا (اولویت مثبت):
@@ -2224,7 +2223,7 @@ def scan_symbol(conn: sqlite3.Connection, symbol: str, market_cap_rials: float =
     primary = sum(1 for k in ("1_growth", "2_eps_trend", "3_gross_margin") if passes[k])
 
     reasons = []
-    if is_insurance_sector(sector):
+    if bool(cfg.get("reject_insurance", True)) and is_insurance_sector(sector):
         reasons.append("صنعت بیمه — حذف خودکار")
     if is_suspended(conn, symbol, int(cfg.get("suspended_max_stale_sessions", 3) or 3),
                     _sessions=_sessions):
@@ -2291,7 +2290,7 @@ def scan_symbol(conn: sqlite3.Connection, symbol: str, market_cap_rials: float =
 def scan_all(conn: sqlite3.Connection, limit: int = 0, cfg: dict = None) -> list[dict]:
     """غربالگری ۵ شاخصی کل نمادهای دارای صورت مالی → حداکثر `watchlist_max` سهم برتر.
 
-    نمادهای تعلیق و صنعت بیمه پیش از رتبه‌بندی حذف میشوند (بخش ۲ دستور کار).
+    نمادهای تعلیق و — وقتی `reject_insurance` روشن است (پیش‌فرض) — صنعت بیمه پیش از رتبه‌بندی حذف میشوند (بخش ۲ دستور کار).
     """
     cfg = cfg or {}
     # مخرجِ کسرِ «سهم از کل بازار» — عددِ رسمیِ TSETMC، نه جمعِ ردیف‌های تابلو.
@@ -2346,7 +2345,7 @@ def scan_all(conn: sqlite3.Connection, limit: int = 0, cfg: dict = None) -> list
     out = []
     for key in order:
         sym, mcap, sector, d_even = best[key]
-        if is_insurance_sector(sector):
+        if bool(cfg.get("reject_insurance", True)) and is_insurance_sector(sector):
             continue
         if d_even and stale_cut and int(d_even) < int(stale_cut):
             continue
@@ -2719,7 +2718,7 @@ def bulk_scan(conn: sqlite3.Connection, cfg: dict = None) -> list[dict]:
         i5 = bool(sec["pass"])
 
         reasons = []
-        if is_insurance_sector(sector):
+        if bool(cfg.get("reject_insurance", True)) and is_insurance_sector(sector):
             reasons.append("صنعت بیمه")
         if stale_cut and key in dev_of and dev_of[key] < int(stale_cut):
             reasons.append("نماد تعلیق")

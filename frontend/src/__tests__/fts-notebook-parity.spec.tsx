@@ -27,6 +27,7 @@ vi.mock('@tanstack/react-virtual', async (orig) => {
 import { FtsCard } from '@features/fundamental/components/FtsCard';
 import { FtsDrillDown } from '@features/fundamental/components/FtsDrillDown';
 import { FtsScreenTable } from '@features/fundamental/ui/FtsScreenTable';
+import { FTS_GUIDE_DEFAULTS } from '@features/fundamental/api/useFtsConfig';
 import { rejectedFor } from '@features/fundamental/lib/exclusionFilter';
 import type { FtsCard as FtsCardType } from '@features/fundamental/api/useFtsCard';
 import type { FtsScreenRow } from '@features/fundamental/api/useFtsScreen';
@@ -218,6 +219,11 @@ describe('شاخص ۴ — پتانسیل سود + شاهدِ فروش/ارزش (
 });
 
 describe('شاخص ۵ — حکمِ موتور، نه فهرستِ دست‌سازِ رابط (ص ۶)', () => {
+  it('فهرستِ الزامیِ رابط فقط سه صنعتِ جزوه است (نه بیمه/قند/شوینده/دارو/غذا)', () => {
+    expect(FTS_GUIDE_DEFAULTS.mandatory_sectors).toEqual(['خودرو', 'نیروگاه', 'لاستیک']);
+    expect(FTS_GUIDE_DEFAULTS.reject_insurance).toBe(true);
+  });
+
   it('رابط «همهٔ دارویی/غذایی مردود» نمی‌گوید', () => {
     render(<FtsDrillDown card={card()} active="5" quarters={[]} physicalApplicable />);
     expect(screen.getByText(/جزوه \(ص ۶\)/)).toBeInTheDocument();

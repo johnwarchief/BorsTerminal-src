@@ -171,9 +171,9 @@ describe('پنل تنظیمات FTS', () => {
     expect(screen.getByLabelText('کف نسبت فروش سالانه‌شده به ارزش بازار')).toBeInTheDocument();
     expect(screen.getByText('الزام رشد تولیدی / تناژ فیزیکی')).toBeInTheDocument();
     expect(screen.getByText('الزام سابقه عملکرد سودسازی ۳ ساله')).toBeInTheDocument();
-    expect(screen.getByText('صنایع آزاد/صادراتی/بورس کالا')).toBeInTheDocument();
-    expect(screen.getByText('صنایع مجاز با جهش نرخ (دارو، غذا)')).toBeInTheDocument();
+    expect(screen.getByText('حذف سه صنعتِ دستوریِ جزوه')).toBeInTheDocument();
     expect(screen.getByText('همه صنایع')).toBeInTheDocument();
+    expect(screen.getByText(/خودرو \(و قطعات\)، نیروگاه/)).toBeInTheDocument();
     expect(screen.getByText('حذف نمادهای مشمول تعلیق')).toBeInTheDocument();
     expect(screen.getByText('بازگشت به مقادیر جزوه')).toBeInTheDocument();
     await waitFor(() => {
@@ -193,6 +193,8 @@ describe('پنل تنظیمات FTS', () => {
       expect(body.v10_volume_growth_min).toBe(0);
       expect(body.v10_sales_to_mcap_min).toBe(0.33);
       expect(body.v10_eps_years).toBe(3);
+      expect(body.mandatory_sectors).toEqual(['خودرو', 'نیروگاه', 'لاستیک']);
+      expect(body.reject_insurance).toBe(true);
     });
   });
 
@@ -210,19 +212,17 @@ describe('پنل تنظیمات FTS', () => {
     });
   });
 
-  it('گیت چندگزینه‌ای: «جهش نرخ» دارو و غذا را از صنایع دستوری خارج می‌کند', async () => {
+  it('حالتِ «حذف سه صنعتِ دستوری» فقط همان سه صنعتِ جزوه را می‌فرستد (نه بیمه/قند/شوینده/دارو/غذا)', async () => {
     renderDrawer();
-    await waitFor(() => expect(screen.getByText('صنایع مجاز با جهش نرخ (دارو، غذا)')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText('حذف سه صنعتِ دستوریِ جزوه')).toBeInTheDocument());
     await waitFor(() => expect(screen.getByText('۳۳٪')).toBeInTheDocument());
-    fireEvent.click(screen.getByText('صنایع مجاز با جهش نرخ (دارو، غذا)'));
+    fireEvent.click(screen.getByText('حذف سه صنعتِ دستوریِ جزوه'));
     fireEvent.click(screen.getByText('ذخیرهٔ پیش‌شرط‌ها'));
     await waitFor(() => {
       const posts = fetchMock.mock.calls.filter((c) => (c[1] as RequestInit | undefined)?.method === 'POST');
       const body = JSON.parse((posts[posts.length - 1][1] as RequestInit).body as string) as Record<string, unknown>;
       expect(body.industry_mode).toBe('Exclude_Mandatory_Pricing');
-      expect(body.mandatory_sectors).not.toContain('دارو');
-      expect(body.mandatory_sectors).not.toContain('غذا');
-      expect(body.mandatory_sectors).toContain('خودرو');
+      expect(body.mandatory_sectors).toEqual(['خودرو', 'نیروگاه', 'لاستیک']);
     });
   });
 
@@ -290,6 +290,8 @@ describe('پنل تنظیمات FTS', () => {
       expect(body.suspended_max_stale_sessions).toBe(3);
       expect(body.v10_sales_to_mcap_min).toBe(0.33);
       expect(body.v10_eps_years).toBe(3);
+      expect(body.mandatory_sectors).toEqual(['خودرو', 'نیروگاه', 'لاستیک']);
+      expect(body.reject_insurance).toBe(true);
     });
   });
 
@@ -430,18 +432,62 @@ describe('دراور تنظیمات FTS — سند v2.1', () => {
     expect(Number(body.v10_volume_growth_min)).toBeGreaterThanOrEqual(0);
   });
 
-  it('دروازهٔ سخت «حذف کامل بیمه» پیش‌فرض روشن است و بیمه را در فهرست صنایع دستوری نگه می‌دارد', async () => {
+  it('دروازهٔ سخت «حذف کامل بیمه» روی reject_insurance می‌نشیند؛ فهرستِ دستوری همیشه سه صنعت و بی‌بیمه است', async () => {
     renderDrawer();
     await waitFor(() => expect(screen.getByText('حذف کامل نمادهای صنعت بیمه')).toBeInTheDocument());
     fireEvent.click(screen.getByRole('button', { name: /ذخیره/ }));
     let body = await lastPosted();
-    expect(body.mandatory_sectors).toContain('بیمه');
-    // خاموش‌کردن توگل، Insurance را از فهرست دستوری بیرون می‌برد ولی بقیه می‌مانند
+    // پیش‌فرض روشن ⇒ reject_insurance=true؛ بیمه هرگز عضوِ فهرستِ دستوری نیست
+    expect(body.reject_insurance).toBe(true);
+    expect(body.mandatory_sectors).toEqual(['خودرو', 'نیروگاه', 'لاستیک']);
+    expect(body.mandatory_sectors).not.toContain('بیمه');
+    // خاموش‌کردن توگل فقط وتو را می‌برد؛ فهرست دست‌نخورده می‌ماند
     fireEvent.click(screen.getByText('حذف کامل نمادهای صنعت بیمه').closest('button')!);
     fireEvent.click(screen.getByRole('button', { name: /ذخیره/ }));
     body = await lastPosted();
+    expect(body.reject_insurance).toBe(false);
+    expect(body.mandatory_sectors).toEqual(['خودرو', 'نیروگاه', 'لاستیک']);
     expect(body.mandatory_sectors).not.toContain('بیمه');
-    expect((body.mandatory_sectors as string[]).length).toBeGreaterThan(0);
+  });
+
+  it('گیت «همه صنایع» هم فهرستِ دستوری را سه صنعتِ جزوه نگه می‌دارد', async () => {
+    renderDrawer();
+    await waitFor(() => expect(screen.getByText('همه صنایع')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText('۳۳٪')).toBeInTheDocument());
+    fireEvent.click(screen.getByText('همه صنایع'));
+    fireEvent.click(screen.getByText('ذخیرهٔ پیش‌شرط‌ها'));
+    await waitFor(() => {
+      const posts = fetchMock.mock.calls.filter((c) => (c[1] as RequestInit | undefined)?.method === 'POST');
+      const body = JSON.parse((posts[posts.length - 1][1] as RequestInit).body as string) as Record<string, unknown>;
+      expect(body.industry_mode).toBe('Rank_Only');
+      expect(body.mandatory_sectors).toEqual(['خودرو', 'نیروگاه', 'لاستیک']);
+    });
+  });
+
+  it('توگل بیمه وضعیت را از reject_insurance می‌خواند، نه از عضویتِ «بیمه» در فهرست', async () => {
+    // کانفیگِ کهنه: بیمه در فهرستِ دستوری مانده ولی وتو خاموش است
+    fetchMock.mockResolvedValue({
+      ok: true,
+      json: () =>
+        Promise.resolve({
+          status: 'success',
+          config: {
+            ...FTS_GUIDE_DEFAULTS,
+            mandatory_sectors: ['خودرو', 'نیروگاه', 'لاستیک', 'بیمه'],
+            reject_insurance: false,
+          },
+        }),
+    } as unknown as Response);
+    renderDrawer();
+    await waitFor(() => expect(screen.getByText('حذف کامل نمادهای صنعت بیمه')).toBeInTheDocument());
+    const insToggle = screen.getByText('حذف کامل نمادهای صنعت بیمه').closest('button')!;
+    // اثرِ بارگذاریِ کانفیگ باید توگل را از مقدارِ پیش‌فرض جدا کند
+    await waitFor(() => expect(insToggle.getAttribute('aria-pressed')).toBe('false'));
+    fireEvent.click(screen.getByRole('button', { name: /ذخیره/ }));
+    const body = await lastPosted();
+    expect(body.reject_insurance).toBe(false);
+    // ذخیره، فهرستِ کهنه را هم به سه صنعتِ جزوه پاک می‌کند
+    expect(body.mandatory_sectors).toEqual(['خودرو', 'نیروگاه', 'لاستیک']);
   });
 
   it('دروازه‌های سخت جدید (هلدینگ N/A، استثنای دارو، بازار پایه) در payload می‌آیند', async () => {
@@ -470,5 +516,7 @@ describe('دراور تنظیمات FTS — سند v2.1', () => {
     expect(body.exclude_base_market).toBe(true);
     expect(body.pharma_margin_exempt_min).toBe(0);
     expect(body.v10_volume_breadth_min).toBe(0.6);
+    expect(body.mandatory_sectors).toEqual(['خودرو', 'نیروگاه', 'لاستیک']);
+    expect(body.reject_insurance).toBe(true);
   });
 });

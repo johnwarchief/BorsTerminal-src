@@ -26,17 +26,17 @@ TS_PATH = os.path.join("frontend", "src", "features", "fundamental", "api", "use
 # کلیدهایی که حذف‌شان از هر یک از دو طرف باید گارد را قرمز کند، نه بی‌صدا رد شود.
 CRITICAL = ("growth_min", "margin_min", "margin_optimal", "sales_to_mcap_min",
             "profit_potential_min", "eps_years", "industry_mode",
+            "mandatory_sectors", "reject_insurance",
             "v10_sales_to_mcap_min", "v10_potential_min", "v10_margin_min",
             "v10_margin_ideal", "v10_eps_years",
             "v10_inflation_basis", "hourglass_rsi_period",
             "hourglass_rsi_oversold", "hourglass_ma52_position")
 
-# «همهٔ صنایعِ دستوری» در کشوی تنظیمات فهرستِ سخت‌گیرانه‌تری نسبت به پیش‌فرضِ
-# سرور می‌فرستد: سرور دارو/غذا را در فهرست وتو ندارد چون استثنای v2.1 با گیتِ
-# حاشیهٔ ناخالص > ۵۰٪ اداره می‌شود (fts_engine:428)، و کلیدِ میانیِ کشو همان
-# دو را از فهرستِ سخت کم می‌کند. پس برابری اینجا معنا ندارد؛ تنها چیزی که
-# باید درست باشد این است که Reset هیچ‌گاه وتویِ صنایعِ سرور را کم نکند.
-STRICT_SUPERSET = {"mandatory_sectors": ("دارو", "غذا")}
+# حکمِ مالک (Task 8): فهرستِ الزامیِ دستوری فقط سه صنعتِ جزوه است. Reset دیگر
+# «سخت‌گیرانه‌تر» از سرور نیست و هیچ صنعتِ وتویِ اضافه‌ای نمی‌سازد؛ پس برابریِ
+# دقیق الزامی است، نه زیرمجموعه‌بودن.
+EXPECTED_MANDATORY = ["خودرو", "نیروگاه", "لاستیک"]
+FORBIDDEN_MANDATORY = ("بیمه", "قند", "شوینده", "دارو", "غذا")
 
 BLOCK_RE = re.compile(r"export const FTS_GUIDE_DEFAULTS\s*=\s*\{(.*?)\n\} as const", re.S)
 KEY_RE = re.compile(r"^\s*([A-Za-z_][A-Za-z0-9_]*)\s*:\s*(.+?),\s*$", re.M)
@@ -93,18 +93,21 @@ def main():
         ck(key in py, f"{key}: در bors_config.FTS_DEFAULTS وجود دارد")
         ck(key in ts, f"{key}: در FTS_GUIDE_DEFAULTS وجود دارد")
 
-    shared = sorted(set(py) & set(ts) - {"__SALES_TO_MCAP_GUIDE_DEFAULT"}
-                    - set(STRICT_SUPERSET))
+    shared = sorted(set(py) & set(ts) - {"__SALES_TO_MCAP_GUIDE_DEFAULT"})
     for key in shared:
         ck(_same(py[key], ts[key]),
            f"{key} یکسان است — سرور {py[key]!r} ⇄ فرانت {ts[key]!r}")
 
-    for key, extra in STRICT_SUPERSET.items():
-        srv, ui = set(py.get(key) or []), set(ts.get(key) or [])
-        ck(srv <= ui, f"{key}: فهرستِ سرور زیرمجموعهٔ فهرستِ کشو است "
-                      f"(Reset هیچ وتویی را کم نمی‌کند) — سرور {sorted(srv)} ⇄ کشو {sorted(ui)}")
-        ck(srv <= ui and (ui - srv) == set(extra),
-           f"{key}: اختلافِ کشو دقیقاً {list(extra)} است (استثنای v2.1)، نه چیزی دیگر")
+    # فهرستِ الزامی: هر دو طرف دقیقاً سه صنعتِ جزوه؛ هیچ صنعتِ وتو/مجازِ اضافه‌ای
+    # نه در سرور و نه در Resetِ کشو. (اگر بازنشانی «سخت‌گیرانه‌تر» شود، کاربر با
+    # یک کلیک صنعتی را وتو می‌کند که جزوه نگفته — همان واگراییِ تاریخی.)
+    for label, lst in (("سرور", py.get("mandatory_sectors") or []),
+                       ("کشو", ts.get("mandatory_sectors") or [])):
+        ck(list(lst) == EXPECTED_MANDATORY,
+           f"mandatory_sectors {label} دقیقاً سه صنعتِ جزوه است — {list(lst)!r}")
+        joined = " ".join(str(s) for s in lst)
+        ck(not any(t in joined for t in FORBIDDEN_MANDATORY),
+           f"mandatory_sectors {label} هیچ صنعتِ غیرِجزوه ندارد — {joined!r}")
 
     # سومین لایه: فال‌بک‌هایِ متنِ fts_engine (وقتی کلید از config بیفتد) هم باید
     # همان عددِ سرور باشند — واگراییِ این‌ها scoresِ scan_symbol و bulk_scan را
