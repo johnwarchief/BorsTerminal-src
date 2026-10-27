@@ -168,12 +168,15 @@ async function loginIfNeeded(page) {
 
 // Per-route readiness. `marker` is a testid the app only renders once that page
 // has REAL rows (read from source, not guessed):
-//   tape-row / treemap-cell-* / chart-area canvas / fts-screen-row
+//   tape-row / treemap-cell-* / chart-area canvas / fts-card-cell-*
 const ROUTES = [
   { route: '/market', label: 'تابلوخوانی', marker: '[data-testid="tape-row"]', min: 10 },
   { route: '/market-status', label: 'وضعیت بازار', marker: '[data-testid^="treemap-cell-"]', min: 1 },
   { route: '/technical', label: 'تکنیکال', marker: '[data-testid="chart-area"]', min: 1 },
-  { route: '/fundamental', label: 'بنیادی', marker: '[data-testid="fts-screen-row"]', min: 5 },
+  // v1.0.98's /fundamental is the symbol fundamental-analysis page (FTS cards +
+  // verdict), not the screening table; fts-screen-row belongs to a screening
+  // sub-view and never appears here. Cards are drawn once data is applied.
+  { route: '/fundamental', label: 'بنیادی', marker: '[data-testid^="fts-card-cell-"]', min: 1 },
   // v1.0.98 opens the master workspace on a symbol dossier, so accept either
   // marker as "master drawn" (the funnel element only mounts in the funnel view).
   { route: '/master', label: 'استراتژی FTS', marker: '[data-testid="fts-funnel-workspace"], [data-testid="master-dossier"]', min: 1 },
