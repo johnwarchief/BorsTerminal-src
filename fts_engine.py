@@ -2522,6 +2522,14 @@ def bulk_scan(conn: sqlite3.Connection, cfg: dict = None) -> list[dict]:
     for key in ms:
         ms[key].sort(key=lambda r: (-r[0], -r[1]))
         ms[key] = _dedupe_ym(ms[key])
+    # همهٔ نمادهایِ ماهانه — حتی آن‌هایی که هیچ ردیفِ YTDِ مثبت ندارند (مثلِ
+    # غنوش با تجمیعیِ منفیِ یک ماه). گزارشِ ماهانه داشتن یعنی «شرکتِ فقط-ماهانه»؛
+    # نبودِ سریِ قابلِ‌استفاده باید ردیفِ شکافِ داده بسازد، نه حذفِ شرکت از جهان.
+    ms_all = set()
+    for (sym,) in conn.execute("SELECT DISTINCT symbol FROM monthly_sales"):
+        k = norm_fa(sym) if sym else ""
+        if k:
+            ms_all.add(k)
 
     # ۳) تابلو + صنعت + ارزش بازار
     # ارزش بازار از **همان** منبعِ کارت است: `market_watch.market_cap` رسمی و در
@@ -2563,7 +2571,13 @@ def bulk_scan(conn: sqlite3.Connection, cfg: dict = None) -> list[dict]:
     fs_growth = fs_growth_map(conn, th={"monetary_growth_min": g_min})
 
     out = []
-    for key in sorted(annual.keys()):
+    # جهانِ اسکن = شرکت‌های دارایِ صورتِ مالیِ سالانه + شرکت‌هایِ فقط-ماهانه‌ای که
+    # در تابلو ابزار دارند (`board_of`). ۷۳ شرکتِ واقعی فقط گزارشِ ماهانه
+    # می‌فرستند و پیش از این از جدول غایب بودند. نام‌هایِ ماهانهٔ بی‌ابزار (۵۷
+    # فانتوم) عمداً وارد نمی‌شوند؛ صندوق/غیرشرکت هم در همان فیلترِ پایین حذف
+    # می‌شود. این تغییر فقط دامنهٔ حلقه است — هیچ فرمول/آستانه‌ای عوض نمی‌شود.
+    universe = set(annual) | {k for k in ms_all if k in board_of}
+    for key in sorted(universe):
         sym = key                                   # کلید = نوشتار نرمال (فارسی)
         sym_out = board_of.get(key) or disp_of.get(key) or key
         sector = sector_of.get(key, "")
