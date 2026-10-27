@@ -97,6 +97,7 @@ def _portable_zip_url(manifest: dict, latest: str) -> str:
 # AppId در installer/bors_setup.iss (کروشه‌های بیرونی توسط Inno حذف می‌شوند)
 APP_ID = "{8F3A2E7C-1B44-4C2E-9A77-0B0B5C0DE001}"
 APP_EXE = "BorsTerminal_Ultimate.exe"
+SHELL_EXE = "BorsTerminal_Shell.exe"
 
 CACHE_DIR = os.path.join(tempfile.gettempdir(), "bors_update")
 os.makedirs(CACHE_DIR, exist_ok=True)
@@ -293,29 +294,33 @@ def _app_exe_path():
     return None
 
 
-def _spawn_install(installer, flags):
-    """نصب‌کننده را طوری اجرا می‌کند که اول این پروسه تمام شود.
+def _install_batch_lines(pid, app_exe, installer, flags):
+    """خطوطِ batchِ نصب: منتظرِ مرگِ پایتون و پوسته، سپس setup و اجرای دوباره.
 
-    ویندوز EXEِ در حال اجرا را قفل می‌کند و Inno نمی‌تواند آن را جایگزین
-    کند (در حالتِ سایلنت، درگیری به‌طور پیش‌فرض abort است). راه‌حل: یک فایل
-    دستور می‌نویسیم که منتظرِ مرگِ این پروسه بماند، بعد setup.exe را با
-    /WAIT اجرا کند تا نصب تمام شود، و در آخر نسخهٔ جدید را دوباره باز
-    کند؛ بخشِ [Run] در bors_setup.iss فقط در نصبِ تعاملی کار می‌کند و در
-    /VERYSILENT اجرا نمی‌شود، پس اجرای دوبارهٔ اینجا انجام می‌شود.
+    پوستهٔ Tauri هم باید بمیرد؛ وگرنه Inno فایلِ قفل‌شدهٔ
+    BorsTerminal_Shell.exe را نمی‌تواند جایگزین کند. انتظار سقف دارد (۱۵ بار
+    ~۲ ثانیه) تا یک پوستهٔ معلق نصب را برایِ همیشه متوقف نکند.
     """
-    pid = os.getpid()
-    bat_path = os.path.join(CACHE_DIR, "bors_install.cmd")
-    app_exe = _app_exe_path()
     lines = [
         "@echo off",
         "chcp 65001 >nul",
         ":wait",
         'tasklist /fi "PID eq %d" 2>nul | find "%d" >nul' % (pid, pid),
-        "if errorlevel 1 goto run",
+        "if errorlevel 1 goto waitshell",
         "ping -n 2 127.0.0.1 >nul",
         "goto wait",
+        ":waitshell",
+        "set /a SHELL_TRIES=0",
+        ":waitshell_loop",
+        'tasklist /fi "IMAGENAME eq %s" 2>nul | find /I "%s" >nul'
+        % (SHELL_EXE, SHELL_EXE),
+        "if errorlevel 1 goto run",
+        "set /a SHELL_TRIES+=1",
+        "if %SHELL_TRIES% GEQ 15 goto run",
+        "ping -n 2 127.0.0.1 >nul",
+        "goto waitshell_loop",
         ":run",
-        # /WAIT: تا نصبِ کامل منتظر می‌مانیم تا فایلها جایگزین شوند و بعد
+        # /WAIT: تا نصبِ کامل منتظر می‌مانیم تا فایل‌ها جایگزین شوند و بعد
         # نسخهٔ جدید را اجرا کنیم. اگر کاربر UAC را رد کند، نصب نمی‌شود ولی
         # نسخهٔ قدیمی هنوز سالم است و دوباره باز می‌شود.
         'start /WAIT "" "%s" %s' % (installer, " ".join(flags)),
@@ -329,6 +334,22 @@ def _spawn_install(installer, flags):
             'start "" "%s"' % app_exe,
         ]
     lines += [":end", 'del "%~f0"']
+    return lines
+
+
+def _spawn_install(installer, flags):
+    """نصب‌کننده را طوری اجرا می‌کند که اول این پروسه تمام شود.
+
+    ویندوز EXEِ در حال اجرا را قفل می‌کند و Inno نمی‌تواند آن را جایگزین
+    کند (در حالتِ سایلنت، درگیری به‌طور پیش‌فرض abort است). راه‌حل: یک فایل
+    دستور می‌نویسیم که منتظرِ مرگِ این پروسه بماند، بعد setup.exe را با
+    /WAIT اجرا کند تا نصب تمام شود، و در آخر نسخهٔ جدید را دوباره باز
+    کند؛ بخشِ [Run] در bors_setup.iss فقط در نصبِ تعاملی کار می‌کند و در
+    /VERYSILENT اجرا نمی‌شود، پس اجرای دوبارهٔ اینجا انجام می‌شود.
+    """
+    pid = os.getpid()
+    bat_path = os.path.join(CACHE_DIR, "bors_install.cmd")
+    lines = _install_batch_lines(pid, _app_exe_path(), installer, flags)
     # chcp 65001 در خطِ اول (ASCII خالص) خطوطِ بعدی را UTF-8 می‌کند تا مسیرهای
     # غیرلاتین (مثل پروفایلِ کاربر) درست بمانند.
     with open(bat_path, "w", encoding="utf-8", newline="\r\n") as f:

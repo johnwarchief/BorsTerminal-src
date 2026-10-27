@@ -8,6 +8,7 @@
 #endif
 #define AppPublisher "BorsTerminal"
 #define AppExe "BorsTerminal_Ultimate.exe"
+#define ShellExe "BorsTerminal_Shell.exe"
 ; Where the compiled onedir bundle lives, relative to this file. release.ps1
 ; overrides it with ISCC /DBundleDir=... when the default dist is unusable
 ; (Windows can hold an unbreakable handle on dist\BorsTerminal_Ultimate and the
@@ -226,6 +227,8 @@ var
   ResultCode: Integer;
 begin
   Exec(ExpandConstant('{cmd}'), '/C "taskkill /F /IM {#AppExe} >NUL 2>NUL"',
+    '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+  Exec(ExpandConstant('{cmd}'), '/C "taskkill /F /IM {#ShellExe} >NUL 2>NUL"',
     '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
 end;
 
