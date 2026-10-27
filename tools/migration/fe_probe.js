@@ -29,6 +29,11 @@ const BASE = process.env.BORS_UI_BASE || 'http://127.0.0.1:8000';
 const LABEL = process.env.BORS_LABEL || `dev-8000-${VW}x${VH}`;
 const EXE = process.env.RA_BROWSER || 'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe';
 const PROFILE = path.join(os.tmpdir(), `bors-perf-profile-${VW}x${VH}`);
+// Shell mode: attach to an already-running desktop shell (Tauri/WebView2) over
+// CDP instead of launching Edge. The viewport is then applied with CDP
+// emulation, because the window itself belongs to the shell.
+const CDP = process.env.BORS_CDP || '';
+const SHOT = process.env.BORS_SHOT || '';
 const argv = process.argv.slice(2);
 const OUT = path.join(REPO, '_audit', 'perf', argv.includes('--out') ? path.basename(argv[argv.indexOf('--out') + 1]) : `FE_BASELINE_${VW}x${VH}.json`);
 const RUNS = Number(process.env.BORS_RUNS || 3);          // repetitions per scenario
@@ -37,6 +42,7 @@ const DEADLINE = Number(process.env.BORS_DEADLINE_MS || 120000);
 const report = {
   base: BASE, label: LABEL, viewport: { width: VW, height: VH },
   ranAt: new Date().toISOString(), runs: RUNS,
+  mode: CDP ? 'shell-cdp' : 'launched-edge', cdp: CDP || null,
   marketState: null, phases: {}, notes: [], consoleErrors: [], netErrors: [],
 };
 const note = (m) => { report.notes.push(m); console.log('·  ' + m); };
@@ -168,7 +174,9 @@ const ROUTES = [
   { route: '/market-status', label: 'وضعیت بازار', marker: '[data-testid^="treemap-cell-"]', min: 1 },
   { route: '/technical', label: 'تکنیکال', marker: '[data-testid="chart-area"]', min: 1 },
   { route: '/fundamental', label: 'بنیادی', marker: '[data-testid="fts-screen-row"]', min: 5 },
-  { route: '/master', label: 'استراتژی FTS', marker: '[data-testid="fts-funnel-workspace"]', min: 1 },
+  // v1.0.98 opens the master workspace on a symbol dossier, so accept either
+  // marker as "master drawn" (the funnel element only mounts in the funnel view).
+  { route: '/master', label: 'استراتژی FTS', marker: '[data-testid="fts-funnel-workspace"], [data-testid="master-dossier"]', min: 1 },
 ];
 const ROUTE_BY_NAME = {};
 for (const r of ROUTES) ROUTE_BY_NAME[r.route.slice(1)] = r;
@@ -331,18 +339,31 @@ async function measureChart(ctx, page) {
 }
 
 async function main() {
-  const browser = await chromium.launch({
-    executablePath: EXE,
-    args: ['--no-first-run', '--disable-sync', '--enable-precise-memory-info',
-           '--disable-features=Translate', '--remote-debugging-port=0'],
-  });
-  const ctx = await browser.newContext({ viewport: { width: VW, height: VH }, storageState: undefined });
+  let browser, ctx, p;
+  if (CDP) {
+    browser = await chromium.connectOverCDP(CDP);
+    ctx = browser.contexts()[0] || (await browser.newContext());
+    p = ctx.pages()[0] || (await ctx.newPage());
+    const session = await ctx.newCDPSession(p);
+    await session.send('Emulation.setDeviceMetricsOverride', {
+      width: VW, height: VH, deviceScaleFactor: 1, mobile: false,
+    });
+    await p.addInitScript(INIT);
+    note(`پوستۀ دسکتاپ از طریق CDP وصل شد (${CDP})؛ ویوپورت ${VW}x${VH} با emulation اعمال شد`);
+  } else {
+    browser = await chromium.launch({
+      executablePath: EXE,
+      args: ['--no-first-run', '--disable-sync', '--enable-precise-memory-info',
+             '--disable-features=Translate', '--remote-debugging-port=0'],
+    });
+    ctx = await browser.newContext({ viewport: { width: VW, height: VH }, storageState: undefined });
+    p = await ctx.newPage();
+    await p.addInitScript(INIT);
+  }
 
   // market state + one page for the whole run (session lives in sessionStorage,
   // so the tab must survive — see measureCold)
   {
-    const p = await ctx.newPage();
-    await p.addInitScript(INIT);
     p.on('console', (m) => { if (m.type() === 'error') report.consoleErrors.push(m.text().slice(0, 200)); });
     p.on('pageerror', (e) => report.consoleErrors.push('pageerror: ' + String(e).slice(0, 200)));
     p.on('response', (r) => { if (r.status() >= 400) report.netErrors.push(`HTTP ${r.status()} ${r.url().slice(0, 140)}`); });
@@ -403,7 +424,15 @@ async function main() {
       .filter((r) => r.name.includes('/api/'))
       .map((r) => ({ u: decodeURIComponent(r.name).replace(/^https?:\/\/[^/]+/, ''),
                      ms: Math.round(r.duration), enc: r.encodedBodySize, tr: r.transferSize })));
-    await p.close();
+    if (SHOT) {
+      try {
+        await clickTab(p, '/market', 'تابلوخوانی');
+        await p.waitForTimeout(3000);
+        await p.screenshot({ path: path.join(REPO, '_audit', 'perf', path.basename(SHOT)) });
+        note(`اسکرین‌شات ذخیره شد: ${SHOT}`);
+      } catch (e) { note(`اسکرین‌شات گرفته نشد: ${String(e).slice(0, 120)}`); }
+    }
+    if (!CDP) await p.close();   // closing the shell's page would close its window
   }
 
   const heapTrace = report.phases.cold.map((c) => c.heapMB);
