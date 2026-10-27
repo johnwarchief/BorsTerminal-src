@@ -4,7 +4,7 @@
 // تکنیکال است و جای آن تبِ تکنیکال است) — این فایل حالا هم چیپ را می‌سنجد و
 // هم نبودِ بج را. دو حالتِ چیپ جدا می‌ماند: قیفِ applied و قیفِ نرسیده که
 // علتش را می‌گوید.
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 import { describe, expect, it, vi } from 'vitest';
 import { FtsScreenTable } from '@features/fundamental/ui/FtsScreenTable';
@@ -63,13 +63,34 @@ describe('چیپ و بجِ قیف درِ جدول غربالگری', () => {
   });
 
   it('ردیفِ کاندیدِ قیف بج نمی‌گیرد (بجِ تکنیکال در این تب رندر نمی‌شود)', () => {
+    // ردیفِ سوم همهٔ محرک‌هایِ چهار بجِ تکنیکال را دارد — از جمله
+    // `tech_matrix_decision: 'REJECT'` که تنها محرکِ «وتوی روند» بود. اگر یکی
+    // از آن بج‌ها برگردد، همین ردیف باید در تست قرمز شود (نه ردیفی که محرک ندارد).
     table([row({ symbol: 'شپنا', funnel_candidate: true, tech_jet: true, tech_hourglass_active: true }),
-           row({ symbol: 'فولاد', funnel_candidate: false, technical_status: 'reject' })], gate());
+           row({ symbol: 'فولاد', funnel_candidate: false, technical_status: 'reject' }),
+           row({
+             symbol: 'خساپا',
+             funnel_candidate: true,
+             tech_jet: true,
+             tech_hourglass_active: true,
+             tech_matrix_decision: 'REJECT',
+             tech_matrix_desc: 'شکستِ ساختارِ روند',
+           })], gate());
     expect(screen.queryByTestId('row-funnel-candidate')).toBeNull();
     expect(screen.queryByText('کاندیدِ قیف')).toBeNull();
     expect(screen.queryByText('جت')).toBeNull();
     expect(screen.queryByText('ساعت شنی')).toBeNull();
     expect(screen.queryByText('وتوی روند')).toBeNull();
+    // خودِ ردیفِ «REJECT» رندر می‌شود، ولی هیچ‌یک از چهار بجِ تکنیکال رویش نیست
+    const rejectRow = screen
+      .getAllByTestId('fts-screen-row')
+      .find((el) => el.textContent?.includes('خساپا'));
+    expect(rejectRow).toBeDefined();
+    expect(within(rejectRow as HTMLElement).queryByTestId('row-funnel-candidate')).toBeNull();
+    expect(within(rejectRow as HTMLElement).queryByText('کاندیدِ قیف')).toBeNull();
+    expect(within(rejectRow as HTMLElement).queryByText('جت')).toBeNull();
+    expect(within(rejectRow as HTMLElement).queryByText('ساعت شنی')).toBeNull();
+    expect(within(rejectRow as HTMLElement).queryByText('وتوی روند')).toBeNull();
     // چیپِ قیف (خلاصهٔ گیتِ بک‌اند) همچنان هست
     expect(chip()).toContain('قیف trend');
   });

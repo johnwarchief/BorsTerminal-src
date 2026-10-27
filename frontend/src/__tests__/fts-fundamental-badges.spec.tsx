@@ -28,9 +28,15 @@ describe('fundamental tab badge separation', () => {
   });
 
   it('keeps assembly and capital increase', () => {
-    expect(src).toMatch(/assembly/i);
-    expect(src).toMatch(/capital/i);
-    expect(src).toMatch(/row-assembly-veto-badge/);
-    expect(src).toMatch(/افزایش سرمایه/);
+    // شناسه‌هایِ واقعیِ سمتِ «نگه‌داشتن» — نه واژه‌هایِ عمومی که با نامِ prop هم
+    // جور می‌شوند: ساختِ بجِ مجمع/افزایش سرمایه و test-idهایِ ردیف باید بمانند.
+    expect(src).toContain('pickAssemblyBadge');
+    expect(src).toContain('pickCapitalBadge');
+    expect(src).toContain('row-assembly-veto-badge');
+    expect(src).toContain('افزایش سرمایه');
+  });
+
+  it('does not render the removed funnel-candidate row badge', () => {
+    expect(src).not.toMatch(/data-testid="row-funnel-candidate"/);
   });
 });
