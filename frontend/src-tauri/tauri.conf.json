@@ -4,26 +4,12 @@
   "version": "1.0.88",
   "identifier": "com.borsterminal.app",
   "build": {
-    "frontendDist": "../dist",
-    "devUrl": "http://localhost:5173",
-    "beforeDevCommand": "npm run dev",
-    "beforeBuildCommand": "npm run build"
+    "frontendDist": "shell-dist"
   },
   "app": {
-    "windows": [
-      {
-        "title": "Bors Terminal Ultimate",
-        "width": 1440,
-        "height": 900,
-        "minWidth": 1024,
-        "minHeight": 700,
-        "resizable": true,
-        "fullscreen": false,
-        "maximized": true
-      }
-    ],
+    "windows": [],
     "security": {
-      "csp": null
+      "csp": "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'"
     }
   },
   "bundle": {
