@@ -48,9 +48,10 @@ python dev/version_anchor_guard.py      # باید «VERSION ANCHOR GUARD OK» �
 
 ## نام‌گذاریِ بیلد و ریلیز (همان چیزی که CI انتظار دارد)
 
-- شش لنگرِ نسخه باید یکی باشند: `bors_config.APP_VERSION`, `frontend/package.json`,
+- هفت لنگرِ نسخه باید یکی باشند: `bors_config.APP_VERSION`, `frontend/package.json`,
   `frontend/package-lock.json` (`version` و `packages[""].version`),
-  `frontend/src-tauri/tauri.conf.json`, `installer/bors_setup.iss` (`#define AppVersion`).
+  `frontend/src-tauri/tauri.conf.json`, `frontend/src-tauri/Cargo.toml`,
+  `installer/bors_setup.iss` (`#define AppVersion`).
   بعد از هر bump `python dev/version_anchor_guard.py` را اجرا کنید.
 - تگ: `vX.Y.Z` (نقطه‌چین، بدونِ `release/`). بیلد روی تگ در `johnwarchief/BorsTerminal-src`
   (remote `github`) می‌دود و خروجی‌ها را در `johnwarchief/BorsTerminal` منتشر می‌کند.

@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 """dev/version_anchor_guard.py -- همهٔ لنگه‌هایِ نسخه باید یک عدد باشند.
 
-چرا: نسخه در شش جا نوشته می‌شود (بک‌اند، فرانت، قفلِ npm، پیکربندیِ Tauri،
-اسکریپتِ Inno). اگر فقط بعضی‌شان bump شوند، آپدیت‌کنندهٔ درون‌برنامهای نسخه‌ای
+چرا: نسخه در هفت جا نوشته می‌شود (بک‌اند، فرانت، قفلِ npm، پیکربندیِ Tauri،
+Cargo.toml پوسته، اسکریپتِ Inno). اگر فقط بعضی‌شان bump شوند، آپدیت‌کنندهٔ درون‌برنامهای نسخه‌ای
 را می‌بیند که با نصب‌کننده نمی‌خواند و یا بی‌صدا هیچ آپدیتی نمی‌دهد یا آپدیتِ
 تکراری می‌فرستد. هیچ‌کدام در زمانِ بیلد کنترل نمی‌شد — این گارد همان است.
 
@@ -40,6 +40,10 @@ def main():
 
     tauri = json.loads(read(os.path.join("frontend", "src-tauri", "tauri.conf.json")))
     find("src-tauri/tauri.conf.json", tauri.get("version"))
+
+    cargo = read(os.path.join("frontend", "src-tauri", "Cargo.toml"))
+    m = re.search(r'^version\s*=\s*"([^"]+)"', cargo, re.M)
+    find("src-tauri/Cargo.toml", m.group(1) if m else None)
 
     iss = read(os.path.join("installer", "bors_setup.iss"))
     m = re.search(r'#define\s+AppVersion\s+"([^"]+)"', iss)
