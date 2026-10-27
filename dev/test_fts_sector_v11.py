@@ -19,6 +19,7 @@ import json
 import os
 import sqlite3
 import sys
+import tempfile
 
 try:                       # پیام‌های فارسی روی کنسولِ cp1252 ویندوز
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
@@ -31,6 +32,7 @@ sys.path.insert(0, ROOT)
 import bors_config                                          # noqa: E402
 import fts_engine as F                                       # noqa: E402
 from api import fundamental as FD                            # noqa: E402
+from api import market as M                                  # noqa: E402
 
 PASS = FAIL = 0
 
@@ -50,7 +52,7 @@ INSURANCE_SECTOR = "بيمه وصندوق بازنشستگي به جزتامين
 # نام‌هایِ واقعیِ TSETMC (با ي/ك عربی) — همان چیزی که در instruments هست.
 MANDATORY_SECTORS = [
     "خودرو و ساخت قطعات",
-    "عرضه برق، گاز، بخاروآب گرم",
+    "عرضه برق، گاز، بخار و آب گرم",
     "لاستيك و پلاستيك",
 ]
 ALLOWED_SECTORS = [
@@ -154,24 +156,62 @@ def main():
     else:
         print("SKIP  scan_symbol: market.db نیست — فقط بررسی‌هایِ خالص اجرا شد")
 
-    # ── ۷) JSON: مستنداتِ جزوه و کلیدِ زنده ─────────────────────────────
-    with open(os.path.join(ROOT, "fts_thresholds.json"), encoding="utf-8") as f:
-        raw = json.load(f)
-    chk("mandatory_sectors" not in raw,
-        "fts_thresholds.json کلیدِ top-level mandatory_sectors ندارد "
-        "(وگرنه FTS_DEFAULTS را بی‌صدا بازنویسی می‌کرد)")
-    chk(raw.get("reject_insurance") is True,
-        "fts_thresholds.json کلیدِ top-level reject_insurance=True دارد",
-        raw.get("reject_insurance"))
-    chk((raw.get("vetoes") or {}).get("reject_insurance") is True,
-        "fts_thresholds.json وتویِ مستندِ vetoes.reject_insurance=True را نگه می‌دارد")
-    f05 = raw.get("f05_industry_gate") or {}
-    chk(f05.get("mandatory_pricing_sectors") == [
-        "خودرو و ساخت قطعات",
-        "عرضه برق، گاز، بخار و آب گرم",
-        "لاستیک و پلاستیک",
-    ], "f05_industry_gate.mandatory_pricing_sectors فقط سه صنعتِ جزوه است",
-        f05.get("mandatory_pricing_sectors"))
+    # ── ۷) مهاجرتِ فایلِ قدیمی: فهرستِ ۸تاییِ ذخیره‌شده باید به سه برسد ────
+    # فایلِ config در نصب‌های قدیمی با همین superset ذخیره شده بود؛ load باید
+    # آن را بی‌نیاز از Save کاربر به سه صنعتِ جزوه نرمال کند.
+    old_eight = ["خودرو", "دارو", "نیروگاه", "قند و شکر", "غذا",
+                 "لاستیک", "شوینده", "بیمه"]
+    original_path = M.FTS_CONFIG_PATH
+    try:
+        with tempfile.TemporaryDirectory(prefix="fts-sector-") as tmp:
+            path = os.path.join(tmp, "fts_thresholds.json")
+            with open(path, "w", encoding="utf-8") as f:
+                json.dump({"mandatory_sectors": old_eight}, f, ensure_ascii=False)
+            M.FTS_CONFIG_PATH = path
+            migrated = M.load_fts_config()
+            chk(migrated["mandatory_sectors"] == EXPECTED,
+                "فایلِ قدیمی: load فهرستِ ۸تایی را به سه صنعتِ جزوه می‌رساند",
+                migrated["mandatory_sectors"])
+            for sector in ALLOWED_SECTORS:
+                res = F.sector_filter(sector, cfg=migrated)
+                chk(res["verdict"] != "mandatory" and res["pass"] is True,
+                    "فایلِ قدیمی: «%s» پس از مهاجرت از شاخص ۵ می‌گذرد" % sector,
+                    res["verdict"])
+
+            # Save نیز نباید superset را روی دیسک بنویسد (پدافندِ همان قاعده).
+            saved = M.set_fts_config({"mandatory_sectors": old_eight,
+                                      "reject_insurance": "false"})
+            chk(saved.get("status") == "success",
+                "set_fts_config فهرستِ قدیمی را بی‌خطا می‌پذیرد", saved.get("message"))
+            chk(saved["config"]["mandatory_sectors"] == EXPECTED,
+                "set_fts_config فهرستِ قدیمی را به سه صنعت نرمال می‌کند",
+                saved["config"]["mandatory_sectors"])
+            chk(saved["config"]["reject_insurance"] is True,
+                "set_fts_config رشتهٔ \"false\" را به پیش‌فرضِ True برمی‌گرداند",
+                saved["config"]["reject_insurance"])
+    finally:
+        M.FTS_CONFIG_PATH = original_path
+
+    # ── ۸) وتویِ بیمه: null/رشته نباید بی‌صدا وتو را خاموش کند ────────────
+    original_path = M.FTS_CONFIG_PATH
+    try:
+        with tempfile.TemporaryDirectory(prefix="fts-veto-") as tmp:
+            path = os.path.join(tmp, "fts_thresholds.json")
+            M.FTS_CONFIG_PATH = path
+            for bad, label in ((None, "null"), ("false", "رشتهٔ \"false\"")):
+                with open(path, "w", encoding="utf-8") as f:
+                    json.dump({"reject_insurance": bad}, f, ensure_ascii=False)
+                veto = M.load_fts_config()["reject_insurance"]
+                chk(veto is True,
+                    "reject_insurance=%s در فایل به پیش‌فرضِ True برمی‌گردد" % label,
+                    veto)
+            with open(path, "w", encoding="utf-8") as f:
+                json.dump({"reject_insurance": False}, f, ensure_ascii=False)
+            veto = M.load_fts_config()["reject_insurance"]
+            chk(veto is False,
+                "reject_insurance=false واقعی همان False می‌ماند", veto)
+    finally:
+        M.FTS_CONFIG_PATH = original_path
 
     print("\n%d/%d checks passed" % (PASS, PASS + FAIL))
     if FAIL:

@@ -32,6 +32,18 @@ _FTS_INDUSTRY_MODES = ("Exclude_Mandatory_Pricing", "Rank_Only",
                        "Include_Industries", "Exclude_Industries")
 
 
+def _normalise_mandatory_sectors(values) -> list:
+    """فهرستِ الزامیِ قیمت‌گذاریِ دستوری را به سه صنعتِ جزوه قفل می‌کند.
+
+    فایلِ ذخیره‌شده فقط می‌تواند همان سه صنعت را تکرار کند و هرگز توکنِ تازه
+    (دارو/غذا/قند/شوینده/بیمه) اضافه نمی‌کند. ترتیبِ ورودی حفظ می‌شود؛ اگر
+    هیچ‌کدام نماند، پیش‌فرضِ سرور برمی‌گردد.
+    """
+    allowed = list(FTS_DEFAULTS["mandatory_sectors"])
+    kept = [s for s in (values or []) if s in allowed]
+    return kept or allowed
+
+
 def load_fts_config() -> dict:
     """پیش‌شرط‌ها را میخواند و کلیدهای نسل قدیم را به ساختار v8 مهاجرت میدهد."""
     try:
@@ -67,13 +79,22 @@ def load_fts_config() -> dict:
         if isinstance(v, str):
             v = [s.strip() for s in v.replace("،", ",").split(",") if s.strip()]
         cfg[k] = [str(s).strip() for s in (v or []) if str(s).strip()]
+    # Task 8 migration: pre-1.0.87 saves may carry the old 6/8-item list
+    # (incl. بیمه/قند/شوینده/دارو/غذا). The owner contract is exactly the
+    # booklet three; a persisted list may only repeat them, never add tokens.
+    cfg["mandatory_sectors"] = _normalise_mandatory_sectors(cfg.get("mandatory_sectors"))
     for k, v in list(cfg.items()):
         if k in FTS_STR_KEYS:
             cfg[k] = str(v)
         elif k in FTS_LIST_KEYS:
             continue
         elif isinstance(FTS_DEFAULTS[k], bool):
-            cfg[k] = bool(v)
+            if k == "reject_insurance":
+                # وتویِ سختِ بیمه فقط با بولِ واقعی خاموش می‌شود؛ JSON `null`
+                # یا رشتهٔ "false" نباید بی‌صدا وتو را بردارد.
+                cfg[k] = v if isinstance(v, bool) else FTS_DEFAULTS[k]
+            else:
+                cfg[k] = bool(v)
         elif k.endswith("_max") or k.endswith("_years") or k.endswith("_sessions"):
             try:
                 cfg[k] = int(float(v))
@@ -1492,7 +1513,11 @@ def set_fts_config(payload: dict = None):
         elif k in FTS_STR_KEYS:
             cfg[k] = str(v)
         elif isinstance(FTS_DEFAULTS[k], bool):
-            cfg[k] = bool(v)
+            if k == "reject_insurance":
+                # فقط بولِ واقعی؛ null/رشته یعنی پیش‌فرضِ امن (True).
+                cfg[k] = v if isinstance(v, bool) else FTS_DEFAULTS[k]
+            else:
+                cfg[k] = bool(v)
         elif k.endswith("_max") or k.endswith("_years") or k.endswith("_sessions"):
             try:
                 cfg[k] = int(float(v))
@@ -1520,6 +1545,9 @@ def set_fts_config(payload: dict = None):
                 continue
             if cfg[k] < 0:
                 errors[k] = "مقدار منفی مجاز نیست"
+    # Task 8: حتی اگر کلاینت فهرستِ قدیمی بفرستد، فقط سه صنعتِ جزوه روی دیسک
+    # می‌نشیند (همان قاعدهٔ load؛ Save دیگر superset ذخیره نمی‌کند).
+    cfg["mandatory_sectors"] = _normalise_mandatory_sectors(cfg.get("mandatory_sectors"))
     if str(cfg.get("industry_mode") or "").strip() not in _FTS_INDUSTRY_MODES:
         errors["industry_mode"] = "حالتِ شناخته‌شده‌ای نیست"
     if cfg.get("hourglass_ma52_position") not in ("below", "above", "either"):
