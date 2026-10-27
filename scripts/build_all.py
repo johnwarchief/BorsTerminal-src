@@ -33,6 +33,8 @@ def run(cmd, cwd, label):
 def main():
     ap = argparse.ArgumentParser(description='FTS Terminal full build (phase 7)')
     ap.add_argument('--skip-npm', action='store_true', help='skip frontend build')
+    ap.add_argument('--skip-shell', action='store_true',
+                    help='skip the Tauri window build')
     args = ap.parse_args()
 
     if not args.skip_npm:
@@ -43,6 +45,10 @@ def main():
     # stale, which makes PyInstaller fail on datas entries we already removed.
     run([sys.executable, '-m', 'PyInstaller', '--noconfirm', '--clean', SPEC], ROOT,
         'pyinstaller: fts_terminal.spec')
+
+    if not args.skip_shell:
+        run([sys.executable, os.path.join('scripts', 'build_shell.py')], ROOT,
+            'shell: Tauri window')
 
     if not os.path.isdir(OUT):
         print('[ERR] expected output missing:', OUT)

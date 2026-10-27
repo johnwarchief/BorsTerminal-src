@@ -131,6 +131,12 @@ function Build-Exe {
     # قراردادِ onedir: _internal/ باید باشد، همهٔ api.* در hiddenimports،
     # و پنجرهٔ بومی (webview/pythonnet) داخلِ باندل باشد.
     if (-not (Test-DistBundle)) { Write-Error '[exe] onedir contract FAILED. ABORT.'; exit 1 }
+    Write-Host '[shell] Tauri window'
+    & $PY scripts\build_shell.py
+    if ($LASTEXITCODE -ne 0) { Write-Error '[shell] build failed. ABORT.'; exit 1 }
+    if (-not (Test-Path "$Bundle\BorsTerminal_Shell.exe")) {
+        Write-Error '[shell] BorsTerminal_Shell.exe missing from bundle. ABORT.'; exit 1
+    }
 }
 function Move-StaleDist([string]$why, [string]$detail) {
     # دیستارِ قدیمی را دور نمی‌اندازیم و ریلیز را هم با آن نمی‌سازیم: یک‌بار
@@ -204,12 +210,16 @@ function Assert-DistFresh {
     }
     # bors_setup.iss در این فهرست نیست: داخلِ باندل نمی‌رود، پس تغییرش نباید
     # rebuildِ PyInstaller بخواهد (تطابقِ نسخه‌اش پایین‌تر چک می‌شود).
-    $watch = @('bors_config.py','bors_entry.py','bors_minisign.py','codal_fetcher.py',
+    $watch = @('bors_config.py','bors_entry.py','bors_shell.py','bors_minisign.py','codal_fetcher.py',
                'fts_engine.py','mstat_engine.py','watchlist_store.py','app.py',
                'bootstrap_first_run.py','bors_flags.py',
                'fts_terminal.spec','bors_setup.spec',
                'frontend/package.json','frontend/package-lock.json',
-               'frontend/src-tauri/tauri.conf.json')
+               'frontend/src-tauri/tauri.conf.json',
+               'frontend/src-tauri/Cargo.toml','frontend/src-tauri/Cargo.lock',
+               'frontend/src-tauri/src/lib.rs','frontend/src-tauri/src/main.rs',
+               'frontend/src-tauri/shell-dist/index.html',
+               'scripts/build_shell.py')
     $watch += @([regex]::Matches($specSrc, "\('([A-Za-z0-9_./-]+\.(?:py|json))',\s*'\.'\)") |
                  ForEach-Object { $_.Groups[1].Value })
     $watch = @($watch | Sort-Object -Unique)
@@ -289,7 +299,7 @@ function Clear-DistRuntime {
 
 function Build-Setup {
     Assert-DistFresh
-    if (-not (Test-Path "$Bundle\BorsTerminal_Ultimate.exe")) { Build-Frontend; Build-Exe }
+    if (-not (Test-Path "$Bundle\BorsTerminal_Ultimate.exe") -or -not (Test-Path "$Bundle\BorsTerminal_Shell.exe")) { Build-Frontend; Build-Exe }
     if (Test-Path 'market.db.lzma') { Copy-Item 'market.db.lzma' "$Bundle\market.db.lzma" -Force }
     # هر باقی‌ماندهٔ زمانِ اجرا از باندل بیرون می‌ماند؛ خودِ این پاک‌سازی در
     # Assert-DistFresh است تا مسیرهایِ portable/patch هم از آن بی‌بهره نمانند.
@@ -382,7 +392,7 @@ function Build-Portable {
     # bors_portable.flag کنارِ EXE همان چیزی است که bors_config.is_portable()
     # می‌خواند، پس ZIPِ استخراج‌شده در هر پوشه‌ای پرتابیل است و نسخۀ نصبی نه.
     Assert-DistFresh
-    if (-not (Test-Path "$Bundle\BorsTerminal_Ultimate.exe")) { Build-Frontend; Build-Exe }
+    if (-not (Test-Path "$Bundle\BorsTerminal_Ultimate.exe") -or -not (Test-Path "$Bundle\BorsTerminal_Shell.exe")) { Build-Frontend; Build-Exe }
 
     $appVer = $null
     $cfgSrc = Join-Path $root 'bors_config.py'
@@ -448,7 +458,7 @@ function Build-Patch {
     # فایلها (overlayِ کامل) که برای نصبِ قدیمیِ فاقدِ apply_update.bat
     # سازگار می‌ماند.
     Assert-DistFresh
-    if (-not (Test-Path "$Bundle\BorsTerminal_Ultimate.exe")) { Build-Frontend; Build-Exe }
+    if (-not (Test-Path "$Bundle\BorsTerminal_Ultimate.exe") -or -not (Test-Path "$Bundle\BorsTerminal_Shell.exe")) { Build-Frontend; Build-Exe }
     if ($Baseline) {
         Write-Host "[patch] delta $PatchFrom -> (current)  baseline=$Baseline  signed"
         & $PY "$root\scripts\make_patch.py" --from $PatchFrom --baseline $Baseline --dist "$DistRoot"
