@@ -210,7 +210,7 @@ async function measureCold(page, run) {
   const rt = routeFromHash(hash);
   let readyMs = null;
   try {
-    await page.waitForFunction(READY_FN(rt.route, rt.marker, rt.min), { timeout: DEADLINE });
+    await page.waitForFunction(READY_FN(rt.route, rt.marker, rt.min), undefined, { timeout: DEADLINE });
     readyMs = Date.now() - t0;
   } catch (e) {
     note(`cold run ${run}: «دادهٔ قابل‌استفاده» تا ${DEADLINE}ms نرسید (route=${rt.route})`);
@@ -253,7 +253,7 @@ async function measureTabCycle(page) {
       if (!(await clickTab(page, rt.route, rt.label))) { note(`تب «${rt.label}» درِ ناوبری پیدا نشد`); continue; }
       let ready = null;
       try {
-        await page.waitForFunction(READY_FN(rt.route, rt.marker, rt.min), { timeout: DEADLINE });
+        await page.waitForFunction(READY_FN(rt.route, rt.marker, rt.min), undefined, { timeout: DEADLINE });
         ready = Date.now() - t0;
       } catch (e) {
         await page.waitForTimeout(5000);
@@ -275,7 +275,7 @@ async function measureTabCycle(page) {
 
 async function measureChart(ctx, page) {
   if (!(await clickTab(page, '/technical', 'تکنیکال'))) { note('تب تکنیکال پیدا نشد'); return null; }
-  await page.waitForFunction(() => document.querySelectorAll('canvas').length >= 1,
+  await page.waitForFunction(() => document.querySelectorAll('canvas').length >= 1, undefined,
                              { timeout: DEADLINE }).catch(() => note('چارت: canvas اولیه ظاهر نشد'));
   await page.waitForTimeout(2500);
 
@@ -404,7 +404,7 @@ async function main() {
     const t0 = Date.now();
     if (await clickTab(p, '/market-status', 'وضعیت بازار')) {
       const ms = ROUTES.find((r) => r.route === '/market-status');
-      await p.waitForFunction(READY_FN(ms.route, ms.marker, ms.min), { timeout: DEADLINE }).catch(() => {
+      await p.waitForFunction(READY_FN(ms.route, ms.marker, ms.min), undefined, { timeout: DEADLINE }).catch(() => {
         note('سناریوی سنگین: آمادگیِ تب وضعیت بازار نرسید');
       });
       const openMs = Date.now() - t0;
