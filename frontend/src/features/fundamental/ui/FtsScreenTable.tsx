@@ -386,30 +386,10 @@ const ScreenerRow = memo(function ScreenerRow({
                         <span className={`font-bold text-sm text-text-primary tracking-wide ${r.excluded ? 'line-through decoration-accent-red/60' : ''}`}>
                           {r.symbol}
                         </span>
-                        {r.tech_hourglass_active ? (
-                          <span className="shrink-0 rounded px-1.5 py-0.5 text-[9px] font-bold bg-accent-green/20 text-accent-green border border-accent-green/30" title="استراتژی ساعت شنی FTS فعال (خرید ۲x-۴x)">
-                            ساعت شنی
-                          </span>
-                        ) : null}
-                        {r.funnel_candidate ? (
-                          <span
-                            data-testid="row-funnel-candidate"
-                            title="هر سه گامِ قیف (تابلوخوانی ← تکنیکال ← بنیادی) pass و بی‌وتو"
-                            className="shrink-0 rounded px-1.5 py-0.5 text-[9px] font-bold bg-neon-cyan/20 text-neon-cyan border border-neon-cyan/30"
-                          >
-                            کاندیدِ قیف
-                          </span>
-                        ) : null}
-                        {r.tech_jet ? (
-                          <span className="shrink-0 rounded px-1.5 py-0.5 text-[9px] font-bold bg-accent-blue/20 text-accent-blue border border-accent-blue/30" title="ستاپ جت FTS (شکست مقاومت)">
-                            جت
-                          </span>
-                        ) : null}
-                        {r.tech_matrix_decision === 'REJECT' ? (
-                          <span className="shrink-0 rounded px-1.5 py-0.5 text-[9px] font-bold bg-accent-red/20 text-accent-red border border-accent-red/30" title={r.tech_matrix_desc ?? 'ممنوعیت ورود FTS'}>
-                            وتوی روند
-                          </span>
-                        ) : null}
+                        {/* بج‌های تکنیکال (ساعت شنی/جت/وتوی روند/کاندیدِ قیف) عمداً
+                            اینجا نیستند: حکمِ ردیفِ تبِ بنیادی از ۵ شاخص، وضعیتِ داده،
+                            مجمع/افزایش سرمایه و فیلترهای ریسک ساخته می‌شود. فیلدهای
+                            تکنیکال در useFtsScreen می‌مانند برای تبِ تکنیکال. */}
                         {/* مجمع پیش‌رو — وتو (قرمز) یا فقط هشدار (زرد/آبی).
                             داورِ وتو بک‌اند است (`assembly_veto` در /api/screener،
                             بیرونِ کش و تازه در هر درخواست)؛ برچسبِ هشدار از
@@ -847,7 +827,7 @@ export function FtsScreenTable({
   /** شاخص‌هایی که کاربر خواسته نمادهای مردود/ناقص‌شان از جدول حذف شود (دراور تنظیمات) */
   const excludeAxes = useExcludeAxes();
 
-  const [strategicPreset, setStrategicPreset] = useState<'all' | 'super' | 'jet' | 'hourglass'>('all');
+  const [strategicPreset, setStrategicPreset] = useState<'all' | 'super' | 'hourglass'>('all');
   /** جستجوی همین جدول — حالتِ محلی است نه سراسری: نمادی که اینجا جستجو می‌شود
    *  فقط همین جدول را تنگ می‌کند و به تب‌های دیگر (تابلو/تکنیکال) سرریز نمی‌کند. */
   const [query, setQuery] = useState('');
@@ -876,10 +856,6 @@ export function FtsScreenTable({
       // pricing_mode==='free'` چهارم را می‌شمرد و بیست‌وـ را می‌انداخت بیرون:
       // سنجشِ ۱۴۰۵-۰۷-۱۱ رویِ ۸۷۳ نماد ⇒ ۹۶ در برابرِ ۵۱ (۶۳ اضافه، ۱۸ کم).
       super: base.filter((r) => r.verdict === 'STRONG').length,
-      // «ستاپ جت» یعنی آخرینِ کندل پلکانِ مقاومتِ جزوه را شکسته باشد --
-      // همان tech_jet که موتورِ اسکرینر از رویِ کندل‌ها حساب می‌کند. پیش از
-      // این این چیپ i1_pass را می‌شمرد و نامش را جت می‌گذاشت.
-      jet: base.filter((r) => r.tech_jet === true && r.pricing_mode === 'free').length,
       hourglass: base.filter((r) => r.score === 5 && r.excluded !== true).length,
     };
   }, [rowsAfterAxisFilter]);
@@ -893,8 +869,6 @@ export function FtsScreenTable({
 
       if (strategicPreset === 'super') {
         base = base.filter((r) => r.verdict === 'STRONG');
-      } else if (strategicPreset === 'jet') {
-        base = base.filter((r) => r.tech_jet === true && r.pricing_mode === 'free');
       } else if (strategicPreset === 'hourglass') {
         base = base.filter((r) => r.score === 5 && r.excluded !== true);
       }
@@ -1073,18 +1047,6 @@ export function FtsScreenTable({
           }`}
         >
           💎 سوپر بنیادی‌ها ({toFaDigits(presetCounts.super)})
-        </button>
-        <button
-          type="button"
-          onClick={() => setStrategicPreset('jet')}
-          title="رشد فروش بالای ۴۰٪ و صنعت آزاد"
-          className={`rounded-lg border px-2.5 py-1 font-bold transition-all ${
-            strategicPreset === 'jet'
-              ? 'border-accent-green bg-accent-green/15 text-accent-green shadow-[0_0_8px_rgba(16,185,129,0.25)]'
-              : 'border-[var(--hairline)] bg-bg-primary text-text-secondary hover:text-text-primary'
-          }`}
-        >
-          🚀 نامزدهای ستاپ جت ({toFaDigits(presetCounts.jet)})
         </button>
         <button
           type="button"
