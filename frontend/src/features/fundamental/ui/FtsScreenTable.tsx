@@ -333,6 +333,16 @@ const ScreenerRow = memo(function ScreenerRow({
               const epsGapReason = epsHist.realYears
                 ? `فقط ${toFaDigits(epsHist.realYears)} سال از ${toFaDigits(epsHist.requiredYears)} سالِ لازم EPS موجود است — سابقهٔ کامل سه‌ساله برای قضاوت شاخص ۲ کافی نیست.`
                 : 'این ردیفِ اسکنر سابقهٔ EPS سالانه ندارد؛ علت دقیق در کارت نماد (دادهٔ جزئیات کدال) دیده می‌شود.';
+              /** شاخص ۴ (Task 7): مسیرِ پذیرش و برچسبِ سالانه‌سازی از خودِ موتور.
+               *  ردیف ارتفاعِ ثابت ۵۲px دارد، پس فقط یک سطرِ راهنما رندر می‌شود
+               *  (مسیر مقدم است) و برچسبِ سالانه‌سازی همیشه در tooltipِ عدد می‌آید. */
+              const i4Path = r.i4_acceptance_path ?? null;
+              const i4Annualize = (r.annualize_label ?? '').trim();
+              const i4NumberHint = r.profit_potential_pct == null
+                ? (r.sales_to_mcap != null
+                    ? `نسبت فروش/ارزش بازار ${fmtRatioGrouped(r.sales_to_mcap)} — پتانسیل سود ناخالص ثبت نشده`
+                    : VALUE_MISSING_WITH_VERDICT)
+                : (absurdHint(r.profit_potential_pct) ?? null);
               return (
                 <tr
                   key={r.symbol}
@@ -658,19 +668,45 @@ const ScreenerRow = memo(function ScreenerRow({
                           />
                         )}
                       </span>
-                      <span
-                        className="num block min-w-0 text-end text-sm font-bold whitespace-nowrap text-text-primary"
-                        title={
-                          r.profit_potential_pct == null
-                            ? r.sales_to_mcap != null
-                              ? `نسبت فروش/ارزش بازار ${fmtRatioGrouped(r.sales_to_mcap)} — پتانسیل سود ناخالص ثبت نشده`
-                              : VALUE_MISSING_WITH_VERDICT
-                            : (absurdHint(r.profit_potential_pct) ?? undefined)
-                        }
-                      >
-                        {r.profit_potential_pct == null ? '—' : fmtPctGrouped(r.profit_potential_pct)}
-                        {isAbsurdPct(r.profit_potential_pct) ? ' ⚠' : ''}
-                      </span>
+                      <div className="flex min-w-0 flex-col items-start gap-0.5">
+                        <span
+                          className="num block min-w-0 text-end text-sm font-bold whitespace-nowrap text-text-primary"
+                          title={
+                            [i4NumberHint, i4Annualize].filter(Boolean).join(' · ') || undefined
+                          }
+                        >
+                          {r.profit_potential_pct == null ? '—' : fmtPctGrouped(r.profit_potential_pct)}
+                          {isAbsurdPct(r.profit_potential_pct) ? ' ⚠' : ''}
+                        </span>
+                        {/* چرا شاخص ۴ پاس شد (Task 7): نامِ مسیر از خودِ موتور،
+                            نه بازمحاسبهٔ آستانه در جدول. مسیر دوم متنِ جزوه را
+                            صریح می‌نامد؛ مسیر اول فقط نشانهٔ کوتاه است. */}
+                        {i4Path ? (
+                          <span
+                            data-testid="fts-i4-path"
+                            className="max-w-full truncate text-3xs font-medium text-text-muted"
+                            title={
+                              i4Path === 'profit_potential'
+                                ? '۴۰٪ پتانسیل سود ناخالص ÷ ارزش بازار (مسیر دوم پذیرش)'
+                                : 'فروش سالانه ÷ ارزش بازار ≥ ۰٫۳۳× (مسیر اول پذیرش)'
+                            }
+                          >
+                            {i4Path === 'profit_potential'
+                              ? 'مسیر دوم — سند v2.1'
+                              : 'مسیر اول'}
+                          </span>
+                        ) : i4Annualize ? (
+                          /* بی‌مسیر (مثلاً تولیدیِ ردشده): برچسبِ سالانه‌سازی
+                             تنها سطرِ راهنماست؛ متنِ کامل هم در tooltipِ عدد. */
+                          <span
+                            data-testid="fts-i4-annualize"
+                            className="max-w-full truncate text-3xs text-text-muted"
+                            title={i4Annualize}
+                          >
+                            {i4Annualize}
+                          </span>
+                        ) : null}
+                      </div>
                     </div>
                   </td>
                   <td className="px-3 py-1.5 align-middle">

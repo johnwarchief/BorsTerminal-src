@@ -608,6 +608,15 @@ function Panel4({ card }: { card: FtsCard }) {
   const potThresh = typeof ind?.potential_threshold === 'number' ? ind.potential_threshold : null;
   const salesFloorLabel = salesThresh == null ? 'کفِ نسبت از بک‌اند نرسید' : `≥ ${toFaDigits(salesThresh.toFixed(2))}×`;
   const scaleTable = ind?.annual?.scale_table ?? [];
+  /** مسیرِ پذیرش و برچسبِ سالانه‌سازی از خودِ `indicators['4']` (Task 7) —
+   *  نامِ مسیرِ پاس‌شده، نه آستانهٔ تازه؛ معاف/بی‌داده هیچ‌کدام را ندارد. */
+  const acceptPath = ind?.acceptance_path ?? null;
+  const annualizeLabel = (ind?.annualize_label ?? '').trim();
+  // برایِ دورهٔ ۱۲ ماهه پیامِ «سال کامل» می‌ماند و برچسبِ موتور جدا زیرش
+  // می‌آید؛ برایِ N<۱۲ خودِ برچسبِ موتور جای متنِ بازساخته را می‌گیرد.
+  const basisLabel = m >= 12
+    ? '۱۲ ماه کاملِ سال مالی (بدون سالانه‌سازی)'
+    : (annualizeLabel || `سالانه‌شده از دورهٔ ${toFaDigits(m)} ماهه`);
   return (
     <div className="flex flex-col gap-3" data-testid="drilldown-panel-4">
       <div className="flex flex-wrap items-center gap-2">
@@ -623,6 +632,24 @@ function Panel4({ card }: { card: FtsCard }) {
             پتانسیل سود <span className="num">{fmtPct(potential)}</span>
             {potThresh == null ? '' : ` (کف ${toFaDigits(potThresh)}٪)`}
           </Badge>
+        ) : null}
+        {/* «چرا ۴ پاس شد»: مسیرِ اول فروش÷ارزش بازار است و مسیرِ دوم
+            پتانسیلِ ۴۰٪ سند v2.1؛ خودِ دروازهٔ OR دست‌نخورده است. */}
+        {acceptPath ? (
+          <span data-testid="drilldown-i4-acceptance">
+            <Badge
+              tone={acceptPath === 'profit_potential' ? 'blue' : 'green'}
+              title={
+                acceptPath === 'profit_potential'
+                  ? '۴۰٪ پتانسیل سود ناخالص ÷ ارزش بازار (مسیر دوم پذیرش)'
+                  : 'فروش سالانه ÷ ارزش بازار ≥ ۰٫۳۳× (مسیر اول پذیرش)'
+              }
+            >
+              {acceptPath === 'profit_potential'
+                ? 'پذیرش: پتانسیل سود ۴۰٪ — مسیر دوم سند v2.1'
+                : 'پذیرش: فروش÷ارزش بازار'}
+            </Badge>
+          </span>
         ) : null}
       </div>
       <div className="rounded-xl border border-[var(--hairline)] bg-bg-card/40 p-3">
@@ -647,9 +674,14 @@ function Panel4({ card }: { card: FtsCard }) {
           </p>
         ) : null}
         <p className="mt-1 text-2xs leading-relaxed text-text-muted" data-testid="annualize-basis">
-          مبنا: {m >= 12 ? '۱۲ ماه کاملِ سال مالی (بدون سالانه‌سازی)' : `سالانه‌شده از دورهٔ ${toFaDigits(m)} ماهه`}
+          مبنا: {basisLabel}
           {ind?.annualize_basis ? ` · ${toFaDigits(ind.annualize_basis)}` : ''}
         </p>
+        {annualizeLabel && annualizeLabel !== basisLabel ? (
+          <p className="mt-0.5 text-2xs text-text-muted" data-testid="drilldown-i4-annualize">
+            {annualizeLabel}
+          </p>
+        ) : null}
         {ind?.annual?.reconciled === false ? (
           <p className="mt-1 text-2xs font-bold text-accent-yellow" data-testid="annualize-unreconciled">
             برآوردِ ماهانه با فروش صورت مالی سالانه هم‌خوان نبود؛ مبنا به فروش سالانهٔ کدال برگشت.

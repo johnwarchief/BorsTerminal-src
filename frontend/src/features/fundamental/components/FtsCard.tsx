@@ -752,6 +752,11 @@ export function FtsCard({
                   ? (audit?.['4_sales_to_mcap']?.actualValue as number)
                   : null);
               const potPct = cfgNum(i4?.potential_pct);
+              /** مسیرِ پذیرش و برچسبِ سالانه‌سازی از موتور (Task 7) — نامِ
+               *  دروازهٔ پاس‌شده است، نه آستانهٔ تازه. معاف/بی‌داده هیچ‌کدام را
+               *  ندارد و چیزی رندر نمی‌شود. */
+              const acceptPath = i4?.acceptance_path ?? null;
+              const annualizeLabel = (i4?.annualize_label ?? '').trim();
 
               // تیترِ کارت «پتانسیل سود تا آخر سال» است، پس عددِ درشت همان
               // درصدِ پتانسیل است نه نسبتِ فروش÷ارزش (فایرا: ۲۷.۵٪ نه ۰.۹۷×).
@@ -766,12 +771,44 @@ export function FtsCard({
               );
 
               extraNode = (
-                <span className="num mt-0.5 block truncate text-3xs text-text-muted" data-testid="fts-card-4-secondary"
-                  title={salesFloor == null ? undefined : `کفِ قبولِ نسبت: ${pct(salesFloor)}`}>
-                  {salesRatio == null
-                    ? 'نسبت فروش به ارزش بازار: بدون داده'
-                    : `نسبت فروش ÷ ارزش بازار ${pct(salesRatio)}` +
-                      (salesFloor == null ? '' : ` · کف ${pct(salesFloor)}`)}
+                <span className="mt-0.5 block min-w-0" data-testid="fts-card-4-secondary">
+                  <span className="num block truncate text-3xs text-text-muted"
+                    title={salesFloor == null ? undefined : `کفِ قبولِ نسبت: ${pct(salesFloor)}`}>
+                    {salesRatio == null
+                      ? 'نسبت فروش به ارزش بازار: بدون داده'
+                      : `نسبت فروش ÷ ارزش بازار ${pct(salesRatio)}` +
+                        (salesFloor == null ? '' : ` · کف ${pct(salesFloor)}`)}
+                  </span>
+                  {/* «چرا ۴ پاس شد» کنارِ همان عددِ پتانسیل؛ مسیر دومِ سند
+                      v2.1 صریح نام برده می‌شود تا با مسیر اول اشتباه نشود. */}
+                  {acceptPath ? (
+                    <span
+                      data-testid="fts-card-4-acceptance"
+                      className={`mt-1 inline-block max-w-full truncate rounded border px-1 py-px text-3xs font-bold ${
+                        acceptPath === 'profit_potential'
+                          ? 'border-accent-blue/40 bg-accent-blue/10 text-accent-blue'
+                          : 'border-accent-green/40 bg-accent-green/10 text-accent-green'
+                      }`}
+                      title={
+                        acceptPath === 'profit_potential'
+                          ? '۴۰٪ پتانسیل سود ناخالص ÷ ارزش بازار (مسیر دوم پذیرش)'
+                          : 'فروش سالانه ÷ ارزش بازار ≥ ۰٫۳۳× (مسیر اول پذیرش)'
+                      }
+                    >
+                      {acceptPath === 'profit_potential'
+                        ? 'پذیرش: پتانسیل سود ۴۰٪ — مسیر دوم سند v2.1'
+                        : 'پذیرش: فروش÷ارزش بازار'}
+                    </span>
+                  ) : null}
+                  {annualizeLabel ? (
+                    <span
+                      data-testid="fts-card-4-annualize"
+                      className="mt-0.5 block truncate text-3xs text-text-muted"
+                      title={annualizeLabel}
+                    >
+                      {annualizeLabel}
+                    </span>
+                  ) : null}
                 </span>
               );
 

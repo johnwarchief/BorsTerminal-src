@@ -1562,6 +1562,32 @@ def annualize_rows(rows, fs_rev: float, op_basis: bool = False) -> dict:
             "reconciled": reconciled, "operational_revenue_basis": False}
 
 
+def annualize_label(months) -> str:
+    """برچسبِ سالانه‌سازیِ شاخص ۴ (Task 7) — «سالانه‌شده از دورهٔ N ماهه».
+
+    همان متنی که پنلِ جزئیات از قبل می‌ساخت، حالا تک‌مرجع است: کارت و ردیفِ
+    `bulk_scan` هم همین را می‌دهند تا UI برچسب را از عدد بازنسازد. `0`/None
+    یعنی دوره‌ای برایِ سالانه‌سازی نیست ⇒ رشتهٔ خالی (نه «دورهٔ ۰ ماهه»).
+    """
+    m = int(_f(months))
+    return ("سالانه‌شده از دورهٔ %d ماهه" % m) if m else ""
+
+
+def i4_acceptance_path(sales_pass, potential_pass) -> Optional[str]:
+    """مسیرِ پذیرشِ شاخص ۴ (Task 7) — **فقط نامِ مسیر، نه دروازهٔ تازه**.
+
+    دروازه همان ORِ سند v2.1 است: اول «فروش سالانه ÷ ارزش بازار ≥ ۰٫۳۳×»
+    (`sales_to_mcap`) و بعد «پتانسیل سود ناخالص ÷ ارزش بازار ≥ ۴۰٪»
+    (`profit_potential` — مسیر دوم). وقتی هر دو پاس‌اند مسیرِ اول نام می‌گیرد،
+    و وقتی هیچ‌کدام نیست (یا شاخص معاف/بی‌داده است) `None`.
+    """
+    if sales_pass:
+        return "sales_to_mcap"
+    if potential_pass:
+        return "profit_potential"
+    return None
+
+
 def annualized_sales(conn: sqlite3.Connection, symbol: str,
                      ref: Optional[dict] = None, series=None, profile=None,
                      exempt=None) -> Optional[dict]:
@@ -2169,8 +2195,13 @@ def scan_symbol(conn: sqlite3.Connection, symbol: str, market_cap_rials: float =
         # ص ۲ (۸۰۰ → ۵۰ → ۱۰ → ۵-۷) را مخدوش می‌کند. کارتِ جزئیات همین را
         # می‌کرد و موتور به آن تراز شد.
         passes_s2m = None
+        path4 = None
     else:
-        passes_s2m = bool((s2m and s2m.get("pass")) or (pot and pot.get("pass")))
+        sales_pass = bool(s2m and s2m.get("pass"))
+        pot_pass = bool(pot and pot.get("pass"))
+        # همان نامِ مسیرِ ردیفِ bulk (Task 7): اول فروش÷ارزش بازار، بعد پتانسیل.
+        path4 = i4_acceptance_path(sales_pass, pot_pass)
+        passes_s2m = bool(sales_pass or pot_pass)
 
     passes = {"1_growth": axis1,
               "2_eps_trend": bool(e and e["pass"]),
@@ -2239,6 +2270,12 @@ def scan_symbol(conn: sqlite3.Connection, symbol: str, market_cap_rials: float =
         # «چرا حکمِ ۳ خالی است»: N/Aِ طبقه (مالی/هلدینگ/صندوق) از خودِ موتور،
         # نه شکافِ داده؛ جدول با همین پرچم N/A خاکستری می‌نشاند (Task 6 fix).
         "i3_na": bool((gm or {}).get("na")),
+        # نامِ مسیرِ پذیرش و برچسبِ سالانه‌سازی (Task 7) — همان قراردادِ ردیفِ
+        # bulk_scan؛ معاف/بی‌داده بی‌مسیر و بی‌برچسب است.
+        "i4_acceptance_path": path4,
+        "annualize_months": int((annual or {}).get("months_used") or 0),
+        "annualize_label": ("" if is_holding
+                            else annualize_label((annual or {}).get("months_used"))),
         "m141": bool(m141_hit),
         "avg_trade_val_hmt": None if avg_trade_val is None else round(avg_trade_val, 3),
         "detail": {"growth": g, "eps_trend": e, "gross_margin": gm,
@@ -2656,6 +2693,7 @@ def bulk_scan(conn: sqlite3.Connection, cfg: dict = None) -> list[dict]:
         s2m = (s2m_d or {}).get("sales_to_mcap")
         pot = (pot_d or {}).get("potential_pct")
 
+        path4 = None
         if is_holding:
             # رأی ۱۶: معاف = «نظر نمی‌دهد» (None)، نه امتیازِ رایگان — همان چیزی
             # که کارتِ جزئیات می‌داد؛ موتور بالاخره به آن تراز شد.
@@ -2667,6 +2705,9 @@ def bulk_scan(conn: sqlite3.Connection, cfg: dict = None) -> list[dict]:
             # (سجام/نمرينو/بپيوند) درِ اسکرینر پاس و درِ /api/fts مردود بودند.
             sales_pass = bool((s2m_d or {}).get("pass"))
             pot_pass = bool((pot_d or {}).get("pass"))
+            # نامِ مسیرِ پذیرفته‌شده (Task 7): اول فروش÷ارزش بازار، بعد
+            # پتانسیلِ ۴۰٪. خودِ آستانه‌ها و OR دست‌نخورده‌اند.
+            path4 = i4_acceptance_path(sales_pass, pot_pass)
             i4 = bool(sales_pass or pot_pass)
 
         # ۵) فیلتر صنعت (قیمت‌گذاری آزاد/بورس کالا در برابر دستوری)
@@ -2724,6 +2765,10 @@ def bulk_scan(conn: sqlite3.Connection, cfg: dict = None) -> list[dict]:
             "profit_potential_pct": None if pot is None else round(pot, 1),
             "annual_sales_bt": round(normalize_mrl_to_btom(annual_sales), 1),
             "annualize_months": months_used,
+            # برچسبِ سالانه‌سازی و نامِ مسیرِ پذیرش (Task 7) — همان چیزی که
+            # کارت می‌دهد؛ برایِ معاف/بی‌داده رشتهٔ خالی و None (نه متنِ گمراه).
+            "annualize_label": "" if is_holding else annualize_label(months_used),
+            "i4_acceptance_path": path4,
             "mcap": mcap, "score": int(sum(1 for _p in (i1, i2, i3, i4, i5) if _p)),
             # همان قاعدهٔ ص ۶ جزوه در مسیرِ bulk (پاریتیِ scan_symbol ⇄ bulk_scan)
             "primary_score": int(sum(1 for _p in (i1, i2, i3) if _p)),

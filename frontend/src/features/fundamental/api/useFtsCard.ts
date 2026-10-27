@@ -195,6 +195,14 @@ const Indicator4Schema = z
     potential_threshold: z.number().nullish(),
     potential_pass: z.boolean().nullish(),
     pass: z.boolean().nullish(),
+    /** مسیرِ پذیرشِ شاخص ۴ (Task 7): «فروش÷ارزش بازار» (مسیر اول) یا
+     *  «پتانسیل سود ۴۰٪» (مسیر دومِ سند v2.1)؛ null یعنی معاف/بی‌داده/بی‌مسیر.
+     *  فقط نامِ مسیر است — آستانه‌ها و دروازهٔ OR دست‌نخورده‌اند. */
+    acceptance_path: z.enum(['sales_to_mcap', 'profit_potential']).nullish(),
+    /** ماه‌هایِ مبنایِ سالانه‌سازی؛ ۰ یعنی دوره‌ای برایِ سالانه‌سازی نیست. */
+    annualize_months: z.number().nullish(),
+    /** «سالانه‌شده از دورهٔ N ماهه» از خودِ موتور؛ خالی یعنی بی‌دوره. */
+    annualize_label: z.string().nullish(),
     na: z.boolean().nullish(),
     exempt: z.boolean().nullish(),
     reason: z.string().nullish(),

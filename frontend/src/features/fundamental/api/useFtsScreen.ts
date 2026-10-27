@@ -61,6 +61,12 @@ export const FtsScreenRowSchema = z.object({
   eps_evidence_label: z.string().nullish(),
   i3_pass: z.boolean().nullish(),
   i4_pass: z.boolean().nullish(),
+  /** مسیرِ پذیرشِ شاخص ۴ (Task 7) از خودِ موتور: `sales_to_mcap` (مسیر اول)
+   *  یا `profit_potential` (مسیر دومِ ۴۰٪)؛ null برایِ معاف/بی‌داده/بی‌مسیر.
+   *  جدول فقط برچسب می‌زند، آستانه یا دروازه را بازمحاسبه نمی‌کند. */
+  i4_acceptance_path: z.enum(['sales_to_mcap', 'profit_potential']).nullish(),
+  /** «سالانه‌شده از دورهٔ N ماهه» — رشتهٔ خالی یعنی دوره‌ای سالانه نشده است. */
+  annualize_label: z.string().nullish(),
   /** علتِ خالی‌بودنِ حکم: «معاف/بی‌کاربرد» (na) یا «داده نیست». از خودِ کارت
    *  (`ind3_na`/`ind4_na`) می‌آید تا جدول علت را از نام و صنعت حدس نزند. */
   i3_na: z.boolean().nullish(),

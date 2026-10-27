@@ -1067,17 +1067,25 @@ def ind4_valuation(annual, gm, market_cap_rials, th=None, exempt=False) -> dict:
     (صنعت + شاهدِ درآمدِ عملیاتی) در ۲۳۱ نماد واگرا بود.
     """
     th = th or v10_thresholds()
+    # آستانهٔ پتانسیل در دو نام می‌آید: خروجیِ `v10_thresholds` «potential_min»
+    # است و پیکربندیِ خام/پنل «profit_potential_min» — هر دو یک عددند و
+    # پیش‌فرضِ ۴۰٪ سند v2.1. (آزمونِ Task 7 همین قرارداد را با کلیدِ خام می‌سنجد.)
+    pot_min = th.get("potential_min", th.get("profit_potential_min", 40.0))
     # سند v2.1: برای طبقهٔ معاف، فروش‌به‌ارزش‌بازار و جانشین NAV ممنوع ⇒ N/A
     if exempt:
         return {"available": False, "na": True, "exempt": True, "pass": False,
                 "potential_pass": False, "sales_pass": False, "rule_ref": "F-04",
+                "acceptance_path": None, "annualize_months": 0,
+                "annualize_label": "",
                 "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A)."}
     mcap = _f(market_cap_rials)
     if not annual or mcap <= 0:
         return {"available": False, "pass": False, "potential_pass": False,
                 "sales_pass": False, "mcap_ht": round(mcap / 1e13, 2),
-                "potential_threshold": th["potential_min"],
+                "potential_threshold": pot_min,
                 "sales_threshold": th["sales_to_mcap_min"],
+                "acceptance_path": None, "annualize_months": 0,
+                "annualize_label": "",
                 "reason": "دادهٔ ارزش بازار یا فروش سالانه برای محاسبه نسبت در دسترس نیست."}
     ann_rial = _f(annual["annual_sales_mrl"]) * MRL_TO_RIAL
     sales_ratio = ann_rial / mcap
@@ -1093,11 +1101,15 @@ def ind4_valuation(annual, gm, market_cap_rials, th=None, exempt=False) -> dict:
     sales_pass = sales_ratio >= th["sales_to_mcap_min"]
     # مقایسه با عددِ **خام** (همان قاعدۀ `fts_engine.gross_profit_potential`)؛
     # با عددِ گرد شده، پتانسیلِ ۳۹٫۹۶٪ «≥ ۴۰٪» می‌شد و کارت با موتور نمی‌خواند.
-    pot_pass = pot_raw is not None and pot_raw >= th["potential_min"]
+    pot_pass = pot_raw is not None and pot_raw >= pot_min
+    months_used = int(annual.get("months_used") or 0)
     return {"available": True, "mcap_ht": round(mcap / 1e13, 2),
-            "annual_sales_bt": annual["annual_sales_bt"],
-            "months_used": annual["months_used"], "scale_factor": annual["scale_factor"],
-            "annualize_basis": annual["basis"], "reconciled": annual["reconciled"],
+            # کلیدهایِ نمایشی با `.get` خوانده می‌شوند: آزمونِ قرارداد (و هر
+            # فراخواننده‌ای که فقط فروش/دوره می‌دهد) نباید با KeyErrorِ یک
+            # فیلدِ تزئینی بشکند؛ `annual_sales_mrl` بالا نگهبانِ اصلی است.
+            "annual_sales_bt": annual.get("annual_sales_bt"),
+            "months_used": annual.get("months_used"), "scale_factor": annual.get("scale_factor"),
+            "annualize_basis": annual.get("basis"), "reconciled": annual.get("reconciled"),
             "sales_to_mcap": (round(sales_ratio, 2)
                            if _sane(sales_ratio, -1000.0, 1000.0) is not None else None),
             "sales_threshold": th["sales_to_mcap_min"], "sales_pass": sales_pass,
@@ -1105,8 +1117,13 @@ def ind4_valuation(annual, gm, market_cap_rials, th=None, exempt=False) -> dict:
             "margin_label": margin_label,
             "est_gross_profit_bt": (_bt(annual["annual_sales_mrl"] * (margin / 100.0))
                                     if margin is not None else None),
-            "potential_pct": pot_pct, "potential_threshold": th["potential_min"],
+            "potential_pct": pot_pct, "potential_threshold": pot_min,
             "potential_pass": pot_pass, "rule_ref": "F-04", "gate": "OR",
+            # مسیرِ پذیرش (Task 7): نامِ دروازه‌ای که حکم را ساخت — ۰٫۳۳×
+            # فروش÷ارزش بازار مقدم است و ۴۰٪ پتانسیل مسیر دوم (سند v2.1).
+            "acceptance_path": fts_engine.i4_acceptance_path(sales_pass, pot_pass),
+            "annualize_months": months_used,
+            "annualize_label": fts_engine.annualize_label(months_used),
             "pass": bool(sales_pass or pot_pass),
             "reason": (("قبولی با نسبت فروش/ارزش‌بازار" if sales_pass else
                         "قبولی با پوشش پتانسیل سود" if pot_pass else
