@@ -18,6 +18,7 @@ import { matchFa } from '@shared/lib/normalizeFa';
 import { absurdHint, fmtPctGrouped, fmtRatioGrouped, isAbsurdPct } from '../lib/numFmt';
 import { EmptyState } from '@shared/components/EmptyState';
 import type { FtsScreenRow, FtsFunnelGate } from '../api/useFtsScreen';
+import type { DbStatus } from '../api/useCodalAutoUpdate';
 import { isFundamentalCompany } from '../lib/assetScope';
 import {
   EPS_PARTIAL_TESTID,
@@ -806,6 +807,31 @@ function FunnelGateChip({ gate }: { gate?: FtsFunnelGate | null }) {
   );
 }
 
+/** خطِ تازگیِ دادهٔ بنیادی — فقط از meta/freshnessِ همان پاسخِ db-status.
+ *  هیچ تاریخی اینجا ساخته نمی‌شود: نبودشان یعنی خط هم نیست. */
+function dbFreshnessText(dbUpdate: DbStatus): string {
+  const fresh = dbUpdate.freshness ?? null;
+  const meta = dbUpdate.meta ?? null;
+  /** اولین مقدارِ ناتهی — بک‌اند برایِ last_successِ نبوده رشتهٔ خالی می‌فرستد،
+   *  پس `??` به‌تنهایی متایِ snapshot را از دست می‌داد. */
+  const firstText = (...values: Array<string | null | undefined>): string =>
+    values.map((v) => String(v ?? '').trim()).find(Boolean) ?? '';
+  const rawDate = firstText(fresh?.last_success, meta?.published_at);
+  const rawPeriod = firstText(
+    fresh?.latest_financial_period,
+    meta?.latest_financial_period,
+  );
+  const parts: string[] = [];
+  if (rawDate) {
+    // last_success قالبِ ISO دارد (2026-10-25T18:30:00)؛ فقط روزش جلالی می‌شود.
+    const day = rawDate.slice(0, 10);
+    const faDate = /^\d{4}-\d{2}-\d{2}$/.test(day) ? jalaliOf(day) : rawDate;
+    parts.push(`آخرین به‌روزرسانی بنیادی: ${toFaDigits(faDate)}`);
+  }
+  if (rawPeriod) parts.push(`آخرین دوره: ${toFaDigits(rawPeriod)}`);
+  return parts.join(' · ');
+}
+
 export function FtsScreenTable({
   rows,
   onSelect,
@@ -823,8 +849,8 @@ export function FtsScreenTable({
   thresholds?: Record<string, unknown> | null;
   /** بروزرسانی دیتابیس کدال از snapshot گیت‌هاب (POST /api/sync/codal/db-download) */
   onDbUpdate?: () => void;
-  /** وضعیت زندهٔ دانلود/ادغام برای لیبل دکمه (GET /api/sync/codal/db-status) */
-  dbUpdate?: { running: boolean; stage: string; percent?: number; detail?: string; error?: string } | null;
+  /** وضعیت زندهٔ دانلود/ادغام + meta/freshness برای خطِ تازگی (GET /api/sync/codal/db-status) */
+  dbUpdate?: DbStatus | null;
   /** رویدادهای مجمعِ همهٔ نمادها از /api/calendar/upcoming — یک درخواست برای کل جدول */
   assemblyEvents?: Record<string, CalEvent[]> | null;
   /** «افزایش سرمایه»هایِ پیش‌رو — همان پاسخِ انبوه، کلیدِ دومِ `capital` */
@@ -854,6 +880,9 @@ export function FtsScreenTable({
 
   /** تعداد ردیف‌های حذف‌شده توسط دروازه‌های سخت */
   const excludedCount = useMemo(() => rows.filter((r) => r.excluded === true).length, [rows]);
+
+  /** خطِ تازگی فقط وقتی بک‌اند meta/freshness داده باشد — وگرنه خالی */
+  const freshnessText = dbUpdate ? dbFreshnessText(dbUpdate) : '';
 
   /** فیلتر نوع نماد (Asset Type): صندوق/کارگزاری/اوراق/مشتقه پیش‌فرض حذف */
   const nonCompanyCount = useMemo(
@@ -1000,6 +1029,15 @@ export function FtsScreenTable({
           <span className="num text-2xs text-text-muted" title="فقط شرکت‌های تولیدی و خدماتی — صندوق‌ها و کارگزاری‌ها حذف شده‌اند">
             {toFaDigits(visible.length)} شرکت از {toFaDigits(rows.length)}
           </span>
+          {freshnessText ? (
+            <span
+              data-testid="fts-db-freshness"
+              className="min-w-0 max-w-full truncate text-2xs text-text-muted"
+              title={freshnessText}
+            >
+              {freshnessText}
+            </span>
+          ) : null}
           <DownloadRowsButton
             base="بنیادی FTS"
             testId="download-screen-rows"
