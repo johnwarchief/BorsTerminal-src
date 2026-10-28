@@ -6,7 +6,7 @@ decorators changed from @app.<verb> to @router.<verb>.
 Audit map of source line spans: MIGRATED_LINES.txt
 """
 from bors_config import (DB_PATH, FTS_CONFIG_PATH, FTS_DEFAULTS, MA_WINDOWS,
-                         _CAL_CACHE_PATH, _cal_cache, APP_VERSION)
+                         WORK_DIR, _CAL_CACHE_PATH, _cal_cache, APP_VERSION)
 from tape_flags import JET_LADDER
 import adjustment_engine as AE
 import candle_contract
@@ -1448,19 +1448,38 @@ def _cal_classify(title, tid):
         return "bondMaturity"
     return "other"
 
+def _cal_cache_path():
+    """مسیرِ کشِ تقویم: ``WORK_DIR/calendar.json`` اول، وگرنه static باندل‌شده.
+
+    Task 7 — به‌روزرسانیِ روزانه ``calendar.json`` را در پوشۀ داده می‌نشاند؛
+    نسخۀ نصبی/پرتابیل نباید برای دیدنِ تقویمِ تازه به فایلِ داخلِ بستۀ
+    (احتمالاً read-only) وابسته بماند. نبودش ⇒ رفتارِ قبلی، بدونِ تغییر.
+    """
+    primary = os.path.join(WORK_DIR, "calendar.json")
+    if os.path.isfile(primary):
+        return primary
+    return _CAL_CACHE_PATH
+
+
 def _cal_cache_events():
-    """رویدادهای خام از static/calendar/cache.json — با بیعه‌سازیِ mtime."""
+    """رویدادهای خام از کشِ تقویم — با بی‌اعتبارسازیِ «مسیر + mtime»."""
+    path = _cal_cache_path()
     try:
-        mtime = os.path.getmtime(_CAL_CACHE_PATH)
+        stat = os.stat(path)
+        signature = (path, stat.st_mtime_ns, stat.st_size)
     except Exception:
         return []
-    if mtime != _cal_cache["mtime"]:
+    # mtime صریح هم سنجیده می‌شود تا ریستِ دستیِ کش (تست‌ها/ابزارِ audit) معتبر بماند.
+    if signature != _cal_cache.get("signature") or _cal_cache.get("mtime") != stat.st_mtime:
         try:
-            with open(_CAL_CACHE_PATH, encoding="utf-8") as f:
-                _cal_cache["events"] = (json.load(f) or {}).get("events") or []
-            _cal_cache["mtime"] = mtime
+            with open(path, encoding="utf-8") as f:
+                events = (json.load(f) or {}).get("events") or []
         except Exception:
             return []
+        _cal_cache["events"] = events
+        _cal_cache["mtime"] = stat.st_mtime
+        _cal_cache["path"] = path
+        _cal_cache["signature"] = signature
     return _cal_cache["events"]
 
 
@@ -1490,7 +1509,7 @@ def event_date_source(ev: dict) -> str:
 
 
 def _cal_events_for(symbol):
-    """رویدادهای نماد از static/calendar/cache.json (کش با mtime)."""
+    """رویدادهای نماد از کشِ تقویم (WORK_DIR/calendar.json یا static؛ با mtime)."""
     _norm = lambda s: str(s or "").translate(str.maketrans({"ك": "ک", "ي": "ی", "ى": "ی"})).strip()
     want = _norm(symbol)
     out, seen = [], set()
@@ -1604,7 +1623,8 @@ def upcoming_assemblies(days: int = ASSEMBLY_NEAR_DAYS) -> dict:
     یک منبع برای دو مصرف: اندپوینتِ `/api/calendar/upcoming` (برچسبِ ردیف‌های
     جدولِ بنیادی) و وتوی مجمع در `/api/screener`. هر دو باید یک افق و یک قاعدهٔ
     تساوی داشته باشند، وگرنه برچسب یک چیز می‌گوید و وتو چیزِ دیگر.
-    هزینه: یک بار خواندنِ کشِ `static/calendar/cache.json`، نه کوئری به‌ازایِ ردیف.
+    هزینه: یک بار خواندنِ کشِ تقویم (WORK_DIR/calendar.json یا static)، نه
+    کوئری به‌ازایِ ردیف.
     خروجی: {نمادِ نرمال‌شده: {"symbol", "date", "cat", "title"}} — خطا ⇒ {} .
     """
     return _upcoming_by(_ASSEMBLY_FAMILY, days)

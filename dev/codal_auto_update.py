@@ -55,6 +55,7 @@ PAUSE = os.path.join(ROOT, "codal_auto_pause")
 SNAPSHOT_LZMA = os.path.join(ROOT, "codal.db.lzma")
 SNAPSHOT_META = os.path.join(ROOT, "codal.meta.json")
 UPDATER = os.path.join(ROOT, "dev", "codal_fts_updater.py")
+CALENDAR_FETCHER = os.path.join(ROOT, "dev", "calendar_fetcher.py")
 SIGN = os.path.join(ROOT, "scripts", "sign_setup.py")
 
 # قفلِ جامانده از اجرایِ مرده بعد از ۶h آزاد می‌شود. تا آن لحظه هر اجرایِ
@@ -64,6 +65,7 @@ SIGN = os.path.join(ROOT, "scripts", "sign_setup.py")
 LOCK_STALE_SECONDS = 6 * 3600
 MATERIALIZE_TIMEOUT = 3600
 SIGN_TIMEOUT = 300
+CALENDAR_TIMEOUT = 300
 
 STATUS_DEFAULTS = {
     "stage": None,
@@ -73,6 +75,7 @@ STATUS_DEFAULTS = {
     "last_error": None,
     "latest_periods": None,
     "validation": None,
+    "calendar": None,
     "published": False,
 }
 
@@ -193,6 +196,40 @@ def _run_cmd(argv, timeout):
     return proc
 
 
+def _fetch_calendar(timeout=None):
+    """تازه‌سازیِ best-effort تقویم (Cat 6) — هرگز exception نمی‌دهد.
+
+    Task 7: فقط پس از mergeِ موفق و در اجرایِ غیرِ dry-run صدا زده می‌شود.
+    خروجیِ ناموفق یک ``warning`` است، نه شکستِ CODAL: تقویم به snapshot/merge
+    وابسته نیست و نباید اجرایِ اصلی را برگرداند. ADB فقط اگر کاربر صریحاً
+    ``--adb-rotate`` بخواهد؛ اینجا هرگز داده نمی‌شود.
+    """
+    info = {"ok": False, "error": None, "path": None}
+    timeout = CALENDAR_TIMEOUT if timeout is None else timeout
+    argv = [sys.executable, CALENDAR_FETCHER,
+            "--cats", "6", "--months", "1", "--merge"]
+    try:
+        proc = subprocess.run(
+            argv, cwd=ROOT, capture_output=True, text=True,
+            encoding="utf-8", errors="replace", timeout=timeout)
+    except subprocess.TimeoutExpired:
+        info["error"] = "timeout after %ss" % timeout
+    except Exception as exc:                           # noqa: BLE001
+        info["error"] = "%s: %s" % (type(exc).__name__, exc)
+    else:
+        if proc.returncode != 0:
+            tail = (proc.stderr or proc.stdout or "").strip().splitlines()
+            info["error"] = "exit=%d%s" % (
+                proc.returncode, (": " + tail[-1]) if tail else "")
+        else:
+            info["ok"] = True
+            info["path"] = os.path.join(ROOT, "static", "calendar", "cache.json")
+    if not info["ok"]:
+        print("[codal-auto] calendar warning: %s" % info["error"],
+              file=sys.stderr, flush=True)
+    return info
+
+
 def _load_last_good():
     """متادیتایِ آخرین snapshotِ سالم (اگر باشد) برایِ هشدارهایِ گیتِ last_good."""
     candidates = [SNAPSHOT_META, os.path.join(publish_mod.LAST, "codal.meta.json")]
@@ -240,7 +277,8 @@ def run(mode="daily", dry_run=False, db_path=None, staging_dir=None):
     staging_dir = os.path.abspath(staging_dir or STAGING_DIR)
     staging_db = os.path.join(staging_dir, "market.db")
     result = {"ok": False, "mode": mode, "staged": False, "validation": None,
-              "snapshot": None, "published": False, "errors": []}
+              "snapshot": None, "published": False, "errors": [],
+              "warnings": []}
     started_at = _now()
 
     # ۱) کلیدِ توقف: پیش از هر کپی/شبکه.
@@ -310,8 +348,6 @@ def run(mode="daily", dry_run=False, db_path=None, staging_dir=None):
                           last_error=None)
             return result
 
-        # TODO(Task 7): calendar_merge اینجا اجرا می‌شود (واکشیِ تقویم، بدونِ
-        # وابستگی به این خطِ لوله). عمداً import نمی‌شود.
         _write_status(stage="merging", validation=_validation_summary(validation),
                       latest_periods=periods)
 
@@ -322,6 +358,23 @@ def run(mode="daily", dry_run=False, db_path=None, staging_dir=None):
         except Exception as exc:                       # noqa: BLE001
             return _fail(result, "merge_failed",
                          "merge: %s: %s" % (type(exc).__name__, exc))
+
+        # ۶.۵) تقویم (Cat 6) — best-effort، فقط پس از mergeِ موفق و نه در dry-run.
+        # خطایِ تقویم نه merge را برمی‌گرداند نه ok را False می‌کند؛ فقط warning.
+        _write_status(stage="calendar")
+        try:
+            calendar = _fetch_calendar()
+        except Exception as exc:                       # noqa: BLE001
+            calendar = {"ok": False, "path": None,
+                        "error": "%s: %s" % (type(exc).__name__, exc)}
+        result["calendar"] = calendar
+        if not calendar.get("ok"):
+            result["warnings"].append(
+                "calendar: %s" % (calendar.get("error") or "failed"))
+            print("[codal-auto] WARN calendar: %s"
+                  % (calendar.get("error") or "failed"),
+                  file=sys.stderr, flush=True)
+        _write_status(calendar=calendar)
 
         # ۷) materialize رویِ همان main (--db صریح؛ هرگز پیش‌فرضِ updater).
         _write_status(stage="materializing")

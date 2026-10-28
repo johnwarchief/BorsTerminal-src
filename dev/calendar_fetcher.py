@@ -40,6 +40,7 @@ static/calendar/cache.json — بدون نیاز به احراز هویت.
   venv\\Scripts\\python.exe dev\\calendar_fetcher.py --jmonth 1405/06 --months 3
   venv\\Scripts\\python.exe dev\\calendar_fetcher.py --db market.db --adb-rotate
   venv\\Scripts\\python.exe dev\\calendar_fetcher.py --cats 6,4            # فقط مجامع + عرضه اولیه
+  venv\\Scripts\\python.exe dev\\calendar_fetcher.py --cats 6 --months 1 --merge  # ادغامِ افزایشی
 """
 import argparse
 import json
@@ -70,7 +71,11 @@ OUT = ROOT / "static" / "calendar" / "cache.json"
 # می‌شد، backoff ریست نمی‌گشت و اسکریپت روی بن می‌ماند. حالا فقط واگذاری می‌کنیم.
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
+_DEV_DIR = str(Path(__file__).resolve().parent)
+if _DEV_DIR not in sys.path:
+    sys.path.insert(0, _DEV_DIR)
 import codal_fetcher as _cf  # noqa: E402  (rotate_ip_via_adb — منبع یگانه حقیقت)
+from calendar_merge import merge_calendar  # noqa: E402  (Task 7: ادغامِ افزایشی)
 BASE = "https://search.codal.ir/api/search/v2/q"
 UA = ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
       "(KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36")
@@ -576,6 +581,32 @@ def fetch_month(session, jy, jm, rotate=False, req_counter=None, max_pages=60,
     return events
 
 
+def merge_payload_with_cache(payload, out_path=None):
+    """payloadِ تازه را با کشِ موجود ادغام می‌کند و payloadِ نهایی را برمی‌گرداند.
+
+    Task 7 — ``--merge``: کشِ قبلی حفظ می‌شود، ردیف‌هایِ تکراری حذف و
+    ``meta.fetchedAt``/``meta.count`` به‌روز می‌شوند. نوشتنِ فایل اینجا
+    انجام نمی‌شود تا مسیرِ atomicِ main تنها نویسندۀ کش بماند. کشِ غایب یا
+    ناخوانا ⇒ payloadِ تازه (جایگزینی) با هشدار.
+    """
+    out = Path(out_path) if out_path else OUT
+    if not out.exists():
+        return payload
+    try:
+        old = json.loads(out.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as exc:
+        print(f"[merge] کشِ قبلی خوانده نشد ({exc}) → جایگزینی")
+        return payload
+    if not isinstance(old, dict):
+        print("[merge] کشِ قبلی dict نبود → جایگزینی")
+        return payload
+    merged = merge_calendar(old, payload)
+    print("[merge] قدیمی=%d تازه=%d ادغام=%d"
+          % (len(old.get("events") or []), len(payload.get("events") or []),
+             len(merged.get("events") or [])))
+    return merged
+
+
 def main():
     ap = argparse.ArgumentParser(description="BorsTerminal calendar fetcher (codal)")
     ap.add_argument("--jmonth", default=None, help="ماه جلالی شروع به‌صورت 1405/06 (پیشفرض: ماه جاری)")
@@ -593,6 +624,9 @@ def main():
                     help="فقط دسته‌های مشخص را کوئری کن، جداشده با ویرگول "
                          "(۱=صورت‌های مالی ۲=افشای بااهمیت ۳=فعالیت ماهانه ۴=پذیرش/عرضه ۶=مجامع). "
                          "پیش‌فرض: دسته‌های تعریف‌شده در QUERIES")
+    ap.add_argument("--merge", action="store_true",
+                    help="اگر static/calendar/cache.json موجود است، رویدادهای تازه را "
+                         "افزایشی در آن ادغام کن (به‌جای جایگزینی)؛ ADB فقط با --adb-rotate")
     ap.add_argument("--max-pages", type=int, default=60,
                     help="حداکثر صفحات در هر کوئری کلان (هر صفحه ۲۰ نامه؛ پیش‌فرض ۶۰ = ۱۲۰۰ نامه)")
     args = ap.parse_args()
@@ -665,6 +699,10 @@ def main():
         "token": None,
         "events": all_events
     }
+    # Task 7 — --merge: کشِ قبلی حفظ می‌شود (Cat 6 فقط دِلتا می‌آورد).
+    if args.merge:
+        payload = merge_payload_with_cache(payload)
+        all_events = payload["events"]
     OUT.parent.mkdir(parents=True, exist_ok=True)
     tmp = OUT.with_suffix(".tmp")
     tmp.write_text(json.dumps(payload, ensure_ascii=False, indent=1), encoding="utf-8")
