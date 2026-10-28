@@ -1,8 +1,8 @@
 import clsx from 'clsx';
-import { faNum, fmtInt, fmtPct, toFaDigits } from '@shared/lib/fa';
+import { faNum, fmtInt, toFaDigits } from '@shared/lib/fa';
 import { useFtsCard, type FtsCard } from '../api/useFtsCard';
 
-type Quality = 'ideal' | 'ok' | 'below' | 'na';
+export type Quality = 'ideal' | 'ok' | 'below' | 'na';
 
 export const QUALITY_WORD: Record<Quality, string> = {
   ideal: 'ایده‌آل',
@@ -39,7 +39,7 @@ function signedPct(input: number | null | undefined): string {
 
 function ratioPct(input: number | null | undefined): string {
   if (input == null || !Number.isFinite(input)) return '—';
-  return `${toFaDigits((input * 100).toFixed(1))}٪`;
+  return `${faNum(input * 100, 1)}٪`;
 }
 
 export function fundamentalFacts(card: FtsCard): FundamentalFact[] {
@@ -84,7 +84,7 @@ export function fundamentalFacts(card: FtsCard): FundamentalFact[] {
   out.push({
     key: '3_gross_margin',
     label: '۳. حاشیه سود ناخالص',
-    value: three?.margin_pct == null ? '—' : fmtPct(three.margin_pct),
+    value: three?.margin_pct == null ? '—' : faNum(three.margin_pct, 1) + '٪',
     quality: qualityOf(pass3, ideal3),
     note: pass3 == null
       ? 'حاشیۀ ناخالص ثبت نشده'
@@ -145,6 +145,8 @@ export function FundamentalCards({ symbol }: { symbol: string }) {
           <div
             key={fact.key}
             data-testid={`fundamental-card-${fact.key}`}
+            role="group"
+            aria-label={`${fact.label} — ${chip.word}`}
             title={`${fact.label} — ${fact.note}`}
             className="flex min-h-0 min-w-[84px] flex-1 flex-col justify-between gap-0.5 rounded-[var(--radius-sm)] border border-line bg-panel-2 px-1.5 py-1"
           >
