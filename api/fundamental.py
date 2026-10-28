@@ -652,10 +652,15 @@ def ind1a_fs_growth(conn, symbol, profile, th=None) -> dict:
     """
     prof = profile or company_profile()
     pred, params = fts_engine.sym_in("symbol", symbol)
+    # نصب‌هایِ قدیمی ممکن است ستونِ is_consolidated را نداشته باشند؛
+    # `fs_growth_from_rows` عنوان را هم می‌سنجد، پس حکم عوض نمی‌شود.
+    _cons = (" AND is_consolidated=0"
+             if fts_engine.has_column(conn, "financial_statements", "is_consolidated")
+             else "")
     rows = conn.execute(
         "SELECT period_end, period_months, revenue, title FROM financial_statements "
-        "WHERE " + pred + " AND revenue>0 AND period_months>0 AND is_consolidated=0 "
-        "ORDER BY period_end DESC", params).fetchall()
+        "WHERE " + pred + " AND revenue>0 AND period_months>0" + _cons +
+        " ORDER BY period_end DESC", params).fetchall()
     return fts_engine.fs_growth_from_rows(
         [tuple(r) for r in rows], th=th,
         revenue_basis=(prof or {}).get("revenue_basis", ""))

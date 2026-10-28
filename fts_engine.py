@@ -970,6 +970,17 @@ def fs_growth_from_rows(rows, th=None, revenue_basis: str = "") -> dict:
     return _fs_growth_gap(FS_GROWTH_NO_PRIOR, revenue_basis, floor)
 
 
+def _fs_nonconsolidated_sql(conn: sqlite3.Connection) -> str:
+    """فیلترِ SQLیِ «غیرتلفیقی» فقط وقتی ستون در DB هست.
+
+    پایگاه‌هایِ قدیمی/نصب‌هایِ پیش از ستونِ is_consolidated این ستون را ندارند؛
+    `fs_growth_from_rows` عنوانِ سطر را هم می‌سنجد، پس در آن‌ها فقط قیدِ SQL حذف
+    می‌شود و حکم عوض نمی‌شود. (گیتِ `dev/fts_pipeline_v981.py` همین را می‌گیرد.)
+    """
+    return (" AND is_consolidated=0"
+            if has_column(conn, "financial_statements", "is_consolidated") else "")
+
+
 def fs_growth_map(conn: sqlite3.Connection, th=None) -> dict:
     """نقشهٔ تک‌گذرِ رشدِ صورتِ مالی برایِ کلِ بازار (کلید = norm_fa).
 
@@ -979,8 +990,8 @@ def fs_growth_map(conn: sqlite3.Connection, th=None) -> dict:
     for sym, pe, months, rev, title in conn.execute(
             "SELECT symbol, period_end, period_months, revenue, title "
             "FROM financial_statements "
-            "WHERE revenue>0 AND period_months>0 AND is_consolidated=0 "
-            "ORDER BY symbol, period_end DESC"):
+            "WHERE revenue>0 AND period_months>0" + _fs_nonconsolidated_sql(conn) +
+            " ORDER BY symbol, period_end DESC"):
         key = norm_fa(sym)
         if key:
             rows_by.setdefault(key, []).append((pe, months, rev, title))
