@@ -409,8 +409,12 @@ def run(mode="daily", dry_run=False, db_path=None, staging_dir=None):
                          "sign: %s: %s" % (type(exc).__name__, exc))
 
         _write_status(stage="publishing")
+        calendar_path = (result.get("calendar") or {}).get("path")
         try:
-            pub = publish(SNAPSHOT_LZMA, sig, SNAPSHOT_META)
+            # Task 5 ↔ 7: صریح می‌دهیم تا یک calendar.jsonِ کهنه در WORK_DIR
+            # تقویمِ تازهٔ همین اجرا را سایه نیندازد؛ None = fallbackِ Task 5.
+            pub = publish(SNAPSHOT_LZMA, sig, SNAPSHOT_META,
+                          calendar=calendar_path)
         except Exception as exc:                       # noqa: BLE001
             return _fail(result, "publish_failed",
                          "publish: %s: %s" % (type(exc).__name__, exc))

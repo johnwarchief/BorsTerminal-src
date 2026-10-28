@@ -257,7 +257,7 @@ try:
 
         def spy_ok():
             calls.append(1)
-            return {"ok": True, "error": None}
+            return {"ok": True, "error": None, "path": str(cf.OUT)}
 
         # dry-run: never called
         main, staging = fresh_env("dry_run")
@@ -282,11 +282,20 @@ try:
         A._fetch_calendar = spy_ok
         A.build_snapshot = fake_snapshot
         A._run_cmd = fake_run_cmd
-        A.publish = lambda *_a, **_k: {"uploaded": True}
+        pub_kwargs = []
+
+        def fake_publish(*_a, **kw):
+            pub_kwargs.append(kw)
+            return {"uploaded": True}
+
+        A.publish = fake_publish
         r = A.run(dry_run=False, db_path=main, staging_dir=staging)
         ck(r["ok"] is True, "orchestrator success: ok True (%r)" % (r["errors"],))
         ck(r["published"] is True, "orchestrator success: published True")
         ck(calls == [1], "orchestrator success: calendar called once (%r)" % calls)
+        ck(pub_kwargs and pub_kwargs[-1].get("calendar") == str(cf.OUT),
+           "orchestrator success: publish gets the fetched calendar path (%r)"
+           % (pub_kwargs,))
 
         # calendar failure is a warning only: ok/published unchanged
         main, staging = fresh_env("calendar_fail")
@@ -294,7 +303,8 @@ try:
         A._fetch_calendar = lambda: {"ok": False, "error": "net down"}
         A.build_snapshot = fake_snapshot
         A._run_cmd = fake_run_cmd
-        A.publish = lambda *_a, **_k: {"uploaded": True}
+        pub_kwargs = []
+        A.publish = fake_publish
         r = A.run(dry_run=False, db_path=main, staging_dir=staging)
         ck(r["ok"] is True, "orchestrator calendar failure: ok stays True")
         ck(r["published"] is True,
@@ -302,6 +312,9 @@ try:
         ck(any("calendar" in w for w in r.get("warnings") or []),
            "orchestrator calendar failure: warning recorded (%r)"
            % (r.get("warnings"),))
+        ck(pub_kwargs and pub_kwargs[-1].get("calendar") is None,
+           "orchestrator calendar failure: publish falls back (calendar None) (%r)"
+           % (pub_kwargs,))
     finally:
         sync_mod._apply_codal_merge = real_merge
 
