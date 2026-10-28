@@ -117,6 +117,18 @@ _CODAL_TABLES = ("codal_notices", "financial_statements", "monthly_sales")
 _dbdl_lock = threading.Lock()
 _dbdl_running = False
 
+# قفلِ متقابل با orchestrator روزانهٔ Task 6 (dev/codal_auto_update.py).
+# آن پروسه نامِ ``codal_fetcher`` ندارد و feed_sync را in-process صدا می‌زند،
+# پس ``_codal_running()`` نمی‌بیندش؛ تنها نشانه‌هایش قفل/وضعیتِ خودش است.
+# همان قاعدهٔ کهنگیِ ۶ساعتهٔ خودِ orchestrator اعمال می‌شود.
+ORCHESTRATOR_LOCK_STALE_SECONDS = 6 * 3600
+_ORCHESTRATOR_TERMINAL_STAGES = frozenset({
+    "done", "dry_run_ok", "paused", "locked", "client_busy",
+    "backup_failed", "fetch_failed", "validation_failed", "merge_failed",
+    "materialize_failed", "snapshot_failed", "sign_failed", "publish_failed",
+    "failed",
+})
+
 
 CATCHUP_OPT_IN_ENV = "BORS_CODAL_AUTOUPDATE"
 CATCHUP_COOLDOWN_HOURS = 6.0
@@ -276,6 +288,72 @@ def read_auto_status():
     except Exception:                                      # noqa: BLE001
         return {}
     return data if isinstance(data, dict) else {}
+
+
+def _orchestrator_busy():
+    """آیا orchestrator روزانهٔ Task 6 همین حالا مشغول است؟ (بدونِ شبکه/I/O سنگین)
+
+    دو نشانهٔ مستقل، هر دو با قاعدهٔ کهنگیِ ۶ساعتهٔ خودِ orchestrator:
+      ۱) ``WORK_DIR/codal_auto.lock`` تازه — قفل را در کلِ اجرا نگه می‌دارد
+         (کپیِ staging، واکشی، merge، انتشار)؛
+      ۲) ``WORK_DIR/codal_auto_status.json`` با مرحلهٔ غیرِپایانی و timestampِ
+         تازه — برایِ پنجره‌ای که قفل هنوز نوشته نشده یا وضعیت از قفل
+         جدا مانده است.
+
+    بدونِ این در، ``_codal_running()`` orchestrator را نمی‌بیند (نامِ پروسه
+    ``codal_auto_update.py`` است و ``feed_sync`` درونِ همان پروسه اجرا می‌شود)
+    و دو مسیر می‌توانند همان سه جدول را هم‌زمان merge کنند. ``monthly_sales``
+    ستونِ ``fetched_at`` ندارد، پس mergeِ دوم می‌تواند ردیفِ قدیمی‌تر را
+    بنویسد؛ SQLite جلویِ خرابی را می‌گیرد، نه رگرسیونِ داده را.
+    """
+    try:
+        lock_age = time.time() - os.path.getmtime(
+            os.path.join(WORK_DIR, "codal_auto.lock"))
+    except OSError:
+        lock_age = None
+    if (lock_age is not None
+            and -_FUTURE_SKEW_SECONDS <= lock_age <= ORCHESTRATOR_LOCK_STALE_SECONDS):
+        return True
+    status = read_auto_status()
+    stage = str(status.get("stage") or "").strip().lower()
+    if not stage or stage in _ORCHESTRATOR_TERMINAL_STAGES:
+        return False
+    age = _age_seconds(status.get("updated_at") or status.get("started_at"))
+    return (age is not None
+            and -_FUTURE_SKEW_SECONDS <= age <= ORCHESTRATOR_LOCK_STALE_SECONDS)
+
+
+def boot_sync(decide_catchup, decide_auto_check, spawn_catchup, run_auto_check):
+    """یک تصمیمِ واحد در بوت؛ دو مسیرِ merge هرگز با هم شروع نمی‌شوند.
+
+    ``decide_catchup``/``decide_auto_check`` دروازه‌هایِ خالصِ Task 6/8a هستند.
+    اگر تصمیمِ جبران true باشد و ``spawn_catchup`` پروسه را واقعاً بالا
+    بیاورد، دروازهٔ auto-check حتی ارزیابی هم نمی‌شود (نه فقط شروع دانلود).
+    فقط شکستِ spawn (هیچ orchestratorی بالا نیامده) اجازه می‌دهد auto-check
+    اجرا شود؛ این استثنا مسیرِ ``dev/``ِ خراب را قفل نمی‌کند.
+
+    خروجی: ``"catchup"`` / ``"auto_check"`` / ``""``. هیچ استثنایی از دو
+    دروازه یا spawn بیرون نمی‌زند؛ استثنای ``run_auto_check`` به فراخوان
+    می‌رسد تا خودش لاگ/مدیریت کند.
+    """
+    try:
+        catchup = bool(decide_catchup())
+    except Exception:                                      # noqa: BLE001
+        catchup = False
+    if catchup:
+        try:
+            if spawn_catchup():
+                return "catchup"
+        except Exception:                                  # noqa: BLE001
+            pass
+    try:
+        check = bool(decide_auto_check())
+    except Exception:                                      # noqa: BLE001
+        check = False
+    if check:
+        run_auto_check()
+        return "auto_check"
+    return ""
 
 
 def _period_key(value):
@@ -577,6 +655,14 @@ def _download_calendar(dest_path=None):
 def _codal_db_worker(dest_lzma, tmp_db, auto=False):
     global _dbdl_running
     try:
+        # ۰) گاردِ متقابل با orchestrator روزانهٔ Task 6. بینِ _start_db_worker
+        #    (که خودش همین را زیرِ _dbdl_lock می‌بیند) و شروعِ این نخ، جبران
+        #    می‌تواند قفل بگیرد؛ پس پیش از هر دانلودی دوباره می‌پرسیم.
+        if _orchestrator_busy():
+            _write_db_status(
+                "skipped", 0.0,
+                "بروزرسانی خودکار روزانهٔ کدال در حال اجراست؛ دانلود شروع نشد.")
+            return
         # ۱) دانلود با retry + چرخش IP (rotate_ip_via_adb خودش gate دارد:
         #    adb_config.json enabled + دستگاه متصل + حداقل فاصلهٔ ۱۲۰ ثانیه)
         attempt = 0
@@ -652,6 +738,16 @@ def _codal_db_worker(dest_lzma, tmp_db, auto=False):
         #    (مثلاً has_operating_sales که بعد از ساخته‌شدن snapshot اضافه شده)
         #    بی‌صدا به NULL برمی‌گردد و کاربر پیام «موفق» می‌بیند. UPSERT فقط
         #    ستون‌های مشترک را لمس می‌کند و بقیه را دست‌نخورده می‌گذارد.
+        #
+        #    بازبینیِ دوم دقیقاً پیش از merge: دانلود/راستی‌آزمایی می‌تواند
+        #    دقیقه‌ها طول بکشد و orchestrator در همین فاصله شروع شود؛ تکیه بر
+        #    دروازهٔ اول یک TOCTOU است. اگر قفل/وضعیتِ orchestrator تازه باشد،
+        #    بدونِ merge رها می‌کنیم و دادهٔ فعلی دست‌نخورده می‌ماند.
+        if _orchestrator_busy():
+            _write_db_status(
+                "skipped", 0.0,
+                "بروزرسانی خودکار روزانهٔ کدال در حال اجراست؛ ادغام انجام نشد.")
+            return
         _write_db_status("merging", 0.0, "ادغام در market.db")
         stats, stale = _apply_codal_merge(DB_PATH, tmp_db)
         # payloadِ اسکرینر از همین جدول‌ها ساخته می‌شود و TTL‑ش ۱۲ ساعت است (به‌علاوه
@@ -719,9 +815,10 @@ def _codal_db_worker(dest_lzma, tmp_db, auto=False):
 def _start_db_worker(auto=False):
     """نخِ دانلود/ادغام را یک‌بار بالا بیاورد؛ "" = شروع شد، وگرنه دلیل.
 
-    همان درهایِ مسیرِ دستی: دانلودِ دوم ممنوع، و merge هم‌زمان با اسکنِ زندهٔ
-    کدال (دو نویسنده رویِ همان جدول‌ها = ۴۲۹ دائمی) ممنوع. پرچمِ ``auto`` فقط
-    متنِ وضعیت را «دریافت خودکار» می‌کند؛ ایمنیِ مسیر یکی است.
+    همان درهایِ مسیرِ دستی: دانلودِ دوم ممنوع، merge هم‌زمان با اسکنِ زندهٔ
+    کدال (دو نویسنده رویِ همان جدول‌ها = ۴۲۹ دائمی) ممنوع، و merge هم‌زمان با
+    orchestrator روزانهٔ Task 6 ممنوع. پرچمِ ``auto`` فقط متنِ وضعیت را
+    «دریافت خودکار» می‌کند؛ ایمنیِ مسیر یکی است.
     """
     global _dbdl_running
     with _dbdl_lock:
@@ -729,6 +826,8 @@ def _start_db_worker(auto=False):
             return "running"
         if _codal_running():
             return "scanning"
+        if _orchestrator_busy():
+            return "orchestrator"
         _dbdl_running = True
     dest = os.path.join(WORK_DIR, "codal_snapshot.db.lzma")
     tmp = os.path.join(WORK_DIR, "codal_snapshot.db")
@@ -763,10 +862,22 @@ def auto_check(timeout=(10, 30)):
     local = _local_meta()
     update = should_update(local, remote)
     started = False
+    skipped = ""
     if update:
-        started = _start_db_worker(auto=True) == ""
-    return {"checked": True, "update": update, "meta": remote,
-            "local": local, "started": started}
+        # دروازهٔ اول پیش از شروعِ دانلود؛ _start_db_worker هم زیرِ قفل دوباره
+        # همین را می‌بیند و worker پیش از merge بارِ سوم. هیچ‌کدام تنها مرجع نیست.
+        if _orchestrator_busy():
+            skipped = "orchestrator"
+        else:
+            reason = _start_db_worker(auto=True)
+            started = reason == ""
+            if reason == "orchestrator":
+                skipped = reason
+    result = {"checked": True, "update": update, "meta": remote,
+              "local": local, "started": started}
+    if skipped:
+        result["skipped"] = skipped
+    return result
 
 
 @router.post("/api/sync/codal/db-download")
@@ -780,6 +891,11 @@ def sync_codal_db_download():
         # merge همزمان با اسکن زنده = دو نویسنده روی جدول‌های کدال؛ ممنوع
         return {"status": "already_running",
                 "message": "اسکن کدال در حال اجراست — صبر کنید تا تمام شود."}
+    if reason == "orchestrator":
+        # orchestrator روزانه (Task 6) کلِ خطِ staging/merge را در دست دارد؛
+        # دومین نویسنده رویِ همان سه جدول ممنوع — دادهٔ فعلی دست‌نخورده می‌ماند.
+        return {"status": "already_running",
+                "message": "بروزرسانی خودکار روزانهٔ کدال در حال اجراست — صبر کنید."}
     if reason:
         return {"status": "error",
                 "message": "شروع دانلود دیتابیس کدال ممکن نشد."}

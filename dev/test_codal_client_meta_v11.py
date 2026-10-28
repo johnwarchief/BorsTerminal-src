@@ -17,17 +17,26 @@ Proves, with no network / CODAL / GitHub / ADB and no operational market.db:
      verification before the merge, downloads the calendar best-effort after a
      successful merge, ``auto_check`` only fetches the meta URL (no CODAL/ADB),
      ``db-status`` carries ``meta``/``freshness`` and app.py starts the check in
-     a guarded daemon thread.
+     a guarded daemon thread;
+  6) I1 boot race: ``boot_sync`` runs exactly one of catch-up/auto-check,
+     ``_orchestrator_busy`` honours a fresh Task 6 lock/status (6h stale rule),
+     ``_start_db_worker``/``auto_check`` refuse to start while it is busy, and
+     the worker re-checks immediately before the merge (with a fake requests
+     layer, so an orchestrator that starts mid-download aborts without merging
+     and leaves a non-error ``skipped`` stage).
 
 Run:  python dev/test_codal_client_meta_v11.py  ->  OK client meta compare
 """
+import datetime
 import json
+import lzma
 import os
 import re
 import shutil
 import sqlite3
 import sys
 import tempfile
+import time
 
 try:                       # Persian/UTF-8 output on a cp1252 Windows console
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
@@ -39,6 +48,7 @@ os.chdir(ROOT)
 sys.path.insert(0, ROOT)
 
 import api._sync_codal as S          # noqa: E402
+import bors_minisign                 # noqa: E402
 
 CHECKS = []
 
@@ -85,6 +95,11 @@ def def_block(src, header):
 TMP = tempfile.mkdtemp(prefix="codal_client_meta_v11_")
 _ORIG_WORK_DIR = S.WORK_DIR
 _ORIG_DB_PATH = S.DB_PATH
+_ORIG_STATUS_PATH = S.CODAL_DB_STATUS_PATH
+_ORIG_REQUESTS = S.requests
+_ORIG_START_WORKER = S._start_db_worker
+_ORIG_APPLY_MERGE = S._apply_codal_merge
+_ORIG_VERIFY = bors_minisign.verify_minisign
 _ORIG_CACHE = dict(getattr(S, "_db_period_cache", {}) or {})
 
 
@@ -116,6 +131,46 @@ def write_status(work_dir, payload):
     with open(os.path.join(work_dir, "codal_auto_status.json"), "w",
               encoding="utf-8") as fh:
         json.dump(payload, fh, ensure_ascii=False)
+
+
+def now_iso():
+    return datetime.datetime.now().isoformat(timespec="seconds")
+
+
+def make_snapshot_lzma(path):
+    """A minimal, integrity-checkable CODAL snapshot (three tables) as .lzma."""
+    raw = path + ".raw"
+    con = sqlite3.connect(raw)
+    try:
+        for table in S._CODAL_TABLES:
+            con.execute('CREATE TABLE "%s" (tracing_no INTEGER PRIMARY KEY)'
+                        % table)
+        con.commit()
+    finally:
+        con.close()
+    with open(raw, "rb") as src, lzma.open(path, "wb") as dst:
+        shutil.copyfileobj(src, dst)
+    os.remove(raw)
+
+
+def stream_response(payload):
+    """Minimal context-manager response for the worker's streamed download."""
+    class _Stream:
+        headers = {"Content-Length": str(len(payload))}
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args):
+            return False
+
+        def raise_for_status(self):
+            pass
+
+        def iter_content(self, _size):
+            yield payload
+
+    return _Stream()
 
 
 try:
@@ -371,6 +426,180 @@ try:
     ck("except Exception" in auto and '"checked": False' in auto,
        "auto_check reports checked False on any network error")
 
+    # ── ۶٫۵) I1: one boot decision + orchestrator mutual exclusion ──────────
+    # Pure decision: when the catch-up spawns, auto-check is never started (the
+    # gate is not even evaluated). A failed spawn may fall through; fresh state
+    # (catch-up false) runs auto-check.
+    calls = []
+    got = safe("boot_sync",
+               lambda: True,
+               lambda: calls.append("gate") or True,
+               lambda: calls.append("spawn") or True,
+               lambda: calls.append("auto"))
+    ck(got == "catchup", "boot_sync: catch-up decision wins (%r)" % (got,))
+    ck(calls == ["spawn"],
+       "catch-up spawned -> auto-check gate/call never runs (%r)" % (calls,))
+
+    calls.clear()
+    got = safe("boot_sync", lambda: False, lambda: True,
+               lambda: calls.append("spawn") or True,
+               lambda: calls.append("auto"))
+    ck(got == "auto_check" and calls == ["auto"],
+       "fresh catch-up -> auto-check runs (%r, %r)" % (got, calls))
+
+    def _raise_spawn():
+        raise RuntimeError("popen failed")
+
+    calls.clear()
+    got = safe("boot_sync", lambda: True, lambda: True, _raise_spawn,
+               lambda: calls.append("auto"))
+    ck(got == "auto_check" and calls == ["auto"],
+       "failed spawn falls through to auto-check, no exception (%r, %r)"
+       % (got, calls))
+
+    calls.clear()
+    got = safe("boot_sync", lambda: False, lambda: False,
+               lambda: calls.append("spawn") or True,
+               lambda: calls.append("auto"))
+    ck(got == "" and calls == [],
+       "both gates closed -> no action, no exception (%r, %r)" % (got, calls))
+
+    # Client side: a fresh Task 6 lock/status makes the download path busy.
+    race = os.path.join(TMP, "race")
+    os.makedirs(race)
+    S.WORK_DIR = race
+    S.CODAL_DB_STATUS_PATH = os.path.join(race, "codal_db_status.json")
+    race_db = os.path.join(TMP, "race_market.db")
+    make_db(race_db, "1405/06/31", "1405/06/30")
+    S.DB_PATH = race_db
+    lock = os.path.join(race, "codal_auto.lock")
+
+    ck(safe("_orchestrator_busy") is False,
+       "idle: no lock/status -> orchestrator not busy")
+    with open(lock, "w", encoding="utf-8") as fh:
+        fh.write("other-owner")
+    ck(safe("_orchestrator_busy") is True,
+       "fresh codal_auto.lock -> orchestrator busy")
+    old = time.time() - (S.ORCHESTRATOR_LOCK_STALE_SECONDS + 60)
+    os.utime(lock, (old, old))
+    ck(safe("_orchestrator_busy") is False,
+       "stale lock (>6h) -> orchestrator not busy (crash-safe)")
+    os.remove(lock)
+    write_status(race, {"stage": "merging", "updated_at": now_iso()})
+    ck(safe("_orchestrator_busy") is True,
+       "fresh non-terminal status (merging) -> orchestrator busy")
+    write_status(race, {"stage": "done", "updated_at": now_iso()})
+    ck(safe("_orchestrator_busy") is False,
+       "terminal status (done) -> orchestrator not busy")
+    write_status(race, {"stage": "merging",
+                        "updated_at": (datetime.datetime.now()
+                                       - datetime.timedelta(hours=7))
+                        .isoformat(timespec="seconds")})
+    ck(safe("_orchestrator_busy") is False,
+       "stale non-terminal status (>6h) -> orchestrator not busy")
+
+    write_status(race, {"stage": "done", "updated_at": now_iso()})
+    with open(lock, "w", encoding="utf-8") as fh:
+        fh.write("other-owner")
+    reason = safe("_start_db_worker")
+    ck(reason == "orchestrator",
+       "_start_db_worker returns 'orchestrator' instead of starting (%r)"
+       % (reason,))
+    ck(S._dbdl_running is False,
+       "no download thread is started while the orchestrator holds the lock")
+    os.remove(lock)
+
+    write_status(race, {"stage": "merging", "updated_at": now_iso()})
+    reason = safe("_start_db_worker")
+    ck(reason == "orchestrator",
+       "_start_db_worker also honours a fresh non-terminal status (%r)"
+       % (reason,))
+    ck(S._dbdl_running is False,
+       "no download thread is started while the orchestrator status is active")
+    write_status(race, {"stage": "done", "updated_at": now_iso()})
+
+    # auto_check checks the same gate before starting the worker (no network).
+    class _MetaResp:
+        def raise_for_status(self):
+            pass
+
+        def json(self):
+            return {"latest_financial_period": "1405/08/31",
+                    "latest_monthly_period": "1405/07/30"}
+
+    class _MetaRequests:
+        @staticmethod
+        def get(url, **_kwargs):
+            return _MetaResp()
+
+    S.requests = _MetaRequests
+    starts = []
+    S._start_db_worker = lambda auto=False: (starts.append(auto) or "")
+    with open(lock, "w", encoding="utf-8") as fh:
+        fh.write("other-owner")
+    res = safe("auto_check")
+    ck(isinstance(res, dict) and res.get("update") is True
+       and res.get("started") is False
+       and res.get("skipped") == "orchestrator",
+       "auto_check skips the download while the orchestrator is busy (%r)"
+       % (res,))
+    ck(starts == [],
+       "auto_check never calls _start_db_worker while orchestrator is busy")
+    os.remove(lock)
+    starts.clear()
+    res = safe("auto_check")
+    ck(isinstance(res, dict) and res.get("update") is True
+       and res.get("started") is True and starts == [True],
+       "auto_check starts the shared worker when no orchestrator runs (%r)"
+       % (res,))
+
+    # Worker re-check immediately before merge: an orchestrator that starts
+    # mid-download must abort the merge, keep the DB, and record "skipped".
+    snap_lzma = os.path.join(race, "snapshot_src.db.lzma")
+    make_snapshot_lzma(snap_lzma)
+    with open(snap_lzma, "rb") as fh:
+        snap_payload = fh.read()
+    write_status(race, {"stage": "done", "updated_at": now_iso()})
+    merge_calls = []
+
+    def _forbidden_merge(*_a, **_k):
+        merge_calls.append(True)
+        raise AssertionError("merge must not run while orchestrator is busy")
+
+    S._apply_codal_merge = _forbidden_merge
+    bors_minisign.verify_minisign = lambda *_a, **_k: None
+
+    class _WorkerRequests:
+        @staticmethod
+        def get(url, **_kwargs):
+            if url == S.CODAL_DB_URL + ".sig":
+                class _Sig:
+                    text = "fake-sig"
+
+                    def raise_for_status(self):
+                        pass
+
+                return _Sig()
+            # The orchestrator starts while the download is in flight.
+            write_status(race, {"stage": "merging", "updated_at": now_iso()})
+            return stream_response(snap_payload)
+
+    S.requests = _WorkerRequests
+    dest = os.path.join(race, "snapshot_dl.db.lzma")
+    tmpdb = os.path.join(race, "snapshot_dl.db")
+    got = safe("_codal_db_worker", dest, tmpdb, True)
+    ck(not str(got).startswith("raised"),
+       "worker aborts benignly when the orchestrator starts mid-download (%r)"
+       % (got,))
+    ck(merge_calls == [],
+       "worker does not call _apply_codal_merge while orchestrator is busy")
+    ck(not os.path.exists(dest) and not os.path.exists(tmpdb),
+       "worker removes its temp snapshot files after the skip")
+    with open(S.CODAL_DB_STATUS_PATH, "r", encoding="utf-8") as fh:
+        db_st = json.load(fh)
+    ck(db_st.get("stage") == "skipped" and not db_st.get("error"),
+       "worker records a non-error 'skipped' stage (%r)" % (db_st,))
+
     # ── ۷) db-status carries meta + freshness, old fields kept ─────────────
     status, s_start = def_block(src, "def sync_codal_db_status(")
     ck(s_start != -1, "db-status handler exists")
@@ -416,6 +645,17 @@ try:
     ck(thread_idx > guard_idx and thread_indent > guard_indent,
        "thread start sits inside the _fetch_loops_enabled() guard")
 
+    # exactly one codal startup thread, and it owns the single boot decision
+    ck("def _codal_boot_sync" in app_src,
+       "app.py has one boot-decision function for both codal paths")
+    ck("boot_sync(" in app_src,
+       "app.py routes catch-up/auto-check through the shared boot_sync helper")
+    ck("threading.Thread(target=_codal_boot_sync" in app_src,
+       "app.py starts exactly one codal startup thread")
+    ck("threading.Thread(target=_codal_auto_catchup" not in app_src
+       and "threading.Thread(target=_codal_auto_check" not in app_src,
+       "no independent catch-up/auto-check threads exist anymore")
+
     failed = [m for ok, m in CHECKS if not ok]
     if failed:
         print("\nFAILED %d/%d" % (len(failed), len(CHECKS)))
@@ -426,6 +666,11 @@ try:
 finally:
     S.WORK_DIR = _ORIG_WORK_DIR
     S.DB_PATH = _ORIG_DB_PATH
+    S.CODAL_DB_STATUS_PATH = _ORIG_STATUS_PATH
+    S.requests = _ORIG_REQUESTS
+    S._start_db_worker = _ORIG_START_WORKER
+    S._apply_codal_merge = _ORIG_APPLY_MERGE
+    bors_minisign.verify_minisign = _ORIG_VERIFY
     try:
         if hasattr(S, "_db_period_cache"):
             S._db_period_cache.clear()

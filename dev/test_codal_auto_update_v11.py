@@ -14,14 +14,20 @@ Proves, with temp DBs only (no network, no CODAL, no gh, no signing):
   3) a pause file short-circuits the run before any staging copy;
   4) a second concurrent run (pre-existing lock) returns ``ok False`` without
      crashing and without deleting the other owner's lock;
-  5) CLI exit codes: success -> 0, paused -> 0, locked -> 0 (benign skips so
-     Task Scheduler's RestartCount does not re-run a full job), validation
-     failure -> 1; ``run()``'s result contract is unchanged;
-  6) no production step (publish/build_snapshot/updater/sign) is reached in
+  5) mutual exclusion with the 8a client download (I1): a fresh
+     ``codal_db_status.json`` in ``downloading``/``merging`` skips before
+     staging, a download that starts mid-run aborts before the merge (patched
+     merge must not be called), both leave main intact and exit 0; a stale
+     (>6h) client status is ignored;
+  6) CLI exit codes: success -> 0, paused -> 0, locked -> 0, client_busy -> 0
+     (benign skips so Task Scheduler's RestartCount does not re-run a full
+     job), validation failure -> 1; ``run()``'s result contract is unchanged;
+  7) no production step (publish/build_snapshot/updater/sign) is reached in
      the dry-run or validation-failure paths — each is patched to raise.
 
 Run:  python dev/test_codal_auto_update_v11.py
 """
+import datetime
 import json
 import os
 import shutil
@@ -39,8 +45,9 @@ os.chdir(ROOT)
 sys.path.insert(0, ROOT)
 sys.path.insert(0, os.path.join(ROOT, "dev"))
 
-import codal_fetcher as cf          # noqa: E402
-import codal_auto_update as A       # noqa: E402
+import api._sync_codal as S          # noqa: E402  (only to forbid a real merge)
+import codal_fetcher as cf           # noqa: E402
+import codal_auto_update as A        # noqa: E402
 
 CHECKS = []
 
@@ -52,6 +59,7 @@ def ck(cond, msg):
 
 
 TMP = tempfile.mkdtemp(prefix="codal_auto_update_v11_")
+_ORIG_CLIENT_STATUS = A.CLIENT_DB_STATUS
 
 FS_COLS = ("tracing_no", "symbol", "title", "period_end", "revenue",
            "gross_profit", "url", "publish_date")
@@ -108,6 +116,7 @@ def fresh_env(name):
     A.STATUS = os.path.join(d, "codal_auto_status.json")
     A.LOCK = os.path.join(d, "codal_auto.lock")
     A.PAUSE = os.path.join(d, "codal_auto_pause")
+    A.CLIENT_DB_STATUS = os.path.join(d, "codal_db_status.json")
     A.SNAPSHOT_LZMA = os.path.join(d, "codal.db.lzma")
     A.SNAPSHOT_META = os.path.join(d, "codal.meta.json")
     A.publish = boom
@@ -119,6 +128,14 @@ def fresh_env(name):
 def load_status(path):
     with open(path, "r", encoding="utf-8") as fh:
         return json.load(fh)
+
+
+def write_client_status(path, stage, ts=None):
+    with open(path, "w", encoding="utf-8") as fh:
+        json.dump({"stage": stage, "percent": 1.0, "detail": "",
+                   "error": "",
+                   "ts": ts or datetime.datetime.now().isoformat(
+                       timespec="seconds")}, fh)
 
 
 try:
@@ -194,6 +211,80 @@ try:
     ck(os.path.isfile(A.LOCK), "locked: other owner's lock is left intact")
     ck(fs_count(main) == 1, "locked: main DB untouched")
 
+    # ── ۴٫۵) mutual exclusion with the 8a client download/merge ─────────────
+    # A fresh client status in downloading/merging is a locked-like skip: no
+    # staging, no merge, exit 0. A stale one must not block the daily run.
+    d, main, staging = fresh_env("client_busy")
+    A._fetch = boom
+    write_client_status(A.CLIENT_DB_STATUS, "downloading")
+    r = A.run(dry_run=False, db_path=main, staging_dir=staging)
+    ck(r["ok"] is False, "client downloading: ok is False")
+    ck("client_busy" in r["errors"],
+       "client downloading: errors name client_busy (%r)" % (r["errors"],))
+    ck(r["staged"] is False,
+       "client downloading: no staging copy is made")
+    ck(not os.path.exists(staging),
+       "client downloading: staging directory is never created")
+    ck(fs_count(main) == 1, "client downloading: main DB untouched")
+    ck(not os.path.exists(A.LOCK), "client downloading: no orchestrator lock left")
+    st = load_status(A.STATUS)
+    ck(st["stage"] == "client_busy",
+       "client downloading: status stage is client_busy (%r)" % st["stage"])
+    ck(A._exit_code(r) == 0,
+       "client downloading: benign skip -> exit 0 (no Task Scheduler retry)")
+
+    # A download that starts mid-run (after staging, before merge) must abort
+    # at the second gate; the merge function is patched to fail loudly.
+    d, main, staging = fresh_env("client_busy_mid")
+    merge_calls = []
+
+    def _forbidden_merge(*_a, **_k):
+        merge_calls.append(True)
+        raise AssertionError("merge must not run while the client is active")
+
+    def fetch_then_client_busy(db_path):
+        insert_fs(db_path, {"tracing_no": 9001, "symbol": "NEW", "title": "new",
+                            "period_end": "1405/06/31", "revenue": 200.0,
+                            "gross_profit": 90.0,
+                            "url": "https://codal.ir/fs/9001",
+                            "publish_date": "1405/07/02"})
+        write_client_status(A.CLIENT_DB_STATUS, "merging")
+
+    _orig_apply = S._apply_codal_merge
+    S._apply_codal_merge = _forbidden_merge
+    A._fetch = fetch_then_client_busy
+    try:
+        r = A.run(dry_run=False, db_path=main, staging_dir=staging)
+    finally:
+        S._apply_codal_merge = _orig_apply
+    ck(r["ok"] is False, "client busy mid-run: ok is False")
+    ck("client_busy" in r["errors"],
+       "client busy mid-run: errors name client_busy (%r)" % (r["errors"],))
+    ck(r["staged"] is True,
+       "client busy mid-run: staging happened before the second gate")
+    ck(merge_calls == [],
+       "client busy mid-run: _apply_codal_merge is never called")
+    ck(fs_count(main) == 1,
+       "client busy mid-run: main DB row count unchanged (no merge)")
+    ck(not os.path.exists(A.LOCK),
+       "client busy mid-run: orchestrator lock released")
+    st = load_status(A.STATUS)
+    ck(st["stage"] == "client_busy",
+       "client busy mid-run: status stage is client_busy (%r)" % st["stage"])
+    ck(A._exit_code(r) == 0, "client busy mid-run: exit 0 (benign)")
+
+    # Stale client status (older than 6h) is ignored: a crashed download must
+    # not block the daily run forever.
+    d, main, staging = fresh_env("client_busy_stale")
+    A._fetch = make_fetch()
+    old_ts = (datetime.datetime.now() - datetime.timedelta(hours=7)).isoformat(
+        timespec="seconds")
+    write_client_status(A.CLIENT_DB_STATUS, "downloading", ts=old_ts)
+    r = A.run(dry_run=True, db_path=main, staging_dir=staging)
+    ck(r["ok"] is True and "client_busy" not in r["errors"],
+       "stale (>6h) client status is ignored, dry-run proceeds (%r)"
+       % (r["errors"],))
+
     # ── ۵) CLI exit codes: locked/paused are benign, failures are not ───────
     ck(A._exit_code({"ok": True, "errors": []}) == 0,
        "exit: success -> 0")
@@ -242,4 +333,5 @@ try:
         raise SystemExit(1)
     print("\nOK orchestrator dry-run (%d checks)" % len(CHECKS))
 finally:
+    A.CLIENT_DB_STATUS = _ORIG_CLIENT_STATUS
     shutil.rmtree(TMP, ignore_errors=True)

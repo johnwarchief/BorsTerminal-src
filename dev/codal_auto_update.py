@@ -58,6 +58,14 @@ UPDATER = os.path.join(ROOT, "dev", "codal_fts_updater.py")
 CALENDAR_FETCHER = os.path.join(ROOT, "dev", "calendar_fetcher.py")
 SIGN = os.path.join(ROOT, "scripts", "sign_setup.py")
 
+# وضعیتِ دانلود/ادغامِ کلاینت (Task 8a). orchestrator و آن worker هر دو همان
+# سه جدول را merge می‌کنند ولی قفلِ مشترکی ندارند؛ این درِ متقابل سمتِ
+# orchestrator است. مسیر از WORK_DIR می‌آید (در حالتِ سورس = ریشهٔ مخزن) و
+# ماژول‌سطحی است تا تست بتواندش به پوشهٔ موقت بچسباند.
+CLIENT_DB_STATUS = os.path.join(bors_config.WORK_DIR, "codal_db_status.json")
+CLIENT_ACTIVE_STAGES = ("downloading", "merging")
+CLIENT_STATUS_STALE_SECONDS = 6 * 3600
+
 # قفلِ جامانده از اجرایِ مرده بعد از ۶h آزاد می‌شود. تا آن لحظه هر اجرایِ
 # دیگری «locked» می‌بیند؛ Task Scheduler نباید این را شکست بشمارد و دوباره
 # اجرا کند (خروجِ ۰ برای locked/paused در _exit_code) و app.py هم در همین
@@ -149,6 +157,38 @@ def _release_lock(path):
         os.remove(path)
     except OSError:
         pass
+
+
+def _client_download_active():
+    """آیا workerِ دانلود/mergeِ کلاینت (Task 8a) همین حالا فعال است؟ (بدونِ importِ api)
+
+    ``codal_db_status.json`` را مستقیم می‌خوانیم؛ importِ ``api._sync_codal``
+    از این اسکریپتِ dev چرخهٔ وابستگی و بارِ FastAPI می‌سازد. فقط دو مرحلهٔ
+    ``downloading``/``merging`` فعال‌اند و ``ts`` باید تازه باشد: statusِ
+    جامانده از کرش نباید اجرایِ روزانه را برایِ همیشه قفل کند. آستانه همان
+    ۶ ساعتِ قفلِ خودمان است (worker در طولِ دانلود ``ts`` را تازه می‌کند).
+    """
+    try:
+        with open(CLIENT_DB_STATUS, "r", encoding="utf-8") as fh:
+            st = json.load(fh)
+    except (OSError, ValueError):
+        return False
+    if not isinstance(st, dict):
+        return False
+    stage = str(st.get("stage") or "").strip().lower()
+    if stage not in CLIENT_ACTIVE_STAGES:
+        return False
+    try:
+        stamp = datetime.datetime.fromisoformat(str(st.get("ts") or ""))
+    except (TypeError, ValueError):
+        return False
+    now = (datetime.datetime.now(stamp.tzinfo) if stamp.tzinfo is not None
+           else datetime.datetime.now())
+    try:
+        age = (now - stamp).total_seconds()
+    except (TypeError, ValueError, OverflowError):
+        return False
+    return -300 <= age <= CLIENT_STATUS_STALE_SECONDS
 
 
 def _backup_db(src_path, dst_path):
@@ -288,6 +328,15 @@ def run(mode="daily", dry_run=False, db_path=None, staging_dir=None):
                       last_error="paused", published=False)
         return result
 
+    # ۱٫۵) درِ متقابل با دانلودِ snapshot در کلاینت (Task 8a): آن مسیر هم
+    #      همان سه جدول را merge می‌کند و قفلِ این orchestrator را نمی‌بیند.
+    #      این بررسی پیش از staging است تا هیچ کپی/شبکه‌ای شروع نشود.
+    if _client_download_active():
+        result["errors"].append("client_busy")
+        _write_status(stage="client_busy", mode=mode, started_at=started_at,
+                      last_error="client_busy", published=False)
+        return result
+
     # ۲) قفلِ اجرایِ هم‌زمان.
     lock = _acquire_lock()
     if lock is None:
@@ -347,6 +396,12 @@ def run(mode="daily", dry_run=False, db_path=None, staging_dir=None):
                           latest_periods=periods, published=False,
                           last_error=None)
             return result
+
+        # بازبینیِ دوم دقیقاً پیش از merge: staging/واکشی/اعتبارسنجی می‌تواند
+        # دقیقه‌ها طول بکشد و دانلودِ کلاینت در همین فاصله شروع شود. تنها
+        # دروازهٔ اول یک TOCTOU است؛ اینجا بدونِ merge برمی‌گردیم (data intact).
+        if _client_download_active():
+            return _fail(result, "client_busy", "client_busy")
 
         _write_status(stage="merging", validation=_validation_summary(validation),
                       latest_periods=periods)
@@ -435,18 +490,18 @@ def run(mode="daily", dry_run=False, db_path=None, staging_dir=None):
         _release_lock(lock)
 
 
-_BENIGN_SKIPS = ("locked", "paused")
+_BENIGN_SKIPS = ("locked", "paused", "client_busy")
 
 
 def _exit_code(result):
-    """کدِ خروجِ CLI؛ قفل/توقف «رد شدنِ بی‌خطر» است، نه شکست.
+    """کدِ خروجِ CLI؛ قفل/توقف/اشتغالِ کلاینت «رد شدنِ بی‌خطر» است، نه شکست.
 
     Task Scheduler با ``-RestartCount 2`` هر خروجِ غیرصفر را شکست می‌شمارد و
     ۱۵ دقیقه بعد دوباره اجرا می‌کند. اگر اجرایِ روزانه قفل را به اجرایِ
     زندهٔ دیگری (مثلاً catch-up) ببازد، تلاشِ دوباره پس از پایانِ آن اجرا
-    کلِ واکشی/merge/publish را تکرار می‌کند. پس locked/paused → 0 و هر خطایِ
-    واقعی (از جمله validation) → 1. قراردادِ ``run()`` دست نمی‌خورد؛ فقط
-    نگاشتِ نتیجه به کدِ خروج اینجاست.
+    کلِ واکشی/merge/publish را تکرار می‌کند. پس locked/paused/client_busy → 0
+    و هر خطایِ واقعی (از جمله validation) → 1. قراردادِ ``run()`` دست
+    نمی‌خورد؛ فقط نگاشتِ نتیجه به کدِ خروج اینجاست.
     """
     if not isinstance(result, dict):
         return 1
