@@ -21,7 +21,7 @@ import { useSectorBoard } from '../api/useSectorBoard';
 import { useFtsScreen } from '../api/useFtsScreen';
 import { groupBySymbol, useCalendarUpcoming } from '../api/useCalendarUpcoming';
 import { deCumulateQuarters, profitYoY, sectorMedianPE } from '../lib/fundMath';
-import { isFinancialOrHolding, isPhysicalGrowthApplicable } from '../lib/assetScope';
+import { financialClassLabel, isBankLike, isFinancialOrHolding, isPhysicalGrowthApplicable } from '../lib/assetScope';
 import { fundamentalSignal } from '../signals/fundamentalSignals';
 import { FtsCard } from '../components/FtsCard';
 import { cardAuditEvidence } from '../lib/auditEvidence';
@@ -123,6 +123,15 @@ export default function FundamentalPage() {
   /** هلدینگ‌ها با گروه «سایر» مقایسه صنعتی نمی‌شوند — گروه نامربوط است */
   const isHolding = useMemo(
     () => isFinancialOrHolding({ name: companyName, sector_name: rawSector }),
+    [companyName, rawSector],
+  );
+  /** بانک از هلدینگ جدا خوانده می‌شود؛ فقط برچسب/متنِ پنل، نه حکم یا امتیاز. */
+  const bankLike = useMemo(
+    () => isBankLike({ name: companyName, sector_name: rawSector }),
+    [companyName, rawSector],
+  );
+  const classLabel = useMemo(
+    () => financialClassLabel({ name: companyName, sector_name: rawSector }),
     [companyName, rawSector],
   );
   /** پنلِ P/NAV باید همان‌جا بیاید که موتورِ FTS شاخص ۴ را معاف کرده، نه همان‌جا
@@ -251,7 +260,7 @@ export default function FundamentalPage() {
       <div className="flex flex-wrap items-center gap-2">
         <h2 className="text-base font-black text-text-primary">{symbol}</h2>
         {sector ? <span className="text-xs text-text-secondary">{sector}</span> : null}
-        {isHolding ? <Badge tone="blue">هلدینگ / سرمایه‌گذاری</Badge> : null}
+        {isHolding ? <Badge tone="blue">{classLabel ?? 'هلدینگ / سرمایه‌گذاری'}</Badge> : null}
         {signal ? (
           <>
             <Badge tone={DIR_TONE[signal.direction]}>{DIR_LABEL[signal.direction]}</Badge>
@@ -271,15 +280,20 @@ export default function FundamentalPage() {
       {card.data?.applicable !== false && (isHolding || axis4Exempt) ? (
         <div className="glass-panel panel-in p-4" data-testid="holding-pnav-panel">
           <div className="mb-2 flex items-center justify-between">
-            <h3 className="text-sm font-black text-text-primary">ارزش‌گذاری هلدینگ</h3>
+            <h3 className="text-sm font-black text-text-primary">
+              {bankLike ? 'ارزش‌گذاری بانک' : 'ارزش‌گذاری هلدینگ'}
+            </h3>
             <Badge tone="yellow">N/A</Badge>
           </div>
           <p className="text-2xs leading-relaxed text-text-secondary" data-testid="holding-nav-na">
-            این نماد سرمایه‌گذاری/هلدینگ است و در کدال ارزش خالص دارایی (NAV) منتشر نشده؛
-            بنابراین P/NAV محاسبه نمی‌شود و جای آن عددی گذاشته نمی‌شود.
+            {bankLike
+              ? 'این نماد بانک/مؤسسهٔ اعتباری است؛ P/NAV برای این طبقه تعریف نشده و جای آن عددی گذاشته نمی‌شود.'
+              : 'این نماد سرمایه‌گذاری/هلدینگ است و در کدال ارزش خالص دارایی (NAV) منتشر نشده؛ بنابراین P/NAV محاسبه نمی‌شود و جای آن عددی گذاشته نمی‌شود.'}
           </p>
           <div className="mt-2.5 pt-2.5 border-t border-border-c/50 text-2xs text-text-muted">
-            هلدینگ‌ها از شرط «نسبت فروش به ارزش بازار» (شاخص ۴) معاف‌اند.
+            {bankLike
+              ? 'بانک‌ها از شرط «نسبت فروش به ارزش بازار» (شاخص ۴) معاف‌اند.'
+              : 'هلدینگ‌ها از شرط «نسبت فروش به ارزش بازار» (شاخص ۴) معاف‌اند.'}
           </div>
         </div>
       ) : (

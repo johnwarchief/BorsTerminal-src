@@ -180,6 +180,9 @@ chk(r.get("available") is False and r.get("na") is True,
     (r.get("available"), r.get("na")))
 chk(r.get("acceptance_path") is None,
     "معاف: acceptance_path=None (حتی اگر پتانسیل عدد داشت)", r.get("acceptance_path"))
+chk("معاف" in (r.get("reason") or "")
+    and "شرکت سرمایه‌گذاری/هلدینگ" not in (r.get("reason") or ""),
+    "معاف: دلیلِ خنثی (بی‌ادعای هلدینگ برای بانک)", r.get("reason"))
 chk(r.get("annualize_months") == 0 and r.get("annualize_label") == "",
     "معاف: بی‌برچسبِ سالانه‌سازی",
     (r.get("annualize_months"), r.get("annualize_label")))

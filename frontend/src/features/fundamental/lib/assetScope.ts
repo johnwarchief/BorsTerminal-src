@@ -40,6 +40,23 @@ export function isFinancialOrHolding(row: Pick<FtsScreenRow, 'name' | 'sector_na
   return FINANCIAL_HOLDING_RE.test(name) || FINANCIAL_HOLDING_RE.test(sector);
 }
 
+/** بانک/مؤسسهٔ اعتباری از هلدینگ/سرمایه‌گذاری جدا می‌شود — فقط برای برچسبِ
+ *  نمایشی و متنِ پنلِ N/A؛ حکم/امتیاز از همین تفکیک اثر نمی‌گیرد. */
+const BANK_RE = /بانك|بانک|اعتباري|اعتباری/;
+export function isBankLike(row: Pick<FtsScreenRow, 'name' | 'sector_name'>): boolean {
+  const name = normalizeFa(row.name);
+  const sector = normalizeFa(row.sector_name);
+  return BANK_RE.test(name) || BANK_RE.test(sector);
+}
+
+/** برچسبِ طبقهٔ مالی برای نشانِ سرصفحه: بانک ≠ هلدینگ. */
+export function financialClassLabel(
+  row: Pick<FtsScreenRow, 'name' | 'sector_name'>,
+): string | null {
+  if (!isFinancialOrHolding(row)) return null;
+  return isBankLike(row) ? 'بانک / مؤسسهٔ اعتباری' : 'هلدینگ / سرمایه‌گذاری';
+}
+
 /** آیا رشد فیزیکی/تناژ برای این ردیف اصلاً «قابل اعمال» است؟
  *  هلدینگ/سرمایه‌گذاری/مالی/بانکی: هرگز؛ خدمات: گروه صنعت */
 export function isPhysicalGrowthApplicable(row: Pick<FtsScreenRow, 'name' | 'sector_name'>): boolean {

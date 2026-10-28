@@ -1565,8 +1565,10 @@ def company_profile(sector: str = "", company_name: str = "") -> dict:
     margin_class = kind
     if kind == "holding" and any(t in both for t in _BANK_TOKENS):
         margin_class = "bank"
+    label = ("بانک / مؤسسهٔ اعتباری" if margin_class == "bank"
+             else _PROFILE_LABEL[kind])
     return {"kind": kind, "margin_class": margin_class,
-            "label": _PROFILE_LABEL[kind], "revenue_basis": basis,
+            "label": label, "revenue_basis": basis,
             "volume_applicable": applicable,
             "volume_note": ("تناژ/تعداد محصول در گزارش فعالیت ماهانه معنادار است؛ "
                             "رشد ریالی بدون رشد تناژ = افزایش قیمت."
@@ -1670,8 +1672,8 @@ def ind4_reason_text(exempt=False, available=True, margin_present=True,
     پذیرش/بی‌مسیر. هیچ آستانه‌ای این‌جا ساخته نمی‌شود؛ فقط متنِ حکمِ موجود.
     """
     if exempt:
-        return ("شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد "
-                "ندارد (N/A).")
+        return ("این نماد از شرط «نسبت فروش به ارزش بازار» معاف است "
+                "(طبقهٔ مالی/بانکی/هلدینگ/صندوق)؛ شاخص ۴ داوری نمی‌شود (N/A).")
     if not available:
         return ("دادهٔ ارزش بازار یا فروش سالانه برای محاسبه نسبت در دسترس "
                 "نیست.")

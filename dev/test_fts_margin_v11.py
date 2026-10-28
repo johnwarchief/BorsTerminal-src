@@ -196,6 +196,8 @@ BANK_SECTOR = "بانكها و موسسات اعتباري"
 p_bank = fts_engine.company_profile(BANK_SECTOR, "بانک ملت")
 chk(p_bank.get("margin_class") == "bank",
     "بانک: margin_class=bank (kind همان holding)", p_bank.get("margin_class"))
+chk(p_bank.get("label") == "بانک / مؤسسهٔ اعتباری",
+    "برچسبِ نمایشیِ بانک «بانک» است، نه هلدینگ", p_bank.get("label"))
 r_bank = ind3_gross_margin(c, "بانک", ref=ref(580), profile=p_bank)
 chk(r_bank.get("na") is True and r_bank.get("margin_tier") is None,
     "بانک ⇒ N/A و بی‌برچسب", (r_bank.get("na"), r_bank.get("margin_tier")))
