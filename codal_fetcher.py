@@ -2714,7 +2714,8 @@ def _is_fund(sym, name):
     return False
 
 
-def feed_sync(mode="update", optimized=False, catchup=None):
+def feed_sync(mode="update", optimized=True, catchup=None, cats=None,
+              pages_per_cat=None):
     """Smart GLOBAL-FEED sync — جایگزین جستجوی نماد-به-نماد.
 
     کشف 2026-08-27 (browser-verified): search.codal.ir/api/search/v2/q با
@@ -2728,6 +2729,13 @@ def feed_sync(mode="update", optimized=False, catchup=None):
     mode="discover": FromDate=1400/01/01 (پنج سال اخیر) → همهٔ اطلاعیههای
                      مالی که نداریم مستقیم دانلود/استخراج میشوند — جایگزین
                      چرخهٔ ۲۱۳۲ پراب خالی discovery قدیم (96.6% empty).
+
+    cats:            دسته‌هایِ فید (پیش‌فرض ``["1", "3"]``). هیچ فیلترِ
+                     دیگری اضافه نمی‌شود.
+    pages_per_cat:   سقفِ صفحه برایِ هر دسته؛ ``None`` = پیش‌فرضِ ۸ صفحه در
+                     حالتِ optimized و ۵۰ صفحه در غیرِ آن. عدد یا نگاشتِ
+                     ``{cat: pages}`` پذیرفته می‌شود. ``POLITE`` همچنان
+                     چرخشِ IP را کامل خاموش می‌کند (مسیرِ بدونِ ADB).
     """
     global _BACKOFF_UNTIL, _BACKOFF_EVENTS
     _BACKOFF_UNTIL, _BACKOFF_EVENTS = 0.0, 0
@@ -2740,6 +2748,28 @@ def feed_sync(mode="update", optimized=False, catchup=None):
     # دامنهٔ درستِ ضدتکرار (زوجِ نماد+دوره، نه دورۀ سراسری) — دلیلش درِ docstringِ
     # `derived_state` و با شمارشِ بانک سنجیده شده است.
     processed, fs_done, ms_done = derived_state(conn)
+    cats = [str(c) for c in (cats or ("1", "3"))]
+    if not cats:
+        cats = ["1", "3"]
+    if pages_per_cat is None:
+        page_budget = 8 if optimized else 50
+    elif isinstance(pages_per_cat, dict):
+        page_budget = 8 if optimized else 50
+    else:
+        try:
+            page_budget = max(1, int(pages_per_cat))
+        except (TypeError, ValueError):
+            page_budget = 8 if optimized else 50
+
+    def _pages_for(cat):
+        """سقفِ صفحهٔ همین دسته؛ نگاشتِ اختیاری، وگرنه سقفِ سراسری."""
+        if isinstance(pages_per_cat, dict):
+            try:
+                return max(1, int(pages_per_cat.get(str(cat), page_budget)))
+            except (TypeError, ValueError):
+                return page_budget
+        return page_budget
+
     if mode == "update":
         # نشانکِ increment: «تازۀ‌ترین تاریخِ واقعیِ بانک».
         # پیش از این همین‌جا `SELECT MAX(publish_date)` می‌خواند و می‌گرفت — ولی
@@ -2750,10 +2780,6 @@ def feed_sync(mode="update", optimized=False, catchup=None):
         # اینجا همان ترجمۀ خودِ فایل اعمال می‌شود و بیشینه عددی گرفته می‌شود.
         max_dt = newest_publish_date(conn)
         from_date = max_dt or "1400/01/01"
-        cats = ["1", "3"]
-        page_budget = 50
-        if optimized:
-            page_budget = 8   # بهینه: فقط آخرین صفحه‌های فید (تغییرپذیر) — ۶ برابر درخواست کمتر
         # تعداد نمادهای موجود که بروزرسانی می‌شوند (پوشش ۵ شاخصی)
         n_syms = conn.execute(
             "SELECT COUNT(DISTINCT symbol) FROM financial_statements").fetchone()[0]
@@ -2762,8 +2788,6 @@ def feed_sync(mode="update", optimized=False, catchup=None):
             label += " [حالت بهینه: فقط داده‌های تغییرپذیر]"
     else:
         from_date = "1400/01/01"
-        cats = ["1", "3"]
-        page_budget = 120
         n_syms = conn.execute(
             "SELECT COUNT(DISTINCT symbol) FROM financial_statements").fetchone()[0]
         label = f"کشف از فید سراسری (۵ سال اخیر) — {n_syms} نماد موجود"
@@ -2772,17 +2796,18 @@ def feed_sync(mode="update", optimized=False, catchup=None):
     sess = make_session()
     counters = {"notices": 0, "fs": 0, "ms": 0, "pages": 0, "retry": 0,
                 "catchup": 0, "catchup_rows": 0}
-    total_pages = page_budget * len(cats)
+    total_pages = sum(_pages_for(c) for c in cats)
     write_progress("codal_sync", f"{label} — شروع...", total_pages, 0, "")
     for cat in cats:
         page = 1
         cat_notices = 0
-        while page <= page_budget:
+        while page <= _pages_for(cat):
             c = _control_cmd()
             if c == "stop":
                 write_progress("codal_stopped", "اسکن توسط کاربر متوقف شد", 100, page, "")
                 print("=== Feed sync stopped by user ===", flush=True)
-                return
+                counters["stopped"] = True
+                return counters
             while c == "pause":
                 write_progress("codal_paused",
                                f"اسکن در حال مکث است (دسته {cat}، صفحه {page}) — برای ادامه دکمه ادامه را بزنید",
@@ -2791,7 +2816,8 @@ def feed_sync(mode="update", optimized=False, catchup=None):
                 c = _control_cmd()
                 if c == "stop":
                     write_progress("codal_stopped", "اسکن توسط کاربر متوقف شد", 100, page, "")
-                    return
+                    counters["stopped"] = True
+                    return counters
             q = {"Audited": "true", "AuditorRef": "-1", "Category": cat,
                  "Childs": "true", "CompanyState": "-1", "CompanyType": "-1",
                  "Consolidatable": "true", "IsNotAudited": "false", "Length": "-1",
@@ -2808,6 +2834,7 @@ def feed_sync(mode="update", optimized=False, catchup=None):
                 write_progress("codal_stopped",
                                f"اسکن متوقف شد: محدودیت موقت Codal (429) — بعداً دوباره امتحان کنید",
                                100, page, "")
+                counters["blocked"] = True
                 break
             if not letters:
                 print(f"  [feed] cat{cat} page {page}: empty — end of feed", flush=True)
@@ -2867,7 +2894,7 @@ def feed_sync(mode="update", optimized=False, catchup=None):
                   f"(fs={counters['fs']} ms={counters['ms']} new={counters['notices']})",
                   flush=True)
             write_progress("codal_sync",
-                           f"{label} — دسته {cat} صفحه {page}/{page_budget} | {counters['notices']} اطلاعیهٔ جدید، "
+                           f"{label} — دسته {cat} صفحه {page}/{_pages_for(cat)} | {counters['notices']} اطلاعیهٔ جدید، "
                            f"FS: {counters['fs']}، ماهانه: {counters['ms']}",
                            total_pages, counters["pages"] + page, "")
             # مرز دادههای شناختهشده: فقط اگر این صفحه کاملاً تکراری باشد (هر ۲۵ رکورد known)
@@ -2908,6 +2935,7 @@ def feed_sync(mode="update", optimized=False, catchup=None):
             write_progress("codal_done",
                            f"جبران تمام شد: {nfmt(counters['catchup'])} ردیفِ مشتقِ تازه "
                            f"از {nfmt(counters['catchup_rows'])} گزارشِ معوق", 1, 1, "")
+    return counters
 
 
 def _repair_periods_from_titles(conn):

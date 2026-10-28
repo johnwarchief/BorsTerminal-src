@@ -70,6 +70,12 @@ dev/fts_update_state.json
 # آن را مینویسد تا دفعهٔ بعد همان را اول امتحان کند) — حالتِ دستگاه، نه کد.
 dev/fts_rotate_memo.json
 
+# ---- به‌روزرسانیِ خودکارِ کدال (Phase 2) — مصنوعاتِ زمانِ اجرا ----
+/last_good/
+codal_auto.lock
+codal_auto_status.json
+market.db.staging/
+
 # ---- لاگ و خروجی ابزار ----
 logs/
 *.log
