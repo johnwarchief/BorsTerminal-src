@@ -1,8 +1,8 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { MarketRow } from '@shared/types/market';
 import { useMediaQuery } from '@shared/lib/useMediaQuery';
 import { useWorkspace } from '@shared/workspace/store';
-import { SIDE_WIDTH } from '@shared/workspace/sizes';
+import { SIDE_WIDTH, maxSideWidth } from '@shared/workspace/sizes';
 import { useTileKeyboard } from '@shared/workspace/useTileKeyboard';
 import { WorkspaceShell } from '@shared/workspace/WorkspaceShell';
 import { LayoutResizer } from '@shared/workspace/LayoutResizer';
@@ -51,7 +51,14 @@ export function MarketPage() {
   const rows = useMemo(() => board.data?.data ?? [], [board.data]);
   const [boardDay, setBoardDay] = useState<number | null>(null);
   const [tab, setTab] = useState<Tab>('symbol');
+  const [viewportWidth, setViewportWidth] = useState(() => window.innerWidth);
   const narrow = useMediaQuery('(max-width: 1279px)');
+
+  useEffect(() => {
+    const onResize = () => setViewportWidth(window.innerWidth);
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
 
   useTileKeyboard(layout);
 
@@ -60,6 +67,8 @@ export function MarketPage() {
     return rows.find((row) => identityOf(row) === activeSymbol) ?? null;
   }, [rows, activeSymbol]);
   const boardDate = boardDay ?? board.data?.meta?.d_even ?? null;
+  const sideMax = maxSideWidth(viewportWidth);
+  const sideWidthNow = Math.min(sideWidth, sideMax);
   const settledSymbol = board.data ? activeSymbol : null;
 
   function selectRow(row: MarketRow, day: number | null) {
@@ -68,6 +77,7 @@ export function MarketPage() {
   }
 
   function selectWatchRow(insCode: string) {
+    setBoardDay(null);
     setActiveSymbol(insCode);
   }
 
@@ -177,9 +187,9 @@ export function MarketPage() {
           <>
             <LayoutResizer
               orientation="vertical"
-              value={sideWidth}
+              value={sideWidthNow}
               min={SIDE_WIDTH.min}
-              max={SIDE_WIDTH.max}
+              max={sideMax}
               step={8}
               defaultValue={SIDE_WIDTH.default}
               label="عرض سایدبار نماد"
@@ -189,7 +199,7 @@ export function MarketPage() {
               fromPointer={(rect, x) => x - rect.left}
               onChange={setSideWidth}
             />
-            <div style={{ width: sideWidth }} className="flex min-h-0 flex-none flex-col border-s border-line bg-panel">
+            <div style={{ width: sideWidthNow }} className="flex min-h-0 flex-none flex-col border-s border-line bg-panel">
               <SymbolSidebar
                 row={symbolRow}
                 symbolKey={settledSymbol}

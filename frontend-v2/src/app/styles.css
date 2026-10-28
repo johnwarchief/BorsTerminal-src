@@ -261,6 +261,12 @@ body {
 .tape-btn[aria-pressed='true'] .count {
   color: var(--accent-2);
 }
+.tape-btn[aria-selected='true'] {
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 55%, transparent);
+  background: var(--accent-soft);
+  font-weight: 700;
+}
 .tape-btn.is-all {
   border-color: transparent;
 }
@@ -408,6 +414,101 @@ body {
 }
 .quick-drawer {
   animation: drawer-in 150ms ease;
+}
+
+/* ===== داکِ پایین: ورودِ کوتاهِ هر گروه ===== */
+@keyframes pane-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.pane-in {
+  animation: pane-in 180ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ===== تابلویِ نماد: تعویضِ نماد ===== */
+@keyframes sym-in {
+  from {
+    opacity: 0.35;
+    transform: translateY(3px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.sym-in {
+  animation: sym-in 160ms ease-out;
+}
+
+/* ===== قیمت: تیکِ آخرین معامله ===== */
+@keyframes tick-up {
+  0% {
+    background: var(--up-soft);
+    color: var(--up);
+  }
+  100% {
+    background: transparent;
+  }
+}
+@keyframes tick-down {
+  0% {
+    background: var(--down-soft);
+    color: var(--down);
+  }
+  100% {
+    background: transparent;
+  }
+}
+.tick-flash[data-flash='up'] {
+  animation: tick-up 460ms ease-out;
+}
+.tick-flash[data-flash='down'] {
+  animation: tick-down 460ms ease-out;
+}
+
+/* ===== لبهٔ فلزِ مایع: فقط کنشِ «افزودن به واچ‌لیست» ===== */
+@property --rim-angle {
+  syntax: '<angle>';
+  inherits: false;
+  initial-value: 0deg;
+}
+@keyframes rim-turn {
+  to {
+    --rim-angle: 360deg;
+  }
+}
+.liquid-rim {
+  position: relative;
+  isolation: isolate;
+}
+.liquid-rim::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  padding: 1px;
+  border-radius: inherit;
+  background: conic-gradient(
+    from var(--rim-angle),
+    color-mix(in srgb, var(--accent) 25%, transparent),
+    var(--accent) 12%,
+    var(--line) 30%,
+    color-mix(in srgb, var(--accent-2) 60%, transparent) 44%,
+    var(--line) 60%,
+    var(--accent) 76%,
+    color-mix(in srgb, var(--accent) 25%, transparent) 100%
+  );
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  animation: rim-turn 7s linear infinite;
+  pointer-events: none;
 }
 /* با کشویِ باز، در عرضِ باریک جستجو جای ستون‌ها را نمی‌گیرد (همان قاعدهٔ پروتوتایپ) */
 @media (max-width: 1500px) {

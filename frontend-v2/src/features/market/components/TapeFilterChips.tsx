@@ -1,24 +1,22 @@
 import clsx from 'clsx';
 import type { MarketRow } from '@shared/types/market';
-import {
-  DEFAULT_TAPE_FILTER_CONFIG, tapeFilterState, tapeFilterVerdict,
-} from '../lib/tapeAlgorithms';
+import { DEFAULT_TAPE_FILTER_CONFIG, tapeFilterState } from '../lib/tapeAlgorithms';
 import { TAPES } from '../lib/tapeFilters';
 
 const REASON = {
   pass: 'روشن',
-  fail: 'زیرِ آستانه یا بی‌داده',
+  fail: 'زیرِ آستانه',
   unevaluated: 'داده برای سنجش نیست',
 } as const;
 
 export function TapeFilterChips({ row }: { row: MarketRow | null }) {
   if (!row) return null;
   return (
-    <div data-testid="symbol-tapes" aria-label="فیلترهای تابلوی این نماد"
+    <div data-testid="symbol-tapes" role="group" aria-label="فیلترهای تابلوی این نماد"
       className="flex flex-wrap gap-1 border-t border-line px-2 py-1">
       {TAPES.map((tape) => {
-        const on = tapeFilterVerdict(row, tape.key, DEFAULT_TAPE_FILTER_CONFIG);
-        const state = on ? 'pass' : tapeFilterState(row, tape.key, DEFAULT_TAPE_FILTER_CONFIG);
+        const state = tapeFilterState(row, tape.key, DEFAULT_TAPE_FILTER_CONFIG);
+        const on = state === 'pass';
         return (
           <span
             key={tape.key}

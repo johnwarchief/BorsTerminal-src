@@ -24,12 +24,14 @@
       }
     },
     {
-      "name": "technical and fundamental summaries render with honest fallbacks",
+      "name": "technical block renders the real MA series and the fundamental summary is honest",
       "ok": true,
       "detail": {
-        "tech": 1,
+        "symbolTech": 1,
+        "techUnavailable": 0,
         "techTrend": 1,
-        "fund": "۱ از ۵ محور قبول\n· ۲ بینظر\n· ۲ رد\nضعیف‌ترین: ۲. سودآوری ۳ ساله\nبستنِ کارت‌های بنیادی"
+        "ma20": "MA20\n۷۲۱٬۳۱۵ زیرِ آن ۰٫۷٪",
+        "fund": "۱ از ۵ محور قبول\n· ۲ بی‌نظر\n· ۲ رد\nضعیف‌ترین: ۲. سودآوری ۳ ساله\nبستنِ کارت‌های بنیادی"
       }
     },
     {
@@ -118,6 +120,6 @@
     "C:\\Users\\PCMOD\\Desktop\\BorsTerminal\\_audit\\live-board-v2-20261028\\ws-2560-dossier.png",
     "C:\\Users\\PCMOD\\Desktop\\BorsTerminal\\_audit\\live-board-v2-20261028\\ws-1279-dossier.png"
   ],
-  "started": "2026-10-28T18:01:27.736Z",
-  "finished": "2026-10-28T18:01:52.281Z"
+  "started": "2026-10-28T19:24:50.232Z",
+  "finished": "2026-10-28T19:25:16.435Z"
 }

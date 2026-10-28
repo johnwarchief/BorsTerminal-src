@@ -1,3 +1,4 @@
+import clsx from 'clsx';
 import { normalizeFa } from '@shared/lib/faSearch';
 import { useUserWatchlist, useWatchlistToggle } from '../api/useWatchlist';
 
@@ -7,6 +8,7 @@ export function WatchlistButton({ symbol, name }: { symbol: string; name?: strin
   const norm = normalizeFa(symbol);
   const listed = (query.data?.data ?? []).some((row) => normalizeFa(row.symbol) === norm);
   const unavailable = query.isError;
+  const disabled = query.isPending || toggle.isPending || unavailable;
   const label = unavailable ? 'واچ‌لیست در دسترس نیست' : listed ? 'حذف از واچ‌لیست' : 'افزودن به واچ‌لیست';
 
   return (
@@ -14,9 +16,12 @@ export function WatchlistButton({ symbol, name }: { symbol: string; name?: strin
       <button
         type="button"
         data-testid="watchlist-toggle"
-        disabled={query.isPending || toggle.isPending || unavailable}
+        disabled={disabled}
         onClick={() => toggle.mutate({ symbol, name, remove: listed })}
-        className="h-7 w-full rounded-[var(--radius-sm)] border border-line bg-panel-2 t-10 font-bold text-text-2 hover:border-accent/60 hover:text-text disabled:cursor-not-allowed disabled:opacity-50"
+        className={clsx(
+          'h-7 w-full rounded-[var(--radius-sm)] border border-line bg-panel-2 t-10 font-bold text-text-2 hover:border-accent/60 hover:text-text disabled:cursor-not-allowed disabled:opacity-50',
+          !disabled && !listed && 'liquid-rim',
+        )}
       >
         {toggle.isPending ? 'در حال ثبت…' : label}
       </button>

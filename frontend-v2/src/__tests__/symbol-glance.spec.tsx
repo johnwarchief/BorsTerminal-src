@@ -1,5 +1,5 @@
-import { cleanup, render, screen } from '@testing-library/react';
-import { afterEach, describe, expect, it } from 'vitest';
+import { act, cleanup, render, screen } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { MarketRow } from '@shared/types/market';
 import { SymbolGlance } from '@app/shell/SymbolGlance';
 
@@ -43,5 +43,28 @@ describe('SymbolGlance', () => {
     expect(screen.getByTestId('symbol-stat-trades').textContent).toContain('۱۰۰');
     expect(screen.getByTestId('symbol-stat-pe').textContent).toContain('۷٫۴');
     expect(screen.getByTestId('symbol-stat-range').textContent).toContain('۹۹۰');
+  });
+
+  it('flashes the price in the tick direction and clears it', () => {
+    vi.useFakeTimers();
+    try {
+      const base = { symbol: 'الف', ins_code: '10', p_last: 100 } as MarketRow;
+      const { rerender } = render(<SymbolGlance row={base} />);
+      expect(screen.getByTestId('symbol-price').getAttribute('data-flash')).toBeNull();
+      rerender(<SymbolGlance row={{ ...base, p_last: 103 } as MarketRow} />);
+      expect(screen.getByTestId('symbol-price').getAttribute('data-flash')).toBe('up');
+      act(() => { vi.advanceTimersByTime(600); });
+      expect(screen.getByTestId('symbol-price').getAttribute('data-flash')).toBeNull();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('does not flash when the panel switches to another symbol', () => {
+    const first = { symbol: 'الف', ins_code: '10', p_last: 100 } as MarketRow;
+    const second = { symbol: 'ب', ins_code: '20', p_last: 900 } as MarketRow;
+    const { rerender } = render(<SymbolGlance row={first} />);
+    rerender(<SymbolGlance row={second} />);
+    expect(screen.getByTestId('symbol-price').getAttribute('data-flash')).toBeNull();
   });
 });

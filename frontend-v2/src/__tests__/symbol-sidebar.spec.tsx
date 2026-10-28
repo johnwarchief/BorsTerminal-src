@@ -109,6 +109,14 @@ describe('SymbolSidebar', () => {
     expect(screen.getAllByTestId(/^symbol-tape-/)).toHaveLength(7);
   });
 
+  it('shows the trade-status chip only when the row carries one', () => {
+    mount();
+    expect(screen.queryByTestId('symbol-status')).toBeNull();
+    cleanup();
+    mount({ row: { ...row, stop_state: 'متوقف' } as MarketRow });
+    expect(screen.getByTestId('symbol-status').textContent).toBe('متوقف');
+  });
+
   it('switches between the depth and history tabs', () => {
     mount();
     fireEvent.click(screen.getByTestId('symbol-tab-history'));

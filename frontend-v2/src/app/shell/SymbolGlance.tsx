@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react';
 import clsx from 'clsx';
 import {
   changePct, faNum, fmtInt, fmtMcap, fmtPe, fmtShare, fmtValue, fmtVolume, tone,
@@ -5,6 +6,26 @@ import {
 import type { MarketRow } from '@shared/types/market';
 
 const TONE = { up: 'text-up', down: 'text-down', flat: 'text-flat' } as const;
+
+function useTickFlash(key: string, value: number | null): 'up' | 'down' | null {
+  const previous = useRef<{ key: string; value: number | null }>({ key, value: null });
+  const [flash, setFlash] = useState<'up' | 'down' | null>(null);
+
+  useEffect(() => {
+    const before = previous.current;
+    previous.current = { key, value };
+    if (before.key !== key) {
+      setFlash(null);
+      return;
+    }
+    if (before.value == null || value == null || before.value === value) return;
+    setFlash(value > before.value ? 'up' : 'down');
+    const timer = window.setTimeout(() => setFlash(null), 460);
+    return () => window.clearTimeout(timer);
+  }, [key, value]);
+
+  return flash;
+}
 
 function value(input: number | null | undefined, format: (n: number) => string): string {
   return input == null || !Number.isFinite(input) ? '—' : format(input);
@@ -63,6 +84,17 @@ function pressureOf(row: MarketRow): Pressure[] {
   return out;
 }
 
+function PriceTick({ symbolKey, price }: { symbolKey: string; price: number | null }) {
+  const flash = useTickFlash(symbolKey, price);
+  return (
+    <b data-testid="symbol-price" data-flash={flash ?? undefined}
+      className="tick-flash -mx-0.5 rounded-[var(--radius-xs)] px-0.5 num t-125 font-extrabold text-text"
+      title="آخرین قیمتِ معامله؛ در نبودِ آن قیمتِ پایانی؛ «—» یعنی هیچ‌کدام در ردیف نیست">
+      {value(price, fmtInt)}
+    </b>
+  );
+}
+
 export function SymbolGlance({ row }: { row: MarketRow | null }) {
   if (!row) return null;
   const price = row.p_last ?? row.p_closing ?? null;
@@ -70,12 +102,9 @@ export function SymbolGlance({ row }: { row: MarketRow | null }) {
   const pressure = pressureOf(row);
 
   return (
-    <div data-testid="symbol-glance" className="flex flex-col gap-1">
+    <div data-testid="symbol-glance" className="sym-in flex flex-col gap-1">
       <div className="flex items-baseline gap-2 px-2 pt-1">
-        <b data-testid="symbol-price" className="num t-125 font-extrabold text-text"
-          title="آخرین قیمتِ معامله؛ در نبودِ آن قیمتِ پایانی؛ «—» یعنی هیچ‌کدام در ردیف نیست">
-          {value(price, fmtInt)}
-        </b>
+        <PriceTick symbolKey={row.ins_code?.trim() || row.symbol} price={price} />
         <span data-testid="symbol-pct"
           title="درصدِ تغییرِ قیمت؛ در نبودِ آن از تغییر ÷ قیمتِ دیروز، وگرنه «—»"
           className={clsx('num t-95', pct == null ? 'text-text-3' : TONE[tone(pct)])}>

@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { DEFAULT_LAYOUT, findTile } from '@shared/workspace/layout';
-import { SIDE_WIDTH } from '@shared/workspace/sizes';
+import { SIDE_WIDTH, maxSideWidth } from '@shared/workspace/sizes';
 import { DEFAULT_SLOTS, sanitizeWorkspace, useWorkspace } from '@shared/workspace/store';
 
 beforeEach(() => {
@@ -36,9 +36,22 @@ describe('workspace store', () => {
     expect(new Set(useWorkspace.getState().workspaces[0].slots).size).toBe(5);
   });
 
-  it('rejects an invalid persisted layout', () => {
-    expect(sanitizeWorkspace({ version: 1, workspaces: [{ layout: { kind: 'tile' } }] })).toBeNull();
+  it('converts an invalid persisted layout to the default and keeps the other fields', () => {
+    const ws = sanitizeWorkspace({
+      version: 1,
+      workspaces: [{
+        layout: { kind: 'tile' },
+        slots: ['tedpix', 'boardVolume', 'marketTrades'],
+        chartOpen: false,
+        sideWidth: 300,
+      }],
+    });
+    expect(ws?.layout).toEqual(DEFAULT_LAYOUT);
+    expect(ws?.slots).toEqual(['tedpix', 'boardVolume', 'marketTrades']);
+    expect(ws?.chartOpen).toBe(false);
+    expect(ws?.sideWidth).toBe(300);
     expect(sanitizeWorkspace(null)).toBeNull();
+    expect(sanitizeWorkspace({ version: 1, workspaces: [] })).toBeNull();
   });
 
   it('resets to the default layout', () => {
@@ -69,11 +82,19 @@ describe('workspace store', () => {
     expect(useWorkspace.getState().workspaces[0].layout).toEqual(DEFAULT_LAYOUT);
     expect(useWorkspace.getState().activeSymbol).toBe('10');
     expect(useWorkspace.getState().workspaces[0].sideWidth).toBe(320);
+    expect(useWorkspace.getState().workspaces[0].chartShare).toBe(0.6);
+  });
+
+  it('caps the sidebar so both panes keep their minimum width', () => {
+    expect(maxSideWidth(1280)).toBe(331);
+    expect(maxSideWidth(1366)).toBe(417);
+    expect(maxSideWidth(1920)).toBe(SIDE_WIDTH.max);
+    expect(maxSideWidth(900)).toBe(SIDE_WIDTH.min);
   });
 
   it('starts with the default sizes and open groups', () => {
     const ws = useWorkspace.getState().workspaces[0];
-    expect([ws.sideWidth, ws.dockHeight, ws.chartShare]).toEqual([320, 200, 0.45]);
+    expect([ws.sideWidth, ws.dockHeight, ws.chartShare]).toEqual([320, 200, 0.6]);
     expect(ws.fundamentalsOpen).toBe(true);
     expect(ws.sideCollapsed).toBe(false);
   });
@@ -86,11 +107,22 @@ describe('workspace store', () => {
     useWorkspace.getState().setDockHeight(10);
     expect(useWorkspace.getState().workspaces[0].dockHeight).toBe(160);
     useWorkspace.getState().setChartShare(0.9);
-    expect(useWorkspace.getState().workspaces[0].chartShare).toBe(0.6);
+    expect(useWorkspace.getState().workspaces[0].chartShare).toBe(0.75);
     useWorkspace.getState().setFundamentalsOpen(false);
     useWorkspace.getState().setSideCollapsed(true);
     expect(useWorkspace.getState().workspaces[0].fundamentalsOpen).toBe(false);
     expect(useWorkspace.getState().workspaces[0].sideCollapsed).toBe(true);
+  });
+
+  it('moves a stored version-2 chart share to the wider default once, and respects a version-3 choice', () => {
+    expect(sanitizeWorkspace({
+      version: 2,
+      workspaces: [{ layout: DEFAULT_LAYOUT, slots: DEFAULT_SLOTS, chartShare: 0.45 }],
+    })?.chartShare).toBe(0.6);
+    expect(sanitizeWorkspace({
+      version: 3,
+      workspaces: [{ layout: DEFAULT_LAYOUT, slots: DEFAULT_SLOTS, chartShare: 0.55 }],
+    })?.chartShare).toBe(0.55);
   });
 
   it('fills the new keys for a version-1 payload and rejects an unknown version', () => {
@@ -100,9 +132,9 @@ describe('workspace store', () => {
     });
     expect(ws?.sideWidth).toBe(320);
     expect(ws?.dockHeight).toBe(200);
-    expect(ws?.chartShare).toBe(0.45);
+    expect(ws?.chartShare).toBe(0.6);
     expect(ws?.fundamentalsOpen).toBe(true);
     expect(ws?.sideCollapsed).toBe(false);
-    expect(sanitizeWorkspace({ version: 3, workspaces: [{ layout: DEFAULT_LAYOUT }] })).toBeNull();
+    expect(sanitizeWorkspace({ version: 4, workspaces: [{ layout: DEFAULT_LAYOUT }] })).toBeNull();
   });
 });

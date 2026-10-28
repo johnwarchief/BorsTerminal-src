@@ -27,7 +27,7 @@ export interface Workspace {
 }
 
 interface WorkspaceStore {
-  version: 2;
+  version: 3;
   activeWorkspaceId: string;
   activeSymbol: string | null;
   pinned: Record<string, string | null>;
@@ -51,6 +51,7 @@ interface WorkspaceStore {
 }
 
 function clampNumber(value: unknown, min: number, max: number, fallback: number): number {
+  if (value == null || value === '') return fallback;
   const parsed = Number(value);
   if (!Number.isFinite(parsed)) return fallback;
   return Math.min(max, Math.max(min, parsed));
@@ -90,24 +91,27 @@ function readPinned(value: unknown): Record<string, string | null> {
 export function sanitizeWorkspace(persisted: unknown): Workspace | null {
   if (!persisted || typeof persisted !== 'object') return null;
   const persistedVersion = Number((persisted as { version?: unknown }).version ?? 1);
-  if (persistedVersion !== 1 && persistedVersion !== 2) return null;
+  if (persistedVersion !== 1 && persistedVersion !== 2 && persistedVersion !== 3) return null;
   const raw = persisted as { workspaces?: unknown };
   const list = Array.isArray(raw.workspaces) ? raw.workspaces : [];
   const first = list[0] as Partial<Workspace> | undefined;
-  if (!first || !isValidLayout(first.layout)) return null;
+  if (!first) return null;
+  const layout = isValidLayout(first.layout) ? first.layout : DEFAULT_LAYOUT;
   const slots = cleanSlots(first.slots);
   return {
     id: typeof first.id === 'string' ? first.id : 'ws-tablo',
     name: typeof first.name === 'string' ? first.name : 'تابلوخوانی',
-    layout: first.layout,
+    layout,
     slots: slots.length >= 3 ? slots : DEFAULT_SLOTS,
     chartOpen: first.chartOpen !== false,
     fundamentalsOpen: first.fundamentalsOpen !== false,
     sideCollapsed: first.sideCollapsed === true,
     sideWidth: clampNumber(first.sideWidth, SIDE_WIDTH.min, SIDE_WIDTH.max, SIDE_WIDTH.default),
     dockHeight: clampNumber(first.dockHeight, DOCK_HEIGHT.min, DOCK_HEIGHT.max, DOCK_HEIGHT.default),
-    chartShare: clampNumber(first.chartShare, CHART_SHARE.min, CHART_SHARE.max, CHART_SHARE.default),
-    updatedAt: Number(first.updatedAt ?? 0),
+    chartShare: persistedVersion < 3
+      ? CHART_SHARE.default
+      : clampNumber(first.chartShare, CHART_SHARE.min, CHART_SHARE.max, CHART_SHARE.default),
+    updatedAt: Number.isFinite(Number(first.updatedAt)) ? Number(first.updatedAt) : 0,
   };
 }
 
@@ -128,7 +132,7 @@ export const useWorkspace = create<WorkspaceStore>()(
       };
 
       return {
-        version: 2,
+        version: 3,
         activeWorkspaceId: DEFAULT_WORKSPACE.id,
         activeSymbol: null,
         pinned: {},
@@ -209,7 +213,7 @@ export const useWorkspace = create<WorkspaceStore>()(
     },
     {
       name: 'bors-workspace-v1',
-      version: 2,
+      version: 3,
       // تنها نرمال‌ساز merge() است؛ این فقط پیامِ ناسازگاریِ نسخه را خاموش می‌کند.
       migrate: (persisted) => persisted as never,
       partialize: (state) => ({

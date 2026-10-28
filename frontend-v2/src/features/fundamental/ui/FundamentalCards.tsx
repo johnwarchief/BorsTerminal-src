@@ -8,7 +8,7 @@ export const QUALITY_WORD: Record<Quality, string> = {
   ideal: 'ایده‌آل',
   ok: 'قبول',
   below: 'رد',
-  na: 'بینظر',
+  na: 'بی‌نظر',
 };
 
 const CHIP: Record<Quality, { word: string; tone: string }> = {
@@ -138,7 +138,7 @@ export function FundamentalCards({ symbol }: { symbol: string }) {
   }
 
   return (
-    <div data-testid="fundamental-cards" className="flex min-h-0 gap-1 overflow-x-auto p-1">
+    <div data-testid="fundamental-cards" className="flex min-h-0 flex-wrap content-start gap-1 overflow-y-auto p-1">
       {fundamentalFacts(query.data).map((fact) => {
         const chip = CHIP[fact.quality];
         return (
@@ -147,7 +147,7 @@ export function FundamentalCards({ symbol }: { symbol: string }) {
             data-testid={`fundamental-card-${fact.key}`}
             role="group"
             aria-label={`${fact.label} — ${chip.word}`}
-            title={`${fact.label} — ${fact.note}`}
+            title={`${fact.label} — ${fact.value} — ${fact.note}`}
             className="flex min-h-0 min-w-[84px] flex-1 flex-col justify-between gap-0.5 rounded-[var(--radius-sm)] border border-line bg-panel-2 px-1.5 py-1"
           >
             <div className="flex items-center justify-between gap-1">

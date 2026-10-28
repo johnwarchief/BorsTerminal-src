@@ -38,7 +38,7 @@ export function FundamentalSummary({ symbol, expanded, onToggle }: Props) {
         </span>
         <span data-testid="fund-summary-weakest" className="t-9 text-text-3">
           {weakest
-            ? `${weakest.quality === 'below' ? 'ضعیف‌ترین' : 'بیداده'}: ${weakest.label}`
+            ? `${weakest.quality === 'below' ? 'ضعیف‌ترین' : 'بی‌داده'}: ${weakest.label}`
             : 'هر پنج محور قبول‌اند.'}
         </span>
       </>

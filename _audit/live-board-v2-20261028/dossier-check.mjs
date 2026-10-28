@@ -63,12 +63,15 @@ try {
     const node = document.querySelector('[data-testid="symbol-fund-summary"]');
     return node && (node.textContent.includes('محور قبول') || node.textContent.includes('در دسترس نیست'));
   }, null, { timeout: 25_000 }).catch(() => null);
-  const tech = await page.locator('[data-testid="symbol-tech"], [data-testid="tech-unavailable"]').count();
+  const symbolTech = await page.locator('[data-testid="symbol-tech"]').count();
+  const techUnavailable = await page.locator('[data-testid="tech-unavailable"]').count();
   const techTrend = await page.locator('[data-testid="tech-trend"], [data-testid="tech-trend-unknown"]').count();
+  const ma20 = await page.locator('[data-testid="tech-ma20"]').innerText().catch(() => '');
   const fund = await page.locator('[data-testid="symbol-fund-summary"]').innerText();
-  record('technical and fundamental summaries render with honest fallbacks',
-    tech === 1 && techTrend === 1 && (fund.includes('محور قبول') || fund.includes('در دسترس نیست')),
-    { tech, techTrend, fund: fund.slice(0, 160) });
+  record('technical block renders the real MA series and the fundamental summary is honest',
+    symbolTech === 1 && techUnavailable === 0 && techTrend === 1 && ma20.length > 0
+      && (fund.includes('محور قبول') || fund.includes('در دسترس نیست')),
+    { symbolTech, techUnavailable, techTrend, ma20: ma20.slice(0, 80), fund: fund.slice(0, 160) });
 
   await page.waitForSelector('[data-testid="chart-panel"]', { timeout: 20_000 }).catch(() => null);
   await page.waitForSelector('[data-testid="fundamental-card-1_growth"], [data-testid="fundamental-error"]', { timeout: 25_000 }).catch(() => null);

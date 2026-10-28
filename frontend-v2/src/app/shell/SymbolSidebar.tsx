@@ -9,7 +9,10 @@ import { useMa, technicalSummary, TREND_LABEL } from '@features/market/api/useMa
 import { OrderBookFive } from '@features/market/components/OrderBookFive';
 import { TapeFilterChips } from '@features/market/components/TapeFilterChips';
 import { TapeHistoryPanel } from '@features/market/components/TapeHistoryPanel';
+import { DEFAULT_TAPE_FILTER_CONFIG } from '@features/market/lib/tapeAlgorithms';
+import { patternBadges } from '@features/market/lib/tapeBadges';
 import { WatchlistButton } from '@features/market/components/WatchlistButton';
+import { IsometricMark } from './IsometricMark';
 import { SymbolGlance } from './SymbolGlance';
 
 type SideTab = 'book' | 'history';
@@ -142,6 +145,7 @@ export function SymbolSidebar(props: SymbolSidebarProps) {
     return (
       <div data-testid="symbol-sidebar" data-variant={variant}
         className="flex h-full min-h-0 flex-col items-center justify-center gap-1 px-2 text-text-3">
+        <IsometricMark />
         <b className="t-105 text-text-2">نمادی انتخاب نشده</b>
         <span className="t-9">روی ردیفِ تابلو کلیک کن.</span>
       </div>
@@ -158,11 +162,22 @@ export function SymbolSidebar(props: SymbolSidebarProps) {
     );
   }
 
+  const status = patternBadges(row, DEFAULT_TAPE_FILTER_CONFIG).find(
+    (badge) => badge.pattern === 'stopped' || badge.pattern === 'supervised',
+  );
+
   return (
     <div data-testid="symbol-sidebar" data-variant={variant} className="flex h-full min-h-0 flex-col">
       <div className="flex flex-none items-center gap-1.5 border-b border-line px-2 py-1">
         <b data-testid="symbol-title" className="t-115 font-extrabold text-text">{row.symbol}</b>
         <span className="min-w-0 truncate t-9 text-text-3">{row.name ?? ''}</span>
+        {status ? (
+          <span data-testid="symbol-status" title={status.title}
+            className={clsx('flex-none rounded-[var(--radius-xs)] border px-1 t-85 font-bold',
+              status.tone === 'red' ? 'border-down/50 text-down' : 'border-warn/50 text-warn')}>
+            {status.label}
+          </span>
+        ) : null}
         {variant === 'wide' && onToggleCollapsed ? (
           <button type="button" data-testid="symbol-collapse" aria-label="جمع کردنِ سایدبارِ نماد"
             onClick={onToggleCollapsed}
@@ -192,7 +207,7 @@ export function SymbolSidebar(props: SymbolSidebarProps) {
       ) : null}
 
       <div className="min-h-0 flex-1 overflow-y-auto">
-        <SymbolGlance row={row} />
+        <SymbolGlance key={row.ins_code?.trim() || row.symbol} row={row} />
         <TapeFilterChips row={row} />
         <TechnicalBlock row={row} />
         <FundamentalSummary
@@ -216,7 +231,7 @@ export function SymbolSidebar(props: SymbolSidebarProps) {
           {(['book', 'history'] as const).map((id) => (
             <button key={id} type="button" role="tab" aria-selected={tab === id}
               data-testid={`symbol-tab-${id}`} onClick={() => setTab(id)}
-              className={clsx('tape-btn', tab === id && 'is-on')}>
+              className="tape-btn">
               {id === 'book' ? 'عمق' : 'تاریخچه تابلو'}
             </button>
           ))}

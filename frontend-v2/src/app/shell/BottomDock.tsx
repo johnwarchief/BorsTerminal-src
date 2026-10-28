@@ -3,6 +3,7 @@ import { ChartPanel } from '@features/chart/ui/ChartPanel';
 import { FundamentalCards } from '@features/fundamental/ui/FundamentalCards';
 import { LayoutResizer } from '@shared/workspace/LayoutResizer';
 import { CHART_SHARE, DOCK_HEIGHT } from '@shared/workspace/sizes';
+import { IsometricMark } from './IsometricMark';
 
 export interface BottomDockProps {
   symbol: string | null;
@@ -58,12 +59,13 @@ export function BottomDock(props: BottomDockProps) {
           <div
             data-testid="dock-chart"
             style={fundamentalsOpen ? { width: `${Number((chartShare * 100).toFixed(2))}%` } : undefined}
-            className={fundamentalsOpen ? 'min-h-0 min-w-0 flex-none' : 'min-h-0 min-w-0 flex-1'}
+            className={fundamentalsOpen ? 'pane-in min-h-0 min-w-0 flex-none overflow-hidden' : 'pane-in min-h-0 min-w-0 flex-1 overflow-hidden'}
           >
             {symbol ? <ChartPanel symbol={symbol} /> : (
-              <p data-testid="dock-chart-empty" className="grid h-full place-items-center px-2 t-95 text-text-3">
-                برای چارت، نمادی را از تابلو انتخاب کن.
-              </p>
+              <div data-testid="dock-chart-empty" className="flex h-full flex-col items-center justify-center gap-1 px-2 text-text-3">
+                <IsometricMark size={44} />
+                <span className="t-95">برای چارت، نمادی را از تابلو انتخاب کن.</span>
+              </div>
             )}
           </div>
         ) : null}
@@ -87,7 +89,7 @@ export function BottomDock(props: BottomDockProps) {
         ) : null}
 
         {fundamentalsOpen ? (
-          <div data-testid="dock-fundamentals" className="min-h-0 min-w-0 flex-1 overflow-x-auto">
+          <div data-testid="dock-fundamentals" className="pane-in min-h-0 min-w-0 flex-1 overflow-x-auto">
             {symbol ? <FundamentalCards symbol={symbol} /> : (
               <p data-testid="dock-fundamentals-empty" className="grid h-full place-items-center px-2 t-95 text-text-3">
                 برای کارت‌های بنیادی، نمادی را از تابلو انتخاب کن.

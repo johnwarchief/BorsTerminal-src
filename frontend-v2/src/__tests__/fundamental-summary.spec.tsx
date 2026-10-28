@@ -46,7 +46,7 @@ describe('FundamentalSummary', () => {
     render(<FundamentalSummary symbol="فولاد" expanded onToggle={() => undefined} />);
     const summary = screen.getByTestId('symbol-fund-summary');
     expect(screen.getByTestId('fund-summary-count').textContent).toContain('۳ از ۵');
-    expect(summary.textContent).toContain('۱ بینظر');
+    expect(summary.textContent).toContain('۱ بی‌نظر');
     expect(summary.textContent).toContain('۱ رد');
     expect(screen.getByTestId('fund-summary-weakest').textContent).toContain('۴. پتانسیل سود');
     expect(summary.getAttribute('aria-expanded')).toBe('true');
@@ -71,10 +71,10 @@ describe('FundamentalSummary', () => {
     render(<FundamentalSummary symbol="فولاد" />);
     const summary = screen.getByTestId('symbol-fund-summary');
     expect(screen.getByTestId('fund-summary-count').textContent).toContain('۰ از ۵');
-    expect(summary.textContent).toContain('۵ بینظر');
+    expect(summary.textContent).toContain('۵ بی‌نظر');
     expect(summary.textContent).not.toContain('رد');
     const weakest = screen.getByTestId('fund-summary-weakest').textContent ?? '';
-    expect(weakest.startsWith('بیداده:')).toBe(true);
+    expect(weakest.startsWith('بی‌داده:')).toBe(true);
   });
 
   it('keeps the all-pass branch positive without inventing a weakness', () => {
@@ -91,7 +91,7 @@ describe('FundamentalSummary', () => {
     render(<FundamentalSummary symbol="فولاد" />);
     const summary = screen.getByTestId('symbol-fund-summary');
     expect(screen.getByTestId('fund-summary-count').textContent).toContain('۵ از ۵');
-    expect(summary.textContent).not.toContain('بینظر');
+    expect(summary.textContent).not.toContain('بی‌نظر');
     expect(summary.textContent).not.toContain('رد');
     const weakest = screen.getByTestId('fund-summary-weakest').textContent ?? '';
     expect(weakest).toContain('هر پنج محور قبول');
@@ -100,11 +100,11 @@ describe('FundamentalSummary', () => {
 });
 
 describe('FundamentalCards', () => {
-  it('shows five compact cards and keeps a null verdict as بینظر', () => {
+  it('shows five compact cards and keeps a null verdict as بی‌نظر', () => {
     render(<FundamentalCards symbol="فولاد" />);
     expect(screen.getAllByTestId(/^fundamental-card-/)).toHaveLength(5);
     const axis3 = screen.getByTestId('fundamental-card-3_gross_margin');
-    expect(axis3.textContent).toContain('بینظر');
+    expect(axis3.textContent).toContain('بی‌نظر');
     expect(axis3.textContent).not.toContain('رد');
     expect(axis3.getAttribute('title')).toContain('۳. حاشیه سود ناخالص');
   });
@@ -117,14 +117,14 @@ describe('FundamentalCards', () => {
     expect(screen.getByTestId('fundamental-error').textContent).toContain('چارت و تابلو');
   });
 
-  it('renders every missing axis as — and بینظر', () => {
+  it('renders every missing axis as — and بی‌نظر', () => {
     serve(bare);
     render(<FundamentalCards symbol="فولاد" />);
     const cards = screen.getAllByTestId(/^fundamental-card-/);
     expect(cards).toHaveLength(5);
     for (const axis of cards) {
       expect(axis.textContent).toContain('—');
-      expect(axis.textContent).toContain('بینظر');
+      expect(axis.textContent).toContain('بی‌نظر');
       expect(axis.textContent).not.toContain('رد');
     }
   });
@@ -140,7 +140,7 @@ describe('FundamentalCards', () => {
     } as unknown as FtsCard);
     render(<FundamentalCards symbol="فولاد" />);
     const axis4 = screen.getByTestId('fundamental-card-4_sales_to_mcap');
-    expect(axis4.textContent).toContain('بینظر');
+    expect(axis4.textContent).toContain('بی‌نظر');
     expect(axis4.textContent).not.toContain('رد');
   });
 
@@ -155,7 +155,7 @@ describe('FundamentalCards', () => {
     } as unknown as FtsCard);
     render(<FundamentalCards symbol="فولاد" />);
     const axis1 = screen.getByTestId('fundamental-card-1_growth');
-    expect(axis1.textContent).toContain('بینظر');
+    expect(axis1.textContent).toContain('بی‌نظر');
     expect(axis1.textContent).not.toContain('قبول');
   });
 

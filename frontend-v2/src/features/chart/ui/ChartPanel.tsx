@@ -15,6 +15,7 @@ export function ChartPanel({ symbol }: { symbol: string }) {
   const query = useChart(symbol);
   const host = useRef<HTMLDivElement>(null);
   const chart = useRef<ChartHandle | null>(null);
+  const lib = useRef<((container: HTMLElement) => void) | null>(null);
   const bars = useRef<ReturnType<typeof toKlineBars>>([]);
 
   bars.current = query.data?.candles?.length ? toKlineBars(query.data.candles) : [];
@@ -23,10 +24,13 @@ export function ChartPanel({ symbol }: { symbol: string }) {
     const hostEl = host.current;
     if (!hostEl) return;
     let alive = true;
-    void import('klinecharts').then(({ init }) => {
+    let created = false;
+    void import('klinecharts').then(({ init, dispose }) => {
       if (!alive) return;
       const instance = init(hostEl) as unknown as ChartHandle | null;
       if (!instance) return;
+      created = true;
+      lib.current = dispose;
       chart.current = instance;
       instance.setStyles({
         grid: { horizontal: { color: 'rgba(255,255,255,0.05)' }, vertical: { color: 'rgba(255,255,255,0.05)' } },
@@ -48,7 +52,9 @@ export function ChartPanel({ symbol }: { symbol: string }) {
       alive = false;
       observer?.disconnect();
       chart.current = null;
-      void import('klinecharts').then(({ dispose }) => dispose(hostEl));
+      // همگام و فقط اگر همین افکت چارت را ساخته باشد؛ وگرنه پاک‌سازیِ دیرهنگامِ
+      // mountِ قبلی (StrictMode) چارتِ تازهٔ mountِ دوم را نابود می‌کرد.
+      if (created) lib.current?.(hostEl);
     };
   }, [symbol]);
 
