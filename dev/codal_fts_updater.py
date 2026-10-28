@@ -654,15 +654,38 @@ def save_monthly(conn, L, vals, period_end):
     return year, month
 
 
+# صریح در نام ستون — همان درسِ FS_UPSERT در codal_fetcher: INSERT موقعیتی
+# روی جدولی که ALTER TABLE ستونِ مشتق/تازه دیده («has 26 columns but 21
+# values were supplied») می‌شکند و ترتیبِ ستون‌ها را هم قربانی می‌کند.
+# ۲۱ مقدارِ موجود به همان ترتیبِ قبلی می‌مانند؛ ۵ ستونِ مشتق در همین درج
+# پر می‌شوند تا ردیفِ تازهٔ آپدیتر با unit_norm=NULL و is_consolidated=0
+# ننشیند (همان قراردادِ fs_derived در مسیرِ FS_UPSERT).
+_FS_INSERT_COLS = ("tracing_no, symbol, company_name, title, report_kind, "
+                   "period_months, period_end, publish_date, revenue, "
+                   "gross_profit, operating_profit, net_profit, total_assets, "
+                   "total_liabilities, total_equity, capital, retained_earnings, "
+                   "basic_eps, unit, url, fetched_at, is_audited, "
+                   "is_consolidated, fiscal_year, unit_norm, has_operating_sales")
+_FS_INSERT = ("INSERT OR REPLACE INTO financial_statements (%s) VALUES (%s)"
+              % (_FS_INSERT_COLS, ",".join("?" * 26)))
+
+
 def save_annual(conn, L, vals, meta, unit):
-    conn.execute("INSERT OR REPLACE INTO financial_statements VALUES ("
-                 + ",".join("?" * (8 + len(cf.FS_KEYS) + 3)) + ")",
-                 (int(L["TracingNo"]), (L.get("Symbol") or "").strip(),
-                  (L.get("CompanyName") or "").strip(), (L.get("Title") or "").strip(),
-                  "Financial Statements", meta.get("period"), meta.get("end"),
-                  (L.get("PublishDateTime") or "").strip())
-                 + tuple(vals.get(k) for k in cf.FS_KEYS)
-                 + (unit, letter_url(L.get("Url")), now_str()))
+    title = (L.get("Title") or "").strip()
+    pe = meta.get("end")
+    row_values = ((int(L["TracingNo"]), (L.get("Symbol") or "").strip(),
+                   (L.get("CompanyName") or "").strip(), title,
+                   "Financial Statements", meta.get("period"), pe,
+                   (L.get("PublishDateTime") or "").strip())
+                  + tuple(vals.get(k) for k in cf.FS_KEYS)
+                  + (unit, letter_url(L.get("Url")), now_str()))
+    # ۴ ستون از همان تابعِ یگانهٔ مسیرِ FS_UPSERT (fts_engine._is_audited/
+    # _is_consolidated + _classify_unit + fiscal_year) تا دو مسیرِ درج هرگز
+    # از هم جدا نشوند. has_operating_sales در امضایِ save_annual شاهدِ
+    # سه‌مقداریِ (۱/۰/NULL) مسیرِ scrape_report را ندارد، پس «نامعلوم»
+    # (NULL) می‌ماند — حدس نمی‌زنیم.
+    derived = cf.fs_derived(title, pe, unit, meta.get("is_consolidated")) + (None,)
+    conn.execute(_FS_INSERT, row_values + derived)
 
 
 # ─────────────────────── واکشی یک نماد ─────────────────────── #
