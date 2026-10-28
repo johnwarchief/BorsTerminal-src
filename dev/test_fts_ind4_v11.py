@@ -319,6 +319,8 @@ def _temp_db_case():
                 continue
             chk("i4_acceptance_path" in b,
                 "ردیفِ bulk کلیدِ i4_acceptance_path دارد", sorted(b))
+            chk("i4_reason" in b,
+                "ردیفِ bulk کلیدِ i4_reason دارد", sorted(b))
             chk("annualize_label" in b,
                 "ردیفِ bulk کلیدِ annualize_label دارد", sorted(b))
             chk(b.get("i4_acceptance_path") == want,
@@ -334,6 +336,13 @@ def _temp_db_case():
             chk(c4.get("acceptance_path") == want,
                 "card %s ⇒ مسیر %r" % (sym, want),
                 c4.get("acceptance_path"))
+            # دلیلِ ۴ در ردیفِ bulk و کارت یکی است (Task 10B2a1): معاف /
+            # دادهٔ ناکافی / نبودِ حاشیه / مسیرِ پذیرش / بی‌مسیر.
+            chk(bool(b.get("i4_reason")),
+                "bulk %s: i4_reason خالی نیست" % sym, b.get("i4_reason"))
+            chk((b.get("i4_reason") or "") == (c4.get("reason") or ""),
+                "bulk/card %s: یک i4_reason" % sym,
+                (b.get("i4_reason"), c4.get("reason")))
             s = scan(sym, sec, mcap)
             chk(s.get("i4_acceptance_path") == want,
                 "scan_symbol %s ⇒ مسیر %r" % (sym, want),

@@ -171,6 +171,34 @@ rz = ind3_gross_margin(c, "بی‌درآمد", ref=ref(100, rev=0))
 chk(rz.get("na") is True and rz.get("margin_tier") is None,
     "درآمدِ صفر ⇒ N/A و بی‌برچسب", (rz.get("na"), rz.get("margin_tier")))
 
+# ── دلیلِ N/A باید کلاس را دقیق بگوید (Task 10B2a1) ───────────────────────
+# بانک در `kind` زیرِ «holding» می‌افتد؛ دلیلش نباید «سرمایه‌گذاری/هلدینگ»
+# باشد. N/A/امتیاز دست‌نخورده است — فقط متنِ دلیل.
+BANK_SECTOR = "بانكها و موسسات اعتباري"
+p_bank = fts_engine.company_profile(BANK_SECTOR, "بانک ملت")
+chk(p_bank.get("margin_class") == "bank",
+    "بانک: margin_class=bank (kind همان holding)", p_bank.get("margin_class"))
+r_bank = ind3_gross_margin(c, "بانک", ref=ref(580), profile=p_bank)
+chk(r_bank.get("na") is True and r_bank.get("margin_tier") is None,
+    "بانک ⇒ N/A و بی‌برچسب", (r_bank.get("na"), r_bank.get("margin_tier")))
+chk("بانک" in (r_bank.get("reason") or "")
+    and "هلدینگ" not in (r_bank.get("reason") or "")
+    and "سرمایه‌گذاری" not in (r_bank.get("reason") or ""),
+    "دلیلِ بانک «بانک» است، نه هلدینگ/سرمایه‌گذاری", r_bank.get("reason"))
+p_hold = fts_engine.company_profile("سرمایه گذاری", "شرکت سرمایه گذاری ب")
+chk(p_hold.get("margin_class") == "holding"
+    and "هلدینگ" in (ind3_gross_margin(c, "هـ", ref=ref(580),
+                                       profile=p_hold).get("reason") or ""),
+    "هلدینگ: margin_class=holding و دلیلِ هلدینگ")
+p_fin = fts_engine.company_profile("لیزینگ", "شرکت لیزینگ الف")
+chk(p_fin.get("margin_class") == "financial"
+    and "مالی" in (ind3_gross_margin(c, "مـ", ref=ref(580),
+                                     profile=p_fin).get("reason") or ""),
+    "مالیِ غیربانکی: margin_class=financial و دلیلِ مالی")
+chk("صندوق" in (ind3_gross_margin(c, "صـ", ref=ref(580),
+                                  profile={"kind": "fund"}).get("reason") or ""),
+    "صندوق: دلیلِ صندوق")
+
 print("OK margin tiers (pure)")
 print("%d/%d passed" % (PASS, PASS + FAIL))
 
@@ -199,6 +227,8 @@ CASES = [
 ]
 # هلدینگ با سود ناخالصِ عدددار: گیتِ طبقه باید N/A بدهد، نه ۵۸٪ «خوب».
 HOLDING = ("شهلد", "شرکت سرمایه گذاری شهلد", "سرمایه گذاری", 58.0)
+# بانک با سود ناخالصِ عدددار: همان N/A، ولی دلیل باید «بانک» باشد نه هلدینگ.
+BANK = ("شبانک", "بانک آزمون", "بانكها و موسسات اعتباري", 58.0)
 
 
 def _seed_instrument(con, code, symbol, name, sector):
@@ -239,6 +269,9 @@ def _temp_db_case():
         hsym, hname, hsec, hmargin = HOLDING
         _seed_instrument(con, "M6H", hsym, hname, hsec)
         _seed_fs(con, 6900, hsym, hname, hmargin)
+        bsym, bname, bsec, bmargin = BANK
+        _seed_instrument(con, "M6B", bsym, bname, bsec)
+        _seed_fs(con, 6950, bsym, bname, bmargin)
         con.commit()
 
         cfg = fts_engine.load_fts_config(os.path.join(ROOT, "fts_thresholds.json"))
@@ -293,6 +326,10 @@ def _temp_db_case():
                     (c3.get("na"), c3.get("margin_tier")))
                 chk(bool(c3.get("reason")), "card N/A %s دلیل دارد" % sym,
                     c3.get("reason"))
+                # دلیلِ شکاف/N/A در ردیف و کارت یکی است (Task 10B2a1).
+                chk((b.get("i3_reason") or "") == (c3.get("reason") or ""),
+                    "bulk/card N/A %s: یک i3_reason" % sym,
+                    (b.get("i3_reason"), c3.get("reason")))
             else:
                 # باند از حکمِ خام (۲۰/۳۰) است، نه از `margin_pct`ِ گردشده؛
                 # برایِ ۲۹٫۹۶٪ «۳۰٫۰» دیده می‌شود ولی باند acceptable است.
@@ -378,6 +415,36 @@ def _temp_db_case():
         chk(hs["score"] == sum(1 for v in hs["passes"].values() if v),
             "scan_symbol هلدینگ: score فقط پاس‌هایِ واقعی",
             hs["score"])
+
+        # ── بانک با revenue>0 و gross_profit: همان N/A، دلیلِ کلاسِ بانک ──
+        bk = fts_engine.norm_fa(bsym)
+        bb = by_key.get(bk)
+        chk(bb is not None, "%s (بانک) در bulk_scan هست" % bsym, sorted(by_key))
+        if bb is not None:
+            chk(bb.get("gross_margin") is None and bb.get("margin_tier") is None
+                and bb.get("i3_pass") is None and bb.get("i3_na") is True,
+                "bulk بانک: بی‌عدد/بی‌برچسب/N/A",
+                (bb.get("gross_margin"), bb.get("margin_tier"),
+                 bb.get("i3_pass"), bb.get("i3_na")))
+            chk("بانک" in (bb.get("i3_reason") or "")
+                and "هلدینگ" not in (bb.get("i3_reason") or "")
+                and "سرمایه‌گذاری" not in (bb.get("i3_reason") or ""),
+                "bulk بانک: دلیل «بانک»، نه هلدینگ/سرمایه‌گذاری",
+                bb.get("i3_reason"))
+        bc3 = card(bsym, bname, bsec)["indicators"]["3"]
+        chk(bc3.get("na") is True and bc3.get("margin_pct") is None,
+            "card بانک: N/A و بی‌عدد",
+            (bc3.get("na"), bc3.get("margin_pct")))
+        chk((bc3.get("reason") or "") == (bb or {}).get("i3_reason")
+            and "بانک" in (bc3.get("reason") or ""),
+            "card/bulk بانک: یک دلیلِ کلاسِ بانک",
+            ((bb or {}).get("i3_reason"), bc3.get("reason")))
+        bs = scan(bsym, bsec)
+        bd3 = ((bs.get("detail") or {}).get("gross_margin") or {})
+        chk(bs.get("i3_na") is True and bs.get("margin_tier") is None
+            and bd3.get("margin_tier") is None,
+            "scan_symbol بانک: N/A و بی‌برچسب",
+            (bs.get("i3_na"), bs.get("margin_tier"), bd3.get("margin_tier")))
 
         # نمادِ بی‌صورتِ مالی: کارت N/A و بی‌برچسب، نه استثنا.
         empty = FD.evaluate_v10(con, "بی‌صورت", cfg=cfg, sector=SEC,

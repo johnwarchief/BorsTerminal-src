@@ -40,6 +40,10 @@ export const FtsScreenRowSchema = z.object({
   /** «ب» رشد فیزیکی برایِ این ماهیت قابل‌اعمال است؟ از همان
    *  `company_profile.volume_applicable` که کارت می‌خواند — نه حدسِ نام/صنعت. */
   i1b_applicable: z.boolean().nullish(),
+  /** «ب» داده دارد ولی حکم نمیسازد؟ `i1b_applicable=true` + `i1b_data_gap=true`
+   *  یعنی کمیت/مبنای تورم در دسترس نبوده — جدول باید N/A خاکستری بنشاند،
+   *  نه ✗ سرخ؛ شکستِ سنجیده‌شده همچنان `i1b_data_gap=false` است. */
+  i1b_data_gap: z.boolean().nullish(),
   /** مبنا/دلیلِ محور ۱ (Task 4): `i1_basis=None` مسیرِ ماهانهٔ YTD،
    *  `fs_interim`/`fs_annual` صورتِ مالی، `fs_unavailable` شکافِ صورتِ مالی.
    *  `i1_na` یعنی حکمِ محور ۱ «سنجیده نشد» است (None)، نه «رد»؛ `i1_reason`
@@ -60,6 +64,9 @@ export const FtsScreenRowSchema = z.object({
    *  ناکافی». جدول آن را زیرِ سلولِ EPS می‌نویسد؛ سری دست‌نخورده می‌ماند. */
   eps_evidence_label: z.string().nullish(),
   i3_pass: z.boolean().nullish(),
+  /** دلیلِ خالی‌بودنِ حکمِ ۳ از خودِ موتور: N/Aِ طبقه (بانک/مالی/هلدینگ/صندوق)
+   *  یا شکافِ داده (نبودِ سطر سود ناخالص/درآمد) — همان متنِ کارت. */
+  i3_reason: z.string().nullish(),
   i4_pass: z.boolean().nullish(),
   /** مسیرِ پذیرشِ شاخص ۴ (Task 7) از خودِ موتور: `sales_to_mcap` (مسیر اول)
    *  یا `profit_potential` (مسیر دومِ ۴۰٪)؛ null برایِ معاف/بی‌داده/بی‌مسیر.
@@ -71,6 +78,8 @@ export const FtsScreenRowSchema = z.object({
    *  (`ind3_na`/`ind4_na`) می‌آید تا جدول علت را از نام و صنعت حدس نزند. */
   i3_na: z.boolean().nullish(),
   i4_na: z.boolean().nullish(),
+  /** دلیلِ حکمِ ۴ از خودِ موتور (معاف / دادهٔ ناکافی / مسیرِ پذیرش / بی‌مسیر). */
+  i4_reason: z.string().nullish(),
   i5_pass: z.boolean().nullish(),
   /** رأیِ موتور برایِ همین ردیف (STRONG / WATCH / REJECT / EXCLUDED / «FTS ندارد»).
    *  پری‌ست «سوپر بنیادی» همان STRONG است — بی‌بازتولیدِ آستانه درِ فرانت. */

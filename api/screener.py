@@ -546,6 +546,11 @@ def _screener_cached():
                 r["i3_pass"] = None if _na3 else p["3_gross_margin"]
                 r["i4_pass"] = None if _na4 else p["4_sales_to_mcap"]
                 r["i3_na"], r["i4_na"] = bool(_na3), bool(_na4)
+                # دلیلِ ۳ از کارت (N/Aِ طبقه یا شکافِ داده) — همان قراردادِ
+                # i1_reason؛ ردیفِ bulk در نبودش متنِ خودش را نگه می‌دارد.
+                _i3_reason = (_g3.get("reason") or "").strip()
+                if _i3_reason:
+                    r["i3_reason"] = _i3_reason
                 r["i5_pass"] = p["5_industry"]
                 r["i1a_pass"] = p.get("1a_monetary_growth")
                 # «ب» رشد فیزیکی: کارت می‌گوید این محور برایِ این ماهیت «قابل
@@ -571,6 +576,12 @@ def _screener_cached():
                 r["i1b_pass"], r["i1b_basis"] = _merge_1b_fields(
                     r.get("i1b_applicable"), p.get("1b_volume_growth"),
                     _v1b.get("basis"), r.get("i1b_basis"))
+                # شکافِ ۱ب هم از کارت می‌آید (Task 10B2a1). برایِ محورِ
+                # غیرقابلِ‌اعمال، «شکاف» معنا ندارد ⇒ صریحاً False.
+                if r.get("i1b_applicable") is False:
+                    r["i1b_data_gap"] = False
+                elif "data_gap" in _v1b:
+                    r["i1b_data_gap"] = bool(_v1b.get("data_gap"))
                 r["i4a_pass"] = p.get("4a_sales_to_mcap")
                 r["i4b_pass"] = p.get("4b_profit_potential")
                 # r["applicable"] از خودِ bulk_scan می‌آید (تک‌مرجعِ
@@ -595,6 +606,11 @@ def _screener_cached():
                 r["margin_tier"] = _g3.get("margin_tier", r.get("margin_tier"))
                 r["sales_to_mcap"] = _v4.get("sales_to_mcap")
                 r["profit_potential_pct"] = _v4.get("potential_pct")
+                # دلیلِ ۴ از کارت (معاف/دادهٔ ناکافی/مسیر/بی‌مسیر) — همان
+                # قراردادِ i1_reason؛ ردیفِ bulk در نبودش متنِ خودش را نگه می‌دارد.
+                _i4_reason = (_v4.get("reason") or "").strip()
+                if _i4_reason:
+                    r["i4_reason"] = _i4_reason
                 r["annual_sales_bt"] = (_v4.get("annual_sales_bt")
                                          if _v4.get("annual_sales_bt") is not None
                                          else _an4.get("annual_sales_bt"))

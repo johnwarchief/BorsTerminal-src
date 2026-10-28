@@ -129,6 +129,7 @@ chk(r_annual_fallback.get("basis") == "fs_annual"
 #  ۳) DB موقت — ردیف/کارت رویِ دو نوع شکاف و یک مسیرِ سالم
 # ═══════════════════════════════════════════════════════════════════════════
 MONTH_GAP = "ماهانه‌گپ"      # تولیدی: گزارشِ ۱۴۰۴ هست، ۱۴۰۳ نیست ⇒ N/A ماهانه
+BAD_YTD = "ماهانه‌بد"        # تولیدی: ردیفِ ماهانه هست ولی تجمیعی منفی ⇒ BAD_YTD
 FS_GAP = "مالی‌گپ"           # مالی: جدیدترین سالانه جفت ندارد ⇒ N/A صورتِ مالی
 FIN_OK = "مالی‌سالم"         # مالی: میاندوره +۱۰۰٪ ⇒ ۱ب N/A ولی محور ۱ پاس
 
@@ -187,8 +188,18 @@ def _temp_db_case():
         _seed_instrument(con, "I41", MONTH_GAP, "شرکت ماهانه‌گپ", PROD_SECTOR)
         _seed_instrument(con, "I42", FS_GAP, "بانک مالی‌گپ", FIN_SECTOR)
         _seed_instrument(con, "I43", FIN_OK, "بانک مالی‌سالم", FIN_SECTOR)
+        _seed_instrument(con, "I44", BAD_YTD, "شرکت ماهانه‌بد", PROD_SECTOR)
 
         _seed_monthly_1404(con, 8100, MONTH_GAP, 1000e9)
+        # ردیفِ ماهانه هست ولی تجمیعیِ منفی است — گزارش «نیست» نه، نامعتبر است.
+        # (همان وضعیتِ غنوش در production؛ Task 10A M1.)
+        con.execute(
+            "INSERT INTO monthly_sales (tracing_no,symbol,title,period_end,"
+            "year,month,monthly_revenue,ytd_revenue,ytd_revenue_prev,"
+            "monthly_volume,ytd_volume,volume_unit) "
+            "VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
+            (8090, BAD_YTD, "گزارش فعالیت ماهانه", "1404/12/29", 1404, 12,
+             -10e9, -62e9, 0.0, None, None, None))
         # سالانه‌هایِ ثابت فقط برایِ حضور در جهانِ bulk/EPS — مسیرِ ۱ همان ماهانه است.
         _seed_fs(con, 8200, MONTH_GAP, "شرکت ماهانه‌گپ", [
             ("1402/12/29", 12, 4000e9, FS_TITLE, 1),
@@ -216,6 +227,7 @@ def _temp_db_case():
         key_month = fts_engine.norm_fa(MONTH_GAP)
         key_fs = fts_engine.norm_fa(FS_GAP)
         key_ok = fts_engine.norm_fa(FIN_OK)
+        key_bad = fts_engine.norm_fa(BAD_YTD)
 
         def card(sym, sector, name):
             return FD.evaluate_v10(con, sym, cfg=cfg, sector=sector,
@@ -245,7 +257,18 @@ def _temp_db_case():
                 and b.get("i1b_basis") == "unavailable",
                 "monthly gap 1b is applicable but unavailable",
                 (b.get("i1b_applicable"), b.get("i1b_basis")))
+            # شکافِ ۱ب در ردیف/کارت/scan یک پرچم است (Task 10B2a1): pass=False
+            # نباید «ردِ سنجیده‌شده» خوانده شود.
+            chk(b.get("i1b_data_gap") is True,
+                "monthly gap exposes i1b_data_gap=True", b.get("i1b_data_gap"))
             c = card(MONTH_GAP, PROD_SECTOR, "شرکت ماهانه‌گپ")
+            chk((c["indicators"]["1"]["volume"] or {}).get("data_gap") is True,
+                "card 1b data_gap matches the row",
+                c["indicators"]["1"]["volume"])
+            s = fts_engine.scan_symbol(con, MONTH_GAP, 1.0e14, 2.0e15,
+                                       PROD_SECTOR, cfg=cfg)
+            chk(s.get("i1b_data_gap") is True,
+                "scan_symbol 1b data_gap matches the row", s.get("i1b_data_gap"))
             chk(c["passes"]["1_growth"] is None
                 and c["indicators"]["1"].get("pass") is None,
                 "card gap axis is None too", c["passes"])
@@ -255,6 +278,44 @@ def _temp_db_case():
             chk(b.get("score") == sum(1 for i in (2, 3, 4, 5)
                                       if b.get("i%d_pass" % i) is True),
                 "a None axis never scores", b.get("score"))
+
+        # ── ردیفِ ماهانه با تجمیعیِ نامعتبر: BAD_YTD، نه «هیچ گزارش» ──────
+        # Task 10A M1: غنوش یک ردیفِ ماهانه با ytd_revenue=-62 دارد؛ متنِ
+        # «هیچ گزارش ماهانه‌ای ثبت نشده» دروغ است. حکم/امتیاز دست‌نخورده است.
+        b = by_key.get(key_bad)
+        chk(b is not None, "bad-YTD monthly symbol is in bulk_scan", sorted(by_key))
+        if b is not None:
+            chk(b.get("i1_pass") is None and b.get("i1_na") is True,
+                "bad-YTD monthly: verdict stays N/A", (b.get("i1_pass"), b.get("i1_na")))
+            chk(b.get("i1_reason") == FD.MONTHLY_BAD_YTD_REASON,
+                "bad-YTD monthly uses MONTHLY_BAD_YTD_REASON",
+                b.get("i1_reason"))
+            chk(b.get("i1_reason") != FD.MONTHLY_NO_SERIES_REASON,
+                "bad-YTD monthly does not claim 'no report'", b.get("i1_reason"))
+            chk(b.get("score") == sum(1 for i in (2, 3, 4, 5)
+                                      if b.get("i%d_pass" % i) is True),
+                "bad-YTD monthly: a None axis never scores", b.get("score"))
+            # شکافِ دادهٔ ۳ و دلیلِ ۴ باید در ردیف بیاید، نه فقط N/Aِ طبقه —
+            # با همان متنِ کارت (Task 10B2a1).
+            c = card(BAD_YTD, PROD_SECTOR, "شرکت ماهانه‌بد")
+            c3, c4 = c["indicators"]["3"], c["indicators"]["4"]
+            chk(b.get("i3_pass") is None and b.get("i3_na") is False,
+                "bad-YTD monthly: i3 is a data gap, not class N/A",
+                (b.get("i3_pass"), b.get("i3_na")))
+            chk(bool(b.get("i3_reason"))
+                and (b.get("i3_reason") or "") == (c3.get("reason") or ""),
+                "bad-YTD monthly: i3_reason is the card's data-gap wording",
+                (b.get("i3_reason"), c3.get("reason")))
+            chk(bool(b.get("i4_reason"))
+                and (b.get("i4_reason") or "") == (c4.get("reason") or ""),
+                "bad-YTD monthly: i4_reason mirrors the card",
+                (b.get("i4_reason"), c4.get("reason")))
+            # بینشِ لایهٔ ۱ برایِ مسیرِ ماهانه باید «گزارش فعالیت ماهانه»
+            # بگوید، نه صورت مالی (Task 10B2a1).
+            _ins_list, _det = FD.build_insights(c)
+            _src = ((_det or {}).get("۱", {}).get("source") or "")
+            chk("گزارش فعالیت ماهانه" in _src and "صورت مالی" not in _src,
+                "monthly insight source names the monthly report", _src)
 
         # ── شکافِ صورتِ مالی: basis جدا، دلیلِ مشترک با کارت ───────────────
         b = by_key.get(key_fs)
@@ -308,6 +369,22 @@ def _temp_db_case():
                 c["indicators"]["1"]["volume"])
             chk(c["passes"]["1_growth"] is True,
                 "the card N/A 1b is not a veto", c["passes"])
+            chk(b.get("i1b_data_gap") is False,
+                "non-applicable 1b carries data_gap=False", b.get("i1b_data_gap"))
+            chk((b.get("i4_reason") or "")
+                == (c["indicators"]["4"].get("reason") or ""),
+                "healthy FS interim: bulk/card i4_reason match",
+                (b.get("i4_reason"), c["indicators"]["4"].get("reason")))
+            # بینش‌ها در `get_fundamental` ساخته می‌شوند؛ این‌جا خودِ سازنده را
+            # روی همین کارت می‌سنجیم (Task 10B2a1).
+            _ins_list, _det = FD.build_insights(c)
+            _ins = {str(x.get("step")): x for x in _ins_list}
+            chk("صورت مالی" in (_ins.get("۱", {}).get("text") or ""),
+                "FS insight text names the financial statement",
+                _ins.get("۱", {}).get("text"))
+            _src = ((_det or {}).get("۱", {}).get("source") or "")
+            chk("صورت مالی" in _src and "گزارش فعالیت ماهانه" not in _src,
+                "FS insight source names the financial statement", _src)
     finally:
         con.close()
         shutil.rmtree(os.path.dirname(path), ignore_errors=True)

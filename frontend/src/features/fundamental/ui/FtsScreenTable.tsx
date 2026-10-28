@@ -82,7 +82,9 @@ export function screenRowCells(r: FtsScreenRow): ExportCell[] {
     r.i1_na === true
       ? 'N/A'
       : `${pct(r.rev_growth)} (الف: ${mark(r.i1a_pass)} / ب: ${
-          r.i1b_applicable === false ? 'N/A' : mark(r.i1b_pass)})`,
+          r.i1b_applicable === false || r.i1b_data_gap === true
+            ? 'N/A'
+            : mark(r.i1b_pass)})`,
     `${eps}${r.eps_last != null ? ` | ${toFaDigits(r.eps_last)}` : ''}${r.eps_data_gap ? ' | بی‌داده' : ''}${
       r.eps_evidence_label ? ` | ${r.eps_evidence_label}` : ''}`,
     // برچسبِ طبقه (Task 6) کنارِ همان عدد؛ «۵۰٪ خوب» فقط نام است و ستونِ
@@ -491,6 +493,17 @@ const ScreenerRow = memo(function ScreenerRow({
                                   evidence={ev.i1b}
                                   testId="fts-na-1b_volume_growth"
                                 />
+                              ) : r.i1b_data_gap === true ? (
+                                /* شکافِ دادهٔ ۱ب (Task 10B2a1): محور قابلِ‌اعمال
+                                   است ولی کمیت/مبنای تورم در دسترس نیست. حکمِ
+                                   `pass=False` «ردِ سنجیده‌شده» نیست؛ N/A خاکستری
+                                   می‌نشیند و شکستِ واقعی همچنان ✗ سرخ است. */
+                                <NaMark
+                                  label="N/A (داده ناکافی)"
+                                  tooltip={r.i1_reason || 'دادهٔ رشد تولیدی/تناژ برای این نماد در دسترس نیست؛ حکمِ ۱ب سنجیده نشد — نه «رد».'}
+                                  evidence={ev.i1b}
+                                  testId="fts-na-1b_volume_growth"
+                                />
                               ) : i1b === 'gap' ? (
                                 <AxisGapMark axis="1b_volume_growth" evidence={ev.i1b} />
                               ) : (
@@ -591,7 +604,7 @@ const ScreenerRow = memo(function ScreenerRow({
                                ردیف از ۲۹۶ ردیفِ نادرست «N/A» می‌گرفت. */
                             <NaMark
                               label="N/A (ماهیت مالی)"
-                              tooltip="موتور FTS برای همین نماد «سود ناخالص» را بی‌کاربرد اعلام کرده است (بانک/بیمه/هلدینگ/صندوق)؛ شکاف داده نیست."
+                              tooltip={r.i3_reason || "موتور FTS برای همین نماد «سود ناخالص» را بی‌کاربرد اعلام کرده است (بانک/بیمه/هلدینگ/صندوق)؛ شکاف داده نیست."}
                               evidence={ev.i3}
                               testId="fts-na-3_gross_margin"
                             />
@@ -608,7 +621,9 @@ const ScreenerRow = memo(function ScreenerRow({
                       </span>
                       <span
                         className="num block min-w-0 text-end text-sm font-bold whitespace-nowrap text-text-primary"
-                        title={r.gross_margin == null ? VALUE_MISSING_WITH_VERDICT : (absurdHint(r.gross_margin) ?? undefined)}
+                        title={r.gross_margin == null
+                          ? (r.i3_reason || VALUE_MISSING_WITH_VERDICT)
+                          : (absurdHint(r.gross_margin) ?? undefined)}
                       >
                         {r.gross_margin == null ? '—' : fmtPctGrouped(r.gross_margin)}
                         {isAbsurdPct(r.gross_margin) ? ' ⚠' : ''}
@@ -633,7 +648,7 @@ const ScreenerRow = memo(function ScreenerRow({
                           r.i4_na === true ? (
                             <NaMark
                               label="N/A (ماهیت مالی)"
-                              tooltip="موتور FTS همین نماد را از شرط «فروش ÷ ارزش بازار» معاف دانسته است (`ind4_na`)؛ شکاف داده نیست."
+                              tooltip={r.i4_reason || "موتور FTS همین نماد را از شرط «فروش ÷ ارزش بازار» معاف دانسته است (`ind4_na`)؛ شکاف داده نیست."}
                               evidence={ev.i4}
                               testId="fts-na-4_sales_to_mcap"
                             />
@@ -652,7 +667,9 @@ const ScreenerRow = memo(function ScreenerRow({
                         <span
                           className="num block min-w-0 text-end text-sm font-bold whitespace-nowrap text-text-primary"
                           title={
-                            [i4NumberHint, i4Annualize && toFaDigits(i4Annualize)].filter(Boolean).join(' · ') || undefined
+                            [r.profit_potential_pct == null ? r.i4_reason : null,
+                              i4NumberHint, i4Annualize && toFaDigits(i4Annualize)]
+                              .filter(Boolean).join(' · ') || undefined
                           }
                         >
                           {r.profit_potential_pct == null ? '—' : fmtPctGrouped(r.profit_potential_pct)}

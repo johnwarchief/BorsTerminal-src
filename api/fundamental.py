@@ -962,6 +962,45 @@ def ind2_eps_track(conn, symbol, th=None, sector="", last_fy_eps=None) -> dict:
 # ═══════════════════════════════════════════════════════════════════════════
 #  لایهٔ ۳ — حاشیهٔ سود ناخالص (سود ناخالص ÷ درآمدهای عملیاتی)
 # ═══════════════════════════════════════════════════════════════════════════
+def margin_gap_detail(ref) -> dict:
+    """دلیلِ «حاشیه ساخته نشد» — تک‌مرجعِ کارت و ردیفِ `bulk_scan` (Task 10B2a1).
+
+    «حاشیه نیست» با «داده نیست» یکی نیست. `fts_engine.gross_margin` در چند
+    حالتِ متفاوت None می‌دهد و کاربر باید تفاوت را بفهمد، وگرنه برای نمادی
+    که فقط همگام‌سازی نشده، «بهای تمام‌شده ندارد» می‌خواند و هرگز دکمهٔ
+    «دیتابیس کدال» را نمی‌زند. `ref` از قبل در دست است؛ کوئریِ تازه لازم نیست.
+    """
+    if ref is None:
+        return {
+            "reason": ("صورت مالی سالانهٔ این نماد در پایگاه کدال ما نیست؛ "
+                       "تا آن نیاید، سود ناخالص و در نتیجه حاشیه محاسبه نمی‌شود."),
+            "remediation": ("با دکمهٔ «دیتابیس کدال» صورت‌های مالی این نماد را "
+                            "تازه کنید؛ این شکاف با انتشار گزارش بعدی هم "
+                            "خودبه‌خود بسته می‌شود."),
+            "data_gap": True,
+        }
+    if _f(ref.get("revenue")) <= 0:
+        return {
+            "reason": ("درآمد عملیاتیِ سالِ مرجع (%s) در کدال خالی یا صفر ثبت "
+                       "شده، پس تقسیمِ سود ناخالص بر آن ممکن نیست."
+                       % _fa_date(ref.get("period_end"))),
+            "remediation": ("با گرفتنِ دیتابیس تازهٔ کدال یا انتشار صورت سود و "
+                            "زیان سالانه بسته می‌شود."),
+            "data_gap": True,
+        }
+    # نامِ صنعت را دلیل نمی‌کنیم: وسدید در جدول «فلزات اساسي» است ولی
+    # درآمدش «سود سهام» است. آنچه قطعی است، نبودِ خودِ سطر در صورتِ مالی‌ست.
+    return {
+        "reason": ("در صورت سود و زیانِ سالِ مرجع (%s) سطر «سود ناخالص» یا "
+                   "«بهای تمام‌شدهٔ کالای فروش‌رفته» ثبت نشده است؛ "
+                   "بدونِ این سطر، حاشیهٔ ناخالص محاسبه نمی‌شود."
+                   % _fa_date(ref.get("period_end"))),
+        "remediation": ("نقص داده نیست — تا خودِ کدال این سطر را منتشر نکند، "
+                        "شاخص ۳ سنجیده نمی‌شود."),
+        "data_gap": False,
+    }
+
+
 def ind3_gross_margin(conn, symbol, th=None, ref=None, profile=None) -> dict:
     """حاشیه = سود ناخالص ÷ درآمدهای عملیاتی × ۱۰۰ — ایده‌آل ≥۳۰٪، قابل‌قبول ≥۲۰٪.
 
@@ -982,38 +1021,18 @@ def ind3_gross_margin(conn, symbol, th=None, ref=None, profile=None) -> dict:
     gm = fts_engine.gross_margin(conn, symbol, min_margin=th["margin_min"],
                                  optimal=th["margin_ideal"], ref=ref)
     if not gm:
-        # «حاشیه نیست» با «داده نیست» یکی نیست. fts_engine.gross_margin در چند
-        # حالتِ متفاوت None می‌دهد و کاربر باید تفاوت را بفهمد، وگرنه برای نمادی
-        # که فقط همگام‌سازی نشده، «بهای تمام‌شده ندارد» می‌خواند و هرگز دکمهٔ
-        # «دیتابیس کدال» را نمی‌زند. `ref` از قبل در دست است؛ کوئریِ تازه لازم نیست.
-        if ref is None:
-            reason = ("صورت مالی سالانهٔ این نماد در پایگاه کدال ما نیست؛ "
-                      "تا آن نیاید، سود ناخالص و در نتیجه حاشیه محاسبه نمی‌شود.")
-            fix = ("با دکمهٔ «دیتابیس کدال» صورت‌های مالی این نماد را تازه کنید؛ "
-                   "این شکاف با انتشار گزارش بعدی هم خودبه‌خود بسته می‌شود.")
-            data_gap = True
-        elif _f(ref.get("revenue")) <= 0:
-            reason = ("درآمد عملیاتیِ سالِ مرجع (%s) در کدال خالی یا صفر ثبت شده، "
-                      "پس تقسیمِ سود ناخالص بر آن ممکن نیست."
-                      % _fa_date(ref.get("period_end")))
-            fix = "با گرفتنِ دیتابیس تازهٔ کدال یا انتشار صورت سود و زیان سالانه بسته می‌شود."
-            data_gap = True
-        else:
-            # نامِ صنعت را دلیل نمی‌کنیم: وسدید در جدول «فلزات اساسي» است ولی
-            # درآمدش «سود سهام» است. آنچه قطعی است، نبودِ خودِ سطر در صورتِ مالی‌ست.
-            reason = ("در صورت سود و زیانِ سالِ مرجع (%s) سطر «سود ناخالص» یا "
-                      "«بهای تمام‌شدهٔ کالای فروش‌رفته» ثبت نشده است؛ "
-                      "بدونِ این سطر، حاشیهٔ ناخالص محاسبه نمی‌شود."
-                      % _fa_date(ref.get("period_end")))
-            fix = "نقص داده نیست — تا خودِ کدال این سطر را منتشر نکند، شاخص ۳ سنجیده نمی‌شود."
-            data_gap = False
+        # «حاشیه نیست» با «داده نیست» یکی نیست؛ متن و پرچمِ شکاف از همان
+        # تک‌مرجعِ `margin_gap_detail` می‌آید که ردیفِ `bulk_scan` هم می‌خواند
+        # (Task 10B2a1) — نه نسخهٔ دومِ همین سه شاخه.
+        gap = margin_gap_detail(ref)
         return {"margin_pct": None, "pass": False, "ideal": False, "na": True,
                 "band": "not_applicable", "threshold": th["margin_min"],
                 "ideal_threshold": th["margin_ideal"], "optimal": False,
                 # برچسبِ طبقه هنگامِ N/A تهی است، نه «below_floor»: حاشیه‌ای
                 # که ساخته نشد صفر نیست و برچسبِ نمایشی هم نمی‌گیرد (Task 6).
                 "margin_tier": None,
-                "data_gap": data_gap, "reason": reason, "remediation": fix}
+                "data_gap": gap["data_gap"], "reason": gap["reason"],
+                "remediation": gap["remediation"]}
     # حاشیۀ منفیِ واقعی (ثتران −۱۸۴٫۶، دامین −۱۴۲٫۵، وملل −۱۱۲٫۵) «N/A» نیست:
     # عدد است و طبیعی به «زیرِ باند» می‌رسد. `_sane(-99, 200)` همین را None می‌کرد
     # و باند را هم اشتباه می‌براند (و حاشیۀ ۱٬۸۸۵٪ را هم)؛ اینجا فقط NaN/inf دور
@@ -1077,7 +1096,7 @@ def ind4_valuation(annual, gm, market_cap_rials, th=None, exempt=False) -> dict:
                 "potential_pass": False, "sales_pass": False, "rule_ref": "F-04",
                 "acceptance_path": None, "annualize_months": 0,
                 "annualize_label": "",
-                "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A)."}
+                "reason": fts_engine.ind4_reason_text(exempt=True)}
     mcap = _f(market_cap_rials)
     if not annual or mcap <= 0:
         return {"available": False, "pass": False, "potential_pass": False,
@@ -1086,7 +1105,7 @@ def ind4_valuation(annual, gm, market_cap_rials, th=None, exempt=False) -> dict:
                 "sales_threshold": th["sales_to_mcap_min"],
                 "acceptance_path": None, "annualize_months": 0,
                 "annualize_label": "",
-                "reason": "دادهٔ ارزش بازار یا فروش سالانه برای محاسبه نسبت در دسترس نیست."}
+                "reason": fts_engine.ind4_reason_text(available=False)}
     ann_rial = _f(annual["annual_sales_mrl"]) * MRL_TO_RIAL
     sales_ratio = ann_rial / mcap
     margin = None
@@ -1128,11 +1147,11 @@ def ind4_valuation(annual, gm, market_cap_rials, th=None, exempt=False) -> dict:
             "annualize_months": months_used,
             "annualize_label": fts_engine.annualize_label(months_used),
             "pass": bool(sales_pass or pot_pass),
-            "reason": (("قبولی با نسبت فروش/ارزش‌بازار" if sales_pass else
-                        "قبولی با پوشش پتانسیل سود" if pot_pass else
-                        "نه نسبت فروش و نه پوشش پتانسیل به حد نصاب نرسید.")
-                       if margin is not None else
-                       "هیچ حاشیه‌ای (ناخالص یا جایگزین) برای این طبقه محاسبه نشد.")}
+            # متنِ دلیل از تک‌مرجعِ fts_engine.i4_reason می‌آید تا ردیفِ
+            # bulk_scan و کارت یک جمله بدهند (Task 10B2a1).
+            "reason": fts_engine.ind4_reason_text(
+                margin_present=margin is not None,
+                sales_pass=sales_pass, potential_pass=pot_pass)}
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -1539,16 +1558,30 @@ def build_insights(res: dict) -> tuple:
 
     # ── لایهٔ ۱: درآمد/فروش (۱الف ریالی + ۱ب فیزیکی) ──────────────────────
     axis1 = axis1_pass(g, v)
+    # مبنایِ ۱الف (Task 10B2a1): برایِ خدماتی/مالی/هلدینگ رشد از **صورت مالی**
+    # می‌آید (میاندوره ÷ همان دورهٔ سال قبل، یا سالانه ÷ سال قبل)، نه از گزارشِ
+    # فعالیت ماهانه. متن و منبع باید همین را بگویند تا کاربر «گزارش ماهانه»ای
+    # نخواند که وجود ندارد.
+    basis1 = str(g.get("basis") or "")
+    fs_interim = basis1 == "fs_interim"
+    fs_annual = basis1 == "fs_annual"
+    fs_unavailable = basis1 == "fs_unavailable"
+    fs_basis = fs_interim or fs_annual or fs_unavailable
+    label1a = ("۱الف رشد ریالی (صورت مالی میاندوره)" if fs_interim else
+               "۱الف رشد ریالی (صورت مالی سالانه)" if fs_annual else
+               "۱الف رشد ریالی (صورت مالی)" if fs_unavailable else
+               "۱الف رشد ریالی")
     if g.get("data_gap"):
-        txt1 = "⚠️ ۱الف رشد ریالی: داده موجود نیست (%s)" % (g.get("reason") or "مخرج YoY غایب")
+        txt1 = "⚠️ %s: داده موجود نیست (%s)" % (
+            label1a, g.get("reason") or "مخرج YoY غایب")
     elif g.get("pass"):
-        txt1 = "✅ ۱الف رشد ریالی: %s (کف %g٪ احراز شد%s)" % (
-            _pct_txt(g.get("monetary_pct")), th["monetary_growth_min"],
+        txt1 = "✅ %s: %s (کف %g٪ احراز شد%s)" % (
+            label1a, _pct_txt(g.get("monetary_pct")), th["monetary_growth_min"],
             " · هدف %g٪ هم پوشش شد" % th["monetary_growth_target"]
             if g.get("strong") else "")
     else:
-        txt1 = "⚠️ ۱الف رشد ریالی: %s (زیر کف %g٪)" % (
-            _pct_txt(g.get("monetary_pct")), th["monetary_growth_min"])
+        txt1 = "⚠️ %s: %s (زیر کف %g٪)" % (
+            label1a, _pct_txt(g.get("monetary_pct")), th["monetary_growth_min"])
 
     _BASIS_FA = {
         "price_effect_decomposition": "تعدیل اثر تورمی",
@@ -1570,17 +1603,37 @@ def build_insights(res: dict) -> tuple:
                      "type": "success" if axis1 else "warning",
                      "text": "%s<br>%s" % (txt1, txt1b)})
     breadth = v.get("breadth") or {}
+    if fs_interim:
+        src1 = ("کدال — صورت مالی میاندورهٔ منتهی به %s (غیرتلفیقی) | "
+                "مخرج: صورت مالی همان دورهٔ سال قبل | طبقهٔ شرکت: %s"
+                % (g.get("period") or "—", prof["label"]))
+    elif fs_annual:
+        src1 = ("کدال — صورت مالی سالانهٔ منتهی به %s (غیرتلفیقی) | "
+                "مخرج: صورت مالی سال قبل | طبقهٔ شرکت: %s"
+                % (g.get("period") or "—", prof["label"]))
+    elif fs_unavailable:
+        src1 = ("کدال — صورت مالی (میاندوره/سالانه)؛ دورهٔ مشابهٔ سال قبل ثبت "
+                "نشده | مخرج: — | طبقهٔ شرکت: %s" % prof["label"])
+    else:
+        src1 = ("کدال — گزارش فعالیت ماهانهٔ منتهی به %s | مخرج: %s | "
+                "طبقهٔ شرکت: %s"
+                % (g.get("period") or "—",
+                   g.get("denominator_basis") or "—", prof["label"]))
     details["۱"] = {
         "title": "درآمد/فروش — رشد ریالی (۱الف) + تأیید حجم (۱ب)",
-        "formula": ("۱الف = (تجمیعی دوره ÷ تجمیعی همان دورهٔ سال قبل) × ۱۰۰ − ۱۰۰ · پاس ≥ %g٪"
+        "formula": ((("۱الف = (درآمد صورت مالی میاندوره ÷ همان دورهٔ سال قبل) × ۱۰۰ − ۱۰۰"
+                      if fs_interim else
+                      "۱الف = (درآمد صورت مالی سالانه ÷ سال قبل) × ۱۰۰ − ۱۰۰")
+                     if fs_basis else
+                     "۱الف = (تجمیعی دوره ÷ تجمیعی همان دورهٔ سال قبل) × ۱۰۰ − ۱۰۰")
+                    + " · پاس ≥ %g٪"
                     " · ۱ب = رشد کمیت ≥ %g٪ یا رشد واقعیِ پس از تورم ≥ %g٪"
                     " · پهنای رشد (%d/%d ماه) فقط نمایشی است، دروازۀ امتیاز نیست"
                     % (th["monetary_growth_min"], th["volume_growth_min"],
                        th["volume_growth_min"],
                        breadth.get("improved_months") or 0,
                        breadth.get("compared_months") or 0)),
-        "source": ("کدال — گزارش فعالیت ماهانهٔ منتهی به %s | مخرج: %s | طبقهٔ شرکت: %s"
-                   % (g.get("period") or "—", g.get("denominator_basis") or "—", prof["label"])),
+        "source": src1,
         "calc": ("%s ÷ %s میلیارد تومان = %s | ۱ب: مبنای %s → رشد واقعی %s (مبنای نرخ %s٪)"
                  % (_n(g.get("ytd_now_bt")), _n(g.get("ytd_prev_bt")),
                     _pct_txt(g.get("monetary_pct")), v.get("basis") or "—",
@@ -1596,9 +1649,14 @@ def build_insights(res: dict) -> tuple:
              "state": _state(g.get("pass"), gap=bool(g.get("data_gap"))),
              "value": _pct_txt(g.get("monetary_pct")),
              "threshold": "≥ %g٪" % th["monetary_growth_min"],
-             "detail": "تجمیعی %s ÷ %s میلیارد تومان (%s)"
-                       % (_n(g.get("ytd_now_bt")), _n(g.get("ytd_prev_bt")),
-                          g.get("period") or "—")},
+             "detail": (("صورت مالی %s — دورهٔ %s"
+                         % ("میاندوره" if fs_interim else
+                            "سالانه" if fs_annual else "موجود نیست",
+                            g.get("period") or "—"))
+                        if fs_basis else
+                        "تجمیعی %s ÷ %s میلیارد تومان (%s)"
+                        % (_n(g.get("ytd_now_bt")), _n(g.get("ytd_prev_bt")),
+                           g.get("period") or "—"))},
             {"key": "1b", "label": "رشد تولیدی / تناژ",
              "state": _state(v.get("pass"), gap=bool(v.get("data_gap"))),
              "value": _pct_txt(v.get("volume_pct") if v.get("quantity_verified")
