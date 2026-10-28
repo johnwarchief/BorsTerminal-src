@@ -44,7 +44,7 @@ describe('LayoutResizer', () => {
     const onChange = mount();
     const separator = screen.getByTestId('resize-test');
     fireEvent.mouseDown(separator, { clientX: 320, clientY: 100 });
-    fireEvent.mouseMove(window, { clientX: 372, clientY: 100 });
+    fireEvent.mouseMove(window, { clientX: 372, clientY: 100, buttons: 1 });
     expect(onChange).toHaveBeenLastCalledWith(372);
   });
 
@@ -52,15 +52,45 @@ describe('LayoutResizer', () => {
     const onChange = mount();
     const separator = screen.getByTestId('resize-test');
     fireEvent.mouseDown(separator, { clientX: 320 });
-    fireEvent.mouseMove(window, { clientX: 900 });
+    fireEvent.mouseMove(window, { clientX: 900, buttons: 1 });
     expect(onChange).toHaveBeenLastCalledWith(420);
-    fireEvent.mouseMove(window, { clientX: 10 });
+    fireEvent.mouseMove(window, { clientX: 10, buttons: 1 });
     expect(onChange).toHaveBeenLastCalledWith(260);
   });
 
   it('does not resize before a mouse down', () => {
     const onChange = mount();
-    fireEvent.mouseMove(window, { clientX: 400 });
+    fireEvent.mouseMove(window, { clientX: 400, buttons: 1 });
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it('ends the drag when the pointer button is already released', () => {
+    const onChange = mount();
+    const separator = screen.getByTestId('resize-test');
+    fireEvent.mouseDown(separator, { clientX: 320, buttons: 1 });
+    fireEvent.mouseMove(window, { clientX: 350, buttons: 1 });
+    expect(onChange).toHaveBeenCalledTimes(1);
+    onChange.mockClear();
+    fireEvent.mouseMove(window, { clientX: 360, buttons: 0 });
+    expect(onChange).not.toHaveBeenCalled();
+    fireEvent.mouseMove(window, { clientX: 370, buttons: 1 });
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it('ignores a drag started with a non-primary button', () => {
+    const onChange = mount();
+    const separator = screen.getByTestId('resize-test');
+    fireEvent.mouseDown(separator, { button: 2, buttons: 2, clientX: 320 });
+    fireEvent.mouseMove(window, { clientX: 372, buttons: 1 });
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it('ends the drag when the window loses focus', () => {
+    const onChange = mount();
+    const separator = screen.getByTestId('resize-test');
+    fireEvent.mouseDown(separator, { clientX: 320, buttons: 1 });
+    fireEvent.blur(window);
+    fireEvent.mouseMove(window, { clientX: 372, buttons: 1 });
     expect(onChange).not.toHaveBeenCalled();
   });
 

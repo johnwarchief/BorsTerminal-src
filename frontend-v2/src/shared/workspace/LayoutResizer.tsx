@@ -39,6 +39,10 @@ export function LayoutResizer(props: LayoutResizerProps) {
   useEffect(() => {
     if (!dragging) return;
     const move = (event: MouseEvent) => {
+      if (event.buttons === 0) {
+        setDragging(false);
+        return;
+      }
       const rect = measure
         ? measure()
         : (host.current?.parentElement?.getBoundingClientRect() ?? null);
@@ -48,9 +52,11 @@ export function LayoutResizer(props: LayoutResizerProps) {
     const stop = () => setDragging(false);
     window.addEventListener('mousemove', move);
     window.addEventListener('mouseup', stop);
+    window.addEventListener('blur', stop);
     return () => {
       window.removeEventListener('mousemove', move);
       window.removeEventListener('mouseup', stop);
+      window.removeEventListener('blur', stop);
     };
   }, [dragging, measure, fromPointer, min, max, onChange]);
 
@@ -60,20 +66,20 @@ export function LayoutResizer(props: LayoutResizerProps) {
       role="separator"
       aria-orientation={orientation}
       aria-label={label}
-      aria-valuenow={Number(value.toFixed(2))}
+      aria-valuenow={Number(clamp(value, min, max).toFixed(2))}
       aria-valuemin={min}
       aria-valuemax={max}
       tabIndex={0}
       data-testid={testId}
       className={clsx(
-        'group relative z-10 flex-none touch-none bg-line hover:bg-accent focus-visible:bg-accent focus-visible:outline-none',
+        'group relative z-10 flex-none bg-line hover:bg-accent focus-visible:bg-accent focus-visible:outline-none',
         orientation === 'vertical' ? 'w-px cursor-col-resize' : 'h-px cursor-row-resize',
       )}
-      onDoubleClick={() => onChange(defaultValue)}
+      onDoubleClick={() => onChange(clamp(defaultValue, min, max))}
       onKeyDown={(event) => {
         if (event.key === 'Enter') {
           event.preventDefault();
-          onChange(defaultValue);
+          onChange(clamp(defaultValue, min, max));
           return;
         }
         if (event.key === increaseKey) {
@@ -87,7 +93,9 @@ export function LayoutResizer(props: LayoutResizerProps) {
         }
       }}
       onMouseDown={(event) => {
+        if (event.button !== 0) return;
         event.preventDefault();
+        host.current?.focus();
         setDragging(true);
       }}
     >
