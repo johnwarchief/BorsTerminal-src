@@ -58,6 +58,16 @@ MS10 = {"tracing_no": 10, "symbol": "A", "title": "t", "period_end": "1405/06/31
 CN100 = {"tracing_no": 100, "symbol": "A", "title": "t",
          "publish_date": "1405/07/01", "url": "https://codal.ir/n/100"}
 
+BAD_FS = {"tracing_no": 2, "symbol": "B", "title": "bad",
+          "period_end": "1405/06/31", "revenue": -5.0,
+          "gross_profit": -10.0, "url": "", "publish_date": "1405/07/02",
+          "fetched_at": "2026-10-01"}
+BAD_MS = {"tracing_no": 20, "symbol": "B", "title": "bad",
+          "period_end": "1405/06/31", "monthly_revenue": -1.0,
+          "ytd_revenue": -2.0, "pdf_url": None, "excel_url": ""}
+BAD_CN = {"tracing_no": 200, "symbol": "B", "title": "bad", "url": "",
+          "publish_date": "", "fetched_at": "2026-10-01"}
+
 TMP = tempfile.mkdtemp(prefix="codal_validation_v11_")
 FAILS = []
 
@@ -210,16 +220,18 @@ try:
            for e in r["errors"]),
        "ms provenance: missing_provenance (%r)" % (r["errors"],))
 
-    # ── ۱۰) فروشِ ماهانهٔ منفی (بدونِ gross>revenue روی این جدول) ────────────
+    # ── ۱۰) فروشِ ماهانهٔ منفی (هر دو ستون) ─────────────────────────────────
     m, s = base_pair("ms_neg")
     add(s, "monthly_sales",
-        dict(MS10, tracing_no=11, monthly_revenue=-1.0, ytd_revenue=10.0))
+        dict(MS10, tracing_no=11, monthly_revenue=-1.0, ytd_revenue=-10.0))
     r = validate_staging(m, s, None)
     ck(r["ok"] is False, "ms negative: ok is False")
-    ck(any("negative_revenue" in e for e in r["errors"]),
-       "ms negative: negative_revenue (%r)" % (r["errors"],))
-    ck(not any("gross_gt_revenue" in e for e in r["errors"]),
-       "ms negative: no gross_gt_revenue on monthly_sales")
+    ck(any("monthly_sales:negative_revenue:monthly_revenue" in e
+           for e in r["errors"]),
+       "ms negative: monthly_revenue (%r)" % (r["errors"],))
+    ck(any("monthly_sales:negative_revenue:ytd_revenue" in e
+           for e in r["errors"]),
+       "ms negative: ytd_revenue (%r)" % (r["errors"],))
 
     # ── ۱۱) دورهٔ آینده در MS ───────────────────────────────────────────────
     m, s = base_pair("ms_future")
@@ -280,7 +292,7 @@ try:
     ck(r["stats"]["financial_statements"] == {"main": 1, "staging": 2},
        "missing column: counts still reported")
 
-    # ── ۱۶) جدولِ غایب در main: هشدار، بدونِ کرش ────────────────────────────
+    # ── ۱۶) جدولِ غایب در main: خطا، بدونِ کرش ──────────────────────────────
     m, s = pair("main_missing_table")
     write_db(m, [FS1], [MS10], [CN100])
     write_db(s, [FS1, FS2], [MS10], [CN100])
@@ -289,22 +301,26 @@ try:
     conn.commit()
     conn.close()
     r = validate_staging(m, s, None)
-    ck(r["ok"] is True, "main missing table: staging still valid (%r)" % (r["errors"],))
-    ck(any("codal_notices_main_missing_table" in w for w in r["warnings"]),
-       "main missing table: warning (%r)" % (r["warnings"],))
+    ck(r["ok"] is False, "main missing table: ok is False (%r)" % (r["errors"],))
+    ck(any("main_table_missing:codal_notices" in e for e in r["errors"]),
+       "main missing table: error (%r)" % (r["errors"],))
+    ck(not any("codal_notices_main_missing_table" in w for w in r["warnings"]),
+       "main missing table: no warning (%r)" % (r["warnings"],))
     ck(r["stats"]["codal_notices"] == {"main": 0, "staging": 1},
        "main missing table: main count 0")
 
-    # ── ۱۷) main غایب: هشدار و عدمِ ساختِ فایل ──────────────────────────────
+    # ── ۱۷) main غایب: خطا و عدمِ ساختِ فایل ────────────────────────────────
     m, s = pair("main_absent")
     if os.path.exists(m):
         os.remove(m)
     write_db(s, [FS1, FS2], [MS10], [CN100])
     r = validate_staging(m, s, None)
-    ck(r["ok"] is True, "main absent: staging still valid (%r)" % (r["errors"],))
+    ck(r["ok"] is False, "main absent: ok is False (%r)" % (r["errors"],))
     ck(not os.path.exists(m), "main absent: validator did not create main.db")
-    ck(any("main_db_unavailable" in w for w in r["warnings"]),
-       "main absent: warning (%r)" % (r["warnings"],))
+    ck(any("main_db_missing" in e for e in r["errors"]),
+       "main absent: error (%r)" % (r["errors"],))
+    ck(not any("main_db_unavailable" in w for w in r["warnings"]),
+       "main absent: no fail-open warning (%r)" % (r["warnings"],))
 
     # ── ۱۸) staging غایب: خطا و عدمِ ساختِ فایل ─────────────────────────────
     m, s = pair("staging_absent")
@@ -317,7 +333,170 @@ try:
     ck(any("staging_db_unavailable" in e for e in r["errors"]),
        "staging absent: error (%r)" % (r["errors"],))
 
-    # ── ۱۹) last_good: فقط هشدار، هرگز کرش ─────────────────────────────────
+    # ── ۱۹) دامنهٔ ردیفی: تاریخِ خرابِ بدونِ تغییر + ردیفِ تازهٔ سالم ────────
+    m, s = pair("scoped_unchanged")
+    write_db(m, [BAD_FS], [BAD_MS], [BAD_CN])
+    write_db(s, [BAD_FS, dict(FS2, tracing_no=3)], [BAD_MS], [BAD_CN])
+    r = validate_staging(m, s, None)
+    ck(r["ok"] is True, "scoped unchanged: ok is True (%r)" % (r["errors"],))
+    ck(not any(("negative_revenue" in e or "gross_gt_revenue" in e
+                or "missing_provenance" in e) for e in r["errors"]),
+       "scoped unchanged: no row errors (%r)" % (r["errors"],))
+
+    # ── ۱۹ب) کپیِ یکسانِ main در staging (تاریخِ خرابِ بدونِ تغییر): ok ──────
+    m, s = pair("identical_copy")
+    write_db(m, [BAD_FS], [BAD_MS], [BAD_CN])
+    write_db(s, [BAD_FS], [BAD_MS], [BAD_CN])
+    r = validate_staging(m, s, None)
+    ck(r["ok"] is True, "identical copy: ok is True (%r)" % (r["errors"],))
+    ck(r["errors"] == [], "identical copy: errors empty (%r)" % (r["errors"],))
+
+    # ── ۲۰) فقط fetched_at عوض شده: تغییر نیست ──────────────────────────────
+    m, s = pair("scoped_fetched_at")
+    write_db(m, [dict(BAD_FS, fetched_at="2026-10-01")],
+             [BAD_MS], [dict(BAD_CN, fetched_at="2026-10-01")])
+    write_db(s, [dict(BAD_FS, fetched_at="2026-10-02")],
+             [BAD_MS], [dict(BAD_CN, fetched_at="2026-10-02")])
+    r = validate_staging(m, s, None)
+    ck(r["ok"] is True, "fetched_at only: ok is True (%r)" % (r["errors"],))
+
+    # ── ۲۱) ردیفِ تغییرکردهٔ خراب در FS: شکست ────────────────────────────────
+    m, s = pair("scoped_changed_fs")
+    write_db(m, [FS2], [MS10], [CN100])
+    write_db(s, [dict(FS2, revenue=-5.0, gross_profit=3.0)], [MS10], [CN100])
+    r = validate_staging(m, s, None)
+    ck(r["ok"] is False, "changed FS bad: ok is False")
+    ck(any("financial_statements:negative_revenue:revenue" in e
+           and "sample=2" in e for e in r["errors"]),
+       "changed FS bad: negative_revenue on tracing 2 (%r)" % (r["errors"],))
+    ck(any("financial_statements:gross_gt_revenue" in e and "sample=2" in e
+           for e in r["errors"]),
+       "changed FS bad: gross_gt_revenue on tracing 2 (%r)" % (r["errors"],))
+
+    # ── ۲۲) ردیفِ تغییرکردهٔ خراب در MS: شکست ───────────────────────────────
+    m, s = pair("scoped_changed_ms")
+    write_db(m, [FS1], [MS10], [CN100])
+    write_db(s, [FS1], [dict(MS10, monthly_revenue=-1.0, ytd_revenue=-2.0)],
+             [CN100])
+    r = validate_staging(m, s, None)
+    ck(r["ok"] is False, "changed MS bad: ok is False")
+    ck(any("monthly_sales:negative_revenue:monthly_revenue" in e
+           for e in r["errors"]),
+       "changed MS bad: negative monthly (%r)" % (r["errors"],))
+    ck(any("monthly_sales:negative_revenue:ytd_revenue" in e
+           for e in r["errors"]),
+       "changed MS bad: negative ytd (%r)" % (r["errors"],))
+
+    # ── ۲۳) ردیفِ تغییرکردهٔ notices با provenance خالی: شکست ─────────────────
+    m, s = pair("scoped_changed_cn")
+    write_db(m, [FS1], [MS10], [CN100])
+    write_db(s, [FS1], [MS10], [dict(CN100, url="")])
+    r = validate_staging(m, s, None)
+    ck(r["ok"] is False, "changed notices bad: ok is False")
+    ck(any("codal_notices:missing_provenance" in e for e in r["errors"]),
+       "changed notices bad: missing_provenance (%r)" % (r["errors"],))
+
+    # ── ۲۴) تغییرِ title هم ردیف را تغییرکرده می‌کند ────────────────────────
+    m, s = pair("scoped_changed_title")
+    write_db(m, [FS1], [MS10], [BAD_CN])
+    write_db(s, [FS1], [MS10], [dict(BAD_CN, title="new title")])
+    r = validate_staging(m, s, None)
+    ck(r["ok"] is False, "changed title: ok is False")
+    ck(any("codal_notices:missing_provenance" in e for e in r["errors"]),
+       "changed title: row re-validated (%r)" % (r["errors"],))
+
+    # ── ۲۵) ردیفِ تازهٔ خراب: شکست (دامنه نباید ردیف‌هایِ تازه را رد کند) ────
+    m, s = base_pair("scoped_new_bad")
+    add(s, "financial_statements",
+        dict(FS2, tracing_no=3, revenue=-5.0, gross_profit=-10.0))
+    r = validate_staging(m, s, None)
+    ck(r["ok"] is False, "new bad row: ok is False")
+    ck(any("financial_statements:negative_revenue:revenue" in e
+           for e in r["errors"]),
+       "new bad row: negative_revenue (%r)" % (r["errors"],))
+
+    # ── ۲۶) main خراب (فایلِ متنی): خطا، نه fail-open ──────────────────────
+    m, s = pair("main_corrupt")
+    with open(m, "w", encoding="utf-8") as handle:
+        handle.write("this is not a sqlite database\n" * 10)
+    write_db(s, [FS1], [MS10], [CN100])
+    r = validate_staging(m, s, None)
+    ck(r["ok"] is False, "corrupt main: ok is False")
+    ck(any("main_db_unreadable" in e for e in r["errors"]),
+       "corrupt main: main_db_unreadable (%r)" % (r["errors"],))
+    ck(not any("main_table_missing" in e for e in r["errors"]),
+       "corrupt main: not misreported as missing table (%r)" % (r["errors"],))
+
+    # ── ۲۷) main خالیِ معتبر (بدونِ جدول): خطا ──────────────────────────────
+    m, s = pair("main_empty")
+    sqlite3.connect(m).close()
+    write_db(s, [FS1], [MS10], [CN100])
+    r = validate_staging(m, s, None)
+    ck(r["ok"] is False, "empty main: ok is False")
+    for table in ("codal_notices", "financial_statements", "monthly_sales"):
+        ck(any("main_table_missing:%s" % table in e for e in r["errors"]),
+           "empty main: main_table_missing:%s (%r)" % (table, r["errors"]))
+
+    # ── ۲۸) staging خراب: خطایِ مشخص، نه سه‌گانهٔ missing_table ──────────────
+    m, s = pair("staging_corrupt")
+    write_db(m, [FS1], [MS10], [CN100])
+    with open(s, "w", encoding="utf-8") as handle:
+        handle.write("this is not a sqlite database\n" * 10)
+    r = validate_staging(m, s, None)
+    ck(r["ok"] is False, "corrupt staging: ok is False")
+    ck(any("staging_db_unreadable" in e for e in r["errors"]),
+       "corrupt staging: staging_db_unreadable (%r)" % (r["errors"],))
+    ck(not any("_missing_table" in e for e in r["errors"]),
+       "corrupt staging: no missing_table noise (%r)" % (r["errors"],))
+
+    # ── ۲۹) دورهٔ آیندهٔ غیرِکانونیک (1406/1/1): خطا ────────────────────────
+    m, s = base_pair("loose_future")
+    add(s, "financial_statements",
+        dict(FS2, tracing_no=3, period_end="1406/1/1"))
+    r = validate_staging(m, s, None)
+    ck(r["ok"] is False, "loose future: ok is False")
+    ck(any("future_period:financial_statements" in e for e in r["errors"]),
+       "loose future: future_period (%r)" % (r["errors"],))
+
+    # ── ۳۰) پس‌رفتِ دورهٔ main-side (FS و MS): خطا، نه هشدار ────────────────
+    m, s = pair("main_ahead")
+    write_db(m, [dict(FS1, tracing_no=1, period_end="1405/07/20")],
+             [dict(MS10, tracing_no=10, period_end="1405/07/30")], [CN100])
+    write_db(s, [dict(FS1, tracing_no=1, period_end="1405/06/31")],
+             [dict(MS10, tracing_no=10, period_end="1405/06/31")], [CN100])
+    r = validate_staging(m, s, None)
+    ck(r["ok"] is False, "main ahead: ok is False")
+    ck(any("fs_period_regressed" in e for e in r["errors"]),
+       "main ahead: fs_period_regressed (%r)" % (r["errors"],))
+    ck(any("ms_period_regressed" in e for e in r["errors"]),
+       "main ahead: ms_period_regressed (%r)" % (r["errors"],))
+    ck(not any("period_regressed" in w for w in r["warnings"]),
+       "main ahead: regression not a warning (%r)" % (r["warnings"],))
+
+    # ── ۳۱) main بدونِ ستونِ period_end: خطا ───────────────────────────────
+    m, s = pair("main_missing_period")
+    write_db(m, [FS1], [MS10], [CN100])
+    write_db(s, [FS1], [MS10], [CN100])
+    conn = sqlite3.connect(m)
+    conn.execute("ALTER TABLE financial_statements DROP COLUMN period_end")
+    conn.commit()
+    conn.close()
+    r = validate_staging(m, s, None)
+    ck(r["ok"] is False, "main missing period: ok is False")
+    ck(any("financial_statements_main_missing_column:period_end" in e
+           for e in r["errors"]),
+       "main missing period: error (%r)" % (r["errors"],))
+
+    # ── ۳۲) main با دورهٔ بدشکل (بدونِ max قابلِ parse): خطا ───────────────
+    m, s = pair("main_bad_period")
+    write_db(m, [dict(FS1, period_end="not-a-date")], [MS10], [CN100])
+    write_db(s, [dict(FS1, period_end="not-a-date")], [MS10], [CN100])
+    r = validate_staging(m, s, None)
+    ck(r["ok"] is False, "main bad period: ok is False")
+    ck(any("fs_main_period_unparseable" in e for e in r["errors"]),
+       "main bad period: error (%r)" % (r["errors"],))
+
+    # ── ۳۳) last_good: فقط هشدار، هرگز کرش ─────────────────────────────────
     m, s = base_pair("last_good", [FS2])
     lg = {"latest_financial_period": "1405/01/01",
           "latest_monthly_period": "1405/01/01",

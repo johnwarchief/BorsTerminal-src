@@ -4,7 +4,16 @@
 
 `validate_staging(main_db, staging_db, last_good)` فقط با `sqlite3`ِ استاندارد
 کار می‌کند و هیچ فایلی نمی‌نویسد: هر دو DB با `mode=ro` باز می‌شوند. نبودِ
-جدول/ستون یا خرابیِ DB «خطا/هشدار» در نتیجه است، نه استثنا.
+جدول/ستون یا خرابیِ DB «خطا/هشدار» در نتیجه است، نه استثنا. mainِ غایب، خراب
+یا بدونِ جدول خطاست (fail-closed)، نه هشدار.
+
+دامنهٔ بررسی‌ها: گیت‌هایِ سراسری (وجودِ جدول، پوشش، تکرارِ tracing_no، دورهٔ
+آینده، پس‌رفتِ دوره) کلِ جدول را می‌بینند؛ بررسی‌هایِ ردیفی (منفی‌بودنِ درآمد،
+gross>revenue، provenance) فقط رویِ ردیف‌هایِ **جدید یا تغییرکرده** نسبت به main
+اجرا می‌شوند. مقایسه با tracing_no join می‌شود و «تغییر» یعنی هر ستونِ
+`compare` (نه `fetched_at`) فرق کند؛ ردیفِ تاریخیِ خرابِ بدونِ تغییر شکست نمی‌دهد.
+اگر main قابلِ اتکا نباشد (نبودِ DB/جدول/ستون)، همهٔ ردیف‌ها بررسی می‌شوند و
+خودِ main نیز خطا ثبت می‌کند.
 
 اصلاحِ پلن (مهم): `monthly_sales` ستونِ `gross_profit`، `url` و `publish_date`
 ندارد. ستون‌هایِ هر جدول در `TABLE_SPECS` نقش‌بندی شده‌اند و هیچ کوئری‌ای نامِ
@@ -16,11 +25,13 @@
                          excel_url؛ مقایسهٔ gross با revenue رویِ این جدول ممنوع
 
 خروجی: `{"ok": bool, "errors": list[str], "warnings": list[str], "stats": dict}`.
-کدهایِ خطا برایِ مصرف‌کنندهٔ پایدار: `<table>_missing_table`،
-`<table>_missing_column:<col>`، `<table>_coverage_drop`،
-`<table>_duplicate_tracing_no`، `<table>:negative_revenue:<col>`،
-`<table>:gross_gt_revenue`، `<table>:missing_provenance`،
-`future_period:<table>`، `fs_period_regressed`، `ms_period_regressed`.
+کدهایِ خطا برایِ مصرف‌کنندهٔ پایدار: `main_db_missing`، `main_db_unreadable`،
+`main_table_missing:<table>`، `<table>_missing_table`، `<table>_missing_column:<col>`،
+`<table>_coverage_drop`، `<table>_duplicate_tracing_no`، `<table>:negative_revenue:<col>`،
+`<table>:gross_gt_revenue`، `<table>:missing_provenance`، `future_period:<table>`،
+`fs_period_regressed`، `ms_period_regressed`،
+`<table>_main_missing_column:period_end`، `main_query_failed:period:<table>`،
+`<code>_main_period_unparseable`.
 """
 import sqlite3
 from pathlib import Path
@@ -31,6 +42,7 @@ TABLES = ("codal_notices", "financial_statements", "monthly_sales")
 TABLE_SPECS = {
     "codal_notices": {
         "key": "tracing_no",
+        "compare": ("symbol", "title", "url", "publish_date"),
         "provenance": ("url", "publish_date"),
         "provenance_mode": "all",
         "non_negative": (),
@@ -39,6 +51,8 @@ TABLE_SPECS = {
     },
     "financial_statements": {
         "key": "tracing_no",
+        "compare": ("period_end", "revenue", "gross_profit", "url",
+                    "publish_date"),
         "provenance": ("url", "publish_date"),
         "provenance_mode": "all",
         "non_negative": ("revenue",),
@@ -47,6 +61,8 @@ TABLE_SPECS = {
     },
     "monthly_sales": {
         "key": "tracing_no",
+        "compare": ("period_end", "monthly_revenue", "ytd_revenue",
+                    "pdf_url", "excel_url"),
         "provenance": ("pdf_url", "excel_url"),
         "provenance_mode": "any",
         "non_negative": ("monthly_revenue", "ytd_revenue"),
@@ -94,6 +110,73 @@ def _columns(conn, table):
     return {row[1] for row in rows} if rows else None
 
 
+def _probe_readable(conn):
+    """None اگر DB خوانا باشد، وگرنه پیامِ خطایِ کوتاه."""
+    try:
+        conn.execute("PRAGMA schema_version").fetchone()
+    except sqlite3.Error as exc:
+        return _short(exc)
+    return None
+
+
+def _baseline(main, table, spec, main_columns):
+    """{tracing_no: tuple(مقادیرِ compare)} از main، یا None اگر قابلِ اتکا نباشد."""
+    key = spec["key"]
+    fields = spec["compare"]
+    if main is None or not main_columns or key not in main_columns:
+        return None
+    if any(field not in main_columns for field in fields):
+        return None
+    sql = "SELECT %s FROM %s" % (
+        ", ".join([_q(key)] + [_q(field) for field in fields]), _q(table))
+    try:
+        rows = main.execute(sql).fetchall()
+    except sqlite3.Error:
+        return None
+    return {row[0]: tuple(row[1:]) for row in rows}
+
+
+def _new_or_changed(baseline, key, values):
+    """ردیف جدید است یا یکی از ستون‌هایِ مقایسه‌شده فرق دارد (NULL-safe)."""
+    if baseline is None or key is None:
+        return True
+    prev = baseline.get(key)
+    if prev is None:
+        return True
+    return any((a is None) != (b is None) or (a is not None and a != b)
+               for a, b in zip(values, prev))
+
+
+def _changed_rows(staging, table, spec, staging_columns, baseline):
+    """مجموعهٔ tracing_noهایِ جدید/تغییریافته؛ None یعنی همهٔ ردیف‌ها بررسی شوند."""
+    if staging is None or not staging_columns or baseline is None:
+        return None
+    key = spec["key"]
+    fields = spec["compare"]
+    if key not in staging_columns:
+        return None
+    if any(field not in staging_columns for field in fields):
+        return None
+    sql = "SELECT %s FROM %s" % (
+        ", ".join([_q(key)] + [_q(field) for field in fields]), _q(table))
+    try:
+        rows = staging.execute(sql).fetchall()
+    except sqlite3.Error:
+        return None
+    changed = set()
+    for row in rows:
+        if _new_or_changed(baseline, row[0], tuple(row[1:])):
+            changed.add(row[0])
+    return changed
+
+
+def _scoped(keys, changed):
+    """فقط ردیف‌هایِ جدید/تغییریافته؛ changed=None یعنی دامنه سراسری است."""
+    if changed is None:
+        return keys
+    return [key for key in keys if key in changed]
+
+
 def _count(conn, table):
     if conn is None:
         return 0
@@ -124,6 +207,18 @@ def _period_tuple(value):
     return int(year), int(month), int(day)
 
 
+def _leading_year(value):
+    """چهار رقمِ نخستِ مقدار (پس از نرمال‌سازیِ ارقام) اگر سالِ کامل باشد."""
+    if value is None:
+        return None
+    text = str(value).strip().translate(_DIGITS)
+    if len(text) < 4 or not text[:4].isdigit():
+        return None
+    if len(text) > 4 and text[4].isdigit():
+        return None
+    return int(text[:4])
+
+
 def _period_scan(conn, table, column, key_expr):
     """(آخرین دوره، ردیف‌هایِ آینده، ردیف‌هایِ بدشکل، خطایِ کوئری)."""
     latest = None
@@ -141,7 +236,12 @@ def _period_scan(conn, table, column, key_expr):
             continue
         parsed = _period_tuple(value)
         if parsed is None:
-            unparsed.append(key)
+            # دورهٔ غیرِکانونیک اما با سالِ آینده (مثلاً 1406/1/1) هم آینده است.
+            year = _leading_year(value)
+            if year is not None and year > _PERIOD_MAX_YEAR:
+                future.append((key, value))
+            else:
+                unparsed.append(key)
             continue
         if parsed[0] > _PERIOD_MAX_YEAR:
             future.append((key, value))
@@ -167,7 +267,7 @@ def _check_duplicates(conn, table, spec, columns, errors):
                       % (table, len(rows), _sample([r[0] for r in rows])))
 
 
-def _check_non_negative(conn, table, spec, columns, column, errors):
+def _check_non_negative(conn, table, spec, columns, column, changed, errors):
     if column not in columns:
         return
     key = spec["key"]
@@ -180,12 +280,13 @@ def _check_non_negative(conn, table, spec, columns, column, errors):
         errors.append("%s_query_failed:negative:%s:%s"
                       % (table, column, _short(exc)))
         return
-    if rows:
+    scoped = _scoped([row[0] for row in rows], changed)
+    if scoped:
         errors.append("%s:negative_revenue:%s:rows=%d sample=%s"
-                      % (table, column, len(rows), _sample([r[0] for r in rows])))
+                      % (table, column, len(scoped), _sample(scoped)))
 
 
-def _check_gross(conn, table, spec, columns, errors):
+def _check_gross(conn, table, spec, columns, changed, errors):
     pair = spec.get("gross")
     if not pair or any(c not in columns for c in pair):
         return
@@ -201,12 +302,13 @@ def _check_gross(conn, table, spec, columns, errors):
     except sqlite3.Error as exc:
         errors.append("%s_query_failed:gross:%s" % (table, _short(exc)))
         return
-    if rows:
+    scoped = _scoped([row[0] for row in rows], changed)
+    if scoped:
         errors.append("%s:gross_gt_revenue:rows=%d sample=%s"
-                      % (table, len(rows), _sample([r[0] for r in rows])))
+                      % (table, len(scoped), _sample(scoped)))
 
 
-def _check_provenance(conn, table, spec, columns, errors):
+def _check_provenance(conn, table, spec, columns, changed, errors):
     fields = spec["provenance"]
     if any(c not in columns for c in fields):
         return
@@ -223,14 +325,15 @@ def _check_provenance(conn, table, spec, columns, errors):
     except sqlite3.Error as exc:
         errors.append("%s_query_failed:provenance:%s" % (table, _short(exc)))
         return
-    if rows:
+    scoped = _scoped([row[0] for row in rows], changed)
+    if scoped:
         errors.append("%s:missing_provenance:fields=%s:rows=%d sample=%s"
-                      % (table, "+".join(fields), len(rows),
-                         _sample([r[0] for r in rows])))
+                      % (table, "+".join(fields), len(scoped),
+                         _sample(scoped)))
 
 
-def _check_periods(conn, table, spec, columns, errors, warnings):
-    """آخرین دورهٔ staging را برمی‌گرداند؛ آینده/بدشکل را هم گزارش می‌کند."""
+def _check_periods(conn, table, spec, columns, changed, errors, warnings):
+    """آخرین دورهٔ staging را برمی‌گرداند؛ آینده سراسری، بدشکل رویِ ردیف‌هایِ تازه."""
     column = spec.get("period")
     key = spec["key"]
     key_expr = _q(key) if key in columns else "rowid"
@@ -242,19 +345,20 @@ def _check_periods(conn, table, spec, columns, errors, warnings):
     if future:
         errors.append("future_period:%s:rows=%d sample=%s"
                       % (table, len(future), _sample([v for _, v in future])))
-    if unparsed:
+    scoped_unparsed = _scoped(unparsed, changed)
+    if scoped_unparsed:
         warnings.append("unparseable_period:%s:rows=%d sample=%s"
-                        % (table, len(unparsed), _sample(unparsed)))
+                        % (table, len(scoped_unparsed), _sample(scoped_unparsed)))
     return latest
 
 
 def _check_period_regression(main, staging, table, code, main_columns,
                              staging_columns, stats, errors, warnings):
-    """MAX(period_end)ِ staging نباید از main عقب‌تر باشد."""
+    """MAX(period_end)ِ staging نباید از main عقب‌تر باشد؛ خرابیِ main خطاست."""
     if main is None or main_columns is None:
         return
     if "period_end" not in main_columns:
-        warnings.append("%s_main_missing_column:period_end" % table)
+        errors.append("%s_main_missing_column:period_end" % table)
         return
     if (staging is None or staging_columns is None
             or "period_end" not in staging_columns):
@@ -262,12 +366,15 @@ def _check_period_regression(main, staging, table, code, main_columns,
     main_latest, _future, unparsed, query_error = _period_scan(
         main, table, "period_end", "rowid")
     if query_error:
-        warnings.append("main_query_failed:period:%s:%s" % (table, query_error))
+        errors.append("main_query_failed:period:%s:%s" % (table, query_error))
         return
     if unparsed:
         warnings.append("unparseable_period:main:%s:rows=%d"
                         % (table, len(unparsed)))
     if main_latest is None:
+        rows = (stats.get(table) or {}).get("main") or 0
+        if rows:
+            errors.append("%s_main_period_unparseable:rows=%d" % (code, rows))
         return
     staging_latest = stats.get(code + "_latest")
     if staging_latest is None:
@@ -376,12 +483,28 @@ def validate_staging(main_db, staging_db, last_good=None):
     try:
         try:
             main = _connect_ro(main_db)
+        except FileNotFoundError as exc:
+            errors.append("main_db_missing:%s" % _short(exc))
         except Exception as exc:                  # noqa: BLE001 - DB ممکن است نباشد
-            warnings.append("main_db_unavailable:%s" % _short(exc))
+            errors.append("main_db_unreadable:%s" % _short(exc))
+        if main is not None:
+            problem = _probe_readable(main)
+            if problem:
+                errors.append("main_db_unreadable:%s" % problem)
+                main.close()
+                main = None
         try:
             staging = _connect_ro(staging_db)
-        except Exception as exc:                  # noqa: BLE001 - DB ممکن است نباشد
+        except FileNotFoundError as exc:
             errors.append("staging_db_unavailable:%s" % _short(exc))
+        except Exception as exc:                  # noqa: BLE001 - DB ممکن است نباشد
+            errors.append("staging_db_unreadable:%s" % _short(exc))
+        if staging is not None:
+            problem = _probe_readable(staging)
+            if problem:
+                errors.append("staging_db_unreadable:%s" % problem)
+                staging.close()
+                staging = None
 
         for table in TABLES:
             spec = TABLE_SPECS[table]
@@ -394,7 +517,7 @@ def validate_staging(main_db, staging_db, last_good=None):
             if mcols is not None:
                 n_main = _count(main, table)
                 if n_main is None:
-                    warnings.append("%s_main_count_failed" % table)
+                    errors.append("%s_main_count_failed" % table)
                     n_main = 0
             n_staging = 0
             if scols is not None:
@@ -407,7 +530,7 @@ def validate_staging(main_db, staging_db, last_good=None):
             if staging is not None and scols is None:
                 errors.append("%s_missing_table" % table)
             if main is not None and mcols is None:
-                warnings.append("%s_main_missing_table" % table)
+                errors.append("main_table_missing:%s" % table)
             if staging is None or scols is None:
                 continue
 
@@ -420,23 +543,27 @@ def validate_staging(main_db, staging_db, last_good=None):
             for column in missing:
                 errors.append("%s_missing_column:%s" % (table, column))
 
+            # دامنهٔ ردیفی: فقط ردیف‌هایِ جدید/تغییریافته؛ بقیهٔ گیت‌ها سراسری‌اند.
+            baseline = _baseline(main, table, spec, mcols)
+            changed = _changed_rows(staging, table, spec, scols, baseline)
+
             if spec["key"] in scols:
                 _check_duplicates(staging, table, spec, scols, errors)
 
             for column in spec["non_negative"]:
                 if column in scols:
                     _check_non_negative(staging, table, spec, scols, column,
-                                        errors)
+                                        changed, errors)
 
             if spec.get("gross") and all(c in scols for c in spec["gross"]):
-                _check_gross(staging, table, spec, scols, errors)
+                _check_gross(staging, table, spec, scols, changed, errors)
 
             if all(c in scols for c in spec["provenance"]):
-                _check_provenance(staging, table, spec, scols, errors)
+                _check_provenance(staging, table, spec, scols, changed, errors)
 
             if spec.get("period") and spec["period"] in scols:
                 latest = _check_periods(staging, table, spec, scols,
-                                        errors, warnings)
+                                        changed, errors, warnings)
                 if table == "financial_statements":
                     stats["fs_latest"] = latest
                 elif table == "monthly_sales":
