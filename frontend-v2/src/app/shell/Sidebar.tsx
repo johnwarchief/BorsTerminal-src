@@ -4,7 +4,6 @@ import { toFaDigits } from '@shared/lib/fa';
 import { useUiStore, type Theme } from '@shared/stores/uiStore';
 import { Icon } from './icons';
 import { HelpBlock } from './HelpBlock';
-import { SidebarSymbol } from './SidebarSymbol';
 
 interface Item { path: string; label: string; icon: string; live?: boolean }
 interface Group { title: string; items: Item[] }
@@ -95,8 +94,6 @@ export function Sidebar({ notificationCount = 0 }: { notificationCount?: number 
           ) : null}
         </NavLink>
       </nav>
-
-      <SidebarSymbol collapsed={collapsed} />
 
       <HelpBlock collapsed={collapsed} />
 
