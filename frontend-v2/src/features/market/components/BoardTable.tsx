@@ -78,6 +78,7 @@ interface Props {
   resetKey: string;
   onSort: (key: SortKey) => void;
   onSelect: (row: MarketRow) => void;
+  onActivate?: (row: MarketRow) => void;
 }
 
 export function BoardTable({
@@ -91,6 +92,7 @@ export function BoardTable({
   resetKey,
   onSort,
   onSelect,
+  onActivate,
 }: Props) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const rowH = useRowHeight(density);
@@ -231,7 +233,7 @@ export function BoardTable({
                 }
                 if (event.key === 'Enter' || event.key === ' ') {
                   event.preventDefault();
-                  onSelect(row);
+                  (event.key === 'Enter' && onActivate ? onActivate : onSelect)(row);
                 }
               }}
               className="board-row absolute inset-x-0 grid items-center"

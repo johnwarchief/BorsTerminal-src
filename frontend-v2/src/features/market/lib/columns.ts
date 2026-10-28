@@ -125,7 +125,7 @@ export type ProfileKey = 'general' | 'trading' | 'fundamental' | 'technical';
 export const PROFILES: Record<ProfileKey, { label: string; columns: ColumnKey[] }> = {
   general: {
     label: 'عمومی',
-    columns: ['symbol', 'last', 'pct_close', 'close', 'volume', 'value', 'trades', 'patterns', 'pe', 'eps', 'mcap', 'tech'],
+    columns: ['symbol', 'last', 'pct_close', 'close', 'volume', 'value', 'trades', 'patterns', 'eps', 'mcap', 'tech'],
   },
   trading: {
     label: 'معاملات',
@@ -136,7 +136,7 @@ export const PROFILES: Record<ProfileKey, { label: string; columns: ColumnKey[] 
   },
   fundamental: {
     label: 'بنیادی',
-    columns: ['symbol', 'last', 'pct_close', 'pe', 'eps', 'mcap'],
+    columns: ['symbol', 'last', 'pct_close', 'eps', 'mcap'],
   },
   technical: {
     label: 'تکنیکال',
