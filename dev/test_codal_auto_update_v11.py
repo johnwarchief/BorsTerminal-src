@@ -14,7 +14,10 @@ Proves, with temp DBs only (no network, no CODAL, no gh, no signing):
   3) a pause file short-circuits the run before any staging copy;
   4) a second concurrent run (pre-existing lock) returns ``ok False`` without
      crashing and without deleting the other owner's lock;
-  5) no production step (publish/build_snapshot/updater/sign) is reached in
+  5) CLI exit codes: success -> 0, paused -> 0, locked -> 0 (benign skips so
+     Task Scheduler's RestartCount does not re-run a full job), validation
+     failure -> 1; ``run()``'s result contract is unchanged;
+  6) no production step (publish/build_snapshot/updater/sign) is reached in
      the dry-run or validation-failure paths — each is patched to raise.
 
 Run:  python dev/test_codal_auto_update_v11.py
@@ -190,6 +193,48 @@ try:
     ck(r["staged"] is False, "locked: staged is False")
     ck(os.path.isfile(A.LOCK), "locked: other owner's lock is left intact")
     ck(fs_count(main) == 1, "locked: main DB untouched")
+
+    # ── ۵) CLI exit codes: locked/paused are benign, failures are not ───────
+    ck(A._exit_code({"ok": True, "errors": []}) == 0,
+       "exit: success -> 0")
+    ck(A._exit_code({"ok": False, "errors": ["paused"]}) == 0,
+       "exit: paused -> 0 (benign skip, no Task Scheduler retry)")
+    ck(A._exit_code({"ok": False, "errors": ["locked"]}) == 0,
+       "exit: locked -> 0 (benign skip, no Task Scheduler retry)")
+    ck(A._exit_code({"ok": False, "errors": ["negative_revenue: -5"]}) == 1,
+       "exit: validation failure -> 1")
+    ck(A._exit_code({"ok": False, "errors": ["locked", "fetch: boom"]}) == 1,
+       "exit: locked plus a real error -> 1")
+    ck(A._exit_code({}) == 1, "exit: malformed result -> 1")
+    ck(A._exit_code(None) == 1, "exit: None result -> 1")
+    ck(A.LOCK_STALE_SECONDS == 6 * 3600,
+       "stale lock window stays 6h (documented; mirrored by the app cooldown)")
+
+    # run()'s result contract is unchanged: locked/paused stay ok False with
+    # their errors; only the CLI mapping makes them exit 0.
+    d, main, staging = fresh_env("exit_codes")
+    A._fetch = boom
+    with open(A.PAUSE, "w", encoding="utf-8") as fh:
+        fh.write("pause")
+    code = A.main(["--dry-run", "--db", main, "--staging-dir", staging])
+    ck(code == 0, "main: paused run exits 0 (%r)" % (code,))
+
+    d, main, staging = fresh_env("exit_codes_locked")
+    A._fetch = boom
+    with open(A.LOCK, "w", encoding="utf-8") as fh:
+        fh.write("other-owner")
+    code = A.main(["--dry-run", "--db", main, "--staging-dir", staging])
+    ck(code == 0, "main: locked run exits 0 (%r)" % (code,))
+
+    d, main, staging = fresh_env("exit_codes_validation")
+    A._fetch = make_fetch(revenue=-5.0, gross_profit=-10.0)
+    code = A.main(["--dry-run", "--db", main, "--staging-dir", staging])
+    ck(code == 1, "main: validation failure exits 1 (%r)" % (code,))
+
+    d, main, staging = fresh_env("exit_codes_success")
+    A._fetch = make_fetch()
+    code = A.main(["--dry-run", "--db", main, "--staging-dir", staging])
+    ck(code == 0, "main: successful dry-run exits 0 (%r)" % (code,))
 
     failed = [m for ok, m in CHECKS if not ok]
     if failed:

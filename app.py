@@ -382,21 +382,34 @@ def _startup_sync_market():
 
     # ── جبرانِ استارتِ بروزرسانیِ روزانهٔ کدال (Task 6) ─────────────────────
     # Task Scheduler روزانه ۱۸:۳۰ اجرا می‌کند و StartWhenAvailable اجرایِ
-    # ازدست‌رفته را پس از روشن‌شدن جبران می‌کند؛ این نخ لایۀِ دوم است: اگر
-    # آخرین موفقیت کهنه/غایب/خراب باشد، همان اسکریپت را بدونِ انتظار بالا
-    # می‌آورد. کار در نخِ daemon است تا حلقهٔ رویداد هرگز پشتِ خواندنِ فایل
-    # یا راه‌اندازیِ پروسه نماند. با BORS_NO_FETCH_LOOPS=1 هیچ پروسهٔ کدال
-    # بالا نمی‌آید (همان دربی که سینک/تیکِ تابلو را خاموش می‌کند).
+    # ازدست‌رفته را پس از روشن‌شدن جبران می‌کند؛ این نخ لایۀِ دوم است. تصمیم
+    # در should_start_catchup (خالص) گرفته می‌شود: در حالتِ سورس/تست فقط با
+    # BORS_CODAL_AUTOUPDATE=1، هرگز با BORS_NO_FETCH_LOOPS=1، نه وقتی
+    # codal_auto_pause هست، و نه وقتی آخرین تلاش کمتر از ۶ ساعت پیش بوده
+    # (تلاشِ ناموفقِ تازه نباید هر بار کلِ خطِ لوله را دوباره اجرا کند). قفلِ
+    # کهنهٔ codal_auto.lock هم تا ۶ ساعت در codal_auto_update.py می‌ماند؛
+    # همین cooldown از اسپاونِ پشتِ‌سرهم در آن پنجره جلوگیری می‌کند. کار در
+    # نخِ daemon است تا حلقهٔ رویداد هرگز پشتِ خواندنِ فایل یا راه‌اندازیِ
+    # پروسه نماند.
     def _codal_auto_catchup():
         try:
-            from api._sync_codal import read_auto_status, should_auto_update
-            last_success = read_auto_status().get("last_success")
-            if not should_auto_update(last_success):
-                print("[startup] codal auto-update is fresh; catch-up skipped")
-                return
+            import bors_config as _bc
+            from api._sync_codal import read_auto_status, should_start_catchup
             script = os.path.join(APP_DIR, "dev", "codal_auto_update.py")
-            if not os.path.isfile(script):
-                print("[startup] codal auto-update script not found; catch-up skipped")
+            script_exists = os.path.isfile(script)
+            paused = os.path.exists(os.path.join(APP_DIR, "codal_auto_pause"))
+            if not should_start_catchup(
+                    read_auto_status(),
+                    frozen=bool(getattr(_bc, "_FROZEN", False)),
+                    env=os.environ,
+                    fetch_loops_enabled=_fetch_loops_enabled(),
+                    paused=paused,
+                    script_exists=script_exists):
+                if not script_exists:
+                    print("[startup] codal auto-update script not found; catch-up skipped")
+                else:
+                    print("[startup] codal auto-update catch-up skipped "
+                          "(guard/pause/cooldown/fresh)")
                 return
             # مسیرِ نسبی + cwd ریشهٔ مخزن: همان فرمانی که Task Scheduler
             # ثبت می‌کند. Popen هرگز wait نمی‌شود؛ خروجی به DEVNULL می‌رود

@@ -57,7 +57,11 @@ SNAPSHOT_META = os.path.join(ROOT, "codal.meta.json")
 UPDATER = os.path.join(ROOT, "dev", "codal_fts_updater.py")
 SIGN = os.path.join(ROOT, "scripts", "sign_setup.py")
 
-LOCK_STALE_SECONDS = 6 * 3600            # قفلِ جامانده از اجرایِ مرده، بعد از ۶h آزاد
+# قفلِ جامانده از اجرایِ مرده بعد از ۶h آزاد می‌شود. تا آن لحظه هر اجرایِ
+# دیگری «locked» می‌بیند؛ Task Scheduler نباید این را شکست بشمارد و دوباره
+# اجرا کند (خروجِ ۰ برای locked/paused در _exit_code) و app.py هم در همین
+# پنجره با cooldown از اسپاونِ دوباره خودداری می‌کند.
+LOCK_STALE_SECONDS = 6 * 3600
 MATERIALIZE_TIMEOUT = 3600
 SIGN_TIMEOUT = 300
 
@@ -374,6 +378,29 @@ def run(mode="daily", dry_run=False, db_path=None, staging_dir=None):
         _release_lock(lock)
 
 
+_BENIGN_SKIPS = ("locked", "paused")
+
+
+def _exit_code(result):
+    """کدِ خروجِ CLI؛ قفل/توقف «رد شدنِ بی‌خطر» است، نه شکست.
+
+    Task Scheduler با ``-RestartCount 2`` هر خروجِ غیرصفر را شکست می‌شمارد و
+    ۱۵ دقیقه بعد دوباره اجرا می‌کند. اگر اجرایِ روزانه قفل را به اجرایِ
+    زندهٔ دیگری (مثلاً catch-up) ببازد، تلاشِ دوباره پس از پایانِ آن اجرا
+    کلِ واکشی/merge/publish را تکرار می‌کند. پس locked/paused → 0 و هر خطایِ
+    واقعی (از جمله validation) → 1. قراردادِ ``run()`` دست نمی‌خورد؛ فقط
+    نگاشتِ نتیجه به کدِ خروج اینجاست.
+    """
+    if not isinstance(result, dict):
+        return 1
+    if result.get("ok"):
+        return 0
+    errors = result.get("errors") or []
+    if errors and all(isinstance(e, str) and e in _BENIGN_SKIPS for e in errors):
+        return 0
+    return 1
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(
         description="CODAL staging-first daily auto-update (no ADB)")
@@ -392,7 +419,7 @@ def main(argv=None):
             print("ERROR " + item)
     print("ok=%s staged=%s published=%s" % (
         res["ok"], res["staged"], res["published"]))
-    return 0 if res["ok"] else 1
+    return _exit_code(res)
 
 
 if __name__ == "__main__":

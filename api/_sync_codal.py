@@ -108,40 +108,135 @@ _dbdl_lock = threading.Lock()
 _dbdl_running = False
 
 
-def should_auto_update(last_success_iso, now=None, max_age_hours=24):
-    """آیا اجرایِ خودکارِ کدال کهنه است؟ (خالص، stdlib، بدونِ شبکه)
+CATCHUP_OPT_IN_ENV = "BORS_CODAL_AUTOUPDATE"
+CATCHUP_COOLDOWN_HOURS = 6.0
+_FUTURE_SKEW_SECONDS = 300          # timestampِ آیندهٔ دور = خراب/اختلافِ ساعت
+_TRUTHY = ("1", "true", "yes", "on")
 
-    None/خالی/تاریخِ نامعتبر → True (محافظه‌کارانه: یک اجرایِ اضافی بهتر از
-    دادهٔ کهنه است). تازۀ کمتر از max_age_hours → False؛ کهنه‌تر → True.
-    ورودیِ aware و naive هر دو پذیرفته می‌شود: اگر یک طرف tzinfo داشته باشد و
-    طرفِ دیگر نه، منطقۀ طرفِ aware به طرفِ naive چسبانده می‌شود تا مقایسه
-    هرگز ``TypeError: can't subtract offset-naive and offset-aware`` ندهد.
+
+def _parse_iso(raw):
+    """ISO timestamp → datetime؛ خالی/date-only/نامعتبر → None.
+
+    date-only (``2026-10-21``) عمداً timestamp شمرده نمی‌شود: fromisoformat
+    آن را نیمه‌شب می‌فهمد و «امروزِ نیمه‌شب» می‌تواند یک اجرایِ کهنه را تازه
+    جا بزند. نویسندهٔ وضعیت همیشه ساعت را می‌نویسد.
     """
-    if not isinstance(last_success_iso, str) or not last_success_iso.strip():
-        return True
-    raw = last_success_iso.strip()
-    # fromisoformat("2026-10-21") را نیمه‌شب می‌فهمد؛ ولی last_success بدونِ
-    # ساعت یک timestamp نیست و «امروزِ نیمه‌شب» می‌تواند اجرایِ کهنه را تازه
-    # جا بزند. محافظه‌کارانه: نبودِ جداکنندۀِ تاریخ/ساعت → کهنه.
+    if not isinstance(raw, str) or not raw.strip():
+        return None
+    raw = raw.strip()
     if "T" not in raw and " " not in raw:
-        return True
+        return None
     if raw.endswith(("Z", "z")):       # ISO-Z → offset؛ fromisoformat پیش از 3.11 نه
         raw = raw[:-1] + "+00:00"
     try:
-        last = datetime.datetime.fromisoformat(raw)
+        return datetime.datetime.fromisoformat(raw)
     except (TypeError, ValueError):
-        return True
+        return None
+
+
+def _age_seconds(raw, now=None):
+    """سنِ raw نسبت به now (ثانیه)؛ None یعنی خالی/نامعتبر/غیرقابلِ‌مقایسه.
+
+    aware/naive مخلوط هم پذیرفته می‌شود: اگر یک طرف tzinfo داشته باشد و طرفِ
+    دیگر نه، منطقۀ طرفِ aware به طرفِ naive چسبانده می‌شود تا مقایسه هرگز
+    ``TypeError: can't subtract offset-naive and offset-aware`` ندهد.
+    """
+    stamp = _parse_iso(raw)
+    if stamp is None:
+        return None
     if now is None:
-        now = (datetime.datetime.now(last.tzinfo) if last.tzinfo is not None
+        now = (datetime.datetime.now(stamp.tzinfo) if stamp.tzinfo is not None
                else datetime.datetime.now())
-    if last.tzinfo is not None and now.tzinfo is None:
-        now = now.replace(tzinfo=last.tzinfo)
-    elif last.tzinfo is None and now.tzinfo is not None:
-        last = last.replace(tzinfo=now.tzinfo)
+    if stamp.tzinfo is not None and now.tzinfo is None:
+        now = now.replace(tzinfo=stamp.tzinfo)
+    elif stamp.tzinfo is None and now.tzinfo is not None:
+        stamp = stamp.replace(tzinfo=now.tzinfo)
     try:
-        return bool((now - last).total_seconds() > float(max_age_hours) * 3600.0)
+        return (now - stamp).total_seconds()
+    except (TypeError, ValueError, OverflowError):
+        return None
+
+
+def should_auto_update(last_success_iso, now=None, max_age_hours=24):
+    """آیا اجرایِ خودکارِ کدال کهنه است؟ (خالص، stdlib، بدونِ شبکه)
+
+    None/خالی/تاریخِ نامعتبر/date-only → True (محافظه‌کارانه: یک اجرایِ اضافی
+    بهتر از دادهٔ کهنه است). تازۀ کمتر از max_age_hours → False؛ کهنه‌تر →
+    True. timestampِ آیندهٔ دور (بیش از ۵ دقیقه اختلافِ ساعت/فایلِ خراب) هم
+    قابلِ اتکا نیست → True. timestampهایِ aware و naive (و مخلوطِ آن‌ها) بدونِ
+    استثنا مقایسه می‌شوند.
+    """
+    age = _age_seconds(last_success_iso, now)
+    if age is None:
+        return True
+    if age < -_FUTURE_SKEW_SECONDS:
+        return True
+    try:
+        return bool(age > float(max_age_hours) * 3600.0)
     except (TypeError, ValueError, OverflowError):
         return True
+
+
+def recently_attempted(status, now=None, cooldown_hours=CATCHUP_COOLDOWN_HOURS):
+    """آیا آخرین تلاش در پنجرهٔ cooldown است؟ (خالص، بدونِ I/O)
+
+    ``started_at`` در هر تلاش — موفق یا ناموفق — نوشته می‌شود؛ در نبودش
+    ``updated_at`` همان نقش را دارد. اگر last_success کهنه باشد ولی تلاشِ
+    تازه‌ای شکست خورده باشد، اجرایِ دوباره فقط درخواستِ تکراری به کدال
+    می‌فرستد (سقفِ درخواست). timestampهایِ aware/naive/نامعتبر نباید استثنا
+    بدهند: نامعتبر → cooldown ندارد (اجازهٔ تلاش)؛ آیندهٔ دور (اختلافِ ساعت یا
+    فایلِ خراب) هم قابلِ اتکا نیست.
+    """
+    if not isinstance(status, dict):
+        return False
+    raw = status.get("started_at") or status.get("updated_at")
+    age = _age_seconds(raw, now)
+    if age is None or age < -_FUTURE_SKEW_SECONDS:
+        return False
+    try:
+        return bool(age <= float(cooldown_hours) * 3600.0)
+    except (TypeError, ValueError, OverflowError):
+        return False
+
+
+def _env_enabled(env, name):
+    """آیا env[name] یکی از مقادیرِ صریحِ 1/true/yes/on است؟"""
+    try:
+        value = (env or {}).get(name)
+    except AttributeError:
+        return False
+    return str(value or "").strip().lower() in _TRUTHY
+
+
+def should_start_catchup(status, frozen, env=None, fetch_loops_enabled=True,
+                         paused=False, script_exists=True, now=None,
+                         max_age_hours=24,
+                         cooldown_hours=CATCHUP_COOLDOWN_HOURS):
+    """آیا نخِ استارت مجاز است ``dev/codal_auto_update.py`` را بالا بیاورد؟ (خالص)
+
+    همهٔ درها باید باز باشند:
+      ۱) حالتِ سورس فقط با opt-inِ صریحِ ``BORS_CODAL_AUTOUPDATE=1``؛ نصبِ
+         frozen/portable خودش opt-in است. این در هارنس‌هایِ تستی/توسعه‌ای که
+         app را بدونِ ``BORS_NO_FETCH_LOOPS`` بالا می‌آورند، واکشیِ واقعی
+         نمی‌سازد.
+      ۲) ``_fetch_loops_enabled()`` (``BORS_NO_FETCH_LOOPS=1`` خاموشش می‌کند).
+      ۳) نه paused (فایلِ ``codal_auto_pause``).
+      ۴) ``last_success`` کهنه (``should_auto_update``) و آخرین تلاش بیرون از
+         cooldownِ ۶ساعته (``recently_attempted``) — تلاشِ ناموفقِ تازه دوباره
+         کلِ خطِ لوله را اجرا نمی‌کند.
+      ۵) اسکریپت موجود باشد؛ بیلدِ frozen پوشهٔ ``dev/`` را همراه ندارد.
+
+    تابع هیچ I/O ندارد: status/env/زمان/وجودِ اسکریپت همه ورودی‌اند.
+    """
+    if not fetch_loops_enabled or paused or not script_exists:
+        return False
+    if not frozen and not _env_enabled(env, CATCHUP_OPT_IN_ENV):
+        return False
+    if recently_attempted(status, now=now, cooldown_hours=cooldown_hours):
+        return False
+    last_success = status.get("last_success") if isinstance(status, dict) else None
+    return bool(should_auto_update(last_success, now=now,
+                                   max_age_hours=max_age_hours))
 
 
 def read_auto_status():
