@@ -4,14 +4,21 @@ import { useFtsCard, type FtsCard } from '../api/useFtsCard';
 
 type Quality = 'ideal' | 'ok' | 'below' | 'na';
 
-const CHIP: Record<Quality, { word: string; tone: string }> = {
-  ideal: { word: 'ایده‌آل', tone: 'text-cyan-300' },
-  ok: { word: 'قبول', tone: 'text-up' },
-  below: { word: 'رد', tone: 'text-down' },
-  na: { word: 'نظر نمی‌دهد', tone: 'text-text-3' },
+export const QUALITY_WORD: Record<Quality, string> = {
+  ideal: 'ایده‌آل',
+  ok: 'قبول',
+  below: 'رد',
+  na: 'بینظر',
 };
 
-interface Fact {
+const CHIP: Record<Quality, { word: string; tone: string }> = {
+  ideal: { word: QUALITY_WORD.ideal, tone: 'text-cyan-300' },
+  ok: { word: QUALITY_WORD.ok, tone: 'text-up' },
+  below: { word: QUALITY_WORD.below, tone: 'text-down' },
+  na: { word: QUALITY_WORD.na, tone: 'text-text-3' },
+};
+
+export interface FundamentalFact {
   key: string;
   label: string;
   value: string;
@@ -25,20 +32,20 @@ function qualityOf(pass: boolean | null | undefined, ideal = false): Quality {
   return pass ? 'ok' : 'below';
 }
 
-function signedPct(value: number | null | undefined): string {
-  if (value == null || !Number.isFinite(value)) return '—';
-  return `${value >= 0 ? '+' : '−'}${faNum(Math.abs(value), 1)}٪`;
+function signedPct(input: number | null | undefined): string {
+  if (input == null || !Number.isFinite(input)) return '—';
+  return `${input >= 0 ? '+' : '−'}${faNum(Math.abs(input), 1)}٪`;
 }
 
-function ratioPct(value: number | null | undefined): string {
-  if (value == null || !Number.isFinite(value)) return '—';
-  return `${toFaDigits((value * 100).toFixed(1))}٪`;
+function ratioPct(input: number | null | undefined): string {
+  if (input == null || !Number.isFinite(input)) return '—';
+  return `${toFaDigits((input * 100).toFixed(1))}٪`;
 }
 
-function factsOf(card: FtsCard): Fact[] {
+export function fundamentalFacts(card: FtsCard): FundamentalFact[] {
   const passes = card.passes ?? {};
   const indicators = card.indicators ?? {};
-  const out: Fact[] = [];
+  const out: FundamentalFact[] = [];
 
   const one = indicators['1'];
   const monetary = one?.monetary;
@@ -130,24 +137,24 @@ export function FundamentalCards({ symbol }: { symbol: string }) {
     );
   }
 
-  const facts = factsOf(query.data);
-
   return (
-    <div data-testid="fundamental-cards" className="flex flex-col gap-1 p-1">
-      {facts.map((fact) => {
+    <div data-testid="fundamental-cards" className="flex min-h-0 gap-1 overflow-x-auto p-1">
+      {fundamentalFacts(query.data).map((fact) => {
         const chip = CHIP[fact.quality];
         return (
-          <div key={fact.key} data-testid={`fundamental-card-${fact.key}`}
-            title={fact.note}
-            className="rounded-[var(--radius-sm)] border border-line bg-panel-2 px-1.5 py-1">
-            <div className="flex items-baseline justify-between gap-2 t-9 text-text-3">
-              <span className="truncate">{fact.label}</span>
-              <span className={clsx('shrink-0 t-85 font-bold', chip.tone)}>{chip.word}</span>
+          <div
+            key={fact.key}
+            data-testid={`fundamental-card-${fact.key}`}
+            title={`${fact.label} — ${fact.note}`}
+            className="flex min-h-0 min-w-[84px] flex-1 flex-col justify-between gap-0.5 rounded-[var(--radius-sm)] border border-line bg-panel-2 px-1.5 py-1"
+          >
+            <div className="flex items-center justify-between gap-1">
+              <span className="grid h-4 w-4 flex-none place-items-center rounded-full bg-panel-3 t-85 text-text-3">
+                {toFaDigits(fact.key.slice(0, 1))}
+              </span>
+              <span className={clsx('truncate t-85 font-bold', chip.tone)}>{chip.word}</span>
             </div>
-            <div className="flex items-baseline justify-between gap-2">
-              <b className="num t-105 font-extrabold text-text">{fact.value}</b>
-              <span className="min-w-0 truncate t-85 text-text-3">{fact.note}</span>
-            </div>
+            <b className="num truncate t-115 font-extrabold text-text">{fact.value}</b>
           </div>
         );
       })}
