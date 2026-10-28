@@ -10,7 +10,7 @@
 import { memo, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { FTS_COLUMN_LABEL, MARGIN_TIER_HINT, MARGIN_TIER_LABEL } from '@shared/lib/ftsLabels';
-import { jalaliOf, pickAssemblyBadge, pickCapitalBadge, type AssemblyBadgeInfo, type CalEvent, type CapitalIncreaseBadge } from '../lib/assemblyEvent';
+import { jalaliOf, pickAssemblyBadge, pickCapitalBadge, todayIsoInTehran, type AssemblyBadgeInfo, type CalEvent, type CapitalIncreaseBadge } from '../lib/assemblyEvent';
 import { toFaDigits } from '@shared/lib/fmt';
 import { DownloadRowsButton } from '@shared/components/DownloadRowsButton';
 import { toExportTable, type ExportCell } from '@shared/lib/tableExport';
@@ -807,8 +807,44 @@ function FunnelGateChip({ gate }: { gate?: FtsFunnelGate | null }) {
   );
 }
 
+/** روزِ تقویمیِ نمایشِ یک مهرِ زمانی — مهرِ دارایِ افست (`meta.published_at` با
+ *  Z/±hh:mm) با تقویمِ تهران خوانده می‌شود؛ برشِ UTC می‌توانست انتشارِ بعد از
+ *  ۲۰:۳۰ UTC را «دیروزِ تهران» نشان دهد. `last_success`ِ بک‌اند بی‌افست است
+ *  (وقتِ محلی)، پس همان روزش درست است. تاریخِ نامعتبر ⇒ خودِ رشته (بدونِ ادعا). */
+export function dbFreshnessDay(raw: string): string {
+  const s = String(raw ?? '').trim();
+  if (!s) return '';
+  if (/(?:z|[+-]\d{2}:?\d{2})$/i.test(s)) {
+    const d = new Date(s);
+    if (Number.isFinite(d.getTime())) return todayIsoInTehran(d);
+  }
+  return /^\d{4}-\d{2}-\d{2}/.test(s) ? s.slice(0, 10) : s;
+}
+
+/** تازه‌ترینِ دو مهرِ زمانی؛ در تساوی/نامعتبری، اولی (منبعِ ترجیحی) می‌ماند. */
+function newestStamp(preferred: string, fallback: string): string {
+  if (!preferred) return fallback;
+  if (!fallback) return preferred;
+  const a = Date.parse(preferred);
+  const b = Date.parse(fallback);
+  if (!Number.isFinite(a)) return fallback;
+  if (!Number.isFinite(b)) return preferred;
+  return b > a ? fallback : preferred;
+}
+
+/** تازه‌ترین دوره؛ هر دو `YYYY/MM/DD`ِ صفرپرشده‌اند، پس مقایسهٔ رشته‌ای = زمانی */
+function newestPeriod(preferred: string, fallback: string): string {
+  if (!preferred) return fallback;
+  if (!fallback) return preferred;
+  return fallback > preferred ? fallback : preferred;
+}
+
 /** خطِ تازگیِ دادهٔ بنیادی — فقط از meta/freshnessِ همان پاسخِ db-status.
- *  هیچ تاریخی اینجا ساخته نمی‌شود: نبودشان یعنی خط هم نیست. */
+ *  هیچ تاریخی اینجا ساخته نمی‌شود: نبودشان یعنی خط هم نیست.
+ *  منبعِ تاریخ: تازه‌ترینِ `meta.published_at` (زمانِ انتشارِ snapshot — همان
+ *  ادغامی که UI تازه انجام داد) و `freshness.last_success` (فقط orchestrator
+ *  روزانه می‌نویسدش؛ ادغامِ سمتِ کلاینت آن را جلو نمی‌برد). منبعِ دوره:
+ *  تازه‌ترینِ `freshness.latest_financial_period` و متای snapshot. */
 function dbFreshnessText(dbUpdate: DbStatus): string {
   const fresh = dbUpdate.freshness ?? null;
   const meta = dbUpdate.meta ?? null;
@@ -816,16 +852,15 @@ function dbFreshnessText(dbUpdate: DbStatus): string {
    *  پس `??` به‌تنهایی متایِ snapshot را از دست می‌داد. */
   const firstText = (...values: Array<string | null | undefined>): string =>
     values.map((v) => String(v ?? '').trim()).find(Boolean) ?? '';
-  const rawDate = firstText(fresh?.last_success, meta?.published_at);
-  const rawPeriod = firstText(
-    fresh?.latest_financial_period,
-    meta?.latest_financial_period,
+  const rawDate = newestStamp(firstText(meta?.published_at), firstText(fresh?.last_success));
+  const rawPeriod = newestPeriod(
+    firstText(fresh?.latest_financial_period),
+    firstText(meta?.latest_financial_period),
   );
   const parts: string[] = [];
   if (rawDate) {
-    // last_success قالبِ ISO دارد (2026-10-25T18:30:00)؛ فقط روزش جلالی می‌شود.
-    const day = rawDate.slice(0, 10);
-    const faDate = /^\d{4}-\d{2}-\d{2}$/.test(day) ? jalaliOf(day) : rawDate;
+    const day = dbFreshnessDay(rawDate);
+    const faDate = /^\d{4}-\d{2}-\d{2}$/.test(day) ? jalaliOf(day) : day;
     parts.push(`آخرین به‌روزرسانی بنیادی: ${toFaDigits(faDate)}`);
   }
   if (rawPeriod) parts.push(`آخرین دوره: ${toFaDigits(rawPeriod)}`);

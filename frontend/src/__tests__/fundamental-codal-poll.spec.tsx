@@ -52,7 +52,11 @@ function mockBody(url: string): unknown {
     queue.push(d);
     return d.p;                     // ترتیبِ حل‌شدن درِ دستِ تست
   }
-  if (u === '/api/sync/codal/db-download') return { status: 'ok', started: true };
+  // قراردادِ بک‌اند: فقط status:"success" شروع را تأیید می‌کند؛ «ok»ِ قدیمی
+  // دیگر موفقیت خوانده نمی‌شد و همین ماک قرارداد را از چشمِ تست پنهان می‌کرد.
+  if (u === '/api/sync/codal/db-download') {
+    return { status: 'success', message: 'دانلود دیتابیس کدال از گیت‌هاب آغاز شد.' };
+  }
   return { status: 'success', data: [] };
 }
 

@@ -43,7 +43,8 @@ const OTHER_GROUP = 'سایر';
 /** نوارِ وضعیتِ به‌روزرسانیِ دادهٔ بنیادی — متن‌ها از پاسخِ واقعیِ بک‌اند می‌آیند.
  *  درصد فقط وقتی می‌آید که stage خودش downloading باشد؛ وگرنه ادعایِ عدد نمی‌کنیم.
  *  موفقیت فقط در گذارِ running→done (از هوک) نمایش داده می‌شود، نه در ورود به
- *  صفحه‌ای که کارِ قبلی‌اش done بوده است. */
+ *  صفحه‌ای که کارِ قبلی‌اش done بوده است. خطایِ ماندگارِ خیلی کهنه را خودِ هوک
+ *  پاک می‌کند تا این اعلان «خطایِ همین حالا» خوانده نشود. */
 function CodalUpdateStatus({ status, completed }: { status: DbStatus | null; completed: boolean }) {
   if (!status && !completed) return null;
   const error = String(status?.error ?? '').trim();

@@ -12,6 +12,11 @@
 //   • گذارِ running→done فقط یک‌بار `onDone` را صدا می‌زند تا صاحبِ صفحه
 //     غربالگری را یک‌بار تازه کند؛ ورود به صفحه وقتی کارِ قبلی done است
 //     «موفقیتِ تازه» ساخته نمی‌شود.
+//   • «اجرا دیده شد» فقط با شاهدِ سرور لچ می‌شود: پولینگی که running:true
+//     برمی‌گرداند یا POSTی که status:"success" تأیید می‌کند. کلیکِ دستی به‌تنهایی
+//     هیچ موفقیتی نمی‌سازد؛ ردشدنِ سرور (already_running/error) هشدار می‌دهد.
+//   • خطایِ ماندگارِ فایلِ وضعیت فقط وقتی «خطایِ همین حالا» خوانده می‌شود که از
+//     همین نشست باشد یا `ts`ش تازه باشد؛ خطایِ چندروزه در هر ورود تکرار نمی‌شود.
 // هیچ شبکه‌ای در تست لازم نیست: فقط `http` ماک می‌شود.
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { http } from '@shared/api/http';
@@ -20,6 +25,22 @@ import { http } from '@shared/api/http';
 export const CODAL_DB_POLL_RUNNING_MS = 2_000;
 /** ریتمِ پولینگِ بی‌کار — برایِ دیدنِ شروعِ اجرایِ خودکارِ روزانه */
 export const CODAL_DB_POLL_IDLE_MS = 30_000;
+/** سنِ مجازِ خطایِ ماندگارِ db-status — قدیمی‌تر از این «همین حالا» خوانده نمی‌شود */
+export const CODAL_DB_ERROR_MAX_AGE_MS = 6 * 60 * 60 * 1000;
+
+/** آیا `ts`ِ وضعیت به‌قدرِ کافی تازه است که خطایش خطایِ کنونی خوانده شود؟
+ *  `ts` را بک‌اند با `datetime.now().isoformat()` می‌نویسد (بی‌افست، وقتِ محلی)؛
+ *  هر ISO دیگری هم با Date.parse خوانده می‌شود. بی‌تاریخ/نامعتبر ⇒ نه. */
+export function isRecentDbStatusTs(
+  ts: string | null | undefined,
+  now: number = Date.now(),
+): boolean {
+  const raw = String(ts ?? '').trim();
+  if (!raw) return false;
+  const at = Date.parse(raw);
+  if (!Number.isFinite(at)) return false;
+  return Math.abs(now - at) <= CODAL_DB_ERROR_MAX_AGE_MS;
+}
 
 /** متایِ آخرین snapshotِ منتشرشده (از tag دادهٔ گیت‌هاب) — فقط فیلدهایِ خوانده‌شده */
 export type CodalDbMeta = {
@@ -56,6 +77,14 @@ export type CodalAutoUpdateOptions = {
   onDone?: () => void;
 };
 
+/** قراردادِ پاسخِ POST /api/sync/codal/db-download — `success` تنها تأییدِ شروع است */
+export type CodalDbDownloadResult = {
+  status?: string;
+  message?: string;
+  started?: boolean;
+  url?: string;
+};
+
 export type CodalAutoUpdateState = {
   status: DbStatus | null;
   running: boolean;
@@ -81,6 +110,7 @@ export function useCodalAutoUpdate({ onDone }: CodalAutoUpdateOptions = {}): Cod
   }, [onDone]);
 
   const applyStatus = useCallback((db: DbStatus) => {
+    let next = db;
     if (db.running) {
       sawRunningRef.current = true;
       setCompleted(false);
@@ -91,16 +121,29 @@ export function useCodalAutoUpdate({ onDone }: CodalAutoUpdateOptions = {}): Cod
         setCompleted(true);
         onDoneRef.current?.();
       }
+    } else if (db.stage === 'error' && String(db.error ?? '').trim()) {
+      // خطایِ نوشته‌شده در فایلِ وضعیت با شروعِ بعدی پاک نمی‌شود؛ اگر از همین
+      // نشست نباشد و `ts`ش هم کهنه باشد، اعلانِ «همین حالا» ساخته نمی‌شود.
+      const fromSession = sawRunningRef.current;
+      sawRunningRef.current = false;
+      setCompleted(false);
+      if (!fromSession && !isRecentDbStatusTs(db.ts)) {
+        next = { ...db, error: '' };
+      }
     } else {
       // idle/error — اجرایِ در جریان پایان یافته؛ doneِ بعدی «تازه» نیست
       sawRunningRef.current = false;
     }
-    setStatus(db);
+    setStatus(next);
   }, []);
 
   const start = useCallback(async () => {
-    epochRef.current += 1;
-    sawRunningRef.current = true;
+    // پاسخِ کاوشِ mount یا تیکِ در راه نباید بعد از این کلیک بنشیند
+    requestSeqRef.current += 1;
+    const epoch = ++epochRef.current;
+    // کلیک به‌تنهایی «اجرا دیده شد» نیست: فقط running:trueِ پولینگ یا
+    // status:"success"ِ خودِ POST این لچ را می‌بندد.
+    sawRunningRef.current = false;
     setCompleted(false);
     setStatus((prev) => ({
       ...(prev ?? {}),
@@ -110,10 +153,35 @@ export function useCodalAutoUpdate({ onDone }: CodalAutoUpdateOptions = {}): Cod
       detail: '',
       error: '',
     }));
+    const reject = (message: string) => {
+      if (epoch !== epochRef.current) return;   // کلیکِ تازه‌تر حاکم است
+      sawRunningRef.current = false;
+      setStatus((prev) => ({
+        ...(prev ?? {}),
+        running: false,
+        stage: 'error',
+        percent: 0,
+        error: message,
+        ts: new Date().toISOString(),
+      }));
+    };
     try {
-      await http('/api/sync/codal/db-download', { method: 'POST' });
+      const res = await http<CodalDbDownloadResult>('/api/sync/codal/db-download', {
+        method: 'POST',
+      });
+      if (String(res?.status ?? '') === 'success') {
+        // تنها تأییدِ سرور اجازهٔ بنرِ پایان می‌دهد (HTTP 200 به‌تنهایی کافی نیست)
+        if (epoch === epochRef.current) sawRunningRef.current = true;
+        return;
+      }
+      // already_running یا error: همان پیامِ سرور به‌صورتِ role=alert دیده می‌شود
+      reject(
+        String(res?.message ?? '').trim()
+          || 'شروعِ به‌روزرسانیِ دادهٔ بنیادی ممکن نشد.',
+      );
     } catch {
-      // وضعیتِ واقعی از polling می‌آید — همان رفتارِ پیشینِ دکمه
+      // POSTِ شکست‌خورده هم موفقیت نیست — بنر/refetchِ ساختگی ممنوع
+      reject('شروعِ به‌روزرسانیِ دادهٔ بنیادی ممکن نشد — ارتباط با سرور برقرار نشد.');
     }
   }, []);
 
