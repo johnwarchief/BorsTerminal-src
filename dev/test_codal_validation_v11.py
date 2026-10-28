@@ -18,6 +18,7 @@ import tempfile
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
 sys.path.insert(0, os.path.join(ROOT, "dev"))
+import codal_validation as V  # noqa: E402
 from codal_validation import validate_staging  # noqa: E402
 
 try:
@@ -527,6 +528,22 @@ try:
     ck(r["ok"] is True, "last_good empty dict: ok stays True")
     ck(any("last_good_checked" in w for w in r["warnings"]),
        "last_good empty dict: checked warning")
+
+    # ── سقفِ سالِ دوره پویاست، نه ۱۴۰۵ِ hard-coded (review I1) ─────────────
+    from datetime import date as _d
+    ck(V._period_max_year(_d(2026, 10, 28)) == 1405, "Jalali ceiling today = 1405")
+    ck(V._period_max_year(_d(2027, 4, 1)) == 1406,
+       "Jalali ceiling rolls to 1406 after Nowruz 1406")
+    ck(V._period_max_year(_d(2030, 1, 1)) == 1408, "Jalali ceiling = 1408 in 2030")
+    c = sqlite3.connect(":memory:")
+    c.execute("CREATE TABLE t (tracing_no INTEGER, period_end TEXT)")
+    c.execute("INSERT INTO t VALUES (1,'1406/01/01')")
+    latest, fut, unp, err = V._period_scan(c, "t", "period_end", "tracing_no",
+                                           max_year=1406)
+    ck(not fut and latest == "1406/01/01",
+       "a 1406 row is not future when the ceiling is 1406 (%r, %r)"
+       % (fut, latest))
+    c.close()
 finally:
     shutil.rmtree(TMP, ignore_errors=True)
 

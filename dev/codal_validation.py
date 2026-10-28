@@ -34,6 +34,7 @@ gross>revenue، provenance) فقط رویِ ردیف‌هایِ **جدید یا 
 `<code>_main_period_unparseable`.
 """
 import sqlite3
+from datetime import date as _date
 from pathlib import Path
 
 TABLES = ("codal_notices", "financial_statements", "monthly_sales")
@@ -71,7 +72,7 @@ TABLE_SPECS = {
     },
 }
 
-_PERIOD_MAX_YEAR = 1405          # دورهٔ ۱۴۰۶ و بعد = آینده
+_PERIOD_MAX_YEAR = 1405          # پیش‌فرضِ سازگاری؛ مقدارِ واقعی از تاریخ گرفته می‌شود
 _COVERAGE_PCT = 95               # staging باید ≥ ۹۵٪ main باشد
 _SAMPLE = 5                      # نمونهٔ tracing_no در پیامِ خطا
 # ارقامِ فارسی/عربی → ASCII (برایِ دوره‌هایِ غیرِASCII هم بی‌خطر است).
@@ -219,12 +220,51 @@ def _leading_year(value):
     return int(text[:4])
 
 
-def _period_scan(conn, table, column, key_expr):
+def _leading_year(value):
+    """سالِ پیشروِ یک دورهٔ غیرِکانونیک (بدونِ تغییرِ رشته)."""
+    text = str(value or "").strip().translate(_DIGITS)
+    if len(text) < 4 or not text[:4].isdigit():
+        return None
+    if len(text) > 4 and text[4].isdigit():
+        return None
+    return int(text[:4])
+
+
+_GDM = (0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334)
+
+
+def _g2j(gy, gm, gd):
+    """میلادی → جلالی (همان الگوریتمِ jalaali-js که فرانت و ra_parity دارند)."""
+    gy2 = gy + 1 if gm > 2 else gy
+    days = (355666 + 365 * gy + (gy2 + 3) // 4 - (gy2 + 99) // 100
+            + (gy2 + 399) // 400 + gd + _GDM[gm - 1])
+    jy = -1595 + 33 * (days // 12053)
+    days %= 12053
+    jy += 4 * (days // 1461)
+    days %= 1461
+    if days > 365:
+        jy += (days - 1) // 365
+        days = (days - 1) % 365
+    return int(jy)
+
+
+def _period_max_year(now=None):
+    """بیشترین سالِ مجازِ دوره = سالِ جلالیِ امروز (نه ۱۴۰۵ِ hard-code).
+
+    گاردِ ۱۴۰۵ در ۱۴۰۶/۰۱/۰۱ (۲۰۲۷-۰۳-۲۱) هر دورهٔ سالمِ تازه را «آینده»
+    می‌کرد و اجرایِ روزانهٔ بدونِ‌ناظر را متوقف می‌کرد. `now` برایِ تست تزریق‌شدنی است.
+    """
+    d = now or _date.today()
+    return _g2j(d.year, d.month, d.day)
+
+
+def _period_scan(conn, table, column, key_expr, max_year=None):
     """(آخرین دوره، ردیف‌هایِ آینده، ردیف‌هایِ بدشکل، خطایِ کوئری)."""
     latest = None
     latest_key = None
     future = []
     unparsed = []
+    limit_year = max_year if max_year is not None else _period_max_year()
     try:
         rows = conn.execute(
             "SELECT %s, %s FROM %s WHERE %s IS NOT NULL"
@@ -238,12 +278,12 @@ def _period_scan(conn, table, column, key_expr):
         if parsed is None:
             # دورهٔ غیرِکانونیک اما با سالِ آینده (مثلاً 1406/1/1) هم آینده است.
             year = _leading_year(value)
-            if year is not None and year > _PERIOD_MAX_YEAR:
+            if year is not None and year > limit_year:
                 future.append((key, value))
             else:
                 unparsed.append(key)
             continue
-        if parsed[0] > _PERIOD_MAX_YEAR:
+        if parsed[0] > limit_year:
             future.append((key, value))
         if latest_key is None or parsed > latest_key:
             latest_key = parsed

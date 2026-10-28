@@ -15,7 +15,7 @@ Proves, with no network / CODAL / GitHub / ADB and no subprocess spawn:
      file and the parsed dict for a valid ``WORK_DIR/codal_auto_status.json``;
   4) the PowerShell scheduler carries every required Task Scheduler token
      (``BorsCodalAutoUpdate``, 18:30 daily, StartWhenAvailable, IgnoreNew,
-     ExecutionTimeLimit 2h, RestartCount 2, the daily script and ``-Remove``);
+     ExecutionTimeLimit 2h, RestartCount 0 (no ban-hammering), the daily script and ``-Remove``);
   5) app.py routes the catch-up decision through ``should_start_catchup`` and
      spawns ``dev/codal_auto_update.py --mode daily`` via a non-blocking
      daemon thread (Popen, never wait/run); in dev defaults the decision is
@@ -278,7 +278,8 @@ try:
     ck("$Argument" in ps1 and "--mode daily" in ps1,
        "PS1 action argument carries --mode daily")
     ck("-Hours 2" in ps1, "PS1 caps execution at 2 hours")
-    ck("-RestartCount 2" in ps1, "PS1 restarts twice")
+    ck("-RestartCount 0" in ps1, "PS1 never auto-retries a banned fetch")
+    ck("-RestartInterval" not in ps1, "PS1 has no retry interval")
 
     # ── ۹) startup catch-up decision: dev defaults never spawn ──────────────
     # The test's WORK_DIR currently holds a non-dict status -> read_auto_status

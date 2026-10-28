@@ -36,7 +36,7 @@ $Trigger = New-ScheduledTaskTrigger -Daily -At "18:30"
 $Settings = New-ScheduledTaskSettingsSet -StartWhenAvailable `
            -MultipleInstances IgnoreNew `
            -ExecutionTimeLimit (New-TimeSpan -Hours 2) `
-           -RestartCount 2 -RestartInterval (New-TimeSpan -Minutes 15)
+           -RestartCount 0
 
 try {
   $Principal = New-ScheduledTaskPrincipal -UserId "$env:USERDOMAIN\$env:USERNAME" -LogonType S4U -RunLevel Limited
