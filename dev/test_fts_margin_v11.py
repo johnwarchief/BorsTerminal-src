@@ -28,6 +28,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import fts_engine                                          # noqa: E402
 from api.fundamental import ind3_gross_margin              # noqa: E402
 from api import fundamental as FD                          # noqa: E402
+from api.screener import _overlay_i3                       # noqa: E402
 
 _u11_log = io.StringIO()
 with contextlib.redirect_stdout(_u11_log):
@@ -171,6 +172,23 @@ rz = ind3_gross_margin(c, "بی‌درآمد", ref=ref(100, rev=0))
 chk(rz.get("na") is True and rz.get("margin_tier") is None,
     "درآمدِ صفر ⇒ N/A و بی‌برچسب", (rz.get("na"), rz.get("margin_tier")))
 
+# ── N/Aِ طبقه ⇔ شکافِ داده (Task 10B2a1 fix round 1) ─────────────────────
+# `ind3_na` فقط سیگنالِ طبقه را True می‌کند؛ payloadهایِ قدیمیِ بی‌na_kind
+# همان رفتارِ پیشین را دارند (مسیرِ مادی‌شده).
+chk(fts_engine.ind3_na({"na": True, "na_kind": "data"}) is False,
+    "ind3_na: شکافِ داده (na_kind=data) N/Aِ طبقه نیست")
+chk(fts_engine.ind3_na({"na": True, "na_kind": "class"}) is True,
+    "ind3_na: N/Aِ طبقه (na_kind=class) True است")
+chk(fts_engine.ind3_na({"na": True}) is True
+    and fts_engine.ind3_na({"na": False, "margin_pct": 30.0}) is False,
+    "ind3_na: payloadِ قدیمیِ بی‌na_kind همان رفتارِ پیشین را دارد")
+chk(fts_engine.ind3_na({"na": True, "na_kind": "data",
+                        "margin_pct": None}) is False,
+    "ind3_na: na_kind=data بر fallbackِ «margin تهی» مقدم است")
+chk(r2.get("na_kind") == "data" and r.get("na_kind") is None,
+    "کارت: na_kind=data برایِ شکاف و None برایِ حاشیهٔ عدددار",
+    (r2.get("na_kind"), r.get("na_kind")))
+
 # ── دلیلِ N/A باید کلاس را دقیق بگوید (Task 10B2a1) ───────────────────────
 # بانک در `kind` زیرِ «holding» می‌افتد؛ دلیلش نباید «سرمایه‌گذاری/هلدینگ»
 # باشد. N/A/امتیاز دست‌نخورده است — فقط متنِ دلیل.
@@ -181,6 +199,8 @@ chk(p_bank.get("margin_class") == "bank",
 r_bank = ind3_gross_margin(c, "بانک", ref=ref(580), profile=p_bank)
 chk(r_bank.get("na") is True and r_bank.get("margin_tier") is None,
     "بانک ⇒ N/A و بی‌برچسب", (r_bank.get("na"), r_bank.get("margin_tier")))
+chk(r_bank.get("na_kind") == "class",
+    "بانک ⇒ na_kind=class (N/Aِ طبقه، نه شکاف)", r_bank.get("na_kind"))
 chk("بانک" in (r_bank.get("reason") or "")
     and "هلدینگ" not in (r_bank.get("reason") or "")
     and "سرمایه‌گذاری" not in (r_bank.get("reason") or ""),
@@ -224,6 +244,8 @@ CASES = [
     ("شبیستونه", "شرکت شبیستونه", SEC, 29.96, "floor"),
     ("شپنجاه", "شرکت شپنجاه", SEC, 50.0, "good"),
     ("شنال", "شرکت شنال", "سرمایه گذاری", None, None),
+    # تولیدیِ بی‌سود ناخالص: شکافِ داده، نه N/Aِ طبقه (fix round 1).
+    ("شبی‌داده", "شرکت شبی‌داده", SEC, None, None),
 ]
 # هلدینگ با سود ناخالصِ عدددار: گیتِ طبقه باید N/A بدهد، نه ۵۸٪ «خوب».
 HOLDING = ("شهلد", "شرکت سرمایه گذاری شهلد", "سرمایه گذاری", 58.0)
@@ -330,6 +352,22 @@ def _temp_db_case():
                 chk((b.get("i3_reason") or "") == (c3.get("reason") or ""),
                     "bulk/card N/A %s: یک i3_reason" % sym,
                     (b.get("i3_reason"), c3.get("reason")))
+                # شکافِ داده `na` دارد ولی N/Aِ طبقه نیست (fix round 1)؛
+                # تولیدیِ بی‌سود ناخالص data و هلدینگِ بی‌سود class است.
+                _want_kind = "data" if sec == SEC else "class"
+                chk(c3.get("na_kind") == _want_kind,
+                    "card N/A %s: na_kind=%s" % (sym, _want_kind),
+                    c3.get("na_kind"))
+                _row = {"i3_pass": True, "i3_na": True, "i3_reason": "کهنه"}
+                _overlay_i3(_row, c3, False)
+                chk(_row.get("i3_pass") is None
+                    and _row.get("i3_na") is (_want_kind == "class"),
+                    "screener overlay %s: i3_pass=None و i3_na=%s"
+                    % (sym, _want_kind == "class"),
+                    (_row.get("i3_pass"), _row.get("i3_na")))
+                chk(_row.get("i3_reason") == (c3.get("reason") or ""),
+                    "screener overlay %s: i3_reason کارت را نگه می‌دارد" % sym,
+                    _row.get("i3_reason"))
             else:
                 # باند از حکمِ خام (۲۰/۳۰) است، نه از `margin_pct`ِ گردشده؛
                 # برایِ ۲۹٫۹۶٪ «۳۰٫۰» دیده می‌شود ولی باند acceptable است.
@@ -350,6 +388,11 @@ def _temp_db_case():
             chk(d3.get("margin_tier") == want_tier,
                 "scan_symbol.detail.gross_margin %s ⇒ margin_tier=%r"
                 % (sym, want_tier), d3.get("margin_tier"))
+            if sec == SEC:
+                # تولیدی: شکافِ داده حکمِ None دارد ولی پرچمِ N/Aِ طبقه
+                # نمی‌گیرد — همان قراردادِ bulk/card (Task 10B2a1 fix round 1).
+                chk(s.get("i3_na") is False,
+                    "scan_symbol %s (تولیدی) i3_na=False" % sym, s.get("i3_na"))
 
         # ── هلدینگ با revenue>0 و gross_profit: گیتِ طبقه باید N/A بدهد ──
         # پیش‌فرضِ آزمون: عددِ حاشیه واقعاً قابلِ محاسبه است (۵۸٪)؛ پس N/A از
@@ -390,6 +433,13 @@ def _temp_db_case():
         chk(hc3.get("data_gap") is False and bool(hc3.get("reason")),
             "card هلدینگ: بدونِ پرچمِ شکاف، با دلیلِ طبقه",
             (hc3.get("data_gap"), bool(hc3.get("reason"))))
+        # overlay اسکرینر: N/Aِ طبقه باید `i3_na=True` و حکم None بدهد.
+        _hrow = {"i3_reason": "کهنه"}
+        _overlay_i3(_hrow, hc3, hres["passes"]["3_gross_margin"])
+        chk(hc3.get("na_kind") == "class" and _hrow.get("i3_na") is True
+            and _hrow.get("i3_pass") is None,
+            "screener overlay هلدینگ: N/Aِ طبقه i3_na=True و i3_pass=None",
+            (hc3.get("na_kind"), _hrow.get("i3_na"), _hrow.get("i3_pass")))
         chk(hres["passes"].get("3_gross_margin") is False,
             "card هلدینگ: passِ ۳ شمارش نمی‌شود",
             hres["passes"].get("3_gross_margin"))

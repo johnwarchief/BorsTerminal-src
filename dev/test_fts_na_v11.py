@@ -299,6 +299,21 @@ def _temp_db_case():
             # با همان متنِ کارت (Task 10B2a1).
             c = card(BAD_YTD, PROD_SECTOR, "شرکت ماهانه‌بد")
             c3, c4 = c["indicators"]["3"], c["indicators"]["4"]
+            # Task 10B2a1 C1: دلیلِ BAD_YTD فقط در bulk نماند — کارت و scan هم
+            # همان را بگویند، و overlay اسکرینر متنِ کارت را روی ردیف بگذارد.
+            chk((c["indicators"]["1"].get("reason") or "") == FD.MONTHLY_BAD_YTD_REASON,
+                "bad-YTD monthly: card reason is BAD_YTD",
+                c["indicators"]["1"].get("reason"))
+            _s = fts_engine.scan_symbol(con, BAD_YTD, 1.0e14, 2.0e15,
+                                        PROD_SECTOR, cfg=cfg)
+            chk((_s.get("i1_reason") or "") == FD.MONTHLY_BAD_YTD_REASON,
+                "bad-YTD monthly: scan_symbol reason is BAD_YTD",
+                _s.get("i1_reason"))
+            _row = {"i1_reason": FD.MONTHLY_NO_SERIES_REASON}
+            _overlay_card_reason(_row, "i1_reason", c["indicators"]["1"])
+            chk(_row.get("i1_reason") == FD.MONTHLY_BAD_YTD_REASON,
+                "screener overlay keeps BAD_YTD (not NO_SERIES)",
+                _row.get("i1_reason"))
             chk(b.get("i3_pass") is None and b.get("i3_na") is False,
                 "bad-YTD monthly: i3 is a data gap, not class N/A",
                 (b.get("i3_pass"), b.get("i3_na")))
@@ -393,7 +408,7 @@ def _temp_db_case():
 # ═══════════════════════════════════════════════════════════════════════════
 #  ۴) سه‌گانهٔ ۱بِ اسکرینر — یک قاعده، دو مسیر
 # ═══════════════════════════════════════════════════════════════════════════
-from api.screener import _merge_1b_fields                  # noqa: E402
+from api.screener import _merge_1b_fields, _overlay_card_reason   # noqa: E402
 
 chk(_merge_1b_fields(False, True, "price_effect_decomposition", "unavailable")
     == (False, "not_applicable"),

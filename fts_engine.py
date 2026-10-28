@@ -332,17 +332,32 @@ def ind2_na(card_ind2) -> bool:
 
 
 def ind3_na(card_ind3) -> bool:
-    """آیا کارتِ جزئیات، شاخص ۳ (حاشیهٔ ناخالص) را «سنجیده نشده» اعلام کرده؟
+    """آیا شاخص ۳ (حاشیهٔ ناخالص) «N/Aِ طبقه» است — نه شکافِ داده؟
 
     همان رأی ۱۶ در شاخص ۳: «بی‌داده» با «رد» یکی نیست. کارت در حالتِ
     not_applicable فقط `na: True` را می‌گوید و `passes` را عمداً bool نگه
     می‌دارد، پس هر کپی‌کاری که حکمِ کارت را به ستونِ سه‌حالۀ جدول می‌برد باید
     جدا بپرسد. بدونِ این، صندوق و نمادی که سطرِ «سود ناخالص» ندارد سرخِ «رد»
     می‌شوند (شاهد ۲۰۲۶-۰۹-۳۰: ۲۹۷ ردیف از ۸۷۳ با gross_margin تهی در
-    اسکرینرِ زنده، و اندوخته داريوش در قیف). `margin_pct` تهی هم همان معنی
-    را می‌دهد: چیزی که عدد ندارد سنجیده نشده است.
+    اسکرینرِ زنده، و اندوخته داريوش در قیف).
+
+    از Task 10B2a1 (fix round 1) کارت `na_kind` را هم می‌دهد:
+    `"class"` = ماهیتِ مالی/بانکی/هلدینگ/صندوق (N/Aِ خاکستری) و
+    `"data"` = شکافِ داده (نبودِ صورتِ مالی/سطرِ سود ناخالص). فقط `"class"`
+    پرچمِ N/A می‌گیرد؛ شکافِ داده حکمِ None دارد ولی «N/Aِ ماهیت» نیست و
+    جدول باید تفاوت را نشان دهد (پیش از این ۱۱۷ ردیفِ شکاف چنین برچسبی
+    می‌گرفتند).
+
+    سازگاریِ عقب‌رو: payloadهایِ قدیمی (مسیرِ مادی‌شدهٔ `fts_results` و کارتِ
+    کش‌شده) `na_kind` ندارند؛ برایشان همان رفتارِ پیشین حفظ می‌شود
+    (`na`/`exempt`/`margin_pct is None` ⇒ N/A).
     """
     if not card_ind3:
+        return False
+    kind = card_ind3.get("na_kind")
+    if kind == "class":
+        return True
+    if kind == "data":
         return False
     return bool(card_ind3.get("na") is True or card_ind3.get("exempt") is True
                 or card_ind3.get("margin_pct") is None)
@@ -797,6 +812,22 @@ def monthly_series(conn: sqlite3.Connection, symbol: str, limit: int = 60) -> li
         "ORDER BY year DESC, month DESC LIMIT ?",
         (*params, max(int(limit or 60), 1))).fetchall()
     return _dedupe_ym([list(r) for r in rows])
+
+
+def monthly_has_rows(conn: sqlite3.Connection, symbol: str) -> bool:
+    """آیا برایِ این نماد اصلاً ردیفی در `monthly_sales` ثبت شده است؟
+
+    `monthly_series` ردیف‌هایِ `ytd_revenue` نامعتبر/غیرمثبت را دور می‌ریزد،
+    پس «سریِ تهی» دو معنی داشت: «هیچ گزارشِ ماهانه‌ای نیست» و «گزارش هست ولی
+    تجمیعی‌اش صفر/نامعتبر است» (غنوش/ثنوسا). این helper فقط وجودِ ردیف را
+    می‌سنجد (بی‌فیلترِ مقدار) تا سه مسیر — کارت، `scan_symbol`، `bulk_scan` —
+    بتوانند BAD_YTD را از NO_SERIES جدا کنند (Task 10B2a1 C1).
+    نمادِ نامعتبر همان «بدونِ ردیف» می‌ماند (`sym_in` شرطِ همیشه‌نادرست می‌دهد).
+    """
+    pred, params = sym_in("symbol", symbol)
+    return conn.execute(
+        "SELECT 1 FROM monthly_sales WHERE " + pred + " LIMIT 1",
+        params).fetchone() is not None
 
 
 def ytd_denominator(rows):
@@ -1380,6 +1411,9 @@ def margin_class_na(profile, min_margin: float = 20.0,
     return {
         "margin_pct": None, "pass": False, "optimal": False, "ideal": False,
         "na": True, "band": "not_applicable",
+        # تفکیکِ «N/Aِ طبقه» از «شکافِ داده» برایِ مصرف‌کننده‌ها (Task 10B2a1
+        # fix round 1): `ind3_na` فقط `"class"` را N/Aِ ماهیت می‌شمارد.
+        "na_kind": "class",
         "threshold": min_margin, "ideal_threshold": optimal,
         "margin_tier": None, "data_gap": False,
         "margin_class": na_class,
@@ -2205,7 +2239,10 @@ def scan_symbol(conn: sqlite3.Connection, symbol: str, market_cap_rials: float =
     # دلیلِ شکاف را همان متنِ کارت می‌گوییم (Task 4) — پیش از این رشتهٔ خالی
     # بود و `axis1_state` به متنِ عمومی می‌افتاد، پس i1_reason دو مسیر یکی نبود.
     if not series:
-        reason1a = MONTHLY_NO_SERIES_REASON
+        # ردیفِ ماهانه هست ولی تجمیعی‌اش نامعتبر است ⇒ BAD_YTD، نه NO_SERIES
+        # (Task 10B2a1 C1؛ همان تفکیکِ کارت و bulk_scan).
+        reason1a = (MONTHLY_BAD_YTD_REASON if monthly_has_rows(conn, symbol)
+                    else MONTHLY_NO_SERIES_REASON)
     elif g is None:
         reason1a = MONTHLY_BAD_YTD_REASON
     elif g.get("data_gap"):
@@ -2269,7 +2306,10 @@ def scan_symbol(conn: sqlite3.Connection, symbol: str, market_cap_rials: float =
         i3_reason = _margin_gap_detail(ref).get("reason") or ""
     else:
         i3_reason = ""
-    i3_na = gm is None or bool(gm.get("na"))
+    # `i3_na` فقط سیگنالِ N/Aِ طبقه است (Task 10B2a1 fix round 1): شکافِ داده
+    # (`gm is None`) حکمِ None دارد ولی پرچمِ N/Aِ ماهیت نمی‌گیرد — همان
+    # قراردادِ bulk (`bool(class_na)`) و `ind3_na`ِ کارت.
+    i3_na = bool(gm is not None and gm.get("na"))
     sec = sector_filter(sector, cfg=cfg, market_cap_rials=mcap,
                         total_market_cap_rials=total_market_cap_rials,
                         gpm=(gm.get("margin_pct") if gm else None),

@@ -168,7 +168,10 @@ for r in rows:
     g3 = (card.get("indicators") or {}).get("3") or {}
     s3 = (scan.get("detail") or {}).get("gross_margin") or {}
     s4 = (scan.get("detail") or {}).get("profit_potential") or {}
-    c_i3 = (None if fts_engine.ind3_na(g3)
+    # حکمِ سه‌حالِ ۳: «کارت حکم نمی‌دهد» از `na`/حاشیهٔ تهی می‌آید، نه از
+    # `ind3_na`؛ از Task 10B2a1 (fix round 1) دومی فقط N/Aِ طبقه است و
+    # شکافِ داده (حکم None، i3_na=False) را نباید True نشان دهد.
+    c_i3 = (None if (g3.get("na") or g3.get("margin_pct") is None)
             else bool(card["passes"]["3_gross_margin"]))
     s_i3 = (None if (s3.get("na") or s3.get("margin_pct") is None)
             else bool((scan.get("passes") or {}).get("3_gross_margin")))
@@ -176,9 +179,11 @@ for r in rows:
     _par = (
         ("gross_margin", b.get("gross_margin"), g3.get("margin_pct"),
          s3.get("margin_pct"), _num_eq),
-        ("i3", None if b.get("i3_na") else b.get("i3_pass"), c_i3, s_i3,
+        ("i3", b.get("i3_pass"), c_i3, s_i3,
          lambda x, y: x == y),
-        ("i3_na", b.get("i3_pass") is None, fts_engine.ind3_na(g3),
+        # `i3_na` = سیگنالِ N/Aِ طبقه در هر سه مسیر (bulk/card/scan)؛ شکافِ
+        # داده در هر سه False است و تفکیکش در `i3_reason` می‌ماند.
+        ("i3_na", bool(b.get("i3_na")), fts_engine.ind3_na(g3),
          bool(scan.get("i3_na")), lambda x, y: x == y),
         ("i3_reason", b.get("i3_reason") or "", g3.get("reason") or "",
          scan.get("i3_reason") or "", lambda x, y: x == y),

@@ -606,7 +606,12 @@ def ind1a_monetary_growth(conn, symbol, series=None, th=None, profile=None) -> d
         return gap
 
     if not series:
-        return _nodata(MONTHLY_NO_SERIES_REASON)
+        # «سریِ تهی» دو معنی دارد: هیچ ردیفِ ماهانه‌ای نیست (NO_SERIES) یا
+        # ردیف هست ولی تجمیعی‌اش صفر/نامعتبر است (BAD_YTD — غنوش/ثنوسا).
+        # پیش از این هر دو «هیچ گزارشی ثبت نشده» می‌گرفتند (Task 10B2a1 C1).
+        return _nodata(MONTHLY_BAD_YTD_REASON
+                       if fts_engine.monthly_has_rows(conn, symbol)
+                       else MONTHLY_NO_SERIES_REASON)
     # مخرج از تک‌قاعدهٔ `fts_engine.ytd_denominator` می‌آید (ستونِ «مقایسه با
     # دورۀ مشابه سال قبل» ← ردیفِ سال−۱/همان ماه) — کارت نسخهٔ دومِ این
     # سلسلۀ‌مراتب را نداشت، فقط ترتیبِ کوئری‌اش فرق می‌کرد (LIMIT ۶۰ در برابر ۳۰).
@@ -1028,6 +1033,10 @@ def ind3_gross_margin(conn, symbol, th=None, ref=None, profile=None) -> dict:
         return {"margin_pct": None, "pass": False, "ideal": False, "na": True,
                 "band": "not_applicable", "threshold": th["margin_min"],
                 "ideal_threshold": th["margin_ideal"], "optimal": False,
+                # شکافِ داده `na: True` است (حکمی ساخته نشد) ولی «N/Aِ طبقه»
+                # نیست؛ `na_kind` همین تفاوت را به اسکرینر/جدول می‌برد
+                # (Task 10B2a1 fix round 1).
+                "na_kind": "data",
                 # برچسبِ طبقه هنگامِ N/A تهی است، نه «below_floor»: حاشیه‌ای
                 # که ساخته نشد صفر نیست و برچسبِ نمایشی هم نمی‌گیرد (Task 6).
                 "margin_tier": None,
@@ -1047,6 +1056,9 @@ def ind3_gross_margin(conn, symbol, th=None, ref=None, profile=None) -> dict:
     # حکم است؛ این‌جا بازمحاسبه نمی‌شود تا ۵۰٪ هیچ دروازه‌ای نسازد (Task 6).
     gm.setdefault("margin_tier", None)
     gm["na"] = False
+    # حاشیهٔ عدددار نه N/Aِ طبقه است نه شکافِ داده؛ کلید صریح می‌ماند تا
+    # مصرف‌کننده‌ها بینِ «کلید نیست» (payloadِ قدیمی) و «N/A نیست» فرق بگذارند.
+    gm.setdefault("na_kind", None)
     gm.setdefault("reason", "")
     return gm
 

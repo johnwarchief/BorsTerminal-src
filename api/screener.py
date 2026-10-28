@@ -60,6 +60,42 @@ def _merge_1b_fields(applicable, card_pass, card_basis, row_basis):
     return bool(card_pass), (card_basis or row_basis)
 
 
+def _overlay_card_reason(row, field, card_ind):
+    """دلیلِ کارت را رویِ ردیفِ اسکرینر می‌نشاند — قراردادِ «دلیلِ جدول == کارت».
+
+    ردیفِ `bulk_scan` متنِ خودش را دارد؛ فقط متنِ غیرخالیِ کارت جایگزین
+    می‌شود. یک قاعده برایِ محور ۱ (Task 4) و شاخص ۳ (Task 10B2a1). بدونِ این
+    overlay، BAD_YTDِ کارت و NO_SERIESِ ردیفِ کهنه در جدول می‌ماند (C1).
+    """
+    text = ((card_ind or {}).get("reason") or "").strip()
+    if text:
+        row[field] = text
+    return row
+
+
+def _overlay_i3(row, card_ind3, card_pass):
+    """حکمِ سه‌حالِ شاخص ۳ + تفکیکِ «N/Aِ طبقه» از «شکافِ داده» (Task 10B2a1 I1).
+
+    `i3_pass` هرجا کارت حکمی ندارد None می‌ماند (`na` یا حاشیهٔ تهی — همان
+    رفتارِ پیشین)، ولی `i3_na` فقط از سیگنالِ طبقه (`fts_engine.ind3_na`) می‌آید.
+    شکافِ داده `i3_na=False` می‌گیرد تا جدول آن را «N/A (ماهیت مالی)» نکند؛
+    دلیلِ گم‌شده در `i3_reason` می‌ماند و tooltip آن را نشان می‌دهد.
+    payloadهایِ بدونِ `na_kind` (مسیرِ مادی/کشِ قدیمی) رفتارِ پیشین را دارند.
+    """
+    import fts_engine
+    g3 = card_ind3 or {}
+    na_class = fts_engine.ind3_na(g3)
+    # «کارت حکم نمی‌دهد» جدا از «N/Aِ طبقه» است: شکافِ داده هم حکم ندارد،
+    # ولی نباید پرچمِ N/Aِ ماهیت بگیرد.
+    no_verdict = bool(g3) and (g3.get("na") is True
+                               or g3.get("exempt") is True
+                               or g3.get("margin_pct") is None)
+    row["i3_pass"] = None if (no_verdict or na_class) else card_pass
+    row["i3_na"] = bool(na_class)
+    _overlay_card_reason(row, "i3_reason", g3)
+    return row
+
+
 def invalidate_screener_cache(drop_materialized: bool = True):
     """باطل‌کردن دستی کش اسکرینر (مثلاً هنگام سینک و رفرش کدال).
 
@@ -518,9 +554,7 @@ def _screener_cached():
                 # دلیلِ محور ۱ از کارت (متنِ خاصِ همان نماد) اگر آمده باشد؛
                 # وگرنه دلیلِ خودِ ردیفِ bulk می‌ماند. قرارداد: دلیلِ جدول و
                 # کارت یکی است — نه متنِ عمومی در یک مسیر و خاص در مسیرِ دیگر.
-                _i1_reason = ((_ind.get("1") or {}).get("reason") or "").strip()
-                if _i1_reason:
-                    r["i1_reason"] = _i1_reason
+                _overlay_card_reason(r, "i1_reason", _ind.get("1"))
                 # رأیِ مالک ۱۴۰۵-۰۷-۰۳: معافیت = «نظر نمی‌دهد» — همان چیزی که
                 # bulk_scan می‌دهد؛ بدونِ این تبدیلِ یک‌خطی جدول با کشِ سرد
                 # «مردود» و با کشِ گرم «N/A» می‌شد.
@@ -534,7 +568,6 @@ def _screener_cached():
                 # جدولِ fts_results خالی است (سنجش: ۰ ردیف در نصب و در dev) ⇒
                 # همه‌چیز از همین مسیرِ زنده می‌آید؛ با فعال‌شدنِ کش باید سه
                 # پرچمِ na هم درِ همان جدول ثبت شود.
-                _na3 = fts_engine.ind3_na(_g3)
                 _na4 = fts_engine.ind4_na(_ind.get("4"))
                 # شاخص ۲ هم سه‌حال شد (جزوه ص ۴ + رأیِ ۱۳): سابقه‌ای که اسلاتی
                 # از صورتهایِ تلفیقی دارد داوریِ FTS ندارد ⇒ «رد» نه. درِ مسیرِ
@@ -543,14 +576,12 @@ def _screener_cached():
                 _na2 = fts_engine.ind2_na(_ind.get("2")) or p.get("2_eps_trend") is None
                 r["i2_pass"] = None if _na2 else p["2_eps_trend"]
                 r["i2_na"] = bool(_na2)
-                r["i3_pass"] = None if _na3 else p["3_gross_margin"]
+                # شاخص ۳: حکمِ سه‌حال + تفکیکِ N/Aِ طبقه از شکافِ داده + دلیلِ
+                # کارت — یک قاعده در `_overlay_i3` (Task 10B2a1 I1). شکافِ داده
+                # `i3_na=False` می‌گیرد تا جدول «N/A (ماهیت مالی)» نشانش ندهد.
+                _overlay_i3(r, _g3, p["3_gross_margin"])
                 r["i4_pass"] = None if _na4 else p["4_sales_to_mcap"]
-                r["i3_na"], r["i4_na"] = bool(_na3), bool(_na4)
-                # دلیلِ ۳ از کارت (N/Aِ طبقه یا شکافِ داده) — همان قراردادِ
-                # i1_reason؛ ردیفِ bulk در نبودش متنِ خودش را نگه می‌دارد.
-                _i3_reason = (_g3.get("reason") or "").strip()
-                if _i3_reason:
-                    r["i3_reason"] = _i3_reason
+                r["i4_na"] = bool(_na4)
                 r["i5_pass"] = p["5_industry"]
                 r["i1a_pass"] = p.get("1a_monetary_growth")
                 # «ب» رشد فیزیکی: کارت می‌گوید این محور برایِ این ماهیت «قابل
