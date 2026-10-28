@@ -59,6 +59,8 @@ export function MarketPage() {
     if (!activeSymbol) return null;
     return rows.find((row) => identityOf(row) === activeSymbol) ?? null;
   }, [rows, activeSymbol]);
+  const boardDate = boardDay ?? board.data?.meta?.d_even ?? null;
+  const settledSymbol = board.data ? activeSymbol : null;
 
   function selectRow(row: MarketRow, day: number | null) {
     setBoardDay(day);
@@ -109,8 +111,8 @@ export function MarketPage() {
                   <SymbolSidebar
                     variant="narrow"
                     row={symbolRow}
-                    symbolKey={activeSymbol}
-                    boardDay={boardDay}
+                    symbolKey={settledSymbol}
+                    boardDay={boardDate}
                     chartOpen={chartOpen}
                     fundamentalsOpen={fundamentalsOpen}
                     onToggleChart={toggleChart}
@@ -163,8 +165,8 @@ export function MarketPage() {
           <SymbolSidebar
             collapsed
             row={symbolRow}
-            symbolKey={activeSymbol}
-            boardDay={boardDay}
+            symbolKey={settledSymbol}
+            boardDay={boardDate}
             chartOpen={chartOpen}
             fundamentalsOpen={fundamentalsOpen}
             onToggleChart={toggleChart}
@@ -190,8 +192,8 @@ export function MarketPage() {
             <div style={{ width: sideWidth }} className="flex min-h-0 flex-none flex-col border-s border-line bg-panel">
               <SymbolSidebar
                 row={symbolRow}
-                symbolKey={activeSymbol}
-                boardDay={boardDay}
+                symbolKey={settledSymbol}
+                boardDay={boardDate}
                 chartOpen={chartOpen}
                 fundamentalsOpen={fundamentalsOpen}
                 onToggleChart={toggleChart}

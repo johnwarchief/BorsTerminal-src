@@ -15,8 +15,12 @@ vi.mock('@features/market/panels/WatchPanel', () => ({
   WatchPanel: () => <div data-testid="watch-stub">دیده‌بان</div>,
 }));
 vi.mock('@app/shell/SymbolSidebar', () => ({
-  SymbolSidebar: ({ row, symbolKey }: { row: { symbol: string } | null; symbolKey: string | null }) => (
-    <div data-testid="sidebar-stub">{row?.symbol ?? symbolKey ?? 'خالی'}</div>
+  SymbolSidebar: ({ row, symbolKey, boardDay }: {
+    row: { symbol: string } | null;
+    symbolKey: string | null;
+    boardDay: number | null;
+  }) => (
+    <div data-testid="sidebar-stub" data-day={boardDay ?? ''}>{row?.symbol ?? symbolKey ?? 'خالی'}</div>
   ),
 }));
 vi.mock('@app/shell/BottomDock', () => ({
@@ -61,6 +65,12 @@ describe('market workspace', () => {
     expect(useWorkspace.getState().activeSymbol).toBe('10');
     expect(screen.getByTestId('sidebar-stub').textContent).toBe('الف');
     expect(screen.getByTestId('dock-stub').textContent).toBe('الف');
+  });
+
+  it('hands the feed board day to the sidebar before any row is clicked', () => {
+    useWorkspace.setState({ activeSymbol: '10' });
+    render(<MarketPage />);
+    expect(screen.getByTestId('sidebar-stub').getAttribute('data-day')).toBe('20261028');
   });
 
   it('closes the watch tile and adds it back from the board menu', () => {

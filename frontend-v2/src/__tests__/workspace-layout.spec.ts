@@ -11,7 +11,7 @@ describe('layout tree', () => {
     expect(ids(DEFAULT_LAYOUT)).toEqual(['board', 'watch']);
   });
 
-  it('refuses a duplicate panel and allows adding watch once it is closed', () => {
+  it('allows adding watch back once it is closed and refuses a third tile', () => {
     expect(splitTile(DEFAULT_LAYOUT, 't-board', 'col', 'watch', () => 't-x')).toBeNull();
     const closed = closeTile(DEFAULT_LAYOUT, 't-watch')!;
     const next = splitTile(closed, 't-board', 'col', 'watch', () => 't-new');

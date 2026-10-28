@@ -47,7 +47,7 @@ describe('workspace store', () => {
     expect(useWorkspace.getState().workspaces[0].layout).toEqual(DEFAULT_LAYOUT);
   });
 
-  it('converts a stored symbol layout to the two-pane default on rehydrate', async () => {
+  it.each(['symbol', 'chart'])('converts a stored %s layout to the two-pane default on rehydrate', async (panel) => {
     localStorage.setItem('bors-workspace-v1', JSON.stringify({
       version: 1,
       state: {
@@ -60,7 +60,7 @@ describe('workspace store', () => {
           layout: {
             kind: 'split', id: 's-root', dir: 'row', ratio: 0.68,
             first: { kind: 'tile', id: 't-board', panel: 'board', follow: false },
-            second: { kind: 'tile', id: 't-symbol', panel: 'symbol', follow: true },
+            second: { kind: 'tile', id: 't-old', panel, follow: true },
           },
         }],
       },
