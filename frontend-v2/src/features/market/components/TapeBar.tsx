@@ -1,67 +1,86 @@
 import clsx from 'clsx';
-import { toFaDigits } from '@shared/lib/fa';
-import { TAPES, type ScreenLogic, type TapeKey } from '../lib/tapeFilters';
+import { fmtInt } from '@shared/lib/fa';
+import { TAPES, type TapeKey } from '../lib/tapeFilters';
 
 interface Props {
   counts: Record<TapeKey, number>;
-  active: readonly TapeKey[];
-  logic: ScreenLogic;
-  onToggle: (key: TapeKey) => void;
-  onLogic: (logic: ScreenLogic) => void;
+  unevaluated: Record<TapeKey, number>;
+  hiddenCounts: Record<TapeKey, number>;
+  baseCount: number;
+  active: TapeKey[];
+  logic: 'and' | 'or';
+  onToggle: (tape: TapeKey) => void;
   onClear: () => void;
+  onLogic: (logic: 'and' | 'or') => void;
 }
 
-export function TapeBar({ counts, active, logic, onToggle, onLogic, onClear }: Props) {
+export function TapeBar({
+  counts,
+  unevaluated,
+  hiddenCounts,
+  baseCount,
+  active,
+  logic,
+  onToggle,
+  onClear,
+  onLogic,
+}: Props) {
   return (
-    <div className="flex h-9 shrink-0 items-center gap-1.5 overflow-x-auto border-b border-line bg-panel px-2">
+    <div
+      data-testid="tape-bar"
+      className="flex h-[33px] shrink-0 items-center gap-1 overflow-hidden border-b border-line bg-panel px-3"
+      aria-label="فیلترهای تابلوخوانی"
+    >
+      <span
+        className="t-9 me-1 flex-none font-bold text-text-2"
+        title={`شمارش روی ${fmtInt(baseCount)} ردیفِ پایه؛ نسنجیده و پنهان جدا شمرده می‌شوند.`}
+      >
+        تابلوخوانی
+      </span>
       <button
         type="button"
+        className="tape-btn is-all"
+        aria-pressed={active.length === 0}
         onClick={onClear}
-        className={clsx(
-          'h-6 shrink-0 rounded px-2 text-[11px]',
-          active.length === 0 ? 'bg-accent text-[#171307]' : 'text-text-2 hover:bg-panel-2 hover:text-text',
-        )}
       >
         همه
+        <span className="count num">{fmtInt(baseCount)}</span>
       </button>
-      {TAPES.map((tape) => {
-        const on = active.includes(tape.key);
-        return (
+      <div className="inline-flex h-[22px] flex-none items-center gap-px rounded-[var(--radius-sm)] border border-line p-[2px]" role="group" aria-label="منطق ترکیب فیلترها">
+        {(['and', 'or'] as const).map((key) => (
           <button
-            key={tape.key}
+            key={key}
             type="button"
-            data-testid={`tape-${tape.key}`}
-            onClick={() => onToggle(tape.key)}
-            title={tape.label}
+            aria-pressed={logic === key}
+            onClick={() => onLogic(key)}
             className={clsx(
-              'flex h-6 shrink-0 items-center gap-1 rounded border px-1.5 text-[11px]',
-              on
-                ? 'border-accent/60 bg-[var(--accent-soft)] text-accent'
-                : 'border-transparent text-text-2 hover:bg-panel-2 hover:text-text',
+              'h-[16px] rounded-[var(--radius-xs)] px-1.5 t-85',
+              logic === key ? 'bg-panel-3 font-bold text-accent' : 'text-text-3 hover:text-text-2',
             )}
           >
-            <span>{tape.label}</span>
-            <span className="num text-[10px] text-text-3">{toFaDigits(counts[tape.key])}</span>
+            {key === 'and' ? 'و' : 'یا'}
           </button>
-        );
-      })}
-      {active.length > 1 && (
-        <div className="ms-auto flex shrink-0 items-center gap-1 ps-2">
-          <button
-            type="button"
-            onClick={() => onLogic('and')}
-            className={clsx('h-6 rounded px-2 text-[10px]', logic === 'and' ? 'bg-panel-3 text-text' : 'text-text-3 hover:text-text')}
-          >
-            اشتراک
-          </button>
-          <button
-            type="button"
-            onClick={() => onLogic('or')}
-            className={clsx('h-6 rounded px-2 text-[10px]', logic === 'or' ? 'bg-panel-3 text-text' : 'text-text-3 hover:text-text')}
-          >
-            اجتماع
-          </button>
-        </div>
+        ))}
+      </div>
+      {TAPES.map((tape) => (
+        <button
+          key={tape.key}
+          type="button"
+          data-testid={`tape-${tape.key}`}
+          className="tape-btn"
+          aria-pressed={active.includes(tape.key)}
+          aria-label={tape.label}
+          title={`${tape.label} · نسنجیده: ${fmtInt(unevaluated[tape.key])} · پنهان: ${fmtInt(hiddenCounts[tape.key])}`}
+          onClick={() => onToggle(tape.key)}
+        >
+          {tape.short}
+          <span className="count num">{fmtInt(counts[tape.key])}</span>
+        </button>
+      ))}
+      {active.length > 0 && (
+        <span className="t-85 ms-auto flex-none whitespace-nowrap text-text-3">
+          {fmtInt(active.length)} فیلتر فعال · {logic === 'and' ? 'همه با هم' : 'دست‌کم یکی'}
+        </span>
       )}
     </div>
   );

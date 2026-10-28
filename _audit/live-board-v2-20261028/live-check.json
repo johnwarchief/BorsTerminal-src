@@ -1,0 +1,815 @@
+{
+  "base": "http://127.0.0.1:5180/",
+  "route": "#/market",
+  "source": "frontend-v2 source via Vite 5180 -> API 8101",
+  "sizes": {
+    "1366": {
+      "initial": {
+        "href": "http://127.0.0.1:5180/#/market",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "overflowX": 0,
+        "pageTitle": "بورس‌ترمینال",
+        "boardCount": "۱٬۰۹۱ از ۵٬۸۹۲",
+        "renderedRows": 33,
+        "toolbar": {
+          "text": "دارایی:پیش‌فرضعمومیمعاملاتبنیادیتکنیکالفیلترهافشردهمتعادلراحتستون‌هانماهاخروجی",
+          "width": 1158,
+          "height": 37,
+          "display": "flex"
+        },
+        "table": {
+          "text": "نمادآخرینتغییر٪پایانیحجمارزش▼معاملاتالگوP/Eارزش بازارتابانگروه پتروشيمي تابان فردا۲۶٬۳۲۰+۲٫۹۷٪۲۶٬۳۲۰۵۱۲ م۱۳٬۴۸۰۳۷٬۱۸۶—۲۹۷۸۹٫۶آوندصندوق س. آوند مفيد-د۳۰٬۸۲۶+۰٫۱۶٪۳۰٬۸۲۶۴۰۱ م۱۲٬۳۶۲۵٬",
+          "width": 1158,
+          "height": 558,
+          "display": "block"
+        },
+        "search": {
+          "text": "",
+          "width": 360,
+          "height": 23,
+          "display": "block"
+        },
+        "savedViews": {
+          "text": "نماها",
+          "width": 27,
+          "height": 24,
+          "display": "flex"
+        },
+        "exportButton": {
+          "text": "خروجی",
+          "width": 27,
+          "height": 24,
+          "display": "flex"
+        },
+        "drawerOpen": "closed"
+      },
+      "screenshot": "C:\\Users\\PCMOD\\Desktop\\BorsTerminal\\_audit\\live-board-v2-20261028\\board-1366x768.png",
+      "interactions": {
+        "savedViews": {
+          "count": 1,
+          "hasState": true,
+          "screenshot": "C:\\Users\\PCMOD\\Desktop\\BorsTerminal\\_audit\\live-board-v2-20261028\\board-1366x768-views.png"
+        },
+        "export": {
+          "filename": "تابلوخوانی-2026-10-28_15-24.csv",
+          "bytes": 145930,
+          "sha256": "296753a0746ecbc3dc05c1c3cd9b573466562b2beb4902599a54e0191ed7a876",
+          "hasUtf8Bom": true,
+          "hasSeparatorHint": true,
+          "hasSourceProvenance": true,
+          "hasSearchProvenance": true,
+          "nonEmptyLines": 1102
+        },
+        "watch": {
+          "height": 273,
+          "textLength": 670,
+          "scope": "دیده‌بان‌ها · کل تابلو",
+          "count": "(۱۵ از ۲۳)",
+          "screenshot": "C:\\Users\\PCMOD\\Desktop\\BorsTerminal\\_audit\\live-board-v2-20261028\\board-1366x768-watch.png"
+        },
+        "drawer": {
+          "width": 356,
+          "height": 665,
+          "searchDisplay": "none",
+          "overflowX": 0,
+          "orderBookSection": true,
+          "historySection": true,
+          "bookFreshness": "current",
+          "bookSessionNote": false,
+          "bookTotals": true,
+          "screenshot": "C:\\Users\\PCMOD\\Desktop\\BorsTerminal\\_audit\\live-board-v2-20261028\\board-1366x768-drawer.png"
+        },
+        "reducedMotion": {
+          "matches": true,
+          "drawerAnimation": "1e-05s"
+        }
+      },
+      "consoleErrors": [],
+      "pageErrors": [],
+      "hardFailedRequests": [],
+      "cancelledRequests": [
+        {
+          "url": "http://127.0.0.1:5180/api/market",
+          "reason": "net::ERR_ABORTED"
+        },
+        {
+          "url": "http://127.0.0.1:5180/api/watchlist",
+          "reason": "net::ERR_ABORTED"
+        },
+        {
+          "url": "http://127.0.0.1:5180/api/tape-history?codes=30714151942396396&days=6",
+          "reason": "net::ERR_ABORTED"
+        },
+        {
+          "url": "http://127.0.0.1:5180/api/order-book/%D8%AA%D8%A7%D8%A8%D8%A7%D9%86",
+          "reason": "net::ERR_ABORTED"
+        },
+        {
+          "url": "http://127.0.0.1:5180/api/tape-history?codes=30714151942396396&days=6",
+          "reason": "net::ERR_ABORTED"
+        }
+      ],
+      "unresolvedCancellations": [],
+      "serverErrors": [],
+      "apiResponses": [
+        {
+          "status": 200,
+          "path": "/api/market"
+        },
+        {
+          "status": 200,
+          "path": "/api/orderbook/watch"
+        },
+        {
+          "status": 200,
+          "path": "/api/tape-history"
+        },
+        {
+          "status": 200,
+          "path": "/api/order-book/%D8%AA%D8%A7%D8%A8%D8%A7%D9%86"
+        },
+        {
+          "status": 200,
+          "path": "/api/watchlist"
+        }
+      ],
+      "final": {
+        "href": "http://127.0.0.1:5180/#/market",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "overflowX": 0,
+        "pageTitle": "بورس‌ترمینال",
+        "boardCount": "۱٬۰۹۱ از ۵٬۸۹۲",
+        "renderedRows": 33,
+        "toolbar": {
+          "text": "دارایی:پیش‌فرضعمومیمعاملاتبنیادیتکنیکالفیلترهافشردهمتعادلراحتستون‌هانماهاخروجی",
+          "width": 1158,
+          "height": 37,
+          "display": "flex"
+        },
+        "table": {
+          "text": "نمادآخرینتغییر٪پایانیحجمارزش▼معاملاتالگوP/Eارزش بازارتابانگروه پتروشيمي تابان فردا۲۶٬۳۲۰+۲٫۹۷٪۲۶٬۳۲۰۵۱۲ م۱۳٬۴۸۰۳۷٬۱۸۶—۲۹۷۸۹٫۶آوندصندوق س. آوند مفيد-د۳۰٬۸۲۶+۰٫۱۶٪۳۰٬۸۲۶۴۰۱ م۱۲٬۳۶۲۵٬",
+          "width": 1158,
+          "height": 558,
+          "display": "block"
+        },
+        "search": {
+          "text": "",
+          "width": 360,
+          "height": 23,
+          "display": "block"
+        },
+        "savedViews": {
+          "text": "نماها",
+          "width": 27,
+          "height": 24,
+          "display": "flex"
+        },
+        "exportButton": {
+          "text": "خروجی",
+          "width": 27,
+          "height": 24,
+          "display": "flex"
+        },
+        "drawerOpen": "closed"
+      }
+    },
+    "1920": {
+      "initial": {
+        "href": "http://127.0.0.1:5180/#/market",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "overflowX": 0,
+        "pageTitle": "بورس‌ترمینال",
+        "boardCount": "۱٬۰۹۱ از ۵٬۸۹۲",
+        "renderedRows": 43,
+        "toolbar": {
+          "text": "دارایی:پیش‌فرضعمومیمعاملاتبنیادیتکنیکالفیلترهافشردهمتعادلراحتستون‌هانماهاخروجی",
+          "width": 1712,
+          "height": 37,
+          "display": "flex"
+        },
+        "table": {
+          "text": "نمادآخرینتغییر٪پایانیحجمارزش▼معاملاتالگوP/Eارزش بازارتابانگروه پتروشيمي تابان فردا۲۶٬۳۲۰+۲٫۹۷٪۲۶٬۳۲۰۵۱۲ م۱۳٬۴۸۰۳۷٬۱۸۶—۲۹۷۸۹٫۶آوندصندوق س. آوند مفيد-د۳۰٬۸۲۶+۰٫۱۶٪۳۰٬۸۲۶۴۰۱ م۱۲٬۳۶۲۵٬",
+          "width": 1712,
+          "height": 870,
+          "display": "block"
+        },
+        "search": {
+          "text": "",
+          "width": 360,
+          "height": 23,
+          "display": "block"
+        },
+        "savedViews": {
+          "text": "نماها",
+          "width": 52,
+          "height": 24,
+          "display": "flex"
+        },
+        "exportButton": {
+          "text": "خروجی",
+          "width": 60,
+          "height": 24,
+          "display": "flex"
+        },
+        "drawerOpen": "closed"
+      },
+      "screenshot": "C:\\Users\\PCMOD\\Desktop\\BorsTerminal\\_audit\\live-board-v2-20261028\\board-1920x1080.png",
+      "interactions": {},
+      "consoleErrors": [],
+      "pageErrors": [],
+      "hardFailedRequests": [],
+      "cancelledRequests": [
+        {
+          "url": "http://127.0.0.1:5180/api/market",
+          "reason": "net::ERR_ABORTED"
+        }
+      ],
+      "unresolvedCancellations": [],
+      "serverErrors": [],
+      "apiResponses": [
+        {
+          "status": 200,
+          "path": "/api/market"
+        }
+      ],
+      "final": {
+        "href": "http://127.0.0.1:5180/#/market",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "overflowX": 0,
+        "pageTitle": "بورس‌ترمینال",
+        "boardCount": "۱٬۰۹۱ از ۵٬۸۹۲",
+        "renderedRows": 43,
+        "toolbar": {
+          "text": "دارایی:پیش‌فرضعمومیمعاملاتبنیادیتکنیکالفیلترهافشردهمتعادلراحتستون‌هانماهاخروجی",
+          "width": 1712,
+          "height": 37,
+          "display": "flex"
+        },
+        "table": {
+          "text": "نمادآخرینتغییر٪پایانیحجمارزش▼معاملاتالگوP/Eارزش بازارتابانگروه پتروشيمي تابان فردا۲۶٬۳۲۰+۲٫۹۷٪۲۶٬۳۲۰۵۱۲ م۱۳٬۴۸۰۳۷٬۱۸۶—۲۹۷۸۹٫۶آوندصندوق س. آوند مفيد-د۳۰٬۸۲۶+۰٫۱۶٪۳۰٬۸۲۶۴۰۱ م۱۲٬۳۶۲۵٬",
+          "width": 1712,
+          "height": 870,
+          "display": "block"
+        },
+        "search": {
+          "text": "",
+          "width": 360,
+          "height": 23,
+          "display": "block"
+        },
+        "savedViews": {
+          "text": "نماها",
+          "width": 52,
+          "height": 24,
+          "display": "flex"
+        },
+        "exportButton": {
+          "text": "خروجی",
+          "width": 60,
+          "height": 24,
+          "display": "flex"
+        },
+        "drawerOpen": "closed"
+      }
+    },
+    "2560": {
+      "initial": {
+        "href": "http://127.0.0.1:5180/#/market",
+        "viewport": {
+          "width": 2560,
+          "height": 1440
+        },
+        "overflowX": 0,
+        "pageTitle": "بورس‌ترمینال",
+        "boardCount": "۱٬۰۹۱ از ۵٬۸۹۲",
+        "renderedRows": 51,
+        "toolbar": {
+          "text": "دارایی:پیش‌فرضعمومیمعاملاتبنیادیتکنیکالفیلترهافشردهمتعادلراحتستون‌هانماهاخروجی",
+          "width": 2352,
+          "height": 37,
+          "display": "flex"
+        },
+        "table": {
+          "text": "نمادآخرینتغییر٪پایانیحجمارزش▼معاملاتالگوP/Eارزش بازارتابانگروه پتروشيمي تابان فردا۲۶٬۳۲۰+۲٫۹۷٪۲۶٬۳۲۰۵۱۲ م۱۳٬۴۸۰۳۷٬۱۸۶—۲۹۷۸۹٫۶آوندصندوق س. آوند مفيد-د۳۰٬۸۲۶+۰٫۱۶٪۳۰٬۸۲۶۴۰۱ م۱۲٬۳۶۲۵٬",
+          "width": 2352,
+          "height": 1230,
+          "display": "block"
+        },
+        "search": {
+          "text": "",
+          "width": 360,
+          "height": 23,
+          "display": "block"
+        },
+        "savedViews": {
+          "text": "نماها",
+          "width": 52,
+          "height": 24,
+          "display": "flex"
+        },
+        "exportButton": {
+          "text": "خروجی",
+          "width": 60,
+          "height": 24,
+          "display": "flex"
+        },
+        "drawerOpen": "closed"
+      },
+      "screenshot": "C:\\Users\\PCMOD\\Desktop\\BorsTerminal\\_audit\\live-board-v2-20261028\\board-2560x1440.png",
+      "interactions": {},
+      "consoleErrors": [],
+      "pageErrors": [],
+      "hardFailedRequests": [],
+      "cancelledRequests": [
+        {
+          "url": "http://127.0.0.1:5180/api/market",
+          "reason": "net::ERR_ABORTED"
+        }
+      ],
+      "unresolvedCancellations": [],
+      "serverErrors": [],
+      "apiResponses": [
+        {
+          "status": 200,
+          "path": "/api/market"
+        }
+      ],
+      "final": {
+        "href": "http://127.0.0.1:5180/#/market",
+        "viewport": {
+          "width": 2560,
+          "height": 1440
+        },
+        "overflowX": 0,
+        "pageTitle": "بورس‌ترمینال",
+        "boardCount": "۱٬۰۹۱ از ۵٬۸۹۲",
+        "renderedRows": 51,
+        "toolbar": {
+          "text": "دارایی:پیش‌فرضعمومیمعاملاتبنیادیتکنیکالفیلترهافشردهمتعادلراحتستون‌هانماهاخروجی",
+          "width": 2352,
+          "height": 37,
+          "display": "flex"
+        },
+        "table": {
+          "text": "نمادآخرینتغییر٪پایانیحجمارزش▼معاملاتالگوP/Eارزش بازارتابانگروه پتروشيمي تابان فردا۲۶٬۳۲۰+۲٫۹۷٪۲۶٬۳۲۰۵۱۲ م۱۳٬۴۸۰۳۷٬۱۸۶—۲۹۷۸۹٫۶آوندصندوق س. آوند مفيد-د۳۰٬۸۲۶+۰٫۱۶٪۳۰٬۸۲۶۴۰۱ م۱۲٬۳۶۲۵٬",
+          "width": 2352,
+          "height": 1230,
+          "display": "block"
+        },
+        "search": {
+          "text": "",
+          "width": 360,
+          "height": 23,
+          "display": "block"
+        },
+        "savedViews": {
+          "text": "نماها",
+          "width": 52,
+          "height": 24,
+          "display": "flex"
+        },
+        "exportButton": {
+          "text": "خروجی",
+          "width": 60,
+          "height": 24,
+          "display": "flex"
+        },
+        "drawerOpen": "closed"
+      }
+    }
+  },
+  "checks": [
+    {
+      "name": "1366: route and data rendered",
+      "ok": true,
+      "detail": {
+        "href": "http://127.0.0.1:5180/#/market",
+        "viewport": {
+          "width": 1366,
+          "height": 768
+        },
+        "overflowX": 0,
+        "pageTitle": "بورس‌ترمینال",
+        "boardCount": "۱٬۰۹۱ از ۵٬۸۹۲",
+        "renderedRows": 33,
+        "toolbar": {
+          "text": "دارایی:پیش‌فرضعمومیمعاملاتبنیادیتکنیکالفیلترهافشردهمتعادلراحتستون‌هانماهاخروجی",
+          "width": 1158,
+          "height": 37,
+          "display": "flex"
+        },
+        "table": {
+          "text": "نمادآخرینتغییر٪پایانیحجمارزش▼معاملاتالگوP/Eارزش بازارتابانگروه پتروشيمي تابان فردا۲۶٬۳۲۰+۲٫۹۷٪۲۶٬۳۲۰۵۱۲ م۱۳٬۴۸۰۳۷٬۱۸۶—۲۹۷۸۹٫۶آوندصندوق س. آوند مفيد-د۳۰٬۸۲۶+۰٫۱۶٪۳۰٬۸۲۶۴۰۱ م۱۲٬۳۶۲۵٬",
+          "width": 1158,
+          "height": 558,
+          "display": "block"
+        },
+        "search": {
+          "text": "",
+          "width": 360,
+          "height": 23,
+          "display": "block"
+        },
+        "savedViews": {
+          "text": "نماها",
+          "width": 27,
+          "height": 24,
+          "display": "flex"
+        },
+        "exportButton": {
+          "text": "خروجی",
+          "width": 27,
+          "height": 24,
+          "display": "flex"
+        },
+        "drawerOpen": "closed"
+      }
+    },
+    {
+      "name": "1366: no horizontal page overflow",
+      "ok": true,
+      "detail": 0
+    },
+    {
+      "name": "1366: saved-view menu opens with focused name input",
+      "ok": true
+    },
+    {
+      "name": "1366: saved view persists complete state",
+      "ok": true,
+      "detail": {
+        "count": 1,
+        "hasState": true
+      }
+    },
+    {
+      "name": "1366: Escape returns focus to views trigger",
+      "ok": true,
+      "detail": {
+        "testId": "saved-views-btn",
+        "ariaLabel": "نماهای ذخیره‌شده",
+        "boardIndex": null,
+        "tag": "BUTTON"
+      }
+    },
+    {
+      "name": "1366: applying view restores query and rows",
+      "ok": true,
+      "detail": {
+        "query": "",
+        "focus": {
+          "testId": "saved-views-btn",
+          "ariaLabel": "نماهای ذخیره‌شده",
+          "boardIndex": null,
+          "tag": "BUTTON"
+        },
+        "rows": 33
+      }
+    },
+    {
+      "name": "1366: applying view returns focus to trigger",
+      "ok": true,
+      "detail": {
+        "testId": "saved-views-btn",
+        "ariaLabel": "نماهای ذخیره‌شده",
+        "boardIndex": null,
+        "tag": "BUTTON"
+      }
+    },
+    {
+      "name": "1366: deleting a view moves focus to name input",
+      "ok": true,
+      "detail": {
+        "testId": "view-name-input",
+        "ariaLabel": "نام نمای تازه",
+        "boardIndex": null,
+        "tag": "INPUT"
+      }
+    },
+    {
+      "name": "1366: deleted view is removed from storage",
+      "ok": true,
+      "detail": 0
+    },
+    {
+      "name": "1366: CSV download has BOM and provenance",
+      "ok": true,
+      "detail": {
+        "filename": "تابلوخوانی-2026-10-28_15-24.csv",
+        "bytes": 145930,
+        "sha256": "296753a0746ecbc3dc05c1c3cd9b573466562b2beb4902599a54e0191ed7a876",
+        "hasUtf8Bom": true,
+        "hasSeparatorHint": true,
+        "hasSourceProvenance": true,
+        "hasSearchProvenance": true,
+        "nonEmptyLines": 1102
+      }
+    },
+    {
+      "name": "1366: Ctrl+K focuses search",
+      "ok": true,
+      "detail": {
+        "testId": "board-search",
+        "ariaLabel": "جستجو در تابلو",
+        "boardIndex": null,
+        "tag": "INPUT"
+      }
+    },
+    {
+      "name": "1366: ArrowDown moves roving row focus",
+      "ok": true,
+      "detail": {
+        "testId": "board-row",
+        "ariaLabel": null,
+        "boardIndex": "1",
+        "tag": "DIV"
+      }
+    },
+    {
+      "name": "1366: tape filter changes visible count",
+      "ok": true,
+      "detail": {
+        "before": "۱٬۰۹۱ از ۵٬۸۹۲",
+        "after": "۴ از ۵٬۸۹۲",
+        "rows": 4
+      }
+    },
+    {
+      "name": "1366: clock watch panel opens with scope and count",
+      "ok": true,
+      "detail": {
+        "height": 273,
+        "textLength": 670,
+        "scope": "دیده‌بان‌ها · کل تابلو",
+        "count": "(۱۵ از ۲۳)"
+      }
+    },
+    {
+      "name": "1366: narrow drawer opens, hides search and keeps page width",
+      "ok": true,
+      "detail": {
+        "width": 356,
+        "height": 665,
+        "searchDisplay": "none",
+        "overflowX": 0,
+        "orderBookSection": true,
+        "historySection": true,
+        "bookFreshness": "current",
+        "bookSessionNote": false,
+        "bookTotals": true
+      }
+    },
+    {
+      "name": "1366: depth freshness agrees with its totals",
+      "ok": true,
+      "detail": {
+        "width": 356,
+        "height": 665,
+        "searchDisplay": "none",
+        "overflowX": 0,
+        "orderBookSection": true,
+        "historySection": true,
+        "bookFreshness": "current",
+        "bookSessionNote": false,
+        "bookTotals": true
+      }
+    },
+    {
+      "name": "1366: Ctrl+K closes drawer and focuses visible search",
+      "ok": true,
+      "detail": {
+        "focus": "board-search",
+        "searchDisplay": "block",
+        "drawerOpen": "closed"
+      }
+    },
+    {
+      "name": "1366: reduced-motion shortens drawer animation",
+      "ok": true,
+      "detail": {
+        "matches": true,
+        "drawerAnimation": "1e-05s"
+      }
+    },
+    {
+      "name": "1366: console and page errors absent",
+      "ok": true,
+      "detail": {
+        "consoleErrors": [],
+        "pageErrors": []
+      }
+    },
+    {
+      "name": "1366: no HTTP or transport errors; cancellations have a 2xx counterpart",
+      "ok": true,
+      "detail": {
+        "hardFailedRequests": [],
+        "serverErrors": [],
+        "unresolvedCancellations": [],
+        "cancelledRequests": [
+          {
+            "url": "http://127.0.0.1:5180/api/market",
+            "reason": "net::ERR_ABORTED"
+          },
+          {
+            "url": "http://127.0.0.1:5180/api/watchlist",
+            "reason": "net::ERR_ABORTED"
+          },
+          {
+            "url": "http://127.0.0.1:5180/api/tape-history?codes=30714151942396396&days=6",
+            "reason": "net::ERR_ABORTED"
+          },
+          {
+            "url": "http://127.0.0.1:5180/api/order-book/%D8%AA%D8%A7%D8%A8%D8%A7%D9%86",
+            "reason": "net::ERR_ABORTED"
+          },
+          {
+            "url": "http://127.0.0.1:5180/api/tape-history?codes=30714151942396396&days=6",
+            "reason": "net::ERR_ABORTED"
+          }
+        ]
+      }
+    },
+    {
+      "name": "1920: route and data rendered",
+      "ok": true,
+      "detail": {
+        "href": "http://127.0.0.1:5180/#/market",
+        "viewport": {
+          "width": 1920,
+          "height": 1080
+        },
+        "overflowX": 0,
+        "pageTitle": "بورس‌ترمینال",
+        "boardCount": "۱٬۰۹۱ از ۵٬۸۹۲",
+        "renderedRows": 43,
+        "toolbar": {
+          "text": "دارایی:پیش‌فرضعمومیمعاملاتبنیادیتکنیکالفیلترهافشردهمتعادلراحتستون‌هانماهاخروجی",
+          "width": 1712,
+          "height": 37,
+          "display": "flex"
+        },
+        "table": {
+          "text": "نمادآخرینتغییر٪پایانیحجمارزش▼معاملاتالگوP/Eارزش بازارتابانگروه پتروشيمي تابان فردا۲۶٬۳۲۰+۲٫۹۷٪۲۶٬۳۲۰۵۱۲ م۱۳٬۴۸۰۳۷٬۱۸۶—۲۹۷۸۹٫۶آوندصندوق س. آوند مفيد-د۳۰٬۸۲۶+۰٫۱۶٪۳۰٬۸۲۶۴۰۱ م۱۲٬۳۶۲۵٬",
+          "width": 1712,
+          "height": 870,
+          "display": "block"
+        },
+        "search": {
+          "text": "",
+          "width": 360,
+          "height": 23,
+          "display": "block"
+        },
+        "savedViews": {
+          "text": "نماها",
+          "width": 52,
+          "height": 24,
+          "display": "flex"
+        },
+        "exportButton": {
+          "text": "خروجی",
+          "width": 60,
+          "height": 24,
+          "display": "flex"
+        },
+        "drawerOpen": "closed"
+      }
+    },
+    {
+      "name": "1920: no horizontal page overflow",
+      "ok": true,
+      "detail": 0
+    },
+    {
+      "name": "1920: toolbar labels are visible",
+      "ok": true,
+      "detail": {
+        "text": "نماها",
+        "width": 52,
+        "height": 24,
+        "display": "flex"
+      }
+    },
+    {
+      "name": "1920: console and page errors absent",
+      "ok": true,
+      "detail": {
+        "consoleErrors": [],
+        "pageErrors": []
+      }
+    },
+    {
+      "name": "1920: no HTTP or transport errors; cancellations have a 2xx counterpart",
+      "ok": true,
+      "detail": {
+        "hardFailedRequests": [],
+        "serverErrors": [],
+        "unresolvedCancellations": [],
+        "cancelledRequests": [
+          {
+            "url": "http://127.0.0.1:5180/api/market",
+            "reason": "net::ERR_ABORTED"
+          }
+        ]
+      }
+    },
+    {
+      "name": "2560: route and data rendered",
+      "ok": true,
+      "detail": {
+        "href": "http://127.0.0.1:5180/#/market",
+        "viewport": {
+          "width": 2560,
+          "height": 1440
+        },
+        "overflowX": 0,
+        "pageTitle": "بورس‌ترمینال",
+        "boardCount": "۱٬۰۹۱ از ۵٬۸۹۲",
+        "renderedRows": 51,
+        "toolbar": {
+          "text": "دارایی:پیش‌فرضعمومیمعاملاتبنیادیتکنیکالفیلترهافشردهمتعادلراحتستون‌هانماهاخروجی",
+          "width": 2352,
+          "height": 37,
+          "display": "flex"
+        },
+        "table": {
+          "text": "نمادآخرینتغییر٪پایانیحجمارزش▼معاملاتالگوP/Eارزش بازارتابانگروه پتروشيمي تابان فردا۲۶٬۳۲۰+۲٫۹۷٪۲۶٬۳۲۰۵۱۲ م۱۳٬۴۸۰۳۷٬۱۸۶—۲۹۷۸۹٫۶آوندصندوق س. آوند مفيد-د۳۰٬۸۲۶+۰٫۱۶٪۳۰٬۸۲۶۴۰۱ م۱۲٬۳۶۲۵٬",
+          "width": 2352,
+          "height": 1230,
+          "display": "block"
+        },
+        "search": {
+          "text": "",
+          "width": 360,
+          "height": 23,
+          "display": "block"
+        },
+        "savedViews": {
+          "text": "نماها",
+          "width": 52,
+          "height": 24,
+          "display": "flex"
+        },
+        "exportButton": {
+          "text": "خروجی",
+          "width": 60,
+          "height": 24,
+          "display": "flex"
+        },
+        "drawerOpen": "closed"
+      }
+    },
+    {
+      "name": "2560: no horizontal page overflow",
+      "ok": true,
+      "detail": 0
+    },
+    {
+      "name": "2560: toolbar labels are visible",
+      "ok": true,
+      "detail": {
+        "text": "نماها",
+        "width": 52,
+        "height": 24,
+        "display": "flex"
+      }
+    },
+    {
+      "name": "2560: console and page errors absent",
+      "ok": true,
+      "detail": {
+        "consoleErrors": [],
+        "pageErrors": []
+      }
+    },
+    {
+      "name": "2560: no HTTP or transport errors; cancellations have a 2xx counterpart",
+      "ok": true,
+      "detail": {
+        "hardFailedRequests": [],
+        "serverErrors": [],
+        "unresolvedCancellations": [],
+        "cancelledRequests": [
+          {
+            "url": "http://127.0.0.1:5180/api/market",
+            "reason": "net::ERR_ABORTED"
+          }
+        ]
+      }
+    }
+  ],
+  "failures": 0
+}

@@ -140,8 +140,8 @@ Single family: **Vazirmatn** (served from `/vendor/fonts`, weights 300/400/600/7
 - Two columns: rail + workspace. Rail is 208px open, 52px collapsed (`--rail-w`); the workspace never scrolls horizontally as a whole — only the board does.
 - Topbar: one 44px row — market state dot, date, command/search, tabs. Micro type, hairline bottom border.
 - Market status strip: three persisted modes — `full` (index hero + breadth + retail card + client split, ≈134px at 1366 and ≈158px at ≥2200px), `ribbon` (one 33px line of facts), `minimal` (one line).
-- Board toolbar: search + profile (column set) + density + columns popover; `padding: 0 12px`, content height (~40px).
-- Tape bar: one 33px row, seven filters + «همه», **single-select**, counts over the visible base.
+- Board toolbar: search + profile (column set) + density + columns popover + saved views + visible-row CSV export; `padding: 0 12px`, content height (~40px). Below 1500px the auxiliary button labels collapse to their accessible icons.
+- Tape bar: one 33px row, seven filters + «همه», **multi-select with explicit AND/OR**, counts over the visible base.
 - Board: CSS grid, sticky 27px head, rows full-width with `--row-h`; default density `compact`.
   - Densities: compact 30px / 11px, normal 36px / 12px, comfortable 44px / 13px.
   - ≥2200px: compact 34/12, normal 40/13, comfortable 48/14; symbol column widens (`--sym-max` 250/270/290).
@@ -162,19 +162,22 @@ Square-ish operational geometry: radii 2px (dots/badges), 3px (chips, inputs, na
 - **Market clock** — 6px status dot + state label + date, 10px; the dot color carries state, never a colored pill.
 - **Status strip** — three modes as above; the mode control is three small buttons (کامل / نوار / کمینه) persisted per user.
 - **Toolbar buttons** — 28px high, 1px `line` border, `panel` background; hover raises border to `line-strong`; no filled primary buttons inside the board.
-- **Tape chip** — 22px; label + count (count in `text-3`, 10px); active chip is `accent` fill with `accent-ink` text; single active at a time + «همه» reset.
+- **Tape chip** — 22px; label + count (count in `text-3`, 10px); each active chip is `accent` fill with `accent-ink` text; multiple chips combine through the visible AND/OR control and «همه» clears them.
 - **Board head** — 27px sticky; labels 10.5px `text-3`; sortable labels show ▲/▼ in `accent`; numbers right-aligned in RTL.
 - **Board row** — 30px; hairline bottom border at 50% `line`; hover and selection use the `panel-2` wash.
 - **Symbol cell** — two lines: code + badges on line one, name in `text-3` 9px on line two; badges cap at 2 (compact), 3 (normal), 4 (comfortable).
 - **Badges** — 6px dots or 9px chips; hover opens a preview card with kicker, time, reasons, source; a stale badge shows a 4px age dot.
-- **Quick drawer** — panel-2, 1px `line`, opens over the board; sections separated by hairlines; close on Escape/backdrop.
+- **Quick drawer** — panel-2, 1px `line`, opens over the board; sections separated by hairlines; close on Escape/backdrop and return focus to the originating control. Selection and history use `ins_code`, not the display symbol. Order-book depth from an older session is marked «کهنه», its rows are not labelled live, and current-session totals are withheld.
+- **Saved board view** — a named popover with one-line input, apply and delete actions; saves filters, chips, AND/OR, columns, query, sort, density and polling. Escape/apply return focus to the trigger; delete moves focus to the name input.
+- **CSV export** — only the currently filtered and sorted visible rows, with the table’s own labels, UTF-8 BOM, `sep=;`, and `#` provenance lines for source, board day, sync, revision, profile, sort, query, filters and row count.
 
 ## Do's and Don'ts
 
 - **Do** keep every measured value in this file; if a new value is needed, add a token instead of hardcoding.
 - **Do** show real data or a labeled gap. Counts come from the visible base (asset filter applied), matching the prototype.
-- **Do** use the single-select tape filter; the multi-select AND/OR model belongs to a different surface and is not part of this page.
+- **Do** use the multi-select tape filters with visible AND/OR; the owner’s 2026 board ruling supersedes the prototype’s single-select behavior.
 - **Do** keep the board readable at 1366×768 with compact density; test 1366/1920/2560 before calling a page done.
+- **Do** keep one tabbable board row (roving focus: ArrowUp/Down, Home/End; Enter/Space opens); Ctrl/Cmd+K closes the drawer if needed and focuses the search. One row shrinks away ⇒ clamp focus to a remaining row.
 - **Don't** add gradients, glassmorphism, glow, or colored pills.
 - **Don't** use shadows for hierarchy inside the board; borders and panel steps only.
 - **Don't** type Persian digits by hand — always through the digit helpers.

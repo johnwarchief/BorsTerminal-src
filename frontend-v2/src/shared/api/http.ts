@@ -10,8 +10,25 @@ export class HttpError extends Error {
   }
 }
 
-export async function getJson<T>(path: string, schema: ZodType<T>, signal?: AbortSignal): Promise<T> {
-  const res = await fetch(path, { signal, headers: { Accept: 'application/json' } });
+export async function requestJson<T>(
+  path: string,
+  schema: ZodType<T>,
+  options: { method?: 'GET' | 'POST' | 'DELETE'; body?: unknown; signal?: AbortSignal } = {},
+): Promise<T> {
+  const { method = 'GET', body, signal } = options;
+  const res = await fetch(path, {
+    method,
+    signal,
+    headers: {
+      Accept: 'application/json',
+      ...(body !== undefined ? { 'Content-Type': 'application/json' } : {}),
+    },
+    ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
+  });
   if (!res.ok) throw new HttpError(res.status, `${path} → ${res.status}`);
   return schema.parse(await res.json());
+}
+
+export async function getJson<T>(path: string, schema: ZodType<T>, signal?: AbortSignal): Promise<T> {
+  return requestJson(path, schema, { signal });
 }

@@ -1,12 +1,15 @@
 import { useQuery } from '@tanstack/react-query';
-import { getJson } from '@shared/api/http';
-import { MarketFeedSchema, type MarketFeed } from '@shared/types/market';
+import { effectivePollMs } from '@shared/lib/marketHours';
+import type { MarketFeed } from '@shared/types/market';
+import { fetchBoard } from './boardFeed';
 
-/** خواندنِ کاملِ /api/market؛ دلتا/پولینگ در تسکِ بعدی روی همین کلید می‌نشیند. */
-export function useBoard() {
+export function useBoard(pollMs = 5_000) {
   return useQuery<MarketFeed>({
     queryKey: ['board'],
-    queryFn: ({ signal }) => getJson('/api/market', MarketFeedSchema, signal),
-    staleTime: 60_000,
+    queryFn: ({ signal }) => fetchBoard(signal),
+    refetchInterval: () => effectivePollMs(pollMs),
+    staleTime: Math.min(Math.max(pollMs - 1_000, 1_000), 4_000),
+    gcTime: 5 * 60_000,
+    refetchOnWindowFocus: false,
   });
 }
