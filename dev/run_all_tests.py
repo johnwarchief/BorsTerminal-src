@@ -144,6 +144,18 @@ SUITES = [
     # کارت، ردیفِ bulk و scan_symbol؛ ۵۰٪ فقط برچسب است و کف ۲۰/استاندارد ۳۰
     # دست‌نخورده می‌ماند؛ مالی/هلدینگ/صندوق N/A با دلیل و بی‌برچسب (نه صفر).
     ('dev/test_fts_margin_v11.py',    'margin tiers: 20/30 gate unchanged, 50 label-only, N/A stays None'),
+    # Task 7 (Phase 1): مسیرِ پذیرشِ شاخص ۴ — دو مسیرِ ص ۵ (نسبت فروش ≥ ۰٫۳۳× /
+    # پتانسیل سود ناخالص ≥ ۴۰٪) یکی نمی‌شوند و برچسبِ سالانه‌سازی از خودِ موتور
+    # می‌آید. بی‌ثبت در SUITES، رگرسیونِ «مسیر دوم» بی‌صدا می‌ماند.
+    ('dev/test_fts_ind4_v11.py',      'indicator 4 acceptance paths: sales_to_mcap vs profit_potential, annualize label'),
+    # Task 8 (Phase 1): سه صنعتِ الزامیِ جزوه (خودرو/نیروگاه/لاستیک) — نه شوینده —
+    # و بیمه به‌عنوانِ وتوی جدا. فهرستِ `mandatory_sectors`ِ رابط با سرور یکی است.
+    ('dev/test_fts_sector_v11.py',    'sector gate: three booklet mandatory industries, insurance separate veto'),
+    # Task 10B (Phase 1): جهانِ ماهانه — فقط شرکت‌های تولیدی/خدماتی، صندوق/
+    # کارگزاری/اوراق/مشتقه بیرون، و شاخصِ ۱ با صورتِ مالی (نه‌فقط ماهانه) برای
+    # نمادی که گزارشِ ماهانه ندارد. رویِ DB موقت؛ market.db فقط خواندنی.
+    ('dev/test_fts_monthly_universe_v11.py',
+     'monthly universe: company scope on a temp DB, indicator 1 falls back to FS'),
     ('dev/test_fts_technical_tristate.py',
      'technical setups stay three-state (null != false) and each rule matches the notebook'),
     ('dev/test_fts_roundj.py',

@@ -533,63 +533,66 @@ const ScreenerRow = memo(function ScreenerRow({
                     </div>
                   </td>
                   <td className="px-3 py-1.5 align-middle">
-                    <div className="flex flex-col min-w-0">
-                      <div className="flex items-center justify-start gap-2 min-w-0">
-                        <span className="shrink-0">
-                          {r.i2_na === true ? (
-                            /* رأیِ ۱۳ + جزوۀ ص ۴ («صورتهای مالی تلفیقی مدنظر ما
-                               نیست»): سابقه‌ای که یک اسلاتش تلفیقی است داوریِ FTS
-                               ندارد — نه ✓ و نه ✗. علت را خودِ موتور می‌گوید
-                               (`ind2_na` + `eps_consolidated`)، نه حدسِ جدول. */
-                            <GapMark
-                              label={r.eps_consolidated ? 'N/A (تلفیقی)' : 'N/A'}
-                              tooltip={
-                                r.eps_consolidated
-                                  ? 'برخی سال‌ها فقط به‌صورت تلفیقی منتشر شده‌اند؛ جزوه (ص ۴) صورتِ شرکت اصلی را مبنای می‌گیرد، پس این شاخص سنجیده نمی‌شود. با همگام‌سازیِ تازه هم بسته نمی‌شود.'
-                                  : 'لایهٔ EPS برای این نماد اجرا نمی‌شود (صنعت بیمه) — اعلامِ خودِ موتور، نه شکاف داده.'
-                              }
-                              evidence={ev.i2}
-                              testId="fts-na-2_eps_trend"
-                            />
-                          ) : epsPartialRejected ? (
-                            <AuditBadge
-                              state="fail"
-                              label={<span className="whitespace-nowrap leading-none text-2xs font-semibold">{epsHist.label}</span>}
-                              hintTitle={epsGapReason}
-                              evidence={() => ({ ...ev.i2(), reason: epsGapReason })}
-                              compact
-                              testId={EPS_PARTIAL_TESTID}
-                            />
-                          ) : epsInsufficient || i2 === 'gap' ? (
-                            /* F-10: برچسب علت‌دار می‌ماند، ولی tone از حکمِ موتور می‌آید */
-                            <AuditBadge
-                              state={i2 === 'pass' ? 'pass' : i2 === 'fail' ? 'fail' : 'na'}
-                              label={<span className="whitespace-nowrap leading-none text-2xs font-semibold">{epsGapLabel(epsHist.realYears)}</span>}
-                              hintTitle={`${epsGapReason} راه‌حل: ${gapReason('2_eps_trend').fix}`}
-                              evidence={ev.i2}
-                              compact
-                              testId="eps-gap-reason"
-                            />
-                          ) : (
-                            <PassMark state={i2} testId="fts-mark-2_eps_trend" />
-                          )}
-                        </span>
-                        <div className="min-w-0 text-end overflow-hidden">
-                          <EpsFlow series={r.eps_series} trendText={epsTrend ?? VALUE_MISSING_WITH_VERDICT} />
-                        </div>
+                    {/* چیدمانِ سلول: سطرِ حکم/عدد باید **فرزندِ اولِ** td باشد.
+                        پیش‌تر یک `div.flex.flex-col` دورِ هر دو می‌پیچید و آزمونِ
+                        «تیکِ حکم در لبهٔ راستِ هر سلول» رویِ ردیفِ بی‌برچسبِ شاهد
+                        (سلولِ ۲/EPS) فقط یک فرزند می‌دید. برچسبِ شاهد (اگر باشد)
+                        بلوکِ دوم و خواهرِ همان سطر می‌نشیند؛ ریتمِ عمودی یکی است. */}
+                    <div className="flex items-center justify-start gap-2 min-w-0">
+                      <span className="shrink-0">
+                        {r.i2_na === true ? (
+                          /* رأیِ ۱۳ + جزوۀ ص ۴ («صورتهای مالی تلفیقی مدنظر ما
+                             نیست»): سابقه‌ای که یک اسلاتش تلفیقی است داوریِ FTS
+                             ندارد — نه ✓ و نه ✗. علت را خودِ موتور می‌گوید
+                             (`ind2_na` + `eps_consolidated`)، نه حدسِ جدول. */
+                          <GapMark
+                            label={r.eps_consolidated ? 'N/A (تلفیقی)' : 'N/A'}
+                            tooltip={
+                              r.eps_consolidated
+                                ? 'برخی سال‌ها فقط به‌صورت تلفیقی منتشر شده‌اند؛ جزوه (ص ۴) صورتِ شرکت اصلی را مبنای می‌گیرد، پس این شاخص سنجیده نمی‌شود. با همگام‌سازیِ تازه هم بسته نمی‌شود.'
+                                : 'لایهٔ EPS برای این نماد اجرا نمی‌شود (صنعت بیمه) — اعلامِ خودِ موتور، نه شکاف داده.'
+                            }
+                            evidence={ev.i2}
+                            testId="fts-na-2_eps_trend"
+                          />
+                        ) : epsPartialRejected ? (
+                          <AuditBadge
+                            state="fail"
+                            label={<span className="whitespace-nowrap leading-none text-2xs font-semibold">{epsHist.label}</span>}
+                            hintTitle={epsGapReason}
+                            evidence={() => ({ ...ev.i2(), reason: epsGapReason })}
+                            compact
+                            testId={EPS_PARTIAL_TESTID}
+                          />
+                        ) : epsInsufficient || i2 === 'gap' ? (
+                          /* F-10: برچسب علت‌دار می‌ماند، ولی tone از حکمِ موتور می‌آید */
+                          <AuditBadge
+                            state={i2 === 'pass' ? 'pass' : i2 === 'fail' ? 'fail' : 'na'}
+                            label={<span className="whitespace-nowrap leading-none text-2xs font-semibold">{epsGapLabel(epsHist.realYears)}</span>}
+                            hintTitle={`${epsGapReason} راه‌حل: ${gapReason('2_eps_trend').fix}`}
+                            evidence={ev.i2}
+                            compact
+                            testId="eps-gap-reason"
+                          />
+                        ) : (
+                          <PassMark state={i2} testId="fts-mark-2_eps_trend" />
+                        )}
+                      </span>
+                      <div className="min-w-0 text-end overflow-hidden">
+                        <EpsFlow series={r.eps_series} trendText={epsTrend ?? VALUE_MISSING_WITH_VERDICT} />
                       </div>
-                      {/* برچسبِ شاهدِ EPS (Task 5) — زیرِ همان سلول، حتی برایِ
-                          تلفیقی/N/A و سابقهٔ ناقص؛ سری بالا دست‌نخورده می‌ماند. */}
-                      {r.eps_evidence_label ? (
-                        <span
-                          data-testid="fts-eps-evidence-label"
-                          className="mt-0.5 block min-w-0 truncate text-start text-3xs font-medium text-text-muted"
-                          title={r.eps_evidence_label}
-                        >
-                          {r.eps_evidence_label}
-                        </span>
-                      ) : null}
                     </div>
+                    {/* برچسبِ شاهدِ EPS (Task 5) — زیرِ همان سطر، حتی برایِ
+                        تلفیقی/N/A و سابقهٔ ناقص؛ سری بالا دست‌نخورده می‌ماند. */}
+                    {r.eps_evidence_label ? (
+                      <span
+                        data-testid="fts-eps-evidence-label"
+                        className="mt-0.5 block min-w-0 truncate text-start text-3xs font-medium text-text-muted"
+                        title={r.eps_evidence_label}
+                      >
+                        {r.eps_evidence_label}
+                      </span>
+                    ) : null}
                   </td>
                   <td className="px-3 py-1.5 align-middle">
                     <div className="flex items-center justify-start gap-2 min-w-0">

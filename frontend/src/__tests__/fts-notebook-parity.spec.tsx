@@ -29,6 +29,7 @@ import { FtsDrillDown } from '@features/fundamental/components/FtsDrillDown';
 import { FtsScreenTable } from '@features/fundamental/ui/FtsScreenTable';
 import { FTS_GUIDE_DEFAULTS } from '@features/fundamental/api/useFtsConfig';
 import { rejectedFor } from '@features/fundamental/lib/exclusionFilter';
+import { todayIsoInTehran } from '@features/fundamental/lib/assemblyEvent';
 import type { FtsCard as FtsCardType } from '@features/fundamental/api/useFtsCard';
 import type { FtsScreenRow } from '@features/fundamental/api/useFtsScreen';
 
@@ -240,5 +241,97 @@ describe('شاخص ۵ — حکمِ موتور، نه فهرستِ دست‌سا�
         active="5" quarters={[]} physicalApplicable />,
     );
     expect(document.body.textContent).toContain('در حالتِ «فقط رتبه‌بندی»');
+  });
+});
+
+/** ردیفِ جدولِ غربالگری برایِ قراردادِ پنج‌شاخصه — همان شکلِ پاسخی که
+ *  `/api/screener` می‌دهد (کمتر از کارت، ولی همان معنای حکم). */
+function screenRow(over: Partial<FtsScreenRow> = {}): FtsScreenRow {
+  return {
+    symbol: 'شپنا', symbol_norm: 'شپنا', name: 'پالایش نفت اصفهان',
+    sector_name: 'محصولات نفتی', pricing_mode: 'free',
+    rev_growth: 45, eps_series: [100, 120, 150], eps_last: 150, eps_data_gap: false,
+    gross_margin: 32.5, margin_tier: 'good', sales_to_mcap: 1.2,
+    profit_potential_pct: 42, mcap: 5e13, score: 4,
+    i1_pass: true, i1a_pass: true, i1b_pass: true, i1b_applicable: true,
+    i2_pass: true, i3_pass: true, i4_pass: true, i5_pass: true,
+    excluded: false, exclusion_reasons: '', watchlist: true,
+    ...over,
+  } as FtsScreenRow;
+}
+
+function renderTable(rows: FtsScreenRow[], extra: Record<string, unknown> = {}) {
+  return render(<FtsScreenTable rows={rows} onSelect={vi.fn()} {...extra} />);
+}
+
+describe('پنج شاخص در جدولِ غربالگری — همان قراردادِ کارت', () => {
+  it('شاخص ۳: «N/A (ماهیت مالی)» از برچسبِ شکافِ داده جدا است', () => {
+    // ماهیتِ مالی ⇒ N/A خاکستری با دلیلِ خودِ موتور
+    const { unmount } = renderTable([
+      screenRow({
+        i3_pass: null, i3_na: true,
+        i3_reason: 'سود ناخالص برایِ این ماهیت (بانک/بیمه/هلدینگ) معنا ندارد.',
+      }),
+    ]);
+    const na = screen.getByTestId('fts-na-3_gross_margin');
+    expect(na.textContent).toContain('N/A (ماهیت مالی)');
+    expect(na.textContent).not.toContain('سود ناخالص در کدال نیست');
+    unmount();
+
+    // همان حکمِ تهی ولی بی‌اعلامِ N/A ⇒ شکافِ داده، با برچسبِ علت‌دار
+    renderTable([screenRow({ i3_pass: null, i3_na: false })]);
+    const gap = screen.getByTestId('fts-gap-reason-3_gross_margin');
+    expect(gap.textContent).toContain('سود ناخالص در کدال نیست');
+    expect(screen.queryByTestId('fts-na-3_gross_margin')).toBeNull();
+  });
+
+  it('شاخص ۴: مسیرِ دومِ پذیرش («سند v2.1») رویِ ردیف دیده می‌شود', () => {
+    renderTable([
+      screenRow({ i4_acceptance_path: 'profit_potential', annualize_label: 'سالانه‌شده از دورهٔ 6 ماهه' }),
+    ]);
+    const path = screen.getByTestId('fts-i4-path');
+    expect(path.textContent).toBe('مسیر دوم — سند v2.1');
+    expect(path.getAttribute('title')).toContain('۴۰٪');
+  });
+
+  it('شاخص ۴: مسیرِ اول برچسبِ کوتاهِ خودش را دارد (دو مسیر یکی نمی‌شوند)', () => {
+    renderTable([screenRow({ i4_acceptance_path: 'sales_to_mcap' })]);
+    expect(screen.getByTestId('fts-i4-path').textContent).toBe('مسیر اول');
+  });
+
+  it('ردیف‌های جدول هیچ بجِ تکنیکال ندارند (ساعت شنی/جت/وتوی روند/کاندیدِ قیف)', () => {
+    renderTable([
+      screenRow({
+        tech_jet: true, tech_hourglass_active: true, weekly_veto: true,
+        funnel_candidate: true, tape_status: 'pass', technical_status: 'pass',
+      }),
+    ]);
+    const rows = screen.getAllByTestId('fts-screen-row');
+    expect(rows.length).toBeGreaterThan(0);
+    for (const r of rows) {
+      const text = r.textContent ?? '';
+      for (const word of ['ساعت شنی', 'جت', 'وتوی روند', 'کاندیدِ قیف']) {
+        expect(text, `بجِ «${word}» در ردیفِ بنیادی نیست`).not.toContain(word);
+      }
+    }
+  });
+
+  it('مجمع و افزایش سرمایه هنوز در ردیف رندر می‌شوند (حذفِ بج‌های تکنیکال آن‌ها را نبرد)', () => {
+    const plusDays = (base: string, n: number) => {
+      const d = new Date(`${base}T12:00:00Z`);
+      d.setUTCDate(d.getUTCDate() + n);
+      return d.toISOString().slice(0, 10);
+    };
+    const in3 = plusDays(todayIsoInTehran(), 3);
+    renderTable([screenRow({ watchlist: false })], {
+      assemblyEvents: {
+        شپنا: [{ date: in3, cat: 'assembly', title: 'آگهی دعوت به مجمع عمومی عادی سالیانه', date_source: 'title' as const }],
+      },
+      capitalEvents: {
+        شپنا: [{ date: in3, cat: 'capitalIncrease', title: 'افزایش سرمایه از محل سود انباشته' }],
+      },
+    });
+    expect(screen.getByTestId('row-assembly-near-badge')).toBeInTheDocument();
+    expect(screen.getByTestId('row-capital-increase-badge')).toBeInTheDocument();
   });
 });

@@ -29,23 +29,23 @@
 - `GET /api/sync/diagnose` → `api/_sync_codal.py:463`
 - `POST /api/codal/control` → `api/_sync_codal.py:570`
 
-### `api/_sync_market.py` — 4 تابع، 1 اندپوینت
-- `POST /api/sync/market` → `api/_sync_market.py:64`
+### `api/_sync_market.py` — 7 تابع، 1 اندپوینت
+- `POST /api/sync/market` → `api/_sync_market.py:69`
 
 ### `api/adb.py` — 2 تابع، 2 اندپوینت
 - `GET /api/adb/state` → `api/adb.py:19`
 - `POST /api/adb/set` → `api/adb.py:47`
 
-### `api/chart.py` — 58 تابع، 9 اندپوینت
-- `GET /api/chart/{symbol}` → `api/chart.py:314`
-- `GET /api/chart/{symbol}/key-levels` → `api/chart.py:572`
-- `GET /api/order-book/{symbol}` → `api/chart.py:616`
-- `GET /api/calendar/upcoming` → `api/chart.py:828`
-- `GET /api/calendar/{symbol}` → `api/chart.py:847`
-- `GET /api/ma/{symbol}` → `api/chart.py:859`
-- `GET /api/chart-db/{symbol}` → `api/chart.py:922`
-- `GET /api/patterns/{symbol}` → `api/chart.py:998`
-- `GET /api/fts/{symbol}` → `api/chart.py:2692`
+### `api/chart.py` — 81 تابع، 9 اندپوینت
+- `GET /api/chart/{symbol}` → `api/chart.py:1043`
+- `GET /api/chart/{symbol}/key-levels` → `api/chart.py:1331`
+- `GET /api/order-book/{symbol}` → `api/chart.py:1384`
+- `GET /api/calendar/upcoming` → `api/chart.py:1630`
+- `GET /api/calendar/{symbol}` → `api/chart.py:1649`
+- `GET /api/ma/{symbol}` → `api/chart.py:1681`
+- `GET /api/chart-db/{symbol}` → `api/chart.py:1748`
+- `GET /api/patterns/{symbol}` → `api/chart.py:1840`
+- `GET /api/fts/{symbol}` → `api/chart.py:4037`
 
 ### `api/diagnostics.py` — 6 تابع، 3 اندپوینت
 - `GET /api/diagnostics/info` → `api/diagnostics.py:39`
@@ -61,41 +61,61 @@
 - `POST /api/adb/rotate` → `api/engine.py:57`
 - `GET /api/sync/pipeline` → `api/engine.py:64`
 
-### `api/fundamental.py` — 59 تابع، 5 اندپوینت
-- `GET /api/fundamental/screen` → `api/fundamental.py:1801`
-- `GET /api/fundamental/sectors` → `api/fundamental.py:1862`
-- `GET /api/fundamental/{symbol}` → `api/fundamental.py:1876`
-- `GET /api/fundamental/{symbol}/quarters` → `api/fundamental.py:2082`
-- `GET /api/sync/codal/fts-coverage` → `api/fundamental.py:2334`
+### `api/fundamental.py` — 66 تابع، 5 اندپوینت
+- `GET /api/fundamental/screen` → `api/fundamental.py:2075`
+- `GET /api/fundamental/sectors` → `api/fundamental.py:2136`
+- `GET /api/fundamental/{symbol}` → `api/fundamental.py:2150`
+- `GET /api/fundamental/{symbol}/quarters` → `api/fundamental.py:2357`
+- `GET /api/sync/codal/fts-coverage` → `api/fundamental.py:2618`
 
-### `api/market.py` — 36 تابع، 10 اندپوینت
-- `GET /api/market/sync-state` → `api/market.py:92`
-- `GET /api/market` → `api/market.py:111`
-- `GET /api/market/delta` → `api/market.py:995`
-- `GET /api/live-stats` → `api/market.py:1046`
-- `POST /api/orderbook/watch` → `api/market.py:1062`
-- `GET /api/fts` → `api/market.py:1081`
-- `GET /api/fts/config` → `api/market.py:1097`
-- `GET /api/price-basis` → `api/market.py:1102`
-- `POST /api/price-basis` → `api/market.py:1114`
-- `POST /api/fts/config` → `api/market.py:1125`
+### `api/funnel.py` — 15 تابع، 4 اندپوینت
+- `GET /api/funnel/registry` → `api/funnel.py:173`
+- `GET /api/funnel/trace` → `api/funnel.py:179`
+- `GET /api/funnel` → `api/funnel.py:212`
+- `POST /api/funnel` → `api/funnel.py:219`
+
+### `api/market.py` — 44 تابع، 11 اندپوینت
+- `GET /api/market/sync-state` → `api/market.py:139`
+- `GET /api/market` → `api/market.py:158`
+- `GET /api/market/delta` → `api/market.py:1243`
+- `GET /api/universe/live` → `api/market.py:1374`
+- `GET /api/live-stats` → `api/market.py:1396`
+- `POST /api/orderbook/watch` → `api/market.py:1421`
+- `GET /api/fts` → `api/market.py:1440`
+- `GET /api/fts/config` → `api/market.py:1456`
+- `GET /api/price-basis` → `api/market.py:1461`
+- `POST /api/price-basis` → `api/market.py:1473`
+- `POST /api/fts/config` → `api/market.py:1484`
 
 ### `api/market_index.py` — 5 تابع، 1 اندپوینت
 - `GET /api/index/tedpix` → `api/market_index.py:207`
 
-### `api/market_status.py` — 13 تابع، 12 اندپوینت
-- `GET /api/mstat/summary` → `api/market_status.py:32`
-- `GET /api/mstat/histogram` → `api/market_status.py:37`
-- `GET /api/mstat/thermometer` → `api/market_status.py:42`
-- `GET /api/mstat/depth` → `api/market_status.py:47`
-- `GET /api/mstat/clientsplit` → `api/market_status.py:52`
-- `GET /api/mstat/mainwatch` → `api/market_status.py:57`
-- `GET /api/mstat/industries` → `api/market_status.py:64`
-- `GET /api/mstat/smart-money` → `api/market_status.py:69`
-- `GET /api/mstat/timeline` → `api/market_status.py:80`
-- `GET /api/mstat/phases` → `api/market_status.py:91`
-- `GET /api/mstat/board` → `api/market_status.py:96`
-- `POST /api/mstat/snapshot` → `api/market_status.py:119`
+### `api/market_status.py` — 26 تابع، 21 اندپوینت
+- `GET /api/mstat/summary` → `api/market_status.py:129`
+- `GET /api/mstat/histogram` → `api/market_status.py:134`
+- `GET /api/mstat/thermometer` → `api/market_status.py:139`
+- `GET /api/mstat/depth` → `api/market_status.py:144`
+- `GET /api/mstat/clientsplit` → `api/market_status.py:149`
+- `GET /api/mstat/phase` → `api/market_status.py:154`
+- `GET /api/mstat/mainwatch` → `api/market_status.py:168`
+- `GET /api/mstat/industries` → `api/market_status.py:175`
+- `GET /api/mstat/treemap` → `api/market_status.py:186`
+- `GET /api/mstat/tops` → `api/market_status.py:195`
+- `GET /api/mstat/orderflows` → `api/market_status.py:207`
+- `GET /api/mstat/ownership` → `api/market_status.py:217`
+- `GET /api/mstat/indexcards` → `api/market_status.py:227`
+- `GET /api/mstat/gold` → `api/market_status.py:236`
+- `GET /api/mstat/goldhistory` → `api/market_status.py:246`
+- `GET /api/mstat/series` → `api/market_status.py:254`
+- `GET /api/mstat/smart-money` → `api/market_status.py:266`
+- `GET /api/mstat/timeline` → `api/market_status.py:277`
+- `GET /api/mstat/phases` → `api/market_status.py:288`
+- `GET /api/mstat/board` → `api/market_status.py:293`
+- `POST /api/mstat/snapshot` → `api/market_status.py:327`
+
+### `api/notifications.py` — 2 تابع، 2 اندپوینت
+- `GET /api/notifications/sources` → `api/notifications.py:23`
+- `GET /api/notifications/feed` → `api/notifications.py:33`
 
 ### `api/notify.py` — 5 تابع، 4 اندپوینت
 - `GET /api/notify/status` → `api/notify.py:16`
@@ -103,51 +123,54 @@
 - `POST /api/notify/test-bale` → `api/notify.py:42`
 - `POST /api/notify/test-all` → `api/notify.py:49`
 
-### `api/screener.py` — 6 تابع، 2 اندپوینت
-- `GET /api/history/{symbol}` → `api/screener.py:96`
-- `GET /api/screener` → `api/screener.py:202`
+### `api/screener.py` — 12 تابع، 2 اندپوینت
+- `GET /api/history/{symbol}` → `api/screener.py:151`
+- `GET /api/screener` → `api/screener.py:366`
 
 ### `api/selection.py` — 8 تابع، 4 اندپوینت
 - `GET /api/selection/symbols` → `api/selection.py:52`
 - `GET /api/selection/portfolio` → `api/selection.py:163`
 - `POST /api/selection/decision` → `api/selection.py:226`
-- `DELETE /api/selection/decision/{symbol}` → `api/selection.py:314`
+- `DELETE /api/selection/decision/{symbol}` → `api/selection.py:315`
 
-### `api/update.py` — 26 تابع، 6 اندپوینت
-- `GET /api/update/version` → `api/update.py:490`
-- `GET /api/update/check` → `api/update.py:503`
-- `POST /api/update/download` → `api/update.py:541`
-- `GET /api/update/progress` → `api/update.py:581`
-- `POST /api/update/install` → `api/update.py:639`
-- `POST /api/update/install-local` → `api/update.py:648`
+### `api/structure3.py` — 3 تابع، 1 اندپوینت
+- `GET /api/structure3/{symbol}` → `api/structure3.py:87`
+
+### `api/update.py` — 27 تابع، 6 اندپوینت
+- `GET /api/update/version` → `api/update.py:518`
+- `GET /api/update/check` → `api/update.py:536`
+- `POST /api/update/download` → `api/update.py:594`
+- `GET /api/update/progress` → `api/update.py:641`
+- `POST /api/update/install` → `api/update.py:707`
+- `POST /api/update/install-local` → `api/update.py:716`
 
 ### `api/watchlist.py` — 4 تابع، 4 اندپوینت
 - `GET /api/watchlist` → `api/watchlist.py:18`
 - `POST /api/watchlist` → `api/watchlist.py:33`
-- `DELETE /api/watchlist/{symbol}` → `api/watchlist.py:70`
-- `GET /api/watchlist/matrix` → `api/watchlist.py:85`
+- `DELETE /api/watchlist/{symbol}` → `api/watchlist.py:71`
+- `GET /api/watchlist/matrix` → `api/watchlist.py:86`
 
 ## موتورهایِ پشتِ اسکرینر/تابلو
 
 | فایل | تابع‌هایِ کلیدی |
 | --- | --- |
-| `fts_engine.py` | `norm_fa`, `symbol_aliases`, `sym_in`, `register_sql`, `_table_exists`, `sector_of` (+64) |
-| `tape_flags.py` | `_n`, `_col`, `_alive`, `history_sessions`, `_sessions_ok`, `formula_volume_base` (+11) |
-| `mstat_engine.py` | `in_trading_session`, `_f`, `_div`, `ensure_schema`, `_word_hit`, `fund_kind` (+59) |
+| `fts_engine.py` | `norm_fa`, `symbol_aliases`, `sym_in`, `register_sql`, `_table_exists`, `sector_of` (+77) |
+| `tape_flags.py` | `_n`, `_col`, `plp_series`, `_alive`, `history_sessions`, `_sessions_ok` (+14) |
+| `mstat_engine.py` | `in_trading_session`, `_f`, `_div`, `ensure_schema`, `_word_hit`, `fund_kind` (+65) |
 | `codal_fetcher.py` | `set_extract_workers`, `polite_pause`, `set_polite`, `write_status`, `_fmt_ban_until`, `_control_cmd` (+71) |
-| `bors_config.py` | `_app_dir`, `_writable`, `_user_data_dir`, `_work_dir`, `_db_has_codal`, `_resolve_market_db` (+13) |
-| `app.py` | `loopback_guard`, `no_cache_middleware`, `_static_dir`, `_frontend_dist`, `_get_index_html`, `_spa_index` (+3) |
-| `bors_entry.py` | `_setup_streams`, `_stamp`, `_note`, `_log_config_with_clock`, `_beat_loop`, `_warn_old_windows` (+16) |
+| `bors_config.py` | `_app_dir`, `_writable`, `_user_data_dir`, `_exe_dir`, `_decide_portable`, `is_portable` (+22) |
+| `app.py` | `loopback_guard`, `no_cache_middleware`, `_static_dir`, `_frontend_dist`, `_get_index_html`, `_spa_index` (+4) |
+| `bors_entry.py` | `_setup_streams`, `_stamp`, `_note`, `_log_config_with_clock`, `_beat_loop`, `_warn_old_windows` (+26) |
 
 ## فرانت (React + FSD) — ورودیِ هر برش
 
 ### `features/`
 
 - **features/fundamental** — 32 فایل: `features/fundamental/api/useCalendarEvents.ts`, `features/fundamental/api/useCalendarUpcoming.ts`, `features/fundamental/api/useFtsCard.ts`, `features/fundamental/api/useFtsConfig.ts`, `features/fundamental/components/SectorPePanel.tsx`, `features/fundamental/routes/FundamentalPage.tsx` (+26 فایل)
-- **features/market** — 30 فایل: `features/market/api/useHistory.ts`, `features/market/api/useIndustries.ts`, `features/market/api/useIntradayCache.ts`, `features/market/api/useMarketFeed.ts`, `features/market/components/SuspiciousPanel.tsx`, `features/market/components/TapeTable.tsx` (+24 فایل)
-- **features/master** — 35 فایل: `features/master/api/useFtsFunnel.ts`, `features/master/api/useFtsPlan.ts`, `features/master/api/useFtsTechBoard.ts`, `features/master/routes/MasterPage.tsx`, `features/master/routes/StrategyTreePage.tsx` (+30 فایل)
-- **features/portfolio** — 18 فایل: `features/portfolio/api/usePortfolio.ts`, `features/portfolio/api/useStopLossBoard.ts`, `features/portfolio/api/useSymbolBasket.ts`, `features/portfolio/api/useSymbolSearch.ts`, `features/portfolio/routes/PortfolioPage.tsx` (+13 فایل)
-- **features/technical** — 75 فایل: `features/technical/engine/index.ts`, `features/technical/api/useCandleFeed.ts`, `features/technical/api/useFtsAnalysis.ts`, `features/technical/api/useFundGate.ts`, `features/technical/api/useOrderBook.ts`, `features/technical/components/ComparePanel.tsx` (+69 فایل)
+- **features/market** — 56 فایل: `features/market/api/useIndustries.ts`, `features/market/api/useIntradayCache.ts`, `features/market/api/useLiveStats.ts`, `features/market/api/useMarketFeed.ts`, `features/market/components/MarketStatusPanel.tsx`, `features/market/components/SuspiciousPanel.tsx` (+50 فایل)
+- **features/master** — 51 فایل: `features/master/api/useFtsFunnel.ts`, `features/master/api/useFtsPlan.ts`, `features/master/api/useFunnelRegistry.ts`, `features/master/api/useFunnelTrace.ts`, `features/master/components/StrategyStageCandidateTable.tsx`, `features/master/routes/MasterPage.tsx` (+45 فایل)
+- **features/portfolio** — 28 فایل: `features/portfolio/api/usePortfolio.ts`, `features/portfolio/api/useStopLossBoard.ts`, `features/portfolio/api/useSymbolBasket.ts`, `features/portfolio/api/useSymbolSearch.ts`, `features/portfolio/components/WatchSummaryPanel.tsx`, `features/portfolio/components/WatchTable.tsx` (+22 فایل)
+- **features/technical** — 81 فایل: `features/technical/engine/index.ts`, `features/technical/api/useCandleFeed.ts`, `features/technical/api/useFtsAnalysis.ts`, `features/technical/api/useFundGate.ts`, `features/technical/api/useScreener.ts`, `features/technical/components/ComparePanel.tsx` (+75 فایل)
 - **features/updater** — 4 فایل: `features/updater/index.ts`, `features/updater/useAppUpdater.ts` (+2 فایل)
 
 ### `widgets/`
@@ -155,16 +178,16 @@
 
 ### `shared/`
 
-- **shared/api** — 2 فایل: `shared/api/http.ts`, `shared/api/marketFeed.ts`
-- **shared/components** — 11 فایل: `shared/components/DataTable.tsx` (+10 فایل)
+- **shared/api** — 4 فایل: `shared/api/useOrderBook.ts`, `shared/api/userWatchlist.ts` (+2 فایل)
+- **shared/components** — 46 فایل: `shared/components/ui/index.ts`, `shared/components/DataTable.tsx` (+44 فایل)
 - **shared/hooks** — 1 فایل: `shared/hooks/useElementWidth.ts`
-- **shared/lib** — 13 فایل: `shared/lib/useFlip.ts`, `shared/lib/useMediaQuery.ts` (+11 فایل)
-- **shared/stores** — 6 فایل: `shared/stores/authStore.ts`, `shared/stores/marketStore.ts`, `shared/stores/signalStore.ts`, `shared/stores/strategyStore.ts` (+2 فایل)
+- **shared/lib** — 17 فایل: `shared/lib/useDialogA11y.ts`, `shared/lib/useFlip.ts`, `shared/lib/useMediaQuery.ts` (+14 فایل)
+- **shared/stores** — 8 فایل: `shared/stores/authStore.ts`, `shared/stores/marketStore.ts`, `shared/stores/screenFilterStore.ts`, `shared/stores/selectedSymbolsStore.ts` (+4 فایل)
 - **shared/types** — 1 فایل: `shared/types/marketRow.ts`
 
 ### `app/`
 
-- **app/components** — 4 فایل: `app/components/CommandPalette.tsx`, `app/components/Sidebar.tsx`, `app/components/ThemeToggle.tsx`, `app/components/Topbar.tsx`
+- **app/components** — 5 فایل: `app/components/CommandPalette.tsx`, `app/components/Sidebar.tsx`, `app/components/SymbolContextStrip.tsx`, `app/components/ThemeToggle.tsx` (+1 فایل)
 - **app/layouts** — 1 فایل: `app/layouts/AppShell.tsx`
 
 ## گاردهایِ dev (توصیف از `dev/run_all_tests.py`)
@@ -176,11 +199,12 @@
 | `dev/adjust_zero_volume_v1072.py` | adjustment also from restated close on zero-volume rows; four negative controls |
 | `dev/assembly_veto_v1064.py` | assembly veto: fresh outside the cache, no-data is not a veto |
 | `dev/board_hist_cache_v1056.py` | board history windows: materialized == inline |
+| `dev/boot_page_v1081.py` | boot page: real download/extract progress, RTL page, handoff + error |
 | `dev/candle_contract_v1071.py` | one candle contract: shared geometry, writer priority, same numbers from every source |
 | `dev/candle_source_fidelity_v1033.py` | candle fidelity: geometry repair + anchored adjustment |
 | `dev/candles_from_board_v1062.py` | candles from the board table + geometry repair + no prune-before-fetch |
 | `dev/ce_weekly_bucket_v1073.py` | confidence_engine weekly bucket == chart Saturday bucket |
-| `dev/chart_api_check_v95.py` | KLineCharts v10 API guard |
+| `dev/chart_api_check_v95.py` | chart API guard: installed klinecharts v10 exports, no dead legacy path |
 | `dev/chart_single_bundle_v1038.py` | چارتِ یکتا: هر متدِ Chart باید در باندلِ خودش باشد و باندلِ دومی نباشد |
 | `dev/client_type_date_v1034.py` | board freshness: session day + abstaining market pulse |
 | `dev/codal_blank_total_v1036.py` | blank published total refuses a component line for فروش |
@@ -193,6 +217,12 @@
 | `dev/db_backfill_derived.py --selftest` | derived columns at insert (backfill selftest) |
 | `dev/db_contract_v11.py` | FTS v2.2 db contract: writer/reader/schema agree |
 | `dev/db_housekeeping.py --selftest` | R1/R2 housekeeping: dedupe + prev-year backfill |
+| `dev/execution_contract_v1.py` | sarkhati: broker contract on mock, no blind retry |
+| `dev/execution_latency_v1.py` | sarkhati: phased latency probe, no fabricated estimate |
+| `dev/execution_queue_v1.py` | sarkhati: order state + queue position, never a fabricated zero |
+| `dev/execution_service_v1.py` | sarkhati: dry-run default, reconcile-only after unknown, limits |
+| `dev/execution_timing_v1.py` | sarkhati: monotonic-anchored scheduler + clock quality |
+| `dev/fts_antirepaint_v1086.py` | anti-repaint: two-time pivots, prefix-stability, no future-look in payload |
 | `dev/fts_cache_basis_v1078.py` | FTS analysis cache key carries the price basis (with a negative control) |
 | `dev/fts_chart_engine_v1037.py` | chart fib belts and setup markers come from the one server engine, over the current wave |
 | `dev/fts_defaults_parity_guard.py` | FTS guide defaults: FE drawer mirrors the server |
@@ -202,8 +232,13 @@
 | `dev/fts_pipeline_v981.py` | codal FTS pipeline + ADB fallback + session window |
 | `dev/fts_screener_card_parity_v10.py` | screener<->card parity + ind-4 exemption engine vs card |
 | `dev/fts_series_basis_v1036.py` | server FTS reads the full adjusted series the chart draws, not the starved raw table |
+| `dev/fts_trend_fixtures_v1075.py` | fts trend fixtures: weekly gate beats daily setup |
+| `dev/fts_trend_pit_v1.py` | trend point-in-time: Saturday week bucket, closed-week immutability, no cache-key lookahead |
 | `dev/fts_trend_staleness_v1064.py` | weekly trend verdict from live pivots or the recent window, never a stale pivot |
 | `dev/fund_not_applicable_v1028.py` | صندوق هیچ‌جا مردود نمی‌شود (کارت/اسکرینر/تابلو/مستر) |
+| `dev/funnel_engine_v1.py` | funnel engine: ordered intersection, weekly gate, fund modes |
+| `dev/funnel_preset_distinct_v1.py` | funnel presets: distinct chains, gates AND distinct engine output |
+| `dev/funnel_registry_v1.py` | funnel registry: every txt filter pinned to its source |
 | `dev/history_depth_v1070.py` | no history pruning, incremental sync, idempotent second run |
 | `dev/incremental_sync_resilience.py` | incremental sync: new symbol + new monthly report |
 | `dev/indicator_math_v1074.py` | indicator math: MA divisor, Wilder RSI seed, and FTS last/closing are oracle-exact |
@@ -215,34 +250,74 @@
 | `dev/market_hot_state_v1077.py` | hot state: field-aware diff, RAM==SQL board, honest delta |
 | `dev/market_swr_v1036.py` | board cache is stale-while-revalidate, single-flight, honest on failure |
 | `dev/market_tick_v1045.py` | live 5s board tick: one request, shared row map, closed-window refuses to write |
+| `dev/market_universe_v1.py` | live trading-status universe: executed vs quoted, dedupe, staleness |
 | `dev/mstat_local_v975.py` | mstat dashboard computed from local market.db |
+| `dev/mstat_snapshot_cache_v1.py` | shared mstat snapshot cache: read-only rows, real invalidation, per-file isolation |
 | `dev/npm_lock_v1040.py` | قفلِ npm درِ CI هم نصب می‌شود (npm ci، نه فقط node_modules محلی) |
 | `dev/onedir_contract_v11.py` | onedir build contract: hiddenimports + shape |
 | `dev/pack_rowcount_guard_v1065.py` | pack refuses a baseline with fewer rows than the committed one |
 | `dev/patch_check_v10.py` | patch/update system guard |
+| `dev/persian_glyph_guard.py` | persian text: no stray CJK, no eaten section digit |
 | `dev/portfolio_weights_v1035.py` | portfolio weights: value-based + no fake zero |
 | `dev/price_basis_v1070.py` | single price resolver (last|closing) + adjustment anchor invariance |
 | `dev/price_last_value_v1070.py` | last/closing are separate columns; no fabricated last, anchor untouched |
 | `dev/pulse_ta_scope_v1063.py` | pulse scopes match tradersarena + no half-written market total |
 | `dev/repo_hygiene_v97.py` | repo hygiene / dead-code stays gone |
+| `dev/sidebar_market_fields_v1082.py` | sidebar Stage-2: p_first/p_max/p_min from real cols, lazy order-book binding |
+| `dev/single_writer_guard.py` | single writer: one backend per market.db |
 | `dev/soft_warnings_v974.py` | soft pass/warn/fail/nodata — no hard vetoes |
 | `dev/stale_chunk_prune_v1069.py` | پاک‌سازیِ chunkهایِ مردهٔ frontend، با درختِ ساختگی |
 | `dev/stale_wiring_v1073.py` | fresh data invalidates the dependent caches; no crawler child in the frozen build |
 | `dev/struct_check.py` | structure / undefined-names |
+| `dev/structure_engine3_compare_v1.py` | engine3 vs engine1: provably different pivot sets, both anti-repaint |
 | `dev/tape_filters_v1034.py` | tape filters: five formulas match the notebook |
+| `dev/tape_smartmoney_v1074.py` | tape smart-money: two new file filters, one canonical judge |
+| `dev/test_adjustment_engine_v1.py` | Phase4 engine: per-type factor formulas (hand-checkable), missing/invalid -> incomplete (never fabricated/never silent ratio=1), deterministic anchored chain, idempotent, real type7 cross-check |
+| `dev/test_adjustment_phasea.py` | canonical adjustment: mode semantics split, single scaled series, honest fallback |
 | `dev/test_arg_parse_v10.py` | make_patch --from arg parsing |
 | `dev/test_calendar_v92.py` | calendar py<->js categories |
+| `dev/test_candle_boundary_v1.py` | RC2: zero-volume day never becomes a candle; FIRST/LAST/CLOSE never silently substituted; widen grows shadow, never crushes price |
+| `dev/test_client_split_v1.py` | real/legal share: value basis, both sides independent, no volume estimate |
 | `dev/test_compat_guard_v1012.py` | Windows + GPU/software-render guard |
+| `dev/test_corporate_ledger_v1.py` | Phase5 ledger: official source-ratio (no proxy), same-day dedup w/ priceAdjust precedence, incomplete/invalid never fabricated, idempotent, wrong-instrument empty, CODAL type only when unique, effective!=publish |
 | `dev/test_cumulative_db_v1020.py` | market.db re-extracts on a new bundled baseline |
 | `dev/test_delta_update.py` | delta patch select/apply + fallback |
+| `dev/test_fts_asof_cutoff.py` | FTS analysis as_of is a real input cutoff; the cache key carries as_of + ruleset so cutoffs never leak |
+| `dev/test_fts_basis_anchor_v1.py` | RC1: switching display basis (last<->closing) never moves the CLOSING adjustment anchor and never fabricates a missing last |
+| `dev/test_fts_event_identity_v1.py` | §B/RC3: event identity (date, kept) is separated from coefficient (exact from source row); disagreeing source never overwrites; shared ledger row -> ambiguous not dropped; no ledger -> unchanged |
+| `dev/test_fts_evidence_v11.py` | EPS evidence labels: one tier label on card, row and scan_symbol |
+| `dev/test_fts_ind4_v11.py` | indicator 4 acceptance paths: sales_to_mcap vs profit_potential, annualize label |
 | `dev/test_fts_isolation.py` | FTS filter isolation |
+| `dev/test_fts_ma_source_v1.py` | api/ma: SMA == independent rolling mean, None before window-1, and the canonical adjustment factor actually shifts the MA |
+| `dev/test_fts_margin_v11.py` | margin tiers: 20/30 gate unchanged, 50 label-only, N/A stays None |
 | `dev/test_fts_market_cap.py` | TSETMC market-cap source of truth + risk filters |
+| `dev/test_fts_monthly_universe_v11.py` | monthly universe: company scope on a temp DB, indicator 1 falls back to FS |
+| `dev/test_fts_na_v11.py` | honest N/A: row fields, reasons, newest-period only |
 | `dev/test_fts_roundj.py` | Round J: jet is last-candle-only, point-hunt trigger ≠ anchor, exit tri-state, roles + status priority |
+| `dev/test_fts_sector_v11.py` | sector gate: three booklet mandatory industries, insurance separate veto |
 | `dev/test_fts_technical_tristate.py` | technical setups stay three-state (null != false) and each rule matches the notebook |
+| `dev/test_fts_universe_v11.py` | FTS universe: classifier + bulk_scan/card agree on a temp DB |
+| `dev/test_fts_untested_paths_v1.py` | pullback / key-levels / structure-points behavior + the strict pivot rule (flat TSETMC rows draw no ceiling) |
 | `dev/test_fts_v10_ladder.py` | FTS v10 EPS evidence ladder + partial table row |
+| `dev/test_fts_zero_volume_collapse_v1.py` | RC3: several VOL=0 halt rows collapse to ONE event; telescoped factor (series) unchanged; independent events never merge |
 | `dev/test_fund_revenue_v1027.py` | fund sheet: سود سهام هرگز «فروش» نمی‌شود |
+| `dev/test_history_gap_repair_v1.py` | RC4: gap-fill writes only missing dates, idempotent (2nd run = 0), dry_run writes nothing, never fabricates open/last, published row never downgraded by board |
+| `dev/test_hourglass_settings_v1.py` | hourglass RSI period, oversold threshold and MA52 mode are configurable |
+| `dev/test_ind1_fs_path_v11.py` | FTS indicator 1 FS path: helper + bulk_scan/card basis parity on a temp DB |
+| `dev/test_ind1b_parity_v11.py` | 1b parity + vol=-100 regression |
+| `dev/test_mainwatch_flags_v1.py` | mainwatch rows carry the tape flags, never a fabricated one |
+| `dev/test_market_phase_v1.py` | session phase from the official market state; no verdict without a phase |
+| `dev/test_notifications_v1.py` | notification centre: codal-only source, explainable levels, dedupe |
+| `dev/test_portable_v1.py` | portable mode: explicit marker, isolated data/port, never spawns the installer |
+| `dev/test_roundm_freeze.py` | weekly gate + weekly hourglass stay frozen (measured on real bank rows) |
+| `dev/test_rule_map_citations.py` | FTS rule->algorithm map cites real code: names exist, NAME:LINE is current, every row has code or is AMBIGUOUS, engine label matches the defining file |
+| `dev/test_screener_funnel_gate_v1.py` | screener candidate = tape∧technicalfundamental pass; no bypass door |
+| `dev/test_structure3_engine.py` | engine 3 contract: explicit input states, thresholds only from the engine itself,  |
+| `dev/test_trend_engine_flag.py` | trend engine flag: legacy is byte-identical, hybrid is a drop-in, jet unchanged, cache isolated by engine, weekly gate rule preserved |
+| `dev/tsetmc_p0_v1076.py` | tsetmc p0: native client values, corporate events, state |
 | `dev/typography_guard.py` | هیچ کلاس اندازهٔ مرده‌ای در فرانت نماند (نردبان 3xs/2xs) |
 | `dev/undef_name_guard.py` | هیچ نامِ تعریف‌نشده‌ای در کدِ منتشرشده (NameError درِ شرطِ نایاب) |
+| `dev/user_watchlist_v1.py` | user watchlist CRUD: get() on a missing row, upsert identity, cap layering |
 | `dev/version_anchor_guard.py` | all six version anchors state the same release |
 | `dev/watchlist_matrix_v973.py` | watchlist store + triple matrix + parity |
 | `dev/weekly_veto_guard.py` | weekly downtrend/neutral is a hard veto; no-data is not |
