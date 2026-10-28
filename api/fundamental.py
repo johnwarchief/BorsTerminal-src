@@ -23,16 +23,16 @@
            (سیمان، فلزات، پتروشیمی) در برابر دستوری (خودرو و قطعات، نیروگاه،
            لاستیک) — همان دیکشنری fts_engine، بدون موازی‌سازی.
 
-مرز مسئولیت (تصادم دو Agent):
-  * fts_engine.py **ویرایش نمی‌شود** — اسکریپت‌های dev/fts_pipeline_v981.py،
+مرز مسئولیت:
+  * `fts_engine.py` مرجعِ مشترکِ موتور و کارت است و از فاز ۱ به بعد ویرایش هم
+    می‌شود (طبقه، N/A، سالانه‌سازی، معافیت)؛ اسکریپت‌های dev/fts_pipeline_v981.py،
     dev/confidence_engine_v973.py و dev/fts_m141_parity_v97.py پاریتی
-    `scan_symbol`/`bulk_scan` را قفل کرده‌اند. از آنجا فقط پریمیتیرهای عمومی
-    (norm_fa، sym_in، annual_statements، gross_margin، sector_filter) مصرف
-    میشوند.
-  * تنها استثنا — معافیتِ شاخص ۴: تک‌مرجعش `fts_engine.ind4_exempt` است و
-    هر دو مسیر (اسکرینر و کارت) همان را می‌خوانند؛ این فایل دیگر هیچ
-    معیارِ نام/طبقهٔ دومی برای N/A ندارد. قفلش:
-    dev/fts_screener_card_parity_v10.py.
+    `scan_symbol`/`bulk_scan` را قفل کرده‌اند. پریمیتیرهای عمومی (`norm_fa`،
+    `sym_in`، `annual_statements`، `gross_margin`، `sector_filter`) از همان‌جا
+    مصرف می‌شوند و قاعدهٔ دومی این‌جا ساخته نمی‌شود.
+  * معافیتِ شاخص ۴: تک‌مرجعش `fts_engine.ind4_exempt` است و هر دو مسیر
+    (اسکرینر و کارت) همان را می‌خوانند؛ این فایل هیچ معیارِ نام/طبقهٔ دومی
+    برای N/A ندارد. قفلش: dev/fts_screener_card_parity_v10.py.
   * `static/index.html` و `static/app.js` مصرف‌کنندهٔ فرجمد این payload هستند؛
     کلیدهای `insights[].{step,title,text}`، `metrics.{mcap,revenue,
     gross_margin,roe,ps}`، `fs_count` و `history[].tracing_no` حفظ شده‌اند.
@@ -1088,8 +1088,16 @@ def ind4_valuation(annual, gm, market_cap_rials, th=None, exempt=False) -> dict:
     th = th or v10_thresholds()
     # آستانهٔ پتانسیل در دو نام می‌آید: خروجیِ `v10_thresholds` «potential_min»
     # است و پیکربندیِ خام/پنل «profit_potential_min» — هر دو یک عددند و
-    # پیش‌فرضِ ۴۰٪ سند v2.1. (آزمونِ Task 7 همین قرارداد را با کلیدِ خام می‌سنجد.)
-    pot_min = th.get("potential_min", th.get("profit_potential_min", 40.0))
+    # پیش‌فرضِ ۴۰٪ سند v2.1. نبودِ هر دو بلند شکست می‌خورد (Task 7 M4): پیش از
+    # این `.get(..., 40.0)` یک `th` ناقص را بی‌صدا با ۴۰ داوری می‌کرد.
+    if "potential_min" in th:
+        pot_min = th["potential_min"]
+    elif "profit_potential_min" in th:
+        pot_min = th["profit_potential_min"]
+    else:
+        raise KeyError(
+            "ind4_valuation: neither 'potential_min' nor 'profit_potential_min' "
+            "is present in thresholds; refusing to invent a 40% floor")
     # سند v2.1: برای طبقهٔ معاف، فروش‌به‌ارزش‌بازار و جانشین NAV ممنوع ⇒ N/A
     if exempt:
         return {"available": False, "na": True, "exempt": True, "pass": False,
@@ -1378,6 +1386,11 @@ def evaluate_v10(conn, symbol, market_cap_rials=0.0, total_market_cap_rials=0.0,
     # پس نه کوئریِ دوباره‌ای لازم است و نه منطقِ موازیِ دوم که بتواند واگرا شود.
     _holdings_na = bool((cfg or {}).get("holdings_sales_na", True))
     ind4_na = fts_engine.ind4_exempt(conn, symbol, sector, holdings_na=_holdings_na)
+    # صندوق در جهانِ FTS داوری ندارد؛ حتی اگر صورتِ مالی‌اش «درآمد عملیاتی» و
+    # ارزش بازار داشته باشد، مسیرِ پذیرش برایش ساخته نمی‌شود (Task 7 M6).
+    # ۷۸۵ ردیفِ جدول همه شرکت‌اند، پس این گیت رویِ خروجیِ اسکرینر اثری ندارد.
+    if identity["kind"] == "fund":
+        ind4_na = True
     annual = dynamic_annualized_sales(conn, symbol, series=series, ref=ref,
                                       profile=prof, exempt=ind4_na)
     val = ind4_valuation(annual, gm, market_cap_rials, th=th, exempt=ind4_na)
@@ -1426,10 +1439,10 @@ def evaluate_v10(conn, symbol, market_cap_rials=0.0, total_market_cap_rials=0.0,
     reasons += risk_gates(conn, symbol, sector, market_cap_rials, cfg=cfg, th=th,
                           m141_map=m141_map, liq_map=liq_map, gate=gate)
 
-    # رأیِ مالک (۱۴۰۵-۰۷-۰۳): FTS برای شرکت‌های عملیاتی است؛ صندوق باید
-    # «FTS ندارد» بگیرد نه REJECT با جدولِ خالی. عددِ امتیاز همین‌جا دست‌نخورده
-    # می‌ماند (اسکرینر روی آن sort می‌کند و None آن را می‌شکند) — فقط مسیرِ
-    # پاسخِ جزئیات آن را خالی نشان می‌دهد.
+    # رأیِ مالک (۱۴۰۵-۰۷-۰۳): FTS برای شرکت‌های عملیاتی است؛ صندوق و هر
+    # غیرشرکتِ بی‌هویت باید «FTS ندارد» بگیرد نه REJECT با جدولِ خالی. عددِ
+    # امتیاز همین‌جا دست‌نخورده می‌ماند (اسکرینر روی آن sort می‌کند و None آن
+    # را می‌شکند) — فقط مسیرِ پاسخِ جزئیات آن را خالی نشان می‌دهد.
     applicable = identity["applicable"]
     verdict = ("FTS ندارد" if not applicable else
                ("EXCLUDED" if reasons else
@@ -2419,15 +2432,23 @@ def v10_batch(symbols, cfg=None, limit: int = 50) -> list:
         need_liq = _f(cfg.get("min_trade_val")) > 0
         m141_map = fts_engine.m141_map(conn) if need_m141 else {}
         liq_map = fts_engine.avg_trade_value_hmt(conn) if need_liq else {}
+        # نامِ شرکت یک‌بار برایِ کلِ واچ‌لیست (تک‌کوئریِ خودِ موتور). ۲۶ شرکتِ
+        # واقعی `sector_name` خالی دارند و تنها نشانهٔ هویتشان نام است؛
+        # v10_batch پیش از این نام را پاس نمی‌داد و کارت آن‌ها «FTS ندارد»
+        # می‌شد در حالی که ردیفِ اسکرینر شرکت بود (Task 10B2a2).
+        cname_of = fts_engine.company_name_map(conn)
         for s in syms:
             try:
-                hit = ctx.get(fts_engine.norm_fa(s)) or (None, "سایر", None)
+                key = fts_engine.norm_fa(s)
+                cname = cname_of.get(key, "")
+                hit = ctx.get(key) or (None, "سایر", None)
                 mcap_raw, sector, mcap_src = hit
                 mcap, mcap_err = _rials_or_none(mcap_raw)
                 if mcap is None:
                     mi = get_tsetmc_market_cap_info(s, db=conn)
                     mcap, mcap_src, mcap_err = mi["rials"], mi["source"], mi["error"]
                 res = evaluate_v10(conn, s, mcap or 0.0, total_mcap, sector, cfg=cfg,
+                                   company_name=cname,
                                    m141_map=m141_map, liq_map=liq_map)
                 res["market_cap_src"] = mcap_src
                 res["market_cap_error"] = mcap_err
@@ -2435,7 +2456,8 @@ def v10_batch(symbols, cfg=None, limit: int = 50) -> list:
                 ind = res["indicators"]
                 g, v = ind["1"]["monetary"], ind["1"]["volume"]
                 val = ind["4"]
-                out.append({"symbol": s, "score": res["score"], "verdict": res["verdict"],
+                out.append({"symbol": s, "company_name": cname,
+                            "score": res["score"], "verdict": res["verdict"],
                             "passes": res["passes"], "sector": sector,
                             "pricing_mode": res["pricing_mode"],
                             "monetary_pct": g.get("monetary_pct"),

@@ -691,11 +691,6 @@ function Panel4({ card }: { card: FtsCard }) {
               مبنا: {basisLabel}
               {ind?.annualize_basis ? ` · ${toFaDigits(ind.annualize_basis)}` : ''}
             </p>
-            {m < 12 && annualizeLabelFa && annualizeLabelFa !== basisLabel ? (
-              <p className="mt-0.5 text-2xs text-text-muted" data-testid="drilldown-i4-annualize">
-                {annualizeLabelFa}
-              </p>
-            ) : null}
             {ind?.annual?.reconciled === false ? (
               <p className="mt-1 text-2xs font-bold text-accent-yellow" data-testid="annualize-unreconciled">
                 برآوردِ ماهانه با فروش صورت مالی سالانه هم‌خوان نبود؛ مبنا به فروش سالانهٔ کدال برگشت.

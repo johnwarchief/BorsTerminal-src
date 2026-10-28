@@ -156,6 +156,20 @@ r = ind4_valuation(annual_full(1998.0), {"margin_pct": 202.0}, 1.0e10,
 chk(r.get("potential_threshold") == 40.0 and r["potential_pass"] is True,
     "آستانه از کلیدِ خامِ پیکربندی هم خوانده می‌شود",
     (r.get("potential_threshold"), r.get("potential_pass")))
+# Task 7 M4: نبودِ هر دو نامِ آستانه باید بلند بشکند، نه ۴۰ِ ساختگی (10B2a2).
+try:
+    ind4_valuation(annual_full(1998.0), {"margin_pct": 202.0}, 1.0e10,
+                   th={"sales_to_mcap_min": 0.33})
+    chk(False, "نبودِ هر دو کلیدِ آستانه KeyError می‌دهد (نه ۴۰ِ بی‌صدا)")
+except KeyError as exc:
+    chk("potential_min" in str(exc) and "profit_potential_min" in str(exc),
+        "KeyErrorِ آستانه هر دو نام را نام می‌برد", str(exc))
+# نامِ رسمیِ خروجیِ `v10_thresholds` هم به‌تنهایی کار می‌کند.
+r = ind4_valuation(annual_full(1998.0), {"margin_pct": 202.0}, 1.0e10,
+                   th={"sales_to_mcap_min": 0.33, "potential_min": 40.0})
+chk(r.get("potential_threshold") == 40.0 and r["potential_pass"] is True,
+    "آستانه از کلیدِ potential_min هم خوانده می‌شود",
+    (r.get("potential_threshold"), r.get("potential_pass")))
 
 # ═══════════════════════════════════════════════════════════════════════════
 #  ۴) معاف/N/A و بی‌داده — هیچ مسیری، هیچ برچسبی، هیچ عددِ ساختگی
@@ -242,8 +256,6 @@ WANT_PATH = {"sales": "sales_to_mcap", "potential": "profit_potential",
              "both": "sales_to_mcap", "none": None, "holding": None,
              "nodata": None, "zeromcap": None}
 NO_DATA = "شوبی"
-HOLDING = "شههلد"
-ZERO_MCAP = "شصفر"
 
 
 def _seed_instrument(con, code, symbol, name, sector, mcap):
@@ -498,7 +510,80 @@ def _temp_db_case():
             pass
 
 
+def _fund_and_batch_case():
+    """صندوقِ عملیاتی نباید مسیر بسازد (Task 7 M6) + نامِ تنها سیگنالِ هویت.
+
+    صندوق با «درآمد عملیاتی» و ارزش بازارِ بزرگ عمداً ساخته می‌شود تا گیتِ
+    `applicable` در کارت/scan سنجیده شود؛ و یک هلدینگ با `sector_name` خالی
+    که نامش تنها نشانهٔ هویت است، برایِ `v10_batch` (Task 10B2a2).
+    """
+    path, con = U11.make_db()
+    try:
+        _seed_instrument(con, "M8F", "شصند", "صندوق سهام شصند",
+                         "صندوق سرمایه گذاری", 3.0e18)
+        _seed_fs(con, 7800, "شصند", "صندوق سهام شصند", 50.0, rev=1000e9)
+        _seed_monthly(con, 7850, "شصند")
+        _seed_instrument(con, "M9H", "شنام", "شرکت سرمایه گذاری شنام",
+                         "", 1.0e14)
+        _seed_fs(con, 7900, "شنام", "شرکت سرمایه گذاری شنام", 58.0,
+                 rev=1000e9)
+        _seed_monthly(con, 7950, "شنام")
+        con.commit()
+        cfg = fts_engine.load_fts_config(os.path.join(ROOT, "fts_thresholds.json"))
+
+        # ۱) صندوق: کارت و scan «FTS ندارد» و هیچ مسیر/پتانسیلی ندارند.
+        fund = FD.evaluate_v10(con, "شصند", 3.0e18, 2.0e15,
+                               "صندوق سرمایه گذاری", cfg=cfg,
+                               company_name="صندوق سهام شصند",
+                               has_instrument=True)
+        f4 = fund["indicators"]["4"]
+        chk(fund.get("applicable") is False and fund.get("verdict") == "FTS ندارد",
+            "صندوق: کارت «FTS ندارد»", (fund.get("applicable"),
+                                        fund.get("verdict")))
+        chk(f4.get("acceptance_path") is None and f4.get("available") is False,
+            "صندوق: هیچ مسیرِ پذیرشِ ساختگی (Task 7 M6)",
+            (f4.get("acceptance_path"), f4.get("available")))
+        chk(f4.get("na") is True or f4.get("exempt") is True,
+            "صندوق: شاخص ۴ N/A است", (f4.get("na"), f4.get("exempt")))
+        chk(f4.get("potential_pct") is None and f4.get("sales_to_mcap") is None,
+            "صندوق: هیچ عددِ پتانسیل/نسبتی ساخته نمی‌شود",
+            (f4.get("potential_pct"), f4.get("sales_to_mcap")))
+        fs = fts_engine.scan_symbol(con, "شصند", 3.0e18, 2.0e15,
+                                    "صندوق سرمایه گذاری", cfg=cfg)
+        chk(fs.get("i4_acceptance_path") is None
+            and (fs.get("passes") or {}).get("4_sales_to_mcap") is None,
+            "صندوق: scan_symbol هم مسیر/حکمِ ساختگی ندارد",
+            (fs.get("i4_acceptance_path"),
+             (fs.get("passes") or {}).get("4_sales_to_mcap")))
+        rows = fts_engine.bulk_scan(con, cfg=cfg)
+        chk("شصند" not in {r["symbol_norm"] for r in rows},
+            "صندوق در جدولِ bulk نیست (جهانِ مالک)")
+
+        # ۲) v10_batch: نام تنها سیگنالِ هویت است (صنعت خالی).
+        orig_get_db = FD.get_db
+        FD.get_db = lambda: sqlite3.connect(path)
+        try:
+            out = FD.v10_batch(["شنام"], cfg=cfg, limit=5)
+        finally:
+            FD.get_db = orig_get_db
+        chk(len(out) == 1, "v10_batch یک ردیف برایِ هلدینگ می‌دهد", out)
+        row = out[0] if out else {}
+        chk(row.get("company_name") == "شرکت سرمایه گذاری شنام",
+            "v10_batch نامِ شرکت را در ردیف می‌گذارد", row.get("company_name"))
+        chk("error" not in row, "v10_batch خطا ندارد", row.get("error"))
+        chk(row.get("verdict") != "FTS ندارد",
+            "نامِ تنها سیگنال: هلدینگ غیرشرکت/صندوق خوانده نمی‌شود",
+            row.get("verdict"))
+    finally:
+        con.close()
+        try:
+            os.remove(path)
+        except OSError:
+            pass
+
+
 _temp_db_case()
+_fund_and_batch_case()
 print("%d/%d passed (with temp DB)" % (PASS, PASS + FAIL))
 if FAIL:
     raise SystemExit(1)

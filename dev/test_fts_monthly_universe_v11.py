@@ -185,8 +185,9 @@ def _temp_db_case():
             chk(b.get("gross_margin") is None and b.get("margin_tier") is None,
                 "حاشیهٔ ساختگی/برچسبِ حاشیه ساخته نشد",
                 (b.get("gross_margin"), b.get("margin_tier")))
-            chk(b.get("i3_na") is False and b.get("i3_reason") == "",
-                "i3 شکافِ داده است، نه N/Aِ طبقه (تولیدی)",
+            chk(b.get("i3_na") is False
+                and b.get("i3_reason") == FD.margin_gap_detail(None)["reason"],
+                "i3 شکافِ داده است (نه N/Aِ طبقه) و دلیلش متنِ کارت است",
                 (b.get("i3_na"), b.get("i3_reason")))
             chk(b.get("i4_acceptance_path") == "sales_to_mcap",
                 "i4 از مسیرِ فروش ÷ ارزش بازار", b.get("i4_acceptance_path"))

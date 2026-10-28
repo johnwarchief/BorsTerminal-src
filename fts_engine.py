@@ -1464,15 +1464,14 @@ _PROFILE_LABEL = {"production": "تولیدی / صادراتی", "financial": "�
                   "holding": "هلدینگ / سرمایه‌گذاری"}
 
 
-NON_COMPANY_TOKENS = (
+NON_COMPANY_TOKENS = tuple(norm_fa(t) for t in (
     "صندوق", "اوراق", "اختيار", "اختیار", "حق تقدم", "حق‌تقدم",
     "خیریه", "شهرداری", "فدراسیون", "موسسه", "پرورشگاه", "وقف", "بنیاد",
-)
+))
 
 
 def classify_identity(symbol, sector, company_name, has_instrument):
     """Universe gate: only real operating companies enter the FTS table."""
-    sym = str(symbol or "").strip()
     sec = str(sector or "").strip()
     name = str(company_name or "").strip()
     if not has_instrument:
@@ -1486,7 +1485,7 @@ def classify_identity(symbol, sector, company_name, has_instrument):
     if fund_class_match(sec, name):
         return {"kind": "fund", "applicable": False, "reason": "fund"}
     text = norm_fa(sec) + " " + norm_fa(name)
-    if any(norm_fa(t) in text for t in NON_COMPANY_TOKENS):
+    if any(t in text for t in NON_COMPANY_TOKENS):
         return {"kind": "non_company", "applicable": False,
                 "reason": "fund_or_non_operating"}
     if not sec and not name:
@@ -1978,6 +1977,28 @@ def gross_profit_potential(conn: sqlite3.Connection, symbol: str, market_cap_ria
             "threshold": min_pct,
             "formula": "(فروش سالانه × حاشیه سود ناخالص) ÷ ارزش بازار × ۱۰۰"}
 
+
+def i4_potential_margin(margin, ref):
+    """(حاشیه، مبنا) — فقط برایِ پتانسیلِ شاخص ۴؛ هرگز به i3/فیلتر صنعت نمی‌رود.
+
+    قراردادِ کارت (`api.fundamental.ind4_valuation`): اگر حاشیهٔ ناخالص N/A باشد
+    (طبقهٔ مالی/بانکی/هلدینگ/صندوق یا نبودِ سطرِ سود ناخالص) ولی نسبتِ سود خالص
+    به درآمد در بازهٔ (۰, ۱۰۰] باشد، همان «حاشیهٔ سود خالص (جایگزینِ مالی)»
+    مبنایِ پتانسیل می‌شود و صریحاً برچسب می‌خورد. این تابع نسخهٔ دومِ قاعده
+    نیست؛ همان شرطِ کارت است تا ردیفِ `bulk_scan`/`scan_symbol` و کارت یک عدد
+    بدهند (پاریتیِ ۱۰B2a2). صفرِ حاشیه مثلِ کارت «حاشیه نیست» است و پتانسیلی
+    نمی‌سازد.
+    """
+    if margin is not None:
+        return (margin or None), "gross_margin"
+    if not ref:
+        return None, "gross_margin"
+    rev = _f(ref.get("revenue"))
+    net = _fn(ref.get("net_profit"))
+    if rev > 0 and net is not None and 0 < (net / rev * 100.0) <= 100.0:
+        return round(net / rev * 100.0, 1), "net_margin_proxy"
+    return None, "gross_margin"
+
 # ============================ شاخص ۵: فیلتر صنعت (قیمت‌گذاری آزاد / دستوری)
 def sector_filter(sector: str, cfg: dict = None, market_cap_rials: float = 0.0,
                   total_market_cap_rials: float = 0.0,
@@ -2159,6 +2180,9 @@ def scan_symbol(conn: sqlite3.Connection, symbol: str, market_cap_rials: float =
     # طبقه از همان `company_profile`ِ کارت + نامِ شرکتِ همان نماد (یک کوئری، دو مصرف)
     cname = company_name_for(conn, symbol)
     prof = company_profile(sector, cname)
+    # صندوق داوری ندارد (رأی ۱۵): مسیرِ پذیرش هم نباید برایش ساخته شود، ولو
+    # صورتِ مالی‌اش سطرِ درآمدِ عملیاتی داشته باشد (Task 7 M6).
+    _is_fund = fund_class_match(sector, cname)
     # گیتِ کانفیگِ معافیت (holdings_sales_na) — همان که مسیرِ کارت می‌گذراند:
     # خاموش یعنی «معافیتِ N/A اعمال نشود»، تا زیرِ هر حالتِ کانفیگ دو مسیر
     # یک داوری بدهند (پیش از این فقط کارت آن را می‌خواند).
@@ -2222,14 +2246,30 @@ def scan_symbol(conn: sqlite3.Connection, symbol: str, market_cap_rials: float =
     gm = margin_class_na(prof, min_margin=m_min, optimal=m_opt)
     if gm is None:
         gm = gross_margin(conn, symbol, min_margin=m_min, optimal=m_opt, ref=ref)
+    # حاشیهٔ جایگزینِ پتانسیل (Task 10B2a2) — همان قاعدهٔ کارت/ردیفِ bulk؛
+    # فقط به `gross_profit_potential` می‌رود، نه به حکم/دلیل/فیلترِ شاخص ۳.
+    pot_margin, pot_margin_basis = i4_potential_margin(
+        None if (gm is None or gm.get("na")) else gm.get("margin_pct"), ref)
     annual = annualized_sales(conn, symbol, ref=ref, profile=prof, exempt=_exempt)
     s2m = sales_to_marketcap(conn, symbol, mcap,
                              min_ratio=_th(cfg, "sales_to_mcap_min"),
                              annual=annual, sector=sector, _no_sales=_no_sales,
                              holdings_na=_hold_na)
-    pot = gross_profit_potential(conn, symbol, mcap,
-                                 min_pct=_th(cfg, "profit_potential_min"),
-                                 gm=gm, annual=annual)
+    pot = None
+    if pot_margin is not None:
+        pot = gross_profit_potential(conn, symbol, mcap,
+                                     min_pct=_th(cfg, "profit_potential_min"),
+                                     gm={"margin_pct": pot_margin}, annual=annual)
+    # دلیلِ خالی‌بودنِ حکمِ ۳ — همان متنِ کارت/ردیفِ bulk (Task 10B2a1/10B2a2):
+    # N/Aِ طبقه از خودِ `gm`، شکافِ داده از `margin_gap_detail`.
+    if gm is not None and gm.get("na"):
+        i3_reason = gm.get("reason") or ""
+    elif gm is None:
+        from api.fundamental import margin_gap_detail as _margin_gap_detail
+        i3_reason = _margin_gap_detail(ref).get("reason") or ""
+    else:
+        i3_reason = ""
+    i3_na = gm is None or bool(gm.get("na"))
     sec = sector_filter(sector, cfg=cfg, market_cap_rials=mcap,
                         total_market_cap_rials=total_market_cap_rials,
                         gpm=(gm.get("margin_pct") if gm else None),
@@ -2239,7 +2279,10 @@ def scan_symbol(conn: sqlite3.Connection, symbol: str, market_cap_rials: float =
     # داوری می‌شود، و از این رو صندوق/سبدگردانی که صورتِ مالی‌شان اصلاً سطرِ
     # «درآمد عملیاتی» ندارد هم — تا رقمِ سرمایه‌گذاری به‌جای فروش حساب نشود.
     is_holding = no_sales_concept(conn, symbol, sector, _precomputed=_no_sales,
-                                  holdings_na=_hold_na)
+                                  holdings_na=_hold_na) or _is_fund
+    sales_pass = bool(s2m and s2m.get("pass"))
+    pot_pass = bool(pot and pot.get("pass"))
+    i4_available = bool(annual) and mcap > 0 and not is_holding
     if is_holding:
         # رأی ۱۶ (۱۴۰۵/۰۷/۰۳): معافیت یعنی «نظر نمی‌دهد»، نه پاسِ رایگان. نمادی
         # که مدلِ کسب‌وکارش فروشِ عملیاتیِ ماهانه ندارد، معیارِ سنجشِ این شاخص را
@@ -2248,12 +2291,18 @@ def scan_symbol(conn: sqlite3.Connection, symbol: str, market_cap_rials: float =
         # می‌کرد و موتور به آن تراز شد.
         passes_s2m = None
         path4 = None
+        i4_reason = ind4_reason_text(exempt=True)
     else:
-        sales_pass = bool(s2m and s2m.get("pass"))
-        pot_pass = bool(pot and pot.get("pass"))
         # همان نامِ مسیرِ ردیفِ bulk (Task 7): اول فروش÷ارزش بازار، بعد پتانسیل.
         path4 = i4_acceptance_path(sales_pass, pot_pass)
         passes_s2m = bool(sales_pass or pot_pass)
+        # متنِ دلیل از تک‌مرجعِ `ind4_reason_text` — همان قراردادِ کارت/bulk.
+        if not annual or mcap <= 0:
+            i4_reason = ind4_reason_text(available=False)
+        else:
+            i4_reason = ind4_reason_text(
+                margin_present=pot_margin is not None,
+                sales_pass=sales_pass, potential_pass=pot_pass)
 
     passes = {"1_growth": axis1,
               "2_eps_trend": bool(e and e["pass"]),
@@ -2324,13 +2373,23 @@ def scan_symbol(conn: sqlite3.Connection, symbol: str, market_cap_rials: float =
         # برچسبِ نمایشیِ طبقهٔ حاشیه (Task 6) — همان مقداری که
         # `detail.gross_margin` و ردیفِ bulk_scan می‌دهند؛ None یعنی N/A.
         "margin_tier": (gm or {}).get("margin_tier"),
-        # «چرا حکمِ ۳ خالی است»: N/Aِ طبقه (مالی/هلدینگ/صندوق) از خودِ موتور،
-        # نه شکافِ داده؛ جدول با همین پرچم N/A خاکستری می‌نشاند (Task 6 fix).
-        "i3_na": bool((gm or {}).get("na")),
+        # «چرا حکمِ ۳ خالی است»: N/Aِ طبقه (مالی/هلدینگ/صندوق) یا شکافِ داده؛
+        # جدول با همین پرچم N/A خاکستری می‌نشاند (Task 6 fix).
+        "i3_na": i3_na,
+        # دلیلِ ۳ — همان متنِ کارت/ردیفِ bulk (Task 10B2a1/10B2a2).
+        "i3_reason": i3_reason,
         # نامِ مسیرِ پذیرش و برچسبِ سالانه‌سازی (Task 7) — همان قراردادِ ردیفِ
         # bulk_scan؛ معاف/بی‌داده بی‌مسیر و بی‌برچسب است. `mcap <= 0` هم مثلِ
         # کارت «بی‌داده» است: نه دوره‌ای برایِ سالانه‌سازی، نه برچسبی.
         "i4_acceptance_path": path4,
+        # کلیدهایِ N/A/دسترس‌پذیری و حاشیهٔ مصرفیِ پتانسیل (Task 10B2a2) —
+        # همان قراردادِ کارت و ردیفِ bulk تا پاریتی سه‌مسیره سنجیده شود.
+        "i4_available": i4_available,
+        "i4_exempt": bool(is_holding),
+        "i4_na": bool(is_holding),
+        "i4_reason": i4_reason,
+        "margin_used_pct": pot_margin if i4_available else None,
+        "margin_basis": pot_margin_basis if i4_available else None,
         "annualize_months": (0 if (is_holding or mcap <= 0)
                              else int((annual or {}).get("months_used") or 0)),
         "annualize_label": ("" if (is_holding or mcap <= 0)
@@ -2774,10 +2833,16 @@ def bulk_scan(conn: sqlite3.Connection, cfg: dict = None) -> list[dict]:
         # معافیتِ نمادهای بی‌درآمد (سيلور/پايدار/پويا) بی‌صدا می‌افتاد.
         is_holding = ind4_exempt(conn, key, sector, holdings_na=_hold_na,
                                  _precomputed=no_sales)
+        # حاشیهٔ **جایگزینِ** پتانسیل (Task 10B2a2): کارت برایِ حاشیهٔ N/A با
+        # نسبتِ سود خالص در (۰,۱۰۰] پتانسیل می‌سازد؛ این‌جا همان قاعده با
+        # متغیرِ جدا (`pot_margin`) تکرار می‌شود و **هرگز** به `i3` یا
+        # `sector_filter` نمی‌رود. `margin` (حاشیهٔ ناخالص) دست‌نخورده می‌ماند.
+        pot_margin, pot_margin_basis = i4_potential_margin(margin, ref)
         pot_d = None
-        if ann_core and margin is not None and mcap > 0 and not is_holding:
+        if ann_core and pot_margin is not None and mcap > 0 and not is_holding:
             pot_d = gross_profit_potential(conn, key, mcap, min_pct=pot_min,
-                                           gm={"margin_pct": margin}, annual=ann_core)
+                                           gm={"margin_pct": pot_margin},
+                                           annual=ann_core)
         s2m = (s2m_d or {}).get("sales_to_mcap")
         pot = (pot_d or {}).get("potential_pct")
 
@@ -2805,8 +2870,14 @@ def bulk_scan(conn: sqlite3.Connection, cfg: dict = None) -> list[dict]:
                 i4_reason = ind4_reason_text(available=False)
             else:
                 i4_reason = ind4_reason_text(
-                    margin_present=margin is not None,
+                    margin_present=pot_margin is not None,
                     sales_pass=sales_pass, potential_pass=pot_pass)
+
+        # چهار حالتِ N/A/دسترس‌پذیریِ شاخص ۴ — همان چیزی که کارت در
+        # `indicators["4"]` می‌گوید (`available`/`exempt`/`na`) و پاریتیِ
+        # ۱۰B2a2 رویِ هر ۷۸۵ ردیف می‌سنجد. حاشیهٔ مصرفی هم فقط برایِ پتانسیل
+        # است؛ `gross_margin` بالا حاشیهٔ شاخص ۳ می‌ماند.
+        i4_available = bool(ann_core) and mcap > 0 and not is_holding
 
         # ۵) فیلتر صنعت (قیمت‌گذاری آزاد/بورس کالا در برابر دستوری)
         sec = sector_filter(sector, cfg=cfg, market_cap_rials=mcap,
@@ -2855,12 +2926,24 @@ def bulk_scan(conn: sqlite3.Connection, cfg: dict = None) -> list[dict]:
             # گردشدۀ نمایش)؛ None برایِ نمادی که حاشیه‌اش ساخته نشده (N/A).
             "margin_tier": margin_tier(margin_raw),
             # N/Aِ طبقه (مالی/بانکی/هلدینگ/صندوق): علت و باند از خودِ موتور
-            # می‌آید؛ شکافِ داده نیست و ستونِ حکم هم شمارش نمی‌شود.
+            # می‌آید؛ شکافِ داده نیست و ستونِ حکم هم شمارش نمی‌شود. (شکافِ داده
+            # هم `i3_pass=None` است؛ تفکیکش در `i3_reason` می‌ماند.)
             "i3_na": bool(class_na),
             "i3_band": (class_na or {}).get("band"),
             "i3_reason": i3_reason,
             "sales_to_mcap": None if s2m is None else round(s2m, 2),
             "profit_potential_pct": None if pot is None else round(pot, 1),
+            # حاشیه و مبنایِ مصرفیِ **پتانسیل** (نه شاخص ۳): برایِ طبقهٔ مالیِ
+            # غیربانکی/تولیدیِ بی‌سود ناخالص، «حاشیهٔ سود خالص (جایگزینِ مالی)»
+            # است و با برچسبِ `net_margin_proxy` از حاشیهٔ ناخالص جدا می‌شود.
+            # در حالتِ معاف/بی‌داده هیچ‌کدام معنا ندارند (کارت هم نمی‌دهد).
+            "margin_used_pct": pot_margin if i4_available else None,
+            "margin_basis": pot_margin_basis if i4_available else None,
+            # `available/exempt/na`ِ شاخص ۴ — همان کلیدهایِ کارت تا سه مسیر
+            # (bulk، کارت، scan) با یک قرارداد مقایسه شوند (پاریتیِ ۱۰B2a2).
+            "i4_available": i4_available,
+            "i4_exempt": bool(is_holding),
+            "i4_na": bool(is_holding),
             "annual_sales_bt": round(normalize_mrl_to_btom(annual_sales), 1),
             # معاف یا بی‌ارزش‌بازار (mcap<=0) سالانه‌سازی ندارد — همان ۰/""ی
             # که کارت در شاخهٔ insufficient-data می‌دهد؛ ردیف نباید بگوید
