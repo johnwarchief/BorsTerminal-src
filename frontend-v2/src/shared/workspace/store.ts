@@ -25,6 +25,8 @@ interface WorkspaceStore {
   activeWorkspaceId: string;
   activeSymbol: string | null;
   workspaces: Workspace[];
+  history: LayoutNode[];
+  undo: () => void;
   split: (tileId: string, dir: SplitDir, panel: TilePanel) => void;
   close: (tileId: string) => void;
   swap: (tileId: string, dir: MoveDir) => void;
@@ -74,7 +76,10 @@ export const useWorkspace = create<WorkspaceStore>()(
     (set, get) => {
       const patch = (layout: LayoutNode, extra: Partial<Workspace> = {}) => {
         const ws = get().workspaces[0];
-        set({ workspaces: [{ ...ws, layout, ...extra, updatedAt: Date.now() }] });
+        set({
+          history: [...get().history.slice(-9), ws.layout],
+          workspaces: [{ ...ws, layout, ...extra, updatedAt: Date.now() }],
+        });
       };
 
       return {
@@ -82,6 +87,16 @@ export const useWorkspace = create<WorkspaceStore>()(
         activeWorkspaceId: DEFAULT_WORKSPACE.id,
         activeSymbol: null,
         workspaces: [DEFAULT_WORKSPACE],
+        history: [],
+        undo: () => {
+          const past = get().history;
+          if (past.length === 0) return;
+          const ws = get().workspaces[0];
+          set({
+            history: past.slice(0, -1),
+            workspaces: [{ ...ws, layout: past[past.length - 1], updatedAt: Date.now() }],
+          });
+        },
         split: (tileId, dir, panel) => {
           const next = splitTile(get().workspaces[0].layout, tileId, dir, panel);
           if (next) patch(next);
@@ -122,6 +137,12 @@ export const useWorkspace = create<WorkspaceStore>()(
     {
       name: 'bors-workspace-v1',
       version: 1,
+      partialize: (state) => ({
+        version: state.version,
+        activeWorkspaceId: state.activeWorkspaceId,
+        activeSymbol: state.activeSymbol,
+        workspaces: state.workspaces,
+      }),
       merge: (persisted, current) => {
         const ws = sanitizeWorkspace(persisted);
         if (!ws) return current;
