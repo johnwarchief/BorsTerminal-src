@@ -1,0 +1,121 @@
+{
+  "base": "http://127.0.0.1:5180/",
+  "route": "#/market",
+  "checks": [
+    {
+      "name": "snapshot strip has four cards",
+      "ok": true,
+      "detail": {
+        "tileCards": 4,
+        "cards": 6,
+        "cardCount": 16
+      }
+    },
+    {
+      "name": "preview names trades and the market basis",
+      "ok": true,
+      "detail": {
+        "preview": "کل بازار\nپیش‌نمایش\nنسبت به نشست قبل\n−۰٫۴٪\nدرصدِ امروز\n−۰٫۴٪\nهم‌وزن\n۲٬۲۲۵٬۸۱۷ (+۰٫۳٪)\nارزش\n۴۷٫۲ همت\nحجم\n۸۹٬۷۵۴ م\nتعداد معاملات\n۱٬۲۸۵٬۳۳۸",
+        "hoverRequests": 0
+      }
+    },
+    {
+      "name": "retail card never lies with zero",
+      "ok": true,
+      "detail": {
+        "retail": "ارزش معاملات خرد › ‹ ⋯ ۵۰ همت —"
+      }
+    },
+    {
+      "name": "ArrowDown swaps the focused panel with its neighbour",
+      "ok": true,
+      "detail": {
+        "symbolHeader": "دیده‌بان‌ها"
+      }
+    },
+    {
+      "name": "closing a tile is undone with Ctrl+Z",
+      "ok": true,
+      "detail": {
+        "closed": 0,
+        "restored": 1
+      }
+    },
+    {
+      "name": "Alt+2 focuses the second panel",
+      "ok": true,
+      "detail": {
+        "focusedId": "t-symbol"
+      }
+    },
+    {
+      "name": "splitter drag changes the ratio and survives reload",
+      "ok": true,
+      "detail": {
+        "before": 0.6794176381692574,
+        "ratioAfter": 0.7402984671848014,
+        "ratioReload": 0.7402984671848014
+      }
+    },
+    {
+      "name": "history tab opens and the chart collapses and returns",
+      "ok": true,
+      "detail": {
+        "historyVisible": 37,
+        "chartHidden": 0,
+        "chartShown": 1
+      }
+    },
+    {
+      "name": "industries tab renders real industries",
+      "ok": true,
+      "detail": {
+        "industries": 3
+      }
+    },
+    {
+      "name": "narrow width uses the two-tab drawer and keeps the saved layout",
+      "ok": true,
+      "detail": {
+        "narrowTabs": 1,
+        "tilesGone": 0,
+        "tilesBack": 1,
+        "stripBack": 1
+      }
+    },
+    {
+      "name": "market status shows the phase and its source",
+      "ok": true,
+      "detail": {
+        "phaseLabel": "پایانِ نشست",
+        "phaseSource": "رسمی — از خودِ بورس"
+      }
+    },
+    {
+      "name": "notifications page is a real feed or an explicit empty/unreachable state",
+      "ok": true,
+      "detail": {
+        "noticeItems": 120,
+        "noticeEmpty": 0,
+        "noticeWarn": 0
+      }
+    },
+    {
+      "name": "no console errors",
+      "ok": true,
+      "detail": {
+        "consoleErrors": []
+      }
+    }
+  ],
+  "console": [],
+  "shots": [
+    "C:\\Users\\PCMOD\\Desktop\\BorsTerminal\\_audit\\live-board-v2-20261028\\ws-1366.png",
+    "C:\\Users\\PCMOD\\Desktop\\BorsTerminal\\_audit\\live-board-v2-20261028\\ws-1366-after.png",
+    "C:\\Users\\PCMOD\\Desktop\\BorsTerminal\\_audit\\live-board-v2-20261028\\ws-1279.png",
+    "C:\\Users\\PCMOD\\Desktop\\BorsTerminal\\_audit\\live-board-v2-20261028\\ws-status-1366.png",
+    "C:\\Users\\PCMOD\\Desktop\\BorsTerminal\\_audit\\live-board-v2-20261028\\ws-notif-1366.png"
+  ],
+  "started": "2026-10-28T16:22:32.543Z",
+  "finished": "2026-10-28T16:22:49.487Z"
+}

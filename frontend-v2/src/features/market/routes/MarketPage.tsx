@@ -35,6 +35,7 @@ export function MarketPage() {
   const toggleFollow = useWorkspace((state) => state.toggleFollow);
 
   const pollMs = useMarketPrefs((state) => state.pollMs);
+  const setFilters = useMarketPrefs((state) => state.setFilters);
   const board = useBoard(pollMs);
   const snapshot = useMarketSnapshot(pollMs);
   const rows = useMemo(() => board.data?.data ?? [], [board.data]);
@@ -96,6 +97,7 @@ export function MarketPage() {
           rows={rows}
           filterConfig={DEFAULT_TAPE_FILTER_CONFIG}
           onSelect={selectWatchRow}
+          onPickSector={(sector) => setFilters({ sector })}
         />
       );
     }
@@ -125,7 +127,7 @@ export function MarketPage() {
               <div className="min-h-0 flex-1">
                 {tab === 'symbol'
                   ? <SymbolPanel row={symbolRow} boardDay={boardDay} chartOpen={chartOpen} onToggleChart={() => setChartOpen(!chartOpen)} />
-                  : <WatchPanel rows={rows} filterConfig={DEFAULT_TAPE_FILTER_CONFIG} onSelect={selectWatchRow} />}
+                  : <WatchPanel rows={rows} filterConfig={DEFAULT_TAPE_FILTER_CONFIG} onSelect={selectWatchRow} onPickSector={(sector) => setFilters({ sector })} />}
               </div>
             </div>
           ) : null}
