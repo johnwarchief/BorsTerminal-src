@@ -431,6 +431,36 @@ def _startup_sync_market():
     except Exception as _e:
         print(f"[startup] codal auto-update catch-up thread failed: {_e}")
 
+    # ── چکِ متایِ snapshotِ کدال در بوت (Task 8a) ───────────────────────────
+    # منبع، تگِ دادهٔ ``data-codal`` است نه ``latest`` ریلیزِ برنامه. این نخ
+    # فقط ``codal.meta.json`` را می‌خواند و اگر دورهٔ FS/MS جلوتر بود، همان
+    # workerِ امضاشده/merge را شروع می‌کند؛ هیچ خزنده/جستجویی صدا زده نمی‌شود.
+    # درِ همان Task 6 است (should_auto_check خالص): سورس/dev فقط با
+    # BORS_CODAL_AUTOUPDATE=1، نصبِ frozen خودش opt-in، و هرگز با
+    # BORS_NO_FETCH_LOOPS=1. نخ daemon است تا بوت هرگز پشتِ شبکه نماند.
+    def _codal_auto_check():
+        try:
+            import bors_config as _bc
+            from api._sync_codal import auto_check, should_auto_check
+            if not should_auto_check(
+                    frozen=bool(getattr(_bc, "_FROZEN", False)),
+                    env=os.environ,
+                    fetch_loops_enabled=_fetch_loops_enabled()):
+                print("[startup] codal auto-check skipped (guard/opt-in)")
+                return
+            result = auto_check()
+            print("[startup] codal auto-check: checked=%r update=%r started=%r"
+                  % (result.get("checked"), result.get("update"),
+                     result.get("started")))
+        except Exception as _e:
+            print(f"[startup] codal auto-check failed: {_e}")
+    try:
+        if _fetch_loops_enabled():
+            threading.Thread(target=_codal_auto_check, daemon=True).start()
+            print("[startup] codal auto-check thread spawned")
+    except Exception as _e:
+        print(f"[startup] codal auto-check thread failed: {_e}")
+
 
 @app.get("/", include_in_schema=False)
 def serve_home():
