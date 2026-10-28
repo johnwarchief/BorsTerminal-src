@@ -380,6 +380,44 @@ def _startup_sync_market():
     except Exception as _e:
         print(f"[startup] candle projection failed: {_e}")
 
+    # ── جبرانِ استارتِ بروزرسانیِ روزانهٔ کدال (Task 6) ─────────────────────
+    # Task Scheduler روزانه ۱۸:۳۰ اجرا می‌کند و StartWhenAvailable اجرایِ
+    # ازدست‌رفته را پس از روشن‌شدن جبران می‌کند؛ این نخ لایۀِ دوم است: اگر
+    # آخرین موفقیت کهنه/غایب/خراب باشد، همان اسکریپت را بدونِ انتظار بالا
+    # می‌آورد. کار در نخِ daemon است تا حلقهٔ رویداد هرگز پشتِ خواندنِ فایل
+    # یا راه‌اندازیِ پروسه نماند. با BORS_NO_FETCH_LOOPS=1 هیچ پروسهٔ کدال
+    # بالا نمی‌آید (همان دربی که سینک/تیکِ تابلو را خاموش می‌کند).
+    def _codal_auto_catchup():
+        try:
+            from api._sync_codal import read_auto_status, should_auto_update
+            last_success = read_auto_status().get("last_success")
+            if not should_auto_update(last_success):
+                print("[startup] codal auto-update is fresh; catch-up skipped")
+                return
+            script = os.path.join(APP_DIR, "dev", "codal_auto_update.py")
+            if not os.path.isfile(script):
+                print("[startup] codal auto-update script not found; catch-up skipped")
+                return
+            # مسیرِ نسبی + cwd ریشهٔ مخزن: همان فرمانی که Task Scheduler
+            # ثبت می‌کند. Popen هرگز wait نمی‌شود؛ خروجی به DEVNULL می‌رود
+            # تا هندلِ لوله باز نماند و بوت معطل نشود.
+            subprocess.Popen([sys.executable, "dev/codal_auto_update.py",
+                              "--mode", "daily"],
+                             cwd=APP_DIR,
+                             stdin=subprocess.DEVNULL,
+                             stdout=subprocess.DEVNULL,
+                             stderr=subprocess.DEVNULL,
+                             creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+            print("[startup] codal auto-update catch-up spawned")
+        except Exception as _e:
+            print(f"[startup] codal auto-update catch-up failed: {_e}")
+    try:
+        if _fetch_loops_enabled():
+            threading.Thread(target=_codal_auto_catchup, daemon=True).start()
+            print("[startup] codal auto-update catch-up thread spawned")
+    except Exception as _e:
+        print(f"[startup] codal auto-update catch-up thread failed: {_e}")
+
 
 @app.get("/", include_in_schema=False)
 def serve_home():

@@ -74,6 +74,7 @@ dev/fts_rotate_memo.json
 /last_good/
 codal_auto.lock
 codal_auto_status.json
+codal_auto_pause
 market.db.staging/
 
 # ---- لاگ و خروجی ابزار ----

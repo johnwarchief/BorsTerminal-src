@@ -108,6 +108,57 @@ _dbdl_lock = threading.Lock()
 _dbdl_running = False
 
 
+def should_auto_update(last_success_iso, now=None, max_age_hours=24):
+    """آیا اجرایِ خودکارِ کدال کهنه است؟ (خالص، stdlib، بدونِ شبکه)
+
+    None/خالی/تاریخِ نامعتبر → True (محافظه‌کارانه: یک اجرایِ اضافی بهتر از
+    دادهٔ کهنه است). تازۀ کمتر از max_age_hours → False؛ کهنه‌تر → True.
+    ورودیِ aware و naive هر دو پذیرفته می‌شود: اگر یک طرف tzinfo داشته باشد و
+    طرفِ دیگر نه، منطقۀ طرفِ aware به طرفِ naive چسبانده می‌شود تا مقایسه
+    هرگز ``TypeError: can't subtract offset-naive and offset-aware`` ندهد.
+    """
+    if not isinstance(last_success_iso, str) or not last_success_iso.strip():
+        return True
+    raw = last_success_iso.strip()
+    # fromisoformat("2026-10-21") را نیمه‌شب می‌فهمد؛ ولی last_success بدونِ
+    # ساعت یک timestamp نیست و «امروزِ نیمه‌شب» می‌تواند اجرایِ کهنه را تازه
+    # جا بزند. محافظه‌کارانه: نبودِ جداکنندۀِ تاریخ/ساعت → کهنه.
+    if "T" not in raw and " " not in raw:
+        return True
+    if raw.endswith(("Z", "z")):       # ISO-Z → offset؛ fromisoformat پیش از 3.11 نه
+        raw = raw[:-1] + "+00:00"
+    try:
+        last = datetime.datetime.fromisoformat(raw)
+    except (TypeError, ValueError):
+        return True
+    if now is None:
+        now = (datetime.datetime.now(last.tzinfo) if last.tzinfo is not None
+               else datetime.datetime.now())
+    if last.tzinfo is not None and now.tzinfo is None:
+        now = now.replace(tzinfo=last.tzinfo)
+    elif last.tzinfo is None and now.tzinfo is not None:
+        last = last.replace(tzinfo=now.tzinfo)
+    try:
+        return bool((now - last).total_seconds() > float(max_age_hours) * 3600.0)
+    except (TypeError, ValueError, OverflowError):
+        return True
+
+
+def read_auto_status():
+    """خواندنِ WORK_DIR/codal_auto_status.json؛ هر خطا → {}.
+
+    مسیر درِ هر فراخوانی از WORK_DIR ساخته می‌شود (نه یک ثابتِ import-time)،
+    تا تست بتواند WORK_DIR را به پوشۀِ موقت بچسباند و مسیرِ واقعی لمس نشود.
+    """
+    try:
+        with open(os.path.join(WORK_DIR, "codal_auto_status.json"),
+                  "r", encoding="utf-8") as fh:
+            data = json.load(fh)
+    except Exception:                                      # noqa: BLE001
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
 def _write_db_status(stage, percent=0.0, detail="", error=""):
     try:
         tmp = CODAL_DB_STATUS_PATH + ".tmp"
