@@ -263,6 +263,12 @@ def mstat_clientsplit(tab: str = Query("all")):
     """گام ۲.۴ و ۵.۱ — تفکیک حقیقی/حقوقی به تفکیک تب."""
     return _mstat_call(_mstat.client_split, tab)
 
+@router.get("/api/mstat/market-snapshot")
+def mstat_market_snapshot():
+    """یک payload برای کارت‌های بالای تابلو؛ با کشِ همان لایهٔ mstat."""
+    return _mstat_call(_mstat.market_snapshot)
+
+
 @router.get("/api/mstat/phase")
 def mstat_phase():
     """مرحلِ جلسه از وضعیتِ **رسمیِ** بازار (بند ۵ مأموریت، 1405-07-20).

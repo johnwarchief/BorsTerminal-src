@@ -974,6 +974,43 @@ def session_phase(conn) -> dict:
     return dict(MP.from_db(conn), status="ok")
 
 
+def market_index_series(conn, limit=1):
+    """سریِ رسمیِ شاخصِ کل و هم‌وزن — خواندنِ چندنشستی از market_index.
+
+    ستون‌هایِ گردش (z_tot_tran, q_tot_cap, q_tot_tran) در بانکِ کهنه ممکن است
+    نباشند؛ آن‌جا None برمی‌گردند، نه صفر. ترتیب: تازه‌ترین اول.
+    """
+    n = max(1, min(int(limit or 1), 60))
+    wide = ("d_even, idx_last, idx_change, idx_pct, ew_last, ew_change, ew_pct,"
+            " z_tot_tran, q_tot_cap, q_tot_tran")
+    try:
+        rows = conn.execute("SELECT %s FROM market_index ORDER BY d_even DESC LIMIT ?" % wide,
+                            (n,)).fetchall()
+        has_totals = True
+    except sqlite3.Error:
+        try:
+            rows = conn.execute("SELECT d_even, idx_last, idx_change, idx_pct, ew_last,"
+                                " ew_change, ew_pct FROM market_index ORDER BY d_even DESC"
+                                " LIMIT ?", (n,)).fetchall()
+        except sqlite3.Error:
+            return []
+        has_totals = False
+
+    def _opt(v):                     # غایب = None، نه صفرِ باورپذیر
+        x = _f(v)
+        return x if x else None
+
+    out = []
+    for r in rows:
+        out.append({"d_even": int(r[0]),
+                    "last": _opt(r[1]), "change": _opt(r[2]), "pct": _opt(r[3]),
+                    "ew_last": _opt(r[4]), "ew_change": _opt(r[5]), "ew_pct": _opt(r[6]),
+                    "z_tot_tran": _opt(r[7]) if has_totals else None,
+                    "q_tot_cap": _opt(r[8]) if has_totals else None,
+                    "q_tot_tran": _opt(r[9]) if has_totals else None})
+    return out
+
+
 def market_index(conn) -> dict | None:
     """شاخصِ کل و هموزنِ رسمی — تنها نقطهٔ خواندنِ جدولِ market_index.
 
@@ -1148,6 +1185,34 @@ def macro_health(conn) -> dict:
     return macro_health_from(_agg(_select(rows, "eq_all")), _agg(_select(rows, "all")),
                              *market_total_rials(conn), phase=MP.from_db(conn),
                              conn=conn)
+
+
+def market_snapshot(conn):
+    """یک payload برای نوارِ کارت‌های بالای تابلو: شاخص، نشستِ قبل، بازار و خرد.
+
+    `prev` نبودِ نشستِ قبلی را با None می‌گوید، نه صفر. `retail` همان
+    macro_health است با آستانه‌هایِ خودِ سند؛ لایهٔ نمایش هیچ عددی نمی‌سازد.
+    """
+    series = market_index_series(conn, 2)
+    cur = series[0] if series else None
+    prev = series[1] if len(series) > 1 else None
+    macro = macro_health(conn)
+    index = ({k: cur[k] for k in ("d_even", "last", "change", "pct",
+                                  "ew_last", "ew_change", "ew_pct")}
+             if cur else None)
+    market = {
+        "trade_value_hemat": (round(cur["q_tot_cap"] / HEMAT_FROM_RIAL, 2)
+                              if cur and cur.get("q_tot_cap") else None),
+        "volume": cur.get("q_tot_tran") if cur else None,
+        "trades": cur.get("z_tot_tran") if cur else None,
+        "market_value_hemat": macro.get("market_value_hemat"),
+    }
+    retail = {k: macro.get(k) for k in ("value_hemat", "state", "label", "basis",
+                                        "cause", "good_min", "bad_max",
+                                        "excellent_min")}
+    return {"status": "ok",
+            "asof": {"d_even": cur["d_even"] if cur else None},
+            "index": index, "prev": prev, "market": market, "retail": retail}
 
 
 # ================================ v9.8.0 — بنر نقدینگی کلان + جریان پول هوشمند =================
