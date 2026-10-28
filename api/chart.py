@@ -27,6 +27,7 @@ import json
 import math
 import os
 import sqlite3
+import sys
 import threading
 import time
 
@@ -1462,20 +1463,50 @@ def _cal_cache_path():
 
 
 def _cal_cache_events():
-    """رویدادهای خام از کشِ تقویم — با بی‌اعتبارسازیِ «مسیر + mtime»."""
-    path = _cal_cache_path()
+    """رویدادهای خام از کشِ تقویم — با بی‌اعتبارسازیِ «مسیر + mtime».
+
+    Fix round 1 (M3): فایلِ ``WORK_DIR/calendar.json`` ورودیِ بیرونی است و
+    ممکن است نیمه‌دانلود/ناسالم باشد. چنین فایلی نه exception می‌دهد نه
+    تقویم را خالی می‌کند: فقط ``dict``ها نگه داشته می‌شوند و اگر خواندن یا
+    تفسیر شکست بخورد، یک‌بار کشِ static باندل‌شده امتحان می‌شود.
+    """
+    primary = os.path.join(WORK_DIR, "calendar.json")
+    if os.path.isfile(primary):
+        events = _cal_load(primary)
+        if events is not None:
+            return events
+        static = _CAL_CACHE_PATH
+        if static and os.path.abspath(static) != os.path.abspath(primary):
+            print("[calendar] WARN %s ناسالم است → کشِ static" % primary,
+                  file=sys.stderr, flush=True)
+            events = _cal_load(static)
+            if events is not None:
+                return events
+        return []
+    events = _cal_load(_CAL_CACHE_PATH)
+    return events if events is not None else []
+
+
+def _cal_load(path):
+    """یک فایلِ کش را می‌خواند؛ ``None`` = ناخوانا/ناسالم (برایِ fallback)."""
     try:
         stat = os.stat(path)
         signature = (path, stat.st_mtime_ns, stat.st_size)
     except Exception:
-        return []
+        return None
     # mtime صریح هم سنجیده می‌شود تا ریستِ دستیِ کش (تست‌ها/ابزارِ audit) معتبر بماند.
     if signature != _cal_cache.get("signature") or _cal_cache.get("mtime") != stat.st_mtime:
         try:
             with open(path, encoding="utf-8") as f:
-                events = (json.load(f) or {}).get("events") or []
-        except Exception:
-            return []
+                raw = json.load(f)
+            events = raw.get("events") if isinstance(raw, dict) else None
+            if not isinstance(events, list):
+                raise ValueError("events is not a list")
+            events = [e for e in events if isinstance(e, dict)]
+        except Exception as exc:
+            print("[calendar] WARN %s: %s" % (path, exc),
+                  file=sys.stderr, flush=True)
+            return None
         _cal_cache["events"] = events
         _cal_cache["mtime"] = stat.st_mtime
         _cal_cache["path"] = path

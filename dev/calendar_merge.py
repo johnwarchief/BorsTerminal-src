@@ -4,8 +4,10 @@
 قرارداد:
     merge_calendar(old: dict, new: dict) -> dict
 
-  * رویدادها بر پایهٔ ``(نماد، دسته، تاریخ، عنوان)`` یکتا می‌شوند؛ ردیفِ
-    قدیمی حفظ می‌شود و ردیفِ تکراریِ تازه کنار گذاشته می‌شود.
+  * رویدادها بر پایهٔ ``(نماد، دسته، تاریخ، عنوان)`` به‌علاوهٔ شناسهٔ نامه
+    (``report_id`` و در نبودش ``event_type_id``) یکتا می‌شوند؛ ردیفِ قدیمی
+    حفظ می‌شود و ردیفِ تکراریِ تازه کنار گذاشته می‌شود. دو نامهٔ متفاوت با
+    عنوان/تاریخِ یکسان (مثلاً چند آگهیِ مجمعِ یک نماد در یک روز) هر دو می‌مانند.
   * ``meta.fetchedAt`` از payloadِ تازه می‌آید، ``meta.count`` دوباره
     شمرده می‌شود، و ``meta.industries``/``meta.jmonths`` افزایشی‌اند تا
     رویدادهایِ قدیمی صنعت/ماهِ خود را از دست ندهند.
@@ -35,8 +37,10 @@ def _meta(payload):
 
 def _cat(ev):
     """نشانگرِ دسته: ``cat`` صریح، وگرنه ``event_type_id`` خام."""
-    if ev.get("cat") not in (None, ""):
-        return str(ev.get("cat")).strip()
+    cat = ev.get("cat")
+    cat = "" if cat is None else str(cat).strip()
+    if cat:
+        return cat
     tid = ev.get("event_type_id")
     return "" if tid is None else str(tid).strip()
 
@@ -52,9 +56,25 @@ def _date(ev):
 
 
 def event_key(ev):
-    """کلیدِ یکتاییِ یک رویداد — برایِ تست و مصرفِ بیرونی."""
-    return (str(ev.get("asset_symbol_trade") or "").strip(),
+    """کلیدِ یکتاییِ یک رویداد — برایِ تست و مصرفِ بیرونی.
+
+    Fix round 1 (M1): ``(نماد، دسته، تاریخ، عنوان)`` تنها کلید نیست؛ چند
+    نامهٔ واقعیِ کدال همین چهار جزء را دارند و فقط ``report_id``شان متفاوت
+    است. شناسه به کلید اضافه می‌شود تا آن‌ها حذف نشوند. ردیفِ بدونِ
+    ``report_id`` با ``event_type_id`` تفکیک می‌شود و ردیفِ بدونِ هر دو،
+    همان کلیدِ چهارتاییِ قبلی را نگه می‌دارد.
+    """
+    base = (str(ev.get("asset_symbol_trade") or "").strip(),
             _cat(ev), _date(ev), _title(ev))
+    rid = ev.get("report_id")
+    rid = "" if rid is None else str(rid).strip()
+    if rid:
+        return base + ("report", rid)
+    tid = ev.get("event_type_id")
+    tid = "" if tid is None else str(tid).strip()
+    if tid:
+        return base + ("type", tid)
+    return base
 
 
 def _merge_meta(old_meta, new_meta):

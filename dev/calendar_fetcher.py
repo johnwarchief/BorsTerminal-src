@@ -581,13 +581,22 @@ def fetch_month(session, jy, jm, rotate=False, req_counter=None, max_pages=60,
     return events
 
 
+class CacheMergeError(RuntimeError):
+    """کشِ موجودِ تقویم خوانده/تفسیر نشد؛ در ``--merge`` جایگزینی ممنوع است."""
+
+
 def merge_payload_with_cache(payload, out_path=None):
     """payloadِ تازه را با کشِ موجود ادغام می‌کند و payloadِ نهایی را برمی‌گرداند.
 
     Task 7 — ``--merge``: کشِ قبلی حفظ می‌شود، ردیف‌هایِ تکراری حذف و
     ``meta.fetchedAt``/``meta.count`` به‌روز می‌شوند. نوشتنِ فایل اینجا
-    انجام نمی‌شود تا مسیرِ atomicِ main تنها نویسندۀ کش بماند. کشِ غایب یا
-    ناخوانا ⇒ payloadِ تازه (جایگزینی) با هشدار.
+    انجام نمی‌شود تا مسیرِ atomicِ main تنها نویسندۀ کش بماند.
+
+    Fix round 1 (I1): کشِ موجود ولی ناخوانا/ناسالم (JSON نامعتبر، غیرِ dict،
+    یا ``events`` غیرِ فهرست) **جایگزین نمی‌شود**؛ ``CacheMergeError`` بالا
+    می‌رود تا ``main`` با کدِ غیرِ صفر متوقف شود و فایل بایت‌به‌بایت دست‌نخورده
+    بماند. دلیل: اجرایِ روزانه فقط Cat 6 می‌آورد و جایگزینی، رویدادهایِ
+    دسته‌هایِ دیگر را برایِ همیشه حذف می‌کند. کشِ غایب ⇒ payloadِ تازه.
     """
     out = Path(out_path) if out_path else OUT
     if not out.exists():
@@ -595,11 +604,17 @@ def merge_payload_with_cache(payload, out_path=None):
     try:
         old = json.loads(out.read_text(encoding="utf-8"))
     except (OSError, ValueError) as exc:
-        print(f"[merge] کشِ قبلی خوانده نشد ({exc}) → جایگزینی")
-        return payload
+        raise CacheMergeError(
+            "کشِ قبلی خوانده نشد (%s: %s)؛ برایِ جلوگیری از حذفِ رویدادها "
+            "نوشتن متوقف شد" % (type(exc).__name__, exc)) from exc
     if not isinstance(old, dict):
-        print("[merge] کشِ قبلی dict نبود → جایگزینی")
-        return payload
+        raise CacheMergeError(
+            "کشِ قبلی dict نبود (%s)؛ برایِ جلوگیری از حذفِ رویدادها "
+            "نوشتن متوقف شد" % type(old).__name__)
+    if not isinstance(old.get("events"), list):
+        raise CacheMergeError(
+            "events کشِ قبلی فهرست نبود (%s)؛ برایِ جلوگیری از حذفِ رویدادها "
+            "نوشتن متوقف شد" % type(old.get("events")).__name__)
     merged = merge_calendar(old, payload)
     print("[merge] قدیمی=%d تازه=%d ادغام=%d"
           % (len(old.get("events") or []), len(payload.get("events") or []),
@@ -700,8 +715,15 @@ def main():
         "events": all_events
     }
     # Task 7 — --merge: کشِ قبلی حفظ می‌شود (Cat 6 فقط دِلتا می‌آورد).
+    # Fix round 1 (I1): کشِ ناخوانا ⇒ توقفِ غیرِ صفر پیش از هر نوشتنی.
     if args.merge:
-        payload = merge_payload_with_cache(payload)
+        try:
+            payload = merge_payload_with_cache(payload)
+        except CacheMergeError as exc:
+            print("[merge] خطا: %s" % exc, file=sys.stderr, flush=True)
+            print("[merge] کشِ قبلی دست‌نخورده ماند؛ جایگزینی فقط با حذف/جابه‌جاییِ "
+                  "عمدیِ آن ممکن است.", file=sys.stderr, flush=True)
+            return 1
         all_events = payload["events"]
     OUT.parent.mkdir(parents=True, exist_ok=True)
     tmp = OUT.with_suffix(".tmp")
@@ -740,4 +762,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

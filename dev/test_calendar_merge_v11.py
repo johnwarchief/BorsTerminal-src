@@ -30,6 +30,8 @@ try:                       # Persian/UTF-8 output on a cp1252 Windows console
 except Exception:
     pass
 
+from pathlib import Path    # noqa: E402
+
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 os.chdir(ROOT)
 sys.path.insert(0, ROOT)
@@ -66,15 +68,15 @@ try:
     from calendar_merge import merge_calendar
 
     old_ev = event("فولاد", "2026-11-01T09:00:00+03:30", "آگهی دعوت به مجمع")
-    new_dup = dict(old_ev, report_id="dup", description="duplicate")
+    new_dup = dict(old_ev, description="duplicate")
     new_ev = event("فولاد", "2026-11-02T09:00:00+03:30", "تصمیمات مجمع")
     old = {"meta": {"fetchedAt": "2026-10-01T00:00:00Z", "count": 1,
                     "industries": {"فولاد": "فلزات اساسي"}, "jmonths": ["1405/07"]},
-           "token": None, "events": [old_ev]}
+           "token": "token-old-round1", "events": [old_ev]}
     new = {"meta": {"fetchedAt": "2026-10-28T12:00:00Z", "count": 2,
                     "industries": {"فولاد": "فلزات اساسي", "تست": "سایر"},
                     "jmonths": ["1405/08"]},
-           "token": None, "events": [new_dup, new_ev]}
+           "token": "token-new-round1", "events": [new_dup, new_ev]}
     merged = merge_calendar(old, new)
     ck(len(merged["events"]) == 2,
        "merge: duplicate removed, old+new kept (count=%d)" % len(merged["events"]))
@@ -92,7 +94,14 @@ try:
        "merge: industries are additive, not replaced")
     ck(merged["meta"]["jmonths"] == ["1405/07", "1405/08"],
        "merge: jmonths union (%r)" % (merged["meta"].get("jmonths"),))
-    ck(merged.get("token") is None, "merge: token field preserved as None")
+    ck(merged.get("token") == "token-old-round1",
+       "merge: token survives (old token, not silently dropped) (%r)"
+       % merged.get("token"))
+    token_fallback = merge_calendar({"events": [], "meta": {}},
+                                    {"events": [], "meta": {}, "token": "t-new"})
+    ck(token_fallback.get("token") == "t-new",
+       "merge: token falls back to the new payload when old has none (%r)"
+       % token_fallback.get("token"))
 
     empty = merge_calendar({}, {})
     ck(empty["events"] == [] and empty["meta"]["count"] == 0,
@@ -121,6 +130,26 @@ try:
        "merge: same title/date but different category is distinct (count=%d)"
        % len(cat_distinct["events"]))
 
+    # M1 fix: distinct CodAL letters sharing (symbol, cat, date, title) survive.
+    letter_title = "آگهی دعوت به مجمع عمومی عادی بطور فوق العاده"
+    letter_a = event("فساپ", "2026-09-23T10:00:00+03:30", letter_title,
+                     report_id="r1602402")
+    letter_b = event("فساپ", "2026-09-23T10:00:00+03:30", letter_title,
+                     report_id="r1602422")
+    letters = merge_calendar({"events": [letter_a], "meta": {}},
+                             {"events": [letter_b, dict(letter_b)], "meta": {}})
+    ck(len(letters["events"]) == 2,
+       "merge: same title/date/cat, different report_id both survive (count=%d)"
+       % len(letters["events"]))
+    ck(sum(1 for e in letters["events"] if e.get("report_id") == "r1602422") == 1,
+       "merge: identical duplicate collapses once under the report_id key")
+    bare = {"asset_symbol_trade": "فساپ", "date_time": "2026-09-23T10:00:00+03:30",
+            "event_title": letter_title, "cat": "6"}
+    bare_merged = merge_calendar({"events": [bare], "meta": {}},
+                                 {"events": [dict(bare, description="dup")], "meta": {}})
+    ck(len(bare_merged["events"]) == 1,
+       "merge: rows without report_id/event_type_id keep the 4-tuple fallback")
+
     # ── 2) calendar_fetcher --merge file helper ─────────────────────────────
     cache_path = os.path.join(TMP, "cache.json")
     with open(cache_path, "w", encoding="utf-8") as fh:
@@ -136,6 +165,71 @@ try:
         on_disk = json.load(fh)
     ck(len(on_disk["events"]) == 1,
        "fetcher --merge: helper does not write (main owns the atomic write)")
+
+    # I1 fix: an existing-but-unreadable cache must NOT be replaced.
+    corrupt_cases = [
+        ("invalid-json", b'{"events": [ '),
+        ("non-dict", json.dumps([1, 2, 3]).encode("utf-8")),
+        ("non-list-events", json.dumps({"events": {"a": 1}}).encode("utf-8")),
+    ]
+    for name, blob in corrupt_cases:
+        bad = os.path.join(TMP, "bad_%s.json" % name)
+        with open(bad, "wb") as fh:
+            fh.write(blob)
+        try:
+            cf.merge_payload_with_cache(payload, bad)
+            raised = False
+        except cf.CacheMergeError:
+            raised = True
+        ck(raised, "fetcher --merge: %s cache aborts with CacheMergeError" % name)
+        with open(bad, "rb") as fh:
+            ck(fh.read() == blob,
+               "fetcher --merge: %s cache left byte-identical" % name)
+
+    # main(): the abort exits non-zero before any write; success still merges.
+    real_out, real_fetch, real_ind = cf.OUT, cf.fetch_month, cf.load_industries
+    real_argv = sys.argv
+    try:
+        cf.fetch_month = lambda *_a, **_k: [new_ev]
+        cf.load_industries = lambda *_a, **_k: {}
+        sys.argv = ["calendar_fetcher.py", "--cats", "6", "--months", "1", "--merge"]
+
+        corrupt_main = os.path.join(TMP, "corrupt_main.json")
+        with open(corrupt_main, "wb") as fh:
+            fh.write(b'{"events": [ ')          # partially written cache
+        before = open(corrupt_main, "rb").read()
+        cf.OUT = Path(corrupt_main)
+        rc = cf.main()
+        ck(rc == 1, "fetcher main: corrupt cache -> non-zero exit (%r)" % (rc,))
+        ck(open(corrupt_main, "rb").read() == before,
+           "fetcher main: corrupt cache file is byte-identical after abort")
+
+        good_main = os.path.join(TMP, "good_main.json")
+        with open(good_main, "w", encoding="utf-8") as fh:
+            json.dump(old, fh, ensure_ascii=False)
+        cf.OUT = Path(good_main)
+        rc = cf.main()
+        with open(good_main, "r", encoding="utf-8") as fh:
+            written = json.load(fh)
+        ck(rc in (0, None), "fetcher main: --merge succeeds (%r)" % (rc,))
+        ck(len(written["events"]) == 2,
+           "fetcher main: calls the merge helper and keeps old+new (count=%d)"
+           % len(written["events"]))
+    finally:
+        cf.OUT, cf.fetch_month, cf.load_industries = real_out, real_fetch, real_ind
+        sys.argv = real_argv
+
+    # Source wiring: the fetcher must actually call the merge helper; the
+    # orchestrator must pass the fetched calendar asset to publish.
+    import inspect
+    fetch_src = inspect.getsource(cf.main)
+    ck("args.merge" in fetch_src and "merge_payload_with_cache(" in fetch_src,
+       "source: calendar_fetcher.main calls merge_payload_with_cache under --merge")
+    run_src = inspect.getsource(A.run)
+    ck('calendar_path = (result.get("calendar") or {}).get("path")' in run_src,
+       "source: orchestrator derives the calendar path from the fetch result")
+    ck("calendar=calendar_path" in run_src,
+       "source: orchestrator passes calendar=calendar_path to publish")
 
     # ── 3) chart loader: WORK_DIR/calendar.json first, static fallback ──────
     work = os.path.join(TMP, "work")
@@ -182,6 +276,27 @@ try:
         ck(len(got) == 1 and got[0]["asset_symbol_trade"] == "استاتیک",
            "chart: falls back to static cache when WORK_DIR file is absent (%r)"
            % [e.get("asset_symbol_trade") for e in got])
+
+        # M3 fix: a malformed WORK_DIR asset warns and falls back — no raise.
+        for label, blob in (("non-list events", '{"events": {"a": 1}}'),
+                            ("invalid json", "{not json")):
+            with open(work_cal, "w", encoding="utf-8") as fh:
+                fh.write(blob)
+            chart._cal_cache.clear()
+            chart._cal_cache.update({"mtime": 0.0, "events": []})
+            got = chart._cal_cache_events()
+            ck(len(got) == 1 and got[0]["asset_symbol_trade"] == "استاتیک",
+               "chart: malformed WORK_DIR (%s) falls back to static (%r)"
+               % (label, [e.get("asset_symbol_trade") for e in got]))
+        with open(work_cal, "w", encoding="utf-8") as fh:
+            json.dump({"events": [work_ev, "bad", 42]}, fh, ensure_ascii=False)
+        chart._cal_cache.clear()
+        chart._cal_cache.update({"mtime": 0.0, "events": []})
+        got = chart._cal_cache_events()
+        events_for = chart._cal_events_for("کاربر")
+        ck(len(got) == 1 and isinstance(got[0], dict) and isinstance(events_for, list),
+           "chart: non-dict events filtered; symbol lookup does not raise (%r)"
+           % (got,))
     finally:
         chart.WORK_DIR = real_work
         chart._CAL_CACHE_PATH = real_static
@@ -254,10 +369,11 @@ try:
             return main, os.path.join(d, "market.db.staging")
 
         calls = []
+        calendar_asset = os.path.join(TMP, "published_calendar.json")
 
         def spy_ok():
             calls.append(1)
-            return {"ok": True, "error": None, "path": str(cf.OUT)}
+            return {"ok": True, "error": None, "path": calendar_asset}
 
         # dry-run: never called
         main, staging = fresh_env("dry_run")
@@ -293,9 +409,9 @@ try:
         ck(r["ok"] is True, "orchestrator success: ok True (%r)" % (r["errors"],))
         ck(r["published"] is True, "orchestrator success: published True")
         ck(calls == [1], "orchestrator success: calendar called once (%r)" % calls)
-        ck(pub_kwargs and pub_kwargs[-1].get("calendar") == str(cf.OUT),
-           "orchestrator success: publish gets the fetched calendar path (%r)"
-           % (pub_kwargs,))
+        ck(pub_kwargs and pub_kwargs[-1].get("calendar") == calendar_asset,
+           "orchestrator success: publish gets the exact fetched calendar asset "
+           "(%r)" % (pub_kwargs,))
 
         # calendar failure is a warning only: ok/published unchanged
         main, staging = fresh_env("calendar_fail")
