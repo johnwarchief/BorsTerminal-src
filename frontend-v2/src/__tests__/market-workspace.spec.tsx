@@ -11,20 +11,27 @@ vi.mock('@features/market/panels/BoardPanel', () => ({
     </button>
   ),
 }));
-vi.mock('@features/market/panels/SymbolPanel', () => ({
-  SymbolPanel: ({ row }: { row: { symbol: string } | null }) => (
-    <div data-testid="symbol-stub">{row?.symbol ?? 'خالی'}</div>
-  ),
-}));
 vi.mock('@features/market/panels/WatchPanel', () => ({
   WatchPanel: () => <div data-testid="watch-stub">دیده‌بان</div>,
 }));
-vi.mock('@features/chart/ui/ChartPanel', () => ({ ChartPanel: () => <div data-testid="chart-stub" /> }));
+vi.mock('@app/shell/SymbolSidebar', () => ({
+  SymbolSidebar: ({ row, symbolKey }: { row: { symbol: string } | null; symbolKey: string | null }) => (
+    <div data-testid="sidebar-stub">{row?.symbol ?? symbolKey ?? 'خالی'}</div>
+  ),
+}));
+vi.mock('@app/shell/BottomDock', () => ({
+  BottomDock: ({ symbol }: { symbol: string | null }) => (
+    <div data-testid="dock-stub">{symbol ?? 'خالی'}</div>
+  ),
+}));
 vi.mock('@features/market/components/SnapshotStrip', () => ({
   SnapshotStrip: () => <div data-testid="strip-stub" />,
 }));
 vi.mock('@features/market/api/useBoard', () => ({
-  useBoard: () => ({ data: { data: [], meta: { d_even: 20261028 } }, isLoading: false, isError: false }),
+  useBoard: () => ({
+    data: { data: [{ symbol: 'الف', ins_code: '10', name: 'الف' }], meta: { d_even: 20261028 } },
+    isLoading: false, isError: false,
+  }),
 }));
 vi.mock('@features/market/api/useMarketSnapshot', () => ({
   useMarketSnapshot: () => ({ data: undefined, isLoading: false, isError: false }),
@@ -38,33 +45,30 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe('market workspace', () => {
-  it('renders the default tiles', () => {
+  it('renders the board, watch, sidebar and dock', () => {
     render(<MarketPage />);
     expect(screen.getByTestId('board-stub')).toBeTruthy();
-    expect(screen.getByTestId('symbol-stub')).toBeTruthy();
     expect(screen.getByTestId('watch-stub')).toBeTruthy();
+    expect(screen.getByTestId('sidebar-stub')).toBeTruthy();
+    expect(screen.getByTestId('dock-stub')).toBeTruthy();
     expect(screen.getByTestId('strip-stub')).toBeTruthy();
+    expect(screen.queryByText('نماد')).toBeNull();
   });
 
-  it('sets the active symbol from the board without navigating', () => {
+  it('feeds the active row to the sidebar and the dock without navigating', () => {
     render(<MarketPage />);
     fireEvent.click(screen.getByTestId('board-stub'));
     expect(useWorkspace.getState().activeSymbol).toBe('10');
-    expect(screen.getByTestId('symbol-stub').textContent).toBe('الف');
+    expect(screen.getByTestId('sidebar-stub').textContent).toBe('الف');
+    expect(screen.getByTestId('dock-stub').textContent).toBe('الف');
   });
 
-  it('closes the watch tile from its header', () => {
+  it('closes the watch tile and adds it back from the board menu', () => {
     render(<MarketPage />);
     fireEvent.click(screen.getByTestId('tile-close-t-watch'));
     expect(screen.queryByTestId('watch-stub')).toBeNull();
-  });
-
-  it('opens the chart tile from the symbol menu', () => {
-    render(<MarketPage />);
-    const before = screen.getAllByTestId(/^tile-header-/).length;
-    fireEvent.click(screen.getByTestId('tile-menu-t-symbol'));
-    fireEvent.click(screen.getByTestId('tile-split-t-symbol-col-chart'));
-    expect(screen.getAllByTestId(/^tile-header-/).length).toBe(before + 1);
-    expect(screen.getByText('چارت')).toBeTruthy();
+    fireEvent.click(screen.getByTestId('tile-menu-t-board'));
+    fireEvent.click(screen.getByTestId('tile-add-watch'));
+    expect(screen.getByTestId('watch-stub')).toBeTruthy();
   });
 });

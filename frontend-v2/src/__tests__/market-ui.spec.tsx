@@ -5,7 +5,7 @@ import type { MarketRow } from '@shared/types/market';
 import { BoardTable } from '@features/market/components/BoardTable';
 import { BoardToolbar } from '@features/market/components/BoardToolbar';
 import { SnapshotStrip } from '@features/market/components/SnapshotStrip';
-import { SymbolPanel } from '@features/market/panels/SymbolPanel';
+import { SymbolSidebar } from '@app/shell/SymbolSidebar';
 import { TapeBar } from '@features/market/components/TapeBar';
 import { DEFAULT_BOARD_FILTER_VALUES } from '@features/market/lib/boardFilters';
 import { defaultColumns } from '@features/market/lib/columns';
@@ -217,12 +217,21 @@ describe('symbol panel', () => {
     const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     render(
       <QueryClientProvider client={queryClient}>
-        <SymbolPanel row={rows[0]!} boardDay={null} chartOpen={false} onToggleChart={noop} />
+        <SymbolSidebar
+          variant="narrow"
+          row={rows[0]!}
+          symbolKey={rows[0]!.symbol}
+          boardDay={null}
+          chartOpen={false}
+          fundamentalsOpen
+          onToggleChart={noop}
+          onToggleFundamentals={noop}
+        />
       </QueryClientProvider>,
     );
     expect(screen.getByTestId('symbol-title').textContent).toContain('آباد');
     expect(screen.getByText('P/E')).toBeTruthy();
-    expect(screen.getByTestId('symbol-pe').textContent).toContain('۸');
+    expect(screen.getByTestId('symbol-stat-pe').textContent).toContain('۸');
     expect(screen.getByTestId('symbol-chart-toggle').textContent).toContain('باز');
     queryClient.clear();
   });

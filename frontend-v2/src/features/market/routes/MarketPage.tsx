@@ -2,15 +2,17 @@ import { useMemo, useState } from 'react';
 import type { MarketRow } from '@shared/types/market';
 import { useMediaQuery } from '@shared/lib/useMediaQuery';
 import { useWorkspace } from '@shared/workspace/store';
+import { SIDE_WIDTH } from '@shared/workspace/sizes';
 import { useTileKeyboard } from '@shared/workspace/useTileKeyboard';
 import { WorkspaceShell } from '@shared/workspace/WorkspaceShell';
-import { findTile, type TilePanel } from '@shared/workspace/layout';
-import { ChartPanel } from '@features/chart/ui/ChartPanel';
+import { LayoutResizer } from '@shared/workspace/LayoutResizer';
+import type { TilePanel } from '@shared/workspace/layout';
+import { SymbolSidebar } from '@app/shell/SymbolSidebar';
+import { BottomDock } from '@app/shell/BottomDock';
 import { useBoard } from '../api/useBoard';
 import { useMarketSnapshot } from '../api/useMarketSnapshot';
 import { SnapshotStrip } from '../components/SnapshotStrip';
 import { BoardPanel } from '../panels/BoardPanel';
-import { SymbolPanel } from '../panels/SymbolPanel';
 import { WatchPanel } from '../panels/WatchPanel';
 import { DEFAULT_TAPE_FILTER_CONFIG } from '../lib/tapeAlgorithms';
 import { useMarketPrefs } from '../stores/prefs';
@@ -24,22 +26,29 @@ function identityOf(row: MarketRow): string {
 export function MarketPage() {
   const layout = useWorkspace((state) => state.workspaces[0].layout);
   const chartOpen = useWorkspace((state) => state.workspaces[0].chartOpen);
+  const fundamentalsOpen = useWorkspace((state) => state.workspaces[0].fundamentalsOpen);
+  const sideCollapsed = useWorkspace((state) => state.workspaces[0].sideCollapsed);
+  const sideWidth = useWorkspace((state) => state.workspaces[0].sideWidth);
+  const dockHeight = useWorkspace((state) => state.workspaces[0].dockHeight);
+  const chartShare = useWorkspace((state) => state.workspaces[0].chartShare);
   const activeSymbol = useWorkspace((state) => state.activeSymbol);
-  const pinned = useWorkspace((state) => state.pinned);
   const setActiveSymbol = useWorkspace((state) => state.setActiveSymbol);
   const setChartOpen = useWorkspace((state) => state.setChartOpen);
+  const setFundamentalsOpen = useWorkspace((state) => state.setFundamentalsOpen);
+  const setSideCollapsed = useWorkspace((state) => state.setSideCollapsed);
+  const setSideWidth = useWorkspace((state) => state.setSideWidth);
+  const setDockHeight = useWorkspace((state) => state.setDockHeight);
+  const setChartShare = useWorkspace((state) => state.setChartShare);
   const split = useWorkspace((state) => state.split);
   const close = useWorkspace((state) => state.close);
   const swap = useWorkspace((state) => state.swap);
   const setRatio = useWorkspace((state) => state.setRatio);
-  const toggleFollow = useWorkspace((state) => state.toggleFollow);
 
   const pollMs = useMarketPrefs((state) => state.pollMs);
   const setFilters = useMarketPrefs((state) => state.setFilters);
   const board = useBoard(pollMs);
   const snapshot = useMarketSnapshot(pollMs);
   const rows = useMemo(() => board.data?.data ?? [], [board.data]);
-  const [selectedRow, setSelectedRow] = useState<MarketRow | null>(null);
   const [boardDay, setBoardDay] = useState<number | null>(null);
   const [tab, setTab] = useState<Tab>('symbol');
   const narrow = useMediaQuery('(max-width: 1279px)');
@@ -51,46 +60,16 @@ export function MarketPage() {
     return rows.find((row) => identityOf(row) === activeSymbol) ?? null;
   }, [rows, activeSymbol]);
 
-  function symbolFor(tileId: string): MarketRow | null {
-    const tile = findTile(layout, tileId);
-    const key = tile && !tile.follow ? (pinned[tileId] ?? null) : activeSymbol;
-    if (!key) return null;
-    return rows.find((row) => identityOf(row) === key) ?? null;
-  }
-
   function selectRow(row: MarketRow, day: number | null) {
-    setSelectedRow(row);
     setBoardDay(day);
     setActiveSymbol(identityOf(row));
   }
 
   function selectWatchRow(insCode: string) {
     setActiveSymbol(insCode);
-    const row = rows.find((item) => identityOf(item) === insCode);
-    if (row) setSelectedRow(row);
   }
 
-  function renderPanel(panel: TilePanel, tileId: string) {
-    const tileRow = symbolFor(tileId);
-    if (panel === 'board') {
-      return (
-        <BoardPanel
-          selectedKey={activeSymbol}
-          onSelect={selectRow}
-          onActivate={selectRow}
-        />
-      );
-    }
-    if (panel === 'symbol') {
-      return (
-        <SymbolPanel
-          row={tileRow ?? selectedRow}
-          boardDay={boardDay ?? board.data?.meta?.d_even ?? null}
-          chartOpen={chartOpen}
-          onToggleChart={() => setChartOpen(!chartOpen)}
-        />
-      );
-    }
+  function renderPanel(panel: TilePanel) {
     if (panel === 'watch') {
       return (
         <WatchPanel
@@ -101,10 +80,11 @@ export function MarketPage() {
         />
       );
     }
-    return tileRow ? <ChartPanel symbol={tileRow.symbol} /> : (
-      <div className="grid h-full place-items-center t-95 text-text-3">برای چارت، نمادی انتخاب کن.</div>
-    );
+    return <BoardPanel selectedKey={activeSymbol} onSelect={selectRow} onActivate={selectRow} />;
   }
+
+  const toggleChart = () => setChartOpen(!chartOpen);
+  const toggleFundamentals = () => setFundamentalsOpen(!fundamentalsOpen);
 
   if (narrow) {
     return (
@@ -125,9 +105,25 @@ export function MarketPage() {
                 ))}
               </div>
               <div className="min-h-0 flex-1">
-                {tab === 'symbol'
-                  ? <SymbolPanel row={symbolRow} boardDay={boardDay} chartOpen={chartOpen} onToggleChart={() => setChartOpen(!chartOpen)} />
-                  : <WatchPanel rows={rows} filterConfig={DEFAULT_TAPE_FILTER_CONFIG} onSelect={selectWatchRow} onPickSector={(sector) => setFilters({ sector })} />}
+                {tab === 'symbol' ? (
+                  <SymbolSidebar
+                    variant="narrow"
+                    row={symbolRow}
+                    symbolKey={activeSymbol}
+                    boardDay={boardDay}
+                    chartOpen={chartOpen}
+                    fundamentalsOpen={fundamentalsOpen}
+                    onToggleChart={toggleChart}
+                    onToggleFundamentals={toggleFundamentals}
+                  />
+                ) : (
+                  <WatchPanel
+                    rows={rows}
+                    filterConfig={DEFAULT_TAPE_FILTER_CONFIG}
+                    onSelect={selectWatchRow}
+                    onPickSector={(sector) => setFilters({ sector })}
+                  />
+                )}
               </div>
             </div>
           ) : null}
@@ -139,16 +135,72 @@ export function MarketPage() {
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <SnapshotStrip rows={rows} snapshot={snapshot.data} />
-      <div className="min-h-0 flex-1">
-        <WorkspaceShell
-          layout={layout}
-          renderPanel={renderPanel}
-          onClose={close}
-          onSplit={split}
-          onSwap={swap}
-          onToggleFollow={toggleFollow}
-          onRatio={setRatio}
-        />
+      <div className="flex min-h-0 flex-1">
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+          <div className="min-h-0 flex-1">
+            <WorkspaceShell
+              layout={layout}
+              renderPanel={renderPanel}
+              onClose={close}
+              onSplit={split}
+              onSwap={swap}
+              onRatio={setRatio}
+            />
+          </div>
+          <BottomDock
+            symbol={symbolRow?.symbol ?? null}
+            chartOpen={chartOpen}
+            fundamentalsOpen={fundamentalsOpen}
+            height={dockHeight}
+            chartShare={chartShare}
+            onToggleChart={toggleChart}
+            onToggleFundamentals={toggleFundamentals}
+            onHeightChange={setDockHeight}
+            onChartShareChange={setChartShare}
+          />
+        </div>
+        {sideCollapsed ? (
+          <SymbolSidebar
+            collapsed
+            row={symbolRow}
+            symbolKey={activeSymbol}
+            boardDay={boardDay}
+            chartOpen={chartOpen}
+            fundamentalsOpen={fundamentalsOpen}
+            onToggleChart={toggleChart}
+            onToggleFundamentals={toggleFundamentals}
+            onToggleCollapsed={() => setSideCollapsed(false)}
+          />
+        ) : (
+          <>
+            <LayoutResizer
+              orientation="vertical"
+              value={sideWidth}
+              min={SIDE_WIDTH.min}
+              max={SIDE_WIDTH.max}
+              step={8}
+              defaultValue={SIDE_WIDTH.default}
+              label="عرض سایدبار نماد"
+              testId="resize-sidebar"
+              increaseKey="ArrowRight"
+              decreaseKey="ArrowLeft"
+              fromPointer={(rect, x) => x - rect.left}
+              onChange={setSideWidth}
+            />
+            <div style={{ width: sideWidth }} className="flex min-h-0 flex-none flex-col border-s border-line bg-panel">
+              <SymbolSidebar
+                row={symbolRow}
+                symbolKey={activeSymbol}
+                boardDay={boardDay}
+                chartOpen={chartOpen}
+                fundamentalsOpen={fundamentalsOpen}
+                onToggleChart={toggleChart}
+                onToggleFundamentals={toggleFundamentals}
+                onToggleCollapsed={() => setSideCollapsed(true)}
+              />
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

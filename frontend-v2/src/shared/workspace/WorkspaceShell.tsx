@@ -1,22 +1,22 @@
 import { useRef, useState, type ReactNode } from 'react';
 import { Splitter } from './Splitter';
 import { TileFrame } from './TileFrame';
-import type { LayoutNode, MoveDir, SplitDir, TilePanel } from './layout';
+import { panelsInOrder, type LayoutNode, type MoveDir, type SplitDir, type TilePanel } from './layout';
 
 export interface WorkspaceShellProps {
   layout: LayoutNode;
-  renderPanel: (panel: TilePanel, tileId: string) => ReactNode;
+  renderPanel: (panel: TilePanel) => ReactNode;
   onClose: (id: string) => void;
   onSplit: (id: string, dir: SplitDir, panel: TilePanel) => void;
   onSwap: (id: string, dir: MoveDir) => void;
-  onToggleFollow: (id: string) => void;
   onRatio: (splitId: string, ratio: number, width: number, height: number) => void;
 }
 
 export function WorkspaceShell(props: WorkspaceShellProps) {
-  const { layout, renderPanel, onClose, onSplit, onSwap, onToggleFollow, onRatio } = props;
+  const { layout, renderPanel, onClose, onSplit, onSwap, onRatio } = props;
   const [focused, setFocused] = useState<string | null>(null);
   const root = useRef<HTMLDivElement>(null);
+  const canAddWatch = !panelsInOrder(layout).some((item) => item.panel === 'watch');
 
   function node(item: LayoutNode): ReactNode {
     if (item.kind === 'tile') {
@@ -25,15 +25,14 @@ export function WorkspaceShell(props: WorkspaceShellProps) {
           key={item.id}
           id={item.id}
           panel={item.panel}
-          follow={item.follow}
           focused={focused === item.id}
+          canAddWatch={canAddWatch}
           onFocus={setFocused}
           onClose={onClose}
           onSplit={onSplit}
           onSwap={onSwap}
-          onToggleFollow={onToggleFollow}
         >
-          {renderPanel(item.panel, item.id)}
+          {renderPanel(item.panel)}
         </TileFrame>
       );
     }

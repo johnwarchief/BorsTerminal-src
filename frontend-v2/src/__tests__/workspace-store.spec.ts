@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { DEFAULT_LAYOUT } from '@shared/workspace/layout';
+import { DEFAULT_LAYOUT, findTile } from '@shared/workspace/layout';
 import { SIDE_WIDTH } from '@shared/workspace/sizes';
 import { DEFAULT_SLOTS, sanitizeWorkspace, useWorkspace } from '@shared/workspace/store';
 
@@ -16,15 +16,16 @@ describe('workspace store', () => {
     expect(state.activeSymbol).toBeNull();
   });
 
-  it('splits, closes and swaps through actions', () => {
+  it('closes, splits and swaps through actions', () => {
     const store = useWorkspace.getState();
-    store.split('t-symbol', 'col', 'chart');
-    expect(useWorkspace.getState().workspaces[0].layout.kind).toBe('split');
-    store.swap('t-symbol', 'down');
-    const afterSwap = useWorkspace.getState().workspaces[0].layout;
-    expect(JSON.stringify(afterSwap)).toContain('"panel":"watch"');
-    useWorkspace.getState().close('t-watch');
-    expect(JSON.stringify(useWorkspace.getState().workspaces[0].layout)).not.toContain('"panel":"watch"');
+    store.close('t-watch');
+    expect(JSON.stringify(useWorkspace.getState().workspaces[0].layout)).not.toContain('"watch"');
+    store.split('t-board', 'col', 'watch');
+    expect(JSON.stringify(useWorkspace.getState().workspaces[0].layout)).toContain('"panel":"watch"');
+    store.swap('t-board', 'down');
+    const root = useWorkspace.getState().workspaces[0].layout;
+    expect(findTile(root, 't-board')?.panel).toBe('watch');
+    expect(useWorkspace.getState().history).toHaveLength(3);
   });
 
   it('keeps slots unique and refuses fewer than three', () => {
@@ -41,9 +42,33 @@ describe('workspace store', () => {
   });
 
   it('resets to the default layout', () => {
-    useWorkspace.getState().split('t-symbol', 'col', 'chart');
+    useWorkspace.getState().close('t-watch');
     useWorkspace.getState().resetLayout();
     expect(useWorkspace.getState().workspaces[0].layout).toEqual(DEFAULT_LAYOUT);
+  });
+
+  it('converts a stored symbol layout to the two-pane default on rehydrate', async () => {
+    localStorage.setItem('bors-workspace-v1', JSON.stringify({
+      version: 1,
+      state: {
+        version: 1,
+        activeWorkspaceId: 'ws-tablo',
+        activeSymbol: '10',
+        pinned: {},
+        workspaces: [{
+          id: 'ws-tablo', name: 'تابلوخوانی', slots: DEFAULT_SLOTS, chartOpen: true, updatedAt: 1,
+          layout: {
+            kind: 'split', id: 's-root', dir: 'row', ratio: 0.68,
+            first: { kind: 'tile', id: 't-board', panel: 'board', follow: false },
+            second: { kind: 'tile', id: 't-symbol', panel: 'symbol', follow: true },
+          },
+        }],
+      },
+    }));
+    await useWorkspace.persist.rehydrate();
+    expect(useWorkspace.getState().workspaces[0].layout).toEqual(DEFAULT_LAYOUT);
+    expect(useWorkspace.getState().activeSymbol).toBe('10');
+    expect(useWorkspace.getState().workspaces[0].sideWidth).toBe(320);
   });
 
   it('starts with the default sizes and open groups', () => {

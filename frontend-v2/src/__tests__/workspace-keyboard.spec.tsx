@@ -17,14 +17,14 @@ function Harness() {
   return (
     <div>
       <div data-tile-id="t-board"><div data-tile-header tabIndex={0} data-testid="h-board" /></div>
-      <div data-tile-id="t-symbol"><div data-tile-header tabIndex={0} data-testid="h-symbol" /></div>
+      <div data-tile-id="t-watch"><div data-tile-header tabIndex={0} data-testid="h-watch" /></div>
     </div>
   );
 }
 
 describe('tile keyboard', () => {
   it('lists the approved shortcuts in one registry', () => {
-    expect(SHORTCUTS.map((s) => s.keys)).toEqual(['Alt+۱…۴', '←→↑↓', 'Ctrl+K', 'Ctrl+Z', 'Esc']);
+    expect(SHORTCUTS.map((item) => item.keys)).toEqual(['Alt+۱ و ۲', '←→↑↓', 'Ctrl+K', 'Ctrl+Z', 'Esc']);
   });
 
   it('focuses panels by their reading order with Alt+Digit', () => {
@@ -32,13 +32,13 @@ describe('tile keyboard', () => {
     fireEvent.keyDown(window, { key: '1', code: 'Digit1', altKey: true });
     expect(document.activeElement?.getAttribute('data-testid')).toBe('h-board');
     fireEvent.keyDown(window, { key: '2', code: 'Digit2', altKey: true });
-    expect(document.activeElement?.getAttribute('data-testid')).toBe('h-symbol');
+    expect(document.activeElement?.getAttribute('data-testid')).toBe('h-watch');
   });
 
   it('undoes the last layout change with Ctrl+Z', () => {
     render(<Harness />);
-    useWorkspace.getState().split('t-symbol', 'col', 'chart');
-    expect(JSON.stringify(useWorkspace.getState().workspaces[0].layout)).toContain('"chart"');
+    useWorkspace.getState().close('t-watch');
+    expect(JSON.stringify(useWorkspace.getState().workspaces[0].layout)).not.toContain('"watch"');
     fireEvent.keyDown(window, { key: 'z', code: 'KeyZ', ctrlKey: true });
     expect(useWorkspace.getState().workspaces[0].layout).toEqual(DEFAULT_LAYOUT);
   });

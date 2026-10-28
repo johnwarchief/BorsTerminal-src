@@ -6,7 +6,7 @@ export interface Shortcut {
 
 /** تنها منبعِ میانبرها: منوی کاشی، راهنمای سایدبار و تست‌ها از همین می‌خوانند. */
 export const SHORTCUTS: ReadonlyArray<Shortcut> = [
-  { id: 'panels', keys: 'Alt+۱…۴', label: 'رفتن به پنل' },
+  { id: 'panels', keys: 'Alt+۱ و ۲', label: 'رفتن به پنل' },
   { id: 'swap', keys: '←→↑↓', label: 'جابه‌جاییِ پنلِ انتخاب‌شده' },
   { id: 'command', keys: 'Ctrl+K', label: 'همهٔ کارها' },
   { id: 'undo', keys: 'Ctrl+Z', label: 'برگشتِ چیدمان' },

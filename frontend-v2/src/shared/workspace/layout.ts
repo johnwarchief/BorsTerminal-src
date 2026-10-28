@@ -187,7 +187,7 @@ export function isValidLayout(node: unknown): node is LayoutNode {
     const item = n as Record<string, unknown>;
     if (item.kind === 'tile') {
       total += 1;
-      if (!['board', 'symbol', 'watch', 'chart'].includes(String(item.panel))) return false;
+      if (!['board', 'watch'].includes(String(item.panel))) return false;
       if (item.panel === 'board') board += 1;
       return typeof item.id === 'string' && typeof item.follow === 'boolean';
     }

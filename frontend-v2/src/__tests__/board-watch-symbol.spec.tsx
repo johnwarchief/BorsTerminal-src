@@ -4,12 +4,21 @@ import type { ReactElement } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { toFaDigits } from '@shared/lib/fa';
 import type { MarketRow } from '@shared/types/market';
+import { SymbolSidebar } from '@app/shell/SymbolSidebar';
 import { OrderBookFive } from '@features/market/components/OrderBookFive';
 import { TapeHistoryPanel } from '@features/market/components/TapeHistoryPanel';
 import { WatchlistButton } from '@features/market/components/WatchlistButton';
 import { WatchPanel } from '@features/market/panels/WatchPanel';
-import { SymbolPanel } from '@features/market/panels/SymbolPanel';
 import { DEFAULT_TAPE_FILTER_CONFIG } from '@features/market/lib/tapeAlgorithms';
+
+vi.mock('@features/market/api/useMa', async (original) => {
+  const mod = await original<typeof import('@features/market/api/useMa')>();
+  return { ...mod, useMa: () => ({ data: undefined, isLoading: false, isError: true, error: new Error('x') }) };
+});
+vi.mock('@features/fundamental/api/useFtsCard', async (original) => {
+  const mod = await original<typeof import('@features/fundamental/api/useFtsCard')>();
+  return { ...mod, useFtsCard: () => ({ data: undefined, isLoading: false, isError: true, error: new Error('x') }) };
+});
 
 function client(): QueryClient {
   return new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
@@ -251,14 +260,22 @@ describe('گردش‌کار نماد و واچ‌لیست', () => {
       return Promise.resolve(json({ status: 'success', count: 0, data: [], limit: 50 }));
     }));
     render(withClient(
-      <SymbolPanel row={row()} boardDay={null} chartOpen={false} onToggleChart={() => undefined} />,
+      <SymbolSidebar
+        row={row()}
+        symbolKey="1"
+        boardDay={null}
+        chartOpen={false}
+        fundamentalsOpen
+        onToggleChart={() => undefined}
+        onToggleFundamentals={() => undefined}
+      />,
     ));
 
     await screen.findByTestId('order-book');
     fireEvent.click(screen.getByTestId('symbol-tab-history'));
     expect(await screen.findByTestId('tape-history-empty-فولاد')).toBeTruthy();
-    fireEvent.click(screen.getByTestId('symbol-tab-fundamental'));
-    expect(screen.getByTestId('symbol-fundamental-empty').textContent).toContain('وصل نشده');
+    expect(screen.getByTestId('symbol-fund-summary')).toBeTruthy();
+    expect(screen.getByTestId('symbol-fund-unavailable').textContent).toContain('در دسترس نیست');
   });
 
   it('افزودن و حذف واچ‌لیست از همان پنل به API واقعی می‌رسد', async () => {
@@ -286,7 +303,15 @@ describe('گردش‌کار نماد و واچ‌لیست', () => {
     });
     vi.stubGlobal('fetch', fetchMock);
     render(withClient(
-      <SymbolPanel row={row()} boardDay={null} chartOpen={false} onToggleChart={() => undefined} />,
+      <SymbolSidebar
+        row={row()}
+        symbolKey="1"
+        boardDay={null}
+        chartOpen={false}
+        fundamentalsOpen
+        onToggleChart={() => undefined}
+        onToggleFundamentals={() => undefined}
+      />,
     ));
 
     const add = await screen.findByRole('button', { name: 'افزودن به واچ‌لیست' });

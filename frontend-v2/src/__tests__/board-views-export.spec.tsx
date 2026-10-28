@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { csvCell, csvTextWithMeta, saveBlob } from '@shared/lib/tableExport';
 import type { MarketFeed, MarketRow } from '@shared/types/market';
 import { useBoard } from '@features/market/api/useBoard';
+import { useWorkspace } from '@shared/workspace/store';
 import { BoardTable } from '@features/market/components/BoardTable';
 import { BoardToolbar } from '@features/market/components/BoardToolbar';
 import { BoardViewMenu } from '@features/market/components/BoardViewMenu';
@@ -43,6 +44,14 @@ vi.mock('@tanstack/react-virtual', async (orig) => {
 vi.mock('@shared/lib/tableExport', async (orig) => {
   const mod = await orig<typeof import('@shared/lib/tableExport')>();
   return { ...mod, saveBlob: vi.fn() };
+});
+vi.mock('@features/market/api/useMa', async (original) => {
+  const mod = await original<typeof import('@features/market/api/useMa')>();
+  return { ...mod, useMa: () => ({ data: undefined, isLoading: false, isError: true, error: new Error('x') }) };
+});
+vi.mock('@features/fundamental/api/useFtsCard', async (original) => {
+  const mod = await original<typeof import('@features/fundamental/api/useFtsCard')>();
+  return { ...mod, useFtsCard: () => ({ data: undefined, isLoading: false, isError: true, error: new Error('x') }) };
 });
 
 const mockedUseBoard = vi.mocked(useBoard);
@@ -123,6 +132,7 @@ beforeEach(() => {
   localStorage.clear();
   useMarketPrefs.persist.clearStorage();
   useMarketPrefs.setState(useMarketPrefs.getInitialState(), true);
+  useWorkspace.setState(useWorkspace.getInitialState(), true);
   mockedUseBoard.mockReturnValue({
     data: feed,
     dataUpdatedAt: 400_000,
@@ -364,7 +374,7 @@ describe('صفحه‌کلید و فوکوس', () => {
     const first = screen.getAllByTestId('board-row')[0]!;
     act(() => first.focus());
     fireEvent.keyDown(first, { key: 'Enter' });
-    await waitFor(() => expect(screen.getByTestId('tile-t-symbol').textContent).not.toContain('نمادی انتخاب نشده'));
+    await waitFor(() => expect(screen.getByTestId('symbol-title')).toBeTruthy());
 
     fireEvent.keyDown(window, { key: 'k', ctrlKey: true });
 
@@ -400,9 +410,9 @@ describe('صفحه‌کلید و فوکوس', () => {
     expect(old).toBeDefined();
     fireEvent.click(old!);
 
-    const panel = await waitFor(() => screen.getByTestId('tile-t-symbol'));
-    expect(panel.textContent).toContain('قدیمی');
-    expect(panel.textContent).not.toContain('تازه');
+    const sidebar = await waitFor(() => screen.getByTestId('symbol-sidebar'));
+    expect(sidebar.textContent).toContain('قدیمی');
+    expect(sidebar.textContent).not.toContain('تازه');
     client.clear();
   });
 
@@ -435,7 +445,7 @@ describe('صفحه‌کلید و فوکوس', () => {
     act(() => first.focus());
     fireEvent.keyDown(first, { key: 'Enter' });
 
-    await waitFor(() => expect(screen.getByTestId('tile-t-symbol').textContent).not.toContain('نمادی انتخاب نشده'));
+    await waitFor(() => expect(screen.getByTestId('symbol-title')).toBeTruthy());
     await waitFor(() => expect(document.activeElement).toBe(first));
     client.clear();
   });
