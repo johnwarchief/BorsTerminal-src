@@ -21,6 +21,8 @@ sys.path.insert(0, os.path.join(ROOT, "dev"))
 import codal_validation as V  # noqa: E402
 from codal_validation import validate_staging  # noqa: E402
 
+FUTURE_YEAR = V._period_max_year() + 1   # wall-clock safe: never a past year
+
 try:
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 except Exception:
@@ -182,7 +184,7 @@ try:
 
     # ── ۶) دورهٔ آینده در FS ────────────────────────────────────────────────
     m, s = base_pair("fs_future")
-    add(s, "financial_statements", dict(FS2, tracing_no=3, period_end="1406/01/01"))
+    add(s, "financial_statements", dict(FS2, tracing_no=3, period_end="%d/01/01" % FUTURE_YEAR))
     r = validate_staging(m, s, None)
     ck(r["ok"] is False, "future FS: ok is False")
     ck(any("future_period" in e for e in r["errors"]),
@@ -236,7 +238,7 @@ try:
 
     # ── ۱۱) دورهٔ آینده در MS ───────────────────────────────────────────────
     m, s = base_pair("ms_future")
-    add(s, "monthly_sales", dict(MS10, tracing_no=11, period_end="1406/02/01"))
+    add(s, "monthly_sales", dict(MS10, tracing_no=11, period_end="%d/02/01" % FUTURE_YEAR))
     r = validate_staging(m, s, None)
     ck(r["ok"] is False, "future MS: ok is False")
     ck(any("future_period" in e for e in r["errors"]),
@@ -450,10 +452,10 @@ try:
     ck(not any("_missing_table" in e for e in r["errors"]),
        "corrupt staging: no missing_table noise (%r)" % (r["errors"],))
 
-    # ── ۲۹) دورهٔ آیندهٔ غیرِکانونیک (1406/1/1): خطا ────────────────────────
+    # ── ۲۹) دورهٔ آیندهٔ غیرِکانونیک (سالِ آینده): خطا ────────────────────────
     m, s = base_pair("loose_future")
     add(s, "financial_statements",
-        dict(FS2, tracing_no=3, period_end="1406/1/1"))
+        dict(FS2, tracing_no=3, period_end="%d/1/1" % FUTURE_YEAR))
     r = validate_staging(m, s, None)
     ck(r["ok"] is False, "loose future: ok is False")
     ck(any("future_period:financial_statements" in e for e in r["errors"]),

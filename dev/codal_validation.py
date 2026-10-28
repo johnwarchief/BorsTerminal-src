@@ -72,7 +72,6 @@ TABLE_SPECS = {
     },
 }
 
-_PERIOD_MAX_YEAR = 1405          # پیش‌فرضِ سازگاری؛ مقدارِ واقعی از تاریخ گرفته می‌شود
 _COVERAGE_PCT = 95               # staging باید ≥ ۹۵٪ main باشد
 _SAMPLE = 5                      # نمونهٔ tracing_no در پیامِ خطا
 # ارقامِ فارسی/عربی → ASCII (برایِ دوره‌هایِ غیرِASCII هم بی‌خطر است).
@@ -213,16 +212,6 @@ def _leading_year(value):
     if value is None:
         return None
     text = str(value).strip().translate(_DIGITS)
-    if len(text) < 4 or not text[:4].isdigit():
-        return None
-    if len(text) > 4 and text[4].isdigit():
-        return None
-    return int(text[:4])
-
-
-def _leading_year(value):
-    """سالِ پیشروِ یک دورهٔ غیرِکانونیک (بدونِ تغییرِ رشته)."""
-    text = str(value or "").strip().translate(_DIGITS)
     if len(text) < 4 or not text[:4].isdigit():
         return None
     if len(text) > 4 and text[4].isdigit():
