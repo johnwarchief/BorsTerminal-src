@@ -16,6 +16,12 @@ import { useMarketPrefs, type BoardViewState } from '@features/market/stores/pre
 import { Topbar } from '../app/shell/Topbar';
 
 vi.mock('@features/market/api/useBoard', () => ({ useBoard: vi.fn() }));
+vi.mock('@features/market/api/useMarketSnapshot', () => ({
+  useMarketSnapshot: () => ({ data: undefined, isLoading: false, isError: false }),
+}));
+vi.mock('@features/chart/ui/ChartPanel', () => ({
+  ChartPanel: ({ symbol }: { symbol: string }) => <div data-testid="chart-stub">{symbol}</div>,
+}));
 vi.mock('@shared/lib/marketHours', () => ({
   effectivePollMs: (ms: number) => ms,
   sessionPollMs: (ms: number) => ms,
@@ -351,18 +357,17 @@ describe('صفحه‌کلید و فوکوس', () => {
     await waitFor(() => expect(document.activeElement).toBe(remaining[0]));
   });
 
-  it('میان‌بر جستجو با کشوی باز، کشو را می‌بندد و فوکوس را به جستجو می‌برد', async () => {
+  it('میان‌بر جستجو با پنلِ نمادِ باز، فوکوس را به جستجو می‌برد', async () => {
     vi.stubGlobal('fetch', vi.fn(() => new Promise<Response>(() => undefined)));
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     render(<QueryClientProvider client={client}><MarketPage /></QueryClientProvider>);
     const first = screen.getAllByTestId('board-row')[0]!;
     act(() => first.focus());
     fireEvent.keyDown(first, { key: 'Enter' });
-    await screen.findByLabelText('بستن جزئیات');
+    await waitFor(() => expect(screen.getByTestId('tile-t-symbol').textContent).not.toContain('نمادی انتخاب نشده'));
 
     fireEvent.keyDown(window, { key: 'k', ctrlKey: true });
 
-    await waitFor(() => expect(screen.queryByLabelText('بستن جزئیات')).toBeNull());
     await waitFor(() => expect(document.activeElement).toBe(screen.getByTestId('board-search')));
     client.clear();
   });
@@ -395,13 +400,13 @@ describe('صفحه‌کلید و فوکوس', () => {
     expect(old).toBeDefined();
     fireEvent.click(old!);
 
-    const dialog = await screen.findByRole('dialog');
-    expect(dialog.textContent).toContain('قدیمی');
-    expect(dialog.textContent).not.toContain('تازه');
+    const panel = await waitFor(() => screen.getByTestId('tile-t-symbol'));
+    expect(panel.textContent).toContain('قدیمی');
+    expect(panel.textContent).not.toContain('تازه');
     client.clear();
   });
 
-  it('کشو فوکوس را می‌گیرد و Escape آن را به ردیفِ آغازگر برمی‌گرداند', async () => {
+  it('Enter روی ردیف، نماد را در پنل می‌نشاند و فوکوس روی همان ردیف می‌ماند', async () => {
     vi.stubGlobal('fetch', vi.fn((input: RequestInfo | URL) => {
       const url = String(input);
       if (url === '/api/watchlist') {
@@ -430,11 +435,7 @@ describe('صفحه‌کلید و فوکوس', () => {
     act(() => first.focus());
     fireEvent.keyDown(first, { key: 'Enter' });
 
-    const close = await screen.findByLabelText('بستن جزئیات');
-    await waitFor(() => expect(document.activeElement).toBe(close));
-    await screen.findByTestId('order-book');
-    fireEvent.keyDown(document, { key: 'Escape' });
-    await waitFor(() => expect(screen.queryByLabelText('بستن جزئیات')).toBeNull());
+    await waitFor(() => expect(screen.getByTestId('tile-t-symbol').textContent).not.toContain('نمادی انتخاب نشده'));
     await waitFor(() => expect(document.activeElement).toBe(first));
     client.clear();
   });

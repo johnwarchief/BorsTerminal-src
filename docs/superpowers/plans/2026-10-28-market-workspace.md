@@ -4409,3 +4409,40 @@ EOF
 
 
 
+
+---
+
+## Task 18: سایدبارِ نماد — انتخابِ چارت و پنج کارت بنیادی (دستورِ مالک، ۱۴۰۵-۰۸-۰۶)
+
+**دستورِ مالک، عیناً:** «توی سایدبار سمت‌چپ وقتی رو نماد می‌زنی هم چارت بتونه نشون داده بشه و بره یعنی کولپس بشه، هم ۵ تا کارت بنیادی همین‌طور تو یه جای جدا» + «توی سایدبار چپ انتخابشون اونجا باشه».
+
+**Files:**
+- Create: `frontend-v2/src/app/shell/SidebarSymbol.tsx`
+- Create: `frontend-v2/src/features/fundamental/api/useFtsCard.ts`
+- Create: `frontend-v2/src/features/fundamental/ui/FundamentalCards.tsx`
+- Modify: `frontend-v2/src/features/chart/ui/ChartPanel.tsx` (میزبانِ سوم: `compact`)
+- Modify: `frontend-v2/src/app/shell/Sidebar.tsx` (جای‌گذاریِ بخشِ نماد بینِ ناوبری و بلوکِ راهنما)
+- Test: `frontend-v2/src/__tests__/sidebar-symbol.spec.tsx`
+
+**Interfaces:**
+- Consumes: `useWorkspace().activeSymbol`, `useChart(symbol)`, `useFtsCard(symbol)`, `CARD_REGISTRY` نیست (این پنج کارت بنیادی جدا از کارت‌های snapshot اند).
+- Produces:
+  - `useFtsCard(symbol)` → `{ status, symbol, passes, indicators, profile }` از `GET /api/fundamental/{symbol}` (پاسخِ canonical؛ هیچ محاسبهٔ دومی در فرانت).
+  - `<FundamentalCards symbol />` — پنج کارتِ محورِ ۱ تا ۵ با مقدار، حکمِ سه‌حالته و یک خط علت.
+  - `<SidebarSymbol />` — سرِ نماد + دو کلیدِ انتخابِ «چارت» و «بنیادی» + بدنهٔ تاشو.
+
+**رفتار:**
+- بخش فقط وقتی `activeSymbol` هست دیده می‌شود؛ در حالتِ جمع‌شدهٔ سایدبار فقط آیکنِ نماد می‌ماند.
+- دو کلیدِ «چارت» و «بنیادی» همان «انتخاب»اند: هر کدام بلوکِ خودش را باز/بسته می‌کند (`aria-expanded`)، پیش‌فرض هر دو باز؛ وضعیت در localStorageِ همین بخش (`bors-sidebar-symbol-v1`) می‌ماند، نه در layout.
+- چارت در سایدبار با همان `ChartPanel` و همان `useChart` رندر می‌شود (`compact`، فقط کندلِ روزانه)؛ دکمهٔ «باز کردن در کاشی» کاشیِ چارت را باز می‌کند.
+- پنج کارت: محورهای ۱ رشد ریالی، ۲ روند EPS، ۳ حاشیهٔ ناخالص، ۴ فروش÷ارزش بازار، ۵ صنعت/نرخ‌گذاری — همان ترتیبِ جزوه، مقدار از پاسخِ سرور، حکم `pass === null` ⇒ `—` با علتِ `gap`؛ هیچ صفر یا قرمزِ ساختگی.
+- شکستِ `/api/fundamental/{symbol}` یا نبودِ داده ⇒ پیامِ صادق «بنیادیِ این نماد در دسترس نیست» زیرِ همان کلید؛ چارت و جدول سالم می‌مانند.
+
+**Steps:**
+- [ ] تستِ ناکام: سایدبار بدونِ نماد بخش را نشان نمی‌دهد؛ با نماد، سرِ نماد و دو کلید را نشان می‌دهد؛ کلیکِ «چارت» `aria-expanded` را برمی‌گرداند و بدنه را برمی‌دارد؛ پنج کارت با fixture رندر می‌شوند و `pass: null` عددِ `—` می‌گیرد؛ خطای API پیامِ صادق می‌دهد.
+- [ ] `useFtsCard` با zod: `passes` ناشناخته‌کلید، `indicators` فقط فیلدهای لازم؛ پاکتِ خطا رد می‌شود.
+- [ ] `FundamentalCards` با `qualityFrom` سه‌حالته و برچسب‌های فارسیِ جزوه.
+- [ ] `SidebarSymbol` و جای‌گذاری در `Sidebar`.
+- [ ] `ChartPanel` میزبانِ `compact`.
+- [ ] کلِ مجموعه سبز + `tsc -b`؛ کامیت فقط همین فایل‌ها.
+

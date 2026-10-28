@@ -5,10 +5,10 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { toFaDigits } from '@shared/lib/fa';
 import type { MarketRow } from '@shared/types/market';
 import { OrderBookFive } from '@features/market/components/OrderBookFive';
-import { QuickDrawer } from '@features/market/components/QuickDrawer';
 import { TapeHistoryPanel } from '@features/market/components/TapeHistoryPanel';
-import { WatchDock } from '@features/market/components/WatchDock';
 import { WatchlistButton } from '@features/market/components/WatchlistButton';
+import { WatchPanel } from '@features/market/panels/WatchPanel';
+import { SymbolPanel } from '@features/market/panels/SymbolPanel';
 import { DEFAULT_TAPE_FILTER_CONFIG } from '@features/market/lib/tapeAlgorithms';
 
 function client(): QueryClient {
@@ -55,14 +55,14 @@ afterEach(() => {
 });
 
 describe('دیده‌بان‌های تابلو', () => {
-  it('بسته شروع می‌شود، عضویت ساعت را از داوری canonical می‌گیرد و نماد را تحویل می‌دهد', () => {
+  it('از تبِ ساعت شروع می‌کند، عضویت ساعت را از داوری canonical می‌گیرد و نماد را تحویل می‌دهد', () => {
     const onSelect = vi.fn();
     const rows = [
       row(),
       row({ ins_code: '2', symbol: 'خساپا', p_last: 1000, f_clock: true }),
     ];
     render(
-      <WatchDock
+      <WatchPanel
         rows={rows}
         filterConfig={DEFAULT_TAPE_FILTER_CONFIG}
         onSelect={onSelect}
@@ -70,14 +70,10 @@ describe('دیده‌بان‌های تابلو', () => {
       />,
     );
 
-    expect(screen.queryByTestId('watch-body')).toBeNull();
-    fireEvent.click(screen.getByTestId('watch-tab-clock'));
     expect(screen.getByTestId('watch-row-clock-1')).toBeTruthy();
     expect(screen.queryByTestId('watch-row-clock-2')).toBeNull();
     fireEvent.click(screen.getByTestId('watch-row-clock-1'));
     expect(onSelect).toHaveBeenCalledWith('1');
-    fireEvent.click(screen.getByTestId('watch-tab-clock'));
-    expect(screen.queryByTestId('watch-body')).toBeNull();
   });
 
   it('تعدادِ کاملِ دیده‌بان را نشان می‌دهد، نه فقط سقفِ ردیف‌های نمایش', () => {
@@ -86,14 +82,13 @@ describe('دیده‌بان‌های تابلو', () => {
       symbol: `نماد${index + 1}`,
     }));
     render(
-      <WatchDock
+      <WatchPanel
         rows={rows}
         filterConfig={DEFAULT_TAPE_FILTER_CONFIG}
         onSelect={() => undefined}
       />,
     );
 
-    fireEvent.click(screen.getByTestId('watch-tab-clock'));
     expect(screen.getByTestId('watch-scope-label').textContent).toContain('کل تابلو');
     expect(screen.getByTestId('watch-count-clock').textContent).toContain('۱۵ از ۱۸');
     expect(screen.getAllByTestId(/^watch-row-clock-/)).toHaveLength(15);
@@ -109,7 +104,7 @@ describe('دیده‌بان‌های تابلو', () => {
       }),
     ];
     render(
-      <WatchDock
+      <WatchPanel
         rows={rows}
         filterConfig={DEFAULT_TAPE_FILTER_CONFIG}
         onSelect={() => undefined}
@@ -134,7 +129,7 @@ describe('دیده‌بان‌های تابلو', () => {
       ],
     })));
     render(withClient(
-      <WatchDock
+      <WatchPanel
         rows={[]}
         filterConfig={DEFAULT_TAPE_FILTER_CONFIG}
         onSelect={() => undefined}
@@ -241,20 +236,32 @@ describe('دفتر سفارش و سابقهٔ مشاهده‌شده', () => {
 });
 
 describe('گردش‌کار نماد و واچ‌لیست', () => {
-  it('کشو مسیرهای ناموجود را فعال وانمود نمی‌کند و بخش‌های عمق و سابقه را دارد', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockImplementation(() => Promise.resolve(
-      json({ status: 'success', count: 0, data: [], limit: 50 }),
-    )));
-    render(withClient(<QuickDrawer row={row()} filterConfig={DEFAULT_TAPE_FILTER_CONFIG} onClose={() => undefined} />));
+  it('مسیرهای ناموجود را فعال وانمود نمی‌کند و بخش‌های عمق و سابقه را دارد', async () => {
+    vi.stubGlobal('fetch', vi.fn((input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.startsWith('/api/tape-history')) {
+        return Promise.resolve(json({ status: 'success', days: [], reliable_from: null, flags: [], by_symbol: {} }));
+      }
+      if (url.startsWith('/api/order-book/')) {
+        return Promise.resolve(json({
+          status: 'success', symbol: 'فولاد', levels: [], session: { updated_at: null },
+          totals: { buy_vol: null, buy_cnt: null, sell_vol: null, sell_cnt: null },
+        }));
+      }
+      return Promise.resolve(json({ status: 'success', count: 0, data: [], limit: 50 }));
+    }));
+    render(withClient(
+      <SymbolPanel row={row()} boardDay={null} chartOpen={false} onToggleChart={() => undefined} />,
+    ));
 
-    expect(screen.getByTestId('drawer-orderbook-section')).toBeTruthy();
-    expect(screen.getByTestId('drawer-history-section')).toBeTruthy();
     await screen.findByTestId('order-book');
-    expect((screen.getByTestId('drawer-technical-link') as HTMLButtonElement).disabled).toBe(true);
-    expect((screen.getByTestId('drawer-fundamental-link') as HTMLButtonElement).disabled).toBe(true);
+    fireEvent.click(screen.getByTestId('symbol-tab-history'));
+    expect(await screen.findByTestId('tape-history-empty-فولاد')).toBeTruthy();
+    fireEvent.click(screen.getByTestId('symbol-tab-fundamental'));
+    expect(screen.getByTestId('symbol-fundamental-empty').textContent).toContain('وصل نشده');
   });
 
-  it('افزودن و حذف واچ‌لیست از همان کشو به API واقعی می‌رسد', async () => {
+  it('افزودن و حذف واچ‌لیست از همان پنل به API واقعی می‌رسد', async () => {
     let listed = false;
     const fetchMock = vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input);
@@ -272,10 +279,15 @@ describe('گردش‌کار نماد و واچ‌لیست', () => {
         listed = false;
         return Promise.resolve(json({ status: 'success', deleted: 1 }));
       }
+      if (url.startsWith('/api/order-book/') || url.startsWith('/api/tape-history')) {
+        return Promise.resolve(json({ status: 'success', levels: [], days: [], flags: [], by_symbol: {}, reliable_from: null }));
+      }
       return Promise.reject(new Error(`unexpected ${url} ${init?.method ?? 'GET'}`));
     });
     vi.stubGlobal('fetch', fetchMock);
-    render(withClient(<QuickDrawer row={row()} filterConfig={DEFAULT_TAPE_FILTER_CONFIG} onClose={() => undefined} />));
+    render(withClient(
+      <SymbolPanel row={row()} boardDay={null} chartOpen={false} onToggleChart={() => undefined} />,
+    ));
 
     const add = await screen.findByRole('button', { name: 'افزودن به واچ‌لیست' });
     await waitFor(() => expect((add as HTMLButtonElement).disabled).toBe(false));

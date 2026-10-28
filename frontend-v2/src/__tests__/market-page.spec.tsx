@@ -6,6 +6,12 @@ import { MarketPage } from '@features/market/routes/MarketPage';
 import { useMarketPrefs } from '@features/market/stores/prefs';
 
 vi.mock('@features/market/api/useBoard', () => ({ useBoard: vi.fn() }));
+vi.mock('@features/market/api/useMarketSnapshot', () => ({
+  useMarketSnapshot: () => ({ data: undefined, isLoading: false, isError: false }),
+}));
+vi.mock('@features/chart/ui/ChartPanel', () => ({
+  ChartPanel: ({ symbol }: { symbol: string }) => <div data-testid="chart-stub">{symbol}</div>,
+}));
 vi.mock('@shared/lib/marketHours', () => ({
   effectivePollMs: (ms: number) => ms,
   isMarketOpen: () => true,

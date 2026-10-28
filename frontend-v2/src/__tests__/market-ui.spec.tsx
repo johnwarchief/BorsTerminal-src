@@ -1,16 +1,17 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import type { MarketRow } from '@shared/types/market';
 import { BoardTable } from '@features/market/components/BoardTable';
 import { BoardToolbar } from '@features/market/components/BoardToolbar';
-import { QuickDrawer } from '@features/market/components/QuickDrawer';
-import { StatusStrip } from '@features/market/components/StatusStrip';
+import { SnapshotStrip } from '@features/market/components/SnapshotStrip';
+import { SymbolPanel } from '@features/market/panels/SymbolPanel';
 import { TapeBar } from '@features/market/components/TapeBar';
 import { DEFAULT_BOARD_FILTER_VALUES } from '@features/market/lib/boardFilters';
 import { defaultColumns } from '@features/market/lib/columns';
 import { DEFAULT_TAPE_FILTER_CONFIG } from '@features/market/lib/tapeAlgorithms';
 import type { TapeKey } from '@features/market/lib/tapeFilters';
+import { useWorkspace } from '@shared/workspace/store';
 
 afterEach(() => {
   cleanup();
@@ -133,36 +134,24 @@ describe('tape bar', () => {
   });
 });
 
-describe('status strip', () => {
-  it('renders the four full-mode cards from the payload only', () => {
-    const onMode = vi.fn();
-    render(
-      <StatusStrip
-        feed={{ status: 'success', data: rows, count: 3, live_count: 2, fossil_count: 1 }}
-        rows={rows}
-        mode="full"
-        onMode={onMode}
-      />,
-    );
-    expect(screen.getByText('ارزش معاملات تابلو')).toBeTruthy();
-    expect(screen.getByText('پهنا')).toBeTruthy();
-    expect(screen.getByText('ترکیب تابلو')).toBeTruthy();
-    expect(screen.getByText('تازگی داده')).toBeTruthy();
-    expect(screen.getByText('مثبت')).toBeTruthy();
-    fireEvent.click(screen.getByText('نوار'));
-    expect(onMode).toHaveBeenLastCalledWith('ribbon');
+describe('snapshot strip', () => {
+  it('renders one card per slot with board values and honest dashes', () => {
+    useWorkspace.setState(useWorkspace.getInitialState(), true);
+    render(<SnapshotStrip rows={rows} />);
+    expect(screen.getByTestId('card-tedpix').textContent).toContain('—');
+    expect(screen.getByTestId('card-retailValue').textContent).toContain('—');
+    expect(screen.getByTestId('card-breadth').textContent).toContain('▲');
+    expect(screen.getByTestId('card-boardValueComposition').textContent).toContain('همت');
   });
 
-  it('switches from the ribbon and minimal modes', () => {
-    const onMode = vi.fn();
-    const { rerender } = render(<StatusStrip rows={rows} mode="ribbon" onMode={onMode} />);
-    expect(screen.getByText('آخرین همگام‌سازی')).toBeTruthy();
-    fireEvent.click(screen.getByText('کمینه'));
-    expect(onMode).toHaveBeenLastCalledWith('minimal');
-
-    rerender(<StatusStrip rows={rows} mode="minimal" onMode={onMode} />);
-    expect(screen.getByText('آخرین همگام‌سازی')).toBeTruthy();
-    expect(screen.getByText('همت')).toBeTruthy();
+  it('the number of cards follows the saved slots', () => {
+    useWorkspace.setState(useWorkspace.getInitialState(), true);
+    render(<SnapshotStrip rows={rows} />);
+    expect(screen.getAllByTestId(/^card-[a-zA-Z]+$/)).toHaveLength(4);
+    act(() => {
+      useWorkspace.getState().setSlots(['tedpix', 'retailValue', 'breadth', 'boardValueComposition', 'boardVolume']);
+    });
+    expect(screen.getAllByTestId(/^card-[a-zA-Z]+$/)).toHaveLength(5);
   });
 });
 
@@ -219,9 +208,8 @@ describe('board toolbar', () => {
   });
 });
 
-describe('quick drawer', () => {
-  it('shows only the fields the feed carries and closes on request', () => {
-    const onClose = vi.fn();
+describe('symbol panel', () => {
+  it('shows the feed fields and honest dashes', () => {
     vi.stubGlobal('fetch', vi.fn().mockImplementation(() => Promise.resolve(new Response(
       JSON.stringify({ status: 'success', count: 0, data: [], limit: 50 }),
       { status: 200, headers: { 'Content-Type': 'application/json' } },
@@ -229,16 +217,13 @@ describe('quick drawer', () => {
     const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     render(
       <QueryClientProvider client={queryClient}>
-        <QuickDrawer row={rows[0]!} filterConfig={DEFAULT_TAPE_FILTER_CONFIG} onClose={onClose} />
+        <SymbolPanel row={rows[0]!} boardDay={null} chartOpen={false} onToggleChart={noop} />
       </QueryClientProvider>,
     );
-    expect(screen.getByText('آباد')).toBeTruthy();
-    expect(screen.getByText('مشخصات بازار')).toBeTruthy();
-    expect(screen.getByText('تابلوخوانی')).toBeTruthy();
-    expect(screen.getByText('کپی نماد')).toBeTruthy();
+    expect(screen.getByTestId('symbol-title').textContent).toContain('آباد');
     expect(screen.getByText('P/E')).toBeTruthy();
-    fireEvent.click(screen.getByLabelText('بستن جزئیات'));
-    expect(onClose).toHaveBeenCalledTimes(1);
+    expect(screen.getByTestId('symbol-pe').textContent).toContain('۸');
+    expect(screen.getByTestId('symbol-chart-toggle').textContent).toContain('باز');
     queryClient.clear();
   });
 });

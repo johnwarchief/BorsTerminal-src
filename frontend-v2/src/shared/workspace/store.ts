@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import {
-  DEFAULT_LAYOUT, clampRatio, closeTile, isValidLayout, splitTile, swapWithNeighbor,
+  DEFAULT_LAYOUT, clampRatio, closeTile, findTile, isValidLayout, splitTile, swapWithNeighbor,
   type LayoutNode, type MoveDir, type SplitDir, type TilePanel,
 } from './layout';
 
@@ -24,6 +24,7 @@ interface WorkspaceStore {
   version: 1;
   activeWorkspaceId: string;
   activeSymbol: string | null;
+  pinned: Record<string, string | null>;
   workspaces: Workspace[];
   history: LayoutNode[];
   undo: () => void;
@@ -34,6 +35,7 @@ interface WorkspaceStore {
   setSlots: (slots: CardId[]) => void;
   setActiveSymbol: (key: string | null) => void;
   setChartOpen: (open: boolean) => void;
+  toggleFollow: (tileId: string) => void;
   resetLayout: () => void;
 }
 
@@ -86,6 +88,7 @@ export const useWorkspace = create<WorkspaceStore>()(
         version: 1,
         activeWorkspaceId: DEFAULT_WORKSPACE.id,
         activeSymbol: null,
+        pinned: {},
         workspaces: [DEFAULT_WORKSPACE],
         history: [],
         undo: () => {
@@ -131,6 +134,25 @@ export const useWorkspace = create<WorkspaceStore>()(
           const ws = get().workspaces[0];
           set({ workspaces: [{ ...ws, chartOpen, updatedAt: Date.now() }] });
         },
+        toggleFollow: (tileId) => {
+          const ws = get().workspaces[0];
+          const tile = findTile(ws.layout, tileId);
+          if (!tile) return;
+          const nextFollow = !tile.follow;
+          const walk = (node: LayoutNode): LayoutNode => {
+            if (node.kind === 'tile') {
+              return node.id === tileId ? { ...node, follow: nextFollow } : node;
+            }
+            return { ...node, first: walk(node.first), second: walk(node.second) };
+          };
+          const pinned = { ...get().pinned };
+          if (nextFollow) delete pinned[tileId];
+          else pinned[tileId] = get().activeSymbol;
+          set({
+            pinned,
+            workspaces: [{ ...ws, layout: walk(ws.layout), updatedAt: Date.now() }],
+          });
+        },
         resetLayout: () => patch(DEFAULT_LAYOUT),
       };
     },
@@ -141,17 +163,25 @@ export const useWorkspace = create<WorkspaceStore>()(
         version: state.version,
         activeWorkspaceId: state.activeWorkspaceId,
         activeSymbol: state.activeSymbol,
+        pinned: state.pinned,
         workspaces: state.workspaces,
       }),
       merge: (persisted, current) => {
         const ws = sanitizeWorkspace(persisted);
         if (!ws) return current;
-        const raw = persisted as { activeSymbol?: unknown };
+        const raw = persisted as { activeSymbol?: unknown; pinned?: unknown };
+        const pinned: Record<string, string | null> = {};
+        if (raw.pinned && typeof raw.pinned === 'object') {
+          for (const [key, value] of Object.entries(raw.pinned as Record<string, unknown>)) {
+            if (typeof value === 'string') pinned[key] = value;
+          }
+        }
         return {
           ...current,
           activeWorkspaceId: ws.id,
           workspaces: [ws],
           activeSymbol: typeof raw.activeSymbol === 'string' ? raw.activeSymbol : null,
+          pinned,
         };
       },
     },
