@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { DEFAULT_LAYOUT } from '@shared/workspace/layout';
+import { SIDE_WIDTH } from '@shared/workspace/sizes';
 import { DEFAULT_SLOTS, sanitizeWorkspace, useWorkspace } from '@shared/workspace/store';
 
 beforeEach(() => {
@@ -43,5 +44,40 @@ describe('workspace store', () => {
     useWorkspace.getState().split('t-symbol', 'col', 'chart');
     useWorkspace.getState().resetLayout();
     expect(useWorkspace.getState().workspaces[0].layout).toEqual(DEFAULT_LAYOUT);
+  });
+
+  it('starts with the default sizes and open groups', () => {
+    const ws = useWorkspace.getState().workspaces[0];
+    expect([ws.sideWidth, ws.dockHeight, ws.chartShare]).toEqual([320, 200, 0.45]);
+    expect(ws.fundamentalsOpen).toBe(true);
+    expect(ws.sideCollapsed).toBe(false);
+  });
+
+  it('clamps every persisted size', () => {
+    useWorkspace.getState().setSideWidth(100);
+    expect(useWorkspace.getState().workspaces[0].sideWidth).toBe(SIDE_WIDTH.min);
+    useWorkspace.getState().setSideWidth(900);
+    expect(useWorkspace.getState().workspaces[0].sideWidth).toBe(SIDE_WIDTH.max);
+    useWorkspace.getState().setDockHeight(10);
+    expect(useWorkspace.getState().workspaces[0].dockHeight).toBe(160);
+    useWorkspace.getState().setChartShare(0.9);
+    expect(useWorkspace.getState().workspaces[0].chartShare).toBe(0.6);
+    useWorkspace.getState().setFundamentalsOpen(false);
+    useWorkspace.getState().setSideCollapsed(true);
+    expect(useWorkspace.getState().workspaces[0].fundamentalsOpen).toBe(false);
+    expect(useWorkspace.getState().workspaces[0].sideCollapsed).toBe(true);
+  });
+
+  it('fills the new keys for a version-1 payload and rejects an unknown version', () => {
+    const ws = sanitizeWorkspace({
+      version: 1,
+      workspaces: [{ layout: DEFAULT_LAYOUT, slots: DEFAULT_SLOTS }],
+    });
+    expect(ws?.sideWidth).toBe(320);
+    expect(ws?.dockHeight).toBe(200);
+    expect(ws?.chartShare).toBe(0.45);
+    expect(ws?.fundamentalsOpen).toBe(true);
+    expect(ws?.sideCollapsed).toBe(false);
+    expect(sanitizeWorkspace({ version: 3, workspaces: [{ layout: DEFAULT_LAYOUT }] })).toBeNull();
   });
 });
