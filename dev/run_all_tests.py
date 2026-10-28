@@ -457,6 +457,19 @@ SUITES = [
     # در حال تشکیل + هر دو مبنایِ رأیِ روند.
     ('dev/fts_antirepaint_v1086.py',
                                      'anti-repaint: two-time pivots, prefix-stability, no future-look in payload'),
+    # PHASE 2 (auto-update, no ADB): eight offline guards — 26-col schema,
+    # staging validation gates, dry-run orchestrator, snapshot meta, publish
+    # dry-run/last-good, scheduler + startup catch-up, Cat6 calendar merge,
+    # client meta compare. None of them call CODAL; the owner-authorized live
+    # dry-run is recorded separately.
+    ('dev/test_fts_updater_schema_v11.py',   'codal updater 26-col schema'),
+    ('dev/test_codal_validation_v11.py',     'codal staging validation gates'),
+    ('dev/test_codal_auto_update_v11.py',    'codal no-ADB orchestrator dry-run'),
+    ('dev/test_codal_snapshot_meta_v11.py',  'codal snapshot meta'),
+    ('dev/test_codal_publish_v11.py',        'codal publish dry-run/last-good'),
+    ('dev/test_codal_schedule_v11.py',       'codal scheduler + startup catch-up'),
+    ('dev/test_calendar_merge_v11.py',       'calendar Cat6 merge'),
+    ('dev/test_codal_client_meta_v11.py',    'codal client meta compare'),
 ]
 
 # تست‌هایِ Node (رابطِ جدول بنیادی با DOMِ ساختگی) — اگر node نصب نباشد رد میشوند
