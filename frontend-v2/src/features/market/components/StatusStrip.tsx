@@ -1,95 +1,12 @@
 import { useMemo } from 'react';
-import { changePct, faNum, fmtInt, fmtMcap, fmtVolume, toFaDigits } from '@shared/lib/fa';
+import { faNum, fmtInt, fmtMcap, fmtVolume, toFaDigits } from '@shared/lib/fa';
 import { jalaliFromYmd } from '@shared/lib/jalali';
 import type { StatusMode } from '@shared/stores/uiStore';
-import type { AssetType } from '../lib/assetType';
-import { classifyAssetType } from '../lib/assetType';
 import type { MarketFeed, MarketRow } from '@shared/types/market';
 
-const TYPE_SHORT: Record<AssetType | 'other', string> = {
-  other: 'سایر',
-  stock: 'سهام',
-  payeh: 'پایه',
-  option: 'اختیار',
-  fund: 'صندوق',
-  bond: 'اوراق',
-  right: 'حق تقدم',
-  teseh: 'تسه',
-  tal: 'TAL',
-  ati: 'آتی',
-  kala: 'کالا',
-  energy: 'انرژی',
-};
+import { boardSums, breadthOf, compositionOf, TYPE_LABEL, type Breadth } from '../lib/boardMetrics';
 
-const COMPOSITION_TYPES: AssetType[] = ['stock', 'payeh', 'right', 'energy', 'fund'];
-
-export interface Breadth {
-  up: number;
-  down: number;
-  flat: number;
-  unknown: number;
-  total: number;
-  upPct: number;
-  downPct: number;
-  flatPct: number;
-}
-
-/** پهنا: شمارشِ مثبت/منفی/بی‌تغییر روی همهٔ ردیف‌های همین پیلود — تعریف پنهان ندارد. */
-export function breadthOf(rows: readonly MarketRow[]): Breadth {
-  let up = 0;
-  let down = 0;
-  let flat = 0;
-  let unknown = 0;
-  for (const row of rows) {
-    const pct = changePct(row.percent_change, row.price_change, row.price_yesterday);
-    if (pct == null) {
-      unknown += 1;
-      continue;
-    }
-    if (pct > 0) up += 1;
-    else if (pct < 0) down += 1;
-    else flat += 1;
-  }
-  const known = up + down + flat;
-  const pctOf = (n: number) => (known ? Math.round((n / known) * 100) : 0);
-  return {
-    up,
-    down,
-    flat,
-    unknown,
-    total: rows.length,
-    upPct: pctOf(up),
-    downPct: pctOf(down),
-    flatPct: Math.max(0, 100 - pctOf(up) - pctOf(down)),
-  };
-}
-
-function sumsOf(rows: readonly MarketRow[]): { value: number; volume: number } {
-  let value = 0;
-  let volume = 0;
-  for (const row of rows) {
-    if (row.q_tot_cap != null && Number.isFinite(row.q_tot_cap)) value += row.q_tot_cap;
-    if (row.q_tot_tran != null && Number.isFinite(row.q_tot_tran)) volume += row.q_tot_tran;
-  }
-  return { value, volume };
-}
-
-/** پنج نوعِ پیش‌فرضِ محصول + «سایر» — پایهٔ همین پنج نوع همان چیزی است که شمارش می‌شود */
-function compositionOf(rows: readonly MarketRow[]): { type: AssetType | 'other'; count: number }[] {
-  const counts = new Map<AssetType, number>();
-  for (const row of rows) {
-    const type = classifyAssetType(row);
-    counts.set(type, (counts.get(type) ?? 0) + 1);
-  }
-  const out: { type: AssetType | 'other'; count: number }[] = COMPOSITION_TYPES.map((type) => ({
-    type,
-    count: counts.get(type) ?? 0,
-  }));
-  let other = 0;
-  for (const [type, count] of counts) if (!COMPOSITION_TYPES.includes(type)) other += count;
-  if (other > 0) out.push({ type: 'other', count: other });
-  return out;
-}
+export { breadthOf, type Breadth } from '../lib/boardMetrics';
 
 function hm(sql: string | null | undefined): string {
   if (!sql) return '—';
@@ -140,7 +57,7 @@ interface Props {
 
 export function StatusStrip({ feed, rows, mode, onMode }: Props) {
   const breadth = useMemo(() => breadthOf(rows), [rows]);
-  const sums = useMemo(() => sumsOf(rows), [rows]);
+  const sums = useMemo(() => boardSums(rows), [rows]);
   const composition = useMemo(() => compositionOf(rows), [rows]);
   const meta = feed?.meta;
   const day = jalaliFromYmd(meta?.d_even);
@@ -272,7 +189,7 @@ export function StatusStrip({ feed, rows, mode, onMode }: Props) {
           <div className="mt-1 grid grid-cols-3 gap-x-2 gap-y-[3px] t-95">
             {composition.map(({ type, count }) => (
               <span key={type} className="flex items-baseline justify-between gap-1 whitespace-nowrap text-text-3">
-                <span>{TYPE_SHORT[type]}</span>
+                <span>{TYPE_LABEL[type]}</span>
                 <b className="num font-semibold text-text-2">{fmtInt(count)}</b>
               </span>
             ))}
