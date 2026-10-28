@@ -49,6 +49,8 @@ import api._sync_codal as S          # noqa: E402  (only to forbid a real merge)
 import codal_fetcher as cf           # noqa: E402
 import codal_auto_update as A        # noqa: E402
 
+REAL_FETCH = A._fetch                # before any test rebinds it
+
 CHECKS = []
 
 
@@ -326,6 +328,25 @@ try:
     A._fetch = make_fetch()
     code = A.main(["--dry-run", "--db", main, "--staging-dir", staging])
     ck(code == 0, "main: successful dry-run exits 0 (%r)" % (code,))
+
+    # ۸) بودجهٔ درخواستِ روزانه: `_fetch` باید ۳+۳ صفحه را به feed_sync بدهد.
+    # رانِ واقعیِ ۱۴۰۵-۰۸-۰۶ همین را گرفت: فراخوانیِ بدونِ pages_per_cat، ۸ صفحه
+    # رفت و روی صفحهٔ ۵ به 429 خورد. تستِ fake-fetch این را نمی‌دید چون
+    # feed_sync را دور می‌زد؛ این‌جا خودِ قراردادِ فراخوانی قفل می‌شود.
+    import codal_fetcher as _cf
+    _orig_fs = _cf.feed_sync
+    _seen = {}
+    _cf.feed_sync = lambda **kw: (_seen.update(kw), {})[1]
+    try:
+        REAL_FETCH(os.path.join(TMP, "budget_staging.db"))
+    finally:
+        _cf.feed_sync = _orig_fs
+    ck(_seen.get("cats") == ["1", "3"],
+       "_fetch asks for exactly cats 1+3 (%r)" % (_seen,))
+    ck(_seen.get("pages_per_cat") == {"1": 3, "3": 3},
+       "_fetch enforces the 3+3 daily page budget (%r)" % (_seen,))
+    ck(_seen.get("mode") == "update" and _seen.get("optimized") is True,
+       "_fetch keeps update+optimized (%r)" % (_seen,))
 
     failed = [m for ok, m in CHECKS if not ok]
     if failed:

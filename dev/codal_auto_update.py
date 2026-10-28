@@ -218,7 +218,9 @@ def _fetch(db_path):
     codal_fetcher.DB_PATH = db_path
     codal_fetcher.set_polite(True)
     try:
-        return codal_fetcher.feed_sync(mode="update", optimized=True)
+        return codal_fetcher.feed_sync(
+            mode="update", optimized=True, cats=["1", "3"],
+            pages_per_cat={"1": 3, "3": 3})
     finally:
         codal_fetcher.DB_PATH = prev_db
         codal_fetcher.set_polite(prev_polite)
