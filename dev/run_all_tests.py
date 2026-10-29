@@ -129,6 +129,7 @@ SUITES = [
     # درزِ BORS_DATA_DIR (B0): اگر متغیر تنظیم باشد مسیرها از آن می‌آیند، و اگر
     # نباشد reload باید همان مسیرهایِ ریشۀ ریپو را بدهد — نه هر چیزِ دیگری.
     ('dev/test_bors_data_dir_seam.py', 'BORS_DATA_DIR seam: override wins, unset keeps the repo paths'),
+    ('dev/test_board_fixture_v1120.py', 'B1 board fixture + goldens + SQL text are current'),
     ('dev/version_anchor_guard.py',   'all six version anchors state the same release'),
     ('dev/fts_defaults_parity_guard.py', 'FTS guide defaults: FE drawer mirrors the server'),
     ('dev/test_hourglass_settings_v1.py', 'hourglass RSI period, oversold threshold and MA52 mode are configurable'),
