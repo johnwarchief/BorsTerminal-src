@@ -9,7 +9,10 @@
 //	   دو گروه همه «نامشخص» (nil) می‌شوند، نه صفر.
 package clientsplit
 
-import "math"
+import (
+	"math"
+	"strconv"
+)
 
 // BasisValue تنها مبنایی است که این لایه می‌سازد؛ همان رشتۀ pct_basis.
 const BasisValue = "value"
@@ -51,8 +54,19 @@ func money(v any) (float64, bool) {
 	return x, true
 }
 
+// round1 همان round(x, 1)ِ داخلیِ پایتون است — گردکردنِ اعشاریِ درستِ همان مقدارِ
+// دودویی، نیم‌به‌زوج — و نه rintِ numpy. diff رویِ گره‌هایِ واقعی: round(0.35,1)=0.3
+// ولی rint(0.35*10)/10=0.4. client_split.py از roundِ داخلی استفاده می‌کند.
+func round1(x float64) float64 {
+	v, err := strconv.ParseFloat(strconv.FormatFloat(x, 'f', 1, 64), 64)
+	if err != nil {
+		return x
+	}
+	return v
+}
+
 // share سهمِ حقیقی از ارزشِ یک سمت (۰ تا ۱۰۰) — یا nil یعنی نامشخص.
-// گردکردن یک‌رقمی و نیم‌به‌زوج، مثلِ round(x, 1) در پایتون.
+// گردکردنِ یک‌رقمی با round1 است، همان گردکردنِ client_split.py.
 func share(retail, legal any) *float64 {
 	r, ok1 := money(retail)
 	l, ok2 := money(legal)
@@ -63,17 +77,17 @@ func share(retail, legal any) *float64 {
 	if den <= 0 {
 		return nil
 	}
-	x := math.RoundToEven(100.0*r/den*10.0) / 10.0
+	x := round1(100.0 * r / den)
 	return &x
 }
 
 // complement سهمِ حقوقیِ همان سمت؛ مکملِ سهمِ حقیقیِ *گردشده*، با همان
-// گردکردنِ یک‌رقمی. یک سمتِ نصفه‌نیمه درصد ندارد.
+// گردکردنِ یک‌رقمیِ round1. یک سمتِ نصفه‌نیمه درصد ندارد.
 func complement(s *float64) *float64 {
 	if s == nil {
 		return nil
 	}
-	x := math.RoundToEven((100.0-*s)*10.0) / 10.0
+	x := round1(100.0 - *s)
 	return &x
 }
 

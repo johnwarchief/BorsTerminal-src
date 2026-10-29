@@ -83,6 +83,25 @@ func TestSharesZeroGroupIsReal(t *testing.T) {
 	}
 }
 
+// TestRound1Ties گره‌هایی که roundِ داخلیِ پایتون و rintِ numpy رویِ آن‌ها واگرا
+// می‌شوند: round(0.35,1)=0.3 ولی rint(0.35*10)/10=0.4. جفتِ 12.25 گرهِ دقیقِ
+// دودویی است و هر دو رژیم 12.2 می‌دهند؛ بقیه پنج مقدار واگرا هستند.
+func TestRound1Ties(t *testing.T) {
+	cases := []struct{ in, want float64 }{
+		{0.35, 0.3},
+		{0.45, 0.5},
+		{1.15, 1.1},
+		{1.05, 1.1},
+		{0.15, 0.1},
+		{12.25, 12.2},
+	}
+	for _, c := range cases {
+		if got := round1(c.in); got != c.want {
+			t.Errorf("round1(%v) = %v, want %v", c.in, got, c.want)
+		}
+	}
+}
+
 // TestSharesSQLiteInts مقادیرِ REAL/INTEGERِ SQLite را می‌پذیرد.
 func TestSharesSQLiteInts(t *testing.T) {
 	got := Shares(int64(10e6), int64(5e6), int64(8e6), int64(6e6))
