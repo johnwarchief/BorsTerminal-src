@@ -1,20 +1,21 @@
 {
- "commit": "1538474d",
+ "commit": "c84ded65",
  "go_version": "go version go1.26.3 windows/amd64",
- "startup_ms": 25.9,
+ "startup_ms": 40.8,
  "rss_mb": 12.6,
  "healthz": {
-  "data_dir": "C:\\Users\\PCMOD\\AppData\\Local\\Temp\\bors-b0-kdzm__h7",
+  "data_dir": "C:\\Users\\PCMOD\\AppData\\Local\\Temp\\bors-b0-dig6_gyq",
   "go": "go1.26.3",
   "loops": "off",
   "market_mode": "read-only",
-  "rss_mb": 10.76953125,
+  "rss_mb": 6.76953125,
   "status": "ok",
-  "uptime_s": 0.0156179,
+  "uptime_s": 0.0311802,
   "version": "dev"
  },
  "tests_ok": true,
  "startup_ok": true,
  "rss_ok": true,
- "measured_at": "2026-10-29T18:03:02Z"
+ "dirty": true,
+ "measured_at": "2026-10-29T18:16:13Z"
 }
