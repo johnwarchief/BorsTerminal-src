@@ -102,6 +102,40 @@ func TestRound1Ties(t *testing.T) {
 	}
 }
 
+// TestSharesRoundingTies دو بردارِ گره را از مسیرِ کاملِ share و complement قفل
+// می‌کند: 100*7/2000 دقیقاً همان floatِ 0.35 است، پس roundِ داخلیِ پایتون 0.3
+// می‌دهد و rintِ numpy یعنی RoundToEven 0.4. هیچ ردیفِ fixture گره نمی‌سازد و
+// round1 فقط به‌تنهایی پین بود؛ برگشتِ share به فرمولِ قدیمی همهٔ تست‌ها را سبز
+// می‌گذاشت. بردارِ دوم همان گره را رویِ سمتِ فروش می‌آزماید تا complement جدا
+// پس‌رفت نکند؛ مکملِ 0.3 می‌شود 99.7 و همان صریح سنجیده می‌شود.
+func TestSharesRoundingTies(t *testing.T) {
+	buy := Shares(7, 1993, nil, nil)
+	wantPct(t, "retail buy", buy.RetailBuy, 0.3)
+	wantPct(t, "legal buy", buy.LegalBuy, 99.7)
+	if buy.RetailSell != nil || buy.LegalSell != nil {
+		t.Fatalf("sell side must stay unknown, got %+v", buy)
+	}
+
+	sell := Shares(nil, nil, 7, 1993)
+	wantPct(t, "retail sell", sell.RetailSell, 0.3)
+	wantPct(t, "legal sell", sell.LegalSell, 99.7)
+	if sell.RetailBuy != nil || sell.LegalBuy != nil {
+		t.Fatalf("buy side must stay unknown, got %+v", sell)
+	}
+}
+
+// wantPct هم نامشخص‌نبودن را می‌سنجد و هم مقدار را، و در پیامِ خطا خودِ عدد را
+// می‌آورد نه نشانیِ اشاره‌گر.
+func wantPct(t *testing.T, name string, got *float64, want float64) {
+	t.Helper()
+	if got == nil {
+		t.Fatalf("%s = nil, want %v", name, want)
+	}
+	if *got != want {
+		t.Fatalf("%s = %v, want %v", name, *got, want)
+	}
+}
+
 // TestSharesSQLiteInts مقادیرِ REAL/INTEGERِ SQLite را می‌پذیرد.
 func TestSharesSQLiteInts(t *testing.T) {
 	got := Shares(int64(10e6), int64(5e6), int64(8e6), int64(6e6))
