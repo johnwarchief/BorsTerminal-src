@@ -307,3 +307,12 @@ SELECT ins_code,
        h2_max, h5_max, h9_max, h19_max, h29_max, h39_max, h49_max, h59_max
 FROM fv
 `
+
+// sqlTextSHA256 هشِ sha256ِ متنِ پایتون پیش از تقسیمِ backtick است؛ تستِ
+// sql_text_test.go همین را با هشِ ثابتِ کامپایل‌شده مقایسه می‌کند.
+var sqlTextSHA256 = map[string]string{
+	"BoardSQLBase":  "41095caa316c15886a017356bb7096eb7f85c9db0dc2218f729b22102f536115",
+	"HistVSQL":      "f67440bc5f178e7361f60228dbea3394c977e976d151410161cd936f70cec9b6",
+	"HistFvSQL":     "6c6b6c653169b3b6980ec41cb8832d48264b2b33231a0865f361f4d1813077c1",
+	"HistFvSlotSQL": "e9c7ff5237b14981291102fd8110599474a738610e0d8915404c50832c577551",
+}

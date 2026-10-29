@@ -147,8 +147,29 @@ def main() -> int:
         for k in range(60):
             con.execute("INSERT INTO tape_history VALUES(?,?,?,?,?)",
                         (code, DAY - k, pmin, pmax, 1000.0 + k))
+            # پنجرهٔ اسلات باید از پنجرهٔ ردیف‌محور تشخیص‌پذیر باشد: برایِ یک نماد
+            # سقفِ اسلاتِ آخر پنج درصد بالاتر و حجمش متفاوت است، و سقفِ اسلاتِ سوم
+            # هم پنج درصد بالاتر تا پلکانِ h2 هم دو پنجره را از هم جدا کند.
+            slot_px = pmax * 21 / 20 if (sym == "عادی01" and k in (0, 2)) else pmax
+            slot_vol = 900000.0 if (sym == "عادی01" and k == 0) else 1000.0 + k
             con.execute("INSERT INTO tape_ih_slot VALUES(?,?,?,?,?,?)",
-                        (code, k, DAY - k, pmin, pmax, 1000.0 + k))
+                        (code, k, DAY - k, pmin, slot_px, slot_vol))
+    # سه نماد، دو نشستِ پیش از DAY در daily_prices: شاخهٔ UNION ALL پنجرهٔ نمایش
+    # باید ردیف بدهد؛ هر نشست مقدارِ یکتا دارد (سقف، کف، حجم، قیمتِ پایانی) تا
+    # گم‌شدنِ این شاخه در طلایی دیده شود. market_cap صفر است تا قاعدهٔ
+    # «NULL یعنی در دسترس نیست» در market_watch دست‌نخورده بماند.
+    for j, sym in enumerate(("عادی01", "پایین02", "نگهبان03")):
+        code = "INS-" + sym
+        for back in (1, 2):
+            con.execute(
+                "INSERT INTO daily_prices(ins_code,d_even,price_max,price_min,q_tot_tran,"
+                "market_cap,p_closing) VALUES(?,?,?,?,?,?,?)",
+                (code, DAY - back,
+                 1000.0 + 100.0 * j + 10.0 * back,
+                 900.0 + 100.0 * j - 10.0 * back,
+                 500000.0 + 10000.0 * j + 1000.0 * back,
+                 0.0,
+                 950.0 + 100.0 * j - 5.0 * back))
     # نمادی که در market_watch نیست ولی در instruments هست ⇒ هرگز نباید در تابلو بیاید.
     con.execute("INSERT INTO instruments VALUES(?,?,?,?)", ("INS-غایب", "غایب", "غایب", "سایر"))
     con.execute("INSERT INTO tape_history_state VALUES(1, ?)", (DAY - 60,))

@@ -2,7 +2,8 @@
 """گاردِ B1: فیکسچرِ تابلو، اوراکلِ طلایی و متنِ SQL باید تازه و بازتولیدپذیر باشند.
 
 چهار سنجش، همه بی‌شبکه و فقط رویِ فایلِ موقت:
-  ۱) ساختِ فیکسچر دو بار در دو پوشهٔ موقت ⇒ همان sha256.
+  ۱) ساختِ فیکسچر دو بار در دو پوشهٔ موقت ⇒ همان sha256؛ و همان ردیف‌هایی که
+     در فیکسچرِ کامیت‌شده نشسته‌اند (ریختِ منطقی، بی‌سرآمدِ SQLite).
   ۲) خروجیِ تازهٔ استخراج‌کننده ⇒ بایت‌به‌بایت همان sql_text.goِ کامیت‌شده.
   ۳) اجرایِ دوبارهٔ اوراکل رویِ همان فیکسچر ⇒ هر پنج JSON پس از پارس برابرِ کامیت.
   ۴) خودِ فیکسچر: دقیقاً 30 ردیفِ market_watch و دقیقاً یک نمادِ instruments
@@ -65,8 +66,43 @@ def read_json(path):
         return json.load(f)
 
 
+def dump_logical(path):
+    """ریختِ منطقیِ یک بانک: نامِ جدول‌ها، ستون‌ها و ردیف‌هایِ مرتب.
+
+    همه‌چیز با sqlite3 خوانده می‌شود، پس سرآمدِ SQLite (نسخهٔ نویسنده) در
+    مقایسه نمی‌آید و فقط محتوا داور است.
+    """
+    uri = Path(os.path.abspath(path)).as_uri() + "?mode=ro"
+    con = sqlite3.connect(uri, uri=True)
+    try:
+        tables = [r[0] for r in con.execute(
+            "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name")]
+        out = {}
+        for table in tables:
+            cur = con.execute('SELECT * FROM "%s"' % table.replace('"', '""'))
+            cols = tuple(d[0] for d in cur.description)
+            rows = sorted((tuple(r) for r in cur.fetchall()), key=repr)
+            out[table] = (cols, rows)
+        return out
+    finally:
+        con.close()
+
+
+def first_difference(committed, fresh):
+    if set(committed) != set(fresh):
+        return "table sets differ"
+    for table, (cols, rows) in committed.items():
+        fresh_cols, fresh_rows = fresh[table]
+        if cols != fresh_cols:
+            return "%s: columns differ" % table
+        if rows != fresh_rows:
+            return "%s: %d vs %d rows" % (table, len(rows), len(fresh_rows))
+    return ""
+
+
 def main():
-    # ۱) بازتولیدپذیریِ فیکسچر — دو ساختِ مستقل، همان بایت‌ها.
+    # ۱) بازتولیدپذیریِ فیکسچر — دو ساختِ مستقل، همان بایت‌ها؛ و همان محتوایی که
+    #    در فیکسچرِ کامیت‌شده نشسته است (سرآمدِ SQLite کنار گذاشته می‌شود).
     try:
         mf = load("board_fixture_gen", "make_board_fixture.py")
         with tempfile.TemporaryDirectory(prefix="b1-fixture-") as tmp:
@@ -76,11 +112,18 @@ def main():
                 with redirect_stdout(io.StringIO()):
                     mf.main()
                 digests.append(sha256_file(os.path.join(mf.OUT, "market.db")))
+            committed = dump_logical(os.path.join(FIX, "market.db"))
+            rebuilt = dump_logical(os.path.join(mf.OUT, "market.db"))
         check("fixture build is deterministic (two builds, same sha256)",
               digests[0] == digests[1],
               "%s != %s" % (digests[0][:12], digests[1][:12]))
+        diff = first_difference(committed, rebuilt)
+        check("fixture rows equal the committed fixture (logical dump, all tables)",
+              not diff, diff)
     except Exception as e:                                        # noqa: BLE001
         check("fixture build is deterministic (two builds, same sha256)", False, repr(e))
+        check("fixture rows equal the committed fixture (logical dump, all tables)",
+              False, repr(e))
 
     # ۲) متنِ SQL — خروجیِ تازۀ استخراج‌کننده باید همان فایلِ کامیت باشد.
     try:

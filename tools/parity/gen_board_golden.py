@@ -30,6 +30,10 @@ def main() -> int:
     sys.path.insert(0, ROOT)
     import api.market as M  # noqa: E402  (پس از تنظیمِ متغیرها)
 
+    # فیلدِ running یک پروبِ زندهٔ فرآیند است، نه دادهٔ فیکسچر؛ طلایی فقط شکل را
+    # سنجاق می‌کند و دروازهٔ دوسروره (تسکِ بعد) مقدار را هم‌زمان در هر دو سو می‌سنجد.
+    M._market_running = lambda: False
+
     os.makedirs(OUT, exist_ok=True)
 
     def save(name, resp):
