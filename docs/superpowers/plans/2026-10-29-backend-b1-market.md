@@ -2281,7 +2281,10 @@ func TestBoardMatchesPythonGolden(t *testing.T) {
 		t.Fatalf("fields=all differs: %v", res.Diffs[:min(5, len(res.Diffs))])
 	}
 	_, sync, _, _ := getJSON(t, s, "/api/market/sync-state", nil)
-	if res := parity.Compare(golden(t, "sync_state.json"), sync, parity.Options{}); !res.Pass {
+	// `running` از شمارشِ زندۀ پروسۀ سینکر می‌آید، نه از داده؛ رویِ ماشینی که
+	// سینکرِ پایتون زنده است true می‌شود. شکلش اینجا سنجیده می‌شود، مقدارش را
+	// گیتِ دو‌سروری (Task 8) هم‌زمان رویِ هر دو طرف می‌سنجد.
+	if res := parity.Compare(golden(t, "sync_state.json"), sync, parity.Options{Exclude: []string{"running"}}); !res.Pass {
 		t.Fatalf("sync-state differs: %v", res.Diffs)
 	}
 }
