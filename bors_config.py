@@ -195,6 +195,7 @@ def _resolve_market_db():
     پوشهٔ نصب نوشتنی باشد؛ در غیر این صورت WAL نمی‌تواند -wal/-shm بسازد.
     """
     exe_dir = os.path.dirname(sys.executable) if getattr(sys, "frozen", False) else _SRC_DIR
+    override = (os.environ.get("BORS_DATA_DIR") or "").strip()
     # ۱) market.db از قبل موجود (پرتابیل کنار EXE / دادهٔ کاربر / dev).
     # exe_dir فقط وقتی در نظر گرفته می‌شود که نوشتنی باشد: در نصبِ
     # all-users پوشهٔ نصب فقط‌خواندنی است و sqlite برای WAL باید -wal/-shm
@@ -204,7 +205,7 @@ def _resolve_market_db():
     # در پرتابیل WORK_DIR = <exe>/data است؛ فایلِ کنارِ EXE (جای market.db در
     # نصبِ نوشتنی) نباید جلوی دادۀ خودِ پرتابیل را بگیرد، وگرنه دو نسخۀ
     # هم‌زمان یک بانک را باز می‌کنند و «ماندگاری دادۀ پرتابیل» دروغ می‌شود.
-    if is_portable():
+    if is_portable() or override:
         dirs = [WORK_DIR]
     # v1.0.16: در بیلدِ onedir، PyInstaller داده‌ها را در _internal می‌گذارد.
     # اگر آنجا market.db با دادهٔ کدال هست، باید بر فایلِ کوچکِ کنارِ EXE
@@ -223,7 +224,7 @@ def _resolve_market_db():
         p = os.path.join(d, "market.db")
         if os.path.exists(p):
             return p
-    if not getattr(sys, "frozen", False):
+    if not getattr(sys, "frozen", False) and not override:
         for p in ("market.db", "../market.db"):
             if os.path.exists(p):
                 return p

@@ -38,6 +38,12 @@ def main():
             check("USER_DB_PATH is inside it",
                   bors_config.USER_DB_PATH == os.path.join(os.path.abspath(tmp), "user.db"),
                   bors_config.USER_DB_PATH)
+            # رگرسیون: بانکِ خالیِ همین پوشه باید بر market.dbِ کدال‌دارِ ریشۀ ریپو
+            # پیشی بگیرد؛ پیش از این exe_dir (ریشه) اول جستجو می‌شد و برنده بود.
+            check("empty market.db under BORS_DATA_DIR beats repo market.db",
+                  bors_config.DB_PATH == os.path.join(os.path.abspath(tmp), "market.db")
+                  and bors_config.DB_PATH != os.path.join(ROOT, "market.db"),
+                  bors_config.DB_PATH)
         del os.environ["BORS_DATA_DIR"]
         with tempfile.TemporaryDirectory() as tmp:
             check("unset changes nothing",
