@@ -27,23 +27,27 @@ def main() -> int:
         "1405/02/301", "1405/13/45", "1405/02/30", "زمان نامعلوم",
         fa("1405/06/31"), ar("1405/06/31"), fa("1405-6-3"),
         14050631.0, 1405, " 1405/06/31 ",
+        "1405/13/45 1404/01/01", "01405/06/31", "1405/02/301 1404/01/01",
+        "1405\u00a0/\u00a006/\u00a031",
     ]
     titles = [
         "", "دوره ۶ ماهه", "صورت مالی 3 ماهه منتهی به 1404/12/29",
         "مجمع از 1403/01/01 تا 1403/12/29", "بدون دوره",
         fa("دوره ۱۲ ماهه منتهی به ۱۴۰۴/۱۲/۲۹"),
+        "مجمع از 1403/01/01 تا 1403/12/29 منتهی\u00a0به 1404/12/29",
+        "دوره ۶\u00a0ماهه",
     ]
     months = [None, "", "6", "6.0", "0", "13", "abc", 6, 6.0]
-    ends = [None, "1404/12/29", "1404/12/29 18:00:00", "1404-12-29", "1405/13/45"]
+    ends = [None, "1404/12/29", "1404/12/29 18:00:00", "1404-12-29", "1405/13/45", "1403/12/29"]
 
     out = {
         "canonicalize": [{"in": c, "out": CP.canonicalize(c)} for c in raw],
         "from_title": [{"in": t, "out": CP.from_title(t)} for t in titles],
         "months_from_title": [{"in": t, "out": CP.months_from_title(t)} for t in titles],
         "derive": [{"end": e, "title": t, "out": list(CP.derive(e, t))}
-                   for e in ends for t in titles[:3]],
+                   for e in ends for t in titles],
         "effective_months": [{"end": e, "months": m, "title": t, "out": list(CP.effective_months(e, m, t))}
-                             for e in ends for m in months for t in titles[:3]],
+                             for e in ends for m in months for t in titles],
         "is_canonical": [{"in": c, "out": CP.is_canonical(c)} for c in raw],
         "is_undated": [{"in": c, "out": CP.is_undated(c)} for c in raw],
         "ym": [{"in": c, "out": list(CP.ym(c))} for c in raw],

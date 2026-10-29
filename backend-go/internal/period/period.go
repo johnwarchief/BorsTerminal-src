@@ -7,11 +7,16 @@ import (
 	"strings"
 )
 
+// pySpace همان مجموعه‌ای است که `\s`ِ پایتون رویِ str می‌پذیرد
+// (Py_UNICODE_ISSPACE): ASCII، جداکننده‌هایِ C0 و فاصله‌هایِ یونیکد.
+// `\s`ِ Go فقط [\t\n\f\r ] است (بی \v و بی یونیکد)، پس صریح می‌نویسیم.
+const pySpace = `[\t\n\v\f\r \x{1c}-\x{1f}\x{85}\x{a0}\x{1680}\x{2000}-\x{200a}\x{2028}\x{2029}\x{202f}\x{205f}\x{3000}]`
+
 var (
 	canonRe      = regexp.MustCompile(`^([0-9]{4})/([0-9]{2})/([0-9]{2})$`)
-	looseRe      = regexp.MustCompile(`([0-9]{4})\s*[-/]\s*([0-9]{1,2})\s*[-/]\s*([0-9]{1,2})`)
-	endAnchor    = regexp.MustCompile(`منتهی\s*به`)
-	monthsAnchor = regexp.MustCompile(`([0-9]+)\s*ماهه`)
+	looseRe      = regexp.MustCompile(`([0-9]{4})` + pySpace + `*[-/]` + pySpace + `*([0-9]{1,2})` + pySpace + `*[-/]` + pySpace + `*([0-9]{1,2})`)
+	endAnchor    = regexp.MustCompile(`منتهی` + pySpace + `*به`)
+	monthsAnchor = regexp.MustCompile(`([0-9]+)` + pySpace + `*ماهه`)
 )
 
 // pyStr مثلِ str(x) در پایتون برایِ انواعی که در JSONِ ورودی می‌آید.
