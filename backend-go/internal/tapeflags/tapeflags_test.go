@@ -88,6 +88,11 @@ func TestFlags(t *testing.T) {
 // نقطه‌ای را جا انداخت، تست هم‌دستِ همان اشتباه نشود.
 var synthLadder = []string{"h2_max", "h5_max", "h9_max", "h19_max", "h29_max", "h39_max", "h49_max", "h59_max"}
 
+// synthLadderPeak سقفِ ردیف‌هایِ پلکان است: ۲۵۰ بالاتر از بقیهٔ نقاط (۹۰۰) و
+// ۵۰ بالاتر از pl (۱۱۰۰) — پس هم پلکان را می‌سازد و هم pl > resistance را رد
+// می‌کند. حذف یا بدنام‌شدنِ همان یک ستون، عدد را به ۹۰۰ می‌اندازد.
+const synthLadderPeak = 1150.0
+
 // synthRow یک ردیفِ ساختگی؛ mut هر خانه را بازنویسی می‌کند. مقادیرِ هر ردیف
 // عیناً درِ tape_flags.apply_tape_flags هم اجرا شد (با pandas 3.0.5) و ستونِ
 // انتظار پایین از همان اجرا گرفته شده است.
@@ -102,12 +107,14 @@ type synthRow struct {
 	sellNVol              float64
 	buyCnt, sellCnt       float64
 	hMax, h59             float64
+	hOverride             map[string]float64
 	dEven                 int64
 }
 
-// synthFrame پنجاه‌ودو ردیفِ لبه است: هر فیلتر یک ردیفِ مثبت دارد، هر دروازه
-// (سابقۀ کوتاه، فسیل، سقف، is6 غایب، کفِ صفر، صفِ غایب) یک ردیفِ منفی، و هر
-// آستانهٔ عددی یک جفتِ «یک پله زیر/بالا» تا تغییرِ موییِ ثابت‌ها هم دیده شود.
+// synthFrame شصت ردیف است: پنجاه‌ودو ردیفِ لبه — هر فیلتر یک ردیفِ مثبت، هر
+// دروازه (سابقهٔ کوتاه، فسیل، سقف، is6 غایب، کفِ صفر، صفِ غایب) یک ردیفِ منفی،
+// و هر آستانهٔ عددی یک جفتِ «یک پله زیر/بالا» — به‌علاوهٔ هشت ردیفِ پلکان که هر
+// نامِ h*_max را جدا می‌آزمایند.
 func synthFrame() *store.Frame {
 	base := synthRow{
 		pClosing: 1000, pLast: 1100, py: 900,
@@ -221,6 +228,19 @@ func synthFrame() *store.Frame {
 		{"smartEdge", func(r *synthRow) { r.tvol = 150 }},
 		{"baseZero", func(r *synthRow) { r.prior30 = 0 }},
 		{"monthZero", func(r *synthRow) { r.monthAvg = 0 }},
+		// ── پلکانِ مقاومت: یک ردیف برایِ هر نقطه، هر کدام سقفِ تنها ─────────
+		// در ردیفِ peakK فقط hK_max برابرِ synthLadderPeak است و بقیه ۹۰۰؛
+		// pl=۱۱۰۰ زیرِ آن می‌مانَد (جت خاموش) و hist از پایه ۶۰ است، پس پلکان
+		// سنجیده می‌شود. حذف یا بدنام‌کردنِ همان یک ستون، resistance_59 را به
+		// ۹۰۰ برمی‌گردانَد و جت را روشن می‌کند؛ پس هر هشت نام آزموده می‌شوند.
+		{"peak2", func(r *synthRow) { r.hOverride = map[string]float64{"h2_max": synthLadderPeak} }},
+		{"peak5", func(r *synthRow) { r.hOverride = map[string]float64{"h5_max": synthLadderPeak} }},
+		{"peak9", func(r *synthRow) { r.hOverride = map[string]float64{"h9_max": synthLadderPeak} }},
+		{"peak19", func(r *synthRow) { r.hOverride = map[string]float64{"h19_max": synthLadderPeak} }},
+		{"peak29", func(r *synthRow) { r.hOverride = map[string]float64{"h29_max": synthLadderPeak} }},
+		{"peak39", func(r *synthRow) { r.hOverride = map[string]float64{"h39_max": synthLadderPeak} }},
+		{"peak49", func(r *synthRow) { r.hOverride = map[string]float64{"h49_max": synthLadderPeak} }},
+		{"peak59", func(r *synthRow) { r.hOverride = map[string]float64{"h59_max": synthLadderPeak} }},
 	}
 	fr := &store.Frame{Cols: map[string][]any{}}
 	for _, row := range rows {
@@ -252,6 +272,10 @@ func synthFrame() *store.Frame {
 		put("buy_count_i", r.buyCnt)
 		put("sell_count_i", r.sellCnt)
 		for _, name := range synthLadder {
+			if v, ok := r.hOverride[name]; ok {
+				put(name, v)
+				continue
+			}
 			if name == "h59_max" {
 				put(name, r.h59)
 				continue
@@ -343,6 +367,16 @@ func TestSyntheticAllSeven(t *testing.T) {
 		"smartEdge":      "1000100",
 		"baseZero":       "0000011",
 		"monthZero":      "1110111",
+		// هشت ردیفِ پلکان: هر کدام یک نقطه را تنها سقف می‌کند، پس pl زیرِ
+		// resistance می‌مانَد و جت خاموش است. از اجرایِ مرجع، نه حسابِ دستی.
+		"peak2":  "1100111",
+		"peak5":  "1100111",
+		"peak9":  "1100111",
+		"peak19": "1100111",
+		"peak29": "1100111",
+		"peak39": "1100111",
+		"peak49": "1100111",
+		"peak59": "1100111",
 	}
 	for i, code := range fr.Codes {
 		got := bits(f.Clock[i], f.Susp[i], f.Jet[i], f.Roobi[i], f.Noqteh[i], f.Smart[i], f.Legal[i])
@@ -365,6 +399,15 @@ func TestSyntheticAllSeven(t *testing.T) {
 	}
 	if got := f.Resistance59[idx["all"]]; math.Abs(got-900.0) > 1e-9 {
 		t.Fatalf("all: resistance_59 = %v, want 900", got)
+	}
+	// هر نقطهٔ پلکان جدا سنجیده می‌شود: ردیفِ peakK همان hK_max را بالا برده
+	// است، پس resistance_59 باید همان synthLadderPeak باشد. حذف یا بدنام‌شدنِ
+	// یک ستون این عدد را به ۹۰۰ می‌اندازد و پرچمِ جت را روشن می‌کند.
+	for _, name := range synthLadder {
+		code := "peak" + strings.TrimSuffix(strings.TrimPrefix(name, "h"), "_max")
+		if got := f.Resistance59[idx[code]]; math.Abs(got-synthLadderPeak) > 1e-9 {
+			t.Fatalf("%s: resistance_59 = %v، باید %v باشد", code, got, synthLadderPeak)
+		}
 	}
 	// نسبت‌هایِ نمایشی تاریخ‌محورند: ردیفِ کم‌سابقه هم نسبتِ ماه را دارد، ولی
 	// مبنایِ فایل (و پلکان) برایش سنجیده نمی‌شود.
@@ -529,14 +572,20 @@ func TestFixtureFlagsGolden(t *testing.T) {
 		}
 	}
 	var bad []string
-	live := 0
+	fossils := 0
 	for _, g := range market.Data {
 		i, ok := idx[g.Symbol]
 		if !ok {
 			t.Fatalf("نمادِ %q در قاب نیست", g.Symbol)
 		}
-		if g.IsLive {
-			live++
+		// is_liveِ مشتق‌شده (تازه‌ترین d_even) باید با اوراکلِ همان ردیف بخوانَد.
+		// این مقایسه ردیف‌به‌ردیف است تا ماسکِ زنده/فسیل هر جا که جابه‌جا شود
+		// دیده شود، نه فقط وقتی شمارشِ کل عوض شود.
+		if d.IsLive[i] != g.IsLive {
+			bad = append(bad, fmt.Sprintf("%s: is_live = %v، گلدن %v", g.Symbol, d.IsLive[i], g.IsLive))
+		}
+		if !d.IsLive[i] {
+			fossils++
 		}
 		got := bits(f.Clock[i], f.Susp[i], f.Jet[i], f.Roobi[i], f.Noqteh[i], f.Smart[i], f.Legal[i])
 		want := bits(g.FClock, g.FSusp, g.FJet, g.FRoobi, g.FNoqteh, g.FSmart, g.FLegal)
@@ -547,8 +596,10 @@ func TestFixtureFlagsGolden(t *testing.T) {
 		checkNum(&bad, g.Symbol+".vol_ratio", board.Round1(f.VolRatio[i]), g.VolRatio)
 		checkNum(&bad, g.Symbol+".vol_ratio_file", f.VolRatioFile[i], g.VolRatioFile)
 	}
-	if live != market.LiveCount {
-		t.Fatalf("is_live rows = %d، گلدن %d", live, market.LiveCount)
+	// دقیقاً یک ردیف بیرون از نشست است (فیکسچر: سخت05)؛ صفر یا دو تا یعنی
+	// ماسکِ is_live خراب شده است.
+	if fossils != 1 {
+		t.Fatalf("ردیف‌هایِ فسیل = %d، باید دقیقاً ۱ باشد", fossils)
 	}
 	for _, g := range all.Data {
 		i, ok := idx[g.Symbol]
