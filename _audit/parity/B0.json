@@ -1,0 +1,20 @@
+{
+ "commit": "1538474d",
+ "go_version": "go version go1.26.3 windows/amd64",
+ "startup_ms": 25.9,
+ "rss_mb": 12.6,
+ "healthz": {
+  "data_dir": "C:\\Users\\PCMOD\\AppData\\Local\\Temp\\bors-b0-kdzm__h7",
+  "go": "go1.26.3",
+  "loops": "off",
+  "market_mode": "read-only",
+  "rss_mb": 10.76953125,
+  "status": "ok",
+  "uptime_s": 0.0156179,
+  "version": "dev"
+ },
+ "tests_ok": true,
+ "startup_ok": true,
+ "rss_ok": true,
+ "measured_at": "2026-10-29T18:03:02Z"
+}
