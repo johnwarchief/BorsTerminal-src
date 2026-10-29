@@ -2,7 +2,7 @@
 
 تاریخ: 2026-10-29 · شاخه: `mission/4-axes-2026-10-10` · وضعیت: در انتظارِ بازبینیِ مالک
 
-مراجع: `docs/BorsTerminal-Desktop-Migration-Decisions.md` (§۹، §۱۲.۳۰، §۱۴)،
+مراجع: `docs/BorsTerminal-Desktop-Migration-Decisions.md` (§۹، §۱۲.۳۰، §۱۴–§۱۵)،
 `docs/MIGRATION-REBUILD-PLAN-2026-10-27.md` (مرحله‌های S0..S10 و درِ G5)،
 `docs/MIGRATION-PERF-BASELINE-2026-10-27.md` (خطِ مبنا).
 
