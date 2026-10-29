@@ -45,19 +45,27 @@ type Report struct {
 }
 
 type walker struct {
-	opts     Options
-	excluded map[string]struct{}
-	diffs    []string
-	maxDelta float64
-	used     map[string]struct{}
+	excluded  map[string]struct{}
+	diffs     []string
+	maxDelta  float64
+	used      map[string]struct{}
+	truncated bool
 }
 
+const diffLimit = 40
+
 func Compare(want, got any, opts Options) Result {
-	w := &walker{opts: opts, excluded: map[string]struct{}{}, used: map[string]struct{}{}}
+	w := &walker{excluded: map[string]struct{}{}, used: map[string]struct{}{}}
 	for _, p := range opts.Exclude {
+		if strings.TrimSpace(p) == "" {
+			continue
+		}
 		w.excluded[p] = struct{}{}
 	}
 	w.walk("", want, got)
+	if w.truncated {
+		w.diffs = append(w.diffs, "… (diffs truncated)")
+	}
 	out := Result{Pass: len(w.diffs) == 0, Diffs: w.diffs, MaxDelta: w.maxDelta}
 	for p := range w.used {
 		out.Excluded = append(out.Excluded, p)
@@ -85,18 +93,37 @@ func (w *walker) walk(path string, want, got any) {
 			w.diff(path, "type", "object", kind(got))
 			return
 		}
-		for k, v := range wantV {
+		wantKeys := make([]string, 0, len(wantV))
+		for k := range wantV {
+			wantKeys = append(wantKeys, k)
+		}
+		sort.Strings(wantKeys)
+		for _, k := range wantKeys {
+			p := join(path, k)
 			g, exists := gotV[k]
 			if !exists {
-				w.diff(path+"."+k, "missing in go", "present", "absent")
+				if w.isExcluded(p) {
+					continue
+				}
+				w.diff(p, "missing in go", "present", "absent")
 				continue
 			}
-			w.walk(join(path, k), v, g)
+			w.walk(p, wantV[k], g)
 		}
+		gotKeys := make([]string, 0, len(gotV))
 		for k := range gotV {
-			if _, exists := wantV[k]; !exists {
-				w.diff(path+"."+k, "extra in go", "absent", "present")
+			gotKeys = append(gotKeys, k)
+		}
+		sort.Strings(gotKeys)
+		for _, k := range gotKeys {
+			if _, exists := wantV[k]; exists {
+				continue
 			}
+			p := join(path, k)
+			if w.isExcluded(p) {
+				continue
+			}
+			w.diff(p, "extra in go", "absent", "present")
 		}
 	case []any:
 		gotV, ok := got.([]any)
@@ -132,15 +159,36 @@ func (w *walker) walk(path string, want, got any) {
 		if delta > 1e-9 {
 			w.diff(path, "number", fmt.Sprintf("%v", wantV), fmt.Sprintf("%v", gotV))
 		}
-	default:
-		if fmt.Sprint(want) != fmt.Sprint(got) {
-			w.diff(path, "value", fmt.Sprint(want), fmt.Sprint(got))
+	case nil:
+		if got != nil {
+			w.diff(path, "type", "null", kind(got))
 		}
+	case string:
+		gotV, ok := got.(string)
+		if !ok {
+			w.diff(path, "type", "string", kind(got))
+			return
+		}
+		if wantV != gotV {
+			w.diff(path, "value", wantV, gotV)
+		}
+	case bool:
+		gotV, ok := got.(bool)
+		if !ok {
+			w.diff(path, "type", "bool", kind(got))
+			return
+		}
+		if wantV != gotV {
+			w.diff(path, "value", fmt.Sprint(wantV), fmt.Sprint(gotV))
+		}
+	default:
+		w.diff(path, "type", kind(want), kind(got))
 	}
 }
 
 func (w *walker) diff(path, what, want, got string) {
-	if len(w.diffs) >= 40 {
+	if len(w.diffs) >= diffLimit {
+		w.truncated = true
 		return
 	}
 	w.diffs = append(w.diffs, fmt.Sprintf("%s: %s (%s != %s)", path, what, want, got))

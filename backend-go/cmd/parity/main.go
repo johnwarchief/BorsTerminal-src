@@ -2,11 +2,13 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"io"
 	"net/http"
 	"os"
+	"path/filepath"
 	"time"
 
 	"borsterminal/backend/internal/parity"
@@ -28,16 +30,23 @@ type fetched struct {
 	status int
 	body   []byte
 	value  any
-	ms     float64
 }
+
+// requestBuildError marks a case whose request could not even be constructed
+// (bad base URL or method): a programmer error, not a parity failure.
+type requestBuildError struct{ err error }
+
+func (e *requestBuildError) Error() string { return e.err.Error() }
+func (e *requestBuildError) Unwrap() error { return e.err }
+
+var httpClient = &http.Client{Timeout: 60 * time.Second}
 
 func fetch(base string, c testCase) (fetched, error) {
 	req, err := http.NewRequest(c.Method, base+c.Path, nil)
 	if err != nil {
-		return fetched{}, err
+		return fetched{}, &requestBuildError{err: err}
 	}
-	start := time.Now()
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := httpClient.Do(req)
 	if err != nil {
 		return fetched{}, err
 	}
@@ -46,7 +55,7 @@ func fetch(base string, c testCase) (fetched, error) {
 	if err != nil {
 		return fetched{}, err
 	}
-	out := fetched{status: resp.StatusCode, body: body, ms: float64(time.Since(start).Microseconds()) / 1000.0}
+	out := fetched{status: resp.StatusCode, body: body}
 	if err := json.Unmarshal(body, &out.value); err != nil {
 		return fetched{}, fmt.Errorf("%s: body is not JSON: %w", c.Path, err)
 	}
@@ -54,32 +63,43 @@ func fetch(base string, c testCase) (fetched, error) {
 }
 
 func main() {
-	py := flag.String("py", "http://127.0.0.1:8299", "python base URL")
-	goURL := flag.String("go", "http://127.0.0.1:8298", "go base URL")
-	cases := flag.String("cases", "", "cases JSON")
-	out := flag.String("out", "_audit/parity/run.json", "report path")
-	commit := flag.String("commit", "unknown", "git commit being measured")
-	flag.Parse()
+	os.Exit(run(os.Args[1:]))
+}
+
+func run(args []string) int {
+	fs := flag.NewFlagSet("parity", flag.ContinueOnError)
+	py := fs.String("py", "http://127.0.0.1:8299", "python base URL")
+	goURL := fs.String("go", "http://127.0.0.1:8298", "go base URL")
+	cases := fs.String("cases", "", "cases JSON")
+	out := fs.String("out", "_audit/parity/run.json", "report path")
+	commit := fs.String("commit", "unknown", "git commit being measured")
+	if err := fs.Parse(args); err != nil {
+		return 2
+	}
 	if *cases == "" {
 		fmt.Fprintln(os.Stderr, "--cases is required")
-		os.Exit(2)
+		return 2
 	}
 	raw, err := os.ReadFile(*cases)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
-		os.Exit(2)
+		return 2
 	}
 	var cf caseFile
 	if err := json.Unmarshal(raw, &cf); err != nil {
 		fmt.Fprintln(os.Stderr, err)
-		os.Exit(2)
+		return 2
+	}
+	if len(cf.Cases) == 0 {
+		fmt.Fprintf(os.Stderr, "no cases in %s\n", *cases)
+		return 2
 	}
 	report := parity.Report{Commit: *commit, PyURL: *py, GoURL: *goURL, DBHash: cf.DBHash}
 	for _, c := range cf.Cases {
 		row, err := compareCase(*py, *goURL, c)
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err)
-			os.Exit(2)
+			return 2
 		}
 		if row.Pass {
 			report.Passed++
@@ -89,35 +109,48 @@ func main() {
 		report.Cases = append(report.Cases, row)
 	}
 	report.Finished = time.Now().UTC().Format(time.RFC3339)
-	blob, _ := json.MarshalIndent(report, "", " ")
-	if err := os.MkdirAll(dirOf(*out), 0o755); err != nil {
+	blob, err := json.MarshalIndent(report, "", " ")
+	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
-		os.Exit(2)
+		return 2
+	}
+	if err := os.MkdirAll(filepath.Dir(*out), 0o755); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		return 2
 	}
 	if err := os.WriteFile(*out, append(blob, '\n'), 0o644); err != nil {
 		fmt.Fprintln(os.Stderr, err)
-		os.Exit(2)
+		return 2
 	}
 	fmt.Printf("parity: %d passed / %d failed -> %s\n", report.Passed, report.Failed, *out)
 	if report.Failed > 0 {
-		os.Exit(1)
+		return 1
 	}
+	return 0
 }
 
 func compareCase(pyBase, goBase string, c testCase) (parity.CaseReport, error) {
+	row := parity.CaseReport{Name: c.Name, Method: c.Method, Path: c.Path}
 	a, err := fetch(pyBase, c)
 	if err != nil {
-		return parity.CaseReport{}, fmt.Errorf("py %s: %w", c.Path, err)
+		var build *requestBuildError
+		if errors.As(err, &build) {
+			return parity.CaseReport{}, fmt.Errorf("py %s: %w", c.Path, err)
+		}
+		row.Diffs = []string{"py fetch: " + err.Error()}
+		return row, nil
 	}
+	row.StatusPy, row.BytesPy = a.status, len(a.body)
 	b, err := fetch(goBase, c)
 	if err != nil {
-		return parity.CaseReport{}, fmt.Errorf("go %s: %w", c.Path, err)
+		var build *requestBuildError
+		if errors.As(err, &build) {
+			return parity.CaseReport{}, fmt.Errorf("go %s: %w", c.Path, err)
+		}
+		row.Diffs = []string{"go fetch: " + err.Error()}
+		return row, nil
 	}
-	row := parity.CaseReport{
-		Name: c.Name, Method: c.Method, Path: c.Path,
-		StatusPy: a.status, StatusGo: b.status,
-		BytesPy: len(a.body), BytesGo: len(b.body),
-	}
+	row.StatusGo, row.BytesGo = b.status, len(b.body)
 	if a.status != b.status {
 		row.Diffs = []string{fmt.Sprintf("status: %d != %d", a.status, b.status)}
 		return row, nil
@@ -125,13 +158,4 @@ func compareCase(pyBase, goBase string, c testCase) (parity.CaseReport, error) {
 	res := parity.Compare(a.value, b.value, parity.Options{Exclude: c.Exclude})
 	row.Pass, row.Diffs, row.MaxDelta, row.Excluded = res.Pass, res.Diffs, res.MaxDelta, res.Excluded
 	return row, nil
-}
-
-func dirOf(path string) string {
-	for i := len(path) - 1; i >= 0; i-- {
-		if path[i] == '/' || path[i] == '\\' {
-			return path[:i]
-		}
-	}
-	return "."
 }
