@@ -2,13 +2,18 @@
 """گیتِ B0: بیلد، تست، شروعِ سرد، RSS، healthz و نوشتنِ شاهد.
 
 DB با کپیِ سادهٔ فایل به پوشهٔ موقت می‌رود؛ خودِ بانکِ عملیاتی هرگز با SQLite
-باز نمی‌شود تا هیچ -wal/-shm کنارش ساخته نشود. اگر -wal با اندازهٔ مثبت وجود
-داشته باشد همراهِ کپی می‌رود، ولی -shm هرگز کپی نمی‌شود. سلامتِ کپی پیش از
-سنجش با PRAGMA quick_check روی همان کپیِ read-only بررسی می‌شود.
+باز نمی‌شود تا هیچ -wal/-shm کنارش ساخته نشود. این قیدِ سختِ گیت است: هیچ
+نوشتنی به بانکِ عملیاتی و کناربانک‌هایش رخ نمی‌دهد. اگر -wal با اندازهٔ مثبت
+وجود داشته باشد همراهِ کپی می‌رود، ولی -shm هرگز کپی نمی‌شود. PRAGMA
+quick_check روی همان کپیِ read-only فقط یک بررسیِ ساختاری است، نه اثباتِ
+سالم‌بودنِ محتوا؛ WALِ نصفه‌کاره می‌تواند همان ok را برگرداند. پس «کپی سالم
+است» ادعایِ این اسکریپت نیست. کپیِ خراب یا بریده در همین مرحله با exit 2 و
+پیامِ روشن رد می‌شود، نه با traceback.
 
-گاردِ کناربانک: وضعیتِ market.db-wal/-shm و user.db-wal/-shm پیش از اجرا ثبت
-می‌شود و در finally مقایسه می‌شود؛ کناربانکِ تازه یا تغییرِ اندازه یعنی خطا
-(exit 2). فقط PIDی کشته می‌شود که همین اسکریپت بالا آورده. هیچ شبکه و هیچ ADB.
+گاردِ کناربانک: زوجِ (اندازه، mtime_ns) برایِ market.db-wal/-shm و
+user.db-wal/-shm پیش از اجرا ثبت می‌شود و در finally دقیقاً مقایسه می‌شود؛
+کناربانکِ تازه یا هر تغییری در همین زوج یعنی خطا (exit 2). فقط PIDی کشته
+می‌شود که همین اسکریپت بالا آورده. هیچ شبکه و هیچ ADB.
 
 RSSِ واقعی با tasklist خوانده می‌شود و خروجیِ CSV با ماژولِ csv تجزیه می‌شود؛
 ستونِ حافظه خودش ویرگول دارد (مثلِ «330,576 K») و تقسیمِ سادهٔ خط بر ویرگول
@@ -37,32 +42,40 @@ SIDECAR_SUFFIXES = ("-wal", "-shm")
 
 
 def sidecar_state():
-    """اندازهٔ کناربانک‌هایِ DBِ عملیاتی؛ None یعنی فایل وجود ندارد."""
+    """زوجِ (اندازه، mtime_ns) هر کناربانک؛ None یعنی فایل وجود ندارد."""
     state = {}
     for name in DB_NAMES:
         for suffix in SIDECAR_SUFFIXES:
             path = os.path.join(ROOT, name + suffix)
-            state[name + suffix] = os.path.getsize(path) if os.path.exists(path) else None
+            if os.path.exists(path):
+                st = os.stat(path)
+                state[name + suffix] = (st.st_size, st.st_mtime_ns)
+            else:
+                state[name + suffix] = None
     return state
+
+
+def describe_entry(entry):
+    return "absent" if entry is None else "%dB@%dns" % entry
 
 
 def describe_sidecars(state):
     return " ".join(
-        "%s=%s" % (key, "absent" if size is None else "%dB" % size)
-        for key, size in state.items())
+        "%s=%s" % (key, describe_entry(entry))
+        for key, entry in state.items())
 
 
 def sidecar_problem(before, after):
-    """هر کناربانکِ تازه یا تغییرِ اندازه در طولِ گیت، نقضِ قید است."""
+    """هر کناربانکِ تازه یا تغییرِ (اندازه، mtime_ns) در طولِ گیت، نقضِ قید است."""
     for key in before:
         old = before[key]
         new = after[key]
         if old is None and new is not None:
-            return "%s appeared (%dB)" % (key, new)
+            return "%s appeared (%s)" % (key, describe_entry(new))
         if old is not None and new is None:
-            return "%s disappeared (was %dB)" % (key, old)
+            return "%s disappeared (was %s)" % (key, describe_entry(old))
         if old != new:
-            return "%s changed (%dB -> %dB)" % (key, old, new)
+            return "%s changed (%s -> %s)" % (key, describe_entry(old), describe_entry(new))
     return None
 
 
@@ -164,7 +177,12 @@ def run_gate() -> int:
             src = os.path.join(ROOT, name)
             if not os.path.exists(src):
                 continue
-            check = snapshot_db(src, os.path.join(tmp, name))
+            try:
+                check = snapshot_db(src, os.path.join(tmp, name))
+            except (sqlite3.Error, OSError) as err:
+                # کپیِ بریده/خراب یا خطایِ فایل‌سیستم: پیامِ روشن، بدونِ traceback.
+                print("snapshot copy unusable: %s: %s" % (name, err))
+                return 2
             if check != ["ok"]:
                 print("quick_check failed for %s copy: %s" % (name, check))
                 return 2
