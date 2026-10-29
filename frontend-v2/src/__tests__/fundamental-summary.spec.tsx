@@ -100,13 +100,25 @@ describe('FundamentalSummary', () => {
 });
 
 describe('FundamentalCards', () => {
-  it('shows five compact cards and keeps a null verdict as بی‌نظر', () => {
+  it('keeps a null verdict as بی‌نظر on a large, detailed card', () => {
     render(<FundamentalCards symbol="فولاد" />);
-    expect(screen.getAllByTestId(/^fundamental-card-/)).toHaveLength(5);
+    expect(screen.getAllByTestId(/^fundamental-card-/)).toHaveLength(4);
     const axis3 = screen.getByTestId('fundamental-card-3_gross_margin');
     expect(axis3.textContent).toContain('بی‌نظر');
     expect(axis3.textContent).not.toContain('رد');
+    expect(axis3.textContent).toContain('حاشیه سود ناخالص');
+    expect(axis3.textContent).toContain('حاشیۀ ناخالص');
     expect(axis3.getAttribute('title')).toContain('۳. حاشیه سود ناخالص');
+  });
+
+  it('fits axis 5 into the axis-4 card as an industry row', () => {
+    render(<FundamentalCards symbol="فولاد" />);
+    const axis4 = screen.getByTestId('fundamental-card-4_sales_to_mcap');
+    const industry = screen.getByTestId('fundamental-industry');
+    expect(axis4.contains(industry)).toBe(true);
+    expect(industry.textContent).toContain('صنعت');
+    expect(industry.textContent).toContain('قبول');
+    expect(screen.queryByTestId('fundamental-card-5_industry')).toBeNull();
   });
 
   it('keeps the chart and board untouched when the request fails', () => {
@@ -121,8 +133,8 @@ describe('FundamentalCards', () => {
     serve(bare);
     render(<FundamentalCards symbol="فولاد" />);
     const cards = screen.getAllByTestId(/^fundamental-card-/);
-    expect(cards).toHaveLength(5);
-    for (const axis of cards) {
+    expect(cards).toHaveLength(4);
+    for (const axis of [...cards, screen.getByTestId('fundamental-industry')]) {
       expect(axis.textContent).toContain('—');
       expect(axis.textContent).toContain('بی‌نظر');
       expect(axis.textContent).not.toContain('رد');

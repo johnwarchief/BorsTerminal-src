@@ -35,11 +35,12 @@
       }
     },
     {
-      "name": "bottom dock holds one chart and the five fundamental cards (or their honest error)",
+      "name": "bottom dock holds one chart and four detailed cards with the industry row",
       "ok": true,
       "detail": {
         "charts": 1,
-        "cards": 5,
+        "cards": 4,
+        "industry": 1,
         "cardErrors": 0
       }
     },
@@ -120,6 +121,6 @@
     "C:\\Users\\PCMOD\\Desktop\\BorsTerminal\\_audit\\live-board-v2-20261028\\ws-2560-dossier.png",
     "C:\\Users\\PCMOD\\Desktop\\BorsTerminal\\_audit\\live-board-v2-20261028\\ws-1279-dossier.png"
   ],
-  "started": "2026-10-28T19:24:50.232Z",
-  "finished": "2026-10-28T19:25:16.435Z"
+  "started": "2026-10-29T09:02:17.174Z",
+  "finished": "2026-10-29T09:02:52.457Z"
 }

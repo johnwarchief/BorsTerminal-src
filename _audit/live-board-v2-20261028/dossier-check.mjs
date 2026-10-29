@@ -77,9 +77,11 @@ try {
   await page.waitForSelector('[data-testid="fundamental-card-1_growth"], [data-testid="fundamental-error"]', { timeout: 25_000 }).catch(() => null);
   const charts = await page.locator('[data-testid="chart-panel"]').count();
   const cards = await page.locator('[data-testid^="fundamental-card-"]').count();
+  const industry = await page.locator('[data-testid="fundamental-industry"]').count();
   const cardErrors = await page.locator('[data-testid="fundamental-error"]').count();
-  record('bottom dock holds one chart and the five fundamental cards (or their honest error)',
-    charts === 1 && (cards === 5 || cardErrors === 1), { charts, cards, cardErrors });
+  record('bottom dock holds one chart and four detailed cards with the industry row',
+    charts === 1 && cardErrors === 0 ? cards === 4 && industry === 1 : cardErrors === 1,
+    { charts, cards, industry, cardErrors });
 
   await page.waitForFunction(
     () => !document.querySelector('[data-testid="chart-loading"]'),
