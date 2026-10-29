@@ -2,8 +2,11 @@ package store
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
+	"log"
 	"strings"
+	"sync"
 )
 
 // Frame قابِ ستون‌محور است: هر ستون یک []any به ترتیبِ ردیف‌هایِ تابلو.
@@ -49,8 +52,22 @@ func LoadBoard(db *sql.DB) (*Frame, error) {
 		if err := rows.Scan(ptrs...); err != nil {
 			return nil, err
 		}
-		code, _ := vals[idx].(string)
-		if code == "" || seen[code] { // drop_duplicates(ins_code, keep="first")
+		var code string
+		switch v := vals[idx].(type) {
+		case nil:
+			// NULL: همانطور که پایتون این ردیف را نمی‌آورد (WHERE ins_code IS NOT
+			// NULL)، اینجا هم ردیف کنار گذاشته می‌شود.
+			continue
+		case string:
+			code = v
+		case []byte:
+			code = string(v)
+		default:
+			return nil, fmt.Errorf("board query: ins_code has Go type %T", v)
+		}
+		// رشتهٔ خالی مثلِ هر کدِ دیگری در بررسیِ تکرار می‌آید؛ پایتون هم با
+		// drop_duplicates آن را نگه می‌دارد.
+		if seen[code] { // drop_duplicates(ins_code, keep="first")
 			continue
 		}
 		seen[code] = true
@@ -79,8 +96,10 @@ func boardSQL(db *sql.DB) (string, error) {
 	text := BoardSQLBase
 	if !tableExists(db, "board_hist_v") || !tableExists(db, "board_hist_fv") {
 		fv := HistFvSQL
-		if tapeSlotsAvailable(db) {
+		if ok, rows := tapeSlotProbe(db); ok {
 			fv = HistFvSlotSQL
+		} else {
+			warnSlotFallback(rows)
 		}
 		// متنِ پایه هر دو پنجره را در پرانتزِ خودش دارد
 		// (`v AS MATERIALIZED (SELECT * FROM board_hist_v)`)؛ CTE بی‌پرانتزِ
@@ -113,17 +132,40 @@ func hasColumn(db *sql.DB, table, col string) bool {
 		if err := rows.Scan(&cid, &name, &typ, &notnull, &dflt, &pk); err != nil {
 			return false
 		}
-		if name == col {
+		if strings.EqualFold(name, col) {
 			return true
 		}
 	}
 	return false
 }
 
-func tapeSlotsAvailable(db *sql.DB) bool {
-	var n int
-	err := db.QueryRow("SELECT COUNT(*) FROM tape_ih_slot").Scan(&n)
-	return err == nil && n > 0
+var slotWarnOnce sync.Once
+
+// tapeSlotProbe می‌پرسد آیا پنجرۀ اسلات‌محور نشسته است، با هزینۀ O(1): وجودِ
+// یک ردیف کافی است و COUNT(*) لازم نیست. rows عینِ پایتون است
+// (api/market.py:_has_tape_slots): 0 = جدولِ خالی، -1 = خطا (جدول نیست)؛
+// مقدارِ مثبت هرگز گزارش نمی‌شود.
+func tapeSlotProbe(db *sql.DB) (bool, int) {
+	var one int
+	err := db.QueryRow("SELECT 1 FROM tape_ih_slot LIMIT 1").Scan(&one)
+	switch {
+	case err == nil:
+		return true, 1
+	case errors.Is(err, sql.ErrNoRows):
+		return false, 0
+	default:
+		return false, -1
+	}
+}
+
+// warnSlotFallback همان گزارشِ یک‌باردرهرپروسۀ پایتون است (api/market.py:486-491):
+// افتادن به پنجرۀ ردیف‌محور باید دیده شود، وگرنه «صفر اختلاف» رویِ پنجرۀ غایب
+// بی‌صدا می‌ماند. sync.Once این را از مسیرِ داغ بیرون نگه می‌دارد.
+func warnSlotFallback(rows int) {
+	slotWarnOnce.Do(func() {
+		log.Printf("[market] پنجرۀ اسلات‌محورِ [ih] در دسترس نیست (rows=%d)"+
+			" — پنج فیلتر روی پنجرۀ ردیف‌محورِ کهنه حساب می‌شوند", rows)
+	})
 }
 
 // mcapDeadBand عینِ fts_engine.mcap_dead_band_sql — بانِ مرده = بی‌اعتبار.
