@@ -9,6 +9,11 @@ import (
 
 var version = "dev"
 
+// Version نسخهٔ باینری است؛ پیش‌فرض dev و در Task 7 با
+// ldflags -X borsterminal/backend/internal/httpapi.version=<v> ست می‌شود.
+// تنها خوانندهٔ version همین تابع است تا /healthz و لاگِ شروع یک مقدار بدهند.
+func Version() string { return version }
+
 func contextWithTimeout(r *http.Request, d time.Duration) (context.Context, context.CancelFunc) {
 	return context.WithTimeout(r.Context(), d)
 }

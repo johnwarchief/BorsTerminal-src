@@ -15,8 +15,6 @@ import (
 	"borsterminal/backend/internal/httpapi"
 )
 
-var version = "dev"
-
 func main() {
 	cfg, err := config.Load(os.Args[1:], os.Getenv)
 	if err != nil {
@@ -31,7 +29,7 @@ func main() {
 
 	srv := &http.Server{Addr: cfg.Addr, Handler: httpapi.New(cfg, handles)}
 	go func() {
-		slog.Info("listening", "addr", cfg.Addr, "data", cfg.DataDir, "version", version)
+		slog.Info("listening", "addr", cfg.Addr, "data", cfg.DataDir, "version", httpapi.Version())
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			slog.Error("serve failed", "err", err)
 			os.Exit(1)
