@@ -28,6 +28,8 @@ type CaseReport struct {
 	StatusGo int      `json:"status_go"`
 	BytesPy  int      `json:"bytes_py"`
 	BytesGo  int      `json:"bytes_go"`
+	MsPy     float64  `json:"ms_py"`
+	MsGo     float64  `json:"ms_go"`
 	Pass     bool     `json:"pass"`
 	MaxDelta float64  `json:"max_delta"`
 	Diffs    []string `json:"diffs,omitempty"`
@@ -35,14 +37,20 @@ type CaseReport struct {
 }
 
 type Report struct {
-	Commit   string       `json:"commit"`
-	PyURL    string       `json:"py_url"`
-	GoURL    string       `json:"go_url"`
-	DBHash   string       `json:"db_sha256"`
-	Passed   int          `json:"passed"`
-	Failed   int          `json:"failed"`
-	Cases    []CaseReport `json:"cases"`
-	Finished string       `json:"finished_at"`
+	Commit    string       `json:"commit"`
+	PyURL     string       `json:"py_url"`
+	GoURL     string       `json:"go_url"`
+	DBHash    string       `json:"db_sha256"`
+	DBMtimeNS int64        `json:"db_mtime_ns"`
+	DBChanged bool         `json:"db_changed"`
+	Passed    int          `json:"passed"`
+	Failed    int          `json:"failed"`
+	P50Py     float64      `json:"p50_py"`
+	P95Py     float64      `json:"p95_py"`
+	P50Go     float64      `json:"p50_go"`
+	P95Go     float64      `json:"p95_go"`
+	Cases     []CaseReport `json:"cases"`
+	Finished  string       `json:"finished_at"`
 }
 
 type walker struct {
@@ -98,6 +106,12 @@ func (w *walker) walk(path string, want, got any) {
 		}
 		if math.IsNaN(wantN) || math.IsNaN(gotN) || math.IsInf(wantN, 0) || math.IsInf(gotN, 0) {
 			w.diff(path, "non-finite", fmt.Sprint(wantN), fmt.Sprint(gotN))
+			return
+		}
+		// قراردادِ §۱۰: اگر هر دو صحیحِ ریاضی باشند فقط برابریِ عددی می‌پذیریم
+		// (۱ و ۱٫۰ یکی‌اند). تلورانسِ نسبی اجازه می‌داد 1e9 و 1e9+1 بگذرند.
+		if isIntegral(wantN) && isIntegral(gotN) {
+			w.diff(path, "number", fmt.Sprintf("%v", wantN), fmt.Sprintf("%v", gotN))
 			return
 		}
 		den := math.Max(math.Abs(wantN), 1e-12)
@@ -203,6 +217,10 @@ func join(path, key string) string {
 	}
 	return path + "." + key
 }
+
+// isIntegral یعنی عدد صحیحِ ریاضی است (۱ و ۱٫۰ هر دو). NaN/Inf پیش از این
+// بررسی حذف شده‌اند، پس Truncِ امن است.
+func isIntegral(v float64) bool { return v == math.Trunc(v) }
 
 func kind(v any) string {
 	switch v.(type) {

@@ -126,6 +126,9 @@ SUITES = [
                                       "indicator-3 no-data is 'not measured', never 'rejected' (both cache paths)"),
     ('dev/codal_logic_guard.py',      'codal logic contract F-01..F-05 (amendment)'),
     ('dev/db_contract_v11.py',        'FTS v2.2 db contract: writer/reader/schema agree'),
+    # درزِ BORS_DATA_DIR (B0): اگر متغیر تنظیم باشد مسیرها از آن می‌آیند، و اگر
+    # نباشد reload باید همان مسیرهایِ ریشۀ ریپو را بدهد — نه هر چیزِ دیگری.
+    ('dev/test_bors_data_dir_seam.py', 'BORS_DATA_DIR seam: override wins, unset keeps the repo paths'),
     ('dev/version_anchor_guard.py',   'all six version anchors state the same release'),
     ('dev/fts_defaults_parity_guard.py', 'FTS guide defaults: FE drawer mirrors the server'),
     ('dev/test_hourglass_settings_v1.py', 'hourglass RSI period, oversold threshold and MA52 mode are configurable'),

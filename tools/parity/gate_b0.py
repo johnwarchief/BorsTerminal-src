@@ -18,8 +18,13 @@ user.db-wal/-shm پیش از اجرا ثبت می‌شود و در finally دق�
 RSSِ واقعی با tasklist خوانده می‌شود و خروجیِ CSV با ماژولِ csv تجزیه می‌شود؛
 ستونِ حافظه خودش ویرگول دارد (مثلِ «330,576 K») و تقسیمِ سادهٔ خط بر ویرگول
 عدد را می‌شکند. عددِ کمتر از ۲ مگابایت یعنی شکستِ سنجش، نه قبولیِ سقفِ ۸۰ مگابایت.
+
+شاهدِ بانکِ یخ‌زده: sha256 و mtime_nsِ market.dbِ عملیاتی پیش از کپی، فقط با
+خواندنِ جریانی، در B0.json ثبت می‌شود؛ هیچ ادعایِ ثباتی نیست، چون حینِ ساعتِ
+بازار فرآیندِ دیگری می‌تواند مشروع بنویسد.
 """
 import csv
+import hashlib
 import json
 import os
 import shutil
@@ -39,6 +44,24 @@ PORT = 8298
 RSS_FLOOR_MB = 2.0
 DB_NAMES = ("market.db", "user.db")
 SIDECAR_SUFFIXES = ("-wal", "-shm")
+HASH_CHUNK = 1 << 20
+
+
+def sha256_file(path):
+    """هشِ sha256 با خواندنِ جریانی؛ بانکِ عملیاتی فقط خوانده می‌شود."""
+    h = hashlib.sha256()
+    with open(path, "rb") as f:
+        for chunk in iter(lambda: f.read(HASH_CHUNK), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+
+def market_db_fingerprint():
+    """(sha256، mtime_ns) بانکِ عملیاتی؛ None اگر فایل نباشد."""
+    path = os.path.join(ROOT, "market.db")
+    if not os.path.exists(path):
+        return None, None
+    return sha256_file(path), os.stat(path).st_mtime_ns
 
 
 def sidecar_state():
@@ -171,6 +194,8 @@ def run_gate() -> int:
         return 2
     commit = run(["git", "rev-parse", "--short", "HEAD"], ROOT)[1].strip()
     go_version = run(["go", "version"], ROOT)[1].strip()
+    # شاهدِ بانکِ یخ‌زده، پیش از هر کپی: همین فایلی که دو سرور می‌خوانند.
+    market_db_sha256, market_db_mtime_ns = market_db_fingerprint()
     tmp = tempfile.mkdtemp(prefix="bors-b0-")
     try:
         for name in DB_NAMES:
@@ -203,6 +228,12 @@ def run_gate() -> int:
             if got_dir != want_dir or proc.poll() is not None:
                 print("healthz is not from this gate's server")
                 return 2
+            # فاز A: حالتِ خواندنِ فقط پیش‌فرض است و حلقه‌ها خاموشند؛ اگر healthz
+            # چیزِ دیگری بگوید، همان پاسخی که سنجیده شده قابلِ اعتماد نیست.
+            if health.get("market_mode") != "read-only" or health.get("loops") != "off":
+                print("healthz mode is not the phase-A default: market_mode=%s loops=%s"
+                      % (health.get("market_mode"), health.get("loops")))
+                return 2
             time.sleep(1.0)
             if proc.poll() is not None:
                 print("server exited before RSS measurement")
@@ -219,6 +250,8 @@ def run_gate() -> int:
                 "startup_ms": startup_ms,
                 "rss_mb": mem,
                 "healthz": health,
+                "market_db_sha256": market_db_sha256,
+                "market_db_mtime_ns": market_db_mtime_ns,
                 "tests_ok": True,
                 "startup_ok": startup_ms < 500.0,
                 "rss_ok": mem is not None and mem < 80.0,

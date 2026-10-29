@@ -65,6 +65,40 @@ func TestNumericTypesNormalize(t *testing.T) {
 	}
 }
 
+func TestIntegralNumbersMustMatchExactly(t *testing.T) {
+	cases := []struct {
+		name string
+		want any
+		got  any
+		pass bool
+	}{
+		// ۱e9 و ۱e9+۱ با تلورانسِ نسبیِ ۱e-۹ می‌گذشتند؛ قراردادِ §۱۰ این را رد می‌کند.
+		{"1e9-vs-1e9+1", 1e9, 1e9 + 1, false},
+		{"int64-1e9-vs-float-1e9+1", int64(1e9), float64(1e9 + 1), false},
+		{"1-vs-1.0", 1, 1.0, true},
+		{"1.5-vs-1.5000000001", 1.5, 1.5000000001, true},
+		{"1.5-vs-1.500000002", 1.5, 1.500000002, false},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			r := Compare(tc.want, tc.got, Options{})
+			if r.Pass != tc.pass {
+				t.Fatalf("Compare(%#v, %#v).Pass = %v, diffs=%v", tc.want, tc.got, r.Pass, r.Diffs)
+			}
+		})
+	}
+}
+
+func TestIntegralDiffThroughJSON(t *testing.T) {
+	r := Compare(decode(t, `{"n":1000000000}`), decode(t, `{"n":1000000001}`), Options{})
+	if r.Pass {
+		t.Fatal("1e9 vs 1e9+1 must fail")
+	}
+	if len(r.Diffs) != 1 || !strings.HasPrefix(r.Diffs[0], "n: number") {
+		t.Fatalf("diffs = %v", r.Diffs)
+	}
+}
+
 func TestStringExactAndArrayOrder(t *testing.T) {
 	r := Compare(decode(t, `{"s":"بیداده"}`), decode(t, `{"s":"بی داده"}`), Options{})
 	if r.Pass {

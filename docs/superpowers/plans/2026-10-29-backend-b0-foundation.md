@@ -12,6 +12,8 @@
 
 ## Global Constraints
 
+**توجه:** برایِ Task 1–5، کدِ کامیت‌شدهٔ بازبینی‌شده مرجع است؛ بلوک‌هایِ جاسازی‌شده پیش‌نویسِ اجرا بودند و در Task 2 (`rwc`)، Task 3 (تطبیقِ قالبِ مسیر) و Task 5 (`pySpace`) با بازبینی اصلاح شده‌اند.
+
 - Go 1.26.3، ویندوز amd64، **بدونِ cgo**؛ ماژول `borsterminal/backend` در `backend-go/`.
 - پورتِ پیش‌فرضِ Go در فاز A: **8198**؛ هارنسِ پاریتی: **8298** (Go) و **8299** (پایتون)؛ پورتِ محصول **8001** دست‌نخورده می‌ماند.
 - `market.db` در فاز A فقط‌خواندنی؛ `user.db` خواندنی/نوشتنی با `busy_timeout`. **هیچ تغییرِ اسکیما، `journal_mode`، یا نوشتن در `market.db` مجاز نیست.**
@@ -104,8 +106,9 @@ func TestDefaults(t *testing.T) {
 	if cfg.Addr != "127.0.0.1:8198" {
 		t.Fatalf("addr = %q", cfg.Addr)
 	}
-	if cfg.ReadOnly || cfg.NoLoops {
-		t.Fatalf("flags should default false")
+	// فاز A: خواندنِ فقط پیش‌فرض است، حتی وقتی هیچ پرچمی داده نشود.
+	if !cfg.ReadOnly || cfg.NoLoops {
+		t.Fatalf("defaults: read-only must be true, no-loops false: %+v", cfg)
 	}
 }
 
@@ -151,6 +154,32 @@ func TestReadOnlyAndNoLoops(t *testing.T) {
 		t.Fatalf("flags not parsed: %+v", cfg)
 	}
 }
+
+func TestReadWriteTurnsReadOnlyOff(t *testing.T) {
+	cfg, err := Load([]string{"--read-write"}, env(nil))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.ReadOnly {
+		t.Fatalf("--read-write must turn read-only off: %+v", cfg)
+	}
+	// صریح برنده است، حتی وقتی هر دو داده شوند.
+	cfg, err = Load([]string{"--read-only", "--read-write"}, env(nil))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.ReadOnly {
+		t.Fatalf("read-write wins over explicit read-only: %+v", cfg)
+	}
+	// خاموش‌کردنِ صریحِ read-only هم باید کار کند.
+	cfg, err = Load([]string{"--read-only=false"}, env(nil))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.ReadOnly {
+		t.Fatalf("--read-only=false must be false: %+v", cfg)
+	}
+}
 ```
 
 - [ ] **Step 3: اجرا کن و شکست را ببین**
@@ -184,7 +213,8 @@ func Load(args []string, getenv func(string) string) (Config, error) {
 	fs := flag.NewFlagSet("borsd", flag.ContinueOnError)
 	port := fs.Int("port", DefaultPort, "listen port on 127.0.0.1")
 	dir := fs.String("db-dir", "", "directory holding market.db/user.db (default: BORS_DATA_DIR or .)")
-	ro := fs.Bool("read-only", false, "open market.db read-only (phase A)")
+	ro := fs.Bool("read-only", true, "open market.db read-only (phase A; default)")
+	rw := fs.Bool("read-write", false, "turn read-only off; market.db becomes writable (not phase A)")
 	noLoops := fs.Bool("no-loops", false, "do not start sync/fetch loops")
 	if err := fs.Parse(args); err != nil {
 		return Config{}, err
@@ -203,7 +233,7 @@ func Load(args []string, getenv func(string) string) (Config, error) {
 	return Config{
 		Addr:     "127.0.0.1:" + strconv.Itoa(*port),
 		DataDir:  abs,
-		ReadOnly: *ro,
+		ReadOnly: *ro && !*rw,
 		NoLoops:  *noLoops,
 	}, nil
 }
@@ -218,20 +248,47 @@ func (c Config) UserDB() string   { return filepath.Join(c.DataDir, "user.db") }
 package main
 
 import (
+	"context"
 	"log"
+	"log/slog"
+	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"borsterminal/backend/internal/config"
+	"borsterminal/backend/internal/db"
+	"borsterminal/backend/internal/httpapi"
 )
-
-var version = "dev"
 
 func main() {
 	cfg, err := config.Load(os.Args[1:], os.Getenv)
 	if err != nil {
 		log.Fatal(err)
 	}
-	log.Printf("borsd %s data=%s addr=%s", version, cfg.DataDir, cfg.Addr)
+	handles, err := db.Open(cfg.DataDir, cfg.ReadOnly)
+	if err != nil {
+		slog.Error("db open failed", "err", err)
+		os.Exit(1)
+	}
+	defer handles.Close()
+
+	srv := &http.Server{Addr: cfg.Addr, Handler: httpapi.New(cfg, handles)}
+	go func() {
+		slog.Info("listening", "addr", cfg.Addr, "data", cfg.DataDir, "version", httpapi.Version())
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			slog.Error("serve failed", "err", err)
+			os.Exit(1)
+		}
+	}()
+
+	stop := make(chan os.Signal, 1)
+	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
+	<-stop
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	_ = srv.Shutdown(ctx)
 }
 ```
 
@@ -1559,6 +1616,40 @@ func TestNumericTypesNormalize(t *testing.T) {
 	}
 }
 
+func TestIntegralNumbersMustMatchExactly(t *testing.T) {
+	cases := []struct {
+		name string
+		want any
+		got  any
+		pass bool
+	}{
+		// ۱e9 و ۱e9+۱ با تلورانسِ نسبیِ ۱e-۹ می‌گذشتند؛ قراردادِ §۱۰ این را رد می‌کند.
+		{"1e9-vs-1e9+1", 1e9, 1e9 + 1, false},
+		{"int64-1e9-vs-float-1e9+1", int64(1e9), float64(1e9 + 1), false},
+		{"1-vs-1.0", 1, 1.0, true},
+		{"1.5-vs-1.5000000001", 1.5, 1.5000000001, true},
+		{"1.5-vs-1.500000002", 1.5, 1.500000002, false},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			r := Compare(tc.want, tc.got, Options{})
+			if r.Pass != tc.pass {
+				t.Fatalf("Compare(%#v, %#v).Pass = %v, diffs=%v", tc.want, tc.got, r.Pass, r.Diffs)
+			}
+		})
+	}
+}
+
+func TestIntegralDiffThroughJSON(t *testing.T) {
+	r := Compare(decode(t, `{"n":1000000000}`), decode(t, `{"n":1000000001}`), Options{})
+	if r.Pass {
+		t.Fatal("1e9 vs 1e9+1 must fail")
+	}
+	if len(r.Diffs) != 1 || !strings.HasPrefix(r.Diffs[0], "n: number") {
+		t.Fatalf("diffs = %v", r.Diffs)
+	}
+}
+
 func TestStringExactAndArrayOrder(t *testing.T) {
 	r := Compare(decode(t, `{"s":"بیداده"}`), decode(t, `{"s":"بی داده"}`), Options{})
 	if r.Pass {
@@ -1740,6 +1831,8 @@ type CaseReport struct {
 	StatusGo int      `json:"status_go"`
 	BytesPy  int      `json:"bytes_py"`
 	BytesGo  int      `json:"bytes_go"`
+	MsPy     float64  `json:"ms_py"`
+	MsGo     float64  `json:"ms_go"`
 	Pass     bool     `json:"pass"`
 	MaxDelta float64  `json:"max_delta"`
 	Diffs    []string `json:"diffs,omitempty"`
@@ -1747,14 +1840,20 @@ type CaseReport struct {
 }
 
 type Report struct {
-	Commit   string       `json:"commit"`
-	PyURL    string       `json:"py_url"`
-	GoURL    string       `json:"go_url"`
-	DBHash   string       `json:"db_sha256"`
-	Passed   int          `json:"passed"`
-	Failed   int          `json:"failed"`
-	Cases    []CaseReport `json:"cases"`
-	Finished string       `json:"finished_at"`
+	Commit    string       `json:"commit"`
+	PyURL     string       `json:"py_url"`
+	GoURL     string       `json:"go_url"`
+	DBHash    string       `json:"db_sha256"`
+	DBMtimeNS int64        `json:"db_mtime_ns"`
+	DBChanged bool         `json:"db_changed"`
+	Passed    int          `json:"passed"`
+	Failed    int          `json:"failed"`
+	P50Py     float64      `json:"p50_py"`
+	P95Py     float64      `json:"p95_py"`
+	P50Go     float64      `json:"p50_go"`
+	P95Go     float64      `json:"p95_go"`
+	Cases     []CaseReport `json:"cases"`
+	Finished  string       `json:"finished_at"`
 }
 
 type walker struct {
@@ -1810,6 +1909,12 @@ func (w *walker) walk(path string, want, got any) {
 		}
 		if math.IsNaN(wantN) || math.IsNaN(gotN) || math.IsInf(wantN, 0) || math.IsInf(gotN, 0) {
 			w.diff(path, "non-finite", fmt.Sprint(wantN), fmt.Sprint(gotN))
+			return
+		}
+		// قراردادِ §۱۰: اگر هر دو صحیحِ ریاضی باشند فقط برابریِ عددی می‌پذیریم
+		// (۱ و ۱٫۰ یکی‌اند). تلورانسِ نسبی اجازه می‌داد 1e9 و 1e9+1 بگذرند.
+		if isIntegral(wantN) && isIntegral(gotN) {
+			w.diff(path, "number", fmt.Sprintf("%v", wantN), fmt.Sprintf("%v", gotN))
 			return
 		}
 		den := math.Max(math.Abs(wantN), 1e-12)
@@ -1916,6 +2021,10 @@ func join(path, key string) string {
 	return path + "." + key
 }
 
+// isIntegral یعنی عدد صحیحِ ریاضی است (۱ و ۱٫۰ هر دو). NaN/Inf پیش از این
+// بررسی حذف شده‌اند، پس Truncِ امن است.
+func isIntegral(v float64) bool { return v == math.Trunc(v) }
+
 func kind(v any) string {
 	switch v.(type) {
 	case nil:
@@ -1978,14 +2087,19 @@ func num(v any) (float64, bool) {
 package main
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"flag"
 	"fmt"
 	"io"
+	"math"
 	"net/http"
 	"os"
 	"path/filepath"
+	"sort"
+	"strings"
 	"time"
 
 	"borsterminal/backend/internal/parity"
@@ -2007,6 +2121,8 @@ type fetched struct {
 	status int
 	body   []byte
 	value  any
+	// media نوعِ رسانهٔ نرمال‌شده است (کوچک، بدونِ پارامتر، تریم‌شده).
+	media string
 }
 
 // requestBuildError marks a case whose request could not even be constructed
@@ -2018,6 +2134,12 @@ func (e *requestBuildError) Unwrap() error { return e.err }
 
 var httpClient = &http.Client{Timeout: 60 * time.Second}
 
+// afterCasesHook جایِ آزمونِ «DB در میانهٔ دسته عوض شد» است؛ در اجرایِ واقعی
+// تهی است. بدونِ این درز، همان مسیر فقط با بازرسیِ کد اثبات‌شدنی بود.
+var afterCasesHook = func() {}
+
+// fetch پاسخ را می‌خواند و نوعِ رسانه را نرمال نگه می‌دارد: «Application/JSON;
+// charset=utf-8» و «application/json» یک چیزند، ولی json و html نه.
 func fetch(base string, c testCase) (fetched, error) {
 	req, err := http.NewRequest(c.Method, base+c.Path, nil)
 	if err != nil {
@@ -2032,11 +2154,65 @@ func fetch(base string, c testCase) (fetched, error) {
 	if err != nil {
 		return fetched{}, err
 	}
-	out := fetched{status: resp.StatusCode, body: body}
+	out := fetched{
+		status: resp.StatusCode,
+		body:   body,
+		media:  normalizeMediaType(resp.Header.Get("Content-Type")),
+	}
 	if err := json.Unmarshal(body, &out.value); err != nil {
 		return fetched{}, fmt.Errorf("%s: body is not JSON: %w", c.Path, err)
 	}
 	return out, nil
+}
+
+func normalizeMediaType(v string) string {
+	if i := strings.IndexByte(v, ';'); i >= 0 {
+		v = v[:i]
+	}
+	return strings.ToLower(strings.TrimSpace(v))
+}
+
+const hashChunk = 1 << 20
+
+// fileFingerprint هشِ sha256 و mtime نانوثانیه‌ای را جریانی می‌خواند؛ DBِ
+// عملیاتی هرگز نوشته نمی‌شود و در حافظه بار نمی‌شود.
+func fileFingerprint(path string) (string, int64, error) {
+	f, err := os.Open(path)
+	if err != nil {
+		return "", 0, err
+	}
+	defer f.Close()
+	st, err := f.Stat()
+	if err != nil {
+		return "", 0, err
+	}
+	h := sha256.New()
+	if _, err := io.CopyBuffer(h, f, make([]byte, hashChunk)); err != nil {
+		return "", 0, err
+	}
+	return hex.EncodeToString(h.Sum(nil)), st.ModTime().UnixNano(), nil
+}
+
+// percentile رتبهٔ نزدیک‌ترین (nearest-rank) روی نمونه‌هایِ خام است؛ ورودی
+// مرتب نمی‌شود، خودش کپیِ مرتب می‌سازد.
+func percentile(samples []float64, p float64) float64 {
+	if len(samples) == 0 {
+		return 0
+	}
+	s := append([]float64(nil), samples...)
+	sort.Float64s(s)
+	rank := int(math.Ceil(p / 100 * float64(len(s))))
+	if rank < 1 {
+		rank = 1
+	}
+	if rank > len(s) {
+		rank = len(s)
+	}
+	return s[rank-1]
+}
+
+func msSince(start time.Time) float64 {
+	return float64(time.Since(start).Nanoseconds()) / 1e6
 }
 
 func main() {
@@ -2048,6 +2224,7 @@ func run(args []string) int {
 	py := fs.String("py", "http://127.0.0.1:8299", "python base URL")
 	goURL := fs.String("go", "http://127.0.0.1:8298", "go base URL")
 	cases := fs.String("cases", "", "cases JSON")
+	db := fs.String("db", "", "market.db both servers use (hashed before/after the batch)")
 	out := fs.String("out", "_audit/parity/run.json", "report path")
 	commit := fs.String("commit", "unknown", "git commit being measured")
 	if err := fs.Parse(args); err != nil {
@@ -2071,7 +2248,35 @@ func run(args []string) int {
 		fmt.Fprintf(os.Stderr, "no cases in %s\n", *cases)
 		return 2
 	}
-	report := parity.Report{Commit: *commit, PyURL: *py, GoURL: *goURL, DBHash: cf.DBHash}
+	// بانکِ یخ‌زده: هشِ اعلام‌شده باید با هشِ اندازه‌گیری‌شده یکی باشد، وگرنه
+	// دسته از پایه بی‌معناست؛ پیش از هر کیس متوقف می‌شویم.
+	if *db == "" {
+		if cf.DBHash != "" {
+			fmt.Fprintln(os.Stderr, "cases declare db_sha256 but --db is missing")
+			return 2
+		}
+	}
+	var dbHash string
+	var dbMtime int64
+	if *db != "" {
+		dbHash, dbMtime, err = fileFingerprint(*db)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "--db %s: %v\n", *db, err)
+			return 2
+		}
+		if cf.DBHash != "" && !strings.EqualFold(cf.DBHash, dbHash) {
+			fmt.Fprintf(os.Stderr,
+				"db_sha256 mismatch for %s: cases declare %s, measured %s\n",
+				*db, cf.DBHash, dbHash)
+			return 2
+		}
+	}
+	report := parity.Report{
+		Commit: *commit, PyURL: *py, GoURL: *goURL,
+		DBHash: dbHash, DBMtimeNS: dbMtime,
+	}
+	pyMs := make([]float64, 0, len(cf.Cases))
+	goMs := make([]float64, 0, len(cf.Cases))
 	for _, c := range cf.Cases {
 		row, err := compareCase(*py, *goURL, c)
 		if err != nil {
@@ -2083,7 +2288,24 @@ func run(args []string) int {
 		} else {
 			report.Failed++
 		}
+		pyMs = append(pyMs, row.MsPy)
+		goMs = append(goMs, row.MsGo)
 		report.Cases = append(report.Cases, row)
+	}
+	afterCasesHook()
+	report.P50Py, report.P95Py = percentile(pyMs, 50), percentile(pyMs, 95)
+	report.P50Go, report.P95Go = percentile(goMs, 50), percentile(goMs, 95)
+	if *db != "" {
+		h2, m2, err := fileFingerprint(*db)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "db re-read failed: %v\n", err)
+			report.DBChanged = true
+		} else if h2 != dbHash || m2 != dbMtime {
+			report.DBChanged = true
+		}
+	}
+	if report.DBChanged {
+		fmt.Println("db changed during the batch; batch invalid")
 	}
 	report.Finished = time.Now().UTC().Format(time.RFC3339)
 	blob, err := json.MarshalIndent(report, "", " ")
@@ -2100,6 +2322,9 @@ func run(args []string) int {
 		return 2
 	}
 	fmt.Printf("parity: %d passed / %d failed -> %s\n", report.Passed, report.Failed, *out)
+	if report.DBChanged {
+		return 2
+	}
 	if report.Failed > 0 {
 		return 1
 	}
@@ -2108,7 +2333,9 @@ func run(args []string) int {
 
 func compareCase(pyBase, goBase string, c testCase) (parity.CaseReport, error) {
 	row := parity.CaseReport{Name: c.Name, Method: c.Method, Path: c.Path}
+	start := time.Now()
 	a, err := fetch(pyBase, c)
+	row.MsPy = msSince(start)
 	if err != nil {
 		var build *requestBuildError
 		if errors.As(err, &build) {
@@ -2118,7 +2345,9 @@ func compareCase(pyBase, goBase string, c testCase) (parity.CaseReport, error) {
 		return row, nil
 	}
 	row.StatusPy, row.BytesPy = a.status, len(a.body)
+	start = time.Now()
 	b, err := fetch(goBase, c)
+	row.MsGo = msSince(start)
 	if err != nil {
 		var build *requestBuildError
 		if errors.As(err, &build) {
@@ -2130,6 +2359,10 @@ func compareCase(pyBase, goBase string, c testCase) (parity.CaseReport, error) {
 	row.StatusGo, row.BytesGo = b.status, len(b.body)
 	if a.status != b.status {
 		row.Diffs = []string{fmt.Sprintf("status: %d != %d", a.status, b.status)}
+		return row, nil
+	}
+	if a.media != b.media {
+		row.Diffs = []string{fmt.Sprintf("content-type: %s != %s", a.media, b.media)}
 		return row, nil
 	}
 	res := parity.Compare(a.value, b.value, parity.Options{Exclude: c.Exclude})
@@ -2146,6 +2379,8 @@ func compareCase(pyBase, goBase string, c testCase) (parity.CaseReport, error) {
 package main
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -2158,8 +2393,12 @@ import (
 )
 
 func server(body string) *httptest.Server {
+	return serverCT("application/json", body)
+}
+
+func serverCT(contentType, body string) *httptest.Server {
 	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Content-Type", contentType)
 		_, _ = w.Write([]byte(body))
 	}))
 }
@@ -2259,6 +2498,218 @@ func TestRunPassingCaseWritesReport(t *testing.T) {
 		t.Fatalf("report=%+v", rep)
 	}
 }
+
+func TestCompareCaseContentTypeMismatchFails(t *testing.T) {
+	py := serverCT("application/json; charset=utf-8", `{"a":1}`)
+	gs := serverCT("text/html; charset=utf-8", `{"a":1}`)
+	defer py.Close()
+	defer gs.Close()
+	row, err := compareCase(py.URL, gs.URL, testCase{Name: "ct", Method: "GET", Path: "/p"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if row.Pass || len(row.Diffs) == 0 || !strings.HasPrefix(row.Diffs[0], "content-type:") {
+		t.Fatalf("row=%+v", row)
+	}
+}
+
+func TestCompareCaseContentTypeCharsetIgnored(t *testing.T) {
+	py := serverCT("Application/JSON; charset=utf-8", `{"a":1}`)
+	gs := serverCT("application/json", `{"a":1}`)
+	defer py.Close()
+	defer gs.Close()
+	row, err := compareCase(py.URL, gs.URL, testCase{Name: "ct-ok", Method: "GET", Path: "/p"})
+	if err != nil || !row.Pass {
+		t.Fatalf("err=%v row=%+v", err, row)
+	}
+}
+
+func writeDB(t *testing.T, dir string) string {
+	t.Helper()
+	path := filepath.Join(dir, "market.db")
+	if err := os.WriteFile(path, []byte("frozen-db-bytes"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	return path
+}
+
+func shaOf(t *testing.T, path string) string {
+	t.Helper()
+	blob, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	sum := sha256.Sum256(blob)
+	return hex.EncodeToString(sum[:])
+}
+
+func TestRunDeclaredHashMismatchExits2(t *testing.T) {
+	dir := t.TempDir()
+	db := writeDB(t, dir)
+	var hits int
+	py := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		hits++
+		_, _ = w.Write([]byte(`{"a":1}`))
+	}))
+	defer py.Close()
+	cases := filepath.Join(dir, "cases.json")
+	blob := `{"db_sha256":"` + strings.Repeat("0", 64) + `","cases":[{"name":"h","method":"GET","path":"/p"}]}`
+	if err := os.WriteFile(cases, []byte(blob), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	out := filepath.Join(dir, "report.json")
+	code := run([]string{"--py", py.URL, "--go", py.URL, "--cases", cases, "--db", db, "--out", out})
+	if code != 2 {
+		t.Fatalf("exit = %d, want 2", code)
+	}
+	if hits != 0 {
+		t.Fatalf("no case may run on a hash mismatch, hits=%d", hits)
+	}
+	if _, err := os.Stat(out); !os.IsNotExist(err) {
+		t.Fatalf("report must not be written: %v", err)
+	}
+}
+
+func TestRunHashDeclaredWithoutDBExits2(t *testing.T) {
+	dir := t.TempDir()
+	cases := filepath.Join(dir, "cases.json")
+	blob := `{"db_sha256":"` + strings.Repeat("a", 64) + `","cases":[{"name":"h","method":"GET","path":"/p"}]}`
+	if err := os.WriteFile(cases, []byte(blob), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	out := filepath.Join(dir, "report.json")
+	if code := run([]string{"--cases", cases, "--out", out}); code != 2 {
+		t.Fatalf("exit = %d, want 2", code)
+	}
+	if _, err := os.Stat(out); !os.IsNotExist(err) {
+		t.Fatalf("report must not be written: %v", err)
+	}
+}
+
+func TestRunWritesMeasuredHashAndPercentiles(t *testing.T) {
+	dir := t.TempDir()
+	db := writeDB(t, dir)
+	want := shaOf(t, db)
+	py, gs := server(`{"a":1}`), server(`{"a":1}`)
+	defer py.Close()
+	defer gs.Close()
+	cases := filepath.Join(dir, "cases.json")
+	if err := os.WriteFile(cases, []byte(`{"cases":[{"name":"ok","method":"GET","path":"/p"}]}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	out := filepath.Join(dir, "report.json")
+	if code := run([]string{"--py", py.URL, "--go", gs.URL, "--cases", cases, "--db", db, "--out", out}); code != 0 {
+		t.Fatalf("exit = %d, want 0", code)
+	}
+	blob, err := os.ReadFile(out)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var rep parity.Report
+	if err := json.Unmarshal(blob, &rep); err != nil {
+		t.Fatal(err)
+	}
+	if rep.DBHash != want {
+		t.Fatalf("db_sha256 = %q, want measured %q", rep.DBHash, want)
+	}
+	if rep.DBMtimeNS == 0 || rep.DBChanged {
+		t.Fatalf("db_mtime_ns=%d db_changed=%v", rep.DBMtimeNS, rep.DBChanged)
+	}
+	if len(rep.Cases) != 1 {
+		t.Fatalf("cases = %d", len(rep.Cases))
+	}
+	if rep.P50Py < 0 || rep.P95Py < 0 || rep.P50Go < 0 || rep.P95Go < 0 {
+		t.Fatalf("percentiles missing: %+v", rep)
+	}
+	// ساعتِ یکنواختِ ویندوز روی این ماشین درشت‌دانه است و یک درخواستِ سریع
+	// می‌تواند صفر بخواند؛ صفر «اندازه‌گیری‌نشده» نیست، پس فقط علامت و بودنِ
+	// کلید سنجیده می‌شود (درستیِ nearest-rank در TestPercentileNearestRank).
+	if rep.Cases[0].MsPy < 0 || rep.Cases[0].MsGo < 0 {
+		t.Fatalf("per-case ms missing: %+v", rep.Cases)
+	}
+	var keys map[string]any
+	if err := json.Unmarshal(blob, &keys); err != nil {
+		t.Fatal(err)
+	}
+	for _, k := range []string{"db_sha256", "db_mtime_ns", "db_changed", "p50_py", "p95_py", "p50_go", "p95_go"} {
+		if _, ok := keys[k]; !ok {
+			t.Fatalf("report JSON lacks %q", k)
+		}
+	}
+	var rawCases []map[string]any
+	list, ok := keys["cases"].([]any)
+	if !ok || len(list) != 1 {
+		t.Fatalf("cases JSON = %#v", keys["cases"])
+	}
+	for _, item := range list {
+		m, ok := item.(map[string]any)
+		if !ok {
+			t.Fatalf("case JSON = %#v", item)
+		}
+		rawCases = append(rawCases, m)
+	}
+	for _, k := range []string{"ms_py", "ms_go"} {
+		if _, ok := rawCases[0][k]; !ok {
+			t.Fatalf("case JSON lacks %q", k)
+		}
+	}
+}
+
+func TestPercentileNearestRank(t *testing.T) {
+	samples := []float64{10, 1, 9, 2, 8, 3, 7, 4, 6, 5}
+	if got := percentile(samples, 50); got != 5 {
+		t.Fatalf("p50 = %v, want 5", got)
+	}
+	if got := percentile(samples, 95); got != 10 {
+		t.Fatalf("p95 = %v, want 10", got)
+	}
+	if got := percentile(samples[:3], 50); got != 9 {
+		t.Fatalf("p50 of %v = %v, want 9", samples[:3], got)
+	}
+	if got := percentile(nil, 95); got != 0 {
+		t.Fatalf("empty = %v, want 0", got)
+	}
+	if samples[0] != 10 {
+		t.Fatal("percentile must not reorder the caller's slice")
+	}
+}
+
+func TestRunDBChangedDuringBatchExits2(t *testing.T) {
+	dir := t.TempDir()
+	db := writeDB(t, dir)
+	py, gs := server(`{"a":1}`), server(`{"a":1}`)
+	defer py.Close()
+	defer gs.Close()
+	cases := filepath.Join(dir, "cases.json")
+	if err := os.WriteFile(cases, []byte(`{"cases":[{"name":"ok","method":"GET","path":"/p"}]}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	out := filepath.Join(dir, "report.json")
+	afterCasesHook = func() {
+		f, err := os.OpenFile(db, os.O_APPEND|os.O_WRONLY, 0o644)
+		if err != nil {
+			t.Errorf("hook: %v", err)
+			return
+		}
+		defer f.Close()
+		_, _ = f.Write([]byte("+1"))
+	}
+	t.Cleanup(func() { afterCasesHook = func() {} })
+	if code := run([]string{"--py", py.URL, "--go", gs.URL, "--cases", cases, "--db", db, "--out", out}); code != 2 {
+		t.Fatalf("exit = %d, want 2", code)
+	}
+	blob, err := os.ReadFile(out)
+	if err != nil {
+		t.Fatalf("report must still be written: %v", err)
+	}
+	var rep parity.Report
+	if err := json.Unmarshal(blob, &rep); err != nil {
+		t.Fatal(err)
+	}
+	if !rep.DBChanged {
+		t.Fatalf("db_changed must be true: %+v", rep)
+	}
+}
 ```
 
 - [ ] **Step 5: تست را سبز کن و کامیت**
@@ -2322,8 +2773,13 @@ user.db-wal/-shm پیش از اجرا ثبت می‌شود و در finally دق�
 RSSِ واقعی با tasklist خوانده می‌شود و خروجیِ CSV با ماژولِ csv تجزیه می‌شود؛
 ستونِ حافظه خودش ویرگول دارد (مثلِ «330,576 K») و تقسیمِ سادهٔ خط بر ویرگول
 عدد را می‌شکند. عددِ کمتر از ۲ مگابایت یعنی شکستِ سنجش، نه قبولیِ سقفِ ۸۰ مگابایت.
+
+شاهدِ بانکِ یخ‌زده: sha256 و mtime_nsِ market.dbِ عملیاتی پیش از کپی، فقط با
+خواندنِ جریانی، در B0.json ثبت می‌شود؛ هیچ ادعایِ ثباتی نیست، چون حینِ ساعتِ
+بازار فرآیندِ دیگری می‌تواند مشروع بنویسد.
 """
 import csv
+import hashlib
 import json
 import os
 import shutil
@@ -2343,6 +2799,24 @@ PORT = 8298
 RSS_FLOOR_MB = 2.0
 DB_NAMES = ("market.db", "user.db")
 SIDECAR_SUFFIXES = ("-wal", "-shm")
+HASH_CHUNK = 1 << 20
+
+
+def sha256_file(path):
+    """هشِ sha256 با خواندنِ جریانی؛ بانکِ عملیاتی فقط خوانده می‌شود."""
+    h = hashlib.sha256()
+    with open(path, "rb") as f:
+        for chunk in iter(lambda: f.read(HASH_CHUNK), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+
+def market_db_fingerprint():
+    """(sha256، mtime_ns) بانکِ عملیاتی؛ None اگر فایل نباشد."""
+    path = os.path.join(ROOT, "market.db")
+    if not os.path.exists(path):
+        return None, None
+    return sha256_file(path), os.stat(path).st_mtime_ns
 
 
 def sidecar_state():
@@ -2475,6 +2949,8 @@ def run_gate() -> int:
         return 2
     commit = run(["git", "rev-parse", "--short", "HEAD"], ROOT)[1].strip()
     go_version = run(["go", "version"], ROOT)[1].strip()
+    # شاهدِ بانکِ یخ‌زده، پیش از هر کپی: همین فایلی که دو سرور می‌خوانند.
+    market_db_sha256, market_db_mtime_ns = market_db_fingerprint()
     tmp = tempfile.mkdtemp(prefix="bors-b0-")
     try:
         for name in DB_NAMES:
@@ -2507,6 +2983,12 @@ def run_gate() -> int:
             if got_dir != want_dir or proc.poll() is not None:
                 print("healthz is not from this gate's server")
                 return 2
+            # فاز A: حالتِ خواندنِ فقط پیش‌فرض است و حلقه‌ها خاموشند؛ اگر healthz
+            # چیزِ دیگری بگوید، همان پاسخی که سنجیده شده قابلِ اعتماد نیست.
+            if health.get("market_mode") != "read-only" or health.get("loops") != "off":
+                print("healthz mode is not the phase-A default: market_mode=%s loops=%s"
+                      % (health.get("market_mode"), health.get("loops")))
+                return 2
             time.sleep(1.0)
             if proc.poll() is not None:
                 print("server exited before RSS measurement")
@@ -2523,6 +3005,8 @@ def run_gate() -> int:
                 "startup_ms": startup_ms,
                 "rss_mb": mem,
                 "healthz": health,
+                "market_db_sha256": market_db_sha256,
+                "market_db_mtime_ns": market_db_mtime_ns,
                 "tests_ok": True,
                 "startup_ok": startup_ms < 500.0,
                 "rss_ok": mem is not None and mem < 80.0,

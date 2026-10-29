@@ -14,8 +14,9 @@ func TestDefaults(t *testing.T) {
 	if cfg.Addr != "127.0.0.1:8198" {
 		t.Fatalf("addr = %q", cfg.Addr)
 	}
-	if cfg.ReadOnly || cfg.NoLoops {
-		t.Fatalf("flags should default false")
+	// فاز A: خواندنِ فقط پیش‌فرض است، حتی وقتی هیچ پرچمی داده نشود.
+	if !cfg.ReadOnly || cfg.NoLoops {
+		t.Fatalf("defaults: read-only must be true, no-loops false: %+v", cfg)
 	}
 }
 
@@ -59,5 +60,31 @@ func TestReadOnlyAndNoLoops(t *testing.T) {
 	}
 	if !cfg.ReadOnly || !cfg.NoLoops {
 		t.Fatalf("flags not parsed: %+v", cfg)
+	}
+}
+
+func TestReadWriteTurnsReadOnlyOff(t *testing.T) {
+	cfg, err := Load([]string{"--read-write"}, env(nil))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.ReadOnly {
+		t.Fatalf("--read-write must turn read-only off: %+v", cfg)
+	}
+	// صریح برنده است، حتی وقتی هر دو داده شوند.
+	cfg, err = Load([]string{"--read-only", "--read-write"}, env(nil))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.ReadOnly {
+		t.Fatalf("read-write wins over explicit read-only: %+v", cfg)
+	}
+	// خاموش‌کردنِ صریحِ read-only هم باید کار کند.
+	cfg, err = Load([]string{"--read-only=false"}, env(nil))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.ReadOnly {
+		t.Fatalf("--read-only=false must be false: %+v", cfg)
 	}
 }
