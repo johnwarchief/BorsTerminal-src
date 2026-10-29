@@ -279,7 +279,6 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"os"
 	"path/filepath"
 	"testing"
 )
@@ -288,7 +287,7 @@ func makeDB(t *testing.T, name string) string {
 	t.Helper()
 	dir := t.TempDir()
 	path := filepath.Join(dir, name)
-	raw, err := sql.Open("sqlite", "file:"+filepath.ToSlash(path))
+	raw, err := sql.Open("sqlite", dsn(path, "rw"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -360,7 +359,6 @@ func TestCloseIsIdempotent(t *testing.T) {
 	if err := h.Close(); err != nil {
 		t.Fatal(err)
 	}
-	_ = os.Getenv("PATH")
 }
 ```
 
@@ -450,12 +448,12 @@ func (h *Handles) Ping(ctx context.Context) error {
 func (h *Handles) Close() error {
 	var errs []error
 	if h.Market != nil {
-		if err := h.Market.Close(); err != nil && !errors.Is(err, sql.ErrConnDone) {
+		if err := h.Market.Close(); err != nil {
 			errs = append(errs, err)
 		}
 	}
 	if h.User != nil {
-		if err := h.User.Close(); err != nil && !errors.Is(err, sql.ErrConnDone) {
+		if err := h.User.Close(); err != nil {
 			errs = append(errs, err)
 		}
 	}
@@ -1484,6 +1482,7 @@ EOF
 - Create: `backend-go/internal/parity/canon.go`
 - Create: `backend-go/internal/parity/canon_test.go`
 - Create: `backend-go/cmd/parity/main.go`
+- Create: `backend-go/cmd/parity/main_test.go`
 
 **Interfaces:**
 - Produces: `parity.Compare(want, got any, opts Options) Result`، `parity.Options{Exclude []string}`، `parity.Result{Pass bool, Diffs []string, MaxDelta float64, Excluded []string}`، `parity.CaseReport` و `parity.Report` با تگ‌هایِ JSON؛ `cmd/parity --py URL --go URL --cases file.json --out file.json`.
@@ -1835,27 +1834,10 @@ func main() {
 	}
 	report := parity.Report{Commit: *commit, PyURL: *py, GoURL: *goURL, DBHash: cf.DBHash}
 	for _, c := range cf.Cases {
-		a, err := fetch(*py, c)
+		row, err := compareCase(*py, *goURL, c)
 		if err != nil {
-			fmt.Fprintln(os.Stderr, "py:", err)
+			fmt.Fprintln(os.Stderr, err)
 			os.Exit(2)
-		}
-		b, err := fetch(*goURL, c)
-		if err != nil {
-			fmt.Fprintln(os.Stderr, "go:", err)
-			os.Exit(2)
-		}
-		row := parity.CaseReport{
-			Name: c.Name, Method: c.Method, Path: c.Path,
-			StatusPy: a.status, StatusGo: b.status,
-			BytesPy: len(a.body), BytesGo: len(b.body),
-		}
-		if a.status != b.status {
-			row.Pass = false
-			row.Diffs = []string{fmt.Sprintf("status: %d != %d", a.status, b.status)}
-		} else {
-			res := parity.Compare(a.value, b.value, parity.Options{Exclude: c.Exclude})
-			row.Pass, row.Diffs, row.MaxDelta, row.Excluded = res.Pass, res.Diffs, res.MaxDelta, res.Excluded
 		}
 		if row.Pass {
 			report.Passed++
@@ -1880,6 +1862,29 @@ func main() {
 	}
 }
 
+func compareCase(pyBase, goBase string, c testCase) (parity.CaseReport, error) {
+	a, err := fetch(pyBase, c)
+	if err != nil {
+		return parity.CaseReport{}, fmt.Errorf("py %s: %w", c.Path, err)
+	}
+	b, err := fetch(goBase, c)
+	if err != nil {
+		return parity.CaseReport{}, fmt.Errorf("go %s: %w", c.Path, err)
+	}
+	row := parity.CaseReport{
+		Name: c.Name, Method: c.Method, Path: c.Path,
+		StatusPy: a.status, StatusGo: b.status,
+		BytesPy: len(a.body), BytesGo: len(b.body),
+	}
+	if a.status != b.status {
+		row.Diffs = []string{fmt.Sprintf("status: %d != %d", a.status, b.status)}
+		return row, nil
+	}
+	res := parity.Compare(a.value, b.value, parity.Options{Exclude: c.Exclude})
+	row.Pass, row.Diffs, row.MaxDelta, row.Excluded = res.Pass, res.Diffs, res.MaxDelta, res.Excluded
+	return row, nil
+}
+
 func dirOf(path string) string {
 	for i := len(path) - 1; i >= 0; i-- {
 		if path[i] == '/' || path[i] == '\\' {
@@ -1890,13 +1895,69 @@ func dirOf(path string) string {
 }
 ```
 
-- [ ] **Step 4: تست را سبز کن و کامیت**
+- [ ] **Step 4: تستِ CLI را بنویس (قبل از سبزکردن)**
+
+`backend-go/cmd/parity/main_test.go`:
+
+```go
+package main
+
+import (
+	"net/http"
+	"net/http/httptest"
+	"testing"
+)
+
+func server(body string) *httptest.Server {
+	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(body))
+	}))
+}
+
+func TestCompareCasePassesOnKeyOrder(t *testing.T) {
+	py, gs := server(`{"a":1,"b":"x"}`), server(`{"b":"x","a":1}`)
+	defer py.Close()
+	defer gs.Close()
+	row, err := compareCase(py.URL, gs.URL, testCase{Name: "k", Method: "GET", Path: "/p"})
+	if err != nil || !row.Pass {
+		t.Fatalf("err=%v row=%+v", err, row)
+	}
+}
+
+func TestCompareCaseFailsOnValue(t *testing.T) {
+	py, gs := server(`{"a":1}`), server(`{"a":2}`)
+	defer py.Close()
+	defer gs.Close()
+	row, err := compareCase(py.URL, gs.URL, testCase{Name: "v", Method: "GET", Path: "/p"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if row.Pass || len(row.Diffs) == 0 {
+		t.Fatalf("row=%+v", row)
+	}
+}
+
+func TestCompareCaseExclusion(t *testing.T) {
+	py, gs := server(`{"meta":{"t":"a"},"n":1}`), server(`{"meta":{"t":"b"},"n":1}`)
+	defer py.Close()
+	defer gs.Close()
+	row, err := compareCase(py.URL, gs.URL, testCase{
+		Name: "e", Method: "GET", Path: "/p", Exclude: []string{"meta.t"},
+	})
+	if err != nil || !row.Pass || len(row.Excluded) != 1 {
+		t.Fatalf("err=%v row=%+v", err, row)
+	}
+}
+```
+
+- [ ] **Step 5: تست را سبز کن و کامیت**
 
 Run: `cd backend-go && gofmt -l . && go vet ./... && go test ./...`
-Expected: PASS.
+Expected: PASS (شاملِ سه تستِ cmd/parity).
 
 ```bash
-git add backend-go/internal/parity/canon.go backend-go/internal/parity/canon_test.go backend-go/cmd/parity/main.go
+git add backend-go/internal/parity/canon.go backend-go/internal/parity/canon_test.go backend-go/cmd/parity/main.go backend-go/cmd/parity/main_test.go
 git commit -m "$(cat <<'EOF'
 feat(go): canonicalسازی و ابزارِ پاریتی
 
