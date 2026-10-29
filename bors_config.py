@@ -149,6 +149,10 @@ def _work_dir():
          گیر می‌کنند.
       ۳) dev: ریشۀ ریپو.
     """
+    # درزِ پاریتی/CI؛ در نبودِ متغیر هیچ رفتاری عوض نمی‌شود.
+    override = (os.environ.get("BORS_DATA_DIR") or "").strip()
+    if override:
+        return os.path.abspath(override)
     if _FROZEN:
         if IS_PORTABLE:
             return portable_data_dir()
