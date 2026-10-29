@@ -689,7 +689,7 @@ EOF
 
 **Interfaces:**
 - Consumes: `store.Frame`
-- Produces: `board.Derive(fr *store.Frame) *board.Derived`; exported slices `Tvol`, `MonthAvgVol`, `PrevDayVol`, `PercentChange`, `PercentLast`, `PlpRaw`, `BuyerPower`, `BuyPowerI`, `SellPowerI`, `VolDod`, `VolTrend []string`, `RetailBuyPct`, `LegalBuyPct`, `RetailSellPct`, `LegalSellPct`, `PctBasis []string`, `IsLive []bool`, `DistMin30Pct`, `Mcap`, `McapSrc`. `NaN` means "no value". `clientsplit.Shares(buyI, buyN, sellI, sellN any) Shares{RetailBuy, LegalBuy, RetailSell, LegalSell *float64; Basis *string}`.
+- Produces: `board.Derive(fr *store.Frame) *board.Derived`; exported slices `Tvol`, `MonthAvgVol`, `PrevDayVol`, `PercentChange`, `PercentLast`, `PlpRaw`, `BuyerPower`, `BuyPowerI`, `SellPowerI`, `VolDod`, `VolTrend []string`, `RetailBuyPct`, `LegalBuyPct`, `RetailSellPct`, `LegalSellPct`, `PctBasis []string`, `IsLive []bool`, `DistMin30Pct`, `Mcap`, `McapSrc`. `NaN` means "no value". `clientsplit.Shares(buyI, buyN, sellI, sellN any) Split{RetailBuy, LegalBuy, RetailSell, LegalSell *float64; Basis *string}`.
 
 - [ ] **Step 1: Write the failing tests**
 
@@ -765,8 +765,11 @@ func TestPercentChangeGuards(t *testing.T) {
 }
 
 func TestRoundHalfEven(t *testing.T) {
+	// pandas/NumPy: ‎x*100‎ اول گرد می‌شود و بعد rint روی همان ضربِ دقیق.
+	// ‎2.675*100‎ در IEEE دقیقاً ‎267.5‎ است ⇒ نیم‌به‌زوج ⇒ ‎2.68‎ (نه ‎2.67‎ِ
+	// ‎round‎ِ داخلیِ پایتون؛ آن یکی در clientsplit است، نه اینجا).
 	for in, want := range map[float64]float64{
-		2.675: 2.67, 2.665: 2.66, 1.005: 1.0, 1.015: 1.01, 0.125: 0.12, 0.135: 0.14,
+		2.675: 2.68, 2.665: 2.66, 1.005: 1.0, 1.015: 1.01, 0.125: 0.12, 0.135: 0.14,
 	} {
 		if got := Round2(in); got != want {
 			t.Fatalf("Round2(%v) = %v, want %v", in, got, want)
@@ -794,14 +797,28 @@ func TestShares(t *testing.T) {
 	if got.Basis == nil || *got.Basis != "value" {
 		t.Fatalf("basis = %v", got.Basis)
 	}
-	if got := Shares(nil, 5e6, 8e6, 6e6); got.RetailBuy != nil || got.Basis != nil {
-		t.Fatal("missing source value must be unknown, not zero")
+	// یک سمتِ کامل کافی است که pct_basis «value» شود؛ سمتِ ناقص nil می‌ماند و
+	// هرگز جای سمتِ دیگر را نمی‌گیرد (client_split قاعدهٔ ۱ و ۳).
+	if got := Shares(nil, 5e6, 8e6, 6e6); got.RetailBuy != nil || got.RetailSell == nil ||
+		got.Basis == nil || *got.Basis != "value" {
+		t.Fatalf("one complete side: buy=%v sell=%v basis=%v", got.RetailBuy, got.RetailSell, got.Basis)
+	}
+	if got := Shares(nil, nil, nil, nil); got.Basis != nil {
+		t.Fatal("no side measured ⇒ pct_basis must be unknown")
 	}
 	if got := Shares(-1.0, 5e6, 8e6, 6e6); got.RetailBuy != nil {
 		t.Fatal("negative value must be unknown")
 	}
 	if got := Shares(0.0, 0.0, 8e6, 6e6); got.RetailBuy != nil {
 		t.Fatal("zero denominator must be unknown")
+	}
+	// گره‌هایِ گردکردن: roundِ داخلیِ پایتون، نه rintِ numpy.
+	for in, want := range map[float64]float64{
+		0.35: 0.3, 0.45: 0.5, 1.15: 1.1, 1.05: 1.1, 0.15: 0.1, 12.25: 12.2,
+	} {
+		if got := round1(in); got != want {
+			t.Fatalf("round1(%v) = %v, want %v", in, got, want)
+		}
 	}
 }
 ```
@@ -816,15 +833,32 @@ Expected: FAIL — `undefined: Derive` / `undefined: Shares`.
 ```go
 package clientsplit
 
-import "math"
+import (
+	"math"
+	"strconv"
+)
 
-// Shares همان client_split.shares است: مبنایِ ارزش، دو سمتِ مستقل، نبود = نامشخص.
-type Shares struct {
+// Split همان client_split.shares است: مبنایِ ارزش، دو سمتِ مستقل، نبود = نامشخص.
+// نامِ نوع Split است نه Shares: در Go نوع و تابع نمی‌توانند هم‌نام باشند و نامِ
+// تابعِ قراردادی Shares است.
+type Split struct {
 	RetailBuy  *float64
 	LegalBuy   *float64
 	RetailSell *float64
 	LegalSell  *float64
 	Basis      *string
+}
+
+// round1 همان round(x, 1)ِ داخلیِ پایتون است — گردکردنِ اعشاریِ درستِ همان مقدارِ
+// دودویی، نیم‌به‌زوج — و نه rintِ numpy. تفاوت رویِ گره‌هایِ واقعی دیده می‌شود:
+// round(0.35, 1) = 0.3 ولی rint(0.35*10)/10 = 0.4. client_split.py از roundِ
+// داخلی استفاده می‌کند، پس این لایه هم باید همان کند.
+func round1(x float64) float64 {
+	v, err := strconv.ParseFloat(strconv.FormatFloat(x, 'f', 1, 64), 64)
+	if err != nil {
+		return x
+	}
+	return v
 }
 
 func money(v any) (float64, bool) {
@@ -855,7 +889,7 @@ func share(retail, legal any) *float64 {
 	if den <= 0 {
 		return nil
 	}
-	x := math.RoundToEven(100.0*r/den*10.0) / 10.0
+	x := round1(100.0 * r / den)
 	return &x
 }
 
@@ -863,11 +897,11 @@ func complement(s *float64) *float64 {
 	if s == nil {
 		return nil
 	}
-	x := math.RoundToEven((100.0-*s)*10.0) / 10.0
+	x := round1(100.0 - *s)
 	return &x
 }
 
-func Shares(buyI, buyN, sellI, sellN any) Shares {
+func Shares(buyI, buyN, sellI, sellN any) Split {
 	rb := share(buyI, buyN)
 	sb := share(sellI, sellN)
 	out := Shares{RetailBuy: rb, LegalBuy: complement(rb),
