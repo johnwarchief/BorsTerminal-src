@@ -9,8 +9,8 @@
 // اوراق و مشتقه‌ها به‌صورت پیش‌فرض حذف می‌شوند (فیلتر نوع نماد).
 import { memo, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { FTS_COLUMN_LABEL } from '@shared/lib/ftsLabels';
-import { jalaliOf, pickAssemblyBadge, pickCapitalBadge, type AssemblyBadgeInfo, type CalEvent, type CapitalIncreaseBadge } from '../lib/assemblyEvent';
+import { FTS_COLUMN_LABEL, MARGIN_TIER_HINT, MARGIN_TIER_LABEL } from '@shared/lib/ftsLabels';
+import { jalaliOf, pickAssemblyBadge, pickCapitalBadge, todayIsoInTehran, type AssemblyBadgeInfo, type CalEvent, type CapitalIncreaseBadge } from '../lib/assemblyEvent';
 import { toFaDigits } from '@shared/lib/fmt';
 import { DownloadRowsButton } from '@shared/components/DownloadRowsButton';
 import { toExportTable, type ExportCell } from '@shared/lib/tableExport';
@@ -18,6 +18,7 @@ import { matchFa } from '@shared/lib/normalizeFa';
 import { absurdHint, fmtPctGrouped, fmtRatioGrouped, isAbsurdPct } from '../lib/numFmt';
 import { EmptyState } from '@shared/components/EmptyState';
 import type { FtsScreenRow, FtsFunnelGate } from '../api/useFtsScreen';
+import type { DbStatus } from '../api/useCodalAutoUpdate';
 import { isFundamentalCompany } from '../lib/assetScope';
 import {
   EPS_PARTIAL_TESTID,
@@ -78,10 +79,20 @@ export function screenRowCells(r: FtsScreenRow): ExportCell[] {
     // (محورِ EPS!) می‌آمد، «الف» از `i1_pass` (رأیِ مجموع) می‌آمد، و رژیم
     // صنعت با کلیدِ `'regulated'` سنجیده می‌شد در حالی که بک‌اند `'mandatory'`
     // می‌فرستد — یعنی هر شرکتِ دستوری در فایل «آزاد» نوشته می‌شد.
-    `${pct(r.rev_growth)} (الف: ${mark(r.i1a_pass)} / ب: ${
-      r.i1b_applicable === false ? 'کاربرد ندارد' : mark(r.i1b_pass)})`,
-    `${eps}${r.eps_last != null ? ` | ${toFaDigits(r.eps_last)}` : ''}${r.eps_data_gap ? ' | بی‌داده' : ''}`,
-    pct(r.gross_margin),
+    // ردیفِ «سنجیده نشد» هم مثلِ صفحه `N/A` می‌نویسد، نه «؟» دوپهلو (Task 4).
+    r.i1_na === true
+      ? 'N/A'
+      : `${pct(r.rev_growth)} (الف: ${mark(r.i1a_pass)} / ب: ${
+          r.i1b_applicable === false || r.i1b_data_gap === true
+            ? 'کاربرد ندارد (N/A)'
+            : mark(r.i1b_pass)})`,
+    `${eps}${r.eps_last != null ? ` | ${toFaDigits(r.eps_last)}` : ''}${r.eps_data_gap ? ' | بی‌داده' : ''}${
+      r.eps_evidence_label ? ` | ${r.eps_evidence_label}` : ''}`,
+    // برچسبِ طبقه (Task 6) کنارِ همان عدد؛ «۵۰٪ خوب» فقط نام است و ستونِ
+    // حکم را عوض نمی‌کند.
+    `${pct(r.gross_margin)}${
+      r.margin_tier ? ` | ${MARGIN_TIER_LABEL[r.margin_tier] ?? r.margin_tier}` : ''
+    }`,
     r.profit_potential_pct == null ? '—' : pct(r.profit_potential_pct),
     `${r.sector_name ?? '—'} (${
       r.pricing_mode === 'mandatory' ? 'دستوری'
@@ -227,6 +238,33 @@ function GapMark({
   );
 }
 
+/** سلولِ N/A با دلیلِ خودِ موتور — خاکستری، نه ✗ و نه زردِ شکافِ داده.
+ *  `AuditBadge state="na"` رنگِ خاکستریِ ثابت دارد؛ برچسبِ پیش‌فرضش همان
+ *  «N/A» است. برایِ i3/i4/i1b متنِ ماهیت هم می‌آید، ولی tone خاکستری می‌ماند
+ *  (Task 4: N/A هرگز شبیه به «رد» دیده نشود). */
+function NaMark({
+  label = 'N/A',
+  tooltip,
+  evidence,
+  testId,
+}: {
+  label?: ReactNode;
+  tooltip: string;
+  evidence?: AuditEvidenceInput;
+  testId?: string;
+}) {
+  return (
+    <AuditBadge
+      state="na"
+      label={label}
+      hintTitle={tooltip}
+      evidence={evidence}
+      compact
+      testId={testId}
+    />
+  );
+}
+
 /** سلول بی‌داده با علتِ همان محور */
 function AxisGapMark({ axis, evidence }: { axis: GapAxis; evidence?: AuditEvidenceInput }) {
   return (
@@ -298,6 +336,16 @@ const ScreenerRow = memo(function ScreenerRow({
               const epsGapReason = epsHist.realYears
                 ? `فقط ${toFaDigits(epsHist.realYears)} سال از ${toFaDigits(epsHist.requiredYears)} سالِ لازم EPS موجود است — سابقهٔ کامل سه‌ساله برای قضاوت شاخص ۲ کافی نیست.`
                 : 'این ردیفِ اسکنر سابقهٔ EPS سالانه ندارد؛ علت دقیق در کارت نماد (دادهٔ جزئیات کدال) دیده می‌شود.';
+              /** شاخص ۴ (Task 7): مسیرِ پذیرش و برچسبِ سالانه‌سازی از خودِ موتور.
+               *  ردیف ارتفاعِ ثابت ۵۲px دارد، پس فقط یک سطرِ راهنما رندر می‌شود
+               *  (مسیر مقدم است) و برچسبِ سالانه‌سازی همیشه در tooltipِ عدد می‌آید. */
+              const i4Path = r.i4_acceptance_path ?? null;
+              const i4Annualize = (r.annualize_label ?? '').trim();
+              const i4NumberHint = r.profit_potential_pct == null
+                ? (r.sales_to_mcap != null
+                    ? `نسبت فروش/ارزش بازار ${fmtRatioGrouped(r.sales_to_mcap)} — پتانسیل سود ناخالص ثبت نشده`
+                    : VALUE_MISSING_WITH_VERDICT)
+                : (absurdHint(r.profit_potential_pct) ?? null);
               return (
                 <tr
                   key={r.symbol}
@@ -341,39 +389,10 @@ const ScreenerRow = memo(function ScreenerRow({
                         <span className={`font-bold text-sm text-text-primary tracking-wide ${r.excluded ? 'line-through decoration-accent-red/60' : ''}`}>
                           {r.symbol}
                         </span>
-                        {r.tech_hourglass_active ? (
-                          <span className="shrink-0 rounded px-1.5 py-0.5 text-3xs font-bold bg-accent-green/20 text-accent-green border border-accent-green/30" title="استراتژی ساعت شنی FTS فعال (خرید ۲x-۴x)">
-                            ساعت شنی
-                          </span>
-                        ) : null}
-                        {r.funnel_candidate ? (
-                          <span
-                            data-testid="row-funnel-candidate"
-                            title="هر سه گامِ قیف (تابلوخوانی ← تکنیکال ← بنیادی) pass و بی‌وتو"
-                            className="shrink-0 rounded px-1.5 py-0.5 text-3xs font-bold bg-neon-cyan/20 text-neon-cyan border border-neon-cyan/30"
-                          >
-                            کاندیدِ قیف
-                          </span>
-                        ) : null}
-                        {r.fund_caveat ? (
-                          <span
-                            data-testid="row-fund-caveat"
-                            title={`عبور با ملاحظات: ${r.fund_passed ?? '—'} شاخص PASS — حداقل ۳ کافی است؛ بقیهٔ شاخص‌ها رد شده‌اند یا داده ندارند`}
-                            className="shrink-0 rounded px-1.5 py-0.5 text-3xs font-bold bg-accent-yellow/20 text-accent-yellow border border-accent-yellow/30"
-                          >
-                            عبور با ملاحظات
-                          </span>
-                        ) : null}
-                        {r.tech_jet ? (
-                          <span className="shrink-0 rounded px-1.5 py-0.5 text-3xs font-bold bg-accent-blue/20 text-accent-blue border border-accent-blue/30" title="ستاپ جت FTS (شکست مقاومت)">
-                            جت
-                          </span>
-                        ) : null}
-                        {r.tech_matrix_decision === 'REJECT' ? (
-                          <span className="shrink-0 rounded px-1.5 py-0.5 text-3xs font-bold bg-accent-red/20 text-accent-red border border-accent-red/30" title={r.tech_matrix_desc ?? 'ممنوعیت ورود FTS'}>
-                            وتوی روند
-                          </span>
-                        ) : null}
+                        {/* بج‌های تکنیکال (ساعت شنی/جت/وتوی روند/کاندیدِ قیف) عمداً
+                            اینجا نیستند: حکمِ ردیفِ تبِ بنیادی از ۵ شاخص، وضعیتِ داده،
+                            مجمع/افزایش سرمایه و فیلترهای ریسک ساخته می‌شود. فیلدهای
+                            تکنیکال در useFtsScreen می‌مانند برای تبِ تکنیکال. */}
                         {/* مجمع پیش‌رو — وتو (قرمز) یا فقط هشدار (زرد/آبی).
                             داورِ وتو بک‌اند است (`assembly_veto` در /api/screener،
                             بیرونِ کش و تازه در هر درخواست)؛ برچسبِ هشدار از
@@ -434,38 +453,66 @@ const ScreenerRow = memo(function ScreenerRow({
                   <td className="px-3 py-1.5 align-middle">
                     <div className="flex items-center justify-start gap-2 min-w-0">
                       <div className="shrink-0 flex items-center gap-1.5">
-                        <span className="inline-flex items-center gap-0.5" title="۱-الف: رشد ریالی">
-                          <span className="text-3xs text-text-muted font-bold">الف</span>
-                          {i1a === 'gap' ? (
-                            <AxisGapMark axis="1a_monetary_growth" evidence={ev.i1a} />
-                          ) : (
-                            <PassMark
-                              state={i1a}
-                              evidence={ev.i1a}
-                              testId="fts-mark-1a_monetary_growth"
-                            />
-                          )}
-                        </span>
-                        <span className="inline-flex items-center gap-0.5" title="۱-ب: رشد تولیدی (تناژ)">
-                          <span className="text-3xs text-text-muted font-bold">ب</span>
-                          {r.i1b_applicable === false ? (
-                            /* «قابل اعمال نیست» را خودِ موتور می‌گوید
-                               (`company_profile.volume_applicable`) — نه از
-                               regexِ نام/صنعت؛ پیش از این درِ ۲۵۱ ردیف حکمِ
-                               واقعیِ ✓/✗ پشتِ N/A پنهان می‌شد و درِ ۱۰۲ ردیف
-                               N/Aِ اشتباه می‌خورد. */
-                            <GapMark
-                              label="کاربرد ندارد"
-                              tooltip="رشد تولیدی/تناژ برایِ این ماهیت (مالی، هلدینگ، صندوق، خدماتِ بی‌کالای فیزیکی) معنا ندارد — اعلامِ خودِ موتور FTS، نه شکاف داده."
-                              evidence={ev.i1b}
-                              testId="fts-na-1b_volume_growth"
-                            />
-                          ) : i1b === 'gap' ? (
-                            <AxisGapMark axis="1b_volume_growth" evidence={ev.i1b} />
-                          ) : (
-                            <PassMark state={i1b} testId="fts-mark-1b_volume_growth" />
-                          )}
-                        </span>
+                        {r.i1_na === true ? (
+                          /* شکافِ داده در محور ۱: «سنجیده نشد»، نه «رد».
+                             پیش از این دو نشانِ «الف»/«ب» هر کدام یک برچسبِ
+                             عمومیِ شکاف می‌گرفتند و دلیلِ خودِ موتور
+                             (`i1_reason`) هیچ‌جا دیده نمی‌شد؛ حالا همان
+                             دلیل رویِ N/A خاکستری می‌نشیند و هیچ ✗ سرخی
+                             برایِ ردیفِ بی‌داده کشیده نمی‌شود (Task 4). */
+                          <NaMark
+                            label="N/A"
+                            tooltip={r.i1_reason || 'شاخص ۱ سنجیده نشد؛ دلیلِ دقیق در کارتِ نماد است.'}
+                            evidence={ev.i1a}
+                            testId="fts-na-1_growth"
+                          />
+                        ) : (
+                          <>
+                            <span className="inline-flex items-center gap-0.5" title="۱-الف: رشد ریالی">
+                              <span className="text-3xs text-text-muted font-bold">الف</span>
+                              {i1a === 'gap' ? (
+                                <AxisGapMark axis="1a_monetary_growth" evidence={ev.i1a} />
+                              ) : (
+                                <PassMark
+                                  state={i1a}
+                                  evidence={ev.i1a}
+                                  testId="fts-mark-1a_monetary_growth"
+                                />
+                              )}
+                            </span>
+                            <span className="inline-flex items-center gap-0.5" title="۱-ب: رشد تولیدی (تناژ)">
+                              <span className="text-3xs text-text-muted font-bold">ب</span>
+                              {r.i1b_applicable === false ? (
+                                /* «قابل اعمال نیست» را خودِ موتور می‌گوید
+                                   (`company_profile.volume_applicable`) — نه از
+                                   regexِ نام/صنعت؛ پیش از این درِ ۲۵۱ ردیف حکمِ
+                                   واقعیِ ✓/✗ پشتِ N/A پنهان می‌شد و درِ ۱۰۲ ردیف
+                                   N/Aِ اشتباه می‌خورد. */
+                                <NaMark
+                                  label="N/A (قابل اعمال نیست)"
+                                  tooltip="رشد تولیدی/تناژ برایِ این ماهیت (مالی، هلدینگ، صندوق، خدماتِ بی‌کالای فیزیکی) معنا ندارد — اعلامِ خودِ موتور FTS، نه شکاف داده."
+                                  evidence={ev.i1b}
+                                  testId="fts-na-1b_volume_growth"
+                                />
+                              ) : r.i1b_data_gap === true ? (
+                                /* شکافِ دادهٔ ۱ب (Task 10B2a1): محور قابلِ‌اعمال
+                                   است ولی کمیت/مبنای تورم در دسترس نیست. حکمِ
+                                   `pass=False` «ردِ سنجیده‌شده» نیست؛ N/A خاکستری
+                                   می‌نشیند و شکستِ واقعی همچنان ✗ سرخ است. */
+                                <NaMark
+                                  label="N/A (داده ناکافی)"
+                                  tooltip={r.i1_reason || 'دادهٔ رشد تولیدی/تناژ برای این نماد در دسترس نیست؛ حکمِ ۱ب سنجیده نشد — نه «رد».'}
+                                  evidence={ev.i1b}
+                                  testId="fts-na-1b_volume_growth"
+                                />
+                              ) : i1b === 'gap' ? (
+                                <AxisGapMark axis="1b_volume_growth" evidence={ev.i1b} />
+                              ) : (
+                                <PassMark state={i1b} testId="fts-mark-1b_volume_growth" />
+                              )}
+                            </span>
+                          </>
+                        )}
                       </div>
                       <span
                         className={`num block min-w-0 text-end text-sm font-bold whitespace-nowrap ${
@@ -475,7 +522,11 @@ const ScreenerRow = memo(function ScreenerRow({
                               ? 'text-accent-green'
                               : 'text-accent-red'
                         }`}
-                        title={r.rev_growth == null ? VALUE_MISSING_WITH_VERDICT : (absurdHint(r.rev_growth) ?? undefined)}
+                        title={r.rev_growth == null
+                          ? (r.i1_na === true
+                            ? (r.i1_reason || 'شاخص ۱ سنجیده نشد؛ دلیلِ دقیق در کارتِ نماد است.')
+                            : VALUE_MISSING_WITH_VERDICT)
+                          : (absurdHint(r.rev_growth) ?? undefined)}
                       >
                         {r.rev_growth == null ? '—' : fmtPctGrouped(r.rev_growth)}
                         {isAbsurdPct(r.rev_growth) ? ' ⚠' : ''}
@@ -483,6 +534,11 @@ const ScreenerRow = memo(function ScreenerRow({
                     </div>
                   </td>
                   <td className="px-3 py-1.5 align-middle">
+                    {/* چیدمانِ سلول: سطرِ حکم/عدد باید **فرزندِ اولِ** td باشد.
+                        پیش‌تر یک `div.flex.flex-col` دورِ هر دو می‌پیچید و آزمونِ
+                        «تیکِ حکم در لبهٔ راستِ هر سلول» رویِ ردیفِ بی‌برچسبِ شاهد
+                        (سلولِ ۲/EPS) فقط یک فرزند می‌دید. برچسبِ شاهد (اگر باشد)
+                        بلوکِ دوم و خواهرِ همان سطر می‌نشیند؛ ریتمِ عمودی یکی است. */}
                     <div className="flex items-center justify-start gap-2 min-w-0">
                       <span className="shrink-0">
                         {r.i2_na === true ? (
@@ -491,7 +547,7 @@ const ScreenerRow = memo(function ScreenerRow({
                              ندارد — نه ✓ و نه ✗. علت را خودِ موتور می‌گوید
                              (`ind2_na` + `eps_consolidated`)، نه حدسِ جدول. */
                           <GapMark
-                            label={r.eps_consolidated ? "کاربرد ندارد (تلفیقی)" : "کاربرد ندارد"}
+                            label={r.eps_consolidated ? "N/A (تلفیقی) — کاربرد ندارد" : "N/A — کاربرد ندارد"}
                             tooltip={
                               r.eps_consolidated
                                 ? 'برخی سال‌ها فقط به‌صورت تلفیقی منتشر شده‌اند؛ جزوه (ص ۴) صورتِ شرکت اصلی را مبنای می‌گیرد، پس این شاخص سنجیده نمی‌شود. با همگام‌سازیِ تازه هم بسته نمی‌شود.'
@@ -527,6 +583,17 @@ const ScreenerRow = memo(function ScreenerRow({
                         <EpsFlow series={r.eps_series} trendText={epsTrend ?? VALUE_MISSING_WITH_VERDICT} />
                       </div>
                     </div>
+                    {/* برچسبِ شاهدِ EPS (Task 5) — زیرِ همان سطر، حتی برایِ
+                        تلفیقی/N/A و سابقهٔ ناقص؛ سری بالا دست‌نخورده می‌ماند. */}
+                    {r.eps_evidence_label ? (
+                      <span
+                        data-testid="fts-eps-evidence-label"
+                        className="mt-0.5 block min-w-0 truncate text-start text-3xs font-medium text-text-muted"
+                        title={r.eps_evidence_label}
+                      >
+                        {r.eps_evidence_label}
+                      </span>
+                    ) : null}
                   </td>
                   <td className="px-3 py-1.5 align-middle">
                     <div className="flex items-center justify-start gap-2 min-w-0">
@@ -539,9 +606,9 @@ const ScreenerRow = memo(function ScreenerRow({
                             /* «سود ناخالص ندارد» را خودِ موتور اعلام می‌کند
                                (`ind3_na`) — نه regexِ نام/صنعت. بی‌این، ۱۱۲
                                ردیف از ۲۹۶ ردیفِ نادرست «N/A» می‌گرفت. */
-                            <GapMark
-                              label="کاربرد ندارد"
-                              tooltip="موتور FTS برای همین نماد «سود ناخالص» را بی‌کاربرد اعلام کرده است (بانک/بیمه/هلدینگ/صندوق)؛ شکاف داده نیست."
+                            <NaMark
+                              label="N/A (ماهیت مالی)"
+                              tooltip={r.i3_reason || "موتور FTS برای همین نماد «سود ناخالص» را بی‌کاربرد اعلام کرده است (بانک/بیمه/هلدینگ/صندوق)؛ شکاف داده نیست."}
                               evidence={ev.i3}
                               testId="fts-na-3_gross_margin"
                             />
@@ -558,10 +625,23 @@ const ScreenerRow = memo(function ScreenerRow({
                       </span>
                       <span
                         className="num block min-w-0 text-end text-sm font-bold whitespace-nowrap text-text-primary"
-                        title={r.gross_margin == null ? VALUE_MISSING_WITH_VERDICT : (absurdHint(r.gross_margin) ?? undefined)}
+                        title={r.gross_margin == null
+                          ? (r.i3_reason || VALUE_MISSING_WITH_VERDICT)
+                          : (absurdHint(r.gross_margin) ?? undefined)}
                       >
                         {r.gross_margin == null ? '—' : fmtPctGrouped(r.gross_margin)}
                         {isAbsurdPct(r.gross_margin) ? ' ⚠' : ''}
+                        {/* طبقهٔ نمایشی (Task 6) کنارِ همان عدد؛ نبودش یعنی
+                            حاشیه ساخته نشده (N/A) — همان‌جا «—» می‌ماند. */}
+                        {r.margin_tier ? (
+                          <span
+                            data-testid="fts-margin-tier"
+                            className="ms-1 text-3xs font-medium text-text-muted"
+                            title={MARGIN_TIER_HINT}
+                          >
+                            {MARGIN_TIER_LABEL[r.margin_tier] ?? r.margin_tier}
+                          </span>
+                        ) : null}
                       </span>
                     </div>
                   </td>
@@ -570,9 +650,9 @@ const ScreenerRow = memo(function ScreenerRow({
                       <span className="shrink-0">
                         {i4 === 'gap' ? (
                           r.i4_na === true ? (
-                            <GapMark
-                              label="کاربرد ندارد"
-                              tooltip="موتور FTS همین نماد را از شرط «فروش ÷ ارزش بازار» معاف دانسته است (`ind4_na`)؛ شکاف داده نیست."
+                            <NaMark
+                              label="N/A (ماهیت مالی)"
+                              tooltip={r.i4_reason || "موتور FTS همین نماد را از شرط «فروش ÷ ارزش بازار» معاف دانسته است (`ind4_na`)؛ شکاف داده نیست."}
                               evidence={ev.i4}
                               testId="fts-na-4_sales_to_mcap"
                             />
@@ -587,19 +667,53 @@ const ScreenerRow = memo(function ScreenerRow({
                           />
                         )}
                       </span>
-                      <span
-                        className="num block min-w-0 text-end text-sm font-bold whitespace-nowrap text-text-primary"
-                        title={
-                          r.profit_potential_pct == null
-                            ? r.sales_to_mcap != null
-                              ? `نسبت فروش/ارزش بازار ${fmtRatioGrouped(r.sales_to_mcap)} — پتانسیل سود ناخالص ثبت نشده`
-                              : VALUE_MISSING_WITH_VERDICT
-                            : (absurdHint(r.profit_potential_pct) ?? undefined)
-                        }
-                      >
-                        {r.profit_potential_pct == null ? '—' : fmtPctGrouped(r.profit_potential_pct)}
-                        {isAbsurdPct(r.profit_potential_pct) ? ' ⚠' : ''}
-                      </span>
+                      <div className="flex min-w-0 flex-col items-start gap-0.5">
+                        <span
+                          className="num block min-w-0 text-end text-sm font-bold whitespace-nowrap text-text-primary"
+                          title={
+                            [r.profit_potential_pct == null ? r.i4_reason : null,
+                              i4NumberHint, i4Annualize && toFaDigits(i4Annualize)]
+                              .filter(Boolean).join(' · ') || undefined
+                          }
+                        >
+                          {r.profit_potential_pct == null ? '—' : fmtPctGrouped(r.profit_potential_pct)}
+                          {isAbsurdPct(r.profit_potential_pct) ? ' ⚠' : ''}
+                          {/* M3: با وجودِ مسیر، برچسبِ سالانه‌سازی فقط در
+                              tooltip می‌ماند؛ نسخهٔ sr-only برایِ صفحه‌خوان و
+                              کاربرِ کیبورد (ارتفاعِ ۵۲px دست‌نخورده). */}
+                          {i4Path && i4Annualize ? (
+                            <span className="sr-only"> · {toFaDigits(i4Annualize)}</span>
+                          ) : null}
+                        </span>
+                        {/* چرا شاخص ۴ پاس شد (Task 7): نامِ مسیر از خودِ موتور،
+                            نه بازمحاسبهٔ آستانه در جدول. مسیر دوم متنِ جزوه را
+                            صریح می‌نامد؛ مسیر اول فقط نشانهٔ کوتاه است. */}
+                        {i4Path ? (
+                          <span
+                            data-testid="fts-i4-path"
+                            className="max-w-full truncate text-3xs font-medium text-text-muted"
+                            title={
+                              i4Path === 'profit_potential'
+                                ? '۴۰٪ پتانسیل سود ناخالص ÷ ارزش بازار (مسیر دوم پذیرش)'
+                                : 'فروش سالانه ÷ ارزش بازار ≥ ۰٫۳۳× (مسیر اول پذیرش)'
+                            }
+                          >
+                            {i4Path === 'profit_potential'
+                              ? 'مسیر دوم — سند v2.1'
+                              : 'مسیر اول'}
+                          </span>
+                        ) : i4Annualize ? (
+                          /* بی‌مسیر (مثلاً تولیدیِ ردشده): برچسبِ سالانه‌سازی
+                             تنها سطرِ راهنماست؛ متنِ کامل هم در tooltipِ عدد. */
+                          <span
+                            data-testid="fts-i4-annualize"
+                            className="max-w-full truncate text-3xs text-text-muted"
+                            title={toFaDigits(i4Annualize)}
+                          >
+                            {toFaDigits(i4Annualize)}
+                          </span>
+                        ) : null}
+                      </div>
                     </div>
                   </td>
                   <td className="px-3 py-1.5 align-middle">
@@ -693,6 +807,66 @@ function FunnelGateChip({ gate }: { gate?: FtsFunnelGate | null }) {
   );
 }
 
+/** روزِ تقویمیِ نمایشِ یک مهرِ زمانی — مهرِ دارایِ افست (`meta.published_at` با
+ *  Z/±hh:mm) با تقویمِ تهران خوانده می‌شود؛ برشِ UTC می‌توانست انتشارِ بعد از
+ *  ۲۰:۳۰ UTC را «دیروزِ تهران» نشان دهد. `last_success`ِ بک‌اند بی‌افست است
+ *  (وقتِ محلی)، پس همان روزش درست است. تاریخِ نامعتبر ⇒ خودِ رشته (بدونِ ادعا). */
+export function dbFreshnessDay(raw: string): string {
+  const s = String(raw ?? '').trim();
+  if (!s) return '';
+  if (/(?:z|[+-]\d{2}:?\d{2})$/i.test(s)) {
+    const d = new Date(s);
+    if (Number.isFinite(d.getTime())) return todayIsoInTehran(d);
+  }
+  return /^\d{4}-\d{2}-\d{2}/.test(s) ? s.slice(0, 10) : s;
+}
+
+/** تازه‌ترینِ دو مهرِ زمانی؛ در تساوی/نامعتبری، اولی (منبعِ ترجیحی) می‌ماند. */
+function newestStamp(preferred: string, fallback: string): string {
+  if (!preferred) return fallback;
+  if (!fallback) return preferred;
+  const a = Date.parse(preferred);
+  const b = Date.parse(fallback);
+  if (!Number.isFinite(a)) return fallback;
+  if (!Number.isFinite(b)) return preferred;
+  return b > a ? fallback : preferred;
+}
+
+/** تازه‌ترین دوره؛ هر دو `YYYY/MM/DD`ِ صفرپرشده‌اند، پس مقایسهٔ رشته‌ای = زمانی */
+function newestPeriod(preferred: string, fallback: string): string {
+  if (!preferred) return fallback;
+  if (!fallback) return preferred;
+  return fallback > preferred ? fallback : preferred;
+}
+
+/** خطِ تازگیِ دادهٔ بنیادی — فقط از meta/freshnessِ همان پاسخِ db-status.
+ *  هیچ تاریخی اینجا ساخته نمی‌شود: نبودشان یعنی خط هم نیست.
+ *  منبعِ تاریخ: تازه‌ترینِ `meta.published_at` (زمانِ انتشارِ snapshot — همان
+ *  ادغامی که UI تازه انجام داد) و `freshness.last_success` (فقط orchestrator
+ *  روزانه می‌نویسدش؛ ادغامِ سمتِ کلاینت آن را جلو نمی‌برد). منبعِ دوره:
+ *  تازه‌ترینِ `freshness.latest_financial_period` و متای snapshot. */
+function dbFreshnessText(dbUpdate: DbStatus): string {
+  const fresh = dbUpdate.freshness ?? null;
+  const meta = dbUpdate.meta ?? null;
+  /** اولین مقدارِ ناتهی — بک‌اند برایِ last_successِ نبوده رشتهٔ خالی می‌فرستد،
+   *  پس `??` به‌تنهایی متایِ snapshot را از دست می‌داد. */
+  const firstText = (...values: Array<string | null | undefined>): string =>
+    values.map((v) => String(v ?? '').trim()).find(Boolean) ?? '';
+  const rawDate = newestStamp(firstText(meta?.published_at), firstText(fresh?.last_success));
+  const rawPeriod = newestPeriod(
+    firstText(fresh?.latest_financial_period),
+    firstText(meta?.latest_financial_period),
+  );
+  const parts: string[] = [];
+  if (rawDate) {
+    const day = dbFreshnessDay(rawDate);
+    const faDate = /^\d{4}-\d{2}-\d{2}$/.test(day) ? jalaliOf(day) : day;
+    parts.push(`آخرین به‌روزرسانی بنیادی: ${toFaDigits(faDate)}`);
+  }
+  if (rawPeriod) parts.push(`آخرین دوره: ${toFaDigits(rawPeriod)}`);
+  return parts.join(' · ');
+}
+
 export function FtsScreenTable({
   rows,
   onSelect,
@@ -710,8 +884,8 @@ export function FtsScreenTable({
   thresholds?: Record<string, unknown> | null;
   /** بروزرسانی دیتابیس کدال از snapshot گیت‌هاب (POST /api/sync/codal/db-download) */
   onDbUpdate?: () => void;
-  /** وضعیت زندهٔ دانلود/ادغام برای لیبل دکمه (GET /api/sync/codal/db-status) */
-  dbUpdate?: { running: boolean; stage: string; percent?: number; detail?: string; error?: string } | null;
+  /** وضعیت زندهٔ دانلود/ادغام + meta/freshness برای خطِ تازگی (GET /api/sync/codal/db-status) */
+  dbUpdate?: DbStatus | null;
   /** رویدادهای مجمعِ همهٔ نمادها از /api/calendar/upcoming — یک درخواست برای کل جدول */
   assemblyEvents?: Record<string, CalEvent[]> | null;
   /** «افزایش سرمایه»هایِ پیش‌رو — همان پاسخِ انبوه، کلیدِ دومِ `capital` */
@@ -734,13 +908,16 @@ export function FtsScreenTable({
   /** شاخص‌هایی که کاربر خواسته نمادهای مردود/ناقص‌شان از جدول حذف شود (دراور تنظیمات) */
   const excludeAxes = useExcludeAxes();
 
-  const [strategicPreset, setStrategicPreset] = useState<'all' | 'super' | 'jet' | 'hourglass'>('all');
+  const [strategicPreset, setStrategicPreset] = useState<'all' | 'super' | 'hourglass'>('all');
   /** جستجوی همین جدول — حالتِ محلی است نه سراسری: نمادی که اینجا جستجو می‌شود
    *  فقط همین جدول را تنگ می‌کند و به تب‌های دیگر (تابلو/تکنیکال) سرریز نمی‌کند. */
   const [query, setQuery] = useState('');
 
   /** تعداد ردیف‌های حذف‌شده توسط دروازه‌های سخت */
   const excludedCount = useMemo(() => rows.filter((r) => r.excluded === true).length, [rows]);
+
+  /** خطِ تازگی فقط وقتی بک‌اند meta/freshness داده باشد — وگرنه خالی */
+  const freshnessText = dbUpdate ? dbFreshnessText(dbUpdate) : '';
 
   /** فیلتر نوع نماد (Asset Type): صندوق/کارگزاری/اوراق/مشتقه پیش‌فرض حذف */
   const nonCompanyCount = useMemo(
@@ -763,10 +940,6 @@ export function FtsScreenTable({
       // pricing_mode==='free'` چهارم را می‌شمرد و بیست‌وـ را می‌انداخت بیرون:
       // سنجشِ ۱۴۰۵-۰۷-۱۱ رویِ ۸۷۳ نماد ⇒ ۹۶ در برابرِ ۵۱ (۶۳ اضافه، ۱۸ کم).
       super: base.filter((r) => r.verdict === 'STRONG').length,
-      // «ستاپ جت» یعنی آخرینِ کندل پلکانِ مقاومتِ جزوه را شکسته باشد --
-      // همان tech_jet که موتورِ اسکرینر از رویِ کندل‌ها حساب می‌کند. پیش از
-      // این این چیپ i1_pass را می‌شمرد و نامش را جت می‌گذاشت.
-      jet: base.filter((r) => r.tech_jet === true && r.pricing_mode === 'free').length,
       hourglass: base.filter((r) => r.score === 5 && r.excluded !== true).length,
     };
   }, [rowsAfterAxisFilter]);
@@ -780,8 +953,6 @@ export function FtsScreenTable({
 
       if (strategicPreset === 'super') {
         base = base.filter((r) => r.verdict === 'STRONG');
-      } else if (strategicPreset === 'jet') {
-        base = base.filter((r) => r.tech_jet === true && r.pricing_mode === 'free');
       } else if (strategicPreset === 'hourglass') {
         base = base.filter((r) => r.score === 5 && r.excluded !== true);
       }
@@ -893,6 +1064,15 @@ export function FtsScreenTable({
           <span className="num text-2xs text-text-muted" title="فقط شرکت‌های تولیدی و خدماتی — صندوق‌ها و کارگزاری‌ها حذف شده‌اند">
             {toFaDigits(visible.length)} شرکت از {toFaDigits(rows.length)}
           </span>
+          {freshnessText ? (
+            <span
+              data-testid="fts-db-freshness"
+              className="min-w-0 max-w-full truncate text-2xs text-text-muted"
+              title={freshnessText}
+            >
+              {freshnessText}
+            </span>
+          ) : null}
           <DownloadRowsButton
             base="بنیادی FTS"
             testId="download-screen-rows"
@@ -960,18 +1140,6 @@ export function FtsScreenTable({
           }`}
         >
           💎 سوپر بنیادی‌ها ({toFaDigits(presetCounts.super)})
-        </button>
-        <button
-          type="button"
-          onClick={() => setStrategicPreset('jet')}
-          title="رشد فروش بالای ۴۰٪ و صنعت آزاد"
-          className={`rounded-lg border px-2.5 py-1 font-bold transition-all ${
-            strategicPreset === 'jet'
-              ? 'border-accent-green bg-accent-green/15 text-accent-green shadow-[0_0_8px_rgba(16,185,129,0.25)]'
-              : 'border-[var(--hairline)] bg-bg-primary text-text-secondary hover:text-text-primary'
-          }`}
-        >
-          🚀 نامزدهای ستاپ جت ({toFaDigits(presetCounts.jet)})
         </button>
         <button
           type="button"

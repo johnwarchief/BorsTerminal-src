@@ -7,6 +7,7 @@ Audit map of source line spans: MIGRATED_LINES.txt
 """
 from bors_config import (DB_PATH, FTS_CONFIG_PATH, FTS_DEFAULTS, MA_WINDOWS,
                          _CAL_CACHE_PATH, _cal_cache, APP_VERSION)
+import wm_calendar as WMC
 from tape_flags import JET_LADDER
 import adjustment_engine as AE
 import bors_flags
@@ -2065,12 +2066,12 @@ _FTS_POINT_TOUCH_TOL = 0.005
 # جزوه (JET_LADDER از tape_flags) مرجع است، تا چارت و تابلو یک جواب بدهند.
 
 
-def _fts_resample(candles, bucket="W"):
+def _fts_resample(candles, bucket="W", symbol=None):
     """تجمیع کندل روزانه به هفتگی/ماهانه — ورودی روند چند-تایم‌فریمی FTS.
 
     candles: لیست دیکشنری با کلیدهای time ('YYYY-MM-DD'), open, high, low, close, volume
              (همان ساختار candles در get_chart_db؛ مرتب صعودی).
-    bucket:  'W' → هفتهٔ شنبه‌محور (کلید = تاریخ شنبۀ همان هفته)  |  'M' → ماه میلادی.
+    bucket:  'W' → هفتهٔ شنبه‌محور (کلید = تاریخ شنبۀ همان هفته)  |  'M' → ماه جلالی.
     هفتهٔ ISO دوشنبه‌محور است؛ نشستِ ایران شنبه تا چهارشنبه است، پس در ISO سه
     روزِ اولِ هفتهٔ معاملاتی به هفتهٔ قبلی می‌افتادند و کندلِ هفتگیِ موتور با
     کندلِ هفتگیِ چارت (که شنبه‌محور است یکی از همان‌ها را می‌شمارد) یکی نمی‌شد —
@@ -2078,6 +2079,10 @@ def _fts_resample(candles, bucket="W"):
     کندل تجمیعی: open = اولین روز سبد، close = آخرین روز، high/low = max/min سبد،
     حجم = جمع. تاریخ کندل تجمیعی = تاریخ آخرین روز سبد (کندلِ هفته در آخرین روز
     معاملاتی‌اش می‌بندد) — هم‌قرارداد rvAggregate سمت فرانت.
+
+    برای کلیدهایی که تقویمِ روزانهٔ محصول با مرجع یکی نیست (Round 32D)، نوارِ
+    مرجعِ ذخیره‌شده از `wm_calendar` جای تجمیعِ ناقص می‌نشیند؛ کلیدهای دیگر
+    دست‌نخورده‌اند و در نبودِ بسته، رفتارِ قبلی برمی‌گردد.
     """
     if not candles:
         return []
@@ -2093,7 +2098,7 @@ def _fts_resample(candles, bucket="W"):
         if bucket == "W":
             key = (d - datetime.timedelta(days=(d.weekday() + 2) % 7)).isoformat()
         else:
-            key = t[:7]          # 'YYYY-MM'
+            key = WMC.month_key(t[:10])   # ماه جلالی، همان تقویمِ مرجع
         prev = out.get(key)
         if prev is None:
             out[key] = {"time": t[:10], "open": c["open"], "high": c["high"],
@@ -2105,6 +2110,12 @@ def _fts_resample(candles, bucket="W"):
             prev["close"] = c["close"]
             prev["time"] = t[:10]
             prev["volume"] += float(c.get("volume") or 0)
+    if symbol:
+        for k, row in out.items():
+            pkey = WMC.week_key(k) if bucket == "W" else k
+            ref = WMC.bar(symbol, bucket, pkey)
+            if ref:
+                row.update(ref)
     return [out[k] for k in sorted(out.keys())]
 
 def _fts_swings(series, k=3):

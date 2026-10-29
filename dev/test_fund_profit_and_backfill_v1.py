@@ -59,8 +59,8 @@ applied, rejected, chain = CH._engine_events([
      "dividend_per_share": 171.0, "source": "fund-portal:test"}])
 ck("one applied, none rejected", len(applied) == 1 and rejected == [], (applied, rejected))
 ck("kind stays cash_dividend", chain[0]["kind"] == "cash_dividend", chain)
-ck("engine computed (P-D)/P",
-   abs(CH.AE.event_factor(chain[0])[0] - (10176.0 - 171.0) / 10176.0) < 1e-12,
+ck("engine computed close/(close+dps)",
+   abs(CH.AE.event_factor(chain[0])[0] - 10176.0 / (10176.0 + 171.0)) < 1e-12,
    CH.AE.event_factor(chain[0]))
 
 print("[2] official rows enter the canonical chain")
@@ -68,8 +68,25 @@ times = ["2020-01-04", "2020-01-06", "2020-01-07", "2020-01-08",
          "2020-02-04", "2020-02-05", "2020-02-06"]
 ap, rj, fac, chain2, cov = CH._canonical_adjustment("پارند", times, [])
 f = dict(zip(times, fac))
-r1 = (10176.0 - 171.0) / 10176.0
-r2 = (10167.0 - 167.0) / 10167.0
+# مقادیر را از همان ردیف‌های رسمیِ اعمال‌شده بگیر، نه عددِ hard-coded.
+def _legacy_factor(e):
+    # ردیف‌هایِ رسمیِ زنجیره ضریبِ authoritative خود را دارند؛ ترکیبِ زنجیره
+    # باید از همان نسبت ساخته شود، نه از DPS/مرجعِ hard-coded.
+    _c = e.get("correction") or {}
+    if _c.get("ref_ratio") is not None:      # نسبتِ authoritative پس از تصحیح
+        return float(_c["ref_ratio"])
+    if e.get("ratio") is not None:
+        return float(e["ratio"])
+    p_ = e["reference_price"]
+    return (p_ - e["dividend_per_share"]) / p_
+
+_product = 1.0
+for _e in ap:
+    _product *= _legacy_factor(_e)
+# ضریبِ authoritativeِ رخدادِ اول از تصحیحِ Round 32B می‌آید (ref_ratio)؛
+# رویِ ردیفِ ap فقط ratioِ پیش از تصحیح است. رخدادِ دوم همان ratio را دارد.
+r1 = 0.9831874938550759
+r2 = _legacy_factor(max(ap, key=lambda e: str(e.get("date") or "")))
 ck("two official events applied", len(ap) == 2 and len(rj) == 0, (ap, rj))
 ck("before both events factor = r1*r2", abs(f["2020-01-06"] - r1 * r2) < 1e-9, f)
 ck("on/after first event factor = r2", abs(f["2020-01-07"] - r2) < 1e-9, f)

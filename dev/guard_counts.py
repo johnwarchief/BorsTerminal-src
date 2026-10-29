@@ -37,6 +37,8 @@ PATTERNS = (
     # بی‌این الگو هیچ‌کدام شمارش نمی‌شدند و سطرشان «بی‌شمارش» می‌ماند.
     ("N_pass / M_fail", re.compile(r"(\d+)_pass\s*/\s*(\d+)_fail(?:\s*/\s*(\d+)_skip)?")),
     # `OK — 12/12` و `%d/%d` تنها درِ خطِ پایانی
+    # `32 PASS / 0 FAIL` — گاردهایِ فاز ۲ (snapshot/publish)
+    ("N PASS / M FAIL", re.compile(r"(?i)(\d+)\s*PASS\s*/\s*(\d+)\s*FAIL")),
     ("OK — N/M", re.compile(r"OK\s*\u2014\s*(\d+)\s*/\s*(\d+)")),
     # `۲۹ سرخ` (candle_integrity) — فقط شمارِ خطا؛ کلِ بررسی‌ها از PASS/FAIL می‌آید
     ("N سرخ", re.compile(r"(\d+)\s*\u0633\u0631\u062e")),
@@ -71,6 +73,9 @@ def parse_counts(txt: str) -> Optional[dict]:
                     "pattern": name, "failed": failed}
         if name == "N سبز، M قرمز":
             # a = سبزها، b = قرمزها — بر «سنجه/خطا» که a کل است
+            return {"passed": g[0], "total": g[0] + g[1], "pattern": name,
+                    "failed": g[1]}
+        if name == "N PASS / M FAIL":
             return {"passed": g[0], "total": g[0] + g[1], "pattern": name,
                     "failed": g[1]}
         if name == "N_pass / M_fail":

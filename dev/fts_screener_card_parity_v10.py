@@ -58,11 +58,13 @@ cfg = load_fts_config()
 # کشِ اسکرینر دو لایه است: payloadِ دیسک (تا ۱۲ ساعت کهنه) و جدولِ مادی‌شدهٔ
 # `fts_results`. اگر سینکِ بازار بین دو اجرای ما ردیف‌ها را عوض کند — یا **کدِ
 # محاسبه عوض شود** (مثل دروازهٔ بانِ مردهٔ ارزش بازار، ۱۴۰۵-۰۷-۱۱) — ناهم‌خوانیِ
-# بندِ اول «باگِ کد» نیست که «کشِ کهنه». پس هر دو لایه با همان رویۀ خودِ محصول
-# باطل می‌شوند. `fts_results` کشِ کاملاً مشتق است: پس ازِ این حذف، اسکرینر محاسبهٔ
-# زنده می‌کند و legِ «codal FTS pipeline» درِ همین سوئیت دوباره مادی‌اش می‌کند.
+# بندِ اول «باگِ کد» نیست که «کشِ کهنه». پس کشِ payload با همان رویۀ خودِ محصول
+# باطل می‌شود. `fts_results` را این اسکریپتِ سنجش دست نمی‌زند (DELETE هم نوشتن
+# رویِ market.db است)؛ هر نمادی که در جدولِ مادی نباشد در همان حلقه به مسیرِ
+# زندهٔ evaluate_v10 می‌افتد.
 try:
-    S.invalidate_screener_cache()
+    # فقط payload — بی‌نوشتنِ market.db (دلیل در بندِ بالا).
+    S.invalidate_screener_cache(drop_materialized=False)
 except OSError:
     pass
 res = S.get_screener()
@@ -87,6 +89,31 @@ mismatches = []
 eng_of = {r["symbol_norm"]: r for r in fts_engine.bulk_scan(conn, cfg=cfg)}
 print("موتور (bulk_scan): %d ردیف" % len(eng_of))
 
+# نقشه‌هایِ کل‌بازاری برایِ scan_symbol همهٔ ردیف‌ها — یک‌بار، نه N+1؛ بدونِ
+# این، هر فراخوانیِ scan_symbol دو نقشهٔ کل‌بازاری می‌سازد و مقایسهٔ ۷۸۵ ردیفی
+# دقیقه‌ها طول می‌کشید (همان الگویِ ضدِ N+1 خودِ bulk_scan).
+_sessions = fts_engine.market_sessions(conn)
+_m141m = fts_engine.m141_map(conn)
+_liqm = fts_engine.avg_trade_value_hmt(conn)
+_no_sales = fts_engine.no_sales_symbols(conn)
+scan_bad = []
+field_bad = []            # پاریتیِ عدد/N/A/دلیلِ شاخص‌های ۳ و ۴ در سه مسیر
+
+
+def _scan(key, mcap, total, sector):
+    return fts_engine.scan_symbol(conn, key, mcap, total, sector, cfg=cfg,
+                                  _sessions=_sessions,
+                                  m141_hit=_m141m.get(key, False),
+                                  avg_trade_val=_liqm.get(key),
+                                  _no_sales=_no_sales)
+
+
+def _num_eq(a, b, tol=0.05):
+    if a is None or b is None:
+        return a is None and b is None
+    return abs(a - b) <= tol
+
+
 
 def eng_exempt(b):
     # رأی ۱۶ (۱۴۰۵/۰۷/۰۳): پیش از این معافیت را `i4_pass=True` علامت می‌زد، یعنی
@@ -102,11 +129,19 @@ score_inflation = []      # امتیازِ موتور چیزی جز شمارشِ
 ratio_far = 0             # اختلافِ عددی (غیرِکشنده؛ مبنای سالانه‌سازی متفاوت)
 ind4_rows = []
 scan_probe = []           # نمونه‌ای از مسیرِ تک‌نمادیِ موتور (scan_symbol)
+# ارزشِ کلِ بازار یک‌بار؛ contextِ هر ردیف (که یک کوئریِ کل‌بازاری داشت)
+# ۷۸۶ بار صدا زده می‌شد و suite از سقفِ ۶۰۰ثانیه‌ایِ گیت رد می‌کرد.
+_total = F.board_total_market_cap(conn)[0]
 for r in rows:
     key = r.get("symbol_norm") or fts_engine.norm_fa(r["symbol"])
-    mcap, sector, total, _info = F._fts_market_ctx(conn, key)
-    card = F.evaluate_v10(conn, key, mcap or 0.0, total, sector, cfg=cfg,
-                          company_name=cname_of.get(key, ""))
+    _b = eng_of.get(key)
+    # مبنایِ مقایسهٔ حکم یکسان: همان ارزشِ بازارِ ردیفِ bulk (کارتِ endpoint
+    # جداگانه سنجیده می‌شود)؛ صنعت هم از خودِ ردیف.
+    mcap_eff = (_b or {}).get("mcap") or 0.0
+    sector = r.get("sector_name") or ""
+    card = F.evaluate_v10(conn, key, mcap_eff, _total, sector, cfg=cfg,
+                          company_name=cname_of.get(key, ""),
+                          has_instrument=True)
     checked += 1
     sp = [bool(r["i1_pass"]), bool(r["i2_pass"]), bool(r["i3_pass"]),
           bool(r["i4_pass"]), bool(r["i5_pass"])]
@@ -131,6 +166,59 @@ for r in rows:
     elif er is not None and cr is not None and abs(er - cr) > 0.05:
         ratio_far += 1
     ind4_rows.append((r["symbol"], ee, er, ce, cr))
+    # ── بندِ دومِ‌الف (Task 10B2a2): عددها، N/A و دلیلِ شاخص‌های ۳ و ۴ در سه
+    # مسیر — ردیفِ bulk_scan، کارت (evaluate_v10) و scan_symbol — برایِ **همهٔ**
+    # ردیف‌ها. پیش از این فقط حکمِ معافیت و یک نمونهٔ ۳۱تایی مقایسه می‌شد، پس
+    # واگراییِ پتانسیلِ «حاشیهٔ سود خالص (جایگزینِ مالی)» در ۶۴ ردیف دیده
+    # نمی‌شد. مقایسه ساکت نمی‌شود؛ هر اختلاف یک ورودیِ `field_bad` است.
+    scan = _scan(key, mcap_eff, _total, sector)
+    g3 = (card.get("indicators") or {}).get("3") or {}
+    s3 = (scan.get("detail") or {}).get("gross_margin") or {}
+    s4 = (scan.get("detail") or {}).get("profit_potential") or {}
+    # حکمِ سه‌حالِ ۳: «کارت حکم نمی‌دهد» از `na`/حاشیهٔ تهی می‌آید، نه از
+    # `ind3_na`؛ از Task 10B2a1 (fix round 1) دومی فقط N/Aِ طبقه است و
+    # شکافِ داده (حکم None، i3_na=False) را نباید True نشان دهد.
+    c_i3 = (None if (g3.get("na") or g3.get("margin_pct") is None)
+            else bool(card["passes"]["3_gross_margin"]))
+    s_i3 = (None if (s3.get("na") or s3.get("margin_pct") is None)
+            else bool((scan.get("passes") or {}).get("3_gross_margin")))
+    c_i4 = None if fts_engine.ind4_na(v4) else v4.get("pass")
+    _par = (
+        ("gross_margin", b.get("gross_margin"), g3.get("margin_pct"),
+         s3.get("margin_pct"), _num_eq),
+        ("i3", b.get("i3_pass"), c_i3, s_i3,
+         lambda x, y: x == y),
+        # `i3_na` = سیگنالِ N/Aِ طبقه در هر سه مسیر (bulk/card/scan)؛ شکافِ
+        # داده در هر سه False است و تفکیکش در `i3_reason` می‌ماند.
+        ("i3_na", bool(b.get("i3_na")), fts_engine.ind3_na(g3),
+         bool(scan.get("i3_na")), lambda x, y: x == y),
+        ("i3_reason", b.get("i3_reason") or "", g3.get("reason") or "",
+         scan.get("i3_reason") or "", lambda x, y: x == y),
+        ("i4", b.get("i4_pass"), c_i4,
+         (scan.get("passes") or {}).get("4_sales_to_mcap"),
+         lambda x, y: x == y),
+        ("i4_na", bool(b.get("i4_na")), bool(v4.get("exempt")),
+         bool(scan.get("i4_na")), lambda x, y: x == y),
+        ("i4_exempt", bool(b.get("i4_exempt")), bool(v4.get("exempt")),
+         bool(scan.get("i4_exempt")), lambda x, y: x == y),
+        ("i4_available", bool(b.get("i4_available")),
+         bool(v4.get("available")), bool(scan.get("i4_available")),
+         lambda x, y: x == y),
+        ("potential_pct", b.get("profit_potential_pct"),
+         v4.get("potential_pct"), s4.get("potential_pct"), _num_eq),
+        ("margin_basis", b.get("margin_basis"), v4.get("margin_basis"),
+         scan.get("margin_basis"), lambda x, y: x == y),
+        ("margin_used_pct", b.get("margin_used_pct"),
+         v4.get("margin_used_pct"), scan.get("margin_used_pct"), _num_eq),
+        ("i4_reason", b.get("i4_reason") or "", v4.get("reason") or "",
+         scan.get("i4_reason") or "", lambda x, y: x == y),
+        ("acceptance_path", b.get("i4_acceptance_path"),
+         v4.get("acceptance_path"), scan.get("i4_acceptance_path"),
+         lambda x, y: x == y),
+    )
+    for label, bv, cv, sv, eq in _par:
+        if not (eq(bv, cv) and eq(bv, sv)):
+            field_bad.append((r["symbol"], label, bv, cv, sv))
     # رأی ۱۶ (قفلِ عددی): امتیازِ موتور باید دقیقاً شمارشِ پاس‌های True باشد.
     # اگر روزی معافیت دوباره True شود (یا None داخلِ جمع بیفتد)، همین‌جا قرمز
     # می‌شود — نه رویِ صفحه‌ای که کاربر نمرهٔ ۴ از ۵ را می‌خواند.
@@ -143,7 +231,7 @@ for r in rows:
         # `exempt`ِ خامِ کارت هم رد می‌شود: «نظر ندادن»ِ شاخص ۴ سه علّت دارد
         # (معافیتِ F-04، بی‌فروشِ سالانه، بی‌ارزشِ بازار) و مقایسهٔ `na` با
         # `is_exempt` آن‌ها را به هم می‌آلاورد.
-        scan_probe.append((key, r["symbol"], mcap or 0.0, total, sector, ce, b,
+        scan_probe.append((key, r["symbol"], mcap_eff, _total, sector, ce, b,
                            bool(v4.get("exempt"))))
 
 print("بررسی‌شده: %d | ناهم‌خوانی: %d" % (checked, len(mismatches)))
@@ -151,6 +239,10 @@ for sym, ss, sp, se, cs, cp, ce in mismatches[:15]:
     print("  ✗ %-14s اسکرینر=%d %s exc=%s | کارت=%d %s exc=%s"
           % (sym, ss, "".join("1" if x else "0" for x in sp), se,
              cs, "".join("1" if x else "0" for x in cp), ce))
+print("شاخص ۳/۴ — عدد/N/A/دلیل در سه مسیر (bulk/card/scan): %d واگرایی"
+      % len(field_bad))
+for sym, label, bv, cv, sv in field_bad[:25]:
+    print("  ✗ %-14s %-16s bulk=%r card=%r scan=%r" % (sym, label, bv, cv, sv))
 
 # ── گزارشِ بندِ دوم ────────────────────────────────────────────────────────
 n_ex = sum(1 for _s, ee, _er, _ce, _cr in ind4_rows if ee)
@@ -168,7 +260,7 @@ for sym, sector, er, cr in value_disagree[:20]:
           % (sym, er, cr, sector))
 scan_bad = []
 for key, sym, mcap, total, sector, ce, bulk_row, c_exempt in scan_probe:
-    _rec = fts_engine.scan_symbol(conn, key, mcap, total, sector, cfg=cfg)
+    _rec = _scan(key, mcap, total, sector)
     d = (_rec.get("detail") or {}).get("sales_to_mcap") or {}
     # دو حکمِ جدا، هر دو قفل:
     #   الف) معافیتِ F-04 درِ کارت و درِ تک‌کوئریِ موتور یکی باشد؛
@@ -209,6 +301,78 @@ for key, sym, mcap, total, sector, ce, bulk_row, c_exempt in scan_probe:
 for sym, ee, ce in scan_bad[:20]:
     print("  ✗ %-14s scan_symbol: %s | %s" % (sym, ee, ce))
 print("نمونهٔ scan_symbol: %d | واگرایی: %d" % (len(scan_probe), len(scan_bad)))
+
+# ── بندِ دومِ‌ب: نمونهٔ شرکت‌هایِ فقط-ماهانه (Task 10A) ─────────────────────
+# این نمادها صورتِ مالیِ سالانه ندارند و پیش از Task 10A اصلاً در ردیف‌هایِ
+# اسکرینر نبودند؛ حالا باید با مسیرِ ماهانه در هر سه سطح یک حکم/مسیر/برچسب
+# بدهند: ردیفِ bulk_scan، کارت (evaluate_v10) و scan_symbol.
+annual_keys = {fts_engine.norm_fa(s[0]) for s in conn.execute(
+    "SELECT DISTINCT symbol FROM financial_statements WHERE period_months>=12")}
+# فقط-ماهانه یعنی مسیرِ ۱ = YTD ماهانه و هیچ سابقهٔ EPS سالانه؛ نه «هر نمادی که
+# صورتِ مالیِ ۱۲ماهه‌اش با املايِ دیگر ثبت شده». (سه نمادِ FS-only با i1_basis
+# fs_* اشتباهاً وارد این کوهورت می‌شدند و i3 آن‌ها درست عددی بود.)
+mo_rows = [r for r in rows
+           if r.get("i1_basis") is None
+           and (r.get("eps_years_available") or 0) == 0]
+mo_sample = mo_rows[:3]
+mo_bad = []
+# آزمونِ حداقلیِ کوهورت (Task 10A M3): اگر تغییرِ جهانِ نمادها برگردد، این
+# حلقه خالی می‌شد و اسکریپت با «۰ ردیف، ۰ واگرایی» سبزِ کاذب می‌ماند.
+if len(mo_rows) < 3:
+    mo_bad.append(("cohort", "فقط-ماهانه کمتر از ۳ ردیف در اسکرینر: %d"
+                   % len(mo_rows)))
+for r in mo_sample:
+    key = r.get("symbol_norm") or fts_engine.norm_fa(r["symbol"])
+    mcap, sector, total, _info = F._fts_market_ctx(conn, key)
+    card = F.evaluate_v10(conn, key, mcap or 0.0, total, sector, cfg=cfg,
+                          company_name=cname_of.get(key, ""), has_instrument=True)
+    b = eng_of.get(key)
+    if b is None:
+        mo_bad.append((r["symbol"], "ردیفِ bulk_scan برایِ نمادِ فقط-ماهانه نیست"))
+        continue
+    scan = _scan(key, mcap_eff, _total, sector)
+    cp = card["passes"]
+    c4 = (card.get("indicators") or {}).get("4") or {}
+    sp = scan.get("passes") or {}
+    _tri = (("i1", b["i1_pass"], cp["1_growth"], sp.get("1_growth")),
+            ("i2", b["i2_pass"], cp["2_eps_trend"], sp.get("2_eps_trend")),
+            ("i3", b["i3_pass"], cp["3_gross_margin"], sp.get("3_gross_margin")),
+            ("i4", b["i4_pass"], c4.get("pass"), sp.get("4_sales_to_mcap")))
+    for label, bv, cv, sv in _tri:
+        if not (bool(bv) == bool(cv) == bool(sv)):
+            mo_bad.append((r["symbol"], "%s: bulk=%s card=%s scan=%s"
+                           % (label, bv, cv, sv)))
+    # حاشیهٔ صورتِ مالی وجود ندارد ⇒ در هر دو مسیرِ موتور حکمِ شاخص ۳ None است.
+    if b.get("i3_pass") is not None or sp.get("3_gross_margin") is not None:
+        mo_bad.append((r["symbol"],
+                       "i3 برایِ فقط-ماهانه None نیست (bulk=%s scan=%s)"
+                       % (b.get("i3_pass"), sp.get("3_gross_margin"))))
+    if b.get("i4_acceptance_path") != c4.get("acceptance_path") \
+            or b.get("i4_acceptance_path") != scan.get("i4_acceptance_path"):
+        mo_bad.append((r["symbol"], "مسیرِ ۴ واگرا: bulk=%s card=%s scan=%s"
+                       % (b.get("i4_acceptance_path"),
+                          c4.get("acceptance_path"),
+                          scan.get("i4_acceptance_path"))))
+    if b.get("annualize_label") != c4.get("annualize_label") \
+            or b.get("annualize_label") != scan.get("annualize_label"):
+        mo_bad.append((r["symbol"], "برچسبِ سالانه‌سازی واگرا: bulk=%s card=%s scan=%s"
+                       % (b.get("annualize_label"), c4.get("annualize_label"),
+                          scan.get("annualize_label"))))
+    if b.get("annualize_months") != c4.get("annualize_months") \
+            or b.get("annualize_months") != scan.get("annualize_months"):
+        mo_bad.append((r["symbol"], "ماهِ سالانه‌سازی واگرا: bulk=%s card=%s scan=%s"
+                       % (b.get("annualize_months"), c4.get("annualize_months"),
+                          scan.get("annualize_months"))))
+    # گزارشِ شاهد برایِ نمونه (نه فقط سبز/قرمز).
+    print("  فقط-ماهانه %-12s i1=%s i2=%s i3=%s i4=%s مسیر=%s برچسب=%r"
+          % (r["symbol"], b["i1_pass"], b["i2_pass"], b["i3_pass"],
+             b["i4_pass"], b.get("i4_acceptance_path"),
+             b.get("annualize_label")))
+for sym, why in mo_bad[:20]:
+    print("  ✗ %-14s فقط-ماهانه: %s" % (sym, why))
+print("فقط-ماهانه (Task 10A): %d ردیف در اسکرینر | نمونه: %d | واگرایی: %d"
+      % (len(mo_rows), len(mo_sample), len(mo_bad)))
+
 print("توضیح: اختلافِ مبنای سالانه‌سازیِ عددی (>۰٫۰۵) خارج از حکمِ معافیت: %d ردیف"
       % ratio_far)
 # رأی ۱۶ (۱۴۰۵/۰۷/۰۳) بحثِ «معاف بودن یعنی پاس؟» را بست: معافیت به هیچ‌وجه
@@ -269,12 +433,13 @@ print("بندِ سوم (endpoint): %d ردیف | ناهم‌خوانی: %d | ص�
          sum(1 for r in ep_rows if r.get("fts_verdict") == "NOT_APPLICABLE"), len(band3)))
 
 if (mismatches or exempt_disagree or value_disagree or scan_bad
-        or score_inflation or band3):
+        or score_inflation or band3 or mo_bad or field_bad):
     print("RESULT: FAIL — اسکرینر/موتور و کارت جزئیات هم‌راستا نیستند "
           "(امتیاز=%d، معافیت=%d، عدد-vs-N/A=%d، scan_symbol=%d، تورمِ امتیاز=%d، "
-          "endpoint=%d)."
+          "endpoint=%d، فقط-ماهانه=%d، شاخص۳/۴=%d)."
           % (len(mismatches), len(exempt_disagree), len(value_disagree),
-             len(scan_bad), len(score_inflation), len(band3)))
+             len(scan_bad), len(score_inflation), len(band3), len(mo_bad),
+             len(field_bad)))
     sys.exit(1)
 print("RESULT: PASS — امتیاز/پرچم اسکرینر == کارت، معافیتِ شاخص ۴ در هر سه مسیر "
       "None است (نه پاسِ رایگانِ امتیاز)، و /api/fundamental/screen همان "

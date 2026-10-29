@@ -25,6 +25,9 @@ export const FtsScreenRowSchema = z.object({
   eps_years_required: z.number().nullish(),
   /** شاخص ۳: حاشیه سود ناخالص (٪) */
   gross_margin: z.number().nullable().nullish(),
+  /** طبقهٔ نمایشیِ حاشیه (Task 6) از همان موتور: below_floor | floor |
+   *  standard | good؛ null یعنی حاشیه ساخته نشده (N/A). برچسب است، نه حکم. */
+  margin_tier: z.string().nullish(),
   /** شاخص ۴: فروش سالانه ÷ ارزش بازار و پتانسیل سود ناخالص (٪) */
   sales_to_mcap: z.number().nullable().nullish(),
   profit_potential_pct: z.number().nullable().nullish(),
@@ -37,18 +40,46 @@ export const FtsScreenRowSchema = z.object({
   /** «ب» رشد فیزیکی برایِ این ماهیت قابل‌اعمال است؟ از همان
    *  `company_profile.volume_applicable` که کارت می‌خواند — نه حدسِ نام/صنعت. */
   i1b_applicable: z.boolean().nullish(),
+  /** «ب» داده دارد ولی حکم نمیسازد؟ `i1b_applicable=true` + `i1b_data_gap=true`
+   *  یعنی کمیت/مبنای تورم در دسترس نبوده — جدول باید N/A خاکستری بنشاند،
+   *  نه ✗ سرخ؛ شکستِ سنجیده‌شده همچنان `i1b_data_gap=false` است. */
+  i1b_data_gap: z.boolean().nullish(),
+  /** مبنا/دلیلِ محور ۱ (Task 4): `i1_basis=None` مسیرِ ماهانهٔ YTD،
+   *  `fs_interim`/`fs_annual` صورتِ مالی، `fs_unavailable` شکافِ صورتِ مالی.
+   *  `i1_na` یعنی حکمِ محور ۱ «سنجیده نشد» است (None)، نه «رد»؛ `i1_reason`
+   *  همان دلیلِ کارت است و جدول باید با آن N/A خاکستری بنشاند. */
+  i1_basis: z.string().nullish(),
+  i1_na: z.boolean().nullish(),
+  i1_reason: z.string().nullish(),
+  /** مبنایِ ۱ب: `reported_quantity`/`price_effect_decomposition`/`unavailable`/
+   *  `not_applicable` — از خودِ موتور، نه بازسازیِ فرانت. */
+  i1b_basis: z.string().nullish(),
   i2_pass: z.boolean().nullish(),
   /** شاخص ۲: «سنجیده نشد» از خودِ موتور (`ind2_na`) — سابقه‌ای که اسلاتی از
    *  صورتهایِ تلفیقی دارد یا صنعت بیمه. `eps_consolidated` علتش را می‌گوید تا
    *  جدول «N/A» را با «داده نیست» اشتباه نگیرد (رأیِ ۱۳ + جزوۀ ص ۴). */
   i2_na: z.boolean().nullish(),
   eps_consolidated: z.boolean().nullish(),
+  /** برچسبِ شاهدِ EPS (Task 5) از خودِ موتور: «سالانهٔ حسابرسی‌شده» … «دادهٔ
+   *  ناکافی». جدول آن را زیرِ سلولِ EPS می‌نویسد؛ سری دست‌نخورده می‌ماند. */
+  eps_evidence_label: z.string().nullish(),
   i3_pass: z.boolean().nullish(),
+  /** دلیلِ خالی‌بودنِ حکمِ ۳ از خودِ موتور: N/Aِ طبقه (بانک/مالی/هلدینگ/صندوق)
+   *  یا شکافِ داده (نبودِ سطر سود ناخالص/درآمد) — همان متنِ کارت. */
+  i3_reason: z.string().nullish(),
   i4_pass: z.boolean().nullish(),
+  /** مسیرِ پذیرشِ شاخص ۴ (Task 7) از خودِ موتور: `sales_to_mcap` (مسیر اول)
+   *  یا `profit_potential` (مسیر دومِ ۴۰٪)؛ null برایِ معاف/بی‌داده/بی‌مسیر.
+   *  جدول فقط برچسب می‌زند، آستانه یا دروازه را بازمحاسبه نمی‌کند. */
+  i4_acceptance_path: z.enum(['sales_to_mcap', 'profit_potential']).nullish(),
+  /** «سالانه‌شده از دورهٔ N ماهه» — رشتهٔ خالی یعنی دوره‌ای سالانه نشده است. */
+  annualize_label: z.string().nullish(),
   /** علتِ خالی‌بودنِ حکم: «معاف/بی‌کاربرد» (na) یا «داده نیست». از خودِ کارت
    *  (`ind3_na`/`ind4_na`) می‌آید تا جدول علت را از نام و صنعت حدس نزند. */
   i3_na: z.boolean().nullish(),
   i4_na: z.boolean().nullish(),
+  /** دلیلِ حکمِ ۴ از خودِ موتور (معاف / دادهٔ ناکافی / مسیرِ پذیرش / بی‌مسیر). */
+  i4_reason: z.string().nullish(),
   i5_pass: z.boolean().nullish(),
   /** رأیِ موتور برایِ همین ردیف (STRONG / WATCH / REJECT / EXCLUDED / «FTS ندارد»).
    *  پری‌ست «سوپر بنیادی» همان STRONG است — بی‌بازتولیدِ آستانه درِ فرانت. */

@@ -5,12 +5,12 @@
 // با نمودار و فرمول شفاف باز می‌کند. هلدینگ‌ها به‌جای P/E با P/NAV
 // محاسبه می‌شوند (آخرین EPS ۱۲ماهه به‌عنوان جانشین NAV تا وقتی بک‌اند
 // ستون NAV منتشر کند) و از مقایسه با گروه نامربوط «سایر» پرهیز می‌شود.
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router';
 import { Badge } from '@shared/components/Badge';
 import { EmptyState } from '@shared/components/EmptyState';
 import { RetryAction } from '@shared/components/RetryAction';
-import { http, HttpError } from '@shared/api/http';
+import { HttpError } from '@shared/api/http';
 import { toFaDigits } from '@shared/lib/fmt';
 import { statementAgeDays } from '@shared/lib/jalaali';
 import { publishSignal } from '@shared/lib/signalBus';
@@ -19,9 +19,10 @@ import { useFtsCard } from '../api/useFtsCard';
 import { useQuarters } from '../api/useQuarters';
 import { useSectorBoard } from '../api/useSectorBoard';
 import { useFtsScreen } from '../api/useFtsScreen';
+import { useCodalAutoUpdate, type DbStatus } from '../api/useCodalAutoUpdate';
 import { groupBySymbol, useCalendarUpcoming } from '../api/useCalendarUpcoming';
 import { deCumulateQuarters, profitYoY, sectorMedianPE } from '../lib/fundMath';
-import { isFinancialOrHolding, isPhysicalGrowthApplicable } from '../lib/assetScope';
+import { financialClassLabel, isBankLike, isFinancialOrHolding, isPhysicalGrowthApplicable } from '../lib/assetScope';
 import { fundamentalSignal } from '../signals/fundamentalSignals';
 import { FtsCard } from '../components/FtsCard';
 import { cardAuditEvidence } from '../lib/auditEvidence';
@@ -40,12 +41,71 @@ const DIR_LABEL = { bullish: 'بنیاد روبه‌رشد', bearish: 'بنیا�
 /** گروه صنعتی نامرتبط برای مقایسه (هلدینگ‌ها با آن سنجیده نمی‌شوند) */
 const OTHER_GROUP = 'سایر';
 
+/** نوارِ وضعیتِ به‌روزرسانیِ دادهٔ بنیادی — متن‌ها از پاسخِ واقعیِ بک‌اند می‌آیند.
+ *  درصد فقط وقتی می‌آید که stage خودش downloading باشد؛ وگرنه ادعایِ عدد نمی‌کنیم.
+ *  موفقیت فقط در گذارِ running→done (از هوک) نمایش داده می‌شود، نه در ورود به
+ *  صفحه‌ای که کارِ قبلی‌اش done بوده است. خطایِ ماندگارِ خیلی کهنه را خودِ هوک
+ *  پاک می‌کند تا این اعلان «خطایِ همین حالا» خوانده نشود. */
+function CodalUpdateStatus({ status, completed }: { status: DbStatus | null; completed: boolean }) {
+  if (!status && !completed) return null;
+  const error = String(status?.error ?? '').trim();
+  if (status?.running) {
+    const percent =
+      typeof status.percent === 'number' && Number.isFinite(status.percent)
+        ? Math.min(100, Math.max(0, Math.round(status.percent)))
+        : null;
+    const downloading = status.stage === 'downloading' && percent != null && percent > 0;
+    return (
+      <div
+        role="status"
+        data-testid="codal-update-running"
+        className="flex flex-wrap items-center gap-2 rounded-xl border border-accent-blue/40 bg-accent-blue/10 px-3 py-2 text-2xs font-bold text-accent-blue"
+      >
+        <span>
+          {downloading ? `دریافت دادهٔ بنیادی ${toFaDigits(percent)}٪` : 'در حال به‌روزرسانی…'}
+        </span>
+        {downloading ? (
+          <span className="h-1.5 w-28 shrink-0 overflow-hidden rounded-full bg-bg-card/80" aria-hidden>
+            <span
+              className="block h-full rounded-full bg-accent-blue"
+              style={{ width: `${percent}%` }}
+            />
+          </span>
+        ) : null}
+      </div>
+    );
+  }
+  if (error) {
+    return (
+      <div
+        role="alert"
+        data-testid="codal-update-error"
+        className="min-w-0 break-words rounded-xl border border-accent-red/40 bg-accent-red/10 px-3 py-2 text-2xs font-bold leading-relaxed text-accent-red"
+      >
+        به‌روزرسانی دادهٔ بنیادی ناموفق ماند: {error}
+      </div>
+    );
+  }
+  if (completed) {
+    return (
+      <div
+        role="status"
+        data-testid="codal-update-done"
+        className="rounded-xl border border-accent-green/40 bg-accent-green/10 px-3 py-2 text-2xs font-bold text-accent-green"
+      >
+        دادهٔ بنیادی به‌روز شد
+      </div>
+    );
+  }
+  return null;
+}
+
+
 /** `?drill=` فقط پنج مقدارِ مجاز دارد؛ هر چیزِ دیگر یعنی «پنل بسته» — نه حدس. */
 function readDrill(raw: string | null): DrillDownKey | null {
   return raw === '1' || raw === '2' || raw === '3' || raw === '4' || raw === '5'
     ? (raw as DrillDownKey) : null;
 }
-
 
 export default function FundamentalPage() {
   const params = useParams();
@@ -78,49 +138,11 @@ export default function FundamentalPage() {
   /** «افزایش سرمایه» از همان یک درخواستِ انبوه می‌آید؛ کلیدِ دومِ پاسخ */
   const capitalMap = useMemo(() => groupBySymbol(upcoming.data?.capital), [upcoming.data]);
 
-  /** بروزرسانی دیتابیس کدال از snapshot گیت‌هاب: POST + polling وضعیت تا پایان */
-  type DbStatus = { running: boolean; stage: string; percent?: number; detail?: string; error?: string };
-  const [dbUpd, setDbUpd] = useState<DbStatus | null>(null);
-  const dbRunning = dbUpd?.running === true;
+  /** یک هوکِ پولینگ (۲s در حال اجرا / ۳۰s بی‌کار) + یک refetch در گذارِ done.
+   *  دو افکتِ پیشین اینجا حذف شدند تا هیچ تایمرِ دومی نباشد. */
   const { refetch: refetchScreen } = screen;
-  const handleDbUpdate = async () => {
-    setDbUpd({ running: true, stage: 'starting' });
-    try {
-      await http('/api/sync/codal/db-download', { method: 'POST' });
-    } catch { /* وضعیت واقعی از polling می‌آید */ }
-  };
-  // polling: ریتم از «آیا در جریان است» می‌آید، نه از خودِ وضعیت — وگرنه هر پاسخ
-  // افکت را از نو می‌ساخت. دو نگهبان لازم است: `alive` (صفحه بسته شد ⇒ نوشتن در
-  // stateِ رهاشده نباشد) و شمارۀ ترتیب (پاسخِ درخواستِ کهنه جایِ پاسخِ تازه را
-  // نگیرد؛ با ریتمِ ۲ ثانیه و پاسخِ کند، دو درخواست هم‌زمان در راه می‌مانند و
-  // ترتیبِ رسیدن با ترتیبِ زدن یکی نیست — پیش از این «done» می‌توانست با
-  // «running»ِ کهنه بازنویسی شود).
-  useEffect(() => {
-    if (!dbRunning) return;
-    let alive = true;
-    let issued = 0;
-    const tick = () => {
-      const mine = ++issued;
-      http<{ db: DbStatus }>('/api/sync/codal/db-status')
-        .then((r) => {
-          if (!alive || mine !== issued) return;
-          setDbUpd(r.db);
-          if (!r.db.running && r.db.stage === 'done') void refetchScreen();
-        })
-        .catch(() => { /* سرور مشغول است — تیک بعدی */ });
-    };
-    const id = setInterval(tick, 2000);
-    return () => { alive = false; clearInterval(id); };
-  }, [dbRunning, refetchScreen]);
-  // اگر دانلود از قبل در جریان است (مثلاً کاربر وسط آن صفحه را عوض کرده)،
-  // وضعیت را یک‌بار بخوان تا دکمه و polling از همان ابتدا زنده باشند.
-  useEffect(() => {
-    let alive = true;
-    http<{ db: DbStatus }>('/api/sync/codal/db-status')
-      .then((r) => { if (alive && r.db.running) setDbUpd(r.db); })
-      .catch(() => {});
-    return () => { alive = false; };
-  }, []);
+  const refetchScreenOnce = useCallback(() => { void refetchScreen(); }, [refetchScreen]);
+  const codalUpdate = useCodalAutoUpdate({ onDone: refetchScreenOnce });
 
   const card = useFtsCard(symbol);
   const quarters = useQuarters(symbol);
@@ -154,6 +176,15 @@ export default function FundamentalPage() {
   /** هلدینگ‌ها با گروه «سایر» مقایسه صنعتی نمی‌شوند — گروه نامربوط است */
   const isHolding = useMemo(
     () => isFinancialOrHolding({ name: companyName, sector_name: rawSector }),
+    [companyName, rawSector],
+  );
+  /** بانک از هلدینگ جدا خوانده می‌شود؛ فقط برچسب/متنِ پنل، نه حکم یا امتیاز. */
+  const bankLike = useMemo(
+    () => isBankLike({ name: companyName, sector_name: rawSector }),
+    [companyName, rawSector],
+  );
+  const classLabel = useMemo(
+    () => financialClassLabel({ name: companyName, sector_name: rawSector }),
     [companyName, rawSector],
   );
   /** پنلِ P/NAV باید همان‌جا بیاید که موتورِ FTS شاخص ۴ را معاف کرده، نه همان‌جا
@@ -207,9 +238,8 @@ export default function FundamentalPage() {
     // جدول کلِ صفحه را در دیدگاه‌های کوچک از کادر بیرون می‌زند.
     return (
       <div className="flex flex-col gap-2 min-w-0">
-        {/* تازگیِ دادهٔ بنیادی پیشِ جدول: «چرا این عدد دیروز است» سؤالِ اولِ
-            این تب است، و پاسخ از خودِ خطِ دریافت می‌آید نه از حدسِ رابط. */}
         <CodalHealthStrip />
+        <CodalUpdateStatus status={codalUpdate.status} completed={codalUpdate.completed} />
         {screen.isLoading ? (
           /* پیش از این در حینِ بارگذاری، rows=[] بود و جدول پیامِ
            * «ردیفی از غربالگری FTS نیامد» نشان می‌داد — اولین اسکنِ بازار
@@ -225,8 +255,8 @@ export default function FundamentalPage() {
           <FtsScreenTable
             rows={screen.data?.data ?? []}
             thresholds={screen.data?.thresholds ?? null}
-            onDbUpdate={handleDbUpdate}
-            dbUpdate={dbUpd}
+            onDbUpdate={codalUpdate.start}
+            dbUpdate={codalUpdate.status}
             assemblyEvents={assemblyMap}
             capitalEvents={capitalMap}
             funnelGate={screen.data?.funnel_gate ?? null}
@@ -281,12 +311,13 @@ export default function FundamentalPage() {
   // #205: علتِ رد را همان پرچم‌های موتور می‌گوید، با عدد و آستانۀ خودشان
   const rejectLines = rejectReasons(passes, card.data.indicators ?? null);
   return (
-    <div className="flex flex-col gap-4" data-testid="fundamental-page">
+    <div className="flex flex-col gap-4">
       <CodalHealthStrip />
+      <CodalUpdateStatus status={codalUpdate.status} completed={codalUpdate.completed} />
       <div className="flex flex-wrap items-center gap-2">
         <h2 className="text-base font-black text-text-primary">{symbol}</h2>
         {sector ? <span className="text-xs text-text-secondary">{sector}</span> : null}
-        {isHolding ? <Badge tone="blue">هلدینگ / سرمایه‌گذاری</Badge> : null}
+        {isHolding ? <Badge tone="blue">{classLabel ?? 'هلدینگ / سرمایه‌گذاری'}</Badge> : null}
         {signal ? (
           <>
             <Badge tone={DIR_TONE[signal.direction]}>{DIR_LABEL[signal.direction]}</Badge>
@@ -306,15 +337,20 @@ export default function FundamentalPage() {
       {card.data?.applicable !== false && (isHolding || axis4Exempt) ? (
         <div className="glass-panel panel-in p-4" data-testid="holding-pnav-panel">
           <div className="mb-2 flex items-center justify-between">
-            <h3 className="text-sm font-black text-text-primary">ارزش‌گذاری هلدینگ</h3>
-            <Badge tone="yellow">قابل ارزیابی نیست</Badge>
+            <h3 className="text-sm font-black text-text-primary">
+              {bankLike ? 'ارزش‌گذاری بانک' : 'ارزش‌گذاری هلدینگ'}
+            </h3>
+            <Badge tone="yellow">N/A</Badge>
           </div>
           <p className="text-2xs leading-relaxed text-text-secondary" data-testid="holding-nav-na">
-            این نماد سرمایه‌گذاری/هلدینگ است و در کدال ارزش خالص دارایی (NAV) منتشر نشده؛
-            بنابراین P/NAV محاسبه نمی‌شود و جای آن عددی گذاشته نمی‌شود.
+            {bankLike
+              ? 'N/A — قابل ارزیابی نیست؛ این نماد بانک/مؤسسهٔ اعتباری است و P/NAV برای این طبقه تعریف نشده است.'
+              : 'N/A — قابل ارزیابی نیست؛ این نماد سرمایه‌گذاری/هلدینگ است و در کدال ارزش خالص دارایی (NAV) منتشر نشده؛ بنابراین P/NAV محاسبه نمی‌شود و جای آن عددی گذاشته نمی‌شود.'}
           </p>
           <div className="mt-2.5 pt-2.5 border-t border-border-c/50 text-2xs text-text-muted">
-            هلدینگ‌ها از شرط «نسبت فروش به ارزش بازار» (شاخص ۴) معاف‌اند.
+            {bankLike
+              ? 'بانک‌ها از شرط «نسبت فروش به ارزش بازار» (شاخص ۴) معاف‌اند.'
+              : 'هلدینگ‌ها از شرط «نسبت فروش به ارزش بازار» (شاخص ۴) معاف‌اند.'}
           </div>
         </div>
       ) : (

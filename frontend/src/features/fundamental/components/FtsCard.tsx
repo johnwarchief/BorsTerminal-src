@@ -5,9 +5,9 @@
 // «حکم نداریم» (بی‌داده / N/A) می‌ماند، چون هیچ‌جای دیگرِ کارت آن را نمی‌گوید.
 import type { ReactNode } from 'react';
 import { fmtInt, toFaDigits } from '@shared/lib/fmt';
-import { FTS_LABEL } from '@shared/lib/ftsLabels';
+import { FTS_LABEL, MARGIN_TIER_HINT, MARGIN_TIER_LABEL } from '@shared/lib/ftsLabels';
 import { ConfidenceDial } from '@shared/components/ConfidenceDial';
-import { gapLabel, type GapAxis } from '../lib/gapReason';
+import { gapLabel, growthBasisLabel, type GapAxis } from '../lib/gapReason';
 import { type AuditEvidence } from './AuditBadge';
 import { industryGateLabel, industryGateTone } from '../lib/industryGate';
 import { MathFraction } from './MathFormula';
@@ -363,7 +363,15 @@ export function FtsCard({
                *  را بک‌اند در `monetary.data_gap` می‌فرستد. منطق «ب فقط آن‌جا که
                *  قابل‌اعمال است» دیگر اینجا تکرار نمی‌شود — در `axis1_pass`
                *  (api/fundamental.py) نشسته و کارت و موتور همان را می‌خوانند. */
-              const card1Pass = mon?.data_gap ? null : passes['1_growth'] === true;
+              const card1Pass = mon?.data_gap ? null : (passes['1_growth'] ?? null);
+              /** «رد» فقط وقتی است که حکمِ سنجیده‌شده False باشد؛ شکافِ داده
+               *  (`data_gap`) و ردیفِ بی‌حکم چیپِ «نظر نمی‌دهد» می‌گیرند،
+               *  نه قرمزِ «رد» (Task 4). برچسبِ ۱الف در `passes` به bool
+               *  تبدیل شده است، پس گیت را از خودِ `data_gap` می‌گیریم. */
+              const chip1a = mon?.data_gap ? null : v1a;
+              const chip1b = (!physicalApplicable || mon?.data_gap
+                || vol?.data_gap) ? null : v1b;
+              const growthBasis = mon ? growthBasisLabel(mon.basis) : null;
 
               return (
                 <button
@@ -403,22 +411,23 @@ export function FtsCard({
                     >
                       <div className="flex items-center justify-between gap-1">
                         <span className="text-2xs font-bold text-text-secondary">درآمد ریالی</span>
-                        <VerdictChip pass={v1a} testId="fts-verdict-1a_monetary_growth" />
+                        <VerdictChip pass={chip1a} testId="fts-verdict-1a_monetary_growth" />
                       </div>
 
                       {/* نتیجۀ درشت (#149). بجِ ممیزی از روی کارت برداشته شد
                           (#204) — «نظر نمی‌دهد» را VerdictChip می‌گوید و تنها
                           علتِ بی‌داده رویِ کارت می‌ماند. */}
                       <div className="mb-1.5 flex items-end justify-between gap-1.5">
-                        <BigResult testId="fts-result-1a" className={v1a === false ? 'text-accent-red' : v1a == null ? 'text-text-primary' : 'text-accent-green'}>
+                        <BigResult testId="fts-result-1a" className={chip1a === false ? 'text-accent-red' : chip1a == null ? 'text-text-primary' : 'text-accent-green'}>
                           {monPct == null ? '—' : `${monPct >= 0 ? '+' : '−'}${toFaDigits(Math.abs(monPct).toFixed(1))}٪`}
                         </BigResult>
-                        {v1a == null ? (
+                        {chip1a == null ? (
                           <span
                             data-testid="fts-cell-gap-1a_monetary_growth"
-                            className="shrink-0 text-3xs leading-snug text-text-muted"
+                            className="shrink-0 text-3xs leading-snug text-text-muted text-start line-clamp-2"
+                            title={mon?.reason || undefined}
                           >
-                            {gapLabel('1a_monetary_growth')}
+                            {mon?.reason || gapLabel('1a_monetary_growth')}
                           </span>
                         ) : null}
                       </div>
@@ -439,7 +448,7 @@ export function FtsCard({
                             denominator={<span className="text-3xs px-0.5 whitespace-nowrap">فروش سال قبل</span>}
                           />
                           <span>− 1</span>
-                          <span className={`font-bold whitespace-nowrap ${tone(v1a)}`}>
+                          <span className={`font-bold whitespace-nowrap ${tone(chip1a)}`}>
                             ≥ هدفِ پوشش تورم{growthTarget == null ? '' : ` (${toFaDigits(growthTarget)}٪)`}
                           </span>
                         </div>
@@ -447,6 +456,15 @@ export function FtsCard({
                       {mon?.denominator_basis ? (
                         <span className="mt-0.5 block text-3xs leading-snug text-text-muted line-clamp-2" title={mon.denominator_basis}>
                           مبنای مقایسه: {mon.denominator_basis}
+                        </span>
+                      ) : null}
+                      {growthBasis ? (
+                        <span
+                          data-testid="fts-card-growth-basis"
+                          className="mt-0.5 block text-3xs leading-snug text-text-muted"
+                          title={mon?.period ? `دورهٔ مبنا: ${mon.period}` : undefined}
+                        >
+                          مبنای رشد: {growthBasis}
                         </span>
                       ) : null}
                     </div>
@@ -458,19 +476,20 @@ export function FtsCard({
                     >
                       <div className="flex items-center justify-between gap-1">
                         <span className="text-2xs font-bold text-text-secondary">رشد تولیدی</span>
-                        <VerdictChip pass={!physicalApplicable ? null : v1b} testId="fts-verdict-1b_volume_growth" />
+                        <VerdictChip pass={chip1b} testId="fts-verdict-1b_volume_growth" />
                       </div>
 
                       <div className="mb-1.5 flex items-end justify-between gap-1.5">
-                        <BigResult testId="fts-result-1b" className={!physicalApplicable || v1b == null ? 'text-text-primary' : v1b ? 'text-accent-green' : 'text-accent-red'}>
+                        <BigResult testId="fts-result-1b" className={chip1b === false ? 'text-accent-red' : chip1b == null ? 'text-text-primary' : 'text-accent-green'}>
                           {!physicalApplicable || volPct == null ? '—' : `${volPct >= 0 ? '+' : '−'}${toFaDigits(Math.abs(volPct).toFixed(1))}٪`}
                         </BigResult>
-                        {physicalApplicable && v1b == null ? (
+                        {physicalApplicable && chip1b == null ? (
                           <span
                             data-testid="fts-cell-gap-1b_volume_growth"
-                            className="shrink-0 text-3xs leading-snug text-text-muted"
+                            className="shrink-0 text-3xs leading-snug text-text-muted text-start line-clamp-2"
+                            title={vol?.reason || undefined}
                           >
-                            {gapLabel('1b_volume_growth')}
+                            {vol?.reason || gapLabel('1b_volume_growth')}
                           </span>
                         ) : null}
                       </div>
@@ -486,7 +505,7 @@ export function FtsCard({
                                 denominator={<span className="text-3xs px-0.5 whitespace-nowrap">۱ + مبنای تورم</span>}
                               />
                               <span>− ۱</span>
-                              <span className={`font-bold whitespace-nowrap ${tone(v1b)}`}>
+                              <span className={`font-bold whitespace-nowrap ${tone(chip1b)}`}>
                                 {/* دروازۀ ۱ب فقط کفِ رشدِ واقعیِ خودِ موتور است؛
                                     «پهنا» دادهٔ نمایشی است (توضیحِ ind1b در
                                     api/fundamental.py) و پیش‌تر همین‌جا با «≥
@@ -562,8 +581,8 @@ export function FtsCard({
                 >
                   {i2?.na === true
                     ? i2?.consolidated_used
-                      ? 'کاربرد ندارد (مبنایِ تلفیقی)'
-                      : 'کاربرد ندارد'
+                      ? 'N/A (تلفیقی) — کاربرد ندارد (مبنایِ تلفیقی)'
+                      : 'N/A — کاربرد ندارد'
                     : epsRising
                       ? `${toFaDigits(epsYearsReq)} سالِ رشد`
                       : epsYears
@@ -578,45 +597,59 @@ export function FtsCard({
               const growths = epsChanges(i2?.eps_series ?? [], i2?.eps_yoy_pct);
               const interimPct = i2?.interim?.interim_yoy_pct ?? null;
               extraNode = (
-                <div
-                  className="mt-1 flex flex-wrap items-center justify-center gap-x-1.5 gap-y-0.5 text-3xs"
-                  data-testid="fts-card-eps-growth"
-                  title="درصد رشد سال‌به‌سالِ EPS (قدیم ← جدید) — نمایشی است، حکمِ شاخص ۲ را عوض نمی‌کند"
-                >
-                  <span className="text-text-muted">رشد سال‌به‌سال:</span>
-                  {growths.some((p) => p != null) ? (
-                    growths.map((p, gi) =>
-                      p == null ? (
-                        <span key={gi} className="num font-mono font-bold text-text-muted">
-                          —
-                        </span>
-                      ) : (
-                        <span
-                          key={gi}
-                          className={`num font-mono font-black ${
-                            p > 0 ? 'text-accent-green' : p < 0 ? 'text-accent-red' : 'text-text-secondary'
-                          }`}
-                        >
-                          {epsChangeText(p)}
-                        </span>
-                      ),
-                    )
-                  ) : (
-                    /* «داده نداریم» هیچ‌وقت ۰٪ و هیچ‌وقت فلش سبز/سرخ نمی‌شود */
-                    <span className="font-bold text-text-muted" data-testid="fts-card-eps-growth-nodata">
-                      {epsGrowthReason(i2?.eps_series ?? [])}
-                    </span>
-                  )}
-                  {interimPct != null ? (
+                <div className="mt-1 flex flex-col items-center gap-0.5">
+                  {/* برچسبِ شاهدِ EPS (Task 5) — زیرِ نتیجهٔ EPS؛ برایِ
+                      «N/A (تلفیقی)» هم همین برچسب می‌ماند و سری نمایشی
+                      (SparkBars بالا) دست‌نخورده است. */}
+                  {i2?.evidence_label ? (
                     <span
-                      className={`num font-mono font-black ${
-                        interimPct > 0 ? 'text-accent-green' : interimPct < 0 ? 'text-accent-red' : 'text-text-secondary'
-                      }`}
-                      title="رشد EPS میاندوره نسبت به همان دورهٔ سال قبل (محاسبهٔ بک‌اند)"
+                      className="text-3xs font-semibold text-text-muted"
+                      data-testid="fts-card-eps-evidence-label"
+                      title="برچسبِ شاهدِ EPS — از خودِ موتور، نه محاسبهٔ دوباره در UI"
                     >
-                      میاندوره {epsChangeText(interimPct)}
+                      {i2.evidence_label}
                     </span>
                   ) : null}
+                  <div
+                    className="flex flex-wrap items-center justify-center gap-x-1.5 gap-y-0.5 text-3xs"
+                    data-testid="fts-card-eps-growth"
+                    title="درصد رشد سال‌به‌سالِ EPS (قدیم ← جدید) — نمایشی است، حکمِ شاخص ۲ را عوض نمی‌کند"
+                  >
+                    <span className="text-text-muted">رشد سال‌به‌سال:</span>
+                    {growths.some((p) => p != null) ? (
+                      growths.map((p, gi) =>
+                        p == null ? (
+                          <span key={gi} className="num font-mono font-bold text-text-muted">
+                            —
+                          </span>
+                        ) : (
+                          <span
+                            key={gi}
+                            className={`num font-mono font-black ${
+                              p > 0 ? 'text-accent-green' : p < 0 ? 'text-accent-red' : 'text-text-secondary'
+                            }`}
+                          >
+                            {epsChangeText(p)}
+                          </span>
+                        ),
+                      )
+                    ) : (
+                      /* «داده نداریم» هیچ‌وقت ۰٪ و هیچ‌وقت فلش سبز/سرخ نمی‌شود */
+                      <span className="font-bold text-text-muted" data-testid="fts-card-eps-growth-nodata">
+                        {epsGrowthReason(i2?.eps_series ?? [])}
+                      </span>
+                    )}
+                    {interimPct != null ? (
+                      <span
+                        className={`num font-mono font-black ${
+                          interimPct > 0 ? 'text-accent-green' : interimPct < 0 ? 'text-accent-red' : 'text-text-secondary'
+                        }`}
+                        title="رشد EPS میاندوره نسبت به همان دورهٔ سال قبل (محاسبهٔ بک‌اند)"
+                      >
+                        میاندوره {epsChangeText(interimPct)}
+                      </span>
+                    ) : null}
+                  </div>
                 </div>
               );
 
@@ -658,8 +691,21 @@ export function FtsCard({
                   : null);
 
               resultNumberNode = (
-                <span className={QUALITY_TEXT[cardQuality]}>
-                  {marginPct != null ? `${toFaDigits(marginPct.toFixed(1))}٪` : '—'}
+                <span className="inline-flex items-baseline gap-1.5">
+                  <span className={QUALITY_TEXT[cardQuality]}>
+                    {marginPct != null ? `${toFaDigits(marginPct.toFixed(1))}٪` : '—'}
+                  </span>
+                  {/* طبقهٔ نمایشی (Task 6) کنارِ همان درصد؛ فقط وقتی حاشیه
+                      ساخته شده باشد. ۵۰٪ دروازه نیست، برچسب است. */}
+                  {marginPct != null && i3?.margin_tier ? (
+                    <span
+                      data-testid="fts-card-margin-tier"
+                      className="text-2xs font-bold text-text-muted"
+                      title={MARGIN_TIER_HINT}
+                    >
+                      {MARGIN_TIER_LABEL[i3.margin_tier] ?? i3.margin_tier}
+                    </span>
+                  ) : null}
                 </span>
               );
 
@@ -708,6 +754,11 @@ export function FtsCard({
                   ? (audit?.['4_sales_to_mcap']?.actualValue as number)
                   : null);
               const potPct = cfgNum(i4?.potential_pct);
+              /** مسیرِ پذیرش و برچسبِ سالانه‌سازی از موتور (Task 7) — نامِ
+               *  دروازهٔ پاس‌شده است، نه آستانهٔ تازه. معاف/بی‌داده هیچ‌کدام را
+               *  ندارد و چیزی رندر نمی‌شود. */
+              const acceptPath = i4?.acceptance_path ?? null;
+              const annualizeLabel = (i4?.annualize_label ?? '').trim();
 
               // تیترِ کارت «پتانسیل سود تا آخر سال» است، پس عددِ درشت همان
               // درصدِ پتانسیل است نه نسبتِ فروش÷ارزش (فایرا: ۲۷.۵٪ نه ۰.۹۷×).
@@ -722,12 +773,44 @@ export function FtsCard({
               );
 
               extraNode = (
-                <span className="num mt-0.5 block truncate text-3xs text-text-muted" data-testid="fts-card-4-secondary"
-                  title={salesFloor == null ? undefined : `کفِ قبولِ نسبت: ${pct(salesFloor)}`}>
-                  {salesRatio == null
-                    ? 'نسبت فروش به ارزش بازار: بدون داده'
-                    : `نسبت فروش ÷ ارزش بازار ${pct(salesRatio)}` +
-                      (salesFloor == null ? '' : ` · کف ${pct(salesFloor)}`)}
+                <span className="mt-0.5 block min-w-0" data-testid="fts-card-4-secondary">
+                  <span className="num block truncate text-3xs text-text-muted"
+                    title={salesFloor == null ? undefined : `کفِ قبولِ نسبت: ${pct(salesFloor)}`}>
+                    {salesRatio == null
+                      ? 'نسبت فروش به ارزش بازار: بدون داده'
+                      : `نسبت فروش ÷ ارزش بازار ${pct(salesRatio)}` +
+                        (salesFloor == null ? '' : ` · کف ${pct(salesFloor)}`)}
+                  </span>
+                  {/* «چرا ۴ پاس شد» کنارِ همان عددِ پتانسیل؛ مسیر دومِ سند
+                      v2.1 صریح نام برده می‌شود تا با مسیر اول اشتباه نشود. */}
+                  {acceptPath ? (
+                    <span
+                      data-testid="fts-card-4-acceptance"
+                      className={`mt-1 inline-block max-w-full truncate rounded border px-1 py-px text-3xs font-bold ${
+                        acceptPath === 'profit_potential'
+                          ? 'border-accent-blue/40 bg-accent-blue/10 text-accent-blue'
+                          : 'border-accent-green/40 bg-accent-green/10 text-accent-green'
+                      }`}
+                      title={
+                        acceptPath === 'profit_potential'
+                          ? '۴۰٪ پتانسیل سود ناخالص ÷ ارزش بازار (مسیر دوم پذیرش)'
+                          : 'فروش سالانه ÷ ارزش بازار ≥ ۰٫۳۳× (مسیر اول پذیرش)'
+                      }
+                    >
+                      {acceptPath === 'profit_potential'
+                        ? 'پذیرش: پتانسیل سود ۴۰٪ — مسیر دوم سند v2.1'
+                        : 'پذیرش: فروش÷ارزش بازار'}
+                    </span>
+                  ) : null}
+                  {annualizeLabel ? (
+                    <span
+                      data-testid="fts-card-4-annualize"
+                      className="mt-0.5 block truncate text-3xs text-text-muted"
+                      title={toFaDigits(annualizeLabel)}
+                    >
+                      {toFaDigits(annualizeLabel)}
+                    </span>
+                  ) : null}
                 </span>
               );
 
@@ -820,7 +903,7 @@ export function FtsCard({
                       data-testid={`fts-cell-gap-${key}`}
                       className="shrink-0 text-3xs leading-snug text-text-muted"
                     >
-                      {axisNa ? 'کاربرد ندارد' : gapLabel(key)}
+                      {axisNa ? 'N/A — کاربرد ندارد' : gapLabel(key)}
                     </span>
                   ) : null}
                 </div>

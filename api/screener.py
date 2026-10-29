@@ -41,6 +41,61 @@ _SCAN_LOCK = threading.Lock()
 _WARM_EVENT = threading.Event()
 _WARM_THREAD = None
 
+
+def _merge_1b_fields(applicable, card_pass, card_basis, row_basis):
+    """سه‌گانهٔ ۱بِ ردیف — یک قاعده برایِ کارت و جدول (Task 4).
+
+    `applicable=False` یعنی «این محور برایِ این ماهیت معنا ندارد»؛ در این حالت
+    `pass` هرگز True نمی‌ماند و `basis` همیشه `not_applicable` است — حتی اگر
+    کارت سطح B را برایِ همان ماهیت سنجیده و `pass=True` ساخته باشد. پیش از
+    این اسکرینر `i1b_pass` را با boolِ کارت بازنویسی می‌کرد و ردیفِ مالی با
+    `applicable=False, pass=True` می‌ماند؛ حکمِ محور ۱ (که N/A را وتو نمی‌کند)
+    دست‌نخورده بود، ولی خودِ ردیف سه‌گانهٔ متناقض داشت.
+
+    برایِ `applicable=True` حکمِ کارت مقدم است و در نبودِ basisِ کارت، basisِ
+    ردیفِ bulk می‌ماند.
+    """
+    if applicable is False:
+        return False, "not_applicable"
+    return bool(card_pass), (card_basis or row_basis)
+
+
+def _overlay_card_reason(row, field, card_ind):
+    """دلیلِ کارت را رویِ ردیفِ اسکرینر می‌نشاند — قراردادِ «دلیلِ جدول == کارت».
+
+    ردیفِ `bulk_scan` متنِ خودش را دارد؛ فقط متنِ غیرخالیِ کارت جایگزین
+    می‌شود. یک قاعده برایِ محور ۱ (Task 4) و شاخص ۳ (Task 10B2a1). بدونِ این
+    overlay، BAD_YTDِ کارت و NO_SERIESِ ردیفِ کهنه در جدول می‌ماند (C1).
+    """
+    text = ((card_ind or {}).get("reason") or "").strip()
+    if text:
+        row[field] = text
+    return row
+
+
+def _overlay_i3(row, card_ind3, card_pass):
+    """حکمِ سه‌حالِ شاخص ۳ + تفکیکِ «N/Aِ طبقه» از «شکافِ داده» (Task 10B2a1 I1).
+
+    `i3_pass` هرجا کارت حکمی ندارد None می‌ماند (`na` یا حاشیهٔ تهی — همان
+    رفتارِ پیشین)، ولی `i3_na` فقط از سیگنالِ طبقه (`fts_engine.ind3_na`) می‌آید.
+    شکافِ داده `i3_na=False` می‌گیرد تا جدول آن را «N/A (ماهیت مالی)» نکند؛
+    دلیلِ گم‌شده در `i3_reason` می‌ماند و tooltip آن را نشان می‌دهد.
+    payloadهایِ بدونِ `na_kind` (مسیرِ مادی/کشِ قدیمی) رفتارِ پیشین را دارند.
+    """
+    import fts_engine
+    g3 = card_ind3 or {}
+    na_class = fts_engine.ind3_na(g3)
+    # «کارت حکم نمی‌دهد» جدا از «N/Aِ طبقه» است: شکافِ داده هم حکم ندارد،
+    # ولی نباید پرچمِ N/Aِ ماهیت بگیرد.
+    no_verdict = bool(g3) and (g3.get("na") is True
+                               or g3.get("exempt") is True
+                               or g3.get("margin_pct") is None)
+    row["i3_pass"] = None if (no_verdict or na_class) else card_pass
+    row["i3_na"] = bool(na_class)
+    _overlay_card_reason(row, "i3_reason", g3)
+    return row
+
+
 def invalidate_screener_cache(drop_materialized: bool = True):
     """باطل‌کردن دستی کش اسکرینر (مثلاً هنگام سینک و رفرش کدال).
 
@@ -502,10 +557,15 @@ def _screener_cached():
                     # نوشته. نمادی که در جدول نیست → None → fallback به زنده.
                     res = _mat.get(key)
                 if res is None:
+                    # هر ردیفِ این حلقه از bulk_scan آمده و bulk_scan فقط
+                    # شرکت‌ها (غیرصندوق/غیرغیرشرکت) را برمی‌گرداند؛ پس حضورِ
+                    # ابزار صریحاً True است — استنتاجِ آن از خالی‌بودنِ
+                    # sector_name همان باگِ ۲۶ شرکتِ بی‌صنعت را برمی‌گرداند.
                     res = evaluate_v10(conn, key, mcap_official.get(key, 0.0),
                                        total_mcap, r.get("sector_name", ""),
                                        cfg=cfg, company_name=cname_of.get(key, ""),
-                                       m141_map=_m141m, liq_map=_liqm)
+                                       m141_map=_m141m, liq_map=_liqm,
+                                       has_instrument=True)
                 p = res["passes"]
                 _ind = res.get("indicators") or {}
                 _g3 = _ind.get("3") or {}
@@ -519,6 +579,7 @@ def _screener_cached():
                 r["i1_pass"] = _states.get("1_growth",
                                             None if _na1 else p["1_growth"])
                 r["i1_na"] = bool(_na1) or _states.get("1_growth") is None
+                _overlay_card_reason(r, "i1_reason", _ind.get("1"))
                 # رأیِ مالک ۱۴۰۵-۰۷-۰۳: معافیت = «نظر نمی‌دهد» — همان چیزی که
                 # bulk_scan می‌دهد؛ بدونِ این تبدیلِ یک‌خطی جدول با کشِ سرد
                 # «مردود» و با کشِ گرم «N/A» می‌شد.
@@ -532,7 +593,6 @@ def _screener_cached():
                 # جدولِ fts_results خالی است (سنجش: ۰ ردیف در نصب و در dev) ⇒
                 # همه‌چیز از همین مسیرِ زنده می‌آید؛ با فعال‌شدنِ کش باید سه
                 # پرچمِ na هم درِ همان جدول ثبت شود.
-                _na3 = fts_engine.ind3_na(_g3)
                 _na4 = fts_engine.ind4_na(_ind.get("4"))
                 # شاخص ۲ هم سه‌حال شد (جزوه ص ۴ + رأیِ ۱۳): سابقه‌ای که اسلاتی
                 # از صورتهایِ تلفیقی دارد داوریِ FTS ندارد ⇒ «رد» نه. درِ مسیرِ
@@ -542,14 +602,17 @@ def _screener_cached():
                 r["i2_pass"] = _states.get("2_eps_trend",
                                           None if _na2 else p["2_eps_trend"])
                 r["i2_na"] = bool(_na2)
-                r["i3_pass"] = _states.get("3_gross_margin",
-                                          None if _na3 else p["3_gross_margin"])
+                # شاخص ۳: حکمِ سه‌حال + تفکیکِ N/Aِ طبقه از شکافِ داده + دلیلِ
+                # کارت — یک قاعده در `_overlay_i3` (Task 10B2a1 I1). شکافِ داده
+                # `i3_na=False` می‌گیرد تا جدول «N/A (ماهیت مالی)» نشانش ندهد.
+                _overlay_i3(r, _g3, p["3_gross_margin"])
+                # شاخص ۴: حکمِ سه‌حال از `states` (v10_axis_states) — همان
+                # قراردادِ bulk؛ در نبودِ states، پرچمِ N/Aِ کارت جایگزین است.
                 r["i4_pass"] = _states.get("4_sales_to_mcap",
                                           None if _na4 else p["4_sales_to_mcap"])
-                r["i3_na"], r["i4_na"] = bool(_na3), bool(_na4)
+                r["i4_na"] = bool(_na4)
                 r["i5_pass"] = p["5_industry"]
                 r["i1a_pass"] = p.get("1a_monetary_growth")
-                r["i1b_pass"] = p.get("1b_volume_growth")
                 # «ب» رشد فیزیکی: کارت می‌گوید این محور برایِ این ماهیت «قابل
                 # اعمال» است یا نه (`company_profile.volume_applicable`). بی‌این
                 # پرچم جدول چاره‌ای نداشت جز حدس‌زدن از regexِ نام/صنعت؛ سنجشِ
@@ -566,6 +629,19 @@ def _screener_cached():
                     r["i1b_applicable"] = bool(fts_engine.company_profile(
                         r.get("sector_name") or "", cname_of.get(key, "")
                     ).get("volume_applicable"))
+                # سه‌گانهٔ ۱ب: وقتی محور قابلِ‌اعمال نیست، pass=False و
+                # basis="not_applicable" — حتی اگر کارت برایِ همان ماهیت
+                # سطح B را سنجیده باشد. حکمِ محور ۱ از این پرچم‌ها وتو
+                # نمی‌گیرد؛ فقط خودِ ردیف متناقض نمی‌ماند (Task 4).
+                r["i1b_pass"], r["i1b_basis"] = _merge_1b_fields(
+                    r.get("i1b_applicable"), p.get("1b_volume_growth"),
+                    _v1b.get("basis"), r.get("i1b_basis"))
+                # شکافِ ۱ب هم از کارت می‌آید (Task 10B2a1). برایِ محورِ
+                # غیرقابلِ‌اعمال، «شکاف» معنا ندارد ⇒ صریحاً False.
+                if r.get("i1b_applicable") is False:
+                    r["i1b_data_gap"] = False
+                elif "data_gap" in _v1b:
+                    r["i1b_data_gap"] = bool(_v1b.get("data_gap"))
                 r["i4a_pass"] = p.get("4a_sales_to_mcap")
                 r["i4b_pass"] = p.get("4b_profit_potential")
                 # r["applicable"] از خودِ bulk_scan می‌آید (تک‌مرجعِ
@@ -585,12 +661,29 @@ def _screener_cached():
                 _an4 = _v4.get("annual") or {}
                 r["rev_growth"] = _g1.get("monetary_pct")
                 r["gross_margin"] = _g3.get("margin_pct")
+                # برچسبِ طبقهٔ حاشیه (Task 6) از همان کارت؛ مسیرِ مادی‌شده
+                # هم آن را از ستونِ f03_margin_pct بازمی‌سازد. None = N/A.
+                r["margin_tier"] = _g3.get("margin_tier", r.get("margin_tier"))
                 r["sales_to_mcap"] = _v4.get("sales_to_mcap")
                 r["profit_potential_pct"] = _v4.get("potential_pct")
+                # دلیلِ ۴ از کارت (معاف/دادهٔ ناکافی/مسیر/بی‌مسیر) — همان
+                # قراردادِ i1_reason؛ ردیفِ bulk در نبودش متنِ خودش را نگه می‌دارد.
+                _i4_reason = (_v4.get("reason") or "").strip()
+                if _i4_reason:
+                    r["i4_reason"] = _i4_reason
                 r["annual_sales_bt"] = (_v4.get("annual_sales_bt")
                                          if _v4.get("annual_sales_bt") is not None
                                          else _an4.get("annual_sales_bt"))
-                r["annualize_months"] = _an4.get("months_used")
+                # مسیر/برچسب/ماهِ سالانه‌سازی (Task 7) هم از کارت می‌آید —
+                # کارت مرجعِ شاخهٔ «دادهٔ ناکافی» است (۰ و ""). پیش از این
+                # فقط `annual_months` بازنویسی می‌شد و برچسبِ bulk رویِ ردیفِ
+                # اسکرینر می‌ماند؛ نمادِ نشار (سالانه + mcap=0) نمونهٔ واقعی بود.
+                r["i4_acceptance_path"] = _v4.get("acceptance_path",
+                                                  r.get("i4_acceptance_path"))
+                r["annualize_label"] = _v4.get("annualize_label",
+                                               r.get("annualize_label"))
+                r["annualize_months"] = _v4.get("annualize_months",
+                                                _an4.get("months_used"))
             # رتبه‌بندی: اول سه محورِ بلاکر (جزوه ص ۶)، بعد امتیازِ پنج‌تایی
             rows.sort(key=lambda r: (r["excluded"], -int(r.get("primary_score") or 0),
                                      -r["score"],

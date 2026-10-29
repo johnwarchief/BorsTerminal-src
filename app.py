@@ -435,6 +435,117 @@ def _startup_sync_market():
     except Exception as _e:
         print(f"[startup] candle projection failed: {_e}")
 
+    # ── بروزرسانیِ خودکارِ کدال در بوت: یک تصمیمِ واحد (Task 6 + 8a) ─────────
+    # Task Scheduler روزانه ۱۸:۳۰ اجرا می‌کند و StartWhenAvailable اجرایِ
+    # ازدست‌رفته را پس از روشن‌شدن جبران می‌کند؛ این نخ لایۀِ دوم است. تصمیم
+    # در should_start_catchup (خالص) گرفته می‌شود: در حالتِ سورس/تست فقط با
+    # BORS_CODAL_AUTOUPDATE=1، هرگز با BORS_NO_FETCH_LOOPS=1، نه وقتی
+    # codal_auto_pause هست، و نه وقتی آخرین تلاش کمتر از ۶ ساعت پیش بوده
+    # (تلاشِ ناموفقِ تازه نباید هر بار کلِ خطِ لوله را دوباره اجرا کند). قفلِ
+    # کهنهٔ codal_auto.lock هم تا ۶ ساعت در codal_auto_update.py می‌ماند؛
+    # همین cooldown از اسپاونِ پشتِ‌سرهم در آن پنجره جلوگیری می‌کند.
+    #
+    # Task 8a در همین بوت یک مسیرِ mergeِ دوم (snapshotِ امضاشده) اضافه کرد.
+    # orchestrator نامِ پروسهٔ codal_fetcher ندارد و _codal_running() آن را
+    # نمی‌بیند، پس دو نخِ مستقل می‌توانستند هم‌زمان همان سه جدول را merge کنند.
+    # تصمیمِ بوت حالا انحصاری است: اگر جبران واقعاً اسپاون شود، auto_check این
+    # بوت هرگز شروع نمی‌شود؛ در غیرِ این صورت auto_check درِ خودش را می‌سنجد.
+    def _codal_auto_catchup_allowed():
+        """دروازهٔ خالصِ Task 6؛ هیچ اسپاون/شبکه‌ای ندارد."""
+        try:
+            import bors_config as _bc
+            from api._sync_codal import read_auto_status, should_start_catchup
+            script = os.path.join(APP_DIR, "dev", "codal_auto_update.py")
+            script_exists = os.path.isfile(script)
+            paused = os.path.exists(os.path.join(APP_DIR, "codal_auto_pause"))
+            allowed = should_start_catchup(
+                read_auto_status(),
+                frozen=bool(getattr(_bc, "_FROZEN", False)),
+                env=os.environ,
+                fetch_loops_enabled=_fetch_loops_enabled(),
+                paused=paused,
+                script_exists=script_exists)
+            if not allowed:
+                if not script_exists:
+                    print("[startup] codal auto-update script not found; catch-up skipped")
+                else:
+                    print("[startup] codal auto-update catch-up skipped "
+                          "(guard/pause/cooldown/fresh)")
+            return allowed
+        except Exception as _e:
+            print(f"[startup] codal auto-update decision failed: {_e}")
+            return False
+
+    # مسیرِ نسبی + cwd ریشهٔ مخزن: همان فرمانی که Task Scheduler ثبت می‌کند.
+    # Popen هرگز wait نمی‌شود؛ خروجی به DEVNULL می‌رود تا هندلِ لوله باز
+    # نماند و بوت معطل نشود. True فقط وقتی پروسه واقعاً بالا آمده باشد.
+    def _codal_auto_catchup():
+        try:
+            subprocess.Popen([sys.executable, "dev/codal_auto_update.py",
+                              "--mode", "daily"],
+                             cwd=APP_DIR,
+                             stdin=subprocess.DEVNULL,
+                             stdout=subprocess.DEVNULL,
+                             stderr=subprocess.DEVNULL,
+                             creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+            print("[startup] codal auto-update catch-up spawned")
+            return True
+        except Exception as _e:
+            print(f"[startup] codal auto-update catch-up failed: {_e}")
+            return False
+
+    # منبع، تگِ دادهٔ ``data-codal`` است نه ``latest`` ریلیزِ برنامه. این تابع
+    # فقط ``codal.meta.json`` را می‌خواند و اگر دورهٔ FS/MS جلوتر بود، همان
+    # workerِ امضاشده/merge را شروع می‌کند؛ هیچ خزنده/جستجویی صدا زده نمی‌شود.
+    def _codal_auto_check():
+        try:
+            from api._sync_codal import auto_check
+            result = auto_check()
+            print("[startup] codal auto-check: checked=%r update=%r started=%r"
+                  % (result.get("checked"), result.get("update"),
+                     result.get("started")))
+            return result
+        except Exception as _e:
+            print(f"[startup] codal auto-check failed: {_e}")
+            return None
+
+    # درِ همان Task 6 است (should_auto_check خالص): سورس/dev فقط با
+    # BORS_CODAL_AUTOUPDATE=1، نصبِ frozen خودش opt-in، و هرگز با
+    # BORS_NO_FETCH_LOOPS=1. دروازه فقط وقتی می‌رسد که جبران اسپاون نشده باشد.
+    def _codal_auto_check_allowed():
+        try:
+            import bors_config as _bc
+            from api._sync_codal import should_auto_check
+            allowed = should_auto_check(
+                frozen=bool(getattr(_bc, "_FROZEN", False)),
+                env=os.environ,
+                fetch_loops_enabled=_fetch_loops_enabled())
+            if not allowed:
+                print("[startup] codal auto-check skipped (guard/opt-in)")
+            return allowed
+        except Exception as _e:
+            print(f"[startup] codal auto-check decision failed: {_e}")
+            return False
+
+    def _codal_boot_sync():
+        """تنها نقطهٔ تصمیمِ بوت: جبران اول؛ auto_check فقط اگر اسپاون نشد."""
+        try:
+            from api._sync_codal import boot_sync
+            action = boot_sync(_codal_auto_catchup_allowed,
+                               _codal_auto_check_allowed,
+                               _codal_auto_catchup,
+                               _codal_auto_check)
+            if action == "":
+                print("[startup] codal startup sync skipped (guards)")
+        except Exception as _e:
+            print(f"[startup] codal startup sync failed: {_e}")
+    try:
+        if _fetch_loops_enabled():
+            threading.Thread(target=_codal_boot_sync, daemon=True).start()
+            print("[startup] codal startup sync thread spawned (single decision)")
+    except Exception as _e:
+        print(f"[startup] codal startup sync thread failed: {_e}")
+
 
 @app.get("/", include_in_schema=False)
 def serve_home():

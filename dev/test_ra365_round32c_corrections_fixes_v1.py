@@ -68,6 +68,9 @@ def make_pack(root, factors, raws, mode="overlay"):
 
 
 def use(d):
+    # گیت به‌طورِ پیش‌فرض packهایِ production را خاموش می‌کند؛ این تست packِ
+    # موقتِ خودش را می‌دهد و باید loader را دوباره روشن کند.
+    os.environ["BORS_CORRECTIONS_DISABLE"] = "0"
     os.environ["BORS_CORRECTIONS_DIR"] = d
     AC._CACHE.clear()
 

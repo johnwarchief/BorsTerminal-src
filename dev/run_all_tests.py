@@ -188,6 +188,43 @@ SUITES = [
     ('dev/fts_chart_engine_v1037.py', 'chart fib belts and setup markers come from the one server engine, over the current wave'),
     ('dev/repo_hygiene_v97.py',       'repo hygiene / dead-code stays gone'),
     ('dev/test_fts_v10_ladder.py',    'FTS v10 EPS evidence ladder + partial table row'),
+    # Task 1 (Phase 1): دروازهٔ جهانِ FTS — صندوق/غیرشرکت از جدول بیرون، بیمه
+    # شرکت می‌ماند، و شرکتِ واقعیِ بی‌صنعت (۲۶ نماد) در جدول و کارت یکسان
+    # «شرکت» است. رویِ DB موقت با اسکیمای کامل؛ market.db فقط خواندنی.
+    ('dev/test_fts_universe_v11.py',  'FTS universe: classifier + bulk_scan/card agree on a temp DB'),
+    # Task 2 (Phase 1): شاخص ۱ برای خدماتی/مالی/هلدینگ از صورتِ مالی (میاندوره
+    # ÷ همان دورهٔ سالِ قبل، fallback سالانه، N/A با دلیل). نقشهٔ تک‌گذرِ bulk و
+    # `i1_basis` باید با `indicators["1"]["monetary"]["basis"]` کارت یکی باشد.
+    ('dev/test_ind1_fs_path_v11.py',  'FTS indicator 1 FS path: helper + bulk_scan/card basis parity on a temp DB'),
+    # Task 3 (Phase 1): یک قاعدهٔ وتوی ۱ب برای کارت و اسکرینر. رگرسیونِ
+    # ZeroDivisionِ «لبن» (کمیتِ گردشده به −۱۰۰٪) فقط این‌جاست؛ بی‌ثبت در
+    # SUITES هرگز درِ گیت اجرا نمی‌شد و شکستش بی‌صدا می‌ماند.
+    ('dev/test_ind1b_parity_v11.py',  '1b parity + vol=-100 regression'),
+    # Task 4 (Phase 1): N/A صادقانه — `i1_na`/`i1_reason`/`i1_basis` رویِ ردیف،
+    # دلیلِ یکسانِ کارت/جدول، تفکیکِ شکافِ ماهانه از صورتِ مالی، و «جدیدترین
+    # دوره» به‌جای fallbackِ بی‌صدای دورهٔ قدیمی. سه‌گانهٔ ۱بِ اسکرینر هم این‌جاست.
+    ('dev/test_fts_na_v11.py',        'honest N/A: row fields, reasons, newest-period only'),
+    # Task 5 (Phase 1): برچسبِ شاهدِ EPS — «سالانهٔ حسابرسی‌شده» مقدم، تنزل‌های
+    # حسابرسی‌نشده/میاندوره صریح، تلفیقی «نمایشی» و N/A (نه رد)، و کمتر از سه
+    # سال «دادهٔ ناکافی». همان برچسب در کارت، ردیفِ bulk و scan_symbol؛ سریِ
+    # EPS در همهٔ حالت‌ها (از جمله تلفیقی) دیده می‌شود.
+    ('dev/test_fts_evidence_v11.py',  'EPS evidence labels: one tier label on card, row and scan_symbol'),
+    # Task 6 (Phase 1): طبقهٔ نمایشیِ حاشیه — below_floor/floor/standard/good رویِ
+    # کارت، ردیفِ bulk و scan_symbol؛ ۵۰٪ فقط برچسب است و کف ۲۰/استاندارد ۳۰
+    # دست‌نخورده می‌ماند؛ مالی/هلدینگ/صندوق N/A با دلیل و بی‌برچسب (نه صفر).
+    ('dev/test_fts_margin_v11.py',    'margin tiers: 20/30 gate unchanged, 50 label-only, N/A stays None'),
+    # Task 7 (Phase 1): مسیرِ پذیرشِ شاخص ۴ — دو مسیرِ ص ۵ (نسبت فروش ≥ ۰٫۳۳× /
+    # پتانسیل سود ناخالص ≥ ۴۰٪) یکی نمی‌شوند و برچسبِ سالانه‌سازی از خودِ موتور
+    # می‌آید. بی‌ثبت در SUITES، رگرسیونِ «مسیر دوم» بی‌صدا می‌ماند.
+    ('dev/test_fts_ind4_v11.py',      'indicator 4 acceptance paths: sales_to_mcap vs profit_potential, annualize label'),
+    # Task 8 (Phase 1): سه صنعتِ الزامیِ جزوه (خودرو/نیروگاه/لاستیک) — نه شوینده —
+    # و بیمه به‌عنوانِ وتوی جدا. فهرستِ `mandatory_sectors`ِ رابط با سرور یکی است.
+    ('dev/test_fts_sector_v11.py',    'sector gate: three booklet mandatory industries, insurance separate veto'),
+    # Task 10B (Phase 1): جهانِ ماهانه — فقط شرکت‌های تولیدی/خدماتی، صندوق/
+    # کارگزاری/اوراق/مشتقه بیرون، و شاخصِ ۱ با صورتِ مالی (نه‌فقط ماهانه) برای
+    # نمادی که گزارشِ ماهانه ندارد. رویِ DB موقت؛ market.db فقط خواندنی.
+    ('dev/test_fts_monthly_universe_v11.py',
+     'monthly universe: company scope on a temp DB, indicator 1 falls back to FS'),
     ('dev/test_fts_technical_tristate.py',
      'technical setups stay three-state (null != false) and each rule matches the notebook'),
     ('dev/test_fts_roundj.py',
@@ -818,6 +855,19 @@ SUITES = [
     # پرچم هیچ کمربند و هیچ رأیی را جابه‌جا نمی‌کند (و دو فرمول هم یکی بودند).
     ('dev/fts_wave_direction_v1125.py',
                                      'wave direction: extremes rule kept, provisional flag moves no fib zone'),
+    # PHASE 2 (auto-update, no ADB): eight offline guards — 26-col schema,
+    # staging validation gates, dry-run orchestrator, snapshot meta, publish
+    # dry-run/last-good, scheduler + startup catch-up, Cat6 calendar merge,
+    # client meta compare. None of them call CODAL; the owner-authorized live
+    # dry-run is recorded separately.
+    ('dev/test_fts_updater_schema_v11.py',   'codal updater 26-col schema'),
+    ('dev/test_codal_validation_v11.py',     'codal staging validation gates'),
+    ('dev/test_codal_auto_update_v11.py',    'codal no-ADB orchestrator dry-run'),
+    ('dev/test_codal_snapshot_meta_v11.py',  'codal snapshot meta'),
+    ('dev/test_codal_publish_v11.py',        'codal publish dry-run/last-good'),
+    ('dev/test_codal_schedule_v11.py',       'codal scheduler + startup catch-up'),
+    ('dev/test_calendar_merge_v11.py',       'calendar Cat6 merge'),
+    ('dev/test_codal_client_meta_v11.py',    'codal client meta compare'),
 ]
 
 # تست‌هایِ Node (رابطِ جدول بنیادی با DOMِ ساختگی) — اگر node نصب نباشد رد میشوند
