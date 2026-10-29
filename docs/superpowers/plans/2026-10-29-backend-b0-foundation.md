@@ -1496,6 +1496,8 @@ package parity
 
 import (
 	"encoding/json"
+	"fmt"
+	"strings"
 	"testing"
 )
 
@@ -1527,6 +1529,33 @@ func TestNumberForms(t *testing.T) {
 	r = Compare(decode(t, `{"a":1}`), decode(t, `{"a":1.01}`), Options{})
 	if r.Pass {
 		t.Fatal("1.01 must differ")
+	}
+}
+
+func TestNumericTypesNormalize(t *testing.T) {
+	cases := []struct {
+		name string
+		want any
+		got  any
+		pass bool
+	}{
+		{"int-vs-float", 1, 1.0, true},
+		{"int-vs-int", 1, 1, true},
+		{"int-vs-int-differ", 1, 2, false},
+		{"int64-vs-float", int64(1), 1.0, true},
+		{"uint-vs-negative", uint(1), -1.0, false},
+		{"float32-vs-float64", float32(1.5), 1.5, true},
+		{"json-number-vs-float", json.Number("2.5"), 2.5, true},
+		{"int-vs-string", 1, "1", false},
+		{"string-vs-int", "1", 1, false},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			r := Compare(tc.want, tc.got, Options{})
+			if r.Pass != tc.pass {
+				t.Fatalf("Compare(%#v, %#v).Pass = %v, diffs=%v", tc.want, tc.got, r.Pass, r.Diffs)
+			}
+		})
 	}
 }
 
@@ -1566,6 +1595,109 @@ func TestNullVsMissingKey(t *testing.T) {
 		t.Fatal("missing key is not null")
 	}
 }
+
+func TestTypeStrictLeaves(t *testing.T) {
+	cases := []struct{ name, want, got string }{
+		{"string-vs-number", `{"a":"1"}`, `{"a":1}`},
+		{"string-vs-bool", `{"a":"true"}`, `{"a":true}`},
+		{"string-nil-vs-null", `{"a":"<nil>"}`, `{"a":null}`},
+		{"bool-vs-number", `{"a":false}`, `{"a":0}`},
+		{"number-vs-string", `{"a":1}`, `{"a":"1"}`},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			r := Compare(decode(t, tc.want), decode(t, tc.got), Options{})
+			if r.Pass {
+				t.Fatalf("%s vs %s must fail", tc.want, tc.got)
+			}
+			if len(r.Diffs) == 0 || !strings.Contains(r.Diffs[0], "type") {
+				t.Fatalf("want a type diff, got %v", r.Diffs)
+			}
+		})
+	}
+}
+
+func TestNumberToleranceBoundary(t *testing.T) {
+	r := Compare(decode(t, `{"a":1}`), decode(t, `{"a":1.0000000001}`), Options{})
+	if !r.Pass {
+		t.Fatalf("1e-10 delta must pass: %v", r.Diffs)
+	}
+	r = Compare(decode(t, `{"a":1}`), decode(t, `{"a":1.000000002}`), Options{})
+	if r.Pass {
+		t.Fatal("2e-9 delta must fail")
+	}
+	r = Compare(decode(t, `[1,2]`), decode(t, `[2,1]`), Options{})
+	if r.Pass {
+		t.Fatal("array order still matters")
+	}
+}
+
+func TestExcludedMissingKeyPasses(t *testing.T) {
+	want := decode(t, `{"meta":{"t":"a","n":2}}`)
+	got := decode(t, `{"meta":{"n":2}}`)
+	r := Compare(want, got, Options{Exclude: []string{"meta.t"}})
+	if !r.Pass {
+		t.Fatalf("excluded missing key must pass: %v", r.Diffs)
+	}
+	if len(r.Excluded) != 1 || r.Excluded[0] != "meta.t" {
+		t.Fatalf("excluded = %v", r.Excluded)
+	}
+	r = Compare(got, want, Options{Exclude: []string{"meta.t"}})
+	if !r.Pass {
+		t.Fatalf("excluded extra key must pass: %v", r.Diffs)
+	}
+	if len(r.Excluded) != 1 || r.Excluded[0] != "meta.t" {
+		t.Fatalf("excluded = %v", r.Excluded)
+	}
+}
+
+func TestEmptyExclusionDoesNotSuppress(t *testing.T) {
+	r := Compare(decode(t, `{"a":1}`), decode(t, `{"a":2}`), Options{Exclude: []string{""}})
+	if r.Pass {
+		t.Fatal("empty exclusion must not suppress the document")
+	}
+	r = Compare(decode(t, `{"a":1}`), decode(t, `{"a":2}`), Options{Exclude: []string{"   "}})
+	if r.Pass {
+		t.Fatal("blank exclusion must not suppress the document")
+	}
+}
+
+func TestDiffOrderDeterministic(t *testing.T) {
+	want := decode(t, `{"a":1,"b":2}`)
+	got := decode(t, `{}`)
+	for i := 0; i < 25; i++ {
+		r := Compare(want, got, Options{})
+		if len(r.Diffs) != 2 {
+			t.Fatalf("diffs = %v", r.Diffs)
+		}
+		if !strings.HasPrefix(r.Diffs[0], "a: ") || !strings.HasPrefix(r.Diffs[1], "b: ") {
+			t.Fatalf("nondeterministic order: %v", r.Diffs)
+		}
+	}
+}
+
+func TestDiffTruncationMarker(t *testing.T) {
+	var sb strings.Builder
+	sb.WriteString("{")
+	for i := 0; i < 45; i++ {
+		if i > 0 {
+			sb.WriteString(",")
+		}
+		fmt.Fprintf(&sb, `"k%02d":0`, i)
+	}
+	sb.WriteString("}")
+	want := decode(t, sb.String())
+	r := Compare(want, decode(t, `{}`), Options{})
+	if r.Pass {
+		t.Fatal("missing keys must differ")
+	}
+	if len(r.Diffs) != 41 {
+		t.Fatalf("want 40 diffs plus marker, got %d", len(r.Diffs))
+	}
+	if r.Diffs[40] != "… (diffs truncated)" {
+		t.Fatalf("last diff = %q", r.Diffs[40])
+	}
+}
 ```
 
 - [ ] **Step 2: اجرا کن و شکست را ببین**
@@ -1581,6 +1713,7 @@ Expected: FAIL — `undefined: Compare`.
 package parity
 
 import (
+	"encoding/json"
 	"fmt"
 	"math"
 	"sort"
@@ -1625,19 +1758,27 @@ type Report struct {
 }
 
 type walker struct {
-	opts     Options
-	excluded map[string]struct{}
-	diffs    []string
-	maxDelta float64
-	used     map[string]struct{}
+	excluded  map[string]struct{}
+	diffs     []string
+	maxDelta  float64
+	used      map[string]struct{}
+	truncated bool
 }
 
+const diffLimit = 40
+
 func Compare(want, got any, opts Options) Result {
-	w := &walker{opts: opts, excluded: map[string]struct{}{}, used: map[string]struct{}{}}
+	w := &walker{excluded: map[string]struct{}{}, used: map[string]struct{}{}}
 	for _, p := range opts.Exclude {
+		if strings.TrimSpace(p) == "" {
+			continue
+		}
 		w.excluded[p] = struct{}{}
 	}
 	w.walk("", want, got)
+	if w.truncated {
+		w.diffs = append(w.diffs, "… (diffs truncated)")
+	}
 	out := Result{Pass: len(w.diffs) == 0, Diffs: w.diffs, MaxDelta: w.maxDelta}
 	for p := range w.used {
 		out.Excluded = append(out.Excluded, p)
@@ -1658,6 +1799,29 @@ func (w *walker) walk(path string, want, got any) {
 	if w.isExcluded(path) {
 		return
 	}
+	if wantN, ok := num(want); ok {
+		gotN, ok := num(got)
+		if !ok {
+			w.diff(path, "type", "number", kind(got))
+			return
+		}
+		if wantN == gotN {
+			return
+		}
+		if math.IsNaN(wantN) || math.IsNaN(gotN) || math.IsInf(wantN, 0) || math.IsInf(gotN, 0) {
+			w.diff(path, "non-finite", fmt.Sprint(wantN), fmt.Sprint(gotN))
+			return
+		}
+		den := math.Max(math.Abs(wantN), 1e-12)
+		delta := math.Abs(gotN-wantN) / den
+		if delta > w.maxDelta {
+			w.maxDelta = delta
+		}
+		if delta > 1e-9 {
+			w.diff(path, "number", fmt.Sprintf("%v", wantN), fmt.Sprintf("%v", gotN))
+		}
+		return
+	}
 	switch wantV := want.(type) {
 	case map[string]any:
 		gotV, ok := got.(map[string]any)
@@ -1665,18 +1829,37 @@ func (w *walker) walk(path string, want, got any) {
 			w.diff(path, "type", "object", kind(got))
 			return
 		}
-		for k, v := range wantV {
+		wantKeys := make([]string, 0, len(wantV))
+		for k := range wantV {
+			wantKeys = append(wantKeys, k)
+		}
+		sort.Strings(wantKeys)
+		for _, k := range wantKeys {
+			p := join(path, k)
 			g, exists := gotV[k]
 			if !exists {
-				w.diff(path+"."+k, "missing in go", "present", "absent")
+				if w.isExcluded(p) {
+					continue
+				}
+				w.diff(p, "missing in go", "present", "absent")
 				continue
 			}
-			w.walk(join(path, k), v, g)
+			w.walk(p, wantV[k], g)
 		}
+		gotKeys := make([]string, 0, len(gotV))
 		for k := range gotV {
-			if _, exists := wantV[k]; !exists {
-				w.diff(path+"."+k, "extra in go", "absent", "present")
+			gotKeys = append(gotKeys, k)
+		}
+		sort.Strings(gotKeys)
+		for _, k := range gotKeys {
+			if _, exists := wantV[k]; exists {
+				continue
 			}
+			p := join(path, k)
+			if w.isExcluded(p) {
+				continue
+			}
+			w.diff(p, "extra in go", "absent", "present")
 		}
 	case []any:
 		gotV, ok := got.([]any)
@@ -1691,36 +1874,36 @@ func (w *walker) walk(path string, want, got any) {
 		for i := range wantV {
 			w.walk(fmt.Sprintf("%s[%d]", path, i), wantV[i], gotV[i])
 		}
-	case float64:
-		gotV, ok := got.(float64)
+	case nil:
+		if got != nil {
+			w.diff(path, "type", "null", kind(got))
+		}
+	case string:
+		gotV, ok := got.(string)
 		if !ok {
-			w.diff(path, "type", "number", kind(got))
+			w.diff(path, "type", "string", kind(got))
 			return
 		}
-		if wantV == gotV {
+		if wantV != gotV {
+			w.diff(path, "value", wantV, gotV)
+		}
+	case bool:
+		gotV, ok := got.(bool)
+		if !ok {
+			w.diff(path, "type", "bool", kind(got))
 			return
 		}
-		if math.IsNaN(wantV) || math.IsNaN(gotV) || math.IsInf(wantV, 0) || math.IsInf(gotV, 0) {
-			w.diff(path, "non-finite", fmt.Sprint(wantV), fmt.Sprint(gotV))
-			return
-		}
-		den := math.Max(math.Abs(wantV), 1e-12)
-		delta := math.Abs(gotV-wantV) / den
-		if delta > w.maxDelta {
-			w.maxDelta = delta
-		}
-		if delta > 1e-9 {
-			w.diff(path, "number", fmt.Sprintf("%v", wantV), fmt.Sprintf("%v", gotV))
+		if wantV != gotV {
+			w.diff(path, "value", fmt.Sprint(wantV), fmt.Sprint(gotV))
 		}
 	default:
-		if fmt.Sprint(want) != fmt.Sprint(got) {
-			w.diff(path, "value", fmt.Sprint(want), fmt.Sprint(got))
-		}
+		w.diff(path, "type", kind(want), kind(got))
 	}
 }
 
 func (w *walker) diff(path, what, want, got string) {
-	if len(w.diffs) >= 40 {
+	if len(w.diffs) >= diffLimit {
+		w.truncated = true
 		return
 	}
 	w.diffs = append(w.diffs, fmt.Sprintf("%s: %s (%s != %s)", path, what, want, got))
@@ -1751,6 +1934,42 @@ func kind(v any) string {
 		return strings.TrimSpace(fmt.Sprintf("%T", v))
 	}
 }
+
+// num هر نوعِ عددیِ Go را به float64 نرمال می‌کند تا عددِ صحیح با عددِ اعشاری
+// برابرِ عددی شمرده شود (قراردادِ API: 1 == 1.0).
+func num(v any) (float64, bool) {
+	switch x := v.(type) {
+	case float64:
+		return x, true
+	case float32:
+		return float64(x), true
+	case int:
+		return float64(x), true
+	case int8:
+		return float64(x), true
+	case int16:
+		return float64(x), true
+	case int32:
+		return float64(x), true
+	case int64:
+		return float64(x), true
+	case uint:
+		return float64(x), true
+	case uint8:
+		return float64(x), true
+	case uint16:
+		return float64(x), true
+	case uint32:
+		return float64(x), true
+	case uint64:
+		return float64(x), true
+	case json.Number:
+		f, err := x.Float64()
+		return f, err == nil
+	default:
+		return 0, false
+	}
+}
 ```
 
 `backend-go/cmd/parity/main.go`:
@@ -1760,11 +1979,13 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"io"
 	"net/http"
 	"os"
+	"path/filepath"
 	"time"
 
 	"borsterminal/backend/internal/parity"
@@ -1786,16 +2007,23 @@ type fetched struct {
 	status int
 	body   []byte
 	value  any
-	ms     float64
 }
+
+// requestBuildError marks a case whose request could not even be constructed
+// (bad base URL or method): a programmer error, not a parity failure.
+type requestBuildError struct{ err error }
+
+func (e *requestBuildError) Error() string { return e.err.Error() }
+func (e *requestBuildError) Unwrap() error { return e.err }
+
+var httpClient = &http.Client{Timeout: 60 * time.Second}
 
 func fetch(base string, c testCase) (fetched, error) {
 	req, err := http.NewRequest(c.Method, base+c.Path, nil)
 	if err != nil {
-		return fetched{}, err
+		return fetched{}, &requestBuildError{err: err}
 	}
-	start := time.Now()
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := httpClient.Do(req)
 	if err != nil {
 		return fetched{}, err
 	}
@@ -1804,7 +2032,7 @@ func fetch(base string, c testCase) (fetched, error) {
 	if err != nil {
 		return fetched{}, err
 	}
-	out := fetched{status: resp.StatusCode, body: body, ms: float64(time.Since(start).Microseconds()) / 1000.0}
+	out := fetched{status: resp.StatusCode, body: body}
 	if err := json.Unmarshal(body, &out.value); err != nil {
 		return fetched{}, fmt.Errorf("%s: body is not JSON: %w", c.Path, err)
 	}
@@ -1812,32 +2040,43 @@ func fetch(base string, c testCase) (fetched, error) {
 }
 
 func main() {
-	py := flag.String("py", "http://127.0.0.1:8299", "python base URL")
-	goURL := flag.String("go", "http://127.0.0.1:8298", "go base URL")
-	cases := flag.String("cases", "", "cases JSON")
-	out := flag.String("out", "_audit/parity/run.json", "report path")
-	commit := flag.String("commit", "unknown", "git commit being measured")
-	flag.Parse()
+	os.Exit(run(os.Args[1:]))
+}
+
+func run(args []string) int {
+	fs := flag.NewFlagSet("parity", flag.ContinueOnError)
+	py := fs.String("py", "http://127.0.0.1:8299", "python base URL")
+	goURL := fs.String("go", "http://127.0.0.1:8298", "go base URL")
+	cases := fs.String("cases", "", "cases JSON")
+	out := fs.String("out", "_audit/parity/run.json", "report path")
+	commit := fs.String("commit", "unknown", "git commit being measured")
+	if err := fs.Parse(args); err != nil {
+		return 2
+	}
 	if *cases == "" {
 		fmt.Fprintln(os.Stderr, "--cases is required")
-		os.Exit(2)
+		return 2
 	}
 	raw, err := os.ReadFile(*cases)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
-		os.Exit(2)
+		return 2
 	}
 	var cf caseFile
 	if err := json.Unmarshal(raw, &cf); err != nil {
 		fmt.Fprintln(os.Stderr, err)
-		os.Exit(2)
+		return 2
+	}
+	if len(cf.Cases) == 0 {
+		fmt.Fprintf(os.Stderr, "no cases in %s\n", *cases)
+		return 2
 	}
 	report := parity.Report{Commit: *commit, PyURL: *py, GoURL: *goURL, DBHash: cf.DBHash}
 	for _, c := range cf.Cases {
 		row, err := compareCase(*py, *goURL, c)
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err)
-			os.Exit(2)
+			return 2
 		}
 		if row.Pass {
 			report.Passed++
@@ -1847,35 +2086,48 @@ func main() {
 		report.Cases = append(report.Cases, row)
 	}
 	report.Finished = time.Now().UTC().Format(time.RFC3339)
-	blob, _ := json.MarshalIndent(report, "", " ")
-	if err := os.MkdirAll(dirOf(*out), 0o755); err != nil {
+	blob, err := json.MarshalIndent(report, "", " ")
+	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
-		os.Exit(2)
+		return 2
+	}
+	if err := os.MkdirAll(filepath.Dir(*out), 0o755); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		return 2
 	}
 	if err := os.WriteFile(*out, append(blob, '\n'), 0o644); err != nil {
 		fmt.Fprintln(os.Stderr, err)
-		os.Exit(2)
+		return 2
 	}
 	fmt.Printf("parity: %d passed / %d failed -> %s\n", report.Passed, report.Failed, *out)
 	if report.Failed > 0 {
-		os.Exit(1)
+		return 1
 	}
+	return 0
 }
 
 func compareCase(pyBase, goBase string, c testCase) (parity.CaseReport, error) {
+	row := parity.CaseReport{Name: c.Name, Method: c.Method, Path: c.Path}
 	a, err := fetch(pyBase, c)
 	if err != nil {
-		return parity.CaseReport{}, fmt.Errorf("py %s: %w", c.Path, err)
+		var build *requestBuildError
+		if errors.As(err, &build) {
+			return parity.CaseReport{}, fmt.Errorf("py %s: %w", c.Path, err)
+		}
+		row.Diffs = []string{"py fetch: " + err.Error()}
+		return row, nil
 	}
+	row.StatusPy, row.BytesPy = a.status, len(a.body)
 	b, err := fetch(goBase, c)
 	if err != nil {
-		return parity.CaseReport{}, fmt.Errorf("go %s: %w", c.Path, err)
+		var build *requestBuildError
+		if errors.As(err, &build) {
+			return parity.CaseReport{}, fmt.Errorf("go %s: %w", c.Path, err)
+		}
+		row.Diffs = []string{"go fetch: " + err.Error()}
+		return row, nil
 	}
-	row := parity.CaseReport{
-		Name: c.Name, Method: c.Method, Path: c.Path,
-		StatusPy: a.status, StatusGo: b.status,
-		BytesPy: len(a.body), BytesGo: len(b.body),
-	}
+	row.StatusGo, row.BytesGo = b.status, len(b.body)
 	if a.status != b.status {
 		row.Diffs = []string{fmt.Sprintf("status: %d != %d", a.status, b.status)}
 		return row, nil
@@ -1883,15 +2135,6 @@ func compareCase(pyBase, goBase string, c testCase) (parity.CaseReport, error) {
 	res := parity.Compare(a.value, b.value, parity.Options{Exclude: c.Exclude})
 	row.Pass, row.Diffs, row.MaxDelta, row.Excluded = res.Pass, res.Diffs, res.MaxDelta, res.Excluded
 	return row, nil
-}
-
-func dirOf(path string) string {
-	for i := len(path) - 1; i >= 0; i-- {
-		if path[i] == '/' || path[i] == '\\' {
-			return path[:i]
-		}
-	}
-	return "."
 }
 ```
 
@@ -1903,9 +2146,15 @@ func dirOf(path string) string {
 package main
 
 import (
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
+	"strings"
 	"testing"
+
+	"borsterminal/backend/internal/parity"
 )
 
 func server(body string) *httptest.Server {
@@ -1947,6 +2196,67 @@ func TestCompareCaseExclusion(t *testing.T) {
 	})
 	if err != nil || !row.Pass || len(row.Excluded) != 1 {
 		t.Fatalf("err=%v row=%+v", err, row)
+	}
+}
+
+func TestCompareCaseNonJSONIsFailedRow(t *testing.T) {
+	py := server(`{"a":1}`)
+	gs := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte("not json"))
+	}))
+	defer py.Close()
+	defer gs.Close()
+	row, err := compareCase(py.URL, gs.URL, testCase{Name: "nj", Method: "GET", Path: "/p"})
+	if err != nil {
+		t.Fatalf("non-JSON body must not abort the run: %v", err)
+	}
+	if row.Pass || len(row.Diffs) == 0 || !strings.HasPrefix(row.Diffs[0], "go fetch:") {
+		t.Fatalf("row=%+v", row)
+	}
+	if row.StatusGo != 0 || row.StatusPy != 200 {
+		t.Fatalf("status_py=%d status_go=%d", row.StatusPy, row.StatusGo)
+	}
+}
+
+func TestRunZeroCasesWritesNoReport(t *testing.T) {
+	dir := t.TempDir()
+	cases := filepath.Join(dir, "cases.json")
+	if err := os.WriteFile(cases, []byte(`{"cases":[]}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	out := filepath.Join(dir, "report.json")
+	if code := run([]string{"--cases", cases, "--out", out}); code != 2 {
+		t.Fatalf("exit = %d, want 2", code)
+	}
+	if _, err := os.Stat(out); !os.IsNotExist(err) {
+		t.Fatalf("report must not be written: %v", err)
+	}
+}
+
+func TestRunPassingCaseWritesReport(t *testing.T) {
+	py, gs := server(`{"a":1}`), server(`{"a":1}`)
+	defer py.Close()
+	defer gs.Close()
+	dir := t.TempDir()
+	cases := filepath.Join(dir, "cases.json")
+	if err := os.WriteFile(cases, []byte(`{"cases":[{"name":"ok","method":"GET","path":"/p"}]}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	out := filepath.Join(dir, "report.json")
+	if code := run([]string{"--py", py.URL, "--go", gs.URL, "--cases", cases, "--out", out}); code != 0 {
+		t.Fatalf("exit = %d, want 0", code)
+	}
+	blob, err := os.ReadFile(out)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var rep parity.Report
+	if err := json.Unmarshal(blob, &rep); err != nil {
+		t.Fatal(err)
+	}
+	if rep.Passed != 1 || rep.Failed != 0 || len(rep.Cases) != 1 || !rep.Cases[0].Pass {
+		t.Fatalf("report=%+v", rep)
 	}
 }
 ```

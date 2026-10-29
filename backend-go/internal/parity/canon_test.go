@@ -38,6 +38,33 @@ func TestNumberForms(t *testing.T) {
 	}
 }
 
+func TestNumericTypesNormalize(t *testing.T) {
+	cases := []struct {
+		name string
+		want any
+		got  any
+		pass bool
+	}{
+		{"int-vs-float", 1, 1.0, true},
+		{"int-vs-int", 1, 1, true},
+		{"int-vs-int-differ", 1, 2, false},
+		{"int64-vs-float", int64(1), 1.0, true},
+		{"uint-vs-negative", uint(1), -1.0, false},
+		{"float32-vs-float64", float32(1.5), 1.5, true},
+		{"json-number-vs-float", json.Number("2.5"), 2.5, true},
+		{"int-vs-string", 1, "1", false},
+		{"string-vs-int", "1", 1, false},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			r := Compare(tc.want, tc.got, Options{})
+			if r.Pass != tc.pass {
+				t.Fatalf("Compare(%#v, %#v).Pass = %v, diffs=%v", tc.want, tc.got, r.Pass, r.Diffs)
+			}
+		})
+	}
+}
+
 func TestStringExactAndArrayOrder(t *testing.T) {
 	r := Compare(decode(t, `{"s":"بیداده"}`), decode(t, `{"s":"بی داده"}`), Options{})
 	if r.Pass {

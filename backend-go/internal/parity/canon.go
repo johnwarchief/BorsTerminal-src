@@ -1,6 +1,7 @@
 package parity
 
 import (
+	"encoding/json"
 	"fmt"
 	"math"
 	"sort"
@@ -86,6 +87,29 @@ func (w *walker) walk(path string, want, got any) {
 	if w.isExcluded(path) {
 		return
 	}
+	if wantN, ok := num(want); ok {
+		gotN, ok := num(got)
+		if !ok {
+			w.diff(path, "type", "number", kind(got))
+			return
+		}
+		if wantN == gotN {
+			return
+		}
+		if math.IsNaN(wantN) || math.IsNaN(gotN) || math.IsInf(wantN, 0) || math.IsInf(gotN, 0) {
+			w.diff(path, "non-finite", fmt.Sprint(wantN), fmt.Sprint(gotN))
+			return
+		}
+		den := math.Max(math.Abs(wantN), 1e-12)
+		delta := math.Abs(gotN-wantN) / den
+		if delta > w.maxDelta {
+			w.maxDelta = delta
+		}
+		if delta > 1e-9 {
+			w.diff(path, "number", fmt.Sprintf("%v", wantN), fmt.Sprintf("%v", gotN))
+		}
+		return
+	}
 	switch wantV := want.(type) {
 	case map[string]any:
 		gotV, ok := got.(map[string]any)
@@ -137,27 +161,6 @@ func (w *walker) walk(path string, want, got any) {
 		}
 		for i := range wantV {
 			w.walk(fmt.Sprintf("%s[%d]", path, i), wantV[i], gotV[i])
-		}
-	case float64:
-		gotV, ok := got.(float64)
-		if !ok {
-			w.diff(path, "type", "number", kind(got))
-			return
-		}
-		if wantV == gotV {
-			return
-		}
-		if math.IsNaN(wantV) || math.IsNaN(gotV) || math.IsInf(wantV, 0) || math.IsInf(gotV, 0) {
-			w.diff(path, "non-finite", fmt.Sprint(wantV), fmt.Sprint(gotV))
-			return
-		}
-		den := math.Max(math.Abs(wantV), 1e-12)
-		delta := math.Abs(gotV-wantV) / den
-		if delta > w.maxDelta {
-			w.maxDelta = delta
-		}
-		if delta > 1e-9 {
-			w.diff(path, "number", fmt.Sprintf("%v", wantV), fmt.Sprintf("%v", gotV))
 		}
 	case nil:
 		if got != nil {
@@ -217,5 +220,41 @@ func kind(v any) string {
 		return "bool"
 	default:
 		return strings.TrimSpace(fmt.Sprintf("%T", v))
+	}
+}
+
+// num هر نوعِ عددیِ Go را به float64 نرمال می‌کند تا عددِ صحیح با عددِ اعشاری
+// برابرِ عددی شمرده شود (قراردادِ API: 1 == 1.0).
+func num(v any) (float64, bool) {
+	switch x := v.(type) {
+	case float64:
+		return x, true
+	case float32:
+		return float64(x), true
+	case int:
+		return float64(x), true
+	case int8:
+		return float64(x), true
+	case int16:
+		return float64(x), true
+	case int32:
+		return float64(x), true
+	case int64:
+		return float64(x), true
+	case uint:
+		return float64(x), true
+	case uint8:
+		return float64(x), true
+	case uint16:
+		return float64(x), true
+	case uint32:
+		return float64(x), true
+	case uint64:
+		return float64(x), true
+	case json.Number:
+		f, err := x.Float64()
+		return f, err == nil
+	default:
+		return 0, false
 	}
 }
