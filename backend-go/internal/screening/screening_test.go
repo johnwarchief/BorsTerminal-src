@@ -22,7 +22,12 @@ func TestEligibility(t *testing.T) {
 		{"stale", map[string]any{"is_live": false, "st_title": "مجاز"}, false, "NOT_LIVE_SESSION", "درِ تازۀترین نشستِ تابلو حاضر نیست (ردیفِ کهنه)"},
 		{"stopped", map[string]any{"is_live": true, "stop_state": "متوقف"}, false, "STOPPED", "متوقف: متوقف"},
 		{"forbidden", map[string]any{"is_live": true, "st_title": "ممنوع", "st_d": int64(20261014), "st_h": int64(93000)}, false, "FORBIDDEN_STATE", "ممنوع (طی معاملات — ساعت ۰۹:۳۰)"},
+		// ترتیبِ وتوها اینجا قفل می‌شود: عنوانی که هر دو نشانه را دارد وتویِ
+		// «ممنوع» را می‌گیرد نه «متوقف» (پایتون: startswith پیش از in).
+		{"mixed", map[string]any{"is_live": true, "st_title": "ممنوع-متوقف", "st_d": int64(20261014), "st_h": int64(93000)}, false, "FORBIDDEN_STATE", "ممنوع-متوقف (طی معاملات — ساعت ۰۹:۳۰)"},
 		{"stopped-title", map[string]any{"is_live": true, "st_title": "مجاز-متوقف", "st_d": int64(20261013)}, false, "STOPPED", "مجاز-متوقف — از نشستِ ۲۰۲۶۱۰۱۳"},
+		// «متوقف» در میانهٔ عنوان هم کافی است، نه فقط در پایانش.
+		{"stopped-infix", map[string]any{"is_live": true, "st_title": "متوقف-اداری", "st_d": int64(20261014), "st_h": int64(93000)}, false, "STOPPED", "متوقف-اداری (طی معاملات — ساعت ۰۹:۳۰)"},
 		{"permitted", map[string]any{"is_live": true, "st_title": "مجاز"}, true, "PERMITTED_STATE", "وضعیتِ ثبت‌شدۀ نماد: مجاز"},
 		{"other-title", map[string]any{"is_live": true, "st_title": "محفوظ"}, true, "NO_BLOCKING_STATE", "وتوی معتبری ثبت نشده (وضعیت: محفوظ)"},
 		{"none", map[string]any{"is_live": true}, true, "NO_BLOCKING_STATE", "وضعیتی برایِ این نماد ثبت نشده — وتویی نیست"},
