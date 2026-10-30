@@ -2,6 +2,7 @@ package mstat
 
 import (
 	"database/sql"
+	"math"
 
 	"borsterminal/backend/internal/pyround"
 )
@@ -156,5 +157,144 @@ func depthPanel(db *sql.DB, group string) (map[string]any, error) {
 		"sell_queue_b_toman": pyround.Round(sellVal/1e10, 1),
 		"ratio":              ratio, "buy_queue_count": bqCnt, "sell_queue_count": sqCnt,
 		"buy": one("buy"), "sell": one("sell"),
+	}, nil
+}
+
+// entryOpportunityNegPct همان ENTRY_OPPORTUNITY_NEG_PCTِ mstat_engine است.
+const entryOpportunityNegPct = 80.0
+
+// thermometerPanel همان mstat_engine.thermometer: نوارِ دو‌رنگِ مثبت/منفی +
+// قانونِ «فرصتِ ورود» (منفی‌ها ≥ ۸۰٪).
+//
+// مانند هیستوگرام فقط نمادهایِ معامله‌شده شمرده می‌شوند؛ قانون رویِ فهرستِ
+// معامله‌نشده‌ها همیشه «فرصتِ ورود»ِ جعلی می‌سازد. درصدها با مخرجِ صفر None
+// می‌مانند، نه ۰. مقایسهٔ ۸۰٪ رویِ نسبتِ *نگردشده* است — پایتون
+// `neg_pct >= ENTRY_OPPORTUNITY_NEG_PCT` را پیش از round می‌سنجد — وگرنه
+// گروهی با ۷۹٫۹۶٪ پس از گردکردن به ۸۰٫۰ می‌رسید و قانون بی‌آنکه سزاوار باشد
+// روشن می‌شد.
+func thermometerPanel(db *sql.DB, group string) (map[string]any, error) {
+	snap, err := loadSnapshot(db)
+	if err != nil {
+		return nil, err
+	}
+	rows := enrich(snap)
+	sel := []*Row{}
+	for _, r := range rows {
+		if inCategory(r, group, nil) && r.M.Vol > 0 {
+			sel = append(sel, r)
+		}
+	}
+	pos, neg, flat := 0, 0, 0
+	for _, r := range sel {
+		switch {
+		case r.Pct != nil && *r.Pct > 0:
+			pos++
+		case r.Pct != nil && *r.Pct < 0:
+			neg++
+		case r.Pct != nil && *r.Pct == 0:
+			flat++
+		}
+	}
+	known := pos + neg + flat
+	var posPct, negPct any
+	entry := false
+	if known > 0 {
+		posRatio := 100.0 * float64(pos) / float64(known)
+		negRatio := 100.0 * float64(neg) / float64(known)
+		posPct = pyround.Round(posRatio, 1)
+		negPct = pyround.Round(negRatio, 1)
+		entry = negRatio >= entryOpportunityNegPct
+	}
+	notTraded := 0
+	for _, r := range rows {
+		if inCategory(r, group, nil) && r.M.Vol <= 0 {
+			notTraded++
+		}
+	}
+	return map[string]any{
+		"status": "ok", "asof": asOfMap(snap, len(top50Codes(snap.Rows)), len(rows)),
+		"group": group, "positive": pos, "negative": neg, "zero": flat,
+		"nodata": len(sel) - known, "not_traded": notTraded,
+		"positive_pct": posPct, "negative_pct": negPct,
+		"entry_opportunity": entry, "entry_rule_pct": entryOpportunityNegPct,
+	}, nil
+}
+
+// tabCat همان _TAB_CAT: نامِ تبِ رابط → دستهٔ in_category.
+var tabCat = map[string]string{
+	"all": "all", "eq_funds": "eq_all", "stock": "stock_right", "eq_fund": "eq_fund",
+	"fixed": "fixed_fund", "top50": "top50", "lev": "lev_fund",
+	"gold": "gold_fund", "silver": "silver_fund",
+}
+
+// sideShare همان client_split.side_share: سهمِ حقیقی از ارزشِ یک سمت (۰ تا ۱۰۰)
+// یا nil یعنی نامشخص. منفی، NaN/±Inf و مخرجِ صفر «نامشخص»اند، نه صفر؛ منفی
+// بودنِ ارزشِ یک گروه معنایِ فنی ندارد. پایتون همین‌ها را در money() رد می‌کند.
+func sideShare(retail, legal float64) any {
+	if isNaN(retail) || isNaN(legal) || math.IsInf(retail, 0) || math.IsInf(legal, 0) ||
+		retail < 0 || legal < 0 {
+		return nil
+	}
+	den := retail + legal
+	if den <= 0 {
+		return nil
+	}
+	return pyround.Round(100.0*retail/den, 1)
+}
+
+// complement سهمِ حقوقیِ همان سمت: مکملِ سهمِ حقیقیِ *گردشده*. سمتِ نصفه‌نیمه
+// درصد ندارد (nil می‌ماند). محاسبهٔ مستقلِ 100*legal/den یک گردکردنِ دوم
+// می‌سازد که با سهمِ حقیقی به ۱۰۰ نمی‌رسد (مثلاً ۰٫۱ + ۹۹٫۸).
+func complement(share any) any {
+	if share == nil {
+		return nil
+	}
+	return pyround.Round(100.0-share.(float64), 1)
+}
+
+// nilOrRound قراردادِ «NaN یعنی NULL» برایِ ارقامِ گردشده: NaN ⇒ nil، وگرنه
+// roundِ پایتون. این تابع مالِ واحدِ ۵B است؛ Task 6 نباید دوباره تعریفش کند.
+func nilOrRound(v float64, n int) any {
+	if isNaN(v) {
+		return nil
+	}
+	return pyround.Round(v, n)
+}
+
+// clientSplitPanel همان mstat_engine.client_split: تعداد/ارزش/درصدِ خرید و
+// فروشِ حقیقی در برابر حقوقی، به تفکیکِ تب.
+//
+// درصدها از همان کسرِ تک‌تعریفِ client_split می‌آیند: سهمِ حقوقی مکملِ سهمِ
+// حقیقیِ همان سمت است، نه یک گردکردنِ مستقل. تبِ ناشناخته به دستهٔ all برمی‌گردد
+// ولی نامِ خامِ tab در پاسخ می‌ماند.
+func clientSplitPanel(db *sql.DB, tab string) (map[string]any, error) {
+	snap, err := loadSnapshot(db)
+	if err != nil {
+		return nil, err
+	}
+	rows := enrich(snap)
+	cat, ok := tabCat[tab]
+	if !ok {
+		cat = "all"
+	}
+	a := aggOf(selectRows(rows, cat))
+	rbuy := sideShare(a.RB, a.IB)
+	rsell := sideShare(a.RS, a.IS)
+	bt := func(v float64) float64 { return pyround.Round(v/1e10, 1) }
+	return map[string]any{
+		"status": "ok", "asof": asOfMap(snap, len(top50Codes(snap.Rows)), len(rows)),
+		"tab": tab, "symbols": a.N,
+		"retail": map[string]any{
+			"buy_count": a.NBI, "buy_b_toman": bt(a.RB), "buy_pct": rbuy,
+			"sell_count": a.NSI, "sell_b_toman": bt(a.RS), "sell_pct": rsell,
+		},
+		"institutional": map[string]any{
+			"buy_count": a.NBN, "buy_b_toman": bt(a.IB), "buy_pct": complement(rbuy),
+			"sell_count": a.NSN, "sell_b_toman": bt(a.IS), "sell_pct": complement(rsell),
+		},
+		"pc_buy_m_toman":     nilOrRound(a.PCBuymt, 1),
+		"pc_sell_m_toman":    nilOrRound(a.PCSellmt, 1),
+		"power":              nilOrRound(a.Power, 2),
+		"money_flow_b_toman": pyround.Round(a.FlowBT, 1),
 	}, nil
 }

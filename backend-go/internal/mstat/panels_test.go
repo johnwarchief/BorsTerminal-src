@@ -1,11 +1,12 @@
 package mstat
 
 import (
+	"math"
+	"reflect"
 	"testing"
 )
 
-// TestPanelsMatchGolden فقط دو پنلِ همین واحد (هیستوگرام و عمق) را با بدنهٔ
-// اوراکلِ پایتون می‌سنجد؛ دماسنج و تفکیکِ حقیقی/حقوقی در واحدِ بعدی می‌آیند.
+// TestPanelsMatchGolden هر چهار پنلِ Task 5 را با بدنهٔ اوراکلِ پایتون می‌سنجد.
 func TestPanelsMatchGolden(t *testing.T) {
 	h := openFixture(t)
 	cases := []struct {
@@ -14,8 +15,12 @@ func TestPanelsMatchGolden(t *testing.T) {
 	}{
 		{"histogram_all", func() (map[string]any, error) { return histogramPanel(h.Market, "all") }},
 		{"histogram_eq_all", func() (map[string]any, error) { return histogramPanel(h.Market, "eq_all") }},
+		{"thermometer_all", func() (map[string]any, error) { return thermometerPanel(h.Market, "all") }},
+		{"thermometer_eq_all", func() (map[string]any, error) { return thermometerPanel(h.Market, "eq_all") }},
 		{"depth_all", func() (map[string]any, error) { return depthPanel(h.Market, "all") }},
 		{"depth_eq_all", func() (map[string]any, error) { return depthPanel(h.Market, "eq_all") }},
+		{"clientsplit_all", func() (map[string]any, error) { return clientSplitPanel(h.Market, "all") }},
+		{"clientsplit_fixed", func() (map[string]any, error) { return clientSplitPanel(h.Market, "fixed") }},
 	}
 	for _, c := range cases {
 		got, err := c.run()
@@ -447,5 +452,248 @@ func TestDepthUnavailableDepthless(t *testing.T) {
 	}
 	if depth, ok := asof["depth"].(bool); !ok || depth {
 		t.Errorf("asof.depth = %v, want false", asof["depth"])
+	}
+}
+
+// subBody زیرنگاشتِ یک پنل را می‌خواند؛ نوعِ اشتباه یعنی قراردادِ بدنه شکسته.
+func subBody(t *testing.T, body map[string]any, key string) map[string]any {
+	t.Helper()
+	m, ok := body[key].(map[string]any)
+	if !ok {
+		t.Fatalf("%s is %T, want map[string]any", key, body[key])
+	}
+	return m
+}
+
+// wantNilKey «نامعلوم» را از «صفر» جدا می‌کند: کلید باید باشد و nil، نه غایب و
+// نه عددِ صفر.
+func wantNilKey(t *testing.T, body map[string]any, key string) {
+	t.Helper()
+	if v, ok := body[key]; !ok || v != nil {
+		t.Errorf("%s = %v, want nil", key, v)
+	}
+}
+
+func wantBool(t *testing.T, body map[string]any, key string, want bool) {
+	t.Helper()
+	got, ok := body[key].(bool)
+	if !ok {
+		t.Fatalf("%s is %T, want bool", key, body[key])
+	}
+	if got != want {
+		t.Errorf("%s = %v, want %v", key, got, want)
+	}
+}
+
+// TestThermometerEntryThreshold مرزِ قانونِ ۸۰٪ را رویِ خودِ مرز می‌سنجد: گروهِ
+// all پنج نمادِ معامله‌شده دارد. با چهار منفی و یک مثبت سهمِ منفی‌ها ۸۰٪ می‌شود
+// و «فرصتِ ورود» باید true باشد؛ با سه منفی و دو مثبت ۶۰٪ می‌شود و false.
+// علامتِ pct از price_yesterday نسبت به p_closing می‌آید، و نسبت در بازهٔ pxNear
+// می‌ماند (۰٫۹ و ۱٫۱) تا بازدهی اصلاً محاسبه شود.
+func TestThermometerEntryThreshold(t *testing.T) {
+	body := func(t *testing.T, yestMult map[string]float64) map[string]any {
+		t.Helper()
+		h := openWritableFixture(t)
+		for code, mult := range yestMult {
+			if _, err := h.Market.Exec(
+				"UPDATE market_watch SET price_yesterday = p_closing * ? WHERE ins_code = ?",
+				mult, code); err != nil {
+				t.Fatal(err)
+			}
+		}
+		got, err := thermometerPanel(h.Market, "all")
+		if err != nil {
+			t.Fatal(err)
+		}
+		return got
+	}
+
+	t.Run("four_negative_exactly_80", func(t *testing.T) {
+		got := body(t, map[string]float64{
+			"m1": 1.1, "m2": 1.1, "m3": 1.1, "m4": 1.1, "m5": 0.9,
+		})
+		wantInt(t, got, "positive", 1)
+		wantInt(t, got, "negative", 4)
+		wantInt(t, got, "zero", 0)
+		wantInt(t, got, "nodata", 0)
+		wantInt(t, got, "not_traded", 0)
+		wantFloat(t, got, "positive_pct", 20.0)
+		wantFloat(t, got, "negative_pct", 80.0)
+		wantFloat(t, got, "entry_rule_pct", 80.0)
+		wantBool(t, got, "entry_opportunity", true)
+	})
+
+	t.Run("three_negative_60", func(t *testing.T) {
+		got := body(t, map[string]float64{
+			"m1": 1.1, "m2": 1.1, "m3": 1.1, "m4": 0.9, "m5": 0.9,
+		})
+		wantInt(t, got, "positive", 2)
+		wantInt(t, got, "negative", 3)
+		wantInt(t, got, "zero", 0)
+		wantInt(t, got, "nodata", 0)
+		wantFloat(t, got, "positive_pct", 40.0)
+		wantFloat(t, got, "negative_pct", 60.0)
+		wantBool(t, got, "entry_opportunity", false)
+	})
+}
+
+// TestThermometerEmptyTradedGroup: وقتی هیچ نمادِ معامله‌شده‌ای در گروه نیست،
+// مخرج صفر است و درصدها باید null بمانند، نه ۰. صفرِ جعلی در مقایسهٔ «≥ ۸۰٪»
+// نمی‌نشیند ولی عددی است که کاربر «۰٪ منفی» می‌خواند؛ و «فرصتِ ورود» هم نباید
+// از درصدِ نامعلوم ساخته شود.
+func TestThermometerEmptyTradedGroup(t *testing.T) {
+	h := openWritableFixture(t)
+	if _, err := h.Market.Exec("UPDATE market_watch SET q_tot_tran = 0"); err != nil {
+		t.Fatal(err)
+	}
+	body, err := thermometerPanel(h.Market, "all")
+	if err != nil {
+		t.Fatal(err)
+	}
+	wantInt(t, body, "positive", 0)
+	wantInt(t, body, "negative", 0)
+	wantInt(t, body, "zero", 0)
+	wantInt(t, body, "nodata", 0)
+	wantInt(t, body, "not_traded", 5)
+	wantNilKey(t, body, "positive_pct")
+	wantNilKey(t, body, "negative_pct")
+	wantBool(t, body, "entry_opportunity", false)
+	wantFloat(t, body, "entry_rule_pct", 80.0)
+}
+
+// TestClientSplitUnknownTabFallsBack: تبِ ناشناخته به دستهٔ all برمی‌گردد ولی
+// نامِ خامِ tab در پاسخ می‌ماند (پایتون `_TAB_CAT.get(tab, "all")` و
+// `"tab": tab`). مقایسهٔ زیرنگاشت‌ها مستقیم است، نه از راهِ رشته.
+func TestClientSplitUnknownTabFallsBack(t *testing.T) {
+	h := openFixture(t)
+	all, err := clientSplitPanel(h.Market, "all")
+	if err != nil {
+		t.Fatal(err)
+	}
+	got, err := clientSplitPanel(h.Market, "nope")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got["tab"] != "nope" {
+		t.Errorf("tab = %v, want the raw argument %q", got["tab"], "nope")
+	}
+	wantInt(t, got, "symbols", 5)
+	for _, k := range []string{"retail", "institutional", "pc_buy_m_toman",
+		"pc_sell_m_toman", "power", "money_flow_b_toman"} {
+		if !reflect.DeepEqual(got[k], all[k]) {
+			t.Errorf("%s = %v, want the all-tab body %v", k, got[k], all[k])
+		}
+	}
+}
+
+// TestClientSplitZeroDenominator: m5 تنها نمادِ تبِ fixed است. حجم‌ها، تعدادها
+// و ارزش‌هایِ مبدأ صفر می‌شوند تا هر دو گروه صفر شوند. تعدادها هم باید صفر
+// شوند وگرنه سرانهٔ خرید ۰÷تعداد = ۰٫۰ می‌شود، نه null. مخرجِ صفر یعنی «در این
+// سمت ارزشی ثبت نشده»، پس هیچ درصدی ساخته نمی‌شود — sideShare نباید ضعیف شود.
+func TestClientSplitZeroDenominator(t *testing.T) {
+	h := openWritableFixture(t)
+	if _, err := h.Market.Exec(`UPDATE client_type SET buy_i_vol = 0, buy_n_vol = 0,
+		buy_ddd_vol = 0, buy_count_i = 0, buy_count_n = 0, sell_i_vol = 0,
+		sell_n_vol = 0, sell_count_i = 0, sell_count_n = 0
+		WHERE ins_code = 'm5'`); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := h.Market.Exec(`UPDATE client_type_value SET buy_i_val = 0,
+		buy_n_val = 0, sell_i_val = 0, sell_n_val = 0 WHERE ins_code = 'm5'`); err != nil {
+		t.Fatal(err)
+	}
+	body, err := clientSplitPanel(h.Market, "fixed")
+	if err != nil {
+		t.Fatal(err)
+	}
+	wantInt(t, body, "symbols", 1)
+	for _, side := range []string{"retail", "institutional"} {
+		m := subBody(t, body, side)
+		wantNilKey(t, m, "buy_pct")
+		wantNilKey(t, m, "sell_pct")
+		wantFloat(t, m, "buy_b_toman", 0)
+		wantFloat(t, m, "sell_b_toman", 0)
+	}
+	wantNilKey(t, body, "pc_buy_m_toman")
+	wantNilKey(t, body, "pc_sell_m_toman")
+	wantNilKey(t, body, "power")
+	wantFloat(t, body, "money_flow_b_toman", 0)
+}
+
+// TestSideShareAndComplement ریاضیِ محضِ سهم را بی‌DB قفل می‌کند: منفی/NaN/مخرجِ
+// صفر ⇒ nil؛ گردکردنِ یک‌رقمی؛ و حقوقی مکملِ *همان* سهمِ گردشده است. بردارِ
+// ۳:۱۹۹۷ گره را نشان می‌دهد: حقیقی ۰٫۱ و مکمل ۹۹٫۹؛ گردکردنِ مستقلِ حقوقی
+// ۹۹٫۸ می‌داد و دو سمت به ۱۰۰ نمی‌رسیدند.
+func TestSideShareAndComplement(t *testing.T) {
+	for _, c := range []struct {
+		name          string
+		retail, legal float64
+	}{
+		{"zero denominator", 0, 0},
+		{"negative retail", -1, 5},
+		{"negative legal", 5, -1},
+		{"NaN retail", math.NaN(), 5},
+		{"NaN legal", 5, math.NaN()},
+	} {
+		if got := sideShare(c.retail, c.legal); got != nil {
+			t.Errorf("%s: sideShare = %v, want nil", c.name, got)
+		}
+	}
+	if got := sideShare(1, 2); got != 33.3 {
+		t.Errorf("sideShare(1,2) = %v, want 33.3", got)
+	}
+	if got := complement(sideShare(1, 2)); got != 66.7 {
+		t.Errorf("complement(33.3) = %v, want 66.7", got)
+	}
+	if got := complement(nil); got != nil {
+		t.Errorf("complement(nil) = %v, want nil", got)
+	}
+	if got := complement(sideShare(100, 900)); got != 90.0 {
+		t.Errorf("complement(10.0) = %v, want 90.0", got)
+	}
+	if got := sideShare(3, 1997); got != 0.1 {
+		t.Errorf("sideShare(3,1997) = %v, want 0.1", got)
+	}
+	if got := complement(0.1); got != 99.9 {
+		t.Errorf("complement(0.1) = %v, want 99.9 (independent legal rounding gives 99.8)", got)
+	}
+}
+
+// TestClientSplitLegalShareIsComplement همان گرهِ ۳:۱۹۹۷ را از مسیرِ کاملِ پنل
+// می‌سنجد: در تبِ fixed فقط m5 هست و حجم‌هایِ ۳ و ۱۹۹۷ با VWAPِ ۱۰۰۰ ارزشِ
+// ۳۰۰۰ و ۱٬۹۹۷٬۰۰۰ ریال می‌دهند. حقوقی باید مکملِ ۰٫۱ یعنی ۹۹٫۹ باشد؛ محاسبهٔ
+// مستقل ۹۹٫۸ می‌داد.
+func TestClientSplitLegalShareIsComplement(t *testing.T) {
+	h := openWritableFixture(t)
+	if _, err := h.Market.Exec(`UPDATE client_type SET buy_i_vol = 3, buy_n_vol = 1997,
+		sell_i_vol = 3, sell_n_vol = 1997 WHERE ins_code = 'm5'`); err != nil {
+		t.Fatal(err)
+	}
+	body, err := clientSplitPanel(h.Market, "fixed")
+	if err != nil {
+		t.Fatal(err)
+	}
+	wantInt(t, body, "symbols", 1)
+	retail := subBody(t, body, "retail")
+	institutional := subBody(t, body, "institutional")
+	wantFloat(t, retail, "buy_pct", 0.1)
+	wantFloat(t, institutional, "buy_pct", 99.9)
+	wantFloat(t, retail, "sell_pct", 0.1)
+	wantFloat(t, institutional, "sell_pct", 99.9)
+}
+
+// TestNilOrRound قراردادِ تبدیلِ «NaN یعنی None» را با گردکردن قفل می‌کند:
+// NaN ⇒ nil، عدد ⇒ همان roundِ پایتون، و صفرِ منفی هم عددی صفر می‌ماند.
+func TestNilOrRound(t *testing.T) {
+	if got := nilOrRound(math.NaN(), 1); got != nil {
+		t.Errorf("nilOrRound(NaN) = %v, want nil", got)
+	}
+	if got := nilOrRound(1.234, 2); got != 1.23 {
+		t.Errorf("nilOrRound(1.234, 2) = %v, want 1.23", got)
+	}
+	got := nilOrRound(math.Copysign(0, -1), 1)
+	f, ok := got.(float64)
+	if !ok || f != 0 {
+		t.Errorf("nilOrRound(-0.0, 1) = %v (%T), want numeric zero", got, got)
 	}
 }
