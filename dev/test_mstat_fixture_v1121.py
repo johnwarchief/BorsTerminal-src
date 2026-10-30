@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""گاردِ فیکسچر/طلاییِ B2 — پنج بررسی، بی‌شبکه.
+"""گاردِ فیکسچر/طلاییِ B2 — شش بررسی، بی‌شبکه.
 
 ۱) فیکسچر قطعی است: دو ساختِ مستقل در دو پوشۀ موقت، همان sha256، و همان
    فیکسچرِ کامیت‌شده. گارد هرگز فیکسچرِ ردیابی‌شده را بازنویسی نمی‌کند؛
@@ -9,6 +9,8 @@
    و mainwatch دقیقاً جفت‌هایِ پرچمِ موردانتظار را True می‌دهد.
 ۴) شمارشِ سناریوها همان چهار صحنه است و درختِ طلایی فقط همان‌ها را دارد.
 ۵) رفتارِ صحنه‌ها با مقدارِ دقیق سنجیده می‌شود (نه «هر مقدارِ متفاوت»).
+۶) terms_gen.go همان چیزی است که استخراجِ تازۀ mstat_engine می‌دهد؛ جدولِ
+   دست‌نویس یا کهنه (یک نویسهٔ جابه‌جا) همین‌جا قرمز می‌شود.
 
 هرگز `market.db`/`user.db`ِ عملیاتیِ ریشه باز نمی‌شود: فیکسچر از نو ساخته
 می‌شود و اوراکل در پوشۀ موقت می‌نویسد (همان الگویِ گاردِ B1).
@@ -18,6 +20,7 @@ import importlib.util
 import io
 import json
 import os
+import subprocess
 import sys
 import tempfile
 from contextlib import redirect_stdout
@@ -284,6 +287,21 @@ def main() -> int:
                   s4.get("phase"), s4.get("phase_source"), s4.get("official")))
     except Exception as e:                                        # noqa: BLE001
         check("scenario count", False, repr(e))
+
+    # ۶) terms_gen.go برابرِ استخراجِ تازه — گاردِ «بی‌دست‌نویسی». خروجیِ تازه درِ
+    #    حافظه ساخته می‌شود و فقط مقایسه می‌شود؛ فایلِ کامیت‌شده دست نمی‌خورد.
+    #    PYTHONIOENCODING صریح است تا پیامِ تفاوتِ فارسی درِ لولۀ ویندوز نترکد.
+    try:
+        env = dict(os.environ, PYTHONIOENCODING="utf-8")
+        r = subprocess.run([sys.executable, os.path.join(ROOT, "tools", "parity",
+                                                         "extract_mstat_terms.py"),
+                            "--check"], capture_output=True, text=True,
+                           encoding="utf-8", errors="replace", env=env)
+        check("terms_gen.go equals a fresh extraction from mstat_engine",
+              r.returncode == 0, (r.stdout + r.stderr).strip()[:600])
+    except Exception as e:                                        # noqa: BLE001
+        check("terms_gen.go equals a fresh extraction from mstat_engine",
+              False, repr(e))
 
     print("mstat_fixture_v1121: %d failed" % FAIL)
     return 0 if FAIL == 0 else 1
