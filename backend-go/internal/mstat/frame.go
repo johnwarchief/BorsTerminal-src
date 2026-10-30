@@ -53,6 +53,9 @@ type Row struct {
 	CT                                         *CTRow
 	CTV                                        *CTVRow
 	Top50                                      bool
+	// M ارقامِ ریالیِ همین ردیف است؛ enrich پر می‌کند و همهٔ تجمیع‌ها از همین
+	// می‌خوانند (یک بار money برایِ هر نماد، همان قاعدهٔ enrichِ پایتون).
+	M Money
 }
 
 type Snapshot struct {
@@ -450,4 +453,24 @@ func collectBaseVolumes(rows rowScanner) map[string]float64 {
 		}
 	}
 	return out
+}
+
+// asOfMap همان asofِ پنل‌هاست: روزِ تابلو، ساعت، روزِ ردیفِ مشتری و تأخیرش،
+// عمق، شمارِ top50 و شمارِ ردیف‌ها. «نبود» nil است، نه صفرِ ساختگی.
+func asOfMap(snap *Snapshot, top50, n int) map[string]any {
+	m := map[string]any{
+		"h_even": snap.AsOf.HEven, "depth": snap.AsOf.Depth,
+		"top50": top50, "n": n, "d_even": nil, "client_d_even": nil,
+		"client_lag_days": nil,
+	}
+	if snap.AsOf.DEven != nil {
+		m["d_even"] = *snap.AsOf.DEven
+	}
+	if snap.AsOf.ClientDEven != nil {
+		m["client_d_even"] = *snap.AsOf.ClientDEven
+	}
+	if snap.AsOf.ClientLag != nil {
+		m["client_lag_days"] = *snap.AsOf.ClientLag
+	}
+	return m
 }
