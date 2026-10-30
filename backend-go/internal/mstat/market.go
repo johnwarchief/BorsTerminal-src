@@ -135,6 +135,13 @@ func marketTotalRials(db *sql.DB) (float64, string) {
 				ok = false
 				break
 			}
+			// پایتون int(r[0]) را صدا می‌زند؛ d_evenِ NULL همان‌جا TypeError
+			// می‌دهد و کلِ دسته دور ریخته می‌شود. ردیفِ بی‌روز نباید با بقیه
+			// قاطی شود و برندهٔ باورپذیری شود.
+			if !d.Valid {
+				ok = false
+				break
+			}
 			if v.Valid {
 				if x := f0(v.Float64); x > 0 {
 					vals = append(vals, x)
@@ -241,23 +248,25 @@ func macroHealthFrom(eq, all *Agg, totalRials float64, totalSource string,
 	} else if hemat <= 10.0 {
 		state, label = "bad", "نامساعد"
 	}
+	// شش کلیدِ مرحل حتی وقتی مرحله‌ای نیست حاضرند و null می‌مانند؛ پایتون هم
+	// (phase or {}).get(...) را بی‌قید در بدنه می‌نشاند.
+	var phaseID, phaseLabel, phaseSource, phaseOfficial, sessionDay, sessionLive any
+	if ph != nil {
+		phaseID, phaseLabel, phaseSource = ph.Phase, ph.Label, ph.PhaseSource
+		phaseOfficial, sessionDay, sessionLive = ph.Official, ph.SessionDay, ph.IsLive
+	}
 	out := map[string]any{
 		"value_hemat": pyround.Round(hemat, 2), "state": state, "label": label,
 		"basis": "eq_all", "excellent": hemat >= 50.0,
 		"good_min": 20.0, "bad_max": 10.0, "excellent_min": 50.0,
+		"phase": phaseID, "phase_label": phaseLabel, "phase_source": phaseSource,
+		"phase_official": phaseOfficial, "session_day": sessionDay,
+		"session_is_live":              sessionLive,
 		"trade_value_all_market_hemat": nil, "market_value_hemat": marketValue,
 		"market_value_source": nilIfEmpty(totalSource),
 	}
 	if all != nil {
 		out["trade_value_all_market_hemat"] = pyround.Round(all.ValHemat, 2)
-	}
-	if ph != nil {
-		out["phase"] = ph.Phase
-		out["phase_label"] = ph.Label
-		out["phase_source"] = ph.PhaseSource
-		out["phase_official"] = ph.Official
-		out["session_day"] = ph.SessionDay
-		out["session_is_live"] = ph.IsLive
 	}
 	return out
 }

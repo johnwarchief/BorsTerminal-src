@@ -324,6 +324,31 @@ func TestResolveNotComputableOrder(t *testing.T) {
 	}
 }
 
+// TestResolveComputableIsCallerOwned: نقشهٔ computableِ هر نتیجه ملکِ همان
+// فراخوان است. پایتون dict(comp) می‌سازد؛ تغییرِ نتیجه نباید بستهٔ مرحله‌ها را
+// برای درخواستِ بعدی عوض کند.
+func TestResolveComputableIsCallerOwned(t *testing.T) {
+	first := Resolve(nil, nil, ip(20261028), nil, nil, nil, at(8, 30))
+	if first.Phase != PreOpen || first.Computable["realized_flow"] != false {
+		t.Fatalf("probe = %s/%v, want pre_open with realized_flow:false",
+			first.Phase, first.Computable["realized_flow"])
+	}
+	first.Computable["realized_flow"] = true
+	first.Computable["injected"] = true
+
+	second := Resolve(nil, nil, ip(20261028), nil, nil, nil, at(8, 30))
+	if second.Computable["realized_flow"] != false {
+		t.Fatal("second resolve inherited the caller's mutation of a previous result")
+	}
+	if _, ok := second.Computable["injected"]; ok {
+		t.Fatal("second resolve inherited an injected key from a previous result")
+	}
+	if len(second.Computable) != 4 {
+		t.Fatalf("computable has %d keys, want the 4-key template: %v",
+			len(second.Computable), second.Computable)
+	}
+}
+
 // TestDateFromDEven سخت‌گیریِ datetime.date را قفل می‌کند: تاریخِ غلت‌خورده
 // (۳۰ فوریه، ماهِ ۱۳) پذیرفته نمی‌شود و به مرحلهٔ تقویمیِ ساختگی نمی‌رسد.
 func TestDateFromDEven(t *testing.T) {

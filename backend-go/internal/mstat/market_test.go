@@ -167,6 +167,52 @@ func TestMarketIndexSeriesOldSchema(t *testing.T) {
 	}
 }
 
+// TestFromDBOldSchema: نبودِ جدول یا ستون‌هایِ رسمیِ market_index نباید خطا یا
+// مرحلهٔ ساختگی بدهد؛ from_db در پایتون بی‌وضعیتِ رسمی به تقویم می‌افتد و روزش
+// را از تابلو (market_watch) می‌گیرد. ساعت ۱۳:۰۰ همان روزِ تابلو ⇒ «پایانِ نشست».
+func TestFromDBOldSchema(t *testing.T) {
+	at := time.Date(2026, 10, 14, 13, 0, 0, 0, time.Local)
+	cases := []struct {
+		name string
+		sql  []string
+	}{
+		{"missing table", []string{"DROP TABLE market_index"}},
+		{"missing official columns", []string{
+			`CREATE TABLE market_index_old AS
+			    SELECT d_even, idx_last, updated_at FROM market_index`,
+			"DROP TABLE market_index",
+			"ALTER TABLE market_index_old RENAME TO market_index",
+		}},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			h := openWritableFixture(t)
+			for _, q := range c.sql {
+				mustExec(t, h.Market, q)
+			}
+			got := marketphase.FromDB(h.Market, at)
+			if got.Phase != marketphase.Closed || got.PhaseSource != "calendar" ||
+				got.Official || got.Label != "پایانِ نشست" {
+				t.Fatalf("phase = %s/%s/official=%v/%s, want closed/calendar/false/پایانِ نشست",
+					got.Phase, got.PhaseSource, got.Official, got.Label)
+			}
+			if got.SessionDay == nil {
+				t.Fatal("session_day = nil, want 20261014 from the board")
+			}
+			if *got.SessionDay != 20261014 {
+				t.Fatalf("session_day = %d, want 20261014 from the board",
+					*got.SessionDay)
+			}
+			if got.OfficialState != nil || got.OfficialStateTitle != nil {
+				t.Fatal("official state/title must be nil without the official columns")
+			}
+			if got.DataUpdatedAt != nil {
+				t.Fatal("data_updated_at must be nil on the schema fallback")
+			}
+		})
+	}
+}
+
 // TestMarketSnapshotPrevSelection: prev ردیفِ دومِ سری است؛ با یک ردیف null
 // می‌شود (نه خودِ cur) و بدونِ ردیف، asof شیءِ {"d_even": null} می‌ماند.
 func TestMarketSnapshotPrevSelection(t *testing.T) {
@@ -257,6 +303,26 @@ func TestMarketTotalRials(t *testing.T) {
 	zero, src := marketTotalRials(h3.Market)
 	if zero != 0 || src != "unavailable" {
 		t.Fatalf("no source = %v/%s, want 0/unavailable", zero, src)
+	}
+}
+
+// TestMarketTotalRialsNullDay: ردیفِ بی‌روز (d_even NULL) مثلِ پایتون است:
+// int(None) کلِ دستهٔ market_totals را دور می‌ریزد و به برآوردِ تابلو برمی‌گردد،
+// نه اینکه روزِ NULL کنارِ ردیف‌هایِ سالم در سنجهٔ باورپذیری بنشیند.
+func TestMarketTotalRialsNullDay(t *testing.T) {
+	h := openWritableFixture(t)
+	// INTEGER PRIMARY KEY امکانِ NULL نمی‌دهد؛ جدولِ خراب/کهنه را بی‌قید
+	// بازمی‌سازیم تا همان شکلی شود که اسکن باید ردش کند.
+	mustExec(t, h.Market, `CREATE TABLE market_totals_nopk AS
+	    SELECT d_even, market_value FROM market_totals`)
+	mustExec(t, h.Market, "DROP TABLE market_totals")
+	mustExec(t, h.Market, "ALTER TABLE market_totals_nopk RENAME TO market_totals")
+	mustExec(t, h.Market, `UPDATE market_totals SET d_even = NULL
+	    WHERE market_value = 69000000000000`)
+	got, src := marketTotalRials(h.Market)
+	if got != 20000000000000 || src != "board_sum_deduped" {
+		t.Fatalf("null-day total = %v/%s, want 20e12/board_sum_deduped "+
+			"(the whole batch must be discarded)", got, src)
 	}
 }
 
@@ -425,6 +491,22 @@ func TestMacroHealthNoTrades(t *testing.T) {
 	if got["cause"] != "unknown" || got["phase"] != nil || got["session_day"] != nil {
 		t.Fatalf("no-phase body = %v/%v/%v, want unknown/nil/nil",
 			got["cause"], got["phase"], got["session_day"])
+	}
+}
+
+// TestMacroHealthNilPhaseKeys: بی‌مرحل، شش کلیدِ مرحل باید حاضر و null باشند.
+// پایتون (phase or {}).get(...) را بی‌قید می‌نشاند؛ حذفِ کلید شکلِ دیگری است.
+func TestMacroHealthNilPhaseKeys(t *testing.T) {
+	got := macroHealthFrom(&Agg{NTraded: 1, ValHemat: 25}, nil, 0, "", nil, nil)
+	for _, k := range []string{"phase", "phase_label", "phase_source",
+		"phase_official", "session_day", "session_is_live"} {
+		v, ok := got[k]
+		if !ok {
+			t.Fatalf("missing key %s on a nil phase", k)
+		}
+		if v != nil {
+			t.Fatalf("%s = %v, want nil on a nil phase", k, v)
+		}
 	}
 }
 

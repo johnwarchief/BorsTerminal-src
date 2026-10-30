@@ -172,7 +172,14 @@ func Resolve(officialState, officialTitle *string, activityDay, activityHEven *i
 			phase, source = Unknown, "none"
 		}
 	}
-	comp := computable[phase]
+	// هر فراخوانی نقشهٔ تازه می‌گیرد: پایتون هم dict(comp) می‌سازد. اگر نقشهٔ
+	// بسته را مستقیم بدهیم، تغییرِ فراخوان جدولِ همهٔ درخواست‌هایِ بعدی را
+	// آلوده می‌کند.
+	src := computable[phase]
+	comp := make(map[string]bool, len(src))
+	for k, v := range src {
+		comp[k] = v
+	}
 	not := []string{}
 	why := map[string]string{}
 	for _, k := range compOrder {
