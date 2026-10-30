@@ -1,0 +1,82 @@
+{
+ "commit": "661ee4db",
+ "py_url": "http://127.0.0.1:8299",
+ "go_url": "http://127.0.0.1:8298",
+ "db_sha256": "",
+ "db_mtime_ns": 0,
+ "db_changed": false,
+ "passed": 5,
+ "failed": 0,
+ "p50_py": 143.9209,
+ "p95_py": 392.054,
+ "p50_go": 83.1381,
+ "p95_go": 371.3186,
+ "cases": [
+  {
+   "name": "market-default",
+   "method": "GET",
+   "path": "/api/market",
+   "status_py": 200,
+   "status_go": 200,
+   "bytes_py": 6814463,
+   "bytes_go": 6452942,
+   "ms_py": 143.9209,
+   "ms_go": 83.1381,
+   "pass": true,
+   "max_delta": 0
+  },
+  {
+   "name": "market-all",
+   "method": "GET",
+   "path": "/api/market?fields=all",
+   "status_py": 200,
+   "status_go": 200,
+   "bytes_py": 9298858,
+   "bytes_go": 8722673,
+   "ms_py": 390.6086,
+   "ms_go": 150.0287,
+   "pass": true,
+   "max_delta": 0
+  },
+  {
+   "name": "delta-cold",
+   "method": "GET",
+   "path": "/api/market/delta?since=-1",
+   "status_py": 200,
+   "status_go": 200,
+   "bytes_py": 45,
+   "bytes_go": 46,
+   "ms_py": 0,
+   "ms_go": 2.3897,
+   "pass": true,
+   "max_delta": 0
+  },
+  {
+   "name": "delta-same-rev",
+   "method": "GET",
+   "path": "/api/market/delta?since=0",
+   "status_py": 200,
+   "status_go": 200,
+   "bytes_py": 158,
+   "bytes_go": 159,
+   "ms_py": 0.6004,
+   "ms_go": 0.8183,
+   "pass": true,
+   "max_delta": 0
+  },
+  {
+   "name": "sync-state",
+   "method": "GET",
+   "path": "/api/market/sync-state",
+   "status_py": 200,
+   "status_go": 200,
+   "bytes_py": 46,
+   "bytes_go": 47,
+   "ms_py": 392.054,
+   "ms_go": 371.3186,
+   "pass": true,
+   "max_delta": 0
+  }
+ ],
+ "finished_at": "2026-10-30T12:06:06Z"
+}

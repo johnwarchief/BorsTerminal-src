@@ -1,0 +1,87 @@
+{
+ "commit": "661ee4db",
+ "go_version": "go version go1.26.3 windows/amd64",
+ "python": "3.14.7",
+ "db": {
+  "sha256": "a903cb04f5b083435a0a5030bc901dd7a70f5e89a6e1f4d2fabc61c7bbfbdf88",
+  "wal_sha256": null,
+  "files": [
+   "market.db",
+   "market.db-wal"
+  ],
+  "frozen_ok": true,
+  "go_copy_unchanged": true,
+  "py_copy_changed": true
+ },
+ "rows": {
+  "py": 6018,
+  "go": 6018,
+  "ok": true
+ },
+ "bytes": {
+  "default_py": 6814463,
+  "default_go": 6452942,
+  "all_py": 9298858,
+  "all_go": 8722673,
+  "ok": true
+ },
+ "perf": {
+  "samples": 20,
+  "p50_py": 358.5412,
+  "p95_py": 424.7699,
+  "p50_go": 146.7587,
+  "p95_go": 163.1446,
+  "ratio": 0.3841,
+  "ok": true
+ },
+ "headers": {
+  "py": {
+   "status": 200,
+   "content_type": "application/json",
+   "cache_control": "no-cache, no-store, must-revalidate",
+   "xcache_first": "MISS",
+   "etag": "\"1d90c0103fb2cbc5\"",
+   "bytes": 6814463,
+   "rows": 6018,
+   "xcache_second": "HIT",
+   "not_modified": true,
+   "bytes_all": 9298858
+  },
+  "go": {
+   "status": 200,
+   "content_type": "application/json",
+   "cache_control": "no-cache, no-store, must-revalidate",
+   "xcache_first": "MISS",
+   "etag": "\"fb682cdbe51f1ac9\"",
+   "bytes": 6452942,
+   "rows": 6018,
+   "xcache_second": "HIT",
+   "not_modified": true,
+   "bytes_all": 8722673
+  },
+  "ok": true,
+  "cache_ok": true,
+  "etag_ok": true
+ },
+ "contract": {
+  "passed": 5,
+  "failed": 0,
+  "report": "_audit\\parity\\B1-contract.json",
+  "ok": true
+ },
+ "history": {
+  "day": 20261014,
+  "py_rows_before": 533,
+  "py_rows_after": 533,
+  "go_rows_before": 533,
+  "go_rows_after": 533,
+  "py_row_growth": 0,
+  "go_row_growth": 0,
+  "py_passes_growth": 413,
+  "go_passes_growth": 413,
+  "py_rows": 2013,
+  "go_rows": 2013,
+  "ok": true
+ },
+ "measured_at": "2026-10-30T12:06:19Z"
+}
