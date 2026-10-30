@@ -74,7 +74,9 @@ func fundKind(name, symbol string) string {
 			}
 		}
 	}
-	tail := strings.TrimRight(name, " \t\r\n")
+	// rstripِ پایتون همهٔ فاصله‌هایِ یونیکد را می‌زداید (از جمله NBSP)؛ برشِ
+	// مجموعهٔ بایتِ محدود، نامی با فاصلهٔ نشکنِ پایانی را به «etf» می‌انداخت.
+	tail := strings.TrimRightFunc(name, unicode.IsSpace)
 	if strings.HasSuffix(tail, "-د") {
 		return "fixed"
 	}

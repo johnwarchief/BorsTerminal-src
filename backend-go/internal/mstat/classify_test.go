@@ -74,4 +74,9 @@ func TestFundKindTailRules(t *testing.T) {
 	if got := fundKind("صندوق س.كالاي ديباي معيار", "معيار"); got != "commod" {
 		t.Fatalf("commod must win over boundary case: %s", got)
 	}
+	// rstripِ پایتون NBSP را هم می‌زُداید؛ نامِ صندوقِ درآمد ثابت با فاصلهٔ
+	// نشکنِ پایانی باید هنوز fixed بماند، نه etf.
+	if got := fundKind("صندوق درآمد ثابت آزمون-د\u00A0", "آزمون"); got != "fixed" {
+		t.Fatalf("NBSP tail = %s", got)
+	}
 }
