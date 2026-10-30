@@ -6,7 +6,9 @@
    وگرنه یک سازندۀ ناقطعی با یک بازنویسی «سبز» می‌شد.
 ۲) طلایی‌ها با اجرایِ تازۀ اوراکل یکی‌اند.
 ۳) هر پنلِ سند در s1 حاضر است، خالی نیست (هر مسیر شرطِ محتوای خودش را دارد)
-   و mainwatch دقیقاً جفت‌هایِ پرچمِ موردانتظار را True می‌دهد.
+   و mainwatch دقیقاً جفت‌هایِ پرچمِ موردانتظار را True می‌دهد. دامپِ enrich
+   (ورودیِ تستِ Go برایِ load_snapshot+money) هم شرطِ خودش را دارد: هر ردیف
+   کد و m، دست‌کم یک ارزشِ ریالی، و asof با کلیدهایِ client_lag_days/depth.
 ۴) شمارشِ سناریوها همان چهار صحنه است و درختِ طلایی فقط همان‌ها را دارد.
 ۵) رفتارِ صحنه‌ها با مقدارِ دقیق سنجیده می‌شود (نه «هر مقدارِ متفاوت»).
 ۶) terms_gen.go همان چیزی است که استخراجِ تازۀ mstat_engine می‌دهد؛ جدولِ
@@ -33,8 +35,12 @@ ROUTES = ["summary", "histogram_all", "histogram_eq_all", "thermometer_all",
           "thermometer_eq_all", "depth_all", "depth_eq_all", "clientsplit_all",
           "clientsplit_fixed", "market_snapshot", "phase", "industries",
           "timeline_cum", "timeline_inst", "phases", "mainwatch_default",
-          "mainwatch_val"]
-# همان چیزی که تسک می‌خواهد: s1 هفده پنل، s2 دو فایل، s3 و s4 هرکدام یکی.
+          "mainwatch_val", "enrich"]
+# `enrich` بدنهٔ یک مسیر نیست: دامپِ موتورِ `load_snapshot`+`money` برایِ تستِ
+# Go است و `status` ندارد. شرطِ شکلش همان asof/rows است.
+ENGINE_DUMPS = {"enrich"}
+# همان چیزی که تسک می‌خواهد: s1 هفده پنل به‌علاوهٔ دامپِ enrich، s2 دو فایل،
+# s3 و s4 هرکدام یکی.
 SCENARIOS = {"s1": set(ROUTES),
              "s2": {"timeline_cum", "phases"},
              "s3": {"phase"},
@@ -129,6 +135,18 @@ def panel_content(name, d):
     if name.startswith("mainwatch_"):
         n = len(d.get("rows") or [])
         return n > 0, "rows=%d" % n
+    if name == "enrich":
+        # دامپِ Go: هر ردیف باید کد و دیکشنریِ m داشته باشد و دست‌کم یک ردیف
+        # ارزشِ ریالیِ واقعی (نه null) بدهد؛ asof هم کلیدهایِ قرارداد را دارد.
+        rows = d.get("rows") or []
+        shaped = bool(rows) and all(
+            isinstance(r, dict) and r.get("ins_code") and isinstance(r.get("m"), dict)
+            for r in rows)
+        valued = any((r.get("m") or {}).get("val") is not None for r in rows)
+        asof = d.get("asof") or {}
+        meta = "client_lag_days" in asof and "depth" in asof
+        return shaped and valued and meta, \
+            "rows=%d valued=%s asof_keys=%s" % (len(rows), valued, sorted(asof))
     if name == "summary":
         n = len(d.get("rows") or [])
         return n > 0, "rows=%d" % n
@@ -200,13 +218,21 @@ def main() -> int:
     for name in ROUTES:
         p = os.path.join(GOLD, "s1", name + ".json")
         if not os.path.exists(p):
-            check("s1/" + name + " status ok", False, "missing")
+            label = ("is an engine dump (asof + rows)" if name in ENGINE_DUMPS
+                     else "status ok")
+            check("s1/" + name + " " + label, False, "missing")
             check("s1/" + name + " has content", False, "missing")
             continue
         d = read_json(p)
-        ok = isinstance(d, dict) and d.get("status") == "ok"
-        check("s1/" + name + " status ok", ok,
-              "status=%r" % (d.get("status") if isinstance(d, dict) else None))
+        if name in ENGINE_DUMPS:
+            shape_ok = (isinstance(d, dict) and isinstance(d.get("asof"), dict)
+                        and isinstance(d.get("rows"), list))
+            check("s1/" + name + " is an engine dump (asof + rows)", shape_ok,
+                  "keys=%r" % (sorted(d) if isinstance(d, dict) else None))
+        else:
+            ok = isinstance(d, dict) and d.get("status") == "ok"
+            check("s1/" + name + " status ok", ok,
+                  "status=%r" % (d.get("status") if isinstance(d, dict) else None))
         if isinstance(d, dict):
             filled, detail = panel_content(name, d)
         else:

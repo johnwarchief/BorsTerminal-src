@@ -57,12 +57,12 @@
  },
  "rows": [
   {
-   "buy_power": 2.12,
+   "buy_power": 2.17,
    "buy_power_up": true,
    "key": "all",
    "label": "کل بازار",
-   "money_flow_b_toman": 96.1,
-   "pc_buy_m_toman": 164.2,
+   "money_flow_b_toman": 100.6,
+   "pc_buy_m_toman": 167.8,
    "pc_sell_m_toman": 77.5,
    "symbols": 5,
    "traded": 5,
@@ -83,12 +83,12 @@
    "volume_b_shares": 0.006
   },
   {
-   "buy_power": 2.15,
+   "buy_power": 2.19,
    "buy_power_up": true,
    "key": "eq_all",
    "label": "سهام، حق تقدم و ص.سهامی",
-   "money_flow_b_toman": 95.6,
-   "pc_buy_m_toman": 167.4,
+   "money_flow_b_toman": 100.1,
+   "pc_buy_m_toman": 171.1,
    "pc_sell_m_toman": 78.0,
    "symbols": 4,
    "traded": 4,
@@ -96,12 +96,12 @@
    "volume_b_shares": 3.2
   },
   {
-   "buy_power": 2.17,
+   "buy_power": 2.21,
    "buy_power_up": true,
    "key": "stock_right",
    "label": "سهام و حق تقدم",
-   "money_flow_b_toman": 95.4,
-   "pc_buy_m_toman": 169.8,
+   "money_flow_b_toman": 99.9,
+   "pc_buy_m_toman": 173.6,
    "pc_sell_m_toman": 78.4,
    "symbols": 3,
    "traded": 3,

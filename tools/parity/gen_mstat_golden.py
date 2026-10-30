@@ -145,6 +145,21 @@ def scenario(name, sql=(), only=None):
             continue
         save(stem + ".json", fn())
 
+    # دامپِ موتور برایِ تستِ Go: `load_snapshot` + `money` ردیف‌به‌ردیف.
+    # این بدنهٔ یک مسیرِ HTTP نیست (status ندارد)؛ فقط صحنهٔ پایه آن را دارد،
+    # چون فیکسچرِ ورودیِ همان تست، فیکسچرِ دست‌نخوردهٔ s1 است.
+    if only is None:
+        import mstat_engine as ME
+        con2 = sqlite3.connect(os.path.join(tmp, "market.db"))
+        try:
+            erows, emeta = ME.enrich(con2)
+            save("enrich.json", {"asof": emeta, "rows": [
+                {"ins_code": r["ins_code"], "symbol": r["symbol"], "cls": r["cls"],
+                 "kind": r["kind"], "pct": r["pct"], "clock_pct": r["clock_pct"],
+                 "top50": r["_top50"], "m": dict(r["_m"])} for r in erows]})
+        finally:
+            con2.close()
+
 
 def main() -> int:
     import importlib

@@ -26,6 +26,12 @@ INS_ADD = [("sector_code", "TEXT"), ("total_shares", "REAL"),
            # تابلو ندارد؛ بی‌آن، ساختِ فیکسچر در همان ردیفِ اول می‌شکند.
            ("updated_at", "TEXT")]
 CT_ADD = [("buy_ddd_vol", "REAL"), ("buy_count_n", "REAL"), ("sell_count_n", "REAL")]
+# ستونِ پنجمِ ارزشِ مبدأ در DDLِ canonicalِ `tsetmc_p0_schema` هست، ولی DDLِ
+# فیکسچرِ تابلو جا افتاده بود. بی‌این، کوئریِ `load_snapshot` با «no such
+# column» می‌شکست و پایتون بی‌صدا کلِ `client_type_value` را دور می‌ریخت —
+# هر سه حالتِ value_source به «reconstructed» می‌افتادند و پوششِ native/mixed
+# فقط رویِ کاغذ بود.
+CTV_ADD = [("buy_ddd_val", "REAL")]
 DP_ADD = [("q_tot_cap", "REAL")]
 
 # (کد، نماد، نام، paper_type، صنعت، پایانی، دیروز، آخرین، حجم، ارزش، معاملات،
@@ -127,7 +133,8 @@ def add_columns(con, table, cols):
 
 def extend(con):
     for table, cols in (("market_watch", MW_ADD), ("instruments", INS_ADD),
-                        ("client_type", CT_ADD), ("daily_prices", DP_ADD)):
+                        ("client_type", CT_ADD), ("client_type_value", CTV_ADD),
+                        ("daily_prices", DP_ADD)):
         add_columns(con, table, cols)
     con.execute("CREATE TABLE market_index (d_even INTEGER PRIMARY KEY, idx_last REAL,"
                 " idx_change REAL, idx_pct REAL, ew_last REAL, ew_change REAL,"

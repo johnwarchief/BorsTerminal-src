@@ -11,19 +11,19 @@
  "institutional": {
   "buy_b_toman": 64.1,
   "buy_count": 12,
-  "buy_pct": 23.7,
+  "buy_pct": 23.3,
   "sell_b_toman": 33.1,
   "sell_count": 12,
   "sell_pct": 23.0
  },
- "money_flow_b_toman": 96.1,
- "pc_buy_m_toman": 164.2,
+ "money_flow_b_toman": 100.6,
+ "pc_buy_m_toman": 167.8,
  "pc_sell_m_toman": 77.5,
- "power": 2.12,
+ "power": 2.17,
  "retail": {
-  "buy_b_toman": 206.9,
+  "buy_b_toman": 211.4,
   "buy_count": 1260,
-  "buy_pct": 76.3,
+  "buy_pct": 76.7,
   "sell_b_toman": 110.8,
   "sell_count": 1430,
   "sell_pct": 77.0

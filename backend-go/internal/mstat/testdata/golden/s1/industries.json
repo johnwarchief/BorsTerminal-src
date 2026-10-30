@@ -45,8 +45,8 @@
   {
    "avg_pct": -3.0,
    "buy_queue_b_toman": 0.0,
-   "flow_b_toman": 0.4,
-   "flow_pct_of_value": 4.0,
+   "flow_b_toman": 4.9,
+   "flow_pct_of_value": 49.0,
    "industry": "سرمایه گذاريها",
    "leader": false,
    "leader_score": 5,
