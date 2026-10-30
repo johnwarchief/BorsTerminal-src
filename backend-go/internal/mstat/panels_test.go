@@ -121,10 +121,11 @@ func checkTallyBars(t *testing.T, bars []map[string]any, spec []histoSpec) {
 	}
 }
 
-// TestTallyBoundaries مرزهایِ نیم‌باز/نیم‌بسته را بدونِ DB قفل می‌کند: فیکسچرِ
-// s1 هیچ بازدهیِ دقیقاً رویِ مرز ندارد (-۳، ۰، ۱۱٫۱۱)، پس یک تغییرِ بی‌صدای
-// `<=` به `<` فقط با این وکتورها لو می‌رود. مقدارِ مرزی باید فقط در یک سطل
-// بنشیند و مجموعِ میله‌ها برابرِ تعدادِ مقدارهایِ غیرِ nil بماند.
+// TestTallyBoundaries مرزهایِ نیم‌باز/نیم‌بسته را بدونِ DB قفل می‌کند: ‎-5، -1،
+// 1، 3 و 5 در هر دو spec رویِ لبهٔ سطل‌اند و هرکدام باید دقیقاً در یک سطل
+// بنشیند، نه دو — و histo7 با همین مقدارها لبه‌هایِ خودش را هم می‌سنجد. مجموعِ
+// میله‌ها هم باید برابرِ تعدادِ مقدارهایِ غیرِ nil بماند و nil هیچ سطلی را
+// نشمارد.
 func TestTallyBoundaries(t *testing.T) {
 	cases := []struct {
 		name string
@@ -294,6 +295,75 @@ func TestDepthBaseBranches(t *testing.T) {
 	})
 	wantCounts(t, sideCounts(t, body, "sell"), map[string]int{
 		"normal": 1, "below_base": 1, "no_trade": 0, "base_unknown": 0,
+	})
+
+	// فازِ دوم: buy_q_vol تهی (NULL) برایِ m4، با همان مبنایِ ۱M. حجمِ صف ناپیدا
+	// است، پس پایتون این ردیف را base_unknown می‌شمارد، نه normal؛ حذفِ شرطِ
+	// isNaN(qvol) در همین سطر لو می‌رود. سمتِ فروش دست‌نخورده می‌ماند.
+	if _, err := h.Market.Exec(
+		"UPDATE market_watch SET buy_q_vol = NULL WHERE ins_code = 'm4'"); err != nil {
+		t.Fatal(err)
+	}
+	body, err = depthPanel(h.Market, "all")
+	if err != nil {
+		t.Fatal(err)
+	}
+	wantInt(t, body, "symbols_with_depth", 5)
+	wantCounts(t, sideCounts(t, body, "buy"), map[string]int{
+		"normal": 0, "below_base": 1, "no_trade": 0, "base_unknown": 1,
+	})
+	wantCounts(t, sideCounts(t, body, "sell"), map[string]int{
+		"normal": 1, "below_base": 1, "no_trade": 0, "base_unknown": 0,
+	})
+}
+
+// TestDepthNullSellQueueValue «بی‌داده ≠ صفر» را رویِ صفِ فروش می‌سنجد: sell_q_val
+// تهی با buy_q_valِ موجود. m1 از have بیرون نمی‌رود (bq_val تهی نیست) و در سمتِ
+// خرید همچنان شمرده می‌شود؛ هم isEmpty(opp) رویِ NaN و هم zeroIfNaN(SQVal) در
+// جمعِ فروش فقط همین‌جا اجرا می‌شوند. مبنا در این کپی نامعلوم است (NaN)، پس
+// m1/m4 رویِ خرید و m3/m5 رویِ فروش در سطلِ base_unknown می‌افتند.
+func TestDepthNullSellQueueValue(t *testing.T) {
+	h := openWritableFixture(t)
+	if _, err := h.Market.Exec(
+		"UPDATE market_watch SET sell_q_val = NULL WHERE ins_code = 'm1'"); err != nil {
+		t.Fatal(err)
+	}
+	body, err := depthPanel(h.Market, "all")
+	if err != nil {
+		t.Fatal(err)
+	}
+	wantInt(t, body, "symbols_with_depth", 5)
+	wantCounts(t, sideCounts(t, body, "buy"), map[string]int{
+		"normal": 0, "below_base": 0, "no_trade": 0, "base_unknown": 2,
+	})
+	wantCounts(t, sideCounts(t, body, "sell"), map[string]int{
+		"normal": 0, "below_base": 0, "no_trade": 0, "base_unknown": 2,
+	})
+	wantFloat(t, body, "buy_queue_b_toman", 0.3)
+	wantFloat(t, body, "sell_queue_b_toman", 5.2)
+	wantFloat(t, body, "ratio", 0.07)
+}
+
+// TestDepthNoTradeSellSide شاخهٔ no_trade را در سمتِ فروش باز می‌کند؛ پیش از این
+// فقط سمتِ خرید آن را می‌دید. m5 صفِ فروشِ یک‌طرفه دارد و با q_tot_tran=0 باید
+// no_trade شود، نه base_unknown. اگر این شاخه فقط برایِ سمتِ خرید اجرا شود،
+// no_trade صفر و base_unknown دو می‌شود.
+func TestDepthNoTradeSellSide(t *testing.T) {
+	h := openWritableFixture(t)
+	if _, err := h.Market.Exec(
+		"UPDATE market_watch SET q_tot_tran = 0 WHERE ins_code = 'm5'"); err != nil {
+		t.Fatal(err)
+	}
+	body, err := depthPanel(h.Market, "all")
+	if err != nil {
+		t.Fatal(err)
+	}
+	wantInt(t, body, "symbols_with_depth", 5)
+	wantCounts(t, sideCounts(t, body, "sell"), map[string]int{
+		"normal": 0, "below_base": 0, "no_trade": 1, "base_unknown": 1,
+	})
+	wantCounts(t, sideCounts(t, body, "buy"), map[string]int{
+		"normal": 0, "below_base": 0, "no_trade": 0, "base_unknown": 2,
 	})
 }
 
