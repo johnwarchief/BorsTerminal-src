@@ -43,7 +43,10 @@ CONTRACT = os.path.join(ROOT, "_audit", "parity", "B2a-contract.json")
 # فرآیندِ غریبه کشته نمی‌شود.
 GO_PORT = int(os.environ.get("BORS_B2A_GO_PORT", "8296"))
 PY_PORT = int(os.environ.get("BORS_B2A_PY_PORT", "8297"))
-ROOT_DBS = ("market.db", "user.db")
+# بانک‌هایِ ریشه که اثرانگشت می‌شوند. codal.db هم اضافه است: گیت هیچ‌کدام را با
+# SQLite باز نمی‌کند و فقط می‌خواند، پس هزینه‌اش چند ثانیه هش است در برابرِ
+# «ادعایِ دست‌نخورده بودنِ کلِ دادِ ریشه».
+ROOT_DBS = ("market.db", "user.db", "codal.db")
 PORT_SCAN = 60
 LOG_TAIL_LINES = 60
 
@@ -216,6 +219,9 @@ def main() -> int:
     os.makedirs(py_dir)
     procs = []
     result = 2
+    # frozen_ok در عمل با «رسیدن به مرحلهٔ سرورها» ثابت می‌شود؛ اما در شاهد باید
+    # نتیجهٔ سنجه باشد، نه یک حرفِ ثابتِ True که هیچ‌وقت دروغ نمی‌گوید.
+    frozen_ok = False
     try:
         for name in base.DB_NAMES:
             src = os.path.join(ROOT, name)
@@ -236,6 +242,7 @@ def main() -> int:
         if db_prints != base.db_fingerprint(py_db):
             print("the two copies are not identical")
             return 2
+        frozen_ok = True
 
         py_env = dict(os.environ, BORS_DATA_DIR=py_dir, BORS_NO_FETCH_LOOPS="1",
                       BORS_CODAL_OFFLINE="1", BORS_CODAL_AUTO="0",
@@ -302,6 +309,20 @@ def main() -> int:
         max_delta = max([case.get("max_delta") or 0.0
                          for case in contract["cases"]] or [0.0])
         delta_zero = max_delta == 0.0
+        # هیچ کیسی نباید با ۴۰۴ِ «دو طرف یکی» رد شود: بدنهٔ NotFoundِ Go عمداً مثلِ
+        # FastAPI ساخته شده، پس یک مسیرِ غلط‌نویسی‌شده یا کم‌شده دو ۴۰۴ برابر می‌دهد و
+        # بی‌صدا از مقایسهٔ بدنه بیرون می‌ماند. دامنهٔ مجاز: (200,200) و دقیقاً دو
+        # (422,422) — همان دو کیسِ limit=abc و desc=xx.
+        pairs = [(case.get("status_py"), case.get("status_go"))
+                 for case in contract["cases"]]
+        allowed = {(200, 200), (422, 422)}
+        statuses_ok = (bool(pairs) and all(p in allowed for p in pairs)
+                       and sum(1 for p in pairs if p == (422, 422)) == 2)
+        # و هیچ کیسی نباید از دسته غایب باشد: نام‌هایِ اجراشده باید مو‌به‌مو با
+        # کیس‌هایِ ارسالی (به‌علاوهٔ کیسِ پویای صنعت) یکی باشد.
+        wanted = sorted(case["name"] for case in cases["cases"])
+        ran = sorted(case["name"] for case in contract["cases"])
+        coverage_ok = wanted == ran
         failed_cases = [{"name": case["name"], "diffs": case.get("diffs") or []}
                         for case in contract["cases"] if not case.get("pass")]
 
@@ -331,10 +352,19 @@ def main() -> int:
         go_db_unchanged = base.db_fingerprint(go_db) == db_prints
         root_after = root_fingerprint()
         root_untouched = root_before == root_after
+        # گاردِ کناربانک هم در شاهد می‌آید تا «exit=0 و گارد ok» فقط از stdoutِ
+        # همان اجرا قابلِ بازخوانی نباشد؛ finally دوباره همان را سنجید و در صورتِ
+        # نقض، کدِ خروج را به ۲ می‌برد.
+        sidecar_problem = base.sidecar_problem(before_sidecars, base.sidecar_state())
 
         checks = {"contract": contract_ok, "delta_zero": delta_zero,
-                  "post_501": post_ok, "timeline": timeline_ok, "clock": clock_ok,
-                  "go_read_only": go_db_unchanged, "root_untouched": root_untouched}
+                  "statuses_200_422": statuses_ok, "case_coverage": coverage_ok,
+                  "post_501": post_ok, "timeline": timeline_ok,
+                  "timeline_exercised": timeline_exercised,
+                  "industry_case_ran": bool(picked), "clock": clock_ok,
+                  "go_read_only": go_db_unchanged, "root_untouched": root_untouched,
+                  "frozen_copies": frozen_ok,
+                  "sidecar_untouched": not sidecar_problem}
         payload = {
             "commit": commit,
             "python": sys.version.split()[0],
@@ -343,9 +373,14 @@ def main() -> int:
                       "fell_back": fell_back},
             "db": {"sha256": db_prints["market.db"],
                    "wal_sha256": db_prints.get("market.db-wal"),
-                   "frozen_ok": True, "go_copy_unchanged": go_db_unchanged,
+                   "frozen_ok": frozen_ok, "go_copy_unchanged": go_db_unchanged,
                    "root_before": root_before, "root_after": root_after,
                    "root_untouched": root_untouched},
+            "sidecar": {"ok": not sidecar_problem,
+                        "problem": sidecar_problem or ""},
+            "statuses": {"pairs": sorted("%s/%s" % p for p in set(pairs)),
+                         "count_422": sum(1 for p in pairs if p == (422, 422)),
+                         "ok": statuses_ok},
             "python_redirect": redirect_paths,
             "contract": {"passed": contract["passed"], "failed": contract["failed"],
                          "cases": case_count, "max_delta": max_delta,

@@ -1,5 +1,5 @@
 {
- "commit": "7ef90cd0",
+ "commit": "daae39f7",
  "python": "3.14.7",
  "ports": {
   "py": 8297,
@@ -23,7 +23,8 @@
     "sha256": "29ad7b39d168898da1906ef7d602b27e941778b411628309c522896b9b88bd84",
     "bytes": 782336,
     "mtime_ns": 1793368279434876000
-   }
+   },
+   "codal.db": null
   },
   "root_after": {
    "market.db": {
@@ -35,13 +36,26 @@
     "sha256": "29ad7b39d168898da1906ef7d602b27e941778b411628309c522896b9b88bd84",
     "bytes": 782336,
     "mtime_ns": 1793368279434876000
-   }
+   },
+   "codal.db": null
   },
   "root_untouched": true
  },
+ "sidecar": {
+  "ok": true,
+  "problem": ""
+ },
+ "statuses": {
+  "pairs": [
+   "200/200",
+   "422/422"
+  ],
+  "count_422": 2,
+  "ok": true
+ },
  "python_redirect": {
-  "market": "C:\\Users\\PCMOD\\AppData\\Local\\Temp\\bors-b2a-ce74xzbd\\py\\market.db",
-  "user": "C:\\Users\\PCMOD\\AppData\\Local\\Temp\\bors-b2a-ce74xzbd\\py\\user.db"
+  "market": "C:\\Users\\PCMOD\\AppData\\Local\\Temp\\bors-b2a-lwksxe_i\\py\\market.db",
+  "user": "C:\\Users\\PCMOD\\AppData\\Local\\Temp\\bors-b2a-lwksxe_i\\py\\user.db"
  },
  "contract": {
   "passed": 34,
@@ -70,18 +84,24 @@
   "ok": true
  },
  "phase": {
-  "py_clock": "2026-10-31 02:27:38",
-  "go_clock": "2026-10-31 02:27:38",
+  "py_clock": "2026-10-31 02:45:55",
+  "go_clock": "2026-10-31 02:45:55",
   "ok": true
  },
  "checks": {
   "contract": true,
   "delta_zero": true,
+  "statuses_200_422": true,
+  "case_coverage": true,
   "post_501": true,
   "timeline": true,
+  "timeline_exercised": true,
+  "industry_case_ran": true,
   "clock": true,
   "go_read_only": true,
-  "root_untouched": true
+  "root_untouched": true,
+  "frozen_copies": true,
+  "sidecar_untouched": true
  },
- "measured_at": "2026-10-30T22:57:45Z"
+ "measured_at": "2026-10-30T23:16:02Z"
 }
