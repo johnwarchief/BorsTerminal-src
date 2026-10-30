@@ -38,7 +38,22 @@ type Market interface {
 	SyncState(http.ResponseWriter, *http.Request)
 }
 
-func New(cfg config.Config, h *db.Handles, m Market) http.Handler {
+// Mstat یازده مسیرِ GETِ تبِ وضعیت بازار؛ nil یعنی هیچ‌کدام پورت نشده.
+type Mstat interface {
+	Summary(http.ResponseWriter, *http.Request)
+	Histogram(http.ResponseWriter, *http.Request)
+	Thermometer(http.ResponseWriter, *http.Request)
+	Depth(http.ResponseWriter, *http.Request)
+	ClientSplit(http.ResponseWriter, *http.Request)
+	MarketSnapshot(http.ResponseWriter, *http.Request)
+	Phase(http.ResponseWriter, *http.Request)
+	Mainwatch(http.ResponseWriter, *http.Request)
+	Industries(http.ResponseWriter, *http.Request)
+	Timeline(http.ResponseWriter, *http.Request)
+	Phases(http.ResponseWriter, *http.Request)
+}
+
+func New(cfg config.Config, h *db.Handles, m Market, ms Mstat) http.Handler {
 	s := &Server{
 		cfg:      cfg,
 		db:       h,
@@ -52,6 +67,19 @@ func New(cfg config.Config, h *db.Handles, m Market) http.Handler {
 		mux.HandleFunc("GET /api/market", m.Board)
 		mux.HandleFunc("GET /api/market/delta", m.Delta)
 		mux.HandleFunc("GET /api/market/sync-state", m.SyncState)
+	}
+	if ms != nil {
+		mux.HandleFunc("GET /api/mstat/summary", ms.Summary)
+		mux.HandleFunc("GET /api/mstat/histogram", ms.Histogram)
+		mux.HandleFunc("GET /api/mstat/thermometer", ms.Thermometer)
+		mux.HandleFunc("GET /api/mstat/depth", ms.Depth)
+		mux.HandleFunc("GET /api/mstat/clientsplit", ms.ClientSplit)
+		mux.HandleFunc("GET /api/mstat/market-snapshot", ms.MarketSnapshot)
+		mux.HandleFunc("GET /api/mstat/phase", ms.Phase)
+		mux.HandleFunc("GET /api/mstat/mainwatch", ms.Mainwatch)
+		mux.HandleFunc("GET /api/mstat/industries", ms.Industries)
+		mux.HandleFunc("GET /api/mstat/timeline", ms.Timeline)
+		mux.HandleFunc("GET /api/mstat/phases", ms.Phases)
 	}
 	mux.HandleFunc("/", s.apiGate)
 	return noCache(mux)

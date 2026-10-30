@@ -14,6 +14,7 @@ import (
 	"borsterminal/backend/internal/db"
 	"borsterminal/backend/internal/httpapi"
 	"borsterminal/backend/internal/market"
+	"borsterminal/backend/internal/mstat"
 )
 
 func main() {
@@ -29,7 +30,8 @@ func main() {
 	defer handles.Close()
 
 	mkt := market.New(handles, cfg.DataDir)
-	srv := &http.Server{Addr: cfg.Addr, Handler: httpapi.New(cfg, handles, mkt)}
+	ms := mstat.New(handles.Market, cfg.DataDir, mkt)
+	srv := &http.Server{Addr: cfg.Addr, Handler: httpapi.New(cfg, handles, mkt, ms)}
 	go func() {
 		slog.Info("listening", "addr", cfg.Addr, "data", cfg.DataDir, "version", httpapi.Version())
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {

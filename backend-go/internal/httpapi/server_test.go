@@ -14,7 +14,7 @@ import (
 
 func newServer(t *testing.T) http.Handler {
 	t.Helper()
-	return New(config.Config{Addr: "127.0.0.1:8198", DataDir: t.TempDir(), ReadOnly: true, NoLoops: true}, nil, nil)
+	return New(config.Config{Addr: "127.0.0.1:8198", DataDir: t.TempDir(), ReadOnly: true, NoLoops: true}, nil, nil, nil)
 }
 
 func serve(t *testing.T, method, target string) *httptest.ResponseRecorder {
@@ -56,6 +56,153 @@ func TestKnownButUnportedIs501(t *testing.T) {
 		t.Fatal(err)
 	}
 	if body["status"] != "error" || body["code"] != "NOT_PORTED" || body["route"] != "GET /api/fts/config" {
+		t.Fatalf("body = %s", rec.Body.String())
+	}
+}
+
+// TestMstatRoutesAreNotPortedWhenServiceMissing همان قفلِ B1 است برایِ تبِ
+// وضعیت بازار: بی سرویس، یازده مسیر ۵۰۱ِ NOT_PORTED می‌دهند، نه ۴۰۴.
+func TestMstatRoutesAreNotPortedWhenServiceMissing(t *testing.T) {
+	paths := []string{
+		"/api/mstat/summary", "/api/mstat/histogram", "/api/mstat/thermometer",
+		"/api/mstat/depth", "/api/mstat/clientsplit", "/api/mstat/market-snapshot",
+		"/api/mstat/phase", "/api/mstat/mainwatch", "/api/mstat/industries",
+		"/api/mstat/timeline", "/api/mstat/phases",
+	}
+	for _, path := range paths {
+		rec := serve(t, "GET", path)
+		if rec.Code != http.StatusNotImplemented {
+			t.Fatalf("%s: status = %d", path, rec.Code)
+		}
+		var body map[string]any
+		if err := json.Unmarshal(rec.Body.Bytes(), &body); err != nil {
+			t.Fatal(err)
+		}
+		if body["code"] != "NOT_PORTED" || body["route"] != "GET "+path {
+			t.Fatalf("%s: body = %s", path, rec.Body.String())
+		}
+	}
+}
+
+// mstatRoutes همان یازده مسیرِ سیم‌کشی‌شده و نامِ هندلرِ گروهی که باید بگیرند.
+var mstatRoutes = map[string]string{
+	"/api/mstat/summary":         "summary",
+	"/api/mstat/histogram":       "histogram",
+	"/api/mstat/thermometer":     "thermometer",
+	"/api/mstat/depth":           "depth",
+	"/api/mstat/clientsplit":     "clientsplit",
+	"/api/mstat/market-snapshot": "market-snapshot",
+	"/api/mstat/phase":           "phase",
+	"/api/mstat/mainwatch":       "mainwatch",
+	"/api/mstat/industries":      "industries",
+	"/api/mstat/timeline":        "timeline",
+	"/api/mstat/phases":          "phases",
+}
+
+// fakeMstat هر فراخوانِ هندلر را با نامش ثبت می‌کند تا سیم‌کشیِ مسیر ← هندلر
+// سنجیده شود، نه فقط کدِ ۲۰۰.
+type fakeMstat struct{ called []string }
+
+func (f *fakeMstat) hit(name string, w http.ResponseWriter) {
+	f.called = append(f.called, name)
+	WriteJSON(w, http.StatusOK, map[string]any{"handler": name})
+}
+
+func (f *fakeMstat) Summary(w http.ResponseWriter, _ *http.Request)     { f.hit("summary", w) }
+func (f *fakeMstat) Histogram(w http.ResponseWriter, _ *http.Request)   { f.hit("histogram", w) }
+func (f *fakeMstat) Thermometer(w http.ResponseWriter, _ *http.Request) { f.hit("thermometer", w) }
+func (f *fakeMstat) Depth(w http.ResponseWriter, _ *http.Request)       { f.hit("depth", w) }
+func (f *fakeMstat) ClientSplit(w http.ResponseWriter, _ *http.Request) { f.hit("clientsplit", w) }
+func (f *fakeMstat) MarketSnapshot(w http.ResponseWriter, _ *http.Request) {
+	f.hit("market-snapshot", w)
+}
+func (f *fakeMstat) Phase(w http.ResponseWriter, _ *http.Request)      { f.hit("phase", w) }
+func (f *fakeMstat) Mainwatch(w http.ResponseWriter, _ *http.Request)  { f.hit("mainwatch", w) }
+func (f *fakeMstat) Industries(w http.ResponseWriter, _ *http.Request) { f.hit("industries", w) }
+func (f *fakeMstat) Timeline(w http.ResponseWriter, _ *http.Request)   { f.hit("timeline", w) }
+func (f *fakeMstat) Phases(w http.ResponseWriter, _ *http.Request)     { f.hit("phases", w) }
+
+// TestMstatRouteTable هر مسیرِ یازده‌گانه باید هم در فهرستِ مسیرهایِ پایتون
+// باشد و هم به همان هندلرِ گروهی برسد — یک جابه‌جایی در ثبتِ مسیرها (مثلاً
+// timeline ← Phases) این‌جا قرمز می‌شود، ولی «۲۰۰ شد» تنها نه.
+func TestMstatRouteTable(t *testing.T) {
+	inventory := map[string]bool{}
+	for _, route := range Routes() {
+		inventory[route] = true
+	}
+	for path := range mstatRoutes {
+		if !inventory["GET "+path] {
+			t.Fatalf("%s is not in the Python route inventory", path)
+		}
+	}
+	if len(mstatRoutes) != 11 {
+		t.Fatalf("wired mstat routes = %d, want 11", len(mstatRoutes))
+	}
+	// دو مسیرِ دیگرِ همان خانواده (board و smart-money) مالِ B2-2‌اند و باید
+	// هنوز ۵۰۱ بمانند؛ بی‌این، «همهٔ mstat وصل شد» با ۱۱ از ۱۳ گمراه می‌کند.
+	for _, path := range []string{"/api/mstat/board", "/api/mstat/smart-money"} {
+		if !inventory["GET "+path] {
+			t.Fatalf("%s is not in the Python route inventory", path)
+		}
+		if rec := serve(t, "GET", path); rec.Code != http.StatusNotImplemented {
+			t.Fatalf("%s: status = %d, want 501 until B2-2", path, rec.Code)
+		}
+	}
+	for path, want := range mstatRoutes {
+		fake := &fakeMstat{}
+		srv := New(config.Config{Addr: "127.0.0.1:8198", DataDir: t.TempDir(), ReadOnly: true, NoLoops: true}, nil, nil, fake)
+		rec := httptest.NewRecorder()
+		srv.ServeHTTP(rec, httptest.NewRequest("GET", path, nil))
+		if rec.Code != http.StatusOK {
+			t.Fatalf("%s: status = %d", path, rec.Code)
+		}
+		if len(fake.called) != 1 || fake.called[0] != want {
+			t.Fatalf("%s: handlers called = %v, want [%s]", path, fake.called, want)
+		}
+		var body map[string]any
+		if err := json.Unmarshal(rec.Body.Bytes(), &body); err != nil {
+			t.Fatal(err)
+		}
+		if body["handler"] != want {
+			t.Fatalf("%s: body handler = %v, want %s", path, body["handler"], want)
+		}
+	}
+}
+
+// TestMstatBadMethodDoesNotReachHandler قراردادِ متدِ نقشهٔ B2 است: هندلرهایِ
+// GET فقط GET را می‌گیرند و POST/PUT/DELETE به آن‌ها نمی‌رسد. مسیرهایِ GET در
+// فهرستِ متدهایِ پایتون POST ندارند، پس apiGate همان ۴۰۴ِ فهرست را می‌دهد؛
+// تنها POSTِ ثبت‌شدهٔ /api/mstat/snapshot در تستِ بعدی ۵۰۱ می‌ماند.
+func TestMstatBadMethodDoesNotReachHandler(t *testing.T) {
+	for _, method := range []string{"POST", "PUT", "DELETE"} {
+		fake := &fakeMstat{}
+		srv := New(config.Config{Addr: "127.0.0.1:8198", DataDir: t.TempDir(), ReadOnly: true, NoLoops: true}, nil, nil, fake)
+		rec := httptest.NewRecorder()
+		srv.ServeHTTP(rec, httptest.NewRequest(method, "/api/mstat/summary", nil))
+		if len(fake.called) != 0 {
+			t.Fatalf("%s reached the handler: %v", method, fake.called)
+		}
+		if rec.Code != http.StatusNotFound {
+			t.Fatalf("%s: status = %d, want 404 (GET-only path not in the POST inventory)", method, rec.Code)
+		}
+		if strings.TrimSpace(rec.Body.String()) != `{"detail":"Not Found"}` {
+			t.Fatalf("%s: body = %s", method, rec.Body.String())
+		}
+	}
+}
+
+// TestPostMstatSnapshotStaysNotPorted تنها POSTِ تبِ وضعیت بازار است و تا B6
+// باید همان ۵۰۱ِ B0 را بدهد (گیتِ B2a همین را می‌سنجد).
+func TestPostMstatSnapshotStaysNotPorted(t *testing.T) {
+	rec := serve(t, "POST", "/api/mstat/snapshot")
+	if rec.Code != http.StatusNotImplemented {
+		t.Fatalf("status = %d", rec.Code)
+	}
+	var body map[string]any
+	if err := json.Unmarshal(rec.Body.Bytes(), &body); err != nil {
+		t.Fatal(err)
+	}
+	if body["code"] != "NOT_PORTED" || body["route"] != "POST /api/mstat/snapshot" {
 		t.Fatalf("body = %s", rec.Body.String())
 	}
 }

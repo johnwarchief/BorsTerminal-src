@@ -18,6 +18,7 @@ import (
 	"unicode"
 
 	"borsterminal/backend/internal/board"
+	"borsterminal/backend/internal/datatoken"
 	"borsterminal/backend/internal/db"
 	"borsterminal/backend/internal/httpapi"
 	"borsterminal/backend/internal/screening"
@@ -566,20 +567,4 @@ func (s *Service) marketRunning() bool {
 // (mtime_ns, size)ِ market_sync.json کافی نیست و هر سه فایل باید در توکن باشند —
 // همان نقشی که revision() و sync_count در پروسۀ پایتون داشتند. غایب ⇒ "-"، تا
 // توکن پایدار بماند. فقط os.Stat: نه بازکردنِ SQLite، نه خواندنِ محتوا.
-func dataToken(dataDir string) string {
-	var b strings.Builder
-	for _, name := range []string{"market_sync.json", "market.db", "market.db-wal"} {
-		if b.Len() > 0 {
-			b.WriteByte('|')
-		}
-		st, err := os.Stat(filepath.Join(dataDir, name))
-		if err != nil {
-			b.WriteByte('-')
-			continue
-		}
-		b.WriteString(strconv.FormatInt(st.ModTime().UnixNano(), 10))
-		b.WriteByte(':')
-		b.WriteString(strconv.FormatInt(st.Size(), 10))
-	}
-	return b.String()
-}
+func dataToken(dataDir string) string { return datatoken.FileToken(dataDir) }

@@ -18,14 +18,19 @@ func NotFound(w http.ResponseWriter) {
 	WriteJSON(w, http.StatusNotFound, map[string]any{"detail": "Not Found"})
 }
 
-// Unprocessable عینِ شکلِ 422ِ FastAPI؛ در B0 فقط واحد-تست می‌شود و
-// پاریتیِ زندهٔ آن با اولین مسیرِ پارامتردار (B2/B3) می‌آید.
-func Unprocessable(w http.ResponseWriter, loc []string, msg string, input any) {
+// UnprocessableAs همان 422ِ FastAPI با نوعِ خطایِ خودش (int_parsing،
+// bool_parsing، …)؛ بدنهٔ مقایسه‌شده در پاریتی همین است.
+func UnprocessableAs(w http.ResponseWriter, typ string, loc []string, msg string, input any) {
 	WriteJSON(w, http.StatusUnprocessableEntity, map[string]any{
 		"detail": []any{map[string]any{
-			"type": "value_error", "loc": loc, "msg": msg, "input": input,
+			"type": typ, "loc": loc, "msg": msg, "input": input,
 		}},
 	})
+}
+
+// Unprocessable عینِ شکلِ 422ِ FastAPI با نوعِ پیش‌فرضِ value_error.
+func Unprocessable(w http.ResponseWriter, loc []string, msg string, input any) {
+	UnprocessableAs(w, "value_error", loc, msg, input)
 }
 
 func NotPorted(w http.ResponseWriter, route string) {
