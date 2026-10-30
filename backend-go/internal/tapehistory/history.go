@@ -74,6 +74,15 @@ func (r *Recorder) LastErr() string {
 	return r.lastErr
 }
 
+// LastToken نشانهٔ آخرین نوبتِ ثبت برایِ همان روز است؛ "" یعنی هنوز نوبتی برایِ
+// آن روز ثبت نشده. مثلِ LastErr فقط خواندنیِ عیب‌یابی است و درِ «همان داده» را
+// می‌شود با آن سنجید.
+func (r *Recorder) LastToken(day int64) string {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	return r.lastToken[day]
+}
+
 // Record همان قراردادِ record_observations: پرچم‌هایِ ردیف‌هایِ زنده را برایِ
 // `day` می‌نویسد. صفر یعنی «نوبتِ تکراری، پنجرهٔ بسته، یا پرچمی روشن نبود» —
 // و خطا هرگز به درخواستِ تابلو نمی‌رسد؛ فقط در LastErr می‌ماند.

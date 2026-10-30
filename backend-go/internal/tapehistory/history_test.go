@@ -149,17 +149,26 @@ func TestNoLiveRowsConsumesTheWindow(t *testing.T) {
 	conn := openDB(t)
 	r := NewRecorder()
 	t0 := time.Date(2026, 10, 14, 9, 0, 0, 0, time.Local)
+	// یک نوبتِ واقعی تا passes شکل بگیرد؛ بعد نوبتِ خالی با نشانهٔ تازه.
+	if n, err := r.Record(conn, baseRecs(), 20261014, "seed", t0); err != nil || n != 3 {
+		t.Fatalf("seed n=%d err=%v, want 3", n, err)
+	}
 	fossil := []map[string]any{rec("C", false, map[string]bool{"f_susp": true}, nil)}
-	if n, _ := r.Record(conn, fossil, 20261014, "x", t0); n != 0 {
+	if n, _ := r.Record(conn, fossil, 20261014, "x", t0.Add(241*time.Second)); n != 0 {
 		t.Fatalf("fossil-only frame wrote %d rows", n)
 	}
-	if got := count(t, conn, "SELECT COUNT(*) FROM tape_flag_day_meta"); got != 0 {
-		t.Fatalf("meta row written without observations (%d)", got)
-	}
-	// عینِ پایتون: نشانه پیش از ساختنِ ردیف‌ها ثبت می‌شود، پس نوبتِ بعدی با همان
-	// نشانه — حتی اگر ردیفِ زنده داشته باشد — تا پنجرهٔ بعدی ثبت نمی‌شود.
-	if n, _ := r.Record(conn, baseRecs(), 20261014, "x", t0.Add(time.Minute)); n != 0 {
+	// عینِ پایتون: نشانه پیش از ساختنِ ردیف‌ها ثبت می‌شود. نوبتِ بعدی با همان
+	// نشانه دقیقاً ۲۴۱ثانیه بعد (بیرونِ کفِ چهار دقیقه‌ای) است، پس فقط خودِ نشانه
+	// می‌تواند جلوی نوشتن را بگیرد — صفر ردیف و passes دست‌نخورده. با یک دقیقهٔ
+	// پیشین، کفِ زمانی نقصِ نشانه را می‌پوشاند و تست بی‌دندان بود.
+	if n, _ := r.Record(conn, baseRecs(), 20261014, "x", t0.Add(482*time.Second)); n != 0 {
 		t.Fatalf("token was not consumed by the empty batch (%d rows)", n)
+	}
+	if got := count(t, conn, "SELECT passes FROM tape_flag_day_meta WHERE d_even=20261014"); got != 1 {
+		t.Fatalf("passes = %d, want 1 (the blocked batch must not advance it)", got)
+	}
+	if got := count(t, conn, "SELECT COUNT(*) FROM tape_flag_day"); got != 3 {
+		t.Fatalf("rows = %d, want 3 (the blocked batch must not add rows)", got)
 	}
 }
 

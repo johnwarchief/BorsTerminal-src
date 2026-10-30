@@ -201,7 +201,7 @@ func TestAssembleMcapSrcEmptyString(t *testing.T) {
 		},
 	}
 	d := board.Derive(fr)
-	recs := assemble(fr, d, tapeflags.Apply(fr, d), true)
+	recs := assemble(fr, d, tapeflags.Apply(fr, d))
 	if len(recs) != 3 {
 		t.Fatalf("records = %d, want 3", len(recs))
 	}
@@ -219,6 +219,89 @@ func TestAssembleMcapSrcEmptyString(t *testing.T) {
 	}
 	if v := recs[1]["sector_name"]; v != "bank" {
 		t.Fatalf("sector_name = %v, want bank", v)
+	}
+}
+
+// TestRecordDayUsesMaxLiveDEven قیدِ پایتون را می‌بندد: روزِ ثبت بیشترین d_even
+// میانِ ردیف‌هایِ زندهٔ همین قاب است — نه d_evenِ متا و نه بیشترینِ کلِ قاب.
+// ردیفِ فسیلی با روزِ بزرگ‌تر و ردیفِ زندهٔ بی‌روز نباید روز را جابه‌جا کنند.
+func TestRecordDayUsesMaxLiveDEven(t *testing.T) {
+	recs := []map[string]any{
+		{"ins_code": "A", "is_live": true, "d_even": int64(20261014)},
+		{"ins_code": "B", "is_live": true, "d_even": float64(20261015)},
+		{"ins_code": "C", "is_live": false, "d_even": int64(20261016)},
+		{"ins_code": "D", "is_live": true},
+	}
+	if got := recordDay(recs); got != 20261015 {
+		t.Fatalf("recordDay = %d, want 20261015 (max d_even among live rows)", got)
+	}
+	if got := recordDay(recs[2:3]); got != 0 {
+		t.Fatalf("fossil-only recordDay = %d, want 0", got)
+	}
+	if got := recordDay(nil); got != 0 {
+		t.Fatalf("empty recordDay = %d, want 0", got)
+	}
+}
+
+// TestBuildRecordsWithDataToken درِ «همان داده» را به توکنِ فایل‌هایِ داده می‌بندد:
+// در این فیکسچر market_sync.json نیست، پس syncTokenِ پیشین "" می‌داد و Record
+// برابریِ نشانه را دور می‌زد؛ توکنِ خالی یعنی هر ۲۴۰ثانیه یک passes جعلی. توکنِ
+// ثبت باید همان dataToken باشد — ناتهی و پایدار تا وقتی فایل‌هایِ داده نچرخند.
+func TestBuildRecordsWithDataToken(t *testing.T) {
+	h, dir := fixtureCopy(t)
+	s := New(h, dir)
+	if _, _, err := s.build(true, true); err != nil {
+		t.Fatal(err)
+	}
+	var day int64
+	if err := h.User.QueryRow("SELECT d_even FROM tape_flag_day_meta").Scan(&day); err != nil {
+		t.Fatal(err)
+	}
+	got := s.recorder.LastToken(day)
+	if got == "" {
+		t.Fatal("recorder token is empty: the same-data gate is disabled")
+	}
+	if want := dataToken(dir); got != want {
+		t.Fatalf("recorder token = %q, want dataToken %q", got, want)
+	}
+}
+
+// TestBuildRecordsUnderLiveMaxDEven سیم‌کشیِ روزِ ثبت را سرتاسری می‌بندد. در
+// تولید meta.d_even و بیشترین d_evenِ ردیف‌هایِ زنده یکی‌اند، پس برایِ جداکردنِ
+// دو منبع یک ردیفِ بی‌ins_code با d_evenِ بزرگ‌تر به کپیِ فیکسچر اضافه می‌شود:
+// boardMeta آن را می‌بیند (MAX(d_even)) ولی قابِ تابلو کنارش می‌گذارد. ردیف‌هایِ
+// ثبت‌شده باید زیرِ روزِ ردیف‌هایِ زنده بنشینند، نه زیرِ روزِ متا.
+func TestBuildRecordsUnderLiveMaxDEven(t *testing.T) {
+	h, dir := fixtureCopy(t)
+	w, err := db.Open(dir, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var liveDay int64
+	if err := w.Market.QueryRow("SELECT MAX(d_even) FROM market_watch WHERE ins_code IS NOT NULL").
+		Scan(&liveDay); err != nil {
+		w.Close()
+		t.Fatal(err)
+	}
+	if _, err := w.Market.Exec("INSERT INTO market_watch(ins_code, d_even, h_even)"+
+		" VALUES(NULL, ?, 1)", liveDay+10000); err != nil {
+		w.Close()
+		t.Fatal(err)
+	}
+	if err := w.Close(); err != nil {
+		t.Fatal(err)
+	}
+	s := New(h, dir)
+	if _, _, err := s.build(true, true); err != nil {
+		t.Fatal(err)
+	}
+	var got int64
+	if err := h.User.QueryRow("SELECT MAX(d_even) FROM tape_flag_day_meta").Scan(&got); err != nil {
+		t.Fatal(err)
+	}
+	if got != liveDay {
+		t.Fatalf("recorded day = %d, want %d (max d_even among live frame rows, not meta)",
+			got, liveDay)
 	}
 }
 

@@ -189,9 +189,12 @@ func (s *Service) build(dropUnused, storeCache bool) ([]byte, string, error) {
 	if v, ok := meta["d_even"].(int64); ok {
 		sessionDay = v
 	}
-	// ثبتِ سابقۀ پرچم‌ها — همان side effectِ پایتون، پیش از حذفِ ستون‌ها.
-	if len(recs) > 0 && sessionDay != 0 {
-		_, _ = s.recorder.Record(s.user, recs, sessionDay, syncToken(s.dataDir), time.Now())
+	// ثبتِ سابقۀ پرچم‌ها — همان side effectِ پایتون، پیش از حذفِ ستون‌ها. روزِ ثبت
+	// از ردیف‌هایِ زندهٔ همین قاب می‌آید (عینِ int(_live_df["d_even"].max() or 0))،
+	// نه از d_evenِ متا؛ و نشانه dataToken است تا با نبودنِ market_sync.json هم
+	// درِ «همان داده» خاموش نشود.
+	if day := recordDay(recs); day != 0 {
+		_, _ = s.recorder.Record(s.user, recs, day, token, time.Now())
 	}
 	if dropUnused {
 		dropUnusedFields(recs)
@@ -388,17 +391,29 @@ func (s *Service) SyncState(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// syncToken «این داده نو است» را از خودِ فایلِ سینکر می‌گیرد: هر سینکِ موفق
-// market_sync.json را بازنویسی می‌کند، پس (mtime_ns, size) همان نقشی را دارد
-// که sync_count در پروسۀ پایتون داشت. غایب ⇒ "" یعنی «نشانه‌ای نیست» و ثبت
-// فقط با کفِ زمانیِ چهار دقیقه مهار می‌شود.
-func syncToken(dataDir string) string {
-	p := filepath.Join(dataDir, "market_sync.json")
-	st, err := os.Stat(p)
-	if err != nil {
-		return ""
+// recordDay روزِ ثبتِ سابقه را از خودِ ردیف‌هایِ زندهٔ قاب می‌گیرد — عینِ
+// int(_live_df["d_even"].max() or 0) در api/market.py؛ نه d_evenِ متای تابلو.
+// صفر یعنی «ردیفِ زندهٔ روزدار نداری» و ثبت انجام نمی‌شود. d_even در این‌جا
+// int64 است (ستونِ INTEGER) یا float64 (قابِ ساختگی/نوعِ REAL)؛ put مقدارِ
+// NaN را پیش‌تر به 0.0 کرده، پس تنها همین دو نوع می‌رسند.
+func recordDay(recs []map[string]any) int64 {
+	var day int64
+	for _, rec := range recs {
+		if live, _ := rec["is_live"].(bool); !live {
+			continue
+		}
+		switch v := rec["d_even"].(type) {
+		case int64:
+			if v > day {
+				day = v
+			}
+		case float64:
+			if d := int64(v); d > day {
+				day = d
+			}
+		}
 	}
-	return strconv.FormatInt(st.ModTime().UnixNano(), 10) + ":" + strconv.FormatInt(st.Size(), 10)
+	return day
 }
 
 // marketRunning عینِ _count_procs("test_tsetmc") با کشِ ۱۰ثانیه‌ای.

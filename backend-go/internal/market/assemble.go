@@ -109,10 +109,8 @@ func dropUnusedFields(recs []map[string]any) {
 }
 
 // assemble ردیفِ کامل می‌سازد — بی درِ _DROP_FIELDS. حذفِ ستون‌هایِ بدنۀ پیش‌فرض
-// کارِ dropUnusedFields است و بعد از ثبتِ سابقه انجام می‌شود. پارامترِ متغیرِ
-// بازمانده فقط امضایِ پیشین را (فراخوانیِ چهارآرگومانیِ تست) قبول می‌کند و هیچ
-// اثری ندارد؛ سرویس همیشه سه‌آرگومانی صدایش می‌زند.
-func assemble(fr *store.Frame, d *board.Derived, fl *tapeflags.Flags, _ ...bool) []map[string]any {
+// کارِ dropUnusedFields است و بعد از ثبتِ سابقه انجام می‌شود.
+func assemble(fr *store.Frame, d *board.Derived, fl *tapeflags.Flags) []map[string]any {
 	n := fr.N()
 	numeric := numericCols(fr)
 	out := make([]map[string]any, n)
