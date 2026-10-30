@@ -3,7 +3,8 @@
 
 ۱) فیکسچر قطعی است (دو ساخت، همان sha256).
 ۲) طلایی‌ها با اجرایِ تازۀ اوراکل یکی‌اند.
-۳) هر پنلِ سند در s1 حاضر است و ردیف‌هایش خالی نیست.
+۳) هر پنلِ سند در s1 حاضر است و ردیف‌هایش خالی نیست — و `mainwatch` حداقل
+   یک پرچمِ True دارد (طلاییِ همه‌False شاخهٔ زنده را از مرده جدا نمی‌کند).
 ۴) شمارشِ سناریوها همان چهار صحنه است.
 
 هرگز `market.db`/`user.db`ِ عملیاتیِ ریشه باز نمی‌شود: فیکسچر از نو ساخته
@@ -152,6 +153,21 @@ def main() -> int:
         check("mainwatch tape flags came from api/market",
               mw.get("tape_flags_source") == "api/market",
               "source=%r" % mw.get("tape_flags_source"))
+        # پوششِ پرچم: طلایی‌ای که هر هفت پرچمش رویِ هر ردیف False باشد، شاخهٔ
+        # زنده را از شاخهٔ مرده جدا نمی‌کند — پورتِ Go می‌تواند «همه False»
+        # بدهد و همان طلایی را سبز کند. پس حداقل یک True واجب است، و نامِ
+        # جفتِ پوشش‌داده هم قفل می‌شود تا اگر روزی گم شود، همین بررسی آن را
+        # به نام صدا کند.
+        heat = sorted((r.get("ins_code"), k)
+                      for r in (mw.get("rows") or [])
+                      for k, v in (r.get("tape_flags") or {}).items() if v is True)
+        print("  INFO tape flag coverage: " + (
+            ", ".join("%s@%s" % (k, ic) for ic, k in heat) if heat else "none"))
+        check("mainwatch has a row with a TRUE tape flag", bool(heat),
+              "all seven flags are false on all %d rows"
+              % len(mw.get("rows") or []))
+        check("tape flag f_susp is exercised on m1 (suspicious volume)",
+              ("m1", "f_susp") in heat, "exercised=%r" % (heat,))
         tl = read_json(os.path.join(GOLD, "s1", "timeline_cum.json"))
         check("timeline has every point", (tl.get("points") or 0) == 3,
               "points=%r" % tl.get("points"))

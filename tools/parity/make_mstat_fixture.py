@@ -90,6 +90,22 @@ TOTALS = [(DAY, 1e12), (20261013, 6.9e13)]
 # ارزشِ معاملاتِ چند نشستِ اخیر (همت) — مبنایِ تداومِ سه‌نشستی.
 LIQ = [(20261012, 9.5), (20261013, 12.0), (DAY, 18.0)]
 
+# پیشینهٔ پرچم‌دار: تنها ردیفِ mstat که یک پرچمِ Trueِ واقعی می‌دهد.
+# بی‌این، هفت پرچمِ هر ردیفِ `mainwatch` در طلایی False بود و پورتِ Go می‌توانست
+# «همه False» بدهد و سبز شود؛ فیکسچری که شاخهٔ زنده را از مرده جدا نکند درِ
+# داوری نیست. سازوکارِ `f_susp`: حجمِ مشکوک = ``tvol > 3*Σ[ih][0..29]/30`` و
+# ``tno > 50``. سی اسلاتِ یک‌میلیونی ÷ ۳۰ = مبنایِ ۱e6، و حجمِ ۱e9ِ m1 صد
+# برابرِ آن است؛ تعدادِ معاملاتِ همان ردیف ۵۰۰ است. `hist_sessions` هم از
+# MAX(slot)+1 = ۳۰ می‌آید، پس درِ `_sessions_ok` باز است. قیمتِ کفِ اسلات‌ها
+# عمداً ۹۵۰ است تا `f_noqteh` (فاصلهٔ زیرِ ۳٪ از کف) و `f_roobi` (آخرین رویِ
+# آستانۀ مجاز) روشن نشوند: طلایی یک پرچم را می‌سنجد، نه چند پرچمِ به‌هم‌چسبیده.
+FLAG_ROW = "m1"
+FLAG_SYMBOL = "فولاد۲"          # همان l_val18ِ m1
+FLAG_SLOT_VOL = 1e6             # q_tot_tran5jِ هر اسلات
+FLAG_SLOT_PX_MIN = 950.0
+FLAG_SLOT_PX_MAX = 1100.0
+FLAG_HIST_VOL = 1e6             # حجمِ روزانهٔ price_history/tape_history
+
 
 def build_board_fixture(tmp):
     """فیکسچرِ B1 را در پوشۀ موقت می‌سازد و مسیرش را برمی‌گرداند."""
@@ -164,7 +180,33 @@ def extend(con):
         con.execute("INSERT INTO client_type_value (ins_code, d_even, kind, buy_i_val,"
                     " buy_n_val, sell_i_val, sell_n_val) VALUES (?,?,?,?,?,?,?)",
                     (ic, d, kind, *vals))
+    seed_flag_history(con)
     con.commit()
+
+
+def seed_flag_history(con):
+    """پیشینهٔ یک نمادِ mstat تا `tape_flags` شاخهٔ زندهٔ `f_susp` را ببیند.
+
+    پنجرۀ [ih]ِ این بانک اسلات‌محور است (`tape_ih_slot` فیکسچرِ تابلو غیرخالی
+    است)، پس `prior30_vol`/`hist_sessions` از همان اسلات‌ها می‌آید و نه از
+    `price_history`؛ هر سه منبع را می‌نشانیم تا ردیف در هر مسیری (اسلات،
+    ردیف‌محورِ `tape_history`، و پنجرۀ نمایشیِ `price_history`) تاریخچهٔ یکسان
+    داشته باشد. اعدادِ عمداً گرد: مبنایِ ۱e6 در برابرِ حجمِ ۱e9.
+    """
+    from make_board_fixture import hist_dates
+
+    for k in range(30):
+        con.execute("INSERT INTO tape_ih_slot VALUES (?,?,?,?,?,?)",
+                    (FLAG_ROW, k, DAY - k, FLAG_SLOT_PX_MIN, FLAG_SLOT_PX_MAX,
+                     FLAG_SLOT_VOL))
+    for k in range(60):
+        con.execute("INSERT INTO tape_history VALUES (?,?,?,?,?)",
+                    (FLAG_ROW, DAY - k, FLAG_SLOT_PX_MIN, FLAG_SLOT_PX_MAX,
+                     FLAG_HIST_VOL))
+    for dt in hist_dates(60):
+        con.execute("INSERT INTO price_history VALUES (?,?,?,?,?,?)",
+                    (FLAG_SYMBOL, dt, FLAG_SLOT_PX_MAX, FLAG_SLOT_PX_MIN, 1000.0,
+                     FLAG_HIST_VOL))
 
 
 def seed_snaps(con, day=DAY, stale=False):

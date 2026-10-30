@@ -160,7 +160,7 @@
     "f_noqteh": false,
     "f_roobi": false,
     "f_smart": false,
-    "f_susp": false
+    "f_susp": true
    },
    "trades": 500.0,
    "val_b_toman": 1000.0,
