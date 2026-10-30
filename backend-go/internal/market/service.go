@@ -22,6 +22,7 @@ import (
 	"borsterminal/backend/internal/screening"
 	"borsterminal/backend/internal/store"
 	"borsterminal/backend/internal/tapeflags"
+	"borsterminal/backend/internal/tapehistory"
 )
 
 const (
@@ -63,13 +64,17 @@ type Service struct {
 	counts  map[string]any
 	journal []journalEntry
 
+	// recorder سابقۀ روزانۀ هفت فیلتر در user.db را می‌نویسد؛ قفلِ خودش را دارد،
+	// پس با muِ کش قفل نمی‌شود.
+	recorder *tapehistory.Recorder
+
 	procMu    sync.Mutex
 	procAt    time.Time
 	procValue bool
 }
 
 func New(h *db.Handles, dataDir string) *Service {
-	return &Service{market: h.Market, user: h.User, dataDir: dataDir}
+	return &Service{market: h.Market, user: h.User, dataDir: dataDir, recorder: tapehistory.NewRecorder()}
 }
 
 func (s *Service) Board(w http.ResponseWriter, r *http.Request) {
@@ -175,7 +180,7 @@ func (s *Service) build(dropUnused, storeCache bool) ([]byte, string, error) {
 	}
 	d := board.Derive(fr)
 	fl := tapeflags.Apply(fr, d)
-	recs := assemble(fr, d, fl, dropUnused)
+	recs := assemble(fr, d, fl)
 	meta, err := boardMeta(s.market)
 	if err != nil {
 		return nil, "", err
@@ -183,6 +188,13 @@ func (s *Service) build(dropUnused, storeCache bool) ([]byte, string, error) {
 	sessionDay := int64(0)
 	if v, ok := meta["d_even"].(int64); ok {
 		sessionDay = v
+	}
+	// ثبتِ سابقۀ پرچم‌ها — همان side effectِ پایتون، پیش از حذفِ ستون‌ها.
+	if len(recs) > 0 && sessionDay != 0 {
+		_, _ = s.recorder.Record(s.user, recs, sessionDay, syncToken(s.dataDir), time.Now())
+	}
+	if dropUnused {
+		dropUnusedFields(recs)
 	}
 	for _, rec := range recs {
 		ok, code, reason := screening.Eligibility(rec, sessionDay)
@@ -374,6 +386,19 @@ func (s *Service) SyncState(w http.ResponseWriter, r *http.Request) {
 	httpapi.WriteJSON(w, http.StatusOK, map[string]any{
 		"status": "success", "running": s.marketRunning(), "last": last,
 	})
+}
+
+// syncToken «این داده نو است» را از خودِ فایلِ سینکر می‌گیرد: هر سینکِ موفق
+// market_sync.json را بازنویسی می‌کند، پس (mtime_ns, size) همان نقشی را دارد
+// که sync_count در پروسۀ پایتون داشت. غایب ⇒ "" یعنی «نشانه‌ای نیست» و ثبت
+// فقط با کفِ زمانیِ چهار دقیقه مهار می‌شود.
+func syncToken(dataDir string) string {
+	p := filepath.Join(dataDir, "market_sync.json")
+	st, err := os.Stat(p)
+	if err != nil {
+		return ""
+	}
+	return strconv.FormatInt(st.ModTime().UnixNano(), 10) + ":" + strconv.FormatInt(st.Size(), 10)
 }
 
 // marketRunning عینِ _count_procs("test_tsetmc") با کشِ ۱۰ثانیه‌ای.

@@ -95,18 +95,24 @@ func numericCols(fr *store.Frame) map[string]bool {
 	return out
 }
 
-// set همان put است با درِ _DROP_FIELDS. پایتون این صافی را در _slim_records
-// رویِ *همهٔ* ستون‌هایِ قابِ نهایی می‌زند — خام و محاسبه‌شده یکی — پس اینجا هم
-// هر دو مسیر از همین یک در رد می‌شوند؛ وگرنه plp_raw/vol_trend/dist_min30_pct
-// از پاسِ مشتقات به بدنۀ پیش‌فرض برمی‌گشتند.
-func set(rec map[string]any, name string, v any, dropUnused bool) {
-	if dropUnused && dropFields[name] {
-		return
+// dropUnusedFields درِ _DROP_FIELDS است، ولی رویِ ردیف‌هایِ *ساخته‌شده* و فقط
+// *بعد* از ثبتِ سابقه. پایتون این صافی را در _slim_records رویِ *همهٔ* ستون‌هایِ
+// قابِ نهایی می‌زند — خام و محاسبه‌شده یکی — و شاهد را پیش از آن از قابِ کامل
+// می‌نویسد؛ resistance_59 هم شاهد است و هم در بدنۀ پیش‌فرض حذف می‌شود، پس
+// ترتیب این دو کار باربر است.
+func dropUnusedFields(recs []map[string]any) {
+	for _, rec := range recs {
+		for name := range dropFields {
+			delete(rec, name)
+		}
 	}
-	put(rec, name, v)
 }
 
-func assemble(fr *store.Frame, d *board.Derived, fl *tapeflags.Flags, dropUnused bool) []map[string]any {
+// assemble ردیفِ کامل می‌سازد — بی درِ _DROP_FIELDS. حذفِ ستون‌هایِ بدنۀ پیش‌فرض
+// کارِ dropUnusedFields است و بعد از ثبتِ سابقه انجام می‌شود. پارامترِ متغیرِ
+// بازمانده فقط امضایِ پیشین را (فراخوانیِ چهارآرگومانیِ تست) قبول می‌کند و هیچ
+// اثری ندارد؛ سرویس همیشه سه‌آرگومانی صدایش می‌زند.
+func assemble(fr *store.Frame, d *board.Derived, fl *tapeflags.Flags, _ ...bool) []map[string]any {
 	n := fr.N()
 	numeric := numericCols(fr)
 	out := make([]map[string]any, n)
@@ -121,30 +127,30 @@ func assemble(fr *store.Frame, d *board.Derived, fl *tapeflags.Flags, dropUnused
 				if v == nil && numeric[name] && !keepNull[name] {
 					v = 0.0
 				}
-				set(rec, name, v, dropUnused)
+				put(rec, name, v)
 			}
 		}
 		// ستون‌هایِ محاسبه‌شده — همان نام‌هایی که رابط می‌خواند.
-		set(rec, "tvol", d.Tvol[i], dropUnused)
-		set(rec, "percent_change", d.PercentChange[i], dropUnused)
-		set(rec, "percent_last", d.PercentLast[i], dropUnused)
-		set(rec, "plp_raw", d.PlpRaw[i], dropUnused)
-		set(rec, "buyer_power", d.BuyerPower[i], dropUnused)
-		set(rec, "buy_power_i", d.BuyPowerI[i], dropUnused)
-		set(rec, "sell_power_i", d.SellPowerI[i], dropUnused)
-		set(rec, "retail_buy_pct", d.RetailBuyPct[i], dropUnused)
-		set(rec, "legal_buy_pct", d.LegalBuyPct[i], dropUnused)
-		set(rec, "retail_sell_pct", d.RetailSellPct[i], dropUnused)
-		set(rec, "legal_sell_pct", d.LegalSellPct[i], dropUnused)
-		set(rec, "pct_basis", d.PctBasis[i], dropUnused)
-		set(rec, "vol_dod", d.VolDod[i], dropUnused)
-		set(rec, "vol_trend", d.VolTrend[i], dropUnused)
-		set(rec, "vol_ratio", board.Round1(fl.VolRatio[i]), dropUnused)
-		set(rec, "vol_ratio_file", board.Round2(fl.VolRatioFile[i]), dropUnused)
-		set(rec, "buyer_power_raw", fl.BuyerPowerRaw[i], dropUnused)
-		set(rec, "resistance_59", fl.Resistance59[i], dropUnused)
-		set(rec, "dist_min30_pct", d.DistMin30Pct[i], dropUnused)
-		set(rec, "mcap", d.Mcap[i], dropUnused)
+		put(rec, "tvol", d.Tvol[i])
+		put(rec, "percent_change", d.PercentChange[i])
+		put(rec, "percent_last", d.PercentLast[i])
+		put(rec, "plp_raw", d.PlpRaw[i])
+		put(rec, "buyer_power", d.BuyerPower[i])
+		put(rec, "buy_power_i", d.BuyPowerI[i])
+		put(rec, "sell_power_i", d.SellPowerI[i])
+		put(rec, "retail_buy_pct", d.RetailBuyPct[i])
+		put(rec, "legal_buy_pct", d.LegalBuyPct[i])
+		put(rec, "retail_sell_pct", d.RetailSellPct[i])
+		put(rec, "legal_sell_pct", d.LegalSellPct[i])
+		put(rec, "pct_basis", d.PctBasis[i])
+		put(rec, "vol_dod", d.VolDod[i])
+		put(rec, "vol_trend", d.VolTrend[i])
+		put(rec, "vol_ratio", board.Round1(fl.VolRatio[i]))
+		put(rec, "vol_ratio_file", board.Round2(fl.VolRatioFile[i]))
+		put(rec, "buyer_power_raw", fl.BuyerPowerRaw[i])
+		put(rec, "resistance_59", fl.Resistance59[i])
+		put(rec, "dist_min30_pct", d.DistMin30Pct[i])
+		put(rec, "mcap", d.Mcap[i])
 		// mcap_src از خودِ ستونِ قاب می‌آید (NULL ⇒ کلید نیامد، "" ⇒ مقدارِ
 		// صریح)؛ درِ Derived.McapSrc فقط برایِ مصرف‌کنندگانِ داخلی است.
 		rec["is_live"] = d.IsLive[i]
@@ -155,7 +161,7 @@ func assemble(fr *store.Frame, d *board.Derived, fl *tapeflags.Flags, dropUnused
 		rec["f_noqteh"] = fl.Noqteh[i]
 		rec["f_smart"] = fl.Smart[i]
 		rec["f_legal"] = fl.Legal[i]
-		set(rec, "suspicious_vol", fl.Susp[i], dropUnused)
+		put(rec, "suspicious_vol", fl.Susp[i])
 		out[i] = rec
 	}
 	return out
