@@ -575,3 +575,93 @@ func TestScreeningReasonUsesLiveSessionDayNotBoardMeta(t *testing.T) {
 		t.Fatalf("fields=all reason = %q, want %q", got, want)
 	}
 }
+
+// TestTapeFlagsUsesCache (F1a): قراردادِ TapeFlags این است که از cached()
+// بگذرد، نه build(). ساختِ بی‌قید در هر درخواستِ mainwatch، تابلوِ ۵٬۵هزار
+// ردیفی را از نو می‌ساخت. builds را build زیرِ همان قفل بالا می‌برد؛ پس N
+// فراخوانیِ پیاپی پس از نخستین ساخت باید آن را روی ۱ نگه دارد.
+func TestTapeFlagsUsesCache(t *testing.T) {
+	s := fixtureService(t)
+	first, ok := s.TapeFlags()
+	if !ok || len(first) == 0 {
+		t.Fatalf("TapeFlags = (%d keys, ok=%v), want an available non-empty map", len(first), ok)
+	}
+	if got := s.buildCount(); got != 1 {
+		t.Fatalf("first TapeFlags builds = %d, want 1 (cold cached())", got)
+	}
+	for i := 0; i < 8; i++ {
+		got, ok := s.TapeFlags()
+		if !ok || len(got) != len(first) {
+			t.Fatalf("call %d: (%d keys, ok=%v), want (%d, true)",
+				i+2, len(got), ok, len(first))
+		}
+	}
+	if got := s.buildCount(); got != 1 {
+		t.Fatalf("TapeFlags rebuilt per call: builds = %d, want 1", got)
+	}
+}
+
+// TestTapeFlagsKeepsZWNJ (F1b): کلیدِ نقشه همان norm_symbolِ پایتون است و
+// نیم‌فاصله (U+200C) بخشی از نماد می‌ماند. پنج نمادِ فیکسچر نیم‌فاصله دارند؛
+// اگر روزی symStrip با نرمال‌سازِ نیم‌فاصله‌بردار عوض شود، پرچمِ این نمادها
+// بی‌صدا گم می‌شود و همهٔ تست‌ها سبز می‌مانند (دو طرفِ جفت‌شدن در mstat یکسان
+// نرمال می‌شوند). نقشهٔ TapeFlags این‌جا با ردیفِ همان نماد در گلدنِ تابلو
+// مقایسه می‌شود؛ گلدن همان _board_rowsی است که _tape_flag_map از آن می‌خواند.
+func TestTapeFlagsKeepsZWNJ(t *testing.T) {
+	s := fixtureService(t)
+	flags, ok := s.TapeFlags()
+	if !ok {
+		t.Fatal("TapeFlags unavailable")
+	}
+	const sym = "پول\u200cهوشمند06"
+	if !strings.Contains(sym, "\u200c") {
+		t.Fatal("fixture symbol lost its ZWNJ")
+	}
+	key := symStrip(symNorm.Replace(sym))
+	if !strings.Contains(key, "\u200c") {
+		t.Fatalf("TapeFlags key %q lost U+200C", key)
+	}
+	got, ok := flags[key]
+	if !ok {
+		t.Fatalf("TapeFlags has no key %q (map has %d keys)", key, len(flags))
+	}
+	if _, ok := flags[strings.ReplaceAll(key, "\u200c", "")]; ok {
+		t.Fatalf("TapeFlags also has a ZWNJ-stripped key for %q", key)
+	}
+
+	raw, ok := golden(t, "market.json").(map[string]any)
+	if !ok {
+		t.Fatalf("board golden type = %T", golden(t, "market.json"))
+	}
+	data, ok := raw["data"].([]any)
+	if !ok {
+		t.Fatalf("board golden data type = %T", raw["data"])
+	}
+	var board map[string]any
+	for _, item := range data {
+		row, ok := item.(map[string]any)
+		if !ok {
+			t.Fatalf("board golden row type = %T", item)
+		}
+		if row["symbol"] == sym {
+			board = row
+			break
+		}
+	}
+	if board == nil {
+		t.Fatalf("board golden has no row for %q", sym)
+	}
+	wantKeys := []string{"f_clock", "f_susp", "f_jet", "f_roobi", "f_noqteh", "f_smart", "f_legal"}
+	if len(got) != len(wantKeys) {
+		t.Fatalf("%q: %d flags, want %d", key, len(got), len(wantKeys))
+	}
+	for _, k := range wantKeys {
+		want, ok := board[k].(bool)
+		if !ok {
+			t.Fatalf("board golden %s = %v (%T), want bool", k, board[k], board[k])
+		}
+		if got[k] != want {
+			t.Errorf("%q: %s = %v, board = %v", key, k, got[k], want)
+		}
+	}
+}

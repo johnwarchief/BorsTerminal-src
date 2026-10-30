@@ -22,6 +22,15 @@ var symNorm = strings.NewReplacer("\u064A", "\u06CC", "\u0649", "\u06CC", "\u064
 // املایِ فارسی. نیم‌فاصله (U+200C) بخشی از خودِ نماد است و برداشته نمی‌شود.
 func normSymbol(s string) string { return pyStrip(symNorm.Replace(s)) }
 
+// آستانه‌هایِ الگویِ ساعت — عینِ mstat_engine.CLOCK_PCT/CLOCK_MIN_TRADES/
+// CLOCK_MIN_PRICE. predicate و clock_rule هر دو از همین سه می‌خوانند تا تغییرِ
+// یکی، آستانه و اعلامِ آن را از هم جدا نکند.
+const (
+	clockMinPct    = 1.0   // CLOCK_PCT
+	clockMinTrades = 30    // CLOCK_MIN_TRADES
+	clockMinPrice  = 500.0 // CLOCK_MIN_PRICE
+)
+
 // gridSortKeys همان _GRID_SORT_KEYS: کلیدِ مرتب‌سازی → ستونِ سطرِ خروجی.
 var gridSortKeys = map[string]string{
 	"vol": "vol_b_shares", "val": "val_b_toman", "pc": "p_closing",
@@ -183,8 +192,8 @@ func mainwatchPanel(db *sql.DB, flags FlagSource, group, industry, sortKey strin
 		if !isNaN(m.BQ1Px) {
 			g.demPx, g.hasDemPx = m.BQ1Px, true
 		}
-		g.clockOK = r.ClockPct != nil && *r.ClockPct >= 1.0 && m.Trades >= 30 &&
-			f0(r.PClosing) >= 500.0
+		g.clockOK = r.ClockPct != nil && *r.ClockPct >= clockMinPct &&
+			m.Trades >= clockMinTrades && f0(r.PClosing) >= clockMinPrice
 		grid = append(grid, g)
 	}
 	// مرتب‌سازی: clock فقط نامزدهایِ قابلِ‌اتکا را رتبه می‌دهد؛ symbol رشته‌ای
@@ -259,13 +268,17 @@ func mainwatchPanel(db *sql.DB, flags FlagSource, group, industry, sortKey strin
 			return "clock_pct"
 		}(),
 		"desc": desc, "total": len(grid), "clock_hits": clockHits,
-		"clock_rule": map[string]any{"min_pct": 1.0, "min_trades": 30, "min_price": 500.0},
-		"rows":       outRows,
+		"clock_rule": map[string]any{
+			"min_pct": clockMinPct, "min_trades": clockMinTrades, "min_price": clockMinPrice,
+		},
+		"rows": outRows,
 	}
 	// انتقال، نه محاسبه: پرچم‌ها از همان بدنهٔ /api/market می‌آیند؛ نبودِ منبع
 	// «unavailable» است و هیچ ردیفی tape_flags نمی‌گیرد (عینِ _attach_tape_flags).
+	// نقشهٔ خالی با ok=true هم همان «منبع نرسید» است: پایتون `if not flags` را
+	// unavailable می‌خواند، نه «هیچ نمادی پرچم ندارد».
 	if flags != nil {
-		if m, ok := flags.TapeFlags(); ok {
+		if m, ok := flags.TapeFlags(); ok && len(m) > 0 {
 			for _, row := range outRows {
 				sym, _ := row["symbol"].(string)
 				row["tape_flags"] = m[normSymbol(sym)]
