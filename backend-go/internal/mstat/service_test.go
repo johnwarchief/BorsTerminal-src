@@ -178,16 +178,165 @@ func TestCallSingleFlight(t *testing.T) {
 		<-release
 		return map[string]any{"status": "ok"}, nil
 	}
-	var wg sync.WaitGroup
-	for i := 0; i < 5; i++ {
-		wg.Add(1)
-		go func() { defer wg.Done(); s.Call("p", fn, Options{}) }()
+	const callers = 5
+	start := make(chan struct{})
+	var ready, wg sync.WaitGroup
+	ready.Add(callers)
+	wg.Add(callers)
+	for i := 0; i < callers; i++ {
+		go func() {
+			defer wg.Done()
+			ready.Done()
+			<-start
+			s.Call("p", fn, Options{})
+		}()
 	}
+	ready.Wait() // همه پیش از بازشدنِ سد آماده‌اند؛ مسابقه‌ای در شروع نمی‌ماند
+	close(start)
 	waitCount(t, &n, 1)
+	// صاحبِ بلیت رویِ release قفل است؛ اگر تک‌پروازگی نبود، بقیه هم compute
+	// می‌کردند و n پیش از release از ۱ جلو می‌زد.
+	time.Sleep(50 * time.Millisecond)
+	if got := atomic.LoadInt32(&n); got != 1 {
+		t.Fatalf("computes before release = %d, want 1", got)
+	}
 	close(release)
 	wg.Wait()
 	if n != 1 {
 		t.Fatalf("computes = %d, want 1", n)
+	}
+}
+
+// waitFlights تا بسته‌شدنِ همهٔ بلیت‌ها صبر می‌کند؛ نشتِ بلیت (پنیکِ بی‌defer)
+// این‌جا یا در فراخوانِ بعدی قرمز می‌شود.
+func waitFlights(t *testing.T, s *Service) {
+	t.Helper()
+	deadline := time.Now().Add(2 * time.Second)
+	for {
+		s.mu.Lock()
+		n := len(s.flights)
+		s.mu.Unlock()
+		if n == 0 {
+			return
+		}
+		if time.Now().After(deadline) {
+			t.Fatalf("flights still open: %d", n)
+		}
+		time.Sleep(2 * time.Millisecond)
+	}
+}
+
+// TestCallStaleCoalescesBackgroundRebuild همان ضمانتِ _MSTAT_BG: چند فراخوانِ
+// هم‌زمانِ کهنه فقط یک بازسازیِ پس‌زمینه می‌سازند (computes = ۲، نه ۶). بازسازی
+// تا برگشتِ همهٔ فراخوان‌ها رویِ release قفل است تا مسابقه‌ای پنهان نماند.
+func TestCallStaleCoalescesBackgroundRebuild(t *testing.T) {
+	s, clk, _ := newTestService(t)
+	release := make(chan struct{})
+	var n int32
+	fn := func() (map[string]any, error) {
+		if atomic.AddInt32(&n, 1) > 1 {
+			<-release
+		}
+		return map[string]any{"status": "ok"}, nil
+	}
+	if got := s.Call("p", fn, Options{StaleOK: true}); got["status"] != "ok" {
+		t.Fatalf("cold body = %v", got)
+	}
+	clk.Advance(DefaultTTL + time.Second)
+	const callers = 5
+	start := make(chan struct{})
+	var ready, wg sync.WaitGroup
+	ready.Add(callers)
+	wg.Add(callers)
+	for i := 0; i < callers; i++ {
+		go func() {
+			defer wg.Done()
+			ready.Done()
+			<-start
+			if got := s.Call("p", fn, Options{StaleOK: true}); got["status"] != "ok" {
+				t.Errorf("stale body = %v", got)
+			}
+		}()
+	}
+	ready.Wait()
+	close(start)
+	wg.Wait() // همهٔ فراخوان‌ها پیش از پایانِ بازسازی برگشته‌اند
+	waitCount(t, &n, 2)
+	if got := atomic.LoadInt32(&n); got != 2 {
+		t.Fatalf("computes in stale window = %d, want 2", got)
+	}
+	close(release)
+	waitFlights(t, s)
+	if got := atomic.LoadInt32(&n); got != 2 {
+		t.Fatalf("computes after rebuild = %d, want 2", got)
+	}
+	s.Call("p", fn, Options{StaleOK: true})
+	if n != 2 {
+		t.Fatalf("fresh call recomputed: %d", n)
+	}
+}
+
+// TestCallRecoversPanicAndClearsFlight دو ضمانت را با هم می‌سنجد: پنیکِ پنل
+// بدنهٔ status=error می‌دهد (نه کشتنِ borsd)، و بلیتِ کلید با defer بسته می‌شود
+// (فراخوانِ بعدی قفل نمی‌ماند).
+func TestCallRecoversPanicAndClearsFlight(t *testing.T) {
+	s, _, _ := newTestService(t)
+	out := s.Call("p", func() (map[string]any, error) { panic("kaboom") }, Options{})
+	if out["status"] != "error" || out["message"] != "kaboom" || out["source"] != "local:market.db" {
+		t.Fatalf("panic body = %v", out)
+	}
+	s.mu.Lock()
+	leaked := len(s.flights)
+	s.mu.Unlock()
+	if leaked != 0 {
+		t.Fatalf("flight leaked after panic: %d", leaked)
+	}
+	done := make(chan map[string]any, 1)
+	go func() {
+		done <- s.Call("p", func() (map[string]any, error) {
+			return map[string]any{"status": "ok"}, nil
+		}, Options{})
+	}()
+	select {
+	case got := <-done:
+		if got["status"] != "ok" {
+			t.Fatalf("call after panic = %v", got)
+		}
+	case <-time.After(2 * time.Second):
+		t.Fatal("call after panic blocked by a leaked flight")
+	}
+}
+
+// TestCallBackgroundRebuildPanicIsContained مسیرِ پس‌زمینه را می‌سنجد: پنیک در
+// goroutine نباید پروسه را بکشد، پاسخِ کهنه باید برسد، و بلیت باید بسته شود.
+func TestCallBackgroundRebuildPanicIsContained(t *testing.T) {
+	s, clk, _ := newTestService(t)
+	var n int32
+	good := func() (map[string]any, error) {
+		atomic.AddInt32(&n, 1)
+		return map[string]any{"status": "ok", "v": int64(1)}, nil
+	}
+	if got := s.Call("p", good, Options{StaleOK: true}); got["v"] != int64(1) {
+		t.Fatalf("cold body = %v", got)
+	}
+	clk.Advance(DefaultTTL + time.Second)
+	if got := s.Call("p", func() (map[string]any, error) {
+		atomic.AddInt32(&n, 1)
+		panic("bg boom")
+	}, Options{StaleOK: true}); got["v"] != int64(1) {
+		t.Fatalf("stale body = %v", got)
+	}
+	waitCount(t, &n, 2)
+	waitFlights(t, s)
+	got := s.Call("p", func() (map[string]any, error) {
+		atomic.AddInt32(&n, 1)
+		return map[string]any{"status": "ok", "v": int64(2)}, nil
+	}, Options{})
+	if got["v"] != int64(2) {
+		t.Fatalf("after background panic = %v", got)
+	}
+	if n != 3 {
+		t.Fatalf("computes = %d, want 3", n)
 	}
 }
 

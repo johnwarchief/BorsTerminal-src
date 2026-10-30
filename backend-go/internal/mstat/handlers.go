@@ -3,7 +3,6 @@ package mstat
 import (
 	"database/sql"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -13,19 +12,47 @@ import (
 	"borsterminal/backend/internal/marketphase"
 )
 
+// qlast همان Query(...)ِ FastAPI برایِ پارامترِ تکراری: آخرین مقدار برنده است
+// (?group=a&group=b ⇒ b)؛ url.Values.Get اولین را می‌داد.
+func qlast(r *http.Request, name string) (string, bool) {
+	vals, ok := r.URL.Query()[name]
+	if !ok || len(vals) == 0 {
+		return "", false
+	}
+	return vals[len(vals)-1], true
+}
+
 // qstr همان Query(...)ِ FastAPI: نبودِ پارامتر ⇒ default، ولی ?group= تهی
 // می‌ماند (FastAPI مقدارِ تهی را با نبودن یکی نمی‌کند؛ ?group= دستهٔ ناشناخته
-// است و صفر ردیف می‌دهد).
+// است و صفر ردیف می‌دهد). مقدارِ تکراری ⇒ آخرین (qlast).
 func qstr(r *http.Request, name, def string) string {
-	if !r.URL.Query().Has(name) {
-		return def
+	if v, ok := qlast(r, name); ok {
+		return v
 	}
-	return r.URL.Query().Get(name)
+	return def
+}
+
+// panelKey کلیدِ کش را با طول‌پیشوندِ هر جزء می‌سازد. joinِ ساده با «|» دو تاپلِ
+// متفاوت را یکسان می‌کرد (group=a&industry=b|c با group=a|b&industry=c) و
+// درخواستِ دوم بدنهٔ اول را از کش می‌خورد؛ طولِ هر جزء مرز را یکتا می‌کند.
+func panelKey(name string, parts ...string) string {
+	var b strings.Builder
+	b.WriteString(strconv.Itoa(len(name)))
+	b.WriteByte(':')
+	b.WriteString(name)
+	for _, p := range parts {
+		b.WriteByte('|')
+		b.WriteString(strconv.Itoa(len(p)))
+		b.WriteByte(':')
+		b.WriteString(p)
+	}
+	return b.String()
 }
 
 // fastBool همان مجموعهٔ رشته‌ایِ Pydantic است، نه strconv.ParseBool.
+// TrimSpace عمداً نیست: Pydantic «" true "» را با 422 رد می‌کند.
 func fastBool(v string) (bool, bool) {
-	switch strings.ToLower(strings.TrimSpace(v)) {
+	switch strings.ToLower(v) {
 	case "1", "t", "true", "y", "yes", "on":
 		return true, true
 	case "0", "f", "false", "n", "no", "off":
@@ -46,28 +73,28 @@ func (s *Service) Summary(w http.ResponseWriter, r *http.Request) {
 
 func (s *Service) Histogram(w http.ResponseWriter, r *http.Request) {
 	group := qstr(r, "group", "all")
-	writePanel(w, s.Call("histogram|"+group, func() (map[string]any, error) {
+	writePanel(w, s.Call(panelKey("histogram", group), func() (map[string]any, error) {
 		return histogramPanel(s.db, group)
 	}, Options{StaleOK: true}))
 }
 
 func (s *Service) Thermometer(w http.ResponseWriter, r *http.Request) {
 	group := qstr(r, "group", "all")
-	writePanel(w, s.Call("thermometer|"+group, func() (map[string]any, error) {
+	writePanel(w, s.Call(panelKey("thermometer", group), func() (map[string]any, error) {
 		return thermometerPanel(s.db, group)
 	}, Options{StaleOK: true}))
 }
 
 func (s *Service) Depth(w http.ResponseWriter, r *http.Request) {
 	group := qstr(r, "group", "all")
-	writePanel(w, s.Call("depth|"+group, func() (map[string]any, error) {
+	writePanel(w, s.Call(panelKey("depth", group), func() (map[string]any, error) {
 		return depthPanel(s.db, group)
 	}, Options{StaleOK: true}))
 }
 
 func (s *Service) ClientSplit(w http.ResponseWriter, r *http.Request) {
 	tab := qstr(r, "tab", "all")
-	writePanel(w, s.Call("clientsplit|"+tab, func() (map[string]any, error) {
+	writePanel(w, s.Call(panelKey("clientsplit", tab), func() (map[string]any, error) {
 		return clientSplitPanel(s.db, tab)
 	}, Options{StaleOK: true}))
 }
@@ -91,8 +118,7 @@ func (s *Service) Mainwatch(w http.ResponseWriter, r *http.Request) {
 	industry := qstr(r, "industry", "")
 	sortKey := qstr(r, "sort", "clock")
 	desc := true
-	if r.URL.Query().Has("desc") {
-		raw := r.URL.Query().Get("desc")
+	if raw, ok := qlast(r, "desc"); ok {
 		v, ok := fastBool(raw)
 		if !ok {
 			httpapi.UnprocessableAs(w, "bool_parsing", []string{"query", "desc"},
@@ -102,8 +128,7 @@ func (s *Service) Mainwatch(w http.ResponseWriter, r *http.Request) {
 		desc = v
 	}
 	limit := 120
-	if r.URL.Query().Has("limit") {
-		raw := r.URL.Query().Get("limit")
+	if raw, ok := qlast(r, "limit"); ok {
 		v, err := strconv.Atoi(raw)
 		if err != nil {
 			httpapi.UnprocessableAs(w, "int_parsing", []string{"query", "limit"},
@@ -112,7 +137,8 @@ func (s *Service) Mainwatch(w http.ResponseWriter, r *http.Request) {
 		}
 		limit = v
 	}
-	key := fmt.Sprintf("mainwatch|%s|%s|%s|%t|%d", group, industry, sortKey, desc, limit)
+	key := panelKey("mainwatch", group, industry, sortKey,
+		strconv.FormatBool(desc), strconv.FormatInt(int64(limit), 10))
 	writePanel(w, s.Call(key, func() (map[string]any, error) {
 		return mainwatchPanel(s.db, s.flags, group, industry, sortKey, desc, limit)
 	}, Options{StaleOK: true}))
@@ -126,7 +152,7 @@ func (s *Service) Industries(w http.ResponseWriter, r *http.Request) {
 
 func (s *Service) Timeline(w http.ResponseWriter, r *http.Request) {
 	mode := qstr(r, "mode", "cum")
-	writePanel(w, s.Call("timeline|"+mode, func() (map[string]any, error) {
+	writePanel(w, s.Call(panelKey("timeline", mode), func() (map[string]any, error) {
 		return timelinePanel(s.db, mode)
 	}, Options{StaleOK: true}))
 }

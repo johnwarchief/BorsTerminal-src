@@ -80,8 +80,8 @@ func (s *Service) Call(key string, fn func() (map[string]any, error), opt Option
 			s.flights[full] = done
 			s.mu.Unlock()
 			go func() {
+				defer s.finish(full, done)
 				s.store(full, s.compute(fn), s.clock())
-				s.finish(full, done)
 			}()
 		} else {
 			s.mu.Unlock()
@@ -107,13 +107,21 @@ func (s *Service) Call(key string, fn func() (map[string]any, error), opt Option
 	done := make(chan struct{})
 	s.flights[full] = done
 	s.mu.Unlock()
+	defer s.finish(full, done)
 	out := s.compute(fn)
 	s.store(full, out, now)
-	s.finish(full, done)
 	return cloneMap(out)
 }
 
-func (s *Service) compute(fn func() (map[string]any, error)) map[string]any {
+func (s *Service) compute(fn func() (map[string]any, error)) (out map[string]any) {
+	// recover عینِ except در _mstat_compute: پنیکِ یک پنل نباید borsd را بکشد و
+	// باید همان بدنهٔ status=error را بدهد (هم در مسیرِ درون‌خطی، هم پس‌زمینه).
+	defer func() {
+		if r := recover(); r != nil {
+			out = map[string]any{"status": "error", "message": fmt.Sprint(r),
+				"source": mstatSource}
+		}
+	}()
 	out, err := fn()
 	if err != nil {
 		// یک پنلِ خراب نباید کل تب را ۵۰۰ کند؛ پایتون هم status=error می‌دهد.

@@ -90,6 +90,7 @@ func TestMainwatchValidation422(t *testing.T) {
 		{"/api/mstat/mainwatch?limit=abc", "int_parsing", "limit"},
 		{"/api/mstat/mainwatch?desc=xx", "bool_parsing", "desc"},
 		{"/api/mstat/mainwatch?limit=", "int_parsing", "limit"},
+		{"/api/mstat/mainwatch?desc=%20true", "bool_parsing", "desc"},
 	} {
 		rec := httptest.NewRecorder()
 		s.Mainwatch(rec, httptest.NewRequest("GET", tc.target, nil))
@@ -159,33 +160,193 @@ func TestMainwatchHandlerPassesFlagSource(t *testing.T) {
 
 // TestHandlerParamRules قواعدِ Queryِ FastAPI را رویِ مسیرها می‌سنجد:
 // پارامترِ غایب ⇒ پیش‌فرض، ?group= ⇒ تهی (نه پیش‌فرض)، و مقدارِ ناشناخته
-// بی‌خطا می‌گذرد. بدنهٔ گروهِ تهی صفر ردیف می‌دهد ولی همچنان status=ok است.
+// بی‌خطا می‌گذرد ولی اثرش در بدنه دیده می‌شود (echo و شمارشِ ردیف‌ها)، نه فقط 200.
 func TestHandlerParamRules(t *testing.T) {
 	h := openFixture(t)
 	s := New(h.Market, t.TempDir(), nil)
 	s.clock = func() time.Time { return pinnedNow }
+	num := func(t *testing.T, body map[string]any, key string) float64 {
+		t.Helper()
+		v, ok := body[key].(float64)
+		if !ok {
+			t.Fatalf("%s = %T, want a number", key, body[key])
+		}
+		return v
+	}
 	cases := []struct {
+		name   string
 		target string
 		fn     http.HandlerFunc
+		check  func(t *testing.T, body map[string]any)
 	}{
-		{"/api/mstat/histogram", s.Histogram},
-		{"/api/mstat/histogram?group=", s.Histogram},
-		{"/api/mstat/depth?group=nope", s.Depth},
-		{"/api/mstat/clientsplit?tab=", s.ClientSplit},
-		{"/api/mstat/timeline?mode=wat", s.Timeline},
+		{"histogram default", "/api/mstat/histogram", s.Histogram, func(t *testing.T, b map[string]any) {
+			if b["group"] != "all" || num(t, b, "total") != 5 {
+				t.Fatalf("default body = %v", b)
+			}
+		}},
+		{"histogram empty", "/api/mstat/histogram?group=", s.Histogram, func(t *testing.T, b map[string]any) {
+			if b["group"] != "" || num(t, b, "total") != 0 {
+				t.Fatalf("empty group body = %v", b)
+			}
+		}},
+		{"histogram eq_all", "/api/mstat/histogram?group=eq_all", s.Histogram, func(t *testing.T, b map[string]any) {
+			if b["group"] != "eq_all" || num(t, b, "total") != 4 {
+				t.Fatalf("eq_all body = %v", b)
+			}
+		}},
+		{"depth known", "/api/mstat/depth?group=eq_all", s.Depth, func(t *testing.T, b map[string]any) {
+			if b["group"] != "eq_all" || num(t, b, "symbols_with_depth") != 4 {
+				t.Fatalf("depth body = %v", b)
+			}
+		}},
+		{"depth unknown", "/api/mstat/depth?group=nope", s.Depth, func(t *testing.T, b map[string]any) {
+			if b["group"] != "nope" || num(t, b, "symbols_with_depth") != 0 {
+				t.Fatalf("unknown group body = %v", b)
+			}
+		}},
+		{"clientsplit empty", "/api/mstat/clientsplit?tab=", s.ClientSplit, func(t *testing.T, b map[string]any) {
+			if b["tab"] != "" || num(t, b, "symbols") != 5 {
+				t.Fatalf("empty tab body = %v", b)
+			}
+		}},
+		{"clientsplit fixed", "/api/mstat/clientsplit?tab=fixed", s.ClientSplit, func(t *testing.T, b map[string]any) {
+			if b["tab"] != "fixed" || num(t, b, "symbols") != 1 {
+				t.Fatalf("fixed tab body = %v", b)
+			}
+		}},
+		{"timeline unknown", "/api/mstat/timeline?mode=wat", s.Timeline, func(t *testing.T, b map[string]any) {
+			if b["mode"] != "cum" || num(t, b, "points") != 3 {
+				t.Fatalf("unknown mode body = %v", b)
+			}
+		}},
+		{"timeline inst", "/api/mstat/timeline?mode=inst", s.Timeline, func(t *testing.T, b map[string]any) {
+			series, ok := b["series"].(map[string]any)
+			if !ok {
+				t.Fatalf("series = %T", b["series"])
+			}
+			bt, ok := series["bq_bt"].([]any)
+			if !ok || len(bt) != 3 || bt[0] != float64(2) || bt[1] != float64(1) {
+				t.Fatalf("inst series = %v", series["bq_bt"])
+			}
+			if b["mode"] != "inst" {
+				t.Fatalf("mode = %v", b["mode"])
+			}
+		}},
+		{"mainwatch limit", "/api/mstat/mainwatch?limit=2", s.Mainwatch, func(t *testing.T, b map[string]any) {
+			if num(t, b, "total") != 4 {
+				t.Fatalf("total = %v", b["total"])
+			}
+			rows, ok := b["rows"].([]any)
+			if !ok || len(rows) != 2 {
+				t.Fatalf("rows = %v", b["rows"])
+			}
+			row, ok := rows[0].(map[string]any)
+			if !ok {
+				t.Fatalf("row = %T", rows[0])
+			}
+			for _, k := range []string{"symbol", "ins_code", "industry", "clock_ok"} {
+				if _, ok := row[k]; !ok {
+					t.Fatalf("row missing %q: %v", k, row)
+				}
+			}
+		}},
 	}
 	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			rec := httptest.NewRecorder()
+			c.fn(rec, httptest.NewRequest("GET", c.target, nil))
+			body := decodePanel(t, rec)
+			if body["status"] != "ok" {
+				t.Fatalf("%s: status = %v", c.target, body["status"])
+			}
+			c.check(t, body)
+		})
+	}
+}
+
+// decodePanel بدنهٔ 200 را با بررسیِ کد برمی‌گرداند تا تست‌هایِ پارامتر میانِ
+// «شکلِ پاسخ» و «مقدارِ پاسخ» فرق بگذارند.
+func decodePanel(t *testing.T, rec *httptest.ResponseRecorder) map[string]any {
+	t.Helper()
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d (%s)", rec.Code, rec.Body.String())
+	}
+	var body map[string]any
+	if err := json.Unmarshal(rec.Body.Bytes(), &body); err != nil {
+		t.Fatalf("body: %v (%s)", err, rec.Body.String())
+	}
+	return body
+}
+
+// TestDuplicateQueryParamsLastWins همان قاعدهٔ FastAPI/Starlette است: کلیدِ
+// تکراری ⇒ آخرین مقدار. url.Values.Get اولین را برمی‌گرداند و این تست را قرمز
+// می‌کند.
+func TestDuplicateQueryParamsLastWins(t *testing.T) {
+	h := openFixture(t)
+	s := New(h.Market, t.TempDir(), nil)
+	s.clock = func() time.Time { return pinnedNow }
+	get := func(target string, fn http.HandlerFunc) map[string]any {
+		t.Helper()
 		rec := httptest.NewRecorder()
-		c.fn(rec, httptest.NewRequest("GET", c.target, nil))
-		if rec.Code != http.StatusOK {
-			t.Fatalf("%s: status = %d (%s)", c.target, rec.Code, rec.Body.String())
-		}
-		var body map[string]any
-		if err := json.Unmarshal(rec.Body.Bytes(), &body); err != nil {
-			t.Fatalf("%s: %v", c.target, err)
-		}
-		if body["status"] != "ok" {
-			t.Fatalf("%s: status = %v", c.target, body["status"])
+		fn(rec, httptest.NewRequest("GET", target, nil))
+		return decodePanel(t, rec)
+	}
+	b := get("/api/mstat/histogram?group=stock&group=all", s.Histogram)
+	if b["group"] != "all" || b["total"] != float64(5) {
+		t.Fatalf("duplicate group body = %v (first value won?)", b)
+	}
+	b = get("/api/mstat/mainwatch?desc=true&desc=0", s.Mainwatch)
+	if b["desc"] != false {
+		t.Fatalf("duplicate desc = %v, want false (last value)", b["desc"])
+	}
+	b = get("/api/mstat/mainwatch?limit=2&limit=5", s.Mainwatch)
+	rows, ok := b["rows"].([]any)
+	if !ok || len(rows) != 4 {
+		t.Fatalf("duplicate limit rows = %v, want 4 (last limit 5, clamped)", b["rows"])
+	}
+}
+
+// TestMainwatchKeyIsCollisionFree کلیدِ کش را با «|» در دو پارامتر می‌آزماید:
+// joinِ سادهٔ pipe این دو تاپل را یکی می‌کرد و دومی بدنهٔ اول (group=a،
+// industry=b|c) را از کش می‌خورد؛ echoها این را لو می‌دهند.
+func TestMainwatchKeyIsCollisionFree(t *testing.T) {
+	h := openFixture(t)
+	s := New(h.Market, t.TempDir(), nil)
+	s.clock = func() time.Time { return pinnedNow }
+	get := func(target string) map[string]any {
+		t.Helper()
+		rec := httptest.NewRecorder()
+		s.Mainwatch(rec, httptest.NewRequest("GET", target, nil))
+		return decodePanel(t, rec)
+	}
+	first := get("/api/mstat/mainwatch?group=a&industry=b%7Cc&sort=d")
+	second := get("/api/mstat/mainwatch?group=a%7Cb&industry=c&sort=d")
+	if first["group"] != "a" || first["industry"] != "b|c" {
+		t.Fatalf("first body = %v", first)
+	}
+	if second["group"] != "a|b" || second["industry"] != "c" {
+		t.Fatalf("second body = %v (cache hit on the first key?)", second)
+	}
+}
+
+// TestMainwatchBoolSpellings مجموعهٔ مثبتِ Pydantic را می‌سنجد؛ نسخهٔ قبلی فقط
+// ردشدنِ desc=xx را داشت و واژه‌هایِ true را هرگز لمس نمی‌کرد.
+func TestMainwatchBoolSpellings(t *testing.T) {
+	h := openFixture(t)
+	s := New(h.Market, t.TempDir(), nil)
+	s.clock = func() time.Time { return pinnedNow }
+	for _, tc := range []struct {
+		raw  string
+		want bool
+	}{
+		{"1", true}, {"yes", true}, {"on", true}, {"t", true},
+		{"0", false}, {"no", false}, {"off", false}, {"f", false},
+	} {
+		rec := httptest.NewRecorder()
+		s.Mainwatch(rec, httptest.NewRequest("GET", "/api/mstat/mainwatch?desc="+tc.raw, nil))
+		body := decodePanel(t, rec)
+		if body["desc"] != tc.want {
+			t.Fatalf("desc=%s body desc = %v, want %v", tc.raw, body["desc"], tc.want)
 		}
 	}
 }
