@@ -535,6 +535,44 @@ func TestThermometerEntryThreshold(t *testing.T) {
 		wantFloat(t, got, "negative_pct", 60.0)
 		wantBool(t, got, "entry_opportunity", false)
 	})
+
+	// صفرِ صورت «نامعلوم» نیست: وقتی هیچ نمادِ مثبتی نیست ولی مخرج زنده است،
+	// positive_pct باید ۰٫۰ بماند (نه null) و منفی‌ها ۱۰۰٪ با فرصتِ ورود.
+	t.Run("all_five_negative", func(t *testing.T) {
+		got := body(t, map[string]float64{
+			"m1": 1.1, "m2": 1.1, "m3": 1.1, "m4": 1.1, "m5": 1.1,
+		})
+		wantInt(t, got, "positive", 0)
+		wantInt(t, got, "negative", 5)
+		wantInt(t, got, "zero", 0)
+		wantInt(t, got, "nodata", 0)
+		wantInt(t, got, "not_traded", 0)
+		wantFloat(t, got, "positive_pct", 0.0)
+		wantFloat(t, got, "negative_pct", 100.0)
+		wantBool(t, got, "entry_opportunity", true)
+	})
+}
+
+// TestEntryOpportunity مرزِ ۸۰٪ را رویِ نسبتِ *نگردشده* قفل می‌کند، نه رویِ
+// درصدِ گردشده: ۷۹۹۹ از ۱۰۰۰۰ برابرِ ۷۹٫۹۹٪ است که round آن ۸۰٫۰ می‌شود؛ اگر
+// کسی نسبتِ گردشده را بسنجد همین بردار به true می‌افتد. مخرجِ صفر نامعلوم است
+// و گروهِ تمام‌منفی (۱ از ۱) سزاوارِ فرصتِ ورود.
+func TestEntryOpportunity(t *testing.T) {
+	for _, c := range []struct {
+		name       string
+		neg, known int
+		want       bool
+	}{
+		{"just below 80 before rounding", 7999, 10000, false},
+		{"exactly 80", 8000, 10000, true},
+		{"unknown denominator", 0, 0, false},
+		{"all negative", 1, 1, true},
+	} {
+		if got := entryOpportunity(c.neg, c.known); got != c.want {
+			t.Errorf("%s: entryOpportunity(%d,%d) = %v, want %v",
+				c.name, c.neg, c.known, got, c.want)
+		}
+	}
 }
 
 // TestThermometerEmptyTradedGroup: وقتی هیچ نمادِ معامله‌شده‌ای در گروه نیست،
@@ -559,6 +597,30 @@ func TestThermometerEmptyTradedGroup(t *testing.T) {
 	wantNilKey(t, body, "negative_pct")
 	wantBool(t, body, "entry_opportunity", false)
 	wantFloat(t, body, "entry_rule_pct", 80.0)
+}
+
+// TestThermometerNodata مسیرِ «nodata» را باز می‌کند: m1 معامله‌شده می‌ماند
+// (حجم دارد) ولی price_yesterday تهی است، پس pct ندارد. نباید از sel بیرون
+// برود — باید در nodata شمرده شود و در مخرج نیاید. بازدهیِ m3 منفی است و
+// m2/m4/m5 صفر، پس منفی ۱ از ۴ = ۲۵٪ و مثبت ۰ از ۴ = ۰٫۰ (نه null).
+func TestThermometerNodata(t *testing.T) {
+	h := openWritableFixture(t)
+	if _, err := h.Market.Exec(
+		"UPDATE market_watch SET price_yesterday = NULL WHERE ins_code = 'm1'"); err != nil {
+		t.Fatal(err)
+	}
+	body, err := thermometerPanel(h.Market, "all")
+	if err != nil {
+		t.Fatal(err)
+	}
+	wantInt(t, body, "positive", 0)
+	wantInt(t, body, "negative", 1)
+	wantInt(t, body, "zero", 3)
+	wantInt(t, body, "nodata", 1)
+	wantInt(t, body, "not_traded", 0)
+	wantFloat(t, body, "positive_pct", 0.0)
+	wantFloat(t, body, "negative_pct", 25.0)
+	wantBool(t, body, "entry_opportunity", false)
 }
 
 // TestClientSplitUnknownTabFallsBack: تبِ ناشناخته به دستهٔ all برمی‌گردد ولی
@@ -620,10 +682,11 @@ func TestClientSplitZeroDenominator(t *testing.T) {
 	wantFloat(t, body, "money_flow_b_toman", 0)
 }
 
-// TestSideShareAndComplement ریاضیِ محضِ سهم را بی‌DB قفل می‌کند: منفی/NaN/مخرجِ
-// صفر ⇒ nil؛ گردکردنِ یک‌رقمی؛ و حقوقی مکملِ *همان* سهمِ گردشده است. بردارِ
-// ۳:۱۹۹۷ گره را نشان می‌دهد: حقیقی ۰٫۱ و مکمل ۹۹٫۹؛ گردکردنِ مستقلِ حقوقی
-// ۹۹٫۸ می‌داد و دو سمت به ۱۰۰ نمی‌رسیدند.
+// TestSideShareAndComplement ریاضیِ محضِ سهم را بی‌DB قفل می‌کند: منفی/NaN/±Inf/
+// مخرجِ صفر ⇒ nil؛ صورتِ صفر با مخرجِ زنده ⇒ ۰٫۰ (نه nil)؛ گردکردنِ یک‌رقمی؛
+// و حقوقی مکملِ *همان* سهمِ گردشده است. بردارِ ۳:۱۹۹۷ گره را نشان می‌دهد:
+// حقیقی ۰٫۱ و مکمل ۹۹٫۹؛ گردکردنِ مستقلِ حقوقی ۹۹٫۸ می‌داد و دو سمت به ۱۰۰
+// نمی‌رسیدند. بردارِ ۰٫۷۵ گردکردنِ بانکی را قفل می‌کند (۹۹٫۲، نه ۹۹٫۳).
 func TestSideShareAndComplement(t *testing.T) {
 	for _, c := range []struct {
 		name          string
@@ -634,6 +697,10 @@ func TestSideShareAndComplement(t *testing.T) {
 		{"negative legal", 5, -1},
 		{"NaN retail", math.NaN(), 5},
 		{"NaN legal", 5, math.NaN()},
+		{"+Inf retail", math.Inf(1), 5},
+		{"+Inf legal", 5, math.Inf(1)},
+		{"-Inf retail", math.Inf(-1), 5},
+		{"-Inf legal", 5, math.Inf(-1)},
 	} {
 		if got := sideShare(c.retail, c.legal); got != nil {
 			t.Errorf("%s: sideShare = %v, want nil", c.name, got)
@@ -648,6 +715,12 @@ func TestSideShareAndComplement(t *testing.T) {
 	if got := complement(nil); got != nil {
 		t.Errorf("complement(nil) = %v, want nil", got)
 	}
+	if got := sideShare(0, 5); got != 0.0 {
+		t.Errorf("sideShare(0,5) = %v, want 0.0 (zero numerator with a live denominator is a value, not nil)", got)
+	}
+	if got := complement(0.0); got != 100.0 {
+		t.Errorf("complement(0.0) = %v, want 100.0", got)
+	}
 	if got := complement(sideShare(100, 900)); got != 90.0 {
 		t.Errorf("complement(10.0) = %v, want 90.0", got)
 	}
@@ -656,6 +729,9 @@ func TestSideShareAndComplement(t *testing.T) {
 	}
 	if got := complement(0.1); got != 99.9 {
 		t.Errorf("complement(0.1) = %v, want 99.9 (independent legal rounding gives 99.8)", got)
+	}
+	if got := complement(0.75); got != 99.2 {
+		t.Errorf("complement(0.75) = %v, want 99.2 (banker's rounding; math.Round gives 99.3)", got)
 	}
 }
 

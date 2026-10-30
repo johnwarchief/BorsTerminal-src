@@ -163,15 +163,23 @@ func depthPanel(db *sql.DB, group string) (map[string]any, error) {
 // entryOpportunityNegPct همان ENTRY_OPPORTUNITY_NEG_PCTِ mstat_engine است.
 const entryOpportunityNegPct = 80.0
 
+// entryOpportunity همان قاعدهٔ «فرصتِ ورود»: سهمِ منفی‌هایِ *نگردشده* باید
+// به ۸۰٪ برسد. پایتون `neg_pct >= ENTRY_OPPORTUNITY_NEG_PCT` را پیش از round
+// می‌سنجد؛ با نسبتِ گردشده گروهی با ۷۹٫۹۹٪ پس از گردکردن ۸۰٫۰ می‌شد و قانون
+// بی‌آنکه سزاوار باشد روشن می‌شد. مخرجِ صفر یعنی نسبت نامعلوم، نه ۰٪.
+func entryOpportunity(neg, known int) bool {
+	if known == 0 {
+		return false
+	}
+	return 100.0*float64(neg)/float64(known) >= entryOpportunityNegPct
+}
+
 // thermometerPanel همان mstat_engine.thermometer: نوارِ دو‌رنگِ مثبت/منفی +
-// قانونِ «فرصتِ ورود» (منفی‌ها ≥ ۸۰٪).
+// قانونِ «فرصتِ ورود» (منفی‌ها ≥ ۸۰٪، رویِ نسبتِ نگردشده — entryOpportunity).
 //
 // مانند هیستوگرام فقط نمادهایِ معامله‌شده شمرده می‌شوند؛ قانون رویِ فهرستِ
 // معامله‌نشده‌ها همیشه «فرصتِ ورود»ِ جعلی می‌سازد. درصدها با مخرجِ صفر None
-// می‌مانند، نه ۰. مقایسهٔ ۸۰٪ رویِ نسبتِ *نگردشده* است — پایتون
-// `neg_pct >= ENTRY_OPPORTUNITY_NEG_PCT` را پیش از round می‌سنجد — وگرنه
-// گروهی با ۷۹٫۹۶٪ پس از گردکردن به ۸۰٫۰ می‌رسید و قانون بی‌آنکه سزاوار باشد
-// روشن می‌شد.
+// می‌مانند، نه ۰.
 func thermometerPanel(db *sql.DB, group string) (map[string]any, error) {
 	snap, err := loadSnapshot(db)
 	if err != nil {
@@ -197,14 +205,11 @@ func thermometerPanel(db *sql.DB, group string) (map[string]any, error) {
 	}
 	known := pos + neg + flat
 	var posPct, negPct any
-	entry := false
 	if known > 0 {
-		posRatio := 100.0 * float64(pos) / float64(known)
-		negRatio := 100.0 * float64(neg) / float64(known)
-		posPct = pyround.Round(posRatio, 1)
-		negPct = pyround.Round(negRatio, 1)
-		entry = negRatio >= entryOpportunityNegPct
+		posPct = pyround.Round(100.0*float64(pos)/float64(known), 1)
+		negPct = pyround.Round(100.0*float64(neg)/float64(known), 1)
 	}
+	entry := entryOpportunity(neg, known)
 	notTraded := 0
 	for _, r := range rows {
 		if inCategory(r, group, nil) && r.M.Vol <= 0 {
