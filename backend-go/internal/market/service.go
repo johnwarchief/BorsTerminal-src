@@ -15,6 +15,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"unicode"
 
 	"borsterminal/backend/internal/board"
 	"borsterminal/backend/internal/db"
@@ -87,6 +88,57 @@ type Service struct {
 
 func New(h *db.Handles, dataDir string) *Service {
 	return &Service{market: h.Market, user: h.User, dataDir: dataDir, recorder: tapehistory.NewRecorder()}
+}
+
+// symNorm همان str.maketransِ funnel_engine._SYM_TRANS است: ي/ى عربی → ی و ك → ک.
+// همین تبدیل در mstat.normSymbol هم هست؛ کلیدِ نقشهٔ پرچم‌ها باید با آن یکی دربیاید.
+var symNorm = strings.NewReplacer("\u064A", "\u06CC", "\u0649", "\u06CC", "\u0643", "\u06A9")
+
+// symStrip همان str.strip()ِ پایتون (norm_symbol) رویِ لبهٔ نماد: U+001C..U+001F
+// هم whitespaceِ پایتون‌اند ولی unicode.IsSpace نیستند.
+func symStrip(s string) string {
+	return strings.TrimFunc(s, func(r rune) bool {
+		return unicode.IsSpace(r) || (r >= 0x1C && r <= 0x1F)
+	})
+}
+
+// TapeFlags پرچم‌هایِ هفت‌گانهٔ ردیف‌هایِ تابلو، کلید = نمادِ نرمال‌شده. منبعش
+// همان کشِ /api/market است (همان مسیری که پایتون در _board_snapshot می‌رود)،
+// پس هیچ فرمولِ دومی ساخته نمی‌شود.
+//
+// از cached() می‌گذرد، نه build(): ساختِ بی‌قید در هر درخواستِ mainwatch،
+// تابلوِ ۵٬۵هزارردیفی را از نو می‌ساخت و همان چیزی می‌شد که کشِ mstat برایِ
+// حذفش هست. cached() داغ ⇒ بی‌محاسبه؛ سرد ⇒ یک ساخت؛ داده تازه ⇒ همان رفتارِ
+// STALE و بازسازیِ پس‌زمینه. ok=false یعنی منبع نرسید (کش ساختنی نبود یا
+// هنوز منتشر نشده) — با «هیچ پرچمی ندارد» یکی نیست.
+func (s *Service) TapeFlags() (map[string]map[string]bool, bool) {
+	if _, _, _, err := s.cached(); err != nil {
+		return nil, false
+	}
+	s.mu.Lock()
+	byCode := s.byCode
+	s.mu.Unlock()
+	if byCode == nil {
+		return nil, false
+	}
+	keys := []string{"f_clock", "f_susp", "f_jet", "f_roobi", "f_noqteh", "f_smart", "f_legal"}
+	out := make(map[string]map[string]bool, len(byCode))
+	for _, rec := range byCode {
+		sym, _ := rec["symbol"].(string)
+		key := symStrip(symNorm.Replace(sym))
+		if key == "" {
+			continue
+		}
+		flags := make(map[string]bool, len(keys))
+		for _, k := range keys {
+			b, _ := rec[k].(bool)
+			flags[k] = b
+		}
+		out[key] = flags
+	}
+	// پایتون _tape_flag_map با نقشهٔ خالی ({}), «منبع نرسید» را یکی می‌داند
+	// («if not flags: unavailable»)؛ همان قرارداد این‌جا هم برقرار است.
+	return out, len(out) > 0
 }
 
 // boardFrame قابِ ایستایِ تابلو را زیرِ نشانکِ داده کش می‌کند — همان کاری که
