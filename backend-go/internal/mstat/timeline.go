@@ -16,11 +16,13 @@ import (
 var seriesKeys = []string{"val_bt", "flow_eq_bt", "flow_fixed_bt", "pos", "neg",
 	"bq_bt", "sq_bt", "pc_buy", "pc_sell", "bq_n", "sq_n"}
 
-// decodeStates همان _dec_states: base64 → zlib → JSON؛ هر خطا ⇒ {}.
+// decodeStates همان _dec_states: base64 → zlib → JSON؛ blobِ تهی/خراب ⇒ {}.
 //
-// پایتون در برابرِ JSONِ غیرِشیء (مثلاً آرایه) استثنا می‌دهد و در phases می‌شکند؛
-// این‌جا قراردادِ API «نقشهٔ تهی» است تا یک نقطهٔ خراب کلِ پنل را نبرد — تنها
-// جفتِ همان نقطه رد می‌شود.
+// پایتون برایِ JSONِ غیرِشیء (آرایه/تهی) هم چیزی برمی‌گرداند و بعداً در phases
+// رویِ .items() می‌شکند؛ این‌جا «نقشهٔ تهی» است تا یک نقطهٔ خراب کلِ پنل را
+// نبرد. نگاشتِ مخلوط ({m1:"b", m2:1}) را پایتون کامل نگه می‌دارد ولی هیچ جفتی
+// برایِ مقدارِ غیرِرشته نمی‌شمارد؛ Go هم فقط رشته‌ها را کپی می‌کند — شمارشِ
+// phases یکی می‌ماند.
 func decodeStates(blob string) map[string]string {
 	if blob == "" {
 		return map[string]string{}
@@ -38,11 +40,19 @@ func decodeStates(blob string) map[string]string {
 	if err != nil {
 		return map[string]string{}
 	}
-	var states map[string]string
+	var states map[string]any
 	if err := json.Unmarshal(body, &states); err != nil || states == nil {
 		return map[string]string{}
 	}
-	return states
+	// فقط رشته‌ها کپی می‌شوند: پایتونِ phases هم برایِ مقدارِ غیرِرشته هیچ جفتی
+	// نمی‌شمارد (کلیدهایِ _TRANS رشته‌اند)، پس انداختنِ آن‌ها همان شمارش است.
+	out := make(map[string]string, len(states))
+	for k, v := range states {
+		if s, ok := v.(string); ok {
+			out[k] = s
+		}
+	}
+	return out
 }
 
 // toF همان _f برایِ مقدارهایِ aggِ خوانده‌شده از JSON (float64)، ستون‌ها
@@ -71,7 +81,12 @@ func hhmm(v any) string {
 // ۰۸:۵۵–۱۳:۰۰ (ردیفِ شبانه/تست خطِ دروغین می‌کشد)، به ترتیبِ h_even، حداکثر ۲۴۰.
 func points(db *sql.DB) ([]map[string]any, error) {
 	var day sql.NullInt64
-	if err := db.QueryRow("SELECT MAX(d_even) FROM mstat_snap").Scan(&day); err != nil || !day.Valid {
+	if err := db.QueryRow("SELECT MAX(d_even) FROM mstat_snap").Scan(&day); err != nil {
+		return nil, err
+	}
+	// جدولِ تهی خطا نیست: MAX یک ردیفِ NULL برمی‌گرداند (err == nil). پس هر
+	// errِ غیرِnil یعنی خواندنِ جدول شکسته (قفل/خرابی/جدولِ غایب) و باید بالا برود.
+	if !day.Valid {
 		return nil, nil
 	}
 	rows, err := db.Query(`SELECT h_even, agg FROM mstat_snap WHERE d_even=?
@@ -88,8 +103,10 @@ func points(db *sql.DB) ([]map[string]any, error) {
 			return nil, err
 		}
 		var j map[string]any
-		// aggِ NULL یا JSONِ غیرِشیء در پایتون استثنا می‌دهد و نقطه را رد می‌کند؛
-		// j تهی هم همین مسیر را می‌رود تا setdefault رویِ نقشهٔ nil نپرد.
+		// پایتون فقط aggِ SQL NULL و JSONِ ناخوانا را رد می‌کند؛ JSONِ خوانا ولی
+		// غیرِشیء (null/آرایه/عدد/رشته) در _points استثنا می‌دهد و کلِ پنل را
+		// می‌برد. این‌جا آن‌ها هم رد می‌شوند تا یک ردیفِ خراب پنل را نبرد — j تهی
+		// و j غیرِشیء یک مسیر دارند.
 		if json.Unmarshal([]byte(agg.String), &j) != nil || j == nil {
 			continue
 		}

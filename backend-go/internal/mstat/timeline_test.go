@@ -383,3 +383,198 @@ func TestPhasesCounts(t *testing.T) {
 		t.Errorf("emitted %d transition keys, want %d", seen, len(want))
 	}
 }
+
+// TestPointsQueryError: خطایِ واقعیِ پرس‌وجو (DBِ بسته) نباید «بدونِ داده» شود؛
+// فقط جدولِ تهیِ سالم مسیرِ ok-تهی است. کنترل: خفه کردنِ دوبارهٔ خطا ⇒ قرمز.
+func TestPointsQueryError(t *testing.T) {
+	// جدولِ تهیِ سالم: MAX یک ردیفِ NULL می‌دهد (err == nil)، نه خطا.
+	empty := openWritableFixture(t)
+	clearSnaps(t, empty.Market)
+	pts, err := points(empty.Market)
+	if err != nil {
+		t.Fatalf("empty table points err = %v, want nil", err)
+	}
+	if len(pts) != 0 {
+		t.Fatalf("empty table points = %d, want 0", len(pts))
+	}
+	body, err := timelinePanel(empty.Market, "cum")
+	if err != nil {
+		t.Fatalf("empty table timeline err = %v, want nil", err)
+	}
+	if body["status"] != "ok" || body["points"] != 0 || body["ready"] != false || body["note"] != noteNeedsTwo {
+		t.Errorf("empty table body = status:%v points:%v ready:%v note:%#v",
+			body["status"], body["points"], body["ready"], body["note"])
+	}
+	if zero := seriesOf(t, body, "val_bt"); len(zero) != 0 {
+		t.Errorf("empty table series len = %d, want 0", len(zero))
+	}
+	phases, err := phasesPanel(empty.Market)
+	if err != nil {
+		t.Fatalf("empty table phases err = %v, want nil", err)
+	}
+	if phases["status"] != "ok" || phases["points"] != 0 || phases["ready"] != false {
+		t.Errorf("empty table phases = status:%v points:%v ready:%v",
+			phases["status"], phases["points"], phases["ready"])
+	}
+
+	// DBِ بسته: هر پرس‌وجو خطا می‌دهد؛ «به دو همگام‌سازی نیاز است» پاسخِ دروغین است.
+	dead := openWritableFixture(t)
+	if err := dead.Market.Close(); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := points(dead.Market); err == nil {
+		t.Error("points on closed DB = nil error, want error")
+	}
+	if deadBody, err := timelinePanel(dead.Market, "cum"); err == nil || deadBody != nil {
+		t.Errorf("closed DB timeline = (%#v, %v), want (nil, error)", deadBody, err)
+	}
+	if deadBody, err := phasesPanel(dead.Market); err == nil || deadBody != nil {
+		t.Errorf("closed DB phases = (%#v, %v), want (nil, error)", deadBody, err)
+	}
+}
+
+// TestDecodeStatesMixedMap: یک مقدارِ غیرِرشته نباید کلِ نگاشت را بیندازد؛
+// پایتون رشته‌ها را نگه می‌دارد و phases همان چرخش را می‌شمارد.
+func TestDecodeStatesMixedMap(t *testing.T) {
+	got := decodeStates(zlibBlob(t, []byte(`{"m1":"b","m2":1}`)))
+	if got["m1"] != "b" {
+		t.Errorf("m1 = %q, want b (mixed map must keep string values)", got["m1"])
+	}
+	if _, ok := got["m2"]; ok {
+		t.Errorf("m2 survived as %#v, want dropped", got["m2"])
+	}
+	if len(got) != 1 {
+		t.Errorf("mixed map = %#v, want only m1", got)
+	}
+
+	// phases: m1 از b به s می‌رود، m2 در نقطهٔ دوم عدد است — فقط m1 شمرده می‌شود.
+	h := openWritableFixture(t)
+	clearSnaps(t, h.Market)
+	insertSnap(t, h.Market, 20261014, 100000,
+		map[string]any{"d_even": 20261014, "st": zlibBlob(t, []byte(`{"m1":"b","m2":"s"}`))})
+	insertSnap(t, h.Market, 20261014, 101000,
+		map[string]any{"d_even": 20261014, "st": zlibBlob(t, []byte(`{"m1":"s","m2":1}`))})
+	body, err := phasesPanel(h.Market)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if body["points"] != 2 {
+		t.Fatalf("points = %v, want 2", body["points"])
+	}
+	found := map[string]int{}
+	for _, col := range []string{"red", "green"} {
+		items, ok := body[col].([]map[string]any)
+		if !ok {
+			t.Fatalf("%s is %T", col, body[col])
+		}
+		for _, it := range items {
+			found[it["key"].(string)] = it["count"].(int)
+		}
+	}
+	if found["b>s"] != 1 {
+		t.Errorf("b>s = %d, want 1 (mixed map must not drop the whole interval)", found["b>s"])
+	}
+	for k, v := range found {
+		if k != "b>s" && v != 0 {
+			t.Errorf("%s = %d, want 0 (non-string value must not form a pair)", k, v)
+		}
+	}
+}
+
+// TestPointsTailCap: سقفِ ۲۴۰ = out[-240:]؛ با ۲۴۵ نقطهٔ درون‌پنجره، پنج نقطهٔ
+// نخست می‌افتند و ترتیب حفظ می‌شود.
+func TestPointsTailCap(t *testing.T) {
+	h := openWritableFixture(t)
+	clearSnaps(t, h.Market)
+	for i := 0; i < 245; i++ {
+		insertSnap(t, h.Market, 20261014, int64(100000+i),
+			map[string]any{"d_even": 20261014, "val_bt": float64(i)})
+	}
+	pts, err := points(h.Market)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(pts) != 240 {
+		t.Fatalf("points = %d, want 240 (tail cap)", len(pts))
+	}
+	if got := toF(pts[0]["h_even"]); got != 100005 {
+		t.Errorf("first h_even = %v, want 100005 (6th smallest)", got)
+	}
+	if got := toF(pts[239]["h_even"]); got != 100244 {
+		t.Errorf("last h_even = %v, want 100244", got)
+	}
+	if got := toF(pts[0]["val_bt"]); got != 5 {
+		t.Errorf("first val_bt = %v, want 5 (sixth inserted point)", got)
+	}
+	body, err := timelinePanel(h.Market, "cum")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if body["points"] != 240 {
+		t.Errorf("timeline points = %v, want 240", body["points"])
+	}
+	if vals := seriesOf(t, body, "val_bt"); len(vals) != 240 || vals[0] != 5.0 {
+		t.Errorf("timeline val_bt len=%d first=%v, want 240/5", len(vals), vals[0])
+	}
+}
+
+// TestPointsSkipsMalformedAgg: ردیف با aggِ SQL NULL، JSONِ ناخوانا یا JSONِ
+// خوانا-ولی-غیرِشیء رد می‌شود و بقیهٔ پنجره دست‌نخورده می‌ماند.
+func TestPointsSkipsMalformedAgg(t *testing.T) {
+	h := openWritableFixture(t)
+	clearSnaps(t, h.Market)
+	insertSnap(t, h.Market, 20261014, 100000, map[string]any{"d_even": 20261014, "val_bt": 1.0})
+	insertSnapJSON(t, h.Market, 20261014, 101000, "null")  // JSONِ null
+	insertSnapJSON(t, h.Market, 20261014, 102000, "[1]")   // آرایه
+	insertSnapJSON(t, h.Market, 20261014, 103000, `{"a":`) // ناخوانا
+	insertSnapJSON(t, h.Market, 20261014, 104000, `"b"`)   // رشته
+	insertSnapJSON(t, h.Market, 20261014, 105000, "7")     // عدد
+	if _, err := h.Market.Exec(
+		"INSERT OR REPLACE INTO mstat_snap (d_even, h_even, ts, agg) VALUES (?,?,?,NULL)",
+		20261014, 106000, "2026-10-28 10:00:00"); err != nil {
+		t.Fatal(err)
+	}
+	insertSnap(t, h.Market, 20261014, 130000, map[string]any{"d_even": 20261014, "val_bt": 2.0})
+
+	pts, err := points(h.Market)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(pts) != 2 {
+		t.Fatalf("points = %d, want 2 (malformed/NULL agg rows skipped)", len(pts))
+	}
+	if toF(pts[0]["h_even"]) != 100000 || toF(pts[1]["h_even"]) != 130000 {
+		t.Errorf("kept h_even = %v/%v, want 100000/130000", pts[0]["h_even"], pts[1]["h_even"])
+	}
+	body, err := timelinePanel(h.Market, "cum")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if body["points"] != 2 {
+		t.Errorf("timeline points = %v, want 2", body["points"])
+	}
+	if vals := seriesOf(t, body, "val_bt"); !reflect.DeepEqual(vals, []any{1.0, 2.0}) {
+		t.Errorf("timeline val_bt = %#v, want [1 2]", vals)
+	}
+}
+
+// TestPointsWindowBoundaries: لبه‌هایِ ۸۵۵۰۰ و ۱۳۰۰۰۵ خودشان داخل‌اند؛ یک دقیقه
+// بیرون‌تر نه (همان >= و <= پایتون).
+func TestPointsWindowBoundaries(t *testing.T) {
+	h := openWritableFixture(t)
+	clearSnaps(t, h.Market)
+	for _, hm := range []int64{85499, 85500, 130005, 130006} {
+		insertSnap(t, h.Market, 20261014, hm,
+			map[string]any{"d_even": 20261014, "val_bt": float64(hm)})
+	}
+	pts, err := points(h.Market)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(pts) != 2 {
+		t.Fatalf("points = %d, want 2 (85500 and 130005 inclusive)", len(pts))
+	}
+	if toF(pts[0]["h_even"]) != 85500 || toF(pts[1]["h_even"]) != 130005 {
+		t.Errorf("kept h_even = %v/%v, want 85500/130005", pts[0]["h_even"], pts[1]["h_even"])
+	}
+}
