@@ -49,7 +49,7 @@ type Service struct {
 	builtAt  time.Time
 	ready    bool
 	building bool
-	// builtToken همان نشانکِ (mtime_ns, size)ِ market_sync.json است که آخرین
+	// builtToken همان نشانکِ (mtime_ns, size)ِ فایل‌هایِ داده است که آخرین
 	// بازسازیِ کش‌شده دید؛ اختلافش با توکنِ فعلی یعنی «داده تازه است» — معادلِ
 	// cur > mirror_rev در پایتون.
 	builtToken string
@@ -168,7 +168,7 @@ func (s *Service) rebuildAsync() {
 func (s *Service) build(dropUnused, storeCache bool) ([]byte, string, error) {
 	// توکنِ همین بازسازی: اگر سینکر وسطِ کار فایلش را عوض کند، بازسازیِ بعدی
 	// آن را می‌بیند و یک بار دیگر می‌سازد.
-	token := syncToken(s.dataDir)
+	token := dataToken(s.dataDir)
 	fr, err := store.LoadBoard(s.market)
 	if err != nil {
 		return nil, "", err
@@ -321,10 +321,11 @@ func (s *Service) delta(since int64) map[string]any {
 		s.rebuildAsync()
 		return map[string]any{"status": "full", "rev": mirrorRev, "reason": "no-cache"}
 	}
-	// فازِ الف: به‌جایِ cur > mirror_revِ پایتون، نشانکِ market_sync.json را
+	// فازِ الف: به‌جایِ cur > mirror_revِ پایتون، نشانکِ فایل‌هایِ داده را
 	// می‌سنجیم. مشتریِ دلتا دیگر پشتِ کشِ ۶۰ثانیه‌ای گیر نمی‌کند: هر سینکِ
-	// موفق بازسازیِ ناهمگام را راه می‌اندازد و ردیف‌هایِ تازه به آینه می‌رسند.
-	if syncToken(s.dataDir) != builtToken {
+	// موفق یا هر کامیتِ tick_live بازسازیِ ناهمگام را راه می‌اندازد و ردیف‌هایِ
+	// تازه به آینه می‌رسند.
+	if dataToken(s.dataDir) != builtToken {
 		s.rebuildAsync()
 	}
 	if since == mirrorRev {
@@ -397,14 +398,26 @@ func (s *Service) marketRunning() bool {
 	return s.procValue
 }
 
-// syncToken «این داده نو است» را از خودِ فایلِ سینکر می‌گیرد: هر سینکِ موفق
-// market_sync.json را بازنویسی می‌کند، پس (mtime_ns, size) همان نقشی را دارد
-// که sync_count در پروسۀ پایتون داشت.
-func syncToken(dataDir string) string {
-	p := filepath.Join(dataDir, "market_sync.json")
-	st, err := os.Stat(p)
-	if err != nil {
-		return ""
+// dataToken «این داده نو است» را از خودِ فایل‌هایِ داده می‌گیرد. هر سینکِ موفق
+// market_sync.json را بازنویسی می‌کند، و tick_live هر ۵ ثانیه ردیف‌ها را در
+// market.db (با WAL) کامیت می‌کند بی آنکه آن فایل را دست بزند؛ پس فقط
+// (mtime_ns, size)ِ market_sync.json کافی نیست و هر سه فایل باید در توکن باشند —
+// همان نقشی که revision() و sync_count در پروسۀ پایتون داشتند. غایب ⇒ "-"، تا
+// توکن پایدار بماند. فقط os.Stat: نه بازکردنِ SQLite، نه خواندنِ محتوا.
+func dataToken(dataDir string) string {
+	var b strings.Builder
+	for _, name := range []string{"market_sync.json", "market.db", "market.db-wal"} {
+		if b.Len() > 0 {
+			b.WriteByte('|')
+		}
+		st, err := os.Stat(filepath.Join(dataDir, name))
+		if err != nil {
+			b.WriteByte('-')
+			continue
+		}
+		b.WriteString(strconv.FormatInt(st.ModTime().UnixNano(), 10))
+		b.WriteByte(':')
+		b.WriteString(strconv.FormatInt(st.Size(), 10))
 	}
-	return strconv.FormatInt(st.ModTime().UnixNano(), 10) + ":" + strconv.FormatInt(st.Size(), 10)
+	return b.String()
 }

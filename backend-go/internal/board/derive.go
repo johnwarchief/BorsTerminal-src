@@ -26,7 +26,7 @@ type Derived struct {
 	PctBasis                      []string // "value" یا ""
 	IsLive                        []bool
 	DistMin30Pct, Mcap            []float64
-	McapSrc                       []string // "" یعنی null
+	McapSrc                       []string // NULL و "" را از هم جدا نمی‌کند و بدنۀ بازار از آن نمی‌خواند
 }
 
 // Round2 مثلِ round(x, 2)ِ numpy/pandas: نیم‌به‌زوج، نه نیم‌به‌بالا. ترتیبِ

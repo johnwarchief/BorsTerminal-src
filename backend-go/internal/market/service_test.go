@@ -262,6 +262,55 @@ func TestDeltaRebuildsWhenSyncTokenAdvances(t *testing.T) {
 	}
 }
 
+// TestDeltaRebuildsWhenDBMtimeAdvances همان شکافِ tick_live را می‌بندد: سینکرِ
+// پایتون هر ۵ ثانیه ردیف‌ها را در market.db کامیت می‌کند بی بازنویسیِ
+// market_sync.json، پس توکنی که فقط آن فایل را می‌دید مشتریِ دلتا-تنها را تا
+// سینکِ کاملِ ۹۰ثانیه‌ای کهنه نگه می‌داشت. اینجا فقط mtimeِ خودِ market.db را
+// جلو می‌بریم و بی هیچ نوشتنِ محتوا انتظارِ بازسازی داریم.
+func TestDeltaRebuildsWhenDBMtimeAdvances(t *testing.T) {
+	h, dir := fixtureCopy(t)
+	s := New(h, dir)
+	if _, _, err := s.build(true, true); err != nil {
+		t.Fatal(err)
+	}
+	before := s.buildCount()
+	if _, got, _, _ := getJSON(t, s, "/api/market/delta?since=0", nil); envelopeStatus(got) != "unchanged" {
+		t.Fatalf("delta(0) پیش از تغییرِ mtime = %v، انتظار unchanged بود", got)
+	}
+	dbPath := filepath.Join(dir, "market.db")
+	st, err := os.Stat(dbPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	future := st.ModTime().Add(time.Second)
+	if err := os.Chtimes(dbPath, future, future); err != nil {
+		t.Fatal(err)
+	}
+	// فراخوانیِ دوم نباید همگام بسازد؛ فقط بازسازیِ ناهمگام را راه می‌اندازد، پس
+	// پاکتِ پاسخ همان unchanged/deltaِ معتبر می‌ماند و شکلش عوض نمی‌شود.
+	_, got, _, _ := getJSON(t, s, "/api/market/delta?since=0", nil)
+	if status := envelopeStatus(got); status != "unchanged" && status != "delta" {
+		t.Fatalf("delta(0) بعد از تغییرِ mtime = %v، پاکتِ نامعتبر", got)
+	}
+	deadline := time.Now().Add(2 * time.Second)
+	for s.buildCount() == before {
+		if time.Now().After(deadline) {
+			t.Fatalf("بعد از ۲ ثانیه بازسازیِ دلتا برایِ market.db اجرا نشد (builds=%d)", before)
+		}
+		time.Sleep(5 * time.Millisecond)
+	}
+	if after := s.buildCount(); after != before+1 {
+		t.Fatalf("builds = %d, want %d؛ توکنِ پایدار باید دقیقاً یک بازسازی بدهد", after, before+1)
+	}
+}
+
+// envelopeStatus نامِ پاکتِ پاسخِ دلتا را برمی‌گرداند ("" اگر نقشه نباشد).
+func envelopeStatus(v any) string {
+	m, _ := v.(map[string]any)
+	st, _ := m["status"].(string)
+	return st
+}
+
 // TestCacheHeaders دو قیدِ هدر را می‌بندد: پاسخِ دلتا مثلِ _ORJ_JSONِ پایتون
 // no-store است، و ۳۰۴ِ مسیرِ ساخت X-Cache: MISS-304 می‌گیرد. کشِ داغ (HIT)
 // مثلِ _market_from_cache فقط ETag می‌دهد، بی X-Cache.
