@@ -30,12 +30,6 @@ MAINWATCH_DEFAULTS = {"group": "eq_all", "industry": "", "sort": "clock",
                       "desc": True, "limit": 120}
 
 
-class _Date(datetime.date):
-    @classmethod
-    def today(cls):
-        return cls(PIN.year, PIN.month, PIN.day)
-
-
 class _DateTime(datetime.datetime):
     @classmethod
     def now(cls, tz=None):
@@ -43,7 +37,7 @@ class _DateTime(datetime.datetime):
 
 
 class _DT:
-    date, datetime, time, timedelta = _Date, _DateTime, datetime.time, datetime.timedelta
+    date, datetime, time, timedelta = datetime.date, _DateTime, datetime.time, datetime.timedelta
 
 
 _DATA_DIR = None
@@ -62,17 +56,24 @@ def data_dir() -> str:
 
 
 def assert_seam(tmp):
-    """درزِ داده باید به پوشۀ موقت بسته باشد — نه به market.dbِ عملیاتیِ ریشه.
+    """درزِ داده باید به پوشۀ موقت بسته باشد — نه به بانکِ عملیاتیِ ریشه.
 
-    `bors_config.DB_PATH` یک بار و در import حل می‌شود؛ هر importی که پیش از
-    تنظیمِ BORS_DATA_DIR رخ بدهد، اوراکل را (بی‌صدا) رویِ بانکِ واقعی می‌نشاند.
-    این بررسی همان اشتباه را پرصدا می‌کند.
+    هر سه مسیرِ نوشتنیِ `bors_config` یک بار و در import حل می‌شوند؛ هر importی
+    که پیش از تنظیمِ BORS_DATA_DIR رخ بدهد، اوراکل را (بی‌صدا) رویِ دادۀ واقعی
+    می‌نشاند. `DB_PATH` به بازار، `USER_DB_PATH` به دفترچۀ کاربر و `WORK_DIR` به
+    پوشۀ داده/وضعیت اشاره می‌کند؛ سنجشِ فقط `DB_PATH` دو مسیرِ دیگر را باز
+    می‌گذاشت. این بررسی همان اشتباه را پرصدا می‌کند.
     """
     import bors_config
-    got = os.path.abspath(bors_config.DB_PATH)
-    want = os.path.join(os.path.abspath(tmp), "market.db")
-    if os.path.normcase(got) != os.path.normcase(want):
-        raise RuntimeError("fixture seam broken: DB_PATH=%r, want %r" % (got, want))
+    tmp = os.path.abspath(tmp)
+    want = {"DB_PATH": os.path.join(tmp, "market.db"),
+            "USER_DB_PATH": os.path.join(tmp, "user.db"),
+            "WORK_DIR": tmp}
+    for attr, expected in sorted(want.items()):
+        got = os.path.abspath(getattr(bors_config, attr))
+        if os.path.normcase(got) != os.path.normcase(expected):
+            raise RuntimeError("fixture seam broken: %s=%r, want %r"
+                               % (attr, got, expected))
 
 
 def _restore(src, dst):
@@ -108,12 +109,10 @@ def scenario(name, sql=(), only=None):
     assert_seam(tmp)
     MS._MSTAT_CACHE.clear()
     # کشِ تابلو هم بسته به پوشۀ دادهٔ همان صحنه است؛ کهنه‌اش بماند، پرچم‌هایِ
-    # mainwatch از بانکِ صحنۀ قبل می‌آیند.
-    try:
-        import api.market as MK
-        MK._market_clear()
-    except Exception:
-        pass
+    # mainwatch از بانکِ صحنۀ قبل می‌آیند. استثنا را نمی‌بلعیم: اگر نامِ تابع
+    # عوض شود، باید پرصدا بشکند، نه اینکه کشِ صحنهٔ قبل بی‌صدا بماند.
+    import api.market as MK
+    MK._market_clear()
     d = os.path.join(OUT, name)
     if os.path.isdir(d):
         shutil.rmtree(d)          # خروجیِ تولیدشده؛ پاک و از نو، بی‌بازماندۀ صحنهٔ قبل
@@ -151,6 +150,7 @@ def main() -> int:
     import importlib
     # پیش از هر importِ اپ: پوشۀ داده باید بسته باشد (بندِ assert_seam).
     data_dir()
+    assert_seam(data_dir())
     # پرچم‌هایِ تابلو نباید به پروبِ زندۀ فرآیندِ همین ماشین وابسته باشند.
     # (همان کاری که اوراکلِ B1 هم می‌کند؛ بی‌آن، طلایی رویِ ماشینی که سینکر
     # بالا دارد با ماشینِ CI یکی نیست.)
@@ -168,9 +168,12 @@ def main() -> int:
     # صحنهٔ ۳: بی‌وضعیتِ رسمی — phase از تقویم می‌آید و «نامشخص» می‌شود.
     scenario("s3", [("UPDATE market_index SET market_state=NULL,"
                      " market_state_title=NULL", ())], only={"phase"})
-    # صحنهٔ ۴: تعطیلی — فعالیت رویِ جمعه اعلام شده.
+    # صحنهٔ ۴: تعطیلی — فعالیت رویِ جمعه اعلام شده. فقط ردیفِ تازه‌ترین نشست
+    # جابه‌جا می‌شود؛ بی‌`WHERE`، ردیفِ قبلی هم به همان کلید می‌رسید و
+    # PRIMARY KEY می‌شکست.
     scenario("s4", [("UPDATE market_index SET d_even=20261016,"
-                     " activity_h_even=123000", ())], only={"phase"})
+                     " activity_h_even=123000 WHERE d_even=20261014", ())],
+             only={"phase"})
     if _DATA_DIR:
         shutil.rmtree(_DATA_DIR, ignore_errors=True)
     return 0

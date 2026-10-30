@@ -157,7 +157,7 @@
     "f_clock": false,
     "f_jet": false,
     "f_legal": false,
-    "f_noqteh": false,
+    "f_noqteh": true,
     "f_roobi": false,
     "f_smart": false,
     "f_susp": true

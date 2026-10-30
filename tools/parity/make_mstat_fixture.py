@@ -90,19 +90,22 @@ TOTALS = [(DAY, 1e12), (20261013, 6.9e13)]
 # ارزشِ معاملاتِ چند نشستِ اخیر (همت) — مبنایِ تداومِ سه‌نشستی.
 LIQ = [(20261012, 9.5), (20261013, 12.0), (DAY, 18.0)]
 
-# پیشینهٔ پرچم‌دار: تنها ردیفِ mstat که یک پرچمِ Trueِ واقعی می‌دهد.
+# پیشینهٔ پرچم‌دار: تنها ردیفِ mstat که پرچم‌هایِ Trueِ واقعی می‌دهد.
 # بی‌این، هفت پرچمِ هر ردیفِ `mainwatch` در طلایی False بود و پورتِ Go می‌توانست
 # «همه False» بدهد و سبز شود؛ فیکسچری که شاخهٔ زنده را از مرده جدا نکند درِ
-# داوری نیست. سازوکارِ `f_susp`: حجمِ مشکوک = ``tvol > 3*Σ[ih][0..29]/30`` و
-# ``tno > 50``. سی اسلاتِ یک‌میلیونی ÷ ۳۰ = مبنایِ ۱e6، و حجمِ ۱e9ِ m1 صد
-# برابرِ آن است؛ تعدادِ معاملاتِ همان ردیف ۵۰۰ است. `hist_sessions` هم از
-# MAX(slot)+1 = ۳۰ می‌آید، پس درِ `_sessions_ok` باز است. قیمتِ کفِ اسلات‌ها
-# عمداً ۹۵۰ است تا `f_noqteh` (فاصلهٔ زیرِ ۳٪ از کف) و `f_roobi` (آخرین رویِ
-# آستانۀ مجاز) روشن نشوند: طلایی یک پرچم را می‌سنجد، نه چند پرچمِ به‌هم‌چسبیده.
+# داوری نیست. دو پرچمِ متفاوت عمداً روشن‌اند تا «یک پرچمِ سخت‌کد» هم کافی نباشد:
+#  • `f_susp`: حجمِ مشکوک = ``tvol > 3*Σ[ih][0..29]/30`` و ``tno > 50``. سی
+#    اسلاتِ یک‌میلیونی ÷ ۳۰ = مبنایِ ۱e6، و حجمِ ۱e9ِ m1 صد برابرِ آن است؛
+#    تعدادِ معاملاتِ همان ردیف ۵۰۰ است. `hist_sessions` از MAX(slot)+1 = ۳۰
+#    می‌آید، پس درِ `_sessions_ok` باز است.
+#  • `f_noqteh`: کمینهٔ [ih][0..28].PriceMin = ۹۷۵ و پایانی ۱۰۰۰ ⇒ فاصلهٔ
+#    ۲٫۵٪ زیرِ آستانۀ ۳٪؛ حجم و تعداد هم از درِ همان فیلتر رد می‌شوند.
+# `f_roobi` همچنان خاموش است (آخرین ۹۵۰ ≠ آستانۀ مجاز ۹۰۰) تا طلایی دو جفتِ
+# نام‌دار را قفل کند، نه یک خوشهٔ به‌هم‌چسبیده.
 FLAG_ROW = "m1"
 FLAG_SYMBOL = "فولاد۲"          # همان l_val18ِ m1
 FLAG_SLOT_VOL = 1e6             # q_tot_tran5jِ هر اسلات
-FLAG_SLOT_PX_MIN = 950.0
+FLAG_SLOT_PX_MIN = 975.0
 FLAG_SLOT_PX_MAX = 1100.0
 FLAG_HIST_VOL = 1e6             # حجمِ روزانهٔ price_history/tape_history
 
@@ -143,6 +146,13 @@ def extend(con):
                 (DAY, 7153088.29, -103912.4, -1.43, 1929823.43, -9112.1, -0.47,
                  1.2e5, 6.4e13, 3.1e9, "2026-10-14 12:30:00", "F", "بسته",
                  123000))
+    # نشستِ قبل: بی‌این ردیف `market_snapshot.prev` همیشه null می‌ماند و پورتِ
+    # Go می‌توانست null را سخت‌کد کند و سبز شود. این ردیف فقط در `prev` دیده
+    # می‌شود؛ `index`/`market` از تازه‌ترین ردیف می‌آیند و بی‌تغییر می‌مانند.
+    con.execute("INSERT INTO market_index VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                (20261013, 7257000.69, 81234.5, 1.13, 1938935.53, 6210.4, 0.32,
+                 1.1e5, 6.5e13, 2.9e9, "2026-10-13 12:30:00", "F", "بسته",
+                 120000))
     for d, v in TOTALS:
         con.execute("INSERT INTO market_totals VALUES (?,?)", (d, v))
     for d, v in LIQ:
@@ -209,7 +219,7 @@ def seed_flag_history(con):
                      FLAG_HIST_VOL))
 
 
-def seed_snaps(con, day=DAY, stale=False):
+def seed_snaps(con, day=DAY):
     """سه نقطۀ تایم‌لاین با وضعیتِ تک‌حرفی؛ دو نقطۀ آخر یک چرخش دارند."""
     import base64
     import json
@@ -219,7 +229,6 @@ def seed_snaps(con, day=DAY, stale=False):
         raw = json.dumps(states, separators=(",", ":")).encode()
         return base64.b64encode(zlib.compress(raw, 6)).decode()
 
-    snap_day = day - 1 if stale else day
     pts = [
         (100000, {"val_bt": 10.0, "flow_eq_bt": 1.0, "flow_fixed_bt": -0.5, "pos": 4,
                   "neg": 3, "bq_bt": 2.0, "sq_bt": 1.0, "pc_buy": 120.0,
@@ -232,9 +241,9 @@ def seed_snaps(con, day=DAY, stale=False):
                   "pc_sell": 110.0, "bq_n": 4, "sq_n": 1, "st": blob({"m1": "s", "m2": "b"})}),
     ]
     for h, agg in pts:
-        agg = dict(agg, d_even=snap_day, h_even=h)
+        agg = dict(agg, d_even=day, h_even=h)
         con.execute("INSERT INTO mstat_snap VALUES (?,?,?,?)",
-                    (snap_day, h, "2026-10-14 %02d:%02d:00" % (h // 10000, (h // 100) % 100),
+                    (day, h, "2026-10-14 %02d:%02d:00" % (h // 10000, (h // 100) % 100),
                      json.dumps(agg, separators=(",", ":"), ensure_ascii=False)))
     con.commit()
 

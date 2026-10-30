@@ -17,7 +17,18 @@
   "trades": 120000.0,
   "volume": 3100000000.0
  },
- "prev": null,
+ "prev": {
+  "change": 81234.5,
+  "d_even": 20261013,
+  "ew_change": 6210.4,
+  "ew_last": 1938935.53,
+  "ew_pct": 0.32,
+  "last": 7257000.69,
+  "pct": 1.13,
+  "q_tot_cap": 65000000000000.0,
+  "q_tot_tran": 2900000000.0,
+  "z_tot_tran": 110000.0
+ },
  "retail": {
   "bad_max": 10.0,
   "basis": "eq_all",
