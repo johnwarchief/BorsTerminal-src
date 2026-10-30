@@ -14,7 +14,7 @@ import (
 
 func newServer(t *testing.T) http.Handler {
 	t.Helper()
-	return New(config.Config{Addr: "127.0.0.1:8198", DataDir: t.TempDir(), ReadOnly: true, NoLoops: true}, nil)
+	return New(config.Config{Addr: "127.0.0.1:8198", DataDir: t.TempDir(), ReadOnly: true, NoLoops: true}, nil, nil)
 }
 
 func serve(t *testing.T, method, target string) *httptest.ResponseRecorder {
@@ -47,7 +47,7 @@ func TestNonAPIPathIsFastAPINotFound(t *testing.T) {
 }
 
 func TestKnownButUnportedIs501(t *testing.T) {
-	rec := serve(t, "GET", "/api/market")
+	rec := serve(t, "GET", "/api/fts/config")
 	if rec.Code != http.StatusNotImplemented {
 		t.Fatalf("status = %d", rec.Code)
 	}
@@ -55,8 +55,27 @@ func TestKnownButUnportedIs501(t *testing.T) {
 	if err := json.Unmarshal(rec.Body.Bytes(), &body); err != nil {
 		t.Fatal(err)
 	}
-	if body["status"] != "error" || body["code"] != "NOT_PORTED" || body["route"] != "GET /api/market" {
+	if body["status"] != "error" || body["code"] != "NOT_PORTED" || body["route"] != "GET /api/fts/config" {
 		t.Fatalf("body = %s", rec.Body.String())
+	}
+}
+
+// TestMarketRoutesAreNotPortedWhenServiceMissing قفلِ قراردادِ پیشین است: بی
+// سرویسِ تابلو (nil)، سه مسیرِ پورت‌شده هنوز 501ِ NOT_PORTED می‌دهند، نه 404.
+func TestMarketRoutesAreNotPortedWhenServiceMissing(t *testing.T) {
+	for _, target := range []string{"/api/market", "/api/market/delta?since=0", "/api/market/sync-state"} {
+		rec := serve(t, "GET", target)
+		if rec.Code != http.StatusNotImplemented {
+			t.Fatalf("%s: status = %d", target, rec.Code)
+		}
+		var body map[string]any
+		if err := json.Unmarshal(rec.Body.Bytes(), &body); err != nil {
+			t.Fatal(err)
+		}
+		path, _, _ := strings.Cut(target, "?")
+		if body["code"] != "NOT_PORTED" || body["route"] != "GET "+path {
+			t.Fatalf("%s: body = %s", target, rec.Body.String())
+		}
 	}
 }
 

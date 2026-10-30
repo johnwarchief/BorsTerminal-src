@@ -31,7 +31,14 @@ type segment struct {
 	param   bool
 }
 
-func New(cfg config.Config, h *db.Handles) http.Handler {
+// Market سه مسیرِ پورت‌شدهٔ تابلو را می‌گیرد؛ nil یعنی هیچ مسیری پورت نشده.
+type Market interface {
+	Board(http.ResponseWriter, *http.Request)
+	Delta(http.ResponseWriter, *http.Request)
+	SyncState(http.ResponseWriter, *http.Request)
+}
+
+func New(cfg config.Config, h *db.Handles, m Market) http.Handler {
 	s := &Server{
 		cfg:      cfg,
 		db:       h,
@@ -41,6 +48,11 @@ func New(cfg config.Config, h *db.Handles) http.Handler {
 	}
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /healthz", s.healthz)
+	if m != nil {
+		mux.HandleFunc("GET /api/market", m.Board)
+		mux.HandleFunc("GET /api/market/delta", m.Delta)
+		mux.HandleFunc("GET /api/market/sync-state", m.SyncState)
+	}
 	mux.HandleFunc("/", s.apiGate)
 	return mux
 }

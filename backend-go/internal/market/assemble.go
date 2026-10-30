@@ -1,0 +1,159 @@
+package market
+
+import (
+	"math"
+
+	"borsterminal/backend/internal/board"
+	"borsterminal/backend/internal/store"
+	"borsterminal/backend/internal/tapeflags"
+)
+
+// عینِ _DROP_FIELDS در api/market.py — فقط برایِ بدنۀ پیش‌فرض.
+var dropFields = map[string]bool{
+	"eps": true, "price_max": true, "price_min": true,
+	"buy_n_vol": true, "sell_n_vol": true,
+	"buy_q_vol": true, "buy_q_val": true, "buy_q_cnt": true,
+	"sell_q_vol": true, "sell_q_val": true, "sell_q_cnt": true,
+	"prev_day_vol": true, "d1_vol": true, "max30_high": true,
+	"plp_raw": true, "tmax": true, "vol_trend": true, "suspicious_vol": true,
+	"d_even": true, "resistance_59": true, "dist_min30_pct": true,
+	"ctv_buy_i_val": true, "ctv_buy_n_val": true,
+	"ctv_sell_i_val": true, "ctv_sell_n_val": true,
+}
+
+// عینِ _KEEP_NULL — NaN در اینجا یعنی «کلید نیامد»، نه صفر.
+var keepNull = map[string]bool{
+	"vol_ratio": true, "vol_dod": true, "vol_trend": true, "dist_min30_pct": true,
+	"p_max": true, "p_min": true, "p_first": true,
+	"month_avg_vol": true, "prev_day_vol": true, "d1_vol": true,
+	"prior30_vol": true, "min_low_29": true, "percent_last": true, "percent_change": true,
+	"plp_raw": true, "vol_ratio_file": true, "hist_sessions": true, "tmin": true, "tmax": true,
+	"buy_q1_cnt": true, "mcap": true, "mcap_src": true,
+	"buyer_power": true, "buy_power_i": true, "sell_power_i": true,
+	"buyer_power_raw": true, "resistance_59": true,
+	"retail_buy_pct": true, "legal_buy_pct": true, "retail_sell_pct": true, "legal_sell_pct": true,
+	"pct_basis": true, "ctv_d": true, "pct_is_current": true,
+	"h2_max": true, "h5_max": true, "h9_max": true, "h19_max": true,
+	"h29_max": true, "h39_max": true, "h49_max": true, "h59_max": true,
+	"min30_low": true, "max30_high": true, "is5": true, "is6": true,
+	"st_code": true, "st_title": true, "st_d": true, "st_h": true,
+	"sup_flag": true, "sup_title": true, "sup_reason_count": true, "sup_reasons": true,
+	"stop_state": true, "stop_since": true, "stop_reasons": true,
+}
+
+// put همان دو پاسِ پایتون را یکی می‌کند: «NaN ⇒ صفر» برایِ ستون‌هایِ عادی
+// (np.nan_to_num) و «NaN ⇒ کلید نیامد» برایِ _KEEP_NULL (ماسکِ isfinite در
+// _slim_records). nil هرگز کلید نمی‌سازد (None در پایتون هم همین است).
+func put(rec map[string]any, name string, v any) {
+	switch x := v.(type) {
+	case nil:
+		return
+	case float64:
+		if math.IsNaN(x) || math.IsInf(x, 0) {
+			if keepNull[name] {
+				return
+			}
+			rec[name] = 0.0
+			return
+		}
+		rec[name] = x
+	case int64, bool:
+		rec[name] = x
+	case string:
+		if x == "" && (name == "vol_trend" || name == "pct_basis" || name == "mcap_src") {
+			return
+		}
+		rec[name] = x
+	}
+}
+
+// numericCols ستون‌هایی را نشان می‌دهد که pandas آن‌ها را float64 می‌خواند:
+// دستِ‌کم یک عدد و هیچ غیرعددی. تفاوتش با ستونِ object فقط درِ برخورد با NULL
+// است — NULL در ستونِ float64 به NaN و بعد در پاسِ fillna(0) به ۰٫۰ می‌رسد،
+// ولی NULL در ستونِ object همان None می‌ماند و در _slim_records کلید نمی‌سازد.
+// بی‌این تفکیک، ردیفِ بی‌مقدارِ یک ستونِ عددی «کلید نیامد» می‌گرفت، نه صفر —
+// و بدنۀ ?fields=all با پایتون یکی نمی‌شد.
+func numericCols(fr *store.Frame) map[string]bool {
+	out := make(map[string]bool, len(fr.Cols))
+	for name, vals := range fr.Cols {
+		seen, all := false, true
+		for _, v := range vals {
+			switch v.(type) {
+			case nil:
+			case float64, int64:
+				seen = true
+			default:
+				all = false
+			}
+		}
+		out[name] = seen && all
+	}
+	return out
+}
+
+// set همان put است با درِ _DROP_FIELDS. پایتون این صافی را در _slim_records
+// رویِ *همهٔ* ستون‌هایِ قابِ نهایی می‌زند — خام و محاسبه‌شده یکی — پس اینجا هم
+// هر دو مسیر از همین یک در رد می‌شوند؛ وگرنه plp_raw/vol_trend/dist_min30_pct
+// از پاسِ مشتقات به بدنۀ پیش‌فرض برمی‌گشتند.
+func set(rec map[string]any, name string, v any, dropUnused bool) {
+	if dropUnused && dropFields[name] {
+		return
+	}
+	put(rec, name, v)
+}
+
+func assemble(fr *store.Frame, d *board.Derived, fl *tapeflags.Flags, dropUnused bool) []map[string]any {
+	n := fr.N()
+	numeric := numericCols(fr)
+	out := make([]map[string]any, n)
+	for i := 0; i < n; i++ {
+		rec := map[string]any{"ins_code": fr.Codes[i]}
+		for name, vals := range fr.Cols {
+			if name == "ins_code" {
+				continue
+			}
+			if i < len(vals) {
+				v := vals[i]
+				if v == nil && numeric[name] && !keepNull[name] {
+					v = 0.0
+				}
+				set(rec, name, v, dropUnused)
+			}
+		}
+		// ستون‌هایِ محاسبه‌شده — همان نام‌هایی که رابط می‌خواند.
+		set(rec, "tvol", d.Tvol[i], dropUnused)
+		set(rec, "percent_change", d.PercentChange[i], dropUnused)
+		set(rec, "percent_last", d.PercentLast[i], dropUnused)
+		set(rec, "plp_raw", d.PlpRaw[i], dropUnused)
+		set(rec, "buyer_power", d.BuyerPower[i], dropUnused)
+		set(rec, "buy_power_i", d.BuyPowerI[i], dropUnused)
+		set(rec, "sell_power_i", d.SellPowerI[i], dropUnused)
+		set(rec, "retail_buy_pct", d.RetailBuyPct[i], dropUnused)
+		set(rec, "legal_buy_pct", d.LegalBuyPct[i], dropUnused)
+		set(rec, "retail_sell_pct", d.RetailSellPct[i], dropUnused)
+		set(rec, "legal_sell_pct", d.LegalSellPct[i], dropUnused)
+		set(rec, "pct_basis", d.PctBasis[i], dropUnused)
+		set(rec, "vol_dod", d.VolDod[i], dropUnused)
+		set(rec, "vol_trend", d.VolTrend[i], dropUnused)
+		set(rec, "vol_ratio", board.Round1(fl.VolRatio[i]), dropUnused)
+		set(rec, "vol_ratio_file", board.Round2(fl.VolRatioFile[i]), dropUnused)
+		set(rec, "buyer_power_raw", fl.BuyerPowerRaw[i], dropUnused)
+		set(rec, "resistance_59", fl.Resistance59[i], dropUnused)
+		set(rec, "dist_min30_pct", d.DistMin30Pct[i], dropUnused)
+		set(rec, "mcap", d.Mcap[i], dropUnused)
+		if d.McapSrc[i] != "" {
+			rec["mcap_src"] = d.McapSrc[i]
+		}
+		rec["is_live"] = d.IsLive[i]
+		rec["f_clock"] = fl.Clock[i]
+		rec["f_susp"] = fl.Susp[i]
+		rec["f_jet"] = fl.Jet[i]
+		rec["f_roobi"] = fl.Roobi[i]
+		rec["f_noqteh"] = fl.Noqteh[i]
+		rec["f_smart"] = fl.Smart[i]
+		rec["f_legal"] = fl.Legal[i]
+		set(rec, "suspicious_vol", fl.Susp[i], dropUnused)
+		out[i] = rec
+	}
+	return out
+}
