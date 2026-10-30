@@ -1,0 +1,23 @@
+{
+ "asof": {
+  "client_d_even": 20261014,
+  "client_lag_days": false,
+  "d_even": 20261014,
+  "depth": true,
+  "h_even": 124000,
+  "n": 38,
+  "top50": 2
+ },
+ "entry_opportunity": false,
+ "entry_rule_pct": 80.0,
+ "group": "all",
+ "negative": 1,
+ "negative_pct": 20.0,
+ "nodata": 0,
+ "not_traded": 0,
+ "positive": 1,
+ "positive_pct": 20.0,
+ "source": "local:market.db",
+ "status": "ok",
+ "zero": 3
+}

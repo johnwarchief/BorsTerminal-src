@@ -1,0 +1,36 @@
+{
+ "activity_h_even": 123000,
+ "clock_now": "2026-10-28 10:30:00",
+ "computable": {
+  "close_price_final": false,
+  "order_pressure": false,
+  "realized_flow": false,
+  "session_vs_threshold": false
+ },
+ "data_updated_at": "2026-10-14 12:30:00",
+ "is_live": false,
+ "label": "مرحل نامشخص",
+ "not_computable": [
+  "realized_flow",
+  "order_pressure",
+  "session_vs_threshold",
+  "close_price_final"
+ ],
+ "official": false,
+ "official_state": null,
+ "official_state_title": null,
+ "phase": "unknown",
+ "phase_source": "none",
+ "session_day": 20261014,
+ "session_end": "12:30",
+ "session_start": "09:00",
+ "source": "local:market.db",
+ "status": "ok",
+ "verdict_allowed": false,
+ "why_not": {
+  "close_price_final": "قیمت پایانیِ نهایی هنوز ساخته نشده",
+  "order_pressure": "دفترِ سفارشِ همین نشست در دسترس نیست",
+  "realized_flow": "هنوز معامله‌ای ثبت نشده؛ جمعِ صف با پولِ تحقق‌یافته یکی نیست",
+  "session_vs_threshold": "جمعِ نشست کامل نشده، پس با آستانۀِ تمام‌روز سنجیده نمی‌شود"
+ }
+}

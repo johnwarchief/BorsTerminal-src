@@ -130,6 +130,9 @@ SUITES = [
     # نباشد reload باید همان مسیرهایِ ریشۀ ریپو را بدهد — نه هر چیزِ دیگری.
     ('dev/test_bors_data_dir_seam.py', 'BORS_DATA_DIR seam: override wins, unset keeps the repo paths'),
     ('dev/test_board_fixture_v1120.py', 'B1 board fixture + goldens + SQL text are current'),
+    # B2: فیکسچرِ وضعیت بازار رویِ همان فیکسچرِ تابلو (تا /api/market و پرچم‌هایِ
+    # mainwatch واقعی باشند)، اوراکلِ طلایی با ساعتِ سنجاق‌شده، و چهار صحنه.
+    ('dev/test_mstat_fixture_v1121.py', 'B2 mstat fixture + goldens + pinned clock are current'),
     ('dev/version_anchor_guard.py',   'all six version anchors state the same release'),
     ('dev/fts_defaults_parity_guard.py', 'FTS guide defaults: FE drawer mirrors the server'),
     ('dev/test_hourglass_settings_v1.py', 'hourglass RSI period, oversold threshold and MA52 mode are configurable'),

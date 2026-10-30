@@ -1,0 +1,138 @@
+{
+ "asof": {
+  "client_d_even": 20261014,
+  "client_lag_days": false,
+  "d_even": 20261014,
+  "depth": true,
+  "h_even": 124000,
+  "n": 38,
+  "top50": 2
+ },
+ "basis": "closing_vs_yesterday",
+ "group": "eq_all",
+ "histo12": [
+  {
+   "color": "neg",
+   "count": 0,
+   "key": "<-5",
+   "label": "کمتر از ۵-"
+  },
+  {
+   "color": "neg",
+   "count": 0,
+   "key": "-5..-4",
+   "label": "۵- تا ۴-"
+  },
+  {
+   "color": "neg",
+   "count": 1,
+   "key": "-4..-3",
+   "label": "۴- تا ۳-"
+  },
+  {
+   "color": "neg",
+   "count": 0,
+   "key": "-3..-2",
+   "label": "۳- تا ۲-"
+  },
+  {
+   "color": "neg",
+   "count": 0,
+   "key": "-2..-1",
+   "label": "۲- تا ۱-"
+  },
+  {
+   "color": "neu",
+   "count": 2,
+   "key": "-1..0",
+   "label": "۰ تا ۱-"
+  },
+  {
+   "color": "neu",
+   "count": 0,
+   "key": "0..1",
+   "label": "۰ تا ۱+"
+  },
+  {
+   "color": "pos",
+   "count": 0,
+   "key": "1..2",
+   "label": "۱+ تا ۲+"
+  },
+  {
+   "color": "pos",
+   "count": 0,
+   "key": "2..3",
+   "label": "۲+ تا ۳+"
+  },
+  {
+   "color": "pos",
+   "count": 0,
+   "key": "3..4",
+   "label": "۳+ تا ۴+"
+  },
+  {
+   "color": "pos",
+   "count": 0,
+   "key": "4..5",
+   "label": "۴+ تا ۵+"
+  },
+  {
+   "color": "pos",
+   "count": 1,
+   "key": ">5",
+   "label": "بالاتر از ۵+"
+  }
+ ],
+ "histo7": [
+  {
+   "color": "neg",
+   "count": 0,
+   "key": "<-5",
+   "label": "پایین‌تر از ۵-"
+  },
+  {
+   "color": "neg",
+   "count": 1,
+   "key": "-5..-3",
+   "label": "۵- تا ۳-"
+  },
+  {
+   "color": "neg",
+   "count": 0,
+   "key": "-3..-1",
+   "label": "۳- تا ۱-"
+  },
+  {
+   "color": "neu",
+   "count": 2,
+   "key": "-1..1",
+   "label": "خنثی (۱- تا ۱+)"
+  },
+  {
+   "color": "pos",
+   "count": 0,
+   "key": "1..3",
+   "label": "۱+ تا ۳+"
+  },
+  {
+   "color": "pos",
+   "count": 0,
+   "key": "3..5",
+   "label": "۳+ تا ۵+"
+  },
+  {
+   "color": "pos",
+   "count": 1,
+   "key": ">5",
+   "label": "بالای ۵+"
+  }
+ ],
+ "known": 4,
+ "nodata": 0,
+ "not_traded": 0,
+ "source": "local:market.db",
+ "status": "ok",
+ "total": 4,
+ "traded_only": true
+}

@@ -1,0 +1,40 @@
+{
+ "green": [
+  {
+   "count": 0,
+   "key": "s>b",
+   "label": "صف فروش به صف خرید"
+  },
+  {
+   "count": 0,
+   "key": "n>b",
+   "label": "منفی به صف خرید"
+  },
+  {
+   "count": 0,
+   "key": "s>p",
+   "label": "صف فروش به مثبت"
+  }
+ ],
+ "points": 3,
+ "ready": true,
+ "red": [
+  {
+   "count": 1,
+   "key": "b>s",
+   "label": "صف خرید به صف فروش"
+  },
+  {
+   "count": 0,
+   "key": "p>s",
+   "label": "مثبت به صف فروش"
+  },
+  {
+   "count": 0,
+   "key": "b>n",
+   "label": "صف خرید به منفی"
+  }
+ ],
+ "source": "local:market.db",
+ "status": "ok"
+}

@@ -1,0 +1,33 @@
+{
+ "asof": {
+  "d_even": 20261014
+ },
+ "index": {
+  "change": -103912.4,
+  "d_even": 20261014,
+  "ew_change": -9112.1,
+  "ew_last": 1929823.43,
+  "ew_pct": -0.47,
+  "last": 7153088.29,
+  "pct": -1.43
+ },
+ "market": {
+  "market_value_hemat": 6.9,
+  "trade_value_hemat": 6.4,
+  "trades": 120000.0,
+  "volume": 3100000000.0
+ },
+ "prev": null,
+ "retail": {
+  "bad_max": 10.0,
+  "basis": "eq_all",
+  "cause": null,
+  "excellent_min": 50.0,
+  "good_min": 20.0,
+  "label": "نامساعد",
+  "state": "bad",
+  "value_hemat": 1.12
+ },
+ "source": "local:market.db",
+ "status": "ok"
+}

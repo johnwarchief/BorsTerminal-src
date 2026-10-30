@@ -1,0 +1,33 @@
+{
+ "asof": {
+  "client_d_even": 20261014,
+  "client_lag_days": false,
+  "d_even": 20261014,
+  "depth": true,
+  "h_even": 124000,
+  "n": 38,
+  "top50": 2
+ },
+ "buy": {
+  "base_unknown": 2,
+  "below_base": 0,
+  "no_trade": 0,
+  "normal": 0
+ },
+ "buy_queue_b_toman": 0.3,
+ "buy_queue_count": 2,
+ "depth_available": true,
+ "group": "all",
+ "ratio": 0.07,
+ "sell": {
+  "base_unknown": 2,
+  "below_base": 0,
+  "no_trade": 0,
+  "normal": 0
+ },
+ "sell_queue_b_toman": 5.2,
+ "sell_queue_count": 2,
+ "source": "local:market.db",
+ "status": "ok",
+ "symbols_with_depth": 5
+}

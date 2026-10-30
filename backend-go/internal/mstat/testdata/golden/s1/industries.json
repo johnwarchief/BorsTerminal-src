@@ -1,0 +1,64 @@
+{
+ "asof": {
+  "client_d_even": 20261014,
+  "client_lag_days": false,
+  "d_even": 20261014,
+  "depth": true,
+  "h_even": 124000,
+  "n": 38,
+  "top50": 2
+ },
+ "leader": "فلزات اساسي",
+ "rows": [
+  {
+   "avg_pct": 11.11,
+   "buy_queue_b_toman": 0.2,
+   "flow_b_toman": 100.0,
+   "flow_pct_of_value": 10.0,
+   "industry": "فلزات اساسي",
+   "leader": true,
+   "leader_score": 2,
+   "negative": 0,
+   "positive": 1,
+   "rank_flow": 1,
+   "rank_value": 1,
+   "sell_queue_b_toman": 0.0,
+   "symbols": 1,
+   "value_b_toman": 1000.0
+  },
+  {
+   "avg_pct": 0.0,
+   "buy_queue_b_toman": 0.1,
+   "flow_b_toman": -5.0,
+   "flow_pct_of_value": -5.0,
+   "industry": "بانكها و موسسات اعتباري",
+   "leader": false,
+   "leader_score": 6,
+   "negative": 0,
+   "positive": 0,
+   "rank_flow": null,
+   "rank_value": 2,
+   "sell_queue_b_toman": 0.1,
+   "symbols": 1,
+   "value_b_toman": 100.0
+  },
+  {
+   "avg_pct": -3.0,
+   "buy_queue_b_toman": 0.0,
+   "flow_b_toman": 0.4,
+   "flow_pct_of_value": 4.0,
+   "industry": "سرمایه گذاريها",
+   "leader": false,
+   "leader_score": 5,
+   "negative": 1,
+   "positive": 0,
+   "rank_flow": 2,
+   "rank_value": 3,
+   "sell_queue_b_toman": 5.0,
+   "symbols": 1,
+   "value_b_toman": 10.0
+  }
+ ],
+ "source": "local:market.db",
+ "status": "ok"
+}

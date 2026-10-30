@@ -1,0 +1,192 @@
+{
+ "asof": {
+  "client_d_even": 20261014,
+  "client_lag_days": false,
+  "d_even": 20261014,
+  "depth": true,
+  "h_even": 124000,
+  "n": 38,
+  "top50": 2
+ },
+ "health": {
+  "bad_max": 10.0,
+  "basis": "eq_all",
+  "excellent": false,
+  "excellent_min": 50.0,
+  "good_min": 20.0,
+  "label": "نامساعد",
+  "market_value_hemat": 6.9,
+  "market_value_source": "tse_market_overview",
+  "phase": "closed",
+  "phase_label": "پایانِ نشست",
+  "phase_official": true,
+  "phase_source": "tsetmc_marketState",
+  "session_day": 20261014,
+  "session_is_live": false,
+  "state": "bad",
+  "trade_value_all_market_hemat": 1.13,
+  "value_hemat": 1.12
+ },
+ "phase": {
+  "activity_h_even": 123000,
+  "clock_now": "2026-10-28 10:30:00",
+  "computable": {
+   "close_price_final": true,
+   "order_pressure": false,
+   "realized_flow": true,
+   "session_vs_threshold": true
+  },
+  "data_updated_at": "2026-10-14 12:30:00",
+  "is_live": false,
+  "label": "پایانِ نشست",
+  "not_computable": [
+   "order_pressure"
+  ],
+  "official": true,
+  "official_state": "F",
+  "official_state_title": "بسته",
+  "phase": "closed",
+  "phase_source": "tsetmc_marketState",
+  "session_day": 20261014,
+  "session_end": "12:30",
+  "session_start": "09:00",
+  "verdict_allowed": true,
+  "why_not": {
+   "order_pressure": "دفترِ سفارشِ همین نشست در دسترس نیست"
+  }
+ },
+ "rows": [
+  {
+   "buy_power": 2.12,
+   "buy_power_up": true,
+   "key": "all",
+   "label": "کل بازار",
+   "money_flow_b_toman": 96.1,
+   "pc_buy_m_toman": 164.2,
+   "pc_sell_m_toman": 77.5,
+   "symbols": 5,
+   "traded": 5,
+   "value_b_toman": 1130.0,
+   "volume_b_shares": 3.3
+  },
+  {
+   "buy_power": null,
+   "buy_power_up": false,
+   "key": "bonds_other",
+   "label": "اوراق، اختيار و سایر",
+   "money_flow_b_toman": 0.0,
+   "pc_buy_m_toman": null,
+   "pc_sell_m_toman": null,
+   "symbols": 30,
+   "traded": 28,
+   "value_b_toman": 1.1,
+   "volume_b_shares": 0.006
+  },
+  {
+   "buy_power": 2.15,
+   "buy_power_up": true,
+   "key": "eq_all",
+   "label": "سهام، حق تقدم و ص.سهامی",
+   "money_flow_b_toman": 95.6,
+   "pc_buy_m_toman": 167.4,
+   "pc_sell_m_toman": 78.0,
+   "symbols": 4,
+   "traded": 4,
+   "value_b_toman": 1120.0,
+   "volume_b_shares": 3.2
+  },
+  {
+   "buy_power": 2.17,
+   "buy_power_up": true,
+   "key": "stock_right",
+   "label": "سهام و حق تقدم",
+   "money_flow_b_toman": 95.4,
+   "pc_buy_m_toman": 169.8,
+   "pc_sell_m_toman": 78.4,
+   "symbols": 3,
+   "traded": 3,
+   "value_b_toman": 1110.0,
+   "volume_b_shares": 3.1
+  },
+  {
+   "buy_power": 1.0,
+   "buy_power_up": true,
+   "key": "eq_fund",
+   "label": "صندوق‌های سهامی و مختلط",
+   "money_flow_b_toman": 0.2,
+   "pc_buy_m_toman": 20.0,
+   "pc_sell_m_toman": 20.0,
+   "symbols": 1,
+   "traded": 1,
+   "value_b_toman": 10.0,
+   "volume_b_shares": 0.1
+  },
+  {
+   "buy_power": 1.0,
+   "buy_power_up": true,
+   "key": "fixed_fund",
+   "label": "صندوق درآمد ثابت",
+   "money_flow_b_toman": 0.5,
+   "pc_buy_m_toman": 33.3,
+   "pc_sell_m_toman": 33.3,
+   "symbols": 1,
+   "traded": 1,
+   "value_b_toman": 10.0,
+   "volume_b_shares": 0.1
+  },
+  {
+   "buy_power": 2.17,
+   "buy_power_up": true,
+   "key": "top50",
+   "label": "پنجاه شرکت بزرگ (شاخص ۵۰ شرکت)",
+   "money_flow_b_toman": 95.0,
+   "pc_buy_m_toman": 170.8,
+   "pc_sell_m_toman": 78.6,
+   "symbols": 2,
+   "traded": 2,
+   "value_b_toman": 1100.0,
+   "volume_b_shares": 3.0
+  },
+  {
+   "buy_power": 0.5,
+   "buy_power_up": false,
+   "key": "lev_fund",
+   "label": "صندوق‌های اهرمی",
+   "money_flow_b_toman": -0.1,
+   "pc_buy_m_toman": 25.0,
+   "pc_sell_m_toman": 50.0,
+   "symbols": 1,
+   "traded": 1,
+   "value_b_toman": 10.0,
+   "volume_b_shares": 0.1
+  },
+  {
+   "buy_power": 1.0,
+   "buy_power_up": true,
+   "key": "gold_fund",
+   "label": "صندوق‌های طلا",
+   "money_flow_b_toman": 0.1,
+   "pc_buy_m_toman": 25.0,
+   "pc_sell_m_toman": 25.0,
+   "symbols": 1,
+   "traded": 1,
+   "value_b_toman": 10.0,
+   "volume_b_shares": 0.1
+  },
+  {
+   "buy_power": 1.0,
+   "buy_power_up": true,
+   "key": "silver_fund",
+   "label": "صندوق‌های نقره",
+   "money_flow_b_toman": 0.0,
+   "pc_buy_m_toman": 20.0,
+   "pc_sell_m_toman": 20.0,
+   "symbols": 1,
+   "traded": 1,
+   "value_b_toman": 10.0,
+   "volume_b_shares": 0.1
+  }
+ ],
+ "source": "local:market.db",
+ "status": "ok"
+}

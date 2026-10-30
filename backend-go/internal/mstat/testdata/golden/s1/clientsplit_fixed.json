@@ -1,0 +1,35 @@
+{
+ "asof": {
+  "client_d_even": 20261014,
+  "client_lag_days": false,
+  "d_even": 20261014,
+  "depth": true,
+  "h_even": 124000,
+  "n": 38,
+  "top50": 2
+ },
+ "institutional": {
+  "buy_b_toman": 9.0,
+  "buy_count": 2,
+  "buy_pct": 90.0,
+  "sell_b_toman": 8.0,
+  "sell_count": 2,
+  "sell_pct": 94.1
+ },
+ "money_flow_b_toman": 0.5,
+ "pc_buy_m_toman": 33.3,
+ "pc_sell_m_toman": 33.3,
+ "power": 1.0,
+ "retail": {
+  "buy_b_toman": 1.0,
+  "buy_count": 30,
+  "buy_pct": 10.0,
+  "sell_b_toman": 0.5,
+  "sell_count": 15,
+  "sell_pct": 5.9
+ },
+ "source": "local:market.db",
+ "status": "ok",
+ "symbols": 1,
+ "tab": "fixed"
+}
