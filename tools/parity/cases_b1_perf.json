@@ -1,0 +1,25 @@
+{
+ "db_sha256": "",
+ "cases": [
+  {"name": "rebuild-01", "method": "GET", "path": "/api/market?fields=all", "exclude": []},
+  {"name": "rebuild-02", "method": "GET", "path": "/api/market?fields=all", "exclude": []},
+  {"name": "rebuild-03", "method": "GET", "path": "/api/market?fields=all", "exclude": []},
+  {"name": "rebuild-04", "method": "GET", "path": "/api/market?fields=all", "exclude": []},
+  {"name": "rebuild-05", "method": "GET", "path": "/api/market?fields=all", "exclude": []},
+  {"name": "rebuild-06", "method": "GET", "path": "/api/market?fields=all", "exclude": []},
+  {"name": "rebuild-07", "method": "GET", "path": "/api/market?fields=all", "exclude": []},
+  {"name": "rebuild-08", "method": "GET", "path": "/api/market?fields=all", "exclude": []},
+  {"name": "rebuild-09", "method": "GET", "path": "/api/market?fields=all", "exclude": []},
+  {"name": "rebuild-10", "method": "GET", "path": "/api/market?fields=all", "exclude": []},
+  {"name": "rebuild-11", "method": "GET", "path": "/api/market?fields=all", "exclude": []},
+  {"name": "rebuild-12", "method": "GET", "path": "/api/market?fields=all", "exclude": []},
+  {"name": "rebuild-13", "method": "GET", "path": "/api/market?fields=all", "exclude": []},
+  {"name": "rebuild-14", "method": "GET", "path": "/api/market?fields=all", "exclude": []},
+  {"name": "rebuild-15", "method": "GET", "path": "/api/market?fields=all", "exclude": []},
+  {"name": "rebuild-16", "method": "GET", "path": "/api/market?fields=all", "exclude": []},
+  {"name": "rebuild-17", "method": "GET", "path": "/api/market?fields=all", "exclude": []},
+  {"name": "rebuild-18", "method": "GET", "path": "/api/market?fields=all", "exclude": []},
+  {"name": "rebuild-19", "method": "GET", "path": "/api/market?fields=all", "exclude": []},
+  {"name": "rebuild-20", "method": "GET", "path": "/api/market?fields=all", "exclude": []}
+ ]
+}

@@ -1,0 +1,10 @@
+{
+ "db_sha256": "",
+ "cases": [
+  {"name": "market-default", "method": "GET", "path": "/api/market", "exclude": []},
+  {"name": "market-all", "method": "GET", "path": "/api/market?fields=all", "exclude": []},
+  {"name": "delta-cold", "method": "GET", "path": "/api/market/delta?since=-1", "exclude": []},
+  {"name": "delta-same-rev", "method": "GET", "path": "/api/market/delta?since=0", "exclude": []},
+  {"name": "sync-state", "method": "GET", "path": "/api/market/sync-state", "exclude": []}
+ ]
+}
