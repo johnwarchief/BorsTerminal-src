@@ -1,0 +1,87 @@
+{
+ "commit": "80ea224d",
+ "python": "3.14.7",
+ "ports": {
+  "py": 8297,
+  "go": 8296,
+  "preferred_py": 8297,
+  "preferred_go": 8296,
+  "fell_back": false
+ },
+ "db": {
+  "sha256": "4a85b22c4b839453a876f2533266f115d19a8d876f6a48967280baf65cafd0a9",
+  "wal_sha256": null,
+  "frozen_ok": true,
+  "go_copy_unchanged": true,
+  "root_before": {
+   "market.db": {
+    "sha256": "4a85b22c4b839453a876f2533266f115d19a8d876f6a48967280baf65cafd0a9",
+    "bytes": 276107264,
+    "mtime_ns": 1793368279628724200
+   },
+   "user.db": {
+    "sha256": "29ad7b39d168898da1906ef7d602b27e941778b411628309c522896b9b88bd84",
+    "bytes": 782336,
+    "mtime_ns": 1793368279434876000
+   }
+  },
+  "root_after": {
+   "market.db": {
+    "sha256": "4a85b22c4b839453a876f2533266f115d19a8d876f6a48967280baf65cafd0a9",
+    "bytes": 276107264,
+    "mtime_ns": 1793368279628724200
+   },
+   "user.db": {
+    "sha256": "29ad7b39d168898da1906ef7d602b27e941778b411628309c522896b9b88bd84",
+    "bytes": 782336,
+    "mtime_ns": 1793368279434876000
+   }
+  },
+  "root_untouched": true
+ },
+ "python_redirect": {
+  "market": "C:\\Users\\PCMOD\\AppData\\Local\\Temp\\bors-b2a-_kn2b3xn\\py\\market.db",
+  "user": "C:\\Users\\PCMOD\\AppData\\Local\\Temp\\bors-b2a-_kn2b3xn\\py\\user.db"
+ },
+ "contract": {
+  "passed": 34,
+  "failed": 0,
+  "cases": 34,
+  "max_delta": 0.0,
+  "report": "_audit\\parity\\B2a-contract.json",
+  "ok": true,
+  "failed_cases": []
+ },
+ "post": {
+  "py": 200,
+  "go": 501,
+  "go_code": "NOT_PORTED",
+  "py_status": "ok",
+  "py_saved": false,
+  "ok": true
+ },
+ "timeline": {
+  "py_points": 161,
+  "go_points": 161,
+  "py_ready": true,
+  "go_ready": true,
+  "exercised": true,
+  "industry_case": "محصولات شيميايي",
+  "ok": true
+ },
+ "phase": {
+  "py_clock": "2026-10-31 00:15:29",
+  "go_clock": "2026-10-31 00:15:29",
+  "ok": true
+ },
+ "checks": {
+  "contract": true,
+  "delta_zero": true,
+  "post_501": true,
+  "timeline": true,
+  "clock": true,
+  "go_read_only": true,
+  "root_untouched": true
+ },
+ "measured_at": "2026-10-30T20:45:36Z"
+}
