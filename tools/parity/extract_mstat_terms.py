@@ -35,6 +35,10 @@ def data():
         "bond_word": list(M._BOND_WORD),
         "futures_word": list(M._FUTURES_WORD),
         "option_keys": list(M._OPTION_KEYS),
+        # مجموعه‌هایِ عضویتِ «کل بازار»/«سهام و حق تقدم» — دست‌نویسشان در
+        # inCategory یعنی یک ویرایشِ پایتون بی‌صدا از گارد رد شود.
+        "all_fund_kinds": list(M._ALL_FUND_KINDS),
+        "eq_fund_kinds": list(M._EQ_FUND_KINDS),
         "category_rows": [[k, v] for k, v in M.CATEGORY_ROWS],
         "client_tabs": [[k, v] for k, v in M.CLIENT_TABS],
         "histo12": [[k, l, lo, hi, c] for k, l, lo, hi, c in M.HISTO12],
@@ -87,7 +91,7 @@ def go_source(d, sha):
     out.append("}")
     for name in ("bond_sym_prefix", "bond_name", "bond_sector", "fund_name",
                  "fund_sector", "teseh_sector", "bond_word", "futures_word",
-                 "option_keys"):
+                 "option_keys", "all_fund_kinds", "eq_fund_kinds"):
         out.append("")
         out.append("var %s = %s" % (camel(name), strs(d[name])))
     out.append("")

@@ -3,7 +3,7 @@
 package mstat
 
 // termsSHA256 اثرِ انگشتِ دادهٔ استخراج‌شده است؛ گارد آن را بازمی‌سازد.
-const termsSHA256 = "0b40767b321a846c50ff036a16ce1e09b7ac1ddad4223a4d9fede57e48d9497a"
+const termsSHA256 = "c606603810fb48d3d6dc0af826196d7efa968376b57730c1d36bcd2b02d83fb2"
 
 type fundKindTerm struct {
 	Kind string
@@ -46,6 +46,10 @@ var bondWord = []string{"صکوک", "مشارکت", "مرابحه", "مضارب�
 var futuresWord = []string{"آتی"}
 
 var optionKeys = []string{"اختيار", "اختیار"}
+
+var allFundKinds = []string{"equity", "fof", "etf", "mixed", "fixed"}
+
+var eqFundKinds = []string{"equity", "fof", "etf", "mixed"}
 
 var categoryRows = []struct{ Key, Label string }{
 	{"all", "کل بازار"},

@@ -1,28 +1,44 @@
 package mstat
 
 import (
+	"database/sql"
 	"encoding/json"
+	"errors"
+	"math"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"borsterminal/backend/internal/db"
 )
 
-// enrichGolden همان دامپِ `mstat_engine.enrich` است — نه یک پنل، بلکه قابِ
+// enrichRow همان ردیفِ دامپِ `mstat_engine.enrich` است — نه یک پنل، بلکه قابِ
 // خامِ ردیف‌ها به‌همراهِ همان چیزی که `money` برایِ هر نماد می‌سازد.
+//
+// ستون‌هایِ خامی که در `m` نمی‌آیند (`p_first`، `p_min`، `p_max`،
+// `price_change`، `total_shares`، `h_even`) عمداً این‌جا هستند: بی‌آن‌ها یک
+// جابه‌جاییِ موقعیتی در SELECTِ Go بی‌صدا سبز می‌شد.
+type enrichRow struct {
+	Code        string         `json:"ins_code"`
+	Symbol      string         `json:"symbol"`
+	Cls         string         `json:"cls"`
+	Kind        string         `json:"kind"`
+	Pct         *float64       `json:"pct"`
+	ClockPct    *float64       `json:"clock_pct"`
+	PFirst      *float64       `json:"p_first"`
+	PMin        *float64       `json:"p_min"`
+	PMax        *float64       `json:"p_max"`
+	PriceChange *float64       `json:"price_change"`
+	TotalShares *float64       `json:"total_shares"`
+	HEven       *int64         `json:"h_even"`
+	Top50       bool           `json:"top50"`
+	M           map[string]any `json:"m"`
+}
+
 type enrichGolden struct {
 	AsOf map[string]any `json:"asof"`
-	Rows []struct {
-		Code     string         `json:"ins_code"`
-		Symbol   string         `json:"symbol"`
-		Cls      string         `json:"cls"`
-		Kind     string         `json:"kind"`
-		Pct      *float64       `json:"pct"`
-		ClockPct *float64       `json:"clock_pct"`
-		Top50    bool           `json:"top50"`
-		M        map[string]any `json:"m"`
-	} `json:"rows"`
+	Rows []enrichRow    `json:"rows"`
 }
 
 // copyFixture فیکسچرِ mstat را در t.TempDir() کپی می‌کند؛ فایلِ ردیابی‌شده
@@ -52,9 +68,79 @@ func openFixture(t *testing.T) *db.Handles {
 	return h
 }
 
-func readEnrich(t *testing.T) enrichGolden {
+// openWritableFixture همان کپیِ موقت است، ولی نوشتنی — تست‌هایی که ستون/
+// جدولِ همان کپی را عوض می‌کنند (بی‌عمق، بی‌نهایت) هرگز فایلِ ردیابی‌شده را
+// نمی‌نویسند.
+func openWritableFixture(t *testing.T) *db.Handles {
 	t.Helper()
-	raw, err := os.ReadFile(filepath.Join("testdata", "golden", "s1", "enrich.json"))
+	h, err := db.Open(copyFixture(t), false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { h.Close() })
+	return h
+}
+
+// depthColumns همان ۱۱ ستونی است که `_row_keys(False)` حذف می‌کند.
+var depthColumns = map[string]bool{
+	"buy_q_vol": true, "buy_q_val": true, "buy_q_cnt": true,
+	"sell_q_vol": true, "sell_q_val": true, "sell_q_cnt": true,
+	"buy_q1_vol": true, "buy_q1_px": true, "sell_q1_vol": true,
+	"sell_q1_px": true, "buy_q1_cnt": true,
+}
+
+// dropDepthColumns جدولِ market_watch را بدونِ ستون‌هایِ عمق بازمی‌سازد —
+// همان کاری که اوراکل رویِ کپیِ موقتِ خودش می‌کند. CTAS به‌جایِ ALTER DROP
+// COLUMN تا درایورهایِ SQLiteِ کهن هم همان نتیجه را بدهند.
+func dropDepthColumns(t *testing.T, conn *sql.DB) {
+	t.Helper()
+	rows, err := conn.Query("PRAGMA table_info(market_watch)")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var cols []string
+	for rows.Next() {
+		var cid int
+		var name, typ string
+		var notnull, pk int
+		var dflt any
+		if err := rows.Scan(&cid, &name, &typ, &notnull, &dflt, &pk); err != nil {
+			rows.Close()
+			t.Fatal(err)
+		}
+		if !depthColumns[name] {
+			cols = append(cols, name)
+		}
+	}
+	if err := rows.Err(); err != nil {
+		rows.Close()
+		t.Fatal(err)
+	}
+	rows.Close()
+	for _, stmt := range []string{
+		"CREATE TABLE market_watch_nodepth AS SELECT " + strings.Join(cols, ", ") +
+			" FROM market_watch",
+		"DROP TABLE market_watch",
+		"ALTER TABLE market_watch_nodepth RENAME TO market_watch",
+	} {
+		if _, err := conn.Exec(stmt); err != nil {
+			t.Fatal(err)
+		}
+	}
+}
+
+// openDepthlessFixture کپیِ موقتِ فیکسچر را بی‌ستون‌هایِ عمق باز می‌کند؛
+// پایتون این بانک را «همگام‌نشده» می‌خواند و پنل‌هایِ صف باید بی‌داده شوند.
+func openDepthlessFixture(t *testing.T) *db.Handles {
+	t.Helper()
+	h := openWritableFixture(t)
+	dropDepthColumns(t, h.Market)
+	return h
+}
+
+func readEnrich(t *testing.T, name string) enrichGolden {
+	t.Helper()
+	raw, err := os.ReadFile(filepath.Join("testdata", "golden", "s1", name))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -69,12 +155,63 @@ func readEnrich(t *testing.T) enrichGolden {
 // این تست فقط شکل را نمی‌بیند — هر یکایِ ریالی، VWAP، سرانه، قدرت، جریان،
 // value_source و qstate را هم قفل می‌کند.
 func TestSnapshotMatchesGolden(t *testing.T) {
-	g := readEnrich(t)
+	g := readEnrich(t, "enrich.json")
 	h := openFixture(t)
 	snap, err := loadSnapshot(h.Market)
 	if err != nil {
 		t.Fatal(err)
 	}
+	checkGolden(t, snap, g)
+}
+
+// TestSnapshotDepthlessMatchesGolden قراردادِ بانکِ همگام‌نشده را می‌سنجد:
+// ستون‌هایِ عمق نیستند، پس `_row_keys(False)` کلیدهایشان را اصلاً نمی‌گذارد و
+// money برایِ هر نماد `bq_val=None` و `qstate='x'` می‌دهد — نه صفرِ خالیِ
+// struct که پنل‌هایِ عمق/تفکیکِ مشتریان ردیفِ خیالی می‌شمردند. طلایی از اجرایِ
+// تازهٔ همان اوراکلِ پایتون رویِ همان کپیِ بی‌عمق می‌آید.
+func TestSnapshotDepthlessMatchesGolden(t *testing.T) {
+	g := readEnrich(t, "enrich_nodepth.json")
+	if depth, ok := g.AsOf["depth"].(bool); !ok || depth {
+		t.Fatalf("golden asof.depth = %v, want false", g.AsOf["depth"])
+	}
+	// سمتِ پایتون: دامپِ اوراکل خودش باید null/x بدهد، نه صفرِ خالی.
+	for _, want := range g.Rows {
+		if want.M["bq_val"] != nil || want.M["qstate"] != "x" {
+			t.Fatalf("golden %s says bq_val=%v qstate=%v, want null/x",
+				want.Code, want.M["bq_val"], want.M["qstate"])
+		}
+	}
+	h := openDepthlessFixture(t)
+	snap, err := loadSnapshot(h.Market)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if snap.Depth || snap.AsOf.Depth {
+		t.Fatalf("snapshot.depth/asof.depth = %v/%v, want false", snap.Depth,
+			snap.AsOf.Depth)
+	}
+	checkGolden(t, snap, g)
+	for _, r := range snap.Rows {
+		if !isNaN(r.BuyQVol) || !isNaN(r.BuyQVal) || !isNaN(r.BuyQCnt) ||
+			!isNaN(r.SellQVol) || !isNaN(r.SellQVal) || !isNaN(r.SellQCnt) ||
+			!isNaN(r.BuyQ1Vol) || !isNaN(r.BuyQ1Px) || !isNaN(r.SellQ1Vol) ||
+			!isNaN(r.SellQ1Px) || !isNaN(r.BuyQ1Cnt) {
+			t.Fatalf("%s depth fields must be NULL (NaN), got %v/%v/%v %v/%v/%v %v/%v %v/%v %v",
+				r.Code, r.BuyQVol, r.BuyQVal, r.BuyQCnt, r.SellQVol, r.SellQVal,
+				r.SellQCnt, r.BuyQ1Vol, r.BuyQ1Px, r.SellQ1Vol, r.SellQ1Px,
+				r.BuyQ1Cnt)
+		}
+		m := money(r, snap.BaseEst)
+		if !isNaN(m.BQVal) || m.QState != "x" {
+			t.Fatalf("%s money bq_val/qstate = %v/%s, want null/x", r.Code,
+				m.BQVal, m.QState)
+		}
+	}
+}
+
+// checkGolden مقایسهٔ مشترکِ دو دامپ: asof، ترتیبِ ردیف‌ها، و هر عددِ یک ردیف.
+func checkGolden(t *testing.T, snap *Snapshot, g enrichGolden) {
+	t.Helper()
 	if len(snap.Rows) != len(g.Rows) {
 		t.Fatalf("rows = %d, want %d", len(snap.Rows), len(g.Rows))
 	}
@@ -88,6 +225,15 @@ func TestSnapshotMatchesGolden(t *testing.T) {
 	}
 	if n, ok := asOfInt(t, g.AsOf, "top50"); ok && int64(len(top50)) != n {
 		t.Fatalf("top50 = %d, want %d", len(top50), n)
+	}
+
+	// ترتیب: طلایی همان ترتیبِ خروجیِ کوئری است؛ مقایسهٔ فقط بر ins_code یک
+	// جابه‌جاییِ JOIN/ORDER BY را بی‌صدا سبز می‌کرد.
+	for i, want := range g.Rows {
+		if snap.Rows[i].Code != want.Code {
+			t.Fatalf("row %d = %q, want %q (order must match the oracle)", i,
+				snap.Rows[i].Code, want.Code)
+		}
 	}
 
 	byCode := map[string]*Row{}
@@ -112,6 +258,30 @@ func TestSnapshotMatchesGolden(t *testing.T) {
 			}
 			if !eqPtr(got.ClockPct, want.ClockPct) {
 				t.Fatalf("clock_pct = %v, want %v", show(got.ClockPct), show(want.ClockPct))
+			}
+			// ستون‌هایِ خام — قفلِ موقعیت در SELECT.
+			for _, c := range []struct {
+				name string
+				got  float64
+				want *float64
+			}{
+				{"p_first", got.PFirst, want.PFirst},
+				{"p_min", got.PMin, want.PMin},
+				{"p_max", got.PMax, want.PMax},
+				{"price_change", got.PriceChange, want.PriceChange},
+				{"total_shares", got.TotalShares, want.TotalShares},
+			} {
+				if !eqNum(c.got, c.want) {
+					t.Fatalf("%s = %v, want %v", c.name, c.got, show(c.want))
+				}
+			}
+			if want.HEven == nil {
+				if got.HasHEven {
+					t.Fatalf("h_even = %d, want null", got.HEven)
+				}
+			} else if !got.HasHEven || got.HEven != *want.HEven {
+				t.Fatalf("h_even = %d (has=%v), want %d", got.HEven, got.HasHEven,
+					*want.HEven)
 			}
 			if got.Top50 != want.Top50 {
 				t.Fatalf("top50 = %v, want %v", got.Top50, want.Top50)
@@ -165,12 +335,14 @@ func checkAsOf(t *testing.T, got AsOf, want map[string]any, rows int) {
 	} else if got.ClientLag != nil {
 		t.Fatalf("asof.client_lag_days = %v, want null", *got.ClientLag)
 	}
+	// depth را خودِ طلایی تعیین می‌کند: s1 بانکِ همگام‌شده (true) و
+	// enrich_nodepth بانکِ بی‌ستونِ عمق (false) را قفل می‌کند.
 	depth, ok := want["depth"].(bool)
-	if !ok || !depth {
-		t.Fatalf("golden asof.depth = %v, want true (fixture has depth)", want["depth"])
+	if !ok {
+		t.Fatalf("golden asof.depth = %v, want bool", want["depth"])
 	}
-	if !got.Depth {
-		t.Fatal("asof.depth = false, want true")
+	if got.Depth != depth {
+		t.Fatalf("asof.depth = %v, want %v", got.Depth, depth)
 	}
 	if n, ok := asOfInt(t, want, "n"); ok && int64(rows) != n {
 		t.Fatalf("asof.n = %d, want %d", rows, n)
@@ -184,11 +356,146 @@ func eqPtr(a, b *float64) bool {
 	return *a == *b
 }
 
+// eqNum خانهٔ خامِ ردیف را می‌سنجد: nullِ طلایی باید NaN بدهد (قراردادِ
+// «NaN یعنی NULL»)، و عدد باید دقیقاً همان عدد باشد.
+func eqNum(got float64, want *float64) bool {
+	if want == nil {
+		return isNaN(got)
+	}
+	return !isNaN(got) && got == *want
+}
+
 func show(p *float64) any {
 	if p == nil {
 		return nil
 	}
 	return *p
+}
+
+// TestSnapshotInfCollapses: بی‌نهایتِ ذخیره‌شده در REAL با `_f`ِ پایتون صفر
+// می‌شود. پیش از اصلاح، Go همان +Inf را تا پنل حمل می‌کرد (`bq_val=+Inf` و
+// qstate غلط) و top50 یک نمادِ بی‌قیمت را با cap=+Inf بالا می‌کشید.
+func TestSnapshotInfCollapses(t *testing.T) {
+	h := openWritableFixture(t)
+	if _, err := h.Market.Exec(
+		"UPDATE market_watch SET buy_q_val = ? WHERE ins_code = 'm2'", math.Inf(1)); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := h.Market.Exec(
+		"UPDATE market_watch SET total_shares = ? WHERE ins_code = 'm1'", math.Inf(1)); err != nil {
+		t.Fatal(err)
+	}
+	snap, err := loadSnapshot(h.Market)
+	if err != nil {
+		t.Fatal(err)
+	}
+	byCode := map[string]*Row{}
+	for _, r := range snap.Rows {
+		byCode[r.Code] = r
+	}
+	m2, ok := byCode["m2"]
+	if !ok {
+		t.Fatal("m2 missing")
+	}
+	if !math.IsInf(m2.BuyQVal, 1) {
+		t.Fatalf("probe: raw buy_q_val = %v, want +Inf from the database", m2.BuyQVal)
+	}
+	// m2 صفِ فروش دارد (sell_q_val = 5e8)؛ با bq_val=Inf پیش از اصلاح
+	// qstate 'z' می‌شد و بعد از _f باید 's' باشد.
+	m := money(m2, snap.BaseEst)
+	if m.BQVal != 0 {
+		t.Fatalf("bq_val = %v, want 0 (python _f(inf))", m.BQVal)
+	}
+	if m.QState != "s" {
+		t.Fatalf("qstate = %s, want s", m.QState)
+	}
+	top := top50Codes(snap.Rows)
+	if top["m1"] {
+		t.Fatal("m1 with total_shares=+Inf must not enter top50 (_f(inf)=0)")
+	}
+	if !top["m2"] {
+		t.Fatal("m2 must stay in top50")
+	}
+}
+
+// fakeRows برایِ شبیه‌سازیِ خطایِ میانِ جریانِ ردیف‌هاست — چیزی که با SQLiteِ
+// سالم نمی‌شود ساخت: یا اسکنِ ردیفِ شمارهٔ failScan می‌شکند، یا Err پس از
+// پایان خطا می‌دهد.
+type fakeRows struct {
+	rows     [][]any
+	i        int
+	failScan int // ۱-پایه؛ ۰ یعنی هیچ
+	endErr   error
+	done     bool
+}
+
+func (f *fakeRows) Next() bool {
+	if f.done || f.i >= len(f.rows) {
+		f.done = true
+		return false
+	}
+	f.i++
+	return true
+}
+
+func (f *fakeRows) Scan(dest ...any) error {
+	if f.i == f.failScan {
+		return errors.New("scan boom")
+	}
+	if f.i == 0 || f.i > len(f.rows) {
+		return errors.New("scan without row")
+	}
+	row := f.rows[f.i-1]
+	if len(dest) != len(row) {
+		return errors.New("arity")
+	}
+	for k, d := range dest {
+		p, ok := d.(*any)
+		if !ok {
+			return errors.New("dest is not *any")
+		}
+		*p = row[k]
+	}
+	return nil
+}
+
+func (f *fakeRows) Err() error {
+	if f.done {
+		return f.endErr
+	}
+	return nil
+}
+
+// TestMidStreamSQLErrorsDiscardResults: پایتون هر دو کوئری را با fetchall
+// می‌خواند؛ خطایِ میانِ راه استثنا می‌دهد و except آن نتیجه را کامل دور
+// می‌ریزد. نگه‌داشتنِ ردیف‌هایِ پیش از خطا یک value_source/برآوردِ می‌سازد که
+// پایتون هرگز نمی‌دهد.
+func TestMidStreamSQLErrorsDiscardResults(t *testing.T) {
+	ctv := [][]any{
+		{"a", 1.0, 2.0, 3.0, 4.0, 5.0},
+		{"b", 6.0, 7.0, 8.0, 9.0, 10.0},
+	}
+	base := [][]any{{"a", 10.0}, {"a", 20.0}}
+
+	if got, ok := scanCTV(&fakeRows{rows: ctv}); !ok || len(got) != 2 {
+		t.Fatalf("clean CTV scan = %v/%d rows, want ok/2", ok, len(got))
+	}
+	if got, ok := scanCTV(&fakeRows{rows: ctv, failScan: 2}); ok || got != nil {
+		t.Fatalf("CTV scan error kept %d rows, want whole result discarded", len(got))
+	}
+	if got, ok := scanCTV(&fakeRows{rows: ctv, endErr: errors.New("stream boom")}); ok || got != nil {
+		t.Fatalf("CTV rows.Err kept %d rows, want whole result discarded", len(got))
+	}
+
+	if got := collectBaseVolumes(&fakeRows{rows: base}); len(got) != 1 || got["a"] != 15 {
+		t.Fatalf("clean base = %v, want a:15", got)
+	}
+	if got := collectBaseVolumes(&fakeRows{rows: base, failScan: 2}); len(got) != 0 {
+		t.Fatalf("base scan error = %v, want empty map", got)
+	}
+	if got := collectBaseVolumes(&fakeRows{rows: base, endErr: errors.New("stream boom")}); len(got) != 0 {
+		t.Fatalf("base rows.Err = %v, want empty map", got)
+	}
 }
 
 // checkMoney هر عددِ ریالی را با تساویِ دقیق می‌سنجد و null را از عدد جدا

@@ -29,6 +29,42 @@ PIN = datetime.datetime(2026, 10, 28, 10, 30, 0)   # چهارشنبه، ۱۰:۳�
 MAINWATCH_DEFAULTS = {"group": "eq_all", "industry": "", "sort": "clock",
                       "desc": True, "limit": 120}
 
+# همان ۱۱ ستونی که `_row_keys(False)` حذف می‌کند — تنها تعریفِ فهرست.
+DEPTH_COLS = ("buy_q_vol", "buy_q_val", "buy_q_cnt", "sell_q_vol", "sell_q_val",
+              "sell_q_cnt", "buy_q1_vol", "buy_q1_px", "sell_q1_vol",
+              "sell_q1_px", "buy_q1_cnt")
+
+
+def enrich_rows(erows):
+    """ردیف‌هایِ دامپِ enrich — همان فیلدهایی که تستِ Go ردیف‌به‌ردیف می‌سنجد.
+
+    `p_first`/`p_min`/`p_max`/`price_change`/`total_shares`/`h_even` در `m`
+    نمی‌آیند؛ بی‌آن‌ها، جابه‌جاییِ موقعیتیِ همین ستون‌ها در SQLِ Go بی‌صدا سبز
+    می‌شد. ترتیبِ ردیف‌ها هم همان ترتیبِ خروجیِ کوئری است و تست آن را می‌سنجد.
+    """
+    return [{"ins_code": r["ins_code"], "symbol": r["symbol"], "cls": r["cls"],
+             "kind": r["kind"], "pct": r["pct"], "clock_pct": r["clock_pct"],
+             "p_first": r.get("p_first"), "p_min": r.get("p_min"),
+             "p_max": r.get("p_max"), "price_change": r.get("price_change"),
+             "total_shares": r.get("total_shares"), "h_even": r.get("h_even"),
+             "top50": r["_top50"], "m": dict(r["_m"])} for r in erows]
+
+
+def drop_depth(con):
+    """`market_watch` را بدونِ ستون‌هایِ عمق بازمی‌سازد (بانکِ همگام‌نشده).
+
+    CTAS به‌جایِ `ALTER TABLE DROP COLUMN` تا SQLiteهایِ کهن هم همان جدول را
+    بدهند؛ ترتیبِ ردیف‌ها (rowid) حفظ می‌شود و همان چیزی است که تستِ Go هم
+    می‌سازد.
+    """
+    cols = [r[1] for r in con.execute("PRAGMA table_info(market_watch)")
+            if r[1] not in DEPTH_COLS]
+    con.execute("CREATE TABLE market_watch_nodepth AS SELECT %s FROM market_watch"
+                % ", ".join(cols))
+    con.execute("DROP TABLE market_watch")
+    con.execute("ALTER TABLE market_watch_nodepth RENAME TO market_watch")
+    con.commit()
+
 
 class _DateTime(datetime.datetime):
     @classmethod
@@ -153,12 +189,23 @@ def scenario(name, sql=(), only=None):
         con2 = sqlite3.connect(os.path.join(tmp, "market.db"))
         try:
             erows, emeta = ME.enrich(con2)
-            save("enrich.json", {"asof": emeta, "rows": [
-                {"ins_code": r["ins_code"], "symbol": r["symbol"], "cls": r["cls"],
-                 "kind": r["kind"], "pct": r["pct"], "clock_pct": r["clock_pct"],
-                 "top50": r["_top50"], "m": dict(r["_m"])} for r in erows]})
         finally:
             con2.close()
+        save("enrich.json", {"asof": emeta, "rows": enrich_rows(erows)})
+        # صحنهٔ بی‌عمق: بانکِ همگام‌نشده هنوز ستون‌هایِ صف را ندارد و پایتون آن
+        # را «بی‌داده» می‌خواند، نه صفر. کپیِ موقتِ همین صحنه — هرگز بانکِ
+        # عملیاتیِ ریشه یا پوشهٔ فیکسچرِ ردیابی‌شده.
+        nodepth = os.path.join(tmp, "market_nodepth.db")
+        shutil.copy2(os.path.join(tmp, "market.db"), nodepth)
+        con3 = sqlite3.connect(nodepth)
+        try:
+            drop_depth(con3)
+            nrows, nmeta = ME.enrich(con3)
+        finally:
+            con3.close()
+        os.remove(nodepth)
+        save("enrich_nodepth.json", {"asof": nmeta,
+                                     "rows": enrich_rows(nrows)})
 
 
 def main() -> int:

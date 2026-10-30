@@ -100,6 +100,26 @@ func TestMoneyNullStaysNull(t *testing.T) {
 	}
 }
 
+// TestMoneyInfCollapses: opt(key)ِ پایتون هر خانهٔ nullable را با _f می‌خواند،
+// پس +Inf/−Inf صفر می‌شود و فقط NaN (NULL) NaN می‌ماند. base_vol هم همین
+// قاعده را دارد و بی‌نهایت به برآوردِ ۴ نشست نمی‌رسد.
+func TestMoneyInfCollapses(t *testing.T) {
+	r := row()
+	r.BuyQVal, r.SellQVal = math.Inf(1), 5
+	r.BuyQ1Px = math.Inf(-1)
+	r.BaseVol = math.Inf(1)
+	m := money(r, nil)
+	if m.BQVal != 0 || m.SQVal != 5 || m.BQ1Px != 0 {
+		t.Fatalf("depth infs = %v/%v/%v, want 0/5/0", m.BQVal, m.SQVal, m.BQ1Px)
+	}
+	if m.QState != "s" {
+		t.Fatalf("qstate = %s, want s", m.QState)
+	}
+	if !isNaN(m.Base) {
+		t.Fatalf("base = %v, want NaN (inf base_vol is not a valid base)", m.Base)
+	}
+}
+
 // TestMoneyVwapFallback: VWAP = ارزش÷حجم اگر بود، وگرنه قیمت پایانی، وگرنه ۰.
 func TestMoneyVwapFallback(t *testing.T) {
 	cases := []struct {

@@ -12,6 +12,7 @@
   {
    "clock_pct": 10.0,
    "cls": "other",
+   "h_even": 123000,
    "ins_code": "INS-عادی01",
    "kind": "other",
    "m": {
@@ -47,13 +48,19 @@
     "vol": 500000.0,
     "vwap": 1000.0
    },
+   "p_first": 1000.0,
+   "p_max": 1150.0,
+   "p_min": 990.0,
    "pct": 0.0,
+   "price_change": 100.0,
    "symbol": "عادی01",
-   "top50": false
+   "top50": false,
+   "total_shares": null
   },
   {
    "clock_pct": -1.0,
    "cls": "other",
+   "h_even": 121500,
    "ins_code": "INS-پایین02",
    "kind": "other",
    "m": {
@@ -89,13 +96,19 @@
     "vol": 100000.0,
     "vwap": 500.0
    },
+   "p_first": 500.0,
+   "p_max": 520.0,
+   "p_min": 480.0,
    "pct": 0.0,
+   "price_change": -5.0,
    "symbol": "پایین02",
-   "top50": false
+   "top50": false,
+   "total_shares": null
   },
   {
    "clock_pct": 5.0,
    "cls": "other",
+   "h_even": 122000,
    "ins_code": "INS-نگهبان03",
    "kind": "other",
    "m": {
@@ -131,13 +144,19 @@
     "vol": 80000.0,
     "vwap": 2000.0
    },
+   "p_first": 2000.0,
+   "p_max": 2200.0,
+   "p_min": 1900.0,
    "pct": null,
+   "price_change": 100.0,
    "symbol": "نگهبان03",
-   "top50": false
+   "top50": false,
+   "total_shares": null
   },
   {
    "clock_pct": 0.0,
    "cls": "other",
+   "h_even": 120000,
    "ins_code": "INS-بی‌معامله04",
    "kind": "other",
    "m": {
@@ -173,13 +192,19 @@
     "vol": 0.0,
     "vwap": 1500.0
    },
+   "p_first": 0.0,
+   "p_max": 0.0,
+   "p_min": 0.0,
    "pct": 0.0,
+   "price_change": 0.0,
    "symbol": "بی‌معامله04",
-   "top50": false
+   "top50": false,
+   "total_shares": null
   },
   {
    "clock_pct": 2.5,
    "cls": "other",
+   "h_even": 123500,
    "ins_code": "INS-پول‌هوشمند06",
    "kind": "other",
    "m": {
@@ -215,13 +240,19 @@
     "vol": 2000000.0,
     "vwap": 4000.0
    },
+   "p_first": 4000.0,
+   "p_max": 4200.0,
+   "p_min": 3900.0,
    "pct": 5.263157894736842,
+   "price_change": 200.0,
    "symbol": "پول‌هوشمند06",
-   "top50": false
+   "top50": false,
+   "total_shares": null
   },
   {
    "clock_pct": 0.0,
    "cls": "other",
+   "h_even": 110000,
    "ins_code": "INS-متوقف07",
    "kind": "other",
    "m": {
@@ -257,13 +288,19 @@
     "vol": 1000.0,
     "vwap": 1000.0
    },
+   "p_first": 1000.0,
+   "p_max": 1010.0,
+   "p_min": 990.0,
    "pct": 0.0,
+   "price_change": 0.0,
    "symbol": "متوقف07",
-   "top50": false
+   "top50": false,
+   "total_shares": null
   },
   {
    "clock_pct": 0.0,
    "cls": "other",
+   "h_even": 100000,
    "ins_code": "INS-ممنوع08",
    "kind": "other",
    "m": {
@@ -299,13 +336,19 @@
     "vol": 2000.0,
     "vwap": 1200.0
    },
+   "p_first": 1200.0,
+   "p_max": 1210.0,
+   "p_min": 1190.0,
    "pct": 0.0,
+   "price_change": 0.0,
    "symbol": "ممنوع08",
-   "top50": false
+   "top50": false,
+   "total_shares": null
   },
   {
    "clock_pct": 1.25,
    "cls": "other",
+   "h_even": 123900,
    "ins_code": "INS-کدبه‌کد09",
    "kind": "other",
    "m": {
@@ -341,13 +384,19 @@
     "vol": 3000000.0,
     "vwap": 800.0
    },
+   "p_first": 800.0,
+   "p_max": 830.0,
+   "p_min": 780.0,
    "pct": 14.285714285714285,
+   "price_change": 100.0,
    "symbol": "کدبه‌کد09",
-   "top50": false
+   "top50": false,
+   "total_shares": null
   },
   {
    "clock_pct": -25.0,
    "cls": "other",
+   "h_even": 124000,
    "ins_code": "INS-کف‌روبی10",
    "kind": "other",
    "m": {
@@ -383,13 +432,19 @@
     "vol": 200000.0,
     "vwap": 600.0
    },
+   "p_first": 600.0,
+   "p_max": 700.0,
+   "p_min": 450.0,
    "pct": 0.0,
+   "price_change": -150.0,
    "symbol": "کف‌روبی10",
-   "top50": false
+   "top50": false,
+   "total_shares": null
   },
   {
    "clock_pct": 5.555555555555555,
    "cls": "other",
+   "h_even": 121000,
    "ins_code": "INS-کم‌سابقه11",
    "kind": "other",
    "m": {
@@ -425,13 +480,19 @@
     "vol": 150000.0,
     "vwap": 900.0
    },
+   "p_first": 900.0,
+   "p_max": 960.0,
+   "p_min": 880.0,
    "pct": 0.0,
+   "price_change": 50.0,
    "symbol": "کم‌سابقه11",
-   "top50": false
+   "top50": false,
+   "total_shares": null
   },
   {
    "clock_pct": 0.4464285714285714,
    "cls": "other",
+   "h_even": 120012,
    "ins_code": "INS-ساده12",
    "kind": "other",
    "m": {
@@ -467,13 +528,19 @@
     "vol": 10012.0,
     "vwap": 112.0
    },
+   "p_first": 112.0,
+   "p_max": 114.0,
+   "p_min": 111.0,
    "pct": 0.0,
+   "price_change": 0.5,
    "symbol": "ساده12",
-   "top50": false
+   "top50": false,
+   "total_shares": null
   },
   {
    "clock_pct": 0.4424778761061947,
    "cls": "other",
+   "h_even": 120013,
    "ins_code": "INS-ساده13",
    "kind": "other",
    "m": {
@@ -509,13 +576,19 @@
     "vol": 10013.0,
     "vwap": 113.0
    },
+   "p_first": 113.0,
+   "p_max": 115.0,
+   "p_min": 112.0,
    "pct": 0.0,
+   "price_change": 0.5,
    "symbol": "ساده13",
-   "top50": false
+   "top50": false,
+   "total_shares": null
   },
   {
    "clock_pct": 0.43859649122807015,
    "cls": "other",
+   "h_even": 120014,
    "ins_code": "INS-ساده14",
    "kind": "other",
    "m": {
@@ -551,13 +624,19 @@
     "vol": 10014.0,
     "vwap": 114.0
    },
+   "p_first": 114.0,
+   "p_max": 116.0,
+   "p_min": 113.0,
    "pct": 0.0,
+   "price_change": 0.5,
    "symbol": "ساده14",
-   "top50": false
+   "top50": false,
+   "total_shares": null
   },
   {
    "clock_pct": 0.43478260869565216,
    "cls": "other",
+   "h_even": 120015,
    "ins_code": "INS-ساده15",
    "kind": "other",
    "m": {
@@ -593,13 +672,19 @@
     "vol": 10015.0,
     "vwap": 115.0
    },
+   "p_first": 115.0,
+   "p_max": 117.0,
+   "p_min": 114.0,
    "pct": 0.0,
+   "price_change": 0.5,
    "symbol": "ساده15",
-   "top50": false
+   "top50": false,
+   "total_shares": null
   },
   {
    "clock_pct": 0.43103448275862066,
    "cls": "other",
+   "h_even": 120016,
    "ins_code": "INS-ساده16",
    "kind": "other",
    "m": {
@@ -635,13 +720,19 @@
     "vol": 10016.0,
     "vwap": 116.0
    },
+   "p_first": 116.0,
+   "p_max": 118.0,
+   "p_min": 115.0,
    "pct": 0.0,
+   "price_change": 0.5,
    "symbol": "ساده16",
-   "top50": false
+   "top50": false,
+   "total_shares": null
   },
   {
    "clock_pct": 0.4273504273504274,
    "cls": "other",
+   "h_even": 120017,
    "ins_code": "INS-ساده17",
    "kind": "other",
    "m": {
@@ -677,13 +768,19 @@
     "vol": 10017.0,
     "vwap": 117.0
    },
+   "p_first": 117.0,
+   "p_max": 119.0,
+   "p_min": 116.0,
    "pct": 0.0,
+   "price_change": 0.5,
    "symbol": "ساده17",
-   "top50": false
+   "top50": false,
+   "total_shares": null
   },
   {
    "clock_pct": 0.423728813559322,
    "cls": "other",
+   "h_even": 120018,
    "ins_code": "INS-ساده18",
    "kind": "other",
    "m": {
@@ -719,13 +816,19 @@
     "vol": 10018.0,
     "vwap": 118.0
    },
+   "p_first": 118.0,
+   "p_max": 120.0,
+   "p_min": 117.0,
    "pct": 0.0,
+   "price_change": 0.5,
    "symbol": "ساده18",
-   "top50": false
+   "top50": false,
+   "total_shares": null
   },
   {
    "clock_pct": 0.42016806722689076,
    "cls": "other",
+   "h_even": 120019,
    "ins_code": "INS-ساده19",
    "kind": "other",
    "m": {
@@ -761,13 +864,19 @@
     "vol": 10019.0,
     "vwap": 119.0
    },
+   "p_first": 119.0,
+   "p_max": 121.0,
+   "p_min": 118.0,
    "pct": 0.0,
+   "price_change": 0.5,
    "symbol": "ساده19",
-   "top50": false
+   "top50": false,
+   "total_shares": null
   },
   {
    "clock_pct": 0.4166666666666667,
    "cls": "other",
+   "h_even": 120020,
    "ins_code": "INS-ساده20",
    "kind": "other",
    "m": {
@@ -803,13 +912,19 @@
     "vol": 10020.0,
     "vwap": 120.0
    },
+   "p_first": 120.0,
+   "p_max": 122.0,
+   "p_min": 119.0,
    "pct": 0.0,
+   "price_change": 0.5,
    "symbol": "ساده20",
-   "top50": false
+   "top50": false,
+   "total_shares": null
   },
   {
    "clock_pct": 0.4132231404958678,
    "cls": "other",
+   "h_even": 120021,
    "ins_code": "INS-ساده21",
    "kind": "other",
    "m": {
@@ -845,13 +960,19 @@
     "vol": 10021.0,
     "vwap": 121.0
    },
+   "p_first": 121.0,
+   "p_max": 123.0,
+   "p_min": 120.0,
    "pct": 0.0,
+   "price_change": 0.5,
    "symbol": "ساده21",
-   "top50": false
+   "top50": false,
+   "total_shares": null
   },
   {
    "clock_pct": 0.4098360655737705,
    "cls": "other",
+   "h_even": 120022,
    "ins_code": "INS-ساده22",
    "kind": "other",
    "m": {
@@ -887,13 +1008,19 @@
     "vol": 10022.0,
     "vwap": 122.0
    },
+   "p_first": 122.0,
+   "p_max": 124.0,
+   "p_min": 121.0,
    "pct": 0.0,
+   "price_change": 0.5,
    "symbol": "ساده22",
-   "top50": false
+   "top50": false,
+   "total_shares": null
   },
   {
    "clock_pct": 0.40650406504065045,
    "cls": "other",
+   "h_even": 120023,
    "ins_code": "INS-ساده23",
    "kind": "other",
    "m": {
@@ -929,13 +1056,19 @@
     "vol": 10023.0,
     "vwap": 123.0
    },
+   "p_first": 123.0,
+   "p_max": 125.0,
+   "p_min": 122.0,
    "pct": 0.0,
+   "price_change": 0.5,
    "symbol": "ساده23",
-   "top50": false
+   "top50": false,
+   "total_shares": null
   },
   {
    "clock_pct": 0.4032258064516129,
    "cls": "other",
+   "h_even": 120024,
    "ins_code": "INS-ساده24",
    "kind": "other",
    "m": {
@@ -971,13 +1104,19 @@
     "vol": 10024.0,
     "vwap": 124.0
    },
+   "p_first": 124.0,
+   "p_max": 126.0,
+   "p_min": 123.0,
    "pct": 0.0,
+   "price_change": 0.5,
    "symbol": "ساده24",
-   "top50": false
+   "top50": false,
+   "total_shares": null
   },
   {
    "clock_pct": 0.4,
    "cls": "other",
+   "h_even": 120025,
    "ins_code": "INS-ساده25",
    "kind": "other",
    "m": {
@@ -1013,13 +1152,19 @@
     "vol": 10025.0,
     "vwap": 125.0
    },
+   "p_first": 125.0,
+   "p_max": 127.0,
+   "p_min": 124.0,
    "pct": 0.0,
+   "price_change": 0.5,
    "symbol": "ساده25",
-   "top50": false
+   "top50": false,
+   "total_shares": null
   },
   {
    "clock_pct": 0.3968253968253968,
    "cls": "other",
+   "h_even": 120026,
    "ins_code": "INS-ساده26",
    "kind": "other",
    "m": {
@@ -1055,13 +1200,19 @@
     "vol": 10026.0,
     "vwap": 126.0
    },
+   "p_first": 126.0,
+   "p_max": 128.0,
+   "p_min": 125.0,
    "pct": 0.0,
+   "price_change": 0.5,
    "symbol": "ساده26",
-   "top50": false
+   "top50": false,
+   "total_shares": null
   },
   {
    "clock_pct": 0.39370078740157477,
    "cls": "other",
+   "h_even": 120027,
    "ins_code": "INS-ساده27",
    "kind": "other",
    "m": {
@@ -1097,13 +1248,19 @@
     "vol": 10027.0,
     "vwap": 127.0
    },
+   "p_first": 127.0,
+   "p_max": 129.0,
+   "p_min": 126.0,
    "pct": 0.0,
+   "price_change": 0.5,
    "symbol": "ساده27",
-   "top50": false
+   "top50": false,
+   "total_shares": null
   },
   {
    "clock_pct": 0.390625,
    "cls": "other",
+   "h_even": 120028,
    "ins_code": "INS-ساده28",
    "kind": "other",
    "m": {
@@ -1139,13 +1296,19 @@
     "vol": 10028.0,
     "vwap": 128.0
    },
+   "p_first": 128.0,
+   "p_max": 130.0,
+   "p_min": 127.0,
    "pct": 0.0,
+   "price_change": 0.5,
    "symbol": "ساده28",
-   "top50": false
+   "top50": false,
+   "total_shares": null
   },
   {
    "clock_pct": 0.3875968992248062,
    "cls": "other",
+   "h_even": 120029,
    "ins_code": "INS-ساده29",
    "kind": "other",
    "m": {
@@ -1181,13 +1344,19 @@
     "vol": 10029.0,
     "vwap": 129.0
    },
+   "p_first": 129.0,
+   "p_max": 131.0,
+   "p_min": 128.0,
    "pct": 0.0,
+   "price_change": 0.5,
    "symbol": "ساده29",
-   "top50": false
+   "top50": false,
+   "total_shares": null
   },
   {
    "clock_pct": 0.38461538461538464,
    "cls": "other",
+   "h_even": 120030,
    "ins_code": "INS-ساده30",
    "kind": "other",
    "m": {
@@ -1223,13 +1392,19 @@
     "vol": 10030.0,
     "vwap": 130.0
    },
+   "p_first": 130.0,
+   "p_max": 132.0,
+   "p_min": 129.0,
    "pct": 0.0,
+   "price_change": 0.5,
    "symbol": "ساده30",
-   "top50": false
+   "top50": false,
+   "total_shares": null
   },
   {
    "clock_pct": -5.0,
    "cls": "stock",
+   "h_even": 123000,
    "ins_code": "m1",
    "kind": "stock",
    "m": {
@@ -1265,13 +1440,19 @@
     "vol": 1000000000.0,
     "vwap": 10000.0
    },
+   "p_first": 900.0,
+   "p_max": 1100.0,
+   "p_min": 900.0,
    "pct": 11.11111111111111,
+   "price_change": 100.0,
    "symbol": "فولاد۲",
-   "top50": true
+   "top50": true,
+   "total_shares": 1000000000.0
   },
   {
    "clock_pct": 1.0,
    "cls": "stock",
+   "h_even": 123000,
    "ins_code": "m2",
    "kind": "stock",
    "m": {
@@ -1307,13 +1488,19 @@
     "vol": 2000000000.0,
     "vwap": 500.0
    },
+   "p_first": 500.0,
+   "p_max": 550.0,
+   "p_min": 450.0,
    "pct": 0.0,
+   "price_change": 0.0,
    "symbol": "وبملت۲",
-   "top50": true
+   "top50": true,
+   "total_shares": 500000000.0
   },
   {
    "clock_pct": -1.0309278350515463,
    "cls": "right",
+   "h_even": 123000,
    "ins_code": "m3",
    "kind": "right",
    "m": {
@@ -1349,13 +1536,19 @@
     "vol": 100000000.0,
     "vwap": 1000.0
    },
+   "p_first": 1000.0,
+   "p_max": 1030.0,
+   "p_min": 900.0,
    "pct": -3.0,
+   "price_change": -30.0,
    "symbol": "حقا۲",
-   "top50": false
+   "top50": false,
+   "total_shares": 100000000.0
   },
   {
    "clock_pct": 0.0,
    "cls": "fund",
+   "h_even": 123000,
    "ins_code": "m4",
    "kind": "equity",
    "m": {
@@ -1391,13 +1584,19 @@
     "vol": 100000000.0,
     "vwap": 1000.0
    },
+   "p_first": 1000.0,
+   "p_max": 1100.0,
+   "p_min": 900.0,
    "pct": 0.0,
+   "price_change": 0.0,
    "symbol": "اوج۲",
-   "top50": false
+   "top50": false,
+   "total_shares": 100000000.0
   },
   {
    "clock_pct": 0.0,
    "cls": "fund",
+   "h_even": 123000,
    "ins_code": "m5",
    "kind": "fixed",
    "m": {
@@ -1433,13 +1632,19 @@
     "vol": 100000000.0,
     "vwap": 1000.0
    },
+   "p_first": 1000.0,
+   "p_max": 1100.0,
+   "p_min": 900.0,
    "pct": 0.0,
+   "price_change": 0.0,
    "symbol": "دينا۲",
-   "top50": false
+   "top50": false,
+   "total_shares": 100000000.0
   },
   {
    "clock_pct": 0.0,
    "cls": "fund",
+   "h_even": 123000,
    "ins_code": "m6",
    "kind": "lev",
    "m": {
@@ -1475,13 +1680,19 @@
     "vol": 100000000.0,
     "vwap": 1000.0
    },
+   "p_first": 1000.0,
+   "p_max": 1100.0,
+   "p_min": 900.0,
    "pct": 0.0,
+   "price_change": 0.0,
    "symbol": "اهرم۲",
-   "top50": false
+   "top50": false,
+   "total_shares": 100000000.0
   },
   {
    "clock_pct": 0.0,
    "cls": "fund",
+   "h_even": 123000,
    "ins_code": "m7",
    "kind": "gold",
    "m": {
@@ -1517,13 +1728,19 @@
     "vol": 100000000.0,
     "vwap": 1000.0
    },
+   "p_first": 1000.0,
+   "p_max": 1100.0,
+   "p_min": 900.0,
    "pct": 0.0,
+   "price_change": 0.0,
    "symbol": "گلگشت۲",
-   "top50": false
+   "top50": false,
+   "total_shares": 100000000.0
   },
   {
    "clock_pct": 0.0,
    "cls": "fund",
+   "h_even": 123000,
    "ins_code": "m8",
    "kind": "silver",
    "m": {
@@ -1559,13 +1776,19 @@
     "vol": 100000000.0,
     "vwap": 1000.0
    },
+   "p_first": 1000.0,
+   "p_max": 1100.0,
+   "p_min": 900.0,
    "pct": 0.0,
+   "price_change": 0.0,
    "symbol": "نقره۲",
-   "top50": false
+   "top50": false,
+   "total_shares": 100000000.0
   },
   {
    "clock_pct": null,
    "cls": "other",
+   "h_even": 123000,
    "ins_code": "m9",
    "kind": "other",
    "m": {
@@ -1601,9 +1824,14 @@
     "vol": 0.0,
     "vwap": 0.0
    },
+   "p_first": 0.0,
+   "p_max": 0.0,
+   "p_min": 0.0,
    "pct": null,
+   "price_change": 0.0,
    "symbol": "ضهرم۲",
-   "top50": false
+   "top50": false,
+   "total_shares": 100000000.0
   }
  ]
 }

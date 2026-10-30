@@ -32,10 +32,9 @@ func cget(ct *CTRow, v float64) float64 {
 	if ct == nil {
 		return 0
 	}
-	if isNaN(v) {
-		return 0
-	}
-	return v
+	// پایتون هر خانهٔ client_type را پیش از مصرف با _f می‌خواند؛ NULL و
+	// بی‌نهایت هر دو صفر می‌شوند، نه NaN.
+	return f0(v)
 }
 
 // money همان mstat_engine.money: ارزش هر گروه = مبدأ اگر بود، وگرنه حجم×VWAP.
@@ -53,11 +52,12 @@ func money(r *Row, baseEst map[string]float64) Money {
 		HasCT: r.CT != nil,
 	}
 	ct := r.CT
-	m.BQVal, m.SQVal = r.BuyQVal, r.SellQVal
-	m.BQVol, m.SQVol = r.BuyQVol, r.SellQVol
-	m.BQCnt, m.SQCnt = r.BuyQCnt, r.SellQCnt
-	m.BQ1Vol, m.BQ1Px = r.BuyQ1Vol, r.BuyQ1Px
-	m.SQ1Vol, m.SQ1Px = r.SellQ1Vol, r.SellQ1Px
+	// opt(key)ِ پایتون: NULL ⇒ None (اینجا NaN)، بی‌نهایت ⇒ 0 با _f.
+	m.BQVal, m.SQVal = fopt(r.BuyQVal), fopt(r.SellQVal)
+	m.BQVol, m.SQVol = fopt(r.BuyQVol), fopt(r.SellQVol)
+	m.BQCnt, m.SQCnt = fopt(r.BuyQCnt), fopt(r.SellQCnt)
+	m.BQ1Vol, m.BQ1Px = fopt(r.BuyQ1Vol), fopt(r.BuyQ1Px)
+	m.SQ1Vol, m.SQ1Px = fopt(r.SellQ1Vol), fopt(r.SellQ1Px)
 
 	var vwap float64
 	if d := div(val, vol); d != nil && *d != 0 {
@@ -150,8 +150,10 @@ func money(r *Row, baseEst map[string]float64) Money {
 	} else {
 		m.Base = math.NaN()
 	}
-	if !isNaN(r.BaseVol) && r.BaseVol > 1.0 {
-		m.Base = r.BaseVol
+	// eff_base_vol: «مبنایِ اعلامی» فقط اگر با _f معنادار باشد؛ بی‌نهایت صفر
+	// است و به برآوردِ ۴ نشست می‌رسد، نه به یک عددِ بی‌معنا.
+	if bv := f0(r.BaseVol); bv > 1.0 {
+		m.Base = bv
 	}
 	m.QState = queueState(r, m)
 	return m
@@ -204,10 +206,8 @@ func top50Codes(rows []*Row) map[string]bool {
 		if r.Cls != paperStock {
 			continue
 		}
-		cap := r.TotalShares * r.PClosing
-		if isNaN(cap) {
-			continue
-		}
+		// پایتون: cap = _f(total_shares) * _f(p_closing) — NULL/بی‌نهایت صفر.
+		cap := f0(r.TotalShares) * f0(r.PClosing)
 		if cap > 0 {
 			list = append(list, scored{cap, r.Code})
 		}
@@ -228,28 +228,33 @@ func top50Codes(rows []*Row) map[string]bool {
 	return out
 }
 
+// goldSilverLevKinds دنبالهٔ tupleِ پایتون در bonds_other
+// (_ALL_FUND_KINDS + ("gold", "silver", "lev"))؛ خودِ فهرستِ صندوق‌ها از
+// terms_gen.go می‌آید تا ویرایشِ mstat_engine از گارد رد نشود.
+var goldSilverLevKinds = []string{"gold", "silver", "lev"}
+
 // inCategory همان in_category: دامنه‌ها همان سطرهایِ `market0`ِ تریدرزآرنا.
 func inCategory(r *Row, cat string, top50 map[string]bool) bool {
 	cls, kind := r.Cls, r.Kind
 	switch cat {
 	case "all":
 		return cls == paperStock || cls == paperRight ||
-			(cls == paperFund && inStrings(kind, []string{"equity", "fof", "etf", "mixed", "fixed"}))
+			(cls == paperFund && inStrings(kind, allFundKinds))
 	case "bonds_other":
 		if cls == paperStock || cls == paperRight {
 			return false
 		}
 		if cls == paperFund {
-			return !inStrings(kind, []string{"equity", "fof", "etf", "mixed", "fixed", "gold", "silver", "lev"})
+			return !inStrings(kind, allFundKinds) && !inStrings(kind, goldSilverLevKinds)
 		}
 		return true
 	case "eq_all":
 		return cls == paperStock || cls == paperRight ||
-			(cls == paperFund && inStrings(kind, []string{"equity", "fof", "etf", "mixed"}))
+			(cls == paperFund && inStrings(kind, eqFundKinds))
 	case "stock_right":
 		return cls == paperStock || cls == paperRight
 	case "eq_fund":
-		return cls == paperFund && inStrings(kind, []string{"equity", "mixed", "fof", "etf"})
+		return cls == paperFund && inStrings(kind, eqFundKinds)
 	case "fixed_fund":
 		return cls == paperFund && kind == "fixed"
 	case "lev_fund":

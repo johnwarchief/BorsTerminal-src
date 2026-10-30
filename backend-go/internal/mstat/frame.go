@@ -74,6 +74,15 @@ func f0(v float64) float64 {
 	return v
 }
 
+// fopt همان opt(key) پایتون: NaN (یعنی NULL) NaN می‌ماند، ولی بی‌نهایت با _f
+// صفر می‌شود — ارقامِ nullable نباید +Inf را تا پنل حمل کنند.
+func fopt(v float64) float64 {
+	if math.IsInf(v, 0) {
+		return 0
+	}
+	return v
+}
+
 func fnum(v any) float64 {
 	switch n := v.(type) {
 	case float64:
@@ -111,11 +120,17 @@ func text(v any) string {
 	}
 }
 
-// div همان _div: مخرجِ صفر یا طرفِ نبود ⇒ nil (نه صفر).
+// div همان _div: مخرجِ صفر یا طرفِ نبود ⇒ nil (نه صفر). بی‌نهایت پیش از
+// تقسیم با _f صفر می‌شود؛ NaN به‌معنایِ None است و nil می‌دهد.
 func div(a, b float64) *float64 {
-	if isNaN(a) || isNaN(b) || b == 0 {
+	if isNaN(a) || isNaN(b) {
 		return nil
 	}
+	b = fopt(b)
+	if b == 0 {
+		return nil
+	}
+	a = fopt(a)
 	x := a / b
 	return &x
 }
@@ -130,18 +145,19 @@ func divF(a, b float64) float64 {
 }
 
 func pxNear(v, ref float64) bool {
-	if isNaN(v) || isNaN(ref) {
-		return false
-	}
+	// پایتون هر دو طرف را با _f می‌خواند؛ بی‌نهایت همان‌جا صفر می‌شود.
+	v, ref = f0(v), f0(ref)
 	return v > 0 && ref > 0 && (1.0/2.0) <= v/ref && v/ref <= 2.0
 }
 
 func pxInBand(r *Row, v, ref float64) bool {
-	if isNaN(v) || isNaN(ref) || v <= 0 || ref <= 0 {
+	v, ref = f0(v), f0(ref)
+	if v <= 0 || ref <= 0 {
 		return false
 	}
-	if r.AllowedMin > 0 && r.AllowedMax >= r.AllowedMin {
-		if !(r.AllowedMin*0.999 <= v && v <= r.AllowedMax*1.001) {
+	amin, amax := f0(r.AllowedMin), f0(r.AllowedMax)
+	if amin > 0 && amax >= amin {
+		if !(amin*0.999 <= v && v <= amax*1.001) {
 			return false
 		}
 	}
@@ -260,6 +276,16 @@ func loadSnapshot(db *sql.DB) (*Snapshot, error) {
 			r.SellQ1Vol, r.SellQ1Px = fnum(vals[i+8]), fnum(vals[i+9])
 			r.BuyQ1Cnt = fnum(vals[i+10])
 			i += 11
+		} else {
+			// پایتون این کلیدها را در _row_keys(False) اصلاً نمی‌گذارد، پس
+			// row.get(...) ⇒ None ⇒ opt(...) ⇒ None. در Go «نبود» همان NaN است؛
+			// بی‌آن، صفرِ خالیِ struct «عمقِ واقعیِ صفر» خوانده می‌شد و پنل‌هایِ
+			// عمق/تفکیکِ مشتریان ردیف‌هایِ عمقِ خیالی می‌شمردند.
+			r.BuyQVol, r.BuyQVal, r.BuyQCnt = math.NaN(), math.NaN(), math.NaN()
+			r.SellQVol, r.SellQVal, r.SellQCnt = math.NaN(), math.NaN(), math.NaN()
+			r.BuyQ1Vol, r.BuyQ1Px = math.NaN(), math.NaN()
+			r.SellQ1Vol, r.SellQ1Px = math.NaN(), math.NaN()
+			r.BuyQ1Cnt = math.NaN()
 		}
 		r.QVol, r.QVal, r.NTrades = fnum(vals[i]), fnum(vals[i+1]), fnum(vals[i+2])
 		r.PriceChange, r.TotalShares, r.BaseVol = fnum(vals[i+3]), fnum(vals[i+4]), fnum(vals[i+5])
@@ -328,25 +354,15 @@ func loadSnapshot(db *sql.DB) (*Snapshot, error) {
 	if cday.Valid {
 		if crs, err := db.Query(`SELECT ins_code, buy_i_val, buy_n_val, sell_i_val,
 		    sell_n_val, buy_ddd_val FROM client_type_value WHERE d_even=?`, cday.Int64); err == nil {
-			defer crs.Close()
-			byCode := map[string]*CTVRow{}
-			for crs.Next() {
-				var vals [6]any
-				ptrs := make([]any, 6)
-				for i := range vals {
-					ptrs[i] = &vals[i]
+			byCode, ok := scanCTV(crs)
+			_ = crs.Close()
+			// پایتون با fetchall می‌خواند؛ خطایِ میانِ راه استثنا می‌دهد و except
+			// کلِ جدول را «خالی» می‌کند. نگه‌داشتنِ ردیف‌هایِ پیش از خطا یعنی
+			// value_source ای که پایتون هرگز نمی‌سازد.
+			if ok {
+				for _, r := range snap.Rows {
+					r.CTV = byCode[r.Code]
 				}
-				if err := crs.Scan(ptrs...); err != nil {
-					break
-				}
-				byCode[text(vals[0])] = &CTVRow{
-					BuyIVal: fnum(vals[1]), BuyNVal: fnum(vals[2]),
-					SellIVal: fnum(vals[3]), SellNVal: fnum(vals[4]),
-					BuyDDDVal: fnum(vals[5]),
-				}
-			}
-			for _, r := range snap.Rows {
-				r.CTV = byCode[r.Code]
 			}
 		}
 	}
@@ -354,10 +370,45 @@ func loadSnapshot(db *sql.DB) (*Snapshot, error) {
 	return snap, nil
 }
 
+// rowScanner کمینهٔ چیزی است که اسکنرهایِ این فایل از *sql.Rows می‌خواهند؛
+// تست می‌تواند با همین قرارداد خطایِ میانِ جریان را شبیه‌سازی کند.
+type rowScanner interface {
+	Next() bool
+	Scan(dest ...any) error
+	Err() error
+}
+
+// scanCTV همهٔ ردیف‌هایِ client_type_value را می‌خواند. هر خطایِ اسکن یا
+// پایانِ همراهِ خطا کلِ نتیجه را دور می‌ریزد (`false`)، چون پایتون با
+// fetchall می‌خواند و استثنایِ آن همهٔ ردیف‌ها را از دست می‌دهد.
+func scanCTV(rows rowScanner) (map[string]*CTVRow, bool) {
+	byCode := map[string]*CTVRow{}
+	for rows.Next() {
+		var vals [6]any
+		ptrs := make([]any, 6)
+		for i := range vals {
+			ptrs[i] = &vals[i]
+		}
+		if err := rows.Scan(ptrs...); err != nil {
+			return nil, false
+		}
+		byCode[text(vals[0])] = &CTVRow{
+			BuyIVal: fnum(vals[1]), BuyNVal: fnum(vals[2]),
+			SellIVal: fnum(vals[3]), SellNVal: fnum(vals[4]),
+			BuyDDDVal: fnum(vals[5]),
+		}
+	}
+	if err := rows.Err(); err != nil {
+		return nil, false
+	}
+	return byCode, true
+}
+
 // baseVolumeEstimate همان _base_volume_estimate: میانگینِ حداکثر ۴ نشستِ
-// پیشین (بدونِ امروز) با شرطِ «حداقل دو مقدار».
+// پیشین (بدونِ امروز) با شرطِ «حداقل دو مقدار». خطایِ میانِ کار (اسکن یا
+// پایان) همهٔ برآورد را دور می‌ریزد — پایتون fetchall را در except می‌گیرد و
+// {} برمی‌گرداند، نه نیمهٔ ردیف‌هایِ پیش از خطا.
 func baseVolumeEstimate(db *sql.DB, dayArg any) map[string]float64 {
-	out := map[string]float64{}
 	rows, err := db.Query(`SELECT ins_code, q_tot_tran FROM daily_prices
 	    WHERE d_even < ? AND q_tot_tran > 0
 	      AND d_even >= (SELECT MIN(d_even) FROM (
@@ -365,21 +416,30 @@ func baseVolumeEstimate(db *sql.DB, dayArg any) map[string]float64 {
 	           ORDER BY d_even DESC LIMIT 4))
 	    ORDER BY ins_code, d_even DESC`, dayArg, dayArg)
 	if err != nil {
-		return out
+		return map[string]float64{}
 	}
 	defer rows.Close()
+	return collectBaseVolumes(rows)
+}
+
+// collectBaseVolumes همان بدنهٔ _base_volume_estimate رویِ ردیف‌هایِ خوانده‌شده.
+func collectBaseVolumes(rows rowScanner) map[string]float64 {
 	acc := map[string][]float64{}
 	for rows.Next() {
 		var code any
 		var v any
 		if err := rows.Scan(&code, &v); err != nil {
-			return out
+			return map[string]float64{}
 		}
 		c := text(code)
 		if len(acc[c]) < 4 {
-			acc[c] = append(acc[c], fnum(v))
+			acc[c] = append(acc[c], f0(fnum(v)))
 		}
 	}
+	if err := rows.Err(); err != nil {
+		return map[string]float64{}
+	}
+	out := map[string]float64{}
 	for c, lst := range acc {
 		if len(lst) >= 2 {
 			sum := 0.0

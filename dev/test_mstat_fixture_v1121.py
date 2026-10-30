@@ -8,7 +8,10 @@
 ۳) هر پنلِ سند در s1 حاضر است، خالی نیست (هر مسیر شرطِ محتوای خودش را دارد)
    و mainwatch دقیقاً جفت‌هایِ پرچمِ موردانتظار را True می‌دهد. دامپِ enrich
    (ورودیِ تستِ Go برایِ load_snapshot+money) هم شرطِ خودش را دارد: هر ردیف
-   کد و m، دست‌کم یک ارزشِ ریالی، و asof با کلیدهایِ client_lag_days/depth.
+   کد و m، دست‌کم یک ارزشِ ریالی، فیلدهایِ ستونیِ p_first/p_min/p_max/
+   price_change/total_shares/h_even، و asof با کلیدهایِ client_lag_days/depth.
+   دامپِ enrich_nodepth همان قید را برایِ بانکِ بی‌ستونِ عمق دارد: depth=False،
+   bq_val تهی و qstate=x در هر ردیف — همان قراردادِ _row_keys(False).
 ۴) شمارشِ سناریوها همان چهار صحنه است و درختِ طلایی فقط همان‌ها را دارد.
 ۵) رفتارِ صحنه‌ها با مقدارِ دقیق سنجیده می‌شود (نه «هر مقدارِ متفاوت»).
 ۶) terms_gen.go همان چیزی است که استخراجِ تازۀ mstat_engine می‌دهد؛ جدولِ
@@ -35,11 +38,16 @@ ROUTES = ["summary", "histogram_all", "histogram_eq_all", "thermometer_all",
           "thermometer_eq_all", "depth_all", "depth_eq_all", "clientsplit_all",
           "clientsplit_fixed", "market_snapshot", "phase", "industries",
           "timeline_cum", "timeline_inst", "phases", "mainwatch_default",
-          "mainwatch_val", "enrich"]
-# `enrich` بدنهٔ یک مسیر نیست: دامپِ موتورِ `load_snapshot`+`money` برایِ تستِ
-# Go است و `status` ندارد. شرطِ شکلش همان asof/rows است.
-ENGINE_DUMPS = {"enrich"}
-# همان چیزی که تسک می‌خواهد: s1 هفده پنل به‌علاوهٔ دامپِ enrich، s2 دو فایل،
+          "mainwatch_val", "enrich", "enrich_nodepth"]
+# `enrich`/`enrich_nodepth` بدنهٔ یک مسیر نیستند: دامپِ موتورِ
+# `load_snapshot`+`money` برایِ تستِ Go هستند و `status` ندارند. شرطِ شکلشان
+# همان asof/rows است.
+ENGINE_DUMPS = {"enrich", "enrich_nodepth"}
+# فیلدهایِ ستونیِ ردیف که فقط از دامپ می‌آیند (در `m` نیستند)؛ اگر یکی از
+# قلم بیفتد، تستِ Go دیگر نمی‌تواند جابه‌جاییِ موقعیتیِ ستون‌ها را بگیرد.
+ROW_COLUMNS = ("p_first", "p_min", "p_max", "price_change", "total_shares",
+               "h_even")
+# همان چیزی که تسک می‌خواهد: s1 هفده پنل به‌علاوهٔ دو دامپِ enrich، s2 دو فایل،
 # s3 و s4 هرکدام یکی.
 SCENARIOS = {"s1": set(ROUTES),
              "s2": {"timeline_cum", "phases"},
@@ -85,6 +93,20 @@ def sha(path):
 def read_json(path):
     with open(path, encoding="utf-8") as f:
         return json.load(f)
+
+
+def _enrich_rows(d):
+    """ردیف‌هایِ دامپِ enrich که شکل و ستون‌هایِ قفل‌شده را دارند.
+
+    ردیفِ بی‌`ins_code`/`m` یا بی‌یکی از `ROW_COLUMNS` کنار گذاشته می‌شود؛
+    آن‌وقت شرطِ محتوا `rows=0` می‌دهد و طلاییِ ناقص بی‌صدا سبز نمی‌شود.
+    """
+    rows = d.get("rows") or []
+    if not all(isinstance(r, dict) and r.get("ins_code")
+               and isinstance(r.get("m"), dict)
+               and all(k in r for k in ROW_COLUMNS) for r in rows):
+        return []
+    return rows
 
 
 def build_fixture(dest):
@@ -138,15 +160,23 @@ def panel_content(name, d):
     if name == "enrich":
         # دامپِ Go: هر ردیف باید کد و دیکشنریِ m داشته باشد و دست‌کم یک ردیف
         # ارزشِ ریالیِ واقعی (نه null) بدهد؛ asof هم کلیدهایِ قرارداد را دارد.
-        rows = d.get("rows") or []
-        shaped = bool(rows) and all(
-            isinstance(r, dict) and r.get("ins_code") and isinstance(r.get("m"), dict)
-            for r in rows)
+        rows = _enrich_rows(d)
         valued = any((r.get("m") or {}).get("val") is not None for r in rows)
         asof = d.get("asof") or {}
         meta = "client_lag_days" in asof and "depth" in asof
-        return shaped and valued and meta, \
+        return bool(rows) and valued and meta, \
             "rows=%d valued=%s asof_keys=%s" % (len(rows), valued, sorted(asof))
+    if name == "enrich_nodepth":
+        # همان قیدِ دامپ، به‌علاوهٔ قراردادِ بی‌عمق: depth=False، هر bq_val تهی
+        # و هر qstate='x' — نه صفرِ خالیِ Go.
+        rows = _enrich_rows(d)
+        depth_off = all((r.get("m") or {}).get("bq_val") is None
+                        and (r.get("m") or {}).get("qstate") == "x"
+                        for r in rows)
+        depth_meta = (d.get("asof") or {}).get("depth") is False
+        return bool(rows) and depth_off and depth_meta, \
+            "rows=%d depth=%r bq_null/qstate_x=%s" % (
+                len(rows), (d.get("asof") or {}).get("depth"), depth_off)
     if name == "summary":
         n = len(d.get("rows") or [])
         return n > 0, "rows=%d" % n
