@@ -42,12 +42,16 @@ var keepNull = map[string]bool{
 }
 
 // put همان دو پاسِ پایتون را یکی می‌کند: «NaN ⇒ صفر» برایِ ستون‌هایِ عادی
-// (np.nan_to_num) و «NaN ⇒ کلید نیامد» برایِ _KEEP_NULL (ماسکِ isfinite در
-// _slim_records). nil هرگز کلید نمی‌سازد (None در پایتون هم همین است).
+// (np.nan_to_num)، «NaN ⇒ کلید نیامد» برایِ _KEEP_NULL (ماسکِ isfinite در
+// _slim_records)، و «NULL ⇒ ۰» برایِ بقیه (replace/fillna(0)ِ پایتون رویِ
+// ستون‌هایِ object). پس nil فقط در _KEEP_NULL کلید نمی‌سازد.
 func put(rec map[string]any, name string, v any) {
 	switch x := v.(type) {
 	case nil:
-		return
+		if keepNull[name] {
+			return
+		}
+		rec[name] = int64(0)
 	case float64:
 		if math.IsNaN(x) || math.IsInf(x, 0) {
 			if keepNull[name] {
@@ -60,7 +64,9 @@ func put(rec map[string]any, name string, v any) {
 	case int64, bool:
 		rec[name] = x
 	case string:
-		if x == "" && (name == "vol_trend" || name == "pct_basis" || name == "mcap_src") {
+		// vol_trend/pct_basis در مشتقات رشته‌اند و "" یعنی null؛ mcap_src نه:
+		// رشتهٔ خالیِ آن از بانک می‌آید و مثلِ پایتون مقدار است، نه null.
+		if x == "" && (name == "vol_trend" || name == "pct_basis") {
 			return
 		}
 		rec[name] = x
@@ -68,11 +74,9 @@ func put(rec map[string]any, name string, v any) {
 }
 
 // numericCols ستون‌هایی را نشان می‌دهد که pandas آن‌ها را float64 می‌خواند:
-// دستِ‌کم یک عدد و هیچ غیرعددی. تفاوتش با ستونِ object فقط درِ برخورد با NULL
-// است — NULL در ستونِ float64 به NaN و بعد در پاسِ fillna(0) به ۰٫۰ می‌رسد،
-// ولی NULL در ستونِ object همان None می‌ماند و در _slim_records کلید نمی‌سازد.
-// بی‌این تفکیک، ردیفِ بی‌مقدارِ یک ستونِ عددی «کلید نیامد» می‌گرفت، نه صفر —
-// و بدنۀ ?fields=all با پایتون یکی نمی‌شد.
+// دستِ‌کم یک عدد و هیچ غیرعددی. NULLِ این ستون‌ها پیش از put صفرِ float64
+// می‌شود (همان nan_to_num) و NULLِ ستونِ object در put به صفرِ صحیح
+// (fillna(0)); هر دو در JSON «۰»اند و تفکیک فقط برایِ هم‌شکلیِ نوعِ داخلی است.
 func numericCols(fr *store.Frame) map[string]bool {
 	out := make(map[string]bool, len(fr.Cols))
 	for name, vals := range fr.Cols {
@@ -141,9 +145,8 @@ func assemble(fr *store.Frame, d *board.Derived, fl *tapeflags.Flags, dropUnused
 		set(rec, "resistance_59", fl.Resistance59[i], dropUnused)
 		set(rec, "dist_min30_pct", d.DistMin30Pct[i], dropUnused)
 		set(rec, "mcap", d.Mcap[i], dropUnused)
-		if d.McapSrc[i] != "" {
-			rec["mcap_src"] = d.McapSrc[i]
-		}
+		// mcap_src از خودِ ستونِ قاب می‌آید (NULL ⇒ کلید نیامد، "" ⇒ مقدارِ
+		// صریح)؛ درِ Derived.McapSrc فقط برایِ مصرف‌کنندگانِ داخلی است.
 		rec["is_live"] = d.IsLive[i]
 		rec["f_clock"] = fl.Clock[i]
 		rec["f_susp"] = fl.Susp[i]

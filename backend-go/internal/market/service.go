@@ -6,6 +6,7 @@ import (
 	"database/sql"
 	"encoding/hex"
 	"encoding/json"
+	"log"
 	"net/http"
 	"os"
 	"os/exec"
@@ -48,6 +49,13 @@ type Service struct {
 	builtAt  time.Time
 	ready    bool
 	building bool
+	// builtToken همان نشانکِ (mtime_ns, size)ِ market_sync.json است که آخرین
+	// بازسازیِ کش‌شده دید؛ اختلافش با توکنِ فعلی یعنی «داده تازه است» — معادلِ
+	// cur > mirror_rev در پایتون.
+	builtToken string
+	// builds شمارندۀ بازسازی‌هایِ کامل‌شدۀ کش‌شده؛ تستِ دلتا با همین می‌بیند
+	// بازسازیِ ناهمگام واقعاً اجرا شده است.
+	builds int
 
 	rev     int64
 	byCode  map[string]map[string]any
@@ -73,6 +81,9 @@ func (s *Service) Board(w http.ResponseWriter, r *http.Request) {
 		}
 		if inm := r.Header.Get("If-None-Match"); inm != "" && inm == etag {
 			w.Header().Set("ETag", etag)
+			// این ۳۰۴ پاسخِ مسیرِ ساخت است، نه کشِ داغ: پایتون هم همین‌جا
+			// X-Cache: MISS-304 می‌فرستد.
+			w.Header().Set("X-Cache", "MISS-304")
 			w.WriteHeader(http.StatusNotModified)
 			return
 		}
@@ -86,6 +97,11 @@ func (s *Service) Board(w http.ResponseWriter, r *http.Request) {
 	}
 	if inm := r.Header.Get("If-None-Match"); inm != "" && inm == etag {
 		w.Header().Set("ETag", etag)
+		// کشِ داغ (HIT/STALE) مثلِ _market_from_cache فقط ETag می‌دهد؛ فقط
+		// ساختِ سرد (MISS) نشانکِ MISS-304 می‌گیرد.
+		if xcache == "MISS" {
+			w.Header().Set("X-Cache", "MISS-304")
+		}
 		w.WriteHeader(http.StatusNotModified)
 		return
 	}
@@ -141,11 +157,18 @@ func (s *Service) rebuildAsync() {
 			s.building = false
 			s.mu.Unlock()
 		}()
-		_, _, _ = s.build(true, true)
+		if _, _, err := s.build(true, true); err != nil {
+			// خطایِ بازسازیِ ناهمگام به پاسخِ HTTP نمی‌رسد؛ بی‌این خط، شکستِ
+			// کشِ داغ در لاگ هیچ اثری نمی‌گذاشت (پایتون هم چاپ می‌کند).
+			log.Printf("[market] background rebuild failed: %v", err)
+		}
 	}()
 }
 
 func (s *Service) build(dropUnused, storeCache bool) ([]byte, string, error) {
+	// توکنِ همین بازسازی: اگر سینکر وسطِ کار فایلش را عوض کند، بازسازیِ بعدی
+	// آن را می‌بیند و یک بار دیگر می‌سازد.
+	token := syncToken(s.dataDir)
 	fr, err := store.LoadBoard(s.market)
 	if err != nil {
 		return nil, "", err
@@ -208,6 +231,8 @@ func (s *Service) build(dropUnused, storeCache bool) ([]byte, string, error) {
 		s.body, s.etag, s.builtAt, s.ready = body, etag, time.Now(), true
 		s.byCode = indexByCode(recs)
 		s.meta, s.counts, s.rev = meta, counts, rev
+		s.builtToken = token
+		s.builds++
 		s.mu.Unlock()
 	}
 	return body, etag, nil
@@ -259,14 +284,19 @@ func boardMeta(db *sql.DB) (map[string]any, error) {
 		return nil, err
 	}
 	meta := map[string]any{"d_even": nil, "h_even": nil, "last_sync": nil}
-	if dEven.Valid {
-		meta["d_even"] = dEven.Int64
-	}
-	if hEven.Valid {
-		meta["h_even"] = hEven.Int64
-	}
-	if lastSync.Valid {
-		meta["last_sync"] = lastSync.String
+	if err == nil {
+		// ردیفِ تجمیع وجود دارد ⇒ عینِ int(_r[0] or 0): NULLِ d_even/h_even
+		// صفر می‌شود و فقط last_sync می‌تواند null بماند.
+		meta["d_even"], meta["h_even"] = int64(0), int64(0)
+		if dEven.Valid {
+			meta["d_even"] = dEven.Int64
+		}
+		if hEven.Valid {
+			meta["h_even"] = hEven.Int64
+		}
+		if lastSync.Valid {
+			meta["last_sync"] = lastSync.String
+		}
 	}
 	return meta, nil
 }
@@ -277,16 +307,25 @@ func (s *Service) Delta(w http.ResponseWriter, r *http.Request) {
 		since = -1
 	}
 	payload := s.delta(since)
+	// عینِ _ORJ_JSONِ پایتون: پاسخِ دلتا هرگز کش نمی‌شود.
+	w.Header().Set("Cache-Control", "no-store")
 	httpapi.WriteJSON(w, http.StatusOK, payload)
 }
 
 func (s *Service) delta(since int64) map[string]any {
 	s.mu.Lock()
 	ready, mirrorRev, meta, counts, byCode, journal := s.ready, s.rev, s.meta, s.counts, s.byCode, s.journal
+	builtToken := s.builtToken
 	s.mu.Unlock()
 	if !ready {
 		s.rebuildAsync()
 		return map[string]any{"status": "full", "rev": mirrorRev, "reason": "no-cache"}
+	}
+	// فازِ الف: به‌جایِ cur > mirror_revِ پایتون، نشانکِ market_sync.json را
+	// می‌سنجیم. مشتریِ دلتا دیگر پشتِ کشِ ۶۰ثانیه‌ای گیر نمی‌کند: هر سینکِ
+	// موفق بازسازیِ ناهمگام را راه می‌اندازد و ردیف‌هایِ تازه به آینه می‌رسند.
+	if syncToken(s.dataDir) != builtToken {
+		s.rebuildAsync()
 	}
 	if since == mirrorRev {
 		return withCounts(map[string]any{"status": "unchanged", "rev": mirrorRev, "meta": meta}, counts)
@@ -336,7 +375,7 @@ func (s *Service) SyncState(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// marketRunning عینِ _count_procs("test_tsetmc") با کشِ ۶۰ثانیه‌ای.
+// marketRunning عینِ _count_procs("test_tsetmc") با کشِ ۱۰ثانیه‌ای.
 func (s *Service) marketRunning() bool {
 	s.procMu.Lock()
 	defer s.procMu.Unlock()
@@ -356,4 +395,16 @@ func (s *Service) marketRunning() bool {
 		s.procValue = n > 0
 	}
 	return s.procValue
+}
+
+// syncToken «این داده نو است» را از خودِ فایلِ سینکر می‌گیرد: هر سینکِ موفق
+// market_sync.json را بازنویسی می‌کند، پس (mtime_ns, size) همان نقشی را دارد
+// که sync_count در پروسۀ پایتون داشت.
+func syncToken(dataDir string) string {
+	p := filepath.Join(dataDir, "market_sync.json")
+	st, err := os.Stat(p)
+	if err != nil {
+		return ""
+	}
+	return strconv.FormatInt(st.ModTime().UnixNano(), 10) + ":" + strconv.FormatInt(st.Size(), 10)
 }

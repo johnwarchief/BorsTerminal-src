@@ -7,9 +7,13 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
+	"borsterminal/backend/internal/board"
 	"borsterminal/backend/internal/db"
 	"borsterminal/backend/internal/parity"
+	"borsterminal/backend/internal/store"
+	"borsterminal/backend/internal/tapeflags"
 )
 
 func fixtureCopy(t *testing.T) (*db.Handles, string) {
@@ -180,5 +184,128 @@ func TestDeltaJournalAfterChange(t *testing.T) {
 	_, same, _, _ := getJSON(t, s, "/api/market/delta?since=1", nil)
 	if sm, _ := same.(map[string]any); sm["status"] != "unchanged" {
 		t.Fatalf("delta(1) = %v", same)
+	}
+}
+
+// TestAssembleMcapSrcEmptyString قیدِ ردیفِ واقعیِ بانک را می‌بندد: پایتون در
+// _slim_records فقط None را می‌اندازد، پس mcap_src = "" هم مقدار است و کلید
+// می‌سازد. ستونِ قاب NULL ⇒ کلید نیامد، "" ⇒ کلید با ""، "mw" ⇒ "mw"؛ و
+// NULLِ ستونِ objectِ غیرِ _KEEP_NULL عینِ fillna(0) صفر می‌شود، نه نیامدن.
+func TestAssembleMcapSrcEmptyString(t *testing.T) {
+	fr := &store.Frame{
+		Codes: []string{"NULLSRC", "EMPTYSRC", "MWSRC"},
+		Cols: map[string][]any{
+			"ins_code":    {"NULLSRC", "EMPTYSRC", "MWSRC"},
+			"mcap_src":    {nil, "", "mw"},
+			"sector_name": {nil, "bank", "other"},
+		},
+	}
+	d := board.Derive(fr)
+	recs := assemble(fr, d, tapeflags.Apply(fr, d), true)
+	if len(recs) != 3 {
+		t.Fatalf("records = %d, want 3", len(recs))
+	}
+	if v, ok := recs[0]["mcap_src"]; ok {
+		t.Fatalf("NULLِ mcap_src باید کلید نیامده باشد، آمد: %v", v)
+	}
+	if v, ok := recs[1]["mcap_src"]; !ok || v != "" {
+		t.Fatalf(`mcap_src="" باید کلید با "" باشد، got %v (present=%v)`, v, ok)
+	}
+	if v := recs[2]["mcap_src"]; v != "mw" {
+		t.Fatalf("mcap_src = %v, want mw", v)
+	}
+	if v := recs[0]["sector_name"]; v != int64(0) {
+		t.Fatalf("NULLِ ستونِ object = %v (%T), want 0", v, v)
+	}
+	if v := recs[1]["sector_name"]; v != "bank" {
+		t.Fatalf("sector_name = %v, want bank", v)
+	}
+}
+
+// buildCount شمارندۀ بازسازی‌هایِ کامل‌شده را زیرِ همان قفل می‌خواند.
+func (s *Service) buildCount() int {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.builds
+}
+
+// TestDeltaRebuildsWhenSyncTokenAdvances همان قیدِ پایتون را می‌بندد: rev فقط
+// با build بالا می‌رود و فقط Board می‌سازد، پس مشتریِ دلتا-تنها باید خودش
+// بازسازی را راه بیندازد. نوشتنِ market_sync.json توکن را از "" جدا می‌کند؛
+// delta(0) باید بازسازیِ ناهمگام را شروع کند و شمارندۀ builds تا ۲ ثانیه
+// جلو برود. فایل در طولِ تست دست نمی‌خورد، پس توکن پایدار است و بازسازیِ
+// تکراری/بی‌پایان ممکن نیست.
+func TestDeltaRebuildsWhenSyncTokenAdvances(t *testing.T) {
+	h, dir := fixtureCopy(t)
+	s := New(h, dir)
+	if _, _, err := s.build(true, true); err != nil {
+		t.Fatal(err)
+	}
+	before := s.buildCount()
+	if err := os.WriteFile(filepath.Join(dir, "market_sync.json"),
+		[]byte(`{"at":"2026-10-30T00:00:00"}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	_, got, _, _ := getJSON(t, s, "/api/market/delta?since=0", nil)
+	if m, _ := got.(map[string]any); m["status"] != "unchanged" {
+		t.Fatalf("delta(0) = %v, want unchanged؛ بازسازی نباید شکلِ پاسخ را عوض کند", got)
+	}
+	deadline := time.Now().Add(2 * time.Second)
+	for s.buildCount() == before {
+		if time.Now().After(deadline) {
+			t.Fatalf("بعد از ۲ ثانیه بازسازیِ دلتا اجرا نشد (builds=%d)", before)
+		}
+		time.Sleep(5 * time.Millisecond)
+	}
+	if after := s.buildCount(); after != before+1 {
+		t.Fatalf("builds = %d, want %d؛ توکنِ پایدار باید دقیقاً یک بازسازی بدهد", after, before+1)
+	}
+}
+
+// TestCacheHeaders دو قیدِ هدر را می‌بندد: پاسخِ دلتا مثلِ _ORJ_JSONِ پایتون
+// no-store است، و ۳۰۴ِ مسیرِ ساخت X-Cache: MISS-304 می‌گیرد. کشِ داغ (HIT)
+// مثلِ _market_from_cache فقط ETag می‌دهد، بی X-Cache.
+func TestCacheHeaders(t *testing.T) {
+	s := fixtureService(t)
+	req := httptest.NewRequest("GET", "/api/market/delta?since=-1", nil)
+	rec := httptest.NewRecorder()
+	s.Delta(rec, req)
+	if got := rec.Header().Get("Cache-Control"); got != "no-store" {
+		t.Fatalf("delta Cache-Control = %q, want no-store", got)
+	}
+
+	// fields=all هر بار می‌سازد، پس ۳۰۴ همیشه از مسیرِ ساخت است.
+	_, _, _, allETag := getJSON(t, s, "/api/market?fields=all", nil)
+	req = httptest.NewRequest("GET", "/api/market?fields=all", nil)
+	req.Header.Set("If-None-Match", allETag)
+	rec = httptest.NewRecorder()
+	s.Board(rec, req)
+	if rec.Code != 304 || rec.Header().Get("X-Cache") != "MISS-304" {
+		t.Fatalf("fields=all 304: code=%d X-Cache=%q, want 304/MISS-304",
+			rec.Code, rec.Header().Get("X-Cache"))
+	}
+
+	// کشِ داغ: ۳۰۴ فقط ETag.
+	_, _, _, etag := getJSON(t, s, "/api/market", nil)
+	req = httptest.NewRequest("GET", "/api/market", nil)
+	req.Header.Set("If-None-Match", etag)
+	rec = httptest.NewRecorder()
+	s.Board(rec, req)
+	if rec.Code != 304 || rec.Header().Get("X-Cache") != "" {
+		t.Fatalf("hot 304: code=%d X-Cache=%q, want 304/empty",
+			rec.Code, rec.Header().Get("X-Cache"))
+	}
+
+	// کهنگیِ بیش از سقف ⇒ ساختِ همگام ⇒ ۳۰۴ِ مسیرِ ساخت.
+	s.mu.Lock()
+	s.builtAt = time.Now().Add(-staleCeiling - time.Second)
+	s.mu.Unlock()
+	req = httptest.NewRequest("GET", "/api/market", nil)
+	req.Header.Set("If-None-Match", etag)
+	rec = httptest.NewRecorder()
+	s.Board(rec, req)
+	if rec.Code != 304 || rec.Header().Get("X-Cache") != "MISS-304" {
+		t.Fatalf("cold 304: code=%d X-Cache=%q, want 304/MISS-304",
+			rec.Code, rec.Header().Get("X-Cache"))
 	}
 }
