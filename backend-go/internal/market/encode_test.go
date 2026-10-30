@@ -3,6 +3,8 @@ package market
 import (
 	"encoding/json"
 	"math"
+	"runtime"
+	"strconv"
 	"testing"
 )
 
@@ -40,6 +42,50 @@ func TestMarshalBoardMatchesEncodingJSON(t *testing.T) {
 	}
 	if string(got) != string(want) {
 		t.Fatalf("encoder drifted from encoding/json:\n got=%s\nwant=%s", got, want)
+	}
+}
+
+// TestMarshalBoardParallelMatchesEncodingJSON شاخهٔ موازیِ encoder را می‌سنجد:
+// گیتِ پاریتی فقط JSONِ تجزیه‌شده را مقایسه می‌کند و بدنهٔ سریال‌شده با تکه‌هایِ
+// هم‌زمان اگر بایتی جابه‌جا شود بی‌صدا از دستش درمی‌رفت. دستهٔ ۱۶۰۰ردیفی
+// workerCount را از مسیرِ ترتیبی بیرون می‌برد (آستانه ۱۵۰۰ ردیف است) و رشتهٔ
+// گریزِلازم و عددِ توان‌دار هم در آن هست، پس هر دو شاخهٔ رشته و عدد هم پوشش
+// می‌گیرند. قرارداد همان قراردادِ قبلی است: برابریِ بایت‌به‌بایت با json.Marshal.
+func TestMarshalBoardParallelMatchesEncodingJSON(t *testing.T) {
+	if prev := runtime.GOMAXPROCS(0); prev < 2 {
+		runtime.GOMAXPROCS(2)
+		defer runtime.GOMAXPROCS(prev)
+	}
+	rows := make([]map[string]any, 1600)
+	for i := range rows {
+		rows[i] = map[string]any{
+			"ins_code": "IRO1PAR" + strconv.Itoa(100000+i),
+			"symbol":   "فولاد",
+			"note":     "a<b>&c" + string(rune(0x07)) + "نیم\u200cفاصله",
+			"tiny":     1e-7,
+			"pct":      float64(i) * 0.25,
+			"is_live":  i%2 == 0,
+		}
+	}
+	if workers := workerCount(len(rows)); workers < 2 {
+		t.Fatalf("workerCount(%d) = %d؛ شاخهٔ موازی باز نشد", len(rows), workers)
+	}
+	payload := map[string]any{
+		"status": "success", "rev": int64(3), "count": len(rows),
+		"meta": map[string]any{"d_even": int64(20261014), "h_even": int64(61019), "last_sync": nil},
+		"data": rows,
+	}
+	want, err := json.Marshal(payload)
+	if err != nil {
+		t.Fatal(err)
+	}
+	got, err := marshalBoard(payload)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(got) != string(want) {
+		t.Fatalf("parallel encoder drifted from encoding/json (got %d bytes, want %d)",
+			len(got), len(want))
 	}
 }
 

@@ -1,6 +1,7 @@
 package market
 
 import (
+	"bytes"
 	"database/sql"
 	"encoding/json"
 	"net/http/httptest"
@@ -441,6 +442,68 @@ func TestCacheHeaders(t *testing.T) {
 	if rec.Code != 304 || rec.Header().Get("X-Cache") != "MISS-304" {
 		t.Fatalf("cold 304: code=%d X-Cache=%q, want 304/MISS-304",
 			rec.Code, rec.Header().Get("X-Cache"))
+	}
+}
+
+// boardCall یک درخواستِ /api/market می‌زند و پاسخِ خام را برمی‌گرداند؛ هدرِ
+// X-Cache و بدنهٔ بایتی برایِ تستِ کش لازم‌اند و getJSON این‌ها را نمی‌دهد.
+func boardCall(t *testing.T, s *Service) *httptest.ResponseRecorder {
+	t.Helper()
+	rec := httptest.NewRecorder()
+	s.Board(rec, httptest.NewRequest("GET", "/api/market", nil))
+	if rec.Code != 200 {
+		t.Fatalf("board status = %d", rec.Code)
+	}
+	return rec
+}
+
+// TestCachedBodyFollowsDataToken درِ توکنِ کشِ بدنه را می‌بندد. پیش از این،
+// cached فقط عمر را می‌سنجید؛ اگر داده زیرِ سرورِ زنده عوض می‌شد، تا ۶۰ ثانیه
+// بدنهٔ کهنه HIT می‌گرفت، درحالی‌که پایتون کش را با هر سینک پاک می‌کند. تغییرِ
+// mtime کافی است تا توکنِ dataToken عوض شود: پاسخِ بعدی باید بدنهٔ فعلی را با
+// X-Cache: STALE بدهد و یک بازسازیِ ناهمگام راه بیندازد؛ پس از نشستنِ بازسازی،
+// همان درخواست HIT می‌گیرد و بدنه بایت‌به‌بایت همان اولی است.
+func TestCachedBodyFollowsDataToken(t *testing.T) {
+	h, dir := fixtureCopy(t)
+	s := New(h, dir)
+	first := boardCall(t, s)
+	if got := first.Header().Get("X-Cache"); got != "MISS" {
+		t.Fatalf("first X-Cache = %q, want MISS", got)
+	}
+
+	dbPath := filepath.Join(dir, "market.db")
+	st, err := os.Stat(dbPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	future := st.ModTime().Add(time.Second)
+	if err := os.Chtimes(dbPath, future, future); err != nil {
+		t.Fatal(err)
+	}
+
+	before := s.buildCount()
+	stale := boardCall(t, s)
+	if got := stale.Header().Get("X-Cache"); got != "STALE" {
+		t.Fatalf("after data change X-Cache = %q, want STALE", got)
+	}
+	if !bytes.Equal(stale.Body.Bytes(), first.Body.Bytes()) {
+		t.Fatal("STALE response must carry the current body unchanged")
+	}
+
+	deadline := time.Now().Add(2 * time.Second)
+	for s.buildCount() == before {
+		if time.Now().After(deadline) {
+			t.Fatalf("بعد از ۲ ثانیه بازسازیِ توکنِ کش اجرا نشد (builds=%d)", before)
+		}
+		time.Sleep(5 * time.Millisecond)
+	}
+
+	hit := boardCall(t, s)
+	if got := hit.Header().Get("X-Cache"); got != "HIT" {
+		t.Fatalf("after rebuild X-Cache = %q, want HIT", got)
+	}
+	if !bytes.Equal(hit.Body.Bytes(), first.Body.Bytes()) {
+		t.Fatal("body changed between the first and the post-rebuild HIT")
 	}
 }
 

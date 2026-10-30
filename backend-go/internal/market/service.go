@@ -52,11 +52,16 @@ type Service struct {
 	building bool
 	// builtToken همان نشانکِ (mtime_ns, size)ِ فایل‌هایِ داده است که آخرین
 	// بازسازیِ کش‌شده دید؛ اختلافش با توکنِ فعلی یعنی «داده تازه است» — معادلِ
-	// cur > mirror_rev در پایتون.
+	// cur > mirror_rev در پایتون. کشِ بدنه هم همین را می‌سنجد: پایتون هر سینک را
+	// با پاک‌کردنِ کش جواب می‌دهد، پس بدنهٔ داغ نباید ۶۰ ثانیه رویِ دادهٔ کهنه بماند.
 	builtToken string
 	// builds شمارندۀ بازسازی‌هایِ کامل‌شدۀ کش‌شده؛ تستِ دلتا با همین می‌بیند
 	// بازسازیِ ناهمگام واقعاً اجرا شده است.
 	builds int
+	// cacheSeq با هر انتشارِ کش بالا می‌رود و فقط شناسهٔ نسلِ نقشهٔ byCode است:
+	// دو map را نمی‌شود با == سنجید، ولی با این شمارنده می‌شود فهمید بازسازیِ
+	// هم‌زمانی بینِ گرفتنِ نقشه و انتشارِ بعدی منتشر شده یا نه.
+	cacheSeq int
 
 	rev     int64
 	byCode  map[string]map[string]any
@@ -160,7 +165,7 @@ func writeBody(w http.ResponseWriter, body []byte, etag, xcache string) {
 
 func (s *Service) cached() ([]byte, string, string, error) {
 	s.mu.Lock()
-	body, etag, builtAt, ready := s.body, s.etag, s.builtAt, s.ready
+	body, etag, builtAt, ready, builtToken := s.body, s.etag, s.builtAt, s.ready, s.builtToken
 	s.mu.Unlock()
 	if !ready {
 		b, e, err := s.build(true, true)
@@ -169,9 +174,16 @@ func (s *Service) cached() ([]byte, string, string, error) {
 		}
 		return b, e, "MISS", nil
 	}
+	// درِ توکن پیش از درِ عمر: پایتون _STATIC_FRAME/کش را با هر سینک پاک می‌کند،
+	// پس بدنهٔ تازه‌ساخته هم اگر داده زیرش عوض شده باشد نباید HIT بگیرد. رفتار
+	// همان مسیرِ STALE است: بدنهٔ فعلی می‌رود و یک بازسازیِ ناهمگام شروع می‌شود.
 	age := time.Since(builtAt)
 	if age < ttl {
-		return body, etag, "HIT", nil
+		if dataToken(s.dataDir) == builtToken {
+			return body, etag, "HIT", nil
+		}
+		s.rebuildAsync()
+		return body, etag, "STALE", nil
 	}
 	if age > staleCeiling {
 		b, e, err := s.build(true, true)
@@ -254,17 +266,35 @@ func (s *Service) build(dropUnused, storeCache bool) ([]byte, string, error) {
 	}
 	counts := map[string]any{"count": len(recs), "live_count": live, "fossil_count": len(recs) - live}
 
+	// نقشهٔ کهنه را زیرِ قفل برمی‌داریم و مقایسه را بیرون انجام می‌دهیم: byCode
+	// فقط جایگزین می‌شود، هرگز درجا تغییر نمی‌کند، پس مرجعِ گرفته‌شده امن است و
+	// marshalِ ۱۲ مگابایتیِ ردیف‌هایِ کهنه/تازه دیگر mu را ۱۰۰ تا ۲۰۰ میلی‌ثانیه
+	// نگه نمی‌دارد (هر بازسازیِ کش‌شده یک درخواستِ تابلو را پشتِ خود می‌خواباند).
 	s.mu.Lock()
+	oldByCode, oldSeq := s.byCode, s.cacheSeq
 	rev := s.rev
+	s.mu.Unlock()
 	var changed []string
-	if storeCache && s.byCode != nil {
-		changed = diffCodes(s.byCode, recs)
-		if len(changed) > 0 {
-			rev++
-			s.journal = append(s.journal, journalEntry{rev: rev, codes: changed})
-			if len(s.journal) > journalMax {
-				s.journal = s.journal[len(s.journal)-journalMax:]
-			}
+	if storeCache && oldByCode != nil {
+		changed = diffCodes(oldByCode, recs)
+	}
+
+	// انتشار دوباره زیرِ قفل: rev و journal باید عینِ مسیرِ پیشین بمانند. اگر در
+	// این فاصله بازسازیِ هم‌زمانی منتشر شده باشد، مقایسه رویِ نقشهٔ تازه تکرار
+	// می‌شود تا دلتا همان چیزی باشد که پشتِ‌سرِهم بودن می‌داد.
+	s.mu.Lock()
+	if storeCache && oldByCode != nil && s.cacheSeq != oldSeq {
+		changed = nil
+		if s.byCode != nil {
+			changed = diffCodes(s.byCode, recs)
+		}
+	}
+	rev = s.rev
+	if storeCache && oldByCode != nil && len(changed) > 0 {
+		rev++
+		s.journal = append(s.journal, journalEntry{rev: rev, codes: changed})
+		if len(s.journal) > journalMax {
+			s.journal = s.journal[len(s.journal)-journalMax:]
 		}
 	}
 	s.mu.Unlock()
@@ -287,6 +317,7 @@ func (s *Service) build(dropUnused, storeCache bool) ([]byte, string, error) {
 		s.meta, s.counts, s.rev = meta, counts, rev
 		s.builtToken = token
 		s.builds++
+		s.cacheSeq++
 		s.mu.Unlock()
 	}
 	return body, etag, nil

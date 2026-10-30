@@ -63,6 +63,12 @@ func New(cfg config.Config, h *db.Handles, m Market) http.Handler {
 // پس از هندلر بازنویسی می‌کند و آن‌چه به مشتری می‌رسد همین no-store است. در
 // net/http هدرِ پس از WriteHeader اثری ندارد، پس تزریق همان لحظهٔ نوشتنِ هدر
 // انجام می‌شود تا پاسخِ Go رویِ سیم عینِ پاسخِ پایتون باشد.
+//
+// دو پیشوندِ /assets/ و /vendor/ این‌جا استثنا شده‌اند چون پایتون آن‌ها را
+// میدل‌ورِ ایستایِ خودش با «public, max-age=31536000, immutable» سرو می‌کند
+// (داراییِ هش‌دار). این دو مسیر بیرونِ سطحِ پورت‌شده‌اند و B0 همان ۴۰۴ را به
+// ارث گذاشت؛ TestNoStoreHeaders عمداً همین رفتارِ واگرا را پین می‌کند تا روزی
+// که میدل‌ورِ ایستا پورت شد، تفاوت دیده شود نه اینکه بی‌صدا عوض شود.
 func noCache(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		p := r.URL.Path
