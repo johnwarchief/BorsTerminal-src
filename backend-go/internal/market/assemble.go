@@ -2,6 +2,7 @@ package market
 
 import (
 	"math"
+	"sync"
 
 	"borsterminal/backend/internal/board"
 	"borsterminal/backend/internal/store"
@@ -109,17 +110,59 @@ func dropUnusedFields(recs []map[string]any) {
 }
 
 // assemble ردیفِ کامل می‌سازد — بی درِ _DROP_FIELDS. حذفِ ستون‌هایِ بدنۀ پیش‌فرض
-// کارِ dropUnusedFields است و بعد از ثبتِ سابقه انجام می‌شود.
-func assemble(fr *store.Frame, d *board.Derived, fl *tapeflags.Flags) []map[string]any {
+// کارِ dropUnusedFields است و بعد از ثبتِ سابقه انجام می‌شود. numeric از کنارِ
+// قابِ کش‌شده می‌آید (یک‌بار بر قاب)، ولی nil یعنی «همین‌جا حساب کن».
+func assemble(fr *store.Frame, d *board.Derived, fl *tapeflags.Flags, numeric map[string]bool) []map[string]any {
 	n := fr.N()
-	numeric := numericCols(fr)
+	if numeric == nil {
+		numeric = numericCols(fr)
+	}
 	out := make([]map[string]any, n)
-	for i := 0; i < n; i++ {
-		rec := map[string]any{"ins_code": fr.Codes[i]}
-		for name, vals := range fr.Cols {
+	// نامِ ستون‌ها یک‌بار در برش می‌نشیند: پیمایشِ map در هر ۶٬۰۰۰ ردیف (با
+	// شروعِ تصادفیِ هر بار) از پیمایشِ یک برش کندتر است. ترتیب مهم نیست؛
+	// سریال‌ساز خودش کلیدها را مرتب می‌کند.
+	names := make([]string, 0, len(fr.Cols))
+	for name := range fr.Cols {
+		names = append(names, name)
+	}
+	// ردیف‌ها مستقل‌اند (قاب و مشتقات فقط خوانده می‌شوند)، پس رویِ دستهٔ بزرگ
+	// چند تکه‌شان موازی ساخته می‌شود؛ ترتیبِ out دست‌نخورده می‌ماند.
+	workers := workerCount(n)
+	if workers <= 1 {
+		assembleRange(fr, d, fl, numeric, names, out, 0, n)
+		return out
+	}
+	chunk := (n + workers - 1) / workers
+	var wg sync.WaitGroup
+	for start := 0; start < n; start += chunk {
+		end := start + chunk
+		if end > n {
+			end = n
+		}
+		wg.Add(1)
+		go func(start, end int) {
+			defer wg.Done()
+			assembleRange(fr, d, fl, numeric, names, out, start, end)
+		}(start, end)
+	}
+	wg.Wait()
+	return out
+}
+
+// assembleRange ردیف‌هایِ [start, end) را می‌سازد؛ تنها نویسندهٔ همان بازه از out.
+func assembleRange(fr *store.Frame, d *board.Derived, fl *tapeflags.Flags,
+	numeric map[string]bool, names []string, out []map[string]any, start, end int) {
+	// ظرفیتِ ازپیش‌معلوم: هر ردیف همان ستون‌هایِ قاب + مشتقات + سه کلیدِ غربال
+	// را دارد؛ بی این، هر map چند بار در طولِ ساخت بزرگ می‌شود (۶٬۰۰۰ ردیف).
+	capHint := len(fr.Cols) + 24
+	for i := start; i < end; i++ {
+		rec := make(map[string]any, capHint)
+		rec["ins_code"] = fr.Codes[i]
+		for _, name := range names {
 			if name == "ins_code" {
 				continue
 			}
+			vals := fr.Cols[name]
 			if i < len(vals) {
 				v := vals[i]
 				if v == nil && numeric[name] && !keepNull[name] {
@@ -162,5 +205,4 @@ func assemble(fr *store.Frame, d *board.Derived, fl *tapeflags.Flags) []map[stri
 		put(rec, "suspicious_vol", fl.Susp[i])
 		out[i] = rec
 	}
-	return out
 }

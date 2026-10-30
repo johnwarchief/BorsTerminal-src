@@ -244,3 +244,37 @@ func TestHealthzMethodMismatchIs405WithAllow(t *testing.T) {
 		t.Fatalf("Allow = %q", allow)
 	}
 }
+
+// TestNoStoreHeaders رویِ سیم همان قراردادِ no_cache_middlewareِ app.py را
+// می‌سنجد: پاسخ‌هایِ API و healthz «no-cache, no-store, must-revalidate» و
+// «Pragma: no-cache» می‌گیرند، ولی داراییِ هش‌دار دست‌نخورده می‌ماند.
+func TestNoStoreHeaders(t *testing.T) {
+	for _, target := range []string{"/api/does-not-exist", "/api/fts/config", "/healthz"} {
+		rec := serve(t, "GET", target)
+		if got := rec.Header().Get("Cache-Control"); got != "no-cache, no-store, must-revalidate" {
+			t.Fatalf("%s: Cache-Control = %q", target, got)
+		}
+		if got := rec.Header().Get("Pragma"); got != "no-cache" {
+			t.Fatalf("%s: Pragma = %q", target, got)
+		}
+	}
+	rec := serve(t, "GET", "/assets/app.js")
+	if got := rec.Header().Get("Cache-Control"); got != "" {
+		t.Fatalf("assets: Cache-Control = %q, want unset", got)
+	}
+}
+
+// TestNoStoreOverridesRouteValue همان بازنویسیِ پس‌از‌هندلرِ Starlette را ثابت
+// می‌کند: هندلری که خودش max-age گذاشته باشد، رویِ سیم no-store می‌بیند.
+func TestNoStoreOverridesRouteValue(t *testing.T) {
+	srv := noCache(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Cache-Control", "max-age=15")
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte("ok"))
+	}))
+	rec := httptest.NewRecorder()
+	srv.ServeHTTP(rec, httptest.NewRequest("GET", "/api/market", nil))
+	if got := rec.Header().Get("Cache-Control"); got != "no-cache, no-store, must-revalidate" {
+		t.Fatalf("Cache-Control = %q", got)
+	}
+}

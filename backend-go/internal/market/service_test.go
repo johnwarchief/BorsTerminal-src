@@ -1,10 +1,12 @@
 package market
 
 import (
+	"database/sql"
 	"encoding/json"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -201,7 +203,7 @@ func TestAssembleMcapSrcEmptyString(t *testing.T) {
 		},
 	}
 	d := board.Derive(fr)
-	recs := assemble(fr, d, tapeflags.Apply(fr, d))
+	recs := assemble(fr, d, tapeflags.Apply(fr, d), nil)
 	if len(recs) != 3 {
 		t.Fatalf("records = %d, want 3", len(recs))
 	}
@@ -439,5 +441,74 @@ func TestCacheHeaders(t *testing.T) {
 	if rec.Code != 304 || rec.Header().Get("X-Cache") != "MISS-304" {
 		t.Fatalf("cold 304: code=%d X-Cache=%q, want 304/MISS-304",
 			rec.Code, rec.Header().Get("X-Cache"))
+	}
+}
+
+// TestScreeningReasonUsesLiveSessionDayNotBoardMeta ریشهٔ تنها اختلافِ واقعیِ
+// B1 رویِ بانکِ کاری را می‌بندد. پایتون session_day را از market_state (تیکِ
+// زنده) می‌گیرد و در پروسۀ بی‌تیک صفر است؛ پس در بدنۀ پیش‌فرض که d_even از
+// ردیف حذف شده، _state_reason به fallback نمی‌رسد و «از نشستِ ...» می‌نویسد.
+// اگر به‌جایِ صفر، d_evenِ متا به Eligibility داده شود، همان ردیف «طی معاملات»
+// می‌گیرد — یعنی علتی که پایتون هرگز در بدنۀ پیش‌فرض نمی‌دهد.
+func TestScreeningReasonUsesLiveSessionDayNotBoardMeta(t *testing.T) {
+	h, dst := fixtureCopy(t)
+	s := New(h, dst)
+
+	_, all, _, _ := getJSON(t, s, "/api/market?fields=all", nil)
+	allRows, _ := all.(map[string]any)["data"].([]any)
+	var code, metaDay string
+	for _, raw := range allRows {
+		rec, _ := raw.(map[string]any)
+		if live, _ := rec["is_live"].(bool); !live {
+			continue
+		}
+		if ev, ok := rec["stop_state"].(string); ok && ev != "" {
+			continue
+		}
+		code, _ = rec["ins_code"].(string)
+		break
+	}
+	if code == "" {
+		t.Fatal("fixture has no live row without stop_state")
+	}
+	meta, _ := all.(map[string]any)["meta"].(map[string]any)
+	if day, ok := meta["d_even"].(float64); ok {
+		metaDay = strconv.FormatInt(int64(day), 10)
+	}
+	if metaDay == "" {
+		t.Fatal("fixture meta has no d_even")
+	}
+
+	w, err := sql.Open("sqlite", filepath.Join(dst, "market.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer w.Close()
+	if _, err := w.Exec("INSERT INTO instrument_state"+
+		" (ins_code, c_etaval, c_etaval_title, d_even, last_h_even)"+
+		" VALUES (?, ?, ?, ?, ?)", code, "A", "ممنوع", 20261014, 60100); err != nil {
+		t.Fatal(err)
+	}
+
+	reason := func(target string) string {
+		_, body, _, _ := getJSON(t, s, target, nil)
+		rows, _ := body.(map[string]any)["data"].([]any)
+		for _, raw := range rows {
+			rec, _ := raw.(map[string]any)
+			if rec["ins_code"] == code {
+				r, _ := rec["screening_exclusion_reason"].(string)
+				return r
+			}
+		}
+		return "<row missing>"
+	}
+
+	// بدنۀ پیش‌فرض: d_even حذف شده ⇒ fallbackی نیست ⇒ «از نشستِ».
+	if got, want := reason("/api/market"), "ممنوع — از نشستِ ۲۰۲۶۱۰۱۴"; got != want {
+		t.Fatalf("default reason = %q, want %q", got, want)
+	}
+	// fields=all: d_even در ردیف هست ⇒ همان نشست ⇒ «طی معاملات».
+	if got, want := reason("/api/market?fields=all"), "ممنوع (طی معاملات — ساعت ۰۶:۰۱)"; got != want {
+		t.Fatalf("fields=all reason = %q, want %q", got, want)
 	}
 }

@@ -71,10 +71,46 @@ type Service struct {
 	procMu    sync.Mutex
 	procAt    time.Time
 	procValue bool
+
+	// frame قابِ ایستایِ کش‌شده و نشانکِ داده‌ای که با آن ساخته شده — همان
+	// _STATIC_FRAMEِ پایتون در لایۀ Go. فقط RAM؛ هیچ نوشتنی به بانک ندارد.
+	frameMu      sync.Mutex
+	frame        *store.Frame
+	frameNumeric map[string]bool
+	frameToken   string
 }
 
 func New(h *db.Handles, dataDir string) *Service {
 	return &Service{market: h.Market, user: h.User, dataDir: dataDir, recorder: tapehistory.NewRecorder()}
+}
+
+// boardFrame قابِ ایستایِ تابلو را زیرِ نشانکِ داده کش می‌کند — همان کاری که
+// پایتون با _STATIC_FRAME/_static_key می‌کند. پایتون کلید را از شمارنده‌هایِ
+// درون‌پروسه (sync_count، session_day، static_rev) می‌سازد؛ در فازِ الفِ Go
+// چنین شمارنده‌ای نیست، پس همان نشانکِ فایل‌هایِ داده نقشش را دارد: هر نویسنده
+// که محتوایِ تابلو را عوض کند دست‌کم mtime/size یکی از سه فایلِ توکن را عوض
+// می‌کند. بی‌این کش، هر بازسازی کوئریِ سنگینِ تابلو را از نو می‌زد و از پایتون
+// کندتر می‌شد، درحالی‌که پایتون قابِ ایستا را در RAM نگه می‌دارد.
+func (s *Service) boardFrame(token string) (*store.Frame, map[string]bool, error) {
+	s.frameMu.Lock()
+	if s.frame != nil && s.frameToken == token {
+		fr, numeric := s.frame, s.frameNumeric
+		s.frameMu.Unlock()
+		return fr, numeric, nil
+	}
+	s.frameMu.Unlock()
+	// بارگذاری بیرونِ قفل: دو بازسازیِ هم‌زمان حداکثر دو بار می‌خوانند، ولی
+	// هیچ درخواستی پشتِ کوئریِ سنگینِ تابلو نمی‌ماند.
+	fr, err := store.LoadBoard(s.market)
+	if err != nil {
+		return nil, nil, err
+	}
+	// نوعِ هر ستون یک‌بار بر قاب حساب می‌شود، نه یک‌بار بر بازسازی.
+	numeric := numericCols(fr)
+	s.frameMu.Lock()
+	s.frame, s.frameNumeric, s.frameToken = fr, numeric, token
+	s.frameMu.Unlock()
+	return fr, numeric, nil
 }
 
 func (s *Service) Board(w http.ResponseWriter, r *http.Request) {
@@ -174,21 +210,24 @@ func (s *Service) build(dropUnused, storeCache bool) ([]byte, string, error) {
 	// توکنِ همین بازسازی: اگر سینکر وسطِ کار فایلش را عوض کند، بازسازیِ بعدی
 	// آن را می‌بیند و یک بار دیگر می‌سازد.
 	token := dataToken(s.dataDir)
-	fr, err := store.LoadBoard(s.market)
+	fr, numeric, err := s.boardFrame(token)
 	if err != nil {
 		return nil, "", err
 	}
 	d := board.Derive(fr)
 	fl := tapeflags.Apply(fr, d)
-	recs := assemble(fr, d, fl)
+	recs := assemble(fr, d, fl, numeric)
 	meta, err := boardMeta(s.market)
 	if err != nil {
 		return nil, "", err
 	}
+	// روزِ نشست را پایتون از market_state (تیکِ زنده) می‌گیرد، نه از d_evenِ متا.
+	// در پروسۀ فازِ الف هیچ تیکی اجرا نمی‌شود، پس همان صفر است — و این در بدنۀ
+	// پیش‌فرض دیده می‌شود: d_even از ردیف حذف شده، پس _state_reasonِ پایتون به
+	// fallbackِ d_evenِ ردیف نمی‌رسد و علت را «از نشستِ ...» می‌نویسد. d_evenِ
+	// متا این fallback را زنده نگه می‌داشت و «طی معاملات» می‌گفت (اختلافِ واقعیِ
+	// B1 رویِ ردیفِ 3202).
 	sessionDay := int64(0)
-	if v, ok := meta["d_even"].(int64); ok {
-		sessionDay = v
-	}
 	// ثبتِ سابقۀ پرچم‌ها — همان side effectِ پایتون، پیش از حذفِ ستون‌ها. روزِ ثبت
 	// از ردیف‌هایِ زندهٔ همین قاب می‌آید (عینِ int(_live_df["d_even"].max() or 0))،
 	// نه از d_evenِ متا؛ و نشانه dataToken است تا با نبودنِ market_sync.json هم
@@ -234,7 +273,7 @@ func (s *Service) build(dropUnused, storeCache bool) ([]byte, string, error) {
 		"status": "success", "rev": rev, "data": recs, "meta": meta,
 		"count": len(recs), "live_count": live, "fossil_count": len(recs) - live,
 	}
-	body, err := json.Marshal(payload)
+	body, err := marshalBoard(payload)
 	if err != nil {
 		return nil, "", err
 	}

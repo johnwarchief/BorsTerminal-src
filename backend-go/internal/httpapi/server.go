@@ -54,8 +54,50 @@ func New(cfg config.Config, h *db.Handles, m Market) http.Handler {
 		mux.HandleFunc("GET /api/market/sync-state", m.SyncState)
 	}
 	mux.HandleFunc("/", s.apiGate)
-	return mux
+	return noCache(mux)
 }
+
+// noCache پورتِ no_cache_middlewareِ app.py است: رویِ همهٔ پاسخ‌ها جز دارایی‌هایِ
+// هش‌دار، Cache-Control را به no-store بازنویسی و Pragma می‌گذارد. این لایه
+// برگ‌های نیست: خودِ هندلرها هم max-age می‌گذارند (`/api/market`)، ولی پایتون
+// پس از هندلر بازنویسی می‌کند و آن‌چه به مشتری می‌رسد همین no-store است. در
+// net/http هدرِ پس از WriteHeader اثری ندارد، پس تزریق همان لحظهٔ نوشتنِ هدر
+// انجام می‌شود تا پاسخِ Go رویِ سیم عینِ پاسخِ پایتون باشد.
+func noCache(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		p := r.URL.Path
+		if strings.HasPrefix(p, "/assets/") || strings.HasPrefix(p, "/vendor/") {
+			next.ServeHTTP(w, r)
+			return
+		}
+		next.ServeHTTP(&noCacheWriter{ResponseWriter: w}, r)
+	})
+}
+
+type noCacheWriter struct {
+	http.ResponseWriter
+}
+
+func (w *noCacheWriter) SetNoCache() {
+	h := w.Header()
+	h.Set("Cache-Control", "no-cache, no-store, must-revalidate")
+	h.Set("Pragma", "no-cache")
+}
+
+func (w *noCacheWriter) WriteHeader(code int) {
+	w.SetNoCache()
+	w.ResponseWriter.WriteHeader(code)
+}
+
+func (w *noCacheWriter) Write(body []byte) (int, error) {
+	// هندلری که WriteHeader را صدا نزده باشد، همین‌جا هدرِ 200 می‌نویسد.
+	w.SetNoCache()
+	return w.ResponseWriter.Write(body)
+}
+
+// Unwrap درِ ResponseController است تا Flush/ReadFromِ لایه‌هایِ بعدی (مثلِ
+// SSEِ آینده) از میانِ این پوشش هم برسد.
+func (w *noCacheWriter) Unwrap() http.ResponseWriter { return w.ResponseWriter }
 
 // compileRoutes رشته‌هایِ «METHOD /api/...» را یک‌بار به الگوهایِ قطعه‌ای تبدیل می‌کند.
 func compileRoutes(routes []string) []routePattern {
