@@ -26,7 +26,8 @@ type Agg struct {
 func enrich(snap *Snapshot) []*Row {
 	top := top50Codes(snap.Rows)
 	for _, r := range snap.Rows {
-		r.M = money(r, snap.BaseEst)
+		m := money(r, snap.BaseEst)
+		r.M = &m
 		r.Top50 = top[r.Code]
 	}
 	return snap.Rows
@@ -35,6 +36,8 @@ func enrich(snap *Snapshot) []*Row {
 // aggOf همان _agg: یک پاس رویِ ردیف‌هایِ یک دسته. جمعِ عمق فقط رویِ ردیف‌هایی
 // که bq_val دارند می‌نشیند (پایتون `if m["bq_val"] is not None`)، ولی سه
 // خانهٔ دیگرِ همان ردیف با `or 0.0` خوانده می‌شوند — NaN یعنی NULL، پس صفر.
+// هر ردیف باید از enrich گذشته باشد؛ Mِ nil همین‌جا پنیک می‌دهد (پایتون هم
+// `r["_m"]` را با KeyError می‌خواند) تا «صفرِ قابلِ قبول» جعل نشود.
 func aggOf(rows []*Row) *Agg {
 	a := &Agg{}
 	for _, r := range rows {

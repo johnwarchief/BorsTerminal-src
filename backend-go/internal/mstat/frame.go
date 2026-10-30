@@ -6,6 +6,7 @@ import (
 	"math"
 	"strconv"
 	"strings"
+	"unicode"
 )
 
 // AsOf همان asofِ load_snapshot: روزِ تابلو، ساعتِ تابلو، روزِ ردیفِ مشتری،
@@ -55,7 +56,9 @@ type Row struct {
 	Top50                                      bool
 	// M ارقامِ ریالیِ همین ردیف است؛ enrich پر می‌کند و همهٔ تجمیع‌ها از همین
 	// می‌خوانند (یک بار money برایِ هر نماد، همان قاعدهٔ enrichِ پایتون).
-	M Money
+	// اشاره‌گر است تا «enrich صدا زده نشد» با nil و پنیکِ صریح لو برود — پایتون
+	// هم در این حالت KeyError می‌دهد، نه صفرِ قابلِ قبول.
+	M *Money
 }
 
 type Snapshot struct {
@@ -121,6 +124,15 @@ func text(v any) string {
 	default:
 		return ""
 	}
+}
+
+// pyStrip همان str.strip()ِ پایتون است: unicode.IsSpace به‌علاوهٔ U+001C..U+001F
+// که Python هم whitespace می‌داند ولی unicode.IsSpace نه. فقط لبه‌ها بریده
+// می‌شوند؛ فاصلهٔ داخلی و کنترلِ غیرِwhitespace دست‌نخورده می‌مانند.
+func pyStrip(s string) string {
+	return strings.TrimFunc(s, func(r rune) bool {
+		return unicode.IsSpace(r) || (r >= 0x1C && r <= 0x1F)
+	})
 }
 
 // div همان _div: مخرجِ صفر یا طرفِ نبود ⇒ nil (نه صفر). بی‌نهایت پیش از
@@ -454,6 +466,11 @@ func collectBaseVolumes(rows rowScanner) map[string]float64 {
 	}
 	return out
 }
+
+// mstatSource همان مقدارِ ثابتی است که api/market_status._mstat_compute با
+// out.setdefault("source", ...) رویِ هر بدنهٔ پنل می‌نشاند. این کلید خروجیِ
+// موتور نیست و در لایهٔ انتقال (Service.compute در Task 9) تزریق می‌شود.
+const mstatSource = "local:market.db"
 
 // asOfMap همان asofِ پنل‌هاست: روزِ تابلو، ساعت، روزِ ردیفِ مشتری و تأخیرش،
 // عمق، شمارِ top50 و شمارِ ردیف‌ها. «نبود» nil است، نه صفرِ ساختگی.

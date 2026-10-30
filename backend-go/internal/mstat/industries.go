@@ -3,13 +3,13 @@ package mstat
 import (
 	"database/sql"
 	"sort"
-	"strings"
 
 	"borsterminal/backend/internal/pyround"
 )
 
+// industryBucket سطلِ تجمیعِ یک صنعت است؛ نامش در outRow.industry می‌نشیند،
+// نه این‌جا (پایتون هم نام را فقط از دیکشنریِ خروجی می‌خواند).
 type industryBucket struct {
-	name        string
 	n, pos, neg int
 	val, flow   float64
 	bq, sq      float64
@@ -53,14 +53,14 @@ func industriesPanel(db *sql.DB) (map[string]any, error) {
 			continue
 		}
 		// پایتون نامِ صنعت را با str.strip() می‌خواند؛ نامِ با فاصلهٔ دو سر
-		// (یا NBSP) باید همان صنعت باشد، نه صنعتی تازه با نامِ آلوده.
-		nm := strings.TrimSpace(r.SectorName)
+		// (یا NBSP/U+001C..U+001F) باید همان صنعت باشد، نه صنعتی تازه با نامِ آلوده.
+		nm := pyStrip(r.SectorName)
 		if nm == "" {
 			continue
 		}
 		b := by[nm]
 		if b == nil {
-			b = &industryBucket{name: nm}
+			b = &industryBucket{}
 			by[nm] = b
 			order = append(order, nm)
 		}
@@ -104,6 +104,35 @@ func industriesPanel(db *sql.DB) (map[string]any, error) {
 			buyQueue: pyround.Round(b.bq/1e10, 1), sellQueue: pyround.Round(b.sq/1e10, 1),
 		})
 	}
+	leader := rankIndustries(out)
+	rowsOut := make([]map[string]any, 0, len(out))
+	for _, x := range out {
+		rowsOut = append(rowsOut, map[string]any{
+			"industry": x.industry, "symbols": x.symbols,
+			"positive": x.positive, "negative": x.negative,
+			"avg_pct": x.avgPct, "value_b_toman": x.valueBT,
+			"flow_b_toman": x.flowBT, "flow_pct_of_value": x.flowPct,
+			"buy_queue_b_toman": x.buyQueue, "sell_queue_b_toman": x.sellQueue,
+			"rank_value": x.rankValue, "rank_flow": x.rankFlow,
+			"leader_score": x.leaderScore, "leader": x.leader,
+		})
+	}
+	// بدونِ کلیدِ source: آن را لایهٔ انتقال می‌نشاند (mstatSource و
+	// _mstat_compute)؛ بدنهٔ موتور فقط همان چیزی است که industriesِ پایتون
+	// برمی‌گرداند. top50 این‌جا دوباره حساب می‌شود تا شکلِ فراخوانیِ asOfMap با
+	// Taskهایِ ۵–۹ یکی بماند (تصمیمِ آگاهانه، نه مسیرِ داغ).
+	return map[string]any{"status": "ok",
+		"asof": asOfMap(snap, len(top50Codes(snap.Rows)), len(rows)),
+		"rows": rowsOut, "leader": nilIfEmpty(leader)}, nil
+}
+
+// rankIndustries همان بلوکِ رتبه‌بندیِ دومعیارهٔ FTS است (mstat_engine.py:2316-2343):
+// رتبهٔ ارزش رویِ value_b_tomanِ **گردشده**، رتبهٔ ورودِ پول فقط برایِ جریانِ
+// مثبتِ قطعی (صفر/منفی/nil رتبه ندارند)، امتیازِ لیدری = مجموعِ رتبه‌ها، لیدر
+// فقط با هر دو رتبهٔ ≤۵، و در پایان مرتب‌سازی با (-ارزش، -جریان که nil=۰).
+// خروجی نامِ صنعتِ لیدر است ("" یعنی لیدر ندارد) و out را در جایِ خود مرتب می‌کند.
+// جدا شد تا بدونِ DB تست‌پذیر باشد؛ پنل فقط بایت‌ها را می‌سازد.
+func rankIndustries(out []*outRow) string {
 	byVal := append([]*outRow(nil), out...)
 	sort.SliceStable(byVal, func(i, j int) bool { return byVal[i].valueBT > byVal[j].valueBT })
 	rankVal := map[string]int{}
@@ -112,7 +141,7 @@ func industriesPanel(db *sql.DB) (map[string]any, error) {
 	}
 	byFlow := []*outRow{}
 	for _, x := range out {
-		if x.flowBT != nil && x.flowBT.(float64) > 0 {
+		if f, ok := x.flowBT.(float64); ok && f > 0 {
 			byFlow = append(byFlow, x)
 		}
 	}
@@ -129,6 +158,8 @@ func industriesPanel(db *sql.DB) (map[string]any, error) {
 		x.rankValue = rv
 		if ok {
 			x.rankFlow = rf
+		} else {
+			x.rankFlow = nil
 		}
 		// (rv or len(out)) + (rf if rf else len(out)+1)؛ rank_value همیشه ≥۱
 		// است، پس جای‌گزینِ `rv or` هرگز نمی‌نشیند.
@@ -156,23 +187,7 @@ func industriesPanel(db *sql.DB) (map[string]any, error) {
 		}
 		return flowVal(out[i]) > flowVal(out[j])
 	})
-	rowsOut := make([]map[string]any, 0, len(out))
-	for _, x := range out {
-		rowsOut = append(rowsOut, map[string]any{
-			"industry": x.industry, "symbols": x.symbols,
-			"positive": x.positive, "negative": x.negative,
-			"avg_pct": x.avgPct, "value_b_toman": x.valueBT,
-			"flow_b_toman": x.flowBT, "flow_pct_of_value": x.flowPct,
-			"buy_queue_b_toman": x.buyQueue, "sell_queue_b_toman": x.sellQueue,
-			"rank_value": x.rankValue, "rank_flow": x.rankFlow,
-			"leader_score": x.leaderScore, "leader": x.leader,
-		})
-	}
-	// `source` همان ثابتِ پوششِ مسیر در پایتون است (api/market_status._mstat_compute
-	// با setdefault رویِ هر پنل می‌نشاند)؛ بدنهٔ HTTP بدونِ آن با طلایی یکی نیست.
-	return map[string]any{"status": "ok", "source": "local:market.db",
-		"asof": asOfMap(snap, len(top50Codes(snap.Rows)), len(rows)),
-		"rows": rowsOut, "leader": nilIfEmpty(leader)}, nil
+	return leader
 }
 
 func flowVal(x *outRow) float64 {

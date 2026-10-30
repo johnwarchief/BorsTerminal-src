@@ -14,16 +14,16 @@ import (
 func TestAggUnit(t *testing.T) {
 	t.Run("counts and depth", func(t *testing.T) {
 		rows := []*Row{
-			{M: Money{Val: 1e10, Vol: 2e9, BQVal: 4e10, SQVal: 6e10, BQVol: 7, SQVol: 8}},
+			{M: &Money{Val: 1e10, Vol: 2e9, BQVal: 4e10, SQVal: 6e10, BQVol: 7, SQVol: 8}},
 			// bq_val غایب است: پایتون کلِ بلوکِ عمق را رد می‌کند، پس حتی
 			// sq_valِ موجودِ همین ردیف هم جمع نمی‌شود.
 			//
 			// این حالتِ دست‌ساز تنها نگهبانِ همین قاعده است: در فیکسچرِ s1 هر
 			// ۳۸ ردیف bq_val/sq_val/bq_vol/sq_volِ غیرتهی دارند، پس تستِ اوراکل
 			// به‌تنهایی نمی‌تواند شاخهٔ `or 0.0` را بگیرد.
-			{M: Money{Val: 0, BQVal: math.NaN(), SQVal: 1e9}},
+			{M: &Money{Val: 0, BQVal: math.NaN(), SQVal: 1e9}},
 			// صفرِ واقعیِ صف «بی‌داده» نیست: depth را می‌شمارد و صفر جمع می‌کند.
-			{M: Money{Val: 5, BQVal: 0, SQVal: math.NaN(),
+			{M: &Money{Val: 5, BQVal: 0, SQVal: math.NaN(),
 				BQVol: math.NaN(), SQVol: math.NaN()}},
 		}
 		a := aggOf(rows)
@@ -47,24 +47,24 @@ func TestAggUnit(t *testing.T) {
 	t.Run("per capita and power", func(t *testing.T) {
 		// rb/nbi = 2e7/2 = 1e7 ⇒ ۱ میلیون تومان؛ rs/nsi = 1e7/2 ⇒ ۰٫۵؛
 		// قدرت = ۱ ÷ ۰٫۵ = ۲.
-		a := aggOf([]*Row{{M: Money{RetailBuy: 2e7, RetailSell: 1e7, NBuyI: 2, NSellI: 2}}})
+		a := aggOf([]*Row{{M: &Money{RetailBuy: 2e7, RetailSell: 1e7, NBuyI: 2, NSellI: 2}}})
 		if a.PCBuymt != 1.0 || a.PCSellmt != 0.5 || a.Power != 2.0 {
 			t.Fatalf("pc/power = %v/%v/%v, want 1/0.5/2",
 				a.PCBuymt, a.PCSellmt, a.Power)
 		}
 		// nbi=0 ⇒ سرانهٔ خرید None، و در نتیجه قدرت هم None.
-		a = aggOf([]*Row{{M: Money{RetailBuy: 5, NBuyI: 0, NSellI: 1}}})
+		a = aggOf([]*Row{{M: &Money{RetailBuy: 5, NBuyI: 0, NSellI: 1}}})
 		if !isNaN(a.PCBuymt) || !isNaN(a.Power) {
 			t.Fatalf("nbi=0 pc_buy/power = %v/%v, want NaN/NaN", a.PCBuymt, a.Power)
 		}
 		// nsi=0 ⇒ سرانهٔ فروش None (نه صفر) و قدرت None.
-		a = aggOf([]*Row{{M: Money{RetailBuy: 2e7, NBuyI: 2, NSellI: 0}}})
+		a = aggOf([]*Row{{M: &Money{RetailBuy: 2e7, NBuyI: 2, NSellI: 0}}})
 		if !isNaN(a.PCSellmt) || !isNaN(a.Power) {
 			t.Fatalf("nsi=0 pc_sell/power = %v/%v, want NaN/NaN", a.PCSellmt, a.Power)
 		}
 		// صفرِ واقعیِ فروش سرانهٔ صفر می‌دهد (نه None)، ولی قدرت تقسیم بر
 		// صفر است ⇒ None. این همان تفاوتِ «۰» و «ساختنی نبود» است.
-		a = aggOf([]*Row{{M: Money{RetailBuy: 1e7, RetailSell: 0, NBuyI: 1, NSellI: 4}}})
+		a = aggOf([]*Row{{M: &Money{RetailBuy: 1e7, RetailSell: 0, NBuyI: 1, NSellI: 4}}})
 		if a.PCSellmt != 0 || !isNaN(a.Power) {
 			t.Fatalf("zero sell pc/power = %v/%v, want 0/NaN", a.PCSellmt, a.Power)
 		}
@@ -79,7 +79,7 @@ func TestAggUnit(t *testing.T) {
 		// هر یکا رویِ توانِ دقیقِ ده سنجیده می‌شود تا ضریبِ 1e9/1e10/1e3
 		// جابه‌جا نماند: ۱e9 سهم = ۱ میلیارد سهم، ۱e10 ریال = ۱ میلیارد تومان،
 		// و ۱۰۰۰ میلیارد تومان = ۱ همت.
-		a := aggOf([]*Row{{M: Money{
+		a := aggOf([]*Row{{M: &Money{
 			Val: 1e10, Vol: 1e9, RetailBuy: 2e10, RetailSell: 1e10,
 			BQVal: 1e10, SQVal: 1e10,
 		}}})
@@ -92,6 +92,18 @@ func TestAggUnit(t *testing.T) {
 			t.Fatalf("flow_bt = %v, want (rb-rs)/1e10", a.FlowBT)
 		}
 	})
+}
+
+// TestAggOfRequiresEnrich قراردادِ Row.M را قفل می‌کند: صفرِ Money خودش یک
+// ردیفِ معتبرِ «بی‌معامله» است، پس «enrich صدا زده نشد» باید پنیک بدهد (پایتون
+// هم r["_m"] را با KeyError می‌خواند)، نه تجمیعِ صفرِ خوش‌قالب. M عمداً nil است.
+func TestAggOfRequiresEnrich(t *testing.T) {
+	defer func() {
+		if recover() == nil {
+			t.Fatal("aggOf on an unenriched row did not panic; nil M must fail fast")
+		}
+	}()
+	aggOf([]*Row{{}})
 }
 
 // oracleRow همان ردیفِ دامپِ اوراکل است؛ `m` عیناً همان ارقامِ پایتون است.
