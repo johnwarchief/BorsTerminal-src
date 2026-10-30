@@ -8,7 +8,8 @@ import (
 )
 
 // industryBucket سطلِ تجمیعِ یک صنعت است؛ نامش در outRow.industry می‌نشیند،
-// نه این‌جا (پایتون هم نام را فقط از دیکشنریِ خروجی می‌خواند).
+// نه این‌جا. در پایتون سطل یک دیکشنریِ بی‌نوع است و نام را با کلیدِ industry
+// کنارِ شمارنده‌ها نگه می‌دارد و همان را در خروجی می‌خواند (b["industry"]).
 type industryBucket struct {
 	n, pos, neg int
 	val, flow   float64

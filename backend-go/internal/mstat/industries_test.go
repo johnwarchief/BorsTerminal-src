@@ -147,9 +147,12 @@ func TestPyStrip(t *testing.T) {
 
 // TestRankIndustries رتبه‌بندیِ دومعیاره را بدونِ DB قفل می‌کند: ترتیبِ ورود
 // نباید رتبه را تعیین کند، tie ارزش با ترتیبِ پایدار و tie شکستِ نهایی با
-// جریان (nil = ۰) حل شود، جریانِ نامثبت رتبه نگیرد، و لیدر فقط با هر دو
-// رتبهٔ ≤۵ انتخاب شود. بدونِ این وکتورها حذفِ هر کدام از sortها/گارد بی‌صدا
-// سبز می‌ماند (فیکسچرِ s1 ترتیبِ ورود = ترتیبِ ارزش دارد).
+// جریان (nil = 0) حل شود، جریانِ نامثبت رتبه نگیرد، و لیدر فقط با هر دو
+// رتبهٔ ≤ 5 انتخاب شود. وکتورِ «leader score order» نشان می‌دهد کاندید از
+// کمترین امتیاز می‌آید نه از out[0]، و وکتورِ «rank_value 6» نیمهٔ ارزشیِ
+// گاردِ لیدر را می‌سنجد (امتیازِ کمینه با rank_value=6 باید رد شود). بدونِ
+// این وکتورها حذفِ هر کدام از sortها/گارد بی‌صدا سبز می‌ماند (فیکسچرِ s1
+// ترتیبِ ورود = ترتیبِ ارزش دارد).
 func TestRankIndustries(t *testing.T) {
 	type want struct {
 		rv     int
@@ -267,6 +270,47 @@ func TestRankIndustries(t *testing.T) {
 			want: map[string]want{
 				"A": {rv: 1, rf: nil, score: 4, leader: false},
 				"B": {rv: 2, rf: nil, score: 5, leader: false},
+			},
+		},
+		{
+			// (f) کاندیدِ لیدر از کمترین امتیاز می‌آید، نه از out[0]: ورودی A,B
+			// ولی امتیازِ B=2 و A=4 ⇒ لیدر B و ترتیبِ نهایی B,A. حذفِ sortِ cand
+			// همان A را (rv 2، rf 2، هر دو ≤ 5) لیدر می‌کند و تست قرمز می‌شود.
+			name: "leader score order beats insertion order",
+			in: []*outRow{
+				{industry: "A", valueBT: 50, flowBT: 1.0},
+				{industry: "B", valueBT: 100, flowBT: 2.0},
+			},
+			wantOrder:  []string{"B", "A"},
+			wantLeader: "B",
+			want: map[string]want{
+				"A": {rv: 2, rf: 2, score: 4, leader: false},
+				"B": {rv: 1, rf: 1, score: 2, leader: true},
+			},
+		},
+		{
+			// (g) نیمهٔ rank_value گارد: پنج صنعتِ پر‌ارزش با جریانِ nil (امتیازِ
+			// rv+7) و یک صنعتِ کم‌ارزش با جریانِ مثبت (امتیازِ 6+1=7) ⇒ cand[0]=L
+			// با rank_value=6 و rank_flow=1. حذفِ top.rankValue <= 5 همین L را
+			// لیدر می‌کند (تست قرمز) چون rf=1 ≤ 5 است و گارد را رد می‌کند.
+			name: "leader rejected when best score has rank_value 6",
+			in: []*outRow{
+				{industry: "H1", valueBT: 600},
+				{industry: "H2", valueBT: 500},
+				{industry: "H3", valueBT: 400},
+				{industry: "H4", valueBT: 300},
+				{industry: "H5", valueBT: 200},
+				{industry: "L", valueBT: 100, flowBT: 1.0},
+			},
+			wantOrder:  []string{"H1", "H2", "H3", "H4", "H5", "L"},
+			wantLeader: "",
+			want: map[string]want{
+				"H1": {rv: 1, rf: nil, score: 8, leader: false},
+				"H2": {rv: 2, rf: nil, score: 9, leader: false},
+				"H3": {rv: 3, rf: nil, score: 10, leader: false},
+				"H4": {rv: 4, rf: nil, score: 11, leader: false},
+				"H5": {rv: 5, rf: nil, score: 12, leader: false},
+				"L":  {rv: 6, rf: 1, score: 7, leader: false},
 			},
 		},
 	}
