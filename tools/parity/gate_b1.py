@@ -12,6 +12,11 @@
 * پایتون در طولِ دسته پنجره‌های board_hist_v/board_hist_fv را در کپیِ خودش
   بازسازی می‌کند (نوشتنِ مشروع و مشتق). پس تغییرِ کپیِ پایتون شکست نیست؛ تغییرِ
   کپیِ Go شکست است (فازِ A فقط می‌خواند) و برابریِ شروع دو کپی الزامی است.
+* شاهدِ ثبتِ روزانه باید «نوشتن» را ثابت کند، نه فقط «توافق»: شمارِ ردیف‌هایِ
+  روزِ بیشینهٔ tape_flag_day و passesِ همان روز پیش از بالا آمدنِ سرورها و پس از
+  خاموشی خوانده می‌شود؛ هر دو کپی باید به یک اندازه رشد کنند و ثبت واقعاً
+  بنویسد (رشدِ ردیف یا رشدِ passes). ثابتِ یخ‌زده هم market.db و market.db-walِ
+  ناتهی را با هم می‌سنجد.
 
 کدِ خروج همان معنایِ gate_b0 را دارد: 0 همه چیز سبز، 1 اندازه‌گیری انجام شد و
 دست‌کم یک بررسی قرمز است، 2 نتوانستیم اندازه بگیریم (کپی/پورت/بیلد/سرور).
@@ -55,6 +60,20 @@ def sha256_file(path):
         for chunk in iter(lambda: f.read(HASH_CHUNK), b""):
             h.update(chunk)
     return h.hexdigest()
+
+
+def db_fingerprint(db_path):
+    """نسخهٔ یخ‌زدهٔ یک بانک: market.db و، اگر ناتهی باشد، market.db-walِ کنارش.
+
+    اگر فقط بدنهٔ اصلی هش شود، ردیف‌هایی که هنوز چک‌پوینت نشده‌اند از برابریِ دو
+    کپی بیرون می‌مانند و تغییرِ آن‌ها دیده نمی‌شود. هر دو نام در B1.json می‌آیند؛
+    -walِ غایب/خالی اصلاً کلید نمی‌گیرد و همین «هیچ‌کدام» هم برایِ دو کپی برابر است.
+    """
+    prints = {"market.db": sha256_file(db_path)}
+    wal = db_path + "-wal"
+    if os.path.exists(wal) and os.path.getsize(wal) > 0:
+        prints["market.db-wal"] = sha256_file(wal)
+    return prints
 
 
 def sidecar_state():
@@ -143,6 +162,19 @@ def http_get(url, headers=None):
         return e.code, e.headers, e.read()
 
 
+def stop(procs):
+    """فقط PIDهایی که همین اسکریپت بالا آورده؛ دوباره‌صداکردنش بی‌خطر است."""
+    for proc, log in reversed(procs):
+        if proc.poll() is None:
+            proc.terminate()
+        try:
+            proc.wait(timeout=10)
+        except subprocess.TimeoutExpired:
+            proc.kill()
+        if log is not None:
+            log.close()
+
+
 def probe(base):
     """MISS، HIT، 304 و اندازه‌ها را از یک سرور می‌گیرد."""
     status, headers, body = http_get(base + "/api/market")
@@ -189,6 +221,32 @@ def flag_rows(path):
     return out
 
 
+def flag_day_state(path):
+    """وضعیتِ روزِ بیشینهٔ tape_flag_day: (روز، شمارِ ردیف، مجموعِ passes) یا None.
+
+    پیش از بالا آمدنِ سرورها و پس از خاموشی خوانده می‌شود تا «پیش/پس» رویِ یک روز
+    مقایسه شود و فقط برابریِ دو کپی اثبات نشود. passes همان شمارندۀ upsertِ هر
+    ردیف است؛ با آن می‌شود «ثبت واقعاً نوشت» را دید حتی وقتی روز از قبل کامل ثبت
+    شده باشد.
+    """
+    if not os.path.exists(path):
+        return None
+    con = sqlite3.connect("file:%s?mode=ro" % path.replace("\\", "/"), uri=True)
+    try:
+        row = con.execute("SELECT MAX(d_even) FROM tape_flag_day").fetchone()
+        day = row[0] if row else None
+        if day is None:
+            return {"day": 0, "rows": 0, "passes": 0}
+        rows, passes = con.execute(
+            "SELECT COUNT(*), COALESCE(SUM(passes), 0) FROM tape_flag_day WHERE d_even = ?",
+            (day,)).fetchone()
+    except sqlite3.Error:
+        return None
+    finally:
+        con.close()
+    return {"day": int(day), "rows": int(rows), "passes": int(passes)}
+
+
 def main() -> int:
     os.makedirs(os.path.join(GO, "bin"), exist_ok=True)
     os.makedirs(os.path.dirname(OUT), exist_ok=True)
@@ -232,11 +290,19 @@ def main() -> int:
                     return 2
         go_db = os.path.join(go_dir, "market.db")
         py_db = os.path.join(py_dir, "market.db")
-        db_hash = sha256_file(go_db)
-        frozen_ok = db_hash == sha256_file(py_db)
+        db_prints = db_fingerprint(go_db)
+        frozen_ok = db_prints == db_fingerprint(py_db)
         if not frozen_ok:
             print("the two copies are not identical")
             return 2
+
+        # پیش از بالا آمدنِ سرورها: شمارِ ردیف‌هایِ روزِ بیشینه و passesِ همان روز.
+        # برابریِ بدنهٔ ردیف‌ها فقط «واگرایی ندارد» را ثابت می‌کرد؛ یک ثبتِ بی‌کار
+        # هم از آن سبز درمی‌آمد.
+        history_before = {
+            "go": flag_day_state(os.path.join(go_dir, "user.db")),
+            "py": flag_day_state(os.path.join(py_dir, "user.db")),
+        }
 
         py_env = dict(os.environ, BORS_DATA_DIR=py_dir, BORS_NO_FETCH_LOOPS="1",
                       BORS_CODAL_OFFLINE="1", BORS_CODAL_AUTO="0",
@@ -301,17 +367,50 @@ def main() -> int:
         perf_ok = perf["p95_py"] > 0 and perf["p95_go"] <= 0.5 * perf["p95_py"]
 
         # پس از خاموشی: کپی‌ها دیگر باز نیستند، پس خواندنِ آن‌ها آزاد است.
-        go_rows = flag_rows(os.path.join(go_dir, "user.db"))
-        py_rows = flag_rows(os.path.join(py_dir, "user.db"))
-        history_ok = go_rows is not None and py_rows is not None and go_rows == py_rows
-        go_db_unchanged = sha256_file(go_db) == db_hash
-        py_db_changed = sha256_file(py_db) != db_hash
+        stop(procs)
+        go_user = os.path.join(go_dir, "user.db")
+        py_user = os.path.join(py_dir, "user.db")
+        go_rows = flag_rows(go_user)
+        py_rows = flag_rows(py_user)
+        before_go, before_py = history_before["go"], history_before["py"]
+        after_go = flag_day_state(go_user)
+        after_py = flag_day_state(py_user)
+
+        def growth(before, after):
+            """(رشدِ ردیف، رشدِ passes)؛ اگر روز جلو رفته باشد مبدأ صفر است."""
+            if before is None or after is None:
+                return None, None
+            same_day = after["day"] == before["day"]
+            base_rows = before["rows"] if same_day else 0
+            base_passes = before["passes"] if same_day else 0
+            return after["rows"] - base_rows, after["passes"] - base_passes
+
+        go_growth, go_writes = growth(before_go, after_go)
+        py_growth, py_writes = growth(before_py, after_py)
+        # ثبت فقط وقتی سبز است که هر دو کپی (اندازه‌ها یکسان) رشد کنند و ثابت شود
+        # واقعاً نوشته‌اند. رشدِ صفر یعنی روز از قبل کامل ثبت شده بود؛ آن‌جا
+        # passesِ همان روز جایِ رشدِ ردیف را می‌گیرد: ثبتِ بی‌کار passes را هم
+        # تکان نمی‌دهد، پس دیگر از این در سبز درنمی‌آید.
+        history_ok = (
+            go_rows is not None and py_rows is not None and go_rows == py_rows
+            and after_go is not None and after_py is not None
+            and after_go["day"] == after_py["day"]
+            and go_growth is not None and py_growth is not None
+            and go_growth == py_growth and go_growth >= 0
+            and go_writes is not None and py_writes is not None
+            and go_writes > 0 and py_writes > 0
+        )
+        go_db_unchanged = db_fingerprint(go_db) == db_prints
+        py_db_changed = db_fingerprint(py_db) != db_prints
 
         payload = {
             "commit": commit,
             "go_version": go_version,
             "python": sys.version.split()[0],
-            "db": {"sha256": db_hash, "frozen_ok": frozen_ok,
+            "db": {"sha256": db_prints["market.db"],
+                   "wal_sha256": db_prints.get("market.db-wal"),
+                   "files": ["market.db", "market.db-wal"],
+                   "frozen_ok": frozen_ok,
                    "go_copy_unchanged": go_db_unchanged,
                    "py_copy_changed": py_db_changed},
             "rows": {"py": p_py["rows"], "go": p_go["rows"], "ok": rows_ok},
@@ -325,7 +424,16 @@ def main() -> int:
                         "cache_ok": cache_ok, "etag_ok": etag_ok},
             "contract": {"passed": contract["passed"], "failed": contract["failed"],
                          "report": os.path.relpath(CONTRACT, ROOT), "ok": contract_ok},
-            "history": {"py_rows": 0 if py_rows is None else len(py_rows),
+            "history": {"day": None if before_go is None else before_go["day"],
+                        "py_rows_before": None if before_py is None else before_py["rows"],
+                        "py_rows_after": None if after_py is None else after_py["rows"],
+                        "go_rows_before": None if before_go is None else before_go["rows"],
+                        "go_rows_after": None if after_go is None else after_go["rows"],
+                        "py_row_growth": py_growth,
+                        "go_row_growth": go_growth,
+                        "py_passes_growth": py_writes,
+                        "go_passes_growth": go_writes,
+                        "py_rows": 0 if py_rows is None else len(py_rows),
                         "go_rows": 0 if go_rows is None else len(go_rows),
                         "ok": history_ok},
             "measured_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
@@ -337,22 +445,22 @@ def main() -> int:
                   "perf": perf_ok, "headers": headers_ok, "cache": cache_ok,
                   "etag": etag_ok, "history": history_ok,
                   "go_read_only": go_db_unchanged}
-        print("checks: " + " ".join("%s=%s" % (k, v) for k, v in checks.items()))
+        rendered = []
+        for key, value in checks.items():
+            if key == "history":
+                rendered.append("history=%s (+%s rows, +%s upserts)"
+                                % (value, "-" if go_growth is None else go_growth,
+                                   "-" if go_writes is None else go_writes))
+            else:
+                rendered.append("%s=%s" % (key, value))
+        print("checks: " + " ".join(rendered))
         print("p50 py=%.1fms go=%.1fms | p95 py=%.1fms go=%.1fms (ratio %.3f)"
               % (perf["p50_py"], perf["p50_go"], perf["p95_py"], perf["p95_go"], ratio))
         print("bytes default %d -> %d | all %d -> %d"
               % (p_py["bytes"], p_go["bytes"], p_py["bytes_all"], p_go["bytes_all"]))
         result = 0 if all(checks.values()) else 1
     finally:
-        for proc, log in reversed(procs):
-            if proc.poll() is None:
-                proc.terminate()
-            try:
-                proc.wait(timeout=10)
-            except subprocess.TimeoutExpired:
-                proc.kill()
-            if log is not None:
-                log.close()
+        stop(procs)
         after_sidecars = sidecar_state()
         problem = sidecar_problem(before_sidecars, after_sidecars)
         if problem:

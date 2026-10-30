@@ -23,6 +23,7 @@ build/
 dist/
 portable/
 releases/
+backend-go/bin/
 android/
 backups/
 .v2cache/
