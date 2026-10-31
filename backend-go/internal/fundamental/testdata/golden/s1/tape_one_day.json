@@ -1,0 +1,133 @@
+{
+ "status": "success",
+ "days": [
+  20261028
+ ],
+ "reliable_from": 20261025,
+ "by_symbol": {
+  "INS-عادی01": {
+   "f_clock": {
+    "days": {
+     "20261028": {
+      "active": true,
+      "first_at": "12:00:07",
+      "last_at": "15:10:52",
+      "passes": 1,
+      "evidence": {
+       "is_live": true,
+       "vol_ratio": 3.4
+      }
+     }
+    },
+    "total": 1,
+    "last_seen_at": "15:10:52"
+   },
+   "f_jet": {
+    "days": {
+     "20261028": {
+      "active": true,
+      "first_at": "12:02:07",
+      "last_at": "15:12:52",
+      "passes": 1,
+      "evidence": {
+       "is_live": true,
+       "vol_ratio": 5.4
+      }
+     }
+    },
+    "total": 1,
+    "last_seen_at": "15:12:52"
+   },
+   "f_legal": {
+    "days": {
+     "20261028": {
+      "active": true,
+      "first_at": "12:00:07",
+      "last_at": "15:10:52",
+      "passes": 1,
+      "evidence": {
+       "is_live": true,
+       "vol_ratio": 9.4
+      }
+     }
+    },
+    "total": 1,
+    "last_seen_at": "15:10:52"
+   },
+   "f_noqteh": {
+    "days": {
+     "20261028": {
+      "active": true,
+      "first_at": "12:04:07",
+      "last_at": "15:14:52",
+      "passes": 1,
+      "evidence": {
+       "is_live": true,
+       "vol_ratio": 7.4
+      }
+     }
+    },
+    "total": 1,
+    "last_seen_at": "15:14:52"
+   },
+   "f_roobi": {
+    "days": {
+     "20261028": {
+      "active": true,
+      "first_at": "12:03:07",
+      "last_at": "15:13:52",
+      "passes": 1,
+      "evidence": {
+       "is_live": true,
+       "vol_ratio": 6.4
+      }
+     }
+    },
+    "total": 1,
+    "last_seen_at": "15:13:52"
+   },
+   "f_smart": {
+    "days": {
+     "20261028": {
+      "active": true,
+      "first_at": "12:05:07",
+      "last_at": "15:15:52",
+      "passes": 1,
+      "evidence": {
+       "is_live": true,
+       "vol_ratio": 8.4
+      }
+     }
+    },
+    "total": 1,
+    "last_seen_at": "15:15:52"
+   },
+   "f_susp": {
+    "days": {
+     "20261028": {
+      "active": true,
+      "first_at": "12:01:07",
+      "last_at": "15:11:52",
+      "passes": 1,
+      "evidence": {
+       "is_live": true,
+       "vol_ratio": 4.4
+      }
+     }
+    },
+    "total": 1,
+    "last_seen_at": "15:11:52"
+   }
+  }
+ },
+ "flags": [
+  "f_clock",
+  "f_susp",
+  "f_jet",
+  "f_roobi",
+  "f_noqteh",
+  "f_smart",
+  "f_legal"
+ ],
+ "write_error": null
+}

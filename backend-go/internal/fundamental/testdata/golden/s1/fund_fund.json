@@ -1,0 +1,774 @@
+{
+ "status": "success",
+ "symbol": "اهرم‌ب",
+ "sector": "صندوق سرمايه گذاري قابل معامله",
+ "pricing_mode": "neutral",
+ "score": null,
+ "verdict": "FTS ندارد",
+ "applicable": false,
+ "excluded": false,
+ "exclusion_reasons": [],
+ "passes": {
+  "1_growth": true,
+  "2_eps_trend": false,
+  "3_gross_margin": true,
+  "4_sales_to_mcap": false,
+  "5_industry": true,
+  "1a_monetary_growth": true,
+  "1b_volume_growth": false,
+  "4a_sales_to_mcap": false,
+  "4b_profit_potential": false
+ },
+ "states": {
+  "1_growth": true,
+  "2_eps_trend": null,
+  "3_gross_margin": true,
+  "4_sales_to_mcap": null,
+  "5_industry": true
+ },
+ "methodology": {
+  "version": "FTS-v10",
+  "axes": 5,
+  "layer_1_subchecks": [
+   "1a_monetary",
+   "1b_volume"
+  ],
+  "annualization": "sales_ytd * (12 / elapsed_months)",
+  "thresholds": {
+   "monetary_growth_min": 40.0,
+   "monetary_growth_target": 60.0,
+   "volume_growth_min": 0.0,
+   "volume_breadth_min": 0.6,
+   "eps_years": 3,
+   "margin_min": 20.0,
+   "margin_ideal": 30.0,
+   "sales_to_mcap_min": 0.33,
+   "potential_min": 40.0,
+   "inflation_basis": 60.0,
+   "inflation_benchmark": 60.0
+  }
+ },
+ "profile": {
+  "kind": "fund",
+  "label": "صندوق",
+  "revenue_basis": "صندوق — درآمد پرتفوی و تغییرات خالص دارایی‌ها",
+  "volume_applicable": false,
+  "volume_note": "این شرکت کالای وزن‌شدنی تولید نمی‌کند؛ چک فیزیکی روی مبنای متناسبِ همان طبقه (درآمد واقعی پس از تورم) سنجیده میشود نه تن محصول.",
+  "pricing_note": "درآمد ریالیِ نرخ‌گذاری‌شده — ریسک سرکوب نرخ وجود دارد."
+ },
+ "indicators": {
+  "1": {
+   "monetary": {
+    "monetary_pct": 41.9,
+    "series": [
+     {
+      "year": 1404,
+      "month": 12,
+      "monthly_revenue": 12.0,
+      "ytd_revenue": 488.0,
+      "ytd_revenue_prev": null,
+      "period_end": "1404/12"
+     },
+     {
+      "year": 1404,
+      "month": 11,
+      "monthly_revenue": 12.0,
+      "ytd_revenue": 476.0,
+      "ytd_revenue_prev": null,
+      "period_end": "1404/11"
+     },
+     {
+      "year": 1404,
+      "month": 10,
+      "monthly_revenue": 12.0,
+      "ytd_revenue": 464.0,
+      "ytd_revenue_prev": null,
+      "period_end": "1404/10"
+     },
+     {
+      "year": 1404,
+      "month": 9,
+      "monthly_revenue": 12.0,
+      "ytd_revenue": 452.0,
+      "ytd_revenue_prev": null,
+      "period_end": "1404/09"
+     },
+     {
+      "year": 1404,
+      "month": 8,
+      "monthly_revenue": 12.0,
+      "ytd_revenue": 440.0,
+      "ytd_revenue_prev": null,
+      "period_end": "1404/08"
+     },
+     {
+      "year": 1404,
+      "month": 7,
+      "monthly_revenue": 12.0,
+      "ytd_revenue": 428.0,
+      "ytd_revenue_prev": null,
+      "period_end": "1404/07"
+     },
+     {
+      "year": 1404,
+      "month": 6,
+      "monthly_revenue": 12.0,
+      "ytd_revenue": 416.0,
+      "ytd_revenue_prev": null,
+      "period_end": "1404/06"
+     },
+     {
+      "year": 1404,
+      "month": 5,
+      "monthly_revenue": 12.0,
+      "ytd_revenue": 404.0,
+      "ytd_revenue_prev": null,
+      "period_end": "1404/05"
+     },
+     {
+      "year": 1404,
+      "month": 4,
+      "monthly_revenue": 12.0,
+      "ytd_revenue": 392.0,
+      "ytd_revenue_prev": null,
+      "period_end": "1404/04"
+     },
+     {
+      "year": 1404,
+      "month": 3,
+      "monthly_revenue": 12.0,
+      "ytd_revenue": 380.0,
+      "ytd_revenue_prev": null,
+      "period_end": "1404/03"
+     },
+     {
+      "year": 1404,
+      "month": 2,
+      "monthly_revenue": 12.0,
+      "ytd_revenue": 368.0,
+      "ytd_revenue_prev": null,
+      "period_end": "1404/02"
+     },
+     {
+      "year": 1404,
+      "month": 1,
+      "monthly_revenue": 12.0,
+      "ytd_revenue": 356.0,
+      "ytd_revenue_prev": null,
+      "period_end": "1404/01"
+     },
+     {
+      "year": 1403,
+      "month": 12,
+      "monthly_revenue": 12.0,
+      "ytd_revenue": 344.0,
+      "ytd_revenue_prev": null,
+      "period_end": "1403/12"
+     },
+     {
+      "year": 1403,
+      "month": 11,
+      "monthly_revenue": 12.0,
+      "ytd_revenue": 332.0,
+      "ytd_revenue_prev": null,
+      "period_end": "1403/11"
+     },
+     {
+      "year": 1403,
+      "month": 10,
+      "monthly_revenue": 12.0,
+      "ytd_revenue": 320.0,
+      "ytd_revenue_prev": null,
+      "period_end": "1403/10"
+     },
+     {
+      "year": 1403,
+      "month": 9,
+      "monthly_revenue": 12.0,
+      "ytd_revenue": 308.0,
+      "ytd_revenue_prev": null,
+      "period_end": "1403/09"
+     },
+     {
+      "year": 1403,
+      "month": 8,
+      "monthly_revenue": 12.0,
+      "ytd_revenue": 296.0,
+      "ytd_revenue_prev": null,
+      "period_end": "1403/08"
+     },
+     {
+      "year": 1403,
+      "month": 7,
+      "monthly_revenue": 12.0,
+      "ytd_revenue": 284.0,
+      "ytd_revenue_prev": null,
+      "period_end": "1403/07"
+     },
+     {
+      "year": 1403,
+      "month": 6,
+      "monthly_revenue": 12.0,
+      "ytd_revenue": 272.0,
+      "ytd_revenue_prev": null,
+      "period_end": "1403/06"
+     },
+     {
+      "year": 1403,
+      "month": 5,
+      "monthly_revenue": 12.0,
+      "ytd_revenue": 260.0,
+      "ytd_revenue_prev": null,
+      "period_end": "1403/05"
+     },
+     {
+      "year": 1403,
+      "month": 4,
+      "monthly_revenue": 12.0,
+      "ytd_revenue": 248.0,
+      "ytd_revenue_prev": null,
+      "period_end": "1403/04"
+     },
+     {
+      "year": 1403,
+      "month": 3,
+      "monthly_revenue": 12.0,
+      "ytd_revenue": 236.0,
+      "ytd_revenue_prev": null,
+      "period_end": "1403/03"
+     },
+     {
+      "year": 1403,
+      "month": 2,
+      "monthly_revenue": 12.0,
+      "ytd_revenue": 224.0,
+      "ytd_revenue_prev": null,
+      "period_end": "1403/02"
+     },
+     {
+      "year": 1403,
+      "month": 1,
+      "monthly_revenue": 212.0,
+      "ytd_revenue": 212.0,
+      "ytd_revenue_prev": null,
+      "period_end": "1403/01"
+     }
+    ],
+    "ytd_now_bt": 0.0,
+    "ytd_prev_bt": 0.0,
+    "ytd_now_mrl": 488.0,
+    "ytd_prev_mrl": 344.0,
+    "period": "12/1404",
+    "months": 12,
+    "year": 1404,
+    "denominator_basis": "تجمیعی 12/1403 از گزارش فعالیت ماهانه (نه ماه قبل)",
+    "revenue_basis": "صندوق — درآمد پرتفوی و تغییرات خالص دارایی‌ها",
+    "threshold": 40.0,
+    "target_threshold": 60.0,
+    "strong": false,
+    "pass": true,
+    "data_gap": false,
+    "reason": "",
+    "source": "کدال — گزارش فعالیت ماهانه",
+    "unit": null,
+    "unit_note": "تجمیعیِ میلیونِ ریال از جدولِ بدونِ ستونِ واحد؛ مخرج هم از همان جدول یا ستون «مقایسهٔ دورهٔ مشابه» می‌آید",
+    "ref_period_end": "1404/12",
+    "rule_ref": "F-01"
+   },
+   "volume": {
+    "quantity_verified": false,
+    "basis": "price_effect_decomposition",
+    "confidence": "medium",
+    "volume_pct": null,
+    "real_pct": -11.3,
+    "implied_price_pct": 60.0,
+    "price_benchmark_pct": 60.0,
+    "breadth": {
+     "improved_months": 0,
+     "compared_months": 12,
+     "ratio": 0.0,
+     "min": 0.6
+    },
+    "threshold": 0.0,
+    "applicable": false,
+    "pass": false,
+    "data_gap": false,
+    "revenue_basis": "صندوق — درآمد پرتفوی و تغییرات خالص دارایی‌ها",
+    "note": "این شرکت کالای وزن‌شدنی تولید نمی‌کند؛ چک فیزیکی روی مبنای متناسبِ همان طبقه (درآمد واقعی پس از تورم) سنجیده میشود نه تن محصول.",
+    "source_detail": "تعدیل رشد اسمی با شاخص افزایش نرخ 60٪ و پهنای رشد ماهانه",
+    "reason": "رشد اسمی +41.9٪ کمتر از مبنای افزایش نرخ 60٪ است؛ رشد واقعی منفی است (فقط قیمت بالا رفته).",
+    "note_breadth": "فقط 0 از 12 ماهِ سپری‌شده بهتر شده — رشد حجم فراگیر نیست.",
+    "rule_ref": "F-01b"
+   },
+   "pass": true
+  },
+  "2": {
+   "years_required": 3,
+   "years_available": 2,
+   "in_progress_year": null,
+   "fiscal_years": [
+    "1403",
+    "1404"
+   ],
+   "eps_series": [
+    null,
+    55.0,
+    57.75
+   ],
+   "period_slots": [
+    "1402",
+    "1403",
+    "1404"
+   ],
+   "period_ends": [
+    null,
+    "1403/12/29",
+    "1404/12/29"
+   ],
+   "evidence": [
+    "missing",
+    "audited_year_end",
+    "audited_year_end"
+   ],
+   "period_months": [
+    null,
+    12,
+    12
+   ],
+   "net_profit_series": [
+    null,
+    55000.0,
+    57750.0
+   ],
+   "ref_tracing_nos": [
+    null,
+    7000,
+    7001
+   ],
+   "available_periods": 2,
+   "periods_missing": 1,
+   "partial": true,
+   "pass": false,
+   "data_gap": true,
+   "reason": "فقط 2 دوره از 3 موجود است — 1403: 55.0 و 1404: 57.75",
+   "consolidated_used": false,
+   "low_quality_track": false,
+   "relaxed_evidence": false,
+   "evidence_tier": "insufficient",
+   "strict_evidence": false,
+   "eps_yoy_pct": [
+    null,
+    null,
+    5.0
+   ],
+   "interim": {
+    "available": false,
+    "reason": "صورت مالی میاندوره‌ایِ غیرتلفیقی ثبت نشده."
+   },
+   "interim_confirms": null,
+   "eps_basis": "شاهدِ کافی برای مسیر EPS موجود نیست (میاندورهٔ مستقلِ راستی‌آزمایی موجود نیست)",
+   "threshold": "3 سال مالی متوالی",
+   "soft_gap": false,
+   "source": "کدال — صورت سود و زیان (حسابرسی شده، شرکت اصلی)",
+   "rule_ref": "F-02"
+  },
+  "3": {
+   "margin_pct": 40.0,
+   "gross_profit_bt": 9.6,
+   "revenue_bt": 24.0,
+   "period_end": "1404/12/29",
+   "basis": "سالانهٔ حسابرسی‌شدهٔ شرکت اصلی — سال مالی 1404",
+   "ref_tracing_no": 7001,
+   "ref_company": "صندوقِ آزمون",
+   "fiscal_year": "1404",
+   "unit": "mrl",
+   "unit_label": "میلیون ریال",
+   "unit_valid": true,
+   "source": "کدال — صورت سود و زیان سالانه",
+   "pass": true,
+   "optimal": true,
+   "threshold": 20.0,
+   "optimal_threshold": 30.0,
+   "formula": "(سود ناخالص ÷ درآمدهای عملیاتی) × ۱۰۰",
+   "band": "ideal",
+   "ideal": true,
+   "ideal_threshold": 30.0,
+   "na": false,
+   "reason": "",
+   "rule_ref": "F-03"
+  },
+  "4": {
+   "available": false,
+   "na": true,
+   "exempt": true,
+   "pass": false,
+   "potential_pass": false,
+   "sales_pass": false,
+   "rule_ref": "F-04",
+   "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+   "annual": {
+    "annual_sales_mrl": 0.0,
+    "annual_sales_bt": null,
+    "months_used": 0,
+    "scale_factor": 0.0,
+    "basis": "N/A — هلدینگ/سرمایه‌گذاری/واسطۀ مالی (سند v2.1 F-04)",
+    "reconciled": true,
+    "revenue_basis": "صندوق — درآمد پرتفوی و تغییرات خالص دارایی‌ها",
+    "operational_revenue_basis": false,
+    "na": true
+   },
+   "market_cap_source": "official",
+   "market_cap_error": null,
+   "market_cap_asof": 20261028,
+   "market_cap_stale": false
+  },
+  "5": {
+   "verdict": "neutral",
+   "label": "خنثی — نیازمند بررسی موردی",
+   "sector": "صندوق سرمايه گذاري قابل معامله",
+   "matched_tokens": [],
+   "fts_top_industry": false,
+   "pass": true,
+   "exclusion_active": true,
+   "market_share_pct": 0.0,
+   "outlook": "سایر صنایع (غیردستوری) — نیازمند بررسی موردیِ نرخ محصول و مجوز افزایش قیمت.",
+   "regime_label": "سایر صنایع",
+   "rule_ref": "F-05"
+  }
+ },
+ "metrics": {
+  "mcap": 4000000.0,
+  "mcap_source": "official",
+  "mcap_asof": 20261028,
+  "mcap_stale": false,
+  "mcap_error": null,
+  "mcap_hmt": 0.0,
+  "annual_sales_bt": null,
+  "revenue": 0.0,
+  "sales_to_mcap": null,
+  "ps": null,
+  "gross_margin": 40.0,
+  "net_margin": null,
+  "growth_pct": 41.9,
+  "monetary_growth_pct": 41.9,
+  "volume_growth_pct": null,
+  "real_growth_pct": -11.3,
+  "volume_basis": "price_effect_decomposition",
+  "quantity_verified": false,
+  "eps_series": [
+   null,
+   55.0,
+   57.75
+  ],
+  "eps_slots": [
+   "1402",
+   "1403",
+   "1404"
+  ],
+  "eps_partial": true,
+  "eps_available": 2,
+  "eps_required": 3,
+  "eps_projected_year": null,
+  "profit_potential_pct": null,
+  "potential_pct": null,
+  "months_used": 0,
+  "scale_factor": 0.0,
+  "roe": 13.4
+ },
+ "insights": [
+  {
+   "step": "۱",
+   "title": "لایهٔ ۱ — درآمد/فروش (رشد ریالی + تأیید حجم)",
+   "type": "success",
+   "text": "✅ ۱الف رشد ریالی: +41.9٪ (کف 40٪ احراز شد)<br>🚫 ۱ب رشد تولیدی: رشد اسمی +41.9٪ کمتر از مبنای افزایش نرخ 60٪ است؛ رشد واقعی منفی است (فقط قیمت بالا رفته)."
+  },
+  {
+   "step": "۲",
+   "title": "لایهٔ ۲ — سابقهٔ ۳ سالهٔ سودسازی (EPS)",
+   "type": "danger",
+   "partial": true,
+   "row": "|<span style=\"color: red;\">شاخص ۲ (تنها ۲ دوره موجود است)</span>| <span style=\"color: red;\">-</span> | <span style=\"color: red;\">55</span> | <span style=\"color: red;\">58</span>|",
+   "text": "🚫 شاخص ۲ (تنها ۲ دوره موجود است) — سابقه EPS: - ← 55 ← 58 ریال · فقط 2 دوره از 3 موجود است — 1403: 55.0 و 1404: 57.75"
+  },
+  {
+   "step": "۳",
+   "title": "لایهٔ ۳ — حاشیهٔ سود ناخالص",
+   "type": "success",
+   "text": "✅ حاشیهٔ ناخالص: 40.0٪ (ایده‌آل ≥ 30٪)"
+  },
+  {
+   "step": "۴",
+   "title": "لایهٔ ۴ — پتانسیل سود سالانه به ارزش بازار",
+   "type": "warning",
+   "text": "⚠️ شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A)."
+  },
+  {
+   "step": "۵",
+   "title": "لایهٔ ۵ — رژیم قیمت‌گذاری صنعت و چشم‌انداز",
+   "type": "info",
+   "text": "ℹ️ وضعیت صنعت: گروه «صندوق سرمايه گذاري قابل معامله» غیردستوری (بررسی تکمیلی)"
+  }
+ ],
+ "details": {
+  "۱": {
+   "title": "درآمد/فروش — رشد ریالی (۱الف) + تأیید حجم (۱ب)",
+   "formula": "۱الف = (تجمیعی دوره ÷ تجمیعی همان دورهٔ سال قبل) × ۱۰۰ − ۱۰۰ · پاس ≥ 40٪ · ۱ب = رشد کمیت ≥ 0٪ یا رشد واقعیِ پس از تورم ≥ 0٪ · پهنای رشد (0/12 ماه) فقط نمایشی است، دروازۀ امتیاز نیست",
+   "source": "کدال — گزارش فعالیت ماهانهٔ منتهی به 12/1404 | مخرج: تجمیعی 12/1403 از گزارش فعالیت ماهانه (نه ماه قبل) | طبقهٔ شرکت: صندوق",
+   "calc": "0 ÷ 0 میلیارد تومان = +41.9٪ | ۱ب: مبنای price_effect_decomposition → رشد واقعی -11.3٪ (مبنای نرخ 60٪)",
+   "what": "صندوق — درآمد پرتفوی و تغییرات خالص دارایی‌ها<br>این شرکت کالای وزن‌شدنی تولید نمی‌کند؛ چک فیزیکی روی مبنای متناسبِ همان طبقه (درآمد واقعی پس از تورم) سنجیده میشود نه تن محصول.<br>شواهد حجم: تعدیل رشد اسمی با شاخص افزایش نرخ 60٪ و پهنای رشد ماهانه — پهنای رشد: 0/12 ماه",
+   "subchecks": [
+    {
+     "key": "1a",
+     "label": "رشد ریالی",
+     "state": "pass",
+     "value": "+41.9٪",
+     "threshold": "≥ 40٪",
+     "detail": "تجمیعی 0 ÷ 0 میلیارد تومان (12/1404)"
+    },
+    {
+     "key": "1b",
+     "label": "رشد تولیدی / تناژ",
+     "state": "fail",
+     "value": "-11.3٪",
+     "threshold": "≥ 0٪",
+     "verified": false,
+     "confidence": "medium",
+     "detail": "تعدیل اثر تورمی (اطمینان متوسط)"
+    }
+   ]
+  },
+  "۲": {
+   "title": "سابقهٔ سودسازی (EPS سه سال + تداوم میاندوره)",
+   "formula": "EPSy > EPSy−1 > EPSy−2 · 3 سال مالیِ متوالی · مبنای امروزی: مبنای معتبری یافت نشد · تداوم: EPS میاندوره × ۱۲÷م ≥ آخرین EPS سال‌پایان",
+   "source": "کدال — صورت سود و زیان (حسابرسی شده، شرکت اصلی)",
+   "calc": "EPS: - | 55 | 58 | متوالی: خیر | مثبت: خیر | میاندوره — → برآورد سال — (تعداد نامعلوم)",
+   "period_row": {
+    "label": "شاخص ۲ (تنها ۲ دوره موجود است)",
+    "cells": [
+     "-",
+     "55",
+     "58"
+    ],
+    "markdown": "|<span style=\"color: red;\">شاخص ۲ (تنها ۲ دوره موجود است)</span>| <span style=\"color: red;\">-</span> | <span style=\"color: red;\">55</span> | <span style=\"color: red;\">58</span>|",
+    "red": true,
+    "available": 2,
+    "required": 3,
+    "periods": [
+     {
+      "year": "1402",
+      "value": "-",
+      "missing": true
+     },
+     {
+      "year": "1403",
+      "value": "55",
+      "missing": false
+     },
+     {
+      "year": "1404",
+      "value": "58",
+      "missing": false
+     }
+    ]
+   },
+   "what": "لایهٔ سختِ v8 (فقط ۱۲ماههٔ حسابرسی‌شدهٔ غیرتلفیقی) روی این دیتابیس برای نمادهای زیادی صفر رکورد می‌دهد؛ نسخهٔ ۱۰ همان مسیر را با سال‌پایان و میاندوره می‌سنجد ولی هر تنزلِ شاهد را صریح برچسب میزند تا کاربر بداند EPS از کدالِ غیرتلفیقیِ حسابرسی‌شده آمده یا از جایگزین‌های ضعیف‌تر. تداومِ سال جاری هشدارِ نرم است، وتوی سخت نه. در کمبودِ دوره هم سطر حذف نمیشود: مقدارِ موجود می‌آید و جایِ دورهٔ غایب «-» با سطرِ قرمز. هر اسلاتِ **تلفیقی** رأیِ ۱۳ را می‌گیرد: شاخص داوری نمی‌شود (N/A)، چون جزوه (ص ۴) صورتِ تلفیقی را مبنایِ سابقۀ سودسازی نمی‌داند.",
+   "subchecks": [
+    {
+     "key": "2a",
+     "label": "سابقهٔ ۳ سالهٔ EPS (تنها ۲ دوره موجود است)",
+     "state": "fail",
+     "value": "- ← 55 ← 58",
+     "threshold": "3 سال صعودی",
+     "partial": true,
+     "available_periods": 2,
+     "periods": [
+      {
+       "year": "1402",
+       "value": "-",
+       "missing": true
+      },
+      {
+       "year": "1403",
+       "value": "55",
+       "missing": false
+      },
+      {
+       "year": "1404",
+       "value": "58",
+       "missing": false
+      }
+     ],
+     "row": "|<span style=\"color: red;\">شاخص ۲ (تنها ۲ دوره موجود است)</span>| <span style=\"color: red;\">-</span> | <span style=\"color: red;\">55</span> | <span style=\"color: red;\">58</span>|",
+     "detail": "1402 - | 1403 55 (حسابرسی‌شده) | 1404 58 (حسابرسی‌شده)"
+    },
+    {
+     "key": "2b",
+     "label": "تداوم در دورهٔ میاندوره‌ای",
+     "state": "na",
+     "value": "—",
+     "threshold": "برآورد ≥ آخرین EPS سال‌پایان",
+     "detail": "— · دوره —"
+    }
+   ]
+  },
+  "۳": {
+   "title": "حاشیهٔ سود ناخالص",
+   "formula": "حاشیه = (سود ناخالص ÷ درآمدهای عملیاتی) × ۱۰۰ · ایده‌آل ≥ 30٪ · قابل‌قبول ≥ 20٪",
+   "source": "کدال — صورت سود و زیان سالانهٔ 1404/12/29 (سالانهٔ حسابرسی‌شدهٔ شرکت اصلی — سال مالی 1404)",
+   "calc": "سود ناخالص 10 ÷ درآمدهای عملیاتی 24 × ۱۰۰ = 40.0٪ (باند: ideal)",
+   "what": "سود ناخالص = درآمدهای عملیاتی − بهای تمام‌شدهٔ کالای فروش‌رفته؛ سود عملیاتی و سود خالص در این لایه نقشی ندارند.",
+   "subchecks": [
+    {
+     "key": "3",
+     "label": "حاشیهٔ ناخالص",
+     "state": "pass",
+     "value": "40.0٪",
+     "threshold": "≥ 20٪ (ایده‌آل 30٪)",
+     "detail": "باند: ideal"
+    }
+   ]
+  },
+  "۴": {
+   "title": "پتانسیل سود با سالانه‌سازیِ پویا",
+   "formula": "م = ماه‌های سپری‌شده از گزارش ماهانه (۱…۱۲) · فروش سالانه = تجمیعی × (۱۲ ÷ م) · سود ناخالص پتانسیل = فروش سالانه × حاشیهٔ ناخالص · نسبت پتانسیل = سود پتانسیل ÷ ارزش بازار ≥ 40٪ · فروش ÷ ارزش بازار ≥ 0.33×",
+   "source": "ارزش بازار: TSETMC (تعداد سهام × قیمت پایانی = — همت) | فروش و حاشیه: کدال — گزارش فعالیت ماهانه + صورت مالی سالانه",
+   "calc": "م = 0 → ضریب × 0.00 | N/A — هلدینگ/سرمایه‌گذاری/واسطۀ مالی (سند v2.1 F-04) | سود ناخالص پتانسیل — میلیارد تومان ÷ ارزش بازار — همت = — | مبنای حاشیه: —",
+   "what": "ضریب سالانه‌سازی ثابت نیست: ۳ ماه ×۴، ۴ ماه ×۳، ۵ ماه ×۲٫۴، ۶ ماه ×۲ … — تا نمادی که ۵ ماه از سال مالی‌اش گذشته با فروشِ ۵ ماه قضاوت نشود. پتانسیل سود روی «سود ناخالص» است نه سود خالص، تا اوراق‌بهادار و مواردِ مالیِ یک‌باره در آن راه نیابد.",
+   "subchecks": [
+    {
+     "key": "4a",
+     "label": "فروش سالانه ÷ ارزش بازار",
+     "state": "nodata",
+     "value": "—",
+     "threshold": "≥ 0×",
+     "detail": "فروش سالانه — میلیارد تومان (× 0.00 برای 0 ماه)"
+    },
+    {
+     "key": "4b",
+     "label": "پتانسیل سود ناخالص ÷ ارزش بازار",
+     "state": "nodata",
+     "value": "—",
+     "threshold": "≥ 0٪",
+     "detail": "— × — = — میلیارد تومان"
+    }
+   ]
+  },
+  "۵": {
+   "title": "رژیم قیمت‌گذاری صنعت",
+   "formula": "حالتِ پنل: Exclude_Mandatory_Pricing · «دستوری» مردود است مگر حالت Rank_Only انتخاب شود",
+   "source": "گروه صنعت: TSETMC (sector_name) | فهرست صنایع: پنل تنظیمات کدال",
+   "calc": "طبقه: neutral | تگ خورده: — | حکم: پاس | سهم از کل بازار: 0.000٪ (تکمیلی)",
+   "what": "سایر صنایع (غیردستوری) — نیازمند بررسی موردیِ نرخ محصول و مجوز افزایش قیمت.",
+   "subchecks": [
+    {
+     "key": "5",
+     "label": "رژیم قیمت‌گذاری",
+     "state": "pass",
+     "value": "سایر صنایع",
+     "threshold": "غیردستوری",
+     "detail": "بدون تگ"
+    }
+   ]
+  }
+ },
+ "data_gaps": [
+  {
+   "layer": "۲",
+   "axis": "2_eps_trend",
+   "why": "فقط 2 دوره از 3 موجود است — 1403: 55.0 و 1404: 57.75",
+   "available_periods": 2,
+   "required_periods": 3,
+   "partial": true,
+   "fix": "با گرفتنِ دیتابیس تازهٔ کدال، صورت‌های ۱۲ماههٔ سال‌های قدیمی‌ترِ همین نماد اضافه می‌شود."
+  }
+ ],
+ "secondary": {
+  "طبقهٔ شرکت": "صندوق — صندوق — درآمد پرتفوی و تغییرات خالص دارایی‌ها",
+  "مبنای حجم (لایهٔ ۱ب)": "price_effect_decomposition · اطمینان medium · تناژ گزارش‌شده: خیر — کمیتِ گزارش‌شدۀ همان دوره در دسترس نبود؛ تعدیل تورمی مصرف شد",
+  "سالانه‌سازی (لایهٔ ۴)": "م = 0 ماه × ۱۲÷م = ×0.00 — N/A — هلدینگ/سرمایه‌گذاری/واسطۀ مالی (سند v2.1 F-04)",
+  "ارزش بازار": "0.00 همت — منبع: official",
+  "تاریخ ارزش بازار": "20261028",
+  "سهم بازار": "0.000٪ از کل بازار (تکمیلی)",
+  "ROE": "13.4٪ (تکمیلی)"
+ },
+ "history": [
+  {
+   "period_end": "1404/12/29",
+   "fiscal_year": "1404",
+   "revenue": 240000.0,
+   "gross_profit": 96000.0,
+   "net_profit": 57750.0,
+   "eps": 57.75,
+   "audited": true,
+   "consolidated": false
+  },
+  {
+   "period_end": "1403/12/29",
+   "fiscal_year": "1403",
+   "revenue": 240000.0,
+   "gross_profit": 96000.0,
+   "net_profit": 55000.0,
+   "eps": 55.0,
+   "audited": true,
+   "consolidated": false
+  }
+ ],
+ "thresholds": {
+  "growth_min": 40.0,
+  "eps_years": 3,
+  "margin_min": 20.0,
+  "margin_optimal": 30.0,
+  "sales_to_mcap_min": 0.33,
+  "sales_to_mcap_ideal": 1.0,
+  "profit_potential_min": 40.0,
+  "industry_mode": "Exclude_Mandatory_Pricing",
+  "mandatory_sectors": [
+   "خودرو",
+   "نیروگاه",
+   "قند و شکر",
+   "لاستیک",
+   "شوینده",
+   "بیمه"
+  ],
+  "free_sectors": [
+   "سیمان",
+   "پتروشیمی",
+   "شیمیایی",
+   "فلزات",
+   "کانی",
+   "کاشی",
+   "سرامیک",
+   "شیشه",
+   "کانه",
+   "معادن",
+   "نفت",
+   "محصولات فلزی"
+  ],
+  "watchlist_max": 50,
+  "mcap_min_hmt": 0.0,
+  "holdings_sales_na": true,
+  "pharma_margin_exempt_min": 0.0,
+  "exclude_base_market": true,
+  "exclude_rejected_indicators": [],
+  "suspended_max_stale_sessions": 3,
+  "filter_m141": false,
+  "min_trade_val": 0.0,
+  "v10_monetary_growth_min": 60.0,
+  "v10_inflation_basis": 60.0,
+  "v10_volume_growth_min": 0.0,
+  "v10_volume_breadth_min": 0.6,
+  "v10_eps_years": 3,
+  "v10_margin_min": 20.0,
+  "v10_margin_ideal": 30.0,
+  "v10_sales_to_mcap_min": 0.33,
+  "v10_potential_min": 40.0,
+  "include_industries": [],
+  "exclude_industries": [],
+  "hourglass_rsi_period": 7,
+  "hourglass_rsi_oversold": 30.0,
+  "hourglass_ma52_position": "below"
+ },
+ "ref_symbol": null,
+ "ref_reason": null,
+ "fs_count": 2
+}

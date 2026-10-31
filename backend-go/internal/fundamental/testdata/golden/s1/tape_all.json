@@ -1,0 +1,21 @@
+{
+ "status": "success",
+ "days": [
+  20261025,
+  20261026,
+  20261027,
+  20261028
+ ],
+ "reliable_from": 20261025,
+ "by_symbol": {},
+ "flags": [
+  "f_clock",
+  "f_susp",
+  "f_jet",
+  "f_roobi",
+  "f_noqteh",
+  "f_smart",
+  "f_legal"
+ ],
+ "write_error": null
+}

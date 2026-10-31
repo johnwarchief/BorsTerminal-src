@@ -1,0 +1,17 @@
+{
+ "status": "success",
+ "symbol": "عادی01",
+ "count": 1,
+ "quarters": [
+  {
+   "period_end": "1405/09/30",
+   "period_months": 3,
+   "revenue": 1200000.0,
+   "gross_profit": 306000.0,
+   "operating_profit": 290700.0,
+   "net_profit": 210000.0,
+   "basic_eps": 41.0,
+   "publish_date": "1405/11/20 10:00:00"
+  }
+ ]
+}

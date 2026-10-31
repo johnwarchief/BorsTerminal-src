@@ -1,0 +1,16 @@
+{
+ "status": "success",
+ "days": [],
+ "reliable_from": null,
+ "by_symbol": {},
+ "flags": [
+  "f_clock",
+  "f_susp",
+  "f_jet",
+  "f_roobi",
+  "f_noqteh",
+  "f_smart",
+  "f_legal"
+ ],
+ "write_error": null
+}

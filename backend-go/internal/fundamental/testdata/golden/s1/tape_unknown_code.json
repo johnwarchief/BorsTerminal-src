@@ -1,0 +1,262 @@
+{
+ "status": "success",
+ "days": [
+  20261025,
+  20261026,
+  20261027,
+  20261028
+ ],
+ "reliable_from": 20261025,
+ "by_symbol": {
+  "ISIN-NOT-HERE": {
+   "f_clock": {
+    "days": {
+     "20261025": {
+      "active": false,
+      "first_at": null,
+      "last_at": null,
+      "passes": 0,
+      "evidence": {}
+     },
+     "20261026": {
+      "active": false,
+      "first_at": null,
+      "last_at": null,
+      "passes": 0,
+      "evidence": {}
+     },
+     "20261027": {
+      "active": false,
+      "first_at": null,
+      "last_at": null,
+      "passes": 0,
+      "evidence": {}
+     },
+     "20261028": {
+      "active": false,
+      "first_at": null,
+      "last_at": null,
+      "passes": 0,
+      "evidence": {}
+     }
+    },
+    "total": 0,
+    "last_seen_at": null
+   },
+   "f_susp": {
+    "days": {
+     "20261025": {
+      "active": false,
+      "first_at": null,
+      "last_at": null,
+      "passes": 0,
+      "evidence": {}
+     },
+     "20261026": {
+      "active": false,
+      "first_at": null,
+      "last_at": null,
+      "passes": 0,
+      "evidence": {}
+     },
+     "20261027": {
+      "active": false,
+      "first_at": null,
+      "last_at": null,
+      "passes": 0,
+      "evidence": {}
+     },
+     "20261028": {
+      "active": false,
+      "first_at": null,
+      "last_at": null,
+      "passes": 0,
+      "evidence": {}
+     }
+    },
+    "total": 0,
+    "last_seen_at": null
+   },
+   "f_jet": {
+    "days": {
+     "20261025": {
+      "active": false,
+      "first_at": null,
+      "last_at": null,
+      "passes": 0,
+      "evidence": {}
+     },
+     "20261026": {
+      "active": false,
+      "first_at": null,
+      "last_at": null,
+      "passes": 0,
+      "evidence": {}
+     },
+     "20261027": {
+      "active": false,
+      "first_at": null,
+      "last_at": null,
+      "passes": 0,
+      "evidence": {}
+     },
+     "20261028": {
+      "active": false,
+      "first_at": null,
+      "last_at": null,
+      "passes": 0,
+      "evidence": {}
+     }
+    },
+    "total": 0,
+    "last_seen_at": null
+   },
+   "f_roobi": {
+    "days": {
+     "20261025": {
+      "active": false,
+      "first_at": null,
+      "last_at": null,
+      "passes": 0,
+      "evidence": {}
+     },
+     "20261026": {
+      "active": false,
+      "first_at": null,
+      "last_at": null,
+      "passes": 0,
+      "evidence": {}
+     },
+     "20261027": {
+      "active": false,
+      "first_at": null,
+      "last_at": null,
+      "passes": 0,
+      "evidence": {}
+     },
+     "20261028": {
+      "active": false,
+      "first_at": null,
+      "last_at": null,
+      "passes": 0,
+      "evidence": {}
+     }
+    },
+    "total": 0,
+    "last_seen_at": null
+   },
+   "f_noqteh": {
+    "days": {
+     "20261025": {
+      "active": false,
+      "first_at": null,
+      "last_at": null,
+      "passes": 0,
+      "evidence": {}
+     },
+     "20261026": {
+      "active": false,
+      "first_at": null,
+      "last_at": null,
+      "passes": 0,
+      "evidence": {}
+     },
+     "20261027": {
+      "active": false,
+      "first_at": null,
+      "last_at": null,
+      "passes": 0,
+      "evidence": {}
+     },
+     "20261028": {
+      "active": false,
+      "first_at": null,
+      "last_at": null,
+      "passes": 0,
+      "evidence": {}
+     }
+    },
+    "total": 0,
+    "last_seen_at": null
+   },
+   "f_smart": {
+    "days": {
+     "20261025": {
+      "active": false,
+      "first_at": null,
+      "last_at": null,
+      "passes": 0,
+      "evidence": {}
+     },
+     "20261026": {
+      "active": false,
+      "first_at": null,
+      "last_at": null,
+      "passes": 0,
+      "evidence": {}
+     },
+     "20261027": {
+      "active": false,
+      "first_at": null,
+      "last_at": null,
+      "passes": 0,
+      "evidence": {}
+     },
+     "20261028": {
+      "active": false,
+      "first_at": null,
+      "last_at": null,
+      "passes": 0,
+      "evidence": {}
+     }
+    },
+    "total": 0,
+    "last_seen_at": null
+   },
+   "f_legal": {
+    "days": {
+     "20261025": {
+      "active": false,
+      "first_at": null,
+      "last_at": null,
+      "passes": 0,
+      "evidence": {}
+     },
+     "20261026": {
+      "active": false,
+      "first_at": null,
+      "last_at": null,
+      "passes": 0,
+      "evidence": {}
+     },
+     "20261027": {
+      "active": false,
+      "first_at": null,
+      "last_at": null,
+      "passes": 0,
+      "evidence": {}
+     },
+     "20261028": {
+      "active": false,
+      "first_at": null,
+      "last_at": null,
+      "passes": 0,
+      "evidence": {}
+     }
+    },
+    "total": 0,
+    "last_seen_at": null
+   }
+  }
+ },
+ "flags": [
+  "f_clock",
+  "f_susp",
+  "f_jet",
+  "f_roobi",
+  "f_noqteh",
+  "f_smart",
+  "f_legal"
+ ],
+ "write_error": null
+}

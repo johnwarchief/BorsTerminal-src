@@ -137,6 +137,8 @@ SUITES = [
     # mainwatch واقعی باشند)، اوراکلِ طلایی با ساعتِ سنجاق‌شده، و چهار صحنه.
     ('dev/test_mstat_fixture_v1121.py', 'B2 mstat fixture + goldens + pinned clock are current'),
     ('dev/test_chart_fixture_b3.py',  'B3 chart fixture + goldens + offline seams are current'),
+    # B4: فیکسچر/اوراکل/طلاییِ بنیادی و نوار — قطعیت، تازگی، و محتوای هر کیس
+    ('dev/test_fundamental_fixture_b4.py',   'fundamental + tape-history fixture, oracle, goldens'),
     ('dev/version_anchor_guard.py',   'all six version anchors state the same release'),
     ('dev/fts_defaults_parity_guard.py', 'FTS guide defaults: FE drawer mirrors the server'),
     ('dev/test_hourglass_settings_v1.py', 'hourglass RSI period, oversold threshold and MA52 mode are configurable'),
