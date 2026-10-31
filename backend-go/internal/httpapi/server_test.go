@@ -14,7 +14,7 @@ import (
 
 func newServer(t *testing.T) http.Handler {
 	t.Helper()
-	return New(config.Config{Addr: "127.0.0.1:8198", DataDir: t.TempDir(), ReadOnly: true, NoLoops: true}, nil, nil, nil)
+	return New(config.Config{Addr: "127.0.0.1:8198", DataDir: t.TempDir(), ReadOnly: true, NoLoops: true}, nil, nil, nil, nil)
 }
 
 func serve(t *testing.T, method, target string) *httptest.ResponseRecorder {
@@ -147,7 +147,7 @@ func TestMstatRouteTable(t *testing.T) {
 	}
 	for path, want := range mstatRoutes {
 		fake := &fakeMstat{}
-		srv := New(config.Config{Addr: "127.0.0.1:8198", DataDir: t.TempDir(), ReadOnly: true, NoLoops: true}, nil, nil, fake)
+		srv := New(config.Config{Addr: "127.0.0.1:8198", DataDir: t.TempDir(), ReadOnly: true, NoLoops: true}, nil, nil, fake, nil)
 		rec := httptest.NewRecorder()
 		srv.ServeHTTP(rec, httptest.NewRequest("GET", path, nil))
 		if rec.Code != http.StatusOK {
@@ -166,6 +166,89 @@ func TestMstatRouteTable(t *testing.T) {
 	}
 }
 
+// chartRoutes شش مسیرِ محلیِ B3؛ {symbol} در درخواست با X جای‌گزین می‌شود.
+var chartRoutes = map[string]string{
+	"/api/order-book/{symbol}":       "order-book",
+	"/api/chart/{symbol}/key-levels": "key-levels",
+	"/api/calendar/upcoming":         "calendar-upcoming",
+	"/api/calendar/{symbol}":         "calendar-symbol",
+	"/api/ma/{symbol}":               "ma",
+	"/api/patterns/{symbol}":         "patterns",
+}
+
+type fakeChart struct{ called []string }
+
+func (f *fakeChart) hit(name string, w http.ResponseWriter) {
+	f.called = append(f.called, name)
+	WriteJSON(w, http.StatusOK, map[string]any{"handler": name})
+}
+func (f *fakeChart) OrderBook(w http.ResponseWriter, _ *http.Request) { f.hit("order-book", w) }
+func (f *fakeChart) KeyLevels(w http.ResponseWriter, _ *http.Request) { f.hit("key-levels", w) }
+func (f *fakeChart) CalendarUpcoming(w http.ResponseWriter, _ *http.Request) {
+	f.hit("calendar-upcoming", w)
+}
+func (f *fakeChart) CalendarSymbol(w http.ResponseWriter, _ *http.Request) {
+	f.hit("calendar-symbol", w)
+}
+func (f *fakeChart) MA(w http.ResponseWriter, _ *http.Request)       { f.hit("ma", w) }
+func (f *fakeChart) Patterns(w http.ResponseWriter, _ *http.Request) { f.hit("patterns", w) }
+
+// TestChartRoutesAreNotPortedWhenServiceMissing بی سرویس، همان مسیرها ۵۰۱ می‌دهند.
+func TestChartRoutesAreNotPortedWhenServiceMissing(t *testing.T) {
+	for tmpl := range chartRoutes {
+		path := strings.ReplaceAll(tmpl, "{symbol}", "X")
+		rec := serve(t, "GET", path)
+		if rec.Code != http.StatusNotImplemented {
+			t.Fatalf("%s: status = %d", path, rec.Code)
+		}
+		var body map[string]any
+		if err := json.Unmarshal(rec.Body.Bytes(), &body); err != nil {
+			t.Fatal(err)
+		}
+		if body["code"] != "NOT_PORTED" || body["route"] != "GET "+path {
+			t.Fatalf("%s: body = %s", path, rec.Body.String())
+		}
+	}
+}
+
+// TestChartRouteTable هر مسیر باید در فهرستِ پایتون باشد و به هندلرِ خودش برسد.
+func TestChartRouteTable(t *testing.T) {
+	inventory := map[string]bool{}
+	for _, route := range Routes() {
+		inventory[route] = true
+	}
+	if len(chartRoutes) != 6 {
+		t.Fatalf("wired chart routes = %d, want 6", len(chartRoutes))
+	}
+	for tmpl, want := range chartRoutes {
+		if !inventory["GET "+tmpl] {
+			t.Fatalf("%s is not in the Python route inventory", tmpl)
+		}
+		path := strings.ReplaceAll(tmpl, "{symbol}", "X")
+		fake := &fakeChart{}
+		srv := New(config.Config{Addr: "127.0.0.1:8198", DataDir: t.TempDir(), ReadOnly: true, NoLoops: true}, nil, nil, nil, fake)
+		rec := httptest.NewRecorder()
+		srv.ServeHTTP(rec, httptest.NewRequest("GET", path, nil))
+		if rec.Code != http.StatusOK {
+			t.Fatalf("%s: status = %d", path, rec.Code)
+		}
+		if len(fake.called) != 1 || fake.called[0] != want {
+			t.Fatalf("%s: handlers = %v, want [%s]", path, fake.called, want)
+		}
+	}
+}
+
+// TestGetChartStaysNotPorted مسیرِ CDN تا B6 در پایتون می‌ماند.
+func TestGetChartStaysNotPorted(t *testing.T) {
+	fake := &fakeChart{}
+	srv := New(config.Config{Addr: "127.0.0.1:8198", DataDir: t.TempDir(), ReadOnly: true, NoLoops: true}, nil, nil, nil, fake)
+	rec := httptest.NewRecorder()
+	srv.ServeHTTP(rec, httptest.NewRequest("GET", "/api/chart/X", nil))
+	if rec.Code != http.StatusNotImplemented || len(fake.called) != 0 {
+		t.Fatalf("status=%d called=%v", rec.Code, fake.called)
+	}
+}
+
 // TestMstatBadMethodDoesNotReachHandler قراردادِ متدِ نقشهٔ B2 است: هندلرهایِ
 // GET فقط GET را می‌گیرند و POST/PUT/DELETE به آن‌ها نمی‌رسد. مسیرهایِ GET در
 // فهرستِ متدهایِ پایتون POST ندارند، پس apiGate همان ۴۰۴ِ فهرست را می‌دهد؛
@@ -173,7 +256,7 @@ func TestMstatRouteTable(t *testing.T) {
 func TestMstatBadMethodDoesNotReachHandler(t *testing.T) {
 	for _, method := range []string{"POST", "PUT", "DELETE"} {
 		fake := &fakeMstat{}
-		srv := New(config.Config{Addr: "127.0.0.1:8198", DataDir: t.TempDir(), ReadOnly: true, NoLoops: true}, nil, nil, fake)
+		srv := New(config.Config{Addr: "127.0.0.1:8198", DataDir: t.TempDir(), ReadOnly: true, NoLoops: true}, nil, nil, fake, nil)
 		rec := httptest.NewRecorder()
 		srv.ServeHTTP(rec, httptest.NewRequest(method, "/api/mstat/summary", nil))
 		if len(fake.called) != 0 {

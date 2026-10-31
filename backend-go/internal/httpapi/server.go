@@ -38,6 +38,17 @@ type Market interface {
 	SyncState(http.ResponseWriter, *http.Request)
 }
 
+// Chart شش مسیرِ محلیِ api/chart.py در B3 (بقیه در B6 یا مرحلهٔ بعد)؛
+// nil یعنی هیچ‌کدام پورت نشده.
+type Chart interface {
+	OrderBook(http.ResponseWriter, *http.Request)
+	KeyLevels(http.ResponseWriter, *http.Request)
+	CalendarUpcoming(http.ResponseWriter, *http.Request)
+	CalendarSymbol(http.ResponseWriter, *http.Request)
+	MA(http.ResponseWriter, *http.Request)
+	Patterns(http.ResponseWriter, *http.Request)
+}
+
 // Mstat سیزده مسیرِ GETِ تبِ وضعیت بازار؛ nil یعنی هیچ‌کدام پورت نشده.
 type Mstat interface {
 	Summary(http.ResponseWriter, *http.Request)
@@ -55,7 +66,7 @@ type Mstat interface {
 	Board(http.ResponseWriter, *http.Request)
 }
 
-func New(cfg config.Config, h *db.Handles, m Market, ms Mstat) http.Handler {
+func New(cfg config.Config, h *db.Handles, m Market, ms Mstat, ch Chart) http.Handler {
 	s := &Server{
 		cfg:      cfg,
 		db:       h,
@@ -84,6 +95,14 @@ func New(cfg config.Config, h *db.Handles, m Market, ms Mstat) http.Handler {
 		mux.HandleFunc("GET /api/mstat/phases", ms.Phases)
 		mux.HandleFunc("GET /api/mstat/smart-money", ms.SmartMoney)
 		mux.HandleFunc("GET /api/mstat/board", ms.Board)
+	}
+	if ch != nil {
+		mux.HandleFunc("GET /api/chart/{symbol}/key-levels", ch.KeyLevels)
+		mux.HandleFunc("GET /api/order-book/{symbol}", ch.OrderBook)
+		mux.HandleFunc("GET /api/calendar/upcoming", ch.CalendarUpcoming)
+		mux.HandleFunc("GET /api/calendar/{symbol}", ch.CalendarSymbol)
+		mux.HandleFunc("GET /api/ma/{symbol}", ch.MA)
+		mux.HandleFunc("GET /api/patterns/{symbol}", ch.Patterns)
 	}
 	mux.HandleFunc("/", s.apiGate)
 	return noCache(mux)

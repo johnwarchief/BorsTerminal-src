@@ -10,6 +10,7 @@ import (
 	"syscall"
 	"time"
 
+	"borsterminal/backend/internal/chart"
 	"borsterminal/backend/internal/config"
 	"borsterminal/backend/internal/db"
 	"borsterminal/backend/internal/httpapi"
@@ -31,7 +32,10 @@ func main() {
 
 	mkt := market.New(handles, cfg.DataDir)
 	ms := mstat.New(handles.Market, cfg.DataDir, mkt)
-	srv := &http.Server{Addr: cfg.Addr, Handler: httpapi.New(cfg, handles, mkt, ms)}
+	ch := chart.New(chart.Config{Market: handles.Market, User: handles.User,
+		DataDir: cfg.DataDir, CalendarPath: cfg.CalendarPath})
+	defer ch.Close()
+	srv := &http.Server{Addr: cfg.Addr, Handler: httpapi.New(cfg, handles, mkt, ms, ch)}
 	go func() {
 		slog.Info("listening", "addr", cfg.Addr, "data", cfg.DataDir, "version", httpapi.Version())
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {

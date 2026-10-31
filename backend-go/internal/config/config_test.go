@@ -1,6 +1,10 @@
 package config
 
-import "testing"
+import (
+	"path/filepath"
+	"strings"
+	"testing"
+)
 
 func env(m map[string]string) func(string) string {
 	return func(k string) string { return m[k] }
@@ -50,6 +54,23 @@ func TestDataDirPrecedence(t *testing.T) {
 	}
 	if cfg.UserDB() != "C:\\data\\b\\user.db" {
 		t.Fatalf("user path = %q", cfg.UserDB())
+	}
+}
+
+func TestCalendarPath(t *testing.T) {
+	cfg, err := Load(nil, env(nil))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.HasSuffix(cfg.CalendarPath, filepath.Join("static", "calendar", "cache.json")) {
+		t.Fatalf("default calendar path = %q", cfg.CalendarPath)
+	}
+	cfg, err = Load(nil, env(map[string]string{"BORS_CALENDAR_PATH": "C:/cal/cache.json"}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.CalendarPath != "C:\\cal\\cache.json" {
+		t.Fatalf("env calendar path = %q", cfg.CalendarPath)
 	}
 }
 

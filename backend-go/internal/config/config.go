@@ -9,10 +9,13 @@ import (
 const DefaultPort = 8198
 
 type Config struct {
-	Addr     string
-	DataDir  string
-	ReadOnly bool
-	NoLoops  bool
+	Addr    string
+	DataDir string
+	// CalendarPath فایلِ static/calendar/cache.json است؛ پایتون آن را از APP_DIR
+	// می‌خواند، Go پیش‌فرض نسبیِ cwd و درزِ BORS_CALENDAR_PATH برایِ پاریتی/CI.
+	CalendarPath string
+	ReadOnly     bool
+	NoLoops      bool
 }
 
 func Load(args []string, getenv func(string) string) (Config, error) {
@@ -36,11 +39,20 @@ func Load(args []string, getenv func(string) string) (Config, error) {
 	if err != nil {
 		return Config{}, err
 	}
+	cal := getenv("BORS_CALENDAR_PATH")
+	if cal == "" {
+		cal = filepath.Join("static", "calendar", "cache.json")
+	}
+	calAbs, err := filepath.Abs(cal)
+	if err != nil {
+		return Config{}, err
+	}
 	return Config{
-		Addr:     "127.0.0.1:" + strconv.Itoa(*port),
-		DataDir:  abs,
-		ReadOnly: *ro && !*rw,
-		NoLoops:  *noLoops,
+		Addr:         "127.0.0.1:" + strconv.Itoa(*port),
+		DataDir:      abs,
+		CalendarPath: calAbs,
+		ReadOnly:     *ro && !*rw,
+		NoLoops:      *noLoops,
 	}, nil
 }
 
