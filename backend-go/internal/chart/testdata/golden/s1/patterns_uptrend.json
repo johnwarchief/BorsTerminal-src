@@ -1,0 +1,190 @@
+{
+ "status": "ok",
+ "symbol": "عادی01",
+ "overlays": [
+  {
+   "name": "horizontalStraightLine",
+   "kind": "sr",
+   "points": [
+    {
+     "timestamp": 1764158400000,
+     "value": 2014.76
+    }
+   ],
+   "styles": {
+    "line": {
+     "style": "dashed",
+     "size": 1,
+     "color": "#f59e0b"
+    }
+   },
+   "meta": {
+    "strength": 7,
+    "kind": "high"
+   }
+  },
+  {
+   "name": "horizontalStraightLine",
+   "kind": "sr",
+   "points": [
+    {
+     "timestamp": 1764158400000,
+     "value": 1989.65
+    }
+   ],
+   "styles": {
+    "line": {
+     "style": "dashed",
+     "size": 1,
+     "color": "#38bdf8"
+    }
+   },
+   "meta": {
+    "strength": 6,
+    "kind": "low"
+   }
+  },
+  {
+   "name": "horizontalStraightLine",
+   "kind": "sr",
+   "points": [
+    {
+     "timestamp": 1764158400000,
+     "value": 1913.0435
+    }
+   ],
+   "styles": {
+    "line": {
+     "style": "dashed",
+     "size": 1,
+     "color": "#f59e0b"
+    }
+   },
+   "meta": {
+    "strength": 7,
+    "kind": "high"
+   }
+  },
+  {
+   "name": "horizontalStraightLine",
+   "kind": "sr",
+   "points": [
+    {
+     "timestamp": 1764158400000,
+     "value": 1866.655
+    }
+   ],
+   "styles": {
+    "line": {
+     "style": "dashed",
+     "size": 1,
+     "color": "#38bdf8"
+    }
+   },
+   "meta": {
+    "strength": 7,
+    "kind": "low"
+   }
+  },
+  {
+   "name": "horizontalStraightLine",
+   "kind": "sr",
+   "points": [
+    {
+     "timestamp": 1764158400000,
+     "value": 1790.2845
+    }
+   ],
+   "styles": {
+    "line": {
+     "style": "dashed",
+     "size": 1,
+     "color": "#f59e0b"
+    }
+   },
+   "meta": {
+    "strength": 7,
+    "kind": "high"
+   }
+  },
+  {
+   "name": "horizontalStraightLine",
+   "kind": "sr",
+   "points": [
+    {
+     "timestamp": 1764158400000,
+     "value": 1761.5469999999998
+    }
+   ],
+   "styles": {
+    "line": {
+     "style": "dashed",
+     "size": 1,
+     "color": "#f59e0b"
+    }
+   },
+   "meta": {
+    "strength": 7,
+    "kind": "high"
+   }
+  },
+  {
+   "name": "trendLine",
+   "kind": "trend-high",
+   "points": [
+    {
+     "timestamp": 1790510400000,
+     "value": 2018.9
+    },
+    {
+     "timestamp": 1790596800000,
+     "value": 2018.59
+    }
+   ],
+   "styles": {
+    "line": {
+     "color": "#ef4444",
+     "size": 2
+    }
+   }
+  },
+  {
+   "name": "trendLine",
+   "kind": "trend-low",
+   "points": [
+    {
+     "timestamp": 1790769600000,
+     "value": 2013.4
+    },
+    {
+     "timestamp": 1791028800000,
+     "value": 2017.86
+    }
+   ],
+   "styles": {
+    "line": {
+     "color": "#22c55e",
+     "size": 2
+    }
+   }
+  },
+  {
+   "name": "rect",
+   "kind": "breakout-zone",
+   "points": [
+    {
+     "timestamp": 1790769600000,
+     "value": 2175.53
+    },
+    {
+     "timestamp": 1793102400000,
+     "value": 2013.4
+    }
+   ],
+   "styles": {
+    "color": "#2962ff"
+   }
+  }
+ ],
+ "count": 9
+}

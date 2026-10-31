@@ -858,7 +858,10 @@ FTS_LIST_KEYS = ("mandatory_sectors", "free_sectors", "include_industries",
                  "exclude_industries", "exclude_rejected_indicators")
 FTS_STR_KEYS = ("industry_mode", "hourglass_ma52_position")
 
-_CAL_CACHE_PATH = os.path.join(APP_DIR, "static", "calendar", "cache.json")
+# درزِ پاریتی/CI برایِ تقویم: فیکسچرِ گارد و گیتِ B3 همین متغیر را می‌دهند تا
+# «امروزِ» ماشین به تقویمِ واقعی گره نخورد. نبودِ متغیر ⇒ همان مسیرِ همیشگی.
+_CAL_CACHE_PATH = (os.environ.get("BORS_CALENDAR_PATH")
+                   or os.path.join(APP_DIR, "static", "calendar", "cache.json"))
 _cal_cache = {"mtime": 0.0, "events": []}
 
 MA_WINDOWS = [5, 20, 50, 120]

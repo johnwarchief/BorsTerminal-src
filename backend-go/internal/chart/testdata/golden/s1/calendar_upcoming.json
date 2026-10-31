@@ -1,0 +1,50 @@
+{
+ "status": "ok",
+ "days": 14,
+ "count": 3,
+ "items": [
+  {
+   "symbol": "پایین02",
+   "date": "2026-10-30",
+   "cat": "assemblyChange",
+   "title": "لغو مجمع عمومی عادی سالیانه",
+   "date_source": "publication_fallback",
+   "published_at": "2026-10-22T08:00:00"
+  },
+  {
+   "symbol": "غایب",
+   "date": "2026-11-01",
+   "cat": "assembly",
+   "title": "مجمع عمومی عادی سالیانه غایب",
+   "date_source": "publication_fallback",
+   "published_at": "2026-10-18T08:00:00"
+  },
+  {
+   "symbol": "عادی01",
+   "date": "2026-11-02",
+   "cat": "assembly",
+   "title": "مجمع عمومی عادی سالیانه شرکت فولاد دوم مورخ 1405/08/11",
+   "date_source": "title",
+   "published_at": "2026-10-20T08:00:00"
+  }
+ ],
+ "capital_count": 2,
+ "capital": [
+  {
+   "symbol": "عادی01",
+   "date": "2026-11-05",
+   "cat": "capitalIncrease",
+   "title": "افزایش سرمایه از محل آورده نقدی",
+   "date_source": "publication_fallback",
+   "published_at": "2026-10-21T08:00:00"
+  },
+  {
+   "symbol": "پول‌هوشمند06",
+   "date": "2026-11-05",
+   "cat": "capitalIncrease",
+   "title": "افزایش سرمایه شرکت پول هوشمند",
+   "date_source": "publication_fallback",
+   "published_at": "2026-10-23T08:00:00"
+  }
+ ]
+}

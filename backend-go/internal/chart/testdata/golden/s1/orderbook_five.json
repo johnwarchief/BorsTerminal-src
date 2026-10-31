@@ -1,0 +1,57 @@
+{
+ "status": "ok",
+ "symbol": "عادی01",
+ "levels": [
+  {
+   "buy_px": 2010.0,
+   "buy_vol": 120000.0,
+   "buy_cnt": 14.0,
+   "sell_px": 2020.0,
+   "sell_vol": 90000.0,
+   "sell_cnt": 11.0
+  },
+  {
+   "buy_px": 2005.0,
+   "buy_vol": 300000.0,
+   "buy_cnt": 22.0,
+   "sell_px": 2025.0,
+   "sell_vol": 150000.0,
+   "sell_cnt": 19.0
+  },
+  {
+   "buy_px": 2000.0,
+   "buy_vol": 500000.0,
+   "buy_cnt": 31.0,
+   "sell_px": 2030.0,
+   "sell_vol": 260000.0,
+   "sell_cnt": 24.0
+  },
+  {
+   "buy_px": 1995.0,
+   "buy_vol": 450000.0,
+   "buy_cnt": 27.0,
+   "sell_px": 2035.0,
+   "sell_vol": 340000.0,
+   "sell_cnt": 29.0
+  },
+  {
+   "buy_px": 1990.0,
+   "buy_vol": 700000.0,
+   "buy_cnt": 40.0,
+   "sell_px": 2040.0,
+   "sell_vol": 410000.0,
+   "sell_cnt": 33.0
+  }
+ ],
+ "session": {
+  "d_even": 20261028,
+  "h_even": 103000,
+  "updated_at": "2026-10-28 10:29:00"
+ },
+ "totals": {
+  "buy_vol": 1000.0,
+  "buy_cnt": 10.0,
+  "sell_vol": 900.0,
+  "sell_cnt": 9.0
+ }
+}

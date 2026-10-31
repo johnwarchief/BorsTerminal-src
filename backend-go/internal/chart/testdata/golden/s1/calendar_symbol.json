@@ -1,0 +1,47 @@
+{
+ "status": "ok",
+ "symbol": "عادی01",
+ "count": 5,
+ "events": [
+  {
+   "date": "2026-11-02",
+   "ts": 1793620800000,
+   "title": "مجمع عمومی عادی سالیانه شرکت فولاد دوم مورخ 1405/08/11",
+   "cat": "assembly",
+   "date_source": "title",
+   "published_at": "2026-10-20T08:00:00"
+  },
+  {
+   "date": "2026-11-03",
+   "ts": 1793707200000,
+   "title": "دعوت به مجمع فوق‌العاده",
+   "cat": "assembly",
+   "date_source": "publication_fallback",
+   "published_at": "2026-10-24T08:00:00"
+  },
+  {
+   "date": "2026-11-05",
+   "ts": 1793880000000,
+   "title": "افزایش سرمایه از محل آورده نقدی",
+   "cat": "capitalIncrease",
+   "date_source": "publication_fallback",
+   "published_at": "2026-10-21T08:00:00"
+  },
+  {
+   "date": "2026-11-09",
+   "ts": 1794225600000,
+   "title": "مجمع با نوشتارِ عربی",
+   "cat": "assembly",
+   "date_source": "publication_fallback",
+   "published_at": "2026-10-25T09:00:00"
+  },
+  {
+   "date": "2027-01-15",
+   "ts": 1800014400000,
+   "title": "مجمع سالیانه بعدی",
+   "cat": "assembly",
+   "date_source": "publication_fallback",
+   "published_at": "2026-10-25T08:00:00"
+  }
+ ]
+}

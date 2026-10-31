@@ -1,0 +1,331 @@
+{
+ "status": "success",
+ "symbol": "عادی01",
+ "fts": {
+  "trend": {
+   "D": {
+    "trend": "up",
+    "basis": "recent-window",
+    "window": 52,
+    "move_pct": 9.5,
+    "ma": 1796.19,
+    "last_close": 1904.0,
+    "above_ma": true,
+    "stale_bars": 32,
+    "last_pivot_time": "2026-07-19",
+    "hh": null,
+    "hl": null,
+    "last_high": null,
+    "prev_high": null,
+    "last_low": null,
+    "prev_low": null,
+    "pivots": {
+     "trend": "up",
+     "hh": true,
+     "hl": true,
+     "basis": "pivots",
+     "last_high": 1766.0,
+     "prev_high": 1746.0,
+     "last_low": 1744.0,
+     "prev_low": 1734.0,
+     "last_high_time": "2026-07-11",
+     "prev_high_time": "2026-06-27",
+     "last_low_time": "2026-07-19",
+     "prev_low_time": "2026-06-30",
+     "stale_bars": null,
+     "window": null,
+     "price_confirm": "new-high-above-recent-pivots"
+    }
+   },
+   "W": {
+    "trend": "up",
+    "basis": "recent-window",
+    "window": 52,
+    "move_pct": 70.9,
+    "ma": 1352.73,
+    "last_close": 1904.0,
+    "above_ma": true,
+    "stale_bars": 24,
+    "last_pivot_time": "2026-03-18",
+    "hh": null,
+    "hl": null,
+    "last_high": null,
+    "prev_high": null,
+    "last_low": null,
+    "prev_low": null
+   },
+   "M": {
+    "trend": "up",
+    "basis": "recent-window",
+    "window": 14,
+    "move_pct": 75.4,
+    "ma": 1379.64,
+    "last_close": 1904.0,
+    "above_ma": true,
+    "stale_bars": 14,
+    "last_pivot_time": null,
+    "hh": null,
+    "hl": null,
+    "last_high": null,
+    "prev_high": null,
+    "last_low": null,
+    "prev_low": null
+   },
+   "alignment": "up",
+   "matrix": {
+    "decision": "PERMITTED",
+    "setup": "JET_OR_PULLBACK_HOLD",
+    "desc": "هفتگی صعودی + روزانه صعودی: ستاپ جت یا پولبک؛ نگهداری روندی بدون نوسان‌گیری",
+    "basis": {
+     "weekly": "مبنا: ۵۲ کندلِ اخیر، ۷۰.۹٪ جابه‌جایی، قیمت بالای میانگینِ ۵۲ دوره (تازه‌ترین پیوتِ تأییدشده ۲۴ کندل عقب است)",
+     "daily": "مبنا: ۵۲ کندلِ اخیر، ۹.۵٪ جابه‌جایی، قیمت بالای میانگینِ ۵۲ دوره (تازه‌ترین پیوتِ تأییدشده ۳۲ کندل عقب است)"
+    }
+   }
+  },
+  "fib": {
+   "retrace_base_high": 1908.0,
+   "retrace_base_low": 1734.0,
+   "zone_33_40": {
+    "lo": 1836.4,
+    "hi": 1848.73,
+    "in_zone": false
+   },
+   "zone_618_70": {
+    "lo": 1784.46,
+    "hi": 1798.51,
+    "in_zone": false
+   },
+   "levels": [
+    {
+     "ratio": 0.0,
+     "price": 1908.0
+    },
+    {
+     "ratio": 0.33,
+     "price": 1848.73
+    },
+    {
+     "ratio": 0.4,
+     "price": 1836.4
+    },
+    {
+     "ratio": 0.5,
+     "price": 1818.92
+    },
+    {
+     "ratio": 0.618,
+     "price": 1798.51
+    },
+    {
+     "ratio": 0.7,
+     "price": 1784.46
+    },
+    {
+     "ratio": 1.0,
+     "price": 1734.0
+    }
+   ],
+   "leg": {
+    "direction": "up",
+    "start": "2026-06-30",
+    "end": "2026-09-01",
+    "high": 1908.0,
+    "low": 1734.0
+   }
+  },
+  "jet": {
+   "active": false,
+   "resistance": 1875.0,
+   "resistance_date": "2026-08-23",
+   "resistance_type": "static",
+   "ath": false,
+   "close": 1904.0,
+   "pct_above_res": 1.55,
+   "ceiling": 1875.0,
+   "ceiling_date": "2026-08-23",
+   "static_broke": false,
+   "breakout_date": null,
+   "entry_window_days": 3,
+   "days_remaining": 0,
+   "tier": "none",
+   "reason": "شکستِ جتِ تأییدشده در پنجرۀ ۳ روزه وجود ندارد"
+  },
+  "choch": {
+   "bearish": false,
+   "bullish": false,
+   "level": null,
+   "label": null,
+   "confirm_days": 2,
+   "margin": 0.01,
+   "reason": null
+  },
+  "point_hunt": {
+   "touches": 32,
+   "floor_price": 1828.0,
+   "active": false,
+   "bounced": false,
+   "floor_idx": 232,
+   "floor_date": "2026-06-28",
+   "trigger_idx": null,
+   "trigger_date": null,
+   "reason": null
+  },
+  "double_bottom": {
+   "active": true,
+   "neckline": 1766.0,
+   "pct_above_neck": 7.81,
+   "reason": null
+  },
+  "range_box": {
+   "active": false,
+   "top": 1904.0,
+   "bottom": 1785.0,
+   "pct_above_top": null,
+   "reason": null
+  },
+  "exit_engine": {
+   "verdict": "hold",
+   "signals": [],
+   "unmeasured": [],
+   "l1": {
+    "hard_stop": 1695.75,
+    "stop_basis": "swing_low",
+    "stop_hit": false,
+    "ma14_exit": false,
+    "ma14_exit_pending": false,
+    "ma14": 1875.29,
+    "close": 1904.0
+   },
+   "l2": {
+    "choch_break": false,
+    "channel_break": false,
+    "level": null,
+    "touches": 32
+   },
+   "l3": {
+    "third_peak": false,
+    "double_top": false,
+    "hs_break": false,
+    "neckline": null,
+    "level": null,
+    "third_peak_level": null
+   },
+   "l4": {
+    "rsi_divergence": false,
+    "rsi_rollover": false,
+    "rsi": 98.1,
+    "rsi_prev_peak": 99.0
+   }
+  },
+  "hourglass": {
+   "active": false,
+   "weekly_close": 1904.0,
+   "ma52": 1352.73,
+   "weekly_bars": 57,
+   "weekly_rsi": 97.1,
+   "weekly_rsi5": 97.1,
+   "rsi_period": 7,
+   "rsi_oversold": 30.0,
+   "ma52_position_mode": "below",
+   "ma52_position_match": false,
+   "action": "NORMAL",
+   "desc": "شرایط ساعت شنی با تنظیمات فعلی برقرار نیست"
+  },
+  "setups": [
+   {
+    "date": "2025-10-28",
+    "kind": "choch",
+    "label": "CHoCH",
+    "price": 937.0,
+    "side": "above"
+   },
+   {
+    "date": "2026-07-26",
+    "kind": "dbl",
+    "label": "دابل‌باتم",
+    "price": 1766.0,
+    "side": "above"
+   }
+  ],
+  "status": {
+   "code": "entry_trigger",
+   "text": "تریگرِ فعال رویِ کندلِ امروز: کفِ دوقلو",
+   "trigger": {
+    "kind": "double_bottom",
+    "price": 1766.0,
+    "date": "2026-09-01",
+    "label": "کفِ دوقلو",
+    "role": "entry"
+   },
+   "exits": [],
+   "warnings": [],
+   "unknown": [],
+   "vetoed": false,
+   "context_only": false,
+   "priority": [
+    "hard_stop",
+    "confirmed_exit",
+    "weekly_veto",
+    "entry_trigger",
+    "warning",
+    "context_only",
+    "no_signal",
+    "insufficient"
+   ],
+   "roles": {
+    "jet": "entry",
+    "choch_bullish": "entry",
+    "point_hunt": "entry",
+    "double_bottom": "entry",
+    "range_break": "entry",
+    "hourglass": "entry",
+    "fib_zone": "context",
+    "trend": "context",
+    "support_resistance": "context",
+    "third_peak": "warning",
+    "rsi_divergence": "warning",
+    "rsi_rollover": "warning",
+    "ma14_pending": "warning",
+    "hard_stop": "exit",
+    "ma14_exit": "exit",
+    "choch_bearish": "exit",
+    "channel_break": "exit",
+    "double_top": "exit",
+    "hs_break": "exit"
+   }
+  },
+  "roles": {
+   "jet": "entry",
+   "choch_bullish": "entry",
+   "point_hunt": "entry",
+   "double_bottom": "entry",
+   "range_break": "entry",
+   "hourglass": "entry",
+   "fib_zone": "context",
+   "trend": "context",
+   "support_resistance": "context",
+   "third_peak": "warning",
+   "rsi_divergence": "warning",
+   "rsi_rollover": "warning",
+   "ma14_pending": "warning",
+   "hard_stop": "exit",
+   "ma14_exit": "exit",
+   "choch_bearish": "exit",
+   "channel_break": "exit",
+   "double_top": "exit",
+   "hs_break": "exit"
+  }
+ },
+ "analysis_basis": "local-db-adjusted",
+ "bars": 280,
+ "trend_engine": "legacy",
+ "adjustCapability": {
+  "source": "base-price-discontinuity",
+  "combined_available": true,
+  "indexed_available": true,
+  "functional_available": false,
+  "functional_reason": "تعدیلِ عملکردیِ واقعی (سودِ نقدیِ سرمایه‌گذاری‌شدهٔ دوباره) رویدادِ تفکیکی می‌خواهد: افزایشِ سرمایه، آورده/حق‌تقدم، سودِ نقدیِ هر مجمع و تاریخِ معافیت. ادعایِ پیشینِ همین کامنت — «هیچ‌یک از این‌ها درِ فیدِ TSETMC نیست» — با سنجشِ زنده ۱۴۰۵-۰۷-۱۳ رد شد: `ClosingPrice/GetPriceAdjustByFlow` دو پایانیِ `pClosing` و `pClosingNotAdjusted` را برایِ بازارِ کامل می‌دهد و `Instrument/GetInstrumentShareChangeByFlow` تعدادِ سهامِ قبل/بعد را؛ هر دو حالا درِ `price_adjust_events` و `share_change_events` می‌نشینند (docs/TSETMC-DATA-GAP-MATRIX.md §17). چیزی که هنوز مبدأ ندارد **نوعِ رویداد** است: `corporateTypeCode` کلیدش درِ پاسخ هست ولی ۱۴۰۵-۰۷-۱۳ درِ ۴۰۱۸ ردیفِ زنده همه null بود، و هیچ مرجعِ بازبینی‌شده‌ای معنای کدهایش را بدونِ حدس نگفته، و تفکیکِ «سودِ نقدی» از «افزایشِ سرمایه» از «معافیت» همان چیزی است که برایِ تعدیلِ عملکردی لازم است. پس فاکتورِ تجمعی از رویدادِ مبدأ ساختنی است، ولی برچسبِ نوعِ رویداد را حدس نمی‌زنیم.",
+  "event_count": 2
+ },
+ "as_of": "2026-09-01"
+}

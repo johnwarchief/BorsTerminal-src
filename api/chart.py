@@ -86,6 +86,17 @@ def _fts_hourglass_settings():
 CDN_OFFLINE_UNTIL = 0.0
 
 
+def _cdn_enabled():
+    """درزِ پاریتی/CI: با `BORS_CHART_CDN=off` هیچ درخواستِ شبکه‌ای از این ماژول
+    بیرون نمی‌رود و مسیرِ محلی همان چیزی است که سنجیده می‌شود.
+
+    پیش‌فرض دست‌نخورده است: نبودِ متغیر یعنی CDN مثلِ امروز. ترمیمِ پس‌زمینهٔ
+    تاریخچه هم پشتِ همین درز است، وگرنه «آفلاین» فقط نصفه آفلاین می‌شد.
+    """
+    return (os.environ.get("BORS_CHART_CDN") or "").strip().lower() not in (
+        "off", "0", "false", "no")
+
+
 def _parse_tsetmc_csv(text):
     """CSV روزانهٔ TSETMC → (candles, volumes, all_rows). خالص: بدون شبکه و دیتابیس.
 
@@ -476,6 +487,8 @@ def _schedule_history_repair(symbol, last_date, target_date):
     دوباره نمی‌فرستند)؛ پاسخِ چارت را هرگز نگه نمی‌دارد؛ و از همان
     `fetch_price_history` می‌گذرد که خودش min_interval و سقفِ ۴۲۹ دارد.
     """
+    if not _cdn_enabled():
+        return False
     with _HISTORY_REPAIR_LOCK:
         if not _history_repair_due(last_date, target_date, symbol):
             return False
@@ -576,6 +589,14 @@ def get_chart_tsetmc(symbol: str):
         except Exception:
             pass
         return None
+
+    # درزِ آفلاینِ پاریتی: بی هیچ درخواستی، همان مسیرِ محلی — پیش از مدارِ CDN.
+    if not _cdn_enabled():
+        fb = _fallback_local()
+        if fb:
+            return fb
+        return {"status": "error",
+                "message": "CDNِ چارت خاموش است و تاریخچهٔ محلی هم داده‌ای ندارد."}
 
     # اگر CDN اخیراً قطع/تایم‌اوت بوده، بلافاصله از دیتابیس محلی لود کن تا کاربر معطل نشود
     if _t.time() < CDN_OFFLINE_UNTIL:

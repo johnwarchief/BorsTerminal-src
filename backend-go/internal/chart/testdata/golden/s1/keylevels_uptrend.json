@@ -1,0 +1,45 @@
+{
+ "levels": [
+  {
+   "price": 1995.0,
+   "strength": 7,
+   "kind": "high",
+   "date": "2026-09-13"
+  },
+  {
+   "price": 2014.0,
+   "strength": 7,
+   "kind": "high",
+   "date": "2026-09-05"
+  },
+  {
+   "price": 1965.0,
+   "strength": 7,
+   "kind": "low",
+   "date": "2026-08-24"
+  },
+  {
+   "price": 1885.0,
+   "strength": 7,
+   "kind": "high",
+   "date": "2026-08-02"
+  },
+  {
+   "price": 1683.0,
+   "strength": 7,
+   "kind": "low",
+   "date": "2026-05-09"
+  },
+  {
+   "price": 1549.0,
+   "strength": 7,
+   "kind": "low",
+   "date": "2026-03-28"
+  }
+ ],
+ "blocks": [],
+ "count": 6,
+ "status": "ok",
+ "symbol": "عادی01",
+ "message": "240 روز آخر"
+}

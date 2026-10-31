@@ -133,6 +133,7 @@ SUITES = [
     # B2: فیکسچرِ وضعیت بازار رویِ همان فیکسچرِ تابلو (تا /api/market و پرچم‌هایِ
     # mainwatch واقعی باشند)، اوراکلِ طلایی با ساعتِ سنجاق‌شده، و چهار صحنه.
     ('dev/test_mstat_fixture_v1121.py', 'B2 mstat fixture + goldens + pinned clock are current'),
+    ('dev/test_chart_fixture_b3.py',  'B3 chart fixture + goldens + offline seams are current'),
     ('dev/version_anchor_guard.py',   'all six version anchors state the same release'),
     ('dev/fts_defaults_parity_guard.py', 'FTS guide defaults: FE drawer mirrors the server'),
     ('dev/test_hourglass_settings_v1.py', 'hourglass RSI period, oversold threshold and MA52 mode are configurable'),
