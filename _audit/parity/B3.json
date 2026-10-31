@@ -1,0 +1,153 @@
+{
+ "commit": "4a872b67",
+ "python": "3.14.7",
+ "ports": {
+  "py": 8299,
+  "go": 8298,
+  "preferred_py": 8299,
+  "preferred_go": 8298,
+  "fell_back": false
+ },
+ "chart_cdn": "off (forced on the child process; proven by cdn_seam_proven)",
+ "routes": [
+  "calendar",
+  "chart",
+  "chart-db",
+  "fts",
+  "ma",
+  "order-book",
+  "patterns"
+ ],
+ "notes": {
+  "watch_injection": "market_watch of this copy is older than price_history, so the live-bar branch is proven by the fixture oracle (chartdb_* liveInjected=true), not by this copy",
+  "calendar_horizon": "calendar cache fetched 2026-09-27T02:19:31.336145Z; the 14/60-day windows are empty on both sides"
+ },
+ "roles": {
+  "deep": "سبهان",
+  "adjust": "شكربن",
+  "events": "كگل",
+  "verdict": "سبهان",
+  "book": "آباد",
+  "watch": "آباد",
+  "short": "اتكاسا3",
+  "thin": "آتي1",
+  "absent": "آبارا07",
+  "corporate": "كگل",
+  "past": "2026-05-05",
+  "cal": "سپهر"
+ },
+ "dropped_cases": [],
+ "basket_seed": {
+  "ok": true,
+  "symbol": "سبهان",
+  "price": 10467.8,
+  "hard_stop_expected": 9944.41
+ },
+ "routes_covered": [
+  "/api/calendar/upcoming",
+  "/api/calendar/{symbol}",
+  "/api/chart-db/{symbol}",
+  "/api/chart/{symbol}",
+  "/api/chart/{symbol}/key-levels",
+  "/api/fts/{symbol}",
+  "/api/ma/{symbol}",
+  "/api/order-book/{symbol}",
+  "/api/patterns/{symbol}"
+ ],
+ "routes_missing": [],
+ "db": {
+  "sha256": "4a85b22c4b839453a876f2533266f115d19a8d876f6a48967280baf65cafd0a9",
+  "wal_sha256": null,
+  "frozen_ok": true,
+  "go_copy_unchanged": true,
+  "root_before": {
+   "market.db": {
+    "sha256": "4a85b22c4b839453a876f2533266f115d19a8d876f6a48967280baf65cafd0a9",
+    "bytes": 276107264,
+    "mtime_ns": 1793368279628724200
+   },
+   "user.db": {
+    "sha256": "29ad7b39d168898da1906ef7d602b27e941778b411628309c522896b9b88bd84",
+    "bytes": 782336,
+    "mtime_ns": 1793368279434876000
+   },
+   "codal.db": null
+  },
+  "root_after": {
+   "market.db": {
+    "sha256": "4a85b22c4b839453a876f2533266f115d19a8d876f6a48967280baf65cafd0a9",
+    "bytes": 276107264,
+    "mtime_ns": 1793368279628724200
+   },
+   "user.db": {
+    "sha256": "29ad7b39d168898da1906ef7d602b27e941778b411628309c522896b9b88bd84",
+    "bytes": 782336,
+    "mtime_ns": 1793368279434876000
+   },
+   "codal.db": null
+  },
+  "root_untouched": true
+ },
+ "sidecar": {
+  "ok": true,
+  "problem": ""
+ },
+ "settings": {
+  "copied": [
+   "price_basis.json",
+   "fts_thresholds.json"
+  ],
+  "calendar": "C:\\Users\\PCMOD\\Desktop\\BorsTerminal\\static\\calendar\\cache.json",
+  "calendar_shared": true
+ },
+ "python_redirect": {
+  "market": "C:\\Users\\PCMOD\\AppData\\Local\\Temp\\bors-b3-3f3ukx34\\py\\market.db",
+  "user": "C:\\Users\\PCMOD\\AppData\\Local\\Temp\\bors-b3-3f3ukx34\\py\\user.db"
+ },
+ "contract": {
+  "passed": 37,
+  "failed": 0,
+  "cases": 37,
+  "max_delta": 0.0,
+  "report": "_audit\\parity\\B3-contract.json",
+  "ok": true,
+  "failed_cases": []
+ },
+ "statuses": {
+  "pairs": [
+   "200/200",
+   "422/422"
+  ],
+  "count_422": 3,
+  "ok": true
+ },
+ "vacuous": [],
+ "chart_endpoint": {
+  "py": 200,
+  "go": 501,
+  "go_code": "NOT_PORTED",
+  "py_status_field": "success",
+  "py_degraded": true,
+  "py_history_repair_scheduled": false,
+  "cdn_seam_proven": true,
+  "symbol": "سبهان"
+ },
+ "checks": {
+  "contract": true,
+  "delta_zero": true,
+  "statuses_200_422": true,
+  "case_coverage": true,
+  "cases_not_vacuous": true,
+  "nine_routes_covered": true,
+  "chart_501_declared": true,
+  "cdn_seam_proven": true,
+  "go_read_only": true,
+  "root_untouched": true,
+  "frozen_copies": true,
+  "sidecar_untouched": true,
+  "settings_shared": true,
+  "calendar_shared": true,
+  "roles_resolved": true
+ },
+ "measured_at": "2026-10-31T10:53:20Z"
+}
