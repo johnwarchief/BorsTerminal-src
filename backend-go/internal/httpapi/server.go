@@ -36,6 +36,8 @@ type Market interface {
 	Board(http.ResponseWriter, *http.Request)
 	Delta(http.ResponseWriter, *http.Request)
 	SyncState(http.ResponseWriter, *http.Request)
+	// TapeHistory از B4: سابقۀ هفت فیلتر در user.db (مسیرِ api/market.py).
+	TapeHistory(http.ResponseWriter, *http.Request)
 }
 
 // Chart هشت مسیرِ محلیِ api/chart.py در B3 (مسیرِ CDNِ /api/chart و
@@ -90,6 +92,7 @@ func New(cfg config.Config, h *db.Handles, m Market, ms Mstat, ch Chart, fd Fund
 		mux.HandleFunc("GET /api/market", m.Board)
 		mux.HandleFunc("GET /api/market/delta", m.Delta)
 		mux.HandleFunc("GET /api/market/sync-state", m.SyncState)
+		mux.HandleFunc("GET /api/tape-history", m.TapeHistory)
 	}
 	if ms != nil {
 		mux.HandleFunc("GET /api/mstat/summary", ms.Summary)

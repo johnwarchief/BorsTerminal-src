@@ -37,8 +37,8 @@ var stableFields = []string{"title", "report_kind", "revenue", "gross_profit",
 // عینِ fts_engine (سنجشِ بانکِ کاری درِ کامنتِ آن فایل: از ۱۹۱ پسوند، ۱۸۹ تا
 // شخصیت‌اند و ۲ تا صفتِ بی‌نام).
 var (
-	titleScopeMarks    = []string{"حسابرس", "تلفیق", "اصلاحی"}
-	titleEntityMarks   = []string{"شرکت", "شرکای", "موسسه", "مؤسسه", "گروه",
+	titleScopeMarks  = []string{"حسابرس", "تلفیق", "اصلاحی"}
+	titleEntityMarks = []string{"شرکت", "شرکای", "موسسه", "مؤسسه", "گروه",
 		"بانک", "بانك", "صندوق", "بیمه", "بيمه"}
 	titleEntityGeneric = []string{"اصلی", "مادر", "خود", "دیگر", "همه", "فرعی"}
 )

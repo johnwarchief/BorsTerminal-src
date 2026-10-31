@@ -149,7 +149,7 @@ func TestEntityLayerOutranksNewnessAndCompleteness(t *testing.T) {
 		t.Fatalf("rows = %d want 1", len(got))
 	}
 	if tn, _ := toI(got[0]["tracing_no"]); tn != 450 {
-		t.Fatalf("winner = %v want 450 — ردیفِ «شرکتِ دیگر» نمایندۀ این نماد نیست، " +
+		t.Fatalf("winner = %v want 450 — ردیفِ «شرکتِ دیگر» نمایندۀ این نماد نیست، "+
 			"هرچند کامل‌تر و تازه‌تر باشد", got[0]["tracing_no"])
 	}
 }
