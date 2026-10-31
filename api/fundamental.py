@@ -174,6 +174,28 @@ def _fa_date(period_end) -> str:
     return CP.canonicalize(period_end) or "—"
 
 
+def _ms_series(series) -> list:
+    """سریِ خامِ گزارش‌هایِ فعالیت ماهانه، همان ترتیبی که `monthly_series` می‌دهد
+    (تازۀترین اول، یک ردیف برایِ هر سال‌وماه).
+
+    چرا درِ پاسخ: کارتِ بنیادی فقط «رشد٪» و `series_months` را می‌گفت و کاربر
+    نمی‌توانست ببیند آن رشد از کدام ردیف‌ها آمده — تصمیمِ §۱۵ بند ۶ (نمودارِ
+    کارت ۱ بر پایهٔ درصدِ رشد، ماهانه + تجمیعی) همین ردیف‌ها را می‌خواهد. هیچ
+    داوریِ تازه‌ای اینجا ساخته نمی‌شود: فقط همان شش ستون، با همان تبدیل‌ها.
+    """
+    out = []
+    for r in series or []:
+        out.append({
+            "year": int(_f(r[0])),
+            "month": int(_f(r[1])),
+            "monthly_revenue": _num_or_none(r[2]) if len(r) > 2 else None,
+            "ytd_revenue": _num_or_none(r[3]) if len(r) > 3 else None,
+            "ytd_revenue_prev": _num_or_none(r[4]) if len(r) > 4 else None,
+            "period_end": r[5] if len(r) > 5 else None,
+        })
+    return out
+
+
 def _pct(new, old) -> float:
     """رشد٪ با محافظ مخرج صفر — None یعنی «محاسبه نشد»، نه «صفر درصد»."""
     old = _f(old)
@@ -531,6 +553,7 @@ def ind1a_monetary_growth(conn, symbol, series=None, th=None, profile=None) -> d
 
     def _nodata(reason, **extra):
         gap = {"monetary_pct": None, "pass": False, "data_gap": True,
+               "series": _ms_series(series),
                "threshold": th["monetary_growth_min"],
                "revenue_basis": prof["revenue_basis"], "reason": reason,
                "remediation": _MS_GAP_HINT,
@@ -564,6 +587,7 @@ def ind1a_monetary_growth(conn, symbol, series=None, th=None, profile=None) -> d
     ytd_prev = d["ytd_prev"]
     growth = _pct(ytd_now, ytd_prev)
     return {"monetary_pct": growth,
+            "series": _ms_series(series),
             "ytd_now_bt": _bt(ytd_now), "ytd_prev_bt": _bt(ytd_prev),
             "ytd_now_mrl": ytd_now, "ytd_prev_mrl": ytd_prev,
             "period": "%02d/%d" % (month, year), "months": month, "year": year,
