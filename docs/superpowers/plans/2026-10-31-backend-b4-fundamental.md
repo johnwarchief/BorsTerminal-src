@@ -65,3 +65,41 @@ Branch: `mission/4-axes-2026-10-10` · پیش‌نیاز: B3 بسته شد (گی
 - `write_error` درِ حالتِ واقعیِ نوشتن (درِ گیت دو طرف `null` است).
 - پاسخِ کاملِ `/api/fundamental/screen` و `/api/sync/codal/*` (تعویقِ اعلام‌شده، فقط اندازه‌گیریِ ۵۰۱).
 - مصرفِ UIِ فیلدِ تازه (کارِ UI و رأیِ G1).
+
+
+## وضعیتِ اجرا — تسک‌هایِ ۲ و ۳ (به‌روزرسانیِ همان قالبِ چهارگانه)
+
+**Task 2 (کامیت 6573a8d1).** `internal/period` عبارت‌هایِ SQL را گرفت: `ValidGlob`،
+`DatedSQL`، `UndatedSQL`، `OrderExpr`، `LatestOrderSQL`. دو طبقه سنجیده شد، نه یکی:
+متنِ هر رشته از خودِ `codal_periods.py` طلایی شد و نتیجهٔ همان رشته رویِ SQLite هم
+از خودِ SQLite درِ `cases.json` ثبت شد (۱۷ ردیفِ شاهد، بی‌فهرستِ دست‌نویس). یک
+`pyTrim` تازه هم لازم شد: `strings.TrimSpace`ِ Go بی‌U+001C تا U+001F است و با
+`.strip()`ِ پایتون یکی نبود. سه ردیفِ شاهد (تب، nbsp، U+001C) ثابت می‌کنند شرطِ
+پایتون و شرطِ SQL رویِ «جای خالیِ غیرفاصله» جدا می‌افتند؛ همان شکاف ثبت شد، نه
+«درست». کنترلِ منفی: حذفِ `trim` از `DatedSQL` و بازگشتِ `pyTrim` به `TrimSpace`
+هر دو آزمون را قرمز کردند. `pub_canon_sql`/`pub_order_expr`/`undated_counts` عمداً
+پورت **نشدند**: مصرف‌کننده‌هایشان `codal_fetcher.py` و `codal_pipeline.py`اند که درِ
+B6 می‌آیند (کدِ مرده نمی‌سازیم).
+
+**Task 3 (این increment).** `internal/fundamental` متولد شد و دو مسیرِ کوچک را
+تحویل داد: `GET /api/fundamental/sectors` و `GET /api/fundamental/{symbol}/quarters`
+(پورتِ `quarter_reference_rows` + `statement_rank` + `title_entity_suffix`). کارتِ
+پنج‌محور (`{symbol}`) و `screen` هنوز ۵۰۱ می‌دهند و گیت همان تعویق را اندازه می‌گیرد.
+
+دو واقعیتِ اندازه‌گیری‌شده که درِ همین قالب باید بمانند:
+
+۱) `canonicalize` جداکننده را یکسان می‌کند، پس «۱۴۰۱-۰۶-۳۱» درِ لایۀ انتخابِ مرجع
+   با «۱۴۰۱/۰۶/۳۱» یکِ کلید می‌سازد، ولی `DATED_SQL` درِ SQL همان ردیف را بی‌دوره
+   می‌شمارد و از مسیرِ واقعی بیرون می‌گذارد. دو قاعدۀ جدید نیست؛ همان دو شرطِ
+   `codal_periods` است (شکل درِ SQL، تبدیل درِ پایتون). ثبت درِ `reference.go`.
+
+۲) فیکسچرِ تسکِ ۱ هیچ ردیفِ **دوره‌دارِ** بی‌`gross_profit` ندارد — همهٔ ردیف‌هایِ
+   NULL با تاریخِ خط‌تیره ساخته شده بودند و درِ SQL فیلتر می‌شدند. یعنی مقایسۀ
+   طلایی‌ها تنهایی شاخۀ «#102: تهی را با سودِ خالص پر نکن» را نمی‌دید و یک باگِ
+   جایگزینی سبز رد می‌شد. آزمونِ `TestQuartersPreservesNullFromLiveQuery` همان
+   شاخه را با یکِ بانکِ ساخته‌شده و کوئریِ زنده می‌پوسد؛ گیتِ B4 رویِ کپیِ بانکِ
+   عملیاتی (که صندوق/بیمه در آن ردیفِ دوره‌دارِ تهی دارد) هم همان را می‌سنجد.
+
+**Lockstep.** همچنان هیچ: نه `hiddenimports`، نه ESLint، نه وابستگی. **گارد:**
+`dev/test_fundamental_fixture_b4.py` + `go test ./internal/period ./internal/fundamental
+./internal/httpapi`. **Rollback:** revertِ همین کامیت.

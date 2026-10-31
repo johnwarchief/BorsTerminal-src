@@ -78,6 +78,11 @@ func pyIsSpace(r rune) bool {
 // pyTrim مثلِ str.strip() بی‌آرگومان درِ پایتون.
 func pyTrim(s string) string { return strings.TrimFunc(s, pyIsSpace) }
 
+// Trim همان .strip() برایِ مصرفِ بقیهٔ پکیج‌ها. هر جا «خالی بودنِ رشته» سنجیده
+// می‌شود باید همین باشد، نه strings.TrimSpace (تفاوتِ U+001C..U+001F درِ
+// testdata/cases.json ردیفِ ۱۷ ثبت شده است).
+func Trim(s string) string { return pyTrim(s) }
+
 // Canonicalize پورتِ codal_periods.canonicalize است.
 // تفاوتِ زبانی: RE2 نگاه‌به‌عقب ندارد، پس «(?<!\d)» و «(?!\d)» با بررسیِ بایتِ
 // قبل/بعد انجام می‌شود؛ و مثلِ پایتون، **اولین** تطبیقِ عبورکرده از این دو شرط

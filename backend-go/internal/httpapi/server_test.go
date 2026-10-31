@@ -14,7 +14,7 @@ import (
 
 func newServer(t *testing.T) http.Handler {
 	t.Helper()
-	return New(config.Config{Addr: "127.0.0.1:8198", DataDir: t.TempDir(), ReadOnly: true, NoLoops: true}, nil, nil, nil, nil)
+	return New(config.Config{Addr: "127.0.0.1:8198", DataDir: t.TempDir(), ReadOnly: true, NoLoops: true}, nil, nil, nil, nil, nil)
 }
 
 func serve(t *testing.T, method, target string) *httptest.ResponseRecorder {
@@ -147,7 +147,7 @@ func TestMstatRouteTable(t *testing.T) {
 	}
 	for path, want := range mstatRoutes {
 		fake := &fakeMstat{}
-		srv := New(config.Config{Addr: "127.0.0.1:8198", DataDir: t.TempDir(), ReadOnly: true, NoLoops: true}, nil, nil, fake, nil)
+		srv := New(config.Config{Addr: "127.0.0.1:8198", DataDir: t.TempDir(), ReadOnly: true, NoLoops: true}, nil, nil, fake, nil, nil)
 		rec := httptest.NewRecorder()
 		srv.ServeHTTP(rec, httptest.NewRequest("GET", path, nil))
 		if rec.Code != http.StatusOK {
@@ -230,7 +230,7 @@ func TestChartRouteTable(t *testing.T) {
 		}
 		path := strings.ReplaceAll(tmpl, "{symbol}", "X")
 		fake := &fakeChart{}
-		srv := New(config.Config{Addr: "127.0.0.1:8198", DataDir: t.TempDir(), ReadOnly: true, NoLoops: true}, nil, nil, nil, fake)
+		srv := New(config.Config{Addr: "127.0.0.1:8198", DataDir: t.TempDir(), ReadOnly: true, NoLoops: true}, nil, nil, nil, fake, nil)
 		rec := httptest.NewRecorder()
 		srv.ServeHTTP(rec, httptest.NewRequest("GET", path, nil))
 		if rec.Code != http.StatusOK {
@@ -246,7 +246,7 @@ func TestChartRouteTable(t *testing.T) {
 // (api/__init__.py: market پیش از chart) یعنی «config» هرگز نماد نیست.
 func TestFtsConfigIsNotSwallowedBySymbolRoute(t *testing.T) {
 	fake := &fakeChart{}
-	srv := New(config.Config{Addr: "127.0.0.1:8198", DataDir: t.TempDir(), ReadOnly: true, NoLoops: true}, nil, nil, nil, fake)
+	srv := New(config.Config{Addr: "127.0.0.1:8198", DataDir: t.TempDir(), ReadOnly: true, NoLoops: true}, nil, nil, nil, fake, nil)
 	rec := httptest.NewRecorder()
 	srv.ServeHTTP(rec, httptest.NewRequest("GET", "/api/fts/config", nil))
 	if rec.Code != http.StatusNotImplemented {
@@ -273,7 +273,7 @@ func TestFtsConfigIsNotSwallowedBySymbolRoute(t *testing.T) {
 // TestGetChartStaysNotPorted مسیرِ CDN تا B6 در پایتون می‌ماند.
 func TestGetChartStaysNotPorted(t *testing.T) {
 	fake := &fakeChart{}
-	srv := New(config.Config{Addr: "127.0.0.1:8198", DataDir: t.TempDir(), ReadOnly: true, NoLoops: true}, nil, nil, nil, fake)
+	srv := New(config.Config{Addr: "127.0.0.1:8198", DataDir: t.TempDir(), ReadOnly: true, NoLoops: true}, nil, nil, nil, fake, nil)
 	rec := httptest.NewRecorder()
 	srv.ServeHTTP(rec, httptest.NewRequest("GET", "/api/chart/X", nil))
 	if rec.Code != http.StatusNotImplemented || len(fake.called) != 0 {
@@ -288,7 +288,7 @@ func TestGetChartStaysNotPorted(t *testing.T) {
 func TestMstatBadMethodDoesNotReachHandler(t *testing.T) {
 	for _, method := range []string{"POST", "PUT", "DELETE"} {
 		fake := &fakeMstat{}
-		srv := New(config.Config{Addr: "127.0.0.1:8198", DataDir: t.TempDir(), ReadOnly: true, NoLoops: true}, nil, nil, fake, nil)
+		srv := New(config.Config{Addr: "127.0.0.1:8198", DataDir: t.TempDir(), ReadOnly: true, NoLoops: true}, nil, nil, fake, nil, nil)
 		rec := httptest.NewRecorder()
 		srv.ServeHTTP(rec, httptest.NewRequest(method, "/api/mstat/summary", nil))
 		if len(fake.called) != 0 {

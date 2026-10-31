@@ -68,7 +68,15 @@ type Mstat interface {
 	Board(http.ResponseWriter, *http.Request)
 }
 
-func New(cfg config.Config, h *db.Handles, m Market, ms Mstat, ch Chart) http.Handler {
+// Fundamental دو مسیرِ خواندنیِ api/fundamental.py که درِ B4 پورت شده‌اند؛
+// nil یعنی هیچ‌کدام پورت نشده. کارتِ پنج‌محور (`{symbol}`)، `screen` و
+// `/api/sync/codal/*` هنوز درِ فهرست می‌مانند و apiGate همان‌ها را 501 می‌کند.
+type Fundamental interface {
+	Sectors(http.ResponseWriter, *http.Request)
+	Quarters(http.ResponseWriter, *http.Request)
+}
+
+func New(cfg config.Config, h *db.Handles, m Market, ms Mstat, ch Chart, fd Fundamental) http.Handler {
 	s := &Server{
 		cfg:      cfg,
 		db:       h,
@@ -111,6 +119,13 @@ func New(cfg config.Config, h *db.Handles, m Market, ms Mstat, ch Chart) http.Ha
 		// `/api/fts/{symbol}` ثبت می‌شود، پس «config» هیچ‌وقت نماد نیست. Go با
 		// الگویِ عام آن را می‌بلعید؛ این ثبتِ صریح همان ترتیب را بازمی‌گرداند.
 		mux.HandleFunc("GET /api/fts/config", s.notPortedRoute)
+	}
+	if fd != nil {
+		// `sectors` صریح و پیش از هر `{symbol}` ثبت می‌شود (R9 از پلنِ B4): درِ
+		// پایتون هم متنیِ `/api/fundamental/sectors` پیش از `/api/fundamental/{symbol}`
+		// تعریف شده است.
+		mux.HandleFunc("GET /api/fundamental/sectors", fd.Sectors)
+		mux.HandleFunc("GET /api/fundamental/{symbol}/quarters", fd.Quarters)
 	}
 	mux.HandleFunc("/", s.apiGate)
 	return noCache(mux)
