@@ -1,5 +1,5 @@
 {
- "commit": "9a604e66",
+ "commit": "70ba1626",
  "python": "3.14.7",
  "ports": {
   "py": 8297,
@@ -54,8 +54,8 @@
   "ok": true
  },
  "python_redirect": {
-  "market": "C:\\Users\\PCMOD\\AppData\\Local\\Temp\\bors-b2a-mb3_ei9f\\py\\market.db",
-  "user": "C:\\Users\\PCMOD\\AppData\\Local\\Temp\\bors-b2a-mb3_ei9f\\py\\user.db"
+  "market": "C:\\Users\\PCMOD\\AppData\\Local\\Temp\\bors-b2a-_9nddu6w\\py\\market.db",
+  "user": "C:\\Users\\PCMOD\\AppData\\Local\\Temp\\bors-b2a-_9nddu6w\\py\\user.db"
  },
  "contract": {
   "passed": 38,
@@ -84,8 +84,8 @@
   "ok": true
  },
  "phase": {
-  "py_clock": "2026-10-31 10:14:08",
-  "go_clock": "2026-10-31 10:14:08",
+  "py_clock": "2026-10-31 10:36:46",
+  "go_clock": "2026-10-31 10:36:46",
   "ok": true
  },
  "checks": {
@@ -103,5 +103,5 @@
   "frozen_copies": true,
   "sidecar_untouched": true
  },
- "measured_at": "2026-10-31T06:44:26Z"
+ "measured_at": "2026-10-31T07:07:03Z"
 }
