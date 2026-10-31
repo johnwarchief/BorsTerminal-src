@@ -63,9 +63,9 @@ const (
 	legalShareTvol = 0.5
 )
 
-// jetLadder نقاطِ پلکانِ مقاومت است: [ih][2] تا [ih][59]، هشت نقطه، عینِ
+// JetLadder نقاطِ پلکانِ مقاومت است: [ih][2] تا [ih][59]، هشت نقطه، عینِ
 // JET_LADDER. ستونِ h{k}_max همان [ih][k].PriceMax است.
-var jetLadder = []int{2, 5, 9, 19, 29, 39, 49, 59}
+var JetLadder = []int{2, 5, 9, 19, 29, 39, 49, 59}
 
 // Flags خروجیِ Apply است؛ هم‌طول و هم‌ترتیبِ قاب. NaN یعنی «سنجیده نشد» و
 // هر پرچم پیشاپیش با is_live و AND شده است.
@@ -148,7 +148,7 @@ func resistanceLadder(fr *store.Frame) []float64 {
 	hist := col(fr, "hist_sessions")
 	for i := 0; i < n; i++ {
 		best := 0.0
-		for _, k := range jetLadder {
+		for _, k := range JetLadder {
 			name := "h" + strconv.Itoa(k) + "_max"
 			v := numAt(col(fr, name), i)
 			if !math.IsNaN(v) && v > best {
