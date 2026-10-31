@@ -123,7 +123,7 @@ func (f *fakeMstat) Phase(w http.ResponseWriter, _ *http.Request)      { f.hit("
 func (f *fakeMstat) Mainwatch(w http.ResponseWriter, _ *http.Request)  { f.hit("mainwatch", w) }
 func (f *fakeMstat) Industries(w http.ResponseWriter, _ *http.Request) { f.hit("industries", w) }
 func (f *fakeMstat) Timeline(w http.ResponseWriter, _ *http.Request)   { f.hit("timeline", w) }
-func (f *fakeMstat) Phases(w http.ResponseWriter, _ *http.Request) { f.hit("phases", w) }
+func (f *fakeMstat) Phases(w http.ResponseWriter, _ *http.Request)     { f.hit("phases", w) }
 func (f *fakeMstat) SmartMoney(w http.ResponseWriter, _ *http.Request) {
 	f.hit("smart-money", w)
 }

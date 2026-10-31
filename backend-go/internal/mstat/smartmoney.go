@@ -94,10 +94,10 @@ func smartMoneyPanel(db *sql.DB, now time.Time, memo *verdictMemo) (map[string]a
 		"excellent":                    macro["excellent"], "cause": macro["cause"],
 		"index": marketIndex(db),
 		"phase": phaseID, "phase_label": phaseLabel, "session_day": sessionDay,
-		"session_is_live":  ph.IsLive,
-		"partial_session":  ph.Phase == marketphase.Continuous,
-		"good_min":         hematGood,
-		"bad_max":          hematBad,
+		"session_is_live": ph.IsLive,
+		"partial_session": ph.Phase == marketphase.Continuous,
+		"good_min":        hematGood,
+		"bad_max":         hematBad,
 	}
 	entryOut := map[string]any{
 		"active": active, "bearish_pct": bearPct,
