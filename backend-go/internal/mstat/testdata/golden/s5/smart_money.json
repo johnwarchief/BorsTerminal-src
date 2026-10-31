@@ -1,0 +1,156 @@
+{
+ "asof": {
+  "client_d_even": 20261014,
+  "client_lag_days": false,
+  "d_even": 20261014,
+  "depth": true,
+  "h_even": 124000,
+  "n": 38,
+  "top50": 2
+ },
+ "flow": {
+  "eq_flow_b_toman": 100.1,
+  "eq_inflow": true,
+  "eq_value_b_toman": 1120.0,
+  "fixed_flow_b_toman": 0.5,
+  "fixed_outflow": false,
+  "fixed_value_b_toman": 10.0,
+  "gold_flow_b_toman": 0.1,
+  "gold_outflow": false,
+  "ideal_fts": false,
+  "sr_flow_b_toman": 99.9,
+  "trio_fts": false
+ },
+ "macro": {
+  "bad_max": 10.0,
+  "basis": "eq_all",
+  "cause": null,
+  "excellent": false,
+  "good_min": 20.0,
+  "index": {
+   "change": -103912.4,
+   "d_even": 20261028,
+   "ew_change": -9112.1,
+   "ew_last": 1929823.43,
+   "ew_pct": -0.47,
+   "last": 7153088.29,
+   "pct": -1.43
+  },
+  "label": "نامساعد",
+  "market_value_hemat": 6.9,
+  "market_value_source": "tse_market_overview",
+  "partial_session": true,
+  "phase": "continuous",
+  "phase_label": "معاملات جاری",
+  "session_day": 20261028,
+  "session_is_live": true,
+  "state": "bad",
+  "trade_value_all_market_hemat": 1.13,
+  "value_hemat": 1.12
+ },
+ "source": "local:market.db",
+ "status": "ok",
+ "verdict": {
+  "basis": "fts_notes_p13_p14",
+  "gates": [
+   {
+    "detail": "۱.۱۲ همت تا این لحظه — آستانه رویِ جمعِ کاملِ نشست است",
+    "key": "liquidity",
+    "label": "ارزش معاملات بازار سهام",
+    "label_state": "هنوز نه‌شده",
+    "rule": "بالایِ ۲۰ خوب · بالایِ ۵۰ عالی · زیرِ ۱۰ نامساعد (جزوه ص۱۳)",
+    "short": "نقدینگی",
+    "state": "mid",
+    "vote": 0,
+    "why": "ارزش معاملات بازار سهام میانِ ۱۰ تا ۲۰ همت — نه روزِ ورود، نه رکود"
+   },
+   {
+    "detail": "۳ نشستِ اخیر: ۱۸ همت · ۱۲ همت · ۹.۵ همت",
+    "key": "continuity",
+    "label": "روند ۳ تا ۴ نشستِ اخیر",
+    "label_state": "بدونِ تداوم",
+    "rule": "همان جهتِ نقدینگی در ۳ تا ۴ نشستِ پیاپی (جزوه ص۱۳)",
+    "short": "روندِ اخیر",
+    "state": "mid",
+    "vote": 0,
+    "why": "جهتِ نقدینگی در ۳ نشستِ اخیر یکی نبوده"
+   },
+   {
+    "detail": "۳۳.۳٪ منفی — آستانهٔ فرصت ۸۰٪",
+    "key": "breadth",
+    "label": "درصدِ نمادهایِ نزولی",
+    "label_state": "بدونِ فرصتِ کف",
+    "rule": "۸۰٪ منفی = بازار فرصتِ ورود دارد، نه هشدار (جزوه ص۱۳)",
+    "short": "پهنایِ بازار",
+    "state": "mid",
+    "vote": 0,
+    "why": "منفی‌ها از آستانۀ ۸۰٪ پایین‌تر بوده (همین حالا ۳۳.۳٪) — نشانه‌ای برای ورود نیست"
+   },
+   {
+    "detail": "خرد +۱۰۰.۱ · درآمد ثابت +۰.۵ · طلا +۰.۱ (میلیارد تومان)",
+    "key": "flow",
+    "label": "جهتِ پولِ حقیقی",
+    "label_state": "جهتِ پول روشن نیست",
+    "rule": "خروجِ طلا و درآمد ثابت ⇄ ورودِ سهام و حق تقدم (جزوه ص۱۴)",
+    "short": "پولِ حقیقی",
+    "state": "mid",
+    "vote": 0,
+    "why": "سه شرطِ وضعِ مطلوب یکجا برقرار نیست؛ جهتِ پول روشن نشده"
+   },
+   {
+    "detail": "ساعتِ داده ۱۲:۴۰ · پنجره‌های جزوه ۰۹:۰۰–۰۹:۳۰ و ۱۲:۱۵–۱۲:۳۰‌اند",
+    "key": "window",
+    "label": "پنجرهٔ زمانیِ جزوه",
+    "label_state": "خارجِ پنجره‌ها",
+    "rule": "درآمد ثابت در نیم‌ساعتِ اول · شفافیتِ طلا ۱۲:۱۵–۱۲:۳۰ (جزوه ص۱۴)",
+    "short": "ساعت",
+    "state": "mid",
+    "vote": 0,
+    "why": "بیرونِ پنجره‌هایِ جزوه — این شرط رأیی در حکم ندارد"
+   }
+  ],
+  "label": "بدونِ حکم",
+  "market_state": {
+   "against": [],
+   "changed_from": null,
+   "client_day": 20261014,
+   "confirm_required": 3,
+   "confirm_streak": 0,
+   "data_clock": "۱۲:۴۰",
+   "data_h_even": 124000,
+   "evidence_direction": "بی‌جهت",
+   "evidence_strength": "کافی نیست",
+   "flow_trend": "روندِ جریانِ امروز: در حالِ تقویت (۲ تغییرِ متوالی)",
+   "for": [],
+   "limitations": [
+    "قیمت پایانیِ نهایی هنوز ساخته نشده"
+   ],
+   "minutes_since_open": 160,
+   "pace_note": "میانهٔ گردشِ کلِ بازار در همین ساعتِ ۲ نشستِ پیش: ۳۰ میلیارد تومان",
+   "session_start_clock": "۱۰:۰۰",
+   "since_open_text": "۱۶۰ دقیقه از آغازِ واقعی",
+   "stage": "mixed",
+   "stage_label": "نشانه‌ها مخالف‌اند — پایشِ فعال",
+   "stale_clients": false
+  },
+  "phase": {
+   "is_live": true,
+   "label": "معاملات جاری",
+   "official": true,
+   "phase": "continuous",
+   "phase_source": "tsetmc_marketState",
+   "session_day": 20261028,
+   "verdict_allowed": true
+  },
+  "reason": "هیچ‌یک از شرط‌هایِ جزوه دادهٔ قاطع ندارد — حکمی صادر نمی‌شود.",
+  "status": "ok",
+  "verdict": "nodata"
+ },
+ "watch_entry": {
+  "active": false,
+  "bearish": 1,
+  "bearish_pct": 33.3,
+  "known": 3,
+  "rule_pct": 80.0
+ }
+}

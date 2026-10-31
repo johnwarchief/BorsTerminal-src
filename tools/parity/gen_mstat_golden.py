@@ -126,7 +126,7 @@ def scenario(name, sql=(), only=None):
     """کپیِ فیکسچر + تغییراتِ صحنه، سپس بدنه‌هایِ پایتون.
 
     `only` فهرستِ ساقهٔ فایل‌هایی است که این صحنه لازم دارد؛ None یعنی همهٔ
-    هفده پنل. صحنه‌هایِ غیرِ پایه فقط همان پنلی را می‌سازند که رفتارشان را
+    نوزده پنل. صحنه‌هایِ غیرِ پایه فقط همان پنلی را می‌سازند که رفتارشان را
     می‌سنجد (۱۷ فایلِ یکسان در هر پوشه، طلایی نیست؛ تکرار است).
     """
     tmp = data_dir()
@@ -176,6 +176,10 @@ def scenario(name, sql=(), only=None):
     panels.append(("mainwatch_default", lambda: MS.mstat_mainwatch(**MAINWATCH_DEFAULTS)))
     panels.append(("mainwatch_val", lambda: MS.mstat_mainwatch(
         **dict(MAINWATCH_DEFAULTS, sort="val", desc=False, limit=5))))
+    # B2-2: دو مسیرِ آخر. smart_money پیش از board می‌آید تا فراخوانِ board از
+    # کشِ همان پنل بخورد — همان ترتیبی که UI هم می‌زند (نبض بازار و تب).
+    panels.append(("smart_money", lambda: MS.mstat_smart_money()))
+    panels.append(("board", lambda: MS.mstat_board(group="eq_all", limit=60)))
     for stem, fn in panels:
         if only is not None and stem not in only:
             continue
@@ -236,6 +240,24 @@ def main() -> int:
     scenario("s4", [("UPDATE market_index SET d_even=20261016,"
                      " activity_h_even=123000 WHERE d_even=20261014", ())],
              only={"phase"})
+    # صحنهٔ ۵: نشستِ جاری (continuous) — شاخۀ «جمعِ تا-لحظه»، آغازِ واقعیِ
+    # معاملات، pace_note و روندِ جریان. سه روزِ mstat_snap لازم است: روزِ
+    # جاری برایِ session_start_hm/flow_trend و دو روزِ پیش برایِ same_clock_ref.
+    # کپی‌ها از ردیف‌هایِ ۲۰۲۶۱۰۱۴ ساخته می‌شوند (ستون و داخلِ agg هر دو).
+    importlib.reload(__import__("api.market_status", fromlist=["x"]))
+    scenario("s5", [
+        ("INSERT INTO mstat_snap (d_even, h_even, agg)"
+         " SELECT d_even-1, h_even, json_set(agg, '$.d_even', d_even-1)"
+         " FROM mstat_snap WHERE d_even=20261014", ()),
+        ("INSERT INTO mstat_snap (d_even, h_even, agg)"
+         " SELECT d_even-2, h_even, json_set(agg, '$.d_even', d_even-2)"
+         " FROM mstat_snap WHERE d_even=20261014", ()),
+        ("UPDATE mstat_snap SET d_even=20261028,"
+         " agg=json_set(agg, '$.d_even', 20261028) WHERE d_even=20261014", ()),
+        ("UPDATE market_index SET d_even=20261028, market_state='A',"
+         " market_state_title='باز', activity_h_even=103000,"
+         " updated_at='2026-10-28 10:29:00' WHERE d_even=20261014", ()),
+    ], only={"smart_money"})
     if _DATA_DIR:
         shutil.rmtree(_DATA_DIR, ignore_errors=True)
     return 0

@@ -1,0 +1,928 @@
+{
+ "clientsplit": {
+  "asof": {
+   "client_d_even": 20261014,
+   "client_lag_days": false,
+   "d_even": 20261014,
+   "depth": true,
+   "h_even": 124000,
+   "n": 38,
+   "top50": 2
+  },
+  "institutional": {
+   "buy_b_toman": 64.1,
+   "buy_count": 12,
+   "buy_pct": 23.3,
+   "sell_b_toman": 33.1,
+   "sell_count": 12,
+   "sell_pct": 23.0
+  },
+  "money_flow_b_toman": 100.6,
+  "pc_buy_m_toman": 167.8,
+  "pc_sell_m_toman": 77.5,
+  "power": 2.17,
+  "retail": {
+   "buy_b_toman": 211.4,
+   "buy_count": 1260,
+   "buy_pct": 76.7,
+   "sell_b_toman": 110.8,
+   "sell_count": 1430,
+   "sell_pct": 77.0
+  },
+  "status": "ok",
+  "symbols": 5,
+  "tab": "all"
+ },
+ "depth": {
+  "asof": {
+   "client_d_even": 20261014,
+   "client_lag_days": false,
+   "d_even": 20261014,
+   "depth": true,
+   "h_even": 124000,
+   "n": 38,
+   "top50": 2
+  },
+  "buy": {
+   "base_unknown": 2,
+   "below_base": 0,
+   "no_trade": 0,
+   "normal": 0
+  },
+  "buy_queue_b_toman": 0.3,
+  "buy_queue_count": 2,
+  "depth_available": true,
+  "group": "eq_all",
+  "ratio": 0.07,
+  "sell": {
+   "base_unknown": 1,
+   "below_base": 0,
+   "no_trade": 0,
+   "normal": 0
+  },
+  "sell_queue_b_toman": 5.0,
+  "sell_queue_count": 1,
+  "status": "ok",
+  "symbols_with_depth": 4
+ },
+ "histogram": {
+  "asof": {
+   "client_d_even": 20261014,
+   "client_lag_days": false,
+   "d_even": 20261014,
+   "depth": true,
+   "h_even": 124000,
+   "n": 38,
+   "top50": 2
+  },
+  "basis": "closing_vs_yesterday",
+  "group": "eq_all",
+  "histo12": [
+   {
+    "color": "neg",
+    "count": 0,
+    "key": "<-5",
+    "label": "کمتر از ۵-"
+   },
+   {
+    "color": "neg",
+    "count": 0,
+    "key": "-5..-4",
+    "label": "۵- تا ۴-"
+   },
+   {
+    "color": "neg",
+    "count": 1,
+    "key": "-4..-3",
+    "label": "۴- تا ۳-"
+   },
+   {
+    "color": "neg",
+    "count": 0,
+    "key": "-3..-2",
+    "label": "۳- تا ۲-"
+   },
+   {
+    "color": "neg",
+    "count": 0,
+    "key": "-2..-1",
+    "label": "۲- تا ۱-"
+   },
+   {
+    "color": "neu",
+    "count": 2,
+    "key": "-1..0",
+    "label": "۰ تا ۱-"
+   },
+   {
+    "color": "neu",
+    "count": 0,
+    "key": "0..1",
+    "label": "۰ تا ۱+"
+   },
+   {
+    "color": "pos",
+    "count": 0,
+    "key": "1..2",
+    "label": "۱+ تا ۲+"
+   },
+   {
+    "color": "pos",
+    "count": 0,
+    "key": "2..3",
+    "label": "۲+ تا ۳+"
+   },
+   {
+    "color": "pos",
+    "count": 0,
+    "key": "3..4",
+    "label": "۳+ تا ۴+"
+   },
+   {
+    "color": "pos",
+    "count": 0,
+    "key": "4..5",
+    "label": "۴+ تا ۵+"
+   },
+   {
+    "color": "pos",
+    "count": 1,
+    "key": ">5",
+    "label": "بالاتر از ۵+"
+   }
+  ],
+  "histo7": [
+   {
+    "color": "neg",
+    "count": 0,
+    "key": "<-5",
+    "label": "پایین‌تر از ۵-"
+   },
+   {
+    "color": "neg",
+    "count": 1,
+    "key": "-5..-3",
+    "label": "۵- تا ۳-"
+   },
+   {
+    "color": "neg",
+    "count": 0,
+    "key": "-3..-1",
+    "label": "۳- تا ۱-"
+   },
+   {
+    "color": "neu",
+    "count": 2,
+    "key": "-1..1",
+    "label": "خنثی (۱- تا ۱+)"
+   },
+   {
+    "color": "pos",
+    "count": 0,
+    "key": "1..3",
+    "label": "۱+ تا ۳+"
+   },
+   {
+    "color": "pos",
+    "count": 0,
+    "key": "3..5",
+    "label": "۳+ تا ۵+"
+   },
+   {
+    "color": "pos",
+    "count": 1,
+    "key": ">5",
+    "label": "بالای ۵+"
+   }
+  ],
+  "known": 4,
+  "nodata": 0,
+  "not_traded": 0,
+  "status": "ok",
+  "total": 4,
+  "traded_only": true
+ },
+ "industries": {
+  "asof": {
+   "client_d_even": 20261014,
+   "client_lag_days": false,
+   "d_even": 20261014,
+   "depth": true,
+   "h_even": 124000,
+   "n": 38,
+   "top50": 2
+  },
+  "leader": "فلزات اساسي",
+  "rows": [
+   {
+    "avg_pct": 11.11,
+    "buy_queue_b_toman": 0.2,
+    "flow_b_toman": 100.0,
+    "flow_pct_of_value": 10.0,
+    "industry": "فلزات اساسي",
+    "leader": true,
+    "leader_score": 2,
+    "negative": 0,
+    "positive": 1,
+    "rank_flow": 1,
+    "rank_value": 1,
+    "sell_queue_b_toman": 0.0,
+    "symbols": 1,
+    "value_b_toman": 1000.0
+   },
+   {
+    "avg_pct": 0.0,
+    "buy_queue_b_toman": 0.1,
+    "flow_b_toman": -5.0,
+    "flow_pct_of_value": -5.0,
+    "industry": "بانكها و موسسات اعتباري",
+    "leader": false,
+    "leader_score": 6,
+    "negative": 0,
+    "positive": 0,
+    "rank_flow": null,
+    "rank_value": 2,
+    "sell_queue_b_toman": 0.1,
+    "symbols": 1,
+    "value_b_toman": 100.0
+   },
+   {
+    "avg_pct": -3.0,
+    "buy_queue_b_toman": 0.0,
+    "flow_b_toman": 4.9,
+    "flow_pct_of_value": 49.0,
+    "industry": "سرمایه گذاريها",
+    "leader": false,
+    "leader_score": 5,
+    "negative": 1,
+    "positive": 0,
+    "rank_flow": 2,
+    "rank_value": 3,
+    "sell_queue_b_toman": 5.0,
+    "symbols": 1,
+    "value_b_toman": 10.0
+   }
+  ],
+  "status": "ok"
+ },
+ "mainwatch": {
+  "asof": {
+   "client_d_even": 20261014,
+   "client_lag_days": false,
+   "d_even": 20261014,
+   "depth": true,
+   "h_even": 124000,
+   "n": 38,
+   "top50": 2
+  },
+  "clock_hits": 1,
+  "clock_rule": {
+   "min_pct": 1.0,
+   "min_price": 500.0,
+   "min_trades": 30
+  },
+  "desc": true,
+  "group": "eq_all",
+  "industry": "",
+  "rows": [
+   {
+    "clock_ok": true,
+    "clock_pct": 1.0,
+    "cls": "stock",
+    "dem_px": 500.0,
+    "dem_vol": 1000000.0,
+    "depth": true,
+    "flow_b_toman": -5.0,
+    "industry": "بانكها و موسسات اعتباري",
+    "ins_code": "m2",
+    "kind": "stock",
+    "name": "بانك ملي دوم",
+    "p_closing": 500.0,
+    "p_first": 500.0,
+    "p_last": 505.0,
+    "p_max": 550.0,
+    "p_min": 450.0,
+    "pc_buy": 25.0,
+    "pc_sell": 25.0,
+    "pct_close": 0.0,
+    "pct_last": 1.0,
+    "power": 1.0,
+    "queue": "z",
+    "symbol": "وبملت۲",
+    "tape_flags": {
+     "f_clock": false,
+     "f_jet": false,
+     "f_legal": false,
+     "f_noqteh": false,
+     "f_roobi": false,
+     "f_smart": false,
+     "f_susp": false
+    },
+    "trades": 100.0,
+    "val_b_toman": 100.0,
+    "vol_b_shares": 2.0
+   },
+   {
+    "clock_ok": false,
+    "clock_pct": -5.0,
+    "cls": "stock",
+    "dem_px": 1000.0,
+    "dem_vol": 1000000.0,
+    "depth": true,
+    "flow_b_toman": 100.0,
+    "industry": "فلزات اساسي",
+    "ins_code": "m1",
+    "kind": "stock",
+    "name": "شرکت فولاد دوم",
+    "p_closing": 1000.0,
+    "p_first": 900.0,
+    "p_last": 950.0,
+    "p_max": 1100.0,
+    "p_min": 900.0,
+    "pc_buy": 200.0,
+    "pc_sell": 100.0,
+    "pct_close": 11.11,
+    "pct_last": 5.56,
+    "power": 2.0,
+    "queue": "b",
+    "symbol": "فولاد۲",
+    "tape_flags": {
+     "f_clock": false,
+     "f_jet": false,
+     "f_legal": false,
+     "f_noqteh": true,
+     "f_roobi": false,
+     "f_smart": false,
+     "f_susp": true
+    },
+    "trades": 500.0,
+    "val_b_toman": 1000.0,
+    "vol_b_shares": 1.0
+   },
+   {
+    "clock_ok": false,
+    "clock_pct": -1.03,
+    "cls": "right",
+    "dem_px": 970.0,
+    "dem_vol": 1000000.0,
+    "depth": true,
+    "flow_b_toman": 4.9,
+    "industry": "سرمایه گذاريها",
+    "ins_code": "m3",
+    "kind": "right",
+    "name": "حق تقدم دوم",
+    "p_closing": 970.0,
+    "p_first": 1000.0,
+    "p_last": 960.0,
+    "p_max": 1030.0,
+    "p_min": 900.0,
+    "pc_buy": 500.0,
+    "pc_sell": 20.0,
+    "pct_close": -3.0,
+    "pct_last": -4.0,
+    "power": 25.0,
+    "queue": "s",
+    "symbol": "حقا۲",
+    "tape_flags": {
+     "f_clock": false,
+     "f_jet": false,
+     "f_legal": false,
+     "f_noqteh": false,
+     "f_roobi": false,
+     "f_smart": false,
+     "f_susp": false
+    },
+    "trades": 10.0,
+    "val_b_toman": 10.0,
+    "vol_b_shares": 0.1
+   },
+   {
+    "clock_ok": false,
+    "clock_pct": 0.0,
+    "cls": "fund",
+    "dem_px": 1000.0,
+    "dem_vol": 1000000.0,
+    "depth": true,
+    "flow_b_toman": 0.2,
+    "industry": "صندوق سرمايه گذاري قابل معامله",
+    "ins_code": "m4",
+    "kind": "equity",
+    "name": "صندوق س.اوج دماوند-س",
+    "p_closing": 1000.0,
+    "p_first": 1000.0,
+    "p_last": 1000.0,
+    "p_max": 1100.0,
+    "p_min": 900.0,
+    "pc_buy": 20.0,
+    "pc_sell": 20.0,
+    "pct_close": 0.0,
+    "pct_last": 0.0,
+    "power": 1.0,
+    "queue": "b",
+    "symbol": "اوج۲",
+    "tape_flags": {
+     "f_clock": false,
+     "f_jet": false,
+     "f_legal": false,
+     "f_noqteh": false,
+     "f_roobi": false,
+     "f_smart": false,
+     "f_susp": false
+    },
+    "trades": 5.0,
+    "val_b_toman": 10.0,
+    "vol_b_shares": 0.1
+   }
+  ],
+  "sort": "clock",
+  "sort_col": "clock_pct",
+  "status": "ok",
+  "tape_flags_source": "api/market",
+  "total": 4
+ },
+ "phases": {
+  "green": [
+   {
+    "count": 0,
+    "key": "s>b",
+    "label": "صف فروش به صف خرید"
+   },
+   {
+    "count": 0,
+    "key": "n>b",
+    "label": "منفی به صف خرید"
+   },
+   {
+    "count": 0,
+    "key": "s>p",
+    "label": "صف فروش به مثبت"
+   }
+  ],
+  "points": 3,
+  "ready": true,
+  "red": [
+   {
+    "count": 1,
+    "key": "b>s",
+    "label": "صف خرید به صف فروش"
+   },
+   {
+    "count": 0,
+    "key": "p>s",
+    "label": "مثبت به صف فروش"
+   },
+   {
+    "count": 0,
+    "key": "b>n",
+    "label": "صف خرید به منفی"
+   }
+  ],
+  "status": "ok"
+ },
+ "smartmoney": {
+  "asof": {
+   "client_d_even": 20261014,
+   "client_lag_days": false,
+   "d_even": 20261014,
+   "depth": true,
+   "h_even": 124000,
+   "n": 38,
+   "top50": 2
+  },
+  "flow": {
+   "eq_flow_b_toman": 100.1,
+   "eq_inflow": true,
+   "eq_value_b_toman": 1120.0,
+   "fixed_flow_b_toman": 0.5,
+   "fixed_outflow": false,
+   "fixed_value_b_toman": 10.0,
+   "gold_flow_b_toman": 0.1,
+   "gold_outflow": false,
+   "ideal_fts": false,
+   "sr_flow_b_toman": 99.9,
+   "trio_fts": false
+  },
+  "macro": {
+   "bad_max": 10.0,
+   "basis": "eq_all",
+   "cause": null,
+   "excellent": false,
+   "good_min": 20.0,
+   "index": {
+    "change": -103912.4,
+    "d_even": 20261014,
+    "ew_change": -9112.1,
+    "ew_last": 1929823.43,
+    "ew_pct": -0.47,
+    "last": 7153088.29,
+    "pct": -1.43
+   },
+   "label": "نامساعد",
+   "market_value_hemat": 6.9,
+   "market_value_source": "tse_market_overview",
+   "partial_session": false,
+   "phase": "closed",
+   "phase_label": "پایانِ نشست",
+   "session_day": 20261014,
+   "session_is_live": false,
+   "state": "bad",
+   "trade_value_all_market_hemat": 1.13,
+   "value_hemat": 1.12
+  },
+  "status": "ok",
+  "verdict": {
+   "basis": "fts_notes_p13_p14",
+   "gates": [
+    {
+     "detail": "۱.۱۲ همت",
+     "key": "liquidity",
+     "label": "ارزش معاملات بازار سهام",
+     "label_state": "نامساعد",
+     "rule": "بالایِ ۲۰ خوب · بالایِ ۵۰ عالی · زیرِ ۱۰ نامساعد (جزوه ص۱۳)",
+     "short": "نقدینگی",
+     "state": "bad",
+     "vote": -1,
+     "why": "ارزش معاملات بازار سهام زیرِ ۱۰ همت — بازار راکد است"
+    },
+    {
+     "detail": "۳ نشستِ اخیر: ۱۸ همت · ۱۲ همت · ۹.۵ همت",
+     "key": "continuity",
+     "label": "روند ۳ تا ۴ نشستِ اخیر",
+     "label_state": "بدونِ تداوم",
+     "rule": "همان جهتِ نقدینگی در ۳ تا ۴ نشستِ پیاپی (جزوه ص۱۳)",
+     "short": "روندِ اخیر",
+     "state": "mid",
+     "vote": 0,
+     "why": "جهتِ نقدینگی در ۳ نشستِ اخیر یکی نبوده"
+    },
+    {
+     "detail": "۳۳.۳٪ منفی — آستانهٔ فرصت ۸۰٪",
+     "key": "breadth",
+     "label": "درصدِ نمادهایِ نزولی",
+     "label_state": "بدونِ فرصتِ کف",
+     "rule": "۸۰٪ منفی = بازار فرصتِ ورود دارد، نه هشدار (جزوه ص۱۳)",
+     "short": "پهنایِ بازار",
+     "state": "mid",
+     "vote": 0,
+     "why": "منفی‌ها از آستانۀ ۸۰٪ پایین‌تر بوده (همین حالا ۳۳.۳٪) — نشانه‌ای برای ورود نیست"
+    },
+    {
+     "detail": "خرد +۱۰۰.۱ · درآمد ثابت +۰.۵ · طلا +۰.۱ (میلیارد تومان)",
+     "key": "flow",
+     "label": "جهتِ پولِ حقیقی",
+     "label_state": "جهتِ پول روشن نیست",
+     "rule": "خروجِ طلا و درآمد ثابت ⇄ ورودِ سهام و حق تقدم (جزوه ص۱۴)",
+     "short": "پولِ حقیقی",
+     "state": "mid",
+     "vote": 0,
+     "why": "سه شرطِ وضعِ مطلوب یکجا برقرار نیست؛ جهتِ پول روشن نشده"
+    },
+    {
+     "detail": "ساعتِ داده ۱۲:۴۰ · پنجره‌های جزوه ۰۹:۰۰–۰۹:۳۰ و ۱۲:۱۵–۱۲:۳۰‌اند",
+     "key": "window",
+     "label": "پنجرهٔ زمانیِ جزوه",
+     "label_state": "خارجِ پنجره‌ها",
+     "rule": "درآمد ثابت در نیم‌ساعتِ اول · شفافیتِ طلا ۱۲:۱۵–۱۲:۳۰ (جزوه ص۱۴)",
+     "short": "ساعت",
+     "state": "mid",
+     "vote": 0,
+     "why": "بیرونِ پنجره‌هایِ جزوه — این شرط رأیی در حکم ندارد"
+    }
+   ],
+   "label": "شواهدِ اولیهٔ منفی — هنوز تأیید نشده",
+   "market_state": {
+    "against": [
+     "نقدینگی: نامساعد"
+    ],
+    "changed_from": null,
+    "client_day": 20261014,
+    "confirm_required": 3,
+    "confirm_streak": 1,
+    "data_clock": "۱۲:۴۰",
+    "data_h_even": 124000,
+    "evidence_direction": "منفی",
+    "evidence_strength": "قابل‌اتکا (جمعِ نهایی)",
+    "flow_trend": "روندِ جریانِ امروز: در حالِ تقویت (۲ تغییرِ متوالی)",
+    "for": [],
+    "limitations": [
+     "دفترِ سفارشِ همین نشست در دسترس نیست"
+    ],
+    "minutes_since_open": null,
+    "pace_note": null,
+    "session_start_clock": null,
+    "since_open_text": null,
+    "stage": "after_close",
+    "stage_label": "پایانِ نشست — حکم رویِ جمعِ نهایی",
+    "stale_clients": false
+   },
+   "phase": {
+    "is_live": false,
+    "label": "پایانِ نشست",
+    "official": true,
+    "phase": "closed",
+    "phase_source": "tsetmc_marketState",
+    "session_day": 20261014,
+    "verdict_allowed": true
+   },
+   "reason": "نقدینگی: نامساعد · ارزیابیِ معتبرِ متوالی: ۱ از ۳",
+   "status": "ok",
+   "verdict": "nodata"
+  },
+  "watch_entry": {
+   "active": false,
+   "bearish": 1,
+   "bearish_pct": 33.3,
+   "known": 3,
+   "rule_pct": 80.0
+  }
+ },
+ "source": "local:market.db",
+ "status": "ok",
+ "summary": {
+  "asof": {
+   "client_d_even": 20261014,
+   "client_lag_days": false,
+   "d_even": 20261014,
+   "depth": true,
+   "h_even": 124000,
+   "n": 38,
+   "top50": 2
+  },
+  "health": {
+   "bad_max": 10.0,
+   "basis": "eq_all",
+   "excellent": false,
+   "excellent_min": 50.0,
+   "good_min": 20.0,
+   "label": "نامساعد",
+   "market_value_hemat": 6.9,
+   "market_value_source": "tse_market_overview",
+   "phase": "closed",
+   "phase_label": "پایانِ نشست",
+   "phase_official": true,
+   "phase_source": "tsetmc_marketState",
+   "session_day": 20261014,
+   "session_is_live": false,
+   "state": "bad",
+   "trade_value_all_market_hemat": 1.13,
+   "value_hemat": 1.12
+  },
+  "phase": {
+   "activity_h_even": 123000,
+   "clock_now": "2026-10-28 10:30:00",
+   "computable": {
+    "close_price_final": true,
+    "order_pressure": false,
+    "realized_flow": true,
+    "session_vs_threshold": true
+   },
+   "data_updated_at": "2026-10-14 12:30:00",
+   "is_live": false,
+   "label": "پایانِ نشست",
+   "not_computable": [
+    "order_pressure"
+   ],
+   "official": true,
+   "official_state": "F",
+   "official_state_title": "بسته",
+   "phase": "closed",
+   "phase_source": "tsetmc_marketState",
+   "session_day": 20261014,
+   "session_end": "12:30",
+   "session_start": "09:00",
+   "verdict_allowed": true,
+   "why_not": {
+    "order_pressure": "دفترِ سفارشِ همین نشست در دسترس نیست"
+   }
+  },
+  "rows": [
+   {
+    "buy_power": 2.17,
+    "buy_power_up": true,
+    "key": "all",
+    "label": "کل بازار",
+    "money_flow_b_toman": 100.6,
+    "pc_buy_m_toman": 167.8,
+    "pc_sell_m_toman": 77.5,
+    "symbols": 5,
+    "traded": 5,
+    "value_b_toman": 1130.0,
+    "volume_b_shares": 3.3
+   },
+   {
+    "buy_power": null,
+    "buy_power_up": false,
+    "key": "bonds_other",
+    "label": "اوراق، اختيار و سایر",
+    "money_flow_b_toman": 0.0,
+    "pc_buy_m_toman": null,
+    "pc_sell_m_toman": null,
+    "symbols": 30,
+    "traded": 28,
+    "value_b_toman": 1.1,
+    "volume_b_shares": 0.006
+   },
+   {
+    "buy_power": 2.19,
+    "buy_power_up": true,
+    "key": "eq_all",
+    "label": "سهام، حق تقدم و ص.سهامی",
+    "money_flow_b_toman": 100.1,
+    "pc_buy_m_toman": 171.1,
+    "pc_sell_m_toman": 78.0,
+    "symbols": 4,
+    "traded": 4,
+    "value_b_toman": 1120.0,
+    "volume_b_shares": 3.2
+   },
+   {
+    "buy_power": 2.21,
+    "buy_power_up": true,
+    "key": "stock_right",
+    "label": "سهام و حق تقدم",
+    "money_flow_b_toman": 99.9,
+    "pc_buy_m_toman": 173.6,
+    "pc_sell_m_toman": 78.4,
+    "symbols": 3,
+    "traded": 3,
+    "value_b_toman": 1110.0,
+    "volume_b_shares": 3.1
+   },
+   {
+    "buy_power": 1.0,
+    "buy_power_up": true,
+    "key": "eq_fund",
+    "label": "صندوق‌های سهامی و مختلط",
+    "money_flow_b_toman": 0.2,
+    "pc_buy_m_toman": 20.0,
+    "pc_sell_m_toman": 20.0,
+    "symbols": 1,
+    "traded": 1,
+    "value_b_toman": 10.0,
+    "volume_b_shares": 0.1
+   },
+   {
+    "buy_power": 1.0,
+    "buy_power_up": true,
+    "key": "fixed_fund",
+    "label": "صندوق درآمد ثابت",
+    "money_flow_b_toman": 0.5,
+    "pc_buy_m_toman": 33.3,
+    "pc_sell_m_toman": 33.3,
+    "symbols": 1,
+    "traded": 1,
+    "value_b_toman": 10.0,
+    "volume_b_shares": 0.1
+   },
+   {
+    "buy_power": 2.17,
+    "buy_power_up": true,
+    "key": "top50",
+    "label": "پنجاه شرکت بزرگ (شاخص ۵۰ شرکت)",
+    "money_flow_b_toman": 95.0,
+    "pc_buy_m_toman": 170.8,
+    "pc_sell_m_toman": 78.6,
+    "symbols": 2,
+    "traded": 2,
+    "value_b_toman": 1100.0,
+    "volume_b_shares": 3.0
+   },
+   {
+    "buy_power": 0.5,
+    "buy_power_up": false,
+    "key": "lev_fund",
+    "label": "صندوق‌های اهرمی",
+    "money_flow_b_toman": -0.1,
+    "pc_buy_m_toman": 25.0,
+    "pc_sell_m_toman": 50.0,
+    "symbols": 1,
+    "traded": 1,
+    "value_b_toman": 10.0,
+    "volume_b_shares": 0.1
+   },
+   {
+    "buy_power": 1.0,
+    "buy_power_up": true,
+    "key": "gold_fund",
+    "label": "صندوق‌های طلا",
+    "money_flow_b_toman": 0.1,
+    "pc_buy_m_toman": 25.0,
+    "pc_sell_m_toman": 25.0,
+    "symbols": 1,
+    "traded": 1,
+    "value_b_toman": 10.0,
+    "volume_b_shares": 0.1
+   },
+   {
+    "buy_power": 1.0,
+    "buy_power_up": true,
+    "key": "silver_fund",
+    "label": "صندوق‌های نقره",
+    "money_flow_b_toman": 0.0,
+    "pc_buy_m_toman": 20.0,
+    "pc_sell_m_toman": 20.0,
+    "symbols": 1,
+    "traded": 1,
+    "value_b_toman": 10.0,
+    "volume_b_shares": 0.1
+   }
+  ],
+  "status": "ok"
+ },
+ "thermometer": {
+  "asof": {
+   "client_d_even": 20261014,
+   "client_lag_days": false,
+   "d_even": 20261014,
+   "depth": true,
+   "h_even": 124000,
+   "n": 38,
+   "top50": 2
+  },
+  "entry_opportunity": false,
+  "entry_rule_pct": 80.0,
+  "group": "eq_all",
+  "negative": 1,
+  "negative_pct": 25.0,
+  "nodata": 0,
+  "not_traded": 0,
+  "positive": 1,
+  "positive_pct": 25.0,
+  "status": "ok",
+  "zero": 2
+ },
+ "timeline": {
+  "board_day": 20261014,
+  "day": 20261014,
+  "mode": "cum",
+  "note": null,
+  "points": 3,
+  "ready": true,
+  "series": {
+   "bq_bt": [
+    2.0,
+    3.0,
+    4.0
+   ],
+   "bq_n": [
+    2,
+    3,
+    4
+   ],
+   "flow_eq_bt": [
+    1.0,
+    2.0,
+    3.0
+   ],
+   "flow_fixed_bt": [
+    -0.5,
+    -0.8,
+    -1.0
+   ],
+   "neg": [
+    3,
+    2,
+    1
+   ],
+   "pc_buy": [
+    120.0,
+    130.0,
+    140.0
+   ],
+   "pc_sell": [
+    100.0,
+    105.0,
+    110.0
+   ],
+   "pos": [
+    4,
+    5,
+    6
+   ],
+   "sq_bt": [
+    1.0,
+    1.5,
+    2.0
+   ],
+   "sq_n": [
+    1,
+    1,
+    1
+   ],
+   "t": [
+    "10:00",
+    "11:00",
+    "12:00"
+   ],
+   "val_bt": [
+    10.0,
+    20.0,
+    30.0
+   ]
+  },
+  "session_close": "13:00",
+  "session_open": "08:55",
+  "stale": false,
+  "status": "ok"
+ }
+}

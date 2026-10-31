@@ -12,7 +12,7 @@
    price_change/total_shares/h_even، و asof با کلیدهایِ client_lag_days/depth.
    دامپِ enrich_nodepth همان قید را برایِ بانکِ بی‌ستونِ عمق دارد: depth=False،
    bq_val تهی و qstate=x در هر ردیف — همان قراردادِ _row_keys(False).
-۴) شمارشِ سناریوها همان چهار صحنه است و درختِ طلایی فقط همان‌ها را دارد.
+۴) شمارشِ سناریوها همان پنج صحنه است و درختِ طلایی فقط همان‌ها را دارد.
 ۵) رفتارِ صحنه‌ها با مقدارِ دقیق سنجیده می‌شود (نه «هر مقدارِ متفاوت»).
 ۶) terms_gen.go همان چیزی است که استخراجِ تازۀ mstat_engine می‌دهد؛ جدولِ
    دست‌نویس یا کهنه (یک نویسهٔ جابه‌جا) همین‌جا قرمز می‌شود.
@@ -38,7 +38,7 @@ ROUTES = ["summary", "histogram_all", "histogram_eq_all", "thermometer_all",
           "thermometer_eq_all", "depth_all", "depth_eq_all", "clientsplit_all",
           "clientsplit_fixed", "market_snapshot", "phase", "industries",
           "timeline_cum", "timeline_inst", "phases", "mainwatch_default",
-          "mainwatch_val", "enrich", "enrich_nodepth"]
+          "mainwatch_val", "smart_money", "board", "enrich", "enrich_nodepth"]
 # `enrich`/`enrich_nodepth` بدنهٔ یک مسیر نیستند: دامپِ موتورِ
 # `load_snapshot`+`money` برایِ تستِ Go هستند و `status` ندارند. شرطِ شکلشان
 # همان asof/rows است.
@@ -47,12 +47,13 @@ ENGINE_DUMPS = {"enrich", "enrich_nodepth"}
 # قلم بیفتد، تستِ Go دیگر نمی‌تواند جابه‌جاییِ موقعیتیِ ستون‌ها را بگیرد.
 ROW_COLUMNS = ("p_first", "p_min", "p_max", "price_change", "total_shares",
                "h_even")
-# همان چیزی که تسک می‌خواهد: s1 هفده پنل به‌علاوهٔ دو دامپِ enrich، s2 دو فایل،
-# s3 و s4 هرکدام یکی.
+# همان چیزی که تسک می‌خواهد: s1 نوزده پنل به‌علاوهٔ دو دامپِ enrich، s2 دو فایل،
+# s3 و s4 هرکدام یکی، و s5 (نشستِ جاری) فقط smart_money.
 SCENARIOS = {"s1": set(ROUTES),
              "s2": {"timeline_cum", "phases"},
              "s3": {"phase"},
-             "s4": {"phase"}}
+             "s4": {"phase"},
+             "s5": {"smart_money"}}
 PIN_CLOCK = "2026-10-28 10:30:00"
 # جفت‌هایِ (ins_code، نامِ پرچم) که طلاییِ s1 باید True بدهد. دو پرچمِ متفاوت
 # عمدی‌اند تا پورتِ Go با «همه False» یا با سخت‌کدِ یک پرچم سبز نشود.
@@ -157,6 +158,28 @@ def panel_content(name, d):
     if name.startswith("mainwatch_"):
         n = len(d.get("rows") or [])
         return n > 0, "rows=%d" % n
+    if name == "smart_money":
+        macro = d.get("macro") or {}
+        flow = d.get("flow") or {}
+        verdict = d.get("verdict") or {}
+        gates = verdict.get("gates") or []
+        ok = (macro.get("label") and flow.get("eq_flow_b_toman") is not None
+              and len(gates) == 5 and verdict.get("market_state"))
+        return bool(ok), "macro_label=%r flow=%r gates=%d" % (
+            macro.get("label"), flow.get("eq_flow_b_toman"), len(gates))
+    if name == "board":
+        # ترکیبِ ده پنل: هر پنل status=ok و بی‌`source` (همان قانونِ _panel)، و
+        # source فقط در سطحِ board. یک پنلِ گم‌شده یا sourceِ جاافتاده قرمز است.
+        panels = ("summary", "thermometer", "histogram", "depth", "clientsplit",
+                  "mainwatch", "industries", "smartmoney", "timeline", "phases")
+        present = [k for k in panels if isinstance(d.get(k), dict)]
+        no_source = all("source" not in d[k] for k in present)
+        ok_status = all(d[k].get("status") == "ok" for k in present)
+        top_source = d.get("source") == "local:market.db"
+        ok = (len(present) == len(panels) and no_source and ok_status
+              and top_source)
+        return ok, "panels=%d/%d no_source=%s status=%s top_source=%s" % (
+            len(present), len(panels), no_source, ok_status, top_source)
     if name == "enrich":
         # دامپِ Go: هر ردیف باید کد و دیکشنریِ m داشته باشد و دست‌کم یک ردیف
         # ارزشِ ریالیِ واقعی (نه null) بدهد؛ asof هم کلیدهایِ قرارداد را دارد.
@@ -321,7 +344,7 @@ def main() -> int:
             check("%s holds exactly %d golden(s)" % (scen, len(stems)), have == want,
                   "have=%s" % sorted(have))
         entries = set(os.listdir(GOLD))
-        check("golden tree holds only s1..s4 (files and dirs)",
+        check("golden tree holds only s1..s5 (files and dirs)",
               entries == set(SCENARIOS), "have=%s" % sorted(entries))
         s2 = read_json(os.path.join(GOLD, "s2", "timeline_cum.json"))
         check("s2 timeline is marked stale", s2.get("stale") is True,
