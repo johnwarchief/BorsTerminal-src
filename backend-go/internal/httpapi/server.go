@@ -38,9 +38,11 @@ type Market interface {
 	SyncState(http.ResponseWriter, *http.Request)
 }
 
-// Chart شش مسیرِ محلیِ api/chart.py در B3 (بقیه در B6 یا مرحلهٔ بعد)؛
-// nil یعنی هیچ‌کدام پورت نشده.
+// Chart هشت مسیرِ محلیِ api/chart.py در B3 (مسیرِ CDNِ /api/chart و
+// POSTها در B6 می‌مانند)؛ nil یعنی هیچ‌کدام پورت نشده.
 type Chart interface {
+	ChartDB(http.ResponseWriter, *http.Request)
+	FTS(http.ResponseWriter, *http.Request)
 	OrderBook(http.ResponseWriter, *http.Request)
 	KeyLevels(http.ResponseWriter, *http.Request)
 	CalendarUpcoming(http.ResponseWriter, *http.Request)
@@ -103,6 +105,8 @@ func New(cfg config.Config, h *db.Handles, m Market, ms Mstat, ch Chart) http.Ha
 		mux.HandleFunc("GET /api/calendar/{symbol}", ch.CalendarSymbol)
 		mux.HandleFunc("GET /api/ma/{symbol}", ch.MA)
 		mux.HandleFunc("GET /api/patterns/{symbol}", ch.Patterns)
+		mux.HandleFunc("GET /api/chart-db/{symbol}", ch.ChartDB)
+		mux.HandleFunc("GET /api/fts/{symbol}", ch.FTS)
 	}
 	mux.HandleFunc("/", s.apiGate)
 	return noCache(mux)

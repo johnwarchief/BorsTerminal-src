@@ -168,6 +168,8 @@ func TestMstatRouteTable(t *testing.T) {
 
 // chartRoutes شش مسیرِ محلیِ B3؛ {symbol} در درخواست با X جای‌گزین می‌شود.
 var chartRoutes = map[string]string{
+	"/api/chart-db/{symbol}":         "chart-db",
+	"/api/fts/{symbol}":              "fts",
 	"/api/order-book/{symbol}":       "order-book",
 	"/api/chart/{symbol}/key-levels": "key-levels",
 	"/api/calendar/upcoming":         "calendar-upcoming",
@@ -182,6 +184,8 @@ func (f *fakeChart) hit(name string, w http.ResponseWriter) {
 	f.called = append(f.called, name)
 	WriteJSON(w, http.StatusOK, map[string]any{"handler": name})
 }
+func (f *fakeChart) ChartDB(w http.ResponseWriter, _ *http.Request)   { f.hit("chart-db", w) }
+func (f *fakeChart) FTS(w http.ResponseWriter, _ *http.Request)       { f.hit("fts", w) }
 func (f *fakeChart) OrderBook(w http.ResponseWriter, _ *http.Request) { f.hit("order-book", w) }
 func (f *fakeChart) KeyLevels(w http.ResponseWriter, _ *http.Request) { f.hit("key-levels", w) }
 func (f *fakeChart) CalendarUpcoming(w http.ResponseWriter, _ *http.Request) {
@@ -217,8 +221,8 @@ func TestChartRouteTable(t *testing.T) {
 	for _, route := range Routes() {
 		inventory[route] = true
 	}
-	if len(chartRoutes) != 6 {
-		t.Fatalf("wired chart routes = %d, want 6", len(chartRoutes))
+	if len(chartRoutes) != 8 {
+		t.Fatalf("wired chart routes = %d, want 8", len(chartRoutes))
 	}
 	for tmpl, want := range chartRoutes {
 		if !inventory["GET "+tmpl] {

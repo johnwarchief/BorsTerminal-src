@@ -21,6 +21,19 @@ func intQuery(w http.ResponseWriter, r *http.Request, name string, def int) (int
 	return v, true
 }
 
+func (s *Service) ChartDB(w http.ResponseWriter, r *http.Request) {
+	adjustment, ok := intQuery(w, r, "adjustment", 3)
+	if !ok {
+		return
+	}
+	httpapi.WriteJSON(w, http.StatusOK, s.chartDBBody(r.Context(), r.PathValue("symbol"), adjustment))
+}
+
+func (s *Service) FTS(w http.ResponseWriter, r *http.Request) {
+	httpapi.WriteJSON(w, http.StatusOK,
+		s.analyzeSymbol(r.Context(), r.PathValue("symbol"), r.URL.Query().Get("as_of")))
+}
+
 func (s *Service) OrderBook(w http.ResponseWriter, r *http.Request) {
 	httpapi.WriteJSON(w, http.StatusOK, s.orderBookBody(r.Context(), r.PathValue("symbol")))
 }

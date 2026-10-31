@@ -351,6 +351,57 @@ def main() -> int:
     except Exception as e:                                        # noqa: BLE001
         check("golden tree holds only s1..s4 (files and dirs)", False, repr(e))
 
+    # ۵) وکتورهایِ موتورِ FTS: فایلِ کامیت‌شده با اجرایِ تازه یکی باشد و هر
+    #    سری واقعاً شاخه‌ای را زده باشد (سنسور کور نباشد).
+    vectors_path = os.path.join(ROOT, "backend-go", "internal", "chart",
+                                "testdata", "fts_vectors.json")
+    branch = {
+        "up": lambda c: c["trend_d"]["trend"] == "up" and c["trend_d"]["basis"] == "pivots",
+        "down": lambda c: c["trend_d"]["trend"] == "down",
+        "range": lambda c: c["point_hunt"]["touches"] == 1,
+        "oneway": lambda c: c["swings"] == [] and c["trend_d"]["basis"] == "recent-window",
+        "short": lambda c: c["jet"]["active"] is None and c["setups"] == [],
+        "jet": lambda c: c["jet"]["active"] is True and c["jet"]["tier"] == "confirmed",
+        "choch": lambda c: c["choch"]["label"] == "choch_bear" and len(c["setups"]) == 1,
+        "point": lambda c: c["point_hunt"]["active"] is True and c["point_hunt"]["touches"] == 3,
+        "dbl": lambda c: c["double_bottom"]["active"] is True and
+                         c["range_box"]["active"] is True and len(c["setups"]) == 1,
+        "stop": lambda c: c["exit"]["verdict"] == "stop",
+        "trail": lambda c: "ma14_trail" in c["exit"]["signals"],
+    }
+    want_codes = {"prec_stop": "hard_stop", "prec_exit": "confirmed_exit",
+                  "prec_warning": "warning", "prec_veto": "weekly_veto",
+                  "prec_trigger": "entry_trigger", "prec_context": "context_only",
+                  "prec_nosignal": "no_signal", "prec_insufficient": "insufficient"}
+    try:
+        with tempfile.TemporaryDirectory(prefix="b3-vectors-") as tmp:
+            vpath = os.path.join(tmp, "fts_vectors.json")
+            proc = subprocess.run(
+                [sys.executable, os.path.join(ROOT, "tools", "parity",
+                                              "gen_fts_vectors.py"), "--out", vpath],
+                capture_output=True, cwd=ROOT,
+                env={**os.environ, "PYTHONIOENCODING": "utf-8"})
+            fresh_v = read_json(vpath) if proc.returncode == 0 and os.path.exists(vpath) else None
+        committed_v = read_json(vectors_path)
+        check("FTS engine vectors equal a fresh oracle run",
+              fresh_v is not None and fresh_v == committed_v,
+              "rc=%d %s" % (proc.returncode,
+                            (proc.stderr or b"")[-200:].decode("utf-8", "replace")))
+        dead = sorted(k for k, pred in branch.items()
+                      if not (committed_v.get("cases") or {}).get(k)
+                      or not pred(committed_v["cases"][k]))
+        check("every FTS vector hits its named branch (%d branches)" % len(branch),
+              committed_v and not dead, "dead: %r" % (dead,))
+        blocks = {k: ((v or {}).get("block") or {}).get("code")
+                  for k, v in (committed_v.get("status") or {}).items()}
+        wrong = sorted(k for k, want in want_codes.items() if blocks.get(k) != want)
+        check("status vectors cover all eight precedence codes", not wrong,
+              "wrong: %r got: %r" % (wrong, {k: blocks.get(k) for k in wrong}))
+    except Exception as e:                                        # noqa: BLE001
+        check("FTS engine vectors equal a fresh oracle run", False, repr(e))
+        check("every FTS vector hits its named branch", False, repr(e))
+        check("status vectors cover all eight precedence codes", False, repr(e))
+
     # ۵) کنترلِ منفیِ درزها — در فرایندِ تازه تا ترتیبِ import واقعی باشد.
     try:
         with tempfile.TemporaryDirectory(prefix="b3-seam-") as tmp:

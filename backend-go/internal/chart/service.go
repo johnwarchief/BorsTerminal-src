@@ -9,7 +9,9 @@ package chart
 import (
 	"context"
 	"database/sql"
+	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 
@@ -47,6 +49,7 @@ type Service struct {
 	sid          *symbolid.Resolver
 	basis        *pricebasis.Resolver
 	ftsPath      string
+	engine       string
 
 	mu        sync.Mutex
 	keyLevels map[string]cacheEntry
@@ -67,6 +70,7 @@ func New(cfg Config) *Service {
 		sid:       symbolid.New(cfg.Market),
 		basis:     pricebasis.New(filepath.Join(cfg.DataDir, "price_basis.json")),
 		ftsPath:   filepath.Join(cfg.DataDir, "fts_thresholds.json"),
+		engine:    trendEngine(),
 		keyLevels: map[string]cacheEntry{}, ma: map[string]cacheEntry{},
 		patterns: map[string]cacheEntry{}, fts: map[string]cacheEntry{},
 	}
@@ -74,6 +78,21 @@ func New(cfg Config) *Service {
 }
 
 func (s *Service) Close() error { return s.sid.Close() }
+
+// trendEngine معادلِ TREND_ENGINE درِ api/chart.py: خواندنِ env یک‌بار درِ
+// ساختِ سرویس؛ مقدارِ ناشناخته فقط «legacy» نیست، بلکه درِ کلیدِ کش وِ fieldِ
+// پاسخ هم نوشته می‌شود (پایتون همین را می‌کند).
+func trendEngine() string {
+	raw, ok := os.LookupEnv("BORS_TREND_ENGINE")
+	if !ok {
+		return "legacy"
+	}
+	raw = strings.ToLower(strings.TrimSpace(raw))
+	if raw == "" {
+		return "legacy"
+	}
+	return raw
+}
 
 func (s *Service) now() time.Time { return s.clock() }
 

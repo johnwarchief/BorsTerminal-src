@@ -18,6 +18,7 @@ const (
 	goldFund  = "اهرم‌ب"
 	goldShort = "کم‌سابقه11"
 	goldNo    = "بی‌معامله04"
+	goldDual  = "عادی 01"
 )
 
 func copyFixture(t *testing.T) string {
@@ -131,6 +132,20 @@ func TestChartGoldens(t *testing.T) {
 		{"s1", "orderbook_missing", func(s *Service) map[string]any { return s.orderBookBody(ctx, goldNo) }},
 		{"s1", "calendar_symbol", func(s *Service) map[string]any { return s.calendarSymbolBody(goldUp) }},
 		{"s1", "calendar_upcoming", func(s *Service) map[string]any { return s.calendarUpcomingBody(14) }},
+		{"s1", "chartdb_uptrend", func(s *Service) map[string]any { return s.chartDBBody(ctx, goldUp, 3) }},
+		{"s1", "chartdb_downtrend", func(s *Service) map[string]any { return s.chartDBBody(ctx, goldDown, 3) }},
+		{"s1", "chartdb_fund", func(s *Service) map[string]any { return s.chartDBBody(ctx, goldFund, 3) }},
+		{"s1", "chartdb_short", func(s *Service) map[string]any { return s.chartDBBody(ctx, goldShort, 3) }},
+		{"s1", "chartdb_nodata", func(s *Service) map[string]any { return s.chartDBBody(ctx, goldNo, 3) }},
+		{"s1", "chartdb_dualspell", func(s *Service) map[string]any { return s.chartDBBody(ctx, goldDual, 3) }},
+		{"s1", "fts_uptrend", func(s *Service) map[string]any { return s.analyzeSymbol(ctx, goldUp, "") }},
+		{"s1", "fts_downtrend", func(s *Service) map[string]any { return s.analyzeSymbol(ctx, goldDown, "") }},
+		{"s1", "fts_short", func(s *Service) map[string]any { return s.analyzeSymbol(ctx, goldShort, "") }},
+		{"s1", "fts_nodata", func(s *Service) map[string]any { return s.analyzeSymbol(ctx, goldNo, "") }},
+		{"s1", "fts_asof", func(s *Service) map[string]any { return s.analyzeSymbol(ctx, goldUp, "2026-09-01") }},
+		{"s3", "fts_uptrend", func(s *Service) map[string]any { return s.analyzeSymbol(ctx, goldUp, "") }},
+		{"s3", "chartdb_uptrend", func(s *Service) map[string]any { return s.chartDBBody(ctx, goldUp, 3) }},
+		{"s4", "chartdb_uptrend", func(s *Service) map[string]any { return s.chartDBBody(ctx, goldUp, 3) }},
 		{"s2", "orderbook_five", func(s *Service) map[string]any { return s.orderBookBody(ctx, goldUp) }},
 		{"s2", "orderbook_null", func(s *Service) map[string]any { return s.orderBookBody(ctx, goldDown) }},
 		{"s4", "keylevels_uptrend", func(s *Service) map[string]any { return s.keyLevelsBody(ctx, goldUp) }},

@@ -106,3 +106,70 @@ func equalJSON(t *testing.T, a, b any) bool {
 	}
 	return string(ra) == string(rb)
 }
+
+// دو مسیرِ تازهٔ B3: chart-db با اعتبارسنجیِ adjustment و fts با برشِ as_of.
+func TestChartDBAndFTSHandlers(t *testing.T) {
+	s := openService(t, "s1")
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /api/chart-db/{symbol}", s.ChartDB)
+	mux.HandleFunc("GET /api/fts/{symbol}", s.FTS)
+
+	decode := func(rec *httptest.ResponseRecorder) map[string]any {
+		var body map[string]any
+		if err := json.Unmarshal(rec.Body.Bytes(), &body); err != nil {
+			t.Fatal(err)
+		}
+		return body
+	}
+
+	rec := httptest.NewRecorder()
+	mux.ServeHTTP(rec, httptest.NewRequest("GET", "/api/chart-db/عادی01", nil))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("chart-db status = %d", rec.Code)
+	}
+	body := decode(rec)
+	if body["status"] != "success" || body["adjustment"] != float64(3) ||
+		body["count"].(float64) < 300 {
+		t.Fatalf("chart-db body = %v / %v / %v", body["status"], body["adjustment"], body["count"])
+	}
+	if _, ok := body["fts"]; !ok {
+		t.Fatal("chart-db must carry the fts block")
+	}
+
+	rec = httptest.NewRecorder()
+	mux.ServeHTTP(rec, httptest.NewRequest("GET", "/api/chart-db/عادی01?adjustment=abc", nil))
+	if rec.Code != http.StatusUnprocessableEntity {
+		t.Fatalf("adjustment=abc status = %d", rec.Code)
+	}
+	var detail struct {
+		Detail []struct {
+			Type string   `json:"type"`
+			Loc  []string `json:"loc"`
+		} `json:"detail"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &detail); err != nil {
+		t.Fatal(err)
+	}
+	if len(detail.Detail) != 1 || detail.Detail[0].Type != "int_parsing" ||
+		detail.Detail[0].Loc[1] != "adjustment" {
+		t.Fatalf("detail = %+v", detail.Detail)
+	}
+
+	rec = httptest.NewRecorder()
+	mux.ServeHTTP(rec, httptest.NewRequest("GET", "/api/fts/عادی01?as_of=2026-09-01", nil))
+	body = decode(rec)
+	if body["status"] != "success" || body["as_of"] != "2026-09-01" ||
+		body["bars"] != float64(280) {
+		t.Fatalf("fts as_of body = %v / %v / %v", body["status"], body["as_of"], body["bars"])
+	}
+	rec = httptest.NewRecorder()
+	mux.ServeHTTP(rec, httptest.NewRequest("GET", "/api/fts/عادی01", nil))
+	if body := decode(rec); body["as_of"] != nil {
+		t.Fatalf("live fts must not carry as_of: %v", body["as_of"])
+	}
+	rec = httptest.NewRecorder()
+	mux.ServeHTTP(rec, httptest.NewRequest("GET", "/api/fts/"+goldNo, nil))
+	if body := decode(rec); body["status"] != "empty" {
+		t.Fatalf("no-history symbol = %v", body["status"])
+	}
+}
