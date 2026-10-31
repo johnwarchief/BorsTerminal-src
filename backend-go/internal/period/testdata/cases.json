@@ -4766,6 +4766,233 @@
    "out": 6
   }
  ],
+ "sql": {
+  "dated_ids": [
+   5,
+   6,
+   8,
+   9,
+   15,
+   16
+  ],
+  "latest_any_id": 8,
+  "latest_dated_id": 8,
+  "order_ids": [
+   8,
+   9,
+   5,
+   6,
+   15,
+   16,
+   7,
+   12,
+   13,
+   14,
+   11,
+   4,
+   3,
+   17,
+   10,
+   2,
+   1
+  ],
+  "py_canonical_ids": [
+   5,
+   6,
+   8,
+   9,
+   10,
+   14,
+   15,
+   16,
+   17
+  ],
+  "rows": [
+   {
+    "period_end": null,
+    "tracing_no": 1
+   },
+   {
+    "period_end": "",
+    "tracing_no": 2
+   },
+   {
+    "period_end": "   ",
+    "tracing_no": 3
+   },
+   {
+    "period_end": "1405-06-31",
+    "tracing_no": 4
+   },
+   {
+    "period_end": "1405/06/31",
+    "tracing_no": 5
+   },
+   {
+    "period_end": "1404/01/01",
+    "tracing_no": 6
+   },
+   {
+    "period_end": "۱۴۰۵/۰۶/۳۰",
+    "tracing_no": 7
+   },
+   {
+    "period_end": "1405/13/45",
+    "tracing_no": 8
+   },
+   {
+    "period_end": "1405/06/31 ",
+    "tracing_no": 9
+   },
+   {
+    "period_end": "\t1405/06/31",
+    "tracing_no": 10
+   },
+   {
+    "period_end": "1405/06/301",
+    "tracing_no": 11
+   },
+   {
+    "period_end": "١٤٠٥/٠٦/٣٠",
+    "tracing_no": 12
+   },
+   {
+    "period_end": "1405/6/31",
+    "tracing_no": 13
+   },
+   {
+    "period_end": "1405/06/31 ",
+    "tracing_no": 14
+   },
+   {
+    "period_end": "1403/12/29",
+    "tracing_no": 15
+   },
+   {
+    "period_end": "0000/01/01",
+    "tracing_no": 16
+   },
+   {
+    "period_end": "\u001c1405/06/31",
+    "tracing_no": 17
+   }
+  ],
+  "seam_ids": [
+   10,
+   14,
+   17
+  ],
+  "text": [
+   {
+    "alias": null,
+    "call": "dated_sql",
+    "out": "(period_end IS NOT NULL AND trim(period_end) GLOB '[0-9][0-9][0-9][0-9]/[0-9][0-9]/[0-9][0-9]')"
+   },
+   {
+    "alias": "",
+    "call": "dated_sql",
+    "out": "(period_end IS NOT NULL AND trim(period_end) GLOB '[0-9][0-9][0-9][0-9]/[0-9][0-9]/[0-9][0-9]')"
+   },
+   {
+    "alias": "fs",
+    "call": "dated_sql",
+    "out": "(fs.period_end IS NOT NULL AND trim(fs.period_end) GLOB '[0-9][0-9][0-9][0-9]/[0-9][0-9]/[0-9][0-9]')"
+   },
+   {
+    "alias": "ms",
+    "call": "dated_sql",
+    "out": "(ms.period_end IS NOT NULL AND trim(ms.period_end) GLOB '[0-9][0-9][0-9][0-9]/[0-9][0-9]/[0-9][0-9]')"
+   },
+   {
+    "alias": null,
+    "call": "undated_sql",
+    "out": "(period_end IS NULL OR trim(period_end) NOT GLOB '[0-9][0-9][0-9][0-9]/[0-9][0-9]/[0-9][0-9]')"
+   },
+   {
+    "alias": "",
+    "call": "undated_sql",
+    "out": "(period_end IS NULL OR trim(period_end) NOT GLOB '[0-9][0-9][0-9][0-9]/[0-9][0-9]/[0-9][0-9]')"
+   },
+   {
+    "alias": "fs",
+    "call": "undated_sql",
+    "out": "(fs.period_end IS NULL OR trim(fs.period_end) NOT GLOB '[0-9][0-9][0-9][0-9]/[0-9][0-9]/[0-9][0-9]')"
+   },
+   {
+    "alias": "ms",
+    "call": "undated_sql",
+    "out": "(ms.period_end IS NULL OR trim(ms.period_end) NOT GLOB '[0-9][0-9][0-9][0-9]/[0-9][0-9]/[0-9][0-9]')"
+   },
+   {
+    "alias": null,
+    "call": "order_expr",
+    "out": "CASE WHEN (period_end IS NOT NULL AND trim(period_end) GLOB '[0-9][0-9][0-9][0-9]/[0-9][0-9]/[0-9][0-9]') THEN 0 ELSE 1 END, period_end DESC"
+   },
+   {
+    "alias": "",
+    "call": "order_expr",
+    "out": "CASE WHEN (period_end IS NOT NULL AND trim(period_end) GLOB '[0-9][0-9][0-9][0-9]/[0-9][0-9]/[0-9][0-9]') THEN 0 ELSE 1 END, period_end DESC"
+   },
+   {
+    "alias": "fs",
+    "call": "order_expr",
+    "out": "CASE WHEN (fs.period_end IS NOT NULL AND trim(fs.period_end) GLOB '[0-9][0-9][0-9][0-9]/[0-9][0-9]/[0-9][0-9]') THEN 0 ELSE 1 END, fs.period_end DESC"
+   },
+   {
+    "alias": "ms",
+    "call": "order_expr",
+    "out": "CASE WHEN (ms.period_end IS NOT NULL AND trim(ms.period_end) GLOB '[0-9][0-9][0-9][0-9]/[0-9][0-9]/[0-9][0-9]') THEN 0 ELSE 1 END, ms.period_end DESC"
+   },
+   {
+    "alias": null,
+    "call": "latest_order_sql",
+    "out": "ORDER BY CASE WHEN (period_end IS NOT NULL AND trim(period_end) GLOB '[0-9][0-9][0-9][0-9]/[0-9][0-9]/[0-9][0-9]') THEN 0 ELSE 1 END, period_end DESC"
+   },
+   {
+    "alias": "",
+    "call": "latest_order_sql",
+    "out": "ORDER BY CASE WHEN (period_end IS NOT NULL AND trim(period_end) GLOB '[0-9][0-9][0-9][0-9]/[0-9][0-9]/[0-9][0-9]') THEN 0 ELSE 1 END, period_end DESC"
+   },
+   {
+    "alias": "fs",
+    "call": "latest_order_sql",
+    "out": "ORDER BY CASE WHEN (fs.period_end IS NOT NULL AND trim(fs.period_end) GLOB '[0-9][0-9][0-9][0-9]/[0-9][0-9]/[0-9][0-9]') THEN 0 ELSE 1 END, fs.period_end DESC"
+   },
+   {
+    "alias": "ms",
+    "call": "latest_order_sql",
+    "out": "ORDER BY CASE WHEN (ms.period_end IS NOT NULL AND trim(ms.period_end) GLOB '[0-9][0-9][0-9][0-9]/[0-9][0-9]/[0-9][0-9]') THEN 0 ELSE 1 END, ms.period_end DESC"
+   },
+   {
+    "alias": null,
+    "call": "DATED_SQL",
+    "out": "(period_end IS NOT NULL AND trim(period_end) GLOB '[0-9][0-9][0-9][0-9]/[0-9][0-9]/[0-9][0-9]')"
+   },
+   {
+    "alias": null,
+    "call": "UNDATED_SQL",
+    "out": "(period_end IS NULL OR trim(period_end) NOT GLOB '[0-9][0-9][0-9][0-9]/[0-9][0-9]/[0-9][0-9]')"
+   },
+   {
+    "alias": null,
+    "call": "VALID_GLOB",
+    "out": "GLOB '[0-9][0-9][0-9][0-9]/[0-9][0-9]/[0-9][0-9]'"
+   }
+  ],
+  "undated_ids": [
+   1,
+   2,
+   3,
+   4,
+   7,
+   10,
+   11,
+   12,
+   13,
+   14,
+   17
+  ]
+ },
  "ym": [
   {
    "in": null,

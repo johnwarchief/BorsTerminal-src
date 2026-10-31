@@ -59,6 +59,25 @@ func digitFold(s string) string {
 
 func isASCIIDigit(c byte) bool { return c >= '0' && c <= '9' }
 
+// pyIsSpace همان مجموعه‌ای است که `pySpace` برایِ `\s`ِ پایتون می‌نویسد
+// (Py_UNICODE_ISSPACE). unicode.IsSpaceِ Go بی‌U+001C..U+001F است، پس پیش‌فرضِ
+// strings.TrimSpace با .strip()ِ پایتون یکی نیست و ردیفِ شاهدش درِ
+// testdata/cases.json (sql.rows id 17) قرمز می‌شود.
+func pyIsSpace(r rune) bool {
+	switch {
+	case r >= '\t' && r <= '\r',
+		r >= 0x1c && r <= 0x1f,
+		r == ' ', r == 0x85, r == 0xa0, r == 0x1680,
+		r >= 0x2000 && r <= 0x200a,
+		r == 0x2028, r == 0x2029, r == 0x202f, r == 0x205f, r == 0x3000:
+		return true
+	}
+	return false
+}
+
+// pyTrim مثلِ str.strip() بی‌آرگومان درِ پایتون.
+func pyTrim(s string) string { return strings.TrimFunc(s, pyIsSpace) }
+
 // Canonicalize پورتِ codal_periods.canonicalize است.
 // تفاوتِ زبانی: RE2 نگاه‌به‌عقب ندارد، پس «(?<!\d)» و «(?!\d)» با بررسیِ بایتِ
 // قبل/بعد انجام می‌شود؛ و مثلِ پایتون، **اولین** تطبیقِ عبورکرده از این دو شرط
@@ -122,7 +141,7 @@ func EffectiveMonths(periodEnd, periodMonths any, title string) (*int, string) {
 	var col *int
 	raw := ""
 	if periodMonths != nil {
-		raw = strings.TrimSpace(pyStr(periodMonths))
+		raw = pyTrim(pyStr(periodMonths))
 	}
 	if raw != "" {
 		if f, err := strconv.ParseFloat(raw, 64); err == nil {
@@ -157,7 +176,7 @@ func IsCanonical(value any) bool {
 	if value == nil {
 		return false
 	}
-	return canonRe.MatchString(strings.TrimSpace(pyStr(value)))
+	return canonRe.MatchString(pyTrim(pyStr(value)))
 }
 
 func IsUndated(value any) bool { return !IsCanonical(value) }
