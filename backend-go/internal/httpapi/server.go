@@ -107,6 +107,10 @@ func New(cfg config.Config, h *db.Handles, m Market, ms Mstat, ch Chart) http.Ha
 		mux.HandleFunc("GET /api/patterns/{symbol}", ch.Patterns)
 		mux.HandleFunc("GET /api/chart-db/{symbol}", ch.ChartDB)
 		mux.HandleFunc("GET /api/fts/{symbol}", ch.FTS)
+		// `/api/fts/config` درِ پایتون متعلق به api/market.py است و *پیش از*
+		// `/api/fts/{symbol}` ثبت می‌شود، پس «config» هیچ‌وقت نماد نیست. Go با
+		// الگویِ عام آن را می‌بلعید؛ این ثبتِ صریح همان ترتیب را بازمی‌گرداند.
+		mux.HandleFunc("GET /api/fts/config", s.notPortedRoute)
 	}
 	mux.HandleFunc("/", s.apiGate)
 	return noCache(mux)
@@ -215,6 +219,12 @@ func (s *Server) knownRoute(method, path string) bool {
 		}
 	}
 	return false
+}
+
+// notPortedRoute مسیرِ فهرستِ پایتون است اما هنوز پورت نشده — همان ۵۰۱ِ apiGate،
+// بی‌اینکه الگویِ عامِ هم‌خانوادۀ آن را ببلعید.
+func (s *Server) notPortedRoute(w http.ResponseWriter, r *http.Request) {
+	NotPorted(w, r.Method+" "+r.URL.Path)
 }
 
 func (s *Server) apiGate(w http.ResponseWriter, r *http.Request) {

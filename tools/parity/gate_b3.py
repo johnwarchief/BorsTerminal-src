@@ -246,6 +246,18 @@ def content_checks(py_url, cases):
     return problems
 
 
+def fts_config_declared(py_url, go_url):
+    """`GET /api/fts/config` مال api/market.py است و در B7 می‌ماند؛ پایتون ۲۰۰
+    می‌دهد و Go ۵۰۱. مسیرهایِ عامِ Go نباید این را «نمادِ config» بخوانند."""
+    py_status, py_body = engine.get_json(py_url + "/api/fts/config")
+    go_status, go_body = engine.get_json(go_url + "/api/fts/config")
+    ok = (go_status == 501 and go_body.get("code") == "NOT_PORTED"
+          and go_body.get("route") == "GET /api/fts/config" and py_status == 200)
+    return ok, {"py": py_status, "go": go_status, "go_code": go_body.get("code"),
+                "go_route": go_body.get("route"),
+                "py_keys": sorted(py_body)[:6] if isinstance(py_body, dict) else []}
+
+
 def chart_declared(py_url, go_url, symbol):
     """پایتون ۲۰۰ (یا بدنهٔ خطای محلی) و Go ۵۰۱ — اندازه‌گیری، نه فرض."""
     py_status, py_body = engine.get_json(py_url + "/api/chart/" +
@@ -462,6 +474,7 @@ def main() -> int:
         chart_ok, chart_meas = (False, {})
         if roles.get("deep"):
             chart_ok, chart_meas = chart_declared(py_url, go_url, roles["deep"])
+        cfg_ok, cfg_meas = fts_config_declared(py_url, go_url)
 
         base.stop(procs)
         go_db_unchanged = base.db_fingerprint(go_db) == db_prints
@@ -480,7 +493,8 @@ def main() -> int:
             "statuses_200_422": statuses_ok, "case_coverage": coverage_ok,
             "cases_not_vacuous": not vacuous,
             "nine_routes_covered": not missing_routes,
-            "chart_501_declared": chart_ok, "cdn_seam_proven": chart_meas.get("cdn_seam_proven", False),
+            "chart_501_declared": chart_ok, "fts_config_501_declared": cfg_ok,
+            "cdn_seam_proven": chart_meas.get("cdn_seam_proven", False),
             "go_read_only": go_db_unchanged, "root_untouched": root_untouched,
             "frozen_copies": frozen_ok,
             "sidecar_untouched": not sidecar_problem,
@@ -520,6 +534,7 @@ def main() -> int:
                          "count_422": sum(1 for p in pairs if p == (422, 422)),
                          "ok": statuses_ok},
             "vacuous": vacuous, "chart_endpoint": chart_meas,
+            "fts_config_endpoint": cfg_meas,
             "checks": checks,
             "measured_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         }

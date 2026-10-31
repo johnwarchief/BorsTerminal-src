@@ -1,5 +1,5 @@
 {
- "commit": "4a872b67",
+ "commit": "32c1bd3d",
  "python": "3.14.7",
  "ports": {
   "py": 8299,
@@ -101,8 +101,8 @@
   "calendar_shared": true
  },
  "python_redirect": {
-  "market": "C:\\Users\\PCMOD\\AppData\\Local\\Temp\\bors-b3-3f3ukx34\\py\\market.db",
-  "user": "C:\\Users\\PCMOD\\AppData\\Local\\Temp\\bors-b3-3f3ukx34\\py\\user.db"
+  "market": "C:\\Users\\PCMOD\\AppData\\Local\\Temp\\bors-b3-cp35dcfq\\py\\market.db",
+  "user": "C:\\Users\\PCMOD\\AppData\\Local\\Temp\\bors-b3-cp35dcfq\\py\\user.db"
  },
  "contract": {
   "passed": 37,
@@ -132,6 +132,16 @@
   "cdn_seam_proven": true,
   "symbol": "سبهان"
  },
+ "fts_config_endpoint": {
+  "py": 200,
+  "go": 501,
+  "go_code": "NOT_PORTED",
+  "go_route": "GET /api/fts/config",
+  "py_keys": [
+   "config",
+   "status"
+  ]
+ },
  "checks": {
   "contract": true,
   "delta_zero": true,
@@ -140,6 +150,7 @@
   "cases_not_vacuous": true,
   "nine_routes_covered": true,
   "chart_501_declared": true,
+  "fts_config_501_declared": true,
   "cdn_seam_proven": true,
   "go_read_only": true,
   "root_untouched": true,
@@ -149,5 +160,5 @@
   "calendar_shared": true,
   "roles_resolved": true
  },
- "measured_at": "2026-10-31T10:53:20Z"
+ "measured_at": "2026-10-31T12:30:09Z"
 }

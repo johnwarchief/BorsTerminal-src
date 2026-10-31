@@ -242,6 +242,34 @@ func TestChartRouteTable(t *testing.T) {
 	}
 }
 
+// TestFtsConfigIsNotSwallowedBySymbolRoute ترتیبِ ثبتِ مسیرها درِ پایتون
+// (api/__init__.py: market پیش از chart) یعنی «config» هرگز نماد نیست.
+func TestFtsConfigIsNotSwallowedBySymbolRoute(t *testing.T) {
+	fake := &fakeChart{}
+	srv := New(config.Config{Addr: "127.0.0.1:8198", DataDir: t.TempDir(), ReadOnly: true, NoLoops: true}, nil, nil, nil, fake)
+	rec := httptest.NewRecorder()
+	srv.ServeHTTP(rec, httptest.NewRequest("GET", "/api/fts/config", nil))
+	if rec.Code != http.StatusNotImplemented {
+		t.Fatalf("status = %d body = %s", rec.Code, rec.Body.String())
+	}
+	if len(fake.called) != 0 {
+		t.Fatalf("the symbol handler answered /api/fts/config: %v", fake.called)
+	}
+	var body map[string]any
+	if err := json.Unmarshal(rec.Body.Bytes(), &body); err != nil {
+		t.Fatal(err)
+	}
+	if body["code"] != "NOT_PORTED" || body["route"] != "GET /api/fts/config" {
+		t.Fatalf("body = %s", rec.Body.String())
+	}
+	// یک نماد واقعی همچنان به هندلر می‌رسد: ثبتِ صریح، الگو را نکشتۀ است.
+	rec = httptest.NewRecorder()
+	srv.ServeHTTP(rec, httptest.NewRequest("GET", "/api/fts/خودرو", nil))
+	if rec.Code != http.StatusOK || len(fake.called) != 1 || fake.called[0] != "fts" {
+		t.Fatalf("symbol route broken: status=%d called=%v", rec.Code, fake.called)
+	}
+}
+
 // TestGetChartStaysNotPorted مسیرِ CDN تا B6 در پایتون می‌ماند.
 func TestGetChartStaysNotPorted(t *testing.T) {
 	fake := &fakeChart{}
