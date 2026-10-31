@@ -1,0 +1,815 @@
+{
+ "eps_row": [
+  {
+   "cells": [
+    "10",
+    "20",
+    "30"
+   ],
+   "in": {
+    "available_periods": 3,
+    "eps_series": [
+     10.0,
+     20.0,
+     30.0
+    ],
+    "period_slots": [
+     "1402",
+     "1403",
+     "1404"
+    ],
+    "years_required": 3
+   },
+   "row": {
+    "available": 3,
+    "cells": [
+     "10",
+     "20",
+     "30"
+    ],
+    "label": "شاخص ۲",
+    "markdown": "| شاخص ۲ | 10 | 20 | 30 |",
+    "periods": [
+     {
+      "missing": false,
+      "value": "10",
+      "year": "1402"
+     },
+     {
+      "missing": false,
+      "value": "20",
+      "year": "1403"
+     },
+     {
+      "missing": false,
+      "value": "30",
+      "year": "1404"
+     }
+    ],
+    "red": false,
+    "required": 3
+   },
+   "slots": [
+    "1402",
+    "1403",
+    "1404"
+   ]
+  },
+  {
+   "cells": [
+    "-",
+    "20",
+    "30"
+   ],
+   "in": {
+    "available_periods": 2,
+    "eps_series": [
+     null,
+     20.0,
+     30.0
+    ],
+    "period_slots": [
+     "1403",
+     "1404"
+    ],
+    "years_required": 3
+   },
+   "row": {
+    "available": 2,
+    "cells": [
+     "-",
+     "20",
+     "30"
+    ],
+    "label": "شاخص ۲ (تنها ۲ دوره موجود است)",
+    "markdown": "|<span style=\"color: red;\">شاخص ۲ (تنها ۲ دوره موجود است)</span>| <span style=\"color: red;\">-</span> | <span style=\"color: red;\">20</span> | <span style=\"color: red;\">30</span>|",
+    "periods": [
+     {
+      "missing": true,
+      "value": "-",
+      "year": "—"
+     },
+     {
+      "missing": false,
+      "value": "20",
+      "year": "1403"
+     },
+     {
+      "missing": false,
+      "value": "30",
+      "year": "1404"
+     }
+    ],
+    "red": true,
+    "required": 3
+   },
+   "slots": [
+    "",
+    "1403",
+    "1404"
+   ]
+  },
+  {
+   "cells": [
+    "-",
+    "-",
+    "-"
+   ],
+   "in": {
+    "eps_series": [],
+    "period_slots": [],
+    "years_required": 3
+   },
+   "row": {
+    "available": 0,
+    "cells": [
+     "-",
+     "-",
+     "-"
+    ],
+    "label": "شاخص ۲",
+    "markdown": "| شاخص ۲ | - | - | - |",
+    "periods": [
+     {
+      "missing": true,
+      "value": "-",
+      "year": "—"
+     },
+     {
+      "missing": true,
+      "value": "-",
+      "year": "—"
+     },
+     {
+      "missing": true,
+      "value": "-",
+      "year": "—"
+     }
+    ],
+    "red": false,
+    "required": 3
+   },
+   "slots": [
+    "",
+    "",
+    ""
+   ]
+  },
+  {
+   "cells": [
+    "-",
+    "-",
+    "1"
+   ],
+   "in": {
+    "eps_series": [
+     1.0
+    ],
+    "fiscal_years": [
+     1402,
+     1404
+    ],
+    "years_required": 3
+   },
+   "row": {
+    "available": 1,
+    "cells": [
+     "-",
+     "-",
+     "1"
+    ],
+    "label": "شاخص ۲ (تنها ۱ دوره موجود است)",
+    "markdown": "|<span style=\"color: red;\">شاخص ۲ (تنها ۱ دوره موجود است)</span>| <span style=\"color: red;\">-</span> | <span style=\"color: red;\">-</span> | <span style=\"color: red;\">1</span>|",
+    "periods": [
+     {
+      "missing": true,
+      "value": "-",
+      "year": "—"
+     },
+     {
+      "missing": true,
+      "value": "-",
+      "year": "1402"
+     },
+     {
+      "missing": false,
+      "value": "1",
+      "year": "1404"
+     }
+    ],
+    "red": true,
+    "required": 3
+   },
+   "slots": [
+    "",
+    "1402",
+    "1404"
+   ]
+  },
+  {
+   "cells": [
+    "-",
+    "-"
+   ],
+   "in": {
+    "eps_series": [
+     null,
+     null
+    ],
+    "period_slots": [
+     "",
+     "1404"
+    ],
+    "years_required": 2
+   },
+   "row": {
+    "available": 0,
+    "cells": [
+     "-",
+     "-"
+    ],
+    "label": "شاخص ۲",
+    "markdown": "| شاخص ۲ | - | - |",
+    "periods": [
+     {
+      "missing": true,
+      "value": "-",
+      "year": "—"
+     },
+     {
+      "missing": true,
+      "value": "-",
+      "year": "1404"
+     }
+    ],
+    "red": false,
+    "required": 2
+   },
+   "slots": [
+    "",
+    "1404"
+   ]
+  },
+  {
+   "cells": [
+    "1,234"
+   ],
+   "in": {
+    "eps_series": [
+     1234.5,
+     67.0
+    ],
+    "period_slots": [
+     "1402"
+    ],
+    "years_required": 1
+   },
+   "row": {
+    "available": 1,
+    "cells": [
+     "1,234"
+    ],
+    "label": "شاخص ۲",
+    "markdown": "| شاخص ۲ | 1,234 |",
+    "periods": [
+     {
+      "missing": false,
+      "value": "1,234",
+      "year": "1402"
+     }
+    ],
+    "red": false,
+    "required": 1
+   },
+   "slots": [
+    "1402"
+   ]
+  }
+ ],
+ "fa": [
+  {
+   "out": "None",
+   "v": null
+  },
+  {
+   "out": "۰",
+   "v": 0
+  },
+  {
+   "out": "۰.۰",
+   "v": 0.0
+  },
+  {
+   "out": "-۱.۰",
+   "v": -1.0
+  },
+  {
+   "out": "۱۲.۵",
+   "v": 12.5
+  },
+  {
+   "out": "۱۲۳۴.۵",
+   "v": 1234.5
+  },
+  {
+   "out": "۱۲۳۴۵۶۷.۸۹۱",
+   "v": 1234567.891
+  },
+  {
+   "out": "۱۰۰۰۰۰۰۰۰۰۰۰۰۰۰۰.۰",
+   "v": 1000000000000000.0
+  },
+  {
+   "out": "۰.۱۲۵",
+   "v": 0.125
+  },
+  {
+   "out": "۱.۰۰۵",
+   "v": 1.005
+  },
+  {
+   "out": "abc",
+   "v": "abc"
+  },
+  {
+   "out": "",
+   "v": ""
+  }
+ ],
+ "ms_series": [
+  {
+   "in": [],
+   "out": []
+  },
+  {
+   "in": [
+    [
+     1404,
+     6,
+     50.0,
+     300.0,
+     200.0,
+     "1404-06-31"
+    ]
+   ],
+   "out": [
+    {
+     "month": 6,
+     "monthly_revenue": 50.0,
+     "period_end": "1404-06-31",
+     "year": 1404,
+     "ytd_revenue": 300.0,
+     "ytd_revenue_prev": 200.0
+    }
+   ]
+  },
+  {
+   "in": [
+    [
+     1404,
+     6,
+     null,
+     null,
+     null,
+     null
+    ]
+   ],
+   "out": [
+    {
+     "month": 6,
+     "monthly_revenue": null,
+     "period_end": null,
+     "year": 1404,
+     "ytd_revenue": null,
+     "ytd_revenue_prev": null
+    }
+   ]
+  },
+  {
+   "in": [
+    [
+     1404,
+     6,
+     "12.5",
+     "0",
+     "",
+     0
+    ]
+   ],
+   "out": [
+    {
+     "month": 6,
+     "monthly_revenue": 12.5,
+     "period_end": 0,
+     "year": 1404,
+     "ytd_revenue": 0.0,
+     "ytd_revenue_prev": null
+    }
+   ]
+  }
+ ],
+ "n": [
+  {
+   "nd": 0,
+   "out": "—",
+   "v": null
+  },
+  {
+   "nd": 1,
+   "out": "—",
+   "v": null
+  },
+  {
+   "nd": 2,
+   "out": "—",
+   "v": null
+  },
+  {
+   "nd": 3,
+   "out": "—",
+   "v": null
+  },
+  {
+   "nd": 4,
+   "out": "—",
+   "v": null
+  },
+  {
+   "nd": 0,
+   "out": "0",
+   "v": 0
+  },
+  {
+   "nd": 1,
+   "out": "0.0",
+   "v": 0
+  },
+  {
+   "nd": 2,
+   "out": "0.00",
+   "v": 0
+  },
+  {
+   "nd": 3,
+   "out": "0.000",
+   "v": 0
+  },
+  {
+   "nd": 4,
+   "out": "0.0000",
+   "v": 0
+  },
+  {
+   "nd": 0,
+   "out": "0",
+   "v": 0.0
+  },
+  {
+   "nd": 1,
+   "out": "0.0",
+   "v": 0.0
+  },
+  {
+   "nd": 2,
+   "out": "0.00",
+   "v": 0.0
+  },
+  {
+   "nd": 3,
+   "out": "0.000",
+   "v": 0.0
+  },
+  {
+   "nd": 4,
+   "out": "0.0000",
+   "v": 0.0
+  },
+  {
+   "nd": 0,
+   "out": "-1",
+   "v": -1.0
+  },
+  {
+   "nd": 1,
+   "out": "-1.0",
+   "v": -1.0
+  },
+  {
+   "nd": 2,
+   "out": "-1.00",
+   "v": -1.0
+  },
+  {
+   "nd": 3,
+   "out": "-1.000",
+   "v": -1.0
+  },
+  {
+   "nd": 4,
+   "out": "-1.0000",
+   "v": -1.0
+  },
+  {
+   "nd": 0,
+   "out": "12",
+   "v": 12.5
+  },
+  {
+   "nd": 1,
+   "out": "12.5",
+   "v": 12.5
+  },
+  {
+   "nd": 2,
+   "out": "12.50",
+   "v": 12.5
+  },
+  {
+   "nd": 3,
+   "out": "12.500",
+   "v": 12.5
+  },
+  {
+   "nd": 4,
+   "out": "12.5000",
+   "v": 12.5
+  },
+  {
+   "nd": 0,
+   "out": "1,234",
+   "v": 1234.5
+  },
+  {
+   "nd": 1,
+   "out": "1,234.5",
+   "v": 1234.5
+  },
+  {
+   "nd": 2,
+   "out": "1,234.50",
+   "v": 1234.5
+  },
+  {
+   "nd": 3,
+   "out": "1,234.500",
+   "v": 1234.5
+  },
+  {
+   "nd": 4,
+   "out": "1,234.5000",
+   "v": 1234.5
+  },
+  {
+   "nd": 0,
+   "out": "1,234,568",
+   "v": 1234567.891
+  },
+  {
+   "nd": 1,
+   "out": "1,234,567.9",
+   "v": 1234567.891
+  },
+  {
+   "nd": 2,
+   "out": "1,234,567.89",
+   "v": 1234567.891
+  },
+  {
+   "nd": 3,
+   "out": "1,234,567.891",
+   "v": 1234567.891
+  },
+  {
+   "nd": 4,
+   "out": "1,234,567.8910",
+   "v": 1234567.891
+  },
+  {
+   "nd": 0,
+   "out": "1,000,000,000,000,000",
+   "v": 1000000000000000.0
+  },
+  {
+   "nd": 1,
+   "out": "1,000,000,000,000,000.0",
+   "v": 1000000000000000.0
+  },
+  {
+   "nd": 2,
+   "out": "1,000,000,000,000,000.00",
+   "v": 1000000000000000.0
+  },
+  {
+   "nd": 3,
+   "out": "1,000,000,000,000,000.000",
+   "v": 1000000000000000.0
+  },
+  {
+   "nd": 4,
+   "out": "1,000,000,000,000,000.0000",
+   "v": 1000000000000000.0
+  },
+  {
+   "nd": 0,
+   "out": "0",
+   "v": 0.125
+  },
+  {
+   "nd": 1,
+   "out": "0.1",
+   "v": 0.125
+  },
+  {
+   "nd": 2,
+   "out": "0.12",
+   "v": 0.125
+  },
+  {
+   "nd": 3,
+   "out": "0.125",
+   "v": 0.125
+  },
+  {
+   "nd": 4,
+   "out": "0.1250",
+   "v": 0.125
+  },
+  {
+   "nd": 0,
+   "out": "1",
+   "v": 1.005
+  },
+  {
+   "nd": 1,
+   "out": "1.0",
+   "v": 1.005
+  },
+  {
+   "nd": 2,
+   "out": "1.00",
+   "v": 1.005
+  },
+  {
+   "nd": 3,
+   "out": "1.005",
+   "v": 1.005
+  },
+  {
+   "nd": 4,
+   "out": "1.0050",
+   "v": 1.005
+  },
+  {
+   "nd": 0,
+   "out": "—",
+   "v": "abc"
+  },
+  {
+   "nd": 1,
+   "out": "—",
+   "v": "abc"
+  },
+  {
+   "nd": 2,
+   "out": "—",
+   "v": "abc"
+  },
+  {
+   "nd": 3,
+   "out": "—",
+   "v": "abc"
+  },
+  {
+   "nd": 4,
+   "out": "—",
+   "v": "abc"
+  },
+  {
+   "nd": 0,
+   "out": "—",
+   "v": ""
+  },
+  {
+   "nd": 1,
+   "out": "—",
+   "v": ""
+  },
+  {
+   "nd": 2,
+   "out": "—",
+   "v": ""
+  },
+  {
+   "nd": 3,
+   "out": "—",
+   "v": ""
+  },
+  {
+   "nd": 4,
+   "out": "—",
+   "v": ""
+  }
+ ],
+ "pct": [
+  {
+   "signed": "—",
+   "unsigned": "—",
+   "v": null
+  },
+  {
+   "signed": "+0.0٪",
+   "unsigned": "0.0٪",
+   "v": 0
+  },
+  {
+   "signed": "+0.0٪",
+   "unsigned": "0.0٪",
+   "v": 0.0
+  },
+  {
+   "signed": "-1.0٪",
+   "unsigned": "-1.0٪",
+   "v": -1.0
+  },
+  {
+   "signed": "+12.5٪",
+   "unsigned": "12.5٪",
+   "v": 12.5
+  },
+  {
+   "signed": "+1234.5٪",
+   "unsigned": "1234.5٪",
+   "v": 1234.5
+  },
+  {
+   "signed": "+1234567.9٪",
+   "unsigned": "1234567.9٪",
+   "v": 1234567.891
+  },
+  {
+   "signed": "+1000000000000000.0٪",
+   "unsigned": "1000000000000000.0٪",
+   "v": 1000000000000000.0
+  },
+  {
+   "signed": "+0.1٪",
+   "unsigned": "0.1٪",
+   "v": 0.125
+  },
+  {
+   "signed": "+1.0٪",
+   "unsigned": "1.0٪",
+   "v": 1.005
+  }
+ ],
+ "state": [
+  {
+   "gap": true,
+   "na": true,
+   "out": "na",
+   "p": true
+  },
+  {
+   "gap": false,
+   "na": true,
+   "out": "na",
+   "p": true
+  },
+  {
+   "gap": true,
+   "na": false,
+   "out": "nodata",
+   "p": true
+  },
+  {
+   "gap": false,
+   "na": false,
+   "out": "pass",
+   "p": true
+  },
+  {
+   "gap": true,
+   "na": true,
+   "out": "na",
+   "p": false
+  },
+  {
+   "gap": false,
+   "na": true,
+   "out": "na",
+   "p": false
+  },
+  {
+   "gap": true,
+   "na": false,
+   "out": "nodata",
+   "p": false
+  },
+  {
+   "gap": false,
+   "na": false,
+   "out": "fail",
+   "p": false
+  }
+ ]
+}

@@ -1,0 +1,5407 @@
+{
+ "annuals": [
+  null,
+  {},
+  {
+   "annual_sales_bt": 0.0,
+   "annual_sales_mrl": 0.0,
+   "basis": "x",
+   "months_used": 6,
+   "reconciled": true,
+   "scale_factor": 2.0
+  },
+  {
+   "annual_sales_bt": 420.0,
+   "annual_sales_mrl": 4200000.0,
+   "basis": " Annualized",
+   "fs_unit": "mrl",
+   "fs_unit_label": "میلیون ریال",
+   "months_used": 9,
+   "reconciled": true,
+   "scale_factor": 1.3333333333333333,
+   "unit_unverified": false
+  },
+  {
+   "annual_sales_bt": 420.0,
+   "annual_sales_mrl": 4200000.0,
+   "basis": "کدال",
+   "months_used": 12,
+   "reconciled": false,
+   "scale_factor": 1.0,
+   "unit_unverified": true
+  }
+ ],
+ "cases": [
+  {
+   "annual": 0,
+   "exempt": false,
+   "gm": 0,
+   "mcap": 0.0,
+   "out": {
+    "available": false,
+    "gap_cause": "annual_sales",
+    "mcap_ht": 0.0,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "potential_threshold": 40.0,
+    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "sales_pass": false,
+    "sales_threshold": 0.33
+   }
+  },
+  {
+   "annual": 0,
+   "exempt": true,
+   "gm": 0,
+   "mcap": 0.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 0,
+   "exempt": false,
+   "gm": 0,
+   "mcap": 1000000000000.0,
+   "out": {
+    "available": false,
+    "gap_cause": "annual_sales",
+    "mcap_ht": 0.1,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "potential_threshold": 40.0,
+    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "sales_pass": false,
+    "sales_threshold": 0.33
+   }
+  },
+  {
+   "annual": 0,
+   "exempt": true,
+   "gm": 0,
+   "mcap": 1000000000000.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 0,
+   "exempt": false,
+   "gm": 0,
+   "mcap": 7500000000000.0,
+   "out": {
+    "available": false,
+    "gap_cause": "annual_sales",
+    "mcap_ht": 0.75,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "potential_threshold": 40.0,
+    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "sales_pass": false,
+    "sales_threshold": 0.33
+   }
+  },
+  {
+   "annual": 0,
+   "exempt": true,
+   "gm": 0,
+   "mcap": 7500000000000.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 0,
+   "exempt": false,
+   "gm": 0,
+   "mcap": 400000000000000.0,
+   "out": {
+    "available": false,
+    "gap_cause": "annual_sales",
+    "mcap_ht": 40.0,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "potential_threshold": 40.0,
+    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "sales_pass": false,
+    "sales_threshold": 0.33
+   }
+  },
+  {
+   "annual": 0,
+   "exempt": true,
+   "gm": 0,
+   "mcap": 400000000000000.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 0,
+   "exempt": false,
+   "gm": 1,
+   "mcap": 0.0,
+   "out": {
+    "available": false,
+    "gap_cause": "annual_sales",
+    "mcap_ht": 0.0,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "potential_threshold": 40.0,
+    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "sales_pass": false,
+    "sales_threshold": 0.33
+   }
+  },
+  {
+   "annual": 0,
+   "exempt": true,
+   "gm": 1,
+   "mcap": 0.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 0,
+   "exempt": false,
+   "gm": 1,
+   "mcap": 1000000000000.0,
+   "out": {
+    "available": false,
+    "gap_cause": "annual_sales",
+    "mcap_ht": 0.1,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "potential_threshold": 40.0,
+    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "sales_pass": false,
+    "sales_threshold": 0.33
+   }
+  },
+  {
+   "annual": 0,
+   "exempt": true,
+   "gm": 1,
+   "mcap": 1000000000000.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 0,
+   "exempt": false,
+   "gm": 1,
+   "mcap": 7500000000000.0,
+   "out": {
+    "available": false,
+    "gap_cause": "annual_sales",
+    "mcap_ht": 0.75,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "potential_threshold": 40.0,
+    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "sales_pass": false,
+    "sales_threshold": 0.33
+   }
+  },
+  {
+   "annual": 0,
+   "exempt": true,
+   "gm": 1,
+   "mcap": 7500000000000.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 0,
+   "exempt": false,
+   "gm": 1,
+   "mcap": 400000000000000.0,
+   "out": {
+    "available": false,
+    "gap_cause": "annual_sales",
+    "mcap_ht": 40.0,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "potential_threshold": 40.0,
+    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "sales_pass": false,
+    "sales_threshold": 0.33
+   }
+  },
+  {
+   "annual": 0,
+   "exempt": true,
+   "gm": 1,
+   "mcap": 400000000000000.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 0,
+   "exempt": false,
+   "gm": 2,
+   "mcap": 0.0,
+   "out": {
+    "available": false,
+    "gap_cause": "annual_sales",
+    "mcap_ht": 0.0,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "potential_threshold": 40.0,
+    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "sales_pass": false,
+    "sales_threshold": 0.33
+   }
+  },
+  {
+   "annual": 0,
+   "exempt": true,
+   "gm": 2,
+   "mcap": 0.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 0,
+   "exempt": false,
+   "gm": 2,
+   "mcap": 1000000000000.0,
+   "out": {
+    "available": false,
+    "gap_cause": "annual_sales",
+    "mcap_ht": 0.1,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "potential_threshold": 40.0,
+    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "sales_pass": false,
+    "sales_threshold": 0.33
+   }
+  },
+  {
+   "annual": 0,
+   "exempt": true,
+   "gm": 2,
+   "mcap": 1000000000000.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 0,
+   "exempt": false,
+   "gm": 2,
+   "mcap": 7500000000000.0,
+   "out": {
+    "available": false,
+    "gap_cause": "annual_sales",
+    "mcap_ht": 0.75,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "potential_threshold": 40.0,
+    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "sales_pass": false,
+    "sales_threshold": 0.33
+   }
+  },
+  {
+   "annual": 0,
+   "exempt": true,
+   "gm": 2,
+   "mcap": 7500000000000.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 0,
+   "exempt": false,
+   "gm": 2,
+   "mcap": 400000000000000.0,
+   "out": {
+    "available": false,
+    "gap_cause": "annual_sales",
+    "mcap_ht": 40.0,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "potential_threshold": 40.0,
+    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "sales_pass": false,
+    "sales_threshold": 0.33
+   }
+  },
+  {
+   "annual": 0,
+   "exempt": true,
+   "gm": 2,
+   "mcap": 400000000000000.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 0,
+   "exempt": false,
+   "gm": 3,
+   "mcap": 0.0,
+   "out": {
+    "available": false,
+    "gap_cause": "annual_sales",
+    "mcap_ht": 0.0,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "potential_threshold": 40.0,
+    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "sales_pass": false,
+    "sales_threshold": 0.33
+   }
+  },
+  {
+   "annual": 0,
+   "exempt": true,
+   "gm": 3,
+   "mcap": 0.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 0,
+   "exempt": false,
+   "gm": 3,
+   "mcap": 1000000000000.0,
+   "out": {
+    "available": false,
+    "gap_cause": "annual_sales",
+    "mcap_ht": 0.1,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "potential_threshold": 40.0,
+    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "sales_pass": false,
+    "sales_threshold": 0.33
+   }
+  },
+  {
+   "annual": 0,
+   "exempt": true,
+   "gm": 3,
+   "mcap": 1000000000000.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 0,
+   "exempt": false,
+   "gm": 3,
+   "mcap": 7500000000000.0,
+   "out": {
+    "available": false,
+    "gap_cause": "annual_sales",
+    "mcap_ht": 0.75,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "potential_threshold": 40.0,
+    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "sales_pass": false,
+    "sales_threshold": 0.33
+   }
+  },
+  {
+   "annual": 0,
+   "exempt": true,
+   "gm": 3,
+   "mcap": 7500000000000.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 0,
+   "exempt": false,
+   "gm": 3,
+   "mcap": 400000000000000.0,
+   "out": {
+    "available": false,
+    "gap_cause": "annual_sales",
+    "mcap_ht": 40.0,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "potential_threshold": 40.0,
+    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "sales_pass": false,
+    "sales_threshold": 0.33
+   }
+  },
+  {
+   "annual": 0,
+   "exempt": true,
+   "gm": 3,
+   "mcap": 400000000000000.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 0,
+   "exempt": false,
+   "gm": 4,
+   "mcap": 0.0,
+   "out": {
+    "available": false,
+    "gap_cause": "annual_sales",
+    "mcap_ht": 0.0,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "potential_threshold": 40.0,
+    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "sales_pass": false,
+    "sales_threshold": 0.33
+   }
+  },
+  {
+   "annual": 0,
+   "exempt": true,
+   "gm": 4,
+   "mcap": 0.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 0,
+   "exempt": false,
+   "gm": 4,
+   "mcap": 1000000000000.0,
+   "out": {
+    "available": false,
+    "gap_cause": "annual_sales",
+    "mcap_ht": 0.1,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "potential_threshold": 40.0,
+    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "sales_pass": false,
+    "sales_threshold": 0.33
+   }
+  },
+  {
+   "annual": 0,
+   "exempt": true,
+   "gm": 4,
+   "mcap": 1000000000000.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 0,
+   "exempt": false,
+   "gm": 4,
+   "mcap": 7500000000000.0,
+   "out": {
+    "available": false,
+    "gap_cause": "annual_sales",
+    "mcap_ht": 0.75,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "potential_threshold": 40.0,
+    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "sales_pass": false,
+    "sales_threshold": 0.33
+   }
+  },
+  {
+   "annual": 0,
+   "exempt": true,
+   "gm": 4,
+   "mcap": 7500000000000.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 0,
+   "exempt": false,
+   "gm": 4,
+   "mcap": 400000000000000.0,
+   "out": {
+    "available": false,
+    "gap_cause": "annual_sales",
+    "mcap_ht": 40.0,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "potential_threshold": 40.0,
+    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "sales_pass": false,
+    "sales_threshold": 0.33
+   }
+  },
+  {
+   "annual": 0,
+   "exempt": true,
+   "gm": 4,
+   "mcap": 400000000000000.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 0,
+   "exempt": false,
+   "gm": 5,
+   "mcap": 0.0,
+   "out": {
+    "available": false,
+    "gap_cause": "annual_sales",
+    "mcap_ht": 0.0,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "potential_threshold": 40.0,
+    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "sales_pass": false,
+    "sales_threshold": 0.33
+   }
+  },
+  {
+   "annual": 0,
+   "exempt": true,
+   "gm": 5,
+   "mcap": 0.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 0,
+   "exempt": false,
+   "gm": 5,
+   "mcap": 1000000000000.0,
+   "out": {
+    "available": false,
+    "gap_cause": "annual_sales",
+    "mcap_ht": 0.1,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "potential_threshold": 40.0,
+    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "sales_pass": false,
+    "sales_threshold": 0.33
+   }
+  },
+  {
+   "annual": 0,
+   "exempt": true,
+   "gm": 5,
+   "mcap": 1000000000000.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 0,
+   "exempt": false,
+   "gm": 5,
+   "mcap": 7500000000000.0,
+   "out": {
+    "available": false,
+    "gap_cause": "annual_sales",
+    "mcap_ht": 0.75,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "potential_threshold": 40.0,
+    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "sales_pass": false,
+    "sales_threshold": 0.33
+   }
+  },
+  {
+   "annual": 0,
+   "exempt": true,
+   "gm": 5,
+   "mcap": 7500000000000.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 0,
+   "exempt": false,
+   "gm": 5,
+   "mcap": 400000000000000.0,
+   "out": {
+    "available": false,
+    "gap_cause": "annual_sales",
+    "mcap_ht": 40.0,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "potential_threshold": 40.0,
+    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "sales_pass": false,
+    "sales_threshold": 0.33
+   }
+  },
+  {
+   "annual": 0,
+   "exempt": true,
+   "gm": 5,
+   "mcap": 400000000000000.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 0,
+   "exempt": false,
+   "gm": 6,
+   "mcap": 0.0,
+   "out": {
+    "available": false,
+    "gap_cause": "annual_sales",
+    "mcap_ht": 0.0,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "potential_threshold": 40.0,
+    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "sales_pass": false,
+    "sales_threshold": 0.33
+   }
+  },
+  {
+   "annual": 0,
+   "exempt": true,
+   "gm": 6,
+   "mcap": 0.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 0,
+   "exempt": false,
+   "gm": 6,
+   "mcap": 1000000000000.0,
+   "out": {
+    "available": false,
+    "gap_cause": "annual_sales",
+    "mcap_ht": 0.1,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "potential_threshold": 40.0,
+    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "sales_pass": false,
+    "sales_threshold": 0.33
+   }
+  },
+  {
+   "annual": 0,
+   "exempt": true,
+   "gm": 6,
+   "mcap": 1000000000000.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 0,
+   "exempt": false,
+   "gm": 6,
+   "mcap": 7500000000000.0,
+   "out": {
+    "available": false,
+    "gap_cause": "annual_sales",
+    "mcap_ht": 0.75,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "potential_threshold": 40.0,
+    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "sales_pass": false,
+    "sales_threshold": 0.33
+   }
+  },
+  {
+   "annual": 0,
+   "exempt": true,
+   "gm": 6,
+   "mcap": 7500000000000.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 0,
+   "exempt": false,
+   "gm": 6,
+   "mcap": 400000000000000.0,
+   "out": {
+    "available": false,
+    "gap_cause": "annual_sales",
+    "mcap_ht": 40.0,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "potential_threshold": 40.0,
+    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "sales_pass": false,
+    "sales_threshold": 0.33
+   }
+  },
+  {
+   "annual": 0,
+   "exempt": true,
+   "gm": 6,
+   "mcap": 400000000000000.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 1,
+   "exempt": false,
+   "gm": 0,
+   "mcap": 0.0,
+   "out": {
+    "available": false,
+    "gap_cause": "annual_sales",
+    "mcap_ht": 0.0,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "potential_threshold": 40.0,
+    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "sales_pass": false,
+    "sales_threshold": 0.33
+   }
+  },
+  {
+   "annual": 1,
+   "exempt": true,
+   "gm": 0,
+   "mcap": 0.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 1,
+   "exempt": false,
+   "gm": 0,
+   "mcap": 1000000000000.0,
+   "out": {
+    "available": false,
+    "gap_cause": "annual_sales",
+    "mcap_ht": 0.1,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "potential_threshold": 40.0,
+    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "sales_pass": false,
+    "sales_threshold": 0.33
+   }
+  },
+  {
+   "annual": 1,
+   "exempt": true,
+   "gm": 0,
+   "mcap": 1000000000000.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 1,
+   "exempt": false,
+   "gm": 0,
+   "mcap": 7500000000000.0,
+   "out": {
+    "available": false,
+    "gap_cause": "annual_sales",
+    "mcap_ht": 0.75,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "potential_threshold": 40.0,
+    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "sales_pass": false,
+    "sales_threshold": 0.33
+   }
+  },
+  {
+   "annual": 1,
+   "exempt": true,
+   "gm": 0,
+   "mcap": 7500000000000.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 1,
+   "exempt": false,
+   "gm": 0,
+   "mcap": 400000000000000.0,
+   "out": {
+    "available": false,
+    "gap_cause": "annual_sales",
+    "mcap_ht": 40.0,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "potential_threshold": 40.0,
+    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "sales_pass": false,
+    "sales_threshold": 0.33
+   }
+  },
+  {
+   "annual": 1,
+   "exempt": true,
+   "gm": 0,
+   "mcap": 400000000000000.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 1,
+   "exempt": false,
+   "gm": 1,
+   "mcap": 0.0,
+   "out": {
+    "available": false,
+    "gap_cause": "annual_sales",
+    "mcap_ht": 0.0,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "potential_threshold": 40.0,
+    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "sales_pass": false,
+    "sales_threshold": 0.33
+   }
+  },
+  {
+   "annual": 1,
+   "exempt": true,
+   "gm": 1,
+   "mcap": 0.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 1,
+   "exempt": false,
+   "gm": 1,
+   "mcap": 1000000000000.0,
+   "out": {
+    "available": false,
+    "gap_cause": "annual_sales",
+    "mcap_ht": 0.1,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "potential_threshold": 40.0,
+    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "sales_pass": false,
+    "sales_threshold": 0.33
+   }
+  },
+  {
+   "annual": 1,
+   "exempt": true,
+   "gm": 1,
+   "mcap": 1000000000000.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 1,
+   "exempt": false,
+   "gm": 1,
+   "mcap": 7500000000000.0,
+   "out": {
+    "available": false,
+    "gap_cause": "annual_sales",
+    "mcap_ht": 0.75,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "potential_threshold": 40.0,
+    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "sales_pass": false,
+    "sales_threshold": 0.33
+   }
+  },
+  {
+   "annual": 1,
+   "exempt": true,
+   "gm": 1,
+   "mcap": 7500000000000.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 1,
+   "exempt": false,
+   "gm": 1,
+   "mcap": 400000000000000.0,
+   "out": {
+    "available": false,
+    "gap_cause": "annual_sales",
+    "mcap_ht": 40.0,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "potential_threshold": 40.0,
+    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "sales_pass": false,
+    "sales_threshold": 0.33
+   }
+  },
+  {
+   "annual": 1,
+   "exempt": true,
+   "gm": 1,
+   "mcap": 400000000000000.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 1,
+   "exempt": false,
+   "gm": 2,
+   "mcap": 0.0,
+   "out": {
+    "available": false,
+    "gap_cause": "annual_sales",
+    "mcap_ht": 0.0,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "potential_threshold": 40.0,
+    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "sales_pass": false,
+    "sales_threshold": 0.33
+   }
+  },
+  {
+   "annual": 1,
+   "exempt": true,
+   "gm": 2,
+   "mcap": 0.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 1,
+   "exempt": false,
+   "gm": 2,
+   "mcap": 1000000000000.0,
+   "out": {
+    "available": false,
+    "gap_cause": "annual_sales",
+    "mcap_ht": 0.1,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "potential_threshold": 40.0,
+    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "sales_pass": false,
+    "sales_threshold": 0.33
+   }
+  },
+  {
+   "annual": 1,
+   "exempt": true,
+   "gm": 2,
+   "mcap": 1000000000000.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 1,
+   "exempt": false,
+   "gm": 2,
+   "mcap": 7500000000000.0,
+   "out": {
+    "available": false,
+    "gap_cause": "annual_sales",
+    "mcap_ht": 0.75,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "potential_threshold": 40.0,
+    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "sales_pass": false,
+    "sales_threshold": 0.33
+   }
+  },
+  {
+   "annual": 1,
+   "exempt": true,
+   "gm": 2,
+   "mcap": 7500000000000.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 1,
+   "exempt": false,
+   "gm": 2,
+   "mcap": 400000000000000.0,
+   "out": {
+    "available": false,
+    "gap_cause": "annual_sales",
+    "mcap_ht": 40.0,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "potential_threshold": 40.0,
+    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "sales_pass": false,
+    "sales_threshold": 0.33
+   }
+  },
+  {
+   "annual": 1,
+   "exempt": true,
+   "gm": 2,
+   "mcap": 400000000000000.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 1,
+   "exempt": false,
+   "gm": 3,
+   "mcap": 0.0,
+   "out": {
+    "available": false,
+    "gap_cause": "annual_sales",
+    "mcap_ht": 0.0,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "potential_threshold": 40.0,
+    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "sales_pass": false,
+    "sales_threshold": 0.33
+   }
+  },
+  {
+   "annual": 1,
+   "exempt": true,
+   "gm": 3,
+   "mcap": 0.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 1,
+   "exempt": false,
+   "gm": 3,
+   "mcap": 1000000000000.0,
+   "out": {
+    "available": false,
+    "gap_cause": "annual_sales",
+    "mcap_ht": 0.1,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "potential_threshold": 40.0,
+    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "sales_pass": false,
+    "sales_threshold": 0.33
+   }
+  },
+  {
+   "annual": 1,
+   "exempt": true,
+   "gm": 3,
+   "mcap": 1000000000000.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 1,
+   "exempt": false,
+   "gm": 3,
+   "mcap": 7500000000000.0,
+   "out": {
+    "available": false,
+    "gap_cause": "annual_sales",
+    "mcap_ht": 0.75,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "potential_threshold": 40.0,
+    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "sales_pass": false,
+    "sales_threshold": 0.33
+   }
+  },
+  {
+   "annual": 1,
+   "exempt": true,
+   "gm": 3,
+   "mcap": 7500000000000.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 1,
+   "exempt": false,
+   "gm": 3,
+   "mcap": 400000000000000.0,
+   "out": {
+    "available": false,
+    "gap_cause": "annual_sales",
+    "mcap_ht": 40.0,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "potential_threshold": 40.0,
+    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "sales_pass": false,
+    "sales_threshold": 0.33
+   }
+  },
+  {
+   "annual": 1,
+   "exempt": true,
+   "gm": 3,
+   "mcap": 400000000000000.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 1,
+   "exempt": false,
+   "gm": 4,
+   "mcap": 0.0,
+   "out": {
+    "available": false,
+    "gap_cause": "annual_sales",
+    "mcap_ht": 0.0,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "potential_threshold": 40.0,
+    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "sales_pass": false,
+    "sales_threshold": 0.33
+   }
+  },
+  {
+   "annual": 1,
+   "exempt": true,
+   "gm": 4,
+   "mcap": 0.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 1,
+   "exempt": false,
+   "gm": 4,
+   "mcap": 1000000000000.0,
+   "out": {
+    "available": false,
+    "gap_cause": "annual_sales",
+    "mcap_ht": 0.1,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "potential_threshold": 40.0,
+    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "sales_pass": false,
+    "sales_threshold": 0.33
+   }
+  },
+  {
+   "annual": 1,
+   "exempt": true,
+   "gm": 4,
+   "mcap": 1000000000000.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 1,
+   "exempt": false,
+   "gm": 4,
+   "mcap": 7500000000000.0,
+   "out": {
+    "available": false,
+    "gap_cause": "annual_sales",
+    "mcap_ht": 0.75,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "potential_threshold": 40.0,
+    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "sales_pass": false,
+    "sales_threshold": 0.33
+   }
+  },
+  {
+   "annual": 1,
+   "exempt": true,
+   "gm": 4,
+   "mcap": 7500000000000.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 1,
+   "exempt": false,
+   "gm": 4,
+   "mcap": 400000000000000.0,
+   "out": {
+    "available": false,
+    "gap_cause": "annual_sales",
+    "mcap_ht": 40.0,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "potential_threshold": 40.0,
+    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "sales_pass": false,
+    "sales_threshold": 0.33
+   }
+  },
+  {
+   "annual": 1,
+   "exempt": true,
+   "gm": 4,
+   "mcap": 400000000000000.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 1,
+   "exempt": false,
+   "gm": 5,
+   "mcap": 0.0,
+   "out": {
+    "available": false,
+    "gap_cause": "annual_sales",
+    "mcap_ht": 0.0,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "potential_threshold": 40.0,
+    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "sales_pass": false,
+    "sales_threshold": 0.33
+   }
+  },
+  {
+   "annual": 1,
+   "exempt": true,
+   "gm": 5,
+   "mcap": 0.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 1,
+   "exempt": false,
+   "gm": 5,
+   "mcap": 1000000000000.0,
+   "out": {
+    "available": false,
+    "gap_cause": "annual_sales",
+    "mcap_ht": 0.1,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "potential_threshold": 40.0,
+    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "sales_pass": false,
+    "sales_threshold": 0.33
+   }
+  },
+  {
+   "annual": 1,
+   "exempt": true,
+   "gm": 5,
+   "mcap": 1000000000000.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 1,
+   "exempt": false,
+   "gm": 5,
+   "mcap": 7500000000000.0,
+   "out": {
+    "available": false,
+    "gap_cause": "annual_sales",
+    "mcap_ht": 0.75,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "potential_threshold": 40.0,
+    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "sales_pass": false,
+    "sales_threshold": 0.33
+   }
+  },
+  {
+   "annual": 1,
+   "exempt": true,
+   "gm": 5,
+   "mcap": 7500000000000.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 1,
+   "exempt": false,
+   "gm": 5,
+   "mcap": 400000000000000.0,
+   "out": {
+    "available": false,
+    "gap_cause": "annual_sales",
+    "mcap_ht": 40.0,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "potential_threshold": 40.0,
+    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "sales_pass": false,
+    "sales_threshold": 0.33
+   }
+  },
+  {
+   "annual": 1,
+   "exempt": true,
+   "gm": 5,
+   "mcap": 400000000000000.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 1,
+   "exempt": false,
+   "gm": 6,
+   "mcap": 0.0,
+   "out": {
+    "available": false,
+    "gap_cause": "annual_sales",
+    "mcap_ht": 0.0,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "potential_threshold": 40.0,
+    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "sales_pass": false,
+    "sales_threshold": 0.33
+   }
+  },
+  {
+   "annual": 1,
+   "exempt": true,
+   "gm": 6,
+   "mcap": 0.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 1,
+   "exempt": false,
+   "gm": 6,
+   "mcap": 1000000000000.0,
+   "out": {
+    "available": false,
+    "gap_cause": "annual_sales",
+    "mcap_ht": 0.1,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "potential_threshold": 40.0,
+    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "sales_pass": false,
+    "sales_threshold": 0.33
+   }
+  },
+  {
+   "annual": 1,
+   "exempt": true,
+   "gm": 6,
+   "mcap": 1000000000000.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 1,
+   "exempt": false,
+   "gm": 6,
+   "mcap": 7500000000000.0,
+   "out": {
+    "available": false,
+    "gap_cause": "annual_sales",
+    "mcap_ht": 0.75,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "potential_threshold": 40.0,
+    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "sales_pass": false,
+    "sales_threshold": 0.33
+   }
+  },
+  {
+   "annual": 1,
+   "exempt": true,
+   "gm": 6,
+   "mcap": 7500000000000.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 1,
+   "exempt": false,
+   "gm": 6,
+   "mcap": 400000000000000.0,
+   "out": {
+    "available": false,
+    "gap_cause": "annual_sales",
+    "mcap_ht": 40.0,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "potential_threshold": 40.0,
+    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "sales_pass": false,
+    "sales_threshold": 0.33
+   }
+  },
+  {
+   "annual": 1,
+   "exempt": true,
+   "gm": 6,
+   "mcap": 400000000000000.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 2,
+   "exempt": false,
+   "gm": 0,
+   "mcap": 0.0,
+   "out": {
+    "available": false,
+    "gap_cause": "annual_sales",
+    "mcap_ht": 0.0,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "potential_threshold": 40.0,
+    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "sales_pass": false,
+    "sales_threshold": 0.33
+   }
+  },
+  {
+   "annual": 2,
+   "exempt": true,
+   "gm": 0,
+   "mcap": 0.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 2,
+   "exempt": false,
+   "gm": 0,
+   "mcap": 1000000000000.0,
+   "out": {
+    "available": false,
+    "gap_cause": "annual_sales",
+    "mcap_ht": 0.1,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "potential_threshold": 40.0,
+    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "sales_pass": false,
+    "sales_threshold": 0.33
+   }
+  },
+  {
+   "annual": 2,
+   "exempt": true,
+   "gm": 0,
+   "mcap": 1000000000000.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 2,
+   "exempt": false,
+   "gm": 0,
+   "mcap": 7500000000000.0,
+   "out": {
+    "available": false,
+    "gap_cause": "annual_sales",
+    "mcap_ht": 0.75,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "potential_threshold": 40.0,
+    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "sales_pass": false,
+    "sales_threshold": 0.33
+   }
+  },
+  {
+   "annual": 2,
+   "exempt": true,
+   "gm": 0,
+   "mcap": 7500000000000.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 2,
+   "exempt": false,
+   "gm": 0,
+   "mcap": 400000000000000.0,
+   "out": {
+    "available": false,
+    "gap_cause": "annual_sales",
+    "mcap_ht": 40.0,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "potential_threshold": 40.0,
+    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "sales_pass": false,
+    "sales_threshold": 0.33
+   }
+  },
+  {
+   "annual": 2,
+   "exempt": true,
+   "gm": 0,
+   "mcap": 400000000000000.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 2,
+   "exempt": false,
+   "gm": 1,
+   "mcap": 0.0,
+   "out": {
+    "available": false,
+    "gap_cause": "annual_sales",
+    "mcap_ht": 0.0,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "potential_threshold": 40.0,
+    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "sales_pass": false,
+    "sales_threshold": 0.33
+   }
+  },
+  {
+   "annual": 2,
+   "exempt": true,
+   "gm": 1,
+   "mcap": 0.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 2,
+   "exempt": false,
+   "gm": 1,
+   "mcap": 1000000000000.0,
+   "out": {
+    "available": false,
+    "gap_cause": "annual_sales",
+    "mcap_ht": 0.1,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "potential_threshold": 40.0,
+    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "sales_pass": false,
+    "sales_threshold": 0.33
+   }
+  },
+  {
+   "annual": 2,
+   "exempt": true,
+   "gm": 1,
+   "mcap": 1000000000000.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 2,
+   "exempt": false,
+   "gm": 1,
+   "mcap": 7500000000000.0,
+   "out": {
+    "available": false,
+    "gap_cause": "annual_sales",
+    "mcap_ht": 0.75,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "potential_threshold": 40.0,
+    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "sales_pass": false,
+    "sales_threshold": 0.33
+   }
+  },
+  {
+   "annual": 2,
+   "exempt": true,
+   "gm": 1,
+   "mcap": 7500000000000.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 2,
+   "exempt": false,
+   "gm": 1,
+   "mcap": 400000000000000.0,
+   "out": {
+    "available": false,
+    "gap_cause": "annual_sales",
+    "mcap_ht": 40.0,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "potential_threshold": 40.0,
+    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "sales_pass": false,
+    "sales_threshold": 0.33
+   }
+  },
+  {
+   "annual": 2,
+   "exempt": true,
+   "gm": 1,
+   "mcap": 400000000000000.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 2,
+   "exempt": false,
+   "gm": 2,
+   "mcap": 0.0,
+   "out": {
+    "available": false,
+    "gap_cause": "annual_sales",
+    "mcap_ht": 0.0,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "potential_threshold": 40.0,
+    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "sales_pass": false,
+    "sales_threshold": 0.33
+   }
+  },
+  {
+   "annual": 2,
+   "exempt": true,
+   "gm": 2,
+   "mcap": 0.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 2,
+   "exempt": false,
+   "gm": 2,
+   "mcap": 1000000000000.0,
+   "out": {
+    "available": false,
+    "gap_cause": "annual_sales",
+    "mcap_ht": 0.1,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "potential_threshold": 40.0,
+    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "sales_pass": false,
+    "sales_threshold": 0.33
+   }
+  },
+  {
+   "annual": 2,
+   "exempt": true,
+   "gm": 2,
+   "mcap": 1000000000000.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 2,
+   "exempt": false,
+   "gm": 2,
+   "mcap": 7500000000000.0,
+   "out": {
+    "available": false,
+    "gap_cause": "annual_sales",
+    "mcap_ht": 0.75,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "potential_threshold": 40.0,
+    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "sales_pass": false,
+    "sales_threshold": 0.33
+   }
+  },
+  {
+   "annual": 2,
+   "exempt": true,
+   "gm": 2,
+   "mcap": 7500000000000.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 2,
+   "exempt": false,
+   "gm": 2,
+   "mcap": 400000000000000.0,
+   "out": {
+    "available": false,
+    "gap_cause": "annual_sales",
+    "mcap_ht": 40.0,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "potential_threshold": 40.0,
+    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "sales_pass": false,
+    "sales_threshold": 0.33
+   }
+  },
+  {
+   "annual": 2,
+   "exempt": true,
+   "gm": 2,
+   "mcap": 400000000000000.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 2,
+   "exempt": false,
+   "gm": 3,
+   "mcap": 0.0,
+   "out": {
+    "available": false,
+    "gap_cause": "annual_sales",
+    "mcap_ht": 0.0,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "potential_threshold": 40.0,
+    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "sales_pass": false,
+    "sales_threshold": 0.33
+   }
+  },
+  {
+   "annual": 2,
+   "exempt": true,
+   "gm": 3,
+   "mcap": 0.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 2,
+   "exempt": false,
+   "gm": 3,
+   "mcap": 1000000000000.0,
+   "out": {
+    "available": false,
+    "gap_cause": "annual_sales",
+    "mcap_ht": 0.1,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "potential_threshold": 40.0,
+    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "sales_pass": false,
+    "sales_threshold": 0.33
+   }
+  },
+  {
+   "annual": 2,
+   "exempt": true,
+   "gm": 3,
+   "mcap": 1000000000000.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 2,
+   "exempt": false,
+   "gm": 3,
+   "mcap": 7500000000000.0,
+   "out": {
+    "available": false,
+    "gap_cause": "annual_sales",
+    "mcap_ht": 0.75,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "potential_threshold": 40.0,
+    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "sales_pass": false,
+    "sales_threshold": 0.33
+   }
+  },
+  {
+   "annual": 2,
+   "exempt": true,
+   "gm": 3,
+   "mcap": 7500000000000.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 2,
+   "exempt": false,
+   "gm": 3,
+   "mcap": 400000000000000.0,
+   "out": {
+    "available": false,
+    "gap_cause": "annual_sales",
+    "mcap_ht": 40.0,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "potential_threshold": 40.0,
+    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "sales_pass": false,
+    "sales_threshold": 0.33
+   }
+  },
+  {
+   "annual": 2,
+   "exempt": true,
+   "gm": 3,
+   "mcap": 400000000000000.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 2,
+   "exempt": false,
+   "gm": 4,
+   "mcap": 0.0,
+   "out": {
+    "available": false,
+    "gap_cause": "annual_sales",
+    "mcap_ht": 0.0,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "potential_threshold": 40.0,
+    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "sales_pass": false,
+    "sales_threshold": 0.33
+   }
+  },
+  {
+   "annual": 2,
+   "exempt": true,
+   "gm": 4,
+   "mcap": 0.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 2,
+   "exempt": false,
+   "gm": 4,
+   "mcap": 1000000000000.0,
+   "out": {
+    "available": false,
+    "gap_cause": "annual_sales",
+    "mcap_ht": 0.1,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "potential_threshold": 40.0,
+    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "sales_pass": false,
+    "sales_threshold": 0.33
+   }
+  },
+  {
+   "annual": 2,
+   "exempt": true,
+   "gm": 4,
+   "mcap": 1000000000000.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 2,
+   "exempt": false,
+   "gm": 4,
+   "mcap": 7500000000000.0,
+   "out": {
+    "available": false,
+    "gap_cause": "annual_sales",
+    "mcap_ht": 0.75,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "potential_threshold": 40.0,
+    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "sales_pass": false,
+    "sales_threshold": 0.33
+   }
+  },
+  {
+   "annual": 2,
+   "exempt": true,
+   "gm": 4,
+   "mcap": 7500000000000.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 2,
+   "exempt": false,
+   "gm": 4,
+   "mcap": 400000000000000.0,
+   "out": {
+    "available": false,
+    "gap_cause": "annual_sales",
+    "mcap_ht": 40.0,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "potential_threshold": 40.0,
+    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "sales_pass": false,
+    "sales_threshold": 0.33
+   }
+  },
+  {
+   "annual": 2,
+   "exempt": true,
+   "gm": 4,
+   "mcap": 400000000000000.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 2,
+   "exempt": false,
+   "gm": 5,
+   "mcap": 0.0,
+   "out": {
+    "available": false,
+    "gap_cause": "annual_sales",
+    "mcap_ht": 0.0,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "potential_threshold": 40.0,
+    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "sales_pass": false,
+    "sales_threshold": 0.33
+   }
+  },
+  {
+   "annual": 2,
+   "exempt": true,
+   "gm": 5,
+   "mcap": 0.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 2,
+   "exempt": false,
+   "gm": 5,
+   "mcap": 1000000000000.0,
+   "out": {
+    "available": false,
+    "gap_cause": "annual_sales",
+    "mcap_ht": 0.1,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "potential_threshold": 40.0,
+    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "sales_pass": false,
+    "sales_threshold": 0.33
+   }
+  },
+  {
+   "annual": 2,
+   "exempt": true,
+   "gm": 5,
+   "mcap": 1000000000000.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 2,
+   "exempt": false,
+   "gm": 5,
+   "mcap": 7500000000000.0,
+   "out": {
+    "available": false,
+    "gap_cause": "annual_sales",
+    "mcap_ht": 0.75,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "potential_threshold": 40.0,
+    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "sales_pass": false,
+    "sales_threshold": 0.33
+   }
+  },
+  {
+   "annual": 2,
+   "exempt": true,
+   "gm": 5,
+   "mcap": 7500000000000.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 2,
+   "exempt": false,
+   "gm": 5,
+   "mcap": 400000000000000.0,
+   "out": {
+    "available": false,
+    "gap_cause": "annual_sales",
+    "mcap_ht": 40.0,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "potential_threshold": 40.0,
+    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "sales_pass": false,
+    "sales_threshold": 0.33
+   }
+  },
+  {
+   "annual": 2,
+   "exempt": true,
+   "gm": 5,
+   "mcap": 400000000000000.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 2,
+   "exempt": false,
+   "gm": 6,
+   "mcap": 0.0,
+   "out": {
+    "available": false,
+    "gap_cause": "annual_sales",
+    "mcap_ht": 0.0,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "potential_threshold": 40.0,
+    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "sales_pass": false,
+    "sales_threshold": 0.33
+   }
+  },
+  {
+   "annual": 2,
+   "exempt": true,
+   "gm": 6,
+   "mcap": 0.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 2,
+   "exempt": false,
+   "gm": 6,
+   "mcap": 1000000000000.0,
+   "out": {
+    "available": false,
+    "gap_cause": "annual_sales",
+    "mcap_ht": 0.1,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "potential_threshold": 40.0,
+    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "sales_pass": false,
+    "sales_threshold": 0.33
+   }
+  },
+  {
+   "annual": 2,
+   "exempt": true,
+   "gm": 6,
+   "mcap": 1000000000000.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 2,
+   "exempt": false,
+   "gm": 6,
+   "mcap": 7500000000000.0,
+   "out": {
+    "available": false,
+    "gap_cause": "annual_sales",
+    "mcap_ht": 0.75,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "potential_threshold": 40.0,
+    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "sales_pass": false,
+    "sales_threshold": 0.33
+   }
+  },
+  {
+   "annual": 2,
+   "exempt": true,
+   "gm": 6,
+   "mcap": 7500000000000.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 2,
+   "exempt": false,
+   "gm": 6,
+   "mcap": 400000000000000.0,
+   "out": {
+    "available": false,
+    "gap_cause": "annual_sales",
+    "mcap_ht": 40.0,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "potential_threshold": 40.0,
+    "reason": "فروش سالانۀ راستی‌آزمایی‌شدۀ این نماد در دسترس نیست (گزارش ماهانه یا صورت مالیِ واحددار نداریم)؛ نسبت فروش به ارزش بازار سنجیده نمی‌شود — این «رد» نیست، «سنجیده نشد» است.",
+    "sales_pass": false,
+    "sales_threshold": 0.33
+   }
+  },
+  {
+   "annual": 2,
+   "exempt": true,
+   "gm": 6,
+   "mcap": 400000000000000.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 3,
+   "exempt": false,
+   "gm": 0,
+   "mcap": 0.0,
+   "out": {
+    "available": false,
+    "gap_cause": "market_cap",
+    "mcap_ht": 0.0,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "potential_threshold": 40.0,
+    "reason": "دادهٔ ارزش بازار یا فروش سالانه برای محاسبه نسبت در دسترس نیست.",
+    "sales_pass": false,
+    "sales_threshold": 0.33
+   }
+  },
+  {
+   "annual": 3,
+   "exempt": true,
+   "gm": 0,
+   "mcap": 0.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 3,
+   "exempt": false,
+   "gm": 0,
+   "mcap": 1000000000000.0,
+   "out": {
+    "annual_sales_bt": 420.0,
+    "annualize_basis": " Annualized",
+    "available": true,
+    "est_gross_profit_bt": null,
+    "fs_unit": "mrl",
+    "fs_unit_label": "میلیون ریال",
+    "gate": "OR",
+    "margin_basis": "gross_margin",
+    "margin_label": "حاشیهٔ سود ناخالص",
+    "margin_used_pct": null,
+    "mcap_ht": 0.1,
+    "months_used": 9,
+    "pass": true,
+    "potential_pass": false,
+    "potential_pct": null,
+    "potential_threshold": 40.0,
+    "reason": "هیچ حاشیه‌ای (ناخالص یا جایگزین) برای این طبقه محاسبه نشد.",
+    "reconciled": true,
+    "rule_ref": "F-04",
+    "sales_pass": true,
+    "sales_threshold": 0.33,
+    "sales_to_mcap": 4.2,
+    "scale_factor": 1.3333333333333333,
+    "unit_unverified": false
+   }
+  },
+  {
+   "annual": 3,
+   "exempt": true,
+   "gm": 0,
+   "mcap": 1000000000000.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 3,
+   "exempt": false,
+   "gm": 0,
+   "mcap": 7500000000000.0,
+   "out": {
+    "annual_sales_bt": 420.0,
+    "annualize_basis": " Annualized",
+    "available": true,
+    "est_gross_profit_bt": null,
+    "fs_unit": "mrl",
+    "fs_unit_label": "میلیون ریال",
+    "gate": "OR",
+    "margin_basis": "gross_margin",
+    "margin_label": "حاشیهٔ سود ناخالص",
+    "margin_used_pct": null,
+    "mcap_ht": 0.75,
+    "months_used": 9,
+    "pass": true,
+    "potential_pass": false,
+    "potential_pct": null,
+    "potential_threshold": 40.0,
+    "reason": "هیچ حاشیه‌ای (ناخالص یا جایگزین) برای این طبقه محاسبه نشد.",
+    "reconciled": true,
+    "rule_ref": "F-04",
+    "sales_pass": true,
+    "sales_threshold": 0.33,
+    "sales_to_mcap": 0.56,
+    "scale_factor": 1.3333333333333333,
+    "unit_unverified": false
+   }
+  },
+  {
+   "annual": 3,
+   "exempt": true,
+   "gm": 0,
+   "mcap": 7500000000000.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 3,
+   "exempt": false,
+   "gm": 0,
+   "mcap": 400000000000000.0,
+   "out": {
+    "annual_sales_bt": 420.0,
+    "annualize_basis": " Annualized",
+    "available": true,
+    "est_gross_profit_bt": null,
+    "fs_unit": "mrl",
+    "fs_unit_label": "میلیون ریال",
+    "gate": "OR",
+    "margin_basis": "gross_margin",
+    "margin_label": "حاشیهٔ سود ناخالص",
+    "margin_used_pct": null,
+    "mcap_ht": 40.0,
+    "months_used": 9,
+    "pass": false,
+    "potential_pass": false,
+    "potential_pct": null,
+    "potential_threshold": 40.0,
+    "reason": "هیچ حاشیه‌ای (ناخالص یا جایگزین) برای این طبقه محاسبه نشد.",
+    "reconciled": true,
+    "rule_ref": "F-04",
+    "sales_pass": false,
+    "sales_threshold": 0.33,
+    "sales_to_mcap": 0.01,
+    "scale_factor": 1.3333333333333333,
+    "unit_unverified": false
+   }
+  },
+  {
+   "annual": 3,
+   "exempt": true,
+   "gm": 0,
+   "mcap": 400000000000000.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 3,
+   "exempt": false,
+   "gm": 1,
+   "mcap": 0.0,
+   "out": {
+    "available": false,
+    "gap_cause": "market_cap",
+    "mcap_ht": 0.0,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "potential_threshold": 40.0,
+    "reason": "دادهٔ ارزش بازار یا فروش سالانه برای محاسبه نسبت در دسترس نیست.",
+    "sales_pass": false,
+    "sales_threshold": 0.33
+   }
+  },
+  {
+   "annual": 3,
+   "exempt": true,
+   "gm": 1,
+   "mcap": 0.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 3,
+   "exempt": false,
+   "gm": 1,
+   "mcap": 1000000000000.0,
+   "out": {
+    "annual_sales_bt": 420.0,
+    "annualize_basis": " Annualized",
+    "available": true,
+    "est_gross_profit_bt": null,
+    "fs_unit": "mrl",
+    "fs_unit_label": "میلیون ریال",
+    "gate": "OR",
+    "margin_basis": "gross_margin",
+    "margin_label": "حاشیهٔ سود ناخالص",
+    "margin_used_pct": null,
+    "mcap_ht": 0.1,
+    "months_used": 9,
+    "pass": true,
+    "potential_pass": false,
+    "potential_pct": null,
+    "potential_threshold": 40.0,
+    "reason": "هیچ حاشیه‌ای (ناخالص یا جایگزین) برای این طبقه محاسبه نشد.",
+    "reconciled": true,
+    "rule_ref": "F-04",
+    "sales_pass": true,
+    "sales_threshold": 0.33,
+    "sales_to_mcap": 4.2,
+    "scale_factor": 1.3333333333333333,
+    "unit_unverified": false
+   }
+  },
+  {
+   "annual": 3,
+   "exempt": true,
+   "gm": 1,
+   "mcap": 1000000000000.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 3,
+   "exempt": false,
+   "gm": 1,
+   "mcap": 7500000000000.0,
+   "out": {
+    "annual_sales_bt": 420.0,
+    "annualize_basis": " Annualized",
+    "available": true,
+    "est_gross_profit_bt": null,
+    "fs_unit": "mrl",
+    "fs_unit_label": "میلیون ریال",
+    "gate": "OR",
+    "margin_basis": "gross_margin",
+    "margin_label": "حاشیهٔ سود ناخالص",
+    "margin_used_pct": null,
+    "mcap_ht": 0.75,
+    "months_used": 9,
+    "pass": true,
+    "potential_pass": false,
+    "potential_pct": null,
+    "potential_threshold": 40.0,
+    "reason": "هیچ حاشیه‌ای (ناخالص یا جایگزین) برای این طبقه محاسبه نشد.",
+    "reconciled": true,
+    "rule_ref": "F-04",
+    "sales_pass": true,
+    "sales_threshold": 0.33,
+    "sales_to_mcap": 0.56,
+    "scale_factor": 1.3333333333333333,
+    "unit_unverified": false
+   }
+  },
+  {
+   "annual": 3,
+   "exempt": true,
+   "gm": 1,
+   "mcap": 7500000000000.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 3,
+   "exempt": false,
+   "gm": 1,
+   "mcap": 400000000000000.0,
+   "out": {
+    "annual_sales_bt": 420.0,
+    "annualize_basis": " Annualized",
+    "available": true,
+    "est_gross_profit_bt": null,
+    "fs_unit": "mrl",
+    "fs_unit_label": "میلیون ریال",
+    "gate": "OR",
+    "margin_basis": "gross_margin",
+    "margin_label": "حاشیهٔ سود ناخالص",
+    "margin_used_pct": null,
+    "mcap_ht": 40.0,
+    "months_used": 9,
+    "pass": false,
+    "potential_pass": false,
+    "potential_pct": null,
+    "potential_threshold": 40.0,
+    "reason": "هیچ حاشیه‌ای (ناخالص یا جایگزین) برای این طبقه محاسبه نشد.",
+    "reconciled": true,
+    "rule_ref": "F-04",
+    "sales_pass": false,
+    "sales_threshold": 0.33,
+    "sales_to_mcap": 0.01,
+    "scale_factor": 1.3333333333333333,
+    "unit_unverified": false
+   }
+  },
+  {
+   "annual": 3,
+   "exempt": true,
+   "gm": 1,
+   "mcap": 400000000000000.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 3,
+   "exempt": false,
+   "gm": 2,
+   "mcap": 0.0,
+   "out": {
+    "available": false,
+    "gap_cause": "market_cap",
+    "mcap_ht": 0.0,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "potential_threshold": 40.0,
+    "reason": "دادهٔ ارزش بازار یا فروش سالانه برای محاسبه نسبت در دسترس نیست.",
+    "sales_pass": false,
+    "sales_threshold": 0.33
+   }
+  },
+  {
+   "annual": 3,
+   "exempt": true,
+   "gm": 2,
+   "mcap": 0.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 3,
+   "exempt": false,
+   "gm": 2,
+   "mcap": 1000000000000.0,
+   "out": {
+    "annual_sales_bt": 420.0,
+    "annualize_basis": " Annualized",
+    "available": true,
+    "est_gross_profit_bt": null,
+    "fs_unit": "mrl",
+    "fs_unit_label": "میلیون ریال",
+    "gate": "OR",
+    "margin_basis": "gross_margin",
+    "margin_label": "حاشیهٔ سود ناخالص",
+    "margin_used_pct": null,
+    "mcap_ht": 0.1,
+    "months_used": 9,
+    "pass": true,
+    "potential_pass": false,
+    "potential_pct": null,
+    "potential_threshold": 40.0,
+    "reason": "هیچ حاشیه‌ای (ناخالص یا جایگزین) برای این طبقه محاسبه نشد.",
+    "reconciled": true,
+    "rule_ref": "F-04",
+    "sales_pass": true,
+    "sales_threshold": 0.33,
+    "sales_to_mcap": 4.2,
+    "scale_factor": 1.3333333333333333,
+    "unit_unverified": false
+   }
+  },
+  {
+   "annual": 3,
+   "exempt": true,
+   "gm": 2,
+   "mcap": 1000000000000.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 3,
+   "exempt": false,
+   "gm": 2,
+   "mcap": 7500000000000.0,
+   "out": {
+    "annual_sales_bt": 420.0,
+    "annualize_basis": " Annualized",
+    "available": true,
+    "est_gross_profit_bt": null,
+    "fs_unit": "mrl",
+    "fs_unit_label": "میلیون ریال",
+    "gate": "OR",
+    "margin_basis": "gross_margin",
+    "margin_label": "حاشیهٔ سود ناخالص",
+    "margin_used_pct": null,
+    "mcap_ht": 0.75,
+    "months_used": 9,
+    "pass": true,
+    "potential_pass": false,
+    "potential_pct": null,
+    "potential_threshold": 40.0,
+    "reason": "هیچ حاشیه‌ای (ناخالص یا جایگزین) برای این طبقه محاسبه نشد.",
+    "reconciled": true,
+    "rule_ref": "F-04",
+    "sales_pass": true,
+    "sales_threshold": 0.33,
+    "sales_to_mcap": 0.56,
+    "scale_factor": 1.3333333333333333,
+    "unit_unverified": false
+   }
+  },
+  {
+   "annual": 3,
+   "exempt": true,
+   "gm": 2,
+   "mcap": 7500000000000.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 3,
+   "exempt": false,
+   "gm": 2,
+   "mcap": 400000000000000.0,
+   "out": {
+    "annual_sales_bt": 420.0,
+    "annualize_basis": " Annualized",
+    "available": true,
+    "est_gross_profit_bt": null,
+    "fs_unit": "mrl",
+    "fs_unit_label": "میلیون ریال",
+    "gate": "OR",
+    "margin_basis": "gross_margin",
+    "margin_label": "حاشیهٔ سود ناخالص",
+    "margin_used_pct": null,
+    "mcap_ht": 40.0,
+    "months_used": 9,
+    "pass": false,
+    "potential_pass": false,
+    "potential_pct": null,
+    "potential_threshold": 40.0,
+    "reason": "هیچ حاشیه‌ای (ناخالص یا جایگزین) برای این طبقه محاسبه نشد.",
+    "reconciled": true,
+    "rule_ref": "F-04",
+    "sales_pass": false,
+    "sales_threshold": 0.33,
+    "sales_to_mcap": 0.01,
+    "scale_factor": 1.3333333333333333,
+    "unit_unverified": false
+   }
+  },
+  {
+   "annual": 3,
+   "exempt": true,
+   "gm": 2,
+   "mcap": 400000000000000.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 3,
+   "exempt": false,
+   "gm": 3,
+   "mcap": 0.0,
+   "out": {
+    "available": false,
+    "gap_cause": "market_cap",
+    "mcap_ht": 0.0,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "potential_threshold": 40.0,
+    "reason": "دادهٔ ارزش بازار یا فروش سالانه برای محاسبه نسبت در دسترس نیست.",
+    "sales_pass": false,
+    "sales_threshold": 0.33
+   }
+  },
+  {
+   "annual": 3,
+   "exempt": true,
+   "gm": 3,
+   "mcap": 0.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 3,
+   "exempt": false,
+   "gm": 3,
+   "mcap": 1000000000000.0,
+   "out": {
+    "annual_sales_bt": 420.0,
+    "annualize_basis": " Annualized",
+    "available": true,
+    "est_gross_profit_bt": 75.6,
+    "fs_unit": "mrl",
+    "fs_unit_label": "میلیون ریال",
+    "gate": "OR",
+    "margin_basis": "net_margin_proxy",
+    "margin_label": "حاشیهٔ سود خالص (جایگزینِ مالی)",
+    "margin_used_pct": 18.0,
+    "mcap_ht": 0.1,
+    "months_used": 9,
+    "pass": true,
+    "potential_pass": true,
+    "potential_pct": 75.6,
+    "potential_threshold": 40.0,
+    "reason": "قبولی با نسبت فروش/ارزش‌بازار",
+    "reconciled": true,
+    "rule_ref": "F-04",
+    "sales_pass": true,
+    "sales_threshold": 0.33,
+    "sales_to_mcap": 4.2,
+    "scale_factor": 1.3333333333333333,
+    "unit_unverified": false
+   }
+  },
+  {
+   "annual": 3,
+   "exempt": true,
+   "gm": 3,
+   "mcap": 1000000000000.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 3,
+   "exempt": false,
+   "gm": 3,
+   "mcap": 7500000000000.0,
+   "out": {
+    "annual_sales_bt": 420.0,
+    "annualize_basis": " Annualized",
+    "available": true,
+    "est_gross_profit_bt": 75.6,
+    "fs_unit": "mrl",
+    "fs_unit_label": "میلیون ریال",
+    "gate": "OR",
+    "margin_basis": "net_margin_proxy",
+    "margin_label": "حاشیهٔ سود خالص (جایگزینِ مالی)",
+    "margin_used_pct": 18.0,
+    "mcap_ht": 0.75,
+    "months_used": 9,
+    "pass": true,
+    "potential_pass": false,
+    "potential_pct": 10.1,
+    "potential_threshold": 40.0,
+    "reason": "قبولی با نسبت فروش/ارزش‌بازار",
+    "reconciled": true,
+    "rule_ref": "F-04",
+    "sales_pass": true,
+    "sales_threshold": 0.33,
+    "sales_to_mcap": 0.56,
+    "scale_factor": 1.3333333333333333,
+    "unit_unverified": false
+   }
+  },
+  {
+   "annual": 3,
+   "exempt": true,
+   "gm": 3,
+   "mcap": 7500000000000.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 3,
+   "exempt": false,
+   "gm": 3,
+   "mcap": 400000000000000.0,
+   "out": {
+    "annual_sales_bt": 420.0,
+    "annualize_basis": " Annualized",
+    "available": true,
+    "est_gross_profit_bt": 75.6,
+    "fs_unit": "mrl",
+    "fs_unit_label": "میلیون ریال",
+    "gate": "OR",
+    "margin_basis": "net_margin_proxy",
+    "margin_label": "حاشیهٔ سود خالص (جایگزینِ مالی)",
+    "margin_used_pct": 18.0,
+    "mcap_ht": 40.0,
+    "months_used": 9,
+    "pass": false,
+    "potential_pass": false,
+    "potential_pct": 0.2,
+    "potential_threshold": 40.0,
+    "reason": "نه نسبت فروش و نه پوشش پتانسیل به حد نصاب نرسید.",
+    "reconciled": true,
+    "rule_ref": "F-04",
+    "sales_pass": false,
+    "sales_threshold": 0.33,
+    "sales_to_mcap": 0.01,
+    "scale_factor": 1.3333333333333333,
+    "unit_unverified": false
+   }
+  },
+  {
+   "annual": 3,
+   "exempt": true,
+   "gm": 3,
+   "mcap": 400000000000000.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 3,
+   "exempt": false,
+   "gm": 4,
+   "mcap": 0.0,
+   "out": {
+    "available": false,
+    "gap_cause": "market_cap",
+    "mcap_ht": 0.0,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "potential_threshold": 40.0,
+    "reason": "دادهٔ ارزش بازار یا فروش سالانه برای محاسبه نسبت در دسترس نیست.",
+    "sales_pass": false,
+    "sales_threshold": 0.33
+   }
+  },
+  {
+   "annual": 3,
+   "exempt": true,
+   "gm": 4,
+   "mcap": 0.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 3,
+   "exempt": false,
+   "gm": 4,
+   "mcap": 1000000000000.0,
+   "out": {
+    "annual_sales_bt": 420.0,
+    "annualize_basis": " Annualized",
+    "available": true,
+    "est_gross_profit_bt": 46.2,
+    "fs_unit": "mrl",
+    "fs_unit_label": "میلیون ریال",
+    "gate": "OR",
+    "margin_basis": "gross_margin",
+    "margin_label": "حاشیهٔ سود ناخالص",
+    "margin_used_pct": 11.0,
+    "mcap_ht": 0.1,
+    "months_used": 9,
+    "pass": true,
+    "potential_pass": true,
+    "potential_pct": 46.2,
+    "potential_threshold": 40.0,
+    "reason": "قبولی با نسبت فروش/ارزش‌بازار",
+    "reconciled": true,
+    "rule_ref": "F-04",
+    "sales_pass": true,
+    "sales_threshold": 0.33,
+    "sales_to_mcap": 4.2,
+    "scale_factor": 1.3333333333333333,
+    "unit_unverified": false
+   }
+  },
+  {
+   "annual": 3,
+   "exempt": true,
+   "gm": 4,
+   "mcap": 1000000000000.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 3,
+   "exempt": false,
+   "gm": 4,
+   "mcap": 7500000000000.0,
+   "out": {
+    "annual_sales_bt": 420.0,
+    "annualize_basis": " Annualized",
+    "available": true,
+    "est_gross_profit_bt": 46.2,
+    "fs_unit": "mrl",
+    "fs_unit_label": "میلیون ریال",
+    "gate": "OR",
+    "margin_basis": "gross_margin",
+    "margin_label": "حاشیهٔ سود ناخالص",
+    "margin_used_pct": 11.0,
+    "mcap_ht": 0.75,
+    "months_used": 9,
+    "pass": true,
+    "potential_pass": false,
+    "potential_pct": 6.2,
+    "potential_threshold": 40.0,
+    "reason": "قبولی با نسبت فروش/ارزش‌بازار",
+    "reconciled": true,
+    "rule_ref": "F-04",
+    "sales_pass": true,
+    "sales_threshold": 0.33,
+    "sales_to_mcap": 0.56,
+    "scale_factor": 1.3333333333333333,
+    "unit_unverified": false
+   }
+  },
+  {
+   "annual": 3,
+   "exempt": true,
+   "gm": 4,
+   "mcap": 7500000000000.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 3,
+   "exempt": false,
+   "gm": 4,
+   "mcap": 400000000000000.0,
+   "out": {
+    "annual_sales_bt": 420.0,
+    "annualize_basis": " Annualized",
+    "available": true,
+    "est_gross_profit_bt": 46.2,
+    "fs_unit": "mrl",
+    "fs_unit_label": "میلیون ریال",
+    "gate": "OR",
+    "margin_basis": "gross_margin",
+    "margin_label": "حاشیهٔ سود ناخالص",
+    "margin_used_pct": 11.0,
+    "mcap_ht": 40.0,
+    "months_used": 9,
+    "pass": false,
+    "potential_pass": false,
+    "potential_pct": 0.1,
+    "potential_threshold": 40.0,
+    "reason": "نه نسبت فروش و نه پوشش پتانسیل به حد نصاب نرسید.",
+    "reconciled": true,
+    "rule_ref": "F-04",
+    "sales_pass": false,
+    "sales_threshold": 0.33,
+    "sales_to_mcap": 0.01,
+    "scale_factor": 1.3333333333333333,
+    "unit_unverified": false
+   }
+  },
+  {
+   "annual": 3,
+   "exempt": true,
+   "gm": 4,
+   "mcap": 400000000000000.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 3,
+   "exempt": false,
+   "gm": 5,
+   "mcap": 0.0,
+   "out": {
+    "available": false,
+    "gap_cause": "market_cap",
+    "mcap_ht": 0.0,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "potential_threshold": 40.0,
+    "reason": "دادهٔ ارزش بازار یا فروش سالانه برای محاسبه نسبت در دسترس نیست.",
+    "sales_pass": false,
+    "sales_threshold": 0.33
+   }
+  },
+  {
+   "annual": 3,
+   "exempt": true,
+   "gm": 5,
+   "mcap": 0.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 3,
+   "exempt": false,
+   "gm": 5,
+   "mcap": 1000000000000.0,
+   "out": {
+    "annual_sales_bt": 420.0,
+    "annualize_basis": " Annualized",
+    "available": true,
+    "est_gross_profit_bt": 204.8,
+    "fs_unit": "mrl",
+    "fs_unit_label": "میلیون ریال",
+    "gate": "OR",
+    "margin_basis": "gross_margin",
+    "margin_label": "حاشیهٔ سود ناخالص",
+    "margin_used_pct": 48.75,
+    "mcap_ht": 0.1,
+    "months_used": 9,
+    "pass": true,
+    "potential_pass": true,
+    "potential_pct": 204.8,
+    "potential_threshold": 40.0,
+    "reason": "قبولی با نسبت فروش/ارزش‌بازار",
+    "reconciled": true,
+    "rule_ref": "F-04",
+    "sales_pass": true,
+    "sales_threshold": 0.33,
+    "sales_to_mcap": 4.2,
+    "scale_factor": 1.3333333333333333,
+    "unit_unverified": false
+   }
+  },
+  {
+   "annual": 3,
+   "exempt": true,
+   "gm": 5,
+   "mcap": 1000000000000.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 3,
+   "exempt": false,
+   "gm": 5,
+   "mcap": 7500000000000.0,
+   "out": {
+    "annual_sales_bt": 420.0,
+    "annualize_basis": " Annualized",
+    "available": true,
+    "est_gross_profit_bt": 204.8,
+    "fs_unit": "mrl",
+    "fs_unit_label": "میلیون ریال",
+    "gate": "OR",
+    "margin_basis": "gross_margin",
+    "margin_label": "حاشیهٔ سود ناخالص",
+    "margin_used_pct": 48.75,
+    "mcap_ht": 0.75,
+    "months_used": 9,
+    "pass": true,
+    "potential_pass": false,
+    "potential_pct": 27.3,
+    "potential_threshold": 40.0,
+    "reason": "قبولی با نسبت فروش/ارزش‌بازار",
+    "reconciled": true,
+    "rule_ref": "F-04",
+    "sales_pass": true,
+    "sales_threshold": 0.33,
+    "sales_to_mcap": 0.56,
+    "scale_factor": 1.3333333333333333,
+    "unit_unverified": false
+   }
+  },
+  {
+   "annual": 3,
+   "exempt": true,
+   "gm": 5,
+   "mcap": 7500000000000.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 3,
+   "exempt": false,
+   "gm": 5,
+   "mcap": 400000000000000.0,
+   "out": {
+    "annual_sales_bt": 420.0,
+    "annualize_basis": " Annualized",
+    "available": true,
+    "est_gross_profit_bt": 204.8,
+    "fs_unit": "mrl",
+    "fs_unit_label": "میلیون ریال",
+    "gate": "OR",
+    "margin_basis": "gross_margin",
+    "margin_label": "حاشیهٔ سود ناخالص",
+    "margin_used_pct": 48.75,
+    "mcap_ht": 40.0,
+    "months_used": 9,
+    "pass": false,
+    "potential_pass": false,
+    "potential_pct": 0.5,
+    "potential_threshold": 40.0,
+    "reason": "نه نسبت فروش و نه پوشش پتانسیل به حد نصاب نرسید.",
+    "reconciled": true,
+    "rule_ref": "F-04",
+    "sales_pass": false,
+    "sales_threshold": 0.33,
+    "sales_to_mcap": 0.01,
+    "scale_factor": 1.3333333333333333,
+    "unit_unverified": false
+   }
+  },
+  {
+   "annual": 3,
+   "exempt": true,
+   "gm": 5,
+   "mcap": 400000000000000.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 3,
+   "exempt": false,
+   "gm": 6,
+   "mcap": 0.0,
+   "out": {
+    "available": false,
+    "gap_cause": "market_cap",
+    "mcap_ht": 0.0,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "potential_threshold": 40.0,
+    "reason": "دادهٔ ارزش بازار یا فروش سالانه برای محاسبه نسبت در دسترس نیست.",
+    "sales_pass": false,
+    "sales_threshold": 0.33
+   }
+  },
+  {
+   "annual": 3,
+   "exempt": true,
+   "gm": 6,
+   "mcap": 0.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 3,
+   "exempt": false,
+   "gm": 6,
+   "mcap": 1000000000000.0,
+   "out": {
+    "annual_sales_bt": 420.0,
+    "annualize_basis": " Annualized",
+    "available": true,
+    "est_gross_profit_bt": null,
+    "fs_unit": "mrl",
+    "fs_unit_label": "میلیون ریال",
+    "gate": "OR",
+    "margin_basis": "gross_margin",
+    "margin_label": "حاشیهٔ سود ناخالص",
+    "margin_used_pct": null,
+    "mcap_ht": 0.1,
+    "months_used": 9,
+    "pass": true,
+    "potential_pass": false,
+    "potential_pct": null,
+    "potential_threshold": 40.0,
+    "reason": "هیچ حاشیه‌ای (ناخالص یا جایگزین) برای این طبقه محاسبه نشد.",
+    "reconciled": true,
+    "rule_ref": "F-04",
+    "sales_pass": true,
+    "sales_threshold": 0.33,
+    "sales_to_mcap": 4.2,
+    "scale_factor": 1.3333333333333333,
+    "unit_unverified": false
+   }
+  },
+  {
+   "annual": 3,
+   "exempt": true,
+   "gm": 6,
+   "mcap": 1000000000000.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 3,
+   "exempt": false,
+   "gm": 6,
+   "mcap": 7500000000000.0,
+   "out": {
+    "annual_sales_bt": 420.0,
+    "annualize_basis": " Annualized",
+    "available": true,
+    "est_gross_profit_bt": null,
+    "fs_unit": "mrl",
+    "fs_unit_label": "میلیون ریال",
+    "gate": "OR",
+    "margin_basis": "gross_margin",
+    "margin_label": "حاشیهٔ سود ناخالص",
+    "margin_used_pct": null,
+    "mcap_ht": 0.75,
+    "months_used": 9,
+    "pass": true,
+    "potential_pass": false,
+    "potential_pct": null,
+    "potential_threshold": 40.0,
+    "reason": "هیچ حاشیه‌ای (ناخالص یا جایگزین) برای این طبقه محاسبه نشد.",
+    "reconciled": true,
+    "rule_ref": "F-04",
+    "sales_pass": true,
+    "sales_threshold": 0.33,
+    "sales_to_mcap": 0.56,
+    "scale_factor": 1.3333333333333333,
+    "unit_unverified": false
+   }
+  },
+  {
+   "annual": 3,
+   "exempt": true,
+   "gm": 6,
+   "mcap": 7500000000000.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 3,
+   "exempt": false,
+   "gm": 6,
+   "mcap": 400000000000000.0,
+   "out": {
+    "annual_sales_bt": 420.0,
+    "annualize_basis": " Annualized",
+    "available": true,
+    "est_gross_profit_bt": null,
+    "fs_unit": "mrl",
+    "fs_unit_label": "میلیون ریال",
+    "gate": "OR",
+    "margin_basis": "gross_margin",
+    "margin_label": "حاشیهٔ سود ناخالص",
+    "margin_used_pct": null,
+    "mcap_ht": 40.0,
+    "months_used": 9,
+    "pass": false,
+    "potential_pass": false,
+    "potential_pct": null,
+    "potential_threshold": 40.0,
+    "reason": "هیچ حاشیه‌ای (ناخالص یا جایگزین) برای این طبقه محاسبه نشد.",
+    "reconciled": true,
+    "rule_ref": "F-04",
+    "sales_pass": false,
+    "sales_threshold": 0.33,
+    "sales_to_mcap": 0.01,
+    "scale_factor": 1.3333333333333333,
+    "unit_unverified": false
+   }
+  },
+  {
+   "annual": 3,
+   "exempt": true,
+   "gm": 6,
+   "mcap": 400000000000000.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 4,
+   "exempt": false,
+   "gm": 0,
+   "mcap": 0.0,
+   "out": {
+    "available": false,
+    "gap_cause": "market_cap",
+    "mcap_ht": 0.0,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "potential_threshold": 40.0,
+    "reason": "دادهٔ ارزش بازار یا فروش سالانه برای محاسبه نسبت در دسترس نیست.",
+    "sales_pass": false,
+    "sales_threshold": 0.33
+   }
+  },
+  {
+   "annual": 4,
+   "exempt": true,
+   "gm": 0,
+   "mcap": 0.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 4,
+   "exempt": false,
+   "gm": 0,
+   "mcap": 1000000000000.0,
+   "out": {
+    "annual_sales_bt": 420.0,
+    "annualize_basis": "کدال",
+    "available": true,
+    "est_gross_profit_bt": null,
+    "fs_unit": null,
+    "fs_unit_label": null,
+    "gate": "OR",
+    "margin_basis": "gross_margin",
+    "margin_label": "حاشیهٔ سود ناخالص",
+    "margin_used_pct": null,
+    "mcap_ht": 0.1,
+    "months_used": 12,
+    "pass": true,
+    "potential_pass": false,
+    "potential_pct": null,
+    "potential_threshold": 40.0,
+    "reason": "هیچ حاشیه‌ای (ناخالص یا جایگزین) برای این طبقه محاسبه نشد.",
+    "reconciled": false,
+    "rule_ref": "F-04",
+    "sales_pass": true,
+    "sales_threshold": 0.33,
+    "sales_to_mcap": 4.2,
+    "scale_factor": 1.0,
+    "unit_unverified": true
+   }
+  },
+  {
+   "annual": 4,
+   "exempt": true,
+   "gm": 0,
+   "mcap": 1000000000000.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 4,
+   "exempt": false,
+   "gm": 0,
+   "mcap": 7500000000000.0,
+   "out": {
+    "annual_sales_bt": 420.0,
+    "annualize_basis": "کدال",
+    "available": true,
+    "est_gross_profit_bt": null,
+    "fs_unit": null,
+    "fs_unit_label": null,
+    "gate": "OR",
+    "margin_basis": "gross_margin",
+    "margin_label": "حاشیهٔ سود ناخالص",
+    "margin_used_pct": null,
+    "mcap_ht": 0.75,
+    "months_used": 12,
+    "pass": true,
+    "potential_pass": false,
+    "potential_pct": null,
+    "potential_threshold": 40.0,
+    "reason": "هیچ حاشیه‌ای (ناخالص یا جایگزین) برای این طبقه محاسبه نشد.",
+    "reconciled": false,
+    "rule_ref": "F-04",
+    "sales_pass": true,
+    "sales_threshold": 0.33,
+    "sales_to_mcap": 0.56,
+    "scale_factor": 1.0,
+    "unit_unverified": true
+   }
+  },
+  {
+   "annual": 4,
+   "exempt": true,
+   "gm": 0,
+   "mcap": 7500000000000.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 4,
+   "exempt": false,
+   "gm": 0,
+   "mcap": 400000000000000.0,
+   "out": {
+    "annual_sales_bt": 420.0,
+    "annualize_basis": "کدال",
+    "available": true,
+    "est_gross_profit_bt": null,
+    "fs_unit": null,
+    "fs_unit_label": null,
+    "gate": "OR",
+    "margin_basis": "gross_margin",
+    "margin_label": "حاشیهٔ سود ناخالص",
+    "margin_used_pct": null,
+    "mcap_ht": 40.0,
+    "months_used": 12,
+    "pass": false,
+    "potential_pass": false,
+    "potential_pct": null,
+    "potential_threshold": 40.0,
+    "reason": "هیچ حاشیه‌ای (ناخالص یا جایگزین) برای این طبقه محاسبه نشد.",
+    "reconciled": false,
+    "rule_ref": "F-04",
+    "sales_pass": false,
+    "sales_threshold": 0.33,
+    "sales_to_mcap": 0.01,
+    "scale_factor": 1.0,
+    "unit_unverified": true
+   }
+  },
+  {
+   "annual": 4,
+   "exempt": true,
+   "gm": 0,
+   "mcap": 400000000000000.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 4,
+   "exempt": false,
+   "gm": 1,
+   "mcap": 0.0,
+   "out": {
+    "available": false,
+    "gap_cause": "market_cap",
+    "mcap_ht": 0.0,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "potential_threshold": 40.0,
+    "reason": "دادهٔ ارزش بازار یا فروش سالانه برای محاسبه نسبت در دسترس نیست.",
+    "sales_pass": false,
+    "sales_threshold": 0.33
+   }
+  },
+  {
+   "annual": 4,
+   "exempt": true,
+   "gm": 1,
+   "mcap": 0.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 4,
+   "exempt": false,
+   "gm": 1,
+   "mcap": 1000000000000.0,
+   "out": {
+    "annual_sales_bt": 420.0,
+    "annualize_basis": "کدال",
+    "available": true,
+    "est_gross_profit_bt": null,
+    "fs_unit": null,
+    "fs_unit_label": null,
+    "gate": "OR",
+    "margin_basis": "gross_margin",
+    "margin_label": "حاشیهٔ سود ناخالص",
+    "margin_used_pct": null,
+    "mcap_ht": 0.1,
+    "months_used": 12,
+    "pass": true,
+    "potential_pass": false,
+    "potential_pct": null,
+    "potential_threshold": 40.0,
+    "reason": "هیچ حاشیه‌ای (ناخالص یا جایگزین) برای این طبقه محاسبه نشد.",
+    "reconciled": false,
+    "rule_ref": "F-04",
+    "sales_pass": true,
+    "sales_threshold": 0.33,
+    "sales_to_mcap": 4.2,
+    "scale_factor": 1.0,
+    "unit_unverified": true
+   }
+  },
+  {
+   "annual": 4,
+   "exempt": true,
+   "gm": 1,
+   "mcap": 1000000000000.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 4,
+   "exempt": false,
+   "gm": 1,
+   "mcap": 7500000000000.0,
+   "out": {
+    "annual_sales_bt": 420.0,
+    "annualize_basis": "کدال",
+    "available": true,
+    "est_gross_profit_bt": null,
+    "fs_unit": null,
+    "fs_unit_label": null,
+    "gate": "OR",
+    "margin_basis": "gross_margin",
+    "margin_label": "حاشیهٔ سود ناخالص",
+    "margin_used_pct": null,
+    "mcap_ht": 0.75,
+    "months_used": 12,
+    "pass": true,
+    "potential_pass": false,
+    "potential_pct": null,
+    "potential_threshold": 40.0,
+    "reason": "هیچ حاشیه‌ای (ناخالص یا جایگزین) برای این طبقه محاسبه نشد.",
+    "reconciled": false,
+    "rule_ref": "F-04",
+    "sales_pass": true,
+    "sales_threshold": 0.33,
+    "sales_to_mcap": 0.56,
+    "scale_factor": 1.0,
+    "unit_unverified": true
+   }
+  },
+  {
+   "annual": 4,
+   "exempt": true,
+   "gm": 1,
+   "mcap": 7500000000000.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 4,
+   "exempt": false,
+   "gm": 1,
+   "mcap": 400000000000000.0,
+   "out": {
+    "annual_sales_bt": 420.0,
+    "annualize_basis": "کدال",
+    "available": true,
+    "est_gross_profit_bt": null,
+    "fs_unit": null,
+    "fs_unit_label": null,
+    "gate": "OR",
+    "margin_basis": "gross_margin",
+    "margin_label": "حاشیهٔ سود ناخالص",
+    "margin_used_pct": null,
+    "mcap_ht": 40.0,
+    "months_used": 12,
+    "pass": false,
+    "potential_pass": false,
+    "potential_pct": null,
+    "potential_threshold": 40.0,
+    "reason": "هیچ حاشیه‌ای (ناخالص یا جایگزین) برای این طبقه محاسبه نشد.",
+    "reconciled": false,
+    "rule_ref": "F-04",
+    "sales_pass": false,
+    "sales_threshold": 0.33,
+    "sales_to_mcap": 0.01,
+    "scale_factor": 1.0,
+    "unit_unverified": true
+   }
+  },
+  {
+   "annual": 4,
+   "exempt": true,
+   "gm": 1,
+   "mcap": 400000000000000.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 4,
+   "exempt": false,
+   "gm": 2,
+   "mcap": 0.0,
+   "out": {
+    "available": false,
+    "gap_cause": "market_cap",
+    "mcap_ht": 0.0,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "potential_threshold": 40.0,
+    "reason": "دادهٔ ارزش بازار یا فروش سالانه برای محاسبه نسبت در دسترس نیست.",
+    "sales_pass": false,
+    "sales_threshold": 0.33
+   }
+  },
+  {
+   "annual": 4,
+   "exempt": true,
+   "gm": 2,
+   "mcap": 0.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 4,
+   "exempt": false,
+   "gm": 2,
+   "mcap": 1000000000000.0,
+   "out": {
+    "annual_sales_bt": 420.0,
+    "annualize_basis": "کدال",
+    "available": true,
+    "est_gross_profit_bt": null,
+    "fs_unit": null,
+    "fs_unit_label": null,
+    "gate": "OR",
+    "margin_basis": "gross_margin",
+    "margin_label": "حاشیهٔ سود ناخالص",
+    "margin_used_pct": null,
+    "mcap_ht": 0.1,
+    "months_used": 12,
+    "pass": true,
+    "potential_pass": false,
+    "potential_pct": null,
+    "potential_threshold": 40.0,
+    "reason": "هیچ حاشیه‌ای (ناخالص یا جایگزین) برای این طبقه محاسبه نشد.",
+    "reconciled": false,
+    "rule_ref": "F-04",
+    "sales_pass": true,
+    "sales_threshold": 0.33,
+    "sales_to_mcap": 4.2,
+    "scale_factor": 1.0,
+    "unit_unverified": true
+   }
+  },
+  {
+   "annual": 4,
+   "exempt": true,
+   "gm": 2,
+   "mcap": 1000000000000.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 4,
+   "exempt": false,
+   "gm": 2,
+   "mcap": 7500000000000.0,
+   "out": {
+    "annual_sales_bt": 420.0,
+    "annualize_basis": "کدال",
+    "available": true,
+    "est_gross_profit_bt": null,
+    "fs_unit": null,
+    "fs_unit_label": null,
+    "gate": "OR",
+    "margin_basis": "gross_margin",
+    "margin_label": "حاشیهٔ سود ناخالص",
+    "margin_used_pct": null,
+    "mcap_ht": 0.75,
+    "months_used": 12,
+    "pass": true,
+    "potential_pass": false,
+    "potential_pct": null,
+    "potential_threshold": 40.0,
+    "reason": "هیچ حاشیه‌ای (ناخالص یا جایگزین) برای این طبقه محاسبه نشد.",
+    "reconciled": false,
+    "rule_ref": "F-04",
+    "sales_pass": true,
+    "sales_threshold": 0.33,
+    "sales_to_mcap": 0.56,
+    "scale_factor": 1.0,
+    "unit_unverified": true
+   }
+  },
+  {
+   "annual": 4,
+   "exempt": true,
+   "gm": 2,
+   "mcap": 7500000000000.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 4,
+   "exempt": false,
+   "gm": 2,
+   "mcap": 400000000000000.0,
+   "out": {
+    "annual_sales_bt": 420.0,
+    "annualize_basis": "کدال",
+    "available": true,
+    "est_gross_profit_bt": null,
+    "fs_unit": null,
+    "fs_unit_label": null,
+    "gate": "OR",
+    "margin_basis": "gross_margin",
+    "margin_label": "حاشیهٔ سود ناخالص",
+    "margin_used_pct": null,
+    "mcap_ht": 40.0,
+    "months_used": 12,
+    "pass": false,
+    "potential_pass": false,
+    "potential_pct": null,
+    "potential_threshold": 40.0,
+    "reason": "هیچ حاشیه‌ای (ناخالص یا جایگزین) برای این طبقه محاسبه نشد.",
+    "reconciled": false,
+    "rule_ref": "F-04",
+    "sales_pass": false,
+    "sales_threshold": 0.33,
+    "sales_to_mcap": 0.01,
+    "scale_factor": 1.0,
+    "unit_unverified": true
+   }
+  },
+  {
+   "annual": 4,
+   "exempt": true,
+   "gm": 2,
+   "mcap": 400000000000000.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 4,
+   "exempt": false,
+   "gm": 3,
+   "mcap": 0.0,
+   "out": {
+    "available": false,
+    "gap_cause": "market_cap",
+    "mcap_ht": 0.0,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "potential_threshold": 40.0,
+    "reason": "دادهٔ ارزش بازار یا فروش سالانه برای محاسبه نسبت در دسترس نیست.",
+    "sales_pass": false,
+    "sales_threshold": 0.33
+   }
+  },
+  {
+   "annual": 4,
+   "exempt": true,
+   "gm": 3,
+   "mcap": 0.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 4,
+   "exempt": false,
+   "gm": 3,
+   "mcap": 1000000000000.0,
+   "out": {
+    "annual_sales_bt": 420.0,
+    "annualize_basis": "کدال",
+    "available": true,
+    "est_gross_profit_bt": 75.6,
+    "fs_unit": null,
+    "fs_unit_label": null,
+    "gate": "OR",
+    "margin_basis": "net_margin_proxy",
+    "margin_label": "حاشیهٔ سود خالص (جایگزینِ مالی)",
+    "margin_used_pct": 18.0,
+    "mcap_ht": 0.1,
+    "months_used": 12,
+    "pass": true,
+    "potential_pass": true,
+    "potential_pct": 75.6,
+    "potential_threshold": 40.0,
+    "reason": "قبولی با نسبت فروش/ارزش‌بازار",
+    "reconciled": false,
+    "rule_ref": "F-04",
+    "sales_pass": true,
+    "sales_threshold": 0.33,
+    "sales_to_mcap": 4.2,
+    "scale_factor": 1.0,
+    "unit_unverified": true
+   }
+  },
+  {
+   "annual": 4,
+   "exempt": true,
+   "gm": 3,
+   "mcap": 1000000000000.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 4,
+   "exempt": false,
+   "gm": 3,
+   "mcap": 7500000000000.0,
+   "out": {
+    "annual_sales_bt": 420.0,
+    "annualize_basis": "کدال",
+    "available": true,
+    "est_gross_profit_bt": 75.6,
+    "fs_unit": null,
+    "fs_unit_label": null,
+    "gate": "OR",
+    "margin_basis": "net_margin_proxy",
+    "margin_label": "حاشیهٔ سود خالص (جایگزینِ مالی)",
+    "margin_used_pct": 18.0,
+    "mcap_ht": 0.75,
+    "months_used": 12,
+    "pass": true,
+    "potential_pass": false,
+    "potential_pct": 10.1,
+    "potential_threshold": 40.0,
+    "reason": "قبولی با نسبت فروش/ارزش‌بازار",
+    "reconciled": false,
+    "rule_ref": "F-04",
+    "sales_pass": true,
+    "sales_threshold": 0.33,
+    "sales_to_mcap": 0.56,
+    "scale_factor": 1.0,
+    "unit_unverified": true
+   }
+  },
+  {
+   "annual": 4,
+   "exempt": true,
+   "gm": 3,
+   "mcap": 7500000000000.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 4,
+   "exempt": false,
+   "gm": 3,
+   "mcap": 400000000000000.0,
+   "out": {
+    "annual_sales_bt": 420.0,
+    "annualize_basis": "کدال",
+    "available": true,
+    "est_gross_profit_bt": 75.6,
+    "fs_unit": null,
+    "fs_unit_label": null,
+    "gate": "OR",
+    "margin_basis": "net_margin_proxy",
+    "margin_label": "حاشیهٔ سود خالص (جایگزینِ مالی)",
+    "margin_used_pct": 18.0,
+    "mcap_ht": 40.0,
+    "months_used": 12,
+    "pass": false,
+    "potential_pass": false,
+    "potential_pct": 0.2,
+    "potential_threshold": 40.0,
+    "reason": "نه نسبت فروش و نه پوشش پتانسیل به حد نصاب نرسید.",
+    "reconciled": false,
+    "rule_ref": "F-04",
+    "sales_pass": false,
+    "sales_threshold": 0.33,
+    "sales_to_mcap": 0.01,
+    "scale_factor": 1.0,
+    "unit_unverified": true
+   }
+  },
+  {
+   "annual": 4,
+   "exempt": true,
+   "gm": 3,
+   "mcap": 400000000000000.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 4,
+   "exempt": false,
+   "gm": 4,
+   "mcap": 0.0,
+   "out": {
+    "available": false,
+    "gap_cause": "market_cap",
+    "mcap_ht": 0.0,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "potential_threshold": 40.0,
+    "reason": "دادهٔ ارزش بازار یا فروش سالانه برای محاسبه نسبت در دسترس نیست.",
+    "sales_pass": false,
+    "sales_threshold": 0.33
+   }
+  },
+  {
+   "annual": 4,
+   "exempt": true,
+   "gm": 4,
+   "mcap": 0.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 4,
+   "exempt": false,
+   "gm": 4,
+   "mcap": 1000000000000.0,
+   "out": {
+    "annual_sales_bt": 420.0,
+    "annualize_basis": "کدال",
+    "available": true,
+    "est_gross_profit_bt": 46.2,
+    "fs_unit": null,
+    "fs_unit_label": null,
+    "gate": "OR",
+    "margin_basis": "gross_margin",
+    "margin_label": "حاشیهٔ سود ناخالص",
+    "margin_used_pct": 11.0,
+    "mcap_ht": 0.1,
+    "months_used": 12,
+    "pass": true,
+    "potential_pass": true,
+    "potential_pct": 46.2,
+    "potential_threshold": 40.0,
+    "reason": "قبولی با نسبت فروش/ارزش‌بازار",
+    "reconciled": false,
+    "rule_ref": "F-04",
+    "sales_pass": true,
+    "sales_threshold": 0.33,
+    "sales_to_mcap": 4.2,
+    "scale_factor": 1.0,
+    "unit_unverified": true
+   }
+  },
+  {
+   "annual": 4,
+   "exempt": true,
+   "gm": 4,
+   "mcap": 1000000000000.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 4,
+   "exempt": false,
+   "gm": 4,
+   "mcap": 7500000000000.0,
+   "out": {
+    "annual_sales_bt": 420.0,
+    "annualize_basis": "کدال",
+    "available": true,
+    "est_gross_profit_bt": 46.2,
+    "fs_unit": null,
+    "fs_unit_label": null,
+    "gate": "OR",
+    "margin_basis": "gross_margin",
+    "margin_label": "حاشیهٔ سود ناخالص",
+    "margin_used_pct": 11.0,
+    "mcap_ht": 0.75,
+    "months_used": 12,
+    "pass": true,
+    "potential_pass": false,
+    "potential_pct": 6.2,
+    "potential_threshold": 40.0,
+    "reason": "قبولی با نسبت فروش/ارزش‌بازار",
+    "reconciled": false,
+    "rule_ref": "F-04",
+    "sales_pass": true,
+    "sales_threshold": 0.33,
+    "sales_to_mcap": 0.56,
+    "scale_factor": 1.0,
+    "unit_unverified": true
+   }
+  },
+  {
+   "annual": 4,
+   "exempt": true,
+   "gm": 4,
+   "mcap": 7500000000000.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 4,
+   "exempt": false,
+   "gm": 4,
+   "mcap": 400000000000000.0,
+   "out": {
+    "annual_sales_bt": 420.0,
+    "annualize_basis": "کدال",
+    "available": true,
+    "est_gross_profit_bt": 46.2,
+    "fs_unit": null,
+    "fs_unit_label": null,
+    "gate": "OR",
+    "margin_basis": "gross_margin",
+    "margin_label": "حاشیهٔ سود ناخالص",
+    "margin_used_pct": 11.0,
+    "mcap_ht": 40.0,
+    "months_used": 12,
+    "pass": false,
+    "potential_pass": false,
+    "potential_pct": 0.1,
+    "potential_threshold": 40.0,
+    "reason": "نه نسبت فروش و نه پوشش پتانسیل به حد نصاب نرسید.",
+    "reconciled": false,
+    "rule_ref": "F-04",
+    "sales_pass": false,
+    "sales_threshold": 0.33,
+    "sales_to_mcap": 0.01,
+    "scale_factor": 1.0,
+    "unit_unverified": true
+   }
+  },
+  {
+   "annual": 4,
+   "exempt": true,
+   "gm": 4,
+   "mcap": 400000000000000.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 4,
+   "exempt": false,
+   "gm": 5,
+   "mcap": 0.0,
+   "out": {
+    "available": false,
+    "gap_cause": "market_cap",
+    "mcap_ht": 0.0,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "potential_threshold": 40.0,
+    "reason": "دادهٔ ارزش بازار یا فروش سالانه برای محاسبه نسبت در دسترس نیست.",
+    "sales_pass": false,
+    "sales_threshold": 0.33
+   }
+  },
+  {
+   "annual": 4,
+   "exempt": true,
+   "gm": 5,
+   "mcap": 0.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 4,
+   "exempt": false,
+   "gm": 5,
+   "mcap": 1000000000000.0,
+   "out": {
+    "annual_sales_bt": 420.0,
+    "annualize_basis": "کدال",
+    "available": true,
+    "est_gross_profit_bt": 204.8,
+    "fs_unit": null,
+    "fs_unit_label": null,
+    "gate": "OR",
+    "margin_basis": "gross_margin",
+    "margin_label": "حاشیهٔ سود ناخالص",
+    "margin_used_pct": 48.75,
+    "mcap_ht": 0.1,
+    "months_used": 12,
+    "pass": true,
+    "potential_pass": true,
+    "potential_pct": 204.8,
+    "potential_threshold": 40.0,
+    "reason": "قبولی با نسبت فروش/ارزش‌بازار",
+    "reconciled": false,
+    "rule_ref": "F-04",
+    "sales_pass": true,
+    "sales_threshold": 0.33,
+    "sales_to_mcap": 4.2,
+    "scale_factor": 1.0,
+    "unit_unverified": true
+   }
+  },
+  {
+   "annual": 4,
+   "exempt": true,
+   "gm": 5,
+   "mcap": 1000000000000.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 4,
+   "exempt": false,
+   "gm": 5,
+   "mcap": 7500000000000.0,
+   "out": {
+    "annual_sales_bt": 420.0,
+    "annualize_basis": "کدال",
+    "available": true,
+    "est_gross_profit_bt": 204.8,
+    "fs_unit": null,
+    "fs_unit_label": null,
+    "gate": "OR",
+    "margin_basis": "gross_margin",
+    "margin_label": "حاشیهٔ سود ناخالص",
+    "margin_used_pct": 48.75,
+    "mcap_ht": 0.75,
+    "months_used": 12,
+    "pass": true,
+    "potential_pass": false,
+    "potential_pct": 27.3,
+    "potential_threshold": 40.0,
+    "reason": "قبولی با نسبت فروش/ارزش‌بازار",
+    "reconciled": false,
+    "rule_ref": "F-04",
+    "sales_pass": true,
+    "sales_threshold": 0.33,
+    "sales_to_mcap": 0.56,
+    "scale_factor": 1.0,
+    "unit_unverified": true
+   }
+  },
+  {
+   "annual": 4,
+   "exempt": true,
+   "gm": 5,
+   "mcap": 7500000000000.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 4,
+   "exempt": false,
+   "gm": 5,
+   "mcap": 400000000000000.0,
+   "out": {
+    "annual_sales_bt": 420.0,
+    "annualize_basis": "کدال",
+    "available": true,
+    "est_gross_profit_bt": 204.8,
+    "fs_unit": null,
+    "fs_unit_label": null,
+    "gate": "OR",
+    "margin_basis": "gross_margin",
+    "margin_label": "حاشیهٔ سود ناخالص",
+    "margin_used_pct": 48.75,
+    "mcap_ht": 40.0,
+    "months_used": 12,
+    "pass": false,
+    "potential_pass": false,
+    "potential_pct": 0.5,
+    "potential_threshold": 40.0,
+    "reason": "نه نسبت فروش و نه پوشش پتانسیل به حد نصاب نرسید.",
+    "reconciled": false,
+    "rule_ref": "F-04",
+    "sales_pass": false,
+    "sales_threshold": 0.33,
+    "sales_to_mcap": 0.01,
+    "scale_factor": 1.0,
+    "unit_unverified": true
+   }
+  },
+  {
+   "annual": 4,
+   "exempt": true,
+   "gm": 5,
+   "mcap": 400000000000000.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 4,
+   "exempt": false,
+   "gm": 6,
+   "mcap": 0.0,
+   "out": {
+    "available": false,
+    "gap_cause": "market_cap",
+    "mcap_ht": 0.0,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "potential_threshold": 40.0,
+    "reason": "دادهٔ ارزش بازار یا فروش سالانه برای محاسبه نسبت در دسترس نیست.",
+    "sales_pass": false,
+    "sales_threshold": 0.33
+   }
+  },
+  {
+   "annual": 4,
+   "exempt": true,
+   "gm": 6,
+   "mcap": 0.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 4,
+   "exempt": false,
+   "gm": 6,
+   "mcap": 1000000000000.0,
+   "out": {
+    "annual_sales_bt": 420.0,
+    "annualize_basis": "کدال",
+    "available": true,
+    "est_gross_profit_bt": null,
+    "fs_unit": null,
+    "fs_unit_label": null,
+    "gate": "OR",
+    "margin_basis": "gross_margin",
+    "margin_label": "حاشیهٔ سود ناخالص",
+    "margin_used_pct": null,
+    "mcap_ht": 0.1,
+    "months_used": 12,
+    "pass": true,
+    "potential_pass": false,
+    "potential_pct": null,
+    "potential_threshold": 40.0,
+    "reason": "هیچ حاشیه‌ای (ناخالص یا جایگزین) برای این طبقه محاسبه نشد.",
+    "reconciled": false,
+    "rule_ref": "F-04",
+    "sales_pass": true,
+    "sales_threshold": 0.33,
+    "sales_to_mcap": 4.2,
+    "scale_factor": 1.0,
+    "unit_unverified": true
+   }
+  },
+  {
+   "annual": 4,
+   "exempt": true,
+   "gm": 6,
+   "mcap": 1000000000000.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 4,
+   "exempt": false,
+   "gm": 6,
+   "mcap": 7500000000000.0,
+   "out": {
+    "annual_sales_bt": 420.0,
+    "annualize_basis": "کدال",
+    "available": true,
+    "est_gross_profit_bt": null,
+    "fs_unit": null,
+    "fs_unit_label": null,
+    "gate": "OR",
+    "margin_basis": "gross_margin",
+    "margin_label": "حاشیهٔ سود ناخالص",
+    "margin_used_pct": null,
+    "mcap_ht": 0.75,
+    "months_used": 12,
+    "pass": true,
+    "potential_pass": false,
+    "potential_pct": null,
+    "potential_threshold": 40.0,
+    "reason": "هیچ حاشیه‌ای (ناخالص یا جایگزین) برای این طبقه محاسبه نشد.",
+    "reconciled": false,
+    "rule_ref": "F-04",
+    "sales_pass": true,
+    "sales_threshold": 0.33,
+    "sales_to_mcap": 0.56,
+    "scale_factor": 1.0,
+    "unit_unverified": true
+   }
+  },
+  {
+   "annual": 4,
+   "exempt": true,
+   "gm": 6,
+   "mcap": 7500000000000.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  },
+  {
+   "annual": 4,
+   "exempt": false,
+   "gm": 6,
+   "mcap": 400000000000000.0,
+   "out": {
+    "annual_sales_bt": 420.0,
+    "annualize_basis": "کدال",
+    "available": true,
+    "est_gross_profit_bt": null,
+    "fs_unit": null,
+    "fs_unit_label": null,
+    "gate": "OR",
+    "margin_basis": "gross_margin",
+    "margin_label": "حاشیهٔ سود ناخالص",
+    "margin_used_pct": null,
+    "mcap_ht": 40.0,
+    "months_used": 12,
+    "pass": false,
+    "potential_pass": false,
+    "potential_pct": null,
+    "potential_threshold": 40.0,
+    "reason": "هیچ حاشیه‌ای (ناخالص یا جایگزین) برای این طبقه محاسبه نشد.",
+    "reconciled": false,
+    "rule_ref": "F-04",
+    "sales_pass": false,
+    "sales_threshold": 0.33,
+    "sales_to_mcap": 0.01,
+    "scale_factor": 1.0,
+    "unit_unverified": true
+   }
+  },
+  {
+   "annual": 4,
+   "exempt": true,
+   "gm": 6,
+   "mcap": 400000000000000.0,
+   "out": {
+    "available": false,
+    "exempt": true,
+    "na": true,
+    "pass": false,
+    "potential_pass": false,
+    "reason": "شرکت سرمایه‌گذاری/هلدینگ؛ نسبت فروش به ارزش بازار کاربرد ندارد (N/A).",
+    "rule_ref": "F-04",
+    "sales_pass": false
+   }
+  }
+ ],
+ "gms": [
+  null,
+  {},
+  {
+   "na": true
+  },
+  {
+   "na": true,
+   "net_margin_pct": 18.0
+  },
+  {
+   "margin_pct": 11.0,
+   "na": false
+  },
+  {
+   "margin_pct": 48.75,
+   "na": false
+  },
+  {
+   "margin_pct": 0.0,
+   "na": false
+  }
+ ]
+}

@@ -1,0 +1,567 @@
+{
+ "cases": [
+  {
+   "exempt": false,
+   "out": {
+    "annual_sales_bt": 0.2,
+    "annual_sales_mrl": 1860.0,
+    "basis": "تجمیعی ۱۲ ماهِ کاملِ سال مالی 1404 (×۱٫۰)",
+    "fs_unit": "mrl",
+    "fs_unit_label": "میلیون ریال",
+    "months_used": 12,
+    "na": false,
+    "operational_revenue_basis": false,
+    "reconciled": true,
+    "revenue_basis": "تولیدی/عمرانی — جمع فروش داخلی + صادراتی (ردیف «جمع» جدول فروش)",
+    "scale_factor": 1.0,
+    "scale_table": [
+     {
+      "factor": 4.0,
+      "months": 3
+     },
+     {
+      "factor": 3.0,
+      "months": 4
+     },
+     {
+      "factor": 2.4,
+      "months": 5
+     },
+     {
+      "factor": 2.0,
+      "months": 6
+     },
+     {
+      "factor": 1.33,
+      "months": 9
+     },
+     {
+      "factor": 1.0,
+      "months": 12
+     }
+    ],
+    "unit_unverified": false,
+    "ytd_sales_bt": 0.2
+   },
+   "symbol": "عادی01"
+  },
+  {
+   "exempt": true,
+   "out": {
+    "annual_sales_bt": null,
+    "annual_sales_mrl": 0.0,
+    "basis": "N/A — هلدینگ/سرمایه‌گذاری/واسطۀ مالی (سند v2.1 F-04)",
+    "months_used": 0,
+    "na": true,
+    "operational_revenue_basis": false,
+    "reconciled": true,
+    "revenue_basis": "تولیدی/عمرانی — جمع فروش داخلی + صادراتی (ردیف «جمع» جدول فروش)",
+    "scale_factor": 0.0
+   },
+   "symbol": "عادی01"
+  },
+  {
+   "kind": "no_exempt_arg",
+   "out": {
+    "annual_sales_bt": 0.2,
+    "annual_sales_mrl": 1860.0,
+    "basis": "تجمیعی ۱۲ ماهِ کاملِ سال مالی 1404 (×۱٫۰)",
+    "fs_unit": "mrl",
+    "fs_unit_label": "میلیون ریال",
+    "months_used": 12,
+    "na": false,
+    "operational_revenue_basis": false,
+    "reconciled": true,
+    "revenue_basis": "تولیدی/عمرانی — جمع فروش داخلی + صادراتی (ردیف «جمع» جدول فروش)",
+    "scale_factor": 1.0,
+    "scale_table": [
+     {
+      "factor": 4.0,
+      "months": 3
+     },
+     {
+      "factor": 3.0,
+      "months": 4
+     },
+     {
+      "factor": 2.4,
+      "months": 5
+     },
+     {
+      "factor": 2.0,
+      "months": 6
+     },
+     {
+      "factor": 1.33,
+      "months": 9
+     },
+     {
+      "factor": 1.0,
+      "months": 12
+     }
+    ],
+    "unit_unverified": false,
+    "ytd_sales_bt": 0.2
+   },
+   "symbol": "عادی01"
+  },
+  {
+   "kind": "ind4_exempt",
+   "out": {
+    "na": false,
+    "na_false": false
+   },
+   "symbol": "عادی01"
+  },
+  {
+   "exempt": false,
+   "out": {
+    "annual_sales_bt": 0.1,
+    "annual_sales_mrl": 1500.0,
+    "basis": "تجمیعی ۱۲ ماهِ کاملِ سال مالی 1404 (×۱٫۰)",
+    "fs_unit": "mrl",
+    "fs_unit_label": "میلیون ریال",
+    "months_used": 12,
+    "na": false,
+    "operational_revenue_basis": false,
+    "reconciled": true,
+    "revenue_basis": "تولیدی/عمرانی — جمع فروش داخلی + صادراتی (ردیف «جمع» جدول فروش)",
+    "scale_factor": 1.0,
+    "scale_table": [
+     {
+      "factor": 4.0,
+      "months": 3
+     },
+     {
+      "factor": 3.0,
+      "months": 4
+     },
+     {
+      "factor": 2.4,
+      "months": 5
+     },
+     {
+      "factor": 2.0,
+      "months": 6
+     },
+     {
+      "factor": 1.33,
+      "months": 9
+     },
+     {
+      "factor": 1.0,
+      "months": 12
+     }
+    ],
+    "unit_unverified": false,
+    "ytd_sales_bt": 0.1
+   },
+   "symbol": "پایین02"
+  },
+  {
+   "exempt": true,
+   "out": {
+    "annual_sales_bt": null,
+    "annual_sales_mrl": 0.0,
+    "basis": "N/A — هلدینگ/سرمایه‌گذاری/واسطۀ مالی (سند v2.1 F-04)",
+    "months_used": 0,
+    "na": true,
+    "operational_revenue_basis": false,
+    "reconciled": true,
+    "revenue_basis": "تولیدی/عمرانی — جمع فروش داخلی + صادراتی (ردیف «جمع» جدول فروش)",
+    "scale_factor": 0.0
+   },
+   "symbol": "پایین02"
+  },
+  {
+   "kind": "no_exempt_arg",
+   "out": {
+    "annual_sales_bt": 0.1,
+    "annual_sales_mrl": 1500.0,
+    "basis": "تجمیعی ۱۲ ماهِ کاملِ سال مالی 1404 (×۱٫۰)",
+    "fs_unit": "mrl",
+    "fs_unit_label": "میلیون ریال",
+    "months_used": 12,
+    "na": false,
+    "operational_revenue_basis": false,
+    "reconciled": true,
+    "revenue_basis": "تولیدی/عمرانی — جمع فروش داخلی + صادراتی (ردیف «جمع» جدول فروش)",
+    "scale_factor": 1.0,
+    "scale_table": [
+     {
+      "factor": 4.0,
+      "months": 3
+     },
+     {
+      "factor": 3.0,
+      "months": 4
+     },
+     {
+      "factor": 2.4,
+      "months": 5
+     },
+     {
+      "factor": 2.0,
+      "months": 6
+     },
+     {
+      "factor": 1.33,
+      "months": 9
+     },
+     {
+      "factor": 1.0,
+      "months": 12
+     }
+    ],
+    "unit_unverified": false,
+    "ytd_sales_bt": 0.1
+   },
+   "symbol": "پایین02"
+  },
+  {
+   "kind": "ind4_exempt",
+   "out": {
+    "na": false,
+    "na_false": false
+   },
+   "symbol": "پایین02"
+  },
+  {
+   "exempt": false,
+   "out": {
+    "annual_sales_bt": 24.0,
+    "annual_sales_mrl": 240000.0,
+    "basis": "درآمد عملیاتیِ صورت مالی سالانه — جایگزینِ «فروش» برایِ طبقه",
+    "fs_unit": "mrl",
+    "fs_unit_label": "میلیون ریال",
+    "months_used": 12,
+    "na": false,
+    "operational_revenue_basis": true,
+    "reconciled": true,
+    "revenue_basis": "صندوق — درآمد پرتفوی و تغییرات خالص دارایی‌ها",
+    "scale_factor": 1.0,
+    "scale_table": [
+     {
+      "factor": 4.0,
+      "months": 3
+     },
+     {
+      "factor": 3.0,
+      "months": 4
+     },
+     {
+      "factor": 2.4,
+      "months": 5
+     },
+     {
+      "factor": 2.0,
+      "months": 6
+     },
+     {
+      "factor": 1.33,
+      "months": 9
+     },
+     {
+      "factor": 1.0,
+      "months": 12
+     }
+    ],
+    "ytd_sales_bt": 24.0
+   },
+   "symbol": "اهرم‌ب"
+  },
+  {
+   "exempt": true,
+   "out": {
+    "annual_sales_bt": null,
+    "annual_sales_mrl": 0.0,
+    "basis": "N/A — هلدینگ/سرمایه‌گذاری/واسطۀ مالی (سند v2.1 F-04)",
+    "months_used": 0,
+    "na": true,
+    "operational_revenue_basis": false,
+    "reconciled": true,
+    "revenue_basis": "صندوق — درآمد پرتفوی و تغییرات خالص دارایی‌ها",
+    "scale_factor": 0.0
+   },
+   "symbol": "اهرم‌ب"
+  },
+  {
+   "kind": "no_exempt_arg",
+   "out": {
+    "annual_sales_bt": 24.0,
+    "annual_sales_mrl": 240000.0,
+    "basis": "درآمد عملیاتیِ صورت مالی سالانه — جایگزینِ «فروش» برایِ طبقه",
+    "fs_unit": "mrl",
+    "fs_unit_label": "میلیون ریال",
+    "months_used": 12,
+    "na": false,
+    "operational_revenue_basis": true,
+    "reconciled": true,
+    "revenue_basis": "صندوق — درآمد پرتفوی و تغییرات خالص دارایی‌ها",
+    "scale_factor": 1.0,
+    "scale_table": [
+     {
+      "factor": 4.0,
+      "months": 3
+     },
+     {
+      "factor": 3.0,
+      "months": 4
+     },
+     {
+      "factor": 2.4,
+      "months": 5
+     },
+     {
+      "factor": 2.0,
+      "months": 6
+     },
+     {
+      "factor": 1.33,
+      "months": 9
+     },
+     {
+      "factor": 1.0,
+      "months": 12
+     }
+    ],
+    "ytd_sales_bt": 24.0
+   },
+   "symbol": "اهرم‌ب"
+  },
+  {
+   "kind": "ind4_exempt",
+   "out": {
+    "na": true,
+    "na_false": false
+   },
+   "symbol": "اهرم‌ب"
+  },
+  {
+   "exempt": false,
+   "out": {
+    "annual_sales_bt": 0.1,
+    "annual_sales_mrl": 600.0,
+    "basis": "تجمیعی 06/1404 × ۱۲÷6 (=×2.00)",
+    "fs_unit": null,
+    "fs_unit_label": "واحد نامعلوم",
+    "months_used": 6,
+    "na": false,
+    "operational_revenue_basis": false,
+    "reconciled": false,
+    "revenue_basis": "خدماتی — کارمزد و درآمد عملیاتی (بدون تناژ فیزیکی)",
+    "scale_factor": 2.0,
+    "scale_table": [
+     {
+      "factor": 4.0,
+      "months": 3
+     },
+     {
+      "factor": 3.0,
+      "months": 4
+     },
+     {
+      "factor": 2.4,
+      "months": 5
+     },
+     {
+      "factor": 2.0,
+      "months": 6
+     },
+     {
+      "factor": 1.33,
+      "months": 9
+     },
+     {
+      "factor": 1.0,
+      "months": 12
+     }
+    ],
+    "unit_unverified": true,
+    "ytd_sales_bt": 0.0
+   },
+   "symbol": "کم‌سابقه11"
+  },
+  {
+   "exempt": true,
+   "out": {
+    "annual_sales_bt": null,
+    "annual_sales_mrl": 0.0,
+    "basis": "N/A — هلدینگ/سرمایه‌گذاری/واسطۀ مالی (سند v2.1 F-04)",
+    "months_used": 0,
+    "na": true,
+    "operational_revenue_basis": false,
+    "reconciled": true,
+    "revenue_basis": "خدماتی — کارمزد و درآمد عملیاتی (بدون تناژ فیزیکی)",
+    "scale_factor": 0.0
+   },
+   "symbol": "کم‌سابقه11"
+  },
+  {
+   "kind": "no_exempt_arg",
+   "out": {
+    "annual_sales_bt": 0.1,
+    "annual_sales_mrl": 600.0,
+    "basis": "تجمیعی 06/1404 × ۱۲÷6 (=×2.00)",
+    "fs_unit": null,
+    "fs_unit_label": "واحد نامعلوم",
+    "months_used": 6,
+    "na": false,
+    "operational_revenue_basis": false,
+    "reconciled": false,
+    "revenue_basis": "خدماتی — کارمزد و درآمد عملیاتی (بدون تناژ فیزیکی)",
+    "scale_factor": 2.0,
+    "scale_table": [
+     {
+      "factor": 4.0,
+      "months": 3
+     },
+     {
+      "factor": 3.0,
+      "months": 4
+     },
+     {
+      "factor": 2.4,
+      "months": 5
+     },
+     {
+      "factor": 2.0,
+      "months": 6
+     },
+     {
+      "factor": 1.33,
+      "months": 9
+     },
+     {
+      "factor": 1.0,
+      "months": 12
+     }
+    ],
+    "unit_unverified": true,
+    "ytd_sales_bt": 0.0
+   },
+   "symbol": "کم‌سابقه11"
+  },
+  {
+   "kind": "ind4_exempt",
+   "out": {
+    "na": false,
+    "na_false": false
+   },
+   "symbol": "کم‌سابقه11"
+  },
+  {
+   "exempt": false,
+   "out": {
+    "annual_sales_bt": 0.1,
+    "annual_sales_mrl": 1400.0,
+    "basis": "تجمیعی 06/1404 × ۱۲÷6 (=×2.00)",
+    "fs_unit": null,
+    "fs_unit_label": "واحد نامعلوم",
+    "months_used": 6,
+    "na": false,
+    "operational_revenue_basis": false,
+    "reconciled": false,
+    "revenue_basis": "تولیدی/عمرانی — جمع فروش داخلی + صادراتی (ردیف «جمع» جدول فروش)",
+    "scale_factor": 2.0,
+    "scale_table": [
+     {
+      "factor": 4.0,
+      "months": 3
+     },
+     {
+      "factor": 3.0,
+      "months": 4
+     },
+     {
+      "factor": 2.4,
+      "months": 5
+     },
+     {
+      "factor": 2.0,
+      "months": 6
+     },
+     {
+      "factor": 1.33,
+      "months": 9
+     },
+     {
+      "factor": 1.0,
+      "months": 12
+     }
+    ],
+    "unit_unverified": true,
+    "ytd_sales_bt": 0.1
+   },
+   "symbol": "متنوع01"
+  },
+  {
+   "exempt": true,
+   "out": {
+    "annual_sales_bt": null,
+    "annual_sales_mrl": 0.0,
+    "basis": "N/A — هلدینگ/سرمایه‌گذاری/واسطۀ مالی (سند v2.1 F-04)",
+    "months_used": 0,
+    "na": true,
+    "operational_revenue_basis": false,
+    "reconciled": true,
+    "revenue_basis": "تولیدی/عمرانی — جمع فروش داخلی + صادراتی (ردیف «جمع» جدول فروش)",
+    "scale_factor": 0.0
+   },
+   "symbol": "متنوع01"
+  },
+  {
+   "kind": "no_exempt_arg",
+   "out": {
+    "annual_sales_bt": 0.1,
+    "annual_sales_mrl": 1400.0,
+    "basis": "تجمیعی 06/1404 × ۱۲÷6 (=×2.00)",
+    "fs_unit": null,
+    "fs_unit_label": "واحد نامعلوم",
+    "months_used": 6,
+    "na": false,
+    "operational_revenue_basis": false,
+    "reconciled": false,
+    "revenue_basis": "تولیدی/عمرانی — جمع فروش داخلی + صادراتی (ردیف «جمع» جدول فروش)",
+    "scale_factor": 2.0,
+    "scale_table": [
+     {
+      "factor": 4.0,
+      "months": 3
+     },
+     {
+      "factor": 3.0,
+      "months": 4
+     },
+     {
+      "factor": 2.4,
+      "months": 5
+     },
+     {
+      "factor": 2.0,
+      "months": 6
+     },
+     {
+      "factor": 1.33,
+      "months": 9
+     },
+     {
+      "factor": 1.0,
+      "months": 12
+     }
+    ],
+    "unit_unverified": true,
+    "ytd_sales_bt": 0.1
+   },
+   "symbol": "متنوع01"
+  },
+  {
+   "kind": "ind4_exempt",
+   "out": {
+    "na": false,
+    "na_false": false
+   },
+   "symbol": "متنوع01"
+  }
+ ]
+}

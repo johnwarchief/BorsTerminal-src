@@ -1,0 +1,368 @@
+{
+ "cases": [
+  {
+   "cfg": {},
+   "out": {
+    "eps_years": 3,
+    "inflation_basis": 60.0,
+    "inflation_benchmark": 60.0,
+    "margin_ideal": 30.0,
+    "margin_min": 20.0,
+    "monetary_growth_min": 40.0,
+    "monetary_growth_target": 60.0,
+    "potential_min": 40.0,
+    "sales_to_mcap_min": 0.33,
+    "volume_breadth_min": 0.6,
+    "volume_growth_min": 0.0
+   }
+  },
+  {
+   "cfg": {
+    "growth_min": 70.0
+   },
+   "out": {
+    "eps_years": 3,
+    "inflation_basis": 60.0,
+    "inflation_benchmark": 60.0,
+    "margin_ideal": 30.0,
+    "margin_min": 20.0,
+    "monetary_growth_min": 70.0,
+    "monetary_growth_target": 60.0,
+    "potential_min": 40.0,
+    "sales_to_mcap_min": 0.33,
+    "volume_breadth_min": 0.6,
+    "volume_growth_min": 0.0
+   }
+  },
+  {
+   "cfg": {
+    "margin_min": 40.0,
+    "v10_margin_min": 40.0
+   },
+   "out": {
+    "eps_years": 3,
+    "inflation_basis": 60.0,
+    "inflation_benchmark": 60.0,
+    "margin_ideal": 30.0,
+    "margin_min": 40.0,
+    "monetary_growth_min": 40.0,
+    "monetary_growth_target": 60.0,
+    "potential_min": 40.0,
+    "sales_to_mcap_min": 0.33,
+    "volume_breadth_min": 0.6,
+    "volume_growth_min": 0.0
+   }
+  },
+  {
+   "cfg": {
+    "margin_min": 25.0,
+    "v10_margin_min": 5.0
+   },
+   "out": {
+    "eps_years": 3,
+    "inflation_basis": 60.0,
+    "inflation_benchmark": 60.0,
+    "margin_ideal": 30.0,
+    "margin_min": 5.0,
+    "monetary_growth_min": 40.0,
+    "monetary_growth_target": 60.0,
+    "potential_min": 40.0,
+    "sales_to_mcap_min": 0.33,
+    "volume_breadth_min": 0.6,
+    "volume_growth_min": 0.0
+   }
+  },
+  {
+   "cfg": {
+    "margin_min": 25.0
+   },
+   "out": {
+    "eps_years": 3,
+    "inflation_basis": 60.0,
+    "inflation_benchmark": 60.0,
+    "margin_ideal": 30.0,
+    "margin_min": 25.0,
+    "monetary_growth_min": 40.0,
+    "monetary_growth_target": 60.0,
+    "potential_min": 40.0,
+    "sales_to_mcap_min": 0.33,
+    "volume_breadth_min": 0.6,
+    "volume_growth_min": 0.0
+   }
+  },
+  {
+   "cfg": {
+    "v10_monetary_growth_min": 55.0
+   },
+   "out": {
+    "eps_years": 3,
+    "inflation_basis": 60.0,
+    "inflation_benchmark": 60.0,
+    "margin_ideal": 30.0,
+    "margin_min": 20.0,
+    "monetary_growth_min": 40.0,
+    "monetary_growth_target": 55.0,
+    "potential_min": 40.0,
+    "sales_to_mcap_min": 0.33,
+    "volume_breadth_min": 0.6,
+    "volume_growth_min": 0.0
+   }
+  },
+  {
+   "cfg": {
+    "growth_min": 30.0,
+    "v10_monetary_growth_min": 55.0
+   },
+   "out": {
+    "eps_years": 3,
+    "inflation_basis": 60.0,
+    "inflation_benchmark": 60.0,
+    "margin_ideal": 30.0,
+    "margin_min": 20.0,
+    "monetary_growth_min": 30.0,
+    "monetary_growth_target": 55.0,
+    "potential_min": 40.0,
+    "sales_to_mcap_min": 0.33,
+    "volume_breadth_min": 0.6,
+    "volume_growth_min": 0.0
+   }
+  },
+  {
+   "cfg": {
+    "growth_min": 30.0
+   },
+   "out": {
+    "eps_years": 3,
+    "inflation_basis": 60.0,
+    "inflation_benchmark": 60.0,
+    "margin_ideal": 30.0,
+    "margin_min": 20.0,
+    "monetary_growth_min": 30.0,
+    "monetary_growth_target": 60.0,
+    "potential_min": 40.0,
+    "sales_to_mcap_min": 0.33,
+    "volume_breadth_min": 0.6,
+    "volume_growth_min": 0.0
+   }
+  },
+  {
+   "cfg": {
+    "eps_years": "5"
+   },
+   "out": {
+    "eps_years": 5,
+    "inflation_basis": 60.0,
+    "inflation_benchmark": 60.0,
+    "margin_ideal": 30.0,
+    "margin_min": 20.0,
+    "monetary_growth_min": 40.0,
+    "monetary_growth_target": 60.0,
+    "potential_min": 40.0,
+    "sales_to_mcap_min": 0.33,
+    "volume_breadth_min": 0.6,
+    "volume_growth_min": 0.0
+   }
+  },
+  {
+   "cfg": {
+    "eps_years": 2,
+    "v10_eps_years": 4
+   },
+   "out": {
+    "eps_years": 4,
+    "inflation_basis": 60.0,
+    "inflation_benchmark": 60.0,
+    "margin_ideal": 30.0,
+    "margin_min": 20.0,
+    "monetary_growth_min": 40.0,
+    "monetary_growth_target": 60.0,
+    "potential_min": 40.0,
+    "sales_to_mcap_min": 0.33,
+    "volume_breadth_min": 0.6,
+    "volume_growth_min": 0.0
+   }
+  },
+  {
+   "cfg": {
+    "v10_volume_breadth_min": 0.75
+   },
+   "out": {
+    "eps_years": 3,
+    "inflation_basis": 60.0,
+    "inflation_benchmark": 60.0,
+    "margin_ideal": 30.0,
+    "margin_min": 20.0,
+    "monetary_growth_min": 40.0,
+    "monetary_growth_target": 60.0,
+    "potential_min": 40.0,
+    "sales_to_mcap_min": 0.33,
+    "volume_breadth_min": 0.75,
+    "volume_growth_min": 0.0
+   }
+  },
+  {
+   "cfg": {
+    "volume_breadth_min": 0.5
+   },
+   "out": {
+    "eps_years": 3,
+    "inflation_basis": 60.0,
+    "inflation_benchmark": 60.0,
+    "margin_ideal": 30.0,
+    "margin_min": 20.0,
+    "monetary_growth_min": 40.0,
+    "monetary_growth_target": 60.0,
+    "potential_min": 40.0,
+    "sales_to_mcap_min": 0.33,
+    "volume_breadth_min": 0.5,
+    "volume_growth_min": 0.0
+   }
+  },
+  {
+   "cfg": {
+    "sales_to_mcap_min": 0.25,
+    "v10_sales_to_mcap_min": 0.5
+   },
+   "out": {
+    "eps_years": 3,
+    "inflation_basis": 60.0,
+    "inflation_benchmark": 60.0,
+    "margin_ideal": 30.0,
+    "margin_min": 20.0,
+    "monetary_growth_min": 40.0,
+    "monetary_growth_target": 60.0,
+    "potential_min": 40.0,
+    "sales_to_mcap_min": 0.5,
+    "volume_breadth_min": 0.6,
+    "volume_growth_min": 0.0
+   }
+  },
+  {
+   "cfg": {
+    "profit_potential_min": 35.0,
+    "v10_potential_min": 20.0
+   },
+   "out": {
+    "eps_years": 3,
+    "inflation_basis": 60.0,
+    "inflation_benchmark": 60.0,
+    "margin_ideal": 30.0,
+    "margin_min": 20.0,
+    "monetary_growth_min": 40.0,
+    "monetary_growth_target": 60.0,
+    "potential_min": 20.0,
+    "sales_to_mcap_min": 0.33,
+    "volume_breadth_min": 0.6,
+    "volume_growth_min": 0.0
+   }
+  },
+  {
+   "cfg": {
+    "v10_inflation_basis": 0.0
+   },
+   "out": {
+    "eps_years": 3,
+    "inflation_basis": 0.0,
+    "inflation_benchmark": 0.0,
+    "margin_ideal": 30.0,
+    "margin_min": 20.0,
+    "monetary_growth_min": 40.0,
+    "monetary_growth_target": 60.0,
+    "potential_min": 40.0,
+    "sales_to_mcap_min": 0.33,
+    "volume_breadth_min": 0.6,
+    "volume_growth_min": 0.0
+   }
+  },
+  {
+   "cfg": {
+    "v10_inflation_basis": "42.5"
+   },
+   "out": {
+    "eps_years": 3,
+    "inflation_basis": 42.5,
+    "inflation_benchmark": 42.5,
+    "margin_ideal": 30.0,
+    "margin_min": 20.0,
+    "monetary_growth_min": 40.0,
+    "monetary_growth_target": 60.0,
+    "potential_min": 40.0,
+    "sales_to_mcap_min": 0.33,
+    "volume_breadth_min": 0.6,
+    "volume_growth_min": 0.0
+   }
+  },
+  {
+   "cfg": {
+    "v10_inflation_basis": -1.0
+   },
+   "out": {
+    "eps_years": 3,
+    "inflation_basis": -1.0,
+    "inflation_benchmark": 60.0,
+    "margin_ideal": 30.0,
+    "margin_min": 20.0,
+    "monetary_growth_min": 40.0,
+    "monetary_growth_target": 60.0,
+    "potential_min": 40.0,
+    "sales_to_mcap_min": 0.33,
+    "volume_breadth_min": 0.6,
+    "volume_growth_min": 0.0
+   }
+  },
+  {
+   "cfg": {
+    "v10_inflation_basis": "abc"
+   },
+   "out": {
+    "eps_years": 3,
+    "inflation_basis": 60.0,
+    "inflation_benchmark": 60.0,
+    "margin_ideal": 30.0,
+    "margin_min": 20.0,
+    "monetary_growth_min": 40.0,
+    "monetary_growth_target": 60.0,
+    "potential_min": 40.0,
+    "sales_to_mcap_min": 0.33,
+    "volume_breadth_min": 0.6,
+    "volume_growth_min": 0.0
+   }
+  },
+  {
+   "cfg": {
+    "margin_min": "bad"
+   },
+   "out": {
+    "eps_years": 3,
+    "inflation_basis": 60.0,
+    "inflation_benchmark": 60.0,
+    "margin_ideal": 30.0,
+    "margin_min": 20.0,
+    "monetary_growth_min": 40.0,
+    "monetary_growth_target": 60.0,
+    "potential_min": 40.0,
+    "sales_to_mcap_min": 0.33,
+    "volume_breadth_min": 0.6,
+    "volume_growth_min": 0.0
+   }
+  },
+  {
+   "cfg": {
+    "margin_min": null
+   },
+   "out": {
+    "eps_years": 3,
+    "inflation_basis": 60.0,
+    "inflation_benchmark": 60.0,
+    "margin_ideal": 30.0,
+    "margin_min": 20.0,
+    "monetary_growth_min": 40.0,
+    "monetary_growth_target": 60.0,
+    "potential_min": 40.0,
+    "sales_to_mcap_min": 0.33,
+    "volume_breadth_min": 0.6,
+    "volume_growth_min": 0.0
+   }
+  }
+ ]
+}

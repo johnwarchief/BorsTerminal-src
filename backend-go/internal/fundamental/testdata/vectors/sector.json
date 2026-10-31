@@ -1,0 +1,148 @@
+{
+ "cases": [
+  {
+   "cfg": {},
+   "out": {
+    "exclusion_active": true,
+    "fts_top_industry": true,
+    "label": "قیمت‌گذاری دستوری",
+    "market_share_pct": 0.0,
+    "matched_tokens": [
+     "خودرو"
+    ],
+    "pass": false,
+    "sector": "خودرو",
+    "verdict": "mandatory"
+   },
+   "sector": "خودرو"
+  },
+  {
+   "cfg": {
+    "industry_mode": "Rank_Only"
+   },
+   "out": {
+    "exclusion_active": false,
+    "fts_top_industry": true,
+    "label": "قیمت‌گذاری دستوری",
+    "market_share_pct": 0.0,
+    "matched_tokens": [
+     "خودرو"
+    ],
+    "pass": true,
+    "sector": "خودرو",
+    "verdict": "mandatory"
+   },
+   "sector": "خودرو"
+  },
+  {
+   "cfg": {},
+   "out": {
+    "exclusion_active": true,
+    "fts_top_industry": true,
+    "label": "قیمت‌گذاری آزاد / بورس کالا",
+    "market_share_pct": 0.0,
+    "matched_tokens": [
+     "سیمان"
+    ],
+    "pass": true,
+    "sector": "سیمان",
+    "verdict": "free"
+   },
+   "sector": "سیمان"
+  },
+  {
+   "cfg": {},
+   "out": {
+    "exclusion_active": true,
+    "fts_top_industry": false,
+    "label": "خنثی — نیازمند بررسی موردی",
+    "market_share_pct": 0.0,
+    "matched_tokens": [],
+    "pass": true,
+    "sector": "دارو",
+    "verdict": "neutral"
+   },
+   "sector": "دارو"
+  },
+  {
+   "cfg": {
+    "pharma_margin_exempt_min": 30.0
+   },
+   "out": {
+    "exclusion_active": true,
+    "fts_top_industry": true,
+    "label": "قیمت‌گذاری آزاد / بورس کالا",
+    "market_share_pct": 0.0,
+    "matched_tokens": [
+     "دارویی ممتاز (حاشیۀ ناخالص ≥ 30٪)"
+    ],
+    "pass": true,
+    "sector": "دارو",
+    "verdict": "free"
+   },
+   "sector": "دارو"
+  },
+  {
+   "cfg": {
+    "pharma_margin_exempt_min": 30.0
+   },
+   "out": {
+    "exclusion_active": true,
+    "fts_top_industry": true,
+    "label": "قیمت‌گذاری آزاد / بورس کالا",
+    "market_share_pct": 0.0,
+    "matched_tokens": [
+     "بانک رشد درآمدی و ارزی"
+    ],
+    "pass": true,
+    "sector": "بانك",
+    "verdict": "free"
+   },
+   "sector": "بانك"
+  },
+  {
+   "cfg": {},
+   "out": {
+    "exclusion_active": true,
+    "fts_top_industry": false,
+    "label": "خنثی — نیازمند بررسی موردی",
+    "market_share_pct": 0.5,
+    "matched_tokens": [],
+    "pass": true,
+    "sector": "غیرفعال",
+    "verdict": "neutral"
+   },
+   "sector": "غیرفعال"
+  },
+  {
+   "cfg": {},
+   "out": {
+    "exclusion_active": true,
+    "fts_top_industry": true,
+    "label": "قیمت‌گذاری آزاد / بورس کالا",
+    "market_share_pct": 0.5,
+    "matched_tokens": [
+     "پتروشیمی"
+    ],
+    "pass": true,
+    "sector": "پتروشیمی",
+    "verdict": "free"
+   },
+   "sector": "پتروشیمی"
+  },
+  {
+   "cfg": {},
+   "out": {
+    "exclusion_active": true,
+    "fts_top_industry": false,
+    "label": "خنثی — نیازمند بررسی موردی",
+    "market_share_pct": 0.0,
+    "matched_tokens": [],
+    "pass": true,
+    "sector": "",
+    "verdict": "neutral"
+   },
+   "sector": ""
+  }
+ ]
+}
