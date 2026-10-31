@@ -129,7 +129,7 @@ func (f *fakeMstat) SmartMoney(w http.ResponseWriter, _ *http.Request) {
 }
 func (f *fakeMstat) Board(w http.ResponseWriter, _ *http.Request) { f.hit("board", w) }
 
-// TestMstatRouteTable هر مسیرِ یازده‌گانه باید هم در فهرستِ مسیرهایِ پایتون
+// TestMstatRouteTable هر مسیرِ سیزده‌گانه باید هم در فهرستِ مسیرهایِ پایتون
 // باشد و هم به همان هندلرِ گروهی برسد — یک جابه‌جایی در ثبتِ مسیرها (مثلاً
 // timeline ← Phases) این‌جا قرمز می‌شود، ولی «۲۰۰ شد» تنها نه.
 func TestMstatRouteTable(t *testing.T) {

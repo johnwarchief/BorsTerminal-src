@@ -335,7 +335,7 @@ def main() -> int:
     except Exception as e:                                        # noqa: BLE001
         check("s1 panel bodies are readable", False, repr(e))
 
-    # ۴) شمارشِ سناریوها — همان چهار صحنه، با همان فهرستِ فایل، و رفتارشان.
+    # ۴) شمارشِ سناریوها — همان پنج صحنه، با همان فهرستِ فایل، و رفتارشان.
     try:
         for scen, stems in sorted(SCENARIOS.items()):
             d = os.path.join(GOLD, scen)

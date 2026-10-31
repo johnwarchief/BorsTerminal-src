@@ -320,3 +320,148 @@ func TestFaSigned(t *testing.T) {
 		}
 	}
 }
+
+// TestFlowTrioTriState سه‌مقداری‌بودنِ gold_out را قفل می‌کند: نبودِ دادهٔ طلا
+// لغوِ الزام است، نه ردِّ شرط؛ falseِ صریح الزام را می‌شکند.
+func TestFlowTrioTriState(t *testing.T) {
+	cases := []struct {
+		name     string
+		flow     map[string]any
+		wantTrio bool
+		wantOut  any
+	}{
+		{"core true, gold absent", map[string]any{
+			"eq_inflow": true, "fixed_outflow": true}, true, nil},
+		{"core true, gold false", map[string]any{
+			"eq_inflow": true, "fixed_outflow": true, "gold_outflow": false}, false, false},
+		{"core true, gold true", map[string]any{
+			"eq_inflow": true, "fixed_outflow": true, "gold_outflow": true}, true, true},
+		{"gold derived from flow", map[string]any{
+			"eq_inflow": true, "fixed_outflow": true, "gold_flow_b_toman": -1.0}, true, true},
+		{"core false", map[string]any{
+			"eq_inflow": false, "fixed_outflow": true, "gold_outflow": true}, false, true},
+	}
+	for _, c := range cases {
+		trio, out := flowTrio(c.flow)
+		if trio != c.wantTrio || out != c.wantOut {
+			t.Errorf("%s: trio=%v out=%v, want %v/%v", c.name, trio, out, c.wantTrio, c.wantOut)
+		}
+	}
+}
+
+// TestFlowDetailGoldMissing: اگر gold_outflow بیاید ولی عددِ طلا نباشد، متن
+// «بدون داده» است نه «۰» — همان _fa_signed(None)ِ پایتون.
+func TestFlowDetailGoldMissing(t *testing.T) {
+	h := openFixture(t)
+	ph := marketphase.FromDB(h.Market, pinnedNow)
+	macro, entry, flow := verdictInputs(25.0, 40.0, false, 5.0, 1.0, nil, false)
+	flow["gold_outflow"] = true // عدد نیامده
+	v := dayVerdict(h.Market, macro, entry, flow, asofAt(124000), ph, newVerdictMemo())
+	g := gateByKey(v, "flow")
+	if !strings.Contains(g["detail"].(string), "طلا بدون داده") {
+		t.Fatalf("flow detail = %v", g["detail"])
+	}
+}
+
+// TestDayVerdictWatch: فقط درِ نقدینگی مثبت است ⇒ «پایِ بازار بمان»، نه «روزِ ورود».
+func TestDayVerdictWatch(t *testing.T) {
+	h := openFixture(t)
+	ph := continuousPhase(20261014)
+	macro, entry, flow := verdictInputs(25.0, 40.0, false, 5.0, 1.0, 0.1, false)
+	v := dayVerdict(h.Market, macro, entry, flow, asofAt(124000), ph, newVerdictMemo())
+	if v["verdict"] != "watch" || v["label"] != "پایِ بازار بمان" {
+		t.Fatalf("verdict = %v / %v", v["verdict"], v["label"])
+	}
+	ms := v["market_state"].(map[string]any)
+	if ms["stage"] != "establishing" || ms["evidence_direction"] != "مثبت" {
+		t.Fatalf("stage=%v direction=%v", ms["stage"], ms["evidence_direction"])
+	}
+}
+
+// TestDayVerdictRiskyConfirmed: در نشستِ جاری با آغازِ واقعیِ ۱۰:۰۰، سه ارزیابیِ
+// تازه حکمِ منفی را قاطع می‌کند و مرحل «risky» می‌شود؛ ردیفِ نیمه‌کارِ امروز هم
+// از «سه نشستِ اخیر» حذف می‌شود (تاریخچه ۲ نشست می‌ماند).
+func TestDayVerdictRiskyConfirmed(t *testing.T) {
+	h := openFixture(t)
+	ph := continuousPhase(20261014)
+	macro, entry, flow := verdictInputs(5.0, 40.0, false, -5.0, 1.0, nil, true)
+	memo := newVerdictMemo()
+	var v map[string]any
+	for _, hv := range []int64{103000, 104000, 105000} {
+		v = dayVerdict(h.Market, macro, entry, flow, asofAt(hv), ph, memo)
+	}
+	if v["verdict"] != "avoid" {
+		t.Fatalf("verdict = %v (%v) reason=%v", v["verdict"], v["label"], v["reason"])
+	}
+	ms := v["market_state"].(map[string]any)
+	if ms["stage"] != "risky" || ms["confirm_streak"] != 3 {
+		t.Fatalf("stage=%v streak=%v", ms["stage"], ms["confirm_streak"])
+	}
+	if ms["minutes_since_open"] != 50 || ms["session_start_clock"] != "۱۰:۰۰" {
+		t.Fatalf("since=%v start=%v", ms["minutes_since_open"], ms["session_start_clock"])
+	}
+	if g := gateByKey(v, "continuity"); g["detail"] != "تاریخچه کامل نیست — ۲ نشست از ۳" {
+		t.Fatalf("continuity detail = %v (today's partial row must be dropped)", g["detail"])
+	}
+}
+
+// TestDayVerdictStages: پیش‌آغاز و تعطیلی برچسبِ مرحلِ خودشان را دارند؛ تعطیلی
+// با حکمِ بی‌شاهد «بدونِ حکم» می‌ماند ولی شدتِ شواهد «جمعِ نهایی» است.
+func TestDayVerdictStages(t *testing.T) {
+	h := openFixture(t)
+	day := int64(20261014)
+	pre := marketphase.Phase{
+		Phase: marketphase.PreOpen, Label: "پیش از آغازِ معاملات",
+		VerdictAllowed: false,
+		Computable: map[string]bool{"realized_flow": false, "order_pressure": false,
+			"session_vs_threshold": false, "close_price_final": false},
+		NotComputable: []string{"realized_flow"}, WhyNot: map[string]string{},
+	}
+	macro, entry, flow := verdictInputs(5.0, 40.0, false, -5.0, 1.0, nil, false)
+	v := dayVerdict(h.Market, macro, entry, flow, asofAt(124000), pre, newVerdictMemo())
+	if ms := v["market_state"].(map[string]any); ms["stage"] != "pre_open" {
+		t.Fatalf("pre_open stage = %v", ms["stage"])
+	}
+
+	hol := marketphase.Phase{
+		Phase: marketphase.Holiday, Label: "تعطیلِ رسمی", VerdictAllowed: true,
+		SessionDay: &day,
+		Computable: map[string]bool{"realized_flow": true, "order_pressure": false,
+			"session_vs_threshold": true, "close_price_final": true},
+		NotComputable: []string{"order_pressure"}, WhyNot: map[string]string{},
+	}
+	blankMacro := map[string]any{"partial_session": false, "excellent": false}
+	blankEntry := map[string]any{}
+	blankFlow := map[string]any{}
+	v = dayVerdict(h.Market, blankMacro, blankEntry, blankFlow, asofAt(124000), hol, newVerdictMemo())
+	if v["verdict"] != "nodata" || v["label"] != "بدونِ حکم" {
+		t.Fatalf("holiday verdict = %v / %v", v["verdict"], v["label"])
+	}
+	ms := v["market_state"].(map[string]any)
+	if ms["stage"] != "holiday" || ms["evidence_strength"] != "قابل‌اتکا (جمعِ نهایی)" {
+		t.Fatalf("holiday = %v / %v", ms["stage"], ms["evidence_strength"])
+	}
+}
+
+// TestDayVerdictStaleClients: تفکیکِ حقیقیِ نرسیده درِ پول را «بدون داده» می‌کند،
+// مرحل را data_limited و علت را در limitations می‌آورد.
+func TestDayVerdictStaleClients(t *testing.T) {
+	h := openFixture(t)
+	ph := continuousPhase(20261014)
+	macro, entry, flow := verdictInputs(25.0, 40.0, false, 5.0, -2.0, -1.0, false)
+	asof := asofAt(124000)
+	asof["client_lag_days"] = true
+	v := dayVerdict(h.Market, macro, entry, flow, asof, ph, newVerdictMemo())
+	g := gateByKey(v, "flow")
+	if g["state"] != "nodata" || !strings.Contains(g["detail"].(string), "روزِ ۲۰۲۶۱۰۱۴") {
+		t.Fatalf("flow gate = %v", g)
+	}
+	ms := v["market_state"].(map[string]any)
+	if ms["stage"] != "data_limited" || ms["stale_clients"] != true {
+		t.Fatalf("stage=%v stale=%v", ms["stage"], ms["stale_clients"])
+	}
+	lim := ms["limitations"].([]string)
+	if len(lim) == 0 || lim[len(lim)-1] != "تفکیکِ حقیقی/حقوقی هنوز به روزِ نشست نرسیده" {
+		t.Fatalf("limitations = %v", lim)
+	}
+}

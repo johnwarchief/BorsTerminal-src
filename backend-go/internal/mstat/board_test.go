@@ -1,6 +1,7 @@
 package mstat
 
 import (
+	"encoding/json"
 	"net/http/httptest"
 	"testing"
 	"time"
@@ -52,9 +53,12 @@ func TestBoardSharesPanelCache(t *testing.T) {
 	}
 	rec := httptest.NewRecorder()
 	s.Summary(rec, httptest.NewRequest("GET", "/api/mstat/summary", nil))
-	fresh := s.summaryBody()
-	if fresh["marker"] != true || fresh["source"] != "sentinel" {
-		t.Fatalf("standalone route missed the shared key: %v", fresh)
+	var routeBody map[string]any
+	if err := json.Unmarshal(rec.Body.Bytes(), &routeBody); err != nil {
+		t.Fatal(err)
+	}
+	if routeBody["marker"] != true || routeBody["source"] != "sentinel" {
+		t.Fatalf("standalone route missed the shared key: %v", routeBody)
 	}
 }
 

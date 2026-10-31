@@ -19,6 +19,24 @@ ROOT = os.path.dirname(os.path.dirname(HERE))
 BASE = os.path.join(HERE, "cases_b2a.json")
 EXTRA = os.path.join(HERE, "cases_b2b_extra.json")
 
+# خانوادهٔ کاملِ مسیرها و کیس‌هایِ الزامیِ B2-2. بی‌این، یک فایلِ خالیِ
+# cases_b2b_extra.json هنوز «B2b»ِ سبز با ۳۳ کیس می‌ساخت و ادعایِ سیزده مسیر
+# فقط به عرف تکیه می‌کرد.
+MSTAT_ROUTES = {"summary", "histogram", "thermometer", "depth", "clientsplit",
+                "market-snapshot", "phase", "mainwatch", "industries", "timeline",
+                "phases", "smart-money", "board"}
+EXTRA_CASES = {"smart-money", "board-default", "board-stock-3", "board-limit-422"}
+
+
+def route_tails(cases):
+    """دنبالهٔ مسیرهایِ GETِ mstat که در فهرست پوشش دارند (بی‌query)."""
+    out = set()
+    for case in cases:
+        path = (case.get("path") or "").split("?", 1)[0]
+        if case.get("method") == "GET" and path.startswith("/api/mstat/"):
+            out.add(path.rsplit("/", 1)[-1])
+    return out
+
 
 def merged_cases(dest):
     """B2a + کیس‌هایِ B2-2 در یک فایل؛ نامِ تکراری یعنی دو تعریفِ یک کیس."""
@@ -32,6 +50,12 @@ def merged_cases(dest):
             raise SystemExit("duplicate case name: %s" % case["name"])
         names.add(case["name"])
     cases["cases"].extend(extra["cases"])
+    missing_routes = MSTAT_ROUTES - route_tails(cases["cases"])
+    if missing_routes:
+        raise SystemExit("merged cases miss mstat routes: %s" % sorted(missing_routes))
+    missing_extra = EXTRA_CASES - names
+    if missing_extra:
+        raise SystemExit("B2-2 cases missing: %s" % sorted(missing_extra))
     with open(dest, "w", encoding="utf-8") as f:
         json.dump(cases, f, ensure_ascii=False)
     return len(cases["cases"]), len(extra["cases"])

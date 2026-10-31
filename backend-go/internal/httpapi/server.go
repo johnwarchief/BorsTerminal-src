@@ -38,7 +38,7 @@ type Market interface {
 	SyncState(http.ResponseWriter, *http.Request)
 }
 
-// Mstat یازده مسیرِ GETِ تبِ وضعیت بازار؛ nil یعنی هیچ‌کدام پورت نشده.
+// Mstat سیزده مسیرِ GETِ تبِ وضعیت بازار؛ nil یعنی هیچ‌کدام پورت نشده.
 type Mstat interface {
 	Summary(http.ResponseWriter, *http.Request)
 	Histogram(http.ResponseWriter, *http.Request)

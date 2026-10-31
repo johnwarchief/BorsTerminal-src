@@ -767,7 +767,7 @@ func dayVerdict(db *sql.DB, macro, entry, flow, asof map[string]any,
 	eqVal, hasEq := mnum(flow, "eq_flow_b_toman")
 	_, hasFixed := mnum(flow, "fixed_flow_b_toman")
 	trio, gdOut := flowTrio(flow)
-	gd, _ := mnum(flow, "gold_flow_b_toman")
+	gd, hasGd := mnum(flow, "gold_flow_b_toman")
 	realized := ph.Computable["realized_flow"]
 	staleClients := mbool(asof, "client_lag_days")
 	var flowState, flowLabel string
@@ -793,8 +793,10 @@ func dayVerdict(db *sql.DB, macro, entry, flow, asof map[string]any,
 		flowState, flowLabel, flowVote = "mid", "جهتِ پول روشن نیست", 0
 	}
 	if flowDetail == nil {
+		// gold_outflow می‌تواند bool باشد حتی وقتی خودِ عدد نیامده؛ پایتون در
+		// این حالت _fa_signed(None) ⇒ «بدون داده» می‌دهد، نه صفر.
 		goldText := "بدون داده"
-		if gdOut != nil {
+		if gdOut != nil && hasGd {
 			goldText = faSigned(gd)
 		}
 		eqText, fxText := "بدون داده", "بدون داده"
