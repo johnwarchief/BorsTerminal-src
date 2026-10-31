@@ -9,6 +9,10 @@
 [B2b-contract.json](../../../_audit/parity/B2b-contract.json). هر دو رویِ درختِ
 کامیت‌شدۀ `9a604e66` ساخته شدند؛ SHA و زمانِ دقیق در `commit` و `measured_at`.
 
+گیت دو بار اجرا شد: یک‌بار رویِ `7a35e5d4` (پیش از کامیت‌شدنِ ابزار) و یک‌بار رویِ
+`9a604e66`؛ هر دو اجرا 38/38 با Δ=0 و همان سیزده بررسیِ سبز بودند و شاهدِ
+کامیت‌شده همان اجرایِ دوم است.
+
 `checks: contract=True delta_zero=True statuses_200_422=True case_coverage=True post_501=True timeline=True timeline_exercised=True industry_case_ran=True clock=True go_read_only=True root_untouched=True frozen_copies=True sidecar_untouched=True`
 
 ## اعدادِ گیت
