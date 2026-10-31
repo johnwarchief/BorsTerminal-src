@@ -1,7 +1,9 @@
 package tapehistory
 
 // گاردِ چهارگانهٔ bors-architecture (پلنِ B4 §۳). What changes: لایۀ *خواندنِ*
-// tape_flag_history.py در کنارِ لایۀ نوشتنِ موجود (Recorder). Invariants: هیچ
+// tape_flag_history.py در کنارِ لایۀ نوشتنِ موجود (Recorder)؛ سه انحرافِ ثابت‌شده
+// از اوراکل بسته شد: `.strip()`ِ پایتون (نه TrimSpace)، `json.loads`ِ بی‌شاخهٔ
+// اضافه با عددِ صحیحِ دقیق، و تقویمِ همه‌یا‌هیچ. Invariants: هیچ
 // داوریِ تازه‌ای نمی‌سازد؛ «روزِ ثبت‌نشده» با «روزِ غیرفعال» یکی نمی‌شود؛
 // کلیدِ روز درِ JSON رشته است (orjson کلیدِ عددی را رد می‌کند — شاهدِ زنده
 // ۱۴۰۵-۰۷-۲۱)؛ user.db درِ فازِ A نوشته نمی‌شود، پس `ensure()` پایتون اینجا
@@ -15,6 +17,8 @@ import (
 	"encoding/json"
 	"strconv"
 	"strings"
+
+	"borsterminal/backend/internal/period"
 )
 
 // Reader همان اتصالِ user.db و همان حالتِ پروسهٔ `write_error` را می‌خواند که
@@ -30,10 +34,14 @@ func NewReader(user *sql.DB, lastErr func() string) *Reader {
 }
 
 // ParseCodes عینِ `[s.strip() for s in codes.split(",") if s.strip()][:400]`.
+// `.strip()`ِ پایتون U+001C..U+001F را هم می‌چیند (Py_UNICODE_ISSPACE) و
+// strings.TrimSpace نه؛ پس period.Trim همین‌جا الزامی است، وگرنه کلیدِ
+// by_symbol کثیف می‌ماند و پارامترِ `IN (?)` هیچ‌وقت به ردیفِ نماد نمی‌رسد
+// (نماد «ثبت‌نشده» به‌جای «غیرفعال» — بی‌صدا).
 func ParseCodes(raw string) []string {
 	out := []string{}
 	for _, part := range strings.Split(raw, ",") {
-		s := strings.TrimSpace(part)
+		s := period.Trim(part)
 		if s == "" {
 			continue
 		}
@@ -62,6 +70,12 @@ func ClampDays(days int) int {
 
 // TradingDays روزهایی که **واقعاً رصد شده‌اند** — نه هر روزِ تقویمی. خطایِ SQLite
 // (مثلاً جدولِ نبود) فهرستِ خالی می‌دهد، نه کرش.
+//
+// همه‌یا‌هیچ: `fetchall()`ِ پایتون کلِ ردیف‌ها را یک‌جا می‌خواند و هر sqlite3.Error
+// درِ همان try بلعیده می‌شود ⇒ فهرستِ خالی. Go حلقه‌به‌حلقه می‌خواند، پس اگر خطایِ
+// Scan میانی نیمه‌فهرست برگردد، تقویمِ نصفه ساخته می‌شود و روزهایِ واقعیِ ثبت‌شده
+// «ثبت‌نشده» خوانده می‌شوند — بدترین خروجیِ ممکن، و هیچ همتایی درِ پایتون ندارد.
+// از همین‌رو هر خطایِ خواندن فهرست را خالی می‌کند.
 func (r *Reader) TradingDays(ctx context.Context, limit int) []int64 {
 	rows, err := r.user.QueryContext(ctx,
 		"SELECT d_even FROM tape_flag_day_meta ORDER BY d_even DESC LIMIT ?", limit)
@@ -73,9 +87,12 @@ func (r *Reader) TradingDays(ctx context.Context, limit int) []int64 {
 	for rows.Next() {
 		var d int64
 		if err := rows.Scan(&d); err != nil {
-			return out
+			return nil
 		}
 		out = append(out, d)
+	}
+	if err := rows.Err(); err != nil {
+		return nil
 	}
 	return out
 }
@@ -233,17 +250,31 @@ func passesOrOne(v sql.NullInt64) int {
 	return int(v.Int64)
 }
 
-// decodeEvidence: متنِ ستونِ evidence همان JSONِ نوشته‌شده است؛ بی‌متن یا
-// بی‌خوانا ⇒ {} (عینِ `except (TypeError, ValueError)` درِ پایتون).
+// decodeEvidence عینِ `json.loads(evidence) if evidence else {}` با همان
+// `except (TypeError, ValueError): ev = {}`ِ پایتون:
+//   - بی‌متن (NULL یا رشتهٔ خالی) ⇒ {} — شرطِ `if evidence` خودِ پایتون است.
+//   - متنِ بی‌خوانا ⇒ {}.
+//   - `null` ⇒ null — شاخۀ تازه‌ای نمی‌سازیم؛ Go پیش‌تر صفرِ JSON را به {}
+//     می‌برد، در حالی که اوراکلِ پایتون null می‌نویسد.
+//   - عددِ درشت (بالای 2^53) رقمش را از دست نمی‌دهد: UseNumber باعث می‌شود
+//     صحیح‌ها به‌جای float64 در متنِ json.Number بمانند و همان‌طور روی سیم
+//     بروند (قراردادِ پروژه: هیچ یادداشتِ تازهٔ 2^53 اضافه نمی‌کنیم).
+//
+// json.loadsِ پایتون چیزی پس از مقدار («Extra data») قبول نمی‌کند؛ Decode تنها
+// نخستین مقدار را می‌خواند، پس باقیِ متن را خودمان می‌سنجیم و بی‌خوانا ⇒ {}.
 func decodeEvidence(s sql.NullString) any {
 	if !s.Valid || s.String == "" {
 		return map[string]any{}
 	}
+	dec := json.NewDecoder(strings.NewReader(s.String))
+	dec.UseNumber()
 	var v any
-	if err := json.Unmarshal([]byte(s.String), &v); err != nil {
+	if err := dec.Decode(&v); err != nil {
 		return map[string]any{}
 	}
-	if v == nil {
+	// الگویِ فاصله درِ json.loadsِ پایتون دقیقاً `[ \t\n\r]*` است، پس اینجا هم
+	// همان چهار نویسه — نه .strip()ِ کامل.
+	if rest := strings.TrimLeft(s.String[dec.InputOffset():], " \t\n\r"); rest != "" {
 		return map[string]any{}
 	}
 	return v

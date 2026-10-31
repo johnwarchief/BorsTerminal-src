@@ -17,6 +17,12 @@ mode=ro)، هر کپی quick_check می‌خورد، فقط PIDهایِ همین
   واقعاً درِ `tape_flag_day` ردیف دارند. بی‌این، سه مسیرِ تازه با بدنهٔ تهی سبز
   می‌شدند.
 * `write_error` درِ دو طرف باید null باشد: حالتِ پروسه است، نه داده (R8).
+* کوئری‌هایِ صحیحِ عددی (`?limit=` خالی، `?limit=1.0`، `?days=3&days=5`) درِ
+  مقایسه‌اند: FastAPI رشتهٔ خالی را ۴۲۲ می‌گیرد، شکلِ اعشاریِ صحیح‌العدد را
+  می‌پذیرد و از کلیدِ تکراری آخرین را برمی‌دارد — `httpapi.IntQuery` همان را
+  اندازه‌گیری و پیاده‌سازی کرده است (شاهد: internal/httpapi/query_test.go).
+* اثرانگشتِ user.db کپیِ پایون درِ میانهٔ دسته دوباره خوانده می‌شود
+  (`user_stable_during_batch`): سنجۀ واقعی، جایِ کلیدِ گمراه‌کننده درِ فایلِ کیس.
 
 کدِ خروج: 0 سبز، 1 اندازه‌گیری شد و قرمز، 2 نتوانستیم اندازه بگیریم.
 """
@@ -68,6 +74,12 @@ TAPE_ROLES = {
               " ORDER BY COUNT(*) DESC, ins_code LIMIT 1",
     "tape_b": "SELECT ins_code FROM tape_flag_day GROUP BY ins_code"
               " ORDER BY COUNT(*) ASC, ins_code LIMIT 1",
+}
+# تقویمِ `tape-history` از tape_flag_day_meta خوانده می‌شود (trading_days درِ
+# tape_flag_history.py)؛ این شمارش پایۀ قاعدۀ clamp است: days=0 ⇒ min(20, n) و
+# days=9999 ⇒ min(120, n).
+WATCHED_DAYS_SQL = {
+    "watched_days": "SELECT COUNT(DISTINCT d_even) FROM tape_flag_day_meta",
 }
 PLACEHOLDERS = ("fs_rich", "fs_empty", "tape_a", "tape_b")
 
@@ -122,7 +134,10 @@ def build_cases(spec, roles):
         row = {"name": case["name"], "method": case.get("method", "GET"),
                "path": path, "exclude": case.get("exclude") or []}
         if case.get("declared"):
-            declared.append(dict(row, note=case["declared"]))
+            # `require_key` کلیدِ اجباریِ بدنهٔ ۲۰۰ است: بی‌آن، پاسخِ تهیِ {} هم
+            # «تعویق اندازه گرفته شد» می‌گرفت (پارۀ (c)).
+            declared.append(dict(row, note=case["declared"],
+                                 require_key=case.get("require_key") or ""))
         else:
             kept.append(row)
     return kept, dropped, declared
@@ -144,8 +159,12 @@ def template_of(path):
     return pure
 
 
-def content_checks(py_url, cases):
-    """هیچ کیسی نباید با بدنهٔ تهی سبز شده باشد؛ سنسور باید رأی را ببیند."""
+def content_checks(py_url, cases, watched_days):
+    """هیچ کیسی نباید با بدنهٔ تهی سبز شده باشد؛ سنسور باید رأی را ببیند.
+
+    `watched_days` شمارشِ روزهایِ رصدشده از همان کپیِ یخ‌زۀ user.db است؛ قواعدۀ
+    clampِ تقویم (20 و 120) بی‌این عدد قابلِ سنجدن نیست.
+    """
     by_name = {c["name"]: c["path"] for c in cases}
     problems = []
 
@@ -207,8 +226,11 @@ def content_checks(py_url, cases):
                 for day in (cell.get("days") or {}).values():
                     if day.get("active"):
                         active += 1
-                    if not isinstance(list((cell.get("days") or {}).keys() or [""])[0], str):
-                        problems.append("tape day key is not a string")
+                    # «کلیدِ روز رشته است یا عدد» اینجا هرگز سنجیده نمی‌شود:
+                    # json.loads کلیدها را به رشته برمی‌گرداند، پس آن سنجه مرده
+                    # بود. متنِ خامِ سیم درِ Go سنجیده می‌شود:
+                    # backend-go/internal/tapehistory/read_test.go
+                    #   TestDayKeysAreStrings (کلیدِ عددی = همان ۵۰۰ِ orjson).
         if active == 0:
             problems.append("no active flag cell in the whole reply — the sensor is blind")
     nod = body_of("tape-no-codes")
@@ -227,9 +249,30 @@ def content_checks(py_url, cases):
         problems.append("tape-one-day calendar=%r want one day" % (d1.get("days"),))
     d0 = body_of("tape-zero-days")
     dd = body_of("tape-clamp-high")
-    if d0 and dd and d0.get("days") != dd.get("days"):
-        problems.append("days=0 (reads as 20) and days=9999 (clamps to 120) must agree on"
-                        " a four-day calendar: %r vs %r" % (d0.get("days"), dd.get("days")))
+    # قاعدۀ واقعی، نه تساویِ دو بدنه: days=0 به 20 خوانده می‌شود (`int(days or 20)`)
+    # و days=9999 تا 120 بریده می‌شود؛ هر دو رویِ تقویمِ روزهایِ رصدشده. تا وقتی
+    # رصد از 20 روز کم‌تر است دو تقویم یکی‌اند و تساویِ کهنه سبز می‌ماند؛ به‌محضِ
+    # اینکه اپراتور بیش از 20 روز رصد داشته باشد همان تساوی قرمزِ کاذب می‌داد.
+    try:
+        n_watch = int(watched_days)
+    except (TypeError, ValueError):
+        n_watch = -1
+        problems.append("watched-day count is unreadable from the copy: %r"
+                        % (watched_days,))
+    if n_watch >= 0:
+        for label, body, cap in (("tape-zero-days", d0, 20), ("tape-clamp-high", dd, 120)):
+            if body is None:
+                problems.append("%s body is missing" % label)
+                continue
+            got = len(body.get("days") or [])
+            if got != min(cap, n_watch):
+                problems.append("%s calendar=%d want min(%d, %d watched days)"
+                                % (label, got, cap, n_watch))
+        # تقویمِ کوتاه‌تر باید دُمِّ تقویمِ بلندتر باشد (تازه‌ترینِ روزها).
+        if d0 and dd:
+            long_days, short_days = (dd.get("days") or []), (d0.get("days") or [])
+            if short_days and long_days[-len(short_days):] != short_days:
+                problems.append("days=0 calendar is not the tail of days=9999")
     dup = body_of("tape-dup-codes")
     if dup and len(dup.get("by_symbol") or {}) != 1:
         problems.append("repeated codes must collapse to one key, got %d"
@@ -245,6 +288,9 @@ def declared_probe(py_url, go_url, declared):
     انتظار: Go همیشه ۵۰۱ NOT_PORTED؛ پایتون ۲۰۰ (یا ۴۲۲ برایِ monthsِ بی‌مصرف).
     اگر روزی کارت پورت شد، این سنجه قرمز می‌شود و می‌گوید کیس باید به مقایسه
     برگردد — یعنی تعویقِ ما تاریخ‌انقضا دارد، نه حدسِ خاموش.
+    وضعِ تنها کافی نیست: هر کیسِ اعلامی `require_key` دارد (کلیدِ اجباریِ
+    همان مسیرِ پایتون، از بدنهٔ واقعیِ api/fundamental.py) و کلیدهایِ دیده‌شده درِ
+    شاهد ثبت می‌شوند، پس پاسخِ ۲۰۰ِ تهیِ {} دیگر سبز نمی‌شود.
     """
     rows, problems = [], []
     for case in declared:
@@ -252,15 +298,20 @@ def declared_probe(py_url, go_url, declared):
         go_status, go_body = engine.get_json(go_url + case["path"])
         want_go = 501
         want_py = 422 if case["name"].endswith("-422") else 200
+        want_key = case.get("require_key") or ("detail" if want_py == 422 else "")
+        py_keys = sorted((py_body or {}).keys())
+        key_seen = bool(want_key) and want_key in (py_body or {})
         ok = (go_status == want_go and (go_body or {}).get("code") == "NOT_PORTED"
-              and py_status == want_py)
+              and py_status == want_py and key_seen and bool(want_key))
         rows.append({"name": case["name"], "path": case["path"], "py": py_status,
                      "go": go_status, "go_code": (go_body or {}).get("code"),
-                     "expect_py": want_py, "ok": ok, "note": case["note"]})
+                     "expect_py": want_py, "require_key": want_key,
+                     "key_seen": key_seen, "py_keys": py_keys,
+                     "ok": ok, "note": case["note"]})
         if not ok:
-            problems.append("%s: py=%r (want %d) go=%r/%r"
+            problems.append("%s: py=%r (want %d) go=%r/%r key=%r seen=%r keys=%r"
                             % (case["name"], py_status, want_py, go_status,
-                               (go_body or {}).get("code")))
+                               (go_body or {}).get("code"), want_key, key_seen, py_keys))
     return rows, problems
 
 
@@ -365,12 +416,18 @@ def main() -> int:
             spec = json.load(f)
         roles = read_roles(os.path.join(py_dir, "market.db"), ROLES_SQL)
         roles.update(read_roles(os.path.join(py_dir, "user.db"), TAPE_ROLES))
+        # شمارۀ روزهایِ رصدشده (پایۀ قواعدۀ clampِ تقویم درِ content_checks؛
+        # path هیچ {watched_days} ندارد، پس کیس‌ها دست‌نمی‌خورند).
+        roles.update(read_roles(os.path.join(py_dir, "user.db"), WATCHED_DAYS_SQL))
         cases, dropped, declared = build_cases(spec, roles)
         if not cases:
             print("no case survived the role lookup: %r" % (dropped,))
             return 2
-        contract_cases = {"cases": cases, "db_sha256": db_prints["market.db"],
-                          "user_sha256": user_prints.get("user.db")}
+        # `cmd/parity` تنها `db_sha256` را از این فایل می‌خواند؛ کلیدِ
+        # `user_sha256` اینجا گمراه‌کننده بود (سنجشی را می‌نمود که وجود ندارد)، پس
+        # حذف شد و سنجهٔ واقعیِ میانهٔ دسته به اسمِّ
+        # `user_stable_during_batch` درِ همین گیت نوشته شد.
+        contract_cases = {"cases": cases, "db_sha256": db_prints["market.db"]}
         dynamic = os.path.join(tmp, "cases_b4_run.json")
         with open(dynamic, "w", encoding="utf-8") as f:
             json.dump(contract_cases, f, ensure_ascii=False)
@@ -381,6 +438,12 @@ def main() -> int:
                             "--db", os.path.join(go_dir, "market.db"),
                             "--out", CONTRACT, "--commit", commit])
         print(log.strip())
+        # بلافاصله پس از دسته: کپیِ پایونِ user.db باید همان اثرانگشتِ یخ‌زده را
+        # داشته باشد. مسیرِ tape-history درِ پایتون `tape_flag_history.ensure(conn)`
+        # می‌زند (ساختنِ جدولِ نبود)؛ اگر همان‌جا چیزی نوشته شود، دو طرفِ دسته
+        # دادهٔ متفاوتی دیده‌اند و مقایسه بی‌اعتبار است.
+        py_user_after = base.db_fingerprint(os.path.join(py_dir, "user.db"))
+        user_stable = py_user_after == user_prints
         if rc == 2:
             print("contract batch could not run")
             return 2
@@ -392,8 +455,12 @@ def main() -> int:
 
         pairs = [(c.get("status_py"), c.get("status_go")) for c in contract["cases"]]
         allowed = {(200, 200), (422, 422)}
+        # پسوندهایِ `-422` تنها نشانهٔ انتظار نیست: کیس‌هایِ «کلیدِ خالی» هم باید
+        # ۴۲۲/۴۲۲ بخورند و نامشان پسوند ندارد، پس `expect_status` درِ cases هم
+        # خوانده می‌شود (پارۀ (a)).
         expect_422 = set(c["name"] for c in spec["cases"]
-                         if c["name"].endswith("-422") and not c.get("declared"))
+                         if not c.get("declared") and (c.get("expect_status") == 422
+                                                       or c["name"].endswith("-422")))
         got_422 = set(c["name"] for c in contract["cases"]
                       if (c.get("status_py"), c.get("status_go")) == (422, 422))
         statuses_ok = (bool(pairs) and all(p in allowed for p in pairs)
@@ -410,7 +477,7 @@ def main() -> int:
                        if c.get("status_go") == 200)
         routes_ok = B4_ROUTES.issubset(answered)
 
-        problems = content_checks(py_url, cases)
+        problems = content_checks(py_url, cases, roles.get("watched_days"))
         declared_rows, declared_problems = declared_probe(py_url, go_url, declared)
 
         base.stop(procs)
@@ -426,6 +493,9 @@ def main() -> int:
                   "declared_measured": not declared_problems,
                   "tape_roles": all(roles.get(r) for r in ("tape_a", "tape_b")),
                   "quarters_roles": all(roles.get(r) for r in ("fs_rich", "fs_empty")),
+                  # user.db کپیِ پایون درِ میانهٔ دسته نباید عوض شود (سنجۀ واقعی،
+                  # جایِ کلیدِ گمراه‌کنندۀ `user_sha256` درِ فایلِ کیس).
+                  "user_stable_during_batch": user_stable,
                   "go_read_only": go_db_unchanged and go_user_unchanged,
                   "root_untouched": root_untouched, "frozen_copies": frozen_ok,
                   "sidecar_untouched": not sidecar_problem}
@@ -437,6 +507,8 @@ def main() -> int:
             "roles": roles, "dropped_cases": dropped,
             "db": {"market_sha256": db_prints["market.db"],
                    "user_sha256": user_prints.get("user.db"),
+                   "user_sha256_after_batch": py_user_after.get("user.db"),
+                   "user_stable_during_batch": user_stable,
                    "frozen_ok": frozen_ok, "go_market_unchanged": go_db_unchanged,
                    "go_user_unchanged": go_user_unchanged,
                    "root_before": root_before, "root_after": root_after,
