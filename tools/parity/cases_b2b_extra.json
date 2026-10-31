@@ -1,0 +1,32 @@
+{
+ "cases": [
+  {
+   "name": "smart-money",
+   "method": "GET",
+   "path": "/api/mstat/smart-money",
+   "exclude": []
+  },
+  {
+   "name": "board-default",
+   "method": "GET",
+   "path": "/api/mstat/board",
+   "exclude": [
+    "summary.phase.clock_now"
+   ]
+  },
+  {
+   "name": "board-stock-3",
+   "method": "GET",
+   "path": "/api/mstat/board?group=stock&limit=3",
+   "exclude": [
+    "summary.phase.clock_now"
+   ]
+  },
+  {
+   "name": "board-limit-422",
+   "method": "GET",
+   "path": "/api/mstat/board?limit=abc",
+   "exclude": []
+  }
+ ]
+}

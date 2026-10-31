@@ -1,5 +1,8 @@
 #!/usr/bin/env python
-"""گیتِ B2a: یازده مسیرِ GETِ /api/mstat/* رویِ دو کپیِ یخ‌زده.
+"""گیتِ B2: مسیرهایِ GETِ /api/mstat/* رویِ دو کپیِ یخ‌زده.
+
+پیش‌فرض: B2a با یازده مسیر. `gate_b2b.py` همین بدنه را با فهرستِ سیزده‌مسیره
+و شاهدِ جدا اجرا می‌کند (BORS_B2_CASES/BORS_B2_OUT/BORS_B2_CONTRACT).
 
 همان قواعدِ gate_b1 را از خودش قرض می‌گیرد: بانکِ عملیاتی با SQLite باز
 نمی‌شود، هر کپی quick_check می‌خورد، گاردِ کناربانک پیش/پس مقایسه می‌شود، و
@@ -9,8 +12,8 @@
 `bors_config.DB_PATH`/`USER_DB_PATH` داخلِ کپی افتاده‌اند (نه در ریشه).
 
 سه سنجهٔ اصلی:
-* صفر اختلاف رویِ یازده مسیر (قرارداد) — دو ۴۲۲ و یک صنعتِ برگرفته از دادهٔ
-  همان کپی هم در دسته‌اند. بیشینهٔ دلتای عددی جدا ثبت می‌شود.
+* صفر اختلاف رویِ همهٔ مسیرهایِ فهرست (قرارداد) — کیس‌هایِ ‎-422 و یک صنعتِ
+  برگرفته از دادهٔ همان کپی هم در دسته‌اند. بیشینهٔ دلتای عددی جدا ثبت می‌شود.
 * POST /api/mstat/snapshot در Go هنوز 501 و در پایتون 200 است — تفاوتِ
   اعلام‌شده تا B6؛ اندازه‌گیری می‌شود، فرض نمی‌شود.
 * clock_now بیرونِ مقایسه است ولی هر دو باید timestampِ معتبر بدهند.
@@ -35,9 +38,12 @@ import gate_b1 as base  # noqa: E402
 
 ROOT = base.ROOT
 GO = base.GO
-CASES = os.path.join(HERE, "cases_b2a.json")
-OUT = os.path.join(ROOT, "_audit", "parity", "B2a.json")
-CONTRACT = os.path.join(ROOT, "_audit", "parity", "B2a-contract.json")
+# پیش‌فرض‌ها همان کیس/شاهدِ B2a (یازده مسیر) است؛ gate_b2b.py با متغیرهایِ
+# محیطی فهرستِ سیزده‌مسیره و شاهدِ جدا می‌دهد — یک بدنه و دو ورودی، نه دو نسخه.
+CASES = os.environ.get("BORS_B2_CASES") or os.path.join(HERE, "cases_b2a.json")
+OUT = os.environ.get("BORS_B2_OUT") or os.path.join(ROOT, "_audit", "parity", "B2a.json")
+CONTRACT = (os.environ.get("BORS_B2_CONTRACT")
+            or os.path.join(ROOT, "_audit", "parity", "B2a-contract.json"))
 # پیش‌فرض‌ها همان دو پورتِ قراردادند؛ اگر فرآیندی که این گیت بالا نیاورده
 # پورتی را گرفته باشد، پورتِ آزادِ بعدی انتخاب و در شاهد ثبت می‌شود — هرگز
 # فرآیندِ غریبه کشته نمی‌شود.
@@ -311,13 +317,18 @@ def main() -> int:
         delta_zero = max_delta == 0.0
         # هیچ کیسی نباید با ۴۰۴ِ «دو طرف یکی» رد شود: بدنهٔ NotFoundِ Go عمداً مثلِ
         # FastAPI ساخته شده، پس یک مسیرِ غلط‌نویسی‌شده یا کم‌شده دو ۴۰۴ برابر می‌دهد و
-        # بی‌صدا از مقایسهٔ بدنه بیرون می‌ماند. دامنهٔ مجاز: (200,200) و دقیقاً دو
-        # (422,422) — همان دو کیسِ limit=abc و desc=xx.
+        # بی‌صدا از مقایسهٔ بدنه بیرون می‌ماند. دامنهٔ مجاز: (200,200) و (422,422)،
+        # و مجموعهٔ ۴۲۲ها باید مو‌به‌مو همان کیس‌هایِ ‎-422 باشد — شمارشِ ثابت یک
+        # ۴۲۲ِ جاافتاده/اضافه را نمی‌دید و با آمدنِ board باید دستی عوض می‌شد.
         pairs = [(case.get("status_py"), case.get("status_go"))
                  for case in contract["cases"]]
         allowed = {(200, 200), (422, 422)}
+        expect_422 = {c["name"] for c in cases["cases"] if c["name"].endswith("-422")}
+        got_422 = {c["name"] for c in contract["cases"]
+                   if (c.get("status_py"), c.get("status_go")) == (422, 422)}
         statuses_ok = (bool(pairs) and all(p in allowed for p in pairs)
-                       and sum(1 for p in pairs if p == (422, 422)) == 2)
+                       and got_422 == expect_422
+                       and sum(1 for p in pairs if p == (422, 422)) == len(expect_422))
         # و هیچ کیسی نباید از دسته غایب باشد: نام‌هایِ اجراشده باید مو‌به‌مو با
         # کیس‌هایِ ارسالی (به‌علاوهٔ کیسِ پویای صنعت) یکی باشد.
         wanted = sorted(case["name"] for case in cases["cases"])
