@@ -24,7 +24,9 @@ const (
 	maTTL        = 900 * time.Second
 	patternsTTL  = 300 * time.Second
 	ftsTTL       = 900 * time.Second
-	ftsCacheMax  = 3000
+	// CHART_FALLBACK_TTLِ پایتون: پاسخِ جایگزینِ محلی ۲۰ ثانیه می‌ماند.
+	chartFallbackTTL = 20 * time.Second
+	ftsCacheMax      = 3000
 )
 
 type Config struct {
@@ -56,6 +58,7 @@ type Service struct {
 	ma        map[string]cacheEntry
 	patterns  map[string]cacheEntry
 	fts       map[string]cacheEntry
+	chartBody map[string]cacheEntry
 	cal       calendarCache
 }
 
@@ -73,6 +76,7 @@ func New(cfg Config) *Service {
 		engine:    trendEngine(),
 		keyLevels: map[string]cacheEntry{}, ma: map[string]cacheEntry{},
 		patterns: map[string]cacheEntry{}, fts: map[string]cacheEntry{},
+		chartBody: map[string]cacheEntry{},
 	}
 	return s
 }

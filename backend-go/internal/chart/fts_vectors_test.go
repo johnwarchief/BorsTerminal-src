@@ -130,6 +130,12 @@ func TestFTSVectors(t *testing.T) {
 			hint = &h
 		}
 		compareJSON(t, label("exit"), c["exit"], exitEngine(candles, hint))
+		if kind == "up" {
+			// تساویِ حدِ ضرر رویِ کفِ ساختاری: پایتون «entry» را برمی‌دارد.
+			low, _ := c["exit_tie_low"].(float64)
+			l1 := asMap(exitEngine(candles, &low))["l1"].(map[string]any)
+			compareJSON(t, label("exit_tie"), c["exit_tie"], l1["stop_basis"])
+		}
 		closes := make([]float64, len(candles))
 		for i, cc := range candles {
 			closes[i] = cc.Close

@@ -103,9 +103,11 @@ func exitLayer1(candles []candle, entryHint *float64) map[string]any {
 		cands = append(cands, cand{*entryHint * 0.95, "entry"})
 	}
 	cands = append(cands, cand{majorLow * 0.95, "swing_low"})
+	// max(cand, key=lambda x: x[0])ِ پایتون در تساوی نخستین را برمی‌دارد، یعنی
+	// «entry» بر «swing_low» می‌چربد حتی وقتی عدد یکی است (خرید روی کفِ ساختاری).
 	stopPx, basis := cands[0].px, cands[0].name
 	for _, c := range cands[1:] {
-		if c.px > stopPx || (c.px == stopPx && c.name > basis) {
+		if c.px > stopPx {
 			stopPx, basis = c.px, c.name
 		}
 	}

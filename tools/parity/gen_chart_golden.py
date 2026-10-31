@@ -137,6 +137,32 @@ def main() -> int:
     dump("s4", "chartdb_uptrend", ch.get_chart_db(UP, 3))
     dump("s4", "fts_uptrend", ch.get_fts(UP, None))
 
+    # ---------- s5: گیتِ جهتِ MA52 خاموش (ma52_position = either) ----------
+    # تنها صحنه‌ای که شاخهٔ سومیِ ساعت شنی را می‌زند: below/above در s1 و s3
+    # دیده می‌شوند؛ «either» نه در دادهٔ ماشینِ مالک (فایلش کلید ساعت شنی ندارد)
+    # و نه در صحنهٔ دیگری.
+    clear_caches(ch)
+    write_setting(tmp, "price_basis.json", None)
+    write_setting(tmp, "fts_thresholds.json", {
+        "hourglass_rsi_period": 5,
+        "hourglass_rsi_oversold": 40.0,
+        "hourglass_ma52_position": "either",
+    })
+    dump("s5", "fts_uptrend", ch.get_fts(UP, None))
+    dump("s5", "fts_downtrend", ch.get_fts(DOWN, None))
+    dump("s5", "chartdb_uptrend", ch.get_chart_db(UP, 3))
+
+    # ---------- s6: سبدی که حدِ ضررش بالای کفِ ساختاری است ----------
+    # entry_hint فقط درِ /api/fts وارد موتور می‌شود؛ بی‌این صحنه، قیمتِ سبد
+    # تنها درِ کلیدِ کش می‌نشست و هیچ‌کس نمی‌دیدد (همان چیزی که بازبینی گرفت).
+    clear_caches(ch)
+    write_setting(tmp, "fts_thresholds.json", None)
+    con = sqlite3.connect(os.path.join(tmp, "user.db"))
+    con.execute("UPDATE selection_decisions SET price = 3000 WHERE symbol = ?", (UP,))
+    con.commit()
+    con.close()
+    dump("s6", "fts_basket_high", ch.get_fts(UP, None))
+
     print("chart goldens -> %s" % OUT)
     return 0
 

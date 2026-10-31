@@ -8,7 +8,7 @@
 ۳) هر مسیرِ پورت‌شده در s1 بدنهٔ غیرخالی با شرطِ همان مسیر دارد: ۵ سطحِ سفارش،
    هندسهٔ کندلِ نمادِ تعدیل‌دار/صندوق/کوتاه‌تاریخ/بی‌داده، سه‌حالتیِ مبنا، برشِ
    `as_of` و سطح‌هایِ کلیدی.
-۴) درختِ طلایی فقط صحنه‌هایِ s1..s4 را دارد.
+۴) درختِ طلایی فقط صحنه‌هایِ s1..s6 را دارد.
 ۵) کنترلِ منفیِ درزها: بی `BORS_CHART_CDN` درخواستِ شبکه واقعاً صدا زده می‌شود؛
    با `off` هرگز؛ و `_schedule_history_repair` با درزِ بسته `False` می‌دهد.
 ۶) `BORS_CALENDAR_PATH` در نبودِ متغیر همان مسیرِ APP_DIR است.
@@ -44,6 +44,8 @@ SCENARIOS = {
            "fts_uptrend", "fts_downtrend", "fts_short", "fts_nodata", "fts_asof"},
     "s2": {"orderbook_five", "orderbook_null"},
     "s3": {"fts_uptrend", "chartdb_uptrend"},
+    "s5": {"fts_uptrend", "fts_downtrend", "chartdb_uptrend"},
+    "s6": {"fts_basket_high"},
     "s4": {"keylevels_uptrend", "ma_uptrend", "patterns_uptrend",
            "chartdb_uptrend", "fts_uptrend"},
 }
@@ -261,8 +263,23 @@ def case_content(scen, name, d):
                 if (hg.get("rsi_period"), hg.get("rsi_oversold"),
                         hg.get("ma52_position_mode")) != (5, 40.0, "above"):
                     return False, "s3 hourglass=%r" % (hg,)
-            elif hg.get("rsi_period") != 7:
+            if scen == "s5":
+                # شاخهٔ سومیِ ساعتِ شنی: گیتِ جهتِ MA52 خاموش ⇒ match همیشه True
+                # و desc همان «گیت جهت MA52 خاموش است» (یا شرطِ برقرار نیست).
+                if hg.get("ma52_position_mode") != "either" or hg.get("ma52_position_match") is not True:
+                    return False, "s5 hourglass=%r" % (hg,)
+            if hg.get("rsi_period") != 7 and scen not in ("s3", "s5"):
                 return False, "rsi_period=%r" % hg.get("rsi_period")
+        if name == "fts_basket_high":
+            ex = fts.get("exit_engine") or {}
+            l1 = ex.get("l1") or {}
+            if l1.get("stop_basis") != "entry" or l1.get("hard_stop") != 2850.0:
+                return False, "s6 l1=%r" % (l1,)
+            if ex.get("verdict") != "stop" or "stop_hard" not in (ex.get("signals") or []):
+                return False, "s6 verdict=%r signals=%r" % (ex.get("verdict"), ex.get("signals"))
+            if (fts.get("status") or {}).get("code") != "hard_stop":
+                return False, "s6 status=%r" % (fts.get("status"),)
+            return True, "entry-hint stop in force"
         if name == "fts_asof":
             if d.get("as_of") != "2026-09-01" or not 60 < (d.get("bars") or 0) < 321:
                 return False, "as_of=%r bars=%r" % (d.get("as_of"), d.get("bars"))
@@ -346,10 +363,10 @@ def main() -> int:
                       if os.path.isdir(os.path.join(GOLD, d)))
         files = sorted(f for f in os.listdir(GOLD)
                        if os.path.isfile(os.path.join(GOLD, f)))
-        check("golden tree holds only s1..s4 (files and dirs)",
+        check("golden tree holds only s1..s6 (files and dirs)",
               not files and set(dirs) == set(SCENARIOS), "dirs=%r files=%r" % (dirs, files))
     except Exception as e:                                        # noqa: BLE001
-        check("golden tree holds only s1..s4 (files and dirs)", False, repr(e))
+        check("golden tree holds only s1..s6 (files and dirs)", False, repr(e))
 
     # ۵) وکتورهایِ موتورِ FTS: فایلِ کامیت‌شده با اجرایِ تازه یکی باشد و هر
     #    سری واقعاً شاخه‌ای را زده باشد (سنسور کور نباشد).
@@ -368,11 +385,19 @@ def main() -> int:
                          c["range_box"]["active"] is True and len(c["setups"]) == 1,
         "stop": lambda c: c["exit"]["verdict"] == "stop",
         "trail": lambda c: "ma14_trail" in c["exit"]["signals"],
+        "tops": lambda c: c["exit"]["l3"]["double_top"] is True and
+                           c["exit"]["l3"]["third_peak"] is True,
+        "hs": lambda c: c["exit"]["l3"]["hs_break"] is True and
+                        (c["exit"]["l3"]["neckline"] or 0) > 0,
+        "roll": lambda c: "rsi_rollover" in c["exit"]["signals"] and
+                          "rsi_divergence" not in c["exit"]["signals"],
     }
     want_codes = {"prec_stop": "hard_stop", "prec_exit": "confirmed_exit",
                   "prec_warning": "warning", "prec_veto": "weekly_veto",
                   "prec_trigger": "entry_trigger", "prec_context": "context_only",
-                  "prec_nosignal": "no_signal", "prec_insufficient": "insufficient"}
+                  "prec_nosignal": "no_signal", "prec_insufficient": "insufficient",
+                  # اولویتِ واقعی وقتی پرچم‌ها هم‌زمان‌اند (نه یک برندهٔ تنها):
+                  "prec_tie": "hard_stop", "prec_stop_over_veto": "hard_stop"}
     try:
         with tempfile.TemporaryDirectory(prefix="b3-vectors-") as tmp:
             vpath = os.path.join(tmp, "fts_vectors.json")
@@ -397,6 +422,11 @@ def main() -> int:
         wrong = sorted(k for k, want in want_codes.items() if blocks.get(k) != want)
         check("status vectors cover all eight precedence codes", not wrong,
               "wrong: %r got: %r" % (wrong, {k: blocks.get(k) for k in wrong}))
+        scaled = committed_v.get("scaled") or {}
+        check("scaled oracle section exists with the six edge rows",
+              len(scaled.get("out") or []) == 5 and len(scaled.get("rows") or []) == 6,
+              "out=%d rows=%d" % (len(scaled.get("out") or []),
+                                  len(scaled.get("rows") or [])))
     except Exception as e:                                        # noqa: BLE001
         check("FTS engine vectors equal a fresh oracle run", False, repr(e))
         check("every FTS vector hits its named branch", False, repr(e))

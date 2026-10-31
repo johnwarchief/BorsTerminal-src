@@ -27,10 +27,28 @@ func (s *Service) basketEntry(symbol string) *float64 {
 	return &v
 }
 
+// chartSnapshot برایِ /api/fts همان ۲۰ ثانیه‌ای است که پایتون پاسخِ فال‌بک را
+// نگه می‌دارد (CHART_FALLBACK_TTL درِ api/chart.py). بی‌این، دو درخواستِ پشتِ
+// هم درِ نشستِ پرتحرک دو «آخرین کندل» متفاوت می‌دادند، در حالی که پایتون یک
+// پاسخِ ثابت می‌دهد. خودِ /api/chart-db همچنان بی‌کش است، مثلِ پایتون.
+func (s *Service) chartSnapshot(ctx context.Context, symbol string) map[string]any {
+	key := symbol
+	if body, ok := s.cacheGet(s.chartBody, key, chartFallbackTTL); ok {
+		return body
+	}
+	body := s.chartDBBody(ctx, symbol, 3)
+	if st, _ := body["status"].(string); st == "success" {
+		if cands, _ := body["candles"].([]map[string]any); len(cands) > 0 {
+			s.cachePut(s.chartBody, key, body)
+		}
+	}
+	return body
+}
+
 // analysisSeries معادلِ _fts_analysis_series رویِ همان چیزی که B3 می‌دهد: مسیرِ
 // محلی (پایتون با BORS_CHART_CDN=off دقیقاً همین سری را می‌سازد).
 func (s *Service) analysisSeries(ctx context.Context, symbol string) ([]map[string]any, string) {
-	body := s.chartDBBody(ctx, symbol, 3)
+	body := s.chartSnapshot(ctx, symbol)
 	if st, _ := body["status"].(string); st != "success" {
 		return nil, "local-db-raw"
 	}
@@ -103,7 +121,12 @@ func (s *Service) analyzeSymbol(ctx context.Context, symbol, asOf string) map[st
 	if body, ok := s.cacheGet(s.fts, key, ftsTTL); ok {
 		return body
 	}
-	fts := s.analyzeCandles(candles)
+	fts, failure := s.analyzeCandlesSafe(candles, hint)
+	if failure != "" {
+		// معادلِ `except Exception as e` درِ _fts_analyze_symbol: متنِ خطا
+		// درایور-وابسته است، شکلِ بدنه نه.
+		return map[string]any{"status": "error", "symbol": symbol, "message": failure}
+	}
 	evs := s.storedAdjustEvents(ctx, symbol)
 	src := s.storedAdjustSource(ctx, symbol)
 	if src == "" {

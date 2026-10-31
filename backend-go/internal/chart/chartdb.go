@@ -27,7 +27,9 @@ func dEvenToDate(v any) string {
 	case int64:
 		s = fmt.Sprintf("%d", x)
 	case float64:
-		s = fmt.Sprintf("%.0f", x)
+		// str(20260928.0) درِ پایتون ده نویسه است و بی‌اعتبار می‌ماند؛ هیچ
+		// عددِ شناوری تاریخِ هشت‌رقمه نمی‌سازد.
+		return ""
 	default:
 		s = fmt.Sprint(x)
 	}
@@ -284,7 +286,8 @@ func (s *Service) scaleCandles(rows []map[string]any, factors, volumes []map[str
 		if !ok {
 			k = 1.0
 		}
-		if k <= 0 {
+		// `if not k > 0` درِ پایتون NaN را هم به ۱.۰ می‌برد (NaN > 0 تهی است).
+		if math.IsNaN(k) || k <= 0 {
 			k = 1.0
 		}
 		o := numOr0(c["open"])
@@ -382,10 +385,19 @@ func (s *Service) chartDBBody(ctx context.Context, symbol string, adjustment int
 	}
 	evMaps := make([]map[string]any, 0, len(evs))
 	for _, e := range evs {
-		evMaps = append(evMaps, map[string]any{"date": e.Date, "ratio": e.Ratio})
+		var date any = e.Date
+		if e.NullDate {
+			date = nil
+		}
+		evMaps = append(evMaps, map[string]any{"date": date, "ratio": e.Ratio})
 	}
 	var fts any
-	fts = s.analyzeCandles(s.scaleCandles(rows, facts, vols, s.basis.Current()))
+	// پایتون این صدازدن را در try می‌گذارد و خطا را `fts: null` می‌کند؛ چارت
+	// هرگز بی‌تحلیل نمی‌میرد. get_chart_db entry_hint نمی‌دهد (فقط /api/fts).
+	if body, failure := s.analyzeCandlesSafe(
+		s.scaleCandles(rows, facts, vols, s.basis.Current()), nil); failure == "" {
+		fts = body
+	}
 	body := map[string]any{
 		"status": "success", "symbol": symbol, "count": len(rows),
 		"candles": rows, "volumes": vols, "factors": facts,

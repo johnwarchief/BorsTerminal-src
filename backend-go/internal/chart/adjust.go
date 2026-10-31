@@ -6,8 +6,10 @@ import (
 )
 
 type adjustEvent struct {
-	Date  string
-	Ratio float64
+	Date string
+	// NullDate یعنی ستونِ date درِ بانک NULL است (پایتون None می‌فرستد، نه "").
+	NullDate bool
+	Ratio    float64
 }
 
 var adjKnownSources = map[string]bool{
@@ -33,8 +35,17 @@ func (s *Service) storedAdjustEvents(ctx context.Context, symbol string) []adjus
 		if err := rs.Scan(&date, &ratio); err != nil {
 			return out
 		}
-		if ratio.Valid && ratio.Float64 != 0 && date.Valid {
-			out = append(out, adjustEvent{Date: date.String, Ratio: ratio.Float64})
+		// پایتون فقط ratioِ تهی را می‌اندازد؛ ردیفی با date NULL درِ adjustEvents
+		// و درِ event_count می‌ماند (بعد در factors حذفش می‌کند) و date را null
+		// می‌فرستد، نه رشتهٔ تهی.
+		if ratio.Valid && ratio.Float64 != 0 {
+			ev := adjustEvent{Ratio: ratio.Float64}
+			if date.Valid {
+				ev.Date = date.String
+			} else {
+				ev.NullDate = true
+			}
+			out = append(out, ev)
 		}
 	}
 	return out

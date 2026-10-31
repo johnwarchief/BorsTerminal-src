@@ -1,0 +1,61 @@
+{
+ "db_sha256": "",
+ "note": "کیس‌هایِ B3: هشت مسیرِ پورت‌شده رویِ نمادهایِ برگرفته از همان کپیِ یخ‌زده. «{role}» درِ gate_b3.py با نخستین نمادِ آن پرس‌وجو جایگزین می‌شود؛ نقشی که داده نداشته باشد کیسش حذف و در شاهد ثبت می‌شود (نه اینکه کیسِ بی‌محتوا سبز بماند). GET /api/chart/{symbol} درِ این فهرست نیست: پایتون ۲۰۰ و Go ۵۰۱ می‌دهد و گیت آن را جدا اندازه می‌گیرد.",
+ "roles": {
+  "deep": "SELECT symbol, COUNT(*) c FROM price_history GROUP BY symbol ORDER BY c DESC, symbol LIMIT 1",
+  "adjust": "SELECT ph.symbol, COUNT(*) c FROM price_history ph JOIN instruments i ON i.l_val18 = ph.symbol JOIN price_adjust_events p ON p.ins_code = i.ins_code WHERE i.l_val18 IS NOT NULL GROUP BY ph.symbol ORDER BY c DESC, ph.symbol LIMIT 1",
+  "events": "SELECT a.symbol, COUNT(*) c FROM adjust_events a JOIN price_history ph ON ph.symbol = a.symbol GROUP BY a.symbol HAVING COUNT(*) >= 2 ORDER BY c DESC, a.symbol LIMIT 1",
+  "verdict": "SELECT v.symbol, COUNT(*) c FROM adjust_verdict v JOIN price_history ph ON ph.symbol = v.symbol WHERE v.source <> '' GROUP BY v.symbol ORDER BY c DESC, v.symbol LIMIT 1",
+  "book": "SELECT i.l_val18, COUNT(*) c FROM order_book ob JOIN instruments i ON i.ins_code = ob.ins_code WHERE ob.book_txt IS NOT NULL AND LENGTH(ob.book_txt) > 20 GROUP BY i.l_val18 ORDER BY MAX(ob.d_even) DESC, i.l_val18 LIMIT 1",
+  "watch": "SELECT i.l_val18, COUNT(*) c FROM instruments i JOIN market_watch m ON m.ins_code = i.ins_code JOIN price_history ph ON ph.symbol = i.l_val18 WHERE m.p_closing > 0 AND m.q_tot_tran > 0 GROUP BY i.l_val18 ORDER BY MAX(m.d_even) DESC, i.l_val18 LIMIT 1",
+  "short": "SELECT symbol, COUNT(*) c FROM price_history GROUP BY symbol HAVING c BETWEEN 12 AND 60 ORDER BY c ASC, symbol LIMIT 1",
+  "thin": "SELECT symbol, COUNT(*) c FROM price_history GROUP BY symbol HAVING c BETWEEN 2 AND 11 ORDER BY c ASC, symbol LIMIT 1",
+  "absent": "SELECT i.l_val18, 0 FROM instruments i LEFT JOIN price_history ph ON ph.symbol = i.l_val18 WHERE ph.symbol IS NULL AND i.l_val18 IS NOT NULL GROUP BY i.l_val18 ORDER BY i.l_val18 LIMIT 1",
+  "corporate": "SELECT i.l_val18, COUNT(*) c FROM instruments i JOIN share_change_events s ON s.ins_code = i.ins_code JOIN price_history ph ON ph.symbol = i.l_val18 GROUP BY i.l_val18 ORDER BY c DESC, i.l_val18 LIMIT 1"
+ },
+ "cases": [
+  {"name": "chart-db-deep", "method": "GET", "path": "/api/chart-db/{deep}", "exclude": []},
+  {"name": "chart-db-watch", "method": "GET", "path": "/api/chart-db/{watch}", "exclude": []},
+  {"name": "chart-db-adjust", "method": "GET", "path": "/api/chart-db/{adjust}", "exclude": []},
+  {"name": "chart-db-events", "method": "GET", "path": "/api/chart-db/{events}", "exclude": []},
+  {"name": "chart-db-verdict", "method": "GET", "path": "/api/chart-db/{verdict}", "exclude": []},
+  {"name": "chart-db-corporate", "method": "GET", "path": "/api/chart-db/{corporate}", "exclude": []},
+  {"name": "chart-db-short", "method": "GET", "path": "/api/chart-db/{short}", "exclude": []},
+  {"name": "chart-db-thin", "method": "GET", "path": "/api/chart-db/{thin}", "exclude": []},
+  {"name": "chart-db-absent", "method": "GET", "path": "/api/chart-db/{absent}", "exclude": []},
+  {"name": "chart-db-raw", "method": "GET", "path": "/api/chart-db/{deep}?adjustment=0", "exclude": []},
+  {"name": "chart-db-422", "method": "GET", "path": "/api/chart-db/{deep}?adjustment=xyz", "exclude": []},
+
+  {"name": "fts-deep", "method": "GET", "path": "/api/fts/{deep}", "exclude": []},
+  {"name": "fts-watch", "method": "GET", "path": "/api/fts/{watch}", "exclude": []},
+  {"name": "fts-events", "method": "GET", "path": "/api/fts/{events}", "exclude": []},
+  {"name": "fts-short", "method": "GET", "path": "/api/fts/{short}", "exclude": []},
+  {"name": "fts-absent", "method": "GET", "path": "/api/fts/{absent}", "exclude": []},
+  {"name": "fts-asof", "method": "GET", "path": "/api/fts/{deep}?as_of={past}", "exclude": []},
+
+  {"name": "key-levels-deep", "method": "GET", "path": "/api/chart/{deep}/key-levels", "exclude": []},
+  {"name": "key-levels-short", "method": "GET", "path": "/api/chart/{short}/key-levels", "exclude": []},
+  {"name": "key-levels-absent", "method": "GET", "path": "/api/chart/{absent}/key-levels", "exclude": []},
+  {"name": "key-levels-unknown-query", "method": "GET", "path": "/api/chart/{deep}/key-levels?days=abc", "exclude": []},
+
+  {"name": "ma-deep", "method": "GET", "path": "/api/ma/{deep}?days=730", "exclude": []},
+  {"name": "ma-short", "method": "GET", "path": "/api/ma/{short}?days=730", "exclude": []},
+  {"name": "ma-zero", "method": "GET", "path": "/api/ma/{deep}?days=0", "exclude": []},
+  {"name": "ma-huge-clamp", "method": "GET", "path": "/api/ma/{deep}?days=5000", "exclude": []},
+  {"name": "ma-422", "method": "GET", "path": "/api/ma/{deep}?days=abc", "exclude": []},
+
+  {"name": "patterns-deep", "method": "GET", "path": "/api/patterns/{deep}", "exclude": []},
+  {"name": "patterns-events", "method": "GET", "path": "/api/patterns/{events}", "exclude": []},
+  {"name": "patterns-absent", "method": "GET", "path": "/api/patterns/{absent}", "exclude": []},
+
+  {"name": "order-book-deep", "method": "GET", "path": "/api/order-book/{deep}", "exclude": []},
+  {"name": "order-book-book", "method": "GET", "path": "/api/order-book/{book}", "exclude": []},
+  {"name": "order-book-absent", "method": "GET", "path": "/api/order-book/{absent}", "exclude": []},
+
+  {"name": "calendar-symbol", "method": "GET", "path": "/api/calendar/{cal}", "exclude": []},
+  {"name": "calendar-upcoming-14", "method": "GET", "path": "/api/calendar/upcoming?days=14", "exclude": []},
+  {"name": "calendar-upcoming-60", "method": "GET", "path": "/api/calendar/upcoming?days=60", "exclude": []},
+  {"name": "calendar-upcoming-zero", "method": "GET", "path": "/api/calendar/upcoming?days=0", "exclude": []},
+  {"name": "calendar-upcoming-422", "method": "GET", "path": "/api/calendar/upcoming?days=1.5", "exclude": []}
+ ]
+}

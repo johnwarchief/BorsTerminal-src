@@ -157,8 +157,8 @@ func fibZones(candles []candle, sw []swing) map[string]any {
 		"levels":      levels,
 		"leg": map[string]any{
 			"direction": leg["direction"],
-			"start":     candles[startIdx].Time[:10],
-			"end":       candles[endIdx].Time[:10],
+			"start":     trim10(candles[startIdx].Time),
+			"end":       trim10(candles[endIdx].Time),
 			"high":      round2(top), "low": round2(bot),
 		},
 	}

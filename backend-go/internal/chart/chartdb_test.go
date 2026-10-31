@@ -3,11 +3,13 @@ package chart
 import (
 	"context"
 	"path/filepath"
-
-	"borsterminal/backend/internal/pricebasis"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
+
+	"borsterminal/backend/internal/db"
+	"borsterminal/backend/internal/pricebasis"
 )
 
 func TestDEvenToDate(t *testing.T) {
@@ -21,7 +23,9 @@ func TestDEvenToDate(t *testing.T) {
 		{nil, ""},
 		{"2026102", ""},
 		{"2026102a", ""},
-		{float64(20261028), "2026-10-28"},
+		// ستونِ REAL: str(20260928.0)ِ پایتون ده نویسه است ⇒ بی‌اعتبار، پس هیچ
+		// کندلی تزریق نمی‌شود. Go هم نباید از شناور تاریخ بسازد.
+		{float64(20261028), ""},
 	}
 	for _, c := range cases {
 		if got := dEvenToDate(c.in); got != c.want {
@@ -247,5 +251,182 @@ func TestTrendEngineFlagIsHonored(t *testing.T) {
 	defer legacy.Close()
 	if legacy.analyzeSymbol(context.Background(), goldUp, "")["trend_engine"] != "legacy" {
 		t.Fatal("empty env must mean legacy")
+	}
+}
+
+// TestScaledOracle مسیرِ _fts_scaled را با خودِ پایتون می‌سنجد، نه با عددِ
+// دست‌حساب: ضریبِ صفر/منفی/تهی، ردیفِ بی‌last، last=0 (falsy ⇒ None و هرگز
+// close×k)، timeِ بلند/کوتاه/متنِ عددی، هندسۀ وارونه (H<L) و ردیفِ تهیِ صفر.
+func TestScaledOracle(t *testing.T) {
+	v := loadVectors(t)
+	sc, _ := v["scaled"].(map[string]any)
+	if sc == nil {
+		t.Fatal("vectors carry no scaled section")
+	}
+	s := openService(t, "s1")
+	rows := make([]map[string]any, 0)
+	for _, x := range sc["rows"].([]any) {
+		rows = append(rows, x.(map[string]any))
+	}
+	facts := make([]map[string]any, 0)
+	for _, x := range sc["factors"].([]any) {
+		if m, ok := x.(map[string]any); ok {
+			facts = append(facts, m)
+		}
+	}
+	vols := make([]map[string]any, 0)
+	for _, x := range sc["volumes"].([]any) {
+		if m, ok := x.(map[string]any); ok {
+			vols = append(vols, m)
+		}
+	}
+	basis, _ := sc["basis"].(string)
+	got := s.scaleCandles(rows, facts, vols, basis)
+	compareJSON(t, "scaled/out", sc["out"], got)
+	if len(got) != 5 {
+		t.Fatalf("rows = %d, want 5 (the short `time` row is dropped)", len(got))
+	}
+	if _, ok := got[4]["high_raw"]; ok {
+		t.Fatal("a row with no usable shadows must not gain high_raw")
+	}
+	if _, ok := got[0]["high_raw"]; !ok {
+		t.Fatal("a widened row must carry high_raw")
+	}
+	if got[1]["last"] != nil {
+		t.Fatalf("last=0 is falsy in Python and must stay None, got %v", got[1]["last"])
+	}
+}
+
+// TestPinnedCorruptRowDifferences دو حالتی که پایتون در آن‌ها رأیِ دیگری
+// می‌دهد و Go مسیرِ خودش را دارد — پین می‌شوند تا بی‌صدا عوض نشوند.
+func TestPinnedCorruptRowDifferences(t *testing.T) {
+	s := openService(t, "s1")
+	// سایه‌هایِ مثبت با close تهی: پایتون در max(hi, lo, None) می‌شکند و کل
+	// مسیر status:error برمی‌گرداند؛ Go همان ردیف را بی‌سایه می‌گذارد (close
+	// null) و خطا نمی‌دهد. این داده درِ مسیرِ خودِ برنامه ساخته نمی‌شود.
+	rows := []map[string]any{{"time": "2025-01-01", "open": nil, "high": 100.0,
+		"low": 90.0, "close": 0.0, "last": nil, "volume": nil}}
+	out := s.scaleCandles(rows, nil, nil, pricebasis.Closing)
+	if len(out) != 1 || out[0]["close"] != nil || out[0]["high"] != 100.0 {
+		t.Fatalf("corrupt row body = %v", out[0])
+	}
+	if _, ok := out[0]["high_raw"]; ok {
+		t.Fatal("no widening may stamp high_raw")
+	}
+	// تمیز کردنِ سری: ردیفِ بی‌مقدارِ مثبت حذف می‌شود، نه صفرِ جعلی.
+	if got := cleanCandles(rows); len(got) != 0 {
+		t.Fatalf("cleanCandles kept a non-positive row: %v", got)
+	}
+}
+
+// TestAnalysisSnapshotIsTwentySecondsGuard: `/api/fts` درِ پایتون از CHART_CACHE با
+// CHART_FALLBACK_TTL=20 می‌گذرد؛ دو درخواستِ پشتِ سرِ هم باید همان سری را
+// ببینند، و بی‌عبورِ آن ۲۰ ثانیه، دادهٔ تازه اثر کند.
+func TestAnalysisSnapshotIsTwentySeconds(t *testing.T) {
+	ctx := context.Background()
+	var now = time.Date(2026, 10, 28, 10, 30, 0, 0, time.Local)
+	dir := copyFixture(t)
+	h, err := db.Open(dir, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer h.Close()
+	s := New(Config{Market: h.Market, User: h.User, DataDir: dir,
+		CalendarPath: filepath.Join("testdata", "fixture", "calendar", "cache.json"),
+		Clock:        func() time.Time { return now }})
+	defer s.Close()
+	first := s.analyzeSymbol(ctx, goldUp, "")
+	// یک نشستِ میانی حذف می‌شود، نه آخرین: آن یکی جای خودش را با کندلِ زندهٔ
+	// همان روز پر می‌کند و شمارش بی‌تغییر می‌ماند.
+	if _, err := h.Market.Exec("DELETE FROM price_history WHERE symbol = ? AND date = "+
+		"(SELECT MIN(date) FROM price_history WHERE symbol = ?)", goldUp, goldUp); err != nil {
+		t.Fatal(err)
+	}
+	same := s.analyzeSymbol(ctx, goldUp, "")
+	if same["bars"] != first["bars"] {
+		t.Fatalf("inside the 20s snapshot the bars must not move: %v -> %v",
+			first["bars"], same["bars"])
+	}
+	// خودِ /api/chart-db کش ندارد (مثلِ پایتون) و همان بلافاصله تازه می‌خواند.
+	fresh := s.chartDBBody(ctx, goldUp, 3)
+	if fresh["count"] == first["bars"] {
+		t.Fatalf("chart-db must stay uncached: count=%v", fresh["count"])
+	}
+	// پس از ۲۰ ثانیه همانِ snapshot تازه خوانده می‌شود. /api/fts ممکن است همچنان
+	// پاسخِ کش‌شدۀ ۹۰۰ ثانیه‌ای‌اش را بدهد (کلید با آخرینِ بسته جابه‌جا نمی‌شود) —
+	// پایتون دقیقاً همین را می‌کند، پس اینجا snapshot را مستقیم می‌سنجیم.
+	now = now.Add(21 * time.Second)
+	if got := s.chartSnapshot(ctx, goldUp)["count"]; got != fresh["count"] {
+		t.Fatalf("after the TTL the snapshot must be re-read: %v want %v", got, fresh["count"])
+	}
+}
+
+// TestRouteEntryHintMovesTheStop بلوکرِ بازبینی: قیمتِ سبد باید از کلیدِ کش
+// بیرون بیاید و به موتورِ خروج برسد — نه اینکه فقط درِ کلید بنشیند.
+func TestRouteEntryHintMovesTheStop(t *testing.T) {
+	ctx := context.Background()
+	s := openService(t, "s1")
+	base := stopOf(t, s.analyzeSymbol(ctx, goldUp, ""))
+	if base.basis != "swing_low" {
+		t.Fatalf("fixture baseline basis = %s", base.basis)
+	}
+	// خریدِ ۳۰۰۰ رویِ همان نماد: حد باید ۲۸۵۰ و مبنا entry شود.
+	if _, err := s.user.Exec("UPDATE selection_decisions SET price = 3000 WHERE symbol = ?",
+		goldUp); err != nil {
+		t.Fatal(err)
+	}
+	fresh := New(Config{Market: s.market, User: s.user, DataDir: s.dataDir,
+		CalendarPath: s.calendarPath,
+		Clock:        func() time.Time { return time.Date(2026, 10, 28, 10, 30, 0, 0, time.Local) }})
+	defer fresh.Close()
+	got := stopOf(t, fresh.analyzeSymbol(ctx, goldUp, ""))
+	if got.basis != "entry" || got.price != 2850.0 {
+		t.Fatalf("the basket price never reached the engine: basis=%s stop=%v",
+			got.basis, got.price)
+	}
+	if got.hit == nil {
+		t.Fatal("stop_hit must be measured, not left null")
+	}
+}
+
+type stopFacts struct {
+	basis string
+	price float64
+	hit   *bool
+}
+
+func stopOf(t *testing.T, body map[string]any) stopFacts {
+	t.Helper()
+	l1 := asMap(asMap(body["fts"])["exit_engine"])["l1"].(map[string]any)
+	f := stopFacts{}
+	f.basis, _ = l1["stop_basis"].(string)
+	f.price, _ = l1["hard_stop"].(float64)
+	if b, ok := l1["stop_hit"].(bool); ok {
+		f.hit = &b
+	}
+	return f
+}
+
+// TestHourglassParseIsAtomic هر شش حالتِ فایلِ تنظیمات را با خودِ پایتون می‌سنجد:
+// نبودِ کلید ⇒ پیش‌فرضِ معتبر، ولی مقدارِ بی‌اعتبار *هر سه* field را رویِ
+// پیش‌فرض می‌گذارد (یک try مشترک).
+func TestHourglassParseIsAtomic(t *testing.T) {
+	v := loadVectors(t)
+	casesAny, _ := v["hourglass"].([]any)
+	if len(casesAny) == 0 {
+		t.Fatal("vectors carry no hourglass section")
+	}
+	s := openService(t, "s1")
+	path := filepath.Join(s.dataDir, "fts_thresholds.json")
+	for i, item := range casesAny {
+		c, _ := item.(map[string]any)
+		file, _ := c["file"].(map[string]any)
+		if file == nil {
+			file = map[string]any{}
+		}
+		writeJSON(t, path, file)
+		got := s.hourglassSettings()
+		want, _ := c["values"].(map[string]any)
+		compareJSON(t, "hourglass/"+strconv.Itoa(i), want, got)
 	}
 }

@@ -55,10 +55,22 @@ func openService(t *testing.T, scenario string) *Service {
 			"hourglass_ma52_position": "above"})
 	case "s4":
 		writeJSON(t, filepath.Join(dir, "price_basis.json"), map[string]any{"basis": "closing"})
+	case "s5":
+		writeJSON(t, filepath.Join(dir, "fts_thresholds.json"), map[string]any{
+			"hourglass_rsi_period": 5, "hourglass_rsi_oversold": 40.0,
+			"hourglass_ma52_position": "either"})
 	}
 	h, err := db.Open(dir, false)
 	if err != nil {
 		t.Fatal(err)
+	}
+	if scenario == "s6" {
+		// بازبینیِ B3: قیمتِ سبد باید از کلیدِ کش بیرون بیاید و به موتورِ خروج
+		// برسد؛ این صحنه تنها جایی است که hint بر کفِ ساختاری می‌چربد.
+		if _, err := h.User.Exec("UPDATE selection_decisions SET price = 3000 "+
+			"WHERE symbol = ?", goldUp); err != nil {
+			t.Fatal(err)
+		}
 	}
 	s := New(Config{
 		Market: h.Market, User: h.User, DataDir: dir,
@@ -146,6 +158,10 @@ func TestChartGoldens(t *testing.T) {
 		{"s3", "fts_uptrend", func(s *Service) map[string]any { return s.analyzeSymbol(ctx, goldUp, "") }},
 		{"s3", "chartdb_uptrend", func(s *Service) map[string]any { return s.chartDBBody(ctx, goldUp, 3) }},
 		{"s4", "chartdb_uptrend", func(s *Service) map[string]any { return s.chartDBBody(ctx, goldUp, 3) }},
+		{"s5", "fts_uptrend", func(s *Service) map[string]any { return s.analyzeSymbol(ctx, goldUp, "") }},
+		{"s5", "fts_downtrend", func(s *Service) map[string]any { return s.analyzeSymbol(ctx, goldDown, "") }},
+		{"s5", "chartdb_uptrend", func(s *Service) map[string]any { return s.chartDBBody(ctx, goldUp, 3) }},
+		{"s6", "fts_basket_high", func(s *Service) map[string]any { return s.analyzeSymbol(ctx, goldUp, "") }},
 		{"s2", "orderbook_five", func(s *Service) map[string]any { return s.orderBookBody(ctx, goldUp) }},
 		{"s2", "orderbook_null", func(s *Service) map[string]any { return s.orderBookBody(ctx, goldDown) }},
 		{"s4", "keylevels_uptrend", func(s *Service) map[string]any { return s.keyLevelsBody(ctx, goldUp) }},

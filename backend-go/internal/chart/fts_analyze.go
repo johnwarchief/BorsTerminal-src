@@ -2,6 +2,7 @@ package chart
 
 import (
 	"encoding/json"
+	"fmt"
 	"math"
 	"os"
 	"sort"
@@ -26,19 +27,36 @@ func (s *Service) hourglassSettings() map[string]any {
 	if err := json.Unmarshal(raw, &doc); err != nil || doc == nil {
 		return vals
 	}
-	period, okP := toFloat(doc["hourglass_rsi_period"])
-	oversold, okO := toFloat(doc["hourglass_rsi_oversold"])
+	// پایتون هر سه field را در یک try می‌خواند: `float(None)` که بترکد، هیچ‌کدام
+	// از سه field عوض نمی‌شود. field‌به‌field ادامه دادن، تنظیمی نصفه می‌ساخت
+	// که درِ پایتون هرگز دیده نمی‌شود.
+	// `raw.get(key, default)` یعنی نبودِ کلید خطا نیست، پیش‌فرض است؛ فقط
+	// مقدارِ بی‌اعتبار `float()` را می‌شکند و آن‌وقت هیچ‌کدام از سه field
+	// عوض نمی‌شود.
+	period, okP := hgNum(doc, "hourglass_rsi_period", 7)
+	oversold, okO := hgNum(doc, "hourglass_rsi_oversold", 30.0)
+	if !okP || !okO {
+		return vals
+	}
 	mode, _ := doc["hourglass_ma52_position"].(string)
-	if okP && period == math.Trunc(period) && period >= 2 && period <= 100 {
+	if period == math.Trunc(period) && period >= 2 && period <= 100 {
 		vals["hourglass_rsi_period"] = int(period)
 	}
-	if okO && oversold >= 5.0 && oversold <= 50.0 {
+	if oversold >= 5.0 && oversold <= 50.0 {
 		vals["hourglass_rsi_oversold"] = oversold
 	}
 	if mode == "below" || mode == "above" || mode == "either" {
 		vals["hourglass_ma52_position"] = mode
 	}
 	return vals
+}
+
+func hgNum(doc map[string]any, key string, def float64) (float64, bool) {
+	v, ok := doc[key]
+	if !ok {
+		return def, true
+	}
+	return toFloat(v)
 }
 
 func toFloat(v any) (float64, bool) {
@@ -115,8 +133,8 @@ func cleanCandles(rows []map[string]any) []candle {
 	return out
 }
 
-// analyzeCandles معادلِ _fts_analyze_candles (بدونِ I/O): کلِ پیلودِ fts.
-func (s *Service) analyzeCandles(rows []map[string]any) map[string]any {
+// entry_hint همان قیمتِ سبد است — حدِ ضررِ تفکیکی به آن وابسته است.
+func (s *Service) analyzeCandles(rows []map[string]any, entryHint *float64) (out map[string]any) {
 	candles := cleanCandles(rows)
 	swingsD := swingsOf(candles, ftsSwingK)
 	w := resample(candles, "W")
@@ -270,7 +288,7 @@ func (s *Service) analyzeCandles(rows []map[string]any) map[string]any {
 		"action": action, "desc": hgDesc,
 	}
 
-	out := map[string]any{
+	out = map[string]any{
 		"trend":       trend,
 		"fib":         fibZones(candles, swingsD),
 		"jet":         jetSetup(candles, 250, 6, 3),
@@ -282,7 +300,7 @@ func (s *Service) analyzeCandles(rows []map[string]any) map[string]any {
 	box := doubleBottom(candles, swingsD)
 	out["double_bottom"] = box["double_bottom"]
 	out["range_box"] = box["range_box"]
-	out["exit_engine"] = exitEngine(candles, nil)
+	out["exit_engine"] = exitEngine(candles, entryHint)
 	out["setups"] = setupHistory(candles, swingsD, 40)
 	out["status"] = statusBlock(candles, out)
 	out["roles"] = rolesCopy()
@@ -291,4 +309,18 @@ func (s *Service) analyzeCandles(rows []map[string]any) map[string]any {
 
 func matrixOf(decision, setup, desc string) map[string]any {
 	return map[string]any{"decision": decision, "setup": setup, "desc": desc}
+}
+
+// analyzeCandlesSafe همان دو try/exceptِ پایتون است: `_fts_analyze_symbol`
+// خطا را به `{"status":"error"}` می‌بَرَد و `get_chart_db` کلیدِ `fts` را `null`
+// می‌گذارد. موتورِ hybrid رویِ سریِ تهی (و هر اشکالِ دیگری که پایتون در آن
+// IndexError می‌گیرد) panic می‌کند؛ اینجا همان نقطه‌ای است که باید مهار شود.
+func (s *Service) analyzeCandlesSafe(rows []map[string]any, entryHint *float64) (
+	out map[string]any, failure string) {
+	defer func() {
+		if r := recover(); r != nil {
+			out, failure = nil, fmt.Sprint(r)
+		}
+	}()
+	return s.analyzeCandles(rows, entryHint), ""
 }
