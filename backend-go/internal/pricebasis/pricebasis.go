@@ -10,6 +10,7 @@ package pricebasis
 import (
 	"encoding/json"
 	"fmt"
+	"math"
 	"os"
 	"strconv"
 	"sync"
@@ -221,26 +222,10 @@ func ApplyBasis(candles []map[string]any, copySeries bool, requested string) (Me
 			hiRaw, loRaw := *hi, *lo
 			putNum(c, "high_raw", hi)
 			putNum(c, "low_raw", lo)
-			nh, nl := hiRaw, loRaw
-			if loRaw > nh {
-				nh = loRaw
-			}
-			if *chosen > nh {
-				nh = *chosen
-			}
-			if loRaw < nl {
-				nl = loRaw
-			}
-			if *chosen < nl {
-				nl = *chosen
-			}
+			nh, nl := math.Max(hiRaw, math.Max(loRaw, *chosen)),
+				math.Min(hiRaw, math.Min(loRaw, *chosen))
 			if op != nil {
-				if *op > nh {
-					nh = *op
-				}
-				if *op < nl {
-					nl = *op
-				}
+				nh, nl = math.Max(nh, *op), math.Min(nl, *op)
 			}
 			if nh != hiRaw || nl != loRaw {
 				widened++
