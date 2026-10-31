@@ -1,0 +1,28 @@
+{
+  "note": "کیس‌هایِ B4a: سه مسیرِ پورت‌شدهٔ بنیادی/نوار. جای‌نمای {role} درِ زمانِ اجرا از همان کپیِ یخ‌زده پر می‌شود (gate_b4.py). کیس‌هایِ ‎-422 باید مو‌به‌مو ۴۲۲/۴۲۲ بخورند.",
+  "cases": [
+    {"name": "sectors", "method": "GET", "path": "/api/fundamental/sectors", "exclude": []},
+    {"name": "quarters-rich", "method": "GET", "path": "/api/fundamental/{fs_rich}/quarters", "exclude": []},
+    {"name": "quarters-limit1", "method": "GET", "path": "/api/fundamental/{fs_rich}/quarters?limit=1", "exclude": []},
+    {"name": "quarters-clamp-zero", "method": "GET", "path": "/api/fundamental/{fs_rich}/quarters?limit=0", "exclude": []},
+    {"name": "quarters-clamp-high", "method": "GET", "path": "/api/fundamental/{fs_rich}/quarters?limit=999", "exclude": []},
+    {"name": "quarters-negative", "method": "GET", "path": "/api/fundamental/{fs_rich}/quarters?limit=-5", "exclude": []},
+    {"name": "quarters-422", "method": "GET", "path": "/api/fundamental/{fs_rich}/quarters?limit=abc", "exclude": []},
+    {"name": "quarters-empty-symbol", "method": "GET", "path": "/api/fundamental/{fs_empty}/quarters", "exclude": []},
+    {"name": "quarters-unknown-symbol", "method": "GET", "path": "/api/fundamental/نیست۰۱/quarters", "exclude": []},
+    {"name": "tape-two-codes", "method": "GET", "path": "/api/tape-history?codes={tape_a},{tape_b}&days=20", "exclude": []},
+    {"name": "tape-no-codes", "method": "GET", "path": "/api/tape-history", "exclude": []},
+    {"name": "tape-one-day", "method": "GET", "path": "/api/tape-history?codes={tape_a}&days=1", "exclude": []},
+    {"name": "tape-clamp-high", "method": "GET", "path": "/api/tape-history?codes={tape_a}&days=9999", "exclude": []},
+    {"name": "tape-zero-days", "method": "GET", "path": "/api/tape-history?codes={tape_a}&days=0", "exclude": []},
+    {"name": "tape-422", "method": "GET", "path": "/api/tape-history?codes={tape_a}&days=abc", "exclude": []},
+    {"name": "tape-unknown-code", "method": "GET", "path": "/api/tape-history?codes=ISIN-NOT-HERE&days=20", "exclude": []},
+    {"name": "tape-dup-codes", "method": "GET", "path": "/api/tape-history?codes={tape_a},{tape_a},{tape_a}&days=20", "exclude": []},
+    {"name": "tape-mixed-codes", "method": "GET", "path": "/api/tape-history?codes={tape_a},,%20{tape_b}%20,&days=20", "exclude": []},
+    {"name": "card-declared", "method": "GET", "path": "/api/fundamental/{fs_rich}", "exclude": [], "declared": "go 501 / py 200 — کارتِ پنج‌محور تا تسکِ 3b"},
+    {"name": "card-months-422", "method": "GET", "path": "/api/fundamental/{fs_rich}?months=abc", "exclude": [], "declared": "go 501 / py 422 — اعتبارسنجیِ months بی‌مصرف"},
+    {"name": "screen-declared", "method": "GET", "path": "/api/fundamental/screen?limit=5", "exclude": [], "declared": "go 501 / py 200 — خروجیِ api/screener.py، درِ B7"},
+    {"name": "coverage-declared", "method": "GET", "path": "/api/sync/codal/fts-coverage", "exclude": [], "declared": "go 501 / py 200 — وضعیتِ حلقه‌ها، درِ B6"},
+    {"name": "pipeline-declared", "method": "GET", "path": "/api/sync/codal/pipeline", "exclude": [], "declared": "go 501 / py 200 — وضعیتِ حلقه‌ها، درِ B6"}
+  ]
+}

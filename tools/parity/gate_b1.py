@@ -69,10 +69,15 @@ def db_fingerprint(db_path):
     کپی بیرون می‌مانند و تغییرِ آن‌ها دیده نمی‌شود. هر دو نام در B1.json می‌آیند؛
     -walِ غایب/خالی اصلاً کلید نمی‌گیرد و همین «هیچ‌کدام» هم برایِ دو کپی برابر است.
     """
-    prints = {"market.db": sha256_file(db_path)}
+    # کلید از نامِ خودِ فایل می‌آید، نه از رشتهٔ ثابت: درِ B4 همین تابع رویِ
+    # user.db هم صدا زده می‌شود و «market.db» به‌عنوانِ کلید، هشِ user.db را زیرِ
+    # نامِ اشتباه می‌گذاشت (سنجه‌ها چون مقایسهٔ dict بودند کار می‌کردند، اما شاهد
+    # گمراه‌کننده می‌شد).
+    base_name = os.path.basename(db_path)
+    prints = {base_name: sha256_file(db_path)}
     wal = db_path + "-wal"
     if os.path.exists(wal) and os.path.getsize(wal) > 0:
-        prints["market.db-wal"] = sha256_file(wal)
+        prints[base_name + "-wal"] = sha256_file(wal)
     return prints
 
 
