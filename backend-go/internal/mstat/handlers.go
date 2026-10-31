@@ -65,52 +65,143 @@ func writePanel(w http.ResponseWriter, body map[string]any) {
 	httpapi.WriteJSON(w, http.StatusOK, body)
 }
 
-func (s *Service) Summary(w http.ResponseWriter, r *http.Request) {
-	writePanel(w, s.Call("summary", func() (map[string]any, error) {
+// پنل‌ها یک‌بار به‌صورتِ تابعِ بدنه تعریف می‌شوند تا مسیرِ تک‌پنلی و board
+// عیناً یک کلیدِ کش و یک محاسبه بگیرند (همان قانونِ _panel/_mstat_call).
+func (s *Service) summaryBody() map[string]any {
+	return s.Call("summary", func() (map[string]any, error) {
 		return summaryPanel(s.db, s.clock())
-	}, Options{StaleOK: true}))
+	}, Options{StaleOK: true})
+}
+
+func (s *Service) histogramBody(group string) map[string]any {
+	return s.Call(panelKey("histogram", group), func() (map[string]any, error) {
+		return histogramPanel(s.db, group)
+	}, Options{StaleOK: true})
+}
+
+func (s *Service) thermometerBody(group string) map[string]any {
+	return s.Call(panelKey("thermometer", group), func() (map[string]any, error) {
+		return thermometerPanel(s.db, group)
+	}, Options{StaleOK: true})
+}
+
+func (s *Service) depthBody(group string) map[string]any {
+	return s.Call(panelKey("depth", group), func() (map[string]any, error) {
+		return depthPanel(s.db, group)
+	}, Options{StaleOK: true})
+}
+
+func (s *Service) clientSplitBody(tab string) map[string]any {
+	return s.Call(panelKey("clientsplit", tab), func() (map[string]any, error) {
+		return clientSplitPanel(s.db, tab)
+	}, Options{StaleOK: true})
+}
+
+func (s *Service) marketSnapshotBody() map[string]any {
+	return s.Call("market-snapshot", func() (map[string]any, error) {
+		return marketSnapshotPanel(s.db, s.clock())
+	}, Options{StaleOK: true})
+}
+
+func (s *Service) phaseBody() map[string]any {
+	// stale_ok=False: تنها فیلدی که میانِ دو ساختِ یکسانِ حالتِ بانک فرق می‌کند
+	// clock_now است، پس پنلِ ارزان درِ انقضا درون‌خطی ساخته می‌شود.
+	return s.Call("phase", func() (map[string]any, error) {
+		return phasePanel(s.db, s.clock())
+	}, Options{StaleOK: false})
+}
+
+func (s *Service) industriesBody() map[string]any {
+	return s.Call("industries", func() (map[string]any, error) {
+		return industriesPanel(s.db)
+	}, Options{StaleOK: true})
+}
+
+func (s *Service) timelineBody(mode string) map[string]any {
+	return s.Call(panelKey("timeline", mode), func() (map[string]any, error) {
+		return timelinePanel(s.db, mode)
+	}, Options{StaleOK: true})
+}
+
+func (s *Service) phasesBody() map[string]any {
+	return s.Call("phases", func() (map[string]any, error) {
+		return phasesPanel(s.db)
+	}, Options{StaleOK: true})
+}
+
+func (s *Service) smartMoneyBody() map[string]any {
+	return s.Call("smart-money", func() (map[string]any, error) {
+		return smartMoneyPanel(s.db, s.clock(), s.memo)
+	}, Options{StaleOK: true})
+}
+
+func (s *Service) Summary(w http.ResponseWriter, r *http.Request) {
+	writePanel(w, s.summaryBody())
 }
 
 func (s *Service) Histogram(w http.ResponseWriter, r *http.Request) {
-	group := qstr(r, "group", "all")
-	writePanel(w, s.Call(panelKey("histogram", group), func() (map[string]any, error) {
-		return histogramPanel(s.db, group)
-	}, Options{StaleOK: true}))
+	writePanel(w, s.histogramBody(qstr(r, "group", "all")))
 }
 
 func (s *Service) Thermometer(w http.ResponseWriter, r *http.Request) {
-	group := qstr(r, "group", "all")
-	writePanel(w, s.Call(panelKey("thermometer", group), func() (map[string]any, error) {
-		return thermometerPanel(s.db, group)
-	}, Options{StaleOK: true}))
+	writePanel(w, s.thermometerBody(qstr(r, "group", "all")))
 }
 
 func (s *Service) Depth(w http.ResponseWriter, r *http.Request) {
-	group := qstr(r, "group", "all")
-	writePanel(w, s.Call(panelKey("depth", group), func() (map[string]any, error) {
-		return depthPanel(s.db, group)
-	}, Options{StaleOK: true}))
+	writePanel(w, s.depthBody(qstr(r, "group", "all")))
 }
 
 func (s *Service) ClientSplit(w http.ResponseWriter, r *http.Request) {
-	tab := qstr(r, "tab", "all")
-	writePanel(w, s.Call(panelKey("clientsplit", tab), func() (map[string]any, error) {
-		return clientSplitPanel(s.db, tab)
-	}, Options{StaleOK: true}))
+	writePanel(w, s.clientSplitBody(qstr(r, "tab", "all")))
 }
 
 func (s *Service) MarketSnapshot(w http.ResponseWriter, r *http.Request) {
-	writePanel(w, s.Call("market-snapshot", func() (map[string]any, error) {
-		return marketSnapshotPanel(s.db, s.clock())
-	}, Options{StaleOK: true}))
+	writePanel(w, s.marketSnapshotBody())
 }
 
 func (s *Service) Phase(w http.ResponseWriter, r *http.Request) {
-	// stale_ok=False: تنها فیلدی که میانِ دو ساختِ یکسانِ حالتِ بانک فرق می‌کند
-	// clock_now است، پس پنلِ ارزان درِ انقضا درون‌خطی ساخته می‌شود.
-	writePanel(w, s.Call("phase", func() (map[string]any, error) {
-		return phasePanel(s.db, s.clock())
-	}, Options{StaleOK: false}))
+	writePanel(w, s.phaseBody())
+}
+
+func (s *Service) SmartMoney(w http.ResponseWriter, r *http.Request) {
+	writePanel(w, s.smartMoneyBody())
+}
+
+// Board همان mstat_board: ترکیبِ ده پنل از همان کش، بی‌کشِ سطحِ خودش.
+// source از هر پنل حذف می‌شود (همان _panel) و فقط در سطحِ board می‌ماند.
+func (s *Service) Board(w http.ResponseWriter, r *http.Request) {
+	group := qstr(r, "group", "eq_all")
+	limit := 60
+	if raw, ok := qlast(r, "limit"); ok {
+		v, err := strconv.Atoi(raw)
+		if err != nil {
+			httpapi.UnprocessableAs(w, "int_parsing", []string{"query", "limit"},
+				"Input should be a valid integer, unable to parse string as an integer", raw)
+			return
+		}
+		limit = v
+	}
+	writePanel(w, s.boardBody(group, limit))
+}
+
+func (s *Service) boardBody(group string, limit int) map[string]any {
+	panel := func(body map[string]any) map[string]any {
+		delete(body, "source")
+		return body
+	}
+	return map[string]any{
+		"status": "ok", "source": mstatSource,
+		"summary":     panel(s.summaryBody()),
+		"thermometer": panel(s.thermometerBody(group)),
+		"histogram":   panel(s.histogramBody(group)),
+		"depth":       panel(s.depthBody(group)),
+		"clientsplit": panel(s.clientSplitBody("all")),
+		"mainwatch":   panel(s.mainwatchBody(group, "", "clock", true, limit)),
+		"industries":  panel(s.industriesBody()),
+		"smartmoney":  panel(s.smartMoneyBody()),
+		"timeline":    panel(s.timelineBody("cum")),
+		"phases":      panel(s.phasesBody()),
+	}
 }
 
 func (s *Service) Mainwatch(w http.ResponseWriter, r *http.Request) {
@@ -137,30 +228,27 @@ func (s *Service) Mainwatch(w http.ResponseWriter, r *http.Request) {
 		}
 		limit = v
 	}
+	writePanel(w, s.mainwatchBody(group, industry, sortKey, desc, limit))
+}
+
+func (s *Service) mainwatchBody(group, industry, sortKey string, desc bool, limit int) map[string]any {
 	key := panelKey("mainwatch", group, industry, sortKey,
 		strconv.FormatBool(desc), strconv.FormatInt(int64(limit), 10))
-	writePanel(w, s.Call(key, func() (map[string]any, error) {
+	return s.Call(key, func() (map[string]any, error) {
 		return mainwatchPanel(s.db, s.flags, group, industry, sortKey, desc, limit)
-	}, Options{StaleOK: true}))
+	}, Options{StaleOK: true})
 }
 
 func (s *Service) Industries(w http.ResponseWriter, r *http.Request) {
-	writePanel(w, s.Call("industries", func() (map[string]any, error) {
-		return industriesPanel(s.db)
-	}, Options{StaleOK: true}))
+	writePanel(w, s.industriesBody())
 }
 
 func (s *Service) Timeline(w http.ResponseWriter, r *http.Request) {
-	mode := qstr(r, "mode", "cum")
-	writePanel(w, s.Call(panelKey("timeline", mode), func() (map[string]any, error) {
-		return timelinePanel(s.db, mode)
-	}, Options{StaleOK: true}))
+	writePanel(w, s.timelineBody(qstr(r, "mode", "cum")))
 }
 
 func (s *Service) Phases(w http.ResponseWriter, r *http.Request) {
-	writePanel(w, s.Call("phases", func() (map[string]any, error) {
-		return phasesPanel(s.db)
-	}, Options{StaleOK: true}))
+	writePanel(w, s.phasesBody())
 }
 
 // phasePanel همان dict(MP.from_db(conn), status="ok"). Phase خودش Status ندارد

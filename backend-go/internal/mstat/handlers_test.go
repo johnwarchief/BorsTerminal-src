@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-// handlerCase یکِ یازده مسیرِ GETِ تبِ وضعیت بازار.
+// handlerCase یکِ سیزده مسیرِ GETِ تبِ وضعیت بازار.
 type handlerCase struct {
 	name   string
 	target string
@@ -28,6 +28,35 @@ func handlerCases(s *Service) []handlerCase {
 		{"industries", "/api/mstat/industries", s.Industries},
 		{"timeline", "/api/mstat/timeline?mode=inst", s.Timeline},
 		{"phases", "/api/mstat/phases", s.Phases},
+		{"smart-money", "/api/mstat/smart-money", s.SmartMoney},
+		{"board", "/api/mstat/board?limit=5", s.Board},
+	}
+}
+
+// TestBoardLimitValidation422: board فقط group/limit دارد؛ limitِ غیرعدد همان
+// ۴۲۲ِ FastAPI را می‌دهد، نه ۵۰۰ یا بدنهٔ پیش‌فرض.
+func TestBoardLimitValidation422(t *testing.T) {
+	h := openFixture(t)
+	s := New(h.Market, t.TempDir(), nil)
+	for _, target := range []string{"/api/mstat/board?limit=abc", "/api/mstat/board?limit="} {
+		rec := httptest.NewRecorder()
+		s.Board(rec, httptest.NewRequest("GET", target, nil))
+		if rec.Code != http.StatusUnprocessableEntity {
+			t.Fatalf("%s: status = %d", target, rec.Code)
+		}
+		var body struct {
+			Detail []struct {
+				Type string   `json:"type"`
+				Loc  []string `json:"loc"`
+			} `json:"detail"`
+		}
+		if err := json.Unmarshal(rec.Body.Bytes(), &body); err != nil {
+			t.Fatal(err)
+		}
+		if len(body.Detail) != 1 || body.Detail[0].Type != "int_parsing" ||
+			len(body.Detail[0].Loc) != 2 || body.Detail[0].Loc[1] != "limit" {
+			t.Fatalf("%s: body = %s", target, rec.Body.String())
+		}
 	}
 }
 

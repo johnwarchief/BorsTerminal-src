@@ -61,13 +61,14 @@ func TestKnownButUnportedIs501(t *testing.T) {
 }
 
 // TestMstatRoutesAreNotPortedWhenServiceMissing همان قفلِ B1 است برایِ تبِ
-// وضعیت بازار: بی سرویس، یازده مسیر ۵۰۱ِ NOT_PORTED می‌دهند، نه ۴۰۴.
+// وضعیت بازار: بی سرویس، سیزده مسیر ۵۰۱ِ NOT_PORTED می‌دهند، نه ۴۰۴.
 func TestMstatRoutesAreNotPortedWhenServiceMissing(t *testing.T) {
 	paths := []string{
 		"/api/mstat/summary", "/api/mstat/histogram", "/api/mstat/thermometer",
 		"/api/mstat/depth", "/api/mstat/clientsplit", "/api/mstat/market-snapshot",
 		"/api/mstat/phase", "/api/mstat/mainwatch", "/api/mstat/industries",
-		"/api/mstat/timeline", "/api/mstat/phases",
+		"/api/mstat/timeline", "/api/mstat/phases", "/api/mstat/smart-money",
+		"/api/mstat/board",
 	}
 	for _, path := range paths {
 		rec := serve(t, "GET", path)
@@ -84,7 +85,7 @@ func TestMstatRoutesAreNotPortedWhenServiceMissing(t *testing.T) {
 	}
 }
 
-// mstatRoutes همان یازده مسیرِ سیم‌کشی‌شده و نامِ هندلرِ گروهی که باید بگیرند.
+// mstatRoutes همان سیزده مسیرِ سیم‌کشی‌شده و نامِ هندلرِ گروهی که باید بگیرند.
 var mstatRoutes = map[string]string{
 	"/api/mstat/summary":         "summary",
 	"/api/mstat/histogram":       "histogram",
@@ -97,6 +98,8 @@ var mstatRoutes = map[string]string{
 	"/api/mstat/industries":      "industries",
 	"/api/mstat/timeline":        "timeline",
 	"/api/mstat/phases":          "phases",
+	"/api/mstat/smart-money":     "smart-money",
+	"/api/mstat/board":           "board",
 }
 
 // fakeMstat هر فراخوانِ هندلر را با نامش ثبت می‌کند تا سیم‌کشیِ مسیر ← هندلر
@@ -120,7 +123,11 @@ func (f *fakeMstat) Phase(w http.ResponseWriter, _ *http.Request)      { f.hit("
 func (f *fakeMstat) Mainwatch(w http.ResponseWriter, _ *http.Request)  { f.hit("mainwatch", w) }
 func (f *fakeMstat) Industries(w http.ResponseWriter, _ *http.Request) { f.hit("industries", w) }
 func (f *fakeMstat) Timeline(w http.ResponseWriter, _ *http.Request)   { f.hit("timeline", w) }
-func (f *fakeMstat) Phases(w http.ResponseWriter, _ *http.Request)     { f.hit("phases", w) }
+func (f *fakeMstat) Phases(w http.ResponseWriter, _ *http.Request) { f.hit("phases", w) }
+func (f *fakeMstat) SmartMoney(w http.ResponseWriter, _ *http.Request) {
+	f.hit("smart-money", w)
+}
+func (f *fakeMstat) Board(w http.ResponseWriter, _ *http.Request) { f.hit("board", w) }
 
 // TestMstatRouteTable هر مسیرِ یازده‌گانه باید هم در فهرستِ مسیرهایِ پایتون
 // باشد و هم به همان هندلرِ گروهی برسد — یک جابه‌جایی در ثبتِ مسیرها (مثلاً
@@ -135,18 +142,8 @@ func TestMstatRouteTable(t *testing.T) {
 			t.Fatalf("%s is not in the Python route inventory", path)
 		}
 	}
-	if len(mstatRoutes) != 11 {
-		t.Fatalf("wired mstat routes = %d, want 11", len(mstatRoutes))
-	}
-	// دو مسیرِ دیگرِ همان خانواده (board و smart-money) مالِ B2-2‌اند و باید
-	// هنوز ۵۰۱ بمانند؛ بی‌این، «همهٔ mstat وصل شد» با ۱۱ از ۱۳ گمراه می‌کند.
-	for _, path := range []string{"/api/mstat/board", "/api/mstat/smart-money"} {
-		if !inventory["GET "+path] {
-			t.Fatalf("%s is not in the Python route inventory", path)
-		}
-		if rec := serve(t, "GET", path); rec.Code != http.StatusNotImplemented {
-			t.Fatalf("%s: status = %d, want 501 until B2-2", path, rec.Code)
-		}
+	if len(mstatRoutes) != 13 {
+		t.Fatalf("wired mstat routes = %d, want 13", len(mstatRoutes))
 	}
 	for path, want := range mstatRoutes {
 		fake := &fakeMstat{}

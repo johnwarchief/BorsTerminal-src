@@ -42,11 +42,15 @@ type Service struct {
 	cache   map[string]entry
 	flights map[string]chan struct{}
 	clock   func() time.Time
+	// memo همان _ASSESS/_STATE_MEMOِ درون‌فرآیندی است؛ با هر Service تازه
+	// صفر می‌شود و فقط رویِ cache-miss به‌روز می‌شود.
+	memo *verdictMemo
 }
 
 func New(db *sql.DB, dataDir string, flags FlagSource) *Service {
 	return &Service{db: db, dataDir: dataDir, flags: flags,
-		cache: map[string]entry{}, flights: map[string]chan struct{}{}, clock: time.Now}
+		cache: map[string]entry{}, flights: map[string]chan struct{}{},
+		clock: time.Now, memo: newVerdictMemo()}
 }
 
 func (s *Service) Call(key string, fn func() (map[string]any, error), opt Options) map[string]any {

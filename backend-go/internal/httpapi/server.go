@@ -51,6 +51,8 @@ type Mstat interface {
 	Industries(http.ResponseWriter, *http.Request)
 	Timeline(http.ResponseWriter, *http.Request)
 	Phases(http.ResponseWriter, *http.Request)
+	SmartMoney(http.ResponseWriter, *http.Request)
+	Board(http.ResponseWriter, *http.Request)
 }
 
 func New(cfg config.Config, h *db.Handles, m Market, ms Mstat) http.Handler {
@@ -80,6 +82,8 @@ func New(cfg config.Config, h *db.Handles, m Market, ms Mstat) http.Handler {
 		mux.HandleFunc("GET /api/mstat/industries", ms.Industries)
 		mux.HandleFunc("GET /api/mstat/timeline", ms.Timeline)
 		mux.HandleFunc("GET /api/mstat/phases", ms.Phases)
+		mux.HandleFunc("GET /api/mstat/smart-money", ms.SmartMoney)
+		mux.HandleFunc("GET /api/mstat/board", ms.Board)
 	}
 	mux.HandleFunc("/", s.apiGate)
 	return noCache(mux)
