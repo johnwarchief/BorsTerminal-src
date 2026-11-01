@@ -1,0 +1,440 @@
+{
+  "registry_version": "1",
+  "ruleset_version": "555648ebff52",
+  "filters": [
+    {
+      "filter_id": "f_clock",
+      "name": "الگوی ساعت",
+      "description": "آخرین روی پایانیِ ۲٪، حجمِ بیشتر از میانگینِ نشست‌ها و تعدادِ معامله.",
+      "source_file": "docs/الگوی ساعت.txt",
+      "source_hash": "6637192e4d10a73d",
+      "formula_version": "txt-1",
+      "backend_impl": "tape_flags.clock_flag",
+      "availability": "backend",
+      "status": "canonical",
+      "note": null,
+      "params": [
+        {
+          "param_id": "clock_delta",
+          "label": "فاصلۀ آخرین از پایانی",
+          "source": "docs/الگوی ساعت.txt:1 `(pl)>=(pc)*1.02`",
+          "value": 0.02,
+          "value_text": null,
+          "unit": "کسر",
+          "configurable": false,
+          "min": null,
+          "max": null,
+          "note": "تعارضِ X-1: چارت ۳ و FTS_SPEC.md:73 عددِ ۱٪ را می‌آورند؛ رأی ۱۸ «گد رو عین فرمول‌ها بکن» ⇒ همان ۱٫۰۲."
+        },
+        {
+          "param_id": "vol_mult",
+          "label": "ضریبِ حجم",
+          "source": "docs/الگوی ساعت.txt:1 `(tvol)>1*(Σ[ih][0..29]/30)`",
+          "value": 1.0,
+          "value_text": null,
+          "unit": "×میانگین",
+          "configurable": true,
+          "min": 1.0,
+          "max": 5.0,
+          "note": "جزوه صریحاً این عدد را دستِ کاربر گذاشته: «می توانیم عدد 1 را به 3 یا 5 تغییر دهیم» (jozve…1-24.md:610-611)."
+        },
+        {
+          "param_id": "min_trades",
+          "label": "حداقلِ تعدادِ معامله",
+          "source": "docs/الگوی ساعت.txt:1 `(tno)>30`",
+          "value": 30.0,
+          "value_text": null,
+          "unit": "معامله",
+          "configurable": false,
+          "min": null,
+          "max": null,
+          "note": null
+        },
+        {
+          "param_id": "base_sessions",
+          "label": "پنجرةٔ میانگینِ حجم",
+          "source": "docs/الگوی ساعت.txt:1 Σ[ih][0..29]",
+          "value": 30.0,
+          "value_text": null,
+          "unit": "نشست",
+          "configurable": false,
+          "min": null,
+          "max": null,
+          "note": "رأی ۱۸ بند ۲: مبناء از month_avg_vol به همین Σ/۳۰ عوض شد. انحرافِ ثبت‌شده: بانکِ ما نشستِ بی‌معامله را ندارد، پس تقسیم بر شمارِ نشستِ *موجود* (کفِ ۱۰) می‌شود."
+        }
+      ],
+      "test_refs": [
+        "dev/test_tape_flags_v1059.py",
+        "tools/tape_formula_parity.py",
+        "frontend/src/__tests__/tape-fuzz-parity.spec.ts"
+      ]
+    },
+    {
+      "filter_id": "f_susp",
+      "name": "حجم مشکوک",
+      "description": "حجمِ همین نشست سه برابرِ میانگینِ سی نشست، با حداقلِ تعدادِ معامله.",
+      "source_file": "docs/حجم مشکوک.txt",
+      "source_hash": "b8a185c4168be33e",
+      "formula_version": "txt-1",
+      "backend_impl": "tape_flags.suspicious_flag",
+      "availability": "backend",
+      "status": "canonical",
+      "note": null,
+      "params": [
+        {
+          "param_id": "vol_mult",
+          "label": "ضریبِ حجم",
+          "source": "docs/حجم مشکوک.txt:1 `(tvol)>3*(Σ[ih][0..29]/30)`",
+          "value": 3.0,
+          "value_text": null,
+          "unit": "×میانگین",
+          "configurable": true,
+          "min": 2.5,
+          "max": 5.0,
+          "note": "دامنه از جزوه: «(tvol)>2.5 یا (tvol)>5» (jozve…1-24.md:615-618)."
+        },
+        {
+          "param_id": "min_trades",
+          "label": "حداقلِ تعدادِ معامله",
+          "source": "docs/حجم مشکوک.txt:1 `(tno)>50`",
+          "value": 50.0,
+          "value_text": null,
+          "unit": "معامله",
+          "configurable": false,
+          "min": null,
+          "max": null,
+          "note": null
+        },
+        {
+          "param_id": "base_sessions",
+          "label": "پنجرةٔ میانگینِ حجم",
+          "source": "docs/حجم مشکوک.txt:1",
+          "value": 30.0,
+          "value_text": null,
+          "unit": "نشست",
+          "configurable": false,
+          "min": null,
+          "max": null,
+          "note": null
+        }
+      ],
+      "test_refs": [
+        "dev/test_tape_flags_v1059.py",
+        "tools/tape_formula_parity.py"
+      ]
+    },
+    {
+      "filter_id": "f_jet",
+      "name": "فیلتر جت",
+      "description": "حجمِ سنگین + قدرتِ خریدارِ حقیقی + شکستنِ سقفِ ایستای هشت پنجره.",
+      "source_file": "docs/فیلتر جت.txt",
+      "source_hash": "e93cab46073567c0",
+      "formula_version": "txt-1",
+      "backend_impl": "tape_flags.jet_flag",
+      "availability": "backend",
+      "status": "canonical",
+      "note": null,
+      "params": [
+        {
+          "param_id": "vol_mult",
+          "label": "ضریبِ حجم",
+          "source": "docs/فیلتر جت.txt:1 `(tvol)>3*(Σ…/30)`",
+          "value": 3.0,
+          "value_text": null,
+          "unit": "×میانگین",
+          "configurable": false,
+          "min": null,
+          "max": null,
+          "note": null
+        },
+        {
+          "param_id": "buyer_power",
+          "label": "سرانۀ سفارشِ خرید به فروشِ حقیقی",
+          "source": "docs/فیلتر جت.txt:1 `Buy_I_Volume/Buy_CountI >= 1.5*Sell_I_Volume/Sell_CountI`",
+          "value": 1.5,
+          "value_text": null,
+          "unit": "×",
+          "configurable": false,
+          "min": null,
+          "max": null,
+          "note": null
+        },
+        {
+          "param_id": "resistance_ladder",
+          "label": "پنجره‌هایِ سقفِ ایستا",
+          "source": "docs/فیلتر جت.txt:1 [ih][59,49,39,29,19,9,5,2].PriceMax",
+          "value": null,
+          "value_text": "2,5,9,19,29,39,49,59",
+          "unit": "نشستِ پیش",
+          "configurable": false,
+          "min": null,
+          "max": null,
+          "note": null
+        },
+        {
+          "param_id": "min_trades",
+          "label": "حداقلِ تعدادِ معامله",
+          "source": "docs/فیلتر جت.txt:1 `(tno)>1 && (tno)>100`",
+          "value": 100.0,
+          "value_text": null,
+          "unit": "معامله",
+          "configurable": false,
+          "min": null,
+          "max": null,
+          "note": "تعارضِ X-3 / پرسشِ Q-2: رأی ۱۷ می‌گوید جزوه و چارت ۳ چنین کفی ندارند و رأی ۱۸ آن را برایِ بجِ تابلو نگه داشته؛ درِ قیف هنوز رأیِ صریح ندارد."
+        }
+      ],
+      "test_refs": [
+        "dev/test_tape_flags_v1059.py",
+        "tools/tape_formula_parity.py"
+      ]
+    },
+    {
+      "filter_id": "f_roobi",
+      "name": "کف روبی صف فروش",
+      "description": "قیمت رویِ آستانۀ مجاز پایین چسبیده و صفِ خریدِ سنگین همان‌جا نشسته است.",
+      "source_file": "docs/کف روبی صف فروش.txt",
+      "source_hash": "053a12a7c96b6e4f",
+      "formula_version": "txt-1",
+      "backend_impl": "tape_flags.roobi_flag",
+      "availability": "backend-partial",
+      "status": "canonical",
+      "note": "تقریبِ جزوه: «(tno)>200» به‌جایِ کف‌روبیِ سخت (jozve…1-24.md:616) — ثبت‌شده، فعلاً درِ کد نیست.",
+      "params": [
+        {
+          "param_id": "plp_max",
+          "label": "سقفِ درصدِ آخرین",
+          "source": "docs/کف روبی صف فروش.txt:1 `(plp)<-1`",
+          "value": -1.0,
+          "value_text": null,
+          "unit": "٪",
+          "configurable": false,
+          "min": null,
+          "max": null,
+          "note": null
+        },
+        {
+          "param_id": "zd1_min",
+          "label": "حداقلِ تعدادِ سفارشِ سطرِ اولِ خرید",
+          "source": "docs/کف روبی صف فروش.txt:1 `(zd1)>1`",
+          "value": 1.0,
+          "value_text": null,
+          "unit": "سفارش",
+          "configurable": false,
+          "min": null,
+          "max": null,
+          "note": null
+        },
+        {
+          "param_id": "qd1_min",
+          "label": "حداقلِ حجمِ سفارشِ سطرِ اولِ خرید",
+          "source": "docs/کف روبی صف فروش.txt:1 `(qd1)>100`",
+          "value": 100.0,
+          "value_text": null,
+          "unit": "سهم",
+          "configurable": false,
+          "min": null,
+          "max": null,
+          "note": "رأی ۱۸ بندِ انحرافِ ۲: ستونِ qd1 تازه به daily_prices آمده؛ تا نبودش این قید سنجیده نمی‌شود و جانشینِ حدسی هم نمی‌خواهد."
+        }
+      ],
+      "test_refs": [
+        "dev/test_tape_flags_v1059.py",
+        "tools/tape_formula_parity.py"
+      ]
+    },
+    {
+      "filter_id": "f_noqteh",
+      "name": "نقطه زنی",
+      "description": "قیمت پایانی زیرِ ۳٪ از کمینۀ ماه، با حجمِ بیشتر از میانگین و حداقلِ تعدادِ معامله.",
+      "source_file": "docs/نقطه زنی.txt",
+      "source_hash": "e5d4fd99a6811443",
+      "formula_version": "txt-1",
+      "backend_impl": "tape_flags.noqteh_flag",
+      "availability": "backend",
+      "status": "canonical",
+      "note": null,
+      "params": [
+        {
+          "param_id": "max_dist",
+          "label": "سقفِ فاصلۀ تا کفِ ماه",
+          "source": "docs/نقطه زنی.txt:1 `(cfield2)<3`",
+          "value": 3.0,
+          "value_text": null,
+          "unit": "٪",
+          "configurable": false,
+          "min": null,
+          "max": null,
+          "note": null
+        },
+        {
+          "param_id": "low_window",
+          "label": "پنجرةٔ کمینه",
+          "source": "docs/نقطه زنی.txt حلقۀ `n=1; n<29`",
+          "value": 29.0,
+          "value_text": null,
+          "unit": "نشست",
+          "configurable": false,
+          "min": null,
+          "max": null,
+          "note": "تعارضِ X-4 / پرسشِ Q-3: کرانِ `dist>=0` درِ v1.0.33 بی‌رأی وارد شده بود و رأی ۲۰ آن را پس داد."
+        },
+        {
+          "param_id": "vol_mult",
+          "label": "ضریبِ حجم",
+          "source": "docs/نقطه زنی.txt:1 `(tvol)>1*(Σ…/30)`",
+          "value": 1.0,
+          "value_text": null,
+          "unit": "×میانگین",
+          "configurable": false,
+          "min": null,
+          "max": null,
+          "note": null
+        },
+        {
+          "param_id": "min_trades",
+          "label": "حداقلِ تعدادِ معامله",
+          "source": "docs/نقطه زنی.txt:1 `(tno)>5`",
+          "value": 5.0,
+          "value_text": null,
+          "unit": "معامله",
+          "configurable": false,
+          "min": null,
+          "max": null,
+          "note": null
+        }
+      ],
+      "test_refs": [
+        "dev/test_tape_flags_v1059.py",
+        "tools/tape_formula_parity.py"
+      ]
+    },
+    {
+      "filter_id": "f_smart",
+      "name": "ورود پول هوشمند",
+      "description": "حجمِ ۱٫۵ برابرِ میانگین با سرانۀ سفارشِ خریدِ حقیقیِ بیشتر از فروش، رویِ روندِ صعودیِ همان نشست.",
+      "source_file": "docs/ورود پول هوشمند.txt",
+      "source_hash": "590e52a23c78166f",
+      "formula_version": "txt-1",
+      "backend_impl": "tape_flags.smart_money_flag",
+      "availability": "backend-partial",
+      "status": "canonical",
+      "note": "سطرهایِ ۲ و ۳ همان فیلتر با مبناءهایِ [is5]/[is6]اند؛ آن آرایه درِ بانکِ ما ذخیره نمی‌شود، پس آن دو variant سنجیده **نمی‌شوند** (نه جانشینِ حدسی). فایل هیچ qidِ تعدادِ معاملۀ دیگری ندارد و اضافه نشده است.",
+      "params": [
+        {
+          "param_id": "vol_mult",
+          "label": "ضریبِ حجم",
+          "source": "docs/ورود پول هوشمند.txt:1 `(tvol)>1.5*(Σ…/30)`",
+          "value": 1.5,
+          "value_text": null,
+          "unit": "×میانگین",
+          "configurable": false,
+          "min": null,
+          "max": null,
+          "note": null
+        },
+        {
+          "param_id": "buyer_power_ge",
+          "label": "سرانۀ خرید ≥ سرانۀ فروشِ حقیقی",
+          "source": "docs/ورود پول هوشمند.txt:1",
+          "value": 1.0,
+          "value_text": null,
+          "unit": "×",
+          "configurable": false,
+          "min": null,
+          "max": null,
+          "note": null
+        }
+      ],
+      "test_refs": [
+        "dev/test_tape_flags_v1059.py",
+        "tools/tape_formula_parity.py"
+      ]
+    },
+    {
+      "filter_id": "f_legal",
+      "name": "پول هوشمند و کد به کد حقوقی به حقیقی",
+      "description": "همان چهار قیدِ «ورود پول هوشمند» + خریدِ حقوقی و فروشِ حقیقیِ هر دو بالایِ نصفِ حجمِ نشست.",
+      "source_file": "docs/ورود پول هوشمند و کد به کد حقوقی به حقیقی.txt",
+      "source_hash": "92adf93e9d5e1df4",
+      "formula_version": "txt-1",
+      "backend_impl": "tape_flags.legal_to_retail_flag",
+      "availability": "backend-partial",
+      "status": "canonical",
+      "note": "قیدهایِ فایل «حقوقی می‌خرد / حقیقی می‌فروشد» را می‌خواهد؛ نامِ فایل «حقوقی به حقیقی» است و ما عیناً از متنِ فایل پیروی می‌کنیم، نه از نام.",
+      "params": [
+        {
+          "param_id": "legal_share",
+          "label": "سهمِ هر دو طرف از حجمِ نشست",
+          "source": "docs/…کد به کد…txt:1 `Buy_I_Volume>0.5*(tvol) && Sell_N_Volume>0.5*(tvol)`",
+          "value": 0.5,
+          "value_text": null,
+          "unit": "سهمِ tvol",
+          "configurable": false,
+          "min": null,
+          "max": null,
+          "note": null
+        }
+      ],
+      "test_refs": [
+        "dev/test_tape_flags_v1059.py",
+        "tools/tape_formula_parity.py"
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "preset_id": "swing",
+      "label": "شخص نوسان‌گیر (زیر ۳ ماه)",
+      "chain": [
+        "f_clock",
+        "f_jet",
+        "f_susp"
+      ],
+      "technical_gate": "trend_matrix",
+      "source": "FTS_CHART3_extracted_text.txt بلوکِ «فیلتر / نوسانگیر»: ساعت + جت + حجم مشکوک",
+      "status": "canonical",
+      "note": "سطرِ «مهندسی معکوس ۱-تابلو خوانی فیلتر حجم مشکوک الگوی ساعت کف روبی ۲-تکنیکال ۳-بنیادی» ترتیبِ دیگری می‌دهد؛ چارت ۳ مرجعِ چیدمان است و همان نگه داشته شده."
+    },
+    {
+      "preset_id": "trend",
+      "label": "شخص روندگیر (بالای ۳ ماه)",
+      "chain": [
+        "f_roobi",
+        "f_noqteh"
+      ],
+      "technical_gate": "trend_matrix",
+      "source": "FTS_CHART3_extracted_text.txt بلوکِ روندگیر: کف روبی + نقطه زنی (ورود در کف سوم یا پنجم) · jozve…1-24.md:584",
+      "status": "canonical",
+      "note": "جزوه: «روندگیر: به حجم مشکوک نیازی ندارد» (jozve…1-24.md:540) — پس حجم مشکوک درِ این preset نیست."
+    },
+    {
+      "preset_id": "hourglass",
+      "label": "استراتژی ساعت شنی (۳ تا ۱۰ ساله)",
+      "chain": [],
+      "technical_gate": "hourglass_ma52_rsi5_weekly",
+      "source": "jozve_FTS_handwritten_pages_25-34.md:74 «MA = 52 تایم هفتگی ؛ RSI = 5 تایم هفتگی» · :66 «در تایم هفتگی یا بالاتر فقط کار می‌کند» · چارت ۳ سطر ۱۴",
+      "status": "unverified",
+      "note": "هیچ فیلترِ تابلویی درِ هیچ منبعی برایش نیامده، پس زنجیره‌اش تهی است. کدِ پیشِ این دور `f_roobi,f_clock` را قرض می‌گرفت که بی‌منبع است ⇒ حذف شد و منتظرِ رأیِ مالک (Q-1) است. خودِ سیگنال درِ api/chart.py:2767-2790 پیاده است."
+    },
+    {
+      "preset_id": "custom",
+      "label": "مسیر سفارشی (انتخاب دستی)",
+      "chain": [],
+      "technical_gate": "trend_matrix",
+      "source": "مأموریتِ مالک ۱۴۰۵-۰۷-۱۶ بند ۴: کاربر از کلِ رجیستری می‌چیند",
+      "status": "canonical",
+      "note": "زنجیره‌ای که کاربر می‌سازد؛ هیچ فیلتری به‌عنوانِ پیش‌فرض تحمیل نمی‌شود."
+    }
+  ],
+  "unimplemented_filters": {
+    "خشک کردن": "نام درِ FTS_CHART3_extracted_text.txt (بلوکِ روندگیر) هست، فرمول هیچ‌جا نیست ⇒ NOT FOUND"
+  },
+  "gates": {
+    "technical": [
+      "trend_matrix",
+      "hourglass_ma52_rsi5_weekly"
+    ],
+    "fundamental": "mandatory_i1_i2_i3_supporting_i4_i5"
+  }
+}

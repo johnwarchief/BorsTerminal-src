@@ -15,6 +15,7 @@ import (
 	"borsterminal/backend/internal/db"
 	"borsterminal/backend/internal/export"
 	"borsterminal/backend/internal/fundamental"
+	"borsterminal/backend/internal/funnel"
 	"borsterminal/backend/internal/httpapi"
 	"borsterminal/backend/internal/market"
 	"borsterminal/backend/internal/marketindex"
@@ -62,6 +63,7 @@ func main() {
 	mi := marketindex.NewService(cfg.DataDir, nil)
 	exp := export.NewService(handles.Market)
 	scr := screener.NewService(handles.Market, cfg.DataDir)
+	fn := funnel.NewService(handles.Market, cfg.DataDir)
 
 	srv := &http.Server{Addr: cfg.Addr,
 		Handler: httpapi.NewWithServices(cfg, handles, httpapi.Services{
@@ -76,6 +78,7 @@ func main() {
 			MarketIndex:   mi,
 			Export:        exp,
 			Screener:      scr,
+			Funnel:        fn,
 		})}
 	go func() {
 		slog.Info("listening", "addr", cfg.Addr, "data", cfg.DataDir, "version", httpapi.Version())

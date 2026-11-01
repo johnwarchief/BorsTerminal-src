@@ -134,7 +134,9 @@ type Screener interface {
 // Funnel مسیرهای قیف FTS در B7؛ nil یعنی پورت نشده.
 type Funnel interface {
 	Registry(http.ResponseWriter, *http.Request)
-	Evaluate(http.ResponseWriter, *http.Request)
+	GetFunnel(http.ResponseWriter, *http.Request)
+	PostFunnel(http.ResponseWriter, *http.Request)
+	Trace(http.ResponseWriter, *http.Request)
 }
 
 // Services مجموعه‌ی کلیه سرویس‌های HTTP بورس‌ترمینال.
@@ -258,8 +260,10 @@ func NewWithServices(cfg config.Config, h *db.Handles, srv Services) http.Handle
 		mux.HandleFunc("GET /api/screener", srv.Screener.Screener)
 	}
 	if srv.Funnel != nil {
+		mux.HandleFunc("GET /api/funnel", srv.Funnel.GetFunnel)
+		mux.HandleFunc("POST /api/funnel", srv.Funnel.PostFunnel)
 		mux.HandleFunc("GET /api/funnel/registry", srv.Funnel.Registry)
-		mux.HandleFunc("POST /api/funnel/evaluate", srv.Funnel.Evaluate)
+		mux.HandleFunc("GET /api/funnel/trace", srv.Funnel.Trace)
 	}
 	mux.HandleFunc("/", s.apiGate)
 	return noCache(mux)
