@@ -13,8 +13,6 @@
 | `bors-build-install-guard` | هنگامِ بیلد/نصبِ بسته تا گاردهای موجود (pinِ numpy، بسته‌بندیِ onedir، `hiddenimports` در `fts_terminal.spec`، fallbackها) نشکنند |
 | `bors-code-review` | **بعد از** نوشتنِ کد و **پیش از** کامیت — بازبینیِ امنیت، باگ، race، لبه‌ها، کارایی و تست‌ها بر پایهٔ حالت‌های شکستِ همین پروژه |
 | `bors-frontend-ui-guard` | هنگامِ تغییرِ رابط کاربری (چیدمان، تراز جدول‌ها، RTL، ارتفاع، ارقامِ فارسی) |
-| `bors-dual-jev-verification` | **روش Jev قدیمی/جایگزین موقت** در دورهٔ مهاجرت؛ مسیر canonical تازه نیست |
-| `bors-jev-verification` | راهنمای میراثیِ pilot/Jev؛ تا اثبات Laya فقط برای fallback یا مقایسه استفاده شود |
 | `bors-live-ui-check` | بعد از هر تغییرِ دیدنی: سنجشِ زنده با Chromium و قضاوت از JSONِ خودِ سنجش |
 | `bors-installed-vs-dev-diagnosis` | وقتی عددی در تابلویِ نصبی صفر/null است: تفاضلِ همان لحظه بین دو بک‌اند، قبل از دست‌زدن به UI |
 | `canvas-chart-live-pixel-check` | وقتی نمودارِ canvas (کندل/سطوح/فلاش) عوض می‌شود: تستِ واحد سبز است ولی پیکسل ندیده‌ایم |
@@ -38,4 +36,7 @@
 و «سبز شدنِ jsdom» به‌تنهایی اثباتِ رابطِ زنده نیست.
 
 
-> **وضعیت مهاجرت Jev → Laya (2026-10-10):** مالک درخواست جایگزینی مسیر تصمیم‌گیری/مرورگر Jev با Laya را داده است؛ مهاجرت هنوز با اجرای واقعی Qoder اثبات نشده. بنابراین skills با نام Jev در این مخزن راهنمای میراثی و fallback هستند، نه الزامِ خودکار برای هر واحد کار. تا زمانی که Laya با تصمیم ساختاریافته و اقدام واقعی مرورگر end-to-end پاس نشده، آزمون زندهٔ UI را با Playwright/CDP موجود انجام دهید و مهاجرت را `UNVERIFIED` نگه دارید. فایل‌ها و متغیرهای Jev را فقط پس از آزمون موفق مسیر جایگزین حذف کنید.
+> **وضعیت مهاجرت Jev و بازنشستگی:** اسکیل‌های میراثی `bors-dual-jev-verification` و `bors-jev-verification` به‌دلیل وابستگی به کلیدهای ناموجود، تکراری‌بودن و سربار زمانی بالا با تصمیم مالک بازنشسته و حذف شدند. برای سنجش زندهٔ رابط کاربری، `bors-live-ui-check` و `canvas-chart-live-pixel-check` همچنان با مرورگر محلی اجرا می‌شوند.
+
+## مهارت‌های توسعه، معماری و متدولوژی (`.agents/skills/`)
+اسکیل‌های عمومی متدولوژی (Superpowers)، عیب‌یابی ریشه‌ای (`systematic-debugging`)، برنامه‌ریزی (`writing-plans`, `executing-plans`)، آزمون مبتنی بر تست (`test-driven-development`)، طراحی فرانت‌اند (`ui-designer`, `frontend-design`, `responsive-design`, `web-animation-design`, `impeccable`)، مهندسی معکوس (`reverse-engineer-anything`) و اتوماسیون مرورگر (`playwright-cli`) در پوشهٔ `.agents/skills/` مخزن نگهداری می‌شوند و برای تمام ایجنت‌ها در دسترس‌اند.

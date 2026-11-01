@@ -1,0 +1,11 @@
+{
+  "owner": "chensu1234",
+  "slug": "playwright-cli-tool",
+  "displayName": "Playwright Cli",
+  "latest": {
+    "version": "1.0.0",
+    "publishedAt": 1776114508972,
+    "commit": "https://github.com/openclaw/skills/commit/0c3491f344c5064db649efd56b6fed179f01e020"
+  },
+  "history": []
+}
