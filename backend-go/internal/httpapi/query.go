@@ -147,3 +147,15 @@ func applySign(digits string, neg bool) (int, bool) {
 	}
 	return int(n), true
 }
+
+// StringQuery رشتهٔ کوئری با همان قاعدۀ تکرارِ IntQuery: starlette آخرین
+// occurrence را می‌دهد، `URL.Query().Get()` نخستین را. کلیدِ غایب ⇒ پیش‌فرض.
+// (بندِ ۵ مأموریت: «متنِ فرستاده‌شده» با «متنِ انتخاب‌شده» یکی نیست؛ پنلِ
+// مالک ممکن است یکِ فیلتر را دو بار بفرستد.)
+func StringQuery(r *http.Request, name, def string) string {
+	vals := r.URL.Query()[name]
+	if len(vals) == 0 {
+		return def
+	}
+	return vals[len(vals)-1]
+}

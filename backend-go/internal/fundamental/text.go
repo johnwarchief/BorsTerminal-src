@@ -9,6 +9,7 @@ package fundamental
 // Rollback: revertِ همین کامیت.
 
 import (
+	"encoding/json"
 	"math"
 	"strconv"
 	"strings"
@@ -42,6 +43,18 @@ func pyStr(v any) string {
 		return strconv.Itoa(x)
 	case int64:
 		return strconv.FormatInt(x, 10)
+	case json.Number:
+		// با UseNumber خوانده می‌شود تا «۷» همان «7» بماند و «7.0» مثلِ
+		// str(float) درِ پایتون «.0» بگیرد (پایتون JSON را int/float می‌شمارد).
+		t := x.String()
+		if strings.ContainsAny(t, ".eE") {
+			f, err := strconv.ParseFloat(t, 64)
+			if err != nil {
+				return t
+			}
+			return pyStr(f)
+		}
+		return t
 	case float64:
 		if math.IsNaN(x) {
 			return "nan"
@@ -78,6 +91,9 @@ func isFalsy(v any) bool {
 	switch x := v.(type) {
 	case nil:
 		return true
+	case json.Number:
+		f, ok := asFloat(x)
+		return !ok || f == 0
 	case string:
 		return x == ""
 	case bool:
@@ -97,6 +113,12 @@ func toF(v any) float64 {
 	switch x := v.(type) {
 	case nil:
 		return 0
+	case json.Number:
+		f, ok := asFloat(x)
+		if !ok {
+			return 0
+		}
+		return f
 	case float64:
 		return x
 	case float32:
@@ -121,11 +143,24 @@ func toF(v any) float64 {
 }
 
 // toI مثلِ int(v) رویِ مقداری که از SQLite می‌آید؛ بی‌عدد ⇒ ok=false تا
-// مصرف‌کننده بتواند شاخهٔ TypeErrorِ پایتون را بازتولید کند.
+// مصرف‌کننده بتواند شاخهٔ TypeErrorِ پایتون را بازتولید کند. رشته فقط همان
+// «عددِ صحیح»ِ پایتون است: `int("5.5")` درِ هر دو زبان ValueError می‌گیرد (نه ۵)،
+// پس شاخهٔ اعشاریِ رشته عمداً نداریم؛ `ok=false` همان صفرِ except درِ order_key
+// و همان ۱۶ درِ clampLimit می‌شود. اعدادِ float (ستونِ REAL) پیشِ اعشار چیده
+// می‌شوند، مثلِ `int(5.5)` = 5 درِ پایتون.
 func toI(v any) (int64, bool) {
 	switch x := v.(type) {
 	case nil:
 		return 0, false
+	case json.Number:
+		if i, err := x.Int64(); err == nil {
+			return i, true
+		}
+		f, ok := asFloat(x)
+		if !ok || math.IsInf(f, 0) || math.IsNaN(f) {
+			return 0, false
+		}
+		return int64(f), true
 	case int:
 		return int64(x), true
 	case int64:
@@ -136,14 +171,11 @@ func toI(v any) (int64, bool) {
 		}
 		return int64(x), true
 	case string:
-		s := strings.TrimSpace(x)
-		if n, err := strconv.ParseInt(s, 10, 64); err == nil {
-			return n, true
+		n, err := strconv.ParseInt(strings.TrimSpace(x), 10, 64)
+		if err != nil {
+			return 0, false
 		}
-		if f, err := strconv.ParseFloat(s, 64); err == nil {
-			return int64(f), true
-		}
-		return 0, false
+		return n, true
 	case bool:
 		if x {
 			return 1, true

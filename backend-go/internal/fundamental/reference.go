@@ -225,6 +225,10 @@ func QuarterReferenceRows(rows []map[string]any, limit any) []map[string]any {
 		}
 		kind := strOr(row["report_kind"])
 		title := strOr(row["title"])
+		// `int(tracing_no or 0)` درِ `statement_rank` بی‌`except` است (fts_engine.py:706):
+		// رشتهٔ غیرعددِ `tracing_no` پایتون را تا ۵۰۰ می‌برد؛ اینجا صفر می‌ماند، چون
+		// ستون درِ بانکِ کدال INTEGER است (schema: tracing_no INTEGER PRIMARY KEY) و
+		// ازِ HTTPِ این مسیر چنین مقداری نمی‌آید — راستی‌آزمایی‌نشده رویِ بانکِ خراب.
 		tn, _ := toI(orZero(row["tracing_no"]))
 		key := quarterKey{periodEnd: *pe, kind: kind}
 		if months != nil {
@@ -265,12 +269,17 @@ func QuarterReferenceRows(rows []map[string]any, limit any) []map[string]any {
 
 // orderKey مثلِ tupleِ `order_key` درِ پایتون؛ ترتیبِ واژگانیِ رشته‌ها و
 // مقایسهٔ عددیِ هر چهار جزء درِ یکِ int64 بسته می‌شود تا با reverse=True بخورد.
+// دو رشته (دوره و نوع) همان `str(x or "")` را می‌خوانند که کلیدِ انتخاب می‌خواند
+// (fts_engine.py:779 و :782 در برابرِ :741) — با `.(string)` خام، `report_kind`
+// عددی درِ ترتیب رشتهٔ خالی می‌شد و دو دورۀ هم‌تاریخ جابه‌جا می‌شدند، یعنی
+// ردیفی که لایۀ انتخاب «۵» می‌خواند لایۀ ترتیب «» می‌دید.
 func orderKey(row map[string]any) int64Order {
+	// `int(x or 0)` درِ پایتون با `except (TypeError, ValueError)` همان صفر را می‌دهد
+	// (fts_engine.py:770-777)، پس انداختنِ `ok` از toI عینِ شاخهٔ except است.
 	m, _ := toI(orZero(row["period_months"]))
 	tn, _ := toI(orZero(row["tracing_no"]))
-	pe, _ := row["period_end"].(string)
-	kind, _ := row["report_kind"].(string)
-	return int64Order{pe: pe, months: m, kind: kind, tracing: tn}
+	return int64Order{pe: strOr(row["period_end"]), months: m,
+		kind: strOr(row["report_kind"]), tracing: tn}
 }
 
 type int64Order struct {
@@ -308,10 +317,16 @@ func (a int64Order) cmp(b int64Order) int {
 	return 0
 }
 
-// clampLimit مثلِ `max(1, min(int(limit), 40))` با همان برگشتِ ۱۶ برایِ ورودیِ
-// غیرعدد (پایتون TypeError/ValueError را می‌گیرد).
+// clampLimit عینِ `try: bounded = max(1, min(int(limit), 40))` / `except
+// (TypeError, ValueError): bounded = 16` درِ fts_engine.py:786-789 — بی‌`orZero`
+// پیشِ تبدیل: آن None را به ۰ می‌رساند و شاخهٔ except را هرگز فعال نمی‌کرد، پس
+// None/«»/«abc» به ۱ می‌رسیدند جایی که اوراکل ۱۶ (پیش‌فرضِ بی‌limit) می‌دهد.
+// صفرِ واقعی عدد است و به ۱ می‌چسبد؛ فقط بی‌عددِ حقیقی ⇒ ۱۶. ازِ مسیرِ HTTP این
+// شاخه اجرا نمی‌شود (`limit` درِ route پایتون int است و Go همان‌جا 422 می‌دهد:
+// `IntQuery` درِ internal/httpapi/query.go رشته را یا int می‌کند یا رد)؛ راهِ آن
+// فراخوانیِ مستقیمِ همین تابعِ exported است.
 func clampLimit(limit any) int {
-	n, ok := toI(orZero(limit))
+	n, ok := toI(limit)
 	if !ok {
 		return 16
 	}

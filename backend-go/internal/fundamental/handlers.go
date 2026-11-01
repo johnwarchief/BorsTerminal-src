@@ -6,8 +6,16 @@ import (
 	"borsterminal/backend/internal/httpapi"
 )
 
+// Sectors بدنهٔ پایتون‌شکل را می‌دهد و خطایِ خواندن را مثلِ FastAPI به ۵۰۰ می‌برد.
+// بدنهٔ ۵۰۰ عینِ الگویِ ثابتِ همین فاز است: internal/market/service.go:178 و :194
+// (`{"status":"error","message":…}`) — هیچ شکلِ تازه‌ای اینجا ساخته نمی‌شود.
 func (s *Service) Sectors(w http.ResponseWriter, r *http.Request) {
-	httpapi.WriteJSON(w, http.StatusOK, s.SectorsBody(r.Context()))
+	body, err := s.SectorsBody(r.Context())
+	if err != nil {
+		httpapi.WriteJSON(w, http.StatusInternalServerError, map[string]any{"status": "error", "message": err.Error()})
+		return
+	}
+	httpapi.WriteJSON(w, http.StatusOK, body)
 }
 
 func (s *Service) Quarters(w http.ResponseWriter, r *http.Request) {
@@ -15,5 +23,11 @@ func (s *Service) Quarters(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	httpapi.WriteJSON(w, http.StatusOK, s.QuartersBody(r.Context(), r.PathValue("symbol"), limit))
+	body, err := s.QuartersBody(r.Context(), r.PathValue("symbol"), limit)
+	if err != nil {
+		// همان ۵۰۰ِ internal/market/service.go:178 — بانکِ خراب «count: 0» نیست.
+		httpapi.WriteJSON(w, http.StatusInternalServerError, map[string]any{"status": "error", "message": err.Error()})
+		return
+	}
+	httpapi.WriteJSON(w, http.StatusOK, body)
 }

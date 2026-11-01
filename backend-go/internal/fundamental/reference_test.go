@@ -154,6 +154,95 @@ func TestEntityLayerOutranksNewnessAndCompleteness(t *testing.T) {
 	}
 }
 
+// TestClampLimitMatchesPython عینِ `try: max(1, min(int(limit), 40)) except
+// (TypeError, ValueError): 16` درِ fts_engine.py:786-789. با `orZero` پیشِ تبدیل،
+// None/«»/«abc» به ۱ می‌رسیدند (پایتون ۱۶) و صفرِ واقعی هم ۱ می‌ماند (درست)؛
+// یعنی دو شاخهٔ متفاوتِ اوراکل درِ Go یکی شده بود. رشتهٔ اعشاری هم مثلِ
+// `int("5.5")`ِ پایتون ValueError است ⇒ همان ۱۶، نه ۵.
+func TestClampLimitMatchesPython(t *testing.T) {
+	for _, c := range []struct {
+		in   any
+		want int
+	}{
+		{nil, 16}, {"", 16}, {"abc", 16}, {"5.5", 16},
+		{0, 1}, {-5, 1}, {41, 40}, {999, 40},
+		{7, 7}, {int64(7), 7}, {"7", 7}, {" 7 ", 7}, {7.0, 7},
+		{true, 1}, {false, 1},
+	} {
+		if got := clampLimit(c.in); got != c.want {
+			t.Errorf("clampLimit(%#v) = %d want %d", c.in, got, c.want)
+		}
+	}
+}
+
+// TestQuarterReferenceRowsNumericReportKindMatchesPython نقصِ دوم: کلیدِ انتخاب
+// `str(row.get("report_kind") or "")` را می‌خواند (fts_engine.py:741) ولی
+// `order_key` همان فیلد را با `.(string)` خام می‌خواند (fts_engine.py:782 →
+// رشتهٔ خالی برایِ عدد). با `report_kind` عددی دو ردیفِ هم‌دوره درِ ترتیب با هم
+// برابر می‌شدند و ترتیبِ سری برمی‌گشت، هرچند لایۀ انتخاب آن‌ها را «۵» و «۳»
+// می‌شناخت.
+//
+// ترتیبِ انتظار ازِ خودِ اوراکل اندازه گرفته شده، نه حدس:
+//
+//	python -c "…; fts_engine.quarter_reference_rows(rows, 16)"
+//	  pe=1404/09/30 kind=5 tn=100 | pe=1404/09/30 kind=3 tn=200
+//	  pe=1404/06/31 kind=7 tn=50  | pe=1404/06/31 kind=0 tn=300
+//
+// با کدِ معیوب Go دو جفتِ اول/دوم و سوم/چهارم جابه‌جا می‌شدند (tracing_no تنها
+// داورِ تساوی می‌مانست): 200، 100، 300، 50.
+func TestQuarterReferenceRowsNumericReportKindMatchesPython(t *testing.T) {
+	rows := []map[string]any{
+		row(map[string]any{"period_end": date(1404, 9, 30), "period_months": int64(3),
+			"report_kind": int64(5), "title": "دوره ۳ ماهه", "tracing_no": int64(100),
+			"revenue": 500.0}),
+		row(map[string]any{"period_end": date(1404, 9, 30), "period_months": int64(3),
+			"report_kind": int64(3), "title": "دوره ۳ ماهه", "tracing_no": int64(200),
+			"revenue": 300.0}),
+		row(map[string]any{"period_end": date(1404, 6, 31), "period_months": int64(6),
+			"report_kind": int64(0), "title": "دوره ۶ ماهه", "tracing_no": int64(300),
+			"revenue": 10.0}),
+		row(map[string]any{"period_end": date(1404, 6, 31), "period_months": int64(6),
+			"report_kind": int64(7), "title": "دوره ۶ ماهه", "tracing_no": int64(50),
+			"revenue": 70.0}),
+	}
+	got := QuarterReferenceRows(rows, 16)
+	if len(got) != 4 {
+		t.Fatalf("rows = %d want 4 کلیدِ یکتا: %+v", len(got), keysOf(got))
+	}
+	want := []struct {
+		pe      string
+		kind    string
+		tracing int64
+		revenue float64
+	}{
+		{date(1404, 9, 30), "5", 100, 500.0},
+		{date(1404, 9, 30), "3", 200, 300.0},
+		{date(1404, 6, 31), "7", 50, 70.0},
+		{date(1404, 6, 31), "", 300, 10.0}, // نوعِ صفر درِ هر دو زبان رشتهٔ خالی است
+	}
+	for i, w := range want {
+		g := got[i]
+		if pe := strOr(g["period_end"]); pe != w.pe {
+			t.Errorf("row %d period_end = %q want %q", i, pe, w.pe)
+		}
+		if kind := strOr(g["report_kind"]); kind != w.kind {
+			t.Errorf("row %d report_kind = %q want %q — لایۀ ترتیب باید همان لایۀ "+
+				"انتخاب را بخواند", i, kind, w.kind)
+		}
+		if tn, _ := toI(g["tracing_no"]); tn != w.tracing {
+			t.Errorf("row %d tracing_no = %v want %d (ترتیبِ برگشتِ اوراکل)", i,
+				g["tracing_no"], w.tracing)
+		}
+		if rv := toF(g["revenue"]); rv != w.revenue {
+			t.Errorf("row %d revenue = %v want %v", i, g["revenue"], w.revenue)
+		}
+	}
+	// ترتیبِ واژگانیِ رشته‌ها هم مثلِ پایتون است: «7» بزرگ‌تر از «» ⇒ ردیفِ سوم.
+	if keys := keysOf(got); keys[0] != want[0].pe || keys[3] != want[3].pe {
+		t.Errorf("ordering groups = %v", keys)
+	}
+}
+
 func TestQuarterReferenceRowsLimitAndClamp(t *testing.T) {
 	var rows []map[string]any
 	for i := 1; i <= 20; i++ {

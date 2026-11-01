@@ -89,7 +89,10 @@ func TestFundamentalGoldens(t *testing.T) {
 	s := openService(t)
 	defer s.Close()
 
-	got := s.SectorsBody(ctx)
+	got, err := s.SectorsBody(ctx)
+	if err != nil {
+		t.Fatalf("sectors on the fixture: %v", err)
+	}
 	compareGolden(t, "sectors", loadGolden(t, "s1", "sectors"), got)
 	// سنجهٔ مستقل: فهرستِ Go باید همان هشت صنعتِ طلایی باشد، با همان ترتیبِ
 	// واژگانیِ SQLite — بی‌این، یکِ پاسخِ تهی هم «مساویِ ساختاری» رد می‌شد.
@@ -104,7 +107,11 @@ func TestFundamentalGoldens(t *testing.T) {
 		if sym == "" {
 			t.Fatalf("%s: golden has no symbol to replay", c.stem)
 		}
-		compareGolden(t, c.stem, want, s.QuartersBody(ctx, sym, c.limit))
+		body, err := s.QuartersBody(ctx, sym, c.limit)
+		if err != nil {
+			t.Fatalf("%s: quarters on the fixture: %v", c.stem, err)
+		}
+		compareGolden(t, c.stem, want, body)
 		ran++
 	}
 	if ran != len(quartersCases) {
@@ -161,7 +168,10 @@ func TestQuartersPreservesNullFromLiveQuery(t *testing.T) {
 	// ریزولورِ هویت یکِ اتصالِ اختصاصی نگه می‌دارد؛ بی‌Close، فایلِ بانکِ موقت
 	// موقعِ پاک کردنِ TempDir قفل می‌ماند (ویندوز).
 	t.Cleanup(func() { _ = s.Close() })
-	got := s.QuartersBody(context.Background(), "شهرفرش", 16)
+	got, err := s.QuartersBody(context.Background(), "شهرفرش", 16)
+	if err != nil {
+		t.Fatalf("quarters on the built bank: %v", err)
+	}
 	rows, _ := got["quarters"].([]any)
 	if len(rows) != 2 {
 		t.Fatalf("rows = %d want 2 (بی‌دوره از درِ SQL فیلتر می‌شود): %+v", len(rows), got)
@@ -187,5 +197,86 @@ func TestQuartersPreservesNullFromLiveQuery(t *testing.T) {
 	}
 	if got["status"] != "success" || got["symbol"] != "شهرفرش" || got["count"] != 2 {
 		t.Errorf("envelope = %v/%v/%v", got["status"], got["symbol"], got["count"])
+	}
+}
+
+// TestQuartersNumericReportKindOnTempDB نقصِ دوم رویِ بانک، نه فقط رویِ نقشه‌ها.
+//
+// چرا ردیف‌ها درِ بانکِ ساخته‌شده می‌آیند و نه درِ فیکسچر: `report_kind` درِ
+// اسکیمایِ کدال TEXT اعلام شده، پس SQLite عددِ ۵ را به '۵' تبدیل می‌کند و دو
+// لایه (انتخاب و ترتیب) با هم می‌خواندند — یعنی طلایی‌هایِ s1 هرگز این نقص را
+// نمی‌دیدند. اینجا ستونِ `report_kind` بی‌نوع است (affinity بی‌تبدیل) و عدد
+// واقعاً INTEGER می‌ماند؛ `typeof` پایینِ همین‌جا ثابتش می‌کند.
+//
+// ترتیبِ انتظار همان چیزی است که اوراکلِ پایتون رویِ همین چهار ردیف می‌دهد
+// (`fts_engine.quarter_reference_rows(rows, 16)`: kind 5، بعد 3، بعد 7، بعد 0).
+// با `.(string)` خام درِ `order_key` هر چهار نوع «» می‌شد و ترتیب فقط از
+// `tracing_no` می‌آمد: 300، 200، 100، 50 ⇒ دو جفتِ اول و آخر جابه‌جا.
+func TestQuartersNumericReportKindOnTempDB(t *testing.T) {
+	conn, err := sql.Open("sqlite", filepath.Join(t.TempDir(), "market.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = conn.Close() })
+	if _, err := conn.Exec("CREATE TABLE financial_statements (" +
+		"symbol TEXT, period_end TEXT, period_months INTEGER, title TEXT," +
+		"revenue REAL, gross_profit REAL, operating_profit REAL, net_profit REAL," +
+		"basic_eps REAL, publish_date TEXT, tracing_no INTEGER, report_kind)"); err != nil {
+		t.Fatal(err)
+	}
+	// (دوره، طول، نوع) چهار کلیدِ یکتا؛ دو دورۀ ۳‌ماهه و دو دورۀ ۶‌ماهه با نوعِ
+	// عددیِ متفاوت، تا ترتیب بی‌`report_kind`ِ عددی تعریف نشود.
+	for _, r := range []struct {
+		pe    string
+		month int
+		kind  int
+		tn    int
+		rev   float64
+		title string
+	}{
+		{"1404/09/30", 3, 5, 100, 500.0, "دوره ۳ ماهه"},
+		{"1404/09/30", 3, 3, 200, 300.0, "دوره ۳ ماهه"},
+		{"1404/06/31", 6, 0, 300, 10.0, "دوره ۶ ماهه"},
+		{"1404/06/31", 6, 7, 50, 70.0, "دوره ۶ ماهه"},
+	} {
+		if _, err := conn.Exec("INSERT INTO financial_statements VALUES "+
+			"(?, ?, ?, ?, ?, NULL, NULL, NULL, NULL, ?, ?, ?)",
+			"شهركنجا", r.pe, r.month, r.title, r.rev, "1405/01/01 10:00:00",
+			r.tn, r.kind); err != nil {
+			t.Fatal(err)
+		}
+	}
+	var typ string
+	if err := conn.QueryRow("SELECT typeof(report_kind) FROM financial_statements" +
+		" WHERE tracing_no = 100").Scan(&typ); err != nil {
+		t.Fatal(err)
+	}
+	if typ != "integer" {
+		t.Fatalf("the fixture must really carry a numeric report_kind, got %q", typ)
+	}
+
+	s := New(conn)
+	t.Cleanup(func() { _ = s.Close() })
+	got, err := s.QuartersBody(context.Background(), "شهركنجا", 16)
+	if err != nil {
+		t.Fatalf("quarters on the built bank: %v", err)
+	}
+	rows, _ := got["quarters"].([]any)
+	if len(rows) != 4 {
+		t.Fatalf("rows = %d want 4: %+v", len(rows), got)
+	}
+	// ترتیبِ نزولیِ (دوره، طول، نوعِ رشته، tracing_no) — نوعِ ۰ درِ هر دو زبان
+	// رشتهٔ خالی است، پس همان دورۀ ۶ ماهه آخر می‌آید.
+	wantRev := []float64{500.0, 300.0, 70.0, 10.0}
+	wantPE := []string{"1404/09/30", "1404/09/30", "1404/06/31", "1404/06/31"}
+	for i, r := range rows {
+		q, _ := r.(map[string]any)
+		if q["period_end"] != wantPE[i] {
+			t.Errorf("row %d period_end = %v want %v", i, q["period_end"], wantPE[i])
+		}
+		if v, _ := q["revenue"].(float64); v != wantRev[i] {
+			t.Errorf("row %d revenue = %v want %v — ترتیبِ سری با نوعِ عددی برمی‌گردد",
+				i, q["revenue"], wantRev[i])
+		}
 	}
 }

@@ -121,6 +121,12 @@ func boardRialsEstimate(db *sql.DB) float64 {
 // ردیفِ نصفه باورپذیر نیست: سینکِ ناقص عدد را کوچک می‌کند، پس فقط پایین‌تر از
 // نصفِ مرجع (جمعِ تابلو، یا بزرگ‌ترین ردیفِ موجود) رد می‌شود. بزرگ‌تر بودنِ
 // عددِ رسمی خطا نیست (تابلو همهٔ بازارها را ندارد).
+// MarketTotalRials نسخۀ صادرشدهٔ همان تک‌تعریف؛ از B4 مسیرِ بنیادی هم صدا زده
+// می‌شود (board_total_market_cap درِ api/fundamental.py) تا «کل ارزش بازار» دو
+// تعریفِ متفاوت نگیرد — جمعِ دستیِ ستونِ market_cap که درِ پایتون ممنوع است،
+// اینجا هم تکرار نمی‌شود.
+func MarketTotalRials(db *sql.DB) (float64, string) { return marketTotalRials(db) }
+
 func marketTotalRials(db *sql.DB) (float64, string) {
 	est := boardRialsEstimate(db)
 	vals := []float64{}

@@ -169,3 +169,24 @@ func TestTapeHistoryRespectsCap(t *testing.T) {
 		t.Errorf("distinct codes in reply = %d want 400 (the cap)", len(by))
 	}
 }
+
+// TestTapeHistoryDuplicateCodes آخرینِ `codes` را می‌گیرد، نه نخستین — همان
+// قراردادی که برایِ `days` سنجیده شد (starlette QueryParams). بی‌این، پنلی که
+// فیلتر را دو بار می‌فرستد درِ Go با نمادِ اول و درِ پایتون با نمادِ آخر
+// جواب می‌گرفت.
+func TestTapeHistoryDuplicateCodes(t *testing.T) {
+	s := tapeService(t)
+	_, body, _ := getTape(t, s, "/api/tape-history?codes=INS-nope&codes=INS-%D8%B9%D8%A7%D8%AF%DB%8C01")
+	by, _ := body["by_symbol"].(map[string]any)
+	if len(by) != 1 {
+		t.Fatalf("by_symbol = %v want the last codes value only", by)
+	}
+	if _, ok := by["INS-عادی01"]; !ok {
+		t.Errorf("first occurrence won: %v", by)
+	}
+	_, body, _ = getTape(t, s, "/api/tape-history?codes=INS-%D8%B9%D8%A7%D8%AF%DB%8C01&codes=")
+	by, _ = body["by_symbol"].(map[string]any)
+	if len(by) != 0 {
+		t.Errorf("an empty last value must mean no codes, got %v", by)
+	}
+}

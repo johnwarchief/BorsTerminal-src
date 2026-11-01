@@ -66,6 +66,40 @@ func (s *Service) rows(ctx context.Context, query string, args []any) ([]map[str
 	return out, rs.Err()
 }
 
+// queryRow همان `conn.execute(...).fetchone()` پایتون: یکِ ردیفِ خام با همان
+// ترتیبِ ستون‌ها، و «ردیف نیست» ⇒ (nil, nil) — نه خطا. خطای SQLite عیناً بالا
+// می‌آید چون پایتون هر کوئری را try/exceptِ جداگانه‌اش دارد (بعضی‌ها row=None
+// می‌گذارند و بعضی بی‌قید به handlerِ بیرونی می‌افتند).
+func (s *Service) queryRow(ctx context.Context, query string, args []any) ([]any, error) {
+	rs, err := s.market.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rs.Close()
+	if !rs.Next() {
+		if err := rs.Err(); err != nil {
+			return nil, err
+		}
+		return nil, nil
+	}
+	cols, err := rs.Columns()
+	if err != nil {
+		return nil, err
+	}
+	raw := make([]any, len(cols))
+	ptrs := make([]any, len(cols))
+	for i := range raw {
+		ptrs[i] = &raw[i]
+	}
+	if err := rs.Scan(ptrs...); err != nil {
+		return nil, err
+	}
+	for i := range raw {
+		raw[i] = normalizeValue(raw[i])
+	}
+	return raw, nil
+}
+
 // normalizeValue: modernc اعدادِ ستونِ INTEGER را int64 و REAL را float64 می‌دهد؛
 // TEXT به‌صورتِ []byte هم می‌تواند برسد (ستونِ بی‌نوع). پایتون درِ این دو ستون
 // str/float/int می‌بیند، پس بایت به رشته تبدیل می‌شود.

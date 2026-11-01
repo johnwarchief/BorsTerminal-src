@@ -153,6 +153,8 @@ def annualize_vectors(con, fe, fd):
 
 def text_vectors(fd):
     """رشته‌سازهایِ کارت — رقمِ هزارگان، ٪، سه‌حاله و سلول‌هایِ جدولِ شاخص ۲."""
+    import codal_periods as cp
+
     vals = [None, 0, 0.0, -1.0, 12.5, 1234.5, 1234567.891, 1e15, 0.125, 1.005, "abc", ""]
     # `_pct_txt` رویِ رشته درِ پایتون TypeError می‌دهد (فراخوان‌هایش همیشه عدد یا
     # None می‌فرستند)، پس وکتورِ آن فقط اعداد/None دارد — همین را صریح ثبت می‌کنیم.
@@ -165,6 +167,12 @@ def text_vectors(fd):
     for v in pct_vals:
         out["pct"].append({"v": v, "signed": fd._pct_txt(v, True),
                            "unsigned": fd._pct_txt(v, False)})
+    # عبارتِ SQLِ «تازۀترینِ انتشار» — دست‌نویسی‌اش درِ گیت یک‌بار رقم را
+    # دزدید (یک `replace` اضافه)، پس از این به بعد داورش همین وکتور است.
+    out["pub_canon"] = [
+        {"col": col, "canon": cp.pub_canon_sql(col), "order": cp.pub_order_expr(col)}
+        for col in ("publish_date", "d.publish_date")
+    ]
     for passed in (True, False):
         for na in (True, False):
             for gap in (True, False):

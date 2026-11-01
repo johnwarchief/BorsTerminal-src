@@ -118,6 +118,10 @@ func tableExists(db *sql.DB, name string) bool {
 	return err == nil && n > 0
 }
 
+// HasColumn نسخۀ صادرشدهٔ همان تک‌تعریفِ تشخیصِ ستون (PRAGMA بی‌کش) — کارتِ
+// بنیادی هم باید همان «ستون دارد/ندارد» را ببیند که موتورِ دسته‌ای می‌گوید.
+func HasColumn(db *sql.DB, table, col string) bool { return hasColumn(db, table, col) }
+
 func hasColumn(db *sql.DB, table, col string) bool {
 	rows, err := db.Query("PRAGMA table_info(" + table + ")")
 	if err != nil {
@@ -167,6 +171,11 @@ func warnSlotFallback(rows int) {
 			" — پنج فیلتر روی پنجرۀ ردیف‌محورِ کهنه حساب می‌شوند", rows)
 	})
 }
+
+// McapDeadBandSQL عینِ fts_engine.mcap_dead_band_sql — تک‌تعریفِ «بانِ مرده =
+// بی‌اعتبار» برایِ کارت، اسکرینر و موتورِ قیف؛ بی‌این یکِ ردیف درِ دو مسیر
+// «ارزش بازار دارد/ندارد» دو جواب می‌گرفت. از B4 مسیرِ بنیادی هم همین را می‌خواند.
+func McapDeadBandSQL(board string) string { return mcapDeadBand(board) }
 
 // mcapDeadBand عینِ fts_engine.mcap_dead_band_sql — بانِ مرده = بی‌اعتبار.
 func mcapDeadBand(board string) string {
