@@ -32,7 +32,7 @@ def notifications_sources():
 
 @router.get("/api/notifications/feed")
 def notifications_feed(since: str = Query(""), levels: str = Query(""),
-                       limit: int = Query(120)):
+                       limit: int = Query(120), symbol: str = Query("")):
     """تازه‌ترینِ اطلاعیه‌ها با نوع/اهمیتِ توضیح‌دادنی و بی‌تکرار.
 
     `levels=high,medium` فیلترِ انتخابیِ خودِ کاربر است؛ `since` تاریخِ
@@ -43,6 +43,7 @@ def notifications_feed(since: str = Query(""), levels: str = Query(""),
     try:
         want = [x for x in str(levels or "").split(",") if x.strip()]
         return N.feed(conn, since=str(since or "").strip() or None,
-                      levels=want, limit=int(limit or 120))
+                      levels=want, limit=int(limit or 120),
+                      symbol=str(symbol or "").strip() or None)
     finally:
         conn.close()

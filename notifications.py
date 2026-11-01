@@ -103,19 +103,28 @@ _COLS = ("tracing_no, symbol, company_name, title, letter_code, publish_date,"
          " sent_date, url, fetched_at")
 
 
-def feed(conn, since=None, levels=None, limit: int = 120) -> dict:
+def feed(conn, since=None, levels=None, limit: int = 120, symbol=None) -> dict:
     """تازۀِ اطلاعیه‌ها از `codal_notices`، با نوع/اهمیتِ توضیح‌دادنی.
 
     `since` «YYYY/MM/DD HH:MM:SS»ِ جلالیِ خودِ کدال است (همان نوشتارِ ستون)؛
     بی‌آن، از تازه‌ترینِ ردیفِ بانک خوانده می‌شود. `levels` فیلترِ انتخابیِ
-    کاربر است (بالا/متوسط/…)؛ تهی یعنی همه.
+    کاربر است (بالا/متوسط/…)؛ تهی یعنی همه. `symbol` فیلترِ اختیاریِ نماد
+    (سایدبارِ رابط — رأیِ §۱۱).
     """
     want = {str(x).strip() for x in (levels or []) if str(x).strip()}
+    sym_str = str(symbol or "").strip()
     try:
-        rows = conn.execute(
-            ("SELECT %s FROM codal_notices ORDER BY " % _COLS) + CP.pub_order_expr()
-            + " LIMIT ?",
-            (max(1, min(int(limit or 120), 2000)) * 3,)).fetchall()
+        if sym_str:
+            import symbol_identity as SI
+            pred, p_args = SI.pred(conn, "symbol", sym_str, SI.CODAL)
+            query = ("SELECT %s FROM codal_notices WHERE " % _COLS) + pred + (" ORDER BY " + CP.pub_order_expr() + " LIMIT ?")
+            args = (*p_args, max(1, min(int(limit or 120), 2000)) * 3)
+            rows = conn.execute(query, args).fetchall()
+        else:
+            rows = conn.execute(
+                ("SELECT %s FROM codal_notices ORDER BY " % _COLS) + CP.pub_order_expr()
+                + " LIMIT ?",
+                (max(1, min(int(limit or 120), 2000)) * 3,)).fetchall()
     except Exception as e:
         return {"status": "error", "source": SOURCE, "items": [],
                 "message": "جدولِ اطلاعیه‌های کدال درِ این بانک نیست: %s" % e}
@@ -154,7 +163,7 @@ def feed(conn, since=None, levels=None, limit: int = 120) -> dict:
             # سطح، و سقفِ درخواست — سه علتِ جدا، نه یک عددِ مبهام.
             "scanned": len(rows), "merged_duplicates": dropped,
             "levels": sorted(want) if want else None,
-            "since": since, "items": kept}
+            "since": since, "symbol": sym_str or None, "items": kept}
 
 
 def sources(conn) -> dict:
