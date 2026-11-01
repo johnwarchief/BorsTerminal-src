@@ -94,7 +94,19 @@ type Notifications interface {
 	Feed(http.ResponseWriter, *http.Request)
 }
 
-func New(cfg config.Config, h *db.Handles, m Market, ms Mstat, ch Chart, fd Fundamental, wl Watchlist, nt Notifications) http.Handler {
+// Sync مسیرهای همگام‌سازی، وضعیت و کنترل در B6؛ nil یعنی پورت نشده.
+type Sync interface {
+	SyncStatus(http.ResponseWriter, *http.Request)
+	CodalDBStatus(http.ResponseWriter, *http.Request)
+	Diagnose(http.ResponseWriter, *http.Request)
+	SyncMarket(http.ResponseWriter, *http.Request)
+	SyncCodal(http.ResponseWriter, *http.Request)
+	SyncCodalFTSRefresh(http.ResponseWriter, *http.Request)
+	SyncCodalDBDownload(http.ResponseWriter, *http.Request)
+	CodalControl(http.ResponseWriter, *http.Request)
+}
+
+func New(cfg config.Config, h *db.Handles, m Market, ms Mstat, ch Chart, fd Fundamental, wl Watchlist, nt Notifications, sy Sync) http.Handler {
 	s := &Server{
 		cfg:      cfg,
 		db:       h,
@@ -158,6 +170,16 @@ func New(cfg config.Config, h *db.Handles, m Market, ms Mstat, ch Chart, fd Fund
 	if nt != nil {
 		mux.HandleFunc("GET /api/notifications/sources", nt.Sources)
 		mux.HandleFunc("GET /api/notifications/feed", nt.Feed)
+	}
+	if sy != nil {
+		mux.HandleFunc("GET /api/sync/status", sy.SyncStatus)
+		mux.HandleFunc("GET /api/sync/codal/db-status", sy.CodalDBStatus)
+		mux.HandleFunc("GET /api/sync/diagnose", sy.Diagnose)
+		mux.HandleFunc("POST /api/sync/market", sy.SyncMarket)
+		mux.HandleFunc("POST /api/sync/codal", sy.SyncCodal)
+		mux.HandleFunc("POST /api/sync/codal/fts-refresh", sy.SyncCodalFTSRefresh)
+		mux.HandleFunc("POST /api/sync/codal/db-download", sy.SyncCodalDBDownload)
+		mux.HandleFunc("POST /api/codal/control", sy.CodalControl)
 	}
 	mux.HandleFunc("/", s.apiGate)
 	return noCache(mux)

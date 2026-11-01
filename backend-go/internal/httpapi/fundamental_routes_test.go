@@ -24,7 +24,7 @@ func (f *fakeFundamental) Card(w http.ResponseWriter, _ *http.Request)     { f.h
 func newFundSrv(t *testing.T, fd Fundamental) http.Handler {
 	t.Helper()
 	return New(config.Config{Addr: "127.0.0.1:8198", DataDir: t.TempDir(),
-		ReadOnly: true, NoLoops: true}, nil, nil, nil, nil, fd, nil, nil)
+		ReadOnly: true, NoLoops: true}, nil, nil, nil, nil, fd, nil, nil, nil)
 }
 
 // TestFundamentalRoutesReachTheirHandlers سه مسیرِ پورت‌شده باید به هندلرِ

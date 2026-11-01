@@ -18,6 +18,7 @@ import (
 	"borsterminal/backend/internal/market"
 	"borsterminal/backend/internal/mstat"
 	"borsterminal/backend/internal/notifications"
+	borssync "borsterminal/backend/internal/sync"
 	"borsterminal/backend/internal/watchlist"
 )
 
@@ -52,8 +53,10 @@ func main() {
 	defer ntSvc.Close()
 	nt := notifications.NewHandler(ntSvc)
 
+	sy := borssync.NewHandler(cfg.DataDir)
+
 	srv := &http.Server{Addr: cfg.Addr,
-		Handler: httpapi.New(cfg, handles, mkt, ms, ch, fd, wl, nt)}
+		Handler: httpapi.New(cfg, handles, mkt, ms, ch, fd, wl, nt, sy)}
 	go func() {
 		slog.Info("listening", "addr", cfg.Addr, "data", cfg.DataDir, "version", httpapi.Version())
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {

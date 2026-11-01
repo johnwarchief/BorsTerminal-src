@@ -44,7 +44,7 @@ func (f *fakeNotifications) Feed(w http.ResponseWriter, _ *http.Request)    { f.
 func newUserSrv(t *testing.T, wl Watchlist, nt Notifications) http.Handler {
 	t.Helper()
 	return New(config.Config{Addr: "127.0.0.1:8198", DataDir: t.TempDir(),
-		ReadOnly: true, NoLoops: true}, nil, nil, nil, nil, nil, wl, nt)
+		ReadOnly: true, NoLoops: true}, nil, nil, nil, nil, nil, wl, nt, nil)
 }
 
 func TestWatchlistAndNotificationRoutesReachHandlers(t *testing.T) {
