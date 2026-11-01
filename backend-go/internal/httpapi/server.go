@@ -79,7 +79,21 @@ type Fundamental interface {
 	Card(http.ResponseWriter, *http.Request)
 }
 
-func New(cfg config.Config, h *db.Handles, m Market, ms Mstat, ch Chart, fd Fundamental) http.Handler {
+// Watchlist سه مسیرِ CRUD واچ‌لیست در B5؛ nil یعنی پورت نشده.
+// مسیرِ GET /api/watchlist/matrix تا فاز B7 روی 501 (notPortedRoute) می‌ماند.
+type Watchlist interface {
+	Get(http.ResponseWriter, *http.Request)
+	Post(http.ResponseWriter, *http.Request)
+	Delete(http.ResponseWriter, *http.Request)
+}
+
+// Notifications دو مسیرِ خواندنیِ مرکز اعلان در B5؛ nil یعنی پورت نشده.
+type Notifications interface {
+	Sources(http.ResponseWriter, *http.Request)
+	Feed(http.ResponseWriter, *http.Request)
+}
+
+func New(cfg config.Config, h *db.Handles, m Market, ms Mstat, ch Chart, fd Fundamental, wl Watchlist, nt Notifications) http.Handler {
 	s := &Server{
 		cfg:      cfg,
 		db:       h,
@@ -132,6 +146,16 @@ func New(cfg config.Config, h *db.Handles, m Market, ms Mstat, ch Chart, fd Fund
 		mux.HandleFunc("GET /api/fundamental/screen", s.notPortedRoute)
 		mux.HandleFunc("GET /api/fundamental/{symbol}/quarters", fd.Quarters)
 		mux.HandleFunc("GET /api/fundamental/{symbol}", fd.Card)
+	}
+	if wl != nil {
+		mux.HandleFunc("GET /api/watchlist", wl.Get)
+		mux.HandleFunc("POST /api/watchlist", wl.Post)
+		mux.HandleFunc("DELETE /api/watchlist/{symbol}", wl.Delete)
+		mux.HandleFunc("GET /api/watchlist/matrix", s.notPortedRoute)
+	}
+	if nt != nil {
+		mux.HandleFunc("GET /api/notifications/sources", nt.Sources)
+		mux.HandleFunc("GET /api/notifications/feed", nt.Feed)
 	}
 	mux.HandleFunc("/", s.apiGate)
 	return noCache(mux)

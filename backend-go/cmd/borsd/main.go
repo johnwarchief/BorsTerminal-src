@@ -17,6 +17,8 @@ import (
 	"borsterminal/backend/internal/httpapi"
 	"borsterminal/backend/internal/market"
 	"borsterminal/backend/internal/mstat"
+	"borsterminal/backend/internal/notifications"
+	"borsterminal/backend/internal/watchlist"
 )
 
 func main() {
@@ -38,8 +40,20 @@ func main() {
 	defer ch.Close()
 	fd := fundamental.New(handles.Market, cfg.DataDir)
 	defer fd.Close()
+
+	wlStore, err := watchlist.NewStore(handles.User, cfg.DataDir)
+	if err != nil {
+		slog.Error("watchlist store init failed", "err", err)
+		os.Exit(1)
+	}
+	wl := watchlist.NewHandler(wlStore)
+
+	ntSvc := notifications.NewService(handles.Market)
+	defer ntSvc.Close()
+	nt := notifications.NewHandler(ntSvc)
+
 	srv := &http.Server{Addr: cfg.Addr,
-		Handler: httpapi.New(cfg, handles, mkt, ms, ch, fd)}
+		Handler: httpapi.New(cfg, handles, mkt, ms, ch, fd, wl, nt)}
 	go func() {
 		slog.Info("listening", "addr", cfg.Addr, "data", cfg.DataDir, "version", httpapi.Version())
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
