@@ -5,6 +5,8 @@ package period
 // رفتارشان رویِ SQLite هم از خودِ SQLite ثبت شده (sql.rows). دو زبان پس یکی
 // می‌فرستند و SQLite هم یک جواب می‌دهد.
 
+import "strconv"
+
 // ValidGlob عینِ codal_periods.VALID_GLOB. الگو فقط رقمِ ASCII و «/» دارد، پس
 // رقمِ فارسی/عربی و خطِ تیره خودبه‌خود بی‌دوره می‌مانند.
 const ValidGlob = "GLOB '[0-9][0-9][0-9][0-9]/[0-9][0-9]/[0-9][0-9]'"
@@ -39,3 +41,24 @@ func OrderExpr(alias string) string {
 // LatestOrderSQL همان OrderExpr با پیشوندِ ORDER BY. بی‌دوره اینجا **حذف** نمی‌شود،
 // فقط بازندۀ ترتیب است؛ پس نمادی که فقط ردیفِ بی‌دوره دارد بی‌جواب نمی‌ماند.
 func LatestOrderSQL(alias string) string { return "ORDER BY " + OrderExpr(alias) }
+
+// PubCanonSQL عبارتِ SQLِ «همین تاریخ، با ارقامِ لاتین و جداکنندۀ یکسان» بی‌`ORDER BY`.
+func PubCanonSQL(col string) string {
+	if col == "" {
+		col = "publish_date"
+	}
+	expr := "trim(" + col + ")"
+	for d := 0; d < 10; d++ {
+		expr = "replace(" + expr + ", '" + string(rune(0x06F0+d)) + "', '" + strconv.Itoa(d) + "')"
+	}
+	for d := 0; d < 10; d++ {
+		expr = "replace(" + expr + ", '" + string(rune(0x0660+d)) + "', '" + strconv.Itoa(d) + "')"
+	}
+	return "replace(" + expr + ", '-', '/')"
+}
+
+// PubOrderExpr عبارتِ «تازۀترینِ انتشار اول»؛ NULL آخر می‌نشیند (SQLite در DESC).
+func PubOrderExpr(col string) string {
+	return PubCanonSQL(col) + " DESC"
+}
+

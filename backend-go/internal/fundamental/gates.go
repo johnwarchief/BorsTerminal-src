@@ -39,20 +39,11 @@ const gtRialPerBillionToman = 1e10
 // ده رقمِ عربی-هندی (U+0660..U+0669)، درِ پایان `trim` و عوضِ «-» به «/». رقم‌ها
 // با `rune(0x06F0+d)` ساخته می‌شوند تا ویرایشِ دستی هیچ رقمی را بدزدد (قیدِ
 // گاردِ machines).
-func gtPubCanonSQL(col string) string {
-	expr := "trim(" + col + ")"
-	for d := 0; d < 10; d++ {
-		expr = "replace(" + expr + ", '" + string(rune(0x06F0+d)) + "', '" + strconv.Itoa(d) + "')"
-	}
-	for d := 0; d < 10; d++ {
-		expr = "replace(" + expr + ", '" + string(rune(0x0660+d)) + "', '" + strconv.Itoa(d) + "')"
-	}
-	return "replace(" + expr + ", '-', '/')"
-}
+func gtPubCanonSQL(col string) string { return period.PubCanonSQL(col) }
 
 // gtPubOrderExpr عینِ `codal_periods.pub_order_expr`: «تازۀترینِ انتشار اول»;
 // NULL آخر می‌نشیند (SQLite در DESC).
-func gtPubOrderExpr(col string) string { return gtPubCanonSQL(col) + " DESC" }
+func gtPubOrderExpr(col string) string { return period.PubOrderExpr(col) }
 
 // gtInsuranceTokens عینِ `fts_engine.INSURANCE_TOKENS`.
 var gtInsuranceTokens = []string{"بیمه", "بازنشستگی"}
