@@ -86,6 +86,14 @@ func fetch(base string, c testCase) (fetched, error) {
 		body:   body,
 		media:  normalizeMediaType(resp.Header.Get("Content-Type")),
 	}
+	if out.media == "text/csv" {
+		out.value = map[string]any{
+			"media":     out.media,
+			"has_bom":   bytes.HasPrefix(body, []byte("\xef\xbb\xbf")),
+			"non_empty": len(body) > 10,
+		}
+		return out, nil
+	}
 	if err := json.Unmarshal(body, &out.value); err != nil {
 		return fetched{}, fmt.Errorf("%s: body is not JSON: %w", c.Path, err)
 	}

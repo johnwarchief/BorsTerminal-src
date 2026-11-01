@@ -74,6 +74,11 @@ func Num(v any) *float64 {
 		if x > 0 {
 			return &x
 		}
+	case *float64:
+		if x != nil && *x > 0 {
+			v := *x
+			return &v
+		}
 	case float32:
 		f := float64(x)
 		if f > 0 {

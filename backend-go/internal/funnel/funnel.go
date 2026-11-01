@@ -35,6 +35,17 @@ func (s *Service) Evaluate(ctx context.Context, preset string, chain []string, f
 		logic = "and"
 	}
 
+	if len(chain) == 0 {
+		switch preset {
+		case "trend":
+			chain = []string{"f_roobi", "f_noqteh"}
+		case "swing":
+			chain = []string{"f_clock", "f_jet", "f_susp"}
+		default:
+			chain = []string{}
+		}
+	}
+
 	// بررسی وضعیت ردیف‌های بازار
 	var count int
 	err := s.marketDB.QueryRowContext(ctx, "SELECT COUNT(*) FROM market_watch").Scan(&count)
@@ -56,8 +67,8 @@ func (s *Service) Evaluate(ctx context.Context, preset string, chain []string, f
 		"preset":          preset,
 		"chain":           chain,
 		"fund_mode":       fundMode,
-		"logic":           logic,
-		"engine_version":  "v1.0",
+		"tape_logic":      logic,
+		"engine_version":  "1",
 		"ruleset_version": "555648ebff52",
 		"as_of":           now.Format("2006-01-02T15:04:05"),
 		"universe": map[string]any{
@@ -130,7 +141,8 @@ func (s *Service) GetTrace(ctx context.Context, symbol, preset string) (map[stri
 		"symbol":          cleanSym,
 		"timeline":        []any{},
 		"matrix":          map[string]any{},
-		"engine_version":  "v1.0",
+		"universe":        map[string]any{"board": count},
+		"engine_version":  "1",
 		"ruleset_version": "555648ebff52",
 		"as_of":           now.Format("2006-01-02T15:04:05"),
 	}, nil

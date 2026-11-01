@@ -10,9 +10,9 @@ import (
 )
 
 const (
-	PortfolioMin          = 3
-	PortfolioMax          = 15
-	PortfolioWeightCapPct = 25.0
+	PortfolioMin          = 5
+	PortfolioMax          = 7
+	PortfolioWeightCapPct = 20.0
 )
 
 var assetKindByMode = map[string]string{

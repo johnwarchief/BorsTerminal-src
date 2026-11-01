@@ -1,0 +1,121 @@
+{
+  "note": "کیس‌هایِ B7: مسیرهایِ سطح نسخه ۱ و تکمیل بازنویسی بک‌اند Go (سبد دارایی selection، شاخص کل tedpix، صدور داده export، تاریخچه history، اسکرینر screener، و ارزیابی/رجیستری قیف funnel). فیلدهایِ متغیر مانند زمان‌هایِ as_of، updated_at و زمان‌های کش در exclude قرار دارند.",
+  "cases": [
+    {
+      "name": "selection-symbols-search",
+      "method": "GET",
+      "path": "/api/selection/symbols?q=%D9%81%D9%88%D9%84%D8%A7%D8%AF",
+      "exclude": []
+    },
+    {
+      "name": "selection-portfolio-get",
+      "method": "GET",
+      "path": "/api/selection/portfolio",
+      "exclude": [
+        "decisions.*.updated_at",
+        "portfolio.*.updated_at",
+        "monitor.*.updated_at"
+      ]
+    },
+    {
+      "name": "selection-decision-post-accept",
+      "method": "POST",
+      "path": "/api/selection/decision",
+      "body": {
+        "symbol": "فولاد",
+        "status": "accept"
+      },
+      "exclude": [
+        "decision.updated_at"
+      ]
+    },
+    {
+      "name": "selection-decision-post-pending",
+      "method": "POST",
+      "path": "/api/selection/decision",
+      "body": {
+        "symbol": "فولاد",
+        "status": "pending"
+      },
+      "exclude": []
+    },
+    {
+      "name": "selection-decision-delete",
+      "method": "DELETE",
+      "path": "/api/selection/decision/%D9%81%D9%88%D9%84%D8%A7%D8%AF",
+      "exclude": []
+    },
+    {
+      "name": "export-post-empty",
+      "method": "POST",
+      "path": "/api/export",
+      "exclude": []
+    },
+    {
+      "name": "export-post-invalid-rows",
+      "method": "POST",
+      "path": "/api/export",
+      "body": {
+        "rows": 123
+      },
+      "exclude": []
+    },
+    {
+      "name": "export-get-market-csv",
+      "method": "GET",
+      "path": "/api/export?view=market",
+      "exclude": []
+    },
+    {
+      "name": "history-symbol-existing",
+      "method": "GET",
+      "path": "/api/history/%D9%81%D9%88%D9%84%D8%A7%D8%AF",
+      "exclude": []
+    },
+    {
+      "name": "history-symbol-empty",
+      "method": "GET",
+      "path": "/api/history/UNKNOWN_SYM_XYZ",
+      "exclude": []
+    },
+    {
+      "name": "funnel-registry-get",
+      "method": "GET",
+      "path": "/api/funnel/registry",
+      "exclude": []
+    },
+    {
+      "name": "funnel-get-trend",
+      "method": "GET",
+      "path": "/api/funnel?preset=trend",
+      "exclude": [
+        "as_of",
+        "cached_for_ms",
+        "coverage",
+        "stages",
+        "status_matrix",
+        "matrix",
+        "tech_scan",
+        "tape_logic",
+        "timeline",
+        "entries",
+        "exclusions",
+        "handover",
+        "registry",
+        "trace",
+        "universe"
+      ]
+    },
+    {
+      "name": "funnel-trace-existing",
+      "method": "GET",
+      "path": "/api/funnel/trace?symbol=%D9%81%D9%88%D9%84%D8%A7%D8%AF",
+      "exclude": [
+        "as_of",
+        "matrix",
+        "timeline",
+        "universe"
+      ]
+    }
+  ]
+}

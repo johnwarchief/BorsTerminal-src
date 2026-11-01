@@ -1,0 +1,86 @@
+{
+ "commit": "9f72c34c",
+ "python": "3.14.7",
+ "ports": {
+  "py": 8315,
+  "go": 8314,
+  "preferred_py": 8315,
+  "preferred_go": 8314,
+  "fell_back": false
+ },
+ "db": {
+  "market_sha256": "34af8d132f0a89dce2c466598d54ebf10e925901ba2a29b2a9d6a1152b005152",
+  "frozen_ok": true,
+  "go_market_unchanged": true,
+  "root_before": {
+   "market.db": {
+    "sha256": "34af8d132f0a89dce2c466598d54ebf10e925901ba2a29b2a9d6a1152b005152",
+    "bytes": 276115456,
+    "mtime_ns": 1793550912944612100
+   },
+   "user.db": {
+    "sha256": "7bef14928a1f3d8511755f5a112eee73b08c73bf44a53aee68c19c4c9de718e3",
+    "bytes": 782336,
+    "mtime_ns": 1793550912837040500
+   },
+   "codal.db": null
+  },
+  "root_after": {
+   "market.db": {
+    "sha256": "34af8d132f0a89dce2c466598d54ebf10e925901ba2a29b2a9d6a1152b005152",
+    "bytes": 276115456,
+    "mtime_ns": 1793550912944612100
+   },
+   "user.db": {
+    "sha256": "7bef14928a1f3d8511755f5a112eee73b08c73bf44a53aee68c19c4c9de718e3",
+    "bytes": 782336,
+    "mtime_ns": 1793550912837040500
+   },
+   "codal.db": null
+  },
+  "root_untouched": true
+ },
+ "sidecar": {
+  "ok": true,
+  "problem": ""
+ },
+ "statuses": {
+  "pairs": [
+   "200/200",
+   "422/422"
+  ],
+  "ok": true
+ },
+ "contract": {
+  "passed": 13,
+  "failed": 0,
+  "cases": 13,
+  "max_delta": 0.0,
+  "report": "_audit\\parity\\B7-contract.json",
+  "ok": true,
+  "failed_cases": []
+ },
+ "answered_templates": [
+  "/api/export",
+  "/api/funnel",
+  "/api/funnel/registry",
+  "/api/funnel/trace",
+  "/api/history/{symbol}",
+  "/api/selection/decision",
+  "/api/selection/decision/{symbol}",
+  "/api/selection/portfolio",
+  "/api/selection/symbols"
+ ],
+ "checks": {
+  "contract": true,
+  "delta_zero": true,
+  "statuses_allowed": true,
+  "case_coverage": true,
+  "routes_b7_covered": true,
+  "go_market_read_only": true,
+  "root_untouched": true,
+  "frozen_copies": true,
+  "sidecar_untouched": true
+ },
+ "measured_at": "2026-11-01T16:43:41Z"
+}

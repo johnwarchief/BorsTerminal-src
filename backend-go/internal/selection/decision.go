@@ -20,7 +20,7 @@ var keepIfAbsent = []string{
 
 type PostDecisionResponse struct {
 	Status      string       `json:"status"`
-	Decision    *DecisionRow `json:"decision,omitempty"`
+	Decision    *DecisionRow `json:"decision"`
 	Symbol      string       `json:"symbol,omitempty"`
 	SavedStatus string       `json:"saved_status,omitempty"`
 	Message     string       `json:"message,omitempty"`

@@ -141,13 +141,17 @@ func (s *Service) GetHistory(ctx context.Context, symbol string) (map[string]any
 	volumes := make([]map[string]any, len(dedup))
 
 	for i, r := range dedup {
+		var lastVal any = nil
+		if r.last != nil && *r.last > 0 {
+			lastVal = pyround.Round(*r.last, 2)
+		}
 		candles[i] = map[string]any{
 			"time":  r.date,
 			"open":  pyround.Round(r.open, 2),
 			"high":  pyround.Round(r.high, 2),
 			"low":   pyround.Round(r.low, 2),
 			"close": pyround.Round(r.close, 2),
-			"last":  r.last,
+			"last":  lastVal,
 		}
 
 		cColor := dnColor
