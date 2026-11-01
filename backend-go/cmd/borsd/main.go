@@ -19,6 +19,7 @@ import (
 	"borsterminal/backend/internal/mstat"
 	"borsterminal/backend/internal/notifications"
 	borssync "borsterminal/backend/internal/sync"
+	"borsterminal/backend/internal/selection"
 	"borsterminal/backend/internal/watchlist"
 )
 
@@ -54,9 +55,19 @@ func main() {
 	nt := notifications.NewHandler(ntSvc)
 
 	sy := borssync.NewHandler(cfg.DataDir)
+	sel := selection.NewService(handles.Market, handles.User)
 
 	srv := &http.Server{Addr: cfg.Addr,
-		Handler: httpapi.New(cfg, handles, mkt, ms, ch, fd, wl, nt, sy)}
+		Handler: httpapi.NewWithServices(cfg, handles, httpapi.Services{
+			Market:        mkt,
+			Mstat:         ms,
+			Chart:         ch,
+			Fundamental:   fd,
+			Watchlist:     wl,
+			Notifications: nt,
+			Sync:          sy,
+			Selection:     sel,
+		})}
 	go func() {
 		slog.Info("listening", "addr", cfg.Addr, "data", cfg.DataDir, "version", httpapi.Version())
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {

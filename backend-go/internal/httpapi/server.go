@@ -106,7 +106,66 @@ type Sync interface {
 	CodalControl(http.ResponseWriter, *http.Request)
 }
 
+// Selection چهار مسیر سبد دارایی و تصمیمات در B7؛ nil یعنی پورت نشده.
+type Selection interface {
+	Symbols(http.ResponseWriter, *http.Request)
+	Portfolio(http.ResponseWriter, *http.Request)
+	PostDecision(http.ResponseWriter, *http.Request)
+	DeleteDecision(http.ResponseWriter, *http.Request)
+}
+
+// MarketIndex مسیر شاخص کل در B7؛ nil یعنی پورت نشده.
+type MarketIndex interface {
+	TEDPIX(http.ResponseWriter, *http.Request)
+}
+
+// Export مسیرهای صدور داده CSV در B7؛ nil یعنی پورت نشده.
+type Export interface {
+	Post(http.ResponseWriter, *http.Request)
+	Get(http.ResponseWriter, *http.Request)
+}
+
+// Screener مسیرهای تاریخچه و اسکرینر FTS در B7؛ nil یعنی پورت نشده.
+type Screener interface {
+	History(http.ResponseWriter, *http.Request)
+	FTS(http.ResponseWriter, *http.Request)
+}
+
+// Funnel مسیرهای قیف FTS در B7؛ nil یعنی پورت نشده.
+type Funnel interface {
+	Registry(http.ResponseWriter, *http.Request)
+	Evaluate(http.ResponseWriter, *http.Request)
+}
+
+// Services مجموعه‌ی کلیه سرویس‌های HTTP بورس‌ترمینال.
+type Services struct {
+	Market        Market
+	Mstat         Mstat
+	Chart         Chart
+	Fundamental   Fundamental
+	Watchlist     Watchlist
+	Notifications Notifications
+	Sync          Sync
+	Selection     Selection
+	MarketIndex   MarketIndex
+	Export        Export
+	Screener      Screener
+	Funnel        Funnel
+}
+
 func New(cfg config.Config, h *db.Handles, m Market, ms Mstat, ch Chart, fd Fundamental, wl Watchlist, nt Notifications, sy Sync) http.Handler {
+	return NewWithServices(cfg, h, Services{
+		Market:        m,
+		Mstat:         ms,
+		Chart:         ch,
+		Fundamental:   fd,
+		Watchlist:     wl,
+		Notifications: nt,
+		Sync:          sy,
+	})
+}
+
+func NewWithServices(cfg config.Config, h *db.Handles, srv Services) http.Handler {
 	s := &Server{
 		cfg:      cfg,
 		db:       h,
@@ -116,70 +175,91 @@ func New(cfg config.Config, h *db.Handles, m Market, ms Mstat, ch Chart, fd Fund
 	}
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /healthz", s.healthz)
-	if m != nil {
-		mux.HandleFunc("GET /api/market", m.Board)
-		mux.HandleFunc("GET /api/market/delta", m.Delta)
-		mux.HandleFunc("GET /api/market/sync-state", m.SyncState)
-		mux.HandleFunc("GET /api/tape-history", m.TapeHistory)
+	if srv.Market != nil {
+		mux.HandleFunc("GET /api/market", srv.Market.Board)
+		mux.HandleFunc("GET /api/market/delta", srv.Market.Delta)
+		mux.HandleFunc("GET /api/market/sync-state", srv.Market.SyncState)
+		mux.HandleFunc("GET /api/tape-history", srv.Market.TapeHistory)
 	}
-	if ms != nil {
-		mux.HandleFunc("GET /api/mstat/summary", ms.Summary)
-		mux.HandleFunc("GET /api/mstat/histogram", ms.Histogram)
-		mux.HandleFunc("GET /api/mstat/thermometer", ms.Thermometer)
-		mux.HandleFunc("GET /api/mstat/depth", ms.Depth)
-		mux.HandleFunc("GET /api/mstat/clientsplit", ms.ClientSplit)
-		mux.HandleFunc("GET /api/mstat/market-snapshot", ms.MarketSnapshot)
-		mux.HandleFunc("GET /api/mstat/phase", ms.Phase)
-		mux.HandleFunc("GET /api/mstat/mainwatch", ms.Mainwatch)
-		mux.HandleFunc("GET /api/mstat/industries", ms.Industries)
-		mux.HandleFunc("GET /api/mstat/timeline", ms.Timeline)
-		mux.HandleFunc("GET /api/mstat/phases", ms.Phases)
-		mux.HandleFunc("GET /api/mstat/smart-money", ms.SmartMoney)
-		mux.HandleFunc("GET /api/mstat/board", ms.Board)
-		mux.HandleFunc("POST /api/mstat/snapshot", ms.SnapshotNow)
+	if srv.Mstat != nil {
+		mux.HandleFunc("GET /api/mstat/summary", srv.Mstat.Summary)
+		mux.HandleFunc("GET /api/mstat/histogram", srv.Mstat.Histogram)
+		mux.HandleFunc("GET /api/mstat/thermometer", srv.Mstat.Thermometer)
+		mux.HandleFunc("GET /api/mstat/depth", srv.Mstat.Depth)
+		mux.HandleFunc("GET /api/mstat/clientsplit", srv.Mstat.ClientSplit)
+		mux.HandleFunc("GET /api/mstat/market-snapshot", srv.Mstat.MarketSnapshot)
+		mux.HandleFunc("GET /api/mstat/phase", srv.Mstat.Phase)
+		mux.HandleFunc("GET /api/mstat/mainwatch", srv.Mstat.Mainwatch)
+		mux.HandleFunc("GET /api/mstat/industries", srv.Mstat.Industries)
+		mux.HandleFunc("GET /api/mstat/timeline", srv.Mstat.Timeline)
+		mux.HandleFunc("GET /api/mstat/phases", srv.Mstat.Phases)
+		mux.HandleFunc("GET /api/mstat/smart-money", srv.Mstat.SmartMoney)
+		mux.HandleFunc("GET /api/mstat/board", srv.Mstat.Board)
+		mux.HandleFunc("POST /api/mstat/snapshot", srv.Mstat.SnapshotNow)
 	}
-	if ch != nil {
-		mux.HandleFunc("GET /api/chart/{symbol}/key-levels", ch.KeyLevels)
-		mux.HandleFunc("GET /api/order-book/{symbol}", ch.OrderBook)
-		mux.HandleFunc("GET /api/calendar/upcoming", ch.CalendarUpcoming)
-		mux.HandleFunc("GET /api/calendar/{symbol}", ch.CalendarSymbol)
-		mux.HandleFunc("GET /api/ma/{symbol}", ch.MA)
-		mux.HandleFunc("GET /api/patterns/{symbol}", ch.Patterns)
-		mux.HandleFunc("GET /api/chart-db/{symbol}", ch.ChartDB)
-		mux.HandleFunc("GET /api/fts/{symbol}", ch.FTS)
+	if srv.Chart != nil {
+		mux.HandleFunc("GET /api/chart/{symbol}/key-levels", srv.Chart.KeyLevels)
+		mux.HandleFunc("GET /api/order-book/{symbol}", srv.Chart.OrderBook)
+		mux.HandleFunc("GET /api/calendar/upcoming", srv.Chart.CalendarUpcoming)
+		mux.HandleFunc("GET /api/calendar/{symbol}", srv.Chart.CalendarSymbol)
+		mux.HandleFunc("GET /api/ma/{symbol}", srv.Chart.MA)
+		mux.HandleFunc("GET /api/patterns/{symbol}", srv.Chart.Patterns)
+		mux.HandleFunc("GET /api/chart-db/{symbol}", srv.Chart.ChartDB)
+		mux.HandleFunc("GET /api/fts/{symbol}", srv.Chart.FTS)
 		// `/api/fts/config` درِ پایتون متعلق به api/market.py است و *پیش از*
 		// `/api/fts/{symbol}` ثبت می‌شود، پس «config» هیچ‌وقت نماد نیست. Go با
 		// الگویِ عام آن را می‌بلعید؛ این ثبتِ صریح همان ترتیب را بازمی‌گرداند.
 		mux.HandleFunc("GET /api/fts/config", s.notPortedRoute)
 	}
-	if fd != nil {
+	if srv.Fundamental != nil {
 		// `sectors` صریح و پیش از هر `{symbol}` ثبت می‌شود (R9 از پلنِ B4): درِ
 		// پایتون هم متنیِ `/api/fundamental/sectors` پیش از `/api/fundamental/{symbol}`
 		// تعریف شده است.
-		mux.HandleFunc("GET /api/fundamental/sectors", fd.Sectors)
+		mux.HandleFunc("GET /api/fundamental/sectors", srv.Fundamental.Sectors)
 		mux.HandleFunc("GET /api/fundamental/screen", s.notPortedRoute)
-		mux.HandleFunc("GET /api/fundamental/{symbol}/quarters", fd.Quarters)
-		mux.HandleFunc("GET /api/fundamental/{symbol}", fd.Card)
+		mux.HandleFunc("GET /api/fundamental/{symbol}/quarters", srv.Fundamental.Quarters)
+		mux.HandleFunc("GET /api/fundamental/{symbol}", srv.Fundamental.Card)
 	}
-	if wl != nil {
-		mux.HandleFunc("GET /api/watchlist", wl.Get)
-		mux.HandleFunc("POST /api/watchlist", wl.Post)
-		mux.HandleFunc("DELETE /api/watchlist/{symbol}", wl.Delete)
+	if srv.Watchlist != nil {
+		mux.HandleFunc("GET /api/watchlist", srv.Watchlist.Get)
+		mux.HandleFunc("POST /api/watchlist", srv.Watchlist.Post)
+		mux.HandleFunc("DELETE /api/watchlist/{symbol}", srv.Watchlist.Delete)
 		mux.HandleFunc("GET /api/watchlist/matrix", s.notPortedRoute)
 	}
-	if nt != nil {
-		mux.HandleFunc("GET /api/notifications/sources", nt.Sources)
-		mux.HandleFunc("GET /api/notifications/feed", nt.Feed)
+	if srv.Notifications != nil {
+		mux.HandleFunc("GET /api/notifications/sources", srv.Notifications.Sources)
+		mux.HandleFunc("GET /api/notifications/feed", srv.Notifications.Feed)
 	}
-	if sy != nil {
-		mux.HandleFunc("GET /api/sync/status", sy.SyncStatus)
-		mux.HandleFunc("GET /api/sync/codal/db-status", sy.CodalDBStatus)
-		mux.HandleFunc("GET /api/sync/diagnose", sy.Diagnose)
-		mux.HandleFunc("POST /api/sync/market", sy.SyncMarket)
-		mux.HandleFunc("POST /api/sync/codal", sy.SyncCodal)
-		mux.HandleFunc("POST /api/sync/codal/fts-refresh", sy.SyncCodalFTSRefresh)
-		mux.HandleFunc("POST /api/sync/codal/db-download", sy.SyncCodalDBDownload)
-		mux.HandleFunc("POST /api/codal/control", sy.CodalControl)
+	if srv.Sync != nil {
+		mux.HandleFunc("GET /api/sync/status", srv.Sync.SyncStatus)
+		mux.HandleFunc("GET /api/sync/codal/db-status", srv.Sync.CodalDBStatus)
+		mux.HandleFunc("GET /api/sync/diagnose", srv.Sync.Diagnose)
+		mux.HandleFunc("POST /api/sync/market", srv.Sync.SyncMarket)
+		mux.HandleFunc("POST /api/sync/codal", srv.Sync.SyncCodal)
+		mux.HandleFunc("POST /api/sync/codal/fts-refresh", srv.Sync.SyncCodalFTSRefresh)
+		mux.HandleFunc("POST /api/sync/codal/db-download", srv.Sync.SyncCodalDBDownload)
+		mux.HandleFunc("POST /api/codal/control", srv.Sync.CodalControl)
+	}
+	if srv.Selection != nil {
+		mux.HandleFunc("GET /api/selection/symbols", srv.Selection.Symbols)
+		mux.HandleFunc("GET /api/selection/portfolio", srv.Selection.Portfolio)
+		mux.HandleFunc("POST /api/selection/decision", srv.Selection.PostDecision)
+		mux.HandleFunc("DELETE /api/selection/decision/{symbol}", srv.Selection.DeleteDecision)
+	}
+	if srv.MarketIndex != nil {
+		mux.HandleFunc("GET /api/index/tedpix", srv.MarketIndex.TEDPIX)
+	}
+	if srv.Export != nil {
+		mux.HandleFunc("POST /api/export", srv.Export.Post)
+		mux.HandleFunc("GET /api/export", srv.Export.Get)
+	}
+	if srv.Screener != nil {
+		mux.HandleFunc("GET /api/history/{symbol}", srv.Screener.History)
+		mux.HandleFunc("GET /api/screener/fts", srv.Screener.FTS)
+	}
+	if srv.Funnel != nil {
+		mux.HandleFunc("GET /api/funnel/registry", srv.Funnel.Registry)
+		mux.HandleFunc("POST /api/funnel/evaluate", srv.Funnel.Evaluate)
 	}
 	mux.HandleFunc("/", s.apiGate)
 	return noCache(mux)
