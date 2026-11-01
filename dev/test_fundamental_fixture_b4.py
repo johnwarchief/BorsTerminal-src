@@ -9,6 +9,9 @@
    سبز نشود.
 ۴) کنترلِ منفی: مرزِ «تاریخِ با خط تیره = بی‌دوره» واقعاً ردیف را از محاسبه
    بیرون می‌اندازد (سنسور باید نبود را هم ببیند).
+۵) کارتِ پنج‌محور (`GET /api/fundamental/{symbol}`): بدنه‌هایِ `card_*/body.json`
+   بایت‌به‌بایت با اجرایِ تازهٔ اوراکل یکی‌اند، متا و نمایه با بدنه می‌خوانند،
+   و محتوایِ هر کیس (رأی، سه‌حال، خطای ارزشِ بازار) سنجیده می‌شود.
 
 اجرا: PYTHONIOENCODING=utf-8 python dev/test_fundamental_fixture_b4.py
 """
@@ -73,6 +76,27 @@ SCENARIOS = {
     "s2": {"fund_up", "fund_down", "fund_thin"},
     "s3": {"tape_missing_tables", "tape_empty_meta"},
 }
+
+# کارتِ پنج‌محور: `GET /api/fundamental/{symbol}` ⇒ پوشهٔ `card_<CASE>/body.json`
+# درِ همان درختِ طلایی. نامِ کیس ⇒ نماد (رقمِ فارسی با کدپوینت نوشته می‌شود تا
+# رقم درِ متن دزدیده نشود).
+CARD_GEN = os.path.join(TOOLS, "gen_fundamental_card_golden.py")
+CARD_CASES = {
+    "card_up": UP,
+    "card_up_score5": UP,
+    "card_down": DOWN,
+    "card_fund": FUND,
+    "card_thin": THIN,
+    "card_mixed": MIXED,
+    "card_mcap_missing": "نگهبان03",
+    "card_no_board_row": "غایب",
+    "card_holding": "سخت05",
+    "card_no_sales": "کدبه‌کد09",
+    "card_not_found": "نیست" + chr(0x06F0) + chr(0x06F1),
+    "card_up_months6": UP,
+}
+ZERO_STEP = chr(0x06F0)          # «۰» — پیامِ حذفِ خودکار درِ صدرِ بینش‌ها
+MCAP_KEY = "ارزش بازار"          # کلیدِ ارزشِ بازار درِ بخشِ «secondary»
 
 
 def build_fixture(tmp):
@@ -194,6 +218,214 @@ def case_content(scen, name, d):
     return False, "no content predicate for %r" % name
 
 
+def card_case_content(name, d):
+    """محتوایِ کارت — سنجه‌هایی که از خودِ بدنه خوانده می‌شوند، نه از نامِ پرونده.
+
+    سه‌حالِ null/False/True و شاخه‌هایِ خطایِ ارزشِ بازار محکِ اصلی‌اند: کارتِ
+    درست باید «بی‌داده» را با «رد» اشتباه نگیرد.
+    """
+    if name == "card_not_found":
+        return (d.get("__http_status__") == 404 and bool(d.get("detail"))), "404 shape kept"
+    st = d.get("states") or {}
+    ps = d.get("passes") or {}
+    mt = d.get("metrics") or {}
+    ind = d.get("indicators") or {}
+    a1, a2, a3, a4 = (ind.get(k) or {} for k in ("1", "2", "3", "4"))
+    sec = d.get("secondary") or {}
+    steps = [i.get("step") for i in (d.get("insights") or [])]
+    five = ("1_growth", "2_eps_trend", "3_gross_margin", "4_sales_to_mcap", "5_industry")
+    mcap_txt = str(sec.get(MCAP_KEY) or "")
+    if name == "card_up":
+        ok = (d.get("verdict") == "WATCH" and d.get("score") == 4
+              and d.get("applicable") is True and d.get("excluded") is False
+              and st.get("1_growth") is False
+              and all(st.get(k) is True for k in five[1:])
+              and ps.get("1b_volume_growth") is False
+              and (a1.get("monetary") or {}).get("monetary_pct") == 50.0
+              and mt.get("mcap_error") is None and mt.get("mcap_source") == "official"
+              and mt.get("mcap_asof") == 20261028
+              and not d.get("data_gaps")
+              and "موجود نیست" not in mcap_txt)
+        return ok, "verdict=%r score=%r states=%r" % (d.get("verdict"), d.get("score"), st)
+    if name == "card_up_score5":
+        thr = (d.get("methodology") or {}).get("thresholds") or {}
+        ok = (d.get("verdict") == "STRONG" and d.get("score") == 5
+              and d.get("applicable") is True
+              and all(st.get(k) is True for k in five)
+              and ps.get("1b_volume_growth") is True
+              and thr.get("inflation_basis") == 40.0
+              and (d.get("thresholds") or {}).get("v10_inflation_basis") == 40.0)
+        return ok, "verdict=%r score=%r inflation=%r" % (d.get("verdict"), d.get("score"),
+                                                         thr.get("inflation_basis"))
+    if name == "card_down":
+        ok = (d.get("verdict") == "REJECT" and d.get("score") == 2
+              and st.get("1_growth") is False and st.get("2_eps_trend") is False
+              and st.get("3_gross_margin") is False
+              and (a2.get("eps_series") or [None])[:1] == [66.56]
+              and a3.get("margin_pct") == 11.0 and a3.get("na") is False
+              and a3.get("pass") is False)
+        return ok, "eps=%r margin=%r" % (a2.get("eps_series"), a3.get("margin_pct"))
+    if name == "card_fund":
+        ok = (d.get("verdict") == "FTS ندارد" and d.get("score") is None
+              and d.get("applicable") is False
+              and st.get("1_growth") is True
+              and st.get("2_eps_trend") is None and st.get("4_sales_to_mcap") is None)
+        return ok, "verdict=%r score=%r applicable=%r" % (d.get("verdict"), d.get("score"),
+                                                          d.get("applicable"))
+    if name == "card_thin":
+        gaps = {g.get("axis") for g in (d.get("data_gaps") or [])}
+        ok = (st.get("1_growth") is None and st.get("2_eps_trend") is None
+              and st.get("3_gross_margin") is None
+              and (a1.get("monetary") or {}).get("data_gap") is True
+              and {"1a_monetary_growth", "2_eps_trend", "3_gross_margin"} <= gaps)
+        return ok, "states=%r gaps=%r" % (st, sorted(gaps))
+    if name == "card_mixed":
+        ok = (mt.get("mcap_error") == "symbol_not_on_board"
+              and mt.get("mcap_source") is None and mt.get("mcap_asof") is None
+              and a4.get("na") is True and a4.get("gap_cause") == "market_cap"
+              and a4.get("market_cap_error") == "symbol_not_on_board"
+              and a3.get("na") is True and st.get("3_gross_margin") is None
+              and "موجود نیست" in mcap_txt)
+        return ok, "mcap_error=%r gap_cause=%r" % (mt.get("mcap_error"), a4.get("gap_cause"))
+    if name == "card_mcap_missing":
+        ok = (mt.get("mcap_error") == "market_cap_missing_value"
+              and mt.get("mcap_asof") == 20261014
+              and d.get("excluded") is True and d.get("verdict") == "EXCLUDED"
+              and d.get("score") == 0 and d.get("pricing_mode") == "mandatory"
+              and bool(d.get("exclusion_reasons"))
+              and ZERO_STEP in steps
+              and "موجود نیست" in mcap_txt)
+        return ok, "mcap_error=%r excluded=%r steps=%r" % (mt.get("mcap_error"),
+                                                           d.get("excluded"), steps)
+    if name == "card_no_board_row":
+        ok = (mt.get("mcap_error") == "market_cap_missing_value"
+              and mt.get("mcap_asof") is None and mt.get("mcap_source") is None
+              and "موجود نیست" in mcap_txt)
+        return ok, "mcap_error=%r asof=%r" % (mt.get("mcap_error"), mt.get("mcap_asof"))
+    if name == "card_holding":
+        ok = (a4.get("na") is True and a4.get("exempt") is True
+              and a4.get("available") is False and a4.get("pass") is False
+              and "N/A" in str(a4.get("reason") or ""))
+        return ok, "axis4=%r" % ({k: a4.get(k) for k in ("na", "exempt", "available")},)
+    if name == "card_no_sales":
+        ok = (a4.get("na") is True and a4.get("gap_cause") == "annual_sales"
+              and a4.get("available") is False and a4.get("pass") is False
+              and "سنجیده" in str(a4.get("reason") or ""))
+        return ok, "axis4=%r" % ({k: a4.get(k) for k in ("na", "gap_cause", "available")},)
+    if name == "card_up_months6":
+        up = read_json(os.path.join(GOLD, "card_up", "body.json"))
+        ok = (d == up and d.get("score") == 4 and d.get("verdict") == "WATCH")
+        return ok, "months=6 body == card_up"
+    return False, "no card predicate for %r" % name
+
+
+def card_section():
+    """داوریِ کارتِ پنج‌محور: اجرایِ تازهٔ اوراکل، مقایسهٔ بایتی، صحتِ متا و
+    نمایه، و یک کنترلِ منفی.
+
+    اوراکل درِ پروسه‌ی جدا اجرا می‌شود: `bors_config.DB_PATH` و
+    `FTS_CONFIG_PATH` درِ لحظهٔ import ثابت می‌شوند، پس اگر همین پروسه پس ازِ
+    اوراکلِ بنیادی کارت را اجرا کند، پروندهٔ آستانه‌های `card_up_score5` را
+    نمی‌بیند و کارت را چهار از پنج محور می‌خواند.
+    """
+    fresh = {}
+    try:
+        with tempfile.TemporaryDirectory(prefix="b4-card-") as tmp:
+            proc = subprocess.run([sys.executable, CARD_GEN, "--out", tmp],
+                                  capture_output=True, text=True, encoding="utf-8",
+                                  errors="replace")
+            check("card oracle runs clean", proc.returncode == 0,
+                  "rc=%r %s" % (proc.returncode, (proc.stderr or "")[-300:]))
+            if proc.returncode != 0:
+                return
+            have = sorted(d for d in os.listdir(tmp) if os.path.isdir(os.path.join(tmp, d)))
+            check("card oracle emits every case dir", have == sorted(CARD_CASES),
+                  "got=%r want=%r" % (have, sorted(CARD_CASES)))
+            mismatch, missing = [], []
+            for case in sorted(CARD_CASES):
+                fp = os.path.join(tmp, case, "body.json")
+                gp = os.path.join(GOLD, case, "body.json")
+                if not (os.path.exists(fp) and os.path.exists(gp)):
+                    missing.append(case)
+                    continue
+                with open(fp, "rb") as f:
+                    fresh[case] = f.read()
+                with open(gp, "rb") as f:
+                    if f.read() != fresh[case]:
+                        mismatch.append(case)
+            check("card goldens are byte-identical to a fresh oracle run (%d files)"
+                  % len(CARD_CASES), not missing and not mismatch,
+                  "missing=%r mismatch=%r" % (missing, mismatch))
+    except Exception as e:                                        # noqa: BLE001
+        check("card oracle section", False, repr(e))
+        return
+
+    # متا: نماد، مسیرِ مسیرِ HTTP، هش و اندازهٔ بدنه — همه باید با فایل بخوانند.
+    bad = []
+    for case, symbol in sorted(CARD_CASES.items()):
+        mp = os.path.join(GOLD, case, "meta.json")
+        bp = os.path.join(GOLD, case, "body.json")
+        if not (os.path.exists(mp) and os.path.exists(bp)):
+            bad.append("%s: missing" % case)
+            continue
+        with open(bp, "rb") as f:
+            raw = f.read()
+        m = read_json(mp)
+        py = m.get("python") or {}
+        if (m.get("case") != case or m.get("symbol") != symbol
+                or m.get("body_file") != "body.json"
+                or m.get("body_sha256") != hashlib.sha256(raw).hexdigest()
+                or m.get("body_bytes") != len(raw)
+                or py.get("module") != "api/fundamental.py"
+                or py.get("function") != "get_fundamental"
+                or not str(m.get("route") or "").startswith("GET /api/fundamental/")):
+            bad.append(case)
+    check("card meta.json matches its body (%d files)" % len(CARD_CASES), not bad,
+          "; ".join(bad[:6]))
+
+    # نمایه: هر کیس با مسیرِ نسبی، هش و اندازهٔ درست.
+    bad = []
+    ip = os.path.join(GOLD, "card_index.json")
+    if not os.path.exists(ip):
+        bad.append("card_index.json missing")
+    else:
+        idx = read_json(ip)
+        rows = {r.get("name"): r for r in (idx.get("cases") or [])}
+        if set(rows) != set(CARD_CASES):
+            bad.append("cases=%r" % sorted(rows))
+        if idx.get("route") != "GET /api/fundamental/{symbol}":
+            bad.append("route=%r" % idx.get("route"))
+        for case, symbol in sorted(CARD_CASES.items()):
+            r = rows.get(case) or {}
+            bp = os.path.join(GOLD, case, "body.json")
+            if not os.path.exists(bp):
+                bad.append("%s: body missing" % case)
+                continue
+            with open(bp, "rb") as f:
+                raw = f.read()
+            if r.get("body") != "%s/body.json" % case:
+                bad.append("%s: body=%r" % (case, r.get("body")))
+            if r.get("symbol") != symbol:
+                bad.append("%s: symbol=%r" % (case, r.get("symbol")))
+            if r.get("sha256") != hashlib.sha256(raw).hexdigest():
+                bad.append("%s: sha" % case)
+            if r.get("bytes") != len(raw):
+                bad.append("%s: bytes" % case)
+    check("card_index.json lists every case with a matching sha", not bad, "; ".join(bad[:6]))
+
+    # کنترلِ منفی: بدنهٔ دستکاری‌شده باید هم بایتی و هم پارسی گرفته شود.
+    try:
+        raw = fresh.get("card_up")
+        good = open(os.path.join(GOLD, "card_up", "body.json"), "rb").read()
+        mutated = raw.replace(b'"score": 4', b'"score": 5', 1)
+        check("negative control really mutates a card body", mutated != raw)
+        check("negative control: mutated body differs byte-wise", mutated != good)
+        check("negative control: mutated body differs in parsed JSON",
+              json.loads(mutated.decode("utf-8")) != json.loads(good.decode("utf-8")))
+    except Exception as e:                                        # noqa: BLE001
+        check("negative control really mutates a card body", False, repr(e))
+
+
 def main() -> int:
     names = ("market.db", "user.db")
     try:
@@ -254,10 +486,22 @@ def main() -> int:
     try:
         dirs = sorted(d for d in os.listdir(GOLD) if os.path.isdir(os.path.join(GOLD, d)))
         files = [f for f in os.listdir(GOLD) if os.path.isfile(os.path.join(GOLD, f))]
-        check("golden tree holds only s1..s3", not files and dirs == ["s1", "s2", "s3"],
+        check("golden tree holds s1..s3 plus the card goldens",
+              dirs == sorted(list(SCENARIOS) + list(CARD_CASES)) and files == ["card_index.json"],
               "dirs=%r files=%r" % (dirs, files))
     except Exception as e:                                        # noqa: BLE001
-        check("golden tree holds only s1..s3", False, repr(e))
+        check("golden tree holds s1..s3 plus the card goldens", False, repr(e))
+
+    # کارتِ پنج‌محور (`GET /api/fundamental/{symbol}`): اوراکلِ تازه بایت‌به‌بایت،
+    # متا و نمایه، و محتوایِ هر کیس.
+    card_section()
+    for case in sorted(CARD_CASES):
+        p = os.path.join(GOLD, case, "body.json")
+        if not os.path.exists(p):
+            check("card/%s has content" % case, False, "missing")
+            continue
+        ok, detail = card_case_content(case, read_json(p))
+        check("card/%s has content" % case, ok, detail)
 
     # کنترلِ منفی: مرزِ «خط تیره = بی‌دوره» را خودِ SQLite با همان GLOB می‌زند
     try:

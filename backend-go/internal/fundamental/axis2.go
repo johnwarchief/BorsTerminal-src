@@ -130,9 +130,10 @@ func ax2NeedYears(years int) int {
 
 // ax2NumOrNone عینِ `_num_or_none` (api/fundamental:214-220) — «داده نیست»
 // هیچ‌وقت ۰٫۰ نمی‌شود (برخلافِ toF)، و NaN هم None است چون پایتون `x == x` را
-// می‌آزماید.
+// می‌آزماید. تبدیل از تعریفِ یکتایِ `float()` می‌آید (`asFloat` درِ config.go)،
+// پس رقمِ یونیکد هم مثلِ پایتون پذیرفته می‌شود.
 func ax2NumOrNone(v any) any {
-	f, ok := stmtParseFloat(v)
+	f, ok := asFloat(v)
 	if !ok || math.IsNaN(f) {
 		return nil
 	}
@@ -456,7 +457,9 @@ func (s *Service) EpsLadder(ctx context.Context, symbol string, years int) (map[
 		if !ok {
 			continue // `float(eps)`/`int(…)ِ` بی‌محتوا ⇒ ValueError ⇒ `continue`
 		}
-		ev, ok := stmtParseFloat(r["basic_eps"])
+		// `float(eps)` — تعریفِ یکتایِ پایتون (`asFloat` درِ config.go): رقمِ
+		// یونیکد و زیرخط هم پذیرفته می‌شوند، پس EPSِ «۱۲۵» ۱۲۵ است و نه بی‌محتوا.
+		ev, ok := asFloat(r["basic_eps"])
 		if !ok {
 			continue
 		}

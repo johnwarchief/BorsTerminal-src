@@ -1,0 +1,27 @@
+{
+ "case": "card_no_sales",
+ "symbol": "کدبه‌کد09",
+ "route": "GET /api/fundamental/کدبه‌کد09",
+ "branch": "فروشِ سالانۀ راستی‌آمایی‌شده ندارد ⇒ محورِ 4 «سنجیده نشد» (نه رد)",
+ "settings": null,
+ "python": {
+  "module": "api/fundamental.py",
+  "function": "get_fundamental",
+  "args": [
+   "کدبه‌کد09",
+   0
+  ],
+  "call": "api.fundamental.get_fundamental(symbol, months)"
+ },
+ "python_commit": "32d1371f5956fbc0540194f920f8731edbe215fb",
+ "fixture": {
+  "dir": "backend-go/internal/fundamental/testdata/fixture",
+  "market_db_sha256": "7cee7d1cf4fc132e64e5b9a4e898fd573e9e89dae042dadbebbec6cd54022fc6",
+  "user_db_sha256": "18f3ac1bfb6c0d6bbd9f88dcfa01d6e006aeeca52c08ba3fed4f510acc6dc618"
+ },
+ "pinned_today": "2026-10-28",
+ "body_file": "body.json",
+ "body_sha256": "1128e8513e68af89cec0cd84b8909fb58e6389d911b867d1d72dfb7428847da0",
+ "body_bytes": 20761,
+ "generated_by": "tools/parity/gen_fundamental_card_golden.py"
+}

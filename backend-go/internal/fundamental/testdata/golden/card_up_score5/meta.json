@@ -1,0 +1,29 @@
+{
+ "case": "card_up_score5",
+ "symbol": "عادی01",
+ "route": "GET /api/fundamental/عادی01",
+ "branch": "هر پنج محور قبول (score=5، حکمِ STRONG) — با مبنای تورمِ 40 درصد رشدِ واقعی مثبت می‌شود؛ با پیش‌فرضِ 60 درصد همین نماد چهار از پنج محور را قبول است (نگاه به card_up)",
+ "settings": {
+  "v10_inflation_basis": 40.0
+ },
+ "python": {
+  "module": "api/fundamental.py",
+  "function": "get_fundamental",
+  "args": [
+   "عادی01",
+   0
+  ],
+  "call": "api.fundamental.get_fundamental(symbol, months)"
+ },
+ "python_commit": "32d1371f5956fbc0540194f920f8731edbe215fb",
+ "fixture": {
+  "dir": "backend-go/internal/fundamental/testdata/fixture",
+  "market_db_sha256": "7cee7d1cf4fc132e64e5b9a4e898fd573e9e89dae042dadbebbec6cd54022fc6",
+  "user_db_sha256": "18f3ac1bfb6c0d6bbd9f88dcfa01d6e006aeeca52c08ba3fed4f510acc6dc618"
+ },
+ "pinned_today": "2026-10-28",
+ "body_file": "body.json",
+ "body_sha256": "97ecf950047af033085ec8ab92a74f083963758b469793411e621185e19aa4cc",
+ "body_bytes": 27631,
+ "generated_by": "tools/parity/gen_fundamental_card_golden.py"
+}

@@ -1,0 +1,27 @@
+{
+ "case": "card_fund",
+ "symbol": "اهرم‌ب",
+ "route": "GET /api/fundamental/اهرم‌ب",
+ "branch": "صندوق: applicable=false، حکمِ «FTS ندارد» و score=null",
+ "settings": null,
+ "python": {
+  "module": "api/fundamental.py",
+  "function": "get_fundamental",
+  "args": [
+   "اهرم‌ب",
+   0
+  ],
+  "call": "api.fundamental.get_fundamental(symbol, months)"
+ },
+ "python_commit": "32d1371f5956fbc0540194f920f8731edbe215fb",
+ "fixture": {
+  "dir": "backend-go/internal/fundamental/testdata/fixture",
+  "market_db_sha256": "7cee7d1cf4fc132e64e5b9a4e898fd573e9e89dae042dadbebbec6cd54022fc6",
+  "user_db_sha256": "18f3ac1bfb6c0d6bbd9f88dcfa01d6e006aeeca52c08ba3fed4f510acc6dc618"
+ },
+ "pinned_today": "2026-10-28",
+ "body_file": "body.json",
+ "body_sha256": "f6223c8fd5b36c5d5c4d9c1eb2321fa45d7c51da6f1b8e8a680f91e9cf094d0f",
+ "body_bytes": 26334,
+ "generated_by": "tools/parity/gen_fundamental_card_golden.py"
+}

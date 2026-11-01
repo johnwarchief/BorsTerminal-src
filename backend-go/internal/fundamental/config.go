@@ -257,8 +257,11 @@ func V10Thresholds(cfg map[string]any) map[string]any {
 				continue
 			}
 			if key == "eps_years" {
-				if i, ok := asInt(raw); ok {
-					out[key] = i
+				// `int(cfg[probe])` — وگرنه ValueError ⇒ probeِ بعدی. اینجا
+				// `asInt` غلط بود: از float می‌گذشت و «3.5» را ۳ می‌کرد (پایتون
+				// خطا می‌دهد و probeِ بعدی را می‌آزماید).
+				if i, ok := pyIntStrict(raw); ok {
+					out[key] = int(i)
 					break
 				}
 				continue
@@ -401,6 +404,109 @@ func asInt(v any) (int, bool) {
 		return 0, false
 	}
 	return int(f), true
+}
+
+// pyIntStrict عینِ `int(v)` درِ پایتون — برخلافِ asInt که از float می‌گذرد.
+//
+// تفاوت‌هایِ داوری‌شده (با پایتون سنجیده شد):
+//   - `int("3.5")` ⇒ ValueError (ولی `int(3.5)` ⇒ ۳). پس رشتهٔ اعشاری خطاست
+//     و «۳٫۵» (ممیزِ فارسی) هم خطاست.
+//   - رقمِ یونیکد پذیرفته می‌شود: `int("٣")==3`، `int("۳")==3`.
+//   - `_` فقط میانِ دو رقم: `1_0`⇒۱۰، ولی `1__0`/`_3`/`3_` خطا.
+//   - `int(None)` ⇒ TypeError و `int(nan)` ⇒ ValueError ⇒ هر دو «ناموفق».
+//   - اعشارِ float رو به صفر بریده می‌شود: `int(-3.9)`⇒−۳.
+func pyIntStrict(v any) (int64, bool) {
+	switch x := v.(type) {
+	case nil:
+		return 0, false
+	case bool:
+		if x {
+			return 1, true
+		}
+		return 0, true
+	case int:
+		return int64(x), true
+	case int64:
+		return x, true
+	case float64:
+		return pyIntFloat(x)
+	case float32:
+		return pyIntFloat(float64(x))
+	case json.Number:
+		if i, err := x.Int64(); err == nil {
+			return i, true
+		}
+		f, ok := asFloat(x)
+		if !ok {
+			return 0, false
+		}
+		return pyIntFloat(f)
+	case string:
+		return pyIntString(x)
+	}
+	return 0, false
+}
+
+// pyIntFloat برشِ رو به صفرِ `int(float)` — NaN/Inf خطا (ValueError).
+func pyIntFloat(f float64) (int64, bool) {
+	if math.IsNaN(f) || math.IsInf(f, 0) || f > math.MaxInt64 || f < math.MinInt64 {
+		return 0, false
+	}
+	return int64(f), true
+}
+
+// pyIntString تجزیۀ متن به سبکِ `int(str)`: علامتِ اختیاری، رقم‌های ASCII یا
+// یونیکد، و `_` فقط میانِ دو رقم.
+func pyIntString(s string) (int64, bool) {
+	runes := []rune(pyTrimStr(s))
+	if len(runes) == 0 {
+		return 0, false
+	}
+	i := 0
+	neg := false
+	if runes[0] == '+' || runes[0] == '-' {
+		neg = runes[0] == '-'
+		i++
+	}
+	if i >= len(runes) {
+		return 0, false
+	}
+	var val int64
+	seen := false
+	expectDigit := false
+	for ; i < len(runes); i++ {
+		r := runes[i]
+		if r == '_' {
+			if !seen || expectDigit {
+				return 0, false
+			}
+			expectDigit = true
+			continue
+		}
+		var d int
+		if r >= '0' && r <= '9' {
+			d = int(r - '0')
+		} else {
+			var ok bool
+			d, ok = decimalDigit(r)
+			if !ok {
+				return 0, false
+			}
+		}
+		expectDigit = false
+		seen = true
+		val = val*10 + int64(d)
+		if val > math.MaxInt64/10+1 {
+			return 0, false
+		}
+	}
+	if !seen || expectDigit {
+		return 0, false
+	}
+	if neg {
+		return -val, true
+	}
+	return val, true
 }
 
 func isBool(v any) bool { _, ok := v.(bool); return ok }

@@ -109,6 +109,7 @@ func isFalsy(v any) bool {
 }
 
 // toF مثلِ float(v) درِ fts_engine/_f: بی‌عدد ⇒ 0.0 (پایتون هم همین‌جا جز می‌گیرد).
+// NaN هم 0.0 می‌شود (`x if x == x else 0.0`) ولی ±Inf می‌ماند.
 func toF(v any) float64 {
 	switch x := v.(type) {
 	case nil:
@@ -120,9 +121,16 @@ func toF(v any) float64 {
 		}
 		return f
 	case float64:
+		if math.IsNaN(x) {
+			return 0
+		}
 		return x
 	case float32:
-		return float64(x)
+		f := float64(x)
+		if math.IsNaN(f) {
+			return 0
+		}
+		return f
 	case int:
 		return float64(x)
 	case int64:
@@ -134,7 +142,7 @@ func toF(v any) float64 {
 		return 0
 	case string:
 		f, err := strconv.ParseFloat(strings.TrimSpace(x), 64)
-		if err != nil {
+		if err != nil || math.IsNaN(f) {
 			return 0
 		}
 		return f

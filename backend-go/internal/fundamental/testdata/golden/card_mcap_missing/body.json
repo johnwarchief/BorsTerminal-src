@@ -1,0 +1,499 @@
+{
+ "status": "success",
+ "symbol": "نگهبان03",
+ "sector": "خودرو",
+ "pricing_mode": "mandatory",
+ "score": 0,
+ "verdict": "EXCLUDED",
+ "applicable": true,
+ "excluded": true,
+ "exclusion_reasons": [
+  "قیمت‌گذاری دستوری — حذف خودکار"
+ ],
+ "passes": {
+  "1_growth": false,
+  "2_eps_trend": false,
+  "3_gross_margin": false,
+  "4_sales_to_mcap": false,
+  "5_industry": false,
+  "1a_monetary_growth": false,
+  "1b_volume_growth": false,
+  "4a_sales_to_mcap": false,
+  "4b_profit_potential": false
+ },
+ "states": {
+  "1_growth": null,
+  "2_eps_trend": null,
+  "3_gross_margin": null,
+  "4_sales_to_mcap": null,
+  "5_industry": false
+ },
+ "methodology": {
+  "version": "FTS-v10",
+  "axes": 5,
+  "layer_1_subchecks": [
+   "1a_monetary",
+   "1b_volume"
+  ],
+  "annualization": "sales_ytd * (12 / elapsed_months)",
+  "thresholds": {
+   "monetary_growth_min": 40.0,
+   "monetary_growth_target": 60.0,
+   "volume_growth_min": 0.0,
+   "volume_breadth_min": 0.6,
+   "eps_years": 3,
+   "margin_min": 20.0,
+   "margin_ideal": 30.0,
+   "sales_to_mcap_min": 0.33,
+   "potential_min": 40.0,
+   "inflation_basis": 60.0,
+   "inflation_benchmark": 60.0
+  }
+ },
+ "profile": {
+  "kind": "production",
+  "label": "تولیدی / صادراتی",
+  "revenue_basis": "تولیدی/عمرانی — جمع فروش داخلی + صادراتی (ردیف «جمع» جدول فروش)",
+  "volume_applicable": true,
+  "volume_note": "تناژ/تعداد محصول در گزارش فعالیت ماهانه معنادار است؛ رشد ریالی بدون رشد تناژ = افزایش قیمت.",
+  "pricing_note": "درآمد به دلار/بورس کالا گره خورده (صادراتی)."
+ },
+ "indicators": {
+  "1": {
+   "monetary": {
+    "monetary_pct": null,
+    "pass": false,
+    "data_gap": true,
+    "series": [],
+    "threshold": 40.0,
+    "revenue_basis": "تولیدی/عمرانی — جمع فروش داخلی + صادراتی (ردیف «جمع» جدول فروش)",
+    "reason": "هیچ گزارش فعالیت ماهانه‌ای با فروش تجمیعی ثبت نشده است.",
+    "remediation": "با گرفتنِ دیتابیس تازهٔ کدال (دکمهٔ «دیتابیس کدال» در جدول غربالگری) گزارش‌های ماهانهٔ جاافتاده اضافه می‌شود.",
+    "source": "کدال — گزارش فعالیت ماهانه",
+    "unit": null,
+    "unit_note": "جدولِ فروشِ ماهانه ستونِ واحدِ پول ندارد؛ مقیاسش تنها با فروشِ سالانۀ کدال (گیتِ واحدِ مشکوک) سنجیده می‌شود",
+    "rule_ref": "F-01"
+   },
+   "volume": {
+    "quantity_verified": false,
+    "basis": "unavailable",
+    "confidence": "none",
+    "volume_pct": null,
+    "real_pct": null,
+    "implied_price_pct": null,
+    "price_benchmark_pct": 60.0,
+    "breadth": null,
+    "threshold": 0.0,
+    "applicable": true,
+    "pass": false,
+    "data_gap": true,
+    "revenue_basis": "تولیدی/عمرانی — جمع فروش داخلی + صادراتی (ردیف «جمع» جدول فروش)",
+    "note": "تناژ/تعداد محصول در گزارش فعالیت ماهانه معنادار است؛ رشد ریالی بدون رشد تناژ = افزایش قیمت.",
+    "reason": "رشد ریالی محاسبه نشد؛ رشد تولیدی هم قابل بررسی نیست.",
+    "rule_ref": "F-01b"
+   },
+   "pass": false
+  },
+  "2": {
+   "eps_series": null,
+   "pass": false,
+   "data_gap": true,
+   "years_required": 3,
+   "years_available": 0,
+   "evidence_tier": "insufficient",
+   "strict_evidence": false,
+   "relaxed_evidence": false,
+   "consolidated_used": false,
+   "low_quality_track": false,
+   "soft_gap": false,
+   "reason": "هیچ صورت مالیِ معتبری با EPS ثبت نشده.",
+   "partial": false,
+   "available_periods": 0,
+   "periods_missing": 3,
+   "period_slots": [],
+   "eps_yoy_pct": [],
+   "interim": {
+    "available": false,
+    "reason": "صورت مالی میاندوره‌ایِ غیرتلفیقی ثبت نشده."
+   },
+   "interim_confirms": null,
+   "eps_basis": "شاهدِ کافی برای مسیر EPS موجود نیست (میاندورهٔ مستقلِ راستی‌آزمایی موجود نیست)",
+   "threshold": "3 سال مالی متوالی",
+   "source": "کدال — صورت سود و زیان (حسابرسی شده، شرکت اصلی)",
+   "rule_ref": "F-02"
+  },
+  "3": {
+   "margin_pct": null,
+   "pass": false,
+   "ideal": false,
+   "na": true,
+   "band": "not_applicable",
+   "threshold": 20.0,
+   "ideal_threshold": 30.0,
+   "optimal": false,
+   "data_gap": true,
+   "reason": "صورت مالی سالانهٔ این نماد در پایگاه کدال ما نیست؛ تا آن نیاید، سود ناخالص و در نتیجه حاشیه محاسبه نمی‌شود.",
+   "remediation": "با دکمهٔ «دیتابیس کدال» صورت‌های مالی این نماد را تازه کنید؛ این شکاف با انتشار گزارش بعدی هم خودبه‌خود بسته می‌شود.",
+   "rule_ref": "F-03"
+  },
+  "4": {
+   "available": false,
+   "na": true,
+   "gap_cause": "annual_sales",
+   "pass": false,
+   "potential_pass": false,
+   "sales_pass": false,
+   "mcap_ht": 0.0,
+   "potential_threshold": 40.0,
+   "sales_threshold": 0.33,
+   "reason": "ارزش بازار از اسنپ‌شاتِ رسمیِ TSETMC خوانده نشد (market_cap_missing_value)؛ فروش÷ارزش و پتانسیل سود محاسبه نمیشوند — پیش از «گزارش ماهانه»، تابلوخوانیِ این نماد باید تازه شود.",
+   "annual": null,
+   "market_cap_source": null,
+   "market_cap_error": "market_cap_missing_value",
+   "market_cap_asof": 20261014,
+   "market_cap_stale": false,
+   "data_gap": true
+  },
+  "5": {
+   "verdict": "mandatory",
+   "label": "قیمت‌گذاری دستوری",
+   "sector": "خودرو",
+   "matched_tokens": [
+    "خودرو"
+   ],
+   "fts_top_industry": true,
+   "pass": false,
+   "exclusion_active": true,
+   "market_share_pct": 0.0,
+   "outlook": "قیمت‌گذاری دستوری — نرخ توسط شورای رقابت/دولت تعیین میشود؛ رشد فروش بدون مجوز افزایش نرخ عملاً ممکن نیست و افزایش حاشیه مشمول مجوز است. استراتژی FTS این گروه را از سبد بیرون می‌گذارد.",
+   "regime_label": "دستوری",
+   "rule_ref": "F-05"
+  }
+ },
+ "metrics": {
+  "mcap": 0.0,
+  "mcap_source": null,
+  "mcap_asof": 20261014,
+  "mcap_stale": false,
+  "mcap_error": "market_cap_missing_value",
+  "mcap_hmt": null,
+  "annual_sales_bt": null,
+  "revenue": null,
+  "sales_to_mcap": null,
+  "ps": null,
+  "gross_margin": null,
+  "net_margin": null,
+  "growth_pct": null,
+  "monetary_growth_pct": null,
+  "volume_growth_pct": null,
+  "real_growth_pct": null,
+  "volume_basis": "unavailable",
+  "quantity_verified": false,
+  "eps_series": null,
+  "eps_slots": [],
+  "eps_partial": false,
+  "eps_available": 0,
+  "eps_required": 3,
+  "eps_projected_year": null,
+  "profit_potential_pct": null,
+  "potential_pct": null,
+  "months_used": null,
+  "scale_factor": null,
+  "roe": null
+ },
+ "insights": [
+  {
+   "step": "۰",
+   "title": "حذف خودکار از غربالگری FTS",
+   "type": "danger",
+   "text": "⚠️ قیمت‌گذاری دستوری — حذف خودکار"
+  },
+  {
+   "step": "۱",
+   "title": "لایهٔ ۱ — درآمد/فروش (رشد ریالی + تأیید حجم)",
+   "type": "warning",
+   "text": "⚠️ ۱الف رشد ریالی: داده موجود نیست (هیچ گزارش فعالیت ماهانه‌ای با فروش تجمیعی ثبت نشده است.)<br>⚠️ ۱ب رشد تولیدی: رشد ریالی محاسبه نشد؛ رشد تولیدی هم قابل بررسی نیست."
+  },
+  {
+   "step": "۲",
+   "title": "لایهٔ ۲ — سابقهٔ ۳ سالهٔ سودسازی (EPS)",
+   "type": "warning",
+   "text": "⚠️ سابقه EPS در دسترس نیست — هیچ صورت مالیِ معتبری با EPS ثبت نشده."
+  },
+  {
+   "step": "۳",
+   "title": "لایهٔ ۳ — حاشیهٔ سود ناخالص",
+   "type": "info",
+   "text": "ℹ️ صورت مالی سالانهٔ این نماد در پایگاه کدال ما نیست؛ تا آن نیاید، سود ناخالص و در نتیجه حاشیه محاسبه نمی‌شود."
+  },
+  {
+   "step": "۴",
+   "title": "لایهٔ ۴ — پتانسیل سود سالانه به ارزش بازار",
+   "type": "warning",
+   "text": "⚠️ ارزش بازار از اسنپ‌شاتِ رسمیِ TSETMC خوانده نشد (market_cap_missing_value)؛ فروش÷ارزش و پتانسیل سود محاسبه نمیشوند — پیش از «گزارش ماهانه»، تابلوخوانیِ این نماد باید تازه شود."
+  },
+  {
+   "step": "۵",
+   "title": "لایهٔ ۵ — رژیم قیمت‌گذاری صنعت و چشم‌انداز",
+   "type": "danger",
+   "text": "🚫 قیمت‌گذاری دستوری: گروه «خودرو» مشمول نرخ‌گذاری دستوری است · تگ: خودرو"
+  }
+ ],
+ "details": {
+  "۱": {
+   "title": "درآمد/فروش — رشد ریالی (۱الف) + تأیید حجم (۱ب)",
+   "formula": "۱الف = (تجمیعی دوره ÷ تجمیعی همان دورهٔ سال قبل) × ۱۰۰ − ۱۰۰ · پاس ≥ 40٪ · ۱ب = رشد کمیت ≥ 0٪ یا رشد واقعیِ پس از تورم ≥ 0٪ · پهنای رشد (0/0 ماه) فقط نمایشی است، دروازۀ امتیاز نیست",
+   "source": "کدال — گزارش فعالیت ماهانهٔ منتهی به — | مخرج: — | طبقهٔ شرکت: تولیدی / صادراتی",
+   "calc": "— ÷ — میلیارد تومان = — | ۱ب: مبنای unavailable → رشد واقعی — (مبنای نرخ 60٪)",
+   "what": "تولیدی/عمرانی — جمع فروش داخلی + صادراتی (ردیف «جمع» جدول فروش)<br>تناژ/تعداد محصول در گزارش فعالیت ماهانه معنادار است؛ رشد ریالی بدون رشد تناژ = افزایش قیمت.<br>شواهد حجم: —",
+   "subchecks": [
+    {
+     "key": "1a",
+     "label": "رشد ریالی",
+     "state": "nodata",
+     "value": "—",
+     "threshold": "≥ 40٪",
+     "detail": "تجمیعی — ÷ — میلیارد تومان (—)"
+    },
+    {
+     "key": "1b",
+     "label": "رشد تولیدی / تناژ",
+     "state": "nodata",
+     "value": "—",
+     "threshold": "≥ 0٪",
+     "verified": false,
+     "confidence": "none",
+     "detail": "unavailable (اطمینان none)"
+    }
+   ]
+  },
+  "۲": {
+   "title": "سابقهٔ سودسازی (EPS سه سال + تداوم میاندوره)",
+   "formula": "EPSy > EPSy−1 > EPSy−2 · 3 سال مالیِ متوالی · مبنای امروزی: مبنای معتبری یافت نشد · تداوم: EPS میاندوره × ۱۲÷م ≥ آخرین EPS سال‌پایان",
+   "source": "کدال — صورت سود و زیان (حسابرسی شده، شرکت اصلی)",
+   "calc": "EPS: - | - | - | متوالی: خیر | مثبت: خیر | میاندوره — → برآورد سال — (تعداد نامعلوم)",
+   "period_row": {
+    "label": "شاخص ۲",
+    "cells": [
+     "-",
+     "-",
+     "-"
+    ],
+    "markdown": "| شاخص ۲ | - | - | - |",
+    "red": false,
+    "available": 0,
+    "required": 3,
+    "periods": [
+     {
+      "year": "—",
+      "value": "-",
+      "missing": true
+     },
+     {
+      "year": "—",
+      "value": "-",
+      "missing": true
+     },
+     {
+      "year": "—",
+      "value": "-",
+      "missing": true
+     }
+    ]
+   },
+   "what": "لایهٔ سختِ v8 (فقط ۱۲ماههٔ حسابرسی‌شدهٔ غیرتلفیقی) روی این دیتابیس برای نمادهای زیادی صفر رکورد می‌دهد؛ نسخهٔ ۱۰ همان مسیر را با سال‌پایان و میاندوره می‌سنجد ولی هر تنزلِ شاهد را صریح برچسب میزند تا کاربر بداند EPS از کدالِ غیرتلفیقیِ حسابرسی‌شده آمده یا از جایگزین‌های ضعیف‌تر. تداومِ سال جاری هشدارِ نرم است، وتوی سخت نه. در کمبودِ دوره هم سطر حذف نمیشود: مقدارِ موجود می‌آید و جایِ دورهٔ غایب «-» با سطرِ قرمز. هر اسلاتِ **تلفیقی** رأیِ ۱۳ را می‌گیرد: شاخص داوری نمی‌شود (N/A)، چون جزوه (ص ۴) صورتِ تلفیقی را مبنایِ سابقۀ سودسازی نمی‌داند.",
+   "subchecks": [
+    {
+     "key": "2a",
+     "label": "سابقهٔ ۳ سالهٔ EPS",
+     "state": "nodata",
+     "value": "- ← - ← -",
+     "threshold": "3 سال صعودی",
+     "partial": false,
+     "available_periods": 0,
+     "periods": [
+      {
+       "year": "—",
+       "value": "-",
+       "missing": true
+      },
+      {
+       "year": "—",
+       "value": "-",
+       "missing": true
+      },
+      {
+       "year": "—",
+       "value": "-",
+       "missing": true
+      }
+     ],
+     "row": "| شاخص ۲ | - | - | - |",
+     "detail": "— - | — - | — -"
+    },
+    {
+     "key": "2b",
+     "label": "تداوم در دورهٔ میاندوره‌ای",
+     "state": "na",
+     "value": "—",
+     "threshold": "برآورد ≥ آخرین EPS سال‌پایان",
+     "detail": "— · دوره —"
+    }
+   ]
+  },
+  "۳": {
+   "title": "حاشیهٔ سود ناخالص",
+   "formula": "حاشیه = (سود ناخالص ÷ درآمدهای عملیاتی) × ۱۰۰ · ایده‌آل ≥ 30٪ · قابل‌قبول ≥ 20٪",
+   "source": "کدال — صورت سود و زیان سالانهٔ — (—)",
+   "calc": "سود ناخالص — ÷ درآمدهای عملیاتی — × ۱۰۰ = — (باند: not_applicable)",
+   "what": "سود ناخالص = درآمدهای عملیاتی − بهای تمام‌شدهٔ کالای فروش‌رفته؛ سود عملیاتی و سود خالص در این لایه نقشی ندارند.",
+   "subchecks": [
+    {
+     "key": "3",
+     "label": "حاشیهٔ ناخالص",
+     "state": "na",
+     "value": "—",
+     "threshold": "≥ 20٪ (ایده‌آل 30٪)",
+     "detail": "باند: not_applicable"
+    }
+   ]
+  },
+  "۴": {
+   "title": "پتانسیل سود با سالانه‌سازیِ پویا",
+   "formula": "م = ماه‌های سپری‌شده از گزارش ماهانه (۱…۱۲) · فروش سالانه = تجمیعی × (۱۲ ÷ م) · سود ناخالص پتانسیل = فروش سالانه × حاشیهٔ ناخالص · نسبت پتانسیل = سود پتانسیل ÷ ارزش بازار ≥ 40٪ · فروش ÷ ارزش بازار ≥ 0.33×",
+   "source": "ارزش بازار: TSETMC (تعداد سهام × قیمت پایانی = 0.00 همت) | فروش و حاشیه: کدال — گزارش فعالیت ماهانه + صورت مالی سالانه",
+   "calc": "م = 0 → ضریب × — | — | سود ناخالص پتانسیل — میلیارد تومان ÷ ارزش بازار 0.00 همت = — | مبنای حاشیه: —",
+   "what": "ضریب سالانه‌سازی ثابت نیست: ۳ ماه ×۴، ۴ ماه ×۳، ۵ ماه ×۲٫۴، ۶ ماه ×۲ … — تا نمادی که ۵ ماه از سال مالی‌اش گذشته با فروشِ ۵ ماه قضاوت نشود. پتانسیل سود روی «سود ناخالص» است نه سود خالص، تا اوراق‌بهادار و مواردِ مالیِ یک‌باره در آن راه نیابد.",
+   "subchecks": [
+    {
+     "key": "4a",
+     "label": "فروش سالانه ÷ ارزش بازار",
+     "state": "nodata",
+     "value": "—",
+     "threshold": "≥ 0.33×",
+     "detail": "فروش سالانه — میلیارد تومان (× — برای 0 ماه)"
+    },
+    {
+     "key": "4b",
+     "label": "پتانسیل سود ناخالص ÷ ارزش بازار",
+     "state": "nodata",
+     "value": "—",
+     "threshold": "≥ 40٪",
+     "detail": "— × — = — میلیارد تومان"
+    }
+   ]
+  },
+  "۵": {
+   "title": "رژیم قیمت‌گذاری صنعت",
+   "formula": "حالتِ پنل: Exclude_Mandatory_Pricing · «دستوری» مردود است مگر حالت Rank_Only انتخاب شود",
+   "source": "گروه صنعت: TSETMC (sector_name) | فهرست صنایع: پنل تنظیمات کدال",
+   "calc": "طبقه: mandatory | تگ خورده: خودرو | حکم: مردود | سهم از کل بازار: 0.000٪ (تکمیلی)",
+   "what": "قیمت‌گذاری دستوری — نرخ توسط شورای رقابت/دولت تعیین میشود؛ رشد فروش بدون مجوز افزایش نرخ عملاً ممکن نیست و افزایش حاشیه مشمول مجوز است. استراتژی FTS این گروه را از سبد بیرون می‌گذارد.",
+   "subchecks": [
+    {
+     "key": "5",
+     "label": "رژیم قیمت‌گذاری",
+     "state": "fail",
+     "value": "دستوری",
+     "threshold": "غیردستوری",
+     "detail": "خودرو"
+    }
+   ]
+  }
+ },
+ "data_gaps": [
+  {
+   "layer": "۱الف",
+   "axis": "1a_monetary_growth",
+   "why": "هیچ گزارش فعالیت ماهانه‌ای با فروش تجمیعی ثبت نشده است.",
+   "fix": "با گرفتنِ دیتابیس تازهٔ کدال (دکمهٔ «دیتابیس کدال» در جدول غربالگری) گزارش‌های ماهانهٔ جاافتاده اضافه می‌شود."
+  },
+  {
+   "layer": "۱ب",
+   "axis": "1b_physical_volume",
+   "why": "رشد ریالی محاسبه نشد؛ رشد تولیدی هم قابل بررسی نیست.",
+   "fix": "با همگام‌سازیِ گزارش فعالیت ماهانه (مخرجِ همان دورهٔ سال قبل) این محور ساخته می‌شود."
+  },
+  {
+   "layer": "۲",
+   "axis": "2_eps_trend",
+   "why": "هیچ صورت مالیِ معتبری با EPS ثبت نشده.",
+   "available_periods": 0,
+   "required_periods": 3,
+   "partial": false,
+   "fix": "با گرفتنِ دیتابیس تازهٔ کدال، صورت‌های ۱۲ماههٔ سال‌های قدیمی‌ترِ همین نماد اضافه می‌شود."
+  },
+  {
+   "layer": "۳",
+   "axis": "3_gross_margin",
+   "why": "صورت مالی سالانهٔ این نماد در پایگاه کدال ما نیست؛ تا آن نیاید، سود ناخالص و در نتیجه حاشیه محاسبه نمی‌شود.",
+   "fix": "با دکمهٔ «دیتابیس کدال» صورت‌های مالی این نماد را تازه کنید؛ این شکاف با انتشار گزارش بعدی هم خودبه‌خود بسته می‌شود."
+  }
+ ],
+ "secondary": {
+  "طبقهٔ شرکت": "تولیدی / صادراتی — تولیدی/عمرانی — جمع فروش داخلی + صادراتی (ردیف «جمع» جدول فروش)",
+  "مبنای حجم (لایهٔ ۱ب)": "unavailable · اطمینان none · تناژ گزارش‌شده: خیر — کمیتِ گزارش‌شدۀ همان دوره در دسترس نبود؛ تعدیل تورمی مصرف شد",
+  "سالانه‌سازی (لایهٔ ۴)": "م = None ماه × ۱۲÷م = ×— — —",
+  "ارزش بازار": "موجود نیست — تابلو برای این نماد ارزش بازارِ معتبر ندارد",
+  "سهم بازار": "0.000٪ از کل بازار (تکمیلی)"
+ },
+ "history": [],
+ "thresholds": {
+  "growth_min": 40.0,
+  "eps_years": 3,
+  "margin_min": 20.0,
+  "margin_optimal": 30.0,
+  "sales_to_mcap_min": 0.33,
+  "sales_to_mcap_ideal": 1.0,
+  "profit_potential_min": 40.0,
+  "industry_mode": "Exclude_Mandatory_Pricing",
+  "mandatory_sectors": [
+   "خودرو",
+   "نیروگاه",
+   "قند و شکر",
+   "لاستیک",
+   "شوینده",
+   "بیمه"
+  ],
+  "free_sectors": [
+   "سیمان",
+   "پتروشیمی",
+   "شیمیایی",
+   "فلزات",
+   "کانی",
+   "کاشی",
+   "سرامیک",
+   "شیشه",
+   "کانه",
+   "معادن",
+   "نفت",
+   "محصولات فلزی"
+  ],
+  "watchlist_max": 50,
+  "mcap_min_hmt": 0.0,
+  "holdings_sales_na": true,
+  "pharma_margin_exempt_min": 0.0,
+  "exclude_base_market": true,
+  "exclude_rejected_indicators": [],
+  "suspended_max_stale_sessions": 3,
+  "filter_m141": false,
+  "min_trade_val": 0.0,
+  "v10_monetary_growth_min": 60.0,
+  "v10_inflation_basis": 60.0,
+  "v10_volume_growth_min": 0.0,
+  "v10_volume_breadth_min": 0.6,
+  "v10_eps_years": 3,
+  "v10_margin_min": 20.0,
+  "v10_margin_ideal": 30.0,
+  "v10_sales_to_mcap_min": 0.33,
+  "v10_potential_min": 40.0,
+  "include_industries": [],
+  "exclude_industries": [],
+  "hourglass_rsi_period": 7,
+  "hourglass_rsi_oversold": 30.0,
+  "hourglass_ma52_position": "below"
+ },
+ "ref_symbol": null,
+ "ref_reason": null,
+ "fs_count": 0
+}

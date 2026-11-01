@@ -33,7 +33,6 @@ import (
 	"errors"
 	"math"
 	"sort"
-	"strconv"
 	"strings"
 
 	"borsterminal/backend/internal/period"
@@ -181,10 +180,15 @@ func (s *Service) AnnualStatements(ctx context.Context, symbol string,
 		// جعلی نمی‌سازد.
 		pred, args = "symbol = ?", []any{symbol}
 	}
+	// پنجره عمداً بزرگ است: `max(int(limit),1)*12+48` — عینِ
+	// `fts_engine.annual_statements` (fts_engine.py:814). سقفِ ۱۲ (خودِ limit)
+	// باعث می‌شد صورتِ مالیِ حسابرسی‌شدۀ کهنه‌تر از ردیفِ دوازدهم هرگز
+	// دیده نشود و `reference_annual` به تنزل (تلفیقی/حسابرسی‌نشده) بغلتد.
 	window := limit
 	if window < 1 {
 		window = 1
 	}
+	window = window*12 + 48
 	query := "SELECT " + stmtFsColumns + " FROM financial_statements WHERE " +
 		pred + " AND " + period.DatedSQL("") +
 		// پیش‌فیلترِ SQL فقط «حداکثرِ ممکن» را نگه می‌دارد (بندِ ۲.۳ سیاست).
@@ -262,41 +266,16 @@ func (s *Service) AnnualStatements(ctx context.Context, symbol string,
 // stmtFloatOrNull عینِ `_fn` (:1055) — «قابل‌سکوت»: None واقعی حفظ می‌شود، چون
 // «درج نشده» بودنِ سودِ ناخالصِ بانک/صندوق معنا دارد و صفر کردنش شاخص ۳ را از
 // «نامفهوم» به «۰٪» می‌برد. NaN هم None است (`x == x` درِ پایتون).
+//
+// تبدیل از تعریفِ یکتایِ `float()` می‌آید (`asFloat` درِ config.go): رقمِ یونیکد
+// و زیرخط هم پذیرفته می‌شوند، پس EPSِ متنیِ «۱۲۵» مثلِ پایتون ۱۲۵ است و نه
+// «بی‌داده» — وگرنه ردیف از نردبانِ EPS و از رتبه‌بندیِ ردیفِ مرجع می‌افتاد.
 func stmtFloatOrNull(v any) any {
-	f, ok := stmtParseFloat(v)
+	f, ok := asFloat(v)
 	if !ok || math.IsNaN(f) {
 		return nil
 	}
 	return f
-}
-
-// stmtParseFloat همان `float(v)` با هر دو exceptِ پایتون؛ برخلافِ `toF` صفرِ
-// جعلی نمی‌سازد تا مصرف‌کننده بتواند «تبدیل نشد» را ببیند.
-func stmtParseFloat(v any) (float64, bool) {
-	switch x := v.(type) {
-	case nil:
-		return 0, false
-	case float64:
-		return x, true
-	case float32:
-		return float64(x), true
-	case int:
-		return float64(x), true
-	case int64:
-		return float64(x), true
-	case bool:
-		if x {
-			return 1, true
-		}
-		return 0, true
-	case string:
-		f, err := strconv.ParseFloat(trimSpace(x), 64)
-		if err != nil {
-			return 0, false
-		}
-		return f, true
-	}
-	return 0, false
 }
 
 // ── pick_reference / reference_annual (fts_engine:943-1024) ─────────────────

@@ -316,20 +316,21 @@ func (s *Service) RiskGates(ctx context.Context, symbol, sector string, mcapRial
 		reasons = append(reasons, "صنعت بیمه — حذف خودکار")
 	}
 	// `int(cfg.get("suspended_max_stale_sessions", 3) or 3)` — نبودِ کلید ۳،
-	// و هر ارزشِ کاذبِ دیگری (از جمله ۰ِ کاربر) هم ۳ می‌شود.
+	// و هر ارزشِ کاذبِ دیگری (از جمله ۰ِ کاربر) هم ۳ می‌شود. اگر `int()`
+	// خطا بدهد (مقدارِ حقیقیِ غیرعددی)، پایتون کلِ بلوکِ تعلیق را می‌پوشاند
+	// (`except Exception: pass`) ⇒ نه دلیلی می‌آید، نه خطایی.
 	rawStale, had := cfg["suspended_max_stale_sessions"]
 	if !had {
 		rawStale = 3
 	}
-	stale := 3
-	if truthy(rawStale) {
-		if i, ok := toI(rawStale); ok {
-			stale = int(i)
-		}
+	if !truthy(rawStale) {
+		rawStale = 3
 	}
-	susp, err := s.IsSuspended(ctx, symbol, stale, nil)
-	if err == nil && susp {
-		reasons = append(reasons, "نماد تعلیق — حذف خودکار")
+	if stale, ok := pyIntStrict(rawStale); ok {
+		susp, err := s.IsSuspended(ctx, symbol, int(stale), nil)
+		if err == nil && susp {
+			reasons = append(reasons, "نماد تعلیق — حذف خودکار")
+		}
 	}
 	// ۱) ماده ۱۴۱ — وقتی روشن است، نمادِ مشمول فوراً از واچ‌لیست بیرون می‌رود.
 	if truthy(cfg["filter_m141"]) {

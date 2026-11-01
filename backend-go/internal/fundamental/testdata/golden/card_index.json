@@ -1,0 +1,206 @@
+{
+ "version": 1,
+ "route": "GET /api/fundamental/{symbol}",
+ "generated_by": "tools/parity/gen_fundamental_card_golden.py",
+ "python_commit": "32d1371f5956fbc0540194f920f8731edbe215fb",
+ "pinned_today": "2026-10-28",
+ "fixture": {
+  "dir": "backend-go/internal/fundamental/testdata/fixture",
+  "market_db_sha256": "7cee7d1cf4fc132e64e5b9a4e898fd573e9e89dae042dadbebbec6cd54022fc6",
+  "user_db_sha256": "18f3ac1bfb6c0d6bbd9f88dcfa01d6e006aeeca52c08ba3fed4f510acc6dc618"
+ },
+ "cases": [
+  {
+   "name": "card_up",
+   "symbol": "عادی01",
+   "route": "GET /api/fundamental/عادی01",
+   "branch": "چهار محور از پنج محور قبول (score=4، حکمِ WATCH)؛ شش صورتِ مالیِ سالانه و ارزشِ بازار از اسنپ‌شاتِ رسمی",
+   "settings": null,
+   "body": "card_up/body.json",
+   "meta": "card_up/meta.json",
+   "sha256": "f099b6f99ee88d312b86298d739915fbe9d0553d3a15f6f703cfff55034e1bcb",
+   "bytes": 27898,
+   "verdict": "WATCH",
+   "score": 4,
+   "applicable": true
+  },
+  {
+   "name": "card_up_score5",
+   "symbol": "عادی01",
+   "route": "GET /api/fundamental/عادی01",
+   "branch": "هر پنج محور قبول (score=5، حکمِ STRONG) — با مبنای تورمِ 40 درصد رشدِ واقعی مثبت می‌شود؛ با پیش‌فرضِ 60 درصد همین نماد چهار از پنج محور را قبول است (نگاه به card_up)",
+   "settings": {
+    "v10_inflation_basis": 40.0
+   },
+   "body": "card_up_score5/body.json",
+   "meta": "card_up_score5/meta.json",
+   "sha256": "97ecf950047af033085ec8ab92a74f083963758b469793411e621185e19aa4cc",
+   "bytes": 27631,
+   "verdict": "STRONG",
+   "score": 5,
+   "applicable": true
+  },
+  {
+   "name": "card_down",
+   "symbol": "پایین02",
+   "route": "GET /api/fundamental/پایین02",
+   "branch": "دو محورِ ردِ واقعی: EPSِ نزولی و حاشیۀ ناخالصِ 11 درصد ⇒ حکمِ REJECT با score=2",
+   "settings": null,
+   "body": "card_down/body.json",
+   "meta": "card_down/meta.json",
+   "sha256": "a41ac12c1987c2e2990bacc49c0cd4f9a4bbaf18331080ec784fe892953b368b",
+   "bytes": 26980,
+   "verdict": "REJECT",
+   "score": 2,
+   "applicable": true
+  },
+  {
+   "name": "card_fund",
+   "symbol": "اهرم‌ب",
+   "route": "GET /api/fundamental/اهرم‌ب",
+   "branch": "صندوق: applicable=false، حکمِ «FTS ندارد» و score=null",
+   "settings": null,
+   "body": "card_fund/body.json",
+   "meta": "card_fund/meta.json",
+   "sha256": "f6223c8fd5b36c5d5c4d9c1eb2321fa45d7c51da6f1b8e8a680f91e9cf094d0f",
+   "bytes": 26334,
+   "verdict": "FTS ندارد",
+   "score": null,
+   "applicable": false
+  },
+  {
+   "name": "card_thin",
+   "symbol": "کم‌سابقه11",
+   "route": "GET /api/fundamental/کم‌سابقه11",
+   "branch": "گپِ داده درِ محورهای 1، 2 و 3: سه‌حالۀ null در برابر False، نه صفرِ ساختگی",
+   "settings": null,
+   "body": "card_thin/body.json",
+   "meta": "card_thin/meta.json",
+   "sha256": "a7fc1c47a4c3ac23b25956bfdbf29d5721a60fabec06ad5bdda57d4121b3524c",
+   "bytes": 22799,
+   "verdict": "REJECT",
+   "score": 1,
+   "applicable": true
+  },
+  {
+   "name": "card_mixed",
+   "symbol": "متنوع01",
+   "route": "GET /api/fundamental/متنوع01",
+   "branch": "نمادِ فقط-کدال: ارزشِ بازار «موجود نیست» (symbol_not_on_board) و محورِ 3 با na=true؛ تله‌های ترتیب و نوشتارِ تاریخ هم درِ همان بدنه‌اند",
+   "settings": null,
+   "body": "card_mixed/body.json",
+   "meta": "card_mixed/meta.json",
+   "sha256": "452c744a5edd624b0c74a7eb52e79d642f950ee5b20435acb447ec55cf6cbf89",
+   "bytes": 22869,
+   "verdict": "REJECT",
+   "score": 1,
+   "applicable": true
+  },
+  {
+   "name": "card_mcap_missing",
+   "symbol": "نگهبان03",
+   "route": "GET /api/fundamental/نگهبان03",
+   "branch": "ستونِ ارزشِ بازار هست ولی مقدارِ آن ندارد (market_cap_missing_value) و نماد به‌خاطرِ قیمت‌گذاریِ دستوری از غربالگری حذف شده است",
+   "settings": null,
+   "body": "card_mcap_missing/body.json",
+   "meta": "card_mcap_missing/meta.json",
+   "sha256": "ba88e57f6f8d9867d2190b09d08fa3215361ba2d9cf0a1aca70453cc9d9fc979",
+   "bytes": 21244,
+   "verdict": "EXCLUDED",
+   "score": 0,
+   "applicable": true
+  },
+  {
+   "name": "card_no_board_row",
+   "symbol": "غایب",
+   "route": "GET /api/fundamental/غایب",
+   "branch": "نماد درِ instruments هست ولی ردیفِ تابلو ندارد ⇒ ارزشِ بازارِ بدونِ asof و متنِ «موجود نیست»",
+   "settings": null,
+   "body": "card_no_board_row/body.json",
+   "meta": "card_no_board_row/meta.json",
+   "sha256": "a0285eb1fd9e37c56e795d792f2c27637eef0e0d9c0333f1ab5bcd5e65fd2879",
+   "bytes": 20532,
+   "verdict": "REJECT",
+   "score": 1,
+   "applicable": true
+  },
+  {
+   "name": "card_holding",
+   "symbol": "سخت05",
+   "route": "GET /api/fundamental/سخت05",
+   "branch": "نمادِ تابلوییِ بی‌دادۀ کدال درِ صنعتِ سرمایه‌گذاری ⇒ محورِ 4 معاف (N/A)",
+   "settings": null,
+   "body": "card_holding/body.json",
+   "meta": "card_holding/meta.json",
+   "sha256": "ca3168de9b19fc9c1c9277e504b8892b7dfb78b2448a57832345c2449d8019dc",
+   "bytes": 21566,
+   "verdict": "REJECT",
+   "score": 1,
+   "applicable": true
+  },
+  {
+   "name": "card_no_sales",
+   "symbol": "کدبه‌کد09",
+   "route": "GET /api/fundamental/کدبه‌کد09",
+   "branch": "فروشِ سالانۀ راستی‌آمایی‌شده ندارد ⇒ محورِ 4 «سنجیده نشد» (نه رد)",
+   "settings": null,
+   "body": "card_no_sales/body.json",
+   "meta": "card_no_sales/meta.json",
+   "sha256": "1128e8513e68af89cec0cd84b8909fb58e6389d911b867d1d72dfb7428847da0",
+   "bytes": 20761,
+   "verdict": "REJECT",
+   "score": 1,
+   "applicable": true
+  },
+  {
+   "name": "card_not_found",
+   "symbol": "نیست۰۱",
+   "route": "GET /api/fundamental/نیست۰۱",
+   "branch": "نمادِ ناشناخته ⇒ 404 با شکلِ خودِ مسیر",
+   "settings": null,
+   "body": "card_not_found/body.json",
+   "meta": "card_not_found/meta.json",
+   "sha256": "e3759664f50d872ee96ff764c86926219fe0ac294a4d1c193eb28c6c34b3b970",
+   "bytes": 59,
+   "verdict": null,
+   "score": null,
+   "applicable": null
+  },
+  {
+   "name": "card_up_months6",
+   "symbol": "عادی01",
+   "route": "GET /api/fundamental/عادی01?months=6",
+   "branch": "پارامترِ months درِ داوری اثری ندارد ⇒ بدنه عینِ card_up است",
+   "settings": null,
+   "body": "card_up_months6/body.json",
+   "meta": "card_up_months6/meta.json",
+   "sha256": "f099b6f99ee88d312b86298d739915fbe9d0553d3a15f6f703cfff55034e1bcb",
+   "bytes": 27898,
+   "verdict": "WATCH",
+   "score": 4,
+   "applicable": true
+  }
+ ],
+ "not_covered": [
+  {
+   "branch": "قراردادِ اختیار (l_val18 با «ض»)",
+   "why": "هیچ نمادِ «ض…» درِ جدولِ instrumentsِ فیکسچر نیست، پس شاخهٔ option_contract (ارجاع به نمادِ اصلی و حکمِ «FTS ندارد») هیچ بدنه‌ای ندارد."
+  },
+  {
+   "branch": "خطِ کلاسِ شماردار (پایه درِ کدال ← خطِ تابلو)",
+   "why": "قاعدۀ class_siblings تک‌رقمِ انتهایِ نام را می‌طلبد و همهٔ نام‌هایِ تابلویِ فیکسچر پسوندِ دو‌رقمی دارند («عادی01»، «ساده12» …)؛ پس هیچ جفتِ «پایه درِ کدال / خطِ شماردار درِ تابلو» درِ این بانک ساخته نمی‌شود."
+  },
+  {
+   "branch": "ستونِ ارزشِ بازار غایب (market_cap_column_missing)",
+   "why": "جدولِ market_watchِ فیکسچر ستونِ market_cap را دارد؛ ضمناً خودِ کد درِ این حالت مهاجرت را صدا می‌زند (ensure_market_cap_schema)، پس شاخه درِ اجرا ترمیم می‌شود و بدنۀ پایدار ندارد."
+  },
+  {
+   "branch": "ارزشِ بازارِ نامعتبر (market_cap_invalid_value)",
+   "why": "هیچ مقدارِ NaN/inf درِ ستونِ market_cap نیست."
+  },
+  {
+   "branch": "بانِ مردۀ تابلو (market_cap_no_live_band)",
+   "why": "تنها بانِ خالیِ فیکسچر 0/0 است و قاعدۀ mcap_dead_band_sql بانِ خالی را عمداً رد نمی‌کند (نبودِ شاهد ≠ شاهدِ بی‌اعتباری)."
+  }
+ ]
+}

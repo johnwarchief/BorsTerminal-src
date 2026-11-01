@@ -1,0 +1,27 @@
+{
+ "case": "card_thin",
+ "symbol": "کم‌سابقه11",
+ "route": "GET /api/fundamental/کم‌سابقه11",
+ "branch": "گپِ داده درِ محورهای 1، 2 و 3: سه‌حالۀ null در برابر False، نه صفرِ ساختگی",
+ "settings": null,
+ "python": {
+  "module": "api/fundamental.py",
+  "function": "get_fundamental",
+  "args": [
+   "کم‌سابقه11",
+   0
+  ],
+  "call": "api.fundamental.get_fundamental(symbol, months)"
+ },
+ "python_commit": "32d1371f5956fbc0540194f920f8731edbe215fb",
+ "fixture": {
+  "dir": "backend-go/internal/fundamental/testdata/fixture",
+  "market_db_sha256": "7cee7d1cf4fc132e64e5b9a4e898fd573e9e89dae042dadbebbec6cd54022fc6",
+  "user_db_sha256": "18f3ac1bfb6c0d6bbd9f88dcfa01d6e006aeeca52c08ba3fed4f510acc6dc618"
+ },
+ "pinned_today": "2026-10-28",
+ "body_file": "body.json",
+ "body_sha256": "a7fc1c47a4c3ac23b25956bfdbf29d5721a60fabec06ad5bdda57d4121b3524c",
+ "body_bytes": 22799,
+ "generated_by": "tools/parity/gen_fundamental_card_golden.py"
+}

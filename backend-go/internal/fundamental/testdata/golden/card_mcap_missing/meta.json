@@ -1,0 +1,27 @@
+{
+ "case": "card_mcap_missing",
+ "symbol": "نگهبان03",
+ "route": "GET /api/fundamental/نگهبان03",
+ "branch": "ستونِ ارزشِ بازار هست ولی مقدارِ آن ندارد (market_cap_missing_value) و نماد به‌خاطرِ قیمت‌گذاریِ دستوری از غربالگری حذف شده است",
+ "settings": null,
+ "python": {
+  "module": "api/fundamental.py",
+  "function": "get_fundamental",
+  "args": [
+   "نگهبان03",
+   0
+  ],
+  "call": "api.fundamental.get_fundamental(symbol, months)"
+ },
+ "python_commit": "32d1371f5956fbc0540194f920f8731edbe215fb",
+ "fixture": {
+  "dir": "backend-go/internal/fundamental/testdata/fixture",
+  "market_db_sha256": "7cee7d1cf4fc132e64e5b9a4e898fd573e9e89dae042dadbebbec6cd54022fc6",
+  "user_db_sha256": "18f3ac1bfb6c0d6bbd9f88dcfa01d6e006aeeca52c08ba3fed4f510acc6dc618"
+ },
+ "pinned_today": "2026-10-28",
+ "body_file": "body.json",
+ "body_sha256": "ba88e57f6f8d9867d2190b09d08fa3215361ba2d9cf0a1aca70453cc9d9fc979",
+ "body_bytes": 21244,
+ "generated_by": "tools/parity/gen_fundamental_card_golden.py"
+}
