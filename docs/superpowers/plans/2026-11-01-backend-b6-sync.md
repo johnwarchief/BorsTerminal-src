@@ -78,13 +78,13 @@ tools/parity/
 - `SaveSnapshot(now time.Time) (map[string]any, error)`
 - هندلر `ms.SnapshotNow` روی `POST /api/mstat/snapshot`
 
-- [ ] **Step 1: پیاده‌سازی متد `SaveSnapshot` در پکیج `mstat`**
+- [x] **Step 1: پیاده‌سازی متد `SaveSnapshot` در پکیج `mstat`**
   بررسی ساعات کاری نشست معاملاتی (`inTradingSession`)، استخراج تجمیع آخرین وضعیت بازار (`SnapshotAgg`) و درج در جدول `mstat_snap` با فرمت JSON منقبض.
-- [ ] **Step 2: نوشتن تست‌های واحد `snapshot_test.go`**
+- [x] **Step 2: نوشتن تست‌های واحد `snapshot_test.go`**
   بررسی رفتار در ساعات غیرمعاملاتی (`outside_trading_session`) و درج صحیح در دیتابیس تست SQLite.
-- [ ] **Step 3: ثبت روت `POST /api/mstat/snapshot` در `handlers.go` و `server.go`**
-- [ ] **Step 4: اجرای `go test ./internal/mstat/...` و اطمینان از سبزی تست‌ها**
-- [ ] **Step 5: کامیت تسک ۰**
+- [x] **Step 3: ثبت روت `POST /api/mstat/snapshot` در `handlers.go` و `server.go`**
+- [x] **Step 4: اجرای `go test ./internal/mstat/...` و اطمینان از سبزی تست‌ها**
+- [x] **Step 5: کامیت تسک ۰**
 
 ---
 
@@ -102,10 +102,10 @@ tools/parity/
 - متد `GetCodalDBStatus() map[string]any` برای نمایش درصد دانلود و مرحله فعلی.
 - متد `Diagnose() map[string]any` برای برگرداندن سلامت ابزارهای فرآیند و وضعیت ADB.
 
-- [ ] **Step 1: پیاده‌سازی خواندن امن و تجمیع وضعیت‌های سینک در `status.go`**
-- [ ] **Step 2: نوشتن تست‌های جامع وضعیت با داده‌های نمونه در `status_test.go`**
-- [ ] **Step 3: پیاده‌سازی `Diagnose` در `diagnose.go` و تست‌های مربوطه**
-- [ ] **Step 4: اجرای تست‌های واحد و کامیت تسک ۱**
+- [x] **Step 1: پیاده‌سازی خواندن امن و تجمیع وضعیت‌های سینک در `status.go`**
+- [x] **Step 2: نوشتن تست‌های جامع وضعیت با داده‌های نمونه در `status_test.go`**
+- [x] **Step 3: پیاده‌سازی `Diagnose` در `diagnose.go` و تست‌های مربوطه**
+- [x] **Step 4: اجرای تست‌های واحد و کامیت تسک ۱**
 
 ---
 
@@ -123,11 +123,11 @@ tools/parity/
 - متدهای `ControlCodal(cmd string)`, `TriggerMarketSync()`, `TriggerCodalSync(mode string)`
 - ثبت روت‌ها در `httpapi.Server`
 
-- [ ] **Step 1: پیاده‌سازی قفل‌های درون‌برنامه‌ای و نوشتن در `codal_control.json` در `control.go`**
-- [ ] **Step 2: پیاده‌سازی هندلرهای HTTP با اعتبارسنجی دقیق پارامترهای query و body در `handlers.go`**
-- [ ] **Step 3: اتصال پکیج `sync` به `httpapi.Server` و رجیستر کردن روت‌ها**
-- [ ] **Step 4: تست جامع هندلرها با `httptest` و اعتبارسنجی کدهای وضعیت**
-- [ ] **Step 5: کامیت تسک ۲**
+- [x] **Step 1: پیاده‌سازی قفل‌های درون‌برنامه‌ای و نوشتن در `codal_control.json` در `control.go`**
+- [x] **Step 2: پیاده‌سازی هندلرهای HTTP با اعتبارسنجی دقیق پارامترهای query و body در `handlers.go`**
+- [x] **Step 3: اتصال پکیج `sync` به `httpapi.Server` و رجیستر کردن روت‌ها**
+- [x] **Step 4: تست جامع هندلرها با `httptest` و اعتبارسنجی کدهای وضعیت**
+- [x] **Step 5: کامیت تسک ۲**
 
 ---
 
@@ -137,11 +137,11 @@ tools/parity/
 - Create: `tools/parity/cases_b6.json`
 - Create: `tools/parity/gate_b6.py`
 
-- [ ] **Step 1: تدوین سناریوهای آزمون در `cases_b6.json`**
+- [x] **Step 1: تدوین سناریوهای آزمون در `cases_b6.json`**
   - فراخوانی روت‌های وضعیت، دیاگ، اسنپ‌شات و اکشن‌های کنترل سینک.
-- [ ] **Step 2: پیاده‌سازی اسکریپت `gate_b6.py`**
+- [x] **Step 2: پیاده‌سازی اسکریپت `gate_b6.py`**
   - راه‌اندازی سرور پایتون و سرور Go با دیتابیس کپی و مسیر `BORS_DATA_DIR` ایزوله.
   - تست هم‌ارزی خروجی مسیرهای خواندنی و تریگرها.
-- [ ] **Step 3: اجرای زنده گیت `gate_b6.py` و اطمینان از خروج صفر (Exit 0)**
-- [ ] **Step 4: اجرای گاردهای رگرسیون ریپو (`persian_glyph_guard`, `version_anchor_guard`, `repo_hygiene_v97`)**
-- [ ] **Step 5: کامیت نهایی فاز B6 و به‌روزرسانی مستندات پیشرفت**
+- [x] **Step 3: اجرای زنده گیت `gate_b6.py` و اطمینان از خروج صفر (Exit 0)**
+- [x] **Step 4: اجرای گاردهای رگرسیون ریپو (`persian_glyph_guard`, `version_anchor_guard`, `repo_hygiene_v97`)**
+- [x] **Step 5: کامیت نهایی فاز B6 و به‌روزرسانی مستندات پیشرفت**

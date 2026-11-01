@@ -2,6 +2,7 @@ package sync
 
 import (
 	"context"
+	"encoding/json"
 	"math"
 	"os"
 	"os/exec"
@@ -61,6 +62,21 @@ func (d defaultProber) IsTetherUp() bool {
 	return false
 }
 
+func adbEnabled(dataDir string) bool {
+	p := filepath.Join(dataDir, "adb_config.json")
+	b, err := os.ReadFile(p)
+	if err != nil {
+		return true
+	}
+	var cfg struct {
+		Enabled *bool `json:"enabled"`
+	}
+	if err := json.Unmarshal(b, &cfg); err != nil || cfg.Enabled == nil {
+		return true
+	}
+	return *cfg.Enabled
+}
+
 // Diagnose گزارش تشخیصی فرآیندها، سن فایل وضعیت و اتصالات را تولید می‌کند.
 func Diagnose(dataDir string, now time.Time, prober DiagProber) map[string]any {
 	if prober == nil {
@@ -93,7 +109,7 @@ func Diagnose(dataDir string, now time.Time, prober DiagProber) map[string]any {
 		"app_processes":         appCount,
 		"adb_found":             adbFound,
 		"adb_device":            adbDevice,
-		"adb_enabled":           false,
+		"adb_enabled":           adbEnabled(dataDir),
 		"status_file_age_sec":   statusAge,
 		"status_frozen":         statusFrozen,
 		"adb_tether_up":         prober.IsTetherUp(),

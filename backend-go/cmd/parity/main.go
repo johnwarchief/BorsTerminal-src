@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
@@ -23,6 +24,7 @@ type testCase struct {
 	Name    string   `json:"name"`
 	Method  string   `json:"method"`
 	Path    string   `json:"path"`
+	Body    any      `json:"body,omitempty"`
 	Exclude []string `json:"exclude"`
 }
 
@@ -55,9 +57,20 @@ var afterCasesHook = func() {}
 // fetch پاسخ را می‌خواند و نوعِ رسانه را نرمال نگه می‌دارد: «Application/JSON;
 // charset=utf-8» و «application/json» یک چیزند، ولی json و html نه.
 func fetch(base string, c testCase) (fetched, error) {
-	req, err := http.NewRequest(c.Method, base+c.Path, nil)
+	var bodyReader io.Reader
+	if c.Body != nil {
+		b, err := json.Marshal(c.Body)
+		if err != nil {
+			return fetched{}, fmt.Errorf("marshal body: %w", err)
+		}
+		bodyReader = bytes.NewReader(b)
+	}
+	req, err := http.NewRequest(c.Method, base+c.Path, bodyReader)
 	if err != nil {
 		return fetched{}, &requestBuildError{err: err}
+	}
+	if c.Body != nil {
+		req.Header.Set("Content-Type", "application/json")
 	}
 	resp, err := httpClient.Do(req)
 	if err != nil {

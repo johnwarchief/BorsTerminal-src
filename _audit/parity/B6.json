@@ -1,0 +1,90 @@
+{
+ "commit": "2cb1b0f9",
+ "python": "3.14.7",
+ "ports": {
+  "py": 8313,
+  "go": 8312,
+  "preferred_py": 8313,
+  "preferred_go": 8312,
+  "fell_back": false
+ },
+ "db": {
+  "market_sha256": "ee6d7201ca6966b6c32bcbb70b3003e65808de57ffc93b92f73dab6d81c27933",
+  "frozen_ok": true,
+  "go_market_unchanged": true,
+  "root_before": {
+   "market.db": {
+    "sha256": "ee6d7201ca6966b6c32bcbb70b3003e65808de57ffc93b92f73dab6d81c27933",
+    "bytes": 276115456,
+    "mtime_ns": 1793536438398357700
+   },
+   "user.db": {
+    "sha256": "b9fc502f5d3937ca2c81cc3ab09318278f78b3782262f0e4a17db7d42555f490",
+    "bytes": 782336,
+    "mtime_ns": 1793536491208893700
+   },
+   "codal.db": null
+  },
+  "root_after": {
+   "market.db": {
+    "sha256": "ee6d7201ca6966b6c32bcbb70b3003e65808de57ffc93b92f73dab6d81c27933",
+    "bytes": 276115456,
+    "mtime_ns": 1793536438398357700
+   },
+   "user.db": {
+    "sha256": "b9fc502f5d3937ca2c81cc3ab09318278f78b3782262f0e4a17db7d42555f490",
+    "bytes": 782336,
+    "mtime_ns": 1793536491208893700
+   },
+   "codal.db": null
+  },
+  "root_untouched": true
+ },
+ "sidecar": {
+  "ok": true,
+  "problem": ""
+ },
+ "statuses": {
+  "pairs": [
+   "200/200"
+  ],
+  "ok": true
+ },
+ "contract": {
+  "passed": 12,
+  "failed": 0,
+  "cases": 12,
+  "max_delta": 0.0,
+  "report": "_audit\\parity\\B6-contract.json",
+  "ok": true,
+  "failed_cases": []
+ },
+ "control_verification": {
+  "ok": true,
+  "problems": []
+ },
+ "answered_templates": [
+  "/api/codal/control",
+  "/api/mstat/snapshot",
+  "/api/sync/codal",
+  "/api/sync/codal/db-download",
+  "/api/sync/codal/db-status",
+  "/api/sync/codal/fts-refresh",
+  "/api/sync/diagnose",
+  "/api/sync/market",
+  "/api/sync/status"
+ ],
+ "checks": {
+  "contract": true,
+  "delta_zero": true,
+  "statuses_200": true,
+  "case_coverage": true,
+  "routes_b6_covered": true,
+  "control_parity_bg3": true,
+  "go_market_read_only": true,
+  "root_untouched": true,
+  "frozen_copies": true,
+  "sidecar_untouched": true
+ },
+ "measured_at": "2026-11-01T14:05:02Z"
+}

@@ -28,5 +28,25 @@ codal_fetcher.DB_PATH = os.path.join(DATA_DIR, "market.db")
 import uvicorn  # noqa: E402
 from app import app  # noqa: E402
 
+if os.environ.get("BORS_NO_FETCH_LOOPS") == "1":
+    import subprocess
+    _orig_popen = subprocess.Popen
+    def _safe_popen(args, *a, **kw):
+        arg_str = " ".join(args) if isinstance(args, (list, tuple)) else str(args)
+        if "codal_fetcher" in arg_str or "codal_fts_updater" in arg_str:
+            class FakeProc:
+                pid = 99999
+                def poll(self): return 0
+                def wait(self, timeout=None): return 0
+            return FakeProc()
+        return _orig_popen(args, *a, **kw)
+    subprocess.Popen = _safe_popen
+
+    import api._sync_market as _sm
+    _sm._run_market_sync = lambda: None
+
+    import api._sync_codal as _sc
+    _sc._codal_db_worker = lambda *a, **kw: None
+
 if __name__ == "__main__":
     uvicorn.run(app, host="127.0.0.1", port=PORT, log_level="warning")

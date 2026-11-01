@@ -1,0 +1,80 @@
+{
+  "note": "کیس‌هایِ B6: مسیرهایِ پورت‌شدهٔ همگام‌سازی، وضعیت و کنترل خزنده‌ها (B-G1 خواندنی و B-G3 نظارت/حلقه‌ها). فیلدهایِ متغیر مانند زمان‌هایِ ts، سن فایل‌ها و وضعیت اتصالات در exclude قرار دارند.",
+  "cases": [
+    {
+      "name": "sync-status-default",
+      "method": "GET",
+      "path": "/api/sync/status",
+      "exclude": ["sync.ts", "sync.elapsed"]
+    },
+    {
+      "name": "sync-codal-db-status",
+      "method": "GET",
+      "path": "/api/sync/codal/db-status",
+      "exclude": ["db.ts"]
+    },
+    {
+      "name": "sync-diagnose",
+      "method": "GET",
+      "path": "/api/sync/diagnose",
+      "exclude": ["diag.status_file_age_sec", "diag.ts", "diag.app_processes"]
+    },
+    {
+      "name": "mstat-snapshot-now",
+      "method": "POST",
+      "path": "/api/mstat/snapshot",
+      "exclude": []
+    },
+    {
+      "name": "codal-control-pause",
+      "method": "POST",
+      "path": "/api/codal/control",
+      "body": {"cmd": "pause"},
+      "exclude": []
+    },
+    {
+      "name": "codal-control-resume",
+      "method": "POST",
+      "path": "/api/codal/control",
+      "body": {"cmd": "resume"},
+      "exclude": []
+    },
+    {
+      "name": "codal-control-invalid-cmd",
+      "method": "POST",
+      "path": "/api/codal/control",
+      "body": {"cmd": "unknown_cmd"},
+      "exclude": []
+    },
+    {
+      "name": "sync-market-trigger",
+      "method": "POST",
+      "path": "/api/sync/market",
+      "exclude": []
+    },
+    {
+      "name": "sync-codal-trigger-update",
+      "method": "POST",
+      "path": "/api/sync/codal?mode=update",
+      "exclude": []
+    },
+    {
+      "name": "sync-codal-trigger-optimized",
+      "method": "POST",
+      "path": "/api/sync/codal?mode=optimized",
+      "exclude": []
+    },
+    {
+      "name": "sync-codal-fts-refresh-monthly",
+      "method": "POST",
+      "path": "/api/sync/codal/fts-refresh?mode=monthly",
+      "exclude": []
+    },
+    {
+      "name": "sync-codal-db-download",
+      "method": "POST",
+      "path": "/api/sync/codal/db-download",
+      "exclude": []
+    }
+  ]
+}
