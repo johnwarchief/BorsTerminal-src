@@ -68,6 +68,7 @@ type Mstat interface {
 	Phases(http.ResponseWriter, *http.Request)
 	SmartMoney(http.ResponseWriter, *http.Request)
 	Board(http.ResponseWriter, *http.Request)
+	SnapshotNow(http.ResponseWriter, *http.Request)
 }
 
 // Fundamental دو مسیرِ خواندنیِ api/fundamental.py که درِ B4 پورت شده‌اند؛
@@ -123,6 +124,7 @@ func New(cfg config.Config, h *db.Handles, m Market, ms Mstat, ch Chart, fd Fund
 		mux.HandleFunc("GET /api/mstat/phases", ms.Phases)
 		mux.HandleFunc("GET /api/mstat/smart-money", ms.SmartMoney)
 		mux.HandleFunc("GET /api/mstat/board", ms.Board)
+		mux.HandleFunc("POST /api/mstat/snapshot", ms.SnapshotNow)
 	}
 	if ch != nil {
 		mux.HandleFunc("GET /api/chart/{symbol}/key-levels", ch.KeyLevels)

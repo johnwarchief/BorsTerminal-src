@@ -128,6 +128,7 @@ func (f *fakeMstat) SmartMoney(w http.ResponseWriter, _ *http.Request) {
 	f.hit("smart-money", w)
 }
 func (f *fakeMstat) Board(w http.ResponseWriter, _ *http.Request) { f.hit("board", w) }
+func (f *fakeMstat) SnapshotNow(w http.ResponseWriter, _ *http.Request) { f.hit("snapshot", w) }
 
 // TestMstatRouteTable هر مسیرِ سیزده‌گانه باید هم در فهرستِ مسیرهایِ پایتون
 // باشد و هم به همان هندلرِ گروهی برسد — یک جابه‌جایی در ثبتِ مسیرها (مثلاً

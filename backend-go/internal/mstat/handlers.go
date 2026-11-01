@@ -267,3 +267,15 @@ func phasePanel(db *sql.DB, now time.Time) (map[string]any, error) {
 	out["status"] = "ok"
 	return out, nil
 }
+
+func (s *Service) SnapshotNow(w http.ResponseWriter, r *http.Request) {
+	res, err := s.SaveSnapshot(s.clock())
+	if err != nil {
+		httpapi.WriteJSON(w, http.StatusOK, map[string]any{
+			"status":  "error",
+			"message": err.Error(),
+		})
+		return
+	}
+	httpapi.WriteJSON(w, http.StatusOK, res)
+}
