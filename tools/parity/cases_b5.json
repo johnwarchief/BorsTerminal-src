@@ -1,0 +1,19 @@
+{
+  "note": "کیس‌هایِ B5: مسیرهایِ پورت‌شدهٔ کاربر شامل واچ‌لیست و مرکزِ اعلان‌ها (B-G1 خواندنی و B-G2 نوشتنی). جای‌نمای {role} درِ زمانِ اجرا از همان کپیِ یخ‌زده پر می‌شود (gate_b5.py). مسیرهایِ -422 باید مو‌به‌مو ۴۲۲/۴۲۲ بخورند. declaredها از مقایسه بیرون‌اند ولی require_keyشان درِ پایتون باید دیده شود.",
+  "cases": [
+    {"name": "watchlist-list-empty", "method": "GET", "path": "/api/watchlist", "exclude": []},
+    {"name": "notifications-sources", "method": "GET", "path": "/api/notifications/sources", "exclude": []},
+    {"name": "notifications-feed-default", "method": "GET", "path": "/api/notifications/feed", "exclude": []},
+    {"name": "notifications-feed-limit5", "method": "GET", "path": "/api/notifications/feed?limit=5", "exclude": []},
+    {"name": "notifications-feed-limit200", "method": "GET", "path": "/api/notifications/feed?limit=200", "exclude": []},
+    {"name": "notifications-feed-limit-clamp-zero", "method": "GET", "path": "/api/notifications/feed?limit=0", "exclude": []},
+    {"name": "notifications-feed-limit-422", "method": "GET", "path": "/api/notifications/feed?limit=abc", "exclude": []},
+    {"name": "notifications-feed-limit-blank", "method": "GET", "path": "/api/notifications/feed?limit=", "exclude": [], "expect_status": 422},
+    {"name": "notifications-feed-symbol", "method": "GET", "path": "/api/notifications/feed?symbol={notice_symbol}&limit=10", "exclude": []},
+    {"name": "notifications-feed-symbol-unknown", "method": "GET", "path": "/api/notifications/feed?symbol=%D9%86%DB%8C%D8%B3%D8%AA%DB%B0%DB%B1&limit=10", "exclude": []},
+    {"name": "notifications-feed-levels-high", "method": "GET", "path": "/api/notifications/feed?levels=high&limit=10", "exclude": []},
+    {"name": "notifications-feed-levels-multi", "method": "GET", "path": "/api/notifications/feed?levels=high,medium&limit=10", "exclude": []},
+    {"name": "notifications-feed-since", "method": "GET", "path": "/api/notifications/feed?since=1404/01/01&limit=10", "exclude": []},
+    {"name": "watchlist-matrix-declared", "method": "GET", "path": "/api/watchlist/matrix", "exclude": [], "require_key": "rows", "declared": "go 501 / py 200 — ماتریس تایید سه‌گانه، درِ B7"}
+  ]
+}

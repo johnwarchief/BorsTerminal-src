@@ -1,0 +1,231 @@
+{
+ "commit": "6ecce634",
+ "python": "3.14.7",
+ "ports": {
+  "py": 8311,
+  "go": 8310,
+  "preferred_py": 8311,
+  "preferred_go": 8310,
+  "fell_back": false
+ },
+ "roles": {
+  "notice_symbol": "فردوس"
+ },
+ "dropped_cases": [],
+ "db": {
+  "market_sha256": "bbe5eabf3f99f0a48441d2017c3e023941f91cfc976c05967643a7a96dfac84b",
+  "frozen_ok": true,
+  "go_market_unchanged": true,
+  "root_before": {
+   "market.db": {
+    "sha256": "bbe5eabf3f99f0a48441d2017c3e023941f91cfc976c05967643a7a96dfac84b",
+    "bytes": 276115456,
+    "mtime_ns": 1793529264568759500
+   },
+   "user.db": {
+    "sha256": "e2db7fb39b7ebc6701c6172aa4c0a3bffbe45ccc03b16bba0a9642d2f4e89920",
+    "bytes": 782336,
+    "mtime_ns": 1793529302281616300
+   },
+   "codal.db": null
+  },
+  "root_after": {
+   "market.db": {
+    "sha256": "bbe5eabf3f99f0a48441d2017c3e023941f91cfc976c05967643a7a96dfac84b",
+    "bytes": 276115456,
+    "mtime_ns": 1793529264568759500
+   },
+   "user.db": {
+    "sha256": "e2db7fb39b7ebc6701c6172aa4c0a3bffbe45ccc03b16bba0a9642d2f4e89920",
+    "bytes": 782336,
+    "mtime_ns": 1793529302281616300
+   },
+   "codal.db": null
+  },
+  "root_untouched": true
+ },
+ "sidecar": {
+  "ok": true,
+  "problem": ""
+ },
+ "statuses": {
+  "pairs": [
+   "200/200",
+   "422/422"
+  ],
+  "count_422": 2,
+  "ok": true
+ },
+ "contract": {
+  "passed": 13,
+  "failed": 0,
+  "cases": 13,
+  "max_delta": 0.0,
+  "report": "_audit\\parity\\B5-contract.json",
+  "ok": true,
+  "failed_cases": []
+ },
+ "content_problems": [],
+ "declared": {
+  "rows": [
+   {
+    "name": "watchlist-matrix-declared",
+    "path": "/api/watchlist/matrix",
+    "py": 200,
+    "go": 501,
+    "go_code": "NOT_PORTED",
+    "expect_py": 200,
+    "require_key": "rows",
+    "key_seen": true,
+    "py_keys": [
+     "asof",
+     "capacity",
+     "count",
+     "limit",
+     "rows",
+     "status"
+    ],
+    "ok": true,
+    "note": "go 501 / py 200 — ماتریس تایید سه‌گانه، درِ B7"
+   }
+  ],
+  "problems": [],
+  "ok": true
+ },
+ "write_parity": {
+  "ok": true,
+  "step_count": 9,
+  "steps": [
+   {
+    "name": "write-add-sym1",
+    "method": "POST",
+    "path": "/api/watchlist",
+    "py_status": 200,
+    "go_status": 200,
+    "status_ok": true,
+    "check_ok": true,
+    "db_match": true,
+    "db_row_count": 1,
+    "ok": true
+   },
+   {
+    "name": "write-add-sym2-arabic",
+    "method": "POST",
+    "path": "/api/watchlist",
+    "py_status": 200,
+    "go_status": 200,
+    "status_ok": true,
+    "check_ok": true,
+    "db_match": true,
+    "db_row_count": 2,
+    "ok": true
+   },
+   {
+    "name": "write-upsert-sym2-persian",
+    "method": "POST",
+    "path": "/api/watchlist",
+    "py_status": 200,
+    "go_status": 200,
+    "status_ok": true,
+    "check_ok": true,
+    "db_match": true,
+    "db_row_count": 2,
+    "ok": true
+   },
+   {
+    "name": "write-empty-payload",
+    "method": "POST",
+    "path": "/api/watchlist",
+    "py_status": 200,
+    "go_status": 200,
+    "status_ok": true,
+    "check_ok": true,
+    "db_match": true,
+    "db_row_count": 2,
+    "ok": true
+   },
+   {
+    "name": "write-empty-symbol",
+    "method": "POST",
+    "path": "/api/watchlist",
+    "py_status": 200,
+    "go_status": 200,
+    "status_ok": true,
+    "check_ok": true,
+    "db_match": true,
+    "db_row_count": 2,
+    "ok": true
+   },
+   {
+    "name": "write-invalid-symbol",
+    "method": "POST",
+    "path": "/api/watchlist",
+    "py_status": 200,
+    "go_status": 200,
+    "status_ok": true,
+    "check_ok": true,
+    "db_match": true,
+    "db_row_count": 2,
+    "ok": true
+   },
+   {
+    "name": "write-delete-sym2-arabic",
+    "method": "DELETE",
+    "path": "/api/watchlist/%D8%AF%D8%A7%D8%B1%D9%8A%D9%83",
+    "py_status": 200,
+    "go_status": 200,
+    "status_ok": true,
+    "check_ok": true,
+    "db_match": true,
+    "db_row_count": 1,
+    "ok": true
+   },
+   {
+    "name": "write-delete-sym2-repeat",
+    "method": "DELETE",
+    "path": "/api/watchlist/%D8%AF%D8%A7%D8%B1%D9%8A%D9%83",
+    "py_status": 200,
+    "go_status": 200,
+    "status_ok": true,
+    "check_ok": true,
+    "db_match": true,
+    "db_row_count": 1,
+    "ok": true
+   },
+   {
+    "name": "write-delete-sym1",
+    "method": "DELETE",
+    "path": "/api/watchlist/%D8%B1%D9%85%D9%BE%D9%86%D8%A7",
+    "py_status": 200,
+    "go_status": 200,
+    "status_ok": true,
+    "check_ok": true,
+    "db_match": true,
+    "db_row_count": 0,
+    "ok": true
+   }
+  ],
+  "problems": []
+ },
+ "answered_templates": [
+  "/api/notifications/feed",
+  "/api/notifications/sources",
+  "/api/watchlist"
+ ],
+ "checks": {
+  "contract": true,
+  "delta_zero": true,
+  "statuses_200_422": true,
+  "case_coverage": true,
+  "routes_read_covered": true,
+  "content": true,
+  "declared_measured": true,
+  "notice_roles": true,
+  "write_parity_bg2": true,
+  "go_market_read_only": true,
+  "root_untouched": true,
+  "frozen_copies": true,
+  "sidecar_untouched": true
+ },
+ "measured_at": "2026-11-01T12:11:57Z"
+}
