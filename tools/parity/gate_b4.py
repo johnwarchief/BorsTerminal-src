@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""گیتِ B4a: سه مسیرِ پورت‌شدهٔ بنیادی/نوار رویِ دو کپیِ یخ‌زده.
+"""گیتِ B4: چهار مسیرِ پورت‌شدهٔ بنیادی/نوار رویِ دو کپیِ یخ‌زده.
 
 همان قواعدِ B1/B2/B3: بانکِ عملیاتی با SQLite باز نمی‌شود (فقط کپیِ موقتی
 mode=ro)، هر کپی quick_check می‌خورد، فقط PIDهایِ همین اسکریپت کشته می‌شوند، و
@@ -9,9 +9,8 @@ mode=ro)، هر کپی quick_check می‌خورد، فقط PIDهایِ همین
 
 * تاریخچۀ نوار از **user.db** می‌خواند، پس دو کپی باید هر دو بانک را داشته
   باشند و هر دو طرف همان کپی را ببینند (سایۀ root دست‌نخورده).
-* پنج کیسِ «تعویقِ اعلام‌شده» درِ مقایسه نیستند: کارتِ پنج‌محور، `screen`،
-  `months` و دو مسیرِ sync/codal. گیت وضعیتِ هر دو طرف را اندازه می‌گیرد و درِ
-  شاهد می‌نویسد (پایتون ۲۰۰ یا ۴۲۲ / Go ۵۰۱) — نه فرضِ سبز، نه سبزِ بی‌آزمون.
+* سه کیسِ «تعویقِ اعلام‌شده» درِ مقایسه نیستند: `screen` و دو مسیرِ sync/codal.
+  گیت وضعیتِ هر دو طرف را اندازه می‌گیرد و درِ شاهد می‌نویسد (پایتون ۲۰۰ / Go ۵۰۱).
 * نقش‌ها درِ زمانِ اجرا از همان کپی برگزیده می‌شوند: نمادی که چند دورۀ
   میاندوره‌ایِ دوره‌دار دارد، نمادی که هیچ صورتِ مالی ندارد، و دو ins_code که
   واقعاً درِ `tape_flag_day` ردیف دارند. بی‌این، سه مسیرِ تازه با بدنهٔ تهی سبز
@@ -84,7 +83,7 @@ WATCHED_DAYS_SQL = {
 PLACEHOLDERS = ("fs_rich", "fs_empty", "tape_a", "tape_b")
 
 B4_ROUTES = {"/api/fundamental/sectors", "/api/fundamental/{symbol}/quarters",
-             "/api/tape-history"}
+             "/api/fundamental/{symbol}", "/api/tape-history"}
 
 
 def pick_port(preferred, taken):
@@ -277,7 +276,15 @@ def content_checks(py_url, cases, watched_days):
     if dup and len(dup.get("by_symbol") or {}) != 1:
         problems.append("repeated codes must collapse to one key, got %d"
                         % len(dup.get("by_symbol") or {}))
-    for name in ("quarters-rich", "tape-two-codes"):
+    card = body_of("card-rich")
+    if not card or card.get("status") != "success":
+        problems.append("card-rich status=%r want success" % ((card or {}).get("status"),))
+    elif len(card.get("indicators") or []) != 5:
+        problems.append("card-rich indicators=%d want 5" % len(card.get("indicators") or []))
+    elif card.get("verdict") is None:
+        problems.append("card-rich verdict missing")
+
+    for name in ("quarters-rich", "tape-two-codes", "card-rich"):
         b = body_of(name)
         if b is not None and b.get("write_error") is not None:
             problems.append("%s write_error=%r in a fresh process" % (name, b["write_error"]))
@@ -489,7 +496,7 @@ def main() -> int:
 
         checks = {"contract": contract_ok, "delta_zero": delta_zero,
                   "statuses_200_422": statuses_ok, "case_coverage": coverage_ok,
-                  "routes_3_of_3": routes_ok, "content": not problems,
+                  "routes_4_of_4": routes_ok, "content": not problems,
                   "declared_measured": not declared_problems,
                   "tape_roles": all(roles.get(r) for r in ("tape_a", "tape_b")),
                   "quarters_roles": all(roles.get(r) for r in ("fs_rich", "fs_empty")),

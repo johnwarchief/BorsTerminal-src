@@ -1,5 +1,5 @@
 {
-  "note": "کیس‌هایِ B4a: سه مسیرِ پورت‌شدهٔ بنیادی/نوار. جای‌نمای {role} درِ زمانِ اجرا از همان کپیِ یخ‌زده پر می‌شود (gate_b4.py). کیس‌هایِ -422 و کیس‌هایِ expect_status=422 باید مو‌به‌مو ۴۲۲/۴۲۲ بخورند: پایتون رشتهٔ خالیِ کوئری را ۴۲۲ می‌گیرد، شکلِ اعشاریِ صحیح‌العدد را می‌پذیرد و از کلیدِ تکراری آخرین را برمی‌دارد. declaredها از مقایسه بیرون‌اند ولی require_keyشان درِ پایتون باید دیده شود.",
+  "note": "کیس‌هایِ B4: چهار مسیرِ پورت‌شدهٔ بنیادی/نوار. جای‌نمای {role} درِ زمانِ اجرا از همان کپیِ یخ‌زده پر می‌شود (gate_b4.py). کیس‌هایِ -422 و کیس‌هایِ expect_status=422 باید مو‌به‌مو ۴۲۲/۴۲۲ بخورند: پایتون رشتهٔ خالیِ کوئری را ۴۲۲ می‌گیرد، شکلِ اعشاریِ صحیح‌العدد را می‌پذیرد و از کلیدِ تکراری آخرین را برمی‌دارد. declaredها از مقایسه بیرون‌اند ولی require_keyشان درِ پایتون باید دیده شود.",
   "cases": [
     {"name": "sectors", "method": "GET", "path": "/api/fundamental/sectors", "exclude": []},
     {"name": "quarters-rich", "method": "GET", "path": "/api/fundamental/{fs_rich}/quarters", "exclude": []},
@@ -24,8 +24,8 @@
     {"name": "tape-unknown-code", "method": "GET", "path": "/api/tape-history?codes=ISIN-NOT-HERE&days=20", "exclude": []},
     {"name": "tape-dup-codes", "method": "GET", "path": "/api/tape-history?codes={tape_a},{tape_a},{tape_a}&days=20", "exclude": []},
     {"name": "tape-mixed-codes", "method": "GET", "path": "/api/tape-history?codes={tape_a},,%20{tape_b}%20,&days=20", "exclude": []},
-    {"name": "card-declared", "method": "GET", "path": "/api/fundamental/{fs_rich}", "exclude": [], "require_key": "indicators", "declared": "go 501 / py 200 — کارتِ پنج‌محور تا تسکِ 3b"},
-    {"name": "card-months-422", "method": "GET", "path": "/api/fundamental/{fs_rich}?months=abc", "exclude": [], "require_key": "detail", "declared": "go 501 / py 422 — اعتبارسنجیِ months بی‌مصرف"},
+    {"name": "card-rich", "method": "GET", "path": "/api/fundamental/{fs_rich}", "exclude": []},
+    {"name": "card-months-422", "method": "GET", "path": "/api/fundamental/{fs_rich}?months=abc", "exclude": [], "expect_status": 422},
     {"name": "screen-declared", "method": "GET", "path": "/api/fundamental/screen?limit=5", "exclude": [], "require_key": "data", "declared": "go 501 / py 200 — خروجیِ api/screener.py، درِ B7"},
     {"name": "coverage-declared", "method": "GET", "path": "/api/sync/codal/fts-coverage", "exclude": [], "require_key": "layers", "declared": "go 501 / py 200 — وضعیتِ حلقه‌ها، درِ B6"},
     {"name": "pipeline-declared", "method": "GET", "path": "/api/sync/codal/pipeline", "exclude": [], "require_key": "queue", "declared": "go 501 / py 200 — وضعیتِ حلقه‌ها، درِ B6"}

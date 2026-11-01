@@ -32,6 +32,7 @@ func serveCtx(t *testing.T, s *Service, ctx context.Context,
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /api/fundamental/sectors", s.Sectors)
 	mux.HandleFunc("GET /api/fundamental/{symbol}/quarters", s.Quarters)
+	mux.HandleFunc("GET /api/fundamental/{symbol}", s.Card)
 	rec := httptest.NewRecorder()
 	req := httptest.NewRequest("GET", target, nil).WithContext(ctx)
 	mux.ServeHTTP(rec, req)
@@ -248,3 +249,74 @@ func TestSectors500OnBrokenBank(t *testing.T) {
 		t.Fatalf("fake empty sector list on a broken bank: %s", rec.Body.String())
 	}
 }
+
+func TestCardHandlerOK(t *testing.T) {
+	s := openFixtureService(t)
+	rec := serve(t, s, "/api/fundamental/"+pathEncode("عادی01"))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d body = %s want 200", rec.Code, rec.Body.String())
+	}
+	var got map[string]any
+	if err := json.Unmarshal(rec.Body.Bytes(), &got); err != nil {
+		t.Fatal(err)
+	}
+	if got["status"] != "success" || got["verdict"] != "WATCH" || got["score"] != float64(4) {
+		t.Fatalf("unexpected card payload: %+v", got)
+	}
+}
+
+func TestCardHandlerNotFound(t *testing.T) {
+	s := openFixtureService(t)
+	// رقم فارسی با کدپوینت:
+	symNotFound := "نیست" + string(rune(0x06F0)) + string(rune(0x06F1))
+	rec := serve(t, s, "/api/fundamental/"+pathEncode(symNotFound))
+	if rec.Code != http.StatusNotFound {
+		t.Fatalf("status = %d body = %s want 404", rec.Code, rec.Body.String())
+	}
+	var got map[string]any
+	if err := json.Unmarshal(rec.Body.Bytes(), &got); err != nil {
+		t.Fatal(err)
+	}
+	if got["detail"] != "Symbol not found" {
+		t.Fatalf("detail = %v want 'Symbol not found'", got["detail"])
+	}
+}
+
+func TestCardHandlerRouteOrder(t *testing.T) {
+	s := openFixtureService(t)
+	// روت sectors نباید توسط {symbol} بلعیده شود:
+	rec := serve(t, s, "/api/fundamental/sectors")
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d body = %s want 200", rec.Code, rec.Body.String())
+	}
+	var got map[string]any
+	if err := json.Unmarshal(rec.Body.Bytes(), &got); err != nil {
+		t.Fatal(err)
+	}
+	if got["sectors"] == nil {
+		t.Fatalf("sectors route swallowed by card route: %s", rec.Body.String())
+	}
+}
+
+func TestCardHandlerValidatesMonths(t *testing.T) {
+	s := openFixtureService(t)
+	rec := serve(t, s, "/api/fundamental/"+pathEncode("عادی01")+"?months=abc")
+	if rec.Code != http.StatusUnprocessableEntity {
+		t.Fatalf("status = %d body = %s want 422", rec.Code, rec.Body.String())
+	}
+	var body struct {
+		Detail []struct {
+			Type  string   `json:"type"`
+			Loc   []string `json:"loc"`
+			Msg   string   `json:"msg"`
+			Input string   `json:"input"`
+		} `json:"detail"`
+	}
+	if err := json.Unmarshal(rec.Body.Bytes(), &body); err != nil {
+		t.Fatal(err)
+	}
+	if len(body.Detail) != 1 || body.Detail[0].Type != "int_parsing" || body.Detail[0].Loc[1] != "months" {
+		t.Fatalf("422 detail = %+v", body.Detail)
+	}
+}
+

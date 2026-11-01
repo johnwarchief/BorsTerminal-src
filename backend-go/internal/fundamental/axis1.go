@@ -17,11 +17,12 @@ package fundamental
 //
 // تابع‌هایِ لایۀ series را از فایلِ همسایه می‌خوانم، نه از نسخۀ دومِ خودم:
 // `SeriesYtdDenominator` و `SeriesGrowthBreadth` و `(*Service).MonthlySeries` و
-// `(*Service).msQuery` (series.go). تنها تکرارِ عمدیِ من `ax1MsSeries` است — چون `SeriesMsRows` فعلی
-// مقدارِ صفر را nil می‌کند (`seriesNumOrNull` رویِ `isFalsy`) جایی که
-// `_num_or_none(0.0)` درِ پایتون همان ۰٫۰ را نگه می‌دارد؛ فیکسچرِ اوراکل این را
-// ثابت می‌کند (ردیف‌هایِ نمادِ «پایین» با `monthly_revenue: 0.0` در برابرِ
-// `ytd_revenue_prev: null`). نشانۀ `TODO(unify)` پایینِ همان تابع است.
+// `(*Service).msQuery` (series.go). تنها تکرارِ من `ax1MsSeries` است: امروز روی
+// دادهٔ واقعی هم‌ارزِ `SeriesMsRows` است (هر دو صفرِ واقعی را نگه می‌دارند —
+// `seriesNumOrNull` دیگر صفر را nil نمی‌کند، پس آن ادعایِ قدیمی دیگر نیست)،
+// ولی برای سال/ماهِ رشته‌ای یکی نیستند: `ax1IntOf` مثلِ `int(float(v))` درِ
+// پایتون سرِ اعشار می‌اندازد و `seriesInt` (از راهِ `toI`) فقط رشتهٔ «عددِ
+// صحیح» را می‌پذیرد. نشانۀ `TODO(unify)` پایینِ همان تابع است.
 
 import (
 	"context"
@@ -110,8 +111,8 @@ func ax1RealGrowth(nominalPct, pricePct any) any {
 }
 
 // ax1NumOrNull عینِ `_num_or_none` (214-220): عدد یا nil — «داده نیست» هیچ‌وقت
-// ۰٫۰ نمی‌شود (برخلافِ toF)، ولی صفرِ واقعی هم صفر می‌ماند (برخلافِ
-// seriesNumOrNullِ فعلی درِ series.go که آن را nil می‌کند).
+// صفر نمی‌شود (برخلافِ toF)، ولی صفرِ واقعی هم صفر می‌ماند (همان قاعدۀ
+// `seriesNumOrNull` درِ series.go؛ آن هم امروز صفر را nil نمی‌کند).
 func ax1NumOrNull(v any) any {
 	if f, ok := asFloat(v); ok {
 		return f
@@ -142,10 +143,11 @@ func ax1Cell(r []any, i int) any {
 // ax1MsSeries عینِ `_ms_series` (177-196): هیچ داوریِ تازه‌ای اینجا ساخته نمی‌شود،
 // فقط همان شش ستون با همان تبدیل‌ها.
 //
-// TODO(unify): شاخۀ series — این تابع کپیِ `SeriesMsRows` (series.go:145) است و
-// یکدستِ آن‌ها با ORACLE همان کاری است که اوراکل ثابت می‌کند: `_num_or_none(0.0)`
-// درِ پایتون ۰٫۰ می‌ماند، `seriesNumOrNull` آن را nil می‌کند. یکِ این دو باید
-// بماند (همین، یا seriesNumOrNullِ اصلاح‌شده) و فراخوانی‌ها یکی شوند.
+// TODO(unify): شاخۀ series — این تابع و `SeriesMsRows` (series.go:144) امروز روی
+// دادهٔ واقعی یکی می‌دهند: صفرِ واقعی درِ هر دو می‌ماند (نه nil) و سال/ماه از
+// SQLite عددِ صحیح می‌آید. تفاوتِ باقی‌مانده فقط رشتهٔ سال/ماه است: `ax1IntOf`
+// مثلِ `int(float(v))` درِ پایتون سرِ اعشار می‌اندازد، `seriesInt` (از راهِ `toI`)
+// فقط رشتهٔ «عددِ صحیح» را می‌پذیرد. یکی کردنشان یعنی یکی کردنِ قاعدۀ سال/ماه.
 func ax1MsSeries(series [][]any) []map[string]any {
 	out := make([]map[string]any, 0, len(series))
 	for _, r := range series {

@@ -21,6 +21,7 @@ package fundamental
 // مستقیمِ `build_insights` با خروجیِ Go. Rollback: revertِ همین کامیت.
 
 import (
+	"encoding/json"
 	"fmt"
 	"strconv"
 	"strings"

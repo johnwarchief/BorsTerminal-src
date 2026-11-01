@@ -36,7 +36,7 @@ func main() {
 	ch := chart.New(chart.Config{Market: handles.Market, User: handles.User,
 		DataDir: cfg.DataDir, CalendarPath: cfg.CalendarPath})
 	defer ch.Close()
-	fd := fundamental.New(handles.Market)
+	fd := fundamental.New(handles.Market, cfg.DataDir)
 	defer fd.Close()
 	srv := &http.Server{Addr: cfg.Addr,
 		Handler: httpapi.New(cfg, handles, mkt, ms, ch, fd)}

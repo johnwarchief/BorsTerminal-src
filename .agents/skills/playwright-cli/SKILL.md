@@ -1,296 +1,251 @@
 ---
 name: playwright-cli
-description: Playwright CLI 自动化工具 - 浏览器自动化测试和网页交互。通过 CLI 命令控制浏览器、截图、填表、点击、执行代码等操作。支持多浏览器、会话管理、网络拦截、视频录制等功能。
+description: Playwright CLI automation tool for browser automation, headless testing, interaction, screenshot capture, form filling, and tracing via CLI commands.
 ---
 
 # Playwright CLI
 
-通过命令行控制浏览器执行自动化任务。适合测试、爬虫、页面交互等场景。
+Control browsers via the command line to perform automated tasks, testing, scraping, and web page interactions.
 
-## 安装
+## Installation
 
 ```bash
-# 安装 Playwright CLI
+# Install Playwright CLI
 npm install -g @playwright/cli@latest
 
-# 安装 skills（供 AI agent 使用）
+# Install skills (for AI agent usage)
 playwright-cli install --skills
 
-# 检查版本
+# Check version
 playwright-cli --version
-# 输出: 0.1.7
 ```
 
-## 核心命令
+## Core Commands
 
-### 浏览器控制
+### Browser Control
 
-| 命令 | 说明 |
-|------|------|
-| `playwright-cli open <url>` | 打开浏览器访问 URL |
-| `playwright-cli goto <url>` | 导航到指定 URL |
-| `playwright-cli close` | 关闭当前页面 |
-| `playwright-cli screenshot [ref]` | 截图（当前页面或指定元素） |
-| `playwright-cli screenshot --filename=f` | 保存截图到指定文件 |
-| `playwright-cli pdf` | 保存页面为 PDF |
-| `playwright-cli pdf --filename=page.pdf` | 保存 PDF 到指定文件 |
-| `playwright-cli resize <w> <h>` | 调整浏览器窗口大小 |
-| `playwright-cli reload` | 刷新当前页面 |
-| `playwright-cli go-back` | 后退 |
-| `playwright-cli go-forward` | 前进 |
+| Command | Description |
+|---------|-------------|
+| `playwright-cli open <url>` | Open browser and navigate to URL |
+| `playwright-cli goto <url>` | Navigate to target URL |
+| `playwright-cli close` | Close current page |
+| `playwright-cli screenshot [ref]` | Capture screenshot (full page or target element) |
+| `playwright-cli screenshot --filename=f` | Save screenshot to specific file |
+| `playwright-cli pdf` | Save page as PDF |
+| `playwright-cli pdf --filename=page.pdf` | Save PDF to specific file |
+| `playwright-cli resize <w> <h>` | Resize browser viewport |
+| `playwright-cli reload` | Reload current page |
+| `playwright-cli go-back` | Navigate back |
+| `playwright-cli go-forward` | Navigate forward |
 
-### 页面交互
+### Page Interaction
 
-| 命令 | 说明 |
-|------|------|
-| `playwright-cli click <ref>` | 点击元素 |
-| `playwright-cli dblclick <ref>` | 双击元素 |
-| `playwright-cli fill <ref> <text>` | 填写表单 |
-| `playwright-cli fill <ref> <text> --submit` | 填写并回车 |
-| `playwright-cli type <text>` | 输入文本 |
-| `playwright-cli hover <ref>` | 鼠标悬停 |
-| `playwright-cli drag <startRef> <endRef>` | 拖拽操作 |
-| `playwright-cli select <ref> <val>` | 选择下拉选项 |
-| `playwright-cli check <ref>` | 勾选复选框/单选框 |
-| `playwright-cli uncheck <ref>` | 取消勾选 |
-| `playwright-cli upload <file>` | 上传文件 |
-| `playwright-cli press <key>` | 按键（如 Enter、ArrowLeft） |
+| Command | Description |
+|---------|-------------|
+| `playwright-cli click <ref>` | Click element |
+| `playwright-cli dblclick <ref>` | Double click element |
+| `playwright-cli fill <ref> <text>` | Fill form input |
+| `playwright-cli fill <ref> <text> --submit` | Fill input and press Enter |
+| `playwright-cli type <text>` | Type text |
+| `playwright-cli hover <ref>` | Hover mouse over element |
+| `playwright-cli drag <startRef> <endRef>` | Drag and drop operation |
+| `playwright-cli select <ref> <val>` | Select dropdown option |
+| `playwright-cli check <ref>` | Check checkbox / radio button |
+| `playwright-cli uncheck <ref>` | Uncheck checkbox |
+| `playwright-cli upload <file>` | Upload file |
+| `playwright-cli press <key>` | Press key (e.g., Enter, ArrowLeft) |
 
-### 键盘鼠标
+### Keyboard and Mouse
 
-| 命令 | 说明 |
-|------|------|
-| `playwright-cli keydown <key>` | 按下键盘按键 |
-| `playwright-cli keyup <key>` | 释放键盘按键 |
-| `playwright-cli mousemove <x> <y>` | 移动鼠标 |
-| `playwright-cli mousedown [button]` | 鼠标按下 |
-| `playwright-cli mouseup [button]` | 鼠标释放 |
-| `playwright-cli mousewheel <dx> <dy>` | 滚动鼠标 |
+| Command | Description |
+|---------|-------------|
+| `playwright-cli keydown <key>` | Key down |
+| `playwright-cli keyup <key>` | Key up |
+| `playwright-cli mousemove <x> <y>` | Move mouse to coordinates |
+| `playwright-cli mousedown [button]` | Mouse down |
+| `playwright-cli mouseup [button]` | Mouse up |
+| `playwright-cli mousewheel <dx> <dy>` | Scroll wheel |
 
-### 元素定位
+### Element Locators
 
-支持多种定位方式：
+Supports multiple locator strategies:
 
 ```bash
-# CSS 选择器
+# CSS Selector
 playwright-cli click "#main > button.submit"
 
-# Role 定位器
+# Role Locator
 playwright-cli click "getByRole('button', { name: 'Submit' })"
 
 # Test ID
 playwright-cli click "getByTestId('submit-button')"
 
-# 使用快照引用（推荐）
-playwright-cli snapshot  # 获取快照，包含元素引用如 e15
-playwright-cli click e15  # 点击引用编号
+# Snapshot reference (Recommended)
+playwright-cli snapshot  # Capture snapshot containing element refs like e15
+playwright-cli click e15  # Click target ref ID
 ```
 
-### 快照
+### Snapshots
 
 ```bash
-# 获取页面快照（包含元素引用）
+# Capture page snapshot (including element references)
 playwright-cli snapshot
 
-# 保存到指定文件
+# Save snapshot to file
 playwright-cli snapshot --filename=after-click.yaml
 
-# 快照特定元素
+# Snapshot specific element
 playwright-cli snapshot "#main"
 
-# 限制快照深度
+# Limit snapshot depth
 playwright-cli snapshot --depth=4
 ```
 
-### Tab 页管理
+### Tab Management
 
 ```bash
-playwright-cli tab-list    # 列出所有标签页
-playwright-cli tab-new [url]  # 新建标签页
-playwright-cli tab-close <index>  # 关闭标签页
-playwright-cli tab-select <index>  # 切换标签页
+playwright-cli tab-list    # List all tabs
+playwright-cli tab-new [url]  # Open new tab
+playwright-cli tab-close <index>  # Close tab by index
+playwright-cli tab-select <index>  # Switch to tab by index
 ```
 
-### 存储状态
+### Storage and State
 
 **Cookies:**
 ```bash
-playwright-cli cookie-list [--domain]  # 列出 Cookies
-playwright-cli cookie-get <name>       # 获取 Cookie
-playwright-cli cookie-set <name> <val> # 设置 Cookie
-playwright-cli cookie-delete <name>    # 删除 Cookie
-playwright-cli cookie-clear           # 清除所有 Cookie
+playwright-cli cookie-list [--domain]  # List cookies
+playwright-cli cookie-get <name>       # Get cookie
+playwright-cli cookie-set <name> <val> # Set cookie
+playwright-cli cookie-delete <name>    # Delete cookie
+playwright-cli cookie-clear           # Clear all cookies
 ```
 
 **LocalStorage:**
 ```bash
-playwright-cli localstorage-list                   # 列出
-playwright-cli localstorage-get <key>             # 获取
-playwright-cli localstorage-set <k> <v>           # 设置
-playwright-cli localstorage-delete <k>            # 删除
-playwright-cli localstorage-clear                 # 清除
+playwright-cli localstorage-list                   # List keys
+playwright-cli localstorage-get <key>             # Get value
+playwright-cli localstorage-set <k> <v>           # Set key-value
+playwright-cli localstorage-delete <k>            # Delete key
+playwright-cli localstorage-clear                 # Clear storage
 ```
 
-**保存/恢复状态:**
+**Save and Load State:**
 ```bash
-playwright-cli state-save [filename]   # 保存状态
-playwright-cli state-load <filename>   # 加载状态
+playwright-cli state-save [filename]   # Save storage state
+playwright-cli state-load <filename>   # Load storage state
 ```
 
-### 网络拦截
+### Network Interception
 
 ```bash
-playwright-cli route <pattern> [opts]  # 拦截请求
-playwright-cli route-list              # 列出拦截规则
-playwright-cli unroute [pattern]       # 移除拦截
+playwright-cli route <pattern> [opts]  # Intercept network requests
+playwright-cli route-list              # List active routing rules
+playwright-cli unroute [pattern]       # Remove routing rule
 ```
 
-### 调试功能
+### Debugging Features
 
 ```bash
-playwright-cli console [min-level]  # 查看控制台消息
-playwright-cli network              # 查看网络请求
-playwright-cli run-code <code>      # 执行代码片段
-playwright-cli run-code --filename=f  # 执行文件中的代码
+playwright-cli console [min-level]  # View console logs
+playwright-cli network              # View network requests
+playwright-cli run-code <code>      # Execute code snippet
+playwright-cli run-code --filename=f  # Execute script file
 ```
 
-### 录制追踪
+### Tracing and Video Recording
 
 ```bash
-playwright-cli tracing-start    # 开始录制
-playwright-cli tracing-stop     # 停止录制
-playwright-cli video-start [filename]  # 开始录像
-playwright-cli video-chapter <title>   # 添加章节标记
-playwright-cli video-stop      # 停止录像
+playwright-cli tracing-start    # Start tracing
+playwright-cli tracing-stop     # Stop tracing
+playwright-cli video-start [filename]  # Start video recording
+playwright-cli video-chapter <title>   # Add chapter mark
+playwright-cli video-stop      # Stop video recording
 ```
 
-### 浏览器选项
+### Browser Options
 
 ```bash
-# 使用指定浏览器
+# Specific browser
 playwright-cli open --browser=chrome  # chrome/firefox/webkit
 
-# 有头模式（可见浏览器）
+# Headed mode (visible browser window)
 playwright-cli open <url> --headed
 
-# 持久化配置文件
+# Persistent profile
 playwright-cli open --persistent
 
-# 使用配置文件
+# Configuration file
 playwright-cli open --config=file.json
 
-# 连接已运行的浏览器
+# Attach to existing running browser
 playwright-cli attach --extension
 ```
 
-## 会话管理
+## Session Management
 
 ```bash
-# 列出所有会话
+# List all active sessions
 playwright-cli list
 
-# 关闭所有浏览器
+# Close all browsers
 playwright-cli close-all
 
-# 强制结束所有浏览器进程
+# Force kill all browser processes
 playwright-cli kill-all
 
-# 打开可视化仪表盘
+# Visual dashboard
 playwright-cli show
 
-# 操作指定会话
-playwright-cli -s=name open https://example.com  # 在命名会话中打开
-playwright-cli -s=name close                    # 关闭命名会话
-playwright-cli -s=name delete-data               # 删除会话数据
+# Named sessions
+playwright-cli -s=name open https://example.com  # Open in named session
+playwright-cli -s=name close                    # Close named session
+playwright-cli -s=name delete-data               # Delete session data
 ```
 
-## 输出模式
+## Environment Variables
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `PLAYWRIGHT_MCP_BROWSER` | Browser type | chrome |
+| `PLAYWRIGHT_MCP_HEADLESS` | Headless mode | true |
+| `PLAYWRIGHT_MCP_CONSOLE_LEVEL` | Console log level | info |
+| `PLAYWRIGHT_MCP_TIMEOUT_ACTION` | Action timeout (ms) | 5000 |
+| `PLAYWRIGHT_MCP_TIMEOUT_NAVIGATION` | Navigation timeout (ms) | 60000 |
+| `PLAYWRIGHT_MCP_VIEWPORT_SIZE` | Viewport size | 1280x720 |
+| `PLAYWRIGHT_MCP_OUTPUT_DIR` | Output directory | ./output |
+| `PLAYWRIGHT_MCP_SAVE_VIDEO` | Save video | - |
+| `PLAYWRIGHT_MCP_SAVE_TRACE` | Save trace | - |
+
+## Usage Examples
+
+### Basic Workflow
 
 ```bash
-# 输出到文件（默认）
-playwright-cli --config path/to/config.json open example.com
-
-# 配置文件中设置
-{
-  "outputMode": "file",  // 或 "stdout"
-  "outputDir": "./playwright-output"
-}
-```
-
-## 环境变量
-
-| 变量 | 说明 | 默认值 |
-|------|------|--------|
-| PLAYWRIGHT_MCP_BROWSER | 浏览器类型 | chrome |
-| PLAYWRIGHT_MCP_HEADLESS | 是否无头 | true |
-| PLAYWRIGHT_MCP_CONSOLE_LEVEL | 控制台级别 | info |
-| PLAYWRIGHT_MCP_TIMEOUT_ACTION | 操作超时(毫秒) | 5000 |
-| PLAYWRIGHT_MCP_TIMEOUT_NAVIGATION | 导航超时(毫秒) | 60000 |
-| PLAYWRIGHT_MCP_VIEWPORT_SIZE | 窗口大小 | 1280x720 |
-| PLAYWRIGHT_MCP_OUTPUT_DIR | 输出目录 | ./output |
-| PLAYWRIGHT_MCP_SAVE_VIDEO | 保存视频 | - |
-| PLAYWRIGHT_MCP_SAVE_TRACE | 保存追踪 | - |
-
-## 使用示例
-
-### 基础操作流程
-
-```bash
-# 1. 打开页面
+# 1. Open page
 playwright-cli open https://demo.playwright.dev/todomvc/
 
-# 2. 截图
+# 2. Capture screenshot
 playwright-cli screenshot
 
-# 3. 填写待办事项
+# 3. Fill todo items
 playwright-cli type "Buy groceries"
 playwright-cli press Enter
 playwright-cli type "Water flowers"
 playwright-cli press Enter
 
-# 4. 勾选完成
+# 4. Check completed items
 playwright-cli snapshot
 playwright-cli check e21
 playwright-cli check e35
 
-# 5. 再次截图
+# 5. Capture final screenshot
 playwright-cli screenshot
 ```
 
-### 测试网页功能
+### Configuration Example
 
-```bash
-# 打开测试页面
-playwright-cli open https://demo.playwright.dev/todomvc/ --headed
-
-# 获取快照查看元素
-playwright-cli snapshot
-
-# 执行操作并截图
-playwright-cli click e15
-playwright-cli screenshot
-```
-
-### 多会话管理
-
-```bash
-# 创建多个会话
-playwright-cli open https://site1.com
-playwright-cli -s=session2 open https://site2.com --persistent
-
-# 切换会话
-playwright-cli -s=session2 goto /page
-
-# 查看所有会话
-playwright-cli list
-
-# 关闭所有
-playwright-cli close-all
-```
-
-## 配置示例
-
-创建 `.playwright/cli.config.json`:
+Create `.playwright/cli.config.json`:
 
 ```json
 {
@@ -318,19 +273,8 @@ playwright-cli close-all
 }
 ```
 
-## 适用场景
+## Best Practices
 
-- ✅ 网页功能测试
-- ✅ 自动填表、数据采集
-- ✅ 页面截图、Pdf 生成
-- ✅ 网络请求拦截/mock
-- ✅ 浏览器会话录制
-- ✅ AI Agent 浏览器控制
-- ❌ 不适合复杂登录态维护（建议用 MCP）
-
-## 注意事项
-
-1. 元素引用（如 e15）来自快照，每次页面变化后需要重新获取快照
-2. 默认无头模式，使用 `--headed` 可视化
-3. 临时目录存储，浏览器关闭后数据丢失
-4. 使用 `--persistent` 保存配置文件到磁盘
+1. Element references (e.g., `e15`) come from snapshots. After every DOM modification or navigation, capture a new snapshot.
+2. Default execution is headless; pass `--headed` for interactive visual inspection.
+3. Temporary profiles lose storage state upon closing; use `--persistent` or `state-save`/`state-load` when session persistence is required.

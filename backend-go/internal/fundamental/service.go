@@ -13,12 +13,17 @@ import (
 )
 
 type Service struct {
-	market *sql.DB
-	sid    *symbolid.Resolver
+	market  *sql.DB
+	sid     *symbolid.Resolver
+	dataDir string
 }
 
-func New(market *sql.DB) *Service {
-	return &Service{market: market, sid: symbolid.New(market)}
+func New(market *sql.DB, dataDir ...string) *Service {
+	s := &Service{market: market, sid: symbolid.New(market)}
+	if len(dataDir) > 0 {
+		s.dataDir = dataDir[0]
+	}
+	return s
 }
 
 func (s *Service) Close() error { return s.sid.Close() }

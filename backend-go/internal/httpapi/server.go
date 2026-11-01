@@ -76,6 +76,7 @@ type Mstat interface {
 type Fundamental interface {
 	Sectors(http.ResponseWriter, *http.Request)
 	Quarters(http.ResponseWriter, *http.Request)
+	Card(http.ResponseWriter, *http.Request)
 }
 
 func New(cfg config.Config, h *db.Handles, m Market, ms Mstat, ch Chart, fd Fundamental) http.Handler {
@@ -128,7 +129,9 @@ func New(cfg config.Config, h *db.Handles, m Market, ms Mstat, ch Chart, fd Fund
 		// پایتون هم متنیِ `/api/fundamental/sectors` پیش از `/api/fundamental/{symbol}`
 		// تعریف شده است.
 		mux.HandleFunc("GET /api/fundamental/sectors", fd.Sectors)
+		mux.HandleFunc("GET /api/fundamental/screen", s.notPortedRoute)
 		mux.HandleFunc("GET /api/fundamental/{symbol}/quarters", fd.Quarters)
+		mux.HandleFunc("GET /api/fundamental/{symbol}", fd.Card)
 	}
 	mux.HandleFunc("/", s.apiGate)
 	return noCache(mux)

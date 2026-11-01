@@ -33,9 +33,6 @@ const (
 	mcapErrNoBand   = "market_cap_no_live_band"   // مجازِ قیمت max<=min ⇒ نشانه، نه ارزش
 )
 
-// hmtToRials تنها نقطۀ تبدیلِ همت → ریال درِ این مسیر (عینِ _hmt_to_rials).
-func hmtToRials(hmt any) float64 { return toF(hmt) * hemmatRial }
-
 // pyReason همان `str(e)[:120]` درِ دو شاخۀ خطادارِ پایتون است. متنِ خطا بینِ دو
 // backend یکسان نیست (و مقایسه نمی‌شود)، ولی **بودنِ** کلیدِ reason شکلِ پاسخ را
 // حفظ می‌کند؛ برش رویِ rune است چون پایتون کدپوینت می‌شمارد نه بایت.

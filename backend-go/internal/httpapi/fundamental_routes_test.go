@@ -17,10 +17,9 @@ func (f *fakeFundamental) hit(name string, w http.ResponseWriter) {
 	WriteJSON(w, http.StatusOK, map[string]any{"handler": name})
 }
 
-func (f *fakeFundamental) Sectors(w http.ResponseWriter, _ *http.Request) { f.hit("sectors", w) }
-func (f *fakeFundamental) Quarters(w http.ResponseWriter, _ *http.Request) {
-	f.hit("quarters", w)
-}
+func (f *fakeFundamental) Sectors(w http.ResponseWriter, _ *http.Request)  { f.hit("sectors", w) }
+func (f *fakeFundamental) Quarters(w http.ResponseWriter, _ *http.Request) { f.hit("quarters", w) }
+func (f *fakeFundamental) Card(w http.ResponseWriter, _ *http.Request)     { f.hit("card", w) }
 
 func newFundSrv(t *testing.T, fd Fundamental) http.Handler {
 	t.Helper()
@@ -28,15 +27,15 @@ func newFundSrv(t *testing.T, fd Fundamental) http.Handler {
 		ReadOnly: true, NoLoops: true}, nil, nil, nil, nil, fd)
 }
 
-// TestFundamentalRoutesReachTheirHandlers دو مسیرِ پورت‌شده باید به هندلرِ
-// خودشون برسند و هر سه مسیرِ مانده (کارت، screen، sync/codal) 501 بدهند؛ این
-// همان تعویقِ اعلام‌شده است، نه یک فرض.
+// TestFundamentalRoutesReachTheirHandlers سه مسیرِ پورت‌شده باید به هندلرِ
+// خودشون برسند و مسیرهایِ مانده (screen، sync/codal) 501 بدهند.
 func TestFundamentalRoutesReachTheirHandlers(t *testing.T) {
 	for _, c := range []struct {
 		path, want string
 	}{
 		{"/api/fundamental/sectors", "sectors"},
 		{"/api/fundamental/عادی01/quarters", "quarters"},
+		{"/api/fundamental/عادی01", "card"},
 	} {
 		fake := &fakeFundamental{}
 		rec := httptest.NewRecorder()
@@ -45,8 +44,8 @@ func TestFundamentalRoutesReachTheirHandlers(t *testing.T) {
 			t.Errorf("%s: status=%d called=%v want %s", c.path, rec.Code, fake.called, c.want)
 		}
 	}
-	// مسیرهایِ نپورت‌شده: هر دو درِ فهرستِ پایتون‌اند، پس 501 و نه 404.
-	for _, path := range []string{"/api/fundamental/عادی01", "/api/fundamental/screen"} {
+	// مسیرهایِ نپورت‌شده: درِ فهرستِ پایتون‌اند، پس 501 و نه 404.
+	for _, path := range []string{"/api/fundamental/screen"} {
 		fake := &fakeFundamental{}
 		rec := httptest.NewRecorder()
 		newFundSrv(t, fake).ServeHTTP(rec, httptest.NewRequest("GET", path, nil))

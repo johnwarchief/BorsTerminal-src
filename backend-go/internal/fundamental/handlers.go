@@ -31,3 +31,21 @@ func (s *Service) Quarters(w http.ResponseWriter, r *http.Request) {
 	}
 	httpapi.WriteJSON(w, http.StatusOK, body)
 }
+
+func (s *Service) Card(w http.ResponseWriter, r *http.Request) {
+	months, ok := httpapi.IntQuery(w, r, "months", 0)
+	if !ok {
+		return
+	}
+	symbol := r.PathValue("symbol")
+	body, status, err := s.CardBody(r.Context(), symbol, months)
+	if err != nil {
+		if status == http.StatusNotFound {
+			httpapi.WriteJSON(w, http.StatusNotFound, map[string]any{"detail": "Symbol not found"})
+			return
+		}
+		httpapi.WriteJSON(w, http.StatusInternalServerError, map[string]any{"status": "error", "message": err.Error()})
+		return
+	}
+	httpapi.WriteJSON(w, status, body)
+}
