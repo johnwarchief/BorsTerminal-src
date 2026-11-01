@@ -128,7 +128,7 @@ type Export interface {
 // Screener مسیرهای تاریخچه و اسکرینر FTS در B7؛ nil یعنی پورت نشده.
 type Screener interface {
 	History(http.ResponseWriter, *http.Request)
-	FTS(http.ResponseWriter, *http.Request)
+	Screener(http.ResponseWriter, *http.Request)
 }
 
 // Funnel مسیرهای قیف FTS در B7؛ nil یعنی پورت نشده.
@@ -255,7 +255,7 @@ func NewWithServices(cfg config.Config, h *db.Handles, srv Services) http.Handle
 	}
 	if srv.Screener != nil {
 		mux.HandleFunc("GET /api/history/{symbol}", srv.Screener.History)
-		mux.HandleFunc("GET /api/screener/fts", srv.Screener.FTS)
+		mux.HandleFunc("GET /api/screener", srv.Screener.Screener)
 	}
 	if srv.Funnel != nil {
 		mux.HandleFunc("GET /api/funnel/registry", srv.Funnel.Registry)

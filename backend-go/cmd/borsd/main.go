@@ -21,6 +21,7 @@ import (
 	"borsterminal/backend/internal/mstat"
 	"borsterminal/backend/internal/notifications"
 	borssync "borsterminal/backend/internal/sync"
+	"borsterminal/backend/internal/screener"
 	"borsterminal/backend/internal/selection"
 	"borsterminal/backend/internal/watchlist"
 )
@@ -60,6 +61,7 @@ func main() {
 	sel := selection.NewService(handles.Market, handles.User)
 	mi := marketindex.NewService(cfg.DataDir, nil)
 	exp := export.NewService(handles.Market)
+	scr := screener.NewService(handles.Market, cfg.DataDir)
 
 	srv := &http.Server{Addr: cfg.Addr,
 		Handler: httpapi.NewWithServices(cfg, handles, httpapi.Services{
@@ -73,6 +75,7 @@ func main() {
 			Selection:     sel,
 			MarketIndex:   mi,
 			Export:        exp,
+			Screener:      scr,
 		})}
 	go func() {
 		slog.Info("listening", "addr", cfg.Addr, "data", cfg.DataDir, "version", httpapi.Version())
