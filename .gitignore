@@ -47,6 +47,7 @@ frontend/src-tauri/target/
 
 # ---- دیتابیس و کش (بازسازی‌شدنی؛ حجم بالا) ----
 *.db
+!backend-go/internal/**/testdata/fixture/*.db
 *.db-shm
 .cline_state/
 
