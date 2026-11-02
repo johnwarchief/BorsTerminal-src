@@ -728,7 +728,7 @@ describe('telegramIndicatorCatalog', () => {
 
   it('search matches title, caption and attachment names', () => {
     expect(searchTelegramRows('supertrend').length).toBeGreaterThan(0);
-    expect(searchTelegramRows('Indi 225.txt').map((r) => r.id)).toContain('p11');
+    expect(searchTelegramRows('Indi 225.txt').map((r) => r.id)).toEqual(['p14', 'p42']);
     expect(searchTelegramRows('zzzz-nothing')).toHaveLength(0);
   });
 
