@@ -640,7 +640,7 @@ Expected: `persian_glyph_guard: 4 passed / 0 failed`.
 ```bash
 cd /c/Users/PCMOD/Desktop/BorsTerminal
 git add docs/technical-indicators/inbox docs/technical-indicators/README.md
-git commit -m "docs(indicators): 35 سورسِ خوانای تلگرام به inbox با provenance"
+git commit -m "docs(indicators): 38 سورسِ خوانای تلگرام به inbox با provenance و مجوز"
 ```
 
 ---
