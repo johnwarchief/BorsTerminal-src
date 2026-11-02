@@ -555,3 +555,35 @@ body {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* کاتالوگ تلگرام — فقط تصویر کامل حرکت می‌کند؛ سطرهای فهرست بی‌انیمیشن‌اند
+   چون این فهرست روزی ده‌بار باز می‌شود. */
+.telegram-catalog-lightbox {
+  animation: telegramLightboxIn 160ms cubic-bezier(0.215, 0.61, 0.355, 1);
+}
+
+@keyframes telegramLightboxIn {
+  from {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .telegram-catalog-lightbox {
+    animation: telegramLightboxFadeOnly 160ms ease-out;
+  }
+
+  @keyframes telegramLightboxFadeOnly {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+}
