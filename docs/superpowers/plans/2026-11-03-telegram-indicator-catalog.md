@@ -537,7 +537,7 @@ PYTHONIOENCODING=utf-8 python tools/build_telegram_catalog_assets.py \
   --export-dir "C:/Users/PCMOD/Downloads/Telegram Desktop/ChatExport_2026-11-03" --dry-run
 ```
 
-Expected, from the measurements in spec §11: `rows: 64`, `rows with no caption: 3 ['p08', 'p09', 'p10']`, `distinct source images: 57`, `attachment names: 61`. If any of these four differ, the export changed shape since Task 1 measured it — stop and report, do not adjust the expectation.
+Expected, from the measurements in spec §11: `rows: 64`, `rows with no caption: 3 ['p08', 'p09', 'p10']`, `distinct source images: 57`, `attachment names: 60` (67 `media_file` blocks, 7 of them repeated names; the 61st distinct `title bold` in the file is `Animation`, which comes from a GIF block and is correctly excluded). If any of these four differ, the export changed shape since Task 1 measured it — stop and report, do not adjust the expectation.
 
 - [ ] **Step 6: Real run, then report the measured size**
 
