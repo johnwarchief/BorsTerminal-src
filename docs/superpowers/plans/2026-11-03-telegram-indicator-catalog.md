@@ -63,7 +63,7 @@ Applies to every task.
 | Modify `frontend-v2/src/app/styles.css` | Keyframes for the lightbox and its reduced-motion fallback. This is the only stylesheet in the tree (imported at `src/main.tsx:5`); no per-component CSS file is added. |
 | Modify `frontend-v2/src/features/technical/ui/WideWorkspaceDrawer.tsx` (after line 667, inside the `activeTab === 'indicators'` block) | Mounts `TelegramCatalogList` as the third block. |
 | Modify `frontend-v2/src/features/technical/ui/__tests__/WideWorkspaceDrawer.test.tsx` | Asserts the catalog block appears on the indicators tab. |
-| Modify `docs/technical-indicators/inbox/` (36 text sources) + `docs/technical-indicators/README.md` | Provenance for stage B. |
+| Modify `docs/technical-indicators/inbox/` (38 text sources) + `docs/technical-indicators/README.md` | Provenance for stage B. |
 
 ---
 
@@ -567,10 +567,10 @@ git commit -m "feat(technical): استخراج 64 عکس و کاتالوگ تل�
 
 ## Task 3: Text sources into `inbox/`
 
-Deliverable: the 35 readable sources the catalog references, inside the repo, with provenance recorded. Compiled `ex4`/`ex5` are deliberately not copied.
+Deliverable: the ۳۸ readable sources the catalog references, inside the repo, with provenance recorded. Compiled `ex4`/`ex5` (۲۲ distinct names) are deliberately not copied.
 
 **Files:**
-- Create: `docs/technical-indicators/inbox/` (36 readable files copied from `E:\Telegram`)
+- Create: `docs/technical-indicators/inbox/` (۳۸ distinct readable files copied from `E:\Telegram`, 32 of them new to git)
 - Modify: `docs/technical-indicators/README.md`
 
 **Interfaces:**
@@ -606,7 +606,7 @@ print('inbox now:', len(list(dst.glob('*'))))
 PY
 ```
 
-Expected: `copied: 36`, and the `referenced but not on E:` line prints exactly two names — `Gold Snap v1.0.mq5` (on `E:` it is stored with two spaces: `Gold Snap  v1.0.mq5`) and `Range Breakout With Filter @IndicatorsforTV.mq5` (on `E:` the file is named `Range Breakout With Filter.mq5`). Both are name-mismatch, not missing content: match them by hand and say so in the report rather than renaming either side. `inbox now:` should be roughly 51. The printed lists are the evidence, not an assumption.
+Expected, as measured after the first run of this task: the script prints `copied:` as a count of copy **operations** (a name referenced by two rows is copied twice), so it reads 44 while the distinct readable names are ۳۸. `referenced but not on E:` prints exactly one name — `Range Breakout With Filter  @IndicatorsforTV.mq5` (the catalog's name; on `E:` the same bytes are stored as `Range Breakout With Filter.mq5`). Hand-copy it under the catalog's name, prove the sha256 matches, and say so in the report; do not rename anything on `E:`. `Gold Snap  v1.0.mq5` is **not** a mismatch — the JSON already carries the two-space name and copies cleanly. `inbox now:` is 47. The printed lists are the evidence, not an assumption.
 
 - [ ] **Step 2: Record provenance in the README**
 
@@ -615,14 +615,17 @@ Append to `docs/technical-indicators/README.md`:
 ```markdown
 ## منبع این inbox
 
-۳۶ سورسِ خوانا (`Indi *.txt`, `.mq4`, `.mq5`) از پوشۀ `E:\Telegram` کپی شده‌اند؛
+۳۸ سورسِ خوانای متمایز (`Indi *.txt`, `.mq4`, `.mq5`) از پوشۀ `E:\Telegram` کپی شده‌اند؛
 همان‌ها که `frontend-v2/src/features/technical/data/telegram-indicators.json` در
 فیلد `attachments` به آن‌ها ارجاع می‌دهد. منبع: گروه `indicators` در تلگرام،
 export در 2026-11-03.
 
-باینری‌های `.ex4`/`.ex5` عمداً کپی نشده‌اند: برای مرحلۀ ب خواندنی نیستند و فقط
-گیت را سنگین می‌کنند. شش پیوستِ ارجاع‌شدۀ کاتالوگ اصلاً روی `E:\Telegram` نیست
-(پنج باینری و `animation.gif`)؛ برای مرحلۀ الف لازم نیستند.
+باینری‌های `.ex4`/`.ex5` (۲۲ نامِ متمایز در کاتالوگ) عمداً کپی نشده‌اند: برای
+مرحلۀ ب خواندنی نیستند و فقط گیت را سنگین می‌کنند. هفت باینری که از پذیرشِ
+اکتبر در همین پوشه مانده بود حذف نشد — پاک‌کردنِ چیزی که این تسک نساخته است.
+یک نام در کاتالوگ با `E:` فرق دارد: `Range Breakout With Filter  @IndicatorsforTV.mq5`
+که همان بایت‌ها در `E:` زیر نامِ `Range Breakout With Filter.mq5` است؛ با کپیِ دستی
+و تطبیقِ sha256 افزوده شد، پس محتوایش دو بار در گیت است.
 ```
 
 Use `toFaDigits`-style codepoints if you script this edit; if you type the Persian digits, re-read the lines and verify them by codepoint.
